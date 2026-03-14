@@ -4,11 +4,10 @@ from xbrl_parser import parse_xbrl
 from adjustment_detector import detect_adjustments
 from tax_adjuster import apply_tax
 from eps_calculator import calculate_eps
-from ai_analyzer import analyze_with_gemini_v3
+from ai_analyzer import analyze_with_gemini_v3 # 追加
 
 def save_result(ticker, accession_no, result):
     os.makedirs(f"data/{ticker}", exist_ok=True)
-    # 個別の決算データ保存
     with open(f"data/{ticker}/{accession_no}.json", "w") as f:
         json.dump(result, f, indent=2)
 
@@ -21,7 +20,8 @@ def run():
         filings = fetch_filings(ticker)
         
         results_history = []
-        for filing in filings:
+        # enumerateを使用してインデックス i を取得
+        for i, filing in enumerate(filings):
             try:
                 data = parse_xbrl(filing)
                 if not data: continue
@@ -32,9 +32,10 @@ def run():
 
                 # 最新の決算（最初の1件）のみAI分析を実行
                 if i == 0:
-                print(f"Generating AI analysis for {ticker}...")
-                ai_comment = analyze_with_gemini_v3(ticker, result, adjustments)
-                result["ai_comment"] = ai_comment
+                    print(f"Generating AI analysis for {ticker}...")
+                    # 最新モデルのGemini 3 Flashで解析
+                    ai_comment = analyze_with_gemini_v3(ticker, result, adjustments)
+                    result["ai_comment"] = ai_comment
                 
                 # 期間情報などを付与
                 result["date"] = str(filing.period_end_date)
@@ -45,12 +46,12 @@ def run():
             except Exception as e:
                 print(f"Skipping filing {filing.accession_no} due to error: {e}")
 
-        # 最後に最新版をlatest.jsonとして保存（サイト表示用）
         if results_history:
+            # 最新版
             with open(f"data/{ticker}/latest.json", "w") as f:
                 json.dump(results_history[0], f, indent=2)
             
-            # 10年分の推移用まとめファイル（後で一覧画面で使用）
+            # 10年分の推移用（グラフ描画に使用可能）
             with open(f"data/{ticker}/history.json", "w") as f:
                 json.dump(results_history, f, indent=2)
 
