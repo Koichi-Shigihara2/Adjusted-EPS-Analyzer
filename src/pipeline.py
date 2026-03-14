@@ -25,16 +25,17 @@ def run():
                 data = parse_xbrl(filing)
                 if not data: continue
                 
-                adjustments = detect_adjustments(data)
-                net_adjustments = apply_tax(adjustments, data)
-                result = calculate_eps(data, net_adjustments)
+                adjustments_raw = detect_adjustments(data)
+                net_adjustment, detailed_adjustments = apply_tax_adjustments(adjustments_raw, data)
+                result = calculate_eps(data, net_adjustment, detailed_adjustments)
 
-                # --- 修正箇所: ifブロックの中身は必ずインデントを入れる ---
+                # AI分析（最新四半期のみ）
                 if i == 0:
-                    print(f"Generating AI analysis for {ticker}...")
-                    ai_comment = analyze_with_gemini_v3(ticker, result, adjustments)
-                    result["ai_comment"] = ai_comment
-                # -----------------------------------------------------
+                    ai_result = analyze_adjustments(ticker, result, detailed_adjustments)
+                    try:
+                        result["ai_analysis"] = json.loads(ai_result)
+                    except:
+                        result["ai_analysis"] = {"health": "Error", "comment": ai_result}
                 
                 result["date"] = str(filing.period_end_date)
                 result["form"] = filing.form
