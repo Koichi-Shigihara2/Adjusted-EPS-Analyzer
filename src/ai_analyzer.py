@@ -40,7 +40,7 @@ GAAP純利益: {data['gaap_net_income']:,} USD
 """
 
     response = client.chat.completions.create(
-        model="grok-beta",  # 必要に応じて最新モデル名に変更
+        model="grok-4.20-beta-0309-reasoning",  # 必要に応じて最新モデル名に変更
         messages=[{"role": "user", "content": prompt}],
         temperature=0.1,
         max_tokens=800
