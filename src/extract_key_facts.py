@@ -1,8 +1,10 @@
 """
-SEC EDGARから企業の財務データを抽出するモジュール
+SEC EDGARから企業の財務データを抽出するモジュール（完全版）
 - CIKマップファイルから銘柄のCIKを取得
 - HTTP/2問題を回避するための設定
-- XBRLデータから四半期財務諸表を抽出
+- 複数クラス株式（PLTRなど）に対応した希薄化後株式数の合算
+- 期間（duration/instant）を指定したXBRLデータ抽出
+- 詳細なデバッグ出力
 """
 import os
 import ssl
@@ -16,16 +18,13 @@ from datetime import datetime
 # ============================================
 # ネットワーク設定（HTTP/2問題の回避）
 # ============================================
-# SSL警告を無効化
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# 環境変数でHTTP/2を完全に無効化
 os.environ["HTTP2"] = "0"
 os.environ["HTTPX_HTTP2"] = "0"
 os.environ["NO_PROXY"] = "sec.gov,www.sec.gov"
 os.environ["no_proxy"] = "sec.gov,www.sec.gov"
 
-# SSLコンテキストの設定
 try:
     ssl_context = ssl.create_default_context()
     ssl_context.check_hostname = True
@@ -33,7 +32,6 @@ try:
 except Exception as e:
     print(f"SSL context creation warning: {e}")
 
-# edgarライブラリのインポート（設定後）
 from edgar import Company, set_identity
 
 # ============================================
@@ -41,7 +39,6 @@ from edgar import Company, set_identity
 # ============================================
 set_identity("jamablue01@gmail.com")
 
-# パス設定
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
@@ -138,7 +135,92 @@ def get_cik(ticker: str) -> str:
     )
 
 # ============================================
-# データ抽出機能
+# XBRLデータ抽出（期間指定・複数クラス対応）
+# ============================================
+def safe_get_xbrl_value(xbrl, tag: str, period_type: str = "duration") -> Optional[Dict[str, Any]]:
+    """
+    XBRLから安全に値を取得（期間指定可能）
+    Args:
+        xbrl: XBRLオブジェクト
+        tag: 取得するタグ名（例: "us-gaap:NetIncomeLoss"）
+        period_type: "duration"（期間）または "instant"（時点）
+    Returns:
+        Optional[Dict]: 値と単位を含む辞書
+    """
+    try:
+        print(f"    Trying to get tag: {tag} (period_type={period_type})")
+        df = xbrl.to_pandas(tag)
+        if df is not None and not df.empty:
+            print(f"    ✓ Found {tag}: {len(df)} rows")
+            
+            # 期間タイプでフィルタリング
+            if period_type == "duration":
+                # startDate を含む行 = 期間データ
+                filtered = df[df['period'].apply(lambda x: 'startDate' in x if isinstance(x, dict) else False)]
+            else:
+                # instant を含む行 = 時点データ
+                filtered = df[df['period'].apply(lambda x: 'instant' in x if isinstance(x, dict) else False)]
+            
+            if filtered.empty:
+                print(f"    ✗ No {period_type} data for {tag}")
+                return None
+            
+            latest = filtered.iloc[-1]
+            print(f"      Latest value: {latest['value']} {latest.get('unit', 'USD')}")
+            return {
+                "value": float(latest["value"]),
+                "unit": latest.get("unit", "USD"),
+                "period": latest.get("period", {}),
+                "filed": latest.get("filed", None)
+            }
+        else:
+            print(f"    ✗ No data for {tag}")
+    except Exception as e:
+        print(f"    ✗ Error getting {tag}: {type(e).__name__}: {e}")
+    return None
+
+def get_diluted_shares_total(xbrl) -> Optional[Dict[str, Any]]:
+    """
+    複数クラス株式の加重平均希薄化後株式数を合算する
+    （PLTR: Class A, Class B, Class F）
+    """
+    total_shares = 0
+    unit = "shares"
+    class_tags = [
+        "us-gaap:CommonClassAMember",
+        "us-gaap:CommonClassBMember",
+        "pltr:CommonClassFMember"
+    ]
+    
+    for class_member in class_tags:
+        try:
+            # 特定のクラスにフィルタリングして取得
+            df = xbrl.to_pandas(
+                "us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding",
+                dimension_filters={class_member: True}
+            )
+            if df is not None and not df.empty:
+                # 期間データ（duration）のみを抽出
+                filtered = df[df['period'].apply(lambda x: 'startDate' in x if isinstance(x, dict) else False)]
+                if not filtered.empty:
+                    value = float(filtered.iloc[-1]["value"])
+                    total_shares += value
+                    print(f"      {class_member}: {value:,.0f}")
+        except Exception as e:
+            print(f"      Error getting {class_member}: {e}")
+            continue
+    
+    if total_shares > 0:
+        return {
+            "value": total_shares,
+            "unit": unit,
+            "period": {"duration": "combined"},
+            "filed": None
+        }
+    return None
+
+# ============================================
+# ファイリング取得
 # ============================================
 def fetch_filings(ticker: str, count: int = 40) -> List:
     """
@@ -163,6 +245,7 @@ def fetch_filings(ticker: str, count: int = 40) -> List:
         for filing in filings:
             filing_list.append(filing)
         
+        # 最初の5件を表示
         for i, filing in enumerate(filing_list[:5]):
             try:
                 filing_date = getattr(filing, 'filing_date', 'unknown')
@@ -177,32 +260,31 @@ def fetch_filings(ticker: str, count: int = 40) -> List:
         print(f"Error fetching filings for {ticker}: {e}")
         return []
 
-def safe_get_xbrl_value(xbrl, tag: str) -> Optional[Dict[str, Any]]:
-    """
-    XBRLから安全に値を取得
-    Args:
-        xbrl: XBRLオブジェクト
-        tag: 取得するタグ名
-    Returns:
-        Optional[Dict]: 値と単位を含む辞書
-    """
+def debug_available_tags(xbrl):
+    """XBRLで利用可能なタグを表示（デバッグ用）"""
     try:
-        df = xbrl.to_pandas(tag)
-        if df is not None and not df.empty:
-            latest = df.iloc[-1]
-            return {
-                "value": float(latest["value"]),
-                "unit": latest.get("unit", "USD"),
-                "period": latest.get("period", {}),
-                "filed": latest.get("filed", None)
-            }
-    except Exception:
-        pass
-    return None
+        if hasattr(xbrl, 'facts'):
+            facts = xbrl.facts
+            print(f"    Total facts available: {len(facts)}")
+            
+            income_tags = [f for f in facts if 'Income' in f.name or 'Earnings' in f.name]
+            print(f"    Income-related tags found: {len(income_tags)}")
+            for tag in income_tags[:10]:
+                print(f"      - {tag.name}")
+            
+            share_tags = [f for f in facts if 'Share' in f.name or 'Stock' in f.name]
+            print(f"    Share-related tags found: {len(share_tags)}")
+            for tag in share_tags[:10]:
+                print(f"      - {tag.name}")
+    except Exception as e:
+        print(f"    Error listing facts: {e}")
 
+# ============================================
+# メイン抽出関数
+# ============================================
 def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]]:
     """
-    四半期データを取得（過去10年分）
+    四半期データを取得（過去10年分）- 複数クラス株式対応版
     Args:
         ticker: 銘柄ティッカー
         years: 取得する年数
@@ -218,71 +300,74 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         quarterly_data = []
         for i, filing in enumerate(filings):
             try:
-                print(f"\nProcessing filing {i+1}/{len(filings)}: {getattr(filing, 'filing_date', 'unknown')} ({getattr(filing, 'form', 'unknown')})")
+                filing_date = getattr(filing, 'filing_date', 'unknown')
+                form = getattr(filing, 'form', 'unknown')
+                print(f"\nProcessing filing {i+1}/{len(filings)}: {filing_date} ({form})")
                 
                 xbrl = filing.xbrl()
                 if not xbrl:
                     print("  No XBRL data available")
                     continue
                 
+                print("  XBRL data loaded successfully")
+                # debug_available_tags(xbrl)  # 必要に応じてコメント解除
+                
                 period_data = {
-                    "filing_date": str(getattr(filing, 'filing_date', 'unknown')),
-                    "form": str(getattr(filing, 'form', 'unknown')),
+                    "filing_date": str(filing_date),
+                    "form": str(form),
                     "accession_no": str(getattr(filing, 'accession_no', 'unknown'))
                 }
                 
-                # Net Income
-                net_income = safe_get_xbrl_value(xbrl, "us-gaap:NetIncomeLoss")
+                # 純利益 (Net Income)
+                net_income = safe_get_xbrl_value(xbrl, "us-gaap:NetIncomeLoss", "duration")
                 if net_income:
                     period_data["net_income"] = net_income
-                    print(f"  Net Income: {net_income['value']:,.0f} {net_income['unit']}")
-                
-                if "net_income" not in period_data:
-                    net_income_parent = safe_get_xbrl_value(xbrl, "us-gaap:NetIncomeLossAttributableToParent")
+                else:
+                    # 代替タグ
+                    net_income_parent = safe_get_xbrl_value(xbrl, "us-gaap:NetIncomeLossAttributableToParent", "duration")
                     if net_income_parent:
                         period_data["net_income"] = net_income_parent
-                        print(f"  Net Income (Parent): {net_income_parent['value']:,.0f} {net_income_parent['unit']}")
                 
-                # Diluted Shares
-                diluted_shares = safe_get_xbrl_value(xbrl, "us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding")
+                # 希薄化後株式数（複数クラス合算）
+                diluted_shares = get_diluted_shares_total(xbrl)
                 if diluted_shares:
                     period_data["diluted_shares"] = diluted_shares
-                    print(f"  Diluted Shares: {diluted_shares['value']:,.0f} {diluted_shares['unit']}")
+                else:
+                    # 通常の単一クラス用フォールバック
+                    ds = safe_get_xbrl_value(xbrl, "us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding", "duration")
+                    if ds:
+                        period_data["diluted_shares"] = ds
+                    else:
+                        bs = safe_get_xbrl_value(xbrl, "us-gaap:WeightedAverageNumberOfSharesOutstandingBasic", "duration")
+                        if bs:
+                            period_data["diluted_shares"] = bs
                 
-                if "diluted_shares" not in period_data:
-                    basic_shares = safe_get_xbrl_value(xbrl, "us-gaap:WeightedAverageNumberOfSharesOutstandingBasic")
-                    if basic_shares:
-                        period_data["diluted_shares"] = basic_shares
-                        print(f"  Basic Shares (used as fallback): {basic_shares['value']:,.0f} {basic_shares['unit']}")
+                # 税引前利益
+                pretax = safe_get_xbrl_value(xbrl, "us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes", "duration")
+                if not pretax:
+                    pretax = safe_get_xbrl_value(xbrl, "us-gaap:IncomeLossBeforeEquityMethodInvestmentsIncomeTax", "duration")
+                if pretax:
+                    period_data["pretax_income"] = pretax
                 
-                # Tax Expense
-                tax_expense = safe_get_xbrl_value(xbrl, "us-gaap:IncomeTaxExpenseBenefit")
-                if tax_expense:
-                    period_data["tax_expense"] = tax_expense
-                    print(f"  Tax Expense: {tax_expense['value']:,.0f} {tax_expense['unit']}")
+                # 税金費用
+                tax = safe_get_xbrl_value(xbrl, "us-gaap:IncomeTaxExpenseBenefit", "duration")
+                if tax:
+                    period_data["tax_expense"] = tax
                 
-                # Pretax Income
-                pretax_income = safe_get_xbrl_value(xbrl, "us-gaap:IncomeLossBeforeEquityMethodInvestmentsIncomeTax")
-                if not pretax_income:
-                    pretax_income = safe_get_xbrl_value(xbrl, "us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes")
-                if pretax_income:
-                    period_data["pretax_income"] = pretax_income
-                    print(f"  Pretax Income: {pretax_income['value']:,.0f} {pretax_income['unit']}")
-                
-                # SBC
-                sbc = safe_get_xbrl_value(xbrl, "us-gaap:ShareBasedCompensation")
+                # 株式報酬 (SBC)
+                sbc = safe_get_xbrl_value(xbrl, "us-gaap:ShareBasedCompensation", "duration")
                 if sbc:
                     period_data["sbc"] = sbc
-                    print(f"  SBC: {sbc['value']:,.0f} {sbc['unit']}")
                 
-                # Restructuring
-                restructuring = safe_get_xbrl_value(xbrl, "us-gaap:RestructuringCharges")
+                # リストラ費用
+                restructuring = safe_get_xbrl_value(xbrl, "us-gaap:RestructuringCharges", "duration")
                 if restructuring:
                     period_data["restructuring"] = restructuring
                 
+                # 必須データが揃っているかチェック
                 if "net_income" in period_data and "diluted_shares" in period_data:
                     quarterly_data.append(period_data)
-                    print(f"  ✓ Added to results")
+                    print(f"  ✓ Added to results (net_income={period_data['net_income']['value']:,.0f}, diluted_shares={period_data['diluted_shares']['value']:,.0f})")
                 else:
                     missing = []
                     if "net_income" not in period_data:
@@ -293,6 +378,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 
             except Exception as e:
                 print(f"  Error processing filing: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
         
         print(f"\n{ticker}: {len(quarterly_data)}件の四半期データを取得")
@@ -300,6 +387,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         
     except Exception as e:
         print(f"{ticker} データ取得エラー: {e}")
+        import traceback
+        traceback.print_exc()
         return []
 
 def normalize_value(value_dict: Optional[Dict]) -> float:
@@ -322,7 +411,7 @@ def normalize_value(value_dict: Optional[Dict]) -> float:
         return value * 1_000_000
     elif unit in ["billions", "billion"]:
         return value * 1_000_000_000
-    else:
+    else:  # USD or others
         return value
 
 # ============================================
@@ -339,8 +428,13 @@ def main():
         print(f"\nSuccessfully extracted {len(data)} quarters:")
         for i, quarter in enumerate(data[:5]):
             print(f"\nQuarter {i+1}: {quarter['filing_date']}")
-            print(f"  Net Income: {normalize_value(quarter.get('net_income')):,.0f} USD")
-            print(f"  Diluted Shares: {normalize_value(quarter.get('diluted_shares')):,.0f}")
+            net = normalize_value(quarter.get('net_income'))
+            shares = normalize_value(quarter.get('diluted_shares'))
+            print(f"  Net Income: {net:,.0f} USD")
+            print(f"  Diluted Shares: {shares:,.0f}")
+            if shares > 0:
+                eps = net / shares
+                print(f"  Implied EPS: {eps:.4f} USD")
     else:
         print("No data extracted")
 
