@@ -3,44 +3,53 @@ from typing import Dict, Any, Optional
 
 def parse_xbrl(filing: Filing) -> Optional[Dict[str, Any]]:
     """
-    Parse XBRL from SEC Filing using latest edgartools API.
-    Returns key financials + raw facts dict.
+    SECのFilingからXBRLデータを安全に抽出（最新edgartools対応）
     """
     try:
+        # XBRLインスタンスを取得
         xbrl = filing.xbrl()
         if not xbrl:
-            print(f"No XBRL instance in filing {filing.accession_no} (amended or missing)")
+            print(f"XBRLデータなし: {filing.accession_no} (修正申告や欠損の可能性)")
             return None
 
-        # Safe getter for single fact value
-        def get_fact_value(concept: str, default=None):
-            fact = xbrl.get_fact(concept)
-            return fact.value if fact else default
+        # 単一の事実値を取得する安全関数
+        def get_value(tag: str, default=None):
+            try:
+                fact = xbrl.get_fact(tag)
+                return fact.value if fact else default
+            except AttributeError:
+                print(f"get_factメソッドが見つかりません: {tag}")
+                return default
+            except Exception as e:
+                print(f"get_factエラー {tag}: {e}")
+                return default
 
-        # Core metrics (use standard us-gaap tags)
-        diluted_shares = get_fact_value("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding") or \
-                         get_fact_value("dei:EntityCommonStockSharesOutstanding")
+        # 重要な項目を取得
+        diluted_shares = get_value("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding") or \
+                         get_value("dei:EntityCommonStockSharesOutstanding")
 
-        net_income = get_fact_value("us-gaap:NetIncomeLoss") or \
-                     get_fact_value("us-gaap:ProfitLoss") or \
-                     get_fact_value("us-gaap:NetIncomeLossAttributableToParent")
+        net_income = get_value("us-gaap:NetIncomeLoss") or \
+                     get_value("us-gaap:NetIncomeLossAttributableToParent")
 
-        tax_expense = get_fact_value("us-gaap:IncomeTaxExpenseBenefit")
+        tax_expense = get_value("us-gaap:IncomeTaxExpenseBenefit")
 
-        pretax_income = get_fact_value("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxesExtraordinaryItemsNoncontrollingInterest") or \
-                        get_fact_value("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes")
+        pretax_income = get_value("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes")
 
-        # All facts as dict (for adjustment_detector to search)
-        # Use query() to make iterable safely
+        # 全事実を辞書化（調整検知用）※イテレーションエラー回避
         raw_facts = {}
         try:
-            for fact in xbrl.facts.query():  # query() returns iterable Fact results
-                concept_name = fact.concept.name
-                raw_facts[concept_name] = fact.value
+            # query()を使って安全にイテレート
+            facts_query = xbrl.facts.query()
+            for fact in facts_query:
+                concept = fact.concept.name
+                raw_facts[concept] = fact.value
         except Exception as qe:
-            print(f"Query iteration failed for {filing.accession_no}: {qe}")
-            # Fallback: if query() fails, use get_fact for known tags only
-            pass
+            print(f"facts.query()失敗: {qe} → フォールバック")
+            # フォールバック：主要タグだけ手動取得
+            for tag in ["us-gaap:Revenues", "us-gaap:CostOfRevenue", "us-gaap:RestructuringCharges"]:
+                val = get_value(tag)
+                if val:
+                    raw_facts[tag] = val
 
         return {
             "net_income": net_income,
@@ -48,13 +57,10 @@ def parse_xbrl(filing: Filing) -> Optional[Dict[str, Any]]:
             "tax_expense": tax_expense,
             "pretax_income": pretax_income,
             "raw_facts": raw_facts,
-            "period_end": str(filing.period_end_date),
+            "period": str(filing.period_end_date),
             "form": filing.form
         }
 
-    except AttributeError as ae:
-        print(f"API mismatch (likely old edgartools): {ae} for {filing.accession_no}")
-        return None
     except Exception as e:
-        print(f"General XBRL parse error for {filing.accession_no}: {e}")
+        print(f"XBRL解析エラー {filing.accession_no}: {e}")
         return None
