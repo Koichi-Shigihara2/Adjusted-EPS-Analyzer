@@ -1,12 +1,14 @@
-from openai import OpenAI
 import os
+import json
+from openai import OpenAI
 
 def analyze_adjustments(ticker, data, adjustments):
-    client = OpenAI(
-        api_key=os.environ.get("XAI_API_KEY"),
-        base_url="https://api.x.ai/v1",
-    )
-
+    try:
+        client = OpenAI(
+            api_key=os.environ.get("XAI_API_KEY"),
+            base_url="https://api.x.ai/v1",
+        )
+        
     # 調整内訳を文字列化（f-string外で\nを扱う）
     adj_lines = []
     for adj in adjustments:
@@ -49,4 +51,8 @@ GAAP純利益: {data['gaap_net_income']:,} USD
     try:
         return response.choices[0].message.content.strip()
     except Exception as e:
-        return f'{{"health": "Error", "comment": "API call failed: {str(e)}"}}'
+        return json.dumps({
+            "health": "Unknown",
+            "comment": f"AI分析をスキップしました（エラー: {str(e)}）",
+            "sources": []
+        })
