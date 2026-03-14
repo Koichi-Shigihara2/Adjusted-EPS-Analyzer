@@ -17,13 +17,10 @@ def calculate_ttm(quarterly_data, end_idx):
     if len(ttm_data) < 4:
         return None
     
-    # TTM集計
-    total_net_income = sum(q["net_income"] for q in ttm_data)
-    total_adjustments = sum(q.get("total_adjustments", 0) for q in ttm_data)
-    
-    # 希薄化後株式数は平均を使用
-    avg_shares = sum(q["diluted_shares"] for q in ttm_data) / 4
-    
+    total_net_income = sum(q["gaap_net_income"] for q in ttm_data)
+    total_adjustments = sum(q.get("net_adjustment_total", 0) for q in ttm_data)
+    avg_shares = sum(q["diluted_shares_used"] for q in ttm_data) / 4
+
     return {
         "period": f"{ttm_data[0]['filing_date']} to {ttm_data[-1]['filing_date']}",
         "net_income": total_net_income,
