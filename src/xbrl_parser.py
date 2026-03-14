@@ -1,55 +1,41 @@
-from edgar import Filing
+from edgar import Company, set_identity
 from typing import Dict, Any, Optional
 
-def parse_xbrl(filing: Filing) -> Optional[Dict[str, Any]]:
-    """
-    SECのFilingからXBRLデータを安全に抽出（最新edgartools対応）
-    """
+set_identity("jamablue01@gmail.com")
+
+def extract_key_facts(ticker: str) -> Optional[Dict[str, Any]]:
     try:
-        # XBRLインスタンスを取得
-        xbrl = filing.xbrl()
-        if not xbrl:
-            print(f"XBRLデータなし: {filing.accession_no} (修正申告や欠損の可能性)")
+        company = Company(ticker)
+        facts = company.get_facts()  # 会社レベルの事実を取得（推奨方法）
+        if not facts:
+            print(f"{ticker} のfactsがありません")
             return None
 
-        # 単一の事実値を取得する安全関数
-        def get_value(tag: str, default=None):
+        # 最新値を取得（to_pandasでDataFrame化）
+        def get_latest(tag: str, default=None):
             try:
-                fact = xbrl.get_fact(tag)
-                return fact.value if fact else default
-            except AttributeError:
-                print(f"get_factメソッドが見つかりません: {tag}")
-                return default
-            except Exception as e:
-                print(f"get_factエラー {tag}: {e}")
+                df = facts.to_pandas(tag)
+                if df.empty:
+                    return default
+                return df['value'].iloc[-1]  # 最新期間の値
+            except:
                 return default
 
-        # 重要な項目を取得
-        diluted_shares = get_value("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding") or \
-                         get_value("dei:EntityCommonStockSharesOutstanding")
+        diluted_shares = get_latest("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding") or \
+                         get_latest("dei:EntityCommonStockSharesOutstanding")
 
-        net_income = get_value("us-gaap:NetIncomeLoss") or \
-                     get_value("us-gaap:NetIncomeLossAttributableToParent")
+        net_income = get_latest("us-gaap:NetIncomeLoss") or \
+                     get_latest("us-gaap:NetIncomeLossAttributableToParent")
 
-        tax_expense = get_value("us-gaap:IncomeTaxExpenseBenefit")
+        tax_expense = get_latest("us-gaap:IncomeTaxExpenseBenefit")
 
-        pretax_income = get_value("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes")
+        pretax_income = get_latest("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxes")
 
-        # 全事実を辞書化（調整検知用）※イテレーションエラー回避
-        raw_facts = {}
-        try:
-            # query()を使って安全にイテレート
-            facts_query = xbrl.facts.query()
-            for fact in facts_query:
-                concept = fact.concept.name
-                raw_facts[concept] = fact.value
-        except Exception as qe:
-            print(f"facts.query()失敗: {qe} → フォールバック")
-            # フォールバック：主要タグだけ手動取得
-            for tag in ["us-gaap:Revenues", "us-gaap:CostOfRevenue", "us-gaap:RestructuringCharges"]:
-                val = get_value(tag)
-                if val:
-                    raw_facts[tag] = val
+        # raw_factsとして一部サンプル
+        raw_facts = {
+            "Revenues": get_latest("us-gaap:Revenues"),
+            "RestructuringCharges": get_latest("us-gaap:RestructuringCharges")
+        }
 
         return {
             "net_income": net_income,
@@ -57,10 +43,9 @@ def parse_xbrl(filing: Filing) -> Optional[Dict[str, Any]]:
             "tax_expense": tax_expense,
             "pretax_income": pretax_income,
             "raw_facts": raw_facts,
-            "period": str(filing.period_end_date),
-            "form": filing.form
+            "ticker": ticker
         }
 
     except Exception as e:
-        print(f"XBRL解析エラー {filing.accession_no}: {e}")
+        print(f"{ticker} のfacts抽出エラー: {e}")
         return None
