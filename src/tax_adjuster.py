@@ -1,25 +1,24 @@
-def apply_tax(adjustments, data):
-    """
-    調整項目ごとに実効税率を適用し、Net of Tax（税後影響額）を算出する。
-    """
-    # 実効税率 (Effective Tax Rate) の算出
-    # 税引前利益が0以下の場合は、標準税率（例: 21%）をフォールバックとして使用
-    if data["pretax_income"] and data["pretax_income"] > 0:
+def apply_tax_adjustments(adjustments, data):
+    etr = 0.21
+    if data.get("pretax_income", 0) > 0 and data.get("tax_expense", 0):
         etr = data["tax_expense"] / data["pretax_income"]
-    else:
-        etr = 0.21 
 
-    total_net_adjustment = 0
+    total_net = 0
+    detailed = []
     for adj in adjustments:
-        if adj["pretax"]:
-            # 費用（ポジティブ調整）なら節税効果分を差し引く
-            # 収益（ネガティブ調整）なら税負担分を差し引く
-            net_amount = adj["amount"] * (1 - etr)
+        gross = adj["amount"]
+        if adj["pre_tax"]:
+            if adj["direction"] == "add_back":  # 費用除外 → 節税分減らす
+                net = gross * (1 - etr)
+            elif adj["direction"] == "subtract":  # 益除外 → 税負担分減らす
+                net = gross * (1 - etr)
+            else:
+                net = gross
         else:
-            # すでに税引後の項目（非継続事業など）はそのまま
-            net_amount = adj["amount"]
-        
-        adj["net_amount"] = net_amount
-        total_net_adjustment += net_amount
-        
-    return total_net_adjustment
+            net = gross
+
+        adj["net_amount"] = net
+        total_net += net if adj["direction"] == "add_back" else -net
+        detailed.append(adj)
+
+    return total_net, detailed
