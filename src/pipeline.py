@@ -4,6 +4,7 @@ from xbrl_parser import parse_xbrl
 from adjustment_detector import detect_adjustments
 from tax_adjuster import apply_tax
 from eps_calculator import calculate_eps
+from ai_analyzer import analyze_with_gemini_v3
 
 def save_result(ticker, accession_no, result):
     os.makedirs(f"data/{ticker}", exist_ok=True)
@@ -28,6 +29,12 @@ def run():
                 adjustments = detect_adjustments(data)
                 net_adjustments = apply_tax(adjustments, data)
                 result = calculate_eps(data, net_adjustments)
+
+                # 最新の決算（最初の1件）のみAI分析を実行
+                if i == 0:
+                print(f"Generating AI analysis for {ticker}...")
+                ai_comment = analyze_with_gemini_v3(ticker, result, adjustments)
+                result["ai_comment"] = ai_comment
                 
                 # 期間情報などを付与
                 result["date"] = str(filing.period_end_date)
