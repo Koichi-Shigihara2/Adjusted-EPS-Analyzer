@@ -3,25 +3,36 @@ import json
 from openai import OpenAI
 
 def analyze_adjustments(ticker, data, adjustments):
+    # APIキーの存在確認
+    api_key = os.environ.get("XAI_API_KEY")
+    if not api_key:
+        return json.dumps({
+            "health": "Unknown",
+            "comment": "XAI_API_KEYが設定されていません。",
+            "sources": []
+        })
+
     try:
         client = OpenAI(
-            api_key=os.environ.get("XAI_API_KEY"),
+            api_key=api_key,
             base_url="https://api.x.ai/v1",
         )
-        
-    # 調整内訳を文字列化（f-string外で\nを扱う）
-    adj_lines = []
-    for adj in adjustments:
-        snippet = adj.get("context_snippet", "N/A")
-        adj_lines.append(f"- {adj['item_name']}: {adj['net_amount']:,} USD (理由: {adj['reason']}) Snippet: {snippet}")
 
-    adj_text = "\n".join(adj_lines)   # ← ここで\nを結合（f-stringの外）
+        # 調整内訳を文字列化
+        adj_lines = []
+        for adj in adjustments:
+            snippet = adj.get("context_snippet", "N/A")
+            # net_amountがない場合はamountを使う（フォールバック）
+            net_amount = adj.get('net_amount', adj.get('amount', 0))
+            adj_lines.append(f"- {adj['item_name']}: {net_amount:,.0f} USD (理由: {adj['reason']}) Snippet: {snippet}")
 
-    prompt = f"""
+        adj_text = "\n".join(adj_lines)
+
+        prompt = f"""
 あなたは米国株のNon-GAAP調整専門のシニアアナリストです。
 銘柄: {ticker}
-GAAP純利益: {data['gaap_net_income']:,} USD
-調整後純利益: {data['adjusted_net_income']:,} USD
+GAAP純利益: {data['gaap_net_income']:,.0f} USD
+調整後純利益: {data['adjusted_net_income']:,.0f} USD
 調整項目詳細:
 {adj_text}
 
@@ -41,18 +52,21 @@ GAAP純利益: {data['gaap_net_income']:,} USD
 }}
 """
 
-    response = client.chat.completions.create(
-        model="grok-4.20-beta-0309-reasoning",  # 必要に応じて最新モデル名に変更
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1,
-        max_tokens=800
-    )
+        response = client.chat.completions.create(
+            model="grok-4.20-beta-0309-reasoning",  # 必要に応じて変更
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1,
+            max_tokens=800
+        )
 
-    try:
-        return response.choices[0].message.content.strip()
+        content = response.choices[0].message.content.strip()
+        # 返却前にJSONとしてパースできるか簡易チェック（任意）
+        json.loads(content)
+        return content
+
     except Exception as e:
         return json.dumps({
-            "health": "Unknown",
-            "comment": f"AI分析をスキップしました（エラー: {str(e)}）",
+            "health": "Error",
+            "comment": f"AI分析中にエラーが発生しました: {str(e)}",
             "sources": []
         })
