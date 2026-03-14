@@ -163,64 +163,51 @@ def is_quarterly_period(item: Dict) -> bool:
                 pass
     return False
 
-def extract_value_from_facts(facts_data: Dict, us_gaap_tag: str, form_type: str = "10-Q", limit: int = 40) -> List[Dict]:
+def extract_value_from_facts(facts_data: Dict, us_gaap_tag: str, form_type: str = "10-Q", limit: int = 20) -> List[Dict]:
     """
-    Company Factsから特定タグの時系列データを抽出
-    - YTDとQuarterの混同を防ぐため、is_quarterly_periodでフィルタリング
-    - 複数クラスがある場合も、すべての値を合算する（'concept'が同一なら、units内の全アイテムを対象とする）
-    Args:
-        facts_data: Company Facts APIのレスポンス
-        us_gaap_tag: タグ名（例: 'NetIncomeLoss'）
-        form_type: フォーム種類（'10-K', '10-Q'）
-        limit: 取得する最大件数
-    Returns:
-        List[Dict]: 各期のデータ（同一periodの値は合算される）
+    Company Factsから特定タグの時系列データを抽出（四半期データのみをフィルタリング）
     """
-    results_dict = {}  # key: end_date, value: 合計値と情報
+    results = []
     try:
         if 'facts' not in facts_data or 'us-gaap' not in facts_data['facts']:
-            return []
+            return results
+        
         if us_gaap_tag not in facts_data['facts']['us-gaap']:
-            return []
-
+            return results
+        
         units_data = facts_data['facts']['us-gaap'][us_gaap_tag]['units']
-        # 全ての単位をチェック（USD, sharesなど）
-        for unit_key, items in units_data.items():
-            for item in items:
-                # フォーム種類でフィルタ（'10-Q'で始まるもの）
-                if not item.get('form', '').startswith(form_type):
-                    continue
-                # 四半期データのみを対象とする
-                if form_type == "10-Q" and not is_quarterly_period(item):
-                    # デバッグ用：除外されたアイテムを確認したい場合はコメント解除
-                    # print(f"    Skipping non-quarterly item: {item.get('end')} ({item.get('fp')})")
-                    continue
-
-                end_date = item.get('end')
-                if not end_date:
-                    continue
-
-                val = item.get('val', 0)
-                # 同じend_dateの値を合算（複数クラス対応）
-                if end_date not in results_dict:
-                    results_dict[end_date] = {
-                        'end': end_date,
-                        'val': val,
-                        'filed': item.get('filed'),
-                        'form': item.get('form'),
-                        'unit': unit_key,
-                        'fp': item.get('fp'),
-                        'start': item.get('start')
-                    }
-                else:
-                    # 同じend_dateの別クラスの値を加算
-                    results_dict[end_date]['val'] += val
-                    # 必要に応じて他の情報もマージ
+        for unit_key in units_data:
+            if 'USD' in unit_key or 'shares' in unit_key:
+                for item in units_data[unit_key]:
+                    # フォーム種類でフィルタ
+                    if item.get('form', '').startswith(form_type):
+                        # --- 追加: 期間の長さをチェック（約3ヶ月 = 90日前後） ---
+                        if 'start' in item and 'end' in item:
+                            from datetime import datetime
+                            start = datetime.strptime(item['start'], '%Y-%m-%d')
+                            end = datetime.strptime(item['end'], '%Y-%m-%d')
+                            days_diff = (end - start).days
+                            
+                            # 60日～100日程度を四半期とみなす（年度末の調整を考慮）
+                            if 60 <= days_diff <= 100:
+                                results.append({
+                                    'end': item.get('end'),
+                                    'val': item.get('val'),
+                                    'filed': item.get('filed'),
+                                    'form': item.get('form'),
+                                    'unit': unit_key,
+                                    'start': item.get('start')  # デバッグ用に保持
+                                })
+                            else:
+                                print(f"      Skipping {us_gaap_tag} for {item['end']} (period {days_diff} days)")
+                        else:
+                            # startがないデータ（時点データなど）はスキップ
+                            continue
+                break
     except Exception as e:
         print(f"Error extracting {us_gaap_tag}: {e}")
-
-    # 辞書をリストに変換し、日付でソート（新しい順）
-    results = list(results_dict.values())
+    
+    # 日付でソート（新しい順）
     results.sort(key=lambda x: x['end'], reverse=True)
     return results[:limit]
 
