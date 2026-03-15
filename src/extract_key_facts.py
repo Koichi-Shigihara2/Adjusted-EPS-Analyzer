@@ -1,8 +1,8 @@
 """
-SEC EDGARから企業の財務データを抽出するモジュール（改善版・会計年度対応強化）
+SEC EDGARから企業の財務データを抽出するモジュール（会計年度対応・四半期分類改善版・複数期間対応）
 - CIKマップファイルから銘柄のCIKを取得
 - SECのCompany Facts APIから直接XBRLデータを取得
-- 10-Qから四半期データ（Q1～Q3）を取得（期間60〜100日でフィルタ）
+- 10-Qから四半期データを取得し、期間から正しい四半期番号（Q1, Q2, Q3）を割り当て
 - 10-Kから通期データを取得し、Q4を計算（通期 - Q1~Q3合計）
 - 会計年度が暦年と異なる場合にも対応（例：NVDAの1月決算）
 - 複数クラス株式の希薄化後株式数を合算
@@ -30,9 +30,9 @@ HEADERS = {
     'Host': 'data.sec.gov'
 }
 
-# 四半期とみなす期間の範囲（日数）
-QUARTER_DAYS_MIN = 60
-QUARTER_DAYS_MAX = 100
+# 四半期とみなす期間の範囲（日数）- 少し余裕を持たせる
+QUARTER_DAYS_MIN = 70
+QUARTER_DAYS_MAX = 120
 # 年次とみなす期間の最小日数（10-Kの場合）
 ANNUAL_DAYS_MIN = 300
 
@@ -126,14 +126,14 @@ def fetch_company_facts(cik: str) -> Dict:
 
 def extract_value_from_facts(facts_data: Dict, us_gaap_tag: str, form_type: Optional[str] = None, limit: int = 40) -> List[Dict]:
     """
-    Company Factsから特定タグの時系列データを抽出（オプションでフォーム種類でフィルタ）
+    Company Factsから特定タグの時系列データを抽出
     Args:
         facts_data: Company Facts APIのレスポンス
         us_gaap_tag: タグ名（例: 'NetIncomeLoss'）
         form_type: フォーム種類（'10-Q', '10-K'）でフィルタする場合は指定
         limit: 取得する最大件数
     Returns:
-        List[Dict]: 各期のデータ（期間フィルタはかけない。後で必要に応じてフィルタ）
+        List[Dict]: 各期のデータ
     """
     results = []
     try:
@@ -183,7 +183,7 @@ def get_diluted_shares_from_facts(facts_data: Dict, form_type: Optional[str] = N
         # 通常は 'shares' 単位
         for unit_key in units_data:
             if 'shares' in unit_key:
-                # 同じend日付のものをグループ化して合計
+                # 同じend日付のものをグループ化して合算
                 period_map = {}
                 for item in units_data[unit_key]:
                     if form_type and not item.get('form', '').startswith(form_type):
@@ -210,6 +210,55 @@ def get_diluted_shares_from_facts(facts_data: Dict, form_type: Optional[str] = N
     return []
 
 # ============================================
+# 会計年度判定と四半期分類
+# ============================================
+def determine_fiscal_year_end(annual_data: List[Dict]) -> int:
+    """
+    10-Kのデータから、会計年度終了月を特定する
+    最も頻出する月を返す（デフォルト12）
+    """
+    month_counts = {}
+    for item in annual_data:
+        if 'end' in item:
+            end_date = datetime.strptime(item['end'], '%Y-%m-%d')
+            month = end_date.month
+            month_counts[month] = month_counts.get(month, 0) + 1
+    
+    if not month_counts:
+        return 12
+    
+    # 最も多い月を返す
+    fiscal_end_month = max(month_counts.items(), key=lambda x: x[1])[0]
+    return fiscal_end_month
+
+def get_quarter_number(end_date: datetime, fiscal_end_month: int) -> int:
+    """
+    終了日と会計年度終了月から四半期番号（1-4）を決定する
+    """
+    end_month = end_date.month
+    
+    # 会計年度終了月からのオフセットを計算
+    # 例： fiscal_end_month=1（1月決算）の場合
+    #   end_month=1 → Q4 (offset 0)
+    #   end_month=10 → Q1 (offset 3)
+    #   end_month=7  → Q2 (offset 6)
+    #   end_month=4  → Q3 (offset 9)
+    if end_month <= fiscal_end_month:
+        offset = fiscal_end_month - end_month
+    else:
+        offset = fiscal_end_month + 12 - end_month
+    
+    # offset から四半期をマッピング
+    if offset <= 1:
+        return 4
+    elif offset <= 4:
+        return 3
+    elif offset <= 7:
+        return 2
+    else:
+        return 1
+
+# ============================================
 # メイン抽出関数（改善版）
 # ============================================
 def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]]:
@@ -232,42 +281,16 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             print(f"No facts data for {ticker}")
             return []
         
-        # ---------- 10-QからQ1～Q3を取得（期間フィルタリング）----------
+        # ---------- 10-Qデータを取得（期間フィルタリング）----------
         net_income_10q = extract_value_from_facts(facts, 'NetIncomeLoss', form_type="10-Q", limit=years*6)
-        # 期間フィルタ（60～100日）を適用して四半期データのみ残す
-        quarterly_10q = []
-        for item in net_income_10q:
-            start = datetime.strptime(item['start'], '%Y-%m-%d')
-            end = datetime.strptime(item['end'], '%Y-%m-%d')
-            days_diff = (end - start).days
-            if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
-                quarterly_10q.append(item)
-        
-        # 希薄化後株式数（10-Q）
         diluted_10q_raw = get_diluted_shares_from_facts(facts, form_type="10-Q", limit=years*6)
-        diluted_10q = []
-        for item in diluted_10q_raw:
-            start = datetime.strptime(item['start'], '%Y-%m-%d')
-            end = datetime.strptime(item['end'], '%Y-%m-%d')
-            days_diff = (end - start).days
-            if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
-                diluted_10q.append(item)
-        
-        # その他の主要項目（SBCなど）も同様に取得（adjustment_detectorで使用）
         sbc_10q = extract_value_from_facts(facts, 'ShareBasedCompensation', form_type="10-Q", limit=years*6)
-        sbc_10q_filtered = []
-        for item in sbc_10q:
-            start = datetime.strptime(item['start'], '%Y-%m-%d')
-            end = datetime.strptime(item['end'], '%Y-%m-%d')
-            days_diff = (end - start).days
-            if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
-                sbc_10q_filtered.append(item)
         
-        # ---------- 10-Kから通期データを取得（期間フィルタリング：年次）----------
+        # ---------- 10-Kデータを取得（期間フィルタリング）----------
         net_income_10k = extract_value_from_facts(facts, 'NetIncomeLoss', form_type="10-K", limit=years*2)
         diluted_10k_raw = get_diluted_shares_from_facts(facts, form_type="10-K", limit=years*2)
         
-        # 年次のみフィルタ（期間300日以上）
+        # 年次データのみフィルタ（期間300日以上）
         annual_10k = []
         for item in net_income_10k:
             if 'start' in item and 'end' in item:
@@ -277,81 +300,141 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 if days_diff >= ANNUAL_DAYS_MIN:
                     annual_10k.append(item)
         
-        diluted_10k = {}
-        for item in diluted_10k_raw:
-            if 'start' in item and 'end' in item:
-                start = datetime.strptime(item['start'], '%Y-%m-%d')
-                end = datetime.strptime(item['end'], '%Y-%m-%d')
-                days_diff = (end - start).days
-                if days_diff >= ANNUAL_DAYS_MIN:
-                    diluted_10k[item['end']] = item['val']
+        # 会計年度終了月を特定
+        fiscal_end_month = determine_fiscal_year_end(annual_10k)
+        print(f"Detected fiscal year end month: {fiscal_end_month}")
         
-        # ---------- 10-Qデータを期間終了日をキーにマップ化 ----------
-        # key: (end_date, form) のタプルで管理（同一日付でも10-Qと10-Kを区別）
-        quarter_map = {}  # key: (end_date, '10-Q') -> data
+        # 希薄化後株式数のマップ（end日付 -> 値）
+        diluted_10k_map = {item['end']: item['val'] for item in diluted_10k_raw}
         
-        for q_item in quarterly_10q:
-            end_date = q_item['end']
-            key = (end_date, '10-Q')
-            if key not in quarter_map:
-                quarter_map[key] = {
-                    'filing_date': end_date,
+        # ---------- 10-Qデータを四半期ごとに分類 ----------
+        # まず、すべての10-Qデータを期間でフィルタ（70～120日）し、さらに同じend日付で複数ある場合は最も短い期間（四半期）を優先
+        quarterly_10q_candidates = []
+        for q_item in net_income_10q:
+            if 'start' not in q_item or 'end' not in q_item:
+                continue
+            start = datetime.strptime(q_item['start'], '%Y-%m-%d')
+            end = datetime.strptime(q_item['end'], '%Y-%m-%d')
+            days_diff = (end - start).days
+            if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
+                quarterly_10q_candidates.append({
+                    'start': start,
+                    'end': end,
+                    'end_str': q_item['end'],
+                    'start_str': q_item['start'],
+                    'val': q_item['val'],
+                    'unit': q_item['unit'],
+                    'filed': q_item.get('filed', q_item['end']),
+                    'days': days_diff
+                })
+        
+        # 同じ終了日(end)のデータをグループ化し、最も期間の短いものを採用（四半期データとして適切）
+        best_quarterly = {}
+        for cand in quarterly_10q_candidates:
+            end_str = cand['end_str']
+            if end_str not in best_quarterly or cand['days'] < best_quarterly[end_str]['days']:
+                best_quarterly[end_str] = cand
+        
+        # quarters_map の構築
+        quarters_map = {}  # key: (fiscal_year, quarter) -> data
+        
+        for end_str, cand in best_quarterly.items():
+            # 会計年度を決定
+            # 終了日が fiscal_end_month より後なら翌年度、そうでなければ当年
+            if cand['end'].month > fiscal_end_month:
+                fiscal_year = cand['end'].year + 1
+            else:
+                fiscal_year = cand['end'].year
+            
+            quarter_num = get_quarter_number(cand['end'], fiscal_end_month)
+            key = (fiscal_year, quarter_num)
+            
+            if key not in quarters_map:
+                quarters_map[key] = {
+                    'filing_date': end_str,
                     'form': '10-Q',
-                    'net_income': {'value': q_item['val'], 'unit': q_item['unit']},
-                    'start': q_item['start'],
-                    'end': end_date,
-                    'filed': q_item.get('filed', end_date)
+                    'net_income': {'value': cand['val'], 'unit': cand['unit']},
+                    'start': cand['start_str'],
+                    'end': end_str,
+                    'filed': cand['filed'],
+                    'quarter': quarter_num,
+                    'fiscal_year': fiscal_year
                 }
+            else:
+                # 既存のデータより提出日が新しければ更新
+                existing_filed = quarters_map[key].get('filed', '')
+                if cand['filed'] > existing_filed:
+                    quarters_map[key].update({
+                        'net_income': {'value': cand['val'], 'unit': cand['unit']},
+                        'filed': cand['filed']
+                    })
         
         # 希薄化後株式数を追加
-        for d_item in diluted_10q:
-            end_date = d_item['end']
-            key = (end_date, '10-Q')
-            if key in quarter_map:
-                quarter_map[key]['diluted_shares'] = {'value': d_item['val'], 'unit': d_item['unit']}
+        for d_item in diluted_10q_raw:
+            if 'start' not in d_item or 'end' not in d_item:
+                continue
+            start = datetime.strptime(d_item['start'], '%Y-%m-%d')
+            end = datetime.strptime(d_item['end'], '%Y-%m-%d')
+            days_diff = (end - start).days
+            if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
+                continue
+            
+            if end.month > fiscal_end_month:
+                fiscal_year = end.year + 1
+            else:
+                fiscal_year = end.year
+            
+            quarter_num = get_quarter_number(end, fiscal_end_month)
+            key = (fiscal_year, quarter_num)
+            
+            if key in quarters_map:
+                quarters_map[key]['diluted_shares'] = {'value': d_item['val'], 'unit': d_item['unit']}
         
         # SBCなどの追加タグ
-        for s_item in sbc_10q_filtered:
-            end_date = s_item['end']
-            key = (end_date, '10-Q')
-            if key in quarter_map:
-                quarter_map[key]['us-gaap:ShareBasedCompensation'] = {'value': s_item['val'], 'unit': s_item['unit']}
+        for s_item in sbc_10q:
+            if 'start' not in s_item or 'end' not in s_item:
+                continue
+            start = datetime.strptime(s_item['start'], '%Y-%m-%d')
+            end = datetime.strptime(s_item['end'], '%Y-%m-%d')
+            days_diff = (end - start).days
+            if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
+                continue
+            
+            if end.month > fiscal_end_month:
+                fiscal_year = end.year + 1
+            else:
+                fiscal_year = end.year
+            
+            quarter_num = get_quarter_number(end, fiscal_end_month)
+            key = (fiscal_year, quarter_num)
+            
+            if key in quarters_map:
+                quarters_map[key]['us-gaap:ShareBasedCompensation'] = {'value': s_item['val'], 'unit': s_item['unit']}
         
         # ---------- 10-KからQ4を計算 ----------
-        # 各10-Kについて、その会計年度内のQ1-Q3を特定しQ4を計算
         for k_item in annual_10k:
-            fiscal_end = k_item['end']  # 会計年度終了日
+            fiscal_end = k_item['end']
             fiscal_end_date = datetime.strptime(fiscal_end, '%Y-%m-%d')
-            fiscal_start = fiscal_end_date - timedelta(days=365)  # おおよその開始日（正確な日数は後で調整）
+            fiscal_year = fiscal_end_date.year  # 10-Kのend日付の年を会計年度とする
             
-            # この会計年度内にある10-Qを抽出（開始日が fiscal_start 以降、終了日が fiscal_end 以前）
-            q_in_fiscal = []
-            for (q_end, q_form), q_data in quarter_map.items():
-                if q_form != '10-Q':
-                    continue
-                q_start = datetime.strptime(q_data['start'], '%Y-%m-%d')
-                q_end_dt = datetime.strptime(q_data['end'], '%Y-%m-%d')
-                # 期間が fiscal_start から fiscal_end の間に収まるか（多少の前後は許容）
-                if q_start >= fiscal_start - timedelta(days=10) and q_end_dt <= fiscal_end_date + timedelta(days=10):
-                    q_in_fiscal.append(q_data)
+            # この会計年度のQ1～Q3を探す
+            q1_key = (fiscal_year, 1)
+            q2_key = (fiscal_year, 2)
+            q3_key = (fiscal_year, 3)
             
-            # 3つ以上ある場合は最新の3つを採用（通常3つ）
-            if len(q_in_fiscal) >= 3:
-                # 終了日でソート（古い順）
-                q_in_fiscal.sort(key=lambda x: x['end'])
-                # 直近3四半期をQ1-Q3とみなす
-                q1_q3 = q_in_fiscal[-3:]
+            if q1_key in quarters_map and q2_key in quarters_map and q3_key in quarters_map:
+                q1_income = normalize_value(quarters_map[q1_key]['net_income'])
+                q2_income = normalize_value(quarters_map[q2_key]['net_income'])
+                q3_income = normalize_value(quarters_map[q3_key]['net_income'])
+                q1q3_sum = q1_income + q2_income + q3_income
                 
-                # Q1-Q3のnet_income合計
-                q1q3_sum = sum(normalize_value(q['net_income']) for q in q1_q3)
                 annual_net = k_item['val']
                 q4_net = annual_net - q1q3_sum
                 
-                # 希薄化後株式数（年次値をQ4に暫定利用）
-                diluted_val = diluted_10k.get(fiscal_end, 0)
-                if diluted_val == 0 and len(q1_q3) > 0:
-                    # フォールバック：Q3の株式数を使う
-                    diluted_val = normalize_value(q1_q3[-1].get('diluted_shares', {'value': 0}))
+                # 希薄化後株式数
+                diluted_val = diluted_10k_map.get(fiscal_end, 0)
+                if diluted_val == 0 and q3_key in quarters_map:
+                    diluted_val = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value': 0}))
                 
                 # Q4データを作成
                 q4_data = {
@@ -359,37 +442,34 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                     'form': '10-K',
                     'net_income': {'value': q4_net, 'unit': 'USD'},
                     'diluted_shares': {'value': diluted_val, 'unit': 'shares'},
-                    'start': q1_q3[-1]['end'] if q1_q3 else fiscal_start.strftime('%Y-%m-%d'),
+                    'start': quarters_map[q3_key]['end'] if q3_key in quarters_map else fiscal_end_date.replace(month=fiscal_end_month, day=1).strftime('%Y-%m-%d'),
                     'end': fiscal_end,
-                    'filed': k_item.get('filed', fiscal_end)
+                    'filed': k_item.get('filed', fiscal_end),
+                    'quarter': 4,
+                    'fiscal_year': fiscal_year
                 }
-                # Q4をquarter_mapに追加（キーは fiscal_end + '-Q4' で区別）
-                q4_key = (fiscal_end, '10-K-Q4')
-                quarter_map[q4_key] = q4_data
-                print(f"  Calculated Q4 for fiscal year ending {fiscal_end}: net_income={q4_net:,.0f}, diluted_shares={diluted_val:,.0f}")
+                q4_key = (fiscal_year, 4)
+                quarters_map[q4_key] = q4_data
+                print(f"  Calculated Q4 for fiscal year {fiscal_year} (end {fiscal_end}): net_income={q4_net:,.0f}, diluted_shares={diluted_val:,.0f}")
             else:
-                print(f"  Warning: Insufficient quarters for fiscal year ending {fiscal_end} (found {len(q_in_fiscal)} quarters)")
+                print(f"  Warning: Missing Q1-Q3 for fiscal year {fiscal_year} (have: {q1_key in quarters_map}, {q2_key in quarters_map}, {q3_key in quarters_map})")
         
         # ---------- 最終的なリストに変換 ----------
         quarterly_list = []
-        for (date_str, form), data in quarter_map.items():
+        for (fiscal_year, quarter), data in sorted(quarters_map.items(), reverse=True):
             # 必須データの確認
             if 'net_income' in data and 'diluted_shares' in data:
-                # 数値を正規化してから保存（必要に応じて）
                 quarterly_list.append(data)
                 net_val = normalize_value(data['net_income'])
                 shr_val = normalize_value(data['diluted_shares'])
-                print(f"  ✓ {data['filing_date']} ({form}): net_income={net_val:,.0f}, diluted_shares={shr_val:,.0f}")
+                print(f"  ✓ {data['filing_date']} (FY{fiscal_year} Q{quarter}): net_income={net_val:,.0f}, diluted_shares={shr_val:,.0f}")
             else:
                 missing = []
                 if 'net_income' not in data:
                     missing.append('net_income')
                 if 'diluted_shares' not in data:
                     missing.append('diluted_shares')
-                print(f"  ✗ {data.get('filing_date', 'unknown')} ({form}): missing {', '.join(missing)}")
-        
-        # 日付順にソート（新しい順）
-        quarterly_list.sort(key=lambda x: x['filing_date'], reverse=True)
+                print(f"  ✗ {data.get('filing_date', 'unknown')} (FY{fiscal_year} Q{quarter}): missing {', '.join(missing)}")
         
         print(f"\n{ticker}: {len(quarterly_list)}件の四半期データを取得")
         return quarterly_list
@@ -435,7 +515,7 @@ def main():
     
     if data:
         print(f"\nSuccessfully extracted {len(data)} quarters:")
-        for i, quarter in enumerate(data[:10]):
+        for i, quarter in enumerate(data[:15]):
             print(f"\nQuarter {i+1}: {quarter['filing_date']} ({quarter.get('form', 'unknown')})")
             net = normalize_value(quarter.get('net_income'))
             shares = normalize_value(quarter.get('diluted_shares'))
