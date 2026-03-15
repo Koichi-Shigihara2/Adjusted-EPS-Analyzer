@@ -57,7 +57,7 @@ def load_required_xbrl_tags() -> List[str]:
             xbrl_tags = sub.get("xbrl_tags", [])
             for tag in xbrl_tags:
                 tags.add(tag)
-    # 基本的な必須タグも追加
+    # 基本的な必須タグも追加（プレフィックス付きで格納）
     tags.add("us-gaap:NetIncomeLoss")
     tags.add("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding")
     tags.add("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxExpenseBenefit")  # 税引前利益
@@ -158,21 +158,27 @@ def extract_value_from_facts(facts_data: Dict, us_gaap_tag: str, form_type: Opti
     Company Factsから特定タグの時系列データを抽出
     Args:
         facts_data: Company Facts APIのレスポンス
-        us_gaap_tag: タグ名（例: 'NetIncomeLoss'）
+        us_gaap_tag: タグ名（例: 'NetIncomeLoss' または 'us-gaap:NetIncomeLoss'）
         form_type: フォーム種類（'10-Q', '10-K'）でフィルタする場合は指定
         limit: 取得する最大件数
     Returns:
         List[Dict]: 各期のデータ
     """
+    # タグ名から 'us-gaap:' プレフィックスを除去（API内のキーはプレフィックスなし）
+    if us_gaap_tag.startswith('us-gaap:'):
+        tag = us_gaap_tag[8:]
+    else:
+        tag = us_gaap_tag
+
     results = []
     try:
         if 'facts' not in facts_data or 'us-gaap' not in facts_data['facts']:
             return results
         
-        if us_gaap_tag not in facts_data['facts']['us-gaap']:
+        if tag not in facts_data['facts']['us-gaap']:
             return results
         
-        units_data = facts_data['facts']['us-gaap'][us_gaap_tag]['units']
+        units_data = facts_data['facts']['us-gaap'][tag]['units']
         for unit_key in units_data:
             if 'USD' in unit_key or 'shares' in unit_key:
                 for item in units_data[unit_key]:
