@@ -1,72 +1,135 @@
-import os
+"""
+ai_analyzer.py
+AI分析モジュール（Grok API利用）
+- 調整項目リストを分析し、健全性・コメント・引用ソースを返す
+- 調整項目がない場合は早期に「調整なし」レスポンスを返す
+- 戻り値はJSON文字列（pipeline.py が json.loads する想定）
+"""
 import json
-from openai import OpenAI
+import os
+import requests
+from typing import List, Dict, Any, Optional
 
-def analyze_adjustments(ticker, data, adjustments):
-    # APIキーの存在確認
-    api_key = os.environ.get("XAI_API_KEY")
-    if not api_key:
-        return json.dumps({
-            "health": "Unknown",
-            "comment": "XAI_API_KEYが設定されていません。",
-            "sources": []
-        })
+# デフォルトプロンプトテンプレート
+PROMPT_TEMPLATE = """
+あなたは財務分析のエキスパートです。以下の調整項目リストを分析し、健全性とコメントを返してください。
+ティッカー: {ticker}
+期: {fiscal_period}
+GAAP EPS: {gaap_eps}
+Adjusted EPS: {adjusted_eps}
+調整項目: {adjustments_json}
 
-    try:
-        client = OpenAI(
-            api_key=api_key,
-            base_url="https://api.x.ai/v1",
-        )
-
-        # 調整内訳を文字列化
-        adj_lines = []
-        for adj in adjustments:
-            snippet = adj.get("context_snippet", "N/A")
-            # net_amountがない場合はamountを使う（フォールバック）
-            net_amount = adj.get('net_amount', adj.get('amount', 0))
-            adj_lines.append(f"- {adj['item_name']}: {net_amount:,.0f} USD (理由: {adj['reason']}) Snippet: {snippet}")
-
-        adj_text = "\n".join(adj_lines)
-
-        prompt = f"""
-あなたは米国株のNon-GAAP調整専門のシニアアナリストです。
-銘柄: {ticker}
-GAAP純利益: {data['gaap_net_income']:,.0f} USD
-調整後純利益: {data['adjusted_net_income']:,.0f} USD
-調整項目詳細:
-{adj_text}
-
-以下の4段階で健全性を評価してください：
-- Excellent: 調整が極めて合理的で本質的成長を示唆
-- Good: 標準的な調整、問題なし
-- Caution: 一部調整が恣意的or連続発生
-- Warning: 調整が利益水増しに見える、または連続Caution
-
-評価理由を日本語で150-250文字。各調整項目に引用した原文snippetを必ず明記。
-連続Cautionが複数四半期なら強調。
-出力はJSON形式で:
+以下のJSON形式で返してください：
 {{
-  "health": "Excellent|Good|Caution|Warning",
-  "comment": "詳細解説...",
-  "sources": [{{"item": "リストラ費用", "snippet": "..."}}, ...]
+  "health": "Excellent/Good/Caution/Warning/Error",
+  "comment": "分析コメント（日本語）",
+  "sources": [
+    {{"item": "項目名", "snippet": "引用テキスト"}}
+  ]
 }}
 """
 
-        response = client.chat.completions.create(
-            model="grok-4.20-beta-0309-reasoning",  # 必要に応じて変更
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1,
-            max_tokens=800
+# 環境変数からAPIキーを取得
+GROK_API_KEY = os.environ.get("GROK_API_KEY")
+GROK_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROK_MODEL = "llama3-70b-8192"  # または "mixtral-8x7b-32768"
+
+def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustments: List[Dict[str, Any]]) -> str:
+    """
+    調整項目を分析し、JSON文字列を返す
+    Args:
+        ticker: 銘柄ティッカー
+        fiscal_period_data: 当該期のデータ（filing_date, gaap_eps, adjusted_eps などを含む）
+        adjustments: 税効果適用後の調整項目リスト（各項目に item_name, amount, net_amount, category 等を含む）
+    Returns:
+        str: JSON文字列。例：
+        {
+            "health": "Good",
+            "comment": "コメント",
+            "sources": [...]
+        }
+    """
+    # --- ガード節：調整項目なし ---
+    if not adjustments:
+        return json.dumps({
+            "health": "Good",
+            "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
+            "sources": []
+        }, ensure_ascii=False)
+
+    # APIキーチェック
+    if not GROK_API_KEY:
+        return json.dumps({
+            "health": "Caution",
+            "comment": "AI分析にはGROK_API_KEY環境変数が必要です。",
+            "sources": []
+        }, ensure_ascii=False)
+
+    # プロンプト作成
+    fiscal_period = fiscal_period_data.get('filing_date', 'unknown')
+    gaap_eps = fiscal_period_data.get('gaap_eps', 0)
+    adjusted_eps = fiscal_period_data.get('adjusted_eps', 0)
+
+    prompt = PROMPT_TEMPLATE.format(
+        ticker=ticker,
+        fiscal_period=fiscal_period,
+        gaap_eps=gaap_eps,
+        adjusted_eps=adjusted_eps,
+        adjustments_json=json.dumps(adjustments, ensure_ascii=False, indent=2)
+    )
+
+    # APIリクエスト
+    try:
+        response = requests.post(
+            GROK_API_URL,
+            headers={
+                "Authorization": f"Bearer {GROK_API_KEY}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": GROK_MODEL,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "response_format": {"type": "json_object"}
+            },
+            timeout=30
         )
-
-        content = response.choices[0].message.content.strip()
-        # 返却前にJSONとしてパースできるか簡易チェック（任意）
-        json.loads(content)
-        return content
-
+        response.raise_for_status()
+        result = response.json()
+        content = result['choices'][0]['message']['content']
+        # レスポンスがJSON文字列であることを確認（念のためパースして戻す）
+        parsed = json.loads(content)
+        return json.dumps(parsed, ensure_ascii=False)
     except Exception as e:
+        # エラーレスポンス
+        error_msg = str(e)
         return json.dumps({
             "health": "Error",
-            "comment": f"AI分析中にエラーが発生しました: {str(e)}",
+            "comment": f"AI分析中にエラーが発生しました: {error_msg}",
             "sources": []
-        })
+        }, ensure_ascii=False)
+
+# テスト用
+if __name__ == "__main__":
+    # ダミーデータ
+    sample_ticker = "PLTR"
+    sample_period = {
+        "filing_date": "2025-03-31",
+        "gaap_eps": 0.0838,
+        "adjusted_eps": 0.1319
+    }
+    sample_adjustments = [
+        {
+            "item_name": "株式報酬費用",
+            "amount": 155339000,
+            "net_amount": 122717810,
+            "category": "株式報酬 (SBC)",
+            "reason": "非現金費用",
+            "extracted_from": "us-gaap:ShareBasedCompensation"
+        }
+    ]
+    result = analyze_adjustments(sample_ticker, sample_period, sample_adjustments)
+    print(result)
+    # 空調整のテスト
+    empty_result = analyze_adjustments(sample_ticker, sample_period, [])
+    print(empty_result)
