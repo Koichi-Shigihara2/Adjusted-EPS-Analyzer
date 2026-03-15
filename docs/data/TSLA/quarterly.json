@@ -1,6 +1,6 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-15T11:36:51.137360",
+  "last_updated": "2026-03-15T12:30:53.476146",
   "quarters": [
     {
       "gaap_eps": 0.23809523809523808,
@@ -43,15 +43,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "唯一の調整項目は株式報酬費用の加算戻し（非現金費用）であり、標準的な調整ですが、調整後EPSがGAAP EPSの約2.1倍となっており影響度が非常に大きいです。TSLAの成長企業特性を考慮しても、株主希薄化や収益品質の観点で注意が必要です。",
+        "comment": "株式報酬費用（573M USD）の加算戻しのみの調整で、調整後EPSがGAAP EPSの約2.1倍に上昇。非現金費用として一般的ですが、TSLAではSBCの規模が大きく株主希薄化の実質コストを無視している可能性があるため、健全性に注意が必要。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 573000000, direction: add_back, reason: 非現金費用, category: 株式報酬 (SBC), net_amount: 452670000.0"
-          },
-          {
-            "item": "EPS比較",
-            "snippet": "GAAP EPS: 0.1161601817665436, Adjusted EPS: 0.24472309003124113"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -97,11 +93,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として標準的な処理です。調整後EPSがGAAP EPSを約36%上回っていますが、TSLAではSBCが事業運営上重要なため、株主希薄化の影響に留意する必要があります。全体として健全な調整内容です。",
+        "comment": "調整項目は株式報酬費用（SBC）の追加戻しのみで、非現金支出に対する標準的な非GAAP調整です。Teslaのような技術企業ではSBCが相対的に大きいため、この調整は一般的であり、透明性も高いと評価できます。調整の健全性は良好です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 524000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -146,12 +142,12 @@
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、非現金費用として標準的な処理ですが、TSLAでは報酬の主要手段であり株主希薄化の経済的実態を無視する可能性があります。調整額はEPS差の約13%に相当し、調整後EPSの健全性は中程度と評価します。",
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用に対する標準的な非GAAP修正です。調整後EPSがGAAP EPSを上回る合理的な内容であり、大きな懸念はありません。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 418000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -197,11 +193,15 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（SBC）の加戻しのみで、非現金支出に対する標準的な調整です。調整幅は合理的であり、過度な調整は見られません。TSLAの成長企業特性を考慮すると健全ですが、SBCが実質的な希薄化コストである点に留意が必要です。",
+        "comment": "調整項目は株式報酬費用（SBC）の追加バックのみで、標準的な非現金費用調整です。税引後約3.3億ドルの調整によりEPSが約0.07上昇しており、透明性の高い健全な調整と言えます。ただし、TSLAはSBCの規模が大きいため、経済的実態を過大評価しないよう留意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 418000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, extracted_from: us-gaap:ShareBasedCompensation, category: 株式報酬 (SBC)"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          },
+          {
+            "item": "調整項目",
+            "snippet": "category: 株式報酬 (SBC), direction: add_back, pre_tax: true"
           }
         ]
       }
@@ -246,12 +246,12 @@
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "唯一の調整項目は株式報酬費用（SBC）の加算戻しです。非現金費用として標準的な調整ですが、調整後EPS（0.407）がGAAP EPS（0.193）の約2.1倍となっており影響度が非常に大きいため、過度に調整後数値に依存しないよう注意が必要です。継続的な株式報酬支出の実態を考慮すべきです。",
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として標準的な調整です。調整額が大きくGAAP EPSを大幅に押し上げていますが、理由が明確で不適切な項目は見られません。希薄化効果の考慮は必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 614000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC), net_amount: 485060000.0"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -296,16 +296,12 @@
       "filing_date": "2020-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "唯一の調整項目は株式報酬費用の加算戻し（非現金費用）です。一般的な調整ですが、金額211百万ドルが大きく、GAAP EPS 0.013をAdjusted EPS 0.153まで約11倍に引き上げており、調整依存度が高いため注意が必要です。株式報酬は経済的コストと希薄化を伴うため、投資家は実質的な収益性を慎重に評価すべきです。",
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用（SBC）の211百万ドルの加算調整のみであり、非現金支出を排除する標準的な処理です。GAAP EPSが0.013からAdjusted EPS 0.153へ大幅に改善していますが、SBCは成長企業テスラでは一般的で透明性が高いため健全性は良好と判断します。ただし、SBCの規模が大きい点は株主希薄化の観点から継続監視が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 211000000, direction: add_back, reason: 非現金費用, category: 株式報酬 (SBC)"
-          },
-          {
-            "item": "EPS比較",
-            "snippet": "GAAP EPS: 0.013411567476948869, Adjusted EPS: 0.1531349538977368"
+            "snippet": "amount: 211000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, extracted_from: us-gaap:ShareBasedCompensation"
           }
         ]
       }

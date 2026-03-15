@@ -1,6 +1,6 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-15T11:36:01.040955",
+  "last_updated": "2026-03-15T12:30:01.859235",
   "quarters": [
     {
       "gaap_eps": 1.7524679774822551,
@@ -43,15 +43,15 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（非現金支出）の追加のみで、標準的な調整です。税引後約11.64億ドルの追加によりAdjusted EPSがGAAP EPSを上回っており、差異も整合しています。NVDAのようなテック企業では一般的ですが、継続的なSBCの影響を注視する必要があります。",
+        "comment": "調整項目は株式報酬費用のみで、非現金支出を加算する標準的な調整です。NVDAのような成長企業では一般的であり、GAAP EPSからAdjusted EPSへの差異は合理的です。ただし、株式報酬の規模が大きいため、希薄化効果については継続的に監視する必要があります。全体として健全な調整内容です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 1474000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "us-gaap:ShareBasedCompensation"
           },
           {
-            "item": "EPS比較",
-            "snippet": "GAAP EPS: 0.76287, Adjusted EPS: 0.81018"
+            "item": "調整項目",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -97,11 +97,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の非現金加算戻しのみで、テック企業として標準的な非GAAP調整です。金額は約10.1億ドル（税後約8億ドル）と規模が大きいものの、抽出元がGAAPタグであり透明性が高いため健全性は良好と判断。NVIDIAの成長モデルでは一般的ですが、継続的な株主希薄化効果には注意が必要です。",
+        "comment": "調整項目は株式報酬費用（SBC）のadd_backのみで、非現金支出に対する標準的な調整です。NVIDIAのようなテック企業では一般的であり、調整後のEPSはGAAP比で約5.4%の上昇と合理的な範囲です。透明性が高く健全な非GAAP調整と言えます。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 1011000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
@@ -147,7 +147,7 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（SBC）のadd_backのみとシンプルで透明性が高いです。非現金費用として標準的な非GAAP調整であり、調整後EPSがGAAPより約28%上方修正されています。NVDAのようなテック企業では一般的ですが、SBCの規模が大きいため株主希薄化効果への留意が必要です。",
+        "comment": "調整項目は株式報酬費用（非現金支出）の加算のみであり、テック企業で極めて標準的な調整です。調整後EPSはGAAP比で約28%上昇していますが、過度な調整は見られず、健全性は良好です。SBCの影響を注視しつつ、ConfigでON/OFF可能な点も適切です。",
         "sources": [
           {
             "item": "株式報酬費用",
@@ -197,11 +197,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の加算戻しのみで、テック企業では極めて標準的な非GAAP修正です。非現金支出を調整しており、過度な操作は見られません。GAAP EPSとAdjusted EPSの差も合理的な範囲であり、財務健全性は良好と判断します。",
+        "comment": "調整項目は株式報酬費用（SBC）の追加戻しのみで、税効果を適切に反映した標準的な非GAAP調整です。非現金費用として一般的に認められる項目ですが、調整によりEPSが約28%上昇しており、SBCの規模が大きい点は株主希薄化の観点から一定の注意が必要です。全体として健全な調整と言えます。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 578000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
           }
         ]
       }
@@ -247,7 +247,7 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用のみで、非現金支出として加算バックする標準的な非GAAP調整です。税効果を適切に反映したnet_amountが使用されており、調整後EPSへの影響も合理的。透明性が高く健全性は良好です。",
+        "comment": "唯一の調整項目は株式報酬費用（非現金）の加算戻しのみであり、テック企業で極めて標準的な調整です。税効果（21%）も適切に適用されており、調整の透明性・健全性は良好です。調整によるEPS増加率は約17.7%と影響は一定程度ありますが、不適切な項目は含まれておらず、NVDAの非GAAP報告慣行と整合しています。",
         "sources": [
           {
             "item": "株式報酬費用",
@@ -297,11 +297,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用のみで、非現金支出として標準的かつ透明性の高い調整です。調整後EPSはGAAP比で約19%上昇していますが、NVDAのようなテック企業ではSBCが重要な費用項目であるため一般的です。過度な調整は見られず健全ですが、SBCの希薄化効果については継続的に監視すべきです。",
+        "comment": "唯一の調整項目は株式報酬費用（SBC）の追加バックであり、非現金支出として標準的な調整です。調整によるEPS上昇率は約19%と一定程度ありますが、テック企業では一般的で特に問題となる異常項目は見られません。健全な非GAAP調整と言えます。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
           }
         ]
       }
