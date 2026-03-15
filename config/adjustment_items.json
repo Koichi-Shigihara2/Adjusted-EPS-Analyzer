@@ -35,6 +35,14 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "M&A由来追加償却"
+        },
+        {
+          "item_name": "在庫評価損",
+          "xbrl_tags": ["us-gaap:InventoryWriteDown"],
+          "keywords": ["inventory write-down"],
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減"
         }
       ]
     },
@@ -62,6 +70,32 @@
           "direction": "add_back",
           "pre_tax": false,
           "reason": "継続事業ベース調整"
+        }
+      ]
+    },
+    {
+      "category_name": "退職給付関連",
+      "sub_items": [
+        {
+          "item_name": "年金決済・削減損益",
+          "xbrl_tags": ["us-gaap:PensionSettlementGainLoss"],
+          "keywords": ["pension settlement"],
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非経常的な年金変動"
+        }
+      ]
+    },
+    {
+      "category_name": "その他非コア項目",
+      "sub_items": [
+        {
+          "item_name": "偶発対価公正価値変動",
+          "xbrl_tags": ["us-gaap:FairValueAdjustmentOfWarrantLiability"],
+          "keywords": ["fair value adjustment"],
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業的な評価変動"
         }
       ]
     }
