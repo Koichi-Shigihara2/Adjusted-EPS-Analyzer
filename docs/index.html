@@ -52,7 +52,7 @@
       </div>
       <div class="flex items-center space-x-2">
         <input type="text" id="ticker-search" placeholder="ティッカー (例: NVDA)" 
-               class="px-3 py-1 bg-gray-700 rounded text-white" value="NVDA">
+               class="px-3 py-1 bg-gray-700 rounded text-white" value="TSLA">
         <button onclick="loadTicker()" class="bg-blue-600 px-4 py-1 rounded hover:bg-blue-700">
           検索
         </button>
@@ -73,7 +73,7 @@
     <div id="content" class="hidden">
       <!-- 銘柄ヘッダー -->
       <div class="flex justify-between items-center mb-6">
-        <h2 class="text-3xl font-bold" id="ticker-title">NVDA</h2>
+        <h2 class="text-3xl font-bold" id="ticker-title">TSLA</h2>
         <div class="flex space-x-2">
           <span id="health-badge" class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600" title="健全性: Good">Good</span>
           <span class="text-gray-400" id="last-updated"></span>
@@ -128,12 +128,14 @@
           </div>
         </div>
         
-        <!-- プリセットボタン -->
+        <!-- プリセットボタン（変更後） -->
         <div class="flex flex-wrap gap-2">
           <button onclick="setPreset('all')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">全期間</button>
+          <button onclick="setPreset('5y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">5年</button>
+          <button onclick="setPreset('4y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">4年</button>
+          <button onclick="setPreset('3y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">3年</button>
+          <button onclick="setPreset('2y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">2年</button>
           <button onclick="setPreset('1y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">1年</button>
-          <button onclick="setPreset('6m')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">6ヶ月</button>
-          <button onclick="setPreset('3m')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">3ヶ月</button>
           <button onclick="resetDateRange()" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">リセット</button>
         </div>
       </div>
@@ -170,7 +172,7 @@
   <script>
     Chart.register(ChartDataLabels);
 
-    let currentTicker = 'NVDA';
+    let currentTicker = 'TSLA';
     let quarterlyData = null;
     let ttmData = null;
     let chart = null;
@@ -279,6 +281,8 @@
       }
 
       const latestInRange = getLatestFromArray(filtered);
+      console.log('latestInRange:', latestInRange); // デバッグ
+
       if (latestInRange) {
         updateMetricsWithQuarter(latestInRange, quarterlyData.quarters);
         updateAI(latestInRange.ai_analysis);
@@ -288,7 +292,7 @@
       }
     }
 
-    // プリセット設定
+    // プリセット設定（変更後）
     function setPreset(range) {
       if (!quarterlyData) return;
       const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
@@ -302,17 +306,28 @@
         case 'all':
           startDate = dates[0];
           break;
+        case '5y':
+          startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 5)).toISOString().split('T')[0];
+          break;
+        case '4y':
+          startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 4)).toISOString().split('T')[0];
+          break;
+        case '3y':
+          startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 3)).toISOString().split('T')[0];
+          break;
+        case '2y':
+          startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 2)).toISOString().split('T')[0];
+          break;
         case '1y':
           startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 1)).toISOString().split('T')[0];
           break;
-        case '6m':
-          startDate = new Date(maxDateObj.setMonth(maxDateObj.getMonth() - 6)).toISOString().split('T')[0];
-          break;
-        case '3m':
-          startDate = new Date(maxDateObj.setMonth(maxDateObj.getMonth() - 3)).toISOString().split('T')[0];
-          break;
         default:
           return;
+      }
+
+      // 開始日がデータの最小日付より前にならないように調整
+      if (startDate < dates[0]) {
+        startDate = dates[0];
       }
 
       document.getElementById('start-date').value = startDate;
@@ -334,7 +349,7 @@
       return sorted[0];
     }
 
-    // YoY計算（四半期ベース）
+    // YoY計算（四半期ベース）- デバッグログ追加
     function calculateYoY(latest, allQuarters) {
       const latestDate = latest.filing_date;
       const [year, month] = latestDate.split('-');
@@ -348,6 +363,8 @@
         return qYear === targetYear && qQuarter === latestQuarter;
       });
 
+      console.log(`YoY candidates for ${latestDate} (Q${latestQuarter}):`, candidates.map(c => c.filing_date));
+
       if (candidates.length > 0) {
         const prevQuarter = candidates.reduce((prev, curr) => {
           const prevDiff = Math.abs(new Date(latestDate) - new Date(prev.filing_date));
@@ -356,6 +373,7 @@
         });
         
         const prevEps = prevQuarter.adjusted_eps;
+        console.log('Selected prevQuarter:', prevQuarter.filing_date, 'prevEps:', prevEps);
         if (Math.abs(prevEps) > 0.0001) {
           return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
         }
@@ -365,6 +383,7 @@
       const idx = allQuarters.findIndex(q => q.filing_date === latestDate);
       if (idx >= 4) {
         const prevEps = allQuarters[idx - 4].adjusted_eps;
+        console.log('Fallback: using 4 quarters before, prevEps:', prevEps);
         if (Math.abs(prevEps) > 0.0001) {
           return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
         }
@@ -607,7 +626,7 @@
       }
     }
 
-    window.onload = () => loadTicker('NVDA');
+    window.onload = () => loadTicker('TSLA');
   </script>
 </body>
 </html>
