@@ -6,6 +6,7 @@ tax_adjuster.py
 - 純額合計と詳細リストを返す
 """
 from typing import Dict, List, Any, Tuple
+from extract_key_facts import normalize_value
 
 def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[str, Any]) -> Tuple[float, List[Dict[str, Any]]]:
     """
@@ -18,25 +19,23 @@ def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[s
             - net_adjustment_total: 税効果適用後の調整額合計（純利益への加算額）
             - detailed: 税効果適用後の詳細リスト（各項目に net_amount を追加）
     """
-    # 実効税率を取得（デフォルト0.21、period_data にあればそれを使う）
-    # 注意：period_data 内の tax_expense と pretax_income から計算するのが理想的だが、
-    # 簡易的に config や固定値を使うこともある。ここでは固定値を使用。
-    # 必要に応じて period_data から動的に計算するロジックに変更可能。
+    # period_data から税引前利益と税費用を取得して実効税率を計算
     tax_rate = 0.21  # デフォルト税率
     
-    # period_data から税引前利益と税費用が取得できれば計算する（オプション）
-    if 'pretax_income' in period_data and 'tax_expense' in period_data:
-        from extract_key_facts import normalize_value
-        pretax = normalize_value(period_data['pretax_income'])
-        tax = normalize_value(period_data['tax_expense'])
-        if pretax != 0:
-            # 実効税率 = 税費用 / 税引前利益（ただしマイナスの場合は絶対値で計算することも）
-            # 簡易的に絶対値で計算（税利益の場合もあるので注意）
-            computed_rate = abs(tax / pretax) if pretax != 0 else 0.21
-            # 常識的な範囲内かチェック（0%〜50%）
-            if 0.0 <= computed_rate <= 0.5:
-                tax_rate = computed_rate
-                print(f"      Using computed tax rate: {tax_rate:.2%}")
+    pretax = normalize_value(period_data.get('pretax_income'))
+    tax = normalize_value(period_data.get('tax_expense'))
+    
+    if pretax != 0:
+        # 実効税率 = 税費用 / 税引前利益（絶対値で計算、赤字の場合は便宜上絶対値で割る）
+        computed_rate = abs(tax / pretax)
+        # 常識的な範囲内かチェック（0%〜50%）
+        if 0.0 <= computed_rate <= 0.5:
+            tax_rate = computed_rate
+            print(f"      Using computed tax rate: {tax_rate:.2%}")
+        else:
+            print(f"      Computed tax rate {computed_rate:.2%} out of range, using default 21%")
+    else:
+        print(f"      Pretax income zero, using default tax rate 21%")
     
     detailed = []
     net_total = 0.0
@@ -51,8 +50,6 @@ def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[s
         
         if pre_tax:
             # 税前項目 → 税効果適用
-            # 金額は単位付きなので、一旦数値として扱い、net_amount も同じ単位とする
-            # ただし、計算上は単位を気にせず数値として扱う（すべて USD と仮定）
             net_amount = amount * (1 - tax_rate)
         else:
             # 税後項目 → そのまま
