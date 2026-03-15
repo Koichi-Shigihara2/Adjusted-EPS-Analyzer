@@ -21,6 +21,26 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
+    /* スクロールバーのカスタマイズ（オプション） */
+    .scrollable-adjustments {
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .scrollable-adjustments::-webkit-scrollbar {
+      width: 8px;
+    }
+    .scrollable-adjustments::-webkit-scrollbar-track {
+      background: #2d3748;
+      border-radius: 4px;
+    }
+    .scrollable-adjustments::-webkit-scrollbar-thumb {
+      background: #4a5568;
+      border-radius: 4px;
+    }
+    .scrollable-adjustments::-webkit-scrollbar-thumb:hover {
+      background: #718096;
+    }
   </style>
 </head>
 <body class="bg-gray-900 text-gray-100 min-h-screen p-6">
@@ -102,15 +122,7 @@
         <canvas id="eps-chart" height="300"></canvas>
       </div>
 
-      <!-- 調整内訳（全期間） -->
-      <div class="bg-gray-800 p-6 rounded-lg mb-8">
-        <h3 class="text-xl font-semibold mb-4">調整内訳（全期間）</h3>
-        <div id="adjustments-accordion" class="space-y-4">
-          <!-- JSで動的生成 -->
-        </div>
-      </div>
-
-      <!-- AIコメント（最新四半期） -->
+      <!-- ★ AI分析（最新四半期）を先に配置 -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-4 flex items-center">
           AI分析（最新四半期）
@@ -121,6 +133,14 @@
         </div>
         <div id="ai-sources" class="mt-4 text-sm text-gray-400 border-t border-gray-700 pt-4">
           <!-- ソース表示 -->
+        </div>
+      </div>
+
+      <!-- 調整内訳（全期間） - スクロール対応 -->
+      <div class="bg-gray-800 p-6 rounded-lg mb-8">
+        <h3 class="text-xl font-semibold mb-4">調整内訳（全期間）</h3>
+        <div id="adjustments-accordion" class="scrollable-adjustments space-y-4 pr-2">
+          <!-- JSで動的生成 -->
         </div>
       </div>
     </div>
@@ -156,9 +176,9 @@
         updateHeader(quarterlyData);
         updateMetrics(quarterlyData);
         updateChart(quarterlyData.quarters, 'quarterly', 'filing_date');
-        updateAllAdjustments(quarterlyData.quarters);  // ← 全期間の調整内訳を表示
+        updateAllAdjustments(quarterlyData.quarters);
 
-        const latest = quarterlyData.quarters[quarterlyData.quarters.length - 1];
+        const latest = getLatestQuarter(quarterlyData.quarters);
         updateAI(latest.ai_analysis);
 
         document.getElementById('ticker-title').innerText = currentTicker;
@@ -174,16 +194,19 @@
       }
     }
 
+    function getLatestQuarter(quarters) {
+      return quarters.reduce((latest, current) => 
+        current.filing_date > latest.filing_date ? current : latest
+      );
+    }
+
     function updateHeader(data) {
       document.getElementById('last-updated').innerText = 
         `最終更新: ${new Date(data.last_updated).toLocaleDateString('ja-JP')}`;
     }
 
     function updateMetrics(data) {
-      // 最新四半期（日付が最も新しいもの）を取得
-      const latest = data.quarters.reduce((latest, current) => 
-        current.filing_date > latest.filing_date ? current : latest
-      );
+      const latest = getLatestQuarter(data.quarters);
       document.getElementById('gaap-eps').innerText = `$${latest.gaap_eps.toFixed(4)}`;
       document.getElementById('adj-eps').innerText = `$${latest.adjusted_eps.toFixed(4)}`;
       
@@ -191,17 +214,16 @@
       document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
       document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
       
-      // YoY成長率（4四半期前と比較）
-      // 最新の日付から4四半期前のデータを探す
-      const latestDate = latest.filing_date;
+      // YoY成長率：前年同期（同じ月の4四半期前）を検索
+      const latestDate = latest.filing_date; // '2025-09-30'
       const [year, month, day] = latestDate.split('-');
-      const targetDate = `${parseInt(year)-1}-${month}-${day}`; // 簡易的に1年前の同じ日付
-      // より正確には、4四半期前のデータを日付順で探す（実装簡略化のため、配列インデックスで代用）
-      const idx = data.quarters.findIndex(q => q.filing_date === latestDate);
-      const prevIdx = idx - 4;
-      if (prevIdx >= 0) {
-        const prev = data.quarters[prevIdx];
-        const prevEps = prev.adjusted_eps;
+      const targetYear = parseInt(year) - 1;
+      const targetDate = `${targetYear}-${month}-${day}`; // '2024-09-30'
+      
+      const prevQuarter = data.quarters.find(q => q.filing_date === targetDate);
+      
+      if (prevQuarter) {
+        const prevEps = prevQuarter.adjusted_eps;
         if (Math.abs(prevEps) > 0.0001) {
           const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
           document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
@@ -210,7 +232,21 @@
           document.getElementById('yoy').innerText = 'N/A';
         }
       } else {
-        document.getElementById('yoy').innerText = '--';
+        // フォールバック：4つ前のインデックス（連続している場合）
+        const idx = data.quarters.findIndex(q => q.filing_date === latestDate);
+        const prevIdx = idx - 4;
+        if (prevIdx >= 0) {
+          const prevEps = data.quarters[prevIdx].adjusted_eps;
+          if (Math.abs(prevEps) > 0.0001) {
+            const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+            document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
+            document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
+          } else {
+            document.getElementById('yoy').innerText = 'N/A';
+          }
+        } else {
+          document.getElementById('yoy').innerText = '--';
+        }
       }
     }
 
@@ -236,7 +272,6 @@
         return;
       }
 
-      // 古い順にソート（昇順）
       const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
 
       const labels = sorted.map(item => formatLabel(item[labelField]));
@@ -299,10 +334,8 @@
       });
     }
 
-    // 全期間の調整内訳を表示（降順：新しい順）
     function updateAllAdjustments(quarters) {
       const container = document.getElementById('adjustments-accordion');
-      // 降順（新しい順）にソート
       const sorted = [...quarters].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
       
       let html = '';
@@ -311,7 +344,6 @@
         html += `<div class="bg-gray-800 px-4 py-2 font-semibold border-b border-gray-700">${q.filing_date}</div>`;
         
         if (q.adjustments && q.adjustments.length > 0) {
-          // 調整項目あり → テーブル生成
           html += `<div class="p-4 bg-gray-750">`;
           html += `<table class="w-full text-sm">`;
           html += `<thead><tr class="text-gray-400"><th class="text-left">項目</th><th class="text-right">金額（税後）</th><th class="text-left">理由</th><th class="text-left">抽出元</th></tr></thead>`;
@@ -387,10 +419,8 @@
       try {
         if (tab === 'quarterly' && quarterlyData) {
           updateChart(quarterlyData.quarters, 'quarterly', 'filing_date');
-          updateAllAdjustments(quarterlyData.quarters);  // ← 全期間表示
-          const latest = quarterlyData.quarters.reduce((latest, current) => 
-            current.filing_date > latest.filing_date ? current : latest
-          );
+          updateAllAdjustments(quarterlyData.quarters);
+          const latest = getLatestQuarter(quarterlyData.quarters);
           updateAI(latest.ai_analysis);
         } else if (tab === 'annual') {
           if (!annualData) {
