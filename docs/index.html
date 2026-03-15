@@ -6,6 +6,8 @@
   <title>Adjusted EPS Analyzer</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- chartjs-plugin-datalabels を追加 -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <script>
@@ -21,7 +23,6 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    /* スクロールバーのカスタマイズ（オプション） */
     .scrollable-adjustments {
       max-height: 600px;
       overflow-y: auto;
@@ -117,12 +118,12 @@
         </ul>
       </div>
 
-      <!-- チャート -->
+      <!-- チャート（データラベル付き） -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <canvas id="eps-chart" height="300"></canvas>
       </div>
 
-      <!-- ★ AI分析（最新四半期）を先に配置 -->
+      <!-- AI分析（最新四半期） -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-4 flex items-center">
           AI分析（最新四半期）
@@ -147,6 +148,9 @@
   </main>
 
   <script>
+    // Chart.js に datalabels プラグインを登録
+    Chart.register(ChartDataLabels);
+
     let currentTicker = 'PLTR';
     let quarterlyData = null;
     let annualData = null;
@@ -215,10 +219,10 @@
       document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
       
       // YoY成長率：前年同期（同じ月の4四半期前）を検索
-      const latestDate = latest.filing_date; // '2025-09-30'
+      const latestDate = latest.filing_date;
       const [year, month, day] = latestDate.split('-');
       const targetYear = parseInt(year) - 1;
-      const targetDate = `${targetYear}-${month}-${day}`; // '2024-09-30'
+      const targetDate = `${targetYear}-${month}-${day}`;
       
       const prevQuarter = data.quarters.find(q => q.filing_date === targetDate);
       
@@ -232,7 +236,6 @@
           document.getElementById('yoy').innerText = 'N/A';
         }
       } else {
-        // フォールバック：4つ前のインデックス（連続している場合）
         const idx = data.quarters.findIndex(q => q.filing_date === latestDate);
         const prevIdx = idx - 4;
         if (prevIdx >= 0) {
@@ -302,14 +305,28 @@
               data: gaapData,
               borderColor: 'rgb(156, 163, 175)',
               backgroundColor: 'rgba(156, 163, 175, 0.1)',
-              tension: 0.1
+              tension: 0.1,
+              datalabels: {
+                align: 'top',
+                offset: 4,
+                color: 'white',
+                font: { size: 10 },
+                formatter: (value) => value.toFixed(2)
+              }
             },
             {
               label: 'Adjusted EPS',
               data: adjData,
               borderColor: 'rgb(34, 197, 94)',
               backgroundColor: 'rgba(34, 197, 94, 0.1)',
-              tension: 0.1
+              tension: 0.1,
+              datalabels: {
+                align: 'bottom',
+                offset: 4,
+                color: '#4ade80',
+                font: { size: 10 },
+                formatter: (value) => value.toFixed(2)
+              }
             }
           ]
         },
@@ -317,7 +334,13 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { labels: { color: 'white' } }
+            legend: { labels: { color: 'white' } },
+            datalabels: {
+              display: true,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              borderRadius: 4,
+              padding: { top: 2, bottom: 2, left: 4, right: 4 }
+            }
           },
           scales: {
             y: { 
