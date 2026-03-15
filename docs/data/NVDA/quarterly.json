@@ -1,16 +1,16 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-15T09:52:09.049608",
+  "last_updated": "2026-03-15T11:36:01.040955",
   "quarters": [
     {
-      "gaap_eps": -0.08520803096274794,
-      "adjusted_eps": -0.08520803096274794,
-      "gaap_net_income": -4227000000.0,
-      "adjusted_net_income": -4227000000.0,
-      "diluted_shares_used": 49608000000.0,
+      "gaap_eps": 1.7524679774822551,
+      "adjusted_eps": 1.7524679774822551,
+      "gaap_net_income": 42960000000.0,
+      "adjusted_net_income": 42960000000.0,
+      "diluted_shares_used": 24514000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2025-01-26",
+      "filing_date": "2026-01-25",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -43,24 +43,28 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "唯一の調整項目は株式報酬費用(SBC)の加算戻しです。非現金支出として標準的な調整であり、税効果を適切に考慮したネット金額で処理されています。調整幅はEPSで約0.047と比較的穏やかで、NVIDIAのようなテック企業では一般的な非GAAP修正です。ただし、SBCは実質的な希薄化コストであるため、過度に依存しないよう留意すべきです。全体として健全な調整内容です。",
+        "comment": "調整項目は株式報酬費用（非現金支出）の追加のみで、標準的な調整です。税引後約11.64億ドルの追加によりAdjusted EPSがGAAP EPSを上回っており、差異も整合しています。NVDAのようなテック企業では一般的ですが、継続的なSBCの影響を注視する必要があります。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 1474000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+          },
+          {
+            "item": "EPS比較",
+            "snippet": "GAAP EPS: 0.76287, Adjusted EPS: 0.81018"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.4015160193989384,
-      "adjusted_eps": -0.4015160193989384,
-      "gaap_net_income": -21029000000.0,
-      "adjusted_net_income": -21029000000.0,
-      "diluted_shares_used": 52374000000.0,
+      "gaap_eps": 0.4453112401225609,
+      "adjusted_eps": 0.4453112401225609,
+      "gaap_net_income": 22091000000.0,
+      "adjusted_net_income": 22091000000.0,
+      "diluted_shares_used": 49608000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2024-01-28",
+      "filing_date": "2025-01-26",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -93,24 +97,24 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（SBC）の加算のみであり、非現金費用としてテック企業で標準的な調整です。税引後約8億ドルを加算し、EPSを約5.4%押し上げていますが、調整幅は穏当で理由も明確です。NVDAの成長企業特性を考慮すると健全性は良好です。",
+        "comment": "調整項目は株式報酬費用の非現金加算戻しのみで、テック企業として標準的な非GAAP調整です。金額は約10.1億ドル（税後約8億ドル）と規模が大きいものの、抽出元がGAAPタグであり透明性が高いため健全性は良好と判断。NVIDIAの成長モデルでは一般的ですが、継続的な株主希薄化効果には注意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC), extracted_from: us-gaap:ShareBasedCompensation"
+            "snippet": "amount: 1011000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.4356468554713469,
-      "adjusted_eps": -0.4356468554713469,
-      "gaap_net_income": -13106000000.0,
-      "adjusted_net_income": -13106000000.0,
-      "diluted_shares_used": 30084000000.0,
+      "gaap_eps": 0.2345820445259098,
+      "adjusted_eps": 0.2345820445259098,
+      "gaap_net_income": 12286000000.0,
+      "adjusted_net_income": 12286000000.0,
+      "diluted_shares_used": 52374000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2023-01-29",
+      "filing_date": "2024-01-28",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -143,24 +147,24 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（SBC）のadd_backのみで、非現金費用として標準的かつ正当な調整です。調整後EPSがGAAP EPSを上回る幅は約28%ですが、NVIDIAのような成長企業では一般的。税率21%の適用も適切で全体的な健全性は良好。ただしSBC規模が大きいため、将来的な株主希薄化効果には留意が必要です。",
+        "comment": "調整項目は株式報酬費用（SBC）のadd_backのみとシンプルで透明性が高いです。非現金費用として標準的な非GAAP調整であり、調整後EPSがGAAPより約28%上方修正されています。NVDAのようなテック企業では一般的ですが、SBCの規模が大きいため株主希薄化効果への留意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
+            "snippet": "amount: 735000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.8938856015779093,
-      "adjusted_eps": 0.8938856015779093,
-      "gaap_net_income": 6798000000.0,
-      "adjusted_net_income": 6798000000.0,
-      "diluted_shares_used": 7605000000.0,
+      "gaap_eps": 0.04700172849355139,
+      "adjusted_eps": 0.04700172849355139,
+      "gaap_net_income": 1414000000.0,
+      "adjusted_net_income": 1414000000.0,
+      "diluted_shares_used": 30084000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2022-01-30",
+      "filing_date": "2023-01-29",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -193,24 +197,24 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用に対する標準的な調整です。GAAP EPSからAdjusted EPSへの差異（約28%増）は主にこの項目によるもので、税率21%適用後の純額も適切に算出されています。NVDAのようなテック企業では一般的ですが、株式報酬の希薄化効果には留意が必要です。",
+        "comment": "調整項目は株式報酬費用の加算戻しのみで、テック企業では極めて標準的な非GAAP修正です。非現金支出を調整しており、過度な操作は見られません。GAAP EPSとAdjusted EPSの差も合理的な範囲であり、財務健全性は良好と判断します。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 578000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.4281161473087819,
-      "adjusted_eps": -0.4281161473087819,
-      "gaap_net_income": -2418000000.0,
-      "adjusted_net_income": -2418000000.0,
-      "diluted_shares_used": 5648000000.0,
+      "gaap_eps": 0.3947403024326101,
+      "adjusted_eps": 0.3947403024326101,
+      "gaap_net_income": 3002000000.0,
+      "adjusted_net_income": 3002000000.0,
+      "diluted_shares_used": 7605000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2021-01-31",
+      "filing_date": "2022-01-30",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -243,28 +247,24 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（非現金）の加算のみで、テック企業として標準的な非GAAP調整です。調整額は税引後約3.39億ドル、EPS差約0.107と影響は中程度ですが、異常な項目はなく健全です。ただしSBCは実質的な株主希薄化コストであるため、投資家はGAAPとNon-GAAPの両方を確認することを推奨します。",
+        "comment": "調整項目は株式報酬費用のみで、非現金支出として加算バックする標準的な非GAAP調整です。税効果を適切に反映したnet_amountが使用されており、調整後EPSへの影響も合理的。透明性が高く健全性は良好です。",
         "sources": [
           {
             "item": "株式報酬費用",
             "snippet": "非現金費用（ConfigでON/OFF可）"
-          },
-          {
-            "item": "extracted_from",
-            "snippet": "us-gaap:ShareBasedCompensation"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.5191477885652643,
-      "adjusted_eps": -0.5191477885652643,
-      "gaap_net_income": -1925000000.0,
-      "adjusted_net_income": -1925000000.0,
-      "diluted_shares_used": 3708000000.0,
+      "gaap_eps": 0.2579674220963173,
+      "adjusted_eps": 0.2579674220963173,
+      "gaap_net_income": 1457000000.0,
+      "adjusted_net_income": 1457000000.0,
+      "diluted_shares_used": 5648000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2020-01-26",
+      "filing_date": "2021-01-31",
       "form": "10-K",
       "ai_analysis": {
         "health": "Good",
@@ -297,11 +297,11 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用のみで、非現金支出として税効果を考慮した標準的なadd_back調整です。NVDAのような成長企業では一般的な非GAAP修正であり、透明性が高く健全です。ただし、SBCは実質的な株主希薄化コストである点に留意が必要です。",
+        "comment": "調整項目は株式報酬費用のみで、非現金支出として標準的かつ透明性の高い調整です。調整後EPSはGAAP比で約19%上昇していますが、NVDAのようなテック企業ではSBCが重要な費用項目であるため一般的です。過度な調整は見られず健全ですが、SBCの希薄化効果については継続的に監視すべきです。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 224000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC), net_amount: 176960000.0"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
