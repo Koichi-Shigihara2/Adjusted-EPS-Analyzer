@@ -117,7 +117,6 @@
             </li>
           </ul>
         </div>
-        <!-- 期間選択ドロップダウン -->
         <div class="ml-4">
           <select id="range-select" class="bg-gray-700 text-white px-3 py-2 rounded" onchange="changeRange()">
             <option value="all">全期間</option>
@@ -128,7 +127,7 @@
         </div>
       </div>
 
-      <!-- チャート（データラベル付き） -->
+      <!-- チャート -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <canvas id="eps-chart" height="300"></canvas>
       </div>
@@ -147,7 +146,7 @@
         </div>
       </div>
 
-      <!-- 調整内訳（全期間） - スクロール対応 -->
+      <!-- 調整内訳（全期間） -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-4">調整内訳（全期間）</h3>
         <div id="adjustments-accordion" class="scrollable-adjustments space-y-4 pr-2">
@@ -158,7 +157,6 @@
   </main>
 
   <script>
-    // Chart.js に datalabels プラグインを登録
     Chart.register(ChartDataLabels);
 
     let currentTicker = 'NVDA';
@@ -166,7 +164,7 @@
     let annualData = null;
     let ttmData = null;
     let chart = null;
-    let currentRange = 'all'; // 選択中の期間
+    let currentRange = 'all';
 
     function showLoading(show) {
       document.getElementById('loading').classList.toggle('hidden', !show);
@@ -184,14 +182,14 @@
         const qResp = await fetch(`data/${currentTicker}/quarterly.json`);
         if (!qResp.ok) throw new Error('データが見つかりません');
         quarterlyData = await qResp.json();
-        console.log('Quarterly data loaded:', quarterlyData); // デバッグ
+        console.log('Quarterly data loaded:', quarterlyData);
 
         annualData = null;
         ttmData = null;
 
         updateHeader(quarterlyData);
         updateMetrics(quarterlyData);
-        updateChartWithRange(); // 期間指定付きでチャート更新
+        updateChartWithRange();
         updateAllAdjustments(quarterlyData.quarters);
 
         const latest = getLatestQuarter(quarterlyData.quarters);
@@ -230,15 +228,14 @@
       document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
       document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
       
-      // YoY成長率：前年同期（同じ月の1年前）を検索
+      // YoY成長率の計算（前年同期）
       const latestDate = latest.filing_date;
       const [year, month, day] = latestDate.split('-');
       const targetYear = parseInt(year) - 1;
       const targetDate = `${targetYear}-${month}-${day}`;
-      
       const prevQuarter = data.quarters.find(q => q.filing_date === targetDate);
-      console.log('YoY check:', { latestDate, targetDate, found: prevQuarter }); // デバッグ
-      
+      console.log('YoY:', { latestDate, targetDate, prevQuarter });
+
       if (prevQuarter) {
         const prevEps = prevQuarter.adjusted_eps;
         if (Math.abs(prevEps) > 0.0001) {
@@ -249,21 +246,7 @@
           document.getElementById('yoy').innerText = 'N/A';
         }
       } else {
-        // フォールバック：4つ前のインデックス
-        const idx = data.quarters.findIndex(q => q.filing_date === latestDate);
-        const prevIdx = idx - 4;
-        if (prevIdx >= 0) {
-          const prevEps = data.quarters[prevIdx].adjusted_eps;
-          if (Math.abs(prevEps) > 0.0001) {
-            const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
-            document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
-            document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
-          } else {
-            document.getElementById('yoy').innerText = 'N/A';
-          }
-        } else {
-          document.getElementById('yoy').innerText = '--';
-        }
+        document.getElementById('yoy').innerText = '--';
       }
     }
 
@@ -276,14 +259,15 @@
       return `${year}-Q${quarter}`;
     }
 
-    // 期間に基づいてデータをフィルタリング
+    // ★★★ 修正：データをソートしてから最新日付を取得するように変更 ★★★
     function filterDataByRange(dataArray, labelField) {
       if (currentRange === 'all' || !dataArray || dataArray.length === 0) return dataArray;
-      
-      const now = new Date();
-      const latestDate = new Date(dataArray[dataArray.length - 1][labelField]);
+
+      // 日付でソート（古い→新しい）
+      const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
+      const latestDate = new Date(sorted[sorted.length - 1][labelField]);
       let cutoffDate = new Date(latestDate);
-      
+
       switch (currentRange) {
         case '1y':
           cutoffDate.setFullYear(latestDate.getFullYear() - 1);
@@ -297,19 +281,21 @@
         default:
           return dataArray;
       }
-      
+
       return dataArray.filter(item => new Date(item[labelField]) >= cutoffDate);
     }
 
     function updateChartWithRange() {
       if (!quarterlyData) return;
       const filtered = filterDataByRange(quarterlyData.quarters, 'filing_date');
+      console.log(`Range: ${currentRange}, filtered data count: ${filtered.length}`);
       updateChart(filtered, 'quarterly', 'filing_date');
     }
 
     function changeRange() {
       const select = document.getElementById('range-select');
       currentRange = select.value;
+      console.log('Range changed to:', currentRange);
       if (quarterlyData) {
         updateChartWithRange();
       }
@@ -317,7 +303,6 @@
 
     function updateChart(dataArray, type, labelField) {
       const ctx = document.getElementById('eps-chart').getContext('2d');
-      console.log('updateChart called with', dataArray.length, 'items'); // デバッグ
 
       if (!dataArray || dataArray.length === 0) {
         if (chart) chart.destroy();
@@ -330,7 +315,6 @@
       }
 
       const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
-
       const labels = sorted.map(item => formatLabel(item[labelField]));
       let gaapData, adjData;
 
@@ -414,7 +398,6 @@
     function updateAllAdjustments(quarters) {
       const container = document.getElementById('adjustments-accordion');
       const sorted = [...quarters].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
-      console.log('Adjustments sorted:', sorted.map(q => q.filing_date)); // デバッグ
       
       let html = '';
       sorted.forEach(q => {
@@ -496,7 +479,7 @@
 
       try {
         if (tab === 'quarterly' && quarterlyData) {
-          updateChartWithRange(); // 期間指定付き
+          updateChartWithRange();
           updateAllAdjustments(quarterlyData.quarters);
           const latest = getLatestQuarter(quarterlyData.quarters);
           updateAI(latest.ai_analysis);
