@@ -132,10 +132,10 @@
         <canvas id="eps-chart" height="300"></canvas>
       </div>
 
-      <!-- AI分析（最新四半期） -->
+      <!-- AI分析（選択期間内の最新四半期） -->
       <div class="bg-gray-800 p-6 rounded-lg mb-8">
         <h3 class="text-xl font-semibold mb-4 flex items-center">
-          AI分析（最新四半期）
+          AI分析（選択期間内の最新四半期）
           <span class="ml-2 text-sm bg-gray-700 px-2 py-1 rounded">Grok</span>
         </h3>
         <div id="ai-comment" class="prose prose-invert max-w-none">
@@ -164,7 +164,8 @@
     let annualData = null;
     let ttmData = null;
     let chart = null;
-    let currentRange = 'all';
+    let currentRange = 'all';      // 現在選択中の期間
+    let currentTab = 'quarterly';  // 現在選択中のタブ
 
     function showLoading(show) {
       document.getElementById('loading').classList.toggle('hidden', !show);
@@ -188,12 +189,10 @@
         ttmData = null;
 
         updateHeader(quarterlyData);
-        updateMetrics(quarterlyData);
-        updateChartWithRange();
-        updateAllAdjustments(quarterlyData.quarters);
-
-        const latest = getLatestQuarter(quarterlyData.quarters);
-        updateAI(latest.ai_analysis);
+        // 初期表示は全期間
+        currentRange = 'all';
+        document.getElementById('range-select').value = 'all';
+        applyRangeUpdate(); // 期間適用（メトリクス・チャート・AI更新）
 
         document.getElementById('ticker-title').innerText = currentTicker;
         showLoading(false);
@@ -208,62 +207,24 @@
       }
     }
 
-    function getLatestQuarter(quarters) {
-      return quarters.reduce((latest, current) => 
-        current.filing_date > latest.filing_date ? current : latest
-      );
-    }
-
+    // ヘッダーの最終更新日時
     function updateHeader(data) {
       document.getElementById('last-updated').innerText = 
         `最終更新: ${new Date(data.last_updated).toLocaleDateString('ja-JP')}`;
     }
 
-    function updateMetrics(data) {
-      const latest = getLatestQuarter(data.quarters);
-      document.getElementById('gaap-eps').innerText = `$${latest.gaap_eps.toFixed(4)}`;
-      document.getElementById('adj-eps').innerText = `$${latest.adjusted_eps.toFixed(4)}`;
-      
-      const diff = latest.adjusted_eps - latest.gaap_eps;
-      document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
-      document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
-      
-      // YoY成長率の計算（前年同期）
-      const latestDate = latest.filing_date;
-      const [year, month, day] = latestDate.split('-');
-      const targetYear = parseInt(year) - 1;
-      const targetDate = `${targetYear}-${month}-${day}`;
-      const prevQuarter = data.quarters.find(q => q.filing_date === targetDate);
-      console.log('YoY:', { latestDate, targetDate, prevQuarter });
-
-      if (prevQuarter) {
-        const prevEps = prevQuarter.adjusted_eps;
-        if (Math.abs(prevEps) > 0.0001) {
-          const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
-          document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
-          document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
-        } else {
-          document.getElementById('yoy').innerText = 'N/A';
-        }
-      } else {
-        document.getElementById('yoy').innerText = '--';
-      }
+    // 指定されたデータ配列から最新の四半期を取得（日付降順ソート後の最初）
+    function getLatestFromArray(dataArray) {
+      if (!dataArray || dataArray.length === 0) return null;
+      const sorted = [...dataArray].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
+      return sorted[0];
     }
 
-    function formatLabel(dateStr) {
-      if (!dateStr) return '';
-      const parts = dateStr.split('-');
-      if (parts.length < 2) return dateStr;
-      const [year, month] = parts;
-      const quarter = Math.floor((parseInt(month) - 1) / 3) + 1;
-      return `${year}-Q${quarter}`;
-    }
-
-    // ★★★ 修正：データをソートしてから最新日付を取得するように変更 ★★★
+    // 期間フィルタリング（全データから）
     function filterDataByRange(dataArray, labelField) {
       if (currentRange === 'all' || !dataArray || dataArray.length === 0) return dataArray;
 
-      // 日付でソート（古い→新しい）
+      // 日付でソートして最新日付を取得（古い順→最新）
       const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
       const latestDate = new Date(sorted[sorted.length - 1][labelField]);
       let cutoffDate = new Date(latestDate);
@@ -285,20 +246,77 @@
       return dataArray.filter(item => new Date(item[labelField]) >= cutoffDate);
     }
 
-    function updateChartWithRange() {
+    // 期間変更時の一括更新
+    function applyRangeUpdate() {
       if (!quarterlyData) return;
+
       const filtered = filterDataByRange(quarterlyData.quarters, 'filing_date');
-      console.log(`Range: ${currentRange}, filtered data count: ${filtered.length}`);
-      updateChart(filtered, 'quarterly', 'filing_date');
+      console.log(`Range: ${currentRange}, filtered count: ${filtered.length}`);
+
+      // チャート更新
+      if (currentTab === 'quarterly') {
+        updateChart(filtered, 'quarterly', 'filing_date');
+      }
+
+      // メトリクス更新（フィルタリング後の最新）
+      const latestInRange = getLatestFromArray(filtered);
+      if (latestInRange) {
+        updateMetricsWithQuarter(latestInRange, quarterlyData.quarters); // YoY計算のために全データも渡す
+      } else {
+        // データがない場合のフォールバック
+        document.getElementById('gaap-eps').innerText = '$0.00';
+        document.getElementById('adj-eps').innerText = '$0.00';
+        document.getElementById('diff').innerText = '$0.00';
+        document.getElementById('yoy').innerText = '--';
+      }
+
+      // AI分析更新（フィルタリング後の最新）
+      if (latestInRange && latestInRange.ai_analysis) {
+        updateAI(latestInRange.ai_analysis);
+      } else {
+        document.getElementById('ai-comment').innerHTML = '<p>分析コメント準備中</p>';
+        document.getElementById('ai-sources').innerHTML = '';
+      }
     }
 
-    function changeRange() {
-      const select = document.getElementById('range-select');
-      currentRange = select.value;
-      console.log('Range changed to:', currentRange);
-      if (quarterlyData) {
-        updateChartWithRange();
+    // メトリクス更新（指定された四半期データを使用）
+    function updateMetricsWithQuarter(quarter, allQuarters) {
+      document.getElementById('gaap-eps').innerText = `$${quarter.gaap_eps.toFixed(4)}`;
+      document.getElementById('adj-eps').innerText = `$${quarter.adjusted_eps.toFixed(4)}`;
+      
+      const diff = quarter.adjusted_eps - quarter.gaap_eps;
+      document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
+      document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
+      
+      // YoY成長率：前年同期（同じ月の1年前）を全データから検索
+      const latestDate = quarter.filing_date;
+      const [year, month, day] = latestDate.split('-');
+      const targetYear = parseInt(year) - 1;
+      const targetDate = `${targetYear}-${month}-${day}`;
+      const prevQuarter = allQuarters.find(q => q.filing_date === targetDate);
+      console.log('YoY:', { latestDate, targetDate, prevQuarter });
+
+      if (prevQuarter) {
+        const prevEps = prevQuarter.adjusted_eps;
+        if (Math.abs(prevEps) > 0.0001) {
+          const yoy = (quarter.adjusted_eps - prevEps) / Math.abs(prevEps);
+          document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
+          document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
+        } else {
+          document.getElementById('yoy').innerText = 'N/A';
+        }
+      } else {
+        document.getElementById('yoy').innerText = '--';
       }
+    }
+
+    function formatLabel(dateStr) {
+      if (!dateStr) return '';
+      const parts = dateStr.split('-');
+      if (parts.length < 2) return dateStr;
+      const [year, month] = parts;
+      const quarter = Math.floor((parseInt(month) - 1) / 3) + 1;
+      return `${year}-Q${quarter}`;
     }
 
     function updateChart(dataArray, type, labelField) {
@@ -395,6 +413,7 @@
       });
     }
 
+    // 全期間の調整内訳（変更なし）
     function updateAllAdjustments(quarters) {
       const container = document.getElementById('adjustments-accordion');
       const sorted = [...quarters].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
@@ -465,7 +484,16 @@
       }
     }
 
+    // 期間選択変更時のハンドラ
+    function changeRange() {
+      const select = document.getElementById('range-select');
+      currentRange = select.value;
+      console.log('Range changed to:', currentRange);
+      applyRangeUpdate();
+    }
+
     async function switchTab(tab) {
+      currentTab = tab;
       ['quarterly', 'annual', 'ttm'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if (t === tab) {
@@ -479,10 +507,8 @@
 
       try {
         if (tab === 'quarterly' && quarterlyData) {
-          updateChartWithRange();
-          updateAllAdjustments(quarterlyData.quarters);
-          const latest = getLatestQuarter(quarterlyData.quarters);
-          updateAI(latest.ai_analysis);
+          applyRangeUpdate(); // 期間フィルタリング済みのデータでチャート・メトリクス・AI更新
+          updateAllAdjustments(quarterlyData.quarters); // 調整内訳は全期間固定
         } else if (tab === 'annual') {
           if (!annualData) {
             const resp = await fetch(`data/${currentTicker}/annual.json`);
@@ -490,6 +516,7 @@
             annualData = await resp.json();
           }
           if (annualData.years && annualData.years.length > 0) {
+            // 年次タブでは期間選択は無視（全期間表示）
             updateChart(annualData.years, 'annual', 'fiscal_year');
             document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">年次データには調整内訳はありません。</p>';
             document.getElementById('ai-comment').innerHTML = '<p>年次データにはAI分析はありません。</p>';
@@ -507,6 +534,7 @@
             ttmData = await resp.json();
           }
           if (ttmData.ttm && ttmData.ttm.length > 0) {
+            // TTMタブでも期間選択は無視（全期間表示）
             updateChart(ttmData.ttm, 'ttm', 'period');
             document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
             document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
