@@ -1,51 +1,17 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-15T09:02:44.926779",
+  "last_updated": "2026-03-15T09:52:54.253682",
   "quarters": [
     {
-      "gaap_eps": 0.3893930799773114,
-      "adjusted_eps": 0.44271695972773684,
-      "gaap_net_income": 1373000000.0,
-      "adjusted_net_income": 1561020000.0,
-      "diluted_shares_used": 3526000000.0,
-      "adjustments": [
-        {
-          "item_name": "リストラ費用",
-          "amount": 238000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性リストラ（非営業）",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "事業構造変更・一過性損益",
-          "net_amount": 188020000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 188020000.0,
-      "filing_date": "2025-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "リストラ費用238M USDをadd_backしており、一過性の事業構造変更費用として合理的な調整。税引後影響額約188M USDがEPS差異（約0.053）と整合しており、調整の透明性は高い。非営業・一時的性質からGAAP EPSを補正する目的は適切。",
-        "sources": [
-          {
-            "item": "リストラ費用",
-            "snippet": "一過性リストラ（非営業） category: 事業構造変更・一過性損益"
-          }
-        ]
-      }
-    },
-    {
-      "gaap_eps": 0.333049161693663,
-      "adjusted_eps": 0.333049161693663,
-      "gaap_net_income": 1172000000.0,
-      "adjusted_net_income": 1172000000.0,
-      "diluted_shares_used": 3519000000.0,
+      "gaap_eps": 0.23809523809523808,
+      "adjusted_eps": 0.23809523809523808,
+      "gaap_net_income": 840000000.0,
+      "adjusted_net_income": 840000000.0,
+      "diluted_shares_used": 3528000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2025-06-30",
-      "form": "10-Q",
+      "filing_date": "2025-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -77,41 +43,29 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、非現金費用として標準的な処理ですが、調整額573M USDによりGAAP EPS（0.116）がAdjusted EPS（0.245）と約2倍に跳ね上がっています。TSLAの高いSBC依存を考慮すると、調整の影響が大きく、持続的な収益力の評価には注意が必要です。",
+        "comment": "調整項目は株式報酬費用（SBC）の追加戻しのみで、非現金項目として一般的な処理です。ただし、調整によりEPSが約2.1倍に跳ね上がっており、調整影響度が非常に大きいため、投資家は希薄化効果も含めて実態を慎重に評価する必要があります。",
         "sources": [
           {
-            "item": "調整項目",
-            "snippet": "株式報酬費用 amount:573000000 direction:add_back reason:非現金費用 category:株式報酬 (SBC)"
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          },
+          {
+            "item": "調整額",
+            "snippet": "573000000 USD (net: 452670000)"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.3106948813268516,
-      "adjusted_eps": 0.3106948813268516,
-      "gaap_net_income": 2173000000.0,
-      "adjusted_net_income": 2173000000.0,
-      "diluted_shares_used": 6994000000.0,
+      "gaap_eps": -0.5502296211251435,
+      "adjusted_eps": -0.5502296211251435,
+      "gaap_net_income": -3834000000.0,
+      "adjusted_net_income": -3834000000.0,
+      "diluted_shares_used": 6968000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2024-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.20109164033323756,
-      "adjusted_eps": 0.20109164033323756,
-      "gaap_net_income": 1400000000.0,
-      "adjusted_net_income": 1400000000.0,
-      "diluted_shares_used": 6962000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2024-06-30",
-      "form": "10-Q",
+      "filing_date": "2024-03-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -143,41 +97,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、非現金項目であるため調整は合理的かつ標準的です。税引後約4.14億ドルの調整によりEPSが約0.059上昇しており、成長企業として一般的な非GAAP修正と言えます。ただしSBCの規模が大きい点は株主希薄化の観点で留意すべきです。",
+        "comment": "調整項目は株式報酬費用（非現金支出）の追加バックのみであり、標準的な調整です。調整幅は約30%ですが、テスラのような成長企業では一般的で不適切な操作は見られません。GAAP EPSがプラスである点も良好です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 524000000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.2652447752648153,
-      "adjusted_eps": 0.2652447752648153,
-      "gaap_net_income": 1853000000.0,
-      "adjusted_net_income": 1853000000.0,
-      "diluted_shares_used": 6986000000.0,
+      "gaap_eps": 0.7582974653275945,
+      "adjusted_eps": 0.7582974653275945,
+      "gaap_net_income": 7928000000.0,
+      "adjusted_net_income": 7928000000.0,
+      "diluted_shares_used": 10455000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2023-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.38858539390454283,
-      "adjusted_eps": 0.38858539390454283,
-      "gaap_net_income": 2703000000.0,
-      "adjusted_net_income": 2703000000.0,
-      "diluted_shares_used": 6956000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2023-06-30",
-      "form": "10-Q",
+      "filing_date": "2023-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -209,41 +147,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の加算戻しのみであり、非現金費用として標準的で適切な調整です。税率21%を適用した純額約3.3億ドルの加算によりAdjusted EPSがGAAP EPSを上回っており、健全な非GAAP修正と言えます。ただしSBCは経済的コストを伴うため、過度に依存しないよう留意が必要です。",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として標準的な調整です。調整後のEPSがGAAP EPSを上回る合理的な修正であり、テスラのような成長企業では一般的です。大きな懸念はありません。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "us-gaap:ShareBasedCompensation 非現金費用（ConfigでON/OFF可）"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.4746251441753172,
-      "adjusted_eps": 0.4746251441753172,
-      "gaap_net_income": 3292000000.0,
-      "adjusted_net_income": 3292000000.0,
-      "diluted_shares_used": 6936000000.0,
+      "gaap_eps": 0.3536690647482014,
+      "adjusted_eps": 0.3536690647482014,
+      "gaap_net_income": 3687000000.0,
+      "adjusted_net_income": 3687000000.0,
+      "diluted_shares_used": 10425000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2022-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.48906689759688243,
-      "adjusted_eps": 0.48906689759688243,
-      "gaap_net_income": 2259000000.0,
-      "adjusted_net_income": 2259000000.0,
-      "diluted_shares_used": 4619000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
+      "filing_date": "2022-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -275,7 +197,7 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Good",
-        "comment": "調整項目は株式報酬費用の追加のみで、非現金費用として標準的かつ妥当な調整です。調整後EPSがGAAP EPSを上回る健全な内容であり、過度な調整は見られません。ただし、SBCは希薄化効果を伴うため長期的な影響には留意が必要です。",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金支出を理由とした標準的な調整です。調整額は4.18億ドル（税引後約3.3億ドル）となり、EPSを約0.071押し上げています。GAAPからAdjustedへの変更が透明で過度な調整もないため健全性は良好です。",
         "sources": [
           {
             "item": "株式報酬費用",
@@ -285,31 +207,15 @@
       }
     },
     {
-      "gaap_eps": 0.3601959038290294,
-      "adjusted_eps": 0.3601959038290294,
-      "gaap_net_income": 1618000000.0,
-      "adjusted_net_income": 1618000000.0,
-      "diluted_shares_used": 4492000000.0,
+      "gaap_eps": 0.29376028350841665,
+      "adjusted_eps": 0.29376028350841665,
+      "gaap_net_income": 2321000000.0,
+      "adjusted_net_income": 2321000000.0,
+      "diluted_shares_used": 7901000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.5102770330652369,
-      "adjusted_eps": 0.5102770330652369,
-      "gaap_net_income": 1142000000.0,
-      "adjusted_net_income": 1142000000.0,
-      "diluted_shares_used": 2238000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2021-06-30",
-      "form": "10-Q",
+      "filing_date": "2021-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -340,42 +246,26 @@
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Good",
-        "comment": "株式報酬費用の追加は非現金項目としてテック企業で一般的な調整です。税効果を適切に反映（21%適用）しており、単一項目で透明性が高いです。ただし調整額が614M USDと大きく、GAAP EPSを約2.1倍に引き上げているため、調整依存度に留意する必要があります。",
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用の追加戻しのみで、標準的な非現金費用調整です。ただし調整額が6.14億ドルと大きく、GAAP EPSを約2.1倍に引き上げており、調整依存度が高いため利益の質に注意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）、category: 株式報酬 (SBC)、net_amount: 485060000.0"
+            "snippet": "非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.1497737556561086,
-      "adjusted_eps": 0.1497737556561086,
-      "gaap_net_income": 331000000.0,
-      "adjusted_net_income": 331000000.0,
-      "diluted_shares_used": 2210000000.0,
+      "gaap_eps": -0.10058675607711651,
+      "adjusted_eps": -0.10058675607711651,
+      "gaap_net_income": -120000000.0,
+      "adjusted_net_income": -120000000.0,
+      "diluted_shares_used": 1193000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
       "filing_date": "2020-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.083668543845535,
-      "adjusted_eps": 0.083668543845535,
-      "gaap_net_income": 104000000.0,
-      "adjusted_net_income": 104000000.0,
-      "diluted_shares_used": 1243000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2020-06-30",
-      "form": "10-Q",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -406,96 +296,14 @@
       "filing_date": "2020-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目は株式報酬費用の加算のみであり、標準的な非現金費用調整です。GAAP EPSが微増益からAdjusted EPS 0.153へ大幅に上昇していますが、SBCはテスラのような成長企業では一般的な調整項目で透明性は保たれています。ただし、調整額の影響が大きいため、将来的な希薄化効果に留意する必要があります。",
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用の加算（非現金費用）のみで標準的な処理ですが、GAAP EPS 0.013に対しAdjusted EPS 0.153と調整影響が約11倍と極めて大きい。SBCは実質的な株主希薄化コストであるため、調整後利益への過度な依存に注意が必要。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 211000000, direction: add_back, category: 株式報酬 (SBC), net_amount: 166690000.0"
           }
         ]
-      }
-    },
-    {
-      "gaap_eps": 0.12929475587703435,
-      "adjusted_eps": 0.12929475587703435,
-      "gaap_net_income": 143000000.0,
-      "adjusted_net_income": 143000000.0,
-      "diluted_shares_used": 1106000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2019-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": -1.153669971214803,
-      "adjusted_eps": -1.153669971214803,
-      "gaap_net_income": -408000000.0,
-      "adjusted_net_income": -408000000.0,
-      "diluted_shares_used": 353654000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2019-06-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": -2.0289662388110603,
-      "adjusted_eps": -1.5540378451338048,
-      "gaap_net_income": -702000000.0,
-      "adjusted_net_income": -537680000.0,
-      "diluted_shares_used": 345989000.0,
-      "adjustments": [
-        {
-          "item_name": "株式報酬費用",
-          "amount": 208000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用（ConfigでON/OFF可）",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬 (SBC)",
-          "net_amount": 164320000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 164320000.0,
-      "filing_date": "2019-03-31",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "唯一の調整項目は株式報酬費用（SBC）のadd_backです。これは非現金費用として標準的な非GAAP調整であり、税引後約1.64億ドルの影響でEPSを約0.47改善しています。調整内容は透明で適切ですが、TSLAのような成長企業ではSBCが株主希薄化要因となるため、長期的な影響を注視する必要があります。",
-        "sources": [
-          {
-            "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
-          }
-        ]
-      }
-    },
-    {
-      "gaap_eps": 0.8745634425990185,
-      "adjusted_eps": 0.8745634425990185,
-      "gaap_net_income": 311516000.0,
-      "adjusted_net_income": 311516000.0,
-      "diluted_shares_used": 356196000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2018-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
       }
     }
   ]

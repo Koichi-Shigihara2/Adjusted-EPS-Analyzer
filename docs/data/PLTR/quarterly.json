@@ -1,33 +1,17 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-03-15T08:58:29.646731",
+  "last_updated": "2026-03-15T09:51:23.176480",
   "quarters": [
     {
-      "gaap_eps": 0.18498189655071826,
-      "adjusted_eps": 0.18498189655071826,
-      "gaap_net_income": 475599000.0,
-      "adjusted_net_income": 475599000.0,
-      "diluted_shares_used": 2571057000.0,
+      "gaap_eps": 0.23728236076995257,
+      "adjusted_eps": 0.23728236076995257,
+      "gaap_net_income": 608676000.0,
+      "adjusted_net_income": 608676000.0,
+      "diluted_shares_used": 2565197000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2025-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.1274827227778402,
-      "adjusted_eps": 0.1274827227778402,
-      "gaap_net_income": 326727000.0,
-      "adjusted_net_income": 326727000.0,
-      "diluted_shares_used": 2562912000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2025-06-30",
-      "form": "10-Q",
+      "filing_date": "2025-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -59,41 +43,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用155M USDをadd_backした結果、GAAP EPS 0.084からAdjusted EPS 0.132へ約57%増加。SBCは非現金だが株主希薄化の実質コストであり、調整依存度が高いため非GAAP指標の健全性に注意が必要。",
+        "comment": "株式報酬費用のadd_back調整によりGAAP EPS 0.084からAdjusted EPS 0.132へ約57%増加。PLTR特有の高額SBCは非現金だが株主希薄化の実質コストであり、調整依存度が高いため財務健全性に注意が必要。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 155339000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "amount: 155339000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.02917662259832842,
-      "adjusted_eps": 0.02917662259832842,
-      "gaap_net_income": 143525000.0,
-      "adjusted_net_income": 143525000.0,
-      "diluted_shares_used": 4919178000.0,
+      "gaap_eps": 0.01611890397410171,
+      "adjusted_eps": 0.01611890397410171,
+      "gaap_net_income": 79009000.0,
+      "adjusted_net_income": 79009000.0,
+      "diluted_shares_used": 4901636000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2024-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.027772854222643348,
-      "adjusted_eps": 0.027772854222643348,
-      "gaap_net_income": 134126000.0,
-      "adjusted_net_income": 134126000.0,
-      "diluted_shares_used": 4829392000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2024-06-30",
-      "form": "10-Q",
+      "filing_date": "2024-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -125,45 +93,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用の追加バック1項目のみで、税効果を適切に適用した標準的な非現金調整です。ただし調整額がGAAP EPSをほぼ倍増させる規模であり、PLTR特有の高いSBC依存を考慮すると調整後EPSの質には注意が必要です。透明性は確保されているものの過度な信頼は避けるべきです。",
+        "comment": "調整項目は株式報酬費用（SBC）のadd_backのみで、非現金項目として標準的な処理です。ただしGAAP EPS 0.022に対しAdjusted EPS 0.043とほぼ2倍となっており、調整の影響度が非常に大きいです。PLTRは伝統的にSBC水準が高い企業であり、株主希薄化の実質コストを考慮する必要があるため、健全性は「要注意」と判断します。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 125651000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, net_amount: 99264290.0"
-          },
-          {
-            "item": "EPS差異",
-            "snippet": "GAAP EPS: 0.021984436527204828, Adjusted EPS: 0.04266357499894796"
+            "snippet": "amount: 125651000, direction: add_back, category: 株式報酬 (SBC), reason: 非現金費用"
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.0153734520123839,
-      "adjusted_eps": 0.0153734520123839,
-      "gaap_net_income": 71505000.0,
-      "adjusted_net_income": 71505000.0,
-      "diluted_shares_used": 4651200000.0,
+      "gaap_eps": 0.013547137630278653,
+      "adjusted_eps": 0.013547137630278653,
+      "gaap_net_income": 93391000.0,
+      "adjusted_net_income": 93391000.0,
+      "diluted_shares_used": 6893781000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2023-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": 0.00617319717051737,
-      "adjusted_eps": 0.00617319717051737,
-      "gaap_net_income": 28127000.0,
-      "adjusted_net_income": 28127000.0,
-      "diluted_shares_used": 4556310000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2023-06-30",
-      "form": "10-Q",
+      "filing_date": "2023-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -195,7 +143,7 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用の加算戻しのみで、非現金費用として一般的な処理ですが、GAAP EPS(0.0038)がAdjusted EPS(0.0242)へ約6倍に跳ね上がる大きな影響を与えています。SBCの高水準は株式希薄化の観点から実質的なコストと見なされる場合があり、調整後の健全性に注意が必要です。",
+        "comment": "調整項目は株式報酬費用の追加戻しのみで、非現金費用として標準的な調整ですが、調整後EPSがGAAP EPSの約6.4倍となっており調整依存度が非常に高いです。PLTRの高いSBC水準を考慮すると、持続的な収益力の評価には注意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
@@ -205,31 +153,15 @@
       }
     },
     {
-      "gaap_eps": -0.029874376888627357,
-      "adjusted_eps": -0.029874376888627357,
-      "gaap_net_income": -123875000.0,
-      "adjusted_net_income": -123875000.0,
-      "diluted_shares_used": 4146530000.0,
+      "gaap_eps": 0.004987257281455391,
+      "adjusted_eps": 0.004987257281455391,
+      "gaap_net_income": 30878000.0,
+      "adjusted_net_income": 30878000.0,
+      "diluted_shares_used": 6191379000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2022-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": -0.04363662820548384,
-      "adjusted_eps": -0.04363662820548384,
-      "gaap_net_income": -179329000.0,
-      "adjusted_net_income": -179329000.0,
-      "diluted_shares_used": 4109598000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
+      "filing_date": "2022-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -261,41 +193,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として一般的な調整です。ただし、GAAP EPSが赤字(-0.025)から調整後EPSが黒字(0.004)へ転換しており、SBCによる実質的な株主希薄化コストを考慮すると過度に楽観的な印象を与える可能性があります。単一項目で透明性は高いものの、継続的なSBC依存に注意が必要です。",
+        "comment": "GAAP EPSがマイナスであるにもかかわらず、株式報酬費用（約1.49億ドル）の全額加算により調整後EPSが僅かにプラスに転換しています。非現金費用としての調整は一般的ですが、金額規模が大きく持続的な希薄化コストを無視しているため、収益の質に注意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 149323000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.02599706270887474,
-      "adjusted_eps": -0.02599706270887474,
-      "gaap_net_income": -102137000.0,
-      "adjusted_net_income": -102137000.0,
-      "diluted_shares_used": 3928790000.0,
+      "gaap_eps": -0.027064985736072546,
+      "adjusted_eps": -0.027064985736072546,
+      "gaap_net_income": -156188000.0,
+      "adjusted_net_income": -156188000.0,
+      "diluted_shares_used": 5770851000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
-      }
-    },
-    {
-      "gaap_eps": -0.03657224773910776,
-      "adjusted_eps": -0.03657224773910776,
-      "gaap_net_income": -138580000.0,
-      "adjusted_net_income": -138580000.0,
-      "diluted_shares_used": 3789212000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2021-06-30",
-      "form": "10-Q",
+      "filing_date": "2021-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -327,59 +243,25 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "GAAP EPSが赤字(-0.034)である一方、株式報酬費用(約1.94億ドル)の加算によりAdjusted EPSが黒字化しています。SBCは非現金費用としてよく調整されますが、PLTRのような企業では金額が大きく、調整後利益を過度に楽観視するリスクがあります。持続的な収益性に注意が必要です。",
+        "comment": "GAAP EPSは赤字(-0.034)だが、株式報酬費用(1.94億ドル)を加算してAdjusted EPSをプラス(0.008)に転換。非現金費用として標準的な調整だが、金額規模が大きく株主希薄化の懸念が残る。PLTR特有のSBC依存を考慮し、注意が必要。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 193731000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "us-gaap:ShareBasedCompensation amount:193731000 direction:add_back category:株式報酬 (SBC)"
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.4712064091524194,
-      "adjusted_eps": -0.46754198151031195,
-      "gaap_net_income": -853319000.0,
-      "adjusted_net_income": -846683000.0,
-      "diluted_shares_used": 1810924010.0,
-      "adjustments": [
-        {
-          "item_name": "株式報酬費用",
-          "amount": 8400000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用（ConfigでON/OFF可）",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬 (SBC)",
-          "net_amount": 6636000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 6636000.0,
-      "filing_date": "2020-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "唯一の調整項目は株式報酬費用（SBC）のadd_backです。非現金費用として標準的な調整であり、GAAP EPSとAdjusted EPSの差が約0.0037と非常に小さいため、調整の影響は限定的で財務健全性は良好です。",
-        "sources": [
-          {
-            "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
-          }
-        ]
-      }
-    },
-    {
-      "gaap_eps": -0.17240571964618234,
-      "adjusted_eps": -0.17240571964618234,
-      "gaap_net_income": -110455000.0,
-      "adjusted_net_income": -110455000.0,
-      "diluted_shares_used": 640669000.0,
+      "gaap_eps": -0.050491321147138515,
+      "adjusted_eps": -0.050491321147138515,
+      "gaap_net_income": -148343000.0,
+      "adjusted_net_income": -148343000.0,
+      "diluted_shares_used": 2937990067.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
-      "filing_date": "2020-06-30",
-      "form": "10-Q",
+      "filing_date": "2020-12-31",
+      "form": "10-K",
       "ai_analysis": {
         "health": "Good",
         "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
@@ -411,29 +293,13 @@
       "form": "10-Q",
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用の加算戻しによりGAAP EPSからAdjusted EPSへの大幅な改善が見られますが、SBCは株主希薄化を伴う実質的なコストであるため調整の健全性は注意が必要です。2020年3月期という上場前後の時期で金額も大きい点が懸念されます。",
+        "comment": "調整項目は株式報酬費用（SBC）の追加戻しのみで、非現金項目として一般的ですが、調整額がGAAP EPSの約79%に相当し、損失を大幅に縮小しています。PLTRのような成長企業では頻出しますが、SBCの希薄化効果を考慮すると真の収益性を過大評価するリスクがあるため注意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 54107000, direction: add_back, category: 株式報酬 (SBC), reason: 非現金費用"
           }
         ]
-      }
-    },
-    {
-      "gaap_eps": -0.2410943486584837,
-      "adjusted_eps": -0.2410943486584837,
-      "gaap_net_income": -139860000.0,
-      "adjusted_net_income": -139860000.0,
-      "diluted_shares_used": 580104846.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2019-09-30",
-      "form": "10-Q",
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
       }
     }
   ]
