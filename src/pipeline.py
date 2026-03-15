@@ -60,38 +60,51 @@ def calculate_ttm(quarterly_results: List[Dict], end_idx: int) -> Optional[Dict]
     }
 
 # ============================================
-# 年次集計関数
+# 年次集計関数（会計年度ベースに修正）
 # ============================================
 def aggregate_annual(quarterly_results: List[Dict]) -> List[Dict]:
     """
-    四半期データを年次に集計（暦年ベース）
+    四半期データを年次に集計（会計年度ベース）
+    各四半期データには 'fiscal_year' フィールドが含まれていることを前提とする。
     """
     annual_map = {}
     for q in quarterly_results:
-        year = q["filing_date"][:4]
-        if year not in annual_map:
-            annual_map[year] = []
-        annual_map[year].append(q)
+        fiscal_year = q.get("fiscal_year")
+        if fiscal_year is None:
+            # 後方互換：fiscal_yearがなければ filing_date の年を使う（警告）
+            print(f"Warning: 'fiscal_year' missing in {q.get('filing_date')}, using filing_date year")
+            fiscal_year = int(q["filing_date"][:4])
+        if fiscal_year not in annual_map:
+            annual_map[fiscal_year] = []
+        annual_map[fiscal_year].append(q)
     
     annual_results = []
     for year, quarters in annual_map.items():
+        # その年に属する四半期が4つ未満でも集計は行うが、警告を出す
         if len(quarters) < 4:
-            continue
+            print(f"Warning: Fiscal year {year} has only {len(quarters)} quarters")
         
+        # 最新のfiling_dateを取得（その年の最大日付）
         latest_q = max(quarters, key=lambda x: x["filing_date"])
         total_net_income = sum(q["gaap_net_income"] for q in quarters)
         total_adjustments = sum(q.get("net_adjustment_total", 0) for q in quarters)
-        avg_shares = sum(q["diluted_shares_used"] for q in quarters) / 4
+        # 加重平均株式数：各四半期の株式数を単純平均（本来は日数加重が理想だが簡易的に平均）
+        avg_shares = sum(q["diluted_shares_used"] for q in quarters) / len(quarters)
+        
+        # 調整項目は全四半期のものをフラットに結合
+        all_adjustments = []
+        for q in quarters:
+            all_adjustments.extend(q.get("adjustments", []))
         
         annual_results.append({
-            "year": year,
+            "year": str(year),  # JSONでは文字列として保存
             "filing_date": latest_q["filing_date"],
             "gaap_net_income": total_net_income,
             "adjusted_net_income": total_net_income + total_adjustments,
             "diluted_shares_used": avg_shares,
             "gaap_eps": total_net_income / avg_shares if avg_shares else 0,
             "adjusted_eps": (total_net_income + total_adjustments) / avg_shares if avg_shares else 0,
-            "adjustments": [adj for q in quarters for adj in q.get("adjustments", [])],
+            "adjustments": all_adjustments,
             "net_adjustment_total": total_adjustments
         })
     
@@ -134,6 +147,8 @@ def run():
             result = calculate_eps(data_for_eps, net_adjustment, detailed)
             result["filing_date"] = data_for_eps["filing_date"]
             result["form"] = data_for_eps["form"]
+            # fiscal_year を引き継ぐ
+            result["fiscal_year"] = period_data.get("fiscal_year")
             
             # ★★★ AI分析（各四半期ごとに実行）★★★
             ai_result_str = analyze_adjustments(ticker, result, result.get("adjustments", []))
