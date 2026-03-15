@@ -245,7 +245,7 @@
       return sorted[0];
     }
 
-    // ===== 修正: 四半期ベースで前年同期を計算 =====
+    // 修正: 四半期ベースで前年同期を計算（デバッグログ付き）
     function calculateYoY(latest, allQuarters) {
       const latestDate = latest.filing_date;
       const [year, month] = latestDate.split('-');
@@ -260,6 +260,8 @@
         return qYear === targetYear && qQuarter === latestQuarter;
       });
 
+      console.log(`YoY: latest=${latestDate} Q${latestQuarter}, candidates=`, candidates.map(c => c.filing_date));
+
       if (candidates.length > 0) {
         // 日付が最も近いものを選ぶ
         const prevQuarter = candidates.reduce((prev, curr) => {
@@ -270,7 +272,9 @@
         
         const prevEps = prevQuarter.adjusted_eps;
         if (Math.abs(prevEps) > 0.0001) {
-          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+          const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+          console.log(`YoY: found candidate ${prevQuarter.filing_date}, prevEps=${prevEps}, yoy=${yoy}`);
+          return yoy;
         }
       }
 
@@ -279,10 +283,13 @@
       if (idx >= 4) {
         const prevEps = allQuarters[idx - 4].adjusted_eps;
         if (Math.abs(prevEps) > 0.0001) {
-          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+          const yoy = (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+          console.log(`YoY: fallback to 4-quarters before, prevEps=${prevEps}, yoy=${yoy}`);
+          return yoy;
         }
       }
       
+      console.log('YoY: no candidate found');
       return null;
     }
 
