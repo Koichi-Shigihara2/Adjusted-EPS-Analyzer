@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-03-15T06:04:30.058820",
+  "last_updated": "2026-03-15T08:58:29.646731",
   "quarters": [
     {
       "gaap_eps": 0.18498189655071826,
@@ -58,9 +58,14 @@
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "株式報酬費用155M USDをadd_backした結果、GAAP EPS 0.084からAdjusted EPS 0.132へ約57%増加。SBCは非現金だが株主希薄化の実質コストであり、調整依存度が高いため非GAAP指標の健全性に注意が必要。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "amount: 155339000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+          }
+        ]
       }
     },
     {
@@ -119,9 +124,18 @@
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用の追加バック1項目のみで、税効果を適切に適用した標準的な非現金調整です。ただし調整額がGAAP EPSをほぼ倍増させる規模であり、PLTR特有の高いSBC依存を考慮すると調整後EPSの質には注意が必要です。透明性は確保されているものの過度な信頼は避けるべきです。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "amount: 125651000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, net_amount: 99264290.0"
+          },
+          {
+            "item": "EPS差異",
+            "snippet": "GAAP EPS: 0.021984436527204828, Adjusted EPS: 0.04266357499894796"
+          }
+        ]
       }
     },
     {
@@ -180,9 +194,14 @@
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用の加算戻しのみで、非現金費用として一般的な処理ですが、GAAP EPS(0.0038)がAdjusted EPS(0.0242)へ約6倍に跳ね上がる大きな影響を与えています。SBCの高水準は株式希薄化の観点から実質的なコストと見なされる場合があり、調整後の健全性に注意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -241,9 +260,14 @@
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として一般的な調整です。ただし、GAAP EPSが赤字(-0.025)から調整後EPSが黒字(0.004)へ転換しており、SBCによる実質的な株主希薄化コストを考慮すると過度に楽観的な印象を与える可能性があります。単一項目で透明性は高いものの、継続的なSBC依存に注意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -302,9 +326,14 @@
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "GAAP EPSが赤字(-0.034)である一方、株式報酬費用(約1.94億ドル)の加算によりAdjusted EPSが黒字化しています。SBCは非現金費用としてよく調整されますが、PLTRのような企業では金額が大きく、調整後利益を過度に楽観視するリスクがあります。持続的な収益性に注意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "amount: 193731000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+          }
+        ]
       }
     },
     {
@@ -331,9 +360,14 @@
       "filing_date": "2020-09-30",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "唯一の調整項目は株式報酬費用（SBC）のadd_backです。非現金費用として標準的な調整であり、GAAP EPSとAdjusted EPSの差が約0.0037と非常に小さいため、調整の影響は限定的で財務健全性は良好です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -376,9 +410,14 @@
       "filing_date": "2020-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "株式報酬費用の加算戻しによりGAAP EPSからAdjusted EPSへの大幅な改善が見られますが、SBCは株主希薄化を伴う実質的なコストであるため調整の健全性は注意が必要です。2020年3月期という上場前後の時期で金額も大きい点が懸念されます。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {

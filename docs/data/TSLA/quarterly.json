@@ -1,6 +1,6 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-15T06:04:32.793723",
+  "last_updated": "2026-03-15T09:02:44.926779",
   "quarters": [
     {
       "gaap_eps": 0.3893930799773114,
@@ -26,9 +26,14 @@
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "リストラ費用238M USDをadd_backしており、一過性の事業構造変更費用として合理的な調整。税引後影響額約188M USDがEPS差異（約0.053）と整合しており、調整の透明性は高い。非営業・一時的性質からGAAP EPSを補正する目的は適切。",
+        "sources": [
+          {
+            "item": "リストラ費用",
+            "snippet": "一過性リストラ（非営業） category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -71,9 +76,14 @@
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、非現金費用として標準的な処理ですが、調整額573M USDによりGAAP EPS（0.116）がAdjusted EPS（0.245）と約2倍に跳ね上がっています。TSLAの高いSBC依存を考慮すると、調整の影響が大きく、持続的な収益力の評価には注意が必要です。",
+        "sources": [
+          {
+            "item": "調整項目",
+            "snippet": "株式報酬費用 amount:573000000 direction:add_back reason:非現金費用 category:株式報酬 (SBC)"
+          }
+        ]
       }
     },
     {
@@ -132,9 +142,14 @@
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、非現金項目であるため調整は合理的かつ標準的です。税引後約4.14億ドルの調整によりEPSが約0.059上昇しており、成長企業として一般的な非GAAP修正と言えます。ただしSBCの規模が大きい点は株主希薄化の観点で留意すべきです。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -193,9 +208,14 @@
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用の加算戻しのみであり、非現金費用として標準的で適切な調整です。税率21%を適用した純額約3.3億ドルの加算によりAdjusted EPSがGAAP EPSを上回っており、健全な非GAAP修正と言えます。ただしSBCは経済的コストを伴うため、過度に依存しないよう留意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "us-gaap:ShareBasedCompensation 非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -254,9 +274,14 @@
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用の追加のみで、非現金費用として標準的かつ妥当な調整です。調整後EPSがGAAP EPSを上回る健全な内容であり、過度な調整は見られません。ただし、SBCは希薄化効果を伴うため長期的な影響には留意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -315,9 +340,14 @@
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "株式報酬費用の追加は非現金項目としてテック企業で一般的な調整です。税効果を適切に反映（21%適用）しており、単一項目で透明性が高いです。ただし調整額が614M USDと大きく、GAAP EPSを約2.1倍に引き上げているため、調整依存度に留意する必要があります。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）、category: 株式報酬 (SBC)、net_amount: 485060000.0"
+          }
+        ]
       }
     },
     {
@@ -376,9 +406,14 @@
       "filing_date": "2020-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は株式報酬費用の加算のみであり、標準的な非現金費用調整です。GAAP EPSが微増益からAdjusted EPS 0.153へ大幅に上昇していますが、SBCはテスラのような成長企業では一般的な調整項目で透明性は保たれています。ただし、調整額の影響が大きいため、将来的な希薄化効果に留意する必要があります。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -437,9 +472,14 @@
       "filing_date": "2019-03-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "唯一の調整項目は株式報酬費用（SBC）のadd_backです。これは非現金費用として標準的な非GAAP調整であり、税引後約1.64億ドルの影響でEPSを約0.47改善しています。調整内容は透明で適切ですが、TSLAのような成長企業ではSBCが株主希薄化要因となるため、長期的な影響を注視する必要があります。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
+          }
+        ]
       }
     },
     {

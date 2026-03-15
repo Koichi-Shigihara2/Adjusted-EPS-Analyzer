@@ -1,6 +1,6 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-15T06:04:31.947868",
+  "last_updated": "2026-03-15T09:01:42.484193",
   "quarters": [
     {
       "gaap_eps": 1.3033533472205203,
@@ -26,9 +26,14 @@
       "filing_date": "2025-10-26",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却の加算戻しのみで、テック企業における標準的な非GAAP調整です。EPSへの影響は約0.003と小さく、96百万ドルの調整額もNVIDIAの規模から見て相対的に軽微です。継続的な償却費であるため「一過性」との分類にはやや注意が必要ですが、全体として健全な調整と言えます。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "amount: 96000000, direction: add_back, reason: M&A由来追加償却, category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -55,9 +60,14 @@
       "filing_date": "2025-07-27",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収無形資産償却の追加戻しのみで、EPSへの影響は約0.0027と極めて小さい標準的な非GAAP調整です。GAAP EPSとAdjusted EPSがほぼ一致しており、収益の質は健全で一過性項目の影響も限定的です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却, extracted_from: us-gaap:AmortizationOfIntangibleAssets, category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -96,9 +106,18 @@
       "filing_date": "2025-04-27",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却と株式報酬費用の2つで、どちらも非現金項目として標準的に加算される内容です。株式報酬が14.74億ドルと規模が大きいものの、NVIDIAのようなハイテク成長企業では一般的な調整であり、Adjusted EPSへの影響も合理的です。全体的な健全性は良好ですが、SBCの継続性と株主希薄化効果については継続監視が必要です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -125,9 +144,14 @@
       "filing_date": "2024-10-27",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収に伴う無形資産償却（1.49億ドル、税引後約1.18億ドル）の加算のみで、GAAP EPSからAdjusted EPSへの影響は約0.0024と小さい。M&A由来の非現金償却費として標準的な調整項目であり、過度な調整や恣意性は見られないため健全性は良好。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / us-gaap:AmortizationOfIntangibleAssets / category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -154,9 +178,14 @@
       "filing_date": "2024-07-28",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "唯一の調整項目は買収に伴う無形資産償却の加算戻しのみで、EPSへの影響は0.7%程度と極めて小さい。標準的な非GAAP調整であり、健全性は良好と判断。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "amount: 146000000, reason: M&A由来追加償却, category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -195,9 +224,18 @@
       "filing_date": "2024-04-28",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目として買収無形資産償却（標準的非現金費用）と多額の株式報酬費用（1011百万ドル、調整後EPSへの影響大）が加算されています。無形資産償却の加回は一般的ですが、SBCは継続的に発生する実質的な費用であり株主希薄化効果も伴うため、調整後EPSの健全性に注意が必要です。テック企業では慣行ですが、GAAPベースの利益も併せて評価することを推奨します。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / us-gaap:AmortizationOfIntangibleAssets / category:事業構造変更・一過性損益"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） / us-gaap:ShareBasedCompensation / category:株式報酬 (SBC)"
+          }
+        ]
       }
     },
     {
@@ -224,9 +262,14 @@
       "filing_date": "2023-10-29",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "唯一の調整項目は買収無形資産償却の加算戻しで、M&A関連の非現金費用を排除する標準的な非GAAP調整です。EPSへの影響は約1.2%と小さく、過度な調整は見られません。ただし償却は継続的に発生する性質のため「一過性」との分類にはやや注意が必要です。全体として財務健全性は良好です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          }
+        ]
       }
     },
     {
@@ -253,9 +296,14 @@
       "filing_date": "2023-07-30",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "買収に伴う無形資産償却の加算調整のみで、調整幅はEPSに対して約1.9%と小さいです。テック企業で一般的な非現金項目の調整であり、健全性は良好ですが、償却が継続的に発生する性質である点は留意が必要です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "amount: 146000000, direction: add_back, reason: M&A由来追加償却, category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -294,9 +342,18 @@
       "filing_date": "2023-04-30",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "NVIDIAの調整項目は買収関連無形資産償却と株式報酬費用の追加戻しで、テック企業における標準的な非GAAP調整です。両項目とも非現金費用であり、Adjusted EPSの算出に一般的に用いられるため健全ですが、SBCは継続的に発生する費用であり株主希薄化の観点から注意が必要です。全体として信頼性の高い調整と言えます。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / us-gaap:AmortizationOfIntangibleAssets"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） / us-gaap:ShareBasedCompensation"
+          }
+        ]
       }
     },
     {
@@ -323,9 +380,14 @@
       "filing_date": "2022-10-30",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収無形資産償却の追加のみで、M&A関連の非現金項目を除外する標準的な非GAAP調整です。テック企業では一般的な処理であり、継続的な事業収益性を反映する目的で適切と考えられます。ただし償却は一定期間継続する性質を持つため、完全に一過性とは言えない点は留意が必要です。全体として大きな懸念はなく健全です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -352,9 +414,14 @@
       "filing_date": "2022-07-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "買収に伴う無形資産償却の加算戻しは、テック企業で極めて標準的な非GAAP調整項目です。非現金支出でありM&Aの影響を除いたコア業績を示す目的で合理的ですが、償却は複数年にわたって継続的に発生する性質を持つため「一過性」と分類するのはやや強引です。調整によりEPSが約22%押し上げられており、影響度は中程度です。全体として健全ですが、定期的な償却費である点に留意が必要です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / us-gaap:AmortizationOfIntangibleAssets / category: 事業構造変更・一過性損益"
+          }
+        ]
       }
     },
     {
@@ -393,9 +460,18 @@
       "filing_date": "2022-05-01",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整後EPSはGAAP EPSに対し約36%上振れしており、主に買収関連無形資産償却と大型の株式報酬費用（578百万ドル）の追加戻しによるものです。買収償却の調整は非現金項目として合理的ですが、株式報酬は継続的な経済的コストであり、特にテック企業で多額になるため調整の質に注意が必要です。全体として調整の健全性はCautionと評価します。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / category: 事業構造変更・一過性損益"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） / category: 株式報酬 (SBC)"
+          }
+        ]
       }
     },
     {
@@ -434,9 +510,18 @@
       "filing_date": "2021-10-31",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収無形資産償却（5.18億ドル）と株式報酬費用（5.59億ドル）の2項目で、どちらもNVDAのようなテック企業で標準的な非GAAP調整です。非現金項目を加算しており業界慣行に沿っていますが、償却は継続的に発生する項目であり一過性として分類されている点に若干の注意が必要です。全体として健全性は良好です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -475,9 +560,18 @@
       "filing_date": "2021-08-01",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "買収無形資産償却の加算はM&A関連の非現金項目として標準的ですが、株式報酬費用が4.65億ドルと非常に大きく、継続的に発生する性質を持つため調整後EPSの健全性は注意が必要です。調整幅が約20%と大きく、SBCを完全に除外したEPSは過度に楽観的になる可能性があります。NVDAのようなテック企業では一般的な調整ですが、投資判断ではGAAPベースも併せて確認すべきです。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -516,9 +610,18 @@
       "filing_date": "2021-05-02",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "買収無形資産償却の加算はM&A関連の非現金項目として合理的ですが、株式報酬費用が4.29億ドルと大幅に加算されており、調整後EPSを約23%押し上げています。SBCは株主希薄化の実質コストであるため、調整の健全性に注意が必要です。テック企業では標準的ですが、過度に楽観的な印象を与える可能性があります。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -557,9 +660,18 @@
       "filing_date": "2020-10-25",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却と株式報酬費用の追加戻しで、NVDAが長年採用している標準的な非GAAP調整です。両者とも非現金項目であり、事業のコア収益性を示す目的で合理的ですが、株式報酬の金額が大きく（383M USD）、株主希薄化の影響を考慮する必要があります。全体として健全な調整と言えます。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -598,9 +710,18 @@
       "filing_date": "2020-07-26",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目は買収無形資産償却と株式報酬費用の2つで、主に非現金項目の加算戻しです。無形資産償却の調整はM&A由来の非現金費用として合理的ですが、株式報酬費用が374M USDと大きく、継続的に発生する報酬コストであるため調整後EPSの健全性に留意が必要です。調整後EPSはGAAPの約1.84倍となっており、調整依存度が高い点が懸念されます。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -639,9 +760,18 @@
       "filing_date": "2020-04-26",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却と株式報酬費用の追加戻しです。どちらもNVDAのようなテック企業で標準的な非現金・非GAAP調整項目であり、健全性は良好です。ただし株式報酬は金額が大きく（2.24億ドル）継続的な性質を持つため、希薄化効果を含めた総合的な評価が必要です。調整後EPSはGAAP比で約20%の上乗せとなっています。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          }
+        ]
       }
     },
     {
@@ -680,9 +810,18 @@
       "filing_date": "2019-10-27",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却（小規模）と株式報酬費用（大規模）の追加バックです。両者ともテック企業で標準的な非GAAP調整であり、非現金性が高い項目です。SBCの影響は大きいもののNVIDIAの成長ステージでは一般的で、調整の透明性も確保されており健全です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "amount: 6000000, reason: M&A由来追加償却, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "amount: 223000000, reason: 非現金費用（ConfigでON/OFF可）, extracted_from: us-gaap:ShareBasedCompensation"
+          }
+        ]
       }
     },
     {
@@ -721,9 +860,18 @@
       "filing_date": "2019-07-28",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "買収無形資産償却と株式報酬費用の2項目が調整されており、調整後EPSがGAAP EPSを約33%上回っています。買収関連償却の調整は標準的ですが、株式報酬費用が2.24億ドルと非常に大きく、継続的なコストを排除している点で注意が必要です。テック企業では一般的ですが、調整依存度が高いため健全性は慎重に評価すべきです。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 (us-gaap:AmortizationOfIntangibleAssets)"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） (us-gaap:ShareBasedCompensation)"
+          }
+        ]
       }
     },
     {
@@ -762,9 +910,18 @@
       "filing_date": "2019-04-28",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "調整項目の主軸は株式報酬費用（1.78億ドル）と買収無形資産償却です。SBCは規模が大きく継続的な費用であるため、非GAAP EPSの水準を過大評価する可能性があり、収益の質に注意が必要です。無形資産償却の加算は比較的標準的ですが、全体として調整依存度が高い状況です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可）"
+          },
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却"
+          }
+        ]
       }
     },
     {
@@ -803,9 +960,18 @@
       "filing_date": "2018-10-28",
       "form": "10-Q",
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にエラーが発生しました: 401 Client Error: Unauthorized for url: https://api.groq.com/openai/v1/chat/completions",
-        "sources": []
+        "health": "Good",
+        "comment": "調整項目は買収関連無形資産償却と株式報酬費用の追加バックです。いずれも非現金項目でテック企業では標準的な調整であり、調整幅はEPSで約9.4%と過度ではなく健全です。ただし株式報酬は継続的に発生する項目であり、株主希薄化の観点からも注視が必要です。",
+        "sources": [
+          {
+            "item": "買収無形資産償却",
+            "snippet": "M&A由来追加償却 / us-gaap:AmortizationOfIntangibleAssets"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用（ConfigでON/OFF可） / us-gaap:ShareBasedCompensation"
+          }
+        ]
       }
     }
   ]
