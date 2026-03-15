@@ -349,47 +349,62 @@
       return sorted[0];
     }
 
-    // YoY計算（四半期ベース）- デバッグログ追加
+    // YoY計算（四半期ベース）- 改善版（フォールバック強化）
     function calculateYoY(latest, allQuarters) {
-      const latestDate = latest.filing_date;
-      const [year, month] = latestDate.split('-');
-      const latestQuarter = Math.floor((parseInt(month) - 1) / 3) + 1;
-      
-      const targetYear = parseInt(year) - 1;
-      const candidates = allQuarters.filter(q => {
-        const qYear = parseInt(q.filing_date.split('-')[0]);
-        const qMonth = parseInt(q.filing_date.split('-')[1]);
-        const qQuarter = Math.floor((qMonth - 1) / 3) + 1;
-        return qYear === targetYear && qQuarter === latestQuarter;
-      });
-
-      console.log(`YoY candidates for ${latestDate} (Q${latestQuarter}):`, candidates.map(c => c.filing_date));
-
-      if (candidates.length > 0) {
-        const prevQuarter = candidates.reduce((prev, curr) => {
-          const prevDiff = Math.abs(new Date(latestDate) - new Date(prev.filing_date));
-          const currDiff = Math.abs(new Date(latestDate) - new Date(curr.filing_date));
-          return currDiff < prevDiff ? curr : prev;
-        });
+        const latestDate = latest.filing_date;
+        const [year, month] = latestDate.split('-');
+        const latestQuarter = Math.floor((parseInt(month) - 1) / 3) + 1;
         
-        const prevEps = prevQuarter.adjusted_eps;
-        console.log('Selected prevQuarter:', prevQuarter.filing_date, 'prevEps:', prevEps);
-        if (Math.abs(prevEps) > 0.0001) {
-          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
-        }
-      }
+        // 前年の同じ四半期を探す
+        const targetYear = parseInt(year) - 1;
+        const targetQuarterStr = `${targetYear}-Q${latestQuarter}`;
+        
+        // 候補を探す: 同じ四半期で年が1年前のもの
+        const candidates = allQuarters.filter(q => {
+            const qYear = parseInt(q.filing_date.split('-')[0]);
+            const qMonth = parseInt(q.filing_date.split('-')[1]);
+            const qQuarter = Math.floor((qMonth - 1) / 3) + 1;
+            return qYear === targetYear && qQuarter === latestQuarter;
+        });
 
-      // フォールバック: 4四半期前
-      const idx = allQuarters.findIndex(q => q.filing_date === latestDate);
-      if (idx >= 4) {
-        const prevEps = allQuarters[idx - 4].adjusted_eps;
-        console.log('Fallback: using 4 quarters before, prevEps:', prevEps);
-        if (Math.abs(prevEps) > 0.0001) {
-          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+        console.log(`YoY candidates for ${latestDate} (Q${latestQuarter}):`, candidates.map(c => c.filing_date));
+
+        if (candidates.length > 0) {
+            // 最も近い日付のものを選ぶ（通常は1つだが、複数ある場合）
+            const prevQuarter = candidates.reduce((prev, curr) => {
+                const prevDiff = Math.abs(new Date(latestDate) - new Date(prev.filing_date));
+                const currDiff = Math.abs(new Date(latestDate) - new Date(curr.filing_date));
+                return currDiff < prevDiff ? curr : prev;
+            });
+            
+            const prevEps = prevQuarter.adjusted_eps;
+            console.log('Selected prevQuarter:', prevQuarter.filing_date, 'prevEps:', prevEps);
+            if (Math.abs(prevEps) > 0.0001) {
+                return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+            }
         }
-      }
-      
-      return null;
+
+        // フォールバック1: 4四半期前を探す（同じ並び順）
+        const idx = allQuarters.findIndex(q => q.filing_date === latestDate);
+        if (idx >= 4 && idx - 4 < allQuarters.length) {
+            const prevEps = allQuarters[idx - 4].adjusted_eps;
+            console.log('Fallback 1: using 4 quarters before, prevEps:', prevEps);
+            if (Math.abs(prevEps) > 0.0001) {
+                return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+            }
+        }
+
+        // フォールバック2: 日付が1年前のデータを直接探す（期間をまたぐ場合）
+        const oneYearAgo = new Date(latestDate);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+        const prevByDate = allQuarters.find(q => q.filing_date === oneYearAgoStr);
+        if (prevByDate && Math.abs(prevByDate.adjusted_eps) > 0.0001) {
+            console.log('Fallback 2: exact date match', prevByDate.filing_date, prevByDate.adjusted_eps);
+            return (latest.adjusted_eps - prevByDate.adjusted_eps) / Math.abs(prevByDate.adjusted_eps);
+        }
+        
+        return null;
     }
 
     function updateMetricsWithQuarter(quarter, allQuarters) {
