@@ -22,12 +22,14 @@ def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[s
     # period_data から税引前利益と税費用を取得して実効税率を計算
     tax_rate = 0.21  # デフォルト税率
     
-    pretax = normalize_value(period_data.get('pretax_income'))
-    tax = normalize_value(period_data.get('tax_expense'))
+    pretax_val = normalize_value(period_data.get('pretax_income'))
+    tax_val = normalize_value(period_data.get('tax_expense'))
     
-    if pretax != 0:
+    print(f"      DEBUG: pretax={pretax_val:,.0f}, tax={tax_val:,.0f}")
+    
+    if pretax_val != 0:
         # 実効税率 = 税費用 / 税引前利益（絶対値で計算、赤字の場合は便宜上絶対値で割る）
-        computed_rate = abs(tax / pretax)
+        computed_rate = abs(tax_val / pretax_val)
         # 常識的な範囲内かチェック（0%〜50%）
         if 0.0 <= computed_rate <= 0.5:
             tax_rate = computed_rate
@@ -62,39 +64,3 @@ def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[s
         net_total += net_amount
     
     return net_total, detailed
-
-# テスト用
-if __name__ == "__main__":
-    # 簡易テスト
-    sample_adjustments = [
-        {
-            "item_name": "株式報酬費用",
-            "amount": 155339000,
-            "unit": "USD",
-            "direction": "add_back",
-            "pre_tax": True,
-            "reason": "非現金費用",
-            "extracted_from": "us-gaap:ShareBasedCompensation",
-            "category": "株式報酬 (SBC)"
-        },
-        {
-            "item_name": "非継続事業損益",
-            "amount": -5000000,
-            "unit": "USD",
-            "direction": "add_back",
-            "pre_tax": False,
-            "reason": "継続事業ベース調整",
-            "extracted_from": "us-gaap:IncomeLossFromDiscontinuedOperationsNetOfTax",
-            "category": "非継続事業"
-        }
-    ]
-    
-    sample_period = {
-        "pretax_income": {"value": 1000000000, "unit": "USD"},
-        "tax_expense": {"value": 210000000, "unit": "USD"}
-    }
-    
-    total, details = apply_tax_adjustments(sample_adjustments, sample_period)
-    print(f"Net adjustment total: {total:,.0f} USD")
-    for d in details:
-        print(f"  {d['item_name']}: gross={d['amount']:,.0f} {d['unit']}, net={d['net_amount']:,.0f} (tax rate: {d.get('tax_rate_applied',0):.2%})")
