@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-03-16T00:09:37.755317",
+  "last_updated": "2026-03-16T00:26:07.746334",
   "quarters": [
     {
       "gaap_eps": 0.23728236076995257,
@@ -79,11 +79,11 @@
       "fiscal_year": 2025,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用の追加戻しのみで、非現金費用として標準的な処理ですが、金額が155M USDと大きく、PLTRのビジネスモデル上SBC依存度が高いため調整後EPSの持続可能性に注意が必要です。税効果が適用されていない点も簡易的です。",
+        "comment": "調整項目は株式報酬費用の加算のみで、非現金費用として会計上妥当ですが、調整額がGAAP EPSを約73%押し上げる大幅な修正となっており、PLTR特有の高いSBC依存が懸念されます。希薄化効果や継続性を考慮する必要があり、調整後EPSの健全性は中立的。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
+            "snippet": "amount: 155339000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
           }
         ]
       }
@@ -165,15 +165,11 @@
       "fiscal_year": 2024,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）の追加バックのみで、非現金費用として標準的な処理。調整後EPSがGAAP EPSの2倍以上となっており、SBC依存度が非常に高いため、持続的な収益力の評価には注意が必要。透明性は確保されているが、過度な調整の影響を考慮すべき。",
+        "comment": "調整項目は株式報酬費用（SBC）125.65百万ドルのみで、非現金費用として全額加算されています。GAAP EPS 0.044からAdjusted EPS 0.096へ2倍以上に引き上げられており、標準的な調整ではあるものの金額規模が大きく、PLTR特有の高いSBC依存が見られます。株主希薄化の実質コストを考慮する必要があり、調整後の健全性は過度に楽観視すべきではありません。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可）"
-          },
-          {
-            "item": "Adjusted EPS",
-            "snippet": "GAAP EPS: 0.043968873054409656 → Adjusted EPS: 0.0963211223499619"
+            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
           }
         ]
       }
@@ -255,11 +251,11 @@
       "fiscal_year": 2023,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "唯一の調整項目は株式報酬費用（SBC）の加算のみで、非現金費用として標準的な処理です。ただし、GAAP EPS 0.0076からAdjusted EPS 0.0593への大幅な上方修正（約7.8倍）となっており、PLTRの高いSBC依存が利益の質に影響を与えている可能性があります。継続的なSBC水準の監視が必要です。",
+        "comment": "株式報酬費用のadd_backは非現金項目として標準的な調整ですが、金額が1.15億ドルと大きく、GAAP EPS(0.0076)をAdjusted EPS(0.0593)へ約7.8倍に引き上げています。PLTRのビジネスモデル上SBCが構造的に高い水準にあるため、株主希薄化の実質コストを過小評価するリスクがあり、調整への依存度が高い点に留意が必要です。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 114714000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "amount: 114714000, direction: add_back, category: 株式報酬 (SBC), reason: 非現金費用"
           }
         ]
       }
@@ -341,11 +337,11 @@
       "fiscal_year": 2022,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）のみで、非現金項目として加算されています。PLTRのようなテック企業では一般的ですが、149百万ドルの金額が大きく、GAAP EPSの赤字（-0.05）を調整後黒字（+0.024）に転換させる影響は無視できません。SBCは継続的な報酬コストであり株主希薄化を伴うため、調整後利益の持続可能性に注意が必要です。",
+        "comment": "GAAP EPSが-0.05と赤字である一方、株式報酬費用149Mを全額add_backした結果、Adjusted EPSが+0.023と黒字化しています。SBCは非現金費用として一般的な調整ですが、調整額がEPS転換のほぼ全要因となっており、株主希薄化の実質的コストを無視している点で注意が必要です。PLTRのような成長企業では頻出する項目ですが、調整依存度が高いため投資判断時は慎重に評価してください。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "非現金費用（ConfigでON/OFF可） extracted_from: us-gaap:ShareBasedCompensation"
+            "snippet": "amount: 149323000 USD, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, extracted_from: us-gaap:ShareBasedCompensation"
           }
         ]
       }
@@ -427,11 +423,15 @@
       "fiscal_year": 2021,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "GAAP EPSが-0.068の赤字である一方、株式報酬費用（1.94億ドル）を全額加算することでAdjusted EPSを+0.039の黒字に転換しています。SBCは非現金費用として調整されることが多いものの、金額が大きく損益の符号を反転させるため、株主希薄化の実質コストを十分に考慮する必要があります。PLTRのような成長企業では一般的ですが、調整の依存度が高い点に留意すべきです。",
+        "comment": "GAAP EPSは赤字(-0.068)だが、株式報酬費用1.94億ドルのadd backにより調整後EPSはプラス(0.039)に転換。SBC金額が極めて大きく、非現金費用とはいえ収益に対する比率が高く、希薄化や利益の質に懸念あり。成長企業として一般的だが、過度な調整依存は注意を要する。",
         "sources": [
           {
             "item": "株式報酬費用",
-            "snippet": "amount: 193731000, direction: add_back, reason: 非現金費用（ConfigでON/OFF可）, category: 株式報酬 (SBC)"
+            "snippet": "amount: 193731000, direction: add_back, reason: 非現金費用"
+          },
+          {
+            "item": "EPS比較",
+            "snippet": "GAAP EPS: -0.0678, Adjusted EPS: 0.0386"
           }
         ]
       }
