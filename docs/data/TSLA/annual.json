@@ -1,16 +1,52 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-16T00:55:35.774186",
+  "last_updated": "2026-03-16T01:14:37.504937",
   "years": [
     {
       "year": "2025",
       "filing_date": "2025-12-31",
       "gaap_net_income": 3794000000.0,
-      "adjusted_net_income": 4446894666.685662,
+      "adjusted_net_income": 7272724666.685662,
       "diluted_shares_used": 3523500000.0,
       "gaap_eps": 1.076770256846885,
-      "adjusted_eps": 1.2620674518761636,
+      "adjusted_eps": 2.064062627128044,
       "adjustments": [
+        {
+          "item_name": "リストラ費用",
+          "amount": 390000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性リストラ（非営業）",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 308100000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_name": "在庫評価損",
+          "amount": 362000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 285980000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_name": "株式報酬費用",
+          "amount": 2825000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用（ConfigでON/OFF可）",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬 (SBC)",
+          "net_amount": 2231750000.0,
+          "tax_rate_applied": 0.21
+        },
         {
           "item_name": "リストラ費用",
           "amount": 238000000,
@@ -48,17 +84,41 @@
           "tax_rate_applied": 0.29238754325259514
         }
       ],
-      "net_adjustment_total": 652894666.6856625
+      "net_adjustment_total": 3478724666.6856623
     },
     {
       "year": "2024",
       "filing_date": "2024-12-31",
       "gaap_net_income": 7091000000.0,
-      "adjusted_net_income": 7505620347.394541,
+      "adjusted_net_income": 8807468686.34495,
       "diluted_shares_used": 3490000000.0,
       "gaap_eps": 2.0318051575931233,
-      "adjusted_eps": 2.1506075493967165,
+      "adjusted_eps": 2.523629996087378,
       "adjustments": [
+        {
+          "item_name": "在庫評価損",
+          "amount": 335000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 186854838.70967743,
+          "tax_rate_applied": 0.4422243620606644
+        },
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1999000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用（ConfigでON/OFF可）",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬 (SBC)",
+          "net_amount": 1114993500.240732,
+          "tax_rate_applied": 0.4422243620606644
+        },
         {
           "item_name": "在庫評価損",
           "amount": 68000000,
@@ -84,17 +144,41 @@
           "tax_rate_applied": 0.29962779156327546
         }
       ],
-      "net_adjustment_total": 414620347.39454097
+      "net_adjustment_total": 1716468686.3449504
     },
     {
       "year": "2023",
       "filing_date": "2023-12-31",
       "gaap_net_income": 14997000000.0,
-      "adjusted_net_income": 15420966834.895458,
+      "adjusted_net_income": 17218216834.89546,
       "diluted_shares_used": 3481000000.0,
       "gaap_eps": 4.308244757253663,
-      "adjusted_eps": 4.430039309076546,
+      "adjusted_eps": 4.946342095632134,
       "adjustments": [
+        {
+          "item_name": "在庫評価損",
+          "amount": 463000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 365770000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1812000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用（ConfigでON/OFF可）",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬 (SBC)",
+          "net_amount": 1431480000.0,
+          "tax_rate_applied": 0.21
+        },
         {
           "item_name": "在庫評価損",
           "amount": 50000000,
@@ -120,17 +204,41 @@
           "tax_rate_applied": 0.09408795962509012
         }
       ],
-      "net_adjustment_total": 423966834.8954578
+      "net_adjustment_total": 2221216834.8954577
     },
     {
       "year": "2022",
       "filing_date": "2022-12-31",
       "gaap_net_income": 12556000000.0,
-      "adjusted_net_income": 12964411026.200872,
+      "adjusted_net_income": 14293383634.625858,
       "diluted_shares_used": 3469750000.0,
       "gaap_eps": 3.618704517616543,
-      "adjusted_eps": 3.736410699964226,
+      "adjusted_eps": 4.119427519165893,
       "adjustments": [
+        {
+          "item_name": "在庫評価損",
+          "amount": 177000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 135422079.26955798,
+          "tax_rate_applied": 0.23490350695164972
+        },
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1560000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用（ConfigでON/OFF可）",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬 (SBC)",
+          "net_amount": 1193550529.1554265,
+          "tax_rate_applied": 0.23490350695164972
+        },
         {
           "item_name": "在庫評価損",
           "amount": 33000000,
@@ -156,17 +264,53 @@
           "tax_rate_applied": 0.09443231441048035
         }
       ],
-      "net_adjustment_total": 408411026.2008733
+      "net_adjustment_total": 1737383634.6258578
     },
     {
       "year": "2021",
       "filing_date": "2021-12-31",
       "gaap_net_income": 5519000000.0,
-      "adjusted_net_income": 6091769230.769231,
+      "adjusted_net_income": 7868640753.948038,
       "diluted_shares_used": 1687500000.0,
       "gaap_eps": 3.2705185185185184,
-      "adjusted_eps": 3.609937321937322,
+      "adjusted_eps": 4.6628982245618005,
       "adjustments": [
+        {
+          "item_name": "買収無形資産償却",
+          "amount": 51000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "M&A由来追加償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 39195695.36423841,
+          "tax_rate_applied": 0.2314569536423841
+        },
+        {
+          "item_name": "在庫評価損",
+          "amount": 140000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価減",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "事業構造変更・一過性損益",
+          "net_amount": 107596026.49006623,
+          "tax_rate_applied": 0.2314569536423841
+        },
+        {
+          "item_name": "株式報酬費用",
+          "amount": 2121000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用（ConfigでON/OFF可）",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬 (SBC)",
+          "net_amount": 1630079801.3245034,
+          "tax_rate_applied": 0.2314569536423841
+        },
         {
           "item_name": "在庫評価損",
           "amount": 49000000,
@@ -192,7 +336,7 @@
           "tax_rate_applied": 0.13609467455621302
         }
       ],
-      "net_adjustment_total": 572769230.7692307
+      "net_adjustment_total": 2349640753.9480386
     }
   ]
 }
