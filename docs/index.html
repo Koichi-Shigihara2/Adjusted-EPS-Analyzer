@@ -46,8 +46,8 @@
     <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
       <h1 class="text-2xl font-bold">Adjusted EPS Analyzer</h1>
       <div class="space-x-4">
-        <a href="#" class="text-blue-400 hover:text-blue-300">ダッシュボード</a>
-        <a href="#" class="text-blue-400 hover:text-blue-300">銘柄一覧</a>
+        <a href="index.html" class="text-blue-400 hover:text-blue-300 font-semibold underline">ダッシュボード</a>
+        <a href="tickers.html" class="text-blue-400 hover:text-blue-300">銘柄一覧</a>
         <a href="#" class="text-blue-400 hover:text-blue-300">設定</a>
       </div>
       <div class="flex items-center space-x-2">
@@ -61,6 +61,7 @@
   </header>
 
   <main class="container mx-auto mt-24">
+    <!-- 以降は既存の内容と同じ（変更なし） -->
     <div id="loading" class="hidden text-center py-10">
       <div class="spinner-border inline-block w-8 h-8"></div>
       <p class="mt-2">データを読み込み中...</p>
@@ -177,6 +178,14 @@
     let ttmData = null;
     let chart = null;
     let currentTab = 'quarterly';
+
+    // URLからtickerパラメータを取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const tickerParam = urlParams.get('ticker');
+    if (tickerParam) {
+      currentTicker = tickerParam.toUpperCase();
+      document.getElementById('ticker-search').value = currentTicker;
+    }
 
     function showLoading(show) {
       document.getElementById('loading').classList.toggle('hidden', !show);
@@ -650,7 +659,7 @@
       }
     }
 
-    window.onload = () => loadTicker('TSLA');
+    window.onload = () => loadTicker();
   </script>
 </body>
 </html>
