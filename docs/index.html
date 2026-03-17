@@ -645,19 +645,33 @@
         applyDateRange();
         updateAllAdjustments(quarterlyData.quarters);
       } else if (tab === 'ttm') {
-        if (!ttmData || !ttmData.ttm || ttmData.ttm.length === 0) {
-          updateChart([], 'ttm', '');
-          document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
-          document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
-          document.getElementById('ai-sources').innerHTML = '';
-        } else {
-          updateChart(ttmData.ttm, 'ttm', 'period');
-          document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
-          document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
-          document.getElementById('ai-sources').innerHTML = '';
-        }
-      }
-    }
+  if (!ttmData || !ttmData.ttm || ttmData.ttm.length === 0) {
+    // ★ データがない場合（この部分はそのまま残す）
+    updateChart([], 'ttm', '');
+    document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
+    document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
+    document.getElementById('ai-sources').innerHTML = '';
+  } else {
+    // ★★★ ここを修正：データがある場合、日付範囲でフィルタリングして表示 ★★★
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const filteredTTM = ttmData.ttm.filter(item => {
+      const endDateStr = item.period.split(' to ')[1]; // "2025-03-31" を抽出
+      const itemEnd = new Date(endDateStr);
+      return itemEnd >= start && itemEnd <= end;
+    });
+    
+    updateChart(filteredTTM, 'ttm', 'period');
+    
+    // TTMタブでは調整内訳とAI分析は表示しない（現在のまま）
+    document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
+    document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
+    document.getElementById('ai-sources').innerHTML = '';
+  }
+}
 
     window.onload = () => loadTicker();
   </script>
