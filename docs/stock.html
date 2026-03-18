@@ -173,6 +173,11 @@
       padding: 10px 16px;
       color: var(--mut);
       border-bottom: 2px solid transparent;
+      cursor: pointer;
+      background: none;
+      border-top: none;
+      border-left: none;
+      border-right: none;
     }
 
     .tab-link.active {
@@ -471,6 +476,7 @@
     });
   }
 
+  // ★★★ 修正箇所: applyDateRange 内で updateAllAdjustments を呼び出す
   function applyDateRange() {
     if (!quarterlyData) return;
 
@@ -494,6 +500,8 @@
         resetMetrics();
         updateAI(null);
       }
+      // ★★★ 追加: 調整内訳を常に全期間で更新
+      updateAllAdjustments(quarterlyData.quarters);
     } else if (currentTab === 'ttm') {
       if (ttmData && ttmData.ttm) {
         const start = new Date(startDate);
@@ -503,6 +511,8 @@
           return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
         });
         updateChart(filteredTTM, 'ttm', 'period');
+        // TTMの場合は調整内訳をクリア（または非表示）
+        document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-500 text-xs font-mono p-4">TTMデータには調整内訳はありません。</p>';
       } else {
         updateChart([], 'ttm', '');
       }
@@ -780,8 +790,7 @@
     if (!currentTicker) return;
 
     if (tab === 'quarterly' && quarterlyData) {
-      applyDateRange();
-      updateAllAdjustments(quarterlyData.quarters);
+      applyDateRange();  // この中で updateAllAdjustments が呼ばれる
     } else if (tab === 'ttm') {
       if (ttmData && ttmData.ttm) {
         const startDate = document.getElementById('start-date').value;
@@ -793,7 +802,9 @@
           return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
         });
         updateChart(filteredTTM, 'ttm', 'period');
+        // TTM表示時は調整内訳をクリア
         document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-500 text-xs font-mono p-4">TTMデータには調整内訳はありません。</p>';
+        // AI分析もクリア
         document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
         document.getElementById('ai-sources').innerHTML = '';
       } else {
