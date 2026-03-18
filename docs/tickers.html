@@ -231,5 +231,15 @@
       }
     });
   </script>
+  <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // 銘柄一覧ページのリンクをアクティブ表示
+    const navTickers = document.getElementById('nav-tickers');
+    if (navTickers) {
+      navTickers.style.color = 'var(--acc)';
+      navTickers.style.borderBottomColor = 'var(--acc)';
+    }
+  });
+</script>
 </body>
 </html>
