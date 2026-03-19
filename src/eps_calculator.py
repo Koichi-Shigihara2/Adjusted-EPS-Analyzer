@@ -6,7 +6,7 @@ EPS計算モジュール
 - 分母には希薄化後株式数を使用
 """
 from typing import Dict, Any, List
-from extract_key_facts import normalize_value
+# from extract_key_facts import normalize_value
 
 def calculate_eps(period_data: Dict[str, Any], net_adjustment: float, adjustments_detail: List[Dict[str, Any]]) -> Dict[str, Any]:
     """
@@ -26,8 +26,8 @@ def calculate_eps(period_data: Dict[str, Any], net_adjustment: float, adjustment
             - net_adjustment_total: float (net_adjustment と同じ)
     """
     # 正規化された値を取得
-    gaap_net_income = normalize_value(period_data.get('net_income'))
-    diluted_shares = normalize_value(period_data.get('diluted_shares'))
+    gaap_net_income = period_data.get('net_income', 0.0)
+    diluted_shares = period_data.get('diluted_shares', 0.0)
     
     if diluted_shares == 0:
         # エラー処理：株式数が0の場合は0を返す
