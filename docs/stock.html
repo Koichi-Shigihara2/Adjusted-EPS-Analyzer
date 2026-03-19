@@ -436,7 +436,7 @@
       }
 
       updateHeader(quarterlyData);
-      setInitialDateRange(quarterlyData.quarters); // 修正版を使用
+      setInitialDateRange(quarterlyData.quarters);
       applyDateRange();
 
       document.getElementById('ticker-title').innerText = currentTicker;
@@ -457,7 +457,7 @@
       `最終更新: ${new Date(data.last_updated).toLocaleDateString('ja-JP')}`;
   }
 
-  // ★★★ 修正: デフォルト期間を3年に設定 ★★★
+  // デフォルト期間を3年に設定
   function setInitialDateRange(quarters) {
     if (!quarters || quarters.length === 0) return;
     const dates = quarters.map(q => q.filing_date).sort(); // 古い順
@@ -503,7 +503,6 @@
       updateChart(filtered, 'quarterly', 'filing_date');
       const latestInRange = getLatestFromArray(filtered);
       if (latestInRange) {
-        // 第3引数に filtered を追加
         updateMetricsWithQuarter(latestInRange, quarterlyData.quarters, filtered);
         updateAI(latestInRange.ai_analysis);
       } else {
@@ -520,7 +519,6 @@
           return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
         });
         updateChart(filteredTTM, 'ttm', 'period');
-        // TTMの場合は調整内訳は表示しない（既に別処理）
       } else {
         updateChart([], 'ttm', '');
       }
@@ -565,7 +563,6 @@
     return [...dataArray].sort((a, b) => b.filing_date.localeCompare(a.filing_date))[0];
   }
 
-  // ★★★ 修正: 第3引数 filteredQuarters を受け取る ★★★
   function calculateYoY(latest, allQuarters, filteredQuarters) {
     // 選択期間内で前年同期を探す
     if (!latest || !filteredQuarters || filteredQuarters.length < 5) return null;
@@ -607,7 +604,6 @@
     return null;
   }
 
-  // ★★★ 修正: 第3引数 filteredQuarters を受け取り、calculateYoYに渡す ★★★
   function updateMetricsWithQuarter(quarter, allQuarters, filteredQuarters) {
     document.getElementById('gaap-eps').innerText = `$${quarter.gaap_eps.toFixed(4)}`;
     document.getElementById('adj-eps').innerText = `$${quarter.adjusted_eps.toFixed(4)}`;
@@ -679,6 +675,7 @@
     return `${year}-Q${q}`;
   }
 
+  // ★★★ 修正: 日付オブジェクトでソート ★★★
   function updateChart(dataArray, type, labelField) {
     const ctx = document.getElementById('eps-chart').getContext('2d');
 
@@ -692,7 +689,11 @@
       return;
     }
 
-    const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
+    // 日付でソート（古い→新しい）
+    const sorted = [...dataArray].sort((a, b) => {
+      return new Date(a[labelField]) - new Date(b[labelField]);
+    });
+    
     const labels = sorted.map(item => formatLabel(item[labelField]));
     let gaapData, adjData;
 
@@ -704,6 +705,7 @@
       adjData = sorted.map(item => item.adjusted_eps);
     }
 
+    // Y軸スケールの動的調整（余白10%）
     const allValues = [...gaapData, ...adjData].filter(v => v !== null && v !== undefined);
     const min = Math.min(...allValues);
     const max = Math.max(...allValues);
@@ -793,7 +795,6 @@
     container.innerHTML = html;
   }
 
-  // ★★★ 修正: TTMタブでAIパネルと調整パネルを非表示にする ★★★
   async function switchTab(tab) {
     currentTab = tab;
     document.getElementById('tab-quarterly').className = tab === 'quarterly' ? 'tab-link active' : 'tab-link';
@@ -803,14 +804,12 @@
     const adjustmentsPanel = document.getElementById('adjustments-panel');
 
     if (tab === 'quarterly') {
-      // 四半期タブではAIと調整内訳を表示
       aiPanel.style.display = 'block';
       adjustmentsPanel.style.display = 'block';
       if (quarterlyData) {
-        applyDateRange(); // この中で updateAllAdjustments が呼ばれる
+        applyDateRange();
       }
     } else if (tab === 'ttm') {
-      // TTMタブではAIと調整内訳を非表示
       aiPanel.style.display = 'none';
       adjustmentsPanel.style.display = 'none';
       if (ttmData && ttmData.ttm) {
@@ -823,7 +822,6 @@
           return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
         });
         updateChart(filteredTTM, 'ttm', 'period');
-        // AIコメントとソースもクリア（念のため）
         document.getElementById('ai-comment').innerHTML = '';
         document.getElementById('ai-sources').innerHTML = '';
       } else {
