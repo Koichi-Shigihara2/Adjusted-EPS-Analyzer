@@ -544,12 +544,45 @@
     applyDateRange();
   }
 
-  function resetDateRange() {
-    if (!quarterlyData) return;
-    const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
-    document.getElementById('start-date').value = dates[0];
-    document.getElementById('end-date').value = dates[dates.length - 1];
-    applyDateRange();
+    function calculateYoY(latest, allQuarters, filteredQuarters) {
+    // 選択期間内で前年同期を探す
+    if (!latest || !filteredQuarters || filteredQuarters.length < 5) return null;
+
+    const [latestYear, latestMonth] = latest.filing_date.split('-');
+    const latestQuarter = Math.floor((parseInt(latestMonth) - 1) / 3) + 1;
+    const prevYear = (parseInt(latestYear) - 1).toString();
+
+    const candidates = filteredQuarters.filter(q => {
+      const qYear = q.filing_date.split('-')[0];
+      const qMonth = parseInt(q.filing_date.split('-')[1]);
+      const qQuarter = Math.floor((qMonth - 1) / 3) + 1;
+      return qYear === prevYear && qQuarter === latestQuarter;
+    });
+
+    if (candidates.length > 0) {
+      const prevQuarter = candidates.reduce((prev, curr) => 
+        new Date(curr.filing_date) > new Date(prev.filing_date) ? curr : prev
+      );
+      const prevEps = prevQuarter.adjusted_eps;
+      if (Math.abs(prevEps) > 1e-6) {
+        return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+      }
+      return null;
+    }
+
+    // フォールバック：全期間からインデックスベースで探す
+    const idx = allQuarters.findIndex(q => q.filing_date === latest.filing_date);
+    if (idx >= 4 && idx - 4 < allQuarters.length) {
+      const prevQuarter = allQuarters[idx - 4];
+      const prevMonth = prevQuarter.filing_date.split('-')[1];
+      if (prevMonth === latestMonth) {
+        const prevEps = prevQuarter.adjusted_eps;
+        if (Math.abs(prevEps) > 1e-6) {
+          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+        }
+      }
+    }
+    return null;
   }
 
   function getLatestFromArray(dataArray) {
