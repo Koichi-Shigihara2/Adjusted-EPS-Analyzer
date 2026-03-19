@@ -79,6 +79,36 @@ def aggregate_annual(quarterly_results: List[Dict]) -> List[Dict]:
     annual_results.sort(key=lambda x: x["year"], reverse=True)
     return annual_results
 
+def generate_summary(tickers_data: Dict[str, Dict]) -> Dict:
+    """全銘柄のサマリー情報を生成"""
+    summary = {
+        "last_updated": datetime.now().isoformat(),
+        "tickers": []
+    }
+    for ticker, data in tickers_data.items():
+        if data.get("quarters") and len(data["quarters"]) > 0:
+            latest = data["quarters"][0]  # 最新が先頭
+            # YoY成長率を計算（4四半期前と比較）
+            yoy_growth = None
+            if len(data["quarters"]) >= 5:
+                prev = data["quarters"][4]  # 4つ前の四半期
+                if prev["adjusted_eps"] != 0:
+                    yoy_growth = (latest["adjusted_eps"] - prev["adjusted_eps"]) / abs(prev["adjusted_eps"])
+            # 健全性は ai_analysis から取得、なければデフォルト "Caution"
+            health = "Caution"
+            if "ai_analysis" in latest:
+                health = latest["ai_analysis"].get("health", "Caution")
+            summary["tickers"].append({
+                "ticker": ticker,
+                "company_name": data.get("company_name", ""),
+                "latest_filing_date": latest["filing_date"],
+                "gaap_eps": latest["gaap_eps"],
+                "adjusted_eps": latest["adjusted_eps"],
+                "yoy_growth": yoy_growth,
+                "health": health
+            })
+    return summary
+
 def run():
     config_base = "config"
     with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
@@ -93,10 +123,15 @@ def run():
     # 銘柄マスタ（セクター情報）を読み込み
     cik_data = load_cik_data()
     ticker_to_sector = {row['ticker']: row.get('sector') for row in cik_data if row.get('sector')}
+    # 会社名マップも作成
+    ticker_to_name = {row['ticker']: row.get('name', '') for row in cik_data}
     
     # 成熟度監視の設定（調整項目設定から取得）
     maturity_config = adjustment_config.get('maturity_defaults', {})
     
+    # 全銘柄のデータを一時保存（summary用）
+    all_tickers_data = {}
+
     for ticker in tickers:
         print(f"\n=== Processing {ticker} ===")
         
@@ -204,6 +239,9 @@ def run():
         ticker_dir = f"docs/data/{ticker}"
         os.makedirs(ticker_dir, exist_ok=True)
         
+        # 日付順にソート（新しい順）
+        quarterly_results.sort(key=lambda x: x["filing_date"], reverse=True)
+        
         with open(f"{ticker_dir}/quarterly.json", "w", encoding="utf-8") as f:
             json.dump({
                 "ticker": ticker,
@@ -227,7 +265,20 @@ def run():
                     "years": annual_results
                 }, f, indent=2, ensure_ascii=False)
         
+        # サマリー用にデータを保持
+        all_tickers_data[ticker] = {
+            "quarters": quarterly_results,
+            "company_name": ticker_to_name.get(ticker, metadata.get('name', ''))
+        }
+        
         print(f"✓ {ticker} 保存完了: {ticker_dir}/")
+    
+    # サマリーファイル生成
+    if all_tickers_data:
+        summary = generate_summary(all_tickers_data)
+        with open("docs/data/summary.json", "w", encoding="utf-8") as f:
+            json.dump(summary, f, indent=2, ensure_ascii=False)
+        print("✓ summary.json 生成完了")
 
 if __name__ == "__main__":
     run()
