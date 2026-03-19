@@ -1,203 +1,25 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adjusted EPS Analyzer · CELH</title>
-  <!-- フォント (MACRO PULSE と同じ) -->
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <title>Stock Detail - Adjusted EPS Analyzer [UIテスト版]</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' }
+  </script>
   <style>
-    /* 色定義 (MACRO PULSE 完全移植) */
-    :root {
-      --bg: #0a0d14;
-      --sur: #111520;
-      --sur2: #161c2d;
-      --bdr: #1e2840;
-      --acc: #3b82f6;
-      --grn: #10b981;
-      --red: #f43f5e;
-      --amb: #f59e0b;
-      --txt: #e2e8f0;
-      --mut: #64748b;
-      --mono: 'Space Mono', monospace;
-      --sans: 'DM Sans', sans-serif;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--txt);
-      font-family: var(--sans);
-      font-size: 14px;
-      min-height: 100vh;
-    }
-
-    .shell {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px 48px;
-    }
-
-    /* ヘッダー (index.html と完全統一) */
-    header {
-      border-bottom: 1px solid var(--bdr);
-      padding: 16px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .logo {
-      font-family: var(--mono);
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .15em;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .logo-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--acc);
+    .spinner-border {
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: #3b82f6;
       border-radius: 50%;
-      animation: pdot 2s ease-in-out infinite;
+      animation: spin 1s linear infinite;
     }
-
-    @keyframes pdot {
-      0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
-      50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
-
-    .hdr-r {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 16px;
-    }
-
-    .nav-links a {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--mut);
-      text-decoration: none;
-      letter-spacing: .08em;
-      padding: 5px 0;
-      border-bottom: 1px solid transparent;
-    }
-
-    .nav-links a:hover {
-      color: var(--acc);
-      border-bottom-color: var(--acc);
-    }
-
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .search-box input {
-      font-family: var(--mono);
-      font-size: 11px;
-      background: var(--sur2);
-      border: 1px solid var(--bdr);
-      padding: 5px 10px;
-      color: var(--txt);
-      width: 120px;
-    }
-
-    .search-box button {
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 5px 12px;
-      border: 1px solid var(--bdr);
-      background: var(--sur2);
-      color: var(--txt);
-      cursor: pointer;
-    }
-
-    .search-box button:hover {
-      border-color: var(--acc);
-      color: var(--acc);
-    }
-
-    /* セクション見出し (統一感のため) */
-    .sec {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .2em;
-      color: var(--mut);
-      text-transform: uppercase;
-      margin: 32px 0 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sec::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--bdr);
-    }
-
-    /* カード系 (stock.html 固有) */
-    .metric-card {
-      background: var(--sur);
-      border: 1px solid var(--bdr);
-      padding: 16px;
-      border-radius: 0; /* 角を揃える */
-    }
-
-    .tab-link {
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 10px 16px;
-      color: var(--mut);
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      background: none;
-      border-top: none;
-      border-left: none;
-      border-right: none;
-    }
-
-    .tab-link.active {
-      color: var(--acc);
-      border-bottom-color: var(--acc);
-    }
-
-    .chart-container {
-      background: var(--sur);
-      border: 1px solid var(--bdr);
-      padding: 20px;
-    }
-
-    .adjustments-panel {
-      background: var(--sur);
-      border: 1px solid var(--bdr);
-      padding: 20px;
-    }
-
-    /* スクロールバー (stock.html から流用) */
     .scrollable-adjustments {
       max-height: 600px;
       overflow-y: auto;
@@ -207,675 +29,640 @@
       width: 8px;
     }
     .scrollable-adjustments::-webkit-scrollbar-track {
-      background: var(--sur2);
+      background: #2d3748;
       border-radius: 4px;
     }
     .scrollable-adjustments::-webkit-scrollbar-thumb {
-      background: var(--bdr);
+      background: #4a5568;
       border-radius: 4px;
     }
     .scrollable-adjustments::-webkit-scrollbar-thumb:hover {
-      background: var(--mut);
-    }
-
-    /* ローディングスピナー (回転を復活) */
-    .spinner-border {
-      border: 4px solid rgba(255,255,255,0.1);
-      border-top-color: var(--acc);
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      display: inline-block;
-    }
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    /* テーブル類 (index.html 準拠) */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-    th {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .12em;
-      color: var(--mut);
-      text-align: left;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--bdr);
-      text-transform: uppercase;
-    }
-    td {
-      padding: 10px 16px;
-      border-bottom: 1px solid rgba(30,40,64,.5);
-    }
-    tr:last-child td {
-      border-bottom: none;
-    }
-    .number {
-      font-family: var(--mono);
-      text-align: right;
+      background: #718096;
     }
   </style>
 </head>
-<body>
-<div class="shell">
-  <!-- ヘッダー (index.html 完全統一) -->
-  <header>
-    <div class="logo">
-      <img src="images/logo.png" alt="TANUKI" style="height:30px; width:auto; object-fit:contain">
-      <span class="logo-dot"></span>
-      Adjusted EPS Analyzer
-    </div>
-    <div class="hdr-r">
-      <div class="nav-links">
-        <a href="index.html">ダッシュボード</a>
-        <a href="tickers.html">銘柄一覧</a>
-        <a href="#">設定</a>
+<body class="bg-gray-900 text-gray-100 min-h-screen p-6">
+  <header class="fixed top-0 left-0 right-0 bg-gray-800 shadow z-10">
+    <nav class="container mx-auto px-4 py-4 flex justify-between items-center">
+      <h1 class="text-2xl font-bold">Adjusted EPS Analyzer</h1>
+      <div class="space-x-4">
+        <a href="index.html" class="text-blue-400 hover:text-blue-300 font-semibold underline">ダッシュボード</a>
+        <a href="tickers.html" class="text-blue-400 hover:text-blue-300">銘柄一覧</a>
+        <a href="#" class="text-blue-400 hover:text-blue-300">設定</a>
       </div>
-      <div class="search-box">
-        <input type="text" id="ticker-search" placeholder="ティッカー (例: CELH)" value="CELH">
-        <button onclick="loadTicker()">検索</button>
+      <div class="flex items-center space-x-2">
+        <input type="text" id="ticker-search" placeholder="ティッカー (例: NVDA)" 
+               class="px-3 py-1 bg-gray-700 rounded text-white" value="TSLA">
+        <button onclick="loadTicker()" class="bg-blue-600 px-4 py-1 rounded hover:bg-blue-700">
+          検索
+        </button>
       </div>
-    </div>
+    </nav>
   </header>
 
-  <!-- ローディング -->
-  <div id="loading" class="hidden text-center py-10">
-    <div class="spinner-border"></div>
-    <p class="mt-2 text-sm font-mono text-gray-500">読み込み中...</p>
-  </div>
-
-  <!-- エラー表示 -->
-  <div id="error" class="hidden bg-red-900/20 border border-red-800 text-white p-4 rounded-none mb-6 font-mono text-sm">
-    <p>エラーが発生しました。 <button onclick="loadTicker()" class="underline text-blue-400">再試行</button></p>
-  </div>
-
-  <!-- メインコンテンツ -->
-  <div id="content" class="hidden">
-    <!-- 銘柄ヘッダー -->
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold font-mono" id="ticker-title">CELH</h2>
-      <div class="flex space-x-3 items-center">
-        <span id="health-badge" class="px-3 py-1 text-xs font-mono border" style="background:rgba(16,185,129,.15); color:var(--grn); border-color:var(--grn);">Caution</span>
-        <span class="text-xs text-gray-500 font-mono" id="last-updated"></span>
-      </div>
+  <main class="container mx-auto mt-24">
+    <div id="loading" class="hidden text-center py-10">
+      <div class="spinner-border inline-block w-8 h-8"></div>
+      <p class="mt-2">データを読み込み中...</p>
     </div>
 
-    <!-- メトリクスカード (4列) -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-      <div class="metric-card">
-        <div class="text-xs font-mono text-gray-500 mb-1">GAAP EPS</div>
-        <div class="text-2xl font-mono text-gray-300" id="gaap-eps">$0.00</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs font-mono text-gray-500 mb-1">Adjusted EPS</div>
-        <div class="text-2xl font-mono text-green-400" id="adj-eps">$0.00</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs font-mono text-gray-500 mb-1">差分</div>
-        <div class="text-2xl font-mono" id="diff">$0.00</div>
-      </div>
-      <div class="metric-card">
-        <div class="text-xs font-mono text-gray-500 mb-1">YoY成長率</div>
-        <div class="text-2xl font-mono" id="yoy">--</div>
-      </div>
+    <div id="error" class="hidden bg-red-900 text-white p-4 rounded-lg mb-6">
+      <p>エラーが発生しました。 <button onclick="loadTicker()" class="underline">再試行</button></p>
     </div>
 
-    <!-- タブ -->
-    <div class="border-b border-[var(--bdr)] mb-4">
-      <div class="flex">
-        <button onclick="switchTab('quarterly')" class="tab-link active" id="tab-quarterly">四半期</button>
-        <button onclick="switchTab('ttm')" class="tab-link" id="tab-ttm">TTM</button>
-      </div>
-    </div>
-
-    <!-- 日付範囲指定 (プリセット付き) -->
-    <div class="metric-card mb-6">
-      <div class="flex flex-wrap items-end gap-4 mb-4">
-        <div>
-          <label class="block text-xs font-mono text-gray-500 mb-1">開始日</label>
-          <input type="date" id="start-date" class="bg-[var(--sur2)] border border-[var(--bdr)] px-3 py-2 text-sm font-mono text-white">
-        </div>
-        <div>
-          <label class="block text-xs font-mono text-gray-500 mb-1">終了日</label>
-          <input type="date" id="end-date" class="bg-[var(--sur2)] border border-[var(--bdr)] px-3 py-2 text-sm font-mono text-white">
-        </div>
-        <div>
-          <button onclick="applyDateRange()" class="bg-[var(--sur2)] border border-[var(--bdr)] px-6 py-2 text-sm font-mono hover:border-[var(--acc)]">適用</button>
+    <div id="content" class="hidden">
+      <!-- 銘柄ヘッダー -->
+      <div class="flex justify-between items-center mb-6">
+        <h2 class="text-3xl font-bold" id="ticker-title">TSLA</h2>
+        <div class="flex space-x-2">
+          <span id="health-badge" class="px-3 py-1 rounded-full text-sm font-semibold bg-green-600" title="健全性: Good">Good</span>
+          <span class="text-gray-400" id="last-updated"></span>
         </div>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <button onclick="setPreset('all')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">全期間</button>
-        <button onclick="setPreset('5y')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">5年</button>
-        <button onclick="setPreset('4y')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">4年</button>
-        <button onclick="setPreset('3y')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">3年</button>
-        <button onclick="setPreset('2y')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">2年</button>
-        <button onclick="setPreset('1y')" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">1年</button>
-        <button onclick="resetDateRange()" class="bg-[var(--sur2)] border border-[var(--bdr)] px-4 py-1 text-xs font-mono hover:border-[var(--acc)]">リセット</button>
+
+      <!-- メトリクスカード -->
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <div class="text-gray-400 text-sm">GAAP EPS</div>
+          <div class="text-2xl font-bold text-gray-300" id="gaap-eps">$0.00</div>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <div class="text-gray-400 text-sm">Adjusted EPS</div>
+          <div class="text-2xl font-bold text-green-400" id="adj-eps">$0.00</div>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <div class="text-gray-400 text-sm">差分</div>
+          <div class="text-2xl font-bold" id="diff">$0.00</div>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-lg">
+          <div class="text-gray-400 text-sm">YoY成長率</div>
+          <div class="text-2xl font-bold" id="yoy">--</div>
+        </div>
+      </div>
+
+      <!-- タブ -->
+      <div class="border-b border-gray-700 mb-4">
+        <ul class="flex flex-wrap -mb-px">
+          <li class="mr-2">
+            <a href="#" onclick="switchTab('quarterly')" class="inline-block p-4 border-b-2 border-blue-600 text-blue-600 font-semibold" id="tab-quarterly">四半期</a>
+          </li>
+          <li class="mr-2">
+            <a href="#" onclick="switchTab('ttm')" class="inline-block p-4 border-b-2 border-transparent hover:text-gray-300" id="tab-ttm">TTM</a>
+          </li>
+        </ul>
+      </div>
+
+      <!-- 任意期間指定UI（日付ピッカー + プリセットボタン） -->
+      <div class="bg-gray-800 p-4 rounded-lg mb-6">
+        <div class="flex flex-wrap items-end gap-4 mb-4">
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">開始日</label>
+            <input type="date" id="start-date" class="bg-gray-700 text-white px-3 py-2 rounded border border-gray-600">
+          </div>
+          <div>
+            <label class="block text-sm text-gray-400 mb-1">終了日</label>
+            <input type="date" id="end-date" class="bg-gray-700 text-white px-3 py-2 rounded border border-gray-600">
+          </div>
+          <div>
+            <button onclick="applyDateRange()" class="bg-blue-600 px-6 py-2 rounded hover:bg-blue-700">適用</button>
+          </div>
+        </div>
+        
+        <!-- プリセットボタン -->
+        <div class="flex flex-wrap gap-2">
+          <button onclick="setPreset('all')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">全期間</button>
+          <button onclick="setPreset('5y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">5年</button>
+          <button onclick="setPreset('4y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">4年</button>
+          <button onclick="setPreset('3y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">3年</button>
+          <button onclick="setPreset('2y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">2年</button>
+          <button onclick="setPreset('1y')" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">1年</button>
+          <button onclick="resetDateRange()" class="bg-gray-700 px-4 py-2 rounded hover:bg-gray-600">リセット</button>
+        </div>
+      </div>
+
+      <!-- チャート -->
+      <div class="bg-gray-800 p-6 rounded-lg mb-8">
+        <canvas id="eps-chart" height="300"></canvas>
+      </div>
+
+      <!-- AI分析（選択期間内の最新四半期） -->
+      <div class="bg-gray-800 p-6 rounded-lg mb-8">
+        <h3 class="text-xl font-semibold mb-4 flex items-center">
+          AI分析（選択期間内の最新四半期）
+          <span class="ml-2 text-sm bg-gray-700 px-2 py-1 rounded">Grok</span>
+        </h3>
+        <div id="ai-comment" class="prose prose-invert max-w-none">
+          <!-- AIコメントが入る -->
+        </div>
+        <div id="ai-sources" class="mt-4 text-sm text-gray-400 border-t border-gray-700 pt-4">
+          <!-- ソース表示 -->
+        </div>
+      </div>
+
+      <!-- 調整内訳（全期間） -->
+      <div class="bg-gray-800 p-6 rounded-lg mb-8">
+        <h3 class="text-xl font-semibold mb-4">調整内訳（全期間）</h3>
+        <div id="adjustments-accordion" class="scrollable-adjustments space-y-4 pr-2">
+          <!-- JSで動的生成 -->
+        </div>
       </div>
     </div>
+  </main>
 
-    <!-- チャート -->
-    <div class="chart-container mb-8">
-      <canvas id="eps-chart" height="300"></canvas>
-    </div>
+  <script>
+    Chart.register(ChartDataLabels);
 
-    <!-- AI分析パネル（ID追加） -->
-    <div id="ai-panel" class="adjustments-panel mb-8">
-      <h3 class="text-sm font-mono mb-4 flex items-center">
-        <span class="text-[var(--acc)]">●</span>
-        <span class="ml-2">AI分析（選択期間内の最新四半期）</span>
-        <span class="ml-2 text-xs bg-[var(--sur2)] px-2 py-0.5 border border-[var(--bdr)]">Grok</span>
-      </h3>
-      <div id="ai-comment" class="prose prose-invert max-w-none text-sm text-gray-300 leading-relaxed"></div>
-      <div id="ai-sources" class="mt-4 text-xs text-gray-500 border-t border-[var(--bdr)] pt-4 font-mono"></div>
-    </div>
+    let currentTicker = 'TSLA';
+    let quarterlyData = null;
+    let ttmData = null;
+    let chart = null;
+    let currentTab = 'quarterly';
 
-    <!-- 調整内訳パネル（ID追加） -->
-    <div id="adjustments-panel" class="adjustments-panel">
-      <h3 class="text-sm font-mono mb-4">調整内訳（全期間）</h3>
-      <div id="adjustments-accordion" class="scrollable-adjustments space-y-4 pr-2"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-  Chart.register(ChartDataLabels);
-
-  let currentTicker = 'CELH';
-  let quarterlyData = null;
-  let ttmData = null;
-  let chart = null;
-  let currentTab = 'quarterly';
-
-  const urlParams = new URLSearchParams(window.location.search);
-  const tickerParam = urlParams.get('ticker');
-  if (tickerParam) {
-    currentTicker = tickerParam.toUpperCase();
-    document.getElementById('ticker-search').value = currentTicker;
-  }
-
-  function showLoading(show) {
-    const loadingEl = document.getElementById('loading');
-    if (show) {
-      loadingEl.classList.remove('hidden');
-    } else {
-      loadingEl.classList.add('hidden');
+    const urlParams = new URLSearchParams(window.location.search);
+    const tickerParam = urlParams.get('ticker');
+    if (tickerParam) {
+      currentTicker = tickerParam.toUpperCase();
+      document.getElementById('ticker-search').value = currentTicker;
     }
-  }
 
-  async function loadTicker(ticker = null) {
-    if (ticker) currentTicker = ticker;
-    else currentTicker = document.getElementById('ticker-search').value.toUpperCase();
+    function showLoading(show) {
+      document.getElementById('loading').classList.toggle('hidden', !show);
+    }
 
-    showLoading(true);
-    document.getElementById('content').classList.add('hidden');
-    document.getElementById('error').classList.add('hidden');
+    async function loadTicker(ticker = null) {
+      if (ticker) currentTicker = ticker;
+      else currentTicker = document.getElementById('ticker-search').value.toUpperCase();
 
-    try {
-      const qResp = await fetch(`data/${currentTicker}/quarterly.json?t=${Date.now()}`, { cache: 'no-store' });
-      if (!qResp.ok) {
-        throw new Error(`四半期データが見つかりません (HTTP ${qResp.status})`);
-      }
-      quarterlyData = await qResp.json();
+      showLoading(true);
+      document.getElementById('content').classList.add('hidden');
+      document.getElementById('error').classList.add('hidden');
 
       try {
-        const tResp = await fetch(`data/${currentTicker}/ttm.json?t=${Date.now()}`, { cache: 'no-store' });
-        if (tResp.ok) {
-          ttmData = await tResp.json();
-        } else {
-          ttmData = null;
+        // ★テスト用: TSLA実データ直接埋め込み (fetchなし)
+        const MOCK_QUARTERLY = {"ticker": "TSLA", "last_updated": "2026-03-16T10:56:31.481089", "quarters": [{"gaap_eps": 0.23809523809523808, "adjusted_eps": 1.0390674603174603, "gaap_net_income": 840000000.0, "adjusted_net_income": 3665830000.0, "diluted_shares_used": 3528000000.0, "adjustments": [{"item_name": "リストラ費用", "amount": 390000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性リストラ（非営業）", "extracted_from": "us-gaap:RestructuringCharges", "category": "事業構造変更・一過性損益", "net_amount": 308100000.0, "tax_rate_applied": 0.21}, {"item_name": "在庫評価損", "amount": 362000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 285980000.0, "tax_rate_applied": 0.21}, {"item_name": "株式報酬費用", "amount": 2825000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 2231750000.0, "tax_rate_applied": 0.21}], "net_adjustment_total": 2825830000.0, "filing_date": "2025-12-31", "form": "10-K", "fiscal_year": 2025, "pretax_income": {"value": 2263000000.0, "unit": "USD"}, "tax_expense": {"value": 1423000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "調整後EPSがGAAP EPSの約4.4倍と大幅に上方修正されており、主に2.825Bドルの株式報酬費用（SBC）の加算が要因です。SBCは非現金項目ですが継続的な株主希薄化コストであり、調整の信頼性に疑問が残ります。リストラ費用と在庫評価損も一過性として加算されていますが、テスラの事業特性上これらが定期的に発生する可能性があり、全体的な健全性は注意を要します。", "sources": [{"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}, {"item": "リストラ費用", "snippet": "一過性リストラ（非営業）"}, {"item": "在庫評価損", "snippet": "一過性の在庫評価減"}]}}, {"gaap_eps": 0.3893930799773114, "adjusted_eps": 0.437090225131506, "gaap_net_income": 1373000000.0, "adjusted_net_income": 1541180133.8136902, "diluted_shares_used": 3526000000.0, "adjustments": [{"item_name": "リストラ費用", "amount": 238000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性リストラ（非営業）", "extracted_from": "us-gaap:RestructuringCharges", "category": "事業構造変更・一過性損益", "net_amount": 168180133.8136902, "tax_rate_applied": 0.29336078229541945}], "net_adjustment_total": 168180133.8136902, "filing_date": "2025-09-30", "form": "10-Q", "fiscal_year": 2025, "pretax_income": {"value": 1943000000.0, "unit": "USD"}, "tax_expense": {"value": 570000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目は一過性のリストラ費用（非営業）のみで、us-gaapタグに基づく明確な根拠があり、適切に税効果を考慮した加算調整が行われています。Adjusted EPSがGAAP EPSを上回る形は標準的で、事業のコア収益性を示すものとして健全性は良好です。ただし、Teslaの成長過程では類似費用が繰り返される可能性に留意する必要があります。", "sources": [{"item": "リストラ費用", "snippet": "一過性リストラ（非営業） extracted_from: us-gaap:RestructuringCharges category: 事業構造変更・一過性損益"}]}}, {"gaap_eps": 0.333049161693663, "adjusted_eps": 0.333049161693663, "gaap_net_income": 1172000000.0, "adjusted_net_income": 1172000000.0, "diluted_shares_used": 3519000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2025-06-30", "form": "10-Q", "fiscal_year": 2025, "pretax_income": {"value": 1531000000.0, "unit": "USD"}, "tax_expense": {"value": 359000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.1161601817665436, "adjusted_eps": 0.25382406500198024, "gaap_net_income": 409000000.0, "adjusted_net_income": 893714532.8719723, "diluted_shares_used": 3521000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 112000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 79252595.15570936, "tax_rate_applied": 0.29238754325259514}, {"item_name": "株式報酬費用", "amount": 573000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 405461937.716263, "tax_rate_applied": 0.29238754325259514}], "net_adjustment_total": 484714532.8719723, "filing_date": "2025-03-31", "form": "10-Q", "fiscal_year": 2025, "pretax_income": {"value": 578000000.0, "unit": "USD"}, "tax_expense": {"value": 169000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "調整後EPSがGAAP EPSの約2.2倍に引き上げられており、株式報酬費用573Mと在庫評価損112Mの加算が主な要因です。株式報酬はテスラにとって継続的に発生する項目であるため非GAAP調整として一般的ですが、調整依存度が高く収益の質に注意が必要です。在庫評価損は一過性とされていますが、全体として調整の健全性は中立的で慎重な判断を要します。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減 / category: 事業構造変更・一過性損益"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可） / category: 株式報酬 (SBC)"}]}}, {"gaap_eps": 0.6623785020011436, "adjusted_eps": 1.034547838464954, "gaap_net_income": 2317000000.0, "adjusted_net_income": 3618848338.9504094, "diluted_shares_used": 3498000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 335000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 186854838.70967743, "tax_rate_applied": 0.4422243620606644}, {"item_name": "株式報酬費用", "amount": 1999000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 1114993500.240732, "tax_rate_applied": 0.4422243620606644}], "net_adjustment_total": 1301848338.9504094, "filing_date": "2024-12-31", "form": "10-K", "fiscal_year": 2024, "pretax_income": {"value": 4154000000.0, "unit": "USD"}, "tax_expense": {"value": 1837000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "在庫評価損の一過性損失の加算は合理的ですが、株式報酬費用約20億ドルの加算が調整の大部分を占めており、非現金費用とはいえ成長企業で継続的に発生する項目です。GAAP EPSに対する調整幅が大きく（+約56%）、調整後EPSの持続可能性と収益品質に留意する必要があります。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}]}}, {"gaap_eps": 0.6196740062911067, "adjusted_eps": 0.6196740062911067, "gaap_net_income": 2167000000.0, "adjusted_net_income": 2167000000.0, "diluted_shares_used": 3497000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2024-09-30", "form": "10-Q", "fiscal_year": 2024, "pretax_income": {"value": 2769000000.0, "unit": "USD"}, "tax_expense": {"value": 602000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.4245906348750359, "adjusted_eps": 0.4245906348750359, "gaap_net_income": 1478000000.0, "adjusted_net_income": 1478000000.0, "diluted_shares_used": 3481000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2024-06-30", "form": "10-Q", "fiscal_year": 2024, "pretax_income": {"value": 1849000000.0, "unit": "USD"}, "tax_expense": {"value": 371000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.324052812858783, "adjusted_eps": 0.44305980120394406, "gaap_net_income": 1129000000.0, "adjusted_net_income": 1543620347.394541, "diluted_shares_used": 3484000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 68000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 47625310.17369727, "tax_rate_applied": 0.29962779156327546}, {"item_name": "株式報酬費用", "amount": 524000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 366995037.2208437, "tax_rate_applied": 0.29962779156327546}], "net_adjustment_total": 414620347.39454097, "filing_date": "2024-03-31", "form": "10-Q", "fiscal_year": 2024, "pretax_income": {"value": 1612000000.0, "unit": "USD"}, "tax_expense": {"value": 483000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "在庫評価損は一過性の項目として加算されており妥当ですが、株式報酬費用が5.24億ドルと多額で継続的に発生する非現金費用であるため、調整後EPSの健全性に留意が必要です。SBCの加算依存度が高く、収益品質にやや懸念があります。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減 (us-gaap:InventoryWriteDown)"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可） (us-gaap:ShareBasedCompensation)"}]}}, {"gaap_eps": 2.2748923959827834, "adjusted_eps": 2.790602582496413, "gaap_net_income": 7928000000.0, "adjusted_net_income": 9725250000.0, "diluted_shares_used": 3485000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 463000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 365770000.0, "tax_rate_applied": 0.21}, {"item_name": "株式報酬費用", "amount": 1812000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 1431480000.0, "tax_rate_applied": 0.21}], "net_adjustment_total": 1797250000.0, "filing_date": "2023-12-31", "form": "10-K", "fiscal_year": 2023, "pretax_income": {"value": 2927000000.0, "unit": "USD"}, "tax_expense": {"value": -5001000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "在庫評価損は一過性項目として加算されており合理的ですが、株式報酬費用が18億ドル超と非常に大きく、継続的に発生する非現金費用であるため調整後EPSの持続可能性に留意が必要です。SBC依存度が高いため保守的な分析では注意を要します。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}]}}, {"gaap_eps": 0.5304895505296306, "adjusted_eps": 0.5304895505296306, "gaap_net_income": 1853000000.0, "adjusted_net_income": 1853000000.0, "diluted_shares_used": 3493000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2023-09-30", "form": "10-Q", "fiscal_year": 2023, "pretax_income": {"value": 2020000000.0, "unit": "USD"}, "tax_expense": {"value": 167000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.7771707878090857, "adjusted_eps": 0.7771707878090857, "gaap_net_income": 2703000000.0, "adjusted_net_income": 2703000000.0, "diluted_shares_used": 3478000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2023-06-30", "form": "10-Q", "fiscal_year": 2023, "pretax_income": {"value": 3026000000.0, "unit": "USD"}, "tax_expense": {"value": 323000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.7246251441753172, "adjusted_eps": 0.8468762499698552, "gaap_net_income": 2513000000.0, "adjusted_net_income": 2936966834.8954577, "diluted_shares_used": 3468000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 50000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 45295602.0187455, "tax_rate_applied": 0.09408795962509012}, {"item_name": "株式報酬費用", "amount": 418000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 378671232.8767123, "tax_rate_applied": 0.09408795962509012}], "net_adjustment_total": 423966834.8954578, "filing_date": "2023-03-31", "form": "10-Q", "fiscal_year": 2023, "pretax_income": {"value": 2774000000.0, "unit": "USD"}, "tax_expense": {"value": 261000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目は一過性の在庫評価損（50M USD）と非現金性の株式報酬費用（418M USD）の2項目です。いずれも合理的なadd-back項目であり、Teslaの成長企業特性を考慮すると標準的な調整と言えます。ただし株式報酬の金額が相対的に大きく、継続的な希薄化効果を考慮する必要があるため、ExcellentではなくGoodと評価します。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}]}}, {"gaap_eps": 1.0610071942446042, "adjusted_eps": 1.4434453549424415, "gaap_net_income": 3687000000.0, "adjusted_net_income": 5015972608.424984, "diluted_shares_used": 3475000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 177000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 135422079.26955798, "tax_rate_applied": 0.23490350695164972}, {"item_name": "株式報酬費用", "amount": 1560000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 1193550529.1554265, "tax_rate_applied": 0.23490350695164972}], "net_adjustment_total": 1328972608.4249845, "filing_date": "2022-12-31", "form": "10-K", "fiscal_year": 2022, "pretax_income": {"value": 4819000000.0, "unit": "USD"}, "tax_expense": {"value": 1132000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "調整項目として一過性の在庫評価損（1.77億ドル）と多額の株式報酬費用（15.6億ドル）が加算され、GAAP EPSを約36%押し上げています。株式報酬は非現金費用として標準的に調整されるものの、金額規模が大きく継続発生するため、調整後EPSの質に注意が必要です。在庫評価損は一過性項目として妥当ですが、全体として調整依存度が高い点が懸念されます。", "sources": [{"item": "在庫評価損", "snippet": "us-gaap:InventoryWriteDown"}, {"item": "株式報酬費用", "snippet": "us-gaap:ShareBasedCompensation"}]}}, {"gaap_eps": 0.9492502883506344, "adjusted_eps": 0.9492502883506344, "gaap_net_income": 3292000000.0, "adjusted_net_income": 3292000000.0, "diluted_shares_used": 3468000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2022-09-30", "form": "10-Q", "fiscal_year": 2022, "pretax_income": {"value": 3597000000.0, "unit": "USD"}, "tax_expense": {"value": 305000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.6521362586605081, "adjusted_eps": 0.6521362586605081, "gaap_net_income": 2259000000.0, "adjusted_net_income": 2259000000.0, "diluted_shares_used": 3464000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2022-06-30", "form": "10-Q", "fiscal_year": 2022, "pretax_income": {"value": 2464000000.0, "unit": "USD"}, "tax_expense": {"value": 205000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.9556451612903226, "adjusted_eps": 1.0732750651500211, "gaap_net_income": 3318000000.0, "adjusted_net_income": 3726411026.2008734, "diluted_shares_used": 3472000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 33000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 29883733.624454148, "tax_rate_applied": 0.09443231441048035}, {"item_name": "株式報酬費用", "amount": 418000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 378527292.5764192, "tax_rate_applied": 0.09443231441048035}], "net_adjustment_total": 408411026.2008733, "filing_date": "2022-03-31", "form": "10-Q", "fiscal_year": 2022, "pretax_income": {"value": 3664000000.0, "unit": "USD"}, "tax_expense": {"value": 346000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目は在庫評価損（一過性）と株式報酬費用（非現金）の2項目のみで、両者とも非GAAP調整として一般的に認められる内容です。在庫評価損は事業の一過性損益として適切に処理されており、株式報酬もテスラのような成長企業では標準的な調整項目です。調整後EPSがGAAP EPSを約12%上回る水準ですが、過度な調整は見られず健全性は良好です。ただし、株式報酬の絶対額が大きいため、将来的な希薄化効果については継続的に注視する必要があります。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}]}}, {"gaap_eps": 2.0558015943312666, "adjusted_eps": 3.629647053302753, "gaap_net_income": 2321000000.0, "adjusted_net_income": 4097871523.178808, "diluted_shares_used": 1129000000.0, "adjustments": [{"item_name": "買収無形資産償却", "amount": 51000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "M&A由来追加償却", "extracted_from": "us-gaap:AmortizationOfIntangibleAssets", "category": "事業構造変更・一過性損益", "net_amount": 39195695.36423841, "tax_rate_applied": 0.2314569536423841}, {"item_name": "在庫評価損", "amount": 140000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 107596026.49006623, "tax_rate_applied": 0.2314569536423841}, {"item_name": "株式報酬費用", "amount": 2121000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 1630079801.3245034, "tax_rate_applied": 0.2314569536423841}], "net_adjustment_total": 1776871523.178808, "filing_date": "2021-12-31", "form": "10-K", "fiscal_year": 2021, "pretax_income": {"value": 3020000000.0, "unit": "USD"}, "tax_expense": {"value": 699000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "調整項目の大部分を株式報酬費用（21.21億ドル）が占めており、GAAP EPSの約1.77倍に引き上げている。SBCは非現金費用だが継続的な経済コストであり、株主希薄化の影響も大きい。在庫評価損も一過性として追加戻しされているが、自動車事業の特性上再発リスクがある。無形資産償却は標準的調整であるものの、全体として調整依存度が高く、収益の質に注意が必要。", "sources": [{"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}, {"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "買収無形資産償却", "snippet": "M&A由来追加償却"}]}}, {"gaap_eps": 0.4802612051053725, "adjusted_eps": 0.4802612051053725, "gaap_net_income": 1618000000.0, "adjusted_net_income": 1618000000.0, "diluted_shares_used": 3369000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2021-09-30", "form": "10-Q", "fiscal_year": 2021, "pretax_income": {"value": 1841000000.0, "unit": "USD"}, "tax_expense": {"value": 223000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 1.0205540661304737, "adjusted_eps": 1.0205540661304737, "gaap_net_income": 1142000000.0, "adjusted_net_income": 1142000000.0, "diluted_shares_used": 1119000000.0, "adjustments": [], "net_adjustment_total": 0.0, "filing_date": "2021-06-30", "form": "10-Q", "fiscal_year": 2021, "pretax_income": {"value": 1257000000.0, "unit": "USD"}, "tax_expense": {"value": 115000000.0, "unit": "USD"}, "ai_analysis": {"health": "Good", "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。", "sources": []}}, {"gaap_eps": 0.38658428949691087, "adjusted_eps": 0.8921175911467173, "gaap_net_income": 438000000.0, "adjusted_net_income": 1010769230.7692307, "diluted_shares_used": 1133000000.0, "adjustments": [{"item_name": "在庫評価損", "amount": 49000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "一過性の在庫評価減", "extracted_from": "us-gaap:InventoryWriteDown", "category": "事業構造変更・一過性損益", "net_amount": 42331360.94674556, "tax_rate_applied": 0.13609467455621302}, {"item_name": "株式報酬費用", "amount": 614000000, "unit": "USD", "direction": "add_back", "pre_tax": true, "reason": "非現金費用（ConfigでON/OFF可）", "extracted_from": "us-gaap:ShareBasedCompensation", "category": "株式報酬 (SBC)", "net_amount": 530437869.8224852, "tax_rate_applied": 0.13609467455621302}], "net_adjustment_total": 572769230.7692307, "filing_date": "2021-03-31", "form": "10-Q", "fiscal_year": 2021, "pretax_income": {"value": 507000000.0, "unit": "USD"}, "tax_expense": {"value": 69000000.0, "unit": "USD"}, "ai_analysis": {"health": "Caution", "comment": "在庫評価損は一過性の項目として加算されており合理的ですが、株式報酬費用が6.14億ドルと極めて大きく、調整後EPSをGAAPの2倍以上に引き上げています。SBCは継続的に発生する非現金費用であり、株主希薄化の実態を反映しない調整として注意が必要です。TSLAの非GAAP開示としては標準的ですが、調整依存度が高いため健全性はCautionと評価します。", "sources": [{"item": "在庫評価損", "snippet": "一過性の在庫評価減"}, {"item": "株式報酬費用", "snippet": "非現金費用（ConfigでON/OFF可）"}]}}]};
+        const MOCK_TTM = {"ticker": "TSLA", "last_updated": "2026-03-16T10:56:31.482392", "ttm": [{"period": "2025-12-31 to 2025-03-31", "net_income": 3794000000.0, "adjusted_income": 7272724666.685662, "diluted_shares": 3523500000.0, "eps": 1.076770256846885, "adjusted_eps": 2.064062627128044}, {"period": "2025-09-30 to 2024-12-31", "net_income": 5271000000.0, "adjusted_income": 7225743005.636072, "diluted_shares": 3516000000.0, "eps": 1.4991467576791808, "adjusted_eps": 2.0551032439237975}, {"period": "2025-06-30 to 2024-09-30", "net_income": 6065000000.0, "adjusted_income": 7851562871.822382, "diluted_shares": 3508750000.0, "eps": 1.728535803348771, "adjusted_eps": 2.2377094041531547}, {"period": "2025-03-31 to 2024-06-30", "net_income": 6371000000.0, "adjusted_income": 8157562871.822382, "diluted_shares": 3499250000.0, "eps": 1.820675859112667, "adjusted_eps": 2.3312317987632727}, {"period": "2024-12-31 to 2024-03-31", "net_income": 7091000000.0, "adjusted_income": 8807468686.34495, "diluted_shares": 3490000000.0, "eps": 2.0318051575931233, "adjusted_eps": 2.523629996087378}, {"period": "2024-09-30 to 2023-12-31", "net_income": 12702000000.0, "adjusted_income": 14913870347.39454, "diluted_shares": 3486750000.0, "eps": 3.6429339642933964, "adjusted_eps": 4.277298443362598}, {"period": "2024-06-30 to 2023-09-30", "net_income": 12388000000.0, "adjusted_income": 14599870347.39454, "diluted_shares": 3485750000.0, "eps": 3.553898013340027, "adjusted_eps": 4.188444480354168}, {"period": "2024-03-31 to 2023-06-30", "net_income": 13613000000.0, "adjusted_income": 15824870347.39454, "diluted_shares": 3485000000.0, "eps": 3.9061692969870876, "adjusted_eps": 4.540852323499151}, {"period": "2023-12-31 to 2023-03-31", "net_income": 14997000000.0, "adjusted_income": 17218216834.89546, "diluted_shares": 3481000000.0, "eps": 4.308244757253663, "adjusted_eps": 4.946342095632134}, {"period": "2023-09-30 to 2022-12-31", "net_income": 10756000000.0, "adjusted_income": 12508939443.320442, "diluted_shares": 3478500000.0, "eps": 3.092137415552681, "adjusted_eps": 3.596072859945506}, {"period": "2023-06-30 to 2022-09-30", "net_income": 12195000000.0, "adjusted_income": 13947939443.320442, "diluted_shares": 3472250000.0, "eps": 3.5121319029447764, "adjusted_eps": 4.016974423880896}, {"period": "2023-03-31 to 2022-06-30", "net_income": 11751000000.0, "adjusted_income": 13503939443.320442, "diluted_shares": 3468750000.0, "eps": 3.3876756756756756, "adjusted_eps": 3.8930275872635507}, {"period": "2022-12-31 to 2022-03-31", "net_income": 12556000000.0, "adjusted_income": 14293383634.625858, "diluted_shares": 3469750000.0, "eps": 3.618704517616543, "adjusted_eps": 4.119427519165893}, {"period": "2022-09-30 to 2021-12-31", "net_income": 11190000000.0, "adjusted_income": 13375282549.37968, "diluted_shares": 2883250000.0, "eps": 3.8810370241914507, "adjusted_eps": 4.638960391703696}, {"period": "2022-06-30 to 2021-09-30", "net_income": 9516000000.0, "adjusted_income": 11701282549.37968, "diluted_shares": 2858500000.0, "eps": 3.329018716109848, "adjusted_eps": 4.093504477656001}, {"period": "2022-03-31 to 2021-06-30", "net_income": 8399000000.0, "adjusted_income": 10584282549.37968, "diluted_shares": 2272250000.0, "eps": 3.696336230608428, "adjusted_eps": 4.658062514855179}, {"period": "2021-12-31 to 2021-03-31", "net_income": 5519000000.0, "adjusted_income": 7868640753.948038, "diluted_shares": 1687500000.0, "eps": 3.2705185185185184, "adjusted_eps": 4.6628982245618005}]};
+
+        if (currentTicker !== 'TSLA') {
+          throw new Error('テスト環境はTSLAのみ対応しています');
         }
-      } catch (e) {
-        console.log('TTM data not found');
-        ttmData = null;
+        quarterlyData = MOCK_QUARTERLY;
+        ttmData = MOCK_TTM;
+
+        updateHeader(quarterlyData);
+        setInitialDateRange(quarterlyData.quarters);
+        applyDateRange();
+
+        document.getElementById('ticker-title').innerText = currentTicker;
+        showLoading(false);
+        document.getElementById('content').classList.remove('hidden');
+        document.getElementById('error').classList.add('hidden');
+
+        switchTab('quarterly');
+      } catch (error) {
+        console.error('Error:', error);
+        showLoading(false);
+        document.getElementById('error').classList.remove('hidden');
       }
-
-      updateHeader(quarterlyData);
-      setInitialDateRange(quarterlyData.quarters);
-      applyDateRange();
-
-      document.getElementById('ticker-title').innerText = currentTicker;
-      document.getElementById('content').classList.remove('hidden');
-      document.getElementById('error').classList.add('hidden');
-    } catch (error) {
-      console.error('Error:', error);
-      document.getElementById('error').classList.remove('hidden');
-      document.getElementById('error').querySelector('p').innerHTML = 
-        `データの読み込みに失敗しました: ${error.message} <button onclick="loadTicker()" class="underline ml-2">再試行</button>`;
-    } finally {
-      showLoading(false);
-    }
-  }
-
-  function updateHeader(data) {
-    document.getElementById('last-updated').innerText = 
-      `最終更新: ${new Date(data.last_updated).toLocaleDateString('ja-JP')}`;
-  }
-
-  // デフォルト期間を3年に設定
-  function setInitialDateRange(quarters) {
-    if (!quarters || quarters.length === 0) return;
-    const dates = quarters.map(q => q.filing_date).sort(); // 古い順
-    const maxDate = dates[dates.length - 1];
-    const maxDateObj = new Date(maxDate);
-    // 3年前の日付を計算
-    const threeYearsAgo = new Date(maxDateObj);
-    threeYearsAgo.setFullYear(maxDateObj.getFullYear() - 3);
-    // YYYY-MM-DD 形式に変換
-    const threeYearsAgoStr = threeYearsAgo.toISOString().split('T')[0];
-    // データの最古より前にならないように調整
-    const startDate = threeYearsAgoStr < dates[0] ? dates[0] : threeYearsAgoStr;
-    document.getElementById('start-date').value = startDate;
-    document.getElementById('end-date').value = maxDate;
-  }
-
-  function filterDataByDateRange(dataArray, labelField, startStr, endStr) {
-    if (!dataArray || dataArray.length === 0) return [];
-    const start = startStr ? new Date(startStr) : null;
-    const end = endStr ? new Date(endStr) : null;
-    return dataArray.filter(item => {
-      const itemDate = new Date(item[labelField]);
-      if (start && itemDate < start) return false;
-      if (end && itemDate > end) return false;
-      return true;
-    });
-  }
-
-  function applyDateRange() {
-    if (!quarterlyData) return;
-
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
-
-    if (!startDate || !endDate) {
-      alert('開始日と終了日を入力してください。');
-      return;
     }
 
-    const filtered = filterDataByDateRange(quarterlyData.quarters, 'filing_date', startDate, endDate);
+    function updateHeader(data) {
+      document.getElementById('last-updated').innerText = 
+        `最終更新: ${new Date(data.last_updated).toLocaleDateString('ja-JP')}`;
+    }
 
-    if (currentTab === 'quarterly') {
-      updateChart(filtered, 'quarterly', 'filing_date');
-      const latestInRange = getLatestFromArray(filtered);
-      if (latestInRange) {
-        updateMetricsWithQuarter(latestInRange, quarterlyData.quarters, filtered);
-        updateAI(latestInRange.ai_analysis);
-      } else {
-        resetMetrics();
-        updateAI(null);
+    function setInitialDateRange(quarters) {
+      if (!quarters || quarters.length === 0) return;
+      const dates = quarters.map(q => q.filing_date).sort();
+      const minDate = dates[0];
+      const maxDate = dates[dates.length - 1];
+      document.getElementById('start-date').value = minDate;
+      document.getElementById('end-date').value = maxDate;
+    }
+
+    function filterDataByDateRange(dataArray, labelField, startStr, endStr) {
+      if (!dataArray || dataArray.length === 0) return [];
+      const start = startStr ? new Date(startStr) : null;
+      const end = endStr ? new Date(endStr) : null;
+      
+      return dataArray.filter(item => {
+        const itemDate = new Date(item[labelField]);
+        if (start && itemDate < start) return false;
+        if (end && itemDate > end) return false;
+        return true;
+      });
+    }
+
+    function applyDateRange() {
+      if (!quarterlyData) return;
+
+      const startDate = document.getElementById('start-date').value;
+      const endDate = document.getElementById('end-date').value;
+
+      if (!startDate || !endDate) {
+        alert('開始日と終了日を入力してください。');
+        return;
       }
-      updateAllAdjustments(quarterlyData.quarters);
-    } else if (currentTab === 'ttm') {
-      if (ttmData && ttmData.ttm) {
+
+      const filtered = filterDataByDateRange(quarterlyData.quarters, 'filing_date', startDate, endDate);
+      console.log(`Date range: ${startDate} to ${endDate}, filtered count: ${filtered.length}`);
+
+      if (currentTab === 'quarterly') {
+        updateChart(filtered, 'quarterly', 'filing_date');
+        
+        const latestInRange = getLatestFromArray(filtered);
+        if (latestInRange) {
+          const latestCopy = JSON.parse(JSON.stringify(latestInRange));
+          updateMetricsWithQuarter(latestCopy, quarterlyData.quarters);
+          updateAI(latestCopy.ai_analysis);
+        } else {
+          resetMetrics();
+          updateAI(null);
+        }
+      } else if (currentTab === 'ttm') {
         const start = new Date(startDate);
         const end = new Date(endDate);
-        const filteredTTM = ttmData.ttm.filter(item => {
-          const endDateStr = item.period.split(' to ')[1];
-          return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
-        });
-        updateChart(filteredTTM, 'ttm', 'period');
-      } else {
-        updateChart([], 'ttm', '');
-      }
-    }
-  }
-
-  function setPreset(range) {
-    if (!quarterlyData) return;
-    const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
-    const maxDate = dates[dates.length - 1];
-    const maxDateObj = new Date(maxDate);
-
-    let startDate;
-    const endDate = maxDate;
-
-    switch (range) {
-      case 'all': startDate = dates[0]; break;
-      case '5y': startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 5)).toISOString().split('T')[0]; break;
-      case '4y': startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 4)).toISOString().split('T')[0]; break;
-      case '3y': startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 3)).toISOString().split('T')[0]; break;
-      case '2y': startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 2)).toISOString().split('T')[0]; break;
-      case '1y': startDate = new Date(maxDateObj.setFullYear(maxDateObj.getFullYear() - 1)).toISOString().split('T')[0]; break;
-      default: return;
-    }
-
-    if (startDate < dates[0]) startDate = dates[0];
-    document.getElementById('start-date').value = startDate;
-    document.getElementById('end-date').value = endDate;
-    applyDateRange();
-  }
-
-  function resetDateRange() {
-    if (!quarterlyData) return;
-    const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
-    document.getElementById('start-date').value = dates[0];
-    document.getElementById('end-date').value = dates[dates.length - 1];
-    applyDateRange();
-  }
-
-  function getLatestFromArray(dataArray) {
-    if (!dataArray || dataArray.length === 0) return null;
-    return [...dataArray].sort((a, b) => b.filing_date.localeCompare(a.filing_date))[0];
-  }
-
-  function calculateYoY(latest, allQuarters, filteredQuarters) {
-    // 選択期間内で前年同期を探す
-    if (!latest || !filteredQuarters || filteredQuarters.length < 5) return null;
-
-    const [latestYear, latestMonth] = latest.filing_date.split('-');
-    const latestQuarter = Math.floor((parseInt(latestMonth) - 1) / 3) + 1;
-    const prevYear = (parseInt(latestYear) - 1).toString();
-
-    const candidates = filteredQuarters.filter(q => {
-      const qYear = q.filing_date.split('-')[0];
-      const qMonth = parseInt(q.filing_date.split('-')[1]);
-      const qQuarter = Math.floor((qMonth - 1) / 3) + 1;
-      return qYear === prevYear && qQuarter === latestQuarter;
-    });
-
-    if (candidates.length > 0) {
-      const prevQuarter = candidates.reduce((prev, curr) => 
-        new Date(curr.filing_date) > new Date(prev.filing_date) ? curr : prev
-      );
-      const prevEps = prevQuarter.adjusted_eps;
-      if (Math.abs(prevEps) > 1e-6) {
-        return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
-      }
-      return null;
-    }
-
-    // フォールバック：全期間からインデックスベースで探す
-    const idx = allQuarters.findIndex(q => q.filing_date === latest.filing_date);
-    if (idx >= 4 && idx - 4 < allQuarters.length) {
-      const prevQuarter = allQuarters[idx - 4];
-      const prevMonth = prevQuarter.filing_date.split('-')[1];
-      if (prevMonth === latestMonth) {
-        const prevEps = prevQuarter.adjusted_eps;
-        if (Math.abs(prevEps) > 1e-6) {
-          return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+        
+        if (ttmData && ttmData.ttm && ttmData.ttm.length > 0) {
+          const filteredTTM = ttmData.ttm.filter(item => {
+            const endDateStr = item.period.split(' to ')[1];
+            const itemEnd = new Date(endDateStr);
+            return itemEnd >= start && itemEnd <= end;
+          });
+          updateChart(filteredTTM, 'ttm', 'period');
+        } else {
+          updateChart([], 'ttm', '');
         }
       }
     }
-    return null;
-  }
 
-  function updateMetricsWithQuarter(quarter, allQuarters, filteredQuarters) {
-    document.getElementById('gaap-eps').innerText = `$${quarter.gaap_eps.toFixed(4)}`;
-    document.getElementById('adj-eps').innerText = `$${quarter.adjusted_eps.toFixed(4)}`;
-    const diff = quarter.adjusted_eps - quarter.gaap_eps;
-    document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
-    document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-mono text-green-400' : 'text-2xl font-mono text-red-400';
-    const yoy = calculateYoY(quarter, allQuarters, filteredQuarters);
-    if (yoy !== null) {
-      document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
-      document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-mono text-green-400' : 'text-2xl font-mono text-red-400';
-    } else {
+    function setPreset(range) {
+      if (!quarterlyData) return;
+      const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
+      const maxDate = dates[dates.length - 1];
+
+      let startDate;
+      const endDate = maxDate;
+
+      // ★修正①: new Date(maxDate) を毎回生成して元の日付オブジェクトが変わらないようにする
+      switch (range) {
+        case 'all':
+          startDate = dates[0];
+          break;
+        case '5y': {
+          const d = new Date(maxDate); d.setFullYear(d.getFullYear() - 5);
+          startDate = d.toISOString().split('T')[0];
+          break;
+        }
+        case '4y': {
+          const d = new Date(maxDate); d.setFullYear(d.getFullYear() - 4);
+          startDate = d.toISOString().split('T')[0];
+          break;
+        }
+        case '3y': {
+          const d = new Date(maxDate); d.setFullYear(d.getFullYear() - 3);
+          startDate = d.toISOString().split('T')[0];
+          break;
+        }
+        case '2y': {
+          const d = new Date(maxDate); d.setFullYear(d.getFullYear() - 2);
+          startDate = d.toISOString().split('T')[0];
+          break;
+        }
+        case '1y': {
+          const d = new Date(maxDate); d.setFullYear(d.getFullYear() - 1);
+          startDate = d.toISOString().split('T')[0];
+          break;
+        }
+        default:
+          return;
+      }
+
+      if (startDate < dates[0]) {
+        startDate = dates[0];
+      }
+
+      document.getElementById('start-date').value = startDate;
+      document.getElementById('end-date').value = endDate;
+      applyDateRange();
+    }
+
+    function resetDateRange() {
+      if (!quarterlyData) return;
+      const dates = quarterlyData.quarters.map(q => q.filing_date).sort();
+      document.getElementById('start-date').value = dates[0];
+      document.getElementById('end-date').value = dates[dates.length - 1];
+      applyDateRange();
+    }
+
+    function getLatestFromArray(dataArray) {
+      if (!dataArray || dataArray.length === 0) return null;
+      const sorted = [...dataArray].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
+      return sorted[0];
+    }
+
+    function calculateYoY(latest, allQuarters) {
+        const latestDate = latest.filing_date;
+        const [year, month] = latestDate.split('-');
+        const latestQuarter = Math.floor((parseInt(month) - 1) / 3) + 1;
+        
+        const targetYear = parseInt(year) - 1;
+        
+        const candidates = allQuarters.filter(q => {
+            const qYear = parseInt(q.filing_date.split('-')[0]);
+            const qMonth = parseInt(q.filing_date.split('-')[1]);
+            const qQuarter = Math.floor((qMonth - 1) / 3) + 1;
+            return qYear === targetYear && qQuarter === latestQuarter;
+        });
+
+        if (candidates.length > 0) {
+            const prevQuarter = candidates.reduce((prev, curr) => {
+                const prevDiff = Math.abs(new Date(latestDate) - new Date(prev.filing_date));
+                const currDiff = Math.abs(new Date(latestDate) - new Date(curr.filing_date));
+                return currDiff < prevDiff ? curr : prev;
+            });
+            
+            const prevEps = prevQuarter.adjusted_eps;
+            if (Math.abs(prevEps) > 0.0001) {
+                return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+            }
+        }
+
+        const idx = allQuarters.findIndex(q => q.filing_date === latestDate);
+        if (idx >= 4 && idx - 4 < allQuarters.length) {
+            const prevEps = allQuarters[idx - 4].adjusted_eps;
+            if (Math.abs(prevEps) > 0.0001) {
+                return (latest.adjusted_eps - prevEps) / Math.abs(prevEps);
+            }
+        }
+
+        const oneYearAgo = new Date(latestDate);
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0];
+        const prevByDate = allQuarters.find(q => q.filing_date === oneYearAgoStr);
+        if (prevByDate && Math.abs(prevByDate.adjusted_eps) > 0.0001) {
+            return (latest.adjusted_eps - prevByDate.adjusted_eps) / Math.abs(prevByDate.adjusted_eps);
+        }
+        
+        return null;
+    }
+
+    function updateMetricsWithQuarter(quarter, allQuarters) {
+      document.getElementById('gaap-eps').innerText = `$${quarter.gaap_eps.toFixed(4)}`;
+      document.getElementById('adj-eps').innerText = `$${quarter.adjusted_eps.toFixed(4)}`;
+      
+      const diff = quarter.adjusted_eps - quarter.gaap_eps;
+      document.getElementById('diff').innerText = `$${diff.toFixed(4)}`;
+      document.getElementById('diff').className = diff >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
+      
+      const yoy = calculateYoY(quarter, allQuarters);
+      if (yoy !== null) {
+        document.getElementById('yoy').innerText = (yoy * 100).toFixed(1) + '%';
+        document.getElementById('yoy').className = yoy >= 0 ? 'text-2xl font-bold text-green-400' : 'text-2xl font-bold text-red-400';
+      } else {
+        document.getElementById('yoy').innerText = '--';
+      }
+    }
+
+    function resetMetrics() {
+      document.getElementById('gaap-eps').innerText = '$0.00';
+      document.getElementById('adj-eps').innerText = '$0.00';
+      document.getElementById('diff').innerText = '$0.00';
       document.getElementById('yoy').innerText = '--';
     }
-  }
 
-  function resetMetrics() {
-    document.getElementById('gaap-eps').innerText = '$0.00';
-    document.getElementById('adj-eps').innerText = '$0.00';
-    document.getElementById('diff').innerText = '$0.00';
-    document.getElementById('yoy').innerText = '--';
-  }
+    function updateAI(ai) {
+      const badge = document.getElementById('health-badge');
+      const commentEl = document.getElementById('ai-comment');
+      const sourcesEl = document.getElementById('ai-sources');
 
-  function updateAI(ai) {
-    const badge = document.getElementById('health-badge');
-    const commentEl = document.getElementById('ai-comment');
-    const sourcesEl = document.getElementById('ai-sources');
+      if (!ai) {
+        badge.innerText = 'Good';
+        badge.className = 'px-3 py-1 rounded-full text-sm font-semibold bg-green-600';
+        badge.title = '健全性: Good';
+        commentEl.innerHTML = '<p>分析コメント準備中</p>';
+        sourcesEl.innerHTML = '';
+        return;
+      }
 
-    if (!ai) {
-      badge.innerText = 'Caution';
-      badge.style.background = 'rgba(245,158,11,.15)';
-      badge.style.color = 'var(--amb)';
-      badge.style.borderColor = 'var(--amb)';
-      commentEl.innerHTML = '<p>AI分析結果がありません。</p>';
-      sourcesEl.innerHTML = '';
-      return;
+      badge.innerText = ai.health || 'Good';
+      const colors = {
+        'Excellent': 'bg-green-600',
+        'Good': 'bg-green-600',
+        'Caution': 'bg-yellow-600',
+        'Warning': 'bg-red-600',
+        'Error': 'bg-gray-600'
+      };
+      badge.className = `px-3 py-1 rounded-full text-sm font-semibold ${colors[ai.health] || 'bg-green-600'}`;
+      
+      const tooltips = {
+        'Excellent': '健全性: Excellent（非常に健全、調整後EPSは持続可能）',
+        'Good': '健全性: Good（調整項目がなく、EPSは安定しています）',
+        'Caution': '健全性: Caution（一部の調整項目に注意が必要）',
+        'Warning': '健全性: Warning（大幅な調整があり、実態を確認要）',
+        'Error': '健全性: Error（AI分析エラー）'
+      };
+      badge.title = tooltips[ai.health] || '健全性評価';
+      
+      commentEl.innerHTML = `<p>${ai.comment || '分析コメント準備中'}</p>`;
+      
+      if (ai.sources && ai.sources.length) {
+        let sourcesHtml = '<h4 class="font-semibold mb-2">引用ソース:</h4><ul class="list-disc pl-5 space-y-1">';
+        ai.sources.forEach(source => {
+          sourcesHtml += `<li><span class="font-mono text-xs">${source.item}:</span> "${source.snippet}"</li>`;
+        });
+        sourcesHtml += '</ul>';
+        sourcesEl.innerHTML = sourcesHtml;
+      } else {
+        sourcesEl.innerHTML = '';
+      }
     }
 
-    badge.innerText = ai.health || 'Good';
-    const colors = {
-      'Excellent': { bg: 'rgba(16,185,129,.15)', text: 'var(--grn)', border: 'var(--grn)' },
-      'Good': { bg: 'rgba(16,185,129,.15)', text: 'var(--grn)', border: 'var(--grn)' },
-      'Caution': { bg: 'rgba(245,158,11,.15)', text: 'var(--amb)', border: 'var(--amb)' },
-      'Warning': { bg: 'rgba(244,63,94,.15)', text: 'var(--red)', border: 'var(--red)' },
-      'Error': { bg: 'rgba(100,116,139,.15)', text: 'var(--mut)', border: 'var(--mut)' }
-    };
-    const style = colors[ai.health] || colors.Good;
-    badge.style.background = style.bg;
-    badge.style.color = style.text;
-    badge.style.borderColor = style.border;
-
-    commentEl.innerHTML = `<p>${ai.comment || '分析コメント準備中'}</p>`;
-
-    if (ai.sources && ai.sources.length) {
-      let html = '<div class="font-mono text-xs"><span class="text-gray-400">引用ソース:</span><ul class="list-disc pl-5 mt-2 space-y-1">';
-      ai.sources.forEach(s => {
-        html += `<li><span class="text-[var(--acc)]">${s.item}:</span> "${s.snippet}"</li>`;
-      });
-      html += '</ul></div>';
-      sourcesEl.innerHTML = html;
-    } else {
-      sourcesEl.innerHTML = '';
+    function formatLabel(dateStr, fieldType) {
+      if (!dateStr) return '';
+      // ★修正②: TTMの period フィールド ("YYYY-MM-DD to YYYY-MM-DD") に対応
+      if (fieldType === 'period') {
+        // "2025-12-31 to 2025-03-31" → 末尾日付を使う
+        const endPart = dateStr.includes(' to ') ? dateStr.split(' to ')[1] : dateStr;
+        const parts = endPart.split('-');
+        if (parts.length < 2) return dateStr;
+        const [year, month] = parts;
+        const quarter = Math.floor((parseInt(month) - 1) / 3) + 1;
+        return `${year}-Q${quarter} TTM`;
+      }
+      const parts = dateStr.split('-');
+      if (parts.length < 2) return dateStr;
+      const [year, month] = parts;
+      const quarter = Math.floor((parseInt(month) - 1) / 3) + 1;
+      return `${year}-Q${quarter}`;
     }
-  }
 
-  // 四半期ラベル生成（YYYY-QQ）
-  function formatQuarterLabel(dateStr) {
-    if (!dateStr) return '';
-    const [year, month] = dateStr.split('-');
-    const q = Math.floor((parseInt(month) - 1) / 3) + 1;
-    return `${year}-Q${q}`;
-  }
-
-  // TTMラベル生成（期間の終了日から四半期を生成）
-  function formatTTMLabel(periodStr) {
-    if (!periodStr) return '';
-    // period は "開始日 to 終了日" 形式 → 終了日を取得
-    const endDateStr = periodStr.split(' to ')[1];
-    if (!endDateStr) return periodStr;
-    return formatQuarterLabel(endDateStr);
-  }
-
-  // ★★★ 修正: データタイプに応じてラベル生成を分岐 ★★★
     function updateChart(dataArray, type, labelField) {
-    const ctx = document.getElementById('eps-chart').getContext('2d');
+      const ctx = document.getElementById('eps-chart').getContext('2d');
 
-    if (!dataArray || dataArray.length === 0) {
+      if (!dataArray || dataArray.length === 0) {
+        if (chart) chart.destroy();
+        chart = new Chart(ctx, {
+          type: 'line',
+          data: { labels: [], datasets: [] },
+          options: { plugins: { legend: { display: false } } }
+        });
+        return;
+      }
+
+      const sorted = [...dataArray].sort((a, b) => a[labelField].localeCompare(b[labelField]));
+      const labels = sorted.map(item => formatLabel(item[labelField], labelField));
+      let gaapData, adjData;
+
+      if (type === 'quarterly') {
+        gaapData = sorted.map(item => item.gaap_eps);
+        adjData = sorted.map(item => item.adjusted_eps);
+      } else if (type === 'ttm') {
+        gaapData = sorted.map(item => item.eps);
+        adjData = sorted.map(item => item.adjusted_eps);
+      } else {
+        return;
+      }
+
       if (chart) chart.destroy();
+
       chart = new Chart(ctx, {
         type: 'line',
-        data: { labels: [], datasets: [] },
-        options: { plugins: { legend: { display: false } } }
-      });
-      return;
-    }
-
-    // ソート（文字列比較で安定）
-    const sorted = [...dataArray].sort((a, b) => {
-      if (type === 'quarterly') {
-        return a.filing_date.localeCompare(b.filing_date);
-      } else {
-        const aEnd = a.period.split(' to ')[1];
-        const bEnd = b.period.split(' to ')[1];
-        return aEnd.localeCompare(bEnd);
-      }
-    });
-    
-    // ラベル生成
-    const rawLabels = sorted.map(item => {
-      if (type === 'quarterly') {
-        return formatQuarterLabel(item.filing_date);
-      } else {
-        return formatTTMLabel(item.period);
-      }
-    });
-
-    let gaapData, adjData;
-    if (type === 'quarterly') {
-      gaapData = sorted.map(item => item.gaap_eps);
-      adjData = sorted.map(item => item.adjusted_eps);
-    } else {
-      gaapData = sorted.map(item => item.eps);
-      adjData = sorted.map(item => item.adjusted_eps);
-    }
-
-    // 重複ラベルの除去
-    const labels = [];
-    const cleanGaap = [];
-    const cleanAdj = [];
-    for (let i = 0; i < rawLabels.length; i++) {
-      if (i === 0 || rawLabels[i] !== rawLabels[i-1]) {
-        labels.push(rawLabels[i]);
-        cleanGaap.push(gaapData[i]);
-        cleanAdj.push(adjData[i]);
-      } else {
-        console.warn(`重複ラベルをスキップ: ${rawLabels[i]}`);
-      }
-    }
-
-    // デバッグ: 生成されたラベルを確認
-    console.log('Chart labels:', labels);
-
-    // Y軸スケール
-    const allValues = [...cleanGaap, ...cleanAdj].filter(v => v !== null && v !== undefined);
-    const min = Math.min(...allValues);
-    const max = Math.max(...allValues);
-    const padding = (max - min) * 0.1;
-
-    if (chart) chart.destroy();
-
-    chart = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'GAAP EPS',
-            data: cleanGaap,
-            borderColor: '#64748b',
-            backgroundColor: 'rgba(100,116,139,0.1)',
-            tension: 0.1,
-            datalabels: {
-              align: 'top',
-              offset: 4,
-              color: '#94a3b8',
-              font: { family: 'Space Mono', size: 9 },
-              formatter: v => v?.toFixed(2)
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'GAAP EPS',
+              data: gaapData,
+              borderColor: 'rgb(156, 163, 175)',
+              backgroundColor: 'rgba(156, 163, 175, 0.1)',
+              tension: 0.1,
+              datalabels: {
+                align: 'top',
+                offset: 4,
+                color: 'white',
+                font: { size: 10 },
+                formatter: (value) => value.toFixed(2)
+              }
+            },
+            {
+              label: 'Adjusted EPS',
+              data: adjData,
+              borderColor: 'rgb(34, 197, 94)',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              tension: 0.1,
+              datalabels: {
+                align: 'bottom',
+                offset: 4,
+                color: '#4ade80',
+                font: { size: 10 },
+                formatter: (value) => value.toFixed(2)
+              }
             }
-          },
-          {
-            label: 'Adjusted EPS',
-            data: cleanAdj,
-            borderColor: '#10b981',
-            backgroundColor: 'rgba(16,185,129,0.1)',
-            tension: 0.1,
-            datalabels: {
-              align: 'bottom',
-              offset: 4,
-              color: '#10b981',
-              font: { family: 'Space Mono', size: 9 },
-              formatter: v => v?.toFixed(2)
-            }
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: '#94a3b8', font: { family: 'Space Mono', size: 10 } } },
-          datalabels: { display: true, backgroundColor: '#1e2840', borderRadius: 2, padding: { top: 2, bottom: 2, left: 4, right: 4 } }
+          ]
         },
-        scales: {
-          y: {
-            grid: { color: 'rgba(30,40,64,0.5)' },
-            ticks: { color: '#94a3b8', font: { family: 'Space Mono', size: 10 } },
-            suggestedMin: min - padding,
-            suggestedMax: max + padding
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: 'white' } },
+            datalabels: {
+              display: true,
+              backgroundColor: 'rgba(0,0,0,0.6)',
+              borderRadius: 4,
+              padding: { top: 2, bottom: 2, left: 4, right: 4 }
+            }
           },
-          x: {
-            grid: { display: false },
-            ticks: {
-              color: '#94a3b8',
-              font: { family: 'Space Mono', size: 9 },
-              maxRotation: 45,
-              autoSkip: true,
-              maxTicksLimit: 12
+          scales: {
+            y: { 
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+              ticks: { color: 'white' },
+              beginAtZero: false
+            },
+            x: { 
+              grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+              ticks: { color: 'white', maxRotation: 45, autoSkip: true }
             }
           }
         }
-      }
-    });
-  }
-  function updateAllAdjustments(quarters) {
-    const container = document.getElementById('adjustments-accordion');
-    const sorted = [...quarters].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
-    let html = '';
-    sorted.forEach(q => {
-      html += `<div class="border border-[var(--bdr)]">`;
-      html += `<div class="bg-[var(--sur2)] px-4 py-2 font-mono text-xs border-b border-[var(--bdr)]">${q.filing_date}</div>`;
-      if (q.adjustments && q.adjustments.length) {
-        html += `<div class="p-4"><table class="w-full"><thead><tr class="text-gray-500"><th>項目</th><th class="text-right">金額（税後）</th><th>理由</th><th>抽出元</th></tr></thead><tbody>`;
-        q.adjustments.forEach(item => {
-          html += `<tr class="border-t border-[var(--bdr)]"><td class="py-2 font-mono text-xs">${item.item_name}</td>`;
-          html += `<td class="text-right text-green-400 font-mono text-xs">+$${(item.net_amount/1e6).toFixed(1)}M</td>`;
-          html += `<td class="text-xs">${item.reason}</td>`;
-          html += `<td><span class="bg-[var(--sur2)] px-2 py-0.5 text-xs font-mono border border-[var(--bdr)]">${item.extracted_from}</span></td></tr>`;
-        });
-        html += `</tbody></table></div>`;
-      } else {
-        html += `<div class="p-4 text-gray-500 text-xs font-mono">調整項目なし</div>`;
-      }
-      html += `</div>`;
-    });
-    container.innerHTML = html;
-  }
+      });
+    }
 
-  async function switchTab(tab) {
-    currentTab = tab;
-    document.getElementById('tab-quarterly').className = tab === 'quarterly' ? 'tab-link active' : 'tab-link';
-    document.getElementById('tab-ttm').className = tab === 'ttm' ? 'tab-link active' : 'tab-link';
+    function updateAllAdjustments(quarters) {
+      const container = document.getElementById('adjustments-accordion');
+      const sorted = [...quarters].sort((a, b) => b.filing_date.localeCompare(a.filing_date));
+      
+      let html = '';
+      sorted.forEach(q => {
+        html += `<div class="border border-gray-700 rounded-lg overflow-hidden">`;
+        html += `<div class="bg-gray-800 px-4 py-2 font-semibold border-b border-gray-700">${q.filing_date}</div>`;
+        
+        if (q.adjustments && q.adjustments.length > 0) {
+          html += `<div class="p-4 bg-gray-750">`;
+          html += `<table class="w-full text-sm">`;
+          html += `<thead><tr class="text-gray-400"><th class="text-left">項目</th><th class="text-right">金額（税後）</th><th class="text-left">理由</th><th class="text-left">抽出元</th></tr></thead>`;
+          html += `<tbody>`;
+          q.adjustments.forEach(item => {
+            html += `<tr class="border-t border-gray-700">`;
+            html += `<td class="py-2">${item.item_name}</td>`;
+            html += `<td class="text-right text-green-400">+$${(item.net_amount/1e6).toFixed(1)}M</td>`;
+            html += `<td>${item.reason}</td>`;
+            html += `<td><span class="text-xs bg-gray-600 px-2 py-1 rounded">${item.extracted_from}</span></td>`;
+            html += `</tr>`;
+          });
+          html += `</tbody></table>`;
+          html += `</div>`;
+        } else {
+          html += `<div class="p-4 text-gray-400">この四半期には調整項目はありません。</div>`;
+        }
+        html += `</div>`;
+      });
+      container.innerHTML = html;
+    }
 
-    const aiPanel = document.getElementById('ai-panel');
-    const adjustmentsPanel = document.getElementById('adjustments-panel');
+    async function switchTab(tab) {
+      currentTab = tab;
+      ['quarterly', 'ttm'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (t === tab) {
+          el.className = 'inline-block p-4 border-b-2 border-blue-600 text-blue-600 font-semibold';
+        } else {
+          el.className = 'inline-block p-4 border-b-2 border-transparent hover:text-gray-300';
+        }
+      });
 
-    if (tab === 'quarterly') {
-      aiPanel.style.display = 'block';
-      adjustmentsPanel.style.display = 'block';
-      if (quarterlyData) {
+      if (!currentTicker) return;
+
+      if (tab === 'quarterly' && quarterlyData) {
         applyDateRange();
-      }
-    } else if (tab === 'ttm') {
-      aiPanel.style.display = 'none';
-      adjustmentsPanel.style.display = 'none';
-      if (ttmData && ttmData.ttm) {
-        const startDate = document.getElementById('start-date').value;
-        const endDate = document.getElementById('end-date').value;
-        const start = new Date(startDate);
-        const end = new Date(endDate);
-        const filteredTTM = ttmData.ttm.filter(item => {
-          const endDateStr = item.period.split(' to ')[1];
-          return new Date(endDateStr) >= start && new Date(endDateStr) <= end;
-        });
-        updateChart(filteredTTM, 'ttm', 'period');
-        document.getElementById('ai-comment').innerHTML = '';
-        document.getElementById('ai-sources').innerHTML = '';
-      } else {
-        updateChart([], 'ttm', '');
+        updateAllAdjustments(quarterlyData.quarters);
+      } else if (tab === 'ttm') {
+        if (!ttmData || !ttmData.ttm || ttmData.ttm.length === 0) {
+          updateChart([], 'ttm', '');
+          document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
+          document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
+          document.getElementById('ai-sources').innerHTML = '';
+        } else {
+          const startDate = document.getElementById('start-date').value;
+          const endDate = document.getElementById('end-date').value;
+          const start = new Date(startDate);
+          const end = new Date(endDate);
+          
+          const filteredTTM = ttmData.ttm.filter(item => {
+            const endDateStr = item.period.split(' to ')[1];
+            const itemEnd = new Date(endDateStr);
+            return itemEnd >= start && itemEnd <= end;
+          });
+          
+          updateChart(filteredTTM, 'ttm', 'period');
+          
+          document.getElementById('adjustments-accordion').innerHTML = '<p class="text-gray-400">TTMデータには調整内訳はありません。</p>';
+          document.getElementById('ai-comment').innerHTML = '<p>TTMデータにはAI分析はありません。</p>';
+          document.getElementById('ai-sources').innerHTML = '';
+        }
       }
     }
-  }
 
-  window.onload = () => loadTicker();
-</script>
+    window.onload = () => loadTicker();
+  </script>
 </body>
 </html>
