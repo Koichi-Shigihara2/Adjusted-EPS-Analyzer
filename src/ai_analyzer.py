@@ -64,6 +64,7 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
 
     # APIキーがない場合
     if not XAI_API_KEY:
+        print(f"  [AI] XAI_API_KEY not set for {ticker}")
         return json.dumps({
             "health": "Caution",
             "comment": "AI分析にはXAI_API_KEY環境変数が必要です。",
@@ -83,6 +84,7 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
         adjustments_json=json.dumps(adjustments, ensure_ascii=False, indent=2)
     )
 
+    print(f"  [AI] Calling XAI API for {ticker} {fiscal_period}...")
     try:
         response = requests.post(
             XAI_API_URL,
@@ -98,17 +100,38 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
             },
             timeout=30
         )
+        print(f"  [AI] Response status: {response.status_code}")
         response.raise_for_status()
         result = response.json()
         content = result['choices'][0]['message']['content']
         # APIレスポンスがJSON形式であることを確認
         parsed = json.loads(content)
+        print(f"  [AI] Analysis successful for {ticker} {fiscal_period}")
         return json.dumps(parsed, ensure_ascii=False)
-    except Exception as e:
-        error_msg = str(e)
-        # エラー時も必ずJSONオブジェクトを返す
+    except requests.exceptions.RequestException as e:
+        error_msg = f"Request failed: {str(e)}"
+        print(f"  [AI] Error: {error_msg}")
+        if hasattr(e, 'response') and e.response is not None:
+            print(f"  [AI] Response body: {e.response.text}")
         return json.dumps({
             "health": "Error",
-            "comment": f"AI分析中にエラーが発生しました: {error_msg}",
+            "comment": f"AI分析中にリクエストエラーが発生しました: {error_msg}",
+            "sources": []
+        }, ensure_ascii=False)
+    except json.JSONDecodeError as e:
+        error_msg = f"JSON decode error: {str(e)}"
+        print(f"  [AI] Error: {error_msg}")
+        print(f"  [AI] Raw content: {content if 'content' in locals() else 'N/A'}")
+        return json.dumps({
+            "health": "Error",
+            "comment": f"AI分析のレスポンスがJSON形式ではありません: {error_msg}",
+            "sources": []
+        }, ensure_ascii=False)
+    except Exception as e:
+        error_msg = f"Unexpected error: {str(e)}"
+        print(f"  [AI] Error: {error_msg}")
+        return json.dumps({
+            "health": "Error",
+            "comment": f"AI分析中に予期せぬエラーが発生しました: {error_msg}",
             "sources": []
         }, ensure_ascii=False)
