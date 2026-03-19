@@ -48,12 +48,13 @@ def load_prompt() -> str:
         print(f"Error loading prompt: {e}. Using default.")
         return DEFAULT_PROMPT
 
-# ★★★ XAI API用の設定 ★★★
+# XAI API用の設定
 XAI_API_KEY = os.environ.get("XAI_API_KEY")  # GitHub Secretsのキー
 XAI_API_URL = "https://api.x.ai/v1/chat/completions"
-XAI_MODEL = "grok-4.20-beta-0309-reasoning"  # 画像にあるモデル名
+XAI_MODEL = "grok-4.20-beta-0309-reasoning"
 
 def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustments: List[Dict[str, Any]]) -> str:
+    # 調整項目がない場合
     if not adjustments:
         return json.dumps({
             "health": "Good",
@@ -61,6 +62,7 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
             "sources": []
         }, ensure_ascii=False)
 
+    # APIキーがない場合
     if not XAI_API_KEY:
         return json.dumps({
             "health": "Caution",
@@ -99,10 +101,12 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
         response.raise_for_status()
         result = response.json()
         content = result['choices'][0]['message']['content']
+        # APIレスポンスがJSON形式であることを確認
         parsed = json.loads(content)
         return json.dumps(parsed, ensure_ascii=False)
     except Exception as e:
         error_msg = str(e)
+        # エラー時も必ずJSONオブジェクトを返す
         return json.dumps({
             "health": "Error",
             "comment": f"AI分析中にエラーが発生しました: {error_msg}",
