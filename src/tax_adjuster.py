@@ -22,8 +22,8 @@ def apply_tax_adjustments(adjustments: List[Dict[str, Any]], period_data: Dict[s
     # period_data から税引前利益と税費用を取得して実効税率を計算
     tax_rate = 0.21  # デフォルト税率
     
-    pretax_val = normalize_value(period_data.get('pretax_income'))
-    tax_val = normalize_value(period_data.get('tax_expense'))
+    pretax_val = period_data.get('pretax_income', 0.0)
+    tax_val = period_data.get('tax_expense', 0.0)
     
     print(f"      DEBUG: pretax={pretax_val:,.0f}, tax={tax_val:,.0f}")
     
