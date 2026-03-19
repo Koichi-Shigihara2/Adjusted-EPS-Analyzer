@@ -483,9 +483,18 @@
     const startDate = document.getElementById('start-date').value;
     const endDate = document.getElementById('end-date').value;
 
-    if (!startDate || !endDate) {
-      alert('開始日と終了日を入力してください。');
-      return;
+        if (currentTab === 'quarterly') {
+      updateChart(filtered, 'quarterly', 'filing_date');
+      const latestInRange = getLatestFromArray(filtered);
+      if (latestInRange) {
+        // 第3引数に filtered を追加
+        updateMetricsWithQuarter(latestInRange, quarterlyData.quarters, filtered);
+        updateAI(latestInRange.ai_analysis);
+      } else {
+        resetMetrics();
+        updateAI(null);
+      }
+      updateAllAdjustments(quarterlyData.quarters);
     }
 
     const filtered = filterDataByDateRange(quarterlyData.quarters, 'filing_date', startDate, endDate);
