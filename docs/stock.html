@@ -668,14 +668,24 @@
     }
   }
 
-  function formatLabel(dateStr) {
+  // 四半期ラベル生成（YYYY-QQ）
+  function formatQuarterLabel(dateStr) {
     if (!dateStr) return '';
     const [year, month] = dateStr.split('-');
     const q = Math.floor((parseInt(month) - 1) / 3) + 1;
     return `${year}-Q${q}`;
   }
 
-  // ★★★ 修正: 日付オブジェクトでソート ★★★
+  // TTMラベル生成（期間の終了日から四半期を生成）
+  function formatTTMLabel(periodStr) {
+    if (!periodStr) return '';
+    // period は "開始日 to 終了日" 形式 → 終了日を取得
+    const endDateStr = periodStr.split(' to ')[1];
+    if (!endDateStr) return periodStr;
+    return formatQuarterLabel(endDateStr);
+  }
+
+  // ★★★ 修正: データタイプに応じてラベル生成を分岐 ★★★
   function updateChart(dataArray, type, labelField) {
     const ctx = document.getElementById('eps-chart').getContext('2d');
 
@@ -691,10 +701,25 @@
 
     // 日付でソート（古い→新しい）
     const sorted = [...dataArray].sort((a, b) => {
-      return new Date(a[labelField]) - new Date(b[labelField]);
+      if (type === 'quarterly') {
+        return new Date(a[labelField]) - new Date(b[labelField]);
+      } else {
+        // TTMの場合は終了日でソート
+        const aEnd = a.period.split(' to ')[1];
+        const bEnd = b.period.split(' to ')[1];
+        return new Date(aEnd) - new Date(bEnd);
+      }
     });
     
-    const labels = sorted.map(item => formatLabel(item[labelField]));
+    // ラベル生成
+    const labels = sorted.map(item => {
+      if (type === 'quarterly') {
+        return formatQuarterLabel(item[labelField]);
+      } else {
+        return formatTTMLabel(item.period);
+      }
+    });
+
     let gaapData, adjData;
 
     if (type === 'quarterly') {
