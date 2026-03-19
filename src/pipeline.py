@@ -201,7 +201,7 @@ def run():
                 latest["ai_analysis"] = {"health": "Error", "comment": ai_result, "sources": []}
         
         # 保存
-        ticker_dir = f"data/{ticker}"
+        ticker_dir = f"docs/data/{ticker}"
         os.makedirs(ticker_dir, exist_ok=True)
         
         with open(f"{ticker_dir}/quarterly.json", "w", encoding="utf-8") as f:
