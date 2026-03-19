@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-19T16:35:39.740053",
+  "last_updated": "2026-03-19T17:04:40.450342",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -68,20 +68,20 @@
         "gov_subsidy_timing"
       ],
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "大規模なリストラ費用（約2.47億ドル）の加算戻しがGAAP赤字をAdjusted黒字に転換させており、事業再編の影響が大きい。加えて減価償却費の加算戻しは非標準的で、償却費項目の重複（同一タグから2件）も確認されるため、調整の健全性に注意が必要。",
+        "health": "Warning",
+        "comment": "調整項目に重大な懸念あり。無形資産償却費（5.8M）が同一GAAPソースから2回重複加算されており二重計上の可能性が高い。また飲料会社のCELHで不動産維持を理由とした減価償却費の全額加算は非標準的。2.467億ドルの大規模リストラ費用も調整の妥当性を疑問視させるため、Adjusted EPSの信頼性は低い。",
         "sources": [
           {
-            "item": "リストラ費用",
-            "snippet": "一過性の事業再編費用"
-          },
-          {
-            "item": "減価償却費",
-            "snippet": "不動産の実態価値維持のため会計上の減価を除外"
-          },
-          {
             "item": "無形資産償却費",
-            "snippet": "買収関連無形資産の償却"
+            "snippet": "extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+          },
+          {
+            "item": "IPR&D償却",
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+          },
+          {
+            "item": "リストラ費用",
+            "snippet": "amount: 246707000, reason: 一過性の事業再編費用"
           }
         ]
       }
