@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-19T13:08:55.495149",
+  "last_updated": "2026-03-19T13:24:27.294040",
   "quarters": [
     {
       "gaap_eps": 0.09597017588777941,
@@ -52,7 +52,21 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "調整項目は株式報酬（非現金）とリストラ費用（一過性）の2つで、基準としては妥当ですが、リストラ費用8075万ドルが極めて大きく、GAAP純利益推定値に対して大幅な影響を与えています。調整後EPSがGAAPの約4.3倍となっており、調整依存度が高いため収益の持続可能性に注意が必要です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用"
+          },
+          {
+            "item": "リストラ費用",
+            "snippet": "一過性の事業再編費用"
+          }
+        ]
+      }
     },
     {
       "gaap_eps": -0.23669203733445057,
@@ -797,21 +811,7 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ],
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目は株式報酬（非現金）とリストラ費用（一過性）の2項目のみで、基準に適合した標準的な加算項目です。GAAP EPS 0.0からAdjusted EPS +0.03への改善は妥当ですが、株式報酬の金額が相対的に大きいため、将来的な希薄化効果に注意が必要です。全体として健全性の高い調整内容です。",
-        "sources": [
-          {
-            "item": "株式報酬費用",
-            "snippet": "非現金費用としてadd_back、criteria: non_cash"
-          },
-          {
-            "item": "リストラ費用",
-            "snippet": "一過性の事業再編費用としてadd_back、criteria: non_recurring"
-          }
-        ]
-      }
+      ]
     }
   ]
 }

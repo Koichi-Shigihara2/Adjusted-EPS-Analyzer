@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-03-19T13:08:40.037994",
+  "last_updated": "2026-03-19T13:23:59.238127",
   "quarters": [
     {
       "gaap_eps": 0.2367415424862226,
@@ -35,7 +35,17 @@
       "sector_exclusions": [
         "sbc",
         "amortization_intangibles"
-      ]
+      ],
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目は株式報酬費用の加算戻しです。非現金支出として合理的でセクター標準ですが、調整額が大きくGAAP EPSを約69%押し上げるため、経済的コストの反映として健全性に懸念があります。Palantirの高水準SBCを考慮し、投資家は希薄化影響と持続可能性を慎重に評価すべきです。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "株式報酬費用 - 現金支出を伴わず、将来の希薄化は株式数で調整済み。成長投資の本質的価値を反映。"
+          }
+        ]
+      }
     },
     {
       "gaap_eps": 0.18498189655071826,
@@ -654,11 +664,6 @@
         "sbc_to_revenue": 0,
         "threshold_ratio": 0.15,
         "threshold_sbc_to_revenue": 0.25
-      },
-      "ai_analysis": {
-        "health": "Good",
-        "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
-        "sources": []
       }
     }
   ]

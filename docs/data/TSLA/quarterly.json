@@ -1,6 +1,6 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-19T13:08:49.223309",
+  "last_updated": "2026-03-19T13:24:15.521257",
   "quarters": [
     {
       "gaap_eps": 0.238230289279637,
@@ -52,7 +52,21 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用（22.52億ドル、非現金）とリストラ費用（1.52億ドル、一過性）の2項目で、主にSBCのadd_backによりGAAP EPS 0.24からAdjusted EPS 0.78へ3倍以上に引き上げられています。SBCは非現金として一般的ですが、テスラでは株主希薄化の実質コストが大きく、調整依存度が高いため健全性に注意が必要です。リストラは比較的妥当ですが、全体として調整の影響が過大です。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用としてadd_back、criteria: non_cash、amount: 2252000000"
+          },
+          {
+            "item": "リストラ費用",
+            "snippet": "一過性の事業再編費用、criteria: non_recurring、amount: 152000000"
+          }
+        ]
+      }
     },
     {
       "gaap_eps": 0.3893930799773114,
@@ -764,17 +778,7 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ],
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目として株式報酬費用（非現金費用）をadd_backしており、一般的な調整ですが、GAAP EPS 0.0からAdjusted EPS 0.86への大幅な上方修正は影響が大きいです。株式報酬は継続的に発生し株主希薄化を伴うため、調整後EPSの持続可能性に注意が必要です。",
-        "sources": [
-          {
-            "item": "株式報酬費用",
-            "snippet": "amount: 363283000.0, direction: add_back, reason: 非現金費用, extracted_from: us-gaap:ShareBasedCompensation"
-          }
-        ]
-      }
+      ]
     }
   ]
 }
