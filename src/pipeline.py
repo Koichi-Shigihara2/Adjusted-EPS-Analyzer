@@ -154,16 +154,24 @@ def run():
         if cik:
             metadata = get_company_metadata(cik)
         
-        # セクター判定（優先順位: 銘柄マスタ > SICコード > キーワード）
+        # セクター判定（優先順位: 銘柄マスタ > SICコード > 会社名キーワード > ティッカー直接マッチ）
+        # ★設計方針: セクター判定が失敗しても sector=None として処理を継続
+        #   sector=None の場合は除外項目なし（全調整項目を適用）で動作する
         sector = ticker_to_sector.get(ticker)
         if not sector:
             sector = classifier.classify_by_sic(metadata.get('sic', ''))
         if not sector:
             sector = classifier.classify_by_keywords(metadata.get('name', ''))
+        if not sector:
+            # ★フォールバック: ティッカーシンボル自体でマッチ
+            # CIKが誤っていてmetadata取得が失敗しても、sectors.yamlに
+            # ティッカーがキーワードとして登録されていれば必ず解決できる
+            sector = classifier.classify_by_keywords(ticker)
         
-        print(f"  Sector: {sector or 'Unknown'}")
+        print(f"  Sector: {sector or 'Unknown（除外項目なしで処理）'}")
         
         # セクター別デフォルト除外項目を取得
+        # sector が None（不明）の場合は空リスト → 全調整項目を適用
         sector_exclusions = classifier.get_exclusions_for_sector(sector) if sector else []
         exclusion_item_ids = [ex['item_id'] for ex in sector_exclusions]
         
