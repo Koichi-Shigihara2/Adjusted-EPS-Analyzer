@@ -20,10 +20,13 @@ class SectorClassifierV2:
             self.sectors = yaml.safe_load(f)['sectors']
         
         # キーワード検索用に正規表現パターンを事前コンパイル
+        # ★修正: \b（単語境界）でマッチさせ、'O' が 'Technologies' 内の 'o' に
+        #         誤マッチするバグを修正。ティッカーシンボルは必ず単語として完全一致させる。
         self.patterns = {}
         for sector in self.sectors:
-            keywords = '|'.join(re.escape(kw) for kw in sector['keywords'])
-            self.patterns[sector['name']] = re.compile(keywords, re.IGNORECASE)
+            # 各キーワードを \b で囲んで単語境界マッチにする
+            parts = [r'\b' + re.escape(kw) + r'\b' for kw in sector['keywords']]
+            self.patterns[sector['name']] = re.compile('|'.join(parts), re.IGNORECASE)
     
     def classify_by_sic(self, sic_code: str) -> Optional[str]:
         """SICコードで業種判定（最も正確）"""
