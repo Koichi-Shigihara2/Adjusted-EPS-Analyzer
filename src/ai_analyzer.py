@@ -29,7 +29,11 @@ Adjusted EPS: {adjusted_eps}
   "health": "Excellent/Good/Caution/Warning/Error",
   "comment": "分析コメント（日本語）",
   "sources": [
-    {{"item": "項目名", "snippet": "引用テキスト"}}
+    {{
+      "item": "項目名",
+      "snippet": "引用テキスト（調整の根拠・性質の説明）",
+      "confidence": 0.0から1.0の数値（この調整が真に一過性であるという確信度）
+    }}
   ]
 }}
 """
@@ -106,6 +110,18 @@ def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustm
         content = result['choices'][0]['message']['content']
         # APIレスポンスがJSON形式であることを確認
         parsed = json.loads(content)
+
+        # ★ ai_confidence を sources の各項目に正規化して保存（要件定義書 4.2③）
+        for source in parsed.get("sources", []):
+            raw_conf = source.get("confidence")
+            if raw_conf is not None:
+                try:
+                    source["confidence"] = round(max(0.0, min(1.0, float(raw_conf))), 2)
+                except (ValueError, TypeError):
+                    source["confidence"] = None
+            else:
+                source["confidence"] = None
+
         print(f"  [AI] Analysis successful for {ticker} {fiscal_period}")
         return json.dumps(parsed, ensure_ascii=False)
     except requests.exceptions.RequestException as e:
