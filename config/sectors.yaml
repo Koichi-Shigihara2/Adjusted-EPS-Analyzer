@@ -22,6 +22,9 @@ sectors:
     reason: 無形資産償却費 - 買収関連の非現金費用
     criteria:
     - non_cash
+  # ★ depreciation はSaaSに除外しない（PLTRでの誤適用を防ぐ）
+  # depreciation は REITs 専用
+
 - name: フィンテック / 銀行
   keywords:
   - SOFI
@@ -33,7 +36,9 @@ sectors:
   sic_codes:
   - '6020'
   - '6021'
+  - '6022'   # ★ 追加：State commercial banks
   - '6199'
+  - '6159'   # ★ 追加：Federal-sponsored credit agencies
   exclusions:
   - item_id: loan_fair_value
     reason: ローン公正価値評価損益 - 市場金利変動による一時的評価替え
@@ -44,6 +49,10 @@ sectors:
     reason: 貸倒引当金繰入の異常変動 - マクロ変動による一時的影響
     criteria:
     - non_recurring
+  # ★ 銀行ではSBCは除外しない（希薄化コストとして実質的）
+  # ★ 銀行では depreciation も除外しない（システム投資の劣化は実コスト）
+  # ★ maturity_watch なし（SBCを調整項目として扱わないため）
+
 - name: ヘルスケア / バイオ
   keywords:
   - VRTX
@@ -67,6 +76,7 @@ sectors:
     criteria:
     - non_cash
     - non_recurring
+
 - name: 一般消費財 / 製造 / EV・半導体
   keywords:
   - TSLA
@@ -94,6 +104,8 @@ sectors:
     reason: 政府補助金の一時的影響 - タイミング差による変動
     criteria:
     - non_recurring
+  # ★ depreciation は製造業でも除外しない（工場・設備の劣化は実コスト）
+
 - name: 不動産 (REITs)
   keywords:
   - O
@@ -113,6 +125,7 @@ sectors:
     criteria:
     - non_recurring
     - non_operating
+
 - name: 暗号資産 / ブロックチェーン
   keywords:
   - COIN
