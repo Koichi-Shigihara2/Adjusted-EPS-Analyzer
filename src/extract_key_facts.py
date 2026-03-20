@@ -294,17 +294,6 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             items = extract_value_from_facts(facts, tag, limit=years*6)
             tag_data_map[tag] = items
             print(f"Extracted {len(items)} items for {tag}")
-
-        # ★★★ デバッグ: SBCタグの全エントリを表示 ★★★
-        for sbc_tag in ['us-gaap:ShareBasedCompensation', 'us-gaap:AllocatedShareBasedCompensationExpense']:
-            sbc_items = tag_data_map.get(sbc_tag, [])
-            if sbc_items:
-                print(f"\n[DEBUG] {sbc_tag} 全エントリ ({len(sbc_items)}件):")
-                for it in sbc_items[:20]:
-                    start = it.get('start','?')
-                    end   = it.get('end','?')
-                    days  = (datetime.strptime(end,'%Y-%m-%d') - datetime.strptime(start,'%Y-%m-%d')).days if start != '?' and end != '?' else '?'
-                    print(f"  form={it.get('form','?')} start={start} end={end} days={days} val={it.get('val',0):,.0f}")
         
         # 年次データ抽出
         annual_data_by_tag = {}
@@ -408,8 +397,9 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 quarters_map[key]['diluted_shares'] = {'value': item['val'], 'unit': item['unit']}
         
         # ★★★ YTD累計タグ → 四半期差分計算（PLTRのSBC対応） ★★★
-        # PLTRのSBCは Q1=3ヶ月, Q2=6ヶ月累計, Q3=9ヶ月累計, Q4=12ヶ月累計 で報告される
-        # YTD値の差分から各四半期の値を導出する
+        # US GAAPではSBCは毎四半期計上義務があるが、XBRLではYTD累計で報告する企業が多い
+        # (例) PLTR: Q1=3ヶ月, Q2=6ヶ月YTD, Q3=9ヶ月YTD, Q4=12ヶ月YTD のみ
+        # → 隣接するYTD値の差分から各四半期値を導出する
         YTD_TARGET_TAGS = [
             'us-gaap:ShareBasedCompensation',
             'us-gaap:AllocatedShareBasedCompensationExpense',
@@ -418,66 +408,57 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             'us-gaap:ShareBasedCompensationExpense',
             'us-gaap:RestrictedStockExpense',
         ]
-        # YTD期間の定義（fiscal_end_month=12の場合）
-        # Q1: 70-120日, Q2 YTD: 150-200日, Q3 YTD: 240-290日, Q4/Annual: 340-380日
-        YTD_RANGES = [
-            (150, 200, 2),  # Q2 YTD (上半期): 180日前後
-            (240, 290, 3),  # Q3 YTD (9ヶ月): 270日前後
-            (340, 380, 4),  # Q4/Annual (年次): 365日前後
-        ]
         for tag in YTD_TARGET_TAGS:
             all_items = tag_data_map.get(tag, [])
             if not all_items:
                 continue
-            # 10-Qのみ対象、start/endあり
-            q_items = [it for it in all_items
-                       if it.get('form','').startswith('10-Q')
-                       and 'start' in it and 'end' in it]
-            # 10-KのQ4用
-            k_items = [it for it in all_items
-                       if it.get('form','').startswith('10-K')
-                       and 'start' in it and 'end' in it]
 
-            # fiscal_year × quarter_num → YTD値 のマップを構築
-            ytd_map = {}  # (fy, qnum) → val
-            for it in q_items + k_items:
+            # start が会計年度開始日（fiscal year start）のエントリ = YTD累計
+            # fiscal_year × quarter_num → {val, unit} のマップを構築
+            ytd_map = {}  # (fy, qnum) → {val, unit}
+            for it in all_items:
+                if 'start' not in it or 'end' not in it:
+                    continue
                 start = datetime.strptime(it['start'], '%Y-%m-%d')
                 end   = datetime.strptime(it['end'],   '%Y-%m-%d')
                 days  = (end - start).days
                 fy    = end.year if end.month <= fiscal_end_month else end.year + 1
+                qnum  = get_quarter_number(end, fiscal_end_month)
+                key   = (fy, qnum)
 
-                # Q1（四半期値そのまま）
-                if QUARTER_DAYS_MIN <= days <= QUARTER_DAYS_MAX:
-                    qnum = get_quarter_number(end, fiscal_end_month)
-                    ytd_map[(fy, qnum)] = {'val': it['val'], 'unit': it['unit']}
-                    continue
-                # YTD or Annual → qnum を期間から推定
-                for (dmin, dmax, qnum) in YTD_RANGES:
-                    if dmin <= days <= dmax:
-                        ytd_map[(fy, qnum)] = {'val': it['val'], 'unit': it['unit']}
-                        break
+                # 四半期単体（70-120日）でも、YTD（>120日）でも受け入れる
+                # ただし同じkeyに既に四半期単体値があればそちらを優先
+                if key not in ytd_map:
+                    ytd_map[key] = {'val': it['val'], 'unit': it['unit'],
+                                    'is_quarterly': QUARTER_DAYS_MIN <= days <= QUARTER_DAYS_MAX}
+                elif not ytd_map[key]['is_quarterly'] and QUARTER_DAYS_MIN <= days <= QUARTER_DAYS_MAX:
+                    # YTDより四半期単体値を優先
+                    ytd_map[key] = {'val': it['val'], 'unit': it['unit'], 'is_quarterly': True}
 
             if not ytd_map:
                 continue
 
-            # YTD差分から四半期値を計算して quarters_map に追加
+            # 各四半期に値を設定
             for (fy, qnum), qdata in quarters_map.items():
                 if tag in qdata:
-                    continue  # 既に値あり
-                current = ytd_map.get((fy, qnum))
-                if not current:
+                    continue  # 既に10-Qの四半期単体値あり→スキップ
+                entry = ytd_map.get((fy, qnum))
+                if not entry:
                     continue
-                if qnum == 1:
-                    # Q1はYTD=四半期値
-                    qval = current['val']
+                if entry['is_quarterly']:
+                    # 四半期単体値そのまま使用
+                    qval = entry['val']
+                elif qnum == 1:
+                    # Q1のYTD = 四半期値
+                    qval = entry['val']
                 else:
-                    # Q2以降: 当期YTD - 前期YTD
+                    # Q2以降: YTD(qnum) - YTD(qnum-1) で差分計算
                     prev = ytd_map.get((fy, qnum - 1))
                     if prev is None:
                         continue
-                    qval = current['val'] - prev['val']
+                    qval = entry['val'] - prev['val']
                 if qval and qval > 0:
-                    qdata[tag] = {'value': qval, 'unit': current['unit']}
+                    qdata[tag] = {'value': qval, 'unit': entry['unit']}
 
             applied = sum(1 for (fy,qn), qd in quarters_map.items() if tag in qd)
             if applied:
