@@ -1,14 +1,26 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-20T01:32:42.161573",
+  "last_updated": "2026-03-20T01:41:47.687453",
   "quarters": [
     {
       "gaap_eps": 1.3033533472205203,
-      "adjusted_eps": 1.4715977942191203,
+      "adjusted_eps": 1.5284580269703318,
       "gaap_net_income": 31910000000.0,
-      "adjusted_net_income": 36029128795.86672,
+      "adjusted_net_income": 37421237874.31464,
       "diluted_shares_used": 24483000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1655000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 1392109078.4479122,
+          "tax_rate_applied": 0.1588464782792071
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 96000000,
@@ -46,7 +58,7 @@
           "tax_rate_applied": 0.1588464782792071
         }
       ],
-      "net_adjustment_total": 4119128795.8667226,
+      "net_adjustment_total": 5511237874.314635,
       "filing_date": "2025-10-26",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -68,27 +80,30 @@
         }
       },
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "無形資産償却費およびIPR&D償却の調整は買収関連の非現金項目として標準的ですが、47億ドル規模のマイルストーン型研究開発費を一過性として全額加算している点が問題です。R&DはNVIDIAの事業核心であり、このような大規模調整は非GAAP EPSの質を低下させ、持続可能性に懸念があります。調整幅はEPSで約0.17と全体の13%に及びます。",
-        "sources": [
-          {
-            "item": "マイルストーン型研究開発費",
-            "snippet": "成功報酬型の一過性R&D費用"
-          },
-          {
-            "item": "無形資産償却費",
-            "snippet": "買収関連無形資産の償却"
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {
       "gaap_eps": 1.0770422305560086,
-      "adjusted_eps": 1.230939920296739,
+      "adjusted_eps": 1.286990570249407,
       "gaap_net_income": 26422000000.0,
-      "adjusted_net_income": 30197418124.719604,
+      "adjusted_net_income": 31572452669.358456,
       "diluted_shares_used": 24532000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1624000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 1375034544.6388514,
+          "tax_rate_applied": 0.1533038518233673
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 84000000,
@@ -126,7 +141,7 @@
           "tax_rate_applied": 0.1533038518233673
         }
       ],
-      "net_adjustment_total": 3775418124.7196045,
+      "net_adjustment_total": 5150452669.358457,
       "filing_date": "2025-07-27",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -140,9 +155,9 @@
     },
     {
       "gaap_eps": 0.7628702612652879,
-      "adjusted_eps": 0.8756988174609429,
+      "adjusted_eps": 0.8696056045115396,
       "gaap_net_income": 18775000000.0,
-      "adjusted_net_income": 21551823596.531265,
+      "adjusted_net_income": 21401863532.6335,
       "diluted_shares_used": 24611000000.0,
       "adjustments": [
         {
@@ -167,6 +182,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 136249429.48425376,
+          "tax_rate_applied": 0.1430853491556367
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -175000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -149960063.89776358,
           "tax_rate_applied": 0.1430853491556367
         },
         {
@@ -206,7 +233,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2776823596.5312643,
+      "net_adjustment_total": 2626863532.6335,
       "filing_date": "2025-04-27",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -220,11 +247,23 @@
     },
     {
       "gaap_eps": 0.77940582869137,
-      "adjusted_eps": 0.9082124560535215,
+      "adjusted_eps": 0.9519396516764643,
       "gaap_net_income": 19309000000.0,
-      "adjusted_net_income": 22500055386.269943,
+      "adjusted_net_income": 23583352930.63273,
       "diluted_shares_used": 24774000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1252000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 1083297544.3627892,
+          "tax_rate_applied": 0.13474637031726117
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 149000000,
@@ -262,7 +301,7 @@
           "tax_rate_applied": 0.13474637031726117
         }
       ],
-      "net_adjustment_total": 3191055386.2699413,
+      "net_adjustment_total": 4274352930.6327305,
       "filing_date": "2024-10-27",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -276,11 +315,23 @@
     },
     {
       "gaap_eps": 0.6680215711526079,
-      "adjusted_eps": 0.7856050495349395,
+      "adjusted_eps": 0.8257266740332276,
       "gaap_net_income": 16599000000.0,
-      "adjusted_net_income": 19520714270.844177,
+      "adjusted_net_income": 20517656396.37764,
       "diluted_shares_used": 24848000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 1154000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 996942125.5334653,
+          "tax_rate_applied": 0.1360986780472572
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 146000000,
@@ -318,7 +369,7 @@
           "tax_rate_applied": 0.1360986780472572
         }
       ],
-      "net_adjustment_total": 2921714270.844176,
+      "net_adjustment_total": 3918656396.377641,
       "filing_date": "2024-07-28",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -332,9 +383,9 @@
     },
     {
       "gaap_eps": 0.5978706307754118,
-      "adjusted_eps": 0.6735040579382665,
+      "adjusted_eps": 0.6758915267456919,
       "gaap_net_income": 14881000000.0,
-      "adjusted_net_income": 16763516002.083454,
+      "adjusted_net_income": 16822940100.700272,
       "diluted_shares_used": 24890000000.0,
       "adjustments": [
         {
@@ -359,6 +410,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 123154291.33630417,
+          "tax_rate_applied": 0.1387811794664043
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 69000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 59424098.6168181,
           "tax_rate_applied": 0.1387811794664043
         },
         {
@@ -398,7 +461,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1882516002.0834537,
+      "net_adjustment_total": 1941940100.700272,
       "filing_date": "2024-04-28",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -412,11 +475,23 @@
     },
     {
       "gaap_eps": 0.3706094627105052,
-      "adjusted_eps": 0.4615535448924596,
+      "adjusted_eps": 0.4960362158669497,
       "gaap_net_income": 9243000000.0,
-      "adjusted_net_income": 11511145409.617943,
+      "adjusted_net_income": 12371143223.721725,
       "diluted_shares_used": 24940000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 979000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 859997814.1037825,
+          "tax_rate_applied": 0.12155483748336818
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 144000000,
@@ -454,7 +529,7 @@
           "tax_rate_applied": 0.12155483748336818
         }
       ],
-      "net_adjustment_total": 2268145409.6179433,
+      "net_adjustment_total": 3128143223.721726,
       "filing_date": "2023-10-29",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -468,11 +543,23 @@
     },
     {
       "gaap_eps": 0.24757941906057454,
-      "adjusted_eps": 0.33028321583027226,
+      "adjusted_eps": 0.36014453524711854,
       "gaap_net_income": 6188000000.0,
-      "adjusted_net_income": 8255098696.461824,
+      "adjusted_net_income": 9001452513.96648,
       "diluted_shares_used": 24994000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 842000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 746353817.5046555,
+          "tax_rate_applied": 0.11359404096834265
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 146000000,
@@ -510,7 +597,7 @@
           "tax_rate_applied": 0.11359404096834265
         }
       ],
-      "net_adjustment_total": 2067098696.4618247,
+      "net_adjustment_total": 2813452513.9664803,
       "filing_date": "2023-07-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -524,9 +611,9 @@
     },
     {
       "gaap_eps": 0.8204819277108434,
-      "adjusted_eps": 1.4685392543464941,
+      "adjusted_eps": 1.463339278344705,
       "gaap_net_income": 2043000000.0,
-      "adjusted_net_income": 3656662743.3227706,
+      "adjusted_net_income": 3643714803.0783157,
       "diluted_shares_used": 2490000000.0,
       "adjustments": [
         {
@@ -551,6 +638,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 167398370.30330467,
+          "tax_rate_applied": 0.07514712539610684
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -14000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -12947940.244454505,
           "tax_rate_applied": 0.07514712539610684
         },
         {
@@ -590,7 +689,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1613662743.3227706,
+      "net_adjustment_total": 1600714803.0783157,
       "filing_date": "2023-04-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -604,11 +703,23 @@
     },
     {
       "gaap_eps": 0.272108843537415,
-      "adjusted_eps": 1.094377065671293,
+      "adjusted_eps": 1.3599123172923329,
       "gaap_net_income": 680000000.0,
-      "adjusted_net_income": 2734848287.112561,
+      "adjusted_net_income": 3398420880.91354,
       "diluted_shares_used": 2499000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 745000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 663572593.8009788,
+          "tax_rate_applied": 0.10929853181076672
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 181000000,
@@ -646,7 +757,7 @@
           "tax_rate_applied": 0.10929853181076672
         }
       ],
-      "net_adjustment_total": 2054848287.112561,
+      "net_adjustment_total": 2718420880.91354,
       "filing_date": "2022-10-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -660,11 +771,23 @@
     },
     {
       "gaap_eps": 0.26073131955484896,
-      "adjusted_eps": 0.7989892059241904,
+      "adjusted_eps": 0.9586461383984605,
       "gaap_net_income": 656000000.0,
-      "adjusted_net_income": 2010256842.1052632,
+      "adjusted_net_income": 2411953684.2105265,
       "diluted_shares_used": 2516000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 649000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 401696842.1052632,
+          "tax_rate_applied": 0.38105263157894737
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 182000000,
@@ -702,7 +825,7 @@
           "tax_rate_applied": 0.38105263157894737
         }
       ],
-      "net_adjustment_total": 1354256842.1052632,
+      "net_adjustment_total": 1755953684.2105262,
       "filing_date": "2022-07-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -716,9 +839,9 @@
     },
     {
       "gaap_eps": 0.637761135199054,
-      "adjusted_eps": 1.3095686335312173,
+      "adjusted_eps": 1.3035620189614754,
       "gaap_net_income": 1618000000.0,
-      "adjusted_net_income": 3322375623.268698,
+      "adjusted_net_income": 3307136842.105263,
       "diluted_shares_used": 2537000000.0,
       "adjustments": [
         {
@@ -743,6 +866,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 138941828.25484765,
+          "tax_rate_applied": 0.10360110803324099
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -17000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -15238781.163434904,
           "tax_rate_applied": 0.10360110803324099
         },
         {
@@ -782,7 +917,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1704375623.2686982,
+      "net_adjustment_total": 1689136842.1052632,
       "filing_date": "2022-05-01",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -932,9 +1067,9 @@
     },
     {
       "gaap_eps": 0.7563291139240507,
-      "adjusted_eps": 1.4525873814065249,
+      "adjusted_eps": 1.5018005771755556,
       "gaap_net_income": 1912000000.0,
-      "adjusted_net_income": 3672140900.195695,
+      "adjusted_net_income": 3796551859.0998044,
       "diluted_shares_used": 2528000000.0,
       "adjustments": [
         {
@@ -959,6 +1094,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 128152641.87866928,
+          "tax_rate_applied": 0.06457925636007827
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 133000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 124410958.9041096,
           "tax_rate_applied": 0.06457925636007827
         },
         {
@@ -998,7 +1145,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1760140900.195695,
+      "net_adjustment_total": 1884551859.0998044,
       "filing_date": "2021-05-02",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",

@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T01:33:11.518204",
+  "last_updated": "2026-03-20T01:42:06.690657",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -81,15 +81,19 @@
       },
       "ai_analysis": {
         "health": "Warning",
-        "comment": "調整項目に重大な問題あり。無形資産償却費とIPR&D償却が同一金額・同一US-GAAPタグで重複計上されており、二重加算の誤りと思われる。また246.7百万ドルの極めて大規模なリストラ費用を全額add_backしており、調整の恣意性が高い。減価償却費の不動産維持目的除外も経済実態を無視した積極的調整。GAAP EPSが赤字のまま調整後EPSをプラス化しており、調整の健全性は低い。",
+        "comment": "調整項目に大きなリストラ費用（約2.47億ドル）が含まれており、EPSを大幅に押し上げています。また減価償却費の全額加算は飲料企業として非標準的で、通常の運用コストを除外している点に懸念があります。さらに無形資産償却費とIPR&D償却が同一タグから同額抽出されており重複の可能性が高いです。GAAP赤字から調整後プラスへの転換はこれらに強く依存しており、調整後EPSの信頼性は低いと判断します。",
         "sources": [
           {
-            "item": "無形資産償却費 / IPR&D償却",
-            "snippet": "両項目ともamount:5800000, extracted_from:us-gaap:AmortizationOfIntangibleAssetsで重複"
+            "item": "リストラ費用",
+            "snippet": "一過性の事業再編費用"
           },
           {
-            "item": "リストラ費用",
-            "snippet": "amount:246707000, category:リストラ・事業再編関連, reason:一過性の事業再編費用"
+            "item": "減価償却費",
+            "snippet": "不動産の実態価値維持のため会計上の減価を除外"
+          },
+          {
+            "item": "無形資産償却費",
+            "snippet": "買収関連無形資産の償却"
           }
         ]
       }
@@ -152,9 +156,9 @@
     },
     {
       "gaap_eps": 0.1872860202722075,
-      "adjusted_eps": 0.21246006301897138,
+      "adjusted_eps": 0.218837730359574,
       "gaap_net_income": 44419000.0,
-      "adjusted_net_income": 50389578.066335484,
+      "adjusted_net_income": 51902182.18484088,
       "diluted_shares_used": 237172000.0,
       "adjustments": [
         {
@@ -179,6 +183,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 145652.7798271933,
+          "tax_rate_applied": 0.2717361008640336
+        },
+        {
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 2077000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1512604.1185054022,
           "tax_rate_applied": 0.2717361008640336
         },
         {
@@ -218,7 +234,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 5970578.066335482,
+      "net_adjustment_total": 7483182.184840883,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -368,9 +384,9 @@
     },
     {
       "gaap_eps": 0.3275935383099742,
-      "adjusted_eps": 0.37271558746139033,
+      "adjusted_eps": 0.3806874400392063,
       "gaap_net_income": 77811000.0,
-      "adjusted_net_income": 88528524.48059182,
+      "adjusted_net_income": 90422022.8204324,
       "diluted_shares_used": 237523000.0,
       "adjustments": [
         {
@@ -395,6 +411,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 84155.48177069251,
+          "tax_rate_applied": 0.15844518229307492
+        },
+        {
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 2250000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1893498.3398405814,
           "tax_rate_applied": 0.15844518229307492
         },
         {
@@ -458,7 +486,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 10717524.480591817,
+      "net_adjustment_total": 12611022.820432398,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -608,9 +636,9 @@
     },
     {
       "gaap_eps": 0.17448587886252154,
-      "adjusted_eps": 0.19695053254534797,
+      "adjusted_eps": 0.1998852781567926,
       "gaap_net_income": 41227000.0,
-      "adjusted_net_income": 46534880.978217185,
+      "adjusted_net_income": 47228293.86705249,
       "diluted_shares_used": 236277000.0,
       "adjustments": [
         {
@@ -635,6 +663,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 82845.0285346837,
+          "tax_rate_applied": 0.17154971465316293
+        },
+        {
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 837000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 693412.8888353027,
           "tax_rate_applied": 0.17154971465316293
         },
         {
@@ -674,7 +714,7 @@
           "tax_rate_applied": 0.17154971465316293
         }
       ],
-      "net_adjustment_total": 5307880.978217185,
+      "net_adjustment_total": 6001293.867052487,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -824,9 +864,9 @@
     },
     {
       "gaap_eps": 0.0853121128127834,
-      "adjusted_eps": 0.12660725814738594,
+      "adjusted_eps": 0.13047734900778638,
       "gaap_net_income": 6679000.0,
-      "adjusted_net_income": 9911955.633100698,
+      "adjusted_net_income": 10214941.176470587,
       "diluted_shares_used": 78289000.0,
       "adjustments": [
         {
@@ -851,6 +891,18 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 66590.2293120638,
+          "tax_rate_applied": 0.3340977068793619
+        },
+        {
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 455000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 302985.5433698903,
           "tax_rate_applied": 0.3340977068793619
         },
         {
@@ -890,7 +942,7 @@
           "tax_rate_applied": 0.3340977068793619
         }
       ],
-      "net_adjustment_total": 3232955.6331006973,
+      "net_adjustment_total": 3535941.1764705875,
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -904,11 +956,23 @@
     },
     {
       "gaap_eps": 0.036802409896929324,
-      "adjusted_eps": 0.04284736260916306,
+      "adjusted_eps": 0.13427727238169831,
       "gaap_net_income": 2745791.0,
-      "adjusted_net_income": 3196798.876907047,
+      "adjusted_net_income": 10018293.01512613,
       "diluted_shares_used": 74609000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 12100000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:EmployeeBenefitsAndShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 6821494.138219084,
+          "tax_rate_applied": 0.4362401538661914
+        },
         {
           "item_name": "無形資産償却費",
           "amount": 100000,
@@ -958,7 +1022,7 @@
           "tax_rate_applied": 0.4362401538661914
         }
       ],
-      "net_adjustment_total": 451007.8769070469,
+      "net_adjustment_total": 7272502.01512613,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",

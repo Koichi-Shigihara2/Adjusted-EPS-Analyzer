@@ -1,14 +1,38 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-20T01:32:57.872485",
+  "last_updated": "2026-03-20T01:41:48.802856",
   "quarters": [
     {
       "gaap_eps": 0.3893930799773114,
-      "adjusted_eps": 1.0343065804235225,
+      "adjusted_eps": 1.1677784235861008,
       "gaap_net_income": 1373000000.0,
-      "adjusted_net_income": 3646965002.5733404,
+      "adjusted_net_income": 4117586721.5645914,
       "diluted_shares_used": 3526000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 663000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 468501801.3381369,
+          "tax_rate_applied": 0.29336078229541945
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 3000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 2119917.653113742,
+          "tax_rate_applied": 0.29336078229541945
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 1630000000,
@@ -46,7 +70,7 @@
           "tax_rate_applied": 0.29336078229541945
         }
       ],
-      "net_adjustment_total": 2273965002.5733404,
+      "net_adjustment_total": 2744586721.5645914,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -68,27 +92,42 @@
         }
       },
       "ai_analysis": {
-        "health": "Warning",
-        "comment": "調整項目のうち減価償却費の全額加算は非標準的で、継続的な経済的コストを無視しており収益の健全性を歪めています。R&Dとリストラは一過性として一定の合理性がありますが、調整幅が大きくGAAP EPSの2.6倍超となるAdjusted EPSの信頼性は低く、投資判断には慎重を要します。",
-        "sources": [
-          {
-            "item": "減価償却費",
-            "snippet": "不動産の実態価値維持のため会計上の減価を除外"
-          },
-          {
-            "item": "マイルストーン型研究開発費",
-            "snippet": "成功報酬型の一過性R&D費用"
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: 503 Server Error: Service Unavailable for url: https://api.x.ai/v1/chat/completions",
+        "sources": []
       }
     },
     {
       "gaap_eps": 0.333049161693663,
-      "adjusted_eps": 0.9288830309810195,
+      "adjusted_eps": 1.0663664210465942,
       "gaap_net_income": 1172000000.0,
-      "adjusted_net_income": 3268739386.0222077,
+      "adjusted_net_income": 3752543435.6629653,
       "diluted_shares_used": 3519000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 635000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 486100587.85107774,
+          "tax_rate_applied": 0.23448726322664926
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -3000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -2296538.210320052,
+          "tax_rate_applied": 0.23448726322664926
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 1589000000,
@@ -114,7 +153,7 @@
           "tax_rate_applied": 0.23448726322664926
         }
       ],
-      "net_adjustment_total": 2096739386.0222077,
+      "net_adjustment_total": 2580543435.6629653,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -128,9 +167,9 @@
     },
     {
       "gaap_eps": 0.1161601817665436,
-      "adjusted_eps": 0.7333831907222017,
+      "adjusted_eps": 0.7323783448591693,
       "gaap_net_income": 409000000.0,
-      "adjusted_net_income": 2582242214.532872,
+      "adjusted_net_income": 2578704152.249135,
       "diluted_shares_used": 3521000000.0,
       "adjustments": [
         {
@@ -143,6 +182,18 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 405461937.716263,
+          "tax_rate_applied": 0.29238754325259514
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -5000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -3538062.2837370248,
           "tax_rate_applied": 0.29238754325259514
         },
         {
@@ -182,7 +233,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2173242214.532872,
+      "net_adjustment_total": 2169704152.249135,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -196,11 +247,35 @@
     },
     {
       "gaap_eps": 0.6196740062911067,
-      "adjusted_eps": 1.0871709362810387,
+      "adjusted_eps": 1.1912332016928713,
       "gaap_net_income": 2167000000.0,
-      "adjusted_net_income": 3801836764.1747923,
+      "adjusted_net_income": 4165742506.319971,
       "diluted_shares_used": 3497000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 457000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 357644998.194294,
+          "tax_rate_applied": 0.2174070061394005
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 8000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 6260743.950884797,
+          "tax_rate_applied": 0.2174070061394005
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 1039000000,
@@ -226,7 +301,7 @@
           "tax_rate_applied": 0.2174070061394005
         }
       ],
-      "net_adjustment_total": 1634836764.1747923,
+      "net_adjustment_total": 1998742506.319971,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -240,11 +315,35 @@
     },
     {
       "gaap_eps": 0.4245906348750359,
-      "adjusted_eps": 0.8964855806122987,
+      "adjusted_eps": 0.9982128122237864,
       "gaap_net_income": 1478000000.0,
-      "adjusted_net_income": 3120666306.1114116,
+      "adjusted_net_income": 3474778799.351001,
       "diluted_shares_used": 3481000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 439000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 350915089.2374256,
+          "tax_rate_applied": 0.20064899945916712
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 4000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 3197404.0021633315,
+          "tax_rate_applied": 0.20064899945916712
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 1074000000,
@@ -270,7 +369,7 @@
           "tax_rate_applied": 0.20064899945916712
         }
       ],
-      "net_adjustment_total": 1642666306.1114116,
+      "net_adjustment_total": 1996778799.3510008,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -284,9 +383,9 @@
     },
     {
       "gaap_eps": 0.324052812858783,
-      "adjusted_eps": 0.8656054049280226,
+      "adjusted_eps": 0.8648013036554202,
       "gaap_net_income": 1129000000.0,
-      "adjusted_net_income": 3015769230.769231,
+      "adjusted_net_income": 3012967741.935484,
       "diluted_shares_used": 3484000000.0,
       "adjustments": [
         {
@@ -299,6 +398,18 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 366995037.2208437,
+          "tax_rate_applied": 0.29962779156327546
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -4000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -2801488.833746898,
           "tax_rate_applied": 0.29962779156327546
         },
         {
@@ -338,7 +449,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1886769230.7692308,
+      "net_adjustment_total": 1883967741.935484,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -352,11 +463,35 @@
     },
     {
       "gaap_eps": 0.5304895505296306,
-      "adjusted_eps": 1.0709586074553634,
+      "adjusted_eps": 1.1949145816385245,
       "gaap_net_income": 1853000000.0,
-      "adjusted_net_income": 3740858415.841584,
+      "adjusted_net_income": 4173836633.6633663,
       "diluted_shares_used": 3493000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 465000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 426556930.69306934,
+          "tax_rate_applied": 0.08267326732673268
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 7000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 6421287.128712871,
+          "tax_rate_applied": 0.08267326732673268
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 1161000000,
@@ -382,7 +517,7 @@
           "tax_rate_applied": 0.08267326732673268
         }
       ],
-      "net_adjustment_total": 1887858415.8415842,
+      "net_adjustment_total": 2320836633.6633663,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -396,11 +531,35 @@
     },
     {
       "gaap_eps": 0.7771707878090857,
-      "adjusted_eps": 1.228936622493878,
+      "adjusted_eps": 1.3419422889300967,
       "gaap_net_income": 2703000000.0,
-      "adjusted_net_income": 4274241573.0337076,
+      "adjusted_net_income": 4667275280.898876,
       "diluted_shares_used": 3478000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 445000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 397500000.0,
+          "tax_rate_applied": 0.10674157303370786
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -5000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -4466292.13483146,
+          "tax_rate_applied": 0.10674157303370786
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 943000000,
@@ -426,7 +585,7 @@
           "tax_rate_applied": 0.10674157303370786
         }
       ],
-      "net_adjustment_total": 1571241573.0337079,
+      "net_adjustment_total": 1964275280.8988762,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -440,9 +599,9 @@
     },
     {
       "gaap_eps": 0.7246251441753172,
-      "adjusted_eps": 1.2079578746125872,
+      "adjusted_eps": 1.209525196481748,
       "gaap_net_income": 2513000000.0,
-      "adjusted_net_income": 4189197909.1564527,
+      "adjusted_net_income": 4194633381.398702,
       "diluted_shares_used": 3468000000.0,
       "adjustments": [
         {
@@ -455,6 +614,18 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 378671232.8767123,
+          "tax_rate_applied": 0.09408795962509012
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": 6000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": 5435472.242249459,
           "tax_rate_applied": 0.09408795962509012
         },
         {
@@ -494,7 +665,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1676197909.1564527,
+      "net_adjustment_total": 1681633381.3987021,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -508,11 +679,35 @@
     },
     {
       "gaap_eps": 0.9492502883506344,
-      "adjusted_eps": 1.3063077362623408,
+      "adjusted_eps": 1.4005202336048976,
       "gaap_net_income": 3292000000.0,
-      "adjusted_net_income": 4530275229.357798,
+      "adjusted_net_income": 4857004170.141785,
       "diluted_shares_used": 3468000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 362000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 331304976.36919653,
+          "tax_rate_applied": 0.08479288295802058
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -5000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -4576035.585209897,
+          "tax_rate_applied": 0.08479288295802058
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 733000000,
@@ -538,7 +733,7 @@
           "tax_rate_applied": 0.08479288295802058
         }
       ],
-      "net_adjustment_total": 1238275229.357798,
+      "net_adjustment_total": 1565004170.1417847,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -552,11 +747,35 @@
     },
     {
       "gaap_eps": 0.6521362586605081,
-      "adjusted_eps": 0.981645041952851,
+      "adjusted_eps": 1.075601361686812,
       "gaap_net_income": 2259000000.0,
-      "adjusted_net_income": 3400418425.3246756,
+      "adjusted_net_income": 3725883116.8831167,
       "diluted_shares_used": 3464000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 361000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 330965503.2467532,
+          "tax_rate_applied": 0.08319805194805195
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -6000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -5500811.688311689,
+          "tax_rate_applied": 0.08319805194805195
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 667000000,
@@ -582,7 +801,7 @@
           "tax_rate_applied": 0.08319805194805195
         }
       ],
-      "net_adjustment_total": 1141418425.3246753,
+      "net_adjustment_total": 1466883116.8831167,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -596,9 +815,9 @@
     },
     {
       "gaap_eps": 0.9556451612903226,
-      "adjusted_eps": 1.433989382307367,
+      "adjusted_eps": 1.4319028208198339,
       "gaap_net_income": 3318000000.0,
-      "adjusted_net_income": 4978811135.371179,
+      "adjusted_net_income": 4971566593.886463,
       "diluted_shares_used": 3472000000.0,
       "adjustments": [
         {
@@ -611,6 +830,18 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 378527292.5764192,
+          "tax_rate_applied": 0.09443231441048035
+        },
+        {
+          "item_name": "投資有価証券評価損益",
+          "amount": -8000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非営業性の評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "金融関連",
+          "net_amount": -7244541.4847161565,
           "tax_rate_applied": 0.09443231441048035
         },
         {
@@ -638,7 +869,7 @@
           "tax_rate_applied": 0.09443231441048035
         }
       ],
-      "net_adjustment_total": 1660811135.3711789,
+      "net_adjustment_total": 1653566593.8864627,
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -652,11 +883,23 @@
     },
     {
       "gaap_eps": 0.4802612051053725,
-      "adjusted_eps": 0.768783145815064,
+      "adjusted_eps": 0.8926962758666946,
       "gaap_net_income": 1618000000.0,
-      "adjusted_net_income": 2590030418.250951,
+      "adjusted_net_income": 3007493753.394894,
       "diluted_shares_used": 3369000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 475000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 417463335.14394355,
+          "tax_rate_applied": 0.12112982074959261
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 611000000,
@@ -682,7 +925,7 @@
           "tax_rate_applied": 0.12112982074959261
         }
       ],
-      "net_adjustment_total": 972030418.2509507,
+      "net_adjustment_total": 1389493753.3948941,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",
@@ -696,11 +939,23 @@
     },
     {
       "gaap_eps": 1.0205540661304737,
-      "adjusted_eps": 1.8624908732723202,
+      "adjusted_eps": 2.2473298767296344,
       "gaap_net_income": 1142000000.0,
-      "adjusted_net_income": 2084127287.1917262,
+      "adjusted_net_income": 2514762132.060461,
       "diluted_shares_used": 1119000000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 474000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 430634844.8687351,
+          "tax_rate_applied": 0.09148766905330151
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 576000000,
@@ -726,7 +981,7 @@
           "tax_rate_applied": 0.09148766905330151
         }
       ],
-      "net_adjustment_total": 942127287.1917263,
+      "net_adjustment_total": 1372762132.0604613,
       "filing_date": "2021-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV・半導体",

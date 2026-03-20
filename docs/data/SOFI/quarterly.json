@@ -1,14 +1,26 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-03-20T01:33:12.410570",
+  "last_updated": "2026-03-20T01:42:24.091005",
   "quarters": [
     {
       "gaap_eps": 0.10797119466836456,
-      "adjusted_eps": 0.2294563234231298,
+      "adjusted_eps": 0.27776792912360654,
       "gaap_net_income": 139392000.0,
-      "adjusted_net_income": 296230637.5588182,
+      "adjusted_net_income": 358601451.9457964,
       "diluted_shares_used": 1291011000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 66469000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 62370814.38697821,
+          "tax_rate_applied": 0.06165559302865682
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 167144000,
@@ -22,7 +34,7 @@
           "tax_rate_applied": 0.06165559302865682
         }
       ],
-      "net_adjustment_total": 156838637.5588182,
+      "net_adjustment_total": 219209451.9457964,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -43,18 +55,39 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: 503 Server Error: Service Unavailable for url: https://api.x.ai/v1/chat/completions",
-        "sources": []
+        "health": "Caution",
+        "comment": "株式報酬費用の加算は非現金費用として標準的な調整ですが、マイルストーン型研究開発費の加算は一過性と主張されているものの、R&Dが事業のコア活動であるFintech企業において積極的な調整と言えます。調整後EPSがGAAP EPSの約2.57倍となっており、持続的な収益性を過大に示す可能性があるため注意が必要です。税率が約6%と低い点も考慮すべきです。",
+        "sources": [
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用、amount: 66469000, category: 株式報酬関連"
+          },
+          {
+            "item": "マイルストーン型研究開発費",
+            "snippet": "成功報酬型の一過性R&D費用、amount: 167144000, category: 研究開発関連"
+          }
+        ]
       }
     },
     {
       "gaap_eps": 0.08222579355249954,
-      "adjusted_eps": 0.19373397226255548,
+      "adjusted_eps": 0.24009445070091923,
       "gaap_net_income": 97263000.0,
-      "adjusted_net_income": 229163459.90801483,
+      "adjusted_net_income": 284002203.56175125,
       "diluted_shares_used": 1182877000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 63256000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 54838743.65373645,
+          "tax_rate_applied": 0.13306652880775813
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 152146000,
@@ -68,7 +101,7 @@
           "tax_rate_applied": 0.13306652880775813
         }
       ],
-      "net_adjustment_total": 131900459.90801483,
+      "net_adjustment_total": 186739203.56175128,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -136,11 +169,23 @@
     },
     {
       "gaap_eps": 0.055000226357010275,
-      "adjusted_eps": 0.17534008424195796,
+      "adjusted_eps": 0.2301602926315637,
       "gaap_net_income": 60745000.0,
-      "adjusted_net_income": 193654356.04103047,
+      "adjusted_net_income": 254200535.19693053,
       "diluted_shares_used": 1104450000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 63646000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 60546179.15590008,
+          "tax_rate_applied": 0.04870409521572312
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 139714000,
@@ -154,7 +199,7 @@
           "tax_rate_applied": 0.04870409521572312
         }
       ],
-      "net_adjustment_total": 132909356.04103045,
+      "net_adjustment_total": 193455535.19693053,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -167,11 +212,23 @@
     },
     {
       "gaap_eps": 0.01633916056670713,
-      "adjusted_eps": 0.12372464543484303,
+      "adjusted_eps": 0.1733333643252905,
       "gaap_net_income": 17404000.0,
-      "adjusted_net_income": 131787904.30247718,
+      "adjusted_net_income": 184629673.011734,
       "diluted_shares_used": 1065171000.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 61057000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 52841768.70925684,
+          "tax_rate_applied": 0.13455019556714473
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 132167000,
@@ -185,7 +242,7 @@
           "tax_rate_applied": 0.13455019556714473
         }
       ],
-      "net_adjustment_total": 114383904.30247718,
+      "net_adjustment_total": 167225673.011734,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -253,11 +310,23 @@
     },
     {
       "gaap_eps": -0.2803708329525663,
-      "adjusted_eps": 0.111279474338873,
+      "adjusted_eps": 0.1764071248559558,
       "gaap_net_income": -266684000.0,
-      "adjusted_net_income": 105847156.146976,
+      "adjusted_net_income": 167795477.11742496,
       "diluted_shares_used": 951183107.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 62005000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 61948320.97044896,
+          "tax_rate_applied": 0.0009141041779056525
+        },
         {
           "item_name": "のれん減損",
           "amount": 247174000,
@@ -283,7 +352,7 @@
           "tax_rate_applied": 0.0009141041779056525
         }
       ],
-      "net_adjustment_total": 372531156.146976,
+      "net_adjustment_total": 434479477.11742496,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -296,11 +365,23 @@
     },
     {
       "gaap_eps": -0.0507693279159168,
-      "adjusted_eps": 0.07977934324089696,
+      "adjusted_eps": 0.15787285950118873,
       "gaap_net_income": -47549000.0,
-      "adjusted_net_income": 74718893.22710778,
+      "adjusted_net_income": 147858892.45676982,
       "diluted_shares_used": 936569420.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 75878000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 73139999.22966206,
+          "tax_rate_applied": 0.036084250643637614
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 126845000,
@@ -314,7 +395,7 @@
           "tax_rate_applied": 0.036084250643637614
         }
       ],
-      "net_adjustment_total": 122267893.22710778,
+      "net_adjustment_total": 195407892.45676982,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -394,11 +475,23 @@
     },
     {
       "gaap_eps": -0.08094676834204996,
-      "adjusted_eps": 0.0394138601115855,
+      "adjusted_eps": 0.12406162373155434,
       "gaap_net_income": -74209000.0,
-      "adjusted_net_income": 36133167.57330324,
+      "adjusted_net_income": 113735103.0073471,
       "diluted_shares_used": 916762973.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 77855000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 77601935.43404387,
+          "tax_rate_applied": 0.0032504600341163987
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 110702000,
@@ -412,7 +505,7 @@
           "tax_rate_applied": 0.0032504600341163987
         }
       ],
-      "net_adjustment_total": 110342167.57330324,
+      "net_adjustment_total": 187944103.0073471,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -425,11 +518,23 @@
     },
     {
       "gaap_eps": -0.10530777677080876,
-      "adjusted_eps": 0.0037442714851750815,
+      "adjusted_eps": 0.091698393129712,
       "gaap_net_income": -95835000.0,
-      "adjusted_net_income": 3407462.096201256,
+      "adjusted_net_income": 83449824.64791673,
       "diluted_shares_used": 910046750.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 80142000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 80042362.5517155,
+          "tax_rate_applied": 0.0012432613147227215
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 99366000,
@@ -443,7 +548,7 @@
           "tax_rate_applied": 0.0012432613147227215
         }
       ],
-      "net_adjustment_total": 99242462.09620126,
+      "net_adjustment_total": 179284824.64791673,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -511,11 +616,23 @@
     },
     {
       "gaap_eps": -0.03753220394130487,
-      "adjusted_eps": 0.054881058254914475,
+      "adjusted_eps": 0.14511788967178602,
       "gaap_net_income": -30047000.0,
-      "adjusted_net_income": 43935899.95312396,
+      "adjusted_net_income": 116176423.79294181,
       "diluted_shares_used": 800565830.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 72681000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 72240523.83981785,
+          "tax_rate_applied": 0.0060604031339985265
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 74434000,
@@ -529,7 +646,7 @@
           "tax_rate_applied": 0.0060604031339985265
         }
       ],
-      "net_adjustment_total": 73982899.95312396,
+      "net_adjustment_total": 146223423.7929418,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
@@ -542,11 +659,23 @@
     },
     {
       "gaap_eps": -0.452869948998095,
-      "adjusted_eps": -0.2628716849283165,
+      "adjusted_eps": -0.12006562828684259,
       "gaap_net_income": -165314000.0,
-      "adjusted_net_income": -95957724.32765792,
+      "adjusted_net_income": -43828320.511270195,
       "diluted_shares_used": 365036365.0,
       "adjustments": [
+        {
+          "item_name": "株式報酬費用",
+          "amount": 52154000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 52129403.816387735,
+          "tax_rate_applied": 0.00047160684918254813
+        },
         {
           "item_name": "マイルストーン型研究開発費",
           "amount": 69389000,
@@ -560,7 +689,7 @@
           "tax_rate_applied": 0.00047160684918254813
         }
       ],
-      "net_adjustment_total": 69356275.67234208,
+      "net_adjustment_total": 121485679.4887298,
       "filing_date": "2021-06-30",
       "form": "10-Q",
       "sector": "フィンテック / 銀行",
