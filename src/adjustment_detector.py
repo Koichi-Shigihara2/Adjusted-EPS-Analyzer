@@ -1,11 +1,3 @@
-# adjustment_detector.py への追加パッチ
-
-## 修正箇所: SECTOR_ITEM_ID_TO_NAME マッピング
-
-以下の2エントリを追加してください。
-
-### 現在のマッピング（引き継ぎ書より）
-
 ```python
 SECTOR_ITEM_ID_TO_NAME = {
     "sbc":                   "株式報酬費用",
