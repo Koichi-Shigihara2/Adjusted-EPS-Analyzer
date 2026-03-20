@@ -138,12 +138,13 @@ def run(ticker_filter: str = None):
     with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
         tickers = yaml.safe_load(f)["tickers"]
     
-    # ★ --ticker 引数が指定された場合は対象を絞る
+    # ★ --ticker 引数が指定された場合は対象を絞る（カンマ区切りで複数指定可能）
     if ticker_filter:
-        ticker_upper = ticker_filter.upper()
-        if ticker_upper not in tickers:
-            print(f"Warning: {ticker_upper} は monitor_tickers.yaml に未登録ですが処理を続行します")
-        tickers = [ticker_upper]
+        requested = [t.strip().upper() for t in ticker_filter.split(',') if t.strip()]
+        for t in requested:
+            if t not in tickers:
+                print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
+        tickers = requested
     
     with open(os.path.join(config_base, "adjustment_items.json"), 'r', encoding='utf-8') as f:
         adjustment_config = json.load(f)
