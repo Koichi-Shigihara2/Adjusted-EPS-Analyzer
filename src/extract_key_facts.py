@@ -442,6 +442,77 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             if net and tax is not None:
                 data['pretax_income'] = {'value': net + tax, 'unit': 'USD'}
         
+        # ★★★ Q4計算（10-K年次 - Q1~Q3合計） ★★★
+        # PLTRのように10-QはQ1〜Q3のみ、Q4は10-Kからしか取れない企業に対応
+        net_income_annual_items = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+        # fiscal_year → 年次純利益のマップ
+        annual_ni_by_fy = {}
+        for item in net_income_annual_items:
+            end = datetime.strptime(item['end'], '%Y-%m-%d')
+            fy = end.year if end.month <= fiscal_end_month else end.year + 1
+            if fy not in annual_ni_by_fy or item['val'] > annual_ni_by_fy[fy]['val']:
+                annual_ni_by_fy[fy] = item
+
+        for fy, annual_item in annual_ni_by_fy.items():
+            # Q4キーがすでに存在すればスキップ
+            q4_key = (fy, 4)
+            if q4_key in quarters_map:
+                continue
+            # Q1〜Q3が揃っているか確認
+            q1 = quarters_map.get((fy, 1))
+            q2 = quarters_map.get((fy, 2))
+            q3 = quarters_map.get((fy, 3))
+            if not (q1 and q2 and q3):
+                continue
+            # Q4純利益 = 年次 - Q1 - Q2 - Q3
+            ni_annual = annual_item['val']
+            ni_q1 = normalize_value(q1.get('net_income'))
+            ni_q2 = normalize_value(q2.get('net_income'))
+            ni_q3 = normalize_value(q3.get('net_income'))
+            ni_q4 = ni_annual - ni_q1 - ni_q2 - ni_q3
+
+            # 年次の決算日をfiling_dateとして使用
+            annual_end = annual_item['end']
+            quarters_map[q4_key] = {
+                'filing_date': annual_end,
+                'form': '10-K',
+                'start': q3['filing_date'],  # Q3終了日 = Q4開始日
+                'end': annual_end,
+                'filed': annual_item.get('filed', annual_end),
+                'quarter': 4,
+                'fiscal_year': fy,
+                'net_income': {'value': ni_q4, 'unit': annual_item['unit']},
+            }
+
+            # 希薄化後株式数：年次の株式数を使用
+            diluted_annual = [it for it in diluted_shares_all
+                              if it.get('form','').startswith('10-K')
+                              and 'end' in it
+                              and datetime.strptime(it['end'],'%Y-%m-%d').year == (fy if fiscal_end_month == 12 else fy-1)]
+            if diluted_annual:
+                best_d = max(diluted_annual, key=lambda x: x['val'])
+                quarters_map[q4_key]['diluted_shares'] = {'value': best_d['val'], 'unit': best_d['unit']}
+
+            # 他のタグも年次から差し引き計算
+            for tag in required_tags:
+                if tag in ['us-gaap:NetIncomeLoss', 'us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding']:
+                    continue
+                annual_tag_items = annual_data_by_tag.get(tag, [])
+                annual_tag_for_fy = [it for it in annual_tag_items
+                                     if 'end' in it and datetime.strptime(it['end'],'%Y-%m-%d').year == (fy if fiscal_end_month == 12 else fy-1)]
+                if not annual_tag_for_fy:
+                    continue
+                annual_val = max(annual_tag_for_fy, key=lambda x: abs(x['val']))
+                v_annual = annual_val['val']
+                v_q1 = normalize_value(q1.get(tag))
+                v_q2 = normalize_value(q2.get(tag))
+                v_q3 = normalize_value(q3.get(tag))
+                v_q4 = v_annual - v_q1 - v_q2 - v_q3
+                if v_q4 != 0:
+                    quarters_map[q4_key][tag] = {'value': v_q4, 'unit': annual_val['unit']}
+
+            print(f"  [Q4計算] FY{fy} Q4: net_income={ni_q4/1e6:.1f}M (annual={ni_annual/1e6:.1f}M - Q1-Q3={( ni_q1+ni_q2+ni_q3)/1e6:.1f}M)")
+
         # quarterly_list 作成（ここがエラー原因だった部分）
         quarterly_list = []
         for (fiscal_year, quarter), data in sorted(quarters_map.items()):
