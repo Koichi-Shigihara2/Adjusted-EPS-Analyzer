@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T01:47:04.946555",
+  "last_updated": "2026-03-20T01:55:59.767688",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -10,6 +10,7 @@
       "diluted_shares_used": 257778000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 5800000,
           "unit": "USD",
@@ -22,6 +23,7 @@
           "tax_rate_applied": 0.3069032499914803
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 5800000,
           "unit": "USD",
@@ -34,6 +36,7 @@
           "tax_rate_applied": 0.3069032499914803
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 3000000,
           "unit": "USD",
@@ -46,6 +49,7 @@
           "tax_rate_applied": 0.3069032499914803
         },
         {
+          "item_id": "restructuring",
           "item_name": "リストラ費用",
           "amount": 246707000,
           "unit": "USD",
@@ -81,18 +85,18 @@
       },
       "ai_analysis": {
         "health": "Warning",
-        "comment": "調整項目に無形資産償却の重複計上（同一タグ・金額で2項目）が確認され、信頼性を損ないます。また不動産減価償却の加算は経済的実態を無視した非標準的な処理であり、2.467億ドルの大規模リストラ費用調整と合わせ、調整後EPS（赤字→黒字転換）の健全性に重大な懸念があります。非GAAP指標の品質は低く、投資判断には慎重を要します。",
+        "comment": "調整項目に重大な問題あり。無形資産償却費とIPR&D償却が同一金額・同一ソースで重複計上されており二重加算の疑い。加えて通常の減価償却費を「不動産の実態価値維持」の理由で加算するのは非標準的で恣意的。246.7百万ドルの大規模リストラ費用加算によりGAAP赤字から調整後黒字への大幅修正が発生しており、調整の健全性・透明性に強い懸念。",
         "sources": [
           {
-            "item": "無形資産償却費 / IPR&D償却",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets (2項目で重複)"
+            "item": "amortization_intangibles / iprd_amortization",
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets (同一項目の重複)"
           },
           {
-            "item": "減価償却費",
+            "item": "depreciation",
             "snippet": "reason: 不動産の実態価値維持のため会計上の減価を除外"
           },
           {
-            "item": "リストラ費用",
+            "item": "restructuring",
             "snippet": "amount: 246707000, reason: 一過性の事業再編費用"
           }
         ]
@@ -106,6 +110,7 @@
       "diluted_shares_used": 260211000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 5800000,
           "unit": "USD",
@@ -118,6 +123,7 @@
           "tax_rate_applied": 0.22871046228710462
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 5800000,
           "unit": "USD",
@@ -130,6 +136,7 @@
           "tax_rate_applied": 0.22871046228710462
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 2800000,
           "unit": "USD",
@@ -162,6 +169,7 @@
       "diluted_shares_used": 237172000.0,
       "adjustments": [
         {
+          "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 5029000,
           "unit": "USD",
@@ -174,6 +182,7 @@
           "tax_rate_applied": 0.2717361008640336
         },
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 200000,
           "unit": "USD",
@@ -186,6 +195,7 @@
           "tax_rate_applied": 0.2717361008640336
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
           "amount": 2077000,
           "unit": "USD",
@@ -198,6 +208,7 @@
           "tax_rate_applied": 0.2717361008640336
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 200000,
           "unit": "USD",
@@ -210,6 +221,7 @@
           "tax_rate_applied": 0.2717361008640336
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 2400000,
           "unit": "USD",
@@ -222,6 +234,7 @@
           "tax_rate_applied": 0.2717361008640336
         },
         {
+          "item_id": "tax_one_time",
           "item_name": "一過性税効果",
           "amount": 269000,
           "unit": "USD",
@@ -254,6 +267,7 @@
       "diluted_shares_used": 233696000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -266,6 +280,7 @@
           "tax_rate_applied": 0.22250764525993882
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 300000,
           "unit": "USD",
@@ -278,6 +293,7 @@
           "tax_rate_applied": 0.22250764525993882
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -290,6 +306,7 @@
           "tax_rate_applied": 0.22250764525993882
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 2200000,
           "unit": "USD",
@@ -322,6 +339,7 @@
       "diluted_shares_used": 237595000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -334,6 +352,7 @@
           "tax_rate_applied": 0.23748219934818554
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 200000,
           "unit": "USD",
@@ -346,6 +365,7 @@
           "tax_rate_applied": 0.23748219934818554
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -358,6 +378,7 @@
           "tax_rate_applied": 0.23748219934818554
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 1200000,
           "unit": "USD",
@@ -390,6 +411,7 @@
       "diluted_shares_used": 237523000.0,
       "adjustments": [
         {
+          "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 3563000,
           "unit": "USD",
@@ -402,6 +424,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -414,6 +437,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
           "amount": 2250000,
           "unit": "USD",
@@ -426,6 +450,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 200000,
           "unit": "USD",
@@ -438,6 +463,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -450,6 +476,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 1100000,
           "unit": "USD",
@@ -462,6 +489,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "asset_sale_gain",
           "item_name": "資産売却損益",
           "amount": 8000,
           "unit": "USD",
@@ -474,6 +502,7 @@
           "tax_rate_applied": 0.15844518229307492
         },
         {
+          "item_id": "tax_one_time",
           "item_name": "一過性税効果",
           "amount": 6450000,
           "unit": "USD",
@@ -506,6 +535,7 @@
       "diluted_shares_used": 237273000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -518,6 +548,7 @@
           "tax_rate_applied": 0.19853930975225548
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 500000,
           "unit": "USD",
@@ -530,6 +561,7 @@
           "tax_rate_applied": 0.19853930975225548
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -542,6 +574,7 @@
           "tax_rate_applied": 0.19853930975225548
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 700000,
           "unit": "USD",
@@ -574,6 +607,7 @@
       "diluted_shares_used": 236832000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -586,6 +620,7 @@
           "tax_rate_applied": 0.25838312576488376
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 200000,
           "unit": "USD",
@@ -598,6 +633,7 @@
           "tax_rate_applied": 0.25838312576488376
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -610,6 +646,7 @@
           "tax_rate_applied": 0.25838312576488376
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 600000,
           "unit": "USD",
@@ -642,6 +679,7 @@
       "diluted_shares_used": 236277000.0,
       "adjustments": [
         {
+          "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 5507000,
           "unit": "USD",
@@ -654,6 +692,7 @@
           "tax_rate_applied": 0.17154971465316293
         },
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -666,6 +705,7 @@
           "tax_rate_applied": 0.17154971465316293
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
           "amount": 837000,
           "unit": "USD",
@@ -678,6 +718,7 @@
           "tax_rate_applied": 0.17154971465316293
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 300000,
           "unit": "USD",
@@ -690,6 +731,7 @@
           "tax_rate_applied": 0.17154971465316293
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -702,6 +744,7 @@
           "tax_rate_applied": 0.17154971465316293
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 400000,
           "unit": "USD",
@@ -734,6 +777,7 @@
       "diluted_shares_used": 75796000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -746,6 +790,7 @@
           "tax_rate_applied": 0.24242507035326905
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 100000,
           "unit": "USD",
@@ -758,6 +803,7 @@
           "tax_rate_applied": 0.24242507035326905
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -770,6 +816,7 @@
           "tax_rate_applied": 0.24242507035326905
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 400000,
           "unit": "USD",
@@ -802,6 +849,7 @@
       "diluted_shares_used": 78372000.0,
       "adjustments": [
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -814,6 +862,7 @@
           "tax_rate_applied": 0.2347927807486631
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 100000,
           "unit": "USD",
@@ -826,6 +875,7 @@
           "tax_rate_applied": 0.2347927807486631
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -838,6 +888,7 @@
           "tax_rate_applied": 0.2347927807486631
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 400000,
           "unit": "USD",
@@ -870,6 +921,7 @@
       "diluted_shares_used": 78289000.0,
       "adjustments": [
         {
+          "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 4310000,
           "unit": "USD",
@@ -882,6 +934,7 @@
           "tax_rate_applied": 0.3340977068793619
         },
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -894,6 +947,7 @@
           "tax_rate_applied": 0.3340977068793619
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
           "amount": 455000,
           "unit": "USD",
@@ -906,6 +960,7 @@
           "tax_rate_applied": 0.3340977068793619
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 100000,
           "unit": "USD",
@@ -918,6 +973,7 @@
           "tax_rate_applied": 0.3340977068793619
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -930,6 +986,7 @@
           "tax_rate_applied": 0.3340977068793619
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 245000,
           "unit": "USD",
@@ -962,6 +1019,7 @@
       "diluted_shares_used": 74609000.0,
       "adjustments": [
         {
+          "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 12100000,
           "unit": "USD",
@@ -974,6 +1032,7 @@
           "tax_rate_applied": 0.4362401538661914
         },
         {
+          "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
           "amount": 100000,
           "unit": "USD",
@@ -986,6 +1045,7 @@
           "tax_rate_applied": 0.4362401538661914
         },
         {
+          "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 300000,
           "unit": "USD",
@@ -998,6 +1058,7 @@
           "tax_rate_applied": 0.4362401538661914
         },
         {
+          "item_id": "iprd_amortization",
           "item_name": "IPR&D償却",
           "amount": 100000,
           "unit": "USD",
@@ -1010,6 +1071,7 @@
           "tax_rate_applied": 0.4362401538661914
         },
         {
+          "item_id": "depreciation",
           "item_name": "減価償却費",
           "amount": 300000,
           "unit": "USD",
