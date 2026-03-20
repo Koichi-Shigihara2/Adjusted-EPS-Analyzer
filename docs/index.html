@@ -6,6 +6,11 @@
   <title>Adjusted EPS Analyzer · ダッシュボード</title>
   <!-- フォント (MACRO PULSE と同じ) -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- DataTables + Excel出力 -->
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     /* 色定義 (MACRO PULSE 完全移植) */
     :root {
@@ -334,6 +339,72 @@
       text-align: right;
     }
 
+    /* DataTables スタイル上書き */
+    .dataTables_wrapper {
+      font-family: var(--sans);
+      font-size: 13px;
+      color: var(--txt);
+    }
+    .dataTables_filter input, .dataTables_length select {
+      background: var(--sur2);
+      border: 1px solid var(--bdr);
+      color: var(--txt);
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 4px 8px;
+      margin-left: 6px;
+    }
+    .dataTables_filter label, .dataTables_length label,
+    .dataTables_info, .dataTables_paginate {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--mut);
+    }
+    .dataTables_paginate .paginate_button {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--mut) !important;
+      padding: 3px 8px !important;
+    }
+    .dataTables_paginate .paginate_button.current {
+      background: var(--sur2) !important;
+      border: 1px solid var(--bdr) !important;
+      color: var(--acc) !important;
+    }
+    .dataTables_paginate .paginate_button:hover {
+      background: var(--sur2) !important;
+      border: 1px solid var(--bdr) !important;
+      color: var(--acc) !important;
+    }
+    table.dataTable thead th {
+      background: var(--sur);
+      border-bottom: 1px solid var(--bdr) !important;
+    }
+    table.dataTable thead .sorting::after,
+    table.dataTable thead .sorting_asc::after,
+    table.dataTable thead .sorting_desc::after {
+      opacity: 0.5;
+    }
+    .dt-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .excel-btn {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 5px 14px;
+      background: rgba(16,185,129,.15);
+      border: 1px solid var(--grn);
+      color: var(--grn);
+      cursor: pointer;
+      letter-spacing: .05em;
+    }
+    .excel-btn:hover { background: rgba(16,185,129,.25); }
+
     /* ローディング／エラー */
     .empty {
       color: var(--mut);
@@ -461,8 +532,9 @@
 
       // 全銘柄一覧テーブル
       html += '<div class="sec">📋 全監視銘柄一覧</div>';
+      html += '<div class="dt-toolbar"><span></span><button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button></div>';
       html += '<div class="table-wrap">';
-      html += '<table><thead><tr>';
+      html += '<table id="main-table"><thead><tr>';
       html += '<th>ティッカー</th><th>会社名</th><th>最新決算日</th><th>GAAP EPS</th><th>Adjusted EPS</th><th>YoY成長率</th><th>健全性</th>';
       html += '</tr></thead><tbody>';
 
@@ -486,6 +558,48 @@
       contentDiv.innerHTML = `<div class="empty">⚠️ データを読み込めませんでした。<br><small>${e.message}</small></div>`;
     }
   })();
+
+  // ★ DataTables 初期化（テーブル描画後に呼ぶ）
+  let dtInstance = null;
+  function initDataTable() {
+    if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
+    const tbl = document.getElementById('main-table');
+    if (!tbl) return;
+    dtInstance = $('#main-table').DataTable({
+      pageLength: 25,
+      order: [[5, 'desc']],  // YoY成長率降順
+      language: {
+        search: '🔍 検索:',
+        lengthMenu: '表示件数: _MENU_',
+        info: '_TOTAL_ 銘柄中 _START_〜_END_ 件',
+        paginate: { previous: '‹', next: '›' },
+        emptyTable: 'データなし',
+        zeroRecords: '該当なし'
+      },
+      columnDefs: [
+        { targets: [3,4,5], type: 'num-fmt' }  // 数値列をソート対応
+      ]
+    });
+  }
+
+  // ★ Excel出力
+  function exportExcel() {
+    const tbl = document.getElementById('main-table');
+    if (!tbl) return;
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.table_to_sheet(tbl);
+    XLSX.utils.book_append_sheet(wb, ws, 'AEA Summary');
+    XLSX.writeFile(wb, `AEA_summary_${new Date().toISOString().slice(0,10)}.xlsx`);
+  }
+
+  // MutationObserver でテーブル描画を検知してDataTables初期化
+  const observer = new MutationObserver(() => {
+    if (document.getElementById('main-table')) {
+      observer.disconnect();
+      setTimeout(initDataTable, 50);
+    }
+  });
+  observer.observe(document.getElementById('dashboard-content'), { childList: true, subtree: true });
 </script>
 </body>
 </html>
