@@ -17,20 +17,25 @@ class MaturityMonitor:
         }
         self.config = config
     
-    def monitor(self, quarterly_results: List[Dict], sector: str = "default") -> Dict:
+    def monitor(self, quarterly_results: List[Dict], sector: str = "default",
+                latest_override: Dict = None) -> Dict:
         if not quarterly_results:
             return {"alert": None, "sbc_contribution": 0, "sbc_to_revenue": 0}
         
-        latest = quarterly_results[-1]
+        # latest_override が渡されればそちらを優先（pipeline.py側でmax()取得済み）
+        latest = latest_override if latest_override is not None else quarterly_results[-1]
         sbc_amount = 0
-        revenue = latest.get('revenue', 0)
-        diluted_shares = latest.get('diluted_shares', 0)  # ← 必須追加
+        revenue = latest.get('revenue', 0) or 0
+        diluted_shares = latest.get('diluted_shares', 0) or 0
         
         # SBC金額取得
         for adj in latest.get('adjustments', []):
             if adj.get('item_id') == 'sbc':
                 sbc_amount = adj.get('net_amount', 0)
                 break
+        
+        print(f"  [MaturityMonitor] filing_date={latest.get('filing_date')} "
+              f"sbc={sbc_amount:,.0f} revenue={revenue:,.0f} diluted_shares={diluted_shares:,.0f}")
         
         gaap_eps = latest.get('gaap_eps', 0)
         adjusted_eps = latest.get('adjusted_eps', 0)
