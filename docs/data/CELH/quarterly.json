@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-19T17:04:40.450342",
+  "last_updated": "2026-03-20T00:18:18.531090",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -67,17 +67,29 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
+      "revenue": 0.0,
+      "diluted_shares": 257778000.0,
+      "maturity_monitor": {
+        "alert": null,
+        "sbc_contribution": 0.0,
+        "sbc_to_revenue": 0,
+        "sbc_per_share": 0.0,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
       "ai_analysis": {
         "health": "Warning",
-        "comment": "調整項目に重大な懸念あり。無形資産償却費（5.8M）が同一GAAPソースから2回重複加算されており二重計上の可能性が高い。また飲料会社のCELHで不動産維持を理由とした減価償却費の全額加算は非標準的。2.467億ドルの大規模リストラ費用も調整の妥当性を疑問視させるため、Adjusted EPSの信頼性は低い。",
+        "comment": "調整項目に同一US-GAAPタグ(us-gaap:AmortizationOfIntangibleAssets)からの無形資産償却費の重複加算が見られ、明らかな二重計上です。また通常の減価償却費や巨額(2.47億ドル)のリストラ費用を加算しており、非標準的・積極的な調整です。GAAP赤字から調整後黒字への大幅転換はEPSの健全性を大きく損なっています。",
         "sources": [
           {
             "item": "無形資産償却費",
-            "snippet": "extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
           },
           {
             "item": "IPR&D償却",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets (同一ソース)"
           },
           {
             "item": "リストラ費用",
@@ -138,7 +150,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 260211000.0
     },
     {
       "gaap_eps": 0.1872860202722075,
@@ -216,7 +230,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 237172000.0
     },
     {
       "gaap_eps": 0.027197726961522662,
@@ -282,7 +298,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 233696000.0
     },
     {
       "gaap_eps": 0.3357941034112671,
@@ -348,7 +366,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 237595000.0
     },
     {
       "gaap_eps": 0.3275935383099742,
@@ -450,7 +470,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 237523000.0
     },
     {
       "gaap_eps": 0.353807639301564,
@@ -516,7 +538,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 384757000.0,
+      "diluted_shares": 237273000.0
     },
     {
       "gaap_eps": 0.21749172409133902,
@@ -582,7 +606,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 325883000.0,
+      "diluted_shares": 236832000.0
     },
     {
       "gaap_eps": 0.17448587886252154,
@@ -660,7 +686,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 259939000.0,
+      "diluted_shares": 236277000.0
     },
     {
       "gaap_eps": -2.3998100163597025,
@@ -726,7 +754,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 188233000.0,
+      "diluted_shares": 75796000.0
     },
     {
       "gaap_eps": 0.11685295768897055,
@@ -792,7 +822,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 154020000.0,
+      "diluted_shares": 78372000.0
     },
     {
       "gaap_eps": 0.0853121128127834,
@@ -870,7 +902,9 @@
         "inventory_writeoff",
         "logistics_one_time",
         "gov_subsidy_timing"
-      ]
+      ],
+      "revenue": 133388000.0,
+      "diluted_shares": 78289000.0
     },
     {
       "gaap_eps": 0.036802409896929324,
@@ -937,16 +971,8 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "maturity_monitor": {
-        "alert": null,
-        "sbc_contribution": 0.0,
-        "sbc_to_revenue": 0,
-        "sbc_per_share": 0,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      }
+      "revenue": 94909000.0,
+      "diluted_shares": 74609000.0
     }
   ]
 }
