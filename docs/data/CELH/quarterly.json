@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T03:57:35.711027",
+  "last_updated": "2026-03-20T04:02:47.084777",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -75,29 +75,25 @@
       "diluted_shares": 257778000.0,
       "maturity_monitor": {
         "alert": null,
-        "sbc_contribution": 0.004,
+        "sbc_contribution": 0.005,
         "sbc_to_revenue": 0.001,
-        "sbc_per_share": 0.0026,
+        "sbc_per_share": 0.0037,
         "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
+          "sbc_contribution": 0.2,
+          "sbc_to_revenue": 0.08
         }
       },
       "ai_analysis": {
         "health": "Warning",
-        "comment": "調整後EPSはGAAPの赤字から大幅に黒字化していますが、主に2.467億ドルの極めて大規模なリストラ費用を加算した結果です。この規模の一過性費用は事業の構造的課題を示唆する可能性が高く、持続的な収益性を過大評価するリスクがあります。また、無形資産償却費とIPR&D償却が同一金額・同一ソースから重複して抽出されており、データ品質に問題が疑われます。SBCは標準的ですが、全体として調整の健全性は低いと判断します。",
+        "comment": "調整項目の大部分を246.7百万ドルの大規模リストラ費用が占めており、GAAP EPSの大幅な赤字を調整後EPSの黒字に転換させる主因となっています。また、無形資産償却費とIPR&D償却費が同一タグ・同一金額で重複抽出されている可能性が高く、調整の正確性・健全性に重大な懸念があります。非GAAP指標の信頼性が低いため注意が必要です。",
         "sources": [
           {
             "item": "リストラ費用",
-            "snippet": "amount: 246707000, reason: 一過性の事業再編費用"
+            "snippet": "amount: 246707000, reason: 一過性の事業再編費用, category: リストラ・事業再編関連"
           },
           {
             "item": "無形資産償却費",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
-          },
-          {
-            "item": "IPR&D償却",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+            "snippet": "amortization_intangiblesとiprd_amortizationが両方5800000、同一extracted_from: us-gaap:AmortizationOfIntangibleAssets"
           }
         ]
       }
