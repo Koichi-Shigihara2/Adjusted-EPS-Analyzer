@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T04:02:47.084777",
+  "last_updated": "2026-03-20T04:16:10.623680",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -85,15 +85,19 @@
       },
       "ai_analysis": {
         "health": "Warning",
-        "comment": "調整項目の大部分を246.7百万ドルの大規模リストラ費用が占めており、GAAP EPSの大幅な赤字を調整後EPSの黒字に転換させる主因となっています。また、無形資産償却費とIPR&D償却費が同一タグ・同一金額で重複抽出されている可能性が高く、調整の正確性・健全性に重大な懸念があります。非GAAP指標の信頼性が低いため注意が必要です。",
+        "comment": "株式報酬と無形資産償却の調整は一般的で非現金項目として妥当ですが、無形資産償却とIPR&D償却が同一金額・同一GAAPタグから抽出されており重複の可能性が高いです。またリストラ費用が2.467億ドルと極めて巨額で、これを全額加算することでGAAP赤字から大幅に調整黒字化しており、事業の構造的問題を隠蔽している懸念があります。調整の健全性は低く、注意が必要です。",
         "sources": [
           {
-            "item": "リストラ費用",
+            "item": "restructuring",
             "snippet": "amount: 246707000, reason: 一過性の事業再編費用, category: リストラ・事業再編関連"
           },
           {
-            "item": "無形資産償却費",
-            "snippet": "amortization_intangiblesとiprd_amortizationが両方5800000、同一extracted_from: us-gaap:AmortizationOfIntangibleAssets"
+            "item": "iprd_amortization",
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets, category: 研究開発関連"
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets, category: 買収・統合関連"
           }
         ]
       }
