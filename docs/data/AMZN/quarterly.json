@@ -1,6 +1,6 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-03-20T11:43:33.557058",
+  "last_updated": "2026-03-20T11:59:48.866512",
   "quarters": [
     {
       "gaap_eps": 1.9573288999722915,
@@ -74,27 +74,27 @@
       "quarter": 4,
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用（43.97億ドル）と無形資産償却費が大きな調整項目となっており、これらはAmazonの事業運営上恒常的に発生する性質の費用です。貸倒引当金の異常変動分は一時的と主張されていますが、税効果の一過性項目以外は調整の正当性に疑問が残ります。調整後EPSは実態よりも大幅に上方修正されており、投資判断には注意が必要です。",
+        "comment": "株式報酬費用（43.97億ドル）と無形資産償却費が大きな調整項目となっており、これらはテック企業では恒常的に発生する性質の費用であるため調整の質に懸念。貸倒引当金の異常変動分と一過性税効果は比較的妥当だが、全体として調整後EPSの健全性は注意が必要。",
         "sources": [
           {
-            "item": "株式報酬費用",
+            "item": "sbc",
             "snippet": "非現金費用",
             "confidence": 0.2
           },
           {
-            "item": "無形資産償却費",
+            "item": "amortization_intangibles",
             "snippet": "買収関連無形資産の償却",
             "confidence": 0.2
           },
           {
-            "item": "貸倒引当金繰入（異常変動分）",
+            "item": "loan_loss_provision_abnormal",
             "snippet": "マクロ変動による一時的影響",
-            "confidence": 0.55
+            "confidence": 0.8
           },
           {
-            "item": "一過性税効果",
+            "item": "tax_one_time",
             "snippet": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-            "confidence": 0.9
+            "confidence": 1.0
           }
         ]
       }
