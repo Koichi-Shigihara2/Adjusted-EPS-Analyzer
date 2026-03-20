@@ -442,76 +442,102 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             if net and tax is not None:
                 data['pretax_income'] = {'value': net + tax, 'unit': 'USD'}
         
-        # ★★★ Q4計算（10-K年次 - Q1~Q3合計） ★★★
-        # PLTRのように10-QはQ1〜Q3のみ、Q4は10-Kからしか取れない企業に対応
-        net_income_annual_items = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
-        # fiscal_year → 年次純利益のマップ
-        annual_ni_by_fy = {}
-        for item in net_income_annual_items:
-            end = datetime.strptime(item['end'], '%Y-%m-%d')
-            fy = end.year if end.month <= fiscal_end_month else end.year + 1
-            if fy not in annual_ni_by_fy or item['val'] > annual_ni_by_fy[fy]['val']:
-                annual_ni_by_fy[fy] = item
+        # ★★★ 10-KからQ4を計算（旧版ロジックベース） ★★★
+        # Q1〜Q3が10-Qで取得済みの fiscal_year について、年次(10-K)からQ4を計算
+        fiscal_years_with_q1q3 = set(k[0] for k in quarters_map.keys() if k[1] in (1,2,3))
+        for fiscal_year in fiscal_years_with_q1q3:
+            q1_key = (fiscal_year, 1)
+            q2_key = (fiscal_year, 2)
+            q3_key = (fiscal_year, 3)
+            q4_key = (fiscal_year, 4)
 
-        for fy, annual_item in annual_ni_by_fy.items():
-            # Q4キーがすでに存在すればスキップ
-            q4_key = (fy, 4)
             if q4_key in quarters_map:
+                continue  # 既にQ4データあり
+
+            if not (q1_key in quarters_map and q2_key in quarters_map and q3_key in quarters_map):
+                print(f"  Warning: Missing Q1-Q3 for FY{fiscal_year}")
                 continue
-            # Q1〜Q3が揃っているか確認
-            q1 = quarters_map.get((fy, 1))
-            q2 = quarters_map.get((fy, 2))
-            q3 = quarters_map.get((fy, 3))
-            if not (q1 and q2 and q3):
+
+            # この fiscal_year に対応する10-Kを探す
+            net_income_annual_items = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+            target_k_item = None
+            for item in net_income_annual_items:
+                item_end = datetime.strptime(item['end'], '%Y-%m-%d')
+                item_fy = item_end.year + 1 if item_end.month > fiscal_end_month else item_end.year
+                if item_fy == fiscal_year:
+                    target_k_item = item
+                    break
+
+            if not target_k_item:
+                print(f"  Warning: No 10-K found for FY{fiscal_year}")
                 continue
+
             # Q4純利益 = 年次 - Q1 - Q2 - Q3
-            ni_annual = annual_item['val']
-            ni_q1 = normalize_value(q1.get('net_income'))
-            ni_q2 = normalize_value(q2.get('net_income'))
-            ni_q3 = normalize_value(q3.get('net_income'))
-            ni_q4 = ni_annual - ni_q1 - ni_q2 - ni_q3
+            annual_net = target_k_item['val']
+            ni_q1 = normalize_value(quarters_map[q1_key].get('net_income', {'value': 0}))
+            ni_q2 = normalize_value(quarters_map[q2_key].get('net_income', {'value': 0}))
+            ni_q3 = normalize_value(quarters_map[q3_key].get('net_income', {'value': 0}))
+            q4_net = annual_net - ni_q1 - ni_q2 - ni_q3
 
-            # 年次の決算日をfiling_dateとして使用
-            annual_end = annual_item['end']
-            quarters_map[q4_key] = {
-                'filing_date': annual_end,
+            # 希薄化後株式数：10-Kの年次値を優先、なければQ3を使用
+            diluted_val = 0
+            for d_item in diluted_shares_all:
+                if d_item.get('form', '').startswith('10-K') and d_item.get('end') == target_k_item['end']:
+                    diluted_val = d_item['val']
+                    break
+            if diluted_val == 0:
+                diluted_val = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value': 0}))
+
+            # Q4データを作成
+            q4_data = {
+                'filing_date': target_k_item['end'],
                 'form': '10-K',
-                'start': q3['filing_date'],  # Q3終了日 = Q4開始日
-                'end': annual_end,
-                'filed': annual_item.get('filed', annual_end),
+                'net_income': {'value': q4_net, 'unit': 'USD'},
+                'diluted_shares': {'value': diluted_val, 'unit': 'shares'},
+                'start': quarters_map[q3_key]['end'],
+                'end': target_k_item['end'],
+                'filed': target_k_item.get('filed', target_k_item['end']),
                 'quarter': 4,
-                'fiscal_year': fy,
-                'net_income': {'value': ni_q4, 'unit': annual_item['unit']},
+                'fiscal_year': fiscal_year
             }
+            quarters_map[q4_key] = q4_data
+            print(f"  [Q4計算] FY{fiscal_year} Q4 end={target_k_item['end']}: net={q4_net/1e6:.1f}M (annual={annual_net/1e6:.1f}M - Q1-Q3={(ni_q1+ni_q2+ni_q3)/1e6:.1f}M)")
 
-            # 希薄化後株式数：年次の株式数を使用
-            diluted_annual = [it for it in diluted_shares_all
-                              if it.get('form','').startswith('10-K')
-                              and 'end' in it
-                              and datetime.strptime(it['end'],'%Y-%m-%d').year == (fy if fiscal_end_month == 12 else fy-1)]
-            if diluted_annual:
-                best_d = max(diluted_annual, key=lambda x: x['val'])
-                quarters_map[q4_key]['diluted_shares'] = {'value': best_d['val'], 'unit': best_d['unit']}
+            # Q4に年次の税費用タグを追加（差し引きではなく年次値をそのまま）
+            tax_tag_candidates_q4 = [
+                'us-gaap:IncomeTaxExpenseBenefit',
+                'us-gaap:IncomeTaxExpenseBenefitContinuingOperations',
+                'us-gaap:ProvisionForIncomeTaxes',
+                'us-gaap:IncomeTaxExpenseBenefitFromContinuingOperations'
+            ]
+            for tax_tag in tax_tag_candidates_q4:
+                annual_tax_items = annual_data_by_tag.get(tax_tag, [])
+                for item in annual_tax_items:
+                    if item['end'] == target_k_item['end']:
+                        q4_data[tax_tag] = {'value': item['val'], 'unit': item['unit']}
+                        break
 
-            # 他のタグも年次から差し引き計算
+            # Q4に年次の調整項目タグを追加（年次値をそのまま — 差し引きしない）
+            skip_tags = {
+                'us-gaap:NetIncomeLoss', 'us-gaap:NetIncomeLossAttributableToParent',
+                'us-gaap:NetIncomeLossAvailableToCommonStockholders',
+                'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
+                'us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding',
+                'us-gaap:EarningsPerShareDiluted',
+                'us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxExpenseBenefit',
+                'us-gaap:IncomeFromContinuingOperationsBeforeIncomeTaxes',
+                'us-gaap:IncomeLossBeforeIncomeTaxExpenseBenefit',
+                'us-gaap:IncomeLossBeforeIncomeTaxExpenseBenefitAndExtraordinaryItems',
+                'us-gaap:IncomeBeforeTax',
+            } | set(tax_tag_candidates_q4)
             for tag in required_tags:
-                if tag in ['us-gaap:NetIncomeLoss', 'us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding']:
+                if tag in skip_tags:
                     continue
                 annual_tag_items = annual_data_by_tag.get(tag, [])
-                annual_tag_for_fy = [it for it in annual_tag_items
-                                     if 'end' in it and datetime.strptime(it['end'],'%Y-%m-%d').year == (fy if fiscal_end_month == 12 else fy-1)]
-                if not annual_tag_for_fy:
-                    continue
-                annual_val = max(annual_tag_for_fy, key=lambda x: abs(x['val']))
-                v_annual = annual_val['val']
-                v_q1 = normalize_value(q1.get(tag))
-                v_q2 = normalize_value(q2.get(tag))
-                v_q3 = normalize_value(q3.get(tag))
-                v_q4 = v_annual - v_q1 - v_q2 - v_q3
-                if v_q4 != 0:
-                    quarters_map[q4_key][tag] = {'value': v_q4, 'unit': annual_val['unit']}
-
-            print(f"  [Q4計算] FY{fy} Q4: net_income={ni_q4/1e6:.1f}M (annual={ni_annual/1e6:.1f}M - Q1-Q3={( ni_q1+ni_q2+ni_q3)/1e6:.1f}M)")
+                for item in annual_tag_items:
+                    if item['end'] == target_k_item['end']:
+                        q4_data[tag] = {'value': item['val'], 'unit': item['unit']}
+                        break
 
         # quarterly_list 作成（ここがエラー原因だった部分）
         quarterly_list = []
