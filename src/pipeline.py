@@ -190,23 +190,23 @@ def run():
         # filing_date順にソート（古い順）してYTD差分を計算
         raw_sorted = sorted(quarterly_raw, key=lambda x: x['filing_date'])
         for sbc_tag in SBC_YTD_TAGS:
-            # fiscal_year × quarter → YTD値 のマップ（最大のYTD値を採用）
+            # extract_key_facts.py が _ytd_{tag} キーで保存したYTD累計値を使用
+            ytd_key = f'_ytd_{sbc_tag}'
             ytd_by_fq = {}
             for pd in raw_sorted:
-                val_dict = pd.get(sbc_tag)
-                if not val_dict:
+                ytd_dict = pd.get(ytd_key)
+                if not ytd_dict:
                     continue
-                raw_val = val_dict.get('value', 0) if isinstance(val_dict, dict) else 0
-                if raw_val <= 0:
+                ytd_val = ytd_dict.get('value', 0) if isinstance(ytd_dict, dict) else 0
+                if ytd_val <= 0:
                     continue
                 fy = pd.get('fiscal_year', int(pd['filing_date'][:4]))
                 qn = pd.get('quarter', 0)
-                # 同じ(fy,qn)に複数エントリある場合は最大値（最新申告）を採用
-                if (fy, qn) not in ytd_by_fq or raw_val > ytd_by_fq[(fy, qn)]:
-                    ytd_by_fq[(fy, qn)] = raw_val
+                if (fy, qn) not in ytd_by_fq or ytd_val > ytd_by_fq[(fy, qn)]:
+                    ytd_by_fq[(fy, qn)] = ytd_val
             if not ytd_by_fq:
                 continue
-            # YTD差分から四半期値を計算して常に上書き
+            # YTD差分から四半期値を計算して上書き
             applied = 0
             for pd in raw_sorted:
                 fy = pd.get('fiscal_year', int(pd['filing_date'][:4]))
@@ -218,9 +218,9 @@ def run():
                     qval = ytd_val
                 else:
                     prev_ytd = ytd_by_fq.get((fy, qn - 1), 0)
-                    qval = ytd_val - prev_ytd
+                    qval = ytd_val - prev_ytd if prev_ytd > 0 else ytd_val
                 if qval > 0:
-                    pd[sbc_tag] = {'value': qval, 'unit': 'USD'}  # 常に上書き
+                    pd[sbc_tag] = {'value': qval, 'unit': 'USD'}
                     applied += 1
             if applied:
                 print(f"  [pipeline YTD→Q diff] {sbc_tag}: {applied}四半期に注入")
