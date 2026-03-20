@@ -248,6 +248,36 @@ def get_diluted_shares_from_facts(facts_data: Dict, form_type: Optional[str] = N
 # ============================================
 # 会計年度判定と四半期分類
 # ============================================
+
+# ★ 非支配持分考慮：純利益タグの優先順位（要件定義書 4.2①）
+NET_INCOME_PRIORITY_TAGS = [
+    'us-gaap:NetIncomeLossAvailableToCommonStockholders',
+    'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
+    'us-gaap:NetIncomeLossAttributableToParent',
+    'us-gaap:NetIncomeLoss',  # フォールバック：連結純利益
+]
+
+def select_net_income_items(tag_data_map: Dict) -> List[Dict]:
+    """
+    非支配持分を考慮した純利益タグを優先順位に従って選択する。
+    上位タグにデータが存在すればそれを使用し、なければ次のタグにフォールバック。
+    """
+    for tag in NET_INCOME_PRIORITY_TAGS:
+        items = tag_data_map.get(tag, [])
+        if items:
+            print(f"  [NetIncome] Using tag: {tag} ({len(items)} items)")
+            return items
+    return []
+
+def select_net_income_annual(annual_data_by_tag: Dict) -> List[Dict]:
+    """年次データから非支配持分考慮の純利益を優先順位に従って選択する。"""
+    for tag in NET_INCOME_PRIORITY_TAGS:
+        items = annual_data_by_tag.get(tag, [])
+        if items:
+            print(f"  [NetIncome Annual] Using tag: {tag} ({len(items)} items)")
+            return items
+    return []
+
 def determine_fiscal_year_end(annual_data: List[Dict]) -> int:
     month_counts = {}
     for item in annual_data:
@@ -291,7 +321,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         
         tag_data_map = {}
         for tag in required_tags:
-            items = extract_value_from_facts(facts, tag, limit=years*8)  # ★ 大企業でも古い四半期が欠落しないよう拡張
+            items = extract_value_from_facts(facts, tag, limit=years*6)
             tag_data_map[tag] = items
             print(f"Extracted {len(items)} items for {tag}")
         
@@ -301,7 +331,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             annual_items = [item for item in items if item.get('form', '').startswith('10-K') and 'start' in item and 'end' in item and (datetime.strptime(item['end'], '%Y-%m-%d') - datetime.strptime(item['start'], '%Y-%m-%d')).days >= ANNUAL_DAYS_MIN]
             annual_data_by_tag[tag] = annual_items
         
-        net_income_annual = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+        net_income_annual = select_net_income_annual(annual_data_by_tag)  # ★ 非支配持分考慮
         fiscal_end_month = determine_fiscal_year_end(net_income_annual)
         print(f"Detected fiscal year end month: {fiscal_end_month}")
         
@@ -314,7 +344,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 diluted_map[key] = item['val']
         
         # 10-Q 四半期候補
-        net_income_10q = tag_data_map.get('us-gaap:NetIncomeLoss', [])
+        net_income_10q = select_net_income_items(tag_data_map)  # ★ 非支配持分考慮
         quarterly_candidates = []
         for q_item in net_income_10q:
             if not q_item.get('form', '').startswith('10-Q'):
@@ -459,7 +489,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 continue
 
             # この fiscal_year に対応する10-Kを探す
-            net_income_annual_items = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+            net_income_annual_items = select_net_income_annual(annual_data_by_tag)  # ★ 非支配持分考慮
             target_k_item = None
             for item in net_income_annual_items:
                 item_end = datetime.strptime(item['end'], '%Y-%m-%d')
