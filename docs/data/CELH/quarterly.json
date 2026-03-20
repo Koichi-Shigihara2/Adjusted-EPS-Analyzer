@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T11:59:22.519506",
+  "last_updated": "2026-03-20T12:25:29.956059",
   "quarters": [
     {
       "gaap_eps": 0.05648638152139374,
@@ -114,37 +114,37 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目に毎期発生する株式報酬費用や無形資産償却などの経常的項目が含まれており、調整の質に課題があります。また80M超の巨額リストラ費用が発生しており事業再編の影響が大きく、一時的税効果もEPSに影響を与えています。調整後EPSの健全性は注意を要するレベルです。",
+        "comment": "調整項目に株式報酬や無形資産償却といった経常的に発生する項目が含まれており、調整の質は中程度です。大規模なリストラ費用(80M超)の調整は一過性と見なせますが、事業環境の悪化を示唆する可能性があり注意が必要です。貸倒引当金の異常分や税効果の一過性調整も混在しており、Adjusted EPSの健全性は限定的です。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが、毎期発生する株式報酬費用",
+            "snippet": "非現金費用だが成長企業では毎期発生する経常的な株式報酬費用",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で、継続的に発生する可能性が高い",
+            "snippet": "買収関連無形資産の償却で、買収後も継続して発生する費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる貸倒引当金",
-            "confidence": 0.55
+            "snippet": "マクロ変動による一時的影響とされる貸倒引当金繰入。ただし飲料事業での異常性の判断が難しい",
+            "confidence": 0.5
           },
           {
             "item": "milestone_rd",
-            "snippet": "成功報酬型の一過性R&D費用",
+            "snippet": "成功報酬型の一過性マイルストーン研究開発費",
             "confidence": 0.5
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用",
+            "snippet": "一過性の事業再編・リストラ費用",
             "confidence": 0.8
           },
           {
             "item": "tax_one_time",
-            "snippet": "法人税率変更・過年度税額戻し等の一過性影響",
-            "confidence": 0.95
+            "snippet": "法人税率変更等による一過性の税効果影響",
+            "confidence": 0.9
           }
         ]
       }
