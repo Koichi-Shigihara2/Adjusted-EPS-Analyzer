@@ -101,8 +101,17 @@ def detect_adjustments(
             if mapped_name:
                 excluded_item_names.add(mapped_name)
 
+    # REIT専用項目（depreciation等）を非REITセクターでは適用しない
+    REIT_ONLY_ITEM_IDS = {'depreciation', 'asset_sale_gain'}
+    is_reit = sector and '不動産' in sector
+
     for item in items_config:
         item_name = item.get('item_name', '')
+        item_id   = item.get('item_id', '')
+
+        # REIT専用項目を非REITセクターでスキップ
+        if item_id in REIT_ONLY_ITEM_IDS and not is_reit:
+            continue
 
         # セクター除外対象はスキップ
         if item_name in excluded_item_names:
