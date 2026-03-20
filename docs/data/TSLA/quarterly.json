@@ -1,6 +1,6 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-03-20T01:41:48.802856",
+  "last_updated": "2026-03-20T01:46:49.904700",
   "quarters": [
     {
       "gaap_eps": 0.3893930799773114,
@@ -92,9 +92,22 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: 503 Server Error: Service Unavailable for url: https://api.x.ai/v1/chat/completions",
-        "sources": []
+        "health": "Warning",
+        "comment": "調整後EPSがGAAP EPSの約3倍となっており、調整幅が極めて大きいです。株式報酬やリストラ費用などの非現金・一過性項目の加算は一般的ですが、13.5億ドルの減価償却費全額加算（不動産価値維持を理由とする）や16.3億ドルのマイルストーン型R&D費は非標準的で積極的な調整と言えます。これにより事業の実態を過度に美化している可能性が高く、財務健全性に懸念があります。",
+        "sources": [
+          {
+            "item": "減価償却費",
+            "snippet": "不動産の実態価値維持のため会計上の減価を除外"
+          },
+          {
+            "item": "マイルストーン型研究開発費",
+            "snippet": "成功報酬型の一過性R&D費用"
+          },
+          {
+            "item": "株式報酬費用",
+            "snippet": "非現金費用"
+          }
+        ]
       }
     },
     {
