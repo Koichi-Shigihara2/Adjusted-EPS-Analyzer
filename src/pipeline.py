@@ -274,6 +274,7 @@ def run():
                 {}
             )
             _sbc_val = _sbc_raw.get("value", 0) if isinstance(_sbc_raw, dict) else 0
+             print(f"  [SBC override] raw={_sbc_raw} val={_sbc_val}")
             monitor = MaturityMonitor(maturity_config)
             maturity_status = monitor.monitor(quarterly_results, sector=sector,
                                               latest_override=latest_for_monitor,
