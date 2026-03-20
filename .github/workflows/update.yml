@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ticker:
-        description: '更新する銘柄（例: AMZN）。空欄の場合は全銘柄を更新'
+        description: '更新する銘柄（例: AMZN または AMZN,AMD,APP）。カンマ区切りで複数指定可。空欄の場合は全銘柄を更新'
         required: false
         default: ''
   schedule:
