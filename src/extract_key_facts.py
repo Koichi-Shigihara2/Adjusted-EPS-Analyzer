@@ -260,22 +260,39 @@ NET_INCOME_PRIORITY_TAGS = [
 def select_net_income_items(tag_data_map: Dict) -> List[Dict]:
     """
     非支配持分を考慮した純利益タグを優先順位に従って選択する。
-    上位タグにデータが存在すればそれを使用し、なければ次のタグにフォールバック。
+    上位タグのデータ件数がフォールバック(NetIncomeLoss)の50%未満の場合は
+    データが少なすぎるとみなし次のタグを試みる。
     """
+    # フォールバックの件数を基準に使う
+    fallback_count = len(tag_data_map.get('us-gaap:NetIncomeLoss', []))
+    threshold = max(4, fallback_count // 2)  # 最低4件、またはフォールバックの半数
+
     for tag in NET_INCOME_PRIORITY_TAGS:
         items = tag_data_map.get(tag, [])
-        if items:
+        if not items:
+            continue
+        # フォールバック自身、またはthreshold以上のデータがある場合に採用
+        if tag == 'us-gaap:NetIncomeLoss' or len(items) >= threshold:
             print(f"  [NetIncome] Using tag: {tag} ({len(items)} items)")
             return items
+        else:
+            print(f"  [NetIncome] Skipping tag: {tag} ({len(items)} items < threshold {threshold})")
     return []
 
 def select_net_income_annual(annual_data_by_tag: Dict) -> List[Dict]:
     """年次データから非支配持分考慮の純利益を優先順位に従って選択する。"""
+    fallback_count = len(annual_data_by_tag.get('us-gaap:NetIncomeLoss', []))
+    threshold = max(2, fallback_count // 2)  # 年次は最低2件
+
     for tag in NET_INCOME_PRIORITY_TAGS:
         items = annual_data_by_tag.get(tag, [])
-        if items:
+        if not items:
+            continue
+        if tag == 'us-gaap:NetIncomeLoss' or len(items) >= threshold:
             print(f"  [NetIncome Annual] Using tag: {tag} ({len(items)} items)")
             return items
+        else:
+            print(f"  [NetIncome Annual] Skipping tag: {tag} ({len(items)} items < threshold {threshold})")
     return []
 
 def determine_fiscal_year_end(annual_data: List[Dict]) -> int:
