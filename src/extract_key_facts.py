@@ -93,6 +93,9 @@ def load_required_xbrl_tags() -> List[str]:
     tags.add("us-gaap:SalesRevenueNet")
     tags.add("us-gaap:InterestAndDividendIncomeOperating")   # 金融・FinTech系
     tags.add("us-gaap:RevenuesNetOfInterestExpense")         # 金融系
+    tags.add("us-gaap:NetInterestIncome")                    # 銀行：純金利収益
+    tags.add("us-gaap:NoninterestIncome")                    # 銀行：非金利収益
+    tags.add("us-gaap:InterestIncomeExpenseNet")             # 銀行：純金利収益（別タグ）
 
     return list(tags)
 
