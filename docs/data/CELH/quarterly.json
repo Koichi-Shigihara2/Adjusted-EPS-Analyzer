@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-03-20T00:18:18.531090",
+  "last_updated": "2026-03-20T00:43:09.913363",
   "quarters": [
     {
       "gaap_eps": -0.23669203733445057,
@@ -67,12 +67,12 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 725106000.0,
       "diluted_shares": 257778000.0,
       "maturity_monitor": {
         "alert": null,
         "sbc_contribution": 0.0,
-        "sbc_to_revenue": 0,
+        "sbc_to_revenue": 0.0,
         "sbc_per_share": 0.0,
         "sector_threshold": {
           "sbc_contribution": 0.4,
@@ -80,20 +80,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Warning",
-        "comment": "調整項目に同一US-GAAPタグ(us-gaap:AmortizationOfIntangibleAssets)からの無形資産償却費の重複加算が見られ、明らかな二重計上です。また通常の減価償却費や巨額(2.47億ドル)のリストラ費用を加算しており、非標準的・積極的な調整です。GAAP赤字から調整後黒字への大幅転換はEPSの健全性を大きく損なっています。",
+        "health": "Caution",
+        "comment": "調整項目全体として買収関連無形資産償却やリストラ費用の加算戻しは一般的ですが、減価償却費を「不動産の実態価値維持のため」と加算戻ししている点は通常の事業コストを除外しており非標準的です。また無形資産償却がほぼ同一内容で2項目重複計上されており、リストラ費用も246Mと極めて大規模です。GAAP赤字からAdjusted黒字への大幅修正のため、調整の適切性に注意が必要です。",
         "sources": [
           {
-            "item": "無形資産償却費",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets"
-          },
-          {
-            "item": "IPR&D償却",
-            "snippet": "amount: 5800000, extracted_from: us-gaap:AmortizationOfIntangibleAssets (同一ソース)"
+            "item": "減価償却費",
+            "snippet": "不動産の実態価値維持のため会計上の減価を除外"
           },
           {
             "item": "リストラ費用",
-            "snippet": "amount: 246707000, reason: 一過性の事業再編費用"
+            "snippet": "一過性の事業再編費用"
+          },
+          {
+            "item": "無形資産償却費",
+            "snippet": "買収関連無形資産の償却"
           }
         ]
       }
@@ -151,7 +151,7 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 739259000.0,
       "diluted_shares": 260211000.0
     },
     {
@@ -231,7 +231,7 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 329276000.0,
       "diluted_shares": 237172000.0
     },
     {
@@ -299,7 +299,7 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 265748000.0,
       "diluted_shares": 233696000.0
     },
     {
@@ -367,7 +367,7 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 401977000.0,
       "diluted_shares": 237595000.0
     },
     {
@@ -471,7 +471,7 @@
         "logistics_one_time",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 355708000.0,
       "diluted_shares": 237523000.0
     },
     {
