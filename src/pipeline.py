@@ -259,6 +259,9 @@ def run():
             result["sector_exclusions"] = exclusion_item_ids
             result["revenue"] = data.get("revenue", 0)           # ★ MaturityMonitor 用
             result["diluted_shares"] = data.get("diluted_shares", 0)  # ★ MaturityMonitor 用
+            result["period_end"] = period_data.get("end", period_data["filing_date"])  # ★ 決算期末日（X軸ラベル用）
+            result["fiscal_year"] = period_data.get("fiscal_year")    # ★ 会計年度
+            result["quarter"] = period_data.get("quarter")            # ★ 四半期番号（1-4）
             
             quarterly_results.append(result)
             
