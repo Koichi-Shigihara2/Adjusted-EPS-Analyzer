@@ -103,6 +103,33 @@ def generate_summary(tickers_data: Dict[str, Dict]) -> Dict:
             })
     return summary
 
+def get_revenue(period_data: Dict) -> float:
+    """売上高を取得（一般企業：Revenues、銀行：純金利収益＋非金利収益の合算）"""
+    # 一般企業系タグを優先チェック
+    for tag in [
+        "us-gaap:Revenues",
+        "us-gaap:RevenueFromContractWithCustomer",
+        "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+        "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
+        "us-gaap:NetSales",
+        "us-gaap:TotalRevenue",
+        "us-gaap:SalesRevenueNet",
+        "us-gaap:RevenuesNetOfInterestExpense",
+    ]:
+        val = normalize_value(period_data.get(tag))
+        if val and val > 0:
+            return val
+    # 銀行系：純金利収益 ＋ 非金利収益 を合算
+    net_interest = normalize_value(
+        period_data.get("us-gaap:NetInterestIncome") or
+        period_data.get("us-gaap:InterestIncomeExpenseNet") or
+        period_data.get("us-gaap:InterestAndDividendIncomeOperating")
+    ) or 0.0
+    non_interest = normalize_value(period_data.get("us-gaap:NoninterestIncome")) or 0.0
+    if net_interest or non_interest:
+        return net_interest + non_interest
+    return 0.0
+
 def run():
     config_base = "config"
     with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
@@ -162,18 +189,8 @@ def run():
                 "tax_expense": normalize_value(period_data.get("tax_expense")),
                 "pretax_income": normalize_value(period_data.get("pretax_income")),
                 
-                # ★★★ ここを追加 ★★★
-                "revenue": normalize_value(
-                    period_data.get("us-gaap:Revenues") or
-                    period_data.get("us-gaap:RevenueFromContractWithCustomer") or
-                    period_data.get("us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax") or
-                    period_data.get("us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax") or
-                    period_data.get("us-gaap:NetSales") or
-                    period_data.get("us-gaap:TotalRevenue") or
-                    period_data.get("us-gaap:SalesRevenueNet") or
-                    period_data.get("us-gaap:InterestAndDividendIncomeOperating") or
-                    period_data.get("us-gaap:RevenuesNetOfInterestExpense")
-                ),
+                # ★★★ 売上高（銀行系は純金利収益＋非金利収益の合算） ★★★
+                "revenue": get_revenue(period_data),
                 
                 "filing_date": period_data["filing_date"],
                 "form": period_data["form"],
