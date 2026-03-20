@@ -274,7 +274,7 @@ def run():
                 {}
             )
             _sbc_val = _sbc_raw.get("value", 0) if isinstance(_sbc_raw, dict) else 0
-            print(f"  [SBC override] raw={_sbc_raw} val={_sbc_val}")
+            print(f"  [SBC override] raw={_sbc_raw} val={_sbc_val} fy={_latest_raw.get('fiscal_year')} q={_latest_raw.get('quarter')} date={_latest_raw.get('filing_date')}")
             monitor = MaturityMonitor(maturity_config)
             maturity_status = monitor.monitor(quarterly_results, sector=sector,
                                               latest_override=latest_for_monitor,
