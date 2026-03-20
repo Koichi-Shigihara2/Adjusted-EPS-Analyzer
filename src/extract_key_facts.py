@@ -82,6 +82,9 @@ def load_required_xbrl_tags() -> List[str]:
     tags.add("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding")
     tags.add("us-gaap:EarningsPerShareDiluted")
     tags.add("us-gaap:ShareBasedCompensation")
+    tags.add("us-gaap:AllocatedShareBasedCompensationExpense")       # 銀行・金融機関で主に使用
+    tags.add("us-gaap:EmployeeBenefitsAndShareBasedCompensation")    # 給付合算型
+    tags.add("us-gaap:StockBasedCompensation")                       # 旧タグ名
 
     # ★★★ 売上高タグ（SBC/売上高比率用）★★★
     tags.add("us-gaap:Revenues")
