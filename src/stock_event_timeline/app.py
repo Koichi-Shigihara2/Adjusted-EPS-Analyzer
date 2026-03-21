@@ -5,13 +5,14 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from .data_access import load_price_history
-from .event_detection import detect_spikes
+from src.stock_event_timeline.data_access import load_price_history
+from src.stock_event_timeline.event_detection import detect_spikes
 
 
 def get_query_param(name: str, default: Optional[str] = None) -> Optional[str]:
     params = st.query_params
-    return params.get(name, [default])[0] if isinstance(params.get(name), list) else params.get(name, default)
+    val = params.get(name, [default])
+    return val[0] if isinstance(val, list) else val
 
 
 def main():
