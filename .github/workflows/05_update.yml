@@ -91,12 +91,13 @@ jobs:
         run: |
           python src/macro-pulse/05_main.py --recalc
 
-      # ── Git commit & push (全ての変更を自動検知して保存) ────────
+      # ── Git commit & push ───────────────────────────────────────
       - name: Commit and push data
-       run: |
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          # --allow-empty をつけることで、中身に変化がなくても「実行時刻」を刻んでPushします
+          # データに変更がなくても必ずコミットを作ってプッシュする
           git commit --allow-empty -m "chore: auto-update $(date -u '+%Y-%m-%d %H:%M') UTC"
           git push origin main
+          
