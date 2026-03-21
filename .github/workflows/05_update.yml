@@ -91,33 +91,4 @@ jobs:
         run: |
           python src/macro-pulse/05_main.py --recalc
 
-      # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          git config user.name  "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-         # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          # ── Git commit & push ───────────────────────────────────────
-      - name: Commit and push data
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          # 1. 全ての階層の変更をインデックスに追加
-          git add -A
-          
-          # 2. 変更があるか確認。なければ空のコミットを作って強制的に時間を更新する
-          # (これにより、Actionsが動いたことがファイル一覧のタイムスタンプで分かります)
-          git commit -m "chore: auto-update $(date -u '+%Y-%m-%d %H:%M') UTC" || echo "No changes to commit"
-          git push
+      # ── Git commit & push (全ての
