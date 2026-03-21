@@ -1,0 +1,41 @@
+name: Market Data Update (collect_and_send)
+
+on:
+  schedule:
+    # 毎日 08:00 JST = 23:00 UTC（前日）など、適宜設定
+    - cron: "0 23 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt   # または必要なパッケージをインストール
+
+      - name: Run collect_and_send
+        env:
+          XAI_API_KEY:     ${{ secrets.XAI_API_KEY }}
+          GMAIL_USER:      ${{ secrets.GMAIL_USER }}
+          GMAIL_PASSWORD:  ${{ secrets.GMAIL_PASSWORD }}
+        run: |
+          python src/market-monitor/collect_and_send.py
+
+      - name: Commit and push data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/
+          git diff --staged --quiet || git commit -m "chore: auto-update market data $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push
