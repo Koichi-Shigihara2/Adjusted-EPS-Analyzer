@@ -1,8 +1,8 @@
-ï»¿name: Market Data Update (collect_and_send)
+name: Market Data Update (collect_and_send)
 
 on:
   schedule:
-    - cron: "0 23 * * *"   # æ¯Žæ—¥ 08:00 JST
+    - cron: "0 23 * * *"   # –ˆ“ú 08:00 JST
   workflow_dispatch:
 
 jobs:
@@ -29,7 +29,7 @@ jobs:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
           GMAIL_USER: ${{ secrets.GMAIL_USER }}
           GMAIL_PASSWORD: ${{ secrets.GMAIL_PASSWORD }}
-        run: python src/market-monitor/collect_and_send.py
+        run: python -m market.market_pulse.collect_and_send
 
       - name: Commit and push data
         run: |
