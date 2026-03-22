@@ -2,6 +2,8 @@ name: Update EPS Data
 
 on:
   workflow_dispatch:
+    branches:
+      - refactor/reorganize
     inputs:
       ticker:
         description: '更新する銘柄（例: AMZN または AMZN,AMD,APP）。カンマ区切りで複数指定可。空欄の場合は全銘柄を更新'
@@ -28,7 +30,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          pip install --upgrade pip
+          pip install -e .
 
       - name: Run pipeline
         env:
@@ -36,9 +39,9 @@ jobs:
           HTTP2: "0"
         run: |
           if [ -n "${{ github.event.inputs.ticker }}" ]; then
-            python src/pipeline.py --ticker ${{ github.event.inputs.ticker }}
+            python src/value/adjusted_eps_analyzer/pipeline.py --ticker ${{ github.event.inputs.ticker }}
           else
-            python src/pipeline.py
+            python src/value/adjusted_eps_analyzer/pipeline.py
           fi
 
       - name: Check for changes

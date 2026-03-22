@@ -5,6 +5,8 @@ on:
     # 毎日 08:00 JST（前日データ取得）
     - cron: "0 23 * * *"
   workflow_dispatch:
+    branches:
+      - refactor/reorganize
 
 jobs:
   update:
@@ -23,7 +25,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install feedparser yfinance requests
+          pip install --upgrade pip
+          pip install -e .
 
       - name: Run collect_and_send
         env:
@@ -31,7 +34,7 @@ jobs:
           GMAIL_USER:      ${{ secrets.GMAIL_USER }}
           GMAIL_PASSWORD:  ${{ secrets.GMAIL_PASSWORD }}
         run: |
-          python src/market-monitor/collect_and_send.py
+          python src/market/market_pulse/collect_and_send.py
 
       - name: Commit and push data
         run: |

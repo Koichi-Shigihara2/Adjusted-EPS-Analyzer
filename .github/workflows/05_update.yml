@@ -9,6 +9,8 @@ on:
     # 毎週日曜 07:00 JST = 土曜 22:00 UTC（スケジュール更新）
     - cron: "0 22 * * 6"
   workflow_dispatch:
+    branches:
+      - refactor/reorganize
     inputs:
       mode:
         description: "実行モード"
@@ -38,7 +40,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install -r 05_requirements.txt
+        run: |
+          pip install --upgrade pip
+          pip install -e .
 
       # ── 毎朝 22:00 UTC（07:00 JST）: 通常実行 ──────────────────
       - name: Run daily update
@@ -51,7 +55,7 @@ jobs:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
-          python src/macro-pulse/05_main.py --date $(date -u +%Y-%m-%d)
+          python src/market/macro_pulse/05_main.py --date $(date -u +%Y-%m-%d)
 
       # ── 毎朝 22:00 UTC: Discord リマインダー（手入力指標） ─────
       - name: Send Discord reminder for manual indicators
@@ -61,7 +65,7 @@ jobs:
         env:
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
-          python src/macro-pulse/05_main.py --remind --date $(date -u +%Y-%m-%d)
+          python src/market/macro_pulse/05_main.py --remind --date $(date -u +%Y-%m-%d)
 
       # ── 毎日 13:00 UTC（22:00 JST）: リターン補完 ──────────────
       - name: Fill S&P500 returns (t+1/5/10/20)
@@ -71,7 +75,7 @@ jobs:
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
         run: |
-          python src/macro-pulse/05_main.py --fill-returns
+          python src/market/macro_pulse/05_main.py --fill-returns
 
       # ── 毎週土曜 22:00 UTC（日曜 07:00 JST）: スケジュール更新 ─
       - name: Update schedule + fed context (weekly)
@@ -83,13 +87,13 @@ jobs:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
-          python src/macro-pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
+          python src/market/macro_pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
 
       # ── 手動: recalc ────────────────────────────────────────────
       - name: Recalculate surprises
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'recalc'
         run: |
-          python src/macro-pulse/05_main.py --recalc
+          python src/market/macro_pulse/05_main.py --recalc
 
       # ── Git commit & push (特定ファイルのみ) ─────────────────────
       - name: Commit and push data
