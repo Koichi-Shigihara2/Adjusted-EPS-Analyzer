@@ -6,7 +6,6 @@ EPS計算モジュール
 - 分母には希薄化後株式数を使用
 """
 from typing import Dict, Any, List
-# from extract_key_facts import normalize_value
 
 def calculate_eps(period_data: Dict[str, Any], net_adjustment: float, adjustments_detail: List[Dict[str, Any]]) -> Dict[str, Any]:
     """

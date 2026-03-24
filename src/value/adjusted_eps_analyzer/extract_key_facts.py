@@ -1,4 +1,4 @@
-﻿"""
+﻿﻿"""
 SEC EDGARから企業の財務データを抽出するモジュール（会計年度対応・四半期分類改善版・複数期間対応）
 - CIKマップファイルから銘柄のCIKを取得
 - SECのCompany Facts APIから直接XBRLデータを取得
@@ -28,7 +28,7 @@ from datetime import datetime, timedelta
 # 定数設定
 # ============================================
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-# extract_key_facts.py は src/value/adjusted_eps_analyzer/ にある → ルートまで4階層上
+# extract_key_facts.py は src/value/adjusted_eps_analyzer/ にある → ルートまで3階層上
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_DIR)))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 CIK_FILE = os.path.join(CONFIG_DIR, "cik_lookup.csv")

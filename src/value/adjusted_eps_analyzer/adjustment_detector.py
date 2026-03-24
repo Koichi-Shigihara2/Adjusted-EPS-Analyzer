@@ -9,8 +9,8 @@ import json
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-# プロジェクトルートを取得（adjustment_detector.py の場所から4階層上）
-PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+# プロジェクトルートを取得（adjustment_detector.py の場所から3階層上）
+PROJECT_ROOT = Path(__file__).parent.parent.parent
 CONFIG_DIR = PROJECT_ROOT / "config"
 ADJUSTMENT_ITEMS_PATH = CONFIG_DIR / "adjustment_items.json"
 

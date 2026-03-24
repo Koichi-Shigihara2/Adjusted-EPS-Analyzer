@@ -17,8 +17,8 @@ from .sector_classifier_v2 import SectorClassifierV2
 from .company_metadata import get_company_metadata
 from .maturity_monitor import MaturityMonitor
 
-# プロジェクトルートを取得（pipeline.py の場所から4階層上）
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+# プロジェクトルートを取得（pipeline.py の場所から3階層上）
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def load_cik_data() -> List[Dict]:
     cik_file = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
