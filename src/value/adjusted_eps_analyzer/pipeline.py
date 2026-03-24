@@ -18,7 +18,8 @@ from .company_metadata import get_company_metadata
 from .maturity_monitor import MaturityMonitor
 
 # プロジェクトルートを取得（pipeline.py の場所から3階層上）
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+print("DEBUG: PROJECT_ROOT =", PROJECT_ROOT)
 
 def load_cik_data() -> List[Dict]:
     cik_file = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
