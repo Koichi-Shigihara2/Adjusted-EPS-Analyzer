@@ -335,6 +335,7 @@ def run(ticker_filter: str = None):
             with open(os.path.join(ticker_dir, "annual.json"), "w", encoding="utf-8") as f:
                 json.dump({"ticker": ticker, "last_updated": datetime.now().isoformat(), "years": annual_results}, f, indent=2, ensure_ascii=False)
         
+        # 現在処理した銘柄のデータを all_tickers_data に格納
         all_tickers_data[ticker] = {
             "quarters": quarterly_results,
             "company_name": ticker_to_name.get(ticker, metadata.get('name', ''))
@@ -342,11 +343,65 @@ def run(ticker_filter: str = None):
         
         print(f"✓ {ticker} 保存完了: {ticker_dir}/")
     
-    if all_tickers_data:
-        summary = generate_summary(all_tickers_data)
-        with open(os.path.join(DATA_ROOT, "summary.json"), "w", encoding="utf-8") as f:
-            json.dump(summary, f, indent=2, ensure_ascii=False)
-        print("✓ summary.json 生成完了")
+    # --- summary.json の保存処理（修正箇所）---
+    SUMMARY_PATH = os.path.join(DATA_ROOT, "summary.json")
+    
+    if ticker_filter is None:
+        # 全銘柄更新時：新規生成して上書き保存
+        if all_tickers_data:
+            summary = generate_summary(all_tickers_data)
+            with open(SUMMARY_PATH, "w", encoding="utf-8") as f:
+                json.dump(summary, f, indent=2, ensure_ascii=False)
+            print("✓ summary.json 生成完了（全銘柄）")
+        else:
+            print("⚠ 全銘柄更新ですが、有効なデータがありませんでした。summary.json は更新しません。")
+    else:
+        # 個別銘柄更新時：既存の summary.json にマージ
+        # 既存のサマリを読み込む
+        existing_summary = {"last_updated": "", "tickers": []}
+        if os.path.exists(SUMMARY_PATH):
+            try:
+                with open(SUMMARY_PATH, "r", encoding="utf-8") as f:
+                    existing_summary = json.load(f)
+            except Exception as e:
+                print(f"⚠ 既存の summary.json の読み込みに失敗しました。新規作成します: {e}")
+                existing_summary = {"last_updated": "", "tickers": []}
+        
+        # 既存の tickers を ticker をキーとした dict に変換
+        existing_tickers_dict = {t["ticker"]: t for t in existing_summary.get("tickers", [])}
+        
+        # 今回更新した銘柄のサマリーエントリを生成
+        for ticker, data in all_tickers_data.items():
+            # data から最新四半期などを取得してエントリを作成（generate_summary と同様のロジック）
+            if data.get("quarters") and len(data["quarters"]) > 0:
+                latest = data["quarters"][0]
+                yoy_growth = None
+                if len(data["quarters"]) >= 5:
+                    prev = data["quarters"][4]
+                    if prev["adjusted_eps"] != 0:
+                        yoy_growth = (latest["adjusted_eps"] - prev["adjusted_eps"]) / abs(prev["adjusted_eps"])
+                health = "Caution"
+                if "ai_analysis" in latest:
+                    health = latest["ai_analysis"].get("health", "Caution")
+                new_entry = {
+                    "ticker": ticker,
+                    "company_name": data.get("company_name", ""),
+                    "latest_filing_date": latest["filing_date"],
+                    "gaap_eps": latest["gaap_eps"],
+                    "adjusted_eps": latest["adjusted_eps"],
+                    "yoy_growth": yoy_growth,
+                    "health": health
+                }
+                existing_tickers_dict[ticker] = new_entry
+        
+        # 更新後のリストを作成し、全体の最終更新日時を更新
+        merged_summary = {
+            "last_updated": datetime.now().isoformat(),
+            "tickers": list(existing_tickers_dict.values())
+        }
+        with open(SUMMARY_PATH, "w", encoding="utf-8") as f:
+            json.dump(merged_summary, f, indent=2, ensure_ascii=False)
+        print(f"✓ summary.json を更新しました（{len(all_tickers_data)} 銘柄をマージ）")
 
 if __name__ == "__main__":
     import argparse
