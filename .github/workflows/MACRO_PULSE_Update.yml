@@ -81,7 +81,7 @@ jobs:
           GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
-          python src/macro-pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
+          python src/market/macro_pulse/05_main.py --date $(date -u +%Y-%m-%d)
 
       - name: Recalculate surprises
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'recalc'
