@@ -1,0 +1,98 @@
+name: MACRO PULSE Update
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+    - cron: "0 13 * * *"
+    - cron: "0 22 * * 6"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "実行モード"
+        required: false
+        default: "normal"
+        type: choice
+        options:
+          - normal
+          - update-schedule
+          - fill-returns
+          - recalc
+          - remind
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # 以下、各モード実行ステップ（変更なし）
+      - name: Run daily update
+        if: |
+          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * *') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'normal')
+        env:
+          FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
+          FMP_API_KEY:      ${{ secrets.FMP_API_KEY }}
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          python src/macro-pulse/05_main.py --date $(date -u +%Y-%m-%d)
+
+      - name: Send Discord reminder for manual indicators
+        if: |
+          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * *') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'remind')
+        env:
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          python src/macro-pulse/05_main.py --remind --date $(date -u +%Y-%m-%d)
+
+      - name: Fill S&P500 returns (t+1/5/10/20)
+        if: |
+          (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'fill-returns')
+        env:
+          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
+        run: |
+          python src/macro-pulse/05_main.py --fill-returns
+
+      - name: Update schedule + fed context (weekly)
+        if: |
+          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 6') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'update-schedule')
+        env:
+          FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          python src/macro-pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
+
+      - name: Recalculate surprises
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'recalc'
+        run: |
+          python src/macro-pulse/05_main.py --recalc
+
+      - name: Commit and push data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/market-monitor/macro-pulse/data/
+          git diff --staged --quiet || git commit -m "chore: auto-update macro-pulse data $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git pull --rebase origin kaihatsu
+          git push origin kaihatsu
