@@ -1,6 +1,6 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-25T14:29:25.154877",
+  "last_updated": "2026-03-26T03:02:39.038712",
   "quarters": [
     {
       "gaap_eps": 1.7524679774822551,
@@ -101,31 +101,31 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目の規模が非常に大きく（投資評価損益9B、マイルストーンR&D 5.5B、SBC 4.9B）、SBCと無形資産償却は恒常的に発生する項目であるため調整の健全性に懸念。投資評価損益とマイルストーンR&Dは一過性を主張しているが規模から判断が難しく、税効果は比較的妥当。全体としてAdjusted EPSの信頼性はCautionレベル。",
+        "comment": "株式報酬費用（SBC）とマイルストーン型R&D費の調整額が非常に大きく、NVIDIAの事業運営上恒常的に発生する可能性の高い項目を除外しているため健全性に懸念。無形資産償却も毎期発生する性質。一方で投資評価変動と一過性税効果は非経常的と判断可能。全体として調整後EPSの信頼性は中程度で注意が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬を加算しているが、NVDAでは毎期継続的に発生する恒常的費用",
+            "snippet": "非現金費用",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する恒常的費用",
+            "snippet": "買収関連無形資産の償却",
             "confidence": 0.2
           },
           {
             "item": "investment_gains",
-            "snippet": "非営業性の評価変動を加算。市場変動による非経常項目とされるが定期的に発生する可能性",
-            "confidence": 0.6
+            "snippet": "非営業性の評価変動",
+            "confidence": 0.65
           },
           {
             "item": "milestone_rd",
-            "snippet": "成功報酬型の一過性R&D費用とされるが、事業活動の中で繰り返される可能性があり判断が難しい",
+            "snippet": "成功報酬型の一過性R&D費用",
             "confidence": 0.5
           },
           {
             "item": "tax_one_time",
-            "snippet": "法人税率変更等による一過性税効果で非経常的",
+            "snippet": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
             "confidence": 0.9
           }
         ]
