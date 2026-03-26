@@ -564,14 +564,14 @@ function updateTicker() {
     .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0]||null;
   const ycR=latest('Yield Curve 10Y-2Y');
   const hyR=latest('HY Spread');
-  const vxR=latest('VIX');
+  const cbcc2R=latest('CB Consumer Confidence');
   const spR=[...DATA].filter(r=>n(r[COL.sp0])).sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0];
   const lastRow=[...DATA].filter(r=>n(r[COL.actual])!==null).sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0];
 
   if(spR){const sp=n(spR[COL.sp0]);el('tk-sp').textContent=sp?sp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
   if(ycR){const yc=n(ycR[COL.actual]);if(yc!==null){el('tk-yc').textContent=(yc>=0?'+':'')+yc.toFixed(2)+'%';el('tk-yc-i').textContent=yc<-0.2?'INVERTED':yc<0.5?'FLAT':'NORMAL';}}
   if(hyR){const hy=n(hyR[COL.actual]);if(hy!==null)el('tk-hy').textContent=hy.toFixed(2)+'%';}
-  if(vxR){const vx=n(vxR[COL.actual]);if(vx!==null)el('tk-vx').textContent=vx.toFixed(1);}
+  el('tk-vx').textContent='—';
   if(lastRow){el('tk-last').textContent=lastRow[COL.date];el('tk-src').textContent=lastRow[COL.dsrc]||'—';}
 }
 
@@ -598,11 +598,11 @@ function renderPhaseGauge() {
 
   const yc    =latestActual('Yield Curve 10Y-2Y');
   const hy    =latestActual('HY Spread');
-  const vix   =latestActual('VIX');
   const ism   =latestActual('ISM Manufacturing PMI');
   const ismNm =latestActual('ISM Non-Manufacturing PMI');
   const claims=latestActual('Initial Claims 4W MA');
   const cbcc  =latestActual('Michigan Consumer Sentiment');
+  const cbcc2 =latestActual('CB Consumer Confidence');
   const lei   =latestActual('Conference Board LEI');
 
   const signals=[];
@@ -619,11 +619,11 @@ function renderPhaseGauge() {
     else if(hy>3.5){hyScore=40;hySignal='neutral';}else{hyScore=15;hySignal='bull';}}
   signals.push({name:'HY Spread',val:hyLabel,score:hyScore,signal:hySignal,weight:15,lead:'先行2ヶ月'});
 
-  let vixScore=50,vixSignal='neutral',vixLabel='—';
-  if(vix!==null){vixLabel=vix.toFixed(1);
-    if(vix>35){vixScore=90;vixSignal='bear';}else if(vix>25){vixScore=70;vixSignal='caution';}
-    else if(vix>18){vixScore=40;vixSignal='neutral';}else{vixScore=15;vixSignal='bull';}}
-  signals.push({name:'VIX',val:vixLabel,score:vixScore,signal:vixSignal,weight:10,lead:'即時'});
+  let cbcc2Score=50,cbcc2Signal='neutral',cbcc2Label='—';
+  if(cbcc2!==null){cbcc2Label=cbcc2.toFixed(1);
+    if(cbcc2>=110){cbcc2Score=15;cbcc2Signal='bull';}else if(cbcc2>=100){cbcc2Score=35;cbcc2Signal='neutral';}
+    else if(cbcc2>=90){cbcc2Score=60;cbcc2Signal='caution';}else{cbcc2Score=85;cbcc2Signal='bear';}}
+  signals.push({name:'CB Confidence',val:cbcc2Label,score:cbcc2Score,signal:cbcc2Signal,weight:10,lead:'先行2ヶ月'});
 
   let ismScore=50,ismSignal='neutral',ismLabel='—';
   if(ism!==null){ismLabel=ism.toFixed(1);const t=trend3('ISM Manufacturing PMI');
@@ -723,14 +723,18 @@ function renderL2() {
   };
 
   const L2_CFG=[
-    {label:'YC 10Y-2Y',key:'Yield Curve 10Y-2Y',mid:0,bull:0.5,bear:-0.2,dir:'right',fmt:v=>(v>=0?'+':'')+v.toFixed(2)+'%'},
-    {label:'ISM Manufacturing',key:'ISM Manufacturing PMI',mid:50,bull:52,bear:48,dir:'right',fmt:v=>v.toFixed(1)},
-    {label:'ISM Non-Mfg',key:'ISM Non-Manufacturing PMI',mid:50,bull:52,bear:48,dir:'right',fmt:v=>v.toFixed(1)},
-    {label:'HY Spread',key:'HY Spread',mid:5.0,bull:4.0,bear:6.5,dir:'left',fmt:v=>v.toFixed(2)+'%'},
-    {label:'VIX',key:'VIX',mid:20,bull:18,bear:25,dir:'left',fmt:v=>v.toFixed(1)},
-    {label:'Michigan Sentiment',key:'Michigan Consumer Sentiment',mid:80,bull:90,bear:65,dir:'right',fmt:v=>v.toFixed(1)},
-    {label:'OECD CLI',key:'Conference Board LEI',mid:100,bull:100.3,bear:99.0,dir:'right',fmt:v=>v.toFixed(2)},
-    {label:'Initial Claims 4WMA',key:'Initial Claims 4W MA',mid:230000,bull:215000,bear:245000,dir:'left',fmt:v=>(v/1000).toFixed(1)+'K'},
+    // 💰 金融環境
+    {label:'YC 10Y-2Y',labelJa:'長短金利差',key:'Yield Curve 10Y-2Y',mid:0,bull:0.5,bear:-0.2,dir:'right',fmt:v=>(v>=0?'+':'')+v.toFixed(2)+'%',rMin:-1.5,rMax:2.0},
+    {label:'HY Spread',labelJa:'ハイイールドスプレッド',key:'HY Spread',mid:5.0,bull:4.0,bear:6.5,dir:'left',fmt:v=>v.toFixed(2)+'%',rMin:2.0,rMax:12.0},
+    // 📈 景気活動
+    {label:'ISM Manufacturing',labelJa:'ISM製造業PMI',key:'ISM Manufacturing PMI',mid:50,bull:52,bear:48,dir:'right',fmt:v=>v.toFixed(1),rMin:44,rMax:62},
+    {label:'ISM Non-Mfg',labelJa:'ISM非製造業PMI',key:'ISM Non-Manufacturing PMI',mid:50,bull:52,bear:48,dir:'right',fmt:v=>v.toFixed(1),rMin:44,rMax:62},
+    {label:'OECD CLI',labelJa:'OECD景気先行指数',key:'Conference Board LEI',mid:100,bull:100.5,bear:99.2,dir:'right',fmt:v=>v.toFixed(2),rMin:98.0,rMax:101.5},
+    // 👷 雇用
+    {label:'Initial Claims 4WMA',labelJa:'新規失業保険申請4週MA',key:'Initial Claims 4W MA',mid:230000,bull:215000,bear:245000,dir:'left',fmt:v=>(v/1000).toFixed(1)+'K',rMin:180000,rMax:400000},
+    // 🛍️ 消費・信頼感
+    {label:'Michigan Sentiment',labelJa:'ミシガン消費者信頼感',key:'Michigan Consumer Sentiment',mid:80,bull:90,bear:65,dir:'right',fmt:v=>v.toFixed(1),rMin:50,rMax:110},
+    {label:'CB Cons. Confidence',labelJa:'CB消費者信頼感',key:'CB Consumer Confidence',mid:100,bull:110,bear:90,dir:'right',fmt:v=>v.toFixed(1),rMin:50,rMax:140},
   ];
 
   const signalColor={BULL:'var(--grn)',CAUTION:'var(--amb)',NEUTRAL:'var(--mut)',BEAR:'var(--red)'};
@@ -754,19 +758,51 @@ function renderL2() {
       barPct=Math.max(0,Math.min(100,(cfg.bear-val)/(cfg.bear-cfg.bull)*100));
     }
 
-    const displayPct=cfg.dir==='right'?barPct:barPct;
     const sc=signalColor[signal]||'var(--mut)';
+    const MARGIN=0.05;
+    const rMin=cfg.rMin!==undefined?cfg.rMin:cfg.bear;
+    const rMax=cfg.rMax!==undefined?cfg.rMax:cfg.bull;
+    const range=rMax-rMin;
+    // dir:'left'は値を反転して常に右=BULL方向に正規化
+    const normVal=cfg.dir==='right'?val:(rMin+rMax-val);
+    const normBull=cfg.dir==='right'?cfg.bull:(rMin+rMax-cfg.bull);
+    const normBear=cfg.dir==='right'?cfg.bear:(rMin+rMax-cfg.bear);
+    const normMid=cfg.dir==='right'?cfg.mid:(rMin+rMax-cfg.mid);
+    const toP=v=>Math.max(MARGIN*100,Math.min((1-MARGIN)*100,(v-rMin)/range*100));
+    const valPct=toP(normVal);
+    const bullPct=toP(normBull);
+    const bearPct=toP(normBear);
+    const midPct=toP(normMid);
+    // 現在値左側(0～valPct)をシグナル色で塗りつぶし
+    const fillColor=signal==='BULL'?'rgba(16,185,129,.45)':signal==='BEAR'?'rgba(244,63,94,.45)':signal==='CAUTION'?'rgba(245,158,11,.35)':'rgba(100,116,139,.3)';
+    const trackBg='rgba(30,40,64,.6)';
+    // ラベル表示用
+    const bearThreshLabel=cfg.fmt(cfg.dir==='right'?cfg.bear:cfg.bull);
+    const bullThreshLabel=cfg.fmt(cfg.dir==='right'?cfg.bull:cfg.bear);
+    const jaLabel=cfg.labelJa||'';
     return`<div class="l2-row">
       <div class="l2-row-top">
-        <span class="l2-name">${cfg.label}</span>
+        <span style="display:flex;flex-direction:column;gap:1px">
+          <span class="l2-name">${cfg.label}</span>
+          <span style="font-family:var(--sans);font-size:9px;color:var(--mut);letter-spacing:.02em">${jaLabel}</span>
+        </span>
         <span style="display:flex;align-items:baseline;gap:8px">
           <span class="l2-val" style="color:${sc}">${cfg.fmt(val)}</span>
           <span class="l2-meta" style="color:${sc}">${signal}</span>
         </span>
       </div>
-      <div class="l2-bar-track">
-        <div class="l2-bar-mid"></div>
-        <div class="l2-bar-fill" style="width:${displayPct}%;background:${barColor};opacity:.85"></div>
+      <div style="position:relative;height:10px;border-radius:3px;border:1px solid var(--bdr);background:${trackBg};margin-top:4px;overflow:hidden">
+        <div style="position:absolute;top:0;left:0;width:${valPct}%;height:100%;background:${fillColor};transition:width .6s ease"></div>
+        <div style="position:absolute;top:0;left:${bearPct}%;width:1px;height:100%;background:var(--red);opacity:.6"></div>
+        <div style="position:absolute;top:0;left:${bullPct}%;width:1px;height:100%;background:var(--grn);opacity:.6"></div>
+        <div style="position:absolute;top:0;left:${midPct}%;width:1px;height:100%;background:var(--mut);opacity:.5"></div>
+        <div style="position:absolute;top:0;left:calc(${valPct}% - 1px);width:3px;height:100%;background:${barColor};box-shadow:0 0 5px ${barColor}"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:3px;position:relative">
+        <span style="font-family:var(--mono);font-size:8px;color:var(--red);opacity:.8">◀ BEAR</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--mut);position:absolute;left:${bearPct}%;transform:translateX(-50%)">${bearThreshLabel}</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--mut);position:absolute;left:${bullPct}%;transform:translateX(-50%)">${bullThreshLabel}</span>
+        <span style="font-family:var(--mono);font-size:8px;color:var(--grn);opacity:.8">BULL ▶</span>
       </div>
     </div>`;
   }).join('');
