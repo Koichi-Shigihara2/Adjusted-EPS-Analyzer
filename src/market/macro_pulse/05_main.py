@@ -42,8 +42,10 @@ logger = logging.getLogger(__name__)
 # ============================================================
 # 出力先を docs/market-monitor/macro-pulse/data/ に変更
 # ============================================================
-BASE_DATA_DIR = "docs/market-monitor/macro-pulse/data"
-os.makedirs(BASE_DATA_DIR, exist_ok=True)
+import pathlib
+_SCRIPT_DIR = pathlib.Path(__file__).resolve().parent
+_REPO_ROOT = _SCRIPT_DIR.parent.parent.parent
+BASE_DATA_DIR = str(_REPO_ROOT / "docs" / "market-monitor" / "macro-pulse" / "data")
 
 EVENTS_PATH      = os.path.join(BASE_DATA_DIR, "05_events.csv")
 SCHEDULE_PATH    = os.path.join(BASE_DATA_DIR, "05_indicator_schedule.csv")
