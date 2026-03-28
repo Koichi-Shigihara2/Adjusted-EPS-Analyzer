@@ -671,19 +671,40 @@ function renderRegimeBar(d) {
 // TICKER
 // ═══════════════════════════════════════════════════════
 function updateTicker() {
-  const latest=(ind)=>DATA.filter(r=>r[COL.indicator]===ind&&n(r[COL.actual])!==null)
-    .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0]||null;
-  const ycR=latest('Yield Curve 10Y-2Y');
-  const hyR=latest('HY Spread');
-  const cbcc2R=latest('CB Consumer Confidence');
-  const spR=[...DATA].filter(r=>n(r[COL.sp0])).sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0];
-  const lastRow=[...DATA].filter(r=>n(r[COL.actual])!==null).sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]))[0];
+  const now = Date.now();
+  const yc = idxLatestAsOf('Yield Curve 10Y-2Y', now);
+  const hy = idxLatestAsOf('HY Spread', now);
 
-  if(spR){const sp=n(spR[COL.sp0]);el('tk-sp').textContent=sp?sp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
-  if(ycR){const yc=n(ycR[COL.actual]);if(yc!==null){el('tk-yc').textContent=(yc>=0?'+':'')+yc.toFixed(2)+'%';el('tk-yc-i').textContent=yc<-0.2?'INVERTED':yc<0.5?'FLAT':'NORMAL';}}
-  if(hyR){const hy=n(hyR[COL.actual]);if(hy!==null)el('tk-hy').textContent=hy.toFixed(2)+'%';}
+  // S&P 500: find latest row with sp500_t0 (need raw scan but only once)
+  if(!window._spCache){
+    const arr=IND_INDEX['Yield Curve 10Y-2Y']||[];
+    // sp500_t0 is not indexed by indicator, scan DATA once
+    let best=null,bestMs=0;
+    for(const r of DATA){const v=n(r[COL.sp0]);if(v){const ms=new Date(r[COL.date]).getTime();if(ms>bestMs){bestMs=ms;best=v;}}}
+    window._spCache=best;
+  }
+  const sp=window._spCache;
+  if(sp)el('tk-sp').textContent=sp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+  if(yc!==null){el('tk-yc').textContent=(yc>=0?'+':'')+yc.toFixed(2)+'%';el('tk-yc-i').textContent=yc<-0.2?'INVERTED':yc<0.5?'FLAT':'NORMAL';}
+  if(hy!==null)el('tk-hy').textContent=hy.toFixed(2)+'%';
   el('tk-vx').textContent='—';
-  if(lastRow){el('tk-last').textContent=lastRow[COL.date];el('tk-src').textContent=lastRow[COL.dsrc]||'—';}
+
+  // Last update: use the index to find the most recent date across all indicators
+  let latestDate='',latestSrc='—';
+  for(const ind in IND_INDEX){
+    const arr=IND_INDEX[ind];
+    if(arr.length){
+      const last=arr[arr.length-1];
+      const ds=new Date(last.dateMs).toISOString().slice(0,10);
+      if(ds>latestDate){latestDate=ds;
+        // find the source from DATA (just use first match for this date+indicator)
+        const r=DATA.find(x=>x[COL.indicator]===ind&&x[COL.date]===ds);
+        if(r)latestSrc=r[COL.dsrc]||'—';
+      }
+    }
+  }
+  if(latestDate){el('tk-last').textContent=latestDate;el('tk-src').textContent=latestSrc;}
 }
 
 // ═══════════════════════════════════════════════════════
@@ -691,18 +712,15 @@ function updateTicker() {
 // ═══════════════════════════════════════════════════════
 function renderPhaseGauge() {
   if(!DATA.length)return;
-  const latestActual=(ind)=>{
-    const rows=DATA.filter(r=>r[COL.indicator]===ind&&n(r[COL.actual])!==null)
-      .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]));
-    return rows[0]?n(rows[0][COL.actual]):null;
-  };
+  const now=Date.now();
+  const latestActual=(ind)=>idxLatestAsOf(ind,now);
   const trend3=(ind)=>{
-    const rows=DATA.filter(r=>r[COL.indicator]===ind&&n(r[COL.actual])!==null)
-      .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date])).slice(0,3);
-    if(rows.length<2)return 0;
-    const vals=rows.map(r=>n(r[COL.actual]));
+    const arr=IND_INDEX[ind];
+    if(!arr||arr.length<2)return 0;
+    const last3=arr.slice(-3);
+    if(last3.length<2)return 0;
     const diffs=[];
-    for(let i=0;i<vals.length-1;i++)diffs.push(vals[i]-vals[i+1]);
+    for(let i=last3.length-1;i>0;i--)diffs.push(last3[i].actual-last3[i-1].actual);
     const avg=diffs.reduce((s,v)=>s+v,0)/diffs.length;
     return avg>0?1:avg<0?-1:0;
   };
@@ -834,11 +852,8 @@ function renderL2() {
   const grid=el('l2Grid');
   if(!DATA.length){grid.innerHTML='<div class="empty">データなし</div>';return;}
 
-  const latestActual=(ind)=>{
-    const rows=DATA.filter(r=>r[COL.indicator]===ind&&n(r[COL.actual])!==null)
-      .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]));
-    return rows[0]?n(rows[0][COL.actual]):null;
-  };
+  const now=Date.now();
+  const latestActual=(ind)=>idxLatestAsOf(ind,now);
 
   const L2_CFG=[
     // 💰 金融環境
@@ -1426,14 +1441,24 @@ function renderRecentSignals() {
 
   const today=new Date(); today.setHours(0,0,0,0);
   const cutOld=new Date(today); cutOld.setDate(cutOld.getDate()-14);
+  const cutOldMs=cutOld.getTime(), todayMs=today.getTime();
 
-  // 月次指標のみ（デイリーは除外）、実績値ありのもの
-  const recent=DATA.filter(r=>{
-    if(DAILY_INDICATORS.has(r[COL.indicator]))return false;
-    if(n(r[COL.actual])===null)return false;
-    const d=new Date(r[COL.date]); d.setHours(0,0,0,0);
-    return d>=cutOld&&d<=today;
-  }).sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]));
+  // Use index: collect recent entries from non-daily indicators
+  const recent=[];
+  for(const ind in IND_INDEX){
+    if(DAILY_INDICATORS.has(ind))continue;
+    const arr=IND_INDEX[ind];
+    // binary search for cutOld
+    let lo=0,hi=arr.length-1;
+    while(lo<hi){const mid=(lo+hi)>>1;if(arr[mid].dateMs<cutOldMs)lo=mid+1;else hi=mid;}
+    for(let i=lo;i<arr.length;i++){
+      if(arr[i].dateMs>todayMs)break;
+      // find the full row from DATA
+      const ds=new Date(arr[i].dateMs).toISOString().slice(0,10);
+      const r=DATA.find(x=>x[COL.indicator]===ind&&x[COL.date]===ds&&n(x[COL.actual])!==null);
+      if(r)recent.push(r);
+    }
+  }
 
   if(!recent.length){
     wrap.innerHTML='<div class="empty" style="padding:24px">直近2週間に発表された指標はありません</div>';
@@ -1631,11 +1656,18 @@ function computeScoreAsOf(asOf) {
 
 // 指定日以前に最もデータがある日付を文字列で返す
 function latestDataDateBefore(asOf) {
-  if(!DATA.length) return null;
   const asOfMs = new Date(asOf).getTime();
-  const rows = DATA.filter(r=>n(r[COL.actual])!==null && new Date(r[COL.date]).getTime()<=asOfMs)
-    .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]));
-  return rows[0] ? rows[0][COL.date] : null;
+  let bestMs=0;
+  for(const ind in IND_INDEX){
+    const arr=IND_INDEX[ind];
+    if(!arr.length)continue;
+    // binary search for asOfMs
+    let lo=0,hi=arr.length-1;
+    if(arr[0].dateMs>asOfMs)continue;
+    while(lo<hi){const mid=(lo+hi+1)>>1;if(arr[mid].dateMs<=asOfMs)lo=mid;else hi=mid-1;}
+    if(arr[lo].dateMs>bestMs)bestMs=arr[lo].dateMs;
+  }
+  return bestMs?new Date(bestMs).toISOString().slice(0,10):null;
 }
 
 function renderCompareBar(currentScore, currentPhase) {
@@ -1716,14 +1748,13 @@ function checkManualInputAlerts() {
   const alerts = [];
 
   MANUAL_INDICATORS.forEach(({name,freq}) => {
-    const rows = DATA.filter(r=>r[COL.indicator]===name&&n(r[COL.actual])!==null)
-      .sort((a,b)=>new Date(b[COL.date])-new Date(a[COL.date]));
-    if(!rows.length){alerts.push(`${name}：データなし`);return;}
-    const latest = new Date(rows[0][COL.date]);
+    const arr=IND_INDEX[name];
+    if(!arr||!arr.length){alerts.push(`${name}：データなし`);return;}
+    const latest = new Date(arr[arr.length-1].dateMs);
     const daysSince = Math.round((today-latest)/86400000);
-    // 35日以上前なら警告（月次なので約1ヶ月+余裕）
     if(daysSince>35){
-      alerts.push(`${name}：最終入力 ${rows[0][COL.date]}（${daysSince}日前）— 未入力の可能性。${freq}`);
+      const ds=latest.toISOString().slice(0,10);
+      alerts.push(`${name}：最終入力 ${ds}（${daysSince}日前）— 未入力の可能性。${freq}`);
     }
   });
 
