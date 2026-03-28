@@ -440,7 +440,7 @@ const COL = {
   dsrc:        'data_source',
 };
 
-const DAILY_INDICATORS = new Set(['Yield Curve 10Y-2Y','HY Spread','Michigan Inflation 5Y']);
+const DAILY_INDICATORS = new Set(['Yield Curve 10Y-2Y','HY Spread','VIX','Michigan Inflation 5Y']);
 
 let DATA = [];
 let RAW  = [];
@@ -620,7 +620,7 @@ async function loadCSVData() {
       showNotice(`${DATA.length}行ロード完了 → ${path.split('/').pop()}`,'ok');
       render();
       return;
-    } catch{}
+    } catch(e){console.error('loadCSVData:',e);}
   }
   showNotice('CSVが見つかりません。','warn');
 }
@@ -635,7 +635,6 @@ function render() {
   renderL2();
   renderRecentSignals();
   checkManualInputAlerts();
-  // Defer heavy chart rendering to allow UI to update first
   requestAnimationFrame(() => {
     renderScoreHistory();
     renderL3();
@@ -1234,8 +1233,6 @@ function buildScoreTimeSeries(startDate, endDate) {
     'Initial Claims 4W MA','CB Consumer Confidence','Michigan Consumer Sentiment',
     'Sahm Rule Recession Indicator'];
 
-  console.log('[buildScoreTimeSeries] startDate:', startDate, 'endDate:', endDate);
-  console.log('[buildScoreTimeSeries] DATA.length:', DATA.length);
 
   DATA.forEach(r => {
     const d = new Date(r[COL.date]); d.setHours(0,0,0,0);
@@ -1243,7 +1240,6 @@ function buildScoreTimeSeries(startDate, endDate) {
       changeDates.add(d.toISOString().slice(0,10));
     }
   });
-  console.log('[buildScoreTimeSeries] changeDates from DATA:', changeDates.size);
 
   // 週次サンプリング補完
   for(let d = new Date(startDate); d <= endDate; d.setDate(d.getDate()+7)) {
@@ -1251,7 +1247,6 @@ function buildScoreTimeSeries(startDate, endDate) {
   }
   changeDates.add(endDate.toISOString().slice(0,10));
   
-  console.log('[buildScoreTimeSeries] total changeDates:', changeDates.size);
 
   const result = [...changeDates].sort().map(ds => {
     const d = new Date(ds); d.setHours(23,59,59,0);
@@ -1259,15 +1254,12 @@ function buildScoreTimeSeries(startDate, endDate) {
     return [ds, score];
   }).filter(p => p[1] !== null);
   
-  console.log('[buildScoreTimeSeries] result length:', result.length);
-  console.log('[buildScoreTimeSeries] first:', result[0], 'last:', result[result.length-1]);
   
   return result;
 }
 
 function renderScoreHistory() {
   const chartEl = el('scoreHistoryChart');
-  console.log('[renderScoreHistory] chartEl:', chartEl, 'DATA.length:', DATA.length);
   if(!chartEl || !DATA.length) return;
 
   const today = new Date(); today.setHours(23,59,59,0);
@@ -1277,16 +1269,13 @@ function renderScoreHistory() {
     const allDates = DATA.map(r => new Date(r[COL.date])).filter(d => !isNaN(d));
     startDate = allDates.length ? new Date(Math.min(...allDates)) : new Date(today);
     startDate.setHours(0,0,0,0);
-    console.log('[renderScoreHistory] mode: 全期間, startDate:', startDate);
   } else {
     startDate = new Date(today);
     startDate.setFullYear(startDate.getFullYear() - SCORE_RANGE_YEARS);
     startDate.setHours(0,0,0,0);
-    console.log('[renderScoreHistory] mode:', SCORE_RANGE_YEARS + '年, startDate:', startDate);
   }
 
   const series = buildScoreTimeSeries(startDate, today);
-  console.log('[renderScoreHistory] series.length:', series.length);
 
   // NBER後退期をmarkAreaに変換（通常 vs 外生で色分け）
   const markAreasNormal = NBER_RECESSIONS
