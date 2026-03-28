@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TANUKI VALUATION</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#0a0d14; --sur:#111520; --sur2:#161c2d; --bdr:#1e2840;
+      --acc:#8b5cf6; --txt:#e2e8f0; --mut:#64748b;
+      --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;min-height:100vh}
+    .shell{max-width:980px;margin:0 auto;padding:0 20px 64px}
+    header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.15em}
+    .hero{text-align:center;padding:48px 0;border-bottom:1px solid var(--bdr)}
+    .hero-title{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--acc)}
+    .card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:20px;margin-top:40px}
+    .ticker-card{background:var(--sur);padding:20px;border-radius:8px;border:1px solid var(--bdr);transition:all .2s}
+    .ticker-card:hover{background:var(--sur2);transform:translateY(-2px)}
+    .ticker-name{font-family:var(--mono);font-size:18px;font-weight:700}
+    .value{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--acc)}
+    .status{font-size:12px;color:var(--mut)}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="logo">TANUKI VALUATION</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--mut)">Koichi式 v5.1</div>
+  </header>
+
+  <div class="hero">
+    <div class="hero-title">TANUKI VALUATION</div>
+    <p style="color:var(--mut);margin-top:16px">本質的価値を過去実績＋AIセグメントKPIで実証計算</p>
+  </div>
+
+  <div id="ticker-list" class="card-grid">
+    <!-- JSで動的に生成 -->
+  </div>
+</div>
+
+<script>
+  // 簡易データ読み込み（GitHub Pages対応）
+  async function loadTickers() {
+    const tickers = ["MSFT","AMZN","SOFI","TSLA","PLTR","CELH","NVDA","AMD","APP","SOUN","RKLB","ONDS","FIG"]; // 後でconfigから自動化
+    const container = document.getElementById('ticker-list');
+    
+    for (let ticker of tickers) {
+      // 将来的に latest.json を読み込む
+      const card = document.createElement('a');
+      card.href = `stock.html?ticker=${ticker}`;
+      card.className = 'ticker-card';
+      card.innerHTML = `
+        <div class="ticker-name">${ticker}</div>
+        <div class="value" id="val-${ticker}">計算中...</div>
+        <div class="status">最新更新: --</div>
+      `;
+      container.appendChild(card);
+      
+      // ダミーデータ（後でJSON読み込みに置き換え）
+      setTimeout(() => {
+        document.getElementById(`val-${ticker}`).textContent = '¥12,450';
+      }, 300);
+    }
+  }
+  loadTickers();
+</script>
+</body>
+</html>
