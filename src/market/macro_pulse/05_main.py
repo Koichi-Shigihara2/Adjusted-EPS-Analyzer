@@ -87,7 +87,7 @@ INDICATOR_CONFIG = {
         "discord_remind": False,          # FRED自動取得のためリマインド不要
     },
     "Philadelphia Fed Manufacturing": {
-        "fred_id": "OUTMS",
+        "fred_id": "GACDFSA066MSFRBPHI",
         "input_method": "FRED",
         "fred_release_id": None,
         "slug": "philly_fed_mfg",
