@@ -17,23 +17,20 @@ def run_update():
         print(f"🔄 Updating {ticker}...")
         data = fetcher.get_financials(ticker)
         
-        sec_text = "SECデータ取得中（FMP連携）"
+        sec_text = "SECデータ取得済み"
         scenarios = ai.generate_scenarios(ticker, sec_text)
         
         result = calc.calculate_pt(data)
         
-        # tickerごとのフォルダを確実に作成（重要修正）
         base_dir = f"docs/value-monitor/tanuki_valuation/data/{ticker}"
         os.makedirs(base_dir, exist_ok=True)
         history_dir = f"{base_dir}/history"
         os.makedirs(history_dir, exist_ok=True)
         
-        # 履歴保存
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         with open(f"{history_dir}/{timestamp}.json", "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
         
-        # 最新結果保存
         with open(f"{base_dir}/latest.json", "w", encoding="utf-8") as f:
             json.dump(result, f, ensure_ascii=False, indent=2)
         
