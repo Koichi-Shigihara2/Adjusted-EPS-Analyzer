@@ -1519,14 +1519,19 @@ def run_weekly_analysis(target_date: date):
 
     # CSV に保存
     wa_df = load_weekly_analysis()
+    # テキストフィールド内の改行・カンマを安全な文字に置換（簡易CSVパーサー対策）
+    def _sanitize(s):
+        if not s:
+            return s
+        return str(s).replace('\n', ' ').replace('\r', ' ').replace('"', "'")
     new_row = {
         "analysis_date": target_date.strftime("%Y-%m-%d"),
         "score":         str(score_data['score']),
         "phase":         score_data['phase'],
-        "summary":       analysis.get("summary", ""),
-        "factor_analysis": analysis.get("factor_analysis", ""),
-        "watchpoints":   analysis.get("watchpoints", ""),
-        "indicator_comments": analysis.get("indicator_comments", ""),
+        "summary":       _sanitize(analysis.get("summary", "")),
+        "factor_analysis": _sanitize(analysis.get("factor_analysis", "")),
+        "watchpoints":   _sanitize(analysis.get("watchpoints", "")),
+        "indicator_comments": _sanitize(analysis.get("indicator_comments", "")),
         "score_change_1w": str(score_1w),
         "score_change_1m": str(score_1m),
         "model":         "gemini-2.5-flash",
