@@ -1128,7 +1128,7 @@ Market Context:
 Respond ONLY in this exact JSON format (no markdown, no extra text):
 {{"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":"日本語で100字以内で判断理由を記載。"}}"""
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         payload = {"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.1,"maxOutputTokens":300}}
         for attempt in range(3):
             r = requests.post(url, json=payload, headers={"Content-Type":"application/json"}, timeout=30)
@@ -1418,7 +1418,7 @@ def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
 {{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個、箇条書き風に（200字以内）","indicator_comments":"各指標への短評を指標名:コメント形式でセミコロン区切り（各30字以内、全8指標）"}}"""
 
     try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1000}
@@ -1513,7 +1513,7 @@ def run_weekly_analysis(target_date: date):
         "indicator_comments": analysis.get("indicator_comments", ""),
         "score_change_1w": str(score_1w),
         "score_change_1m": str(score_1m),
-        "model":         "gemini-2.0-flash",
+        "model":         "gemini-2.5-flash",
         "updated_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
 
