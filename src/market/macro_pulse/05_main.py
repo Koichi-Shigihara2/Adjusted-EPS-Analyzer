@@ -1129,9 +1129,9 @@ Respond ONLY in this exact JSON format (no markdown, no extra text):
 {{"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":"日本語で100字以内で判断理由を記載。"}}"""
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload = {"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.1,"maxOutputTokens":300}}
+        payload = {"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.1,"maxOutputTokens":1024,"thinkingConfig":{"thinkingBudget":512}}}
         for attempt in range(3):
-            r = requests.post(url, json=payload, headers={"Content-Type":"application/json"}, timeout=30)
+            r = requests.post(url, json=payload, headers={"Content-Type":"application/json"}, timeout=60)
             if r.status_code == 429:
                 wait = 15 * (2 ** attempt)
                 if attempt < 2:
@@ -1423,12 +1423,16 @@ def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
         payload = {
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1000}
+            "generationConfig": {
+                "temperature": 0.3,
+                "maxOutputTokens": 4096,
+                "thinkingConfig": {"thinkingBudget": 1024}
+            }
         }
         prompt_len = len(prompt)
         logger.info(f"Gemini weekly analysis: prompt length={prompt_len} chars")
         for attempt in range(3):
-            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
+            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=90)
             logger.info(f"Gemini response: status={r.status_code}")
             if r.status_code == 429:
                 try:
