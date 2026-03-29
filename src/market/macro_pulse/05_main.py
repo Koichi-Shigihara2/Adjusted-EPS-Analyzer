@@ -173,6 +173,17 @@ INDICATOR_CONFIG = {
         "unit": "千件",
         "discord_remind": False,
     },
+    # ── サームルール（月次自動）────────────────────────────
+    "Sahm Rule Recession Indicator": {
+        "fred_id": "SAHMCURRENT",
+        "input_method": "FRED",
+        "fred_release_id": None,
+        "slug": "sahm_rule",
+        "threshold_bull": 0.3,
+        "threshold_bear": 0.5,
+        "unit": "pp",
+        "discord_remind": False,
+    },
     # ── デイリー指標（毎日自動記録）────────────────────────────
     "Yield Curve 10Y-2Y": {
         "fred_id": "T10Y2Y",
@@ -516,12 +527,12 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
             "indicator":    ind_name,
             "release_date": date_str,
             "fred_id":      INDICATOR_CONFIG.get(ind_name, {}).get("fred_id", ""),
-            "input_method": "manual",
+            "input_method": "FRED",
             "consensus":    "",
             "actual":       "",
             "status":       "scheduled",
         })
-        logger.info(f"[Schedule+] {ind_name}: {date_str} (第3木曜 ルールベース算出)")
+        logger.info(f"[Schedule+] {ind_name}: {date_str} (第2月曜 ルールベース算出)")
 
     if not new_rows:
         logger.info("Schedule up to date.")
