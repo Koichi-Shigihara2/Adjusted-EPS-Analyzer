@@ -18,6 +18,7 @@ on:
           - fill-returns
           - recalc
           - remind
+          - weekly-analysis
 
 jobs:
   update:
@@ -82,6 +83,17 @@ jobs:
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
           python src/market/macro_pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
+
+      - name: Generate weekly AI analysis
+        if: |
+          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 6') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'weekly-analysis')
+        env:
+          FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
+          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          python src/market/macro_pulse/05_main.py --weekly-analysis --date $(date -u +%Y-%m-%d)
 
       - name: Recalculate surprises
         if: github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'recalc'

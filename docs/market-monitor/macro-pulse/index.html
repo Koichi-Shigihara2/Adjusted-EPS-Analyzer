@@ -188,6 +188,33 @@
     .si-dot.future{background:var(--bdr)}
     @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
+    /* ══════════════════════════════════════════
+       ⑦ AI WEEKLY COMMENTARY
+    ══════════════════════════════════════════ */
+    .ai-wrap{border:1px solid var(--bdr);background:var(--sur);margin-bottom:14px}
+    .ai-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;padding:12px 20px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
+    .ai-title-icon{font-size:13px}
+    .ai-timeline{padding:0}
+    .ai-card{padding:16px 20px;border-bottom:1px solid var(--bdr);transition:background .2s}
+    .ai-card:last-child{border-bottom:none}
+    .ai-card:hover{background:rgba(59,130,246,.02)}
+    .ai-card-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;cursor:pointer}
+    .ai-card-date{font-family:var(--mono);font-size:11px;color:var(--mut);white-space:nowrap}
+    .ai-card-score{font-family:var(--mono);font-size:16px;font-weight:700}
+    .ai-card-phase{font-family:var(--mono);font-size:10px;padding:2px 8px;border-radius:2px}
+    .ai-card-delta{font-family:var(--mono);font-size:11px;font-weight:700}
+    .ai-card-body{display:none;padding-top:6px}
+    .ai-card.open .ai-card-body{display:block}
+    .ai-card-section{margin-bottom:10px}
+    .ai-card-section-label{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:4px}
+    .ai-card-section-text{font-family:var(--sans);font-size:12px;color:var(--txt);line-height:1.7}
+    .ai-card-indicators{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:6px;margin-top:8px}
+    .ai-ind-chip{font-family:var(--mono);font-size:9px;padding:4px 8px;background:var(--sur2);border:1px solid var(--bdr);border-radius:3px;color:var(--mut);line-height:1.5}
+    .ai-ind-chip b{color:var(--txt);font-weight:600}
+    .ai-card-toggle{font-family:var(--mono);font-size:10px;color:var(--mut);cursor:pointer;user-select:none;transition:transform .2s}
+    .ai-card.open .ai-card-toggle{transform:rotate(180deg)}
+    .ai-empty{padding:24px 20px;font-family:var(--mono);font-size:11px;color:var(--mut);text-align:center}
+
     /* ── Ticker ── */
     .ticker{display:flex;align-items:stretch;gap:0;border:1px solid var(--bdr);background:var(--sur);margin-bottom:16px;overflow:hidden;flex-wrap:wrap}
     .tick{padding:10px 18px;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--bdr);min-width:120px}
@@ -412,6 +439,13 @@
     <div id="schedGrid"><div class="empty"><span class="spin"></span>Loading...</div></div>
   </div>
 
+  <!-- ⑦ AI週次解説 -->
+  <div class="sec">⑦ AI 週次景気解説</div>
+  <div class="ai-wrap">
+    <div class="ai-title"><span class="ai-title-icon">🤖</span>AI WEEKLY COMMENTARY — 毎週日曜自動生成（Gemini 2.0 Flash）</div>
+    <div class="ai-timeline" id="aiTimeline"><div class="ai-empty"><span class="spin"></span>Loading...</div></div>
+  </div>
+
 </div><!-- /shell -->
 
 <script>
@@ -422,6 +456,7 @@
 const CSV_PATHS    = ['data/05_events.csv'];
 const FED_CTX_PATH = 'data/05_fed_context.csv';
 const SCHED_PATH   = 'data/05_indicator_schedule.csv';
+const WEEKLY_ANALYSIS_PATH = 'data/05_weekly_analysis.csv';
 
 const COL = {
   indicator:   'indicator',
@@ -1756,6 +1791,122 @@ function checkManualInputAlerts() {
 }
 
 // ═══════════════════════════════════════════════════════
+// ⑦ AI WEEKLY COMMENTARY
+// ═══════════════════════════════════════════════════════
+async function loadWeeklyAnalysis() {
+  try {
+    const res = await fetch(WEEKLY_ANALYSIS_PATH+'?t='+Date.now());
+    if(!res.ok){
+      el('aiTimeline').innerHTML='<div class="ai-empty">週次解説データがまだありません。日曜の自動更新後に表示されます。</div>';
+      return;
+    }
+    const rows = parseCSVRaw(await res.text());
+    if(!rows.length){
+      el('aiTimeline').innerHTML='<div class="ai-empty">週次解説データがまだありません。日曜の自動更新後に表示されます。</div>';
+      return;
+    }
+    renderWeeklyAnalysis(rows);
+  } catch(e){
+    console.warn('weekly_analysis:', e);
+    el('aiTimeline').innerHTML='<div class="ai-empty">読み込みエラー</div>';
+  }
+}
+
+function renderWeeklyAnalysis(rows) {
+  const timeline = el('aiTimeline');
+  if(!rows.length){
+    timeline.innerHTML='<div class="ai-empty">週次解説データがまだありません</div>';
+    return;
+  }
+
+  // 日付降順でソート
+  const sorted = [...rows].sort((a,b)=>(b.analysis_date||'').localeCompare(a.analysis_date||''));
+
+  // 直近12週分のみ表示
+  const display = sorted.slice(0, 12);
+
+  timeline.innerHTML = display.map((r, idx) => {
+    const date = r.analysis_date || '—';
+    const score = parseInt(r.score) || 0;
+    const phase = r.phase || '—';
+    const summary = r.summary || '';
+    const factors = r.factor_analysis || '';
+    const watchpoints = r.watchpoints || '';
+    const indComments = r.indicator_comments || '';
+    const chg1w = parseInt(r.score_change_1w) || 0;
+    const chg1m = parseInt(r.score_change_1m) || 0;
+
+    // フェーズカラー
+    const phColor = score<30?'var(--grn)':score<52?'var(--acc)':score<70?'var(--amb)':'var(--red)';
+    const phBg = score<30?'rgba(16,185,129,.15)':score<52?'rgba(59,130,246,.15)':score<70?'rgba(245,158,11,.15)':'rgba(244,63,94,.15)';
+
+    // デルタ表示
+    const d1w = chg1w>0?`<span style="color:var(--red)">▲+${chg1w}</span>`:chg1w<0?`<span style="color:var(--grn)">▼${chg1w}</span>`:`<span style="color:var(--mut)">→0</span>`;
+    const d1m = chg1m>0?`<span style="color:var(--red)">▲+${chg1m}</span>`:chg1m<0?`<span style="color:var(--grn)">▼${chg1m}</span>`:`<span style="color:var(--mut)">→0</span>`;
+
+    // 日付をフォーマット
+    const dObj = new Date(date);
+    const dFmt = dObj.toLocaleDateString('ja-JP',{year:'numeric',month:'numeric',day:'numeric',weekday:'short'});
+
+    // 指標コメントをパース（"指標名:コメント;指標名:コメント" 形式）
+    let indChipsHtml = '';
+    if(indComments){
+      const chips = indComments.split(';').filter(s=>s.trim()).map(s=>{
+        const parts = s.split(':');
+        if(parts.length>=2){
+          const name = parts[0].trim();
+          const comment = parts.slice(1).join(':').trim();
+          return `<div class="ai-ind-chip"><b>${name}</b>: ${comment}</div>`;
+        }
+        return `<div class="ai-ind-chip">${s.trim()}</div>`;
+      });
+      indChipsHtml = `<div class="ai-card-indicators">${chips.join('')}</div>`;
+    }
+
+    // 最新の1件はデフォルトで開く
+    const openCls = idx===0 ? 'open' : '';
+
+    return `<div class="ai-card ${openCls}" onclick="toggleAiCard(this)">
+      <div class="ai-card-header">
+        <div style="display:flex;align-items:center;gap:12px">
+          <span class="ai-card-date">${dFmt}</span>
+          <span class="ai-card-score" style="color:${phColor}">${score}</span>
+          <span class="ai-card-phase" style="background:${phBg};color:${phColor}">${phase}</span>
+          <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">週${d1w} 月${d1m}</span>
+        </div>
+        <span class="ai-card-toggle">▼</span>
+      </div>
+      <div class="ai-card-body">
+        <div class="ai-card-section">
+          <div class="ai-card-section-label">総括</div>
+          <div class="ai-card-section-text">${summary}</div>
+        </div>
+        ${factors ? `<div class="ai-card-section">
+          <div class="ai-card-section-label">要因分析</div>
+          <div class="ai-card-section-text">${factors}</div>
+        </div>` : ''}
+        ${watchpoints ? `<div class="ai-card-section">
+          <div class="ai-card-section-label">注視ポイント</div>
+          <div class="ai-card-section-text">${watchpoints}</div>
+        </div>` : ''}
+        ${indChipsHtml ? `<div class="ai-card-section">
+          <div class="ai-card-section-label">各指標コメント</div>
+          ${indChipsHtml}
+        </div>` : ''}
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);margin-top:8px;text-align:right">
+          model: ${r.model||'—'} | updated: ${r.updated_at||'—'}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleAiCard(card) {
+  // クリックされた要素が内部要素でなくカード自体の場合のみトグル
+  card.classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -1763,6 +1914,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadFedContext();
   loadSchedule();
   loadCSVData();
+  loadWeeklyAnalysis();
   setInterval(()=>{updateTs();},60000);
 });
 </script>

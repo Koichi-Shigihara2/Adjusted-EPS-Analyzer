@@ -50,6 +50,7 @@ BASE_DATA_DIR = str(_REPO_ROOT / "docs" / "market-monitor" / "macro-pulse" / "da
 EVENTS_PATH      = os.path.join(BASE_DATA_DIR, "05_events.csv")
 SCHEDULE_PATH    = os.path.join(BASE_DATA_DIR, "05_indicator_schedule.csv")
 FED_CONTEXT_PATH = os.path.join(BASE_DATA_DIR, "05_fed_context.csv")
+WEEKLY_ANALYSIS_PATH = os.path.join(BASE_DATA_DIR, "05_weekly_analysis.csv")
 
 # ─────────────────────────────────────────────────────────────────
 #  カラム定義
@@ -72,6 +73,13 @@ FED_CONTEXT_COLUMNS = [
     "dominant_concern", "dominant_label",
     "ff_current", "zq_ticker", "zq_price", "zq_rate",
     "cuts_implied", "ai_reason", "updated_at",
+]
+
+WEEKLY_ANALYSIS_COLUMNS = [
+    "analysis_date", "score", "phase",
+    "summary", "factor_analysis", "watchpoints",
+    "indicator_comments", "score_change_1w", "score_change_1m",
+    "model", "updated_at",
 ]
 
 # ─────────────────────────────────────────────────────────────────
@@ -1200,14 +1208,333 @@ def update_fed_context(target_date: date, fred):
     logger.info(f"Fed context saved: {FED_CONTEXT_PATH}")
 
 # ─────────────────────────────────────────────────────────────────
+#  週次AI解説（--weekly-analysis）
+# ─────────────────────────────────────────────────────────────────
+def load_weekly_analysis() -> pd.DataFrame:
+    if not os.path.exists(WEEKLY_ANALYSIS_PATH):
+        return pd.DataFrame(columns=WEEKLY_ANALYSIS_COLUMNS)
+    try:
+        df = pd.read_csv(WEEKLY_ANALYSIS_PATH, encoding="utf-8", dtype=str).fillna("")
+        for c in WEEKLY_ANALYSIS_COLUMNS:
+            if c not in df.columns:
+                df[c] = ""
+        return df
+    except Exception as e:
+        logger.warning(f"weekly_analysis.csv read error: {e}")
+        return pd.DataFrame(columns=WEEKLY_ANALYSIS_COLUMNS)
+
+def save_weekly_analysis(df: pd.DataFrame):
+    os.makedirs(BASE_DATA_DIR, exist_ok=True)
+    df = df.drop_duplicates(subset=["analysis_date"], keep="last")
+    df = df.sort_values("analysis_date").reset_index(drop=True)
+    df.to_csv(WEEKLY_ANALYSIS_PATH, index=False, encoding="utf-8")
+    logger.info(f"weekly_analysis.csv saved: {WEEKLY_ANALYSIS_PATH} ({len(df)} rows)")
+
+def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
+    """events.csv から target_date 時点のスコアと各指標の値を計算する"""
+    target_ms = datetime.combine(target_date, datetime.max.time()).timestamp() * 1000
+
+    # indicator -> [(date, actual)] sorted by date
+    ind_data = {}
+    for _, r in events.iterrows():
+        ind = r.get("indicator", "")
+        actual_str = str(r.get("actual", "")).strip()
+        date_str = str(r.get("release_date", "")).strip()
+        if not ind or not actual_str or not date_str:
+            continue
+        try:
+            val = float(actual_str)
+            d = datetime.strptime(date_str, "%Y-%m-%d")
+            d_ms = d.timestamp() * 1000
+            if d_ms > target_ms:
+                continue
+            if ind not in ind_data:
+                ind_data[ind] = []
+            ind_data[ind].append((d_ms, val, date_str))
+        except (ValueError, TypeError):
+            continue
+
+    for ind in ind_data:
+        ind_data[ind].sort(key=lambda x: x[0])
+
+    def latest(ind):
+        arr = ind_data.get(ind, [])
+        return (arr[-1][1], arr[-1][2]) if arr else (None, None)
+
+    def trend3(ind):
+        arr = ind_data.get(ind, [])
+        if len(arr) < 2:
+            return 0, []
+        last3 = arr[-3:]
+        changes = []
+        for i in range(1, len(last3)):
+            changes.append(last3[i][1] - last3[i-1][1])
+        avg = sum(changes) / len(changes)
+        return (1 if avg > 0 else -1 if avg < 0 else 0), changes
+
+    indicators = {}
+    score_inputs = []
+
+    # 各指標の最新値を取得
+    indicator_keys = [
+        ('Yield Curve 10Y-2Y', 'yc'),
+        ('HY Spread', 'hy'),
+        ('Philadelphia Fed Manufacturing', 'philly'),
+        ('Chicago Fed National Activity', 'cfnai'),
+        ('Initial Claims 4W MA', 'claims'),
+        ('CB Consumer Confidence', 'cbcc2'),
+        ('Michigan Consumer Sentiment', 'cbcc'),
+        ('Sahm Rule Recession Indicator', 'sahm'),
+    ]
+
+    weights = {'yc':20, 'hy':15, 'philly':18, 'cfnai':12, 'claims':10, 'cbcc2':10, 'cbcc':8, 'sahm':7}
+
+    for ind_name, key in indicator_keys:
+        val, val_date = latest(ind_name)
+        trend_dir, _ = trend3(ind_name)
+        indicators[key] = {'name': ind_name, 'value': val, 'date': val_date, 'trend': trend_dir}
+
+        if val is None:
+            continue
+
+        # スコア計算（renderPhaseGaugeと同一ロジック）
+        if key == 'yc':
+            s = 90 if val < -0.5 else 70 if val < 0 else 40 if val < 0.5 else 15
+        elif key == 'hy':
+            s = 90 if val > 6 else 70 if val > 4.5 else 40 if val > 3.5 else 15
+        elif key == 'cbcc2':
+            s = 15 if val >= 110 else 35 if val >= 100 else 60 if val >= 90 else 85
+        elif key == 'philly':
+            s = 88 if val < -10 else 65 if val < 0 else 35 if val < 5 else 12
+        elif key == 'cfnai':
+            s = 82 if val < -0.7 else 50 if val < -0.35 else 18
+        elif key == 'claims':
+            s = 85 if val > 300000 else 60 if val > 250000 else 35 if val > 215000 else 15
+        elif key == 'cbcc':
+            s = 82 if val < 60 else 72 if val < 75 else 60 if val < 90 else 30
+        elif key == 'sahm':
+            s = 88 if val >= 0.5 else 50 if val >= 0.3 else 12
+        else:
+            s = 50
+
+        score_inputs.append({'key': key, 'score': s, 'weight': weights.get(key, 0)})
+
+    total_w = sum(si['weight'] for si in score_inputs)
+    raw_score = sum(si['score'] * si['weight'] for si in score_inputs) / total_w if total_w > 0 else 50
+    score = round(raw_score)
+
+    if score < 30:
+        phase = '拡張'
+    elif score < 52:
+        phase = '踊り場'
+    elif score < 70:
+        phase = '後退入口'
+    else:
+        phase = '後退'
+
+    return {
+        'score': score,
+        'phase': phase,
+        'indicators': indicators,
+        'score_inputs': score_inputs,
+    }
+
+def _compute_score_change(events: pd.DataFrame, target_date: date, days_back: int) -> int:
+    """N日前のスコアとの差分を計算"""
+    past_date = target_date - timedelta(days=days_back)
+    current = _compute_current_score(events, target_date)
+    past = _compute_current_score(events, past_date)
+    if current['score'] is None or past['score'] is None:
+        return 0
+    return current['score'] - past['score']
+
+def _get_recent_events_summary(events: pd.DataFrame, target_date: date, days: int = 7) -> list:
+    """直近N日間の主要指標発表をサマリとして取得"""
+    DAILY_INDS = {'Yield Curve 10Y-2Y', 'HY Spread', 'VIX', 'Michigan Inflation 5Y'}
+    cutoff = (target_date - timedelta(days=days)).strftime("%Y-%m-%d")
+    target_str = target_date.strftime("%Y-%m-%d")
+
+    recent = []
+    for _, r in events.iterrows():
+        ind = str(r.get("indicator", "")).strip()
+        rd = str(r.get("release_date", "")).strip()
+        if ind in DAILY_INDS or not rd:
+            continue
+        if cutoff <= rd <= target_str:
+            actual = r.get("actual", "")
+            surprise = r.get("surprise", "")
+            recent.append({
+                'indicator': ind,
+                'date': rd,
+                'actual': actual,
+                'surprise': surprise,
+            })
+    return sorted(recent, key=lambda x: x['date'], reverse=True)
+
+def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
+                                          recent_events: list,
+                                          score_1w: int, score_1m: int,
+                                          fed_context: dict) -> dict:
+    """Gemini APIで週次AI解説を生成"""
+    api_key = os.environ.get("GEMINI_API_KEY", "")
+    if not api_key:
+        logger.warning("GEMINI_API_KEY not set. Generating fallback analysis.")
+        return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
+
+    # 指標サマリを構築
+    ind_lines = []
+    for key, info in score_data['indicators'].items():
+        val = info['value']
+        if val is None:
+            continue
+        trend_str = '↑上昇' if info['trend'] > 0 else '↓下降' if info['trend'] < 0 else '→横ばい'
+        ind_lines.append(f"  - {info['name']}: {val} (最終更新: {info['date']}, トレンド: {trend_str})")
+
+    # 直近発表イベント
+    event_lines = []
+    for ev in recent_events[:10]:
+        surp = ev['surprise']
+        surp_str = f", サプライズ: {surp}" if surp else ""
+        event_lines.append(f"  - {ev['date']} {ev['indicator']}: {ev['actual']}{surp_str}")
+
+    # FED context
+    regime = fed_context.get('regime', 'BALANCED')
+    ff_rate = fed_context.get('ff_current', '—')
+    cuts = fed_context.get('cuts_implied', '—')
+
+    prompt = f"""あなたは米国マクロ経済の専門アナリストです。以下のデータに基づいて、個人投資家向けの週次景気解説を日本語で作成してください。
+
+■ 現在の景気スコア: {score_data['score']}/100 (フェーズ: {score_data['phase']})
+■ 先週比: {score_1w:+d}pt, 前月比: {score_1m:+d}pt
+■ FED政策局面: {regime}, FF金利: {ff_rate}%, 利下げ織り込み: {cuts}回
+
+■ 8指標の最新値:
+{chr(10).join(ind_lines)}
+
+■ 直近1週間の主要発表:
+{chr(10).join(event_lines) if event_lines else '  なし'}
+
+以下のJSON形式で回答してください（マークダウンなし、バッククォートなし）:
+{{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個、箇条書き風に（200字以内）","indicator_comments":"各指標への短評を指標名:コメント形式でセミコロン区切り（各30字以内、全8指標）"}}"""
+
+    try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
+        payload = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.3, "maxOutputTokens": 1000}
+        }
+        for attempt in range(3):
+            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=45)
+            if r.status_code == 429:
+                wait = 15 * (2 ** attempt)
+                if attempt < 2:
+                    logger.warning(f"Gemini rate limit. Retry in {wait}s...")
+                    time.sleep(wait)
+                    continue
+                return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
+            r.raise_for_status()
+            break
+
+        data = r.json()
+        raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if m:
+            result = json.loads(m.group())
+            logger.info("Weekly analysis generated via Gemini.")
+            return result
+
+    except Exception as e:
+        logger.warning(f"Gemini API error for weekly analysis: {e}")
+
+    return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
+
+def _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m):
+    """Gemini失敗時のフォールバック"""
+    score = score_data['score']
+    phase = score_data['phase']
+    direction = "改善" if score_1w < 0 else "悪化" if score_1w > 0 else "横ばい"
+
+    return {
+        "summary": f"景気後退リスクスコアは{score}/100（{phase}局面）。先週比{score_1w:+d}ptで{direction}傾向。AI解説は生成できませんでした（ルールベース判定）。",
+        "factor_analysis": f"先週比{score_1w:+d}pt、前月比{score_1m:+d}ptの変動。詳細な要因分析にはGemini API接続が必要です。",
+        "watchpoints": "Gemini API未接続のため注視ポイントは自動生成されていません。各指標の個別トレンドを確認してください。",
+        "indicator_comments": "",
+    }
+
+def run_weekly_analysis(target_date: date):
+    """週次AI解説のメイン処理"""
+    logger.info(f"=== Weekly Analysis | {target_date} ===")
+
+    events = load_events()
+    if events.empty:
+        logger.warning("No events data. Skipping weekly analysis.")
+        return
+
+    # 現在のスコアと指標状態を計算
+    score_data = _compute_current_score(events, target_date)
+    score_1w = _compute_score_change(events, target_date, 7)
+    score_1m = _compute_score_change(events, target_date, 30)
+
+    # 直近1週間の発表イベント
+    recent_events = _get_recent_events_summary(events, target_date, days=7)
+
+    # FED context
+    fed_context = {}
+    if os.path.exists(FED_CONTEXT_PATH):
+        try:
+            fc = pd.read_csv(FED_CONTEXT_PATH, dtype=str).fillna("")
+            if not fc.empty:
+                fed_context = fc.iloc[-1].to_dict()
+        except Exception:
+            pass
+
+    # Gemini で解説生成
+    analysis = generate_weekly_analysis_with_gemini(
+        target_date, score_data, recent_events, score_1w, score_1m, fed_context
+    )
+
+    # CSV に保存
+    wa_df = load_weekly_analysis()
+    new_row = {
+        "analysis_date": target_date.strftime("%Y-%m-%d"),
+        "score":         str(score_data['score']),
+        "phase":         score_data['phase'],
+        "summary":       analysis.get("summary", ""),
+        "factor_analysis": analysis.get("factor_analysis", ""),
+        "watchpoints":   analysis.get("watchpoints", ""),
+        "indicator_comments": analysis.get("indicator_comments", ""),
+        "score_change_1w": str(score_1w),
+        "score_change_1m": str(score_1m),
+        "model":         "gemini-2.0-flash",
+        "updated_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+    # 同日の既存行を上書き
+    wa_df = wa_df[wa_df["analysis_date"] != target_date.strftime("%Y-%m-%d")]
+    wa_df = pd.concat([wa_df, pd.DataFrame([new_row])], ignore_index=True)
+    save_weekly_analysis(wa_df)
+
+    # Discord通知
+    discord_msg = (
+        f"📊 **MACRO PULSE — 週次AI解説** ({target_date.strftime('%Y-%m-%d')})\n\n"
+        f"**スコア: {score_data['score']}/100 ({score_data['phase']})** "
+        f"(先週比{score_1w:+d} / 前月比{score_1m:+d})\n\n"
+        f"**総括:** {analysis.get('summary', '—')}\n\n"
+        f"**要因分析:** {analysis.get('factor_analysis', '—')}\n\n"
+        f"**注視ポイント:** {analysis.get('watchpoints', '—')}"
+    )
+    send_discord(discord_msg)
+    logger.info("=== Weekly Analysis complete ===")
+
+# ─────────────────────────────────────────────────────────────────
 #  メインオーケストレーター（変更なし）
 # ─────────────────────────────────────────────────────────────────
 def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
         do_update_schedule: bool = False, do_remind: bool = False,
-        do_fill_returns: bool = False):
+        do_fill_returns: bool = False, do_weekly_analysis: bool = False):
     logger.info(f"=== MACRO PULSE v6.0 | {target_date} | recalc={do_recalc} | "
                 f"update_schedule={do_update_schedule} | remind={do_remind} | "
-                f"fill_returns={do_fill_returns} ===")
+                f"fill_returns={do_fill_returns} | weekly_analysis={do_weekly_analysis} ===")
 
     ensure_schedule_csv()
     fred     = get_fred()
@@ -1216,6 +1543,10 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
 
     if do_remind:
         remind_manual_indicators(target_date)
+        return
+
+    if do_weekly_analysis:
+        run_weekly_analysis(target_date)
         return
 
     if do_update_schedule:
@@ -1302,6 +1633,7 @@ def main():
     p.add_argument("--update-schedule", action="store_true", help="Update schedule + fed context")
     p.add_argument("--remind",          action="store_true", help="Send Discord reminders for today's manual indicators")
     p.add_argument("--fill-returns",    action="store_true", help="Backfill S&P500 t+N returns")
+    p.add_argument("--weekly-analysis", action="store_true", help="Generate weekly AI commentary")
     p.add_argument("--date", type=str, default=None, help="YYYY-MM-DD (default: yesterday)")
     args = p.parse_args()
     target = (datetime.strptime(args.date, "%Y-%m-%d").date()
@@ -1311,7 +1643,8 @@ def main():
         do_recalc=args.recalc,
         do_update_schedule=args.update_schedule,
         do_remind=args.remind,
-        do_fill_returns=args.fill_returns)
+        do_fill_returns=args.fill_returns,
+        do_weekly_analysis=args.weekly_analysis)
 
 if __name__ == "__main__":
     main()
