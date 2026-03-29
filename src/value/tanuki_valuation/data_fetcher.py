@@ -4,47 +4,47 @@ import json
 import numpy as np
 from typing import Dict, Any
 import requests
+from datetime import datetime
+
+# 既存のextract_key_facts.pyをインポート（相対パス）
+from ..adjusted_eps_analyzer.extract_key_facts import extract_quarterly_facts
 
 class TanukiDataFetcher:
+    """SEC EDGAR直接取得に完全切り替え（FMPは補助のみ）"""
+    
     def __init__(self):
-        self.fmp_key = os.getenv("FMP_API_KEY")
-        self.fred_key = os.getenv("FRED_API_KEY")
         self.alpha_key = os.getenv("ALPHA_VANTAGE_API_KEY")
-
+    
     def get_financials(self, ticker: str) -> Dict[str, Any]:
-        base = "https://financialmodelingprep.com/api/v3"
+        print(f"🔍 SEC EDGARから {ticker} の財務データを取得中...")
         
-        # キャッシュフロー
-        cf_url = f"{base}/cash-flow-statement/{ticker}?period=annual&limit=20&apikey={self.fmp_key}"
-        cf_resp = requests.get(cf_url)
-        print(f"DEBUG {ticker} CF status: {cf_resp.status_code} | length: {len(cf_resp.text)}")
-        cf_data = cf_resp.json()
-        fcf_list = [item.get("freeCashFlow", 0) for item in cf_data if isinstance(item, dict)]
+        # 既存モジュールで四半期・年次データを取得（高精度）
+        quarterly_data = extract_quarterly_facts(ticker, years=5)
         
-        # キー指標
-        metrics_url = f"{base}/key-metrics/{ticker}?limit=20&apikey={self.fmp_key}"
-        metrics_resp = requests.get(metrics_url)
-        print(f"DEBUG {ticker} Metrics status: {metrics_resp.status_code}")
-        metrics = metrics_resp.json()
-        roe_values = [m.get("returnOnEquity", m.get("roe", 0)) for m in metrics if isinstance(m, dict)]  # 両キー対応
+        # FCF計算（調整後純利益 + 非現金費用 - CapEx など簡易版）
+        fcf_list = []
+        for q in quarterly_data:
+            net_income = q.get('net_income', {}).get('value', 0)
+            sbc = q.get('us-gaap:ShareBasedCompensation', {}).get('value', 0) or 0
+            amort = q.get('us-gaap:AmortizationOfIntangibleAssets', {}).get('value', 0) or 0
+            capex = q.get('us-gaap:PaymentsForPropertyPlantAndEquipment', {}).get('value', 0) or 0
+            fcf = net_income + sbc + amort - capex
+            fcf_list.append(fcf)
         
-        # EPSアナライザー連携（緩やか連携）
-        eps_path = f"docs/value-monitor/adjusted_eps_analyzer/data/{ticker}/annual.json"
-        eps_data = {}
-        if os.path.exists(eps_path):
-            with open(eps_path, "r", encoding="utf-8") as f:
-                eps_data = json.load(f)
+        # ROE（EPSアナライザーのadjusted_net_incomeから簡易算出）
+        roe_values = [q.get('adjusted_eps', 0) * 100 for q in quarterly_data if 'adjusted_eps' in q]  # 簡易ROE代理
         
-        fcf_5yr = self._normalize_fcf(fcf_list[-5:]) if fcf_list else 0.0
+        # 最新株価（Alpha Vantage）
+        current_price = self._get_current_price(ticker)
         
         return {
-            "fcf_5yr_avg": fcf_5yr,
+            "fcf_5yr_avg": self._normalize_fcf(fcf_list[-5:]),
             "roe_10yr_avg": float(np.mean(roe_values)) if roe_values else 0.0,
-            "current_price": self._get_current_price(ticker),
+            "current_price": current_price,
             "fcf_list_raw": fcf_list,
-            "eps_data": eps_data
+            "eps_data": {"ticker": ticker, "quarters": quarterly_data}
         }
-
+    
     def _normalize_fcf(self, fcf_list: list) -> float:
         if not fcf_list:
             return 0.0
@@ -52,9 +52,8 @@ class TanukiDataFetcher:
         std = np.std(fcf_list) if len(fcf_list) > 1 else 0
         clipped = np.clip(fcf_list, mean - 2*std, mean + 2*std)
         return float(np.mean(clipped))
-
+    
     def _get_current_price(self, ticker: str) -> float:
         url = f"https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol={ticker}&apikey={self.alpha_key}"
         data = requests.get(url).json()
-        price = data.get("Global Quote", {}).get("05. price", 0)
-        return float(price) if price else 0.0
+        return float(data.get("Global Quote", {}).get("05. price", 0) or 0)
