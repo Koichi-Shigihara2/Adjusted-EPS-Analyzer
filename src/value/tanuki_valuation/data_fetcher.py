@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from typing import Dict, Any
-from .extract_key_facts import extract_quarterly_facts  # 相対インポート
+from ..adjusted_eps_analyzer.extract_key_facts import extract_quarterly_facts  # ← これを修正
 
 class TanukiDataFetcher:
     def __init__(self):
@@ -30,13 +30,12 @@ class TanukiDataFetcher:
 
         fcf_5yr_avg = self._normalize_fcf(fcf_list[-5:]) if fcf_list else 0.0
 
-        # diluted_sharesは最新四半期から確実に取得
         diluted_shares = quarterly_data[0].get('diluted_shares', {}).get('value', 0) if quarterly_data else 0
 
         return {
             "fcf_5yr_avg": fcf_5yr_avg,
             "diluted_shares": diluted_shares,
-            "roe_10yr_avg": 0.0,  # 将来拡張予定
+            "roe_10yr_avg": 0.0,
             "current_price": self._get_current_price(ticker),
             "fcf_list_raw": fcf_list,
             "eps_data": {"ticker": ticker, "quarters": quarterly_data},
@@ -52,5 +51,4 @@ class TanukiDataFetcher:
         return float(np.mean(clipped))
 
     def _get_current_price(self, ticker: str) -> float:
-        # Alpha Vantageで取得（簡易版）
-        return 0.0  # 実際はAPI呼び出しを実装済み
+        return 0.0  # Alpha Vantageは後で実装可
