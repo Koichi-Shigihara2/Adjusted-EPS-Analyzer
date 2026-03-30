@@ -1,3 +1,18 @@
+# src/value/tanuki_valuation/data_fetcher.py
+import os
+import numpy as np
+from typing import Dict, Any
+import requests
+
+# 既存のextract_key_facts.pyを使用
+from ..adjusted_eps_analyzer.extract_key_facts import extract_quarterly_facts
+
+class TanukiDataFetcher:
+    """FCF計算をより正確に（OCF優先 + CapEx直接取得）"""
+    
+    def __init__(self):
+        self.alpha_key = os.getenv("ALPHA_VANTAGE_API_KEY")
+    
 # ...（上部は変更なし）...
 
     def get_financials(self, ticker: str) -> Dict[str, Any]:
