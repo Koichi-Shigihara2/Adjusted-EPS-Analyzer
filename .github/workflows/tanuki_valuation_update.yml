@@ -17,12 +17,12 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-          cache: 'pip'   # pipキャッシュを有効化
 
-      - name: Install dependencies
+      - name: Clear pip cache and install dependencies
         run: |
+          pip cache purge   # キャッシュを強制削除
           pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r requirements.txt --no-cache-dir   # キャッシュを使わずにインストール
 
       - name: Run TANUKI VALUATION Update
         env:
@@ -40,7 +40,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add docs/value-monitor/tanuki_valuation/data/
-          git commit -m "chore: TANUKI VALUATION weekly update ${{ github.run_id }}" || echo "No changes"
+          git commit -m "chore: TANUKI VALUATION weekly update ${{ github.run_id }}" || echo "No changes to commit"
           git push
 
       - name: Send Email Notification
