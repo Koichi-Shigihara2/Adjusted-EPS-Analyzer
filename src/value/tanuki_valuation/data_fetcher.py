@@ -1,6 +1,5 @@
 # src/value/tanuki_valuation/data_fetcher.py
 import os
-import json
 import numpy as np
 from typing import Dict, Any
 import requests
@@ -9,7 +8,7 @@ import requests
 from ..adjusted_eps_analyzer.extract_key_facts import extract_quarterly_facts
 
 class TanukiDataFetcher:
-    """SEC EDGARから総額ベースの本質的価値計算に必要なデータを取得"""
+    """SEC EDGARからより正確なFCF（OCF - CapEx優先）を取得"""
     
     def __init__(self):
         self.alpha_key = os.getenv("ALPHA_VANTAGE_API_KEY")
@@ -23,39 +22,46 @@ class TanukiDataFetcher:
             print(f"⚠️ {ticker} データ取得失敗: {e}")
             quarterly_data = []
 
-        # FCF簡易計算（Net Income + 非現金費用 - CapEx）
+        # === FCF計算（より正確版）===
         fcf_list = []
+        method_used = "未計算"
+        
         for q in quarterly_data:
-            net_income = q.get('net_income', {}).get('value', 0)
-            sbc = q.get('us-gaap:ShareBasedCompensation', {}).get('value', 0) or 0
-            amort = q.get('us-gaap:AmortizationOfIntangibleAssets', {}).get('value', 0) or 0
-            capex = q.get('us-gaap:PaymentsForPropertyPlantAndEquipment', {}).get('value', 0) or 0
-            fcf = net_income + sbc + amort - abs(capex)   # CapExはマイナスが多いので絶対値
+            # 優先1: OCF - CapEx（最も正確）
+            ocf = q.get('us-gaap:NetCashProvidedByUsedInOperatingActivities', {}).get('value', 0)
+            capex = q.get('us-gaap:PaymentsForPropertyPlantAndEquipment', {}).get('value', 0)
+            
+            if ocf != 0 or capex != 0:
+                fcf = ocf - abs(capex)   # CapExは通常マイナスなので絶対値
+                method_used = "OCF - CapEx (優先)"
+            else:
+                # フォールバック: 従来の簡易計算
+                net_income = q.get('net_income', {}).get('value', 0)
+                sbc = q.get('us-gaap:ShareBasedCompensation', {}).get('value', 0) or 0
+                amort = q.get('us-gaap:AmortizationOfIntangibleAssets', {}).get('value', 0) or 0
+                fcf = net_income + sbc + amort - abs(capex)
+                method_used = "簡易計算 (フォールバック)"
+            
             fcf_list.append(fcf)
-
-        # ROE簡易（adjusted_epsから）
-        roe_values = []
-        for q in quarterly_data:
-            if 'adjusted_eps' in q and q.get('diluted_shares', 0) > 0:
-                # 簡易ROE = Adjusted Net Income / (Diluted Shares * 推定Book Value per Share) の代理としてadjusted_epsを使う
-                roe_values.append(q['adjusted_eps'] * 100)
-
-        current_price = self._get_current_price(ticker)
 
         fcf_5yr_avg = self._normalize_fcf(fcf_list[-5:]) if fcf_list else 0.0
 
-        print(f"DEBUG {ticker}: FCF_5yr_avg = {fcf_5yr_avg:,.0f}, ROE count = {len(roe_values)}")
+        print(f"DEBUG {ticker}: FCF_5yr_avg = {fcf_5yr_avg:,.0f} | 方法: {method_used} | データ件数: {len(fcf_list)}")
+
+        # ROEは簡易のまま（後で強化予定）
+        roe_values = [q.get('adjusted_eps', 0) * 100 for q in quarterly_data if 'adjusted_eps' in q]
 
         return {
             "fcf_5yr_avg": fcf_5yr_avg,
             "roe_10yr_avg": float(np.mean(roe_values)) if roe_values else 0.0,
-            "current_price": current_price,
+            "current_price": self._get_current_price(ticker),
             "fcf_list_raw": fcf_list,
             "eps_data": {
                 "ticker": ticker,
                 "quarters": quarterly_data
             },
-            "diluted_shares": quarterly_data[0].get('diluted_shares', {}).get('value', 0) if quarterly_data else 0
+            "diluted_shares": quarterly_data[0].get('diluted_shares', {}).get('value', 0) if quarterly_data else 0,
+            "fcf_calc_method": method_used   # デバッグ用に記録
         }
 
     def _normalize_fcf(self, fcf_list: list) -> float:
