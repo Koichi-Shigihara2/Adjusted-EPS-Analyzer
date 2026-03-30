@@ -1,41 +1,35 @@
-# src/value/tanuki_valuation/pipeline.py
-import os
-import json
+from data_fetcher import TanukiDataFetcher
+from core_calculator import KoichiValuationCalculator
+import json, os
 from datetime import datetime
-from .core_calculator import KoichiValuationCalculator
-from .data_fetcher import TanukiDataFetcher
-from .segment_kpi_ai import SegmentKPIAI
 
 def run_update():
     fetcher = TanukiDataFetcher()
-    ai = SegmentKPIAI()
-    calc = KoichiValuationCalculator()
-    
-    tickers = ["MSFT", "AMZN"] + ["SOFI","TSLA","PLTR","CELH","NVDA","AMD","APP","SOUN","RKLB","ONDS","FIG"]
-    
+    calculator = KoichiValuationCalculator()
+    tickers = ["MSFT", "AMZN", "SOFI", "TSLA", "PLTR", "CELH", "NVDA", "AMD", "APP", "SOUN", "RKLB", "ONDS", "FIG"]
+
+    results = {}
     for ticker in tickers:
         print(f"🔄 Updating {ticker}...")
-        data = fetcher.get_financials(ticker)
-        
-        sec_text = "SECデータ取得済み"
-        scenarios = ai.generate_scenarios(ticker, sec_text)
-        
-        result = calc.calculate_pt(data)
-        
-        base_dir = f"docs/value-monitor/tanuki_valuation/data/{ticker}"
-        os.makedirs(base_dir, exist_ok=True)
-        history_dir = f"{base_dir}/history"
-        os.makedirs(history_dir, exist_ok=True)
-        
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        with open(f"{history_dir}/{timestamp}.json", "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        
-        with open(f"{base_dir}/latest.json", "w", encoding="utf-8") as f:
-            json.dump(result, f, ensure_ascii=False, indent=2)
-        
+        financials = fetcher.get_financials(ticker)
+        if "error" in financials:
+            print(f"❌ {ticker} skipped")
+            continue
+        calc = calculator.calculate_pt(financials)
+        results[ticker] = calc
         print(f"✅ {ticker} 更新完了")
-    
+
+    # 保存
+    data_dir = "docs/value-monitor/tanuki_valuation/data"
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(f"{data_dir}/history", exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    with open(f"{data_dir}/history/{timestamp}.json", "w") as f:
+        json.dump(results, f, indent=2)
+    with open(f"{data_dir}/latest.json", "w") as f:
+        json.dump(results, f, indent=2)
+
     print("🎉 TANUKI VALUATION 全銘柄更新完了！")
 
 if __name__ == "__main__":
