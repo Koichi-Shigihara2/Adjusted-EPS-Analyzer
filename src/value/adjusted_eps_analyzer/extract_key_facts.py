@@ -106,7 +106,10 @@ def load_required_xbrl_tags() -> List[str]:
     tags.add("us-gaap:NetInterestIncome")                    # 銀行：純金利収益
     tags.add("us-gaap:NoninterestIncome")                    # 銀行：非金利収益
     tags.add("us-gaap:InterestIncomeExpenseNet")             # 銀行：純金利収益（別タグ）
-
+    
+    # ★★★ FCF正確計算用（OCF - CapEx）★★★
+    tags.add('us-gaap:NetCashProvidedByUsedInOperatingActivities')   # Operating Cash Flow
+    tags.add('us-gaap:PaymentsForPropertyPlantAndEquipment')         # CapEx
     return list(tags)
 
 # ============================================
