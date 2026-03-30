@@ -1451,7 +1451,7 @@ def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
 {chr(10).join(event_lines) if event_lines else '  なし'}
 
 以下のJSON形式で回答してください（マークダウンなし、バッククォートなし）:
-{{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で。各指標の差分データを根拠として言及すること（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個（200字以内）","indicator_comments":"各指標への短評を指標名:コメント形式でセミコロン区切り（各30字以内、全8指標）"}}"""
+{{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で。各指標の差分データを根拠として言及すること（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個（200字以内）","indicator_comments":"Yield Curve 10Y-2Y:コメント;HY Spread:コメント;Philadelphia Fed Manufacturing:コメント;Chicago Fed National Activity:コメント;Initial Claims 4W MA:コメント;CB Consumer Confidence:コメント;Michigan Consumer Sentiment:コメント;Sahm Rule Recession Indicator:コメント の形式で必ず半角セミコロン(;)で8個に区切る。各コメントは20字以内。句読点に全角セミコロンや。を使わないこと"}}"""
 
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
