@@ -1,12 +1,12 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-03-26T03:03:07.781083",
+  "last_updated": "2026-03-30T11:08:00.992456",
   "quarters": [
     {
       "gaap_eps": 0.1386432139527564,
-      "adjusted_eps": 0.42644385896097275,
+      "adjusted_eps": 0.42552307258459443,
       "gaap_net_income": 173549000.0,
-      "adjusted_net_income": 533808350.0,
+      "adjusted_net_income": 532655740.0,
       "diluted_shares_used": 1251767000.0,
       "adjustments": [
         {
@@ -33,6 +33,32 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 58917410.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -1337000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -1056230.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -122000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -96380.0,
           "tax_rate_applied": 0.21
         },
         {
@@ -75,46 +101,53 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 360259350.0,
+      "net_adjustment_total": 359106740.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 1025051000.0,
       "diluted_shares": 1251767000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
       "maturity_monitor": {
-        "alert": "SBC寄与率が30%超（現在 55.0%）",
-        "sbc_contribution": 0.55,
+        "alert": "SBC寄与率が40%超（現在 55.2%）",
+        "sbc_contribution": 0.552,
         "sbc_to_revenue": 0.193,
         "sbc_per_share": 0.1584,
         "sector_threshold": {
-          "sbc_contribution": 0.3,
-          "sbc_to_revenue": 0.05
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
         }
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目のうち、SBC（198M）と無形資産償却（74M）が大半を占め、これらはSOFIのような成長企業ではほぼ恒常的に発生する費用であるため、調整の正当性に疑問が残る。マイルストーンR&D（172M）は一過性と主張されているが、事業特性上再発の可能性があり判断が難しい。小規模なリストラと一過性税効果は妥当だが、全体としてAdjusted EPSは実態より大幅に上方修正されており、持続可能性の観点で注意が必要。",
+        "comment": "SBC（198M）とマイルストーンR&D（173M）、無形資産償却（75M）が調整額の大部分を占めており、これらはSOFIの事業特性上、恒常的に発生しやすい項目です。リストラや税効果の一過性項目は小さいため、調整後EPS（0.43）はGAAP（0.14）を大幅に上回るものの、健全性は限定的。投資判断時はコア収益性を慎重に評価すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用であるが、テック企業では毎期発生する恒常的な株式報酬コスト",
+            "snippet": "非現金費用だが、成長企業では継続的に発生する株式報酬",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で、定期的に発生する経常的費用",
+            "snippet": "買収関連無形資産の償却は複数年にわたって継続する非現金費用",
             "confidence": 0.2
           },
           {
+            "item": "loan_fair_value",
+            "snippet": "市場金利変動による一時的評価替え",
+            "confidence": 0.6
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響（異常変動分）",
+            "confidence": 0.7
+          },
+          {
             "item": "milestone_rd",
-            "snippet": "成功報酬型の一過性R&D費用とされるが、研究開発の性質上繰り返される可能性",
+            "snippet": "成功報酬型の一過性R&D費用だが、事業成長に伴い繰り返される可能性",
             "confidence": 0.5
           },
           {
@@ -124,17 +157,17 @@
           },
           {
             "item": "tax_one_time",
-            "snippet": "法人税率変更等の一過性税効果",
-            "confidence": 1.0
+            "snippet": "法人税率変更・過年度税額戻し等の一過性影響",
+            "confidence": 0.9
           }
         ]
       }
     },
     {
       "gaap_eps": 0.10797119466836456,
-      "adjusted_eps": 0.27776792912360654,
+      "adjusted_eps": 0.27780645106770263,
       "gaap_net_income": 139392000.0,
-      "adjusted_net_income": 358601451.9457964,
+      "adjusted_net_income": 358651184.19936585,
       "diluted_shares_used": 1291011000.0,
       "adjustments": [
         {
@@ -151,6 +184,19 @@
           "tax_rate_applied": 0.06165559302865682
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 53000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 49732.25356948119,
+          "tax_rate_applied": 0.06165559302865682
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 167144000,
@@ -164,14 +210,11 @@
           "tax_rate_applied": 0.06165559302865682
         }
       ],
-      "net_adjustment_total": 219209451.9457964,
+      "net_adjustment_total": 219259184.19936588,
       "filing_date": "2025-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 961600000.0,
       "diluted_shares": 1291011000.0,
       "period_end": "2025-09-30",
@@ -180,9 +223,9 @@
     },
     {
       "gaap_eps": 0.08222579355249954,
-      "adjusted_eps": 0.2868213803726709,
+      "adjusted_eps": 0.28710647943224665,
       "gaap_net_income": 97263000.0,
-      "adjusted_net_income": 339274413.95108384,
+      "adjusted_net_income": 339611651.07137764,
       "diluted_shares_used": 1182877000.0,
       "adjustments": [
         {
@@ -199,6 +242,19 @@
           "tax_rate_applied": 0.13306652880775813
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 389000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 337237.1202937821,
+          "tax_rate_applied": 0.13306652880775813
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 152146000,
@@ -212,14 +268,11 @@
           "tax_rate_applied": 0.13306652880775813
         }
       ],
-      "net_adjustment_total": 242011413.95108384,
+      "net_adjustment_total": 242348651.07137764,
       "filing_date": "2025-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 854944000.0,
       "diluted_shares": 1182877000.0,
       "period_end": "2025-06-30",
@@ -228,9 +281,9 @@
     },
     {
       "gaap_eps": 0.05998991114042916,
-      "adjusted_eps": 0.23280255132823513,
+      "adjusted_eps": 0.2325153167884186,
       "gaap_net_income": 71116000.0,
-      "adjusted_net_income": 275979509.3128776,
+      "adjusted_net_income": 275639002.53189945,
       "diluted_shares_used": 1185466000.0,
       "adjustments": [
         {
@@ -244,6 +297,32 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 56830760.02105738,
+          "tax_rate_applied": 0.10862099220375523
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -760000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -677448.0459251461,
+          "tax_rate_applied": 0.10862099220375523
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 378000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 336941.2649469805,
           "tax_rate_applied": 0.10862099220375523
         },
         {
@@ -273,14 +352,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 204863509.3128776,
+      "net_adjustment_total": 204523002.53189945,
       "filing_date": "2025-03-31",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 771759000.0,
       "diluted_shares": 1185466000.0,
       "period_end": "2025-03-31",
@@ -289,9 +365,9 @@
     },
     {
       "gaap_eps": 0.30186673203860576,
-      "adjusted_eps": 0.341401501738712,
+      "adjusted_eps": 0.3417615740110224,
       "gaap_net_income": 332473000.0,
-      "adjusted_net_income": 376016200.0,
+      "adjusted_net_income": 376412780.0,
       "diluted_shares_used": 1101390000.0,
       "adjustments": [
         {
@@ -318,6 +394,32 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 59640260.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": 667000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": 526930.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -165000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -130350.0,
           "tax_rate_applied": 0.21
         },
         {
@@ -360,14 +462,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 43543200.0,
+      "net_adjustment_total": 43939780.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 734125000.0,
       "diluted_shares": 1101390000.0,
       "period_end": "2024-12-31",
@@ -376,9 +475,9 @@
     },
     {
       "gaap_eps": 0.055000226357010275,
-      "adjusted_eps": 0.2301602926315637,
+      "adjusted_eps": 0.22857372279443877,
       "gaap_net_income": 60745000.0,
-      "adjusted_net_income": 254200535.19693053,
+      "adjusted_net_income": 252448248.1403179,
       "diluted_shares_used": 1104450000.0,
       "adjustments": [
         {
@@ -395,6 +494,32 @@
           "tax_rate_applied": 0.04870409521572312
         },
         {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -2899000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -2757806.8279696186,
+          "tax_rate_applied": 0.04870409521572312
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1057000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1005519.7713569807,
+          "tax_rate_applied": 0.04870409521572312
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 139714000,
@@ -408,14 +533,11 @@
           "tax_rate_applied": 0.04870409521572312
         }
       ],
-      "net_adjustment_total": 193455535.19693053,
+      "net_adjustment_total": 191703248.1403179,
       "filing_date": "2024-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 697121000.0,
       "diluted_shares": 1104450000.0,
       "period_end": "2024-09-30",
@@ -424,9 +546,9 @@
     },
     {
       "gaap_eps": 0.007467345618684699,
-      "adjusted_eps": 0.15889233462134317,
+      "adjusted_eps": 0.15849289454419346,
       "gaap_net_income": 7954000.0,
-      "adjusted_net_income": 169247506.96095073,
+      "adjusted_net_income": 168822034.97453308,
       "diluted_shares_used": 1065171000.0,
       "adjustments": [
         {
@@ -443,6 +565,32 @@
           "tax_rate_applied": 0.3504244482173175
         },
         {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -1037000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -673609.8471986417,
+          "tax_rate_applied": 0.3504244482173175
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 382000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 248137.8607809847,
+          "tax_rate_applied": 0.3504244482173175
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 132167000,
@@ -456,14 +604,11 @@
           "tax_rate_applied": 0.3504244482173175
         }
       ],
-      "net_adjustment_total": 161293506.96095073,
+      "net_adjustment_total": 160868034.97453308,
       "filing_date": "2024-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 598618000.0,
       "diluted_shares": 1065171000.0,
       "period_end": "2024-06-30",
@@ -472,9 +617,9 @@
     },
     {
       "gaap_eps": 0.07478726149353894,
-      "adjusted_eps": 0.23917251099183823,
+      "adjusted_eps": 0.24004705988020789,
       "gaap_net_income": 77964000.0,
-      "adjusted_net_income": 249331841.74123853,
+      "adjusted_net_income": 250243538.84273946,
       "diluted_shares_used": 1042477000.0,
       "adjustments": [
         {
@@ -488,6 +633,32 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 51034654.21227138,
+          "tax_rate_applied": 0.07347855538521872
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -1427000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -1322146.1014652927,
+          "tax_rate_applied": 0.07347855538521872
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 2411000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 2233843.2029662374,
           "tax_rate_applied": 0.07347855538521872
         },
         {
@@ -517,14 +688,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 171367841.74123853,
+      "net_adjustment_total": 172279538.84273946,
       "filing_date": "2024-03-31",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 644995000.0,
       "diluted_shares": 1042477000.0,
       "period_end": "2024-03-31",
@@ -533,9 +701,9 @@
     },
     {
       "gaap_eps": 0.03991855615627859,
-      "adjusted_eps": 0.4089105827728256,
+      "adjusted_eps": 0.40795759126412173,
       "gaap_net_income": 37724000.0,
-      "adjusted_net_income": 386430380.0,
+      "adjusted_net_income": 385529780.0,
       "diluted_shares_used": 945024160.0,
       "adjustments": [
         {
@@ -562,6 +730,32 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 82886010.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -1819000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -1437010.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 679000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 536410.0,
           "tax_rate_applied": 0.21
         },
         {
@@ -604,14 +798,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 348706380.0,
+      "net_adjustment_total": 347805780.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 615404000.0,
       "diluted_shares": 945024160.0,
       "period_end": "2023-12-31",
@@ -620,9 +811,9 @@
     },
     {
       "gaap_eps": -0.29108275574116144,
-      "adjusted_eps": 0.16571056826439953,
+      "adjusted_eps": 0.16501205452266635,
       "gaap_net_income": -276873000.0,
-      "adjusted_net_income": 157621093.18446714,
+      "adjusted_net_income": 156956678.71332318,
       "diluted_shares_used": 951183107.0,
       "adjustments": [
         {
@@ -652,6 +843,32 @@
           "tax_rate_applied": 0.0008804945203650444
         },
         {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -517000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -516544.78433297126,
+          "tax_rate_applied": 0.0008804945203650444
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -148000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -147869.68681098596,
+          "tax_rate_applied": 0.0008804945203650444
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 125698000,
@@ -665,14 +882,11 @@
           "tax_rate_applied": 0.0008804945203650444
         }
       ],
-      "net_adjustment_total": 434494093.18446714,
+      "net_adjustment_total": 433829678.7133232,
       "filing_date": "2023-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 537209000.0,
       "diluted_shares": 951183107.0,
       "period_end": "2023-09-30",
@@ -681,9 +895,9 @@
     },
     {
       "gaap_eps": -0.06153094342969259,
-      "adjusted_eps": 0.21495747256837178,
+      "adjusted_eps": 0.21641475167902316,
       "gaap_net_income": -57628000.0,
-      "adjusted_net_income": 201322595.40802586,
+      "adjusted_net_income": 202687438.45946676,
       "diluted_shares_used": 936569420.0,
       "adjustments": [
         {
@@ -700,6 +914,32 @@
           "tax_rate_applied": 0.029962294640452466
         },
         {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": 311000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": 301681.7263668193,
+          "tax_rate_applied": 0.029962294640452466
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1096000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1063161.325074064,
+          "tax_rate_applied": 0.029962294640452466
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 126845000,
@@ -713,14 +953,11 @@
           "tax_rate_applied": 0.029962294640452466
         }
       ],
-      "net_adjustment_total": 258950595.40802586,
+      "net_adjustment_total": 260315438.45946676,
       "filing_date": "2023-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 498018000.0,
       "diluted_shares": 936569420.0,
       "period_end": "2023-06-30",
@@ -729,9 +966,9 @@
     },
     {
       "gaap_eps": -0.047768641474783664,
-      "adjusted_eps": 0.1455896983509524,
+      "adjusted_eps": 0.1437236628202495,
       "gaap_net_income": -44390000.0,
-      "adjusted_net_income": 135292244.24794143,
+      "adjusted_net_income": 133558192.06118149,
       "diluted_shares_used": 929270723.0,
       "adjustments": [
         {
@@ -745,6 +982,32 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 61941732.89590892,
+          "tax_rate_applied": 0.03556608077867339
+        },
+        {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -944000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -910425.6197449323,
+          "tax_rate_applied": 0.03556608077867339
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -854000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -823626.567015013,
           "tax_rate_applied": 0.03556608077867339
         },
         {
@@ -787,14 +1050,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 179682244.24794143,
+      "net_adjustment_total": 177948192.0611815,
       "filing_date": "2023-03-31",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 472158000.0,
       "diluted_shares": 929270723.0,
       "period_end": "2023-03-31",
@@ -803,9 +1063,9 @@
     },
     {
       "gaap_eps": -0.05571736457658106,
-      "adjusted_eps": 0.32213872076858174,
+      "adjusted_eps": 0.3224965018414042,
       "gaap_net_income": -50195000.0,
-      "adjusted_net_income": 290210300.0,
+      "adjusted_net_income": 290532620.0,
       "diluted_shares_used": 900886113.0,
       "adjustments": [
         {
@@ -835,6 +1095,32 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "loan_fair_value",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -586000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "市場金利変動による一時的評価替え",
+          "extracted_from": "us-gaap:FairValueOptionChangesInFairValueGainLoss1",
+          "category": "金融関連",
+          "net_amount": -462940.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 994000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 785260.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 113281000.0,
@@ -861,14 +1147,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 340405300.0,
+      "net_adjustment_total": 340727620.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 456679000.0,
       "diluted_shares": 900886113.0,
       "period_end": "2022-12-31",
@@ -877,9 +1160,9 @@
     },
     {
       "gaap_eps": -0.09206087340527877,
-      "adjusted_eps": 0.11302799836550513,
+      "adjusted_eps": 0.11201754761652703,
       "gaap_net_income": -84398000.0,
-      "adjusted_net_income": 103619883.81379962,
+      "adjusted_net_income": 102693539.98109639,
       "diluted_shares_used": 916762973.0,
       "adjustments": [
         {
@@ -896,6 +1179,19 @@
           "tax_rate_applied": 0.0028591682419659733
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -929000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -926343.8327032136,
+          "tax_rate_applied": 0.0028591682419659733
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 110702000,
@@ -909,14 +1205,11 @@
           "tax_rate_applied": 0.0028591682419659733
         }
       ],
-      "net_adjustment_total": 188017883.81379962,
+      "net_adjustment_total": 187091539.9810964,
       "filing_date": "2022-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 423985000.0,
       "diluted_shares": 916762973.0,
       "period_end": "2022-09-30",
@@ -925,9 +1218,9 @@
     },
     {
       "gaap_eps": -0.1163830319706103,
-      "adjusted_eps": 0.16518541696347203,
+      "adjusted_eps": 0.16640595778035705,
       "gaap_net_income": -105914000.0,
-      "adjusted_net_income": 150326451.85500258,
+      "adjusted_net_income": 151437201.05865115,
       "diluted_shares_used": 910046750.0,
       "adjustments": [
         {
@@ -944,6 +1237,19 @@
           "tax_rate_applied": 0.0011248168628006994
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1112000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1110749.2036485656,
+          "tax_rate_applied": 0.0011248168628006994
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 99366000,
@@ -957,14 +1263,11 @@
           "tax_rate_applied": 0.0011248168628006994
         }
       ],
-      "net_adjustment_total": 256240451.85500258,
+      "net_adjustment_total": 257351201.05865115,
       "filing_date": "2022-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 362527000.0,
       "diluted_shares": 910046750.0,
       "period_end": "2022-06-30",
@@ -973,9 +1276,9 @@
     },
     {
       "gaap_eps": -0.14108517635892104,
-      "adjusted_eps": 0.044045646889279436,
+      "adjusted_eps": 0.04335703728846445,
       "gaap_net_income": -120325000.0,
-      "adjusted_net_income": 37564488.33766818,
+      "adjusted_net_income": 36977205.16337299,
       "diluted_shares_used": 852853596.0,
       "adjustments": [
         {
@@ -989,6 +1292,19 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 76536611.45074557,
+          "tax_rate_applied": 0.006289045185786089
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -591000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -587283.1742952004,
           "tax_rate_applied": 0.006289045185786089
         },
         {
@@ -1018,14 +1334,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 157889488.33766818,
+      "net_adjustment_total": 157302205.163373,
       "filing_date": "2022-03-31",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 330344000.0,
       "diluted_shares": 852853596.0,
       "period_end": "2022-03-31",
@@ -1034,9 +1347,9 @@
     },
     {
       "gaap_eps": -0.2301025951497402,
-      "adjusted_eps": 0.27850915518218156,
+      "adjusted_eps": 0.2790085948754708,
       "gaap_net_income": -121202000.0,
-      "adjusted_net_income": 146699200.0,
+      "adjusted_net_income": 146962270.0,
       "diluted_shares_used": 526730261.0,
       "adjustments": [
         {
@@ -1066,6 +1379,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 333000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 263070.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 66316000.0,
@@ -1092,14 +1418,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 267901200.0,
+      "net_adjustment_total": 268164270.0,
       "filing_date": "2021-12-31",
       "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 285608000.0,
       "diluted_shares": 526730261.0,
       "period_end": "2021-12-31",
@@ -1108,9 +1431,9 @@
     },
     {
       "gaap_eps": -0.05025945211776026,
-      "adjusted_eps": 0.13267393475848013,
+      "adjusted_eps": 0.13383036374121407,
       "gaap_net_income": -40236000.0,
-      "adjusted_net_income": 106214218.69928849,
+      "adjusted_net_income": 107140016.22768694,
       "diluted_shares_used": 800565830.0,
       "adjustments": [
         {
@@ -1127,6 +1450,19 @@
           "tax_rate_applied": 0.0045187866683310445
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 930000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 925797.5283984521,
+          "tax_rate_applied": 0.0045187866683310445
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 74434000,
@@ -1140,14 +1476,11 @@
           "tax_rate_applied": 0.0045187866683310445
         }
       ],
-      "net_adjustment_total": 146450218.6992885,
+      "net_adjustment_total": 147376016.22768694,
       "filing_date": "2021-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 272006000.0,
       "diluted_shares": 800565830.0,
       "period_end": "2021-09-30",
@@ -1156,9 +1489,9 @@
     },
     {
       "gaap_eps": -0.4804808967457256,
-      "adjusted_eps": -0.04510968931042208,
+      "adjusted_eps": -0.04334352750362213,
       "gaap_net_income": -175393000.0,
-      "adjusted_net_income": -16466677.01215583,
+      "adjusted_net_income": -15821963.726199746,
       "diluted_shares_used": 365036365.0,
       "adjustments": [
         {
@@ -1175,6 +1508,19 @@
           "tax_rate_applied": 0.00044451789754432354
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 645000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 644713.2859560839,
+          "tax_rate_applied": 0.00044451789754432354
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 69389000,
@@ -1188,14 +1534,11 @@
           "tax_rate_applied": 0.00044451789754432354
         }
       ],
-      "net_adjustment_total": 158926322.98784417,
+      "net_adjustment_total": 159571036.27380025,
       "filing_date": "2021-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 231274000.0,
       "diluted_shares": 365036365.0,
       "period_end": "2021-06-30",
@@ -1204,9 +1547,9 @@
     },
     {
       "gaap_eps": -1.6145313260462468,
-      "adjusted_eps": -0.724189965275528,
+      "adjusted_eps": -0.714475939242613,
       "gaap_net_income": -187532000.0,
-      "adjusted_net_income": -84116542.29133254,
+      "adjusted_net_income": -82988232.97913995,
       "diluted_shares_used": 116152593.0,
       "adjustments": [
         {
@@ -1220,6 +1563,19 @@
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 37233213.19723439,
+          "tax_rate_applied": 0.005894879125476713
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1135000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1128309.312192584,
           "tax_rate_applied": 0.005894879125476713
         },
         {
@@ -1249,14 +1605,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 103415457.70866746,
+      "net_adjustment_total": 104543767.02086005,
       "filing_date": "2021-03-31",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 195984000.0,
       "diluted_shares": 116152593.0,
       "period_end": "2021-03-31",
@@ -1265,9 +1618,9 @@
     },
     {
       "gaap_eps": -0.7045536040133387,
-      "adjusted_eps": 0.3838553865723265,
+      "adjusted_eps": 0.39036096001658627,
       "gaap_net_income": -53067000.0,
-      "adjusted_net_income": 28912000.0,
+      "adjusted_net_income": 29402000.0,
       "diluted_shares_used": 75320032.0,
       "adjustments": [
         {
@@ -1284,6 +1637,19 @@
           "tax_rate_applied": 0.0
         },
         {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 490000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 490000.0,
+          "tax_rate_applied": 0.0
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 55428000,
@@ -1297,14 +1663,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 81979000.0,
+      "net_adjustment_total": 82469000.0,
       "filing_date": "2020-09-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 200787000.0,
       "diluted_shares": 75320032.0,
       "period_end": "2020-09-30",
@@ -1348,11 +1711,8 @@
       "net_adjustment_total": 71939770.0,
       "filing_date": "2020-06-30",
       "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
+      "sector": "Financial Services",
+      "sector_exclusions": [],
       "revenue": 114952000.0,
       "diluted_shares": 72147293.0,
       "period_end": "2020-06-30",

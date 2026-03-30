@@ -1,12 +1,12 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-03-26T03:02:39.038712",
+  "last_updated": "2026-03-30T11:07:24.172916",
   "quarters": [
     {
       "gaap_eps": 1.7524679774822551,
-      "adjusted_eps": 2.4169511299665496,
+      "adjusted_eps": 2.4310018764787467,
       "gaap_net_income": 42960000000.0,
-      "adjusted_net_income": 59249140000.0,
+      "adjusted_net_income": 59593580000.0,
       "diluted_shares_used": 24514000000.0,
       "adjustments": [
         {
@@ -49,6 +49,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 436000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 344440000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 5512000000.0,
@@ -75,67 +88,68 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 16289140000.0,
+      "net_adjustment_total": 16633580000.0,
       "filing_date": "2026-01-25",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 68127000000.0,
       "diluted_shares": 24514000000.0,
       "period_end": "2026-01-25",
       "fiscal_year": 2026,
       "quarter": 4,
       "maturity_monitor": {
-        "alert": "SBC寄与率が20%超（現在 30.2%）",
-        "sbc_contribution": 0.302,
+        "alert": null,
+        "sbc_contribution": 0.295,
         "sbc_to_revenue": 0.072,
         "sbc_per_share": 0.2004,
         "sector_threshold": {
-          "sbc_contribution": 0.2,
-          "sbc_to_revenue": 0.08
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
         }
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用（SBC）とマイルストーン型R&D費の調整額が非常に大きく、NVIDIAの事業運営上恒常的に発生する可能性の高い項目を除外しているため健全性に懸念。無形資産償却も毎期発生する性質。一方で投資評価変動と一過性税効果は非経常的と判断可能。全体として調整後EPSの信頼性は中程度で注意が必要。",
+        "comment": "SBCや無形資産償却といった恒常的に発生する項目を大幅に加算調整しており、調整の健全性に懸念があります。投資評価損益（9B規模）とマイルストーンR&D（5.5B規模）が極めて大きく、非経常性を過度に強調している可能性が高いです。在庫評価損や一過性税効果は比較的妥当ですが、全体として調整後EPSの信頼性は中程度で注意が必要です。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用",
+            "snippet": "非現金費用だがテック企業では毎期継続的に発生する恒常的項目",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却",
+            "snippet": "買収関連無形資産の償却で定期的に発生する経常的費用",
             "confidence": 0.2
           },
           {
             "item": "investment_gains",
-            "snippet": "非営業性の評価変動",
-            "confidence": 0.65
+            "snippet": "非営業性の評価変動でボラティリティが高いが完全に一過性とは言えない",
+            "confidence": 0.75
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損",
+            "confidence": 0.85
           },
           {
             "item": "milestone_rd",
-            "snippet": "成功報酬型の一過性R&D費用",
+            "snippet": "成功報酬型の一過性R&D費用だが研究開発はコア事業に関連",
             "confidence": 0.5
           },
           {
             "item": "tax_one_time",
-            "snippet": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-            "confidence": 0.9
+            "snippet": "法人税率変更・過年度税額戻し等の一過性影響",
+            "confidence": 0.95
           }
         ]
       }
     },
     {
       "gaap_eps": 1.3033533472205203,
-      "adjusted_eps": 1.525125433268297,
+      "adjusted_eps": 1.5381122417154014,
       "gaap_net_income": 31910000000.0,
-      "adjusted_net_income": 37339645982.70772,
+      "adjusted_net_income": 37657602013.918175,
       "diluted_shares_used": 24483000000.0,
       "adjustments": [
         {
@@ -165,6 +179,19 @@
           "tax_rate_applied": 0.1588464782792071
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 378000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 317956031.2104597,
+          "tax_rate_applied": 0.1588464782792071
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 4705000000,
@@ -178,15 +205,11 @@
           "tax_rate_applied": 0.1588464782792071
         }
       ],
-      "net_adjustment_total": 5429645982.707718,
+      "net_adjustment_total": 5747602013.918178,
       "filing_date": "2025-10-26",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 57006000000.0,
       "diluted_shares": 24483000000.0,
       "period_end": "2025-10-26",
@@ -195,9 +218,9 @@
     },
     {
       "gaap_eps": 1.0770422305560086,
-      "adjusted_eps": 1.3349994705475359,
+      "adjusted_eps": 1.365578827602994,
       "gaap_net_income": 26422000000.0,
-      "adjusted_net_income": 32750207011.472153,
+      "adjusted_net_income": 33500379798.75665,
       "diluted_shares_used": 24532000000.0,
       "adjustments": [
         {
@@ -227,6 +250,19 @@
           "tax_rate_applied": 0.1533038518233673
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 886000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 750172787.2844965,
+          "tax_rate_applied": 0.1533038518233673
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 4291000000,
@@ -240,15 +276,11 @@
           "tax_rate_applied": 0.1533038518233673
         }
       ],
-      "net_adjustment_total": 6328207011.472153,
+      "net_adjustment_total": 7078379798.756649,
       "filing_date": "2025-07-27",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 46743000000.0,
       "diluted_shares": 24532000000.0,
       "period_end": "2025-07-27",
@@ -257,9 +289,9 @@
     },
     {
       "gaap_eps": 0.7628702612652879,
-      "adjusted_eps": 0.8640694853175103,
+      "adjusted_eps": 0.9441517126525245,
       "gaap_net_income": 18775000000.0,
-      "adjusted_net_income": 21265614103.149246,
+      "adjusted_net_income": 23236517800.09128,
       "diluted_shares_used": 24611000000.0,
       "adjustments": [
         {
@@ -302,6 +334,19 @@
           "tax_rate_applied": 0.1430853491556367
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 2300000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 1970903696.9420354,
+          "tax_rate_applied": 0.1430853491556367
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 3989000000,
@@ -328,15 +373,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2490614103.149246,
+      "net_adjustment_total": 4461517800.091282,
       "filing_date": "2025-04-27",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 44062000000.0,
       "diluted_shares": 24611000000.0,
       "period_end": "2025-04-27",
@@ -345,9 +386,9 @@
     },
     {
       "gaap_eps": 0.8906224802451218,
-      "adjusted_eps": 1.046211901306241,
+      "adjusted_eps": 1.06923923560716,
       "gaap_net_income": 22091000000.0,
-      "adjusted_net_income": 25950240000.0,
+      "adjusted_net_income": 26521410000.0,
       "diluted_shares_used": 24804000000.0,
       "adjustments": [
         {
@@ -390,6 +431,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 723000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 571170000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 3714000000.0,
@@ -416,15 +470,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3859240000.0,
+      "net_adjustment_total": 4430410000.0,
       "filing_date": "2025-01-26",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 39331000000.0,
       "diluted_shares": 24804000000.0,
       "period_end": "2025-01-26",
@@ -433,9 +483,9 @@
     },
     {
       "gaap_eps": 0.77940582869137,
-      "adjusted_eps": 0.9467356962868331,
+      "adjusted_eps": 0.9579818280684526,
       "gaap_net_income": 19309000000.0,
-      "adjusted_net_income": 23454430139.81,
+      "adjusted_net_income": 23733041808.567844,
       "diluted_shares_used": 24774000000.0,
       "adjustments": [
         {
@@ -465,6 +515,19 @@
           "tax_rate_applied": 0.13474637031726117
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 322000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 278611668.75784194,
+          "tax_rate_applied": 0.13474637031726117
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 3390000000,
@@ -478,15 +541,11 @@
           "tax_rate_applied": 0.13474637031726117
         }
       ],
-      "net_adjustment_total": 4145430139.8100023,
+      "net_adjustment_total": 4424041808.567844,
       "filing_date": "2024-10-27",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 35082000000.0,
       "diluted_shares": 24774000000.0,
       "period_end": "2024-10-27",
@@ -495,9 +554,9 @@
     },
     {
       "gaap_eps": 0.6680215711526079,
-      "adjusted_eps": 0.8557657412485838,
+      "adjusted_eps": 0.8677605076713824,
       "gaap_net_income": 16599000000.0,
-      "adjusted_net_income": 21264067138.54481,
+      "adjusted_net_income": 21562113094.618507,
       "diluted_shares_used": 24848000000.0,
       "adjustments": [
         {
@@ -527,6 +586,19 @@
           "tax_rate_applied": 0.1360986780472572
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 345000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 298045956.07369626,
+          "tax_rate_applied": 0.1360986780472572
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 3090000000,
@@ -540,15 +612,11 @@
           "tax_rate_applied": 0.1360986780472572
         }
       ],
-      "net_adjustment_total": 4665067138.544811,
+      "net_adjustment_total": 4963113094.618507,
       "filing_date": "2024-07-28",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 30040000000.0,
       "diluted_shares": 24848000000.0,
       "period_end": "2024-07-28",
@@ -557,9 +625,9 @@
     },
     {
       "gaap_eps": 0.5978706307754118,
-      "adjusted_eps": 0.6709435841447958,
+      "adjusted_eps": 0.6782097935586991,
       "gaap_net_income": 14881000000.0,
-      "adjusted_net_income": 16699785809.363968,
+      "adjusted_net_income": 16880641761.676022,
       "diluted_shares_used": 24890000000.0,
       "adjustments": [
         {
@@ -602,6 +670,19 @@
           "tax_rate_applied": 0.1387811794664043
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 210000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 180855952.31205508,
+          "tax_rate_applied": 0.1387811794664043
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 2720000000,
@@ -628,15 +709,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1818785809.363968,
+      "net_adjustment_total": 1999641761.6760225,
       "filing_date": "2024-04-28",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 26044000000.0,
       "diluted_shares": 24890000000.0,
       "period_end": "2024-04-28",
@@ -645,9 +722,9 @@
     },
     {
       "gaap_eps": 4.926222935044106,
-      "adjusted_eps": 6.180934242181235,
+      "adjusted_eps": 6.218311948676824,
       "gaap_net_income": 12286000000.0,
-      "adjusted_net_income": 15415250000.0,
+      "adjusted_net_income": 15508470000.0,
       "diluted_shares_used": 2494000000.0,
       "adjustments": [
         {
@@ -690,6 +767,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 118000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 93220000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 2466000000.0,
@@ -716,15 +806,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3129250000.0,
+      "net_adjustment_total": 3222470000.0,
       "filing_date": "2024-01-28",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 22103000000.0,
       "diluted_shares": 2494000000.0,
       "period_end": "2024-01-28",
@@ -733,9 +819,9 @@
     },
     {
       "gaap_eps": 0.3706094627105052,
-      "adjusted_eps": 0.49096419889010956,
+      "adjusted_eps": 0.4982904456344343,
       "gaap_net_income": 9243000000.0,
-      "adjusted_net_income": 12244647120.319332,
+      "adjusted_net_income": 12427363714.122791,
       "diluted_shares_used": 24940000000.0,
       "adjustments": [
         {
@@ -765,6 +851,19 @@
           "tax_rate_applied": 0.12155483748336818
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 208000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 182716593.80345944,
+          "tax_rate_applied": 0.12155483748336818
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 2294000000,
@@ -778,15 +877,11 @@
           "tax_rate_applied": 0.12155483748336818
         }
       ],
-      "net_adjustment_total": 3001647120.319331,
+      "net_adjustment_total": 3184363714.1227903,
       "filing_date": "2023-10-29",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 18120000000.0,
       "diluted_shares": 24940000000.0,
       "period_end": "2023-10-29",
@@ -795,9 +890,9 @@
     },
     {
       "gaap_eps": 0.24757941906057454,
-      "adjusted_eps": 0.38099780818904916,
+      "adjusted_eps": 0.3931622174051754,
       "gaap_net_income": 6188000000.0,
-      "adjusted_net_income": 9522659217.877094,
+      "adjusted_net_income": 9826696461.824953,
       "diluted_shares_used": 24994000000.0,
       "adjustments": [
         {
@@ -827,6 +922,19 @@
           "tax_rate_applied": 0.11359404096834265
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 343000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 304037243.94785845,
+          "tax_rate_applied": 0.11359404096834265
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 2040000000,
@@ -840,15 +948,11 @@
           "tax_rate_applied": 0.11359404096834265
         }
       ],
-      "net_adjustment_total": 3334659217.8770947,
+      "net_adjustment_total": 3638696461.824953,
       "filing_date": "2023-07-30",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 13507000000.0,
       "diluted_shares": 24994000000.0,
       "period_end": "2023-07-30",
@@ -857,9 +961,9 @@
     },
     {
       "gaap_eps": 0.8204819277108434,
-      "adjusted_eps": 1.3961110171787192,
+      "adjusted_eps": 1.4351108371921366,
       "gaap_net_income": 2043000000.0,
-      "adjusted_net_income": 3476316432.775011,
+      "adjusted_net_income": 3573425984.6084204,
       "diluted_shares_used": 2490000000.0,
       "adjustments": [
         {
@@ -902,6 +1006,19 @@
           "tax_rate_applied": 0.07514712539610684
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 105000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 97109551.83340879,
+          "tax_rate_applied": 0.07514712539610684
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 1875000000,
@@ -928,15 +1045,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1433316432.775011,
+      "net_adjustment_total": 1530425984.6084204,
       "filing_date": "2023-04-30",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 7192000000.0,
       "diluted_shares": 2490000000.0,
       "period_end": "2023-04-30",
@@ -945,9 +1058,9 @@
     },
     {
       "gaap_eps": 0.5640207419226166,
-      "adjusted_eps": 1.251870761866773,
+      "adjusted_eps": 1.2884244116473873,
       "gaap_net_income": 1414000000.0,
-      "adjusted_net_income": 3138440000.0,
+      "adjusted_net_income": 3230080000.0,
       "diluted_shares_used": 2507000000.0,
       "adjustments": [
         {
@@ -990,6 +1103,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 116000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 91640000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 1952000000.0,
@@ -1016,15 +1142,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 1724440000.0,
+      "net_adjustment_total": 1816080000.0,
       "filing_date": "2023-01-29",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 6051000000.0,
       "diluted_shares": 2507000000.0,
       "period_end": "2023-01-29",
@@ -1033,9 +1155,9 @@
     },
     {
       "gaap_eps": 0.272108843537415,
-      "adjusted_eps": 1.295399725958899,
+      "adjusted_eps": 1.4215735233734603,
       "gaap_net_income": 680000000.0,
-      "adjusted_net_income": 3237203915.1712885,
+      "adjusted_net_income": 3552512234.9102774,
       "diluted_shares_used": 2499000000.0,
       "adjustments": [
         {
@@ -1065,6 +1187,19 @@
           "tax_rate_applied": 0.10929853181076672
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 354000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 315308319.7389886,
+          "tax_rate_applied": 0.10929853181076672
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 1945000000,
@@ -1078,15 +1213,11 @@
           "tax_rate_applied": 0.10929853181076672
         }
       ],
-      "net_adjustment_total": 2557203915.1712885,
+      "net_adjustment_total": 2872512234.9102774,
       "filing_date": "2022-10-30",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 5931000000.0,
       "diluted_shares": 2499000000.0,
       "period_end": "2022-10-30",
@@ -1095,9 +1226,9 @@
     },
     {
       "gaap_eps": 0.26073131955484896,
-      "adjusted_eps": 1.0558179231863443,
+      "adjusted_eps": 1.1960404987030375,
       "gaap_net_income": 656000000.0,
-      "adjusted_net_income": 2656437894.736842,
+      "adjusted_net_income": 3009237894.736842,
       "diluted_shares_used": 2516000000.0,
       "adjustments": [
         {
@@ -1127,6 +1258,19 @@
           "tax_rate_applied": 0.38105263157894737
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 570000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 352800000.00000006,
+          "tax_rate_applied": 0.38105263157894737
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 1824000000,
@@ -1140,15 +1284,11 @@
           "tax_rate_applied": 0.38105263157894737
         }
       ],
-      "net_adjustment_total": 2000437894.7368422,
+      "net_adjustment_total": 2353237894.736842,
       "filing_date": "2022-07-31",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 6704000000.0,
       "diluted_shares": 2516000000.0,
       "period_end": "2022-07-31",
@@ -1231,12 +1371,8 @@
       "net_adjustment_total": 1550195013.8504157,
       "filing_date": "2022-05-01",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 8288000000.0,
       "diluted_shares": 2537000000.0,
       "period_end": "2022-05-01",
@@ -1245,9 +1381,9 @@
     },
     {
       "gaap_eps": 1.1842209072978305,
-      "adjusted_eps": 1.5615187376725839,
+      "adjusted_eps": 1.6154319526627219,
       "gaap_net_income": 3002000000.0,
-      "adjusted_net_income": 3958450000.0,
+      "adjusted_net_income": 4095120000.0,
       "diluted_shares_used": 2535000000.0,
       "adjustments": [
         {
@@ -1290,6 +1426,19 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 173000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 136670000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
           "item_id": "milestone_rd",
           "item_name": "マイルストーン型研究開発費",
           "amount": 1467000000.0,
@@ -1316,15 +1465,11 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 956450000.0,
+      "net_adjustment_total": 1093120000.0,
       "filing_date": "2022-01-30",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 7643000000.0,
       "diluted_shares": 2535000000.0,
       "period_end": "2022-01-30",
@@ -1381,12 +1526,8 @@
       "net_adjustment_total": 2316421531.46323,
       "filing_date": "2021-10-31",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 7103000000.0,
       "diluted_shares": 2538000000.0,
       "period_end": "2021-10-31",
@@ -1443,12 +1584,8 @@
       "net_adjustment_total": 2257977443.6090226,
       "filing_date": "2021-08-01",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 6507000000.0,
       "diluted_shares": 2532000000.0,
       "period_end": "2021-08-01",
@@ -1531,12 +1668,8 @@
       "net_adjustment_total": 1756399217.2211351,
       "filing_date": "2021-05-02",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 5661000000.0,
       "diluted_shares": 2528000000.0,
       "period_end": "2021-05-02",
@@ -1619,12 +1752,8 @@
       "net_adjustment_total": 1053690000.0,
       "filing_date": "2021-01-31",
       "form": "10-K",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 5003000000.0,
       "diluted_shares": 628000000.0,
       "period_end": "2021-01-31",
@@ -1681,12 +1810,8 @@
       "net_adjustment_total": 1589721068.249258,
       "filing_date": "2020-10-25",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 4726000000.0,
       "diluted_shares": 2520000000.0,
       "period_end": "2020-10-25",
@@ -1743,12 +1868,8 @@
       "net_adjustment_total": 1838889983.579639,
       "filing_date": "2020-07-26",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 3866000000.0,
       "diluted_shares": 2504000000.0,
       "period_end": "2020-07-26",
@@ -1831,12 +1952,8 @@
       "net_adjustment_total": 916174311.9266055,
       "filing_date": "2020-04-26",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 3080000000.0,
       "diluted_shares": 622000000.0,
       "period_end": "2020-04-26",
@@ -1893,12 +2010,8 @@
       "net_adjustment_total": 1258037539.1032324,
       "filing_date": "2019-10-27",
       "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV・半導体",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "logistics_one_time",
-        "gov_subsidy_timing"
-      ],
+      "sector": "Technology",
+      "sector_exclusions": [],
       "revenue": 3014000000.0,
       "diluted_shares": 618000000.0,
       "period_end": "2019-10-27",
