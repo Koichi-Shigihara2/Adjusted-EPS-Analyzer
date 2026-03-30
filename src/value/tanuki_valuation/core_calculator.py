@@ -12,13 +12,16 @@ class KoichiValuationCalculator:
         roe_avg = financials.get("roe_10yr_avg", 0.0)
         current_price = financials.get("current_price", 0.0)
         fcf_method = financials.get("fcf_calc_method", "N/A")
+        ticker = financials.get("eps_data", {}).get("ticker", "Unknown")
 
         if diluted_shares <= 0:
             return {"error": "diluted_shares missing or zero"}
 
-        # FCFが負または極端に小さい場合は最低値フロアを設ける（成長株対策）
-        if fcf_avg <= 0:
-            fcf_avg = 100_000  # 最低100kドルフロア（後で調整可）
+        # FCFが負または0に近い場合の安全処理（成長株対策）
+        original_fcf = fcf_avg
+        if fcf_avg < 100_000:   # 最低フロア（調整可能）
+            fcf_avg = max(100_000, abs(fcf_avg) * 0.1)  # 負の場合は絶対値の10%を下限に
+            print(f"   [{ticker}] FCF floor applied: {original_fcf:,.0f} → {fcf_avg:,.0f}")
 
         # V_固定的（10年DCF + 永続0成長）
         wacc = self.wacc_default
@@ -26,7 +29,7 @@ class KoichiValuationCalculator:
         terminal = fcf_avg / wacc / (1 + wacc) ** 10
         v0 = v_fixed + terminal
 
-        # α個別成長期待（簡易ROEベース）
+        # α個別成長期待（ROEベース）
         g_individual = max(0.0, roe_avg * 0.6)
         alpha = max(0.0, (g_individual / wacc) * 0.7)
         beta = 0.0
@@ -34,7 +37,6 @@ class KoichiValuationCalculator:
         m_total = 0.0
 
         intrinsic_value_pt = v0 * (1 + alpha + beta) + self.k * m_total * v0 * (alpha + beta)
-
         intrinsic_value_per_share = intrinsic_value_pt / diluted_shares if diluted_shares > 0 else 0.0
 
         approx_value = intrinsic_value_pt * (1 + self.k * m_total)
@@ -49,10 +51,11 @@ class KoichiValuationCalculator:
             "m_total": float(m_total),
             "implied_irr": float((intrinsic_value_per_share / current_price - 1) * 100) if current_price > 0 else 0.0,
             "calculation_date": "2026-03-30",
-            "formula": "Koichi式 v5.1 exact (FCF floor applied)",
+            "formula": "Koichi式 v5.1 exact (with FCF floor)",
             "components": {
                 **financials,
                 "fcf_avg_used": float(fcf_avg),
+                "original_fcf": float(original_fcf),
                 "fcf_method": fcf_method
             }
         }
