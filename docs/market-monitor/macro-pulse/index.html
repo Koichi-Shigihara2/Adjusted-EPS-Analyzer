@@ -1861,14 +1861,18 @@ function renderWeeklyAnalysis(rows) {
       });
     }
 
-    // 差分バッジ生成ヘルパー
-    function deltaBadge(valStr){
+    // 差分バッジ生成ヘルパー（inverse=trueの場合は色を反転：上昇=赤、下降=緑）
+    const INVERSE_INDS = new Set(['HY Spread','Initial Claims 4W MA','Sahm Rule Recession Indicator']);
+    function deltaBadge(valStr, inverse){
       if(!valStr || valStr==='N/A') return '';
       const v = parseFloat(valStr);
       if(isNaN(v)) return '';
       if(Math.abs(v)<0.001) return `<span style="color:var(--mut);font-size:8px">±0</span>`;
-      const col = v>0 ? 'var(--grn)' : 'var(--red)';
-      return `<span style="color:${col};font-size:8px">${v>0?'▲':'▼'}${Math.abs(v).toFixed(2)}</span>`;
+      const positive = v > 0;
+      const isGood = inverse ? !positive : positive;
+      const col = isGood ? 'var(--grn)' : 'var(--red)';
+      const fmt = Math.abs(v)>=100 ? Math.abs(v).toFixed(0) : Math.abs(v).toFixed(2);
+      return `<span style="color:${col};font-size:8px">${positive?'▲':'▼'}${fmt}</span>`;
     }
 
     // 指標コメント+差分チップを構築
@@ -1880,10 +1884,11 @@ function renderWeeklyAnalysis(rows) {
           const name = parts[0].trim();
           const comment = parts.slice(1).join(':').trim();
           const d = deltaMap[name];
+          const inv = INVERSE_INDS.has(name);
           let deltaHtml = '';
           if(d){
-            const wBadge = deltaBadge(d.w);
-            const mBadge = deltaBadge(d.m);
+            const wBadge = deltaBadge(d.w, inv);
+            const mBadge = deltaBadge(d.m, inv);
             deltaHtml = `<div style="display:flex;gap:8px;margin-top:2px;font-family:var(--mono);font-size:8px;color:var(--mut)"><span>週${wBadge||'—'}</span><span>月${mBadge||'—'}</span></div>`;
           }
           return `<div class="ai-ind-chip"><b>${name}</b>: ${comment}${deltaHtml}</div>`;
