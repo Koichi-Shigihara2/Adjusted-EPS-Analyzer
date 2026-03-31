@@ -6,7 +6,7 @@ from datetime import datetime
 def run_update():
     fetcher = TanukiDataFetcher()
     calculator = KoichiValuationCalculator()
-    tickers = ["MSFT", "AMZN", "SOFI", "TSLA", "PLTR", "CELH", "NVDA", "AMD", "APP", "SOUN", "RKLB", "ONDS", "FIG"]
+    tickers = ["MSFT", "AMZN", "TSLA", "NVDA", "PLTR", "CELH", "APP", "AMD", "SOFI", "SOUN", "RKLB", "ONDS", "FIG"]
 
     results = {}
     for ticker in tickers:
@@ -14,7 +14,7 @@ def run_update():
         financials = fetcher.get_financials(ticker)
         
         if "error" in financials:
-            print(f"❌ {ticker} skipped")
+            print(f"❌ {ticker} skipped - {financials.get('error')}")
             continue
             
         calc = calculator.calculate_pt(financials)
