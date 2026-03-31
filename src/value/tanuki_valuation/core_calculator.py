@@ -3,9 +3,10 @@ from typing import Dict, Any
 
 class KoichiValuationCalculator:
     def __init__(self):
-        self.wacc = 0.085          # 割引率（成長期待を一切含まない固定値）
+        self.wacc = 0.085          # 割引率
         self.k = 0.10              # モメンタム係数
-        self.high_growth_years = 3 # あなたのスタイルに合わせた高成長期
+        self.high_growth_years = 3 # あなたのKPI監視期間に合わせ3年
+        self.high_growth_rate = 0.40  # 40%成長（ハイパー成長株向けに大幅強化）
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         fcf_avg = financials.get("fcf_5yr_avg", 0.0)
@@ -23,19 +24,17 @@ class KoichiValuationCalculator:
             fcf_avg = max(100_000, abs(fcf_avg) * 0.1)
             print(f"   [{ticker}] FCF floor applied: {original_fcf:,.0f} → {fcf_avg:,.0f}")
 
-        # === 2段階DCF ===
-        # 1. 高成長期（3年）
-        high_growth_fcf = fcf_avg * 1.25  # 25%成長（あなたのハイパー成長株スタイルに合わせ調整可）
-        pv_high = sum(high_growth_fcf * (1.25 ** t) / (1 + self.wacc) ** (t + 1) for t in range(self.high_growth_years))
+        # 2段階DCF（高成長期3年 + 永続期）
+        high_growth_fcf = fcf_avg * (1 + self.high_growth_rate)
+        pv_high = sum(high_growth_fcf * ((1 + self.high_growth_rate) ** t) / (1 + self.wacc) ** (t + 1) for t in range(self.high_growth_years))
 
-        # 2. 永続成長期（3年後から）
-        terminal_fcf = high_growth_fcf * (1.25 ** self.high_growth_years) * 1.03  # 永続3%成長
+        terminal_fcf = high_growth_fcf * ((1 + self.high_growth_rate) ** self.high_growth_years) * 1.03  # 永続3%
         terminal_value = terminal_fcf / (self.wacc - 0.03)
         pv_terminal = terminal_value / (1 + self.wacc) ** self.high_growth_years
 
         v0 = pv_high + pv_terminal
 
-        # α個別成長期待（ROEベース）
+        # α個別成長期待
         g_individual = max(0.0, roe_avg * 0.6)
         alpha = max(0.0, (g_individual / self.wacc) * 0.7)
         beta = 0.0
@@ -53,10 +52,10 @@ class KoichiValuationCalculator:
             "m_total": float(m_total),
             "implied_irr": float((intrinsic_value_per_share / current_price - 1) * 100) if current_price > 0 else 0.0,
             "calculation_date": "2026-03-30",
-            "formula": "Koichi式 v5.1 2段階DCF (3年高成長)",
+            "formula": "Koichi式 v5.1 2段階DCF (40%高成長3年)",
             "components": {
                 **financials,
                 "fcf_avg_used": float(fcf_avg),
-                "high_growth_fcf": float(high_growth_fcf)
+                "high_growth_rate": self.high_growth_rate
             }
         }
