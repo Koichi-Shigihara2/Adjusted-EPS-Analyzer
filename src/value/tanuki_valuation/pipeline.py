@@ -14,7 +14,7 @@ CACHE_DIR = Path("data/sec_cache")
 CACHE_DIR.mkdir(parents=True, exist_ok=True)
 CACHE_EXPIRE_HOURS = 24
 
-USER_AGENT = "TanukiValuation/1.0 (your-email@example.com)"  # ← 自分のメールに変えてね！
+USER_AGENT = "TanukiValuation/1.0 (jamablue01@gmail.com)"  # ← 自分のメールに変えてね！
 
 # SEC API用共通ヘッダー
 HEADERS = {
