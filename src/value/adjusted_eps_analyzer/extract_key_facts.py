@@ -5,7 +5,7 @@ from typing import List, Dict, Any
 import json
 import os
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -13,24 +13,17 @@ from urllib3.util.retry import Retry
 CIK_FILE = "config/cik_lookup.csv"
 ADJUSTMENT_ITEMS_FILE = "config/adjustment_items.json"
 
-# ★★★ SEC公式必須：明確なUser-Agent ★★★
 USER_AGENT = "Koichi Shigihara (koichi.shigihara2@gmail.com) - TanukiValuation/1.0 (+https://github.com/koichi-shigihara2/On-a-journey)"
 
-# リトライ設定（403/429対応）
 def create_session():
     session = requests.Session()
-    retry_strategy = Retry(
-        total=5,
-        backoff_factor=2,           # 指数バックオフ
-        status_forcelist=[403, 429, 500, 502, 503, 504],
-        allowed_methods=["GET"]
-    )
+    retry_strategy = Retry(total=5, backoff_factor=2, status_forcelist=[403, 429, 500, 502, 503, 504])
     adapter = HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
     session.headers.update({"User-Agent": USER_AGENT})
     return session
 
-# ====================== ヘルパー ======================
+# （以下は前回の強化版と同じロジック）
 def normalize_value(value: Any) -> float:
     if isinstance(value, (int, float)):
         return float(value)
@@ -51,7 +44,6 @@ def load_required_xbrl_tags() -> List[str]:
                     tags.add(item["xbrl_tag"])
     except:
         pass
-
     tags.update([
         'us-gaap:NetIncomeLoss', 'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
         'us-gaap:NetCashProvidedByUsedInOperatingActivities', 'us-gaap:PaymentsForPropertyPlantAndEquipment',
