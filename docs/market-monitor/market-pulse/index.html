@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -34,6 +34,12 @@
       --sunny:  #f59e0b;
       --cloudy: #64748b;
       --storm:  #f43f5e;
+
+      /* センチメントカラー */
+      --fear:    #f43f5e;
+      --caution: #f59e0b;
+      --neutral: #64748b;
+      --greed-c: #10b981;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -110,6 +116,187 @@
       gap: 10px;
     }
     .sec::after { content:''; flex:1; height:1px; background:var(--bdr); }
+
+    /* ════════════════════════════════════════════════════════
+       SENTIMENT HERO SECTION
+       ════════════════════════════════════════════════════════ */
+    .hero-sentiment {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 16px;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 900px) {
+      .hero-sentiment { grid-template-columns: 1fr; }
+    }
+
+    /* ── GAUGE CARD ─────────────────────────────────────── */
+    .gauge-card {
+      background: var(--sur);
+      border: 1px solid var(--bdr);
+      padding: 20px 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .gauge-title {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .2em;
+      color: var(--mut);
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      align-self: flex-start;
+    }
+    .gauge-svg-wrap {
+      position: relative;
+      width: 260px;
+      height: 148px;
+    }
+    .gauge-svg-wrap svg {
+      width: 100%;
+      height: 100%;
+    }
+    .gauge-center {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+    }
+    .gauge-score {
+      font-family: var(--mono);
+      font-size: 36px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .gauge-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      letter-spacing: .12em;
+      margin-top: 2px;
+    }
+    .gauge-delta {
+      font-family: var(--mono);
+      font-size: 10px;
+      margin-top: 2px;
+    }
+
+    /* サブスコアバー */
+    .sub-scores {
+      width: 100%;
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .sub-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 32px;
+      align-items: center;
+      gap: 8px;
+    }
+    .sub-name {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: .08em;
+      color: var(--mut);
+      text-transform: uppercase;
+      text-align: right;
+    }
+    .sub-bar-bg {
+      height: 6px;
+      background: rgba(30,40,64,.8);
+      position: relative;
+      overflow: hidden;
+    }
+    .sub-bar-fill {
+      height: 100%;
+      transition: width .6s ease;
+    }
+    .sub-val {
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--mut);
+      text-align: right;
+    }
+
+    /* ── OSCILLATOR CARD ───────────────────────────────── */
+    .osc-card {
+      background: var(--sur);
+      border: 1px solid var(--bdr);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+    }
+    .osc-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .osc-title {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .15em;
+      color: var(--mut);
+      text-transform: uppercase;
+    }
+    .osc-period-btns { display: flex; gap: 2px; }
+    .osc-period-btn {
+      font-family: var(--mono);
+      font-size: 9px;
+      letter-spacing: .06em;
+      padding: 3px 8px;
+      border: 1px solid var(--bdr);
+      background: var(--sur);
+      color: var(--mut);
+      cursor: pointer;
+      transition: all .12s;
+    }
+    .osc-period-btn:hover { border-color: var(--acc); color: var(--acc); }
+    .osc-period-btn.active {
+      background: rgba(59,130,246,.12);
+      border-color: var(--acc);
+      color: var(--acc);
+    }
+    .osc-chart-wrap {
+      flex: 1;
+      position: relative;
+      min-height: 180px;
+    }
+    .osc-legend {
+      display: flex;
+      gap: 14px;
+      margin-top: 8px;
+      flex-wrap: wrap;
+    }
+    .osc-legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-family: var(--mono);
+      font-size: 9px;
+      color: var(--mut);
+    }
+    .osc-legend-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+    }
+    .osc-zone-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 4px;
+    }
+    .osc-zone-label {
+      font-family: var(--mono);
+      font-size: 7px;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
 
     /* ── TOP BAR ────────────────────────────────────────── */
     .top-bar {
@@ -419,7 +606,7 @@
       line-height: 1.8;
       white-space: pre-wrap;
       font-family: var(--sans);
-      max-height: 280px;
+      max-height: 420px;
       overflow-y: auto;
     }
     .detail-body::-webkit-scrollbar { width: 4px; }
@@ -453,7 +640,7 @@
   <div class="logo">
     <img src="../common/images/logo.png" alt="TANUKI"
          style="height:28px;width:auto;vertical-align:middle"
-         onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'🦝',style:'font-size:22px;line-height:1'}))">
+         onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:'\uD83E\uDD9D',style:'font-size:22px;line-height:1'}))">
     <span class="logo-dot"></span>
     MARKET PULSE
   </div>
@@ -467,6 +654,62 @@
 
 <div class="shell">
 
+  <!-- ═══ SENTIMENT HERO ═══ -->
+  <div class="sec">sentiment oscillator</div>
+
+  <div class="hero-sentiment">
+
+    <!-- ゲージ -->
+    <div class="gauge-card">
+      <div class="gauge-title">Market Sentiment Index</div>
+      <div class="gauge-svg-wrap">
+        <svg viewBox="0 0 260 148" id="gaugeSvg">
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stop-color="#f43f5e"/>
+              <stop offset="25%"  stop-color="#f59e0b"/>
+              <stop offset="50%"  stop-color="#64748b"/>
+              <stop offset="75%"  stop-color="#22d3ee"/>
+              <stop offset="100%" stop-color="#10b981"/>
+            </linearGradient>
+          </defs>
+          <!-- 背景アーク -->
+          <path d="M 26 132 A 104 104 0 0 1 234 132" fill="none" stroke="#1e2840" stroke-width="14" stroke-linecap="round"/>
+          <!-- カラーアーク -->
+          <path d="M 26 132 A 104 104 0 0 1 234 132" fill="none" stroke="url(#gaugeGrad)" stroke-width="14" stroke-linecap="round" opacity="0.35"/>
+          <!-- 針 -->
+          <line id="gaugeNeedle" x1="130" y1="132" x2="130" y2="36" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90, 130, 132)" style="transition: transform 1s ease-out"/>
+          <circle cx="130" cy="132" r="5" fill="#e2e8f0"/>
+          <!-- ゾーンラベル -->
+          <text x="18" y="146" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="7" letter-spacing=".06em">FEAR</text>
+          <text x="204" y="146" fill="#10b981" font-family="'Space Mono',monospace" font-size="7" letter-spacing=".06em">GREED</text>
+        </svg>
+        <div class="gauge-center">
+          <div class="gauge-score" id="gaugeScore">—</div>
+          <div class="gauge-label" id="gaugeLabel" style="color:var(--mut)">LOADING</div>
+          <div class="gauge-delta" id="gaugeDelta"></div>
+        </div>
+      </div>
+      <div class="sub-scores" id="subScores"></div>
+    </div>
+
+    <!-- オシレーター -->
+    <div class="osc-card">
+      <div class="osc-header">
+        <span class="osc-title">Sentiment Score History</span>
+        <div class="osc-period-btns" id="oscPeriodBtns"></div>
+      </div>
+      <div class="osc-chart-wrap"><canvas id="oscChart"></canvas></div>
+      <div class="osc-legend">
+        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:#3b82f6"></div>Score</div>
+        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(244,63,94,.25)"></div>Fear Zone (&lt;35)</div>
+        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(16,185,129,.25)"></div>Greed Zone (&gt;65)</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══ 既存セクション ═══ -->
   <div class="sec">市場フェーズ概要 &amp; 表示期間</div>
 
   <div class="top-bar">
@@ -518,7 +761,9 @@
 </div>
 
 <script>
-// ── サンプルデータ生成 ────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// サンプルデータ生成
+// ══════════════════════════════════════════════════════════════════════════════
 function makeSample() {
   const base = [
     { d:"2026-01-07", j:"晴れ", vix:17.2,  sp:5940, jpy:157.1, y10:4.62, oil:73.8, haiku:"新春や 指数清々し 買い気満つ",         st:"リスクオン", bo:"リスクオン", cr:"リスクオン" },
@@ -569,17 +814,32 @@ function makeSample() {
     { d:"2026-03-16", j:"曇り", vix:23.40, sp:5728, jpy:151.9, y10:4.19, oil:94.2, haiku:"霞たつ 週初の空に 不安漂う",           st:"リスクオフ", bo:"リスクオフ", cr:"リスクオン" },
     { d:"2026-03-17", j:"曇り", vix:23.68, sp:5748, jpy:152.5, y10:4.20, oil:93.8, haiku:"春光や 買い意欲じわり 芽吹き初む",     st:"リスクオン", bo:"リスクオン", cr:"リスクオン" },
     { d:"2026-03-18", j:"曇り", vix:23.68, sp:5748, jpy:158.9, y10:4.20, oil:93.8, haiku:"春霞 資金は流れ 指数上ぐ",             st:"リスクオン", bo:"リスクオン", cr:"リスクオン" },
-    { d:"2026-03-19", j:"曇り", vix:25.55, sp:5547, jpy:159.2, y10:4.26, oil:95.5, haiku:"静かなる波紋 広がる市場の影 目指すは光か", st:"リスクオフ", bo:"リスクオン", cr:"リスクオン" },
-    { d:"2026-03-20", j:"曇り", vix:25.93, sp:5546, jpy:159.1, y10:4.39, oil:96.6, haiku:"春の山笑う 市に影伸び VIX二十六",      st:"リスクオフ", bo:"リスクオフ", cr:"リスクオン" },
+    { d:"2026-03-19", j:"曇り", vix:25.55, sp:5547, jpy:159.2, y10:4.26, oil:95.5, haiku:"静かなる 波紋広がる 市場の影",          st:"リスクオフ", bo:"リスクオン", cr:"リスクオン" },
+    { d:"2026-03-20", j:"曇り", vix:25.93, sp:5546, jpy:159.1, y10:4.39, oil:96.6, haiku:"春の山 笑う市に影 VIX二十六",          st:"リスクオフ", bo:"リスクオフ", cr:"リスクオン" },
   ];
   return base.map((b,i) => {
     const p = i > 0 ? base[i-1] : b;
     const pct = (a,pp) => pp ? +((a-pp)/pp*100).toFixed(2) : 0;
+    // サンプル用にセンチメントスコアを簡易算出
+    const vixScore = Math.max(0, Math.min(1, (35 - b.vix) / 23)) * 100;
+    const sentScore = Math.round(vixScore * 0.6 + (b.j === "晴れ" ? 30 : b.j === "嵐" ? 5 : 18));
+    const sentLabel = sentScore <= 20 ? "EXTREME FEAR" : sentScore <= 35 ? "FEAR" : sentScore <= 50 ? "CAUTION" : sentScore <= 65 ? "NEUTRAL" : sentScore <= 80 ? "GREED" : "EXTREME GREED";
     return {
       date: b.d + "T19:30:00+09:00",
       judgment: b.j,
       haiku: b.haiku,
       credit: { stock: b.st, bond: b.bo, credit: b.cr },
+      sentiment: {
+        score: sentScore,
+        label: sentLabel,
+        sub_scores: {
+          vix_level:    { score: vixScore, weight: 0.30, raw: b.vix },
+          sp500_ma_dev: { score: 50, weight: 0.25, raw: null },
+          hyg_lqd_dir:  { score: 50, weight: 0.20, raw: null },
+          growth_value: { score: 50, weight: 0.15, raw: null },
+          distribution: { score: 50, weight: 0.10, raw: null },
+        }
+      },
       summary: `1. 市場フェーズ判定\n● VIX指数: ${b.vix}  判定：${b.j}\n\n2. 金利・債券（米10年債）\n● 米10年債: ${b.y10}%\n\n4. 通貨の勢い（ドル円）\n● ドル円: ${b.jpy}\n\n5. 指数・需給\n● S&P500: ${b.sp.toLocaleString()}\n\n7. コモディティ（原油）\n● WTI原油: ${b.oil}\n\n10. 総評\n市場フェーズ「${b.j}」。各指標を総合すると現在の需給構造は${b.j === "晴れ" ? "強気" : b.j === "嵐" ? "リスクオフ優勢" : "中立〜慎重"}。`,
       indicators: {
         "VIX指数":  { value: b.vix,  change_percent: pct(b.vix,  p.vix)  },
@@ -592,7 +852,9 @@ function makeSample() {
   });
 }
 
-// ── 定数 ──────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// 定数
+// ══════════════════════════════════════════════════════════════════════════════
 const PERIODS = [
   { label:"1W",  days:7   },
   { label:"2W",  days:14  },
@@ -612,15 +874,36 @@ const METRIC_DEFS = [
   { key:"WTI原油", label:"OIL",    color:"#a78bfa" },
 ];
 
-// ── 状態 ──────────────────────────────────────────────────────────────────────
+const OSC_PERIODS = [
+  { label:"2W", days:14 },
+  { label:"1M", days:30 },
+  { label:"3M", days:90 },
+  { label:"全期間", days:9999 },
+];
+
+const SUB_SCORE_NAMES = {
+  vix_level:    "VIX Level",
+  sp500_ma_dev: "S&P vs 50MA",
+  hyg_lqd_dir:  "HYG/LQD",
+  growth_value: "Growth/Value",
+  distribution: "Volume Flow",
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 状態
+// ══════════════════════════════════════════════════════════════════════════════
 let allData      = [];
 let filteredData = [];
 let selectedIdx  = 0;
 let periodDays   = DEFAULT_DAYS;
 let activeMetrics = new Set(["VIX指数", "S&P500"]);
 let chartInst    = null;
+let oscChartInst = null;
+let oscDays      = 30;
 
-// ── ユーティリティ ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════════════════════════════════════════════
 const phaseClass = j => j==="晴れ"?"sunny": (j==="嵐")?"storm":"cloudy";
 const fmtDate    = iso => { const d=new Date(iso); return `${d.getMonth()+1}/${d.getDate()}`; };
 const fmtDateFull= iso => { const d=new Date(iso); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`; };
@@ -629,9 +912,20 @@ const fmtChg     = v => {
   const t = (v>=0?"+":"")+v.toFixed(2)+"%";
   return {text:t, cls: v>0.05?"up": v<-0.05?"down":"flat"};
 };
-const phaseLabel = j => j==="晴れ"?"☀ 晴れ": j==="嵐"?"⛈ 嵐":"☁ 曇り";
+const phaseLabel = j => j==="晴れ"?"\u2600 晴れ": j==="嵐"?"\u26C8 嵐":"\u2601 曇り";
 
-// ── 期間フィルタ ───────────────────────────────────────────────────────────────
+function sentimentColor(score) {
+  if (score <= 20) return "#f43f5e";
+  if (score <= 35) return "#fb7185";
+  if (score <= 50) return "#f59e0b";
+  if (score <= 65) return "#64748b";
+  if (score <= 80) return "#22d3ee";
+  return "#10b981";
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 期間フィルタ
+// ══════════════════════════════════════════════════════════════════════════════
 function applyPeriod() {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - periodDays);
@@ -641,7 +935,9 @@ function applyPeriod() {
   selectedIdx = filteredData.length - 1;
 }
 
-// ── 期間ボタン ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// 期間ボタン
+// ══════════════════════════════════════════════════════════════════════════════
 function renderPeriodGroup() {
   document.getElementById("periodGroup").innerHTML = PERIODS.map(p =>
     `<button class="period-btn ${p.days===periodDays?"active":""}"
@@ -654,7 +950,9 @@ function switchPeriod(days) {
   renderAll();
 }
 
-// ── フェーズ集計 ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// フェーズ集計
+// ══════════════════════════════════════════════════════════════════════════════
 function renderPhasePills() {
   const c = {"晴れ":0,"曇り":0,"嵐":0};
   filteredData.forEach(d => { if (c[d.judgment]!=null) c[d.judgment]++; });
@@ -666,7 +964,9 @@ function renderPhasePills() {
     `<div class="phase-pill pill-total">計 ${filteredData.length} 日</div>`;
 }
 
-// ── タイムライン ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// タイムライン
+// ══════════════════════════════════════════════════════════════════════════════
 function renderTimeline() {
   document.getElementById("tlCount").textContent = `${filteredData.length} 件`;
   const rev = [...filteredData].reverse();
@@ -694,7 +994,9 @@ function renderTimeline() {
   }).join("");
 }
 
-// ── メトリクス ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// メトリクス
+// ══════════════════════════════════════════════════════════════════════════════
 function renderMetrics() {
   const d = filteredData[selectedIdx];
   const SHOW  = ["VIX指数","S&P500","米10年債","ドル円"];
@@ -715,7 +1017,9 @@ function renderMetrics() {
   }).join("");
 }
 
-// ── チャートボタン ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// チャートボタン
+// ══════════════════════════════════════════════════════════════════════════════
 function renderMetricBtns() {
   document.getElementById("metricBtns").innerHTML = METRIC_DEFS.map(m =>
     `<button class="metric-btn ${activeMetrics.has(m.key)?"active":""}"
@@ -728,7 +1032,7 @@ function renderMetricBtns() {
 }
 function toggleMetric(key) {
   if (activeMetrics.has(key)) {
-    if (activeMetrics.size <= 1) return; // 最低1つは残す
+    if (activeMetrics.size <= 1) return;
     activeMetrics.delete(key);
   } else {
     activeMetrics.add(key);
@@ -738,12 +1042,13 @@ function toggleMetric(key) {
   renderLegend();
 }
 
-// ── チャート ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// チャート
+// ══════════════════════════════════════════════════════════════════════════════
 function renderChart() {
   const labels = filteredData.map(d => fmtDate(d.date));
   const datasets = METRIC_DEFS.filter(m => activeMetrics.has(m.key)).map(m => {
     const raw = filteredData.map(d => d.indicators[m.key]?.value ?? null);
-    // 正規化（複数指標を同一スケールで見やすく）
     const valid = raw.filter(v=>v!=null);
     const mn = Math.min(...valid), mx = Math.max(...valid);
     const normed = raw.map(v => v==null ? null : mx===mn ? 50 : (v-mn)/(mx-mn)*80+10);
@@ -821,7 +1126,9 @@ function renderLegend() {
     ).join("") + note;
 }
 
-// ── 詳細パネル ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// 詳細パネル
+// ══════════════════════════════════════════════════════════════════════════════
 function renderDetail() {
   const d = filteredData[selectedIdx];
   const pc = phaseClass(d.judgment);
@@ -844,7 +1151,200 @@ function renderDetail() {
   `;
 }
 
-// ── アイテム選択 ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// SENTIMENT GAUGE
+// ══════════════════════════════════════════════════════════════════════════════
+function renderGauge() {
+  const latest = filteredData[filteredData.length - 1];
+  if (!latest?.sentiment) {
+    document.getElementById("gaugeScore").textContent = "—";
+    document.getElementById("gaugeLabel").textContent = "NO DATA";
+    document.getElementById("gaugeDelta").textContent = "";
+    document.getElementById("subScores").innerHTML = "";
+    return;
+  }
+
+  const s = latest.sentiment;
+  const score = s.score;
+  const color = sentimentColor(score);
+
+  // 針の角度: 0→-90°, 100→+90°
+  const angle = (score / 100) * 180 - 90;
+  document.getElementById("gaugeNeedle").setAttribute("transform", `rotate(${angle}, 130, 132)`);
+
+  document.getElementById("gaugeScore").textContent = score.toFixed(0);
+  document.getElementById("gaugeScore").style.color = color;
+  document.getElementById("gaugeLabel").textContent = s.label;
+  document.getElementById("gaugeLabel").style.color = color;
+
+  // 前日差
+  if (filteredData.length >= 2) {
+    const prev = filteredData[filteredData.length - 2]?.sentiment?.score;
+    if (prev != null) {
+      const delta = score - prev;
+      const arrow = delta > 0 ? "\u25B2" : delta < 0 ? "\u25BC" : "\u25B6";
+      const cls = delta > 0.5 ? "down" : delta < -0.5 ? "up" : "flat"; // VIXとは逆（スコア上昇=良い）
+      document.getElementById("gaugeDelta").innerHTML = `<span class="${delta>0?'down':'up'}">${arrow} ${delta>0?'+':''}${delta.toFixed(1)}pt vs prev</span>`;
+    }
+  }
+
+  // サブスコアバー
+  const subs = s.sub_scores || {};
+  document.getElementById("subScores").innerHTML = Object.entries(subs).map(([k, v]) => {
+    const sc = v.score;
+    const c = sentimentColor(sc);
+    return `<div class="sub-row">
+      <div class="sub-name">${SUB_SCORE_NAMES[k] || k}</div>
+      <div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div>
+      <div class="sub-val">${sc.toFixed(0)}</div>
+    </div>`;
+  }).join("");
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// SENTIMENT OSCILLATOR CHART
+// ══════════════════════════════════════════════════════════════════════════════
+function renderOscPeriodBtns() {
+  document.getElementById("oscPeriodBtns").innerHTML = OSC_PERIODS.map(p =>
+    `<button class="osc-period-btn ${p.days===oscDays?"active":""}"
+      onclick="switchOscPeriod(${p.days})">${p.label}</button>`
+  ).join("");
+}
+function switchOscPeriod(days) {
+  oscDays = days;
+  renderOscPeriodBtns();
+  renderOscChart();
+}
+
+function renderOscChart() {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - oscDays);
+  const oscData = oscDays >= 9999 ? [...allData]
+    : allData.filter(d => new Date(d.date) >= cutoff);
+  if (!oscData.length) return;
+
+  const labels = oscData.map(d => fmtDate(d.date));
+  const scores = oscData.map(d => d.sentiment?.score ?? null);
+  const colors = scores.map(s => s != null ? sentimentColor(s) : "#64748b");
+
+  if (oscChartInst) oscChartInst.destroy();
+  oscChartInst = new Chart(document.getElementById("oscChart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Sentiment",
+          data: scores,
+          borderColor: "#3b82f6",
+          backgroundColor: ctx => {
+            const idx = ctx.dataIndex;
+            return colors[idx] || "#3b82f6";
+          },
+          pointBackgroundColor: colors,
+          pointBorderColor: "transparent",
+          pointRadius: oscData.length > 40 ? 2 : 5,
+          pointHoverRadius: 7,
+          borderWidth: 2,
+          fill: false,
+          tension: 0.3,
+          segment: {
+            borderColor: ctx => {
+              const s = scores[ctx.p0DataIndex];
+              return s != null ? sentimentColor(s) : "#64748b";
+            }
+          }
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: "#111520",
+          borderColor: "#1e2840",
+          borderWidth: 1,
+          titleColor: "#64748b",
+          bodyColor: "#e2e8f0",
+          titleFont: { family: "Space Mono", size: 10 },
+          bodyFont: { family: "Space Mono", size: 11 },
+          callbacks: {
+            label: ctx => {
+              const sc = scores[ctx.dataIndex];
+              const d = oscData[ctx.dataIndex];
+              const lbl = d?.sentiment?.label || "";
+              return sc != null ? ` Score: ${sc.toFixed(1)} (${lbl})` : " —";
+            }
+          }
+        },
+        annotation: undefined
+      },
+      scales: {
+        x: {
+          ticks: { color: "#64748b", font: { family: "Space Mono", size: 9 }, maxTicksLimit: 12 },
+          grid: { color: "rgba(30,40,64,.5)" },
+          border: { color: "#1e2840" }
+        },
+        y: {
+          min: 0,
+          max: 100,
+          ticks: {
+            color: "#64748b",
+            font: { family: "Space Mono", size: 9 },
+            stepSize: 20,
+            callback: v => {
+              if (v === 0) return "0";
+              if (v === 20) return "FEAR";
+              if (v === 50) return "50";
+              if (v === 80) return "GREED";
+              if (v === 100) return "100";
+              return "";
+            }
+          },
+          grid: {
+            color: ctx => {
+              if (ctx.tick.value === 35) return "rgba(244,63,94,.2)";
+              if (ctx.tick.value === 65) return "rgba(16,185,129,.2)";
+              return "rgba(30,40,64,.5)";
+            }
+          },
+          border: { color: "#1e2840" }
+        }
+      }
+    },
+    plugins: [{
+      id: "zoneShading",
+      beforeDraw(chart) {
+        const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
+        // Fear zone (0-35)
+        const y35 = y.getPixelForValue(35);
+        const yBottom = y.getPixelForValue(0);
+        ctx.fillStyle = "rgba(244,63,94,.06)";
+        ctx.fillRect(left, y35, right - left, yBottom - y35);
+        // Greed zone (65-100)
+        const y65 = y.getPixelForValue(65);
+        const yTop = y.getPixelForValue(100);
+        ctx.fillStyle = "rgba(16,185,129,.06)";
+        ctx.fillRect(left, yTop, right - left, y65 - yTop);
+        // Threshold lines
+        ctx.setLineDash([4, 4]);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "rgba(244,63,94,.3)";
+        ctx.beginPath(); ctx.moveTo(left, y35); ctx.lineTo(right, y35); ctx.stroke();
+        ctx.strokeStyle = "rgba(16,185,129,.3)";
+        ctx.beginPath(); ctx.moveTo(left, y65); ctx.lineTo(right, y65); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }]
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// アイテム選択
+// ══════════════════════════════════════════════════════════════════════════════
 function selectItem(i) {
   selectedIdx = i;
   renderTimeline();
@@ -852,8 +1352,13 @@ function selectItem(i) {
   renderDetail();
 }
 
-// ── 全再描画 ───────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// 全再描画
+// ══════════════════════════════════════════════════════════════════════════════
 function renderAll() {
+  renderGauge();
+  renderOscPeriodBtns();
+  renderOscChart();
   renderPeriodGroup();
   renderPhasePills();
   renderTimeline();
@@ -864,7 +1369,9 @@ function renderAll() {
   renderDetail();
 }
 
-// ── データロード ───────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// データロード
+// ══════════════════════════════════════════════════════════════════════════════
 async function init() {
   try {
     const resp = await fetch('./data/market_data.json');
@@ -872,7 +1379,7 @@ async function init() {
     if (Array.isArray(json) && json.length > 0) {
       allData = json
         .map(d => {
-          // judgment の表記ゆれを正規化（「曇」→「曇り」「晴」→「晴れ」）
+          // judgment の表記ゆれを正規化
           const j = d.judgment || "不明";
           d.judgment = j === "曇" ? "曇り" : j === "晴" ? "晴れ" : j;
           // credit が無い場合は summary から簡易推定
@@ -882,6 +1389,18 @@ async function init() {
             const bo = s.includes("債券（米10年債利回りの方向）は上昇") ? "リスクオフ" : "リスクオン";
             const cr = s.includes("クレジット（HYG対LQD比の方向）は上昇") ? "リスクオン" : "リスクオフ";
             d.credit = { stock: st, bond: bo, credit: cr };
+          }
+          // sentiment が無い場合は簡易算出（後方互換）
+          if (!d.sentiment) {
+            const vix = d.indicators?.["VIX指数"]?.value;
+            if (vix != null) {
+              const vixScore = Math.max(0, Math.min(1, (35 - vix) / 23)) * 100;
+              const score = Math.round(vixScore * 0.6 + 20);
+              const label = score <= 20 ? "EXTREME FEAR" : score <= 35 ? "FEAR" : score <= 50 ? "CAUTION" : score <= 65 ? "NEUTRAL" : score <= 80 ? "GREED" : "EXTREME GREED";
+              d.sentiment = { score, label, sub_scores: { vix_level: { score: Math.round(vixScore), weight: 0.30, raw: vix } } };
+            } else {
+              d.sentiment = { score: 50, label: "NEUTRAL", sub_scores: {} };
+            }
           }
           return d;
         })
