@@ -52,6 +52,7 @@ CSV_COLUMNS = [
     "グロース対バリュー比_diff_percent",
     "大型対小型比_diff_percent",
     "HYG対LQD比_value", "HYG対LQD比_change",
+    "sentiment_score", "sentiment_label",
     "summary"
 ]
 
@@ -83,6 +84,136 @@ def format_line(name, hist):
         return f"● {name}: {latest:.2f} [{diff:+.2f} ({pct:+.2f}%){vol_msg}] ({last_date} 確定)\n"
     except Exception as e:
         return f"● {name}: 解析エラー ({e})\n"
+
+
+# ──────────────────────────────────────────────────────
+# センチメントスコア算出（Phase 1: 5指標版）
+# ──────────────────────────────────────────────────────
+def clamp01(v):
+    """0.0〜1.0にクランプ"""
+    return max(0.0, min(1.0, v))
+
+
+def compute_sentiment(structured_data):
+    """
+    既存の structured_data から5指標でセンチメントスコア(0-100)を算出。
+    0=EXTREME FEAR, 50=NEUTRAL, 100=EXTREME GREED
+
+    サブ指標 (Phase 1):
+      1. VIX水準             (Weight 30%) — 12→100, 35→0
+      2. S&P500 vs 50日MA乖離 (Weight 25%) — -8%→0, +8%→100 (別途取得)
+      3. HYG/LQD比 変化方向   (Weight 20%) — 下落→0, 上昇→100
+      4. グロース対バリュー比  (Weight 15%) — バリュー優勢→0, グロース優勢→100
+      5. 出来高比(Distribution)(Weight 10%) — 出来高比>1.1+下落→0, 通常→100
+    """
+    sub_scores = {}
+
+    # --- 1. VIX水準 (30%) ---
+    vix_data = structured_data.get("VIX指数")
+    if vix_data and vix_data.get("value") is not None:
+        vix = vix_data["value"]
+        # VIX 12→100(GREED), 35→0(FEAR) の線形補間（逆転）
+        score = clamp01((35 - vix) / (35 - 12))
+        sub_scores["vix_level"] = {"score": score, "weight": 0.30, "raw": vix}
+    else:
+        sub_scores["vix_level"] = {"score": 0.5, "weight": 0.30, "raw": None}
+
+    # --- 2. S&P500 vs 50日MA乖離率 (25%) ---
+    sp500_ma_dev = _get_sp500_ma_deviation()
+    if sp500_ma_dev is not None:
+        # -8%→0, +8%→100
+        score = clamp01((sp500_ma_dev + 8) / 16)
+        sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.25, "raw": round(sp500_ma_dev, 2)}
+    else:
+        sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.25, "raw": None}
+
+    # --- 3. HYG/LQD比 変化方向 (20%) ---
+    hyg_lqd = structured_data.get("HYG対LQD比")
+    if hyg_lqd and hyg_lqd.get("change") is not None:
+        chg = hyg_lqd["change"]
+        # -0.005→0, +0.005→100 の線形補間
+        score = clamp01((chg + 0.005) / 0.01)
+        sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.20, "raw": round(chg, 6)}
+    else:
+        sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.20, "raw": None}
+
+    # --- 4. グロース対バリュー比 (15%) ---
+    gv = structured_data.get("グロース対バリュー比")
+    if gv and gv.get("diff_percent") is not None:
+        diff = gv["diff_percent"]
+        # -3%→0, +3%→100
+        score = clamp01((diff + 3) / 6)
+        sub_scores["growth_value"] = {"score": score, "weight": 0.15, "raw": round(diff, 2)}
+    else:
+        sub_scores["growth_value"] = {"score": 0.5, "weight": 0.15, "raw": None}
+
+    # --- 5. Distribution判定 (10%) ---
+    sp_data = structured_data.get("S&P500")
+    if sp_data and sp_data.get("volume_ratio") is not None and sp_data.get("change_percent") is not None:
+        vol_ratio = sp_data["volume_ratio"]
+        chg_pct = sp_data["change_percent"]
+        # 出来高比>1.1 かつ 下落 → Distribution (score=0)
+        # 出来高比<0.8 → 閑散 (score=0.5)
+        # 上昇+出来高増 → Accumulation (score=1.0)
+        if vol_ratio > 1.1 and chg_pct < -0.3:
+            score = 0.0  # Distribution
+        elif vol_ratio > 1.1 and chg_pct > 0.3:
+            score = 1.0  # Accumulation
+        else:
+            score = 0.5  # Neutral
+        sub_scores["distribution"] = {"score": score, "weight": 0.10, "raw": {"vol_ratio": vol_ratio, "chg_pct": chg_pct}}
+    else:
+        sub_scores["distribution"] = {"score": 0.5, "weight": 0.10, "raw": None}
+
+    # --- 加重平均 ---
+    total_score = sum(s["score"] * s["weight"] for s in sub_scores.values())
+    total_weight = sum(s["weight"] for s in sub_scores.values())
+    final_score = round((total_score / total_weight) * 100, 1) if total_weight > 0 else 50.0
+
+    # ラベル判定
+    if final_score <= 20:
+        label = "EXTREME FEAR"
+    elif final_score <= 35:
+        label = "FEAR"
+    elif final_score <= 50:
+        label = "CAUTION"
+    elif final_score <= 65:
+        label = "NEUTRAL"
+    elif final_score <= 80:
+        label = "GREED"
+    else:
+        label = "EXTREME GREED"
+
+    # サブスコアを100点満点に変換して記録
+    sub_detail = {}
+    for k, v in sub_scores.items():
+        sub_detail[k] = {
+            "score": round(v["score"] * 100, 1),
+            "weight": v["weight"],
+            "raw": v["raw"]
+        }
+
+    return {
+        "score": final_score,
+        "label": label,
+        "sub_scores": sub_detail
+    }
+
+
+def _get_sp500_ma_deviation():
+    """S&P500の現在値と50日移動平均の乖離率(%)を返す"""
+    try:
+        t = yf.Ticker("^GSPC")
+        hist = t.history(period="3mo")
+        if hist is None or len(hist) < 50:
+            return None
+        latest = hist['Close'].iloc[-1]
+        ma50 = hist['Close'].iloc[-50:].mean()
+        deviation = (latest - ma50) / ma50 * 100
+        return deviation
+    except Exception as e:
+        print(f"[WARN] S&P500 MA乖離率の取得失敗: {e}")
+        return None
 
 
 def get_realtime_data():
@@ -356,7 +487,7 @@ def extract_judgment(report_text):
     return match.group(1) if match else "不明"
 
 
-def save_data_to_json_and_csv(report_text, structured_data):
+def save_data_to_json_and_csv(report_text, structured_data, sentiment_data):
     os.makedirs(DATA_DIR, exist_ok=True)
     jst_now = datetime.now(JST)
     date_str = jst_now.strftime('%Y-%m-%dT%H:%M:%S+09:00')
@@ -382,6 +513,7 @@ def save_data_to_json_and_csv(report_text, structured_data):
         "date": date_str,
         "judgment": judgment,
         "indicators": structured_data,
+        "sentiment": sentiment_data,
         "summary": report_text
     }
     all_data.append(new_entry)
@@ -401,6 +533,8 @@ def save_data_to_json_and_csv(report_text, structured_data):
                 row[col_name] = subvalue
         else:
             row[key] = value
+    row["sentiment_score"] = sentiment_data.get("score", "")
+    row["sentiment_label"] = sentiment_data.get("label", "")
     row["summary"] = report_text
 
     file_exists = os.path.exists(CSV_PATH)
@@ -412,10 +546,12 @@ def save_data_to_json_and_csv(report_text, structured_data):
     print(f"[INFO] CSV保存完了: {CSV_PATH}")
 
 
-def send_email(body):
+def send_email(body, sentiment_data):
     jst_now = datetime.now(JST)
+    score = sentiment_data.get("score", "?")
+    label = sentiment_data.get("label", "")
     msg = MIMEText(body, 'plain', 'utf-8')
-    msg['Subject'] = f"🦝02_【市況分析】 {jst_now.strftime('%m/%d %H:%M')}"
+    msg['Subject'] = f"\U0001f99d02_\u3010\u5e02\u6cc1\u5206\u6790\u3011{label} ({score}) {jst_now.strftime('%m/%d %H:%M')}"
     msg['From'], msg['To'] = GMAIL_USER, GMAIL_USER
     try:
         with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
@@ -430,12 +566,19 @@ def send_email(body):
 
 if __name__ == "__main__":
     realtime_text, structured_data = get_realtime_data()
+
+    # センチメントスコア算出
+    sentiment_data = compute_sentiment(structured_data)
+    print(f"[INFO] センチメントスコア: {sentiment_data['score']} ({sentiment_data['label']})")
+    for k, v in sentiment_data["sub_scores"].items():
+        print(f"  {k}: {v['score']:.1f} (weight={v['weight']}, raw={v['raw']})")
+
     news = get_market_news()
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
     report = analyse_market(realtime_text, "\n".join(news))
-    save_data_to_json_and_csv(report, structured_data)
+    save_data_to_json_and_csv(report, structured_data, sentiment_data)
     if GMAIL_USER and GMAIL_PASSWORD:
-        send_email(report)
+        send_email(report, sentiment_data)
     else:
         print("[INFO] メール送信スキップ（認証情報なし）")
