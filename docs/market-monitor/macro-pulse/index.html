@@ -159,6 +159,8 @@
     .sig-ind{font-size:13px;font-weight:500}
     .sig-val{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
     .sig-surp{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
+    .sig-prev{font-family:var(--mono);font-size:11px;color:var(--mut);text-align:right}
+    .sig-chg{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
     .sig-badge{display:inline-block;font-family:var(--mono);font-size:8px;padding:2px 7px;border-radius:2px;white-space:nowrap}
     .sig-arrow{font-size:14px;width:20px;text-align:center}
     .up{color:var(--grn)}
@@ -434,7 +436,7 @@
   <!-- ⑤ 直近の動き -->
   <div class="sec">⑤ 直近の動き（過去2週間の発表実績）</div>
   <div class="signals-wrap">
-    <div class="signals-title">RECENT SIGNALS — サプライズの大きい順に並べています</div>
+    <div class="signals-title">RECENT SIGNALS — 発表日の新しい順に並べています</div>
     <div id="recentSignals"><div class="empty"><span class="spin"></span>Loading...</div></div>
   </div>
 
@@ -1455,7 +1457,7 @@ function renderL3() {
 }
 
 // ═══════════════════════════════════════════════════════
-// ④ RECENT SIGNALS — 直近2週間のサプライズ履歴
+// ④ RECENT SIGNALS — 直近2週間の発表実績
 // ═══════════════════════════════════════════════════════
 function renderRecentSignals() {
   const wrap=el('recentSignals');
@@ -1465,20 +1467,20 @@ function renderRecentSignals() {
   const cutOld=new Date(today); cutOld.setDate(cutOld.getDate()-14);
   const cutOldMs=cutOld.getTime(), todayMs=today.getTime();
 
-  // Use index: collect recent entries from non-daily indicators
   const recent=[];
   for(const ind in IND_INDEX){
     if(DAILY_INDICATORS.has(ind))continue;
     const arr=IND_INDEX[ind];
-    // binary search for cutOld
     let lo=0,hi=arr.length-1;
     while(lo<hi){const mid=(lo+hi)>>1;if(arr[mid].dateMs<cutOldMs)lo=mid+1;else hi=mid;}
     for(let i=lo;i<arr.length;i++){
       if(arr[i].dateMs>todayMs)break;
-      // find the full row from DATA
       const ds=new Date(arr[i].dateMs).toISOString().slice(0,10);
       const r=DATA.find(x=>x[COL.indicator]===ind&&x[COL.date]===ds&&n(x[COL.actual])!==null);
-      if(r)recent.push(r);
+      if(r){
+        const prevEntry = i > 0 ? arr[i-1] : null;
+        recent.push({row:r, prevVal: prevEntry ? prevEntry.actual : null});
+      }
     }
   }
 
@@ -1487,52 +1489,66 @@ function renderRecentSignals() {
     return;
   }
 
-  // サプライズの絶対値でソート（大きい順）→ 発表日でサブソート
-  const sorted=[...recent].sort((a,b)=>{
-    const sa=Math.abs(n(a[COL.surprise])||0);
-    const sb=Math.abs(n(b[COL.surprise])||0);
-    if(sb!==sa)return sb-sa;
-    return new Date(b[COL.date])-new Date(a[COL.date]);
-  });
+  const sorted=[...recent].sort((a,b)=>new Date(b.row[COL.date])-new Date(a.row[COL.date]));
 
-  const rows_html=sorted.map(r=>{
+  const BULL_UP = new Set([
+    'Philadelphia Fed Manufacturing',
+    'Chicago Fed National Activity',
+    'Michigan Consumer Sentiment',
+    'CB Consumer Confidence',
+    'Building Permits',
+    'Conference Board LEI',
+    'NFP',
+  ]);
+  const BULL_DOWN = new Set([
+    'Sahm Rule Recession Indicator',
+    'Initial Claims 4W MA',
+    'Initial Claims',
+    'HY Spread',
+  ]);
+
+  const rows_html=sorted.map(({row:r, prevVal})=>{
     const actual=n(r[COL.actual]);
-    const surp=n(r[COL.surprise]);
-    const isFake=r[COL.src]==='actual_as_forecast';
     const d=new Date(r[COL.date]);
     const dstr=d.toLocaleDateString('ja-JP',{month:'numeric',day:'numeric',weekday:'short'});
+    const indName=r[COL.indicator];
 
-    // サプライズ表示
-    let surpHtml='<span class="neu">—</span>';
-    let arrow='';
-    let rowBg='';
-    if(!isFake&&surp!==null&&Math.abs(surp)>0.001){
-      const cls=surp>0?'up':'dn';
-      const sign=surp>0?'▲ +':'▼ ';
-      surpHtml=`<span class="${cls}">${sign}${Math.abs(surp).toFixed(2)}</span>`;
-      arrow=surp>0?'<span class="up">↑</span>':'<span class="dn">↓</span>';
-      // 大きなサプライズに背景色
-      if(Math.abs(surp)>2)rowBg=surp>0?'background:rgba(16,185,129,0.04)':'background:rgba(244,63,94,0.04)';
-    } else {
-      arrow='<span class="neu">→</span>';
+    let prevHtml='<span class="neu">—</span>';
+    let chgHtml='<span class="neu">—</span>';
+    let dirHtml='<span class="neu">→</span>';
+
+    if(prevVal!==null && actual!==null){
+      const chg=actual-prevVal;
+      const abschg=Math.abs(chg);
+      const threshold = Math.abs(actual)*0.001 + 0.001;
+      const isBullUp = BULL_UP.has(indName);
+      const isBullDown = BULL_DOWN.has(indName);
+
+      prevHtml=`<span class="sig-prev">${fmtK(prevVal)}</span>`;
+
+      if(abschg > threshold){
+        const isUp = chg > 0;
+        let dirCls='neu';
+        if(isBullUp) dirCls = isUp ? 'up' : 'dn';
+        else if(isBullDown) dirCls = isUp ? 'dn' : 'up';
+
+        const sign = isUp ? '+' : '';
+        const arrow = isUp ? '↑' : '↓';
+        dirHtml=`<span class="${dirCls}">${arrow}</span>`;
+        chgHtml=`<span class="${dirCls}">${sign}${fmtK(chg)}</span>`;
+      } else {
+        dirHtml='<span class="neu">→</span>';
+        chgHtml='<span class="neu">±0</span>';
+      }
     }
 
-    // 強弱バッジ
-    let badge='IN-LINE',badgeCls='bg-m';
-    if(!isFake&&surp!==null){
-      if(surp>2){badge='BEAT ↑↑';badgeCls='bg-g';}
-      else if(surp>0.5){badge='BEAT';badgeCls='bg-g';}
-      else if(surp<-2){badge='MISS ↓↓';badgeCls='bg-r';}
-      else if(surp<-0.5){badge='MISS';badgeCls='bg-r';}
-    }
-
-    return`<tr style="${rowBg}">
+    return`<tr>
       <td class="sig-date">${dstr}</td>
-      <td class="sig-ind">${r[COL.indicator]}</td>
+      <td class="sig-ind">${indName}</td>
       <td class="sig-val">${fmtK(actual)}</td>
-      <td style="text-align:center">${arrow}</td>
-      <td class="sig-surp">${surpHtml}</td>
-      <td style="text-align:right"><span class="sig-badge ${badgeCls}">${badge}</span></td>
+      <td class="sig-prev" style="text-align:right">${prevHtml}</td>
+      <td style="text-align:center">${dirHtml}</td>
+      <td class="sig-chg" style="text-align:right">${chgHtml}</td>
     </tr>`;
   }).join('');
 
@@ -1541,9 +1557,9 @@ function renderRecentSignals() {
       <th>DATE</th>
       <th>INDICATOR</th>
       <th class="r">ACTUAL</th>
+      <th class="r">PREV</th>
       <th style="text-align:center">DIR</th>
-      <th class="r">SURPRISE</th>
-      <th class="r">VERDICT</th>
+      <th class="r">CHANGE</th>
     </tr></thead>
     <tbody>${rows_html}</tbody>
   </table>`;
