@@ -39,9 +39,27 @@ LAG_DATABASE = {
 
 def evaluate_signals(m):
     signals = []
-    rev_c, rev_p = m['revenue']['current'] or 0, m['revenue']['prior'] or 0
+    
+    # 【追加】m 自体がリストで返ってきた場合のバリア
+    if isinstance(m, list) and len(m) > 0:
+        m = m[0]
+    # それでも辞書じゃない場合は空の辞書にする（エラー回避）
+    if not isinstance(m, dict):
+        m = {}
+
+    def get_val(data, key):
+        if isinstance(data, dict):
+            return data.get(key, 0) or 0
+        elif isinstance(data, list) and len(data) > 0:
+            if isinstance(data[0], dict):
+                return data[0].get(key, 0) or 0
+        return 0
+
+    rev_c = get_val(m.get('revenue', {}), 'current')
+    rev_p = get_val(m.get('revenue', {}), 'prior')
+
     if rev_p > 0 and ((rev_c - rev_p) / rev_p) * 100 >= 20.0:
-        signals.append(f"✅ 売上急成長")
+        signals.append("✅ 売上急成長")
     return signals
 
 # ==========================================
@@ -63,18 +81,35 @@ def run_full_agent(ticker: str, filing_type: str = "10-K"):
     api_key = os.getenv("GEMINI_API_KEY")
     client = genai.Client(api_key=api_key)
 
-    prompt = f"提出された{filing_type}から数値を抽出しJSONで返してください。metrics, selected_cluster, inflection_point_commentを含めてください。"
+    # 🎯 修正: プロンプトを厳格化し、JSONが壊れないように指示
+    prompt = f"""
+    提出された{filing_type}から数値を抽出し、以下の厳密なJSONフォーマットで返してください。
+    文字列内に改行やダブルクォーテーションを含めず、コメントは短く簡潔にしてください。
+    {{
+      "metrics": {{
+        "revenue": {{"current": 0, "prior": 0}},
+        "cfo": {{"current": 0, "prior": 0}}
+      }},
+      "selected_cluster": "High-Margin AI/Enterprise",
+      "inflection_point_comment": "短いコメント"
+    }}
+    """
 
     try:
-        # ✅ 修正：一覧で確認できた「gemini-2.5-flash」を指定
         response = client.models.generate_content(
             model="gemini-2.5-flash", 
             contents=[document_text, prompt],
             config={"response_mime_type": "application/json"}
         )
         data = json.loads(response.text)
-        m = data["metrics"]
+        m = data.get("metrics", {})
         
+    except json.JSONDecodeError as e:
+        # JSONが壊れていた場合、何が返ってきたのかを表示する安全装置
+        print(f"❌ JSON解析エラー: {e}")
+        print("--- Geminiが返した異常なテキスト ---")
+        print(response.text)
+        return
     except Exception as e:
         print(f"❌ 解析エラー: {e}")
         return
