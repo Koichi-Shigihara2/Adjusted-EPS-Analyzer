@@ -13,17 +13,24 @@ from urllib3.util.retry import Retry
 CIK_FILE = "config/cik_lookup.csv"
 ADJUSTMENT_ITEMS_FILE = "config/adjustment_items.json"
 
+# SEC公式必須の明確なUser-Agent
 USER_AGENT = "Koichi Shigihara (koichi.shigihara2@gmail.com) - TanukiValuation/1.0 (+https://github.com/koichi-shigihara2/On-a-journey)"
 
 def create_session():
     session = requests.Session()
-    retry_strategy = Retry(total=5, backoff_factor=2, status_forcelist=[403, 429, 500, 502, 503, 504])
+    # ★★★ さらに強いリトライ設定 ★★★
+    retry_strategy = Retry(
+        total=8,                    # 最大8回
+        backoff_factor=3,           # 指数バックオフを長めに
+        status_forcelist=[403, 429, 500, 502, 503, 504],
+        allowed_methods=["GET"]
+    )
     adapter = HTTPAdapter(max_retries=retry_strategy)
     session.mount("https://", adapter)
     session.headers.update({"User-Agent": USER_AGENT})
     return session
 
-# （以下は前回の強化版と同じロジック）
+# ====================== ヘルパー ======================
 def normalize_value(value: Any) -> float:
     if isinstance(value, (int, float)):
         return float(value)
@@ -77,26 +84,27 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict]:
     quarterly_data = []
     diluted_shares = 0.0
 
-    for attempt in range(5):
+    for attempt in range(8):
         try:
-            resp = session.get(url, timeout=20)
+            resp = session.get(url, timeout=25)
             if resp.status_code == 200:
                 break
             if resp.status_code == 403:
-                wait = 2 ** attempt
-                print(f"   [DEBUG {ticker}] 403 Forbidden → {wait}秒待機 ({attempt+1}/5)")
+                wait = 5 * (2 ** attempt)   # 5秒→10秒→20秒→40秒...
+                print(f"   [DEBUG {ticker}] 403 Forbidden → {wait}秒待機 ({attempt+1}/8)")
                 time.sleep(wait)
                 continue
             print(f"Error fetching company facts: {resp.status_code} {resp.reason}")
             return []
         except Exception as e:
             print(f"   [DEBUG {ticker}] リクエスト例外: {e}")
-            time.sleep(2 ** attempt)
+            time.sleep(5 * (2 ** attempt))
 
     else:
-        print(f"   [DEBUG {ticker}] 最大リトライ失敗")
+        print(f"   [DEBUG {ticker}] 最大リトライ失敗 → データ取得不可")
         return []
 
+    # 以下は前回と同じ処理（省略せず全文）
     facts = resp.json().get('facts', {}).get('us-gaap', {})
     required_tags = load_required_xbrl_tags()
 
