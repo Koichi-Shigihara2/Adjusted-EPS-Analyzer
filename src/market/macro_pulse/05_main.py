@@ -1,4 +1,4 @@
-"""
+﻿"""
 MACRO PULSE — Economic Indicators Auto-Update  v6.0
 ====================================================
 変更点 (v5.0 → v6.0):
@@ -1287,7 +1287,7 @@ def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
         ('Philadelphia Fed Manufacturing', 'philly'),
         ('Chicago Fed National Activity', 'cfnai'),
         ('Initial Claims 4W MA', 'claims'),
-        ('CB Consumer Confidence', 'cbcc2'),
+        ('Building Permits', 'cbcc2'),
         ('Michigan Consumer Sentiment', 'cbcc'),
         ('Sahm Rule Recession Indicator', 'sahm'),
     ]
@@ -1308,7 +1308,7 @@ def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
         elif key == 'hy':
             s = 90 if val > 6 else 70 if val > 4.5 else 40 if val > 3.5 else 15
         elif key == 'cbcc2':
-            s = 15 if val >= 110 else 35 if val >= 100 else 60 if val >= 90 else 85
+            s = 15 if val >= 1500 else 35 if val >= 1300 else 60 if val >= 1100 else 85
         elif key == 'philly':
             s = 88 if val < -10 else 65 if val < 0 else 35 if val < 5 else 12
         elif key == 'cfnai':
@@ -1451,7 +1451,7 @@ def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
 {chr(10).join(event_lines) if event_lines else '  なし'}
 
 以下のJSON形式で回答してください（マークダウンなし、バッククォートなし）:
-{{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で。各指標の差分データを根拠として言及すること（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個（200字以内）","indicator_comments":"Yield Curve 10Y-2Y:コメント;HY Spread:コメント;Philadelphia Fed Manufacturing:コメント;Chicago Fed National Activity:コメント;Initial Claims 4W MA:コメント;CB Consumer Confidence:コメント;Michigan Consumer Sentiment:コメント;Sahm Rule Recession Indicator:コメント の形式で必ず半角セミコロン(;)で8個に区切る。各コメントは20字以内。句読点に全角セミコロンや。を使わないこと"}}"""
+{{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で。各指標の差分データを根拠として言及すること（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個（200字以内）","indicator_comments":"Yield Curve 10Y-2Y:コメント;HY Spread:コメント;Philadelphia Fed Manufacturing:コメント;Chicago Fed National Activity:コメント;Initial Claims 4W MA:コメント;Building Permits:コメント;Michigan Consumer Sentiment:コメント;Sahm Rule Recession Indicator:コメント の形式で必ず半角セミコロン(;)で8個に区切る。各コメントは20字以内。句読点に全角セミコロンや。を使わないこと"}}"""
 
     try:
         url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"

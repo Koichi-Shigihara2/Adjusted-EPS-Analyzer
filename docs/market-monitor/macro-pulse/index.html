@@ -240,9 +240,6 @@
     .cmp-delta.dn{color:var(--grn)}
     .cmp-delta.flat{color:var(--mut)}
     .cmp-snap-label{font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em}
-    /* ── 手動入力警告 ── */
-    .manual-alert{display:none;border:1px solid rgba(245,158,11,.4);background:rgba(245,158,11,.06);padding:10px 16px;margin-bottom:14px;font-family:var(--mono);font-size:10px;color:var(--amb);line-height:1.8}
-    .manual-alert-title{font-size:11px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
     /* ── L3スライダー ── */
     .l3-slider-wrap{padding:10px 20px 4px;border-top:1px solid var(--bdr);display:flex;align-items:center;gap:12px;flex-wrap:wrap}
     .l3-slider-label{font-family:var(--mono);font-size:9px;color:var(--mut);white-space:nowrap}
@@ -300,11 +297,6 @@
   </div>
 
 
-  <!-- ⑥ 手動入力未入力アラート -->
-  <div class="manual-alert" id="manualAlert">
-    <div class="manual-alert-title">⚠ 手動入力データ未入力の可能性</div>
-    <div id="manualAlertBody"></div>
-  </div>
 
   <!-- ① 景気フェーズ判定 -->
   <div class="sec">① 景気フェーズ判定</div>
@@ -672,7 +664,6 @@ function render() {
   renderPhaseGauge();
   renderL2();
   renderRecentSignals();
-  checkManualInputAlerts();
   requestAnimationFrame(() => {
     renderScoreHistory();
     renderL3();
@@ -765,7 +756,7 @@ function renderPhaseGauge() {
   const cfnai  =latestActual('Chicago Fed National Activity');
   const claims=latestActual('Initial Claims 4W MA');
   const cbcc  =latestActual('Michigan Consumer Sentiment');
-  const cbcc2 =latestActual('CB Consumer Confidence');
+  const cbcc2 =latestActual('Building Permits');
   const sahm   =latestActual('Sahm Rule Recession Indicator');
 
   const signals=[];
@@ -783,10 +774,10 @@ function renderPhaseGauge() {
   signals.push({name:'HY Spread',val:hyLabel,score:hyScore,signal:hySignal,weight:15,lead:'先行2ヶ月',desc:'ハイイールド債と国債の利回り差。信用リスクの高まりを示し、拡大時は景気後退のサイン。',thresh:'BULL≤4.0% / BEAR≥6.5%'});
 
   let cbcc2Score=50,cbcc2Signal='neutral',cbcc2Label='—';
-  if(cbcc2!==null){cbcc2Label=cbcc2.toFixed(1);
-    if(cbcc2>=110){cbcc2Score=15;cbcc2Signal='bull';}else if(cbcc2>=100){cbcc2Score=35;cbcc2Signal='neutral';}
-    else if(cbcc2>=90){cbcc2Score=60;cbcc2Signal='caution';}else{cbcc2Score=85;cbcc2Signal='bear';}}
-  signals.push({name:'CB Confidence',val:cbcc2Label,score:cbcc2Score,signal:cbcc2Signal,weight:10,lead:'先行2ヶ月',desc:'コンファレンスボード消費者信頼感指数。消費者の景気見通しを反映。100が基準値。',thresh:'BULL≥110 / BEAR≤90'});
+  if(cbcc2!==null){cbcc2Label=(cbcc2/1000).toFixed(0)+'K';
+    if(cbcc2>=1500){cbcc2Score=15;cbcc2Signal='bull';}else if(cbcc2>=1300){cbcc2Score=35;cbcc2Signal='neutral';}
+    else if(cbcc2>=1100){cbcc2Score=60;cbcc2Signal='caution';}else{cbcc2Score=85;cbcc2Signal='bear';}}
+  signals.push({name:'Building Permits',val:cbcc2Label,score:cbcc2Score,signal:cbcc2Signal,weight:10,lead:'先行3ヶ月',desc:'住宅着工許可件数。住宅投資と建設活動の先行指標。景気サイクルに敏感に反応する。',thresh:'BULL≥1500K / BEAR≤1100K'});
 
   let phillyScore=50,phillySignal='neutral',phillyLabel='—';
   if(philly!==null){phillyLabel=philly.toFixed(1);const t=trend3('Philadelphia Fed Manufacturing');
@@ -901,7 +892,7 @@ function renderL2() {
     {label:'Initial Claims 4WMA',labelJa:'新規失業保険申請4週MA',key:'Initial Claims 4W MA',mid:230000,bull:215000,bear:245000,dir:'left',fmt:v=>(v/1000).toFixed(1)+'K',rMin:180000,rMax:400000},
     // 🛍️ 消費・信頼感
     {label:'Michigan Sentiment',labelJa:'ミシガン消費者信頼感',key:'Michigan Consumer Sentiment',mid:80,bull:90,bear:65,dir:'right',fmt:v=>v.toFixed(1),rMin:50,rMax:110},
-    {label:'CB Cons. Confidence',labelJa:'CB消費者信頼感',key:'CB Consumer Confidence',mid:100,bull:110,bear:90,dir:'right',fmt:v=>v.toFixed(1),rMin:50,rMax:140},
+    {label:'Building Permits',labelJa:'住宅着工許可件数',key:'Building Permits',mid:1300,bull:1500,bear:1100,dir:'right',fmt:v=>(v/1000).toFixed(0)+'K',rMin:500,rMax:2200},
   ];
 
   const signalColor={BULL:'var(--grn)',CAUTION:'var(--amb)',NEUTRAL:'var(--mut)',BEAR:'var(--red)'};
@@ -996,7 +987,7 @@ const L3_INDICATORS=[
   {label:'Philly Fed',    key:'Philadelphia Fed Manufacturing',  min:-30,   max:30},
   {label:'CFNAI',         key:'Chicago Fed National Activity',   min:-3,    max:1},
   {label:'Sahm Rule',      key:'Sahm Rule Recession Indicator',  min:0,     max:1.5},
-  {label:'CB Confidence', key:'CB Consumer Confidence',          min:50,    max:140},
+  {label:'Bldg Permits',  key:'Building Permits',                min:500,   max:2200},
   {label:'Michigan',      key:'Michigan Consumer Sentiment',     min:50,    max:110},
   {label:'Initial Clms',  key:'Initial Claims 4W MA',            min:350000,max:180000},
   {label:'HY Spread',     key:'HY Spread',                       min:10,    max:2.5},
@@ -1051,7 +1042,7 @@ function buildL3Snapshots(){
 
   // 月次指標の発表日を追加
   const monthlyInds = ['Philadelphia Fed Manufacturing','Chicago Fed National Activity',
-    'Michigan Consumer Sentiment','CB Consumer Confidence','Sahm Rule Recession Indicator','Initial Claims 4W MA'];
+    'Michigan Consumer Sentiment','Building Permits','Sahm Rule Recession Indicator','Initial Claims 4W MA'];
   DATA.forEach(r=>{
     const d = new Date(r[COL.date]); d.setHours(0,0,0,0);
     if(d >= start && d <= today && monthlyInds.includes(r[COL.indicator].trim())){
@@ -1265,7 +1256,7 @@ function buildScoreTimeSeries(startDate, endDate) {
   const changeDates = new Set();
   const allInds = ['Yield Curve 10Y-2Y','HY Spread',
     'Philadelphia Fed Manufacturing','Chicago Fed National Activity',
-    'Initial Claims 4W MA','CB Consumer Confidence','Michigan Consumer Sentiment',
+    'Initial Claims 4W MA','Building Permits','Michigan Consumer Sentiment',
     'Sahm Rule Recession Indicator'];
 
 
@@ -1495,7 +1486,6 @@ function renderRecentSignals() {
     'Philadelphia Fed Manufacturing',
     'Chicago Fed National Activity',
     'Michigan Consumer Sentiment',
-    'CB Consumer Confidence',
     'Building Permits',
     'Conference Board LEI',
     'NFP',
@@ -1649,7 +1639,7 @@ function computeScoreAsOf(asOf) {
   const philly = la('Philadelphia Fed Manufacturing');
   const cfnai  = la('Chicago Fed National Activity');
   const claims = la('Initial Claims 4W MA');
-  const cbcc2  = la('CB Consumer Confidence');
+  const cbcc2  = la('Building Permits');
   const cbcc   = la('Michigan Consumer Sentiment');
   const sahm   = la('Sahm Rule Recession Indicator');
 
@@ -1661,7 +1651,7 @@ function computeScoreAsOf(asOf) {
       case 'hy':
         return {score: val>6?90:val>4.5?70:val>3.5?40:15, w:15};
       case 'cbcc2':
-        return {score: val>=110?15:val>=100?35:val>=90?60:85, w:10};
+        return {score: val>=1500?15:val>=1300?35:val>=1100?60:85, w:10};
       case 'philly':
         return {score: val<-10?88:val<0?65:val<5?35:12, w:18};
       case 'cfnai':
@@ -1774,38 +1764,6 @@ function renderCustomCmp() {
 }
 
 // ═══════════════════════════════════════════════════════
-// ⑥ 手動入力データ未入力チェック
-// ═══════════════════════════════════════════════════════
-function checkManualInputAlerts() {
-  if(!DATA.length) return;
-
-  const MANUAL_INDICATORS = [
-    {name:'Philadelphia Fed Manufacturing',     freq:'月次（毎月第1営業日）'},
-    {name:'Chicago Fed National Activity', freq:'月次（毎月第1週金曜）'},
-  ];
-
-  const today = new Date(); today.setHours(0,0,0,0);
-  const alerts = [];
-
-  MANUAL_INDICATORS.forEach(({name,freq}) => {
-    const arr=IND_INDEX[name];
-    if(!arr||!arr.length){alerts.push(`${name}：データなし`);return;}
-    const latest = new Date(arr[arr.length-1].dateMs);
-    const daysSince = Math.round((today-latest)/86400000);
-    if(daysSince>35){
-      const ds=latest.toISOString().slice(0,10);
-      alerts.push(`${name}：最終入力 ${ds}（${daysSince}日前）— 未入力の可能性。${freq}`);
-    }
-  });
-
-  const alertEl = el('manualAlert');
-  if(alerts.length>0){
-    el('manualAlertBody').innerHTML = alerts.join('<br>');
-    alertEl.style.display = 'block';
-  } else {
-    alertEl.style.display = 'none';
-  }
-}
 
 // ═══════════════════════════════════════════════════════
 // ⑦ AI WEEKLY COMMENTARY
