@@ -465,7 +465,7 @@
     }
     /* VIXバー（右端視覚化） */
     .tl-vix-bar-wrap {
-      width: 28px;
+      width: 52px;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
@@ -474,14 +474,16 @@
     }
     .tl-vix-val {
       font-family: var(--mono);
-      font-size: 10px;
+      font-size: 12px;
+      font-weight: 700;
       color: var(--txt);
       text-align: right;
     }
     .tl-vix-chg {
       font-family: var(--mono);
-      font-size: 9px;
+      font-size: 8px;
       text-align: right;
+      letter-spacing: .04em;
     }
     .up   { color: var(--red); }
     .down { color: var(--grn); }
@@ -739,14 +741,13 @@
     <div class="osc-card">
       <div class="osc-header">
         <span class="osc-title">Sentiment Score History</span>
-        <div class="osc-period-btns" id="oscPeriodBtns"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="chart-metric-btns" id="oscMetricBtns"></div>
+          <div class="osc-period-btns" id="oscPeriodBtns"></div>
+        </div>
       </div>
       <div class="osc-chart-wrap"><canvas id="oscChart"></canvas></div>
-      <div class="osc-legend">
-        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:#3b82f6"></div>Score</div>
-        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(244,63,94,.25)"></div>Fear Zone (&lt;35)</div>
-        <div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(16,185,129,.25)"></div>Greed Zone (&gt;65)</div>
-      </div>
+      <div class="osc-legend" id="oscLegend"></div>
     </div>
 
   </div>
@@ -923,6 +924,14 @@ const OSC_PERIODS = [
   { label:"全期間", days:9999 },
 ];
 
+const OSC_METRICS = [
+  { key:"score",    label:"Score",    color:"#3b82f6", extract: d => d.sentiment?.score ?? null, yMin:0, yMax:100, zones:true },
+  { key:"vix",      label:"VIX",      color:"#f43f5e", extract: d => d.indicators?.["VIX指数"]?.value ?? null, yMin:null, yMax:null, zones:false },
+  { key:"ad_ratio", label:"AD Ratio", color:"#22d3ee", extract: d => d.sentiment?.breadth?.ad_ratio_5d ?? null, yMin:null, yMax:null, zones:false },
+  { key:"nh_nl",    label:"NH-NL",    color:"#a78bfa", extract: d => d.sentiment?.breadth?.nh_nl_diff ?? null, yMin:null, yMax:null, zones:false },
+  { key:"pct50ma",  label:">50MA%",   color:"#f59e0b", extract: d => d.sentiment?.breadth?.pct_above_50ma ?? null, yMin:0, yMax:100, zones:false },
+];
+
 const SUB_SCORE_NAMES = {
   vix_level:    "VIX Level",
   sp500_ma_dev: "S&P vs 50MA",
@@ -944,6 +953,7 @@ let activeMetrics = new Set(["VIX指数", "S&P500"]);
 let chartInst    = null;
 let oscChartInst = null;
 let oscDays      = 30;
+let activeOscMetrics = new Set(["score"]);
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ユーティリティ
@@ -1020,6 +1030,12 @@ function renderTimeline() {
     const chg = fmtChg(vix?.change_percent);
     const pc  = phaseClass(d.judgment);
     const isLast = ri === rev.length - 1;
+    const sent = d.sentiment;
+    const sentScore = sent?.score;
+    const sentColor = sentScore != null ? sentimentColor(sentScore) : "var(--mut)";
+    const sentLabel = sent?.label || "";
+    // ラベル短縮表示
+    const shortLabel = {"EXTREME FEAR":"X-FEAR","FEAR":"FEAR","CAUTION":"CAUTION","NEUTRAL":"NEUTRAL","GREED":"GREED","EXTREME GREED":"X-GREED"}[sentLabel] || sentLabel;
     return `<div class="tl-item ${i===selectedIdx?"active":""}" onclick="selectItem(${i})">
       <div class="tl-vis">
         <div class="tl-dot ${pc}"></div>
@@ -1031,8 +1047,8 @@ function renderTimeline() {
         ${d.haiku ? `<div class="tl-haiku">${d.haiku}</div>` : ""}
       </div>
       <div class="tl-vix-bar-wrap">
-        <div class="tl-vix-val">${vix ? vix.value.toFixed(2) : "-"}</div>
-        <div class="tl-vix-chg ${chg.cls}">${chg.text}</div>
+        <div class="tl-vix-val" style="color:${sentColor}">${sentScore != null ? sentScore.toFixed(0) : "-"}</div>
+        <div class="tl-vix-chg" style="color:${sentColor}">${shortLabel}</div>
       </div>
     </div>`;
   }).join("");
@@ -1293,6 +1309,27 @@ function switchOscPeriod(days) {
   renderOscChart();
 }
 
+function renderOscMetricBtns() {
+  document.getElementById("oscMetricBtns").innerHTML = OSC_METRICS.map(m =>
+    `<button class="metric-btn ${activeOscMetrics.has(m.key)?"active":""}"
+      onclick="toggleOscMetric('${m.key}')"
+      style="color:${activeOscMetrics.has(m.key)?m.color:'var(--mut)'};
+             border-color:${activeOscMetrics.has(m.key)?m.color+'80':'var(--bdr)'}">
+      <span class="mbdot" style="background:${m.color}"></span>${m.label}
+    </button>`
+  ).join("");
+}
+function toggleOscMetric(key) {
+  if (activeOscMetrics.has(key)) {
+    if (activeOscMetrics.size <= 1) return;
+    activeOscMetrics.delete(key);
+  } else {
+    activeOscMetrics.add(key);
+  }
+  renderOscMetricBtns();
+  renderOscChart();
+}
+
 function renderOscChart() {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - oscDays);
@@ -1301,39 +1338,84 @@ function renderOscChart() {
   if (!oscData.length) return;
 
   const labels = oscData.map(d => fmtDate(d.date));
-  const scores = oscData.map(d => d.sentiment?.score ?? null);
-  const colors = scores.map(s => s != null ? sentimentColor(s) : "#64748b");
+  const activeMetricList = OSC_METRICS.filter(m => activeOscMetrics.has(m.key));
+  const isMulti = activeMetricList.length > 1;
+  const hasScore = activeOscMetrics.has("score");
+
+  // データセット構築
+  const datasets = activeMetricList.map(m => {
+    const raw = oscData.map(d => m.extract(d));
+    let plotData = raw;
+
+    // 複数メトリクス時は正規化（0-100スケール）
+    if (isMulti && m.key !== "score") {
+      const valid = raw.filter(v => v != null);
+      if (valid.length > 0) {
+        const mn = Math.min(...valid);
+        const mx = Math.max(...valid);
+        plotData = raw.map(v => v == null ? null : mx === mn ? 50 : (v - mn) / (mx - mn) * 100);
+      }
+    }
+
+    const colors = m.key === "score"
+      ? raw.map(s => s != null ? sentimentColor(s) : "#64748b")
+      : raw.map(() => m.color);
+
+    return {
+      label: m.label,
+      data: plotData,
+      borderColor: m.color,
+      pointBackgroundColor: colors,
+      pointBorderColor: "transparent",
+      pointRadius: oscData.length > 40 ? 2 : (m.key === "score" ? 5 : 3),
+      pointHoverRadius: 7,
+      borderWidth: m.key === "score" ? 2 : 1.5,
+      fill: false,
+      tension: 0.3,
+      borderDash: m.key === "score" ? [] : [4, 2],
+      _rawData: raw,
+      _meta: m,
+      segment: m.key === "score" ? {
+        borderColor: ctx => {
+          const s = raw[ctx.p0DataIndex];
+          return s != null ? sentimentColor(s) : "#64748b";
+        }
+      } : undefined
+    };
+  });
+
+  // Y軸設定
+  const useZones = hasScore && !isMulti;
+  const yConfig = {
+    min: (hasScore || isMulti) ? 0 : undefined,
+    max: (hasScore || isMulti) ? 100 : undefined,
+    ticks: {
+      color: "#64748b",
+      font: { family: "Space Mono", size: 9 },
+      stepSize: useZones ? 20 : undefined,
+      callback: useZones ? (v => {
+        if (v === 0) return "0";
+        if (v === 20) return "FEAR";
+        if (v === 50) return "50";
+        if (v === 80) return "GREED";
+        if (v === 100) return "100";
+        return "";
+      }) : undefined
+    },
+    grid: {
+      color: ctx => {
+        if (useZones && ctx.tick.value === 35) return "rgba(244,63,94,.2)";
+        if (useZones && ctx.tick.value === 65) return "rgba(16,185,129,.2)";
+        return "rgba(30,40,64,.5)";
+      }
+    },
+    border: { color: "#1e2840" }
+  };
 
   if (oscChartInst) oscChartInst.destroy();
   oscChartInst = new Chart(document.getElementById("oscChart"), {
     type: "line",
-    data: {
-      labels,
-      datasets: [
-        {
-          label: "Sentiment",
-          data: scores,
-          borderColor: "#3b82f6",
-          backgroundColor: ctx => {
-            const idx = ctx.dataIndex;
-            return colors[idx] || "#3b82f6";
-          },
-          pointBackgroundColor: colors,
-          pointBorderColor: "transparent",
-          pointRadius: oscData.length > 40 ? 2 : 5,
-          pointHoverRadius: 7,
-          borderWidth: 2,
-          fill: false,
-          tension: 0.3,
-          segment: {
-            borderColor: ctx => {
-              const s = scores[ctx.p0DataIndex];
-              return s != null ? sentimentColor(s) : "#64748b";
-            }
-          }
-        }
-      ]
-    },
+    data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -1350,10 +1432,15 @@ function renderOscChart() {
           bodyFont: { family: "Space Mono", size: 11 },
           callbacks: {
             label: ctx => {
-              const sc = scores[ctx.dataIndex];
-              const d = oscData[ctx.dataIndex];
-              const lbl = d?.sentiment?.label || "";
-              return sc != null ? ` Score: ${sc.toFixed(1)} (${lbl})` : " —";
+              const ds = ctx.dataset;
+              const raw = ds._rawData?.[ctx.dataIndex];
+              const m = ds._meta;
+              if (m?.key === "score") {
+                const d = oscData[ctx.dataIndex];
+                const lbl = d?.sentiment?.label || "";
+                return raw != null ? ` Score: ${raw.toFixed(1)} (${lbl})` : " —";
+              }
+              return raw != null ? ` ${m?.label || ds.label}: ${raw.toFixed(2)}` : " —";
             }
           }
         },
@@ -1365,48 +1452,21 @@ function renderOscChart() {
           grid: { color: "rgba(30,40,64,.5)" },
           border: { color: "#1e2840" }
         },
-        y: {
-          min: 0,
-          max: 100,
-          ticks: {
-            color: "#64748b",
-            font: { family: "Space Mono", size: 9 },
-            stepSize: 20,
-            callback: v => {
-              if (v === 0) return "0";
-              if (v === 20) return "FEAR";
-              if (v === 50) return "50";
-              if (v === 80) return "GREED";
-              if (v === 100) return "100";
-              return "";
-            }
-          },
-          grid: {
-            color: ctx => {
-              if (ctx.tick.value === 35) return "rgba(244,63,94,.2)";
-              if (ctx.tick.value === 65) return "rgba(16,185,129,.2)";
-              return "rgba(30,40,64,.5)";
-            }
-          },
-          border: { color: "#1e2840" }
-        }
+        y: yConfig
       }
     },
-    plugins: [{
+    plugins: useZones ? [{
       id: "zoneShading",
       beforeDraw(chart) {
-        const { ctx, chartArea: { left, right, top, bottom }, scales: { y } } = chart;
-        // Fear zone (0-35)
+        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
         const y35 = y.getPixelForValue(35);
         const yBottom = y.getPixelForValue(0);
         ctx.fillStyle = "rgba(244,63,94,.06)";
         ctx.fillRect(left, y35, right - left, yBottom - y35);
-        // Greed zone (65-100)
         const y65 = y.getPixelForValue(65);
         const yTop = y.getPixelForValue(100);
         ctx.fillStyle = "rgba(16,185,129,.06)";
         ctx.fillRect(left, yTop, right - left, y65 - yTop);
-        // Threshold lines
         ctx.setLineDash([4, 4]);
         ctx.lineWidth = 1;
         ctx.strokeStyle = "rgba(244,63,94,.3)";
@@ -1415,8 +1475,18 @@ function renderOscChart() {
         ctx.beginPath(); ctx.moveTo(left, y65); ctx.lineTo(right, y65); ctx.stroke();
         ctx.setLineDash([]);
       }
-    }]
+    }] : []
   });
+
+  // 凡例更新
+  const noteText = isMulti ? ' <span style="color:var(--mut);font-size:8px">（Score以外は正規化）</span>' : '';
+  document.getElementById("oscLegend").innerHTML =
+    activeMetricList.map(m =>
+      `<div class="osc-legend-item"><div class="osc-legend-dot" style="background:${m.color}"></div>${m.label}</div>`
+    ).join("") +
+    (useZones ? `<div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(244,63,94,.25)"></div>Fear Zone</div>
+      <div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(16,185,129,.25)"></div>Greed Zone</div>` : '') +
+    noteText;
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1434,6 +1504,7 @@ function selectItem(i) {
 // ══════════════════════════════════════════════════════════════════════════════
 function renderAll() {
   renderGauge();
+  renderOscMetricBtns();
   renderOscPeriodBtns();
   renderOscChart();
   renderPeriodGroup();
