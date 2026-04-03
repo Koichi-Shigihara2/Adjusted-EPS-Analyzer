@@ -20,7 +20,9 @@ import os
 import sys
 import json
 import time
+import io
 import pandas as pd
+import requests
 import yfinance as yf
 from datetime import datetime, timezone, timedelta
 
@@ -37,7 +39,7 @@ JST = timezone(timedelta(hours=9))
 def get_sp500_tickers():
     """
     S&P500構成銘柄リストを取得。
-    まずキャッシュ（7日以内）を確認し、なければWikipediaから取得。
+    優先順: キャッシュ(7日) → Wikipedia(requests) → GitHub CSV → 期限切れキャッシュ
     """
     # キャッシュ確認
     if os.path.exists(TICKERS_CACHE):
@@ -51,16 +53,42 @@ def get_sp500_tickers():
         except Exception as e:
             print(f"[WARN] キャッシュ読み込み失敗: {e}")
 
-    # WikipediaからS&P500構成銘柄を取得
+    tickers = None
+
+    # ソース1: Wikipedia（requests で User-Agent を付けて取得）
     print("[INFO] WikipediaからS&P500構成銘柄を取得中...")
     try:
-        tables = pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")
+        headers = {"User-Agent": "Mozilla/5.0 (compatible; MarketPulseBot/1.0)"}
+        resp = requests.get(
+            "https://en.wikipedia.org/wiki/List_of_S%26P_500_companies",
+            headers=headers,
+            timeout=30
+        )
+        resp.raise_for_status()
+        tables = pd.read_html(io.StringIO(resp.text))
         df = tables[0]
         tickers = df["Symbol"].str.replace(".", "-", regex=False).tolist()
         tickers = [t.strip() for t in tickers if t.strip()]
-        print(f"[INFO] S&P500銘柄リスト取得完了: {len(tickers)}銘柄")
+        print(f"[INFO] Wikipedia取得成功: {len(tickers)}銘柄")
+    except Exception as e:
+        print(f"[WARN] Wikipedia取得失敗: {e}")
 
-        # キャッシュ保存
+    # ソース2: GitHub datasets/s-and-p-500-companies（フォールバック）
+    if not tickers:
+        print("[INFO] GitHub CSVからS&P500構成銘柄を取得中...")
+        try:
+            csv_url = "https://raw.githubusercontent.com/datasets/s-and-p-500-companies/main/data/constituents.csv"
+            resp = requests.get(csv_url, timeout=30)
+            resp.raise_for_status()
+            df = pd.read_csv(io.StringIO(resp.text))
+            tickers = df["Symbol"].str.replace(".", "-", regex=False).tolist()
+            tickers = [t.strip() for t in tickers if t.strip()]
+            print(f"[INFO] GitHub CSV取得成功: {len(tickers)}銘柄")
+        except Exception as e:
+            print(f"[WARN] GitHub CSV取得失敗: {e}")
+
+    # 取得成功 → キャッシュ保存
+    if tickers and len(tickers) >= 400:
         os.makedirs(DATA_DIR, exist_ok=True)
         with open(TICKERS_CACHE, 'w', encoding='utf-8') as f:
             json.dump({
@@ -69,15 +97,16 @@ def get_sp500_tickers():
                 "tickers": tickers
             }, f, ensure_ascii=False, indent=2)
         return tickers
-    except Exception as e:
-        print(f"[ERROR] S&P500銘柄リスト取得失敗: {e}")
-        # フォールバック: キャッシュがあれば期限切れでも使う
-        if os.path.exists(TICKERS_CACHE):
-            with open(TICKERS_CACHE, 'r', encoding='utf-8') as f:
-                cache = json.load(f)
-            print(f"[WARN] 期限切れキャッシュを使用 ({len(cache['tickers'])}銘柄)")
-            return cache["tickers"]
-        raise
+
+    # すべて失敗 → 期限切れキャッシュを使う
+    if os.path.exists(TICKERS_CACHE):
+        with open(TICKERS_CACHE, 'r', encoding='utf-8') as f:
+            cache = json.load(f)
+        print(f"[WARN] 期限切れキャッシュを使用 ({len(cache['tickers'])}銘柄)")
+        return cache["tickers"]
+
+    print("[ERROR] S&P500銘柄リストの取得手段がすべて失敗しました")
+    sys.exit(1)
 
 
 def compute_breadth(tickers):
