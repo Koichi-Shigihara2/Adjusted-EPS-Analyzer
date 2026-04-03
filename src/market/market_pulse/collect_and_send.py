@@ -32,6 +32,7 @@ REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.p
 DATA_DIR = os.path.join(REPO_ROOT, "docs", "market-monitor", "market-pulse", "data")
 JSON_PATH = os.path.join(DATA_DIR, "market_data.json")
 CSV_PATH = os.path.join(DATA_DIR, "market_data.csv")
+BREADTH_JSON = os.path.join(DATA_DIR, "breadth_data.json")
 
 # CSVのカラム定義（必要に応じて拡張）
 CSV_COLUMNS = [
@@ -96,74 +97,90 @@ def clamp01(v):
 
 def compute_sentiment(structured_data):
     """
-    既存の structured_data から5指標でセンチメントスコア(0-100)を算出。
+    structured_data + breadth_data.json から7指標でセンチメントスコア(0-100)を算出。
     0=EXTREME FEAR, 50=NEUTRAL, 100=EXTREME GREED
 
-    サブ指標 (Phase 1):
-      1. VIX水準             (Weight 30%) — 12→100, 35→0
-      2. S&P500 vs 50日MA乖離 (Weight 25%) — -8%→0, +8%→100 (別途取得)
-      3. HYG/LQD比 変化方向   (Weight 20%) — 下落→0, 上昇→100
-      4. グロース対バリュー比  (Weight 15%) — バリュー優勢→0, グロース優勢→100
-      5. 出来高比(Distribution)(Weight 10%) — 出来高比>1.1+下落→0, 通常→100
+    サブ指標 (Phase 2 — 7指標版):
+      1. VIX水準             (Weight 25%) — 12→100, 35→0
+      2. S&P500 vs 50日MA乖離 (Weight 20%) — -8%→0, +8%→100
+      3. AD Ratio (5日)       (Weight 15%) — 0.5→0, 2.0→100
+      4. HYG/LQD比 変化方向   (Weight 12%) — 下落→0, 上昇→100
+      5. NH-NL差分            (Weight 10%) — -50→0, +50→100
+      6. グロース対バリュー比  (Weight 10%) — バリュー優勢→0, グロース優勢→100
+      7. 出来高比(Distribution)(Weight  8%) — 出来高比>1.1+下落→0, 通常→100
     """
     sub_scores = {}
 
-    # --- 1. VIX水準 (30%) ---
+    # breadth_data.json を読み込み
+    breadth = _load_latest_breadth()
+
+    # --- 1. VIX水準 (25%) ---
     vix_data = structured_data.get("VIX指数")
     if vix_data and vix_data.get("value") is not None:
         vix = vix_data["value"]
-        # VIX 12→100(GREED), 35→0(FEAR) の線形補間（逆転）
         score = clamp01((35 - vix) / (35 - 12))
-        sub_scores["vix_level"] = {"score": score, "weight": 0.30, "raw": vix}
+        sub_scores["vix_level"] = {"score": score, "weight": 0.25, "raw": vix}
     else:
-        sub_scores["vix_level"] = {"score": 0.5, "weight": 0.30, "raw": None}
+        sub_scores["vix_level"] = {"score": 0.5, "weight": 0.25, "raw": None}
 
-    # --- 2. S&P500 vs 50日MA乖離率 (25%) ---
+    # --- 2. S&P500 vs 50日MA乖離率 (20%) ---
     sp500_ma_dev = _get_sp500_ma_deviation()
     if sp500_ma_dev is not None:
-        # -8%→0, +8%→100
         score = clamp01((sp500_ma_dev + 8) / 16)
-        sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.25, "raw": round(sp500_ma_dev, 2)}
+        sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.20, "raw": round(sp500_ma_dev, 2)}
     else:
-        sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.25, "raw": None}
+        sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.20, "raw": None}
 
-    # --- 3. HYG/LQD比 変化方向 (20%) ---
+    # --- 3. AD Ratio 5日 (15%) ---
+    if breadth and breadth.get("ad_ratio_5d") is not None:
+        ad5 = breadth["ad_ratio_5d"]
+        # 0.5→0(FEAR), 2.0→100(GREED) の線形補間
+        score = clamp01((ad5 - 0.5) / (2.0 - 0.5))
+        sub_scores["ad_ratio"] = {"score": score, "weight": 0.15, "raw": ad5}
+    else:
+        sub_scores["ad_ratio"] = {"score": 0.5, "weight": 0.15, "raw": None}
+
+    # --- 4. HYG/LQD比 変化方向 (12%) ---
     hyg_lqd = structured_data.get("HYG対LQD比")
     if hyg_lqd and hyg_lqd.get("change") is not None:
         chg = hyg_lqd["change"]
-        # -0.005→0, +0.005→100 の線形補間
         score = clamp01((chg + 0.005) / 0.01)
-        sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.20, "raw": round(chg, 6)}
+        sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.12, "raw": round(chg, 6)}
     else:
-        sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.20, "raw": None}
+        sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.12, "raw": None}
 
-    # --- 4. グロース対バリュー比 (15%) ---
+    # --- 5. NH-NL差分 (10%) ---
+    if breadth and breadth.get("nh_nl_diff") is not None:
+        nh_nl = breadth["nh_nl_diff"]
+        # -50→0(FEAR), +50→100(GREED) の線形補間
+        score = clamp01((nh_nl + 50) / 100)
+        sub_scores["nh_nl"] = {"score": score, "weight": 0.10, "raw": nh_nl}
+    else:
+        sub_scores["nh_nl"] = {"score": 0.5, "weight": 0.10, "raw": None}
+
+    # --- 6. グロース対バリュー比 (10%) ---
     gv = structured_data.get("グロース対バリュー比")
     if gv and gv.get("diff_percent") is not None:
         diff = gv["diff_percent"]
-        # -3%→0, +3%→100
         score = clamp01((diff + 3) / 6)
-        sub_scores["growth_value"] = {"score": score, "weight": 0.15, "raw": round(diff, 2)}
+        sub_scores["growth_value"] = {"score": score, "weight": 0.10, "raw": round(diff, 2)}
     else:
-        sub_scores["growth_value"] = {"score": 0.5, "weight": 0.15, "raw": None}
+        sub_scores["growth_value"] = {"score": 0.5, "weight": 0.10, "raw": None}
 
-    # --- 5. Distribution判定 (10%) ---
+    # --- 7. Distribution判定 (8%) ---
     sp_data = structured_data.get("S&P500")
     if sp_data and sp_data.get("volume_ratio") is not None and sp_data.get("change_percent") is not None:
         vol_ratio = sp_data["volume_ratio"]
         chg_pct = sp_data["change_percent"]
-        # 出来高比>1.1 かつ 下落 → Distribution (score=0)
-        # 出来高比<0.8 → 閑散 (score=0.5)
-        # 上昇+出来高増 → Accumulation (score=1.0)
         if vol_ratio > 1.1 and chg_pct < -0.3:
             score = 0.0  # Distribution
         elif vol_ratio > 1.1 and chg_pct > 0.3:
             score = 1.0  # Accumulation
         else:
             score = 0.5  # Neutral
-        sub_scores["distribution"] = {"score": score, "weight": 0.10, "raw": {"vol_ratio": vol_ratio, "chg_pct": chg_pct}}
+        sub_scores["distribution"] = {"score": score, "weight": 0.08, "raw": {"vol_ratio": vol_ratio, "chg_pct": chg_pct}}
     else:
-        sub_scores["distribution"] = {"score": 0.5, "weight": 0.10, "raw": None}
+        sub_scores["distribution"] = {"score": 0.5, "weight": 0.08, "raw": None}
 
     # --- 加重平均 ---
     total_score = sum(s["score"] * s["weight"] for s in sub_scores.values())
@@ -193,11 +210,48 @@ def compute_sentiment(structured_data):
             "raw": v["raw"]
         }
 
+    # breadthデータもsentimentに含める（フロントエンド表示用）
+    breadth_summary = None
+    if breadth:
+        breadth_summary = {
+            "advances": breadth.get("advances"),
+            "declines": breadth.get("declines"),
+            "ad_ratio_5d": breadth.get("ad_ratio_5d"),
+            "new_highs_52w": breadth.get("new_highs_52w"),
+            "new_lows_52w": breadth.get("new_lows_52w"),
+            "nh_nl_diff": breadth.get("nh_nl_diff"),
+            "pct_above_50ma": breadth.get("pct_above_50ma"),
+            "pct_above_200ma": breadth.get("pct_above_200ma"),
+            "date": breadth.get("date"),
+        }
+
     return {
         "score": final_score,
         "label": label,
-        "sub_scores": sub_detail
+        "sub_scores": sub_detail,
+        "breadth": breadth_summary,
     }
+
+
+def _load_latest_breadth():
+    """breadth_data.json から最新のブレッスデータを読み込む"""
+    if not os.path.exists(BREADTH_JSON):
+        print("[INFO] breadth_data.json が見つかりません（breadth_calculator.py 未実行）")
+        return None
+    try:
+        with open(BREADTH_JSON, 'r', encoding='utf-8') as f:
+            all_breadth = json.load(f)
+        if not all_breadth:
+            return None
+        # 最新のエントリを返す（日付順ソート済み前提）
+        latest = all_breadth[-1]
+        print(f"[INFO] ブレッスデータ読み込み: {latest.get('date')} "
+              f"ADV={latest.get('advances')} DEC={latest.get('declines')} "
+              f"NH={latest.get('new_highs_52w')} NL={latest.get('new_lows_52w')}")
+        return latest
+    except Exception as e:
+        print(f"[WARN] breadth_data.json読み込み失敗: {e}")
+        return None
 
 
 def _get_sp500_ma_deviation():
