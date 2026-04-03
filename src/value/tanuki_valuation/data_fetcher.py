@@ -21,18 +21,27 @@ class TanukiDataFetcher:
     def get_financials(self, ticker: str) -> dict:
         print(f"   [{ticker}] Alpha Vantage API 取得開始")
 
-        # 1. Overview（shares, ROEなど）
+        # 1. OVERVIEW（ROE, 株価など）
         overview = self._fetch_av(ticker, "OVERVIEW")
-        diluted_shares = 0
+        diluted_shares = 0.0
         roe = 0.0
-
-        if overview and "SharesOutstanding" in overview:
-            diluted_shares = float(overview.get("SharesOutstanding", 0))
-        if overview and "ReturnOnEquityTTM" in overview:
+        if overview:
+            diluted_shares = float(overview.get("SharesOutstanding", 0) or 0)
             roe_str = overview.get("ReturnOnEquityTTM", "0")
             roe = float(roe_str.replace("%", "")) / 100 if "%" in roe_str else float(roe_str) / 100
 
-        # 2. FCF取得（Cash Flow）
+        # 2. INCOME_STATEMENT から shares fallback（成長株対応）
+        if diluted_shares <= 100_000:
+            income = self._fetch_av(ticker, "INCOME_STATEMENT")
+            if income and "annualReports" in income:
+                for report in income["annualReports"][:3]:  # 最新3年
+                    shares = float(report.get("commonStockSharesOutstanding", 0) or 0)
+                    if shares > 100_000:
+                        diluted_shares = shares
+                        print(f"   [{ticker}] INCOME_STATEMENTからshares取得成功: {diluted_shares:,.0f}")
+                        break
+
+        # 3. FCF（CASH_FLOW）
         cf_data = self._fetch_av(ticker, "CASH_FLOW")
         fcf_list = []
         if cf_data and "annualReports" in cf_data:
@@ -44,7 +53,7 @@ class TanukiDataFetcher:
 
         fcf_avg = sum(fcf_list) / len(fcf_list) if fcf_list else 0.0
 
-        # 3. 株価
+        # 4. 株価
         quote = self._fetch_av(ticker, "GLOBAL_QUOTE")
         current_price = float(quote.get("Global Quote", {}).get("05. price", 0)) if quote else 0.0
 
@@ -53,7 +62,7 @@ class TanukiDataFetcher:
         return {
             "fcf_5yr_avg": fcf_avg,
             "diluted_shares": diluted_shares,
-            "roe_10yr_avg": roe,   # OverviewからTTM ROEを取得（簡易10yr代替）
+            "roe_10yr_avg": roe,
             "current_price": current_price,
             "fcf_list_raw": fcf_list,
             "eps_data": {"ticker": ticker}
@@ -68,15 +77,15 @@ class TanukiDataFetcher:
         url = f"https://www.alphavantage.co/query?function={function}&symbol={ticker}&apikey={self.av_key}"
         try:
             resp = requests.get(url, timeout=15)
-            print(f"   [AV STATUS {ticker}] {resp.status_code}")
+            print(f"   [AV STATUS {ticker} {function}] {resp.status_code}")
             if resp.status_code == 200:
                 data = resp.json()
                 with open(cache_path, "w") as f:
                     json.dump(data, f)
                 return data
             else:
-                print(f"   [AV ERROR {ticker}] {resp.status_code}")
+                print(f"   [AV ERROR {ticker} {function}] {resp.status_code}")
                 return None
         except Exception as e:
-            print(f"   [AV EXCEPTION {ticker}] {e}")
+            print(f"   [AV EXCEPTION {ticker} {function}] {e}")
             return None
