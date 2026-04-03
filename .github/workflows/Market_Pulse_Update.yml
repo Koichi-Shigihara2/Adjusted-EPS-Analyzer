@@ -1,4 +1,4 @@
-﻿name: Market_Pulse_Update
+name: Market_Pulse_Update
 
 on:
   schedule:
@@ -28,6 +28,11 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -r requirements.txt
+          pip install lxml html5lib
+
+      - name: Run breadth calculator
+        run: |
+          python src/market/market_pulse/breadth_calculator.py
 
       - name: Run collect_and_send
         env:
