@@ -221,6 +221,47 @@
       text-align: right;
     }
 
+    /* ブレッスサマリー */
+    .breadth-summary {
+      width: 100%;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--bdr);
+    }
+    .breadth-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 2px 0;
+    }
+    .breadth-label {
+      font-family: var(--mono);
+      font-size: 8px;
+      letter-spacing: .06em;
+      color: var(--mut);
+      text-transform: uppercase;
+    }
+    .breadth-val {
+      font-family: var(--mono);
+      font-size: 9px;
+      font-weight: 700;
+    }
+    .breadth-ad-bar {
+      display: flex;
+      height: 4px;
+      width: 100%;
+      margin: 4px 0 2px;
+      gap: 1px;
+    }
+    .breadth-ad-bar .adv-fill {
+      background: var(--grn);
+      height: 100%;
+    }
+    .breadth-ad-bar .dec-fill {
+      background: var(--red);
+      height: 100%;
+    }
+
     /* ── OSCILLATOR CARD ───────────────────────────────── */
     .osc-card {
       background: var(--sur);
@@ -691,6 +732,7 @@
         </div>
       </div>
       <div class="sub-scores" id="subScores"></div>
+      <div class="breadth-summary" id="breadthSummary"></div>
     </div>
 
     <!-- オシレーター -->
@@ -884,7 +926,9 @@ const OSC_PERIODS = [
 const SUB_SCORE_NAMES = {
   vix_level:    "VIX Level",
   sp500_ma_dev: "S&P vs 50MA",
+  ad_ratio:     "AD Ratio 5d",
   hyg_lqd_dir:  "HYG/LQD",
+  nh_nl:        "NH-NL Diff",
   growth_value: "Growth/Value",
   distribution: "Volume Flow",
 };
@@ -1199,6 +1243,39 @@ function renderGauge() {
       <div class="sub-val">${sc.toFixed(0)}</div>
     </div>`;
   }).join("");
+
+  // ブレッスサマリー
+  const b = s.breadth;
+  if (b && b.advances != null) {
+    const total = b.advances + b.declines;
+    const advPct = total > 0 ? (b.advances / total * 100) : 50;
+    const decPct = total > 0 ? (b.declines / total * 100) : 50;
+    document.getElementById("breadthSummary").innerHTML = `
+      <div class="breadth-row">
+        <span class="breadth-label">S&P500 Breadth (${b.date || ''})</span>
+      </div>
+      <div class="breadth-ad-bar">
+        <div class="adv-fill" style="width:${advPct}%"></div>
+        <div class="dec-fill" style="width:${decPct}%"></div>
+      </div>
+      <div class="breadth-row">
+        <span class="breadth-label">\u25B2 ${b.advances}</span>
+        <span class="breadth-label">AD(5d) ${b.ad_ratio_5d || '-'}</span>
+        <span class="breadth-label">\u25BC ${b.declines}</span>
+      </div>
+      <div class="breadth-row" style="margin-top:4px">
+        <span class="breadth-val" style="color:var(--grn)">NH ${b.new_highs_52w || 0}</span>
+        <span class="breadth-val" style="color:${(b.nh_nl_diff||0)>=0?'var(--grn)':'var(--red)'}">${(b.nh_nl_diff||0)>=0?'+':''}${b.nh_nl_diff||0}</span>
+        <span class="breadth-val" style="color:var(--red)">NL ${b.new_lows_52w || 0}</span>
+      </div>
+      ${b.pct_above_50ma != null ? `<div class="breadth-row" style="margin-top:2px">
+        <span class="breadth-label">&gt;50MA ${b.pct_above_50ma}%</span>
+        ${b.pct_above_200ma != null ? `<span class="breadth-label">&gt;200MA ${b.pct_above_200ma}%</span>` : ''}
+      </div>` : ''}
+    `;
+  } else {
+    document.getElementById("breadthSummary").innerHTML = "";
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
