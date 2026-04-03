@@ -1,6 +1,6 @@
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 
 class TanukiDataFetcher:
@@ -21,25 +21,30 @@ class TanukiDataFetcher:
     def get_financials(self, ticker: str) -> dict:
         print(f"   [{ticker}] Alpha Vantage API 取得開始")
 
-        # 1. OVERVIEW（ROE, 株価など）
+        # 1. OVERVIEW（ROE, SharesOutstanding）
         overview = self._fetch_av(ticker, "OVERVIEW")
-        diluted_shares = 0.0
+        diluted_shares = float(overview.get("SharesOutstanding", 0) or 0) if overview else 0.0
         roe = 0.0
         if overview:
-            diluted_shares = float(overview.get("SharesOutstanding", 0) or 0)
             roe_str = overview.get("ReturnOnEquityTTM", "0")
             roe = float(roe_str.replace("%", "")) / 100 if "%" in roe_str else float(roe_str) / 100
 
-        # 2. INCOME_STATEMENT から shares fallback（成長株対応）
-        if diluted_shares <= 100_000:
-            income = self._fetch_av(ticker, "INCOME_STATEMENT")
-            if income and "annualReports" in income:
-                for report in income["annualReports"][:3]:  # 最新3年
-                    shares = float(report.get("commonStockSharesOutstanding", 0) or 0)
-                    if shares > 100_000:
-                        diluted_shares = shares
-                        print(f"   [{ticker}] INCOME_STATEMENTからshares取得成功: {diluted_shares:,.0f}")
-                        break
+        # 2. INCOME_STATEMENT + BALANCE_SHEET でsharesを多角的に取得
+        shares_candidates = [diluted_shares] if diluted_shares > 0 else []
+
+        for endpoint in ["INCOME_STATEMENT", "BALANCE_SHEET"]:
+            data = self._fetch_av(ticker, endpoint)
+            if data and "annualReports" in data:
+                for report in data["annualReports"][:3]:  # 最新3年分
+                    for key in ["commonStockSharesOutstanding", "weightedAverageShsOutDil", "weightedAverageShsOut"]:
+                        val = float(report.get(key, 0) or 0)
+                        if val > 100_000:
+                            shares_candidates.append(val)
+                            print(f"   [{ticker}] {endpoint}から{key}取得成功: {val:,.0f}")
+                            break
+
+        # 最大値（最も信頼できる最新shares）を採用
+        diluted_shares = max(shares_candidates) if shares_candidates else 0.0
 
         # 3. FCF（CASH_FLOW）
         cf_data = self._fetch_av(ticker, "CASH_FLOW")
