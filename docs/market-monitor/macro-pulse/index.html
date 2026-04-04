@@ -801,7 +801,7 @@ function renderPhaseGauge() {
   if(cbcc!==null){cbLabel=cbcc.toFixed(1);
     if(cbcc<60){cbScore=82;cbSignal='bear';}else if(cbcc<75){cbScore=72;cbSignal='bear';}
     else if(cbcc<90){cbScore=60;cbSignal='caution';}else{cbScore=30;cbSignal='neutral';}}
-  signals.push({name:'Michigan Sent.',val:cbLabel,score:cbScore,signal:cbSignal,weight:8,lead:'先行2ヶ月',desc:'ミシガン大学消費者信頼感指数。消費者の現況認識と将来期待を測定。消費支出の先行指標。',thresh:'BULL≥90 / BEAR≤65'});
+  signals.push({name:'Michigan Sent.*',val:cbLabel,score:cbScore,signal:cbSignal,weight:8,lead:'先行2ヶ月',desc:'ミシガン大学消費者信頼感指数。消費者の現況認識と将来期待を測定。消費支出の先行指標。※FREDは1ヶ月遅延公開のため、最新発表値と異なる場合があります。',thresh:'BULL≥90 / BEAR≤65'});
   let sahmScore=50,sahmSignal='neutral',sahmLabel='—';
   if(sahm!==null){sahmLabel=sahm.toFixed(2);
     sahmScore=sahm>=0.5?88:sahm>=0.3?50:12;
