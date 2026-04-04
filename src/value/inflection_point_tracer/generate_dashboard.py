@@ -151,4 +151,8 @@ html_template = f"""
 with open(output_path, "w", encoding="utf-8") as f:
     f.write(html_template)
 
+<<<<<<< HEAD
 print(f"✨ ダッシュボードを更新しました: {output_path}")
+=======
+print(f"✨ ダッシュボードを更新しました: {output_path}")
+>>>>>>> c0461e008594096f93d25e99483def18db12e04a
