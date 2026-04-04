@@ -1,145 +1,210 @@
 import json
 import os
-from datetime import datetime
 
 # ==========================================
-# 1. パス設定
+# 1. パス設定 (shigi様の環境に合わせています)
 # ==========================================
 base_dir = os.path.dirname(os.path.abspath(__file__))
 history_path = os.path.join(base_dir, "analysis_history.json")
 
-# 出力先を docs ディレクトリに指定
+# 出力先: docs/value-monitor/inflection_dashboard/index.html
 project_root = os.path.abspath(os.path.join(base_dir, "../../.."))
 docs_dir = os.path.join(project_root, "docs", "value-monitor", "inflection_dashboard")
 os.makedirs(docs_dir, exist_ok=True)
 output_path = os.path.join(docs_dir, "index.html")
 
 # ==========================================
-# 2. 履歴データの読み込み
+# 2. データの読み込みと安全策
 # ==========================================
 if not os.path.exists(history_path):
-    print("❌ analysis_history.json が見つかりません。")
+    print(f"❌ {history_path} が見つかりません。")
     exit()
 
 with open(history_path, "r", encoding="utf-8") as f:
-    history_data = json.load(f)
-
-# グラフ用のデータ配列
-labels = []
-revenue_data = []
-cfo_data = []
-
-# 最新のAI判定を保持する変数
-latest_cluster = "不明"
-latest_lag = 0
-
-for record in history_data:
-    timestamp = record.get("timestamp", "Unknown")
-    labels.append(timestamp[:10]) 
-    
-    metrics = record.get("metrics", {})
-    revenue = metrics.get("revenue", {}).get("current", 0) if isinstance(metrics, dict) else 0
-    cfo = metrics.get("cfo", {}).get("current", 0) if isinstance(metrics, dict) else 0
-    
-    revenue_data.append(revenue)
-    cfo_data.append(cfo)
-
-    latest_cluster = record.get("cluster_name", latest_cluster)
-    latest_lag = record.get("predicted_lag_q", latest_lag)
+    try:
+        history_data = json.load(f)
+    except:
+        print("❌ JSONの読み込みに失敗しました。")
+        exit()
 
 # ==========================================
-# 3. HTMLの生成
+# 3. HTML/JS 生成 (シミュレーター機能付き)
 # ==========================================
-html_template = f"""
+html_content = """
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spidey Bot - PLTR Analysis Dashboard</title>
+    <title>Spidey Bot - Inflection Simulator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }}
-        .container {{ max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }}
-        h1 {{ text-align: center; color: #2c3e50; }}
-        .stats {{ display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; padding: 20px; background: #eef2f5; border-radius: 8px; gap: 10px; }}
-        .stat-box {{ text-align: center; flex: 1; min-width: 150px; }}
-        .stat-value {{ font-size: 24px; font-weight: bold; color: #2980b9; margin-top: 5px; }}
-        .info-panel {{ margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; font-size: 16px; line-height: 1.6; }}
-        .chart-container {{ position: relative; height: 50vh; width: 100%; margin-top: 30px; }}
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .card { background: #1e293b; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .controls { display: flex; gap: 20px; align-items: center; background: #334155; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        select, input[type="range"] { accent-color: #38bdf8; cursor: pointer; }
+        select { padding: 8px; border-radius: 5px; background: #1e293b; color: white; border: 1px solid #475569; }
+        .status-badge { background: #38bdf8; color: #0f172a; padding: 4px 12px; border-radius: 20px; font-weight: bold; margin-left: 10px; }
+        .chart-container { height: 550px; margin-top: 20px; }
+        .info-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #38bdf8; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📈 PLTR Inflection Point Tracker</h1>
-        
-        <div class="stats">
-            <div class="stat-box">
-                <div>最新の売上 (Revenue)</div>
-                <div class="stat-value">${revenue_data[-1]:,.0f}</div>
+        <div class="header">
+            <h1>🚀 Inflection Tracker <small style="font-size: 0.5em; color: #94a3b8;">Phase 3: Step 8, 9</small></h1>
+        </div>
+
+        <div class="controls">
+            <div>
+                <label>対象銘柄:</label>
+                <select id="stockSelector" onchange="initChart()"></select>
             </div>
-            <div class="stat-box">
-                <div>最新の営業CF (CFO)</div>
-                <div class="stat-value">${cfo_data[-1]:,.0f}</div>
-            </div>
-            <div class="stat-box">
-                <div>分析実行回数</div>
-                <div class="stat-value">{len(history_data)} 回</div>
+            <div style="flex-grow: 1; display: flex; align-items: center; gap: 15px;">
+                <label>黒字化予測ラグ (Q数): <span id="lagVal" class="status-badge">4</span></label>
+                <input type="range" id="lagSlider" min="1" max="16" value="4" style="width: 100%;" oninput="updateSimulation()">
             </div>
         </div>
 
-        <div class="info-panel">
-            <strong>🤖 AI 判定結果:</strong><br>
-            事業クラスター: <strong>{latest_cluster}</strong><br>
-            黒字化までの予測ラグ: <strong>{latest_lag} 四半期 (Q)</strong>
-        </div>
-
-        <div class="chart-container">
-            <canvas id="metricsChart"></canvas>
+        <div class="card">
+            <div class="info-panel">
+                <div id="tickerLabel">---</div>
+                <div id="runwayLabel">Runway: ---</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="simChart"></canvas>
+            </div>
+            <p style="font-size: 12px; color: #64748b; text-align: right; margin-top: 10px;">
+                ※10-Qは年率換算(x4) | 点線はシミュレーション予測
+            </p>
         </div>
     </div>
 
     <script>
-        const ctx = document.getElementById('metricsChart').getContext('2d');
-        const metricsChart = new Chart(ctx, {{
-            type: 'line',
-            data: {{
-                labels: {json.dumps(labels)},
-                datasets: [
-                    {{
-                        label: 'Revenue (売上)',
-                        data: {json.dumps(revenue_data)},
-                        borderColor: 'rgba(52, 152, 219, 1)',
-                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }},
-                    {{
-                        label: 'CFO (営業キャッシュフロー)',
-                        data: {json.dumps(cfo_data)},
-                        borderColor: 'rgba(46, 204, 113, 1)',
-                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }}
-                ]
-            }},
-            options: {{
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {{
-                    y: {{
-                        beginAtZero: true,
-                        title: {{ display: true, text: 'USD' }}
-                    }}
-                }},
-                plugins: {{
-                    legend: {{ position: 'top' }}
-                }}
-            }}
-        }});
+        const rawData = """ + json.dumps(history_data) + """;
+        let chart = null;
+
+        // 銘柄リストの作成
+        const tickers = [...new Set(rawData.map(d => d.ticker))];
+        const selector = document.getElementById('stockSelector');
+        tickers.forEach(t => { selector.add(new Option(t, t)); });
+
+        function initChart() {
+            const ticker = selector.value;
+            const filtered = rawData.filter(d => d.ticker === ticker);
+            const latest = filtered[filtered.length - 1];
+            // 保存されているラグがあれば反映
+            document.getElementById('lagSlider').value = latest.predicted_lag_q || 4;
+            updateSimulation();
+        }
+
+        function updateSimulation() {
+            const ticker = selector.value;
+            const lag = parseInt(document.getElementById('lagSlider').value);
+            document.getElementById('lagVal').innerText = lag;
+            
+            const filtered = rawData.filter(d => d.ticker === ticker);
+            if (filtered.length === 0) return;
+
+            // --- 1. 実績データの整理 ---
+            const labels = filtered.map(d => d.timestamp.split(' ')[0] + ' (' + (d.filing_type || '10-K') + ')');
+            
+            // 年率換算 (10-Qは4倍)
+            const revData = filtered.map(d => {
+                let v = d.metrics.revenue.current || 0;
+                return (d.filing_type === '10-Q') ? v * 4 : v;
+            });
+            const cfoData = filtered.map(d => {
+                let v = d.metrics.cfo.current || 0;
+                return (d.filing_type === '10-Q') ? v * 4 : v;
+            });
+
+            // --- 2. 未来予測ロジック (Step 8) ---
+            const lastRev = revData[revData.length - 1];
+            
+            // 直近のまともなCFO（0でないもの）を起点にする
+            let lastValidCfo = 0;
+            for (let i = cfoData.length - 1; i >= 0; i--) {
+                if (cfoData[i] !== 0) { lastValidCfo = cfoData[i]; break; }
+            }
+
+            const projLabels = [...labels];
+            const projRev = [...revData];
+            const projCfo = [...cfoData];
+
+            // ラグ（Q数）に応じて未来を描画
+            for (let i = 1; i <= lag; i++) {
+                projLabels.push(`Q+${i} (予測)`);
+                projRev.push(lastRev * Math.pow(1.05, i)); // 5%成長仮定
+                // CFOが徐々にRevenueに追いつく線
+                let progress = i / lag;
+                projCfo.push(lastValidCfo + (lastRev - lastValidCfo) * progress);
+            }
+
+            // --- 3. Runway計算 (Step 3 暫定) ---
+            let runwayMsg = "CFOプラス";
+            if (lastValidCfo < 0) {
+                const burn = Math.abs(lastValidCfo);
+                const cashEstimate = lastRev * 0.4; // 売上の40%程度の現預金があると仮定(暫定)
+                const months = (cashEstimate / burn) * 12;
+                runwayMsg = `推定Runway: 約${months.toFixed(1)}ヶ月`;
+            }
+            document.getElementById('runwayLabel').innerText = runwayMsg;
+            document.getElementById('tickerLabel').innerText = ticker + " Analysis";
+
+            // --- 4. Chart描画 ---
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('simChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: projLabels,
+                    datasets: [
+                        {
+                            label: 'Revenue (Annualized)',
+                            data: projRev,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'CFO (Annualized Projection)',
+                            data: projCfo,
+                            borderColor: '#10b981',
+                            borderDash: [5, 5], // 点線
+                            pointRadius: 4,
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f8fafc' } }
+                    }
+                }
+            });
+        }
+        initChart();
     </script>
 </body>
 </html>
+"""
+
+with open(output_path, "w", encoding="utf-8") as f:
+    f.write(html_content)
+
+print(f"✅ ダッシュボードを更新しました！ブラウザで確認してください。")
+print(f"場所: {output_path}")

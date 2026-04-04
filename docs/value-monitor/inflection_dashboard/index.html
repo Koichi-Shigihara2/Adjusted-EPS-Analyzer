@@ -3,82 +3,169 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Spidey Bot - PLTR Analysis Dashboard</title>
+    <title>Spidey Bot - Inflection Simulator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; color: #333; margin: 0; padding: 20px; }
-        .container { max-width: 1000px; margin: 0 auto; background: #fff; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #2c3e50; }
-        .chart-container { position: relative; height: 50vh; width: 100%; margin-top: 30px; }
-        .stats { display: flex; justify-content: space-around; margin-top: 20px; padding: 20px; background: #eef2f5; border-radius: 8px; }
-        .stat-box { text-align: center; }
-        .stat-value { font-size: 24px; font-weight: bold; color: #2980b9; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; }
+        .container { max-width: 1100px; margin: 0 auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 1px solid #334155; padding-bottom: 10px; }
+        .card { background: #1e293b; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+        .controls { display: flex; gap: 20px; align-items: center; background: #334155; padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        select, input[type="range"] { accent-color: #38bdf8; cursor: pointer; }
+        select { padding: 8px; border-radius: 5px; background: #1e293b; color: white; border: 1px solid #475569; }
+        .status-badge { background: #38bdf8; color: #0f172a; padding: 4px 12px; border-radius: 20px; font-weight: bold; margin-left: 10px; }
+        .chart-container { height: 550px; margin-top: 20px; }
+        .info-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; color: #38bdf8; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>📈 PLTR Inflection Point Tracker</h1>
-        <div class="stats">
-            <div class="stat-box">
-                <div>最新の売上 (Revenue)</div>
-                <div class="stat-value">$4,475,446,000</div>
+        <div class="header">
+            <h1>🚀 Inflection Tracker <small style="font-size: 0.5em; color: #94a3b8;">Phase 3: Step 8, 9</small></h1>
+        </div>
+
+        <div class="controls">
+            <div>
+                <label>対象銘柄:</label>
+                <select id="stockSelector" onchange="initChart()"></select>
             </div>
-            <div class="stat-box">
-                <div>最新の営業CF (CFO)</div>
-                <div class="stat-value">$2,134,473,000</div>
-            </div>
-            <div class="stat-box">
-                <div>分析実行回数</div>
-                <div class="stat-value">2 回</div>
+            <div style="flex-grow: 1; display: flex; align-items: center; gap: 15px;">
+                <label>黒字化予測ラグ (Q数): <span id="lagVal" class="status-badge">4</span></label>
+                <input type="range" id="lagSlider" min="1" max="16" value="4" style="width: 100%;" oninput="updateSimulation()">
             </div>
         </div>
-        <div class="chart-container">
-            <canvas id="metricsChart"></canvas>
+
+        <div class="card">
+            <div class="info-panel">
+                <div id="tickerLabel">---</div>
+                <div id="runwayLabel">Runway: ---</div>
+            </div>
+            <div class="chart-container">
+                <canvas id="simChart"></canvas>
+            </div>
+            <p style="font-size: 12px; color: #64748b; text-align: right; margin-top: 10px;">
+                ※10-Qは年率換算(x4) | 点線はシミュレーション予測
+            </p>
         </div>
     </div>
 
     <script>
-        const ctx = document.getElementById('metricsChart').getContext('2d');
-        const metricsChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: ["2026-04-02", "2026-04-03"],
-                datasets: [
-                    {
-                        label: 'Revenue (売上)',
-                        data: [0, 4475446000],
-                        borderColor: 'rgba(52, 152, 219, 1)',
-                        backgroundColor: 'rgba(52, 152, 219, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    },
-                    {
-                        label: 'CFO (営業キャッシュフロー)',
-                        data: [0, 2134473000],
-                        borderColor: 'rgba(46, 204, 113, 1)',
-                        backgroundColor: 'rgba(46, 204, 113, 0.2)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        fill: true
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: { display: true, text: 'USD' }
-                    }
-                },
-                plugins: {
-                    legend: { position: 'top' }
-                }
+        const rawData = [{"timestamp": "2026-04-02 23:32:26", "ticker": "PLTR", "filing_date": "2026-02-17", "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise"}, {"timestamp": "2026-04-03 05:02:44", "ticker": "PLTR", "metrics": {"revenue": {"current": 4475446000, "prior": 2865507000}, "cfo": {"current": 2134473000, "prior": 1153865000}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise"}, {"timestamp": "2026-04-04 11:15:48", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092, "prior": 725516}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise"}, {"timestamp": "2026-04-04 11:21:07", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092000, "prior": 725516000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise"}, {"timestamp": "2026-04-04 11:21:27", "ticker": "SOFI", "filing_type": "10-Q", "metrics": {"revenue": {"current": 961600000, "prior": 697121000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise"}, {"timestamp": "2026-04-04 11:27:09", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092000, "prior": 725516000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Palantir achieved significant revenue growth across both government and commercial sectors, driven by the expanding adoption of its AI Platform and a transition to sustained GAAP profitability."}, {"timestamp": "2026-04-04 11:28:29", "ticker": "SOFI", "filing_type": "10-Q", "metrics": {"revenue": {"current": 961600000, "prior": 697121000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Sustained net income and strong growth in fee-based revenue, particularly from the Loan Platform Business, signal a successful shift towards diversified and profitable operations."}, {"timestamp": "2026-04-04 11:30:02", "ticker": "TSLA", "filing_type": "10-Q", "metrics": {"revenue": {"current": 28095000000, "prior": 25182000000}, "cfo": {"current": null, "prior": null}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Tesla is strategically pivoting towards AI-driven services and products like Robotaxi and energy storage for AI infrastructure, despite facing short-term automotive sales decline and lower profitability, indicated by increased R&D and restructuring for AI chip design."}, {"timestamp": "2026-04-04 12:05:30", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092000, "prior": 725516000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Analysis comment needed."}, {"timestamp": "2026-04-04 12:06:46", "ticker": "SOFI", "filing_type": "10-Q", "metrics": {"revenue": {"current": 961600000, "prior": 697121000}, "cfo": {"current": -2751280000, "prior": -919704000}}, "predicted_lag_q": 4, "cluster_name": "High-Growth FinTech Platform", "comment": "SoFi demonstrates strong performance, with Q3 2025 total net revenue increasing by 38% year-over-year to $961.6 million and net income surging by 129%. This growth is primarily fueled by the robust expansion of the Financial Services and Lending segments, notably driven by the Loan Platform Business, higher origination fees, and increased interchange/brokerage income. Despite operating cash outflows, the company's strategic focus on its Financial Services Productivity Loop, evidenced by significant member and product growth, coupled with deposit-led funding and a recent common stock offering, indicates a powerful trajectory towards sustained profitability and diversified revenue streams."}, {"timestamp": "2026-04-04 12:08:18", "ticker": "TSLA", "filing_type": "10-Q", "metrics": {"revenue": {"current": 28095000000, "prior": 25182000000}, "cfo": {"current": 10934000000, "prior": 10109000000}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Tesla's Q3 2025 revenue increased compared to the prior year's quarter, driven by higher automotive and energy product deployments. However, the nine-month period saw a revenue decrease, partly due to lower FSD recognition and changes in automotive deliveries and pricing. Cash flow from operating activities for the nine months improved year-over-year. Operating income declined due to significant increases in R&D and restructuring expenses, reflecting the company's intensified strategic investments in AI, robotics, autonomy (Cybercab, Optimus), and new product development, alongside macroeconomic pressures like tariffs. This indicates a period of substantial investment for future growth despite near-term impacts on profitability."}, {"timestamp": "2026-04-04 12:25:04", "ticker": "SOUN", "filing_type": "10-Q", "metrics": {"revenue": {"current": 42049000, "prior": 25094000}, "cfo": {"current": 0, "prior": 0}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "SoundHound AI is strategically positioning for future growth through continuous investment in proprietary AI technology and R&D, coupled with significant acquisitions (SYNQ3, Amelia, Interactions) that expand market reach, customer portfolios, and AI capabilities in conversational AI, Agentic AI, and customer service. The company anticipates long-term revenue growth, particularly from its 'monetization flywheel' ecosystem, while aiming to improve gross margins and manage operating expenses for sustainable financial performance."}, {"timestamp": "2026-04-04 12:26:21", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092000, "prior": 725516000}, "cfo": {"current": null, "prior": null}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "CFO data for the discrete three-month periods ended September 30, 2025 and 2024 is not explicitly available in the 'Condensed Consolidated Statements of Cash Flows' section of the 10-Q filing, which only provides year-to-date figures. Therefore, it cannot be extracted as per the 'Three Months Ended' rule for the prompt."}, {"timestamp": "2026-04-04 12:27:37", "ticker": "SOFI", "filing_type": "10-Q", "metrics": {"revenue": {"current": 961600000, "prior": 697121000}, "cfo": {"current": -2751280000, "prior": -919704000}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "SoFi Technologies demonstrates strong top-line growth with a 38% increase in revenue for the three months ended September 30, 2025, driven by significant expansion in its Financial Services and Lending segments. Net income saw a substantial 129% increase for the same period. While net cash used in operating activities increased for the nine-month period, this largely reflects the scaling of its lending business where originations outpaced loan sales and paydowns. The company successfully executed a common stock offering, bolstering its capital position and reducing reliance on higher-cost debt. Continued member and product growth (35% and 36% YoY, respectively), along with the growing profitability of the Financial Services segment and robust loan platform fees, indicate strong execution of its Financial Services Productivity Loop strategy. The strategic integration of AI/ML technologies in its technology platform also positions it for future high-margin enterprise growth."}, {"timestamp": "2026-04-04 12:29:04", "ticker": "TSLA", "filing_type": "10-Q", "metrics": {"revenue": {"current": 28095000000, "prior": 25182000000}, "cfo": {"current": 10934000000, "prior": 10109000000}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Tesla is significantly investing in AI, robotics, and autonomous technologies, evident from increased R&D expenses and restructuring related to AI chip design. The launch of the Robotaxi service and next-generation energy storage products like Megapack 3 and Megablock indicates a strategic pivot towards service-driven and AI-enabled business models, aiming for long-term growth and high-margin opportunities despite near-term revenue fluctuations."}, {"timestamp": "2026-04-04 12:44:19", "ticker": "SOUN", "filing_type": "10-Q", "metrics": {"revenue": {"current": 42049000, "prior": 25094000}, "cfo": {"current": null, "prior": null}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "SoundHound AI experienced significant revenue growth of 68% year-over-year in Q3 2025, primarily driven by service subscriptions and recent acquisitions. However, the company reported a substantially larger net loss, largely due to a non-cash adjustment in the fair value of contingent acquisition liabilities. Gross margin declined due to increased amortization of acquired intangible assets from the Amelia and Interactions acquisitions. The company continues its aggressive growth and investment strategy, particularly in M&A, to expand its AI offerings in the enterprise sector. Cash flow from operating activities for the three months ended September 30, 2025 and 2024, is not separately presented in the provided consolidated statements of cash flows."}, {"timestamp": "2026-04-04 12:45:44", "ticker": "PLTR", "filing_type": "10-Q", "metrics": {"revenue": {"current": 1181092000, "prior": 725516000}, "cfo": {"current": null, "prior": null}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "Palantir is demonstrating robust growth driven by its enterprise AI platforms (AIP, Gotham, Foundry), particularly with a 121% increase in U.S. commercial revenue. The company maintains strong gross margins (82-84%) and is now consistently profitable, indicating successful market penetration and operational efficiency in high-value government and commercial sectors. Note: Three-month CFO data is not explicitly available in the provided cash flow statement, which only reports nine-month periods."}, {"timestamp": "2026-04-04 12:47:01", "ticker": "SOFI", "filing_type": "10-Q", "metrics": {"revenue": {"current": 961600000, "prior": 697121000}, "cfo": {"current": -2751280000, "prior": -919704000}}, "predicted_lag_q": 4, "cluster_name": "High-Growth Fintech", "comment": "Revenue and CFO show significant growth and a clear trend in operations. Note: CFO is extracted for the nine months ended, as detailed in the cash flow statement."}, {"timestamp": "2026-04-04 12:48:31", "ticker": "TSLA", "filing_type": "10-Q", "metrics": {"revenue": {"current": 28095000000, "prior": 25182000000}, "cfo": {"current": null, "prior": null}}, "predicted_lag_q": 4, "cluster_name": "High-Margin AI/Enterprise", "comment": "CFO data for the three months ended September 30 for both current and prior periods is not available in the provided document, as the Consolidated Statements of Cash Flows only present data for the nine months ended September 30."}];
+        let chart = null;
+
+        // 銘柄リストの作成
+        const tickers = [...new Set(rawData.map(d => d.ticker))];
+        const selector = document.getElementById('stockSelector');
+        tickers.forEach(t => { selector.add(new Option(t, t)); });
+
+        function initChart() {
+            const ticker = selector.value;
+            const filtered = rawData.filter(d => d.ticker === ticker);
+            const latest = filtered[filtered.length - 1];
+            // 保存されているラグがあれば反映
+            document.getElementById('lagSlider').value = latest.predicted_lag_q || 4;
+            updateSimulation();
+        }
+
+        function updateSimulation() {
+            const ticker = selector.value;
+            const lag = parseInt(document.getElementById('lagSlider').value);
+            document.getElementById('lagVal').innerText = lag;
+            
+            const filtered = rawData.filter(d => d.ticker === ticker);
+            if (filtered.length === 0) return;
+
+            // --- 1. 実績データの整理 ---
+            const labels = filtered.map(d => d.timestamp.split(' ')[0] + ' (' + (d.filing_type || '10-K') + ')');
+            
+            // 年率換算 (10-Qは4倍)
+            const revData = filtered.map(d => {
+                let v = d.metrics.revenue.current || 0;
+                return (d.filing_type === '10-Q') ? v * 4 : v;
+            });
+            const cfoData = filtered.map(d => {
+                let v = d.metrics.cfo.current || 0;
+                return (d.filing_type === '10-Q') ? v * 4 : v;
+            });
+
+            // --- 2. 未来予測ロジック (Step 8) ---
+            const lastRev = revData[revData.length - 1];
+            
+            // 直近のまともなCFO（0でないもの）を起点にする
+            let lastValidCfo = 0;
+            for (let i = cfoData.length - 1; i >= 0; i--) {
+                if (cfoData[i] !== 0) { lastValidCfo = cfoData[i]; break; }
             }
-        });
+
+            const projLabels = [...labels];
+            const projRev = [...revData];
+            const projCfo = [...cfoData];
+
+            // ラグ（Q数）に応じて未来を描画
+            for (let i = 1; i <= lag; i++) {
+                projLabels.push(`Q+${i} (予測)`);
+                projRev.push(lastRev * Math.pow(1.05, i)); // 5%成長仮定
+                // CFOが徐々にRevenueに追いつく線
+                let progress = i / lag;
+                projCfo.push(lastValidCfo + (lastRev - lastValidCfo) * progress);
+            }
+
+            // --- 3. Runway計算 (Step 3 暫定) ---
+            let runwayMsg = "CFOプラス";
+            if (lastValidCfo < 0) {
+                const burn = Math.abs(lastValidCfo);
+                const cashEstimate = lastRev * 0.4; // 売上の40%程度の現預金があると仮定(暫定)
+                const months = (cashEstimate / burn) * 12;
+                runwayMsg = `推定Runway: 約${months.toFixed(1)}ヶ月`;
+            }
+            document.getElementById('runwayLabel').innerText = runwayMsg;
+            document.getElementById('tickerLabel').innerText = ticker + " Analysis";
+
+            // --- 4. Chart描画 ---
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('simChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: projLabels,
+                    datasets: [
+                        {
+                            label: 'Revenue (Annualized)',
+                            data: projRev,
+                            borderColor: '#3b82f6',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'CFO (Annualized Projection)',
+                            data: projCfo,
+                            borderColor: '#10b981',
+                            borderDash: [5, 5], // 点線
+                            pointRadius: 4,
+                            fill: false,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: '#334155' },
+                            ticks: { color: '#94a3b8', callback: v => '$' + v.toLocaleString() }
+                        },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    },
+                    plugins: {
+                        legend: { labels: { color: '#f8fafc' } }
+                    }
+                }
+            });
+        }
+        initChart();
     </script>
 </body>
 </html>
