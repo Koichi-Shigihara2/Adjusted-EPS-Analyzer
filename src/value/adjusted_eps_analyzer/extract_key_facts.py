@@ -101,6 +101,21 @@ def load_required_xbrl_tags() -> List[str]:
     # その他よく使う調整関連（adjustment_items.json にない場合の保険）
     tags.add("us-gaap:ShareBasedCompensation")
 
+    # ★ 売上高タグ（pipeline.py の get_revenue() で使用）
+    tags.add("us-gaap:Revenues")
+    tags.add("us-gaap:RevenueFromContractWithCustomer")
+    tags.add("us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax")
+    tags.add("us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax")
+    tags.add("us-gaap:NetSales")
+    tags.add("us-gaap:TotalRevenue")
+    tags.add("us-gaap:SalesRevenueNet")
+    # 銀行・金融機関用
+    tags.add("us-gaap:RevenuesNetOfInterestExpense")
+    tags.add("us-gaap:NetInterestIncome")
+    tags.add("us-gaap:InterestIncomeExpenseNet")
+    tags.add("us-gaap:InterestAndDividendIncomeOperating")
+    tags.add("us-gaap:NoninterestIncome")
+
     return list(tags)
 
 # ============================================
