@@ -16,12 +16,12 @@ class TanukiDataFetcher:
         if not os.path.exists(path):
             return False
         age = (datetime.now() - datetime.fromtimestamp(os.path.getmtime(path))).total_seconds()
-        return age < 86400  # 24時間
+        return age < 86400
 
     def get_financials(self, ticker: str) -> dict:
         print(f"   [{ticker}] Alpha Vantage API 取得開始")
 
-        # Alpha Vantageのみ使用（SECフォールバック完全オフ）
+        # 1. Overview（ROEなど）
         overview = self._fetch_av(ticker, "OVERVIEW")
         diluted_shares = float(overview.get("SharesOutstanding", 0) or 0) if overview else 0.0
         roe = 0.0
@@ -29,11 +29,13 @@ class TanukiDataFetcher:
             roe_str = overview.get("ReturnOnEquityTTM", "0")
             roe = float(roe_str.replace("%", "")) / 100 if "%" in roe_str else float(roe_str) / 100
 
-        # INCOME / BALANCE で最大限取得
+        # 2. INCOME_STATEMENT / BALANCE_SHEET でsharesと売上高を取得
+        latest_revenue = 0.0
         for endpoint in ["INCOME_STATEMENT", "BALANCE_SHEET"]:
             data = self._fetch_av(ticker, endpoint)
             if data and "annualReports" in data:
                 for report in data["annualReports"][:3]:
+                    # shares
                     for key in ["commonStockSharesOutstanding", "weightedAverageShsOutDil", "weightedAverageShsOut",
                                "weightedAverageNumberOfDilutedSharesOutstanding", "sharesOutstanding"]:
                         val = float(report.get(key, 0) or 0)
@@ -41,11 +43,14 @@ class TanukiDataFetcher:
                             diluted_shares = max(diluted_shares, val)
                             print(f"   [{ticker}] {endpoint}から{key}取得成功: {val:,.0f}")
                             break
+                    # 最新売上高（revenue or totalRevenue）
+                    rev = float(report.get("totalRevenue", 0) or report.get("revenue", 0) or 0)
+                    if rev > latest_revenue:
+                        latest_revenue = rev
 
-        if diluted_shares <= 100_000:
-            print(f"   [{ticker}] shares取得失敗 → スキップ（SECフォールバックはオフ）")
+        print(f"   [{ticker}] 最新売上高（補正用） = ${latest_revenue:,.0f}")
 
-        # FCF
+        # 3. FCF
         cf_data = self._fetch_av(ticker, "CASH_FLOW")
         fcf_list = []
         if cf_data and "annualReports" in cf_data:
@@ -57,7 +62,7 @@ class TanukiDataFetcher:
 
         fcf_avg = sum(fcf_list) / len(fcf_list) if fcf_list else 0.0
 
-        # 株価
+        # 4. 株価
         quote = self._fetch_av(ticker, "GLOBAL_QUOTE")
         current_price = float(quote.get("Global Quote", {}).get("05. price", 0)) if quote else 0.0
 
@@ -69,6 +74,7 @@ class TanukiDataFetcher:
             "roe_10yr_avg": roe,
             "current_price": current_price,
             "fcf_list_raw": fcf_list,
+            "latest_revenue": latest_revenue,   # 新規追加：FCF補正用
             "eps_data": {"ticker": ticker}
         }
 
