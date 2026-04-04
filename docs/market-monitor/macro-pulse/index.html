@@ -774,7 +774,7 @@ function renderPhaseGauge() {
   signals.push({name:'HY Spread',val:hyLabel,score:hyScore,signal:hySignal,weight:15,lead:'先行2ヶ月',desc:'ハイイールド債と国債の利回り差。信用リスクの高まりを示し、拡大時は景気後退のサイン。',thresh:'BULL≤4.0% / BEAR≥6.5%'});
 
   let cbcc2Score=50,cbcc2Signal='neutral',cbcc2Label='—';
-  if(cbcc2!==null){cbcc2Label=(cbcc2/1000).toFixed(0)+'K';
+  if(cbcc2!==null){cbcc2Label=cbcc2.toFixed(0)+'K';
     if(cbcc2>=1500){cbcc2Score=15;cbcc2Signal='bull';}else if(cbcc2>=1300){cbcc2Score=35;cbcc2Signal='neutral';}
     else if(cbcc2>=1100){cbcc2Score=60;cbcc2Signal='caution';}else{cbcc2Score=85;cbcc2Signal='bear';}}
   signals.push({name:'Building Permits',val:cbcc2Label,score:cbcc2Score,signal:cbcc2Signal,weight:10,lead:'先行3ヶ月',desc:'住宅着工許可件数。住宅投資と建設活動の先行指標。景気サイクルに敏感に反応する。',thresh:'BULL≥1500K / BEAR≤1100K'});
@@ -889,10 +889,10 @@ function renderL2() {
     {label:'CFNAI MA3',labelJa:'シカゴ連銀全米活動指数',key:'Chicago Fed National Activity',mid:-0.2,bull:0,bear:-0.7,dir:'right',fmt:v=>v.toFixed(2),rMin:-3,rMax:1},
     {label:'Sahm Rule',labelJa:'サームルール不況指標',key:'Sahm Rule Recession Indicator',mid:0.3,bull:0.3,bear:0.5,dir:'left',fmt:v=>v.toFixed(2),rMin:0,rMax:1.5},
     // 👷 雇用
-    {label:'Initial Claims 4WMA',labelJa:'新規失業保険申請4週MA',key:'Initial Claims 4W MA',mid:230000,bull:215000,bear:245000,dir:'left',fmt:v=>v.toFixed(0)+'K',rMin:180000,rMax:400000},
+    {label:'Initial Claims 4WMA',labelJa:'新規失業保険申請4週MA',key:'Initial Claims 4W MA',mid:230000,bull:215000,bear:245000,dir:'left',fmt:v=>(v/1000).toFixed(1)+'K',rMin:180000,rMax:400000},
     // 🛍️ 消費・信頼感
     {label:'Michigan Sentiment',labelJa:'ミシガン消費者信頼感',key:'Michigan Consumer Sentiment',mid:80,bull:90,bear:65,dir:'right',fmt:v=>v.toFixed(1),rMin:50,rMax:110},
-    {label:'Building Permits',labelJa:'住宅着工許可件数',key:'Building Permits',mid:1300,bull:1500,bear:1100,dir:'right',cbcc2Label=cbcc2.toFixed(0)+'K',rMin:500,rMax:2200},
+    {label:'Building Permits',labelJa:'住宅着工許可件数',key:'Building Permits',mid:1300,bull:1500,bear:1100,dir:'right',fmt:v=>v.toFixed(0)+'K',rMin:500,rMax:2200},
   ];
 
   const signalColor={BULL:'var(--grn)',CAUTION:'var(--amb)',NEUTRAL:'var(--mut)',BEAR:'var(--red)'};
