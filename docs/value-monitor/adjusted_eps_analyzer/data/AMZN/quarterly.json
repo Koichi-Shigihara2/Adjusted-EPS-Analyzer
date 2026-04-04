@@ -1,12 +1,12 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-04-04T16:19:13.404834",
+  "last_updated": "2026-04-04T16:28:52.291369",
   "quarters": [
     {
       "gaap_eps": 1.9573288999722915,
-      "adjusted_eps": 2.364371614115127,
+      "adjusted_eps": 2.2884503062736195,
       "gaap_net_income": 21192000000.0,
-      "adjusted_net_income": 25599051466.02448,
+      "adjusted_net_income": 24777051466.02448,
       "diluted_shares_used": 10827000000.0,
       "adjustments": [
         {
@@ -47,22 +47,9 @@
           "category": "金融関連",
           "net_amount": 841808386.5041336,
           "tax_rate_applied": 0.47386975843491647
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 822000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 822000000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 4407051466.024479,
+      "net_adjustment_total": 3585051466.024479,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "Consumer Cyclical",
@@ -73,8 +60,8 @@
       "fiscal_year": 2025,
       "quarter": 4,
       "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 99.8%）",
-        "sbc_contribution": 0.998,
+        "alert": "SBC寄与率が40%超（現在 122.6%）",
+        "sbc_contribution": 1.226,
         "sbc_to_revenue": 0,
         "sbc_per_share": 0.4061,
         "sector_threshold": {
@@ -84,36 +71,31 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用（SBC）と無形資産償却費の調整額が大きく、これらはAmazonのようなテック企業では毎期発生する実質的な恒常コストであるため、調整後EPSの健全性は限定的。異常貸倒引当のマクロ一時的調整と税効果は比較的妥当だが、全体として非GAAP調整の質は中程度で過度な楽観視に注意が必要。",
+        "comment": "株式報酬費用と無形資産償却費が調整額の大部分を占めており、これらはAmazonの事業運営上恒常的に発生する項目であるため調整の健全性に懸念がある。貸倒引当金の異常分は一時的とみなせるが、全体として調整後EPSは過大評価の可能性がある。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として追加されているが、テック企業では毎期発生する恒常的な従業員報酬コスト",
+            "snippet": "非現金費用として株式報酬費用を加算。ただし、従業員報酬として毎期継続的に発生する恒常的コスト",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は継続的に発生する非現金費用であり、恒常的性格が強い",
+            "snippet": "買収関連無形資産の償却で、定期的に発生する経常的費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる異常変動分だが、貸倒引当の性質上完全に一過性とは言い切れない",
-            "confidence": 0.5
-          },
-          {
-            "item": "tax_one_time",
-            "snippet": "法人税率変更や過年度修正等の一過性税効果であり、明確に非経常的",
-            "confidence": 0.9
+            "snippet": "マクロ変動による一時的影響として異常変動分の貸倒引当金を加算",
+            "confidence": 0.6
           }
         ]
       }
     },
     {
       "gaap_eps": 1.9536191793453204,
-      "adjusted_eps": 3.224708087849455,
+      "adjusted_eps": 2.2906370873884128,
       "gaap_net_income": 21187000000.0,
-      "adjusted_net_income": 34971959212.72734,
+      "adjusted_net_income": 24841959212.727337,
       "diluted_shares_used": 10845000000.0,
       "adjustments": [
         {
@@ -128,22 +110,9 @@
           "category": "株式報酬関連",
           "net_amount": 3654959212.7273374,
           "tax_rate_applied": 0.24593372957967044
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 10130000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 10130000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 13784959212.727337,
+      "net_adjustment_total": 3654959212.7273374,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -156,9 +125,9 @@
     },
     {
       "gaap_eps": 1.6809180085137887,
-      "adjusted_eps": 2.208906418638897,
+      "adjusted_eps": 2.207888465649817,
       "gaap_net_income": 18164000000.0,
-      "adjusted_net_income": 23869442759.81192,
+      "adjusted_net_income": 23858442759.81192,
       "diluted_shares_used": 10806000000.0,
       "adjustments": [
         {
@@ -173,22 +142,9 @@
           "category": "株式報酬関連",
           "net_amount": 5694442759.811918,
           "tax_rate_applied": 0.12849054793206027
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 11000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 11000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 5705442759.811918,
+      "net_adjustment_total": 5694442759.811918,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -201,9 +157,9 @@
     },
     {
       "gaap_eps": 1.5868618549059577,
-      "adjusted_eps": 1.9038521234721288,
+      "adjusted_eps": 1.8568772323389868,
       "gaap_net_income": 17127000000.0,
-      "adjusted_net_income": 20548275968.634686,
+      "adjusted_net_income": 20041275968.634686,
       "diluted_shares_used": 10793000000.0,
       "adjustments": [
         {
@@ -218,22 +174,9 @@
           "category": "株式報酬関連",
           "net_amount": 2914275968.6346865,
           "tax_rate_applied": 0.21000922509225092
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 507000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 507000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3421275968.6346865,
+      "net_adjustment_total": 2914275968.6346865,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -246,9 +189,9 @@
     },
     {
       "gaap_eps": 1.8658707210148306,
-      "adjusted_eps": 2.208856056864426,
+      "adjusted_eps": 2.358842065632265,
       "gaap_net_income": 20004000000.0,
-      "adjusted_net_income": 23681145785.643513,
+      "adjusted_net_income": 25289145785.643513,
       "diluted_shares_used": 10721000000.0,
       "adjustments": [
         {
@@ -289,22 +232,9 @@
           "category": "金融関連",
           "net_amount": 1298561618.0942295,
           "tax_rate_applied": 0.31654651679251083
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1608000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1608000000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3677145785.6435137,
+      "net_adjustment_total": 5285145785.643514,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "Consumer Cyclical",
@@ -317,9 +247,9 @@
     },
     {
       "gaap_eps": 1.4278528178854215,
-      "adjusted_eps": 1.7274134935000125,
+      "adjusted_eps": 1.850096306727772,
       "gaap_net_income": 15328000000.0,
-      "adjusted_net_income": 18543783852.722633,
+      "adjusted_net_income": 19860783852.722633,
       "diluted_shares_used": 10735000000.0,
       "adjustments": [
         {
@@ -334,22 +264,9 @@
           "category": "株式報酬関連",
           "net_amount": 4532783852.722635,
           "tax_rate_applied": 0.1500499057336143
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1317000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1317000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3215783852.7226353,
+      "net_adjustment_total": 4532783852.722635,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -362,9 +279,9 @@
     },
     {
       "gaap_eps": 1.2593388121031004,
-      "adjusted_eps": 1.7410563790919942,
+      "adjusted_eps": 1.8143660541013331,
       "gaap_net_income": 13485000000.0,
-      "adjusted_net_income": 18643231707.317074,
+      "adjusted_net_income": 19428231707.317074,
       "diluted_shares_used": 10708000000.0,
       "adjustments": [
         {
@@ -379,22 +296,9 @@
           "category": "株式報酬関連",
           "net_amount": 5943231707.317073,
           "tax_rate_applied": 0.11585365853658537
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -785000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -785000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 5158231707.317073,
+      "net_adjustment_total": 5943231707.317073,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -407,9 +311,9 @@
     },
     {
       "gaap_eps": 0.9776007497656982,
-      "adjusted_eps": 1.2657085011182105,
+      "adjusted_eps": 1.3536185292344243,
       "gaap_net_income": 10431000000.0,
-      "adjusted_net_income": 13505109706.931307,
+      "adjusted_net_income": 14443109706.931307,
       "diluted_shares_used": 10670000000.0,
       "adjustments": [
         {
@@ -424,22 +328,9 @@
           "category": "株式報酬関連",
           "net_amount": 4012109706.9313073,
           "tax_rate_applied": 0.1912699643355559
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -938000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -938000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3074109706.9313073,
+      "net_adjustment_total": 4012109706.9313073,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -452,9 +343,9 @@
     },
     {
       "gaap_eps": 1.0125810141059854,
-      "adjusted_eps": 1.3823611411433916,
+      "adjusted_eps": 1.5218960248643219,
       "gaap_net_income": 10624000000.0,
-      "adjusted_net_income": 14503733092.876465,
+      "adjusted_net_income": 15967733092.876465,
       "diluted_shares_used": 10492000000.0,
       "adjustments": [
         {
@@ -495,22 +386,9 @@
           "category": "金融関連",
           "net_amount": 1137601442.7412083,
           "tax_rate_applied": 0.4012623985572588
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1464000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1464000000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3879733092.876465,
+      "net_adjustment_total": 5343733092.876465,
       "filing_date": "2023-12-31",
       "form": "10-K",
       "sector": "Consumer Cyclical",
@@ -523,9 +401,9 @@
     },
     {
       "gaap_eps": 0.9356885773820799,
-      "adjusted_eps": 1.270019618461766,
+      "adjusted_eps": 1.3832986485811067,
       "gaap_net_income": 9879000000.0,
-      "adjusted_net_income": 13408867131.719326,
+      "adjusted_net_income": 14604867131.719326,
       "diluted_shares_used": 10558000000.0,
       "adjustments": [
         {
@@ -540,22 +418,9 @@
           "category": "株式報酬関連",
           "net_amount": 4725867131.719327,
           "tax_rate_applied": 0.18924907673368896
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1196000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1196000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3529867131.719327,
+      "net_adjustment_total": 4725867131.719327,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -568,9 +433,9 @@
     },
     {
       "gaap_eps": 0.6459948320413437,
-      "adjusted_eps": 0.9928650761127215,
+      "adjusted_eps": 1.2554739382047877,
       "gaap_net_income": 6750000000.0,
-      "adjusted_net_income": 10374447180.301826,
+      "adjusted_net_income": 13118447180.301826,
       "diluted_shares_used": 10449000000.0,
       "adjustments": [
         {
@@ -585,22 +450,9 @@
           "category": "株式報酬関連",
           "net_amount": 6368447180.3018265,
           "tax_rate_applied": 0.10643367752184273
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -2744000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -2744000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3624447180.3018265,
+      "net_adjustment_total": 6368447180.3018265,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -613,9 +465,9 @@
     },
     {
       "gaap_eps": 0.3065622885860636,
-      "adjusted_eps": 0.6142359166063799,
+      "adjusted_eps": 0.6598530036847601,
       "gaap_net_income": 3172000000.0,
-      "adjusted_net_income": 6355499029.126213,
+      "adjusted_net_income": 6827499029.126213,
       "diluted_shares_used": 10347000000.0,
       "adjustments": [
         {
@@ -630,22 +482,9 @@
           "category": "株式報酬関連",
           "net_amount": 3655499029.1262136,
           "tax_rate_applied": 0.23009708737864076
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -472000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -472000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3183499029.1262136,
+      "net_adjustment_total": 3655499029.1262136,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -658,9 +497,9 @@
     },
     {
       "gaap_eps": 0.27799825767108705,
-      "adjusted_eps": 0.7233228553775176,
+      "adjusted_eps": 0.8031795972224504,
       "gaap_net_income": 2872000000.0,
-      "adjusted_net_income": 7472648418.905134,
+      "adjusted_net_income": 8297648418.905134,
       "diluted_shares_used": 10331000000.0,
       "adjustments": [
         {
@@ -675,22 +514,9 @@
           "category": "株式報酬関連",
           "net_amount": 5425648418.905134,
           "tax_rate_applied": 0.023461407684461068
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -825000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -825000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 4600648418.905134,
+      "net_adjustment_total": 5425648418.905134,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",
@@ -703,9 +529,9 @@
     },
     {
       "gaap_eps": -0.1993120393120393,
-      "adjusted_eps": -0.0018749925091388242,
+      "adjusted_eps": 0.19026259962845332,
       "gaap_net_income": -2028000000.0,
-      "adjusted_net_income": -19078048.780487537,
+      "adjusted_net_income": 1935921951.2195125,
       "diluted_shares_used": 10175000000.0,
       "adjustments": [
         {
@@ -720,22 +546,9 @@
           "category": "株式報酬関連",
           "net_amount": 3963921951.2195125,
           "tax_rate_applied": 0.23902439024390243
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1955000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1955000000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2008921951.2195125,
+      "net_adjustment_total": 3963921951.2195125,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "Consumer Cyclical",

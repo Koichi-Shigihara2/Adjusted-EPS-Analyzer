@@ -1,12 +1,12 @@
 {
   "ticker": "APP",
-  "last_updated": "2026-04-04T16:19:05.917954",
+  "last_updated": "2026-04-04T16:28:41.561197",
   "quarters": [
     {
       "gaap_eps": -0.3576692073408395,
-      "adjusted_eps": 0.44623054867984907,
+      "adjusted_eps": -0.2538228571411103,
       "gaap_net_income": -11700000.0,
-      "adjusted_net_income": 14597000.0,
+      "adjusted_net_income": -8303000.0,
       "diluted_shares_used": 32711790.0,
       "adjustments": [
         {
@@ -34,34 +34,27 @@
           "category": "金融関連",
           "net_amount": 1264000.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 22900000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 22900000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 26297000.0,
+      "net_adjustment_total": 3397000.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32711790.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
       "maturity_monitor": {
-        "alert": null,
-        "sbc_contribution": 0.103,
+        "alert": "SBC寄与率が40%超（現在 79.5%）",
+        "sbc_contribution": 0.795,
         "sbc_to_revenue": 0,
         "sbc_per_share": 0.0825,
         "sector_threshold": {
@@ -71,22 +64,17 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整後EPSはGAAPの赤字から黒字化しているが、株式報酬（SBC）の加算は経常的な非現金費用であり調整の質を低下させている。貸倒引当の異常分は一時性を主張しているものの事業特性による変動の可能性があり判断が難しい。一過性税効果は比較的正当性が高いが、全体として調整依存度が高く健全性は限定的。",
+        "comment": "株式報酬費用（SBC）の調整は毎期発生する恒常的な非現金費用であり、調整の正当性は低い。異常貸倒引当金はマクロ変動による一時的項目として一定の合理性があるが、全体として調整後EPSの健全性は限定的。損失幅の改善効果はあるものの、持続可能性に注意が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用を加算。ただしテック企業では毎期発生する経常的費用である可能性が高い",
+            "snippet": "非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる貸倒引当金の異常変動分",
-            "confidence": 0.55
-          },
-          {
-            "item": "tax_one_time",
-            "snippet": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-            "confidence": 0.85
+            "snippet": "マクロ変動による一時的影響",
+            "confidence": 0.65
           }
         ]
       }
@@ -116,7 +104,13 @@
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32331693.0,
       "period_end": "2025-09-30",
@@ -148,7 +142,13 @@
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33002869.0,
       "period_end": "2025-06-30",
@@ -157,9 +157,9 @@
     },
     {
       "gaap_eps": -0.6301373910563304,
-      "adjusted_eps": -0.5421050273145559,
+      "adjusted_eps": -0.47878978706487674,
       "gaap_net_income": -20900000.0,
-      "adjusted_net_income": -17980198.01980198,
+      "adjusted_net_income": -15880198.01980198,
       "diluted_shares_used": 33167370.0,
       "adjustments": [
         {
@@ -200,26 +200,19 @@
           "category": "金融関連",
           "net_amount": 1544554.4554455446,
           "tax_rate_applied": 0.034653465346534656
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -2100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -2100000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2919801.98019802,
+      "net_adjustment_total": 5019801.98019802,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33167370.0,
       "period_end": "2025-03-31",
@@ -228,9 +221,9 @@
     },
     {
       "gaap_eps": -0.31947343063047356,
-      "adjusted_eps": -0.3649670336409579,
+      "adjusted_eps": -0.10577160878981895,
       "gaap_net_income": -10600000.0,
-      "adjusted_net_income": -12109459.45945946,
+      "adjusted_net_income": -3509459.4594594594,
       "diluted_shares_used": 33179598.0,
       "adjustments": [
         {
@@ -271,26 +264,19 @@
           "category": "金融関連",
           "net_amount": 2864864.864864865,
           "tax_rate_applied": 0.28378378378378377
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -8600000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -8600000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": -1509459.4594594594,
+      "net_adjustment_total": 7090540.540540541,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33179598.0,
       "period_end": "2024-12-31",
@@ -322,7 +308,13 @@
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33207768.0,
       "period_end": "2024-09-30",
@@ -354,7 +346,13 @@
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33239620.0,
       "period_end": "2024-06-30",
@@ -412,7 +410,13 @@
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 33108695.0,
       "period_end": "2024-03-31",
@@ -421,9 +425,9 @@
     },
     {
       "gaap_eps": -0.05779026980360768,
-      "adjusted_eps": -0.080815129930624,
+      "adjusted_eps": 0.22334418482520588,
       "gaap_net_income": -1900000.0,
-      "adjusted_net_income": -2657000.0,
+      "adjusted_net_income": 7343000.0,
       "diluted_shares_used": 32877507.0,
       "adjustments": [
         {
@@ -464,26 +468,19 @@
           "category": "金融関連",
           "net_amount": 4503000.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -10000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -10000000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": -757000.0,
+      "net_adjustment_total": 9243000.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32877507.0,
       "period_end": "2023-12-31",
@@ -515,7 +512,13 @@
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32729517.0,
       "period_end": "2023-09-30",
@@ -547,7 +550,13 @@
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32731422.0,
       "period_end": "2023-06-30",
@@ -556,9 +565,9 @@
     },
     {
       "gaap_eps": 0.030834966173271233,
-      "adjusted_eps": 0.1538945129920537,
+      "adjusted_eps": 0.15697800960938083,
       "gaap_net_income": 1000000.0,
-      "adjusted_net_income": 4990909.090909091,
+      "adjusted_net_income": 5090909.090909091,
       "diluted_shares_used": 32430715.0,
       "adjustments": [
         {
@@ -599,26 +608,19 @@
           "category": "金融関連",
           "net_amount": 1363636.3636363635,
           "tax_rate_applied": 0.09090909090909091
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -100000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3990909.090909091,
+      "net_adjustment_total": 4090909.090909091,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32430715.0,
       "period_end": "2023-03-31",
@@ -627,9 +629,9 @@
     },
     {
       "gaap_eps": -0.021670710885690312,
-      "adjusted_eps": 0.13928075467817244,
+      "adjusted_eps": 0.17643054476792727,
       "gaap_net_income": -700000.0,
-      "adjusted_net_income": 4499000.0,
+      "adjusted_net_income": 5699000.0,
       "diluted_shares_used": 32301663.0,
       "adjustments": [
         {
@@ -670,26 +672,19 @@
           "category": "金融関連",
           "net_amount": 3002000.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": -1200000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": -1200000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 5199000.0,
+      "net_adjustment_total": 6399000.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32301663.0,
       "period_end": "2022-12-31",
@@ -721,7 +716,13 @@
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32138952.0,
       "period_end": "2022-09-30",
@@ -753,7 +754,13 @@
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32151512.0,
       "period_end": "2022-06-30",
@@ -762,9 +769,9 @@
     },
     {
       "gaap_eps": -0.03707894998346279,
-      "adjusted_eps": 0.08651754996141317,
+      "adjusted_eps": 0.05252851247657228,
       "gaap_net_income": -1200000.0,
-      "adjusted_net_income": 2800000.0,
+      "adjusted_net_income": 1700000.0,
       "diluted_shares_used": 32363376.0,
       "adjustments": [
         {
@@ -805,26 +812,19 @@
           "category": "金融関連",
           "net_amount": 1200000.0,
           "tax_rate_applied": 0.0
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 1100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 1100000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 4000000.0,
+      "net_adjustment_total": 2900000.0,
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32363376.0,
       "period_end": "2022-03-31",
@@ -833,9 +833,9 @@
     },
     {
       "gaap_eps": -0.022077611066232235,
-      "adjusted_eps": 0.23017486508766122,
+      "adjusted_eps": 0.11496127476630928,
       "gaap_net_income": -700000.0,
-      "adjusted_net_income": 7298000.0,
+      "adjusted_net_income": 3645000.0,
       "diluted_shares_used": 31706329.0,
       "adjustments": [
         {
@@ -876,39 +876,19 @@
           "category": "金融関連",
           "net_amount": 2844000.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 700000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 553000.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 3100000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 3100000.0,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 7998000.0,
+      "net_adjustment_total": 4345000.0,
       "filing_date": "2021-12-31",
       "form": "10-K",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 31706329.0,
       "period_end": "2021-12-31",
@@ -940,7 +920,13 @@
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32363376.0,
       "period_end": "2021-09-30",
@@ -972,7 +958,13 @@
       "filing_date": "2021-06-30",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 32553526.0,
       "period_end": "2021-06-30",
@@ -981,9 +973,9 @@
     },
     {
       "gaap_eps": -0.18988289289052465,
-      "adjusted_eps": -0.11902915485512645,
+      "adjusted_eps": -0.1417074760707964,
       "gaap_net_income": -5700000.0,
-      "adjusted_net_income": -3573076.923076923,
+      "adjusted_net_income": -4253846.153846154,
       "diluted_shares_used": 30018502.0,
       "adjustments": [
         {
@@ -1024,39 +1016,19 @@
           "category": "金融関連",
           "net_amount": 542307.6923076924,
           "tax_rate_applied": 0.09615384615384616
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 200000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 180769.23076923078,
-          "tax_rate_applied": 0.09615384615384616
-        },
-        {
-          "item_id": "tax_one_time",
-          "item_name": "一過性税効果",
-          "amount": 500000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": false,
-          "reason": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
-          "extracted_from": "us-gaap:DeferredIncomeTaxExpenseBenefit",
-          "category": "税効果関連",
-          "net_amount": 500000,
-          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 2126923.076923077,
+      "net_adjustment_total": 1446153.8461538465,
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "sector": "Technology",
-      "sector_exclusions": [],
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
       "revenue": 0.0,
       "diluted_shares": 30018502.0,
       "period_end": "2021-03-31",
