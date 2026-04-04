@@ -44,12 +44,11 @@ for record in history_data:
     revenue_data.append(revenue)
     cfo_data.append(cfo)
 
-    # 履歴をループしながら、常に最新のレコードの情報を上書きで取得する
     latest_cluster = record.get("cluster_name", latest_cluster)
     latest_lag = record.get("predicted_lag_q", latest_lag)
 
 # ==========================================
-# 3. HTMLの生成 (デザインを少しリッチにしました)
+# 3. HTMLの生成
 # ==========================================
 html_template = f"""
 <!DOCTYPE html>
@@ -66,7 +65,6 @@ html_template = f"""
         .stats {{ display: flex; justify-content: space-around; flex-wrap: wrap; margin-top: 20px; padding: 20px; background: #eef2f5; border-radius: 8px; gap: 10px; }}
         .stat-box {{ text-align: center; flex: 1; min-width: 150px; }}
         .stat-value {{ font-size: 24px; font-weight: bold; color: #2980b9; margin-top: 5px; }}
-        /* AI判定パネルのスタイルを追加 */
         .info-panel {{ margin-top: 20px; padding: 15px; background: #fff3cd; border-left: 5px solid #ffc107; border-radius: 4px; font-size: 16px; line-height: 1.6; }}
         .chart-container {{ position: relative; height: 50vh; width: 100%; margin-top: 30px; }}
     </style>
@@ -90,7 +88,6 @@ html_template = f"""
             </div>
         </div>
 
-        <!-- ここにAIの判定結果を表示します -->
         <div class="info-panel">
             <strong>🤖 AI 判定結果:</strong><br>
             事業クラスター: <strong>{latest_cluster}</strong><br>
@@ -146,13 +143,3 @@ html_template = f"""
     </script>
 </body>
 </html>
-"""
-
-with open(output_path, "w", encoding="utf-8") as f:
-    f.write(html_template)
-
-<<<<<<< HEAD
-print(f"✨ ダッシュボードを更新しました: {output_path}")
-=======
-print(f"✨ ダッシュボードを更新しました: {output_path}")
->>>>>>> c0461e008594096f93d25e99483def18db12e04a
