@@ -1,4 +1,52 @@
 sectors:
+# =============================================
+# テクノロジー / 半導体（新規追加）
+# =============================================
+- name: Technology
+  keywords:
+  - NVDA
+  - AMD
+  - INTC
+  - MSFT
+  - GOOGL
+  - GOOG
+  - META
+  - AAPL
+  - TECH
+  - SEMICONDUCTOR
+  sic_codes:
+  - '3674'   # Semiconductors
+  - '7370'   # Computer programming services
+  - '7371'   # Computer programming services
+  - '7372'   # Prepackaged software
+  - '7373'   # Computer integrated systems design
+  exclusions:
+  # テクノロジー企業は SBC + 無形資産償却 のみ調整
+  # 以下の項目は調整対象外（除外）とする
+  - item_id: inventory_writeoff
+    reason: 在庫評価損は半導体では事業サイクルの一部
+    criteria:
+    - operating
+  - item_id: gov_subsidy_timing
+    reason: 政府補助金は継続的な事業支援
+    criteria:
+    - operating
+  - item_id: fx_gains_losses
+    reason: 為替変動は継続的に発生
+    criteria:
+    - operating
+  - item_id: derivative_gains_losses
+    reason: デリバティブは継続的なヘッジ活動
+    criteria:
+    - operating
+  - item_id: tax_one_time
+    reason: 繰延税金は継続的に発生
+    criteria:
+    - operating
+
+# =============================================
+# ハイパーグロース / SaaS
+# =============================================
 - name: ハイパーグロース / SaaS
   keywords:
   - PLTR
@@ -8,13 +56,14 @@ sectors:
   - CLOUD
   - APP
   - SAAS
+  - SOUN
   sic_codes:
   - '7370'
   - '7372'
   - '7373'
   exclusions:
   - item_id: sbc
-    reason: 株式報酬費用 - 現金支出を伴わず、将来の希薄化は株式数で調整済み。成長投資の本質的価値を反映。
+    reason: 株式報酬費用 - 現金支出を伴わず、将来の希薄化は株式数で調整済み
     criteria:
     - non_cash
     - non_recurring
@@ -23,9 +72,19 @@ sectors:
     reason: 無形資産償却費 - 買収関連の非現金費用
     criteria:
     - non_cash
-  # ★ depreciation はSaaSに除外しない（PLTRでの誤適用を防ぐ）
-  # depreciation は REITs 専用
+  # 以下は除外（調整しない）
+  - item_id: inventory_writeoff
+    reason: SaaS企業には在庫がほぼない
+    criteria:
+    - not_applicable
+  - item_id: gov_subsidy_timing
+    reason: 政府補助金は稀
+    criteria:
+    - not_applicable
 
+# =============================================
+# フィンテック / 銀行
+# =============================================
 - name: フィンテック / 銀行
   keywords:
   - SOFI
@@ -37,9 +96,9 @@ sectors:
   sic_codes:
   - '6020'
   - '6021'
-  - '6022'   # ★ 追加：State commercial banks
+  - '6022'
   - '6199'
-  - '6159'   # ★ 追加：Federal-sponsored credit agencies
+  - '6159'
   exclusions:
   - item_id: loan_fair_value
     reason: ローン公正価値評価損益 - 市場金利変動による一時的評価替え
@@ -50,10 +109,11 @@ sectors:
     reason: 貸倒引当金繰入の異常変動 - マクロ変動による一時的影響
     criteria:
     - non_recurring
-  # ★ 銀行ではSBCは除外しない（希薄化コストとして実質的）
-  # ★ 銀行では depreciation も除外しない（システム投資の劣化は実コスト）
-  # ★ maturity_watch なし（SBCを調整項目として扱わないため）
+  # 銀行ではSBCは除外しない（希薄化コストとして実質的）
 
+# =============================================
+# ヘルスケア / バイオ
+# =============================================
 - name: ヘルスケア / バイオ
   keywords:
   - VRTX
@@ -78,35 +138,59 @@ sectors:
     - non_cash
     - non_recurring
 
-- name: 一般消費財 / 製造 / EV・半導体
+# =============================================
+# 一般消費財 / 製造 / EV
+# =============================================
+- name: 一般消費財 / 製造 / EV
   keywords:
   - TSLA
   - CELH
-  - NVDA
-  - ASML
-  - AMD
+  - RIVN
+  - LCID
   - INDUSTRIAL
+  - EV
+  - CONSUMER
   sic_codes:
-  - '3570'
-  - '3571'
-  - '3674'
-  - '3711'
+  - '3711'   # Motor vehicles
+  - '2080'   # Beverages
+  - '2086'   # Bottled soft drinks
   exclusions:
   - item_id: inventory_writeoff
     reason: 在庫評価損・減損 - サプライチェーン混乱による一過性コスト
     criteria:
     - non_recurring
-  - item_id: logistics_one_time
-    reason: 物流・関税の一時的コスト増 - 外部ショック要因
-    criteria:
-    - non_recurring
-    - non_operating
   - item_id: gov_subsidy_timing
     reason: 政府補助金の一時的影響 - タイミング差による変動
     criteria:
     - non_recurring
-  # ★ depreciation は製造業でも除外しない（工場・設備の劣化は実コスト）
 
+# =============================================
+# 宇宙・航空
+# =============================================
+- name: 宇宙・航空
+  keywords:
+  - RKLB
+  - SPCE
+  - ASTR
+  - SPACE
+  - AEROSPACE
+  sic_codes:
+  - '3760'   # Guided missiles and space vehicles
+  - '3761'
+  exclusions:
+  - item_id: sbc
+    reason: 株式報酬費用 - 非現金費用
+    criteria:
+    - non_cash
+    maturity_watch: true
+  - item_id: amortization_intangibles
+    reason: 無形資産償却費
+    criteria:
+    - non_cash
+
+# =============================================
+# 不動産 (REITs)
+# =============================================
 - name: 不動産 (REITs)
   keywords:
   - O
@@ -127,6 +211,9 @@ sectors:
     - non_recurring
     - non_operating
 
+# =============================================
+# 暗号資産 / ブロックチェーン
+# =============================================
 - name: 暗号資産 / ブロックチェーン
   keywords:
   - COIN
@@ -145,3 +232,25 @@ sectors:
     criteria:
     - non_cash
     - non_recurring
+
+# =============================================
+# 通信・インフラ
+# =============================================
+- name: 通信・インフラ
+  keywords:
+  - ONDS
+  - INFRASTRUCTURE
+  - TELECOM
+  sic_codes:
+  - '4812'
+  - '4813'
+  exclusions:
+  - item_id: sbc
+    reason: 株式報酬費用
+    criteria:
+    - non_cash
+    maturity_watch: true
+  - item_id: amortization_intangibles
+    reason: 無形資産償却費
+    criteria:
+    - non_cash

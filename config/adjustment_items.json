@@ -1,5 +1,5 @@
 {
-  "version": "2026-03",
+  "version": "2026-04",
   "maturity_defaults": {
     "threshold_ratio": 0.15,
     "threshold_sbc_to_revenue": 0.25
@@ -15,7 +15,6 @@
             "us-gaap:ShareBasedCompensation",
             "us-gaap:AllocatedShareBasedCompensationExpense",
             "us-gaap:EmployeeBenefitsAndShareBasedCompensation",
-            "us-gaap:ShareBasedCompensationArrangementByShareBasedPaymentAwardEquityInstrumentsOtherThanOptionsGrantsInPeriodWeightedAverageGrantDateFairValue",
             "us-gaap:StockBasedCompensation"
           ],
           "direction": "add_back",
@@ -107,23 +106,6 @@
           "criteria": [
             "non_recurring"
           ]
-        },
-        {
-          "item_id": "investment_gains",
-          "item_name": "投資有価証券評価損益",
-          "xbrl_tags": [
-            "us-gaap:InvestmentGainsLosses",
-            "us-gaap:GainLossOnInvestments",
-            "us-gaap:RealizedInvestmentGainsLosses",
-            "us-gaap:UnrealizedGainLossOnInvestments"
-          ],
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason_default": "非営業性の評価変動",
-          "criteria": [
-            "non_operating",
-            "non_recurring"
-          ]
         }
       ]
     },
@@ -141,20 +123,6 @@
           "reason_default": "一過性の在庫評価損",
           "criteria": [
             "non_recurring"
-          ]
-        },
-        {
-          "item_id": "logistics_one_time",
-          "item_name": "物流・関税一時的コスト",
-          "xbrl_tags": [
-            "us-gaap:OtherCostAndExpense"
-          ],
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason_default": "外部ショック要因による一時的コスト",
-          "criteria": [
-            "non_recurring",
-            "non_operating"
           ]
         },
         {
@@ -178,29 +146,15 @@
       "category_name": "研究開発関連",
       "sub_items": [
         {
-          "item_id": "milestone_rd",
-          "item_name": "マイルストーン型研究開発費",
-          "xbrl_tags": [
-            "us-gaap:ResearchAndDevelopmentExpense"
-          ],
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason_default": "成功報酬型の一過性R&D費用",
-          "criteria": [
-            "non_recurring"
-          ]
-        },
-        {
           "item_id": "iprd_amortization",
-          "item_name": "IPR&D償却",
+          "item_name": "IPR&D償却・減損",
           "xbrl_tags": [
             "us-gaap:ImpairmentOfInProcessResearchAndDevelopment",
-            "us-gaap:ResearchAndDevelopmentInProcessExpense",
-            "us-gaap:BusinessAcquisitionCostOfAcquiredEntityTransactionCosts"
+            "us-gaap:ResearchAndDevelopmentInProcessExpense"
           ],
           "direction": "add_back",
           "pre_tax": true,
-          "reason_default": "買収に伴うIPR&D償却",
+          "reason_default": "買収に伴うIPR&D償却・減損",
           "criteria": [
             "non_cash",
             "non_recurring"
@@ -280,7 +234,8 @@
           "item_id": "restructuring",
           "item_name": "リストラ費用",
           "xbrl_tags": [
-            "us-gaap:RestructuringCharges"
+            "us-gaap:RestructuringCharges",
+            "us-gaap:RestructuringAndRelatedCostIncurredCost"
           ],
           "direction": "add_back",
           "pre_tax": true,
@@ -349,12 +304,11 @@
           "item_id": "tax_one_time",
           "item_name": "一過性税効果",
           "xbrl_tags": [
-            "us-gaap:IncomeTaxReconciliationOtherReconcilingItems",
-            "us-gaap:DeferredIncomeTaxExpenseBenefit"
+            "us-gaap:IncomeTaxReconciliationOtherReconcilingItems"
           ],
           "direction": "add_back",
           "pre_tax": false,
-          "reason_default": "法人税率変更・過年度税額戻し等の一過性影響（繰延税金ベース）",
+          "reason_default": "法人税率変更・過年度税額戻し等の一過性影響",
           "criteria": [
             "non_recurring"
           ]
