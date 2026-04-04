@@ -2,11 +2,29 @@ import json
 import os
 from datetime import datetime
 
-# パス設定
+# ==========================================
+# 1. パス設定（ここを綺麗に修正します）
+# ==========================================
+# base_dir は現在の場所 (src/value/inflection_point_tracer)
 base_dir = os.path.dirname(os.path.abspath(__file__))
-history_path = os.path.join(base_dir, "analysis_history.json")
-output_path = os.path.join(base_dir, "dashboard.html")
 
+# JSONの読み込み元はそのまま
+history_path = os.path.join(base_dir, "analysis_history.json")
+
+# 出力先を docs ディレクトリの奥深くに指定
+# 例: docs/value-monitor/inflection_dashboard/index.html
+project_root = os.path.abspath(os.path.join(base_dir, "../../..")) # プロジェクトのルートへ戻る
+docs_dir = os.path.join(project_root, "docs", "value-monitor", "inflection_dashboard")
+
+# フォルダが存在しない場合は自動で作る
+os.makedirs(docs_dir, exist_ok=True)
+
+# 最終的なHTMLの出力パス
+output_path = os.path.join(docs_dir, "index.html")
+
+# ==========================================
+# (以降のJSON読み込み・HTML生成コードはそのまま)
+# ==========================================
 # 履歴データの読み込み
 if not os.path.exists(history_path):
     print("❌ analysis_history.json が見つかりません。先に agent_runner.py を実行してください。")
