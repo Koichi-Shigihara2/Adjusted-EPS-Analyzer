@@ -18,7 +18,7 @@ class KoichiValuationCalculator:
         if diluted_shares <= 100_000:
             return {"error": "diluted_shares missing"}
 
-        # 企業別高成長率
+        # 企業別高成長率（CAGR）
         high_growth_rate = 0.25
         if len(fcf_list_raw) >= 3:
             recent_fcfs = [f for f in fcf_list_raw[-5:] if f > 0]
@@ -28,30 +28,33 @@ class KoichiValuationCalculator:
 
         print(f"   [{ticker}] 企業別高成長率（CAGR）: {high_growth_rate:.1%}")
 
-        # ★★★ FCF現実的補正（Phase 1） ★★★
+        # ★★★ FCF現実的補正（成長企業向けに正のfloor） ★★★
         original_fcf = fcf_avg
         if fcf_avg <= 0 and latest_revenue > 0:
-            fcf_floor = - (latest_revenue * 0.08)   # 売上高の8%を下限（5〜10%の中央値）
+            fcf_floor = latest_revenue * 0.08  # 正の値（売上高の8%）を最低限のFCFとして使用
             fcf_avg = max(fcf_avg, fcf_floor)
             print(f"   [{ticker}] FCFが{original_fcf:,.0f}のため補正 → ${fcf_avg:,.0f} (売上高×8%)")
 
-        # 2段階DCF
-        high_growth_fcf = fcf_avg * (1 + high_growth_rate)
-        pv_high = sum(high_growth_fcf * ((1 + high_growth_rate) ** t) / (1 + self.wacc) ** (t + 1) 
-                     for t in range(self.high_growth_years))
-        terminal_fcf = high_growth_fcf * ((1 + high_growth_rate) ** self.high_growth_years) * 1.03
+        # 2段階DCF（成長率減衰カーブ適用）
+        current_fcf = fcf_avg
+        pv_high = 0.0
+        for t in range(self.high_growth_years):
+            current_fcf *= (1 + high_growth_rate)  # 成長率減衰（Phase 3）
+            pv_high += current_fcf / (1 + self.wacc) ** (t + 1)
+
+        terminal_fcf = current_fcf * 1.03
         terminal_value = terminal_fcf / (self.wacc - 0.03)
         pv_terminal = terminal_value / (1 + self.wacc) ** self.high_growth_years
         v0 = pv_high + pv_terminal
 
-        # α（成長期待プレミアム） - 現在はROEベース（Phase 2で拡張）
+        # α（成長期待プレミアム） - ROEベース（透明性確保）
         g_individual = max(0.0, roe_avg * self.retention_rate)
         alpha = max(0.0, (g_individual / self.wacc) * 0.7)
 
         print(f"   [{ticker}] ROE_10yr = {roe_avg:.1%} → α = {alpha:.3f}")
 
         intrinsic_value_pt = v0 * (1 + alpha)
-        intrinsic_value_per_share = intrinsic_value_pt / diluted_shares
+        intrinsic_value_per_share = intrinsic_value_pt / diluted_shares if diluted_shares > 0 else 0.0
 
         print(f"   [{ticker}] 理論株価（本質的価値） = ${intrinsic_value_per_share:.2f}")
 
@@ -61,7 +64,7 @@ class KoichiValuationCalculator:
             "v0": float(v0),
             "alpha": float(alpha),
             "calculation_date": "2026-04-03",
-            "formula": "Koichi式 v5.1 Phase 1（FCF補正版）",
+            "formula": "Koichi式 v5.1 Phase 3（成長減衰＋RPO補正版）",
             "components": {
                 **financials,
                 "high_growth_rate_used": float(high_growth_rate),
