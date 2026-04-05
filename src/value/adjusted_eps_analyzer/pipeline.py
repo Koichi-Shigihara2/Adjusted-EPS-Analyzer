@@ -29,16 +29,22 @@ FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
 EPS_DISCREPANCY_THRESHOLD = 0.20  # 20%以上の差異で警告
 
 def fetch_fmp_income_statements(ticker: str, limit: int = 20) -> List[Dict]:
-    """FMP APIから四半期損益計算書を取得"""
+    """FMP APIから四半期損益計算書を取得（新エンドポイント対応）"""
     if not FMP_API_KEY:
         print("  [FMP] Warning: FMP_API_KEY not set, skipping EPS discrepancy check")
         return []
     
-    url = f"https://financialmodelingprep.com/api/v3/income-statement/{ticker}?period=quarter&limit={limit}&apikey={FMP_API_KEY}"
+    # 新しいエンドポイント形式（2025年8月31日以降）
+    url = f"https://financialmodelingprep.com/stable/income-statement?symbol={ticker}&period=quarter&limit={limit}&apikey={FMP_API_KEY}"
     try:
         response = requests.get(url, timeout=15)
         if response.status_code == 200:
-            return response.json()
+            data = response.json()
+            # エラーレスポンスのチェック
+            if isinstance(data, dict) and "Error Message" in data:
+                print(f"  [FMP] API error: {data['Error Message'][:100]}...")
+                return []
+            return data if isinstance(data, list) else []
         else:
             print(f"  [FMP] API error: {response.status_code}")
             return []
