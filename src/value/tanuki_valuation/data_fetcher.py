@@ -2,6 +2,14 @@ import requests
 import json
 from datetime import datetime
 import os
+import time
+
+# SEC EDGARフォールバック（信頼できるメインソース）
+try:
+    from ..adjusted_eps_analyzer.extract_key_facts import extract_quarterly_facts
+    HAS_SEC = True
+except:
+    HAS_SEC = False
 
 class TanukiDataFetcher:
     def __init__(self):
@@ -19,36 +27,39 @@ class TanukiDataFetcher:
         return age < 86400
 
     def get_financials(self, ticker: str) -> dict:
-        print(f"   [{ticker}] Alpha Vantage API 取得開始")
+        print(f"   [{ticker}] データ取得開始（SEC優先）")
 
-        # 1. Overview（ROEなど）
-        overview = self._fetch_av(ticker, "OVERVIEW")
-        diluted_shares = float(overview.get("SharesOutstanding", 0) or 0) if overview else 0.0
-        roe = 0.0
-        if overview:
-            roe_str = overview.get("ReturnOnEquityTTM", "0")
-            roe = float(roe_str.replace("%", "")) / 100 if "%" in roe_str else float(roe_str) / 100
-
-        # 2. INCOME_STATEMENT / BALANCE_SHEET でsharesと売上高を取得
+        # 1. SEC EDGARを優先（信頼性が高い）
         latest_revenue = 0.0
-        for endpoint in ["INCOME_STATEMENT", "BALANCE_SHEET"]:
-            data = self._fetch_av(ticker, endpoint)
-            if data and "annualReports" in data:
-                for report in data["annualReports"][:3]:
-                    # shares
-                    for key in ["commonStockSharesOutstanding", "weightedAverageShsOutDil", "weightedAverageShsOut",
-                               "weightedAverageNumberOfDilutedSharesOutstanding", "sharesOutstanding"]:
-                        val = float(report.get(key, 0) or 0)
-                        if val > 100_000:
-                            diluted_shares = max(diluted_shares, val)
-                            print(f"   [{ticker}] {endpoint}から{key}取得成功: {val:,.0f}")
-                            break
-                    # 最新売上高（revenue or totalRevenue）
-                    rev = float(report.get("totalRevenue", 0) or report.get("revenue", 0) or 0)
-                    if rev > latest_revenue:
-                        latest_revenue = rev
+        diluted_shares = 0.0
+        roe = 0.0
 
-        print(f"   [{ticker}] 最新売上高（補正用） = ${latest_revenue:,.0f}")
+        if HAS_SEC:
+            print(f"   [{ticker}] SEC EDGARから財務データ取得")
+            try:
+                quarterly_data = extract_quarterly_facts(ticker)
+                if quarterly_data:
+                    for q in quarterly_data[:5]:
+                        # shares
+                        for key in ["us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding", "us-gaap:CommonStockSharesOutstanding"]:
+                            if key in q and q[key].get("value", 0) > 100_000:
+                                diluted_shares = max(diluted_shares, float(q[key]["value"]))
+                        # revenue
+                        rev = float(q.get("us-gaap:Revenues", {}).get("value", 0) or q.get("us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", {}).get("value", 0) or 0)
+                        if rev > latest_revenue:
+                            latest_revenue = rev
+                print(f"   [{ticker}] SECから取得: shares = {diluted_shares:,.0f}, Revenue = ${latest_revenue:,.0f}")
+            except Exception as e:
+                print(f"   [{ticker}] SEC取得エラー: {e}")
+
+        # 2. Alpha Vantageを補完（ROEなど）
+        overview = self._fetch_av(ticker, "OVERVIEW")
+        if overview:
+            if diluted_shares == 0:
+                diluted_shares = float(overview.get("SharesOutstanding", 0) or 0)
+            if roe == 0:
+                roe_str = overview.get("ReturnOnEquityTTM", "0")
+                roe = float(roe_str.replace("%", "")) / 100 if "%" in roe_str else float(roe_str) / 100
 
         # 3. FCF
         cf_data = self._fetch_av(ticker, "CASH_FLOW")
@@ -66,7 +77,7 @@ class TanukiDataFetcher:
         quote = self._fetch_av(ticker, "GLOBAL_QUOTE")
         current_price = float(quote.get("Global Quote", {}).get("05. price", 0)) if quote else 0.0
 
-        print(f"   [{ticker}] FCF 5yr Avg = {fcf_avg:,.0f} | diluted_shares = {diluted_shares:,.0f} | ROE = {roe:.1%}")
+        print(f"   [{ticker}] FCF 5yr Avg = {fcf_avg:,.0f} | diluted_shares = {diluted_shares:,.0f} | ROE = {roe:.1%} | Revenue = ${latest_revenue:,.0f}")
 
         return {
             "fcf_5yr_avg": fcf_avg,
@@ -74,7 +85,7 @@ class TanukiDataFetcher:
             "roe_10yr_avg": roe,
             "current_price": current_price,
             "fcf_list_raw": fcf_list,
-            "latest_revenue": latest_revenue,   # 新規追加：FCF補正用
+            "latest_revenue": latest_revenue,
             "eps_data": {"ticker": ticker}
         }
 
@@ -94,8 +105,6 @@ class TanukiDataFetcher:
                     json.dump(data, f)
                 return data
             else:
-                print(f"   [AV ERROR {ticker} {function}] {resp.status_code}")
                 return None
-        except Exception as e:
-            print(f"   [AV EXCEPTION {ticker} {function}] {e}")
+        except Exception:
             return None
