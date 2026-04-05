@@ -14,7 +14,6 @@ TARGET_STOCKS = {
     "PLTR": "0001321655",
     "SOFI": "0001818874",
     "TSLA": "0001318605"
-  
 }
 
 def send_discord_notification(message: str):
@@ -30,50 +29,74 @@ sys.path.append(base_dir)
 from sec_extractor import download_and_clean_html, fetch_latest_filing
 
 def run_full_agent(ticker: str, cik: str, filing_type: str = "10-Q"):
-    print(f"\n=== 🤖 {ticker} ({filing_type}) の分析を開始 ===")
+    print(f"🎬 {ticker} の分析エージェントを開始します。")
     
-    filing_info = fetch_latest_filing(ticker, cik, filing_type)
-    if not filing_info: 
-        print(f"⚠️ {ticker} の書類が見つかりませんでした。")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        print("⚠️ GEMINI_API_KEY が設定されていません。")
         return
-
+        
+    client = genai.Client(api_key=api_key)
+    
+    # 1. 最新の書類メタデータをSECから取得
+    filing_info = fetch_latest_filing(ticker, cik, filing_type)
+    if not filing_info:
+        print(f"❌ {ticker} の {filing_type} が見つかりませんでした。")
+        return
+        
+    print(f"📄 最新書類を発見: {filing_info['filing_date']}")
+    
+    # 2. HTMLのダウンロードとテキスト化
     document_text = download_and_clean_html(filing_info["url"])
-    if not document_text: return
-
-    print(f"Geminiで解析中... (大容量ドキュメントのため時間がかかる場合があります)")
-    client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-
-    # 🎯 単位ミスとCFO抽出を徹底強化したプロンプト
-    prompt = f"""
-    提出された{filing_type}から数値を抽出し、JSONで返してください。
+    if not document_text:
+        print("❌ テキストの抽出に失敗しました。")
+        return
+        
+    print(f"🚀 Geminiにデータを送信中... (文字数: {len(document_text)})")
     
-    【重要：CFOの探し方】
-    "Net cash provided by operating activities" または "Net cash provided by (used in) operating activities" 
-    という項目を「CONSOLIDATED STATEMENTS OF CASH FLOWS」セクションから探してください。
-    
-    【ルール】
-    1. 数値は「1ドル単位」に換算（In thousandsなら1000倍）。
-    2. 10-Qの場合、必ず「Three Months Ended（最新3ヶ月間）」の数値を使用すること。
-    
-    【厳格ルール：CFOのマイナス値（赤字）の取り扱い】
-    1. "Net cash provided by (used in) operating activities" を探してください。
-    2. 決算書上で括弧書き `(123,456)` になっている数値、または "used in" と記載されている数値は、必ず「マイナスの数値（例: -123456000）」として出力してください。
-    3. 絶対に `0` や `null` に丸めないでください。マイナスであることを正確に把握することがこの分析の命です。
+    # ==========================================
+    # 改善されたプロンプト (類推・逆算の許可とラベリング)
+    # ==========================================
+    prompt = """
+    あなたは米国のプロの機関投資家専属のデータアナリストです。
+    提出された決算書（10-Kまたは10-Q）を厳密に分析し、指定されたフォーマットのJSONのみを返してください。
 
+    【最重要ルール：データの欠落（null）と類推（CALCULATED）の扱い】
+    SEC書類（特に四半期報告書10-Q）では、キャッシュフロー計算書（CFO等）が「年初からの累計（Year-to-Date）」でしか記載されていないケースが多々あります。
+    投資家は「当期単独（3ヶ月間）の数値」を必要としています。
 
-    {{
-      "metrics": {{
-        "revenue": {{"current": 0, "prior": 0}},
-        "cfo": {{"current": 0, "prior": 0}}
-      }},
-      "selected_cluster": "High-Margin AI/Enterprise",
-      "inflection_point_comment": "分析コメント"
-    }}
+    1. 書類内に「当期単独（3ヶ月間）」の数値が明記されている場合は、それを抽出し status を "CONFIRMED" としてください。
+    2. 単独の数値が明記されておらず、年初からの累計額しか載っていない場合：
+       - 書類内の文脈、あるいは注記（Notes）等から、当期単独の数値を「逆算（例：Q3累計からQ2累計を引く）」または「合理的に類推」できる場合は、その計算結果を数値として格納し、status を "CALCULATED" としてください。
+       - その際、必ず「derivation_logic」に、どのような計算や類似科目の参照を行ってその数値を導き出したのか、日本語でプロセスを厳密に記録してください。
+    3. どうしても数値が見当たらず、類推も不可能な場合のみ数値を null とし、status を "NULL" としてください。
+
+    【返却するJSONフォーマット】
+    ```json
+    {
+      "selected_cluster": "企業のビジネスモデルに応じたクラスター名（例: High-Margin AI/Enterprise など）",
+      "inflection_point_comment": "業績の反転や変化の兆候、抽出の過程で気づいたことに関する日本語のコメント",
+      "metrics": {
+        "revenue": {
+          "current": 当期の数値(数値、不明ならnull),
+          "prior": 前年同期の数値(数値、不明ならnull),
+          "status": "CONFIRMED" | "CALCULATED" | "NULL",
+          "derivation_logic": "抽出または計算のロジック（CONFIRMEDの場合は空文字で可）"
+        },
+        "cfo": {
+          "current": 当期の数値(数値、不明ならnull),
+          "prior": 前年同期の数値(数値、不明ならnull),
+          "status": "CONFIRMED" | "CALCULATED" | "NULL",
+          "derivation_logic": "抽出または計算のロジック（CONFIRMEDの場合は空文字で可）"
+        }
+      }
+    }
+    ```
     """
 
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash", 
+            model="gemini-2.5-flash",
             contents=[document_text, prompt],
             config={"response_mime_type": "application/json"}
         )
@@ -85,6 +108,7 @@ def run_full_agent(ticker: str, cik: str, filing_type: str = "10-Q"):
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "ticker": ticker,
             "filing_type": filing_type,
+            "filing_date": filing_info["filing_date"],
             "metrics": m,
             "predicted_lag_q": 4, 
             "cluster_name": data.get("selected_cluster", "Unknown"),
@@ -94,8 +118,10 @@ def run_full_agent(ticker: str, cik: str, filing_type: str = "10-Q"):
         history_data = []
         if os.path.exists(history_path):
             with open(history_path, "r", encoding="utf-8") as f:
-                try: history_data = json.load(f)
-                except: pass
+                try: 
+                    history_data = json.load(f)
+                except: 
+                    pass
         
         history_data.append(new_record)
         with open(history_path, "w", encoding="utf-8") as f:
@@ -105,11 +131,10 @@ def run_full_agent(ticker: str, cik: str, filing_type: str = "10-Q"):
         send_discord_notification(f"【Spidey Bot】{ticker} ({filing_type}) 分析完了。")
         
     except Exception as e:
-        print(f"❌ {ticker} 解析エラー: {e}")
+        print(f"❌ 処理中にエラーが発生しました: {e}")
 
 if __name__ == "__main__":
-    for i, (ticker, cik) in enumerate(TARGET_STOCKS.items()):
-        if i > 0:
-            print(f"\n⏳ API制限回避のため60秒待機します...")
-            time.sleep(60)
+    # テスト実行
+    for ticker, cik in TARGET_STOCKS.items():
         run_full_agent(ticker, cik, "10-Q")
+        time.sleep(1)
