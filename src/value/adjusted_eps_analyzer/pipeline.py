@@ -186,11 +186,23 @@ def aggregate_annual(quarterly_results: List[Dict]) -> List[Dict]:
     annual_results.sort(key=lambda x: x["year"], reverse=True)
     return annual_results
 
-def generate_summary(tickers_data: Dict[str, Dict]) -> Dict:
-    summary = {
-        "last_updated": datetime.now().isoformat(),
-        "tickers": []
-    }
+def generate_summary(tickers_data: Dict[str, Dict], existing_summary_path: str = None) -> Dict:
+    """
+    サマリーを生成。既存のsummary.jsonがあればマージする。
+    """
+    # 既存のサマリーを読み込み
+    existing_tickers = {}
+    if existing_summary_path and os.path.exists(existing_summary_path):
+        try:
+            with open(existing_summary_path, 'r', encoding='utf-8') as f:
+                existing = json.load(f)
+                for t in existing.get("tickers", []):
+                    existing_tickers[t["ticker"]] = t
+            print(f"  [Summary] Loaded {len(existing_tickers)} existing tickers from summary.json")
+        except Exception as e:
+            print(f"  [Summary] Warning: Could not load existing summary.json: {e}")
+    
+    # 新しいデータで更新
     for ticker, data in tickers_data.items():
         if data.get("quarters") and len(data["quarters"]) > 0:
             latest = data["quarters"][0]
@@ -202,7 +214,7 @@ def generate_summary(tickers_data: Dict[str, Dict]) -> Dict:
             health = "Caution"
             if "ai_analysis" in latest:
                 health = latest["ai_analysis"].get("health", "Caution")
-            summary["tickers"].append({
+            existing_tickers[ticker] = {
                 "ticker": ticker,
                 "company_name": data.get("company_name", ""),
                 "latest_filing_date": latest["filing_date"],
@@ -210,7 +222,12 @@ def generate_summary(tickers_data: Dict[str, Dict]) -> Dict:
                 "adjusted_eps": latest["adjusted_eps"],
                 "yoy_growth": yoy_growth,
                 "health": health
-            })
+            }
+    
+    summary = {
+        "last_updated": datetime.now().isoformat(),
+        "tickers": list(existing_tickers.values())
+    }
     return summary
 
 def get_revenue(period_data: Dict) -> float:
@@ -409,21 +426,26 @@ def run(ticker_filter: str = None):
             _pending_maturity = None
         
         # ★★★ EPS差分検知（Alpha Vantage API vs XBRL） ★★★
-        eps_discrepancies = check_eps_discrepancy(ticker, quarterly_results)
-        if eps_discrepancies:
-            print(f"  [AV] Applying discrepancies to {len(eps_discrepancies)} quarters...")
-            print(f"  [AV] Discrepancy keys: {list(eps_discrepancies.keys())[:5]}...")
-            print(f"  [AV] quarterly_results period_ends: {[q.get('period_end', q.get('filing_date', '')) for q in quarterly_results[:5]]}...")
-            # 差異が見つかった四半期に special_notes を追加
-            matched_count = 0
-            for q in quarterly_results:
-                period_end = q.get('period_end', q.get('filing_date', ''))
-                if period_end in eps_discrepancies:
-                    q['special_flags'] = q.get('special_flags', []) + ['EPS_DISCREPANCY']
-                    q['special_notes'] = q.get('special_notes', {})
-                    q['special_notes']['eps_discrepancy'] = eps_discrepancies[period_end]
-                    matched_count += 1
-            print(f"  [AV] Applied special_flags to {matched_count} quarters")
+        # Alpha Vantage無料枠は25リクエスト/日なので、全銘柄実行時のみ実行
+        # または特定銘柄（SOUN等）のみ実行
+        EPS_CHECK_TICKERS = ['SOUN', 'CELH']  # 差分検知対象銘柄
+        
+        if ticker in EPS_CHECK_TICKERS:
+            eps_discrepancies = check_eps_discrepancy(ticker, quarterly_results)
+            if eps_discrepancies:
+                print(f"  [AV] Applying discrepancies to {len(eps_discrepancies)} quarters...")
+                # 差異が見つかった四半期に special_notes を追加
+                matched_count = 0
+                for q in quarterly_results:
+                    period_end = q.get('period_end', q.get('filing_date', ''))
+                    if period_end in eps_discrepancies:
+                        q['special_flags'] = q.get('special_flags', []) + ['EPS_DISCREPANCY']
+                        q['special_notes'] = q.get('special_notes', {})
+                        q['special_notes']['eps_discrepancy'] = eps_discrepancies[period_end]
+                        matched_count += 1
+                print(f"  [AV] Applied special_flags to {matched_count} quarters")
+        else:
+            print(f"  [AV] Skipping EPS discrepancy check for {ticker} (not in EPS_CHECK_TICKERS)")
         
         # TTM・年次集計・AI分析
         ttm_results = []
@@ -474,10 +496,11 @@ def run(ticker_filter: str = None):
         print(f"✓ {ticker} 保存完了: {ticker_dir}/")
     
     if all_tickers_data:
-        summary = generate_summary(all_tickers_data)
-        with open(os.path.join(DATA_ROOT, "summary.json"), "w", encoding="utf-8") as f:
+        summary_path = os.path.join(DATA_ROOT, "summary.json")
+        summary = generate_summary(all_tickers_data, existing_summary_path=summary_path)
+        with open(summary_path, "w", encoding="utf-8") as f:
             json.dump(summary, f, indent=2, ensure_ascii=False)
-        print("✓ summary.json 生成完了")
+        print(f"✓ summary.json 生成完了 (全{len(summary['tickers'])}銘柄)")
 
 if __name__ == "__main__":
     import argparse
