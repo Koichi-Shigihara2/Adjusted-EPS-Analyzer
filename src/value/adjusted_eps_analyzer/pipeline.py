@@ -121,6 +121,7 @@ def check_eps_discrepancy(ticker: str, quarterly_results: List[Dict]) -> Dict[st
     
     if discrepancies:
         print(f"  [AV] Found {len(discrepancies)} quarters with EPS discrepancy")
+        print(f"  [AV] DEBUG: discrepancies keys = {list(discrepancies.keys())}")
     else:
         print(f"  [AV] No significant EPS discrepancy found")
     
@@ -407,16 +408,22 @@ def run(ticker_filter: str = None):
         else:
             _pending_maturity = None
         
-        # ★★★ EPS差分検知（FMP API vs XBRL） ★★★
+        # ★★★ EPS差分検知（Alpha Vantage API vs XBRL） ★★★
         eps_discrepancies = check_eps_discrepancy(ticker, quarterly_results)
         if eps_discrepancies:
+            print(f"  [AV] Applying discrepancies to {len(eps_discrepancies)} quarters...")
+            print(f"  [AV] Discrepancy keys: {list(eps_discrepancies.keys())[:5]}...")
+            print(f"  [AV] quarterly_results period_ends: {[q.get('period_end', q.get('filing_date', '')) for q in quarterly_results[:5]]}...")
             # 差異が見つかった四半期に special_notes を追加
+            matched_count = 0
             for q in quarterly_results:
                 period_end = q.get('period_end', q.get('filing_date', ''))
                 if period_end in eps_discrepancies:
                     q['special_flags'] = q.get('special_flags', []) + ['EPS_DISCREPANCY']
                     q['special_notes'] = q.get('special_notes', {})
                     q['special_notes']['eps_discrepancy'] = eps_discrepancies[period_end]
+                    matched_count += 1
+            print(f"  [AV] Applied special_flags to {matched_count} quarters")
         
         # TTM・年次集計・AI分析
         ttm_results = []
