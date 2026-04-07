@@ -1,6 +1,6 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-04-06T08:53:27.192886",
+  "last_updated": "2026-04-07T12:25:34.688663",
   "quarters": [
     {
       "gaap_eps": 0.1386432139527564,
@@ -97,31 +97,31 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目の大部分を株式報酬費用と無形資産償却費が占めており、これらは継続的に発生する経常的項目であるため調整後EPSの健全性は限定的。リストラや公正価値調整などの一過性項目は金額が相対的に小さく、全体として注意を要する。",
+        "comment": "調整の大半を占める株式報酬費用（約1.98億ドル）と無形資産償却費は恒常的に発生する項目であり、調整後EPSの持続可能性を過大評価するリスクがある。ローン公正価値や異常貸倒引当金は一時的要素が強いが金額は小さい。リストラ費用は一過性が高い。全体として調整の健全性には注意が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが、成長企業における株式報酬は毎期発生する恒常的なコスト",
-            "confidence": 0.25
+            "snippet": "非現金費用として加算されているが、成長企業では毎期発生する恒常的な株式報酬コスト",
+            "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は過去のM&Aに基づく定期的な費用",
+            "snippet": "買収関連無形資産の定期的な償却費で、恒常的に発生する非現金項目",
             "confidence": 0.2
           },
           {
             "item": "loan_fair_value",
-            "snippet": "市場金利変動による一時的評価替え",
-            "confidence": 0.75
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響の異常変動分",
+            "snippet": "市場金利変動による一時的な公正価値評価損益。金融事業のボラティリティ要因",
             "confidence": 0.6
           },
           {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による異常貸倒引当金の繰入分として一時的と分類",
+            "confidence": 0.65
+          },
+          {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用",
+            "snippet": "一過性の事業再編・リストラ費用",
             "confidence": 0.8
           }
         ]

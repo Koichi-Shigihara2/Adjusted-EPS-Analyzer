@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-04-06T08:53:19.377449",
+  "last_updated": "2026-04-07T12:25:24.865209",
   "quarters": [
     {
       "gaap_eps": 0.09704955847334952,
@@ -72,6 +72,18 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.09704955847334952,
+          "official_eps": 0.26,
+          "eps_diff_pct": 62.7,
+          "note": "XBRLと公式発表のGAAP EPSに63%の差異があります。公式EPS: $0.26, XBRL計算EPS: $0.10。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      },
       "maturity_monitor": {
         "alert": null,
         "sbc_contribution": 0.329,
@@ -84,26 +96,26 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目にはリストラ費用のような一過性項目が大きい一方で、株式報酬費用や無形資産償却費などの恒常的に発生しやすい項目も含まれており、調整後のEPSの健全性は限定的。貸倒引当金の異常変動分は飲料事業との関連性が不明瞭で検証が必要。全体として非GAAP利益の質に注意を要する。",
+        "comment": "調整項目のうちリストラ費用（8,075万ドル）が極めて大規模で、調整後EPSを大幅に押し上げている点が懸念されます。また株式報酬費用と無形資産償却は成長企業ではほぼ恒常的に発生する性質のものであり、真に一過性とは言えません。異常貸倒引当金は一時的と主張されていますが、飲料事業との関連性も含め詳細な検証が必要です。全体として非GAAP調整の品質は中程度で、投資判断時には注意を要します。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用を加算。ただし、継続的に発生する経営者の報酬形態であり、株主希薄化を伴う。",
+            "snippet": "非現金費用だが、成長企業では毎期発生する経常的な株式報酬費用",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却を加算。買収が過去のものであれば定期的に発生する費用。",
+            "snippet": "買収関連無形資産の償却は継続的に発生する恒常的費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的な貸倒引当金の異常分。飲料メーカーとしては異質な項目で、詳細な検証が必要。",
-            "confidence": 0.5
+            "snippet": "マクロ変動による一時的影響とされるが、事業との関連性確認が必要",
+            "confidence": 0.55
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用。リストラ費用は典型的には非経常的とみなされる。",
+            "snippet": "一過性の事業再編費用だが規模が大きく事業構造に影響する可能性",
             "confidence": 0.75
           }
         ]
@@ -152,7 +164,19 @@
       "diluted_shares": 257778000.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.23669203733445057,
+          "official_eps": 0.42,
+          "eps_diff_pct": 156.4,
+          "note": "XBRLと公式発表のGAAP EPSに156%の差異があります。公式EPS: $0.42, XBRL計算EPS: $-0.24。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.38374626745218304,
@@ -300,7 +324,19 @@
       "diluted_shares": 237404000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.07951003352934238,
+          "official_eps": 0.14,
+          "eps_diff_pct": 156.8,
+          "note": "XBRLと公式発表のGAAP EPSに157%の差異があります。公式EPS: $0.14, XBRL計算EPS: $-0.08。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.027197726961522662,
@@ -332,7 +368,19 @@
       "diluted_shares": 233696000.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.027197726961522662,
+          "official_eps": -0.0033,
+          "eps_diff_pct": 924.2,
+          "note": "XBRLと公式発表のGAAP EPSに924%の差異があります。公式EPS: $-0.00, XBRL計算EPS: $0.03。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.3357941034112671,
@@ -422,7 +470,19 @@
       "diluted_shares": 237523000.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.3275935383099742,
+          "official_eps": 0.27,
+          "eps_diff_pct": 21.3,
+          "note": "XBRLと公式発表のGAAP EPSに21%の差異があります。公式EPS: $0.27, XBRL計算EPS: $0.33。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.21149204098512855,
@@ -493,7 +553,19 @@
       "diluted_shares": 236964000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.21149204098512855,
+          "official_eps": 0.17,
+          "eps_diff_pct": 24.4,
+          "note": "XBRLと公式発表のGAAP EPSに24%の差異があります。公式EPS: $0.17, XBRL計算EPS: $0.21。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.353807639301564,
@@ -525,7 +597,19 @@
       "diluted_shares": 237273000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.353807639301564,
+          "official_eps": 0.89,
+          "eps_diff_pct": 60.2,
+          "note": "XBRLと公式発表のGAAP EPSに60%の差異があります。公式EPS: $0.89, XBRL計算EPS: $0.35。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.21749172409133902,
@@ -557,7 +641,19 @@
       "diluted_shares": 236832000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.21749172409133902,
+          "official_eps": 0.52,
+          "eps_diff_pct": 58.2,
+          "note": "XBRLと公式発表のGAAP EPSに58%の差異があります。公式EPS: $0.52, XBRL計算EPS: $0.22。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.17448587886252154,
@@ -615,7 +711,19 @@
       "diluted_shares": 236277000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.17448587886252154,
+          "official_eps": 0.4,
+          "eps_diff_pct": 56.4,
+          "note": "XBRLと公式発表のGAAP EPSに56%の差異があります。公式EPS: $0.40, XBRL計算EPS: $0.17。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.2805456780658039,
@@ -853,7 +961,19 @@
       "diluted_shares": 74609000.0,
       "period_end": "2021-09-30",
       "fiscal_year": 2021,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.036802409896929324,
+          "official_eps": -0.13,
+          "eps_diff_pct": 128.3,
+          "note": "XBRLと公式発表のGAAP EPSに128%の差異があります。公式EPS: $-0.13, XBRL計算EPS: $0.04。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     }
   ]
 }

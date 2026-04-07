@@ -1,6 +1,6 @@
 {
   "ticker": "RKLB",
-  "last_updated": "2026-04-06T08:54:09.693945",
+  "last_updated": "2026-04-07T12:26:28.445835",
   "quarters": [
     {
       "gaap_eps": -0.09972774130642749,
@@ -58,16 +58,16 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用と無形資産償却費の両方を調整加算していますが、これらはRocket Labのような成長企業において定期的に発生する項目であり、真に一過性とは言えません。特にSBCの金額が大きく、調整後EPSの健全性は限定的です。コア損失の改善度合いを過大評価しないよう注意が必要です。",
+        "comment": "調整項目は株式報酬費用と無形資産償却費の2項目のみですが、どちらも非現金費用ながら成長企業において毎期継続的に発生する恒常的な性質が強い項目です。SBCは従業員報酬の主要手段として、無形資産償却は買収関連で定期的に計上されるため、調整後のEPS改善（-0.10→-0.026）は一時的な印象を与える可能性があります。真の経済的損失を測る上ではGAAP EPSを重視すべきであり、健全性に注意が必要です。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として毎期発生する株式報酬費用。成長企業では恒常的な報酬コストであり、調整の正当性は中程度以下。",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック・成長企業では毎期発生する恒常的な報酬コストであり一過性とは言えない。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却費は、買収後も複数年にわたり継続して発生する費用。",
+            "snippet": "無形資産償却費は買収関連無形資産に対する定期的な償却であり、継続的に発生する非経常的とは言えない費用である。",
             "confidence": 0.2
           }
         ]
@@ -569,51 +569,6 @@
       "quarter": 1
     },
     {
-      "gaap_eps": -0.07980882688671179,
-      "adjusted_eps": 0.012636256851745088,
-      "gaap_net_income": -37208000.0,
-      "adjusted_net_income": 5891201.052323885,
-      "diluted_shares_used": 466214095.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 43691000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 39862130.72201111,
-          "tax_rate_applied": 0.08763519438760596
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 3548000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 3237070.330312774,
-          "tax_rate_applied": 0.08763519438760596
-        }
-      ],
-      "net_adjustment_total": 43099201.052323885,
-      "filing_date": "2022-12-31",
-      "form": "10-K",
-      "sector": "Industrials",
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 466214095.0,
-      "period_end": "2022-12-31",
-      "fiscal_year": 2022,
-      "quarter": 4
-    },
-    {
       "gaap_eps": -0.0736745399460833,
       "adjusted_eps": -0.037453731142195607,
       "gaap_net_income": -34610000.0,
@@ -702,51 +657,6 @@
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2
-    },
-    {
-      "gaap_eps": -0.0585088186058122,
-      "adjusted_eps": -0.03236812041129639,
-      "gaap_net_income": -26709000.0,
-      "adjusted_net_income": -14775894.449173424,
-      "diluted_shares_used": 456495288.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 11958000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 9607222.525872497,
-          "tax_rate_applied": 0.19658617445454954
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 2895000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 2325883.024954079,
-          "tax_rate_applied": 0.19658617445454954
-        }
-      ],
-      "net_adjustment_total": 11933105.550826576,
-      "filing_date": "2022-03-31",
-      "form": "10-Q",
-      "sector": "Industrials",
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 456495288.0,
-      "period_end": "2022-03-31",
-      "fiscal_year": 2022,
-      "quarter": 1
     }
   ]
 }
