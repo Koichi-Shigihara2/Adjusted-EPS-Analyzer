@@ -37,14 +37,14 @@ jobs:
         env:
           FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
           ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
+        working-directory: src/value/tanuki_valuation
         run: |
-          cd src/value/tanuki_valuation
           if [ -n "${{ github.event.inputs.tickers }}" ]; then
             # 入力をスペース区切りに変換
             TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
-            python -m src.pipeline $TICKERS
+            python pipeline.py $TICKERS
           else
-            python -m src.pipeline
+            python pipeline.py
           fi
 
       - name: Commit and push changes
