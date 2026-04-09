@@ -39,8 +39,9 @@ class SECParser:
         
         # PL（損益計算書）
         "revenue": [
+            "Revenues",  # 最優先（最も汎用的）
             "RevenueFromContractWithCustomerExcludingAssessedTax",
-            "Revenues",
+            "RevenueFromContractWithCustomerIncludingAssessedTax",  # SOUN等
             "RevenueFromContractWithCustomer",
             "SalesRevenueNet",
             "TotalRevenue",
@@ -71,6 +72,7 @@ class SECParser:
         # 株式数
         "shares_diluted": [
             "WeightedAverageNumberOfDilutedSharesOutstanding",
+            "CommonStockSharesOutstanding",  # フォールバック
         ],
         "shares_basic": [
             "WeightedAverageNumberOfSharesOutstandingBasic",
@@ -130,7 +132,9 @@ class SECParser:
         # 全項目を抽出
         extracted = {}
         for field_name, xbrl_keys in self.XBRL_MAPPING.items():
-            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys)
+            # 株式数は同一期間で最大値を採用（異常値対策）
+            use_max = field_name in ["shares_diluted", "shares_basic"]
+            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max)
         
         # 年次データを集約
         years = self._get_available_years(extracted)
@@ -148,9 +152,14 @@ class SECParser:
         
         return result
     
-    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str]) -> Dict[str, Any]:
+    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
+        
+        Args:
+            us_gaap: SEC XBRL データ
+            xbrl_keys: 優先順位順のXBRLキーリスト
+            use_max: 同一期間に複数値がある場合、最大値を使用（株式数向け）
         
         Returns:
             dict: {
@@ -183,14 +192,23 @@ class SECParser:
                     
                     # 年次（10-K）
                     if form == "10-K" and fp == "FY":
-                        if fy not in result["annual"]:
-                            result["annual"][fy] = val
+                        if use_max:
+                            # 最大値を採用（株式数の異常値対策）
+                            if fy not in result["annual"] or val > result["annual"][fy]:
+                                result["annual"][fy] = val
+                        else:
+                            if fy not in result["annual"]:
+                                result["annual"][fy] = val
                     
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
                         quarter_key = f"{fy}{fp}"
-                        if quarter_key not in result["quarterly"]:
-                            result["quarterly"][quarter_key] = val
+                        if use_max:
+                            if quarter_key not in result["quarterly"] or val > result["quarterly"][quarter_key]:
+                                result["quarterly"][quarter_key] = val
+                        else:
+                            if quarter_key not in result["quarterly"]:
+                                result["quarterly"][quarter_key] = val
                 
                 # 最初に見つかったunit_typeのデータを使用
                 if result["annual"] or result["quarterly"]:

@@ -143,7 +143,10 @@ class SECReader:
         return sum(fcf_list) / len(fcf_list) if fcf_list else 0.0
     
     def get_roe_avg(self, ticker: str, years: int = 10) -> float:
-        """ROE平均を取得（純利益÷株主資本）"""
+        """
+        ROE平均を取得（純利益÷株主資本）
+        赤字年度を含まない直近の連続黒字期間のみ使用
+        """
         annual_data = self.get_annual_range(ticker, years)
         
         roe_list = []
@@ -152,8 +155,13 @@ class SECReader:
             equity = data.get("bs", {}).get("stockholders_equity")
             
             if net_income is not None and equity and equity > 0:
-                roe = net_income / equity
-                roe_list.append(roe)
+                if net_income > 0:
+                    # 黒字年度のみ追加
+                    roe = net_income / equity
+                    roe_list.append(roe)
+                else:
+                    # 赤字に到達したら打ち切り（直近連続黒字のみ使用）
+                    break
         
         return sum(roe_list) / len(roe_list) if roe_list else 0.0
     
