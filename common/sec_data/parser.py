@@ -29,6 +29,14 @@ class SECParser:
             "LiabilitiesAndStockholdersEquity",
         ],
         
+        # RPO（残存履行義務）- SaaS企業向け
+        "rpo": [
+            "RevenueRemainingPerformanceObligation",
+            "RemainingPerformanceObligation",
+            "ContractWithCustomerLiability",
+            "DeferredRevenue",
+        ],
+        
         # PL（損益計算書）
         "revenue": [
             "RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -218,6 +226,7 @@ class SECParser:
             "pl": {},
             "cf": {},
             "shares": {},
+            "other": {},
         }
         
         # BS
@@ -249,6 +258,12 @@ class SECParser:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["shares"][field] = val
+        
+        # Other (RPO等)
+        for field in ["rpo"]:
+            val = extracted.get(field, {}).get(period_type, {}).get(period)
+            if val is not None:
+                data["other"][field] = val
         
         # 最低限のデータがあるか確認
         if not any([data["bs"], data["pl"], data["cf"]]):

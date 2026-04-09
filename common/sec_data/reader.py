@@ -191,6 +191,17 @@ class SECReader:
         
         return fcf_list
     
+    def get_rpo(self, ticker: str) -> float:
+        """直近のRPO（残存履行義務）を取得 - SaaS企業向け"""
+        annual_data = self.get_annual_range(ticker, 1)
+        
+        if annual_data:
+            rpo = annual_data[0].get("other", {}).get("rpo")
+            if rpo:
+                return float(rpo)
+        
+        return 0.0
+    
     # =========================================
     # Adjusted EPS Analyzer用ヘルパー
     # =========================================
