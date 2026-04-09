@@ -1,10 +1,10 @@
 """
-TANUKI VALUATION - Core Calculator v5.1
+TANUKI VALUATION - Core Calculator v5.2
 Koichi式株価評価モデル
 
-P_t = V_0 × (1 + α)
+P_t = (V_0 + RPO調整) × (1 + α)
 V_0 = 2段階DCF（高成長期3年 + ターミナル）
-α = max(0, (ROE_10yr × retention_rate / WACC) × 0.7)
+α = min(1.0, max(0, (ROE_10yr × retention_rate / WACC) × 0.7))
 
 パラメータ:
 - WACC: 8.5%（成長期待を含まない固定値）
@@ -12,15 +12,17 @@ V_0 = 2段階DCF（高成長期3年 + ターミナル）
 - retention_rate: 60%
 - high_growth_range: 15%〜50%
 - FCF floor: revenue × 8%（FCFがマイナスの場合）
+- α_cap: 1.0（100%上限）
+- min_fcf_years: 3（最低FCFデータ年数）
+- RPO割引率: 15%（バックログの現在価値化）
 """
 
-import numpy as np
 from typing import Dict, Any, List
 from datetime import datetime
 
 
 class KoichiValuationCalculator:
-    """Koichi式 v5.1 バリュエーション計算エンジン"""
+    """Koichi式 v5.2 バリュエーション計算エンジン"""
 
     def __init__(self):
         # 固定パラメータ
@@ -28,6 +30,11 @@ class KoichiValuationCalculator:
         self.high_growth_years = 3   # 高成長期間（年）
         self.retention_rate = 0.60   # 内部留保率
         self.terminal_growth = 0.03  # 永続成長率
+        
+        # v5.2 追加パラメータ
+        self.alpha_cap = 1.0         # α上限（100%）
+        self.min_fcf_years = 3       # 最低FCFデータ年数
+        self.rpo_discount_rate = 0.15  # RPO割引率
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -41,11 +48,12 @@ class KoichiValuationCalculator:
                 "current_price": float,
                 "fcf_list_raw": list,
                 "latest_revenue": float,
-                "eps_data": {"ticker": str}
+                "eps_data": {"ticker": str},
+                "rpo": float (optional) - 残存履行義務
             }
         
         Returns:
-            完全なバリュエーション結果（calculation_stepsを含む）
+            完全なバリュエーション結果
         """
         # データ抽出
         fcf_avg = financials.get("fcf_5yr_avg", 0.0)
@@ -55,15 +63,27 @@ class KoichiValuationCalculator:
         fcf_list_raw = financials.get("fcf_list_raw", [])
         current_price = financials.get("current_price", 0.0)
         ticker = financials.get("eps_data", {}).get("ticker", "Unknown")
+        rpo = financials.get("rpo", 0.0)  # 残存履行義務
 
+        # ========================================
         # バリデーション
+        # ========================================
         if diluted_shares <= 100_000:
-            return {"error": "diluted_shares missing or invalid"}
+            return {"error": "diluted_shares missing or invalid", "ticker": ticker}
+        
+        # データ不足ガード
+        if len(fcf_list_raw) < self.min_fcf_years:
+            print(f"   [{ticker}] ⚠️ FCFデータ不足 ({len(fcf_list_raw)}年 < {self.min_fcf_years}年)")
+            return {
+                "error": f"FCFデータ不足 ({len(fcf_list_raw)}年)",
+                "ticker": ticker,
+                "fcf_years_available": len(fcf_list_raw),
+                "min_required": self.min_fcf_years
+            }
 
         # ========================================
         # STEP 1: FCF 5年平均算出
         # ========================================
-        step1_description = "過去5年のFCF（営業CF - 設備投資）を平均化"
         fcf_calculation = {
             "input": fcf_list_raw,
             "sum": sum(fcf_list_raw) if fcf_list_raw else 0,
@@ -74,7 +94,6 @@ class KoichiValuationCalculator:
         # ========================================
         # STEP 2: 企業別高成長率（CAGR）算出
         # ========================================
-        step2_description = "直近5年FCFのCAGRを算出し、15%〜50%にクリップ"
         high_growth_rate = 0.25  # デフォルト
         cagr_calculation = {"method": "default", "result": high_growth_rate}
 
@@ -99,28 +118,16 @@ class KoichiValuationCalculator:
         # ========================================
         original_fcf = fcf_avg
         fcf_floor_applied = 0.0
-        fcf_correction = {"applied": False}
 
         if fcf_avg <= 0 and latest_revenue > 0:
             fcf_floor = latest_revenue * 0.08
             fcf_avg = max(fcf_avg, fcf_floor)
             fcf_floor_applied = fcf_avg - original_fcf
-            fcf_correction = {
-                "applied": True,
-                "original_fcf": original_fcf,
-                "revenue": latest_revenue,
-                "floor_rate": 0.08,
-                "floor_value": fcf_floor,
-                "adjusted_fcf": fcf_avg
-            }
             print(f"   [{ticker}] FCFが{original_fcf:,.0f}のため補正 → ${fcf_avg:,.0f} (売上高×8%)")
 
         # ========================================
         # STEP 3: 2段階DCF計算
         # ========================================
-        step3_description = "高成長期3年 + ターミナル価値のDCF"
-
-        # 高成長期 PV計算
         current_fcf = fcf_avg
         pv_high = 0.0
         high_growth_detail = []
@@ -142,27 +149,38 @@ class KoichiValuationCalculator:
         terminal_value = terminal_fcf / (self.wacc - self.terminal_growth)
         pv_terminal = terminal_value / (1 + self.wacc) ** self.high_growth_years
 
-        dcf_calculation = {
-            "wacc": self.wacc,
-            "high_growth_years": self.high_growth_years,
-            "terminal_growth": self.terminal_growth,
-            "high_growth_detail": high_growth_detail,
-            "pv_high": pv_high,
-            "terminal_fcf": terminal_fcf,
-            "terminal_value": terminal_value,
-            "pv_terminal": pv_terminal
-        }
-
         # V_0（本質的価値ベース）
         v0 = pv_high + pv_terminal
 
         # ========================================
-        # STEP 4: α（成長期待プレミアム）算出
+        # STEP 4: RPO補正（SaaS企業向け）
         # ========================================
-        step4_description = "α = max(0, (g_individual / WACC) × 0.7)"
+        rpo_adjustment = 0.0
+        rpo_calculation = {"applied": False}
+        
+        if rpo > 0:
+            # RPOを割引現在価値化（平均1.5年で実現と仮定）
+            rpo_pv = rpo / (1 + self.rpo_discount_rate) ** 1.5
+            rpo_adjustment = rpo_pv
+            rpo_calculation = {
+                "applied": True,
+                "rpo_raw": rpo,
+                "discount_rate": self.rpo_discount_rate,
+                "assumed_realization_years": 1.5,
+                "rpo_pv": rpo_pv
+            }
+            print(f"   [{ticker}] RPO補正: ${rpo:,.0f} → PV ${rpo_pv:,.0f}")
+
+        # V_0 + RPO調整
+        v0_adjusted = v0 + rpo_adjustment
+
+        # ========================================
+        # STEP 5: α（成長期待プレミアム）算出 ★キャップ追加
+        # ========================================
         g_individual = max(0.0, roe_avg * self.retention_rate)
         alpha_raw = (g_individual / self.wacc) * 0.7
-        alpha = max(0.0, alpha_raw)
+        alpha_uncapped = max(0.0, alpha_raw)
+        alpha = min(self.alpha_cap, alpha_uncapped)  # ★キャップ適用
 
         alpha_calculation = {
             "roe_10yr_avg": roe_avg,
@@ -170,33 +188,28 @@ class KoichiValuationCalculator:
             "g_individual": g_individual,
             "wacc": self.wacc,
             "alpha_raw": alpha_raw,
-            "alpha_clipped": alpha
+            "alpha_uncapped": alpha_uncapped,
+            "alpha_cap": self.alpha_cap,
+            "alpha_final": alpha,
+            "was_capped": alpha_uncapped > self.alpha_cap
         }
 
-        print(f"   [{ticker}] ROE_10yr = {roe_avg:.1%} → α = {alpha:.3f}")
+        if alpha_uncapped > self.alpha_cap:
+            print(f"   [{ticker}] ROE_10yr = {roe_avg:.1%} → α = {alpha_uncapped:.3f} → キャップ適用 → {alpha:.3f}")
+        else:
+            print(f"   [{ticker}] ROE_10yr = {roe_avg:.1%} → α = {alpha:.3f}")
 
         # ========================================
-        # STEP 5: 本質的価値（P_t）算出
+        # STEP 6: 本質的価値（P_t）算出
         # ========================================
-        step5_description = "P_t = V_0 × (1 + α)"
-        intrinsic_value_pt = v0 * (1 + alpha)
+        intrinsic_value_pt = v0_adjusted * (1 + alpha)
         intrinsic_value_per_share = intrinsic_value_pt / diluted_shares if diluted_shares > 0 else 0.0
-
-        pt_calculation = {
-            "v0": v0,
-            "alpha": alpha,
-            "formula": "V_0 × (1 + α)",
-            "intrinsic_value_pt": intrinsic_value_pt,
-            "diluted_shares": diluted_shares,
-            "intrinsic_value_per_share": intrinsic_value_per_share
-        }
 
         # ========================================
         # 1〜3年後価値予測
         # ========================================
         future_values = {}
         current_value = intrinsic_value_per_share
-        future_detail = []
 
         for year in range(1, 4):
             if year <= self.high_growth_years:
@@ -206,11 +219,6 @@ class KoichiValuationCalculator:
             
             future_value = current_value * (1 + growth_rate)
             future_values[f"{year}年後"] = round(future_value, 2)
-            future_detail.append({
-                "year": year,
-                "growth_rate": growth_rate,
-                "value": round(future_value, 2)
-            })
             current_value = future_value
 
         print(f"   [{ticker}] 1〜3年後理論株価: {future_values}")
@@ -225,82 +233,32 @@ class KoichiValuationCalculator:
             "intrinsic_value_pt": float(intrinsic_value_pt),
             "intrinsic_value_per_share": float(intrinsic_value_per_share),
             "v0": float(v0),
+            "v0_adjusted": float(v0_adjusted),
             "alpha": float(alpha),
+            "alpha_was_capped": alpha_uncapped > self.alpha_cap,
             "future_values": future_values,
             "upside_percent": round(upside_percent, 1),
             "calculation_date": datetime.now().strftime("%Y-%m-%d"),
-            "formula": "Koichi式 v5.1 Phase 4（将来価値予測版）",
+            "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
             
-            # 計算ステップ詳細（フロントエンド表示用）
-            "calculation_steps": {
-                "step1": {
-                    "title": "FCF 5年平均算出",
-                    "description": step1_description,
-                    "formula": "Σ(FCF_t) / n",
-                    "inputs": {
-                        "fcf_list": fcf_list_raw,
-                        "years": len(fcf_list_raw)
-                    },
-                    "result": fcf_avg,
-                    "detail": fcf_calculation
-                },
-                "step2": {
-                    "title": "企業別高成長率（CAGR）",
-                    "description": step2_description,
-                    "formula": "(FCF_end / FCF_start)^(1/n) - 1",
-                    "inputs": cagr_calculation,
-                    "result": high_growth_rate,
-                    "constraints": {"min": 0.15, "max": 0.50}
-                },
-                "step3": {
-                    "title": "2段階DCF計算",
-                    "description": step3_description,
-                    "formula": "PV_high + PV_terminal",
-                    "inputs": {
-                        "fcf_base": fcf_avg,
-                        "wacc": self.wacc,
-                        "high_growth_rate": high_growth_rate,
-                        "terminal_growth": self.terminal_growth
-                    },
-                    "result": {
-                        "pv_high": pv_high,
-                        "pv_terminal": pv_terminal,
-                        "v0": v0
-                    },
-                    "detail": dcf_calculation
-                },
-                "step4": {
-                    "title": "α 成長期待プレミアム",
-                    "description": step4_description,
-                    "formula": "max(0, (ROE × 内部留保率 / WACC) × 0.7)",
-                    "inputs": alpha_calculation,
-                    "result": alpha
-                },
-                "step5": {
-                    "title": "本質的価値（P_t）算出",
-                    "description": step5_description,
-                    "formula": "V_0 × (1 + α)",
-                    "inputs": pt_calculation,
-                    "result": intrinsic_value_per_share
-                }
-            },
-            
-            # 従来形式のcomponents（互換性維持）
+            # 計算コンポーネント
             "components": {
                 **financials,
                 "high_growth_rate_used": float(high_growth_rate),
                 "pv_high": float(pv_high),
                 "pv_terminal": float(pv_terminal),
                 "roe_used": float(roe_avg),
-                "fcf_floor_applied": float(fcf_floor_applied)
+                "fcf_floor_applied": float(fcf_floor_applied),
+                "rpo_adjustment": float(rpo_adjustment),
+                "alpha_uncapped": float(alpha_uncapped),
             }
         }
 
 
 if __name__ == "__main__":
-    # テスト実行
     calculator = KoichiValuationCalculator()
     
+    # テスト: 通常ケース
     test_data = {
         "fcf_5yr_avg": 4850000000,
         "diluted_shares": 3180000000,
@@ -312,7 +270,32 @@ if __name__ == "__main__":
     }
     
     result = calculator.calculate_pt(test_data)
+    print(f"\nTSLA: ${result.get('intrinsic_value_per_share', 0):.2f}")
     
-    import json
-    print("\n=== Calculation Result ===")
-    print(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+    # テスト: 異常ROE（FIGケース）
+    test_high_roe = {
+        "fcf_5yr_avg": 1000000000,
+        "diluted_shares": 187000000,
+        "roe_10yr_avg": 2.579,  # 257.9%
+        "current_price": 20.0,
+        "fcf_list_raw": [800000000, 900000000, 1000000000],
+        "latest_revenue": 500000000,
+        "eps_data": {"ticker": "TEST_HIGH_ROE"}
+    }
+    
+    result2 = calculator.calculate_pt(test_high_roe)
+    print(f"\nTEST_HIGH_ROE: ${result2.get('intrinsic_value_per_share', 0):.2f} (α capped: {result2.get('alpha_was_capped')})")
+    
+    # テスト: データ不足
+    test_insufficient = {
+        "fcf_5yr_avg": 500000000,
+        "diluted_shares": 100000000,
+        "roe_10yr_avg": 0.15,
+        "current_price": 50.0,
+        "fcf_list_raw": [400000000, 500000000],  # 2年分のみ
+        "latest_revenue": 2000000000,
+        "eps_data": {"ticker": "TEST_INSUFFICIENT"}
+    }
+    
+    result3 = calculator.calculate_pt(test_insufficient)
+    print(f"\nTEST_INSUFFICIENT: {result3.get('error', 'OK')}")

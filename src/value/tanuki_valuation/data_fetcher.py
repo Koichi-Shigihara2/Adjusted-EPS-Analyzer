@@ -70,6 +70,7 @@ class TanukiDataFetcher:
             "current_price": 0.0,
             "fcf_list_raw": [],
             "latest_revenue": 0.0,
+            "rpo": 0.0,  # 残存履行義務（SaaS企業向け）
             "eps_data": {"ticker": ticker}
         }
 
@@ -89,6 +90,8 @@ class TanukiDataFetcher:
         print(f"       ROE avg: {result['roe_10yr_avg']:.1%}")
         print(f"       Current Price: ${result['current_price']:.2f}")
         print(f"       Revenue: ${result['latest_revenue']:,.0f}")
+        if result['rpo'] > 0:
+            print(f"       RPO: ${result['rpo']:,.0f}")
 
         return result
 
@@ -124,6 +127,12 @@ class TanukiDataFetcher:
         if revenue > 0:
             result["latest_revenue"] = revenue
             print(f"   [{ticker}] SEC revenue: ${revenue:,.0f}")
+        
+        # RPO（残存履行義務）
+        rpo = self.sec_reader.get_rpo(ticker)
+        if rpo > 0:
+            result["rpo"] = rpo
+            print(f"   [{ticker}] SEC RPO: ${rpo:,.0f}")
         
         return result
 
