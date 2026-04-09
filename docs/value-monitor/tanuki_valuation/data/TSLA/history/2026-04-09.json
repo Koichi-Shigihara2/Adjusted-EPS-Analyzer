@@ -2,7 +2,9 @@
   "intrinsic_value_pt": 195705533632.07153,
   "intrinsic_value_per_share": 56.156537627567154,
   "v0": 195705533632.07153,
+  "v0_adjusted": 195705533632.07153,
   "alpha": 0.0,
+  "alpha_was_capped": false,
   "future_values": {
     "1年後": 79.62,
     "2年後": 112.9,
@@ -10,128 +12,7 @@
   },
   "upside_percent": -83.6,
   "calculation_date": "2026-04-09",
-  "formula": "Koichi式 v5.1 Phase 4（将来価値予測版）",
-  "calculation_steps": {
-    "step1": {
-      "title": "FCF 5年平均算出",
-      "description": "過去5年のFCF（営業CF - 設備投資）を平均化",
-      "formula": "Σ(FCF_t) / n",
-      "inputs": {
-        "fcf_list": [
-          1078000000,
-          2786000000,
-          5015000000,
-          7566000000,
-          4357000000
-        ],
-        "years": 5
-      },
-      "result": 4160400000.0,
-      "detail": {
-        "input": [
-          1078000000,
-          2786000000,
-          5015000000,
-          7566000000,
-          4357000000
-        ],
-        "sum": 20802000000,
-        "count": 5,
-        "result": 4160400000.0
-      }
-    },
-    "step2": {
-      "title": "企業別高成長率（CAGR）",
-      "description": "直近5年FCFのCAGRを算出し、15%〜50%にクリップ",
-      "formula": "(FCF_end / FCF_start)^(1/n) - 1",
-      "inputs": {
-        "method": "cagr",
-        "start_value": 1078000000,
-        "end_value": 4357000000,
-        "periods": 4,
-        "raw_cagr": 0.41788889065629453,
-        "clipped_result": 0.41788889065629453
-      },
-      "result": 0.41788889065629453,
-      "constraints": {
-        "min": 0.15,
-        "max": 0.5
-      }
-    },
-    "step3": {
-      "title": "2段階DCF計算",
-      "description": "高成長期3年 + ターミナル価値のDCF",
-      "formula": "PV_high + PV_terminal",
-      "inputs": {
-        "fcf_base": 4160400000.0,
-        "wacc": 0.085,
-        "high_growth_rate": 0.41788889065629453,
-        "terminal_growth": 0.03
-      },
-      "result": {
-        "pv_high": 21826584146.380737,
-        "pv_terminal": 173878949485.6908,
-        "v0": 195705533632.07153
-      },
-      "detail": {
-        "wacc": 0.085,
-        "high_growth_years": 3,
-        "terminal_growth": 0.03,
-        "high_growth_detail": [
-          {
-            "year": 1,
-            "fcf": 5898984940.686448,
-            "discount_factor": 1.085,
-            "pv": 5436852479.895344
-          },
-          {
-            "year": 2,
-            "fcf": 8364105213.548096,
-            "discount_factor": 1.177225,
-            "pv": 7104933392.977634
-          },
-          {
-            "year": 3,
-            "fcf": 11859371862.570238,
-            "discount_factor": 1.2772891249999998,
-            "pv": 9284798273.507761
-          }
-        ],
-        "pv_high": 21826584146.380737,
-        "terminal_fcf": 12215153018.447346,
-        "terminal_value": 222093691244.49716,
-        "pv_terminal": 173878949485.6908
-      }
-    },
-    "step4": {
-      "title": "α 成長期待プレミアム",
-      "description": "α = max(0, (g_individual / WACC) × 0.7)",
-      "formula": "max(0, (ROE × 内部留保率 / WACC) × 0.7)",
-      "inputs": {
-        "roe_10yr_avg": -0.08183242206594875,
-        "retention_rate": 0.6,
-        "g_individual": 0.0,
-        "wacc": 0.085,
-        "alpha_raw": 0.0,
-        "alpha_clipped": 0.0
-      },
-      "result": 0.0
-    },
-    "step5": {
-      "title": "本質的価値（P_t）算出",
-      "description": "P_t = V_0 × (1 + α)",
-      "formula": "V_0 × (1 + α)",
-      "inputs": {
-        "v0": 195705533632.07153,
-        "alpha": 0.0,
-        "formula": "V_0 × (1 + α)",
-        "intrinsic_value_pt": 195705533632.07153,
-        "diluted_shares": 3485000000,
-        "intrinsic_value_per_share": 56.156537627567154
-      },
-      "result": 56.156537627567154
-    }
-  },
+  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
   "components": {
     "fcf_5yr_avg": 4160400000.0,
     "diluted_shares": 3485000000,
@@ -145,6 +26,7 @@
       4357000000
     ],
     "latest_revenue": 96773000000.0,
+    "rpo": 0.0,
     "eps_data": {
       "ticker": "TSLA"
     },
@@ -152,6 +34,8 @@
     "pv_high": 21826584146.380737,
     "pv_terminal": 173878949485.6908,
     "roe_used": -0.08183242206594875,
-    "fcf_floor_applied": 0.0
+    "fcf_floor_applied": 0.0,
+    "rpo_adjustment": 0.0,
+    "alpha_uncapped": 0.0
   }
 }

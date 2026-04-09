@@ -1,137 +1,18 @@
 {
-  "intrinsic_value_pt": 3443743257023.263,
-  "intrinsic_value_per_share": 460.8864102011862,
+  "intrinsic_value_pt": 2713458689838.777,
+  "intrinsic_value_per_share": 363.1502529227485,
   "v0": 1356729344919.3884,
-  "alpha": 1.5382684246634886,
+  "v0_adjusted": 1356729344919.3884,
+  "alpha": 1.0,
+  "alpha_was_capped": true,
   "future_values": {
-    "1年後": 530.02,
-    "2年後": 609.52,
-    "3年後": 700.95
+    "1年後": 417.62,
+    "2年後": 480.27,
+    "3年後": 552.31
   },
-  "upside_percent": 23.1,
+  "upside_percent": -3.0,
   "calculation_date": "2026-04-09",
-  "formula": "Koichi式 v5.1 Phase 4（将来価値予測版）",
-  "calculation_steps": {
-    "step1": {
-      "title": "FCF 5年平均算出",
-      "description": "過去5年のFCF（営業CF - 設備投資）を平均化",
-      "formula": "Σ(FCF_t) / n",
-      "inputs": {
-        "fcf_list": [
-          38260000000,
-          45234000000,
-          56118000000,
-          65149000000,
-          59475000000
-        ],
-        "years": 5
-      },
-      "result": 52847200000.0,
-      "detail": {
-        "input": [
-          38260000000,
-          45234000000,
-          56118000000,
-          65149000000,
-          59475000000
-        ],
-        "sum": 264236000000,
-        "count": 5,
-        "result": 52847200000.0
-      }
-    },
-    "step2": {
-      "title": "企業別高成長率（CAGR）",
-      "description": "直近5年FCFのCAGRを算出し、15%〜50%にクリップ",
-      "formula": "(FCF_end / FCF_start)^(1/n) - 1",
-      "inputs": {
-        "method": "cagr",
-        "start_value": 38260000000,
-        "end_value": 59475000000,
-        "periods": 4,
-        "raw_cagr": 0.11659935142319622,
-        "clipped_result": 0.15
-      },
-      "result": 0.15,
-      "constraints": {
-        "min": 0.15,
-        "max": 0.5
-      }
-    },
-    "step3": {
-      "title": "2段階DCF計算",
-      "description": "高成長期3年 + ターミナル価値のDCF",
-      "formula": "PV_high + PV_terminal",
-      "inputs": {
-        "fcf_base": 52847200000.0,
-        "wacc": 0.085,
-        "high_growth_rate": 0.15,
-        "terminal_growth": 0.03
-      },
-      "result": {
-        "pv_high": 178307393749.24213,
-        "pv_terminal": 1178421951170.1462,
-        "v0": 1356729344919.3884
-      },
-      "detail": {
-        "wacc": 0.085,
-        "high_growth_years": 3,
-        "terminal_growth": 0.03,
-        "high_growth_detail": [
-          {
-            "year": 1,
-            "fcf": 60774279999.99999,
-            "discount_factor": 1.085,
-            "pv": 56013161290.32258
-          },
-          {
-            "year": 2,
-            "fcf": 69890421999.99998,
-            "discount_factor": 1.177225,
-            "pv": 59368788464.397194
-          },
-          {
-            "year": 3,
-            "fcf": 80373985299.99997,
-            "discount_factor": 1.2772891249999998,
-            "pv": 62925443994.52237
-          }
-        ],
-        "pv_high": 178307393749.24213,
-        "terminal_fcf": 82785204858.99997,
-        "terminal_value": 1505185542890.9084,
-        "pv_terminal": 1178421951170.1462
-      }
-    },
-    "step4": {
-      "title": "α 成長期待プレミアム",
-      "description": "α = max(0, (g_individual / WACC) × 0.7)",
-      "formula": "max(0, (ROE × 内部留保率 / WACC) × 0.7)",
-      "inputs": {
-        "roe_10yr_avg": 0.3113162288009442,
-        "retention_rate": 0.6,
-        "g_individual": 0.1867897372805665,
-        "wacc": 0.085,
-        "alpha_raw": 1.5382684246634886,
-        "alpha_clipped": 1.5382684246634886
-      },
-      "result": 1.5382684246634886
-    },
-    "step5": {
-      "title": "本質的価値（P_t）算出",
-      "description": "P_t = V_0 × (1 + α)",
-      "formula": "V_0 × (1 + α)",
-      "inputs": {
-        "v0": 1356729344919.3884,
-        "alpha": 1.5382684246634886,
-        "formula": "V_0 × (1 + α)",
-        "intrinsic_value_pt": 3443743257023.263,
-        "diluted_shares": 7472000000,
-        "intrinsic_value_per_share": 460.8864102011862
-      },
-      "result": 460.8864102011862
-    }
-  },
+  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
   "components": {
     "fcf_5yr_avg": 52847200000.0,
     "diluted_shares": 7472000000,
@@ -145,6 +26,7 @@
       59475000000
     ],
     "latest_revenue": 211915000000.0,
+    "rpo": 0.0,
     "eps_data": {
       "ticker": "MSFT"
     },
@@ -152,6 +34,8 @@
     "pv_high": 178307393749.24213,
     "pv_terminal": 1178421951170.1462,
     "roe_used": 0.3113162288009442,
-    "fcf_floor_applied": 0.0
+    "fcf_floor_applied": 0.0,
+    "rpo_adjustment": 0.0,
+    "alpha_uncapped": 1.5382684246634886
   }
 }
