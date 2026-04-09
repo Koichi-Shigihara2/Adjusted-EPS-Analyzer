@@ -31,16 +31,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install requests numpy
+          pip install yfinance numpy
 
       - name: Run TANUKI VALUATION Pipeline
-        env:
-          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
-          ALPHA_VANTAGE_API_KEY: ${{ secrets.ALPHA_VANTAGE_API_KEY }}
         working-directory: src/value/tanuki_valuation
         run: |
           if [ -n "${{ github.event.inputs.tickers }}" ]; then
-            # 入力をスペース区切りに変換
             TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
             python pipeline.py $TICKERS
           else
@@ -52,10 +48,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          # 変更をステージング
           git add docs/value-monitor/tanuki_valuation/data/
           
-          # 変更があればコミット
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
@@ -67,9 +61,10 @@ jobs:
         run: |
           echo "## 🦝 TANUKI VALUATION 更新完了" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| ティッカー | ファイル |" >> $GITHUB_STEP_SUMMARY
+          echo "| ティッカー | 理論株価 |" >> $GITHUB_STEP_SUMMARY
           echo "|:-----------|:---------|" >> $GITHUB_STEP_SUMMARY
           for f in docs/value-monitor/tanuki_valuation/data/*/latest.json; do
             ticker=$(basename $(dirname $f))
-            echo "| $ticker | ✅ |" >> $GITHUB_STEP_SUMMARY
+            value=$(cat $f | python -c "import sys,json; print(f'${json.load(sys.stdin).get(\"intrinsic_value_per_share\", 0):.2f}')" 2>/dev/null || echo "N/A")
+            echo "| $ticker | \$$value |" >> $GITHUB_STEP_SUMMARY
           done
