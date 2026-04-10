@@ -133,7 +133,10 @@ class SECParser:
         extracted = {}
         for field_name, xbrl_keys in self.XBRL_MAPPING.items():
             # 株式数は同一期間で最大値を採用（異常値対策）
-            use_max = field_name in ["shares_diluted", "shares_basic"]
+            use_max = False  # 株式数は優先順位順で取得（最大値ではない）
+            # 以前はuse_max=Trueだったが、CommonStockSharesOutstanding（期末発行済）が
+            # WeightedAverageNumberOfDilutedSharesOutstanding（加重平均希薄化後）より
+            # 大きい場合に誤った値が取得される問題があった
             extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max)
         
         # 年次データを集約
