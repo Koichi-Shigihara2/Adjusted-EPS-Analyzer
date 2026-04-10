@@ -160,6 +160,7 @@ class SECParser:
             us_gaap: SEC XBRL データ
             xbrl_keys: 優先順位順のXBRLキーリスト
             use_max: 同一期間に複数値がある場合、最大値を使用（株式数向け）
+                     Trueの場合、全XBRLキーを検索して最大値を採用
         
         Returns:
             dict: {
@@ -214,8 +215,8 @@ class SECParser:
                 if result["annual"] or result["quarterly"]:
                     break
             
-            # 最初に見つかったXBRLキーのデータを使用
-            if result["annual"] or result["quarterly"]:
+            # use_max=Trueの場合は全キーを検索、Falseの場合は最初に見つかったキーで終了
+            if not use_max and (result["annual"] or result["quarterly"]):
                 break
         
         return result

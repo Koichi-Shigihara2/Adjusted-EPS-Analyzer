@@ -166,13 +166,27 @@ class SECReader:
         return sum(roe_list) / len(roe_list) if roe_list else 0.0
     
     def get_diluted_shares(self, ticker: str) -> int:
-        """直近の希薄化後株式数を取得"""
+        """
+        直近の希薄化後株式数を取得
+        100万株未満の場合は異常値とみなし、shares_basicを試行
+        """
         annual_data = self.get_annual_range(ticker, 1)
         
         if annual_data:
-            shares = annual_data[0].get("shares", {}).get("shares_diluted")
-            if shares:
-                return int(shares)
+            shares_data = annual_data[0].get("shares", {})
+            shares_diluted = shares_data.get("shares_diluted", 0)
+            shares_basic = shares_data.get("shares_basic", 0)
+            
+            # 希薄化後株式数が100万以上なら使用
+            if shares_diluted and shares_diluted >= 1_000_000:
+                return int(shares_diluted)
+            
+            # 100万未満の場合、basicsを試行
+            if shares_basic and shares_basic >= 1_000_000:
+                return int(shares_basic)
+            
+            # それでも小さい場合、大きい方を返す（異常値の可能性あり）
+            return int(max(shares_diluted or 0, shares_basic or 0))
         
         return 0
     
