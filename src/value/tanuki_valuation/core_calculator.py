@@ -250,6 +250,7 @@ class KoichiValuationCalculator:
                 "roe_used": float(roe_avg),
                 "fcf_floor_applied": float(fcf_floor_applied),
                 "rpo_adjustment": float(rpo_adjustment),
+                "rpo_pv": float(rpo_adjustment),  # RPO現在価値（フロントエンド表示用）
                 "alpha_uncapped": float(alpha_uncapped),
             }
         }
