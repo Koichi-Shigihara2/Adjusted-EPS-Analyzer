@@ -12,7 +12,33 @@
   },
   "upside_percent": -80.8,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.25,
+      "source": "fcf_cagr",
+      "note": "FCF CAGR-based (no segment config)"
+    },
+    "base_cagr": {
+      "rate": 0.25,
+      "source": "fcf_cagr"
+    },
+    "segment": null,
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.3,
+        "intrinsic_value_per_share": 1.36
+      },
+      "base": {
+        "growth_rate": 0.25,
+        "intrinsic_value_per_share": 1.23
+      },
+      "bear": {
+        "growth_rate": 0.175,
+        "intrinsic_value_per_share": 1.06
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": -74702271.6,
     "fcf_list_raw": [
@@ -61,7 +87,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Anomalies in FCF and valuation gap indicate potential errors.",
-    "ai_concerns": "Deviations include a negative FCF average (-$74,702,272) leading to positive enterprise value, and an extreme undervaluation gap (-80.8%), suggesting potential issues with assumptions or market dynamics."
+    "ai_comment": "全ての検証が合格しました。"
   }
 }

@@ -1,18 +1,60 @@
 {
-  "intrinsic_value_pt": 175018211940.2524,
-  "intrinsic_value_per_share": 511.7940519351183,
-  "v0": 87509105970.1262,
-  "v0_adjusted": 87509105970.1262,
+  "intrinsic_value_pt": 123366826453.1265,
+  "intrinsic_value_per_share": 360.7533598067857,
+  "v0": 61683413226.56325,
+  "v0_adjusted": 61683413226.56325,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 767.69,
-    "2年後": 1151.54,
-    "3年後": 1727.3
+    "1年後": 479.8,
+    "2年後": 638.14,
+    "3年後": 848.72
   },
-  "upside_percent": 30.8,
+  "upside_percent": -7.8,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.33,
+      "source": "segment_weighted",
+      "note": "Segment-based weighted average"
+    },
+    "base_cagr": {
+      "rate": 0.5,
+      "source": "fcf_cagr"
+    },
+    "segment": {
+      "rate": 0.33,
+      "source": "segment_weighted",
+      "fiscal_year": "FY2024",
+      "segments": {
+        "Software Platform": {
+          "weight": 0.7,
+          "growth": 0.45,
+          "note": "AppDiscovery, MAX, AXON"
+        },
+        "Apps": {
+          "weight": 0.3,
+          "growth": 0.05,
+          "note": "1P mobile games portfolio"
+        }
+      }
+    },
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.396,
+        "intrinsic_value_per_share": 415.2
+      },
+      "base": {
+        "growth_rate": 0.33,
+        "intrinsic_value_per_share": 360.75
+      },
+      "bear": {
+        "growth_rate": 0.23099999999999998,
+        "intrinsic_value_per_share": 288.43
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": 1579033000.0,
     "fcf_list_raw": [
@@ -30,9 +72,9 @@
     "eps_data": {
       "ticker": "APP"
     },
-    "high_growth_rate_used": 0.5,
-    "pv_high": 9373262589.538998,
-    "pv_terminal": 78135843380.5872,
+    "high_growth_rate_used": 0.33,
+    "pv_high": 7216664733.711525,
+    "pv_terminal": 54466748492.85172,
     "roe_used": 1.0984085183814432,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 0.0,
@@ -45,11 +87,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $175.02B / 0.342B = $511.79 (差異0.00%)"
+        "detail": "P_t $123.37B / 0.342B = $360.75 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $9.37B + pv_terminal $78.14B = $87.51B (差異0.00%)"
+        "detail": "pv_high $7.22B + pv_terminal $54.47B = $61.68B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

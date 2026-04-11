@@ -1,18 +1,65 @@
 {
-  "intrinsic_value_pt": 251277891827.44464,
-  "intrinsic_value_per_share": 71.22389224133919,
-  "v0": 137312905399.63974,
-  "v0_adjusted": 145762209836.04327,
+  "intrinsic_value_pt": 236233623098.18655,
+  "intrinsic_value_per_share": 66.95964373531365,
+  "v0": 128585970294.46217,
+  "v0_adjusted": 137035274730.8657,
   "alpha": 0.7238891487038227,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 81.91,
-    "2年後": 94.19,
-    "3年後": 108.32
+    "1年後": 75.26,
+    "2年後": 84.6,
+    "3年後": 95.09
   },
-  "upside_percent": -79.6,
+  "upside_percent": -80.8,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.124,
+      "source": "segment_weighted",
+      "note": "Segment-based weighted average"
+    },
+    "base_cagr": {
+      "rate": 0.15,
+      "source": "fcf_cagr"
+    },
+    "segment": {
+      "rate": 0.124,
+      "source": "segment_weighted",
+      "fiscal_year": "FY2024",
+      "segments": {
+        "Automotive": {
+          "weight": 0.82,
+          "growth": 0.1,
+          "note": "Vehicle sales & leasing"
+        },
+        "Energy": {
+          "weight": 0.1,
+          "growth": 0.3,
+          "note": "Powerwall, Megapack, Solar"
+        },
+        "Services": {
+          "weight": 0.08,
+          "growth": 0.15,
+          "note": "Supercharging, maintenance, insurance"
+        }
+      }
+    },
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.1488,
+        "intrinsic_value_per_share": 71.02
+      },
+      "base": {
+        "growth_rate": 0.124,
+        "intrinsic_value_per_share": 66.96
+      },
+      "bear": {
+        "growth_rate": 0.08679999999999999,
+        "intrinsic_value_per_share": 61.18
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": 5348600000.0,
     "fcf_list_raw": [
@@ -30,9 +77,9 @@
     "eps_data": {
       "ticker": "TSLA"
     },
-    "high_growth_rate_used": 0.15,
-    "pv_high": 18046271632.313473,
-    "pv_terminal": 119266633767.32626,
+    "high_growth_rate_used": 0.124,
+    "pv_high": 17227213369.97401,
+    "pv_terminal": 111358756924.48816,
     "roe_used": 0.14650137533291652,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 8449304436.40354,
@@ -45,11 +92,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $251.28B / 3.528B = $71.22 (差異0.00%)"
+        "detail": "P_t $236.23B / 3.528B = $66.96 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $18.05B + pv_terminal $119.27B = $137.31B (差異0.00%)"
+        "detail": "pv_high $17.23B + pv_terminal $111.36B = $128.59B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -61,6 +108,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed with minor rounding consistency."
+    "ai_comment": "One check failed due to extreme divergence.",
+    "ai_concerns": "Divergence rate of -80.8% is extreme, indicating potential overvaluation in market price compared to intrinsic value."
   }
 }

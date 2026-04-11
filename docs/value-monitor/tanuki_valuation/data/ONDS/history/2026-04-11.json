@@ -12,7 +12,33 @@
   },
   "upside_percent": 6783.9,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.25,
+      "source": "fcf_cagr",
+      "note": "FCF CAGR-based (no segment config)"
+    },
+    "base_cagr": {
+      "rate": 0.25,
+      "source": "fcf_cagr"
+    },
+    "segment": null,
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.3,
+        "intrinsic_value_per_share": 700.25
+      },
+      "base": {
+        "growth_rate": 0.25,
+        "intrinsic_value_per_share": 628.5
+      },
+      "bear": {
+        "growth_rate": 0.175,
+        "intrinsic_value_per_share": 530.88
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": -33755936.4,
     "fcf_list_raw": [
@@ -61,7 +87,7 @@
       }
     },
     "overall": "FAIL",
-    "ai_comment": "FCF負値なのにPV正値が異常",
-    "ai_concerns": "Deviations include extreme upside gap (+6783.9%) and positive PV despite negative FCF, indicating possible calculation anomalies."
+    "ai_comment": "Negative FCF causes valuation anomalies.",
+    "ai_concerns": "Extreme divergence rate (+6783.9%) and positive valuation despite negative FCF indicate potential anomalies."
   }
 }

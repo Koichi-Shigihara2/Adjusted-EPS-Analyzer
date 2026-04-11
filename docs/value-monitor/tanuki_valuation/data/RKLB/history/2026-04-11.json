@@ -12,7 +12,33 @@
   },
   "upside_percent": -91.5,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.25,
+      "source": "fcf_cagr",
+      "note": "FCF CAGR-based (no segment config)"
+    },
+    "base_cagr": {
+      "rate": 0.25,
+      "source": "fcf_cagr"
+    },
+    "segment": null,
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.3,
+        "intrinsic_value_per_share": 6.14
+      },
+      "base": {
+        "growth_rate": 0.25,
+        "intrinsic_value_per_share": 5.78
+      },
+      "bear": {
+        "growth_rate": 0.175,
+        "intrinsic_value_per_share": 5.3
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": -167560600.0,
     "fcf_list_raw": [
@@ -61,7 +87,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Extreme valuation discrepancy detected.",
-    "ai_concerns": "Deviations like -91.5% discrepancy between intrinsic value and market price indicate potential anomalies."
+    "ai_comment": "Anomalies in FCF and divergence detected.",
+    "ai_concerns": "FCF is negative but PV of high growth period is positive, which is unusual; divergence rate of -91.5% is extremely high."
   }
 }

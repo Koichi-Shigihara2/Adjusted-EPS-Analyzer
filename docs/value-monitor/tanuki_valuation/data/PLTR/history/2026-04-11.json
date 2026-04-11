@@ -1,18 +1,65 @@
 {
-  "intrinsic_value_pt": 84858079285.87325,
-  "intrinsic_value_per_share": 33.08053115837624,
-  "v0": 49254848104.84595,
-  "v0_adjusted": 52579430464.65924,
+  "intrinsic_value_pt": 60668711123.467384,
+  "intrinsic_value_per_share": 23.65070250880045,
+  "v0": 34266726620.3311,
+  "v0_adjusted": 37591308980.144394,
   "alpha": 0.6139025952917042,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 49.62,
-    "2年後": 74.43,
-    "3年後": 111.65
+    "1年後": 31.31,
+    "2年後": 41.46,
+    "3年後": 54.89
   },
-  "upside_percent": -74.2,
+  "upside_percent": -81.5,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.324,
+      "source": "segment_weighted",
+      "note": "Segment-based weighted average"
+    },
+    "base_cagr": {
+      "rate": 0.5,
+      "source": "fcf_cagr"
+    },
+    "segment": {
+      "rate": 0.324,
+      "source": "segment_weighted",
+      "fiscal_year": "FY2024",
+      "segments": {
+        "Government": {
+          "weight": 0.42,
+          "growth": 0.2,
+          "note": "US Gov + Allies defense/intel"
+        },
+        "Commercial US": {
+          "weight": 0.38,
+          "growth": 0.5,
+          "note": "US Enterprise (AIP platform)"
+        },
+        "Commercial International": {
+          "weight": 0.2,
+          "growth": 0.25,
+          "note": "Non-US Enterprise"
+        }
+      }
+    },
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.3888,
+        "intrinsic_value_per_share": 26.86
+      },
+      "base": {
+        "growth_rate": 0.324,
+        "intrinsic_value_per_share": 23.65
+      },
+      "bear": {
+        "growth_rate": 0.2268,
+        "intrinsic_value_per_share": 19.38
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": 888765000.0,
     "fcf_list_raw": [
@@ -30,9 +77,9 @@
     "eps_data": {
       "ticker": "PLTR"
     },
-    "high_growth_rate_used": 0.5,
-    "pv_high": 5275778103.048908,
-    "pv_terminal": 43979070001.79704,
+    "high_growth_rate_used": 0.324,
+    "pv_high": 4022936225.8770194,
+    "pv_terminal": 30243790394.454082,
     "roe_used": 0.12424219190427348,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 3324582359.813293,
@@ -45,11 +92,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $84.86B / 2.565B = $33.08 (差異0.00%)"
+        "detail": "P_t $60.67B / 2.565B = $23.65 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $5.28B + pv_terminal $43.98B = $49.25B (差異0.00%)"
+        "detail": "pv_high $4.02B + pv_terminal $30.24B = $34.27B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -61,7 +108,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Most checks pass, but anomalies in deviation rate.",
-    "ai_concerns": "Deviations rate (-74.2%) is extreme, indicating potential overvaluation in market price compared to intrinsic value, though other values like shares are normal."
+    "ai_comment": "計算一貫性ありが、乖離率極端",
+    "ai_concerns": "乖離率 -81.5% is extremely negative, indicating potential overvaluation or market anomaly, though other values are consistent."
   }
 }

@@ -1,18 +1,60 @@
 {
-  "intrinsic_value_pt": 14618071249.316734,
-  "intrinsic_value_per_share": 57.345784408349324,
-  "v0": 7309035624.658367,
-  "v0_adjusted": 7309035624.658367,
+  "intrinsic_value_pt": 9230403356.036537,
+  "intrinsic_value_per_share": 36.21029832387201,
+  "v0": 4615201678.018269,
+  "v0_adjusted": 4615201678.018269,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 84.82,
-    "2年後": 125.47,
-    "3年後": 185.59
+    "1年後": 45.72,
+    "2年後": 57.72,
+    "3年後": 72.87
   },
-  "upside_percent": 64.5,
+  "upside_percent": 3.9,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.2625,
+      "source": "segment_weighted",
+      "note": "Segment-based weighted average"
+    },
+    "base_cagr": {
+      "rate": 0.4791795810815356,
+      "source": "fcf_cagr"
+    },
+    "segment": {
+      "rate": 0.2625,
+      "source": "segment_weighted",
+      "fiscal_year": "FY2024",
+      "segments": {
+        "North America": {
+          "weight": 0.95,
+          "growth": 0.25,
+          "note": "US/Canada retail & e-commerce"
+        },
+        "International": {
+          "weight": 0.05,
+          "growth": 0.5,
+          "note": "Europe, Asia expansion"
+        }
+      }
+    },
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.315,
+        "intrinsic_value_per_share": 40.74
+      },
+      "base": {
+        "growth_rate": 0.2625,
+        "intrinsic_value_per_share": 36.21
+      },
+      "bear": {
+        "growth_rate": 0.18375,
+        "intrinsic_value_per_share": 30.07
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": 137369861.2,
     "fcf_list_raw": [
@@ -30,9 +72,9 @@
     "eps_data": {
       "ticker": "CELH"
     },
-    "high_growth_rate_used": 0.4791795810815356,
-    "pv_high": 790658407.6636108,
-    "pv_terminal": 6518377216.994757,
+    "high_growth_rate_used": 0.2625,
+    "pv_high": 562254529.5453883,
+    "pv_terminal": 4052947148.47288,
     "roe_used": 0.4377082903943001,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 0.0,
@@ -45,11 +87,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $14.62B / 0.255B = $57.35 (差異0.00%)"
+        "detail": "P_t $9.23B / 0.255B = $36.21 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $0.79B + pv_terminal $6.52B = $7.31B (差異0.00%)"
+        "detail": "pv_high $0.56B + pv_terminal $4.05B = $4.62B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

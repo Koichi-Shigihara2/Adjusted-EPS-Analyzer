@@ -1,18 +1,80 @@
 {
-  "intrinsic_value_pt": 440323176023.17706,
-  "intrinsic_value_per_share": 40.66899196667379,
-  "v0": 211393995745.00122,
-  "v0_adjusted": 231665839402.39935,
+  "intrinsic_value_pt": 408959202794.45496,
+  "intrinsic_value_per_share": 37.772162445225355,
+  "v0": 194892567746.93503,
+  "v0_adjusted": 215164411404.33316,
   "alpha": 0.9006823671501419,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 46.77,
-    "2年後": 53.78,
-    "3年後": 61.85
+    "1年後": 42.23,
+    "2年後": 47.2,
+    "3年後": 52.77
   },
-  "upside_percent": -82.9,
+  "upside_percent": -84.2,
   "calculation_date": "2026-04-11",
-  "formula": "Koichi式 v5.2（αキャップ＋RPO補正＋データガード）",
+  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.11790000000000002,
+      "source": "segment_weighted",
+      "note": "Segment-based weighted average"
+    },
+    "base_cagr": {
+      "rate": 0.15,
+      "source": "fcf_cagr"
+    },
+    "segment": {
+      "rate": 0.11790000000000002,
+      "source": "segment_weighted",
+      "fiscal_year": "FY2024",
+      "segments": {
+        "AWS": {
+          "weight": 0.17,
+          "growth": 0.18,
+          "note": "Cloud infrastructure"
+        },
+        "Online Stores": {
+          "weight": 0.4,
+          "growth": 0.08,
+          "note": "1P e-commerce"
+        },
+        "Third-Party Seller Services": {
+          "weight": 0.24,
+          "growth": 0.12,
+          "note": "3P marketplace fees"
+        },
+        "Advertising": {
+          "weight": 0.09,
+          "growth": 0.2,
+          "note": "Sponsored products/brands"
+        },
+        "Subscription Services": {
+          "weight": 0.07,
+          "growth": 0.1,
+          "note": "Prime membership"
+        },
+        "Other": {
+          "weight": 0.03,
+          "growth": 0.05,
+          "note": "Physical stores, etc."
+        }
+      }
+    },
+    "scenario_valuations": {
+      "bull": {
+        "growth_rate": 0.14148000000000002,
+        "intrinsic_value_per_share": 39.88
+      },
+      "base": {
+        "growth_rate": 0.11790000000000002,
+        "intrinsic_value_per_share": 37.77
+      },
+      "bear": {
+        "growth_rate": 0.08253,
+        "intrinsic_value_per_share": 34.76
+      }
+    }
+  },
   "components": {
     "fcf_5yr_avg": 8234200000.0,
     "fcf_list_raw": [
@@ -30,9 +92,9 @@
     "eps_data": {
       "ticker": "AMZN"
     },
-    "high_growth_rate_used": 0.15,
-    "pv_high": 27782337410.68609,
-    "pv_terminal": 183611658334.31512,
+    "high_growth_rate_used": 0.11790000000000002,
+    "pv_high": 26231206767.602734,
+    "pv_terminal": 168661360979.3323,
     "roe_used": 0.18228095525657637,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 20271843657.39813,
@@ -45,11 +107,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $440.32B / 10.827B = $40.67 (差異0.00%)"
+        "detail": "P_t $408.96B / 10.827B = $37.77 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $27.78B + pv_terminal $183.61B = $211.39B (差異0.00%)"
+        "detail": "pv_high $26.23B + pv_terminal $168.66B = $194.89B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -61,7 +123,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "High discrepancy may indicate errors.",
-    "ai_concerns": "Valuation discrepancy (-82.9%) is extreme, indicating potential issues with inputs or assumptions."
+    "ai_comment": "All checks passed successfully."
   }
 }
