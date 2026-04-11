@@ -222,11 +222,16 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     anomalies = []
     divergence = ((ivps - current_price) / current_price * 100) if current_price > 0 else 0
     
-    if abs(divergence) > 500:
+    # 乖離率チェック（±1000%超えのみ警告、成長株では-90%程度は普通）
+    if abs(divergence) > 1000:
         anomalies.append(f"乖離率{divergence:+.0f}%が極端")
-    if diluted_shares < 1000000:
+    
+    # 株式数チェック（100万株未満のみ警告）
+    if diluted_shares < 1_000_000:
         anomalies.append(f"株式数{diluted_shares:,}が異常に少ない")
-    if ivps > 10000:
+    
+    # 理論株価チェック（$50,000超えのみ警告）
+    if ivps > 50000:
         anomalies.append(f"理論株価${ivps:.0f}が異常に高い")
     
     checks["anomaly_detection"] = {
@@ -265,16 +270,22 @@ def validate_calculation(ticker: str, data: Dict[str, Any], use_ai: bool = True)
     # まず基本チェックを実行
     validation = run_basic_checks(ticker, data)
     
-    # AI検証（オプション）
+    # AI検証（オプション）- コメント取得のみ、チェック結果は上書きしない
     if use_ai and XAI_API_KEY:
         prompt = build_validation_prompt(ticker, data)
         ai_result = call_xai_api(prompt)
         
         if ai_result:
             validation["model"] = XAI_MODEL
-            validation["checks"] = ai_result.get("checks", validation["checks"])
-            validation["overall"] = ai_result.get("overall", validation["overall"])
+            # AIのコメントのみ採用（チェック結果は基本チェックを維持）
             validation["ai_comment"] = ai_result.get("ai_comment")
+            
+            # AIが検出した追加の懸念事項があれば記録
+            ai_checks = ai_result.get("checks", {})
+            ai_anomaly = ai_checks.get("anomaly_detection", {})
+            if ai_anomaly.get("detail") and not ai_anomaly.get("pass", True):
+                # AIの懸念事項を追記（ただしoverallは変更しない）
+                validation["ai_concerns"] = ai_anomaly.get("detail")
     
     return validation
 
