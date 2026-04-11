@@ -205,8 +205,8 @@ def main():
     """コマンドライン実行"""
     tickers = sys.argv[1:] if len(sys.argv) > 1 else None
     
-    # AI検証を有効化（GEMINI_API_KEYが設定されている場合）
-    use_ai = bool(os.environ.get("GEMINI_API_KEY"))
+    # AI検証を有効化（XAI_API_KEYが設定されている場合）
+    use_ai = bool(os.environ.get("XAI_API_KEY"))
     
     pipeline = TanukiValuationPipeline(use_ai_validation=use_ai)
     results = pipeline.run(tickers)

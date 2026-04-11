@@ -1,6 +1,6 @@
 """
 TANUKI VALUATION - AI Calculation Validator
-Gemini APIを使用して計算結果の妥当性を検証
+xAI API (Grok) を使用して計算結果の妥当性を検証
 
 検証項目:
 1. P_t / shares = intrinsic_value_per_share 整合性
@@ -15,10 +15,10 @@ import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
 
-# Gemini API設定
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-GEMINI_MODEL = "gemini-2.5-flash"
-GEMINI_ENDPOINT = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
+# xAI API設定
+XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
+XAI_MODEL = "grok-3-mini"
+XAI_ENDPOINT = "https://api.x.ai/v1/chat/completions"
 
 
 def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
@@ -120,29 +120,32 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     return prompt
 
 
-def call_gemini_api(prompt: str) -> Optional[Dict[str, Any]]:
-    """Gemini APIを呼び出して検証結果を取得"""
+def call_xai_api(prompt: str) -> Optional[Dict[str, Any]]:
+    """xAI API (Grok) を呼び出して検証結果を取得"""
     
-    if not GEMINI_API_KEY:
-        print("[WARN] GEMINI_API_KEY not set, skipping AI validation")
+    if not XAI_API_KEY:
+        print("[WARN] XAI_API_KEY not set, skipping AI validation")
         return None
     
-    headers = {"Content-Type": "application/json"}
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {XAI_API_KEY}"
+    }
     payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 1024
-        }
+        "model": XAI_MODEL,
+        "messages": [
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.1,
+        "max_tokens": 1024
     }
     
     try:
-        url = f"{GEMINI_ENDPOINT}?key={GEMINI_API_KEY}"
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response = requests.post(XAI_ENDPOINT, headers=headers, json=payload, timeout=30)
         response.raise_for_status()
         
         result = response.json()
-        text = result.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+        text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
         
         # JSONを抽出
         json_start = text.find("{")
@@ -151,14 +154,14 @@ def call_gemini_api(prompt: str) -> Optional[Dict[str, Any]]:
             json_str = text[json_start:json_end]
             return json.loads(json_str)
         
-        print(f"[WARN] Could not parse JSON from Gemini response: {text[:200]}")
+        print(f"[WARN] Could not parse JSON from xAI response: {text[:200]}")
         return None
         
     except requests.exceptions.RequestException as e:
-        print(f"[ERROR] Gemini API request failed: {e}")
+        print(f"[ERROR] xAI API request failed: {e}")
         return None
     except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to parse Gemini response as JSON: {e}")
+        print(f"[ERROR] Failed to parse xAI response as JSON: {e}")
         return None
 
 
@@ -263,12 +266,12 @@ def validate_calculation(ticker: str, data: Dict[str, Any], use_ai: bool = True)
     validation = run_basic_checks(ticker, data)
     
     # AI検証（オプション）
-    if use_ai and GEMINI_API_KEY:
+    if use_ai and XAI_API_KEY:
         prompt = build_validation_prompt(ticker, data)
-        ai_result = call_gemini_api(prompt)
+        ai_result = call_xai_api(prompt)
         
         if ai_result:
-            validation["model"] = GEMINI_MODEL
+            validation["model"] = XAI_MODEL
             validation["checks"] = ai_result.get("checks", validation["checks"])
             validation["overall"] = ai_result.get("overall", validation["overall"])
             validation["ai_comment"] = ai_result.get("ai_comment")
