@@ -22,17 +22,38 @@ except ImportError:
     HAS_YFINANCE = False
 
 # SEC EDGAR - common/sec_data/reader.py
+# パス構造: 
+#   On-a-journey/src/value/tanuki_valuation/data_fetcher.py
+#   On-a-journey/common/sec_data/reader.py
+# つまり: ../../../common/sec_data/
+HAS_SEC = False
+SECDataReader = None
+
 try:
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    src_dir = os.path.dirname(os.path.dirname(current_dir))
-    common_path = os.path.join(src_dir, "common", "sec_data")
-    if common_path not in sys.path:
-        sys.path.insert(0, src_dir)
-    from common.sec_data.reader import SECDataReader
-    HAS_SEC = True
+    # src/value/tanuki_valuation → src/value → src → On-a-journey (repo root)
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
+    common_path = os.path.join(repo_root, "common", "sec_data")
+    
+    if os.path.exists(common_path):
+        if repo_root not in sys.path:
+            sys.path.insert(0, repo_root)
+        from common.sec_data.reader import SECDataReader
+        HAS_SEC = True
 except Exception as e:
-    HAS_SEC = False
-    SECDataReader = None
+    pass
+
+# GitHub Actions環境用フォールバック
+if not HAS_SEC:
+    try:
+        github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if github_workspace:
+            if github_workspace not in sys.path:
+                sys.path.insert(0, github_workspace)
+            from common.sec_data.reader import SECDataReader
+            HAS_SEC = True
+    except Exception as e:
+        pass
 
 
 class TanukiDataFetcher:
@@ -84,7 +105,7 @@ class TanukiDataFetcher:
                     # 株式数（SEC diluted - 加重平均）
                     sec_diluted = annual[0].get("diluted_shares", 0) or 0
                     if sec_diluted > 0:
-                        print(f"   [{ticker}] SEC diluted shares: {sec_diluted:,.0f}")
+                        print(f"   [{ticker}] SEC shares: {sec_diluted:,.0f}")
                     
                     # ROE（連続黒字期間平均）
                     roe_list = []
@@ -241,15 +262,14 @@ class TanukiDataFetcher:
 
 # スタンドアロンテスト
 if __name__ == "__main__":
-    fetcher = TanukiDataFetcher()
-    
-    print("\n" + "="*60)
-    print("株式数取得テスト（マイクロキャップ対応 v2.2）")
+    print("="*60)
+    print(f"HAS_SEC: {HAS_SEC}")
+    print(f"HAS_YFINANCE: {HAS_YFINANCE}")
     print("="*60)
     
-    test_tickers = ["ONDS", "SOUN", "TSLA", "NVDA"]
+    fetcher = TanukiDataFetcher()
     
-    for ticker in test_tickers:
+    for ticker in ["ONDS", "TSLA"]:
         print(f"\n--- {ticker} ---")
         result = fetcher.get_financials(ticker)
         print(f"=== 最終: {result['diluted_shares']:,.0f} ({result['_shares_source']}) ===")
