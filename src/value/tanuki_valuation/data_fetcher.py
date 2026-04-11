@@ -1,159 +1,255 @@
 """
-TANUKI VALUATION - Data Fetcher v3.2
-SEC EDGARデータ優先 + Alpha Vantage補完 + yfinance価格取得
+TANUKI VALUATION - Data Fetcher v2.2
+SEC EDGAR + yfinance ハイブリッド取得（マイクロキャップ対応）
 
-v3.2変更点:
-- SEC reader (common/sec_data/reader.py) を使用
-- RPO取得対応
-- 加重平均希薄化後株式数の取得
+v2.2 変更点:
+- 完全希薄化後株式数の取得ロジック強化
+- yfinance impliedSharesOutstanding 最優先
+- SEC diluted vs yfinance outstanding の max 採用
+- 大規模増資検出（乖離5倍以上）→ yfinance優先
+- 株式数ソースをログに記録
 """
 
 import os
 import sys
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 
-# SEC reader のインポート
-# src/value/tanuki_valuation/ から common/sec_data/ へのパス
-script_dir = os.path.dirname(os.path.abspath(__file__))
-repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
-sys.path.insert(0, repo_root)
-
-try:
-    from common.sec_data.reader import SECReader
-    HAS_SEC_READER = True
-except ImportError as e:
-    print(f"Warning: SEC reader not available: {e}")
-    HAS_SEC_READER = False
-
-# yfinance for current price
+# yfinance
 try:
     import yfinance as yf
     HAS_YFINANCE = True
 except ImportError:
     HAS_YFINANCE = False
 
+# SEC EDGAR - common/sec_data/reader.py
+try:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    src_dir = os.path.dirname(os.path.dirname(current_dir))
+    common_path = os.path.join(src_dir, "common", "sec_data")
+    if common_path not in sys.path:
+        sys.path.insert(0, src_dir)
+    from common.sec_data.reader import SECDataReader
+    HAS_SEC = True
+except Exception as e:
+    HAS_SEC = False
+    SECDataReader = None
+
 
 class TanukiDataFetcher:
-    """TANUKI VALUATION用データ取得"""
+    """
+    TANUKI VALUATION 用データフェッチャー v2.2
+    
+    データソース優先順位:
+    1. 株式数: yfinance implied > max(SEC diluted, yfinance outstanding)
+    2. FCF/Revenue/ROE/RPO: SEC XBRL
+    3. 株価: yfinance
+    """
     
     def __init__(self):
-        # SEC reader初期化
-        if HAS_SEC_READER:
-            # GitHub Actions環境では common/sec_data/data を使用
-            sec_data_dir = os.path.join(repo_root, "common", "sec_data", "data")
-            self.sec_reader = SECReader(data_dir=sec_data_dir)
-        else:
-            self.sec_reader = None
+        self.sec_reader = SECDataReader() if HAS_SEC else None
     
     def get_financials(self, ticker: str) -> Dict[str, Any]:
         """
-        財務データ取得
-        
-        Returns:
-            dict: {
-                "fcf_5yr_avg": float,
-                "fcf_list_raw": list,
-                "diluted_shares": int,
-                "roe_10yr_avg": float,
-                "current_price": float,
-                "latest_revenue": float,
-                "rpo": float,
-                "eps_data": {"ticker": str}
-            }
+        財務データ取得メイン関数
         """
         print(f"\n   [{ticker}] データ取得開始")
         
-        result = {
-            "fcf_5yr_avg": 0.0,
-            "fcf_list_raw": [],
-            "diluted_shares": 0,
-            "roe_10yr_avg": 0.0,
-            "current_price": 0.0,
-            "latest_revenue": 0.0,
-            "rpo": 0.0,
-            "eps_data": {"ticker": ticker}
-        }
+        # 結果格納
+        fcf_list = []
+        fcf_avg = 0.0
+        sec_diluted = 0
+        roe_avg = 0.0
+        revenue = 0.0
+        rpo = 0.0
         
-        # ===========================================
-        # SEC EDGAR からデータ取得
-        # ===========================================
+        # ========================================
+        # 1. SEC EDGAR からデータ取得
+        # ========================================
         if self.sec_reader:
             try:
-                # FCF 5年平均
-                fcf_avg = self.sec_reader.get_fcf_5yr_avg(ticker)
-                if fcf_avg != 0:
-                    result["fcf_5yr_avg"] = fcf_avg
-                    print(f"   [{ticker}] SEC FCF 5yr avg: ${fcf_avg:,.0f}")
+                annual = self.sec_reader.get_annual_data(ticker, years=10)
                 
-                # FCFリスト
-                fcf_list = self.sec_reader.get_fcf_list(ticker, years=5)
-                if fcf_list:
-                    result["fcf_list_raw"] = fcf_list
-                    print(f"   [{ticker}] SEC FCF list: {len(fcf_list)}年分")
-                
-                # 希薄化後株式数
-                shares = self.sec_reader.get_diluted_shares(ticker)
-                if shares > 0:
-                    result["diluted_shares"] = shares
-                    print(f"   [{ticker}] SEC shares: {shares:,}")
-                
-                # ROE平均（連続黒字期間のみ）
-                roe = self.sec_reader.get_roe_avg(ticker, years=10)
-                if roe > 0:
-                    result["roe_10yr_avg"] = roe
-                    print(f"   [{ticker}] SEC ROE avg: {roe:.1%}")
-                
-                # 直近売上高
-                revenue = self.sec_reader.get_latest_revenue(ticker)
-                if revenue > 0:
-                    result["latest_revenue"] = revenue
-                    print(f"   [{ticker}] SEC revenue: ${revenue:,.0f}")
-                
-                # RPO（残存履行義務）
-                rpo = self.sec_reader.get_rpo(ticker)
-                if rpo > 0:
-                    result["rpo"] = rpo
-                    print(f"   [{ticker}] SEC RPO: ${rpo:,.0f}")
+                if annual and len(annual) > 0:
+                    # FCFリスト（最新5年）
+                    for yr in annual[:5]:
+                        ocf = yr.get("operating_cash_flow", 0) or 0
+                        capex = abs(yr.get("capital_expenditures", 0) or 0)
+                        fcf_list.append(ocf - capex)
                     
+                    if fcf_list:
+                        fcf_avg = sum(fcf_list) / len(fcf_list)
+                        print(f"   [{ticker}] SEC FCF 5yr avg: ${fcf_avg:,.0f}")
+                        print(f"   [{ticker}] SEC FCF list: {len(fcf_list)}年分")
+                    
+                    # 株式数（SEC diluted - 加重平均）
+                    sec_diluted = annual[0].get("diluted_shares", 0) or 0
+                    if sec_diluted > 0:
+                        print(f"   [{ticker}] SEC diluted shares: {sec_diluted:,.0f}")
+                    
+                    # ROE（連続黒字期間平均）
+                    roe_list = []
+                    for yr in annual:
+                        r = yr.get("return_on_equity", 0) or 0
+                        if r > 0:
+                            roe_list.append(r)
+                        else:
+                            break
+                    roe_avg = sum(roe_list) / len(roe_list) if roe_list else 0.0
+                    print(f"   [{ticker}] SEC ROE avg: {roe_avg:.1%}")
+                    
+                    # 売上高
+                    revenue = annual[0].get("total_revenue", 0) or 0
+                    print(f"   [{ticker}] SEC revenue: ${revenue:,.0f}")
+                    
+                    # RPO
+                    rpo = annual[0].get("remaining_performance_obligation", 0) or 0
+                    if rpo > 0:
+                        print(f"   [{ticker}] SEC RPO: ${rpo:,.0f}")
+                        
             except Exception as e:
-                print(f"   [{ticker}] SEC reader error: {e}")
+                print(f"   [{ticker}] SEC取得エラー: {e}")
         
-        # ===========================================
-        # yfinance から現在価格取得
-        # ===========================================
+        # ========================================
+        # 2. yfinance から株式数と株価を取得
+        # ========================================
+        yf_implied = 0
+        yf_outstanding = 0
+        current_price = 0.0
+        
         if HAS_YFINANCE:
             try:
                 stock = yf.Ticker(ticker)
                 info = stock.info
                 
-                # 現在価格
-                price = info.get("currentPrice") or info.get("regularMarketPrice") or 0
-                if price > 0:
-                    result["current_price"] = float(price)
-                    print(f"   [{ticker}] yfinance price: ${price:.2f}")
+                # 完全希薄化後株式数（最優先）
+                yf_implied = info.get("impliedSharesOutstanding", 0) or 0
+                if yf_implied > 0:
+                    print(f"   [{ticker}] yfinance implied shares: {yf_implied:,.0f}")
                 
+                # 発行済株式数
+                yf_outstanding = info.get("sharesOutstanding", 0) or 0
+                if yf_outstanding > 0:
+                    print(f"   [{ticker}] yfinance outstanding shares: {yf_outstanding:,.0f}")
+                
+                # 株価
+                current_price = (
+                    info.get("currentPrice") or 
+                    info.get("regularMarketPrice") or 
+                    info.get("previousClose") or 0
+                )
+                if current_price > 0:
+                    print(f"   [{ticker}] yfinance price: ${current_price:.2f}")
+                    
             except Exception as e:
-                print(f"   [{ticker}] yfinance error: {e}")
+                print(f"   [{ticker}] yfinance取得エラー: {e}")
         
-        # ===========================================
-        # 結果サマリー
-        # ===========================================
+        # ========================================
+        # 3. 完全希薄化後株式数の決定
+        # ========================================
+        final_shares, shares_source = self._determine_diluted_shares(
+            ticker, yf_implied, yf_outstanding, sec_diluted
+        )
+        
+        # ========================================
+        # 最終サマリー
+        # ========================================
         print(f"   [{ticker}] 最終結果:")
-        print(f"       FCF 5yr Avg: ${result['fcf_5yr_avg']:,.0f}")
-        print(f"       Diluted Shares: {result['diluted_shares']:,}")
-        print(f"       ROE avg: {result['roe_10yr_avg']:.1%}")
-        print(f"       Current Price: ${result['current_price']:.2f}")
-        print(f"       Revenue: ${result['latest_revenue']:,.0f}")
-        if result['rpo'] > 0:
-            print(f"       RPO: ${result['rpo']:,.0f}")
+        print(f"       FCF 5yr Avg: ${fcf_avg:,.0f}")
+        print(f"       Diluted Shares: {final_shares:,.0f} ({shares_source})")
+        print(f"       ROE avg: {roe_avg:.1%}")
+        print(f"       Current Price: ${current_price:.2f}")
+        print(f"       Revenue: ${revenue:,.0f}")
+        if rpo > 0:
+            print(f"       RPO: ${rpo:,.0f}")
         
-        return result
+        return {
+            "fcf_5yr_avg": fcf_avg,
+            "fcf_list_raw": fcf_list,
+            "diluted_shares": final_shares,
+            "roe_10yr_avg": roe_avg,
+            "current_price": current_price,
+            "latest_revenue": revenue,
+            "rpo": rpo,
+            "eps_data": {"ticker": ticker},
+            "_shares_source": shares_source
+        }
+    
+    def _determine_diluted_shares(
+        self, 
+        ticker: str,
+        yf_implied: int, 
+        yf_outstanding: int, 
+        sec_diluted: int
+    ) -> Tuple[int, str]:
+        """
+        完全希薄化後株式数を決定
+        
+        優先順位:
+        1. yfinance impliedSharesOutstanding（取得できれば最優先）
+        2. 大規模増資検出（乖離5倍以上）→ yfinance outstanding
+        3. max(SEC diluted, yfinance outstanding)
+        
+        Returns:
+            (株式数, ソース文字列)
+        """
+        MIN_SHARES = 100_000
+        
+        # 1. yfinance implied（完全希薄化後）が取得できれば最優先
+        if yf_implied > MIN_SHARES:
+            print(f"   [{ticker}] → yfinance implied採用（完全希薄化後）")
+            return int(yf_implied), "yf_implied"
+        
+        # 2. SEC diluted と yfinance outstanding の比較
+        has_sec = sec_diluted > MIN_SHARES
+        has_yf = yf_outstanding > MIN_SHARES
+        
+        if has_sec and has_yf:
+            ratio = yf_outstanding / sec_diluted
+            
+            if ratio > 5:
+                # 大規模増資があった可能性 → yfinance優先
+                print(f"   [{ticker}] ⚠️ 大規模増資検出: yf={yf_outstanding:,.0f} vs SEC={sec_diluted:,.0f} (×{ratio:.1f})")
+                print(f"   [{ticker}] → yfinance outstanding採用（増資後の現在値）")
+                return int(yf_outstanding), "yf_outstanding_post_dilution"
+            
+            elif ratio < 0.2:
+                # 逆のケース（株式併合など？）→ SEC優先
+                print(f"   [{ticker}] ⚠️ 株式数減少検出: yf={yf_outstanding:,.0f} vs SEC={sec_diluted:,.0f}")
+                print(f"   [{ticker}] → SEC diluted採用")
+                return int(sec_diluted), "sec_diluted"
+            
+            else:
+                # 通常ケース → maxを採用
+                max_shares = max(sec_diluted, yf_outstanding)
+                source = "max_sec" if sec_diluted >= yf_outstanding else "max_yf"
+                print(f"   [{ticker}] → max採用: {max_shares:,.0f} ({source})")
+                return int(max_shares), source
+        
+        # 3. どちらか一方のみ
+        if has_yf:
+            print(f"   [{ticker}] → yfinance outstanding採用（SEC取得不可）")
+            return int(yf_outstanding), "yf_outstanding"
+        
+        if has_sec:
+            print(f"   [{ticker}] → SEC diluted採用（yfinance取得不可）")
+            return int(sec_diluted), "sec_diluted"
+        
+        # 4. どちらも取得不可
+        print(f"   [{ticker}] ⚠️ 有効な株式数が取得できませんでした")
+        return 0, "none"
 
 
+# スタンドアロンテスト
 if __name__ == "__main__":
-    # テスト実行
     fetcher = TanukiDataFetcher()
     
-    for ticker in ["TSLA", "PLTR", "MSFT"]:
-        data = fetcher.get_financials(ticker)
-        print(f"\n{ticker}: {data}")
+    print("\n" + "="*60)
+    print("株式数取得テスト（マイクロキャップ対応 v2.2）")
+    print("="*60)
+    
+    test_tickers = ["ONDS", "SOUN", "TSLA", "NVDA"]
+    
+    for ticker in test_tickers:
+        print(f"\n--- {ticker} ---")
+        result = fetcher.get_financials(ticker)
+        print(f"=== 最終: {result['diluted_shares']:,.0f} ({result['_shares_source']}) ===")
