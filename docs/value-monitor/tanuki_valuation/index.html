@@ -20,7 +20,8 @@
 
     /* ── Header ── */
     header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg);z-index:100}
-    .logo{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:10px}
+    .logo{font-family:var(--mono);font-size:15px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt)}
+    .logo img{height:28px;width:auto}
     .logo-text{display:flex;gap:4px}
     .logo-accent{color:var(--acc)}
     .logo-dot{width:8px;height:8px;background:var(--acc);border-radius:50%;animation:pdot 2s ease-in-out infinite}
@@ -83,10 +84,11 @@
 <body>
 <div class="shell">
   <header>
-    <div class="logo">
+    <a href="/On-a-journey/" class="logo">
+      <img src="/On-a-journey/images/logo.png" alt="TANUKI">
       <span class="logo-dot"></span>
       <span class="logo-text">TANUKI<span class="logo-accent">VALUATION</span></span>
-    </div>
+    </a>
     <div class="hdr-r">
       <div class="version-tag">Koichi式 v5.2</div>
       <a href="/On-a-journey/market-monitor/macro-pulse/" class="nav-link">MACRO PULSE</a>
