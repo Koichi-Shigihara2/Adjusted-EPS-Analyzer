@@ -1,68 +1,80 @@
 {
-  "intrinsic_value_pt": 171179358302.50476,
-  "intrinsic_value_per_share": 104.99154794784029,
-  "v0": 95278045380.3247,
-  "v0_adjusted": 95533470610.40793,
-  "alpha": 0.7918260187634758,
+  "intrinsic_value_pt": 73482137030.31683,
+  "intrinsic_value_per_share": 45.06970577430533,
+  "v0": 50968317987.97748,
+  "v0_adjusted": 51223743218.06069,
+  "alpha": 0.4345327462208614,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 125.52,
-    "2年後": 150.06,
-    "3年後": 179.39
+    "1年後": 53.88,
+    "2年後": 64.41,
+    "3年後": 77.01
   },
-  "upside_percent": -57.2,
+  "upside_percent": -81.6,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.1549,
+    "beta": 1.96,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.145,
+      0.155,
+      0.165
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        39.59,
+        49.38,
+        60.06
+      ],
+      [
+        36.33,
+        45.07,
+        54.43
+      ],
+      [
+        33.56,
+        41.41,
+        49.67
+      ]
+    ],
+    "base_wacc": 0.155,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.19549999999999998,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.20259787495136128,
-      "source": "fcf_cagr"
+      "rate": 0.195,
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.19549999999999998,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.19549999999999998,
       "fiscal_year": "FY2024",
-      "segments": {
-        "Data Center": {
-          "weight": 0.5,
-          "growth": 0.35,
-          "note": "EPYC CPUs, Instinct GPUs"
-        },
-        "Client": {
-          "weight": 0.25,
-          "growth": 0.08,
-          "note": "Ryzen CPUs"
-        },
-        "Gaming": {
-          "weight": 0.12,
-          "growth": -0.05,
-          "note": "Console APUs, Radeon GPUs"
-        },
-        "Embedded": {
-          "weight": 0.13,
-          "growth": 0.05,
-          "note": "Xilinx FPGAs, industrial"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.137,
+      "intrinsic_value_per_share": 36.42
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.23459999999999998,
-        "intrinsic_value_per_share": 115.17
-      },
-      "base": {
-        "growth_rate": 0.19549999999999998,
-        "intrinsic_value_per_share": 104.99
-      },
-      "bear": {
-        "growth_rate": 0.13684999999999997,
-        "intrinsic_value_per_share": 90.89
-      }
+    "base": {
+      "growth_rate": 0.195,
+      "intrinsic_value_per_share": 45.07
+    },
+    "bull": {
+      "growth_rate": 0.235,
+      "intrinsic_value_per_share": 51.77
     }
   },
   "components": {
@@ -79,17 +91,21 @@
     "current_price": 245.04,
     "latest_revenue": 34639000000.0,
     "rpo": 315000000.0,
+    "beta": 1.963,
+    "sector": "Technology",
     "eps_data": {
       "ticker": "AMD"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.19549999999999998,
-    "pv_high": 12127043985.519646,
-    "pv_terminal": 83151001394.80505,
+    "high_growth_years": 5,
+    "pv_high": 18430949845.88366,
+    "pv_terminal": 32537368142.093815,
     "roe_used": 0.16025050379737013,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 255425230.08321643,
-    "rpo_pv": 255425230.08321643,
-    "alpha_uncapped": 0.7918260187634758
+    "alpha_uncapped": 0.4345327462208614
   },
   "validation": {
     "validated_at": "2026-04-12",
@@ -97,22 +113,23 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $171.18B / 1.630B = $104.99 (差異0.00%)"
+        "detail": "P_t $73.12B / 1.630B = $44.84 (差異0.50%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $12.13B + pv_terminal $83.15B = $95.28B (差異0.00%)"
+        "detail": "pv_high $18.43B + pv_terminal $32.54B = $50.97B (差異0.00%)"
       },
       "formula_verification": {
-        "pass": true,
-        "detail": "α計算: ROE 16.0% × 60% / 8.5% × 0.7 = 0.7918 (実際0.7918)"
+        "pass": false,
+        "detail": "α計算: ROE 16.0% × 60% / 8.5% × 0.7 = 0.7918 (実際0.4345)"
       },
       "anomaly_detection": {
         "pass": true,
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "overall": "WARN",
+    "ai_comment": "Multiple inconsistencies and anomalies detected.",
+    "ai_concerns": "乖離率 -81.6% is extreme (market price $245.04 vs intrinsic $45.07), suggesting overvaluation. Shares count is reasonable, but overall anomaly present."
   }
 }

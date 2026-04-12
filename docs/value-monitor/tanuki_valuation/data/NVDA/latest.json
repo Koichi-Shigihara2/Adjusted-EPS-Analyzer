@@ -1,68 +1,80 @@
 {
-  "intrinsic_value_pt": 3347352955728.12,
-  "intrinsic_value_per_share": 137.7228124142407,
-  "v0": 1671811468247.5793,
-  "v0_adjusted": 1673676477864.06,
+  "intrinsic_value_pt": 1812733675628.8406,
+  "intrinsic_value_per_share": 74.58274740295579,
+  "v0": 904501828197.9397,
+  "v0_adjusted": 906366837814.4203,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 187.72,
-    "2年後": 255.86,
-    "3年後": 348.73
+    "1年後": 101.66,
+    "2年後": 138.56,
+    "3年後": 188.85
   },
-  "upside_percent": -27.0,
+  "upside_percent": -60.5,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.1761,
+    "beta": 2.33,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.166,
+      0.176,
+      0.186
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        53.35,
+        81.14,
+        119.12
+      ],
+      [
+        49.46,
+        74.58,
+        108.33
+      ],
+      [
+        46.07,
+        68.89,
+        99.03
+      ]
+    ],
+    "base_wacc": 0.176,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.36300000000000004,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.5,
-      "source": "fcf_cagr"
+      "rate": 0.363,
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.36300000000000004,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.36300000000000004,
       "fiscal_year": "FY2025",
-      "segments": {
-        "Data Center": {
-          "weight": 0.88,
-          "growth": 0.4,
-          "note": "GPU/Networking for AI training & inference"
-        },
-        "Gaming": {
-          "weight": 0.08,
-          "growth": 0.05,
-          "note": "PC/Console GPU"
-        },
-        "Professional Visualization": {
-          "weight": 0.02,
-          "growth": 0.1,
-          "note": "Workstation GPU"
-        },
-        "Automotive": {
-          "weight": 0.02,
-          "growth": 0.25,
-          "note": "DRIVE platform"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.254,
+      "intrinsic_value_per_share": 52.0
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.43560000000000004,
-        "intrinsic_value_per_share": 160.12
-      },
-      "base": {
-        "growth_rate": 0.36300000000000004,
-        "intrinsic_value_per_share": 137.72
-      },
-      "bear": {
-        "growth_rate": 0.2541,
-        "intrinsic_value_per_share": 108.24
-      }
+    "base": {
+      "growth_rate": 0.363,
+      "intrinsic_value_per_share": 74.58
+    },
+    "bull": {
+      "growth_rate": 0.436,
+      "intrinsic_value_per_share": 93.85
     }
   },
   "components": {
@@ -79,29 +91,33 @@
     "current_price": 188.63,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
+    "beta": 2.335,
+    "sector": "Technology",
     "eps_data": {
       "ticker": "NVDA"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.36300000000000004,
-    "pv_high": 191994497986.9633,
-    "pv_terminal": 1479816970260.616,
+    "high_growth_years": 5,
+    "pv_high": 317006728915.3659,
+    "pv_terminal": 587495099282.5737,
     "roe_used": 0.4564387976956358,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 1865009616.4806278,
-    "rpo_pv": 1865009616.4806278,
-    "alpha_uncapped": 2.255344647437259
+    "alpha_uncapped": 1.0886413301466085
   },
   "validation": {
     "validated_at": "2026-04-12",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $3347.35B / 24.305B = $137.72 (差異0.00%)"
+        "detail": "P_t $1809.00B / 24.305B = $74.43 (差異0.21%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $191.99B + pv_terminal $1479.82B = $1671.81B (差異0.00%)"
+        "detail": "pv_high $317.01B + pv_terminal $587.50B = $904.50B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -113,6 +129,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All verifications passed without issues."
+    "ai_comment": null
   }
 }

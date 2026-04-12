@@ -1,63 +1,80 @@
 {
-  "intrinsic_value_pt": 236233623098.18655,
-  "intrinsic_value_per_share": 62.95480480538046,
-  "v0": 128585970294.46217,
-  "v0_adjusted": 137035274730.8657,
-  "alpha": 0.7238891487038227,
+  "intrinsic_value_pt": 102725582085.69427,
+  "intrinsic_value_per_share": 27.375734596577907,
+  "v0": 64696534954.75144,
+  "v0_adjusted": 73145839391.15498,
+  "alpha": 0.4043940563229925,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 70.76,
-    "2年後": 79.54,
-    "3年後": 89.4
+    "1年後": 30.77,
+    "2年後": 34.59,
+    "3年後": 38.87
   },
-  "upside_percent": -82.0,
+  "upside_percent": -92.2,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.1522,
+    "beta": 1.92,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.142,
+      0.152,
+      0.162
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        26.5,
+        29.67,
+        32.74
+      ],
+      [
+        24.55,
+        27.38,
+        30.06
+      ],
+      [
+        22.9,
+        25.43,
+        27.8
+      ]
+    ],
+    "base_wacc": 0.152,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
       "rate": 0.124,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.15,
-      "source": "fcf_cagr"
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.124,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.124,
       "fiscal_year": "FY2024",
-      "segments": {
-        "Automotive": {
-          "weight": 0.82,
-          "growth": 0.1,
-          "note": "Vehicle sales & leasing"
-        },
-        "Energy": {
-          "weight": 0.1,
-          "growth": 0.3,
-          "note": "Powerwall, Megapack, Solar"
-        },
-        "Services": {
-          "weight": 0.08,
-          "growth": 0.15,
-          "note": "Supercharging, maintenance, insurance"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.087,
+      "intrinsic_value_per_share": 24.2
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.1488,
-        "intrinsic_value_per_share": 66.78
-      },
-      "base": {
-        "growth_rate": 0.124,
-        "intrinsic_value_per_share": 62.95
-      },
-      "bear": {
-        "growth_rate": 0.08679999999999999,
-        "intrinsic_value_per_share": 57.52
-      }
+    "base": {
+      "growth_rate": 0.124,
+      "intrinsic_value_per_share": 27.38
+    },
+    "bull": {
+      "growth_rate": 0.149,
+      "intrinsic_value_per_share": 29.72
     }
   },
   "components": {
@@ -74,41 +91,45 @@
     "current_price": 348.95,
     "latest_revenue": 94827000000.0,
     "rpo": 10420000000.0,
+    "beta": 1.915,
+    "sector": "Consumer Cyclical",
     "eps_data": {
       "ticker": "TSLA"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.124,
-    "pv_high": 17227213369.97401,
-    "pv_terminal": 111358756924.48816,
+    "high_growth_years": 5,
+    "pv_high": 24845178499.41114,
+    "pv_terminal": 39851356455.3403,
     "roe_used": 0.14650137533291652,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 8449304436.40354,
-    "rpo_pv": 8449304436.40354,
-    "alpha_uncapped": 0.7238891487038227
+    "alpha_uncapped": 0.4043940563229925
   },
   "validation": {
     "validated_at": "2026-04-12",
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": true,
-        "detail": "P_t $236.23B / 3.752B = $62.95 (差異0.00%)"
+        "pass": false,
+        "detail": "P_t $90.86B / 3.752B = $24.21 (差異11.55%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $17.23B + pv_terminal $111.36B = $128.59B (差異0.00%)"
+        "detail": "pv_high $24.85B + pv_terminal $39.85B = $64.70B (差異0.00%)"
       },
       "formula_verification": {
-        "pass": true,
-        "detail": "α計算: ROE 14.7% × 60% / 8.5% × 0.7 = 0.7239 (実際0.7239)"
+        "pass": false,
+        "detail": "α計算: ROE 14.7% × 60% / 8.5% × 0.7 = 0.7239 (実際0.4044)"
       },
       "anomaly_detection": {
         "pass": true,
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
-    "ai_comment": "Calculations are accurate but deviation is extreme.",
-    "ai_concerns": "Deviations like -82.0% are extreme, indicating potential overvaluation in market price compared to intrinsic value, though other values (e.g., shares) are reasonable."
+    "overall": "WARN",
+    "ai_comment": "Multiple calculation errors detected",
+    "ai_concerns": "乖離率 of -92.2% is extremely negative, indicating potential anomaly in valuation relative to market price"
   }
 }

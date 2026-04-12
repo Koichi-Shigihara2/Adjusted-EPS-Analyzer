@@ -1,63 +1,80 @@
 {
-  "intrinsic_value_pt": 60668711123.467384,
-  "intrinsic_value_per_share": 25.366612557226986,
-  "v0": 34266726620.3311,
-  "v0_adjusted": 37591308980.144394,
-  "alpha": 0.6139025952917042,
+  "intrinsic_value_pt": 39163934705.234184,
+  "intrinsic_value_per_share": 16.375102412550355,
+  "v0": 25117188157.844746,
+  "v0_adjusted": 28441770517.65804,
+  "alpha": 0.37698652342755173,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 33.59,
-    "2年後": 44.47,
-    "3年後": 58.87
+    "1年後": 21.68,
+    "2年後": 28.71,
+    "3年後": 38.01
   },
-  "upside_percent": -80.2,
+  "upside_percent": -87.2,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.1384,
+    "beta": 1.67,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.128,
+      0.138,
+      0.148
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        12.7,
+        18.06,
+        25.45
+      ],
+      [
+        11.65,
+        16.38,
+        22.76
+      ],
+      [
+        10.79,
+        14.98,
+        20.55
+      ]
+    ],
+    "base_wacc": 0.138,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
       "rate": 0.324,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.5,
-      "source": "fcf_cagr"
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.324,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.324,
       "fiscal_year": "FY2024",
-      "segments": {
-        "Government": {
-          "weight": 0.42,
-          "growth": 0.2,
-          "note": "US Gov + Allies defense/intel"
-        },
-        "Commercial US": {
-          "weight": 0.38,
-          "growth": 0.5,
-          "note": "US Enterprise (AIP platform)"
-        },
-        "Commercial International": {
-          "weight": 0.2,
-          "growth": 0.25,
-          "note": "Non-US Enterprise"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.227,
+      "intrinsic_value_per_share": 12.2
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.3888,
-        "intrinsic_value_per_share": 28.81
-      },
-      "base": {
-        "growth_rate": 0.324,
-        "intrinsic_value_per_share": 25.37
-      },
-      "bear": {
-        "growth_rate": 0.2268,
-        "intrinsic_value_per_share": 20.79
-      }
+    "base": {
+      "growth_rate": 0.324,
+      "intrinsic_value_per_share": 16.38
+    },
+    "bull": {
+      "growth_rate": 0.389,
+      "intrinsic_value_per_share": 19.88
     }
   },
   "components": {
@@ -74,40 +91,44 @@
     "current_price": 128.06,
     "latest_revenue": 4475446000.0,
     "rpo": 4100000000.0,
+    "beta": 1.674,
+    "sector": "Technology",
     "eps_data": {
       "ticker": "PLTR"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.324,
-    "pv_high": 4022936225.8770194,
-    "pv_terminal": 30243790394.454082,
+    "high_growth_years": 5,
+    "pv_high": 7151083198.912719,
+    "pv_terminal": 17966104958.932026,
     "roe_used": 0.12424219190427348,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 3324582359.813293,
-    "rpo_pv": 3324582359.813293,
-    "alpha_uncapped": 0.6139025952917042
+    "alpha_uncapped": 0.37698652342755173
   },
   "validation": {
     "validated_at": "2026-04-12",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": true,
-        "detail": "P_t $60.67B / 2.392B = $25.37 (差異0.00%)"
+        "pass": false,
+        "detail": "P_t $34.59B / 2.392B = $14.46 (差異11.69%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $4.02B + pv_terminal $30.24B = $34.27B (差異0.00%)"
+        "detail": "pv_high $7.15B + pv_terminal $17.97B = $25.12B (差異0.00%)"
       },
       "formula_verification": {
-        "pass": true,
-        "detail": "α計算: ROE 12.4% × 60% / 8.5% × 0.7 = 0.6139 (実際0.6139)"
+        "pass": false,
+        "detail": "α計算: ROE 12.4% × 60% / 8.5% × 0.7 = 0.6139 (実際0.3770)"
       },
       "anomaly_detection": {
         "pass": true,
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
-    "ai_comment": "All verifications passed without issues."
+    "overall": "WARN",
+    "ai_comment": null
   }
 }

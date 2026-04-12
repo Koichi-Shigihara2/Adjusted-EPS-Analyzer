@@ -1,58 +1,80 @@
 {
-  "intrinsic_value_pt": 9230403356.036537,
-  "intrinsic_value_per_share": 35.80655477040856,
-  "v0": 4615201678.018269,
-  "v0_adjusted": 4615201678.018269,
+  "intrinsic_value_pt": 9162318884.543056,
+  "intrinsic_value_per_share": 35.542441679841254,
+  "v0": 4581159442.271528,
+  "v0_adjusted": 4581159442.271528,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 45.21,
-    "2年後": 57.07,
-    "3年後": 72.05
+    "1年後": 44.87,
+    "2年後": 56.65,
+    "3年後": 71.52
   },
-  "upside_percent": 2.7,
+  "upside_percent": 2.0,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.107,
+    "beta": 1.12,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.097,
+      0.107,
+      0.117
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        29.23,
+        41.36,
+        57.41
+      ],
+      [
+        25.33,
+        35.54,
+        48.83
+      ],
+      [
+        22.32,
+        31.08,
+        42.27
+      ]
+    ],
+    "base_wacc": 0.107,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.2625,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.4791795810815356,
-      "source": "fcf_cagr"
+      "rate": 0.263,
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.2625,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.2625,
       "fiscal_year": "FY2024",
-      "segments": {
-        "North America": {
-          "weight": 0.95,
-          "growth": 0.25,
-          "note": "US/Canada retail & e-commerce"
-        },
-        "International": {
-          "weight": 0.05,
-          "growth": 0.5,
-          "note": "Europe, Asia expansion"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.184,
+      "intrinsic_value_per_share": 26.47
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.315,
-        "intrinsic_value_per_share": 40.29
-      },
-      "base": {
-        "growth_rate": 0.2625,
-        "intrinsic_value_per_share": 35.81
-      },
-      "bear": {
-        "growth_rate": 0.18375,
-        "intrinsic_value_per_share": 29.74
-      }
+    "base": {
+      "growth_rate": 0.263,
+      "intrinsic_value_per_share": 35.54
+    },
+    "bull": {
+      "growth_rate": 0.315,
+      "intrinsic_value_per_share": 42.91
     }
   },
   "components": {
@@ -69,17 +91,21 @@
     "current_price": 34.86,
     "latest_revenue": 2515269000.0,
     "rpo": 0.0,
+    "beta": 1.123,
+    "sector": "Consumer Defensive",
     "eps_data": {
       "ticker": "CELH"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.2625,
-    "pv_high": 562254529.5453883,
-    "pv_terminal": 4052947148.47288,
+    "high_growth_years": 5,
+    "pv_high": 1036510957.6355796,
+    "pv_terminal": 3544648484.635949,
     "roe_used": 0.4377082903943001,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 0.0,
-    "rpo_pv": 0.0,
-    "alpha_uncapped": 2.1627939054777174
+    "alpha_uncapped": 1.7179306983918101
   },
   "validation": {
     "validated_at": "2026-04-12",
@@ -87,11 +113,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $9.23B / 0.258B = $35.81 (差異0.00%)"
+        "detail": "P_t $9.16B / 0.258B = $35.54 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $0.56B + pv_terminal $4.05B = $4.62B (差異0.00%)"
+        "detail": "pv_high $1.04B + pv_terminal $3.54B = $4.58B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -103,6 +129,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "ai_comment": "All verifications passed without issues."
   }
 }

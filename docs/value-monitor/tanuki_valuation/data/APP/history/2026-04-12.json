@@ -1,58 +1,80 @@
 {
-  "intrinsic_value_pt": 123366826453.1265,
-  "intrinsic_value_per_share": 365.03921070298264,
-  "v0": 61683413226.56325,
-  "v0_adjusted": 61683413226.56325,
+  "intrinsic_value_pt": 59718045542.19219,
+  "intrinsic_value_per_share": 176.70413381128313,
+  "v0": 29859022771.096096,
+  "v0_adjusted": 29859022771.096096,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 485.5,
-    "2年後": 645.72,
-    "3年後": 858.8
+    "1年後": 235.02,
+    "2年後": 312.57,
+    "3年後": 415.72
   },
-  "upside_percent": -6.7,
+  "upside_percent": -54.9,
   "calculation_date": "2026-04-12",
-  "formula": "Koichi式 v5.3（セグメント成長率＋αキャップ＋RPO補正）",
+  "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
+  "wacc": {
+    "value": 0.1856,
+    "beta": 2.5,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "wacc_values": [
+      0.176,
+      0.186,
+      0.196
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "matrix": [
+      [
+        131.77,
+        191.19,
+        267.23
+      ],
+      [
+        122.75,
+        176.7,
+        244.61
+      ],
+      [
+        114.82,
+        164.04,
+        224.95
+      ]
+    ],
+    "base_wacc": 0.186,
+    "base_years": 5
+  },
   "growth_scenarios": {
     "primary": {
       "rate": 0.33,
-      "source": "segment_weighted",
-      "note": "Segment-based weighted average"
-    },
-    "base_cagr": {
-      "rate": 0.5,
-      "source": "fcf_cagr"
+      "source": "segment_weighted"
     },
     "segment": {
-      "rate": 0.33,
-      "source": "segment_weighted",
+      "enabled": true,
+      "weighted_growth": 0.33,
       "fiscal_year": "FY2024",
-      "segments": {
-        "Software Platform": {
-          "weight": 0.7,
-          "growth": 0.45,
-          "note": "AppDiscovery, MAX, AXON"
-        },
-        "Apps": {
-          "weight": 0.3,
-          "growth": 0.05,
-          "note": "1P mobile games portfolio"
-        }
-      }
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.231,
+      "intrinsic_value_per_share": 127.0
     },
-    "scenario_valuations": {
-      "bull": {
-        "growth_rate": 0.396,
-        "intrinsic_value_per_share": 420.13
-      },
-      "base": {
-        "growth_rate": 0.33,
-        "intrinsic_value_per_share": 365.04
-      },
-      "bear": {
-        "growth_rate": 0.23099999999999998,
-        "intrinsic_value_per_share": 291.86
-      }
+    "base": {
+      "growth_rate": 0.33,
+      "intrinsic_value_per_share": 176.7
+    },
+    "bull": {
+      "growth_rate": 0.396,
+      "intrinsic_value_per_share": 218.3
     }
   },
   "components": {
@@ -69,17 +91,21 @@
     "current_price": 391.38,
     "latest_revenue": 5480717000.0,
     "rpo": 0.0,
+    "beta": 2.502,
+    "sector": "Communication Services",
     "eps_data": {
       "ticker": "APP"
     },
+    "_shares_source": "yf_implied",
+    "_beta_source": "yfinance",
     "high_growth_rate_used": 0.33,
-    "pv_high": 7216664733.711525,
-    "pv_terminal": 54466748492.85172,
+    "high_growth_years": 5,
+    "pv_high": 11292893282.12159,
+    "pv_terminal": 18566129488.974506,
     "roe_used": 1.0984085183814432,
     "fcf_floor_applied": 0.0,
     "rpo_adjustment": 0.0,
-    "rpo_pv": 0.0,
-    "alpha_uncapped": 5.427430326120072
+    "alpha_uncapped": 2.4854352458338598
   },
   "validation": {
     "validated_at": "2026-04-12",
@@ -87,11 +113,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "P_t $123.37B / 0.338B = $365.04 (差異0.00%)"
+        "detail": "P_t $59.72B / 0.338B = $176.70 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "pv_high $7.22B + pv_terminal $54.47B = $61.68B (差異0.00%)"
+        "detail": "pv_high $11.29B + pv_terminal $18.57B = $29.86B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
