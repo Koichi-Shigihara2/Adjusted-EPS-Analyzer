@@ -1,24 +1,15 @@
 """
-TANUKI VALUATION - Core Calculator v5.3
+TANUKI VALUATION - Core Calculator v5.3.1
 Koichi式株価評価モデル
 
-v5.3 変更点:
+v5.3.1 変更点:
+- get_segment_growth() 戻り値の dict -> float 変換を修正
 - 動的WACC（CAPM: Rf + β × (Rm - Rf)）
 - 感度分析マトリクス（WACC ±1% × 高成長期間 3/5/7年）
 
 P_t = (V_0 + RPO調整) × (1 + α)
 V_0 = 2段階DCF（高成長期 + ターミナル）
 α = min(1.0, max(0, (ROE_10yr × retention_rate / WACC) × 0.7))
-
-パラメータ:
-- WACC: CAPM計算（Rf=4.3%, Rm=10%, β=企業別）
-- terminal_growth: 3%
-- retention_rate: 60%
-- high_growth_range: 15%〜50%
-- FCF floor: revenue × 8%
-- α_cap: 1.0
-- min_fcf_years: 3
-- RPO割引率: 15%
 """
 
 from typing import Dict, Any, List, Optional
@@ -38,7 +29,7 @@ except ImportError:
 
 
 class KoichiValuationCalculator:
-    """Koichi式 v5.3 バリュエーション計算エンジン"""
+    """Koichi式 v5.3.1 バリュエーション計算エンジン"""
 
     def __init__(self):
         # CAPM パラメータ
@@ -78,9 +69,6 @@ class KoichiValuationCalculator:
     ) -> Dict[str, float]:
         """
         2段階DCF計算（内部ヘルパー）
-        
-        Returns:
-            {"pv_high": float, "pv_terminal": float, "v0": float}
         """
         current_fcf = fcf_avg
         pv_high = 0.0
@@ -114,21 +102,6 @@ class KoichiValuationCalculator:
     ) -> Dict[str, Any]:
         """
         感度分析マトリクス生成
-        WACC: base-1%, base, base+1%
-        高成長期間: 3年, 5年, 7年
-        
-        Returns:
-            {
-                "wacc_values": [0.08, 0.09, 0.10],
-                "growth_years": [3, 5, 7],
-                "matrix": [
-                    [price_3y_low, price_5y_low, price_7y_low],
-                    [price_3y_mid, price_5y_mid, price_7y_mid],
-                    [price_3y_high, price_5y_high, price_7y_high]
-                ],
-                "base_wacc": 0.09,
-                "base_years": 5
-            }
         """
         wacc_low = base_wacc - self.sensitivity_wacc_delta
         wacc_mid = base_wacc
@@ -160,19 +133,6 @@ class KoichiValuationCalculator:
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """
         メイン計算関数
-        
-        Args:
-            financials: {
-                "fcf_5yr_avg": float,
-                "diluted_shares": int,
-                "roe_10yr_avg": float,
-                "current_price": float,
-                "fcf_list_raw": list,
-                "latest_revenue": float,
-                "eps_data": {"ticker": str},
-                "rpo": float (optional),
-                "beta": float (optional) - WACC計算用
-            }
         """
         # データ抽出
         fcf_avg = financials.get("fcf_5yr_avg", 0.0)
@@ -214,15 +174,18 @@ class KoichiValuationCalculator:
         segment_info = None
         
         # セグメント加重成長率を優先
-        segment_growth = get_segment_growth(ticker)
-        if segment_growth is not None:
-            high_growth_rate = segment_growth
-            growth_source = "segment_weighted"
-            print(f"   [{ticker}] セグメント加重成長率: {high_growth_rate:.1%}")
-            
-            # セグメント詳細取得
-            if ticker in SEGMENT_OVERRIDES:
-                segment_info = SEGMENT_OVERRIDES[ticker]
+        segment_data = get_segment_growth(ticker)
+        
+        # ★修正: segment_data は dict、weighted_growth を抽出
+        if segment_data is not None and isinstance(segment_data, dict):
+            weighted_growth = segment_data.get("weighted_growth")
+            if weighted_growth is not None:
+                high_growth_rate = float(weighted_growth)
+                growth_source = "segment_weighted"
+                print(f"   [{ticker}] セグメント加重成長率: {high_growth_rate:.1%}")
+                
+                # セグメント詳細保存
+                segment_info = segment_data
         else:
             # FCF CAGR計算
             if len(fcf_list_raw) >= 3:
@@ -309,24 +272,26 @@ class KoichiValuationCalculator:
         print(f"   [{ticker}] 感度分析マトリクス生成完了")
 
         # ========================================
-        # STEP 9: シナリオ別理論株価（セグメント企業向け）
+        # STEP 9: シナリオ別理論株価
         # ========================================
         scenario_valuations = None
         if segment_info is not None:
             scenario_valuations = {}
             for scenario in ["bear", "base", "bull"]:
-                scenario_rate = calculate_scenario_growth(ticker, scenario)
-                if scenario_rate:
-                    dcf_scenario = self._calculate_dcf(
-                        fcf_avg, scenario_rate, wacc, self.high_growth_years
-                    )
-                    v0_scenario = dcf_scenario["v0"] + rpo_adjustment
-                    pt_scenario = v0_scenario * (1 + alpha)
-                    price_scenario = pt_scenario / diluted_shares
-                    scenario_valuations[scenario] = {
-                        "growth_rate": round(scenario_rate, 3),
-                        "intrinsic_value_per_share": round(price_scenario, 2)
-                    }
+                scenario_result = calculate_scenario_growth(ticker, scenario)
+                if scenario_result and isinstance(scenario_result, dict):
+                    scenario_rate = scenario_result.get("rate")
+                    if scenario_rate is not None:
+                        dcf_scenario = self._calculate_dcf(
+                            fcf_avg, scenario_rate, wacc, self.high_growth_years
+                        )
+                        v0_scenario = dcf_scenario["v0"] + rpo_adjustment
+                        pt_scenario = v0_scenario * (1 + alpha)
+                        price_scenario = pt_scenario / diluted_shares
+                        scenario_valuations[scenario] = {
+                            "growth_rate": round(scenario_rate, 3),
+                            "intrinsic_value_per_share": round(price_scenario, 2)
+                        }
 
         # ========================================
         # 1〜3年後価値予測
@@ -352,6 +317,16 @@ class KoichiValuationCalculator:
         # ========================================
         # 結果返却
         # ========================================
+        # segment_info をシリアライズ可能な形式に変換
+        segment_info_serializable = None
+        if segment_info:
+            segment_info_serializable = {
+                "enabled": segment_info.get("enabled"),
+                "weighted_growth": segment_info.get("weighted_growth"),
+                "fiscal_year": segment_info.get("fiscal_year"),
+                "source": segment_info.get("source")
+            }
+        
         result = {
             "intrinsic_value_pt": float(intrinsic_value_pt),
             "intrinsic_value_per_share": float(intrinsic_value_per_share),
@@ -362,7 +337,7 @@ class KoichiValuationCalculator:
             "future_values": future_values,
             "upside_percent": round(upside_percent, 1),
             "calculation_date": datetime.now().strftime("%Y-%m-%d"),
-            "formula": "Koichi式 v5.3（動的WACC＋感度分析）",
+            "formula": "Koichi式 v5.3.1（動的WACC＋感度分析＋セグメント成長率）",
             
             # WACC情報
             "wacc": {
@@ -382,7 +357,7 @@ class KoichiValuationCalculator:
                     "rate": round(high_growth_rate, 3),
                     "source": growth_source
                 },
-                "segment": segment_info
+                "segment": segment_info_serializable
             },
             
             # シナリオ別理論株価
@@ -417,7 +392,7 @@ if __name__ == "__main__":
         "fcf_list_raw": [2800000000, 3500000000, 4200000000, 5800000000, 7950000000],
         "latest_revenue": 96773000000,
         "eps_data": {"ticker": "TSLA"},
-        "beta": 2.31  # TSLAのβ
+        "beta": 2.31
     }
     
     result = calculator.calculate_pt(test_data)
