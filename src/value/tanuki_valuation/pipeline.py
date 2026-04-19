@@ -35,18 +35,24 @@ class TanukiValuationPipeline:
 
     def __init__(self, output_dir: str = None, use_ai_validation: bool = True):
         self.fetcher = TanukiDataFetcher()
-        self.calculator = KoichiValuationCalculator()
         self.use_ai_validation = use_ai_validation
-        
+
         # 出力ディレクトリ（デフォルト: docs/value-monitor/tanuki_valuation/data）
         if output_dir:
             self.output_dir = output_dir
+            repo_root = os.path.dirname(os.path.dirname(os.path.dirname(output_dir)))
         else:
             # リポジトリルートからの相対パス（GitHub Actions実行時）
             # src/value/tanuki_valuation/ から見て ../../../docs/value-monitor/tanuki_valuation/data
             script_dir = os.path.dirname(os.path.abspath(__file__))
             repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
             self.output_dir = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
+
+        # v7.1: EPSアナライザーのdataディレクトリ
+        eps_data_dir = os.path.join(
+            repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data"
+        )
+        self.calculator = KoichiValuationCalculator(eps_data_dir=eps_data_dir)
         
         os.makedirs(self.output_dir, exist_ok=True)
         print(f"   出力先: {self.output_dir}")

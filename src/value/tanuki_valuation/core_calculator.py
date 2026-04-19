@@ -54,6 +54,7 @@ from calculator.adjustments import (
     determine_fcf_base, FCFBaseResult,          # v6.2追加
     DEFAULT_FCF_CV_THRESHOLD,
     calculate_bs_adjustment, BSAdjustmentResult,  # v7.0追加
+    analyze_fcf_outlier, FCFOutlierResult,        # v7.1追加
 )
 
 try:
@@ -71,7 +72,7 @@ class KoichiValuationCalculator:
       - FCFベース自動判定（急拡大銘柄は直近2年平均を使用）
     """
 
-    VERSION = "6.2.0"
+    VERSION = "7.1.0"
 
     def __init__(
         self,
@@ -81,6 +82,7 @@ class KoichiValuationCalculator:
         alpha_cap: float = DEFAULT_ALPHA_CAP,
         min_fcf_years: int = 3,
         fcf_base_threshold: float = DEFAULT_FCF_CV_THRESHOLD,
+        eps_data_dir: str = "",
     ):
         self.high_growth_years = high_growth_years
         self.terminal_growth = terminal_growth
@@ -88,6 +90,7 @@ class KoichiValuationCalculator:
         self.alpha_cap = alpha_cap
         self.min_fcf_years = min_fcf_years
         self.fcf_base_threshold = fcf_base_threshold
+        self.eps_data_dir = eps_data_dir  # v7.1: EPSアナライザーdataディレクトリ
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """メイン計算関数"""
@@ -105,6 +108,8 @@ class KoichiValuationCalculator:
         beta           = financials.get("beta")
         sector         = financials.get("sector")
         net_cash_data  = financials.get("net_cash_data", {"net_cash": 0.0, "available": False})  # v7.0
+        # v7.1: FCF外れ値分析用（net_cash_dataのfiscal_yearを流用）
+        fiscal_year_of_latest = net_cash_data.get("fiscal_year", 0)
 
         # ── バリデーション ──
         if diluted_shares <= 100_000:
@@ -152,6 +157,26 @@ class KoichiValuationCalculator:
               f"2yr=${adjusted_fcf_2yr/1e9:.2f}B  "
               f"→ 採用=${base_fcf/1e9:.2f}B"
               + (f"  (CV={fcf_base_result.cv:.2f})" if fcf_base_result.cv < 999 else "  (CV=データ不足)"))
+
+        # ── STEP 4b: FCF外れ値分析（v7.1追加）──
+        # EPSアナライザーと突合して一過性費用を確認・記録
+        fcf_outlier_result: FCFOutlierResult = analyze_fcf_outlier(
+            ticker=ticker,
+            fcf_list=fcf_list_raw,
+            fcf_5yr_avg=fcf_avg,       # 元の5年平均（補正前）
+            cv=fcf_base_result.cv,
+            fiscal_year_of_latest=fiscal_year_of_latest,
+            eps_data_dir=self.eps_data_dir,
+            cv_threshold=self.fcf_base_threshold,
+        )
+        if fcf_outlier_result.detected:
+            action_tag = "除外" if fcf_outlier_result.action == "excluded" else "要確認"
+            transient_str = (
+                f"一過性費用合計${fcf_outlier_result.transient_total/1e6:.0f}M確認済"
+                if fcf_outlier_result.transient_found
+                else "一過性費用の証拠なし"
+            )
+            print(f"   [{ticker}] FCF外れ値: {fcf_outlier_result.rule} → {action_tag}（{transient_str}）")
 
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
         dcf_type = "two_stage"
@@ -330,6 +355,9 @@ class KoichiValuationCalculator:
 
             # FCFベース判定結果（v6.2追加）
             "fcf_base": fcf_base_result.to_dict(),
+
+            # FCF外れ値分析結果（v7.1追加）
+            "fcf_outlier": fcf_outlier_result.to_dict(),
 
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
