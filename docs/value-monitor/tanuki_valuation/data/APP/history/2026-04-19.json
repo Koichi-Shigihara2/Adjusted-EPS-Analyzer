@@ -224,6 +224,16 @@
     "action": "flagged",
     "note": "FY2025 FCF($360M)が5年平均($1579M)から77%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
+  "fcf_estimation": {
+    "applied": false,
+    "method": "raw_fcf",
+    "adj_net_income": -68085281.35313532,
+    "conversion_rate": 0.7,
+    "estimated_fcf": 386286000.0,
+    "raw_fcf": 386286000.0,
+    "sector": "",
+    "note": "調整済み純利益がマイナス($-68M) → 従来FCFを使用"
+  },
   "bs_adjustment": {
     "cash": 2487096000.0,
     "short_term_investments": 0.0,
@@ -291,7 +301,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share value calculation.",
-    "ai_concerns": "Discrepancy in intrinsic value per share ($98.53 calculated vs. $95.53 reported). High ROE (109.84%) and growth rate (33%) are notable but not necessarily anomalous."
+    "ai_comment": "Per share mismatch and high ROE detected",
+    "ai_concerns": "Inconsistency in per share value (98.53 vs. 95.53) and unusually high ROE (109.84%) suggest potential anomalies."
   }
 }

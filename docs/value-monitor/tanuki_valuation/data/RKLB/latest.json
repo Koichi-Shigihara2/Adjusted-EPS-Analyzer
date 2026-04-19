@@ -131,6 +131,16 @@
     "action": "flagged",
     "note": "FY2025 FCF($-97.5M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
+  "fcf_estimation": {
+    "applied": false,
+    "method": "raw_fcf",
+    "adj_net_income": -101504490.18803637,
+    "conversion_rate": 0.7,
+    "estimated_fcf": 48143920.0,
+    "raw_fcf": 48143920.0,
+    "sector": "",
+    "note": "調整済み純利益がマイナス($-102M) → 従来FCFを使用"
+  },
   "bs_adjustment": {
     "cash": 828660000.0,
     "short_term_investments": 187917000.0,
@@ -198,7 +208,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per-share value indicate errors.",
-    "ai_concerns": "Anomalies include ROE at 0.00% leading to α=0, and significant discrepancy in per-share value calculation."
+    "ai_comment": "Major inconsistencies detected.",
+    "ai_concerns": "ROE at 0.00% and market price (84.80) vs. intrinsic value (7.47) indicate significant anomalies."
   }
 }
