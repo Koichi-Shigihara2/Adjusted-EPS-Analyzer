@@ -190,7 +190,10 @@ def determine_fcf_base(
         )
 
     # ── 特殊ケース（直近赤字）──
-    if fcf_2yr_avg <= 0:
+    # ①2年平均がマイナス または ②直近1年がマイナス → avg_5yrにフォールバック
+    # CELHのような「最新年マイナス・前年プラス」で平均がほぼゼロになるケースを防ぐ
+    latest_year_negative = len(fcf_list) >= 1 and fcf_list[0] < 0
+    if fcf_2yr_avg <= 0 or latest_year_negative:
         return FCFBaseResult(
             base_fcf=fcf_5yr_avg,
             method="avg_5yr",
@@ -454,6 +457,250 @@ def calculate_bs_adjustment(
         net_cash_per_share=net_cash_per_share,
         fiscal_year=net_cash_data.get("fiscal_year", 0),
         applied=available and net_cash != 0.0
+    )
+
+
+
+# ========================================
+# FCF外れ値分析 v7.1（EPSアナライザー連携）
+# ========================================
+
+# 一過性費用として認識するカテゴリ
+TRANSIENT_CATEGORIES = {
+    "リストラ・事業再編関連",
+    "在庫・サプライチェーン関連",
+    "金融関連",
+}
+
+# FCF外れ値判定の閾値（CV区分別）
+FCF_OUTLIER_THRESHOLDS = {
+    "mature":  0.20,   # CV≤0.5（成熟企業）: 5年平均から±20%超で外れ値候補
+    "growth":  0.60,   # CV>0.5 （成長企業）: 5年平均から±60%超で外れ値候補
+}
+
+
+@dataclass
+class FCFOutlierResult:
+    """
+    FCF外れ値分析結果
+
+    detected     : 外れ値ルールがトリガーされたか
+    rule         : トリガーされたルール名
+    fiscal_year  : 対象会計年度（fcf_list[0]の年度）
+    fcf_value    : 問題のFCF値
+    threshold_pct: 適用した閾値（%）
+    transient_found   : EPSアナライザーで一過性費用が確認されたか
+    transient_items   : 一過性費用の詳細リスト
+    transient_total   : 一過性費用の合計（税前）
+    action       : "excluded" | "flagged" | "none"
+    note         : 人間が読める説明文
+    """
+    detected: bool
+    rule: str                    # "none" | "latest_negative" | "deviation_large"
+    fiscal_year: int
+    fcf_value: float
+    threshold_pct: float         # 適用した乖離閾値（%）
+    transient_found: bool
+    transient_items: List[Dict[str, Any]]
+    transient_total: float       # 一過性費用の合計（税前）
+    action: str                  # "excluded" | "flagged" | "none"
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "detected": self.detected,
+            "rule": self.rule,
+            "fiscal_year": self.fiscal_year,
+            "fcf_value": self.fcf_value,
+            "threshold_pct": self.threshold_pct,
+            "transient_evidence": {
+                "found": self.transient_found,
+                "source": "adjusted_eps_analyzer" if self.transient_found else None,
+                "items": self.transient_items,
+                "total_transient_amount": self.transient_total,
+            },
+            "action": self.action,
+            "note": self.note,
+        }
+
+
+def _load_eps_annual(ticker: str, eps_data_dir: str) -> Optional[Dict[str, Any]]:
+    """
+    EPSアナライザーのannual.jsonを読み込む
+
+    パス: docs/value-monitor/adjusted_eps_analyzer/data/{TICKER}/annual.json
+    """
+    import os, json
+    path = os.path.join(eps_data_dir, ticker.upper(), "annual.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def _find_transient_items(
+    eps_annual: Dict[str, Any],
+    target_year: int,
+) -> List[Dict[str, Any]]:
+    """
+    指定年度のEPSアナライザー調整項目から一過性費用を抽出
+
+    Returns:
+        一過性費用の詳細リスト（カテゴリが TRANSIENT_CATEGORIES に該当するもの）
+    """
+    items = []
+    for yr in eps_annual.get("years", []):
+        # 年度文字列 "2025" を int 2025 として比較
+        try:
+            yr_int = int(yr.get("year", 0))
+        except (ValueError, TypeError):
+            continue
+        if yr_int != target_year:
+            continue
+
+        for adj in yr.get("adjustments", []):
+            if adj.get("category") in TRANSIENT_CATEGORIES:
+                items.append({
+                    "category":  adj["category"],
+                    "item_name": adj.get("item_name", ""),
+                    "amount":    adj.get("amount", 0),
+                    "reason":    adj.get("reason", ""),
+                })
+    return items
+
+
+def analyze_fcf_outlier(
+    ticker: str,
+    fcf_list: List[float],
+    fcf_5yr_avg: float,
+    cv: float,
+    fiscal_year_of_latest: int,
+    eps_data_dir: str = "",
+    cv_threshold: float = DEFAULT_FCF_CV_THRESHOLD,
+) -> FCFOutlierResult:
+    """
+    FCF外れ値を分析し、EPSアナライザーと突合して一過性判定を行う
+
+    Args:
+        ticker             : ティッカーシンボル
+        fcf_list           : FCFリスト（新しい順、fcf_list[0]が直近）
+        fcf_5yr_avg        : 5年平均FCF
+        cv                 : 変動係数（determine_fcf_baseで計算済み）
+        fiscal_year_of_latest: fcf_list[0]の会計年度（例: 2025）
+        eps_data_dir       : EPSアナライザーのdataディレクトリパス
+        cv_threshold       : 成熟/成長の分岐CV閾値
+
+    Returns:
+        FCFOutlierResult
+    """
+    NO_OUTLIER = FCFOutlierResult(
+        detected=False, rule="none",
+        fiscal_year=fiscal_year_of_latest,
+        fcf_value=fcf_list[0] if fcf_list else 0,
+        threshold_pct=0.0,
+        transient_found=False, transient_items=[], transient_total=0.0,
+        action="none", note=""
+    )
+
+    if not fcf_list or fcf_5yr_avg == 0:
+        return NO_OUTLIER
+
+    latest_fcf = fcf_list[0]
+
+    # ── ルール1: 直近1年がマイナス ──
+    if latest_fcf < 0:
+        rule = "latest_negative"
+        threshold_pct = 0.0
+    else:
+        # ── ルール2: 5年平均からの乖離が閾値超 ──
+        is_mature = cv <= cv_threshold
+        threshold_pct = FCF_OUTLIER_THRESHOLDS["mature"] if is_mature else FCF_OUTLIER_THRESHOLDS["growth"]
+        deviation = abs(latest_fcf - fcf_5yr_avg) / abs(fcf_5yr_avg)
+        if deviation > threshold_pct:
+            rule = "deviation_large"
+        else:
+            return NO_OUTLIER  # 外れ値なし
+
+    # ── EPSアナライザーとの突合 ──
+    transient_items = []
+    transient_total = 0.0
+    transient_found = False
+
+    if eps_data_dir:
+        eps_annual = _load_eps_annual(ticker, eps_data_dir)
+        if eps_annual:
+            transient_items = _find_transient_items(eps_annual, fiscal_year_of_latest)
+            transient_total = sum(item["amount"] for item in transient_items)
+            transient_found = len(transient_items) > 0
+
+    # ── アクション決定 ──
+    if transient_found:
+        action = "excluded"
+        # 一過性費用の内訳を文字列化
+        summary = "、".join(
+            "{cat}({name} ${amt:.0f}M)".format(
+                cat=it["category"], name=it["item_name"], amt=it["amount"]/1e6
+            )
+            for it in transient_items
+        )
+        if rule == "latest_negative":
+            note = (
+                "FY{yr} FCF(${val:.1f}M)がマイナス。"
+                "一過性費用合計${total:.0f}M({summary})による影響と判断し除外。"
+                "5年平均(${avg:.0f}M)を採用。"
+            ).format(
+                yr=fiscal_year_of_latest,
+                val=latest_fcf/1e6,
+                total=transient_total/1e6,
+                summary=summary,
+                avg=fcf_5yr_avg/1e6,
+            )
+        else:
+            deviation_pct = abs(latest_fcf - fcf_5yr_avg) / abs(fcf_5yr_avg) * 100
+            note = (
+                "FY{yr} FCF(${val:.0f}M)が5年平均(${avg:.0f}M)から{dev:.0f}%乖離。"
+                "一過性費用合計${total:.0f}M({summary})による影響と判断し除外。"
+            ).format(
+                yr=fiscal_year_of_latest,
+                val=latest_fcf/1e6,
+                avg=fcf_5yr_avg/1e6,
+                dev=deviation_pct,
+                total=transient_total/1e6,
+                summary=summary,
+            )
+    else:
+        action = "flagged"
+        if rule == "latest_negative":
+            note = (
+                "FY{yr} FCF(${val:.1f}M)がマイナス。"
+                "一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+            ).format(yr=fiscal_year_of_latest, val=latest_fcf/1e6)
+        else:
+            deviation_pct = abs(latest_fcf - fcf_5yr_avg) / abs(fcf_5yr_avg) * 100
+            note = (
+                "FY{yr} FCF(${val:.0f}M)が5年平均(${avg:.0f}M)から{dev:.0f}%乖離。"
+                "一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+            ).format(
+                yr=fiscal_year_of_latest,
+                val=latest_fcf/1e6,
+                avg=fcf_5yr_avg/1e6,
+                dev=deviation_pct,
+            )
+
+    return FCFOutlierResult(
+        detected=True,
+        rule=rule,
+        fiscal_year=fiscal_year_of_latest,
+        fcf_value=latest_fcf,
+        threshold_pct=threshold_pct,
+        transient_found=transient_found,
+        transient_items=transient_items,
+        transient_total=transient_total,
+        action=action,
+        note=note,
     )
 
 
