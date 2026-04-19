@@ -235,16 +235,20 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
 
     checks = {}
 
-    # ── 1. P_t / shares 整合性 ──
+    # ── 1. P_t / shares 整合性（v7.0: BS補正考慮）──
+    bs_adj = data.get("bs_adjustment", {})
+    net_cash_per_share = bs_adj.get("net_cash_per_share", 0.0) if bs_adj.get("applied", False) else 0.0
+
     if diluted_shares > 0:
         total_v0 = v0 + rpo_pv + growth_option_pv
         p_t = total_v0 * (1 + alpha)
-        calculated_ivps = p_t / diluted_shares
-        diff_pct = abs(calculated_ivps - ivps) / ivps * 100 if ivps > 0 else 0
+        calculated_ivps = p_t / diluted_shares + net_cash_per_share
+        diff_pct = abs(calculated_ivps - ivps) / abs(ivps) * 100 if ivps != 0 else 0
 
+        bs_note = f" + BS ${net_cash_per_share:+.2f}/株" if net_cash_per_share != 0 else ""
         checks["pt_shares_consistency"] = {
             "pass": diff_pct < 1.0,
-            "detail": f"(V₀ ${v0/1e9:.2f}B + RPO ${rpo_pv/1e9:.2f}B + GO ${growth_option_pv/1e9:.2f}B) × (1+{alpha:.3f}) / {diluted_shares/1e9:.3f}B = ${calculated_ivps:.2f} (差異{diff_pct:.2f}%)"
+            "detail": f"(V₀ ${v0/1e9:.2f}B + RPO ${rpo_pv/1e9:.2f}B + GO ${growth_option_pv/1e9:.2f}B) × (1+{alpha:.3f}) / {diluted_shares/1e9:.3f}B{bs_note} = ${calculated_ivps:.2f} (差異{diff_pct:.2f}%)"
         }
     else:
         checks["pt_shares_consistency"] = {"pass": False, "detail": "株式数が0"}
