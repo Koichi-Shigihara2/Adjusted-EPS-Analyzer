@@ -110,7 +110,7 @@
     "base_fcf": 49548240.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 49548240.0,
-    "fcf_2yr_avg": -4375768500.0,
+    "fcf_2yr_avg": -4375266500.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -120,7 +120,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -1402478000,
+    "fcf_value": -1401962000,
     "threshold_pct": 0.0,
     "transient_evidence": {
       "found": true,
@@ -172,7 +172,7 @@
       "total_transient_amount": 1768000
     },
     "action": "flagged",
-    "note": "FY2025 FCF($-1402.5M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($-1402.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -197,16 +197,16 @@
     "applied": true
   },
   "components": {
-    "fcf_5yr_avg": -4269811800.0,
-    "fcf_2yr_avg": -4375768500.0,
+    "fcf_5yr_avg": -4269250000.0,
+    "fcf_2yr_avg": -4375266500.0,
     "fcf_base_used": 610507822.6346307,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      -1402478000,
-      -7349059000,
-      -7338548000,
-      -1274072000,
-      -3984902000
+      -1401962000,
+      -7348571000,
+      -7338039000,
+      -1273542000,
+      -3984136000
     ],
     "diluted_shares": 1275263850,
     "roe_10yr_avg": 0.061154046555506165,
@@ -226,7 +226,7 @@
     "pv_high": 4403120588.527235,
     "pv_terminal": 13902796173.160276,
     "roe_used": 0.061154046555506165,
-    "fcf_floor_applied": 4319360040.0,
+    "fcf_floor_applied": 4318798240.0,
     "rpo_pv": 6920807.424635721,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.23056283261501426
@@ -253,7 +253,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple inconsistencies detected, especially in per-share calculation.",
-    "ai_concerns": "Inconsistency in per-share value suggests potential error; other values like high growth rate seem plausible but unverified."
+    "ai_comment": "Inconsistency in per share calculation detected.",
+    "ai_concerns": "Anomaly in per share value: reported 21.54 does not match calculated 17.67 from P_t and shares. No other obvious anomalies."
   }
 }

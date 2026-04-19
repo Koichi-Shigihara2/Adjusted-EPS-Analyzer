@@ -198,20 +198,20 @@
     "dcf_type": "three_stage"
   },
   "fcf_base": {
-    "base_fcf": 5348600000.0,
+    "base_fcf": 5726600000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 5348600000.0,
-    "fcf_2yr_avg": 6290500000.0,
-    "cv": 0.294,
+    "fcf_5yr_avg": 5726600000.0,
+    "fcf_2yr_avg": 6761000000.0,
+    "cv": 0.274,
     "cv_threshold": 0.5,
-    "ratio": 0.294,
+    "ratio": 0.274,
     "threshold": 0.5
   },
   "fcf_outlier": {
     "detected": false,
     "rule": "none",
     "fiscal_year": 2025,
-    "fcf_value": 5015000000,
+    "fcf_value": 5454000000,
     "threshold_pct": 0.0,
     "transient_evidence": {
       "found": false,
@@ -228,10 +228,10 @@
     "adj_net_income": 7498157055.874877,
     "conversion_rate": 0.7,
     "estimated_fcf": 5248709939.112413,
-    "raw_fcf": 5348600000.0,
+    "raw_fcf": 5726600000.0,
     "sector": "",
-    "note": "調整済み純利益$7.50B × 転換率70%[sector()] = 推定FCF$5.25B（従来$5.35Bの1.0倍）",
-    "divergence_ratio": 0.98,
+    "note": "調整済み純利益$7.50B × 転換率70%[sector()] = 推定FCF$5.25B（従来$5.73Bの0.9倍）",
+    "divergence_ratio": 0.92,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -245,16 +245,16 @@
     "applied": true
   },
   "components": {
-    "fcf_5yr_avg": 5348600000.0,
-    "fcf_2yr_avg": 6290500000.0,
+    "fcf_5yr_avg": 5726600000.0,
+    "fcf_2yr_avg": 6761000000.0,
     "fcf_base_used": 5248709939.112413,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      5015000000,
-      7566000000,
-      4358000000,
-      3584000000,
-      6220000000
+      5454000000,
+      8068000000,
+      4822000000,
+      3965000000,
+      6324000000
     ],
     "diluted_shares": 3752431984,
     "roe_10yr_avg": 0.14650137533291652,
@@ -301,7 +301,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value",
-    "ai_concerns": "Inconsistency in intrinsic value per share (44.85 vs. 54.40) is an anomaly; also, large market discrepancy (-86.4%) warrants review."
+    "ai_comment": "Inconsistencies in per share value found",
+    "ai_concerns": "Inconsistency in per share value (44.85 vs 54.40) suggests a potential calculation error, though other values like growth rates and FCF appear reasonable."
   }
 }

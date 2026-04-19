@@ -110,7 +110,7 @@
     "base_fcf": 48143920.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 48143920.0,
-    "fcf_2yr_avg": -123220000.0,
+    "fcf_2yr_avg": -123084500.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -154,16 +154,16 @@
     "applied": true
   },
   "components": {
-    "fcf_5yr_avg": -167560600.0,
-    "fcf_2yr_avg": -123220000.0,
+    "fcf_5yr_avg": -167319800.0,
+    "fcf_2yr_avg": -123084500.0,
     "fcf_base_used": 48143920.0,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       -97490000,
-      -148950000,
-      -153574000,
-      -115983000,
-      -321806000
+      -148679000,
+      -153238000,
+      -115654000,
+      -321538000
     ],
     "diluted_shares": 578044302,
     "roe_10yr_avg": 0.0,
@@ -183,7 +183,7 @@
     "pv_high": 368288504.80405545,
     "pv_terminal": 1589965223.2355862,
     "roe_used": 0.0,
-    "fcf_floor_applied": 215704520.0,
+    "fcf_floor_applied": 215463720.0,
     "rpo_pv": 1497944910.7548811,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0
@@ -210,7 +210,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple inconsistencies and anomalies detected.",
-    "ai_concerns": "ROE at 0.00% and large discrepancy between intrinsic value ($7.47) and market price ($84.80) suggest anomalies in inputs or assumptions."
+    "ai_comment": "Inconsistencies in per share calculation indicate errors.",
+    "ai_concerns": "Anomaly in intrinsic value per share: calculated value does not match P_t / shares. Additionally, ROE at 0% leads to α=0, which is unusual but mathematically correct."
   }
 }
