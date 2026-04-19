@@ -28,7 +28,33 @@ class SECParser:
             "Liabilities",
             "LiabilitiesAndStockholdersEquity",
         ],
-        
+
+        # BS詳細（ネットキャッシュ計算用）
+        "cash_and_equivalents": [
+            "CashAndCashEquivalentsAtCarryingValue",
+            "CashCashEquivalentsAndShortTermInvestments",
+            "Cash",
+        ],
+        "short_term_investments": [
+            "ShortTermInvestments",
+            "MarketableSecuritiesCurrent",
+            "AvailableForSaleSecuritiesCurrent",
+            "AvailableForSaleSecurities",
+        ],
+        "long_term_debt": [
+            "LongTermDebt",
+            "LongTermDebtNoncurrent",
+            "LongTermNotesPayable",
+            "SeniorNotes",
+        ],
+        "short_term_debt": [
+            "ShortTermBorrowings",
+            "NotesPayableCurrent",
+            "LongTermDebtCurrent",
+            "DebtCurrent",
+            "CommercialPaper",
+        ],
+
         # RPO（残存履行義務）- SaaS企業向け
         "rpo": [
             "RevenueRemainingPerformanceObligation",
@@ -297,7 +323,9 @@ class SECParser:
         }
         
         # BS
-        for field in ["total_assets", "stockholders_equity", "total_liabilities"]:
+        for field in ["total_assets", "stockholders_equity", "total_liabilities",
+                      "cash_and_equivalents", "short_term_investments",
+                      "long_term_debt", "short_term_debt"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["bs"][field] = val

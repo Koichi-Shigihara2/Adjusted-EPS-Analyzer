@@ -224,6 +224,60 @@ class SECReader:
         
         return 0.0
     
+    def get_net_cash(self, ticker: str) -> dict:
+        """
+        ネットキャッシュ関連BSデータを取得
+
+        ネットキャッシュ = (現金 + 短期投資) - (長期有利子負債 + 短期有利子負債)
+        プラス → 純キャッシュ（負債より現金が多い）
+        マイナス → 純負債（負債が現金を上回る）
+
+        Returns:
+            {
+                "cash":                   float
+                "short_term_investments": float
+                "long_term_debt":         float
+                "short_term_debt":        float
+                "net_cash":               float  ネットキャッシュ（符号付き）
+                "fiscal_year":            int    取得会計年度
+                "available":              bool   データ取得成功フラグ
+            }
+        """
+        annual_data = self.get_annual_range(ticker, years=1)
+        if not annual_data:
+            return {
+                "cash": 0.0, "short_term_investments": 0.0,
+                "long_term_debt": 0.0, "short_term_debt": 0.0,
+                "net_cash": 0.0, "fiscal_year": 0, "available": False
+            }
+
+        latest = annual_data[0]
+        bs = latest.get("bs", {})
+
+        # fiscal_yearはperiodフィールド（文字列 "2025" 等）から取得
+        try:
+            fy = int(latest.get("period", 0))
+        except (ValueError, TypeError):
+            fy = 0
+
+        cash    = bs.get("cash_and_equivalents", 0) or 0
+        st_inv  = bs.get("short_term_investments", 0) or 0
+        lt_debt = bs.get("long_term_debt", 0) or 0
+        st_debt = bs.get("short_term_debt", 0) or 0
+
+        net_cash = (cash + st_inv) - (lt_debt + st_debt)
+        available = any([cash, st_inv, lt_debt, st_debt])
+
+        return {
+            "cash":                   float(cash),
+            "short_term_investments": float(st_inv),
+            "long_term_debt":         float(lt_debt),
+            "short_term_debt":        float(st_debt),
+            "net_cash":               float(net_cash),
+            "fiscal_year":            fy,
+            "available":              available
+        }
+
     # =========================================
     # Adjusted EPS Analyzer用ヘルパー
     # =========================================
