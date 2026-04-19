@@ -191,12 +191,16 @@ class KoichiValuationCalculator:
         except Exception:
             pass
 
+        # ガードA: FCF外れ値「excluded」の銘柄は二重補正しない
+        _fcf_outlier_action = fcf_outlier_result.action if fcf_outlier_result else "none"
+
         fcf_estimation: FCFEstimationResult = estimate_fcf_from_eps(
             ticker=ticker,
             raw_fcf=base_fcf,
             diluted_shares=diluted_shares,
             sector=_sector,
             eps_data_dir=self.eps_data_dir,
+            fcf_outlier_action=_fcf_outlier_action,
         )
         if fcf_estimation.applied:
             base_fcf = fcf_estimation.estimated_fcf
@@ -204,6 +208,9 @@ class KoichiValuationCalculator:
                   f" × {fcf_estimation.conversion_rate:.0%}"
                   f" = ${base_fcf/1e9:.2f}B"
                   f"（従来${fcf_estimation.raw_fcf/1e9:.2f}Bから更新）")
+            if fcf_estimation.divergence_warning:
+                print(f"   [{ticker}] ⚠ FCF乖離警告({fcf_estimation.divergence_ratio:.1f}x): "
+                      f"{fcf_estimation.divergence_warning}")
         else:
             print(f"   [{ticker}] FCF実力推定: フォールバック → {fcf_estimation.note}")
 
