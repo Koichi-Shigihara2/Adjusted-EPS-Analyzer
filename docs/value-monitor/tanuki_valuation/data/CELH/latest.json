@@ -67,15 +67,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.184,
-      "intrinsic_value_per_share": 44.55
+      "intrinsic_value_per_share": 44.71
     },
     "base": {
       "growth_rate": 0.263,
-      "intrinsic_value_per_share": 60.42
+      "intrinsic_value_per_share": 54.21
     },
     "bull": {
       "growth_rate": 0.315,
-      "intrinsic_value_per_share": 73.37
+      "intrinsic_value_per_share": 61.22
     }
   },
   "growth_options": {
@@ -271,7 +271,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -291,6 +291,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "Inconsistencies in per share value detected.",
+    "ai_concerns": "Inconsistency in P_t / shares (55.30 vs 54.21) indicates potential anomaly in per share calculation."
   }
 }

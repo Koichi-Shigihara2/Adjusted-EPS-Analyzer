@@ -67,15 +67,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.231,
-      "intrinsic_value_per_share": 67.0
+      "intrinsic_value_per_share": 71.02
     },
     "base": {
       "growth_rate": 0.33,
-      "intrinsic_value_per_share": 94.77
+      "intrinsic_value_per_share": 95.53
     },
     "bull": {
       "growth_rate": 0.396,
-      "intrinsic_value_per_share": 118.23
+      "intrinsic_value_per_share": 115.11
     }
   },
   "growth_options": {
@@ -271,7 +271,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -291,6 +291,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "Inconsistency in per share value calculation.",
+    "ai_concerns": "Discrepancy in intrinsic value per share ($98.53 calculated vs. $95.53 reported). High ROE (109.84%) and growth rate (33%) are notable but not necessarily anomalous."
   }
 }

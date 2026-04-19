@@ -67,15 +67,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.137,
-      "intrinsic_value_per_share": 67.7
+      "intrinsic_value_per_share": 80.22
     },
     "base": {
       "growth_rate": 0.195,
-      "intrinsic_value_per_share": 84.84
+      "intrinsic_value_per_share": 95.79
     },
     "bull": {
       "growth_rate": 0.235,
-      "intrinsic_value_per_share": 98.19
+      "intrinsic_value_per_share": 107.46
     }
   },
   "growth_options": {
@@ -258,7 +258,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -278,6 +278,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "複数の不一致が見つかりました",
+    "ai_concerns": "Inconsistencies in pt_shares_consistency and dcf_components suggest potential errors; divergence rate -65.6% may indicate overvaluation."
   }
 }
