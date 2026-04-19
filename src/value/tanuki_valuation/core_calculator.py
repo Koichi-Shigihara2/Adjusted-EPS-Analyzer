@@ -54,6 +54,7 @@ from calculator.adjustments import (
     determine_fcf_base, FCFBaseResult,          # v6.2追加
     DEFAULT_FCF_CV_THRESHOLD,
     calculate_bs_adjustment, BSAdjustmentResult,  # v7.0追加
+    estimate_fcf_from_eps, FCFEstimationResult,   # v7.2追加
     analyze_fcf_outlier, FCFOutlierResult,        # v7.1追加
 )
 
@@ -177,6 +178,34 @@ class KoichiValuationCalculator:
                 else "一過性費用の証拠なし"
             )
             print(f"   [{ticker}] FCF外れ値: {fcf_outlier_result.rule} → {action_tag}（{transient_str}）")
+
+        # ── STEP 4c: FCF実力推定（調整済みEPS × FCF転換率）v7.2 ──
+        _sector = ""
+        try:
+            import json as _json
+            _bcfg_path = os.path.join(os.path.dirname(__file__), '..', 'beta_config.json')
+            if os.path.exists(_bcfg_path):
+                with open(_bcfg_path) as _f:
+                    _bcfg = _json.load(_f)
+                _sector = _bcfg.get('overrides', {}).get(ticker, {}).get('sector', '')
+        except Exception:
+            pass
+
+        fcf_estimation: FCFEstimationResult = estimate_fcf_from_eps(
+            ticker=ticker,
+            raw_fcf=base_fcf,
+            diluted_shares=diluted_shares,
+            sector=_sector,
+            eps_data_dir=self.eps_data_dir,
+        )
+        if fcf_estimation.applied:
+            base_fcf = fcf_estimation.estimated_fcf
+            print(f"   [{ticker}] FCF実力推定: 調整済み純利益${fcf_estimation.adj_net_income/1e9:.2f}B"
+                  f" × {fcf_estimation.conversion_rate:.0%}"
+                  f" = ${base_fcf/1e9:.2f}B"
+                  f"（従来${fcf_estimation.raw_fcf/1e9:.2f}Bから更新）")
+        else:
+            print(f"   [{ticker}] FCF実力推定: フォールバック → {fcf_estimation.note}")
 
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
         dcf_type = "two_stage"
@@ -380,6 +409,7 @@ class KoichiValuationCalculator:
 
             # FCF外れ値分析結果（v7.1追加）
             "fcf_outlier": fcf_outlier_result.to_dict(),
+            "fcf_estimation": fcf_estimation.to_dict(),
 
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
