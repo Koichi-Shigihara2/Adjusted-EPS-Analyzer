@@ -1,16 +1,16 @@
 {
   "intrinsic_value_pt": 9381049.432664623,
-  "intrinsic_value_per_share": 0.03650554780095382,
+  "intrinsic_value_per_share": -1.072780948431064,
   "v0": 4690524.716332312,
   "v0_adjusted": 4690524.716332312,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 0.05,
-    "2年後": 0.06,
-    "3年後": 0.07
+    "1年後": -1.35,
+    "2年後": -1.71,
+    "3年後": -2.16
   },
-  "upside_percent": -99.9,
+  "upside_percent": -103.0,
   "calculation_date": "2026-04-19",
   "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -184,6 +184,16 @@
     "ratio": 1.167,
     "threshold": 0.5
   },
+  "bs_adjustment": {
+    "cash": 398866000.0,
+    "short_term_investments": 0.0,
+    "long_term_debt": 676926000.0,
+    "short_term_debt": 7000000.0,
+    "net_cash": -285060000.0,
+    "net_cash_per_share": -1.1092864962320177,
+    "fiscal_year": 2025,
+    "applied": true
+  },
   "components": {
     "fcf_5yr_avg": 137369861.2,
     "fcf_2yr_avg": 90653.0,
@@ -241,7 +251,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Results indicate possible input errors leading to anomalies.",
-    "ai_concerns": "Intrinsic value per share of 0.04 is unrealistically low compared to market price of 35.25, suggesting potential scale error in FCF or other inputs."
+    "ai_comment": "株価計算に不整合と異常値あり",
+    "ai_concerns": "Negative intrinsic value per share (-1.07) is anomalous, as P_t is positive, suggesting potential calculation error."
   }
 }

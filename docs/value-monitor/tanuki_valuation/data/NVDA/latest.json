@@ -1,14 +1,14 @@
 {
   "intrinsic_value_pt": 1135759710488.6074,
-  "intrinsic_value_per_share": 46.72946761936257,
+  "intrinsic_value_per_share": 46.776289261000095,
   "v0": 564155131190.6031,
   "v0_adjusted": 567879855244.3037,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 63.69,
-    "2年後": 86.81,
-    "3年後": 118.33
+    "1年後": 63.76,
+    "2年後": 86.9,
+    "3年後": 118.44
   },
   "upside_percent": -76.8,
   "calculation_date": "2026-04-19",
@@ -234,6 +234,16 @@
     "ratio": 0.968,
     "threshold": 0.5
   },
+  "bs_adjustment": {
+    "cash": 10605000000.0,
+    "short_term_investments": 0.0,
+    "long_term_debt": 8468000000.0,
+    "short_term_debt": 999000000.0,
+    "net_cash": 1138000000.0,
+    "net_cash_per_share": 0.04682164163752314,
+    "fiscal_year": 2026,
+    "applied": true
+  },
   "components": {
     "fcf_5yr_avg": 39859800000.0,
     "fcf_2yr_avg": 7374500000.0,
@@ -271,11 +281,11 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $564.16B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B = $46.73 (差異0.00%)"
+        "detail": "(V₀ $564.16B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B = $46.73 (差異0.10%)"
       },
       "dcf_components": {
         "pass": true,
@@ -291,6 +301,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "All checks passed without issues."
   }
 }

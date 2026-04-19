@@ -1,16 +1,16 @@
 {
   "intrinsic_value_pt": 138624464.68086946,
-  "intrinsic_value_per_share": 0.2876722202042894,
+  "intrinsic_value_per_share": 1.427458341489773,
   "v0": 131731226.9636078,
   "v0_adjusted": 138624464.68086946,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 0.36,
-    "2年後": 0.45,
-    "3年後": 0.56
+    "1年後": 1.78,
+    "2年後": 2.23,
+    "3年後": 2.79
   },
-  "upside_percent": -97.1,
+  "upside_percent": -85.7,
   "calculation_date": "2026-04-19",
   "formula": "Koichi式 v6.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -116,6 +116,16 @@
     "ratio": 999.0,
     "threshold": 0.5
   },
+  "bs_adjustment": {
+    "cash": 550744000.0,
+    "short_term_investments": 0.0,
+    "long_term_debt": 0.0,
+    "short_term_debt": 1500000.0,
+    "net_cash": 549244000.0,
+    "net_cash_per_share": 1.1397861212854836,
+    "fiscal_year": 2025,
+    "applied": true
+  },
   "components": {
     "fcf_5yr_avg": -33755936.4,
     "fcf_2yr_avg": -29331555.0,
@@ -156,8 +166,8 @@
     "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": true,
-        "detail": "(V₀ $0.13B + RPO $0.01B + GO $0.00B) × (1+0.000) / 0.482B = $0.29 (差異0.00%)"
+        "pass": false,
+        "detail": "(V₀ $0.13B + RPO $0.01B + GO $0.00B) × (1+0.000) / 0.482B = $0.29 (差異79.85%)"
       },
       "dcf_components": {
         "pass": true,
@@ -172,7 +182,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
+    "overall": "WARN",
     "ai_comment": null
   }
 }

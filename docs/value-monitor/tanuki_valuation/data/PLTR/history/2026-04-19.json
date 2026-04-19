@@ -1,16 +1,16 @@
 {
   "intrinsic_value_pt": 31597174061.201233,
-  "intrinsic_value_per_share": 13.21131201687453,
+  "intrinsic_value_per_share": 16.21215488490665,
   "v0": 16334888478.758667,
   "v0_adjusted": 21077990640.888275,
   "alpha": 0.49906006694524535,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 17.49,
-    "2年後": 23.16,
-    "3年後": 30.66
+    "1年後": 21.46,
+    "2年後": 28.42,
+    "3年後": 37.63
   },
-  "upside_percent": -91.0,
+  "upside_percent": -88.9,
   "calculation_date": "2026-04-19",
   "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -223,6 +223,16 @@
     "ratio": 0.869,
     "threshold": 0.5
   },
+  "bs_adjustment": {
+    "cash": 1423796000.0,
+    "short_term_investments": 5753247000.0,
+    "long_term_debt": 0.0,
+    "short_term_debt": 0.0,
+    "net_cash": 7177043000.0,
+    "net_cash_per_share": 3.00084286803212,
+    "fiscal_year": 2025,
+    "applied": true
+  },
   "components": {
     "fcf_5yr_avg": 888765000.0,
     "fcf_2yr_avg": 252467000.0,
@@ -263,8 +273,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": true,
-        "detail": "(V₀ $16.33B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B = $13.21 (差異0.00%)"
+        "pass": false,
+        "detail": "(V₀ $16.33B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B = $13.21 (差異18.51%)"
       },
       "dcf_components": {
         "pass": true,
@@ -279,7 +289,8 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
-    "ai_comment": "All checks passed successfully."
+    "overall": "WARN",
+    "ai_comment": "Per share value mismatch detected",
+    "ai_concerns": "Inconsistency in intrinsic value per share (13.21 vs. 16.21) suggests potential calculation error, despite other values aligning."
   }
 }
