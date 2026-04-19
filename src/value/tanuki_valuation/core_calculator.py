@@ -53,6 +53,7 @@ from calculator.adjustments import (
     calculate_growth_option_pv, GrowthOptionResult,
     determine_fcf_base, FCFBaseResult,          # v6.2追加
     DEFAULT_FCF_CV_THRESHOLD,
+    calculate_bs_adjustment, BSAdjustmentResult,  # v7.0追加
 )
 
 try:
@@ -103,6 +104,7 @@ class KoichiValuationCalculator:
         rpo            = financials.get("rpo", 0.0)
         beta           = financials.get("beta")
         sector         = financials.get("sector")
+        net_cash_data  = financials.get("net_cash_data", {"net_cash": 0.0, "available": False})  # v7.0
 
         # ── バリデーション ──
         if diluted_shares <= 100_000:
@@ -218,15 +220,31 @@ class KoichiValuationCalculator:
         else:
             print(f"   [{ticker}] α: {alpha:.3f}")
 
-        # ── STEP 9: 本質的価値（P_t）算出 ──
+        # ── STEP 9: BS評価補正（v7.0追加）──
+        # ネットキャッシュ/純負債を1株あたり価値に換算して加算
+        bs_adjustment: BSAdjustmentResult = calculate_bs_adjustment(
+            net_cash_data=net_cash_data,
+            diluted_shares=diluted_shares
+        )
+        if bs_adjustment.applied:
+            nc = bs_adjustment.net_cash
+            ncs = bs_adjustment.net_cash_per_share
+            sign = "+" if nc >= 0 else ""
+            print(f"   [{ticker}] BS補正: ネットキャッシュ {sign}${nc/1e9:.2f}B → {sign}${ncs:.2f}/株")
+
+        # ── STEP 10: 本質的価値（P_t）算出 ──
         v0_adjusted, intrinsic_value_pt = calculate_intrinsic_value(
             v0=v0, rpo_pv=rpo_pv, alpha=alpha,
             growth_option_pv=growth_option_pv
         )
 
-        intrinsic_value_per_share = calculate_per_share_value(
-            intrinsic_value_pt=intrinsic_value_pt,
-            diluted_shares=diluted_shares
+        # DCFベース理論株価 + ネットキャッシュ/株
+        intrinsic_value_per_share = (
+            calculate_per_share_value(
+                intrinsic_value_pt=intrinsic_value_pt,
+                diluted_shares=diluted_shares
+            )
+            + bs_adjustment.net_cash_per_share
         )
 
         upside_percent = calculate_upside(
@@ -312,6 +330,9 @@ class KoichiValuationCalculator:
 
             # FCFベース判定結果（v6.2追加）
             "fcf_base": fcf_base_result.to_dict(),
+
+            # BS評価補正結果（v7.0追加）
+            "bs_adjustment": bs_adjustment.to_dict(),
 
             "components": {
                 "fcf_5yr_avg": financials.get("fcf_5yr_avg"),

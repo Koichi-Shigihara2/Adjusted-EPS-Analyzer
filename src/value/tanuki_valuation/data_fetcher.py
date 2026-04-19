@@ -126,6 +126,7 @@ class TanukiDataFetcher:
         roe_avg = 0.0
         revenue = 0.0
         rpo = 0.0
+        net_cash_data = {"net_cash": 0.0, "available": False}  # BS評価補正用
         
         # ========================================
         # 1. SEC EDGAR
@@ -151,7 +152,13 @@ class TanukiDataFetcher:
                 rpo = self.sec_reader.get_rpo(ticker)
                 if rpo > 0:
                     print(f"   [{ticker}] SEC RPO: ${rpo:,.0f}")
-                    
+
+                # BS評価補正用（v7.0追加）
+                if hasattr(self.sec_reader, 'get_net_cash'):
+                    net_cash_data = self.sec_reader.get_net_cash(ticker)
+                else:
+                    net_cash_data = {"net_cash": 0.0, "available": False}
+
             except Exception as e:
                 print(f"   [{ticker}] SEC取得エラー: {e}")
         
@@ -237,6 +244,7 @@ class TanukiDataFetcher:
             "fcf_5yr_avg": fcf_avg,
             "fcf_2yr_avg": fcf_2yr_avg,
             "fcf_list_raw": fcf_list,
+            "net_cash_data": net_cash_data,  # BS評価補正用（v7.0追加）
             "diluted_shares": final_shares,
             "roe_10yr_avg": roe_avg,
             "current_price": current_price,
