@@ -278,18 +278,35 @@ class KoichiValuationCalculator:
         )
 
         # ── STEP 10: 感度分析 ──
+        # Phase2パラメータを取得（3段階DCFの場合）
+        _phase2_growth = None
+        _phase2_years = 0
+        if dcf_type == "three_stage" and maturity_profile:
+            _phase2_growth = maturity_profile.get("phase2", {}).get("growth")
+            _phase2_years  = maturity_profile.get("phase2", {}).get("years", 0)
+
         sensitivity_calc_func = create_sensitivity_calc_func(
             base_fcf=base_fcf,
             high_growth_rate=high_growth_rate,
             diluted_shares=diluted_shares,
             rpo_pv=rpo_pv + growth_option_pv,
             alpha=alpha,
-            terminal_growth=terminal_growth
+            terminal_growth=terminal_growth,
+            net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
+            phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
+            phase2_years=_phase2_years,                            # v7.1: 3段階対応
         )
+        # 感度分析のbase_yearsはPhase1の実際の年数（3段階DCFの場合）
+        # → 中央列が理論株価と一致する（選択肢C）
+        if dcf_type == "three_stage" and maturity_profile:
+            _sensitivity_base_years = maturity_profile.get("phase1", {}).get("years", self.high_growth_years)
+        else:
+            _sensitivity_base_years = self.high_growth_years
+
         sensitivity_result: SensitivityResult = calculate_sensitivity_matrix(
             calc_func=sensitivity_calc_func,
             base_wacc=wacc,
-            base_years=self.high_growth_years
+            base_years=_sensitivity_base_years
         )
 
         # ── STEP 11: シナリオ分析 ──
