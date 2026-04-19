@@ -310,6 +310,18 @@ function render(d) {
   const goPv = growthOptions.total_pv || 0;
   const goCount = growthOptions.count || 0;
 
+  // v7.1: FCF外れ値分析
+  const fcfOutlier = d.fcf_outlier || {};
+  const fcfOutlierDetected = fcfOutlier.detected || false;
+  const fcfOutlierRule = fcfOutlier.rule || "none";
+  const fcfOutlierNote = fcfOutlier.note || "";
+  const fcfOutlierAction = fcfOutlier.action || "none";
+  const fcfOutlierTransientFound = (fcfOutlier.transient_evidence || {}).found || false;
+  const fcfOutlierTransientTotal = (fcfOutlier.transient_evidence || {}).total_transient_amount || 0;
+  const fcfOutlierItems = (fcfOutlier.transient_evidence || {}).items || [];
+  const fcfOutlierFY = fcfOutlier.fiscal_year || "";
+  const fcfOutlierValue = fcfOutlier.fcf_value || 0;
+
   // v7.0: BS評価補正
   const bsAdj = d.bs_adjustment || {};
   const bsNetCash = bsAdj.net_cash || 0;
@@ -666,6 +678,58 @@ function render(d) {
                 </div>
               `).join('')}
             </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- Step: FCF外れ値分析（条件付き） -->
+        ${fcfOutlierDetected ? `
+        <div class="calc-step ${fcfOutlierAction === 'excluded' ? '' : 'fcf-flagged'}">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">
+                FCF外れ値分析
+                ${fcfOutlierAction === 'excluded'
+                  ? '<span style="color:var(--grn);font-size:10px;margin-left:6px">除外済</span>'
+                  : '<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 要確認</span>'}
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result" style="color:${fcfOutlierAction === 'excluded' ? 'var(--grn)' : 'var(--yellow)'}">
+                FY${fcfOutlierFY} ${fmtB(fcfOutlierValue)}
+              </span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <p class="formula-desc" style="white-space:pre-wrap">${fcfOutlierNote}</p>
+            </div>
+            ${fcfOutlierTransientFound ? `
+            <div class="inputs-grid">
+              <div class="input-item" style="grid-column:1/-1">
+                <span class="input-label">一過性費用の内訳（EPSアナライザー）</span>
+                <span class="input-value highlight" style="color:var(--grn)">
+                  合計 ${fmtB(fcfOutlierTransientTotal)}（税前）
+                </span>
+              </div>
+              ${fcfOutlierItems.map(it => `
+                <div class="input-item">
+                  <span class="input-label">${it.category} / ${it.item_name}</span>
+                  <span class="input-value">${fmtB(it.amount)}</span>
+                </div>
+              `).join('')}
+            </div>
+            ` : `
+            <div class="inputs-grid">
+              <div class="input-item" style="grid-column:1/-1">
+                <span class="input-label" style="color:var(--yellow)">
+                  ⚠ EPSアナライザーで一過性費用の証拠が確認されていません。手動確認を推奨します。
+                </span>
+              </div>
+            </div>
+            `}
           </div>
         </div>
         ` : ''}
