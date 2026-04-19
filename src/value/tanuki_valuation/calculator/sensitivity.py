@@ -120,33 +120,51 @@ def create_sensitivity_calc_func(
         calc_func: (wacc, years) -> per_share_value（BS補正込み）
     """
     def calc_func(wacc: float, years: int) -> float:
-        current_fcf = base_fcf
-        pv = 0.0
-        t = 0
-
-        # Phase1（高成長期）: years年分
-        for _ in range(years):
-            t += 1
-            current_fcf *= (1 + high_growth_rate)
-            pv += current_fcf / (1 + wacc) ** t
-
-        # Phase2（移行期）: 3段階DCFの場合のみ
-        if phase2_growth is not None and phase2_years > 0:
-            for _ in range(phase2_years):
+        # 精密計算のためdcfモジュールを使用
+        try:
+            if phase2_growth is not None and phase2_years > 0:
+                from .dcf import calculate_three_stage_dcf
+                result = calculate_three_stage_dcf(
+                    base_fcf=base_fcf,
+                    phase1_growth=high_growth_rate,
+                    phase1_years=years,
+                    phase2_growth=phase2_growth,
+                    phase2_years=phase2_years,
+                    terminal_growth=terminal_growth,
+                    wacc=wacc,
+                )
+                v0 = result.v0
+            else:
+                from .dcf import calculate_two_stage_dcf
+                result = calculate_two_stage_dcf(
+                    base_fcf=base_fcf,
+                    high_growth_rate=high_growth_rate,
+                    high_growth_years=years,
+                    terminal_growth=terminal_growth,
+                    wacc=wacc,
+                )
+                v0 = result.v0
+        except Exception:
+            # フォールバック: シンプル計算
+            current_fcf = base_fcf
+            pv = 0.0
+            t = 0
+            for _ in range(years):
                 t += 1
-                current_fcf *= (1 + phase2_growth)
+                current_fcf *= (1 + high_growth_rate)
                 pv += current_fcf / (1 + wacc) ** t
-
-        # ターミナル価値
-        terminal_fcf = current_fcf * (1 + terminal_growth)
-        if wacc <= terminal_growth:
-            terminal_value = terminal_fcf * 20
-        else:
-            terminal_value = terminal_fcf / (wacc - terminal_growth)
-        pv += terminal_value / (1 + wacc) ** t
+            if phase2_growth is not None and phase2_years > 0:
+                for _ in range(phase2_years):
+                    t += 1
+                    current_fcf *= (1 + phase2_growth)
+                    pv += current_fcf / (1 + wacc) ** t
+            terminal_fcf = current_fcf * (1 + terminal_growth)
+            terminal_value = terminal_fcf / (wacc - terminal_growth) if wacc > terminal_growth else terminal_fcf * 20
+            pv += terminal_value / (1 + wacc) ** t
+            v0 = pv
 
         # P_t = (V0 + RPO_PV) × (1 + α)
-        v0_adjusted = pv + rpo_pv
+        v0_adjusted = v0 + rpo_pv
         pt = v0_adjusted * (1 + alpha)
 
         # 1株あたり + BS補正
