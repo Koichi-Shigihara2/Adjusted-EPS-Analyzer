@@ -312,14 +312,19 @@ class KoichiValuationCalculator:
         # ── STEP 11: シナリオ分析 ──
         scenario_result: Optional[ScenarioResult] = None
         if growth_result.source == "segment_weighted":
+            # シナリオ計算: Phase1年数・Phase2・BS補正を渡す（v7.1）
+            _scenario_p1_years = _sensitivity_base_years  # Phase1実際年数
             scenario_calc_func = create_scenario_func(
                 base_fcf=base_fcf,
                 wacc=wacc,
-                high_growth_years=self.high_growth_years,
+                high_growth_years=_scenario_p1_years,
                 diluted_shares=diluted_shares,
                 rpo_pv=rpo_pv + growth_option_pv,
                 alpha=alpha,
-                terminal_growth=terminal_growth
+                terminal_growth=terminal_growth,
+                net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
+                phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
+                phase2_years=_phase2_years,                            # v7.1: 3段階対応
             )
             scenario_result = calculate_scenario_valuations(
                 calc_func=scenario_calc_func,

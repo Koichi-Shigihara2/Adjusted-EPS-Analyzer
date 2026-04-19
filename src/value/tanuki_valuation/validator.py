@@ -187,28 +187,36 @@ def call_xai_api(prompt: str) -> Optional[Dict[str, Any]]:
         "max_tokens": 1024
     }
 
-    try:
-        response = requests.post(XAI_ENDPOINT, headers=headers, json=payload, timeout=30)
-        response.raise_for_status()
+    for attempt in range(2):  # 最大2回試行（タイムアウト時1回リトライ）
+        try:
+            response = requests.post(XAI_ENDPOINT, headers=headers, json=payload, timeout=60)
+            response.raise_for_status()
 
-        result = response.json()
-        text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+            result = response.json()
+            text = result.get("choices", [{}])[0].get("message", {}).get("content", "")
 
-        json_start = text.find("{")
-        json_end = text.rfind("}") + 1
-        if json_start >= 0 and json_end > json_start:
-            json_str = text[json_start:json_end]
-            return json.loads(json_str)
+            json_start = text.find("{")
+            json_end = text.rfind("}") + 1
+            if json_start >= 0 and json_end > json_start:
+                json_str = text[json_start:json_end]
+                return json.loads(json_str)
 
-        print(f"[WARN] Could not parse JSON from xAI response: {text[:200]}")
-        return None
+            print(f"[WARN] Could not parse JSON from xAI response: {text[:200]}")
+            return None
 
-    except requests.exceptions.RequestException as e:
-        print(f"[ERROR] xAI API request failed: {e}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"[ERROR] Failed to parse xAI response as JSON: {e}")
-        return None
+        except requests.exceptions.Timeout:
+            if attempt == 0:
+                print(f"[WARN] xAI API timeout (attempt 1/2), retrying...")
+                continue
+            print(f"[ERROR] xAI API request timed out after 2 attempts")
+            return None
+        except requests.exceptions.RequestException as e:
+            print(f"[ERROR] xAI API request failed: {e}")
+            return None
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] Failed to parse xAI response as JSON: {e}")
+            return None
+    return None
 
 
 def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
