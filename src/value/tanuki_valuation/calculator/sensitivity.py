@@ -40,34 +40,39 @@ def calculate_sensitivity_matrix(
     years_options: List[int] = None
 ) -> SensitivityResult:
     """
-    感度分析マトリクスを計算
-    
+    感度分析マトリクスを計算（v7.1: base_years中心の可変軸）
+
     Args:
         calc_func: 計算関数 (wacc, years) -> per_share_value
         base_wacc: ベースWACC
-        base_years: ベース高成長期間
-        wacc_delta: WACCの変動幅
-        years_options: 高成長期間オプション
-    
+        base_years: Phase1の実際の年数（中央列に配置）
+        wacc_delta: WACCの変動幅（±1%）
+        years_options: 年数軸を明示指定する場合（Noneで自動計算）
+
     Returns:
         SensitivityResult: 感度分析結果
-    
-    マトリクス構造:
-                    3年    5年    7年
+
+    マトリクス構造（base_years=4の例）:
+                    2年    4年    6年
         WACC-1%   [ ][0,0] [0,1] [0,2]
-        WACC      [ ][1,0] [1,1] [1,2]
+        WACC      [ ][1,0] [1,1] [1,2]  ← 基準値 = 理論株価と一致
         WACC+1%   [ ][2,0] [2,1] [2,2]
     """
     if years_options is None:
-        years_options = [3, 5, 7]
-    
+        # base_yearsを中央に、±(base_years//2または2)を両側に配置
+        # base_years=1の場合は [1, 2, 3]、base_years=2なら [1, 2, 4] など
+        step = max(1, base_years // 2)
+        left  = max(1, base_years - step)
+        right = base_years + step
+        years_options = [left, base_years, right]
+
     # WACCの3つの値
     wacc_values = [
         round(base_wacc - wacc_delta, 3),
         round(base_wacc, 3),
         round(base_wacc + wacc_delta, 3)
     ]
-    
+
     # マトリクス計算
     matrix = []
     for wacc in wacc_values:
@@ -76,7 +81,7 @@ def calculate_sensitivity_matrix(
             value = calc_func(wacc, years)
             row.append(round(value, 2))
         matrix.append(row)
-    
+
     return SensitivityResult(
         matrix=matrix,
         wacc_values=wacc_values,
@@ -92,51 +97,63 @@ def create_sensitivity_calc_func(
     diluted_shares: int,
     rpo_pv: float,
     alpha: float,
-    terminal_growth: float = 0.03
+    terminal_growth: float = 0.03,
+    net_cash_per_share: float = 0.0,
+    phase2_growth: float = None,
+    phase2_years: int = 0,
 ) -> Callable[[float, int], float]:
     """
-    感度分析用の計算関数を生成
-    
+    感度分析用の計算関数を生成（v7.1: BS補正・3段階DCF対応）
+
     Args:
         base_fcf: ベースFCF
-        high_growth_rate: 高成長率
+        high_growth_rate: 高成長率（Phase1）
         diluted_shares: 希薄化後株式数
-        rpo_pv: RPO現在価値
+        rpo_pv: RPO + 成長オプション現在価値の合計
         alpha: α（成長期待プレミアム）
         terminal_growth: 永続成長率
-    
+        net_cash_per_share: BS補正（ネットキャッシュ/株）v7.0追加
+        phase2_growth: Phase2成長率（Noneなら2段階DCF）
+        phase2_years: Phase2年数（0なら2段階DCF）
+
     Returns:
-        calc_func: (wacc, years) -> per_share_value
+        calc_func: (wacc, years) -> per_share_value（BS補正込み）
     """
     def calc_func(wacc: float, years: int) -> float:
-        # DCF計算（簡易版）
         current_fcf = base_fcf
-        pv_high = 0.0
-        
-        for t in range(years):
+        pv = 0.0
+        t = 0
+
+        # Phase1（高成長期）: years年分
+        for _ in range(years):
+            t += 1
             current_fcf *= (1 + high_growth_rate)
-            pv_high += current_fcf / (1 + wacc) ** (t + 1)
-        
+            pv += current_fcf / (1 + wacc) ** t
+
+        # Phase2（移行期）: 3段階DCFの場合のみ
+        if phase2_growth is not None and phase2_years > 0:
+            for _ in range(phase2_years):
+                t += 1
+                current_fcf *= (1 + phase2_growth)
+                pv += current_fcf / (1 + wacc) ** t
+
         # ターミナル価値
         terminal_fcf = current_fcf * (1 + terminal_growth)
         if wacc <= terminal_growth:
             terminal_value = terminal_fcf * 20
         else:
             terminal_value = terminal_fcf / (wacc - terminal_growth)
-        pv_terminal = terminal_value / (1 + wacc) ** years
-        
-        # V_0
-        v0 = pv_high + pv_terminal
-        
-        # P_t
-        v0_adjusted = v0 + rpo_pv
+        pv += terminal_value / (1 + wacc) ** t
+
+        # P_t = (V0 + RPO_PV) × (1 + α)
+        v0_adjusted = pv + rpo_pv
         pt = v0_adjusted * (1 + alpha)
-        
-        # Per share
+
+        # 1株あたり + BS補正
         if diluted_shares > 0:
-            return pt / diluted_shares
+            return pt / diluted_shares + net_cash_per_share
         return 0.0
-    
+
     return calc_func
 
 
