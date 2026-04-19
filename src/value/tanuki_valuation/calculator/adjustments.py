@@ -633,11 +633,23 @@ def analyze_fcf_outlier(
         eps_annual = _load_eps_annual(ticker, eps_data_dir)
         if eps_annual:
             transient_items = _find_transient_items(eps_annual, fiscal_year_of_latest)
-            transient_total = sum(item["amount"] for item in transient_items)
-            transient_found = len(transient_items) > 0
+            # マイナス値（評価益等）は除外してプラスのみ合計
+            transient_total = max(0.0, sum(
+                item["amount"] for item in transient_items if item["amount"] > 0
+            ))
+            transient_found = len(transient_items) > 0 and transient_total > 0
 
     # ── アクション決定 ──
-    if transient_found:
+    # 一過性費用がFCF乖離の20%未満の場合は除外しない（金額が小さすぎる）
+    fcf_deviation = abs(latest_fcf - fcf_5yr_avg) if fcf_5yr_avg != 0 else abs(latest_fcf)
+    # latest_negativeの場合: 一過性費用の金額が5年平均の10%以上なら除外
+    # deviation_largeの場合:  一過性費用の金額がFCF乖離の20%以上なら除外
+    if rule == "latest_negative":
+        transient_explains = transient_found and transient_total >= abs(fcf_5yr_avg) * 0.10
+    else:
+        transient_explains = transient_found and transient_total >= fcf_deviation * 0.20
+
+    if transient_explains:
         action = "excluded"
         # 一過性費用の内訳を文字列化
         summary = "、".join(
