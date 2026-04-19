@@ -750,3 +750,151 @@ if __name__ == "__main__":
         fcf_list=[-3e9, -2e9, -1e9, 0.2e9, 0.8e9]
     )
     print(f"SOFI相当: method={r3.method}  ratio={r3.ratio:.2f}  base=${r3.base_fcf/1e9:.2f}B")
+
+
+# ── FCF実力推定（調整済みEPS × FCF転換率）v7.2 ──────────────────────
+
+@dataclass
+class FCFEstimationResult:
+    """EPSベースFCF推定結果"""
+    applied: bool                  # 新方式が適用されたか
+    method: str                    # "adj_eps_estimated" or "raw_fcf"
+    adj_net_income: float          # 調整済み純利益
+    conversion_rate: float         # FCF転換率
+    estimated_fcf: float           # 推定FCF
+    raw_fcf: float                 # 従来のFCFベース
+    sector: str                    # セクター
+    note: str                      # 理由
+
+    def to_dict(self):
+        return {
+            "applied": self.applied,
+            "method": self.method,
+            "adj_net_income": self.adj_net_income,
+            "conversion_rate": self.conversion_rate,
+            "estimated_fcf": self.estimated_fcf,
+            "raw_fcf": self.raw_fcf,
+            "sector": self.sector,
+            "note": self.note,
+        }
+
+
+def estimate_fcf_from_eps(
+    ticker: str,
+    raw_fcf: float,
+    diluted_shares: int,
+    sector: str,
+    eps_data_dir: str,
+    config_path: str = None,
+) -> FCFEstimationResult:
+    """
+    調整済みEPS × FCF転換率 によるFCF実力推定（v7.2）
+
+    EPSアナライザーのannual.jsonが存在する場合に常時適用。
+    調整済みEPSがマイナスの場合は従来FCFにフォールバック。
+
+    Args:
+        ticker: 銘柄コード
+        raw_fcf: 従来のFCFベース（5年平均 or 直近2年平均）
+        diluted_shares: 希薄化後株式数
+        sector: セクター（beta_config.jsonのsector値）
+        eps_data_dir: EPSアナライザーのdataディレクトリ
+        config_path: fcf_conversion_config.jsonのパス（Noneで自動探索）
+
+    Returns:
+        FCFEstimationResult
+    """
+    import json, os
+
+    # ── 設定ファイルの読み込み ──
+    if config_path is None:
+        # pipelineから見た相対パス候補
+        candidates = [
+            os.path.join(os.path.dirname(__file__), 'fcf_conversion_config.json'),
+            os.path.join(os.path.dirname(__file__), '..', 'fcf_conversion_config.json'),
+            'fcf_conversion_config.json',
+        ]
+        config_path = next((p for p in candidates if os.path.exists(p)), None)
+
+    if config_path is None or not os.path.exists(config_path):
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=0, conversion_rate=0,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector, note="fcf_conversion_config.json が見つからない"
+        )
+
+    with open(config_path, 'r', encoding='utf-8') as f:
+        cfg = json.load(f)
+
+    # ── FCF転換率の決定 ──
+    ticker_overrides = cfg.get('ticker_overrides', {})
+    sector_rates = cfg.get('sector_conversion_rates', {})
+
+    if ticker in ticker_overrides:
+        conversion_rate = ticker_overrides[ticker]['conversion_rate']
+        rate_source = f"ticker_override({ticker_overrides[ticker]['reason'][:30]})"
+    else:
+        conversion_rate = sector_rates.get(sector, sector_rates.get('default', 0.70))
+        rate_source = f"sector({sector})"
+
+    # ── EPSアナライザーから調整済みEPSを取得 ──
+    eps_file = os.path.join(eps_data_dir, ticker, 'annual.json')
+    if not os.path.exists(eps_file):
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=0, conversion_rate=conversion_rate,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector, note=f"EPSデータなし({eps_file})"
+        )
+
+    with open(eps_file, 'r', encoding='utf-8') as f:
+        eps_data = json.load(f)
+
+    # 直近年度の調整済み純利益を取得
+    years = eps_data.get('years', [])
+    if not years:
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=0, conversion_rate=conversion_rate,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector, note="EPSデータ年度なし"
+        )
+
+    # 直近年度の調整済み純利益
+    latest = years[0]
+    adj_net_income = latest.get('adjusted_net_income', 0)
+
+    # ── フォールバック条件 ──
+    # 調整済み純利益がマイナスの場合は従来FCFを使用
+    if adj_net_income <= 0:
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=adj_net_income, conversion_rate=conversion_rate,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector,
+            note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M) → 従来FCFを使用"
+        )
+
+    # ── FCF推定 ──
+    estimated_fcf = adj_net_income * conversion_rate
+
+    note = (
+        f"調整済み純利益${adj_net_income/1e9:.2f}B × 転換率{conversion_rate:.0%}"
+        f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
+        f"（従来${raw_fcf/1e9:.2f}Bの{estimated_fcf/raw_fcf:.1f}倍）"
+        if raw_fcf != 0 else
+        f"調整済み純利益${adj_net_income/1e9:.2f}B × 転換率{conversion_rate:.0%}"
+        f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
+    )
+
+    return FCFEstimationResult(
+        applied=True,
+        method="adj_eps_estimated",
+        adj_net_income=adj_net_income,
+        conversion_rate=conversion_rate,
+        estimated_fcf=estimated_fcf,
+        raw_fcf=raw_fcf,
+        sector=sector,
+        note=note,
+    )
