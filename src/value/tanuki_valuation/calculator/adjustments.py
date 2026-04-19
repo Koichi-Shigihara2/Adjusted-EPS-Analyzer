@@ -387,6 +387,76 @@ def calculate_growth_option_pv(ticker: str) -> GrowthOptionResult:
         )
 
 
+# ========================================
+# BS評価補正 v7.0 新規
+# ========================================
+
+@dataclass
+class BSAdjustmentResult:
+    """
+    BSネットキャッシュ補正結果
+
+    理論株価への加算方式:
+        PT = DCF理論株価 + net_cash_per_share
+    純負債の場合はマイナス（理論株価を引き下げ）
+    """
+    cash: float                    # 現金・現金同等物
+    short_term_investments: float  # 短期投資
+    long_term_debt: float          # 長期有利子負債
+    short_term_debt: float         # 短期有利子負債
+    net_cash: float                # ネットキャッシュ（+/-）
+    net_cash_per_share: float      # 1株あたりネットキャッシュ
+    fiscal_year: int               # 取得会計年度
+    applied: bool                  # 補正適用フラグ
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "cash":                   self.cash,
+            "short_term_investments": self.short_term_investments,
+            "long_term_debt":         self.long_term_debt,
+            "short_term_debt":        self.short_term_debt,
+            "net_cash":               self.net_cash,
+            "net_cash_per_share":     self.net_cash_per_share,
+            "fiscal_year":            self.fiscal_year,
+            "applied":                self.applied
+        }
+
+
+def calculate_bs_adjustment(
+    net_cash_data: dict,
+    diluted_shares: int
+) -> BSAdjustmentResult:
+    """
+    BSネットキャッシュ補正値を計算
+
+    Args:
+        net_cash_data: SECReader.get_net_cash()の返却値
+        diluted_shares: 希薄化後株式数
+
+    Returns:
+        BSAdjustmentResult
+    """
+    net_cash = net_cash_data.get("net_cash", 0.0)
+    available = net_cash_data.get("available", False)
+
+    net_cash_per_share = (
+        net_cash / diluted_shares
+        if diluted_shares > 0 and available
+        else 0.0
+    )
+
+    return BSAdjustmentResult(
+        cash=net_cash_data.get("cash", 0.0),
+        short_term_investments=net_cash_data.get("short_term_investments", 0.0),
+        long_term_debt=net_cash_data.get("long_term_debt", 0.0),
+        short_term_debt=net_cash_data.get("short_term_debt", 0.0),
+        net_cash=net_cash,
+        net_cash_per_share=net_cash_per_share,
+        fiscal_year=net_cash_data.get("fiscal_year", 0),
+        applied=available and net_cash != 0.0
+    )
+
+
 # デフォルトパラメータ
 DEFAULT_RETENTION_RATE = 0.60
 DEFAULT_ALPHA_CAP = 1.0
