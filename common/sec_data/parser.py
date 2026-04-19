@@ -94,6 +94,12 @@ class SECParser:
             "PaymentsToAcquireProductiveAssets",
             "PaymentsForCapitalImprovements",
         ],
+        # ファイナンスリース返済（AMZN等）: FCF計算から除外するために別取得
+        "finance_lease_payments": [
+            "FinanceLeasePrincipalPayments",
+            "PaymentsForFinanceLeases",
+            "RepaymentsOfLongTermCapitalLeaseObligations",
+        ],
         
         # 株式数
         "shares_diluted": [
@@ -337,16 +343,23 @@ class SECParser:
                 data["pl"][field] = val
         
         # CF
-        for field in ["operating_cash_flow", "capital_expenditure"]:
+        for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["cf"][field] = val
         
-        # FCF計算
-        ocf = data["cf"].get("operating_cash_flow", 0)
+        # FCF計算（ファイナンスリース返済をCapExから除外）
+        # ファイナンスリースは設備取得ではなくリース債務の返済であり
+        # 通常のCapEx（設備投資）とは性質が異なる（AMZN等で重要）
+        ocf   = data["cf"].get("operating_cash_flow", 0)
         capex = data["cf"].get("capital_expenditure", 0)
+        fl    = data["cf"].get("finance_lease_payments", 0)
+        # CapExはSECデータでは負値で記録されることがあるためabs()
+        # ファイナンスリースも負値の場合があるためabs()
+        pure_capex = abs(capex) - abs(fl)  # リース除外後の純CapEx
         if ocf != 0:
-            data["cf"]["free_cash_flow"] = ocf - abs(capex)
+            data["cf"]["free_cash_flow"] = ocf - max(0, pure_capex)
+            data["cf"]["finance_lease_payments_applied"] = abs(fl) > 0
         
         # Shares
         for field in ["shares_diluted", "shares_basic"]:
