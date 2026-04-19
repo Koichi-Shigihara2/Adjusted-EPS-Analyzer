@@ -12,7 +12,7 @@
   },
   "upside_percent": -76.8,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.10285000000000001,
@@ -234,6 +234,21 @@
     "ratio": 0.968,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "deviation_large",
+    "fiscal_year": 2026,
+    "fcf_value": 9108000000,
+    "threshold_pct": 0.6,
+    "transient_evidence": {
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0
+    },
+    "action": "flagged",
+    "note": "FY2026 FCF($9108M)が5年平均($39860M)から77%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+  },
   "bs_adjustment": {
     "cash": 10605000000.0,
     "short_term_investments": 0.0,
@@ -281,7 +296,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -301,6 +316,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "ai_comment": null
   }
 }

@@ -12,7 +12,7 @@
   },
   "upside_percent": -72.7,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
     "value": 0.1114,
@@ -116,6 +116,64 @@
     "ratio": 999.0,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "latest_negative",
+    "fiscal_year": 2025,
+    "fcf_value": -1402478000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "金融関連",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -1337000.0,
+          "reason": "市場金利変動による一時的評価替え"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -122000.0,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 948000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 53000,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 389000,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "ローン公正価値評価損益",
+          "amount": -760000,
+          "reason": "市場金利変動による一時的評価替え"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 378000,
+          "reason": "マクロ変動による一時的影響"
+        }
+      ],
+      "total_transient_amount": -451000.0
+    },
+    "action": "excluded",
+    "note": "FY2025 FCF($-1402.5M)がマイナス。一過性費用合計$-0M(金融関連(ローン公正価値評価損益 $-1M)、金融関連(貸倒引当金繰入（異常変動分） $-0M)、リストラ・事業再編関連(リストラ費用 $1M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、金融関連(ローン公正価値評価損益 $-1M)、金融関連(貸倒引当金繰入（異常変動分） $0M))による影響と判断し除外。5年平均($-4270M)を採用。"
+  },
   "bs_adjustment": {
     "cash": 4929452000.0,
     "short_term_investments": 0.0,
@@ -183,7 +241,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "P_t per share mismatch is critical.",
-    "ai_concerns": "Intrinsic value per share (5.31) does not match calculated P_t / shares (1.44), indicating a potential anomaly in per-share computation."
+    "ai_comment": "不一致が複数あり、検証失敗",
+    "ai_concerns": "Intrinsic value per share (5.31) does not align with P_t / shares calculation, suggesting potential error in per-share derivation."
   }
 }

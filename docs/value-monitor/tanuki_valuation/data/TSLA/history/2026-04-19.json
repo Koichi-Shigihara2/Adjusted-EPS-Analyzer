@@ -12,7 +12,7 @@
   },
   "upside_percent": -86.2,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.11425,
@@ -207,6 +207,21 @@
     "ratio": 0.294,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": false,
+    "rule": "none",
+    "fiscal_year": 2025,
+    "fcf_value": 5015000000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0.0
+    },
+    "action": "none",
+    "note": ""
+  },
   "bs_adjustment": {
     "cash": 16513000000.0,
     "short_term_investments": 27546000000.0,
@@ -274,7 +289,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "計算不一致が複数あり",
-    "ai_concerns": "Inconsistencies in per share value and α calculation indicate potential errors; intrinsic value (55.19) vs market price (400.62) is extreme but not anomalous alone."
+    "ai_comment": "Inconsistencies detected in calculations.",
+    "ai_concerns": "Deviations like -86.2% (market price $400.62 vs intrinsic $55.19) are extreme, and pt_shares inconsistency suggests potential errors."
   }
 }

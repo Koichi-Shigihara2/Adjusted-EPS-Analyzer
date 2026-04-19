@@ -12,7 +12,7 @@
   },
   "upside_percent": -88.9,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.10456000000000001,
@@ -223,6 +223,21 @@
     "ratio": 0.869,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "deviation_large",
+    "fiscal_year": 2025,
+    "fcf_value": 321224000,
+    "threshold_pct": 0.6,
+    "transient_evidence": {
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0
+    },
+    "action": "flagged",
+    "note": "FY2025 FCF($321M)が5年平均($889M)から64%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+  },
   "bs_adjustment": {
     "cash": 1423796000.0,
     "short_term_investments": 5753247000.0,
@@ -270,7 +285,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
@@ -290,7 +305,6 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "Per share value mismatch detected",
-    "ai_concerns": "Inconsistency in intrinsic value per share (13.21 vs. 16.21) suggests potential calculation error, despite other values aligning."
+    "ai_comment": null
   }
 }

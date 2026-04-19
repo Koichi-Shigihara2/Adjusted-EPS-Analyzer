@@ -12,7 +12,7 @@
   },
   "upside_percent": -83.8,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.10570000000000002,
@@ -211,6 +211,28 @@
     "cv_threshold": 0.5,
     "ratio": 999.0,
     "threshold": 0.5
+  },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "latest_negative",
+    "fiscal_year": 2025,
+    "fcf_value": -14726000000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1600000000,
+          "reason": "マクロ変動による一時的影響"
+        }
+      ],
+      "total_transient_amount": 1600000000
+    },
+    "action": "excluded",
+    "note": "FY2025 FCF($-14726.0M)がマイナス。一過性費用合計$1600M(金融関連(貸倒引当金繰入（異常変動分） $1600M))による影響と判断し除外。5年平均($8234M)を採用。"
   },
   "bs_adjustment": {
     "cash": 86810000000.0,

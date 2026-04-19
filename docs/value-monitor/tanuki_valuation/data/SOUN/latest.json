@@ -12,7 +12,7 @@
   },
   "upside_percent": -78.0,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
     "value": 0.10456000000000001,
@@ -116,6 +116,28 @@
     "ratio": 999.0,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "latest_negative",
+    "fiscal_year": 2025,
+    "fcf_value": -864358,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 4873000,
+          "reason": "一過性の事業再編費用"
+        }
+      ],
+      "total_transient_amount": 4873000
+    },
+    "action": "excluded",
+    "note": "FY2025 FCF($-0.9M)がマイナス。一過性費用合計$5M(リストラ・事業再編関連(リストラ費用 $5M))による影響と判断し除外。5年平均($-75M)を採用。"
+  },
   "bs_adjustment": {
     "cash": 248490000.0,
     "short_term_investments": 0.0,
@@ -163,7 +185,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
@@ -183,7 +205,6 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "不一致と異常値が見つかりました。",
-    "ai_concerns": "Anomaly detected: Intrinsic value per share ($1.78) does not match calculated P_t / shares ($1.20), suggesting potential error in reporting."
+    "ai_comment": null
   }
 }

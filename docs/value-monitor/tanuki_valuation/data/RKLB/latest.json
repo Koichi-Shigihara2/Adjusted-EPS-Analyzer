@@ -12,7 +12,7 @@
   },
   "upside_percent": -91.2,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
     "value": 0.09145,
@@ -116,6 +116,21 @@
     "ratio": 999.0,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "latest_negative",
+    "fiscal_year": 2025,
+    "fcf_value": -97490000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0
+    },
+    "action": "flagged",
+    "note": "FY2025 FCF($-97.5M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+  },
   "bs_adjustment": {
     "cash": 828660000.0,
     "short_term_investments": 187917000.0,
@@ -183,7 +198,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "Inconsistencies in per share calculation detected.",
-    "ai_concerns": "ROE at 0.00% leads to α=0, which is unusual, and per share value inconsistency suggests potential errors."
+    "ai_comment": "Inconsistencies in per share calculation lead to failure.",
+    "ai_concerns": "Anomaly in intrinsic value per share ($7.47 vs calculated $5.98). Also, ROE=0% and large market discrepancy (-91.2%) are notable but not definitively erroneous."
   }
 }

@@ -12,7 +12,7 @@
   },
   "upside_percent": -80.0,
   "calculation_date": "2026-04-19",
-  "formula": "Koichi式 v6.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.11026,
@@ -196,6 +196,34 @@
     "ratio": 0.956,
     "threshold": 0.5
   },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "deviation_large",
+    "fiscal_year": 2025,
+    "fcf_value": 360461000,
+    "threshold_pct": 0.6,
+    "transient_evidence": {
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1600000.0,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1600000,
+          "reason": "マクロ変動による一時的影響"
+        }
+      ],
+      "total_transient_amount": 3200000.0
+    },
+    "action": "excluded",
+    "note": "FY2025 FCF($360M)が5年平均($1579M)から77%乖離。一過性費用合計$3M(金融関連(貸倒引当金繰入（異常変動分） $2M)、金融関連(貸倒引当金繰入（異常変動分） $2M))による影響と判断し除外。"
+  },
   "bs_adjustment": {
     "cash": 2487096000.0,
     "short_term_investments": 0.0,
@@ -263,7 +291,6 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "Inconsistencies in per share value detected.",
-    "ai_concerns": "ROE at 109.84% is unusually high and may be anomalous; additionally, per share value discrepancy suggests potential errors."
+    "ai_comment": "Multiple inconsistencies in calculations."
   }
 }
