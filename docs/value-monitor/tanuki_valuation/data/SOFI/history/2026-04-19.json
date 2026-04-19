@@ -169,10 +169,10 @@
           "reason": "マクロ変動による一時的影響"
         }
       ],
-      "total_transient_amount": -451000.0
+      "total_transient_amount": 1768000
     },
-    "action": "excluded",
-    "note": "FY2025 FCF($-1402.5M)がマイナス。一過性費用合計$-0M(金融関連(ローン公正価値評価損益 $-1M)、金融関連(貸倒引当金繰入（異常変動分） $-0M)、リストラ・事業再編関連(リストラ費用 $1M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、金融関連(ローン公正価値評価損益 $-1M)、金融関連(貸倒引当金繰入（異常変動分） $0M))による影響と判断し除外。5年平均($-4270M)を採用。"
+    "action": "flagged",
+    "note": "FY2025 FCF($-1402.5M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "bs_adjustment": {
     "cash": 4929452000.0,
@@ -221,11 +221,11 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $1.49B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B = $1.44 (差異72.85%)"
+        "pass": true,
+        "detail": "(V₀ $1.49B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $5.31 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -240,8 +240,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "不一致が複数あり、検証失敗",
-    "ai_concerns": "Intrinsic value per share (5.31) does not align with P_t / shares calculation, suggesting potential error in per-share derivation."
+    "overall": "PASS",
+    "ai_comment": null
   }
 }

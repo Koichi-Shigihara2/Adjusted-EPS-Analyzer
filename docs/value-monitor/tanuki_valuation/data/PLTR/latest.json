@@ -233,7 +233,7 @@
       "found": false,
       "source": null,
       "items": [],
-      "total_transient_amount": 0
+      "total_transient_amount": 0.0
     },
     "action": "flagged",
     "note": "FY2025 FCF($321M)が5年平均($889M)から64%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -288,8 +288,8 @@
     "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $16.33B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B = $13.21 (差異18.51%)"
+        "pass": true,
+        "detail": "(V₀ $16.33B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B + BS $+3.00/株 = $16.21 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -304,7 +304,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   }
 }

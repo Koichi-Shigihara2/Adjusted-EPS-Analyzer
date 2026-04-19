@@ -135,8 +135,8 @@
       ],
       "total_transient_amount": 4873000
     },
-    "action": "excluded",
-    "note": "FY2025 FCF($-0.9M)がマイナス。一過性費用合計$5M(リストラ・事業再編関連(リストラ費用 $5M))による影響と判断し除外。5年平均($-75M)を採用。"
+    "action": "flagged",
+    "note": "FY2025 FCF($-0.9M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "bs_adjustment": {
     "cash": 248490000.0,
@@ -188,8 +188,8 @@
     "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $0.45B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B = $1.20 (差異32.74%)"
+        "pass": true,
+        "detail": "(V₀ $0.45B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B + BS $+0.58/株 = $1.78 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -204,7 +204,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   }
 }

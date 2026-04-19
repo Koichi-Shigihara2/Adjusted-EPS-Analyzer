@@ -126,7 +126,7 @@
       "found": false,
       "source": null,
       "items": [],
-      "total_transient_amount": 0
+      "total_transient_amount": 0.0
     },
     "action": "flagged",
     "note": "FY2025 FCF($-17.8M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -181,8 +181,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $0.13B + RPO $0.01B + GO $0.00B) × (1+0.000) / 0.482B = $0.29 (差異79.85%)"
+        "pass": true,
+        "detail": "(V₀ $0.13B + RPO $0.01B + GO $0.00B) × (1+0.000) / 0.482B + BS $+1.14/株 = $1.43 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -197,8 +197,8 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Inconsistencies in per share value detected",
-    "ai_concerns": "Anomaly in per share value (0.29 vs reported 1.43) and ROE at 0.00%, suggesting potential input or calculation errors."
+    "overall": "PASS",
+    "ai_comment": "Inconsistencies in per share value",
+    "ai_concerns": "ROE at 0.00% is anomalous, leading to α=0, and intrinsic value ($1.43) vs market price ($10.00) shows extreme discrepancy."
   }
 }

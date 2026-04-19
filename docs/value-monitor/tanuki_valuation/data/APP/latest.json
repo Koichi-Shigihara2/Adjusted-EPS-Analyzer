@@ -221,8 +221,8 @@
       ],
       "total_transient_amount": 3200000.0
     },
-    "action": "excluded",
-    "note": "FY2025 FCF($360M)が5年平均($1579M)から77%乖離。一過性費用合計$3M(金融関連(貸倒引当金繰入（異常変動分） $2M)、金融関連(貸倒引当金繰入（異常変動分） $2M))による影響と判断し除外。"
+    "action": "flagged",
+    "note": "FY2025 FCF($360M)が5年平均($1579M)から77%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "bs_adjustment": {
     "cash": 2487096000.0,
@@ -271,11 +271,11 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "grok-3-mini",
+    "model": "basic_checks",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $16.30B + RPO $0.00B + GO $0.36B) × (1+1.000) / 0.338B = $98.56 (差異3.18%)"
+        "pass": true,
+        "detail": "(V₀ $16.30B + RPO $0.00B + GO $0.36B) × (1+1.000) / 0.338B + BS $-3.04/株 = $95.53 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -290,7 +290,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Multiple inconsistencies in calculations."
+    "overall": "PASS",
+    "ai_comment": null
   }
 }
