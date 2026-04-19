@@ -445,9 +445,9 @@ function render(d) {
         </div>
 
         <div class="matrix-legend">
-          <div class="legend-item"><div class="legend-color cheap"></div><span>割安 (&gt;10%)</span></div>
-          <div class="legend-item"><div class="legend-color base"></div><span>基準値</span></div>
-          <div class="legend-item"><div class="legend-color expensive"></div><span>割高 (&lt;-10%)</span></div>
+          <div class="legend-item"><div class="legend-color cheap"></div><span>基準値より+10%超</span></div>
+          <div class="legend-item"><div class="legend-color base"></div><span>基準値（±10%以内）</span></div>
+          <div class="legend-item"><div class="legend-color expensive"></div><span>基準値より-10%超</span></div>
         </div>
       </div>
 
@@ -858,12 +858,19 @@ function fmtBaseLabel(method) {
 }
 
 function renderMatrixRows(matrix, waccValues, growthYears, currentPrice, baseRowIdx) {
+  // 基準値（中央行・中央列）を取得
+  const basePrice = matrix[baseRowIdx]?.[1] || 0;
   return matrix.map((row, i) => `
     <tr>
       <td class="row-label">${fmtPct(waccValues[i])}</td>
       ${row.map((price, j) => {
         const isBase = i === baseRowIdx && j === 1;
-        const cls = isBase ? 'base-cell' : (price > currentPrice * 1.1 ? 'cheap' : (price < currentPrice * 0.9 ? 'expensive' : ''));
+        // 基準値との相対差で色分け（±10%）
+        const diffFromBase = basePrice > 0 ? (price - basePrice) / basePrice : 0;
+        const cls = isBase ? 'base-cell'
+          : diffFromBase > 0.10 ? 'cheap'
+          : diffFromBase < -0.10 ? 'expensive'
+          : '';
         return `<td class="${cls}">$${fmt(price)}</td>`;
       }).join('')}
     </tr>
