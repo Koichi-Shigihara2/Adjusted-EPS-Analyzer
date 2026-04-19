@@ -1,0 +1,38 @@
+{
+  "_comment": "Koichi式 FCF転換率設定。調整済みEPS × 株式数 × FCF転換率 = 推定FCF",
+  "_design": {
+    "purpose": "EPSアナライザーの調整済みEPSからFCF実力値を推定する",
+    "formula": "estimated_fcf = adj_net_income × conversion_rate",
+    "when_applied": "EPSアナライザーのannual.jsonが存在する場合に常時適用",
+    "fallback": "EPSデータなし or 調整済みEPSがマイナスの場合は従来FCFを使用"
+  },
+  "_sector_rationale": {
+    "Software_Internet": "SBC除外後は高マージン・CapEx極小。FCFへの転換率が最も高い",
+    "AdTech_Internet": "Softwareに準じる。広告技術は軽資産",
+    "Semiconductor": "Fablessモデル（NVDA等）は高転換。設備投資はファウンドリが担う",
+    "Cloud_Services": "AzureなどCapEx増加中だが高マージン維持",
+    "Software_Internet_EC": "EC部門のCapExが重い。AWS高転換とEC低転換の加重平均",
+    "EV_Automotive": "製造業CapEx・R&Dが重い",
+    "Fintech": "貸倒引当金・規制資本要件がFCFに影響",
+    "Consumer_Beverage": "軽資産。マーケティング費用が主なキャッシュアウト",
+    "Space_Defense": "ロケット製造CapExが重い。政府契約で安定"
+  },
+  "sector_conversion_rates": {
+    "Software_Internet": 0.9,
+    "AdTech_Internet": 0.88,
+    "Semiconductor": 0.85,
+    "Cloud_Services": 0.8,
+    "EV_Automotive": 0.65,
+    "Fintech": 0.5,
+    "Consumer_Beverage": 0.75,
+    "Space_Defense": 0.55,
+    "default": 0.7
+  },
+  "_ticker_overrides_comment": "個別銘柄で標準セクター値を上書きする場合",
+  "ticker_overrides": {
+    "AMZN": {
+      "conversion_rate": 0.55,
+      "reason": "EC部門の重いCapEx・ファイナンスリースを考慮。AWSの高転換とEC低転換の加重平均"
+    }
+  }
+}
