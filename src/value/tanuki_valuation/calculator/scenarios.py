@@ -93,50 +93,82 @@ def create_scenario_calc_func(
     diluted_shares: int,
     rpo_pv: float,
     alpha: float,
-    terminal_growth: float = 0.03
+    terminal_growth: float = 0.03,
+    net_cash_per_share: float = 0.0,
+    phase2_growth: float = None,
+    phase2_years: int = 0,
 ) -> Callable[[float], float]:
     """
-    シナリオ分析用の計算関数を生成
-    
+    シナリオ分析用の計算関数を生成（v7.1: BS補正・3段階DCF対応）
+
     Args:
         base_fcf: ベースFCF
         wacc: WACC
-        high_growth_years: 高成長期間
+        high_growth_years: Phase1高成長期間
         diluted_shares: 希薄化後株式数
-        rpo_pv: RPO現在価値
+        rpo_pv: RPO + 成長オプション現在価値の合計
         alpha: α
         terminal_growth: 永続成長率
-    
+        net_cash_per_share: BS補正（ネットキャッシュ/株）v7.1追加
+        phase2_growth: Phase2成長率（Noneなら2段階DCF）
+        phase2_years: Phase2年数（0なら2段階DCF）
+
     Returns:
-        calc_func: (growth_rate) -> per_share_value
+        calc_func: (growth_rate) -> per_share_value（BS補正込み）
     """
     def calc_func(growth_rate: float) -> float:
-        # DCF計算
-        current_fcf = base_fcf
-        pv_high = 0.0
-        
-        for t in range(high_growth_years):
-            current_fcf *= (1 + growth_rate)
-            pv_high += current_fcf / (1 + wacc) ** (t + 1)
-        
-        # ターミナル価値
-        terminal_fcf = current_fcf * (1 + terminal_growth)
-        if wacc <= terminal_growth:
-            terminal_value = terminal_fcf * 20
-        else:
-            terminal_value = terminal_fcf / (wacc - terminal_growth)
-        pv_terminal = terminal_value / (1 + wacc) ** high_growth_years
-        
-        # V_0 + RPO + α
-        v0 = pv_high + pv_terminal
+        # 精密計算のためdcfモジュールを使用
+        try:
+            if phase2_growth is not None and phase2_years > 0:
+                from .dcf import calculate_three_stage_dcf
+                result = calculate_three_stage_dcf(
+                    base_fcf=base_fcf,
+                    phase1_growth=growth_rate,
+                    phase1_years=high_growth_years,
+                    phase2_growth=phase2_growth,
+                    phase2_years=phase2_years,
+                    terminal_growth=terminal_growth,
+                    wacc=wacc,
+                )
+                v0 = result.v0
+            else:
+                from .dcf import calculate_two_stage_dcf
+                result = calculate_two_stage_dcf(
+                    base_fcf=base_fcf,
+                    high_growth_rate=growth_rate,
+                    high_growth_years=high_growth_years,
+                    terminal_growth=terminal_growth,
+                    wacc=wacc,
+                )
+                v0 = result.v0
+        except Exception:
+            # フォールバック: シンプル計算
+            current_fcf = base_fcf
+            pv = 0.0
+            t = 0
+            for _ in range(high_growth_years):
+                t += 1
+                current_fcf *= (1 + growth_rate)
+                pv += current_fcf / (1 + wacc) ** t
+            if phase2_growth is not None and phase2_years > 0:
+                for _ in range(phase2_years):
+                    t += 1
+                    current_fcf *= (1 + phase2_growth)
+                    pv += current_fcf / (1 + wacc) ** t
+            terminal_fcf = current_fcf * (1 + terminal_growth)
+            tv = terminal_fcf / (wacc - terminal_growth) if wacc > terminal_growth else terminal_fcf * 20
+            pv += tv / (1 + wacc) ** t
+            v0 = pv
+
+        # P_t = (V0 + RPO_PV) × (1 + α)
         v0_adjusted = v0 + rpo_pv
         pt = v0_adjusted * (1 + alpha)
-        
-        # Per share
+
+        # 1株あたり + BS補正
         if diluted_shares > 0:
-            return pt / diluted_shares
+            return pt / diluted_shares + net_cash_per_share
         return 0.0
-    
+
     return calc_func
 
 
