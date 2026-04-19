@@ -139,6 +139,14 @@ class TanukiDataFetcher:
                 fcf_list = self.sec_reader.get_fcf_list(ticker, years=5)
                 print(f"   [{ticker}] SEC FCF list: {len(fcf_list)}年分")
                 
+                # ファイナンスリース除外が適用されたか確認
+                _annual = self.sec_reader.get_annual_range(ticker, 1)
+                if _annual:
+                    _fl_applied = _annual[0].get("cf", {}).get("finance_lease_payments_applied", False)
+                    _fl_amt = _annual[0].get("cf", {}).get("finance_lease_payments", 0)
+                    if _fl_applied:
+                        print(f"   [{ticker}] ファイナンスリース除外: ${abs(_fl_amt):,.0f}をCapExから控除")
+                
                 sec_diluted = self.sec_reader.get_diluted_shares(ticker)
                 if sec_diluted > 0:
                     print(f"   [{ticker}] SEC shares: {sec_diluted:,.0f}")
