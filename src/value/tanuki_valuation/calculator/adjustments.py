@@ -765,6 +765,8 @@ class FCFEstimationResult:
     raw_fcf: float                 # 従来のFCFベース
     sector: str                    # セクター
     note: str                      # 理由
+    divergence_ratio: float = 0.0  # 推定FCF / 生FCF の倍率
+    divergence_warning: str = ""   # 大幅乖離時の警告メッセージ
 
     def to_dict(self):
         return {
@@ -776,6 +778,8 @@ class FCFEstimationResult:
             "raw_fcf": self.raw_fcf,
             "sector": self.sector,
             "note": self.note,
+            "divergence_ratio": round(self.divergence_ratio, 2),
+            "divergence_warning": self.divergence_warning,
         }
 
 
@@ -786,6 +790,7 @@ def estimate_fcf_from_eps(
     sector: str,
     eps_data_dir: str,
     config_path: str = None,
+    fcf_outlier_action: str = "none",
 ) -> FCFEstimationResult:
     """
     調整済みEPS × FCF転換率 によるFCF実力推定（v7.2）
@@ -800,6 +805,7 @@ def estimate_fcf_from_eps(
         sector: セクター（beta_config.jsonのsector値）
         eps_data_dir: EPSアナライザーのdataディレクトリ
         config_path: fcf_conversion_config.jsonのパス（Noneで自動探索）
+        fcf_outlier_action: FCF外れ値の処置（"excluded"の場合はフォールバック）
 
     Returns:
         FCFEstimationResult
@@ -822,6 +828,18 @@ def estimate_fcf_from_eps(
             adj_net_income=0, conversion_rate=0,
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector, note="fcf_conversion_config.json が見つからない"
+        )
+
+    # ── ガードA: FCF外れ値「excluded」の場合はフォールバック ──
+    # 既にFCF外れ値補正で一過性費用が除外済みのため二重補正を防ぐ
+    if fcf_outlier_action == "excluded":
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=0, conversion_rate=0,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector,
+            note="FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
+            divergence_ratio=1.0, divergence_warning=""
         )
 
     with open(config_path, 'r', encoding='utf-8') as f:
@@ -888,6 +906,23 @@ def estimate_fcf_from_eps(
         f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
     )
 
+    # ── 乖離率の計算と警告生成 ──
+    divergence_ratio = estimated_fcf / raw_fcf if raw_fcf > 0 else 0.0
+    divergence_warning = ""
+    if divergence_ratio >= 5.0:
+        divergence_warning = (
+            f"FCF推定値が生FCFの{divergence_ratio:.1f}倍。"
+            f"調整済み純利益${adj_net_income/1e9:.1f}B × {conversion_rate:.0%}転換率"
+            f"= 推定FCF${estimated_fcf/1e9:.1f}B（生FCF${raw_fcf/1e9:.1f}B比）。"
+            f"成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
+        )
+    elif divergence_ratio >= 2.0:
+        divergence_warning = (
+            f"FCF推定値が生FCFの{divergence_ratio:.1f}倍。"
+            f"推定FCF${estimated_fcf/1e9:.1f}Bを採用。"
+            f"生FCF（${raw_fcf/1e9:.1f}B）との乖離を確認してください。"
+        )
+
     return FCFEstimationResult(
         applied=True,
         method="adj_eps_estimated",
@@ -897,4 +932,6 @@ def estimate_fcf_from_eps(
         raw_fcf=raw_fcf,
         sector=sector,
         note=note,
+        divergence_ratio=round(divergence_ratio, 2),
+        divergence_warning=divergence_warning,
     )
