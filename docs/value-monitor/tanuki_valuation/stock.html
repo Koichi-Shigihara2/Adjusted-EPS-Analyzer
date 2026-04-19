@@ -130,23 +130,21 @@
     .legend-color.base { background: var(--acc); }
     .legend-color.expensive { background: rgba(248, 113, 113, 0.3); }
 
-    .future-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 24px; }
-    .future-card { background: var(--sur); border: 1px solid var(--bdr); border-radius: 8px; padding: 16px; text-align: center; }
-    .future-year { font-size: 11px; color: var(--mut); text-transform: uppercase; letter-spacing: .06em; }
-    .future-value { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--txt); margin-top: 4px; }
-
-    .scenario-section { margin-top: 24px; }
-    .scenario-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
-    .scenario-card { background: var(--sur); border: 2px solid var(--bdr); border-radius: 10px; padding: 16px; text-align: center; }
-    .scenario-card.bear { border-color: var(--red); background: rgba(248, 113, 113, 0.05); }
-    .scenario-card.base { border-color: var(--acc); background: rgba(196, 208, 255, 0.05); }
-    .scenario-card.bull { border-color: var(--green); background: rgba(74, 222, 128, 0.05); }
-    .scenario-label { font-family: var(--mono); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
-    .scenario-card.bear .scenario-label { color: var(--red); }
-    .scenario-card.base .scenario-label { color: var(--acc); }
-    .scenario-card.bull .scenario-label { color: var(--green); }
-    .scenario-rate { font-size: 11px; color: var(--mut); margin-bottom: 4px; }
-    .scenario-price { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--txt); }
+    /* 将来価値予測テーブル（シナリオ統合版） */
+    .future-section { margin-top: 24px; }
+    .future-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+    .future-table th { background: var(--sur2); color: var(--mut); font-size: 11px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .06em; padding: 10px 14px; text-align: center; border: 1px solid var(--bdr); }
+    .future-table th.scenario-header { text-align: left; min-width: 130px; }
+    .future-table td { padding: 12px 14px; text-align: center; border: 1px solid var(--bdr);
+      font-family: var(--mono); font-size: 14px; color: var(--txt); background: var(--sur); }
+    .future-table td.scenario-name { text-align: left; font-size: 11px; font-weight: 700;
+      letter-spacing: .06em; text-transform: uppercase; background: var(--sur2); }
+    .future-table td.scenario-name.bear { color: var(--red); }
+    .future-table td.scenario-name.base { color: var(--acc); }
+    .future-table td.scenario-name.bull { color: var(--green); }
+    .future-table td.current-val { font-weight: 700; color: var(--txt); background: var(--sur2); }
+    .future-table tr.base-row td { background: rgba(196,208,255,0.06); }
 
     .calc-section { margin-top: 40px; }
     .section-title {
@@ -213,7 +211,7 @@
 
     @media (max-width: 768px) {
       .value-display, .inputs-grid { grid-template-columns: 1fr; }
-      .future-grid, .scenario-grid { grid-template-columns: 1fr; }
+      .future-table { font-size: 12px; }
       .wacc-slider-container { flex-direction: column; align-items: flex-start; }
       .wacc-slider { width: 100%; }
     }
@@ -451,36 +449,57 @@ function render(d) {
         </div>
       </div>
 
-      ${scenarioValuations ? `
-      <div class="scenario-section">
-        <h3 class="section-title">SCENARIO VALUATIONS</h3>
-        <div class="scenario-grid">
-          <div class="scenario-card bear">
-            <div class="scenario-label">🐻 Bear</div>
-            <div class="scenario-rate">成長率: ${fmtPct(scenarioValuations.bear?.growth_rate)}</div>
-            <div class="scenario-price">$${fmt(scenarioValuations.bear?.intrinsic_value_per_share)}</div>
-          </div>
-          <div class="scenario-card base">
-            <div class="scenario-label">📊 Base</div>
-            <div class="scenario-rate">成長率: ${fmtPct(scenarioValuations.base?.growth_rate)}</div>
-            <div class="scenario-price">$${fmt(scenarioValuations.base?.intrinsic_value_per_share)}</div>
-          </div>
-          <div class="scenario-card bull">
-            <div class="scenario-label">🐂 Bull</div>
-            <div class="scenario-rate">成長率: ${fmtPct(scenarioValuations.bull?.growth_rate)}</div>
-            <div class="scenario-price">$${fmt(scenarioValuations.bull?.intrinsic_value_per_share)}</div>
-          </div>
-        </div>
-      </div>
-      ` : ''}
+      <div class="future-section">
+        <h3 class="section-title">将来価値予測（シナリオ別）</h3>
+        ${(() => {
+          // シナリオ定義（segment_weightedの場合のみBEAR/BASE/BULL、それ以外はBASEのみ）
+          const scenarios = scenarioValuations ? [
+            { label: '🐂 BULL', rate: scenarioValuations.bull?.growth_rate, cls: 'bull' },
+            { label: '📊 BASE', rate: scenarioValuations.base?.growth_rate, cls: 'base' },
+            { label: '🐻 BEAR', rate: scenarioValuations.bear?.growth_rate, cls: 'bear' },
+          ] : [
+            { label: '📊 BASE', rate: highGrowthRate, cls: 'base' },
+          ];
 
-      <div class="future-grid">
-        ${Object.entries(futureVals).map(([k, v]) => `
-          <div class="future-card">
-            <div class="future-year">${k}</div>
-            <div class="future-value">$${fmt(v)}</div>
-          </div>
-        `).join('')}
+          // シナリオ別将来価値を計算
+          function projectFuture(baseVal, growthRate) {
+            const vals = [];
+            let v = baseVal;
+            const nYears = Object.keys(futureVals).length || 3;
+            for (let yr = 1; yr <= nYears; yr++) {
+              const g = yr <= highGrowthYears ? growthRate : terminalGrowth;
+              v = v * (1 + g);
+              vals.push(v);
+            }
+            return vals;
+          }
+
+          const yearLabels = Object.keys(futureVals);
+
+          return `
+          <table class="future-table">
+            <thead>
+              <tr>
+                <th class="scenario-header">シナリオ / 成長率</th>
+                <th>現在</th>
+                ${yearLabels.map(k => `<th>${k}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              ${scenarios.map(sc => {
+                const vals = projectFuture(ivps, sc.rate);
+                return `
+                <tr class="${sc.cls === 'base' ? 'base-row' : ''}">
+                  <td class="scenario-name ${sc.cls}">${sc.label}<br>
+                    <span style="font-size:10px;font-weight:400;opacity:.7;">${fmtPct(sc.rate)}</span>
+                  </td>
+                  <td class="current-val">$${fmt(ivps)}</td>
+                  ${vals.map(v => `<td>$${fmt(v)}</td>`).join('')}
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>`;
+        })()}
       </div>
     </div>
 
