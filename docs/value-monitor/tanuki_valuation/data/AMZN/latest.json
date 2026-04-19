@@ -24,19 +24,19 @@
   "sensitivity": {
     "matrix": [
       [
-        29.32,
-        33.09,
-        37.01
+        41.8,
+        45.87,
+        50.1
       ],
       [
-        25.86,
-        29.03,
-        32.27
+        37.06,
+        40.37,
+        43.74
       ],
       [
-        23.2,
-        25.92,
-        28.64
+        33.44,
+        36.18,
+        38.92
       ]
     ],
     "wacc_values": [
@@ -281,7 +281,7 @@
   },
   "validation": {
     "validated_at": "2026-04-19",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -301,6 +301,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "Inconsistencies in per-share calculation affect reliability.",
+    "ai_concerns": "Inconsistency in per-share value calculation indicates potential error; intrinsic value $40.51 vs calculated $35.50."
   }
 }
