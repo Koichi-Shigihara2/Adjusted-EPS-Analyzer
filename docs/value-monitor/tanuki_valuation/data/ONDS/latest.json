@@ -139,7 +139,9 @@
     "estimated_fcf": 4058480.0,
     "raw_fcf": 4058480.0,
     "sector": "",
-    "note": "調整済み純利益がマイナス($-46M) → 従来FCFを使用"
+    "note": "調整済み純利益がマイナス($-46M) → 従来FCFを使用",
+    "divergence_ratio": 0.0,
+    "divergence_warning": ""
   },
   "bs_adjustment": {
     "cash": 550744000.0,
@@ -208,7 +210,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value detected.",
-    "ai_concerns": "ROE at 0.00% leads to α=0.0000, which is consistent, but intrinsic value per share discrepancy (0.29 vs 1.43) indicates potential error."
+    "ai_comment": "計算エラー多発、整合性欠如",
+    "ai_concerns": "ROE at 0.00% leads to α=0, which is unusual and may indicate errors; market price ($10.00) vs. intrinsic value ($1.43) shows extreme discrepancy."
   }
 }
