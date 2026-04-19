@@ -310,6 +310,17 @@ function render(d) {
 
   // v7.1: FCF外れ値分析
   const fcfOutlier = d.fcf_outlier || {};
+
+  // v7.2: FCF実力推定
+  const fcfEstimation = d.fcf_estimation || {};
+  const fcfEstApplied = fcfEstimation.applied || false;
+  const fcfEstRawFcf = fcfEstimation.raw_fcf || 0;
+  const fcfEstEstimated = fcfEstimation.estimated_fcf || 0;
+  const fcfEstAdjNi = fcfEstimation.adj_net_income || 0;
+  const fcfEstConvRate = fcfEstimation.conversion_rate || 0;
+  const fcfEstRatio = fcfEstimation.divergence_ratio || 1.0;
+  const fcfEstWarning = fcfEstimation.divergence_warning || "";
+  const fcfEstNote = fcfEstimation.note || "";
   const fcfOutlierDetected = fcfOutlier.detected || false;
   const fcfOutlierRule = fcfOutlier.rule || "none";
   const fcfOutlierNote = fcfOutlier.note || "";
@@ -753,6 +764,74 @@ function render(d) {
           </div>
         </div>
         ` : ''}
+
+        <!-- Step: FCF実力推定（v7.2 条件付き） -->
+        ${fcfEstApplied || (fcfEstimation.method === 'raw_fcf' && fcfEstNote) ? `
+        <div class="calc-step ${fcfEstWarning ? 'fcf-flagged' : ''}">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">
+                FCF実力推定（調整済みEPS基準）
+                ${fcfEstApplied
+                  ? (fcfEstWarning
+                      ? \`<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 乖離 \${fcfEstRatio.toFixed(1)}x</span>\`
+                      : '<span style="color:var(--grn);font-size:10px;margin-left:6px">適用済</span>')
+                  : '<span style="color:var(--mut);font-size:10px;margin-left:6px">フォールバック</span>'}
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result" style="color:${fcfEstApplied ? (fcfEstWarning ? 'var(--yellow)' : 'var(--grn)') : 'var(--mut)'}">
+                ${fcfEstApplied ? fmtB(fcfEstEstimated) : fmtB(fcfEstRawFcf)}
+              </span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <p class="formula">推定FCF = 調整済み純利益 × FCF転換率（セクター別）</p>
+              <p class="formula-desc">SBC・ファイナンスリース等のノイズを除いた調整済み純利益から、<br>
+              セクター固有のFCF転換率を用いてFCF実力値を推定します。</p>
+            </div>
+            ${fcfEstApplied ? \`
+            <div class="inputs-grid">
+              <div class="input-item">
+                <span class="input-label">調整済み純利益</span>
+                <span class="input-value highlight">\${fmtB(fcfEstAdjNi)}</span>
+              </div>
+              <div class="input-item">
+                <span class="input-label">FCF転換率（セクター）</span>
+                <span class="input-value">\${(fcfEstConvRate * 100).toFixed(0)}%</span>
+              </div>
+              <div class="input-item">
+                <span class="input-label">推定FCF</span>
+                <span class="input-value highlight" style="color:var(--grn)">\${fmtB(fcfEstEstimated)}</span>
+              </div>
+              <div class="input-item">
+                <span class="input-label">生FCF（従来）</span>
+                <span class="input-value">\${fmtB(fcfEstRawFcf)}</span>
+              </div>
+            </div>
+            \${fcfEstWarning ? \`
+            <div class="inputs-grid" style="margin-top:12px">
+              <div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">
+                <span class="input-label" style="color:var(--yellow);font-size:12px">
+                  ⚠ 大幅乖離の警告（\${fcfEstRatio.toFixed(1)}倍）
+                </span>
+                <span class="input-value" style="color:var(--yellow);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">\${fcfEstWarning}</span>
+              </div>
+            </div>
+            \` : ''}
+            \` : \`
+            <div class="inputs-grid">
+              <div class="input-item" style="grid-column:1/-1">
+                <span class="input-label" style="color:var(--mut)">\${fcfEstNote}</span>
+              </div>
+            </div>
+            \`}
+          </div>
+        </div>
+        \` : ''}
 
         <!-- Step: BS評価補正（条件付き） -->
         ${bsApplied ? `
