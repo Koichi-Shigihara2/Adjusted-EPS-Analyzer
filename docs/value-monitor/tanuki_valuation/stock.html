@@ -337,7 +337,8 @@ function render(d) {
   const maturity = d.maturity_profile;
 
   const highGrowthRate = d.components?.high_growth_rate_used || 0;
-  const highGrowthYears = d.components?.high_growth_years || 5;
+  // 高成長期間: 3段階DCFはPhase1の実際年数、2段階DCFはhigh_growth_years
+  const highGrowthYears = (d.maturity_profile?.phase1?.years) || d.components?.high_growth_years || 5;
   const terminalGrowth = d.components?.terminal_growth_used || 0.03;
   const roeAvg = d.components?.roe_used || 0;
   const dilutedShares = d.components?.diluted_shares || 0;
