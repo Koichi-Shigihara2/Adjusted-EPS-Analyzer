@@ -1,6 +1,8 @@
 {
   "intrinsic_value_pt": 3456198638.794523,
   "intrinsic_value_per_share": 7.474134117136445,
+  "intrinsic_value_rm_no_beta": 7.03,
+  "upside_percent_rm_no_beta": -91.7,
   "intrinsic_value_rf": 21.14,
   "upside_percent_rf": -75.1,
   "v0": 1958253728.0396416,
@@ -136,12 +138,12 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": -101504490.18803637,
+    "adj_net_income": -198209000.0,
     "conversion_rate": 0.7,
     "estimated_fcf": 48143920.0,
     "raw_fcf": 48143920.0,
     "sector": "",
-    "note": "調整済み純利益がマイナス($-102M) → 従来FCFを使用",
+    "note": "調整済み純利益がマイナス($-198M) → 従来FCFを使用",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -212,7 +214,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in key values detected.",
-    "ai_concerns": "ROE at 0% leads to α=0, and intrinsic value $7.47 vs market $84.80 shows extreme discrepancy, indicating potential issues."
+    "ai_comment": "Inconsistencies in per share value",
+    "ai_concerns": "ROE at 0.00% results in α=0, which is expected, but large discrepancy in P_t/shares and market price (84.80 vs. 7.47) suggests potential anomalies."
   }
 }

@@ -1,18 +1,20 @@
 {
-  "intrinsic_value_pt": 4708739603.019116,
-  "intrinsic_value_per_share": 11.630954138374602,
-  "intrinsic_value_rf": 68.36,
-  "upside_percent_rf": 746.0,
-  "v0": 4644275140.18859,
-  "v0_adjusted": 4708739603.019116,
+  "intrinsic_value_pt": 2792654696.744864,
+  "intrinsic_value_per_share": 7.135318984308955,
+  "intrinsic_value_rm_no_beta": 7.59,
+  "upside_percent_rm_no_beta": -6.1,
+  "intrinsic_value_rf": 40.46,
+  "upside_percent_rf": 400.7,
+  "v0": 2728190233.914338,
+  "v0_adjusted": 2792654696.744864,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 14.54,
-    "2年後": 18.17,
-    "3年後": 22.72
+    "1年後": 8.92,
+    "2年後": 11.15,
+    "3年後": 13.94
   },
-  "upside_percent": 43.9,
+  "upside_percent": -11.7,
   "calculation_date": "2026-04-20",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -26,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        9.82,
-        13.38,
-        18.02
+        6.07,
+        8.16,
+        10.89
       ],
       [
-        8.57,
-        11.56,
-        15.39
+        5.34,
+        7.09,
+        9.34
       ],
       [
-        7.62,
-        10.18,
-        13.39
+        4.78,
+        6.28,
+        8.17
       ]
     ],
     "wacc_values": [
@@ -70,43 +72,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 4644275140.18859,
-    "pv_high_growth": 1035555881.0216736,
-    "pv_terminal": 3608719259.1669164,
+    "v0": 2728190233.914338,
+    "pv_high_growth": 608317413.5891452,
+    "pv_terminal": 2119872820.3251927,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 175925291.45484534,
+        "fcf": 103343933.67274812,
         "discount_factor": 1.10456,
-        "pv": 159271829.01322275
+        "pv": 93561177.00509535
       },
       {
         "year": 2,
-        "fcf": 219906614.31855667,
+        "fcf": 129179917.09093514,
         "discount_factor": 1.2200527936,
-        "pv": 180243523.45416132
+        "pv": 105880596.12548813
       },
       {
         "year": 3,
-        "fcf": 274883267.89819586,
+        "fcf": 161474896.36366892,
         "discount_factor": 1.3476215136988159,
-        "pv": 203976609.978364
+        "pv": 119822141.99034926
       },
       {
         "year": 4,
-        "fcf": 343604084.8727448,
+        "fcf": 201843620.45458615,
         "discount_factor": 1.488528819171164,
-        "pv": 230834687.54341543
+        "pv": 135599403.82408974
       },
       {
         "year": 5,
-        "fcf": 429505106.090931,
+        "fcf": 252304525.5682327,
         "discount_factor": 1.644169392503701,
-        "pv": 261229231.03251004
+        "pv": 153454094.64412272
       }
     ],
-    "terminal_fcf": 442390259.27365893,
-    "terminal_value": 5933345752.060875
+    "terminal_fcf": 259873661.33527967,
+    "terminal_value": 3485430007.1791797
   },
   "fcf_base": {
     "base_fcf": 13513600.0,
@@ -125,17 +127,10 @@
     "fcf_value": -864358,
     "threshold_pct": 0.0,
     "transient_evidence": {
-      "found": true,
-      "source": "adjusted_eps_analyzer",
-      "items": [
-        {
-          "category": "リストラ・事業再編関連",
-          "item_name": "リストラ費用",
-          "amount": 4873000,
-          "reason": "一過性の事業再編費用"
-        }
-      ],
-      "total_transient_amount": 4873000
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0.0
     },
     "action": "flagged",
     "note": "FY2025 FCF($-0.9M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -143,14 +138,14 @@
   "fcf_estimation": {
     "applied": true,
     "method": "adj_eps_estimated",
-    "adj_net_income": 201057475.94839466,
+    "adj_net_income": 118107352.768855,
     "conversion_rate": 0.7,
-    "estimated_fcf": 140740233.16387627,
+    "estimated_fcf": 82675146.93819849,
     "raw_fcf": 13513600.0,
     "sector": "",
-    "note": "調整済み純利益$0.20B × 転換率70%[sector()] = 推定FCF$0.14B（従来$0.01Bの10.4倍）",
-    "divergence_ratio": 10.41,
-    "divergence_warning": "FCF推定値が生FCFの10.4倍。調整済み純利益$0.2B × 70%転換率= 推定FCF$0.1B（生FCF$0.0B比）。成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
+    "note": "調整済み純利益$0.12B × 転換率70%[sector()] = 推定FCF$0.08B（従来$0.01Bの6.1倍）",
+    "divergence_ratio": 6.12,
+    "divergence_warning": "FCF推定値が生FCFの6.1倍。調整済み純利益$0.1B × 70%転換率= 推定FCF$0.1B（生FCF$0.0B比）。成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
   },
   "bs_adjustment": {
     "cash": 248490000.0,
@@ -165,7 +160,7 @@
   "components": {
     "fcf_5yr_avg": -74351071.6,
     "fcf_2yr_avg": -47454679.0,
-    "fcf_base_used": 140740233.16387627,
+    "fcf_base_used": 82675146.93819849,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       -864358,
@@ -189,8 +184,8 @@
     "high_growth_rate_used": 0.25,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1035555881.0216736,
-    "pv_terminal": 3608719259.1669164,
+    "pv_high": 608317413.5891452,
+    "pv_terminal": 2119872820.3251927,
     "roe_used": 0.0,
     "fcf_floor_applied": 87864671.6,
     "rpo_pv": 64464462.83052605,
@@ -203,11 +198,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $4.64B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B + BS $+0.58/株 = $11.63 (差異0.00%)"
+        "detail": "(V₀ $2.73B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B + BS $+0.58/株 = $7.14 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.04B + pv_terminal $3.61B = $4.64B (差異0.00%)"
+        "detail": "2段階: pv_high $0.61B + pv_terminal $2.12B = $2.73B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -219,7 +214,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value",
-    "ai_concerns": "Anomaly in intrinsic value per share calculation; reported 11.63 vs. calculated 11.05, possibly due to rounding or input error."
+    "ai_comment": "Inconsistency in per share value found.",
+    "ai_concerns": "ROE=0% is unusually low, potentially affecting α; per share value mismatch indicates error."
   }
 }

@@ -1,18 +1,20 @@
 {
-  "intrinsic_value_pt": 22535097272.265297,
-  "intrinsic_value_per_share": 21.5363661976816,
-  "intrinsic_value_rf": 124.51,
-  "upside_percent_rf": 540.8,
-  "v0": 18305916761.68751,
-  "v0_adjusted": 18312837569.11215,
+  "intrinsic_value_pt": 22563885495.33879,
+  "intrinsic_value_per_share": 21.55894052461284,
+  "intrinsic_value_rm_no_beta": 24.72,
+  "upside_percent_rm_no_beta": 27.2,
+  "intrinsic_value_rf": 124.67,
+  "upside_percent_rf": 541.6,
+  "v0": 18329311116.13288,
+  "v0_adjusted": 18336231923.557518,
   "alpha": 0.23056283261501426,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 26.92,
-    "2年後": 33.65,
-    "3年後": 42.06
+    "1年後": 26.95,
+    "2年後": 33.69,
+    "3年後": 42.11
   },
-  "upside_percent": 10.8,
+  "upside_percent": 11.0,
   "calculation_date": "2026-04-20",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -26,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        18.67,
-        24.37,
-        31.73
+        18.69,
+        24.4,
+        31.76
       ],
       [
-        16.79,
-        21.63,
-        27.76
+        16.81,
+        21.65,
+        27.79
       ],
       [
-        15.32,
-        19.5,
-        24.69
+        15.34,
+        19.52,
+        24.72
       ]
     ],
     "wacc_values": [
@@ -70,43 +72,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 18305916761.68751,
-    "pv_high_growth": 4403120588.527235,
-    "pv_terminal": 13902796173.160276,
+    "v0": 18329311116.13288,
+    "pv_high_growth": 4408747630.595366,
+    "pv_terminal": 13920563485.537516,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 763134778.2932884,
+        "fcf": 764110039.2280668,
         "discount_factor": 1.1114,
-        "pv": 686642773.3428904
+        "pv": 687520280.0324517
       },
       {
         "year": 2,
-        "fcf": 953918472.8666104,
+        "fcf": 955137549.0350835,
         "discount_factor": 1.23520996,
-        "pv": 772272329.2051584
+        "pv": 773259267.6269252
       },
       {
         "year": 3,
-        "fcf": 1192398091.083263,
+        "fcf": 1193921936.2938545,
         "discount_factor": 1.3728123495439999,
-        "pv": 868580539.415555
+        "pv": 869690556.5355917
       },
       {
         "year": 4,
-        "fcf": 1490497613.8540788,
+        "fcf": 1492402420.3673182,
         "discount_factor": 1.5257436452832014,
-        "pv": 976899113.0731006
+        "pv": 978147557.7375289
       },
       {
         "year": 5,
-        "fcf": 1863122017.3175983,
+        "fcf": 1865503025.4591477,
         "discount_factor": 1.69571148736775,
-        "pv": 1098725833.4905305
+        "pv": 1100129968.6628678
       }
     ],
-    "terminal_fcf": 1919015677.8371263,
-    "terminal_value": 23575131177.360275
+    "terminal_fcf": 1921468116.222922,
+    "terminal_value": 23605259413.05801
   },
   "fcf_base": {
     "base_fcf": 49548240.0,
@@ -129,49 +131,13 @@
       "source": "adjusted_eps_analyzer",
       "items": [
         {
-          "category": "金融関連",
-          "item_name": "ローン公正価値評価損益",
-          "amount": -1337000.0,
-          "reason": "市場金利変動による一時的評価替え"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": -122000.0,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
           "category": "リストラ・事業再編関連",
           "item_name": "リストラ費用",
           "amount": 948000,
           "reason": "一過性の事業再編費用"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 53000,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 389000,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "ローン公正価値評価損益",
-          "amount": -760000,
-          "reason": "市場金利変動による一時的評価替え"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 378000,
-          "reason": "マクロ変動による一時的影響"
         }
       ],
-      "total_transient_amount": 1768000
+      "total_transient_amount": 948000
     },
     "action": "flagged",
     "note": "FY2025 FCF($-1402.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -179,13 +145,13 @@
   "fcf_estimation": {
     "applied": true,
     "method": "adj_eps_estimated",
-    "adj_net_income": 872154032.3351867,
+    "adj_net_income": 873268616.2606478,
     "conversion_rate": 0.7,
-    "estimated_fcf": 610507822.6346307,
+    "estimated_fcf": 611288031.3824534,
     "raw_fcf": 49548240.0,
     "sector": "",
     "note": "調整済み純利益$0.87B × 転換率70%[sector()] = 推定FCF$0.61B（従来$0.05Bの12.3倍）",
-    "divergence_ratio": 12.32,
+    "divergence_ratio": 12.34,
     "divergence_warning": "FCF推定値が生FCFの12.3倍。調整済み純利益$0.9B × 70%転換率= 推定FCF$0.6B（生FCF$0.0B比）。成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
   },
   "bs_adjustment": {
@@ -201,7 +167,7 @@
   "components": {
     "fcf_5yr_avg": -4269250000.0,
     "fcf_2yr_avg": -4375266500.0,
-    "fcf_base_used": 610507822.6346307,
+    "fcf_base_used": 611288031.3824534,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       -1401962000,
@@ -225,8 +191,8 @@
     "high_growth_rate_used": 0.25,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 4403120588.527235,
-    "pv_terminal": 13902796173.160276,
+    "pv_high": 4408747630.595366,
+    "pv_terminal": 13920563485.537516,
     "roe_used": 0.061154046555506165,
     "fcf_floor_applied": 4318798240.0,
     "rpo_pv": 6920807.424635721,
@@ -239,11 +205,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $18.31B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $21.54 (差異0.00%)"
+        "detail": "(V₀ $18.33B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $21.56 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $4.40B + pv_terminal $13.90B = $18.31B (差異0.00%)"
+        "detail": "2段階: pv_high $4.41B + pv_terminal $13.92B = $18.33B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -255,7 +221,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in key values detected.",
-    "ai_concerns": "Inconsistency in per-share value calculation; ROE (6.12%) seems low for 25% growth rate."
+    "ai_comment": "Inconsistency in per share value calculation."
   }
 }

@@ -1,6 +1,8 @@
 {
   "intrinsic_value_pt": 138624464.68086946,
   "intrinsic_value_per_share": 1.427458341489773,
+  "intrinsic_value_rm_no_beta": 1.45,
+  "upside_percent_rm_no_beta": -85.5,
   "intrinsic_value_rf": 2.88,
   "upside_percent_rf": -71.2,
   "v0": 131731226.9636078,
@@ -136,12 +138,12 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": -46350514.85677462,
+    "adj_net_income": -132558000.0,
     "conversion_rate": 0.7,
     "estimated_fcf": 4058480.0,
     "raw_fcf": 4058480.0,
     "sector": "",
-    "note": "調整済み純利益がマイナス($-46M) → 従来FCFを使用",
+    "note": "調整済み純利益がマイナス($-133M) → 従来FCFを使用",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -212,7 +214,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Major inconsistency detected",
-    "ai_concerns": "ROE at 0% is unusual, and per share value mismatch suggests potential errors"
+    "ai_comment": "Inconsistencies in per share value",
+    "ai_concerns": "ROE=0% is unusual, leading to α=0, and the discrepancy in per share value (0.2876 vs 1.43) indicates a potential error."
   }
 }
