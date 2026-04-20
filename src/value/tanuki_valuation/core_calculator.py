@@ -299,14 +299,20 @@ class KoichiValuationCalculator:
             growth_option_pv=growth_option_pv
         )
 
-        # DCFベース理論株価 + ネットキャッシュ/株
-        intrinsic_value_per_share = (
+        # DCFベース理論株価 + ネットキャッシュ/株（β込みWACC版・参考用）
+        intrinsic_value_per_share_beta = (
             calculate_per_share_value(
                 intrinsic_value_pt=intrinsic_value_pt,
                 diluted_shares=diluted_shares
             )
             + bs_adjustment.net_cash_per_share
         )
+
+        # ── メイン理論株価はRmβなし（市場期待リターン）で計算 v7.3 ──
+        # 理由: β込みWACCは市場の評価を割引率に持ち込むため
+        #       「市場から独立した本質的価値」という目的と矛盾する
+        #       Rm（10%固定）は「お金の機会コスト」として銘柄非依存
+        intrinsic_value_per_share = _calc_ivps_with_wacc(_rm)
 
         upside_percent = calculate_upside(
             intrinsic_value_per_share=intrinsic_value_per_share,
@@ -356,12 +362,9 @@ class KoichiValuationCalculator:
                 + bs_adjustment.net_cash_per_share
             )
 
-        # ② Rmβなし: WACC = Rm（βを除いた市場期待リターン）
-        _ivps_rm_no_beta = _calc_ivps_with_wacc(_rm)
-        _upside_rm_no_beta = calculate_upside(
-            intrinsic_value_per_share=_ivps_rm_no_beta,
-            current_price=current_price
-        )
+        # ② Rmβなし = メイン理論株価と同一（既に上で計算済み）
+        _ivps_rm_no_beta = intrinsic_value_per_share
+        _upside_rm_no_beta = upside_percent
 
         # ③ Rf（リスクゼロ）で計算
         _ivps_rf = _calc_ivps_with_wacc(_rf)
@@ -448,11 +451,11 @@ class KoichiValuationCalculator:
             "intrinsic_value_pt": float(intrinsic_value_pt),
             "intrinsic_value_per_share": float(intrinsic_value_per_share),
             # 割引率別理論株価（v7.3: 差額分析用）
-            # ① β込みWACC → intrinsic_value_per_share（メイン）
-            # ② Rmβなし（市場期待リターン = Rm）
-            "intrinsic_value_rm_no_beta": round(float(_ivps_rm_no_beta), 2),
-            "upside_percent_rm_no_beta": round(_upside_rm_no_beta, 1),
-            # ③ Rf（リスクゼロ理論上限）
+            # メイン: Rmβなし（10%）→ intrinsic_value_per_share
+            # 参考①: β込みWACC
+            "intrinsic_value_beta": round(float(intrinsic_value_per_share_beta), 2),
+            "upside_percent_beta": round(calculate_upside(intrinsic_value_per_share_beta, current_price), 1),
+            # 参考②: Rf（リスクゼロ理論上限）
             "intrinsic_value_rf": round(float(_ivps_rf), 2),
             "upside_percent_rf": round(_upside_rf, 1),
             "v0": float(v0),
