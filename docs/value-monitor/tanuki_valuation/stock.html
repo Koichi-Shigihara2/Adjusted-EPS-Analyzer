@@ -415,13 +415,9 @@ function render(d) {
 
       <div class="value-display">
         <div class="value-box primary">
-          <div class="value-label">Intrinsic Value</div>
-          <div class="value-main" id="displayIvps">$${fmt(ivps)}</div>
-          <div class="value-sub">理論株価（Koichi式 v6.2）</div>
-          <div class="wacc-badge">
-            📊 WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span>
-            <span class="beta">β=${beta.toFixed(2)}</span>
-          </div>
+          <div class="value-label">Intrinsic Value <span style="font-size:10px;color:var(--mut);font-weight:400;letter-spacing:.04em">Rm基準（βなし ${(d.wacc?.market_return * 100 || 10).toFixed(1)}%）</span></div>
+          <div class="value-main" id="displayIvpsMain">$${fmt(ivps)}</div>
+          <div class="value-sub" style="margin-bottom:10px">理論株価（Koichi式・市場独立）</div>
           <div id="rfValueBlock"></div>
         </div>
         <div class="value-box">
@@ -432,6 +428,18 @@ function render(d) {
             ${upside >= 0 ? '▲' : '▼'} ${Math.abs(upside).toFixed(1)}%
           </div>
           <div id="rfMarketBlock"></div>
+        </div>
+      </div>
+
+      <!-- WACC感度表示（β込みWACC・スライダー連動） -->
+      <div style="margin:0 0 16px;padding:12px 16px;background:var(--sur2);border-radius:8px;border:1px solid var(--bdr);display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">β込みWACC感度</div>
+          <div style="display:flex;align-items:baseline;gap:6px">
+            <span style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--acc)" id="displayIvps">$${fmt(ivpsBeta > 0 ? ivpsBeta : ivps)}</span>
+            <span style="font-size:11px;color:var(--mut)">WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span> β=${beta.toFixed(2)}</span>
+          </div>
+          <div style="font-size:10px;color:var(--mut);margin-top:2px">スライダーで感度確認</div>
         </div>
       </div>
 
@@ -1054,11 +1062,14 @@ function updateWacc(delta) {
   document.getElementById('matrixBody').innerHTML = renderMatrixRows(adjustedMatrix, adjustedWaccValues, growthYears, currentPrice, 1);
   document.getElementById('displayWacc').textContent = fmtPct2(newWacc);
 
-  const baseIvps = globalData.intrinsic_value_per_share || 0;
-  const newIvps = baseIvps * adjustFactor;
+  // β込みWACC感度表示を更新（displayIvps）
+  const baseIvpsBeta = globalData.intrinsic_value_beta || globalData.intrinsic_value_per_share || 0;
+  const newIvps = baseIvpsBeta * adjustFactor;
   document.getElementById('displayIvps').textContent = '$' + fmt(newIvps);
 
-  const newUpside = ((newIvps / currentPrice) - 1) * 100;
+  // メイン理論株価（Rmβなし固定）のupside更新
+  const mainIvps = globalData.intrinsic_value_per_share || 0;
+  const newUpside = ((mainIvps / currentPrice) - 1) * 100;
   const badge = document.getElementById('displayUpside');
   badge.className = 'upside-badge ' + (newUpside >= 0 ? 'positive' : 'negative');
   badge.textContent = (newUpside >= 0 ? '▲' : '▼') + ' ' + Math.abs(newUpside).toFixed(1) + '%';
