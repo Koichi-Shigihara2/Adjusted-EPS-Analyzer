@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-04-13T11:21:14.737534",
+  "last_updated": "2026-04-20T11:22:12.052741",
   "quarters": [
     {
       "gaap_eps": 0.09704955847334952,
@@ -65,8 +65,11 @@
       "net_adjustment_total": 69999768.31924927,
       "filing_date": "2025-12-31",
       "form": "10-K",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 254911000.0,
       "period_end": "2025-12-31",
@@ -96,27 +99,27 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目に株式報酬費用や無形資産償却といった準恒常的な項目が含まれており、調整後EPSが実態よりも大幅に上方修正されている可能性があります。リストラ費用は一過性として妥当ですが金額が大きく、貸倒引当金の異常分も金融事業との関連性が不明瞭です。非GAAP利益の持続可能性に注意が必要です。",
+        "comment": "調整後EPSはGAAPの約3.8倍となっており、主に大規模なリストラ費用(80.7M)のadd_backによる影響が大きい。一方で株式報酬や無形資産償却といった経常的に発生しやすい項目も含まれており、調整の質は中程度。貸倒引当金の異常変動分は一時的と見なせるが、全体として調整後利益の持続可能性に注意が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用を加算しているが、成長企業では毎期継続的に発生する傾向が強く恒常的コストの可能性が高い",
-            "confidence": 0.25
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただし成長企業では毎期発生する恒常的な報酬コストである可能性が高い。",
+            "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却費を加算。買収が完了した後も定期的に発生する項目であり、真に一過性とは言い難い",
+            "snippet": "買収関連無形資産の償却としてadd_back。買収後の継続的な非現金費用であり、恒常的性格が強い。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として貸倒引当金の異常変動分を調整。飲料事業との関連性は低いものの、異常分に限定されている点は妥当",
-            "confidence": 0.6
+            "snippet": "マクロ変動による一時的影響として貸倒引当金の異常変動分をadd_back。異常項目として一過性と判断。",
+            "confidence": 0.65
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用としてリストラ費用を大幅に加算。典型的には一時的項目とみなされるが、金額規模が大きい",
-            "confidence": 0.75
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd_back。典型的には非経常的とみなされる項目。",
+            "confidence": 0.8
           }
         ]
       }
@@ -158,8 +161,11 @@
       "net_adjustment_total": 175011781.05440128,
       "filing_date": "2025-09-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 257778000.0,
       "period_end": "2025-09-30",
@@ -202,8 +208,11 @@
       "net_adjustment_total": 4473479.318734794,
       "filing_date": "2025-06-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 260211000.0,
       "period_end": "2025-06-30",
@@ -260,8 +269,11 @@
       "net_adjustment_total": 5320696.04708737,
       "filing_date": "2025-03-31",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 237172000.0,
       "period_end": "2025-03-31",
@@ -318,8 +330,11 @@
       "net_adjustment_total": 13723880.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 237404000.0,
       "period_end": "2024-12-31",
@@ -362,8 +377,11 @@
       "net_adjustment_total": 77749.23547400611,
       "filing_date": "2024-09-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 233696000.0,
       "period_end": "2024-09-30",
@@ -406,8 +424,11 @@
       "net_adjustment_total": 76251.78006518145,
       "filing_date": "2024-06-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 237595000.0,
       "period_end": "2024-06-30",
@@ -464,8 +485,11 @@
       "net_adjustment_total": 4976113.637101048,
       "filing_date": "2024-03-31",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 237523000.0,
       "period_end": "2024-03-31",
@@ -486,9 +510,9 @@
     },
     {
       "gaap_eps": 0.21149204098512855,
-      "adjusted_eps": 0.29324445907395214,
+      "adjusted_eps": 0.26886742289968096,
       "gaap_net_income": 50116000.0,
-      "adjusted_net_income": 69488380.0,
+      "adjusted_net_income": 63711900.0,
       "diluted_shares_used": 236964000.0,
       "adjustments": [
         {
@@ -529,26 +553,16 @@
           "category": "金融関連",
           "net_amount": 1019890.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 7312000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 5776480.0,
-          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 19372380.0,
+      "net_adjustment_total": 13595900.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 236964000.0,
       "period_end": "2023-12-31",
@@ -591,8 +605,11 @@
       "net_adjustment_total": 80146.06902477446,
       "filing_date": "2023-09-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 237273000.0,
       "period_end": "2023-09-30",
@@ -635,8 +652,11 @@
       "net_adjustment_total": 74161.68742351163,
       "filing_date": "2023-06-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 236832000.0,
       "period_end": "2023-06-30",
@@ -705,8 +725,11 @@
       "net_adjustment_total": 5338533.638775018,
       "filing_date": "2023-03-31",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 236277000.0,
       "period_end": "2023-03-31",
@@ -727,9 +750,9 @@
     },
     {
       "gaap_eps": -0.2805456780658039,
-      "adjusted_eps": -0.023826223743869713,
+      "adjusted_eps": -0.08785205356316673,
       "gaap_net_income": -21223000.0,
-      "adjusted_net_income": -1802430.0,
+      "adjusted_net_income": -6645920.0,
       "diluted_shares_used": 75649000.0,
       "adjustments": [
         {
@@ -770,26 +793,16 @@
           "category": "金融関連",
           "net_amount": 1498630.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 6131000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 4843490.0,
-          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 19420570.0,
+      "net_adjustment_total": 14577080.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 75649000.0,
       "period_end": "2022-12-31",
@@ -820,8 +833,11 @@
       "net_adjustment_total": 75757.49296467309,
       "filing_date": "2022-09-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 75796000.0,
       "period_end": "2022-09-30",
@@ -852,8 +868,11 @@
       "net_adjustment_total": 76520.72192513368,
       "filing_date": "2022-06-30",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 78372000.0,
       "period_end": "2022-06-30",
@@ -910,70 +929,16 @@
       "net_adjustment_total": 3239614.656031904,
       "filing_date": "2022-03-31",
       "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 78289000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1
-    },
-    {
-      "gaap_eps": 0.036802409896929324,
-      "adjusted_eps": 0.1289879387584938,
-      "gaap_net_income": 2745791.0,
-      "adjusted_net_income": 9623661.122832464,
-      "diluted_shares_used": 74609000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 12100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:EmployeeBenefitsAndShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 6821494.138219084,
-          "tax_rate_applied": 0.4362401538661914
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 100000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 56375.98461338086,
-          "tax_rate_applied": 0.4362401538661914
-        }
-      ],
-      "net_adjustment_total": 6877870.122832464,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "sector": "Consumer Defensive",
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 74609000.0,
-      "period_end": "2021-09-30",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.036802409896929324,
-          "official_eps": -0.13,
-          "eps_diff_pct": 128.3,
-          "note": "XBRLと公式発表のGAAP EPSに128%の差異があります。公式EPS: $-0.13, XBRL計算EPS: $0.04。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
     }
   ]
 }

@@ -1,12 +1,12 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-04-13T11:20:55.804951",
+  "last_updated": "2026-04-20T11:23:30.457740",
   "quarters": [
     {
       "gaap_eps": 0.23809523809523808,
-      "adjusted_eps": 0.8323866213151927,
+      "adjusted_eps": 0.77640589569161,
       "gaap_net_income": 840000000.0,
-      "adjusted_net_income": 2936660000.0,
+      "adjusted_net_income": 2739160000.0,
       "diluted_shares_used": 3528000000.0,
       "adjustments": [
         {
@@ -23,19 +23,6 @@
           "tax_rate_applied": 0.21
         },
         {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 250000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 197500000.0,
-          "tax_rate_applied": 0.21
-        },
-        {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
           "amount": 152000000.0,
@@ -49,19 +36,22 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 2096660000.0,
+      "net_adjustment_total": 1899160000.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3528000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
       "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 107.4%）",
-        "sbc_contribution": 1.074,
+        "alert": "SBC寄与率が40%超（現在 118.6%）",
+        "sbc_contribution": 1.186,
         "sbc_to_revenue": 0,
         "sbc_per_share": 0.6383,
         "sector_threshold": {
@@ -71,21 +61,16 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目の約80%を占める株式報酬費用(SBC)はテスラにおいて恒常的に発生する非現金コストであり、調整後EPSを大幅に押し上げているため質は低い。在庫評価損とリストラ費用は一過性の可能性が高いが、SBCの影響が大きいため全体の健全性をCautionと評価。",
+        "comment": "Adjusted EPSがGAAP EPSの3倍以上に上方修正されており、主な要因は22.5億ドルの株式報酬費用(SBC)の加算です。SBCはテスラにとって毎期発生する恒常的な報酬コストであり、非経常項目としての調整の質に懸念があります。一方、リストラ費用は一過性として比較的妥当ですが、全体的な調整の健全性はCautionと評価します。投資判断では希薄化効果も含めた実質的な収益性を慎重に検討すべきです。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用を加算。ただし、継続的に発生する報酬コスト。",
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただしテスラでは毎期継続的に発生する恒常的コストの可能性が高い。",
             "confidence": 0.2
           },
           {
-            "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損として加算。",
-            "confidence": 0.65
-          },
-          {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用として加算。",
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd_back。事業再編に伴う非経常的支出とみなせる。",
             "confidence": 0.8
           }
         ]
@@ -128,8 +113,11 @@
       "net_adjustment_total": 636681935.1518271,
       "filing_date": "2025-09-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3526000000.0,
       "period_end": "2025-09-30",
@@ -160,8 +148,11 @@
       "net_adjustment_total": 486100587.85107774,
       "filing_date": "2025-06-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3519000000.0,
       "period_end": "2025-06-30",
@@ -170,9 +161,9 @@
     },
     {
       "gaap_eps": 0.1161601817665436,
-      "adjusted_eps": 0.25382406500198024,
+      "adjusted_eps": 0.23131551767005484,
       "gaap_net_income": 409000000.0,
-      "adjusted_net_income": 893714532.8719723,
+      "adjusted_net_income": 814461937.716263,
       "diluted_shares_used": 3521000000.0,
       "adjustments": [
         {
@@ -187,26 +178,16 @@
           "category": "株式報酬関連",
           "net_amount": 405461937.716263,
           "tax_rate_applied": 0.29238754325259514
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 112000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 79252595.15570936,
-          "tax_rate_applied": 0.29238754325259514
         }
       ],
-      "net_adjustment_total": 484714532.8719723,
+      "net_adjustment_total": 405461937.716263,
       "filing_date": "2025-03-31",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3521000000.0,
       "period_end": "2025-03-31",
@@ -215,9 +196,9 @@
     },
     {
       "gaap_eps": 0.6623785020011436,
-      "adjusted_eps": 0.9401501318725909,
+      "adjusted_eps": 0.8975754905547513,
       "gaap_net_income": 2317000000.0,
-      "adjusted_net_income": 3288645161.290323,
+      "adjusted_net_income": 3139719065.96052,
       "diluted_shares_used": 3498000000.0,
       "adjustments": [
         {
@@ -232,26 +213,16 @@
           "category": "株式報酬関連",
           "net_amount": 822719065.96052,
           "tax_rate_applied": 0.4422243620606644
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 267000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 148926095.3298026,
-          "tax_rate_applied": 0.4422243620606644
         }
       ],
-      "net_adjustment_total": 971645161.2903227,
+      "net_adjustment_total": 822719065.96052,
       "filing_date": "2024-12-31",
       "form": "10-K",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3498000000.0,
       "period_end": "2024-12-31",
@@ -282,8 +253,11 @@
       "net_adjustment_total": 357644998.194294,
       "filing_date": "2024-09-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3497000000.0,
       "period_end": "2024-09-30",
@@ -314,8 +288,11 @@
       "net_adjustment_total": 350915089.2374256,
       "filing_date": "2024-06-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3481000000.0,
       "period_end": "2024-06-30",
@@ -324,9 +301,9 @@
     },
     {
       "gaap_eps": 0.324052812858783,
-      "adjusted_eps": 0.44305980120394406,
+      "adjusted_eps": 0.4293900795697026,
       "gaap_net_income": 1129000000.0,
-      "adjusted_net_income": 1543620347.394541,
+      "adjusted_net_income": 1495995037.2208438,
       "diluted_shares_used": 3484000000.0,
       "adjustments": [
         {
@@ -341,26 +318,16 @@
           "category": "株式報酬関連",
           "net_amount": 366995037.2208437,
           "tax_rate_applied": 0.29962779156327546
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 68000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 47625310.17369727,
-          "tax_rate_applied": 0.29962779156327546
         }
       ],
-      "net_adjustment_total": 414620347.39454097,
+      "net_adjustment_total": 366995037.2208437,
       "filing_date": "2024-03-31",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3484000000.0,
       "period_end": "2024-03-31",
@@ -369,9 +336,9 @@
     },
     {
       "gaap_eps": 2.2748923959827834,
-      "adjusted_eps": 2.6845136298421806,
+      "adjusted_eps": 2.590892395982783,
       "gaap_net_income": 7928000000.0,
-      "adjusted_net_income": 9355530000.0,
+      "adjusted_net_income": 9029260000.0,
       "diluted_shares_used": 3485000000.0,
       "adjustments": [
         {
@@ -386,26 +353,16 @@
           "category": "株式報酬関連",
           "net_amount": 1101260000.0,
           "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 413000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 326270000.0,
-          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 1427530000.0,
+      "net_adjustment_total": 1101260000.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3485000000.0,
       "period_end": "2023-12-31",
@@ -436,8 +393,11 @@
       "net_adjustment_total": 426556930.69306934,
       "filing_date": "2023-09-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3493000000.0,
       "period_end": "2023-09-30",
@@ -468,8 +428,11 @@
       "net_adjustment_total": 397500000.0,
       "filing_date": "2023-06-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3478000000.0,
       "period_end": "2023-06-30",
@@ -478,9 +441,9 @@
     },
     {
       "gaap_eps": 0.7246251441753172,
-      "adjusted_eps": 0.8468762499698552,
+      "adjusted_eps": 0.8338152343935157,
       "gaap_net_income": 2513000000.0,
-      "adjusted_net_income": 2936966834.8954577,
+      "adjusted_net_income": 2891671232.8767123,
       "diluted_shares_used": 3468000000.0,
       "adjustments": [
         {
@@ -495,26 +458,16 @@
           "category": "株式報酬関連",
           "net_amount": 378671232.8767123,
           "tax_rate_applied": 0.09408795962509012
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 50000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 45295602.0187455,
-          "tax_rate_applied": 0.09408795962509012
         }
       ],
-      "net_adjustment_total": 423966834.8954578,
+      "net_adjustment_total": 378671232.8767123,
       "filing_date": "2023-03-31",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3468000000.0,
       "period_end": "2023-03-31",
@@ -523,9 +476,9 @@
     },
     {
       "gaap_eps": 1.0610071942446042,
-      "adjusted_eps": 1.344147939585663,
+      "adjusted_eps": 1.31244322160035,
       "gaap_net_income": 3687000000.0,
-      "adjusted_net_income": 4670914090.060179,
+      "adjusted_net_income": 4560740195.061216,
       "diluted_shares_used": 3475000000.0,
       "adjustments": [
         {
@@ -540,26 +493,16 @@
           "category": "株式報酬関連",
           "net_amount": 873740195.061216,
           "tax_rate_applied": 0.23490350695164972
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 144000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 110173894.99896243,
-          "tax_rate_applied": 0.23490350695164972
         }
       ],
-      "net_adjustment_total": 983914090.0601784,
+      "net_adjustment_total": 873740195.061216,
       "filing_date": "2022-12-31",
       "form": "10-K",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3475000000.0,
       "period_end": "2022-12-31",
@@ -590,8 +533,11 @@
       "net_adjustment_total": 331304976.36919653,
       "filing_date": "2022-09-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3468000000.0,
       "period_end": "2022-09-30",
@@ -622,8 +568,11 @@
       "net_adjustment_total": 330965503.2467532,
       "filing_date": "2022-06-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3464000000.0,
       "period_end": "2022-06-30",
@@ -632,9 +581,9 @@
     },
     {
       "gaap_eps": 0.9556451612903226,
-      "adjusted_eps": 1.0732750651500211,
+      "adjusted_eps": 1.0646679990139456,
       "gaap_net_income": 3318000000.0,
-      "adjusted_net_income": 3726411026.2008734,
+      "adjusted_net_income": 3696527292.5764194,
       "diluted_shares_used": 3472000000.0,
       "adjustments": [
         {
@@ -649,26 +598,16 @@
           "category": "株式報酬関連",
           "net_amount": 378527292.5764192,
           "tax_rate_applied": 0.09443231441048035
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 33000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 29883733.624454148,
-          "tax_rate_applied": 0.09443231441048035
         }
       ],
-      "net_adjustment_total": 408411026.2008733,
+      "net_adjustment_total": 378527292.5764192,
       "filing_date": "2022-03-31",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3472000000.0,
       "period_end": "2022-03-31",
@@ -677,9 +616,9 @@
     },
     {
       "gaap_eps": 2.0558015943312666,
-      "adjusted_eps": 3.178323723156518,
+      "adjusted_eps": 3.1163773837246818,
       "gaap_net_income": 2321000000.0,
-      "adjusted_net_income": 3588327483.443709,
+      "adjusted_net_income": 3518390066.225166,
       "diluted_shares_used": 1129000000.0,
       "adjustments": [
         {
@@ -707,26 +646,16 @@
           "category": "買収・統合関連",
           "net_amount": 39195695.36423841,
           "tax_rate_applied": 0.2314569536423841
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 91000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 69937417.21854305,
-          "tax_rate_applied": 0.2314569536423841
         }
       ],
-      "net_adjustment_total": 1267327483.443709,
+      "net_adjustment_total": 1197390066.2251658,
       "filing_date": "2021-12-31",
       "form": "10-K",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 1129000000.0,
       "period_end": "2021-12-31",
@@ -757,8 +686,11 @@
       "net_adjustment_total": 417463335.14394355,
       "filing_date": "2021-09-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 3369000000.0,
       "period_end": "2021-09-30",
@@ -789,8 +721,11 @@
       "net_adjustment_total": 430634844.8687351,
       "filing_date": "2021-06-30",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 1119000000.0,
       "period_end": "2021-06-30",
@@ -799,9 +734,9 @@
     },
     {
       "gaap_eps": 0.38658428949691087,
-      "adjusted_eps": 0.8921175911467173,
+      "adjusted_eps": 0.8547554014320258,
       "gaap_net_income": 438000000.0,
-      "adjusted_net_income": 1010769230.7692307,
+      "adjusted_net_income": 968437869.8224852,
       "diluted_shares_used": 1133000000.0,
       "adjustments": [
         {
@@ -816,26 +751,16 @@
           "category": "株式報酬関連",
           "net_amount": 530437869.8224852,
           "tax_rate_applied": 0.13609467455621302
-        },
-        {
-          "item_id": "inventory_writeoff",
-          "item_name": "在庫評価損・減損",
-          "amount": 49000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の在庫評価損",
-          "extracted_from": "us-gaap:InventoryWriteDown",
-          "category": "在庫・サプライチェーン関連",
-          "net_amount": 42331360.94674556,
-          "tax_rate_applied": 0.13609467455621302
         }
       ],
-      "net_adjustment_total": 572769230.7692307,
+      "net_adjustment_total": 530437869.8224852,
       "filing_date": "2021-03-31",
       "form": "10-Q",
-      "sector": "Consumer Cyclical",
-      "sector_exclusions": [],
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
       "revenue": 0.0,
       "diluted_shares": 1133000000.0,
       "period_end": "2021-03-31",
