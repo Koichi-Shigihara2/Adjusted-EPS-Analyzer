@@ -293,6 +293,10 @@ class KoichiValuationCalculator:
             sign = "+" if nc >= 0 else ""
             print(f"   [{ticker}] BS補正: ネットキャッシュ {sign}${nc/1e9:.2f}B → {sign}${ncs:.2f}/株")
 
+        # ── 割引率定数（STEP10bで使用）──
+        _rf = wacc_result.risk_free_rate  # Rf: 通常4.3%
+        _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
+
         # ── STEP 10: 本質的価値（P_t）算出 ──
         v0_adjusted, intrinsic_value_pt = calculate_intrinsic_value(
             v0=v0, rpo_pv=rpo_pv, alpha=alpha,
@@ -308,26 +312,9 @@ class KoichiValuationCalculator:
             + bs_adjustment.net_cash_per_share
         )
 
-        # ── メイン理論株価はRmβなし（市場期待リターン）で計算 v7.3 ──
-        # 理由: β込みWACCは市場の評価を割引率に持ち込むため
-        #       「市場から独立した本質的価値」という目的と矛盾する
-        #       Rm（10%固定）は「お金の機会コスト」として銘柄非依存
-        intrinsic_value_per_share = _calc_ivps_with_wacc(_rm)
 
-        upside_percent = calculate_upside(
-            intrinsic_value_per_share=intrinsic_value_per_share,
-            current_price=current_price
-        )
 
-        # ── STEP 10b: Rf/Rmβなし 理論株価（参照用）v7.3 ──
-        # 3種類の割引率で計算し差額分析に使用
-        # ① β込みWACC（メイン）: Rf + β×(Rm-Rf)  ← 既計算
-        # ② Rmβなし:             Rm               ← 今回追加
-        # ③ Rf:                  Rf               ← 今回追加
-        _rf = wacc_result.risk_free_rate  # 通常4.3%
-        _rm = wacc_result.market_return   # 通常10.0%
-
-        # ── Rmβなし（βを除いた市場期待リターン = Rm）で計算 ──
+        # ── STEP 10b: 割引率別理論株価（v7.3）──
         def _calc_ivps_with_wacc(discount_rate):
             """指定した割引率で理論株価を計算（共通処理）"""
             if dcf_type == "three_stage" and maturity_profile:
@@ -362,7 +349,15 @@ class KoichiValuationCalculator:
                 + bs_adjustment.net_cash_per_share
             )
 
-        # ② Rmβなし = メイン理論株価と同一（既に上で計算済み）
+        # ② Rmβなし = Rmで計算（メイン理論株価）
+        # ── メイン理論株価はRmβなし（市場期待リターン）で計算 v7.3 ──
+        # 理由: β込みWACCは市場の評価を割引率に持ち込むため
+        #       「市場から独立した本質的価値」という目的と矛盾する
+        intrinsic_value_per_share = _calc_ivps_with_wacc(_rm)
+        upside_percent = calculate_upside(
+            intrinsic_value_per_share=intrinsic_value_per_share,
+            current_price=current_price
+        )
         _ivps_rm_no_beta = intrinsic_value_per_share
         _upside_rm_no_beta = upside_percent
 
