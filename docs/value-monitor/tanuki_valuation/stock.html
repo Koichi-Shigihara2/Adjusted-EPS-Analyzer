@@ -276,9 +276,12 @@ async function loadData() {
 
 function render(d) {
   const ivps = d.intrinsic_value_per_share || 0;
-  const ivpsRmNoBeta = d.intrinsic_value_rm_no_beta || 0;  // ② Rmβなし
-  const ivpsRf = d.intrinsic_value_rf || 0;               // ③ Rf
+  // v7.3: 3種類の割引率による理論株価
+  // メイン: ivps = Rmβなし（10%）← intrinsic_value_per_share
+  const ivpsBeta = d.intrinsic_value_beta || 0;  // 参考①: β込みWACC
+  const ivpsRf = d.intrinsic_value_rf || 0;      // 参考②: Rf理論上限
   const upsideRf = d.upside_percent_rf || 0;
+  const upsieBeta = d.upside_percent_beta || 0;
   const currentPrice = d.components?.current_price || 0;
   const upside = d.upside_percent || 0;
   const calcDate = d.calculation_date || '—';
@@ -936,29 +939,37 @@ function render(d) {
   renderChart(dcfType, pvPhase1, pvPhase2, pvHigh, pvTerminal, rpoPV, goPv, alpha, v0);
 
   // 割引率別理論株価の表示（テンプレートリテラル外で安全に処理）
+  // メイン: ivps = Rmβなし（10%）
+  // 参考①: ivpsBeta = β込みWACC
+  // 参考②: ivpsRf = Rf理論上限
   const boxStyle = 'margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)';
   const lblStyle = 'font-size:10px;color:var(--mut);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px';
   const subStyle = 'font-size:10px;color:var(--mut);margin-top:2px';
   const valStyle = 'font-family:var(--mono);font-size:16px;font-weight:700;color:var(--txt)';
+  const rmPct = ((d.wacc?.market_return || 0.10) * 100).toFixed(1);
+  const rfPct = ((d.wacc?.risk_free_rate || 0.043) * 100).toFixed(1);
+  const waccPct = ((d.wacc?.value || 0) * 100).toFixed(2);
 
-  // 左カード: Rmβなし・Rfの理論株価
+  // 左カード: 参考①β込みWACC・参考②Rfを表示
   const rfBlock = document.getElementById('rfValueBlock');
   if (rfBlock) {
     let html = '';
-    if (ivpsRmNoBeta > 0) {
+    if (ivpsBeta > 0) {
+      const diffBeta = ivps - ivpsBeta;
+      const diffBetaSign = diffBeta >= 0 ? '+' : '';
       html +=
         '<div style="' + boxStyle + '">' +
-        '<div style="' + lblStyle + '">② Rm基準・βなし（市場期待リターン ' + (d.wacc?.market_return * 100 || 10).toFixed(1) + '%）</div>' +
-        '<div style="' + valStyle + '">$' + fmt(ivpsRmNoBeta) + '</div>' +
-        '<div style="' + subStyle + '">差額 $' + fmt(Math.abs(ivpsRmNoBeta - ivps)) + ' = βによる調整分</div>' +
+        '<div style="' + lblStyle + '">参考① β込みWACC（' + waccPct + '%）</div>' +
+        '<div style="' + valStyle + '">$' + fmt(ivpsBeta) + '</div>' +
+        '<div style="' + subStyle + '">メインとの差 ' + diffBetaSign + '$' + fmt(diffBeta) + ' = βによる効果</div>' +
         '</div>';
     }
     if (ivpsRf > 0) {
       html +=
         '<div style="' + boxStyle + '">' +
-        '<div style="' + lblStyle + '">③ Rf基準（リスクゼロ理論上限 ' + (d.wacc?.risk_free_rate * 100 || 4.3).toFixed(1) + '%）</div>' +
+        '<div style="' + lblStyle + '">参考② Rf理論上限（' + rfPct + '%）</div>' +
         '<div style="' + valStyle + '">$' + fmt(ivpsRf) + '</div>' +
-        '<div style="' + subStyle + '">差額 $' + fmt(Math.abs(ivpsRf - ivps)) + ' = リスクプレミアム全体</div>' +
+        '<div style="' + subStyle + '">メインとの差 $' + fmt(ivpsRf - ivps) + ' = リスクプレミアム全体</div>' +
         '</div>';
     }
     rfBlock.innerHTML = html;
@@ -966,26 +977,33 @@ function render(d) {
 
   // 右カード: 市場価格との差額分析
   const rmBlock = document.getElementById('rfMarketBlock');
-  if (rmBlock && ivpsRmNoBeta > 0) {
-    const diff1Color = (currentPrice - ivps) >= 0 ? 'var(--red)' : 'var(--grn)';
-    const diff2Color = (currentPrice - ivpsRmNoBeta) >= 0 ? 'var(--red)' : 'var(--grn)';
-    rmBlock.innerHTML =
+  if (rmBlock) {
+    const diff = currentPrice - ivps;
+    const diffColor = diff >= 0 ? 'var(--red)' : 'var(--grn)';
+    const diffSign = diff >= 0 ? '+' : '';
+    let html =
       '<div style="' + boxStyle + '">' +
-      '<div style="' + lblStyle + '">差額分析</div>' +
-      '<div style="font-size:11px;margin-top:4px">' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
-      '<span style="color:var(--mut)">市場価格 - ①β込み</span>' +
-      '<span style="font-family:var(--mono);font-weight:700;color:' + diff1Color + '">$' + fmt(Math.abs(currentPrice - ivps)) + '</span>' +
+      '<div style="' + lblStyle + '">差額分析（市場価格 - メイン理論株価）</div>' +
+      '<div style="font-family:var(--mono);font-size:20px;font-weight:700;color:' + diffColor + ';margin:4px 0">' +
+      diffSign + '$' + fmt(Math.abs(diff)) +
       '</div>' +
-      '<div style="display:flex;justify-content:space-between;margin-bottom:3px">' +
-      '<span style="color:var(--mut)">市場価格 - ②βなし</span>' +
-      '<span style="font-family:var(--mono);font-weight:700;color:' + diff2Color + '">$' + fmt(Math.abs(currentPrice - ivpsRmNoBeta)) + '</span>' +
-      '</div>' +
-      '<div style="border-top:1px solid var(--bdr);margin-top:4px;padding-top:4px;color:var(--mut);font-size:10px">' +
-      '①→②の差: βによる割引 ②以上の市場価格: 固有の期待価値' +
-      '</div>' +
-      '</div>' +
-      '</div>';
+      '<div style="' + subStyle + '">FCFで説明できない市場の評価</div>';
+    if (ivpsBeta > 0) {
+      const diffB = currentPrice - ivpsBeta;
+      const diffBColor = diffB >= 0 ? 'var(--red)' : 'var(--grn)';
+      html +=
+        '<div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px;font-size:11px">' +
+        '<div style="display:flex;justify-content:space-between;margin-bottom:2px">' +
+        '<span style="color:var(--mut)">vs β込みWACC</span>' +
+        '<span style="font-family:var(--mono);color:' + diffBColor + '">' + (diffB >= 0 ? '+' : '') + '$' + fmt(Math.abs(diffB)) + '</span>' +
+        '</div>' +
+        '<div style="display:flex;justify-content:space-between">' +
+        '<span style="color:var(--mut)">βの効果（メイン - β込み）</span>' +
+        '<span style="font-family:var(--mono);color:var(--mut)">' + (ivps - ivpsBeta >= 0 ? '+' : '') + '$' + fmt(ivps - ivpsBeta) + '</span>' +
+        '</div></div>';
+    }
+    html += '</div>';
+    rmBlock.innerHTML = html;
   }
 }
 
