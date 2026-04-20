@@ -1,8 +1,8 @@
 {
   "intrinsic_value_pt": 14220877597.422676,
-  "intrinsic_value_per_share": 54.230036745855244,
-  "intrinsic_value_rm_no_beta": 35.02,
-  "upside_percent_rm_no_beta": -0.6,
+  "intrinsic_value_per_share": 35.02217285124624,
+  "intrinsic_value_beta": 54.23,
+  "upside_percent_beta": 53.8,
   "intrinsic_value_rf": 210.9,
   "upside_percent_rf": 498.3,
   "v0": 7110438798.711338,
@@ -10,11 +10,11 @@
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 68.47,
-    "2年後": 86.44,
-    "3年後": 109.13
+    "1年後": 44.22,
+    "2年後": 55.82,
+    "3年後": 70.48
   },
-  "upside_percent": 53.8,
+  "upside_percent": -0.6,
   "calculation_date": "2026-04-20",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -290,8 +290,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": true,
-        "detail": "(V₀ $7.11B + RPO $0.00B + GO $0.00B) × (1+1.000) / 0.257B + BS $-1.11/株 = $54.23 (差異0.00%)"
+        "pass": false,
+        "detail": "(V₀ $7.11B + RPO $0.00B + GO $0.00B) × (1+1.000) / 0.257B + BS $-1.11/株 = $54.23 (差異54.84%)"
       },
       "dcf_components": {
         "pass": true,
@@ -306,8 +306,8 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "PASS",
-    "ai_comment": "Inconsistency in per share value detected.",
-    "ai_concerns": "Intrinsic value per share (54.23) does not align with calculated value, indicating potential error in final per-share computation."
+    "overall": "WARN",
+    "ai_comment": "Inconsistency in per-share value calculation",
+    "ai_concerns": "Anomaly in intrinsic value per share (55.31 calculated vs. 35.02 reported), suggesting potential error in final per-share computation."
   }
 }
