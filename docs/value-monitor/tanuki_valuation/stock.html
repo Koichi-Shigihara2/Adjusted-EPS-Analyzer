@@ -276,6 +276,8 @@ async function loadData() {
 
 function render(d) {
   const ivps = d.intrinsic_value_per_share || 0;
+  const ivpsRf = d.intrinsic_value_rf || 0;
+  const upsideRf = d.upside_percent_rf || 0;
   const currentPrice = d.components?.current_price || 0;
   const upside = d.upside_percent || 0;
   const calcDate = d.calculation_date || '—';
@@ -416,6 +418,18 @@ function render(d) {
             📊 WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span>
             <span class="beta">β=${beta.toFixed(2)}</span>
           </div>
+          ${ivpsRf > 0 ? `
+          <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)">
+            <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">
+              Rf基準（リスクゼロ想定）
+            </div>
+            <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt)">
+              $${fmt(ivpsRf)}
+            </div>
+            <div style="font-size:10px;color:var(--mut);margin-top:2px">
+              差額 $${fmt(Math.abs(ivpsRf - ivps))} = リスクプレミアム相当
+            </div>
+          </div>` : ''}
         </div>
         <div class="value-box">
           <div class="value-label">Current Price</div>
@@ -424,6 +438,18 @@ function render(d) {
           <div class="upside-badge ${upside >= 0 ? 'positive' : 'negative'}" id="displayUpside">
             ${upside >= 0 ? '▲' : '▼'} ${Math.abs(upside).toFixed(1)}%
           </div>
+          ${ivpsRf > 0 ? `
+          <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)">
+            <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">
+              市場価格 vs Rm基準
+            </div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${(currentPrice - ivps) >= 0 ? 'var(--red)' : 'var(--grn)'}">
+              差額 $${fmt(Math.abs(currentPrice - ivps))}
+            </div>
+            <div style="font-size:10px;color:var(--mut);margin-top:2px">
+              FCF以外の価値（期待・独占等）
+            </div>
+          </div>` : ''}
         </div>
       </div>
 
