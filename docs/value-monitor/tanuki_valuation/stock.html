@@ -418,18 +418,7 @@ function render(d) {
             📊 WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span>
             <span class="beta">β=${beta.toFixed(2)}</span>
           </div>
-          ${ivpsRf > 0 ? `
-          <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)">
-            <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">
-              Rf基準（リスクゼロ想定）
-            </div>
-            <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt)">
-              $${fmt(ivpsRf)}
-            </div>
-            <div style="font-size:10px;color:var(--mut);margin-top:2px">
-              差額 $${fmt(Math.abs(ivpsRf - ivps))} = リスクプレミアム相当
-            </div>
-          </div>` : ''}
+          <div id="rfValueBlock"></div>
         </div>
         <div class="value-box">
           <div class="value-label">Current Price</div>
@@ -438,18 +427,7 @@ function render(d) {
           <div class="upside-badge ${upside >= 0 ? 'positive' : 'negative'}" id="displayUpside">
             ${upside >= 0 ? '▲' : '▼'} ${Math.abs(upside).toFixed(1)}%
           </div>
-          ${ivpsRf > 0 ? `
-          <div style="margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)">
-            <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">
-              市場価格 vs Rm基準
-            </div>
-            <div style="font-family:var(--mono);font-size:14px;font-weight:700;color:${(currentPrice - ivps) >= 0 ? 'var(--red)' : 'var(--grn)'}">
-              差額 $${fmt(Math.abs(currentPrice - ivps))}
-            </div>
-            <div style="font-size:10px;color:var(--mut);margin-top:2px">
-              FCF以外の価値（期待・独占等）
-            </div>
-          </div>` : ''}
+          <div id="rfMarketBlock"></div>
         </div>
       </div>
 
@@ -513,29 +491,25 @@ function render(d) {
 
           const yearLabels = Object.keys(futureVals);
 
-          return `
-          <table class="future-table">
-            <thead>
-              <tr>
-                <th class="scenario-header">シナリオ / 成長率</th>
-                <th>現在</th>
-                ${yearLabels.map(k => `<th>${k}</th>`).join('')}
-              </tr>
-            </thead>
-            <tbody>
-              ${scenarios.map(sc => {
-                const vals = projectFuture(ivps, sc.rate);
-                return `
-                <tr class="${sc.cls === 'base' ? 'base-row' : ''}">
-                  <td class="scenario-name ${sc.cls}">${sc.label}<br>
-                    <span style="font-size:10px;font-weight:400;opacity:.7;">${fmtPct(sc.rate)}</span>
-                  </td>
-                  <td class="current-val">$${fmt(ivps)}</td>
-                  ${vals.map(v => `<td>$${fmt(v)}</td>`).join('')}
-                </tr>`;
-              }).join('')}
-            </tbody>
-          </table>`;
+          // テンプレートリテラルの入れ子を避け文字列連結で構築
+          const thYears = yearLabels.map(k => '<th>' + k + '</th>').join('');
+          const tbRows = scenarios.map(sc => {
+            const vals = projectFuture(ivps, sc.rate);
+            const tds = vals.map(v => '<td>$' + fmt(v) + '</td>').join('');
+            const trCls = sc.cls === 'base' ? 'base-row' : '';
+            return '<tr class="' + trCls + '">' +
+              '<td class="scenario-name ' + sc.cls + '">' + sc.label + '<br>' +
+              '<span style="font-size:10px;font-weight:400;opacity:.7;">' + fmtPct(sc.rate) + '</span></td>' +
+              '<td class="current-val">$' + fmt(ivps) + '</td>' +
+              tds + '</tr>';
+          }).join('');
+          return '<table class="future-table">' +
+            '<thead><tr>' +
+            '<th class="scenario-header">シナリオ / 成長率</th>' +
+            '<th>現在</th>' + thYears +
+            '</tr></thead>' +
+            '<tbody>' + tbRows + '</tbody>' +
+            '</table>';
         })()}
       </div>
     </div>
@@ -801,7 +775,7 @@ function render(d) {
                 FCF実力推定（調整済みEPS基準）
                 ${fcfEstApplied
                   ? (fcfEstWarning
-                      ? \`<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 乖離 \${fcfEstRatio.toFixed(1)}x</span>\`
+                      ? '<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 乖離 ' + fcfEstRatio.toFixed(1) + 'x</span>'
                       : '<span style="color:var(--grn);font-size:10px;margin-left:6px">適用済</span>')
                   : '<span style="color:var(--mut);font-size:10px;margin-left:6px">フォールバック</span>'}
               </span>
@@ -819,45 +793,31 @@ function render(d) {
               <p class="formula-desc">SBC・ファイナンスリース等のノイズを除いた調整済み純利益から、<br>
               セクター固有のFCF転換率を用いてFCF実力値を推定します。</p>
             </div>
-            ${fcfEstApplied ? \`
-            <div class="inputs-grid">
-              <div class="input-item">
-                <span class="input-label">調整済み純利益</span>
-                <span class="input-value highlight">\${fmtB(fcfEstAdjNi)}</span>
-              </div>
-              <div class="input-item">
-                <span class="input-label">FCF転換率（セクター）</span>
-                <span class="input-value">\${(fcfEstConvRate * 100).toFixed(0)}%</span>
-              </div>
-              <div class="input-item">
-                <span class="input-label">推定FCF</span>
-                <span class="input-value highlight" style="color:var(--grn)">\${fmtB(fcfEstEstimated)}</span>
-              </div>
-              <div class="input-item">
-                <span class="input-label">生FCF（従来）</span>
-                <span class="input-value">\${fmtB(fcfEstRawFcf)}</span>
-              </div>
-            </div>
-            \${fcfEstWarning ? \`
-            <div class="inputs-grid" style="margin-top:12px">
-              <div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">
-                <span class="input-label" style="color:var(--yellow);font-size:12px">
-                  ⚠ 大幅乖離の警告（\${fcfEstRatio.toFixed(1)}倍）
-                </span>
-                <span class="input-value" style="color:var(--yellow);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">\${fcfEstWarning}</span>
-              </div>
-            </div>
-            \` : ''}
-            \` : \`
-            <div class="inputs-grid">
-              <div class="input-item" style="grid-column:1/-1">
-                <span class="input-label" style="color:var(--mut)">\${fcfEstNote}</span>
-              </div>
-            </div>
-            \`}
+            ${(() => {
+              if (fcfEstApplied) {
+                let html = '<div class="inputs-grid">' +
+                  '<div class="input-item"><span class="input-label">調整済み純利益</span><span class="input-value highlight">' + fmtB(fcfEstAdjNi) + '</span></div>' +
+                  '<div class="input-item"><span class="input-label">FCF転換率（セクター）</span><span class="input-value">' + (fcfEstConvRate * 100).toFixed(0) + '%</span></div>' +
+                  '<div class="input-item"><span class="input-label">推定FCF</span><span class="input-value highlight" style="color:var(--grn)">' + fmtB(fcfEstEstimated) + '</span></div>' +
+                  '<div class="input-item"><span class="input-label">生FCF（従来）</span><span class="input-value">' + fmtB(fcfEstRawFcf) + '</span></div>' +
+                  '</div>';
+                if (fcfEstWarning) {
+                  html += '<div class="inputs-grid" style="margin-top:12px">' +
+                    '<div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">' +
+                    '<span class="input-label" style="color:var(--yellow);font-size:12px">⚠ 大幅乖離の警告（' + fcfEstRatio.toFixed(1) + '倍）</span>' +
+                    '<span class="input-value" style="color:var(--yellow);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">' + fcfEstWarning + '</span>' +
+                    '</div></div>';
+                }
+                return html;
+              } else {
+                return '<div class="inputs-grid"><div class="input-item" style="grid-column:1/-1">' +
+                  '<span class="input-label" style="color:var(--mut)">' + fcfEstNote + '</span>' +
+                  '</div></div>';
+              }
+            })()}
           </div>
         </div>
-        \` : ''}
+        ` : ''}
 
         <!-- Step: BS評価補正（条件付き） -->
         ${bsApplied ? `
@@ -973,6 +933,33 @@ function render(d) {
   `;
 
   renderChart(dcfType, pvPhase1, pvPhase2, pvHigh, pvTerminal, rpoPV, goPv, alpha, v0);
+
+  // Rfベース理論株価の表示（テンプレートリテラル外で安全に処理）
+  if (ivpsRf > 0) {
+    const boxStyle = 'margin-top:10px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)';
+    const lblStyle = 'font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px';
+    const subStyle = 'font-size:10px;color:var(--mut);margin-top:2px';
+
+    const rfBlock = document.getElementById('rfValueBlock');
+    if (rfBlock) {
+      rfBlock.innerHTML =
+        '<div style="' + boxStyle + '">' +
+        '<div style="' + lblStyle + '">Rf基準（リスクゼロ想定）</div>' +
+        '<div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt)">$' + fmt(ivpsRf) + '</div>' +
+        '<div style="' + subStyle + '">差額 $' + fmt(Math.abs(ivpsRf - ivps)) + ' = リスクプレミアム相当</div>' +
+        '</div>';
+    }
+    const rmBlock = document.getElementById('rfMarketBlock');
+    if (rmBlock) {
+      const diffColor = (currentPrice - ivps) >= 0 ? 'var(--red)' : 'var(--grn)';
+      rmBlock.innerHTML =
+        '<div style="' + boxStyle + '">' +
+        '<div style="' + lblStyle + '">市場価格 vs Rm基準</div>' +
+        '<div style="font-family:var(--mono);font-size:14px;font-weight:700;color:' + diffColor + '">差額 $' + fmt(Math.abs(currentPrice - ivps)) + '</div>' +
+        '<div style="' + subStyle + '">FCF以外の価値（期待・独占等）</div>' +
+        '</div>';
+    }
+  }
 }
 
 function fmtBaseLabel(method) {
