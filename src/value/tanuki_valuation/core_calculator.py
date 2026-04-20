@@ -313,6 +313,52 @@ class KoichiValuationCalculator:
             current_price=current_price
         )
 
+        # ── STEP 10b: Rfベース理論株価（参照用）v7.3 ──
+        # 割引率をRf（リスクフリーレート）で再計算
+        # 目的: 市場価格との差額分析で「FCFで説明できない価値」を分離する
+        _rf = wacc_result.risk_free_rate  # 通常4.3%
+        _rm = wacc_result.market_return   # 通常10.0%
+
+        # Rfで同じDCF計算を実行
+        if dcf_type == "three_stage" and maturity_profile:
+            _p1 = maturity_profile["phase1"]
+            _p2 = maturity_profile["phase2"]
+            _rf_dcf = calculate_three_stage_dcf(
+                base_fcf=base_fcf,
+                phase1_growth_rate=_p1["growth"] if _p1["growth"] is not None else high_growth_rate,
+                phase2_growth_rate=_p2["growth"],
+                wacc=_rf,
+                phase1_years=_p1["years"],
+                phase2_years=_p2["years"],
+                terminal_growth=terminal_growth,
+            )
+            _v0_rf = _rf_dcf.v0
+        else:
+            _rf_dcf = calculate_two_stage_dcf(
+                base_fcf=base_fcf,
+                high_growth_rate=high_growth_rate,
+                wacc=_rf,
+                high_growth_years=self.high_growth_years,
+                terminal_growth=terminal_growth,
+            )
+            _v0_rf = _rf_dcf.v0
+
+        _v0_adj_rf, _ivpt_rf = calculate_intrinsic_value(
+            v0=_v0_rf, rpo_pv=rpo_pv, alpha=alpha,
+            growth_option_pv=growth_option_pv
+        )
+        _ivps_rf = (
+            calculate_per_share_value(
+                intrinsic_value_pt=_ivpt_rf,
+                diluted_shares=diluted_shares
+            )
+            + bs_adjustment.net_cash_per_share
+        )
+        _upside_rf = calculate_upside(
+            intrinsic_value_per_share=_ivps_rf,
+            current_price=current_price
+        )
+
         # ── STEP 10: 感度分析 ──
         # Phase2パラメータを取得（3段階DCFの場合）
         _phase2_growth = None
@@ -390,6 +436,9 @@ class KoichiValuationCalculator:
         result = {
             "intrinsic_value_pt": float(intrinsic_value_pt),
             "intrinsic_value_per_share": float(intrinsic_value_per_share),
+            # Rfベース理論株価（v7.3: 差額分析用）
+            "intrinsic_value_rf": round(float(_ivps_rf), 2),
+            "upside_percent_rf": round(_upside_rf, 1),
             "v0": float(v0),
             "v0_adjusted": float(v0_adjusted),
             "alpha": float(alpha),
