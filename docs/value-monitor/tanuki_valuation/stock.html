@@ -41,11 +41,20 @@
       padding: 16px 0; border-bottom: 1px solid var(--bdr);
       position: sticky; top: 0; background: var(--bg); z-index: 100;
     }
+    /* ロゴ */
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 8px var(--acc); animation: pulse-dot 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+    .logo-text { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--txt); letter-spacing: .08em; }
+    .logo-accent { color: var(--acc); }
+    .hdr-l { display: flex; align-items: center; gap: 20px; }
+
     .back-link {
-      font-family: var(--mono); font-size: 12px; color: var(--acc);
+      font-family: var(--mono); font-size: 12px; color: var(--mut);
       text-decoration: none; display: flex; align-items: center; gap: 6px;
+      border-left: 1px solid var(--bdr); padding-left: 20px;
     }
-    .back-link:hover { text-decoration: underline; }
+    .back-link:hover { color: var(--acc); }
     .header-right { font-family: var(--mono); font-size: 10px; color: var(--mut); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .nav-links { display: flex; gap: 14px; flex-wrap: wrap; }
     .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .06em; padding: 4px 0; border-bottom: 1px solid transparent; transition: all .2s; }
@@ -389,7 +398,13 @@ function render(d) {
 
   document.getElementById('app').innerHTML = `
     <header>
-      <a href="index.html" class="back-link">← BACK TO LIST</a>
+      <div class="hdr-l">
+        <a href="index.html" class="logo">
+          <span class="logo-dot"></span>
+          <span class="logo-text">TANUKI<span class="logo-accent">VALUATION</span></span>
+        </a>
+        <a href="index.html" class="back-link">← BACK TO LIST</a>
+      </div>
       <div class="header-right">
         <nav class="nav-links">
           <a href="../../">HOME</a>
@@ -431,27 +446,23 @@ function render(d) {
         </div>
       </div>
 
-      <!-- WACC感度表示（β込みWACC・スライダー連動） -->
-      <div style="margin:0 0 16px;padding:12px 16px;background:var(--sur2);border-radius:8px;border:1px solid var(--bdr);display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-        <div>
-          <div style="font-size:10px;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px">β込みWACC感度</div>
-          <div style="display:flex;align-items:baseline;gap:6px">
-            <span style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--acc)" id="displayIvps">$${fmt(ivpsBeta > 0 ? ivpsBeta : ivps)}</span>
-            <span style="font-size:11px;color:var(--mut)">WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span> β=${beta.toFixed(2)}</span>
-          </div>
-          <div style="font-size:10px;color:var(--mut);margin-top:2px">スライダーで感度確認</div>
-        </div>
-      </div>
 
       <div class="sensitivity-section">
         <div class="sensitivity-header">
           <div class="sensitivity-title">📈 SENSITIVITY ANALYSIS</div>
-          <div class="wacc-slider-container">
-            <span class="wacc-slider-label">WACC調整:</span>
-            <input type="range" class="wacc-slider" id="waccSlider"
-                   min="-2" max="2" step="0.5" value="0"
-                   oninput="updateWacc(this.value)">
-            <span class="wacc-slider-value" id="waccDeltaDisplay">±0%</span>
+          <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+            <div style="font-size:11px;color:var(--mut);font-family:var(--mono)">
+              β込みWACC:
+              <span style="color:var(--acc);font-weight:700" id="displayIvps">$${fmt(ivpsBeta > 0 ? ivpsBeta : ivps)}</span>
+              <span style="color:var(--mut);font-size:10px">（WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span> β=${beta.toFixed(2)}）</span>
+            </div>
+            <div class="wacc-slider-container">
+              <span class="wacc-slider-label">WACC調整:</span>
+              <input type="range" class="wacc-slider" id="waccSlider"
+                     min="-2" max="2" step="0.5" value="0"
+                     oninput="updateWacc(this.value)">
+              <span class="wacc-slider-value" id="waccDeltaDisplay">±0%</span>
+            </div>
           </div>
         </div>
 
