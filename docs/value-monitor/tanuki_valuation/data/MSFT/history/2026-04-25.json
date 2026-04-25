@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 6344926690262.1045,
-  "intrinsic_value_per_share": 791.0029408316906,
-  "intrinsic_value_beta": 860.2,
-  "upside_percent_beta": 102.6,
-  "intrinsic_value_rf": 4275.51,
-  "upside_percent_rf": 906.9,
-  "v0": 2865808226638.9473,
-  "v0_adjusted": 3172463345131.0522,
+  "intrinsic_value_pt": 6287171013347.071,
+  "intrinsic_value_per_share": 783.9765446486828,
+  "intrinsic_value_beta": 852.43,
+  "upside_percent_beta": 100.8,
+  "intrinsic_value_rf": 4230.75,
+  "upside_percent_rf": 896.4,
+  "v0": 2836930388181.4307,
+  "v0_adjusted": 3143585506673.5356,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 986.82,
-    "2年後": 1132.08,
-    "3年後": 1298.72
+    "1年後": 975.78,
+    "2年後": 1116.97,
+    "3年後": 1278.6
   },
-  "upside_percent": 86.3,
+  "upside_percent": 84.6,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        874.35,
-        1023.04,
-        1189.57
+        869.41,
+        1013.52,
+        1174.22
       ],
       [
-        745.13,
-        864.19,
-        995.11
+        741.03,
+        856.38,
+        982.67
       ],
       [
-        651.12,
-        748.93,
-        854.55
+        647.62,
+        742.36,
+        844.2
       ]
     ],
     "wacc_values": [
@@ -58,28 +58,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.1472,
+      "rate": 0.1447,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.1472,
-      "fiscal_year": "FY2024",
+      "weighted_growth": 0.1447,
+      "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.103,
-      "intrinsic_value_per_share": 732.18
+      "growth_rate": 0.101,
+      "intrinsic_value_per_share": 727.49
     },
     "base": {
-      "growth_rate": 0.147,
-      "intrinsic_value_per_share": 860.2
+      "growth_rate": 0.145,
+      "intrinsic_value_per_share": 852.43
     },
     "bull": {
-      "growth_rate": 0.177,
-      "intrinsic_value_per_share": 956.74
+      "growth_rate": 0.174,
+      "intrinsic_value_per_share": 946.47
     }
   },
   "growth_options": {
@@ -96,7 +96,7 @@
         "delay_years": 3,
         "expected_fcf": 3919999999.9999995,
         "pv": 2577463631.133394,
-        "note": "M365 Copilotの企業採用拡大。Officeの自然延長。"
+        "note": "M365 Copilotの企業向け拡大。"
       }
     ]
   },
@@ -113,51 +113,51 @@
     "terminal_growth": 0.03
   },
   "dcf_components": {
-    "v0": 2865808226638.9473,
-    "pv_phase1": 536283009149.08527,
-    "pv_phase2": 565417533837.1292,
-    "pv_high_growth": 1101700542986.2144,
-    "pv_terminal": 1764107683652.7332,
+    "v0": 2836930388181.4307,
+    "pv_phase1": 532677510171.60767,
+    "pv_phase2": 559283483964.7281,
+    "pv_high_growth": 1091960994136.3358,
+    "pv_terminal": 1744969394045.0947,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.1472,
-        "fcf": 106558353487.56783,
+        "growth_rate": 0.1447,
+        "fcf": 106326139502.45718,
         "discount_factor": 1.0943,
-        "pv": 97375814207.77467
+        "pv": 97163610986.43625
       },
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.1472,
-        "fcf": 122243743120.9378,
+        "growth_rate": 0.1447,
+        "fcf": 121711531888.46274,
         "discount_factor": 1.1974924900000001,
-        "pv": 102083097924.8461
+        "pv": 101638659870.39528
       },
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.1472,
-        "fcf": 140238022108.33984,
+        "growth_rate": 0.1447,
+        "fcf": 139323190552.7233,
         "discount_factor": 1.3104160318070002,
-        "pv": 107017938352.72177
+        "pv": 106319815364.74594
       },
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.1472,
-        "fcf": 160881058962.68747,
+        "growth_rate": 0.1447,
+        "fcf": 159483256225.70236,
         "discount_factor": 1.4339882636064003,
-        "pv": 112191335902.6249
+        "pv": 111216570088.6637
       },
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.1472,
-        "fcf": 184562750841.99506,
+        "growth_rate": 0.1447,
+        "fcf": 182560483401.5615,
         "discount_factor": 1.569213356864484,
-        "pv": 117614822761.11786
+        "pv": 116338853861.36646
       }
     ],
     "phase2_detail": [
@@ -165,45 +165,45 @@
         "year": 6,
         "phase": "phase2",
         "growth_rate": 0.08,
-        "fcf": 199327770909.35468,
+        "fcf": 197165322073.68643,
         "discount_factor": 1.717190176416805,
-        "pv": 116077865833.87305
+        "pv": 114818570931.4409
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.08,
-        "fcf": 215273992582.10306,
+        "fcf": 212938547839.58136,
         "discount_factor": 1.8791212100529098,
-        "pv": 114560993420.98409
+        "pv": 113318154624.8343
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.08,
-        "fcf": 232495911988.67133,
+        "fcf": 229973631666.7479,
         "discount_factor": 2.056322340160899,
-        "pv": 113063943063.7511
+        "pv": 111837345330.18465
       },
       {
         "year": 9,
         "phase": "phase2",
         "growth_rate": 0.08,
-        "fcf": 251095584947.76505,
+        "fcf": 248371522200.08774,
         "discount_factor": 2.250233536838072,
-        "pv": 111586455733.20953
+        "pv": 110375886828.65706
       },
       {
         "year": 10,
         "phase": "phase2",
         "growth_rate": 0.08,
-        "fcf": 271183231743.58627,
+        "fcf": 268241243976.0948,
         "discount_factor": 2.4624305593619025,
-        "pv": 110128275785.31143
+        "pv": 108933526249.61128
       }
     ],
-    "terminal_fcf": 279318728695.89386,
-    "terminal_value": 4343992670231.63,
+    "terminal_fcf": 276288481295.3776,
+    "terminal_value": 4296865961047.863,
     "dcf_type": "three_stage"
   },
   "fcf_base": {
@@ -269,9 +269,9 @@
     },
     "segments": {
       "Intelligent Cloud": {
-        "weight": 0.44,
+        "weight": 0.38,
         "config_growth": 0.22,
-        "note": "Azure, Server products, Enterprise services",
+        "note": "Azure, Server products. AI workload acceleration.",
         "revenue": {
           "FY2023": 87907000000.0,
           "FY2024": 105362000000.0,
@@ -306,9 +306,9 @@
         }
       },
       "Productivity and Business Processes": {
-        "weight": 0.32,
+        "weight": 0.43,
         "config_growth": 0.12,
-        "note": "Office 365, LinkedIn, Dynamics",
+        "note": "Office 365, LinkedIn, Dynamics. Copilot upsell.",
         "revenue": {
           "FY2023": 69274000000.0,
           "FY2024": 77728000000.0,
@@ -343,9 +343,9 @@
         }
       },
       "More Personal Computing": {
-        "weight": 0.24,
+        "weight": 0.19,
         "config_growth": 0.05,
-        "note": "Windows, Xbox, Surface, Search",
+        "note": "Windows, Xbox, Surface, Search. Mature segment.",
         "revenue": {
           "FY2023": 54734000000.0,
           "FY2024": 62032000000.0,
@@ -406,11 +406,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Cloud_Services)",
-    "high_growth_rate_used": 0.1472,
+    "high_growth_rate_used": 0.1447,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1101700542986.2144,
-    "pv_terminal": 1764107683652.7332,
+    "pv_high": 1091960994136.3358,
+    "pv_terminal": 1744969394045.0947,
     "roe_used": 0.33282252757802594,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 304077654860.9719,
@@ -423,11 +423,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $2865.81B + RPO $304.08B + GO $2.58B) × (1+1.000) / 7.432B + BS $+6.51/株 = $860.20 (差異0.00%)"
+        "detail": "(V₀ $2836.93B + RPO $304.08B + GO $2.58B) × (1+1.000) / 7.432B + BS $+6.51/株 = $852.43 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $536.28B + P2 $565.42B + TV $1764.11B = $2865.81B (差異0.00%)"
+        "detail": "3段階: P1 $532.68B + P2 $559.28B + TV $1744.97B = $2836.93B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -439,6 +439,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "One check failed due to per share inconsistency."
+    "ai_comment": "Minor inconsistency in share calculation; otherwise valid."
   }
 }

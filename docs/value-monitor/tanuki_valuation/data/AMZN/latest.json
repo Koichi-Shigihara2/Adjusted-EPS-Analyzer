@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 609643481696.1434,
-  "intrinsic_value_per_share": 66.59942755651802,
-  "intrinsic_value_beta": 61.69,
-  "upside_percent_beta": -76.6,
-  "intrinsic_value_rf": 360.16,
-  "upside_percent_rf": 36.4,
-  "v0": 332774550166.374,
-  "v0_adjusted": 353560971744.8059,
+  "intrinsic_value_pt": 613179276901.7285,
+  "intrinsic_value_per_share": 66.96094934598847,
+  "intrinsic_value_beta": 62.01,
+  "upside_percent_beta": -76.5,
+  "intrinsic_value_rf": 362.49,
+  "upside_percent_rf": 37.3,
+  "v0": 334825124356.5536,
+  "v0_adjusted": 355611545934.9855,
   "alpha": 0.724295186449972,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 68.96,
-    "2年後": 77.09,
-    "3年後": 86.18
+    "1年後": 69.41,
+    "2年後": 77.7,
+    "3年後": 86.98
   },
-  "upside_percent": -74.8,
+  "upside_percent": -74.6,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        63.82,
-        70.57,
-        77.59
+        64.03,
+        70.96,
+        78.18
       ],
       [
-        55.97,
-        61.45,
-        67.05
+        56.15,
+        61.78,
+        67.54
       ],
       [
-        49.97,
-        54.5,
-        59.05
+        50.13,
+        54.78,
+        59.46
       ]
     ],
     "wacc_values": [
@@ -58,28 +58,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.1179,
+      "rate": 0.11939999999999999,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.1179,
-      "fiscal_year": "FY2024",
+      "weighted_growth": 0.11939999999999999,
+      "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.083,
-      "intrinsic_value_per_share": 54.41
+      "growth_rate": 0.084,
+      "intrinsic_value_per_share": 54.61
     },
     "base": {
-      "growth_rate": 0.118,
-      "intrinsic_value_per_share": 61.69
+      "growth_rate": 0.119,
+      "intrinsic_value_per_share": 62.01
     },
     "bull": {
-      "growth_rate": 0.141,
-      "intrinsic_value_per_share": 67.05
+      "growth_rate": 0.143,
+      "intrinsic_value_per_share": 67.48
     }
   },
   "growth_options": {
@@ -96,7 +96,7 @@
         "delay_years": 4,
         "expected_fcf": 900000000.0,
         "pv": 514577921.03373003,
-        "note": "Alexa+の有料化・企業向け展開。"
+        "note": "Alexa+の有料転換と企業向け展開。"
       }
     ]
   },
@@ -113,51 +113,51 @@
     "terminal_growth": 0.03
   },
   "dcf_components": {
-    "v0": 332774550166.374,
-    "pv_phase1": 70551971597.19215,
-    "pv_phase2": 71001231606.5269,
-    "pv_high_growth": 141553203203.71906,
-    "pv_terminal": 191221346962.65497,
+    "v0": 334825124356.5536,
+    "pv_phase1": 70838564943.08351,
+    "pv_phase2": 71478859479.60396,
+    "pv_high_growth": 142317424422.68747,
+    "pv_terminal": 192507699933.86612,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.1179,
-        "fcf": 15261347220.000002,
+        "growth_rate": 0.11939999999999999,
+        "fcf": 15281824920.0,
         "discount_factor": 1.1057000000000001,
-        "pv": 13802430333.725243
+        "pv": 13820950456.724245
       },
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.1179,
-        "fcf": 17060660057.238005,
+        "growth_rate": 0.11939999999999999,
+        "fcf": 17106474815.448,
         "discount_factor": 1.2225724900000003,
-        "pv": 13954722682.528215
+        "pv": 13992196745.280924
       },
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.1179,
-        "fcf": 19072111877.986366,
+        "growth_rate": 0.11939999999999999,
+        "fcf": 19148987908.41249,
         "discount_factor": 1.3517984021930005,
-        "pv": 14108695384.641666
+        "pv": 14165564833.741037
       },
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.1179,
-        "fcf": 21320713868.400963,
+        "growth_rate": 0.11939999999999999,
+        "fcf": 21435377064.67694,
         "discount_factor": 1.4946834933048008,
-        "pv": 14264366980.637533
+        "pv": 14341081011.928837
       },
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.1179,
-        "fcf": 23834426033.48544,
+        "growth_rate": 0.11939999999999999,
+        "fcf": 23994761086.199368,
         "discount_factor": 1.6526715385471185,
-        "pv": 14421756215.65949
+        "pv": 14518771895.408463
       }
     ],
     "phase2_detail": [
@@ -165,45 +165,45 @@
         "year": 6,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 26217868636.833984,
+        "fcf": 26394237194.819305,
         "discount_factor": 1.827358920171549,
-        "pv": 14347410542.846558
+        "pv": 14443926096.54455
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 28839655500.517384,
+        "fcf": 29033660914.30124,
         "discount_factor": 2.020510758033682,
-        "pv": 14273448129.810268
+        "pv": 14369466135.659767
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 31723621050.569126,
+        "fcf": 31937027005.731365,
         "discount_factor": 2.2340787451578423,
-        "pv": 14199867000.806091
+        "pv": 14295390023.71868
       },
       {
         "year": 9,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 34895983155.626045,
+        "fcf": 35130729706.304504,
         "discount_factor": 2.4702208685210265,
-        "pv": 14126665190.27467
+        "pv": 14221695781.939537
       },
       {
         "year": 10,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 38385581471.18865,
+        "fcf": 38643802676.93496,
         "discount_factor": 2.7313232143236994,
-        "pv": 14053840742.789305
+        "pv": 14148381441.741423
       }
     ],
-    "terminal_fcf": 39537148915.32431,
-    "terminal_value": 522287304033.3461,
+    "terminal_fcf": 39803116757.24301,
+    "terminal_value": 525800749765.4294,
     "dcf_type": "three_stage"
   },
   "fcf_base": {
@@ -270,72 +270,96 @@
       "FY2023": 574785000000,
       "FY2024": 637959000000,
       "FY2025": 716924000000,
-      "FY2026_est": 107093260000,
-      "FY2027_est": 126370046800,
-      "FY2028_est": 149116655224
+      "FY2026_est": 641842340000,
+      "FY2027_est": 717883318800,
+      "FY2028_est": 804322789736
     },
     "segments": {
       "North America": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.6,
+        "config_growth": 0.1,
+        "note": "1P + 3P e-commerce, advertising, Prime.",
         "revenue": {
           "FY2023": 279833000000.0,
           "FY2024": 315880000000.0,
-          "FY2025": 352828000000.0
+          "FY2025": 352828000000.0,
+          "FY2026_est": 388110800000,
+          "FY2027_est": 426921880000,
+          "FY2028_est": 469614068000
         },
         "operating_income": {
           "FY2023": 7271000000.0,
           "FY2024": -2847000000.0,
-          "FY2025": 14877000000.0
+          "FY2025": 14877000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "operating_margin": {
           "FY2023": 0.026,
           "FY2024": -0.009,
-          "FY2025": 0.0422
+          "FY2025": 0.0422,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "yoy_growth": {
           "FY2023": null,
           "FY2024": 0.1288,
-          "FY2025": 0.117
+          "FY2025": 0.117,
+          "FY2026_est": 0.1,
+          "FY2027_est": 0.1,
+          "FY2028_est": 0.1
         }
       },
       "International": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.22,
+        "config_growth": 0.09,
+        "note": "Non-US e-commerce. Profitability improving.",
         "revenue": {
           "FY2023": 127787000000.0,
           "FY2024": 118007000000.0,
-          "FY2025": 131200000000.0
+          "FY2025": 131200000000.0,
+          "FY2026_est": 143008000000,
+          "FY2027_est": 155878720000,
+          "FY2028_est": 169907804800
         },
         "operating_income": {
           "FY2023": -924000000.0,
           "FY2024": -7746000000.0,
-          "FY2025": -2656000000.0
+          "FY2025": -2656000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "operating_margin": {
           "FY2023": -0.0072,
           "FY2024": -0.0656,
-          "FY2025": -0.0202
+          "FY2025": -0.0202,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "yoy_growth": {
           "FY2023": null,
           "FY2024": -0.0765,
-          "FY2025": 0.1118
+          "FY2025": 0.1118,
+          "FY2026_est": 0.09,
+          "FY2027_est": 0.09,
+          "FY2028_est": 0.09
         }
       },
       "AWS": {
-        "weight": 0.17,
-        "config_growth": 0.18,
-        "note": "Cloud infrastructure",
+        "weight": 0.18,
+        "config_growth": 0.22,
+        "note": "Cloud infrastructure. Highest margin segment.",
         "revenue": {
           "FY2023": 62202000000.0,
           "FY2024": 80096000000.0,
           "FY2025": 90757000000.0,
-          "FY2026_est": 107093260000,
-          "FY2027_est": 126370046800,
-          "FY2028_est": 149116655224
+          "FY2026_est": 110723540000,
+          "FY2027_est": 135082718800,
+          "FY2028_est": 164800916936
         },
         "operating_income": {
           "FY2023": 18532000000.0,
@@ -357,9 +381,9 @@
           "FY2023": null,
           "FY2024": 0.2877,
           "FY2025": 0.1331,
-          "FY2026_est": 0.18,
-          "FY2027_est": 0.18,
-          "FY2028_est": 0.18
+          "FY2026_est": 0.22,
+          "FY2027_est": 0.22,
+          "FY2028_est": 0.22
         }
       }
     },
@@ -389,11 +413,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Software_Internet)",
-    "high_growth_rate_used": 0.1179,
+    "high_growth_rate_used": 0.11939999999999999,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 141553203203.71906,
-    "pv_terminal": 191221346962.65497,
+    "pv_high": 142317424422.68747,
+    "pv_terminal": 192507699933.86612,
     "roe_used": 0.18228095525657637,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 20271843657.39813,
@@ -406,11 +430,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $332.77B + RPO $20.27B + GO $0.51B) × (1+0.724) / 10.754B + BS $+5.00/株 = $61.69 (差異0.01%)"
+        "detail": "(V₀ $334.83B + RPO $20.27B + GO $0.51B) × (1+0.724) / 10.754B + BS $+5.00/株 = $62.01 (差異0.01%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $70.55B + P2 $71.00B + TV $191.22B = $332.77B (差異0.00%)"
+        "detail": "3段階: P1 $70.84B + P2 $71.48B + TV $192.51B = $334.83B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -422,7 +446,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per-share value detected.",
-    "ai_concerns": "Intrinsic value per share (56.77 vs reported 61.69) shows inconsistency; market price divergence (-74.8%) is notable but not anomalous in isolation."
+    "ai_comment": "一部検証で不一致"
   }
 }

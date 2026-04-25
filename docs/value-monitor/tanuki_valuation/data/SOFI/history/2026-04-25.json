@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 22563885495.33879,
-  "intrinsic_value_per_share": 24.71758515810598,
-  "intrinsic_value_beta": 21.56,
-  "upside_percent_beta": 16.9,
-  "intrinsic_value_rf": 124.67,
-  "upside_percent_rf": 576.1,
-  "v0": 18329311116.13288,
-  "v0_adjusted": 18336231923.557518,
+  "intrinsic_value_pt": 20424543794.153564,
+  "intrinsic_value_per_share": 22.716653734379488,
+  "intrinsic_value_beta": 19.88,
+  "upside_percent_beta": 7.8,
+  "intrinsic_value_rf": 112.35,
+  "upside_percent_rf": 509.3,
+  "v0": 16590804438.957363,
+  "v0_adjusted": 16597725246.381998,
   "alpha": 0.23056283261501426,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 30.9,
-    "2年後": 38.62,
-    "3年後": 48.28
+    "1年後": 24.31,
+    "2年後": 29.74,
+    "3年後": 36.37
   },
-  "upside_percent": 34.0,
+  "upside_percent": 23.2,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        18.69,
-        24.4,
-        31.76
+        17.79,
+        22.43,
+        28.16
       ],
       [
-        16.81,
-        21.65,
-        27.79
+        16.03,
+        19.97,
+        24.74
       ],
       [
-        15.34,
-        19.52,
-        24.72
+        14.65,
+        18.05,
+        22.09
       ]
     ],
     "wacc_values": [
@@ -58,12 +58,30 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.25,
-      "source": "default"
+      "rate": 0.22300000000000003,
+      "source": "segment_weighted"
     },
-    "segment": null
+    "segment": {
+      "enabled": true,
+      "weighted_growth": 0.22300000000000003,
+      "fiscal_year": "FY2025",
+      "source": "segment_config"
+    }
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.156,
+      "intrinsic_value_per_share": 16.29
+    },
+    "base": {
+      "growth_rate": 0.223,
+      "intrinsic_value_per_share": 19.88
+    },
+    "bull": {
+      "growth_rate": 0.268,
+      "intrinsic_value_per_share": 22.73
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -72,43 +90,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 18329311116.13288,
-    "pv_high_growth": 4408747630.595366,
-    "pv_terminal": 13920563485.537516,
+    "v0": 16590804438.957363,
+    "pv_high_growth": 4110101815.363379,
+    "pv_terminal": 12480702623.593985,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 764110039.2280668,
+        "fcf": 747605262.3807406,
         "discount_factor": 1.1114,
-        "pv": 687520280.0324517
+        "pv": 672669841.9837508
       },
       {
         "year": 2,
-        "fcf": 955137549.0350835,
+        "fcf": 914321235.8916459,
         "discount_factor": 1.23520996,
-        "pv": 773259267.6269252
+        "pv": 740215239.1093462
       },
       {
         "year": 3,
-        "fcf": 1193921936.2938545,
+        "fcf": 1118214871.495483,
         "discount_factor": 1.3728123495439999,
-        "pv": 869690556.5355917
+        "pv": 814543132.4732144
       },
       {
         "year": 4,
-        "fcf": 1492402420.3673182,
+        "fcf": 1367576787.8389757,
         "discount_factor": 1.5257436452832014,
-        "pv": 978147557.7375289
+        "pv": 896334578.9227471
       },
       {
         "year": 5,
-        "fcf": 1865503025.4591477,
+        "fcf": 1672546411.5270674,
         "discount_factor": 1.69571148736775,
-        "pv": 1100129968.6628678
+        "pv": 986339022.8743206
       }
     ],
-    "terminal_fcf": 1921468116.222922,
-    "terminal_value": 23605259413.05801
+    "terminal_fcf": 1722722803.8728795,
+    "terminal_value": 21163670809.249134
   },
   "fcf_base": {
     "base_fcf": 49548240.0,
@@ -174,84 +192,120 @@
       "FY2023": 421454000,
       "FY2024": 503123000,
       "FY2025": 619353000,
-      "FY2026_est": null,
-      "FY2027_est": null,
-      "FY2028_est": null
+      "FY2026_est": 2554902050,
+      "FY2027_est": 2864439912,
+      "FY2028_est": 3221437134
     },
     "segments": {
       "Lending": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.49,
+        "config_growth": 0.1,
+        "note": "Student, personal, home loans.",
         "revenue": {
           "FY2023": 0.0,
           "FY2024": 1485222000.0,
-          "FY2025": 1848949000.0
+          "FY2025": 1848949000.0,
+          "FY2026_est": 2033843900,
+          "FY2027_est": 2237228290,
+          "FY2028_est": 2460951119
         },
         "operating_income": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "operating_margin": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "yoy_growth": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": 0.2449
+          "FY2025": 0.2449,
+          "FY2026_est": 0.1,
+          "FY2027_est": 0.1,
+          "FY2028_est": 0.1
         }
       },
       "Technology Platform": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.12,
+        "config_growth": 0.15,
+        "note": "Galileo B2B fintech infrastructure.",
         "revenue": {
           "FY2023": 319845000.0,
           "FY2024": 346185000.0,
-          "FY2025": 355721000.0
+          "FY2025": 355721000.0,
+          "FY2026_est": 409079150,
+          "FY2027_est": 470441022,
+          "FY2028_est": 541007175
         },
         "operating_income": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "operating_margin": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "yoy_growth": {
           "FY2023": null,
           "FY2024": 0.0824,
-          "FY2025": 0.0275
+          "FY2025": 0.0275,
+          "FY2026_est": 0.15,
+          "FY2027_est": 0.15,
+          "FY2028_est": 0.15
         }
       },
       "Financial Services": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.39,
+        "config_growth": 0.4,
+        "note": "SoFi Money, Invest, Credit Card.",
         "revenue": {
           "FY2023": 38443000.0,
           "FY2024": 52129000.0,
-          "FY2025": 79985000.0
+          "FY2025": 79985000.0,
+          "FY2026_est": 111979000,
+          "FY2027_est": 156770600,
+          "FY2028_est": 219478840
         },
         "operating_income": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "operating_margin": {
           "FY2023": null,
           "FY2024": null,
-          "FY2025": null
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
         },
         "yoy_growth": {
           "FY2023": null,
           "FY2024": 0.356,
-          "FY2025": 0.5344
+          "FY2025": 0.5344,
+          "FY2026_est": 0.4,
+          "FY2027_est": 0.4,
+          "FY2028_est": 0.4
         }
       }
     },
@@ -281,11 +335,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Fintech)",
-    "high_growth_rate_used": 0.25,
+    "high_growth_rate_used": 0.22300000000000003,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 4408747630.595366,
-    "pv_terminal": 13920563485.537516,
+    "pv_high": 4110101815.363379,
+    "pv_terminal": 12480702623.593985,
     "roe_used": 0.061154046555506165,
     "fcf_floor_applied": 4318798240.0,
     "rpo_pv": 6920807.424635721,
@@ -298,11 +352,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $18.33B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $21.56 (差異0.00%)"
+        "detail": "(V₀ $16.59B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $19.88 (差異0.01%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $4.41B + pv_terminal $13.92B = $18.33B (差異0.00%)"
+        "detail": "2段階: pv_high $4.11B + pv_terminal $12.48B = $16.59B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -314,6 +368,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Minor inconsistency in pt_shares, but overall valid."
+    "ai_comment": "Per share value inconsistency indicates calculation error.",
+    "ai_concerns": "Anomaly in per-share value: calculated 16.01 vs. reported 19.88. No other obvious anomalies in inputs or α calculation."
   }
 }

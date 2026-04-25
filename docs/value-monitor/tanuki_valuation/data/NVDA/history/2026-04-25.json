@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 11370435407765.412,
-  "intrinsic_value_per_share": 491.4055135298073,
-  "intrinsic_value_beta": 467.87,
-  "upside_percent_beta": 124.6,
-  "intrinsic_value_rf": 3238.24,
-  "upside_percent_rf": 1454.8,
-  "v0": 5681492979829.006,
-  "v0_adjusted": 5685217703882.706,
+  "intrinsic_value_pt": 9931658787751.377,
+  "intrinsic_value_per_share": 429.11982676647006,
+  "intrinsic_value_beta": 408.67,
+  "upside_percent_beta": 96.2,
+  "intrinsic_value_rf": 2814.12,
+  "upside_percent_rf": 1251.2,
+  "v0": 4962104669821.988,
+  "v0_adjusted": 4965829393875.688,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 637.71,
-    "2年後": 869.19,
-    "3年後": 1184.71
+    "1年後": 541.49,
+    "2年後": 717.47,
+    "3年後": 950.65
   },
-  "upside_percent": 135.9,
+  "upside_percent": 106.0,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        348.35,
-        558.65,
-        885.66
+        320.71,
+        487.53,
+        732.68
       ],
       [
-        294.69,
-        466.68,
-        729.33
+        271.4,
+        407.64,
+        604.25
       ],
       [
-        254.22,
-        397.72,
-        612.93
+        234.21,
+        347.72,
+        508.59
       ]
     ],
     "wacc_values": [
@@ -58,28 +58,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.36300000000000004,
+      "rate": 0.325,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.36300000000000004,
-      "fiscal_year": "FY2025",
+      "weighted_growth": 0.325,
+      "fiscal_year": "FY2026",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.254,
-      "intrinsic_value_per_share": 314.57
+      "growth_rate": 0.227,
+      "intrinsic_value_per_share": 284.21
     },
     "base": {
-      "growth_rate": 0.363,
-      "intrinsic_value_per_share": 467.87
+      "growth_rate": 0.325,
+      "intrinsic_value_per_share": 408.67
     },
     "bull": {
-      "growth_rate": 0.436,
-      "intrinsic_value_per_share": 600.38
+      "growth_rate": 0.39,
+      "intrinsic_value_per_share": 514.03
     }
   },
   "growth_options": {
@@ -96,7 +96,7 @@
         "delay_years": 3,
         "expected_fcf": 1680000000.0,
         "pv": 1104627270.4857402,
-        "note": "各国政府のAIインフラ独自整備需要。CUDAエコシステムの延長。"
+        "note": "各国政府のAIインフラ整備需要。CUDAエコシステムの競争優位。"
       },
       {
         "name": "Robotics / Isaac",
@@ -107,7 +107,7 @@
         "delay_years": 5,
         "expected_fcf": 800000000.0,
         "pv": 397741388.2386319,
-        "note": "Isaacプラットフォームによるロボティクス向けGPU需要。実現期間長い。"
+        "note": "Isaacプラットフォームによるロボティクス向けGPU需要。"
       },
       {
         "name": "NIM / Inference SaaS",
@@ -118,7 +118,7 @@
         "delay_years": 4,
         "expected_fcf": 625000000.0,
         "pv": 357345778.4956459,
-        "note": "NIMAによる推論SaaS化。AWSのようなソフトウェア収益転換。"
+        "note": "NIMによる推論SaaS転換。AWSのようなソフトウェア収益構造の実現。"
       }
     ]
   },
@@ -135,51 +135,51 @@
     "terminal_growth": 0.03
   },
   "dcf_components": {
-    "v0": 5681492979829.006,
-    "pv_phase1": 732822983262.3722,
-    "pv_phase2": 1216098063402.4116,
-    "pv_high_growth": 1948921046664.7837,
-    "pv_terminal": 3732571933164.222,
+    "v0": 4962104669821.988,
+    "pv_phase1": 665863961086.797,
+    "pv_phase2": 1055768521527.6653,
+    "pv_high_growth": 1721632482614.4624,
+    "pv_terminal": 3240472187207.526,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.36300000000000004,
-        "fcf": 101226068017.63516,
+        "growth_rate": 0.325,
+        "fcf": 98403917918.83095,
         "discount_factor": 1.10285,
-        "pv": 91785889302.83824
+        "pv": 89226928339.14941
       },
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.36300000000000004,
-        "fcf": 137971130708.0367,
+        "growth_rate": 0.325,
+        "fcf": 130385191242.451,
         "discount_factor": 1.2162781225000003,
-        "pv": 113437155660.12466
+        "pv": 107200145123.42836
       },
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.36300000000000004,
-        "fcf": 188054651155.05405,
+        "growth_rate": 0.325,
+        "fcf": 172760378396.2476,
         "discount_factor": 1.3413723273991254,
-        "pv": 140195713981.7291
+        "pv": 128793754625.32762
       },
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.36300000000000004,
-        "fcf": 256318489524.33865,
+        "growth_rate": 0.325,
+        "fcf": 228907501375.02805,
         "discount_factor": 1.4793324712721256,
-        "pv": 173266317411.34036
+        "pv": 154737022150.39133
       },
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.36300000000000004,
-        "fcf": 349362101221.6736,
+        "growth_rate": 0.325,
+        "fcf": 303302439321.9122,
         "discount_factor": 1.6314818159424638,
-        "pv": 214137906906.33984
+        "pv": 185906110848.50027
       }
     ],
     "phase2_detail": [
@@ -187,45 +187,45 @@
         "year": 6,
         "phase": "phase2",
         "growth_rate": 0.15,
-        "fcf": 401766416404.92456,
+        "fcf": 348797805220.199,
         "discount_factor": 1.7992797207121465,
-        "pv": 223292916482.10614
+        "pv": 193854130186.13162
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.15,
-        "fcf": 462031378865.6632,
+        "fcf": 401117476003.22876,
         "discount_factor": 1.9843356399873908,
-        "pv": 232839328969.8708
+        "pv": 202141950141.9516
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.15,
-        "fcf": 531336085695.51263,
+        "fcf": 461285097403.713,
         "discount_factor": 2.1884245605600943,
-        "pv": 242793877966.49713
+        "pv": 210784098166.78992
       },
       {
         "year": 9,
         "phase": "phase2",
         "growth_rate": 0.15,
-        "fcf": 611036498549.8395,
+        "fcf": 530477862014.2699,
         "discount_factor": 2.4135040266137002,
-        "pv": 253174012478.09915
+        "pv": 219795722801.65784
       },
       {
         "year": 10,
         "phase": "phase2",
         "growth_rate": 0.15,
-        "fcf": 702691973332.3153,
+        "fcf": 610049541316.4103,
         "discount_factor": 2.6617329157509197,
-        "pv": 263997927505.83844
+        "pv": 229192620231.13428
       }
     ],
-    "terminal_fcf": 723772732532.2848,
-    "terminal_value": 9935109574911.252,
+    "terminal_fcf": 628351027555.9026,
+    "terminal_value": 8625271483265.648,
     "dcf_type": "three_stage"
   },
   "fcf_base": {
@@ -285,59 +285,83 @@
       "FY2024": 60922000000,
       "FY2025": 130497000000,
       "FY2026": 215938000000,
-      "FY2027_est": null,
-      "FY2028_est": null,
-      "FY2029_est": null
+      "FY2027_est": 285901550000,
+      "FY2028_est": 379790867500,
+      "FY2029_est": 505923823625
     },
     "segments": {
       "Compute and Networking": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.9,
+        "config_growth": 0.35,
+        "note": "Data Center GPU/Networking for AI training & inference.",
         "revenue": {
           "FY2024": 47405000000.0,
           "FY2025": 116193000000.0,
-          "FY2026": 193479000000.0
+          "FY2026": 193479000000.0,
+          "FY2027_est": 261196650000,
+          "FY2028_est": 352615477500,
+          "FY2029_est": 476030894625
         },
         "operating_income": {
           "FY2024": 32016000000.0,
           "FY2025": 82875000000.0,
-          "FY2026": 130141000000.0
+          "FY2026": 130141000000.0,
+          "FY2027_est": null,
+          "FY2028_est": null,
+          "FY2029_est": null
         },
         "operating_margin": {
           "FY2024": 0.6754,
           "FY2025": 0.7133,
-          "FY2026": 0.6726
+          "FY2026": 0.6726,
+          "FY2027_est": null,
+          "FY2028_est": null,
+          "FY2029_est": null
         },
         "yoy_growth": {
           "FY2024": null,
           "FY2025": 1.4511,
-          "FY2026": 0.6652
+          "FY2026": 0.6652,
+          "FY2027_est": 0.35,
+          "FY2028_est": 0.35,
+          "FY2029_est": 0.35
         }
       },
       "Graphics": {
-        "weight": null,
-        "config_growth": null,
-        "note": "",
+        "weight": 0.1,
+        "config_growth": 0.1,
+        "note": "GeForce GPU for PC gaming and professional visualization.",
         "revenue": {
           "FY2024": 13517000000.0,
           "FY2025": 14304000000.0,
-          "FY2026": 22459000000.0
+          "FY2026": 22459000000.0,
+          "FY2027_est": 24704900000,
+          "FY2028_est": 27175390000,
+          "FY2029_est": 29892929000
         },
         "operating_income": {
           "FY2024": 5846000000.0,
           "FY2025": 5085000000.0,
-          "FY2026": 9156000000.0
+          "FY2026": 9156000000.0,
+          "FY2027_est": null,
+          "FY2028_est": null,
+          "FY2029_est": null
         },
         "operating_margin": {
           "FY2024": 0.4325,
           "FY2025": 0.3555,
-          "FY2026": 0.4077
+          "FY2026": 0.4077,
+          "FY2027_est": null,
+          "FY2028_est": null,
+          "FY2029_est": null
         },
         "yoy_growth": {
           "FY2024": null,
           "FY2025": 0.0582,
-          "FY2026": 0.5701
+          "FY2026": 0.5701,
+          "FY2027_est": 0.1,
+          "FY2028_est": 0.1,
+          "FY2029_est": 0.1
         }
       }
     },
@@ -367,11 +391,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Semiconductor)",
-    "high_growth_rate_used": 0.36300000000000004,
+    "high_growth_rate_used": 0.325,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1948921046664.7837,
-    "pv_terminal": 3732571933164.222,
+    "pv_high": 1721632482614.4624,
+    "pv_terminal": 3240472187207.526,
     "roe_used": 0.45643879769563567,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 1865009616.4806278,
@@ -384,11 +408,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $5681.49B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $467.87 (差異0.00%)"
+        "detail": "(V₀ $4962.10B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $408.67 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $732.82B + P2 $1216.10B + TV $3732.57B = $5681.49B (差異0.00%)"
+        "detail": "3段階: P1 $665.86B + P2 $1055.77B + TV $3240.47B = $4962.10B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -400,6 +424,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "ai_comment": "Minor anomaly in divergence rate calculation.",
+    "ai_concerns": "Divergence rate +106.0% does not match calculated (408.67 - 208.27)/208.27 ≈ +96.3%, indicating a potential error in rate computation."
   }
 }

@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 286383769214.74695,
-  "intrinsic_value_per_share": 195.89810788693742,
-  "intrinsic_value_beta": 180.15,
-  "upside_percent_beta": -48.2,
-  "intrinsic_value_rf": 1127.64,
-  "upside_percent_rf": 224.2,
-  "v0": 174280859905.98352,
-  "v0_adjusted": 174970245849.47186,
+  "intrinsic_value_pt": 328505175997.6278,
+  "intrinsic_value_per_share": 224.19710958964447,
+  "intrinsic_value_beta": 205.98,
+  "upside_percent_beta": -40.8,
+  "intrinsic_value_rf": 1302.44,
+  "upside_percent_rf": 274.5,
+  "v0": 200015533768.73245,
+  "v0_adjusted": 200704919712.2208,
   "alpha": 0.6367569687312719,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 215.37,
-    "2年後": 257.47,
-    "3年後": 307.81
+    "1年後": 255.42,
+    "2年後": 316.71,
+    "3年後": 392.73
   },
-  "upside_percent": -43.7,
+  "upside_percent": -35.5,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        164.38,
-        208.6,
-        261.22
+        176.2,
+        238.89,
+        319.15
       ],
       [
-        142.46,
-        179.38,
-        222.53
+        152.61,
+        205.1,
+        271.08
       ],
       [
-        125.66,
-        157.07,
-        193.1
+        134.55,
+        179.29,
+        234.54
       ]
     ],
     "wacc_values": [
@@ -58,28 +58,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.19549999999999998,
+      "rate": 0.24,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.19549999999999998,
-      "fiscal_year": "FY2024",
+      "weighted_growth": 0.24,
+      "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.137,
-      "intrinsic_value_per_share": 150.09
+      "growth_rate": 0.168,
+      "intrinsic_value_per_share": 165.51
     },
     "base": {
-      "growth_rate": 0.195,
-      "intrinsic_value_per_share": 180.15
+      "growth_rate": 0.24,
+      "intrinsic_value_per_share": 205.98
     },
     "bull": {
-      "growth_rate": 0.235,
-      "intrinsic_value_per_share": 202.7
+      "growth_rate": 0.288,
+      "intrinsic_value_per_share": 237.03
     }
   },
   "growth_options": {
@@ -113,43 +113,43 @@
     "terminal_growth": 0.03
   },
   "dcf_components": {
-    "v0": 174280859905.98352,
-    "pv_phase1": 29855774295.464012,
-    "pv_phase2": 33009490310.92849,
-    "pv_high_growth": 62865264606.3925,
-    "pv_terminal": 111415595299.59102,
+    "v0": 200015533768.73245,
+    "pv_phase1": 32856037979.65742,
+    "pv_phase2": 38205618735.16562,
+    "pv_high_growth": 71061656714.82304,
+    "pv_terminal": 128953877053.90941,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.19549999999999998,
-        "fcf": 7312798967.678574,
+        "growth_rate": 0.24,
+        "fcf": 7585002693.36799,
         "discount_factor": 1.1057000000000001,
-        "pv": 6613727925.909897
+        "pv": 6859910186.640127
       },
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.19549999999999998,
-        "fcf": 8742451165.859735,
+        "growth_rate": 0.24,
+        "fcf": 9405403339.776306,
         "discount_factor": 1.2225724900000003,
-        "pv": 7150865275.775781
+        "pv": 7693125288.445107
       },
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.19549999999999998,
-        "fcf": 10451600368.785315,
+        "growth_rate": 0.24,
+        "fcf": 11662700141.32262,
         "discount_factor": 1.3517984021930005,
-        "pv": 7731626514.597039
+        "pv": 8627543960.994785
       },
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.19549999999999998,
-        "fcf": 12494888240.882843,
+        "growth_rate": 0.24,
+        "fcf": 14461748175.24005,
         "discount_factor": 1.4946834933048008,
-        "pv": 8359554579.181295
+        "pv": 9675458543.5774
       }
     ],
     "phase2_detail": [
@@ -157,37 +157,37 @@
         "year": 5,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 13744377064.971128,
+        "fcf": 15907922992.764055,
         "discount_factor": 1.6526715385471185,
-        "pv": 8316460194.536877
+        "pv": 9625580535.348774
       },
       {
         "year": 6,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 15118814771.468243,
+        "fcf": 17498715292.040462,
         "discount_factor": 1.827358920171549,
-        "pv": 8273587965.98586
+        "pv": 9575959653.50787
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 16630696248.615068,
+        "fcf": 19248586821.24451,
         "discount_factor": 2.020510758033682,
-        "pv": 8230936748.2901745
+        "pv": 9526594572.541067
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.1,
-        "fcf": 18293765873.476578,
+        "fcf": 21173445503.368965,
         "discount_factor": 2.2340787451578423,
-        "pv": 8188505402.115576
+        "pv": 9477483973.767906
       }
     ],
-    "terminal_fcf": 18842578849.680874,
-    "terminal_value": 248911213337.9243,
+    "terminal_fcf": 21808648868.470036,
+    "terminal_value": 288093115831.8366,
     "dcf_type": "three_stage"
   },
   "fcf_base": {
@@ -247,15 +247,15 @@
       "FY2023": 22680000000,
       "FY2024": 25785000000,
       "FY2025": 34639000000,
-      "FY2026_est": 29798450000,
-      "FY2027_est": 37654097500,
-      "FY2028_est": 48279111125
+      "FY2026_est": 29948350000,
+      "FY2027_est": 38052302500,
+      "FY2028_est": 49031830375
     },
     "segments": {
       "Data Center": {
-        "weight": 0.5,
+        "weight": 0.62,
         "config_growth": 0.35,
-        "note": "EPYC CPUs, Instinct GPUs",
+        "note": "EPYC CPUs + Instinct MI300X GPUs.",
         "revenue": {
           "FY2023": 6496000000.0,
           "FY2024": 12579000000.0,
@@ -290,9 +290,9 @@
         }
       },
       "Client": {
-        "weight": 0.25,
+        "weight": 0.2,
         "config_growth": 0.08,
-        "note": "Ryzen CPUs",
+        "note": "Ryzen CPUs for PC.",
         "revenue": {
           "FY2023": 4651000000.0,
           "FY2024": 7054000000.0,
@@ -327,16 +327,16 @@
         }
       },
       "Gaming": {
-        "weight": 0.12,
-        "config_growth": -0.05,
-        "note": "Console APUs, Radeon GPUs",
+        "weight": 0.08,
+        "config_growth": -0.1,
+        "note": "Console APUs cycle declining.",
         "revenue": {
           "FY2023": 6212000000.0,
           "FY2024": 2595000000.0,
           "FY2025": 3910000000.0,
-          "FY2026_est": 3714500000,
-          "FY2027_est": 3528775000,
-          "FY2028_est": 3352336250
+          "FY2026_est": 3519000000,
+          "FY2027_est": 3167100000,
+          "FY2028_est": 2850390000
         },
         "operating_income": {
           "FY2023": 971000000.0,
@@ -358,22 +358,22 @@
           "FY2023": null,
           "FY2024": -0.5823,
           "FY2025": 0.5067,
-          "FY2026_est": -0.05,
-          "FY2027_est": -0.05,
-          "FY2028_est": -0.05
+          "FY2026_est": -0.1,
+          "FY2027_est": -0.1,
+          "FY2028_est": -0.1
         }
       },
       "Embedded": {
-        "weight": 0.13,
-        "config_growth": 0.05,
-        "note": "Xilinx FPGAs, industrial",
+        "weight": 0.1,
+        "config_growth": 0.15,
+        "note": "Xilinx FPGAs. Recovery from inventory digestion.",
         "revenue": {
           "FY2023": 5321000000.0,
           "FY2024": 3557000000.0,
           "FY2025": 3454000000.0,
-          "FY2026_est": 3626700000,
-          "FY2027_est": 3808035000,
-          "FY2028_est": 3998436750
+          "FY2026_est": 3972100000,
+          "FY2027_est": 4567915000,
+          "FY2028_est": 5253102250
         },
         "operating_income": {
           "FY2023": 2628000000.0,
@@ -395,9 +395,9 @@
           "FY2023": null,
           "FY2024": -0.3315,
           "FY2025": -0.029,
-          "FY2026_est": 0.05,
-          "FY2027_est": 0.05,
-          "FY2028_est": 0.05
+          "FY2026_est": 0.15,
+          "FY2027_est": 0.15,
+          "FY2028_est": 0.15
         }
       }
     },
@@ -427,11 +427,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Semiconductor)",
-    "high_growth_rate_used": 0.19549999999999998,
+    "high_growth_rate_used": 0.24,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 62865264606.3925,
-    "pv_terminal": 111415595299.59102,
+    "pv_high": 71061656714.82304,
+    "pv_terminal": 128953877053.90941,
     "roe_used": 0.16025050379737013,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 255425230.08321643,
@@ -444,11 +444,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $174.28B + RPO $0.26B + GO $0.43B) × (1+0.637) / 1.630B + BS $+4.50/株 = $180.15 (差異0.00%)"
+        "detail": "(V₀ $200.02B + RPO $0.26B + GO $0.43B) × (1+0.637) / 1.630B + BS $+4.50/株 = $205.98 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $29.86B + P2 $33.01B + TV $111.42B = $174.28B (差異0.00%)"
+        "detail": "3段階: P1 $32.86B + P2 $38.21B + TV $128.95B = $200.02B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -460,6 +460,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "一部の整合性問題あり"
+    "ai_comment": "One inconsistency in per share value noted."
   }
 }
