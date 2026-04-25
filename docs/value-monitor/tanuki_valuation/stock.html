@@ -16,6 +16,7 @@
       --acc: #c4d0ff;
       --acc2: #8b9dff;
       --green: #4ade80;
+      --grn: #4ade80;
       --red: #f87171;
       --yellow: #fbbf24;
       --orange: #fb923c;
@@ -44,7 +45,7 @@
     /* ロゴ（index.html統一） */
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--txt); }
     .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); animation: pdot 2s ease-in-out infinite; flex-shrink: 0; }
-    @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4)} 50%{box-shadow:0 0 0 6px rgba(59,130,246,0)} }
+    @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(196,208,255,.5)} 50%{box-shadow:0 0 0 6px rgba(196,208,255,0)} }
     .logo-text { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--txt); letter-spacing: .12em; display: flex; gap: 4px; }
     .logo-accent { color: var(--acc); }
     .hdr-l { display: flex; align-items: center; gap: 20px; }
@@ -413,7 +414,7 @@ function render(d) {
           <a href="../../market-monitor/market-pulse/">Market Pulse</a>
           <a href="../../market-monitor/macro-pulse/">MACRO PULSE</a>
         </nav>
-        <div class="version-tag">v6.2 | ${calcDate}</div>
+        <div class="version-tag">${(d.formula || '').match(/v[\d.]+/) ? (d.formula.match(/v[\d.]+/)[0]) : 'v6.2'} | ${calcDate}</div>
       </div>
     </header>
 
@@ -492,11 +493,11 @@ function render(d) {
         ${(() => {
           // シナリオ定義（segment_weightedの場合のみBEAR/BASE/BULL、それ以外はBASEのみ）
           const scenarios = scenarioValuations ? [
-            { label: '🐂 BULL', rate: scenarioValuations.bull?.growth_rate, cls: 'bull' },
-            { label: '📊 BASE', rate: scenarioValuations.base?.growth_rate, cls: 'base' },
-            { label: '🐻 BEAR', rate: scenarioValuations.bear?.growth_rate, cls: 'bear' },
+            { label: '🐂 BULL', rate: scenarioValuations.bull?.growth_rate, cls: 'bull', baseVal: scenarioValuations.bull?.intrinsic_value_per_share || ivps },
+            { label: '📊 BASE', rate: scenarioValuations.base?.growth_rate, cls: 'base', baseVal: scenarioValuations.base?.intrinsic_value_per_share || ivps },
+            { label: '🐻 BEAR', rate: scenarioValuations.bear?.growth_rate, cls: 'bear', baseVal: scenarioValuations.bear?.intrinsic_value_per_share || ivps },
           ] : [
-            { label: '📊 BASE', rate: highGrowthRate, cls: 'base' },
+            { label: '📊 BASE', rate: highGrowthRate, cls: 'base', baseVal: ivps },
           ];
 
           // シナリオ別将来価値を計算
@@ -517,13 +518,13 @@ function render(d) {
           // テンプレートリテラルの入れ子を避け文字列連結で構築
           const thYears = yearLabels.map(k => '<th>' + k + '</th>').join('');
           const tbRows = scenarios.map(sc => {
-            const vals = projectFuture(ivps, sc.rate);
+            const vals = projectFuture(sc.baseVal, sc.rate);
             const tds = vals.map(v => '<td>$' + fmt(v) + '</td>').join('');
             const trCls = sc.cls === 'base' ? 'base-row' : '';
             return '<tr class="' + trCls + '">' +
               '<td class="scenario-name ' + sc.cls + '">' + sc.label + '<br>' +
               '<span style="font-size:10px;font-weight:400;opacity:.7;">' + fmtPct(sc.rate) + '</span></td>' +
-              '<td class="current-val">$' + fmt(ivps) + '</td>' +
+              '<td class="current-val">$' + fmt(sc.baseVal) + '</td>' +
               tds + '</tr>';
           }).join('');
           return '<table class="future-table">' +
