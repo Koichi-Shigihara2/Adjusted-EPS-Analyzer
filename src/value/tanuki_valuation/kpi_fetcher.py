@@ -156,7 +156,17 @@ def build_kpi_data(
                 seg_entry["yoy_growth"][_fy_label(fy)] = None
 
         # 予測値を埋める（config_growth を適用）
+        # 直近実績の営業利益率を予測期間に適用する
         g = cfg.get("growth")
+
+        # 直近実績の営業利益率を取得（最新FYから遡って最初に取れた値を使用）
+        latest_om = None
+        for fy in reversed(actual_years):
+            om = seg_entry["operating_margin"].get(_fy_label(fy))
+            if om is not None:
+                latest_om = om
+                break
+
         if g is not None:
             last_rev = seg_entry["revenue"].get(_fy_label(fiscal_year_latest))
             for j in range(1, forecast_years + 1):
@@ -164,9 +174,11 @@ def build_kpi_data(
                 est_label = _fy_label(est_fy, is_est=True)
                 if last_rev is not None:
                     last_rev  = round(last_rev * (1 + g))
+                    # 予測営業利益 = 予測売上 × 直近実績営業利益率
+                    est_oi = round(last_rev * latest_om) if latest_om is not None else None
                     seg_entry["revenue"][est_label]          = last_rev
-                    seg_entry["operating_income"][est_label] = None  # 予測利益は未設定
-                    seg_entry["operating_margin"][est_label] = None
+                    seg_entry["operating_income"][est_label] = est_oi
+                    seg_entry["operating_margin"][est_label] = round(latest_om, 4) if latest_om is not None else None
                     seg_entry["yoy_growth"][est_label]       = round(g, 4)
                 else:
                     seg_entry["revenue"][est_label]          = None
@@ -175,6 +187,34 @@ def build_kpi_data(
                     seg_entry["yoy_growth"][est_label]       = round(g, 4) if g else None
 
         segments[seg_name] = seg_entry
+
+    # ── 動的ウェイト計算 ──────────────────────────────────────────
+    # 固定ウェイトではなく、年度ごとの売上実績・予測から動的にウェイトを計算する
+    # ウェイト = 各セグメント売上 / 全セグメント合計売上
+    # これにより高成長セグメントのウェイトが自動的に増加する
+    all_labels = []
+    for fy in actual_years:
+        all_labels.append(_fy_label(fy))
+    for j in range(1, forecast_years + 1):
+        all_labels.append(_fy_label(fiscal_year_latest + j, is_est=True))
+
+    for label in all_labels:
+        # 全セグメントの売上合計（config_growth定義済みセグメントのみ）
+        total = sum(
+            seg["revenue"].get(label) or 0
+            for seg in segments.values()
+            if seg.get("config_growth") is not None or seg["revenue"].get(label) is not None
+        )
+        if total > 0:
+            for seg in segments.values():
+                rev = seg["revenue"].get(label)
+                if rev is not None:
+                    seg.setdefault("dynamic_weight", {})[label] = round(rev / total, 4)
+                else:
+                    seg.setdefault("dynamic_weight", {})[label] = None
+        else:
+            for seg in segments.values():
+                seg.setdefault("dynamic_weight", {})[label] = None
 
     # ── 全社売上（total_revenue）を年度別に収集 ─────────────────
     # SEC annual_*.json の pl.revenue（全社売上）を優先使用
