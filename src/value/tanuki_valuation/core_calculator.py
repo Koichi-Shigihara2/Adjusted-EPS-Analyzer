@@ -423,8 +423,14 @@ class KoichiValuationCalculator:
             )
 
         # ── STEP 12: 将来価値予測 ──
+        # BASE シナリオの ivps を起点とする（segment_weighted の場合）
+        # segment_weighted でない場合は Rmβなし ivps をそのまま使用
+        _future_base_val = intrinsic_value_per_share
+        if scenario_result is not None:
+            _sv = scenario_result.to_dict()
+            _future_base_val = _sv.get("base", {}).get("intrinsic_value_per_share", intrinsic_value_per_share)
         future_values = calculate_future_values(
-            current_value=intrinsic_value_per_share,
+            current_value=_future_base_val,
             high_growth_rate=high_growth_rate,
             high_growth_years=self.high_growth_years,
             terminal_growth=terminal_growth

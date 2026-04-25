@@ -69,7 +69,7 @@ class TanukiValuationPipeline:
         """
         print("=" * 60)
         print("TANUKI VALUATION Phase 4 実行開始")
-        print(f"  Koichi式 v5.2（成長率減衰カーブ＋FCF補正＋将来予測＋AI検証）")
+        print(f"  Koichi式 v{KoichiValuationCalculator.VERSION}（動的WACC + 3段階DCF + FCFベース自動判定 + AI検証）")
         print("=" * 60)
         
         if tickers is None:
