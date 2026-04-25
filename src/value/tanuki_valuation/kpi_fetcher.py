@@ -101,12 +101,13 @@ def build_kpi_data(
         if ann:
             annual_data[fy] = ann
 
-    # セグメント別売上が1件も取れていない場合は None を返す
+    # セグメント別売上が1件も取れていない場合でも segment_config があれば継続
     has_any_segment = any(
         ann.get("segments")
         for ann in annual_data.values()
     )
-    if not has_any_segment:
+    # segment_config の定義もない場合のみ None を返す
+    if not has_any_segment and not seg_config:
         return None
 
     # ── セグメント構造を構築 ────────────────────────────────────
@@ -176,10 +177,18 @@ def build_kpi_data(
         segments[seg_name] = seg_entry
 
     # ── 全社売上（total_revenue）を年度別に収集 ─────────────────
+    # SEC annual_*.json の pl.revenue（全社売上）を優先使用
     total_revenue: Dict[str, Optional[float]] = {}
     for fy in actual_years:
         ann = annual_data.get(fy, {})
+        # pl.revenue が全社売上（最も正確）
         rev = ann.get("pl", {}).get("revenue")
+        if rev is None:
+            # フォールバック: セグメント合計
+            rev = sum(
+                (ann.get("segments", {}).get(s, {}).get("revenue") or 0)
+                for s in seg_names
+            ) or None
         total_revenue[_fy_label(fy)] = rev
 
     # 予測全社売上（セグメント合計から計算）

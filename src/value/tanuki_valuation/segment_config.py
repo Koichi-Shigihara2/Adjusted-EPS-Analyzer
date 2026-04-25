@@ -141,6 +141,16 @@ SEGMENT_OVERRIDES: Dict[str, Dict[str, Any]] = {
                 "growth": 0.15,
                 "note": "Xilinx FPGAs. Recovery from inventory digestion."
             },
+            "Client and Gaming": {
+                "weight": 0.00,
+                "growth": 0.00,
+                "note": "FY2025 XBRL統合形式。Client+Gamingの合算。weight/growthはClient/Gamingから按分。",
+            },
+            "All Other": {
+                "weight": 0.00,
+                "growth": 0.00,
+                "note": "その他・調整項目。",
+            },
         }
     },
 

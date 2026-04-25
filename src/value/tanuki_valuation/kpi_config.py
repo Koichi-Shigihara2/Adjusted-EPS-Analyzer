@@ -130,11 +130,6 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "Azure成長率（YoY）", "unit": "%", "source": "manual"},
             # {"name": "Microsoft 365 商業シート数", "unit": "M", "source": "manual"},
         ],
-        "xbrl_members": {
-            "msft:IntelligentCloudMember": "Intelligent Cloud",
-            "msft:ProductivityAndBusinessProcessesMember": "Productivity and Business Processes",
-            "msft:MorePersonalComputingMember": "More Personal Computing",
-        },
         "notes": "6月末決算。FY2025=2025年6月期。",
     },
 
@@ -155,12 +150,7 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "Primeメンバー数", "unit": "M", "source": "manual"},
             # {"name": "広告売上高", "unit": "B USD", "source": "manual"},
         ],
-        "xbrl_members": {
-            "amzn:NorthAmericaSegmentMember": "North America",
-            "amzn:InternationalSegmentMember": "International",
-            "amzn:AmazonWebServicesSegmentMember": "AWS",
-        },
-        "notes": "12月末決算。NorthAmericaAndInternationalは除外。",
+        "notes": "North America/International/AWS の3セグメント。",
     },
 
     # ── AMD ──
@@ -172,21 +162,15 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "Client",
             "Gaming",
             "Embedded",
+            "Client and Gaming",  # FY2025: Client+GamingをXBRLで統合開示
+            "All Other",
         ],
         "financial_kpis": [
             "segment_revenue",
             "segment_operating_income",
         ],
-        "xbrl_members": {
-            "amd:DatacenterMember": "Data Center",
-            "amd:ClientMember": "Client",
-            "amd:GamingMember": "Gaming",
-            "amd:EmbeddedMember": "Embedded",
-            "amd:ClientAndGamingMember": "Client and Gaming",
-            "amd:AllOtherMember": "All Other",
-        },
         "operational_kpis": [],
-        "notes": "12月末決算。FY2023以前はClient/Gaming分離開示。",
+        "notes": "12月末決算。FY2025はClient/GamingがXBRLで統合。",
     },
 
     # ── AppLovin ──
@@ -262,11 +246,7 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "打ち上げ回数", "unit": "回", "source": "manual"},
             # {"name": "受注残（バックログ）", "unit": "M USD", "source": "manual"},
         ],
-        "xbrl_members": {
-            "rklb:LaunchServicesMember": "Launch Services",
-            "rklb:SpaceSystemsMember": "Space Systems",
-        },
-        "notes": "12月末決算。セグメント別利益は未開示が多い。",
+        "notes": "セグメント別利益は未開示が多い。",
     },
 
     # ── SoundHound ──
