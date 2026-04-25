@@ -401,9 +401,9 @@ function render(d) {
     <header>
       <div class="hdr-l">
         <a href="index.html" class="logo">
+          <img src="../../common/images/logo.png" alt="TANUKI" style="height:30px;width:auto;object-fit:contain">
           <span class="logo-dot"></span>
           <span class="logo-text">TANUKI<span class="logo-accent">VALUATION</span></span>
-        </a>
         <a href="index.html" class="back-link">← BACK TO LIST</a>
       </div>
       <div class="header-right" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -471,8 +471,8 @@ function render(d) {
           <table class="matrix-table" id="sensitivityTable">
             <thead>
               <tr>
-                <th class="corner">WACC \\ Years</th>
-                ${growthYears.map(y => `<th>${y}年</th>`).join('')}
+                <th class="corner">WACC \ 高成長期間</th>
+                ${growthYears.map(y => `<th>高成長${y}年</th>`).join('')}
               </tr>
             </thead>
             <tbody id="matrixBody">
