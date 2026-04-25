@@ -106,7 +106,11 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "顧客数（商業）", "unit": "社", "source": "manual"},
             # {"name": "ARR（商業）", "unit": "M USD", "source": "manual"},
         ],
-        "notes": "Government/Commercial をUS/International に分けて開示している場合あり。",
+        "xbrl_members": {
+            "pltr:GovernmentOperatingSegmentMember": "Government",
+            "pltr:CommercialMember":                 "Commercial",
+        },
+        "notes": "12月末決算。US/International はXBRL別軸で開示。",
     },
 
     # ── Microsoft ──
@@ -126,6 +130,11 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "Azure成長率（YoY）", "unit": "%", "source": "manual"},
             # {"name": "Microsoft 365 商業シート数", "unit": "M", "source": "manual"},
         ],
+        "xbrl_members": {
+            "msft:IntelligentCloudMember": "Intelligent Cloud",
+            "msft:ProductivityAndBusinessProcessesMember": "Productivity and Business Processes",
+            "msft:MorePersonalComputingMember": "More Personal Computing",
+        },
         "notes": "6月末決算。FY2025=2025年6月期。",
     },
 
@@ -146,7 +155,12 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "Primeメンバー数", "unit": "M", "source": "manual"},
             # {"name": "広告売上高", "unit": "B USD", "source": "manual"},
         ],
-        "notes": "North America/International/AWS の3セグメント。",
+        "xbrl_members": {
+            "amzn:NorthAmericaSegmentMember": "North America",
+            "amzn:InternationalSegmentMember": "International",
+            "amzn:AmazonWebServicesSegmentMember": "AWS",
+        },
+        "notes": "12月末決算。NorthAmericaAndInternationalは除外。",
     },
 
     # ── AMD ──
@@ -163,8 +177,16 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "segment_revenue",
             "segment_operating_income",
         ],
+        "xbrl_members": {
+            "amd:DatacenterMember": "Data Center",
+            "amd:ClientMember": "Client",
+            "amd:GamingMember": "Gaming",
+            "amd:EmbeddedMember": "Embedded",
+            "amd:ClientAndGamingMember": "Client and Gaming",
+            "amd:AllOtherMember": "All Other",
+        },
         "operational_kpis": [],
-        "notes": "12月末決算。",
+        "notes": "12月末決算。FY2023以前はClient/Gaming分離開示。",
     },
 
     # ── AppLovin ──
@@ -195,7 +217,8 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             "segment_revenue",
         ],
         "operational_kpis": [],
-        "notes": "セグメント別営業利益の開示なし。",
+        "xbrl_members": {},  # 単一セグメントのため取得不可
+        "notes": "12月末決算。地域別はXBRLタグなし・手動設定が必要。",
     },
 
     # ── SoFi ──
@@ -216,7 +239,12 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "プロダクト数", "unit": "万件", "source": "manual"},
             # {"name": "調整後EBITDA", "unit": "M USD", "source": "manual"},
         ],
-        "notes": "金融業のため営業利益の定義に注意。",
+        "xbrl_members": {
+            "sofi:LendingSegmentMember":            "Lending",
+            "sofi:TechnologyPlatformSegmentMember": "Technology Platform",
+            "sofi:FinancialServicesSegmentMember":  "Financial Services",
+        },
+        "notes": "12月末決算。金融業のため営業利益の定義に注意。",
     },
 
     # ── Rocket Lab ──
@@ -234,7 +262,11 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "打ち上げ回数", "unit": "回", "source": "manual"},
             # {"name": "受注残（バックログ）", "unit": "M USD", "source": "manual"},
         ],
-        "notes": "セグメント別利益は未開示が多い。",
+        "xbrl_members": {
+            "rklb:LaunchServicesMember": "Launch Services",
+            "rklb:SpaceSystemsMember": "Space Systems",
+        },
+        "notes": "12月末決算。セグメント別利益は未開示が多い。",
     },
 
     # ── SoundHound ──
@@ -251,6 +283,17 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # {"name": "ARR", "unit": "M USD", "source": "manual"},
         ],
         "notes": "単一セグメント。全社売上高のみ取得。",
+    },
+    # ── Ondas Holdings ──
+    # 単一セグメント開示（XBRLタグなし）
+    "ONDS": {
+        "fiscal_year_end": 12,
+        "revenue_unit": "M USD",
+        "segments": [],
+        "xbrl_members": {},  # 単一セグメントのため取得不可
+        "financial_kpis": ["segment_revenue"],
+        "operational_kpis": [],
+        "notes": "12月末決算。単一セグメント開示。",
     },
 }
 

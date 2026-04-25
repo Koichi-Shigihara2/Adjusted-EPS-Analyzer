@@ -66,8 +66,6 @@ REVENUE_TAGS = {
     "revenuefromcontractwithcustomerincludingassessedtax",
     "salesrevenuenet",
     "totalrevenues",
-    "revenuesnetofinterestexpense",     # 金融業（SOFI等）
-    "netrevenues",
 }
 OPINCOME_TAGS = {
     "operatingincomeloss",
@@ -219,18 +217,17 @@ def parse_xbrl_segments(
 
     # 文字列検索でコンテキストを抽出（名前空間の問題を回避）
     # pattern: id="c-NNN" ... StatementBusinessSegmentsAxis ... Member
-    # コンテキストブロックを先に分割（境界を超えたマッチを防ぐ）
-    ctx_block_pattern = re.compile(
-        r'<(?:xbrli:)?context\s+id="([^"]+)"[^>]*>(.*?)</(?:xbrli:)?context>',
+    ctx_pattern = re.compile(
+        r'id="(c-\d+)".*?</.*?context>',
         re.DOTALL
     )
     member_pattern = re.compile(
         r'StatementBusinessSegmentsAxis[^>]*>([^<]+)</xbrldi:explicitMember>'
     )
 
-    for ctx_match in ctx_block_pattern.finditer(xml_text):
+    for ctx_match in ctx_pattern.finditer(xml_text):
         ctx_id  = ctx_match.group(1)
-        ctx_txt = ctx_match.group(2)  # コンテキストブロック内部のみ
+        ctx_txt = ctx_match.group(0)
         m = member_pattern.search(ctx_txt)
         if m:
             member_val = m.group(1).strip()
@@ -262,6 +259,8 @@ def parse_xbrl_segments(
         try:
             val_str = tag.get_text(strip=True).replace(",", "")
             val     = float(val_str)
+            # XBRL Instance Document の値はフル数値（USD単位）
+            # decimals=-6 はラウンディング精度を示すだけ（スケール変換不要）
         except (ValueError, TypeError):
             continue
 
