@@ -39,16 +39,26 @@ from typing import Dict, Any, List, Optional
 KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
 
     # ── NVIDIA ──
+    # XBRLセグメント構造（FY2025 10-K調査結果）:
+    #   nvda:ComputeAndNetworkingSegmentMember → Compute and Networking
+    #   nvda:GraphicsSegmentMember             → Graphics
+    # ※ Data Center/Gaming等の細分類はXBRLタグなし（表形式のみ開示）
     "NVDA": {
         "fiscal_year_end": 1,       # 1月末決算
         "revenue_unit": "B USD",
         "segments": [
-            "Data Center",
-            "Gaming",
-            "Professional Visualization",
-            "Automotive",
-            "OEM and Other",
+            "Compute and Networking",
+            "Graphics",
         ],
+        # XBRL Instance Document (_htm.xml) のMember名マッピング
+        # FY2025/2026: SegmentMember（新形式）
+        # FY2024以前:  Member（旧形式、"Segment"なし）
+        "xbrl_members": {
+            "nvda:ComputeAndNetworkingSegmentMember": "Compute and Networking",
+            "nvda:GraphicsSegmentMember":             "Graphics",
+            "nvda:ComputeAndNetworkingMember":        "Compute and Networking",
+            "nvda:GraphicsMember":                    "Graphics",
+        },
         "financial_kpis": [
             "segment_revenue",
             "segment_operating_income",
@@ -57,7 +67,7 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
             # B案: 将来追加予定
             # {"name": "Data Center GPU出荷数", "unit": "万基", "source": "manual"},
         ],
-        "notes": "FY=翌年1月末。FY2025=2025年1月期。",
+        "notes": "FY=翌年1月末。FY2025=2025年1月期。XBRLは2セグメント開示。",
     },
 
     # ── Tesla ──

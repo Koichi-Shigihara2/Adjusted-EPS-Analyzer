@@ -223,7 +223,7 @@ def _load_segment_config(ticker: str) -> Dict[str, Dict[str, Any]]:
         if not os.path.exists(seg_cfg_path):
             return {}
         spec = importlib.util.spec_from_file_location("segment_config", seg_cfg_path)
-        mod  = importlib.util.load_module_from_spec(spec)
+        mod  = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
 
         config = getattr(mod, "SEGMENT_OVERRIDES", {}).get(ticker, {})

@@ -1,15 +1,25 @@
 """
-SEC セグメント別売上取得スクリプト（ローカル専用）
+SEC セグメント別売上取得スクリプト（ローカル専用）v2.0
 
-10-K の iXBRL から セグメント別売上・営業利益を抽出し、
+XBRL Instance Document（_htm.xml）からセグメント別売上・営業利益を抽出し、
 annual_{year}.json の "segments" フィールドに追記する。
 
-使用方法（PowerShell）:
-    python common/sec_data/segment_fetcher.py              # 全銘柄
-    python common/sec_data/segment_fetcher.py NVDA         # 特定銘柄のみ
-    python common/sec_data/segment_fetcher.py NVDA --years 3  # 直近3年
+【発見した事実】
+- iXBRL（10-K HTML本体）: セグメント別Revenueタグなし（NVDAの方針）
+- XBRL Instance Document（_htm.xml）: セグメント別Revenueが正しく存在
+  例: nvda-20250126_htm.xml
+      c-201 = ComputeAndNetworkingSegmentMember → $116,193M
+      c-202 = GraphicsSegmentMember             → $14,304M
 
-GitHub Actions では実行しない。ローカルで実行してpushする運用。
+【ファイル名の法則】
+  primaryDocument: "nvda-20250126.htm"
+  Instance Doc:    "nvda-20250126_htm.xml"  （.htm → _htm.xml）
+
+使用方法（PowerShell）:
+    python common/sec_data/segment_fetcher.py NVDA --years 3
+    python common/sec_data/segment_fetcher.py       # 全銘柄
+
+GitHub Actions では実行しない。ローカル実行 → push の運用。
 
 必要パッケージ（初回のみ）:
     pip install beautifulsoup4 lxml requests
@@ -26,7 +36,9 @@ from typing import Optional, Dict, Any, List, Tuple
 from datetime import datetime
 
 try:
-    from bs4 import BeautifulSoup
+    from bs4 import BeautifulSoup, XMLParsedAsHTMLWarning
+    import warnings
+    warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
     HAS_BS4 = True
 except ImportError:
     HAS_BS4 = False
@@ -42,23 +54,23 @@ from common.sec_data.config import get_all, get_ticker_info
 # ── SEC API 設定 ──────────────────────────────────────────────
 SEC_HEADERS = {
     "User-Agent": "Koichi Personal Investment Tools koichi@example.com",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept": "application/xml,text/xml,*/*",
 }
-SEC_BASE = "https://www.sec.gov"
-RATE_LIMIT_DELAY = 0.15   # SEC: 10req/秒上限
+SEC_BASE      = "https://www.sec.gov"
+RATE_LIMIT_DELAY = 0.15
 
-# ── セグメント別売上の iXBRL タグ候補 ────────────────────────
-SEGMENT_REVENUE_TAGS = [
-    "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
-    "us-gaap:Revenues",
-    "us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax",
-    "us-gaap:SalesRevenueNet",
-]
-
-SEGMENT_OPINCOME_TAGS = [
-    "us-gaap:OperatingIncomeLoss",
-    "us-gaap:GrossProfit",
-]
+# ── Revenue / 営業利益 の XBRL タグ名 ────────────────────────
+REVENUE_TAGS = {
+    "revenues",
+    "revenuefromcontractwithcustomerexcludingassessedtax",
+    "revenuefromcontractwithcustomerincludingassessedtax",
+    "salesrevenuenet",
+    "totalrevenues",
+}
+OPINCOME_TAGS = {
+    "operatingincomeloss",
+    "grossprofit",
+}
 
 # ── CIK キャッシュ ────────────────────────────────────────────
 _cik_cache: Dict[str, str] = {}
@@ -85,11 +97,12 @@ def get_cik(ticker: str, data_dir: str) -> Optional[str]:
     global _cik_cache
     if ticker in _cik_cache:
         return _cik_cache[ticker]
-
     try:
         time.sleep(RATE_LIMIT_DELAY)
-        url = "https://www.sec.gov/files/company_tickers.json"
-        r = requests.get(url, headers=SEC_HEADERS, timeout=15)
+        r = requests.get(
+            "https://www.sec.gov/files/company_tickers.json",
+            headers=SEC_HEADERS, timeout=15
+        )
         if r.status_code == 200:
             for entry in r.json().values():
                 if entry.get("ticker", "").upper() == ticker:
@@ -104,177 +117,156 @@ def get_cik(ticker: str, data_dir: str) -> Optional[str]:
 
 def get_10k_filings(cik: str, max_years: int = 5) -> List[Dict[str, Any]]:
     """
-    SEC submissions API から 10-K ファイリング一覧を取得
-
-    Returns:
-        [{"accn": "0001045810-25-000011", "date": "2025-02-26", "fy": 2025}, ...]
+    submissions API から 10-K ファイリング一覧を取得
+    primaryDocument フィールドから HTM ファイル名を取得し
+    _htm.xml ファイル名を導出する
     """
-    url = f"{SEC_BASE}/cgi-bin/browse-edgar?action=getcompany&CIK={cik}&type=10-K&dateb=&owner=include&count=10&search_text=&output=atom"
-    # submissions endpoint の方が安定
-    url2 = f"https://data.sec.gov/submissions/CIK{cik}.json"
+    url = f"https://data.sec.gov/submissions/CIK{cik}.json"
     try:
         time.sleep(RATE_LIMIT_DELAY)
-        r = requests.get(url2, headers=SEC_HEADERS, timeout=20)
+        r = requests.get(url, headers=SEC_HEADERS, timeout=20)
         if r.status_code != 200:
             print(f"   submissions API エラー: {r.status_code}")
             return []
-        data = r.json()
-        filings = data.get("filings", {}).get("recent", {})
-        forms   = filings.get("form", [])
-        accns   = filings.get("accessionNumber", [])
-        dates   = filings.get("filingDate", [])
-        fys     = filings.get("reportDate", [])
+        data     = r.json()
+        filings  = data.get("filings", {}).get("recent", {})
+        forms    = filings.get("form", [])
+        accns    = filings.get("accessionNumber", [])
+        dates    = filings.get("filingDate", [])
+        fys      = filings.get("reportDate", [])
+        pri_docs = filings.get("primaryDocument", [])
 
         results = []
         for i, f in enumerate(forms):
-            if f == "10-K":
-                fy_str = fys[i] if i < len(fys) else ""
-                fy = int(fy_str[:4]) if fy_str else 0
-                results.append({
-                    "accn": accns[i],
-                    "date": dates[i],
-                    "fy":   fy,
-                })
-                if len(results) >= max_years:
-                    break
+            if f != "10-K":
+                continue
+            fy_str   = fys[i] if i < len(fys) else ""
+            fy       = int(fy_str[:4]) if fy_str else 0
+            htm_file = pri_docs[i] if i < len(pri_docs) else ""
+
+            # _htm.xml ファイル名を導出
+            # 例: nvda-20250126.htm → nvda-20250126_htm.xml
+            if htm_file.endswith(".htm"):
+                xml_file = htm_file[:-4] + "_htm.xml"
+            elif htm_file.endswith(".html"):
+                xml_file = htm_file[:-5] + "_htm.xml"
+            else:
+                xml_file = ""
+
+            results.append({
+                "accn":     accns[i],
+                "date":     dates[i],
+                "fy":       fy,
+                "htm_file": htm_file,
+                "xml_file": xml_file,
+            })
+            if len(results) >= max_years:
+                break
         return results
     except Exception as e:
         print(f"   submissions API 例外: {e}")
         return []
 
 
-def get_10k_htm_url(cik: str, accn: str) -> Optional[str]:
+def download_xbrl_instance(cik: str, accn: str, xml_file: str) -> Optional[str]:
     """
-    accessionNumber から 10-K の HTM ファイル URL を取得
-
-    Returns:
-        "https://www.sec.gov/Archives/edgar/data/.../xxx-20250126.htm"
+    XBRL Instance Document（_htm.xml）をダウンロードして返す
+    メモリのみ・保存しない
     """
     accn_nodash = accn.replace("-", "")
-    index_url = f"{SEC_BASE}/Archives/edgar/data/{int(cik)}/{accn_nodash}/{accn}-index.json"
+    cik_int     = int(cik)
+    url = f"{SEC_BASE}/Archives/edgar/data/{cik_int}/{accn_nodash}/{xml_file}"
+    print(f"   XML URL: {url}")
     try:
         time.sleep(RATE_LIMIT_DELAY)
-        r = requests.get(index_url, headers=SEC_HEADERS, timeout=20)
+        r = requests.get(url, headers=SEC_HEADERS, timeout=60)
         if r.status_code != 200:
+            print(f"   XML取得エラー: {r.status_code}")
             return None
-        index = r.json()
-        # 10-K 本文 HTM を探す
-        for item in index.get("directory", {}).get("item", []):
-            name = item.get("name", "")
-            # メインの10-K HTMLを特定（通常は最大のHTMファイル）
-            if name.endswith(".htm") and not name.startswith("R") and "ex" not in name.lower():
-                return f"{SEC_BASE}/Archives/edgar/data/{int(cik)}/{accn_nodash}/{name}"
-        # フォールバック: 全HTMから最大ファイルを選択
-        htm_files = [
-            item for item in index.get("directory", {}).get("item", [])
-            if item.get("name", "").endswith(".htm")
-        ]
-        if htm_files:
-            largest = max(htm_files, key=lambda x: int(x.get("size", 0) or 0))
-            name = largest["name"]
-            return f"{SEC_BASE}/Archives/edgar/data/{int(cik)}/{accn_nodash}/{name}"
+        print(f"   ダウンロード完了: {len(r.content)/1024:.0f} KB")
+        return r.text
     except Exception as e:
-        print(f"   index取得エラー: {e}")
-    return None
-
-
-def download_10k_html(url: str) -> Optional[str]:
-    """10-K HTML をダウンロード（メモリのみ、保存しない）"""
-    try:
-        time.sleep(RATE_LIMIT_DELAY)
-        r = requests.get(url, headers=SEC_HEADERS, timeout=60, stream=True)
-        if r.status_code != 200:
-            print(f"   HTMダウンロードエラー: {r.status_code}")
-            return None
-        # 最大50MBまで
-        content = b""
-        for chunk in r.iter_content(chunk_size=65536):
-            content += chunk
-            if len(content) > 50 * 1024 * 1024:
-                print("   警告: ファイルサイズが50MBを超えました。打ち切ります。")
-                break
-        print(f"   ダウンロード完了: {len(content)/1024/1024:.1f} MB")
-        return content.decode("utf-8", errors="replace")
-    except Exception as e:
-        print(f"   ダウンロード例外: {e}")
+        print(f"   XML取得例外: {e}")
         return None
 
 
-def parse_ixbrl_segments(
-    html: str,
-    ticker: str,
-    segment_names: List[str],
+def parse_xbrl_segments(
+    xml_text: str,
+    member_map: Dict[str, str],
 ) -> Dict[str, Dict[str, Any]]:
     """
-    iXBRL HTML からセグメント別売上・営業利益を抽出
+    XBRL Instance Document からセグメント別売上・営業利益を抽出
 
     Args:
-        html:          10-K HTML テキスト
-        ticker:        銘柄コード（ログ用）
-        segment_names: kpi_config.py で定義されたセグメント名リスト
+        xml_text:   _htm.xml のテキスト
+        member_map: {"nvda:ComputeAndNetworkingSegmentMember": "Compute and Networking", ...}
 
     Returns:
-        {
-          "Data Center": {"revenue": 115200000000, "operating_income": 81200000000},
-          "Gaming":      {"revenue": 3100000000,   "operating_income": None},
-          ...
-        }
+        {"Compute and Networking": {"revenue": 116193000000, "operating_income": ...}, ...}
+
+    処理フロー:
+        1. context タグを解析してコンテキストIDとセグメントMemberのマッピングを構築
+           （StatementBusinessSegmentsAxis ディメンションを使用）
+        2. Revenue/OperatingIncome タグのcontextRefでマッピングを引いて値を取得
     """
-    if not HAS_BS4:
-        print("   エラー: beautifulsoup4 が必要です。pip install beautifulsoup4 lxml")
+    soup = BeautifulSoup(xml_text, "xml")
+
+    # ── Step 1: コンテキストID → セグメントMember のマッピング ──
+    # context タグを直接検索（名前空間あり・なし両方）
+    ctx_to_member: Dict[str, str] = {}
+
+    # 文字列検索でコンテキストを抽出（名前空間の問題を回避）
+    # pattern: id="c-NNN" ... StatementBusinessSegmentsAxis ... Member
+    ctx_pattern = re.compile(
+        r'id="(c-\d+)".*?</.*?context>',
+        re.DOTALL
+    )
+    member_pattern = re.compile(
+        r'StatementBusinessSegmentsAxis[^>]*>([^<]+)</xbrldi:explicitMember>'
+    )
+
+    for ctx_match in ctx_pattern.finditer(xml_text):
+        ctx_id  = ctx_match.group(1)
+        ctx_txt = ctx_match.group(0)
+        m = member_pattern.search(ctx_txt)
+        if m:
+            member_val = m.group(1).strip()
+            if member_val in member_map:
+                ctx_to_member[ctx_id] = member_map[member_val]
+
+    print(f"   セグメントコンテキスト: {ctx_to_member}")
+
+    if not ctx_to_member:
         return {}
 
-    soup = BeautifulSoup(html, "lxml")
-    results: Dict[str, Dict[str, Any]] = {seg: {"revenue": None, "operating_income": None} for seg in segment_names}
+    # ── Step 2: Fact タグからセグメント別数値を収集 ──
+    results: Dict[str, Dict[str, Any]] = {
+        seg: {"revenue": None, "operating_income": None}
+        for seg in set(ctx_to_member.values())
+    }
 
-    # iXBRL タグ（ix:nonFraction / ix:nonNumeric）を収集
-    # contextRef にセグメント名が含まれるものを抽出
-    ix_tags = soup.find_all(re.compile(r"ix:nonFraction", re.IGNORECASE))
-    print(f"   iXBRL タグ数: {len(ix_tags)}")
+    # BeautifulSoup で全タグを走査
+    all_tags = soup.find_all(True)
+    for tag in all_tags:
+        ctx_ref = tag.get("contextRef", "")
+        if ctx_ref not in ctx_to_member:
+            continue
 
-    # セグメント名を正規化してマッチングキーを作成
-    def normalize(s: str) -> str:
-        return re.sub(r"[^a-z0-9]", "", s.lower())
+        seg_name = ctx_to_member[ctx_ref]
+        tag_local = tag.name.split(":")[-1].lower() if tag.name else ""
 
-    seg_norm = {normalize(seg): seg for seg in segment_names}
-
-    found_count = 0
-    for tag in ix_tags:
-        name_attr    = (tag.get("name") or "").lower()
-        context_ref  = tag.get("contextref") or tag.get("contextRef") or ""
-        context_norm = normalize(context_ref)
-        val_str      = tag.get_text(strip=True).replace(",", "").replace("$", "").replace("(", "-").replace(")", "")
-
-        # 数値変換
+        # 数値取得
         try:
-            scale_attr = tag.get("scale") or tag.get("data-scale") or "0"
-            scale = 10 ** int(scale_attr)
-            val = float(val_str) * scale
+            val_str = tag.get_text(strip=True).replace(",", "")
+            val     = float(val_str)
         except (ValueError, TypeError):
             continue
 
-        # セグメント名マッチング
-        matched_seg = None
-        for seg_key, seg_orig in seg_norm.items():
-            if seg_key in context_norm:
-                matched_seg = seg_orig
-                break
-        if not matched_seg:
-            continue
+        if tag_local in REVENUE_TAGS and results[seg_name]["revenue"] is None:
+            results[seg_name]["revenue"] = val
+        elif tag_local in OPINCOME_TAGS and results[seg_name]["operating_income"] is None:
+            results[seg_name]["operating_income"] = val
 
-        # 売上タグ
-        is_rev = any(t.split(":")[-1].lower() in name_attr for t in SEGMENT_REVENUE_TAGS)
-        # 営業利益タグ
-        is_oi  = any(t.split(":")[-1].lower() in name_attr for t in SEGMENT_OPINCOME_TAGS)
-
-        if is_rev and results[matched_seg]["revenue"] is None:
-            results[matched_seg]["revenue"] = val
-            found_count += 1
-        elif is_oi and results[matched_seg]["operating_income"] is None:
-            results[matched_seg]["operating_income"] = val
-            found_count += 1
-
-    print(f"   セグメントデータ取得: {found_count}件")
     return results
 
 
@@ -282,17 +274,12 @@ def update_annual_json(
     data_dir: str,
     ticker: str,
     fy: int,
-    segments_raw: Dict[str, Dict[str, Any]],
+    seg_results: Dict[str, Dict[str, Any]],
     filing_date: str,
 ) -> bool:
-    """
-    annual_{fy}.json の "segments" フィールドを更新
-
-    既存データを上書きせずに segments キーのみ追記/更新する。
-    """
+    """annual_{fy}.json の segments フィールドを更新"""
     ticker = ticker.upper()
     path = os.path.join(data_dir, ticker, f"annual_{fy}.json")
-
     if not os.path.exists(path):
         print(f"   [{ticker}] annual_{fy}.json が見つかりません")
         return False
@@ -300,159 +287,167 @@ def update_annual_json(
     with open(path, encoding="utf-8") as f:
         data = json.load(f)
 
-    # 既存の segments を保持しつつ更新
-    existing_segs = data.get("segments", {})
-    for seg_name, seg_vals in segments_raw.items():
-        if seg_vals["revenue"] is not None or seg_vals["operating_income"] is not None:
-            existing_segs[seg_name] = {
-                "revenue":          seg_vals.get("revenue"),
-                "operating_income": seg_vals.get("operating_income"),
+    existing = data.get("segments", {})
+    updated = 0
+    for seg_name, vals in seg_results.items():
+        if vals["revenue"] is not None or vals["operating_income"] is not None:
+            entry = {
+                "revenue":          vals.get("revenue"),
+                "operating_income": vals.get("operating_income"),
             }
-            # 営業利益率を自動計算
-            if seg_vals.get("revenue") and seg_vals.get("operating_income"):
-                existing_segs[seg_name]["operating_margin"] = round(
-                    seg_vals["operating_income"] / seg_vals["revenue"], 4
+            if vals.get("revenue") and vals.get("operating_income"):
+                entry["operating_margin"] = round(
+                    vals["operating_income"] / vals["revenue"], 4
                 )
+            existing[seg_name] = entry
+            updated += 1
 
-    data["segments"] = existing_segs
+    data["segments"]              = existing
     data["segments_fetched_at"]   = datetime.now().strftime("%Y-%m-%d")
     data["segments_filing_date"]  = filing_date
-    data["segments_source"]       = "SEC 10-K iXBRL (local parse)"
+    data["segments_source"]       = "SEC 10-K XBRL Instance Document (_htm.xml)"
 
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
-    non_null = sum(1 for v in existing_segs.values() if v.get("revenue") is not None)
-    print(f"   [{ticker}] annual_{fy}.json 更新完了 (セグメント{non_null}件)")
-    return True
+    print(f"   [{ticker}] annual_{fy}.json 更新 ({updated}セグメント)")
+    return updated > 0
 
 
 def fetch_segments_for_ticker(
     ticker: str,
     data_dir: str,
-    segment_names: List[str],
+    kpi_def: Dict[str, Any],
     max_years: int = 3,
+    force: bool = False,
 ) -> bool:
-    """1銘柄のセグメントデータを取得してannual_*.jsonに書き込む"""
+    """1銘柄のセグメントデータを取得して annual_*.json に書き込む"""
     ticker = ticker.upper()
     print(f"\n{'─'*50}")
     print(f"🔄 {ticker}")
     print(f"{'─'*50}")
 
-    if not segment_names:
-        print(f"   [{ticker}] kpi_config.py にセグメント定義なし → スキップ")
+    # member_map: XBRLのMember名 → 表示用セグメント名
+    member_map: Dict[str, str] = kpi_def.get("xbrl_members", {})
+    if not member_map:
+        print(f"   [{ticker}] kpi_config.py に xbrl_members 未定義 → スキップ")
         return False
 
-    # CIK 取得
     cik = get_cik(ticker, data_dir)
     if not cik:
         print(f"   [{ticker}] CIK取得失敗")
         return False
     print(f"   CIK: {cik}")
 
-    # 10-K ファイリング一覧
     filings = get_10k_filings(cik, max_years=max_years)
     if not filings:
         print(f"   [{ticker}] 10-Kファイリング取得失敗")
         return False
     print(f"   10-K ファイリング: {[f['fy'] for f in filings]}")
 
-    success_count = 0
+    success = 0
     for filing in filings:
-        fy   = filing["fy"]
-        accn = filing["accn"]
-        date = filing["date"]
+        fy       = filing["fy"]
+        accn     = filing["accn"]
+        date     = filing["date"]
+        xml_file = filing.get("xml_file", "")
+
         print(f"\n   FY{fy} ({accn}):")
 
-        # annual_{fy}.json が存在し既にsegmentsがある場合はスキップ
-        ann_path = os.path.join(data_dir, ticker, f"annual_{fy}.json")
-        if os.path.exists(ann_path):
-            with open(ann_path, encoding="utf-8") as f:
-                existing = json.load(f)
-            if existing.get("segments"):
-                non_null = sum(1 for v in existing["segments"].values()
-                               if v.get("revenue") is not None)
-                print(f"   既存データあり（{non_null}セグメント）→ スキップ（--force で強制更新）")
-                success_count += 1
-                continue
+        # 既存データのスキップ判定
+        if not force:
+            ann_path = os.path.join(data_dir, ticker, f"annual_{fy}.json")
+            if os.path.exists(ann_path):
+                with open(ann_path, encoding="utf-8") as f:
+                    existing = json.load(f)
+                segs = existing.get("segments", {})
+                if segs and any(v.get("revenue") for v in segs.values()):
+                    print(f"   既存データあり → スキップ（--force で再取得）")
+                    success += 1
+                    continue
 
-        # HTM URL 取得
-        htm_url = get_10k_htm_url(cik, accn)
-        if not htm_url:
-            print(f"   HTM URL取得失敗")
-            continue
-        print(f"   URL: {htm_url}")
-
-        # HTML ダウンロード（メモリのみ）
-        html = download_10k_html(htm_url)
-        if not html:
+        if not xml_file:
+            print(f"   xml_file が不明 → スキップ")
             continue
 
-        # iXBRL パース
-        segments_raw = parse_ixbrl_segments(html, ticker, segment_names)
-        del html  # メモリ解放
+        # XBRL Instance Document ダウンロード
+        xml_text = download_xbrl_instance(cik, accn, xml_file)
+        if not xml_text:
+            continue
+
+        # パース
+        seg_results = parse_xbrl_segments(xml_text, member_map)
+        del xml_text  # メモリ解放
+
+        # 結果確認
+        found = {k: v for k, v in seg_results.items() if v.get("revenue") is not None}
+        if not found:
+            print(f"   セグメント売上が取得できませんでした")
+            continue
+
+        for seg, vals in found.items():
+            rev = vals.get("revenue", 0) or 0
+            oi  = vals.get("operating_income")
+            print(f"   {seg}: ${rev/1e9:.2f}B" + (f"  OI=${oi/1e9:.2f}B" if oi else ""))
 
         # annual_*.json に書き込み
-        ok = update_annual_json(data_dir, ticker, fy, segments_raw, date)
+        ok = update_annual_json(data_dir, ticker, fy, seg_results, date)
         if ok:
-            success_count += 1
+            success += 1
 
-    return success_count > 0
+    return success > 0
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SEC 10-K セグメント別売上取得（ローカル専用）")
+    parser = argparse.ArgumentParser(
+        description="SEC 10-K XBRL Instance Document からセグメント別売上取得（ローカル専用）"
+    )
     parser.add_argument("tickers", nargs="*", help="対象ティッカー（省略時は全銘柄）")
     parser.add_argument("--years",  type=int, default=3, help="取得年数（デフォルト: 3）")
     parser.add_argument("--force",  action="store_true", help="既存データがある場合も再取得")
     args = parser.parse_args()
 
     if not HAS_BS4:
-        print("エラー: beautifulsoup4 が必要です。")
-        print("  pip install beautifulsoup4 lxml")
+        print("エラー: beautifulsoup4 が必要です。pip install beautifulsoup4 lxml")
         sys.exit(1)
 
-    # kpi_config.py からセグメント定義を読み込む
+    # kpi_config.py を読み込む
     try:
-        kpi_config_path = os.path.join(
-            repo_root, "src", "value", "tanuki_valuation", "kpi_config.py"
-        )
         import importlib.util
-        spec = importlib.util.spec_from_file_location("kpi_config", kpi_config_path)
-        kpi_config = importlib.util.load_module_from_spec(spec)
-        spec.loader.exec_module(kpi_config)
-        KPI_DEFINITIONS = kpi_config.KPI_DEFINITIONS
+        kpi_path = os.path.join(repo_root, "src", "value", "tanuki_valuation", "kpi_config.py")
+        spec     = importlib.util.spec_from_file_location("kpi_config", kpi_path)
+        kpi_mod  = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(kpi_mod)
+        KPI_DEFINITIONS = kpi_mod.KPI_DEFINITIONS
+        print(f"kpi_config.py 読み込み完了: {len(KPI_DEFINITIONS)}銘柄")
     except Exception as e:
         print(f"kpi_config.py 読み込みエラー: {e}")
         KPI_DEFINITIONS = {}
 
-    tickers = [t.upper() for t in args.tickers] if args.tickers else get_all()
+    tickers  = [t.upper() for t in args.tickers] if args.tickers else get_all()
     data_dir = os.path.join(script_dir, "data")
 
-    # CIK キャッシュをロード
     global _cik_cache
     _cik_cache = _load_cik_cache(data_dir)
 
     print("=" * 60)
-    print("SEC 10-K セグメント別売上取得（ローカル専用）")
-    print(f"対象: {tickers}")
-    print(f"取得年数: {args.years}年")
+    print("SEC XBRL Instance Document セグメント別売上取得")
+    print(f"対象: {tickers}  取得年数: {args.years}年")
     print(f"データ保存先: {data_dir}")
     print("=" * 60)
 
     results = {}
     for ticker in tickers:
         defn = KPI_DEFINITIONS.get(ticker, {})
-        seg_names = defn.get("segments", [])
-        ok = fetch_segments_for_ticker(
-            ticker=ticker,
-            data_dir=data_dir,
-            segment_names=seg_names,
-            max_years=args.years,
+        ok   = fetch_segments_for_ticker(
+            ticker   = ticker,
+            data_dir = data_dir,
+            kpi_def  = defn,
+            max_years= args.years,
+            force    = args.force,
         )
         results[ticker] = ok
 
-    # サマリー
     success = [t for t, ok in results.items() if ok]
     failed  = [t for t, ok in results.items() if not ok]
     print("\n" + "=" * 60)
