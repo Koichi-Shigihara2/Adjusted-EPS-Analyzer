@@ -164,6 +164,99 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-02-17",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "M USD",
+    "fiscal_year_end": 12,
+    "total_revenue": {
+      "FY2023": 421454000,
+      "FY2024": 503123000,
+      "FY2025": 619353000,
+      "FY2026_est": null,
+      "FY2027_est": null,
+      "FY2028_est": null
+    },
+    "segments": {
+      "Lending": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 0.0,
+          "FY2024": 1485222000.0,
+          "FY2025": 1848949000.0
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": 0.2449
+        }
+      },
+      "Technology Platform": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 319845000.0,
+          "FY2024": 346185000.0,
+          "FY2025": 355721000.0
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.0824,
+          "FY2025": 0.0275
+        }
+      },
+      "Financial Services": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 38443000.0,
+          "FY2024": 52129000.0,
+          "FY2025": 79985000.0
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.356,
+          "FY2025": 0.5344
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": -4269250000.0,
     "fcf_2yr_avg": -4375266500.0,
@@ -204,8 +297,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $18.33B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $21.56 (差異12.78%)"
+        "pass": true,
+        "detail": "(V₀ $18.33B + RPO $0.01B + GO $0.00B) × (1+0.231) / 1.275B + BS $+3.87/株 = $21.56 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -220,8 +313,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Inconsistency in per-share value detected.",
-    "ai_concerns": "Inconsistency in per-share value calculation suggests potential anomaly in final valuation step."
+    "overall": "PASS",
+    "ai_comment": "Minor inconsistency in pt_shares, but overall valid."
   }
 }

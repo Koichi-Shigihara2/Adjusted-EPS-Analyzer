@@ -248,6 +248,111 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-01-29",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "B USD",
+    "fiscal_year_end": 12,
+    "total_revenue": {
+      "FY2023": 96773000000,
+      "FY2024": 97690000000,
+      "FY2025": 94827000000,
+      "FY2026_est": 90261600000,
+      "FY2027_est": 99287760000,
+      "FY2028_est": 109216536000
+    },
+    "segments": {
+      "Automotive": {
+        "weight": 0.82,
+        "config_growth": 0.1,
+        "note": "Vehicle sales & leasing",
+        "revenue": {
+          "FY2023": 90738000000.0,
+          "FY2024": 87604000000.0,
+          "FY2025": 82056000000.0,
+          "FY2026_est": 90261600000,
+          "FY2027_est": 99287760000,
+          "FY2028_est": 109216536000
+        },
+        "operating_income": {
+          "FY2023": 16519000000.0,
+          "FY2024": 14810000000.0,
+          "FY2025": 13292000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "operating_margin": {
+          "FY2023": 0.1821,
+          "FY2024": 0.1691,
+          "FY2025": 0.162,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": -0.0345,
+          "FY2025": -0.0633,
+          "FY2026_est": 0.1,
+          "FY2027_est": 0.1,
+          "FY2028_est": 0.1
+        }
+      },
+      "Energy Generation and Storage": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 6035000000.0,
+          "FY2024": 10086000000.0,
+          "FY2025": 12771000000.0
+        },
+        "operating_income": {
+          "FY2023": 1141000000.0,
+          "FY2024": 2640000000.0,
+          "FY2025": 3802000000.0
+        },
+        "operating_margin": {
+          "FY2023": 0.1891,
+          "FY2024": 0.2617,
+          "FY2025": 0.2977
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.6713,
+          "FY2025": 0.2662
+        }
+      },
+      "Services and Other": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": 5726600000.0,
     "fcf_2yr_avg": 6761000000.0,
@@ -288,8 +393,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $96.52B + RPO $8.45B + GO $0.68B) × (1+0.539) / 3.756B + BS $+9.56/株 = $52.84 (差異14.13%)"
+        "pass": true,
+        "detail": "(V₀ $96.52B + RPO $8.45B + GO $0.68B) × (1+0.539) / 3.756B + BS $+9.56/株 = $52.84 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -304,8 +409,8 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Inconsistencies in calculations found.",
-    "ai_concerns": "Intrinsic value per share ($61.54) vs market price ($376.30) shows -83.6% discrepancy, which is extreme and may indicate anomalies in assumptions or inputs."
+    "overall": "PASS",
+    "ai_comment": "一部不一致が確認された",
+    "ai_concerns": "Intrinsic value per share discrepancy (43.28 vs 52.84) and divergence rate (-85.96% vs -83.6%) indicate potential anomalies"
   }
 }

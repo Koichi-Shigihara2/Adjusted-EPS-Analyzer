@@ -253,6 +253,135 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2025-07-30",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "B USD",
+    "fiscal_year_end": 6,
+    "total_revenue": {
+      "FY2023": 211915000000,
+      "FY2024": 245122000000,
+      "FY2025": 281724000000,
+      "FY2026_est": 322331950000,
+      "FY2027_est": 369959412500,
+      "FY2028_est": 425953488025
+    },
+    "segments": {
+      "Intelligent Cloud": {
+        "weight": 0.44,
+        "config_growth": 0.22,
+        "note": "Azure, Server products, Enterprise services",
+        "revenue": {
+          "FY2023": 87907000000.0,
+          "FY2024": 105362000000.0,
+          "FY2025": 106265000000.0,
+          "FY2026_est": 129643300000,
+          "FY2027_est": 158164826000,
+          "FY2028_est": 192961087720
+        },
+        "operating_income": {
+          "FY2023": 37884000000.0,
+          "FY2024": 49584000000.0,
+          "FY2025": 44589000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "operating_margin": {
+          "FY2023": 0.431,
+          "FY2024": 0.4706,
+          "FY2025": 0.4196,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.1986,
+          "FY2025": 0.0086,
+          "FY2026_est": 0.22,
+          "FY2027_est": 0.22,
+          "FY2028_est": 0.22
+        }
+      },
+      "Productivity and Business Processes": {
+        "weight": 0.32,
+        "config_growth": 0.12,
+        "note": "Office 365, LinkedIn, Dynamics",
+        "revenue": {
+          "FY2023": 69274000000.0,
+          "FY2024": 77728000000.0,
+          "FY2025": 120810000000.0,
+          "FY2026_est": 135307200000,
+          "FY2027_est": 151544064000,
+          "FY2028_est": 169729351680
+        },
+        "operating_income": {
+          "FY2023": 34189000000.0,
+          "FY2024": 40540000000.0,
+          "FY2025": 69773000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "operating_margin": {
+          "FY2023": 0.4935,
+          "FY2024": 0.5216,
+          "FY2025": 0.5775,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.122,
+          "FY2025": 0.5543,
+          "FY2026_est": 0.12,
+          "FY2027_est": 0.12,
+          "FY2028_est": 0.12
+        }
+      },
+      "More Personal Computing": {
+        "weight": 0.24,
+        "config_growth": 0.05,
+        "note": "Windows, Xbox, Surface, Search",
+        "revenue": {
+          "FY2023": 54734000000.0,
+          "FY2024": 62032000000.0,
+          "FY2025": 54649000000.0,
+          "FY2026_est": 57381450000,
+          "FY2027_est": 60250522500,
+          "FY2028_est": 63263048625
+        },
+        "operating_income": {
+          "FY2023": 16450000000.0,
+          "FY2024": 19309000000.0,
+          "FY2025": 14166000000.0,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "operating_margin": {
+          "FY2023": 0.3005,
+          "FY2024": 0.3113,
+          "FY2025": 0.2592,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.1333,
+          "FY2025": -0.119,
+          "FY2026_est": 0.05,
+          "FY2027_est": 0.05,
+          "FY2028_est": 0.05
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": 66518600000.0,
     "fcf_2yr_avg": 61405500000.0,
@@ -293,8 +422,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $2865.81B + RPO $304.08B + GO $2.58B) × (1+1.000) / 7.432B + BS $+6.51/株 = $860.20 (差異8.75%)"
+        "pass": true,
+        "detail": "(V₀ $2865.81B + RPO $304.08B + GO $2.58B) × (1+1.000) / 7.432B + BS $+6.51/株 = $860.20 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -309,7 +438,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Inconsistency in per-share calculation affects reliability."
+    "overall": "PASS",
+    "ai_comment": "One check failed due to per share inconsistency."
   }
 }

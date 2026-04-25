@@ -275,6 +275,74 @@
     "fiscal_year": 2026,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-02-25",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "B USD",
+    "fiscal_year_end": 1,
+    "total_revenue": {
+      "FY2024": 60922000000,
+      "FY2025": 130497000000,
+      "FY2026": 215938000000,
+      "FY2027_est": null,
+      "FY2028_est": null,
+      "FY2029_est": null
+    },
+    "segments": {
+      "Compute and Networking": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2024": 47405000000.0,
+          "FY2025": 116193000000.0,
+          "FY2026": 193479000000.0
+        },
+        "operating_income": {
+          "FY2024": 32016000000.0,
+          "FY2025": 82875000000.0,
+          "FY2026": 130141000000.0
+        },
+        "operating_margin": {
+          "FY2024": 0.6754,
+          "FY2025": 0.7133,
+          "FY2026": 0.6726
+        },
+        "yoy_growth": {
+          "FY2024": null,
+          "FY2025": 1.4511,
+          "FY2026": 0.6652
+        }
+      },
+      "Graphics": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2024": 13517000000.0,
+          "FY2025": 14304000000.0,
+          "FY2026": 22459000000.0
+        },
+        "operating_income": {
+          "FY2024": 5846000000.0,
+          "FY2025": 5085000000.0,
+          "FY2026": 9156000000.0
+        },
+        "operating_margin": {
+          "FY2024": 0.4325,
+          "FY2025": 0.3555,
+          "FY2026": 0.4077
+        },
+        "yoy_growth": {
+          "FY2024": null,
+          "FY2025": 0.0582,
+          "FY2026": 0.5701
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": 39859800000.0,
     "fcf_2yr_avg": 7374500000.0,
@@ -288,7 +356,7 @@
       96676000000
     ],
     "diluted_shares": 24305000000,
-    "roe_10yr_avg": 0.4564387976956358,
+    "roe_10yr_avg": 0.45643879769563567,
     "current_price": 208.27,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
@@ -304,19 +372,19 @@
     "terminal_growth_used": 0.03,
     "pv_high": 1948921046664.7837,
     "pv_terminal": 3732571933164.222,
-    "roe_used": 0.4564387976956358,
+    "roe_used": 0.45643879769563567,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
-    "alpha_uncapped": 1.8639211962291393
+    "alpha_uncapped": 1.863921196229139
   },
   "validation": {
     "validated_at": "2026-04-25",
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $5681.49B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $467.87 (差異4.79%)"
+        "pass": true,
+        "detail": "(V₀ $5681.49B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $467.87 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -331,7 +399,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "One inconsistency in per share value calculation."
+    "overall": "PASS",
+    "ai_comment": "All checks passed without issues."
   }
 }

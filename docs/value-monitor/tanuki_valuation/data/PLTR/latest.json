@@ -1,13 +1,13 @@
 {
   "intrinsic_value_pt": 184670660947.69348,
-  "intrinsic_value_per_share": 86.18807946375172,
+  "intrinsic_value_per_share": 86.1880794637517,
   "intrinsic_value_beta": 80.21,
   "upside_percent_beta": -43.9,
   "intrinsic_value_rf": 532.31,
   "upside_percent_rf": 272.0,
   "v0": 118447865978.33435,
   "v0_adjusted": 123190968140.46396,
-  "alpha": 0.49906006694524535,
+  "alpha": 0.49906006694524524,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 106.2,
@@ -264,6 +264,86 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-02-17",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "M USD",
+    "fiscal_year_end": 12,
+    "total_revenue": {
+      "FY2023": 2225012000,
+      "FY2024": 2865507000,
+      "FY2025": 4475446000,
+      "FY2026_est": 2882744400,
+      "FY2027_est": 3459293280,
+      "FY2028_est": 4151151936
+    },
+    "segments": {
+      "Government": {
+        "weight": 0.42,
+        "config_growth": 0.2,
+        "note": "US Gov + Allies defense/intel",
+        "revenue": {
+          "FY2023": 1222215000.0,
+          "FY2024": 1569605000.0,
+          "FY2025": 2402287000.0,
+          "FY2026_est": 2882744400,
+          "FY2027_est": 3459293280,
+          "FY2028_est": 4151151936
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null,
+          "FY2026_est": null,
+          "FY2027_est": null,
+          "FY2028_est": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.2842,
+          "FY2025": 0.5305,
+          "FY2026_est": 0.2,
+          "FY2027_est": 0.2,
+          "FY2028_est": 0.2
+        }
+      },
+      "Commercial": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 1002797000.0,
+          "FY2024": 1295902000.0,
+          "FY2025": 2073159000.0
+        },
+        "operating_income": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "operating_margin": {
+          "FY2023": null,
+          "FY2024": null,
+          "FY2025": null
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.2923,
+          "FY2025": 0.5998
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": 888765000.0,
     "fcf_2yr_avg": 252467000.0,
@@ -277,7 +357,7 @@
       2100591000
     ],
     "diluted_shares": 2391675711,
-    "roe_10yr_avg": 0.12424219190427348,
+    "roe_10yr_avg": 0.12424219190427345,
     "current_price": 143.09,
     "latest_revenue": 4475446000.0,
     "rpo": 4100000000.0,
@@ -293,19 +373,19 @@
     "terminal_growth_used": 0.03,
     "pv_high": 41891198459.967834,
     "pv_terminal": 76556667518.36652,
-    "roe_used": 0.12424219190427348,
+    "roe_used": 0.12424219190427345,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 3324582359.813293,
     "growth_option_pv": 1418519802.3163157,
-    "alpha_uncapped": 0.49906006694524535
+    "alpha_uncapped": 0.49906006694524524
   },
   "validation": {
     "validated_at": "2026-04-25",
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $118.45B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B + BS $+3.00/株 = $80.21 (差異6.93%)"
+        "pass": true,
+        "detail": "(V₀ $118.45B + RPO $3.32B + GO $1.42B) × (1+0.499) / 2.392B + BS $+3.00/株 = $80.21 (差異0.01%)"
       },
       "dcf_components": {
         "pass": true,
@@ -320,8 +400,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Per-share value mismatch detected",
-    "ai_concerns": "Inconsistency in per-share value (77.19 vs 86.19) suggests potential error; other values like high growth rate 32.4% are plausible but warrant review."
+    "overall": "PASS",
+    "ai_comment": "一部検証で不一致"
   }
 }

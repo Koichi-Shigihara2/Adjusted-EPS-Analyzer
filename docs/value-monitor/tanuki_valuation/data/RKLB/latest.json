@@ -157,6 +157,74 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-02-26",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "M USD",
+    "fiscal_year_end": 12,
+    "total_revenue": {
+      "FY2023": 244592000,
+      "FY2024": 436214000,
+      "FY2025": 601799000,
+      "FY2026_est": null,
+      "FY2027_est": null,
+      "FY2028_est": null
+    },
+    "segments": {
+      "Launch Services": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 71894000.0,
+          "FY2024": 125376000.0,
+          "FY2025": 199042000.0
+        },
+        "operating_income": {
+          "FY2023": 8067000.0,
+          "FY2024": 34590000.0,
+          "FY2025": 81270000.0
+        },
+        "operating_margin": {
+          "FY2023": 0.1122,
+          "FY2024": 0.2759,
+          "FY2025": 0.4083
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.7439,
+          "FY2025": 0.5876
+        }
+      },
+      "Space Systems": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2023": 172698000.0,
+          "FY2024": 310838000.0,
+          "FY2025": 402757000.0
+        },
+        "operating_income": {
+          "FY2023": 43342000.0,
+          "FY2024": 81559000.0,
+          "FY2025": 125911000.0
+        },
+        "operating_margin": {
+          "FY2023": 0.251,
+          "FY2024": 0.2624,
+          "FY2025": 0.3126
+        },
+        "yoy_growth": {
+          "FY2023": null,
+          "FY2024": 0.7999,
+          "FY2025": 0.2957
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": -167319800.0,
     "fcf_2yr_avg": -123084500.0,
@@ -197,8 +265,8 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $1.96B + RPO $1.50B + GO $0.00B) × (1+0.000) / 0.578B + BS $+1.50/株 = $7.47 (差異6.32%)"
+        "pass": true,
+        "detail": "(V₀ $1.96B + RPO $1.50B + GO $0.00B) × (1+0.000) / 0.578B + BS $+1.50/株 = $7.47 (差異0.06%)"
       },
       "dcf_components": {
         "pass": true,
@@ -213,8 +281,8 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "Inconsistencies in per-share value and anomalies in growth metrics.",
-    "ai_concerns": "ROE at 0.00% and α at 0.0000 indicate no growth, which is anomalous for a company with a 25% high growth rate assumption."
+    "overall": "PASS",
+    "ai_comment": "計算に不一致と異常値あり、検証必要",
+    "ai_concerns": "Intrinsic value $7.47 vs market price $79.68 results in -91.2% divergence, indicating potential overvaluation anomaly with ROE at 0%."
   }
 }

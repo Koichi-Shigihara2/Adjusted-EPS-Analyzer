@@ -2,19 +2,19 @@
   "intrinsic_value_pt": 11370435407765.412,
   "intrinsic_value_per_share": 491.4055135298073,
   "intrinsic_value_beta": 467.87,
-  "upside_percent_beta": 124.2,
+  "upside_percent_beta": 124.6,
   "intrinsic_value_rf": 3238.24,
-  "upside_percent_rf": 1451.9,
+  "upside_percent_rf": 1454.8,
   "v0": 5681492979829.006,
   "v0_adjusted": 5685217703882.706,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 669.79,
-    "2年後": 912.92,
-    "3年後": 1244.31
+    "1年後": 637.71,
+    "2年後": 869.19,
+    "3年後": 1184.71
   },
-  "upside_percent": 135.5,
+  "upside_percent": 135.9,
   "calculation_date": "2026-04-25",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -275,6 +275,74 @@
     "fiscal_year": 2026,
     "applied": true
   },
+  "kpi_data": {
+    "fetched_at": "2026-04-25",
+    "filing_date": "2026-02-25",
+    "source": "SEC 10-K iXBRL (local parse)",
+    "unit": "B USD",
+    "fiscal_year_end": 1,
+    "total_revenue": {
+      "FY2024": 60922000000,
+      "FY2025": 130497000000,
+      "FY2026": 215938000000,
+      "FY2027_est": null,
+      "FY2028_est": null,
+      "FY2029_est": null
+    },
+    "segments": {
+      "Compute and Networking": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2024": 47405000000.0,
+          "FY2025": 116193000000.0,
+          "FY2026": 193479000000.0
+        },
+        "operating_income": {
+          "FY2024": 32016000000.0,
+          "FY2025": 82875000000.0,
+          "FY2026": 130141000000.0
+        },
+        "operating_margin": {
+          "FY2024": 0.6754,
+          "FY2025": 0.7133,
+          "FY2026": 0.6726
+        },
+        "yoy_growth": {
+          "FY2024": null,
+          "FY2025": 1.4511,
+          "FY2026": 0.6652
+        }
+      },
+      "Graphics": {
+        "weight": null,
+        "config_growth": null,
+        "note": "",
+        "revenue": {
+          "FY2024": 13517000000.0,
+          "FY2025": 14304000000.0,
+          "FY2026": 22459000000.0
+        },
+        "operating_income": {
+          "FY2024": 5846000000.0,
+          "FY2025": 5085000000.0,
+          "FY2026": 9156000000.0
+        },
+        "operating_margin": {
+          "FY2024": 0.4325,
+          "FY2025": 0.3555,
+          "FY2026": 0.4077
+        },
+        "yoy_growth": {
+          "FY2024": null,
+          "FY2025": 0.0582,
+          "FY2026": 0.5701
+        }
+      }
+    },
+    "errors": []
+  },
   "components": {
     "fcf_5yr_avg": 39859800000.0,
     "fcf_2yr_avg": 7374500000.0,
@@ -288,8 +356,8 @@
       96676000000
     ],
     "diluted_shares": 24305000000,
-    "roe_10yr_avg": 0.4564387976956358,
-    "current_price": 208.66,
+    "roe_10yr_avg": 0.45643879769563567,
+    "current_price": 208.27,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
     "beta": 1.05,
@@ -304,19 +372,19 @@
     "terminal_growth_used": 0.03,
     "pv_high": 1948921046664.7837,
     "pv_terminal": 3732571933164.222,
-    "roe_used": 0.4564387976956358,
+    "roe_used": 0.45643879769563567,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
-    "alpha_uncapped": 1.8639211962291393
+    "alpha_uncapped": 1.863921196229139
   },
   "validation": {
     "validated_at": "2026-04-25",
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $5681.49B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $467.87 (差異4.79%)"
+        "pass": true,
+        "detail": "(V₀ $5681.49B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $467.87 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -331,92 +399,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
-    "ai_comment": "P_t per share mismatch detected."
-  },
-  "kpi_data": {
-    "fetched_at": "2026-04-25",
-    "source": "SEC EDGAR XBRL",
-    "unit": "B USD",
-    "segments": {
-      "Data Center": {
-        "weight": 0.88,
-        "config_growth": 0.4,
-        "revenue": {
-          "FY2023": 18400000000,
-          "FY2024": 47500000000,
-          "FY2025": 115200000000,
-          "FY2026_est": 161280000000,
-          "FY2027_est": 225792000000,
-          "FY2028_est": 316108800000
-        },
-        "operating_income": {
-          "FY2023": 9750000000,
-          "FY2024": 27700000000,
-          "FY2025": 81200000000,
-          "FY2026_est": null,
-          "FY2027_est": null,
-          "FY2028_est": null
-        },
-        "operating_margin": {
-          "FY2023": 0.53,
-          "FY2024": 0.583,
-          "FY2025": 0.705,
-          "FY2026_est": null,
-          "FY2027_est": null,
-          "FY2028_est": null
-        },
-        "yoy_growth": {
-          "FY2024": 1.582,
-          "FY2025": 1.426,
-          "FY2026_est": 0.4,
-          "FY2027_est": 0.4,
-          "FY2028_est": 0.4
-        }
-      },
-      "Gaming": {
-        "weight": 0.08,
-        "config_growth": 0.05,
-        "revenue": {
-          "FY2023": 4900000000,
-          "FY2024": 2900000000,
-          "FY2025": 3100000000,
-          "FY2026_est": 3255000000,
-          "FY2027_est": 3417750000,
-          "FY2028_est": 3588637500
-        },
-        "operating_income": {},
-        "operating_margin": {},
-        "yoy_growth": {
-          "FY2024": -0.408,
-          "FY2025": 0.069,
-          "FY2026_est": 0.05,
-          "FY2027_est": 0.05,
-          "FY2028_est": 0.05
-        }
-      },
-      "Automotive & Other": {
-        "weight": 0.04,
-        "config_growth": 0.175,
-        "revenue": {
-          "FY2023": 903000000,
-          "FY2024": 1090000000,
-          "FY2025": 1690000000,
-          "FY2026_est": 1985750000,
-          "FY2027_est": 2333506250,
-          "FY2028_est": 2741870044
-        },
-        "operating_income": {},
-        "operating_margin": {},
-        "yoy_growth": {
-          "FY2024": 0.207,
-          "FY2025": 0.55,
-          "FY2026_est": 0.175,
-          "FY2027_est": 0.175,
-          "FY2028_est": 0.175
-        }
-      }
-    },
-    "errors": []
+    "overall": "PASS",
+    "ai_comment": "All checks passed without issues."
   }
 }
