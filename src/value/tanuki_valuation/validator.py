@@ -72,6 +72,8 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     p = _extract_params(data)
 
     ivps = data.get("intrinsic_value_per_share", 0)
+    # v7.3: プロンプト内の整合性検証もβ込みWACC版を使用
+    ivps_beta = data.get("intrinsic_value_beta", ivps)
     v0 = data.get("v0", 0)
     alpha = data.get("alpha", 0)
 
@@ -136,7 +138,8 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
 | 成長オプションPV | ${growth_option_pv:,.0f} |
 | α | {alpha:.4f} |
 | 企業価値 P_t | ${p_t:,.0f} |
-| 1株当り本質価値 | ${ivps:.2f} |
+| 1株当り本質価値（β込みWACC版） | ${ivps_beta:.2f} |
+| 1株当り本質価値（Rmβなし版） | ${ivps:.2f} |
 | 現在市場価格 | ${current_price:.2f} |
 | 乖離率 | {divergence:+.1f}% |
 
@@ -144,7 +147,7 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
 
 以下4項目を検証し、JSON形式で回答してください:
 
-1. **pt_shares_consistency**: P_t / shares = intrinsic_value_per_share が正しいか
+1. **pt_shares_consistency**: P_t / shares + BS補正 = intrinsic_value_beta（β込みWACC版）が正しいか
 2. **dcf_components**: DCF構成要素の合計 = v0 が成立するか
 3. **formula_verification**: 算式が正しく適用されているか（動的WACC {p["wacc"]*100:.2f}% で再計算）
 4. **anomaly_detection**: 異常値がないか
@@ -230,6 +233,11 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     p = _extract_params(data)
 
     ivps = data.get("intrinsic_value_per_share", 0)
+    # v7.3: メイン理論株価はRmβなし（10%固定）で計算されるため、
+    # pt_shares_consistency の比較対象は β込みWACC版（intrinsic_value_beta）を使用する。
+    # V₀はβ込みWACCで計算されたものがlatest.jsonに記録されているため、
+    # calculated_ivps は intrinsic_value_beta と一致するはず。
+    ivps_beta = data.get("intrinsic_value_beta", ivps)  # フォールバック: ivps
     v0 = data.get("v0", 0)
     alpha = data.get("alpha", 0)
     alpha_was_capped = data.get("alpha_was_capped", False)
@@ -243,7 +251,9 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
 
     checks = {}
 
-    # ── 1. P_t / shares 整合性（v7.0: BS補正考慮）──
+    # ── 1. P_t / shares 整合性（v7.3: β込みWACC版と照合）──
+    # メイン理論株価(ivps)はRm=10%固定で計算されるため、
+    # V₀(β込みWACC)から再計算した値は intrinsic_value_beta と比較する。
     bs_adj = data.get("bs_adjustment", {})
     net_cash_per_share = bs_adj.get("net_cash_per_share", 0.0) if bs_adj.get("applied", False) else 0.0
 
@@ -251,7 +261,7 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
         total_v0 = v0 + rpo_pv + growth_option_pv
         p_t = total_v0 * (1 + alpha)
         calculated_ivps = p_t / diluted_shares + net_cash_per_share
-        diff_pct = abs(calculated_ivps - ivps) / abs(ivps) * 100 if ivps != 0 else 0
+        diff_pct = abs(calculated_ivps - ivps_beta) / abs(ivps_beta) * 100 if ivps_beta != 0 else 0
 
         bs_note = f" + BS ${net_cash_per_share:+.2f}/株" if net_cash_per_share != 0 else ""
         checks["pt_shares_consistency"] = {
