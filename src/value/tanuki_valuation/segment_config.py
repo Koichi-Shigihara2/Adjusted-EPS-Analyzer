@@ -127,14 +127,14 @@ SEGMENT_OVERRIDES: Dict[str, Dict[str, Any]] = {
                 "note": "EPYC CPUs + Instinct MI300X GPUs."
             },
             "Client": {
-                "weight": 0.20,
+                "weight": 0.00,
                 "growth": 0.08,
-                "note": "Ryzen CPUs for PC."
+                "note": "Ryzen CPUs. FY2025はClient and Gamingに統合のためweight=0。"
             },
             "Gaming": {
-                "weight": 0.08,
+                "weight": 0.00,
                 "growth": -0.10,
-                "note": "Console APUs cycle declining."
+                "note": "Console APUs. FY2025はClient and Gamingに統合のためweight=0。"
             },
             "Embedded": {
                 "weight": 0.10,
