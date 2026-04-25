@@ -84,6 +84,7 @@ class KoichiValuationCalculator:
         min_fcf_years: int = 3,
         fcf_base_threshold: float = DEFAULT_FCF_CV_THRESHOLD,
         eps_data_dir: str = "",
+        sec_data_dir: str = "",
     ):
         self.high_growth_years = high_growth_years
         self.terminal_growth = terminal_growth
@@ -92,6 +93,7 @@ class KoichiValuationCalculator:
         self.min_fcf_years = min_fcf_years
         self.fcf_base_threshold = fcf_base_threshold
         self.eps_data_dir = eps_data_dir  # v7.1: EPSアナライザーdataディレクトリ
+        self.sec_data_dir = sec_data_dir  # v7.4: common/sec_data/data/ へのパス（kpi_data生成用）
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """メイン計算関数"""
@@ -490,6 +492,9 @@ class KoichiValuationCalculator:
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
 
+            # KPIデータ（v7.4追加: セグメント別業績 SEC 10-K iXBRL）
+            "kpi_data": self._build_kpi_data(ticker, fiscal_year_of_latest),
+
             "components": {
                 "fcf_5yr_avg": financials.get("fcf_5yr_avg"),
                 "fcf_2yr_avg": fcf_2yr_avg,
@@ -520,6 +525,28 @@ class KoichiValuationCalculator:
         }
 
         return result
+
+
+    def _build_kpi_data(self, ticker: str, fiscal_year_latest: int) -> dict:
+        """
+        kpi_fetcher を呼び出して kpi_data を生成する（v7.4）
+
+        sec_data_dir が設定されていない場合は None を返す。
+        kpi_fetcher のインポートエラーや取得失敗時も None を返す（計算本体に影響しない）。
+        """
+        if not self.sec_data_dir:
+            return None
+        try:
+            from kpi_fetcher import build_kpi_data, get_fiscal_year_latest
+            fy = fiscal_year_latest or get_fiscal_year_latest(ticker, self.sec_data_dir)
+            return build_kpi_data(
+                ticker=ticker,
+                sec_data_dir=self.sec_data_dir,
+                fiscal_year_latest=fy,
+            )
+        except Exception as e:
+            print(f"   [{ticker}] kpi_data生成エラー（無視）: {e}")
+            return None
 
 
 def create_calculator(**kwargs) -> KoichiValuationCalculator:

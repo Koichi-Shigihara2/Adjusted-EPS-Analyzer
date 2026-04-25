@@ -52,7 +52,12 @@ class TanukiValuationPipeline:
         eps_data_dir = os.path.join(
             repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data"
         )
-        self.calculator = KoichiValuationCalculator(eps_data_dir=eps_data_dir)
+        # v7.4: SEC生データディレクトリ（kpi_data生成用）
+        sec_data_dir = os.path.join(repo_root, "common", "sec_data", "data")
+        self.calculator = KoichiValuationCalculator(
+            eps_data_dir=eps_data_dir,
+            sec_data_dir=sec_data_dir,
+        )
         
         os.makedirs(self.output_dir, exist_ok=True)
         print(f"   出力先: {self.output_dir}")
