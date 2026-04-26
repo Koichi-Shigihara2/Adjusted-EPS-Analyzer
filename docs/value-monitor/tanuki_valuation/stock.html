@@ -284,7 +284,8 @@
     footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--bdr); font-size: 12px; color: var(--mut); text-align: center; }
 
     .toggle-arrow { font-size: 10px; color: var(--mut); transition: transform .2s; }
-    .calc-step.open .toggle-arrow { transform: rotate(180deg); }
+    .toggle-arrow { transform: rotate(180deg); }
+    .calc-step.open .toggle-arrow { transform: rotate(0deg); }
 
     .loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; gap: 16px; }
     .loading-spinner { width: 40px; height: 40px; border: 3px solid var(--sur2); border-top-color: var(--acc); border-radius: 50%; animation: spin 1s linear infinite; }
@@ -625,7 +626,7 @@ function render(d) {
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtPct2(waccValue)}</span>
-              <span class="toggle-arrow">▶</span>
+              <span class="toggle-arrow">▼</span>
             </div>
           </div>
           <div class="calc-step-body">
