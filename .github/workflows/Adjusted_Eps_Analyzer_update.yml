@@ -1,4 +1,4 @@
-name: Adjusted_EPS_Data_Update
+﻿name: Adjusted_EPS_Data_Update
 
 on:
   workflow_dispatch:
@@ -6,16 +6,16 @@ on:
       - kaihatsu
     inputs:
       ticker:
-        description: '更新する銘柄（例: AMZN または AMZN,AMD,APP）。カンマ区切りで複数指定可。空欄の場合は全銘柄を更新'
+        description: '譖ｴ譁ｰ縺吶ｋ驫俶氛・井ｾ・ AMZN 縺ｾ縺溘・ AMZN,AMD,APP・峨ゅき繝ｳ繝槫玄蛻・ｊ縺ｧ隍・焚謖・ｮ壼庄縲らｩｺ谺・・蝣ｴ蜷医・蜈ｨ驫俶氛繧呈峩譁ｰ'
         required: false
         default: ''
   schedule:
-    - cron: '0 10 * * 1'  # 毎週月曜日10:00 UTC
+    - cron: '0 10 * * 1'  # 豈朱ｱ譛域屆譌･10:00 UTC
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # タイムアウト設定を追加
+    timeout-minutes: 30  # 繧ｿ繧､繝繧｢繧ｦ繝郁ｨｭ螳壹ｒ霑ｽ蜉
     permissions:
       contents: write
     
@@ -26,7 +26,7 @@ jobs:
           ref: kaihatsu
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.10'
 

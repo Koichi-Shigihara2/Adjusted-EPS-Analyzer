@@ -1,11 +1,11 @@
-name: SEC Data Update
+﻿name: SEC Data Update
 on:
   schedule:
     - cron: '0 12 * * 0'
   workflow_dispatch:
     inputs:
       tickers:
-        description: '対象ティッカー（カンマ区切り、空白で全て）'
+        description: '蟇ｾ雎｡繝・ぅ繝・き繝ｼ・医き繝ｳ繝槫玄蛻・ｊ縲∫ｩｺ逋ｽ縺ｧ蜈ｨ縺ｦ・・
         required: false
         default: ''
 env:
@@ -20,7 +20,7 @@ jobs:
         with:
           ref: kaihatsu
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
@@ -42,19 +42,19 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "📊 SEC Data Update: $(date +'%Y-%m-%d')"
+            git commit -m "投 SEC Data Update: $(date +'%Y-%m-%d')"
             git push origin kaihatsu
           fi
       - name: Summary
         run: |
-          echo "## 📊 SEC Data Update 完了" >> $GITHUB_STEP_SUMMARY
+          echo "## 投 SEC Data Update 螳御ｺ・ >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| ティッカー | 年次データ |" >> $GITHUB_STEP_SUMMARY
+          echo "| 繝・ぅ繝・き繝ｼ | 蟷ｴ谺｡繝・・繧ｿ |" >> $GITHUB_STEP_SUMMARY
           echo "|:-----------|:-----------|" >> $GITHUB_STEP_SUMMARY
           for dir in common/sec_data/data/*/; do
             ticker=$(basename $dir)
             if [ "$ticker" != "_cik_cache.json" ]; then
               annual_count=$(ls -1 $dir/annual_*.json 2>/dev/null | wc -l)
-              echo "| $ticker | ${annual_count}件 |" >> $GITHUB_STEP_SUMMARY
+              echo "| $ticker | ${annual_count}莉ｶ |" >> $GITHUB_STEP_SUMMARY
             fi
           done
