@@ -278,7 +278,7 @@
     "fcf_floor_applied": 0.0,
     "rpo_pv": 0.0,
     "growth_option_pv": 355058765.51327366,
-    "alpha_uncapped": 4.184033899149339
+    "alpha_uncapped": 4.613315777202062
   },
   "validation": {
     "validated_at": "2026-04-26",
@@ -286,7 +286,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $117.20B + RPO $0.00B + GO $0.36B) × (1+1.000) / 0.336B + BS $-3.05/株 = $696.13 (差異0.00%)"
+        "detail": "(V₀ $137.01B + RPO $0.00B + GO $0.36B) × (1+1.000) / 0.336B + BS $-3.05/株 = $813.94 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -294,7 +294,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 109.8% × 60% / WACC 11.03% × 0.7 = 4.1840 → cap適用 → 1.0000"
+        "detail": "α計算: ROE 109.8% × 60% / Rm 10.00% × 0.7 = 4.6133 → cap適用 → 1.0000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -302,6 +302,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "One inconsistency in per share value detected."
+    "ai_comment": "Multiple inconsistencies detected, especially in per-share calculation.",
+    "ai_concerns": "Inconsistency in per-share value; ROE of 109.84% is unusually high, potentially indicating over-optimism."
   }
 }

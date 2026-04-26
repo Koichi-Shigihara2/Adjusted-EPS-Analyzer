@@ -217,7 +217,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $4.63B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B + BS $+0.58/株 = $11.59 (差異0.02%)"
+        "detail": "(V₀ $4.97B + RPO $0.06B + GO $0.00B) × (1+0.000) / 0.426B + BS $+0.58/株 = $12.38 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -225,7 +225,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 0.0% × 60% / WACC 10.46% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE 0.0% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -233,6 +233,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "軽微な計算不一致あり"
+    "ai_comment": "Inconsistencies in calculations detected.",
+    "ai_concerns": "Inconsistency in per share value; ROE at 0% with high growth rate suggests potential anomalies."
   }
 }

@@ -317,7 +317,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $4962.10B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $408.67 (差異0.00%)"
+        "detail": "(V₀ $5210.58B + RPO $1.87B + GO $1.86B) × (1+1.000) / 24.305B + BS $+0.05/株 = $429.12 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -325,7 +325,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 45.6% × 60% / WACC 10.29% × 0.7 = 1.8639 → cap適用 → 1.0000"
+        "detail": "α計算: ROE 45.6% × 60% / Rm 10.00% × 0.7 = 1.9170 → cap適用 → 1.0000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -333,6 +333,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed successfully."
+    "ai_comment": "Inconsistencies in per-share value calculation detected; verify inputs.",
+    "ai_concerns": "Inconsistency between P_t and per-share value suggests potential calculation error. High growth rate (32.5%) vs. WACC (10.29%) is aggressive but not anomalous alone."
   }
 }
