@@ -1,4 +1,4 @@
-﻿name: Adjusted_EPS_Data_Update
+name: Adjusted_EPS_Data_Update
 
 on:
   workflow_dispatch:
@@ -6,19 +6,19 @@ on:
       - kaihatsu
     inputs:
       ticker:
-        description: '譖ｴ譁ｰ縺吶ｋ驫俶氛・井ｾ・ AMZN 縺ｾ縺溘・ AMZN,AMD,APP・峨ゅき繝ｳ繝槫玄蛻・ｊ縺ｧ隍・焚謖・ｮ壼庄縲らｩｺ谺・・蝣ｴ蜷医・蜈ｨ驫俶氛繧呈峩譁ｰ'
+        description: 'Update target ticker (e.g. AMZN or AMZN,AMD,APP). Leave blank to update all tickers.'
         required: false
         default: ''
   schedule:
-    - cron: '0 10 * * 1'  # 豈朱ｱ譛域屆譌･10:00 UTC
+    - cron: '0 10 * * 1'  # Monday 10:00 UTC
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 30  # 繧ｿ繧､繝繧｢繧ｦ繝郁ｨｭ螳壹ｒ霑ｽ蜉
+    timeout-minutes: 30
     permissions:
       contents: write
-    
+
     steps:
       - uses: actions/checkout@v4
         with:

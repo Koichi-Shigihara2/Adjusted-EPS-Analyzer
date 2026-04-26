@@ -1,10 +1,10 @@
-﻿name: TANUKI CIK Lookup
+name: TANUKI CIK Lookup
 
 on:
   workflow_dispatch:
     inputs:
       ticker:
-        description: '繝・ぅ繝・き繝ｼ繧ｷ繝ｳ繝懊Ν・井ｾ・ KO・・
+        description: 'Ticker symbol (e.g. KO)'
         required: true
         type: string
 
@@ -48,48 +48,43 @@ jobs:
                   json.dump(data, f, ensure_ascii=False, indent=2)
 
           def clean_key(k):
-              """BOM繝ｻ遨ｺ逋ｽ繧帝勁蜴ｻ縺励◆繧ｭ繝ｼ繧定ｿ斐☆"""
               return k.lstrip('\ufeff').strip() if k else ''
 
-          # 笏笏 譌｢蟄呂SV繧定ｪｭ縺ｿ霎ｼ繧・・OM蟇ｾ蠢懊・繝倥ャ繝繝ｼ菫晄戟・・笏笏
+          # Read existing CSV
           rows = []
           existing_tickers = set()
-          fieldnames = ["ticker", "cik", "name"]  # 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ
+          fieldnames = ["ticker", "cik", "name"]
 
           try:
               with open(csv_path, newline='', encoding='utf-8') as f:
                   reader = csv.DictReader(f)
                   raw_fn = reader.fieldnames or []
-
-                  # BOM髯､蜴ｻ繝ｻ遨ｺ蛻鈴勁蜴ｻ縺励※fieldnames繧堤｢ｺ螳・
                   fieldnames = [clean_key(fn) for fn in raw_fn if clean_key(fn)]
-                  print(f"[INFO] CSV繝倥ャ繝繝ｼ: {fieldnames}")
+                  print(f"[INFO] CSV headers: {fieldnames}")
 
                   for row in reader:
-                      # 繧ｭ繝ｼ縺ｮBOM繝ｻ遨ｺ逋ｽ繧帝勁蜴ｻ縺励↑縺後ｉ隱ｭ縺ｿ霎ｼ繧
                       clean_row = {clean_key(k): v for k, v in row.items() if clean_key(k)}
                       rows.append(clean_row)
                       existing_tickers.add(clean_row.get('ticker', '').upper())
 
-              print(f"[INFO] 譌｢蟄倩｡梧焚: {len(rows)}")
+              print(f"[INFO] Existing rows: {len(rows)}")
 
           except FileNotFoundError:
-              print(f"[INFO] {csv_path} 縺悟ｭ伜惠縺励↑縺・◆繧∵眠隕丈ｽ懈・縺励∪縺・)
+              print(f"[INFO] {csv_path} not found, creating new file")
 
           if ticker in existing_tickers:
-              print(f"[SKIP] {ticker} 縺ｯ譌｢縺ｫcik_lookup.csv縺ｫ蟄伜惠縺励∪縺・)
+              print(f"[SKIP] {ticker} already exists in cik_lookup.csv")
               write_result({"ticker": ticker, "status": "already_exists"})
               exit(0)
 
-          # 笏笏 SEC company_tickers.json 縺九ｉ CIK 繧貞叙蠕・笏笏
-          print(f"[INFO] SEC API縺九ｉCIK繧貞叙蠕嶺ｸｭ: {ticker}")
+          # Fetch CIK from SEC
+          print(f"[INFO] Fetching CIK from SEC API: {ticker}")
           user_agent = f"Koichi-Shigihara2 On-a-journey {sec_email}"
           headers = {
               "User-Agent": user_agent,
               "Accept": "application/json",
               "Accept-Encoding": "gzip, deflate"
           }
-          print(f"[INFO] User-Agent: Koichi-Shigihara2 On-a-journey ***")
 
           try:
               res = requests.get(
@@ -98,13 +93,11 @@ jobs:
                   timeout=30
               )
               if res.status_code == 403:
-                  raise Exception(
-                      "403 Forbidden: SEC_USER_AGENT_EMAIL Secret縺梧悴險ｭ螳壹°辟｡蜉ｹ縺ｧ縺吶・
-                  )
+                  raise Exception("403 Forbidden: SEC_USER_AGENT_EMAIL secret is missing or invalid")
               res.raise_for_status()
               data = res.json()
           except Exception as e:
-              print(f"[ERROR] SEC API蜿門ｾ怜､ｱ謨・ {e}")
+              print(f"[ERROR] SEC API error: {e}")
               write_result({"ticker": ticker, "status": "api_error", "error": str(e)})
               exit(1)
 
@@ -117,13 +110,13 @@ jobs:
                   break
 
           if not cik:
-              print(f"[ERROR] {ticker} 縺ｮCIK縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆")
+              print(f"[ERROR] CIK not found for {ticker}")
               write_result({"ticker": ticker, "status": "not_found"})
               exit(1)
 
           print(f"[OK] {ticker}: CIK={cik}, Name={name}")
 
-          # 笏笏 譁ｰ隕剰｡後ｒ霑ｽ蜉・域里蟄倥・fieldnames縺ｫ蜷医ｏ縺帙※遨ｺ蝓九ａ・・笏笏
+          # Add new row and sort
           new_row = {fn: "" for fn in fieldnames}
           new_row["ticker"] = ticker
           new_row["cik"]    = cik
@@ -131,14 +124,14 @@ jobs:
           rows.append(new_row)
           rows.sort(key=lambda r: r.get("ticker", ""))
 
-          # 笏笏 CSV繧呈嶌縺肴綾縺呻ｼ・OM縺ｪ縺誘TF-8繝ｻ蜈・・繝・ム繝ｼ邯ｭ謖・ｼ・笏笏
+          # Write CSV (UTF-8 without BOM)
           os.makedirs(os.path.dirname(csv_path), exist_ok=True)
           with open(csv_path, "w", newline='', encoding='utf-8') as f:
               writer = csv.DictWriter(f, fieldnames=fieldnames, extrasaction='ignore')
               writer.writeheader()
               writer.writerows(rows)
 
-          print(f"[DONE] cik_lookup.csv 繧呈峩譁ｰ縺励∪縺励◆・亥・{len(rows)}陦鯉ｼ・)
+          print(f"[DONE] cik_lookup.csv updated ({len(rows)} rows)")
 
           write_result({
               "ticker": ticker,
@@ -161,9 +154,9 @@ jobs:
           git add config/cik_lookup_result.json 2>/dev/null || true
 
           if git diff --staged --quiet; then
-            echo "[INFO] 繧ｳ繝溘ャ繝医☆繧句､画峩縺ｯ縺ゅｊ縺ｾ縺帙ｓ"
+            echo "[INFO] No changes to commit"
           else
             git commit -m "chore: CIK lookup for ${{ github.event.inputs.ticker }}"
             git push
-            echo "[DONE] 繧ｳ繝溘ャ繝亥ｮ御ｺ・
+            echo "[DONE] Commit complete"
           fi

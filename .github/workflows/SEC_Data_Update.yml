@@ -1,31 +1,36 @@
-﻿name: SEC Data Update
+name: SEC Data Update
+
 on:
   schedule:
-    - cron: '0 12 * * 0'
+    - cron: '0 12 * * 0'  # Sunday 12:00 UTC
   workflow_dispatch:
     inputs:
       tickers:
-        description: '蟇ｾ雎｡繝・ぅ繝・き繝ｼ・医き繝ｳ繝槫玄蛻・ｊ縲∫ｩｺ逋ｽ縺ｧ蜈ｨ縺ｦ・・
+        description: 'Target tickers (comma-separated, blank for all)'
         required: false
         default: ''
+
 env:
   TZ: Asia/Tokyo
+
 jobs:
   update-sec-data:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: kaihatsu
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.11'
           cache: 'pip'
+
       - name: Install dependencies
         run: pip install requests
+
       - name: Run SEC Data Update
         run: |
           if [ -n "${{ github.event.inputs.tickers }}" ]; then
@@ -34,6 +39,7 @@ jobs:
           else
             python common/sec_data/update.py
           fi
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
@@ -42,19 +48,20 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "投 SEC Data Update: $(date +'%Y-%m-%d')"
+            git commit -m "Update SEC Data - $(date +'%Y-%m-%d')"
             git push origin kaihatsu
           fi
+
       - name: Summary
         run: |
-          echo "## 投 SEC Data Update 螳御ｺ・ >> $GITHUB_STEP_SUMMARY
+          echo "## SEC Data Update Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| 繝・ぅ繝・き繝ｼ | 蟷ｴ谺｡繝・・繧ｿ |" >> $GITHUB_STEP_SUMMARY
+          echo "| Ticker | Annual Files |" >> $GITHUB_STEP_SUMMARY
           echo "|:-----------|:-----------|" >> $GITHUB_STEP_SUMMARY
           for dir in common/sec_data/data/*/; do
             ticker=$(basename $dir)
             if [ "$ticker" != "_cik_cache.json" ]; then
               annual_count=$(ls -1 $dir/annual_*.json 2>/dev/null | wc -l)
-              echo "| $ticker | ${annual_count}莉ｶ |" >> $GITHUB_STEP_SUMMARY
+              echo "| $ticker | ${annual_count} files |" >> $GITHUB_STEP_SUMMARY
             fi
           done
