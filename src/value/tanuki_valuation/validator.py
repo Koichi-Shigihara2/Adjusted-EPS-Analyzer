@@ -234,7 +234,8 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     p = _extract_params(data)
 
     ivps = data.get("intrinsic_value_per_share", 0)
-    v0 = data.get("v0", 0)
+    # pt_shares_consistencyはRM基準V0で検証（メイン理論株価と整合）
+    v0 = data.get("dcf_components", {}).get("v0_rm") or data.get("v0", 0)
     alpha = data.get("alpha", 0)
     alpha_was_capped = data.get("alpha_was_capped", False)
 

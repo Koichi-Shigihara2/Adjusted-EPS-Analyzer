@@ -285,12 +285,12 @@
     "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $203.70B + RPO $0.26B + GO $0.43B) × (1+0.673) / 1.630B + BS $+4.50/株 = $214.23 (差異8.14%)"
+        "pass": true,
+        "detail": "(V₀ $222.19B + RPO $0.26B + GO $0.43B) × (1+0.673) / 1.630B + BS $+4.50/株 = $233.21 (差異0.00%)"
       },
       "dcf_components": {
-        "pass": true,
-        "detail": "3段階: P1 $33.28B + P2 $38.95B + TV $131.47B = $203.70B (差異0.00%)"
+        "pass": false,
+        "detail": "3段階: P1 $33.28B + P2 $38.95B + TV $131.47B = $203.70B (差異8.32%)"
       },
       "formula_verification": {
         "pass": true,
@@ -302,7 +302,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "複数の不一致が見つかりました",
-    "ai_concerns": "Inconsistencies in P_t/shares and DCF components suggest potential errors; intrinsic value per share deviates from calculation."
+    "ai_comment": "Major inconsistency in per share calculation.",
+    "ai_concerns": "Inconsistency in per share value suggests potential error; other values like growth rates appear reasonable."
   }
 }
