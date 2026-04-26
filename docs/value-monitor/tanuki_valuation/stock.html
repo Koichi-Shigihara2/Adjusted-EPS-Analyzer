@@ -625,10 +625,10 @@ function render(d) {
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtPct2(waccValue)}</span>
-              <span class="toggle-arrow">▶</span>
+              <span class="toggle-arrow">▼</span>
             </div>
           </div>
-          <div class="calc-step-body" style="display:none">
+          <div class="calc-step-body">
             <div class="formula-box">
               <code>WACC = Rf + β × (Rm - Rf)</code>
               <p class="formula-desc">CAPMで銘柄固有のリスク（β）を反映した割引率を計算。</p>
@@ -1184,6 +1184,7 @@ function renderSegmentKpiTable(d, growthScenarios) {
     const configGrowth  = seg.config_growth != null ? (seg.config_growth * 100).toFixed(1) + '%' : null;
     const segNote       = seg.note || '';
     const dynamicWeight = seg.dynamic_weight || {};
+    const estimatedFromWeight = seg.estimated_from_weight || false;
 
     // 直近実績年のダイナミックウェイトを代表値として表示
     const latestActualLabel = sortedYears.filter(y => !estYears.has(y)).slice(-1)[0];
@@ -1195,12 +1196,19 @@ function renderSegmentKpiTable(d, growthScenarios) {
     let metaHtml = '';
     if (dynW || configGrowth) {
       metaHtml += `<span class="seg-meta">`;
-      if (dynW) metaHtml += `実績ウェイト ${dynW}`;
-      if (dynW && configGrowth) metaHtml += ` ／ `;
+      if (estimatedFromWeight) {
+        metaHtml += `設定ウェイト ${configGrowth ? (seg.weight != null ? (seg.weight * 100).toFixed(0) + '%' : '–') : '–'}`;
+      } else {
+        if (dynW) metaHtml += `実績ウェイト ${dynW}`;
+      }
+      if ((dynW || estimatedFromWeight) && configGrowth) metaHtml += ` ／ `;
       if (configGrowth) metaHtml += `設定成長率 <span class="seg-growth">${configGrowth}</span>`;
       metaHtml += `</span>`;
+      if (estimatedFromWeight) {
+        metaHtml += `<span class="seg-note" style="color:#f6ad55">※全社売上×ウェイトで推定</span>`;
+      }
     }
-    if (segNote) {
+    if (segNote && !estimatedFromWeight) {
       metaHtml += `<span class="seg-note">${segNote}</span>`;
     }
 

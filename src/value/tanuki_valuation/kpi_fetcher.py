@@ -158,6 +158,7 @@ def build_kpi_data(
         # 予測値を埋める（config_growth を適用）
         # 直近実績の営業利益率を予測期間に適用する
         g = cfg.get("growth")
+        weight = cfg.get("weight")
 
         # 直近実績の営業利益率を取得（最新FYから遡って最初に取れた値を使用）
         latest_om = None
@@ -168,7 +169,25 @@ def build_kpi_data(
                 break
 
         if g is not None:
+            # ── 実績起点の取得 ────────────────────────────────────────
+            # XBRLセグメント実績がある場合はそれを使用（通常ケース）
             last_rev = seg_entry["revenue"].get(_fy_label(fiscal_year_latest))
+
+            # XBRLセグメント実績がない場合（APP・CELH・SOUN・ONDS等）
+            # → 全社売上 × segment_config ウェイトを起点として使用（自動フォールバック）
+            # これにより新規銘柄登録時も自動的に機能する
+            if last_rev is None and weight is not None:
+                # 実績年を遡って全社売上を探す
+                for fy in reversed(actual_years):
+                    ann = annual_data.get(fy, {})
+                    corp_rev = ann.get("pl", {}).get("revenue")
+                    if corp_rev:
+                        last_rev = round(corp_rev * weight)
+                        # 実績列にも推定値を設定（UIで参照できるよう）
+                        seg_entry["revenue"][_fy_label(fy)] = last_rev
+                        seg_entry["estimated_from_weight"] = True  # 推定フラグ
+                        break
+
             for j in range(1, forecast_years + 1):
                 est_fy    = fiscal_year_latest + j
                 est_label = _fy_label(est_fy, is_est=True)
