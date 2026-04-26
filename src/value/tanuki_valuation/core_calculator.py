@@ -84,6 +84,7 @@ class KoichiValuationCalculator:
         min_fcf_years: int = 3,
         fcf_base_threshold: float = DEFAULT_FCF_CV_THRESHOLD,
         eps_data_dir: str = "",
+        sec_data_dir: str = "",
     ):
         self.high_growth_years = high_growth_years
         self.terminal_growth = terminal_growth
@@ -92,6 +93,7 @@ class KoichiValuationCalculator:
         self.min_fcf_years = min_fcf_years
         self.fcf_base_threshold = fcf_base_threshold
         self.eps_data_dir = eps_data_dir  # v7.1: EPSアナライザーdataディレクトリ
+        self.sec_data_dir = sec_data_dir  # v7.4: SECデータディレクトリ
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """メイン計算関数"""
