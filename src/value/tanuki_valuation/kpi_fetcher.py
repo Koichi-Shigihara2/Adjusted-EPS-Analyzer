@@ -175,17 +175,21 @@ def build_kpi_data(
 
             # XBRLセグメント実績がない場合（APP・CELH・SOUN・ONDS等）
             # → 全社売上 × segment_config ウェイトを起点として使用（自動フォールバック）
+            # 全実績年を埋めることで過去データも表示される
             # これにより新規銘柄登録時も自動的に機能する
             if last_rev is None and weight is not None:
-                # 実績年を遡って全社売上を探す
-                for fy in reversed(actual_years):
+                # 全実績年の全社売上×ウェイトで実績列を埋める
+                for fy in actual_years:
                     ann = annual_data.get(fy, {})
                     corp_rev = ann.get("pl", {}).get("revenue")
                     if corp_rev:
-                        last_rev = round(corp_rev * weight)
-                        # 実績列にも推定値を設定（UIで参照できるよう）
-                        seg_entry["revenue"][_fy_label(fy)] = last_rev
-                        seg_entry["estimated_from_weight"] = True  # 推定フラグ
+                        est_rev = round(corp_rev * weight)
+                        seg_entry["revenue"][_fy_label(fy)] = est_rev
+                seg_entry["estimated_from_weight"] = True  # 推定フラグ
+                # 最新年の推定値を予測起点とする
+                for fy in reversed(actual_years):
+                    if seg_entry["revenue"].get(_fy_label(fy)) is not None:
+                        last_rev = seg_entry["revenue"][_fy_label(fy)]
                         break
 
             for j in range(1, forecast_years + 1):
