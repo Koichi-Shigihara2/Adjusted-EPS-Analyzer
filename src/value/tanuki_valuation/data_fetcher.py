@@ -276,8 +276,8 @@ class TanukiDataFetcher:
         """
         if not fcf_list or len(fcf_list) < 2:
             return 0.0
-        # fcf_listは古い順（reader.get_fcf_list()の仕様）→ 末尾2件が直近2年
-        recent_2 = fcf_list[-2:]
+        # fcf_listは新しい順（fcf_list[0]が直近）→ 先頭2件が直近2年
+        recent_2 = fcf_list[:2]
         if all(v is not None for v in recent_2):
             return sum(recent_2) / 2
         return 0.0
