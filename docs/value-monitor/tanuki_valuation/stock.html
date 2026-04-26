@@ -1005,8 +1005,8 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>P_t = (V₀ + RPO_PV + GrowthOption_PV) × (1 + α) / 株式数</code>
-              <p class="formula-desc">V₀と各種加算項の合計にαを乗じ、希薄化後株式数で割り1株当り本質価値を算出。</p>
+              <code>P_t = (V₀ + RPO_PV + GrowthOption_PV) × (1 + α) / 株式数 + BS補正/株</code>
+              <p class="formula-desc">V₀と各種加算項の合計にαを乗じ、希薄化後株式数で割り、STEP9のBS補正（ネットキャッシュ/株）を加算して1株当り本質価値を算出。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">V₀</span><span class="input-value">${fmtB(v0)}</span></div>
@@ -1014,6 +1014,7 @@ function render(d) {
               <div class="input-item"><span class="input-label">GrowthOption_PV</span><span class="input-value">${fmtB(goPv)}</span></div>
               <div class="input-item"><span class="input-label">希薄化後株式数</span><span class="input-value">${fmtInt(dilutedShares)}</span></div>
               <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB((v0 + rpoPV + goPv) * (1 + alpha))}</span></div>
+              <div class="input-item"><span class="input-label">BS補正/株</span><span class="input-value">${bsNetCashPerShare >= 0 ? '+' : ''}$${fmt(bsNetCashPerShare)}</span></div>
               <div class="input-item"><span class="input-label">1株当り</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
             </div>
           </div>
