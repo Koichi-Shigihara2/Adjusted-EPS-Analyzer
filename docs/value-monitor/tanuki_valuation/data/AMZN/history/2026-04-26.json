@@ -207,13 +207,13 @@
     "dcf_type": "three_stage"
   },
   "fcf_base": {
-    "base_fcf": 13651800000.0,
-    "method": "avg_5yr",
+    "base_fcf": 22086500000.0,
+    "method": "recent_2yr",
     "fcf_5yr_avg": 13651800000.0,
-    "fcf_2yr_avg": -6257500000.0,
-    "cv": 999.0,
+    "fcf_2yr_avg": 22086500000.0,
+    "cv": 1.556,
     "cv_threshold": 0.5,
-    "ratio": 999.0,
+    "ratio": 1.556,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -237,11 +237,11 @@
     "adj_net_income": 93518729407.19843,
     "conversion_rate": 0.55,
     "estimated_fcf": 51435301173.95914,
-    "raw_fcf": 13651800000.0,
+    "raw_fcf": 22086500000.0,
     "sector": "",
-    "note": "調整済み純利益$93.52B × 転換率55%[ticker_override(EC部門の重いCapEx・ファイナンスリースを考慮。AWSの)] = 推定FCF$51.44B（従来$13.65Bの3.8倍）",
-    "divergence_ratio": 3.77,
-    "divergence_warning": "FCF推定値が生FCFの3.8倍。推定FCF$51.4Bを採用。生FCF（$13.7B）との乖離を確認してください。"
+    "note": "調整済み純利益$93.52B × 転換率55%[ticker_override(EC部門の重いCapEx・ファイナンスリースを考慮。AWSの)] = 推定FCF$51.44B（従来$22.09Bの2.3倍）",
+    "divergence_ratio": 2.33,
+    "divergence_warning": "FCF推定値が生FCFの2.3倍。推定FCF$51.4Bを採用。生FCF（$22.1B）との乖離を確認してください。"
   },
   "bs_adjustment": {
     "cash": 86810000000.0,
@@ -408,9 +408,9 @@
   },
   "components": {
     "fcf_5yr_avg": 13651800000.0,
-    "fcf_2yr_avg": -6257500000.0,
+    "fcf_2yr_avg": 22086500000.0,
     "fcf_base_used": 51435301173.95914,
-    "fcf_base_method": "avg_5yr",
+    "fcf_base_method": "recent_2yr",
     "fcf_list_raw": [
       9252000000,
       34921000000,
@@ -463,6 +463,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "一部検証で不一致が確認された"
+    "ai_comment": "主にP_tと1株値の不整合"
   }
 }
