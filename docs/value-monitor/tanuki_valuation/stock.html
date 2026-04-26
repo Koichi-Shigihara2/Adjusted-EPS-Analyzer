@@ -617,7 +617,7 @@ function render(d) {
       <div class="calc-flow">
 
         <!-- Step 1: WACC -->
-        <div class="calc-step open">
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -628,7 +628,7 @@ function render(d) {
               <span class="toggle-arrow">▶</span>
             </div>
           </div>
-          <div class="calc-step-body" style="display:none">
+          <div class="calc-step-body">
             <div class="formula-box">
               <code>WACC = Rf + β × (Rm - Rf)</code>
               <p class="formula-desc">CAPMで銘柄固有のリスク（β）を反映した割引率を計算。</p>
@@ -643,7 +643,7 @@ function render(d) {
         </div>
 
         <!-- Step 2: 成長率 -->
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -670,7 +670,7 @@ function render(d) {
         </div>
 
         <!-- Step 3: FCFベース判定 -->
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -700,7 +700,7 @@ function render(d) {
         </div>
 
         <!-- Step 4: DCF計算 -->
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -751,7 +751,7 @@ function render(d) {
 
         <!-- Step 5: RPO補正（条件付き） -->
         ${rpo > 0 ? `
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -777,7 +777,7 @@ function render(d) {
 
         <!-- Step 6: 成長オプション（条件付き） -->
         ${goCount > 0 ? `
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -920,7 +920,7 @@ function render(d) {
 
         <!-- Step: BS評価補正（条件付き） -->
         ${bsApplied ? `
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -964,7 +964,7 @@ function render(d) {
         ` : ''}
 
         <!-- Step 7: α -->
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
@@ -990,7 +990,7 @@ function render(d) {
         </div>
 
         <!-- Step 8: P_t -->
-        <div class="calc-step">
+        <div class="calc-step open">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
