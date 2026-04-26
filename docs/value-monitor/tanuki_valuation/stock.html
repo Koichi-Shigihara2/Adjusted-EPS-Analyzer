@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -42,7 +42,7 @@
       padding: 16px 0; border-bottom: 1px solid var(--bdr);
       position: sticky; top: 0; background: var(--bg); z-index: 100;
     }
-    /* ロゴ（index.html統一） */
+    /* 繝ｭ繧ｴ・・ndex.html邨ｱ荳・・*/
     .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--txt); }
     .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); animation: pdot 2s ease-in-out infinite; flex-shrink: 0; }
     @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(196,208,255,.5)} 50%{box-shadow:0 0 0 6px rgba(196,208,255,0)} }
@@ -140,7 +140,7 @@
     .legend-color.base { background: var(--acc); }
     .legend-color.expensive { background: rgba(248, 113, 113, 0.3); }
 
-    /* 将来価値予測テーブル（シナリオ統合版） */
+    /* 蟆・擂萓｡蛟､莠域ｸｬ繝・・繝悶Ν・医す繝翫Μ繧ｪ邨ｱ蜷育沿・・*/
     .future-section { margin-top: 24px; }
     .future-table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     .future-table th { background: var(--sur2); color: var(--mut); font-size: 11px; font-weight: 600;
@@ -157,7 +157,7 @@
     .future-table tr.base-row td { background: rgba(196,208,255,0.06); }
 
 
-    /* セグメントKPIテーブル */
+    /* 繧ｻ繧ｰ繝｡繝ｳ繝・PI繝・・繝悶Ν */
     .kpi-section { margin-top: 20px; }
     .kpi-section-title {
       font-family: var(--mono); font-size: 10px; font-weight: 700; color: var(--mut);
@@ -166,9 +166,9 @@
     }
     .kpi-section-title::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
     .kpi-source-note { font-size: 10px; color: var(--mut); margin-bottom: 12px; font-style: italic; }
-    /* テーブル全体 */
+    /* 繝・・繝悶Ν蜈ｨ菴・*/
     .kpi-table { width: 100%; border-collapse: collapse; font-size: 12px; overflow-x: auto; display: block; }
-    /* ヘッダー行 */
+    /* 繝倥ャ繝繝ｼ陦・*/
     .kpi-table th {
       background: #0d1117; color: var(--mut); font-family: var(--mono);
       font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
@@ -176,16 +176,16 @@
     }
     .kpi-table th.kpi-seg-col { text-align: left; min-width: 180px; }
     .kpi-table th.kpi-metric-col { text-align: left; min-width: 80px; color: var(--mut); }
-    /* 実績列ヘッダー: 落ち着いた色 */
+    /* 螳溽ｸｾ蛻励・繝・ム繝ｼ: 關ｽ縺｡逹縺・◆濶ｲ */
     .kpi-table th.kpi-actual { color: #4a5568; }
-    /* 予測列ヘッダー: アクセントで明確に */
+    /* 莠域ｸｬ蛻励・繝・ム繝ｼ: 繧｢繧ｯ繧ｻ繝ｳ繝医〒譏守｢ｺ縺ｫ */
     .kpi-table th.kpi-est { color: var(--acc); background: rgba(196,208,255,0.08); }
-    /* データセル共通 */
+    /* 繝・・繧ｿ繧ｻ繝ｫ蜈ｱ騾・*/
     .kpi-table td {
       padding: 7px 12px; border: 1px solid var(--bdr); font-family: var(--mono);
       font-size: 12px; text-align: right; background: var(--sur); color: #6b7280;
     }
-    /* セグメント名セル（rowspan） */
+    /* 繧ｻ繧ｰ繝｡繝ｳ繝亥錐繧ｻ繝ｫ・・owspan・・*/
     .kpi-table td.kpi-seg-name {
       text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .03em;
       background: #0d1117; color: var(--txt); vertical-align: top; padding-top: 10px;
@@ -202,32 +202,32 @@
       display: block; font-size: 9px; color: #4a5568; margin-top: 3px;
       font-weight: 400; font-family: var(--sans); letter-spacing: 0;
     }
-    /* 指標ラベルセル */
+    /* 謖・ｨ吶Λ繝吶Ν繧ｻ繝ｫ */
     .kpi-table td.kpi-row-label {
       text-align: left; color: var(--mut); font-size: 10px;
       background: #0d1117; padding-left: 16px; font-weight: 400; white-space: nowrap;
     }
-    /* 実績データセル: 淡い表示 */
+    /* 螳溽ｸｾ繝・・繧ｿ繧ｻ繝ｫ: 豺｡縺・｡ｨ遉ｺ */
     .kpi-table td.kpi-actual { color: #6b7280; background: var(--sur); }
-    /* 予測データセル: 明るく明確に */
+    /* 莠域ｸｬ繝・・繧ｿ繧ｻ繝ｫ: 譏弱ｋ縺乗・遒ｺ縺ｫ */
     .kpi-table td.kpi-est {
       color: var(--txt); background: rgba(196,208,255,0.06);
       font-weight: 600; border-left: 1px solid rgba(196,208,255,0.2);
     }
-    /* 成長率の色分け */
+    /* 謌宣聞邇・・濶ｲ蛻・￠ */
     .kpi-growth-pos { color: var(--green) !important; }
     .kpi-growth-neg { color: var(--red) !important; }
     .kpi-growth-neu { color: var(--mut) !important; }
-    /* 合計行 */
+    /* 蜷郁ｨ郁｡・*/
     .kpi-table tr.kpi-total-row td {
       border-top: 2px solid var(--acc); font-weight: 700;
       background: rgba(196,208,255,0.04); color: var(--txt);
     }
     .kpi-table tr.kpi-total-row td.kpi-est { color: var(--acc); }
-    /* その他行 */
+    /* 縺昴・莉冶｡・*/
     .kpi-table tr.kpi-other-row td { color: #4a5568; font-style: italic; }
     .kpi-no-data { font-size: 11px; color: var(--mut); padding: 12px 0; font-style: italic; }
-    /* 予測境界線 */
+    /* 莠域ｸｬ蠅・阜邱・*/
     .kpi-table td.kpi-est-first { border-left: 2px solid rgba(196,208,255,0.4) !important; }
     .kpi-table th.kpi-est-first { border-left: 2px solid rgba(196,208,255,0.4) !important; }
     .calc-section { margin-top: 40px; }
@@ -259,7 +259,7 @@
     .input-value { font-family: var(--mono); font-size: 13px; color: var(--txt); }
     .input-value.highlight { color: var(--acc); font-weight: 700; }
 
-    /* v6.2: 成長オプション表示 */
+    /* v6.2: 謌宣聞繧ｪ繝励す繝ｧ繝ｳ陦ｨ遉ｺ */
     .go-list { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
     .go-item { background: var(--sur2); border-radius: 6px; padding: 12px 14px; border-left: 3px solid var(--green); }
     .go-item-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
@@ -268,7 +268,7 @@
     .go-item-params { font-size: 11px; color: var(--mut); font-family: var(--mono); }
     .go-item-note { font-size: 11px; color: var(--mut); margin-top: 4px; line-height: 1.5; }
 
-    /* v6.2: 3段階DCF Phase表示 */
+    /* v6.2: 3谿ｵ髫札CF Phase陦ｨ遉ｺ */
     .phase-row { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; }
     .phase-card { flex:1; min-width:140px; background:var(--sur2); border-radius:6px; padding:12px 14px; border-top: 3px solid var(--acc); }
     .phase-card.p1 { border-top-color: var(--green); }
@@ -315,14 +315,13 @@ const ticker = params.get('ticker') || 'NVDA';
 
 let globalData = null;
 
-const fmt = (n) => n?.toFixed(2) ?? '—';
-const fmtInt = (n) => n?.toLocaleString() ?? '—';
-const fmtPct = (n) => n != null ? (n * 100).toFixed(1) + '%' : '—';
-const fmtPct2 = (n) => n != null ? (n * 100).toFixed(2) + '%' : '—';
+const fmt = (n) => n?.toFixed(2) ?? '窶・;
+const fmtInt = (n) => n?.toLocaleString() ?? '窶・;
+const fmtPct = (n) => n != null ? (n * 100).toFixed(1) + '%' : '窶・;
+const fmtPct2 = (n) => n != null ? (n * 100).toFixed(2) + '%' : '窶・;
 const fmtB = (n) => {
-  if (n == null) return '—';
-  if (n < 0) return '-' + fmtB(-n);   // マイナス対応
-  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
+  if (n == null) return '窶・;
+  if (n < 0) return '-' + fmtB(-n);   // 繝槭う繝翫せ蟇ｾ蠢・  if (n >= 1e12) return '$' + (n / 1e12).toFixed(2) + 'T';
   if (n >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return '$' + (n / 1e6).toFixed(2) + 'M';
   if (n >= 1e3) return '$' + (n / 1e3).toFixed(2) + 'K';
@@ -338,7 +337,7 @@ async function loadData() {
   } catch (error) {
     document.getElementById('app').innerHTML = `
       <header>
-        <a href="index.html" class="back-link">← BACK TO LIST</a>
+        <a href="index.html" class="back-link">竊・BACK TO LIST</a>
         <div class="header-right">
           <nav class="nav-links">
             <a href="../../">HOME</a>
@@ -360,49 +359,45 @@ async function loadData() {
 
 function render(d) {
   const ivps = d.intrinsic_value_per_share || 0;
-  // v7.3: 3種類の割引率による理論株価
-  // メイン: ivps = Rmβなし（10%）← intrinsic_value_per_share
-  const ivpsBeta = d.intrinsic_value_beta || 0;  // 参考①: β込みWACC
-  const ivpsRf = d.intrinsic_value_rf || 0;      // 参考②: Rf理論上限
+  // v7.3: 3遞ｮ鬘槭・蜑ｲ蠑慕紫縺ｫ繧医ｋ逅・ｫ匁ｪ萓｡
+  // 繝｡繧､繝ｳ: ivps = Rmﾎｲ縺ｪ縺暦ｼ・0%・俄・ intrinsic_value_per_share
+  const ivpsBeta = d.intrinsic_value_beta || 0;  // 蜿り・蔵: ﾎｲ霎ｼ縺ｿWACC
+  const ivpsRf = d.intrinsic_value_rf || 0;      // 蜿り・贈: Rf逅・ｫ紋ｸ企剞
   const upsideRf = d.upside_percent_rf || 0;
   const upsieBeta = d.upside_percent_beta || 0;
   const currentPrice = d.components?.current_price || 0;
   const upside = d.upside_percent || 0;
-  const calcDate = d.calculation_date || '—';
-  const formula = d.formula || 'Koichi式 v6.2';
+  const calcDate = d.calculation_date || '窶・;
+  const formula = d.formula || 'Koichi蠑・v6.2';
 
   const v0 = d.v0 || 0;
   const alpha = d.alpha || 0;
   const alphaWasCapped = d.alpha_was_capped || false;
   const alphaUncapped = d.components?.alpha_uncapped || alpha;
 
-  // v6.2: DCFタイプに応じたPV取得
-  const dcfType = d.dcf_type || 'two_stage';
+  // v6.2: DCF繧ｿ繧､繝励↓蠢懊§縺蘖V蜿門ｾ・  const dcfType = d.dcf_type || 'two_stage';
   const dcfC = d.dcf_components || {};
   const pvHigh = d.components?.pv_high || 0;
   const pvTerminal = d.components?.pv_terminal || 0;
   const pvPhase1 = dcfC.pv_phase1 || 0;
   const pvPhase2 = dcfC.pv_phase2 || 0;
 
-  // v6.2: FCFベース判定
-  const fcfBase = d.fcf_base || {};
+  // v6.2: FCF繝吶・繧ｹ蛻､螳・  const fcfBase = d.fcf_base || {};
   const fcfBaseMethod = fcfBase.method || d.components?.fcf_base_method || 'avg_5yr';
   const fcfBaseUsed = fcfBase.base_fcf || d.components?.fcf_base_used || 0;
   const fcf5yr = fcfBase.fcf_5yr_avg ?? d.components?.fcf_5yr_avg ?? 0;
   const fcf2yr = fcfBase.fcf_2yr_avg ?? d.components?.fcf_2yr_avg ?? 0;
-  const fcfRatio = fcfBase.ratio || 0;   // 後方互換（旧ratio）
-  const fcfCv    = fcfBase.cv    ?? fcfBase.ratio ?? 0;  // v6.3: CV値
+  const fcfRatio = fcfBase.ratio || 0;   // 蠕梧婿莠呈鋤・域立ratio・・  const fcfCv    = fcfBase.cv    ?? fcfBase.ratio ?? 0;  // v6.3: CV蛟､
 
-  // v6.2: 成長オプション
+  // v6.2: 謌宣聞繧ｪ繝励す繝ｧ繝ｳ
   const growthOptions = d.growth_options || { total_pv: 0, count: 0, options: [] };
   const goPv = growthOptions.total_pv || 0;
   const goCount = growthOptions.count || 0;
 
-  // v7.1: FCF外れ値分析
+  // v7.1: FCF螟悶ｌ蛟､蛻・梵
   const fcfOutlier = d.fcf_outlier || {};
 
-  // v7.2: FCF実力推定
-  const fcfEstimation = d.fcf_estimation || {};
+  // v7.2: FCF螳溷鴨謗ｨ螳・  const fcfEstimation = d.fcf_estimation || {};
   const fcfEstApplied = fcfEstimation.applied || false;
   const fcfEstRawFcf = fcfEstimation.raw_fcf || 0;
   const fcfEstEstimated = fcfEstimation.estimated_fcf || 0;
@@ -421,7 +416,7 @@ function render(d) {
   const fcfOutlierFY = fcfOutlier.fiscal_year || "";
   const fcfOutlierValue = fcfOutlier.fcf_value || 0;
 
-  // v7.0: BS評価補正
+  // v7.0: BS隧穂ｾ｡陬懈ｭ｣
   const bsAdj = d.bs_adjustment || {};
   const bsNetCash = bsAdj.net_cash || 0;
   const bsNetCashPerShare = bsAdj.net_cash_per_share || 0;
@@ -432,11 +427,11 @@ function render(d) {
   const bsStDebt = bsAdj.short_term_debt || 0;
   const bsFY = bsAdj.fiscal_year || '';
 
-  // v6.2: 成熟プロファイル
+  // v6.2: 謌千・繝励Ο繝輔ぃ繧､繝ｫ
   const maturity = d.maturity_profile;
 
   const highGrowthRate = d.components?.high_growth_rate_used || 0;
-  // 高成長期間: 3段階DCFはPhase1の実際年数、2段階DCFはhigh_growth_years
+  // 鬮俶・髟ｷ譛滄俣: 3谿ｵ髫札CF縺ｯPhase1縺ｮ螳滄圀蟷ｴ謨ｰ縲・谿ｵ髫札CF縺ｯhigh_growth_years
   const highGrowthYears = (d.maturity_profile?.phase1?.years) || d.components?.high_growth_years || 5;
   const terminalGrowth = d.components?.terminal_growth_used || 0.03;
   const roeAvg = d.components?.roe_used || 0;
@@ -462,13 +457,12 @@ function render(d) {
   const scenarioValuations = d.scenario_valuations;
   const futureVals = d.future_values || {};
 
-  // バッジ構成
-  const dcfTag = dcfType === 'three_stage' ? '3段階DCF' : '2段階DCF';
-  const fcfTag = fcfBaseMethod === 'recent_2yr' ? '直近2年平均' : '5年平均';
-  const segTag = growthSource === 'segment_weighted' ? 'セグメント加重' : '';
+  // 繝舌ャ繧ｸ讒区・
+  const dcfTag = dcfType === 'three_stage' ? '3谿ｵ髫札CF' : '2谿ｵ髫札CF';
+  const fcfTag = fcfBaseMethod === 'recent_2yr' ? '逶ｴ霑・蟷ｴ蟷ｳ蝮・ : '5蟷ｴ蟷ｳ蝮・;
+  const segTag = growthSource === 'segment_weighted' ? '繧ｻ繧ｰ繝｡繝ｳ繝亥刈驥・ : '';
 
-  // ステップ番号（条件付き表示）
-  let stepNum = 0;
+  // 繧ｹ繝・ャ繝礼分蜿ｷ・域擅莉ｶ莉倥″陦ｨ遉ｺ・・  let stepNum = 0;
   const nextStep = () => ++stepNum;
 
   document.getElementById('app').innerHTML = `
@@ -478,7 +472,7 @@ function render(d) {
           <img src="../../common/images/logo.png" alt="TANUKI" style="height:30px;width:auto;object-fit:contain">
           <span class="logo-dot"></span>
           <span class="logo-text">TANUKI<span class="logo-accent">VALUATION</span></span>
-        <a href="index.html" class="back-link">← BACK TO LIST</a>
+        <a href="index.html" class="back-link">竊・BACK TO LIST</a>
       </div>
       <div class="header-right" style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
         <nav class="nav-links">
@@ -498,24 +492,24 @@ function render(d) {
         <div class="ticker-tags">
           <span class="tag dcf">${dcfTag}</span>
           <span class="tag fcf">${fcfTag}</span>
-          ${goCount > 0 ? `<span class="tag go">成長OPT ${goCount}件</span>` : ''}
+          ${goCount > 0 ? `<span class="tag go">謌宣聞OPT ${goCount}莉ｶ</span>` : ''}
           ${segTag ? `<span class="tag seg">${segTag}</span>` : ''}
         </div>
       </div>
 
       <div class="value-display">
         <div class="value-box primary">
-          <div class="value-label">Intrinsic Value <span style="font-size:10px;color:var(--mut);font-weight:400;letter-spacing:.04em">Rm基準（βなし ${(d.wacc?.market_return * 100 || 10).toFixed(1)}%）</span></div>
+          <div class="value-label">Intrinsic Value <span style="font-size:10px;color:var(--mut);font-weight:400;letter-spacing:.04em">Rm蝓ｺ貅厄ｼ夷ｲ縺ｪ縺・${(d.wacc?.market_return * 100 || 10).toFixed(1)}%・・/span></div>
           <div class="value-main" id="displayIvpsMain">$${fmt(ivps)}</div>
-          <div class="value-sub" style="margin-bottom:10px">理論株価（Koichi式・市場独立）</div>
+          <div class="value-sub" style="margin-bottom:10px">逅・ｫ匁ｪ萓｡・・oichi蠑上・蟶ょｴ迢ｬ遶具ｼ・/div>
           <div id="rfValueBlock"></div>
         </div>
         <div class="value-box">
           <div class="value-label">Current Price</div>
           <div class="value-main" style="color:var(--txt)">$${fmt(currentPrice)}</div>
-          <div class="value-sub">現在株価</div>
+          <div class="value-sub">迴ｾ蝨ｨ譬ｪ萓｡</div>
           <div class="upside-badge ${upside >= 0 ? 'positive' : 'negative'}" id="displayUpside">
-            ${upside >= 0 ? '▲' : '▼'} ${Math.abs(upside).toFixed(1)}%
+            ${upside >= 0 ? '笆ｲ' : '笆ｼ'} ${Math.abs(upside).toFixed(1)}%
           </div>
           <div id="rfMarketBlock"></div>
         </div>
@@ -524,19 +518,19 @@ function render(d) {
 
       <div class="sensitivity-section">
         <div class="sensitivity-header">
-          <div class="sensitivity-title">📈 SENSITIVITY ANALYSIS</div>
+          <div class="sensitivity-title">嶋 SENSITIVITY ANALYSIS</div>
           <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
             <div style="font-size:11px;color:var(--mut);font-family:var(--mono)">
-              β込みWACC:
+              ﾎｲ霎ｼ縺ｿWACC:
               <span style="color:var(--acc);font-weight:700" id="displayIvps">$${fmt(ivpsBeta > 0 ? ivpsBeta : ivps)}</span>
-              <span style="color:var(--mut);font-size:10px">（WACC: <span id="displayWacc">${fmtPct2(waccValue)}</span> β=${beta.toFixed(2)}）</span>
+              <span style="color:var(--mut);font-size:10px">・・ACC: <span id="displayWacc">${fmtPct2(waccValue)}</span> ﾎｲ=${beta.toFixed(2)}・・/span>
             </div>
             <div class="wacc-slider-container">
-              <span class="wacc-slider-label">WACC調整:</span>
+              <span class="wacc-slider-label">WACC隱ｿ謨ｴ:</span>
               <input type="range" class="wacc-slider" id="waccSlider"
                      min="-2" max="2" step="0.5" value="0"
                      oninput="updateWacc(this.value)">
-              <span class="wacc-slider-value" id="waccDeltaDisplay">±0%</span>
+              <span class="wacc-slider-value" id="waccDeltaDisplay">ﾂｱ0%</span>
             </div>
           </div>
         </div>
@@ -545,8 +539,8 @@ function render(d) {
           <table class="matrix-table" id="sensitivityTable">
             <thead>
               <tr>
-                <th class="corner">WACC \ 高成長期間</th>
-                ${growthYears.map(y => `<th>高成長${y}年</th>`).join('')}
+                <th class="corner">WACC \ 鬮俶・髟ｷ譛滄俣</th>
+                ${growthYears.map(y => `<th>鬮俶・髟ｷ${y}蟷ｴ</th>`).join('')}
               </tr>
             </thead>
             <tbody id="matrixBody">
@@ -556,26 +550,24 @@ function render(d) {
         </div>
 
         <div class="matrix-legend">
-          <div class="legend-item"><div class="legend-color cheap"></div><span>基準値より+10%超</span></div>
-          <div class="legend-item"><div class="legend-color base"></div><span>基準値（±10%以内）</span></div>
-          <div class="legend-item"><div class="legend-color expensive"></div><span>基準値より-10%超</span></div>
+          <div class="legend-item"><div class="legend-color cheap"></div><span>蝓ｺ貅門､繧医ｊ+10%雜・/span></div>
+          <div class="legend-item"><div class="legend-color base"></div><span>蝓ｺ貅門､・按ｱ10%莉･蜀・ｼ・/span></div>
+          <div class="legend-item"><div class="legend-color expensive"></div><span>蝓ｺ貅門､繧医ｊ-10%雜・/span></div>
         </div>
       </div>
 
       <div class="future-section">
-        <h3 class="section-title">将来価値予測（シナリオ別）</h3>
+        <h3 class="section-title">蟆・擂萓｡蛟､莠域ｸｬ・医す繝翫Μ繧ｪ蛻･・・/h3>
         ${(() => {
-          // シナリオ定義（segment_weightedの場合のみBEAR/BASE/BULL、それ以外はBASEのみ）
-          const scenarios = scenarioValuations ? [
-            { label: '🐂 BULL', rate: scenarioValuations.bull?.growth_rate, cls: 'bull', baseVal: scenarioValuations.bull?.intrinsic_value_per_share || ivps },
-            { label: '📊 BASE', rate: scenarioValuations.base?.growth_rate, cls: 'base', baseVal: scenarioValuations.base?.intrinsic_value_per_share || ivps },
-            { label: '🐻 BEAR', rate: scenarioValuations.bear?.growth_rate, cls: 'bear', baseVal: scenarioValuations.bear?.intrinsic_value_per_share || ivps },
+          // 繧ｷ繝翫Μ繧ｪ螳夂ｾｩ・・egment_weighted縺ｮ蝣ｴ蜷医・縺ｿBEAR/BASE/BULL縲√◎繧御ｻ･螟悶・BASE縺ｮ縺ｿ・・          const scenarios = scenarioValuations ? [
+            { label: '垂 BULL', rate: scenarioValuations.bull?.growth_rate, cls: 'bull', baseVal: scenarioValuations.bull?.intrinsic_value_per_share || ivps },
+            { label: '投 BASE', rate: scenarioValuations.base?.growth_rate, cls: 'base', baseVal: scenarioValuations.base?.intrinsic_value_per_share || ivps },
+            { label: '製 BEAR', rate: scenarioValuations.bear?.growth_rate, cls: 'bear', baseVal: scenarioValuations.bear?.intrinsic_value_per_share || ivps },
           ] : [
-            { label: '📊 BASE', rate: highGrowthRate, cls: 'base', baseVal: ivps },
+            { label: '投 BASE', rate: highGrowthRate, cls: 'base', baseVal: ivps },
           ];
 
-          // シナリオ別将来価値を計算
-          function projectFuture(baseVal, growthRate) {
+          // 繧ｷ繝翫Μ繧ｪ蛻･蟆・擂萓｡蛟､繧定ｨ育ｮ・          function projectFuture(baseVal, growthRate) {
             const vals = [];
             let v = baseVal;
             const nYears = Object.keys(futureVals).length || 3;
@@ -589,8 +581,7 @@ function render(d) {
 
           const yearLabels = Object.keys(futureVals);
 
-          // テンプレートリテラルの入れ子を避け文字列連結で構築
-          const thYears = yearLabels.map(k => '<th>' + k + '</th>').join('');
+          // 繝・Φ繝励Ξ繝ｼ繝医Μ繝・Λ繝ｫ縺ｮ蜈･繧悟ｭ舌ｒ驕ｿ縺第枚蟄怜・騾｣邨舌〒讒狗ｯ・          const thYears = yearLabels.map(k => '<th>' + k + '</th>').join('');
           const tbRows = scenarios.map(sc => {
             const vals = projectFuture(sc.baseVal, sc.rate);
             const tds = vals.map(v => '<td>$' + fmt(v) + '</td>').join('');
@@ -603,8 +594,8 @@ function render(d) {
           }).join('');
           return '<table class="future-table">' +
             '<thead><tr>' +
-            '<th class="scenario-header">シナリオ / 成長率</th>' +
-            '<th>現在</th>' + thYears +
+            '<th class="scenario-header">繧ｷ繝翫Μ繧ｪ / 謌宣聞邇・/th>' +
+            '<th>迴ｾ蝨ｨ</th>' + thYears +
             '</tr></thead>' +
             '<tbody>' + tbRows + '</tbody>' +
             '</table>';
@@ -621,178 +612,177 @@ function render(d) {
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">動的WACC計算（CAPM）</span>
+              <span class="step-name">蜍慕噪WACC險育ｮ暦ｼ・APM・・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtPct2(waccValue)}</span>
-              <span class="toggle-arrow">▶</span>
+              <span class="toggle-arrow">笆ｶ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>WACC = Rf + β × (Rm - Rf)</code>
-              <p class="formula-desc">CAPMで銘柄固有のリスク（β）を反映した割引率を計算。</p>
+              <code>WACC = Rf + ﾎｲ ﾃ・(Rm - Rf)</code>
+              <p class="formula-desc">CAPM縺ｧ驫俶氛蝗ｺ譛峨・繝ｪ繧ｹ繧ｯ・夷ｲ・峨ｒ蜿肴丐縺励◆蜑ｲ蠑慕紫繧定ｨ育ｮ励・/p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">Rf（リスクフリー）</span><span class="input-value">${fmtPct(riskFreeRate)}</span></div>
-              <div class="input-item"><span class="input-label">Rm（市場期待）</span><span class="input-value">${fmtPct(marketReturn)}</span></div>
-              <div class="input-item"><span class="input-label">β</span><span class="input-value">${beta.toFixed(2)}</span></div>
+              <div class="input-item"><span class="input-label">Rf・医Μ繧ｹ繧ｯ繝輔Μ繝ｼ・・/span><span class="input-value">${fmtPct(riskFreeRate)}</span></div>
+              <div class="input-item"><span class="input-label">Rm・亥ｸょｴ譛溷ｾ・ｼ・/span><span class="input-value">${fmtPct(marketReturn)}</span></div>
+              <div class="input-item"><span class="input-label">ﾎｲ</span><span class="input-value">${beta.toFixed(2)}</span></div>
               <div class="input-item"><span class="input-label">WACC</span><span class="input-value highlight">${fmtPct2(waccValue)}</span></div>
             </div>
           </div>
         </div>
 
-        <!-- Step 2: 成長率 -->
-        <div class="calc-step open">
+        <!-- Step 2: 謌宣聞邇・-->
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">成長率（${growthSource === 'segment_weighted' ? 'セグメント加重' : growthSource === 'fcf_cagr' ? 'FCF CAGR' : 'デフォルト'}）</span>
+              <span class="step-name">謌宣聞邇・ｼ・{growthSource === 'segment_weighted' ? '繧ｻ繧ｰ繝｡繝ｳ繝亥刈驥・ : growthSource === 'fcf_cagr' ? 'FCF CAGR' : '繝・ヵ繧ｩ繝ｫ繝・}・・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtPct(growthRate)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>優先順位: segment_weighted &gt; fcf_cagr &gt; default(25%)</code>
-              <p class="formula-desc">セグメント別売上構成比×成長率で加重平均を算出。未定義銘柄はFCF CAGR（15〜50%クリップ）。</p>
+              <code>蜆ｪ蜈磯・ｽ・ segment_weighted &gt; fcf_cagr &gt; default(25%)</code>
+              <p class="formula-desc">繧ｻ繧ｰ繝｡繝ｳ繝亥挨螢ｲ荳頑ｧ区・豈氾玲・髟ｷ邇・〒蜉驥榊ｹｳ蝮・ｒ邂怜・縲よ悴螳夂ｾｩ驫俶氛縺ｯFCF CAGR・・5縲・0%繧ｯ繝ｪ繝・・・峨・/p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">成長率ソース</span><span class="input-value">${growthSource}</span></div>
-              <div class="input-item"><span class="input-label">高成長率</span><span class="input-value highlight">${fmtPct(growthRate)}</span></div>
-              <div class="input-item"><span class="input-label">高成長期間</span><span class="input-value">${highGrowthYears}年</span></div>
-              <div class="input-item"><span class="input-label">ターミナル成長率</span><span class="input-value">${fmtPct(terminalGrowth)}</span></div>
+              <div class="input-item"><span class="input-label">謌宣聞邇・た繝ｼ繧ｹ</span><span class="input-value">${growthSource}</span></div>
+              <div class="input-item"><span class="input-label">鬮俶・髟ｷ邇・/span><span class="input-value highlight">${fmtPct(growthRate)}</span></div>
+              <div class="input-item"><span class="input-label">鬮俶・髟ｷ譛滄俣</span><span class="input-value">${highGrowthYears}蟷ｴ</span></div>
+              <div class="input-item"><span class="input-label">繧ｿ繝ｼ繝溘リ繝ｫ謌宣聞邇・/span><span class="input-value">${fmtPct(terminalGrowth)}</span></div>
             </div>
             ${renderSegmentKpiTable(d, growthScenarios)}
           </div>
         </div>
 
-        <!-- Step 3: FCFベース判定 -->
-        <div class="calc-step open">
+        <!-- Step 3: FCF繝吶・繧ｹ蛻､螳・-->
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">FCFベース自動判定</span>
+              <span class="step-name">FCF繝吶・繧ｹ閾ｪ蜍募愛螳・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtBaseLabel(fcfBaseMethod)} / ${fmtB(fcfBaseUsed)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>CV = std(FCF過去5年) / |mean(FCF過去5年)|</code>
+              <code>CV = std(FCF驕主悉5蟷ｴ) / |mean(FCF驕主悉5蟷ｴ)|</code>
               <p class="formula-desc">
-                CV ≤ 0.5（安定） → <strong>avg_5yr</strong>を採用（成熟企業: KO, MSFT等）<br>
-                CV &gt; 0.5（不安定）→ <strong>recent_2yr</strong>を採用（成長企業: NVDA, AMD等）<br>
-                FCFの変動係数で安定性を測定。成長企業の過小評価を構造的に解消。（v6.3）
-              </p>
+                CV 竕､ 0.5・亥ｮ牙ｮ夲ｼ・竊・<strong>avg_5yr</strong>繧呈治逕ｨ・域・辭滉ｼ∵･ｭ: KO, MSFT遲会ｼ・br>
+                CV &gt; 0.5・井ｸ榊ｮ牙ｮ夲ｼ俄・ <strong>recent_2yr</strong>繧呈治逕ｨ・域・髟ｷ莨∵･ｭ: NVDA, AMD遲会ｼ・br>
+                FCF縺ｮ螟牙虚菫よ焚縺ｧ螳牙ｮ壽ｧ繧呈ｸｬ螳壹よ・髟ｷ莨∵･ｭ縺ｮ驕主ｰ剰ｩ穂ｾ｡繧呈ｧ矩逧・↓隗｣豸医ゑｼ・6.3・・              </p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">5年平均FCF</span><span class="input-value">${fmtB(fcf5yr)}</span></div>
-              <div class="input-item"><span class="input-label">直近2年平均FCF</span><span class="input-value">${fmtB(fcf2yr)}</span></div>
-              <div class="input-item"><span class="input-label">変動係数 (CV)</span><span class="input-value">${fcfCv && fcfCv < 999 ? fcfCv.toFixed(2) : '—'}</span></div>
-              <div class="input-item"><span class="input-label">採用ベース</span><span class="input-value highlight">${fmtBaseLabel(fcfBaseMethod)}</span></div>
+              <div class="input-item"><span class="input-label">5蟷ｴ蟷ｳ蝮⑦CF</span><span class="input-value">${fmtB(fcf5yr)}</span></div>
+              <div class="input-item"><span class="input-label">逶ｴ霑・蟷ｴ蟷ｳ蝮⑦CF</span><span class="input-value">${fmtB(fcf2yr)}</span></div>
+              <div class="input-item"><span class="input-label">螟牙虚菫よ焚 (CV)</span><span class="input-value">${fcfCv && fcfCv < 999 ? fcfCv.toFixed(2) : '窶・}</span></div>
+              <div class="input-item"><span class="input-label">謗｡逕ｨ繝吶・繧ｹ</span><span class="input-value highlight">${fmtBaseLabel(fcfBaseMethod)}</span></div>
             </div>
           </div>
         </div>
 
-        <!-- Step 4: DCF計算 -->
-        <div class="calc-step open">
+        <!-- Step 4: DCF險育ｮ・-->
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">${dcfType === 'three_stage' ? '3段階DCF計算' : '2段階DCF計算'}</span>
+              <span class="step-name">${dcfType === 'three_stage' ? '3谿ｵ髫札CF險育ｮ・ : '2谿ｵ髫札CF險育ｮ・}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">${fmtB(v0)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
               ${dcfType === 'three_stage'
-                ? `<code>V₀ = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
-                   <p class="formula-desc">高成長期→移行期→永続成長の3段階で鈍化カーブを表現。銘柄別に成熟プロファイルを設定。</p>`
-                : `<code>V₀ = Σ(FCF × (1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
-                   <p class="formula-desc">高成長期+ターミナル永続成長の2段階モデル。</p>`}
+                ? `<code>V竄 = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
+                   <p class="formula-desc">鬮俶・髟ｷ譛溪・遘ｻ陦梧悄竊呈ｰｸ邯壽・髟ｷ縺ｮ3谿ｵ髫弱〒驤榊喧繧ｫ繝ｼ繝悶ｒ陦ｨ迴ｾ縲る釜譟・挨縺ｫ謌千・繝励Ο繝輔ぃ繧､繝ｫ繧定ｨｭ螳壹・/p>`
+                : `<code>V竄 = ﾎ｣(FCF ﾃ・(1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
+                   <p class="formula-desc">鬮俶・髟ｷ譛・繧ｿ繝ｼ繝溘リ繝ｫ豌ｸ邯壽・髟ｷ縺ｮ2谿ｵ髫弱Δ繝・Ν縲・/p>`}
             </div>
 
             ${dcfType === 'three_stage' && maturity ? `
             <div class="phase-row">
               <div class="phase-card p1">
-                <div class="phase-label">Phase 1（高成長）</div>
-                <div class="phase-detail">${maturity.phase1?.years || 0}年 @ ${fmtPct(maturity.phase1?.growth ?? growthRate)}</div>
+                <div class="phase-label">Phase 1・磯ｫ俶・髟ｷ・・/div>
+                <div class="phase-detail">${maturity.phase1?.years || 0}蟷ｴ @ ${fmtPct(maturity.phase1?.growth ?? growthRate)}</div>
                 <div class="phase-value">${fmtB(pvPhase1)}</div>
               </div>
               <div class="phase-card p2">
-                <div class="phase-label">Phase 2（移行期）</div>
-                <div class="phase-detail">${maturity.phase2?.years || 0}年 @ ${fmtPct(maturity.phase2?.growth)}</div>
+                <div class="phase-label">Phase 2・育ｧｻ陦梧悄・・/div>
+                <div class="phase-detail">${maturity.phase2?.years || 0}蟷ｴ @ ${fmtPct(maturity.phase2?.growth)}</div>
                 <div class="phase-value">${fmtB(pvPhase2)}</div>
               </div>
               <div class="phase-card tv">
-                <div class="phase-label">Terminal（永続）</div>
+                <div class="phase-label">Terminal・域ｰｸ邯夲ｼ・/div>
                 <div class="phase-detail">@ ${fmtPct(terminalGrowth)}</div>
                 <div class="phase-value">${fmtB(pvTerminal)}</div>
               </div>
             </div>
             ` : `
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">FCFベース</span><span class="input-value">${fmtB(fcfBaseUsed)}</span></div>
-              <div class="input-item"><span class="input-label">高成長期PV</span><span class="input-value">${fmtB(pvHigh)}</span></div>
-              <div class="input-item"><span class="input-label">ターミナルPV</span><span class="input-value">${fmtB(pvTerminal)}</span></div>
-              <div class="input-item"><span class="input-label">V₀</span><span class="input-value highlight">${fmtB(v0)}</span></div>
+              <div class="input-item"><span class="input-label">FCF繝吶・繧ｹ</span><span class="input-value">${fmtB(fcfBaseUsed)}</span></div>
+              <div class="input-item"><span class="input-label">鬮俶・髟ｷ譛蘖V</span><span class="input-value">${fmtB(pvHigh)}</span></div>
+              <div class="input-item"><span class="input-label">繧ｿ繝ｼ繝溘リ繝ｫPV</span><span class="input-value">${fmtB(pvTerminal)}</span></div>
+              <div class="input-item"><span class="input-label">V竄</span><span class="input-value highlight">${fmtB(v0)}</span></div>
             </div>
             `}
           </div>
         </div>
 
-        <!-- Step 5: RPO補正（条件付き） -->
+        <!-- Step 5: RPO陬懈ｭ｣・域擅莉ｶ莉倥″・・-->
         ${rpo > 0 ? `
-        <div class="calc-step open">
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">RPO補正（残存履行義務）</span>
+              <span class="step-name">RPO陬懈ｭ｣・域ｮ句ｭ伜ｱ･陦檎ｾｩ蜍呻ｼ・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">+${fmtB(rpoPV)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
               <code>RPO_PV = RPO / (1 + 15%)^1.5</code>
-              <p class="formula-desc">SaaS・長期契約企業のRPOを15%割引率で現在価値化。</p>
+              <p class="formula-desc">SaaS繝ｻ髟ｷ譛溷･醍ｴ・ｼ∵･ｭ縺ｮRPO繧・5%蜑ｲ蠑慕紫縺ｧ迴ｾ蝨ｨ萓｡蛟､蛹悶・/p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">RPO（生値）</span><span class="input-value">${fmtB(rpo)}</span></div>
-              <div class="input-item"><span class="input-label">RPO現在価値</span><span class="input-value highlight">${fmtB(rpoPV)}</span></div>
+              <div class="input-item"><span class="input-label">RPO・育函蛟､・・/span><span class="input-value">${fmtB(rpo)}</span></div>
+              <div class="input-item"><span class="input-label">RPO迴ｾ蝨ｨ萓｡蛟､</span><span class="input-value highlight">${fmtB(rpoPV)}</span></div>
             </div>
           </div>
         </div>
         ` : ''}
 
-        <!-- Step 6: 成長オプション（条件付き） -->
+        <!-- Step 6: 謌宣聞繧ｪ繝励す繝ｧ繝ｳ・域擅莉ｶ莉倥″・・-->
         ${goCount > 0 ? `
-        <div class="calc-step open">
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">成長オプション（仮説セグメント）</span>
+              <span class="step-name">謌宣聞繧ｪ繝励す繝ｧ繝ｳ・井ｻｮ隱ｬ繧ｻ繧ｰ繝｡繝ｳ繝茨ｼ・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">+${fmtB(goPv)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>期待FCF = TAM × 侵入率 × FCFマージン × 確率</code>
-              <code>仮説PV = 期待FCF / (1 + 15%)^遅延年数</code>
-              <p class="formula-desc">未実現の成長機会を「仮説セグメント」として定量化。TAM × 侵入率で期待売上、マージン × 確率で期待FCFを算出し、実現遅延を考慮して現在価値化。</p>
+              <code>譛溷ｾ・CF = TAM ﾃ・萓ｵ蜈･邇・ﾃ・FCF繝槭・繧ｸ繝ｳ ﾃ・遒ｺ邇・/code>
+              <code>莉ｮ隱ｬPV = 譛溷ｾ・CF / (1 + 15%)^驕・ｻｶ蟷ｴ謨ｰ</code>
+              <p class="formula-desc">譛ｪ螳溽樟縺ｮ謌宣聞讖滉ｼ壹ｒ縲御ｻｮ隱ｬ繧ｻ繧ｰ繝｡繝ｳ繝医阪→縺励※螳夐㍼蛹悶５AM ﾃ・萓ｵ蜈･邇・〒譛溷ｾ・｣ｲ荳翫√・繝ｼ繧ｸ繝ｳ ﾃ・遒ｺ邇・〒譛溷ｾ・CF繧堤ｮ怜・縺励∝ｮ溽樟驕・ｻｶ繧定・・縺励※迴ｾ蝨ｨ萓｡蛟､蛹悶・/p>
             </div>
             <div class="go-list">
               ${(growthOptions.options || []).map(opt => `
@@ -802,8 +792,7 @@ function render(d) {
                     <div class="go-item-pv">${fmtB(opt.pv)}</div>
                   </div>
                   <div class="go-item-params">
-                    TAM ${fmtB(opt.tam)} × 侵入 ${fmtPct(opt.penetration)} × マージン ${fmtPct(opt.fcf_margin)} × 確率 ${fmtPct(opt.probability)} / ${opt.delay_years}年後
-                  </div>
+                    TAM ${fmtB(opt.tam)} ﾃ・萓ｵ蜈･ ${fmtPct(opt.penetration)} ﾃ・繝槭・繧ｸ繝ｳ ${fmtPct(opt.fcf_margin)} ﾃ・遒ｺ邇・${fmtPct(opt.probability)} / ${opt.delay_years}蟷ｴ蠕・                  </div>
                   ${opt.note ? `<div class="go-item-note">${opt.note}</div>` : ''}
                 </div>
               `).join('')}
@@ -812,24 +801,24 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- Step: FCF外れ値分析（条件付き） -->
+        <!-- Step: FCF螟悶ｌ蛟､蛻・梵・域擅莉ｶ莉倥″・・-->
         ${fcfOutlierDetected ? `
         <div class="calc-step ${fcfOutlierAction === 'excluded' ? '' : 'fcf-flagged'}">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
               <span class="step-name">
-                FCF外れ値分析
+                FCF螟悶ｌ蛟､蛻・梵
                 ${fcfOutlierAction === 'excluded'
-                  ? '<span style="color:var(--grn);font-size:10px;margin-left:6px">除外済</span>'
-                  : '<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 要確認</span>'}
+                  ? '<span style="color:var(--grn);font-size:10px;margin-left:6px">髯､螟匁ｸ・/span>'
+                  : '<span style="color:var(--yellow);font-size:10px;margin-left:6px">笞 隕∫｢ｺ隱・/span>'}
               </span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result" style="color:${fcfOutlierAction === 'excluded' ? 'var(--grn)' : 'var(--yellow)'}">
                 FY${fcfOutlierFY} ${fmtB(fcfOutlierValue)}
               </span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
@@ -839,10 +828,9 @@ function render(d) {
             ${fcfOutlierTransientFound ? `
             <div class="inputs-grid">
               <div class="input-item" style="grid-column:1/-1">
-                <span class="input-label">一過性費用の内訳（EPSアナライザー）</span>
+                <span class="input-label">荳驕取ｧ雋ｻ逕ｨ縺ｮ蜀・ｨｳ・・PS繧｢繝翫Λ繧､繧ｶ繝ｼ・・/span>
                 <span class="input-value highlight" style="color:var(--grn)">
-                  合計 ${fmtB(fcfOutlierTransientTotal)}（税前）
-                </span>
+                  蜷郁ｨ・${fmtB(fcfOutlierTransientTotal)}・育ｨ主燕・・                </span>
               </div>
               ${fcfOutlierItems.map(it => `
                 <div class="input-item">
@@ -855,8 +843,7 @@ function render(d) {
             <div class="inputs-grid">
               <div class="input-item" style="grid-column:1/-1">
                 <span class="input-label" style="color:var(--yellow)">
-                  ⚠ EPSアナライザーで一過性費用の証拠が確認されていません。手動確認を推奨します。
-                </span>
+                  笞 EPS繧｢繝翫Λ繧､繧ｶ繝ｼ縺ｧ荳驕取ｧ雋ｻ逕ｨ縺ｮ險ｼ諡縺檎｢ｺ隱阪＆繧後※縺・∪縺帙ｓ縲よ焔蜍慕｢ｺ隱阪ｒ謗ｨ螂ｨ縺励∪縺吶・                </span>
               </div>
             </div>
             `}
@@ -864,46 +851,45 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- Step: FCF実力推定（v7.2 条件付き） -->
+        <!-- Step: FCF螳溷鴨謗ｨ螳夲ｼ・7.2 譚｡莉ｶ莉倥″・・-->
         ${fcfEstApplied || (fcfEstimation.method === 'raw_fcf' && fcfEstNote) ? `
         <div class="calc-step ${fcfEstWarning ? 'fcf-flagged' : ''}">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
               <span class="step-name">
-                FCF実力推定（調整済みEPS基準）
-                ${fcfEstApplied
+                FCF螳溷鴨謗ｨ螳夲ｼ郁ｪｿ謨ｴ貂医∩EPS蝓ｺ貅厄ｼ・                ${fcfEstApplied
                   ? (fcfEstWarning
-                      ? '<span style="color:var(--yellow);font-size:10px;margin-left:6px">⚠ 乖離 ' + fcfEstRatio.toFixed(1) + 'x</span>'
-                      : '<span style="color:var(--grn);font-size:10px;margin-left:6px">適用済</span>')
-                  : '<span style="color:var(--mut);font-size:10px;margin-left:6px">フォールバック</span>'}
+                      ? '<span style="color:var(--yellow);font-size:10px;margin-left:6px">笞 荵夜屬 ' + fcfEstRatio.toFixed(1) + 'x</span>'
+                      : '<span style="color:var(--grn);font-size:10px;margin-left:6px">驕ｩ逕ｨ貂・/span>')
+                  : '<span style="color:var(--mut);font-size:10px;margin-left:6px">繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ</span>'}
               </span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result" style="color:${fcfEstApplied ? (fcfEstWarning ? 'var(--yellow)' : 'var(--grn)') : 'var(--mut)'}">
                 ${fcfEstApplied ? fmtB(fcfEstEstimated) : fmtB(fcfEstRawFcf)}
               </span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <p class="formula">推定FCF = 調整済み純利益 × FCF転換率（セクター別）</p>
-              <p class="formula-desc">SBC・ファイナンスリース等のノイズを除いた調整済み純利益から、<br>
-              セクター固有のFCF転換率を用いてFCF実力値を推定します。</p>
+              <p class="formula">謗ｨ螳哥CF = 隱ｿ謨ｴ貂医∩邏泌茜逶・ﾃ・FCF霆｢謠帷紫・医そ繧ｯ繧ｿ繝ｼ蛻･・・/p>
+              <p class="formula-desc">SBC繝ｻ繝輔ぃ繧､繝翫Φ繧ｹ繝ｪ繝ｼ繧ｹ遲峨・繝弱う繧ｺ繧帝勁縺・◆隱ｿ謨ｴ貂医∩邏泌茜逶翫°繧峨・br>
+              繧ｻ繧ｯ繧ｿ繝ｼ蝗ｺ譛峨・FCF霆｢謠帷紫繧堤畑縺・※FCF螳溷鴨蛟､繧呈耳螳壹＠縺ｾ縺吶・/p>
             </div>
             ${(() => {
               if (fcfEstApplied) {
                 let html = '<div class="inputs-grid">' +
-                  '<div class="input-item"><span class="input-label">調整済み純利益</span><span class="input-value highlight">' + fmtB(fcfEstAdjNi) + '</span></div>' +
-                  '<div class="input-item"><span class="input-label">FCF転換率（セクター）</span><span class="input-value">' + (fcfEstConvRate * 100).toFixed(0) + '%</span></div>' +
-                  '<div class="input-item"><span class="input-label">推定FCF</span><span class="input-value highlight" style="color:var(--grn)">' + fmtB(fcfEstEstimated) + '</span></div>' +
-                  '<div class="input-item"><span class="input-label">生FCF（従来）</span><span class="input-value">' + fmtB(fcfEstRawFcf) + '</span></div>' +
+                  '<div class="input-item"><span class="input-label">隱ｿ謨ｴ貂医∩邏泌茜逶・/span><span class="input-value highlight">' + fmtB(fcfEstAdjNi) + '</span></div>' +
+                  '<div class="input-item"><span class="input-label">FCF霆｢謠帷紫・医そ繧ｯ繧ｿ繝ｼ・・/span><span class="input-value">' + (fcfEstConvRate * 100).toFixed(0) + '%</span></div>' +
+                  '<div class="input-item"><span class="input-label">謗ｨ螳哥CF</span><span class="input-value highlight" style="color:var(--grn)">' + fmtB(fcfEstEstimated) + '</span></div>' +
+                  '<div class="input-item"><span class="input-label">逕檳CF・亥ｾ捺擂・・/span><span class="input-value">' + fmtB(fcfEstRawFcf) + '</span></div>' +
                   '</div>';
                 if (fcfEstWarning) {
                   html += '<div class="inputs-grid" style="margin-top:12px">' +
                     '<div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">' +
-                    '<span class="input-label" style="color:var(--yellow);font-size:12px">⚠ 大幅乖離の警告（' + fcfEstRatio.toFixed(1) + '倍）</span>' +
+                    '<span class="input-label" style="color:var(--yellow);font-size:12px">笞 螟ｧ蟷・ｹ夜屬縺ｮ隴ｦ蜻奇ｼ・ + fcfEstRatio.toFixed(1) + '蛟搾ｼ・/span>' +
                     '<span class="input-value" style="color:var(--yellow);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">' + fcfEstWarning + '</span>' +
                     '</div></div>';
                 }
@@ -918,42 +904,40 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- Step: BS評価補正（条件付き） -->
+        <!-- Step: BS隧穂ｾ｡陬懈ｭ｣・域擅莉ｶ莉倥″・・-->
         ${bsApplied ? `
-        <div class="calc-step open">
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">BS評価補正（ネットキャッシュ）</span>
+              <span class="step-name">BS隧穂ｾ｡陬懈ｭ｣・医ロ繝・ヨ繧ｭ繝｣繝・す繝･・・/span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
-                ${bsNetCashPerShare >= 0 ? '+' : ''}${fmtB(bsNetCashPerShare)}/株
+                ${bsNetCashPerShare >= 0 ? '+' : ''}${fmtB(bsNetCashPerShare)}/譬ｪ
               </span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>PT = DCF理論株価 + ネットキャッシュ/株</code>
-              <code>ネットキャッシュ = (現金 + 短期投資) - (長期負債 + 短期負債)</code>
+              <code>PT = DCF逅・ｫ匁ｪ萓｡ + 繝阪ャ繝医く繝｣繝・す繝･/譬ｪ</code>
+              <code>繝阪ャ繝医く繝｣繝・す繝･ = (迴ｾ驥・+ 遏ｭ譛滓兜雉・ - (髟ｷ譛溯ｲ蛯ｵ + 遏ｭ譛溯ｲ蛯ｵ)</code>
               <p class="formula-desc">
-                DCFが捉えきれないバランスシート価値を反映。<br>
-                純キャッシュ企業（NVDA等）はプラス補正、純負債企業はマイナス補正。
-                FY${bsFY}実績ベース。
-              </p>
+                DCF縺梧拷縺医″繧後↑縺・ヰ繝ｩ繝ｳ繧ｹ繧ｷ繝ｼ繝井ｾ｡蛟､繧貞渚譏縲・br>
+                邏斐く繝｣繝・す繝･莨∵･ｭ・・VDA遲会ｼ峨・繝励Λ繧ｹ陬懈ｭ｣縲∫ｴ碑ｲ蛯ｵ莨∵･ｭ縺ｯ繝槭う繝翫せ陬懈ｭ｣縲・                FY${bsFY}螳溽ｸｾ繝吶・繧ｹ縲・              </p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">現金・現金同等物</span><span class="input-value">${fmtB(bsCash)}</span></div>
-              <div class="input-item"><span class="input-label">短期投資</span><span class="input-value">${fmtB(bsStInv)}</span></div>
-              <div class="input-item"><span class="input-label">長期有利子負債</span><span class="input-value">${fmtB(bsLtDebt)}</span></div>
-              <div class="input-item"><span class="input-label">短期有利子負債</span><span class="input-value">${fmtB(bsStDebt)}</span></div>
-              <div class="input-item"><span class="input-label">ネットキャッシュ合計</span>
+              <div class="input-item"><span class="input-label">迴ｾ驥代・迴ｾ驥大酔遲臥黄</span><span class="input-value">${fmtB(bsCash)}</span></div>
+              <div class="input-item"><span class="input-label">遏ｭ譛滓兜雉・/span><span class="input-value">${fmtB(bsStInv)}</span></div>
+              <div class="input-item"><span class="input-label">髟ｷ譛滓怏蛻ｩ蟄占ｲ蛯ｵ</span><span class="input-value">${fmtB(bsLtDebt)}</span></div>
+              <div class="input-item"><span class="input-label">遏ｭ譛滓怏蛻ｩ蟄占ｲ蛯ｵ</span><span class="input-value">${fmtB(bsStDebt)}</span></div>
+              <div class="input-item"><span class="input-label">繝阪ャ繝医く繝｣繝・す繝･蜷郁ｨ・/span>
                 <span class="input-value highlight" style="color:${bsNetCash >= 0 ? 'var(--grn)' : 'var(--red)'}">
                   ${bsNetCash >= 0 ? '+' : ''}${fmtB(bsNetCash)}
                 </span>
               </div>
-              <div class="input-item"><span class="input-label">1株あたり</span>
+              <div class="input-item"><span class="input-label">1譬ｪ縺ゅ◆繧・/span>
                 <span class="input-value highlight" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
                   ${bsNetCashPerShare >= 0 ? '+' : ''}$${bsNetCashPerShare.toFixed(2)}
                 </span>
@@ -963,56 +947,56 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- Step 7: α -->
-        <div class="calc-step open">
+        <!-- Step 7: ﾎｱ -->
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">α（成長期待プレミアム）${alphaWasCapped ? ' <span style="color:var(--yellow);font-size:10px">CAPPED</span>' : ''}</span>
+              <span class="step-name">ﾎｱ・域・髟ｷ譛溷ｾ・・繝ｬ繝溘い繝・・{alphaWasCapped ? ' <span style="color:var(--yellow);font-size:10px">CAPPED</span>' : ''}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">×${(1 + alpha).toFixed(3)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="step-result">ﾃ・{(1 + alpha).toFixed(3)}</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>α = min(1.0, max(0, (ROE × 0.6 / WACC) × 0.7))</code>
-              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、WACCとの比で質的プレミアムを計算。上限1.0。</p>
+              <code>ﾎｱ = min(1.0, max(0, (ROE ﾃ・0.6 / WACC) ﾃ・0.7))</code>
+              <p class="formula-desc">ROEﾃ怜・驛ｨ逡吩ｿ晉紫縺ｧ蛟句挨謌宣聞邇・ｒ邂怜・縺励仝ACC縺ｨ縺ｮ豈斐〒雉ｪ逧・・繝ｬ繝溘い繝繧定ｨ育ｮ励ゆｸ企剞1.0縲・/p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">ROE（平均）</span><span class="input-value">${fmtPct(roeAvg)}</span></div>
+              <div class="input-item"><span class="input-label">ROE・亥ｹｳ蝮・ｼ・/span><span class="input-value">${fmtPct(roeAvg)}</span></div>
               <div class="input-item"><span class="input-label">WACC</span><span class="input-value">${fmtPct2(waccValue)}</span></div>
-              <div class="input-item"><span class="input-label">α（cap前）</span><span class="input-value">${alphaUncapped.toFixed(4)}</span></div>
-              <div class="input-item"><span class="input-label">α（cap後）</span><span class="input-value highlight">${alpha.toFixed(4)}</span></div>
+              <div class="input-item"><span class="input-label">ﾎｱ・・ap蜑搾ｼ・/span><span class="input-value">${alphaUncapped.toFixed(4)}</span></div>
+              <div class="input-item"><span class="input-label">ﾎｱ・・ap蠕鯉ｼ・/span><span class="input-value highlight">${alpha.toFixed(4)}</span></div>
             </div>
           </div>
         </div>
 
         <!-- Step 8: P_t -->
-        <div class="calc-step open">
+        <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
             <div class="calc-step-title">
               <span class="step-num">${nextStep()}</span>
-              <span class="step-name">本質的価値（P_t）算出</span>
+              <span class="step-name">譛ｬ雉ｪ逧・ｾ｡蛟､・・_t・臥ｮ怜・</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
               <span class="step-result">$${fmt(ivps)}</span>
-              <span class="toggle-arrow">▼</span>
+              <span class="toggle-arrow">笆ｼ</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>P_t = (V₀ + RPO_PV + GrowthOption_PV) × (1 + α) / 株式数</code>
-              <p class="formula-desc">V₀と各種加算項の合計にαを乗じ、希薄化後株式数で割り1株当り本質価値を算出。</p>
+              <code>P_t = (V竄 + RPO_PV + GrowthOption_PV) ﾃ・(1 + ﾎｱ) / 譬ｪ蠑乗焚</code>
+              <p class="formula-desc">V竄縺ｨ蜷・ｨｮ蜉邂鈴・・蜷郁ｨ医↓ﾎｱ繧剃ｹ励§縲∝ｸ瑚埋蛹門ｾ梧ｪ蠑乗焚縺ｧ蜑ｲ繧・譬ｪ蠖薙ｊ譛ｬ雉ｪ萓｡蛟､繧堤ｮ怜・縲・/p>
             </div>
             <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">V₀</span><span class="input-value">${fmtB(v0)}</span></div>
+              <div class="input-item"><span class="input-label">V竄</span><span class="input-value">${fmtB(v0)}</span></div>
               <div class="input-item"><span class="input-label">RPO_PV</span><span class="input-value">${fmtB(rpoPV)}</span></div>
               <div class="input-item"><span class="input-label">GrowthOption_PV</span><span class="input-value">${fmtB(goPv)}</span></div>
-              <div class="input-item"><span class="input-label">希薄化後株式数</span><span class="input-value">${fmtInt(dilutedShares)}</span></div>
-              <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB((v0 + rpoPV + goPv) * (1 + alpha))}</span></div>
-              <div class="input-item"><span class="input-label">1株当り</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
+              <div class="input-item"><span class="input-label">蟶瑚埋蛹門ｾ梧ｪ蠑乗焚</span><span class="input-value">${fmtInt(dilutedShares)}</span></div>
+              <div class="input-item"><span class="input-label">P_t・井ｼ∵･ｭ萓｡蛟､・・/span><span class="input-value">${fmtB((v0 + rpoPV + goPv) * (1 + alpha))}</span></div>
+              <div class="input-item"><span class="input-label">1譬ｪ蠖薙ｊ</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
             </div>
           </div>
         </div>
@@ -1026,17 +1010,15 @@ function render(d) {
     </div>
 
     <footer>
-      <p>計算日: ${calcDate} | ${formula}</p>
-      <p style="margin-top:8px"><a href="index.html" style="color:var(--acc);text-decoration:none">銘柄一覧に戻る</a></p>
+      <p>險育ｮ玲律: ${calcDate} | ${formula}</p>
+      <p style="margin-top:8px"><a href="index.html" style="color:var(--acc);text-decoration:none">驫俶氛荳隕ｧ縺ｫ謌ｻ繧・/a></p>
     </footer>
   `;
 
   renderChart(dcfType, pvPhase1, pvPhase2, pvHigh, pvTerminal, rpoPV, goPv, alpha, v0);
 
-  // 割引率別理論株価の表示（テンプレートリテラル外で安全に処理）
-  // メイン: ivps = Rmβなし（10%）
-  // 参考①: ivpsBeta = β込みWACC
-  // 参考②: ivpsRf = Rf理論上限
+  // 蜑ｲ蠑慕紫蛻･逅・ｫ匁ｪ萓｡縺ｮ陦ｨ遉ｺ・医ユ繝ｳ繝励Ξ繝ｼ繝医Μ繝・Λ繝ｫ螟悶〒螳牙・縺ｫ蜃ｦ逅・ｼ・  // 繝｡繧､繝ｳ: ivps = Rmﾎｲ縺ｪ縺暦ｼ・0%・・  // 蜿り・蔵: ivpsBeta = ﾎｲ霎ｼ縺ｿWACC
+  // 蜿り・贈: ivpsRf = Rf逅・ｫ紋ｸ企剞
   const boxStyle = 'margin-top:8px;padding:8px 10px;background:rgba(255,255,255,0.04);border-radius:6px;border:1px solid var(--bdr)';
   const lblStyle = 'font-size:10px;color:var(--mut);letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px';
   const subStyle = 'font-size:10px;color:var(--mut);margin-top:2px';
@@ -1045,7 +1027,7 @@ function render(d) {
   const rfPct = ((d.wacc?.risk_free_rate || 0.043) * 100).toFixed(1);
   const waccPct = ((d.wacc?.value || 0) * 100).toFixed(2);
 
-  // 左カード: 参考①β込みWACC・参考②Rfを表示
+  // 蟾ｦ繧ｫ繝ｼ繝・ 蜿り・蔵ﾎｲ霎ｼ縺ｿWACC繝ｻ蜿り・贈Rf繧定｡ｨ遉ｺ
   const rfBlock = document.getElementById('rfValueBlock');
   if (rfBlock) {
     let html = '';
@@ -1054,46 +1036,45 @@ function render(d) {
       const diffBetaSign = diffBeta >= 0 ? '+' : '';
       html +=
         '<div style="' + boxStyle + '">' +
-        '<div style="' + lblStyle + '">参考① β込みWACC（' + waccPct + '%）</div>' +
+        '<div style="' + lblStyle + '">蜿り・蔵 ﾎｲ霎ｼ縺ｿWACC・・ + waccPct + '%・・/div>' +
         '<div style="' + valStyle + '">$' + fmt(ivpsBeta) + '</div>' +
-        '<div style="' + subStyle + '">メインとの差 ' + diffBetaSign + '$' + fmt(diffBeta) + ' = βによる効果</div>' +
+        '<div style="' + subStyle + '">繝｡繧､繝ｳ縺ｨ縺ｮ蟾ｮ ' + diffBetaSign + '$' + fmt(diffBeta) + ' = ﾎｲ縺ｫ繧医ｋ蜉ｹ譫・/div>' +
         '</div>';
     }
     if (ivpsRf > 0) {
       html +=
         '<div style="' + boxStyle + '">' +
-        '<div style="' + lblStyle + '">参考② Rf理論上限（' + rfPct + '%）</div>' +
+        '<div style="' + lblStyle + '">蜿り・贈 Rf逅・ｫ紋ｸ企剞・・ + rfPct + '%・・/div>' +
         '<div style="' + valStyle + '">$' + fmt(ivpsRf) + '</div>' +
-        '<div style="' + subStyle + '">メインとの差 $' + fmt(ivpsRf - ivps) + ' = リスクプレミアム全体</div>' +
+        '<div style="' + subStyle + '">繝｡繧､繝ｳ縺ｨ縺ｮ蟾ｮ $' + fmt(ivpsRf - ivps) + ' = 繝ｪ繧ｹ繧ｯ繝励Ξ繝溘い繝蜈ｨ菴・/div>' +
         '</div>';
     }
     rfBlock.innerHTML = html;
   }
 
-  // 右カード: 市場価格との差額分析
-  const rmBlock = document.getElementById('rfMarketBlock');
+  // 蜿ｳ繧ｫ繝ｼ繝・ 蟶ょｴ萓｡譬ｼ縺ｨ縺ｮ蟾ｮ鬘榊・譫・  const rmBlock = document.getElementById('rfMarketBlock');
   if (rmBlock) {
     const diff = currentPrice - ivps;
     const diffColor = diff >= 0 ? 'var(--red)' : 'var(--grn)';
     const diffSign = diff >= 0 ? '+' : '';
     let html =
       '<div style="' + boxStyle + '">' +
-      '<div style="' + lblStyle + '">差額分析（市場価格 - メイン理論株価）</div>' +
+      '<div style="' + lblStyle + '">蟾ｮ鬘榊・譫撰ｼ亥ｸょｴ萓｡譬ｼ - 繝｡繧､繝ｳ逅・ｫ匁ｪ萓｡・・/div>' +
       '<div style="font-family:var(--mono);font-size:20px;font-weight:700;color:' + diffColor + ';margin:4px 0">' +
       diffSign + '$' + fmt(Math.abs(diff)) +
       '</div>' +
-      '<div style="' + subStyle + '">FCFで説明できない市場の評価</div>';
+      '<div style="' + subStyle + '">FCF縺ｧ隱ｬ譏弱〒縺阪↑縺・ｸょｴ縺ｮ隧穂ｾ｡</div>';
     if (ivpsBeta > 0) {
       const diffB = currentPrice - ivpsBeta;
       const diffBColor = diffB >= 0 ? 'var(--red)' : 'var(--grn)';
       html +=
         '<div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px;font-size:11px">' +
         '<div style="display:flex;justify-content:space-between;margin-bottom:2px">' +
-        '<span style="color:var(--mut)">vs β込みWACC</span>' +
+        '<span style="color:var(--mut)">vs ﾎｲ霎ｼ縺ｿWACC</span>' +
         '<span style="font-family:var(--mono);color:' + diffBColor + '">' + (diffB >= 0 ? '+' : '') + '$' + fmt(Math.abs(diffB)) + '</span>' +
         '</div>' +
         '<div style="display:flex;justify-content:space-between">' +
-        '<span style="color:var(--mut)">βの効果（メイン - β込み）</span>' +
+        '<span style="color:var(--mut)">ﾎｲ縺ｮ蜉ｹ譫懶ｼ医Γ繧､繝ｳ - ﾎｲ霎ｼ縺ｿ・・/span>' +
         '<span style="font-family:var(--mono);color:var(--mut)">' + (ivps - ivpsBeta >= 0 ? '+' : '') + '$' + fmt(ivps - ivpsBeta) + '</span>' +
         '</div></div>';
     }
@@ -1106,26 +1087,24 @@ function render(d) {
 function renderSegmentKpiTable(d, growthScenarios) {
   const kpiData = d.kpi_data;
 
-  // kpi_data が存在しない場合
-  if (!kpiData || !kpiData.segments || Object.keys(kpiData.segments).length === 0) {
+  // kpi_data 縺悟ｭ伜惠縺励↑縺・ｴ蜷・  if (!kpiData || !kpiData.segments || Object.keys(kpiData.segments).length === 0) {
     const segEnabled = d.growth_scenarios?.segment?.enabled;
     if (!segEnabled) return '';
     return `
       <div class="kpi-section">
-        <div class="kpi-section-title">セグメント別業績・KPI</div>
-        <p class="kpi-no-data">※ SEC実績データ未取得。パイプライン再実行後に表示されます。（成長率はsegment_config.py設定値）</p>
+        <div class="kpi-section-title">繧ｻ繧ｰ繝｡繝ｳ繝亥挨讌ｭ邵ｾ繝ｻKPI</div>
+        <p class="kpi-no-data">窶ｻ SEC螳溽ｸｾ繝・・繧ｿ譛ｪ蜿門ｾ励ゅヱ繧､繝励Λ繧､繝ｳ蜀榊ｮ溯｡悟ｾ後↓陦ｨ遉ｺ縺輔ｌ縺ｾ縺吶ゑｼ域・髟ｷ邇・・segment_config.py險ｭ螳壼､・・/p>
       </div>`;
   }
 
   const segs       = kpiData.segments;
   const segNames   = Object.keys(segs);
-  const fetchedAt  = kpiData.fetched_at || '—';
+  const fetchedAt  = kpiData.fetched_at || '窶・;
   const source     = kpiData.source || 'SEC EDGAR XBRL';
   const unit       = kpiData.unit || 'B USD';
   const useB       = unit.includes('B');
 
-  // 年度リスト（実績・予測を分離）
-  const allYears = new Set();
+  // 蟷ｴ蠎ｦ繝ｪ繧ｹ繝茨ｼ亥ｮ溽ｸｾ繝ｻ莠域ｸｬ繧貞・髮｢・・  const allYears = new Set();
   const estYears = new Set();
   for (const seg of Object.values(segs)) {
     for (const yr of Object.keys(seg.revenue || {})) {
@@ -1137,43 +1116,39 @@ function renderSegmentKpiTable(d, growthScenarios) {
   const actualYears  = sortedYears.filter(y => !estYears.has(y));
   const firstEstYear = sortedYears.find(y => estYears.has(y));
 
-  // フォーマット関数
+  // 繝輔か繝ｼ繝槭ャ繝磯未謨ｰ
   function fmtRev(val) {
-    if (val == null) return '<span style="color:#4a5568">—</span>';
+    if (val == null) return '<span style="color:#4a5568">窶・/span>';
     return useB
       ? '$' + (val / 1e9).toFixed(1) + 'B'
       : '$' + (val / 1e6).toFixed(0) + 'M';
   }
   function fmtGrowth(val) {
-    if (val == null) return '<span style="color:#4a5568">—</span>';
+    if (val == null) return '<span style="color:#4a5568">窶・/span>';
     const pct  = (val * 100).toFixed(1);
     const sign = val >= 0 ? '+' : '';
     const cls  = val > 0.05 ? 'kpi-growth-pos' : val < -0.05 ? 'kpi-growth-neg' : 'kpi-growth-neu';
     return `<span class="${cls}">${sign}${pct}%</span>`;
   }
   function fmtMargin(val) {
-    if (val == null) return '<span style="color:#4a5568">—</span>';
+    if (val == null) return '<span style="color:#4a5568">窶・/span>';
     return (val * 100).toFixed(1) + '%';
   }
   function isFirst(yr) { return yr === firstEstYear; }
 
-  // ヘッダー行
-  const thYears = sortedYears.map(yr => {
+  // 繝倥ャ繝繝ｼ陦・  const thYears = sortedYears.map(yr => {
     const isEst   = estYears.has(yr);
     const isFirst_ = isFirst(yr);
-    const label   = yr.replace('_est', '(予)');
+    const label   = yr.replace('_est', '(莠・');
     const cls     = isEst
       ? 'kpi-est' + (isFirst_ ? ' kpi-est-first' : '')
       : 'kpi-actual';
     return `<th class="${cls}">${label}</th>`;
   }).join('');
 
-  // 全社売上（「その他」計算用）
-  // kpi_data.total_revenue → なければ components.latest_revenue（直近1年のみ）
-  const totalRevMap = kpiData.total_revenue || {};
+  // 蜈ｨ遉ｾ螢ｲ荳奇ｼ医後◎縺ｮ莉悶崎ｨ育ｮ礼畑・・  // kpi_data.total_revenue 竊・縺ｪ縺代ｌ縺ｰ components.latest_revenue・育峩霑・蟷ｴ縺ｮ縺ｿ・・  const totalRevMap = kpiData.total_revenue || {};
 
-  // セグメント行の生成 + セグメント合計を集計
-  let rows = '';
+  // 繧ｻ繧ｰ繝｡繝ｳ繝郁｡後・逕滓・ + 繧ｻ繧ｰ繝｡繝ｳ繝亥粋險医ｒ髮・ｨ・  let rows = '';
   const segTotalByYear = {};
 
   for (const segName of segNames) {
@@ -1186,34 +1161,33 @@ function renderSegmentKpiTable(d, growthScenarios) {
     const dynamicWeight = seg.dynamic_weight || {};
     const estimatedFromWeight = seg.estimated_from_weight || false;
 
-    // 直近実績年のダイナミックウェイトを代表値として表示
+    // 逶ｴ霑大ｮ溽ｸｾ蟷ｴ縺ｮ繝繧､繝翫Α繝・け繧ｦ繧ｧ繧､繝医ｒ莉｣陦ｨ蛟､縺ｨ縺励※陦ｨ遉ｺ
     const latestActualLabel = sortedYears.filter(y => !estYears.has(y)).slice(-1)[0];
     const dynW = latestActualLabel && dynamicWeight[latestActualLabel] != null
       ? (dynamicWeight[latestActualLabel] * 100).toFixed(0) + '%'
       : null;
 
-    // セグメント名セル内のメタ情報
+    // 繧ｻ繧ｰ繝｡繝ｳ繝亥錐繧ｻ繝ｫ蜀・・繝｡繧ｿ諠・ｱ
     let metaHtml = '';
     if (dynW || configGrowth) {
       metaHtml += `<span class="seg-meta">`;
       if (estimatedFromWeight) {
-        metaHtml += `設定ウェイト ${configGrowth ? (seg.weight != null ? (seg.weight * 100).toFixed(0) + '%' : '–') : '–'}`;
+        metaHtml += `險ｭ螳壹え繧ｧ繧､繝・${configGrowth ? (seg.weight != null ? (seg.weight * 100).toFixed(0) + '%' : '窶・) : '窶・}`;
       } else {
-        if (dynW) metaHtml += `実績ウェイト ${dynW}`;
+        if (dynW) metaHtml += `螳溽ｸｾ繧ｦ繧ｧ繧､繝・${dynW}`;
       }
-      if ((dynW || estimatedFromWeight) && configGrowth) metaHtml += ` ／ `;
-      if (configGrowth) metaHtml += `設定成長率 <span class="seg-growth">${configGrowth}</span>`;
+      if ((dynW || estimatedFromWeight) && configGrowth) metaHtml += ` ・・`;
+      if (configGrowth) metaHtml += `險ｭ螳壽・髟ｷ邇・<span class="seg-growth">${configGrowth}</span>`;
       metaHtml += `</span>`;
       if (estimatedFromWeight) {
-        metaHtml += `<span class="seg-note" style="color:#f6ad55">※全社売上×ウェイトで推定</span>`;
+        metaHtml += `<span class="seg-note" style="color:#f6ad55">窶ｻ蜈ｨ遉ｾ螢ｲ荳甘励え繧ｧ繧､繝医〒謗ｨ螳・/span>`;
       }
     }
     if (segNote && !estimatedFromWeight) {
       metaHtml += `<span class="seg-note">${segNote}</span>`;
     }
 
-    // セグメント合計を集計
-    for (const yr of sortedYears) {
+    // 繧ｻ繧ｰ繝｡繝ｳ繝亥粋險医ｒ髮・ｨ・    for (const yr of sortedYears) {
       const v = rev[yr];
       if (v != null) segTotalByYear[yr] = (segTotalByYear[yr] || 0) + v;
     }
@@ -1221,8 +1195,7 @@ function renderSegmentKpiTable(d, growthScenarios) {
     const hasMargin = Object.values(margin).some(v => v != null);
     const rowspan   = 2 + (hasMargin ? 1 : 0);
 
-    // 売上高行
-    const revCells = sortedYears.map(yr => {
+    // 螢ｲ荳企ｫ倩｡・    const revCells = sortedYears.map(yr => {
       const isEst_  = estYears.has(yr);
       const isFirst_ = isFirst(yr);
       const cls = isEst_
@@ -1231,8 +1204,7 @@ function renderSegmentKpiTable(d, growthScenarios) {
       return `<td class="${cls}">${fmtRev(rev[yr])}</td>`;
     }).join('');
 
-    // YoY成長率行
-    const yoyCells = sortedYears.map(yr => {
+    // YoY謌宣聞邇・｡・    const yoyCells = sortedYears.map(yr => {
       const isEst_  = estYears.has(yr);
       const isFirst_ = isFirst(yr);
       const cls = isEst_
@@ -1241,8 +1213,7 @@ function renderSegmentKpiTable(d, growthScenarios) {
       return `<td class="${cls}">${fmtGrowth(yoy[yr])}</td>`;
     }).join('');
 
-    // 営業利益率行
-    const marginCells = hasMargin ? sortedYears.map(yr => {
+    // 蝟ｶ讌ｭ蛻ｩ逶顔紫陦・    const marginCells = hasMargin ? sortedYears.map(yr => {
       const isEst_  = estYears.has(yr);
       const isFirst_ = isFirst(yr);
       const cls = isEst_
@@ -1254,20 +1225,18 @@ function renderSegmentKpiTable(d, growthScenarios) {
     rows += `
       <tr>
         <td class="kpi-seg-name" rowspan="${rowspan}">${segName}${metaHtml}</td>
-        <td class="kpi-row-label">売上高</td>${revCells}
+        <td class="kpi-row-label">螢ｲ荳企ｫ・/td>${revCells}
       </tr>
-      <tr><td class="kpi-row-label">YoY成長率</td>${yoyCells}</tr>
-      ${hasMargin ? `<tr><td class="kpi-row-label">営業利益率</td>${marginCells}</tr>` : ''}`;
+      <tr><td class="kpi-row-label">YoY謌宣聞邇・/td>${yoyCells}</tr>
+      ${hasMargin ? `<tr><td class="kpi-row-label">蝟ｶ讌ｭ蛻ｩ逶顔紫</td>${marginCells}</tr>` : ''}`;
   }
 
-  // 「その他」行（全社 - セグメント合計）
-  let otherRow = '';
+  // 縲後◎縺ｮ莉悶崎｡鯉ｼ亥・遉ｾ - 繧ｻ繧ｰ繝｡繝ｳ繝亥粋險茨ｼ・  let otherRow = '';
   const hasOtherData = Object.keys(totalRevMap).length > 0 ||
     (d.components?.latest_revenue && actualYears.length > 0);
 
   if (hasOtherData) {
-    // 最新実績年のみlatestRevenueで補完
-    const latestActualYr = actualYears[actualYears.length - 1];
+    // 譛譁ｰ螳溽ｸｾ蟷ｴ縺ｮ縺ｿlatestRevenue縺ｧ陬懷ｮ・    const latestActualYr = actualYears[actualYears.length - 1];
     if (latestActualYr && !totalRevMap[latestActualYr] && d.components?.latest_revenue) {
       totalRevMap[latestActualYr] = d.components.latest_revenue;
     }
@@ -1286,13 +1255,12 @@ function renderSegmentKpiTable(d, growthScenarios) {
 
     otherRow = `
       <tr class="kpi-other-row">
-        <td class="kpi-seg-name" style="color:#4a5568;font-style:italic">その他・調整</td>
-        <td class="kpi-row-label">売上高</td>${otherCells}
+        <td class="kpi-seg-name" style="color:#4a5568;font-style:italic">縺昴・莉悶・隱ｿ謨ｴ</td>
+        <td class="kpi-row-label">螢ｲ荳企ｫ・/td>${otherCells}
       </tr>`;
   }
 
-  // 合計行（全社またはセグメント合計）
-  const totalCells = sortedYears.map(yr => {
+  // 蜷郁ｨ郁｡鯉ｼ亥・遉ｾ縺ｾ縺溘・繧ｻ繧ｰ繝｡繝ｳ繝亥粋險茨ｼ・  const totalCells = sortedYears.map(yr => {
     const isEst_   = estYears.has(yr);
     const isFirst_ = isFirst(yr);
     const val      = totalRevMap[yr] ?? segTotalByYear[yr];
@@ -1304,14 +1272,14 @@ function renderSegmentKpiTable(d, growthScenarios) {
 
   return `
     <div class="kpi-section">
-      <div class="kpi-section-title">セグメント別業績・KPI</div>
-      <p class="kpi-source-note">出典: ${source}（取得日: ${fetchedAt}）｜予測(予)はsegment_config.py設定成長率による推計</p>
+      <div class="kpi-section-title">繧ｻ繧ｰ繝｡繝ｳ繝亥挨讌ｭ邵ｾ繝ｻKPI</div>
+      <p class="kpi-source-note">蜃ｺ蜈ｸ: ${source}・亥叙蠕玲律: ${fetchedAt}・会ｽ應ｺ域ｸｬ(莠・縺ｯsegment_config.py險ｭ螳壽・髟ｷ邇・↓繧医ｋ謗ｨ險・/p>
       <div style="overflow-x:auto">
         <table class="kpi-table">
           <thead>
             <tr>
-              <th class="kpi-seg-col">セグメント</th>
-              <th class="kpi-metric-col">指標</th>
+              <th class="kpi-seg-col">繧ｻ繧ｰ繝｡繝ｳ繝・/th>
+              <th class="kpi-metric-col">謖・ｨ・/th>
               ${thYears}
             </tr>
           </thead>
@@ -1319,8 +1287,8 @@ function renderSegmentKpiTable(d, growthScenarios) {
             ${rows}
             ${otherRow}
             <tr class="kpi-total-row">
-              <td class="kpi-seg-name" style="font-weight:700;color:var(--txt)">合計（全社）</td>
-              <td class="kpi-row-label">売上高</td>
+              <td class="kpi-seg-name" style="font-weight:700;color:var(--txt)">蜷郁ｨ茨ｼ亥・遉ｾ・・/td>
+              <td class="kpi-row-label">螢ｲ荳企ｫ・/td>
               ${totalCells}
             </tr>
           </tbody>
@@ -1330,21 +1298,19 @@ function renderSegmentKpiTable(d, growthScenarios) {
 }
 
 function fmtBaseLabel(method) {
-  if (method === 'recent_2yr') return '直近2年平均';
-  if (method === 'avg_5yr') return '5年平均';
+  if (method === 'recent_2yr') return '逶ｴ霑・蟷ｴ蟷ｳ蝮・;
+  if (method === 'avg_5yr') return '5蟷ｴ蟷ｳ蝮・;
   return method;
 }
 
 function renderMatrixRows(matrix, waccValues, growthYears, currentPrice, baseRowIdx) {
-  // 基準値（中央行・中央列）を取得
-  const basePrice = matrix[baseRowIdx]?.[1] || 0;
+  // 蝓ｺ貅門､・井ｸｭ螟ｮ陦後・荳ｭ螟ｮ蛻暦ｼ峨ｒ蜿門ｾ・  const basePrice = matrix[baseRowIdx]?.[1] || 0;
   return matrix.map((row, i) => `
     <tr>
       <td class="row-label">${fmtPct(waccValues[i])}</td>
       ${row.map((price, j) => {
         const isBase = i === baseRowIdx && j === 1;
-        // 基準値との相対差で色分け（±10%）
-        const diffFromBase = basePrice > 0 ? (price - basePrice) / basePrice : 0;
+        // 蝓ｺ貅門､縺ｨ縺ｮ逶ｸ蟇ｾ蟾ｮ縺ｧ濶ｲ蛻・￠・按ｱ10%・・        const diffFromBase = basePrice > 0 ? (price - basePrice) / basePrice : 0;
         const cls = isBase ? 'base-cell'
           : diffFromBase > 0.10 ? 'cheap'
           : diffFromBase < -0.10 ? 'expensive'
@@ -1376,17 +1342,16 @@ function updateWacc(delta) {
   document.getElementById('matrixBody').innerHTML = renderMatrixRows(adjustedMatrix, adjustedWaccValues, growthYears, currentPrice, 1);
   document.getElementById('displayWacc').textContent = fmtPct2(newWacc);
 
-  // β込みWACC感度表示を更新（displayIvps）
-  const baseIvpsBeta = globalData.intrinsic_value_beta || globalData.intrinsic_value_per_share || 0;
+  // ﾎｲ霎ｼ縺ｿWACC諢溷ｺｦ陦ｨ遉ｺ繧呈峩譁ｰ・・isplayIvps・・  const baseIvpsBeta = globalData.intrinsic_value_beta || globalData.intrinsic_value_per_share || 0;
   const newIvps = baseIvpsBeta * adjustFactor;
   document.getElementById('displayIvps').textContent = '$' + fmt(newIvps);
 
-  // メイン理論株価（Rmβなし固定）のupside更新
+  // 繝｡繧､繝ｳ逅・ｫ匁ｪ萓｡・・mﾎｲ縺ｪ縺怜崋螳夲ｼ峨・upside譖ｴ譁ｰ
   const mainIvps = globalData.intrinsic_value_per_share || 0;
   const newUpside = ((mainIvps / currentPrice) - 1) * 100;
   const badge = document.getElementById('displayUpside');
   badge.className = 'upside-badge ' + (newUpside >= 0 ? 'positive' : 'negative');
-  badge.textContent = (newUpside >= 0 ? '▲' : '▼') + ' ' + Math.abs(newUpside).toFixed(1) + '%';
+  badge.textContent = (newUpside >= 0 ? '笆ｲ' : '笆ｼ') + ' ' + Math.abs(newUpside).toFixed(1) + '%';
 }
 
 function toggleStep(header) {
@@ -1401,27 +1366,25 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
   const totalV0 = v0 + rpoPV + goPv;
   const alphaPremium = totalV0 * alpha;
 
-  // ラベル・値・measure を動的構築
-  const x = [];
+  // 繝ｩ繝吶Ν繝ｻ蛟､繝ｻmeasure 繧貞虚逧・ｧ狗ｯ・  const x = [];
   const y = [];
   const measure = [];
   const text = [];
 
-  // DCF要素
+  // DCF隕∫ｴ
   if (hasThreeStage) {
     x.push('PV Phase1', 'PV Phase2', 'PV Terminal');
     y.push(pvP1, pvP2, pvTv);
     measure.push('relative', 'relative', 'relative');
     text.push(fmtB(pvP1), fmtB(pvP2), fmtB(pvTv));
   } else {
-    x.push('PV 高成長期', 'PV ターミナル');
+    x.push('PV 鬮俶・髟ｷ譛・, 'PV 繧ｿ繝ｼ繝溘リ繝ｫ');
     y.push(pvHigh, pvTv);
     measure.push('relative', 'relative');
     text.push(fmtB(pvHigh), fmtB(pvTv));
   }
 
-  // V₀ 小計
-  x.push('V₀');
+  // V竄 蟆剰ｨ・  x.push('V竄');
   y.push(0);
   measure.push('total');
   text.push(fmtB(v0));
@@ -1434,18 +1397,18 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
   }
 
   if (hasGO) {
-    x.push('成長OPT PV');
+    x.push('謌宣聞OPT PV');
     y.push(goPv);
     measure.push('relative');
     text.push(fmtB(goPv));
   }
 
-  x.push('α プレミアム');
+  x.push('ﾎｱ 繝励Ξ繝溘い繝');
   y.push(alphaPremium);
   measure.push('relative');
   text.push(fmtB(alphaPremium));
 
-  x.push('本質価値 P_t');
+  x.push('譛ｬ雉ｪ萓｡蛟､ P_t');
   y.push(0);
   measure.push('total');
   text.push(fmtB(totalV0 * (1 + alpha)));
@@ -1474,3 +1437,4 @@ loadData();
 </script>
 </body>
 </html>
+
