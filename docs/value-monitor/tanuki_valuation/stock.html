@@ -302,6 +302,16 @@
     footer { margin-top: 60px; padding: 24px 0; border-top: 1px solid var(--bdr); font-size: 12px; color: var(--mut); text-align: center; }
 
     .toggle-arrow { font-size: 10px; color: var(--mut); transition: transform .2s; }
+
+    /* Layer2 ON/OFFトグル */
+    .layer2-controls {
+      display: flex; gap: 16px; align-items: center;
+      padding: 10px 16px; margin: 0 0 8px;
+      background: rgba(246,173,85,0.05); border-radius: 6px;
+    }
+    .layer2-controls label { font-size: 12px; color: var(--mut); display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .layer2-controls input[type=checkbox] { width: 16px; height: 16px; accent-color: var(--yellow); cursor: pointer; }
+    .layer2-controls span.ctl-label { font-family: var(--mono); font-size: 11px; color: var(--txt); }
     .toggle-arrow { transform: rotate(180deg); }
     .calc-step.open .toggle-arrow { transform: rotate(0deg); }
 
@@ -932,6 +942,17 @@ function render(d) {
           <span class="layer-title">期待・主観の加算</span>
           <span class="layer-desc">成長オプション・質的プレミアムによる上乗せ（主観的評価）</span>
         </div>
+        <div class="layer2-controls">
+          <label>
+            <input type="checkbox" id="toggleGO" checked onchange="applyLayer2Toggle()">
+            <span class="ctl-label">成長オプション</span>
+          </label>
+          <label>
+            <input type="checkbox" id="toggleAlpha" checked onchange="applyLayer2Toggle()">
+            <span class="ctl-label">α（成長期待プレミアム）</span>
+          </label>
+          <span id="layer2AdjustedIvps" style="margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--yellow)"></span>
+        </div>
         <!-- Step 6: 成長オプション（条件付き） -->
         ${goCount > 0 ? `
         <div class="calc-step">
@@ -1426,6 +1447,30 @@ function updateWacc(delta) {
   const badge = document.getElementById('displayUpside');
   badge.className = 'upside-badge ' + (newUpside >= 0 ? 'positive' : 'negative');
   badge.textContent = (newUpside >= 0 ? '▲' : '▼') + ' ' + Math.abs(newUpside).toFixed(1) + '%';
+}
+
+function applyLayer2Toggle() {
+  if (!globalData) return;
+  const d = globalData;
+  const useGO    = document.getElementById('toggleGO')?.checked ?? true;
+  const useAlpha = document.getElementById('toggleAlpha')?.checked ?? true;
+
+  // 元の値を取得
+  const v0        = d.dcf_components?.v0_rm || d.v0 || 0;
+  const rpoPV     = d.components?.rpo_pv || 0;
+  const goPv      = useGO ? (d.growth_options?.total_pv || 0) : 0;
+  const alpha     = useAlpha ? (d.alpha || 0) : 0;
+  const shares    = d.components?.diluted_shares || 1;
+  const bs        = d.bs_adjustment?.net_cash_per_share || 0;
+
+  const pt = (v0 + rpoPV + goPv) * (1 + alpha);
+  const adjIvps = pt / shares + bs;
+
+  const el = document.getElementById('layer2AdjustedIvps');
+  if (el) {
+    const label = (!useGO || !useAlpha) ? `調整後: $${adjIvps.toFixed(2)}` : '';
+    el.textContent = label;
+  }
 }
 
 function toggleStep(header) {
