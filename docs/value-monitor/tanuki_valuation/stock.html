@@ -891,51 +891,6 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- Step: BS評価補正（条件付き） -->
-        ${bsApplied ? `
-        <div class="calc-step">
-          <div class="calc-step-header" onclick="toggleStep(this)">
-            <div class="calc-step-title">
-              <span class="step-num">${nextStep()}</span>
-              <span class="step-name">BS評価補正（ネットキャッシュ）</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
-                ${bsNetCashPerShare >= 0 ? '+' : ''}${fmtB(bsNetCashPerShare)}/株
-              </span>
-              <span class="toggle-arrow">▼</span>
-            </div>
-          </div>
-          <div class="calc-step-body">
-            <div class="formula-box">
-              <code>PT = DCF理論株価 + ネットキャッシュ/株</code>
-              <code>ネットキャッシュ = (現金 + 短期投資) - (長期負債 + 短期負債)</code>
-              <p class="formula-desc">
-                DCFが捉えきれないバランスシート価値を反映。<br>
-                純キャッシュ企業（NVDA等）はプラス補正、純負債企業はマイナス補正。
-                FY${bsFY}実績ベース。
-              </p>
-            </div>
-            <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">現金・現金同等物</span><span class="input-value">${fmtB(bsCash)}</span></div>
-              <div class="input-item"><span class="input-label">短期投資</span><span class="input-value">${fmtB(bsStInv)}</span></div>
-              <div class="input-item"><span class="input-label">長期有利子負債</span><span class="input-value">${fmtB(bsLtDebt)}</span></div>
-              <div class="input-item"><span class="input-label">短期有利子負債</span><span class="input-value">${fmtB(bsStDebt)}</span></div>
-              <div class="input-item"><span class="input-label">ネットキャッシュ合計</span>
-                <span class="input-value highlight" style="color:${bsNetCash >= 0 ? 'var(--grn)' : 'var(--red)'}">
-                  ${bsNetCash >= 0 ? '+' : ''}${fmtB(bsNetCash)}
-                </span>
-              </div>
-              <div class="input-item"><span class="input-label">1株あたり</span>
-                <span class="input-value highlight" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
-                  ${bsNetCashPerShare >= 0 ? '+' : ''}$${bsNetCashPerShare.toFixed(2)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-        ` : ''}
-
         <!-- Step 6: 成長オプション（条件付き） -->
         ${goCount > 0 ? `
         <div class="calc-step">
@@ -998,6 +953,51 @@ function render(d) {
             </div>
           </div>
         </div>
+
+        <!-- Step: BS評価補正（条件付き） -->
+        ${bsApplied ? `
+        <div class="calc-step">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">BS評価補正（ネットキャッシュ）</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
+                ${bsNetCashPerShare >= 0 ? '+' : ''}${fmtB(bsNetCashPerShare)}/株
+              </span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <code>PT = DCF理論株価 + ネットキャッシュ/株</code>
+              <code>ネットキャッシュ = (現金 + 短期投資) - (長期負債 + 短期負債)</code>
+              <p class="formula-desc">
+                DCFが捉えきれないバランスシート価値を反映。<br>
+                純キャッシュ企業（NVDA等）はプラス補正、純負債企業はマイナス補正。
+                FY${bsFY}実績ベース。
+              </p>
+            </div>
+            <div class="inputs-grid">
+              <div class="input-item"><span class="input-label">現金・現金同等物</span><span class="input-value">${fmtB(bsCash)}</span></div>
+              <div class="input-item"><span class="input-label">短期投資</span><span class="input-value">${fmtB(bsStInv)}</span></div>
+              <div class="input-item"><span class="input-label">長期有利子負債</span><span class="input-value">${fmtB(bsLtDebt)}</span></div>
+              <div class="input-item"><span class="input-label">短期有利子負債</span><span class="input-value">${fmtB(bsStDebt)}</span></div>
+              <div class="input-item"><span class="input-label">ネットキャッシュ合計</span>
+                <span class="input-value highlight" style="color:${bsNetCash >= 0 ? 'var(--grn)' : 'var(--red)'}">
+                  ${bsNetCash >= 0 ? '+' : ''}${fmtB(bsNetCash)}
+                </span>
+              </div>
+              <div class="input-item"><span class="input-label">1株あたり</span>
+                <span class="input-value highlight" style="color:${bsNetCashPerShare >= 0 ? 'var(--grn)' : 'var(--red)'}">
+                  ${bsNetCashPerShare >= 0 ? '+' : ''}$${bsNetCashPerShare.toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
 
         <!-- Step 8: P_t -->
         <div class="calc-step">
