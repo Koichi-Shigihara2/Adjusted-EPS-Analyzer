@@ -983,12 +983,12 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>α = min(1.0, max(0, (ROE × 0.6 / WACC) × 0.7))</code>
-              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、WACCとの比で質的プレミアムを計算。上限1.0。</p>
+              <code>α = min(1.0, max(0, (ROE × 0.6 / Rm) × 0.7))</code>
+              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、Rm（市場期待リターン・βなし）との比で質的プレミアムを計算。上限1.0。βWACCを使わないことでLayer1のβ独立性を維持。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">ROE（平均）</span><span class="input-value">${fmtPct(roeAvg)}</span></div>
-              <div class="input-item"><span class="input-label">WACC</span><span class="input-value">${fmtPct2(waccValue)}</span></div>
+              <div class="input-item"><span class="input-label">Rm（市場期待リターン）</span><span class="input-value">${fmtPct2(d.wacc?.market_return || 0.10)}</span></div>
               <div class="input-item"><span class="input-label">α（cap前）</span><span class="input-value">${alphaUncapped.toFixed(4)}</span></div>
               <div class="input-item"><span class="input-label">α（cap後）</span><span class="input-value highlight">${alpha.toFixed(4)}</span></div>
             </div>
