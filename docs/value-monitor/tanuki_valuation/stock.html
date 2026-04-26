@@ -813,17 +813,17 @@ function render(d) {
               <span class="step-name">${dcfType === 'three_stage' ? '3段階DCF計算' : '2段階DCF計算'}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">${fmtB(v0)}</span>
+              <span class="step-result">${fmtB(dcfC.v0 || 0)}</span>
               <span class="toggle-arrow">▼</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
               ${dcfType === 'three_stage'
-                ? `<code>V₀ = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
-                   <p class="formula-desc">高成長期→移行期→永続成長の3段階で鈍化カーブを表現。銘柄別に成熟プロファイルを設定。</p>`
-                : `<code>V₀ = Σ(FCF × (1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
-                   <p class="formula-desc">高成長期+ターミナル永続成長の2段階モデル。</p>`}
+                ? `<code>V₀<sub>β</sub> = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
+                   <p class="formula-desc">β込みWACC基準のDCF（参考値）。高成長期→移行期→永続成長の3段階で鈍化カーブを表現。<br><span style="color:var(--yellow);font-size:11px">※ STEP9のV₀はRM基準（βなし10%）で再計算した値を使用。</span></p>`
+                : `<code>V₀<sub>β</sub> = Σ(FCF × (1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
+                   <p class="formula-desc">β込みWACC基準のDCF（参考値）。<br><span style="color:var(--yellow);font-size:11px">※ STEP9のV₀はRM基準（βなし10%）で再計算した値を使用。</span></p>`}
             </div>
 
             ${dcfType === 'three_stage' && maturity ? `
@@ -849,7 +849,7 @@ function render(d) {
               <div class="input-item"><span class="input-label">FCFベース</span><span class="input-value">${fmtB(fcfBaseUsed)}</span></div>
               <div class="input-item"><span class="input-label">高成長期PV</span><span class="input-value">${fmtB(pvHigh)}</span></div>
               <div class="input-item"><span class="input-label">ターミナルPV</span><span class="input-value">${fmtB(pvTerminal)}</span></div>
-              <div class="input-item"><span class="input-label">V₀</span><span class="input-value highlight">${fmtB(v0)}</span></div>
+              <div class="input-item"><span class="input-label">V₀（β込みWACC基準）</span><span class="input-value highlight">${fmtB(dcfC.v0 || 0)}</span></div>
             </div>
             `}
           </div>
