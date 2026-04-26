@@ -84,7 +84,6 @@ class KoichiValuationCalculator:
         min_fcf_years: int = 3,
         fcf_base_threshold: float = DEFAULT_FCF_CV_THRESHOLD,
         eps_data_dir: str = "",
-        sec_data_dir: str = "",
     ):
         self.high_growth_years = high_growth_years
         self.terminal_growth = terminal_growth
@@ -93,7 +92,6 @@ class KoichiValuationCalculator:
         self.min_fcf_years = min_fcf_years
         self.fcf_base_threshold = fcf_base_threshold
         self.eps_data_dir = eps_data_dir  # v7.1: EPSアナライザーdataディレクトリ
-        self.sec_data_dir = sec_data_dir  # v7.4: common/sec_data/data/ へのパス（kpi_data生成用）
 
     def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
         """メイン計算関数"""
@@ -355,6 +353,23 @@ class KoichiValuationCalculator:
         # ── メイン理論株価はRmβなし（市場期待リターン）で計算 v7.3 ──
         # 理由: β込みWACCは市場の評価を割引率に持ち込むため
         #       「市場から独立した本質的価値」という目的と矛盾する
+        # RM基準V0を別途計算して保存（UIのSTEP11表示用）
+        if dcf_type == "three_stage" and maturity_profile:
+            _p1 = maturity_profile["phase1"]; _p2 = maturity_profile["phase2"]
+            _res_rm = calculate_three_stage_dcf(
+                base_fcf=base_fcf,
+                phase1_growth_rate=_p1["growth"] if _p1["growth"] is not None else high_growth_rate,
+                phase2_growth_rate=_p2["growth"], wacc=_rm,
+                phase1_years=_p1["years"], phase2_years=_p2["years"],
+                terminal_growth=terminal_growth,
+            )
+        else:
+            _res_rm = calculate_two_stage_dcf(
+                base_fcf=base_fcf, high_growth_rate=high_growth_rate,
+                wacc=_rm, high_growth_years=self.high_growth_years,
+                terminal_growth=terminal_growth,
+            )
+        _v0_rm = _res_rm.v0  # RM基準V0（UIのSTEP11に表示すべき値）
         intrinsic_value_per_share = _calc_ivps_with_wacc(_rm)
         upside_percent = calculate_upside(
             intrinsic_value_per_share=intrinsic_value_per_share,
@@ -480,7 +495,7 @@ class KoichiValuationCalculator:
             "scenario_valuations": scenario_result.to_dict() if scenario_result else None,
             "growth_options": go_result.to_dict(),
             "maturity_profile": maturity_profile,
-            "dcf_components": dcf_components,
+            "dcf_components": {**dcf_components, "v0_rm": float(_v0_rm)},
 
             # FCFベース判定結果（v6.2追加）
             "fcf_base": fcf_base_result.to_dict(),
@@ -491,9 +506,6 @@ class KoichiValuationCalculator:
 
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
-
-            # KPIデータ（v7.4追加: セグメント別業績 SEC 10-K iXBRL）
-            "kpi_data": self._build_kpi_data(ticker, fiscal_year_of_latest),
 
             "components": {
                 "fcf_5yr_avg": financials.get("fcf_5yr_avg"),
@@ -525,28 +537,6 @@ class KoichiValuationCalculator:
         }
 
         return result
-
-
-    def _build_kpi_data(self, ticker: str, fiscal_year_latest: int) -> dict:
-        """
-        kpi_fetcher を呼び出して kpi_data を生成する（v7.4）
-
-        sec_data_dir が設定されていない場合は None を返す。
-        kpi_fetcher のインポートエラーや取得失敗時も None を返す（計算本体に影響しない）。
-        """
-        if not self.sec_data_dir:
-            return None
-        try:
-            from kpi_fetcher import build_kpi_data, get_fiscal_year_latest
-            fy = fiscal_year_latest or get_fiscal_year_latest(ticker, self.sec_data_dir)
-            return build_kpi_data(
-                ticker=ticker,
-                sec_data_dir=self.sec_data_dir,
-                fiscal_year_latest=fy,
-            )
-        except Exception as e:
-            print(f"   [{ticker}] kpi_data生成エラー（無視）: {e}")
-            return None
 
 
 def create_calculator(**kwargs) -> KoichiValuationCalculator:

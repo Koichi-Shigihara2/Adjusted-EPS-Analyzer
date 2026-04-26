@@ -372,7 +372,8 @@ function render(d) {
   const calcDate = d.calculation_date || '—';
   const formula = d.formula || 'Koichi式 v6.2';
 
-  const v0 = d.v0 || 0;
+  // STEP11表示用V0はRM基準（WACC=Rm=10%）のV0を使用（メイン理論株価と整合）
+  const v0 = d.dcf_components?.v0_rm || d.v0 || 0;
   const alpha = d.alpha || 0;
   const alphaWasCapped = d.alpha_was_capped || false;
   const alphaUncapped = d.components?.alpha_uncapped || alpha;
