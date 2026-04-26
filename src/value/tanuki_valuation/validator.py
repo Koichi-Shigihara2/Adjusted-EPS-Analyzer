@@ -267,13 +267,15 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
         checks["pt_shares_consistency"] = {"pass": False, "detail": "株式数が0"}
 
     # ── 2. DCF構成要素（3段階 or 2段階） ──
+    # DCF構成要素はβWACC基準で計算されているため、βWACC基準V0と比較する
+    v0_beta = p["dcf_components"].get("v0") or data.get("v0", 0)
     if p["dcf_type"] == "three_stage":
         dcf_c = p["dcf_components"]
         pv_phase1 = dcf_c.get("pv_phase1", 0)
         pv_phase2 = dcf_c.get("pv_phase2", 0)
         pv_tv = dcf_c.get("pv_terminal", pv_terminal)
         v0_calculated = pv_phase1 + pv_phase2 + pv_tv
-        diff_v0 = abs(v0_calculated - v0) / v0 * 100 if v0 > 0 else 0
+        diff_v0 = abs(v0_calculated - v0_beta) / v0_beta * 100 if v0_beta > 0 else 0
 
         checks["dcf_components"] = {
             "pass": diff_v0 < 1.0,
@@ -281,7 +283,7 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
         }
     else:
         v0_calculated = pv_high + pv_terminal
-        diff_v0 = abs(v0_calculated - v0) / v0 * 100 if v0 > 0 else 0
+        diff_v0 = abs(v0_calculated - v0_beta) / v0_beta * 100 if v0_beta > 0 else 0
 
         checks["dcf_components"] = {
             "pass": diff_v0 < 1.0,
