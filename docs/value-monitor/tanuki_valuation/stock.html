@@ -246,6 +246,24 @@
     .step-name { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--txt); }
     .step-result { font-family: var(--mono); font-size: 14px; color: var(--acc); }
     .calc-step-body { padding: 0 20px 20px; display: none; }
+
+    /* Layer headers */
+    .layer-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 16px; margin: 24px 0 8px;
+      border-radius: 6px; border-left: 3px solid;
+    }
+    .layer-fact { background: rgba(99,179,237,0.08); border-color: var(--acc); }
+    .layer-expect { background: rgba(246,173,85,0.08); border-color: var(--yellow); }
+    .layer-ref { background: rgba(113,128,150,0.08); border-color: var(--mut); }
+    .layer-label {
+      font-family: var(--mono); font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 3px; background: rgba(255,255,255,0.1);
+      color: var(--mut);
+    }
+    .layer-title { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--txt); }
+    .layer-desc { font-size: 11px; color: var(--mut); }
+
     .calc-step.open .calc-step-body { display: block; }
     .calc-step.open .calc-step-header { border-bottom: 1px solid var(--bdr); }
 
@@ -618,32 +636,12 @@ function render(d) {
       <h2 class="section-title">CALCULATION BREAKDOWN</h2>
       <div class="calc-flow">
 
-        <!-- Step 1: WACC -->
-        <div class="calc-step">
-          <div class="calc-step-header" onclick="toggleStep(this)">
-            <div class="calc-step-title">
-              <span class="step-num">${nextStep()}</span>
-              <span class="step-name">動的WACC計算（CAPM）</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">${fmtPct2(waccValue)}</span>
-              <span class="toggle-arrow">▼</span>
-            </div>
-          </div>
-          <div class="calc-step-body">
-            <div class="formula-box">
-              <code>WACC = Rf + β × (Rm - Rf)</code>
-              <p class="formula-desc">CAPMで銘柄固有のリスク（β）を反映した割引率を計算。</p>
-            </div>
-            <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">Rf（リスクフリー）</span><span class="input-value">${fmtPct(riskFreeRate)}</span></div>
-              <div class="input-item"><span class="input-label">Rm（市場期待）</span><span class="input-value">${fmtPct(marketReturn)}</span></div>
-              <div class="input-item"><span class="input-label">β</span><span class="input-value">${beta.toFixed(2)}</span></div>
-              <div class="input-item"><span class="input-label">WACC</span><span class="input-value highlight">${fmtPct2(waccValue)}</span></div>
-            </div>
-          </div>
+        <!-- ═══ Layer 1: ファクトベース本質的価値 ═══ -->
+        <div class="layer-header layer-fact">
+          <span class="layer-label">Layer 1</span>
+          <span class="layer-title">ファクトベース本質的価値</span>
+          <span class="layer-desc">SEC実績データ・FCF・DCFによる客観的価値算出（βなし・市場評価独立）</span>
         </div>
-
         <!-- Step 2: 成長率 -->
         <div class="calc-step">
           <div class="calc-step-header" onclick="toggleStep(this)">
@@ -700,119 +698,6 @@ function render(d) {
             </div>
           </div>
         </div>
-
-        <!-- Step 4: DCF計算 -->
-        <div class="calc-step">
-          <div class="calc-step-header" onclick="toggleStep(this)">
-            <div class="calc-step-title">
-              <span class="step-num">${nextStep()}</span>
-              <span class="step-name">${dcfType === 'three_stage' ? '3段階DCF計算' : '2段階DCF計算'}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">${fmtB(v0)}</span>
-              <span class="toggle-arrow">▼</span>
-            </div>
-          </div>
-          <div class="calc-step-body">
-            <div class="formula-box">
-              ${dcfType === 'three_stage'
-                ? `<code>V₀ = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
-                   <p class="formula-desc">高成長期→移行期→永続成長の3段階で鈍化カーブを表現。銘柄別に成熟プロファイルを設定。</p>`
-                : `<code>V₀ = Σ(FCF × (1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
-                   <p class="formula-desc">高成長期+ターミナル永続成長の2段階モデル。</p>`}
-            </div>
-
-            ${dcfType === 'three_stage' && maturity ? `
-            <div class="phase-row">
-              <div class="phase-card p1">
-                <div class="phase-label">Phase 1（高成長）</div>
-                <div class="phase-detail">${maturity.phase1?.years || 0}年 @ ${fmtPct(maturity.phase1?.growth ?? growthRate)}</div>
-                <div class="phase-value">${fmtB(pvPhase1)}</div>
-              </div>
-              <div class="phase-card p2">
-                <div class="phase-label">Phase 2（移行期）</div>
-                <div class="phase-detail">${maturity.phase2?.years || 0}年 @ ${fmtPct(maturity.phase2?.growth)}</div>
-                <div class="phase-value">${fmtB(pvPhase2)}</div>
-              </div>
-              <div class="phase-card tv">
-                <div class="phase-label">Terminal（永続）</div>
-                <div class="phase-detail">@ ${fmtPct(terminalGrowth)}</div>
-                <div class="phase-value">${fmtB(pvTerminal)}</div>
-              </div>
-            </div>
-            ` : `
-            <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">FCFベース</span><span class="input-value">${fmtB(fcfBaseUsed)}</span></div>
-              <div class="input-item"><span class="input-label">高成長期PV</span><span class="input-value">${fmtB(pvHigh)}</span></div>
-              <div class="input-item"><span class="input-label">ターミナルPV</span><span class="input-value">${fmtB(pvTerminal)}</span></div>
-              <div class="input-item"><span class="input-label">V₀</span><span class="input-value highlight">${fmtB(v0)}</span></div>
-            </div>
-            `}
-          </div>
-        </div>
-
-        <!-- Step 5: RPO補正（条件付き） -->
-        ${rpo > 0 ? `
-        <div class="calc-step">
-          <div class="calc-step-header" onclick="toggleStep(this)">
-            <div class="calc-step-title">
-              <span class="step-num">${nextStep()}</span>
-              <span class="step-name">RPO補正（残存履行義務）</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">+${fmtB(rpoPV)}</span>
-              <span class="toggle-arrow">▼</span>
-            </div>
-          </div>
-          <div class="calc-step-body">
-            <div class="formula-box">
-              <code>RPO_PV = RPO / (1 + 15%)^1.5</code>
-              <p class="formula-desc">SaaS・長期契約企業のRPOを15%割引率で現在価値化。</p>
-            </div>
-            <div class="inputs-grid">
-              <div class="input-item"><span class="input-label">RPO（生値）</span><span class="input-value">${fmtB(rpo)}</span></div>
-              <div class="input-item"><span class="input-label">RPO現在価値</span><span class="input-value highlight">${fmtB(rpoPV)}</span></div>
-            </div>
-          </div>
-        </div>
-        ` : ''}
-
-        <!-- Step 6: 成長オプション（条件付き） -->
-        ${goCount > 0 ? `
-        <div class="calc-step">
-          <div class="calc-step-header" onclick="toggleStep(this)">
-            <div class="calc-step-title">
-              <span class="step-num">${nextStep()}</span>
-              <span class="step-name">成長オプション（仮説セグメント）</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">+${fmtB(goPv)}</span>
-              <span class="toggle-arrow">▼</span>
-            </div>
-          </div>
-          <div class="calc-step-body">
-            <div class="formula-box">
-              <code>期待FCF = TAM × 侵入率 × FCFマージン × 確率</code>
-              <code>仮説PV = 期待FCF / (1 + 15%)^遅延年数</code>
-              <p class="formula-desc">未実現の成長機会を「仮説セグメント」として定量化。TAM × 侵入率で期待売上、マージン × 確率で期待FCFを算出し、実現遅延を考慮して現在価値化。</p>
-            </div>
-            <div class="go-list">
-              ${(growthOptions.options || []).map(opt => `
-                <div class="go-item">
-                  <div class="go-item-head">
-                    <div class="go-item-name">${opt.name}</div>
-                    <div class="go-item-pv">${fmtB(opt.pv)}</div>
-                  </div>
-                  <div class="go-item-params">
-                    TAM ${fmtB(opt.tam)} × 侵入 ${fmtPct(opt.penetration)} × マージン ${fmtPct(opt.fcf_margin)} × 確率 ${fmtPct(opt.probability)} / ${opt.delay_years}年後
-                  </div>
-                  ${opt.note ? `<div class="go-item-note">${opt.note}</div>` : ''}
-                </div>
-              `).join('')}
-            </div>
-          </div>
-        </div>
-        ` : ''}
 
         <!-- Step: FCF外れ値分析（条件付き） -->
         ${fcfOutlierDetected ? `
@@ -920,6 +805,82 @@ function render(d) {
         </div>
         ` : ''}
 
+        <!-- Step 4: DCF計算 -->
+        <div class="calc-step">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">${dcfType === 'three_stage' ? '3段階DCF計算' : '2段階DCF計算'}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result">${fmtB(v0)}</span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              ${dcfType === 'three_stage'
+                ? `<code>V₀ = PV(Phase1) + PV(Phase2) + PV(Terminal)</code>
+                   <p class="formula-desc">高成長期→移行期→永続成長の3段階で鈍化カーブを表現。銘柄別に成熟プロファイルを設定。</p>`
+                : `<code>V₀ = Σ(FCF × (1+g)^t / (1+WACC)^t) + TV/(1+WACC)^n</code>
+                   <p class="formula-desc">高成長期+ターミナル永続成長の2段階モデル。</p>`}
+            </div>
+
+            ${dcfType === 'three_stage' && maturity ? `
+            <div class="phase-row">
+              <div class="phase-card p1">
+                <div class="phase-label">Phase 1（高成長）</div>
+                <div class="phase-detail">${maturity.phase1?.years || 0}年 @ ${fmtPct(maturity.phase1?.growth ?? growthRate)}</div>
+                <div class="phase-value">${fmtB(pvPhase1)}</div>
+              </div>
+              <div class="phase-card p2">
+                <div class="phase-label">Phase 2（移行期）</div>
+                <div class="phase-detail">${maturity.phase2?.years || 0}年 @ ${fmtPct(maturity.phase2?.growth)}</div>
+                <div class="phase-value">${fmtB(pvPhase2)}</div>
+              </div>
+              <div class="phase-card tv">
+                <div class="phase-label">Terminal（永続）</div>
+                <div class="phase-detail">@ ${fmtPct(terminalGrowth)}</div>
+                <div class="phase-value">${fmtB(pvTerminal)}</div>
+              </div>
+            </div>
+            ` : `
+            <div class="inputs-grid">
+              <div class="input-item"><span class="input-label">FCFベース</span><span class="input-value">${fmtB(fcfBaseUsed)}</span></div>
+              <div class="input-item"><span class="input-label">高成長期PV</span><span class="input-value">${fmtB(pvHigh)}</span></div>
+              <div class="input-item"><span class="input-label">ターミナルPV</span><span class="input-value">${fmtB(pvTerminal)}</span></div>
+              <div class="input-item"><span class="input-label">V₀</span><span class="input-value highlight">${fmtB(v0)}</span></div>
+            </div>
+            `}
+          </div>
+        </div>
+
+        <!-- Step 5: RPO補正（条件付き） -->
+        ${rpo > 0 ? `
+        <div class="calc-step">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">RPO補正（残存履行義務）</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result">+${fmtB(rpoPV)}</span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <code>RPO_PV = RPO / (1 + 15%)^1.5</code>
+              <p class="formula-desc">SaaS・長期契約企業のRPOを15%割引率で現在価値化。</p>
+            </div>
+            <div class="inputs-grid">
+              <div class="input-item"><span class="input-label">RPO（生値）</span><span class="input-value">${fmtB(rpo)}</span></div>
+              <div class="input-item"><span class="input-label">RPO現在価値</span><span class="input-value highlight">${fmtB(rpoPV)}</span></div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
         <!-- Step: BS評価補正（条件付き） -->
         ${bsApplied ? `
         <div class="calc-step">
@@ -960,6 +921,49 @@ function render(d) {
                   ${bsNetCashPerShare >= 0 ? '+' : ''}$${bsNetCashPerShare.toFixed(2)}
                 </span>
               </div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- ═══ Layer 2: 期待・主観の加算 ═══ -->
+        <div class="layer-header layer-expect">
+          <span class="layer-label">Layer 2</span>
+          <span class="layer-title">期待・主観の加算</span>
+          <span class="layer-desc">成長オプション・質的プレミアムによる上乗せ（主観的評価）</span>
+        </div>
+        <!-- Step 6: 成長オプション（条件付き） -->
+        ${goCount > 0 ? `
+        <div class="calc-step">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">成長オプション（仮説セグメント）</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result">+${fmtB(goPv)}</span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <code>期待FCF = TAM × 侵入率 × FCFマージン × 確率</code>
+              <code>仮説PV = 期待FCF / (1 + 15%)^遅延年数</code>
+              <p class="formula-desc">未実現の成長機会を「仮説セグメント」として定量化。TAM × 侵入率で期待売上、マージン × 確率で期待FCFを算出し、実現遅延を考慮して現在価値化。</p>
+            </div>
+            <div class="go-list">
+              ${(growthOptions.options || []).map(opt => `
+                <div class="go-item">
+                  <div class="go-item-head">
+                    <div class="go-item-name">${opt.name}</div>
+                    <div class="go-item-pv">${fmtB(opt.pv)}</div>
+                  </div>
+                  <div class="go-item-params">
+                    TAM ${fmtB(opt.tam)} × 侵入 ${fmtPct(opt.penetration)} × マージン ${fmtPct(opt.fcf_margin)} × 確率 ${fmtPct(opt.probability)} / ${opt.delay_years}年後
+                  </div>
+                  ${opt.note ? `<div class="go-item-note">${opt.note}</div>` : ''}
+                </div>
+              `).join('')}
             </div>
           </div>
         </div>
@@ -1016,6 +1020,38 @@ function render(d) {
               <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB((v0 + rpoPV + goPv) * (1 + alpha))}</span></div>
               <div class="input-item"><span class="input-label">BS補正/株</span><span class="input-value">${bsNetCashPerShare >= 0 ? '+' : ''}$${fmt(bsNetCashPerShare)}</span></div>
               <div class="input-item"><span class="input-label">1株当り</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══ 参考: 市場リスク調整 ═══ -->
+        <div class="layer-header layer-ref">
+          <span class="layer-label">参考</span>
+          <span class="layer-title">市場リスク調整（β込み）</span>
+          <span class="layer-desc">β込みWACCによる市場評価との対比（参考値）</span>
+        </div>
+        <!-- Step 1: WACC -->
+        <div class="calc-step">
+          <div class="calc-step-header" onclick="toggleStep(this)">
+            <div class="calc-step-title">
+              <span class="step-num">${nextStep()}</span>
+              <span class="step-name">動的WACC計算（CAPM）</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:16px">
+              <span class="step-result">${fmtPct2(waccValue)}</span>
+              <span class="toggle-arrow">▼</span>
+            </div>
+          </div>
+          <div class="calc-step-body">
+            <div class="formula-box">
+              <code>WACC = Rf + β × (Rm - Rf)</code>
+              <p class="formula-desc">CAPMで銘柄固有のリスク（β）を反映した割引率を計算。</p>
+            </div>
+            <div class="inputs-grid">
+              <div class="input-item"><span class="input-label">Rf（リスクフリー）</span><span class="input-value">${fmtPct(riskFreeRate)}</span></div>
+              <div class="input-item"><span class="input-label">Rm（市場期待）</span><span class="input-value">${fmtPct(marketReturn)}</span></div>
+              <div class="input-item"><span class="input-label">β</span><span class="input-value">${beta.toFixed(2)}</span></div>
+              <div class="input-item"><span class="input-label">WACC</span><span class="input-value highlight">${fmtPct2(waccValue)}</span></div>
             </div>
           </div>
         </div>
