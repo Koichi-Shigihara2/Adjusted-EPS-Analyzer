@@ -201,19 +201,26 @@
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": false,
-    "rule": "none",
+    "detected": true,
+    "rule": "deviation_large",
     "fiscal_year": 2025,
-    "fcf_value": 3220000000,
-    "threshold_pct": 0.0,
+    "fcf_value": 6735000000,
+    "threshold_pct": 0.6,
     "transient_evidence": {
-      "found": false,
-      "source": null,
-      "items": [],
-      "total_transient_amount": 0.0
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 186000000,
+          "reason": "一過性の事業再編費用"
+        }
+      ],
+      "total_transient_amount": 186000000
     },
-    "action": "none",
-    "note": ""
+    "action": "flagged",
+    "note": "FY2025 FCF($6735M)が5年平均($3319M)から103%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -531,11 +538,11 @@
     "fcf_base_used": 6116937655.941927,
     "fcf_base_method": "recent_2yr",
     "fcf_list_raw": [
-      3220000000,
-      3115000000,
-      1121000000,
+      6735000000,
       2405000000,
-      6735000000
+      1121000000,
+      3115000000,
+      3220000000
     ],
     "diluted_shares": 1630410844,
     "roe_10yr_avg": 0.16025050379737013,
@@ -582,6 +589,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "計算は正しいが、1株当り値に不一致あり"
+    "ai_comment": "All verifications passed without issues."
   }
 }

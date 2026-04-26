@@ -142,7 +142,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -864358,
+    "fcf_value": -98955000,
     "threshold_pct": 0.0,
     "transient_evidence": {
       "found": false,
@@ -151,7 +151,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($-0.9M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($-99.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -182,11 +182,11 @@
     "fcf_base_used": 82675146.93819849,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      -864358,
-      -94045000,
-      -68498000,
+      -98955000,
       -109393000,
-      -98955000
+      -68498000,
+      -94045000,
+      -864358
     ],
     "diluted_shares": 426210055,
     "roe_10yr_avg": 0.0,
@@ -233,6 +233,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "ai_comment": "不一致と異常値あり、検証必要",
+    "ai_concerns": "ROE at 0.00% with 40% growth rate is anomalous, potentially skewing α and overall valuation."
   }
 }

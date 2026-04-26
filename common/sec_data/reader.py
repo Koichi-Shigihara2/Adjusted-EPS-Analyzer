@@ -202,11 +202,11 @@ class SECReader:
         return 0.0
     
     def get_fcf_list(self, ticker: str, years: int = 5) -> List[float]:
-        """FCFリストを取得（古い順）"""
+        """FCFリストを取得（新しい順、fcf_list[0]が直近）"""
         annual_data = self.get_annual_range(ticker, years)
-        
+        # annual_data は新しい順（get_annual_range の仕様）なのでそのまま使用
         fcf_list = []
-        for data in reversed(annual_data):  # 古い順に並び替え
+        for data in annual_data:
             fcf = data.get("cf", {}).get("free_cash_flow")
             if fcf is not None:
                 fcf_list.append(fcf)
