@@ -346,7 +346,7 @@ GROWTH_OPTIONS: Dict[str, List[Dict[str, Any]]] = {
             "tam": 80_000_000_000,
             "penetration": 0.20,
             "fcf_margin": 0.35,
-            "probability": 0.70,
+            "probability": 0.35,
             "delay_years": 3,
             "discount_rate": 0.15,
             "note": "M365 Copilotの企業向け拡大。",

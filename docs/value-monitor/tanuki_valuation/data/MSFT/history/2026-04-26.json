@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 6287171013347.071,
-  "intrinsic_value_per_share": 783.9765446486828,
-  "intrinsic_value_beta": 852.43,
-  "upside_percent_beta": 100.8,
-  "intrinsic_value_rf": 4230.75,
-  "upside_percent_rf": 896.4,
+  "intrinsic_value_pt": 6284593549715.938,
+  "intrinsic_value_per_share": 783.6297560770536,
+  "intrinsic_value_beta": 852.08,
+  "upside_percent_beta": 100.7,
+  "intrinsic_value_rf": 4230.41,
+  "upside_percent_rf": 896.3,
   "v0": 2836930388181.4307,
-  "v0_adjusted": 3143585506673.5356,
+  "v0_adjusted": 3142296774857.969,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 975.78,
-    "2年後": 1116.97,
-    "3年後": 1278.6
+    "1年後": 975.38,
+    "2年後": 1116.51,
+    "3年後": 1278.07
   },
-  "upside_percent": 84.6,
+  "upside_percent": 84.5,
   "calculation_date": "2026-04-26",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        869.41,
-        1013.52,
-        1174.22
+        869.06,
+        1013.17,
+        1173.87
       ],
       [
-        741.03,
-        856.38,
-        982.67
+        740.68,
+        856.03,
+        982.32
       ],
       [
-        647.62,
-        742.36,
-        844.2
+        647.28,
+        742.01,
+        843.86
       ]
     ],
     "wacc_values": [
@@ -71,19 +71,19 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.101,
-      "intrinsic_value_per_share": 727.49
+      "intrinsic_value_per_share": 727.15
     },
     "base": {
       "growth_rate": 0.145,
-      "intrinsic_value_per_share": 852.43
+      "intrinsic_value_per_share": 852.08
     },
     "bull": {
       "growth_rate": 0.174,
-      "intrinsic_value_per_share": 946.47
+      "intrinsic_value_per_share": 946.12
     }
   },
   "growth_options": {
-    "total_pv": 2577463631.133394,
+    "total_pv": 1288731815.566697,
     "count": 1,
     "applied": true,
     "options": [
@@ -92,10 +92,10 @@
         "tam": 80000000000,
         "penetration": 0.2,
         "fcf_margin": 0.35,
-        "probability": 0.7,
+        "probability": 0.35,
         "delay_years": 3,
-        "expected_fcf": 3919999999.9999995,
-        "pv": 2577463631.133394,
+        "expected_fcf": 1959999999.9999998,
+        "pv": 1288731815.566697,
         "note": "M365 Copilotの企業向け拡大。"
       }
     ]
@@ -286,7 +286,7 @@
     "roe_used": 0.33282252757802594,
     "fcf_floor_applied": 0.0,
     "rpo_pv": 304077654860.9719,
-    "growth_option_pv": 2577463631.133394,
+    "growth_option_pv": 1288731815.566697,
     "alpha_uncapped": 1.3978546158277088
   },
   "validation": {
@@ -295,7 +295,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $2582.54B + RPO $304.08B + GO $2.58B) × (1+1.000) / 7.432B + BS $+6.51/株 = $783.98 (差異0.00%)"
+        "detail": "(V₀ $2582.54B + RPO $304.08B + GO $1.29B) × (1+1.000) / 7.432B + BS $+6.51/株 = $783.63 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -311,7 +311,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per-share value",
-    "ai_concerns": "Inconsistency between P_t and per-share value indicates potential calculation error."
+    "ai_comment": "Inconsistencies in per share value",
+    "ai_concerns": "Inconsistency in per share value (845.32 vs. 783.63) suggests potential error in final calculation."
   }
 }
