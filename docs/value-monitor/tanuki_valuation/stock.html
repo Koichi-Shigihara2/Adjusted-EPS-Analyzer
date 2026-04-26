@@ -649,8 +649,8 @@ function render(d) {
         <!-- ═══ Layer 1: ファクトベース本質的価値 ═══ -->
         <div class="layer-header layer-fact">
           <span class="layer-label">Layer 1</span>
-          <span class="layer-title">ファクトベース本質的価値</span>
-          <span class="layer-desc">SEC実績データ・FCF・DCFによる客観的価値算出（βなし・市場評価独立）</span>
+          <span class="layer-title">本質的価値</span>
+          <span class="layer-desc">SEC実績・FCF・DCF・成長オプション・質的プレミアムによる合理的推定（βなし・市場心理独立）</span>
         </div>
         <!-- Step 2: 成長率 -->
         <div class="calc-step">
@@ -936,23 +936,6 @@ function render(d) {
         </div>
         ` : ''}
 
-        <!-- ═══ Layer 2: 期待・主観の加算 ═══ -->
-        <div class="layer-header layer-expect">
-          <span class="layer-label">Layer 2</span>
-          <span class="layer-title">期待・主観の加算</span>
-          <span class="layer-desc">成長オプション・質的プレミアムによる上乗せ（主観的評価）</span>
-        </div>
-        <div class="layer2-controls">
-          <label>
-            <input type="checkbox" id="toggleGO" checked onchange="applyLayer2Toggle()">
-            <span class="ctl-label">成長オプション</span>
-          </label>
-          <label>
-            <input type="checkbox" id="toggleAlpha" checked onchange="applyLayer2Toggle()">
-            <span class="ctl-label">α（成長期待プレミアム）</span>
-          </label>
-          <span id="layer2AdjustedIvps" style="margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--yellow)"></span>
-        </div>
         <!-- Step 6: 成長オプション（条件付き） -->
         ${goCount > 0 ? `
         <div class="calc-step">
@@ -1045,6 +1028,15 @@ function render(d) {
           </div>
         </div>
 
+        <!-- ═══ Layer 2: 市場心理・行動経済学的要因 ═══ -->
+        <div class="layer-header layer-expect">
+          <span class="layer-label">Layer 2</span>
+          <span class="layer-title">市場心理・行動経済学的要因</span>
+          <span class="layer-desc">モメンタム・センチメント等の非合理的価格要因（将来実装予定）</span>
+        </div>
+        <div style="padding:10px 16px;color:var(--mut);font-size:12px;font-family:var(--mono);">
+          ── 現時点では未実装 ──
+        </div>
         <!-- ═══ 参考: 市場リスク調整 ═══ -->
         <div class="layer-header layer-ref">
           <span class="layer-label">参考</span>
