@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-04-20T11:23:04.667649",
+  "last_updated": "2026-04-27T11:34:07.191539",
   "quarters": [
     {
       "gaap_eps": 0.23728236076995257,
@@ -50,15 +50,9 @@
         }
       },
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）の加算のみで、金額も約5.29億ドルと非常に大きく、Adjusted EPSをGAAPの約1.84倍に引き上げています。SBCは非現金費用ですがPLTRでは継続的に多額発生する恒常的コストであり、株主希薄化の実態を反映しない調整と言えます。調整の健全性は低く、注意が必要です。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただしテック企業では毎期発生する運用コストであり、恒常的な可能性が高い。",
-            "confidence": 0.2
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {
@@ -658,44 +652,6 @@
       "quarter": 1
     },
     {
-      "gaap_eps": -0.08119495720821765,
-      "adjusted_eps": 0.14471167231972662,
-      "gaap_net_income": -156188000.0,
-      "adjusted_net_income": 278369832.97265553,
-      "diluted_shares_used": 1923617000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 584484000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 434557832.97265553,
-          "tax_rate_applied": 0.2565103014408341
-        }
-      ],
-      "net_adjustment_total": 434557832.97265553,
-      "filing_date": "2021-12-31",
-      "form": "10-K",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 1923617000.0,
-      "period_end": "2021-12-31",
-      "fiscal_year": 2021,
-      "quarter": 4
-    },
-    {
       "gaap_eps": -0.05199412541774948,
       "adjusted_eps": 0.04075479862588713,
       "gaap_net_income": -102137000.0,
@@ -770,44 +726,6 @@
       "period_end": "2021-06-30",
       "fiscal_year": 2021,
       "quarter": 2
-    },
-    {
-      "gaap_eps": -0.06779971864055727,
-      "adjusted_eps": 0.03583683036071074,
-      "gaap_net_income": -123474000.0,
-      "adjusted_net_income": 65264530.306051254,
-      "diluted_shares_used": 1821158000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 193731000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 188738530.30605125,
-          "tax_rate_applied": 0.025770112650782575
-        }
-      ],
-      "net_adjustment_total": 188738530.30605125,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 1821158000.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 1
     }
   ]
 }

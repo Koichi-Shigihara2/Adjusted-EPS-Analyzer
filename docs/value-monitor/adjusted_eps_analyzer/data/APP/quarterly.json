@@ -1,6 +1,6 @@
 {
   "ticker": "APP",
-  "last_updated": "2026-04-20T11:21:59.867307",
+  "last_updated": "2026-04-27T11:31:47.394254",
   "quarters": [
     {
       "gaap_eps": 3.223253501769161,
@@ -64,16 +64,16 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用と買収関連無形資産償却の調整は非現金項目として一般的ですが、両者とも毎期発生する可能性の高い経常的項目です。特にSBCは規模が大きく恒常コストの性質が強いため、調整後EPSの健全性は中程度と評価。持続可能性に注意が必要です。",
+        "comment": "株式報酬費用と無形資産償却費の両調整項目は、非現金ではあるものの毎期継続的に発生する経常的コストです。特にSBCは事業運営に不可欠な報酬であり、無形資産償却も過去の買収に基づく定期費用であるため、調整後EPSの質は過大評価の可能性があります。健全性はCautionと評価します。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用である株式報酬費用をadd_back。ただし、テック企業で毎期発生する恒常的な報酬コスト。",
+            "snippet": "非現金費用として株式報酬費用をadd_backしているが、テック企業で毎期発生する恒常的な報酬コストである。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却を買収関連としてadd_back。ただし、取得した無形資産の定期的な償却は経常的。",
+            "snippet": "買収関連無形資産の償却費をadd_backしているが、買収後の複数年にわたる定期的な非現金費用であり恒常的。",
             "confidence": 0.2
           }
         ]
@@ -716,70 +716,6 @@
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
       "quarter": 3
-    },
-    {
-      "gaap_eps": -0.05816330550976383,
-      "adjusted_eps": 0.379871400150587,
-      "gaap_net_income": -21748000.0,
-      "adjusted_net_income": 142038750.0,
-      "diluted_shares_used": 373912724.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 57156000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 45153240.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 142769000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 112787510.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": 7400000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "リストラ・事業再編関連",
-          "net_amount": 5846000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 163786750.0,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 373912724.0,
-      "period_end": "2022-06-30",
-      "fiscal_year": 2022,
-      "quarter": 2
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-04-20T11:22:56.311108",
+  "last_updated": "2026-04-27T11:33:36.897039",
   "quarters": [
     {
       "gaap_eps": -450.32283141467025,
@@ -48,12 +48,12 @@
       },
       "ai_analysis": {
         "health": "Good",
-        "comment": "一過性税効果（税率変更や過年度修正等）の調整は真に非経常的な項目として適切に処理されており、調整の健全性は良好。調整によりAdjusted EPSがやや悪化しているものの、税務の一時的影響を除外する目的は妥当で、恒常的なコア損失をより明確に示している。",
+        "comment": "一過性税効果（法人税率変更や過年度税額戻し等）の調整は明確に非経常的な項目であり、適切に除外されています。調整項目が1件のみで透明性が高く、Adjusted EPSの算出は健全です。",
         "sources": [
           {
             "item": "tax_one_time",
             "snippet": "法人税率変更・過年度税額戻し等の一過性影響",
-            "confidence": 0.9
+            "confidence": 1.0
           }
         ]
       }
@@ -304,41 +304,6 @@
       "quarter": 1
     },
     {
-      "gaap_eps": -0.9057611968034581,
-      "adjusted_eps": -0.5425848951974344,
-      "gaap_net_income": -38261640.0,
-      "adjusted_net_income": -22920156.0,
-      "diluted_shares_used": 42242525.0,
-      "adjustments": [
-        {
-          "item_id": "goodwill_impairment",
-          "item_name": "のれん減損",
-          "amount": 19419600,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金減損",
-          "extracted_from": "us-gaap:GoodwillImpairmentLoss",
-          "category": "買収・統合関連",
-          "net_amount": 15341484.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 15341484.0,
-      "filing_date": "2022-12-31",
-      "form": "10-K",
-      "sector": "通信・インフラ",
-      "sector_exclusions": [
-        "sbc",
-        "amortization_intangibles"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 42242525.0,
-      "period_end": "2022-12-31",
-      "fiscal_year": 2022,
-      "quarter": 4
-    },
-    {
       "gaap_eps": -0.31828011073281887,
       "adjusted_eps": -0.31828011073281887,
       "gaap_net_income": -13578341.0,
@@ -379,27 +344,6 @@
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2
-    },
-    {
-      "gaap_eps": -0.2442120394224979,
-      "adjusted_eps": -0.2442120394224979,
-      "gaap_net_income": -10010399.0,
-      "adjusted_net_income": -10010399.0,
-      "diluted_shares_used": 40990604.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2022-03-31",
-      "form": "10-Q",
-      "sector": "通信・インフラ",
-      "sector_exclusions": [
-        "sbc",
-        "amortization_intangibles"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 40990604.0,
-      "period_end": "2022-03-31",
-      "fiscal_year": 2022,
-      "quarter": 1
     }
   ]
 }

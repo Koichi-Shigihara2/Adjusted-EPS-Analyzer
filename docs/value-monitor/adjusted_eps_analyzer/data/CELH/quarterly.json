@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-04-20T11:22:12.052741",
+  "last_updated": "2026-04-27T11:32:14.014996",
   "quarters": [
     {
       "gaap_eps": 0.09704955847334952,
@@ -99,27 +99,27 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整後EPSはGAAPの約3.8倍となっており、主に大規模なリストラ費用(80.7M)のadd_backによる影響が大きい。一方で株式報酬や無形資産償却といった経常的に発生しやすい項目も含まれており、調整の質は中程度。貸倒引当金の異常変動分は一時的と見なせるが、全体として調整後利益の持続可能性に注意が必要。",
+        "comment": "調整項目の多くがリストラ費用や異常貸倒引当金といった一過性項目だが、株式報酬費用と無形資産償却は恒常的に発生しやすい性質を持ち、調整後EPSを大幅に押し上げている。リストラ費用の規模が特に大きく、事業再編の影響を考慮する必要があるため、健全性は注意を要する水準。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただし成長企業では毎期発生する恒常的な報酬コストである可能性が高い。",
-            "confidence": 0.2
+            "snippet": "非現金費用",
+            "confidence": 0.25
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却としてadd_back。買収後の継続的な非現金費用であり、恒常的性格が強い。",
+            "snippet": "買収関連無形資産の償却",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として貸倒引当金の異常変動分をadd_back。異常項目として一過性と判断。",
-            "confidence": 0.65
+            "snippet": "マクロ変動による一時的影響",
+            "confidence": 0.7
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用としてリストラ費用をadd_back。典型的には非経常的とみなされる項目。",
-            "confidence": 0.8
+            "snippet": "一過性の事業再編費用",
+            "confidence": 0.75
           }
         ]
       }
