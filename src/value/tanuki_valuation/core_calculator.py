@@ -273,6 +273,10 @@ class KoichiValuationCalculator:
             print(f"   [{ticker}] 成長オプション: {go_result.count}件  PV=${growth_option_pv/1e9:.2f}B")
 
         # ── STEP 8: α計算 ──
+        # RM基準・Rf取得（STEP8以降で使用）
+        _rf = wacc_result.risk_free_rate  # Rf: 通常4.3%
+        _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
+
         # αはRM基準（βなし・市場期待リターン10%）で計算
         alpha_result = calculate_alpha(
             roe=roe_avg, wacc=_rm,
@@ -297,8 +301,6 @@ class KoichiValuationCalculator:
             print(f"   [{ticker}] BS補正: ネットキャッシュ {sign}${nc/1e9:.2f}B → {sign}${ncs:.2f}/株")
 
         # ── 割引率定数（STEP10bで使用）──
-        _rf = wacc_result.risk_free_rate  # Rf: 通常4.3%
-        _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
 
         # ── STEP 10: 本質的価値（P_t）算出 ──
         v0_adjusted, intrinsic_value_pt = calculate_intrinsic_value(
