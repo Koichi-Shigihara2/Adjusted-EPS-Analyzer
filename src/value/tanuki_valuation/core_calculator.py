@@ -273,8 +273,9 @@ class KoichiValuationCalculator:
             print(f"   [{ticker}] 成長オプション: {go_result.count}件  PV=${growth_option_pv/1e9:.2f}B")
 
         # ── STEP 8: α計算 ──
+        # αはRM基準（βなし・市場期待リターン10%）で計算
         alpha_result = calculate_alpha(
-            roe=roe_avg, wacc=wacc,
+            roe=roe_avg, wacc=_rm,
             retention_rate=self.retention_rate, alpha_cap=self.alpha_cap
         )
         alpha = alpha_result.alpha
