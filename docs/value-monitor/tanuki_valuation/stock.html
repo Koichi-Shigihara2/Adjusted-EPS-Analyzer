@@ -668,6 +668,12 @@ function render(d) {
             <div class="formula-box">
               <code>優先順位: segment_weighted &gt; fcf_cagr &gt; default(25%)</code>
               <p class="formula-desc">セグメント別売上構成比×成長率で加重平均を算出。未定義銘柄はFCF CAGR（15〜50%クリップ）。</p>
+              <div class="inputs-grid" style="margin-top:8px">
+                <div class="input-item"><span class="input-label">FCF CAGR 下限</span><span class="input-value">${fmtPct(d.components?.fcf_growth_floor || 0.15)}</span></div>
+                <div class="input-item"><span class="input-label">FCF CAGR 上限</span><span class="input-value">${fmtPct(d.components?.fcf_growth_cap || 0.50)}</span></div>
+                <div class="input-item"><span class="input-label">Bear乗数</span><span class="input-value">×${(d.components?.bear_multiplier || 0.7).toFixed(1)}</span></div>
+                <div class="input-item"><span class="input-label">Bull乗数</span><span class="input-value">×${(d.components?.bull_multiplier || 1.2).toFixed(1)}</span></div>
+              </div>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">成長率ソース</span><span class="input-value">${growthSource}</span></div>
