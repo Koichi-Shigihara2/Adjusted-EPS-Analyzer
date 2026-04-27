@@ -1013,8 +1013,8 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>P_t = (V₀ + RPO_PV + GrowthOption_PV) × (1 + α) / 株式数 + BS補正/株</code>
-              <p class="formula-desc">V₀と各種加算項の合計にαを乗じ、希薄化後株式数で割り、STEP9のBS補正（ネットキャッシュ/株）を加算して1株当り本質価値を算出。</p>
+              <code>P_t = (V₀ + RPO_PV) × (1 + α) / 株式数 + GrowthOption_PV × (1 + α) / 株式数 + BS補正/株</code>
+              <p class="formula-desc">既存事業（V₀+RPO）と未参入事業（成長オプション）それぞれにαを乗じて加算。αはこの企業固有の価値創造能力の乗数として両者に等しく適用される。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">V₀</span><span class="input-value">${fmtB(v0)}</span></div>
