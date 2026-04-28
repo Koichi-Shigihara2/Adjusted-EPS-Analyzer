@@ -93,6 +93,14 @@ class SECParser:
         "eps_basic": [
             "EarningsPerShareBasic",
         ],
+        # 販売・マーケティング費（RICE投資強度計算用）
+        # 軽資産型企業（CELH等）はR&D/CapExが極小だが
+        # マーケティング投資が成長の主な源泉のため投資強度に加算する
+        "selling_and_marketing": [
+            "MarketingAndAdvertisingExpense",
+            "SellingAndMarketingExpense",
+            "AdvertisingExpense",
+        ],
         
         # CF（キャッシュフロー計算書）
         "operating_cash_flow": [
@@ -347,7 +355,7 @@ class SECParser:
         
         # PL
         for field in ["revenue", "net_income", "eps_diluted", "eps_basic",
-                      "research_and_development"]:
+                      "research_and_development", "selling_and_marketing"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["pl"][field] = val

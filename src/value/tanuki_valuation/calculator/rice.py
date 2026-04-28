@@ -167,6 +167,22 @@ def _calc_cf_lagged(
             f"parser.pyにResearchAndDevelopmentExpenseタグ追加を検討"
         )
 
+    # SM欠損チェック（販売・マーケティング費）
+    sm_missing_years = []
+    for i in range(min(years, len(annual_data) - 1)):
+        older = annual_data[i + 1]
+        sm = older.get("pl", {}).get("selling_and_marketing")
+        fy = older.get("period", "?")
+        if sm is None:
+            sm_missing_years.append(str(fy))
+
+    if sm_missing_years and len(sm_missing_years) == min(years, len(annual_data) - 1):
+        # 全年度でSMが未取得の場合のみ警告（一部欠損は許容）
+        warnings.append(
+            f"販売・マーケティング費未取得（FY{', '.join(sm_missing_years)}）: "
+            f"投資強度が過小になる可能性"
+        )
+
     # annual_data[0]=最新, annual_data[1]=1年前, ...
     # ペア: (t=data[i+1], t+1=data[i]) で i=0,1,...
     for i in range(min(years, len(annual_data) - 1)):
@@ -176,12 +192,15 @@ def _calc_cf_lagged(
         rev_t   = older.get("pl", {}).get("revenue")
         capex_t = older.get("cf", {}).get("capital_expenditure")
         rd_t    = older.get("pl", {}).get("research_and_development")
+        sm_t    = older.get("pl", {}).get("selling_and_marketing")
         fy_t    = older.get("period", "?")
 
         if rev_t is None or rev_t == 0 or capex_t is None:
             continue
 
-        invest_t    = abs(capex_t) + (abs(rd_t) if rd_t is not None else 0.0)
+        invest_t = (abs(capex_t)
+                    + (abs(rd_t) if rd_t is not None else 0.0)
+                    + (abs(sm_t) if sm_t is not None else 0.0))
         intensity_t = invest_t / rev_t
 
         # 投資強度が異常に低い場合（R&D未取得の典型症状）
