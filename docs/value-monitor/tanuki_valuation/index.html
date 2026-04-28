@@ -98,6 +98,22 @@
     .method-card p{font-size:12px;color:var(--mut);line-height:1.6}
     .method-card code{font-family:var(--mono);font-size:10px;color:var(--acc);background:var(--sur2);padding:2px 6px;border-radius:3px}
 
+    /* ── 凡例セクション ── */
+    .legend{margin-top:40px;padding-top:28px;border-top:1px solid var(--bdr)}
+    .legend-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:4px}
+    .legend-card{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:20px}
+    .legend-card h3{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--acc);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--bdr)}
+    .legend-item{margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bdr)}
+    .legend-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+    .legend-term{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--txt);margin-bottom:4px}
+    .legend-term .tag{font-size:10px;margin-left:6px;padding:1px 6px;border-radius:3px;font-weight:400}
+    .legend-term .tag-grn{background:rgba(16,185,129,.15);color:var(--grn)}
+    .legend-term .tag-amb{background:rgba(245,158,11,.15);color:var(--amb)}
+    .legend-term .tag-mut{background:rgba(100,116,139,.15);color:var(--mut)}
+    .legend-desc{font-size:12px;color:var(--mut);line-height:1.65;margin-bottom:6px}
+    .legend-formula{font-family:var(--mono);font-size:11px;color:var(--acc);background:var(--sur2);padding:6px 10px;border-radius:4px;border-left:2px solid var(--acc);margin-top:6px}
+    .legend-note{font-size:11px;color:var(--mut);margin-top:5px;padding-left:8px;border-left:2px solid var(--bdr);line-height:1.5}
+
     footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--bdr);text-align:center;font-size:11px;color:var(--mut)}
     footer a{color:var(--acc);text-decoration:none}
 
@@ -214,6 +230,130 @@
         <h3>RPO補正 / BS評価補正</h3>
         <p>SaaS企業向けRPOを15%割引率で現在価値化。ネットキャッシュ/純負債を1株あたり価値に加算。</p>
       </div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <h2 class="section-title">TABLE LEGEND — 列・バッジの説明</h2>
+    <div class="legend-grid">
+
+      <!-- 列の説明 -->
+      <div class="legend-card">
+        <h3>📊 テーブル列の説明</h3>
+
+        <div class="legend-item">
+          <div class="legend-term">理論株価 BASE</div>
+          <div class="legend-desc">BASEシナリオ（セグメント加重成長率 × 1.0）で計算した1株あたり本質的価値。現在株価との差が「乖離率」として表示される。</div>
+          <div class="legend-formula">P_t = (V₀ + RPO_PV + GO_PV) × (1 + α) ÷ 株式数 + BS補正</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">乖離率</div>
+          <div class="legend-desc">（理論株価 − 現在株価）÷ 現在株価。プラスなら割安、マイナスなら割高を示す。Koichi式では「Extreme Fear + 乖離率がプラスかつ拡大傾向」が強い買いシグナル。</div>
+          <div class="legend-formula">乖離率 = (理論株価 − 現在株価) / 現在株価</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">成長率 BASE <span class="tag tag-mut">G</span></div>
+          <div class="legend-desc">TANUKIが使用するBASEシナリオの高成長期成長率。セグメント加重成長率（segment_config.py設定値）が優先される。RICEのGとして使用される。</div>
+          <div class="legend-note">Bull = BASE × 1.2 / Bear = BASE × 0.7</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">WACC</div>
+          <div class="legend-desc">加重平均資本コスト。CAPMで動的計算。高いほど将来FCFが厳しく割引されるため理論株価が低くなる。銘柄別βをbeta_config.jsonで設定。</div>
+          <div class="legend-formula">WACC = Rf + β × (Rm − Rf) &nbsp; Rf=4.3% / Rm=10%</div>
+        </div>
+      </div>
+
+      <!-- α・RICE・Q・CF -->
+      <div class="legend-card">
+        <h3>🔢 指標の説明（α / RICE / Q / CF）</h3>
+
+        <div class="legend-item">
+          <div class="legend-term">α（アルファ）<span class="tag tag-amb">上限1.0</span></div>
+          <div class="legend-desc">成長期待プレミアム。ROE平均から個別の成長率ポテンシャルを推定し、市場期待リターン（Rm=10%）との比率で質的補正を加える。高いほど「ROEが高く成長余力がある」企業。上限1.0でキャップ。</div>
+          <div class="legend-formula">α = min(1.0, ROE_avg × 0.6 / Rm × 0.7)</div>
+          <div class="legend-note">α=1.0（キャップ適用）= 極めて高いROE。例: NVDA / CELH</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">RICE <span class="tag tag-grn">投資効率指標</span></div>
+          <div class="legend-desc">Reinvestment & Compounding Efficiency。投資が成長として再生産される質と効率を測定する純粋な投資効率指標。銘柄間の相対比較に使用。高いほど「少ない投資で高い成長を再生産している」。</div>
+          <div class="legend-formula">RICE = (G × Q × CF) / WACC</div>
+          <div class="legend-note">G=BASEシナリオ成長率 / Q=OCF転換効率 / CF=投資再生産効率<br>PERとの比率（RICE/PER）で割高・割安の相対評価が可能（将来実装）</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">Q（OCF/NI）<span class="tag tag-mut">キャッシュ転換効率</span></div>
+          <div class="legend-desc">営業キャッシュフロー ÷ 純利益の直近3年平均。1.0以上なら会計利益がしっかりキャッシュに変換されている。SBC（株式報酬）が多い企業はQ>1になりやすい。</div>
+          <div class="legend-formula">Q = OCF ÷ 純利益（直近3年平均）</div>
+          <div class="legend-note">Q&lt;1: キャッシュ化が不十分 / Q&gt;2: 利益以上のキャッシュ創出</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">CF（投資効率）<span class="tag tag-mut">投資再生産効率</span></div>
+          <div class="legend-desc">「1単位の投資強度が翌年の売上成長率に何単位変換されたか」を示す。1年ラグで計算（t年の投資 → t+1年の売上成長）。投資強度 = (R&D + CapEx + 販売・マーケティング費) ÷ 売上。</div>
+          <div class="legend-formula">CF = 売上成長率(t+1) ÷ 投資強度(t)　※直近3点平均</div>
+          <div class="legend-note">投資強度 = (R&D + CapEx + S&M) / Revenue<br>R&D/CapExが極小でも成長する軽資産型企業はCFが高くなる傾向</div>
+        </div>
+      </div>
+
+      <!-- バッジの説明 -->
+      <div class="legend-card">
+        <h3>🏷️ バッジの説明</h3>
+
+        <div class="legend-item">
+          <div class="legend-term"><span class="badge fcf2" style="font-size:11px;padding:2px 8px">2YR</span></div>
+          <div class="legend-desc">FCFベースに「直近2年平均」を採用。変動係数(CV)が閾値0.5を超えた場合に自動適用。直近のFCF急拡大を反映し、5年平均より高い値になることが多い。</div>
+          <div class="legend-note">非表示の場合は「5年平均（avg_5yr）」を採用。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term"><span class="badge seg" style="font-size:11px;padding:2px 8px">SEG</span></div>
+          <div class="legend-desc">成長率にセグメント加重成長率を採用。10-K開示のセグメント別売上 × Koichi設定成長率の加重平均。FCF CAGRより企業の実態を反映するため最優先される。</div>
+          <div class="legend-note">segment_config.pyで銘柄ごとに設定。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term"><span class="badge go" style="font-size:11px;padding:2px 8px">GO</span></div>
+          <div class="legend-desc">成長オプション（Growth Option）が設定されている銘柄。現時点では存在しない「仮説セグメント」（例: Sovereign AI、Robotaxi）のTAM × 侵入率 × マージン × 確率を割引してV₀に加算。</div>
+          <div class="legend-note">segment_config.pyのGROWTH_OPTIONSで銘柄ごとに設定。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">KO のように バッジなし</div>
+          <div class="legend-desc">セグメント設定・成長オプション・2年FCF採用のいずれもない銘柄。FCF CAGRまたはデフォルト成長率を使用。</div>
+        </div>
+      </div>
+
+      <!-- 読み方・注意事項 -->
+      <div class="legend-card">
+        <h3>⚠️ 読み方と注意事項</h3>
+
+        <div class="legend-item">
+          <div class="legend-term">RICEは絶対値ではなく相対比較で使う</div>
+          <div class="legend-desc">RICEは「投資効率の純粋な測定指標」として設計されている。単独では割高・割安を判定できず、銘柄間の相対比較（どの銘柄が効率よく成長を再生産しているか）に使用する。</div>
+          <div class="legend-note">総合的な割高・割安判定はRICEを含む複数指標の組み合わせで将来設計予定。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">理論株価は「本質的価値の推定値」</div>
+          <div class="legend-desc">TANUKIの理論株価はβなし・市場心理独立の本質的価値（Layer 1）を算出している。市場が常にこの価格に収束するわけではなく、あくまで投資判断の参考値として使用する。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">RKLB / ONDS / SOUN などの赤字企業</div>
+          <div class="legend-desc">FCFがマイナスの銘柄は調整済みEPSからFCF実力値を推定して計算。推定値と実績値の乖離が大きい場合は信頼性に注意が必要。パイプラインログに警告が出る。</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">データソース</div>
+          <div class="legend-desc">財務データはSEC EDGAR（10-K/XBRL）から自動取得。株価・β・株式数はyfinance。計算は毎週GitHub Actionsで自動更新される。</div>
+          <div class="legend-note">KOのみ更新日が古い場合がある（段階的対応中）。</div>
+        </div>
+      </div>
+
     </div>
   </div>
 
