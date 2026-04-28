@@ -6,6 +6,11 @@ v6.2 追加エクスポート:
 - determine_fcf_base
 - FCFBaseResult
 - DEFAULT_FCF_BASE_THRESHOLD
+
+v8.0 追加エクスポート:
+- calculate_rice
+- RICEResult
+- RICEScenario
 """
 
 from .wacc import (
@@ -50,9 +55,11 @@ from .scenarios import (
 from .future_values import (
     calculate_future_values, calculate_return_metrics,
 )
+
 from .rice import (
     calculate_rice, RICEResult, RICEScenario,
 )
+
 
 __all__ = [
     # WACC
@@ -84,6 +91,7 @@ __all__ = [
     "DEFAULT_BEAR_MULTIPLIER", "DEFAULT_BULL_MULTIPLIER",
     # Future Values
     "calculate_future_values", "calculate_return_metrics",
+    # RICE
     "calculate_rice", "RICEResult", "RICEScenario",
 ]
 

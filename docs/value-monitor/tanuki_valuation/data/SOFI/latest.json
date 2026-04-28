@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 20860801108.599525,
   "intrinsic_value_per_share": 23.11930562680847,
   "intrinsic_value_beta": 20.22,
-  "upside_percent_beta": 8.1,
+  "upside_percent_beta": 7.8,
   "intrinsic_value_rf": 114.66,
-  "upside_percent_rf": 512.8,
+  "upside_percent_rf": 511.2,
   "v0": 16590804438.957363,
   "v0_adjusted": 16597725246.381998,
   "alpha": 0.25684699553312584,
@@ -14,7 +14,7 @@
     "2年後": 30.24,
     "3年後": 36.99
   },
-  "upside_percent": 23.6,
+  "upside_percent": 23.2,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -183,6 +183,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 4.67,
+    "cf_conversion": 0.6541,
+    "wacc": 0.1114,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.2727,
+    "avg_rev_growth_lagged": 0.1808,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.156,
+      "rice": 4.278,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.223,
+      "rice": 6.115,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.268,
+      "rice": 7.349,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": -4269250000.0,
     "fcf_2yr_avg": -2628839000.0,
@@ -197,7 +223,7 @@
     ],
     "diluted_shares": 1275263850,
     "roe_10yr_avg": 0.061154046555506165,
-    "current_price": 18.7103,
+    "current_price": 18.76,
     "latest_revenue": 619353000.0,
     "rpo": 8535000.0,
     "beta": 1.2,
@@ -244,7 +270,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share calculation",
-    "ai_concerns": "Inconsistency in per-share value suggests potential error; other values like growth rates appear plausible."
+    "ai_comment": "Inconsistency in per share value calculation",
+    "ai_concerns": "Inconsistency in per share value (16.34 vs 23.12) suggests potential error in final calculation."
   }
 }

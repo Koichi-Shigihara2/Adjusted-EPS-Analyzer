@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 235108249693.23306,
   "intrinsic_value_per_share": 813.9426336647232,
   "intrinsic_value_beta": 696.13,
-  "upside_percent_beta": 52.3,
+  "upside_percent_beta": 51.2,
   "intrinsic_value_rf": 4943.28,
-  "upside_percent_rf": 981.6,
+  "upside_percent_rf": 973.9,
   "v0": 117199066081.10326,
   "v0_adjusted": 117554124846.61653,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1254.64,
     "3年後": 1684.35
   },
-  "upside_percent": 78.1,
+  "upside_percent": 76.8,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -245,6 +245,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 1.8319,
+    "cf_conversion": 400.4617,
+    "wacc": 0.1103,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.0008,
+    "avg_rev_growth_lagged": 0.2545,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.24,
+      "rice": 1596.815,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.343,
+      "rice": 2282.114,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.411,
+      "rice": 2734.545,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 1581247800.0,
     "fcf_2yr_avg": 3035052500.0,
@@ -258,8 +284,8 @@
       361851000
     ],
     "diluted_shares": 336260915,
-    "roe_10yr_avg": 1.0984085183814432,
-    "current_price": 457.055,
+    "roe_10yr_avg": 1.0984085183814434,
+    "current_price": 460.29,
     "latest_revenue": 5480717000.0,
     "rpo": 0.0,
     "beta": 1.18,
@@ -274,7 +300,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 41053759632.10086,
     "pv_terminal": 76145306449.0024,
-    "roe_used": 1.0984085183814432,
+    "roe_used": 1.0984085183814434,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -282,7 +308,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 355058765.51327366,
-    "alpha_uncapped": 4.61331577720206
+    "alpha_uncapped": 4.613315777202062
   },
   "validation": {
     "validated_at": "2026-04-28",
@@ -306,7 +332,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in calculations detected",
-    "ai_concerns": "High ROE (109.84%) and discrepancy in per share value indicate potential anomalies"
+    "ai_comment": "Inconsistencies in per share value",
+    "ai_concerns": "Reported intrinsic value per share (813.94) does not match calculated value (698.99), indicating potential anomaly in final output."
   }
 }

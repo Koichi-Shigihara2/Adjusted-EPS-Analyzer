@@ -23,6 +23,7 @@ v6.2 追加:
  10. 感度分析
  11. シナリオ分析
  12. 将来価値予測
+ 13. RICE計算（v8.0追加）
 """
 
 import os
@@ -63,6 +64,18 @@ try:
     HAS_MATURITY_CONFIG = True
 except ImportError:
     HAS_MATURITY_CONFIG = False
+
+try:
+    _repo_root = os.path.dirname(os.path.dirname(os.path.dirname(_current_dir)))
+    if _repo_root not in sys.path:
+        sys.path.insert(0, _repo_root)
+    from common.sec_data.reader import SECReader
+    HAS_SEC_READER = True
+except ImportError:
+    HAS_SEC_READER = False
+    SECReader = None
+
+from calculator.rice import calculate_rice, RICEResult
 
 
 class KoichiValuationCalculator:
@@ -459,6 +472,41 @@ class KoichiValuationCalculator:
         )
         print(f"   [{ticker}] 1〜3年後理論株価: {future_values}")
 
+        # ── STEP 13: RICE計算（v8.0追加）──
+        rice_result: RICEResult = RICEResult(
+            q=0.0, cf_conversion=0.0, wacc=wacc,
+            q_years=0, cf_years=0,
+            avg_intensity=0.0, avg_rev_growth=0.0,
+            available=False, note="SEC年次データ未取得"
+        )
+        try:
+            if HAS_SEC_READER and self.sec_data_dir:
+                _sec_reader = SECReader(data_dir=os.path.join(self.sec_data_dir))
+                _annual_data = _sec_reader.get_annual_range(ticker, years=4)
+                if _annual_data:
+                    _current_per = financials.get("current_per", 0.0)
+                    _sc_val = scenario_result.to_dict() if scenario_result else None
+                    rice_result = calculate_rice(
+                        annual_data=_annual_data,
+                        wacc=wacc,
+                        scenario_valuations=_sc_val,
+                        current_per=_current_per,
+                    )
+                    if rice_result.available:
+                        _base_rice = rice_result.base.rice if rice_result.base else 0.0
+                        print(f"   [{ticker}] RICE: Q={rice_result.q:.2f}  "
+                              f"CF={rice_result.cf_conversion:.2f}  base={_base_rice:.1f}")
+                    else:
+                        print(f"   [{ticker}] RICE: 計算不可 ({rice_result.note})")
+        except Exception as _rice_e:
+            print(f"   [{ticker}] RICE計算エラー: {_rice_e}")
+            rice_result = RICEResult(
+                q=0.0, cf_conversion=0.0, wacc=wacc,
+                q_years=0, cf_years=0,
+                avg_intensity=0.0, avg_rev_growth=0.0,
+                available=False, note=f"エラー: {_rice_e}"
+            )
+
         # ── DCF詳細（共通フォーマット） ──
         if dcf_type == "three_stage" and three_stage_result:
             dcf_components = three_stage_result.to_dict()
@@ -511,6 +559,9 @@ class KoichiValuationCalculator:
 
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
+
+            # RICE（投資効率指標）v8.0追加
+            "rice": rice_result.to_dict(),
 
             "components": {
                 "fcf_5yr_avg": financials.get("fcf_5yr_avg"),

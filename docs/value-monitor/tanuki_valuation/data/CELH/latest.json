@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 23317878719.98873,
   "intrinsic_value_per_share": 58.32094104193617,
   "intrinsic_value_beta": 89.66,
-  "upside_percent_beta": 162.8,
+  "upside_percent_beta": 170.5,
   "intrinsic_value_rf": 345.17,
-  "upside_percent_rf": 911.6,
+  "upside_percent_rf": 941.6,
   "v0": 11658939359.994366,
   "v0_adjusted": 11658939359.994366,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 122.74,
     "3年後": 143.6
   },
-  "upside_percent": 70.9,
+  "upside_percent": 76.0,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -251,6 +251,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 1.921,
+    "cf_conversion": 49.5784,
+    "wacc": 0.0772,
+    "q_years": 3,
+    "cf_years": 1,
+    "avg_intensity": 0.0173,
+    "avg_rev_growth_lagged": 0.8554,
+    "note": "CF: 1点のみ使用（3点要求）",
+    "bear": {
+      "growth_rate": 0.119,
+      "rice": 146.808,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.17,
+      "rice": 209.726,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.204,
+      "rice": 251.671,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 137422281.6,
     "fcf_2yr_avg": 281472000.0,
@@ -265,7 +291,7 @@
     ],
     "diluted_shares": 256896075,
     "roe_10yr_avg": 0.4377082903943001,
-    "current_price": 34.12,
+    "current_price": 33.14,
     "latest_revenue": 2515269000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -312,7 +338,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value",
-    "ai_concerns": "Anomaly in per share value (90.68 vs. 58.32); other values like high ROE (43.77%) are plausible but require scrutiny."
+    "ai_comment": "Inconsistency in per share calculation detected.",
+    "ai_concerns": "Inconsistency in per-share value ($90.69 vs $58.32) indicates a potential error; other values like ROE (43.77%) are high but plausible."
   }
 }

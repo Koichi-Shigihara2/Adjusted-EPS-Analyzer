@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 171684190263.03342,
   "intrinsic_value_per_share": 64.47009058126426,
   "intrinsic_value_beta": 55.27,
-  "upside_percent_beta": -84.9,
+  "upside_percent_beta": -85.4,
   "intrinsic_value_rf": 305.95,
-  "upside_percent_rf": -16.6,
+  "upside_percent_rf": -19.2,
   "v0": 97155656101.91309,
   "v0_adjusted": 106285876501.87732,
   "alpha": 0.6153057763982493,
@@ -14,7 +14,7 @@
     "2年後": 70.08,
     "3年後": 78.91
   },
-  "upside_percent": -82.4,
+  "upside_percent": -83.0,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -249,6 +249,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 2.2918,
+    "cf_conversion": 0.6632,
+    "wacc": 0.1143,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.0986,
+    "avg_rev_growth_lagged": 0.056,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.088,
+      "rice": 1.171,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.126,
+      "rice": 1.676,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.151,
+      "rice": 2.009,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 5726600000.0,
     "fcf_2yr_avg": 5144500000.0,
@@ -263,7 +289,7 @@
     ],
     "diluted_shares": 3755723871,
     "roe_10yr_avg": 0.14650137533291652,
-    "current_price": 366.76,
+    "current_price": 378.67,
     "latest_revenue": 94827000000.0,
     "rpo": 10420000000.0,
     "beta": 1.25,
@@ -310,7 +336,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in key calculations.",
-    "ai_concerns": "Inconsistency in per share value (45.70 vs 64.47) indicates potential calculation error."
+    "ai_comment": "Multiple inconsistencies detected.",
+    "ai_concerns": "Inconsistencies in per share value and large market price discrepancy (-83%), suggesting potential anomalies in inputs or calculations."
   }
 }

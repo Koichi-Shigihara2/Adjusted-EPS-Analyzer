@@ -1,20 +1,20 @@
 {
   "intrinsic_value_pt": 196763189640.87375,
-  "intrinsic_value_per_share": 91.66060781590983,
-  "intrinsic_value_beta": 85.27,
-  "upside_percent_beta": -40.4,
-  "intrinsic_value_rf": 568.99,
-  "upside_percent_rf": 297.4,
+  "intrinsic_value_per_share": 91.45101443111474,
+  "intrinsic_value_beta": 85.08,
+  "upside_percent_beta": -40.5,
+  "intrinsic_value_rf": 567.69,
+  "upside_percent_rf": 296.7,
   "v0": 124551788752.08115,
   "v0_adjusted": 129294890914.21075,
-  "alpha": 0.5218172059979486,
+  "alpha": 0.5218172059979485,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 114.09,
-    "2年後": 152.65,
-    "3年後": 204.25
+    "1年後": 113.84,
+    "2年後": 152.31,
+    "3年後": 203.8
   },
-  "upside_percent": -36.0,
+  "upside_percent": -36.1,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        66.67,
-        99.74,
-        149.12
+        66.52,
+        99.51,
+        148.78
       ],
       [
-        57.55,
-        84.7,
-        124.49
+        57.42,
+        84.5,
+        124.21
       ],
       [
-        50.63,
-        73.33,
-        106.02
+        50.51,
+        73.16,
+        105.78
       ]
     ],
     "wacc_values": [
@@ -71,15 +71,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.237,
-      "intrinsic_value_per_share": 60.5
+      "intrinsic_value_per_share": 60.36
     },
     "base": {
       "growth_rate": 0.338,
-      "intrinsic_value_per_share": 85.27
+      "intrinsic_value_per_share": 85.08
     },
     "bull": {
       "growth_rate": 0.406,
-      "intrinsic_value_per_share": 106.39
+      "intrinsic_value_per_share": 106.15
     }
   },
   "growth_options": {
@@ -261,9 +261,35 @@
     "long_term_debt": 0.0,
     "short_term_debt": 0.0,
     "net_cash": 7177043000.0,
-    "net_cash_per_share": 3.00084286803212,
+    "net_cash_per_share": 2.9939810674294858,
     "fiscal_year": 2025,
     "applied": true
+  },
+  "rice": {
+    "available": true,
+    "q": 2.4014,
+    "cf_conversion": 59.2599,
+    "wacc": 0.1046,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.0107,
+    "avg_rev_growth_lagged": 0.339,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.237,
+      "rice": 322.558,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.338,
+      "rice": 460.019,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.406,
+      "rice": 552.568,
+      "rice_per_ratio": 0.0
+    }
   },
   "components": {
     "fcf_5yr_avg": 888765000.0,
@@ -277,9 +303,9 @@
       183710000,
       321224000
     ],
-    "diluted_shares": 2391675711,
-    "roe_10yr_avg": 0.12424219190427348,
-    "current_price": 143.18,
+    "diluted_shares": 2397157109,
+    "roe_10yr_avg": 0.12424219190427345,
+    "current_price": 143.1,
     "latest_revenue": 4475446000.0,
     "rpo": 4100000000.0,
     "beta": 1.08,
@@ -294,7 +320,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 43861055471.839165,
     "pv_terminal": 80690733280.24199,
-    "roe_used": 0.12424219190427348,
+    "roe_used": 0.12424219190427345,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -302,7 +328,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 3324582359.813293,
     "growth_option_pv": 1418519802.3163157,
-    "alpha_uncapped": 0.5218172059979486
+    "alpha_uncapped": 0.5218172059979485
   },
   "validation": {
     "validated_at": "2026-04-28",
@@ -310,7 +336,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $134.59B + RPO $3.32B + GO $1.42B) × (1+0.522) / 2.392B + BS $+3.00/株 = $91.66 (差異0.00%)"
+        "detail": "(V₀ $134.59B + RPO $3.32B + GO $1.42B) × (1+0.522) / 2.397B + BS $+2.99/株 = $91.45 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -326,7 +352,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "不整合が見つかる",
-    "ai_concerns": "Inconsistency in intrinsic value per share (82.36 vs 91.66). Market price (143.18) vs intrinsic (91.66) shows large discrepancy."
+    "ai_comment": "Inconsistencies in per share value detected",
+    "ai_concerns": "Inconsistency in per share value (calculated 82.08 vs reported 91.45) suggests potential anomaly in final valuation step."
   }
 }

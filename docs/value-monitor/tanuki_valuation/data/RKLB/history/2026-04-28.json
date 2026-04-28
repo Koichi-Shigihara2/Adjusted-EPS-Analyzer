@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4000207224.773137,
   "intrinsic_value_per_share": 7.83948691171507,
   "intrinsic_value_beta": 8.42,
-  "upside_percent_beta": -89.2,
+  "upside_percent_beta": -89.8,
   "intrinsic_value_rf": 26.15,
-  "upside_percent_rf": -66.4,
+  "upside_percent_rf": -68.2,
   "v0": 2502262314.018256,
   "v0_adjusted": 4000207224.773137,
   "alpha": 0.0,
@@ -14,7 +14,7 @@
     "2年後": 14.6,
     "3年後": 19.23
   },
-  "upside_percent": -89.9,
+  "upside_percent": -90.5,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -176,6 +176,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 0.5446,
+    "cf_conversion": 2.2543,
+    "wacc": 0.0915,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.1928,
+    "avg_rev_growth_lagged": 0.4408,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.222,
+      "rice": 2.98,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.317,
+      "rice": 4.255,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.38,
+      "rice": 5.101,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": -167319800.0,
     "fcf_2yr_avg": -218596000.0,
@@ -190,7 +216,7 @@
     ],
     "diluted_shares": 578044302,
     "roe_10yr_avg": 0.0,
-    "current_price": 77.84,
+    "current_price": 82.29,
     "latest_revenue": 601799000.0,
     "rpo": 1847322000.0,
     "beta": 0.85,
@@ -237,7 +263,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies and anomalies detected.",
-    "ai_concerns": "ROE at 0.00% with high growth rate of 31.7% is anomalous, and extreme discrepancy between intrinsic value ($7.84) and market price ($77.84) suggests potential errors."
+    "ai_comment": "Inconsistencies in per share value detected.",
+    "ai_concerns": "Anomalies include ROE=0% with high growth rate of 31.7%, and inconsistency between P_t and per-share value, suggesting potential errors."
   }
 }

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 6284593549715.938,
   "intrinsic_value_per_share": 783.6297560770536,
   "intrinsic_value_beta": 852.08,
-  "upside_percent_beta": 101.9,
+  "upside_percent_beta": 100.6,
   "intrinsic_value_rf": 4230.41,
-  "upside_percent_rf": 902.5,
+  "upside_percent_rf": 895.8,
   "v0": 2836930388181.4307,
   "v0_adjusted": 3142296774857.969,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1116.51,
     "3年後": 1278.07
   },
-  "upside_percent": 85.7,
+  "upside_percent": 84.5,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -58,12 +58,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.14470000000000002,
+      "rate": 0.1447,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.14470000000000002,
+      "weighted_growth": 0.1447,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -122,7 +122,7 @@
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 106326139502.45718,
         "discount_factor": 1.0943,
         "pv": 97163610986.43625
@@ -130,7 +130,7 @@
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 121711531888.46274,
         "discount_factor": 1.1974924900000001,
         "pv": 101638659870.39528
@@ -138,7 +138,7 @@
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 139323190552.7233,
         "discount_factor": 1.3104160318070002,
         "pv": 106319815364.74594
@@ -146,7 +146,7 @@
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 159483256225.70236,
         "discount_factor": 1.4339882636064003,
         "pv": 111216570088.6637
@@ -154,7 +154,7 @@
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 182560483401.5615,
         "discount_factor": 1.569213356864484,
         "pv": 116338853861.36646
@@ -254,6 +254,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 1.2975,
+    "cf_conversion": 0.8585,
+    "wacc": 0.0943,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.1449,
+    "avg_rev_growth_lagged": 0.1249,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.101,
+      "rice": 1.193,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.145,
+      "rice": 1.713,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.174,
+      "rice": 2.055,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 66518600000.0,
     "fcf_2yr_avg": 74625500000.0,
@@ -268,7 +294,7 @@
     ],
     "diluted_shares": 7432377656,
     "roe_10yr_avg": 0.33282252757802594,
-    "current_price": 421.98,
+    "current_price": 424.82,
     "latest_revenue": 281724000000.0,
     "rpo": 375000000000.0,
     "beta": 0.9,
@@ -278,7 +304,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Cloud_Services)",
-    "high_growth_rate_used": 0.14470000000000002,
+    "high_growth_rate_used": 0.1447,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "pv_high": 1091960994136.3358,
@@ -315,7 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in calculations detected.",
-    "ai_concerns": "Inconsistency in per share value (845.48 vs 783.63); GrowthOption_PV (1,288,731,816) is unusually small relative to other components."
+    "ai_comment": "Inconsistencies detected in per share value.",
+    "ai_concerns": "Inconsistency in intrinsic value per share ($845.32 calculated vs $783.63 provided) indicates potential error."
   }
 }

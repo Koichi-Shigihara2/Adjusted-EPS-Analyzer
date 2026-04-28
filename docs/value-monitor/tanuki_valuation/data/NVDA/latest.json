@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9931658787751.377,
   "intrinsic_value_per_share": 429.11982676647006,
   "intrinsic_value_beta": 408.67,
-  "upside_percent_beta": 94.0,
+  "upside_percent_beta": 88.7,
   "intrinsic_value_rf": 2814.12,
-  "upside_percent_rf": 1235.6,
+  "upside_percent_rf": 1199.2,
   "v0": 4962104669821.988,
   "v0_adjusted": 4965829393875.688,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 717.47,
     "3年後": 950.65
   },
-  "upside_percent": 103.7,
+  "upside_percent": 98.1,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -276,6 +276,32 @@
     "fiscal_year": 2026,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 0.8929,
+    "cf_conversion": 45.7437,
+    "wacc": 0.1029,
+    "q_years": 3,
+    "cf_years": 2,
+    "avg_intensity": 0.0212,
+    "avg_rev_growth_lagged": 0.8984,
+    "note": "CF: 2点のみ使用（3点要求）",
+    "bear": {
+      "growth_rate": 0.227,
+      "rice": 90.15,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.325,
+      "rice": 129.07,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.39,
+      "rice": 154.884,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 39859800000.0,
     "fcf_2yr_avg": 78764500000.0,
@@ -289,8 +315,8 @@
       9108000000
     ],
     "diluted_shares": 24305000000,
-    "roe_10yr_avg": 0.4564387976956358,
-    "current_price": 210.6999,
+    "roe_10yr_avg": 0.45643879769563567,
+    "current_price": 216.61,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
     "beta": 1.05,
@@ -305,7 +331,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 1721632482614.4624,
     "pv_terminal": 3240472187207.526,
-    "roe_used": 0.4564387976956358,
+    "roe_used": 0.45643879769563567,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -313,7 +339,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
-    "alpha_uncapped": 1.91704295032167
+    "alpha_uncapped": 1.9170429503216697
   },
   "validation": {
     "validated_at": "2026-04-28",
@@ -337,7 +363,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share calculation",
-    "ai_concerns": "Inconsistency in per share value (408.54 vs 429.12) suggests potential calculation error in P_t or shares application."
+    "ai_comment": "Inconsistencies detected in per share",
+    "ai_concerns": "Inconsistency in per share value (408.52 vs 429.12) suggests potential calculation error; other values appear reasonable."
   }
 }

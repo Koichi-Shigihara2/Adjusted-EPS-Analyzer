@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2263990321971.288,
   "intrinsic_value_per_share": 234.60094834998762,
   "intrinsic_value_beta": 215.52,
-  "upside_percent_beta": -17.4,
+  "upside_percent_beta": -17.5,
   "intrinsic_value_rf": 1374.71,
-  "upside_percent_rf": 426.6,
+  "upside_percent_rf": 426.5,
   "v0": 1261506256456.1196,
   "v0_adjusted": 1282292678034.5515,
   "alpha": 0.7655800120776206,
@@ -14,7 +14,7 @@
     "2年後": 270.06,
     "3年後": 302.3
   },
-  "upside_percent": -10.1,
+  "upside_percent": -10.2,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -254,6 +254,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 2.1813,
+    "cf_conversion": 1.0349,
+    "wacc": 0.1057,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.1152,
+    "avg_rev_growth_lagged": 0.1173,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.084,
+      "rice": 1.794,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.119,
+      "rice": 2.542,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.143,
+      "rice": 3.054,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 13651800000.0,
     "fcf_2yr_avg": 22086500000.0,
@@ -268,7 +294,7 @@
     ],
     "diluted_shares": 10754251799,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 261.0599,
+    "current_price": 261.12,
     "latest_revenue": 716924000000.0,
     "rpo": 25000000000.0,
     "beta": 1.1,
@@ -315,7 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in share value calculation.",
-    "ai_concerns": "Inconsistency in per share value; other values like growth rates and WACC appear reasonable."
+    "ai_comment": "Inconsistency in per-share calculation detected.",
+    "ai_concerns": "Inconsistency in per-share value; calculated $210.50 vs. reported $234.60."
   }
 }

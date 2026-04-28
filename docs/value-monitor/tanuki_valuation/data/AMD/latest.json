@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 341948633625.7794,
   "intrinsic_value_per_share": 233.20745004138215,
   "intrinsic_value_beta": 214.23,
-  "upside_percent_beta": -35.9,
+  "upside_percent_beta": -36.0,
   "intrinsic_value_rf": 1356.83,
-  "upside_percent_rf": 306.3,
+  "upside_percent_rf": 305.5,
   "v0": 203696735902.94696,
   "v0_adjusted": 204386121846.4353,
   "alpha": 0.6730521159489544,
@@ -14,7 +14,7 @@
     "2年後": 332.6,
     "3年後": 414.41
   },
-  "upside_percent": -30.2,
+  "upside_percent": -30.3,
   "calculation_date": "2026-04-28",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -245,6 +245,32 @@
     "fiscal_year": 2025,
     "applied": true
   },
+  "rice": {
+    "available": true,
+    "q": 1.8611,
+    "cf_conversion": 5.8538,
+    "wacc": 0.1057,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.0226,
+    "avg_rev_growth_lagged": 0.1471,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.172,
+      "rice": 17.729,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.246,
+      "rice": 25.356,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.295,
+      "rice": 30.407,
+      "rice_per_ratio": 0.0
+    }
+  },
   "components": {
     "fcf_5yr_avg": 3319200000.0,
     "fcf_2yr_avg": 4570000000.0,
@@ -259,7 +285,7 @@
     ],
     "diluted_shares": 1630410844,
     "roe_10yr_avg": 0.16025050379737013,
-    "current_price": 333.97,
+    "current_price": 334.63,
     "latest_revenue": 34639000000.0,
     "rpo": 315000000.0,
     "beta": 1.1,
@@ -306,7 +332,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "不一致が複数あり、検証失敗",
-    "ai_concerns": "Inconsistencies in pt_shares_consistency and formula_verification suggest potential errors; intrinsic value per share does not align with calculations."
+    "ai_comment": "Multiple inconsistencies detected in calculations.",
+    "ai_concerns": "Inconsistencies in per-share value ($209.72 vs $233.21) and α value suggest potential calculation errors."
   }
 }
