@@ -79,9 +79,13 @@ class SECParser:
             "NetIncomeLossAvailableToCommonStockholdersBasic",
         ],
         # R&D費（RICE計算の投資強度に使用）
+        # CapitalizedComputerSoftwareDevelopmentCosts:
+        #   費用化されずBSに資産計上されるソフトウェア開発費。
+        #   PLに現れないR&D投資を捕捉するためのフォールバック。
         "research_and_development": [
             "ResearchAndDevelopmentExpense",
             "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+            "CapitalizedComputerSoftwareDevelopmentCosts",
         ],
         "eps_diluted": [
             "EarningsPerShareDiluted",
