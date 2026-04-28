@@ -78,6 +78,11 @@ class SECParser:
             "ProfitLoss",
             "NetIncomeLossAvailableToCommonStockholdersBasic",
         ],
+        # R&D費（RICE計算の投資強度に使用）
+        "research_and_development": [
+            "ResearchAndDevelopmentExpense",
+            "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+        ],
         "eps_diluted": [
             "EarningsPerShareDiluted",
         ],
@@ -337,7 +342,8 @@ class SECParser:
                 data["bs"][field] = val
         
         # PL
-        for field in ["revenue", "net_income", "eps_diluted", "eps_basic"]:
+        for field in ["revenue", "net_income", "eps_diluted", "eps_basic",
+                      "research_and_development"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["pl"][field] = val

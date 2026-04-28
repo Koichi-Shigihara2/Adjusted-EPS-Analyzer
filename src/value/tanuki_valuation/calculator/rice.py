@@ -84,6 +84,7 @@ class RICEResult:
             "cf_years": self.cf_years,
             "avg_intensity": round(self.avg_intensity, 4),
             "avg_rev_growth_lagged": round(self.avg_rev_growth, 4),
+            "warnings": self.note != "",   # 警告ありフラグ（フロントで表示判定用）
             "note": self.note,
         }
         if self.bear:
@@ -119,7 +120,9 @@ def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, i
     return sum(q_list) / len(q_list), len(q_list)
 
 
-def _calc_cf_lagged(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, int, float, float]:
+def _calc_cf_lagged(
+    annual_data: List[Dict[str, Any]], years: int = 3
+) -> Tuple[float, int, float, float, List[str]]:
     """
     CF = 売上成長率(t+1) ÷ 投資強度(t)（1年ラグ・直近N点平均）
 
@@ -133,11 +136,36 @@ def _calc_cf_lagged(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[
         years: 使用するラグペアの数（最低3点）
 
     Returns:
-        (CF値, 使用年数, 平均投資強度, 平均売上成長率)
+        (CF値, 使用年数, 平均投資強度, 平均売上成長率, 警告リスト)
+
+    異常値検出:
+        - R&Dフィールドが存在しない年がある場合 → 警告
+        - 投資強度 < 1% の年がある場合 → 警告（R&D未取得の可能性）
+        - CF点が50超の場合 → 警告（非現実的な値）
     """
-    cf_list       = []
+    # 異常値検出の閾値
+    INTENSITY_MIN  = 0.01   # 投資強度の最低ライン（1%）
+    CF_POINT_MAX   = 50.0   # CF点の警告閾値
+
+    cf_list        = []
     intensity_list = []
     rev_growth_list = []
+    warnings: List[str] = []
+
+    # R&D欠損チェック（計算対象年のいずれかでNoneなら警告）
+    rd_missing_years = []
+    for i in range(min(years, len(annual_data) - 1)):
+        older = annual_data[i + 1]
+        rd = older.get("pl", {}).get("research_and_development")
+        fy = older.get("period", "?")
+        if rd is None:
+            rd_missing_years.append(str(fy))
+
+    if rd_missing_years:
+        warnings.append(
+            f"R&D未取得（FY{', '.join(rd_missing_years)}）: "
+            f"parser.pyにResearchAndDevelopmentExpenseタグ追加を検討"
+        )
 
     # annual_data[0]=最新, annual_data[1]=1年前, ...
     # ペア: (t=data[i+1], t+1=data[i]) で i=0,1,...
@@ -145,19 +173,24 @@ def _calc_cf_lagged(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[
         newer = annual_data[i]      # t+1年
         older = annual_data[i + 1]  # t年
 
-        # 投資強度(t年) = (R&D + CapEx) / Revenue
-        rev_t     = older.get("pl", {}).get("revenue")
-        capex_t   = older.get("cf", {}).get("capital_expenditure")
-        rd_t      = older.get("pl", {}).get("research_and_development")  # 存在しない場合はNone
+        rev_t   = older.get("pl", {}).get("revenue")
+        capex_t = older.get("cf", {}).get("capital_expenditure")
+        rd_t    = older.get("pl", {}).get("research_and_development")
+        fy_t    = older.get("period", "?")
 
         if rev_t is None or rev_t == 0 or capex_t is None:
             continue
 
-        # R&Dがない場合はCapExのみで投資強度を計算
-        invest_t = abs(capex_t) + (abs(rd_t) if rd_t is not None else 0.0)
+        invest_t    = abs(capex_t) + (abs(rd_t) if rd_t is not None else 0.0)
         intensity_t = invest_t / rev_t
 
-        # 売上成長率(t+1年)
+        # 投資強度が異常に低い場合（R&D未取得の典型症状）
+        if intensity_t < INTENSITY_MIN:
+            warnings.append(
+                f"投資強度が低すぎる（FY{fy_t}: {intensity_t:.3%}）: "
+                f"R&D未取得の可能性。CF値が過大になる場合がある"
+            )
+
         rev_t1 = newer.get("pl", {}).get("revenue")
         if rev_t1 is None or rev_t == 0:
             continue
@@ -168,18 +201,26 @@ def _calc_cf_lagged(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[
             continue
 
         cf_point = rev_growth_t1 / intensity_t
+
+        # CF点が非現実的に大きい場合
+        if abs(cf_point) > CF_POINT_MAX:
+            warnings.append(
+                f"CF点が異常値（FY{fy_t}→: {cf_point:.1f}）: "
+                f"R&D未取得による投資強度過小の可能性"
+            )
+
         cf_list.append(cf_point)
         intensity_list.append(intensity_t)
         rev_growth_list.append(rev_growth_t1)
 
     if not cf_list:
-        return 0.0, 0, 0.0, 0.0
+        return 0.0, 0, 0.0, 0.0, warnings
 
-    cf_avg        = sum(cf_list) / len(cf_list)
-    intensity_avg = sum(intensity_list) / len(intensity_list)
+    cf_avg         = sum(cf_list) / len(cf_list)
+    intensity_avg  = sum(intensity_list) / len(intensity_list)
     rev_growth_avg = sum(rev_growth_list) / len(rev_growth_list)
 
-    return cf_avg, len(cf_list), intensity_avg, rev_growth_avg
+    return cf_avg, len(cf_list), intensity_avg, rev_growth_avg, warnings
 
 
 def calculate_rice(
@@ -226,7 +267,7 @@ def calculate_rice(
         )
 
     # ── CF計算（1年ラグ） ──
-    cf, cf_used, avg_intensity, avg_rev_growth = _calc_cf_lagged(annual_data, cf_years)
+    cf, cf_used, avg_intensity, avg_rev_growth, cf_warnings = _calc_cf_lagged(annual_data, cf_years)
     if cf_used == 0:
         return RICEResult(
             q=q, cf_conversion=0.0, wacc=wacc,
@@ -258,13 +299,14 @@ def calculate_rice(
                 rice_per_ratio=ratio,
             )
 
-    # ── ノート生成 ──
+    # ── ノート生成（データ不足 + 異常値警告を統合） ──
     note_parts = []
     if q_used < q_years:
         note_parts.append(f"Q: {q_used}年のみ使用（{q_years}年要求）")
     if cf_used < cf_years:
         note_parts.append(f"CF: {cf_used}点のみ使用（{cf_years}点要求）")
-    note = "、".join(note_parts) if note_parts else ""
+    note_parts.extend(cf_warnings)
+    note = " / ".join(note_parts) if note_parts else ""
 
     return RICEResult(
         q=q,
