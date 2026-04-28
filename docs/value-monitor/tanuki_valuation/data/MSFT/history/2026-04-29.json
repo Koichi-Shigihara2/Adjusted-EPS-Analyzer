@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 6284593549715.938,
   "intrinsic_value_per_share": 783.6297560770536,
   "intrinsic_value_beta": 852.08,
-  "upside_percent_beta": 99.1,
+  "upside_percent_beta": 98.5,
   "intrinsic_value_rf": 4230.41,
-  "upside_percent_rf": 888.3,
+  "upside_percent_rf": 885.5,
   "v0": 2836930388181.4307,
   "v0_adjusted": 3142296774857.969,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1116.51,
     "3年後": 1278.07
   },
-  "upside_percent": 83.1,
+  "upside_percent": 82.6,
   "calculation_date": "2026-04-29",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -58,12 +58,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.14470000000000002,
+      "rate": 0.1447,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.14470000000000002,
+      "weighted_growth": 0.1447,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -122,7 +122,7 @@
       {
         "year": 1,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 106326139502.45718,
         "discount_factor": 1.0943,
         "pv": 97163610986.43625
@@ -130,7 +130,7 @@
       {
         "year": 2,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 121711531888.46274,
         "discount_factor": 1.1974924900000001,
         "pv": 101638659870.39528
@@ -138,7 +138,7 @@
       {
         "year": 3,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 139323190552.7233,
         "discount_factor": 1.3104160318070002,
         "pv": 106319815364.74594
@@ -146,7 +146,7 @@
       {
         "year": 4,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 159483256225.70236,
         "discount_factor": 1.4339882636064003,
         "pv": 111216570088.6637
@@ -154,7 +154,7 @@
       {
         "year": 5,
         "phase": "phase1",
-        "growth_rate": 0.14470000000000002,
+        "growth_rate": 0.1447,
         "fcf": 182560483401.5615,
         "discount_factor": 1.569213356864484,
         "pv": 116338853861.36646
@@ -295,7 +295,7 @@
     ],
     "diluted_shares": 7432377656,
     "roe_10yr_avg": 0.33282252757802594,
-    "current_price": 428.03,
+    "current_price": 429.25,
     "latest_revenue": 281724000000.0,
     "rpo": 375000000000.0,
     "beta": 0.9,
@@ -305,7 +305,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Cloud_Services)",
-    "high_growth_rate_used": 0.14470000000000002,
+    "high_growth_rate_used": 0.1447,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "pv_high": 1091960994136.3358,
@@ -342,6 +342,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share value"
+    "ai_comment": "Inconsistencies detected in calculations.",
+    "ai_concerns": "Inconsistency between P_t/shares and intrinsic value per share; growth option PV is unusually small relative to other components."
   }
 }
