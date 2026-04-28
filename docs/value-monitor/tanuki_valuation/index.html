@@ -40,7 +40,7 @@
     .stats-bar{display:flex;gap:32px;justify-content:center;padding:16px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
     .stat-item{text-align:center}
     .stat-value{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--acc)}
-    .stat-label{font-size:10px;color:var(--mut);margin-top:2px;text-transform:uppercase;letter-spacing:.08em}
+    .stat-label{font-size:10px;color:var(--mut);margin-top:2px;text-transform:none;letter-spacing:.08em}
 
     /* ── テーブル ── */
     .table-wrap{margin-top:24px;overflow-x:auto;border-radius:8px;border:1px solid var(--bdr)}
@@ -53,6 +53,7 @@
       cursor:pointer;user-select:none;position:relative;
       transition:color .15s;
     }
+    thead th.no-transform{text-transform:none;}
     thead th:first-child{text-align:left}
     thead th:hover{color:var(--acc)}
     thead th.sort-asc::after{content:' ▲';color:var(--acc)}
@@ -182,7 +183,7 @@
           <th data-col="upside"  data-type="num">乖離率</th>
           <th data-col="rice"    data-type="num" class="col-rice grp-border">RICE<br><span style="font-weight:400;opacity:.7">base</span></th>
           <th data-col="growth"  data-type="num">成長率<br><span style="font-weight:400;opacity:.6">BASE</span></th>
-          <th data-col="alpha"   data-type="num" class="grp-border">α</th>
+          <th data-col="alpha"   data-type="num" class="grp-border no-transform">α</th>
           <th data-col="wacc"    data-type="num">WACC</th>
           <th data-col="q"       data-type="num">Q<br><span style="font-weight:400;opacity:.6">OCF/NI</span></th>
           <th data-col="cf"      data-type="num">CF<br><span style="font-weight:400;opacity:.6">投資効率</span></th>
