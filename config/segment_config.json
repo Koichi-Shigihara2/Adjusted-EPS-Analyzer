@@ -1,0 +1,232 @@
+{
+  "_meta": {
+    "description": "セグメント別成長率・ウェイト設定",
+    "encoding": "UTF-8",
+    "updated_at": "2026-04-29",
+    "schema_version": "1.0"
+  },
+  "_schema": {
+    "enabled": "true=有効 / false=無効（FCF CAGRにフォールバック）",
+    "fiscal_year": "設定対象の会計年度ラベル（表示用）",
+    "segments": "セグメント名: {weight: ウェイト合計1.0, growth: 成長率, note: メモ}",
+    "weight_rule": "全セグメントのweight合計が0.95〜1.05の範囲に収まること",
+    "growth_null": "growth=nullの場合はFCF CAGRにフォールバック"
+  },
+  "NVDA": {
+    "enabled": true,
+    "fiscal_year": "FY2026",
+    "segments": {
+      "Compute and Networking": {
+        "weight": 0.9,
+        "growth": 0.35,
+        "note": "Data Center GPU/Networking for AI training & inference."
+      },
+      "Graphics": {
+        "weight": 0.1,
+        "growth": 0.1,
+        "note": "GeForce GPU for PC gaming and professional visualization."
+      }
+    }
+  },
+  "TSLA": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Automotive": {
+        "weight": 0.87,
+        "growth": 0.1,
+        "note": "Vehicle sales & leasing. FSD revenue included."
+      },
+      "Energy Generation and Storage": {
+        "weight": 0.13,
+        "growth": 0.3,
+        "note": "Powerwall, Megapack, Solar. High-growth segment."
+      }
+    }
+  },
+  "PLTR": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Government": {
+        "weight": 0.54,
+        "growth": 0.2,
+        "note": "US Gov + Allies defense/intel contracts."
+      },
+      "Commercial": {
+        "weight": 0.46,
+        "growth": 0.5,
+        "note": "US Enterprise AIP platform."
+      }
+    }
+  },
+  "MSFT": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Intelligent Cloud": {
+        "weight": 0.38,
+        "growth": 0.22,
+        "note": "Azure, Server products. AI workload acceleration."
+      },
+      "Productivity and Business Processes": {
+        "weight": 0.43,
+        "growth": 0.12,
+        "note": "Office 365, LinkedIn, Dynamics. Copilot upsell."
+      },
+      "More Personal Computing": {
+        "weight": 0.19,
+        "growth": 0.05,
+        "note": "Windows, Xbox, Surface, Search. Mature segment."
+      }
+    }
+  },
+  "AMZN": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "North America": {
+        "weight": 0.6,
+        "growth": 0.1,
+        "note": "1P + 3P e-commerce, advertising, Prime."
+      },
+      "International": {
+        "weight": 0.22,
+        "growth": 0.09,
+        "note": "Non-US e-commerce. Profitability improving."
+      },
+      "AWS": {
+        "weight": 0.18,
+        "growth": 0.22,
+        "note": "Cloud infrastructure. Highest margin segment."
+      }
+    }
+  },
+  "AMD": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Data Center": {
+        "weight": 0.62,
+        "growth": 0.35,
+        "note": "EPYC CPUs + Instinct MI300X GPUs."
+      },
+      "Client": {
+        "weight": 0.0,
+        "growth": 0.08,
+        "note": "Ryzen CPUs. FY2025はClient and Gamingに統合のためweight=0。"
+      },
+      "Gaming": {
+        "weight": 0.0,
+        "growth": -0.1,
+        "note": "Console APUs. FY2025はClient and Gamingに統合のためweight=0。"
+      },
+      "Embedded": {
+        "weight": 0.1,
+        "growth": 0.15,
+        "note": "Xilinx FPGAs. Recovery from inventory digestion."
+      },
+      "Client and Gaming": {
+        "weight": 0.28,
+        "growth": 0.05,
+        "note": "FY2025 XBRL統合形式。Client(20%+8.0%)+Gaming(8%-10.0%)の合算。"
+      },
+      "All Other": {
+        "weight": 0.0,
+        "growth": 0.0,
+        "note": "その他・調整項目。"
+      }
+    }
+  },
+  "SOFI": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Lending": {
+        "weight": 0.49,
+        "growth": 0.1,
+        "note": "Student, personal, home loans."
+      },
+      "Technology Platform": {
+        "weight": 0.12,
+        "growth": 0.15,
+        "note": "Galileo B2B fintech infrastructure."
+      },
+      "Financial Services": {
+        "weight": 0.39,
+        "growth": 0.4,
+        "note": "SoFi Money, Invest, Credit Card."
+      }
+    }
+  },
+  "RKLB": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Launch Services": {
+        "weight": 0.33,
+        "growth": 0.25,
+        "note": "Electron launches + Neutron development."
+      },
+      "Space Systems": {
+        "weight": 0.67,
+        "growth": 0.35,
+        "note": "Spacecraft components, satellites, solar panels."
+      }
+    }
+  },
+  "APP": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Software Platform": {
+        "weight": 0.75,
+        "growth": 0.45,
+        "note": "AppDiscovery, MAX, AXON 2.0."
+      },
+      "Apps": {
+        "weight": 0.25,
+        "growth": 0.02,
+        "note": "1P mobile games portfolio."
+      }
+    }
+  },
+  "CELH": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "North America": {
+        "weight": 0.92,
+        "growth": 0.15,
+        "note": "US/Canada retail & e-commerce."
+      },
+      "International": {
+        "weight": 0.08,
+        "growth": 0.4,
+        "note": "Europe, Asia expansion."
+      }
+    }
+  },
+  "SOUN": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Voice AI": {
+        "weight": 1.0,
+        "growth": 0.4,
+        "note": "Automotive + restaurant + IoT voice AI."
+      }
+    }
+  },
+  "ONDS": {
+    "enabled": true,
+    "fiscal_year": "FY2025",
+    "segments": {
+      "Total": {
+        "weight": 1.0,
+        "growth": 0.3,
+        "note": "Drone + railroad automation."
+      }
+    }
+  }
+}

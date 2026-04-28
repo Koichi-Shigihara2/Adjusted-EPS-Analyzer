@@ -1,0 +1,117 @@
+{
+  "_meta": {
+    "description": "DCF成熟プロファイル設定（two_stage / three_stage）",
+    "encoding": "UTF-8",
+    "updated_at": "2026-04-29",
+    "schema_version": "1.0"
+  },
+  "_schema": {
+    "type": "two_stage（2段階）| three_stage（3段階）",
+    "phase1.years": "高成長期の年数",
+    "phase1.growth": "高成長期の成長率。null = segment_configの加重平均成長率を流用",
+    "phase2.years": "移行期の年数（three_stageのみ有効）",
+    "phase2.growth": "移行期の成長率（three_stageのみ有効）",
+    "terminal_growth": "永続成長率（通常0.03）",
+    "_default": "銘柄未設定時のフォールバック（two_stage）"
+  },
+  "_default": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "NVDA": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.15
+    },
+    "terminal_growth": 0.03
+  },
+  "TSLA": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 4,
+      "growth": null
+    },
+    "phase2": {
+      "years": 4,
+      "growth": 0.08
+    },
+    "terminal_growth": 0.03
+  },
+  "PLTR": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.15
+    },
+    "terminal_growth": 0.03
+  },
+  "MSFT": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.08
+    },
+    "terminal_growth": 0.03
+  },
+  "AMZN": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.1
+    },
+    "terminal_growth": 0.03
+  },
+  "AMD": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 4,
+      "growth": null
+    },
+    "phase2": {
+      "years": 4,
+      "growth": 0.1
+    },
+    "terminal_growth": 0.03
+  },
+  "APP": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 4,
+      "growth": null
+    },
+    "phase2": {
+      "years": 4,
+      "growth": 0.12
+    },
+    "terminal_growth": 0.03
+  },
+  "CELH": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 3,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.1
+    },
+    "terminal_growth": 0.03
+  }
+}
