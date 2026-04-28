@@ -1,114 +1,89 @@
 """
-TANUKI VALUATION - Maturity Profile Configuration
+TANUKI VALUATION - Maturity Profile Configuration v8.0
 銘柄別成熟曲線パラメータ設定
 
-責務: 企業ごとの成長鈍化カーブを定義
-     既存2段階DCFにフォールバックする後方互換設計
+v8.0 変更点:
+  - 設定値を config/maturity_config.json から読み込む
+  - ハードコードの MATURITY_PROFILES を廃止
+  - 後方互換: get_maturity_profile() / is_three_stage() / get_terminal_growth() のAPIは変更なし
+  - フォールバック: JSONが存在しない場合は two_stage をデフォルトとして返す
 
 成熟タイプ:
   "three_stage" : Phase1（高成長）→ Phase2（移行）→ ターミナル
   "two_stage"   : 既存モデルと同一（デフォルト）
 
-未定義銘柄は自動的に two_stage（既存動作）にフォールバック。
+phase1.growth = null の場合は segment_config の加重平均成長率を流用する。
+
+設定変更方法:
+  - admin.html（docs/value-monitor/admin.html）からフォーム入力
+  - GitHub API経由で config/maturity_config.json を更新
+  - ローカル直接編集は非推奨（admin.htmlを使用すること）
 """
 
-from typing import Dict, Any, Optional
+import json
+import os
+from typing import Dict, Any
 
 
-# ========================================
-# 銘柄別成熟プロファイル
-# ========================================
-# three_stage 構造:
-#   phase1.years  : 高成長期の年数
-#   phase1.growth : 高成長期の成長率（segment_configの加重平均を上書きしない）
-#                   ※ growth=None の場合は determine_growth_rate() の結果を流用
-#   phase2.years  : 移行期の年数
-#   phase2.growth : 移行期の成長率
-#   terminal_growth: 永続成長率（デフォルト 3.0%）
-# ========================================
+# ============================================================
+# JSON設定ファイルの読み込み
+# ============================================================
 
-MATURITY_PROFILES: Dict[str, Dict[str, Any]] = {
+def _find_config_dir() -> str:
+    """config/ ディレクトリを探す"""
+    workspace = os.environ.get("GITHUB_WORKSPACE", "")
+    if workspace:
+        path = os.path.join(workspace, "config")
+        if os.path.isdir(path):
+            return path
 
-    # ── NVIDIA ──
-    # AI需要は5年以上継続見込み。移行期はCUDA競合台頭・市場成熟で鈍化。
-    "NVDA": {
-        "type": "three_stage",
-        "phase1": {"years": 5,  "growth": None},   # segment_weighted を流用
-        "phase2": {"years": 5,  "growth": 0.15},   # 競合台頭後の安定成長
-        "terminal_growth": 0.03
-    },
+    current = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.dirname(os.path.dirname(os.path.dirname(current)))
+    path = os.path.join(repo_root, "config")
+    if os.path.isdir(path):
+        return path
 
-    # ── Tesla ──
-    # EV競争激化で早めに鈍化。Energy事業が移行期を下支え。
-    "TSLA": {
-        "type": "three_stage",
-        "phase1": {"years": 4,  "growth": None},
-        "phase2": {"years": 4,  "growth": 0.08},
-        "terminal_growth": 0.03
-    },
+    raise FileNotFoundError(
+        "config/ ディレクトリが見つかりません。"
+        "migrate_config_to_json.py を実行してください。"
+    )
 
-    # ── Palantir ──
-    # AIP商業化が牽引。政府部門の安定性で移行期も比較的高め。
-    "PLTR": {
-        "type": "three_stage",
-        "phase1": {"years": 5,  "growth": None},
-        "phase2": {"years": 5,  "growth": 0.15},
-        "terminal_growth": 0.03
-    },
 
-    # ── Microsoft ──
-    # 成熟大企業。Azureが牽引するが成長速度は安定的。
-    "MSFT": {
-        "type": "three_stage",
-        "phase1": {"years": 5,  "growth": None},
-        "phase2": {"years": 5,  "growth": 0.08},
-        "terminal_growth": 0.03
-    },
-
-    # ── Amazon ──
-    # AWS+広告が牽引。小売成熟で移行期は緩やか。
-    "AMZN": {
-        "type": "three_stage",
-        "phase1": {"years": 5,  "growth": None},
-        "phase2": {"years": 5,  "growth": 0.10},
-        "terminal_growth": 0.03
-    },
-
-    # ── AMD ──
-    # MI300X rampが牽引するが、NVDAとの差は大きい。移行期は早め。
-    "AMD": {
-        "type": "three_stage",
-        "phase1": {"years": 4,  "growth": None},
-        "phase2": {"years": 4,  "growth": 0.10},
-        "terminal_growth": 0.03
-    },
-
-    # ── AppLovin ──
-    # AXON急成長。ただしモバイル広告市場の集中度次第で鈍化リスク高い。
-    "APP": {
-        "type": "three_stage",
-        "phase1": {"years": 4,  "growth": None},
-        "phase2": {"years": 4,  "growth": 0.12},
-        "terminal_growth": 0.03
-    },
-
-    # ── Celsius ──
-    # 高成長期は短め。エナジードリンク市場の飽和リスク考慮。
-    "CELH": {
-        "type": "three_stage",
-        "phase1": {"years": 3,  "growth": None},
-        "phase2": {"years": 5,  "growth": 0.10},
-        "terminal_growth": 0.03
-    },
-
-    # ── 未定義銘柄のデフォルト ──
-    # two_stage = 既存モデルそのまま（変更なし）
-    "_default": {
-        "type": "two_stage",
-        "terminal_growth": 0.03
-    }
+_DEFAULT_PROFILE: Dict[str, Any] = {
+    "type": "two_stage",
+    "terminal_growth": 0.03
 }
 
+_MATURITY_CONFIG: Dict[str, Any] = {}
+
+
+def _ensure_loaded() -> None:
+    """設定が未ロードなら読み込む（遅延初期化）"""
+    global _MATURITY_CONFIG
+    if not _MATURITY_CONFIG:
+        try:
+            config_dir = _find_config_dir()
+            path = os.path.join(config_dir, "maturity_config.json")
+            with open(path, encoding="utf-8") as f:
+                _MATURITY_CONFIG = json.load(f)
+        except FileNotFoundError as e:
+            print(f"[ERROR] maturity_config.json が見つかりません: {e}")
+            _MATURITY_CONFIG = {"_default": _DEFAULT_PROFILE.copy()}
+        except json.JSONDecodeError as e:
+            print(f"[ERROR] maturity_config.json のJSON解析エラー: {e}")
+            _MATURITY_CONFIG = {"_default": _DEFAULT_PROFILE.copy()}
+
+
+def reload_config() -> None:
+    """設定を強制再読み込み（テスト・デバッグ用）"""
+    global _MATURITY_CONFIG
+    _MATURITY_CONFIG = {}
+    _ensure_loaded()
+
+
+# ============================================================
+# 公開API（既存コードとの後方互換を維持）
+# ============================================================
 
 def get_maturity_profile(ticker: str) -> Dict[str, Any]:
     """
@@ -120,9 +95,11 @@ def get_maturity_profile(ticker: str) -> Dict[str, Any]:
     Returns:
         成熟プロファイルのdict（未定義の場合は _default を返す）
     """
-    profile = MATURITY_PROFILES.get(ticker)
-    if profile is None:
-        return MATURITY_PROFILES["_default"].copy()
+    _ensure_loaded()
+    profile = _MATURITY_CONFIG.get(ticker)
+    if profile is None or ticker.startswith("_"):
+        default = _MATURITY_CONFIG.get("_default", _DEFAULT_PROFILE)
+        return default.copy()
     return profile.copy()
 
 
@@ -139,15 +116,16 @@ def get_terminal_growth(ticker: str) -> float:
 
 
 if __name__ == "__main__":
-    print("=== Maturity Profile 確認 ===\n")
-    for ticker in ["NVDA", "TSLA", "PLTR", "MSFT", "AMZN", "AMD", "APP", "CELH", "UNKNOWN"]:
+    print("=== Maturity Profile（JSON読み込み版）===\n")
+    tickers = ["NVDA", "TSLA", "PLTR", "MSFT", "AMZN", "AMD", "APP", "CELH", "UNKNOWN"]
+    for ticker in tickers:
         profile = get_maturity_profile(ticker)
         ptype = profile.get("type")
         if ptype == "three_stage":
             p1 = profile["phase1"]
             p2 = profile["phase2"]
             tg = profile["terminal_growth"]
-            g1 = f"{p1['growth']:.0%}" if p1["growth"] else "segment_weighted"
+            g1 = f"{p1['growth']:.0%}" if p1.get("growth") else "segment_weighted"
             print(f"{ticker:6}: three_stage  P1={p1['years']}yr@{g1}  P2={p2['years']}yr@{p2['growth']:.0%}  TV={tg:.1%}")
         else:
             print(f"{ticker:6}: two_stage (既存モデル)")
