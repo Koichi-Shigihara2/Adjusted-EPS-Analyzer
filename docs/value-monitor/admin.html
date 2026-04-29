@@ -285,7 +285,7 @@
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
         <div class="form-group" style="margin:0">
           <label>会計年度</label>
-          <input type="text" class="form-input" id="seg-fiscal-year" placeholder="例: FY2025" style="width:120px">
+          <input type="text" class="form-input" autocomplete="off" id="seg-fiscal-year" placeholder="例: FY2025" style="width:120px">
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-family:var(--mono);font-size:11px;color:var(--mut)">ウェイト合計:</span>
@@ -327,7 +327,7 @@
         </div>
         <div class="form-group">
           <label>Phase1 成長率（null=セグメント加重を流用）</label>
-          <input type="text" class="form-input" id="mat-p1-growth" placeholder="null（空欄でnull）">
+          <input type="text" class="form-input" autocomplete="off" id="mat-p1-growth" placeholder="null（空欄でnull）">
         </div>
         <div class="form-group" id="mat-p2-years-wrap">
           <label>Phase2 年数（移行期）</label>
@@ -602,6 +602,61 @@ async function commitFile(path, content, message, sha) {
     throw new Error(`コミット失敗: ${err.message}`);
   }
   return await res.json();
+}
+
+// 複数ファイルを1コミットにまとめる（GitHub Trees API使用）
+async function commitMultipleFiles(files, message) {
+  const baseUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+
+  // 1. 現在のブランチのHEAD SHAを取得
+  const refRes = await fetch(`${baseUrl}/git/ref/heads/${BRANCH}`, { headers: apiHeaders() });
+  if (!refRes.ok) throw new Error('ブランチ情報取得失敗');
+  const refData = await refRes.json();
+  const headSha = refData.object.sha;
+
+  // 2. HEAD commitのtree SHAを取得
+  const commitRes = await fetch(`${baseUrl}/git/commits/${headSha}`, { headers: apiHeaders() });
+  if (!commitRes.ok) throw new Error('コミット情報取得失敗');
+  const commitData = await commitRes.json();
+  const baseTreeSha = commitData.tree.sha;
+
+  // 3. 新しいtreeを作成（複数ファイルをまとめて）
+  const treeItems = files.map(f => ({
+    path: f.path,
+    mode: '100644',
+    type: 'blob',
+    content: f.content   // UTF-8テキストをそのまま渡す
+  }));
+  const treeRes = await fetch(`${baseUrl}/git/trees`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({ base_tree: baseTreeSha, tree: treeItems })
+  });
+  if (!treeRes.ok) throw new Error('tree作成失敗');
+  const treeData = await treeRes.json();
+
+  // 4. 新しいcommitを作成
+  const newCommitRes = await fetch(`${baseUrl}/git/commits`, {
+    method: 'POST',
+    headers: apiHeaders(),
+    body: JSON.stringify({
+      message,
+      tree: treeData.sha,
+      parents: [headSha]
+    })
+  });
+  if (!newCommitRes.ok) throw new Error('commit作成失敗');
+  const newCommitData = await newCommitRes.json();
+
+  // 5. ブランチのHEADを更新
+  const updateRes = await fetch(`${baseUrl}/git/refs/heads/${BRANCH}`, {
+    method: 'PATCH',
+    headers: apiHeaders(),
+    body: JSON.stringify({ sha: newCommitData.sha })
+  });
+  if (!updateRes.ok) throw new Error('ブランチ更新失敗');
+
+  return newCommitData;
 }
 
 async function dispatchWorkflow(workflowFile, inputs = {}) {
@@ -1060,11 +1115,11 @@ function createSegmentRow(name='', seg={}) {
   const div = document.createElement('div');
   div.className = 'seg-row';
   div.innerHTML = `
-    <input type="text" class="seg-input" placeholder="セグメント名" value="${name}" oninput="updateWeightTotal()">
+    <input type="text" class="seg-input" autocomplete="off" placeholder="セグメント名" value="${name}" oninput="updateWeightTotal()">
     <input type="number" class="seg-input" placeholder="0.50" value="${seg.weight ?? ''}" step="0.01" min="0" max="1" oninput="updateWeightTotal()">
     <input type="number" class="seg-input" placeholder="0.20" value="${seg.growth ?? ''}" step="0.01" min="-0.5" max="1">
     <div style="display:flex;gap:4px;align-items:center">
-      <input type="text" class="seg-input" placeholder="メモ" value="${seg.note || ''}" style="flex:1">
+      <input type="text" class="seg-input" autocomplete="off" placeholder="メモ" value="${seg.note || ''}" style="flex:1">
       <button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="this.closest('.seg-row').remove();updateWeightTotal()">✕</button>
     </div>
   `;
@@ -1104,7 +1159,7 @@ function createGoOptionRow(opt={}, idx=0) {
     </div>
     <div class="form-group" style="margin-top:8px">
       <label>オプション名</label>
-      <input type="text" class="form-input" data-field="name" value="${opt.name || ''}" placeholder="例: Sovereign AI">
+      <input type="text" class="form-input" autocomplete="off" data-field="name" value="${opt.name || ''}" placeholder="例: Sovereign AI">
     </div>
     <div class="go-option-grid">
       <div class="form-group">
@@ -1134,7 +1189,7 @@ function createGoOptionRow(opt={}, idx=0) {
     </div>
     <div class="form-group" style="margin-top:8px">
       <label>メモ・根拠</label>
-      <input type="text" class="form-input" data-field="note" value="${opt.note || ''}" placeholder="投資根拠...">
+      <input type="text" class="form-input" autocomplete="off" data-field="note" value="${opt.note || ''}" placeholder="投資根拠...">
     </div>
   `;
   return div;
@@ -1181,17 +1236,6 @@ async function saveAllSettings() {
       return;
     }
 
-    // segment_config.json 更新
-    if (!segConfig) segConfig = { _meta: {}, _schema: {} };
-    segConfig[ticker] = {
-      enabled: Object.keys(segments).length > 0,
-      fiscal_year: document.getElementById('seg-fiscal-year').value.trim(),
-      segments
-    };
-    segConfig._meta.updated_at = new Date().toISOString().split('T')[0];
-    const { sha: ss } = await fetchFile(SEG_PATH);
-    await commitFile(SEG_PATH, JSON.stringify(segConfig, null, 2), `chore: update segment_config for ${ticker}`, ss);
-
     // ── 成熟プロファイルを収集 ──
     const matType = document.getElementById('mat-type').value;
     const p1GrowthRaw = document.getElementById('mat-p1-growth').value.trim();
@@ -1209,11 +1253,6 @@ async function saveAllSettings() {
         growth: parseFloat(document.getElementById('mat-p2-growth').value)
       };
     }
-    if (!matConfig) matConfig = { _meta: {}, _schema: {}, _default: { type:'two_stage', terminal_growth:0.03 } };
-    matConfig[ticker] = matEntry;
-    matConfig._meta.updated_at = new Date().toISOString().split('T')[0];
-    const { sha: ms } = await fetchFile(MAT_PATH);
-    await commitFile(MAT_PATH, JSON.stringify(matConfig, null, 2), `chore: update maturity_config for ${ticker}`, ms);
 
     // ── 成長オプションを収集 ──
     const goRows = document.querySelectorAll('#goOptionRows .go-option');
@@ -1233,22 +1272,44 @@ async function saveAllSettings() {
         note:          f('note')?.trim() || ''
       });
     });
+
+    // ── 各JSONオブジェクトを更新 ──
+    const today = new Date().toISOString().split('T')[0];
+
+    if (!segConfig) segConfig = { _meta: {}, _schema: {} };
+    segConfig[ticker] = {
+      enabled: Object.keys(segments).length > 0,
+      fiscal_year: document.getElementById('seg-fiscal-year').value.trim(),
+      segments
+    };
+    segConfig._meta.updated_at = today;
+
+    if (!matConfig) matConfig = { _meta: {}, _schema: {}, _default: { type:'two_stage', terminal_growth:0.03 } };
+    matConfig[ticker] = matEntry;
+    matConfig._meta.updated_at = today;
+
     if (!goConfig) goConfig = { _meta: {}, _schema: {} };
     goConfig[ticker] = { options };
-    goConfig._meta.updated_at = new Date().toISOString().split('T')[0];
-    const { sha: gs } = await fetchFile(GO_PATH);
-    await commitFile(GO_PATH, JSON.stringify(goConfig, null, 2), `chore: update growth_options_config for ${ticker}`, gs);
+    goConfig._meta.updated_at = today;
+
+    // ── GitHub Trees API で3ファイルを1コミット ──
+    await commitMultipleFiles(
+      [
+        { path: SEG_PATH, content: JSON.stringify(segConfig, null, 2) },
+        { path: MAT_PATH, content: JSON.stringify(matConfig, null, 2) },
+        { path: GO_PATH,  content: JSON.stringify(goConfig,  null, 2) },
+      ],
+      `chore: update settings for ${ticker} (segment/maturity/growth_options)`
+    );
 
     showResult('settingsResult', 'success',
-      `✓ ${ticker} の設定を保存しました。\n` +
+      `✓ ${ticker} の設定を1コミットで保存しました。\n` +
       `  セグメント: ${Object.keys(segments).length}件\n` +
       `  成熟プロファイル: ${matType}\n` +
       `  成長オプション: ${options.length}件\n\n` +
       `次回のパイプライン実行から反映されます。`
     );
-    // ローカルキャッシュを更新
     await loadConfigFiles();
-    // アラートを再評価
     await loadTickerSettings();
 
   } catch(e) {
