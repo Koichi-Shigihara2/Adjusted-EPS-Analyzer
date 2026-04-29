@@ -180,8 +180,11 @@
           <th data-col="ticker"  data-type="str"  style="text-align:left">TICKER</th>
           <th data-col="price"   data-type="num">現在株価</th>
           <th data-col="ivps"    data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">BASE</span></th>
+          <th data-col="ivps_beta" data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">β込み</span></th>
           <th data-col="upside"  data-type="num">乖離率</th>
           <th data-col="rice"    data-type="num" class="col-rice grp-border">RICE<br><span style="font-weight:400;opacity:.7">base</span></th>
+          <th data-col="rice_per" data-type="num">RICE/PER</th>
+          <th data-col="ma200"   data-type="num">200MA<br><span style="font-weight:400;opacity:.6">乖離</span></th>
           <th data-col="growth"  data-type="num">成長率<br><span style="font-weight:400;opacity:.6">BASE</span></th>
           <th data-col="alpha"   data-type="num" class="grp-border no-transform">α</th>
           <th data-col="wacc"    data-type="num">WACC</th>
@@ -191,7 +194,7 @@
         </tr>
       </thead>
       <tbody id="table-body">
-        <tr><td colspan="11" id="status-msg">読み込み中...</td></tr>
+        <tr><td colspan="14" id="status-msg">読み込み中...</td></tr>
       </tbody>
     </table>
   </div>
@@ -244,14 +247,27 @@
 
         <div class="legend-item">
           <div class="legend-term">理論株価 BASE</div>
-          <div class="legend-desc">BASEシナリオ（セグメント加重成長率 × 1.0）で計算した1株あたり本質的価値。現在株価との差が「乖離率」として表示される。</div>
+          <div class="legend-desc">BASEシナリオ（セグメント加重成長率 × 1.0）で計算した1株あたり本質的価値。WACC=Rm固定（10%）のβなし版。現在株価との差が「乖離率」として表示される。</div>
           <div class="legend-formula">P_t = (V₀ + RPO_PV + GO_PV) × (1 + α) ÷ 株式数 + BS補正</div>
         </div>
 
         <div class="legend-item">
+          <div class="legend-term">理論株価 β込み</div>
+          <div class="legend-desc">銘柄ごとのβを反映したWACCで計算した理論株価。β込みWACCはリスク感応度が高い銘柄ほど低く算出される。BASEとの差がβリスクプレミアムの影響を示す。</div>
+          <div class="legend-formula">WACC_β = Rf(4.3%) + β × (Rm-Rf)(5.7%)</div>
+        </div>
+
+        <div class="legend-item">
           <div class="legend-term">乖離率</div>
-          <div class="legend-desc">（理論株価 − 現在株価）÷ 現在株価。プラスなら割安、マイナスなら割高を示す。Koichi式では「Extreme Fear + 乖離率がプラスかつ拡大傾向」が強い買いシグナル。</div>
+          <div class="legend-desc">（理論株価BASE − 現在株価）÷ 現在株価。プラスなら割安、マイナスなら割高を示す。Koichi式では「Extreme Fear + 乖離率がプラスかつ拡大傾向」が強い買いシグナル。</div>
           <div class="legend-formula">乖離率 = (理論株価 − 現在株価) / 現在株価</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">200MA乖離</div>
+          <div class="legend-desc">（現在株価 − 200日移動平均）÷ 200日移動平均。プラスなら200日MAより上（強気トレンド）、マイナスなら下（弱気トレンド）。長期的な水準感の参考値。</div>
+          <div class="legend-formula">200MA乖離 = (現在株価 − 200日MA) / 200日MA</div>
+          <div class="legend-note">yfinanceから取得。パイプライン実行時点の値。</div>
         </div>
 
         <div class="legend-item">
@@ -282,7 +298,14 @@
           <div class="legend-term">RICE <span class="tag tag-grn">投資効率指標</span></div>
           <div class="legend-desc">Reinvestment & Compounding Efficiency。投資が成長として再生産される質と効率を測定する純粋な投資効率指標。銘柄間の相対比較に使用。高いほど「少ない投資で高い成長を再生産している」。</div>
           <div class="legend-formula">RICE = (G × Q × CF) / WACC</div>
-          <div class="legend-note">G=BASEシナリオ成長率 / Q=OCF転換効率 / CF=投資再生産効率<br>PERとの比率（RICE/PER）で割高・割安の相対評価が可能（将来実装）</div>
+          <div class="legend-note">G=BASEシナリオ成長率 / Q=OCF転換効率 / CF=投資再生産効率</div>
+        </div>
+
+        <div class="legend-item">
+          <div class="legend-term">RICE/PER <span class="tag tag-grn">割安・割高スクリーニング</span></div>
+          <div class="legend-desc">投資効率（RICE）を現在の株価収益率（PER）で割った指標。値が高いほど「投資効率の割にPERが低い＝割安」を示す。赤字企業や極端なPERの銘柄は「—」で表示。</div>
+          <div class="legend-formula">RICE/PER = RICE ÷ PER（trailingPE）</div>
+          <div class="legend-note">PERはyfinanceのtrailingPEを使用。パイプライン実行時点の値。</div>
         </div>
 
         <div class="legend-item">
@@ -378,28 +401,32 @@ let tableRows = []; // {ticker, data, cells} の配列
 function buildRows(results) {
   tableRows = results.map(r => {
     const d = r.data;
-    const price   = d.components?.current_price || 0;
-    const ivps    = d.scenario_valuations?.base?.intrinsic_value_per_share || d.intrinsic_value_per_share || 0;
-    const upside  = price > 0 && ivps > 0 ? (ivps - price) / price : null;
-    const growth  = d.scenario_valuations?.base?.growth_rate ?? d.growth_scenarios?.primary?.rate ?? null;
-    const alpha   = d.alpha ?? null;
-    const wacc    = d.wacc?.value ?? null;
-    const rice    = d.rice?.base?.rice ?? null;
-    const q       = d.rice?.q ?? null;
-    const cf      = d.rice?.cf_conversion ?? null;
-    const date    = d.calculation_date || '—';
-    const fcfM    = d.fcf_base?.method || d.components?.fcf_base_method || '';
-    const hasGO   = (d.growth_options?.count || 0) > 0;
-    const hasSeg  = d.growth_scenarios?.primary?.source === 'segment_weighted';
+    const price    = d.components?.current_price || 0;
+    const ivps     = d.scenario_valuations?.base?.intrinsic_value_per_share || d.intrinsic_value_per_share || 0;
+    const ivps_beta= d.intrinsic_value_beta || 0;
+    const upside   = price > 0 && ivps > 0 ? (ivps - price) / price : null;
+    const growth   = d.scenario_valuations?.base?.growth_rate ?? d.growth_scenarios?.primary?.rate ?? null;
+    const alpha    = d.alpha ?? null;
+    const wacc     = d.wacc?.value ?? null;
+    const rice     = d.rice?.base?.rice ?? null;
+    const rice_per = d.rice?.base?.rice_per_ratio ?? null;
+    const ma200_raw= d.components?.ma200 ?? null;
+    const ma200_dev= (ma200_raw && price > 0) ? (price - ma200_raw) / ma200_raw : null;
+    const q        = d.rice?.q ?? null;
+    const cf       = d.rice?.cf_conversion ?? null;
+    const date     = d.calculation_date || '—';
+    const fcfM     = d.fcf_base?.method || d.components?.fcf_base_method || '';
+    const hasGO    = (d.growth_options?.count || 0) > 0;
+    const hasSeg   = d.growth_scenarios?.primary?.source === 'segment_weighted';
 
     return {
       ticker: r.ticker,
-      // ソート用数値
-      _price: price, _ivps: ivps, _upside: upside,
-      _rice: rice, _growth: growth, _alpha: alpha,
+      _price: price, _ivps: ivps, _ivps_beta: ivps_beta,
+      _upside: upside, _rice: rice, _rice_per: rice_per,
+      _ma200: ma200_dev, _growth: growth, _alpha: alpha,
       _wacc: wacc, _q: q, _cf: cf, _date: date,
-      // 表示用
-      price, ivps, upside, growth, alpha, wacc, rice, q, cf, date,
+      price, ivps, ivps_beta, upside, growth, alpha, wacc,
+      rice, rice_per, ma200_dev, ma200_raw, q, cf, date,
       fcfM, hasGO, hasSeg,
     };
   });
@@ -408,8 +435,10 @@ function buildRows(results) {
 function sortRows() {
   const colMap = {
     ticker: '_ticker_str', price: '_price', ivps: '_ivps',
-    upside: '_upside', rice: '_rice', growth: '_growth',
-    alpha: '_alpha', wacc: '_wacc', q: '_q', cf: '_cf', date: '_date',
+    ivps_beta: '_ivps_beta', upside: '_upside',
+    rice: '_rice', rice_per: '_rice_per', ma200: '_ma200',
+    growth: '_growth', alpha: '_alpha', wacc: '_wacc',
+    q: '_q', cf: '_cf', date: '_date',
   };
   tableRows.sort((a, b) => {
     let av = a[colMap[sortCol]] ?? (sortCol === 'ticker' ? a.ticker : null);
@@ -427,7 +456,7 @@ function renderTable() {
   tbody.innerHTML = '';
 
   if (tableRows.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="11" id="status-msg">データがありません</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="14" id="status-msg">データがありません</td></tr>';
     return;
   }
 
@@ -439,6 +468,13 @@ function renderTable() {
     const upsideClass = r.upside == null ? '' : r.upside >= 0 ? 'positive' : 'negative';
     const upsideTxt   = r.upside != null ? fmtPct(r.upside) : '—';
 
+    // 200MA乖離の色分け（プラス=株価が200MA上 / マイナス=200MA下）
+    const ma200Class = r.ma200_dev == null ? '' : r.ma200_dev >= 0 ? 'positive' : 'negative';
+    const ma200Txt   = r.ma200_dev != null ? fmtPct(r.ma200_dev) : '—';
+
+    // RICE/PER（正の値のみ表示）
+    const ricePERTxt = (r.rice_per != null && r.rice_per > 0) ? r.rice_per.toFixed(2) : '—';
+
     const badges = [
       r.fcfM === 'recent_2yr' ? '<span class="badge fcf2">2yr</span>' : '',
       r.hasSeg ? '<span class="badge seg">SEG</span>' : '',
@@ -449,8 +485,11 @@ function renderTable() {
       <td>${r.ticker}${badges}</td>
       <td>${fmtDlr(r.price)}</td>
       <td>${fmtDlr(r.ivps)}</td>
+      <td>${r.ivps_beta > 0 ? fmtDlr(r.ivps_beta) : '—'}</td>
       <td class="${upsideClass}">${upsideTxt}</td>
       <td class="col-rice grp-border">${r.rice != null ? r.rice.toFixed(1) : '—'}</td>
+      <td>${ricePERTxt}</td>
+      <td class="${ma200Class}">${ma200Txt}</td>
       <td>${r.growth != null ? fmtPct2(r.growth) : '—'}</td>
       <td class="grp-border">${r.alpha != null ? r.alpha.toFixed(3) : '—'}</td>
       <td>${r.wacc != null ? fmtPct2(r.wacc) : '—'}</td>
