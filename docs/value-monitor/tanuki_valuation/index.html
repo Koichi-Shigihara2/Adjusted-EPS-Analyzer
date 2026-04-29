@@ -402,7 +402,7 @@ function buildRows(results) {
   tableRows = results.map(r => {
     const d = r.data;
     const price    = d.components?.current_price || 0;
-    const ivps     = d.scenario_valuations?.base?.intrinsic_value_per_share || d.intrinsic_value_per_share || 0;
+    const ivps     = d.intrinsic_value_per_share || d.scenario_valuations?.base?.intrinsic_value_per_share || 0;
     const ivps_beta= d.intrinsic_value_beta || 0;
     const upside   = price > 0 && ivps > 0 ? (ivps - price) / price : null;
     const growth   = d.scenario_valuations?.base?.growth_rate ?? d.growth_scenarios?.primary?.rate ?? null;
