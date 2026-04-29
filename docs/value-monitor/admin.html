@@ -361,12 +361,40 @@
     <div class="action-bar">
       <button class="btn primary" id="saveBetaBtn" onclick="saveBeta()" disabled>💾 保存してコミット</button>
       <button class="btn" id="resetBetaBtn" onclick="loadBetaTab()" disabled>↺ リセット</button>
+      <button class="btn" id="refreshBetaBtn" onclick="loadBetaTab()" disabled>🔄 再読込</button>
     </div>
     <p style="font-size:12px;color:var(--mut);margin-bottom:20px;line-height:1.7">
       Damodaran 2025の業種別Unlevered β参照値をベースに設定します。<br>
       未設定の銘柄はyfinance βにフォールバックします。
       WACC = Rf(4.3%) + β × (Rm-Rf)(5.7%)
     </p>
+    <!-- 新規銘柄追加フォーム -->
+    <div class="add-form" style="margin-bottom:20px">
+      <h3 style="font-family:var(--mono);font-size:11px;color:var(--acc);margin-bottom:12px">＋ β設定に銘柄を追加</h3>
+      <div class="form-grid" style="grid-template-columns:120px 200px 100px 1fr">
+        <div class="form-group">
+          <label>ティッカー</label>
+          <input type="text" class="form-input" id="newBetaTicker" placeholder="例: GOOGL"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label>業種</label>
+          <select class="form-input" id="newBetaSector">
+            <option value="">— 未設定 —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>設定β</label>
+          <input type="number" class="form-input" id="newBetaValue" value="1.0" step="0.01" min="0.3" max="3.0">
+        </div>
+        <div class="form-group">
+          <label>理由・メモ</label>
+          <input type="text" class="form-input" id="newBetaReason" placeholder="設定理由..."
+                 autocomplete="off">
+        </div>
+      </div>
+      <button class="btn primary" onclick="addBetaRow()" style="font-size:11px">＋ 追加</button>
+    </div>
     <h3 class="section-title">銘柄別β設定</h3>
     <div class="table-wrap">
       <table id="betaTable">
@@ -375,7 +403,7 @@
             <th>ティッカー</th>
             <th>業種</th>
             <th>Damodaran参照β</th>
-            <th>設定β</th>
+            <th class="no-transform">設定β</th>
             <th>推定WACC</th>
             <th>理由・メモ</th>
             <th>操作</th>
@@ -706,7 +734,7 @@ async function connect() {
     document.getElementById('statusText').textContent = '接続済み';
     document.getElementById('statusText').style.color = 'var(--grn)';
     ['refreshBtn','fetchSecBtn','updateSelectedBtn','lookupCikBtn','addTickerBtn',
-     'deleteSelectedBtn','saveBetaBtn','resetBetaBtn','refreshStatusBtn',
+     'deleteSelectedBtn','saveBetaBtn','resetBetaBtn','refreshBetaBtn','refreshStatusBtn',
      'saveSettingsBtn','resetSettingsBtn'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = false;
@@ -917,6 +945,13 @@ async function loadBetaTab() {
     const { content, sha } = await fetchFile(BETA_PATH);
     betaConfig = JSON.parse(content); betaSha = sha;
     renderBetaTable(); renderDamodaranRef();
+    // 新規追加フォームの業種セレクトを更新
+    const damoRef = betaConfig._damodaran_ref_2025 || {};
+    const sel = document.getElementById('newBetaSector');
+    if (sel) {
+      sel.innerHTML = '<option value="">— 未設定 —</option>' +
+        Object.keys(damoRef).map(s => `<option value="${s}">${s}</option>`).join('');
+    }
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
   }
@@ -969,13 +1004,54 @@ function removeBetaRow(ticker) {
   delete betaConfig.overrides[ticker]; renderBetaTable();
 }
 function addBetaRow() {
-  const ticker = prompt('ティッカーを入力してください（例: GOOGL）');
-  if (!ticker) return;
-  const t = ticker.trim().toUpperCase();
-  if (betaConfig.overrides[t]) { alert('既に設定済みです'); return; }
-  betaConfig.overrides[t] = { beta: 1.0, sector: '', reason: '' };
-  renderBetaTable();
-  setTimeout(() => document.getElementById(`beta-${t}`)?.focus(), 100);
+  const ticker = document.getElementById('newBetaTicker')?.value.trim().toUpperCase();
+  const sector = document.getElementById('newBetaSector')?.value || '';
+  const beta   = parseFloat(document.getElementById('newBetaValue')?.value) || 1.0;
+  const reason = document.getElementById('newBetaReason')?.value.trim() || '';
+
+  if (!ticker) { alert('ティッカーを入力してください'); return; }
+  if (betaConfig.overrides[ticker]) { alert(`${ticker} は既に設定済みです`); return; }
+
+  // メモリ上のbetaConfigに追加
+  betaConfig.overrides[ticker] = { beta, sector, reason };
+
+  // テーブルに行を追加（全体再描画せず追加のみ）
+  const tbody = document.getElementById('betaTableBody');
+  const damoRef = betaConfig._damodaran_ref_2025 || {};
+  const sectorOptions = Object.keys(damoRef).map(s =>
+    `<option value="${s}" ${s === sector ? 'selected' : ''}>${s}</option>`
+  ).join('');
+  const refBeta = damoRef[sector] || null;
+
+  const tr = document.createElement('tr');
+  tr.dataset.ticker = ticker;
+  tr.innerHTML = `
+    <td><strong class="mono">${ticker}</strong></td>
+    <td>
+      <select class="beta-input" id="sector-${ticker}" style="width:160px;font-size:11px" onchange="updateDamoRef('${ticker}')">
+        <option value="">— 未設定 —</option>${sectorOptions}
+      </select>
+    </td>
+    <td class="damodaran-ref" id="damo-${ticker}">${refBeta !== null ? refBeta.toFixed(2) : '—'}</td>
+    <td><input type="number" class="beta-input" id="beta-${ticker}" value="${beta}" step="0.01" min="0.3" max="3.0" oninput="updateWaccPreview('${ticker}')"></td>
+    <td class="wacc-preview" id="wacc-${ticker}">${calcWacc(beta)}</td>
+    <td><input type="text" class="reason-input" id="reason-${ticker}" value="${reason}" placeholder="設定理由..."></td>
+    <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeBetaRow('${ticker}')">削除</button></td>
+  `;
+  // ＋ 銘柄を追加ボタンの前に挿入（最終行の前）
+  const lastRow = tbody.querySelector('tr:last-child');
+  if (lastRow) {
+    tbody.insertBefore(tr, lastRow);
+  } else {
+    tbody.appendChild(tr);
+  }
+
+  // フォームをクリア
+  document.getElementById('newBetaTicker').value = '';
+  document.getElementById('newBetaSector').value = '';
+  document.getElementById('newBetaValue').value = '1.0';
+  document.getElementById('newBetaReason').value = '';
+  document.getElementById('newBetaTicker').focus();
 }
 async function saveBeta() {
   const rows = document.querySelectorAll('#betaTableBody tr[data-ticker]');
@@ -994,9 +1070,9 @@ async function saveBeta() {
   try {
     const { sha } = await fetchFile(BETA_PATH);
     await commitFile(BETA_PATH, JSON.stringify(betaConfig, null, 2), 'chore: update beta_config.json', sha);
-    showResult('betaResult', 'success', '✓ beta_config.json を保存しました。次回のパイプライン実行から反映されます。');
-    await new Promise(r => setTimeout(r, 2000));
-    await loadBetaTab();
+    showResult('betaResult', 'success',
+      '✓ beta_config.json を保存しました。次回のパイプライン実行から反映されます。\n' +
+      '「🔄 再読込」ボタンで最新の内容を確認できます。');
   } catch(e) { showResult('betaResult', 'error', '保存失敗: ' + e.message); }
   finally { btn.disabled = false; btn.innerHTML = '💾 保存してコミット'; }
 }
