@@ -984,9 +984,6 @@ function renderBetaTable() {
     `;
     tbody.appendChild(tr);
   }
-  const addRow = document.createElement('tr');
-  addRow.innerHTML = `<td colspan="7" style="text-align:center;padding:10px"><button class="btn" onclick="addBetaRow()" style="font-size:11px">＋ 銘柄を追加</button></td>`;
-  tbody.appendChild(addRow);
 }
 
 function updateWaccPreview(ticker) {
@@ -1038,13 +1035,8 @@ function addBetaRow() {
     <td><input type="text" class="reason-input" id="reason-${ticker}" value="${reason}" placeholder="設定理由..."></td>
     <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeBetaRow('${ticker}')">削除</button></td>
   `;
-  // ＋ 銘柄を追加ボタンの前に挿入（最終行の前）
-  const lastRow = tbody.querySelector('tr:last-child');
-  if (lastRow) {
-    tbody.insertBefore(tr, lastRow);
-  } else {
-    tbody.appendChild(tr);
-  }
+  // テーブルに行を追加
+  tbody.appendChild(tr);
 
   // フォームをクリア
   document.getElementById('newBetaTicker').value = '';
