@@ -484,7 +484,7 @@ class KoichiValuationCalculator:
                 _sec_reader = SECReader(data_dir=os.path.join(self.sec_data_dir))
                 _annual_data = _sec_reader.get_annual_range(ticker, years=4)
                 if _annual_data:
-                    _current_per = financials.get("current_per", 0.0)
+                    _current_per = financials.get("per") or financials.get("current_per") or 0.0
                     _sc_val = scenario_result.to_dict() if scenario_result else None
                     rice_result = calculate_rice(
                         annual_data=_annual_data,
@@ -593,6 +593,8 @@ class KoichiValuationCalculator:
                 "rpo_pv": rpo_pv,
                 "growth_option_pv": growth_option_pv,
                 "alpha_uncapped": alpha_result.alpha_uncapped,
+                "per": financials.get("per"),
+                "ma200": financials.get("ma200"),
             }
         }
 

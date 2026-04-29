@@ -178,6 +178,8 @@ class TanukiDataFetcher:
         current_price = 0.0
         beta = None
         sector = "default"
+        per = None
+        ma200 = None
         
         if HAS_YFINANCE:
             try:
@@ -211,9 +213,21 @@ class TanukiDataFetcher:
                 sector = info.get("sector", "default")
                 if sector and sector != "default":
                     print(f"   [{ticker}] yfinance sector: {sector}")
+
+                # PER（株価収益率）
+                per = info.get("trailingPE") or info.get("forwardPE") or None
+                if per is not None and per > 0:
+                    print(f"   [{ticker}] yfinance PER: {per:.1f}")
+
+                # 200日移動平均
+                ma200 = info.get("twoHundredDayAverage") or None
+                if ma200 is not None and ma200 > 0:
+                    print(f"   [{ticker}] yfinance 200MA: ${ma200:.2f}")
                     
             except Exception as e:
                 print(f"   [{ticker}] yfinance取得エラー: {e}")
+                per = None
+                ma200 = None
         
         # ========================================
         # 3. β決定（beta_config.json > yfinance > セクターデフォルト）
@@ -252,7 +266,7 @@ class TanukiDataFetcher:
             "fcf_5yr_avg": fcf_avg,
             "fcf_2yr_avg": fcf_2yr_avg,
             "fcf_list_raw": fcf_list,
-            "net_cash_data": net_cash_data,  # BS評価補正用（v7.0追加）
+            "net_cash_data": net_cash_data,
             "diluted_shares": final_shares,
             "roe_10yr_avg": roe_avg,
             "current_price": current_price,
@@ -261,6 +275,8 @@ class TanukiDataFetcher:
             "beta": final_beta,
             "beta_yf_raw": float(beta) if (beta is not None and beta > 0) else None,
             "sector": sector,
+            "per": per,
+            "ma200": ma200,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,
             "_beta_source": beta_source

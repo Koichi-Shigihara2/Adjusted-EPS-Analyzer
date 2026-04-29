@@ -1,20 +1,20 @@
 {
-  "intrinsic_value_pt": 4911541159.159168,
-  "intrinsic_value_per_share": 74.08303072143542,
-  "intrinsic_value_beta": 90.2,
-  "upside_percent_beta": 43.9,
-  "intrinsic_value_rf": 437.44,
-  "upside_percent_rf": 597.9,
-  "v0": 2455770579.579584,
-  "v0_adjusted": 2455770579.579584,
+  "intrinsic_value_pt": 4724008430.592509,
+  "intrinsic_value_per_share": 70.93708338222608,
+  "intrinsic_value_beta": 86.44,
+  "upside_percent_beta": 37.9,
+  "intrinsic_value_rf": 420.42,
+  "upside_percent_rf": 570.7,
+  "v0": 2362004215.2962546,
+  "v0_adjusted": 2362004215.2962546,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 94.44,
-    "2年後": 98.88,
-    "3年後": 103.53
+    "1年後": 90.5,
+    "2年後": 94.76,
+    "3年後": 99.21
   },
-  "upside_percent": 18.2,
+  "upside_percent": 13.2,
   "calculation_date": "2026-04-29",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        106.19,
-        109.59,
-        112.78
+        101.82,
+        105.09,
+        108.16
       ],
       [
-        86.77,
-        89.53,
-        92.07
+        83.14,
+        85.79,
+        88.24
       ],
       [
-        72.98,
-        75.28,
-        77.37
+        69.88,
+        72.09,
+        74.1
       ]
     ],
     "wacc_values": [
@@ -64,22 +64,22 @@
     "segment": {
       "enabled": true,
       "weighted_growth": 0.047,
-      "fiscal_year": "",
+      "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.033,
-      "intrinsic_value_per_share": 85.39
+      "intrinsic_value_per_share": 81.81
     },
     "base": {
       "growth_rate": 0.047,
-      "intrinsic_value_per_share": 90.2
+      "intrinsic_value_per_share": 86.44
     },
     "bull": {
       "growth_rate": 0.056,
-      "intrinsic_value_per_share": 93.51
+      "intrinsic_value_per_share": 89.62
     }
   },
   "growth_options": {
@@ -101,43 +101,43 @@
     }
   },
   "dcf_components": {
-    "v0": 2455770579.579584,
-    "pv_phase1": 477701230.0548878,
-    "pv_phase2": 392748787.9865531,
-    "pv_high_growth": 870450018.0414408,
-    "pv_terminal": 1585320561.5381434,
+    "v0": 2362004215.2962546,
+    "pv_phase1": 459461616.00934875,
+    "pv_phase2": 377752832.6508198,
+    "pv_high_growth": 837214448.6601685,
+    "pv_terminal": 1524789766.6360862,
     "phase1_detail": [
       {
         "year": 1,
         "phase": "phase1",
         "growth_rate": 0.047,
-        "fcf": 137700393.0,
+        "fcf": 132442709.19217215,
         "discount_factor": 1.0886,
-        "pv": 126493103.986772
+        "pv": 121663337.49051273
       },
       {
         "year": 2,
         "phase": "phase1",
         "growth_rate": 0.047,
-        "fcf": 144172311.471,
+        "fcf": 138667516.52420422,
         "discount_factor": 1.18504996,
-        "pv": 121659268.66998923
+        "pv": 117014067.9336458
       },
       {
         "year": 3,
         "phase": "phase1",
         "growth_rate": 0.047,
-        "fcf": 150948410.110137,
+        "fcf": 145184889.8008418,
         "discount_factor": 1.290045386456,
-        "pv": 117010154.59992534
+        "pv": 112542466.58692552
       },
       {
         "year": 4,
         "phase": "phase1",
         "growth_rate": 0.047,
-        "fcf": 158042985.38531342,
+        "fcf": 152008579.62148136,
         "discount_factor": 1.4043434076960017,
-        "pv": 112538702.79820119
+        "pv": 108241743.99826474
       }
     ],
     "phase2_detail": [
@@ -145,39 +145,39 @@
         "year": 5,
         "phase": "phase2",
         "growth_rate": 0.03,
-        "fcf": 162784274.94687283,
+        "fcf": 156568837.01012582,
         "discount_factor": 1.5287682336178674,
-        "pv": 106480675.98947936
+        "pv": 102415025.09481233
       },
       {
         "year": 6,
         "phase": "phase2",
         "growth_rate": 0.03,
-        "fcf": 167667803.19527903,
+        "fcf": 161265902.1204296,
         "discount_factor": 1.6642170991164105,
-        "pv": 100748756.44788146
+        "pv": 96901962.0132801
       },
       {
         "year": 7,
         "phase": "phase2",
         "growth_rate": 0.03,
-        "fcf": 172697837.2911374,
+        "fcf": 166103879.18404248,
         "discount_factor": 1.8116667340981245,
-        "pv": 95325389.62090565
+        "pv": 91685670.47003353
       },
       {
         "year": 8,
         "phase": "phase2",
         "growth_rate": 0.03,
-        "fcf": 177878772.40987152,
+        "fcf": 171086995.55956376,
         "discount_factor": 1.9721804067392184,
-        "pv": 90193965.92828663
+        "pv": 86750175.07269385
       }
     ],
-    "terminal_fcf": 183215135.58216766,
-    "terminal_value": 3126538149.8663416,
+    "terminal_fcf": 176219605.42635068,
+    "terminal_value": 3007160502.156154,
     "dcf_type": "three_stage",
-    "v0_rm": 2054028822.1894374
+    "v0_rm": 1975601783.2830408
   },
   "fcf_base": {
     "base_fcf": 131519000.0,
@@ -205,15 +205,15 @@
     "note": "FY2025 FCF($155M)が5年平均($82M)から89%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
-    "applied": false,
-    "method": "raw_fcf",
-    "adj_net_income": 0,
+    "applied": true,
+    "method": "adj_eps_estimated",
+    "adj_net_income": 180710477.81712672,
     "conversion_rate": 0.7,
-    "estimated_fcf": 131519000.0,
+    "estimated_fcf": 126497334.4719887,
     "raw_fcf": 131519000.0,
     "sector": "",
-    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\CAKE\\annual.json)",
-    "divergence_ratio": 0.0,
+    "note": "調整済み純利益$0.18B × 転換率70%[sector()] = 推定FCF$0.13B（従来$0.13Bの1.0倍）",
+    "divergence_ratio": 0.96,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -240,23 +240,23 @@
     "bear": {
       "growth_rate": 0.033,
       "rice": 0.804,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0393
     },
     "base": {
       "growth_rate": 0.047,
       "rice": 1.145,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0559
     },
     "bull": {
       "growth_rate": 0.056,
       "rice": 1.365,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0666
     }
   },
   "components": {
     "fcf_5yr_avg": 82228400.0,
     "fcf_2yr_avg": 131519000.0,
-    "fcf_base_used": 131519000.0,
+    "fcf_base_used": 126497334.4719887,
     "fcf_base_method": "recent_2yr",
     "fcf_list_raw": [
       155077000,
@@ -280,8 +280,8 @@
     "high_growth_rate_used": 0.047,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 870450018.0414408,
-    "pv_terminal": 1585320561.5381434,
+    "pv_high": 837214448.6601685,
+    "pv_terminal": 1524789766.6360862,
     "roe_used": 0.26513162682791036,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -290,7 +290,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.1135528326772233
+    "alpha_uncapped": 1.1135528326772233,
+    "per": 20.48366,
+    "ma200": 56.9483
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -298,11 +300,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $2.05B + RPO $0.00B + GO $0.00B) × (1+1.000) / 0.050B + BS $-8.31/株 = $74.08 (差異0.00%)"
+        "detail": "(V₀ $1.98B + RPO $0.00B + GO $0.00B) × (1+1.000) / 0.050B + BS $-8.31/株 = $70.94 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "3段階: P1 $0.48B + P2 $0.39B + TV $1.59B = $2.46B (差異0.00%)"
+        "detail": "3段階: P1 $0.46B + P2 $0.38B + TV $1.52B = $2.36B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -314,7 +316,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Per share value mismatch found.",
-    "ai_concerns": "Inconsistency in intrinsic value per share (98.42 vs. 74.08) suggests potential calculation error."
+    "ai_comment": "Inconsistency in per share calculation.",
+    "ai_concerns": "Inconsistency in intrinsic value per share; other values like ROE (26.51%) and growth rates appear reasonable."
   }
 }
