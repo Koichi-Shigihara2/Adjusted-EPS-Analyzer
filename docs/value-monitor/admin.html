@@ -1191,11 +1191,11 @@ function createSegmentRow(name='', seg={}) {
   const div = document.createElement('div');
   div.className = 'seg-row';
   div.innerHTML = `
-    <input type="text" class="seg-input" autocomplete="off" placeholder="セグメント名" value="${name}" oninput="updateWeightTotal()">
-    <input type="number" class="seg-input" placeholder="0.50" value="${seg.weight ?? ''}" step="0.01" min="0" max="1" oninput="updateWeightTotal()">
-    <input type="number" class="seg-input" placeholder="0.20" value="${seg.growth ?? ''}" step="0.01" min="-0.5" max="1">
+    <input type="text" class="seg-input" data-field="name" autocomplete="off" placeholder="セグメント名" value="${name}" oninput="updateWeightTotal()">
+    <input type="number" class="seg-input" data-field="weight" placeholder="0.50" value="${seg.weight ?? ''}" step="0.01" min="0" max="1" oninput="updateWeightTotal()">
+    <input type="number" class="seg-input" data-field="growth" placeholder="0.20" value="${seg.growth ?? ''}" step="0.01" min="-0.5" max="1">
     <div style="display:flex;gap:4px;align-items:center">
-      <input type="text" class="seg-input" autocomplete="off" placeholder="メモ" value="${seg.note || ''}" style="flex:1">
+      <input type="text" class="seg-input" data-field="note" autocomplete="off" placeholder="メモ" value="${seg.note || ''}" style="flex:1">
       <button class="btn danger" style="padding:4px 8px;font-size:10px" onclick="this.closest('.seg-row').remove();updateWeightTotal()">✕</button>
     </div>
   `;
@@ -1211,7 +1211,7 @@ function updateWeightTotal() {
   const rows = document.querySelectorAll('#segmentRows .seg-row');
   let total = 0;
   rows.forEach(row => {
-    const w = parseFloat(row.querySelectorAll('input')[1].value) || 0;
+    const w = parseFloat(row.querySelector('[data-field="weight"]')?.value) || 0;
     total += w;
   });
   const el = document.getElementById('weightTotal');
@@ -1295,11 +1295,11 @@ async function saveAllSettings() {
     const rows = document.querySelectorAll('#segmentRows .seg-row');
     const segments = {};
     rows.forEach(row => {
-      const inputs = row.querySelectorAll('input');
-      const name   = inputs[0].value.trim();
-      const weight = parseFloat(inputs[1].value);
-      const growth = parseFloat(inputs[2].value);
-      const note   = inputs[3].value.trim();
+      const f = (field) => row.querySelector(`[data-field="${field}"]`)?.value;
+      const name   = f('name')?.trim();
+      const weight = parseFloat(f('weight'));
+      const growth = parseFloat(f('growth'));
+      const note   = f('note')?.trim() || '';
       if (name && !isNaN(weight)) {
         segments[name] = { weight, growth: isNaN(growth) ? null : growth, note };
       }
