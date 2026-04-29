@@ -268,17 +268,17 @@
     "bear": {
       "growth_rate": 0.101,
       "rice": 0.459,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0171
     },
     "base": {
       "growth_rate": 0.145,
       "rice": 0.659,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0245
     },
     "bull": {
       "growth_rate": 0.174,
       "rice": 0.791,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0294
     }
   },
   "components": {
@@ -318,7 +318,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 304077654860.9719,
     "growth_option_pv": 1288731815.566697,
-    "alpha_uncapped": 1.3978546158277088
+    "alpha_uncapped": 1.3978546158277088,
+    "per": 26.878521,
+    "ma200": 469.3415
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -342,7 +344,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple inconsistencies found",
-    "ai_concerns": "Anomalies include P_t significantly higher than V0 and inconsistencies in per-share value calculation."
+    "ai_comment": "Inconsistencies in calculations found",
+    "ai_concerns": "Discrepancy in P_t and per-share value; growth option PV ($1.29M) is unusually small compared to other components."
   }
 }

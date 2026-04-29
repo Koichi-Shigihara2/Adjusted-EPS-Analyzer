@@ -197,17 +197,17 @@
     "bear": {
       "growth_rate": 0.156,
       "rice": 0.388,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0082
     },
     "base": {
       "growth_rate": 0.223,
       "rice": 0.555,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0118
     },
     "bull": {
       "growth_rate": 0.268,
       "rice": 0.666,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0142
     }
   },
   "components": {
@@ -247,7 +247,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 6920807.424635721,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.25684699553312584
+    "alpha_uncapped": 0.25684699553312584,
+    "per": 47.076927,
+    "ma200": 23.8417
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -271,7 +273,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value detected",
-    "ai_concerns": "Inconsistency in per share value (16.35 vs 23.12) suggests potential calculation error"
+    "ai_comment": "Inconsistency in per share calculation detected.",
+    "ai_concerns": "Inconsistency in per share value (calculated 16.35 vs reported 23.12) suggests potential error in final valuation step."
   }
 }

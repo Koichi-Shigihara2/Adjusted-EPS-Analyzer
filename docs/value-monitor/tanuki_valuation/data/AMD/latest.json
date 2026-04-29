@@ -259,17 +259,17 @@
     "bear": {
       "growth_rate": 0.172,
       "rice": 1.367,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0111
     },
     "base": {
       "growth_rate": 0.246,
       "rice": 1.955,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0159
     },
     "bull": {
       "growth_rate": 0.295,
       "rice": 2.345,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.019
     }
   },
   "components": {
@@ -309,7 +309,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 255425230.08321643,
     "growth_option_pv": 433960713.40511227,
-    "alpha_uncapped": 0.6730521159489544
+    "alpha_uncapped": 0.6730521159489544,
+    "per": 123.362595,
+    "ma200": 208.43155
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -333,7 +335,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per-share value detected.",
-    "ai_concerns": "Inconsistency in per-share value calculation detected; other values like high growth rate (24.6%) seem reasonable but warrant review."
+    "ai_comment": "Inconsistencies in per share value detected",
+    "ai_concerns": "Anomaly in per share value: calculated 209.68 vs. reported 233.21."
   }
 }

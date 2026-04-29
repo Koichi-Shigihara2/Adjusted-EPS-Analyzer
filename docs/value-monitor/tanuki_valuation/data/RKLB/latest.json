@@ -190,17 +190,17 @@
     "bear": {
       "growth_rate": 0.222,
       "rice": 0.926,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0006
     },
     "base": {
       "growth_rate": 0.317,
       "rice": 1.322,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0009
     },
     "bull": {
       "growth_rate": 0.38,
       "rice": 1.585,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.001
     }
   },
   "components": {
@@ -240,7 +240,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 1497944910.7548811,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.0
+    "alpha_uncapped": 0.0,
+    "per": 1533.4634,
+    "ma200": 61.585377
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -264,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies and anomalies detected in calculations.",
-    "ai_concerns": "Anomalies include ROE at 0% with high growth rate of 31.7%, and intrinsic value per share ($7.84) vs. market price ($78.59) showing extreme discrepancy."
+    "ai_comment": "Multiple errors detected in calculations.",
+    "ai_concerns": "ROE=0% contradicts high growth rate of 31.7%, and intrinsic value ($7.84) vs market price ($78.59) shows extreme discrepancy."
   }
 }

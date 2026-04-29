@@ -263,17 +263,17 @@
     "bear": {
       "growth_rate": 0.088,
       "rice": 0.816,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0024
     },
     "base": {
       "growth_rate": 0.126,
       "rice": 1.169,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0034
     },
     "bull": {
       "growth_rate": 0.151,
       "rice": 1.401,
-      "rice_per_ratio": 0.0
+      "rice_per_ratio": 0.0041
     }
   },
   "components": {
@@ -313,7 +313,9 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 8449304436.40354,
     "growth_option_pv": 680915963.5607014,
-    "alpha_uncapped": 0.6153057763982493
+    "alpha_uncapped": 0.6153057763982493,
+    "per": 344.97244,
+    "ma200": 401.51306
   },
   "validation": {
     "validated_at": "2026-04-29",
@@ -337,7 +339,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value detected.",
-    "ai_concerns": "Inconsistency in P_t / shares calculation suggests potential error in per share value derivation."
+    "ai_comment": "Multiple inconsistencies in calculations detected.",
+    "ai_concerns": "Inconsistencies in per-share value and α suggest potential errors; market price vs. intrinsic value gap is extreme but not anomalous alone."
   }
 }
