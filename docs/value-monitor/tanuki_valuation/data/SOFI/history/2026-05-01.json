@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 20860801108.599525,
   "intrinsic_value_per_share": 23.008425291826917,
   "intrinsic_value_beta": 20.13,
-  "upside_percent_beta": 23.9,
+  "upside_percent_beta": 25.0,
   "intrinsic_value_rf": 114.11,
-  "upside_percent_rf": 602.2,
+  "upside_percent_rf": 609.0,
   "v0": 16590804438.957363,
   "v0_adjusted": 16597725246.381998,
   "alpha": 0.25684699553312584,
@@ -14,7 +14,7 @@
     "2年後": 30.11,
     "3年後": 36.82
   },
-  "upside_percent": 41.6,
+  "upside_percent": 43.0,
   "calculation_date": "2026-05-01",
   "formula": "Koichi式 v7.1.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -197,17 +197,17 @@
     "bear": {
       "growth_rate": 0.156,
       "rice": 0.388,
-      "rice_per_ratio": 0.0107
+      "rice_per_ratio": 0.0108
     },
     "base": {
       "growth_rate": 0.223,
       "rice": 0.555,
-      "rice_per_ratio": 0.0154
+      "rice_per_ratio": 0.0155
     },
     "bull": {
       "growth_rate": 0.268,
       "rice": 0.666,
-      "rice_per_ratio": 0.0185
+      "rice_per_ratio": 0.0186
     }
   },
   "components": {
@@ -224,7 +224,7 @@
     ],
     "diluted_shares": 1281409498,
     "roe_10yr_avg": 0.061154046555506165,
-    "current_price": 16.25,
+    "current_price": 16.095,
     "latest_revenue": 619353000.0,
     "rpo": 8535000.0,
     "beta": 1.2,
@@ -248,8 +248,8 @@
     "rpo_pv": 6920807.424635721,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.25684699553312584,
-    "per": 36.11111,
-    "ma200": 23.812675
+    "per": 35.766666,
+    "ma200": 23.788376
   },
   "validation": {
     "validated_at": "2026-05-01",
@@ -273,7 +273,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Per share value mismatch found",
-    "ai_concerns": "Inconsistency in P_t and per share value suggests potential anomaly in final valuation steps."
+    "ai_comment": "P_t per share mismatch indicates error.",
+    "ai_concerns": "No major anomalies in rates or values, but P_t per share discrepancy suggests potential error."
   }
 }

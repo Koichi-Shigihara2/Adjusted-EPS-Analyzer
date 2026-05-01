@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 23317878719.98873,
   "intrinsic_value_per_share": 58.32094104193617,
   "intrinsic_value_beta": 89.66,
-  "upside_percent_beta": 175.4,
+  "upside_percent_beta": 162.6,
   "intrinsic_value_rf": 345.17,
-  "upside_percent_rf": 960.3,
+  "upside_percent_rf": 911.0,
   "v0": 11658939359.994366,
   "v0_adjusted": 11658939359.994366,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 122.74,
     "3年後": 143.6
   },
-  "upside_percent": 79.1,
+  "upside_percent": 70.8,
   "calculation_date": "2026-05-01",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -265,17 +265,17 @@
     "bear": {
       "growth_rate": 0.119,
       "rice": 13.959,
-      "rice_per_ratio": 0.1072
+      "rice_per_ratio": 0.1022
     },
     "base": {
       "growth_rate": 0.17,
       "rice": 19.942,
-      "rice_per_ratio": 0.1531
+      "rice_per_ratio": 0.146
     },
     "bull": {
       "growth_rate": 0.204,
       "rice": 23.93,
-      "rice_per_ratio": 0.1838
+      "rice_per_ratio": 0.1752
     }
   },
   "components": {
@@ -292,7 +292,7 @@
     ],
     "diluted_shares": 256896075,
     "roe_10yr_avg": 0.4377082903943001,
-    "current_price": 32.555,
+    "current_price": 34.14,
     "latest_revenue": 2515269000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -316,8 +316,8 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.83837481965606,
-    "per": 130.22,
-    "ma200": 48.68485
+    "per": 136.56,
+    "ma200": 48.62515
   },
   "validation": {
     "validated_at": "2026-05-01",
@@ -341,7 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share value.",
-    "ai_concerns": "Inconsistency in per-share value calculation; high ROE (43.77%) and growth rates seem plausible but warrant review."
+    "ai_comment": "Multiple inconsistencies detected, especially in per share calculation.",
+    "ai_concerns": "Inconsistency in per share value ($90.69 calculated vs $58.32 reported) indicates potential error in final valuation step."
   }
 }

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 171684190263.03342,
   "intrinsic_value_per_share": 64.47009058126426,
   "intrinsic_value_beta": 55.27,
-  "upside_percent_beta": -85.3,
+  "upside_percent_beta": -85.8,
   "intrinsic_value_rf": 305.95,
-  "upside_percent_rf": -18.9,
+  "upside_percent_rf": -21.3,
   "v0": 97155656101.91309,
   "v0_adjusted": 106285876501.87732,
   "alpha": 0.6153057763982493,
@@ -14,7 +14,7 @@
     "2年後": 70.08,
     "3年後": 78.91
   },
-  "upside_percent": -82.9,
+  "upside_percent": -83.4,
   "calculation_date": "2026-05-01",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -290,7 +290,7 @@
     ],
     "diluted_shares": 3755723871,
     "roe_10yr_avg": 0.14650137533291652,
-    "current_price": 377.2,
+    "current_price": 388.96,
     "latest_revenue": 94827000000.0,
     "rpo": 10420000000.0,
     "beta": 1.25,
@@ -314,8 +314,8 @@
     "rpo_pv": 8449304436.40354,
     "growth_option_pv": 680915963.5607014,
     "alpha_uncapped": 0.6153057763982493,
-    "per": 349.25925,
-    "ma200": 401.79254
+    "per": 350.45947,
+    "ma200": 402.1468
   },
   "validation": {
     "validated_at": "2026-05-01",
@@ -339,6 +339,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share and alpha calculations"
+    "ai_comment": "Inconsistencies in per share calculation lead to failure.",
+    "ai_concerns": "Anomaly in per share value: calculated $45.70 vs reported $64.47. Also, intrinsic value $64.47 vs market price $388.96 shows extreme discrepancy."
   }
 }

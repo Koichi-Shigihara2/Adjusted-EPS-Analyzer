@@ -1,20 +1,20 @@
 {
   "intrinsic_value_pt": 6284593549715.938,
-  "intrinsic_value_per_share": 783.6297560770536,
-  "intrinsic_value_beta": 852.08,
-  "upside_percent_beta": 111.3,
-  "intrinsic_value_rf": 4230.41,
-  "upside_percent_rf": 949.1,
+  "intrinsic_value_per_share": 784.0457003017932,
+  "intrinsic_value_beta": 852.54,
+  "upside_percent_beta": 106.2,
+  "intrinsic_value_rf": 4232.65,
+  "upside_percent_rf": 923.6,
   "v0": 2836930388181.4307,
   "v0_adjusted": 3142296774857.969,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 975.38,
-    "2年後": 1116.51,
-    "3年後": 1278.07
+    "1年後": 975.9,
+    "2年後": 1117.12,
+    "3年後": 1278.76
   },
-  "upside_percent": 94.3,
+  "upside_percent": 89.6,
   "calculation_date": "2026-05-01",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -28,19 +28,19 @@
   "sensitivity": {
     "matrix": [
       [
-        869.06,
-        1013.17,
-        1173.87
+        869.52,
+        1013.71,
+        1174.49
       ],
       [
-        740.68,
-        856.03,
-        982.32
+        741.07,
+        856.49,
+        982.84
       ],
       [
-        647.28,
-        742.01,
-        843.86
+        647.62,
+        742.4,
+        844.3
       ]
     ],
     "wacc_values": [
@@ -71,15 +71,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.101,
-      "intrinsic_value_per_share": 727.15
+      "intrinsic_value_per_share": 727.53
     },
     "base": {
       "growth_rate": 0.145,
-      "intrinsic_value_per_share": 852.08
+      "intrinsic_value_per_share": 852.54
     },
     "bull": {
       "growth_rate": 0.174,
-      "intrinsic_value_per_share": 946.12
+      "intrinsic_value_per_share": 946.62
     }
   },
   "growth_options": {
@@ -250,7 +250,7 @@
     "long_term_debt": 43151000000.0,
     "short_term_debt": 2999000000.0,
     "net_cash": 48415000000.0,
-    "net_cash_per_share": 6.514066189964876,
+    "net_cash_per_share": 6.5175238026834785,
     "fiscal_year": 2025,
     "applied": true
   },
@@ -268,17 +268,17 @@
     "bear": {
       "growth_rate": 0.101,
       "rice": 0.459,
-      "rice_per_ratio": 0.0182
+      "rice_per_ratio": 0.0187
     },
     "base": {
       "growth_rate": 0.145,
       "rice": 0.659,
-      "rice_per_ratio": 0.0261
+      "rice_per_ratio": 0.0268
     },
     "bull": {
       "growth_rate": 0.174,
       "rice": 0.791,
-      "rice_per_ratio": 0.0313
+      "rice_per_ratio": 0.0321
     }
   },
   "components": {
@@ -293,9 +293,9 @@
       66045000000,
       56766000000
     ],
-    "diluted_shares": 7432377656,
+    "diluted_shares": 7428434704,
     "roe_10yr_avg": 0.33282252757802594,
-    "current_price": 403.225,
+    "current_price": 413.51,
     "latest_revenue": 281724000000.0,
     "rpo": 375000000000.0,
     "beta": 0.9,
@@ -319,8 +319,8 @@
     "rpo_pv": 304077654860.9719,
     "growth_option_pv": 1288731815.566697,
     "alpha_uncapped": 1.3978546158277088,
-    "per": 25.264725,
-    "ma200": 468.9487
+    "per": 24.613691,
+    "ma200": 468.4585
   },
   "validation": {
     "validated_at": "2026-05-01",
@@ -328,7 +328,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $2582.54B + RPO $304.08B + GO $1.29B) × (1+1.000) / 7.432B + BS $+6.51/株 = $783.63 (差異0.00%)"
+        "detail": "(V₀ $2582.54B + RPO $304.08B + GO $1.29B) × (1+1.000) / 7.428B + BS $+6.52/株 = $784.05 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -344,7 +344,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share calculation detected.",
-    "ai_concerns": "Inconsistency in per share value suggests potential error; other values like high growth rate (14.5%) seem reasonable but overall anomaly present."
+    "ai_comment": "Inconsistency in per share calculation detected.",
+    "ai_concerns": "Inconsistency in per share value ($845.99 calculated vs. $784.05 provided); GrowthOption_PV is unusually small relative to other components."
   }
 }

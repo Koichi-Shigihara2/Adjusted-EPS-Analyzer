@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2263990321971.288,
   "intrinsic_value_per_share": 234.60094834998762,
   "intrinsic_value_beta": 215.52,
-  "upside_percent_beta": -16.5,
+  "upside_percent_beta": -20.2,
   "intrinsic_value_rf": 1374.71,
-  "upside_percent_rf": 432.3,
+  "upside_percent_rf": 409.3,
   "v0": 1261506256456.1196,
   "v0_adjusted": 1282292678034.5515,
   "alpha": 0.7655800120776206,
@@ -14,7 +14,7 @@
     "2年後": 270.06,
     "3年後": 302.3
   },
-  "upside_percent": -9.2,
+  "upside_percent": -13.1,
   "calculation_date": "2026-05-01",
   "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -268,17 +268,17 @@
     "bear": {
       "growth_rate": 0.084,
       "rice": 1.354,
-      "rice_per_ratio": 0.0438
+      "rice_per_ratio": 0.0419
     },
     "base": {
       "growth_rate": 0.119,
       "rice": 1.918,
-      "rice_per_ratio": 0.0621
+      "rice_per_ratio": 0.0593
     },
     "bull": {
       "growth_rate": 0.143,
       "rice": 2.305,
-      "rice_per_ratio": 0.0746
+      "rice_per_ratio": 0.0713
     }
   },
   "components": {
@@ -295,7 +295,7 @@
     ],
     "diluted_shares": 10754251799,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 258.235,
+    "current_price": 269.91,
     "latest_revenue": 716924000000.0,
     "rpo": 25000000000.0,
     "beta": 1.1,
@@ -319,8 +319,8 @@
     "rpo_pv": 20271843657.39813,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 30.889353,
-    "ma200": 226.95856
+    "per": 32.32455,
+    "ma200": 227.1521
   },
   "validation": {
     "validated_at": "2026-05-01",
@@ -344,7 +344,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share calculation detected; verify inputs.",
-    "ai_concerns": "Inconsistency in intrinsic value per share ($234.60 vs calculated $210.48) indicates potential anomaly in final valuation step."
+    "ai_comment": "Inconsistencies in per share value detected.",
+    "ai_concerns": "Inconsistency in P_t per share calculation suggests potential error; other values like growth rates appear normal."
   }
 }
