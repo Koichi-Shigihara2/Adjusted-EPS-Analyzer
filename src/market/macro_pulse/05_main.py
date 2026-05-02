@@ -1634,7 +1634,65 @@ def run_weekly_analysis(target_date: date):
     logger.info("=== Weekly Analysis complete ===")
 
 # ─────────────────────────────────────────────────────────────────
-#  メインオーケストレーター（変更なし）
+#  月次FRED指標の自動補完
+#  スケジュール未登録 (Philly Fed / CFNAI / Sahm Rule 等) および
+#  スケジュール済みだが FRED が空を返したイベントを毎日再試行する。
+# ─────────────────────────────────────────────────────────────────
+_MONTHLY_REFRESH_SET = {
+    "Philadelphia Fed Manufacturing",
+    "Chicago Fed National Activity",
+    "NFP",
+    "Initial Claims 4W MA",
+    "Building Permits",
+    "Sahm Rule Recession Indicator",
+    "Conference Board LEI",
+    "Michigan Consumer Sentiment",
+}
+
+def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
+                                schedule: pd.DataFrame, events: pd.DataFrame,
+                                sp500_t0) -> list:
+    """
+    毎日の normal run で呼び出し、月次 FRED 指標を補完する。
+    - FREDの最新観測日が events.csv に未登録または actual が空 → 新規追加
+    - スケジュールに依存しないため Philly Fed / CFNAI / Sahm Rule も自動取得できる
+    """
+    if fred is None:
+        return []
+
+    new_rows = []
+    for ind_name in _MONTHLY_REFRESH_SET:
+        cfg = INDICATOR_CONFIG.get(ind_name, {})
+        fred_id = cfg.get("fred_id", "")
+        if not fred_id:
+            continue
+
+        val, obs_date = fred_latest(fred, fred_id, target_date)
+        if val is None or obs_date is None:
+            continue
+
+        event_id = make_event_id(ind_name, obs_date)
+        existing = events[events["event_id"] == event_id]
+        if not existing.empty:
+            actual_str = str(existing.iloc[0].get("actual", "")).strip()
+            if actual_str not in ("", "nan"):
+                continue  # 既に正常データあり → スキップ
+
+        try:
+            row = fetch_event_row(ind_name, target_date, fred, fin_ctx, schedule, events)
+            row["sp500_t0"] = str(sp500_t0) if sp500_t0 else ""
+            new_rows.append(row)
+            logger.info(f"[monthly-refresh] {ind_name}: obs={obs_date} val={val}")
+            time.sleep(0.3)
+        except Exception as e:
+            logger.warning(f"[monthly-refresh] {ind_name}: {e}")
+
+    if new_rows:
+        logger.info(f"[monthly-refresh] {len(new_rows)} indicators refreshed.")
+    return new_rows
+
+# ─────────────────────────────────────────────────────────────────
+#  メインオーケストレーター
 # ─────────────────────────────────────────────────────────────────
 def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
         do_update_schedule: bool = False, do_remind: bool = False,
@@ -1718,6 +1776,11 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
             new_rows.append(row)
         except Exception as e:
             logger.error(f"[{ind_name}]: {e}")
+
+    # 月次FRED指標の自動補完（スケジュール未登録・空actual の再試行）
+    new_rows.extend(
+        refresh_monthly_indicators(target_date, fred, fin_ctx, schedule, events, sp500_t0)
+    )
 
     if not new_rows:
         logger.info("No rows to add.")
