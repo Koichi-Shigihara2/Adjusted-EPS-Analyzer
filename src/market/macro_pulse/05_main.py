@@ -1069,7 +1069,7 @@ def fetch_latest_fomc_statement():
         logger.warning(f"FOMC calendar fetch: {e}")
 
     if not found_url:
-        known = ["20260318","20260129","20251218","20251107","20250918","20250730"]
+        known = ["20260507","20260318","20260129","20251218","20251107","20250918","20250730"]
         today_str = date.today().strftime("%Y%m%d")
         for best_dt in sorted([d for d in known if d <= today_str], reverse=True):
             u = f"https://www.federalreserve.gov/newsevents/pressreleases/monetary{best_dt}a.htm"
@@ -1147,7 +1147,12 @@ Respond ONLY in this exact JSON format (no markdown, no extra text):
         raw = "\n".join(raw_texts).strip()
         m = re.search(r'\{.*\}', raw, re.DOTALL)
         if m:
-            return json.loads(m.group())
+            parsed = json.loads(m.group())
+            _VALID_REGIMES = {"EASING", "BALANCED", "TIGHTENING"}
+            if parsed.get("regime") not in _VALID_REGIMES:
+                logger.warning(f"Gemini returned invalid regime '{parsed.get('regime')}'. Using fallback.")
+                return _fallback_regime(ff_current, zq_rate, cuts_implied)
+            return parsed
     except Exception as e:
         logger.warning(f"Gemini API error: {e}")
     return _fallback_regime(ff_current, zq_rate, cuts_implied)
@@ -1172,20 +1177,24 @@ def update_fed_context(target_date: date, fred):
     already = (not ctx_df.empty and "record_date" in ctx_df.columns and
                ctx_df["record_date"].str.startswith(record_month).any())
 
+    def _n(v):
+        return "" if v is None else str(v)
+
     if already:
         last_idx = ctx_df[ctx_df["record_date"].str.startswith(record_month)].index[-1]
         ctx_df.loc[last_idx, "zq_ticker"]    = zq_ticker or ""
-        ctx_df.loc[last_idx, "zq_price"]     = str(zq_price or "")
-        ctx_df.loc[last_idx, "zq_rate"]      = str(zq_rate or "")
+        ctx_df.loc[last_idx, "zq_price"]     = _n(zq_price)
+        ctx_df.loc[last_idx, "zq_rate"]      = _n(zq_rate)
         ctx_df.loc[last_idx, "ff_current"]   = str(ff_current)
-        ctx_df.loc[last_idx, "cuts_implied"] = str(cuts_implied or "")
+        ctx_df.loc[last_idx, "cuts_implied"] = _n(cuts_implied)
         ctx_df.loc[last_idx, "updated_at"]   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     else:
         fomc_date, stmt_text = fetch_latest_fomc_statement()
         if stmt_text:
             analysis = analyze_fomc_with_gemini(
                 fomc_date or target_date.strftime("%Y-%m-%d"),
-                stmt_text, ff_current, zq_rate or ff_current, cuts_implied or 0)
+                stmt_text, ff_current, zq_rate if zq_rate is not None else ff_current,
+                cuts_implied if cuts_implied is not None else 0)
         else:
             analysis = _fallback_regime(ff_current, zq_rate, cuts_implied)
             fomc_date = target_date.strftime("%Y-%m-%d")
@@ -1198,9 +1207,9 @@ def update_fed_context(target_date: date, fred):
             "dominant_label":   analysis.get("dominant_label", "両睨み"),
             "ff_current":       str(ff_current),
             "zq_ticker":        zq_ticker or "",
-            "zq_price":         str(zq_price or ""),
-            "zq_rate":          str(zq_rate or ""),
-            "cuts_implied":     str(cuts_implied or ""),
+            "zq_price":         _n(zq_price),
+            "zq_rate":          _n(zq_rate),
+            "cuts_implied":     _n(cuts_implied),
             "ai_reason":        analysis.get("ai_reason", ""),
             "updated_at":       datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
