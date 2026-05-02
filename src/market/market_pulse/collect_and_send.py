@@ -318,9 +318,10 @@ def get_realtime_data():
         nya_pct = (nya_latest - nya_prev) / nya_prev * 100
         vol_latest = nya_hist['Volume'].iloc[-1]
         vol_prev = nya_hist['Volume'].iloc[-2]
-        vol_ratio = vol_latest / vol_prev if vol_prev > 0 else 0
+        vol_ratio = vol_latest / vol_prev if vol_prev > 0 else None
+        vol_ratio_str = f"{vol_ratio:.2f}" if vol_ratio is not None else "N/A"
         last_date = nya_hist.index[-1].strftime('%m/%d')
-        summary += f"● NYSE Composite(^NYA): {nya_latest:.2f} [{nya_pct:+.2f}%] | 前日比出来高比:{vol_ratio:.2f} ({last_date} 確定)\n"
+        summary += f"● NYSE Composite(^NYA): {nya_latest:.2f} [{nya_pct:+.2f}%] | 前日比出来高比:{vol_ratio_str} ({last_date} 確定)\n"
         if sp_hist is not None and len(sp_hist) >= 2:
             sp_pct = (sp_hist['Close'].iloc[-1] - sp_hist['Close'].iloc[-2]) / sp_hist['Close'].iloc[-2] * 100
             divergence = nya_pct - sp_pct
@@ -334,7 +335,7 @@ def get_realtime_data():
         nya_data = {
             "value": round(nya_latest, 2),
             "change_percent": round(nya_pct, 2),
-            "volume_ratio": round(vol_ratio, 2),
+            "volume_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
             "date": nya_hist.index[-1].strftime('%Y-%m-%d')
         }
         if sp_hist is not None and len(sp_hist) >= 2:
@@ -572,6 +573,9 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "fear_greed": fear_greed_data,
         "summary": report_text
     }
+    # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
+    today = date_str[:10]
+    all_data = [d for d in all_data if d.get("date", "")[:10] != today]
     all_data.append(new_entry)
 
     with open(JSON_PATH, 'w', encoding='utf-8') as f:
