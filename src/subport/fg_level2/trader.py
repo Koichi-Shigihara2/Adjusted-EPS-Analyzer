@@ -1,18 +1,21 @@
 """
 F&G Level2 × TQQQ 発注・ポジション管理
 =========================================
-signal.json を読み込み、BUYシグナルの場合にmoomoo APIで発注する。
-またポジション監視・利確/損切も担当する。
+完全自動化版：
+  - エントリー時はgit pullで最新signal.jsonを取得してから判定
+  - moomoo OpenD（ローカル常時起動）経由で発注
+  - Windowsタスクスケジューラから毎日自動実行
 
 実行モード:
-  python trader.py --entry    # エントリー（signal.jsonがBUYの場合のみ）
-  python trader.py --monitor  # ポジション監視・決済判定
+  python trader.py --entry    # エントリー判定+発注（タスクスケジューラから）
+  python trader.py --monitor  # ポジション監視・決済判定（タスクスケジューラから）
   python trader.py --status   # 現在のポジション状態確認
 """
 
 import argparse
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime, date
 from pathlib import Path
@@ -22,9 +25,50 @@ from pathlib import Path
 # ============================================================
 
 BASE_DIR    = Path(__file__).parent
+REPO_ROOT   = BASE_DIR.parent.parent.parent
 CONFIG      = json.loads((BASE_DIR / "config.json").read_text(encoding="utf-8"))
 STATE_FILE  = BASE_DIR / "state.json"
 SIGNAL_FILE = BASE_DIR / "signal.json"
+
+
+# ============================================================
+# git pull（最新シグナルを取得）
+# ============================================================
+
+def git_pull():
+    """リモートから最新のsignal.jsonを取得する"""
+    try:
+        result = subprocess.run(
+            ["git", "pull", "origin", "kaihatsu"],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0:
+            print(f"[git] pull成功: {result.stdout.strip()}")
+        else:
+            print(f"[git] pull失敗: {result.stderr.strip()}")
+    except Exception as e:
+        print(f"[git] pull例外: {e}")
+
+
+def git_push():
+    """state.jsonの変更をpushする"""
+    try:
+        subprocess.run(["git", "add", str(STATE_FILE)], cwd=REPO_ROOT, timeout=10)
+        subprocess.run(
+            ["git", "commit", "-m",
+             f"chore(fg-level2): update state {date.today()}"],
+            cwd=REPO_ROOT, capture_output=True, timeout=10
+        )
+        result = subprocess.run(
+            ["git", "push", "origin", "kaihatsu"],
+            cwd=REPO_ROOT, capture_output=True, text=True, timeout=30
+        )
+        print(f"[git] push: {result.stdout.strip() or result.stderr.strip()}")
+    except Exception as e:
+        print(f"[git] push例外: {e}")
 
 
 # ============================================================
@@ -99,6 +143,9 @@ def do_entry():
     """signal.jsonを読んでBUYなら発注"""
     print("\n[entry] エントリー処理開始")
 
+    # 最新シグナルをpull
+    git_pull()
+
     # シグナル確認
     if not SIGNAL_FILE.exists():
         print("[error] signal.json が見つかりません。signal.py を先に実行してください")
@@ -171,6 +218,7 @@ def do_entry():
     }
     state["position"] = position
     save_state(state)
+    git_push()
 
     print(f"[entry] ポジション保存完了")
     print(f"  利確ライン: ${position['take_profit']:.2f} (+{CONFIG['exit']['take_profit_pct']}%)")
@@ -282,6 +330,7 @@ def do_exit(state: dict, pos: dict, price: float, reason: str):
     state["trades"].append(trade)
     state["position"] = None
     save_state(state)
+    git_push()
 
     print(f"[exit] 完了: {pnl_pct:+.2f}% (${pnl_usd:+.2f})")
     print(f"  累計トレード数: {len(state['trades'])}")
