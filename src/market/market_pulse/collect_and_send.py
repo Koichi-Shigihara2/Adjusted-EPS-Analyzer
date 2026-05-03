@@ -340,28 +340,111 @@ def fetch_fg_score_from_feargreedchart():
         return None
 
 
-def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, fg_score):
-    """Tech Pulseスコアを算出する（0〜100）
-    正常範囲: qqq_vs_ma125=±15%, vxn_vs_ma50=±30%, qqq_vs_spy_20d=±10%
-    """
-    score = 50.0
+def _load_tech_pulse_history(json_path, window=90):
+    """market_data.jsonから過去window日分のTech Pulse指標リストを返す"""
+    hist = {"qqq_vs_ma125": [], "vxn_vs_ma50": [], "qqq_vs_spy_20d": []}
+    if not os.path.exists(json_path):
+        return hist
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            all_data = json.load(f)
+    except Exception:
+        return hist
+    cutoff = datetime.now(timezone.utc) - timedelta(days=window)
+    for entry in all_data:
+        try:
+            d = datetime.fromisoformat(entry.get("date", ""))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+        except Exception:
+            continue
+        if d < cutoff:
+            continue
+        comp = ((entry.get("tech_pulse") or {}).get("components") or {})
+        for key in hist:
+            v = comp.get(key)
+            if v is not None:
+                hist[key].append(float(v))
+    return hist
 
-    if qqq_vs_ma125 is not None:
-        score += max(-25, min(25, qqq_vs_ma125 / 15 * 25))
 
-    if vxn_vs_ma50 is not None:
-        score += max(-20, min(20, -vxn_vs_ma50 / 30 * 20))
+def _load_div_history(json_path, window=90):
+    """過去window日分の乖離値（TP score − F&G score）リストを返す"""
+    if not os.path.exists(json_path):
+        return []
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            all_data = json.load(f)
+    except Exception:
+        return []
+    cutoff = datetime.now(timezone.utc) - timedelta(days=window)
+    result = []
+    for entry in all_data:
+        try:
+            d = datetime.fromisoformat(entry.get("date", ""))
+            if d.tzinfo is None:
+                d = d.replace(tzinfo=timezone.utc)
+        except Exception:
+            continue
+        if d < cutoff:
+            continue
+        tp_s = (entry.get("tech_pulse") or {}).get("score")
+        fg_s = (entry.get("fear_greed") or {}).get("score")
+        if tp_s is not None and fg_s is not None:
+            result.append(float(tp_s) - float(fg_s))
+    return result
 
-    if qqq_vs_spy_20d is not None:
-        score += max(-15, min(15, qqq_vs_spy_20d / 10 * 15))
 
-    if fg_score is not None:
-        if fg_score < 20:
-            score += 10
-        elif fg_score > 80:
-            score -= 10
+def _calc_divergence_zscore(div_history):
+    """乖離値リストの最後の値のZスコアを返す（履歴不足の場合はNone）"""
+    import statistics as _stats
+    if len(div_history) < 5:
+        return None
+    mean = _stats.mean(div_history)
+    stdev = _stats.stdev(div_history)
+    if stdev == 0:
+        return 0.0
+    return round((div_history[-1] - mean) / stdev, 2)
 
-    return max(0, min(100, round(score)))
+
+def _get_tp_signal(div_value, div_zscore, fg_score):
+    """3条件シグナル文字列を返す"""
+    if div_value is None or div_zscore is None or fg_score is None:
+        return ""
+    if fg_score < 30 and div_value > 10 and div_zscore > 1.0:
+        return "ハイテク先行反発シグナル"
+    if div_value < -10 and div_zscore < -1.0:
+        return "ハイテク先行下落注意"
+    return ""
+
+
+def _tp_label(score):
+    if score <= 20: return "EXTREME FEAR"
+    if score <= 35: return "FEAR"
+    if score <= 50: return "CAUTION"
+    if score <= 65: return "NEUTRAL"
+    if score <= 80: return "GREED"
+    return "EXTREME GREED"
+
+
+def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, history_90d):
+    """Tech Pulseスコアを算出する（0〜100）— 過去90日パーセンタイル正規化"""
+    try:
+        from scipy.stats import percentileofscore
+    except ImportError:
+        print("[WARN] scipy未インストール。Tech Pulse固定50を返します。")
+        return 50
+    percentiles = []
+    hist = history_90d or {}
+    if qqq_vs_ma125 is not None and hist.get("qqq_vs_ma125"):
+        percentiles.append(percentileofscore(hist["qqq_vs_ma125"], qqq_vs_ma125))
+    if vxn_vs_ma50 is not None and hist.get("vxn_vs_ma50"):
+        percentiles.append(100 - percentileofscore(hist["vxn_vs_ma50"], vxn_vs_ma50))
+    if qqq_vs_spy_20d is not None and hist.get("qqq_vs_spy_20d"):
+        percentiles.append(percentileofscore(hist["qqq_vs_spy_20d"], qqq_vs_spy_20d))
+    if not percentiles:
+        return 50
+    return max(0, min(100, round(sum(percentiles) / len(percentiles))))
 
 
 def get_realtime_data():
@@ -759,19 +842,18 @@ if __name__ == "__main__":
     qqq_vs_ma125, qqq_vs_spy_20d = fetch_qqq_tech_data()
     vxn_latest, vxn_vs_ma50 = fetch_vxn_from_fred()
     fg_score_tech = fetch_fg_score_from_feargreedchart()
-    tp_score = calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, fg_score_tech)
-    if tp_score <= 20:
-        tp_label = "EXTREME FEAR"
-    elif tp_score <= 35:
-        tp_label = "FEAR"
-    elif tp_score <= 50:
-        tp_label = "CAUTION"
-    elif tp_score <= 65:
-        tp_label = "NEUTRAL"
-    elif tp_score <= 80:
-        tp_label = "GREED"
-    else:
-        tp_label = "EXTREME GREED"
+    history_90d = _load_tech_pulse_history(JSON_PATH, window=90)
+    tp_score = calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, history_90d)
+    tp_label = _tp_label(tp_score)
+
+    # 乖離・Zスコア・シグナル
+    div_value = round(float(tp_score) - float(fg_score_tech), 1) if fg_score_tech is not None else None
+    div_hist = _load_div_history(JSON_PATH, window=90)
+    if div_value is not None:
+        div_hist.append(div_value)
+    div_zscore = _calc_divergence_zscore(div_hist)
+    tp_signal = _get_tp_signal(div_value, div_zscore, fg_score_tech)
+
     tech_pulse_data = {
         "score": tp_score,
         "label": tp_label,
@@ -782,8 +864,13 @@ if __name__ == "__main__":
             "qqq_vs_spy_20d": qqq_vs_spy_20d,
             "fg_score": fg_score_tech,
         },
+        "divergence": {
+            "value": div_value,
+            "zscore": div_zscore,
+            "signal": tp_signal,
+        },
     }
-    print(f"[INFO] Tech Pulseスコア: {tp_score} ({tp_label})")
+    print(f"[INFO] Tech Pulseスコア: {tp_score} ({tp_label}), 乖離={div_value}, Z={div_zscore}, シグナル={tp_signal or 'なし'}")
 
     news = get_market_news()
     if not news:

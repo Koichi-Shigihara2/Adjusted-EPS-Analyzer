@@ -193,8 +193,9 @@
     .tp-signal{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border:1px solid;text-transform:uppercase;animation:signal-pulse 2s ease-in-out infinite}
     .tp-signal-buy{color:#10b981;border-color:rgba(16,185,129,.5);background:rgba(16,185,129,.1)}
     .tp-signal-sell{color:#f43f5e;border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.1)}
-    .tp-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
-    @media(max-width:640px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
+    .tp-cards{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-bottom:10px}
+    @media(max-width:768px){.tp-cards{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:480px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
     .tp-chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px;margin-bottom:6px}
     .tp-chart-wrap{position:relative;height:160px}
   </style>
@@ -332,6 +333,14 @@
     <div class="metric-card">
       <div class="metric-label" style="color:#22d3ee">QQQ vs SPY 20日</div>
       <div class="metric-value" id="tpCQQQ">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label" style="color:#a78bfa">TECH−F&amp;G 乖離</div>
+      <div class="metric-value" id="tpCDiv">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label" style="color:#94a3b8">乖離Zスコア（90日）</div>
+      <div class="metric-value" id="tpCZscore">—</div>
     </div>
   </div>
   <!-- ④ 過去30日チャート -->
@@ -619,19 +628,21 @@ function renderTechPulse(){
     document.getElementById("tpGaugeLbl").textContent="NO DATA";
   }
 
-  // 乖離
+  // 乖離（JSONにdivergenceフィールドがあれば優先、なければ計算）
   const divEl=document.getElementById("tpDivVal");
-  if(tpScore!=null&&fgScore!=null){
-    const diff=tpScore-fgScore;
-    divEl.textContent=(diff>0?"+":"")+diff.toFixed(0);
-    divEl.style.color=diff>0?"#10b981":diff<0?"#f43f5e":"var(--mut)";
+  const divVal=tp?.divergence?.value??((tpScore!=null&&fgScore!=null)?tpScore-fgScore:null);
+  const divZ=tp?.divergence?.zscore??null;
+  const divSig=tp?.divergence?.signal??null;
+  if(divVal!=null){
+    divEl.textContent=(divVal>0?"+":"")+Number(divVal).toFixed(0);
+    divEl.style.color=divVal>0?"#10b981":divVal<0?"#f43f5e":"var(--mut)";
     let badge="";
-    if(diff>10&&fgScore<30)badge='<div class="tp-signal tp-signal-buy">ハイテク先行反発シグナル</div>';
-    else if(diff<-10)badge='<div class="tp-signal tp-signal-sell">ハイテク先行下落</div>';
+    if(divSig==="ハイテク先行反発シグナル")badge='<div class="tp-signal tp-signal-buy">ハイテク先行反発シグナル</div>';
+    else if(divSig==="ハイテク先行下落注意")badge='<div class="tp-signal tp-signal-sell">ハイテク先行下落注意</div>';
     document.getElementById("tpDivBadge").innerHTML=badge;
   } else {divEl.textContent="—";document.getElementById("tpDivBadge").innerHTML=""}
 
-  // 4枚カード
+  // 6枚カード
   const setCard=(id,val,color)=>{const el=document.getElementById(id);el.textContent=val;if(color)el.style.color=color};
   setCard("tpCFG",fgScore!=null?fgScore.toFixed(0):"—",fgScore!=null?tpColor(fgScore):null);
   setCard("tpCTP",tpScore!=null?String(tpScore):"—",tpScore!=null?tpColor(tpScore):null);
@@ -639,6 +650,12 @@ function renderTechPulse(){
   setCard("tpCVXN",vxn!=null?vxn.toFixed(1):"—",null);
   const qqq=tp?.components?.qqq_vs_spy_20d;
   setCard("tpCQQQ",qqq!=null?(qqq>=0?"+":"")+qqq.toFixed(1)+"%":"—",qqq!=null?(qqq>=0?"var(--grn)":"var(--red)"):null);
+  const divDisp=divVal!=null?(divVal>0?"+":"")+Number(divVal).toFixed(1):"—";
+  const divColor=divVal!=null?(Math.abs(divVal)>15?"#a78bfa":(divVal>0?"#10b981":"#f43f5e")):null;
+  setCard("tpCDiv",divDisp,divColor);
+  const zDisp=divZ!=null?(divZ>0?"+":"")+Number(divZ).toFixed(2)+"σ":"—";
+  const zColor=divZ!=null?(Math.abs(divZ)>1.5?"#f59e0b":Math.abs(divZ)>1.0?"#94a3b8":null):null;
+  setCard("tpCZscore",zDisp,zColor);
 
   renderTechPulseChart();
 }
