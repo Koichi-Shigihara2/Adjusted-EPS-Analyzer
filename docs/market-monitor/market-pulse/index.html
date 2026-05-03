@@ -176,6 +176,27 @@
     .modal-body td{padding:4px 8px;border:1px solid var(--bdr)}
     .modal-body .bar-example{display:inline-block;height:8px;border-radius:1px;vertical-align:middle;margin-right:4px}
     .modal-body code{font-family:var(--mono);font-size:10px;color:var(--cyn);background:var(--sur2);padding:1px 4px}
+
+    /* TECH PULSE */
+    .tp-gauges-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
+    @media(max-width:640px){.tp-gauges-row{grid-template-columns:1fr}}
+    .tp-gauge-card{background:var(--sur);border:1px solid var(--bdr);padding:14px 16px;display:flex;flex-direction:column;align-items:center}
+    .tp-gauge-title{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;align-self:flex-start;margin-bottom:6px}
+    .tp-gauge-svg-wrap{position:relative;width:180px;height:106px}
+    .tp-gauge-svg-wrap svg{width:100%;height:100%}
+    .tp-gauge-center{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center}
+    .tp-gauge-score{font-family:var(--mono);font-size:28px;font-weight:700;line-height:1}
+    .tp-gauge-lbl{font-family:var(--mono);font-size:8px;letter-spacing:.1em;margin-top:2px}
+    .tp-div-card{background:var(--sur);border:1px solid var(--bdr);padding:12px 18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+    .tp-div-label{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;white-space:nowrap}
+    .tp-div-value{font-family:var(--mono);font-size:30px;font-weight:700;min-width:54px;text-align:right}
+    .tp-signal{font-family:var(--mono);font-size:9px;font-weight:700;letter-spacing:.08em;padding:3px 10px;border:1px solid;text-transform:uppercase;animation:signal-pulse 2s ease-in-out infinite}
+    .tp-signal-buy{color:#10b981;border-color:rgba(16,185,129,.5);background:rgba(16,185,129,.1)}
+    .tp-signal-sell{color:#f43f5e;border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.1)}
+    .tp-cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:10px}
+    @media(max-width:640px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
+    .tp-chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px;margin-bottom:6px}
+    .tp-chart-wrap{position:relative;height:160px}
   </style>
 </head>
 <body>
@@ -239,6 +260,90 @@
       <div class="osc-chart-wrap"><canvas id="oscChart"></canvas></div>
       <div class="osc-legend" id="oscLegend"></div>
     </div>
+  </div>
+  <div class="sec">tech pulse — ナスダック感情指数</div>
+  <!-- ① 並列ゲージ -->
+  <div class="tp-gauges-row">
+    <div class="tp-gauge-card">
+      <div class="tp-gauge-title">CNN Fear &amp; Greed</div>
+      <div class="tp-gauge-svg-wrap">
+        <svg viewBox="0 0 180 106" id="fgGaugeSvg">
+          <defs><linearGradient id="fgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f43f5e"/><stop offset="25%" stop-color="#f97316"/>
+            <stop offset="50%" stop-color="#f59e0b"/><stop offset="75%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient></defs>
+          <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="#1e2840" stroke-width="10" stroke-linecap="round"/>
+          <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="url(#fgGrad)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+          <line id="fgNeedle" x1="90" y1="94" x2="90" y2="28" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90,90,94)" style="transition:transform 1s ease-out"/>
+          <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
+          <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="6">FEAR</text>
+          <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="6">GREED</text>
+        </svg>
+        <div class="tp-gauge-center">
+          <div class="tp-gauge-score" id="fgGaugeScore">—</div>
+          <div class="tp-gauge-lbl" id="fgGaugeLbl" style="color:var(--mut)">LOADING</div>
+        </div>
+      </div>
+    </div>
+    <div class="tp-gauge-card">
+      <div class="tp-gauge-title">Tech Pulse (QQQ/VXN)</div>
+      <div class="tp-gauge-svg-wrap">
+        <svg viewBox="0 0 180 106" id="tpGaugeSvg">
+          <defs><linearGradient id="tpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#f43f5e"/><stop offset="25%" stop-color="#f97316"/>
+            <stop offset="50%" stop-color="#f59e0b"/><stop offset="75%" stop-color="#10b981"/>
+            <stop offset="100%" stop-color="#3b82f6"/>
+          </linearGradient></defs>
+          <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="#1e2840" stroke-width="10" stroke-linecap="round"/>
+          <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="url(#tpGrad)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+          <line id="tpNeedle" x1="90" y1="94" x2="90" y2="28" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90,90,94)" style="transition:transform 1s ease-out"/>
+          <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
+          <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="6">FEAR</text>
+          <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="6">GREED</text>
+        </svg>
+        <div class="tp-gauge-center">
+          <div class="tp-gauge-score" id="tpGaugeScore">—</div>
+          <div class="tp-gauge-lbl" id="tpGaugeLbl" style="color:var(--mut)">LOADING</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ② 乖離インジケーター -->
+  <div class="tp-div-card">
+    <div class="tp-div-label">Tech Pulse − F&amp;G</div>
+    <div class="tp-div-value" id="tpDivVal">—</div>
+    <div id="tpDivBadge"></div>
+  </div>
+  <!-- ③ 数値サマリー4枚 -->
+  <div class="tp-cards">
+    <div class="metric-card">
+      <div class="metric-label" style="color:#f59e0b">F&amp;G Score</div>
+      <div class="metric-value" id="tpCFG">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label" style="color:#3b82f6">Tech Pulse</div>
+      <div class="metric-value" id="tpCTP">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label" style="color:#f43f5e">VXN</div>
+      <div class="metric-value" id="tpCVXN">—</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label" style="color:#22d3ee">QQQ vs SPY 20d</div>
+      <div class="metric-value" id="tpCQQQ">—</div>
+    </div>
+  </div>
+  <!-- ④ 過去30日チャート -->
+  <div class="tp-chart-card">
+    <div class="chart-header">
+      <span class="chart-title">F&amp;G vs Tech Pulse — 過去30日</span>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>CNN F&amp;G</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#3b82f6"></div>Tech Pulse</div>
+      </div>
+    </div>
+    <div class="tp-chart-wrap"><canvas id="tpChart"></canvas></div>
   </div>
   <div class="sec">市場フェーズ概要 &amp; 表示期間</div>
   <div class="top-bar">
@@ -477,9 +582,83 @@ function renderOscChart(){
   const nTxt=isMulti?' <span style="color:var(--mut);font-size:7px">(Score/F&G以外は正規化)</span>':'';
   document.getElementById("oscLegend").innerHTML=aList.map(m=>`<div class="osc-legend-item"><div class="osc-legend-dot" style="background:${m.color}"></div>${m.label}</div>`).join("")+(useZones?'<div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(244,63,94,.25)"></div>Fear</div><div class="osc-legend-item"><div class="osc-legend-dot" style="background:rgba(16,185,129,.25)"></div>Greed</div>':'')+nTxt}
 
+// ── TECH PULSE ──
+function tpColor(s){if(s<=20)return"#f43f5e";if(s<=40)return"#f97316";if(s<=60)return"#f59e0b";if(s<=80)return"#10b981";return"#3b82f6"}
+function tpLabel(s){if(s<=20)return"EXTREME FEAR";if(s<=35)return"FEAR";if(s<=50)return"CAUTION";if(s<=65)return"NEUTRAL";if(s<=80)return"GREED";return"EXTREME GREED"}
+let tpChartInst=null;
+
+function renderTechPulse(){
+  const latest=allData[allData.length-1];
+  const tp=latest?.tech_pulse;
+  const fgScore=latest?.fear_greed?.score??null;
+  const tpScore=tp?.score??null;
+
+  // F&G gauge
+  if(fgScore!=null){
+    const c=tpColor(fgScore);
+    document.getElementById("fgNeedle").setAttribute("transform",`rotate(${fgScore/100*180-90},90,94)`);
+    document.getElementById("fgGaugeScore").textContent=fgScore.toFixed(0);
+    document.getElementById("fgGaugeScore").style.color=c;
+    document.getElementById("fgGaugeLbl").textContent=tpLabel(fgScore);
+    document.getElementById("fgGaugeLbl").style.color=c;
+  } else {
+    document.getElementById("fgGaugeScore").textContent="—";
+    document.getElementById("fgGaugeLbl").textContent="NO DATA";
+  }
+
+  // Tech Pulse gauge
+  if(tpScore!=null){
+    const c=tpColor(tpScore);
+    document.getElementById("tpNeedle").setAttribute("transform",`rotate(${tpScore/100*180-90},90,94)`);
+    document.getElementById("tpGaugeScore").textContent=tpScore;
+    document.getElementById("tpGaugeScore").style.color=c;
+    document.getElementById("tpGaugeLbl").textContent=tp?.label||tpLabel(tpScore);
+    document.getElementById("tpGaugeLbl").style.color=c;
+  } else {
+    document.getElementById("tpGaugeScore").textContent="—";
+    document.getElementById("tpGaugeLbl").textContent="NO DATA";
+  }
+
+  // 乖離
+  const divEl=document.getElementById("tpDivVal");
+  if(tpScore!=null&&fgScore!=null){
+    const diff=tpScore-fgScore;
+    divEl.textContent=(diff>0?"+":"")+diff.toFixed(0);
+    divEl.style.color=diff>0?"#10b981":diff<0?"#f43f5e":"var(--mut)";
+    let badge="";
+    if(diff>10&&fgScore<30)badge='<div class="tp-signal tp-signal-buy">ハイテク先行反発シグナル</div>';
+    else if(diff<-10)badge='<div class="tp-signal tp-signal-sell">ハイテク先行下落</div>';
+    document.getElementById("tpDivBadge").innerHTML=badge;
+  } else {divEl.textContent="—";document.getElementById("tpDivBadge").innerHTML=""}
+
+  // 4枚カード
+  const setCard=(id,val,color)=>{const el=document.getElementById(id);el.textContent=val;if(color)el.style.color=color};
+  setCard("tpCFG",fgScore!=null?fgScore.toFixed(0):"—",fgScore!=null?tpColor(fgScore):null);
+  setCard("tpCTP",tpScore!=null?String(tpScore):"—",tpScore!=null?tpColor(tpScore):null);
+  const vxn=tp?.components?.vxn_latest;
+  setCard("tpCVXN",vxn!=null?vxn.toFixed(1):"—",null);
+  const qqq=tp?.components?.qqq_vs_spy_20d;
+  setCard("tpCQQQ",qqq!=null?(qqq>=0?"+":"")+qqq.toFixed(1)+"%":"—",qqq!=null?(qqq>=0?"var(--grn)":"var(--red)"):null);
+
+  renderTechPulseChart();
+}
+
+function renderTechPulseChart(){
+  const cutoff=new Date();cutoff.setDate(cutoff.getDate()-30);
+  const od=allData.filter(d=>new Date(d.date)>=cutoff);
+  if(!od.length)return;
+  const labels=od.map(d=>fmtDate(d.date));
+  const ds=[
+    {label:"CNN F&G",data:od.map(d=>d.fear_greed?.score??null),borderColor:"#f59e0b",pointBackgroundColor:"#f59e0b",pointBorderColor:"transparent",pointRadius:od.length>30?2:3,borderWidth:1.5,fill:false,tension:.3},
+    {label:"Tech Pulse",data:od.map(d=>d.tech_pulse?.score??null),borderColor:"#3b82f6",pointBackgroundColor:"#3b82f6",pointBorderColor:"transparent",pointRadius:od.length>30?2:3,borderWidth:2,fill:false,tension:.3}
+  ];
+  if(tpChartInst)tpChartInst.destroy();
+  tpChartInst=new Chart(document.getElementById("tpChart"),{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:9},bodyFont:{family:"Space Mono",size:10}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:8},maxTicksLimit:10},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:{min:0,max:100,ticks:{color:"#64748b",font:{family:"Space Mono",size:8},stepSize:20,callback:v=>{if(v===0)return"0";if(v===20)return"FEAR";if(v===50)return"50";if(v===80)return"GREED";if(v===100)return"100";return""}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}}}},
+  plugins:[{id:"tpZones",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;const y20=y.getPixelForValue(20),yB=y.getPixelForValue(0);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y20,right-left,yB-y20);const y80=y.getPixelForValue(80),yT=y.getPixelForValue(100);ctx.fillStyle="rgba(59,130,246,.06)";ctx.fillRect(left,yT,right-left,y80-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.25)";ctx.beginPath();ctx.moveTo(left,y20);ctx.lineTo(right,y20);ctx.stroke();ctx.strokeStyle="rgba(59,130,246,.25)";ctx.beginPath();ctx.moveTo(left,y80);ctx.lineTo(right,y80);ctx.stroke();ctx.setLineDash([])}}]})}
+
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail()}
+function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse()}
 
 // ── INIT ──
 async function init(){

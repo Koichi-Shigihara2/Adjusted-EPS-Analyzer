@@ -270,6 +270,98 @@ def _get_sp500_ma_deviation():
         return None
 
 
+# ──────────────────────────────────────────────────────
+# Tech Pulse — QQQ/VXN/F&Gベースのナスダック感情指数
+# ──────────────────────────────────────────────────────
+def fetch_qqq_tech_data():
+    """QQQのMA125乖離率とQQQ/SPY 20日相対強度を返す（%表示）"""
+    try:
+        hist_qqq = yf.Ticker("QQQ").history(period="200d")
+        hist_spy = yf.Ticker("SPY").history(period="200d")
+        if hist_qqq is None or len(hist_qqq) < 125:
+            print("[WARN] QQQデータ不足。Tech Pulseスキップ。")
+            return None, None
+        qqq_latest = hist_qqq['Close'].iloc[-1]
+        ma125 = hist_qqq['Close'].iloc[-125:].mean()
+        qqq_vs_ma125 = round((qqq_latest / ma125 - 1) * 100, 2)
+        qqq_vs_spy_20d = None
+        if hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21:
+            qqq_ret = (hist_qqq['Close'].iloc[-1] / hist_qqq['Close'].iloc[-21] - 1) * 100
+            spy_ret = (hist_spy['Close'].iloc[-1] / hist_spy['Close'].iloc[-21] - 1) * 100
+            if spy_ret != 0:
+                qqq_vs_spy_20d = round((qqq_ret / spy_ret - 1) * 100, 2)
+            else:
+                qqq_vs_spy_20d = 0.0
+        print(f"[INFO] QQQ: {qqq_latest:.2f}, vs_MA125={qqq_vs_ma125:+.2f}%, vs_SPY_20d={qqq_vs_spy_20d}")
+        return qqq_vs_ma125, qqq_vs_spy_20d
+    except Exception as e:
+        print(f"[WARN] QQQデータ取得失敗: {e}")
+        return None, None
+
+
+def fetch_vxn_from_fred():
+    """FREDからVXNCLS（ナスダック恐怖指数）を取得しMA50乖離率（%）を返す"""
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        print("[WARN] FRED_API_KEY未設定。VXN取得スキップ。")
+        return None, None
+    try:
+        from fredapi import Fred
+        fred = Fred(api_key=fred_api_key)
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+        vxn = fred.get_series("VXNCLS", observation_start=start).dropna()
+        if len(vxn) < 50:
+            print("[WARN] VXNデータが不足しています。")
+            return None, None
+        vxn_latest = float(vxn.iloc[-1])
+        ma50 = float(vxn.iloc[-50:].mean())
+        vxn_vs_ma50 = round((vxn_latest / ma50 - 1) * 100, 2)
+        print(f"[INFO] VXN: {vxn_latest:.2f}, MA50={ma50:.2f}, vs_MA50={vxn_vs_ma50:+.2f}%")
+        return round(vxn_latest, 2), vxn_vs_ma50
+    except Exception as e:
+        print(f"[WARN] VXN取得失敗: {e}")
+        return None, None
+
+
+def fetch_fg_score_from_feargreedchart():
+    """feargreedchart.com APIからF&Gスコア（0〜100）を取得する"""
+    try:
+        resp = requests.get(
+            "https://feargreedchart.com/api/?action=all",
+            timeout=15,
+            headers={"User-Agent": "Mozilla/5.0"},
+        )
+        resp.raise_for_status()
+        score = float(resp.json()["score"]["score"])
+        print(f"[INFO] feargreedchart.com F&G score: {score}")
+        return score
+    except Exception as e:
+        print(f"[WARN] feargreedchart.com F&G取得失敗: {e}")
+        return None
+
+
+def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, fg_score):
+    """Tech Pulseスコアを算出する（0〜100）"""
+    score = 50.0
+
+    if qqq_vs_ma125 is not None:
+        score += max(-25, min(25, qqq_vs_ma125 * 2.5))
+
+    if vxn_vs_ma50 is not None:
+        score += max(-20, min(20, -vxn_vs_ma50 * 1.0))
+
+    if qqq_vs_spy_20d is not None:
+        score += max(-15, min(15, qqq_vs_spy_20d * 3.0))
+
+    if fg_score is not None:
+        if fg_score < 20:
+            score += 10
+        elif fg_score > 80:
+            score -= 10
+
+    return max(0, min(100, round(score)))
+
+
 def get_realtime_data():
     """表示用テキストと構造化データを返す"""
     summary = ""
@@ -543,7 +635,7 @@ def extract_judgment(report_text):
     return match.group(1) if match else "不明"
 
 
-def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None):
+def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None, tech_pulse_data=None):
     os.makedirs(DATA_DIR, exist_ok=True)
     jst_now = datetime.now(JST)
     date_str = jst_now.strftime('%Y-%m-%dT%H:%M:%S+09:00')
@@ -571,6 +663,7 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "indicators": structured_data,
         "sentiment": sentiment_data,
         "fear_greed": fear_greed_data,
+        "tech_pulse": tech_pulse_data,
         "summary": report_text
     }
     # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
@@ -660,11 +753,41 @@ if __name__ == "__main__":
     # CNN Fear & Greed Index取得
     fear_greed_data = fetch_cnn_fear_greed()
 
+    # Tech Pulse（ナスダック感情指数）算出
+    qqq_vs_ma125, qqq_vs_spy_20d = fetch_qqq_tech_data()
+    vxn_latest, vxn_vs_ma50 = fetch_vxn_from_fred()
+    fg_score_tech = fetch_fg_score_from_feargreedchart()
+    tp_score = calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, fg_score_tech)
+    if tp_score <= 20:
+        tp_label = "EXTREME FEAR"
+    elif tp_score <= 35:
+        tp_label = "FEAR"
+    elif tp_score <= 50:
+        tp_label = "CAUTION"
+    elif tp_score <= 65:
+        tp_label = "NEUTRAL"
+    elif tp_score <= 80:
+        tp_label = "GREED"
+    else:
+        tp_label = "EXTREME GREED"
+    tech_pulse_data = {
+        "score": tp_score,
+        "label": tp_label,
+        "components": {
+            "qqq_vs_ma125": qqq_vs_ma125,
+            "vxn_latest": vxn_latest,
+            "vxn_vs_ma50": vxn_vs_ma50,
+            "qqq_vs_spy_20d": qqq_vs_spy_20d,
+            "fg_score": fg_score_tech,
+        },
+    }
+    print(f"[INFO] Tech Pulseスコア: {tp_score} ({tp_label})")
+
     news = get_market_news()
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
     report = analyse_market(realtime_text, "\n".join(news))
-    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data)
+    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data)
     if GMAIL_USER and GMAIL_PASSWORD:
         send_email(report, sentiment_data)
     else:
