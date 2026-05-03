@@ -481,7 +481,7 @@ function switchPeriod(d){periodDays=d;applyPeriod();renderAll()}
 // ── PHASE PILLS ──
 function renderPhasePills(){const c={"晴れ":0,"曇り":0,"嵐":0};filteredData.forEach(d=>{if(c[d.judgment]!=null)c[d.judgment]++});document.getElementById("phasePills").innerHTML=Object.entries(c).filter(([,v])=>v>0).map(([k,v])=>`<div class="phase-pill pill-${phaseClass(k)}"><span class="dot"></span>${phaseLabel(k)} <strong>${v}日</strong></div>`).join("")+`<div class="phase-pill pill-total">計 ${filteredData.length} 日</div>`}
 
-// ── TIMELINE (4-point: judgment + sentiment + F&G + VIX) ──
+// ── TIMELINE (judgment + sentiment + F&G + VIX + Tech Pulse + 乖離) ──
 function renderTimeline(){
   document.getElementById("tlCount").textContent=`${filteredData.length} 件`;
   const rev=[...filteredData].reverse();
@@ -493,6 +493,10 @@ function renderTimeline(){
     const sLbl={"EXTREME FEAR":"X-FEAR","FEAR":"FEAR","CAUTION":"CAUTION","NEUTRAL":"NEUTRAL","GREED":"GREED","EXTREME GREED":"X-GREED"}[sent?.label]||"";
     const fg=d.fear_greed;const fgS=fg?.score;const fgC=fgS!=null?fgColor(fgS):"var(--mut)";
     const vix=d.indicators?.["VIX指数"];
+    const tp=d.tech_pulse;const tpS=tp?.score??null;const tpC=tpS!=null?tpColor(tpS):"var(--mut)";
+    const divV=tp?.divergence?.value??((tpS!=null&&fgS!=null)?tpS-fgS:null);
+    const divC=divV!=null?(divV>0?"#10b981":"#f43f5e"):"var(--mut)";
+    const divTxt=divV!=null?(divV>0?"+":"")+Number(divV).toFixed(0):"—";
     return`<div class="tl-item ${i===selectedIdx?"active":""}" onclick="selectItem(${i})">
       <div class="tl-vis"><div class="tl-dot ${pc}"></div>${!isLast?'<div class="tl-line"></div>':''}</div>
       <div class="tl-main">
@@ -504,6 +508,8 @@ function renderTimeline(){
         <div class="tl-sent-label" style="color:${sColor}">${sLbl}</div>
         ${fgS!=null?`<div class="tl-fg-row"><span class="tl-fg-badge" style="color:${fgC};border-color:${fgC}40">F&G ${fgS.toFixed(0)}</span></div>`:''}
         <div class="tl-vix-val">VIX ${vix?vix.value.toFixed(1):"-"}</div>
+        <div class="tl-fg-row">${tpS!=null?`<span class="tl-fg-badge" style="color:${tpC};border-color:${tpC}40">TECH ${tpS}</span>`:'<span class="tl-fg-badge" style="color:var(--mut);border-color:var(--bdr)">TECH —</span>'}</div>
+        <div class="tl-vix-val" style="color:${divC}">乖離 ${divTxt}</div>
       </div>
     </div>`}).join("")}
 
