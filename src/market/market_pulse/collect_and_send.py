@@ -341,17 +341,19 @@ def fetch_fg_score_from_feargreedchart():
 
 
 def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, fg_score):
-    """Tech Pulseスコアを算出する（0〜100）"""
+    """Tech Pulseスコアを算出する（0〜100）
+    正常範囲: qqq_vs_ma125=±15%, vxn_vs_ma50=±30%, qqq_vs_spy_20d=±10%
+    """
     score = 50.0
 
     if qqq_vs_ma125 is not None:
-        score += max(-25, min(25, qqq_vs_ma125 * 2.5))
+        score += max(-25, min(25, qqq_vs_ma125 / 15 * 25))
 
     if vxn_vs_ma50 is not None:
-        score += max(-20, min(20, -vxn_vs_ma50 * 1.0))
+        score += max(-20, min(20, -vxn_vs_ma50 / 30 * 20))
 
     if qqq_vs_spy_20d is not None:
-        score += max(-15, min(15, qqq_vs_spy_20d * 3.0))
+        score += max(-15, min(15, qqq_vs_spy_20d / 10 * 15))
 
     if fg_score is not None:
         if fg_score < 20:
