@@ -1,0 +1,63 @@
+name: F&G Level2 Signal Check
+
+on:
+  schedule:
+    # 毎日 JST 22:00（UTC 13:00）に実行
+    # F&GとTech Pulseの最新値でシグナル判定
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: '実行モード (signal / monitor / status)'
+        required: false
+        default: 'signal'
+
+jobs:
+  check-signal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pandas requests yfinance
+
+      - name: Run signal check
+        env:
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          MODE="${{ github.event.inputs.mode || 'signal' }}"
+          echo "実行モード: $MODE"
+
+          if [ "$MODE" = "signal" ]; then
+            python src/subport/fg_level2/signal.py
+            # シグナル結果をDiscordに通知
+            python - <<'EOF'
+          import json, sys
+          sys.path.insert(0, 'src/subport/fg_level2')
+          from notify import notify_signal
+          signal = json.load(open('src/subport/fg_level2/signal.json'))
+          notify_signal(signal)
+          print(f"通知完了: {signal['action']}")
+          EOF
+
+          elif [ "$MODE" = "monitor" ]; then
+            python src/subport/fg_level2/trader.py --monitor
+
+          elif [ "$MODE" = "status" ]; then
+            python src/subport/fg_level2/trader.py --status
+          fi
+
+      - name: Commit state changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add src/subport/fg_level2/state.json
+          git add src/subport/fg_level2/signal.json
+          git diff --staged --quiet || git commit -m "chore(fg-level2): update signal/state $(date +%Y-%m-%d)"
+          git push
