@@ -18,8 +18,8 @@ MACRO PULSE v6.0 — 過去データ一括投入スクリプト
   Conference Board LEI / OECD CLI（USALOLITONOSTSAM: 1955年〜）
 
 手入力指標（FREDに月次公式データなし）:
-  ISM Manufacturing PMI, ISM Non-Manufacturing PMI
-  → --source オプションでCSVを渡す（ISM公式またはFRED: MANEMP等から手動DL）
+  ※ ISM PMIは8指標体制から除外済み（スコア計算対象外）
+  → --source オプションでCSVを渡す（各指標公式サイトまたはFREDから手動DL）
 
 入力CSVフォーマット（手入力指標用）:
   date,actual,consensus
@@ -348,7 +348,7 @@ def main():
 
     csv_p = sub.add_parser("csv", help="手動DLしたCSVを投入")
     csv_p.add_argument("--source",    required=True, help="入力CSVファイルパス")
-    csv_p.add_argument("--indicator", required=True, help="指標名（例: 'ISM Manufacturing PMI'）")
+    csv_p.add_argument("--indicator", required=True, help="指標名（例: 'Michigan Consumer Sentiment'）")
     csv_p.add_argument("--overwrite", action="store_true")
 
     args = p.parse_args()

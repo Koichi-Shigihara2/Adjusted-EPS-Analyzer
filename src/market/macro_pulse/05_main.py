@@ -302,26 +302,6 @@ def us_business_days_add(start: date, n: int) -> date:
                 return d
         d += timedelta(days=1)
 
-# ─────────────────────────────────────────────────────────────────
-#  ISM 発表予定日算出（変更なし）
-# ─────────────────────────────────────────────────────────────────
-def ism_release_dates(months_ahead: int = 3) -> list[tuple[str, date]]:
-    today = date.today()
-    results = []
-    for offset in range(months_ahead + 1):
-        year  = today.year + (today.month - 1 + offset) // 12
-        month = (today.month - 1 + offset) % 12 + 1
-        try:
-            mfg_date = nth_us_business_day(year, month, 1)
-            svc_date = nth_us_business_day(year, month, 3)
-            if mfg_date >= today:
-                results.append(("ISM Manufacturing PMI", mfg_date))
-            if svc_date >= today:
-                results.append(("ISM Non-Manufacturing PMI", svc_date))
-        except ValueError as e:
-            logger.warning(f"ISM date calc error: {e}")
-    return results
-
 def michigan_consumer_sentiment_release_dates(months_ahead: int = 3) -> list[tuple[str, date]]:
     today = date.today()
     results = []
@@ -469,20 +449,6 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
                 "actual":       "",
                 "status":       "scheduled",
             })
-
-    for ind_name, rd in ism_release_dates(months_ahead=3):
-        date_str = rd.strftime("%Y-%m-%d")
-        if (ind_name, date_str) in registered:
-            continue
-        new_rows.append({
-            "indicator":    ind_name,
-            "release_date": date_str,
-            "fred_id":      "",
-            "input_method": "manual",
-            "consensus":    "",
-            "actual":       "",
-            "status":       "scheduled",
-        })
 
     for ind_name, rd in michigan_release_dates(months_ahead=3):
         date_str = rd.strftime("%Y-%m-%d")
