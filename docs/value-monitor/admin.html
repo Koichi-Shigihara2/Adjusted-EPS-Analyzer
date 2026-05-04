@@ -1003,7 +1003,7 @@ async function registerTicker() {
       const { content: segRaw } = await fetchFile(SEG_PATH);
       const seg = JSON.parse(segRaw);
       if (!seg[ticker]) {
-        seg[ticker] = { enabled: false, fiscal_year: 'FY2025', segments: {} };
+        seg[ticker] = { enabled: true, fiscal_year: 'FY2025', segments: {} };
         files.push({ path: SEG_PATH, content: JSON.stringify(seg, null, 2) });
       }
       // maturity_config.json
