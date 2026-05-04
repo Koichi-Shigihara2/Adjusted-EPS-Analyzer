@@ -14,6 +14,12 @@ from .config import get_ticker_info
 class SECParser:
     """SEC Company Facts データパーサー"""
     
+    # タグをまたいでデータをマージするフィールド（早期終了しない）
+    # 企業によって年代ごとに異なるXBRLタグを使うフィールドを列挙する
+    # 例: GOOGLはFY2022-2024に RevenueFromContractWithCustomerExcludingAssessedTax,
+    #         FY2025に Revenues を使用しており、早期終了するとFY2022-2024が欠落する
+    MERGE_ALL_TAGS_FIELDS = {"revenue"}
+
     # XBRL項目マッピング（優先順位順）
     XBRL_MAPPING = {
         # BS（貸借対照表）
@@ -186,7 +192,8 @@ class SECParser:
             # 以前はuse_max=Trueだったが、CommonStockSharesOutstanding（期末発行済）が
             # WeightedAverageNumberOfDilutedSharesOutstanding（加重平均希薄化後）より
             # 大きい場合に誤った値が取得される問題があった
-            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max)
+            merge_all = field_name in self.MERGE_ALL_TAGS_FIELDS
+            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all)
         
         # 年次データを集約
         years = self._get_available_years(extracted)
@@ -204,7 +211,7 @@ class SECParser:
         
         return result
     
-    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False) -> Dict[str, Any]:
+    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
         
@@ -297,9 +304,9 @@ class SECParser:
                 if result["annual"] or result["quarterly"]:
                     break
             
-            # use_max=Trueの場合は全キーを検索
-            # use_max=Falseの場合は「最新FYのannualデータが取れた」場合のみ終了
-            if use_max:
+            # use_max=True または merge_all_tags=True の場合は全キーを検索（早期終了しない）
+            # merge_all_tags: 年代ごとにXBRLタグが切り替わる銘柄でデータ欠落を防ぐ
+            if use_max or merge_all_tags:
                 continue  # 全キーを検索
             
             if result["annual"]:
