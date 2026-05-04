@@ -30,7 +30,7 @@ class TanukiValuationPipeline:
     DEFAULT_TICKERS = [
         "TSLA", "PLTR", "SOFI", "CELH", "NVDA",
         "AMD", "APP", "SOUN", "RKLB", "ONDS",
-        "MSFT", "AMZN", "FIG"
+        "MSFT", "AMZN", "FIG", "CRWV"
     ]
 
     def __init__(self, output_dir: str = None, use_ai_validation: bool = True):
