@@ -254,28 +254,28 @@
   "rice": {
     "available": true,
     "q": 1.921,
-    "cf_conversion": 4.7142,
+    "cf_conversion": 27.7888,
     "wacc": 0.0772,
     "q_years": 3,
-    "cf_years": 1,
-    "avg_intensity": 0.1815,
-    "avg_rev_growth_lagged": 0.8554,
+    "cf_years": 3,
+    "avg_intensity": 0.0697,
+    "avg_rev_growth_lagged": 0.6335,
     "warnings": true,
-    "note": "CF: 1点のみ使用（3点要求）",
+    "note": "CF点が異常値（FY2022→: 76.7）: R&D未取得による投資強度過小の可能性",
     "bear": {
       "growth_rate": 0.119,
-      "rice": 13.959,
-      "rice_per_ratio": 0.1035
+      "rice": 82.286,
+      "rice_per_ratio": 0.6099
     },
     "base": {
       "growth_rate": 0.17,
-      "rice": 19.942,
-      "rice_per_ratio": 0.1478
+      "rice": 117.552,
+      "rice_per_ratio": 0.8713
     },
     "bull": {
       "growth_rate": 0.204,
-      "rice": 23.93,
-      "rice_per_ratio": 0.1774
+      "rice": 141.062,
+      "rice_per_ratio": 1.0455
     }
   },
   "components": {
@@ -321,7 +321,7 @@
   },
   "validation": {
     "validated_at": "2026-05-04",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -341,6 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "Inconsistency in share value calculation detected.",
+    "ai_concerns": "Inconsistency in per-share value ($90.68 calculated vs. $58.32 reported) indicates potential error; other values like high ROE (43.77%) are plausible but require scrutiny."
   }
 }

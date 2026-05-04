@@ -229,28 +229,28 @@
   "rice": {
     "available": true,
     "q": 2.4987,
-    "cf_conversion": 0.8641,
+    "cf_conversion": 2.4525,
     "wacc": 0.0886,
     "q_years": 3,
-    "cf_years": 1,
-    "avg_intensity": 0.055,
-    "avg_rev_growth_lagged": 0.0475,
+    "cf_years": 3,
+    "avg_intensity": 0.0415,
+    "avg_rev_growth_lagged": 0.0867,
     "warnings": true,
-    "note": "CF: 1点のみ使用（3点要求） / R&D未取得（FY2024, 2023, 2021）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
+    "note": "R&D未取得（FY2024, 2023, 2021）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "bear": {
       "growth_rate": 0.033,
-      "rice": 0.804,
-      "rice_per_ratio": 0.0456
+      "rice": 2.283,
+      "rice_per_ratio": 0.1293
     },
     "base": {
       "growth_rate": 0.047,
-      "rice": 1.145,
-      "rice_per_ratio": 0.0649
+      "rice": 3.251,
+      "rice_per_ratio": 0.1841
     },
     "bull": {
       "growth_rate": 0.056,
-      "rice": 1.365,
-      "rice_per_ratio": 0.0773
+      "rice": 3.873,
+      "rice_per_ratio": 0.2194
     }
   },
   "components": {
@@ -296,7 +296,7 @@
   },
   "validation": {
     "validated_at": "2026-05-04",
-    "model": "basic_checks",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -316,6 +316,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "P_t and per share value mismatch detected",
+    "ai_concerns": "Inconsistency between P_t and intrinsic_value_per_share suggests potential calculation error or anomaly in per share derivation"
   }
 }

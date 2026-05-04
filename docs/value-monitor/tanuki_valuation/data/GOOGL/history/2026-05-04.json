@@ -10,9 +10,9 @@
   "alpha": 0.9116297263806581,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 526.18,
-    "2年後": 605.1,
-    "3年後": 695.87
+    "1年後": 435.53,
+    "2年後": 500.86,
+    "3年後": 575.99
   },
   "upside_percent": 18.6,
   "calculation_date": "2026-05-04",
@@ -59,11 +59,29 @@
   "growth_scenarios": {
     "primary": {
       "rate": 0.15,
-      "source": "fcf_cagr"
+      "source": "segment_weighted"
     },
-    "segment": null
+    "segment": {
+      "enabled": true,
+      "weighted_growth": 0.15,
+      "fiscal_year": "FY2025",
+      "source": "segment_config"
+    }
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 323.39
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 378.72
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 420.4
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -159,16 +177,31 @@
     "applied": true
   },
   "rice": {
-    "available": false,
+    "available": true,
     "q": 1.2922,
-    "cf_conversion": 0.0,
+    "cf_conversion": 0.4258,
     "wacc": 0.1152,
     "q_years": 3,
-    "cf_years": 0,
-    "avg_intensity": 0.0,
-    "avg_rev_growth_lagged": 0.0,
-    "warnings": true,
-    "note": "CF計算不可（Revenue/CapExデータなし）"
+    "cf_years": 3,
+    "avg_intensity": 0.2935,
+    "avg_rev_growth_lagged": 0.1255,
+    "warnings": false,
+    "note": "",
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.501,
+      "rice_per_ratio": 0.017
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 0.716,
+      "rice_per_ratio": 0.0243
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 0.86,
+      "rice_per_ratio": 0.0292
+    }
   },
   "components": {
     "fcf_5yr_avg": 68988000000.0,
@@ -233,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value detected.",
-    "ai_concerns": "Inconsistency in P_t per share calculation indicates potential error; other values like growth rates appear normal."
+    "ai_comment": "Inconsistency in P_t and per share value detected.",
+    "ai_concerns": "Inconsistency between P_t and per share value suggests potential calculation error; other values appear reasonable."
   }
 }
