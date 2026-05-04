@@ -11,6 +11,7 @@ v2.1変更点:
     - latest.jsonに"validation"フィールドを追加
 """
 
+import csv
 import json
 import os
 import sys
@@ -26,13 +27,6 @@ from validator import validate_calculation
 class TanukiValuationPipeline:
     """TANUKI VALUATION パイプライン"""
 
-    # 監視対象ティッカー
-    DEFAULT_TICKERS = [
-        "TSLA", "PLTR", "SOFI", "CELH", "NVDA",
-        "AMD", "APP", "SOUN", "RKLB", "ONDS",
-        "MSFT", "AMZN", "FIG", "CRWV"
-    ]
-
     def __init__(self, output_dir: str = None, use_ai_validation: bool = True):
         self.fetcher = TanukiDataFetcher()
         self.use_ai_validation = use_ai_validation
@@ -47,6 +41,8 @@ class TanukiValuationPipeline:
             script_dir = os.path.dirname(os.path.abspath(__file__))
             repo_root = os.path.dirname(os.path.dirname(os.path.dirname(script_dir)))
             self.output_dir = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
+
+        self.repo_root = repo_root
 
         # v7.1: EPSアナライザーのdataディレクトリ
         eps_data_dir = os.path.join(
@@ -78,7 +74,7 @@ class TanukiValuationPipeline:
         print("=" * 60)
         
         if tickers is None:
-            tickers = self.DEFAULT_TICKERS
+            tickers = self._load_tickers_from_csv()
 
         results = {}
         success_count = 0
@@ -178,6 +174,15 @@ class TanukiValuationPipeline:
             self._save_tickers_index(list(results.keys()))
 
         return results
+
+    def _load_tickers_from_csv(self) -> List[str]:
+        csv_path = os.path.join(self.repo_root, "config", "cik_lookup.csv")
+        if not os.path.exists(csv_path):
+            print(f"❌ エラー: {csv_path} が見つかりません")
+            sys.exit(1)
+        with open(csv_path, encoding="utf-8", newline="") as f:
+            reader = csv.DictReader(f)
+            return [row["ticker"] for row in reader]
 
     def _get_warn_details(self, validation: dict) -> str:
         """検証警告の詳細を取得"""
