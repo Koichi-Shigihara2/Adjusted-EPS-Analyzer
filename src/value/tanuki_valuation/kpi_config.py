@@ -275,6 +275,14 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "12月末決算。単一セグメント開示。",
     },
+
+    # ── CoreWeave ──
+    "CRWV": {
+        "fiscal_year_end": 12,
+        "revenue_unit": "B USD",
+        "segments": [],
+        "xbrl_members": {},
+    },
 }
 
 
