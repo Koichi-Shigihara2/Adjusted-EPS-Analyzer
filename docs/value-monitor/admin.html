@@ -920,6 +920,88 @@ async function addTicker() {
   }
 }
 
+async function fetchSegmentsForTicker(ticker, cik) {
+    if (!cik) return { "General": { weight: 1.0, growth: 0.15 } };
+    try {
+        const paddedCik = String(parseInt(cik)).padStart(10, '0');
+        const cikInt    = parseInt(cik).toString();
+
+        // 1. Get latest 10-K accession from submissions API (CORS-enabled)
+        const subResp = await fetch(
+            `https://data.sec.gov/submissions/CIK${paddedCik}.json`,
+            { headers: { 'User-Agent': 'TANUKI-Admin tanuki-valuation' } }
+        );
+        if (!subResp.ok) throw new Error('submissions API failed');
+        const sub = await subResp.json();
+
+        const recent = sub.filings?.recent;
+        if (!recent) throw new Error('no recent filings');
+        const idx = recent.form.findIndex(f => f === '10-K' || f === '20-F');
+        if (idx === -1) throw new Error('no annual filing found');
+        const accession = recent.accessionNumber[idx].replace(/-/g, '');
+
+        // 2. FilingSummary.xml → find segment report R file
+        const sumResp = await fetch(
+            `https://www.sec.gov/Archives/edgar/data/${cikInt}/${accession}/FilingSummary.xml`,
+            { headers: { 'User-Agent': 'TANUKI-Admin tanuki-valuation' } }
+        );
+        if (!sumResp.ok) throw new Error('FilingSummary not accessible');
+        const sumXml = await sumResp.text();
+
+        const domParser = new DOMParser();
+        const xmlDoc = domParser.parseFromString(sumXml, 'application/xml');
+        const segReport = Array.from(xmlDoc.querySelectorAll('Report')).find(r => {
+            const sn = (r.querySelector('ShortName')?.textContent || '').toLowerCase();
+            return sn.includes('segment') && !sn.includes('polic') && !sn.includes('account');
+        });
+        if (!segReport) throw new Error('no segment report in FilingSummary');
+
+        const htmlFile = segReport.querySelector('HtmlFileName')?.textContent;
+        if (!htmlFile) throw new Error('no HtmlFileName in segment report');
+
+        // 3. Fetch R file and parse segment names from HTML table
+        const rResp = await fetch(
+            `https://www.sec.gov/Archives/edgar/data/${cikInt}/${accession}/${htmlFile}`,
+            { headers: { 'User-Agent': 'TANUKI-Admin tanuki-valuation' } }
+        );
+        if (!rResp.ok) throw new Error('R file not accessible');
+        const rHtml = await rResp.text();
+
+        const rDoc = domParser.parseFromString(rHtml, 'text/html');
+        const table = rDoc.querySelector('table.report') || rDoc.querySelector('table');
+        if (!table) throw new Error('no table in R file');
+
+        const names = [];
+        Array.from(table.querySelectorAll('tr')).forEach((row, i) => {
+            if (i === 0) return;
+            const cell = row.querySelector('td.pl, td:first-child');
+            if (!cell) return;
+            const label = cell.textContent.trim().replace(/\s+/g, ' ');
+            if (!label || label.length < 2) return;
+            if (/total|subtotal|elimin|reconcil|corporate|unalloc/i.test(label)) return;
+            if (/^\$|^\d|^%|^\[/.test(label)) return;
+            if (!names.includes(label)) names.push(label);
+        });
+        if (names.length === 0) throw new Error('no segment names extracted from R file');
+
+        // 4. Equal-weight distribution, growth default 0.15
+        const n = names.length;
+        const w = Math.round(1000 / n) / 1000;
+        const segments = {};
+        names.forEach((name, i) => {
+            segments[name] = {
+                weight: (i === n - 1) ? Math.round((1 - w * (n - 1)) * 1000) / 1000 : w,
+                growth: 0.15
+            };
+        });
+        return segments;
+
+    } catch(e) {
+        console.warn(`[TANUKI] segment auto-fetch failed (${ticker}): ${e.message}`);
+        return { "General": { weight: 1.0, growth: 0.15 } };
+    }
+}
+
 async function registerTicker() {
   const ticker = document.getElementById('regTicker').value.trim().toUpperCase();
   const doTanuki = document.getElementById('regTanuki').checked;
@@ -1003,7 +1085,9 @@ async function registerTicker() {
       const { content: segRaw } = await fetchFile(SEG_PATH);
       const seg = JSON.parse(segRaw);
       if (!seg[ticker]) {
-        seg[ticker] = { enabled: true, fiscal_year: 'FY2025', segments: {} };
+        btn.innerHTML = '<span class="spinner"></span>セグメント情報取得中...';
+        const segments = await fetchSegmentsForTicker(ticker, cik);
+        seg[ticker] = { enabled: true, fiscal_year: 'FY2025', segments };
         files.push({ path: SEG_PATH, content: JSON.stringify(seg, null, 2) });
       }
       // maturity_config.json
