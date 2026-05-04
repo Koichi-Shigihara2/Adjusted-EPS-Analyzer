@@ -234,28 +234,33 @@
     </div>
 
     <div class="divider"></div>
-    <h3 class="section-title">新規銘柄追加</h3>
+    <h3 class="section-title">新規銘柄登録</h3>
     <div class="add-form">
-      <div class="form-grid">
-        <div class="form-group">
+      <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px">
+        <div class="form-group" style="flex:0 0 160px">
           <label>ティッカー *</label>
-          <input type="text" class="form-input" id="newTicker" placeholder="例: GOOGL"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+          <input type="text" class="form-input" id="regTicker" placeholder="例: GOOGL"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
         </div>
-        <div class="form-group">
-          <label>CIK</label>
-          <input type="text" class="form-input" id="newCik" placeholder="自動取得">
+        <div class="form-group" style="flex:1">
+          <label>登録するシステム</label>
+          <div style="display:flex;gap:20px;padding:8px 0">
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--txt)">
+              <input type="checkbox" id="regTanuki" checked style="accent-color:var(--acc)">
+              TANUKI VALUATION
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--txt)">
+              <input type="checkbox" id="regEps" checked style="accent-color:var(--acc)">
+              EPS Analyzer
+            </label>
+          </div>
         </div>
-        <div class="form-group">
-          <label>会社名</label>
-          <input type="text" class="form-input" id="newName" placeholder="自動取得">
-        </div>
+        <button class="btn primary" id="registerTickerBtn" onclick="registerTicker()" disabled>登録</button>
       </div>
       <div class="form-actions">
-        <button class="btn" id="lookupCikBtn" onclick="lookupCik()" disabled>🔍 CIK自動取得</button>
-        <button class="btn primary" id="addTickerBtn" onclick="addTicker()" disabled>＋ 銘柄を追加</button>
         <button class="btn danger" id="deleteSelectedBtn" onclick="deleteSelected()" disabled>🗑 選択銘柄を削除</button>
       </div>
+      <div class="result-msg" id="registerResult"></div>
       <div class="result-msg" id="tickerResult"></div>
     </div>
   </div>
@@ -492,6 +497,27 @@
         </div>
         <div class="result-msg" id="wf-cik-result"></div>
       </div>
+      <div class="wf-card" style="border-color:var(--acc)">
+        <div class="wf-card-head">
+          <div>
+            <div class="wf-name">SEC取得 → TANUKI実行</div>
+            <div class="wf-desc">SECデータ取得の完了を待ってからTANUKI評価を連続実行します</div>
+          </div>
+          <span class="wf-schedule">手動のみ</span>
+        </div>
+        <div class="wf-inputs">
+          <div class="form-group" style="flex:1">
+            <label>対象ティッカー（空=全銘柄）</label>
+            <input type="text" class="form-input" id="wf-sec-tanuki-ticker"
+                   placeholder="例: CRWV"
+                   autocomplete="off" autocorrect="off" autocapitalize="off">
+          </div>
+        </div>
+        <div class="wf-actions">
+          <button class="btn warn" onclick="runSecThenTanuki(event)">▶ SEC取得 → TANUKI実行</button>
+        </div>
+        <div class="result-msg" id="wf-sec-tanuki-result"></div>
+      </div>
     </div>
 
     <h3 class="section-title" style="margin-top:28px">EPS / MARKET</h3>
@@ -586,6 +612,7 @@ const BETA_PATH  = 'config/beta_config.json';
 const SEG_PATH   = 'config/segment_config.json';
 const GO_PATH    = 'config/growth_options_config.json';
 const MAT_PATH   = 'config/maturity_config.json';
+const KPI_PATH   = 'src/value/tanuki_valuation/kpi_config.py';
 const DATA_BASE  = 'docs/value-monitor/tanuki_valuation/data';
 const RF = 0.043;
 const RM_RF = 0.057;
@@ -734,8 +761,8 @@ async function connect() {
     document.getElementById('statusText').textContent = '接続済み';
     document.getElementById('statusText').style.color = 'var(--grn)';
     ['refreshBtn','fetchSecBtn','updateSelectedBtn','lookupCikBtn','addTickerBtn',
-     'deleteSelectedBtn','saveBetaBtn','resetBetaBtn','refreshBetaBtn','refreshStatusBtn',
-     'saveSettingsBtn','resetSettingsBtn'].forEach(id => {
+     'deleteSelectedBtn','registerTickerBtn','saveBetaBtn','resetBetaBtn','refreshBetaBtn',
+     'refreshStatusBtn','saveSettingsBtn','resetSettingsBtn'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = false;
     });
@@ -819,10 +846,10 @@ async function lookupCik() {
     showResult('tickerResult', 'error', '起動失敗: ' + e.message);
     btn.disabled = false; btn.innerHTML = '🔍 CIK自動取得'; return;
   }
-  showResult('tickerResult', 'info', `⏳ CIK取得中... Actions完了を待っています（最大60秒）`);
+  showResult('tickerResult', 'info', `⏳ CIK取得中... Actions完了を待っています（最大180秒）`);
   btn.innerHTML = '<span class="spinner"></span>取得中...';
   const startTime = Date.now(); let found = false;
-  for (let i = 0; i < 12; i++) {
+  for (let i = 0; i < 36; i++) {
     await new Promise(r => setTimeout(r, 5000));
     btn.innerHTML = `<span class="spinner"></span>取得中... ${Math.round((Date.now()-startTime)/1000)}秒`;
     try {
@@ -832,7 +859,7 @@ async function lookupCik() {
       if (result.status === 'ok') {
         document.getElementById('newCik').value  = result.cik;
         document.getElementById('newName').value = result.name;
-        showResult('tickerResult', 'success', `✓ CIK取得完了: ${result.cik}（${result.name}）\nそのまま「＋ 銘柄を追加」をクリックしてください。`);
+        showResult('tickerResult', 'success', `✓ CIK取得完了: ${result.cik}（${result.name}）`);
         found = true; break;
       } else if (result.status === 'not_found') {
         showResult('tickerResult', 'error', `✗ ${ticker} のCIKがSEC EDGARに見つかりませんでした。手動入力してください。`);
@@ -840,10 +867,13 @@ async function lookupCik() {
       } else if (result.status === 'already_exists') {
         showResult('tickerResult', 'info', `ℹ ${ticker} はcik_lookup.csvに既に登録されています。`);
         found = true; break;
+      } else if (result.status === 'api_error') {
+        showResult('tickerResult', 'error', `✗ SEC EDGAR APIエラー。時間をおいて再試行してください。`);
+        found = true; break;
       }
     } catch(e) {}
   }
-  if (!found) showResult('tickerResult', 'info', `⏱ タイムアウト（60秒）。Actions完了後に「🔄 再読込」で確認してください。`);
+  if (!found) showResult('tickerResult', 'info', `⏱ タイムアウト（180秒）。Actions完了後に「🔄 再読込」で確認してください。`);
   btn.disabled = false; btn.innerHTML = '🔍 CIK自動取得';
 }
 
@@ -886,6 +916,141 @@ async function addTicker() {
     showResult('tickerResult', 'error', '追加失敗: ' + e.message);
   } finally {
     btn.disabled = false; btn.innerHTML = '＋ 銘柄を追加';
+  }
+}
+
+async function registerTicker() {
+  const ticker = document.getElementById('regTicker').value.trim().toUpperCase();
+  const doTanuki = document.getElementById('regTanuki').checked;
+  const doEps    = document.getElementById('regEps').checked;
+  if (!ticker) { alert('ティッカーを入力してください'); return; }
+  if (!doTanuki && !doEps) { alert('登録するシステムを選択してください'); return; }
+
+  const btn = document.getElementById('registerTickerBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>登録中...';
+  const resultId = 'registerResult';
+
+  try {
+    let cik = '', name = '';
+
+    // ── Step 1: CIK取得（TANUKI登録時のみ）──
+    if (doTanuki) {
+      showResult(resultId, 'info', '⏳ CIK取得中... Actions起動中...');
+      try {
+        await dispatchWorkflow('TANUKI_CIK_Lookup.yml', { ticker });
+      } catch(e) {
+        showResult(resultId, 'warn', `⚠ CIK自動取得起動失敗 (${e.message})。CIK未登録のまま続行します。`);
+      }
+
+      const startTime = Date.now();
+      let found = false;
+      for (let i = 0; i < 36; i++) {
+        await new Promise(r => setTimeout(r, 5000));
+        btn.innerHTML = `<span class="spinner"></span>CIK取得中... ${Math.round((Date.now()-startTime)/1000)}秒`;
+        try {
+          const { content } = await fetchFile('config/cik_lookup_result.json');
+          const result = JSON.parse(content);
+          if (result.ticker !== ticker) continue;
+          if (result.status === 'ok') {
+            cik = result.cik; name = result.name;
+            showResult(resultId, 'info', `✓ CIK取得: ${cik}（${name}）\nコミット中...`);
+            found = true; break;
+          } else if (result.status === 'not_found') {
+            showResult(resultId, 'warn', `⚠ ${ticker} のCIKがSEC EDGARに見つかりません。CIK未登録のまま続行します。`);
+            found = true; break;
+          } else if (result.status === 'already_exists') {
+            try {
+              const { content: csv } = await fetchFile(CIK_PATH);
+              const rows = parseCsv(csv);
+              const ex = rows.find(r => r.ticker.toUpperCase() === ticker);
+              if (ex) { cik = ex.cik; name = ex.name; }
+            } catch(e) {}
+            showResult(resultId, 'info', `ℹ ${ticker} はCIK登録済み。コミット中...`);
+            found = true; break;
+          } else if (result.status === 'api_error') {
+            showResult(resultId, 'warn', `⚠ CIK取得でAPIエラー発生。CIK未登録のまま続行します。`);
+            found = true; break;
+          }
+        } catch(e) {}
+      }
+      if (!found) showResult(resultId, 'warn', '⏱ CIK取得タイムアウト（180秒）。CIK未登録のまま続行します。');
+    }
+
+    // ── Step 2: ファイルをまとめてコミット ──
+    btn.innerHTML = '<span class="spinner"></span>コミット中...';
+    const files = [];
+
+    if (doTanuki) {
+      // cik_lookup.csv
+      if (cik) {
+        const { content: csv } = await fetchFile(CIK_PATH);
+        const rows = parseCsv(csv);
+        if (!rows.find(r => r.ticker.toUpperCase() === ticker)) {
+          rows.push({ ticker, cik, name });
+          rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
+          files.push({ path: CIK_PATH, content: buildCsv(rows) });
+        }
+      }
+      // beta_config.json
+      const { content: betaRaw } = await fetchFile(BETA_PATH);
+      const beta = JSON.parse(betaRaw);
+      if (!beta.overrides[ticker]) {
+        beta.overrides[ticker] = { beta: 1.10, sector: 'Technology', reason: 'デフォルト設定' };
+        files.push({ path: BETA_PATH, content: JSON.stringify(beta, null, 2) });
+      }
+      // segment_config.json
+      const { content: segRaw } = await fetchFile(SEG_PATH);
+      const seg = JSON.parse(segRaw);
+      if (!seg[ticker]) {
+        seg[ticker] = { enabled: false, fiscal_year: 'FY2025', segments: {} };
+        files.push({ path: SEG_PATH, content: JSON.stringify(seg, null, 2) });
+      }
+      // maturity_config.json
+      const { content: matRaw } = await fetchFile(MAT_PATH);
+      const mat = JSON.parse(matRaw);
+      if (!mat[ticker]) {
+        mat[ticker] = { type: 'two_stage', terminal_growth: 0.03 };
+        files.push({ path: MAT_PATH, content: JSON.stringify(mat, null, 2) });
+      }
+      // kpi_config.py
+      const { content: kpiRaw } = await fetchFile(KPI_PATH);
+      if (!kpiRaw.includes(`"${ticker}":`)) {
+        const ins = kpiRaw.lastIndexOf('\n}');
+        if (ins !== -1) {
+          const entry = `\n    "${ticker}": {\n        "fiscal_year_end": 12,\n        "revenue_unit": "B USD",\n        "segments": [],\n        "financial_kpis": ["segment_revenue"],\n        "operational_kpis": [],\n        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",\n    },`;
+          files.push({ path: KPI_PATH, content: kpiRaw.slice(0, ins) + entry + kpiRaw.slice(ins) });
+        }
+      }
+    }
+
+    if (doEps) {
+      const { content: yaml } = await fetchFile(YAML_PATH);
+      const list = parseYaml(yaml);
+      if (!list.includes(ticker)) {
+        list.push(ticker); list.sort();
+        files.push({ path: YAML_PATH, content: buildYaml(list) });
+      }
+    }
+
+    if (files.length === 0) {
+      showResult(resultId, 'info', `ℹ ${ticker} は既にすべての対象システムに登録済みです。`);
+      return;
+    }
+
+    const systems = [doTanuki ? 'TANUKI' : '', doEps ? 'EPS' : ''].filter(Boolean).join('+');
+    await commitMultipleFiles(files, `chore: register ticker ${ticker} [${systems}]`);
+
+    const fileNames = files.map(f => f.path.split('/').pop()).join(', ');
+    showResult(resultId, 'success',
+      `✓ ${ticker} を登録しました [${systems}]\n更新ファイル: ${fileNames}${cik ? `\nCIK: ${cik}` : ''}`
+    );
+    document.getElementById('regTicker').value = '';
+    await loadTickerTab();
+
+  } catch(e) {
+    showResult(resultId, 'error', '登録失敗: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '登録';
   }
 }
 
@@ -1490,6 +1655,57 @@ async function loadStatusTab() {
 
   } catch(e) {
     grid.innerHTML = `<div style="color:var(--red)">エラー: ${e.message}</div>`;
+  }
+}
+
+// ── SEC取得 → TANUKI実行（連続）──
+async function runSecThenTanuki(ev) {
+  const ticker = document.getElementById('wf-sec-tanuki-ticker').value.trim();
+  const btn = ev.currentTarget;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>起動中...';
+  const resultId = 'wf-sec-tanuki-result';
+
+  try {
+    const secInputs = ticker ? { tickers: ticker } : {};
+    await dispatchWorkflow('SEC_Data_Update.yml', secInputs);
+    showResult(resultId, 'info', '✓ SEC取得を起動しました。完了を待っています（最大5分）...');
+
+    // SEC完了をポーリング（初回は20秒待機）
+    await new Promise(r => setTimeout(r, 20000));
+    const startTime = Date.now();
+    const maxWait = 5 * 60 * 1000;
+    let secDone = false;
+    while (Date.now() - startTime < maxWait) {
+      btn.innerHTML = `<span class="spinner"></span>SEC完了待ち... ${Math.round((Date.now()-startTime)/1000)}秒`;
+      try {
+        const runsUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/SEC_Data_Update.yml/runs?branch=${BRANCH}&per_page=1`;
+        const runsRes = await fetch(runsUrl, { headers: apiHeaders() });
+        if (runsRes.ok) {
+          const runsData = await runsRes.json();
+          const latest = runsData.workflow_runs?.[0];
+          if (latest && latest.status === 'completed') {
+            const conclusion = latest.conclusion || '不明';
+            showResult(resultId, conclusion === 'success' ? 'info' : 'warn',
+              `✓ SEC取得完了（${conclusion}）。TANUKI実行を起動します...`);
+            secDone = true; break;
+          }
+        }
+      } catch(e) {}
+      await new Promise(r => setTimeout(r, 10000));
+    }
+    if (!secDone) {
+      showResult(resultId, 'warn', '⏱ SEC完了確認タイムアウト。TANUKI実行を起動します...');
+    }
+
+    const tanukiInputs = ticker ? { tickers: ticker } : {};
+    await dispatchWorkflow('TANUKI_VALUATION_Update.yml', tanukiInputs);
+    showResult(resultId, 'success',
+      `✓ SEC取得 → TANUKI実行を連続起動しました${ticker ? ` (${ticker})` : ''}。\nGitHub Actionsで進捗を確認してください。`);
+
+  } catch(e) {
+    showResult(resultId, 'error', '実行失敗: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '▶ SEC取得 → TANUKI実行';
   }
 }
 
