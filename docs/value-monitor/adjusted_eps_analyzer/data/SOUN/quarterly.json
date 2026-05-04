@@ -1,6 +1,6 @@
 {
   "ticker": "SOUN",
-  "last_updated": "2026-04-27T11:34:37.688611",
+  "last_updated": "2026-05-04T05:11:18.416971",
   "quarters": [
     {
       "gaap_eps": 0.09782972173380086,
@@ -52,6 +52,18 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.09782972173380086,
+          "official_eps": -0.02,
+          "eps_diff_pct": 589.1,
+          "note": "XBRLと公式発表のGAAP EPSに589%の差異があります。公式EPS: $-0.02, XBRL計算EPS: $0.10。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      },
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 103.7%）",
         "sbc_contribution": 1.037,
@@ -64,16 +76,16 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "調整項目は株式報酬費用（約6318万ドル）と無形資産償却費（約495万ドル）の2項目で、主に非現金項目を加算調整しています。これらはテック企業で一般的ですが、SBCは継続的に発生する恒常的コストの可能性が高く、無形資産償却も買収関連ながら定期的に計上される性質です。GAAP EPS 0.098に対しAdjusted EPS 0.247と2.5倍近くに膨らんでおり、経済的実態を過大評価している懸念があるため健全性は注意を要します。",
+        "comment": "株式報酬費用（SBC）と無形資産償却費の両調整項目は非現金費用として加算されているが、基準に基づきいずれも毎期発生する恒常的な性質が強く、真に一過性の項目が見当たらない。調整後EPSがGAAP EPSの2倍以上となっており、調整の健全性に注意が必要。継続的なSBCは将来の希薄化も伴う可能性がある。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用である株式報酬費用をadd_back（毎期発生するSBCとして恒常的コストの可能性が高い）",
+            "snippet": "非現金費用として株式報酬費用をadd_back。毎期発生するSBCのため恒常的な可能性が高い",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却としてadd_back（定期的に発生する無形資産償却として恒常的コストの可能性が高い）",
+            "snippet": "買収関連無形資産の償却をadd_back。継続的に発生する償却費のため恒常的な可能性が高い",
             "confidence": 0.2
           }
         ]
@@ -128,7 +140,19 @@
       "diluted_shares": 411702440.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.2654125635009596,
+          "official_eps": -0.03,
+          "eps_diff_pct": 784.7,
+          "note": "XBRLと公式発表のGAAP EPSに785%の差異があります。公式EPS: $-0.03, XBRL計算EPS: $-0.27。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.1858605000392644,
@@ -230,7 +254,19 @@
       "diluted_shares": 414156455.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.3137268499171406,
+          "official_eps": -0.06,
+          "eps_diff_pct": 622.9,
+          "note": "XBRLと公式発表のGAAP EPSに623%の差異があります。公式EPS: $-0.06, XBRL計算EPS: $0.31。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.7640401623843941,
@@ -281,7 +317,19 @@
       "diluted_shares": 338462574.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.7640401623843941,
+          "official_eps": -0.05,
+          "eps_diff_pct": 1428.1,
+          "note": "XBRLと公式発表のGAAP EPSに1428%の差異があります。公式EPS: $-0.05, XBRL計算EPS: $-0.76。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.06035476224574568,
@@ -332,7 +380,19 @@
       "diluted_shares": 360385812.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.06035476224574568,
+          "official_eps": -0.04,
+          "eps_diff_pct": 50.9,
+          "note": "XBRLと公式発表のGAAP EPSに51%の差異があります。公式EPS: $-0.04, XBRL計算EPS: $-0.06。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.11247304829697928,
@@ -434,7 +494,19 @@
       "diluted_shares": 286596559.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.11517584201002218,
+          "official_eps": -0.07,
+          "eps_diff_pct": 64.5,
+          "note": "XBRLと公式発表のGAAP EPSに65%の差異があります。公式EPS: $-0.07, XBRL計算EPS: $-0.12。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.0891501474643498,
@@ -485,7 +557,19 @@
       "diluted_shares": 229264904.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.0891501474643498,
+          "official_eps": -0.07,
+          "eps_diff_pct": 27.4,
+          "note": "XBRLと公式発表のGAAP EPSに27%の差異があります。公式EPS: $-0.07, XBRL計算EPS: $-0.09。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.08345099881470411,
@@ -663,7 +747,19 @@
       "diluted_shares": 157317695.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.35213807321547647,
+          "official_eps": -0.15,
+          "eps_diff_pct": 134.8,
+          "note": "XBRLと公式発表のGAAP EPSに135%の差異があります。公式EPS: $-0.15, XBRL計算EPS: $-0.35。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.14680698115366267,
@@ -777,7 +873,19 @@
       "diluted_shares": 69604188.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
-      "quarter": 1
+      "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.00553774149337106,
+          "official_eps": -2.0,
+          "eps_diff_pct": 99.7,
+          "note": "XBRLと公式発表のGAAP EPSに100%の差異があります。公式EPS: $-2.00, XBRL計算EPS: $-0.01。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     }
   ]
 }

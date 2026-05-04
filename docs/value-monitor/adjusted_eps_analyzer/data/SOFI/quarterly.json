@@ -1,6 +1,6 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-04-27T11:34:24.027186",
+  "last_updated": "2026-05-04T05:11:02.368350",
   "quarters": [
     {
       "gaap_eps": 0.1386432139527564,
@@ -74,21 +74,21 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用（約1.98億ドル）と無形資産償却費（約0.75億ドル）が調整の大半を占め、これらは成長企業において恒常的に発生しやすい項目です。リストラ費用は少数で一過性と評価できますが、全体として調整後EPS（0.31）がGAAP EPS（0.14）の2倍超となっており、持続可能性に疑問が残ります。非GAAP指標の過度な楽観視に注意が必要です。",
+        "comment": "調整項目の大部分を占める株式報酬費用（約1.98億ドル）はテック企業において継続的に発生する非現金費用であり、恒常的な性質が強い。無形資産償却も買収関連で複数年にわたる再発可能性が高い。一方、リストラ費用は金額が小さく一過性が高い。調整後EPSがGAAP EPSの2倍超となっており、収益の質と持続可能性に注意が必要。全体として調整の健全性は中程度。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが、従業員報酬として毎期発生する可能性が高い株式報酬費用",
+            "snippet": "株式報酬費用は成長企業で毎期発生する非現金報酬コストであり、経済的実態を排除した調整の信頼性は限定的。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で、定期的に発生する非現金費用",
+            "snippet": "買収に伴う無形資産償却は定期的に発生する非現金費用で、恒常的な性格を持つ。",
             "confidence": 0.2
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用",
+            "snippet": "事業再編に伴うリストラ費用は一時的な性格が強く、調整として比較的妥当。",
             "confidence": 0.8
           }
         ]
@@ -711,54 +711,6 @@
       "quarter": 1
     },
     {
-      "gaap_eps": -0.43320340199706125,
-      "adjusted_eps": 0.07698737185374821,
-      "gaap_net_income": -228181341.0,
-      "adjusted_net_income": 40551578.47022885,
-      "diluted_shares_used": 526730261.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 201557000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 199089188.75581083,
-          "tax_rate_applied": 0.012243738715049166
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 70507000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 69643730.71441802,
-          "tax_rate_applied": 0.012243738715049166
-        }
-      ],
-      "net_adjustment_total": 268732919.47022885,
-      "filing_date": "2021-12-31",
-      "form": "10-K",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 526730261.0,
-      "period_end": "2021-12-31",
-      "fiscal_year": 2021,
-      "quarter": 4
-    },
-    {
       "gaap_eps": -0.03753220394130487,
       "adjusted_eps": 0.05270462747556669,
       "gaap_net_income": -30047000.0,
@@ -827,41 +779,6 @@
       "period_end": "2021-06-30",
       "fiscal_year": 2021,
       "quarter": 2
-    },
-    {
-      "gaap_eps": -0.5199596275909226,
-      "adjusted_eps": -0.20348095406563166,
-      "gaap_net_income": -60394659.0,
-      "adjusted_net_income": -23634840.44083701,
-      "diluted_shares_used": 116152593.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 37454000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 36759818.55916299,
-          "tax_rate_applied": 0.018534240423906917
-        }
-      ],
-      "net_adjustment_total": 36759818.55916299,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 116152593.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 1
     }
   ]
 }

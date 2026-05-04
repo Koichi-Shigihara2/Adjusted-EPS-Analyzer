@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-04-27T11:34:07.191539",
+  "last_updated": "2026-05-04T05:10:37.352803",
   "quarters": [
     {
       "gaap_eps": 0.23728236076995257,
@@ -50,9 +50,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "Caution",
+        "comment": "唯一の調整項目が多額の株式報酬費用(SBC)の加算戻しです。非現金費用という理由で調整されていますが、PLTRのようなテック企業では人材獲得のための恒常的かつ大規模なコストであり、株主希薄化効果も無視できません。調整後EPSがGAAPの約1.8倍となっており、調整の質は低く健全性に懸念があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用として毎期発生する恒常的な報酬コストであり、調整加算されているが一過性とは言い難い",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

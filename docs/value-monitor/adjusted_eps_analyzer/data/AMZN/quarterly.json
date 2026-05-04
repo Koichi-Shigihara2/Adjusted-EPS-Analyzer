@@ -1,7 +1,50 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-04-27T11:31:24.282923",
+  "last_updated": "2026-05-04T05:07:21.462011",
   "quarters": [
+    {
+      "gaap_eps": 2.7823248114769172,
+      "adjusted_eps": 3.064086299355228,
+      "gaap_net_income": 30255000000.0,
+      "adjusted_net_income": 33318874419.188747,
+      "diluted_shares_used": 10874000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 4032000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 3063874419.188748,
+          "tax_rate_applied": 0.2401105111139018
+        }
+      ],
+      "net_adjustment_total": 3063874419.188748,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 10874000000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目が株式報酬費用(SBC)のadd_backです。非現金費用として調整される一方、Amazonでは毎四半期継続的に発生する恒常的コストであり、経済的実態(報酬コスト・株式希薄化)を反映しない可能性が高いため、調整後EPSの健全性に注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として毎期発生する株式報酬費用をadd_back。テック企業における継続的な報酬コストであり一過性とは言えない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.9573288999722915,
       "adjusted_eps": 2.2884503062736195,
@@ -58,28 +101,7 @@
       "diluted_shares": 10827000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用（SBC）と無形資産償却費はAmazonのようなテック企業ではほぼ恒常的に発生する項目であり、調整の正当性は低い（confidence 0.2）。これらは非現金項目ではあるが、経済的コストとして株主希薄化等の影響を無視できない。一方、貸倒引当金の異常変動分はマクロ要因による一時的項目として比較的妥当性が高い。全体として調整後EPSはGAAP EPSを過度に上方修正しており、持続可能性の観点から注意を要する。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただしテック企業では毎期発生する恒常的報酬コストであり、調整の持続可能性は低い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。買収後複数年にわたって発生する経常的項目であり、非GAAP調整としては一般的だが真の一過性とは言えない。",
-            "confidence": 0.2
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として貸倒引当金の異常変動分をadd_back。異常分に限定されているため一過性の蓋然性は比較的高い。",
-            "confidence": 0.65
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 1.9536191793453204,
@@ -484,38 +506,6 @@
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
       "quarter": 1
-    },
-    {
-      "gaap_eps": 0.27799825767108705,
-      "adjusted_eps": 0.8031795972224504,
-      "gaap_net_income": 2872000000.0,
-      "adjusted_net_income": 8297648418.905134,
-      "diluted_shares_used": 10331000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 5556000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 5425648418.905134,
-          "tax_rate_applied": 0.023461407684461068
-        }
-      ],
-      "net_adjustment_total": 5425648418.905134,
-      "filing_date": "2022-09-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 10331000000.0,
-      "period_end": "2022-09-30",
-      "fiscal_year": 2022,
-      "quarter": 3
     }
   ]
 }

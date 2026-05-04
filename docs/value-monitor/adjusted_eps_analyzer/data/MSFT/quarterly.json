@@ -1,7 +1,84 @@
 {
   "ticker": "MSFT",
-  "last_updated": "2026-04-27T11:33:06.013186",
+  "last_updated": "2026-05-04T05:09:48.165775",
   "quarters": [
+    {
+      "gaap_eps": 4.2683680322364,
+      "adjusted_eps": 4.722004197533309,
+      "gaap_net_income": 31778000000.0,
+      "adjusted_net_income": 35155321250.63548,
+      "diluted_shares_used": 7445000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 3081000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 2488765073.716319,
+          "tax_rate_applied": 0.1922216573462125
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 1100000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 888556176.9191662,
+          "tax_rate_applied": 0.1922216573462125
+        }
+      ],
+      "net_adjustment_total": 3377321250.635485,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 7445000000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 3,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 91.2%）",
+        "sbc_contribution": 0.912,
+        "sbc_to_revenue": 0,
+        "sbc_per_share": 0.4138,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "調整項目は株式報酬費用と無形資産償却費の2項目のみで、Microsoftの非GAAP調整として標準的な内容です。ただし両者とも定期的に発生する非現金項目であり、特にSBCはテック企業の人件費の本質的部分を構成します。調整後EPSはGAAPを上回るものの、持続可能性の観点から過大評価のリスクがあり、慎重な分析を要します。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただしMicrosoftでは毎期継続的に発生する恒常的なコストであり、一過性とは言えない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却をadd_back。過去のM&Aに基づく定期的な償却費用であり、恒常的な性格が強い。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 5.155227882037534,
       "adjusted_eps": 5.627411109884896,
@@ -51,33 +128,7 @@
       "diluted_shares": 7460000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2026,
-      "quarter": 2,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 91.4%）",
-        "sbc_contribution": 0.914,
-        "sbc_to_revenue": 0,
-        "sbc_per_share": 0.4315,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目は株式報酬費用（SBC）と無形資産償却費の2項目のみで、どちらもMicrosoftにとって毎期継続的に発生する性質の費用です。SBCはテック企業の標準的な報酬コスト、無形資産償却も定期的な買収活動に伴う恒常的項目であり、真に一過性とは言えません。Adjusted EPSがGAAP EPSを大幅に上回る要因となっていますが、収益の質を過大評価するリスクがあるためCautionと評価します。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただし毎期発生する恒常的な報酬コストであり、非経常的とはみなせない。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。ただし継続的なM&Aにより定期的に発生する恒常的費用。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "quarter": 2
     },
     {
       "gaap_eps": 3.7164478971336727,
@@ -945,57 +996,6 @@
       "period_end": "2021-09-30",
       "fiscal_year": 2022,
       "quarter": 1
-    },
-    {
-      "gaap_eps": 2.0346189285244174,
-      "adjusted_eps": 2.2624452531967383,
-      "gaap_net_income": 15457000000.0,
-      "adjusted_net_income": 17187796588.53562,
-      "diluted_shares_used": 7597000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 1525000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 1367598340.682293,
-          "tax_rate_applied": 0.10321420283128337
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 405000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 363198247.85333025,
-          "tax_rate_applied": 0.10321420283128337
-        }
-      ],
-      "net_adjustment_total": 1730796588.535623,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 7597000000.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 3
     }
   ]
 }
