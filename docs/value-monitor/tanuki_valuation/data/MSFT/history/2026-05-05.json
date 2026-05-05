@@ -268,7 +268,7 @@
     "bear": {
       "growth_rate": 0.101,
       "rice": 0.433,
-      "rice_per_ratio": 0.0175
+      "rice_per_ratio": 0.0176
     },
     "base": {
       "growth_rate": 0.145,
@@ -278,7 +278,7 @@
     "bull": {
       "growth_rate": 0.174,
       "rice": 0.746,
-      "rice_per_ratio": 0.0302
+      "rice_per_ratio": 0.0303
     }
   },
   "components": {
@@ -319,7 +319,7 @@
     "rpo_pv": 304077654860.9719,
     "growth_option_pv": 1288731815.566697,
     "alpha_uncapped": 1.3978546158277088,
-    "per": 24.693731,
+    "per": 24.634901,
     "ma200": 467.5122
   },
   "validation": {
@@ -344,7 +344,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value detected.",
-    "ai_concerns": "Inconsistency in per share value; other values like high growth rate (14.5%) vs WACC (9.43%) are plausible but overall calculation has errors."
+    "ai_comment": "Multiple inconsistencies detected in calculations.",
+    "ai_concerns": "Inconsistencies exist, such as P_t not aligning with (V0 + RPO_PV + GrowthOption_PV) * (1 + α), and mismatched sums in DCF components."
   }
 }
