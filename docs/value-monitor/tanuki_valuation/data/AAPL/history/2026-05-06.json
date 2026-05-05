@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4110464277707.821,
   "intrinsic_value_per_share": 300.50032510784416,
   "intrinsic_value_beta": 276.57,
-  "upside_percent_beta": -1.4,
+  "upside_percent_beta": -1.3,
   "intrinsic_value_rf": 1702.4,
-  "upside_percent_rf": 507.1,
+  "upside_percent_rf": 507.8,
   "v0": 2044123168529.6562,
   "v0_adjusted": 2055232138853.9104,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 397.41,
     "3年後": 457.02
   },
-  "upside_percent": 7.2,
+  "upside_percent": 7.3,
   "calculation_date": "2026-05-06",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -217,7 +217,7 @@
     ],
     "diluted_shares": 14687356000,
     "roe_10yr_avg": 1.095797481703121,
-    "current_price": 280.43,
+    "current_price": 280.1,
     "latest_revenue": 416161000000.0,
     "rpo": 13700000000.0,
     "beta": 1.1,
@@ -241,7 +241,7 @@
     "rpo_pv": 11108970324.254175,
     "growth_option_pv": 0,
     "alpha_uncapped": 4.602349423153108,
-    "per": 33.991516,
+    "per": 33.951515,
     "ma200": 255.51735
   },
   "validation": {
@@ -266,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple calculation inconsistencies detected.",
-    "ai_concerns": "Inconsistencies include mismatched P_t per share and α value; ROE is high but plausible."
+    "ai_comment": "Inconsistencies in per share and P_t values",
+    "ai_concerns": "P_t (4,110,464,277,708) does not align with expected (V0 + RPO + GrowthOption) * α ≈ 2,055B * 1, suggesting calculation anomaly."
   }
 }
