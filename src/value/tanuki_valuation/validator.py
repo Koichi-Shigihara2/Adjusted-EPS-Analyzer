@@ -359,14 +359,14 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
 
     return {
         "validated_at": datetime.now().strftime("%Y-%m-%d"),
-        "model": "basic_checks",
+        "model": "basic_checks_only",  # v7.3: Grok廃止、basic_checksで代替
         "checks": checks,
         "overall": overall,
         "ai_comment": None
     }
 
 
-def validate_calculation(ticker: str, data: Dict[str, Any], use_ai: bool = True) -> Dict[str, Any]:
+def validate_calculation(ticker: str, data: Dict[str, Any], use_ai: bool = False) -> Dict[str, Any]:
     """計算結果を検証"""
 
     validation = run_basic_checks(ticker, data)

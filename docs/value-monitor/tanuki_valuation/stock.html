@@ -906,16 +906,19 @@ function render(d) {
             <div class="phase-row">
               <div class="phase-card p1">
                 <div class="phase-label">Phase 1（高成長）</div>
+                <div style="font-size:9px;color:var(--mut);margin-top:1px">β込みWACC基準（参考）</div>
                 <div class="phase-detail">${maturity.phase1?.years || 0}年 @ ${fmtPct(maturity.phase1?.growth ?? growthRate)}</div>
                 <div class="phase-value">${fmtB(pvPhase1)}</div>
               </div>
               <div class="phase-card p2">
                 <div class="phase-label">Phase 2（移行期）</div>
+                <div style="font-size:9px;color:var(--mut);margin-top:1px">β込みWACC基準（参考）</div>
                 <div class="phase-detail">${maturity.phase2?.years || 0}年 @ ${fmtPct(maturity.phase2?.growth)}</div>
                 <div class="phase-value">${fmtB(pvPhase2)}</div>
               </div>
               <div class="phase-card tv">
                 <div class="phase-label">Terminal（永続）</div>
+                <div style="font-size:9px;color:var(--mut);margin-top:1px">β込みWACC基準（参考）</div>
                 <div class="phase-detail">@ ${fmtPct(terminalGrowth)}</div>
                 <div class="phase-value">${fmtB(pvTerminal)}</div>
               </div>
