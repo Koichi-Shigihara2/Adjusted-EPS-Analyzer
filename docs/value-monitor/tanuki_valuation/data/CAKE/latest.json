@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4724008430.592509,
   "intrinsic_value_per_share": 70.93708338222608,
   "intrinsic_value_beta": 86.44,
-  "upside_percent_beta": 45.2,
+  "upside_percent_beta": 44.7,
   "intrinsic_value_rf": 420.42,
-  "upside_percent_rf": 606.1,
+  "upside_percent_rf": 603.8,
   "v0": 2362004215.2962546,
   "v0_adjusted": 2362004215.2962546,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 77.77,
     "3年後": 81.42
   },
-  "upside_percent": 19.1,
+  "upside_percent": 18.7,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -240,17 +240,17 @@
     "bear": {
       "growth_rate": 0.033,
       "rice": 2.022,
-      "rice_per_ratio": 0.1158
+      "rice_per_ratio": 0.1154
     },
     "base": {
       "growth_rate": 0.047,
       "rice": 2.88,
-      "rice_per_ratio": 0.165
+      "rice_per_ratio": 0.1644
     },
     "bull": {
       "growth_rate": 0.056,
       "rice": 3.432,
-      "rice_per_ratio": 0.1965
+      "rice_per_ratio": 0.1959
     }
   },
   "components": {
@@ -267,7 +267,7 @@
     ],
     "diluted_shares": 49859092,
     "roe_10yr_avg": 0.26513162682791036,
-    "current_price": 59.54,
+    "current_price": 59.7375,
     "latest_revenue": 3751806000.0,
     "rpo": 0.0,
     "beta": 0.8,
@@ -291,7 +291,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.1135528326772233,
-    "per": 17.460411,
+    "per": 17.518328,
     "ma200": 56.9185
   },
   "validation": {
@@ -316,7 +316,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in P_t and per share value detected",
-    "ai_concerns": "Anomaly in P_t (4,724,008,431) vs. intrinsic value per share (70.94), as it should derive from V0_rm=1.98B per supplement, but P_t is double V0."
+    "ai_comment": "Inconsistencies detected in key values",
+    "ai_concerns": "Inconsistency between P_t and intrinsic_value_per_share; also, supplement values like intrinsic_value_beta suggest potential errors."
   }
 }

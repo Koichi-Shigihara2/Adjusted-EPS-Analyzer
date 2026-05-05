@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 445090575966.00146,
   "intrinsic_value_per_share": 71.56089239629603,
   "intrinsic_value_beta": 105.49,
-  "upside_percent_beta": 35.4,
+  "upside_percent_beta": 34.8,
   "intrinsic_value_rf": 379.74,
-  "upside_percent_rf": 387.5,
+  "upside_percent_rf": 385.1,
   "v0": 222545287983.00073,
   "v0_adjusted": 222545287983.00073,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 78.89,
     "3年後": 82.84
   },
-  "upside_percent": -8.1,
+  "upside_percent": -8.6,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -186,7 +186,7 @@
     "avg_intensity": 0.1425,
     "avg_rev_growth_lagged": 0.0371,
     "warnings": true,
-    "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / SGA取得漏れ疑い（FY2024(66%), FY2023(64%), FY2022(69%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
+    "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "bear": {
       "growth_rate": 0.035,
       "rice": 0.073,
@@ -217,7 +217,7 @@
     ],
     "diluted_shares": 4302482418,
     "roe_10yr_avg": 0.3675234999062005,
-    "current_price": 77.9,
+    "current_price": 78.2726,
     "latest_revenue": 47941000000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -241,7 +241,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.543598699606042,
-    "per": 24.496855,
+    "per": 24.614023,
     "ma200": 71.9924
   },
   "validation": {
@@ -266,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple inconsistencies in values detected.",
-    "ai_concerns": "P_t ($445B) is approximately double V0 ($222B) despite α=1.0, and intrinsic_value_per_share ($71.56) does not align with P_t/shares calculation, indicating potential anomalies."
+    "ai_comment": "Inconsistencies in per-share value calculation lead to failure.",
+    "ai_concerns": "P_t ($445B) aligns with V0 ($222B) * (1 + α=1.0) ≈ $444B, but intrinsic value per share $71.56 does not match P_t / shares ($103.41), indicating potential error."
   }
 }

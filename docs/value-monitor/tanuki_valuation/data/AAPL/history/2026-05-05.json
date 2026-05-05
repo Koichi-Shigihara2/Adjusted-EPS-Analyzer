@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4110464277707.821,
   "intrinsic_value_per_share": 300.50032510784416,
   "intrinsic_value_beta": 276.57,
-  "upside_percent_beta": -0.8,
+  "upside_percent_beta": -1.6,
   "intrinsic_value_rf": 1702.4,
-  "upside_percent_rf": 510.4,
+  "upside_percent_rf": 506.0,
   "v0": 2044123168529.6562,
   "v0_adjusted": 2055232138853.9104,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 397.41,
     "3年後": 457.02
   },
-  "upside_percent": 7.7,
+  "upside_percent": 7.0,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -186,7 +186,7 @@
     "avg_intensity": 0.1016,
     "avg_rev_growth_lagged": 0.0188,
     "warnings": true,
-    "note": "販売・マーケティング費未取得（FY2024, 2023, 2022）: 投資強度が過小になる可能性",
+    "note": "販売・マーケティング費未取得（FY2024, 2023, 2022）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2024(100%), FY2023(100%), FY2022(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.201,
@@ -195,12 +195,12 @@
     "base": {
       "growth_rate": 0.15,
       "rice": 0.287,
-      "rice_per_ratio": 0.0085
+      "rice_per_ratio": 0.0084
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.344,
-      "rice_per_ratio": 0.0102
+      "rice_per_ratio": 0.0101
     }
   },
   "components": {
@@ -217,7 +217,7 @@
     ],
     "diluted_shares": 14687356000,
     "roe_10yr_avg": 1.095797481703121,
-    "current_price": 278.9,
+    "current_price": 280.935,
     "latest_revenue": 416161000000.0,
     "rpo": 13700000000.0,
     "beta": 1.1,
@@ -241,7 +241,7 @@
     "rpo_pv": 11108970324.254175,
     "growth_option_pv": 0,
     "alpha_uncapped": 4.602349423153108,
-    "per": 33.802425,
+    "per": 34.052727,
     "ma200": 255.51735
   },
   "validation": {
@@ -266,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple calculation inconsistencies detected.",
-    "ai_concerns": "Inconsistencies in P_t vs intrinsic value per share and α calculation suggest potential anomalies in the results."
+    "ai_comment": "Inconsistencies in per share and P_t values detected.",
+    "ai_concerns": "Anomaly in P_t per share calculation; expected $279.90 but reported $300.50. Also, P_t ($4,110B) significantly exceeds V0 ($2,044B), indicating potential discrepancy."
   }
 }

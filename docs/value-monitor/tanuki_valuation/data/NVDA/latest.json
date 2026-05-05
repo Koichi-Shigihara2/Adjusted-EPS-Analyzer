@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9931658787751.377,
   "intrinsic_value_per_share": 429.11982676647006,
   "intrinsic_value_beta": 408.67,
-  "upside_percent_beta": 105.9,
+  "upside_percent_beta": 106.0,
   "intrinsic_value_rf": 2814.12,
-  "upside_percent_rf": 1317.8,
+  "upside_percent_rf": 1318.3,
   "v0": 4962104669821.988,
   "v0_adjusted": 4965829393875.688,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 753.37,
     "3年後": 998.22
   },
-  "upside_percent": 116.2,
+  "upside_percent": 116.3,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -286,21 +286,21 @@
     "avg_intensity": 0.1418,
     "avg_rev_growth_lagged": 0.8984,
     "warnings": true,
-    "note": "CF: 2点のみ使用（3点要求） / 販売・マーケティング費未取得（FY2025, 2024, 2023）: 投資強度が過小になる可能性",
+    "note": "CF: 2点のみ使用（3点要求） / 販売・マーケティング費未取得（FY2025, 2024, 2023）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2023(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
     "bear": {
       "growth_rate": 0.227,
       "rice": 12.598,
-      "rice_per_ratio": 0.3095
+      "rice_per_ratio": 0.3111
     },
     "base": {
       "growth_rate": 0.325,
       "rice": 18.037,
-      "rice_per_ratio": 0.443
+      "rice_per_ratio": 0.4454
     },
     "bull": {
       "growth_rate": 0.39,
       "rice": 21.644,
-      "rice_per_ratio": 0.5317
+      "rice_per_ratio": 0.5345
     }
   },
   "components": {
@@ -317,7 +317,7 @@
     ],
     "diluted_shares": 24305000000,
     "roe_10yr_avg": 0.4564387976956358,
-    "current_price": 198.48,
+    "current_price": 198.41,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
     "beta": 1.05,
@@ -341,7 +341,7 @@
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
     "alpha_uncapped": 1.91704295032167,
-    "per": 40.711224,
+    "per": 40.492878,
     "ma200": 183.9837
   },
   "validation": {
@@ -366,7 +366,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per-share value detected; other checks pass.",
-    "ai_concerns": "Reported intrinsic value per share ($429.12) does not match calculated P_t / shares ($408.67), indicating potential anomaly in final value adjustment."
+    "ai_comment": "One check failed due to per share inconsistency."
   }
 }
