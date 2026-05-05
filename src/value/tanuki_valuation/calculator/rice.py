@@ -10,7 +10,7 @@ RICE = Reinvestment & Compounding Efficiency
     Q    : OCF ÷ 純利益（直近3年平均）キャッシュ転換効率
     CF   : 売上成長率 ÷ 投資強度（1年ラグ・直近3年平均）投資再生産効率
            投資強度 = (R&D + CapEx) / Revenue
-    WACC : TANUKI VALUATION計算値
+    WACC : Rmβなし（市場期待リターン10%固定）※v7.3以降
 
 設計方針:
     - RICEは「投資効率の純粋な測定指標」として割り切る

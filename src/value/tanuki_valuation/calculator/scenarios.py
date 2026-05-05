@@ -123,9 +123,9 @@ def create_scenario_calc_func(
                 from .dcf import calculate_three_stage_dcf
                 result = calculate_three_stage_dcf(
                     base_fcf=base_fcf,
-                    phase1_growth=growth_rate,
+                    phase1_growth_rate=growth_rate,
                     phase1_years=high_growth_years,
-                    phase2_growth=phase2_growth,
+                    phase2_growth_rate=phase2_growth,
                     phase2_years=phase2_years,
                     terminal_growth=terminal_growth,
                     wacc=wacc,
