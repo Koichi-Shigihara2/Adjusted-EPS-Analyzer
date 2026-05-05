@@ -259,17 +259,17 @@
     "bear": {
       "growth_rate": 0.24,
       "rice": 2.7,
-      "rice_per_ratio": 0.0589
+      "rice_per_ratio": 0.057
     },
     "base": {
       "growth_rate": 0.343,
       "rice": 3.859,
-      "rice_per_ratio": 0.0842
+      "rice_per_ratio": 0.0814
     },
     "bull": {
       "growth_rate": 0.411,
       "rice": 4.624,
-      "rice_per_ratio": 0.1008
+      "rice_per_ratio": 0.0975
     }
   },
   "components": {
@@ -310,7 +310,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 355058765.51327366,
     "alpha_uncapped": 4.61331577720206,
-    "per": 45.849422,
+    "per": 47.405186,
     "ma200": 526.2943
   },
   "validation": {
@@ -335,6 +335,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "One check failed due to inconsistency."
+    "ai_comment": "Inconsistency in P_t and per share value detected.",
+    "ai_concerns": "P_t value ($235,108,249,693) does not align with formula calculation from V0, indicating potential error in aggregation or reporting."
   }
 }
