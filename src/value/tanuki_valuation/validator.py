@@ -76,8 +76,8 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     p = _extract_params(data)
 
     ivps = data.get("intrinsic_value_per_share", 0)
-    # v7.3: RM基準V0を優先（メイン理論株価と整合）
-    v0 = data.get("dcf_components", {}).get("v0_rm") or data.get("v0", 0)
+    # プロンプト内ではβ込みWACC基準V0を使用（DCF構成要素との整合性のため）
+    v0 = data.get("v0", 0)
     alpha = data.get("alpha", 0)
 
     pv_high = c.get("pv_high", 0)
@@ -168,6 +168,15 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
   "ai_comment": "総合評価コメント（50字以内）"
 }}
 ```
+"""
+    v0_rm = data.get("dcf_components", {}).get("v0_rm", 0)
+    prompt += f"""
+## 補足（v7.3設計）
+
+- メイン理論株価（${ivps:.2f}）はRmβなし（10%）で計算したV0_rm=${v0_rm/1e9:.2f}Bから算出
+- V₀（${v0/1e9:.2f}B）はβ込みWACC基準。DCF構成要素（Phase1+2+TV）はV₀と整合する
+- intrinsic_value_beta（${data.get('intrinsic_value_beta', 0):.2f}）はβ込みWACCの参考値。メイン理論株価との差異は設計上正常
+- DCF構成要素の整合性はV₀（β込みWACC）と比較すること
 """
     return prompt
 
