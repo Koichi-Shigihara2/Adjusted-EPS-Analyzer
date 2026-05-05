@@ -463,6 +463,20 @@ function render(d) {
   const bsStDebt = bsAdj.short_term_debt || 0;
   const bsFY = bsAdj.fiscal_year || '';
 
+  // RICE（投資効率指標）
+  const rice = d.rice || {};
+  const riceAvailable = rice.available || false;
+  const riceBase = rice.base || {};
+  const riceBear = rice.bear || {};
+  const riceBull = rice.bull || {};
+  const riceNote = rice.note || '';
+  const riceWarnings = rice.warnings || false;
+
+  // validation
+  const validation = d.validation || {};
+  const aiConcerns = validation.ai_concerns || '';
+  const validationOverall = validation.overall || '';
+
   // v6.2: 成熟プロファイル
   const maturity = d.maturity_profile;
 
@@ -533,6 +547,14 @@ function render(d) {
           ${segTag ? `<span class="tag seg">${segTag}</span>` : ''}
         </div>
       </div>
+
+      ${validationOverall === 'FAIL' ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red)">
+        🚨 AI検証コメント: ${aiConcerns}
+      </div>` : (aiConcerns ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;font-size:13px;color:var(--yellow)">
+        ⚠️ AI検証コメント: ${aiConcerns}
+      </div>` : '')}
 
       <div class="value-display">
         <div class="value-box primary">
@@ -641,6 +663,43 @@ function render(d) {
             '</table>';
         })()}
       </div>
+
+      ${riceAvailable ? `
+      <div class="future-section">
+        <h3 class="section-title">RICE RATIO（投資効率指標）</h3>
+        <table class="future-table">
+          <thead>
+            <tr>
+              <th class="scenario-header">シナリオ</th>
+              <th>成長率</th>
+              <th>RICE</th>
+              <th>RICE/PER</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="scenario-name bear">🐻 BEAR</td>
+              <td>${fmtPct(riceBear.growth_rate)}</td>
+              <td>${riceBear.rice != null ? riceBear.rice.toFixed(1) : '—'}</td>
+              <td>${riceBear.rice_per_ratio != null ? riceBear.rice_per_ratio.toFixed(2) : '—'}</td>
+            </tr>
+            <tr class="base-row">
+              <td class="scenario-name base">📊 BASE</td>
+              <td>${fmtPct(riceBase.growth_rate)}</td>
+              <td>${riceBase.rice != null ? riceBase.rice.toFixed(1) : '—'}</td>
+              <td>${riceBase.rice_per_ratio != null ? riceBase.rice_per_ratio.toFixed(2) : '—'}</td>
+            </tr>
+            <tr>
+              <td class="scenario-name bull">🐂 BULL</td>
+              <td>${fmtPct(riceBull.growth_rate)}</td>
+              <td>${riceBull.rice != null ? riceBull.rice.toFixed(1) : '—'}</td>
+              <td>${riceBull.rice_per_ratio != null ? riceBull.rice_per_ratio.toFixed(2) : '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+        ${riceWarnings ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:12px;color:var(--yellow)">⚠️ ${riceNote}</div>` : ''}
+      </div>
+      ` : ''}
     </div>
 
     <div class="calc-section">

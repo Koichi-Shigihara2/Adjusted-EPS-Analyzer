@@ -86,7 +86,7 @@ class KoichiValuationCalculator:
       - FCFベース自動判定（急拡大銘柄は直近2年平均を使用）
     """
 
-    VERSION = "7.1.0"
+    VERSION = "7.3.0"
 
     def __init__(
         self,
@@ -431,7 +431,7 @@ class KoichiValuationCalculator:
 
         sensitivity_result: SensitivityResult = calculate_sensitivity_matrix(
             calc_func=sensitivity_calc_func,
-            base_wacc=wacc,
+            base_wacc=_rm,  # v7.3: Rmβなし基点（中央セルがメイン理論株価と一致）
             base_years=_sensitivity_base_years
         )
 
@@ -442,7 +442,7 @@ class KoichiValuationCalculator:
             _scenario_p1_years = _sensitivity_base_years  # Phase1実際年数
             scenario_calc_func = create_scenario_func(
                 base_fcf=base_fcf,
-                wacc=wacc,
+                wacc=_rm,  # v7.3: Rmβなし（メイン理論株価と整合）
                 high_growth_years=_scenario_p1_years,
                 diluted_shares=diluted_shares,
                 rpo_pv=rpo_pv + growth_option_pv,
@@ -488,7 +488,7 @@ class KoichiValuationCalculator:
                     _sc_val = scenario_result.to_dict() if scenario_result else None
                     rice_result = calculate_rice(
                         annual_data=_annual_data,
-                        wacc=wacc,
+                        wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
                         scenario_valuations=_sc_val,
                         current_per=_current_per,
                     )
