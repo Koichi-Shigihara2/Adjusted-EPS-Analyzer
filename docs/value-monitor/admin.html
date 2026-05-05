@@ -192,6 +192,13 @@
         <span id="statusText" style="color:var(--mut)">未接続</span>
       </div>
     </div>
+    <div class="token-row" style="margin-top:6px">
+      <span class="token-label">Anthropic API Key:</span>
+      <input type="text" class="token-input" id="anthropicKeyInput"
+             placeholder="sk-ant-xxxxxxxxxxxx（AI案生成に使用）"
+             autocomplete="off" autocorrect="off" autocapitalize="off"
+             spellcheck="false" style="-webkit-text-security:disc">
+    </div>
   </div>
 
   <!-- Tabs -->
@@ -305,7 +312,10 @@
         <span>メモ</span>
       </div>
       <div id="segmentRows"></div>
-      <button class="btn" onclick="addSegmentRow()" style="margin-top:8px;font-size:11px">＋ セグメント追加</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn" onclick="addSegmentRow()" style="font-size:11px">＋ セグメント追加</button>
+        <button class="btn" id="aiSegmentBtn" onclick="generateSegmentAI()" style="font-size:11px">🤖 AI案を生成</button>
+      </div>
     </div>
 
     <!-- 成熟プロファイル -->
@@ -1447,6 +1457,73 @@ function createSegmentRow(name='', seg={}) {
 function addSegmentRow() {
   document.getElementById('segmentRows').appendChild(createSegmentRow());
   updateWeightTotal();
+}
+
+async function generateSegmentAI() {
+  const ticker = document.getElementById('settingsTicker').value;
+  if (!ticker) { alert('銘柄を選択してください'); return; }
+
+  const apiKey = document.getElementById('anthropicKeyInput').value.trim();
+  if (!apiKey) { alert('Anthropic API Keyを入力してください（画面上部の入力欄）'); return; }
+
+  const btn = document.getElementById('aiSegmentBtn');
+  const origText = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '⏳ 生成中...';
+
+  try {
+    const systemPrompt = 'あなたは米国株のアナリストです。指定された銘柄の事業セグメント構成を分析し、JSON形式のみで回答してください。';
+    const userPrompt = `${ticker}の事業セグメント別の売上構成比（weight）と今後1〜3年の成長率予測（growth）を以下のJSON形式のみで返してください。他のテキストは一切含めないでください。\n\n{\n  "fiscal_year": "FY2025",\n  "segments": [\n    {"name": "セグメント名", "weight": 0.XX, "growth": 0.XX, "note": "根拠・特記事項"},\n    ...\n  ]\n}\n\nweightの合計は必ず1.0にすること。growthは小数（例: 0.30 = 30%）。`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API Error: ${res.status}`);
+    }
+
+    const data = await res.json();
+    const text = data.content?.[0]?.text || '';
+
+    const jsonMatch = text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) throw new Error('JSONが見つかりませんでした: ' + text.substring(0, 200));
+    const parsed = JSON.parse(jsonMatch[0]);
+
+    if (!parsed.segments || !Array.isArray(parsed.segments)) {
+      throw new Error('segmentsフィールドが不正です');
+    }
+
+    if (parsed.fiscal_year) {
+      document.getElementById('seg-fiscal-year').value = parsed.fiscal_year;
+    }
+
+    const segsObj = {};
+    for (const s of parsed.segments) {
+      segsObj[s.name] = { weight: s.weight, growth: s.growth, note: s.note || '' };
+    }
+    renderSegmentRows(segsObj);
+
+    showResult('settingsResult', 'success', '✅ AI案を挿入しました。内容を確認して保存してください。');
+  } catch(e) {
+    alert('AI案生成エラー: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = origText;
+  }
 }
 
 function updateWeightTotal() {
