@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2682081453017.6196,
   "intrinsic_value_per_share": 1156.3588309550971,
   "intrinsic_value_beta": 1065.59,
-  "upside_percent_beta": 74.6,
+  "upside_percent_beta": 75.6,
   "intrinsic_value_rf": 6474.33,
-  "upside_percent_rf": 960.7,
+  "upside_percent_rf": 966.7,
   "v0": 1340164982862.8103,
   "v0_adjusted": 1341040726508.8098,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1529.29,
     "3年後": 1758.68
   },
-  "upside_percent": 89.4,
+  "upside_percent": 90.5,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -190,17 +190,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.604,
-      "rice_per_ratio": 0.0273
+      "rice_per_ratio": 0.0274
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.863,
-      "rice_per_ratio": 0.0389
+      "rice_per_ratio": 0.0392
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 1.036,
-      "rice_per_ratio": 0.0467
+      "rice_per_ratio": 0.047
     }
   },
   "components": {
@@ -217,7 +217,7 @@
     ],
     "diluted_shares": 2538423304,
     "roe_10yr_avg": 0.24346860847168234,
-    "current_price": 610.41,
+    "current_price": 606.97,
     "latest_revenue": 200966000000.0,
     "rpo": 1080000000.0,
     "beta": 1.1,
@@ -241,7 +241,7 @@
     "rpo_pv": 875743645.9995992,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.0225681555810657,
-    "per": 22.172537,
+    "per": 22.047583,
     "ma200": 677.8259
   },
   "validation": {
@@ -266,7 +266,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share calculation",
-    "ai_concerns": "Inconsistency in per share value (e.g., reported 1,156.36 vs calculated 1,056.36), potentially due to unaligned V0 variants."
+    "ai_comment": "Inconsistencies in per share value detected.",
+    "ai_concerns": "Inconsistency between P_t-derived per share value ($1,056.36) and reported intrinsic value per share ($1,156.36), suggesting potential error in final valuation steps."
   }
 }

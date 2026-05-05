@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 23317878719.98873,
   "intrinsic_value_per_share": 58.32094104193617,
   "intrinsic_value_beta": 89.66,
-  "upside_percent_beta": 167.1,
+  "upside_percent_beta": 173.1,
   "intrinsic_value_rf": 345.17,
-  "upside_percent_rf": 928.2,
+  "upside_percent_rf": 951.4,
   "v0": 11658939359.994366,
   "v0_adjusted": 11658939359.994366,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 79.83,
     "3年後": 93.41
   },
-  "upside_percent": 73.7,
+  "upside_percent": 77.6,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -254,28 +254,28 @@
   "rice": {
     "available": true,
     "q": 1.921,
-    "cf_conversion": 27.7888,
+    "cf_conversion": 2.2541,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.0697,
+    "avg_intensity": 0.2901,
     "avg_rev_growth_lagged": 0.6335,
     "warnings": true,
-    "note": "CF点が異常値（FY2022→: 76.7）: R&D未取得による投資強度過小の可能性",
+    "note": "SGA取得漏れ疑い（FY2024(58%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
     "bear": {
       "growth_rate": 0.119,
-      "rice": 63.525,
-      "rice_per_ratio": 0.4731
+      "rice": 5.153,
+      "rice_per_ratio": 0.0392
     },
     "base": {
       "growth_rate": 0.17,
-      "rice": 90.75,
-      "rice_per_ratio": 0.6758
+      "rice": 7.361,
+      "rice_per_ratio": 0.0561
     },
     "bull": {
       "growth_rate": 0.204,
-      "rice": 108.9,
-      "rice_per_ratio": 0.811
+      "rice": 8.834,
+      "rice_per_ratio": 0.0673
     }
   },
   "components": {
@@ -292,7 +292,7 @@
     ],
     "diluted_shares": 256896075,
     "roe_10yr_avg": 0.4377082903943001,
-    "current_price": 33.57,
+    "current_price": 32.83,
     "latest_revenue": 2515269000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -316,7 +316,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.83837481965606,
-    "per": 134.28,
+    "per": 131.32,
     "ma200": 48.51715
   },
   "validation": {
@@ -341,7 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per-share calculation detected.",
-    "ai_concerns": "Anomaly in per-share value: calculated $90.68 vs. reported $58.32. No other obvious anomalies in inputs or DCF components."
+    "ai_comment": "Inconsistencies in per share calculation detected",
+    "ai_concerns": "Inconsistency between P_t and intrinsic_value_per_share suggests potential error in final value adjustment."
   }
 }

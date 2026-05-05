@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 286115481.20861334,
   "intrinsic_value_per_share": 0.796224192448986,
   "intrinsic_value_beta": 0.52,
-  "upside_percent_beta": -87.5,
+  "upside_percent_beta": -87.3,
   "intrinsic_value_rf": 5.02,
-  "upside_percent_rf": 20.5,
+  "upside_percent_rf": 22.6,
   "v0": 286115481.20861334,
   "v0_adjusted": 286115481.20861334,
   "alpha": 0.0,
@@ -14,7 +14,7 @@
     "2年後": 1.33,
     "3年後": 1.72
   },
-  "upside_percent": -80.9,
+  "upside_percent": -80.6,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -223,7 +223,7 @@
     "avg_intensity": 0.0333,
     "avg_rev_growth_lagged": -0.0575,
     "warnings": true,
-    "note": "R&D未取得（FY2024）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / 投資強度が低すぎる（FY2024: 0.405%）: R&D未取得の可能性。CF値が過大になる場合がある",
+    "note": "R&D未取得（FY2024）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / SGA取得漏れ疑い（FY2024(100%), FY2023(92%), FY2022(90%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください / 投資強度が低すぎる（FY2024: 0.405%）: R&D未取得の可能性。CF値が過大になる場合がある",
     "bear": {
       "growth_rate": 0.203,
       "rice": -6.108,
@@ -254,7 +254,7 @@
     ],
     "diluted_shares": 478949450,
     "roe_10yr_avg": 0.0,
-    "current_price": 4.17,
+    "current_price": 4.098,
     "latest_revenue": 127672000.0,
     "rpo": 0.0,
     "beta": 1.5,
@@ -278,7 +278,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -20.85,
+    "per": -20.49,
     "ma200": 5.54375
   },
   "validation": {
@@ -303,7 +303,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_tと1株価値の不一致が主な問題",
-    "ai_concerns": "Inconsistency in intrinsic_value_per_share (0.80 vs calculated 0.597); ROE at 0% may indicate underlying issues, but not critical alone."
+    "ai_comment": "Inconsistency in per share value; otherwise calculations align."
   }
 }

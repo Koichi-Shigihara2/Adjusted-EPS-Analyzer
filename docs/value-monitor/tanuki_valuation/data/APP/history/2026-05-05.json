@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 235108249693.23306,
   "intrinsic_value_per_share": 813.9426336647232,
   "intrinsic_value_beta": 696.13,
-  "upside_percent_beta": 46.6,
+  "upside_percent_beta": 46.0,
   "intrinsic_value_rf": 4943.28,
-  "upside_percent_rf": 940.7,
+  "upside_percent_rf": 936.9,
   "v0": 117199066081.10326,
   "v0_adjusted": 117554124846.61653,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1466.97,
     "3年後": 1969.41
   },
-  "upside_percent": 71.4,
+  "upside_percent": 70.7,
   "calculation_date": "2026-05-05",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -259,17 +259,17 @@
     "bear": {
       "growth_rate": 0.24,
       "rice": 2.7,
-      "rice_per_ratio": 0.057
+      "rice_per_ratio": 0.0567
     },
     "base": {
       "growth_rate": 0.343,
       "rice": 3.859,
-      "rice_per_ratio": 0.0814
+      "rice_per_ratio": 0.0811
     },
     "bull": {
       "growth_rate": 0.411,
       "rice": 4.624,
-      "rice_per_ratio": 0.0975
+      "rice_per_ratio": 0.0972
     }
   },
   "components": {
@@ -286,7 +286,7 @@
     ],
     "diluted_shares": 336260915,
     "roe_10yr_avg": 1.0984085183814432,
-    "current_price": 475.0,
+    "current_price": 476.755,
     "latest_revenue": 5480717000.0,
     "rpo": 0.0,
     "beta": 1.18,
@@ -310,7 +310,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 355058765.51327366,
     "alpha_uncapped": 4.61331577720206,
-    "per": 47.405186,
+    "per": 47.580338,
     "ma200": 526.2943
   },
   "validation": {
@@ -335,7 +335,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Multiple inconsistencies detected in calculations.",
-    "ai_concerns": "Anomalies include mismatched P_t calculation, high ROE (109.84%), and discrepancy between P_t/shares and listed intrinsic value."
+    "ai_comment": "Major inconsistencies in per-share value calculation.",
+    "ai_concerns": "Inconsistency between calculated P_t per share ($698.99) and reported value ($813.94) suggests potential error; high ROE (109.84%) and growth rate (34.2%) are unusual but possible."
   }
 }
