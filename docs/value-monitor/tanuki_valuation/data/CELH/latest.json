@@ -2,21 +2,21 @@
   "intrinsic_value_pt": 23317878719.98873,
   "intrinsic_value_per_share": 58.32094104193617,
   "intrinsic_value_beta": 89.66,
-  "upside_percent_beta": 164.3,
+  "upside_percent_beta": 167.1,
   "intrinsic_value_rf": 345.17,
-  "upside_percent_rf": 917.6,
+  "upside_percent_rf": 928.2,
   "v0": 11658939359.994366,
   "v0_adjusted": 11658939359.994366,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 104.9,
-    "2年後": 122.74,
-    "3年後": 143.6
+    "1年後": 68.23,
+    "2年後": 79.83,
+    "3年後": 93.41
   },
-  "upside_percent": 71.9,
+  "upside_percent": 73.7,
   "calculation_date": "2026-05-05",
-  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.07719999999999999,
@@ -28,32 +28,32 @@
   "sensitivity": {
     "matrix": [
       [
-        103.79,
-        116.32,
-        130.06
+        62.11,
+        69.1,
+        76.61
       ],
       [
-        80.63,
-        90.07,
-        100.32
+        52.57,
+        58.32,
+        64.43
       ],
       [
-        65.63,
-        73.08,
-        81.11
+        45.44,
+        50.27,
+        55.36
       ]
     ],
     "wacc_values": [
-      0.067,
-      0.077,
-      0.087
+      0.09,
+      0.1,
+      0.11
     ],
     "growth_years": [
       2,
       3,
       4
     ],
-    "base_wacc": 0.07719999999999999,
+    "base_wacc": 0.1,
     "base_years": 3
   },
   "growth_scenarios": {
@@ -71,15 +71,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.119,
-      "intrinsic_value_per_share": 78.6
+      "intrinsic_value_per_share": 51.17
     },
     "base": {
       "growth_rate": 0.17,
-      "intrinsic_value_per_share": 89.66
+      "intrinsic_value_per_share": 58.32
     },
     "bull": {
       "growth_rate": 0.204,
-      "intrinsic_value_per_share": 97.58
+      "intrinsic_value_per_share": 63.44
     }
   },
   "growth_options": {
@@ -255,7 +255,7 @@
     "available": true,
     "q": 1.921,
     "cf_conversion": 27.7888,
-    "wacc": 0.0772,
+    "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
     "avg_intensity": 0.0697,
@@ -264,18 +264,18 @@
     "note": "CF点が異常値（FY2022→: 76.7）: R&D未取得による投資強度過小の可能性",
     "bear": {
       "growth_rate": 0.119,
-      "rice": 82.286,
-      "rice_per_ratio": 0.6065
+      "rice": 63.525,
+      "rice_per_ratio": 0.4731
     },
     "base": {
       "growth_rate": 0.17,
-      "rice": 117.552,
-      "rice_per_ratio": 0.8664
+      "rice": 90.75,
+      "rice_per_ratio": 0.6758
     },
     "bull": {
       "growth_rate": 0.204,
-      "rice": 141.062,
-      "rice_per_ratio": 1.0397
+      "rice": 108.9,
+      "rice_per_ratio": 0.811
     }
   },
   "components": {
@@ -292,7 +292,7 @@
     ],
     "diluted_shares": 256896075,
     "roe_10yr_avg": 0.4377082903943001,
-    "current_price": 33.92,
+    "current_price": 33.57,
     "latest_revenue": 2515269000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -316,8 +316,8 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.83837481965606,
-    "per": 135.68,
-    "ma200": 48.57155
+    "per": 134.28,
+    "ma200": 48.51715
   },
   "validation": {
     "validated_at": "2026-05-05",
@@ -341,7 +341,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value.",
-    "ai_concerns": "Anomaly in per share value (90.69 vs. 58.32) suggests calculation error; other values like ROE (43.77%) are high but plausible."
+    "ai_comment": "Inconsistencies detected in values.",
+    "ai_concerns": "Inconsistency in per share value suggests potential error in final calculation."
   }
 }

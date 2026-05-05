@@ -1,22 +1,22 @@
 {
   "intrinsic_value_pt": 2263990321971.288,
-  "intrinsic_value_per_share": 234.60094834998762,
-  "intrinsic_value_beta": 215.52,
-  "upside_percent_beta": -20.5,
-  "intrinsic_value_rf": 1374.71,
-  "upside_percent_rf": 407.2,
+  "intrinsic_value_per_share": 234.5386263708139,
+  "intrinsic_value_beta": 215.46,
+  "upside_percent_beta": -20.8,
+  "intrinsic_value_rf": 1374.34,
+  "upside_percent_rf": 405.2,
   "v0": 1261506256456.1196,
   "v0_adjusted": 1282292678034.5515,
   "alpha": 0.7655800120776206,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 241.25,
-    "2年後": 270.06,
-    "3年後": 302.3
+    "1年後": 262.54,
+    "2年後": 293.89,
+    "3年後": 328.98
   },
-  "upside_percent": -13.4,
+  "upside_percent": -13.8,
   "calculation_date": "2026-05-05",
-  "formula": "Koichi式 v7.1.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.10570000000000002,
@@ -28,32 +28,32 @@
   "sensitivity": {
     "matrix": [
       [
-        223.31,
-        250.01,
-        277.87
+        246.42,
+        277.01,
+        309.27
       ],
       [
-        192.9,
-        214.59,
-        236.82
+        210.03,
+        234.54,
+        259.92
       ],
       [
-        169.66,
-        187.61,
-        205.67
+        182.85,
+        202.91,
+        223.32
       ]
     ],
     "wacc_values": [
-      0.096,
-      0.106,
-      0.116
+      0.09,
+      0.1,
+      0.11
     ],
     "growth_years": [
       3,
       5,
       7
     ],
-    "base_wacc": 0.10570000000000002,
+    "base_wacc": 0.1,
     "base_years": 5
   },
   "growth_scenarios": {
@@ -71,15 +71,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.084,
-      "intrinsic_value_per_share": 186.95
+      "intrinsic_value_per_share": 203.14
     },
     "base": {
       "growth_rate": 0.119,
-      "intrinsic_value_per_share": 215.52
+      "intrinsic_value_per_share": 234.54
     },
     "bull": {
       "growth_rate": 0.143,
-      "intrinsic_value_per_share": 236.6
+      "intrinsic_value_per_share": 257.72
     }
   },
   "growth_options": {
@@ -250,7 +250,7 @@
     "long_term_debt": 68836000000.0,
     "short_term_debt": 455000000.0,
     "net_cash": 53738000000.0,
-    "net_cash_per_share": 4.996907363187916,
+    "net_cash_per_share": 4.995579929693671,
     "fiscal_year": 2025,
     "applied": true
   },
@@ -258,7 +258,7 @@
     "available": true,
     "q": 2.1813,
     "cf_conversion": 0.7811,
-    "wacc": 0.1057,
+    "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
     "avg_intensity": 0.1515,
@@ -267,18 +267,18 @@
     "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "bear": {
       "growth_rate": 0.084,
-      "rice": 1.354,
-      "rice_per_ratio": 0.0418
+      "rice": 1.431,
+      "rice_per_ratio": 0.0447
     },
     "base": {
       "growth_rate": 0.119,
-      "rice": 1.918,
-      "rice_per_ratio": 0.0592
+      "rice": 2.027,
+      "rice_per_ratio": 0.0633
     },
     "bull": {
       "growth_rate": 0.143,
-      "rice": 2.305,
-      "rice_per_ratio": 0.0712
+      "rice": 2.436,
+      "rice_per_ratio": 0.076
     }
   },
   "components": {
@@ -293,9 +293,9 @@
       -8952000000,
       -3563000000
     ],
-    "diluted_shares": 10754251799,
+    "diluted_shares": 10757109436,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 271.05,
+    "current_price": 272.05,
     "latest_revenue": 716924000000.0,
     "rpo": 25000000000.0,
     "beta": 1.1,
@@ -319,8 +319,8 @@
     "rpo_pv": 20271843657.39813,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 32.38351,
-    "ma200": 227.37746
+    "per": 32.04358,
+    "ma200": 227.6183
   },
   "validation": {
     "validated_at": "2026-05-05",
@@ -328,7 +328,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $1377.75B + RPO $20.27B + GO $0.51B) × (1+0.766) / 10.754B + BS $+5.00/株 = $234.60 (差異0.00%)"
+        "detail": "(V₀ $1377.75B + RPO $20.27B + GO $0.51B) × (1+0.766) / 10.757B + BS $+5.00/株 = $234.54 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
@@ -344,6 +344,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed with minor rounding note."
+    "ai_comment": "Inconsistency in per share value",
+    "ai_concerns": "Inconsistency in pt_shares_consistency suggests potential error in final value calculation"
   }
 }
