@@ -92,6 +92,7 @@ class SECParser:
             "ResearchAndDevelopmentExpense",
             "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
             "CapitalizedComputerSoftwareDevelopmentCosts",
+            "CapitalizedComputerSoftwareAmortization1",  # UNH等: ソフトウェア投資の償却費
         ],
         "eps_diluted": [
             "EarningsPerShareDiluted",
@@ -105,6 +106,7 @@ class SECParser:
         "selling_and_marketing": [
             "MarketingAndAdvertisingExpense",
             "SellingAndMarketingExpense",    # CELH等: FY2022以前の旧タグ
+            "MarketingExpense",              # AMZN等: Sales&Marketing費用
             "AdvertisingExpense",
         ],
         # SGA整合性チェック用参照フィールド（取得済みR&D+S&Mとの差分でタグ漏れを検出）
