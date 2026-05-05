@@ -76,7 +76,8 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     p = _extract_params(data)
 
     ivps = data.get("intrinsic_value_per_share", 0)
-    v0 = data.get("v0", 0)
+    # v7.3: RM基準V0を優先（メイン理論株価と整合）
+    v0 = data.get("dcf_components", {}).get("v0_rm") or data.get("v0", 0)
     alpha = data.get("alpha", 0)
 
     pv_high = c.get("pv_high", 0)
@@ -369,10 +370,19 @@ def validate_calculation(ticker: str, data: Dict[str, Any], use_ai: bool = True)
             validation["model"] = XAI_MODEL
             validation["ai_comment"] = ai_result.get("ai_comment")
 
+            # v7.3: ai_commentが存在しoverallがPASSでも懸念があれば記録
+            ai_comment = ai_result.get("ai_comment", "")
             ai_checks = ai_result.get("checks", {})
             ai_anomaly = ai_checks.get("anomaly_detection", {})
+            # anomaly_detectionがFAILの場合はその詳細をai_concernsに記録
             if ai_anomaly.get("detail") and not ai_anomaly.get("pass", True):
                 validation["ai_concerns"] = ai_anomaly.get("detail")
+            # ai_commentに懸念ワードが含まれる場合も記録（誤判定フィルタ付き）
+            elif ai_comment and any(w in ai_comment.lower() for w in ["inconsistency", "error", "concern", "incorrect"]):
+                # ただしbasic_checksが全PASS済みなら無視（Grokの誤判定）
+                basic_all_pass = all(v.get("pass", False) for v in validation.get("checks", {}).values())
+                if not basic_all_pass:
+                    validation["ai_concerns"] = ai_comment
 
     return validation
 
