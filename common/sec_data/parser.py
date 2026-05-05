@@ -404,29 +404,26 @@ class SECParser:
                 data["other"][field] = val
 
         # SGA整合性チェック:
-        # 取得済み(R&D + S&M)がSGA総額の50%未満かつ売上比5%超の乖離がある場合、
-        # XBRLタグ漏れによる投資強度過小の可能性を data_quality として記録する。
-        # G&A単独では通常SGA比30%以下のため、50%超の差額はタグ漏れを強く示唆する。
-        sga_total = data["pl"].get("selling_general_and_administrative")
-        revenue   = data["pl"].get("revenue") or 0
-        if sga_total and sga_total > 0 and revenue > 0:
-            rnd_cap = data["pl"].get("research_and_development") or 0
-            sm_cap  = data["pl"].get("selling_and_marketing") or 0
-            captured  = rnd_cap + sm_cap
-            gap       = sga_total - captured
-            gap_ratio = gap / sga_total
-            if gap_ratio > 0.50 and (gap / revenue) > 0.05:
+        # selling_and_marketing が完全に未取得（None）かつ
+        # SGA総額が売上比5%超の場合に data_quality 警告を記録する。
+        # ※ SGA = Selling + G&A であり G&A は投資強度に含めないため、
+        #   (R&D + S&M) vs SGA 差額による比率チェックは常に誤発火する。
+        #   S&M が何らかの値で取得できている場合は警告不要。
+        sga_total  = data["pl"].get("selling_general_and_administrative")
+        sm_missing = data["pl"].get("selling_and_marketing") is None
+        revenue    = data["pl"].get("revenue") or 0
+        if sm_missing and sga_total and sga_total > 0 and revenue > 0:
+            if (sga_total / revenue) > 0.05:
                 data["data_quality"] = {
                     "sga_gap_warning": True,
                     "sga_total": sga_total,
-                    "sga_captured": round(captured),
-                    "gap_amount": round(gap),
-                    "gap_ratio": round(gap_ratio, 3),
+                    "sga_captured": 0,
+                    "gap_amount": sga_total,
+                    "gap_ratio": 1.0,
                     "note": (
-                        f"SGA整合性警告: 総額${sga_total/1e6:.0f}Mに対し"
-                        f"取得済み${captured/1e6:.0f}M"
-                        f"（差額率{gap_ratio*100:.0f}%・売上比{gap/revenue*100:.0f}%）。"
-                        "XBRLタグ漏れの可能性。parser.py XBRL_MAPPINGを確認してください"
+                        f"S&M未取得かつSGA総額${sga_total/1e6:.0f}M"
+                        f"（売上比{sga_total/revenue*100:.0f}%）。"
+                        "企業がSGA内訳を非開示の可能性。投資強度が過小になる場合があります"
                     ),
                 }
 
