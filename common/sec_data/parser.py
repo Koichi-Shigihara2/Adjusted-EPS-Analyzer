@@ -18,7 +18,7 @@ class SECParser:
     # 企業によって年代ごとに異なるXBRLタグを使うフィールドを列挙する
     # 例: GOOGLはFY2022-2024に RevenueFromContractWithCustomerExcludingAssessedTax,
     #         FY2025に Revenues を使用しており、早期終了するとFY2022-2024が欠落する
-    MERGE_ALL_TAGS_FIELDS = {"revenue"}
+    MERGE_ALL_TAGS_FIELDS = {"revenue", "selling_and_marketing"}
 
     # XBRL項目マッピング（優先順位順）
     XBRL_MAPPING = {
@@ -104,10 +104,14 @@ class SECParser:
         # マーケティング投資が成長の主な源泉のため投資強度に加算する
         "selling_and_marketing": [
             "MarketingAndAdvertisingExpense",
-            "SellingAndMarketingExpense",
+            "SellingAndMarketingExpense",    # CELH等: FY2022以前の旧タグ
             "AdvertisingExpense",
         ],
-        
+        # SGA整合性チェック用参照フィールド（取得済みR&D+S&Mとの差分でタグ漏れを検出）
+        "selling_general_and_administrative": [
+            "SellingGeneralAndAdministrativeExpense",
+        ],
+
         # CF（キャッシュフロー計算書）
         "operating_cash_flow": [
             "NetCashProvidedByUsedInOperatingActivities",
@@ -362,7 +366,8 @@ class SECParser:
         
         # PL
         for field in ["revenue", "net_income", "eps_diluted", "eps_basic",
-                      "research_and_development", "selling_and_marketing"]:
+                      "research_and_development", "selling_and_marketing",
+                      "selling_general_and_administrative"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["pl"][field] = val
@@ -397,7 +402,34 @@ class SECParser:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["other"][field] = val
-        
+
+        # SGA整合性チェック:
+        # 取得済み(R&D + S&M)がSGA総額の50%未満かつ売上比5%超の乖離がある場合、
+        # XBRLタグ漏れによる投資強度過小の可能性を data_quality として記録する。
+        # G&A単独では通常SGA比30%以下のため、50%超の差額はタグ漏れを強く示唆する。
+        sga_total = data["pl"].get("selling_general_and_administrative")
+        revenue   = data["pl"].get("revenue") or 0
+        if sga_total and sga_total > 0 and revenue > 0:
+            rnd_cap = data["pl"].get("research_and_development") or 0
+            sm_cap  = data["pl"].get("selling_and_marketing") or 0
+            captured  = rnd_cap + sm_cap
+            gap       = sga_total - captured
+            gap_ratio = gap / sga_total
+            if gap_ratio > 0.50 and (gap / revenue) > 0.05:
+                data["data_quality"] = {
+                    "sga_gap_warning": True,
+                    "sga_total": sga_total,
+                    "sga_captured": round(captured),
+                    "gap_amount": round(gap),
+                    "gap_ratio": round(gap_ratio, 3),
+                    "note": (
+                        f"SGA整合性警告: 総額${sga_total/1e6:.0f}Mに対し"
+                        f"取得済み${captured/1e6:.0f}M"
+                        f"（差額率{gap_ratio*100:.0f}%・売上比{gap/revenue*100:.0f}%）。"
+                        "XBRLタグ漏れの可能性。parser.py XBRL_MAPPINGを確認してください"
+                    ),
+                }
+
         # 最低限のデータがあるか確認
         if not any([data["bs"], data["pl"], data["cf"]]):
             return None

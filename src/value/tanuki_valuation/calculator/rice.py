@@ -176,11 +176,25 @@ def _calc_cf_lagged(
         if sm is None:
             sm_missing_years.append(str(fy))
 
-    if sm_missing_years and len(sm_missing_years) == min(years, len(annual_data) - 1):
-        # 全年度でSMが未取得の場合のみ警告（一部欠損は許容）
+    if sm_missing_years:
         warnings.append(
             f"販売・マーケティング費未取得（FY{', '.join(sm_missing_years)}）: "
             f"投資強度が過小になる可能性"
+        )
+
+    # SGA整合性チェック: parser.pyが annual JSON に記録した data_quality 警告を伝播
+    sga_gap_years = []
+    for i in range(min(years, len(annual_data) - 1)):
+        older = annual_data[i + 1]
+        dq = older.get("data_quality", {})
+        if dq.get("sga_gap_warning"):
+            fy       = older.get("period", "?")
+            gap_pct  = round(dq.get("gap_ratio", 0) * 100)
+            sga_gap_years.append(f"FY{fy}({gap_pct}%)")
+    if sga_gap_years:
+        warnings.append(
+            f"SGA取得漏れ疑い（{', '.join(sga_gap_years)}）: "
+            f"投資強度が過小の可能性。company_factsを再取得して確認してください"
         )
 
     # annual_data[0]=最新, annual_data[1]=1年前, ...
