@@ -192,13 +192,6 @@
         <span id="statusText" style="color:var(--mut)">未接続</span>
       </div>
     </div>
-    <div class="token-row" style="margin-top:6px">
-      <span class="token-label">Anthropic API Key:</span>
-      <input type="text" class="token-input" id="anthropicKeyInput"
-             placeholder="sk-ant-xxxxxxxxxxxx（AI案生成に使用）"
-             autocomplete="off" autocorrect="off" autocapitalize="off"
-             spellcheck="false" style="-webkit-text-security:disc">
-    </div>
   </div>
 
   <!-- Tabs -->
@@ -923,6 +916,9 @@ async function addTicker() {
     document.getElementById('newCik').value = '';
     document.getElementById('newName').value = '';
     await loadTickerTab();
+    await loadConfigFiles();
+    document.getElementById('settingsTicker').value = ticker;
+    await loadTickerSettings();
   } catch(e) {
     showResult('tickerResult', 'error', '追加失敗: ' + e.message);
   } finally {
@@ -1141,6 +1137,9 @@ async function registerTicker() {
     );
     document.getElementById('regTicker').value = '';
     await loadTickerTab();
+    await loadConfigFiles();
+    document.getElementById('settingsTicker').value = ticker;
+    await loadTickerSettings();
 
   } catch(e) {
     showResult(resultId, 'error', '登録失敗: ' + e.message);
@@ -1463,61 +1462,33 @@ async function generateSegmentAI() {
   const ticker = document.getElementById('settingsTicker').value;
   if (!ticker) { alert('銘柄を選択してください'); return; }
 
-  const apiKey = document.getElementById('anthropicKeyInput').value.trim();
-  if (!apiKey) { alert('Anthropic API Keyを入力してください（画面上部の入力欄）'); return; }
-
   const btn = document.getElementById('aiSegmentBtn');
   const origText = btn.innerHTML;
   btn.disabled = true;
-  btn.innerHTML = '⏳ 生成中...';
 
   try {
-    const systemPrompt = 'あなたは米国株のアナリストです。指定された銘柄の事業セグメント構成を分析し、JSON形式のみで回答してください。';
-    const userPrompt = `${ticker}の事業セグメント別の売上構成比（weight）と今後1〜3年の成長率予測（growth）を以下のJSON形式のみで返してください。他のテキストは一切含めないでください。\n\n{\n  "fiscal_year": "FY2025",\n  "segments": [\n    {"name": "セグメント名", "weight": 0.XX, "growth": 0.XX, "note": "根拠・特記事項"},\n    ...\n  ]\n}\n\nweightの合計は必ず1.0にすること。growthは小数（例: 0.30 = 30%）。`;
+    await dispatchWorkflow('TANUKI_Segment_AI.yml', { ticker });
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
-      })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API Error: ${res.status}`);
+    // 30秒カウントダウンで待機
+    for (let i = 30; i > 0; i--) {
+      btn.innerHTML = `⏳ 生成中... ${i}秒`;
+      await new Promise(r => setTimeout(r, 1000));
     }
 
-    const data = await res.json();
-    const text = data.content?.[0]?.text || '';
+    // segment_config.json を再読み込みしてフォームに反映
+    btn.innerHTML = '⏳ 反映中...';
+    const { content, sha } = await fetchFile(SEG_PATH);
+    segConfig = JSON.parse(content);
+    segSha = sha;
 
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) throw new Error('JSONが見つかりませんでした: ' + text.substring(0, 200));
-    const parsed = JSON.parse(jsonMatch[0]);
-
-    if (!parsed.segments || !Array.isArray(parsed.segments)) {
-      throw new Error('segmentsフィールドが不正です');
+    const segData = segConfig[ticker];
+    if (segData) {
+      document.getElementById('seg-fiscal-year').value = segData.fiscal_year || '';
+      renderSegmentRows(segData.segments || {});
+      showResult('settingsResult', 'success', '✅ AI案を挿入しました。内容を確認して保存してください。');
+    } else {
+      showResult('settingsResult', 'warn', '⚠ セグメント設定が見つかりませんでした。ワークフローの完了を待って「↺ リセット」で再試行してください。');
     }
-
-    if (parsed.fiscal_year) {
-      document.getElementById('seg-fiscal-year').value = parsed.fiscal_year;
-    }
-
-    const segsObj = {};
-    for (const s of parsed.segments) {
-      segsObj[s.name] = { weight: s.weight, growth: s.growth, note: s.note || '' };
-    }
-    renderSegmentRows(segsObj);
-
-    showResult('settingsResult', 'success', '✅ AI案を挿入しました。内容を確認して保存してください。');
   } catch(e) {
     alert('AI案生成エラー: ' + e.message);
   } finally {
