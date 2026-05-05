@@ -1,7 +1,50 @@
 {
   "ticker": "CAKE",
-  "last_updated": "2026-05-04T11:43:53.941671",
+  "last_updated": "2026-05-05T13:15:11.616635",
   "quarters": [
+    {
+      "gaap_eps": 1.0225570116603033,
+      "adjusted_eps": 1.1569915092289593,
+      "gaap_net_income": 49548000.0,
+      "adjusted_net_income": 56062023.57968923,
+      "diluted_shares_used": 48455000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 7014000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 6514023.579689228,
+          "tax_rate_applied": 0.0712826376262863
+        }
+      ],
+      "net_adjustment_total": 6514023.579689228,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 48455000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目が継続的に発生する株式報酬費用(SBC)のadd_backです。非現金項目ではありますが、企業の人材確保に不可欠な恒常的コストであり株主希薄化も伴うため、調整後EPSの健全性は限定的。調整幅がEPSに約13%の影響を与えており、過度に楽観的な調整の可能性があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただし毎期発生するSBCは恒常的な報酬コストであり経済的実態を歪める可能性が高い。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.5926757430330992,
       "adjusted_eps": 0.8729984998320258,
@@ -45,23 +88,7 @@
       "diluted_shares": 48551000.0,
       "period_end": "2025-12-30",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用と無形資産償却費の2項目を加回しており、調整後EPSがGAAP EPSを約47%上回る水準となっています。ただし両項目とも毎期発生する可能性の高い継続的コストであり、非経常的調整としての正当性は低いです。経済的実態を過大評価しているリスクがあるため、健全性には注意が必要です。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用として加算されているが、毎期発生するSBCであり恒常的な可能性が高い",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連無形資産の償却として加算されているが、定期的に発生する恒常的費用である",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 0.6561420108606221,
