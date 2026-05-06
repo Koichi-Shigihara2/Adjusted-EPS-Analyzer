@@ -1,11 +1,11 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Adjusted EPS Analyzer · ダッシュボード</title>
   <!-- フォント (MACRO PULSE と同じ) -->
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <!-- DataTables + Excel出力 -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
@@ -430,8 +430,9 @@
       to { transform: rotate(360deg); }
     }
   </style>
+  <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
-<body>
+<body data-tool="eps">
 <div class="shell">
   <header>
     <div class="logo">
@@ -604,5 +605,6 @@
   });
   observer.observe(document.getElementById('dashboard-content'), { childList: true, subtree: true });
 </script>
+  <script src="../../common/site-nav.js"></script>
 </body>
 </html>

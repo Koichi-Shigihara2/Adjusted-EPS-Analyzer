@@ -1,10 +1,10 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Adjusted EPS Analyzer · 管理</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="icon" href="/On-a-journey/favicon.ico">
   <style>
     /* 同じデザイン変数を使用 */
@@ -111,8 +111,9 @@
     }
     hr { border: none; border-top: 1px solid var(--bdr); margin: 20px 0; }
   </style>
+  <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
-<body>
+<body data-tool="eps">
 <div class="shell">
   <header>
     <div class="logo">
@@ -476,5 +477,6 @@
   // 読み込みボタン
   loadBtn.onclick = loadData;
 </script>
+  <script src="../../common/site-nav.js"></script>
 </body>
 </html>

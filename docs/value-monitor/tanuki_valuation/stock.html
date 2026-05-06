@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>TANUKI VALUATION - Stock Detail</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
   <link rel="icon" href="/On-a-journey/favicon.ico">
   <style>
@@ -330,8 +330,9 @@
       .wacc-slider { width: 100%; }
     }
   </style>
+  <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
-<body>
+<body data-tool="tanuki">
 <div class="shell" id="app">
   <div class="loading">
     <div class="loading-spinner"></div>
@@ -1619,5 +1620,6 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
 
 loadData();
 </script>
+  <script src="../../common/site-nav.js"></script>
 </body>
 </html>

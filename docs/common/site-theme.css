@@ -1,0 +1,123 @@
+/* ──────────────────────────────────────────────────────────
+ * On a Journey · Site theme overrides
+ * 全ページの末尾で読み込み、ナビ・配色・タイポを統一する。
+ * ────────────────────────────────────────────────────────── */
+
+/* === グローバルトークン（!important で既存変数に上書き） === */
+:root {
+  /* ベース色（読みやすさ重視で微調整） */
+  --bg:   #0a0d14;
+  --sur:  #111520;
+  --sur2: #161c2d;
+  --bdr:  #1f2a44;          /* 旧 #1e2840 → わずかに明度UP */
+  --txt:  #e8edf5;          /* 旧 #e2e8f0 */
+  --mut:  #94a3b8;          /* 旧 #64748b → コントラストUP */
+  --mut2: #64748b;          /* 旧mut。さらに薄いラベル用 */
+
+  /* セマンティック色 */
+  --grn:  #10b981;
+  --red:  #f43f5e;
+  --amb:  #f59e0b;
+  --pur:  #a78bfa;
+  --cyn:  #22d3ee;
+
+  /* ツール別アクセント */
+  --tool-tanuki: #a78bfa;   /* 紫 */
+  --tool-eps:    #22d3ee;   /* シアン（旧 #3b82f6 と差別化） */
+  --tool-mp:     #10b981;   /* グリーン */
+  --tool-macro:  #f59e0b;   /* アンバー */
+
+  /* デフォルト --acc は青（ランディング・ホーム） */
+  --acc:  #3b82f6;
+
+  /* タイポ */
+  --mono: 'Space Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --sans: 'DM Sans', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ページごとに body の data 属性で --acc を切り替える */
+body[data-tool="tanuki"] { --acc: var(--tool-tanuki); }
+body[data-tool="eps"]    { --acc: var(--tool-eps); }
+body[data-tool="mp"]     { --acc: var(--tool-mp); }
+body[data-tool="macro"]  { --acc: var(--tool-macro); }
+
+/* === 基本タイポ === */
+body {
+  font-family: var(--sans) !important;
+  font-size: 15px !important;            /* 旧14px */
+  color: var(--txt) !important;
+  background: var(--bg) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body, p, td, th, li, span, div, a, button, input, select, textarea {
+  font-feature-settings: "palt";
+}
+
+/* リンクの可視性UP */
+a { color: inherit; }
+a:focus-visible { outline: 2px solid var(--acc); outline-offset: 2px; }
+
+/* === 統一ナビゲーション === */
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.site-nav a {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--mut);
+  text-decoration: none;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-bottom: 1px solid transparent;
+  transition: color .15s, border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.site-nav a:hover {
+  color: var(--acc);
+  border-bottom-color: var(--acc);
+}
+.site-nav a.active {
+  color: var(--acc);
+  border-bottom-color: var(--acc);
+  background: color-mix(in oklab, var(--acc) 8%, transparent);
+}
+.site-nav .nav-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--bdr);
+  margin: 0 4px;
+}
+
+/* === ヘッダー共通整形 === */
+header .logo,
+.shell > header .logo {
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .15em;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* スクロールバー */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #2a3a5e; }
+
+/* セクション線色を新しい --bdr に */
+.sec::after { background: var(--bdr) !important; }
+
+/* テーブルの行間を広げる（視認性） */
+table { line-height: 1.55; }
+
+/* フォーカスリング */
+button:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 1px;
+}

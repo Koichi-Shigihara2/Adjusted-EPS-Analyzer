@@ -1,10 +1,10 @@
-﻿﻿<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Adjusted EPS Analyzer · 銘柄詳細</title>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0/dist/chartjs-plugin-datalabels.min.js"></script>
   <link rel="icon" href="/On-a-journey/favicon.ico">
@@ -348,8 +348,9 @@
     }
     .amt-cell { font-family: var(--mono); text-align: right; color: var(--grn); }
   </style>
+  <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
-<body>
+<body data-tool="eps">
   <!-- ヘッダー -->
   <div class="hdr">
     <div class="hdr-inner">
@@ -1002,5 +1003,6 @@
 
     window.onload = () => loadTicker();
   </script>
+  <script src="../../common/site-nav.js"></script>
 </body>
 </html>
