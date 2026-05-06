@@ -116,6 +116,44 @@ header .logo,
 /* テーブルの行間を広げる（視認性） */
 table { line-height: 1.55; }
 
+/* === HOMEカードをツール別テーマカラーに塗り替え === */
+/* 既存の card-tanuki / card-vm / card-mp / card-macro を上書き */
+.card.card-tanuki { --card-acc: var(--tool-tanuki); }
+.card.card-vm     { --card-acc: var(--tool-eps); }
+.card.card-mp     { --card-acc: var(--tool-mp); }
+.card.card-macro  { --card-acc: var(--tool-macro); }
+
+.card.card-tanuki, .card.card-vm, .card.card-mp, .card.card-macro {
+  border-color: color-mix(in oklab, var(--card-acc) 35%, var(--bdr)) !important;
+  position: relative;
+}
+.card.card-tanuki::before, .card.card-vm::before,
+.card.card-mp::before, .card.card-macro::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--card-acc);
+}
+.card.card-tanuki:hover, .card.card-vm:hover,
+.card.card-mp:hover, .card.card-macro:hover {
+  border-color: var(--card-acc) !important;
+  box-shadow: 0 0 0 1px var(--card-acc), 0 8px 24px color-mix(in oklab, var(--card-acc) 20%, transparent);
+}
+.card.card-tanuki .card-tag, .card.card-vm .card-tag,
+.card.card-mp .card-tag, .card.card-macro .card-tag {
+  color: var(--card-acc) !important;
+}
+.card.card-tanuki .card-arrow, .card.card-vm .card-arrow,
+.card.card-mp .card-arrow, .card.card-macro .card-arrow {
+  color: var(--card-acc) !important;
+}
+.card.card-tanuki .dot-live, .card.card-vm .dot-live,
+.card.card-mp .dot-live, .card.card-macro .dot-live {
+  background: var(--card-acc) !important;
+  box-shadow: 0 0 8px var(--card-acc) !important;
+}
+
 /* フォーカスリング */
 button:focus-visible, input:focus-visible, select:focus-visible {
   outline: 2px solid var(--acc);
