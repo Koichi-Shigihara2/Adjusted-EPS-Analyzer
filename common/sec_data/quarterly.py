@@ -25,6 +25,11 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
     },
 }
 
+# 会計年度タイプ（将来対応用）
+FISCAL_YEAR_TYPE: dict[str, str] = {
+    # "AMZN": "53week",  # 53週会計年度（AMZNオンボード時に有効化）
+}
+
 # XBRL概念マッピング（field_name → (concept, unit)）
 FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "OCF":              ("NetCashProvidedByUsedInOperatingActivities", "USD"),
@@ -45,6 +50,9 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "Equity":           ("StockholdersEquity", "USD"),
     "SharesBasic":      ("CommonStockSharesOutstanding", "shares"),
     "SharesDiluted":    ("WeightedAverageNumberOfDilutedSharesOutstanding", "shares"),
+    # R&D / 販売・マーケティング費（RICE計算用）
+    "RD":               ("ResearchAndDevelopmentExpense", "USD"),
+    "SM":               ("SellingAndMarketingExpense", "USD"),
     # GrossProfit逆算用（内部フィールド）
     "_COGS":            ("CostOfRevenue", "USD"),
 }
@@ -56,6 +64,18 @@ _REVENUE_FALLBACKS = (
     "SalesRevenueNet",
     "TotalRevenue",
 )
+
+# RD・SM フォールバック概念（primaryと重複しない候補のみ）
+_FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
+    "RD": (
+        "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+    ),
+    "SM": (
+        "MarketingAndAdvertisingExpense",
+        "MarketingExpense",
+        "AdvertisingExpense",
+    ),
+}
 
 # 取得期間
 _QUARTERLY_YEARS = 5
@@ -110,6 +130,13 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
                 entries = _get_field_units(company_facts, fallback_concept, unit)
                 if entries:
                     logger.debug("[%s] Revenue fallback: %s", ticker, fallback_concept)
+                    break
+
+        if not entries and field_name in _FIELD_FALLBACKS:
+            for fallback_concept in _FIELD_FALLBACKS[field_name]:
+                entries = _get_field_units(company_facts, fallback_concept, unit)
+                if entries:
+                    logger.debug("[%s] %s fallback: %s", ticker, field_name, fallback_concept)
                     break
 
         fields[field_name] = _process_entries(entries)

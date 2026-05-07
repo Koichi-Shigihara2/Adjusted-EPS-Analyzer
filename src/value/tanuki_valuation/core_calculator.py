@@ -480,24 +480,22 @@ class KoichiValuationCalculator:
             available=False, note="SEC年次データ未取得"
         )
         try:
-            if HAS_SEC_READER and self.sec_data_dir:
-                _sec_reader = SECReader(data_dir=os.path.join(self.sec_data_dir))
-                _annual_data = _sec_reader.get_annual_range(ticker, years=4)
-                if _annual_data:
-                    _current_per = financials.get("per") or financials.get("current_per") or 0.0
-                    _sc_val = scenario_result.to_dict() if scenario_result else None
-                    rice_result = calculate_rice(
-                        annual_data=_annual_data,
-                        wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
-                        scenario_valuations=_sc_val,
-                        current_per=_current_per,
-                    )
-                    if rice_result.available:
-                        _base_rice = rice_result.base.rice if rice_result.base else 0.0
-                        print(f"   [{ticker}] RICE: Q={rice_result.q:.2f}  "
-                              f"CF={rice_result.cf_conversion:.2f}  base={_base_rice:.1f}")
-                    else:
-                        print(f"   [{ticker}] RICE: 計算不可 ({rice_result.note})")
+            _rice_data = financials.get("rice_annual_data")
+            if _rice_data:
+                _current_per = financials.get("per") or financials.get("current_per") or 0.0
+                _sc_val = scenario_result.to_dict() if scenario_result else None
+                rice_result = calculate_rice(
+                    annual_data=_rice_data,
+                    wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
+                    scenario_valuations=_sc_val,
+                    current_per=_current_per,
+                )
+                if rice_result.available:
+                    _base_rice = rice_result.base.rice if rice_result.base else 0.0
+                    print(f"   [{ticker}] RICE: Q={rice_result.q:.2f}  "
+                          f"CF={rice_result.cf_conversion:.2f}  base={_base_rice:.1f}")
+                else:
+                    print(f"   [{ticker}] RICE: 計算不可 ({rice_result.note})")
         except Exception as _rice_e:
             print(f"   [{ticker}] RICE計算エラー: {_rice_e}")
             rice_result = RICEResult(
@@ -562,6 +560,12 @@ class KoichiValuationCalculator:
 
             # RICE（投資効率指標）v8.0追加
             "rice": rice_result.to_dict(),
+
+            # FCF/RICEデータソース記録
+            "fcf_source": financials.get("fcf_source", "unknown"),
+            "fcf_ttm_end": financials.get("fcf_ttm_end"),
+            "fcf_ttm_periods": financials.get("fcf_ttm_periods", 0),
+            "rice_data_source": financials.get("rice_data_source", "unknown"),
 
             "components": {
                 "fcf_5yr_avg": financials.get("fcf_5yr_avg"),

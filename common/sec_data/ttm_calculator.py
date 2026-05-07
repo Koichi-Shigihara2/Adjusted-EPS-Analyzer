@@ -18,6 +18,7 @@ TTM_DIR = os.path.join(BASE_DIR, "ttm")
 FLOW_FIELDS = frozenset([
     "OCF", "ICF", "CFF", "CapEx", "FinanceLeasePmts", "SBC", "DA",
     "Revenue", "GrossProfit", "OperatingIncome", "NetIncome",
+    "RD", "SM",
 ])
 
 # ストック系フィールド（最新Q末の値）
@@ -317,4 +318,192 @@ def save_ttm(ticker: str, ttm: dict) -> str:
     with open(path, "w", encoding="utf-8") as f:
         json.dump(ttm, f, ensure_ascii=False, indent=2)
     logger.info("[%s] TTM saved -> %s", ticker, path)
+    return path
+
+
+# ---------------------------------------------------------------------------
+# Rolling TTM系列
+# ---------------------------------------------------------------------------
+
+def _calc_fcf(ocf: float | None, capex: float | None, fl: float | None) -> float | None:
+    """
+    FCF計算（parser.pyと同じ計算式）。
+      pure_capex = |CapEx| - |FinanceLeasePmts or 0|
+      FCF = OCF - max(0, pure_capex)
+    OCF または CapEx が None の場合は None を返す。
+    FinanceLeasePmts が None の場合は 0 として扱う。
+    """
+    if ocf is None or capex is None:
+        return None
+    pure_capex = abs(capex) - abs(fl or 0)
+    return ocf - max(0, pure_capex)
+
+
+def _select_anchors(all_end_dates: list[str], n_periods: int) -> list[str]:
+    """
+    anchor[0] = all_end_dates[0]（最新Q）
+    anchor[i] = anchor[i-1] から約365日前に最も近い end_date
+
+    許容差分: 305〜425日（365±60日）
+    範囲外の場合はそのanchorをスキップ（n_periodsに満たなくても継続）。
+    """
+    if not all_end_dates:
+        return []
+
+    anchors: list[str] = [all_end_dates[0]]
+
+    for _ in range(n_periods - 1):
+        prev = anchors[-1]
+        prev_date = date.fromisoformat(prev)
+
+        best: str | None = None
+        best_diff: int | None = None
+
+        for d in all_end_dates:
+            if d >= prev:
+                continue
+            gap = (prev_date - date.fromisoformat(d)).days
+            if 305 <= gap <= 425:
+                diff = abs(gap - 365)
+                if best_diff is None or diff < best_diff:
+                    best = d
+                    best_diff = diff
+
+        if best is None:
+            break
+
+        gap_actual = (prev_date - date.fromisoformat(best)).days
+        if gap_actual < 305:
+            logger.warning(
+                "anchor gap too small: %s → %s (%d days)", prev, best, gap_actual
+            )
+
+        anchors.append(best)
+
+    return anchors
+
+
+def calc_ttm_series(
+    ticker: str,
+    normalized: dict,
+    n_periods: int = 6,
+) -> list[dict]:
+    """
+    Rolling TTM系列を生成する。
+    直近Qをanchor[0]とし、約1年(4Q)ずつ遡ってn_periods点を計算。
+
+    n_periods=6 の理由: rice.pyのCF計算が3年分必要（4点）+ FCF用5点 → 安全マージン6点
+
+    戻り値: ttm_end降順のリスト
+    [
+      {
+        "ttm_end": "2026-01-25",
+        "flow": {
+          "OCF":              {"val": ..., "quarters_used": 4, "missing": 0},
+          "CapEx":            {"val": ..., "quarters_used": 4, "missing": 0},
+          "FinanceLeasePmts": {"val": ..., "quarters_used": 4, "missing": 0},
+          "FCF":              {"val": ...},
+          "Revenue":          {"val": ..., "quarters_used": 4, "missing": 0},
+          "NetIncome":        {"val": ..., "quarters_used": 4, "missing": 0},
+          "RD":               {"val": ..., "quarters_used": 4, "missing": 0},
+          "SM":               {"val": ..., "quarters_used": 4, "missing": 2},
+        }
+      },
+      ...
+    ]
+    """
+    ticker = ticker.upper()
+    fields = normalized.get("fields", {})
+
+    # calc_ttm() と同じパターンで quarterly / annual に分離
+    quarterly_by_field: dict[str, list] = {}
+    annual_by_field: dict[str, list] = {}
+
+    for field_name, entries in fields.items():
+        quarterly_by_field[field_name] = sorted(
+            [e for e in entries if not e.get("is_annual")],
+            key=lambda x: x["end"],
+            reverse=True,
+        )
+        annual_by_field[field_name] = sorted(
+            [e for e in entries if e.get("is_annual")],
+            key=lambda x: x["end"],
+            reverse=True,
+        )
+
+    # calc_ttm() と同じパターンで implied Q4 を合成・マージ
+    for field_name in FLOW_FIELDS:
+        q4_list = _build_q4_quarterly_entries(
+            annual_by_field.get(field_name, []),
+            quarterly_by_field.get(field_name, []),
+        )
+        if q4_list:
+            merged = sorted(
+                quarterly_by_field.get(field_name, []) + q4_list,
+                key=lambda x: x["end"],
+                reverse=True,
+            )
+            quarterly_by_field[field_name] = merged
+
+    # anchor選択: FLOW_FIELDS の全 end_date の union を使用
+    all_end_dates: list[str] = sorted(
+        {
+            e["end"]
+            for field_name in FLOW_FIELDS
+            for e in quarterly_by_field.get(field_name, [])
+        },
+        reverse=True,
+    )
+
+    anchors = _select_anchors(all_end_dates, n_periods)
+
+    series: list[dict] = []
+    for anchor in anchors:
+        flow: dict = {}
+
+        for field_name in FLOW_FIELDS:
+            q_entries = [
+                e for e in quarterly_by_field.get(field_name, [])
+                if e["end"] <= anchor
+            ]
+            last4 = q_entries[:4]
+            if not last4:
+                continue
+            total = sum(e["val"] for e in last4)
+            flow[field_name] = {
+                "val": total,
+                "quarters_used": len(last4),
+                "missing": max(0, 4 - len(last4)),
+            }
+
+        # FCF計算（派生値・quarters_used/missingなし）
+        ocf_val = flow.get("OCF", {}).get("val")
+        capex_val = flow.get("CapEx", {}).get("val")
+        fl_val = flow.get("FinanceLeasePmts", {}).get("val")
+        fcf_val = _calc_fcf(ocf_val, capex_val, fl_val)
+        if fcf_val is not None:
+            flow["FCF"] = {"val": fcf_val}
+
+        series.append({
+            "ttm_end": anchor,
+            "flow": flow,
+        })
+
+    logger.info("[%s] TTM series calculated: %d periods", ticker, len(series))
+    return series
+
+
+def save_ttm_series(ticker: str, series: list[dict], n_periods: int = 6) -> str:
+    """TTM系列をJSONファイルに保存し、パスを返す"""
+    os.makedirs(TTM_DIR, exist_ok=True)
+    path = os.path.join(TTM_DIR, f"{ticker.upper()}_ttm_series.json")
+    data = {
+        "ticker": ticker.upper(),
+        "generated_at": datetime.now().isoformat(),
+        "n_periods": n_periods,
+        "series": series,
+    }
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+    logger.info("[%s] TTM series saved -> %s", ticker, path)
     return path

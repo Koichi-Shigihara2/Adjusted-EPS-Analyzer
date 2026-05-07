@@ -8,9 +8,11 @@ v2.4 変更点:
 - β採用理由をログ出力・latest.jsonに記録
 """
 
+import logging
 import os
 import sys
 import json
+from statistics import mean
 from typing import Dict, Any, Optional, Tuple
 
 # yfinance
@@ -23,6 +25,7 @@ except ImportError:
 # SEC EDGAR - common/sec_data/reader.py
 HAS_SEC = False
 SECReader = None
+repo_root: str | None = None
 
 try:
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -39,6 +42,8 @@ except Exception:
 if not HAS_SEC:
     try:
         github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if github_workspace:
+            repo_root = github_workspace
         if github_workspace and github_workspace not in sys.path:
             sys.path.insert(0, github_workspace)
         from common.sec_data.reader import SECReader
@@ -62,6 +67,96 @@ SECTOR_DEFAULT_BETA = {
     "Utilities": 0.50,
     "default": 1.00
 }
+
+
+class TTMReader:
+    """TTM系列ファイル（{ticker}_ttm_series.json）の読み込み"""
+
+    def __init__(self, ticker: str, repo_root_path: str | None):
+        self.ticker = ticker.upper()
+        self._series: list[dict] | None = None
+        if repo_root_path:
+            self._path: str | None = os.path.join(
+                repo_root_path, "common", "sec_data", "ttm",
+                f"{self.ticker}_ttm_series.json",
+            )
+        else:
+            self._path = None
+        self._load()
+
+    def _load(self) -> None:
+        if not self._path:
+            logging.warning("[%s] TTMReader: repo_root未解決のためスキップ", self.ticker)
+            return
+        try:
+            with open(self._path, encoding="utf-8") as f:
+                data = json.load(f)
+                self._series = data.get("series", [])
+        except FileNotFoundError:
+            self._series = None
+            logging.warning("[%s] TTM series file not found: %s", self.ticker, self._path)
+
+    def get_fcf_series(self) -> list[float] | None:
+        """FCF系列をfloatリストで返す（降順・最新が先頭）。2点未満はNone"""
+        if not self._series:
+            return None
+        vals = [
+            s["flow"]["FCF"]["val"]
+            for s in self._series
+            if s.get("flow", {}).get("FCF", {}).get("val") is not None
+        ]
+        return vals if len(vals) >= 2 else None
+
+    def get_ttm_end(self) -> str | None:
+        if self._series:
+            return self._series[0].get("ttm_end")
+        return None
+
+    def get_periods(self) -> int:
+        if not self._series:
+            return 0
+        return sum(
+            1 for s in self._series
+            if s.get("flow", {}).get("FCF", {}).get("val") is not None
+        )
+
+    def get_series(self) -> list[dict] | None:
+        return self._series
+
+
+def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
+    """
+    TTM系列を rice.py が期待する annual_data 形式に変換するアダプター。
+    rice.py は変更しない — このアダプターでインターフェースを吸収する。
+
+    rice.py が使うフィールド:
+      period                      ← "TTM@{ttm_end}" 形式（警告ログ用）
+      cf.operating_cash_flow      ← OCF
+      cf.capital_expenditure      ← CapEx
+      pl.revenue                  ← Revenue
+      pl.net_income               ← NetIncome
+      pl.research_and_development ← RD（Noneの場合はNoneのまま渡す）
+      pl.selling_and_marketing    ← SM（Noneの場合はNoneのまま渡す、rice側で or 0.0）
+      data_quality                ← sga_gap_warning用（TTMパスでは空dict）
+    """
+    result = []
+    for s in ttm_series:
+        flow = s.get("flow", {})
+        result.append({
+            "period": f"TTM@{s.get('ttm_end', '?')}",
+            "cf": {
+                "operating_cash_flow": flow.get("OCF", {}).get("val"),
+                "capital_expenditure": flow.get("CapEx", {}).get("val"),
+            },
+            "pl": {
+                "revenue":                  flow.get("Revenue", {}).get("val"),
+                "net_income":               flow.get("NetIncome", {}).get("val"),
+                "research_and_development": flow.get("RD", {}).get("val"),
+                "selling_and_marketing":    flow.get("SM", {}).get("val"),
+            },
+            "data_quality": {},
+        })
+    return result
 
 
 def _load_beta_config() -> Dict[str, Any]:
@@ -127,6 +222,13 @@ class TanukiDataFetcher:
         revenue = 0.0
         rpo = 0.0
         net_cash_data = {"net_cash": 0.0, "available": False}  # BS評価補正用
+
+        # TTM FCF/RICE 状態（TTMReader ブロックで更新）
+        fcf_source = "annual_fallback"
+        fcf_ttm_end: str | None = None
+        fcf_ttm_periods = 0
+        rice_annual_data = None
+        rice_data_source = "annual_fallback"
         
         # ========================================
         # 1. SEC EDGAR
@@ -169,7 +271,31 @@ class TanukiDataFetcher:
 
             except Exception as e:
                 print(f"   [{ticker}] SEC取得エラー: {e}")
-        
+
+        # ========================================
+        # TTM系列: FCFソース切り替え（年次→TTM）
+        # ========================================
+        ttm_reader = TTMReader(ticker, repo_root)
+        fcf_series = ttm_reader.get_fcf_series()
+
+        if fcf_series:
+            fcf_list = fcf_series
+            fcf_avg = float(mean(fcf_series))
+            fcf_source = "ttm_series"
+            fcf_ttm_end = ttm_reader.get_ttm_end()
+            fcf_ttm_periods = ttm_reader.get_periods()
+            print(f"   [{ticker}] TTM FCF series: {len(fcf_series)}点 end={fcf_ttm_end}")
+        else:
+            logging.warning("[%s] TTM series unavailable, fallback to annual FCF", ticker)
+
+        ttm_series_data = ttm_reader.get_series()
+        if ttm_series_data:
+            rice_annual_data = build_rice_annual_shape(ttm_series_data)
+            rice_data_source = "ttm_series"
+        else:
+            rice_annual_data = self.sec_reader.get_annual_range(ticker, years=4) if self.sec_reader else None
+            rice_data_source = "annual_fallback"
+
         # ========================================
         # 2. yfinance（株式数、株価、β、セクター）
         # ========================================
@@ -279,7 +405,12 @@ class TanukiDataFetcher:
             "ma200": ma200,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,
-            "_beta_source": beta_source
+            "_beta_source": beta_source,
+            "fcf_source": fcf_source,
+            "fcf_ttm_end": fcf_ttm_end,
+            "fcf_ttm_periods": fcf_ttm_periods,
+            "rice_annual_data": rice_annual_data,
+            "rice_data_source": rice_data_source,
         }
     
     def _calc_fcf_2yr_avg(self, fcf_list: list) -> float:
