@@ -168,9 +168,69 @@ class SECFetcher:
         return results
 
 
+def load_company_facts(ticker: str, data_dir: str = None) -> Optional[Dict[str, Any]]:
+    """
+    {data_dir}/{ticker}/company_facts.json を読み込んで返す。
+
+    ファイルが存在しない場合は None を返す（ネットワーク取得は行わない）。
+    取得が必要な場合は SECFetcher.fetch_company_facts() を使うこと。
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.path.dirname(__file__), "data")
+    path = os.path.join(data_dir, ticker.upper(), "company_facts.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"   [{ticker}] company_facts.json 読み込みエラー: {e}")
+        return None
+
+
+def _get_latest_accn(company_facts: dict) -> Optional[str]:
+    """company_facts 内で最も最近の accn（filingアクセッション番号）を返す"""
+    latest_filed = ""
+    latest_accn = None
+    try:
+        for concept_data in company_facts.get("facts", {}).get("us-gaap", {}).values():
+            for unit_data in concept_data.get("units", {}).values():
+                for entry in unit_data:
+                    filed = entry.get("filed", "")
+                    if filed > latest_filed:
+                        latest_filed = filed
+                        latest_accn = entry.get("accn")
+    except Exception:
+        pass
+    return latest_accn
+
+
+def needs_quarterly_update(ticker: str, company_facts: dict, run_state: dict) -> bool:
+    """
+    company_facts の最新 filing の accn を run_state と比較。
+    差分がある（または未記録）場合のみ True を返す。
+    """
+    latest_accn = _get_latest_accn(company_facts)
+    if latest_accn is None:
+        return False
+    saved_accn = run_state.get(ticker.upper(), {}).get("quarterly", {}).get("last_accn")
+    return latest_accn != saved_accn
+
+
+def update_quarterly_run_state(ticker: str, latest_accn: str, run_state: dict) -> dict:
+    """run_state の quarterly セクションを更新して返す"""
+    ticker = ticker.upper()
+    updated = dict(run_state)
+    updated.setdefault(ticker, {})["quarterly"] = {
+        "last_fetched": datetime.now().strftime("%Y-%m-%d"),
+        "last_accn": latest_accn,
+    }
+    return updated
+
+
 if __name__ == "__main__":
     fetcher = SECFetcher()
-    
+
     # テスト: 単一ティッカー
     data = fetcher.fetch_company_facts("TSLA")
     if data:
