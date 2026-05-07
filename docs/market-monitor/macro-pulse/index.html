@@ -1966,18 +1966,21 @@ function liqPrevVal(rows, col, daysBack) {
 
 function renderLiquidityCards(rows) {
   const latest = rows[rows.length - 1];
-  const m2      = latest.m2            !== '' ? parseFloat(latest.m2)            : null;
-  const netLiq  = latest.net_liquidity !== '' ? parseFloat(latest.net_liquidity) : null;
-  const fed     = latest.fed_balance   !== '' ? parseFloat(latest.fed_balance)   : null;
+  const m2      = latest.m2          !== '' ? parseFloat(latest.m2)          : null;
+  const hySpread = latest.hy_spread  !== '' ? parseFloat(latest.hy_spread)  : null;
+  const fed     = latest.fed_balance !== '' ? parseFloat(latest.fed_balance) : null;
 
-  const m2Prev      = liqPrevVal(rows, 'm2',             28);
-  const netLiqPrev  = liqPrevVal(rows, 'net_liquidity',   7);
-  const fedPrev     = liqPrevVal(rows, 'fed_balance',      7);
+  const m2Prev       = liqPrevVal(rows, 'm2',          28);
+  const hySpreadPrev = liqPrevVal(rows, 'hy_spread',    7);
+  const fedPrev      = liqPrevVal(rows, 'fed_balance',  7);
 
-  function chgHtml(cur, prev, fmt) {
+  function chgHtml(cur, prev, fmt, inverse) {
     if (cur === null || prev === null) return '<span class="liq-card-chg flat">—</span>';
     const diff = cur - prev;
-    const cls = Math.abs(diff) < 0.0001 ? 'flat' : (diff > 0 ? 'up' : 'dn');
+    let cls;
+    if (Math.abs(diff) < 0.0001) cls = 'flat';
+    else if (inverse) cls = diff > 0 ? 'dn' : 'up';
+    else cls = diff > 0 ? 'up' : 'dn';
     const sign = diff > 0 ? '+' : '';
     return `<span class="liq-card-chg ${cls}">${sign}${fmt(diff)}</span>`;
   }
@@ -1987,23 +1990,23 @@ function renderLiquidityCards(rows) {
       label: 'M2 マネーサプライ',
       val:   m2 !== null ? m2.toLocaleString('en-US', {maximumFractionDigits:1}) : '—',
       unit:  'Billion USD',
-      chg:   chgHtml(m2, m2Prev, d => (d/Math.abs(m2Prev||1)*100).toFixed(2)+'%'),
+      chg:   chgHtml(m2, m2Prev, d => (d/Math.abs(m2Prev||1)*100).toFixed(2)+'%', false),
       chgLabel: '前月比',
       date:  latest.date,
     },
     {
-      label: 'NET LIQUIDITY',
-      val:   netLiq !== null ? (netLiq/1000000).toFixed(2) : '—',
-      unit:  '兆 USD',
-      chg:   chgHtml(netLiq, netLiqPrev, d => (d/1000000).toFixed(3)+'兆'),
-      chgLabel: '前週比',
+      label: 'HY SPREAD',
+      val:   hySpread !== null ? hySpread.toFixed(2) : '—',
+      unit:  '%',
+      chg:   chgHtml(hySpread, hySpreadPrev, d => (d >= 0 ? '+' : '') + d.toFixed(2) + '%', true),
+      chgLabel: '前日比',
       date:  latest.date,
     },
     {
       label: 'FRB バランスシート',
       val:   fed !== null ? (fed/1000000).toFixed(2) : '—',
       unit:  '兆 USD',
-      chg:   chgHtml(fed, fedPrev, d => (d/1000000).toFixed(3)+'兆'),
+      chg:   chgHtml(fed, fedPrev, d => (d/1000000).toFixed(3)+'兆', false),
       chgLabel: '前週比',
       date:  latest.date,
     },
