@@ -444,7 +444,13 @@ def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, history_90d
         percentiles.append(percentileofscore(hist["qqq_vs_spy_20d"], qqq_vs_spy_20d))
     if not percentiles:
         return 50
-    return max(0, min(100, round(sum(percentiles) / len(percentiles))))
+    score = max(0, min(100, round(sum(percentiles) / len(percentiles))))
+    if vxn_vs_ma50 is None:
+        capped = min(score, 75)
+        if capped < score:
+            print(f"[WARN] VXN欠落のためスコアをキャップ（上限75）: {score} → {capped}")
+        score = capped
+    return score
 
 
 def get_realtime_data():
@@ -863,6 +869,7 @@ if __name__ == "__main__":
             "vxn_vs_ma50": vxn_vs_ma50,
             "qqq_vs_spy_20d": qqq_vs_spy_20d,
             "fg_score": fg_score_tech,
+            "vxn_available": vxn_vs_ma50 is not None,
         },
         "divergence": {
             "value": div_value,
