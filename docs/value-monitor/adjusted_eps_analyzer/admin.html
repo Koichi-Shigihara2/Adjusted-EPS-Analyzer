@@ -110,6 +110,8 @@
       font-family: var(--mono);
     }
     hr { border: none; border-top: 1px solid var(--bdr); margin: 20px 0; }
+    select { background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); padding: 4px 8px; font-family: var(--sans); font-size: 12px; cursor: pointer; }
+    select:hover { border-color: var(--acc); }
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -162,6 +164,22 @@
       <div id="addResult" style="margin-top:10px; font-family:var(--mono);"></div>
     </div>
 
+    <!-- EPSセクター手動設定 -->
+    <div class="panel" id="epsSectorPanel">
+      <h3 style="font-family:var(--mono); margin-bottom:15px;">⚙ 銘柄設定 (EPSセクター)</h3>
+      <p style="color:var(--mut); font-size:12px; margin-bottom:12px;">未設定の場合は会社名・SICコードから自動推定します。</p>
+      <table>
+        <thead>
+          <tr><th>ティッカー</th><th>会社名</th><th>EPSセクター</th></tr>
+        </thead>
+        <tbody id="epsSectorList"></tbody>
+      </table>
+      <div style="margin-top:15px; display:flex; gap:10px; align-items:center;">
+        <button id="saveEpsSectors">💾 保存</button>
+        <span id="epsSaveResult" style="font-family:var(--mono); font-size:12px;"></span>
+      </div>
+    </div>
+
     <!-- 最終更新日時 (グローバル) -->
     <div class="panel">
       <span style="font-family:var(--mono); color:var(--mut);">データ最終更新: </span><span id="globalLastUpdated">—</span>
@@ -172,10 +190,13 @@
 <script>
   const REPO_OWNER = 'Koichi-Shigihara2';
   const REPO_NAME = 'On-a-journey';
-  const BRANCH = 'refactor/reorganize';   // 実際のブランチ名に合わせてください
+  const BRANCH = 'kaihatsu';
 
   let token = '';
   let tickerList = [];
+  let sectorNames = [];
+  let csvRowsGlobal = [];
+  let csvSha = '';
 
   const contentDiv = document.getElementById('content');
   const tokenInput = document.getElementById('token');
@@ -225,6 +246,17 @@
     return await res.json();
   }
 
+  // sectors.yaml から - name: の値を抽出
+  function parseSectorsYaml(text) {
+    const names = [];
+    const regex = /^- name:\s*(.+)$/gm;
+    let match;
+    while ((match = regex.exec(text)) !== null) {
+      names.push(match[1].trim());
+    }
+    return names;
+  }
+
   // YAML パース (簡易)
   function parseYaml(yaml) {
     const lines = yaml.split('\n');
@@ -250,26 +282,49 @@
     return yaml;
   }
 
+  // CSV 1行をクォートを考慮してパース
+  function parseCsvLine(line) {
+    const values = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += ch;
+      }
+    }
+    values.push(current.trim());
+    return values;
+  }
+
   // CSV パース
   function parseCsv(csv) {
     const lines = csv.split('\n');
-    const headers = lines[0].split(',');
+    const headers = parseCsvLine(lines[0]);
     const rows = [];
-    for (let i=1; i<lines.length; i++) {
+    for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
-      const vals = lines[i].split(',');
+      const vals = parseCsvLine(lines[i]);
       const row = {};
-      headers.forEach((h, idx) => row[h.trim()] = vals[idx] ? vals[idx].trim() : '');
+      headers.forEach((h, idx) => row[h.trim()] = vals[idx] !== undefined ? vals[idx] : '');
       rows.push(row);
     }
     return rows;
   }
 
-  // CSV 生成
+  // CSV 生成（eps_sector 列を含む）
   function buildCsv(rows) {
-    const headers = ['ticker', 'cik', 'name'];
+    const headers = ['ticker', 'cik', 'name', 'eps_sector'];
     let csv = headers.join(',') + '\n';
-    rows.forEach(r => csv += `${r.ticker},${r.cik},${r.name || ''}\n`);
+    rows.forEach(r => {
+      const name = r.name && r.name.includes(',') ? `"${r.name}"` : (r.name || '');
+      csv += `${r.ticker || ''},${r.cik || ''},${name},${r.eps_sector || ''}\n`;
+    });
     return csv;
   }
 
@@ -334,13 +389,22 @@
       const { content: yamlContent, sha: yamlSha } = await fetchFileContent('config/monitor_tickers.yaml');
       const tickers = parseYaml(yamlContent);
       // cik_lookup.csv を取得
-      const { content: csvContent } = await fetchFileContent('config/cik_lookup.csv');
-      const csvRows = parseCsv(csvContent);
+      const { content: csvContent, sha: csvShaVal } = await fetchFileContent('config/cik_lookup.csv');
+      csvRowsGlobal = parseCsv(csvContent);
+      csvSha = csvShaVal;
+
+      // sectors.yaml からセクター一覧を取得
+      try {
+        const { content: sectorsYaml } = await fetchFileContent('config/sectors.yaml');
+        sectorNames = parseSectorsYaml(sectorsYaml);
+      } catch (e) {
+        sectorNames = ['Technology', 'ハイパーグロース / SaaS', 'フィンテック / 銀行', 'ヘルスケア / バイオ', '一般消費財 / 製造 / EV', '宇宙・航空', '不動産 (REITs)', '暗号資産 / ブロックチェーン', '通信・インフラ'];
+      }
 
       // マップ作成
       const cikMap = {};
       const nameMap = {};
-      csvRows.forEach(r => { if (r.ticker) { cikMap[r.ticker.toUpperCase()] = r.cik; nameMap[r.ticker.toUpperCase()] = r.name; } });
+      csvRowsGlobal.forEach(r => { if (r.ticker) { cikMap[r.ticker.toUpperCase()] = r.cik; nameMap[r.ticker.toUpperCase()] = r.name; } });
 
       // 各ティッカーの最終更新日を取得 (並列)
       const promises = tickers.map(async t => {
@@ -364,6 +428,8 @@
         `;
         tickerListTbody.appendChild(row);
       });
+
+      renderEpsSectorPanel();
 
       // 全選択チェックボックス
       selectAll.onclick = () => {
@@ -456,11 +522,14 @@
       await updateFile('config/monitor_tickers.yaml', newYaml, `Add ticker ${ticker}`, yamlSha);
 
       // cik_lookup.csv を更新
-      const { content: csvContent, sha: csvSha } = await fetchFileContent('config/cik_lookup.csv');
+      const { content: csvContent, sha: localCsvSha } = await fetchFileContent('config/cik_lookup.csv');
       const rows = parseCsv(csvContent);
-      rows.push({ ticker, cik, name });
+      rows.push({ ticker, cik, name, eps_sector: '' });
       const newCsv = buildCsv(rows);
-      await updateFile('config/cik_lookup.csv', newCsv, `Add CIK for ${ticker}`, csvSha);
+      const csvResult = await updateFile('config/cik_lookup.csv', newCsv, `Add CIK for ${ticker}`, localCsvSha);
+      csvRowsGlobal = parseCsv(newCsv);
+      csvSha = csvResult.content.sha;
+      renderEpsSectorPanel();
 
       addResultDiv.innerHTML = `<span class="success">✓ ティッカー ${ticker} を追加しました。リストを再読込してください。</span>`;
       document.getElementById('newTicker').value = '';
@@ -470,6 +539,50 @@
       addResultDiv.innerHTML = `<span class="error">✗ 追加失敗: ${err.message}</span>`;
     }
   };
+
+  // EPSセクター設定パネルを描画
+  function renderEpsSectorPanel() {
+    const tbody = document.getElementById('epsSectorList');
+    tbody.innerHTML = '';
+    csvRowsGlobal.forEach(row => {
+      const currentSector = row.eps_sector || '';
+      const optionsHtml = `<option value=""${!currentSector ? ' selected' : ''}>— 自動 —</option>` +
+        sectorNames.map(s => `<option value="${s}"${s === currentSector ? ' selected' : ''}>${s}</option>`).join('');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${row.ticker}</strong></td>
+        <td style="color:var(--mut);">${row.name || '—'}</td>
+        <td><select class="eps-sector-select" data-ticker="${row.ticker}">${optionsHtml}</select></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // EPSセクターを保存
+  async function saveEpsSectors() {
+    const saveBtn = document.getElementById('saveEpsSectors');
+    const resultSpan = document.getElementById('epsSaveResult');
+    saveBtn.disabled = true;
+    resultSpan.textContent = '保存中...';
+
+    // ドロップダウンの値を収集
+    document.querySelectorAll('.eps-sector-select').forEach(sel => {
+      const row = csvRowsGlobal.find(r => r.ticker === sel.dataset.ticker);
+      if (row) row.eps_sector = sel.value;
+    });
+
+    try {
+      const newCsv = buildCsv(csvRowsGlobal);
+      const result = await updateFile('config/cik_lookup.csv', newCsv, 'Update eps_sector settings', csvSha);
+      csvSha = result.content.sha;
+      resultSpan.innerHTML = '<span class="success">✓ 保存しました</span>';
+    } catch (err) {
+      resultSpan.innerHTML = `<span class="error">✗ 保存失敗: ${err.message}</span>`;
+    }
+    saveBtn.disabled = false;
+  }
+
+  document.getElementById('saveEpsSectors').onclick = saveEpsSectors;
 
   // 再読込
   refreshBtn.onclick = loadData;
