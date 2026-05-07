@@ -65,8 +65,12 @@ _REVENUE_FALLBACKS = (
     "TotalRevenue",
 )
 
-# RD・SM フォールバック概念（primaryと重複しない候補のみ）
+# RD・SM・CapEx フォールバック概念（primaryと重複しない候補のみ）
 _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
+    "CapEx": (
+        # NVDAなど: PP&E以外の生産的資産支出も含む広義CapEx
+        "PaymentsToAcquireProductiveAssets",
+    ),
     "RD": (
         "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
     ),
@@ -132,14 +136,20 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
                     logger.debug("[%s] Revenue fallback: %s", ticker, fallback_concept)
                     break
 
-        if not entries and field_name in _FIELD_FALLBACKS:
-            for fallback_concept in _FIELD_FALLBACKS[field_name]:
-                entries = _get_field_units(company_facts, fallback_concept, unit)
-                if entries:
-                    logger.debug("[%s] %s fallback: %s", ticker, field_name, fallback_concept)
-                    break
+        processed = _process_entries(entries)
 
-        fields[field_name] = _process_entries(entries)
+        # 汎用フォールバック: タグ欠如 または 有効期間内エントリなしの場合に適用
+        if not processed and field_name in _FIELD_FALLBACKS:
+            for fallback_concept in _FIELD_FALLBACKS[field_name]:
+                fb_entries = _get_field_units(company_facts, fallback_concept, unit)
+                if fb_entries:
+                    fb_processed = _process_entries(fb_entries)
+                    if fb_processed:
+                        processed = fb_processed
+                        logger.debug("[%s] %s fallback: %s", ticker, field_name, fallback_concept)
+                        break
+
+        fields[field_name] = processed
 
     logger.info("[%s] raw table built: %d fields", ticker, len(fields))
     return {
