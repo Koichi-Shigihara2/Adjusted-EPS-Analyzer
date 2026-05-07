@@ -51,6 +51,7 @@ EVENTS_PATH      = os.path.join(BASE_DATA_DIR, "05_events.csv")
 SCHEDULE_PATH    = os.path.join(BASE_DATA_DIR, "05_indicator_schedule.csv")
 FED_CONTEXT_PATH = os.path.join(BASE_DATA_DIR, "05_fed_context.csv")
 WEEKLY_ANALYSIS_PATH = os.path.join(BASE_DATA_DIR, "05_weekly_analysis.csv")
+LIQUIDITY_PATH   = os.path.join(BASE_DATA_DIR, "05_liquidity.csv")
 
 # ─────────────────────────────────────────────────────────────────
 #  カラム定義
@@ -1658,6 +1659,66 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
     return new_rows
 
 # ─────────────────────────────────────────────────────────────────
+#  流動性モニター CSV 更新
+#  M2マネーサプライ / HYスプレッド / FRBバランスシート を日次保存
+#  (スコア計算には影響しない参考情報)
+# ─────────────────────────────────────────────────────────────────
+LIQUIDITY_COLUMNS = ["date", "m2", "hy_spread", "fed_balance"]
+
+def update_liquidity_csv(target_date: date, fred) -> None:
+    """M2SL / BAMLH0A0HYM2 / WALCL を取得して 05_liquidity.csv に追記・更新する"""
+    if fred is None:
+        logger.warning("[Liquidity] FRED not available. Skipping.")
+        return
+
+    # M2マネーサプライ: 月次 (lookback 90日で直近値を確実に捕捉)
+    m2_val,  _ = fred_latest(fred, "M2SL",          target_date, lookback=90)
+    # HYスプレッド: 日次
+    hy_val,  _ = fred_latest(fred, "BAMLH0A0HYM2",  target_date, lookback=14)
+    # FRBバランスシート: 週次
+    fed_val, _ = fred_latest(fred, "WALCL",          target_date, lookback=14)
+
+    if all(v is None for v in (m2_val, hy_val, fed_val)):
+        logger.warning("[Liquidity] All series returned None. Skipping.")
+        return
+
+    if os.path.exists(LIQUIDITY_PATH):
+        try:
+            df = pd.read_csv(LIQUIDITY_PATH, dtype=str).fillna("")
+            for col in LIQUIDITY_COLUMNS:
+                if col not in df.columns:
+                    df[col] = ""
+        except Exception as e:
+            logger.warning(f"[Liquidity] CSV read error: {e}")
+            df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
+    else:
+        df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
+
+    date_str = target_date.strftime("%Y-%m-%d")
+    new_row = {
+        "date":        date_str,
+        "m2":          str(round(m2_val,  4)) if m2_val  is not None else "",
+        "hy_spread":   str(round(hy_val,  4)) if hy_val  is not None else "",
+        "fed_balance": str(round(fed_val, 4)) if fed_val is not None else "",
+    }
+
+    if date_str in df["date"].values:
+        idx = df.index[df["date"] == date_str][0]
+        for col in ["m2", "hy_spread", "fed_balance"]:
+            if new_row[col]:
+                df.at[idx, col] = new_row[col]
+    else:
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+
+    df = df.sort_values("date").reset_index(drop=True)
+    os.makedirs(BASE_DATA_DIR, exist_ok=True)
+    df.to_csv(LIQUIDITY_PATH, index=False, encoding="utf-8")
+    logger.info(
+        f"[Liquidity] Saved {date_str}: "
+        f"m2={new_row['m2']} hy_spread={new_row['hy_spread']} fed_balance={new_row['fed_balance']}"
+    )
+
+# ─────────────────────────────────────────────────────────────────
 #  メインオーケストレーター
 # ─────────────────────────────────────────────────────────────────
 def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
@@ -1757,6 +1818,10 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
     existing_filtered = events[~events["event_id"].isin(key_new)]
     combined = pd.concat([existing_filtered, new_df], ignore_index=True)
     save_events(combined)
+
+    # 流動性モニター更新（スコア計算には影響しない参考情報）
+    update_liquidity_csv(target_date, fred)
+
     logger.info("=== Run complete ===")
 
 # ─────────────────────────────────────────────────────────────────

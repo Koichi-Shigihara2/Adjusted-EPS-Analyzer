@@ -255,6 +255,24 @@
     .empty{color:var(--mut);font-family:var(--mono);font-size:11px;padding:20px;text-align:center}
     .spin{display:inline-block;width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:6px}
     @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* ══════════════════════════════════════════
+       💧 流動性モニター
+    ══════════════════════════════════════════ */
+    .liq-wrap{border:1px solid var(--bdr);background:var(--sur);margin-bottom:14px;padding:14px 20px}
+    .liq-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:14px}
+    .liq-note{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:10px;padding-top:8px;border-top:1px solid var(--bdr)}
+    .liq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .liq-card{background:var(--sur2);border:1px solid var(--bdr);padding:14px 16px;display:flex;flex-direction:column;gap:5px}
+    .liq-card-label{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase}
+    .liq-card-val-row{display:flex;align-items:baseline;gap:6px}
+    .liq-card-val{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1}
+    .liq-card-unit{font-family:var(--mono);font-size:10px;color:var(--mut)}
+    .liq-card-chg-row{display:flex;align-items:center;gap:6px}
+    .liq-card-chg{font-family:var(--mono);font-size:11px;font-weight:700}
+    .liq-card-chg.up{color:var(--grn)}.liq-card-chg.dn{color:var(--red)}.liq-card-chg.flat{color:var(--mut)}
+    .liq-card-chg-label{font-family:var(--mono);font-size:9px;color:var(--mut)}
+    .liq-card-date{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px}
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -442,6 +460,14 @@
   </div>
 
   <!-- ⑦ AI週次解説 は ①の直後に移動済み -->
+
+  <!-- 💧 流動性モニター -->
+  <div class="sec">💧 流動性モニター <span style="font-size:8px;color:var(--mut);letter-spacing:.05em">参考情報 — スコア計算には影響しません</span></div>
+  <div class="liq-wrap">
+    <div class="liq-title">LIQUIDITY MONITOR</div>
+    <div class="liq-grid" id="liqGrid"><div class="empty"><span class="spin"></span>Loading...</div></div>
+    <div class="liq-note">※ M2は月次・FRBバランスシートは週次のため、値は次回発表まで変わりません。HYスプレッドは日次。</div>
+  </div>
 
 </div><!-- /shell -->
 
@@ -1924,6 +1950,93 @@ function toggleAiCard(card) {
 }
 
 // ═══════════════════════════════════════════════════════
+// 💧 LIQUIDITY MONITOR
+// ═══════════════════════════════════════════════════════
+const LIQUIDITY_PATH = 'data/05_liquidity.csv';
+
+function liqPrevVal(rows, col, daysBack) {
+  const latestDate = new Date(rows[rows.length - 1].date);
+  const cutoff = latestDate.getTime() - daysBack * 86400000;
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const d = new Date(rows[i].date).getTime();
+    if (d <= cutoff && rows[i][col] !== '') return parseFloat(rows[i][col]);
+  }
+  return null;
+}
+
+function renderLiquidityCards(rows) {
+  const latest = rows[rows.length - 1];
+  const m2  = latest.m2  !== '' ? parseFloat(latest.m2)  : null;
+  const hy  = latest.hy_spread  !== '' ? parseFloat(latest.hy_spread)  : null;
+  const fed = latest.fed_balance !== '' ? parseFloat(latest.fed_balance) : null;
+
+  const m2Prev  = liqPrevVal(rows, 'm2',          28);
+  const hyPrev  = liqPrevVal(rows, 'hy_spread',    7);
+  const fedPrev = liqPrevVal(rows, 'fed_balance',   7);
+
+  function chgHtml(cur, prev, fmt) {
+    if (cur === null || prev === null) return '<span class="liq-card-chg flat">—</span>';
+    const diff = cur - prev;
+    const cls = Math.abs(diff) < 0.0001 ? 'flat' : (diff > 0 ? 'up' : 'dn');
+    const sign = diff > 0 ? '+' : '';
+    return `<span class="liq-card-chg ${cls}">${sign}${fmt(diff)}</span>`;
+  }
+
+  const cards = [
+    {
+      label: 'M2 マネーサプライ',
+      val:   m2 !== null ? m2.toLocaleString('en-US', {maximumFractionDigits:1}) : '—',
+      unit:  'Billion USD',
+      chg:   chgHtml(m2, m2Prev, d => (d/Math.abs(m2Prev||1)*100).toFixed(2)+'%'),
+      chgLabel: '前月比',
+      date:  latest.date,
+    },
+    {
+      label: 'HY スプレッド',
+      val:   hy !== null ? hy.toFixed(2) : '—',
+      unit:  '%',
+      chg:   chgHtml(hy, hyPrev, d => d.toFixed(2)+'pp'),
+      chgLabel: '前週比',
+      date:  latest.date,
+    },
+    {
+      label: 'FRB バランスシート',
+      val:   fed !== null ? (fed/1000000).toFixed(2) : '—',
+      unit:  '兆 USD',
+      chg:   chgHtml(fed, fedPrev, d => (d/1000000).toFixed(3)+'兆'),
+      chgLabel: '前週比',
+      date:  latest.date,
+    },
+  ];
+
+  document.getElementById('liqGrid').innerHTML = cards.map(c => `
+    <div class="liq-card">
+      <div class="liq-card-label">${c.label}</div>
+      <div class="liq-card-val-row">
+        <div class="liq-card-val">${c.val}</div>
+        <div class="liq-card-unit">${c.unit}</div>
+      </div>
+      <div class="liq-card-chg-row">${c.chg}<span class="liq-card-chg-label">${c.chgLabel}</span></div>
+      <div class="liq-card-date">${c.date}</div>
+    </div>
+  `).join('');
+}
+
+async function loadLiquidityData() {
+  try {
+    const res = await fetch(LIQUIDITY_PATH + '?t=' + Date.now());
+    if (!res.ok) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
+    const rows = parseCSVRaw(await res.text());
+    if (!rows.length) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
+    rows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    renderLiquidityCards(rows);
+  } catch(e) {
+    console.warn('liquidity:', e);
+    document.getElementById('liqGrid').innerHTML = '<div class="empty">読み込みエラー</div>';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
@@ -1932,6 +2045,7 @@ document.addEventListener('DOMContentLoaded', () => {
   loadSchedule();
   loadCSVData();
   loadWeeklyAnalysis();
+  loadLiquidityData();
   setInterval(()=>{updateTs();},60000);
 });
 </script>
