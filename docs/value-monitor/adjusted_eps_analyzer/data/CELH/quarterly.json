@@ -1,7 +1,117 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-05-05T13:15:29.200731",
+  "last_updated": "2026-05-08T11:25:15.864906",
   "quarters": [
+    {
+      "gaap_eps": 0.42384241080365254,
+      "adjusted_eps": 0.4885608442995192,
+      "gaap_net_income": 110099000.0,
+      "adjusted_net_income": 126910519.1586203,
+      "diluted_shares_used": 259764000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 7626000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 6104692.400535133,
+          "tax_rate_applied": 0.1994895881805491
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 5900000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 4723011.429734761,
+          "tax_rate_applied": 0.1994895881805491
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 3048000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 2439955.7352256863,
+          "tax_rate_applied": 0.1994895881805491
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 4427000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 3543859.593124709,
+          "tax_rate_applied": 0.1994895881805491
+        }
+      ],
+      "net_adjustment_total": 16811519.15862029,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 259764000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 45.4%）",
+        "sbc_contribution": 0.454,
+        "sbc_to_revenue": 0,
+        "sbc_per_share": 0.0294,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "株式報酬費用と無形資産償却費が調整項目の大部分を占めており、これらは毎期発生しやすい恒常的性質を持つため調整の健全性は限定的。リストラ費用と異常貸倒引当金は一過性が高いが、全体として調整後EPSの持続可能性に注意を要する。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用であるが、毎期発生する株式報酬費用であり恒常的な可能性が高い",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で定期的に発生する費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響とされる異常変動分の貸倒引当金",
+            "confidence": 0.75
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用として分類されるリストラ費用",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.09704955847334952,
       "adjusted_eps": 0.37165429628085594,
@@ -86,42 +196,6 @@
           "eps_diff_pct": 62.7,
           "note": "XBRLと公式発表のGAAP EPSに63%の差異があります。公式EPS: $0.26, XBRL計算EPS: $0.10。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
         }
-      },
-      "maturity_monitor": {
-        "alert": null,
-        "sbc_contribution": 0.329,
-        "sbc_to_revenue": 0,
-        "sbc_per_share": 0.0903,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目全体の規模が大きく、特に株式報酬費用と無形資産償却のような経常的・非一過性項目の加算が目立つため、調整後EPSの健全性は限定的。リストラ費用は一過性が高いが80M超の巨額であり、貸倒引当金の異常分も事業特性から見て透明性に課題あり。投資判断ではGAAPベースの慎重な検証を推奨。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬を加算しているが、毎期発生する恒常的な運用コストである。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、調整の正当性は低い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる異常貸倒引当金だが、飲料事業における性質が不明瞭で一過性判断は中立的。",
-            "confidence": 0.6
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用としてリストラ費用を全額加算しており、一時性は比較的高い。",
-            "confidence": 0.8
-          }
-        ]
       }
     },
     {

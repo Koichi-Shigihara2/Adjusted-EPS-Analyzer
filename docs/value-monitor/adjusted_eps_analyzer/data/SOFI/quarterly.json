@@ -1,7 +1,63 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-05-05T13:18:21.400746",
+  "last_updated": "2026-05-08T11:27:47.878020",
   "quarters": [
+    {
+      "gaap_eps": 0.12099395432982755,
+      "adjusted_eps": 0.16465684239509146,
+      "gaap_net_income": 166731000.0,
+      "adjusted_net_income": 226898940.04570237,
+      "diluted_shares_used": 1378011000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 72012000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 60167940.04570237,
+          "tax_rate_applied": 0.1644734204618345
+        }
+      ],
+      "net_adjustment_total": 60167940.04570237,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": "フィンテック / 銀行",
+      "sector_exclusions": [
+        "loan_fair_value",
+        "loan_loss_provision_abnormal"
+      ],
+      "revenue": 0.0,
+      "diluted_shares": 1378011000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が30%超（現在 119.7%）",
+        "sbc_contribution": 1.197,
+        "sbc_to_revenue": 0,
+        "sbc_per_share": 0.0523,
+        "sector_threshold": {
+          "sbc_contribution": 0.3,
+          "sbc_to_revenue": 0.05
+        }
+      },
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目は株式報酬費用(SBC)の加算です。非現金費用として調整されていますが、フィンテック企業において継続的に発生する恒常的なコストであり、株主希薄化の影響も無視できません。調整によりEPSが約36%押し上げられていますが、再発可能性が高いため調整後EPSの健全性には注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。reason: 非現金費用、category: 株式報酬関連。毎期発生するSBCは恒常的な可能性が高い。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.1386432139527564,
       "adjusted_eps": 0.31272377223466963,
@@ -61,38 +117,7 @@
       "diluted_shares": 1251767000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が30%超（現在 91.0%）",
-        "sbc_contribution": 0.91,
-        "sbc_to_revenue": 0,
-        "sbc_per_share": 0.1584,
-        "sector_threshold": {
-          "sbc_contribution": 0.3,
-          "sbc_to_revenue": 0.05
-        }
-      },
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "主な調整項目が株式報酬費用（約1.98億ドル）と無形資産償却費（約0.75億ドル）であり、これらは継続的に発生する性質の費用であるため、調整後EPS（0.31）がGAAP EPS（0.14）を大幅に上回る健全性は限定的。リストラ費用は一過性だが金額が小さく全体への影響は軽微。調整の質に注意が必要。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用を加算。ただし毎期発生する継続的な報酬コストの可能性が高い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却。定期的に発生する非現金費用であり恒常性の可能性が高い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用としてリストラ費用を加算。",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 0.10797119466836456,
@@ -744,41 +769,6 @@
       "period_end": "2021-09-30",
       "fiscal_year": 2021,
       "quarter": 3
-    },
-    {
-      "gaap_eps": -0.452869948998095,
-      "adjusted_eps": -0.31006389235662113,
-      "gaap_net_income": -165314000.0,
-      "adjusted_net_income": -113184596.18361226,
-      "diluted_shares_used": 365036365.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 52154000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 52129403.816387735,
-          "tax_rate_applied": 0.00047160684918254813
-        }
-      ],
-      "net_adjustment_total": 52129403.816387735,
-      "filing_date": "2021-06-30",
-      "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
-      "revenue": 0.0,
-      "diluted_shares": 365036365.0,
-      "period_end": "2021-06-30",
-      "fiscal_year": 2021,
-      "quarter": 2
     }
   ]
 }

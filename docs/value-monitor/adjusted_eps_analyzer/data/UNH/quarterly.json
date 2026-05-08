@@ -1,7 +1,50 @@
 {
   "ticker": "UNH",
-  "last_updated": "2026-05-05T13:19:05.908134",
+  "last_updated": "2026-05-08T11:28:34.268537",
   "quarters": [
+    {
+      "gaap_eps": 6.9010989010989015,
+      "adjusted_eps": 7.2105014284864835,
+      "gaap_net_income": 6280000000.0,
+      "adjusted_net_income": 6561556299.9227,
+      "diluted_shares_used": 910000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 348000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 281556299.92270035,
+          "tax_rate_applied": 0.19093017263591858
+        }
+      ],
+      "net_adjustment_total": 281556299.92270035,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 910000000.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目が継続的に発生する株式報酬費用(SBC)の加算です。非現金費用という理由で調整されていますが、SBCは毎期発生する恒常的なコストであり株主希薄化の実態を反映しない調整は健全性に疑問があります。調整後EPSは経済的利益を過大表示している可能性が高いため注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用348百万USDをadd_back。ただし毎期発生する報酬コストであり一過性とは言えない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.010976948408342482,
       "adjusted_eps": 2.002019758507135,
@@ -45,23 +88,7 @@
       "diluted_shares": 911000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用と買収関連無形資産償却費の両方を調整加算していますが、これらはUNHのような大規模M&Aを継続する企業において毎期発生する準恒常的な項目です。非現金費用という根拠は理解できますが、調整後EPSが持続可能性を過大評価している可能性が高く、健全性に注意が必要です。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただし、企業が継続的に付与する恒常的なコストである。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。M&Aを繰り返す企業では定期的に発生する償却費。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 2.5859030837004404,
