@@ -589,6 +589,13 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                             break
                     if diluted_val == 0 and q3_key in quarters_map:
                         diluted_val = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value':0}))
+
+                    # 単位サニティチェック: 10-KのshareがQ3の1%未満なら千株単位と判断して×1000
+                    if diluted_val > 0 and q3_key in quarters_map:
+                        q3_shares = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value': 0}))
+                        if q3_shares > 0 and diluted_val < q3_shares * 0.01:
+                            print(f"  [WARN] 10-K diluted_shares={diluted_val:,.0f} << Q3 shares={q3_shares:,.0f} → 千株単位と判断し×1000補正")
+                            diluted_val *= 1000
                     
                     # Q4データを作成
                     q4_data = {
