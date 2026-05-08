@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9931658787751.377,
   "intrinsic_value_per_share": 429.11982676647006,
   "intrinsic_value_beta": 408.67,
-  "upside_percent_beta": 89.2,
+  "upside_percent_beta": 89.8,
   "intrinsic_value_rf": 2814.12,
-  "upside_percent_rf": 1202.8,
+  "upside_percent_rf": 1206.8,
   "v0": 4962104669821.988,
   "v0_adjusted": 4965829393875.688,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 753.37,
     "3年後": 998.22
   },
-  "upside_percent": 98.7,
+  "upside_percent": 99.3,
   "calculation_date": "2026-05-09",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -232,11 +232,11 @@
   "fcf_base": {
     "base_fcf": 78764500000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 39859800000.0,
+    "fcf_5yr_avg": 47041000000.0,
     "fcf_2yr_avg": 78764500000.0,
-    "cv": 0.968,
+    "cv": 0.863,
     "cv_threshold": 0.5,
-    "ratio": 0.968,
+    "ratio": 0.863,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -252,7 +252,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2026 FCF($96676M)が5年平均($39860M)から143%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2026 FCF($96676M)が5年平均($47041M)から106%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -279,36 +279,36 @@
   "rice": {
     "available": true,
     "q": 0.8929,
-    "cf_conversion": 6.2154,
+    "cf_conversion": 5.3518,
     "wacc": 0.1,
     "q_years": 3,
-    "cf_years": 2,
-    "avg_intensity": 0.1418,
-    "avg_rev_growth_lagged": 0.8984,
+    "cf_years": 3,
+    "avg_intensity": 0.2103,
+    "avg_rev_growth_lagged": 1.0184,
     "warnings": true,
-    "note": "CF: 2点のみ使用（3点要求） / 販売・マーケティング費未取得（FY2025, 2024, 2023）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2023(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
+    "note": "販売・マーケティング費未取得（FYTTM@2025-01-26, TTM@2024-01-28, TTM@2023-01-29）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.227,
-      "rice": 12.598,
-      "rice_per_ratio": 0.2864
+      "rice": 10.848,
+      "rice_per_ratio": 0.2473
     },
     "base": {
       "growth_rate": 0.325,
-      "rice": 18.037,
-      "rice_per_ratio": 0.41
+      "rice": 15.531,
+      "rice_per_ratio": 0.3541
     },
     "bull": {
       "growth_rate": 0.39,
-      "rice": 21.644,
-      "rice_per_ratio": 0.492
+      "rice": 18.637,
+      "rice_per_ratio": 0.4249
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-01-25",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 39859800000.0,
+    "fcf_5yr_avg": 47041000000.0,
     "fcf_2yr_avg": 78764500000.0,
     "fcf_base_used": 74267107863.26865,
     "fcf_base_method": "recent_2yr",
@@ -316,12 +316,11 @@
       96676000000,
       60853000000,
       27021000000,
-      5641000000,
-      9108000000
+      3614000000
     ],
     "diluted_shares": 24305000000,
-    "roe_10yr_avg": 0.4564387976956358,
-    "current_price": 215.9997,
+    "roe_10yr_avg": 0.45643879769563567,
+    "current_price": 215.34,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
     "beta": 1.05,
@@ -336,7 +335,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 1721632482614.4624,
     "pv_terminal": 3240472187207.526,
-    "roe_used": 0.4564387976956358,
+    "roe_used": 0.45643879769563567,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -344,13 +343,13 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
-    "alpha_uncapped": 1.91704295032167,
-    "per": 43.99179,
+    "alpha_uncapped": 1.9170429503216697,
+    "per": 43.857433,
     "ma200": 184.50874
   },
   "validation": {
     "validated_at": "2026-05-09",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -370,7 +369,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share calculations detected.",
-    "ai_concerns": "Inconsistency between P_t-derived per share value ($408.67) and reported $429.12; no other obvious anomalies in DCF components."
+    "ai_comment": null
   }
 }

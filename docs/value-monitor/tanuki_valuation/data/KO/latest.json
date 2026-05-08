@@ -2,7 +2,7 @@
   "intrinsic_value_pt": 445090575966.00146,
   "intrinsic_value_per_share": 71.56089239629603,
   "intrinsic_value_beta": 105.49,
-  "upside_percent_beta": 34.1,
+  "upside_percent_beta": 34.2,
   "intrinsic_value_rf": 379.74,
   "upside_percent_rf": 382.9,
   "v0": 222545287983.00073,
@@ -130,13 +130,13 @@
     "v0_rm": 149557240675.72675
   },
   "fcf_base": {
-    "base_fcf": 8115200000.0,
+    "base_fcf": 7329500000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 8115200000.0,
+    "fcf_5yr_avg": 7329500000.0,
     "fcf_2yr_avg": 5018500000.0,
-    "cv": 0.359,
+    "cv": 0.366,
     "cv_threshold": 0.5,
-    "ratio": 0.359,
+    "ratio": 0.366,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -152,7 +152,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($5296M)が5年平均($8115M)から35%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($5296M)が5年平均($7330M)から28%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -160,10 +160,10 @@
     "adj_net_income": 13337688906.654764,
     "conversion_rate": 0.7,
     "estimated_fcf": 9336382234.658335,
-    "raw_fcf": 8115200000.0,
+    "raw_fcf": 7329500000.0,
     "sector": "",
-    "note": "調整済み純利益$13.34B × 転換率70%[sector()] = 推定FCF$9.34B（従来$8.12Bの1.2倍）",
-    "divergence_ratio": 1.15,
+    "note": "調整済み純利益$13.34B × 転換率70%[sector()] = 推定FCF$9.34B（従来$7.33Bの1.3倍）",
+    "divergence_ratio": 1.27,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -179,36 +179,36 @@
   "rice": {
     "available": true,
     "q": 0.7626,
-    "cf_conversion": 0.2723,
+    "cf_conversion": 0.9951,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.1425,
+    "avg_intensity": 0.0396,
     "avg_rev_growth_lagged": 0.0371,
     "warnings": true,
-    "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
+    "note": "R&D未取得（FYTTM@2024-12-31, TTM@2023-12-31, TTM@2022-12-31）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / 販売・マーケティング費未取得（FYTTM@2024-12-31, TTM@2023-12-31, TTM@2022-12-31）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.035,
-      "rice": 0.073,
-      "rice_per_ratio": 0.0029
+      "rice": 0.266,
+      "rice_per_ratio": 0.0107
     },
     "base": {
       "growth_rate": 0.05,
-      "rice": 0.104,
-      "rice_per_ratio": 0.0042
+      "rice": 0.379,
+      "rice_per_ratio": 0.0153
     },
     "bull": {
       "growth_rate": 0.06,
-      "rice": 0.125,
-      "rice_per_ratio": 0.005
+      "rice": 0.455,
+      "rice_per_ratio": 0.0184
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 8115200000.0,
+    "fcf_5yr_avg": 7329500000.0,
     "fcf_2yr_avg": 5018500000.0,
     "fcf_base_used": 9336382234.658335,
     "fcf_base_method": "avg_5yr",
@@ -216,12 +216,11 @@
       5296000000,
       4741000000,
       9747000000,
-      9534000000,
-      11258000000
+      9534000000
     ],
     "diluted_shares": 4302482418,
-    "roe_10yr_avg": 0.3675234999062005,
-    "current_price": 78.64,
+    "roe_10yr_avg": 0.3675234999062004,
+    "current_price": 78.63,
     "latest_revenue": 47941000000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -236,7 +235,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 43262490050.80399,
     "pv_terminal": 179282797932.19675,
-    "roe_used": 0.3675234999062005,
+    "roe_used": 0.3675234999062004,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -244,8 +243,8 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.543598699606042,
-    "per": 24.729559,
+    "alpha_uncapped": 1.5435986996060416,
+    "per": 24.726414,
     "ma200": 72.1252
   },
   "validation": {
@@ -270,6 +269,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t and per-share value inconsistency fails verification."
+    "ai_comment": "Inconsistencies in per share valuation detected.",
+    "ai_concerns": "Anomaly in intrinsic value per share (71.56 vs. calculated 103.42), possibly due to mismatch with V0_rm reference."
   }
 }

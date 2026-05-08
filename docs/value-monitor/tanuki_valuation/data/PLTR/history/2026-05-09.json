@@ -2,12 +2,12 @@
   "intrinsic_value_pt": 196763189640.87375,
   "intrinsic_value_per_share": 91.4451066327811,
   "intrinsic_value_beta": 85.07,
-  "upside_percent_beta": -37.8,
+  "upside_percent_beta": -37.7,
   "intrinsic_value_rf": 567.65,
   "upside_percent_rf": 315.4,
   "v0": 124551788752.08115,
   "v0_adjusted": 129294890914.21075,
-  "alpha": 0.5218172059979486,
+  "alpha": 0.5218172059979485,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 122.36,
@@ -221,11 +221,11 @@
   "fcf_base": {
     "base_fcf": 1620911000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 888765000.0,
+    "fcf_5yr_avg": 1030650250.0,
     "fcf_2yr_avg": 1620911000.0,
-    "cv": 0.869,
+    "cv": 0.789,
     "cv_threshold": 0.5,
-    "ratio": 0.869,
+    "ratio": 0.789,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -241,7 +241,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($2101M)が5年平均($889M)から136%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($2101M)が5年平均($1031M)から104%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -292,12 +292,12 @@
       "rice_per_ratio": 0.042
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 888765000.0,
+    "fcf_5yr_avg": 1030650250.0,
     "fcf_2yr_avg": 1620911000.0,
     "fcf_base_used": 1830693697.0422852,
     "fcf_base_method": "recent_2yr",
@@ -305,12 +305,11 @@
       2100591000,
       1141231000,
       697069000,
-      183710000,
-      321224000
+      183710000
     ],
     "diluted_shares": 2397311977,
-    "roe_10yr_avg": 0.12424219190427348,
-    "current_price": 136.66,
+    "roe_10yr_avg": 0.12424219190427345,
+    "current_price": 136.635,
     "latest_revenue": 4475446000.0,
     "rpo": 4100000000.0,
     "beta": 1.08,
@@ -325,7 +324,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 43861055471.839165,
     "pv_terminal": 80690733280.24199,
-    "roe_used": 0.12424219190427348,
+    "roe_used": 0.12424219190427345,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -333,8 +332,8 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 3324582359.813293,
     "growth_option_pv": 1418519802.3163157,
-    "alpha_uncapped": 0.5218172059979486,
-    "per": 153.55057,
+    "alpha_uncapped": 0.5218172059979485,
+    "per": 153.52246,
     "ma200": 164.01723
   },
   "validation": {
@@ -359,6 +358,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All verifications successful."
+    "ai_comment": "計算不一致が複数確認された",
+    "ai_concerns": "Inconsistency in P_t / shares vs. intrinsic_value_per_share; other values like divergence rate appear normal but overall raises flags."
   }
 }

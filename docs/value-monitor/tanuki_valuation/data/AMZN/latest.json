@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2263990321971.288,
   "intrinsic_value_per_share": 234.5386263708139,
   "intrinsic_value_beta": 215.46,
-  "upside_percent_beta": -20.9,
+  "upside_percent_beta": -21.0,
   "intrinsic_value_rf": 1374.34,
-  "upside_percent_rf": 404.4,
+  "upside_percent_rf": 404.0,
   "v0": 1261506256456.1196,
   "v0_adjusted": 1282292678034.5515,
   "alpha": 0.7655800120776206,
@@ -14,7 +14,7 @@
     "2年後": 293.89,
     "3年後": 328.98
   },
-  "upside_percent": -13.9,
+  "upside_percent": -14.0,
   "calculation_date": "2026-05-09",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -210,11 +210,11 @@
   "fcf_base": {
     "base_fcf": 22086500000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 13651800000.0,
+    "fcf_5yr_avg": 17955500000.0,
     "fcf_2yr_avg": 22086500000.0,
-    "cv": 1.556,
+    "cv": 1.218,
     "cv_threshold": 0.5,
-    "ratio": 1.556,
+    "ratio": 1.218,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -264,7 +264,7 @@
     "avg_intensity": 0.1913,
     "avg_rev_growth_lagged": 0.1173,
     "warnings": true,
-    "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
+    "note": "R&D未取得（FYTTM@2024-12-31, TTM@2023-12-31, TTM@2022-12-31）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "bear": {
       "growth_rate": 0.084,
       "rice": 1.128,
@@ -273,20 +273,20 @@
     "base": {
       "growth_rate": 0.119,
       "rice": 1.598,
-      "rice_per_ratio": 0.049
+      "rice_per_ratio": 0.0489
     },
     "bull": {
       "growth_rate": 0.143,
       "rice": 1.921,
-      "rice_per_ratio": 0.0589
+      "rice_per_ratio": 0.0588
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 13651800000.0,
+    "fcf_5yr_avg": 17955500000.0,
     "fcf_2yr_avg": 22086500000.0,
     "fcf_base_used": 51435301173.95914,
     "fcf_base_method": "recent_2yr",
@@ -294,12 +294,11 @@
       9252000000,
       34921000000,
       36601000000,
-      -8952000000,
-      -3563000000
+      -8952000000
     ],
     "diluted_shares": 10757109436,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 272.45,
+    "current_price": 272.6599,
     "latest_revenue": 716924000000.0,
     "rpo": 25000000000.0,
     "beta": 1.1,
@@ -323,7 +322,7 @@
     "rpo_pv": 20271843657.39813,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 32.628742,
+    "per": 32.652683,
     "ma200": 228.30235
   },
   "validation": {
@@ -348,6 +347,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "One inconsistency in per-share value, but other checks pass."
+    "ai_comment": "Inconsistency in per-share value detected."
   }
 }

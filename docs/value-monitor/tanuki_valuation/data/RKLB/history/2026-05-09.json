@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 8.42,
   "upside_percent_beta": -91.5,
   "intrinsic_value_rf": 26.15,
-  "upside_percent_rf": -73.6,
+  "upside_percent_rf": -73.7,
   "v0": 2502262314.018256,
   "v0_adjusted": 4000207224.773137,
   "alpha": 0.0,
@@ -186,7 +186,7 @@
     "avg_intensity": 0.5913,
     "avg_rev_growth_lagged": 0.4408,
     "warnings": true,
-    "note": "販売・マーケティング費未取得（FY2024, 2023, 2022）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2024(100%), FY2023(100%), FY2022(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
+    "note": "販売・マーケティング費未取得（FYTTM@2024-12-31, TTM@2023-12-31, TTM@2022-12-31）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.222,
       "rice": 0.847,
@@ -200,15 +200,15 @@
     "bull": {
       "growth_rate": 0.38,
       "rice": 1.449,
-      "rice_per_ratio": 0.0008
+      "rice_per_ratio": 0.0007
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -167319800.0,
+    "fcf_5yr_avg": -184777250.0,
     "fcf_2yr_avg": -218596000.0,
     "fcf_base_used": 48143920.0,
     "fcf_base_method": "avg_5yr",
@@ -216,12 +216,11 @@
       -321538000,
       -115654000,
       -153238000,
-      -148679000,
-      -97490000
+      -148679000
     ],
     "diluted_shares": 578044302,
     "roe_10yr_avg": 0.0,
-    "current_price": 98.94,
+    "current_price": 99.45,
     "latest_revenue": 601799000.0,
     "rpo": 1847322000.0,
     "beta": 0.85,
@@ -237,7 +236,7 @@
     "pv_high": 437992627.72259957,
     "pv_terminal": 2064269686.2956564,
     "roe_used": 0.0,
-    "fcf_floor_applied": 215463720.0,
+    "fcf_floor_applied": 232921170.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,
@@ -245,7 +244,7 @@
     "rpo_pv": 1497944910.7548811,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 1930.3414,
+    "per": 1940.4878,
     "ma200": 62.727123
   },
   "validation": {
@@ -270,6 +269,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_tと1株価値の不一致が確認"
+    "ai_comment": "Inconsistencies in values detected.",
+    "ai_concerns": "Anomalies include ROE at 0% with high growth rate 31.7%, and discrepancy between calculated P_t/shares ($6.92) and reported value ($7.84)."
   }
 }

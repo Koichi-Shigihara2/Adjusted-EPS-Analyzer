@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 214.2,
   "upside_percent_beta": -50.9,
   "intrinsic_value_rf": 1356.67,
-  "upside_percent_rf": 210.8,
+  "upside_percent_rf": 211.2,
   "v0": 203696735902.94696,
   "v0_adjusted": 204386121846.4353,
   "alpha": 0.6730521159489544,
@@ -14,7 +14,7 @@
     "2年後": 362.02,
     "3年後": 451.07
   },
-  "upside_percent": -46.6,
+  "upside_percent": -46.5,
   "calculation_date": "2026-05-09",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -194,11 +194,11 @@
   "fcf_base": {
     "base_fcf": 4570000000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 3319200000.0,
+    "fcf_5yr_avg": 3344000000.0,
     "fcf_2yr_avg": 4570000000.0,
-    "cv": 0.628,
+    "cv": 0.72,
     "cv_threshold": 0.5,
-    "ratio": 0.628,
+    "ratio": 0.72,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -221,7 +221,7 @@
       "total_transient_amount": 186000000
     },
     "action": "flagged",
-    "note": "FY2025 FCF($6735M)が5年平均($3319M)から103%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($6735M)が5年平均($3344M)から101%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -246,38 +246,23 @@
     "applied": true
   },
   "rice": {
-    "available": true,
+    "available": false,
     "q": 1.8611,
-    "cf_conversion": 0.4514,
+    "cf_conversion": 0.0,
     "wacc": 0.1,
     "q_years": 3,
-    "cf_years": 3,
-    "avg_intensity": 0.2984,
-    "avg_rev_growth_lagged": 0.1471,
-    "warnings": false,
-    "note": "",
-    "bear": {
-      "growth_rate": 0.172,
-      "rice": 1.445,
-      "rice_per_ratio": 0.0099
-    },
-    "base": {
-      "growth_rate": 0.246,
-      "rice": 2.067,
-      "rice_per_ratio": 0.0141
-    },
-    "bull": {
-      "growth_rate": 0.295,
-      "rice": 2.478,
-      "rice_per_ratio": 0.0169
-    }
+    "cf_years": 0,
+    "avg_intensity": 0.0,
+    "avg_rev_growth_lagged": 0.0,
+    "warnings": true,
+    "note": "CF計算不可（Revenue/CapExデータなし）"
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-27",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 3319200000.0,
+    "fcf_5yr_avg": 3344000000.0,
     "fcf_2yr_avg": 4570000000.0,
     "fcf_base_used": 6116937655.941927,
     "fcf_base_method": "recent_2yr",
@@ -285,12 +270,11 @@
       6735000000,
       2405000000,
       1121000000,
-      3115000000,
-      3220000000
+      3115000000
     ],
     "diluted_shares": 1630600639,
     "roe_10yr_avg": 0.16025050379737013,
-    "current_price": 436.575,
+    "current_price": 435.96,
     "latest_revenue": 34639000000.0,
     "rpo": 315000000.0,
     "beta": 1.1,
@@ -314,7 +298,7 @@
     "rpo_pv": 255425230.08321643,
     "growth_option_pv": 433960713.40511227,
     "alpha_uncapped": 0.6730521159489544,
-    "per": 146.50168,
+    "per": 146.28932,
     "ma200": 215.87025
   },
   "validation": {
@@ -339,7 +323,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per-share calculation detected.",
-    "ai_concerns": "Anomaly in per-share value mismatch; calculated P_t per share is $209.72 vs. reported $233.18."
+    "ai_comment": "Inconsistency in per share value calculation detected."
   }
 }

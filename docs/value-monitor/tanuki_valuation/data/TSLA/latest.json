@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 55.27,
   "upside_percent_beta": -87.1,
   "intrinsic_value_rf": 305.95,
-  "upside_percent_rf": -28.7,
+  "upside_percent_rf": -28.6,
   "v0": 97155656101.91309,
   "v0_adjusted": 106285876501.87732,
   "alpha": 0.6153057763982493,
@@ -203,13 +203,13 @@
     "v0_rm": 118539637019.49068
   },
   "fcf_base": {
-    "base_fcf": 5726600000.0,
+    "base_fcf": 5793750000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 5726600000.0,
-    "fcf_2yr_avg": 5144500000.0,
-    "cv": 0.274,
+    "fcf_5yr_avg": 5793750000.0,
+    "fcf_2yr_avg": 5143000000.0,
+    "cv": 0.311,
     "cv_threshold": 0.5,
-    "ratio": 0.274,
+    "ratio": 0.311,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -233,10 +233,10 @@
     "adj_net_income": 7221404460.719168,
     "conversion_rate": 0.7,
     "estimated_fcf": 5054983122.503417,
-    "raw_fcf": 5726600000.0,
+    "raw_fcf": 5793750000.0,
     "sector": "",
-    "note": "調整済み純利益$7.22B × 転換率70%[sector()] = 推定FCF$5.05B（従来$5.73Bの0.9倍）",
-    "divergence_ratio": 0.88,
+    "note": "調整済み純利益$7.22B × 転換率70%[sector()] = 推定FCF$5.05B（従来$5.79Bの0.9倍）",
+    "divergence_ratio": 0.87,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -259,7 +259,7 @@
     "avg_intensity": 0.1404,
     "avg_rev_growth_lagged": 0.056,
     "warnings": true,
-    "note": "販売・マーケティング費未取得（FY2024, 2023, 2022）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2024(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
+    "note": "販売・マーケティング費未取得（FYTTM@2024-12-31, TTM@2023-12-31, TTM@2022-12-31）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.088,
       "rice": 0.933,
@@ -276,25 +276,24 @@
       "rice_per_ratio": 0.004
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 5726600000.0,
-    "fcf_2yr_avg": 5144500000.0,
+    "fcf_5yr_avg": 5793750000.0,
+    "fcf_2yr_avg": 5143000000.0,
     "fcf_base_used": 5054983122.503417,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       6324000000,
-      3965000000,
-      4822000000,
-      8068000000,
-      5454000000
+      3962000000,
+      4821000000,
+      8068000000
     ],
     "diluted_shares": 3755723871,
     "roe_10yr_avg": 0.14650137533291652,
-    "current_price": 429.2299,
+    "current_price": 428.7,
     "latest_revenue": 94827000000.0,
     "rpo": 10420000000.0,
     "beta": 1.25,
@@ -318,12 +317,12 @@
     "rpo_pv": 8449304436.40354,
     "growth_option_pv": 680915963.5607014,
     "alpha_uncapped": 0.6153057763982493,
-    "per": 401.1494,
+    "per": 400.6542,
     "ma200": 403.90625
   },
   "validation": {
     "validated_at": "2026-05-09",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -343,6 +342,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per-share value calculation affects reliability."
+    "ai_comment": null
   }
 }

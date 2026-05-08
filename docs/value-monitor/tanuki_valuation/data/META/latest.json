@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2682081453017.6196,
   "intrinsic_value_per_share": 1156.3588309550971,
   "intrinsic_value_beta": 1065.59,
-  "upside_percent_beta": 75.0,
+  "upside_percent_beta": 75.2,
   "intrinsic_value_rf": 6474.33,
-  "upside_percent_rf": 963.4,
+  "upside_percent_rf": 964.7,
   "v0": 1340164982862.8103,
   "v0_adjusted": 1341040726508.8098,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 1529.29,
     "3年後": 1758.68
   },
-  "upside_percent": 89.9,
+  "upside_percent": 90.2,
   "calculation_date": "2026-05-09",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -130,29 +130,29 @@
     "v0_rm": 1455364358495.3079
   },
   "fcf_base": {
-    "base_fcf": 41853200000.0,
+    "base_fcf": 42161000000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 41853200000.0,
-    "fcf_2yr_avg": 52337000000.0,
-    "cv": 0.326,
+    "fcf_5yr_avg": 42161000000.0,
+    "fcf_2yr_avg": 52792500000.0,
+    "cv": 0.356,
     "cv_threshold": 0.5,
-    "ratio": 0.326,
+    "ratio": 0.356,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": false,
-    "rule": "none",
+    "detected": true,
+    "rule": "deviation_large",
     "fiscal_year": 2025,
-    "fcf_value": 48633000000,
-    "threshold_pct": 0.0,
+    "fcf_value": 50869000000,
+    "threshold_pct": 0.2,
     "transient_evidence": {
       "found": false,
       "source": null,
       "items": [],
       "total_transient_amount": 0.0
     },
-    "action": "none",
-    "note": ""
+    "action": "flagged",
+    "note": "FY2025 FCF($50869M)が5年平均($42161M)から21%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -160,10 +160,10 @@
     "adj_net_income": 86265199720.57245,
     "conversion_rate": 0.7,
     "estimated_fcf": 60385639804.40071,
-    "raw_fcf": 41853200000.0,
+    "raw_fcf": 42161000000.0,
     "sector": "",
-    "note": "調整済み純利益$86.27B × 転換率70%[sector()] = 推定FCF$60.39B（従来$41.85Bの1.4倍）",
-    "divergence_ratio": 1.44,
+    "note": "調整済み純利益$86.27B × 転換率70%[sector()] = 推定FCF$60.39B（従来$42.16Bの1.4倍）",
+    "divergence_ratio": 1.43,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -177,51 +177,36 @@
     "applied": true
   },
   "rice": {
-    "available": true,
-    "q": 1.7329,
-    "cf_conversion": 0.3322,
+    "available": false,
+    "q": 1.6226,
+    "cf_conversion": 0.0,
     "wacc": 0.1,
     "q_years": 3,
-    "cf_years": 3,
-    "avg_intensity": 0.6147,
-    "avg_rev_growth_lagged": 0.1993,
-    "warnings": false,
-    "note": "",
-    "bear": {
-      "growth_rate": 0.105,
-      "rice": 0.604,
-      "rice_per_ratio": 0.0273
-    },
-    "base": {
-      "growth_rate": 0.15,
-      "rice": 0.863,
-      "rice_per_ratio": 0.039
-    },
-    "bull": {
-      "growth_rate": 0.18,
-      "rice": 1.036,
-      "rice_per_ratio": 0.0468
-    }
+    "cf_years": 0,
+    "avg_intensity": 0.0,
+    "avg_rev_growth_lagged": 0.0,
+    "warnings": true,
+    "note": "CF計算不可（Revenue/CapExデータなし）"
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 41853200000.0,
-    "fcf_2yr_avg": 52337000000.0,
+    "fcf_5yr_avg": 42161000000.0,
+    "fcf_2yr_avg": 52792500000.0,
     "fcf_base_used": 60385639804.40071,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      48633000000,
-      56041000000,
-      44905000000,
-      19894000000,
-      39793000000
+      50869000000,
+      54716000000,
+      50848000000,
+      18710000000,
+      35662000000
     ],
     "diluted_shares": 2538423304,
-    "roe_10yr_avg": 0.24346860847168234,
-    "current_price": 608.855,
+    "roe_10yr_avg": 0.2434686084716823,
+    "current_price": 608.1,
     "latest_revenue": 200966000000.0,
     "rpo": 1080000000.0,
     "beta": 1.1,
@@ -236,7 +221,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 340216395607.68,
     "pv_terminal": 999948587255.1304,
-    "roe_used": 0.24346860847168234,
+    "roe_used": 0.2434686084716823,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -245,7 +230,7 @@
     "rpo_pv": 875743645.9995992,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.0225681555810657,
-    "per": 22.132133,
+    "per": 22.104689,
     "ma200": 676.38885
   },
   "validation": {
@@ -270,6 +255,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "All checks passed without issues."
+    "ai_comment": "Inconsistency in per-share value calculation leads to failure."
   }
 }

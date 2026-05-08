@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 20860801108.599525,
   "intrinsic_value_per_share": 22.984538660620267,
   "intrinsic_value_beta": 20.11,
-  "upside_percent_beta": 27.7,
+  "upside_percent_beta": 27.8,
   "intrinsic_value_rf": 114.0,
-  "upside_percent_rf": 624.2,
+  "upside_percent_rf": 624.4,
   "v0": 16590804438.957363,
   "v0_adjusted": 16597725246.381998,
   "alpha": 0.25684699553312584,
@@ -14,7 +14,7 @@
     "2年後": 34.37,
     "3年後": 42.04
   },
-  "upside_percent": 46.0,
+  "upside_percent": 46.1,
   "calculation_date": "2026-05-09",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -210,12 +210,12 @@
       "rice_per_ratio": 0.0212
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2025-12-31",
+  "fcf_ttm_periods": 4,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -4269250000.0,
+    "fcf_5yr_avg": -4986072000.0,
     "fcf_2yr_avg": -2628839000.0,
     "fcf_base_used": 611288031.3824534,
     "fcf_base_method": "avg_5yr",
@@ -223,12 +223,11 @@
       -3984136000,
       -1273542000,
       -7338039000,
-      -7348571000,
-      -1401962000
+      -7348571000
     ],
     "diluted_shares": 1282741200,
     "roe_10yr_avg": 0.061154046555506165,
-    "current_price": 15.74,
+    "current_price": 15.7368,
     "latest_revenue": 619353000.0,
     "rpo": 8535000.0,
     "beta": 1.2,
@@ -244,7 +243,7 @@
     "pv_high": 4110101815.363379,
     "pv_terminal": 12480702623.593985,
     "roe_used": 0.061154046555506165,
-    "fcf_floor_applied": 4318798240.0,
+    "fcf_floor_applied": 5035620240.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,
@@ -252,7 +251,7 @@
     "rpo_pv": 6920807.424635721,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.25684699553312584,
-    "per": 34.97778,
+    "per": 34.97067,
     "ma200": 23.655975
   },
   "validation": {
@@ -277,7 +276,6 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share value; overall calculation flawed.",
-    "ai_concerns": "Inconsistency in P_t per share calculation ($16.27 vs $22.98). Other values like high growth rate (22.3%) and WACC (11.14%) seem plausible but require context."
+    "ai_comment": "Inconsistency in per-share calculation affects accuracy."
   }
 }
