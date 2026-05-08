@@ -328,6 +328,7 @@
       .future-table { font-size: 12px; }
       .wacc-slider-container { flex-direction: column; align-items: flex-start; }
       .wacc-slider { width: 100%; }
+      #valMetricsRow { grid-template-columns: 1fr !important; }
     }
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
@@ -350,6 +351,22 @@ const fmt = (n) => n?.toFixed(2) ?? '—';
 const fmtInt = (n) => n?.toLocaleString() ?? '—';
 const fmtPct = (n) => n != null ? (n * 100).toFixed(1) + '%' : '—';
 const fmtPct2 = (n) => n != null ? (n * 100).toFixed(2) + '%' : '—';
+
+function translateAiConcerns(text) {
+  if (!text) return text;
+  return text
+    .replace(/\bdisproportionately small\b/gi, '相対的に過小')
+    .replace(/\bexplained by design differences\b/gi, '設計上の差異による')
+    .replace(/\bmismatch(?:es)?\b/gi, '不一致')
+    .replace(/\banomal(?:y|ies)\b/gi, '異常値')
+    .replace(/\bpotential\b/gi, '可能性あり')
+    .replace(/\bindicates?\b/gi, '示唆')
+    .replace(/\boverall\b/gi, '全体的に')
+    .replace(/\bvalues? like\b/gi, '値（例:')
+    .replace(/\bcompared to\b/gi, 'と比較して')
+    .replace(/\bthough\b/gi, 'ただし')
+    .replace(/\bseems?\b/gi, 'と見られる');
+}
 const fmtB = (n) => {
   if (n == null) return '—';
   if (n < 0) return '-' + fmtB(-n);   // マイナス対応
@@ -510,6 +527,17 @@ function render(d) {
   const scenarioValuations = d.scenario_valuations;
   const futureVals = d.future_values || {};
 
+  // フェアPER / PEG / PSR
+  const perCurrent   = d.components?.per || null;
+  const latestRevenue = d.components?.latest_revenue || 0;
+  const dilutedSharesVal = d.components?.diluted_shares || 0;
+  const fairPer = (perCurrent && currentPrice > 0 && ivps > 0)
+    ? ivps / (currentPrice / perCurrent) : null;
+  const pegRatio = (perCurrent && growthRate > 0)
+    ? perCurrent / (growthRate * 100) : null;
+  const marketCap = currentPrice * dilutedSharesVal;
+  const psr = (latestRevenue > 0 && marketCap > 0) ? marketCap / latestRevenue : null;
+
   // バッジ構成
   const dcfTag = dcfType === 'three_stage' ? '3段階DCF' : '2段階DCF';
   const fcfTag = fcfBaseMethod === 'recent_2yr' ? '直近2年平均' : '5年平均';
@@ -553,10 +581,10 @@ function render(d) {
 
       ${validationOverall === 'FAIL' ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red)">
-        🔴 検証失敗: ${aiConcerns}
+        🔴 検証失敗: ${translateAiConcerns(aiConcerns)}
       </div>` : (showAiConcerns ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:8px;font-size:13px;color:var(--yellow)">
-        ⚠️ 検証コメント（参考）: ${aiConcerns}
+        ⚠️ 検証コメント（参考）: ${translateAiConcerns(aiConcerns)}
       </div>` : '')}
 
       <div class="value-display">
@@ -615,6 +643,61 @@ function render(d) {
           <div class="legend-item"><div class="legend-color cheap"></div><span>基準値より+10%超</span></div>
           <div class="legend-item"><div class="legend-color base"></div><span>基準値（±10%以内）</span></div>
           <div class="legend-item"><div class="legend-color expensive"></div><span>基準値より-10%超</span></div>
+        </div>
+      </div>
+
+      <!-- ── フェアPER / PEGレシオ / PSR ── -->
+      <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px" id="valMetricsRow">
+        <!-- フェアPER -->
+        <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px">
+          <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">フェアPER</div>
+          <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--acc)">
+            ${fairPer != null ? fairPer.toFixed(1) + 'x' : '—'}
+          </div>
+          <div style="font-size:12px;color:var(--mut);margin-top:6px">
+            現在PER: <span style="font-family:var(--mono);color:var(--txt)">${perCurrent != null ? perCurrent.toFixed(1) + 'x' : '—'}</span>
+          </div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5">
+            理論株価÷EPS（現在株価÷現在PER）
+          </div>
+        </div>
+
+        <!-- PEGレシオ -->
+        <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px">
+          <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">PEGレシオ</div>
+          <div style="display:flex;align-items:baseline;gap:10px">
+            <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--acc)">
+              ${pegRatio != null ? pegRatio.toFixed(2) : '—'}
+            </div>
+            ${pegRatio != null ? (() => {
+              const [label, bg, fg] = pegRatio < 1.0
+                ? ['割安', 'rgba(74,222,128,0.15)', 'var(--green)']
+                : pegRatio <= 2.0
+                ? ['適正', 'rgba(251,191,36,0.15)', 'var(--yellow)']
+                : ['割高', 'rgba(248,113,113,0.15)', 'var(--red)'];
+              return `<span style="font-family:var(--mono);font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;background:${bg};color:${fg}">${label}</span>`;
+            })() : ''}
+          </div>
+          <div style="font-size:12px;color:var(--mut);margin-top:6px">
+            成長率: <span style="font-family:var(--mono);color:var(--txt)">${fmtPct(growthRate)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5">
+            PER÷(成長率×100) / &lt;1.0=割安 / 1〜2=適正 / &gt;2=割高
+          </div>
+        </div>
+
+        <!-- PSR -->
+        <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px">
+          <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">PSR（株価売上高倍率）</div>
+          <div style="font-family:var(--mono);font-size:28px;font-weight:700;color:var(--acc)">
+            ${psr != null ? psr.toFixed(1) + 'x' : '—'}
+          </div>
+          <div style="font-size:12px;color:var(--mut);margin-top:6px">
+            時価総額: <span style="font-family:var(--mono);color:var(--txt)">${fmtB(marketCap)}</span>
+          </div>
+          <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5">
+            テック系目安: 5〜15倍
+          </div>
         </div>
       </div>
 
