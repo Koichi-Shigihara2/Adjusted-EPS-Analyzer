@@ -1966,13 +1966,13 @@ function liqPrevVal(rows, col, daysBack) {
 
 function renderLiquidityCards(rows) {
   const latest = rows[rows.length - 1];
-  const m2      = latest.m2          !== '' ? parseFloat(latest.m2)          : null;
-  const hySpread = latest.hy_spread  !== '' ? parseFloat(latest.hy_spread)  : null;
-  const fed     = latest.fed_balance !== '' ? parseFloat(latest.fed_balance) : null;
+  const m2      = latest.m2            !== '' ? parseFloat(latest.m2)            : null;
+  const fed     = latest.fed_balance   !== '' ? parseFloat(latest.fed_balance)   : null;
+  const netLiq  = latest.net_liquidity !== '' ? parseFloat(latest.net_liquidity) : null;
 
-  const m2Prev       = liqPrevVal(rows, 'm2',          28);
-  const hySpreadPrev = liqPrevVal(rows, 'hy_spread',    7);
-  const fedPrev      = liqPrevVal(rows, 'fed_balance',  7);
+  const m2Prev     = liqPrevVal(rows, 'm2',            28);
+  const fedPrev    = liqPrevVal(rows, 'fed_balance',    7);
+  const netLiqPrev = liqPrevVal(rows, 'net_liquidity',  7);
 
   function chgHtml(cur, prev, fmt, inverse) {
     if (cur === null || prev === null) return '<span class="liq-card-chg flat">—</span>';
@@ -1995,11 +1995,11 @@ function renderLiquidityCards(rows) {
       date:  latest.date,
     },
     {
-      label: 'HY SPREAD',
-      val:   hySpread !== null ? hySpread.toFixed(2) : '—',
-      unit:  '%',
-      chg:   chgHtml(hySpread, hySpreadPrev, d => (d >= 0 ? '+' : '') + d.toFixed(2) + '%', true),
-      chgLabel: '前日比',
+      label: 'NET LIQUIDITY',
+      val:   netLiq !== null ? netLiq.toFixed(2) : '—',
+      unit:  '兆 USD',
+      chg:   chgHtml(netLiq, netLiqPrev, d => (d >= 0 ? '+' : '') + d.toFixed(3) + '兆', false),
+      chgLabel: '前週比',
       date:  latest.date,
     },
     {
