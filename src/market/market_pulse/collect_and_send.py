@@ -278,6 +278,10 @@ def fetch_qqq_tech_data():
     try:
         hist_qqq = yf.Ticker("QQQ").history(period="200d")
         hist_spy = yf.Ticker("SPY").history(period="200d")
+        # 市場開場前・開場中は当日データが不確定なため除外
+        today = datetime.now().date()
+        hist_qqq = hist_qqq[hist_qqq.index.date < today]
+        hist_spy = hist_spy[hist_spy.index.date < today]
         if hist_qqq is None or len(hist_qqq) < 125:
             print("[WARN] QQQデータ不足。Tech Pulseスキップ。")
             return None, None
@@ -288,10 +292,10 @@ def fetch_qqq_tech_data():
         if hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21:
             qqq_ret = (hist_qqq['Close'].iloc[-1] / hist_qqq['Close'].iloc[-21] - 1) * 100
             spy_ret = (hist_spy['Close'].iloc[-1] / hist_spy['Close'].iloc[-21] - 1) * 100
-            if spy_ret != 0:
+            if abs(spy_ret) >= 0.01:
                 qqq_vs_spy_20d = round((qqq_ret / spy_ret - 1) * 100, 2)
             else:
-                qqq_vs_spy_20d = 0.0
+                print(f"[WARN] spy_ret極小({spy_ret:.4f}%)のためqqq_vs_spy_20dをスキップ")
         print(f"[INFO] QQQ: {qqq_latest:.2f}, vs_MA125={qqq_vs_ma125:+.2f}%, vs_SPY_20d={qqq_vs_spy_20d}")
         return qqq_vs_ma125, qqq_vs_spy_20d
     except Exception as e:
@@ -366,6 +370,22 @@ def _load_tech_pulse_history(json_path, window=90):
             if v is not None:
                 hist[key].append(float(v))
     return hist
+
+
+def _load_prev_tech_pulse_score(json_path):
+    """market_data.jsonから直近のTech Pulseスコアを返す（なければNone）"""
+    if not os.path.exists(json_path):
+        return None
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            all_data = json.load(f)
+        for entry in reversed(all_data):
+            score = (entry.get("tech_pulse") or {}).get("score")
+            if score is not None:
+                return float(score)
+    except Exception:
+        pass
+    return None
 
 
 def _load_div_history(json_path, window=90):
@@ -850,6 +870,11 @@ if __name__ == "__main__":
     fg_score_tech = fetch_fg_score_from_feargreedchart()
     history_90d = _load_tech_pulse_history(JSON_PATH, window=90)
     tp_score = calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, history_90d)
+    # 異常値ガード: score=100 かつ直前スコアとの差が20以上なら前回値を保持
+    _prev_tp_score = _load_prev_tech_pulse_score(JSON_PATH)
+    if tp_score == 100 and _prev_tp_score is not None and abs(tp_score - _prev_tp_score) >= 20:
+        print(f"[WARN] Tech Pulse異常値検出: score={tp_score} (前回={_prev_tp_score}) → 前回値を保持")
+        tp_score = _prev_tp_score
     tp_label = _tp_label(tp_score)
 
     # 乖離・Zスコア・シグナル
