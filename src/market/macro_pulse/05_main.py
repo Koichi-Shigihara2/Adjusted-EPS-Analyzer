@@ -8,9 +8,8 @@ MACRO PULSE — Economic Indicators Auto-Update  v6.0
     - 金融環境スナップショット（regime, ff_rate, yc_10y2y, hy_spread, vix, cuts_implied）を同時保存
     - S&P500 t0/t1/t5/t10/t20 と変化率を後から自動補完
 
-  [監視指標 12本体制]
+  [監視指標]
     手入力:  ISM製造業PMI, ISM非製造業PMI
-    自動取得(FRED): Conference Board LEI → OECD CLI (USALOLITONOSTSAM) で代替
     FRED自動: NFP, 失業保険4週MA, ミシガン1Y/5Yインフレ期待, CB消費者信頼感,
               住宅建築許可, 10Y-2Yカーブ, HYスプレッド, VIX
 
@@ -88,16 +87,6 @@ WEEKLY_ANALYSIS_COLUMNS = [
 #  指標マスタ（v6.0 確定12指標）※変更なし
 # ─────────────────────────────────────────────────────────────────
 INDICATOR_CONFIG = {
-    "Conference Board LEI": {
-        "fred_id": "USALOLITONOSTSAM",   # OECD CLI Normalized (FRED free API)
-        "input_method": "FRED",
-        "fred_release_id": None,          # リリースカレンダー不要（月次自動）
-        "slug": "cb_lei",
-        "threshold_bull": 100.1,          # OECD CLI: 100超=拡張、100未満=縮小
-        "threshold_bear": 99.5,
-        "unit": "index",                  # 正規化指数（100基準）
-        "discord_remind": False,          # FRED自動取得のためリマインド不要
-    },
     "Philadelphia Fed Manufacturing": {
         "fred_id": "GACDFSA066MSFRBPHI",
         "input_method": "FRED",
@@ -319,20 +308,6 @@ def michigan_consumer_sentiment_release_dates(months_ahead: int = 3) -> list[tup
             logger.warning(f"Michigan Consumer Sentiment date calc error: {e}")
     return results
 
-def cb_lei_release_dates(months_ahead: int = 3) -> list[tuple[str, date]]:
-    today = date.today()
-    results = []
-    for offset in range(months_ahead + 1):
-        year  = today.year + (today.month - 1 + offset) // 12
-        month = (today.month - 1 + offset) % 12 + 1
-        try:
-            release_date = nth_weekday(year, month, 0, 2)
-            if release_date >= today:
-                results.append(("Conference Board LEI", release_date))
-        except Exception as e:
-            logger.warning(f"OECD CLI date calc error: {e}")
-    return results
-
 def building_permit_release_dates(months_ahead: int = 3) -> list[tuple[str, date]]:
     today = date.today()
     results = []
@@ -433,13 +408,28 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
     ensure_schedule_csv()
     df = load_schedule()
     registered = set(zip(df["indicator"], df["release_date"]))
+
+    # events.csv に actual が入っている (indicator, release_date) はスケジュールに追加しない
+    events_df = load_events()
+    already_released: set = set()
+    if not events_df.empty:
+        has_actual = (
+            events_df["actual"].str.strip().ne("") &
+            events_df["actual"].str.strip().ne("nan")
+        )
+        for _, ev in events_df[has_actual].iterrows():
+            already_released.add((ev["indicator"], ev["release_date"]))
+
+    def _skip(ind_name: str, date_str: str) -> bool:
+        return (ind_name, date_str) in registered or (ind_name, date_str) in already_released
+
     new_rows = []
 
     for ind_name, dates in fred_release_dates(fred_api_key, days_ahead).items():
         cfg = INDICATOR_CONFIG.get(ind_name, {})
         for rd in dates:
             date_str = rd.strftime("%Y-%m-%d")
-            if (ind_name, date_str) in registered:
+            if _skip(ind_name, date_str):
                 continue
             new_rows.append({
                 "indicator":    ind_name,
@@ -453,7 +443,7 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
 
     for ind_name, rd in michigan_release_dates(months_ahead=3):
         date_str = rd.strftime("%Y-%m-%d")
-        if (ind_name, date_str) in registered:
+        if _skip(ind_name, date_str):
             continue
         new_rows.append({
             "indicator":    ind_name,
@@ -467,7 +457,7 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
 
     for ind_name, rd in building_permit_release_dates(months_ahead=3):
         date_str = rd.strftime("%Y-%m-%d")
-        if (ind_name, date_str) in registered:
+        if _skip(ind_name, date_str):
             continue
         new_rows.append({
             "indicator":    ind_name,
@@ -482,7 +472,7 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
 
     for ind_name, rd in michigan_consumer_sentiment_release_dates(months_ahead=3):
         date_str = rd.strftime("%Y-%m-%d")
-        if (ind_name, date_str) in registered:
+        if _skip(ind_name, date_str):
             continue
         new_rows.append({
             "indicator":    ind_name,
@@ -494,21 +484,6 @@ def update_schedule(fred_api_key: str, days_ahead: int = 90):
             "status":       "scheduled",
         })
         logger.info(f"[Schedule+] {ind_name}: {date_str} (第2金曜 ルールベース算出)")
-
-    for ind_name, rd in cb_lei_release_dates(months_ahead=3):
-        date_str = rd.strftime("%Y-%m-%d")
-        if (ind_name, date_str) in registered:
-            continue
-        new_rows.append({
-            "indicator":    ind_name,
-            "release_date": date_str,
-            "fred_id":      INDICATOR_CONFIG.get(ind_name, {}).get("fred_id", ""),
-            "input_method": "FRED",
-            "consensus":    "",
-            "actual":       "",
-            "status":       "scheduled",
-        })
-        logger.info(f"[Schedule+] {ind_name}: {date_str} (第2月曜 ルールベース算出)")
 
     if not new_rows:
         logger.info("Schedule up to date.")
@@ -1612,7 +1587,6 @@ _MONTHLY_REFRESH_SET = {
     "Initial Claims 4W MA",
     "Building Permits",
     "Sahm Rule Recession Indicator",
-    "Conference Board LEI",
     "Michigan Consumer Sentiment",
 }
 
@@ -1623,6 +1597,7 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
     毎日の normal run で呼び出し、月次 FRED 指標を補完する。
     - FREDの最新観測日が events.csv に未登録または actual が空 → 新規追加
     - スケジュールに依存しないため Philly Fed / CFNAI / Sahm Rule も自動取得できる
+    - FREDのobs_dateが月初1日等になる場合、scheduleの実発表日で上書きする
     """
     if fred is None:
         return []
@@ -1638,7 +1613,21 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
         if val is None or obs_date is None:
             continue
 
-        event_id = make_event_id(ind_name, obs_date)
+        # FREDのobs_dateが月初1日等になる場合、scheduleの実発表日で上書き
+        release_date = obs_date
+        sched_hits = schedule[
+            (schedule["indicator"] == ind_name) &
+            (schedule["release_date"] >= obs_date.strftime("%Y-%m-%d")) &
+            (schedule["release_date"] <= (obs_date + timedelta(days=60)).strftime("%Y-%m-%d"))
+        ]
+        if not sched_hits.empty:
+            try:
+                release_date = datetime.strptime(sched_hits["release_date"].iloc[0], "%Y-%m-%d").date()
+                logger.info(f"[monthly-refresh] {ind_name}: obs={obs_date} → sched_release={release_date}")
+            except Exception:
+                pass
+
+        event_id = make_event_id(ind_name, release_date)
         existing = events[events["event_id"] == event_id]
         if not existing.empty:
             actual_str = str(existing.iloc[0].get("actual", "")).strip()
@@ -1647,6 +1636,8 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
 
         try:
             row = fetch_event_row(ind_name, target_date, fred, fin_ctx, schedule, events)
+            row["release_date"] = release_date.strftime("%Y-%m-%d")
+            row["event_id"]     = make_event_id(ind_name, release_date)
             row["sp500_t0"] = str(sp500_t0) if sp500_t0 else ""
             new_rows.append(row)
             logger.info(f"[monthly-refresh] {ind_name}: obs={obs_date} val={val}")
