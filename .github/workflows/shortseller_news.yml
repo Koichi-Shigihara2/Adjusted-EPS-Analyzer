@@ -40,7 +40,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # リモートの先行コミットを取り込む（push rejected 対策）
+          git stash
           git pull --rebase origin kaihatsu
+          git stash pop
 
           # ファイルが存在する場合のみ個別にadd（pathspec error 対策）
           for f in \
