@@ -1,4 +1,4 @@
-"""
+﻿"""
 TANUKI VALUATION - Pipeline v2.1
 全ティッカーを処理し、latest.jsonを生成
 
@@ -265,7 +265,7 @@ def main():
     tickers = sys.argv[1:] if len(sys.argv) > 1 else None
     
     # AI検証を有効化（XAI_API_KEYが設定されている場合）
-    use_ai = bool(os.environ.get("XAI_API_KEY"))
+    use_ai = False  # v7.3: AI検証退役
     
     pipeline = TanukiValuationPipeline(use_ai_validation=use_ai)
     results = pipeline.run(tickers)
