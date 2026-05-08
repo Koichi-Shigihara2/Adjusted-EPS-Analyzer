@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2263990321971.288,
   "intrinsic_value_per_share": 234.5386263708139,
   "intrinsic_value_beta": 215.46,
-  "upside_percent_beta": -21.1,
+  "upside_percent_beta": -20.5,
   "intrinsic_value_rf": 1374.34,
-  "upside_percent_rf": 403.1,
+  "upside_percent_rf": 406.8,
   "v0": 1261506256456.1196,
   "v0_adjusted": 1282292678034.5515,
   "alpha": 0.7655800120776206,
@@ -14,7 +14,7 @@
     "2年後": 293.89,
     "3年後": 328.98
   },
-  "upside_percent": -14.1,
+  "upside_percent": -13.5,
   "calculation_date": "2026-05-08",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -268,17 +268,17 @@
     "bear": {
       "growth_rate": 0.084,
       "rice": 1.128,
-      "rice_per_ratio": 0.0345
+      "rice_per_ratio": 0.0347
     },
     "base": {
       "growth_rate": 0.119,
       "rice": 1.598,
-      "rice_per_ratio": 0.0489
+      "rice_per_ratio": 0.0492
     },
     "bull": {
       "growth_rate": 0.143,
       "rice": 1.921,
-      "rice_per_ratio": 0.0588
+      "rice_per_ratio": 0.0591
     }
   },
   "fcf_source": "annual_fallback",
@@ -299,7 +299,7 @@
     ],
     "diluted_shares": 10757109436,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 273.175,
+    "current_price": 271.17,
     "latest_revenue": 716924000000.0,
     "rpo": 25000000000.0,
     "beta": 1.1,
@@ -323,8 +323,8 @@
     "rpo_pv": 20271843657.39813,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 32.676434,
-    "ma200": 228.08385
+    "per": 32.47545,
+    "ma200": 228.30235
   },
   "validation": {
     "validated_at": "2026-05-08",
@@ -348,7 +348,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistency in per share calculation detected.",
-    "ai_concerns": "Anomaly in pt_shares_consistency; calculated per share value does not match reported intrinsic value per share."
+    "ai_comment": "Inconsistency in per-share calculation detected; overall verification failed.",
+    "ai_concerns": "Discrepancy in per-share value suggests potential error; other values like growth rates and WACC appear reasonable."
   }
 }

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9931658787751.377,
   "intrinsic_value_per_share": 429.11982676647006,
   "intrinsic_value_beta": 408.67,
-  "upside_percent_beta": 93.1,
+  "upside_percent_beta": 93.2,
   "intrinsic_value_rf": 2814.12,
-  "upside_percent_rf": 1230.0,
+  "upside_percent_rf": 1230.6,
   "v0": 4962104669821.988,
   "v0_adjusted": 4965829393875.688,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 753.37,
     "3年後": 998.22
   },
-  "upside_percent": 102.8,
+  "upside_percent": 102.9,
   "calculation_date": "2026-05-08",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -290,17 +290,17 @@
     "bear": {
       "growth_rate": 0.227,
       "rice": 12.598,
-      "rice_per_ratio": 0.2917
+      "rice_per_ratio": 0.2925
     },
     "base": {
       "growth_rate": 0.325,
       "rice": 18.037,
-      "rice_per_ratio": 0.4177
+      "rice_per_ratio": 0.4187
     },
     "bull": {
       "growth_rate": 0.39,
       "rice": 21.644,
-      "rice_per_ratio": 0.5012
+      "rice_per_ratio": 0.5025
     }
   },
   "fcf_source": "annual_fallback",
@@ -321,7 +321,7 @@
     ],
     "diluted_shares": 24305000000,
     "roe_10yr_avg": 0.4564387976956358,
-    "current_price": 211.59,
+    "current_price": 211.5,
     "latest_revenue": 215938000000.0,
     "rpo": 2300000000.0,
     "beta": 1.05,
@@ -345,8 +345,8 @@
     "rpo_pv": 1865009616.4806278,
     "growth_option_pv": 1859714437.220018,
     "alpha_uncapped": 1.91704295032167,
-    "per": 43.18163,
-    "ma200": 184.2864
+    "per": 43.07536,
+    "ma200": 184.50874
   },
   "validation": {
     "validated_at": "2026-05-08",
@@ -370,7 +370,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "主要項目で不一致、全体的に異常有り",
-    "ai_concerns": "P_t per share mismatch ($408.67 vs $429.12) indicates potential anomaly, though explained by design differences; overall, values like RPO_PV seem disproportionately small compared to V0."
+    "ai_comment": "Inconsistency in per share calculation detected.",
+    "ai_concerns": "No major anomalies in DCF components, but discrepancy between P_t-derived per share value ($408.67) and reported ($429.12) suggests potential error in value attribution."
   }
 }

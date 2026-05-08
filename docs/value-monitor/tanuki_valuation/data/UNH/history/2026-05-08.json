@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 494142556765.458,
   "intrinsic_value_per_share": 376.4243603060875,
   "intrinsic_value_beta": 488.77,
-  "upside_percent_beta": 32.9,
+  "upside_percent_beta": 32.2,
   "intrinsic_value_rf": 2321.56,
-  "upside_percent_rf": 531.1,
+  "upside_percent_rf": 527.9,
   "v0": 255908205388.17883,
   "v0_adjusted": 265395428219.84116,
   "alpha": 0.8619105840667813,
@@ -14,7 +14,7 @@
     "2年後": 441.99,
     "3年後": 478.94
   },
-  "upside_percent": 2.3,
+  "upside_percent": 1.8,
   "calculation_date": "2026-05-08",
   "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
@@ -256,17 +256,17 @@
     "bear": {
       "growth_rate": 0.059,
       "rice": 8.583,
-      "rice_per_ratio": 0.3103
+      "rice_per_ratio": 0.3081
     },
     "base": {
       "growth_rate": 0.084,
       "rice": 12.22,
-      "rice_per_ratio": 0.4419
+      "rice_per_ratio": 0.4386
     },
     "bull": {
       "growth_rate": 0.1,
       "rice": 14.548,
-      "rice_per_ratio": 0.526
+      "rice_per_ratio": 0.5221
     }
   },
   "fcf_source": "annual_fallback",
@@ -287,7 +287,7 @@
     ],
     "diluted_shares": 908144404,
     "roe_10yr_avg": 0.20521680573018605,
-    "current_price": 367.8377,
+    "current_price": 369.74,
     "latest_revenue": 447567000000.0,
     "rpo": 11700000000.0,
     "beta": 0.75,
@@ -311,8 +311,8 @@
     "rpo_pv": 9487222831.662325,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.8619105840667813,
-    "per": 27.656971,
-    "ma200": 316.59415
+    "per": 27.862846,
+    "ma200": 317.0172
   },
   "validation": {
     "validated_at": "2026-05-08",
@@ -336,7 +336,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in per share value calculation detected.",
-    "ai_concerns": "Inconsistency in per share value (544.28 vs. 376.42); other values like growth rates and WACC appear reasonable but warrant review."
+    "ai_comment": "計算不一致が複数あり、信頼性低下",
+    "ai_concerns": "Anomaly in P_t and per-share value calculation; values do not align, indicating potential error in final enterprise value derivation."
   }
 }

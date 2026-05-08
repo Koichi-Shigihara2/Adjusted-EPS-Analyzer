@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4110464277707.821,
   "intrinsic_value_per_share": 300.50032510784416,
   "intrinsic_value_beta": 276.57,
-  "upside_percent_beta": -4.4,
+  "upside_percent_beta": -3.8,
   "intrinsic_value_rf": 1702.4,
-  "upside_percent_rf": 488.5,
+  "upside_percent_rf": 492.3,
   "v0": 2044123168529.6562,
   "v0_adjusted": 2055232138853.9104,
   "alpha": 1.0,
@@ -14,7 +14,7 @@
     "2年後": 397.41,
     "3年後": 457.02
   },
-  "upside_percent": 3.9,
+  "upside_percent": 4.5,
   "calculation_date": "2026-05-08",
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
@@ -190,7 +190,7 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.201,
-      "rice_per_ratio": 0.0057
+      "rice_per_ratio": 0.0058
     },
     "base": {
       "growth_rate": 0.15,
@@ -200,7 +200,7 @@
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.344,
-      "rice_per_ratio": 0.0098
+      "rice_per_ratio": 0.0099
     }
   },
   "fcf_source": "annual_fallback",
@@ -221,7 +221,7 @@
     ],
     "diluted_shares": 14687356000,
     "roe_10yr_avg": 1.095797481703121,
-    "current_price": 289.26,
+    "current_price": 287.44,
     "latest_revenue": 416161000000.0,
     "rpo": 13700000000.0,
     "beta": 1.1,
@@ -245,8 +245,8 @@
     "rpo_pv": 11108970324.254175,
     "growth_option_pv": 0,
     "alpha_uncapped": 4.602349423153108,
-    "per": 35.06182,
-    "ma200": 256.2575
+    "per": 34.841213,
+    "ma200": 256.6227
   },
   "validation": {
     "validated_at": "2026-05-08",
@@ -270,7 +270,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "Inconsistencies in key values detected.",
-    "ai_concerns": "Anomalies include P_t not aligning with per-share value and α discrepancy; potential errors in final P_t calculation."
+    "ai_comment": "Inconsistencies in per share calculation.",
+    "ai_concerns": "Inconsistency between P_t/shares and intrinsic value per share; ROE is unusually high but plausible."
   }
 }
