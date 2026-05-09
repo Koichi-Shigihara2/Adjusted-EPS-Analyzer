@@ -84,10 +84,8 @@
     /* Detail panel */
     .detail{display:none;border:1px solid var(--bdr);border-top:none;background:var(--sur);padding:24px;margin-top:-1px}
     .detail.open{display:block}
-    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:20px}
-    .detail-col-right{display:flex;flex-direction:column;gap:1px;background:var(--bdr);min-width:0}
-    .detail-col-right .detail-col{flex:1 1 auto}
-    .detail-col{background:var(--sur2);padding:16px 18px}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:20px}
+    .detail-col{background:var(--sur2);padding:12px 14px}
     .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:12px;text-transform:uppercase}
     .detail-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px}
     .detail-key{font-size:12px;color:var(--mut)}
@@ -326,26 +324,24 @@ function buildDetail(ticker, d) {
       <div class="detail-verdict">${dq.verdict_reason || '—'}</div>
     </div>
 
-    <div class="detail-col-right">
-      <div class="detail-col">
-        <div class="detail-col-title">② 生存能力</div>
-        <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
-        <div class="detail-row"><span class="detail-key">現金</span><span class="detail-val">${fmtB(ra.cash)}</span></div>
-        <div class="detail-row"><span class="detail-key">月次バーン</span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
-        <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
-        <div class="detail-verdict">${ra.verdict_reason || '—'}</div>
-      </div>
+    <div class="detail-col">
+      <div class="detail-col-title">② 生存能力</div>
+      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">現金</span><span class="detail-val">${fmtB(ra.cash)}</span></div>
+      <div class="detail-row"><span class="detail-key">月次バーン</span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
+      <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+      <div class="detail-verdict">${ra.verdict_reason || '—'}</div>
+    </div>
 
-      <div class="detail-col">
-        <div class="detail-col-title">③ 黒字化パス</div>
-        <div class="detail-row"><span class="detail-key">OCFトレンド</span><span class="detail-val">${pp.ocf_trend||'—'}</span></div>
-        <div class="detail-row"><span class="detail-key">隠れ黒字</span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-        <div class="detail-row"><span class="detail-key">OCF BE予測</span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
-        <div class="detail-row"><span class="detail-key">GAAP BE予測</span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
-        <div style="margin-top:12px">
-          <div class="ocf-title">OCF 推移</div>
-          <div class="ocf-bars">${barsHTML}</div>
-        </div>
+    <div class="detail-col">
+      <div class="detail-col-title">③ 黒字化パス</div>
+      <div class="detail-row"><span class="detail-key">OCFトレンド</span><span class="detail-val">${pp.ocf_trend||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">隠れ黒字</span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+      <div class="detail-row"><span class="detail-key">OCF BE予測</span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">GAAP BE予測</span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
+      <div style="margin-top:12px">
+        <div class="ocf-title">OCF 推移</div>
+        <div class="ocf-bars">${barsHTML}</div>
       </div>
     </div>
   </div>
