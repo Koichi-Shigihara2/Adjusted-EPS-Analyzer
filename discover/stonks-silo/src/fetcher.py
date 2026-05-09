@@ -78,6 +78,8 @@ def load_annual_data(ticker: str, years: int = 5) -> dict:
         except Exception as e:
             errors.append({"year": year, "error": str(e)})
 
+    _sanitize_revenue(records, errors)
+
     return {
         "ticker": ticker,
         "years": sorted(records.keys()),
@@ -176,6 +178,33 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
             })
 
     return {"pl": pl, "cf": cf, "bs": bs, "raw_year": year}
+
+
+def _sanitize_revenue(records: dict, errors: list) -> None:
+    """
+    全年の revenue を比較し、他年の中央値の10倍を超える単年値を外れ値として除去する。
+    XBRL タグ混入による誤申告（例: IONQ 2022 Revenues=$1.235B）対策。
+    """
+    values = [
+        (yr, rec["pl"]["revenue"])
+        for yr, rec in records.items()
+        if rec["pl"].get("revenue") is not None and rec["pl"]["revenue"] > 0
+    ]
+    if len(values) < 2:
+        return
+    sorted_vals = sorted(v for _, v in values)
+    # 最大値を除いた中央値を基準にする
+    non_max = sorted_vals[:-1]
+    median = non_max[len(non_max) // 2]
+    if median <= 0:
+        return
+    for yr, v in values:
+        if v > median * 10:
+            records[yr]["pl"]["revenue"] = None
+            errors.append({
+                "year": yr, "section": "pl", "field": "revenue",
+                "warning": f"outlier_removed (val={v:.0f} > median*10={median*10:.0f})",
+            })
 
 
 def _list_available_tickers() -> list[str]:

@@ -320,12 +320,11 @@ class StonksAnalyzer:
         ocf = cf.get("operating_cash_flow")
         capex = cf.get("capital_expenditure")
 
-        # 月次バーン = (OCF + CapEx) / 12
-        # OCF が正なら現金消費なし（CapEx分は流出）
-        # CapEx は通常マイナス値で格納
+        # 月次バーン = (OCF - |CapEx|) / 12
+        # CapEx は正・負どちらで格納されていても abs() で正規化して差し引く
         monthly_burn = None
         if ocf is not None and capex is not None:
-            annual_burn = ocf + capex  # CapEx がマイナスなら OCF から差し引かれる
+            annual_burn = ocf - abs(capex)
             monthly_burn = annual_burn / 12
         elif ocf is not None:
             monthly_burn = ocf / 12
