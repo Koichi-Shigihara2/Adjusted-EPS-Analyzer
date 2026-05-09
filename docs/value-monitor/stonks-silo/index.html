@@ -401,6 +401,16 @@ function buildDetail(ticker, d) {
     return 'var(--red)';
   };
 
+  // 営業CFトレンド 日本語ラベル（pillar用）
+  const trendJa = {
+    'ACCELERATING': '加速中', 'IMPROVING': '改善中',
+    'FLAT': '横ばい', 'DETERIORATING': '悪化中', 'UNKNOWN': '不明',
+  };
+  const trendJaColor = {
+    'ACCELERATING': 'var(--grn)', 'IMPROVING': 'var(--grn)',
+    'FLAT': 'var(--mut)', 'DETERIORATING': 'var(--red)', 'UNKNOWN': 'var(--mut)',
+  };
+
   // バーチャートヘルパー
   function makeChart(vals) {
     const valid = vals.filter(v => v !== null);
@@ -453,24 +463,24 @@ function buildDetail(ticker, d) {
       <div class="pillar-title">③ 黒字化パス</div>
       <div class="pillar-score" style="color:${pillarColor(s3)}">${s3}</div>
       <div class="pillar-max">/100</div>
-      <div class="pillar-label">${trendCell(pp.ocf_trend)}</div>
+      <div class="pillar-label" style="color:${trendJaColor[pp.ocf_trend]||'var(--mut)'};font-size:12px">${trendJa[pp.ocf_trend]||'—'}</div>
     </div>
   </div>
 
   <div class="chart-row">
     ${hasRecords ? `
     <div class="chart-col">
-      <div class="chart-title">REVENUE</div>
+      <div class="chart-title">売上推移</div>
       <div class="chart-latest">${fmtB(latestRev)}</div>
       ${makeChart(revVals)}
     </div>
     <div class="chart-col">
-      <div class="chart-title">NET INCOME</div>
+      <div class="chart-title">純利益推移</div>
       <div class="chart-latest" style="color:${latestNI!==null&&latestNI>=0?'var(--grn)':'var(--red)'}">${fmtB(latestNI)}</div>
       ${makeChart(niVals)}
     </div>` : ''}
     <div class="chart-col" ${!hasRecords?'style="grid-column:1/-1"':''}>
-      <div class="chart-title">OPER. CASH FLOW</div>
+      <div class="chart-title">営業CF推移</div>
       <div class="chart-latest" style="color:${latestOCF!==null&&latestOCF>=0?'var(--grn)':'var(--red)'}">${fmtB(latestOCF)}</div>
       ${makeChart(ocfVals)}
     </div>
@@ -479,24 +489,24 @@ function buildDetail(ticker, d) {
   <div class="detail-bottom">
     <div class="detail-col">
       <div class="detail-col-title">① 赤字品質 · 詳細</div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">3yr CAGR<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>=20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">売上成長率（3年）<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>=20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">R&amp;D比率<span class="tip-icon">?</span><span class="tip-box">研究開発費÷売上高×100。技術・製品への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">S&amp;M比率<span class="tip-icon">?</span><span class="tip-box">販売・マーケティング費÷売上高×100。市場拡大への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">研究開発比率<span class="tip-icon">?</span><span class="tip-box">研究開発費÷売上高×100。技術・製品への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">販売管理比率<span class="tip-icon">?</span><span class="tip-box">販売・マーケティング費÷売上高×100。市場拡大への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
     </div>
     <div class="detail-col">
       <div class="detail-col-title">② 生存能力 · 詳細</div>
       <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次バーン<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">Runway<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
     </div>
     <div class="detail-col">
       <div class="detail-col-title">③ 黒字化パス · 詳細</div>
-      <div class="detail-row"><span class="detail-key">OCFトレンド</span><span class="detail-val">${pp.ocf_trend||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">隠れ黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">OCF BE予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">GAAP BE予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
     </div>
   </div>
 
