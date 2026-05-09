@@ -521,7 +521,8 @@ class StonksAnalyzer:
             # OCF が既にプラス → 予測不要
             ocf_reason = "ACHIEVED"
         else:
-            ocf_be, ocf_reason = _linear_breakeven(years, ocf_annual)
+            # OCF BE は直近2YoY平均傾きで外挿（OLSより直近の改善速度を重視）
+            ocf_be, ocf_reason = _yoy_avg_breakeven(years, ocf_annual)
 
         # OCF が悪化中なら予測を抑制（OLS が過去の改善に引っ張られても無効化）
         if ocf_trend == "DETERIORATING":
@@ -697,6 +698,50 @@ def _linear_breakeven(
 
     # y = slope * x + intercept = 0 → x = -intercept / slope
     be_year = int(-intercept / slope + 0.5)
+
+    if be_year > latest_yr + horizon:
+        return None, "TOO_FAR"
+
+    return be_year, "PREDICTED"
+
+
+def _yoy_avg_breakeven(
+    years: list[int],
+    ocf_annual: dict[int, Optional[float]],
+    horizon: int = 5,
+) -> tuple[Optional[int], str]:
+    """
+    直近2年のYoY変化の平均を傾きとして OCF 黒字化年を外挿する。
+    OLS（3点全体のフィッティング）より直近の改善速度を重視する。
+    reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
+    """
+    valid = [(yr, v) for yr in years[-3:] if (v := ocf_annual.get(yr)) is not None]
+    if len(valid) < 2:
+        return None, "NO_DATA"
+
+    latest_yr, latest_val = valid[-1]
+    if latest_val > 0:
+        return latest_yr, "ACHIEVED"
+
+    # 連続する年間ペアの YoY 変化を収集
+    yoys = []
+    for i in range(1, len(valid)):
+        yr0, v0 = valid[i - 1]
+        yr1, v1 = valid[i]
+        if yr1 != yr0:
+            yoys.append((v1 - v0) / (yr1 - yr0))
+
+    if not yoys:
+        return None, "NO_DATA"
+
+    # 直近2つの YoY 変化の平均を傾きとして使用
+    avg_slope = sum(yoys[-2:]) / len(yoys[-2:])
+
+    if avg_slope <= 0:
+        return None, "NO_TREND"
+
+    years_to_be = -latest_val / avg_slope
+    be_year = int(latest_yr + years_to_be + 0.5)
 
     if be_year > latest_yr + horizon:
         return None, "TOO_FAR"
