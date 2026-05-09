@@ -42,6 +42,25 @@
     .sec{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase;margin:0 0 16px;display:flex;align-items:center;gap:10px}
     .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
+    /* Guide */
+    .guide{border:1px solid var(--bdr);margin-bottom:28px;background:var(--sur)}
+    .guide-toggle{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;padding:10px 14px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;transition:color .2s}
+    .guide-toggle:hover{color:var(--txt)}
+    .guide-toggle .arr{transition:transform .25s}
+    .guide-toggle.open .arr{transform:rotate(180deg)}
+    .guide-body{display:none;padding:16px 18px 18px;border-top:1px solid var(--bdr)}
+    .guide-body.open{display:block}
+    .guide-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
+    .guide-col{background:var(--sur2);padding:10px 12px}
+    .guide-col-head{font-family:var(--mono);font-size:8px;letter-spacing:.18em;color:var(--stonks);text-transform:uppercase;margin-bottom:6px}
+    .guide-col-body{font-size:11px;color:var(--mut);line-height:1.6}
+    .guide-signals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .guide-signal{background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px}
+    .guide-signal-head{font-family:var(--mono);font-size:8px;letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px}
+    .guide-signal-head.pos{color:var(--grn)}
+    .guide-signal-head.neg{color:var(--red)}
+    .guide-signal-body{font-size:11px;color:var(--mut);line-height:1.7}
+
     /* Filters */
     .filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
     .filter-btn{font-family:var(--mono);font-size:9px;letter-spacing:.15em;padding:5px 12px;border:1px solid var(--bdr);background:transparent;color:var(--mut);cursor:pointer;transition:all .2s;text-transform:uppercase}
@@ -141,6 +160,47 @@
     <div class="hero-meta">
       UPDATED<br><span id="hero-updated">—</span><br><br>
       COVERAGE<br><span id="hero-count">—</span> TICKERS
+    </div>
+  </div>
+
+  <!-- Guide -->
+  <div class="guide">
+    <div class="guide-toggle" id="guide-toggle" onclick="toggleGuide()">
+      <span>使い方</span><span class="arr">▼</span>
+    </div>
+    <div class="guide-body" id="guide-body">
+      <div class="guide-grid">
+        <div class="guide-col">
+          <div class="guide-col-head">VERDICT</div>
+          <div class="guide-col-body">総合判定。<br>10x CANDIDATE / PROMISING / WATCH / AVOID の4段階。スコア加重で算出。</div>
+        </div>
+        <div class="guide-col">
+          <div class="guide-col-head">DEFICIT</div>
+          <div class="guide-col-body">赤字の質。<br>粗利率・R&D比率・売上成長から「投資中の赤字か、単なる損失か」を判定。</div>
+        </div>
+        <div class="guide-col">
+          <div class="guide-col-head">RUNWAY</div>
+          <div class="guide-col-body">資金余命。<br>現金 ÷ 月次バーンレート。12ヶ月未満は赤表示。∞ はバーンなし。</div>
+        </div>
+        <div class="guide-col">
+          <div class="guide-col-head">OCF TREND</div>
+          <div class="guide-col-body">営業CF推移。<br>IMPROVING / STABLE / DECLINING。黒字化に向かっているかを示す。</div>
+        </div>
+        <div class="guide-col">
+          <div class="guide-col-head">SCORE</div>
+          <div class="guide-col-body">0〜100の総合スコア。①赤字品質②生存能力③黒字化パスの加重平均。</div>
+        </div>
+      </div>
+      <div class="guide-signals">
+        <div class="guide-signal">
+          <div class="guide-signal-head pos">▲ 買いシグナル</div>
+          <div class="guide-signal-body">DEFICIT が QUALITY / GROWTH-INVEST ・ RUNWAY が24M以上 ・ OCF TREND が IMPROVING ・ SCORE 70以上が揃えば注目候補。</div>
+        </div>
+        <div class="guide-signal">
+          <div class="guide-signal-head neg">▼ 回避シグナル</div>
+          <div class="guide-signal-body">RUNWAY が12M未満（赤）・ DEFICIT が PURE-LOSS ・ OCF TREND が DECLINING の組み合わせは資金切れリスク大。</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -270,6 +330,15 @@ function render() {
 }
 
 // ---------------------------------------------------------------------------
+// Guide toggle
+// ---------------------------------------------------------------------------
+function toggleGuide() {
+  const toggle = document.getElementById('guide-toggle');
+  const body   = document.getElementById('guide-body');
+  toggle.classList.toggle('open');
+  body.classList.toggle('open');
+}
+
 // Detail panel
 // ---------------------------------------------------------------------------
 function toggleDetail(ticker) {
