@@ -749,12 +749,29 @@ function buildYaml(tickers) {
 }
 function parseCsv(csv) {
   return csv.split('\n').slice(1).filter(l => l.trim()).map(l => {
-    const [ticker, cik, ...rest] = l.split(',');
-    return { ticker: (ticker||'').trim(), cik: (cik||'').trim(), name: rest.join(',').trim() };
+    const cols = [];
+    let cur = '', inQ = false;
+    for (let i = 0; i < l.length; i++) {
+      const c = l[i];
+      if (inQ) {
+        if (c === '"' && l[i+1] === '"') { cur += '"'; i++; }
+        else if (c === '"') { inQ = false; }
+        else { cur += c; }
+      } else {
+        if (c === '"') { inQ = true; }
+        else if (c === ',') { cols.push(cur.trim()); cur = ''; }
+        else { cur += c; }
+      }
+    }
+    cols.push(cur.trim());
+    const [ticker, cik, name, eps_sector, stonks_silo] = cols;
+    return { ticker: ticker||'', cik: cik||'', name: name||'', eps_sector: eps_sector||'', stonks_silo: stonks_silo||'' };
   }).filter(r => r.ticker);
 }
 function buildCsv(rows) {
-  return 'ticker,cik,name\n' + rows.map(r => `${r.ticker},${r.cik},${r.name||''}`).join('\n') + '\n';
+  const q = v => v.includes(',') ? `"${v.replace(/"/g, '""')}"` : v;
+  return 'ticker,cik,name,eps_sector,stonks_silo\n' +
+    rows.map(r => `${q(r.ticker)},${q(r.cik)},${q(r.name||'')},${q(r.eps_sector||'')},${q(r.stonks_silo||'')}`).join('\n') + '\n';
 }
 function calcWacc(beta) {
   return (RF + beta * RM_RF * 100).toFixed(2) + '%';
@@ -1075,13 +1092,23 @@ async function registerTicker() {
     btn.innerHTML = '<span class="spinner"></span>コミット中...';
     const files = [];
 
+    if (!doTanuki && doStonks && cik) {
+      const { content: csv } = await fetchFile(CIK_PATH);
+      const rows = parseCsv(csv);
+      if (!rows.find(r => r.ticker.toUpperCase() === ticker)) {
+        rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: 'true' });
+        rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
+        files.push({ path: CIK_PATH, content: buildCsv(rows) });
+      }
+    }
+
     if (doTanuki) {
       // cik_lookup.csv
       if (cik) {
         const { content: csv } = await fetchFile(CIK_PATH);
         const rows = parseCsv(csv);
         if (!rows.find(r => r.ticker.toUpperCase() === ticker)) {
-          rows.push({ ticker, cik, name });
+          rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: doStonks ? 'true' : 'false' });
           rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
           files.push({ path: CIK_PATH, content: buildCsv(rows) });
         }
