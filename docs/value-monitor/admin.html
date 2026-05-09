@@ -1162,7 +1162,7 @@ async function registerTicker() {
       return;
     }
 
-    const systems = [doTanuki ? 'TANUKI' : '', doEps ? 'EPS' : ''].filter(Boolean).join('+');
+    const systems = [doTanuki ? 'TANUKI' : '', doEps ? 'EPS' : '', doStonks ? 'STONKS' : ''].filter(Boolean).join('+');
     await commitMultipleFiles(files, `chore: register ticker ${ticker} [${systems}]`);
 
     const fileNames = files.map(f => f.path.split('/').pop()).join(', ');
