@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STONKS SILO | On a Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/On-a-journey/favicon.ico">
+  <style>
+    :root {
+      --bg:#0a0d14; --sur:#111520; --sur2:#161c2d; --bdr:#1e2840;
+      --acc:#3b82f6; --grn:#10b981; --red:#f43f5e; --amb:#f59e0b;
+      --txt:#e2e8f0; --mut:#64748b;
+      --stonks:#f43f5e;
+      --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;min-height:100vh}
+    body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:999}
+    .shell{max-width:1100px;margin:0 auto;padding:0 20px 64px}
+
+    /* Header */
+    header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:40px}
+    .logo{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.15em;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--txt)}
+    .logo-dot{width:8px;height:8px;background:var(--stonks);border-radius:50%;animation:pdot 2s ease-in-out infinite}
+    @keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(244,63,94,.4)}50%{box-shadow:0 0 0 6px rgba(244,63,94,0)}}
+    .nav-back{font-family:var(--mono);font-size:10px;color:var(--mut);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+    .nav-back:hover{color:var(--txt)}
+
+    /* Hero */
+    .hero{padding:32px 0 40px;border-bottom:1px solid var(--bdr);margin-bottom:36px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
+    .hero-left{}
+    .hero-label{font-family:var(--mono);font-size:9px;letter-spacing:.3em;color:var(--mut);text-transform:uppercase;margin-bottom:12px}
+    .hero-title{font-family:var(--mono);font-size:36px;font-weight:700;letter-spacing:.06em;line-height:1.1;margin-bottom:10px}
+    .hero-title span{color:var(--stonks)}
+    .hero-sub{font-size:13px;color:var(--mut);line-height:1.7;max-width:480px}
+    .hero-meta{font-family:var(--mono);font-size:10px;color:var(--mut);text-align:right;line-height:1.8}
+    #hero-updated{color:var(--txt)}
+    #hero-count{color:var(--stonks)}
+
+    /* Section label */
+    .sec{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase;margin:0 0 16px;display:flex;align-items:center;gap:10px}
+    .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+    /* Filters */
+    .filters{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+    .filter-btn{font-family:var(--mono);font-size:9px;letter-spacing:.15em;padding:5px 12px;border:1px solid var(--bdr);background:transparent;color:var(--mut);cursor:pointer;transition:all .2s;text-transform:uppercase}
+    .filter-btn:hover{border-color:var(--stonks);color:var(--txt)}
+    .filter-btn.active{border-color:var(--stonks);background:rgba(244,63,94,.1);color:var(--stonks)}
+
+    /* Table */
+    .tbl-wrap{border:1px solid var(--bdr);overflow-x:auto}
+    table{width:100%;border-collapse:collapse}
+    thead tr{border-bottom:1px solid var(--bdr)}
+    thead th{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;padding:10px 16px;text-align:left;white-space:nowrap;background:var(--sur2)}
+    thead th.r{text-align:right}
+    tbody tr{border-bottom:1px solid rgba(30,40,64,.5);cursor:pointer;transition:background .15s}
+    tbody tr:last-child{border-bottom:none}
+    tbody tr:hover{background:var(--sur2)}
+    tbody td{padding:12px 16px;font-size:13px;white-space:nowrap}
+    tbody td.r{text-align:right;font-family:var(--mono);font-size:12px}
+    .ticker-cell{font-family:var(--mono);font-weight:700;font-size:14px;letter-spacing:.08em}
+
+    /* Verdict badges */
+    .badge{font-family:var(--mono);font-size:8px;letter-spacing:.12em;padding:3px 8px;border:1px solid;display:inline-block}
+    .badge-10x{color:#f43f5e;border-color:rgba(244,63,94,.4);background:rgba(244,63,94,.08)}
+    .badge-promising{color:#f59e0b;border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.08)}
+    .badge-watch{color:#64748b;border-color:rgba(100,116,139,.4);background:rgba(100,116,139,.08)}
+    .badge-avoid{color:#374151;border-color:rgba(55,65,81,.4);background:rgba(55,65,81,.08)}
+
+    /* Deficit badge */
+    .def-badge{font-family:var(--mono);font-size:8px;letter-spacing:.1em;padding:2px 7px;border:1px solid}
+    .def-good{color:#10b981;border-color:rgba(16,185,129,.3)}
+    .def-watch{color:#f59e0b;border-color:rgba(245,158,11,.3)}
+    .def-bad{color:#f43f5e;border-color:rgba(244,63,94,.3)}
+    .def-profit{color:#3b82f6;border-color:rgba(59,130,246,.3)}
+
+    /* Score bar */
+    .score-bar{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+    .score-track{width:60px;height:4px;background:var(--bdr);position:relative}
+    .score-fill{position:absolute;top:0;left:0;height:100%;transition:width .4s}
+    .score-num{font-family:var(--mono);font-size:11px;min-width:28px;text-align:right}
+
+    /* Detail panel */
+    .detail{display:none;border:1px solid var(--bdr);border-top:none;background:var(--sur);padding:24px;margin-top:-1px}
+    .detail.open{display:block}
+    .detail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:20px}
+    .detail-col{background:var(--sur2);padding:16px 18px}
+    .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:12px;text-transform:uppercase}
+    .detail-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:8px}
+    .detail-key{font-size:12px;color:var(--mut)}
+    .detail-val{font-family:var(--mono);font-size:12px;color:var(--txt)}
+    .detail-val.pos{color:var(--grn)}
+    .detail-val.neg{color:var(--red)}
+    .detail-verdict{font-family:var(--mono);font-size:10px;color:var(--mut);line-height:1.7;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
+
+    /* OCF timeline */
+    .ocf-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:10px;text-transform:uppercase}
+    .ocf-bars{display:flex;align-items:flex-end;gap:4px;height:56px}
+    .ocf-bar-wrap{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+    .ocf-bar{width:100%;transition:height .4s;min-height:2px;position:relative}
+    .ocf-bar-pos{background:rgba(16,185,129,.5);border-top:1px solid var(--grn)}
+    .ocf-bar-neg{background:rgba(244,63,94,.2);border-bottom:1px solid var(--red)}
+    .ocf-yr{font-family:var(--mono);font-size:8px;color:var(--mut)}
+
+    /* Loading / empty */
+    .loading{text-align:center;padding:60px;font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.15em}
+    .empty{text-align:center;padding:40px;font-family:var(--mono);font-size:11px;color:var(--mut)}
+
+    /* Footer */
+    footer{margin-top:48px;padding-top:20px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between}
+    .ft-left{font-family:var(--mono);font-size:10px;color:var(--mut)}
+    .ft-right{font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.1em}
+
+    @media(max-width:700px){
+      .detail-grid{grid-template-columns:1fr}
+      .hero{flex-direction:column;align-items:flex-start}
+      .hero-meta{text-align:left}
+    }
+  </style>
+  <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
+</head>
+<body data-tool="stonks-silo">
+<div class="shell">
+
+  <header>
+    <a href="/On-a-journey/" class="logo">
+      <img src="/On-a-journey/common/images/logo.png" alt="TANUKI" style="height:30px;width:auto;object-fit:contain">
+      <span class="logo-dot"></span>
+      ON A JOURNEY
+    </a>
+    <a href="/On-a-journey/" class="nav-back">← HOME</a>
+  </header>
+
+  <div class="hero">
+    <div class="hero-left">
+      <div class="hero-label">Discover · 10x Candidates</div>
+      <div class="hero-title">STONKS<br><span>SILO</span></div>
+      <div class="hero-sub">「次のPLTR $7を見つけ、次のSRGAを避ける」<br>良い赤字・生存能力・隠れ黒字化の3本柱で成長初期銘柄を評価。</div>
+    </div>
+    <div class="hero-meta">
+      UPDATED<br><span id="hero-updated">—</span><br><br>
+      COVERAGE<br><span id="hero-count">—</span> TICKERS
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="sec">screening</div>
+  <div class="filters">
+    <button class="filter-btn active" data-filter="ALL">ALL</button>
+    <button class="filter-btn" data-filter="10x_CANDIDATE">10x CANDIDATE</button>
+    <button class="filter-btn" data-filter="PROMISING">PROMISING</button>
+    <button class="filter-btn" data-filter="WATCH">WATCH</button>
+    <button class="filter-btn" data-filter="AVOID">AVOID</button>
+  </div>
+
+  <!-- Table -->
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>TICKER</th>
+          <th>VERDICT</th>
+          <th>DEFICIT</th>
+          <th>RUNWAY</th>
+          <th>OCF TREND</th>
+          <th class="r">SCORE</th>
+        </tr>
+      </thead>
+      <tbody id="tbl-body">
+        <tr><td colspan="6" class="loading">LOADING DATA ···</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div id="detail-panel"></div>
+
+  <footer>
+    <div class="ft-left">Stonks Silo · On-a-journey</div>
+    <div class="ft-right">PERSONAL USE ONLY</div>
+  </footer>
+
+</div>
+
+<script>
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
+const DATA_URL = '/On-a-journey/discover/stonks-silo/data/results.json';
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
+let allData = {};
+let currentFilter = 'ALL';
+let openTicker = null;
+
+// ---------------------------------------------------------------------------
+// Load
+// ---------------------------------------------------------------------------
+async function loadData() {
+  try {
+    const res = await fetch(DATA_URL + '?t=' + Date.now());
+    if (!res.ok) throw new Error(res.status);
+    const json = await res.json();
+    allData = json.tickers || {};
+
+    // Hero meta
+    const dt = new Date(json.generated_at);
+    document.getElementById('hero-updated').textContent =
+      dt.toLocaleDateString('ja-JP', {month:'2-digit', day:'2-digit'}) +
+      ' ' + dt.toLocaleTimeString('ja-JP', {hour:'2-digit', minute:'2-digit'});
+    document.getElementById('hero-count').textContent = Object.keys(allData).length;
+
+    render();
+  } catch(e) {
+    document.getElementById('tbl-body').innerHTML =
+      `<tr><td colspan="6" class="empty">データ読み込みエラー: ${e.message}</td></tr>`;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Render table
+// ---------------------------------------------------------------------------
+function render() {
+  const body = document.getElementById('tbl-body');
+  const rows = Object.entries(allData)
+    .filter(([t, d]) => currentFilter === 'ALL' || d.overall_verdict === currentFilter)
+    .sort((a, b) => (b[1].overall_score || 0) - (a[1].overall_score || 0));
+
+  if (!rows.length) {
+    body.innerHTML = `<tr><td colspan="6" class="empty">該当銘柄なし</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = rows.map(([ticker, d]) => {
+    const dq = d.deficit_quality || {};
+    const ra = d.runway || {};
+    const pp = d.profitability_path || {};
+    const score = d.overall_score ?? 0;
+
+    return `
+    <tr data-ticker="${ticker}" onclick="toggleDetail('${ticker}')">
+      <td><span class="ticker-cell">${ticker}</span></td>
+      <td>${verdictBadge(d.overall_verdict)}</td>
+      <td>${deficitBadge(dq.verdict)}</td>
+      <td>${runwayCell(ra)}</td>
+      <td>${trendCell(pp.ocf_trend)}</td>
+      <td class="r">
+        <div class="score-bar">
+          <div class="score-track"><div class="score-fill" style="width:${score}%;background:${scoreColor(score)}"></div></div>
+          <span class="score-num" style="color:${scoreColor(score)}">${score}</span>
+        </div>
+      </td>
+    </tr>
+    <tr id="detail-${ticker}" style="display:none">
+      <td colspan="6" style="padding:0">
+        <div class="detail" id="detail-inner-${ticker}"></div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ---------------------------------------------------------------------------
+// Detail panel
+// ---------------------------------------------------------------------------
+function toggleDetail(ticker) {
+  if (openTicker === ticker) {
+    closeDetail(ticker);
+    openTicker = null;
+    return;
+  }
+  if (openTicker) closeDetail(openTicker);
+  openTicker = ticker;
+
+  const row = document.getElementById(`detail-${ticker}`);
+  const inner = document.getElementById(`detail-inner-${ticker}`);
+  const d = allData[ticker];
+  if (!d) return;
+
+  inner.innerHTML = buildDetail(ticker, d);
+  inner.classList.add('open');
+  row.style.display = '';
+}
+
+function closeDetail(ticker) {
+  const row = document.getElementById(`detail-${ticker}`);
+  const inner = document.getElementById(`detail-inner-${ticker}`);
+  if (inner) inner.classList.remove('open');
+  if (row) row.style.display = 'none';
+}
+
+function buildDetail(ticker, d) {
+  const dq = d.deficit_quality || {};
+  const ra = d.runway || {};
+  const pp = d.profitability_path || {};
+  const years = d.years || [];
+
+  // OCF bars
+  const ocfVals = years.map(yr => (pp.ocf_annual || {})[yr] ?? null);
+  const maxAbs = Math.max(...ocfVals.filter(v=>v!==null).map(Math.abs), 1);
+
+  const barsHTML = years.map((yr, i) => {
+    const v = ocfVals[i];
+    if (v === null) return `<div class="ocf-bar-wrap"><div style="flex:1"></div><div class="ocf-yr">${yr}</div></div>`;
+    const h = Math.round(Math.abs(v) / maxAbs * 48);
+    const cls = v >= 0 ? 'ocf-bar-pos' : 'ocf-bar-neg';
+    return `<div class="ocf-bar-wrap">
+      <div class="ocf-bar ${cls}" style="height:${h}px" title="${fmtB(v)}"></div>
+      <div class="ocf-yr">${yr}</div>
+    </div>`;
+  }).join('');
+
+  return `
+  <div class="detail-grid">
+    <div class="detail-col">
+      <div class="detail-col-title">① 赤字品質</div>
+      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
+      <div class="detail-row"><span class="detail-key">スコア</span><span class="detail-val">${dq.score ?? '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">3yr CAGR</span><span class="detail-val ${(dq.cagr_3yr||0)>20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
+      <div class="detail-row"><span class="detail-key">粗利率</span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
+      <div class="detail-row"><span class="detail-key">R&D比率</span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key">S&M比率</span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
+      <div class="detail-verdict">${dq.verdict_reason || '—'}</div>
+    </div>
+
+    <div class="detail-col">
+      <div class="detail-col-title">② 生存能力</div>
+      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">現金</span><span class="detail-val">${fmtB(ra.cash)}</span></div>
+      <div class="detail-row"><span class="detail-key">月次バーン</span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
+      <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months===null?'':''}">
+        ${ra.runway_months === null ? '—' : ra.runway_months === null ? '∞' : fmtRunway(ra.runway_months)}
+      </span></div>
+      <div class="detail-verdict">${ra.verdict_reason || '—'}</div>
+    </div>
+
+    <div class="detail-col">
+      <div class="detail-col-title">③ 黒字化パス</div>
+      <div class="detail-row"><span class="detail-key">OCFトレンド</span><span class="detail-val">${pp.ocf_trend||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">隠れ黒字</span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+      <div class="detail-row"><span class="detail-key">OCF BE予測</span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">GAAP BE予測</span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
+      <div style="margin-top:12px">
+        <div class="ocf-title">OCF 推移</div>
+        <div class="ocf-bars">${barsHTML}</div>
+      </div>
+    </div>
+  </div>
+  <div style="font-family:var(--mono);font-size:10px;color:var(--mut)">${d.summary||''}</div>`;
+}
+
+// ---------------------------------------------------------------------------
+// Filters
+// ---------------------------------------------------------------------------
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    openTicker = null;
+    render();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+function verdictBadge(v) {
+  const map = {
+    '10x_CANDIDATE': ['10x_CANDIDATE','badge-10x'],
+    'PROMISING':     ['PROMISING','badge-promising'],
+    'WATCH':         ['WATCH','badge-watch'],
+    'AVOID':         ['AVOID','badge-avoid'],
+  };
+  const [label, cls] = map[v] || [v||'—','badge-watch'];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function deficitBadge(v) {
+  const map = {
+    'GOOD_DEFICIT': ['GOOD','def-good'],
+    'WATCH':        ['WATCH','def-watch'],
+    'BAD_DEFICIT':  ['BAD','def-bad'],
+    'PROFITABLE':   ['PROFIT','def-profit'],
+  };
+  const [label, cls] = map[v] || [v||'—','def-watch'];
+  return `<span class="def-badge ${cls}">${label}</span>`;
+}
+
+function runwayCell(ra) {
+  if (!ra) return '—';
+  return fmtRunway(ra.runway_months);
+}
+
+function fmtRunway(months) {
+  if (months === null || months === undefined) return '—';
+  if (months > 999) return '<span style="color:var(--grn)">∞</span>';
+  const color = months >= 24 ? 'var(--grn)' : months >= 12 ? 'var(--amb)' : 'var(--red)';
+  return `<span style="color:${color};font-family:var(--mono);font-size:12px">${Math.round(months)}M</span>`;
+}
+
+function trendCell(t) {
+  const map = {
+    'ACCELERATING':  ['ACCEL','var(--grn)'],
+    'IMPROVING':     ['IMPRV','var(--grn)'],
+    'FLAT':          ['FLAT','var(--mut)'],
+    'DETERIORATING': ['DETER','var(--red)'],
+  };
+  const [label, color] = map[t] || [t||'—','var(--mut)'];
+  return `<span style="font-family:var(--mono);font-size:10px;color:${color}">${label}</span>`;
+}
+
+function scoreColor(s) {
+  if (s >= 75) return 'var(--red)';
+  if (s >= 55) return 'var(--amb)';
+  if (s >= 35) return 'var(--mut)';
+  return '#374151';
+}
+
+function fmtB(v) {
+  if (v === null || v === undefined) return '—';
+  if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(2)}B`;
+  if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(0)}M`;
+  return `$${v.toLocaleString()}`;
+}
+
+function fmtPct(v) {
+  if (v === null || v === undefined) return '—';
+  return `${v.toFixed(1)}%`;
+}
+
+// ---------------------------------------------------------------------------
+// Init
+// ---------------------------------------------------------------------------
+loadData();
+</script>
+<script src="/On-a-journey/common/site-nav.js"></script>
+</body>
+</html>
