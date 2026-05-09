@@ -486,10 +486,14 @@ class StonksAnalyzer:
         """
         reasons = []
 
-        # GAAP 純利益 黒字化
+        # GAAP 純利益 黒字化（最新年が既にプラスなら予測不要）
         gaap_be = None
         net_incomes = {yr: records[yr]["pl"].get("net_income") for yr in years}
-        gaap_be, gaap_reason = _linear_breakeven(years, net_incomes)
+        latest_ni = net_incomes.get(years[-1])
+        if latest_ni is not None and latest_ni > 0:
+            gaap_reason = "純利益黒字達成済み"
+        else:
+            gaap_be, gaap_reason = _linear_breakeven(years, net_incomes)
         reasons.append(gaap_reason)
 
         # OCF 黒字化

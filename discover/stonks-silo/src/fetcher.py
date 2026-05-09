@@ -156,6 +156,24 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
                 "warning": "derived_from_ocf_capex",
             })
 
+    # gross_profit が欠損の場合、revenue - cost 系タグから補完
+    if pl["gross_profit"] is None:
+        rev = pl.get("revenue")
+        pl_raw = raw.get("pl", {})
+        cost = (
+            pl_raw.get("cost_of_revenue")
+            or pl_raw.get("cost_of_goods_sold")
+            or pl_raw.get("cost_of_goods_and_services_sold")
+        )
+        if rev is not None and cost is not None:
+            pl["gross_profit"] = rev - cost
+            errors.append({
+                "year": year,
+                "section": "pl",
+                "field": "gross_profit",
+                "warning": "derived_from_revenue_minus_cost",
+            })
+
     return {"pl": pl, "cf": cf, "bs": bs, "raw_year": year}
 
 
