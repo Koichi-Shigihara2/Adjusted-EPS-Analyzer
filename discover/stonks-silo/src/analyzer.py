@@ -510,7 +510,11 @@ class StonksAnalyzer:
         if latest_ni is not None and latest_ni > 0:
             gaap_reason = "ACHIEVED"
         else:
-            gaap_be, gaap_reason = _linear_breakeven(years, net_incomes)
+            gaap_margin_result = _gaap_margin_breakeven(years, net_incomes, records)
+            if gaap_margin_result is not None:
+                gaap_be, gaap_reason = gaap_margin_result
+            else:
+                gaap_be, gaap_reason = _linear_breakeven(years, net_incomes)
 
         # OCF 黒字化
         latest_ocf = ocf_annual.get(years[-1])
@@ -531,7 +535,7 @@ class StonksAnalyzer:
                 ocf_be, ocf_reason = _yoy_avg_breakeven(years, ocf_annual)
 
         # OCF 悪化中 かつ 純利益も悪化トレンド（OLS スロープ ≤ 0）の場合は GAAP 予測も抑制
-        if ocf_trend == "DETERIORATING" and gaap_reason not in ("ACHIEVED", "PREDICTED"):
+        if ocf_trend == "DETERIORATING" and gaap_reason not in ("ACHIEVED", "PREDICTED", "IMMINENT"):
             gaap_be = None
             gaap_reason = "NO_TREND"
 
@@ -781,6 +785,53 @@ def _margin_breakeven(
 
     years_to_be = -latest_margin / margin_slope
     be_year = max(int(latest_yr + years_to_be + 0.5), latest_yr)
+
+    if be_year > latest_yr + horizon:
+        return None, "TOO_FAR"
+
+    return be_year, "PREDICTED"
+
+
+def _gaap_margin_breakeven(
+    years: list[int],
+    net_incomes: dict[int, Optional[float]],
+    records: dict,
+    horizon: int = 5,
+) -> Optional[tuple[Optional[int], str]]:
+    """
+    純利益マージン（NI/Revenue × 100）の改善外挿でGAAP黒字化年を予測する。
+    直近2年のマージンYoY変化を傾きとして使用。
+    Revenue が全年 None の場合は None を返し、呼び出し元がOLSにフォールバックする。
+    reason codes: ACHIEVED / PREDICTED / IMMINENT / NO_TREND / TOO_FAR
+    """
+    margin_data = []
+    for yr in years[-3:]:
+        ni = net_incomes.get(yr)
+        rev = records.get(yr, {}).get("pl", {}).get("revenue")
+        if ni is not None and rev is not None and rev > 0:
+            margin_data.append((yr, ni / rev * 100))
+
+    if len(margin_data) < 2:
+        return None  # Revenue不足 → OLSフォールバック
+
+    latest_yr, latest_margin = margin_data[-1]
+
+    if latest_margin >= 0:
+        return latest_yr, "ACHIEVED"
+
+    (yr0, m0), (yr1, m1) = margin_data[-2], margin_data[-1]
+    if yr1 == yr0:
+        return None
+    margin_slope = (m1 - m0) / (yr1 - yr0)
+
+    if margin_slope <= 0:
+        return None, "NO_TREND"
+
+    years_to_be = -latest_margin / margin_slope
+    be_year = int(latest_yr + years_to_be + 0.5)
+
+    if be_year <= latest_yr:
+        return latest_yr + 1, "IMMINENT"
 
     if be_year > latest_yr + horizon:
         return None, "TOO_FAR"
