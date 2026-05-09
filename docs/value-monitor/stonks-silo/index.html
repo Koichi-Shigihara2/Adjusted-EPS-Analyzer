@@ -406,6 +406,14 @@ function buildDetail(ticker, d) {
     'ACCELERATING': '加速中', 'IMPROVING': '改善中',
     'FLAT': '横ばい', 'DETERIORATING': '悪化中', 'UNKNOWN': '不明',
   };
+  const breReasonJa = {
+    'ACHIEVED': '達成済み',
+    'PREDICTED': '予測あり',
+    'NO_TREND': '予測不可（悪化中）',
+    'NO_DATA': 'データ不足',
+    'TOO_FAR': '5年超',
+  };
+  const fmtBe = (year, reason) => year ? year+'年' : (breReasonJa[reason]||'—');
   const trendJaColor = {
     'ACCELERATING': 'var(--grn)', 'IMPROVING': 'var(--grn)',
     'FLAT': 'var(--mut)', 'DETERIORATING': 'var(--red)', 'UNKNOWN': 'var(--mut)',
@@ -506,8 +514,8 @@ function buildDetail(ticker, d) {
       <div class="detail-col-title">③ 黒字化パス · 詳細</div>
       <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
     </div>
   </div>
 

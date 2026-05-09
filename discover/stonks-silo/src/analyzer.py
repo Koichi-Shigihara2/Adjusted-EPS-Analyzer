@@ -83,7 +83,9 @@ class ProfitabilityPath:
 
     # 黒字化予測
     gaap_breakeven_year: Optional[int] = None     # GAAP純利益ベース
+    gaap_breakeven_reason: str = ""               # ACHIEVED/PREDICTED/NO_TREND/NO_DATA/TOO_FAR
     ocf_breakeven_year: Optional[int] = None      # OCFベース（隠れ黒字化）
+    ocf_breakeven_reason: str = ""                # ACHIEVED/PREDICTED/NO_TREND/NO_DATA/TOO_FAR
     hidden_profit_already: bool = False            # OCFが既に黒字かどうか
 
     verdict_reason: str = ""
@@ -424,7 +426,7 @@ class StonksAnalyzer:
         ocf_trend = self._ocf_trend(years, ocf_annual, ocf_yoy, ocf_accel)
 
         # 黒字化予測
-        gaap_be, ocf_be, hidden_already, reason = self._breakeven_estimate(
+        gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, reason = self._breakeven_estimate(
             years, records, ocf_annual
         )
 
@@ -435,7 +437,9 @@ class StonksAnalyzer:
             ocf_acceleration=ocf_accel,
             ocf_trend=ocf_trend,
             gaap_breakeven_year=gaap_be,
+            gaap_breakeven_reason=gaap_reason,
             ocf_breakeven_year=ocf_be,
+            ocf_breakeven_reason=ocf_reason,
             hidden_profit_already=hidden_already,
             verdict_reason=reason,
         )
@@ -482,23 +486,21 @@ class StonksAnalyzer:
         years: list[int],
         records: dict,
         ocf_annual: dict,
-    ) -> tuple[Optional[int], Optional[int], bool, str]:
+    ) -> tuple[Optional[int], Optional[int], bool, str, str, str]:
         """
         簡易線形外挿で黒字化年を予測。
         直近3年の改善トレンドを用いる。
-        Returns: (gaap_be_year, ocf_be_year, hidden_already, reason)
+        Returns: (gaap_be_year, ocf_be_year, hidden_already, gaap_reason, ocf_reason, combined_reason)
+        reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
         """
-        reasons = []
-
         # GAAP 純利益 黒字化（最新年が既にプラスなら予測不要）
         gaap_be = None
         net_incomes = {yr: records[yr]["pl"].get("net_income") for yr in years}
         latest_ni = net_incomes.get(years[-1])
         if latest_ni is not None and latest_ni > 0:
-            gaap_reason = "純利益黒字達成済み"
+            gaap_reason = "ACHIEVED"
         else:
             gaap_be, gaap_reason = _linear_breakeven(years, net_incomes)
-        reasons.append(gaap_reason)
 
         # OCF 黒字化
         latest_ocf = ocf_annual.get(years[-1])
@@ -507,11 +509,11 @@ class StonksAnalyzer:
         ocf_be = None
         if not hidden_already:
             ocf_be, ocf_reason = _linear_breakeven(years, ocf_annual)
-            reasons.append(ocf_reason)
         else:
-            reasons.append("OCFは既に黒字（隠れ黒字達成済み）")
+            ocf_reason = "ACHIEVED"
 
-        return gaap_be, ocf_be, hidden_already, " | ".join(reasons)
+        combined = f"{gaap_reason} | {ocf_reason}"
+        return gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, combined
 
     # ------------------------------------------------------------------
     # 総合スコア・サマリー
@@ -609,7 +611,19 @@ class StonksAnalyzer:
 
         lines.append(f"② 生存能力 : {ra.verdict} Runway={runway_str} — {ra.verdict_reason}")
 
-        hidden = "✅ 営業CF黒字達成済み" if pp.hidden_profit_already else f"営業CF黒字化予測: {pp.ocf_breakeven_year or '不明'}"
+        be_reason_ja = {
+            "ACHIEVED": "達成済み",
+            "PREDICTED": f"{pp.ocf_breakeven_year}年頃" if pp.ocf_breakeven_year else "予測あり",
+            "NO_TREND": "予測不可（悪化中）",
+            "NO_DATA": "データ不足",
+            "TOO_FAR": "5年超",
+        }
+        if pp.hidden_profit_already:
+            hidden = "✅ 営業CF黒字達成済み"
+        elif pp.ocf_breakeven_year:
+            hidden = f"営業CF黒字化予測: {pp.ocf_breakeven_year}年頃"
+        else:
+            hidden = f"営業CF黒字化: {be_reason_ja.get(pp.ocf_breakeven_reason, pp.ocf_breakeven_reason)}"
         lines.append(f"③ 黒字化   : 営業CFトレンド={trend_str} / {hidden}")
 
         return "\n".join(lines)
@@ -635,31 +649,32 @@ def _linear_breakeven(
 ) -> tuple[Optional[int], str]:
     """
     直近3年の有効データで線形回帰し、ゼロクロス年を推定する。
+    reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
     """
     valid = [(yr, v) for yr in years[-3:] if (v := series.get(yr)) is not None]
     if len(valid) < 2:
-        return None, "データ不足のため予測不可"
+        return None, "NO_DATA"
 
     latest_yr, latest_val = valid[-1]
     if latest_val > 0:
-        return latest_yr, "既に黒字"
+        return latest_yr, "ACHIEVED"
 
     # 簡易傾き（最終2点）
     (yr0, v0), (yr1, v1) = valid[-2], valid[-1]
     if yr1 == yr0:
-        return None, "同年データのため計算不可"
+        return None, "NO_DATA"
     slope = (v1 - v0) / (yr1 - yr0)
 
     if slope <= 0:
-        return None, "改善トレンドなし（予測不可）"
+        return None, "NO_TREND"
 
     years_to_be = -latest_val / slope
     be_year = int(latest_yr + years_to_be + 0.5)
 
     if be_year > latest_yr + horizon:
-        return None, f"黒字化まで{years_to_be:.1f}年（{horizon}年超のため対象外）"
+        return None, "TOO_FAR"
 
-    return be_year, f"線形外挿で{be_year}年頃に黒字化予測"
+    return be_year, "PREDICTED"
 
 
 # ---------------------------------------------------------------------------
