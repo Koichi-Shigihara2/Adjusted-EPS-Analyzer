@@ -182,8 +182,11 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
 
 def _sanitize_revenue(records: dict, errors: list) -> None:
     """
-    全年の revenue を比較し、他年の中央値の10倍を超える単年値を外れ値として除去する。
-    XBRL タグ混入による誤申告（例: IONQ 2022 Revenues=$1.235B）対策。
+    全年の revenue を比較し、外れ値を None 化する（2パス方式）。
+    Pass1: 最大値を除いた中央値の10倍超 → 上限外れ値除去 (XBRL過大申告対策)
+    Pass2: Pass1除去後の残存値から中央値を再計算し、1/10未満 → 下限外れ値除去
+           (事前収益期の極小売上によるマージン歪み対策)
+    2パスにすることで上限・下限チェックの相互汚染を防ぐ。
     """
     values = [
         (yr, rec["pl"]["revenue"])
@@ -193,17 +196,37 @@ def _sanitize_revenue(records: dict, errors: list) -> None:
     if len(values) < 2:
         return
     sorted_vals = sorted(v for _, v in values)
-    # 最大値を除いた中央値を基準にする
+
+    # Pass1: 上限外れ値 — 最大値を除いた中央値の10倍超
     non_max = sorted_vals[:-1]
-    median = non_max[len(non_max) // 2]
-    if median <= 0:
+    median_hi = non_max[len(non_max) // 2]
+    if median_hi <= 0:
         return
     for yr, v in values:
-        if v > median * 10:
+        if v > median_hi * 10:
             records[yr]["pl"]["revenue"] = None
             errors.append({
                 "year": yr, "section": "pl", "field": "revenue",
-                "warning": f"outlier_removed (val={v:.0f} > median*10={median*10:.0f})",
+                "warning": f"outlier_removed_high (val={v:.0f} > median*10={median_hi*10:.0f})",
+            })
+
+    # Pass2: 下限外れ値 — Pass1除去後の残存値で中央値を再計算し1/10未満
+    remaining = sorted(
+        v for yr, v in values
+        if records[yr]["pl"].get("revenue") is not None
+    )
+    if len(remaining) < 2:
+        return
+    non_min = remaining[1:]
+    median_lo = non_min[len(non_min) // 2]
+    if median_lo <= 0:
+        return
+    for yr, v in values:
+        if records[yr]["pl"].get("revenue") is not None and v < median_lo / 10:
+            records[yr]["pl"]["revenue"] = None
+            errors.append({
+                "year": yr, "section": "pl", "field": "revenue",
+                "warning": f"outlier_removed_low (val={v:.0f} < median/10={median_lo/10:.0f})",
             })
 
 
