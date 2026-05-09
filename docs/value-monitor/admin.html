@@ -1179,7 +1179,7 @@ async function registerTicker() {
     let successMsg = `✓ ${ticker} を登録しました [${systems}]\n更新ファイル: ${fileNames}${cik ? `\nCIK: ${cik}` : ''}`;
     if (doStonks) {
       try {
-        await dispatchWorkflow('Stonks_Silo_Update.yml', { tickers: ticker });
+        await dispatchWorkflow('Stonks_Silo_Update.yml', {});
         successMsg += '\n✓ Stonks Silo パイプラインを起動しました（反映まで約1〜2分）';
       } catch(e) {
         successMsg += `\n⚠ Stonks Silo パイプライン起動失敗: ${e.message}`;

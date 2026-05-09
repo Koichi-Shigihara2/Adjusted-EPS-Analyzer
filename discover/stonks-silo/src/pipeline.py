@@ -73,8 +73,10 @@ def _to_dict(obj) -> object:
 def run(tickers: list[str] | None = None) -> dict:
     """
     tickers=None のとき stonks_tickers() で stonks_silo=true 全件処理。
+    特定ティッカー指定時は既存 results.json とマージする。
     """
-    target = [t.upper() for t in tickers] if tickers else stonks_tickers()
+    partial = tickers is not None
+    target = [t.upper() for t in tickers] if partial else stonks_tickers()
 
     if not target:
         print("対象ティッカーが見つかりません。cik_lookup.csv の stonks_silo 列を確認してください。")
@@ -98,6 +100,25 @@ def run(tickers: list[str] | None = None) -> dict:
         except Exception as e:
             errors[ticker] = str(e)
             print(f"  [{ticker}] ERROR — {e}")
+
+    # 特定ティッカー指定時は既存データとマージ（全件消去を防ぐ）
+    if partial and _OUTPUT_FILE.exists():
+        try:
+            with open(_OUTPUT_FILE, encoding="utf-8") as f:
+                existing = json.load(f)
+            merged = existing.get("tickers", {})
+            merged_errors = existing.get("errors", {})
+            merged.update(results)
+            merged_errors.update(errors)
+            results = merged
+            errors = merged_errors
+        except Exception:
+            pass
+
+    # stonks_silo=true の銘柄のみ残す（削除・false変更に追従）
+    valid = set(stonks_tickers())
+    results = {k: v for k, v in results.items() if k in valid}
+    errors  = {k: v for k, v in errors.items()  if k in valid}
 
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
