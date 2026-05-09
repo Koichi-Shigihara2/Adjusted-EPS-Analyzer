@@ -242,8 +242,8 @@
         <div class="form-group" style="flex:0 0 160px">
           <label>ティッカー *</label>
           <input type="text" class="form-input" id="regTicker" placeholder="例: GOOGL"
-                 autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
-                 oninput="this.value=this.value.toUpperCase()">
+                 autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false"
+                 oninput="const s=this.selectionStart,e=this.selectionEnd,v=this.value.toUpperCase();if(this.value!==v){this.value=v;this.setSelectionRange(s,e)}">
         </div>
         <div class="form-group" style="flex:1">
           <label>登録するシステム</label>
