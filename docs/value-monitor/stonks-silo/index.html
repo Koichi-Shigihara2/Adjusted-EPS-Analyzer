@@ -248,11 +248,11 @@
       <thead>
         <tr>
           <th>TICKER</th>
-          <th><span class="tip-wrap">VERDICT<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x_CANDIDATE / ≥55→PROMISING / ≥35→WATCH / &lt;35→AVOID。スコア＝赤字品質(40%)+Runway(30%)+黒字化パス(30%)の加重平均</span></span></th>
-          <th><span class="tip-wrap">DEFICIT<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上CAGR3年(40pt)・R&amp;D+S&amp;M比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→GOOD / ≥35→WATCH / &lt;35→BAD / 純黒字→PROFITABLE</span></span></th>
-          <th><span class="tip-wrap">RUNWAY<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span></th>
-          <th><span class="tip-wrap">OCF TREND<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。ACCELERATING=加速中 / IMPROVING=改善中 / FLAT=横ばい / DETERIORATING=悪化中</span></span></th>
-          <th class="r"><span class="tip-wrap">SCORE<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+Runway点数×30%+黒字化パス点数×30%。Runway: SAFE=100/WATCH=60/DANGER=20。黒字化パス: ACCEL=100/IMPRV=75/FLAT=50/DETER=20</span></span></th>
+          <th><span class="tip-wrap">総合判定<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x候補 / ≥55→有望 / ≥35→要観察 / &lt;35→回避。スコア＝赤字品質(40%)+生存期間(30%)+黒字化パス(30%)の加重平均</span></span></th>
+          <th><span class="tip-wrap">赤字品質<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上成長率3年(40pt)・研究開発+販売管理比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→良い赤字 / ≥35→要観察 / &lt;35→悪い赤字 / 純黒字→純利益黒字</span></span></th>
+          <th><span class="tip-wrap">生存期間<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span></th>
+          <th><span class="tip-wrap">CF改善<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span></th>
+          <th class="r"><span class="tip-wrap">スコア<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+生存期間点数×30%+黒字化パス点数×30%。生存期間: SAFE=100/WATCH=60/DANGER=20。黒字化パス: 加速中=100/改善中=75/横ばい=50/悪化中=20</span></span></th>
         </tr>
       </thead>
       <tbody id="tbl-body">
@@ -493,6 +493,7 @@ function buildDetail(ticker, d) {
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">研究開発比率<span class="tip-icon">?</span><span class="tip-box">研究開発費÷売上高×100。技術・製品への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">販売管理比率<span class="tip-icon">?</span><span class="tip-box">販売・マーケティング費÷売上高×100。市場拡大への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key">純利益</span><span class="detail-val ${dq.net_income!==null&&dq.net_income>=0?'pos':'neg'}">${fmtB(dq.net_income)}</span></div>
     </div>
     <div class="detail-col">
       <div class="detail-col-title">② 生存能力 · 詳細</div>
@@ -542,10 +543,10 @@ function verdictBadge(v) {
 
 function deficitBadge(v) {
   const map = {
-    'GOOD_DEFICIT': ['GOOD','def-good'],
-    'WATCH':        ['WATCH','def-watch'],
-    'BAD_DEFICIT':  ['BAD','def-bad'],
-    'PROFITABLE':   ['PROFIT','def-profit'],
+    'GOOD_DEFICIT': ['良い赤字',  'def-good'],
+    'WATCH':        ['要観察',    'def-watch'],
+    'BAD_DEFICIT':  ['悪い赤字',  'def-bad'],
+    'PROFITABLE':   ['純利益黒字','def-profit'],
   };
   const [label, cls] = map[v] || [v||'—','def-watch'];
   return `<span class="def-badge ${cls}">${label}</span>`;
@@ -565,10 +566,11 @@ function fmtRunway(months) {
 
 function trendCell(t) {
   const map = {
-    'ACCELERATING':  ['ACCEL','var(--grn)'],
-    'IMPROVING':     ['IMPRV','var(--grn)'],
-    'FLAT':          ['FLAT','var(--mut)'],
-    'DETERIORATING': ['DETER','var(--red)'],
+    'ACCELERATING':  ['加速中','var(--grn)'],
+    'IMPROVING':     ['改善中','var(--grn)'],
+    'FLAT':          ['横ばい','var(--mut)'],
+    'DETERIORATING': ['悪化中','var(--red)'],
+    'UNKNOWN':       ['不明',  'var(--mut)'],
   };
   const [label, color] = map[t] || [t||'—','var(--mut)'];
   return `<span style="font-family:var(--mono);font-size:10px;color:${color}">${label}</span>`;

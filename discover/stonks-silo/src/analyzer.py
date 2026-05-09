@@ -567,9 +567,29 @@ class StonksAnalyzer:
         pp: ProfitabilityPath,
         overall_verdict: str,
     ) -> str:
+        verdict_ja = {
+            "GOOD_DEFICIT": "良い赤字",
+            "BAD_DEFICIT":  "悪い赤字",
+            "PROFITABLE":   "純利益黒字",
+            "UNKNOWN":      "不明",
+        }
+        trend_ja = {
+            "ACCELERATING": "加速中",
+            "IMPROVING":    "改善中",
+            "FLAT":         "横ばい",
+            "DETERIORATING":"悪化中",
+            "UNKNOWN":      "不明",
+        }
+
+        def _fix(s: str) -> str:
+            return s.replace("R&D+SM", "研究開発+販売管理").replace("CAGR", "成長率")
+
+        dq_v = verdict_ja.get(dq.verdict, dq.verdict)
+        trend_str = trend_ja.get(pp.ocf_trend, pp.ocf_trend)
+
         lines = [
             f"[{ticker}] 総合判定: {overall_verdict}",
-            f"① 赤字品質 : {dq.verdict} (スコア {dq.score}) — {dq.verdict_reason[:60]}",
+            f"① 赤字品質 : {dq_v} (スコア {dq.score}) — {_fix(dq.verdict_reason[:60])}",
         ]
 
         if ra.runway_months == float("inf"):
@@ -581,8 +601,8 @@ class StonksAnalyzer:
 
         lines.append(f"② 生存能力 : {ra.verdict} Runway={runway_str} — {ra.verdict_reason}")
 
-        hidden = "✅ 隠れ黒字達成済み" if pp.hidden_profit_already else f"OCF BE予測: {pp.ocf_breakeven_year or '不明'}"
-        lines.append(f"③ 黒字化   : OCFトレンド={pp.ocf_trend} / {hidden}")
+        hidden = "✅ 営業CF黒字達成済み" if pp.hidden_profit_already else f"営業CF黒字化予測: {pp.ocf_breakeven_year or '不明'}"
+        lines.append(f"③ 黒字化   : 営業CFトレンド={trend_str} / {hidden}")
 
         return "\n".join(lines)
 
