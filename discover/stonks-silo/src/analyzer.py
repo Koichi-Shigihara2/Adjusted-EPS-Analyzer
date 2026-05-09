@@ -521,13 +521,14 @@ class StonksAnalyzer:
             # OCF が既にプラス → 予測不要
             ocf_reason = "ACHIEVED"
         else:
-            # OCF BE は直近2YoY平均傾きで外挿（OLSより直近の改善速度を重視）
-            ocf_be, ocf_reason = _yoy_avg_breakeven(years, ocf_annual)
-
-        # OCF が悪化中なら予測を抑制（OLS が過去の改善に引っ張られても無効化）
-        if ocf_trend == "DETERIORATING":
-            ocf_be = None
-            ocf_reason = "NO_TREND"
+            # OCF BE: まずマージンベース（OCF/Revenue）を試みる
+            # マージン改善が正なら Revenue スケールに依存しない黒字化予測が可能
+            margin_result = _margin_breakeven(years, ocf_annual, records)
+            if margin_result is not None:
+                ocf_be, ocf_reason = margin_result
+            else:
+                # Revenue データ不足 → 額ベースの最新YoYにフォールバック
+                ocf_be, ocf_reason = _yoy_avg_breakeven(years, ocf_annual)
 
         # OCF 悪化中 かつ 純利益も悪化トレンド（OLS スロープ ≤ 0）の場合は GAAP 予測も抑制
         if ocf_trend == "DETERIORATING" and gaap_reason not in ("ACHIEVED", "PREDICTED"):
@@ -734,6 +735,52 @@ def _yoy_avg_breakeven(
 
     years_to_be = -latest_val / slope
     be_year = int(latest_yr + years_to_be + 0.5)
+
+    if be_year > latest_yr + horizon:
+        return None, "TOO_FAR"
+
+    return be_year, "PREDICTED"
+
+
+def _margin_breakeven(
+    years: list[int],
+    ocf_annual: dict[int, Optional[float]],
+    records: dict,
+    horizon: int = 5,
+) -> Optional[tuple[Optional[int], str]]:
+    """
+    OCFマージン（OCF/Revenue）の改善外挿で黒字化年を予測する。
+    直近2年のマージンYoY変化を傾きとして使用。
+    Revenue が不足する場合は None を返し、呼び出し元がフォールバックする。
+    reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
+    """
+    # 直近3年でOCF・Revenueが両方有効な年を収集
+    margin_data = []
+    for yr in years[-3:]:
+        ocf = ocf_annual.get(yr)
+        rev = records.get(yr, {}).get("pl", {}).get("revenue")
+        if ocf is not None and rev is not None and rev > 0:
+            margin_data.append((yr, ocf / rev))
+
+    if len(margin_data) < 2:
+        return None  # Revenue不足 → フォールバック
+
+    latest_yr, latest_margin = margin_data[-1]
+
+    if latest_margin >= 0:
+        return latest_yr, "ACHIEVED"
+
+    # 最新1年のマージンYoY変化を傾きとして使用
+    (yr0, m0), (yr1, m1) = margin_data[-2], margin_data[-1]
+    if yr1 == yr0:
+        return None  # フォールバック
+    margin_slope = (m1 - m0) / (yr1 - yr0)
+
+    if margin_slope <= 0:
+        return None, "NO_TREND"
+
+    years_to_be = -latest_margin / margin_slope
+    be_year = max(int(latest_yr + years_to_be + 0.5), latest_yr)
 
     if be_year > latest_yr + horizon:
         return None, "TOO_FAR"
