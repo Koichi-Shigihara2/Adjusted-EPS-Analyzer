@@ -135,7 +135,7 @@
     .detail-val.neg{color:var(--red)}
 
     /* 総合コメント */
-    .detail-summary{font-size:11px;color:var(--mut);line-height:1.8;padding:10px 14px;background:var(--sur2);border:1px solid var(--bdr)}
+    .detail-summary{font-size:11px;color:var(--mut);line-height:1.8;padding:10px 14px;background:var(--sur2);border:1px solid var(--bdr);white-space:normal;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
 
     /* Loading / empty */
     .loading{text-align:center;padding:60px;font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.15em}
@@ -497,7 +497,7 @@ function buildDetail(ticker, d) {
     </div>
     <div class="detail-col">
       <div class="detail-col-title">② 生存能力 · 詳細</div>
-      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${{'SAFE':'安全','WATCH':'要注意','DANGER':'危険','UNKNOWN':'不明'}[ra.verdict]||ra.verdict||'—'}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
