@@ -332,8 +332,8 @@ function buildDetail(ticker, d) {
         <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
         <div class="detail-row"><span class="detail-key">現金</span><span class="detail-val">${fmtB(ra.cash)}</span></div>
         <div class="detail-row"><span class="detail-key">月次バーン</span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
-        <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months===null?'':''}">
-          ${ra.runway_months === null ? '—' : ra.runway_months === null ? '∞' : fmtRunway(ra.runway_months)}
+        <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">
+          ${ra.runway_months === null ? '—' : ra.runway_months === Infinity ? '∞' : fmtRunway(ra.runway_months)}
         </span></div>
         <div class="detail-verdict">${ra.verdict_reason || '—'}</div>
       </div>
