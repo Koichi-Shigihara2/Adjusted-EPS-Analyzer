@@ -92,7 +92,15 @@ def run(tickers: list[str] | None = None) -> dict:
         try:
             data = load_annual_data(ticker, years=_YEARS)
             analysis = analyzer.analyze(data)
-            results[ticker] = _to_dict(analysis)
+            result = _to_dict(analysis)
+            result["records"] = {
+                str(yr): {
+                    "revenue":    _to_dict(rec["pl"].get("revenue")),
+                    "net_income": _to_dict(rec["pl"].get("net_income")),
+                }
+                for yr, rec in data["records"].items()
+            }
+            results[ticker] = result
             print(f"  [{ticker}] {analysis.overall_verdict} (score={analysis.overall_score})")
         except FileNotFoundError:
             errors[ticker] = "annual_*.json not found"
