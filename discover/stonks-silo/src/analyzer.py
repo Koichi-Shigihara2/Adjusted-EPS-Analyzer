@@ -517,10 +517,11 @@ class StonksAnalyzer:
         hidden_already = latest_ocf is not None and latest_ocf > 0
 
         ocf_be = None
-        if not hidden_already:
-            ocf_be, ocf_reason = _linear_breakeven(years, ocf_annual)
-        else:
+        if hidden_already:
+            # OCF が既にプラス → 予測不要
             ocf_reason = "ACHIEVED"
+        else:
+            ocf_be, ocf_reason = _linear_breakeven(years, ocf_annual)
 
         combined = f"{gaap_reason} | {ocf_reason}"
         return gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, combined
@@ -544,7 +545,7 @@ class StonksAnalyzer:
         dq_score = dq.score or 0
 
         # 生存能力スコア (0-100)
-        runway_map = {"SAFE": 100, "WATCH": 60, "DANGER": 20, "UNKNOWN": 0}
+        runway_map = {"SAFE": 100, "WATCH": 60, "DANGER": 20, "UNKNOWN": 50}
         ra_score = runway_map.get(ra.verdict, 0)
 
         # 黒字化パス (0-100)
