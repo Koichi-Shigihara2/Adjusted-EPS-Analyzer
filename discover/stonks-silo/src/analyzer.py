@@ -227,8 +227,7 @@ class StonksAnalyzer:
           粗利率    (20pt): >70%=20, >50%=15, >30%=8,  else=0
           赤字状況  (10pt): 純赤字=5 (赤字でも投資中), 純黒字=10
         """
-        if net_income is not None and net_income > 0:
-            return "PROFITABLE", "純利益黒字", 75.0
+        is_profitable = net_income is not None and net_income > 0
 
         score = 0.0
         reasons = []
@@ -244,7 +243,7 @@ class StonksAnalyzer:
             elif cagr_3yr >= 10:
                 score += 10; reasons.append(f"売上CAGR +{cagr_3yr:.0f}% (緩成長)")
             else:
-                reasons.append(f"売上CAGR +{cagr_3yr:.0f}% (成長鈍化)")
+                reasons.append(f"売上CAGR {cagr_3yr:.0f}% (成長鈍化)")
         else:
             reasons.append("成長率計算不可")
 
@@ -278,12 +277,16 @@ class StonksAnalyzer:
         else:
             reasons.append("粗利率計算不可")
 
-        # 赤字状況 (10pt) — 赤字は投資中として5pt
-        if net_income is not None:
+        # 黒字状況 (10pt)
+        if is_profitable:
+            score += 10; reasons.append("純利益黒字")
+        elif net_income is not None:
             score += 5
 
         # 最終判定
-        if score >= 65:
+        if is_profitable:
+            verdict = "PROFITABLE"
+        elif score >= 65:
             verdict = "GOOD_DEFICIT"
         elif score >= 35:
             verdict = "WATCH"
@@ -627,28 +630,11 @@ def _linear_breakeven(
 
 
 # ---------------------------------------------------------------------------
-# CLI ユーティリティ（__main__ より前に定義する必要がある）
-# ---------------------------------------------------------------------------
-
-def _pct(v) -> str:
-    if v is None: return "N/A"
-    return f"{v:.1f}%"
-
-def _fmt(v) -> str:
-    if v is None: return "N/A"
-    if abs(v) >= 1e9: return f"${v/1e9:.2f}B"
-    if abs(v) >= 1e6: return f"${v/1e6:.0f}M"
-    return f"${v:,.0f}"
-
-
-# ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
     import sys
-    from pathlib import Path as _Path
-    sys.path.insert(0, str(_Path(__file__).parent))
     from fetcher import load_annual_data
 
     ticker = sys.argv[1] if len(sys.argv) > 1 else "PLTR"
@@ -687,3 +673,14 @@ if __name__ == "__main__":
 
     print(f"\n  GAAP黒字化予測: {result.profitability_path.gaap_breakeven_year or '不明'}")
     print(f"  OCF黒字化予測 : {result.profitability_path.ocf_breakeven_year or '既に黒字' if pp.hidden_profit_already else '不明'}")
+
+
+def _pct(v) -> str:
+    if v is None: return "N/A"
+    return f"{v:.1f}%"
+
+def _fmt(v) -> str:
+    if v is None: return "N/A"
+    if abs(v) >= 1e9: return f"${v/1e9:.2f}B"
+    if abs(v) >= 1e6: return f"${v/1e6:.0f}M"
+    return f"${v:,.0f}"
