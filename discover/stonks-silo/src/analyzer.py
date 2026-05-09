@@ -711,8 +711,8 @@ def _yoy_avg_breakeven(
     horizon: int = 5,
 ) -> tuple[Optional[int], str]:
     """
-    直近2年のYoY変化の平均を傾きとして OCF 黒字化年を外挿する。
-    OLS（3点全体のフィッティング）より直近の改善速度を重視する。
+    最新1年のYoY変化のみを傾きとして OCF 黒字化年を外挿する。
+    直近の改善速度だけを根拠にするため、古い悪化に引っ張られない。
     reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
     """
     valid = [(yr, v) for yr in years[-3:] if (v := ocf_annual.get(yr)) is not None]
@@ -723,24 +723,16 @@ def _yoy_avg_breakeven(
     if latest_val > 0:
         return latest_yr, "ACHIEVED"
 
-    # 連続する年間ペアの YoY 変化を収集
-    yoys = []
-    for i in range(1, len(valid)):
-        yr0, v0 = valid[i - 1]
-        yr1, v1 = valid[i]
-        if yr1 != yr0:
-            yoys.append((v1 - v0) / (yr1 - yr0))
-
-    if not yoys:
+    # 最新1つの YoY 変化のみを傾きとして使用
+    (yr0, v0), (yr1, v1) = valid[-2], valid[-1]
+    if yr1 == yr0:
         return None, "NO_DATA"
+    slope = (v1 - v0) / (yr1 - yr0)
 
-    # 直近2つの YoY 変化の平均を傾きとして使用
-    avg_slope = sum(yoys[-2:]) / len(yoys[-2:])
-
-    if avg_slope <= 0:
+    if slope <= 0:
         return None, "NO_TREND"
 
-    years_to_be = -latest_val / avg_slope
+    years_to_be = -latest_val / slope
     be_year = int(latest_yr + years_to_be + 0.5)
 
     if be_year > latest_yr + horizon:
