@@ -136,6 +136,11 @@
       .hero{flex-direction:column;align-items:flex-start}
       .hero-meta{text-align:left}
     }
+    .tip-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
+    .tip-icon{font-family:var(--mono);font-size:9px;color:var(--mut);border:1px solid var(--mut);border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0;line-height:1}
+    .tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px;font-family:var(--sans);font-size:11px;color:var(--txt);line-height:1.7;white-space:normal;width:260px;z-index:100;pointer-events:none}
+    .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--bdr)}
+    .tip-wrap:hover .tip-box{display:block}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 </head>
@@ -228,11 +233,11 @@
       <thead>
         <tr>
           <th>TICKER</th>
-          <th>VERDICT</th>
-          <th>DEFICIT</th>
-          <th>RUNWAY</th>
-          <th>OCF TREND</th>
-          <th class="r">SCORE</th>
+          <th><span class="tip-wrap">VERDICT<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x_CANDIDATE / ≥55→PROMISING / ≥35→WATCH / &lt;35→AVOID。スコア＝赤字品質(40%)+Runway(30%)+黒字化パス(30%)の加重平均</span></span></th>
+          <th><span class="tip-wrap">DEFICIT<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上CAGR3年(40pt)・R&amp;D+S&amp;M比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→GOOD / ≥35→WATCH / &lt;35→BAD / 純黒字→PROFITABLE</span></span></th>
+          <th><span class="tip-wrap">RUNWAY<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span></th>
+          <th><span class="tip-wrap">OCF TREND<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。ACCELERATING=加速中 / IMPROVING=改善中 / FLAT=横ばい / DETERIORATING=悪化中</span></span></th>
+          <th class="r"><span class="tip-wrap">SCORE<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+Runway点数×30%+黒字化パス点数×30%。Runway: SAFE=100/WATCH=60/DANGER=20。黒字化パス: ACCEL=100/IMPRV=75/FLAT=50/DETER=20</span></span></th>
         </tr>
       </thead>
       <tbody id="tbl-body">
@@ -394,28 +399,28 @@ function buildDetail(ticker, d) {
       <div class="detail-col-title">① 赤字品質</div>
       <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
       <div class="detail-row"><span class="detail-key">スコア</span><span class="detail-val">${dq.score ?? '—'}</span></div>
-      <div class="detail-row"><span class="detail-key">3yr CAGR</span><span class="detail-val ${(dq.cagr_3yr||0)>20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
-      <div class="detail-row"><span class="detail-key">粗利率</span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
-      <div class="detail-row"><span class="detail-key">R&D比率</span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
-      <div class="detail-row"><span class="detail-key">S&M比率</span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">3yr CAGR<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。計算式:(最新年売上÷3年前売上)^(1/3)-1。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通。XBRLデータ未取得の場合は「—」</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">R&amp;D比率<span class="tip-icon">?</span><span class="tip-box">研究開発費÷売上高×100。技術・製品への投資強度。高いほど将来成長への投資が積極的</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">S&amp;M比率<span class="tip-icon">?</span><span class="tip-box">販売・マーケティング費÷売上高×100。市場拡大への投資強度。高いほど顧客獲得に積極的</span></span></span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
       <div class="detail-verdict">${dq.verdict_reason || '—'}</div>
     </div>
 
     <div class="detail-col">
       <div class="detail-col-title">② 生存能力</div>
       <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${ra.verdict||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">現金</span><span class="detail-val">${fmtB(ra.cash)}</span></div>
-      <div class="detail-row"><span class="detail-key">月次バーン</span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
-      <div class="detail-row"><span class="detail-key">Runway</span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計(貸借対照表より)</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次バーン<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${fmtB(ra.monthly_burn)}/月</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">Runway<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
       <div class="detail-verdict">${ra.verdict_reason || '—'}</div>
     </div>
 
     <div class="detail-col">
       <div class="detail-col-title">③ 黒字化パス</div>
       <div class="detail-row"><span class="detail-key">OCFトレンド</span><span class="detail-val">${pp.ocf_trend||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">隠れ黒字</span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-      <div class="detail-row"><span class="detail-key">OCF BE予測</span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key">GAAP BE予測</span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">隠れ黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。R&amp;D・S&amp;M等の成長投資を計上しながらも本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">OCF BE予測<span class="tip-icon">?</span><span class="tip-box">直近2-3年のOCF改善トレンドを線形外挿してOCFがゼロを超える年を予測。改善トレンドなし・5年超の場合は「—」</span></span></span><span class="detail-val">${pp.ocf_breakeven_year||'—'}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">GAAP BE予測<span class="tip-icon">?</span><span class="tip-box">直近2-3年の純利益改善トレンドを線形外挿して純利益がゼロを超える年を予測。改善トレンドなし・5年超の場合は「—」</span></span></span><span class="detail-val">${pp.gaap_breakeven_year||'—'}</span></div>
       <div style="margin-top:12px">
         <div class="ocf-title">OCF 推移</div>
         <div class="ocf-bars">${barsHTML}</div>
