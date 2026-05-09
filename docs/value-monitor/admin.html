@@ -1033,8 +1033,9 @@ async function fetchSegmentsForTicker(ticker, cik) {
 
 async function registerTicker() {
   const ticker = document.getElementById('regTicker').value.trim().toUpperCase();
-  const doTanuki = document.getElementById('regTanuki').checked;
-  const doEps    = document.getElementById('regEps').checked;
+  const doTanuki  = document.getElementById('regTanuki').checked;
+  const doEps     = document.getElementById('regEps').checked;
+  const doStonks  = document.getElementById('registerStonks').checked;
   if (!ticker) { alert('ティッカーを入力してください'); return; }
   if (!doTanuki && !doEps) { alert('登録するシステムを選択してください'); return; }
 
