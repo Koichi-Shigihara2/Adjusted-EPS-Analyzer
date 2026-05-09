@@ -3,7 +3,7 @@
 Stonks Silo Pipeline
 config/cik_lookup.csv の stonks_silo=true 銘柄を一括処理して results.json に保存する。
 
-出力先: discover/stonks-silo/data/results.json
+出力先: docs/value-monitor/stonks-silo/data/results.json  (GitHub Pages 公開パス)
 
 使い方:
   python discover/stonks-silo/src/pipeline.py          # stonks_silo=true 全件
@@ -26,7 +26,7 @@ from analyzer import StonksAnalyzer
 
 
 _CIK_LOOKUP = _REPO_ROOT / "config" / "cik_lookup.csv"
-_OUTPUT_DIR = _SRC_DIR.parent / "data"
+_OUTPUT_DIR = _REPO_ROOT / "docs" / "value-monitor" / "stonks-silo" / "data"
 _OUTPUT_FILE = _OUTPUT_DIR / "results.json"
 _YEARS = 5
 
