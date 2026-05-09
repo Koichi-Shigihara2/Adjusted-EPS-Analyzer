@@ -62,6 +62,7 @@ class RunwayAnalysis:
 
     verdict: str = "UNKNOWN"                  # SAFE / WATCH / DANGER / UNKNOWN
     verdict_reason: str = ""
+    score: Optional[float] = None             # 0-100
 
 
 @dataclass
@@ -85,6 +86,7 @@ class ProfitabilityPath:
     hidden_profit_already: bool = False            # OCFが既に黒字かどうか
 
     verdict_reason: str = ""
+    score: Optional[float] = None             # 0-100
 
 
 @dataclass
@@ -536,6 +538,9 @@ class StonksAnalyzer:
         path_score = trend_map.get(pp.ocf_trend, 0)
         if pp.hidden_profit_already:
             path_score = max(path_score, 80)
+
+        ra.score = float(ra_score)
+        pp.score = float(path_score)
 
         overall = (
             dq_score * weights["deficit"]
