@@ -87,6 +87,10 @@ class SECParser:
         "gross_profit": [
             "GrossProfit",
         ],
+        "cost_of_revenue": [
+            "CostOfRevenue",
+            "CostOfGoodsAndServicesSold",
+        ],
         # R&D費（RICE計算の投資強度に使用）
         # CapitalizedComputerSoftwareDevelopmentCosts:
         #   費用化されずBSに資産計上されるソフトウェア開発費。
@@ -370,7 +374,7 @@ class SECParser:
                 data["bs"][field] = val
         
         # PL
-        for field in ["revenue", "gross_profit", "net_income", "eps_diluted", "eps_basic",
+        for field in ["revenue", "gross_profit", "cost_of_revenue", "net_income", "eps_diluted", "eps_basic",
                       "research_and_development", "selling_and_marketing",
                       "selling_general_and_administrative"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)

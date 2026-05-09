@@ -42,6 +42,7 @@ class DeficitQuality:
     rnd_ratio: Optional[float] = None         # R&D / Revenue
     sm_ratio: Optional[float] = None          # S&M / Revenue
     gross_margin: Optional[float] = None      # GrossProfit / Revenue
+    gross_margin_derived: bool = False        # True = revenue-cost から逆算
 
     # 総合判定
     verdict: str = "UNKNOWN"                  # GOOD_DEFICIT / BAD_DEFICIT / PROFITABLE / UNKNOWN
@@ -181,6 +182,7 @@ class StonksAnalyzer:
 
         # 最新年コスト比率
         rnd_ratio = sm_ratio = gross_margin = None
+        gross_margin_derived = False
         if revenue and revenue > 0:
             rnd = pl.get("research_and_development")
             sm = pl.get("selling_and_marketing")
@@ -191,6 +193,7 @@ class StonksAnalyzer:
                 sm_ratio = sm / revenue * 100
             if gp is not None:
                 gross_margin = gp / revenue * 100
+                gross_margin_derived = bool(pl.get("gross_profit_derived", False))
 
         # 判定ロジック
         verdict, reason, score = self._deficit_verdict(
@@ -206,6 +209,7 @@ class StonksAnalyzer:
             rnd_ratio=rnd_ratio,
             sm_ratio=sm_ratio,
             gross_margin=gross_margin,
+            gross_margin_derived=gross_margin_derived,
             verdict=verdict,
             verdict_reason=reason,
             score=score,
