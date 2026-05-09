@@ -1037,7 +1037,7 @@ async function registerTicker() {
   const doEps     = document.getElementById('regEps').checked;
   const doStonks  = document.getElementById('regStonks').checked;
   if (!ticker) { alert('ティッカーを入力してください'); return; }
-  if (!doTanuki && !doEps) { alert('登録するシステムを選択してください'); return; }
+  if (!doTanuki && !doEps && !doStonks) { alert('登録するシステムを選択してください'); return; }
 
   const btn = document.getElementById('registerTickerBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>登録中...';
@@ -1046,8 +1046,8 @@ async function registerTicker() {
   try {
     let cik = '', name = '';
 
-    // ── Step 1: CIK取得（TANUKI登録時のみ）──
-    if (doTanuki) {
+    // ── Step 1: CIK取得（TANUKI or Stonks登録時）──
+    if (doTanuki || doStonks) {
       showResult(resultId, 'info', '⏳ CIK取得中... Actions起動中...');
       try {
         await dispatchWorkflow('TANUKI_CIK_Lookup.yml', { ticker });
@@ -1093,12 +1093,18 @@ async function registerTicker() {
     btn.innerHTML = '<span class="spinner"></span>コミット中...';
     const files = [];
 
-    if (!doTanuki && doStonks && cik) {
+    if (!doTanuki && doStonks) {
       const { content: csv } = await fetchFile(CIK_PATH);
       const rows = parseCsv(csv);
-      if (!rows.find(r => r.ticker.toUpperCase() === ticker)) {
-        rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: 'true' });
-        rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
+      const existing = rows.find(r => r.ticker.toUpperCase() === ticker);
+      if (!existing) {
+        if (cik) {
+          rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: 'true' });
+          rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
+          files.push({ path: CIK_PATH, content: buildCsv(rows) });
+        }
+      } else if (existing.stonks_silo !== 'true') {
+        existing.stonks_silo = 'true';
         files.push({ path: CIK_PATH, content: buildCsv(rows) });
       }
     }
@@ -1108,9 +1114,13 @@ async function registerTicker() {
       if (cik) {
         const { content: csv } = await fetchFile(CIK_PATH);
         const rows = parseCsv(csv);
-        if (!rows.find(r => r.ticker.toUpperCase() === ticker)) {
+        const existing = rows.find(r => r.ticker.toUpperCase() === ticker);
+        if (!existing) {
           rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: doStonks ? 'true' : 'false' });
           rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
+          files.push({ path: CIK_PATH, content: buildCsv(rows) });
+        } else if (doStonks && existing.stonks_silo !== 'true') {
+          existing.stonks_silo = 'true';
           files.push({ path: CIK_PATH, content: buildCsv(rows) });
         }
       }
@@ -1166,9 +1176,16 @@ async function registerTicker() {
     await commitMultipleFiles(files, `chore: register ticker ${ticker} [${systems}]`);
 
     const fileNames = files.map(f => f.path.split('/').pop()).join(', ');
-    showResult(resultId, 'success',
-      `✓ ${ticker} を登録しました [${systems}]\n更新ファイル: ${fileNames}${cik ? `\nCIK: ${cik}` : ''}`
-    );
+    let successMsg = `✓ ${ticker} を登録しました [${systems}]\n更新ファイル: ${fileNames}${cik ? `\nCIK: ${cik}` : ''}`;
+    if (doStonks) {
+      try {
+        await dispatchWorkflow('Stonks_Silo_Update.yml', { tickers: ticker });
+        successMsg += '\n✓ Stonks Silo パイプラインを起動しました（反映まで約1〜2分）';
+      } catch(e) {
+        successMsg += `\n⚠ Stonks Silo パイプライン起動失敗: ${e.message}`;
+      }
+    }
+    showResult(resultId, 'success', successMsg);
     document.getElementById('regTicker').value = '';
     await loadTickerTab();
     await loadConfigFiles();
