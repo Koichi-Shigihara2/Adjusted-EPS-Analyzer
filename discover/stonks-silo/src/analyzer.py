@@ -455,7 +455,7 @@ class StonksAnalyzer:
         if len(years) < 2:
             return "UNKNOWN"
 
-        # 直近2年の速度
+        # 直近2年の YoY（新しい順）
         recent_yoys = [
             ocf_yoy[yr] for yr in years[-2:]
             if ocf_yoy.get(yr) is not None
@@ -463,8 +463,7 @@ class StonksAnalyzer:
         if not recent_yoys:
             return "UNKNOWN"
 
-        positive_yoys = sum(1 for v in recent_yoys if v > 0)
-        latest_ocf = ocf_annual.get(years[-1])
+        latest_yoy = recent_yoys[-1]  # 最新年のYoY
 
         # 加速度（直近）
         latest_accel = None
@@ -473,13 +472,24 @@ class StonksAnalyzer:
                 latest_accel = ocf_accel[yr]
                 break
 
-        if positive_yoys == len(recent_yoys) and latest_accel is not None and latest_accel > 0:
+        latest_ocf = ocf_annual.get(years[-1])
+
+        # 最新年YoYがマイナス → 悪化
+        if latest_yoy <= 0:
+            if latest_ocf is not None and latest_ocf > 0:
+                return "FLAT"  # 黒字維持だが改善なし
+            return "DETERIORATING"
+
+        # 最新年YoYがプラス かつ 加速度もプラス → 加速中
+        if latest_accel is not None and latest_accel > 0:
             return "ACCELERATING"
-        if positive_yoys >= 1:
+
+        # 最新年YoYがプラス かつ 直近2年とも改善 → 改善中
+        if len(recent_yoys) == 2 and recent_yoys[0] > 0:
             return "IMPROVING"
-        if latest_ocf is not None and latest_ocf > 0:
-            return "FLAT"  # 黒字だが改善なし
-        return "DETERIORATING"
+
+        # 最新年YoYはプラスだが直前年はマイナス（混在）→ FLAT
+        return "FLAT"
 
     def _breakeven_estimate(
         self,
