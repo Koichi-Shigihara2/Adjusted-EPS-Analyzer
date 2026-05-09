@@ -756,15 +756,18 @@ def _margin_breakeven(
     OCFマージン（OCF/Revenue）の改善外挿で黒字化年を予測する。
     直近2年のマージンYoY変化を傾きとして使用。
     Revenue が不足する場合は None を返し、呼び出し元がフォールバックする。
+    最新年 revenue の 10% 未満の年はマージン計算から除外する。
     reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
     """
-    # 直近3年でOCF・Revenueが両方有効な年を収集
+    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue")
+
     margin_data = []
     for yr in years[-3:]:
         ocf = ocf_annual.get(yr)
         rev = records.get(yr, {}).get("pl", {}).get("revenue")
         if ocf is not None and rev is not None and rev > 0:
-            margin_data.append((yr, ocf / rev))
+            if latest_rev is None or rev >= latest_rev * 0.10:
+                margin_data.append((yr, ocf / rev))
 
     if len(margin_data) < 2:
         return None  # Revenue不足 → フォールバック
@@ -802,14 +805,18 @@ def _gaap_margin_breakeven(
     純利益マージン（NI/Revenue × 100）の改善外挿でGAAP黒字化年を予測する。
     直近2年のマージンYoY変化を傾きとして使用。
     Revenue が全年 None の場合は None を返し、呼び出し元がOLSにフォールバックする。
+    最新年 revenue の 10% 未満の年はマージン計算から除外する。
     reason codes: ACHIEVED / PREDICTED / IMMINENT / NO_TREND / TOO_FAR
     """
+    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue")
+
     margin_data = []
     for yr in years[-3:]:
         ni = net_incomes.get(yr)
         rev = records.get(yr, {}).get("pl", {}).get("revenue")
         if ni is not None and rev is not None and rev > 0:
-            margin_data.append((yr, ni / rev * 100))
+            if latest_rev is None or rev >= latest_rev * 0.10:
+                margin_data.append((yr, ni / rev * 100))
 
     if len(margin_data) < 2:
         return None  # Revenue不足 → OLSフォールバック
