@@ -648,7 +648,7 @@ def _linear_breakeven(
     horizon: int = 5,
 ) -> tuple[Optional[int], str]:
     """
-    直近3年の有効データで線形回帰し、ゼロクロス年を推定する。
+    直近3年の有効データ全点で最小二乗線形回帰し、ゼロクロス年を推定する。
     reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
     """
     valid = [(yr, v) for yr in years[-3:] if (v := series.get(yr)) is not None]
@@ -659,17 +659,23 @@ def _linear_breakeven(
     if latest_val > 0:
         return latest_yr, "ACHIEVED"
 
-    # 簡易傾き（最終2点）
-    (yr0, v0), (yr1, v1) = valid[-2], valid[-1]
-    if yr1 == yr0:
+    # 最小二乗法で傾き・切片を算出
+    n = len(valid)
+    xs = [yr for yr, _ in valid]
+    ys = [v for _, v in valid]
+    x_mean = sum(xs) / n
+    y_mean = sum(ys) / n
+    ss_xx = sum((x - x_mean) ** 2 for x in xs)
+    if ss_xx == 0:
         return None, "NO_DATA"
-    slope = (v1 - v0) / (yr1 - yr0)
+    slope = sum((xs[i] - x_mean) * (ys[i] - y_mean) for i in range(n)) / ss_xx
+    intercept = y_mean - slope * x_mean
 
     if slope <= 0:
         return None, "NO_TREND"
 
-    years_to_be = -latest_val / slope
-    be_year = int(latest_yr + years_to_be + 0.5)
+    # y = slope * x + intercept = 0 → x = -intercept / slope
+    be_year = int(-intercept / slope + 0.5)
 
     if be_year > latest_yr + horizon:
         return None, "TOO_FAR"
