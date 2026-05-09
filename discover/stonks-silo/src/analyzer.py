@@ -427,7 +427,7 @@ class StonksAnalyzer:
 
         # 黒字化予測
         gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, reason = self._breakeven_estimate(
-            years, records, ocf_annual
+            years, records, ocf_annual, ocf_trend
         )
 
         return ProfitabilityPath(
@@ -496,6 +496,7 @@ class StonksAnalyzer:
         years: list[int],
         records: dict,
         ocf_annual: dict,
+        ocf_trend: str,
     ) -> tuple[Optional[int], Optional[int], bool, str, str, str]:
         """
         簡易線形外挿で黒字化年を予測。
@@ -522,6 +523,16 @@ class StonksAnalyzer:
             ocf_reason = "ACHIEVED"
         else:
             ocf_be, ocf_reason = _linear_breakeven(years, ocf_annual)
+
+        # OCF が悪化中なら予測を抑制（OLS が過去の改善に引っ張られても無効化）
+        if ocf_trend == "DETERIORATING":
+            ocf_be = None
+            ocf_reason = "NO_TREND"
+
+        # OCF 悪化中 かつ 純利益も悪化トレンド（OLS スロープ ≤ 0）の場合は GAAP 予測も抑制
+        if ocf_trend == "DETERIORATING" and gaap_reason not in ("ACHIEVED", "PREDICTED"):
+            gaap_be = None
+            gaap_reason = "NO_TREND"
 
         combined = f"{gaap_reason} | {ocf_reason}"
         return gaap_be, ocf_be, hidden_already, gaap_reason, ocf_reason, combined
