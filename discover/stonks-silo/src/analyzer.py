@@ -57,6 +57,7 @@ class DeficitQuality:
     sbc_yoy_change: Optional[float] = None    # SBC前年比変化率(%)
     dilution_risk: str = "UNKNOWN"            # HIGH/MEDIUM/LOW/UNKNOWN
     deficit_fixed_risk: str = "MEDIUM"        # HIGH/MEDIUM/LOW
+    mature_profit_note: str = ""              # 投資除外後も赤字の場合に注記
 
 
 @dataclass
@@ -221,10 +222,13 @@ class StonksAnalyzer:
 
         # 成熟想定利益（純利益 + R&D + SM）
         mature_profit = None
+        mature_profit_note = ""
         if net_income is not None:
             _rnd = pl.get("research_and_development")
             _sm = pl.get("selling_and_marketing")
             mature_profit = net_income + (_rnd or 0) + (_sm or 0)
+            if mature_profit < 0:
+                mature_profit_note = "投資除外後も赤字"
 
         # SBC 関連
         cf = latest["cf"]
@@ -265,6 +269,7 @@ class StonksAnalyzer:
             score=score,
             rule_of_40=rule_of_40,
             mature_profit=mature_profit,
+            mature_profit_note=mature_profit_note,
             sbc_adjusted_fcf=sbc_adjusted_fcf,
             sbc_ratio=sbc_ratio_val,
             sbc_yoy_change=sbc_yoy_change,
