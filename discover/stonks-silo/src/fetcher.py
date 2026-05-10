@@ -182,13 +182,22 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
 
 def _sanitize_revenue(records: dict, errors: list) -> None:
     """
-    全年の revenue を比較し、外れ値を None 化する（2パス方式）。
-    Pass1: 最大値を除いた中央値の10倍超 → 上限外れ値除去 (XBRL過大申告対策)
-           ただし最新年は除外対象としない（事業収益化開始による急成長を誤除去しない）
-    Pass2: Pass1除去後の残存値から中央値を再計算し、1/10未満 → 下限外れ値除去
-           (事前収益期の極小売上によるマージン歪み対策)
-    2パスにすることで上限・下限チェックの相互汚染を防ぐ。
+    全年の revenue を比較し外れ値を検出する（2パス方式）。
+    生データ pl["revenue"] は一切変更せず、結果を以下に書き込む:
+      pl["revenue_sanitized"]  : 外れ値なら None、正常なら revenue と同値
+      pl["revenue_is_outlier"] : 外れ値除去された場合 True
+
+    Pass1: 最大値を除いた中央値の10倍超 → 上限外れ値 (XBRL過大申告対策)
+           最新年は保護（事業収益化開始による急成長を誤除去しない）
+    Pass2: Pass1後の残存値（最新年除く）で中央値を再計算し1/10未満 → 下限外れ値
+           最新年を中央値計算・判定対象の両方から除外
+           (収益化開始期の急成長で中央値が歪んで過去年を誤除去するのを防ぐ)
     """
+    # 全レコードの sanitized フィールドを初期化
+    for rec in records.values():
+        rec["pl"]["revenue_sanitized"] = rec["pl"].get("revenue")
+        rec["pl"]["revenue_is_outlier"] = False
+
     values = [
         (yr, rec["pl"]["revenue"])
         for yr, rec in records.items()
@@ -197,8 +206,6 @@ def _sanitize_revenue(records: dict, errors: list) -> None:
     if len(values) < 2:
         return
     sorted_vals = sorted(v for _, v in values)
-
-    # 最新年は Pass1 の除去対象から常に除外する
     latest_year = max(yr for yr, _ in values)
 
     # Pass1: 上限外れ値 — 最大値を除いた中央値の10倍超
@@ -210,19 +217,17 @@ def _sanitize_revenue(records: dict, errors: list) -> None:
         if yr == latest_year:
             continue  # 最新年は保護
         if v > median_hi * 10:
-            records[yr]["pl"]["revenue"] = None
+            records[yr]["pl"]["revenue_sanitized"] = None
+            records[yr]["pl"]["revenue_is_outlier"] = True
             errors.append({
                 "year": yr, "section": "pl", "field": "revenue",
                 "warning": f"outlier_removed_high (val={v:.0f} > median*10={median_hi*10:.0f})",
             })
 
-    # Pass2: 下限外れ値 — Pass1除去後の残存値で中央値を再計算し1/10未満
-    # latest_year は中央値計算・除去対象の両方から除外する。
-    # 収益化開始期の急成長で latest_year が大きい場合、中央値が歪んで
-    # 過去年の正当な極小売上を誤除去するのを防ぐ。
+    # Pass2: 下限外れ値 — Pass1後の残存値（最新年除く）で中央値を再計算し1/10未満
     remaining = sorted(
         v for yr, v in values
-        if yr != latest_year and records[yr]["pl"].get("revenue") is not None
+        if yr != latest_year and not records[yr]["pl"]["revenue_is_outlier"]
     )
     if len(remaining) < 2:
         return
@@ -233,8 +238,9 @@ def _sanitize_revenue(records: dict, errors: list) -> None:
     for yr, v in values:
         if yr == latest_year:
             continue  # 最新年は保護
-        if records[yr]["pl"].get("revenue") is not None and v < median_lo / 10:
-            records[yr]["pl"]["revenue"] = None
+        if not records[yr]["pl"]["revenue_is_outlier"] and v < median_lo / 10:
+            records[yr]["pl"]["revenue_sanitized"] = None
+            records[yr]["pl"]["revenue_is_outlier"] = True
             errors.append({
                 "year": yr, "section": "pl", "field": "revenue",
                 "warning": f"outlier_removed_low (val={v:.0f} < median/10={median_lo/10:.0f})",

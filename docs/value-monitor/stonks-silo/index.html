@@ -505,7 +505,7 @@ function buildDetail(ticker, d) {
   <div class="chart-row">
     ${hasRecords ? `
     <div class="chart-col">
-      <div class="chart-title">売上推移${yearRange}</div>
+      <div class="chart-title">売上推移${yearRange}${(dq.revenue_outlier_years||[]).length>0?` <span style="font-size:9px;color:var(--mut)">※${dq.revenue_outlier_years.join('・')}年は計算から除外（外れ値）</span>`:''}</div>
       <div class="chart-latest">${fmtB(latestRev)}</div>
       ${makeChart(revVals)}
     </div>

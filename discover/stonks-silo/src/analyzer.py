@@ -58,6 +58,7 @@ class DeficitQuality:
     dilution_risk: str = "UNKNOWN"            # HIGH/MEDIUM/LOW/UNKNOWN
     deficit_fixed_risk: str = "MEDIUM"        # HIGH/MEDIUM/LOW
     mature_profit_note: str = ""              # 投資除外後も赤字の場合に注記
+    revenue_outlier_years: list[int] = field(default_factory=list)  # 外れ値除去された年
 
 
 @dataclass
@@ -161,14 +162,21 @@ class StonksAnalyzer:
         latest = records[latest_year]
         pl = latest["pl"]
 
-        revenue = pl.get("revenue")
+        revenue = pl.get("revenue")                      # 生データ（表示・参照用）
+        revenue_san = pl.get("revenue_sanitized")         # サニタイズ済み（計算用）
         net_income = pl.get("net_income")
 
-        # 売上成長率（YoY）
+        # 外れ値除去された年を収集
+        revenue_outlier_years = [
+            yr for yr in years
+            if records[yr]["pl"].get("revenue_is_outlier", False)
+        ]
+
+        # 売上成長率（YoY）— サニタイズ済み値を使用
         rev_growth: dict[int, Optional[float]] = {}
         revenues = {}
         for yr in years:
-            rev = records[yr]["pl"].get("revenue")
+            rev = records[yr]["pl"].get("revenue_sanitized")
             revenues[yr] = rev
 
         for i, yr in enumerate(years):
@@ -193,19 +201,19 @@ class StonksAnalyzer:
             if r_end and r_start and r_start > 0:
                 cagr_3yr = ((r_end / r_start) ** (1 / 3) - 1) * 100
 
-        # 最新年コスト比率
+        # 最新年コスト比率（サニタイズ済み売上を使用）
         rnd_ratio = sm_ratio = gross_margin = None
         gross_margin_derived = False
-        if revenue and revenue > 0:
+        if revenue_san and revenue_san > 0:
             rnd = pl.get("research_and_development")
             sm = pl.get("selling_and_marketing")
             gp = pl.get("gross_profit")
             if rnd is not None:
-                rnd_ratio = rnd / revenue * 100
+                rnd_ratio = rnd / revenue_san * 100
             if sm is not None:
-                sm_ratio = sm / revenue * 100
+                sm_ratio = sm / revenue_san * 100
             if gp is not None:
-                gross_margin = gp / revenue * 100
+                gross_margin = gp / revenue_san * 100
                 gross_margin_derived = bool(pl.get("gross_profit_derived", False))
 
         # 判定ロジック
@@ -215,10 +223,10 @@ class StonksAnalyzer:
 
         # Rule of 40（売上成長率 + 営業利益率）
         rule_of_40 = None
-        if revenue and revenue > 0 and cagr_3yr is not None:
+        if revenue_san and revenue_san > 0 and cagr_3yr is not None:
             operating_income = pl.get("operating_income")
             if operating_income is not None:
-                rule_of_40 = round(cagr_3yr + operating_income / revenue * 100, 1)
+                rule_of_40 = round(cagr_3yr + operating_income / revenue_san * 100, 1)
 
         # 成熟想定利益（純利益 + R&D + SM）
         mature_profit = None
@@ -235,7 +243,7 @@ class StonksAnalyzer:
         sbc = cf.get("stock_based_compensation")
         fcf = cf.get("free_cash_flow")
         sbc_adjusted_fcf = (fcf - sbc) if fcf is not None and sbc is not None else None
-        sbc_ratio_val = (sbc / revenue * 100) if sbc is not None and revenue and revenue > 0 else None
+        sbc_ratio_val = (sbc / revenue_san * 100) if sbc is not None and revenue_san and revenue_san > 0 else None
 
         # SBC YoY 変化
         sbc_yoy_change = None
@@ -274,6 +282,7 @@ class StonksAnalyzer:
             sbc_ratio=sbc_ratio_val,
             sbc_yoy_change=sbc_yoy_change,
             dilution_risk=dilution_risk,
+            revenue_outlier_years=revenue_outlier_years,
         )
 
     def _deficit_verdict(
@@ -736,7 +745,7 @@ class StonksAnalyzer:
             margins = []
             for yr in years[-2:]:
                 ni = records.get(yr, {}).get("pl", {}).get("net_income")
-                rev = records.get(yr, {}).get("pl", {}).get("revenue")
+                rev = records.get(yr, {}).get("pl", {}).get("revenue_sanitized")
                 if ni is not None and rev and rev > 0:
                     margins.append(ni / rev * 100)
             if len(margins) == 2:
@@ -913,12 +922,12 @@ def _margin_breakeven(
     最新年 revenue の 10% 未満の年はマージン計算から除外する。
     reason codes: ACHIEVED / PREDICTED / NO_TREND / NO_DATA / TOO_FAR
     """
-    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue")
+    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue_sanitized")
 
     margin_data = []
     for yr in years[-3:]:
         ocf = ocf_annual.get(yr)
-        rev = records.get(yr, {}).get("pl", {}).get("revenue")
+        rev = records.get(yr, {}).get("pl", {}).get("revenue_sanitized")
         if ocf is not None and rev is not None and rev > 0:
             if latest_rev is None or rev >= latest_rev * 0.10:
                 margin_data.append((yr, ocf / rev))
@@ -962,12 +971,12 @@ def _gaap_margin_breakeven(
     最新年 revenue の 10% 未満の年はマージン計算から除外する。
     reason codes: ACHIEVED / PREDICTED / IMMINENT / NO_TREND / TOO_FAR
     """
-    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue")
+    latest_rev = records.get(years[-1], {}).get("pl", {}).get("revenue_sanitized")
 
     margin_data = []
     for yr in years[-3:]:
         ni = net_incomes.get(yr)
-        rev = records.get(yr, {}).get("pl", {}).get("revenue")
+        rev = records.get(yr, {}).get("pl", {}).get("revenue_sanitized")
         if ni is not None and rev is not None and rev > 0:
             if latest_rev is None or rev >= latest_rev * 0.10:
                 margin_data.append((yr, ni / rev * 100))
