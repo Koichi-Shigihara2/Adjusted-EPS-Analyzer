@@ -120,6 +120,9 @@ class SECParser:
         "selling_general_and_administrative": [
             "SellingGeneralAndAdministrativeExpense",
         ],
+        "operating_income": [
+            "OperatingIncomeLoss",
+        ],
 
         # CF（キャッシュフロー計算書）
         "operating_cash_flow": [
@@ -135,6 +138,9 @@ class SECParser:
             "FinanceLeasePrincipalPayments",
             "PaymentsForFinanceLeases",
             "RepaymentsOfLongTermCapitalLeaseObligations",
+        ],
+        "stock_based_compensation": [
+            "ShareBasedCompensation",
         ],
         
         # 株式数
@@ -376,13 +382,13 @@ class SECParser:
         # PL
         for field in ["revenue", "gross_profit", "cost_of_revenue", "net_income", "eps_diluted", "eps_basic",
                       "research_and_development", "selling_and_marketing",
-                      "selling_general_and_administrative"]:
+                      "selling_general_and_administrative", "operating_income"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["pl"][field] = val
         
         # CF
-        for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments"]:
+        for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments", "stock_based_compensation"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["cf"][field] = val
