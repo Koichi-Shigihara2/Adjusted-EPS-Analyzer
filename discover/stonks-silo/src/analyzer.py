@@ -106,6 +106,15 @@ class ProfitabilityPath:
     discontinuous_growth: bool = False
     discontinuous_growth_note: str = ""
 
+    # 拡大再生産指標
+    incremental_margin: Optional[float] = None
+    incremental_margin_prev: Optional[float] = None
+    incremental_margin_trend: str = "UNKNOWN"
+    incremental_rev_delta: Optional[float] = None
+    incremental_gp_delta: Optional[float] = None
+    reproduction_score: int = 0
+    reproduction_label: str = "不明"
+
 
 @dataclass
 class StonksAnalysis:
@@ -533,6 +542,58 @@ class StonksAnalyzer:
                             discontinuous_growth = True
                             discontinuous_growth_note = f"直近売上が急拡大（+{latest_yoy:.0f}%）、予測精度が低下している可能性があります"
 
+        # 増分粗利率計算
+        inc_results = _calc_incremental_margin(years, records)
+        incremental_margin = None
+        incremental_margin_prev = None
+        incremental_margin_trend = "UNKNOWN"
+        incremental_rev_delta = None
+        incremental_gp_delta = None
+        reproduction_score = 0
+        reproduction_label = "不明"
+
+        if inc_results:
+            _, im0, rd0, gd0 = inc_results[0]
+            incremental_margin = im0
+            incremental_rev_delta = rd0
+            incremental_gp_delta = gd0
+
+            if len(inc_results) >= 2:
+                _, im1, _, _ = inc_results[1]
+                incremental_margin_prev = im1
+                if incremental_margin > incremental_margin_prev + 5:
+                    incremental_margin_trend = "IMPROVING"
+                elif incremental_margin < incremental_margin_prev - 5:
+                    incremental_margin_trend = "DETERIORATING"
+                else:
+                    incremental_margin_trend = "FLAT"
+
+            if incremental_margin >= 70:
+                base_score = 4
+            elif incremental_margin >= 50:
+                base_score = 3
+            elif incremental_margin >= 30:
+                base_score = 2
+            elif incremental_margin >= 0:
+                base_score = 1
+            else:
+                base_score = 0
+
+            reproduction_score = min(4, base_score + (0.5 if incremental_margin_trend == "IMPROVING" else 0))
+
+            if reproduction_score >= 3.5:
+                reproduction_label = "極めて強い拡大再生産"
+            elif reproduction_score >= 2.5:
+                reproduction_label = "拡大再生産の兆候あり"
+            elif reproduction_score >= 1.5:
+                reproduction_label = "限定的な拡大再生産"
+            elif reproduction_score >= 0.5:
+                reproduction_label = "拡大再生産は弱い"
+            else:
+                reproduction_label = "拡大再生産なし"
+        else:
+            reproduction_label = "データ不足"
+
         return ProfitabilityPath(
             core_profit=core_profit,
             ocf_annual=ocf_annual,
@@ -547,6 +608,13 @@ class StonksAnalyzer:
             verdict_reason=reason,
             discontinuous_growth=discontinuous_growth,
             discontinuous_growth_note=discontinuous_growth_note,
+            incremental_margin=incremental_margin,
+            incremental_margin_prev=incremental_margin_prev,
+            incremental_margin_trend=incremental_margin_trend,
+            incremental_rev_delta=incremental_rev_delta,
+            incremental_gp_delta=incremental_gp_delta,
+            reproduction_score=reproduction_score,
+            reproduction_label=reproduction_label,
         )
 
     def _ocf_trend(
@@ -849,6 +917,27 @@ def _sum_not_none(*values) -> Optional[float]:
         if v is not None:
             result = (result or 0) + v
     return result
+
+
+def _calc_incremental_margin(
+    years: list[int], records: dict
+) -> list[tuple[int, float, float, float]]:
+    """直近2年の増分粗利率を計算。戻り値: [(year, inc_margin%, rev_delta, gp_delta), ...]"""
+    results = []
+    for i in range(len(years) - 1, max(len(years) - 3, 0), -1):
+        yr = years[i]
+        prev_yr = years[i - 1]
+        curr_rev = records[yr]["pl"].get("revenue_sanitized")
+        prev_rev = records[prev_yr]["pl"].get("revenue_sanitized")
+        curr_gp = records[yr]["pl"].get("gross_profit")
+        prev_gp = records[prev_yr]["pl"].get("gross_profit")
+        if all(v is not None for v in [curr_rev, prev_rev, curr_gp, prev_gp]):
+            rev_delta = curr_rev - prev_rev
+            gp_delta = curr_gp - prev_gp
+            if rev_delta > 0:
+                inc_margin = gp_delta / rev_delta * 100
+                results.append((yr, inc_margin, rev_delta, gp_delta))
+    return results
 
 
 def _fmt_margin_trend(margin_data: list, scale: float = 1) -> str:
