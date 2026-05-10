@@ -561,12 +561,26 @@ class StonksAnalyzer:
             if len(inc_results) >= 2:
                 _, im1, _, _ = inc_results[1]
                 incremental_margin_prev = im1
-                if incremental_margin > incremental_margin_prev + 5:
-                    incremental_margin_trend = "IMPROVING"
-                elif incremental_margin < incremental_margin_prev - 5:
-                    incremental_margin_trend = "DETERIORATING"
+                # OLS trend: x = 年次インデックス（古い順に 0,1,2...）、y = 増分粗利率
+                pts_ols = list(reversed(inc_results))  # 古い順
+                n_ols = len(pts_ols)
+                xs = list(range(n_ols))
+                ys = [im for _, im, _, _ in pts_ols]
+                xm = sum(xs) / n_ols
+                ym = sum(ys) / n_ols
+                ss_xx = sum((x - xm) ** 2 for x in xs)
+                if ss_xx > 0:
+                    slope_im = sum((xs[j] - xm) * (ys[j] - ym) for j in range(n_ols)) / ss_xx
+                    if slope_im > 5:
+                        incremental_margin_trend = "IMPROVING"
+                    elif slope_im < -5:
+                        incremental_margin_trend = "DETERIORATING"
+                    else:
+                        incremental_margin_trend = "FLAT"
                 else:
                     incremental_margin_trend = "FLAT"
+            elif len(inc_results) == 1:
+                incremental_margin_trend = "UNKNOWN"
 
             if incremental_margin >= 70:
                 base_score = 4
@@ -922,9 +936,10 @@ def _sum_not_none(*values) -> Optional[float]:
 def _calc_incremental_margin(
     years: list[int], records: dict
 ) -> list[tuple[int, float, float, float]]:
-    """直近2年の増分粗利率を計算。戻り値: [(year, inc_margin%, rev_delta, gp_delta), ...]"""
+    """全年ペアの増分粗利率を新しい順に返す。戻り値: [(year, inc_margin%, rev_delta, gp_delta), ...]"""
+    latest_rev = records[years[-1]]["pl"].get("revenue_sanitized")
     results = []
-    for i in range(len(years) - 1, max(len(years) - 3, 0), -1):
+    for i in range(len(years) - 1, 0, -1):
         yr = years[i]
         prev_yr = years[i - 1]
         curr_rev = records[yr]["pl"].get("revenue_sanitized")
@@ -932,11 +947,14 @@ def _calc_incremental_margin(
         curr_gp = records[yr]["pl"].get("gross_profit")
         prev_gp = records[prev_yr]["pl"].get("gross_profit")
         if all(v is not None for v in [curr_rev, prev_rev, curr_gp, prev_gp]):
+            if latest_rev and prev_rev < latest_rev * 0.10:
+                continue
             rev_delta = curr_rev - prev_rev
+            if rev_delta <= 0:
+                continue
             gp_delta = curr_gp - prev_gp
-            if rev_delta > 0:
-                inc_margin = gp_delta / rev_delta * 100
-                results.append((yr, inc_margin, rev_delta, gp_delta))
+            inc_margin = gp_delta / rev_delta * 100
+            results.append((yr, inc_margin, rev_delta, gp_delta))
     return results
 
 
