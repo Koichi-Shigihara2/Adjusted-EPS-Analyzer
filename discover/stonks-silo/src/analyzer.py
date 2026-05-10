@@ -610,6 +610,12 @@ class StonksAnalyzer:
             "PROFITABLE":   "純利益黒字",
             "UNKNOWN":      "不明",
         }
+        overall_ja = {
+            "10x_CANDIDATE": "急成長候補",
+            "PROMISING":     "バランス有望",
+            "WATCH":         "条件付き観察",
+            "AVOID":         "基準未達",
+        }
         trend_ja = {
             "ACCELERATING": "加速中",
             "IMPROVING":    "改善中",
@@ -625,7 +631,7 @@ class StonksAnalyzer:
         trend_str = trend_ja.get(pp.ocf_trend, pp.ocf_trend)
 
         lines = [
-            f"[{ticker}] 総合判定: {overall_verdict}",
+            f"[{ticker}] 総合判定: {overall_ja.get(overall_verdict, overall_verdict)}",
             f"① 赤字品質 : {dq_v} (スコア {dq.score}) — {_fix(dq.verdict_reason[:60])}",
         ]
 

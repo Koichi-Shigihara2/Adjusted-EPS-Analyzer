@@ -426,20 +426,33 @@ function buildDetail(ticker, d) {
     const valid = vals.filter(v => v !== null);
     if (!valid.length) return '<div style="height:152px"></div>';
     const maxAbs = Math.max(...valid.map(Math.abs), 1);
-    const halfH = 60; // 上60px＋下60px＝120px
+    const halfH = 60;
 
-    // bar-wrap高さ = 2*halfH = 120px（年ラベルは別行）
-    // プラスラベル: bottom:h+62 → バー上端から2px上（外側）
-    // マイナスラベル: top:halfH+h+2 → バー下端から2px下（外側）
+    // ラベル中心y（bar-wrap上端基準）を追跡し、前バーと14px未満なら7pxに縮小
+    let prevLabel = null; // { cy: number, pos: boolean }
+
     const bars = years.map((yr, i) => {
       const v = vals[i];
-      if (v === null) return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH * 2}px"></div></div>`;
+      if (v === null) {
+        prevLabel = null;
+        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH * 2}px"></div></div>`;
+      }
       const h = Math.max(2, Math.round(Math.abs(v) / maxAbs * halfH));
       const amt = fmtShort(v);
-      if (v >= 0) {
-        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH-h}px"></div><div class="bar bar-pos" style="height:${h}px"></div><div style="height:${halfH}px"></div><span class="bar-amt" style="position:absolute;bottom:${h+62}px;left:0;right:0;text-align:center;color:var(--grn);font-size:8px">${amt}</span></div>`;
+      const isPos = v >= 0;
+      // プラス: bottom:h+62 → ラベル底y = 120-(h+62) = 58-h → 中心 ≈ 53-h
+      // マイナス: top:halfH+h+2 = 62+h → 中心 ≈ 67+h
+      const labelCY = isPos ? (53 - h) : (67 + h);
+      const tooClose = prevLabel !== null
+        && prevLabel.pos === isPos
+        && Math.abs(labelCY - prevLabel.cy) < 14;
+      const fs = tooClose ? '7px' : '8px';
+      prevLabel = { cy: labelCY, pos: isPos };
+
+      if (isPos) {
+        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH-h}px"></div><div class="bar bar-pos" style="height:${h}px"></div><div style="height:${halfH}px"></div><span class="bar-amt" style="position:absolute;bottom:${h+62}px;left:0;right:0;text-align:center;color:var(--grn);font-size:${fs}">${amt}</span></div>`;
       } else {
-        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH}px"></div><div class="bar bar-neg" style="height:${h}px"></div><div style="height:${halfH-h}px"></div><span class="bar-amt" style="position:absolute;top:${halfH+h+2}px;left:0;right:0;text-align:center;color:var(--red);font-size:8px">${amt}</span></div>`;
+        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH}px"></div><div class="bar bar-neg" style="height:${h}px"></div><div style="height:${halfH-h}px"></div><span class="bar-amt" style="position:absolute;top:${halfH+h+2}px;left:0;right:0;text-align:center;color:var(--red);font-size:${fs}">${amt}</span></div>`;
       }
     }).join('');
 
