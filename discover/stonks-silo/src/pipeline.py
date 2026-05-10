@@ -23,6 +23,7 @@ sys.path.insert(0, str(_SRC_DIR))
 
 from fetcher import load_annual_data
 from analyzer import StonksAnalyzer
+from valuation_fetcher import fetch_valuation
 
 
 _CIK_LOOKUP = _REPO_ROOT / "config" / "cik_lookup.csv"
@@ -100,6 +101,35 @@ def run(tickers: list[str] | None = None) -> dict:
                 }
                 for yr, rec in data["records"].items()
             }
+
+            # バリュエーション取得・計算
+            val = fetch_valuation(ticker)
+            latest_yr = data["years"][-1]
+            latest_rev_san = data["records"][latest_yr]["pl"].get("revenue_sanitized")
+            latest_cash    = data["records"][latest_yr]["bs"].get("cash_and_equivalents")
+            latest_sti     = data["records"][latest_yr]["bs"].get("short_term_investments")
+            cash_total     = (latest_cash or 0) + (latest_sti or 0) or None
+
+            psr      = None
+            ev_sales = None
+            net_cash = None
+
+            if latest_rev_san and latest_rev_san > 0:
+                if val["market_cap"] is not None:
+                    psr = round(val["market_cap"] / latest_rev_san, 2)
+                if val["enterprise_value"] is not None:
+                    ev_sales = round(val["enterprise_value"] / latest_rev_san, 2)
+
+            if cash_total is not None and val["total_debt"] is not None:
+                net_cash = cash_total - val["total_debt"]
+            elif cash_total is not None:
+                net_cash = cash_total  # 無借金
+
+            val["psr"]      = psr
+            val["ev_sales"] = ev_sales
+            val["net_cash"] = net_cash
+            result["valuation"] = val
+
             results[ticker] = result
             print(f"  [{ticker}] {analysis.overall_verdict} (score={analysis.overall_score})")
         except FileNotFoundError:
