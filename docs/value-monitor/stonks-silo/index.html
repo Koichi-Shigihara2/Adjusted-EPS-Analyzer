@@ -437,7 +437,15 @@ function buildDetail(ticker, d) {
     'NO_DATA': 'データ不足',
     'TOO_FAR': '5年超',
   };
-  const fmtBe = (year, reason) => year ? year+'年' : (breReasonJa[reason]||'—');
+  const fmtBe = (year, reason) => {
+    if (year) return year + '年';
+    if (!reason) return '—';
+    if (reason.startsWith('NO_TREND:')) {
+      const trend = reason.slice(9);
+      return `予測不可（改善なし）<br><span style="font-size:9px;color:var(--mut)">直近マージン: ${trend}</span>`;
+    }
+    return breReasonJa[reason] || '—';
+  };
   const trendJaColor = {
     'ACCELERATING': 'var(--grn)', 'IMPROVING': 'var(--grn)',
     'FLAT': 'var(--mut)', 'DETERIORATING': 'var(--red)', 'UNKNOWN': 'var(--mut)',
@@ -626,10 +634,11 @@ function buildDetail(ticker, d) {
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
+      ${pp.discontinuous_growth ? `<div style="font-size:10px;color:var(--amb);margin-top:4px;">⚠ 非連続成長の可能性あり<br><span style="color:var(--mut)">${pp.discontinuous_growth_note}</span></div>` : ''}
     </div>
   </div>
 
-  <div class="detail-summary">${formatSummary(d.summary)}</div>
+  <div class="detail-summary">${formatSummary(d.summary)}${pp.discontinuous_growth ? '<div style="margin-top:8px;font-size:10px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:6px">※黒字化予測は過去トレンドの外挿であり、直近の急成長局面では実際の黒字化が予測より早まる可能性があります</div>' : ''}</div>
   </div>
   <div class="color-legend-bar">
     <span class="cl-item"><span class="cl-dot" style="background:#3b82f6"></span>良い赤字（戦略的投資）</span>
