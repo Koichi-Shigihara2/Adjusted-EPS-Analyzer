@@ -117,12 +117,13 @@
     .chart-col{background:var(--sur2);padding:12px 14px}
     .chart-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:8px}
     .chart-latest{font-family:var(--mono);font-size:16px;font-weight:700;margin-bottom:8px}
-    .bar-group{display:flex;align-items:flex-end;gap:3px;height:48px}
-    .bar-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+    .bar-group{display:flex;gap:3px;position:relative}
+    .bar-wrap{display:flex;flex-direction:column;align-items:center;flex:1}
     .bar{width:100%;min-height:2px}
     .bar-pos{background:rgba(16,185,129,.5);border-top:1px solid var(--grn)}
     .bar-neg{background:rgba(244,63,94,.2);border-bottom:1px solid var(--red)}
     .bar-yr{font-family:var(--mono);font-size:8px;color:var(--mut)}
+    .bar-amt{font-family:var(--mono);font-size:7px;line-height:1.2;text-align:center;white-space:nowrap}
 
     /* 下段: 詳細数値 */
     .detail-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:14px}
@@ -228,10 +229,10 @@
   <div class="sec">screening</div>
   <div class="filters">
     <button class="filter-btn active" data-filter="ALL">ALL</button>
-    <button class="filter-btn" data-filter="10x_CANDIDATE">最有力候補</button>
-    <button class="filter-btn" data-filter="PROMISING">有望</button>
-    <button class="filter-btn" data-filter="WATCH">要観察</button>
-    <button class="filter-btn" data-filter="AVOID">回避</button>
+    <button class="filter-btn" data-filter="10x_CANDIDATE">急成長候補</button>
+    <button class="filter-btn" data-filter="PROMISING">バランス有望</button>
+    <button class="filter-btn" data-filter="WATCH">条件付き観察</button>
+    <button class="filter-btn" data-filter="AVOID">基準未達</button>
   </div>
 
   <!-- Table -->
@@ -392,6 +393,7 @@ function buildDetail(ticker, d) {
   const ra = d.runway || {};
   const pp = d.profitability_path || {};
   const years = d.years || [];
+  const yearRange = years.length >= 2 ? `（${years[0]}-${years[years.length-1]}年）` : '';
 
   // スコア表示色
   const pillarColor = s => {
@@ -419,18 +421,25 @@ function buildDetail(ticker, d) {
     'FLAT': 'var(--mut)', 'DETERIORATING': 'var(--red)', 'UNKNOWN': 'var(--mut)',
   };
 
-  // バーチャートヘルパー
+  // バーチャートヘルパー（ゼロライン中央・プラス上向き緑／マイナス下向き赤）
   function makeChart(vals) {
     const valid = vals.filter(v => v !== null);
-    if (!valid.length) return '<div class="bar-group"></div>';
+    if (!valid.length) return '<div style="height:104px"></div>';
     const maxAbs = Math.max(...valid.map(Math.abs), 1);
-    return '<div class="bar-group">' + years.map((yr, i) => {
+    const halfH = 44;
+    const bars = years.map((yr, i) => {
       const v = vals[i];
-      if (v === null) return `<div class="bar-wrap"><div style="flex:1"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
-      const h = Math.max(2, Math.round(Math.abs(v) / maxAbs * 44));
-      const cls = v >= 0 ? 'bar-pos' : 'bar-neg';
-      return `<div class="bar-wrap"><div class="bar ${cls}" style="height:${h}px" title="${fmtB(v)}"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
-    }).join('') + '</div>';
+      if (v === null) return `<div class="bar-wrap"><div style="height:${halfH * 2}px"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+      const h = Math.max(2, Math.round(Math.abs(v) / maxAbs * halfH));
+      const amt = fmtShort(v);
+      const sp = halfH - h;
+      if (v >= 0) {
+        return `<div class="bar-wrap"><div style="height:${sp}px;display:flex;align-items:flex-end;justify-content:center"><span class="bar-amt" style="color:var(--grn)">${sp >= 9 ? amt : ''}</span></div><div class="bar bar-pos" style="height:${h}px"></div><div style="height:${halfH}px"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+      } else {
+        return `<div class="bar-wrap"><div style="height:${halfH}px"></div><div class="bar bar-neg" style="height:${h}px"></div><div style="height:${sp}px;display:flex;align-items:flex-start;justify-content:center"><span class="bar-amt" style="color:var(--red)">${sp >= 9 ? amt : ''}</span></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+      }
+    }).join('');
+    return `<div style="position:relative"><div class="bar-group">${bars}</div><div style="position:absolute;left:0;right:0;top:${halfH}px;height:1px;background:rgba(255,255,255,0.2)"></div></div>`;
   }
 
   // records の有無チェック
@@ -478,17 +487,17 @@ function buildDetail(ticker, d) {
   <div class="chart-row">
     ${hasRecords ? `
     <div class="chart-col">
-      <div class="chart-title">売上推移</div>
+      <div class="chart-title">売上推移${yearRange}</div>
       <div class="chart-latest">${fmtB(latestRev)}</div>
       ${makeChart(revVals)}
     </div>
     <div class="chart-col">
-      <div class="chart-title">純利益推移</div>
+      <div class="chart-title">純利益推移${yearRange}</div>
       <div class="chart-latest" style="color:${latestNI!==null&&latestNI>=0?'var(--grn)':'var(--red)'}">${fmtB(latestNI)}</div>
       ${makeChart(niVals)}
     </div>` : ''}
     <div class="chart-col" ${!hasRecords?'style="grid-column:1/-1"':''}>
-      <div class="chart-title">営業CF推移</div>
+      <div class="chart-title">営業CF推移${yearRange}</div>
       <div class="chart-latest" style="color:${latestOCF!==null&&latestOCF>=0?'var(--grn)':'var(--red)'}">${fmtB(latestOCF)}</div>
       ${makeChart(ocfVals)}
     </div>
@@ -540,13 +549,13 @@ document.querySelectorAll('.filter-btn').forEach(btn => {
 // ---------------------------------------------------------------------------
 function verdictBadge(v) {
   const map = {
-    '10x_CANDIDATE': ['10x_CANDIDATE','badge-10x'],
-    'PROMISING':     ['PROMISING','badge-promising'],
-    'WATCH':         ['WATCH','badge-watch'],
-    'AVOID':         ['AVOID','badge-avoid'],
+    '10x_CANDIDATE': ['急成長候補', '高成長・高リスク', 'badge-10x'],
+    'PROMISING':     ['バランス有望', '成長・生存・黒字化が均衡', 'badge-promising'],
+    'WATCH':         ['条件付き観察', '改善余地あり', 'badge-watch'],
+    'AVOID':         ['基準未達', '複数指標が要件未達', 'badge-avoid'],
   };
-  const [label, cls] = map[v] || [v||'—','badge-watch'];
-  return `<span class="badge ${cls}">${label}</span>`;
+  const [label, sub, cls] = map[v] || [v||'—', '', 'badge-watch'];
+  return `<span class="badge ${cls}"><span style="display:block;font-size:9px;letter-spacing:.1em">${label}</span><span style="display:block;font-size:7px;letter-spacing:0;opacity:0.75;margin-top:1px">${sub}</span></span>`;
 }
 
 function deficitBadge(v) {
@@ -596,6 +605,15 @@ function fmtB(v) {
   if (Math.abs(v) >= 1e9) return `$${(v/1e9).toFixed(2)}B`;
   if (Math.abs(v) >= 1e6) return `$${(v/1e6).toFixed(0)}M`;
   return `$${v.toLocaleString()}`;
+}
+
+function fmtShort(v) {
+  if (v === null || v === undefined) return '';
+  const sign = v < 0 ? '-' : '';
+  const a = Math.abs(v);
+  if (a >= 1e9) return `${sign}$${(a/1e9).toFixed(1)}B`;
+  if (a >= 1e6) return `${sign}$${(a/1e6).toFixed(0)}M`;
+  return `${sign}$${Math.round(a/1e3)}K`;
 }
 
 function fmtPct(v) {
