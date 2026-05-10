@@ -128,7 +128,7 @@ class StonksAnalyzer:
         pp = self._analyze_profitability_path(years, records)
 
         overall_score, overall_verdict = self._overall(dq, ra, pp)
-        summary = self._build_summary(ticker, dq, ra, pp, overall_verdict)
+        summary = self._build_summary(ticker, dq, ra, pp, overall_verdict, years, records)
 
         return StonksAnalysis(
             ticker=ticker,
@@ -603,61 +603,141 @@ class StonksAnalyzer:
         ra: RunwayAnalysis,
         pp: ProfitabilityPath,
         overall_verdict: str,
+        years: list[int] | None = None,
+        records: dict | None = None,
     ) -> str:
-        verdict_ja = {
-            "GOOD_DEFICIT": "良い赤字",
-            "BAD_DEFICIT":  "悪い赤字",
-            "PROFITABLE":   "純利益黒字",
-            "UNKNOWN":      "不明",
+        verdict_label_map = {
+            "GOOD_DEFICIT": "高成長×積極投資の好例",
+            "WATCH":        "成長・投資のバランス要確認",
+            "BAD_DEFICIT":  "採算性に懸念",
+            "PROFITABLE":   "黒字転換済み",
         }
-        overall_ja = {
-            "10x_CANDIDATE": "急成長候補",
-            "PROMISING":     "バランス有望",
-            "WATCH":         "条件付き観察",
-            "AVOID":         "基準未達",
+        runway_label_map = {
+            "SAFE":   "極めて安全水準",
+            "WATCH":  "要注意水準",
+            "DANGER": "危険水準",
         }
-        trend_ja = {
-            "ACCELERATING": "加速中",
-            "IMPROVING":    "改善中",
-            "FLAT":         "横ばい",
-            "DETERIORATING":"悪化中",
-            "UNKNOWN":      "不明",
+        path_label_map = {
+            "ACCELERATING":  "明確な道筋",
+            "IMPROVING":     "改善中",
+            "FLAT":          "横ばい",
+            "DETERIORATING": "悪化中",
+        }
+        trend_ja_map = {
+            "ACCELERATING":  "加速中",
+            "IMPROVING":     "改善中",
+            "FLAT":          "横ばい",
+            "DETERIORATING": "悪化中",
+            "UNKNOWN":       "不明",
         }
 
-        def _fix(s: str) -> str:
-            return s.replace("R&D+SM", "研究開発+販売管理").replace("CAGR", "成長率")
+        def cagr_cmt(v):
+            if v is None: return "計算不可"
+            if v >= 50: return "極めて強い成長エンジン"
+            if v >= 30: return "高い成長力"
+            if v >= 20: return "安定した成長"
+            if v >= 10: return "緩やかな成長"
+            return "成長鈍化"
 
-        dq_v = verdict_ja.get(dq.verdict, dq.verdict)
-        trend_str = trend_ja.get(pp.ocf_trend, pp.ocf_trend)
+        def invest_cmt(v):
+            if v >= 60: return "将来への戦略的投資を継続"
+            if v >= 40: return "積極的な投資姿勢"
+            if v >= 20: return "標準的な投資水準"
+            return "投資水準は低め"
+
+        def gm_cmt(v):
+            if v is None: return "データなし"
+            if v >= 70: return "高収益ビジネスモデル"
+            if v >= 50: return "良好な収益構造"
+            if v >= 30: return "改善余地はあるが安定基盤"
+            return "収益構造の改善が課題"
+
+        def fmt_b(v):
+            if v is None: return "N/A"
+            if abs(v) >= 1e9: return f"${v/1e9:.1f}B"
+            if abs(v) >= 1e6: return f"${v/1e6:.0f}M"
+            return f"${v:,.0f}"
+
+        # 投資比率
+        invest_no_data = dq.rnd_ratio is None and dq.sm_ratio is None
+        invest_ratio = (dq.rnd_ratio or 0.0) + (dq.sm_ratio or 0.0)
+
+        # 純利益マージン改善（直近2年）
+        ni_margin_line = None
+        if years and records and len(years) >= 2:
+            margins = []
+            for yr in years[-2:]:
+                ni = records.get(yr, {}).get("pl", {}).get("net_income")
+                rev = records.get(yr, {}).get("pl", {}).get("revenue")
+                if ni is not None and rev and rev > 0:
+                    margins.append(ni / rev * 100)
+            if len(margins) == 2:
+                imp = margins[1] - margins[0]
+                ni_margin_line = f"純利益マージン改善: {margins[0]:.1f}%→{margins[1]:.1f}%（{imp:+.1f}pt/年）"
+
+        # ランウェイ
+        if ra.monthly_burn is not None and ra.monthly_burn >= 0:
+            runway_detail = "∞（CF黒字）"
+        elif ra.runway_months == float("inf"):
+            runway_detail = "∞（CF黒字）"
+        elif ra.runway_months is not None:
+            runway_detail = f"{ra.runway_months:.0f}ヶ月確保"
+        else:
+            runway_detail = "算出不可"
+
+        # OCF黒字化テキスト
+        if pp.hidden_profit_already:
+            ocf_be_text = "営業CF黒字：達成済み"
+        elif pp.ocf_breakeven_year:
+            ocf_be_text = f"営業CF黒字化予測：{pp.ocf_breakeven_year}年頃"
+        else:
+            m = {"NO_TREND": "黒字化予測不可（悪化中）", "NO_DATA": "データ不足", "TOO_FAR": "5年超"}
+            ocf_be_text = f"営業CF黒字化：{m.get(pp.ocf_breakeven_reason, pp.ocf_breakeven_reason or '不明')}"
+
+        # GAAP黒字化テキスト
+        if pp.gaap_breakeven_reason == "ACHIEVED":
+            gaap_be_text = "純利益黒字：達成済み"
+        elif pp.gaap_breakeven_year:
+            gaap_be_text = f"純利益黒字化予測：{pp.gaap_breakeven_year}年頃"
+        else:
+            m = {"NO_TREND": "純利益黒字化予測不可", "NO_DATA": "純利益データ不足", "TOO_FAR": "純利益黒字化：5年超"}
+            gaap_be_text = m.get(pp.gaap_breakeven_reason, f"純利益：{pp.gaap_breakeven_reason or '不明'}")
+
+        verdict_label = verdict_label_map.get(dq.verdict, dq.verdict)
+        runway_label  = runway_label_map.get(ra.verdict, ra.verdict)
+        path_label    = path_label_map.get(pp.ocf_trend, pp.ocf_trend)
+        trend_ja      = trend_ja_map.get(pp.ocf_trend, pp.ocf_trend)
+
+        cagr_str = f"{dq.cagr_3yr:.1f}" if dq.cagr_3yr is not None else "N/A"
+        gm_str   = f"{dq.gross_margin:.1f}" if dq.gross_margin is not None else "N/A"
+        dq_s = int(dq.score or 0)
+        ra_s = int(ra.score or 0)
+        pp_s = int(pp.score or 0)
 
         lines = [
-            f"[{ticker}] 総合判定: {overall_ja.get(overall_verdict, overall_verdict)}",
-            f"① 赤字品質 : {dq_v} (スコア {dq.score}) — {_fix(dq.verdict_reason[:60])}",
+            "【総合スコア判定根拠】",
+            "",
+            f"赤字品質 {dq_s}点　（{verdict_label}）",
+            f"• 売上成長率 {cagr_str}%　→　{cagr_cmt(dq.cagr_3yr)}",
         ]
-
-        if ra.runway_months == float("inf"):
-            runway_str = "∞（CF黒字）"
-        elif ra.runway_months is not None:
-            runway_str = f"{ra.runway_months:.0f}ヶ月"
+        if invest_no_data:
+            lines.append("• 研究開発+販管費 データなし")
         else:
-            runway_str = "N/A"
+            lines.append(f"• 研究開発+販管費 {invest_ratio:.1f}%　→　{invest_cmt(invest_ratio)}")
+        lines.append(f"• 粗利率 {gm_str}%　→　{gm_cmt(dq.gross_margin)}")
+        if ni_margin_line:
+            lines.append(f"• {ni_margin_line}")
 
-        lines.append(f"② 生存能力 : {ra.verdict} Runway={runway_str} — {ra.verdict_reason}")
-
-        be_reason_ja = {
-            "ACHIEVED": "達成済み",
-            "PREDICTED": f"{pp.ocf_breakeven_year}年頃" if pp.ocf_breakeven_year else "予測あり",
-            "NO_TREND": "予測不可（悪化中）",
-            "NO_DATA": "データ不足",
-            "TOO_FAR": "5年超",
-        }
-        if pp.hidden_profit_already:
-            hidden = "✅ 営業CF黒字達成済み"
-        elif pp.ocf_breakeven_year:
-            hidden = f"営業CF黒字化予測: {pp.ocf_breakeven_year}年頃"
-        else:
-            hidden = f"営業CF黒字化: {be_reason_ja.get(pp.ocf_breakeven_reason, pp.ocf_breakeven_reason)}"
-        lines.append(f"③ 黒字化   : 営業CFトレンド={trend_str} / {hidden}")
+        lines += [
+            "",
+            f"生存能力 {ra_s}点　（{runway_label}）",
+            f"• 現金 {fmt_b(ra.cash)}・月次バーン {fmt_b(ra.monthly_burn)}/月　→　ランウェイ{runway_detail}",
+            "",
+            f"黒字化パス {pp_s}点　（{path_label}）",
+            f"• 営業CFトレンド {trend_ja}",
+            f"• {ocf_be_text}",
+            f"• {gaap_be_text}",
+        ]
 
         return "\n".join(lines)
 
