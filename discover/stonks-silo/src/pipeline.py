@@ -102,33 +102,33 @@ def run(tickers: list[str] | None = None) -> dict:
                 for yr, rec in data["records"].items()
             }
 
-            # バリュエーション取得・計算
             val = fetch_valuation(ticker)
-            latest_yr = data["years"][-1]
-            latest_rev_san = data["records"][latest_yr]["pl"].get("revenue_sanitized")
-            latest_cash    = data["records"][latest_yr]["bs"].get("cash_and_equivalents")
-            latest_sti     = data["records"][latest_yr]["bs"].get("short_term_investments")
-            cash_total     = (latest_cash or 0) + (latest_sti or 0) or None
+            latest_rev = None
+            for yr in reversed(data["years"]):
+                r = data["records"][yr]["pl"].get("revenue_sanitized")
+                if r:
+                    latest_rev = r
+                    break
 
-            psr      = None
-            ev_sales = None
-            net_cash = None
+            psr = val["market_cap"] / latest_rev if val["market_cap"] and latest_rev else None
+            ev_sales = val["enterprise_value"] / latest_rev if val["enterprise_value"] and latest_rev else None
 
-            if latest_rev_san and latest_rev_san > 0:
-                if val["market_cap"] is not None:
-                    psr = round(val["market_cap"] / latest_rev_san, 2)
-                if val["enterprise_value"] is not None:
-                    ev_sales = round(val["enterprise_value"] / latest_rev_san, 2)
+            latest_bs = data["records"][data["years"][-1]]["bs"]
+            cash = (latest_bs.get("cash_and_equivalents") or 0) + (latest_bs.get("short_term_investments") or 0)
+            total_debt = val["total_debt"] or 0
+            net_cash = cash - total_debt if (latest_bs.get("cash_and_equivalents") is not None) else None
 
-            if cash_total is not None and val["total_debt"] is not None:
-                net_cash = cash_total - val["total_debt"]
-            elif cash_total is not None:
-                net_cash = cash_total  # 無借金
-
-            val["psr"]      = psr
-            val["ev_sales"] = ev_sales
-            val["net_cash"] = net_cash
-            result["valuation"] = val
+            result["valuation"] = {
+                "market_cap":       val["market_cap"],
+                "current_price":    val["current_price"],
+                "enterprise_value": val["enterprise_value"],
+                "total_debt":       val["total_debt"],
+                "psr":              round(psr, 1) if psr else None,
+                "ev_sales":         round(ev_sales, 1) if ev_sales else None,
+                "net_cash":         net_cash,
+                "fetched_at":       val["fetched_at"],
+                "error":            val["error"],
+            }
 
             results[ticker] = result
             print(f"  [{ticker}] {analysis.overall_verdict} (score={analysis.overall_score})")
