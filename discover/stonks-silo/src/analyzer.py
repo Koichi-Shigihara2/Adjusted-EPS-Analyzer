@@ -49,6 +49,15 @@ class DeficitQuality:
     verdict_reason: str = ""
     score: Optional[float] = None             # 0-100 (高いほど「攻めの赤字」)
 
+    # 追加指標
+    rule_of_40: Optional[float] = None        # 売上成長率 + 営業利益率
+    mature_profit: Optional[float] = None     # 純利益 + R&D + SM
+    sbc_adjusted_fcf: Optional[float] = None  # FCF - SBC
+    sbc_ratio: Optional[float] = None         # SBC ÷ 売上
+    sbc_yoy_change: Optional[float] = None    # SBC前年比変化率(%)
+    dilution_risk: str = "UNKNOWN"            # HIGH/MEDIUM/LOW/UNKNOWN
+    deficit_fixed_risk: str = "MEDIUM"        # HIGH/MEDIUM/LOW
+
 
 @dataclass
 class RunwayAnalysis:
@@ -126,6 +135,7 @@ class StonksAnalyzer:
         dq = self._analyze_deficit_quality(years, records)
         ra = self._analyze_runway(years, records)
         pp = self._analyze_profitability_path(years, records)
+        dq.deficit_fixed_risk = self._calc_deficit_fixed_risk(dq, pp)
 
         overall_score, overall_verdict = self._overall(dq, ra, pp)
         summary = self._build_summary(ticker, dq, ra, pp, overall_verdict, years, records)
@@ -202,6 +212,44 @@ class StonksAnalyzer:
             net_income, cagr_3yr, rev_growth, rnd_ratio, sm_ratio, gross_margin
         )
 
+        # Rule of 40（売上成長率 + 営業利益率）
+        rule_of_40 = None
+        if revenue and revenue > 0 and cagr_3yr is not None:
+            operating_income = pl.get("operating_income")
+            if operating_income is not None:
+                rule_of_40 = round(cagr_3yr + operating_income / revenue * 100, 1)
+
+        # 成熟想定利益（純利益 + R&D + SM）
+        mature_profit = None
+        if net_income is not None:
+            _rnd = pl.get("research_and_development")
+            _sm = pl.get("selling_and_marketing")
+            mature_profit = net_income + (_rnd or 0) + (_sm or 0)
+
+        # SBC 関連
+        cf = latest["cf"]
+        sbc = cf.get("stock_based_compensation")
+        fcf = cf.get("free_cash_flow")
+        sbc_adjusted_fcf = (fcf - sbc) if fcf is not None and sbc is not None else None
+        sbc_ratio_val = (sbc / revenue * 100) if sbc is not None and revenue and revenue > 0 else None
+
+        # SBC YoY 変化
+        sbc_yoy_change = None
+        if len(years) >= 2 and sbc is not None:
+            prev_sbc = records[years[-2]]["cf"].get("stock_based_compensation")
+            if prev_sbc is not None and prev_sbc != 0:
+                sbc_yoy_change = (sbc - prev_sbc) / abs(prev_sbc) * 100
+
+        # 希薄化リスク
+        if sbc_ratio_val is None:
+            dilution_risk = "UNKNOWN"
+        elif sbc_ratio_val >= 15:
+            dilution_risk = "HIGH"
+        elif sbc_ratio_val >= 8:
+            dilution_risk = "MEDIUM"
+        else:
+            dilution_risk = "LOW"
+
         return DeficitQuality(
             latest_year=latest_year,
             revenue=revenue,
@@ -215,6 +263,12 @@ class StonksAnalyzer:
             verdict=verdict,
             verdict_reason=reason,
             score=score,
+            rule_of_40=rule_of_40,
+            mature_profit=mature_profit,
+            sbc_adjusted_fcf=sbc_adjusted_fcf,
+            sbc_ratio=sbc_ratio_val,
+            sbc_yoy_change=sbc_yoy_change,
+            dilution_risk=dilution_risk,
         )
 
     def _deficit_verdict(
@@ -304,6 +358,15 @@ class StonksAnalyzer:
         return verdict, " / ".join(reasons), round(score, 1)
 
     # ------------------------------------------------------------------
+    def _calc_deficit_fixed_risk(self, dq: DeficitQuality, pp: ProfitabilityPath) -> str:
+        if dq.verdict == "GOOD_DEFICIT":
+            if pp.ocf_trend in ("ACCELERATING", "IMPROVING"):
+                return "LOW"
+            return "MEDIUM"
+        if dq.verdict == "BAD_DEFICIT" and pp.ocf_trend == "DETERIORATING":
+            return "HIGH"
+        return "MEDIUM"
+
     # ② 生存能力（Runway）
     # ------------------------------------------------------------------
 

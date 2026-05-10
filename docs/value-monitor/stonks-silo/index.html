@@ -524,11 +524,20 @@ function buildDetail(ticker, d) {
   <div class="detail-bottom">
     <div class="detail-col">
       <div class="detail-col-title">① 赤字品質 · 詳細</div>
+      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">成長効率</div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">売上成長率（3年）<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>=20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率${dq.gross_margin_derived?'<span class="tip-wrap" style="margin-left:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--amb);border:1px solid var(--amb);border-radius:50%;width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;line-height:1">逆</span><span class="tip-box" style="width:220px">売上高 − 原価コスト（CostOfRevenue）から逆算した推定値。SEC が GrossProfit タグを未申告のため。</span></span>':''}<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">研究開発比率<span class="tip-icon">?</span><span class="tip-box">研究開発費÷売上高×100。技術・製品への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">販売管理比率<span class="tip-icon">?</span><span class="tip-box">販売・マーケティング費÷売上高×100。市場拡大への投資強度</span></span></span><span class="detail-val">${fmtPct(dq.sm_ratio)}</span></div>
-      <div class="detail-row"><span class="detail-key">純利益</span><span class="detail-val ${dq.net_income!==null&&dq.net_income>=0?'pos':'neg'}">${fmtB(dq.net_income)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">Rule of 40<span class="tip-icon">?</span><span class="tip-box">売上成長率(3年CAGR)+営業利益率の合計。40以上が優良SaaS基準</span></span></span><span class="detail-val ${dq.rule_of_40!=null&&dq.rule_of_40>=40?'pos':''}">${dq.rule_of_40!=null?dq.rule_of_40.toFixed(1):'—'}</span></div>
+      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">投資性赤字分析</div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成長投資比率<span class="tip-icon">?</span><span class="tip-box">（研究開発費+販売管理費）÷売上高×100。高いほど将来への積極投資中</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio!=null||dq.sm_ratio!=null?(dq.rnd_ratio||0)+(dq.sm_ratio||0):null)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成熟想定利益<span class="tip-icon">?</span><span class="tip-box">純利益+R&D+販管費。先行投資を除いた「成熟後の利益」試算。プラスなら本業収益力あり</span></span></span><span class="detail-val ${dq.mature_profit!=null?(dq.mature_profit>=0?'pos':'neg'):''}">${fmtB(dq.mature_profit)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC調整後FCF<span class="tip-icon">?</span><span class="tip-box">フリーキャッシュフロー − 株式報酬。SBCは非現金だが株主への希薄化コストとして控除</span></span></span><span class="detail-val ${dq.sbc_adjusted_fcf!=null?(dq.sbc_adjusted_fcf>=0?'pos':'neg'):''}">${fmtB(dq.sbc_adjusted_fcf)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC比率（売上比）<span class="tip-icon">?</span><span class="tip-box">株式報酬÷売上高×100。≥15%=HIGH希薄化 / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span><span class="detail-val">${fmtPct(dq.sbc_ratio)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBCトレンド（前年比）<span class="tip-icon">?</span><span class="tip-box">株式報酬の前年比変化率。増加=希薄化拡大(赤) / 減少=改善(緑)</span></span></span><span class="detail-val ${dq.sbc_yoy_change!=null?(dq.sbc_yoy_change>0?'neg':'pos'):''}">${fmtPct(dq.sbc_yoy_change)}</span></div>
+      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">判定</div>
+      <div class="detail-row"><span class="detail-key">投資性赤字</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">赤字固定化リスク<span class="tip-icon">?</span><span class="tip-box">良い赤字×OCF改善中→LOW / 悪い赤字×悪化中→HIGH</span></span></span>${riskBadge(dq.deficit_fixed_risk)}</div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">希薄化リスク<span class="tip-icon">?</span><span class="tip-box">SBC比率による株主希薄化リスク。≥15%=HIGH / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span>${riskBadge(dq.dilution_risk)}</div>
     </div>
     <div class="detail-col">
       <div class="detail-col-title">② 生存能力 · 詳細</div>
@@ -637,6 +646,16 @@ function fmtShort(v) {
 function fmtPct(v) {
   if (v === null || v === undefined) return '—';
   return `${v.toFixed(1)}%`;
+}
+
+function riskBadge(level) {
+  const map = {
+    'LOW':     ['LOW',    'var(--grn)'],
+    'MEDIUM':  ['MEDIUM', 'var(--amb)'],
+    'HIGH':    ['HIGH',   'var(--red)'],
+  };
+  const [label, color] = map[level] || ['—', 'var(--mut)'];
+  return `<span style="font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:${color};border:1px solid ${color};padding:2px 7px">${label}</span>`;
 }
 
 function formatSummary(text) {
