@@ -123,7 +123,7 @@
     .bar-pos{background:rgba(16,185,129,.5);border-top:1px solid var(--grn)}
     .bar-neg{background:rgba(244,63,94,.2);border-bottom:1px solid var(--red)}
     .bar-yr{font-family:var(--mono);font-size:8px;color:var(--mut)}
-    .bar-amt{font-family:var(--mono);font-size:7px;line-height:1.2;text-align:center;white-space:nowrap}
+    .bar-amt{font-family:var(--mono);font-size:8px;line-height:1.2;text-align:center;white-space:nowrap}
 
     /* 下段: 詳細数値 */
     .detail-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:14px}
@@ -424,22 +424,27 @@ function buildDetail(ticker, d) {
   // バーチャートヘルパー（ゼロライン中央・プラス上向き緑／マイナス下向き赤）
   function makeChart(vals) {
     const valid = vals.filter(v => v !== null);
-    if (!valid.length) return '<div style="height:104px"></div>';
+    if (!valid.length) return '<div style="height:152px"></div>';
     const maxAbs = Math.max(...valid.map(Math.abs), 1);
-    const halfH = 44;
+    const halfH = 60; // 上60px＋下60px＝120px
+
+    // bar-wrap高さ = 2*halfH = 120px（年ラベルは別行）
+    // プラスラベル: bottom:h+62 → バー上端から2px上（外側）
+    // マイナスラベル: top:halfH+h+2 → バー下端から2px下（外側）
     const bars = years.map((yr, i) => {
       const v = vals[i];
-      if (v === null) return `<div class="bar-wrap"><div style="height:${halfH * 2}px"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+      if (v === null) return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH * 2}px"></div></div>`;
       const h = Math.max(2, Math.round(Math.abs(v) / maxAbs * halfH));
       const amt = fmtShort(v);
-      const sp = halfH - h;
       if (v >= 0) {
-        return `<div class="bar-wrap"><div style="height:${sp}px;display:flex;align-items:flex-end;justify-content:center"><span class="bar-amt" style="color:var(--grn)">${sp >= 9 ? amt : ''}</span></div><div class="bar bar-pos" style="height:${h}px"></div><div style="height:${halfH}px"></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH-h}px"></div><div class="bar bar-pos" style="height:${h}px"></div><div style="height:${halfH}px"></div><span class="bar-amt" style="position:absolute;bottom:${h+62}px;left:0;right:0;text-align:center;color:var(--grn);font-size:8px">${amt}</span></div>`;
       } else {
-        return `<div class="bar-wrap"><div style="height:${halfH}px"></div><div class="bar bar-neg" style="height:${h}px"></div><div style="height:${sp}px;display:flex;align-items:flex-start;justify-content:center"><span class="bar-amt" style="color:var(--red)">${sp >= 9 ? amt : ''}</span></div><div class="bar-yr">${String(yr).slice(2)}</div></div>`;
+        return `<div class="bar-wrap" style="position:relative;overflow:visible"><div style="height:${halfH}px"></div><div class="bar bar-neg" style="height:${h}px"></div><div style="height:${halfH-h}px"></div><span class="bar-amt" style="position:absolute;top:${halfH+h+2}px;left:0;right:0;text-align:center;color:var(--red);font-size:8px">${amt}</span></div>`;
       }
     }).join('');
-    return `<div style="position:relative"><div class="bar-group">${bars}</div><div style="position:absolute;left:0;right:0;top:${halfH}px;height:1px;background:rgba(255,255,255,0.2)"></div></div>`;
+
+    const yrRow = years.map(yr => `<div style="flex:1;text-align:center;font-family:var(--mono);font-size:8px;color:var(--mut)">${String(yr).slice(2)}</div>`).join('');
+    return `<div style="position:relative;padding-top:14px;overflow:visible"><div class="bar-group" style="overflow:visible">${bars}</div><div style="display:flex;gap:3px;margin-top:4px">${yrRow}</div><div style="position:absolute;left:0;right:0;top:${halfH+14}px;height:1px;background:rgba(255,255,255,0.2)"></div></div>`;
   }
 
   // records の有無チェック
