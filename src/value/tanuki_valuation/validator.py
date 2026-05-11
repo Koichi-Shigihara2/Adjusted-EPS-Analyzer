@@ -342,6 +342,8 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     if ivps > 50000:
         anomalies.append(f"理論株価${ivps:.0f}が異常に高い")
 
+    if ivps <= 0:
+        anomalies.append(f"理論株価${ivps:.2f}がゼロ以下（FCF恒久マイナス銘柄）")
     checks["anomaly_detection"] = {
         "pass": len(anomalies) == 0,
         "detail": "、".join(anomalies) if anomalies else "異常値なし"
