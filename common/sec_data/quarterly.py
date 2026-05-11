@@ -138,6 +138,18 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
 
         processed = _process_entries(entries)
 
+        # Revenue追加フォールバック: 生データはあるが直近カットオフ後に空になった場合
+        # （例: METAは2018年以前はRevenues、以降はRevenueFromContractWith...に切り替え）
+        if field_name == "Revenue" and not processed:
+            for fallback_concept in _REVENUE_FALLBACKS:
+                fb_entries = _get_field_units(company_facts, fallback_concept, unit)
+                if fb_entries:
+                    fb_processed = _process_entries(fb_entries)
+                    if fb_processed:
+                        processed = fb_processed
+                        logger.debug("[%s] Revenue post-cutoff fallback: %s", ticker, fallback_concept)
+                        break
+
         # 汎用フォールバック: タグ欠如 または 有効期間内エントリなしの場合に適用
         if not processed and field_name in _FIELD_FALLBACKS:
             for fallback_concept in _FIELD_FALLBACKS[field_name]:
