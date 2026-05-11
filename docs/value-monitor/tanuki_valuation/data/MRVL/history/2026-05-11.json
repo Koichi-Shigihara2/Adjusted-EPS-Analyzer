@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 44020480707.29863,
+  "intrinsic_value_pt": 33292478757.044792,
   "intrinsic_value_per_share": 52.001158277915074,
-  "intrinsic_value_beta": 47.67,
-  "upside_percent_beta": -72.0,
+  "intrinsic_value_beta": 35.41,
+  "upside_percent_beta": -79.2,
   "intrinsic_value_rf": 305.54,
   "upside_percent_rf": 79.6,
-  "v0": 24678411168.99746,
-  "v0_adjusted": 24678411168.99746,
+  "v0": 18664164189.039444,
+  "v0_adjusted": 18664164189.039444,
   "alpha": 0.7837647815269352,
   "alpha_was_capped": false,
   "future_values": {
@@ -19,8 +19,8 @@
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
-    "value": 0.10570000000000002,
-    "beta": 1.1,
+    "value": 0.1285,
+    "beta": 1.5,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -90,43 +90,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 24678411168.99746,
-    "pv_high_growth": 6264900370.180847,
-    "pv_terminal": 18413510798.816612,
+    "v0": 18664164189.039444,
+    "pv_high_growth": 5885808262.5420475,
+    "pv_terminal": 12778355926.497396,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 1278764120.0,
-        "discount_factor": 1.1057000000000001,
-        "pv": 1156519960.2062042
+        "discount_factor": 1.1285,
+        "pv": 1133153850.2436862
       },
       {
         "year": 2,
         "fcf": 1470578738.0,
-        "discount_factor": 1.2225724900000003,
-        "pv": 1202856067.8639183
+        "discount_factor": 1.2735122500000002,
+        "pv": 1154742514.6479743
       },
       {
         "year": 3,
         "fcf": 1691165548.6999998,
-        "discount_factor": 1.3517984021930005,
-        "pv": 1251048637.1018412
+        "discount_factor": 1.4371585741250001,
+        "pv": 1176742482.8047588
       },
       {
         "year": 4,
         "fcf": 1944840381.0049996,
-        "discount_factor": 1.4946834933048008,
-        "pv": 1301172047.2706132
+        "discount_factor": 1.621833450900063,
+        "pv": 1199161590.8067987
       },
       {
         "year": 5,
         "fcf": 2236566438.1557493,
-        "discount_factor": 1.6526715385471185,
-        "pv": 1353303657.7382698
+        "discount_factor": 1.830239049340721,
+        "pv": 1222007824.0388288
       }
     ],
     "terminal_fcf": 2303663431.3004217,
-    "terminal_value": 30431485221.93423,
+    "terminal_value": 23387446003.049965,
     "v0_rm": 26799745179.827667
   },
   "fcf_base": {
@@ -224,18 +224,18 @@
     "current_price": 170.13,
     "latest_revenue": 8194600000.0,
     "rpo": 0.0,
-    "beta": 1.1,
+    "beta": 1.5,
     "sector": "Technology",
     "eps_data": {
       "ticker": "MRVL"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Technology)",
+    "_beta_source": "beta_config(Semiconductor)",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 6264900370.180847,
-    "pv_terminal": 18413510798.816612,
+    "pv_high": 5885808262.5420475,
+    "pv_terminal": 12778355926.497396,
     "roe_used": 0.1866106622683179,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -258,7 +258,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $6.26B + pv_terminal $18.41B = $24.68B (差異0.00%)"
+        "detail": "2段階: pv_high $5.89B + pv_terminal $12.78B = $18.66B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 5326425.238333478,
+  "intrinsic_value_pt": 4756576.281252696,
   "intrinsic_value_per_share": 0.11563528592701397,
   "intrinsic_value_beta": 0.12,
   "upside_percent_beta": -98.4,
   "intrinsic_value_rf": 0.13,
   "upside_percent_rf": -98.2,
-  "v0": 5326425.238333478,
-  "v0_adjusted": 5326425.238333478,
+  "v0": 4756576.281252696,
+  "v0_adjusted": 4756576.281252696,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -19,8 +19,8 @@
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
-    "value": 0.10570000000000002,
-    "beta": 1.1,
+    "value": 0.11425,
+    "beta": 1.25,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -90,43 +90,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 5326425.238333478,
-    "pv_high_growth": 1352174.709257493,
-    "pv_terminal": 3974250.5290759844,
+    "v0": 4756576.281252696,
+    "pv_high_growth": 1320565.2864398367,
+    "pv_terminal": 3436010.994812859,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 276000.0,
-        "discount_factor": 1.1057000000000001,
-        "pv": 249615.62810889026
+        "discount_factor": 1.11425,
+        "pv": 247700.24680278215
       },
       {
         "year": 2,
         "fcf": 317400.0,
-        "discount_factor": 1.2225724900000003,
-        "pv": 259616.5074841492
+        "discount_factor": 1.2415530625,
+        "pv": 255647.55110899662
       },
       {
         "year": 3,
         "fcf": 365010.0,
-        "discount_factor": 1.3517984021930005,
-        "pv": 270018.07326288463
+        "discount_factor": 1.3834004998906249,
+        "pv": 263849.83960093884
       },
       {
         "year": 4,
         "fcf": 419761.49999999994,
-        "discount_factor": 1.4946834933048008,
-        "pv": 280836.3789927804
+        "discount_factor": 1.5414540070031286,
+        "pv": 272315.293283446
       },
       {
         "year": 5,
         "fcf": 482725.7249999999,
-        "discount_factor": 1.6526715385471185,
-        "pv": 292088.12140878843
+        "discount_factor": 1.7175651273032362,
+        "pv": 281052.35564367316
       }
     ],
     "terminal_fcf": 497207.49674999993,
-    "terminal_value": 6568130.736459707,
+    "terminal_value": 5901572.6617210675,
     "v0_rm": 5784279.957458016
   },
   "fcf_base": {
@@ -209,18 +209,18 @@
     "current_price": 7.08,
     "latest_revenue": 3000000.0,
     "rpo": 0.0,
-    "beta": 1.1,
+    "beta": 1.25,
     "sector": "Consumer Cyclical",
     "eps_data": {
       "ticker": "AUR"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Technology)",
+    "_beta_source": "beta_config(Software_System)",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1352174.709257493,
-    "pv_terminal": 3974250.5290759844,
+    "pv_high": 1320565.2864398367,
+    "pv_terminal": 3436010.994812859,
     "roe_used": 0.0,
     "fcf_floor_applied": 601108400.0,
     "fcf_growth_floor": 0.15,
@@ -243,7 +243,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.00B + pv_terminal $0.00B = $0.01B (差異0.00%)"
+        "detail": "2段階: pv_high $0.00B + pv_terminal $0.00B = $0.00B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,

@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 72556586.63458349,
+  "intrinsic_value_pt": 88557579.51403068,
   "intrinsic_value_per_share": 2.0065409603751876,
-  "intrinsic_value_beta": 1.96,
-  "upside_percent_beta": -81.1,
+  "intrinsic_value_beta": 2.09,
+  "upside_percent_beta": -79.9,
   "intrinsic_value_rf": 4.97,
   "upside_percent_rf": -52.0,
-  "v0": 72313324.51069471,
-  "v0_adjusted": 72556586.63458349,
+  "v0": 88314317.3901419,
+  "v0_adjusted": 88557579.51403068,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -19,8 +19,8 @@
   "formula": "Koichi式 v7.3.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "wacc": {
-    "value": 0.10570000000000002,
-    "beta": 1.1,
+    "value": 0.09259,
+    "beta": 0.87,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -90,43 +90,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 72313324.51069471,
-    "pv_high_growth": 18357574.577782806,
-    "pv_terminal": 53955749.93291191,
+    "v0": 88314317.3901419,
+    "pv_high_growth": 19046882.89802464,
+    "pv_terminal": 69267434.49211726,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 3747067.9999999995,
-        "discount_factor": 1.1057000000000001,
-        "pv": 3388864.9724156633
+        "discount_factor": 1.09259,
+        "pv": 3429528.0022698357
       },
       {
         "year": 2,
         "fcf": 4309128.199999999,
-        "discount_factor": 1.2225724900000003,
-        "pv": 3524640.244440637
+        "discount_factor": 1.1937529080999998,
+        "pv": 3609732.106838166
       },
       {
         "year": 3,
         "fcf": 4955497.429999999,
-        "discount_factor": 1.3517984021930005,
-        "pv": 3665855.368641342
+        "discount_factor": 1.3042824898609788,
+        "pv": 3799405.012734777
       },
       {
         "year": 4,
         "fcf": 5698822.044499998,
-        "discount_factor": 1.4946834933048008,
-        "pv": 3812728.2933323164
+        "discount_factor": 1.4250460055972067,
+        "pv": 3999044.256898739
       },
       {
         "year": 5,
         "fcf": 6553645.351174997,
-        "discount_factor": 1.6526715385471185,
-        "pv": 3965485.698952847
+        "discount_factor": 1.556991015255452,
+        "pv": 4209173.519283125
       }
     ],
     "terminal_fcf": 6750254.711710247,
-    "terminal_value": 89171132.2550891,
+    "terminal_value": 107848773.15402216,
     "v0_rm": 78529312.79576916
   },
   "fcf_base": {
@@ -222,18 +222,18 @@
     "current_price": 10.37,
     "latest_revenue": 40729000.0,
     "rpo": 300000.0,
-    "beta": 1.1,
+    "beta": 0.87,
     "sector": "Industrials",
     "eps_data": {
       "ticker": "RCAT"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Technology)",
+    "_beta_source": "beta_config(Aerospace_Defense)",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 18357574.577782806,
-    "pv_terminal": 53955749.93291191,
+    "pv_high": 19046882.89802464,
+    "pv_terminal": 69267434.49211726,
     "roe_used": 0.0,
     "fcf_floor_applied": 19735534.333333336,
     "fcf_growth_floor": 0.15,
@@ -256,7 +256,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.02B + pv_terminal $0.05B = $0.07B (差異0.00%)"
+        "detail": "2段階: pv_high $0.02B + pv_terminal $0.07B = $0.09B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
