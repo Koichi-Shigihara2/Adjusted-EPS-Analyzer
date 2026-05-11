@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-05-11T12:37:57.556533",
+  "last_updated": "2026-05-11T12:47:37.930447",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -87,26 +87,26 @@
       },
       "ai_analysis": {
         "health": "Caution",
-        "comment": "株式報酬費用と無形資産償却費が調整額の大きな部分を占めており、これらは毎期発生する恒常的な性質が強いため調整の質を低下させています。リストラ費用は一過性として妥当ですが、異常貸倒引当もマクロ要因による一時的項目と位置づけられる一方で全体の健全性は注意を要します。",
+        "comment": "株式報酬費用と無形資産償却費が調整額の大部分を占めており、これらは毎期発生する可能性の高い非現金項目であるため、Adjusted EPSの健全性は中程度。リストラ費用と異常貸倒引当金は一過性が高いと評価されるが、全体として調整の質に注意が必要で過度に楽観的なEPSになっていないか検証を推奨。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用",
+            "snippet": "非現金費用として毎期発生する可能性の高い株式報酬費用をadd back",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却",
+            "snippet": "買収関連無形資産の償却として定期的に発生する非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響",
-            "confidence": 0.6
+            "snippet": "マクロ変動による一時的影響として異常変動分をadd back",
+            "confidence": 0.75
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用",
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd back",
             "confidence": 0.8
           }
         ]

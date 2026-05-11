@@ -1,6 +1,6 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-05-11T12:36:07.123620",
+  "last_updated": "2026-05-11T12:45:58.326886",
   "quarters": [
     {
       "gaap_eps": 2.7823248114769172,
@@ -34,9 +34,15 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "Caution",
+        "comment": "唯一の調整項目は株式報酬費用(SBC)の加算です。非現金費用という根拠は事実ですが、Amazonでは毎期多額に発生する恒常的な報酬コストであり、株主希薄化効果も伴います。調整後EPSの上方修正幅が大きいため、持続的な収益力の過大評価につながる可能性があり、健全性に注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_backするが、毎期発生するSBCは恒常的な報酬コストであり一過性とはみなせない",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
