@@ -19,7 +19,7 @@ from common.sec_data.fetcher import SECFetcher, load_company_facts
 from common.sec_data.parser import SECParser
 from common.sec_data.quarterly import build_raw_table, save_raw_table
 from common.sec_data.normalizer import normalize, save_normalized
-from common.sec_data.ttm_calculator import calc_ttm, save_ttm_series
+from common.sec_data.ttm_calculator import calc_ttm_series, save_ttm_series
 
 
 def main():
@@ -85,10 +85,11 @@ def main():
 
         # 5. TTMシリーズ生成
         try:
-            ttm_result = calc_ttm(ticker, normalized)
-            save_ttm_series(ticker, ttm_result)
-            ttm_fields = list(ttm_result.get("ttm", {}).keys())
-            print(f"   TTM: {len(ttm_fields)} fields → {ttm_fields[:5]}...")
+            ttm_series = calc_ttm_series(ticker, normalized)
+            save_ttm_series(ticker, ttm_series)
+            n = len(ttm_series)
+            fields_sample = list(ttm_series[0].get("flow", {}).keys()) if ttm_series else []
+            print(f"   TTM: {n} periods → {fields_sample[:5]}...")
         except Exception as e:
             print(f"   [WARN] TTM計算エラー: {e}")
 
