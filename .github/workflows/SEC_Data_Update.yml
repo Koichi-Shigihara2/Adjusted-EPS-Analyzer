@@ -44,10 +44,12 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add common/sec_data/data/
-          git add common/sec_data/raw/
-          git add common/sec_data/normalized/
-          git add common/sec_data/ttm/
+          echo "--- Generated directories ---"
+          ls common/sec_data/
+          git add common/sec_data/data/ || true
+          git add --ignore-unmatch common/sec_data/raw/
+          git add --ignore-unmatch common/sec_data/normalized/
+          git add --ignore-unmatch common/sec_data/ttm/
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
