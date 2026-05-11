@@ -45,6 +45,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add common/sec_data/data/
+          git add common/sec_data/raw/
+          git add common/sec_data/normalized/
+          git add common/sec_data/ttm/
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
@@ -56,12 +59,13 @@ jobs:
         run: |
           echo "## SEC Data Update Complete" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Ticker | Annual Files |" >> $GITHUB_STEP_SUMMARY
-          echo "|:-----------|:-----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Ticker | Annual Files | TTM Files |" >> $GITHUB_STEP_SUMMARY
+          echo "|:-----------|:-----------|:-----------|" >> $GITHUB_STEP_SUMMARY
           for dir in common/sec_data/data/*/; do
             ticker=$(basename $dir)
             if [ "$ticker" != "_cik_cache.json" ]; then
               annual_count=$(ls -1 $dir/annual_*.json 2>/dev/null | wc -l)
-              echo "| $ticker | ${annual_count} files |" >> $GITHUB_STEP_SUMMARY
+              ttm_count=$(ls -1 common/sec_data/ttm/${ticker}_ttm_series.json 2>/dev/null | wc -l)
+              echo "| $ticker | ${annual_count} files | ${ttm_count} files |" >> $GITHUB_STEP_SUMMARY
             fi
           done
