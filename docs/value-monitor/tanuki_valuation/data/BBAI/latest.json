@@ -133,7 +133,7 @@
     "base_fcf": 10213760.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 10213760.0,
-    "fcf_2yr_avg": -40539500.0,
+    "fcf_2yr_avg": -42501000.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -143,7 +143,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -42476000,
+    "fcf_value": -54052000,
     "threshold_pct": 0.0,
     "transient_evidence": {
       "found": true,
@@ -189,7 +189,7 @@
       "total_transient_amount": 4721000.0
     },
     "action": "excluded",
-    "note": "FY2025 FCF($-42.5M)がマイナス。一過性費用合計$5M(金融関連(貸倒引当金繰入（異常変動分） $0M)、リストラ・事業再編関連(リストラ費用 $0M)、リストラ・事業再編関連(リストラ費用 $1M)、リストラ・事業再編関連(リストラ費用 $2M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、リストラ・事業再編関連(リストラ費用 $2M))による影響と判断し除外。5年平均($-34M)を採用。"
+    "note": "FY2025 FCF($-54.1M)がマイナス。一過性費用合計$5M(金融関連(貸倒引当金繰入（異常変動分） $0M)、リストラ・事業再編関連(リストラ費用 $0M)、リストラ・事業再編関連(リストラ費用 $1M)、リストラ・事業再編関連(リストラ費用 $2M)、金融関連(貸倒引当金繰入（異常変動分） $0M)、リストラ・事業再編関連(リストラ費用 $2M))による影響と判断し除外。5年平均($-33M)を採用。"
   },
   "fcf_estimation": {
     "applied": false,
@@ -215,46 +215,46 @@
   },
   "rice": {
     "available": true,
-    "q": 0.1917,
-    "cf_conversion": -15.698,
+    "q": 0.1456,
+    "cf_conversion": -0.5443,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.0333,
-    "avg_rev_growth_lagged": -0.0575,
+    "avg_intensity": 0.0563,
+    "avg_rev_growth_lagged": -0.0668,
     "warnings": true,
-    "note": "R&D未取得（FY2024）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / 投資強度が低すぎる（FY2024: 0.405%）: R&D未取得の可能性。CF値が過大になる場合がある",
+    "note": "販売・マーケティング費未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.203,
-      "rice": -6.108,
+      "rice": -0.161,
       "rice_per_ratio": 0.0
     },
     "base": {
       "growth_rate": 0.29,
-      "rice": -8.725,
+      "rice": -0.23,
       "rice_per_ratio": 0.0
     },
     "bull": {
       "growth_rate": 0.348,
-      "rice": -10.47,
+      "rice": -0.276,
       "rice_per_ratio": 0.0
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -33900400.0,
-    "fcf_2yr_avg": -40539500.0,
+    "fcf_5yr_avg": -33354800.0,
+    "fcf_2yr_avg": -42501000.0,
     "fcf_base_used": 10213760.0,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      -42476000,
-      -38603000,
-      -18309000,
-      -49687000,
-      -20427000
+      -54052000,
+      -30950000,
+      -20689000,
+      -53816000,
+      -7267000
     ],
     "diluted_shares": 478949450,
     "roe_10yr_avg": 0.0,
@@ -274,7 +274,7 @@
     "pv_high": 77653252.13105366,
     "pv_terminal": 208462229.07755968,
     "roe_used": 0.0,
-    "fcf_floor_applied": 44114160.0,
+    "fcf_floor_applied": 43568560.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,

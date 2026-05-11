@@ -196,29 +196,29 @@
     "v0_rm": 201111330985.45752
   },
   "fcf_base": {
-    "base_fcf": 21151000000.0,
+    "base_fcf": 22276200000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 21151000000.0,
-    "fcf_2yr_avg": 18390000000.0,
-    "cv": 0.172,
+    "fcf_5yr_avg": 22276200000.0,
+    "fcf_2yr_avg": 22264000000.0,
+    "cv": 0.385,
     "cv_threshold": 0.5,
-    "ratio": 0.172,
+    "ratio": 0.385,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": true,
-    "rule": "deviation_large",
+    "detected": false,
+    "rule": "none",
     "fiscal_year": 2025,
-    "fcf_value": 16075000000,
-    "threshold_pct": 0.2,
+    "fcf_value": 19666000000,
+    "threshold_pct": 0.0,
     "transient_evidence": {
       "found": false,
       "source": null,
       "items": [],
       "total_transient_amount": 0.0
     },
-    "action": "flagged",
-    "note": "FY2025 FCF($16075M)が5年平均($21151M)から24%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "action": "none",
+    "note": ""
   },
   "fcf_estimation": {
     "applied": true,
@@ -226,10 +226,10 @@
     "adj_net_income": 14167606279.656738,
     "conversion_rate": 0.7,
     "estimated_fcf": 9917324395.759716,
-    "raw_fcf": 21151000000.0,
+    "raw_fcf": 22276200000.0,
     "sector": "",
-    "note": "調整済み純利益$14.17B × 転換率70%[sector()] = 推定FCF$9.92B（従来$21.15Bの0.5倍）",
-    "divergence_ratio": 0.47,
+    "note": "調整済み純利益$14.17B × 転換率70%[sector()] = 推定FCF$9.92B（従来$22.28Bの0.4倍）",
+    "divergence_ratio": 0.45,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -244,46 +244,46 @@
   },
   "rice": {
     "available": true,
-    "q": 1.5376,
-    "cf_conversion": 9.4614,
+    "q": 1.3721,
+    "cf_conversion": 11.4691,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.0121,
-    "avg_rev_growth_lagged": 0.1139,
+    "avg_intensity": 0.0089,
+    "avg_rev_growth_lagged": 0.1023,
     "warnings": true,
-    "note": "販売・マーケティング費未取得（FY2024, 2023, 2022）: 投資強度が過小になる可能性 / SGA取得漏れ疑い（FY2024(100%), FY2023(100%), FY2022(100%)）: 投資強度が過小の可能性。company_factsを再取得して確認してください",
+    "note": "R&D未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / 販売・マーケティング費未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: 投資強度が過小になる可能性 / 投資強度が低すぎる（FYTTM@2025-03-31: 0.891%）: R&D未取得の可能性。CF値が過大になる場合がある / 投資強度が低すぎる（FYTTM@2024-03-31: 0.888%）: R&D未取得の可能性。CF値が過大になる場合がある / 投資強度が低すぎる（FYTTM@2023-03-31: 0.895%）: R&D未取得の可能性。CF値が過大になる場合がある",
     "bear": {
       "growth_rate": 0.059,
-      "rice": 8.583,
-      "rice_per_ratio": 0.2995
+      "rice": 9.285,
+      "rice_per_ratio": 0.324
     },
     "base": {
       "growth_rate": 0.084,
-      "rice": 12.22,
-      "rice_per_ratio": 0.4264
+      "rice": 13.219,
+      "rice_per_ratio": 0.4613
     },
     "bull": {
       "growth_rate": 0.1,
-      "rice": 14.548,
-      "rice_per_ratio": 0.5077
+      "rice": 15.737,
+      "rice_per_ratio": 0.5492
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 21151000000.0,
-    "fcf_2yr_avg": 18390000000.0,
+    "fcf_5yr_avg": 22276200000.0,
+    "fcf_2yr_avg": 22264000000.0,
     "fcf_base_used": 9917324395.759716,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      16075000000,
-      20705000000,
-      25682000000,
-      23404000000,
-      19889000000
+      19666000000,
+      24862000000,
+      10516000000,
+      34207000000,
+      22130000000
     ],
     "diluted_shares": 908144404,
     "roe_10yr_avg": 0.20521680573018605,

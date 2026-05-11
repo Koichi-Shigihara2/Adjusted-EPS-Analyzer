@@ -133,7 +133,7 @@
     "base_fcf": 240000.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 240000.0,
-    "fcf_2yr_avg": -628500000.0,
+    "fcf_2yr_avg": -641414000.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -143,7 +143,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -612000000,
+    "fcf_value": -645914000,
     "threshold_pct": 0.0,
     "transient_evidence": {
       "found": false,
@@ -152,7 +152,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($-612.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($-645.9M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": false,
@@ -177,32 +177,47 @@
     "applied": true
   },
   "rice": {
-    "available": false,
-    "q": 0.76,
-    "cf_conversion": 0.0,
+    "available": true,
+    "q": 0.7606,
+    "cf_conversion": -0.0807,
     "wacc": 0.1,
     "q_years": 3,
-    "cf_years": 0,
-    "avg_intensity": 0.0,
-    "avg_rev_growth_lagged": 0.0,
+    "cf_years": 2,
+    "avg_intensity": 7.2265,
+    "avg_rev_growth_lagged": -0.6268,
     "warnings": true,
-    "note": "CF計算不可（Revenue/CapExデータなし）"
+    "note": "CF: 2点のみ使用（3点要求） / 販売・マーケティング費未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: 投資強度が過小になる可能性",
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": -0.064,
+      "rice_per_ratio": 0.0
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": -0.092,
+      "rice_per_ratio": 0.0
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": -0.11,
+      "rice_per_ratio": 0.0
+    }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -600868400.0,
-    "fcf_2yr_avg": -628500000.0,
+    "fcf_5yr_avg": -605910400.0,
+    "fcf_2yr_avg": -641414000.0,
     "fcf_base_used": 240000.0,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
-      -612000000,
-      -645000000,
-      -613000000,
-      -523000000,
-      -611342000
+      -645914000,
+      -636914000,
+      -632914000,
+      -519914000,
+      -593896000
     ],
     "diluted_shares": 1961203089,
     "roe_10yr_avg": 0.0,
@@ -222,7 +237,7 @@
     "pv_high": 1320565.2864398367,
     "pv_terminal": 3436010.994812859,
     "roe_used": 0.0,
-    "fcf_floor_applied": 601108400.0,
+    "fcf_floor_applied": 606150400.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,

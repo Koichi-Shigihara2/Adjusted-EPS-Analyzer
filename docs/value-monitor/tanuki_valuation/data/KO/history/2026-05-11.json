@@ -130,29 +130,29 @@
     "v0_rm": 149557240675.72675
   },
   "fcf_base": {
-    "base_fcf": 8115200000.0,
-    "method": "avg_5yr",
-    "fcf_5yr_avg": 8115200000.0,
-    "fcf_2yr_avg": 5018500000.0,
-    "cv": 0.359,
+    "base_fcf": 5817000000.0,
+    "method": "recent_2yr",
+    "fcf_5yr_avg": 7915200000.0,
+    "fcf_2yr_avg": 5817000000.0,
+    "cv": 0.652,
     "cv_threshold": 0.5,
-    "ratio": 0.359,
+    "ratio": 0.652,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": true,
-    "rule": "deviation_large",
+    "detected": false,
+    "rule": "none",
     "fiscal_year": 2025,
-    "fcf_value": 5296000000,
-    "threshold_pct": 0.2,
+    "fcf_value": 12562000000,
+    "threshold_pct": 0.0,
     "transient_evidence": {
       "found": false,
       "source": null,
       "items": [],
       "total_transient_amount": 0.0
     },
-    "action": "flagged",
-    "note": "FY2025 FCF($5296M)が5年平均($8115M)から35%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "action": "none",
+    "note": ""
   },
   "fcf_estimation": {
     "applied": true,
@@ -160,10 +160,10 @@
     "adj_net_income": 13337688906.654764,
     "conversion_rate": 0.7,
     "estimated_fcf": 9336382234.658335,
-    "raw_fcf": 8115200000.0,
+    "raw_fcf": 5817000000.0,
     "sector": "",
-    "note": "調整済み純利益$13.34B × 転換率70%[sector()] = 推定FCF$9.34B（従来$8.12Bの1.2倍）",
-    "divergence_ratio": 1.15,
+    "note": "調整済み純利益$13.34B × 転換率70%[sector()] = 推定FCF$9.34B（従来$5.82Bの1.6倍）",
+    "divergence_ratio": 1.61,
     "divergence_warning": ""
   },
   "bs_adjustment": {
@@ -178,46 +178,46 @@
   },
   "rice": {
     "available": true,
-    "q": 0.7626,
-    "cf_conversion": 0.2723,
+    "q": 0.7591,
+    "cf_conversion": 1.0957,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.1425,
-    "avg_rev_growth_lagged": 0.0371,
+    "avg_intensity": 0.0401,
+    "avg_rev_growth_lagged": 0.0427,
     "warnings": true,
-    "note": "R&D未取得（FY2024, 2023, 2022）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
+    "note": "R&D未取得（FYTTM@2025-03-28, TTM@2024-03-29, TTM@2023-03-31）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討 / 販売・マーケティング費未取得（FYTTM@2025-03-28, TTM@2024-03-29, TTM@2023-03-31）: 投資強度が過小になる可能性",
     "bear": {
       "growth_rate": 0.035,
-      "rice": 0.073,
-      "rice_per_ratio": 0.0029
+      "rice": 0.291,
+      "rice_per_ratio": 0.0118
     },
     "base": {
       "growth_rate": 0.05,
-      "rice": 0.104,
-      "rice_per_ratio": 0.0042
+      "rice": 0.416,
+      "rice_per_ratio": 0.0169
     },
     "bull": {
       "growth_rate": 0.06,
-      "rice": 0.125,
-      "rice_per_ratio": 0.0051
+      "rice": 0.499,
+      "rice_per_ratio": 0.0202
     }
   },
-  "fcf_source": "annual_fallback",
-  "fcf_ttm_end": null,
-  "fcf_ttm_periods": 0,
-  "rice_data_source": "annual_fallback",
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-04-03",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 8115200000.0,
-    "fcf_2yr_avg": 5018500000.0,
+    "fcf_5yr_avg": 7915200000.0,
+    "fcf_2yr_avg": 5817000000.0,
     "fcf_base_used": 9336382234.658335,
-    "fcf_base_method": "avg_5yr",
+    "fcf_base_method": "recent_2yr",
     "fcf_list_raw": [
-      5296000000,
-      4741000000,
-      9747000000,
-      9534000000,
-      11258000000
+      12562000000,
+      -928000000,
+      10021000000,
+      9012000000,
+      8909000000
     ],
     "diluted_shares": 4302482418,
     "roe_10yr_avg": 0.3675234999062005,
