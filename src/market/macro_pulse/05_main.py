@@ -598,14 +598,10 @@ def get_ff_current(fred):
 def get_zq_futures(target_date: date, fred=None):
     if fred is None:
         return None, None, None
-    t1yff, _ = fred_latest(fred, "T1YFF", target_date, lookback=30)
-    if t1yff is None:
+    dgs1, _ = fred_latest(fred, "DGS1", target_date, lookback=30)
+    if dgs1 is None:
         return None, None, None
-    ff_current = get_ff_current(fred)
-    if ff_current is None:
-        return None, None, None
-    implied_rate = round(ff_current + t1yff, 4)
-    return "FRED:T1YFF", round(t1yff, 4), implied_rate
+    return "FRED:DGS1", round(dgs1, 4), round(dgs1, 4)
 
 # ─────────────────────────────────────────────────────────────────
 #  金融環境スナップショット（変更なし）
