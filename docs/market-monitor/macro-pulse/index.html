@@ -740,6 +740,31 @@ function updateTicker() {
   const sp=window._spCache;
   const spEl=el('tk-sp'); if(sp&&spEl)spEl.textContent=sp.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 
+  // S&P 500 前営業日比
+  const spCEl = el('tk-sp-c');
+  if(spCEl){
+    const spRows = Object.values(
+      DATA.filter(r => n(r[COL.sp0]))
+          .reduce((acc, r) => {
+            const d = r[COL.date].slice(0,10);
+            if(!acc[d] || new Date(r[COL.date])>new Date(acc[d][COL.date])) acc[d]=r;
+            return acc;
+          }, {})
+    ).map(r => ({ms: new Date(r[COL.date]).getTime(), val: n(r[COL.sp0])}))
+     .sort((a,b) => a.ms - b.ms);
+    if(spRows.length >= 2){
+      const cur  = spRows[spRows.length - 1].val;
+      const prev = spRows[spRows.length - 2].val;
+      const chg  = cur - prev;
+      const pct  = (chg / prev * 100);
+      const sign = chg >= 0 ? '+' : '';
+      spCEl.textContent = `${sign}${chg.toFixed(2)} (${sign}${pct.toFixed(2)}%)`;
+      spCEl.style.color = chg >= 0 ? 'var(--bull)' : 'var(--bear)';
+    } else {
+      spCEl.textContent = '—';
+    }
+  }
+
   if(yc!==null){const e1=el('tk-yc');if(e1)e1.textContent=(yc>=0?'+':'')+yc.toFixed(2)+'%';const e2=el('tk-yc-i');if(e2)e2.textContent=yc<-0.2?'INVERTED':yc<0.5?'FLAT':'NORMAL';}
   if(hy!==null){const e1=el('tk-hy');if(e1)e1.textContent=hy.toFixed(2)+'%';}
 
