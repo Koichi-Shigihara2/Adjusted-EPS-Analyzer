@@ -1124,12 +1124,13 @@ def update_fed_context(target_date: date, fred):
 
     if already:
         last_idx = ctx_df[ctx_df["record_date"].str.startswith(record_month)].index[-1]
-        ctx_df.loc[last_idx, "zq_ticker"]    = zq_ticker or ""
-        ctx_df.loc[last_idx, "zq_price"]     = _n(zq_price)
-        ctx_df.loc[last_idx, "zq_rate"]      = _n(zq_rate)
-        ctx_df.loc[last_idx, "ff_current"]   = str(ff_current)
-        ctx_df.loc[last_idx, "cuts_implied"] = _n(cuts_implied)
-        ctx_df.loc[last_idx, "updated_at"]   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        ctx_df.loc[last_idx, "ff_current"] = str(ff_current)
+        ctx_df.loc[last_idx, "updated_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if zq_rate is not None:
+            ctx_df.loc[last_idx, "zq_ticker"]    = zq_ticker or ""
+            ctx_df.loc[last_idx, "zq_price"]     = _n(zq_price)
+            ctx_df.loc[last_idx, "zq_rate"]      = _n(zq_rate)
+            ctx_df.loc[last_idx, "cuts_implied"] = _n(cuts_implied)
     else:
         fomc_date, stmt_text = fetch_latest_fomc_statement()
         if stmt_text:
