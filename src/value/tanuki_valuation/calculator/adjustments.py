@@ -11,6 +11,12 @@ v6.1 追加:
 v6.2 追加:
   - FCFBaseResult / determine_fcf_base()
     FCFリストのトレンドから5年平均 or 直近2年平均を自動判定
+
+v8.1 追加:
+  - adjust_rpo() にセクター別適用率を追加（② RPO補正精度改善）
+    SaaS=100% / Fintech=50% / 保険=0% / 消費者=0%
+  - BSAdjustmentResult に sector_guard フィールドを追加
+  - calculate_bs_adjustment() が sector_guard を net_cash_data から受け取る
 """
 
 from typing import Dict, Any, Optional, Tuple, List
@@ -42,6 +48,8 @@ class RPOAdjustmentResult:
     discount_rate: float
     assumed_years: float
     applied: bool
+    application_rate: float = 1.0   # v8.1: セクター別適用率（0.0〜1.0）
+    sector_category: str = ""       # v8.1: 判定セクターカテゴリ
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -49,7 +57,9 @@ class RPOAdjustmentResult:
             "rpo_raw": self.rpo_raw,
             "discount_rate": self.discount_rate,
             "assumed_realization_years": self.assumed_years,
-            "applied": self.applied
+            "applied": self.applied,
+            "application_rate": self.application_rate,
+            "sector_category": self.sector_category,
         }
 
 
@@ -283,29 +293,114 @@ def adjust_fcf(
     )
 
 
+def _get_rpo_application_rate(sector: Optional[str], ticker: str) -> Tuple[float, str]:
+    """
+    セクター別RPO適用率を返す（v8.1追加）
+
+    RPOは「将来の収益確実性」の代理指標。セクターによって意味が大きく異なる:
+      - SaaS/クラウド (100%): サブスクリプション契約のバックログ → 収益化確実
+      - Fintech (50%):       ローン/手数料の将来見通し → 不確実性中程度
+      - 保険 (0%):           保険準備金/負債性項目 → 収益ではなく義務
+      - 消費者/ハードウェア (0%): 製品デリバリーがほぼ完了 → RPOの意味薄
+
+    セクター判定はbeta_config.jsonのsector値（yfinanceベース）を使用。
+    SaaS判定は ticker ベースのホワイトリストを優先する。
+
+    Returns:
+        (適用率 0.0〜1.0, カテゴリ文字列)
+    """
+    # ── ticker ホワイトリスト（SaaS確定銘柄）──
+    SAAS_TICKERS = {
+        "PLTR", "MSFT", "NOW", "CRM", "SNOW", "DDOG", "ZS", "CRWD",
+        "NET", "TEAM", "HUBS", "MDB", "ESTC", "BILL", "GTLB",
+    }
+    # ── セクター → カテゴリマッピング（yfinanceのsector文字列）──
+    # 適用率: SaaS=1.0 / Fintech=0.5 / 保険=0.0 / その他=0.0
+    SECTOR_RATES: Dict[str, Tuple[float, str]] = {
+        # SaaS/クラウド系（Technology）
+        "Technology": (1.0, "SaaS"),
+        "Communication Services": (1.0, "SaaS"),
+        # Fintech
+        "Financial Services": (0.5, "Fintech"),
+        # 保険
+        "Insurance": (0.0, "Insurance"),
+        # 消費者・ハードウェア系
+        "Consumer Cyclical": (0.0, "Consumer"),
+        "Consumer Defensive": (0.0, "Consumer"),
+        "Industrials": (0.0, "Consumer"),
+        "Energy": (0.0, "Consumer"),
+        "Utilities": (0.0, "Consumer"),
+        "Real Estate": (0.0, "Consumer"),
+        "Basic Materials": (0.0, "Consumer"),
+        "Healthcare": (0.0, "Consumer"),
+    }
+
+    # Tickerホワイトリスト優先
+    if ticker.upper() in SAAS_TICKERS:
+        return 1.0, "SaaS"
+
+    if sector:
+        rate, category = SECTOR_RATES.get(sector, (0.0, "Consumer"))
+        return rate, category
+
+    # セクター不明 → 保守的に0%（RPO混入リスクを避ける）
+    return 0.0, "Unknown"
+
+
 def adjust_rpo(
     rpo: float,
     discount_rate: float = 0.15,
-    assumed_realization_years: float = 1.5
+    assumed_realization_years: float = 1.5,
+    sector: Optional[str] = None,   # v8.1: セクター別適用率
+    ticker: str = "",               # v8.1: SaaSホワイトリスト用
 ) -> RPOAdjustmentResult:
-    """RPO補正（残存履行義務の現在価値化）"""
+    """
+    RPO補正（残存履行義務の現在価値化）v8.1
+
+    v8.1追加: セクター別適用率
+        SaaS (PLTR/MSFT/NOW等):   100% → 全額をPV化
+        Fintech (SOFI等):          50% → 半額をPV化
+        保険 (UNH等):               0% → RPOを適用しない
+        消費者/ハードウェア:         0% → RPOを適用しない
+
+    適用率を掛けてからPV化する（適用率0%の場合は補正なし）。
+    """
     if rpo <= 0:
         return RPOAdjustmentResult(
             rpo_pv=0.0,
             rpo_raw=0.0,
             discount_rate=discount_rate,
             assumed_years=assumed_realization_years,
-            applied=False
+            applied=False,
+            application_rate=1.0,
+            sector_category="",
         )
 
-    rpo_pv = rpo / (1 + discount_rate) ** assumed_realization_years
+    application_rate, sector_category = _get_rpo_application_rate(sector, ticker)
+
+    # 適用率0%はRPOを使わない
+    if application_rate == 0.0:
+        return RPOAdjustmentResult(
+            rpo_pv=0.0,
+            rpo_raw=rpo,
+            discount_rate=discount_rate,
+            assumed_years=assumed_realization_years,
+            applied=False,
+            application_rate=0.0,
+            sector_category=sector_category,
+        )
+
+    effective_rpo = rpo * application_rate
+    rpo_pv = effective_rpo / (1 + discount_rate) ** assumed_realization_years
 
     return RPOAdjustmentResult(
         rpo_pv=rpo_pv,
         rpo_raw=rpo,
         discount_rate=discount_rate,
         assumed_years=assumed_realization_years,
-        applied=True
+        applied=True,
+        application_rate=application_rate,
+        sector_category=sector_category,
     )
 
 
@@ -411,6 +506,7 @@ class BSAdjustmentResult:
     net_cash_per_share: float      # 1株あたりネットキャッシュ
     fiscal_year: int               # 取得会計年度
     applied: bool                  # 補正適用フラグ
+    sector_guard: str = "none"     # v8.1: 適用したセクターガード名
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -421,7 +517,8 @@ class BSAdjustmentResult:
             "net_cash":               self.net_cash,
             "net_cash_per_share":     self.net_cash_per_share,
             "fiscal_year":            self.fiscal_year,
-            "applied":                self.applied
+            "applied":                self.applied,
+            "sector_guard":           self.sector_guard,
         }
 
 
@@ -434,6 +531,7 @@ def calculate_bs_adjustment(
 
     Args:
         net_cash_data: SECReader.get_net_cash()の返却値
+                       v8.1以降は sector_guard フィールドを含む
         diluted_shares: 希薄化後株式数
 
     Returns:
@@ -456,7 +554,8 @@ def calculate_bs_adjustment(
         net_cash=net_cash,
         net_cash_per_share=net_cash_per_share,
         fiscal_year=net_cash_data.get("fiscal_year", 0),
-        applied=available and net_cash != 0.0
+        applied=available and net_cash != 0.0,
+        sector_guard=net_cash_data.get("sector_guard", "none"),  # v8.1
     )
 
 

@@ -10,13 +10,17 @@ v6.2 追加:
     直近2年 / 5年平均 の比率が閾値超 → recent_2yr を自動選択
     安定・成熟企業 → avg_5yr（既存動作）
 
+v8.1 追加:
+  - RPO補正: セクター別適用率（SaaS100%/Fintech50%/保険0%/消費者0%）
+  - BS補正: セクターガード（保険の負債除外/FintechのST債務除外）
+
 計算フロー:
   1. WACC計算（CAPM）
   2. 成長率決定
   3. FCF補正（マイナスFCF対応）
   4. FCFベース自動判定（v6.2追加）← NEW
   5. DCF計算（2段階 or 3段階）
-  6. RPO補正
+  6. RPO補正（v8.1: セクター別適用率）
   7. 成長オプションPV計算
   8. α計算
   9. 本質的価値（P_t）算出
@@ -274,10 +278,13 @@ class KoichiValuationCalculator:
             v0 = dcf_result.v0
 
         # ── STEP 6: RPO補正 ──
-        rpo_adjustment = adjust_rpo(rpo=rpo)
+        rpo_adjustment = adjust_rpo(rpo=rpo, sector=sector, ticker=ticker)
         rpo_pv = rpo_adjustment.rpo_pv
         if rpo_adjustment.applied:
-            print(f"   [{ticker}] RPO補正: ${rpo:,.0f} → PV ${rpo_pv:,.0f}")
+            rate_str = f" ({rpo_adjustment.application_rate:.0%} 適用: {rpo_adjustment.sector_category})"
+            print(f"   [{ticker}] RPO補正: ${rpo:,.0f} → PV ${rpo_pv:,.0f}{rate_str}")
+        elif rpo > 0 and not rpo_adjustment.applied:
+            print(f"   [{ticker}] RPO補正: スキップ (適用率0%: {rpo_adjustment.sector_category})")
 
         # ── STEP 7: 成長オプションPV計算 ──
         go_result: GrowthOptionResult = calculate_growth_option_pv(ticker)
@@ -311,7 +318,8 @@ class KoichiValuationCalculator:
             nc = bs_adjustment.net_cash
             ncs = bs_adjustment.net_cash_per_share
             sign = "+" if nc >= 0 else ""
-            print(f"   [{ticker}] BS補正: ネットキャッシュ {sign}${nc/1e9:.2f}B → {sign}${ncs:.2f}/株")
+            guard_str = f" [{bs_adjustment.sector_guard}]" if bs_adjustment.sector_guard != "none" else ""
+            print(f"   [{ticker}] BS補正: ネットキャッシュ {sign}${nc/1e9:.2f}B → {sign}${ncs:.2f}/株{guard_str}")
 
         # ── 割引率定数（STEP10bで使用）──
 

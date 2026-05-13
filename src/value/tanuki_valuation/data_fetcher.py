@@ -263,11 +263,7 @@ class TanukiDataFetcher:
                 if rpo > 0:
                     print(f"   [{ticker}] SEC RPO: ${rpo:,.0f}")
 
-                # BS評価補正用（v7.0追加）
-                if hasattr(self.sec_reader, 'get_net_cash'):
-                    net_cash_data = self.sec_reader.get_net_cash(ticker)
-                else:
-                    net_cash_data = {"net_cash": 0.0, "available": False}
+                # BS評価補正用（v8.1: sector確定後に呼ぶため、ここでは取得しない）
 
             except Exception as e:
                 print(f"   [{ticker}] SEC取得エラー: {e}")
@@ -373,6 +369,19 @@ class TanukiDataFetcher:
         fcf_2yr_avg = self._calc_fcf_2yr_avg(fcf_list)
         if fcf_2yr_avg > 0:
             print(f"   [{ticker}] SEC FCF 2yr avg: ${fcf_2yr_avg:,.0f}")
+
+        # ========================================
+        # 5. BS評価補正データ取得（v8.1: sector確定後に呼ぶ）
+        # ========================================
+        if self.sec_reader and hasattr(self.sec_reader, 'get_net_cash'):
+            try:
+                net_cash_data = self.sec_reader.get_net_cash(ticker, sector=sector)
+                guard = net_cash_data.get("sector_guard", "none")
+                if guard != "none":
+                    print(f"   [{ticker}] BS補正 セクターガード: {guard}")
+            except Exception as e:
+                print(f"   [{ticker}] get_net_cash エラー: {e}")
+                net_cash_data = {"net_cash": 0.0, "available": False, "sector_guard": "none"}
 
         # ========================================
         # 最終サマリー

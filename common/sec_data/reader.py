@@ -224,13 +224,19 @@ class SECReader:
         
         return 0.0
     
-    def get_net_cash(self, ticker: str) -> dict:
+    def get_net_cash(self, ticker: str, sector: Optional[str] = None) -> dict:
         """
-        ネットキャッシュ関連BSデータを取得
+        ネットキャッシュ関連BSデータを取得 v8.1
 
         ネットキャッシュ = (現金 + 短期投資) - (長期有利子負債 + 短期有利子負債)
         プラス → 純キャッシュ（負債より現金が多い）
         マイナス → 純負債（負債が現金を上回る）
+
+        v8.1追加: セクターガード
+          - 保険 (Insurance): 有利子負債フィールドに保険準備金が混入するリスクあり
+            → net_cash計算では負債側を0とし、現金のみで近似（保守的）
+          - Fintech (Financial Services): DebtCurrent等に顧客預金が混入するリスク
+            → long_term_debt のみを使用（short_term_debtを除外）
 
         Returns:
             {
@@ -241,6 +247,7 @@ class SECReader:
                 "net_cash":               float  ネットキャッシュ（符号付き）
                 "fiscal_year":            int    取得会計年度
                 "available":              bool   データ取得成功フラグ
+                "sector_guard":           str    適用したセクターガード名（v8.1）
             }
         """
         annual_data = self.get_annual_range(ticker, years=1)
@@ -248,13 +255,13 @@ class SECReader:
             return {
                 "cash": 0.0, "short_term_investments": 0.0,
                 "long_term_debt": 0.0, "short_term_debt": 0.0,
-                "net_cash": 0.0, "fiscal_year": 0, "available": False
+                "net_cash": 0.0, "fiscal_year": 0, "available": False,
+                "sector_guard": "none",
             }
 
         latest = annual_data[0]
         bs = latest.get("bs", {})
 
-        # fiscal_yearはperiodフィールド（文字列 "2025" 等）から取得
         try:
             fy = int(latest.get("period", 0))
         except (ValueError, TypeError):
@@ -264,6 +271,20 @@ class SECReader:
         st_inv  = bs.get("short_term_investments", 0) or 0
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
+
+        # ── セクターガード（v8.1）──
+        # 保険セクター: 有利子負債タグに保険準備金が混入しうるため負債側を0扱い
+        # 実務上の保険会社評価はEV/書く資産ベースが標準で、DCFのnet_cashガードには不向き
+        sector_guard = "none"
+        if sector == "Insurance":
+            lt_debt = 0.0
+            st_debt = 0.0
+            sector_guard = "insurance_liabilities_excluded"
+        # Fintech: 短期有利子負債に顧客預金が混入するリスク（DebtCurrentタグの曖昧性）
+        # long_term_debtのみ使用し、short_term_debtは除外する
+        elif sector == "Financial Services":
+            st_debt = 0.0
+            sector_guard = "fintech_st_debt_excluded"
 
         net_cash = (cash + st_inv) - (lt_debt + st_debt)
         available = any([cash, st_inv, lt_debt, st_debt])
@@ -275,7 +296,8 @@ class SECReader:
             "short_term_debt":        float(st_debt),
             "net_cash":               float(net_cash),
             "fiscal_year":            fy,
-            "available":              available
+            "available":              available,
+            "sector_guard":           sector_guard,
         }
 
     # =========================================
