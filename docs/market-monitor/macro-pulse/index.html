@@ -273,6 +273,222 @@
     .liq-card-chg.up{color:var(--grn)}.liq-card-chg.dn{color:var(--red)}.liq-card-chg.flat{color:var(--mut)}
     .liq-card-chg-label{font-family:var(--mono);font-size:9px;color:var(--mut)}
     .liq-card-date{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px}
+
+    /* ════════════════════════════════════════════════════════
+       ★ v3 — 3か月先予測UI への再構成
+       ① 先行指標を最上部ヒーローに
+       ② 足許の状況を下に視覚的に分離
+       ③ サイドバー（AIコメント＋発表予定）
+       ④ 全データ・全機能は温存（CSS + 軽量JSの追加のみ）
+       ════════════════════════════════════════════════════════ */
+
+    /* shell をやや広く */
+    .shell { max-width: 1320px; }
+
+    /* ---- ダッシュボード・グリッド ---- */
+    .v3-dash {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 340px;
+      gap: 18px;
+      align-items: start;
+      margin-top: 14px;
+    }
+    .v3-main, .v3-side {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+    .v3-side {
+      position: sticky;
+      top: 12px;
+      max-height: calc(100vh - 24px);
+    }
+    @media (max-width: 1000px) {
+      .v3-dash { grid-template-columns: minmax(0, 1fr); }
+      .v3-side { position: static; max-height: none; }
+    }
+
+    /* main / side のなかでは原則 margin-bottom を打ち消す（gap で制御） */
+    .v3-main > *, .v3-side > * { margin-bottom: 0 !important; margin-top: 0 !important; }
+
+    /* ---- セクション・バナー（3段帯） ---- */
+    .v3-banner {
+      padding: 14px 18px;
+      border: 1px solid var(--bdr);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-family: var(--mono);
+    }
+    .v3-banner .v3-banner-tag {
+      font-size: 9px;
+      letter-spacing: .25em;
+      font-weight: 700;
+      padding: 4px 9px;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+    .v3-banner .v3-banner-title {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: .08em;
+      color: var(--txt);
+    }
+    .v3-banner .v3-banner-sub {
+      font-family: var(--sans);
+      font-size: 12px;
+      color: var(--mut);
+      flex: 1;
+      line-height: 1.5;
+    }
+    .v3-hero-banner {
+      background: linear-gradient(135deg,
+        color-mix(in oklab, var(--acc) 14%, var(--sur)) 0%,
+        var(--sur) 70%);
+      border-color: color-mix(in oklab, var(--acc) 40%, var(--bdr));
+    }
+    .v3-hero-banner .v3-banner-tag { background: var(--acc); color: #0a0d14; }
+    .v3-now-banner { background: var(--sur); }
+    .v3-now-banner .v3-banner-tag {
+      background: color-mix(in oklab, var(--mut) 30%, transparent);
+      color: var(--txt);
+    }
+    .v3-detail-banner { background: var(--sur); border-style: dashed; }
+    .v3-detail-banner .v3-banner-tag {
+      background: color-mix(in oklab, var(--mut) 22%, transparent);
+      color: var(--mut);
+    }
+
+    /* 元の .sec 区切りは v3 では非表示（バナーで代替） */
+    .v3-main > .sec, .v3-side > .sec { display: none; }
+
+    /* ---- 先行指標（phase-wrap）を主役に ---- */
+    .v3-main > .phase-wrap {
+      border-color: color-mix(in oklab, var(--acc) 40%, var(--bdr));
+    }
+    .phase-verdict {
+      min-width: 230px !important;
+      padding: 22px 24px !important;
+      background: linear-gradient(135deg,
+        color-mix(in oklab, var(--acc) 10%, transparent), transparent 65%);
+    }
+    .phase-verdict .pv-label { font-size: 9px !important; letter-spacing: .22em !important; }
+    .phase-verdict .pv-label::before { content: "▸ "; color: var(--acc); }
+    .phase-verdict .pv-label::after {
+      content: " · 3か月先";
+      color: var(--acc);
+      font-weight: 700;
+    }
+    .pv-phase {
+      font-size: 52px !important;
+      letter-spacing: .04em !important;
+      display: flex !important;
+      align-items: baseline;
+      gap: 12px;
+      line-height: 1 !important;
+    }
+    .pv-phase::before {
+      font-weight: 700;
+      font-size: 38px;
+      line-height: 1;
+      transform: translateY(2px);
+      display: inline-block;
+    }
+    .pv-phase.phase-expand::before    { content: "↗"; color: var(--grn); }
+    .pv-phase.phase-plateau::before   { content: "→"; color: var(--acc); }
+    .pv-phase.phase-edge::before      { content: "↘"; color: var(--amb); }
+    .pv-phase.phase-recession::before { content: "↓"; color: var(--red); }
+    .pv-sub { font-size: 12px !important; line-height: 1.6 !important; margin-top: 4px; }
+
+    .phase-score {
+      min-width: 140px !important;
+      padding: 16px 20px !important;
+      background: var(--sur2);
+    }
+    .phase-score .ps-num { font-size: 28px !important; opacity: .95; }
+    .phase-score .ps-label { font-size: 7px !important; letter-spacing: .12em !important; }
+
+    .phase-wrap::after {
+      height: 3px !important;
+      background: linear-gradient(90deg,
+        var(--acc) 0%,
+        color-mix(in oklab, var(--acc) 50%, transparent) 40%,
+        transparent 80%) !important;
+    }
+
+    /* ---- 足許セクションは視覚的に控えめ ---- */
+    .v3-main > .regime-bar { opacity: .96; }
+    .v3-main > .ticker     { opacity: .96; }
+    .v3-main > .liq-wrap   { opacity: .96; }
+
+    /* ---- 8指標ヘルスバーを 2 列で俯瞰 ---- */
+    .l2-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+      gap: 8px 18px !important;
+    }
+    .l2-row { padding: 4px 0; }
+    .l2-bar-track { height: 5px !important; }
+    @media (max-width: 720px) {
+      .l2-grid { grid-template-columns: minmax(0, 1fr) !important; }
+    }
+
+    /* ---- AI コメント抑制（TL;DR + 折りたたみ + max-height） ---- */
+    .v3-side .ai-wrap {
+      display: flex;
+      flex-direction: column;
+      max-height: calc(100vh - 24px);
+      overflow: hidden;
+    }
+    .v3-side .ai-wrap .ai-timeline {
+      flex: 1;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+    .ai-timeline::-webkit-scrollbar { width: 6px; }
+    .ai-timeline::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 3px; }
+    @media (max-width: 1000px) {
+      .v3-side .ai-wrap { max-height: none; }
+      .v3-side .ai-wrap .ai-timeline { max-height: 460px; }
+    }
+
+    /* 概要(TL;DR)は常に表示、それ以外は折りたたみ */
+    .ai-card-body { display: block !important; padding-top: 6px; }
+    .ai-card:not(.open) .ai-card-body > .ai-card-section:not(:first-of-type),
+    .ai-card:not(.open) .ai-card-body > .ai-card-indicators { display: none; }
+    .ai-card:not(.open) .ai-card-body > .ai-card-section:first-of-type .ai-card-section-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+      -webkit-mask-image: linear-gradient(180deg, #000 70%, transparent 100%);
+    }
+    .ai-card:not(.open) .ai-card-body > .ai-card-section:first-of-type .ai-card-section-label::after {
+      content: " · TL;DR";
+      color: var(--acc);
+      font-weight: 700;
+    }
+    .ai-card-toggle::before {
+      content: "詳細";
+      font-size: 9px;
+      letter-spacing: .08em;
+      margin-right: 4px;
+      color: var(--mut);
+    }
+    .ai-card.open .ai-card-toggle::before { content: "閉じる"; color: var(--acc); }
+
+    .v3-side .ai-card { padding: 12px 16px !important; }
+    .v3-side .ai-card-section-text { font-size: 11.5px !important; line-height: 1.65 !important; }
+    .v3-side .ai-title { padding: 10px 16px !important; gap: 6px; }
+    .v3-side .ai-card-header { margin-bottom: 6px !important; flex-wrap: wrap; gap: 6px; }
+    .v3-side .ai-card-date { font-size: 10px !important; }
+    .v3-side .ai-card-score { font-size: 14px !important; }
+    .v3-side .ai-card-phase { font-size: 9px !important; padding: 2px 6px !important; }
+
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -2078,5 +2294,134 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
   <script src="../../common/site-nav.js"></script>
+
+<script>
+(function () {
+  function init() {
+    var shell = document.querySelector('.shell');
+    if (!shell || shell.dataset.v3Applied) return;
+    shell.dataset.v3Applied = '1';
+
+    // 1) .sec 各要素にテキスト内容で ID を付与
+    shell.querySelectorAll('.sec').forEach(function (el) {
+      if (el.id) return;
+      var t = (el.textContent || '').trim();
+      if (/景気フェーズ|景気予測/.test(t)) el.id = 'sec-phase';
+      else if (/流動性/.test(t)) el.id = 'sec-liq';
+      else if (/各指標の現在地/.test(t)) el.id = 'sec-l2';
+      else if (/SCORE.*推移|RECESSION RISK.*推移/.test(t)) el.id = 'sec-history';
+      else if (/類似度/.test(t)) el.id = 'sec-l3';
+      else if (/直近の動き/.test(t)) el.id = 'sec-signals';
+      else if (/スケジュール/.test(t)) el.id = 'sec-sched';
+    });
+
+    // 2) バナー生成
+    function banner(cls, tag, title, sub) {
+      var d = document.createElement('div');
+      d.className = 'v3-banner ' + cls;
+      d.innerHTML =
+        '<span class="v3-banner-tag">' + tag + '</span>' +
+        '<span class="v3-banner-title">' + title + '</span>' +
+        '<span class="v3-banner-sub">' + sub + '</span>';
+      return d;
+    }
+
+    var hero   = banner('v3-hero-banner', '3M FORECAST',
+                        '3か月先のマクロ予測',
+                        '8つの先行指標（Yield Curve / ISM / HY Spread 等）を統合した3〜6か月先の景気フェーズ。');
+    var now    = banner('v3-now-banner', 'NOW',
+                        '足許の状況',
+                        'FED 金融政策・実勢金利・流動性。予測ではなく現時点の市場環境。');
+    var detail = banner('v3-detail-banner', 'DETAIL',
+                        '指標別の詳細・過去比較',
+                        '各指標の現在地、スコア履歴、過去の後退局面との類似度、直近の発表実績。');
+
+    // 3) main / side カラムを生成
+    var dash = document.createElement('div');
+    dash.className = 'v3-dash';
+    var main = document.createElement('div');
+    main.className = 'v3-main';
+    var side = document.createElement('div');
+    side.className = 'v3-side';
+    dash.appendChild(main);
+    dash.appendChild(side);
+
+    // 4) 既存のチャイルドを分類して詰める
+    //    header, notice, ticker(上部の小バー) は shell 直下に残す。
+    //    main: hero + phase関連 + now + regime/ticker/liq + detail + 詳細群
+    //    side: AI コメント + 今後の発表
+    var children = Array.from(shell.children);
+    var preserved = [];   // header, notice — shell 直下に残す
+    var sideItems = [];   // ai-wrap, sec-sched, sched-wrap
+    var rest = [];        // それ以外（main col 行き）
+
+    children.forEach(function (c) {
+      if (c.tagName === 'HEADER' || c.classList.contains('notice')) {
+        preserved.push(c);
+      } else if (c.classList.contains('ai-wrap') ||
+                 c.id === 'sec-sched' ||
+                 c.classList.contains('sched-wrap')) {
+        sideItems.push(c);
+      } else {
+        rest.push(c);
+      }
+    });
+
+    // 5) main を組み立てる：hero → (phase-wrap, compareBar) → now → (regime-bar, ticker, liq-wrap) → detail → 残り（l2/score/l3/signals）
+    function findFirst(arr, predicate) {
+      for (var i = 0; i < arr.length; i++) { if (predicate(arr[i])) return arr[i]; }
+      return null;
+    }
+    function take(arr, predicate) {
+      for (var i = 0; i < arr.length; i++) {
+        if (predicate(arr[i])) {
+          var el = arr[i];
+          arr.splice(i, 1);
+          return el;
+        }
+      }
+      return null;
+    }
+
+    // 上段：先行指標
+    main.appendChild(hero);
+    var phase    = take(rest, function(e){ return e.id === 'phaseGauge' || e.classList.contains('phase-wrap'); });
+    var compare  = take(rest, function(e){ return e.id === 'compareBar'; });
+    if (phase)   main.appendChild(phase);
+    if (compare) main.appendChild(compare);
+
+    // 中段：足許の状況
+    main.appendChild(now);
+    var regime = take(rest, function(e){ return e.id === 'regimeBar' || e.classList.contains('regime-bar'); });
+    var ticker = take(rest, function(e){ return e.classList.contains('ticker'); });
+    var liq    = take(rest, function(e){ return e.classList.contains('liq-wrap'); });
+    if (regime) main.appendChild(regime);
+    if (ticker) main.appendChild(ticker);
+    if (liq)    main.appendChild(liq);
+
+    // 下段：詳細分析
+    main.appendChild(detail);
+    // rest に残っている要素を全て push（順序保持）
+    rest.forEach(function(e){ main.appendChild(e); });
+
+    // 6) side: AI が先、スケジュールが下
+    var ai     = sideItems.find(function(e){ return e.classList.contains('ai-wrap'); });
+    var schedS = sideItems.find(function(e){ return e.id === 'sec-sched'; });
+    var schedW = sideItems.find(function(e){ return e.classList.contains('sched-wrap'); });
+    if (ai)     side.appendChild(ai);
+    if (schedS) side.appendChild(schedS);
+    if (schedW) side.appendChild(schedW);
+
+    // 7) shell: header → notice → dash の順に
+    preserved.forEach(function(p){ shell.appendChild(p); }); // すでに detach されている要素も含め appendChild で末尾へ
+    shell.appendChild(dash);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
 </body>
 </html>
