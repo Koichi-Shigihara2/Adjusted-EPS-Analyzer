@@ -2,7 +2,7 @@
   "_meta": {
     "description": "DCF成熟プロファイル設定（two_stage / three_stage）",
     "encoding": "UTF-8",
-    "updated_at": "2026-05-05",
+    "updated_at": "2026-05-13",
     "schema_version": "1.0"
   },
   "_schema": {
@@ -14,68 +14,35 @@
     "terminal_growth": "永続成長率（通常0.03）",
     "_default": "銘柄未設定時のフォールバック（two_stage）"
   },
+  "_sector_caps": {
+    "_description": "Phase2成長率のセクター別上限。admin.htmlから編集可能。新規銘柄登録時の初期値として使用。",
+    "Consumer Cyclical": 0.05,
+    "Consumer Defensive": 0.05,
+    "Insurance": 0.05,
+    "Healthcare": 0.05,
+    "Industrials": 0.05,
+    "Energy": 0.05,
+    "Utilities": 0.05,
+    "Real Estate": 0.05,
+    "Basic Materials": 0.05,
+    "Financial Services": 0.1,
+    "Technology": null,
+    "Communication Services": null,
+    "_mega_tech_tickers": [
+      "MSFT",
+      "AMZN",
+      "GOOGL",
+      "AAPL",
+      "META"
+    ],
+    "_mega_tech_cap": 0.08
+  },
   "_default": {
     "type": "two_stage",
     "terminal_growth": 0.03
   },
-  "NVDA": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 5,
-      "growth": null
-    },
-    "terminal_growth": 0.03,
-    "phase2": {
-      "years": 5,
-      "growth": 0.15
-    }
-  },
-  "TSLA": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 4,
-      "growth": null
-    },
-    "phase2": {
-      "years": 4,
-      "growth": 0.08
-    },
-    "terminal_growth": 0.03
-  },
-  "PLTR": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 5,
-      "growth": null
-    },
-    "phase2": {
-      "years": 5,
-      "growth": 0.15
-    },
-    "terminal_growth": 0.03
-  },
-  "MSFT": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 5,
-      "growth": null
-    },
-    "phase2": {
-      "years": 5,
-      "growth": 0.08
-    },
-    "terminal_growth": 0.03
-  },
-  "AMZN": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 5,
-      "growth": null
-    },
-    "phase2": {
-      "years": 5,
-      "growth": 0.1
-    },
+  "AAPL": {
+    "type": "two_stage",
     "terminal_growth": 0.03
   },
   "AMD": {
@@ -87,6 +54,18 @@
     "phase2": {
       "years": 4,
       "growth": 0.1
+    },
+    "terminal_growth": 0.03
+  },
+  "AMZN": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.08
     },
     "terminal_growth": 0.03
   },
@@ -102,16 +81,16 @@
     },
     "terminal_growth": 0.03
   },
-  "CELH": {
-    "type": "three_stage",
-    "phase1": {
-      "years": 3,
-      "growth": null
-    },
-    "phase2": {
-      "years": 5,
-      "growth": 0.1
-    },
+  "ARQQ": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "ASTS": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "AUR": {
+    "type": "two_stage",
     "terminal_growth": 0.03
   },
   "BBAI": {
@@ -134,17 +113,21 @@
       "growth": 0.03
     }
   },
-  "UNH": {
+  "CELH": {
     "type": "three_stage",
     "phase1": {
-      "years": 5,
+      "years": 3,
       "growth": null
     },
-    "terminal_growth": 0.03,
     "phase2": {
       "years": 5,
-      "growth": 0.06
-    }
+      "growth": 0.05
+    },
+    "terminal_growth": 0.03
+  },
+  "CIX": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
   },
   "CRWV": {
     "type": "three_stage",
@@ -158,12 +141,32 @@
     },
     "terminal_growth": 0.03
   },
+  "IONQ": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "JOBY": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
   "META": {
     "type": "two_stage",
     "terminal_growth": 0.03
   },
-  "AAPL": {
+  "MRVL": {
     "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "MSFT": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.08
+    },
     "terminal_growth": 0.03
   },
   "NOW": {
@@ -174,60 +177,28 @@
     },
     "terminal_growth": 0.03
   },
-  "RCAT": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
+  "NVDA": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "terminal_growth": 0.03,
+    "phase2": {
+      "years": 5,
+      "growth": 0.15
+    }
   },
-  "VWAV": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "AUR": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "XNDU": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "RDW": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "CIX": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "SNDL": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "JOBY": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "ARQQ": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "RXRX": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "MRVL": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "RLMD": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "ASTS": {
-    "type": "two_stage",
-    "terminal_growth": 0.03
-  },
-  "IONQ": {
-    "type": "two_stage",
+  "PLTR": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.15
+    },
     "terminal_growth": 0.03
   },
   "QBIT": {
@@ -235,6 +206,58 @@
     "terminal_growth": 0.03
   },
   "QBTS": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "RCAT": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "RDW": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "RLMD": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "RXRX": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "SNDL": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "TSLA": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 4,
+      "growth": null
+    },
+    "phase2": {
+      "years": 4,
+      "growth": 0.05
+    },
+    "terminal_growth": 0.03
+  },
+  "UNH": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "terminal_growth": 0.03,
+    "phase2": {
+      "years": 5,
+      "growth": 0.05
+    }
+  },
+  "VWAV": {
+    "type": "two_stage",
+    "terminal_growth": 0.03
+  },
+  "XNDU": {
     "type": "two_stage",
     "terminal_growth": 0.03
   }

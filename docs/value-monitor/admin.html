@@ -225,6 +225,8 @@
             <th>ティッカー</th>
             <th>CIK</th>
             <th>会社名</th>
+            <th>EPSセクター</th>
+            <th>Stonks Silo</th>
             <th>データ状態</th>
             <th>操作</th>
           </tr>
@@ -349,8 +351,10 @@
           <input type="number" class="form-input" id="mat-p2-years" value="5" min="1" max="10">
         </div>
         <div class="form-group" id="mat-p2-growth-wrap">
-          <label>Phase2 成長率</label>
-          <input type="number" class="form-input" id="mat-p2-growth" value="0.10" step="0.01" min="0" max="0.5">
+          <label>Phase2 成長率 <span id="mat-p2-cap-hint" style="font-size:10px;color:var(--amb);margin-left:6px"></span></label>
+          <input type="number" class="form-input" id="mat-p2-growth" value="0.10" step="0.01" min="0" max="0.5"
+                 oninput="checkPhase2Cap()">
+          <div id="mat-p2-cap-warn" style="font-size:11px;color:var(--red);margin-top:4px;display:none"></div>
         </div>
       </div>
     </div>
@@ -364,6 +368,19 @@
       </p>
       <div id="goOptionRows"></div>
       <button class="btn" onclick="addGoOption()" style="margin-top:8px;font-size:11px">＋ オプション追加</button>
+    </div>
+
+    <!-- Phase2上限テーブル -->
+    <div class="config-panel" id="panelSectorCaps">
+      <h3>🔒 Phase2成長率 セクター別上限テーブル</h3>
+      <p style="font-size:12px;color:var(--mut);margin-bottom:14px;line-height:1.6">
+        新規銘柄登録時のPhase2成長率初期値として使用されます。<br>
+        既存銘柄の個別設定はこのテーブルではなく「DCF成熟プロファイル」パネルで行ってください。<br>
+        <span style="color:var(--amb)">null = 上限なし（SaaS/ハイテク成長株）</span>
+      </p>
+      <div id="sectorCapsRows" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;margin-bottom:12px"></div>
+      <button class="btn primary" onclick="saveSectorCaps()" style="font-size:11px">💾 上限テーブルを保存</button>
+      <div class="result-msg" id="sectorCapsResult"></div>
     </div>
 
     <div class="result-msg" id="settingsResult"></div>
@@ -631,7 +648,7 @@ let token = '';
 let yamlSha = null, betaSha = null;
 let segSha = null, goSha = null, matSha = null;
 let tickerList = [];
-let cikMap = {}, nameMap = {};
+let cikMap = {}, nameMap = {}, cikRowMap = {};  // cikRowMap: ticker→{cik,name,eps_sector,stonks_silo}
 let betaConfig = null;
 let segConfig = null, goConfig = null, matConfig = null;
 
@@ -831,25 +848,64 @@ async function loadTickerTab() {
     yamlSha = ys;
     tickerList = parseYaml(yaml);
     const rows = parseCsv(csv);
-    cikMap = {}; nameMap = {};
+    cikMap = {}; nameMap = {}; cikRowMap = {};
     rows.forEach(r => {
-      cikMap[r.ticker.toUpperCase()] = r.cik;
-      nameMap[r.ticker.toUpperCase()] = r.name;
+      const t = r.ticker.toUpperCase();
+      cikMap[t]    = r.cik;
+      nameMap[t]   = r.name;
+      cikRowMap[t] = r;
     });
     tbody.innerHTML = '';
     for (const ticker of tickerList) {
       const hasCik = !!cikMap[ticker];
+      const row    = cikRowMap[ticker] || {};
+      const silo   = row.stonks_silo === 'true';
+      const epsSec = row.eps_sector || '';
       const tr = document.createElement('tr');
+      tr.id = `tr-${ticker}`;
       tr.innerHTML = `
         <td><input type="checkbox" class="ticker-check" value="${ticker}"></td>
         <td><strong class="mono">${ticker}</strong></td>
         <td class="mono">${cikMap[ticker] || '<span style="color:var(--red)">未登録</span>'}</td>
         <td>${nameMap[ticker] || '—'}</td>
+        <td style="font-size:12px;color:var(--mut)">${epsSec || '<span style="color:var(--mut)">—</span>'}</td>
+        <td><span class="badge ${silo ? 'ok' : 'mut'}">${silo ? '対象' : '—'}</span></td>
         <td><span class="badge ${hasCik ? 'ok' : 'warn'}">${hasCik ? 'CIK有' : 'CIK無'}</span></td>
-        <td><button class="btn danger" style="padding:4px 10px;font-size:11px"
-            onclick="deleteTicker('${ticker}')">削除</button></td>
+        <td style="display:flex;gap:4px">
+          <button class="btn" style="padding:4px 10px;font-size:11px" onclick="toggleEditRow('${ticker}')">✏</button>
+          <button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="deleteTicker('${ticker}')">削除</button>
+        </td>
       `;
       tbody.appendChild(tr);
+      // インライン編集行（初期非表示）
+      const editTr = document.createElement('tr');
+      editTr.id = `edit-${ticker}`;
+      editTr.style.display = 'none';
+      editTr.style.background = 'var(--sur)';
+      editTr.innerHTML = `
+        <td colspan="8" style="padding:10px 16px">
+          <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap">
+            <div class="form-group" style="margin:0;flex:1;min-width:160px">
+              <label style="font-size:11px">EPSセクター</label>
+              <input type="text" class="form-input" id="edit-eps-${ticker}" value="${epsSec}"
+                     placeholder="例: SaaS / Semiconductor" autocomplete="off" style="font-size:12px">
+            </div>
+            <div class="form-group" style="margin:0">
+              <label style="font-size:11px">Stonks Silo対象</label>
+              <select class="form-input" id="edit-silo-${ticker}" style="font-size:12px">
+                <option value="false" ${!silo ? 'selected' : ''}>対象外</option>
+                <option value="true"  ${silo  ? 'selected' : ''}>対象</option>
+              </select>
+            </div>
+            <button class="btn primary" style="font-size:11px;padding:6px 14px"
+                    onclick="saveTickerEdit('${ticker}')">💾 保存</button>
+            <button class="btn" style="font-size:11px;padding:6px 10px"
+                    onclick="toggleEditRow('${ticker}')">✕</button>
+          </div>
+          <div class="result-msg" id="edit-result-${ticker}" style="margin-top:8px"></div>
+        </td>
+      `;
+      tbody.appendChild(editTr);
     }
     // 銘柄設定タブのセレクタを更新
     const sel = document.getElementById('settingsTicker');
@@ -859,6 +915,42 @@ async function loadTickerTab() {
     document.getElementById('globalUpdated').textContent = `監視銘柄: ${tickerList.length}件`;
   } catch(e) {
     tbody.innerHTML = `<tr><td colspan="6" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
+  }
+}
+
+function toggleEditRow(ticker) {
+  const editTr = document.getElementById(`edit-${ticker}`);
+  if (!editTr) return;
+  editTr.style.display = editTr.style.display === 'none' ? '' : 'none';
+}
+
+async function saveTickerEdit(ticker) {
+  const epsSec = document.getElementById(`edit-eps-${ticker}`)?.value.trim() || '';
+  const silo   = document.getElementById(`edit-silo-${ticker}`)?.value || 'false';
+  const resultEl = document.getElementById(`edit-result-${ticker}`);
+
+  try {
+    const { content: csv, sha: cs } = await fetchFile(CIK_PATH);
+    const rows = parseCsv(csv);
+    const idx  = rows.findIndex(r => r.ticker.toUpperCase() === ticker);
+    if (idx === -1) { showResult(`edit-result-${ticker}`, 'error', `${ticker} がCSVに見つかりません`); return; }
+    rows[idx].eps_sector   = epsSec;
+    rows[idx].stonks_silo  = silo;
+    await commitFile(CIK_PATH, buildCsv(rows), `chore: update ${ticker} eps_sector/stonks_silo`, cs);
+    showResult(`edit-result-${ticker}`, 'success', `✓ ${ticker} を更新しました`);
+    // ローカルキャッシュ更新
+    cikRowMap[ticker] = { ...cikRowMap[ticker], eps_sector: epsSec, stonks_silo: silo };
+    // 行のバッジ・セクター表示を即時反映
+    const mainTr = document.getElementById(`tr-${ticker}`);
+    if (mainTr) {
+      const cells = mainTr.querySelectorAll('td');
+      cells[4].innerHTML = epsSec || '<span style="color:var(--mut)">—</span>';
+      cells[5].innerHTML = silo === 'true'
+        ? '<span class="badge ok">対象</span>'
+        : '<span class="badge mut">—</span>';
+    }
+  } catch(e) {
+    showResult(`edit-result-${ticker}`, 'error', '保存失敗: ' + e.message);
   }
 }
 
@@ -1401,6 +1493,7 @@ async function loadConfigFiles() {
     segConfig = JSON.parse(s.content); segSha = s.sha;
     goConfig  = JSON.parse(g.content); goSha  = g.sha;
     matConfig = JSON.parse(m.content); matSha = m.sha;
+    renderSectorCaps();
   } catch(e) {
     console.error('設定ファイル読み込みエラー:', e.message);
   }
@@ -1442,6 +1535,7 @@ async function loadTickerSettings() {
   document.getElementById('mat-p2-years').value = matData.phase2?.years || 5;
   document.getElementById('mat-p2-growth').value = matData.phase2?.growth || 0.10;
   toggleMaturityFields();
+  checkPhase2Cap();
 
   // ── 成長オプションを描画 ──
   const goData = goConfig[ticker]?.options || [];
@@ -1616,6 +1710,109 @@ function addGoOption() {
   const container = document.getElementById('goOptionRows');
   const idx = container.querySelectorAll('.go-option').length;
   container.appendChild(createGoOptionRow({}, idx));
+}
+
+// ── Phase2上限テーブル ──
+const MEGA_TECH = ['MSFT', 'AMZN', 'GOOGL', 'AAPL', 'META'];
+
+function getSectorCap(ticker) {
+  if (!matConfig?._sector_caps) return null;
+  const caps = matConfig._sector_caps;
+  if (MEGA_TECH.includes(ticker?.toUpperCase())) return caps._mega_tech_cap ?? 0.08;
+  // betaConfigからsectorを取得
+  const sector = betaConfig?.overrides?.[ticker?.toUpperCase()]?.sector || '';
+  // yfinance sectorマッピング（大まかに）
+  const sectorMap = {
+    'Consumer': caps['Consumer Cyclical'] ?? 0.05,
+    'Insurance': caps['Insurance'] ?? 0.05,
+    'Healthcare': caps['Healthcare'] ?? 0.05,
+    'Financial': caps['Financial Services'] ?? 0.10,
+    'Industrials': caps['Industrials'] ?? 0.05,
+  };
+  for (const [k, v] of Object.entries(sectorMap)) {
+    if (sector.includes(k)) return v;
+  }
+  return null; // 上限なし
+}
+
+function renderSectorCaps() {
+  const container = document.getElementById('sectorCapsRows');
+  if (!container || !matConfig?._sector_caps) return;
+  const caps = matConfig._sector_caps;
+  const skipKeys = ['_description', '_mega_tech_tickers', '_mega_tech_cap'];
+  container.innerHTML = '';
+
+  // メガテック特別行
+  const megaDiv = document.createElement('div');
+  megaDiv.style.cssText = 'background:var(--bg);border:0.5px solid var(--bdr);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px';
+  megaDiv.innerHTML = `
+    <span style="font-size:12px;font-weight:500">メガテック<br><span style="font-size:10px;color:var(--mut)">${(caps._mega_tech_tickers||[]).join(', ')}</span></span>
+    <div style="display:flex;align-items:center;gap:6px">
+      <input type="number" class="form-input" data-cap-key="_mega_tech_cap"
+             value="${caps._mega_tech_cap ?? ''}" placeholder="null"
+             step="0.01" min="0" max="0.5" style="width:80px;font-size:12px">
+      <span style="font-size:11px;color:var(--mut)">上限</span>
+    </div>
+  `;
+  container.appendChild(megaDiv);
+
+  for (const [sector, val] of Object.entries(caps)) {
+    if (skipKeys.includes(sector)) continue;
+    const div = document.createElement('div');
+    div.style.cssText = 'background:var(--bg);border:0.5px solid var(--bdr);border-radius:6px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px';
+    div.innerHTML = `
+      <span style="font-size:12px;font-weight:500">${sector}</span>
+      <div style="display:flex;align-items:center;gap:6px">
+        <input type="number" class="form-input" data-cap-key="${sector}"
+               value="${val !== null ? val : ''}" placeholder="null（上限なし）"
+               step="0.01" min="0" max="0.5" style="width:90px;font-size:12px">
+        <span style="font-size:11px;color:var(--mut)">上限</span>
+      </div>
+    `;
+    container.appendChild(div);
+  }
+}
+
+async function saveSectorCaps() {
+  if (!matConfig) { showResult('sectorCapsResult', 'error', '設定未読み込み'); return; }
+  const inputs = document.querySelectorAll('[data-cap-key]');
+  const caps = matConfig._sector_caps;
+  inputs.forEach(inp => {
+    const key = inp.dataset.capKey;
+    const v   = inp.value.trim();
+    caps[key] = v === '' ? null : parseFloat(v);
+  });
+  matConfig._meta.updated_at = new Date().toISOString().split('T')[0];
+  try {
+    await commitFile(MAT_PATH, JSON.stringify(matConfig, null, 2),
+      'chore: update sector caps in maturity_config', matSha);
+    const { sha } = await fetchFile(MAT_PATH);
+    matSha = sha;
+    showResult('sectorCapsResult', 'success', '✓ セクター上限テーブルを保存しました');
+  } catch(e) {
+    showResult('sectorCapsResult', 'error', '保存失敗: ' + e.message);
+  }
+}
+
+function checkPhase2Cap() {
+  const ticker  = document.getElementById('settingsTicker')?.value;
+  const val     = parseFloat(document.getElementById('mat-p2-growth')?.value);
+  const hintEl  = document.getElementById('mat-p2-cap-hint');
+  const warnEl  = document.getElementById('mat-p2-cap-warn');
+  if (!hintEl || !warnEl || isNaN(val)) return;
+  const cap = getSectorCap(ticker);
+  if (cap === null) {
+    hintEl.textContent = '上限なし';
+    warnEl.style.display = 'none';
+  } else {
+    hintEl.textContent = `セクター上限: ${(cap*100).toFixed(0)}%`;
+    if (val > cap) {
+      warnEl.textContent = `⚠ 入力値 ${(val*100).toFixed(0)}% がセクター上限 ${(cap*100).toFixed(0)}% を超えています`;
+      warnEl.style.display = '';
+    } else {
+      warnEl.style.display = 'none';
+    }
+  }
 }
 
 function toggleMaturityFields() {
