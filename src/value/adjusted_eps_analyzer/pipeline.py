@@ -283,6 +283,15 @@ def run(ticker_filter: str = None):
 
     cik_data = load_cik_data()
     ticker_to_name = {row['ticker']: row.get('name', '') for row in cik_data}
+
+    # eps 列が "false" の銘柄をスキップ（ticker_filter 未指定時のみ適用）
+    # ticker_filter 指定時は明示的に処理したい銘柄なので除外しない
+    if not ticker_filter:
+        eps_skipped = [row['ticker'] for row in cik_data
+                       if row.get('eps', 'true').strip().lower() == 'false']
+        if eps_skipped:
+            print(f"   ℹ️  EPSスキップ銘柄: {', '.join(eps_skipped)}")
+            tickers = [t for t in tickers if t not in eps_skipped]
     
     maturity_config = adjustment_config.get('maturity_defaults', {})
     
