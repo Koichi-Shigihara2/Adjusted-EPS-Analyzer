@@ -300,6 +300,7 @@ class TanukiDataFetcher:
         current_price = 0.0
         beta = None
         sector = "default"
+        industry = ""       # v8.1: 保険判定精度向上のためindustryも取得
         per = None
         ma200 = None
         
@@ -331,10 +332,13 @@ class TanukiDataFetcher:
                 if beta is not None and beta > 0:
                     print(f"   [{ticker}] yfinance beta: {beta:.2f}")
                 
-                # セクター
+                # セクター・業種（v8.1: industryを追加取得）
                 sector = info.get("sector", "default")
                 if sector and sector != "default":
                     print(f"   [{ticker}] yfinance sector: {sector}")
+                industry = info.get("industry", "")
+                if industry:
+                    print(f"   [{ticker}] yfinance industry: {industry}")
 
                 # PER（株価収益率）
                 per = info.get("trailingPE") or info.get("forwardPE") or None
@@ -375,7 +379,7 @@ class TanukiDataFetcher:
         # ========================================
         if self.sec_reader and hasattr(self.sec_reader, 'get_net_cash'):
             try:
-                net_cash_data = self.sec_reader.get_net_cash(ticker, sector=sector)
+                net_cash_data = self.sec_reader.get_net_cash(ticker, sector=sector, industry=industry)
                 guard = net_cash_data.get("sector_guard", "none")
                 if guard != "none":
                     print(f"   [{ticker}] BS補正 セクターガード: {guard}")
@@ -410,6 +414,7 @@ class TanukiDataFetcher:
             "beta": final_beta,
             "beta_yf_raw": float(beta) if (beta is not None and beta > 0) else None,
             "sector": sector,
+            "industry": industry,
             "per": per,
             "ma200": ma200,
             "eps_data": {"ticker": ticker},

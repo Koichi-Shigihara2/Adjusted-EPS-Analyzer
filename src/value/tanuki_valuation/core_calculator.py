@@ -127,6 +127,7 @@ class KoichiValuationCalculator:
         rpo            = financials.get("rpo", 0.0)
         beta           = financials.get("beta")
         sector         = financials.get("sector")
+        industry       = financials.get("industry", "")   # v8.1: 保険判定精度向上
         net_cash_data  = financials.get("net_cash_data", {"net_cash": 0.0, "available": False})  # v7.0
         # v7.1: FCF外れ値分析用（net_cash_dataのfiscal_yearを流用）
         fiscal_year_of_latest = net_cash_data.get("fiscal_year", 0)
@@ -278,7 +279,7 @@ class KoichiValuationCalculator:
             v0 = dcf_result.v0
 
         # ── STEP 6: RPO補正 ──
-        rpo_adjustment = adjust_rpo(rpo=rpo, sector=sector, ticker=ticker)
+        rpo_adjustment = adjust_rpo(rpo=rpo, sector=sector, ticker=ticker, industry=industry)
         rpo_pv = rpo_adjustment.rpo_pv
         if rpo_adjustment.applied:
             rate_str = f" ({rpo_adjustment.application_rate:.0%} 適用: {rpo_adjustment.sector_category})"

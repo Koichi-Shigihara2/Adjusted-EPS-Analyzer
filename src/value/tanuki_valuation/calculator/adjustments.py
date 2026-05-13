@@ -293,44 +293,82 @@ def adjust_fcf(
     )
 
 
-def _get_rpo_application_rate(sector: Optional[str], ticker: str) -> Tuple[float, str]:
+def _is_insurance(ticker: str, sector: Optional[str], industry: str) -> bool:
     """
-    セクター別RPO適用率を返す（v8.1追加）
+    保険会社かどうかを判定する（v8.1 industry優先方式）
 
-    RPOは「将来の収益確実性」の代理指標。セクターによって意味が大きく異なる:
-      - SaaS/クラウド (100%): サブスクリプション契約のバックログ → 収益化確実
-      - Fintech (50%):       ローン/手数料の将来見通し → 不確実性中程度
-      - 保険 (0%):           保険準備金/負債性項目 → 収益ではなく義務
-      - 消費者/ハードウェア (0%): 製品デリバリーがほぼ完了 → RPOの意味薄
+    判定優先順位:
+      1. industry文字列に "Insurance" / "Health Insurance" 等が含まれる → 保険
+      2. ticker ブラックリスト（yfinanceが別sectorを返すことがある銘柄）
+      3. sector == "Insurance"
 
-    セクター判定はbeta_config.jsonのsector値（yfinanceベース）を使用。
-    SaaS判定は ticker ベースのホワイトリストを優先する。
-    保険系はyfinanceがHealthcare等と返す場合があるためtickerブラックリストも使用。
-
-    Returns:
-        (適用率 0.0〜1.0, カテゴリ文字列)
+    yfinanceのindustry文字列例:
+      保険系: "Insurance—Life", "Insurance—Property & Casualty",
+              "Insurance—Specialty", "Insurance Brokers",
+              "Health Insurance", "Managed Health Care"
+      非保険: "Health Care Plans"（OSCRはこれになる可能性）
     """
-    # ── ticker ホワイトリスト（SaaS確定銘柄）──
+    # 1. industry文字列チェック（最優先・最も正確）
+    if industry:
+        industry_lower = industry.lower()
+        if "insurance" in industry_lower or "managed health" in industry_lower:
+            return True
+
+    # 2. tickerブラックリスト（yfinanceが誤ったsectorを返す実績銘柄）
+    INSURANCE_TICKERS = {
+        "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",   # 医療保険
+        "MET", "PRU", "AFL", "ALL", "TRV", "CB", "HIG",    # 生保・損保
+        "PGR", "AIZ", "CINF", "AIG", "L", "GL",            # 損保・複合
+    }
+    if ticker.upper() in INSURANCE_TICKERS:
+        return True
+
+    # 3. sectorフォールバック
+    return sector == "Insurance"
+
+
+def _get_rpo_application_rate(
+    sector: Optional[str], ticker: str, industry: str = ""
+) -> Tuple[float, str]:
+    """
+    セクター別RPO適用率を返す（v8.1: industry優先判定）
+
+    RPOは「将来の収益確実性」の代理指標:
+      - SaaS/クラウド (100%): サブスクリプション契約バックログ → 収益化確実
+      - Fintech (50%):        将来収益見通し → 不確実性中程度
+      - 保険 (0%):            保険準備金 → 収益でなく義務
+      - その他 (0%):          製品デリバリー完了後が多い
+
+    判定順: SaaSホワイトリスト → 保険判定(_is_insurance) → sector/industry
+    """
     SAAS_TICKERS = {
         "PLTR", "MSFT", "NOW", "CRM", "SNOW", "DDOG", "ZS", "CRWD",
         "NET", "TEAM", "HUBS", "MDB", "ESTC", "BILL", "GTLB",
     }
-    # ── ticker ブラックリスト（保険・準保険、yfinanceがHealthcareと返す場合あり）──
-    INSURANCE_TICKERS = {
-        "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",  # 医療保険
-        "MET", "PRU", "AFL", "ALL", "TRV", "CB",           # 生保・損保
-    }
 
-    # ── セクター → カテゴリマッピング（yfinanceのsector文字列）──
+    # SaaSホワイトリスト優先
+    if ticker.upper() in SAAS_TICKERS:
+        return 1.0, "SaaS"
+
+    # 保険判定（industry優先）
+    if _is_insurance(ticker, sector, industry):
+        return 0.0, "Insurance"
+
+    # Fintech
+    if sector == "Financial Services":
+        return 0.5, "Fintech"
+
+    # industry文字列でSaaS/Tech系を追加判定
+    if industry:
+        industry_lower = industry.lower()
+        if any(kw in industry_lower for kw in ("software", "cloud", "saas", "internet")):
+            # sectorがTechnology/Communication Servicesでない場合でもSaaSと判定
+            if sector in ("Technology", "Communication Services"):
+                return 1.0, "SaaS"
+
     SECTOR_RATES: Dict[str, Tuple[float, str]] = {
-        # SaaS/クラウド系
         "Technology": (1.0, "SaaS"),
         "Communication Services": (1.0, "SaaS"),
-        # Fintech
-        "Financial Services": (0.5, "Fintech"),
-        # 保険
-        "Insurance": (0.0, "Insurance"),
-        # その他（消費者・ハードウェア・医療等）
         "Consumer Cyclical": (0.0, "Consumer"),
         "Consumer Defensive": (0.0, "Consumer"),
         "Industrials": (0.0, "Non-SaaS"),
@@ -341,19 +379,10 @@ def _get_rpo_application_rate(sector: Optional[str], ticker: str) -> Tuple[float
         "Healthcare": (0.0, "Healthcare"),
     }
 
-    # Tickerホワイトリスト優先（SaaS確定）
-    if ticker.upper() in SAAS_TICKERS:
-        return 1.0, "SaaS"
-
-    # Tickerブラックリスト（保険系）
-    if ticker.upper() in INSURANCE_TICKERS:
-        return 0.0, "Insurance"
-
     if sector:
         rate, category = SECTOR_RATES.get(sector, (0.0, "Non-SaaS"))
         return rate, category
 
-    # セクター不明 → 保守的に0%
     return 0.0, "Unknown"
 
 
@@ -361,8 +390,9 @@ def adjust_rpo(
     rpo: float,
     discount_rate: float = 0.15,
     assumed_realization_years: float = 1.5,
-    sector: Optional[str] = None,   # v8.1: セクター別適用率
-    ticker: str = "",               # v8.1: SaaSホワイトリスト用
+    sector: Optional[str] = None,
+    ticker: str = "",
+    industry: str = "",     # v8.1: industry優先判定
 ) -> RPOAdjustmentResult:
     """
     RPO補正（残存履行義務の現在価値化）v8.1
@@ -386,7 +416,7 @@ def adjust_rpo(
             sector_category="",
         )
 
-    application_rate, sector_category = _get_rpo_application_rate(sector, ticker)
+    application_rate, sector_category = _get_rpo_application_rate(sector, ticker, industry)
 
     # 適用率0%はRPOを使わない
     if application_rate == 0.0:

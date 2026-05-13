@@ -224,7 +224,7 @@ class SECReader:
         
         return 0.0
     
-    def get_net_cash(self, ticker: str, sector: Optional[str] = None) -> dict:
+    def get_net_cash(self, ticker: str, sector: Optional[str] = None, industry: str = "") -> dict:
         """
         ネットキャッシュ関連BSデータを取得 v8.1
 
@@ -272,22 +272,29 @@ class SECReader:
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
 
-        # ── セクターガード（v8.1）──
-        # yfinanceのsector文字列が実態と乖離するケースに対応するため
-        # tickerブラックリストを優先チェックする（UNH等はHealthcareと返ることがある）
-        INSURANCE_TICKERS = {
-            "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",
-            "MET", "PRU", "AFL", "ALL", "TRV", "CB",
-        }
+        # ── セクターガード（v8.1: industry優先判定）──
+        # _is_insurance()と同じロジックをここで直接適用
+        # （adjustments.pyのimportを避けるため複製）
+        def _is_insurance_local(t: str, s: Optional[str], ind: str) -> bool:
+            if ind:
+                ind_lower = ind.lower()
+                if "insurance" in ind_lower or "managed health" in ind_lower:
+                    return True
+            INSURANCE_TICKERS = {
+                "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",
+                "MET", "PRU", "AFL", "ALL", "TRV", "CB", "HIG",
+                "PGR", "AIZ", "CINF", "AIG", "L", "GL",
+            }
+            if t.upper() in INSURANCE_TICKERS:
+                return True
+            return s == "Insurance"
+
         sector_guard = "none"
-        if ticker.upper() in INSURANCE_TICKERS or sector == "Insurance":
-            # 保険セクター: 有利子負債タグに保険準備金が混入しうるため負債側を0扱い
+        if _is_insurance_local(ticker, sector, industry):
             lt_debt = 0.0
             st_debt = 0.0
             sector_guard = "insurance_liabilities_excluded"
         elif sector == "Financial Services":
-            # Fintech: 短期有利子負債に顧客預金が混入するリスク（DebtCurrentタグの曖昧性）
-            # long_term_debtのみ使用し、short_term_debtは除外する
             st_debt = 0.0
             sector_guard = "fintech_st_debt_excluded"
 
