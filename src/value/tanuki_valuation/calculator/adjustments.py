@@ -305,6 +305,7 @@ def _get_rpo_application_rate(sector: Optional[str], ticker: str) -> Tuple[float
 
     セクター判定はbeta_config.jsonのsector値（yfinanceベース）を使用。
     SaaS判定は ticker ベースのホワイトリストを優先する。
+    保険系はyfinanceがHealthcare等と返す場合があるためtickerブラックリストも使用。
 
     Returns:
         (適用率 0.0〜1.0, カテゴリ文字列)
@@ -314,36 +315,45 @@ def _get_rpo_application_rate(sector: Optional[str], ticker: str) -> Tuple[float
         "PLTR", "MSFT", "NOW", "CRM", "SNOW", "DDOG", "ZS", "CRWD",
         "NET", "TEAM", "HUBS", "MDB", "ESTC", "BILL", "GTLB",
     }
+    # ── ticker ブラックリスト（保険・準保険、yfinanceがHealthcareと返す場合あり）──
+    INSURANCE_TICKERS = {
+        "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",  # 医療保険
+        "MET", "PRU", "AFL", "ALL", "TRV", "CB",           # 生保・損保
+    }
+
     # ── セクター → カテゴリマッピング（yfinanceのsector文字列）──
-    # 適用率: SaaS=1.0 / Fintech=0.5 / 保険=0.0 / その他=0.0
     SECTOR_RATES: Dict[str, Tuple[float, str]] = {
-        # SaaS/クラウド系（Technology）
+        # SaaS/クラウド系
         "Technology": (1.0, "SaaS"),
         "Communication Services": (1.0, "SaaS"),
         # Fintech
         "Financial Services": (0.5, "Fintech"),
         # 保険
         "Insurance": (0.0, "Insurance"),
-        # 消費者・ハードウェア系
+        # その他（消費者・ハードウェア・医療等）
         "Consumer Cyclical": (0.0, "Consumer"),
         "Consumer Defensive": (0.0, "Consumer"),
-        "Industrials": (0.0, "Consumer"),
-        "Energy": (0.0, "Consumer"),
-        "Utilities": (0.0, "Consumer"),
-        "Real Estate": (0.0, "Consumer"),
-        "Basic Materials": (0.0, "Consumer"),
-        "Healthcare": (0.0, "Consumer"),
+        "Industrials": (0.0, "Non-SaaS"),
+        "Energy": (0.0, "Non-SaaS"),
+        "Utilities": (0.0, "Non-SaaS"),
+        "Real Estate": (0.0, "Non-SaaS"),
+        "Basic Materials": (0.0, "Non-SaaS"),
+        "Healthcare": (0.0, "Healthcare"),
     }
 
-    # Tickerホワイトリスト優先
+    # Tickerホワイトリスト優先（SaaS確定）
     if ticker.upper() in SAAS_TICKERS:
         return 1.0, "SaaS"
 
+    # Tickerブラックリスト（保険系）
+    if ticker.upper() in INSURANCE_TICKERS:
+        return 0.0, "Insurance"
+
     if sector:
-        rate, category = SECTOR_RATES.get(sector, (0.0, "Consumer"))
+        rate, category = SECTOR_RATES.get(sector, (0.0, "Non-SaaS"))
         return rate, category
 
-    # セクター不明 → 保守的に0%（RPO混入リスクを避ける）
+    # セクター不明 → 保守的に0%
     return 0.0, "Unknown"
 
 

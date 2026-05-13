@@ -273,16 +273,21 @@ class SECReader:
         st_debt = bs.get("short_term_debt", 0) or 0
 
         # ── セクターガード（v8.1）──
-        # 保険セクター: 有利子負債タグに保険準備金が混入しうるため負債側を0扱い
-        # 実務上の保険会社評価はEV/書く資産ベースが標準で、DCFのnet_cashガードには不向き
+        # yfinanceのsector文字列が実態と乖離するケースに対応するため
+        # tickerブラックリストを優先チェックする（UNH等はHealthcareと返ることがある）
+        INSURANCE_TICKERS = {
+            "UNH", "CVS", "CI", "HUM", "ELV", "CNC", "MOH",
+            "MET", "PRU", "AFL", "ALL", "TRV", "CB",
+        }
         sector_guard = "none"
-        if sector == "Insurance":
+        if ticker.upper() in INSURANCE_TICKERS or sector == "Insurance":
+            # 保険セクター: 有利子負債タグに保険準備金が混入しうるため負債側を0扱い
             lt_debt = 0.0
             st_debt = 0.0
             sector_guard = "insurance_liabilities_excluded"
-        # Fintech: 短期有利子負債に顧客預金が混入するリスク（DebtCurrentタグの曖昧性）
-        # long_term_debtのみ使用し、short_term_debtは除外する
         elif sector == "Financial Services":
+            # Fintech: 短期有利子負債に顧客預金が混入するリスク（DebtCurrentタグの曖昧性）
+            # long_term_debtのみ使用し、short_term_debtは除外する
             st_debt = 0.0
             sector_guard = "fintech_st_debt_excluded"
 
