@@ -146,6 +146,7 @@ def _calc_cf_lagged(
     # 異常値検出の閾値
     INTENSITY_MIN  = 0.01   # 投資強度の最低ライン（1%）
     CF_POINT_MAX   = 50.0   # CF点の警告閾値
+    CF_POINT_CLAMP = 10.0   # CF点のクリップ上限（異常値による理論株価への影響を防ぐ）
 
     cf_list        = []
     intensity_list = []
@@ -235,12 +236,14 @@ def _calc_cf_lagged(
 
         cf_point = rev_growth_t1 / intensity_t
 
-        # CF点が非現実的に大きい場合
+        # CF点が非現実的に大きい場合 → 警告＋クリップ
         if abs(cf_point) > CF_POINT_MAX:
             warnings.append(
                 f"CF点が異常値（FY{fy_t}→: {cf_point:.1f}）: "
                 f"R&D未取得による投資強度過小の可能性"
             )
+        # CF点をクリップ（異常値が平均を歪めるのを防ぐ）
+        cf_point = max(-CF_POINT_CLAMP, min(CF_POINT_CLAMP, cf_point))
 
         cf_list.append(cf_point)
         intensity_list.append(intensity_t)
@@ -256,6 +259,22 @@ def _calc_cf_lagged(
     return cf_avg, len(cf_list), intensity_avg, rev_growth_avg, warnings
 
 
+# RICEを構造的に計算できないセクター（投資強度の定義が成立しない）
+RICE_EXCLUDED_SECTORS = {
+    "Insurance",           # 保険会社: R&D/CapExがほぼゼロ・FCFがフロート
+    "Consumer Defensive",  # 飲食・日用品: R&D=0が多くCF膨張
+    "Consumer Cyclical",   # 外食・小売: 同上（CAKE等）
+    "Financial Services",  # 銀行・金融: 投資強度の定義が異なる
+    "Real Estate",         # REIT等: CapEx性質が異なる
+    "Utilities",           # 公益: 設備投資の性質が異なる
+}
+
+# industryベースの除外（sectorがHealthcareでも保険会社はRICE除外）
+RICE_EXCLUDED_INDUSTRIES = {
+    "Healthcare Plans",    # UNH・OSCR等: 保険会社はsector=Healthcareだが構造は保険
+}
+
+
 def calculate_rice(
     annual_data: List[Dict[str, Any]],
     wacc: float,
@@ -263,6 +282,8 @@ def calculate_rice(
     current_per: float = 0.0,
     q_years: int = 3,
     cf_years: int = 3,
+    sector: str = "",
+    industry: str = "",
 ) -> RICEResult:
     """
     RICE計算メイン関数
@@ -274,10 +295,29 @@ def calculate_rice(
         current_per:          現在のPER（RICE/PER計算用、0の場合は比率計算をスキップ）
         q_years:              Q計算年数（デフォルト3）
         cf_years:             CF計算年数（デフォルト3）
+        sector:               yfinanceセクター名（除外判定用）
 
     Returns:
         RICEResult
     """
+    # ── セクター・業種除外チェック ──
+    if sector and sector in RICE_EXCLUDED_SECTORS:
+        return RICEResult(
+            q=0.0, cf_conversion=0.0, wacc=wacc,
+            q_years=0, cf_years=0,
+            avg_intensity=0.0, avg_rev_growth=0.0,
+            available=False,
+            note=f"セクター除外（{sector}）: 投資強度の定義が成立しないため計算対象外"
+        )
+    if industry and industry in RICE_EXCLUDED_INDUSTRIES:
+        return RICEResult(
+            q=0.0, cf_conversion=0.0, wacc=wacc,
+            q_years=0, cf_years=0,
+            avg_intensity=0.0, avg_rev_growth=0.0,
+            available=False,
+            note=f"業種除外（{industry}）: 保険会社はFCF構造が異なるため計算対象外"
+        )
+
     # ── データ不足チェック ──
     if len(annual_data) < 2:
         return RICEResult(
@@ -297,6 +337,18 @@ def calculate_rice(
             avg_intensity=0.0, avg_rev_growth=0.0,
             available=False,
             note="Q計算不可（OCF/純利益データなし）"
+        )
+
+    # ── Q異常値ガード ──
+    # |Q| > 5.0 は保険会社のフロート・赤字急拡大企業等で発生する構造的異常
+    Q_MAX = 5.0
+    if abs(q) > Q_MAX:
+        return RICEResult(
+            q=q, cf_conversion=0.0, wacc=wacc,
+            q_years=q_used, cf_years=0,
+            avg_intensity=0.0, avg_rev_growth=0.0,
+            available=False,
+            note=f"Q異常値（Q={q:.2f}）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外"
         )
 
     # ── CF計算（1年ラグ） ──

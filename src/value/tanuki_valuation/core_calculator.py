@@ -533,6 +533,8 @@ class KoichiValuationCalculator:
                     wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
                     scenario_valuations=_sc_val,
                     current_per=_current_per,
+                    sector=sector or "",
+                    industry=industry or "",
                 )
                 if rice_result.available:
                     _base_rice = rice_result.base.rice if rice_result.base else 0.0
