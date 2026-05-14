@@ -64,8 +64,8 @@ XAI_API_URL = "https://api.x.ai/v1/chat/completions"
 def analyze_adjustments(ticker: str, fiscal_period_data: Dict[str, Any], adjustments: List[Dict[str, Any]]) -> str:
     if not adjustments:
         return json.dumps({
-            "health": "Good",
-            "comment": "調整項目はありません。GAAP EPSがそのまま実質EPSと見なせます。",
+            "health": "Excellent",
+            "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
             "sources": []
         }, ensure_ascii=False)
 

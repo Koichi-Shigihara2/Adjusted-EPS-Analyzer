@@ -166,7 +166,12 @@
       padding: 2px 8px;
       border-radius: 2px;
     }
-    .health-Excellent, .health-Good {
+    .health-Excellent {
+      background: rgba(16,185,129,.25);
+      color: #34d399;
+      border: 1px solid rgba(16,185,129,.4);
+    }
+    .health-Good {
       background: rgba(16,185,129,.15);
       color: var(--grn);
     }
@@ -223,7 +228,7 @@
           <th>GAAP EPS</th>
           <th>Adjusted EPS</th>
           <th>YoY成長率</th>
-          <th>健全性</th>
+          <th>AdjEPS信頼性</th>
         </tr>
       </thead>
     </table>
@@ -276,11 +281,12 @@
           render: function(data) {
             const health = data || 'Good';
             let cls = 'health-';
-            if (health === 'Excellent' || health === 'Good') cls += 'Good';
+            if (health === 'Excellent') cls += 'Excellent';
+            else if (health === 'Good') cls += 'Good';
             else if (health === 'Caution') cls += 'Caution';
             else if (health === 'Warning') cls += 'Warning';
             else cls += 'Error';
-            return '<span class="health-badge ' + cls + '">' + health + '</span>';
+            return '<span class="health-badge ' + cls + '" title="Excellent:調整ゼロ / Good:一過性のみ / Caution:一部疑義 / Warning:信頼性低">' + health + '</span>';
           }
         }
       ],
