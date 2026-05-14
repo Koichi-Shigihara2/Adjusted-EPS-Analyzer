@@ -383,6 +383,14 @@ async function loadData() {
     if (!response.ok) throw new Error('Data not found');
     globalData = await response.json();
     render(globalData);
+    // 時系列チャート（history.jsonが存在する場合のみ）
+    try {
+      const hRes = await fetch(`data/${ticker}/history.json`, { cache: 'no-cache' });
+      if (hRes.ok) {
+        const historyData = await hRes.json();
+        if (historyData.length >= 2) renderHistoryChart(historyData);
+      }
+    } catch (e) { /* history.json未存在は無視 */ }
   } catch (error) {
     document.getElementById('app').innerHTML = `
       <header>
@@ -1227,6 +1235,11 @@ function render(d) {
       </div>
     </div>
 
+    <div class="chart-container" id="history-chart-section" style="display:none">
+      <h2 class="section-title">理論株価 時系列</h2>
+      <div id="history-chart" style="width:100%;height:340px;background:var(--sur);border:1px solid var(--bdr);border-radius:8px;"></div>
+    </div>
+
     <div class="chart-container">
       <h2 class="section-title">VALUATION COMPONENTS</h2>
       <div id="valuation-chart"></div>
@@ -1698,6 +1711,35 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
     showlegend: false,
     yaxis: { gridcolor: '#1e2840', tickformat: '$,.0f' },
     xaxis: { tickangle: -30 }
+  }, { displayModeBar: false, responsive: true });
+}
+
+function renderHistoryChart(data) {
+  document.getElementById('history-chart-section').style.display = '';
+  const dates = data.map(d => d.date);
+  const iv    = data.map(d => d.intrinsic_value_per_share);
+  const price = data.map(d => d.current_price);
+  const ma200 = data.map(d => d.ma200);
+  const bear  = data.map(d => d.scenario_bear);
+  const bull  = data.map(d => d.scenario_bull);
+
+  const traces = [
+    { name: '理論株価 (Rm基準)', x: dates, y: iv,    mode: 'lines+markers', line: { color: '#c4d0ff', width: 2 }, marker: { size: 5 } },
+    { name: '現在株価',          x: dates, y: price,  mode: 'lines+markers', line: { color: '#facc15', width: 2 }, marker: { size: 5 } },
+    { name: '200日MA',           x: dates, y: ma200,  mode: 'lines',         line: { color: '#94a3b8', width: 1, dash: 'dot' } },
+    { name: 'BEAR理論価',        x: dates, y: bear,   mode: 'lines',         line: { color: '#f87171', width: 1, dash: 'dash' } },
+    { name: 'BULL理論価',        x: dates, y: bull,   mode: 'lines',         line: { color: '#4ade80', width: 1, dash: 'dash' } },
+  ];
+
+  Plotly.newPlot('history-chart', traces, {
+    paper_bgcolor: '#111520',
+    plot_bgcolor:  '#111520',
+    font: { family: 'Space Mono', color: '#94a3b8', size: 11 },
+    margin: { t: 20, b: 60, l: 70, r: 20 },
+    legend: { orientation: 'h', y: -0.25, font: { size: 10 } },
+    xaxis: { gridcolor: '#1e2840', tickangle: -30 },
+    yaxis: { gridcolor: '#1e2840', tickprefix: '$', tickformat: ',.0f' },
+    hovermode: 'x unified',
   }, { displayModeBar: false, responsive: true });
 }
 

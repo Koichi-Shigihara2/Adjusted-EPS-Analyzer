@@ -200,6 +200,35 @@ class TanukiValuationPipeline:
         with open(history_path, "w", encoding="utf-8") as f:
             json.dump(valuation, f, ensure_ascii=False, indent=2)
 
+        # history.json（時系列チャート用・軽量サマリ）に追記
+        history_summary_path = os.path.join(ticker_dir, "history.json")
+        history_summary = []
+        if os.path.exists(history_summary_path):
+            try:
+                with open(history_summary_path, encoding="utf-8") as f:
+                    history_summary = json.load(f)
+            except Exception:
+                history_summary = []
+
+        entry = {
+            "date": date_str,
+            "intrinsic_value_per_share": valuation.get("intrinsic_value_per_share"),
+            "intrinsic_value_beta": valuation.get("intrinsic_value_beta"),
+            "current_price": valuation.get("components", {}).get("current_price"),
+            "ma200": valuation.get("components", {}).get("ma200"),
+            "upside_percent": valuation.get("upside_percent"),
+            "growth_rate": valuation.get("growth_scenarios", {}).get("primary", {}).get("rate"),
+            "scenario_bear": valuation.get("scenario_valuations", {}).get("bear", {}).get("intrinsic_value_per_share"),
+            "scenario_bull": valuation.get("scenario_valuations", {}).get("bull", {}).get("intrinsic_value_per_share"),
+        }
+        # 同日エントリを上書き
+        history_summary = [e for e in history_summary if e.get("date") != date_str]
+        history_summary.append(entry)
+        history_summary.sort(key=lambda e: e.get("date", ""))
+
+        with open(history_summary_path, "w", encoding="utf-8") as f:
+            json.dump(history_summary, f, ensure_ascii=False, indent=2)
+
         print(f"   💾 保存: {latest_path}")
 
     def _save_tickers_index(self, success_tickers: List[str]) -> None:
