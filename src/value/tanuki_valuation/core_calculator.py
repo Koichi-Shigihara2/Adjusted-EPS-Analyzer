@@ -254,6 +254,26 @@ class KoichiValuationCalculator:
             phase1_years  = p1["years"]
             phase2_years  = p2["years"]
 
+            # ③ Phase2成長率にセクター上限を適用
+            try:
+                import json as _json, pathlib as _pl
+                _cfg_path = _pl.Path(__file__).parent.parent.parent.parent / "config" / "maturity_config.json"
+                _cfg_all  = _json.loads(_cfg_path.read_text(encoding="utf-8"))
+                _caps     = _cfg_all.get("_sector_caps", {})
+                _mega     = _caps.get("_mega_tech_tickers", [])
+                _mega_cap = _caps.get("_mega_tech_cap")
+                if ticker in _mega and _mega_cap is not None:
+                    _cap = _mega_cap
+                elif sector and sector in _caps:
+                    _cap = _caps[sector]
+                else:
+                    _cap = None
+                if _cap is not None and phase2_growth is not None and phase2_growth > _cap:
+                    print(f"   [{ticker}] Phase2上限適用: {phase2_growth:.1%} → {_cap:.1%} (sector={sector})")
+                    phase2_growth = _cap
+            except Exception:
+                pass
+
             print(f"   [{ticker}] DCF: 3段階  P1={phase1_years}yr@{phase1_growth:.1%}  P2={phase2_years}yr@{phase2_growth:.1%}  TV={terminal_growth:.1%}")
 
             three_stage_result = calculate_three_stage_dcf(
@@ -298,14 +318,29 @@ class KoichiValuationCalculator:
         _rf = wacc_result.risk_free_rate  # Rf: 通常4.3%
         _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
 
+        # ④ αセクター別上限を決定
+        _alpha_cap = self.alpha_cap
+        try:
+            import json as _json, pathlib as _pl
+            _cfg_path = _pl.Path(__file__).parent.parent.parent.parent / "config" / "maturity_config.json"
+            _cfg_all  = _json.loads(_cfg_path.read_text(encoding="utf-8"))
+            _alpha_caps = _cfg_all.get("_alpha_caps", {})
+            _mega = _cfg_all.get("_sector_caps", {}).get("_mega_tech_tickers", [])
+            if ticker in _mega:
+                _alpha_cap = _alpha_caps.get("mega_tech", self.alpha_cap)
+            elif sector and sector in _alpha_caps:
+                _alpha_cap = _alpha_caps[sector]
+        except Exception:
+            pass
+
         # αはRM基準（βなし・市場期待リターン10%）で計算
         alpha_result = calculate_alpha(
             roe=roe_avg, wacc=_rm,
-            retention_rate=self.retention_rate, alpha_cap=self.alpha_cap
+            retention_rate=self.retention_rate, alpha_cap=_alpha_cap
         )
         alpha = alpha_result.alpha
         if alpha_result.was_capped:
-            print(f"   [{ticker}] α: {alpha_result.alpha_uncapped:.3f} → cap → {alpha:.3f}")
+            print(f"   [{ticker}] α: {alpha_result.alpha_uncapped:.3f} → cap({_alpha_cap:.1f}) → {alpha:.3f}")
         else:
             print(f"   [{ticker}] α: {alpha:.3f}")
 
