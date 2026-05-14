@@ -279,7 +279,7 @@ def fetch_qqq_tech_data():
         hist_qqq = yf.Ticker("QQQ").history(period="200d")
         hist_spy = yf.Ticker("SPY").history(period="200d")
         # 市場開場前・開場中は当日データが不確定なため除外
-        today = datetime.now().date()
+        today = datetime.now(JST).date()
         hist_qqq = hist_qqq[hist_qqq.index.date < today]
         hist_spy = hist_spy[hist_spy.index.date < today]
         if hist_qqq is None or len(hist_qqq) < 125:
