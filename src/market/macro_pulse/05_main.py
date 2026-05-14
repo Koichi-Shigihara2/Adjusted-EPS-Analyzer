@@ -1670,7 +1670,7 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     if tga_val is None:
         tga_val, _ = fred_latest(fred, "FTSD",      target_date, lookback=14)
     # RRP (RRPONTSYD): 日次, Billions USD
-    rrp_val, _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=7)
+    rrp_val, _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
 
     if all(v is None for v in (m2_val, hy_val, fed_val)):
         logger.warning("[Liquidity] All series returned None. Skipping.")
