@@ -792,8 +792,105 @@ function render(d) {
           </tbody>
         </table>
         ${riceWarnings ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:12px;color:var(--yellow)">⚠️ ${riceNote}</div>` : ''}
+
+        <!-- RICE × 乖離率 2軸マトリクス -->
+        ${(() => {
+          const rice_val = riceBase.rice;
+          const upside_val = upside;
+          if (rice_val == null) return '';
+
+          // 象限ラベルと色
+          const isHighRice   = rice_val > 2.0;
+          const isUndervalue = upside_val > 0;
+          let quadLabel, quadColor, quadDesc;
+          if (isUndervalue && isHighRice) {
+            quadLabel = '① 強い買い候補';
+            quadColor = '#4ade80';
+            quadDesc  = '割安 × 成長効率高：最も優位な状態';
+          } else if (!isUndervalue && isHighRice) {
+            quadLabel = '② 期待プレミアム有';
+            quadColor = '#facc15';
+            quadDesc  = '割高だが成長効率は高い：期待に一定の根拠あり';
+          } else if (isUndervalue && !isHighRice) {
+            quadLabel = '③ 割安だが効率低';
+            quadColor = '#94a3b8';
+            quadDesc  = '株価は安いが成長の質に課題';
+          } else {
+            quadLabel = '④ 要注意';
+            quadColor = '#f87171';
+            quadDesc  = '割高 × 成長効率低：慎重に';
+          }
+
+          // SVGの点の位置計算
+          // X軸: 乖離率  -100%〜+200% → 0〜300px  中心(0%)=100px
+          // Y軸: RICE    0〜10        → 200〜0px   中心(2.0)=160px
+          const W = 300, H = 200, PAD = 40;
+          const xRange = [-100, 200]; // 乖離率の表示範囲
+          const yRange = [0, 10];     // RICEの表示範囲
+          const cx = PAD + (upside_val - xRange[0]) / (xRange[1] - xRange[0]) * (W - PAD*2);
+          const cy = PAD + (1 - (Math.min(rice_val, yRange[1]) - yRange[0]) / (yRange[1] - yRange[0])) * (H - PAD*2);
+          const cxClamped = Math.max(PAD+2, Math.min(W-PAD-2, cx));
+          const cyClamped = Math.max(PAD+2, Math.min(H-PAD-2, cy));
+
+          // 軸のゼロ位置
+          const xZero = PAD + (0 - xRange[0]) / (xRange[1] - xRange[0]) * (W - PAD*2);
+          const yThresh = PAD + (1 - (2.0 - yRange[0]) / (yRange[1] - yRange[0])) * (H - PAD*2);
+
+          return \`
+          <div style="margin-top:20px;">
+            <div style="font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.06em;margin-bottom:10px">RICE × 乖離率 ポジション</div>
+            <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;">
+              <svg width="\${W}" height="\${H}" style="background:#0d1117;border:1px solid #1e2840;border-radius:6px;flex-shrink:0;">
+                <!-- 象限背景 -->
+                <rect x="\${PAD}" y="\${PAD}" width="\${xZero-PAD}" height="\${yThresh-PAD}" fill="rgba(74,222,128,0.05)"/>
+                <rect x="\${xZero}" y="\${PAD}" width="\${W-PAD-xZero}" height="\${yThresh-PAD}" fill="rgba(251,191,36,0.05)"/>
+                <rect x="\${PAD}" y="\${yThresh}" width="\${xZero-PAD}" height="\${H-PAD-yThresh}" fill="rgba(148,163,184,0.05)"/>
+                <rect x="\${xZero}" y="\${yThresh}" width="\${W-PAD-xZero}" height="\${H-PAD-yThresh}" fill="rgba(248,113,113,0.05)"/>
+                <!-- 象限ラベル -->
+                <text x="\${PAD+6}" y="\${PAD+14}" font-size="9" fill="rgba(74,222,128,0.6)" font-family="monospace">①割安×高</text>
+                <text x="\${xZero+6}" y="\${PAD+14}" font-size="9" fill="rgba(251,191,36,0.6)" font-family="monospace">②割高×高</text>
+                <text x="\${PAD+6}" y="\${H-PAD-6}" font-size="9" fill="rgba(148,163,184,0.6)" font-family="monospace">③割安×低</text>
+                <text x="\${xZero+6}" y="\${H-PAD-6}" font-size="9" fill="rgba(248,113,113,0.6)" font-family="monospace">④割高×低</text>
+                <!-- 軸線 -->
+                <line x1="\${xZero}" y1="\${PAD}" x2="\${xZero}" y2="\${H-PAD}" stroke="#1e2840" stroke-width="1"/>
+                <line x1="\${PAD}" y1="\${yThresh}" x2="\${W-PAD}" y2="\${yThresh}" stroke="#1e2840" stroke-width="1"/>
+                <!-- 軸ラベル -->
+                <text x="\${W/2}" y="\${H-4}" font-size="9" fill="#475569" text-anchor="middle" font-family="monospace">乖離率 →</text>
+                <text x="10" y="\${H/2}" font-size="9" fill="#475569" text-anchor="middle" font-family="monospace" transform="rotate(-90,10,\${H/2})">RICE →</text>
+                <text x="\${PAD}" y="\${H-PAD+12}" font-size="8" fill="#334155" text-anchor="middle" font-family="monospace">-100%</text>
+                <text x="\${xZero}" y="\${H-PAD+12}" font-size="8" fill="#475569" text-anchor="middle" font-family="monospace">0%</text>
+                <text x="\${W-PAD}" y="\${H-PAD+12}" font-size="8" fill="#334155" text-anchor="middle" font-family="monospace">+200%</text>
+                <text x="\${PAD-4}" y="\${PAD}" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">10</text>
+                <text x="\${PAD-4}" y="\${yThresh}" font-size="8" fill="#475569" text-anchor="end" font-family="monospace">2</text>
+                <text x="\${PAD-4}" y="\${H-PAD}" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">0</text>
+                <!-- 銘柄点 -->
+                <circle cx="\${cxClamped}" cy="\${cyClamped}" r="6" fill="\${quadColor}" opacity="0.9"/>
+                <circle cx="\${cxClamped}" cy="\${cyClamped}" r="6" fill="none" stroke="\${quadColor}" stroke-width="1" opacity="0.4"/>
+                <text x="\${cxClamped+9}" y="\${cyClamped+4}" font-size="10" fill="\${quadColor}" font-family="monospace" font-weight="bold">\${ticker}</text>
+              </svg>
+              <div style="flex:1;min-width:140px;">
+                <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:\${quadColor};margin-bottom:8px">\${quadLabel}</div>
+                <div style="font-size:12px;color:var(--mut);line-height:1.6;margin-bottom:12px">\${quadDesc}</div>
+                <div style="display:grid;gap:6px;">
+                  <div style="display:flex;justify-content:space-between;font-size:12px;">
+                    <span style="color:var(--mut)">RICE (base)</span>
+                    <span style="font-family:var(--mono);color:var(--txt)">\${rice_val.toFixed(2)}</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;">
+                    <span style="color:var(--mut)">乖離率</span>
+                    <span style="font-family:var(--mono);color:\${upside_val>=0?'var(--green)':'var(--red)'}">\${upside_val>=0?'+':''}\${upside_val.toFixed(1)}%</span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;font-size:12px;">
+                    <span style="color:var(--mut)">RICE閾値</span>
+                    <span style="font-family:var(--mono);color:var(--mut)">2.0（基準）</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>\`;
+        })()}
       </div>
-      ` : ''}
+      \` : ''}
     </div>
 
     <div class="calc-section">
