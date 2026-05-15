@@ -2226,6 +2226,98 @@ function renderLiquidityCards(rows) {
     return `<span class="liq-card-chg ${cls}">${sign}${fmt(diff)}</span>`;
   }
 
+  // 水準・ベクトル・解釈を評価するヘルパー
+  function liqLevel(val, low, high) {
+    if (val === null) return null;
+    if (val >= high) return { label: '多い', cls: 'up', icon: '▲' };
+    if (val <= low)  return { label: '少ない', cls: 'dn', icon: '▼' };
+    return { label: '普通', cls: 'flat', icon: '—' };
+  }
+  function liqVector(cur, prev) {
+    if (cur === null || prev === null) return null;
+    const pct = (cur - prev) / Math.abs(prev || 1);
+    if (pct >  0.005) return { label: '拡大中', cls: 'up', icon: '↑' };
+    if (pct < -0.005) return { label: '縮小中', cls: 'dn', icon: '↓' };
+    return { label: '横ばい', cls: 'flat', icon: '→' };
+  }
+
+  // 過去90日の最大・最小で水準判定
+  const m2History   = rows.map(r => r.m2            !== '' ? parseFloat(r.m2)            : null).filter(v => v !== null);
+  const nlHistory   = rows.map(r => r.net_liquidity !== '' ? parseFloat(r.net_liquidity) : null).filter(v => v !== null);
+  const fedHistory  = rows.map(r => r.fed_balance   !== '' ? parseFloat(r.fed_balance)   : null).filter(v => v !== null);
+  const hyHistory   = rows.map(r => r.hy_spread     !== '' ? parseFloat(r.hy_spread)     : null).filter(v => v !== null);
+
+  function pctRank(history, val) {
+    if (!history.length || val === null) return null;
+    const sorted = [...history].sort((a,b) => a-b);
+    const below = sorted.filter(v => v <= val).length;
+    return Math.round(below / sorted.length * 100);
+  }
+
+  const m2Rank  = pctRank(m2History,  m2);
+  const nlRank  = pctRank(nlHistory,  netLiq);
+  const fedRank = pctRank(fedHistory, fed);
+  const hyRank  = pctRank(hyHistory,  parseFloat(latest.hy_spread || 0));
+  const hyVal   = latest.hy_spread !== '' ? parseFloat(latest.hy_spread) : null;
+  const hyPrev  = liqPrevVal(rows, 'hy_spread', 7);
+
+  function rankLabel(rank, inverse) {
+    if (rank === null) return { label: '—', cls: 'flat' };
+    const r = inverse ? 100 - rank : rank;
+    if (r >= 70) return { label: '高水準', cls: 'up' };
+    if (r <= 30) return { label: '低水準', cls: 'dn' };
+    return { label: '中程度', cls: 'flat' };
+  }
+
+  // 解釈コメント
+  function m2Comment(rank, vec) {
+    if (rank === null) return '';
+    if (rank >= 70 && vec && vec.cls === 'up')   return '流動性豊富・拡大中 → 株式に追い風';
+    if (rank >= 70 && vec && vec.cls === 'flat') return '流動性豊富・横ばい → 中立';
+    if (rank <= 30 && vec && vec.cls === 'dn')   return '流動性タイト・縮小中 → 株式に逆風';
+    if (rank <= 30)                               return '流動性タイト → やや逆風';
+    return '流動性は中程度';
+  }
+  function nlComment(rank, vec) {
+    if (rank === null) return '';
+    if (rank >= 70 && vec && vec.cls === 'up')   return 'FRB供給資金が潤沢・増加 → リスクオン';
+    if (rank >= 70)                               return 'FRB供給資金が潤沢 → 中立〜強気';
+    if (rank <= 30 && vec && vec.cls === 'dn')   return 'FRB資金が枯渇気味・減少 → リスクオフ';
+    if (rank <= 30)                               return 'FRB資金が枯渇気味 → 注意';
+    return 'FRB資金は中程度';
+  }
+  function hyComment(val, vec) {
+    if (val === null) return '';
+    if (val < 3.0 && vec && vec.cls === 'dn')    return 'スプレッド低位・縮小 → 信用市場良好';
+    if (val < 3.0)                                return 'スプレッド低位 → 信用リスク低い';
+    if (val > 4.5 && vec && vec.cls === 'up')    return 'スプレッド拡大中 → 信用不安サイン';
+    if (val > 4.5)                                return 'スプレッド高め → 信用リスク注意';
+    return 'スプレッドは普通水準';
+  }
+  function fedComment(rank, vec) {
+    if (rank === null) return '';
+    if (rank >= 70 && vec && vec.cls === 'dn')   return 'BS大きいが縮小中(QT継続) → やや引締め';
+    if (rank <= 30 && vec && vec.cls === 'dn')   return 'BS縮小進行中 → 引締め継続';
+    if (vec && vec.cls === 'up')                  return 'BS拡大中 → 緩和的';
+    return 'BS変化小さい';
+  }
+
+  const m2Vec  = liqVector(m2,    m2Prev);
+  const nlVec  = liqVector(netLiq, netLiqPrev);
+  const fedVec = liqVector(fed,    fedPrev);
+  const hyVec  = liqVector(hyVal,  hyPrev);
+
+  function levelBar(rank, inverse) {
+    if (rank === null) return '';
+    const r = inverse ? 100 - rank : rank;
+    const pct = Math.max(2, Math.min(98, r));
+    const col = pct >= 70 ? 'var(--grn)' : pct <= 30 ? 'var(--red)' : 'var(--amb)';
+    return '<div style="position:relative;height:4px;background:var(--sur2);border-radius:2px;margin:6px 0 4px;">'
+      + '<div style="position:absolute;left:0;top:0;height:4px;width:' + pct + '%;background:' + col + ';border-radius:2px;transition:width .4s"></div>'
+      + '</div>'
+      + '<div style="font-family:var(--mono);font-size:9px;color:var(--mut)">過去データ内 ' + rank + 'パーセンタイル</div>';
+  }
+
   const cards = [
     {
       label: 'M2 マネーサプライ',
@@ -2234,6 +2326,9 @@ function renderLiquidityCards(rows) {
       chg:   chgHtml(m2, m2Prev, d => (d/Math.abs(m2Prev||1)*100).toFixed(2)+'%', false),
       chgLabel: '前月比',
       date:  latest.date,
+      levelBar: levelBar(m2Rank, false),
+      vec:   m2Vec,
+      comment: m2Comment(m2Rank, m2Vec),
     },
     {
       label: 'NET LIQUIDITY',
@@ -2242,6 +2337,20 @@ function renderLiquidityCards(rows) {
       chg:   chgHtml(netLiq, netLiqPrev, d => (d >= 0 ? '+' : '') + d.toFixed(3) + '兆', false),
       chgLabel: '前週比',
       date:  latest.date,
+      levelBar: levelBar(nlRank, false),
+      vec:   nlVec,
+      comment: nlComment(nlRank, nlVec),
+    },
+    {
+      label: 'HY スプレッド',
+      val:   hyVal !== null ? hyVal.toFixed(2) : '—',
+      unit:  '%',
+      chg:   chgHtml(hyVal, hyPrev, d => (d >= 0 ? '+' : '') + d.toFixed(3) + '%', true),
+      chgLabel: '前週比',
+      date:  latest.date,
+      levelBar: levelBar(hyRank, true),
+      vec:   hyVec ? { ...hyVec, cls: hyVec.cls === 'up' ? 'dn' : hyVec.cls === 'dn' ? 'up' : 'flat' } : null,
+      comment: hyComment(hyVal, hyVec),
     },
     {
       label: 'FRB バランスシート',
@@ -2250,20 +2359,35 @@ function renderLiquidityCards(rows) {
       chg:   chgHtml(fed, fedPrev, d => (d/1000000).toFixed(3)+'兆', false),
       chgLabel: '前週比',
       date:  latest.date,
+      levelBar: levelBar(fedRank, false),
+      vec:   fedVec,
+      comment: fedComment(fedRank, fedVec),
     },
   ];
 
-  document.getElementById('liqGrid').innerHTML = cards.map(c => `
+  document.getElementById('liqGrid').innerHTML = cards.map(c => {
+    const vecHtml = c.vec
+      ? '<span style="font-family:var(--mono);font-size:11px;color:'
+        + (c.vec.cls==='up'?'var(--grn)':c.vec.cls==='dn'?'var(--red)':'var(--mut)')
+        + ';margin-left:6px">' + c.vec.icon + ' ' + c.vec.label + '</span>'
+      : '';
+    const commentHtml = c.comment
+      ? '<div style="font-size:11px;color:var(--mut);margin-top:6px;line-height:1.5;border-top:0.5px solid var(--bdr);padding-top:6px">'
+        + c.comment + '</div>'
+      : '';
+    return `
     <div class="liq-card">
       <div class="liq-card-label">${c.label}</div>
       <div class="liq-card-val-row">
         <div class="liq-card-val">${c.val}</div>
         <div class="liq-card-unit">${c.unit}</div>
       </div>
-      <div class="liq-card-chg-row">${c.chg}<span class="liq-card-chg-label">${c.chgLabel}</span></div>
+      <div class="liq-card-chg-row">${c.chg}<span class="liq-card-chg-label">${c.chgLabel}</span>${vecHtml}</div>
+      ${c.levelBar}
+      ${commentHtml}
       <div class="liq-card-date">${c.date}</div>
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 async function loadLiquidityData() {
