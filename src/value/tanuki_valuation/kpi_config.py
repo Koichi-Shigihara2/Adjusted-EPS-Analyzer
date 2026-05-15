@@ -563,6 +563,14 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
+    "ZETA": {
+        "fiscal_year_end": 12,
+        "revenue_unit": "B USD",
+        "segments": [],
+        "financial_kpis": ["segment_revenue"],
+        "operational_kpis": [],
+        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
+    },
 }
 
 
