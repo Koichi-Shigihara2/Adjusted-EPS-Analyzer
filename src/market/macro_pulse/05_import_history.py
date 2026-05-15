@@ -64,14 +64,17 @@ FED_CONTEXT_PATH = _m.FED_CONTEXT_PATH
 EVENTS_COLUMNS   = _m.EVENTS_COLUMNS
 INDICATOR_CONFIG = _m.INDICATOR_CONFIG
 
-make_event_id    = _m.make_event_id
-load_events      = _m.load_events
-save_events      = _m.save_events
-fred_latest      = _m.fred_latest
-get_fred         = _m.get_fred
-get_ff_current   = _m.get_ff_current
-_fmt             = _m._fmt
-_safe_float      = _m._safe_float
+make_event_id        = _m.make_event_id
+load_events          = _m.load_events
+save_events          = _m.save_events
+fred_latest          = _m.fred_latest
+get_fred             = _m.get_fred
+get_ff_current       = _m.get_ff_current
+_fmt                 = _m._fmt
+_safe_float          = _m._safe_float
+LIQUIDITY_PATH       = _m.LIQUIDITY_PATH
+LIQUIDITY_COLUMNS    = _m.LIQUIDITY_COLUMNS
+update_liquidity_csv = _m.update_liquidity_csv
 
 # ─────────────────────────────────────────────────────────────────
 #  金融環境キャッシュ（全期間を一括取得してメモリに保持）
@@ -334,6 +337,139 @@ def import_from_csv(source_path: str, indicator: str, overwrite: bool = False):
     logger.info(f"インポート完了: {len(new_rows)} 行追加、{skipped} 行スキップ → {EVENTS_PATH}")
 
 # ─────────────────────────────────────────────────────────────────
+#  流動性CSVバックフィル
+# ─────────────────────────────────────────────────────────────────
+def backfill_liquidity(from_date: str, to_date: str, overwrite: bool = False) -> None:
+    """
+    FRED から過去の流動性データ（M2/HYスプレッド/FRBバランスシート/TGA/RRP）を
+    一括取得して 05_liquidity.csv にバックフィルする。
+
+    Args:
+        from_date: 開始日（YYYY-MM-DD）
+        to_date:   終了日（YYYY-MM-DD）
+        overwrite: Trueの場合、既存日付も上書き
+    """
+    import pandas as pd
+    from datetime import datetime, timedelta
+
+    fred = get_fred()
+    if fred is None:
+        logger.error("FRED_API_KEY が設定されていません。")
+        return
+
+    start = datetime.strptime(from_date, "%Y-%m-%d").date()
+    end   = datetime.strptime(to_date,   "%Y-%m-%d").date()
+
+    # 既存データ読み込み
+    existing_dates = set()
+    existing_rows  = []
+    if pathlib.Path(LIQUIDITY_PATH).exists():
+        try:
+            df_ex = pd.read_csv(LIQUIDITY_PATH, dtype=str)
+            existing_rows  = df_ex.to_dict("records")
+            existing_dates = set(df_ex["date"].tolist())
+        except Exception:
+            pass
+
+    # FREDから一括取得（期間を広めに指定してキャッシュ）
+    logger.info(f"FREDデータ取得中: {from_date} 〜 {to_date}")
+    lookback_start = (start - timedelta(days=90)).strftime("%Y-%m-%d")
+
+    def fetch_series(series_id):
+        try:
+            s = fred.get_series(series_id, observation_start=lookback_start,
+                                observation_end=to_date)
+            return s.dropna()
+        except Exception as e:
+            logger.warning(f"  [{series_id}] 取得失敗: {e}")
+            return None
+
+    s_m2    = fetch_series("M2SL")
+    s_hy    = fetch_series("BAMLH0A0HYM2")
+    s_walcl = fetch_series("WALCL")
+    s_tga   = fetch_series("WTREGEN")
+    s_rrp   = fetch_series("RRPONTSYD")
+
+    def latest_val(series, target_date, lookback=90):
+        """target_date以前の直近値を返す"""
+        if series is None:
+            return None
+        cutoff = pd.Timestamp(target_date)
+        s_before = series[series.index <= cutoff]
+        if s_before.empty:
+            return None
+        # lookback日以内のみ有効
+        if (cutoff - s_before.index[-1]).days > lookback:
+            return None
+        return float(s_before.iloc[-1])
+
+    # 日次でループ（営業日のみ）
+    added = skipped = 0
+    current = start
+    new_rows = []
+
+    while current <= end:
+        date_str = current.strftime("%Y-%m-%d")
+
+        if date_str in existing_dates and not overwrite:
+            skipped += 1
+            current += timedelta(days=1)
+            continue
+
+        m2_val    = latest_val(s_m2,    current, lookback=45)   # M2は月次
+        hy_val    = latest_val(s_hy,    current, lookback=7)    # HYは日次
+        walcl_val = latest_val(s_walcl, current, lookback=10)   # 週次
+        tga_val   = latest_val(s_tga,   current, lookback=10)
+        rrp_val   = latest_val(s_rrp,   current, lookback=10)
+
+        # 主要データが全てNullの日はスキップ
+        if all(v is None for v in (m2_val, hy_val, walcl_val)):
+            current += timedelta(days=1)
+            continue
+
+        # NET LIQUIDITY計算
+        if walcl_val and tga_val and rrp_val:
+            net_liq = round((walcl_val - tga_val - rrp_val) / 1_000_000, 4)
+        else:
+            net_liq = None
+
+        new_rows.append({
+            "date":          date_str,
+            "m2":            str(round(m2_val, 4))    if m2_val    is not None else "",
+            "hy_spread":     str(round(hy_val, 4))    if hy_val    is not None else "",
+            "fed_balance":   str(round(walcl_val, 4)) if walcl_val is not None else "",
+            "tga":           str(round(tga_val, 4))   if tga_val   is not None else "",
+            "rrp":           str(round(rrp_val, 4))   if rrp_val   is not None else "",
+            "net_liquidity": str(net_liq)              if net_liq   is not None else "",
+        })
+        added += 1
+        current += timedelta(days=1)
+
+    if not new_rows:
+        logger.info(f"新規データなし（スキップ: {skipped}日）")
+        return
+
+    # 既存データとマージして日付順ソート
+    if overwrite:
+        new_dates = {r["date"] for r in new_rows}
+        existing_rows = [r for r in existing_rows if r["date"] not in new_dates]
+
+    all_rows = existing_rows + new_rows
+    all_rows.sort(key=lambda r: r["date"])
+
+    # 重複除去（同日は後勝ち）
+    seen = {}
+    for r in all_rows:
+        seen[r["date"]] = r
+    all_rows = sorted(seen.values(), key=lambda r: r["date"])
+
+    pathlib.Path(LIQUIDITY_PATH).parent.mkdir(parents=True, exist_ok=True)
+    df_out = pd.DataFrame(all_rows, columns=LIQUIDITY_COLUMNS)
+    df_out.to_csv(LIQUIDITY_PATH, index=False, encoding="utf-8")
+    logger.info(f"バックフィル完了: {added}日追加 / {skipped}日スキップ → {LIQUIDITY_PATH}")
+
+
+# ─────────────────────────────────────────────────────────────────
 #  Entry Point
 # ─────────────────────────────────────────────────────────────────
 def main():
@@ -351,12 +487,20 @@ def main():
     csv_p.add_argument("--indicator", required=True, help="指標名（例: 'Michigan Consumer Sentiment'）")
     csv_p.add_argument("--overwrite", action="store_true")
 
+    # liquidity サブコマンド
+    liq_p = sub.add_parser("liquidity", help="流動性CSV（05_liquidity.csv）を過去データでバックフィル")
+    liq_p.add_argument("--from",      dest="from_date",  default="2023-01-01", help="開始日（デフォルト: 3年前）")
+    liq_p.add_argument("--to",        dest="to_date",    default=date.today().strftime("%Y-%m-%d"), help="終了日")
+    liq_p.add_argument("--overwrite", action="store_true", help="既存日付も上書き")
+
     args = p.parse_args()
 
     if args.mode == "fred":
         import_from_fred(args.from_date, args.to_date, args.overwrite, args.indicators)
     elif args.mode == "csv":
         import_from_csv(args.source, args.indicator, args.overwrite)
+    elif args.mode == "liquidity":
+        backfill_liquidity(args.from_date, args.to_date, args.overwrite)
 
 if __name__ == "__main__":
     main()
