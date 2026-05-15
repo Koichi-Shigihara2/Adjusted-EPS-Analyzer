@@ -537,12 +537,16 @@ function render(d) {
 
   // フェアPER / PEG / PSR
   const perCurrent   = d.components?.per || null;
+  const perAdjusted  = d.components?.per_adjusted || null;
   const latestRevenue = d.components?.latest_revenue || 0;
   const dilutedSharesVal = d.components?.diluted_shares || 0;
-  const fairPer = (perCurrent && currentPrice > 0 && ivps > 0)
-    ? ivps / (currentPrice / perCurrent) : null;
-  const pegRatio = (perCurrent && growthRate > 0)
-    ? perCurrent / (growthRate * 100) : null;
+  // フェアPER: 調整後EPSが取れる場合は調整後PERベース、なければGAAP PERベース
+  const perForCalc   = perAdjusted || perCurrent;
+  const adjEps       = (perAdjusted && currentPrice > 0) ? currentPrice / perAdjusted : null;
+  const fairPer = (perForCalc && currentPrice > 0 && ivps > 0)
+    ? ivps / (currentPrice / perForCalc) : null;
+  const pegRatio = (perForCalc && growthRate > 0)
+    ? perForCalc / (growthRate * 100) : null;
   const marketCap = currentPrice * dilutedSharesVal;
   const psr = (latestRevenue > 0 && marketCap > 0) ? marketCap / latestRevenue : null;
 
@@ -663,10 +667,11 @@ function render(d) {
             ${fairPer != null ? fairPer.toFixed(1) + 'x' : '—'}
           </div>
           <div style="font-size:12px;color:var(--mut);margin-top:6px">
-            現在PER: <span style="font-family:var(--mono);color:var(--txt)">${perCurrent != null ? perCurrent.toFixed(1) + 'x' : '—'}</span>
+            ${perAdjusted ? '調整後PER' : 'GAAP PER'}: <span style="font-family:var(--mono);color:var(--txt)">${(perAdjusted || perCurrent) != null ? (perAdjusted || perCurrent).toFixed(1) + 'x' : '—'}</span>
+            ${perAdjusted ? '<span style="font-size:10px;color:var(--green);margin-left:4px">AdjEPS</span>' : ''}
           </div>
           <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5">
-            理論株価÷EPS（現在株価÷現在PER）
+            理論株価÷${perAdjusted ? '調整後' : 'GAAP'}EPS
           </div>
         </div>
 
@@ -690,7 +695,7 @@ function render(d) {
             成長率: <span style="font-family:var(--mono);color:var(--txt)">${fmtPct(growthRate)}</span>
           </div>
           <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.5">
-            PER÷(成長率×100) / &lt;1.0=割安 / 1〜2=適正 / &gt;2=割高
+            ${perAdjusted ? '調整後' : 'GAAP'}PER÷(成長率×100) / &lt;1.0=割安 / 1〜2=適正 / &gt;2=割高
           </div>
         </div>
 

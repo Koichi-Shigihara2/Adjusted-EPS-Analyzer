@@ -644,11 +644,47 @@ class KoichiValuationCalculator:
                 "growth_option_pv": growth_option_pv,
                 "alpha_uncapped": alpha_result.alpha_uncapped,
                 "per": financials.get("per"),
+                "per_adjusted": _calc_adjusted_per(
+                    ticker=ticker,
+                    current_price=financials.get("current_price", 0),
+                    eps_data_dir=self.eps_data_dir,
+                ),
                 "ma200": financials.get("ma200"),
             }
         }
 
         return result
+
+
+def _calc_adjusted_per(
+    ticker: str,
+    current_price: float,
+    eps_data_dir: str,
+) -> Optional[float]:
+    """
+    EPS Analyzerの調整後EPSから調整後PERを計算する。
+
+    Returns:
+        調整後PER（float）またはNone（データなし・EPS<=0の場合）
+    """
+    import os, json as _json
+    if not eps_data_dir or current_price <= 0:
+        return None
+    eps_file = os.path.join(eps_data_dir, ticker.upper(), "annual.json")
+    if not os.path.exists(eps_file):
+        return None
+    try:
+        with open(eps_file, "r", encoding="utf-8") as f:
+            eps_data = _json.load(f)
+        years = eps_data.get("years", [])
+        if not years:
+            return None
+        adj_eps = years[0].get("adjusted_eps")
+        if adj_eps is None or adj_eps <= 0:
+            return None
+        return round(current_price / adj_eps, 2)
+    except Exception:
+        return None
 
 
 def create_calculator(**kwargs) -> KoichiValuationCalculator:
