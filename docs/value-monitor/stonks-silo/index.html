@@ -156,26 +156,26 @@
     .detail-col{background:var(--sur2);padding:12px 14px}
     .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px}
 
-    /* 財務ベクトルパネル */
+    /* 財務トレンドパネル */
     .fv-section{margin-top:14px;border:1px solid var(--bdr)}
     .fv-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--sur2);cursor:pointer;user-select:none}
     .fv-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut)}
     .fv-header-toggle{font-size:10px;color:var(--mut)}
-    .fv-body{display:none;padding:16px 14px 14px}
+    .fv-body{display:none;padding:14px 14px 12px}
     .fv-body.open{display:block}
-    .fv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--bdr)}
-    .fv-col{background:var(--sur);padding:14px 8px 10px;display:flex;flex-direction:column;align-items:center;gap:4px}
-    .fv-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.08em;color:var(--txt);text-align:center;margin-bottom:4px}
-    .fv-arrow-wrap{width:52px;height:52px;display:flex;align-items:center;justify-content:center}
-    .fv-change{font-family:var(--mono);font-size:11px;margin-top:4px;font-weight:600}
-    .fv-change.pos{color:var(--grn)}
-    .fv-change.neg{color:var(--red)}
-    .fv-change.neu{color:var(--mut)}
-    .fv-period-label{font-family:var(--mono);font-size:8px;letter-spacing:.12em;color:var(--mut);padding:6px 0 4px 0}
-    .fv-composite{display:flex;gap:32px;justify-content:center;margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr)}
-    .fv-comp-item{display:flex;flex-direction:column;align-items:center;gap:4px}
-    .fv-comp-label{font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em}
-    .fv-missing{font-size:10px;color:var(--mut);text-align:center;padding:6px 0}
+    .fv-spark-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--bdr)}
+    .fv-spark-col{background:var(--sur);padding:12px 8px 8px;display:flex;flex-direction:column;gap:6px}
+    .fv-spark-title{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--txt)}
+    .fv-spark-canvas{position:relative;height:68px}
+    .fv-spark-stats{display:flex;justify-content:space-between;font-family:var(--mono);font-size:9px}
+    .fv-hm-section{margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)}
+    .fv-hm-label{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--mut);margin-bottom:6px}
+    .fv-hm-grid{display:grid;gap:1px;background:var(--bdr)}
+    .fv-hm-row{display:grid;gap:1px}
+    .fv-hm-cell{display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:9px;height:26px}
+    .fv-legend{display:flex;align-items:center;gap:8px;margin-top:8px}
+    .fv-legend-bar{height:8px;flex:0 0 160px;border-radius:2px;overflow:hidden;display:flex}
+    .fv-legend-seg{flex:1}
     .val-bar{display:flex;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
     .val-item{flex:1;background:var(--sur2);padding:10px 14px;text-align:center}
     .val-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--mut);margin-bottom:4px}
@@ -841,132 +841,178 @@ function buildDetail(ticker, d) {
   </div>`;
 }
 
+
 // ---------------------------------------------------------------------------
-// 財務ベクトルパネル
+// 財務トレンドパネル（スパークライン＋ヒートマップ）
 // ---------------------------------------------------------------------------
+let _fvCharts = {};
+
 function buildVectorPanel(fv) {
   if (!fv || !fv.fields) return '';
+  const FIELDS = [
+    { key: 'Revenue',     label: '売上',   color: '#378ADD' },
+    { key: 'GrossProfit', label: '粗利率', color: '#1D9E75' },
+    { key: 'RD',          label: 'R&D費',  color: '#8B5CF6' },
+    { key: 'NetIncome',   label: '純利益', color: '#E24B4A' },
+    { key: 'OCF',         label: 'OCF',    color: '#BA7517' },
+  ];
+  const uid = 'fv' + Math.random().toString(36).slice(2,6);
 
-  const FIELD_LABELS = {
-    Revenue:     '売上',
-    GrossProfit: '粗利率',
-    RD:          'R&D費',
-    NetIncome:   '純利益',
-    OCF:         'OCF',
-    CapEx:       'CapEx',
-  };
-  const FIELD_ORDER = ['Revenue', 'GrossProfit', 'RD', 'NetIncome', 'OCF'];
+  const sparkCols = FIELDS.map((f, i) => {
+    const fd = fv.fields[f.key] || {};
+    const yoy = fd.yoy; const qoq = fd.qoq;
+    const yoyPct = yoy ? yoy.change_pct : null;
+    const qoqPct = qoq ? qoq.change_pct : null;
+    const yoyCol = yoyPct == null ? 'var(--mut)' : yoyPct > 5 ? '#10b981' : yoyPct < -5 ? '#f43f5e' : 'var(--mut)';
+    const qoqCol = qoqPct == null ? 'var(--mut)' : qoqPct > 5 ? '#10b981' : qoqPct < -5 ? '#f43f5e' : 'var(--mut)';
+    const fmtP = v => v == null ? '—' : (v > 0 ? '+' : '') + v.toFixed(0) + '%';
+    return `<div class="fv-spark-col">
+      <div class="fv-spark-title">${f.label}</div>
+      <div class="fv-spark-canvas"><canvas id="${uid}_c${i}" role="img" aria-label="${f.label}"></canvas></div>
+      <div class="fv-spark-stats">
+        <span style="color:var(--mut)">YoY <span style="color:${yoyCol}">${fmtP(yoyPct)}</span></span>
+        <span style="color:var(--mut)">QoQ <span style="color:${qoqCol}">${fmtP(qoqPct)}</span></span>
+      </div>
+    </div>`;
+  }).join('');
 
-  // SVGベクトル矢印生成
-  // angle: -90°〜+90°（真上=+90=最大改善）
-  // length: 0〜1
-  function arrowSVG(angle, length, hasData) {
-    if (!hasData) {
-      return `<svg width="52" height="52" viewBox="-26 -26 52 52">
-        <text x="0" y="4" text-anchor="middle" font-size="11" fill="var(--bdr)">—</text>
-      </svg>`;
-    }
-
-    const rad = (angle * Math.PI) / 180;
-    // 矢印の長さ: 最小10px〜最大22px（円の半径相当）
-    const arrowLen = 10 + length * 12;
-
-    // SVG座標系はY軸が下向きなので角度を反転
-    const dx = Math.cos(rad + Math.PI / 2) * arrowLen;
-    const dy = -Math.sin(rad + Math.PI / 2) * arrowLen;
-
-    // 色: 改善(>10°)=緑、悪化(<-10°)=赤、横ばい=グレー
-    const color = angle > 10 ? '#10b981' : angle < -10 ? '#f43f5e' : '#64748b';
-
-    // 矢印の太さは勢いに比例
-    const sw = 2 + length * 2.5;
-
-    // 矢印ヘッド
-    const headLen = 6;
-    const headAngle = 0.5;
-    const nx = dx / arrowLen;
-    const ny = dy / arrowLen;
-    const hx1 = dx - headLen * (nx * Math.cos(headAngle) - ny * Math.sin(headAngle));
-    const hy1 = dy - headLen * (ny * Math.cos(headAngle) + nx * Math.sin(headAngle));
-    const hx2 = dx - headLen * (nx * Math.cos(-headAngle) - ny * Math.sin(-headAngle));
-    const hy2 = dy - headLen * (ny * Math.cos(-headAngle) + nx * Math.sin(-headAngle));
-
-    // 軸線（参考用・薄い水平線）
-    return `<svg width="52" height="52" viewBox="-26 -26 52 52">
-      <line x1="-20" y1="0" x2="20" y2="0" stroke="var(--bdr)" stroke-width="0.5"/>
-      <line x1="0" y1="-20" x2="0" y2="20" stroke="var(--bdr)" stroke-width="0.5" stroke-dasharray="2,3"/>
-      <line x1="0" y1="0" x2="${dx.toFixed(1)}" y2="${dy.toFixed(1)}"
-            stroke="${color}" stroke-width="${sw.toFixed(1)}" stroke-linecap="round"/>
-      <line x1="${dx.toFixed(1)}" y1="${dy.toFixed(1)}" x2="${hx1.toFixed(1)}" y2="${hy1.toFixed(1)}"
-            stroke="${color}" stroke-width="${(sw*0.8).toFixed(1)}" stroke-linecap="round"/>
-      <line x1="${dx.toFixed(1)}" y1="${dy.toFixed(1)}" x2="${hx2.toFixed(1)}" y2="${hy2.toFixed(1)}"
-            stroke="${color}" stroke-width="${(sw*0.8).toFixed(1)}" stroke-linecap="round"/>
-      <circle cx="0" cy="0" r="2" fill="${color}"/>
-    </svg>`;
-  }
-
-  function fmtChg(pct) {
-    if (pct == null) return '';
-    const sign = pct >= 0 ? '+' : '';
-    const cls = pct > 5 ? 'pos' : pct < -5 ? 'neg' : 'neu';
-    return `<span class="fv-change ${cls}">${sign}${pct.toFixed(1)}%</span>`;
-  }
-
-  // 5列グリッド（YoW上段・QoQ下段）
-  function buildGrid(period, label) {
-    const cols = FIELD_ORDER.map(fname => {
-      const fdata = fv.fields[fname];
-      const pdata = fdata ? fdata[period] : null;
-      const hasData = pdata != null;
-      const angle  = hasData ? pdata.angle  : 0;
-      const length = hasData ? pdata.length : 0;
-      return `<div class="fv-col">
-        <div class="fv-col-title">${FIELD_LABELS[fname] || fname}</div>
-        <div class="fv-arrow-wrap">${arrowSVG(angle, length, hasData)}</div>
-        ${hasData ? fmtChg(pdata.change_pct) : '<span class="fv-change neu">—</span>'}
-      </div>`;
+  const hmLabelW = 54;
+  const hmHeader = `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(2,1fr)">
+    <div class="fv-hm-cell" style="background:var(--sur)"></div>
+    <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">YoY</div>
+    <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">QoQ</div>
+  </div>`;
+  const hmRows = FIELDS.map(f => {
+    const fd = fv.fields[f.key] || {};
+    const cells = [fd.yoy, fd.qoq].map(pd => {
+      const pct = pd ? pd.change_pct : null;
+      const txt = pct == null ? '—' : (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
+      return `<div class="fv-hm-cell fv-hm-data" data-pct="${pct == null ? '' : pct.toFixed(1)}">${txt}</div>`;
     }).join('');
-
-    return `<div>
-      <div class="fv-period-label">${label}</div>
-      <div class="fv-grid">${cols}</div>
+    return `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(2,1fr)">
+      <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:9px;color:var(--mut);padding:0 6px;justify-content:flex-start">${f.label}</div>
+      ${cells}
     </div>`;
-  }
+  }).join('');
 
-  // 合成ベクトル表示
-  function compArrow(comp, label) {
-    if (!comp) return '';
-    return `<div class="fv-comp-item">
-      <div class="fv-comp-label">${label}</div>
-      <div class="fv-arrow-wrap">${arrowSVG(comp.angle, comp.length, true)}</div>
-      <span class="fv-change ${comp.angle > 10 ? 'pos' : comp.angle < -10 ? 'neg' : 'neu'}">${comp.angle > 0 ? '+' : ''}${comp.angle.toFixed(1)}°</span>
-    </div>`;
-  }
-
-  const missing = (fv.data_quality?.fields_missing || [])
-    .filter(f => FIELD_ORDER.includes(f));
-  const missingNote = missing.length
-    ? `<div class="fv-missing">データ取得不可: ${missing.join(' / ')}</div>`
-    : '';
-
-  const id = 'fv-' + Math.random().toString(36).slice(2,7);
+  const legendSegs = Array.from({length:41}, (_,i) => {
+    const pct = (-50 + i*2.5).toFixed(1);
+    return `<div class="fv-legend-seg" data-pct="${pct}"></div>`;
+  }).join('');
 
   return `
   <div class="fv-section">
-    <div class="fv-header" onclick="(function(el){var b=el.nextElementSibling;var t=el.querySelector('.fv-header-toggle');b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲':'▼'})(this)">
-      <span class="fv-header-title">財務ベクトル <span style="font-weight:normal;letter-spacing:0;font-size:9px;color:var(--mut)">– 四半期変化の方向と勢い</span></span>
+    <div class="fv-header" onclick="(function(el){var b=el.nextElementSibling;var t=el.querySelector('.fv-header-toggle');b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲':'▼';if(b.classList.contains('open'))initFvCharts('${uid}');})(this)">
+      <span class="fv-header-title">財務トレンド <span style="font-weight:normal;letter-spacing:0;font-size:9px;color:var(--mut)">– 四半期変化の方向と勢い</span></span>
       <span class="fv-header-toggle">▼</span>
     </div>
-    <div class="fv-body">
-      ${buildGrid('yoy', 'YoY（前年同期比）')}
-      ${buildGrid('qoq', 'QoQ（前四半期比）')}
-      ${missingNote}
-      <div class="fv-composite">
-        ${compArrow(fv.composite?.yoy, 'YoY 合成')}
-        ${compArrow(fv.composite?.qoq, 'QoQ 合成')}
+    <div class="fv-body" id="${uid}_body">
+      <div class="fv-spark-grid">${sparkCols}</div>
+      <div class="fv-hm-section">
+        <div class="fv-hm-label">変化ヒートマップ（YoY / QoQ）</div>
+        <div class="fv-hm-grid" id="${uid}_hm">${hmHeader}${hmRows}</div>
+      </div>
+      <div class="fv-legend">
+        <div class="fv-legend-bar" id="${uid}_leg">${legendSegs}</div>
+        <span style="font-family:var(--mono);font-size:9px;color:var(--mut)">悪化 ← → 改善</span>
       </div>
     </div>
   </div>`;
+}
+
+function initFvCharts(uid) {
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textColor = isDark ? '#94a3b8' : '#64748b';
+
+  function pctToColor(pct) {
+    if (pct == null) return { bg: isDark ? '#1e293b' : '#f1f5f9', fg: isDark ? '#64748b' : '#94a3b8' };
+    const clamped = Math.max(-50, Math.min(50, pct));
+    const t = clamped / 50;
+    function lerp(a, b, s) { return Math.round(a + (b-a)*s); }
+    let r, g, b;
+    if (t < 0) {
+      const a = -t;
+      if (a < 0.33)      { const s=a*3; r=lerp(isDark?30:241,252,s); g=lerp(isDark?41:245,200,s); b=lerp(isDark?59:249,180,s); }
+      else if (a < 0.66) { const s=(a-0.33)*3; r=lerp(252,244,s); g=lerp(200,100,s); b=lerp(180,100,s); }
+      else               { const s=(a-0.66)*3; r=lerp(244,180,s); g=lerp(100,20,s); b=lerp(100,30,s); }
+      const fg = a < 0.33 ? (isDark?'#e2e8f0':'#475569') : a < 0.66 ? '#7f1d1d' : '#ffffff';
+      return { bg: `rgb(${r},${g},${b})`, fg };
+    } else {
+      if (t < 0.33)      { const s=t*3; r=lerp(isDark?30:241,187,s); g=lerp(isDark?41:245,235,s); b=lerp(isDark?59:249,177,s); }
+      else if (t < 0.66) { const s=(t-0.33)*3; r=lerp(187,52,s); g=lerp(235,211,s); b=lerp(177,117,s); }
+      else               { const s=(t-0.66)*3; r=lerp(52,6,s); g=lerp(211,120,s); b=lerp(117,60,s); }
+      const fg = t < 0.33 ? (isDark?'#e2e8f0':'#475569') : t < 0.66 ? '#064e3b' : '#ffffff';
+      return { bg: `rgb(${r},${g},${b})`, fg };
+    }
+  }
+
+  const hm = document.getElementById(uid + '_hm');
+  if (hm) {
+    hm.querySelectorAll('.fv-hm-data').forEach(cell => {
+      const pctStr = cell.dataset.pct;
+      const pct = pctStr === '' ? null : parseFloat(pctStr);
+      const c = pctToColor(pct);
+      cell.style.background = c.bg;
+      cell.style.color = c.fg;
+    });
+  }
+
+  const leg = document.getElementById(uid + '_leg');
+  if (leg) {
+    leg.querySelectorAll('.fv-legend-seg').forEach(seg => {
+      const pct = parseFloat(seg.dataset.pct);
+      seg.style.background = pctToColor(pct).bg;
+    });
+  }
+
+  const FIELDS = [
+    { key: 'Revenue',     label: '売上',   color: '#378ADD' },
+    { key: 'GrossProfit', label: '粗利率', color: '#1D9E75' },
+    { key: 'RD',          label: 'R&D費',  color: '#8B5CF6' },
+    { key: 'NetIncome',   label: '純利益', color: '#E24B4A' },
+    { key: 'OCF',         label: 'OCF',    color: '#BA7517' },
+  ];
+
+  if (_fvCharts[uid]) _fvCharts[uid].forEach(c => { try { c.destroy(); } catch(e){} });
+  _fvCharts[uid] = [];
+
+  const ticker = document.querySelector('.detail.open')?.closest('tr')?.previousElementSibling?.dataset?.ticker || openTicker;
+  const d = ticker ? allData[ticker] : null;
+
+  FIELDS.forEach((f, i) => {
+    const canvas = document.getElementById(uid + '_c' + i);
+    if (!canvas || typeof Chart === 'undefined') return;
+    const fvData = d?.financial_vectors?.fields?.[f.key];
+    const yoyPct = fvData?.yoy?.change_pct ?? null;
+    const qoqPct = fvData?.qoq?.change_pct ?? null;
+    const vals = [yoyPct, qoqPct];
+    const barColors = vals.map(v => v == null ? gridColor : v > 5 ? '#10b981' : v < -5 ? '#f43f5e' : '#64748b');
+    try {
+      const chart = new Chart(canvas, {
+        type: 'bar',
+        data: { labels: ['YoY', 'QoQ'], datasets: [{ data: vals, backgroundColor: barColors, borderRadius: 2, borderSkipped: false }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false }, tooltip: { callbacks: {
+            label: ctx => ctx.parsed.y == null ? '—' : (ctx.parsed.y > 0 ? '+' : '') + ctx.parsed.y.toFixed(1) + '%'
+          }}},
+          scales: {
+            x: { ticks: { font: { size: 9, family: 'monospace' }, color: textColor }, grid: { display: false } },
+            y: { ticks: { font: { size: 9, family: 'monospace' }, color: textColor,
+                          callback: v => (v > 0 ? '+' : '') + v + '%' },
+                 grid: { color: gridColor },
+                 afterDataLimits: scale => {
+                   const ext = Math.max(Math.abs(scale.min||0), Math.abs(scale.max||0), 10);
+                   scale.min = -ext * 1.2; scale.max = ext * 1.2;
+                 }
+               }
+          }
+        }
+      });
+      _fvCharts[uid].push(chart);
+    } catch(e) { console.warn('Chart error', e); }
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -1145,6 +1191,7 @@ function formatSummary(text) {
 // ---------------------------------------------------------------------------
 loadData();
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="/On-a-journey/common/site-nav.js"></script>
 </body>
 </html>
