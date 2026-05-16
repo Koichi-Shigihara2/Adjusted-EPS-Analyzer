@@ -38,7 +38,7 @@ from __future__ import annotations
 import json
 import logging
 import math
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -71,14 +71,75 @@ SUB_FIELDS = ["SM", "SBC"]
 COMPOSITE_FIELDS = {"Revenue", "GrossProfit", "NetIncome", "OCF"}
 
 
+_TODAY = date.today().isoformat()
+
+
+def _build_q4_implied(annual_entries: list, quarterly_entries: list) -> list:
+    """
+    ttm_calculator._build_q4_quarterly_entriesと同等のQ4逆算ロジック。
+    FY年次値 - (Q1+Q2+Q3) = Q4 implied
+    """
+    result = []
+    for annual in annual_entries:
+        fy_end   = annual.get("end", "")
+        fy_start = annual.get("start", "")
+        fy_val   = annual.get("val")
+        if not fy_end or fy_val is None:
+            continue
+        if fy_end > _TODAY:
+            continue
+        fy_qs = [
+            e for e in quarterly_entries
+            if e.get("end", "") < fy_end
+            and e.get("start", "") >= fy_start
+            and not e.get("is_annual")
+        ]
+        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
+        if len(top3) < 3:
+            continue
+        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
+        q4_val = fy_val - sum(e["val"] for e in top3)
+        try:
+            period_days = (date.fromisoformat(fy_end) - date.fromisoformat(q3_end)).days
+        except (ValueError, TypeError):
+            period_days = 90
+        result.append({
+            "end":         fy_end,
+            "start":       q3_end,
+            "val":         q4_val,
+            "fp":          "Q4",
+            "fy":          annual.get("fy"),
+            "form":        "10-K",
+            "filed":       annual.get("filed", ""),
+            "accn":        annual.get("accn", ""),
+            "period_days": period_days,
+            "is_ytd":      False,
+            "is_annual":   False,
+            "is_implied":  True,
+        })
+    return result
+
+
 def _get_quarterly_entries(normalized: dict, field_name: str) -> list:
-    """standalone Q エントリのみ返す（年次・YTD除外）"""
+    """standalone Q エントリ + Q4 implied を返す（年次・YTD除外）"""
     entries = normalized.get("fields", {}).get(field_name, [])
-    result = [
+    quarterly = [
         e for e in entries
         if not e.get("is_annual") and not e.get("is_ytd")
     ]
-    return sorted(result, key=lambda x: x["end"])
+    annual = [e for e in entries if e.get("is_annual")]
+
+    # Q4 impliedを追加
+    q4_implied = _build_q4_implied(annual, quarterly)
+
+    # 既存Q4エントリと重複しないよう end_date で管理
+    existing_ends = {e["end"] for e in quarterly}
+    for q4 in q4_implied:
+        if q4["end"] not in existing_ends:
+            quarterly.append(q4)
+            existing_ends.add(q4["end"])
+
+    return sorted(quarterly, key=lambda x: x["end"])
 
 
 def _calc_yoy_change(entries: list) -> Optional[dict]:
