@@ -184,10 +184,8 @@
     }
     .tip-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
     .tip-icon{font-family:var(--mono);font-size:9px;color:var(--mut);border:1px solid var(--mut);border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1}
-    .tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px;font-family:var(--sans);font-size:11px;color:var(--txt);line-height:1.7;white-space:normal;width:260px;z-index:200;pointer-events:none}
-    .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--bdr)}
-    .tip-wrap:hover .tip-box{display:block}
-    .tip-wrap.tip-open .tip-box{display:block}
+    .tip-box{display:none !important;position:fixed;background:var(--sur2,#161c2d);border:1px solid var(--bdr,#1e2840);padding:10px 12px;font-family:var(--sans,'DM Sans',sans-serif);font-size:11px;color:var(--txt,#e2e8f0);line-height:1.7;white-space:normal;width:260px;z-index:9999;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
+    .tip-box.tip-visible{display:block !important}
     .th-inner{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
     .sort-arr{font-size:9px;cursor:pointer;padding:2px 3px;color:var(--mut);flex-shrink:0}
     .sort-arr:hover{color:var(--txt)}
@@ -938,19 +936,58 @@ function formatSummary(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Tooltip touch support
+// Tooltip – JS完結（site-theme.css上書き対策・fixed座標追従）
 // ---------------------------------------------------------------------------
-document.addEventListener('click', e => {
-  const icon = e.target.closest('.tip-icon');
-  if (icon) {
-    e.stopPropagation();
-    const wrap = icon.closest('.tip-wrap');
-    document.querySelectorAll('.tip-wrap.tip-open').forEach(w => { if (w !== wrap) w.classList.remove('tip-open'); });
-    wrap.classList.toggle('tip-open');
-    return;
+(function() {
+  function showTip(icon, e) {
+    hideAll();
+    const box = icon.closest('.tip-wrap') && icon.closest('.tip-wrap').querySelector('.tip-box');
+    if (!box) return;
+    box.classList.add('tip-visible');
+    positionTip(box, e);
   }
-  document.querySelectorAll('.tip-wrap.tip-open').forEach(w => w.classList.remove('tip-open'));
-});
+
+  function positionTip(box, e) {
+    const margin = 12;
+    box.style.left = '0px';
+    box.style.top  = '0px';
+    const bw = box.offsetWidth  || 260;
+    const bh = box.offsetHeight || 80;
+    let x = e.clientX - bw / 2;
+    let y = e.clientY - bh - margin;
+    if (x < margin) x = margin;
+    if (x + bw > window.innerWidth - margin) x = window.innerWidth - bw - margin;
+    if (y < margin) y = e.clientY + margin + 16;
+    box.style.left = x + 'px';
+    box.style.top  = y + 'px';
+  }
+
+  function hideAll() {
+    document.querySelectorAll('.tip-box.tip-visible').forEach(b => b.classList.remove('tip-visible'));
+  }
+
+  // PC: ホバーで表示
+  document.addEventListener('mouseover', e => {
+    const icon = e.target.closest('.tip-icon');
+    if (icon) showTip(icon, e);
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest('.tip-icon')) hideAll();
+  });
+
+  // スマホ: タップで表示/非表示
+  document.addEventListener('click', e => {
+    const icon = e.target.closest('.tip-icon');
+    if (icon) {
+      e.stopPropagation();
+      const box = icon.closest('.tip-wrap').querySelector('.tip-box');
+      if (box && box.classList.contains('tip-visible')) { hideAll(); return; }
+      showTip(icon, e);
+      return;
+    }
+    hideAll();
+  });
+})();
 
 // ---------------------------------------------------------------------------
 // Init
