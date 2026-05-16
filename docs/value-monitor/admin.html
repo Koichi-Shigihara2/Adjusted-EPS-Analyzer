@@ -609,6 +609,31 @@
         <div class="result-msg" id="wf-market-result"></div>
       </div>
     </div>
+
+    <h3 class="section-title" style="margin-top:28px">DISCOVER</h3>
+    <div class="wf-grid">
+      <div class="wf-card">
+        <div class="wf-card-head">
+          <div>
+            <div class="wf-name">Stonks Silo 更新</div>
+            <div class="wf-desc">赤字銘柄評価（赤字品質・Runway・黒字化パス）を更新</div>
+          </div>
+          <span class="wf-schedule">平日 JST 0:00</span>
+        </div>
+        <div class="wf-inputs">
+          <div class="form-group" style="flex:1">
+            <label>対象ティッカー（空=stonks_silo=true全銘柄）</label>
+            <input type="text" class="form-input" id="wf-stonks-tickers"
+                   placeholder="例: SOUN,BBAI"
+                   autocomplete="off" autocorrect="off" autocapitalize="off">
+          </div>
+        </div>
+        <div class="wf-actions">
+          <button class="btn" onclick="runWorkflow('Stonks_Silo_Update.yml', {tickers: document.getElementById('wf-stonks-tickers').value.trim()}, 'wf-stonks-result')">▶ 実行</button>
+        </div>
+        <div class="result-msg" id="wf-stonks-result"></div>
+      </div>
+    </div>
   </div>
 
   <!-- ═══════════════════════════════════════ -->
