@@ -18,7 +18,7 @@ class SECParser:
     # 企業によって年代ごとに異なるXBRLタグを使うフィールドを列挙する
     # 例: GOOGLはFY2022-2024に RevenueFromContractWithCustomerExcludingAssessedTax,
     #         FY2025に Revenues を使用しており、早期終了するとFY2022-2024が欠落する
-    MERGE_ALL_TAGS_FIELDS = {"revenue", "selling_and_marketing"}
+    MERGE_ALL_TAGS_FIELDS = {"revenue", "selling_and_marketing", "depreciation_and_amortization"}
 
     # XBRL項目マッピング（優先順位順）
     XBRL_MAPPING = {
@@ -138,6 +138,17 @@ class SECParser:
             "FinanceLeasePrincipalPayments",
             "PaymentsForFinanceLeases",
             "RepaymentsOfLongTermCapitalLeaseObligations",
+        ],
+        # 減価償却費（R&D資本化・維持CapEx分離に使用）
+        # DepreciationAndAmortization: 最も汎用的なタグ（多くの企業）
+        # DepreciationDepletionAndAmortization: 資源系企業等で使用
+        # Depreciation: D&Aを分割開示する企業のDepreciation単独タグ
+        # AmortizationOfIntangibleAssets: 無形資産償却を別開示する企業のフォールバック
+        "depreciation_and_amortization": [
+            "DepreciationAndAmortization",
+            "DepreciationDepletionAndAmortization",
+            "Depreciation",
+            "AmortizationOfIntangibleAssets",
         ],
         "stock_based_compensation": [
             "ShareBasedCompensation",
@@ -388,7 +399,8 @@ class SECParser:
                 data["pl"][field] = val
         
         # CF
-        for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments", "stock_based_compensation"]:
+        for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments",
+                      "depreciation_and_amortization", "stock_based_compensation"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["cf"][field] = val
