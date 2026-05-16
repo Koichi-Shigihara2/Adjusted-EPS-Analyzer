@@ -877,19 +877,42 @@ function buildVectorPanel(fv) {
   }).join('');
 
   const hmLabelW = 54;
-  const hmHeader = `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(2,1fr)">
+
+  // series_qからQoQ変化率の時系列ヒートマップを生成
+  // 全フィールドで共通の時間軸（直近8Q）を使う
+  // まずラベル（四半期）を取得
+  const refSeries = FIELDS.map(f => fv.fields[f.key]?.series_q || []).find(s => s.length >= 2) || [];
+  const hmLabels = refSeries.map(e => {
+    const y = e.end.slice(2,4);
+    const fp = e.fp || '';
+    return fp.startsWith('Q') ? y+fp : e.end.slice(0,7);
+  });
+  const nCols = hmLabels.length;
+
+  const hmHeader = `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(${nCols},1fr)">
     <div class="fv-hm-cell" style="background:var(--sur)"></div>
-    <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">YoY</div>
-    <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">QoQ</div>
+    ${hmLabels.map(l => `<div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">${l}</div>`).join('')}
   </div>`;
+
   const hmRows = FIELDS.map(f => {
-    const fd = fv.fields[f.key] || {};
-    const cells = [fd.yoy, fd.qoq].map(pd => {
-      const pct = pd ? pd.change_pct : null;
+    const series = fv.fields[f.key]?.series_q || [];
+    // QoQ変化率を計算（最初のセルはnull）
+    const qoqPcts = series.map((e, j) => {
+      if (j === 0) return null;
+      const prev = series[j-1].val;
+      if (prev == null || prev === 0) return null;
+      return (e.val - prev) / Math.abs(prev) * 100;
+    });
+    // nCols分に合わせる（足りない場合は左をnullで埋める）
+    const padded = Array(nCols).fill(null);
+    for (let i = 0; i < qoqPcts.length && i < nCols; i++) {
+      padded[nCols - qoqPcts.length + i] = qoqPcts[i];
+    }
+    const cells = padded.map(pct => {
       const txt = pct == null ? '—' : (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
       return `<div class="fv-hm-cell fv-hm-data" data-pct="${pct == null ? '' : pct.toFixed(1)}">${txt}</div>`;
     }).join('');
-    return `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(2,1fr)">
+    return `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(${nCols},1fr)">
       <div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:9px;color:var(--mut);padding:0 6px;justify-content:flex-start">${f.label}</div>
       ${cells}
     </div>`;
@@ -977,36 +1000,57 @@ function initFvCharts(uid) {
   if (_fvCharts[uid]) _fvCharts[uid].forEach(c => { try { c.destroy(); } catch(e){} });
   _fvCharts[uid] = [];
 
-  const ticker = document.querySelector('.detail.open')?.closest('tr')?.previousElementSibling?.dataset?.ticker || openTicker;
+  const ticker = openTicker;
   const d = ticker ? allData[ticker] : null;
 
   FIELDS.forEach((f, i) => {
     const canvas = document.getElementById(uid + '_c' + i);
     if (!canvas || typeof Chart === 'undefined') return;
     const fvData = d?.financial_vectors?.fields?.[f.key];
-    const yoyPct = fvData?.yoy?.change_pct ?? null;
-    const qoqPct = fvData?.qoq?.change_pct ?? null;
-    const vals = [yoyPct, qoqPct];
-    const barColors = vals.map(v => v == null ? gridColor : v > 5 ? '#10b981' : v < -5 ? '#f43f5e' : '#64748b');
+    const seriesQ = fvData?.series_q || [];
+
+    if (seriesQ.length < 2) return;
+
+    const labels = seriesQ.map(e => {
+      // "2025-03-31" → "25Q1" 形式
+      const y = e.end.slice(2,4);
+      const fp = e.fp || '';
+      return fp.startsWith('Q') ? y + fp : e.end.slice(0,7);
+    });
+    const vals = seriesQ.map(e => e.val == null ? null : Math.round(e.val / 1e6 * 10) / 10);
+
+    // ゼロラインを基準にした色づけ（正=指標色、負=赤）
+    const ptColors = vals.map(v => v == null ? gridColor : v >= 0 ? f.color : '#f43f5e');
+
     try {
       const chart = new Chart(canvas, {
-        type: 'bar',
-        data: { labels: ['YoY', 'QoQ'], datasets: [{ data: vals, backgroundColor: barColors, borderRadius: 2, borderSkipped: false }] },
+        type: 'line',
+        data: {
+          labels,
+          datasets: [{
+            data: vals,
+            borderColor: f.color,
+            borderWidth: 2,
+            pointBackgroundColor: ptColors,
+            pointBorderColor: ptColors,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            fill: true,
+            backgroundColor: f.color + '18',
+            tension: 0.3,
+            spanGaps: true,
+          }]
+        },
         options: {
           responsive: true, maintainAspectRatio: false,
           plugins: { legend: { display: false }, tooltip: { callbacks: {
-            label: ctx => ctx.parsed.y == null ? '—' : (ctx.parsed.y > 0 ? '+' : '') + ctx.parsed.y.toFixed(1) + '%'
+            label: ctx => ctx.parsed.y == null ? '—' : (ctx.parsed.y >= 0 ? '+' : '') + ctx.parsed.y.toFixed(1) + 'M'
           }}},
           scales: {
-            x: { ticks: { font: { size: 9, family: 'monospace' }, color: textColor }, grid: { display: false } },
-            y: { ticks: { font: { size: 9, family: 'monospace' }, color: textColor,
-                          callback: v => (v > 0 ? '+' : '') + v + '%' },
-                 grid: { color: gridColor },
-                 afterDataLimits: scale => {
-                   const ext = Math.max(Math.abs(scale.min||0), Math.abs(scale.max||0), 10);
-                   scale.min = -ext * 1.2; scale.max = ext * 1.2;
-                 }
-               }
+            x: { ticks: { font: { size: 8, family: 'monospace' }, color: textColor, maxRotation: 0, autoSkip: true, maxTicksLimit: 6 }, grid: { color: gridColor } },
+            y: { ticks: { font: { size: 8, family: 'monospace' }, color: textColor,
+                          callback: v => Math.abs(v) >= 1000 ? (v/1000).toFixed(0)+'B' : v+'M' },
+                 grid: { color: gridColor } }
           }
         }
       });

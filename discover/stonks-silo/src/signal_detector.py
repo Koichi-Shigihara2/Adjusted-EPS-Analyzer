@@ -225,6 +225,7 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
     results: dict[str, dict] = {}
 
     for ticker, field_data in raw_changes.items():
+        normalized = all_normalized[ticker]
         fields_out: dict = {}
         available: list[str] = []
         missing: list[str] = []
@@ -238,6 +239,14 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
             info = field_data.get(fname, {})
 
             field_out: dict = {}
+
+            # 時系列データ（直近8四半期）をseries_qとして追加
+            entries = _get_quarterly_entries(normalized, fname)
+            recent = entries[-8:]  # 直近8Q
+            field_out["series_q"] = [
+                {"end": e["end"], "fp": e.get("fp", ""), "val": e["val"]}
+                for e in recent
+            ]
 
             for period in ("yoy", "qoq"):
                 change = info.get(period)
