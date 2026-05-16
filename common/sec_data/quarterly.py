@@ -150,14 +150,17 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
         if field_name == "Revenue":
             # Revenueは企業によってタグが途中で変わる・複数タグ併用のため
             # メインタグ＋全フォールバックをマージして最多エントリを確保する
+            # 注意: 同一accn内にYTDとstandalone両方が含まれる場合があるため
+            # accnではなく(end, start, val)の組み合わせで重複排除する
             all_entries = list(entries)
-            seen_accn = {e.get("accn") for e in entries}
+            seen_key = {(e.get("end"), e.get("start"), e.get("val")) for e in entries}
             for fallback_concept in _REVENUE_FALLBACKS:
                 fb = _get_field_units(company_facts, fallback_concept, unit)
                 for e in fb:
-                    if e.get("accn") not in seen_accn:
+                    key = (e.get("end"), e.get("start"), e.get("val"))
+                    if key not in seen_key:
                         all_entries.append(e)
-                        seen_accn.add(e.get("accn"))
+                        seen_key.add(key)
             entries = all_entries
             if entries:
                 logger.debug("[%s] Revenue merged: %d entries", ticker, len(entries))
