@@ -31,9 +31,24 @@ def normalize(ticker: str, raw: dict) -> dict:
 
     for field_name, entries in fields_raw.items():
         if field_name == "_COGS":
-            fields_norm[field_name] = entries
+            # _COGSもYTD変換を適用してからQ4 implied計算に備える
+            fields_norm[field_name] = _normalize_field(entries)
             continue
         fields_norm[field_name] = _normalize_field(entries)
+
+    # Q4 implied計算（Revenue・_COGS）
+    # FY年次値 - (Q1+Q2+Q3) = Q4 implied
+    for field_name in ("Revenue", "_COGS"):
+        src = fields_norm.get(field_name, [])
+        if not src:
+            continue
+        q4_list = _build_q4_implied_entries(src)
+        if q4_list:
+            existing_ends = {e["end"] for e in src if not e.get("is_annual")}
+            added = [e for e in q4_list if e["end"] not in existing_ends]
+            if added:
+                fields_norm[field_name] = sorted(src + added, key=lambda x: x["end"])
+                logger.debug("[%s] %s Q4 implied added: %d entries", ticker, field_name, len(added))
 
     # GrossProfit逆算（欠損補完）
     fields_norm = _calc_gross_profit(fields_norm)
@@ -121,6 +136,64 @@ def _ytd_to_quarterly(fy_entries: list) -> list:
     return result
 
 
+def _build_q4_implied_entries(entries: list) -> list:
+    """
+    年次データ（is_annual=True）から Q4 implied エントリを生成する。
+    Q4 = FY年次値 - (Q1+Q2+Q3の合計)
+
+    同一FY内にQ1・Q2・Q3が揃っている場合のみQ4を逆算する。
+    """
+    from datetime import date
+    today = date.today().isoformat()
+
+    annual = [e for e in entries if e.get("is_annual") and e.get("end", "") <= today]
+    quarterly = [e for e in entries if not e.get("is_annual") and not e.get("is_ytd")]
+
+    result = []
+    for ann in annual:
+        fy_end = ann.get("end", "")
+        fy_start = ann.get("start", "")
+        fy_val = ann.get("val")
+        if not fy_end or fy_val is None:
+            continue
+
+        # 同FY内のQ1・Q2・Q3を取得
+        fy_qs = [
+            e for e in quarterly
+            if e.get("end", "") < fy_end
+            and e.get("start", "") >= fy_start
+        ]
+        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
+        if len(top3) < 3:
+            continue
+
+        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
+        q4_val = fy_val - sum(e["val"] for e in top3)
+
+        try:
+            from datetime import date as _date
+            period_days = (_date.fromisoformat(fy_end) - _date.fromisoformat(q3_end)).days
+        except (ValueError, TypeError):
+            period_days = 90
+
+        result.append({
+            "end":         fy_end,
+            "start":       q3_end,
+            "val":         q4_val,
+            "fp":          "Q4",
+            "fy":          ann.get("fy"),
+            "form":        "10-K",
+            "filed":       ann.get("filed", ""),
+            "accn":        ann.get("accn", ""),
+            "period_days": period_days,
+            "is_ytd":      False,
+            "is_annual":   False,
+            "is_implied":  True,
+        })
+
+    return result
+
+
 def _calc_gross_profit(fields: dict) -> dict:
     """
     GrossProfit が欠損している四半期を Revenue - _COGS で逆算する。
@@ -150,8 +223,8 @@ def _calc_gross_profit(fields: dict) -> dict:
             continue
         # Revenue と COGS は符号が正なので単純差分
         gp_val = rev_val - abs(cogs_val)
-        # 逆算エントリを対応するRevenueエントリから構築
-        rev_entry = next((e for e in rev_entries if e["end"] == end_date), None)
+        # 逆算エントリを対応するRevenueエントリから構築（annualを除外）
+        rev_entry = next((e for e in rev_entries if e["end"] == end_date and not e.get("is_annual")), None)
         if rev_entry is None:
             continue
         backfilled.append({
