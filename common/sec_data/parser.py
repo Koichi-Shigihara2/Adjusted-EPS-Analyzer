@@ -90,6 +90,7 @@ class SECParser:
         "cost_of_revenue": [
             "CostOfRevenue",
             "CostOfGoodsAndServicesSold",
+            "CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization",  # IONQ等
         ],
         # R&D費（RICE計算の投資強度に使用）
         # CapitalizedComputerSoftwareDevelopmentCosts:
