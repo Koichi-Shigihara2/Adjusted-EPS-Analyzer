@@ -573,6 +573,10 @@ function toggleDetail(ticker) {
   inner.innerHTML = buildDetail(ticker, d);
   inner.classList.add('open');
   row.style.display = '';
+
+  // 財務トレンドチャート初期化
+  const fvEl = inner.querySelector('[data-fv-uid]');
+  if (fvEl) setTimeout(() => initFvCharts(fvEl.dataset.fvUid), 50);
 }
 
 function closeDetail(ticker) {
@@ -925,7 +929,7 @@ function buildVectorPanel(fv) {
   }).join('');
 
   return `
-  <div class="fv-section">
+  <div class="fv-section" data-fv-uid="${uid}">
     <div class="fv-header">
       <span class="fv-header-title">財務トレンド <span style="font-weight:normal;letter-spacing:0;font-size:9px;color:var(--mut)">– 四半期変化の方向と勢い</span></span>
     </div>
@@ -940,8 +944,7 @@ function buildVectorPanel(fv) {
         <span style="font-family:var(--mono);font-size:9px;color:var(--mut)">悪化 ← → 改善</span>
       </div>
     </div>
-  </div>
-  <script>setTimeout(()=>initFvCharts('${uid}'),0);</script>`;
+  </div>`;
 }
 
 function initFvCharts(uid) {
