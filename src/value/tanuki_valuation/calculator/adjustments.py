@@ -932,12 +932,15 @@ def estimate_fcf_from_eps(
     eps_data_dir: str,
     config_path: str = None,
     fcf_outlier_action: str = "none",
+    industry: str = "",
 ) -> FCFEstimationResult:
     """
     調整済みEPS × FCF転換率 によるFCF実力推定（v7.2）
 
     EPSアナライザーのannual.jsonが存在する場合に常時適用。
     調整済みEPSがマイナスの場合は従来FCFにフォールバック。
+    保険（Healthcare Plans）・金融（Financial Services）は
+    OCFが実態と乖離するため調整後純利益を強制採用（転換率1.0）。
 
     Args:
         ticker: 銘柄コード
@@ -947,6 +950,7 @@ def estimate_fcf_from_eps(
         eps_data_dir: EPSアナライザーのdataディレクトリ
         config_path: fcf_conversion_config.jsonのパス（Noneで自動探索）
         fcf_outlier_action: FCF外れ値の処置（"excluded"の場合はフォールバック）
+        industry: yfinance industry文字列（業種別FCF定義切り替え用）
 
     Returns:
         FCFEstimationResult
@@ -972,8 +976,15 @@ def estimate_fcf_from_eps(
         )
 
     # ── ガードA: FCF外れ値「excluded」の場合はフォールバック ──
+    # ただし保険・金融は常にadj_net_incomeを使うためガードAをスキップ
+    FCF_OVERRIDE_INDUSTRIES_CHECK = {"Healthcare Plans"}
+    FCF_OVERRIDE_SECTORS_CHECK    = {"Financial Services"}
+    skip_guard_a = (
+        industry in FCF_OVERRIDE_INDUSTRIES_CHECK
+        or sector in FCF_OVERRIDE_SECTORS_CHECK
+    )
     # 既にFCF外れ値補正で一過性費用が除外済みのため二重補正を防ぐ
-    if fcf_outlier_action == "excluded":
+    if fcf_outlier_action == "excluded" and not skip_guard_a:
         return FCFEstimationResult(
             applied=False, method="raw_fcf",
             adj_net_income=0, conversion_rate=0,
@@ -982,6 +993,15 @@ def estimate_fcf_from_eps(
             note="FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
             divergence_ratio=1.0, divergence_warning=""
         )
+
+    # ── 業種別FCF定義切り替え（Phase2）──
+    # 保険・金融はOCFが実態と乖離するため、調整後純利益を直接FCFとして採用
+    FCF_OVERRIDE_INDUSTRIES = {"Healthcare Plans"}
+    FCF_OVERRIDE_SECTORS    = {"Financial Services"}
+    use_ni_direct = (
+        industry in FCF_OVERRIDE_INDUSTRIES
+        or sector in FCF_OVERRIDE_SECTORS
+    )
 
     with open(config_path, 'r', encoding='utf-8') as f:
         cfg = json.load(f)
@@ -993,6 +1013,10 @@ def estimate_fcf_from_eps(
     if ticker in ticker_overrides:
         conversion_rate = ticker_overrides[ticker]['conversion_rate']
         rate_source = f"ticker_override({ticker_overrides[ticker]['reason'][:30]})"
+    elif use_ni_direct:
+        # 保険・金融は調整後純利益をそのままFCFとして使用（転換率1.0）
+        conversion_rate = 1.0
+        rate_source = f"ni_direct({industry or sector})"
     else:
         conversion_rate = sector_rates.get(sector, sector_rates.get('default', 0.70))
         rate_source = f"sector({sector})"

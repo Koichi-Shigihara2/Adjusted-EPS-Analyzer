@@ -221,6 +221,7 @@ class KoichiValuationCalculator:
             sector=_sector,
             eps_data_dir=self.eps_data_dir,
             fcf_outlier_action=_fcf_outlier_action,
+            industry=industry or "",
         )
         if fcf_estimation.applied:
             base_fcf = fcf_estimation.estimated_fcf
