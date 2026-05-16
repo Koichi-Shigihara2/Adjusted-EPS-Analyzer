@@ -183,13 +183,14 @@
       .hero-meta{text-align:left}
     }
     .tip-wrap{position:relative;display:inline-flex;align-items:center;gap:4px}
-    .tip-icon{font-family:var(--mono);font-size:9px;color:var(--mut);border:1px solid var(--mut);border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;cursor:default;flex-shrink:0;line-height:1}
-    .tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px;font-family:var(--sans);font-size:11px;color:var(--txt);line-height:1.7;white-space:normal;width:260px;z-index:100;pointer-events:none}
+    .tip-icon{font-family:var(--mono);font-size:9px;color:var(--mut);border:1px solid var(--mut);border-radius:50%;width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;line-height:1}
+    .tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px;font-family:var(--sans);font-size:11px;color:var(--txt);line-height:1.7;white-space:normal;width:260px;z-index:200;pointer-events:none}
     .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--bdr)}
     .tip-wrap:hover .tip-box{display:block}
     .tip-wrap.tip-open .tip-box{display:block}
-    thead th[data-sort]:hover{color:var(--txt)}
-    thead th[data-sort] .sort-arr{font-size:8px;vertical-align:middle}
+    .th-inner{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+    .sort-arr{font-size:9px;cursor:pointer;padding:2px 3px;color:var(--mut);flex-shrink:0}
+    .sort-arr:hover{color:var(--txt)}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 </head>
@@ -273,43 +274,72 @@
     <table>
       <colgroup>
         <col style="width:28px">
-        <col style="width:74px">
-        <col style="width:130px">
-        <col style="width:110px">
-        <col style="width:80px">
+        <col style="width:72px">
+        <col style="width:118px">
+        <col style="width:90px">
         <col style="width:96px">
-        <col style="width:70px">
+        <col style="width:84px">
+        <col style="width:76px">
         <col style="width:72px">
         <col style="width:76px">
-        <col style="width:100px">
+        <col style="width:96px">
       </colgroup>
       <thead>
         <tr>
           <th style="padding:8px 4px"></th>
-          <th data-sort="ticker" onclick="setSort('ticker')" style="cursor:pointer;user-select:none">TICKER<span class="sort-arr" style="color:var(--mut)"> ⇅</span></th>
-          <th data-sort="verdict" onclick="setSort('verdict')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">総合判定<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x候補 / ≥55→有望 / ≥35→要観察 / &lt;35→回避。スコア＝赤字品質(40%)+生存期間(30%)+黒字化パス(30%)の加重平均</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th data-sort="ticker">
+            <span class="th-inner">
+              <span class="th-label">TICKER</span>
+              <span class="sort-arr" onclick="setSort('ticker')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th data-sort="deficit" onclick="setSort('deficit')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">赤字品質<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上成長率3年(40pt)・研究開発+販売管理比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→良い赤字 / ≥35→要観察 / &lt;35→悪い赤字 / 純黒字→純利益黒字</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th data-sort="verdict">
+            <span class="th-inner">
+              <span class="tip-wrap">総合判定<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x候補 / ≥55→有望 / ≥35→要観察 / &lt;35→回避。スコア＝赤字品質(40%)+生存期間(30%)+黒字化パス(30%)の加重平均</span></span>
+              <span class="sort-arr" onclick="setSort('verdict')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th data-sort="runway" onclick="setSort('runway')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">生存期間<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th data-sort="deficit">
+            <span class="th-inner">
+              <span class="tip-wrap">赤字品質<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上成長率3年(40pt)・研究開発+販売管理比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→良い赤字 / ≥35→要観察 / &lt;35→悪い赤字 / 純黒字→純利益黒字</span></span>
+              <span class="sort-arr" onclick="setSort('deficit')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th data-sort="trend" onclick="setSort('trend')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">CF改善<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th data-sort="runway">
+            <span class="th-inner">
+              <span class="tip-wrap">生存期間<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span>
+              <span class="sort-arr" onclick="setSort('runway')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th class="r" data-sort="price" onclick="setSort('price')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">株価<span class="tip-icon">?</span><span class="tip-box">最新取得株価（valuation_fetcher.pyによる取得時点。リアルタイムではありません）</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th data-sort="trend">
+            <span class="th-inner">
+              <span class="tip-wrap">CF改善<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span>
+              <span class="sort-arr" onclick="setSort('trend')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th class="r" data-sort="gm" onclick="setSort('gm')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">粗利率<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等) / ≥50%=良好 / ≥30%=普通。SEC未申告の場合はCostOfRevenueから逆算</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th class="r" data-sort="price">
+            <span class="th-inner" style="justify-content:flex-end">
+              <span class="tip-wrap">株価<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">最新取得株価（valuation_fetcher.pyによる取得時点。リアルタイムではありません）</span></span>
+              <span class="sort-arr" onclick="setSort('price')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th class="r" data-sort="be" onclick="setSort('be')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">黒字化<span class="tip-icon">?</span><span class="tip-box">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          <th class="r" data-sort="gm">
+            <span class="th-inner" style="justify-content:flex-end">
+              <span class="tip-wrap">粗利率<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等) / ≥50%=良好 / ≥30%=普通。SEC未申告の場合はCostOfRevenueから逆算</span></span>
+              <span class="sort-arr" onclick="setSort('gm')" style="color:var(--mut)"> ⇅</span>
+            </span>
           </th>
-          <th class="r" data-sort="score" onclick="setSort('score')" style="cursor:pointer;user-select:none">
-            <span class="tip-wrap">スコア<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+生存期間点数×30%+黒字化パス点数×30%。生存期間: SAFE=100/WATCH=60/DANGER=20。黒字化パス: 加速中=100/改善中=75/横ばい=50/悪化中=20</span></span><span class="sort-arr" style="color:var(--stonks)"> ▼</span>
+          <th class="r" data-sort="be">
+            <span class="th-inner" style="justify-content:flex-end">
+              <span class="tip-wrap">黒字化<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス</span></span>
+              <span class="sort-arr" onclick="setSort('be')" style="color:var(--mut)"> ⇅</span>
+            </span>
+          </th>
+          <th class="r" data-sort="score">
+            <span class="th-inner" style="justify-content:flex-end">
+              <span class="tip-wrap">スコア<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">総合スコア(0-100点)。赤字品質スコア×40%+生存期間点数×30%+黒字化パス点数×30%。生存期間: SAFE=100/WATCH=60/DANGER=20。黒字化パス: 加速中=100/改善中=75/横ばい=50/悪化中=20</span></span>
+              <span class="sort-arr" onclick="setSort('score')" style="color:var(--stonks)"> ▼</span>
+            </span>
           </th>
         </tr>
       </thead>
@@ -915,12 +945,10 @@ document.addEventListener('click', e => {
   if (icon) {
     e.stopPropagation();
     const wrap = icon.closest('.tip-wrap');
-    // close all others
     document.querySelectorAll('.tip-wrap.tip-open').forEach(w => { if (w !== wrap) w.classList.remove('tip-open'); });
     wrap.classList.toggle('tip-open');
     return;
   }
-  // click outside closes
   document.querySelectorAll('.tip-wrap.tip-open').forEach(w => w.classList.remove('tip-open'));
 });
 
