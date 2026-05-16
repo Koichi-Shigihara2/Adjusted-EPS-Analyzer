@@ -24,6 +24,7 @@ sys.path.insert(0, str(_SRC_DIR))
 from fetcher import load_annual_data
 from analyzer import StonksAnalyzer
 from valuation_fetcher import fetch_valuation
+from signal_detector import compute_vectors, load_all_normalized
 
 
 _CIK_LOOKUP = _REPO_ROOT / "config" / "cik_lookup.csv"
@@ -157,6 +158,19 @@ def run(tickers: list[str] | None = None) -> dict:
     valid = set(stonks_tickers())
     results = {k: v for k, v in results.items() if k in valid}
     errors  = {k: v for k, v in errors.items()  if k in valid}
+
+    # 財務ベクトル計算（全銘柄のパーセンタイルを一括計算）
+    try:
+        all_normalized = load_all_normalized(list(results.keys()))
+        vectors = compute_vectors(all_normalized)
+        for ticker, vec in vectors.items():
+            if ticker in results:
+                results[ticker]["financial_vectors"] = vec
+        print(f"財務ベクトル計算完了: {len(vectors)} 銘柄")
+    except Exception as e:
+        print(f"財務ベクトル計算エラー: {e}")
+        import traceback
+        traceback.print_exc()
 
     output = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
