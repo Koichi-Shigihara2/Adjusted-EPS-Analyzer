@@ -24,7 +24,7 @@ sys.path.insert(0, str(_SRC_DIR))
 from fetcher import load_annual_data
 from analyzer import StonksAnalyzer
 from valuation_fetcher import fetch_valuation
-from signal_detector import compute_vectors, load_all_normalized
+from financial_trend_calculator import compute_vectors, load_all_normalized
 
 
 _CIK_LOOKUP = _REPO_ROOT / "config" / "cik_lookup.csv"

@@ -1,4 +1,4 @@
-# discover/stonks-silo/src/signal_detector.py
+# discover/stonks-silo/src/financial_trend_calculator.py
 """
 財務ベクトル計算モジュール
 
