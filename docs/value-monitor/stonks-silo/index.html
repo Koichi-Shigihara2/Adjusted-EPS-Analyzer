@@ -155,6 +155,27 @@
     .detail-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:14px}
     .detail-col{background:var(--sur2);padding:12px 14px}
     .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px}
+
+    /* 財務ベクトルパネル */
+    .fv-section{margin-top:14px;border:1px solid var(--bdr)}
+    .fv-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--sur2);cursor:pointer;user-select:none}
+    .fv-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut)}
+    .fv-header-toggle{font-size:10px;color:var(--mut)}
+    .fv-body{display:none;padding:16px 14px 12px}
+    .fv-body.open{display:block}
+    .fv-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--bdr)}
+    .fv-col{background:var(--sur);padding:10px 8px;display:flex;flex-direction:column;align-items:center;gap:6px}
+    .fv-col-title{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--mut);text-align:center}
+    .fv-period{font-family:var(--mono);font-size:7px;color:var(--mut);letter-spacing:.08em;margin-bottom:2px}
+    .fv-arrow-wrap{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+    .fv-change{font-family:var(--mono);font-size:9px;margin-top:2px}
+    .fv-change.pos{color:var(--grn)}
+    .fv-change.neg{color:var(--red)}
+    .fv-change.neu{color:var(--mut)}
+    .fv-composite{display:flex;gap:20px;justify-content:center;margin-top:12px;padding-top:10px;border-top:1px solid var(--bdr)}
+    .fv-comp-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+    .fv-comp-label{font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em}
+    .fv-missing{font-size:10px;color:var(--mut);text-align:center;padding:8px 0}
     .val-bar{display:flex;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
     .val-item{flex:1;background:var(--sur2);padding:10px 14px;text-align:center}
     .val-label{font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--mut);margin-bottom:4px}
@@ -809,12 +830,140 @@ function buildDetail(ticker, d) {
   </div>
 
   <div class="detail-summary">${formatSummary(d.summary)}${pp.discontinuous_growth ? '<div style="margin-top:8px;font-size:10px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:6px">※黒字化予測は過去トレンドの外挿であり、直近の急成長局面では実際の黒字化が予測より早まる可能性があります</div>' : ''}</div>
+
+  ${buildVectorPanel(d.financial_vectors)}
   </div>
   <div class="color-legend-bar">
     <span class="cl-item"><span class="cl-dot" style="background:#3b82f6"></span>良い赤字（戦略的投資）</span>
     <span class="cl-item"><span class="cl-dot" style="background:#f43f5e"></span>危険な赤字・損失</span>
     <span class="cl-item"><span class="cl-dot" style="background:#10b981"></span>黒字・安全・改善中</span>
     <span class="cl-item"><span class="cl-dot" style="background:#f59e0b"></span>要注意・中間</span>
+  </div>`;
+}
+
+// ---------------------------------------------------------------------------
+// 財務ベクトルパネル
+// ---------------------------------------------------------------------------
+function buildVectorPanel(fv) {
+  if (!fv || !fv.fields) return '';
+
+  const FIELD_LABELS = {
+    Revenue:     '売上',
+    GrossProfit: '粗利率',
+    RD:          'R&D費',
+    NetIncome:   '純利益',
+    OCF:         'OCF',
+    CapEx:       'CapEx',
+  };
+  const FIELD_ORDER = ['Revenue', 'GrossProfit', 'RD', 'NetIncome', 'OCF'];
+
+  // SVGベクトル矢印生成
+  // angle: -90°〜+90°（真上=+90=最大改善）
+  // length: 0〜1
+  function arrowSVG(angle, length, hasData) {
+    if (!hasData) {
+      return `<svg width="44" height="44" viewBox="-22 -22 44 44">
+        <line x1="0" y1="12" x2="0" y2="-12" stroke="var(--bdr)" stroke-width="1" stroke-dasharray="2,2"/>
+        <text x="0" y="5" text-anchor="middle" font-size="8" fill="var(--mut)">—</text>
+      </svg>`;
+    }
+
+    const rad = (angle * Math.PI) / 180;
+    const maxLen = 16;
+    const minLen = 3;
+    const arrowLen = minLen + length * (maxLen - minLen);
+
+    // 矢印は上向き基準（angle=+90が真上）
+    // SVG座標系はY軸が下向きなので反転
+    const dx = Math.cos(rad + Math.PI / 2) * arrowLen;
+    const dy = -Math.sin(rad + Math.PI / 2) * arrowLen;
+
+    // 色: 改善(angle>10)=緑、悪化(angle<-10)=赤、横ばい=グレー
+    const color = angle > 10 ? 'var(--grn)' : angle < -10 ? 'var(--red)' : 'var(--mut)';
+
+    // 矢印ヘッド
+    const headLen = 4;
+    const headAngle = 0.45;
+    const nx = dx / arrowLen;
+    const ny = dy / arrowLen;
+    const hx1 = dx - headLen * (nx * Math.cos(headAngle) - ny * Math.sin(headAngle));
+    const hy1 = dy - headLen * (ny * Math.cos(headAngle) + nx * Math.sin(headAngle));
+    const hx2 = dx - headLen * (nx * Math.cos(-headAngle) - ny * Math.sin(-headAngle));
+    const hy2 = dy - headLen * (ny * Math.cos(-headAngle) + nx * Math.sin(-headAngle));
+
+    return `<svg width="44" height="44" viewBox="-22 -22 44 44">
+      <circle cx="0" cy="0" r="18" fill="none" stroke="var(--bdr)" stroke-width="0.5"/>
+      <line x1="0" y1="0" x2="${dx.toFixed(1)}" y2="${dy.toFixed(1)}"
+            stroke="${color}" stroke-width="2" stroke-linecap="round"/>
+      <line x1="${dx.toFixed(1)}" y1="${dy.toFixed(1)}" x2="${hx1.toFixed(1)}" y2="${hy1.toFixed(1)}"
+            stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="${dx.toFixed(1)}" y1="${dy.toFixed(1)}" x2="${hx2.toFixed(1)}" y2="${hy2.toFixed(1)}"
+            stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
+      <circle cx="0" cy="0" r="1.5" fill="${color}"/>
+    </svg>`;
+  }
+
+  function fmtChg(pct) {
+    if (pct == null) return '';
+    const sign = pct >= 0 ? '+' : '';
+    const cls = pct > 5 ? 'pos' : pct < -5 ? 'neg' : 'neu';
+    return `<span class="fv-change ${cls}">${sign}${pct.toFixed(1)}%</span>`;
+  }
+
+  // 5列グリッド（YoW上段・QoQ下段）
+  function buildGrid(period, label) {
+    const cols = FIELD_ORDER.map(fname => {
+      const fdata = fv.fields[fname];
+      const pdata = fdata ? fdata[period] : null;
+      const hasData = pdata != null;
+      const angle  = hasData ? pdata.angle  : 0;
+      const length = hasData ? pdata.length : 0;
+      return `<div class="fv-col">
+        <div class="fv-col-title">${FIELD_LABELS[fname] || fname}</div>
+        <div class="fv-arrow-wrap">${arrowSVG(angle, length, hasData)}</div>
+        ${hasData ? fmtChg(pdata.change_pct) : '<span class="fv-change neu">—</span>'}
+      </div>`;
+    }).join('');
+
+    return `<div style="margin-bottom:1px">
+      <div style="font-family:var(--mono);font-size:7px;letter-spacing:.12em;color:var(--mut);padding:4px 0 4px 2px">${label}</div>
+      <div class="fv-grid">${cols}</div>
+    </div>`;
+  }
+
+  // 合成ベクトル表示
+  function compArrow(comp, label) {
+    if (!comp) return '';
+    return `<div class="fv-comp-item">
+      <div class="fv-comp-label">${label}</div>
+      <div class="fv-arrow-wrap">${arrowSVG(comp.angle, comp.length, true)}</div>
+      <span class="fv-change ${comp.angle > 10 ? 'pos' : comp.angle < -10 ? 'neg' : 'neu'}">${comp.angle > 0 ? '+' : ''}${comp.angle.toFixed(1)}°</span>
+    </div>`;
+  }
+
+  const missing = (fv.data_quality?.fields_missing || [])
+    .filter(f => FIELD_ORDER.includes(f));
+  const missingNote = missing.length
+    ? `<div class="fv-missing">データ取得不可: ${missing.join(' / ')}</div>`
+    : '';
+
+  const id = 'fv-' + Math.random().toString(36).slice(2,7);
+
+  return `
+  <div class="fv-section">
+    <div class="fv-header" onclick="(function(el){var b=el.nextElementSibling;var t=el.querySelector('.fv-header-toggle');b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲':'▼'})(this)">
+      <span class="fv-header-title">財務ベクトル <span style="font-weight:normal;letter-spacing:0;font-size:9px;color:var(--mut)">– 四半期変化の方向と勢い</span></span>
+      <span class="fv-header-toggle">▼</span>
+    </div>
+    <div class="fv-body">
+      ${buildGrid('yoy', 'YoY（前年同期比）')}
+      ${buildGrid('qoq', 'QoQ（前四半期比）')}
+      ${missingNote}
+      <div class="fv-composite">
+        ${compArrow(fv.composite?.yoy, 'YoY 合成')}
+        ${compArrow(fv.composite?.qoq, 'QoQ 合成')}
+      </div>
+    </div>
   </div>`;
 }
 
