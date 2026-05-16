@@ -57,19 +57,21 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "_COGS":            ("CostOfRevenue", "USD"),
 }
 
-# Revenue フォールバック概念
+# Revenue フォールバック概念（優先順位順・メインタグとマージして最多エントリを採用）
 _REVENUE_FALLBACKS = (
     "RevenueFromContractWithCustomerExcludingAssessedTax",
     "RevenueFromContractWithCustomerIncludingAssessedTax",
     "SalesRevenueNet",
     "TotalRevenue",
+    "RevenuesNetOfInterestExpense",  # 銀行・金融系（SOFI等）
 )
 
-# RD・SM・CapEx フォールバック概念（primaryと重複しない候補のみ）
+# RD・SM・CapEx・SBC フォールバック概念（primaryと重複しない候補のみ）
 _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
     "CapEx": (
         # NVDAなど: PP&E以外の生産的資産支出も含む広義CapEx
         "PaymentsToAcquireProductiveAssets",
+        "PaymentsForCapitalImprovements",
     ),
     "RD": (
         "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
@@ -78,6 +80,22 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
         "MarketingAndAdvertisingExpense",
         "MarketingExpense",
         "AdvertisingExpense",
+        # SGA全体をフォールバック（SM単独タグ未申告の銘柄向け: JOBY/AUR/NVDA/CIX/ELF/KO/UNH等）
+        "SellingGeneralAndAdministrativeExpense",
+        "GeneralAndAdministrativeExpense",
+    ),
+    "Cash": (
+        # RCAT等: CashAndCashEquivalentsAtCarryingValue が少ない場合
+        "CashCashEquivalentsAndShortTermInvestments",
+        "Cash",
+    ),
+    "SBC": (
+        # CEG等: ShareBasedCompensation未申告の場合
+        "AllocatedShareBasedCompensationExpense",
+    ),
+    "GrossProfit": (
+        # AMZN等: GrossProfitタグがある場合（normalizer._calc_gross_profitで逆算済みの場合は不要）
+        "GrossProfitLoss",
     ),
 }
 
@@ -129,37 +147,43 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
 
         entries = _get_field_units(company_facts, concept, unit)
 
-        if field_name == "Revenue" and not entries:
+        if field_name == "Revenue":
+            # Revenueは企業によってタグが途中で変わる・複数タグ併用のため
+            # メインタグ＋全フォールバックをマージして最多エントリを確保する
+            all_entries = list(entries)
+            seen_accn = {e.get("accn") for e in entries}
             for fallback_concept in _REVENUE_FALLBACKS:
-                entries = _get_field_units(company_facts, fallback_concept, unit)
-                if entries:
-                    logger.debug("[%s] Revenue fallback: %s", ticker, fallback_concept)
-                    break
+                fb = _get_field_units(company_facts, fallback_concept, unit)
+                for e in fb:
+                    if e.get("accn") not in seen_accn:
+                        all_entries.append(e)
+                        seen_accn.add(e.get("accn"))
+            entries = all_entries
+            if entries:
+                logger.debug("[%s] Revenue merged: %d entries", ticker, len(entries))
 
         processed = _process_entries(entries)
 
-        # Revenue追加フォールバック: 生データはあるが直近カットオフ後に空になった場合
-        # （例: METAは2018年以前はRevenues、以降はRevenueFromContractWith...に切り替え）
-        if field_name == "Revenue" and not processed:
-            for fallback_concept in _REVENUE_FALLBACKS:
-                fb_entries = _get_field_units(company_facts, fallback_concept, unit)
-                if fb_entries:
-                    fb_processed = _process_entries(fb_entries)
-                    if fb_processed:
-                        processed = fb_processed
-                        logger.debug("[%s] Revenue post-cutoff fallback: %s", ticker, fallback_concept)
-                        break
-
-        # 汎用フォールバック: タグ欠如 または 有効期間内エントリなしの場合に適用
-        if not processed and field_name in _FIELD_FALLBACKS:
-            for fallback_concept in _FIELD_FALLBACKS[field_name]:
-                fb_entries = _get_field_units(company_facts, fallback_concept, unit)
-                if fb_entries:
-                    fb_processed = _process_entries(fb_entries)
-                    if fb_processed:
-                        processed = fb_processed
-                        logger.debug("[%s] %s fallback: %s", ticker, field_name, fallback_concept)
-                        break
+        # 汎用フォールバック:
+        # ① タグ欠如またはエントリなし → 全フィールド対象
+        # ② Q件数が少ない（4件未満）場合もフォールバックを試みてより多い方を採用
+        #    ※ SMはメインタグで少数取れていてもSGA等に乗り換えると意味が変わるため除外
+        _FALLBACK_MIN = 4
+        _FALLBACK_MIN_FIELDS = {"Cash", "SBC", "CapEx", "GrossProfit"}
+        if field_name in _FIELD_FALLBACKS:
+            q_count = sum(1 for e in processed if not e.get("is_annual"))
+            use_min = field_name in _FALLBACK_MIN_FIELDS and q_count < _FALLBACK_MIN
+            if not processed or use_min:
+                for fallback_concept in _FIELD_FALLBACKS[field_name]:
+                    fb_entries = _get_field_units(company_facts, fallback_concept, unit)
+                    if fb_entries:
+                        fb_processed = _process_entries(fb_entries)
+                        fb_q_count = sum(1 for e in fb_processed if not e.get("is_annual"))
+                        if fb_q_count > q_count:
+                            processed = fb_processed
+                            logger.debug("[%s] %s fallback(better): %s (%d Q entries)",
+                                         ticker, field_name, fallback_concept, fb_q_count)
+                            break
 
         fields[field_name] = processed
 
