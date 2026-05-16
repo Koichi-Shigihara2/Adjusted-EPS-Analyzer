@@ -64,9 +64,8 @@ VECTOR_FIELDS = [
     {"name": "CapEx",       "invert": False, "weight": 0.5},  # 投資強度（参考）
 ]
 
-# ヒートマップ対象フィールド（安定取得できるもののみ）
-# Revenue・GrossProfitはQ2/Q4未申告銘柄が多いため除外
-HEATMAP_FIELDS = {"RD", "NetIncome", "OCF"}
+# ヒートマップ対象フィールド（全フィールド・データある四半期のみ表示）
+HEATMAP_FIELDS = {"Revenue", "GrossProfit", "RD", "NetIncome", "OCF"}
 
 # サブパネル用（別折りたたみ）
 SUB_FIELDS = ["SM", "SBC"]
