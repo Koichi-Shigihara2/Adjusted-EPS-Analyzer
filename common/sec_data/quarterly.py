@@ -57,6 +57,14 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "_COGS":            ("CostOfRevenue", "USD"),
 }
 
+# _COGS フォールバック概念（CostOfRevenue未申告の場合）
+_COGS_FALLBACKS = (
+    "CostOfGoodsAndServicesSold",
+    "CostOfGoodsSold",
+    "CostOfServices",
+    "CostOfGoodsSoldExcludingDepreciationDepletionAndAmortization",
+)
+
 # Revenue フォールバック概念（優先順位順・メインタグとマージして最多エントリを採用）
 _REVENUE_FALLBACKS = (
     "RevenueFromContractWithCustomerExcludingAssessedTax",
@@ -164,6 +172,15 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
             entries = all_entries
             if entries:
                 logger.debug("[%s] Revenue merged: %d entries", ticker, len(entries))
+
+        if field_name == "_COGS" and not entries:
+            # CostOfRevenue未申告の場合、代替COGSタグを試みる
+            for fallback_concept in _COGS_FALLBACKS:
+                fb = _get_field_units(company_facts, fallback_concept, unit)
+                if fb:
+                    entries = fb
+                    logger.debug("[%s] _COGS fallback: %s", ticker, fallback_concept)
+                    break
 
         processed = _process_entries(entries)
 
