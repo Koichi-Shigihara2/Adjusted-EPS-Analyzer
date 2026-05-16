@@ -152,17 +152,16 @@
     .bar-amt{font-family:var(--mono);font-size:8px;line-height:1.2;text-align:center;white-space:nowrap}
 
     /* 下段: 詳細数値 */
-    .detail-bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:14px}
+    .detail-bottom{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:14px}
     .detail-col{background:var(--sur2);padding:12px 14px}
+    .detail-col-full{background:var(--sur2);padding:12px 14px;grid-column:1/-1}
     .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px}
 
     /* 財務トレンドパネル */
     .fv-section{margin-top:14px;border:1px solid var(--bdr)}
-    .fv-header{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:var(--sur2);cursor:pointer;user-select:none}
+    .fv-header{display:flex;align-items:center;padding:8px 14px;background:var(--sur2)}
     .fv-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut)}
-    .fv-header-toggle{font-size:10px;color:var(--mut)}
-    .fv-body{display:none;padding:14px 14px 12px}
-    .fv-body.open{display:block}
+    .fv-body{display:block;padding:14px 14px 12px}
     .fv-spark-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--bdr);overflow:hidden}
     .fv-spark-col{background:var(--sur);padding:12px 8px 8px;display:flex;flex-direction:column;gap:6px;min-width:0;overflow:hidden}
     .fv-spark-title{font-family:var(--mono);font-size:9px;letter-spacing:.06em;color:var(--txt)}
@@ -812,20 +811,22 @@ function buildDetail(ticker, d) {
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">赤字固定化リスク<span class="tip-icon">?</span><span class="tip-box">良い赤字×OCF改善中→LOW / 悪い赤字×悪化中→HIGH</span></span></span>${riskBadge(dq.deficit_fixed_risk)}</div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">希薄化リスク<span class="tip-icon">?</span><span class="tip-box">SBC比率による株主希薄化リスク。≥15%=HIGH / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span>${riskBadge(dq.dilution_risk)}</div>
     </div>
-    <div class="detail-col">
-      <div class="detail-col-title">② 生存能力 · 詳細</div>
-      <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${{'SAFE':'安全','WATCH':'要注意','DANGER':'危険','UNKNOWN':'不明'}[ra.verdict]||ra.verdict||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${(ra.monthly_burn||0)>0?`+${fmtB(ra.monthly_burn)}/月 <span style="font-size:9px;color:var(--mut)">（OCF ${fmtB(ra.ocf_annual)} - CapEx ${fmtB(ra.capex_annual)} = CF黒字）</span>`:`${fmtB(ra.monthly_burn)}/月`}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
-    </div>
-    <div class="detail-col">
-      <div class="detail-col-title">③ 黒字化パス · 詳細</div>
-      <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
-      ${pp.discontinuous_growth ? `<div style="font-size:10px;color:var(--amb);margin-top:4px;">⚠ 非連続成長の可能性あり<br><span style="color:var(--mut)">${pp.discontinuous_growth_note}</span></div>` : ''}
+    <div class="detail-col" style="display:flex;flex-direction:column;gap:0">
+      <div>
+        <div class="detail-col-title">② 生存能力 · 詳細</div>
+        <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${{'SAFE':'安全','WATCH':'要注意','DANGER':'危険','UNKNOWN':'不明'}[ra.verdict]||ra.verdict||'—'}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${(ra.monthly_burn||0)>0?`+${fmtB(ra.monthly_burn)}/月 <span style="font-size:9px;color:var(--mut)">（OCF ${fmtB(ra.ocf_annual)} - CapEx ${fmtB(ra.capex_annual)} = CF黒字）</span>`:`${fmtB(ra.monthly_burn)}/月`}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+      </div>
+      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)">
+        <div class="detail-col-title">③ 黒字化パス · 詳細</div>
+        <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
+        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
+        ${pp.discontinuous_growth ? `<div style="font-size:10px;color:var(--amb);margin-top:4px;">⚠ 非連続成長の可能性あり<br><span style="color:var(--mut)">${pp.discontinuous_growth_note}</span></div>` : ''}
+      </div>
     </div>
   </div>
 
@@ -851,7 +852,7 @@ function buildVectorPanel(fv) {
   if (!fv || !fv.fields) return '';
   const FIELDS = [
     { key: 'Revenue',     label: '売上',   color: '#378ADD' },
-    { key: 'GrossProfit', label: '粗利率', color: '#1D9E75' },
+    { key: 'GrossProfit', label: '粗利',   color: '#1D9E75' },
     { key: 'RD',          label: 'R&D費',  color: '#8B5CF6' },
     { key: 'NetIncome',   label: '純利益', color: '#E24B4A' },
     { key: 'OCF',         label: 'OCF',    color: '#BA7517' },
@@ -925,14 +926,13 @@ function buildVectorPanel(fv) {
 
   return `
   <div class="fv-section">
-    <div class="fv-header" onclick="(function(el){var b=el.nextElementSibling;var t=el.querySelector('.fv-header-toggle');b.classList.toggle('open');t.textContent=b.classList.contains('open')?'▲':'▼';if(b.classList.contains('open'))initFvCharts('${uid}');})(this)">
+    <div class="fv-header">
       <span class="fv-header-title">財務トレンド <span style="font-weight:normal;letter-spacing:0;font-size:9px;color:var(--mut)">– 四半期変化の方向と勢い</span></span>
-      <span class="fv-header-toggle">▼</span>
     </div>
     <div class="fv-body" id="${uid}_body">
       <div class="fv-spark-grid">${sparkCols}</div>
       <div class="fv-hm-section">
-        <div class="fv-hm-label">変化ヒートマップ（YoY / QoQ）</div>
+        <div class="fv-hm-label">変化ヒートマップ（QoQ）</div>
         <div class="fv-hm-grid" id="${uid}_hm">${hmHeader}${hmRows}</div>
       </div>
       <div class="fv-legend">
@@ -940,7 +940,8 @@ function buildVectorPanel(fv) {
         <span style="font-family:var(--mono);font-size:9px;color:var(--mut)">悪化 ← → 改善</span>
       </div>
     </div>
-  </div>`;
+  </div>
+  <script>setTimeout(()=>initFvCharts('${uid}'),0);</script>`;
 }
 
 function initFvCharts(uid) {
