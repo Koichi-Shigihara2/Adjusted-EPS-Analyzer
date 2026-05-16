@@ -514,6 +514,23 @@ function render(d) {
   const terminalGrowth = d.components?.terminal_growth_used || 0.03;
   const roeAvg = d.components?.roe_used || 0;
   const dilutedShares = d.components?.diluted_shares || 0;
+  const sectorName   = d.components?.sector   || '';
+  const industryName = d.components?.industry  || '';
+
+  // FCF信頼性が低い業種の判定
+  const FCF_LOW_RELIABILITY_SECTORS   = ['Financial Services', 'Utilities'];
+  const FCF_LOW_RELIABILITY_INDUSTRIES= ['Healthcare Plans'];
+  const fcfLowReliability = FCF_LOW_RELIABILITY_SECTORS.includes(sectorName)
+    || FCF_LOW_RELIABILITY_INDUSTRIES.includes(industryName);
+  const fcfLowReliabilityMsg = fcfLowReliability ? (() => {
+    if (industryName === 'Healthcare Plans')
+      return '保険会社のOCFには将来の保険金支払義務（負債増加）が含まれるため、FCFが実態より大きく見えます。理論株価の信頼性が低い可能性があります。';
+    if (sectorName === 'Financial Services')
+      return '金融・Fintechのキャッシュフローは貸付金の増減がOCFに影響するため、FCFベースのDCFが実態を反映しにくい場合があります。';
+    if (sectorName === 'Utilities')
+      return '公益事業は設備投資が巨大でFCFが慢性的にマイナスになりやすく、DCFの前提が成立しにくい場合があります。';
+    return '';
+  })() : '';
   const rpo = d.components?.rpo || 0;
   const rpoPV = d.components?.rpo_pv || 0;
 
@@ -591,6 +608,11 @@ function render(d) {
         </div>
       </div>
 
+      ${fcfLowReliability ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
+        ⚠️ <strong>FCF信頼性注意（${industryName || sectorName}）</strong><br>
+        <span style="font-size:12px">${fcfLowReliabilityMsg}</span>
+      </div>` : ''}
       ${validationOverall === 'FAIL' ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red)">
         🔴 検証失敗: ${translateAiConcerns(aiConcerns)}
