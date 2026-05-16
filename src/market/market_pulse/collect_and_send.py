@@ -72,7 +72,7 @@ def format_line(name, hist):
         return f"● {name}: 取得制限あり\n"
     try:
         latest = hist['Close'].iloc[-1]
-        last_date = hist.index[-1].strftime('%m/%d')
+        last_date = hist.index[-1].astimezone(JST).strftime('%m/%d')
         diff, pct, vol_msg = 0.0, 0.0, ""
         if len(hist) >= 2:
             prev = hist['Close'].iloc[-2]
@@ -505,7 +505,7 @@ def get_realtime_data():
                 "change": round(change, 2),
                 "change_percent": round(change_percent, 2),
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
-                "date": hist.index[-1].strftime('%Y-%m-%d')
+                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
         else:
             data[name] = None
@@ -523,7 +523,7 @@ def get_realtime_data():
         vol_prev = nya_hist['Volume'].iloc[-2]
         vol_ratio = vol_latest / vol_prev if vol_prev > 0 else None
         vol_ratio_str = f"{vol_ratio:.2f}" if vol_ratio is not None else "N/A"
-        last_date = nya_hist.index[-1].strftime('%m/%d')
+        last_date = nya_hist.index[-1].astimezone(JST).strftime('%m/%d')
         summary += f"● NYSE Composite(^NYA): {nya_latest:.2f} [{nya_pct:+.2f}%] | 前日比出来高比:{vol_ratio_str} ({last_date} 確定)\n"
         if sp_hist is not None and len(sp_hist) >= 2:
             sp_pct = (sp_hist['Close'].iloc[-1] - sp_hist['Close'].iloc[-2]) / sp_hist['Close'].iloc[-2] * 100
@@ -539,7 +539,7 @@ def get_realtime_data():
             "value": round(nya_latest, 2),
             "change_percent": round(nya_pct, 2),
             "volume_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
-            "date": nya_hist.index[-1].strftime('%Y-%m-%d')
+            "date": nya_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
         }
         if sp_hist is not None and len(sp_hist) >= 2:
             nya_data["divergence_vs_sp"] = round(divergence, 2)
@@ -566,7 +566,7 @@ def get_realtime_data():
             data[name] = {
                 "value": round(latest, 2),
                 "change_percent": round(pct, 2),
-                "date": hist.index[-1].strftime('%Y-%m-%d')
+                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
         else:
             data[name] = None
@@ -606,19 +606,19 @@ def get_realtime_data():
                 "change": round(change, 2),
                 "change_percent": round(change_percent, 2),
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
-                "date": hist.index[-1].strftime('%Y-%m-%d')
+                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
         try:
             ratio_now = hyg_hist['Close'].iloc[-1] / lqd_hist['Close'].iloc[-1]
             ratio_prev = hyg_hist['Close'].iloc[-2] / lqd_hist['Close'].iloc[-2]
             ratio_chg = ratio_now - ratio_prev
-            last_date = hyg_hist.index[-1].strftime('%m/%d')
+            last_date = hyg_hist.index[-1].astimezone(JST).strftime('%m/%d')
             direction = "HY優勢＝リスクオン" if ratio_chg > 0 else "スプレッド拡大示唆＝リスクオフ"
             summary += f"● HYG対LQD比（クレジット代理）: {ratio_now:.4f} [{ratio_chg:+.6f}] ({last_date} 確定) → {direction}\n"
             data["HYG対LQD比"] = {
                 "value": round(ratio_now, 4),
                 "change": round(ratio_chg, 6),
-                "date": hyg_hist.index[-1].strftime('%Y-%m-%d')
+                "date": hyg_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
         except Exception as e:
             summary += f"● HYG/LQD比率: 計算エラー ({e})\n"
