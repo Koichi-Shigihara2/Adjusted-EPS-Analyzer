@@ -626,6 +626,7 @@ class KoichiValuationCalculator:
                 "rpo": rpo,
                 "beta": wacc_result.beta,
                 "sector": sector,
+                "industry": industry or "",
                 "eps_data": financials.get("eps_data"),
                 "_shares_source": financials.get("_shares_source"),
                 "_beta_source": financials.get("_beta_source"),
