@@ -11,6 +11,7 @@
   var ITEMS = [
     { key: 'home',   label: 'HOME',              href: BASE + '/' },
     { key: 'tanuki', label: 'TANUKI Valuation',  href: BASE + '/value-monitor/tanuki_valuation/' },
+    { key: 'stonks', label: 'STONKS SILO',       href: BASE + '/value-monitor/stonks-silo/' },
     { key: 'eps',    label: 'EPS Analyzer',      href: BASE + '/value-monitor/adjusted_eps_analyzer/' },
     { key: 'mp',     label: 'Market Pulse',      href: BASE + '/market-monitor/market-pulse/' },
     { key: 'macro',  label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' }

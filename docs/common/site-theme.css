@@ -23,6 +23,7 @@
 
   /* ツール別アクセント */
   --tool-tanuki: #a78bfa;   /* 紫 */
+  --tool-stonks: #f43f5e;   /* レッド */
   --tool-eps:    #22d3ee;   /* シアン（旧 #3b82f6 と差別化） */
   --tool-mp:     #10b981;   /* グリーン */
   --tool-macro:  #f59e0b;   /* アンバー */
@@ -37,6 +38,7 @@
 
 /* ページごとに body の data 属性で --acc を切り替える */
 body[data-tool="tanuki"] { --acc: var(--tool-tanuki); }
+body[data-tool="stonks"] { --acc: var(--tool-stonks); }
 body[data-tool="eps"]    { --acc: var(--tool-eps); }
 body[data-tool="mp"]     { --acc: var(--tool-mp); }
 body[data-tool="macro"]  { --acc: var(--tool-macro); }
@@ -117,17 +119,18 @@ header .logo,
 table { line-height: 1.55; }
 
 /* === HOMEカードをツール別テーマカラーに塗り替え === */
-/* 既存の card-tanuki / card-vm / card-mp / card-macro を上書き */
+/* 既存の card-tanuki / card-stonks / card-vm / card-mp / card-macro を上書き */
 .card.card-tanuki { --card-acc: var(--tool-tanuki); }
+.card.card-stonks { --card-acc: var(--tool-stonks); }
 .card.card-vm     { --card-acc: var(--tool-eps); }
 .card.card-mp     { --card-acc: var(--tool-mp); }
 .card.card-macro  { --card-acc: var(--tool-macro); }
 
-.card.card-tanuki, .card.card-vm, .card.card-mp, .card.card-macro {
+.card.card-tanuki, .card.card-stonks, .card.card-vm, .card.card-mp, .card.card-macro {
   border-color: color-mix(in oklab, var(--card-acc) 35%, var(--bdr)) !important;
   position: relative;
 }
-.card.card-tanuki::before, .card.card-vm::before,
+.card.card-tanuki::before, .card.card-stonks::before, .card.card-vm::before,
 .card.card-mp::before, .card.card-macro::before {
   content: "";
   position: absolute;
@@ -135,20 +138,20 @@ table { line-height: 1.55; }
   width: 3px;
   background: var(--card-acc);
 }
-.card.card-tanuki:hover, .card.card-vm:hover,
+.card.card-tanuki:hover, .card.card-stonks:hover, .card.card-vm:hover,
 .card.card-mp:hover, .card.card-macro:hover {
   border-color: var(--card-acc) !important;
   box-shadow: 0 0 0 1px var(--card-acc), 0 8px 24px color-mix(in oklab, var(--card-acc) 20%, transparent);
 }
-.card.card-tanuki .card-tag, .card.card-vm .card-tag,
+.card.card-tanuki .card-tag, .card.card-stonks .card-tag, .card.card-vm .card-tag,
 .card.card-mp .card-tag, .card.card-macro .card-tag {
   color: var(--card-acc) !important;
 }
-.card.card-tanuki .card-arrow, .card.card-vm .card-arrow,
+.card.card-tanuki .card-arrow, .card.card-stonks .card-arrow, .card.card-vm .card-arrow,
 .card.card-mp .card-arrow, .card.card-macro .card-arrow {
   color: var(--card-acc) !important;
 }
-.card.card-tanuki .dot-live, .card.card-vm .dot-live,
+.card.card-tanuki .dot-live, .card.card-stonks .dot-live, .card.card-vm .dot-live,
 .card.card-mp .dot-live, .card.card-macro .dot-live {
   background: var(--card-acc) !important;
   box-shadow: 0 0 8px var(--card-acc) !important;
