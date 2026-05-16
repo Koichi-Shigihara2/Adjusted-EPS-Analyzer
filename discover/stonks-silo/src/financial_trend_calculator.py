@@ -1,4 +1,4 @@
-# discover/stonks-silo/src/financial_trend_calculator.py
+# discover/stonks-silo/src/signal_detector.py
 """
 財務ベクトル計算モジュール
 
@@ -63,6 +63,10 @@ VECTOR_FIELDS = [
     {"name": "OCF",         "invert": False, "weight": 2.0},  # 現金創出力
     {"name": "CapEx",       "invert": False, "weight": 0.5},  # 投資強度（参考）
 ]
+
+# ヒートマップ対象フィールド（安定取得できるもののみ）
+# Revenue・GrossProfitはQ2/Q4未申告銘柄が多いため除外
+HEATMAP_FIELDS = {"RD", "NetIncome", "OCF"}
 
 # サブパネル用（別折りたたみ）
 SUB_FIELDS = ["SM", "SBC"]
@@ -293,6 +297,19 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
         composite_angles_yoy: list[tuple[float, float]] = []  # (angle, weight)
         composite_angles_qoq: list[tuple[float, float]] = []
 
+        # 全フィールドの最新endを取得して基準日を決定
+        all_entries_by_field = {
+            field_cfg["name"]: _get_quarterly_entries(normalized, field_cfg["name"])
+            for field_cfg in VECTOR_FIELDS
+        }
+        latest_ends = [
+            entries[-1]["end"]
+            for entries in all_entries_by_field.values()
+            if entries
+        ]
+        # 基準日 = 全フィールドの最新endの最大値
+        base_end = max(latest_ends) if latest_ends else None
+
         for field_cfg in VECTOR_FIELDS:
             fname = field_cfg["name"]
             invert = field_cfg["invert"]
@@ -301,9 +318,13 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
 
             field_out: dict = {}
 
-            # 時系列データ（直近8四半期）をseries_qとして追加
-            entries = _get_quarterly_entries(normalized, fname)
-            recent = entries[-8:]  # 直近8Q
+            # 時系列データ: base_endより古い（または等しい）エントリの末尾8件
+            entries = all_entries_by_field[fname]
+            if base_end:
+                filtered = [e for e in entries if e["end"] <= base_end]
+            else:
+                filtered = entries
+            recent = filtered[-8:]
             field_out["series_q"] = [
                 {"end": e["end"], "fp": e.get("fp", ""), "val": e["val"]}
                 for e in recent
@@ -375,6 +396,7 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
             "data_quality": {
                 "fields_available": available,
                 "fields_missing":   missing,
+                "heatmap_fields":   sorted(HEATMAP_FIELDS),
             },
         }
 

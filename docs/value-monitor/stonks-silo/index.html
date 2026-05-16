@@ -881,11 +881,17 @@ function buildVectorPanel(fv) {
     </div>`;
   }).join('');
 
+  // ヒートマップ対象フィールド（安定取得できるもののみ）
+  const hmFields = FIELDS.filter(f => {
+    const hf = fv.data_quality?.heatmap_fields;
+    return hf ? hf.includes(f.key) : ['RD','NetIncome','OCF'].includes(f.key);
+  });
+
   const hmLabelW = 54;
 
-  // 全フィールドのseries_qから共通の日付軸を構築（union of all end dates, sorted）
-  const allEnds = new Map(); // end → {label, fp}
-  FIELDS.forEach(f => {
+  // 全フィールドのseries_qから共通の日付軸を構築（hmFields対象のみ）
+  const allEnds = new Map(); // end → label
+  hmFields.forEach(f => {
     (fv.fields[f.key]?.series_q || []).forEach(e => {
       if (!allEnds.has(e.end)) {
         const y = e.end.slice(2,4);
@@ -903,7 +909,7 @@ function buildVectorPanel(fv) {
     ${hmLabels.map(l => `<div class="fv-hm-cell" style="background:var(--sur);font-family:var(--mono);font-size:8px;color:var(--mut)">${l}</div>`).join('')}
   </div>`;
 
-  const hmRows = FIELDS.map(f => {
+  const hmRows = hmFields.map(f => {
     const series = fv.fields[f.key]?.series_q || [];
     // end→val のマップを作成
     const valByEnd = new Map(series.map(e => [e.end, e.val]));
