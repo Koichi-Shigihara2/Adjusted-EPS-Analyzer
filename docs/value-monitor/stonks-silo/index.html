@@ -187,6 +187,9 @@
     .tip-box{display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--sur2);border:1px solid var(--bdr);padding:10px 12px;font-family:var(--sans);font-size:11px;color:var(--txt);line-height:1.7;white-space:normal;width:260px;z-index:100;pointer-events:none}
     .tip-box::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--bdr)}
     .tip-wrap:hover .tip-box{display:block}
+    .tip-wrap.tip-open .tip-box{display:block}
+    thead th[data-sort]:hover{color:var(--txt)}
+    thead th[data-sort] .sort-arr{font-size:8px;vertical-align:middle}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 </head>
@@ -269,25 +272,49 @@
   <div class="tbl-wrap">
     <table>
       <colgroup>
-        <col style="width:80px">
+        <col style="width:28px">
+        <col style="width:74px">
         <col style="width:130px">
-        <col style="width:115px">
+        <col style="width:110px">
         <col style="width:80px">
+        <col style="width:96px">
+        <col style="width:70px">
+        <col style="width:72px">
+        <col style="width:76px">
         <col style="width:100px">
-        <col style="width:105px">
       </colgroup>
       <thead>
         <tr>
-          <th>TICKER</th>
-          <th><span class="tip-wrap">総合判定<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x候補 / ≥55→有望 / ≥35→要観察 / &lt;35→回避。スコア＝赤字品質(40%)+生存期間(30%)+黒字化パス(30%)の加重平均</span></span></th>
-          <th><span class="tip-wrap">赤字品質<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上成長率3年(40pt)・研究開発+販売管理比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→良い赤字 / ≥35→要観察 / &lt;35→悪い赤字 / 純黒字→純利益黒字</span></span></th>
-          <th><span class="tip-wrap">生存期間<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span></th>
-          <th><span class="tip-wrap">CF改善<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span></th>
-          <th class="r"><span class="tip-wrap">スコア<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+生存期間点数×30%+黒字化パス点数×30%。生存期間: SAFE=100/WATCH=60/DANGER=20。黒字化パス: 加速中=100/改善中=75/横ばい=50/悪化中=20</span></span></th>
+          <th style="padding:8px 4px"></th>
+          <th data-sort="ticker" onclick="setSort('ticker')" style="cursor:pointer;user-select:none">TICKER<span class="sort-arr" style="color:var(--mut)"> ⇅</span></th>
+          <th data-sort="verdict" onclick="setSort('verdict')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">総合判定<span class="tip-icon">?</span><span class="tip-box">総合判定スコア（0-100点）による4段階評価。スコア≥75→10x候補 / ≥55→有望 / ≥35→要観察 / &lt;35→回避。スコア＝赤字品質(40%)+生存期間(30%)+黒字化パス(30%)の加重平均</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th data-sort="deficit" onclick="setSort('deficit')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">赤字品質<span class="tip-icon">?</span><span class="tip-box">赤字の質を4指標でスコアリング。売上成長率3年(40pt)・研究開発+販売管理比率(30pt)・粗利率(20pt)・純利益(10pt)。≥65点→良い赤字 / ≥35→要観察 / &lt;35→悪い赤字 / 純黒字→純利益黒字</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th data-sort="runway" onclick="setSort('runway')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">生存期間<span class="tip-icon">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th data-sort="trend" onclick="setSort('trend')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">CF改善<span class="tip-icon">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th class="r" data-sort="price" onclick="setSort('price')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">株価<span class="tip-icon">?</span><span class="tip-box">最新取得株価（valuation_fetcher.pyによる取得時点。リアルタイムではありません）</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th class="r" data-sort="gm" onclick="setSort('gm')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">粗利率<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等) / ≥50%=良好 / ≥30%=普通。SEC未申告の場合はCostOfRevenueから逆算</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th class="r" data-sort="be" onclick="setSort('be')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">黒字化<span class="tip-icon">?</span><span class="tip-box">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス</span></span><span class="sort-arr" style="color:var(--mut)"> ⇅</span>
+          </th>
+          <th class="r" data-sort="score" onclick="setSort('score')" style="cursor:pointer;user-select:none">
+            <span class="tip-wrap">スコア<span class="tip-icon">?</span><span class="tip-box">総合スコア(0-100点)。赤字品質スコア×40%+生存期間点数×30%+黒字化パス点数×30%。生存期間: SAFE=100/WATCH=60/DANGER=20。黒字化パス: 加速中=100/改善中=75/横ばい=50/悪化中=20</span></span><span class="sort-arr" style="color:var(--stonks)"> ▼</span>
+          </th>
         </tr>
       </thead>
       <tbody id="tbl-body">
-        <tr><td colspan="6" class="loading">LOADING DATA ···</td></tr>
+        <tr><td colspan="10" class="loading">LOADING DATA ···</td></tr>
       </tbody>
     </table>
   </div>
@@ -313,6 +340,9 @@ const DATA_URL = '/On-a-journey/value-monitor/stonks-silo/data/results.json';
 let allData = {};
 let currentFilter = 'ALL';
 let openTicker = null;
+let sortKey = 'score';
+let sortDir = -1; // -1=desc, 1=asc
+let pinnedTickers = new Set(JSON.parse(localStorage.getItem('stonks_pins') || '[]'));
 
 // ---------------------------------------------------------------------------
 // Load
@@ -334,8 +364,57 @@ async function loadData() {
     render();
   } catch(e) {
     document.getElementById('tbl-body').innerHTML =
-      `<tr><td colspan="6" class="empty">データ読み込みエラー: ${e.message}</td></tr>`;
+      `<tr><td colspan="9" class="empty">データ読み込みエラー: ${e.message}</td></tr>`;
   }
+}
+
+// ---------------------------------------------------------------------------
+// Sort helpers
+// ---------------------------------------------------------------------------
+function getSortVal(ticker, d, key) {
+  const dq = d.deficit_quality || {};
+  const ra = d.runway || {};
+  const pp = d.profitability_path || {};
+  const v  = d.valuation || {};
+  switch(key) {
+    case 'ticker':  return ticker;
+    case 'score':   return d.overall_score ?? -1;
+    case 'verdict': return ['10x_CANDIDATE','PROMISING','WATCH','AVOID'].indexOf(d.overall_verdict);
+    case 'deficit': return dq.score ?? -1;
+    case 'runway':  return ra.runway_months === null ? -1 : (ra.runway_months > 999 ? 9999 : (ra.runway_months ?? -1));
+    case 'trend':   return ['ACCELERATING','IMPROVING','FLAT','DETERIORATING','UNKNOWN'].indexOf(pp.ocf_trend);
+    case 'price':   return v.current_price ?? -1;
+    case 'gm':      return dq.gross_margin ?? -1;
+    case 'be':      return pp.ocf_breakeven_year || pp.gaap_breakeven_year || 9999;
+    default: return 0;
+  }
+}
+
+function setSort(key) {
+  if (sortKey === key) sortDir *= -1;
+  else { sortKey = key; sortDir = key === 'ticker' ? 1 : -1; }
+  // update header arrows
+  document.querySelectorAll('thead th[data-sort]').forEach(th => {
+    const arr = th.querySelector('.sort-arr');
+    if (!arr) return;
+    if (th.dataset.sort === sortKey) {
+      arr.textContent = sortDir === -1 ? ' ▼' : ' ▲';
+      arr.style.color = 'var(--stonks)';
+    } else {
+      arr.textContent = ' ⇅';
+      arr.style.color = 'var(--mut)';
+    }
+  });
+  render();
+}
+
+function togglePin(ticker, e) {
+  e.stopPropagation();
+  if (pinnedTickers.has(ticker)) pinnedTickers.delete(ticker);
+  else pinnedTickers.add(ticker);
+  localStorage.setItem('stonks_pins', JSON.stringify([...pinnedTickers]));
+  render();
+  if (openTicker === ticker) toggleDetail(ticker);
 }
 
 // ---------------------------------------------------------------------------
@@ -343,28 +422,65 @@ async function loadData() {
 // ---------------------------------------------------------------------------
 function render() {
   const body = document.getElementById('tbl-body');
-  const rows = Object.entries(allData)
-    .filter(([t, d]) => currentFilter === 'ALL' || d.overall_verdict === currentFilter)
-    .sort((a, b) => (b[1].overall_score || 0) - (a[1].overall_score || 0));
+  let rows = Object.entries(allData)
+    .filter(([t, d]) => currentFilter === 'ALL' || d.overall_verdict === currentFilter);
+
+  rows.sort((a, b) => {
+    const av = getSortVal(a[0], a[1], sortKey);
+    const bv = getSortVal(b[0], b[1], sortKey);
+    if (typeof av === 'string') return av.localeCompare(bv) * sortDir;
+    return (av - bv) * sortDir;
+  });
+
+  // pinned first
+  const pinned   = rows.filter(([t]) => pinnedTickers.has(t));
+  const unpinned = rows.filter(([t]) => !pinnedTickers.has(t));
+  rows = [...pinned, ...unpinned];
 
   if (!rows.length) {
-    body.innerHTML = `<tr><td colspan="6" class="empty">該当銘柄なし</td></tr>`;
+    body.innerHTML = `<tr><td colspan="9" class="empty">該当銘柄なし</td></tr>`;
     return;
   }
 
   body.innerHTML = rows.map(([ticker, d]) => {
-    const dq = d.deficit_quality || {};
-    const ra = d.runway || {};
-    const pp = d.profitability_path || {};
+    const dq    = d.deficit_quality || {};
+    const ra    = d.runway || {};
+    const pp    = d.profitability_path || {};
+    const v     = d.valuation || {};
     const score = d.overall_score ?? 0;
+    const isPinned = pinnedTickers.has(ticker);
+
+    // breakeven display (shortest)
+    const beYear = pp.ocf_breakeven_year || pp.gaap_breakeven_year;
+    let beCell = '—';
+    if (pp.hidden_profit_already) beCell = `<span style="color:var(--grn);font-family:var(--mono);font-size:11px">達成済</span>`;
+    else if (beYear) beCell = `<span style="font-family:var(--mono);font-size:11px">${beYear}年</span>`;
+
+    // runway bar
+    const rm = ra.runway_months;
+    let runwayHtml = runwayCell(ra);
+    if (rm !== null && rm !== undefined && rm < 999) {
+      const pct = Math.min(100, Math.round(rm / 36 * 100));
+      const barColor = rm >= 24 ? 'var(--grn)' : rm >= 12 ? 'var(--amb)' : 'var(--red)';
+      runwayHtml = `<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px">
+        <span style="color:${barColor};font-family:var(--mono);font-size:11px">${Math.round(rm)}M</span>
+        <div style="width:44px;height:3px;background:var(--bdr)"><div style="width:${pct}%;height:100%;background:${barColor}"></div></div>
+      </div>`;
+    }
 
     return `
-    <tr data-ticker="${ticker}" onclick="toggleDetail('${ticker}')">
+    <tr data-ticker="${ticker}" onclick="toggleDetail('${ticker}')" style="${isPinned?'background:rgba(244,63,94,0.04)':''}">
+      <td style="padding:10px 6px 10px 10px;width:28px">
+        <span onclick="togglePin('${ticker}',event)" title="ピン留め" style="cursor:pointer;font-size:13px;color:${isPinned?'var(--stonks)':'var(--bdr)'};transition:color .15s">★</span>
+      </td>
       <td><span class="ticker-cell">${ticker}</span></td>
       <td>${verdictBadge(d.overall_verdict)}</td>
       <td>${deficitBadge(dq.verdict)}</td>
-      <td>${runwayCell(ra)}</td>
+      <td class="r">${runwayHtml}</td>
       <td>${trendCell(pp.ocf_trend)}</td>
+      <td class="r" style="font-family:var(--mono);font-size:11px">${v.current_price != null ? '$'+v.current_price.toFixed(2) : '—'}</td>
+      <td class="r" style="font-family:var(--mono);font-size:11px">${dq.gross_margin != null ? dq.gross_margin.toFixed(1)+'%' : '—'}</td>
+      <td class="r">${beCell}</td>
       <td class="r">
         <div class="score-bar">
           <div class="score-track"><div class="score-fill" style="width:${score}%;background:${scoreColor(score)}"></div></div>
@@ -373,7 +489,7 @@ function render() {
       </td>
     </tr>
     <tr id="detail-${ticker}" style="display:none">
-      <td colspan="6" style="padding:0">
+      <td colspan="10" style="padding:0">
         <div class="detail" id="detail-inner-${ticker}"></div>
       </td>
     </tr>`;
@@ -790,6 +906,23 @@ function formatSummary(text) {
     return `<div>${line}</div>`;
   }).join('');
 }
+
+// ---------------------------------------------------------------------------
+// Tooltip touch support
+// ---------------------------------------------------------------------------
+document.addEventListener('click', e => {
+  const icon = e.target.closest('.tip-icon');
+  if (icon) {
+    e.stopPropagation();
+    const wrap = icon.closest('.tip-wrap');
+    // close all others
+    document.querySelectorAll('.tip-wrap.tip-open').forEach(w => { if (w !== wrap) w.classList.remove('tip-open'); });
+    wrap.classList.toggle('tip-open');
+    return;
+  }
+  // click outside closes
+  document.querySelectorAll('.tip-wrap.tip-open').forEach(w => w.classList.remove('tip-open'));
+});
 
 // ---------------------------------------------------------------------------
 // Init
