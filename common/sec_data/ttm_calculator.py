@@ -325,17 +325,32 @@ def save_ttm(ticker: str, ttm: dict) -> str:
 # Rolling TTM系列
 # ---------------------------------------------------------------------------
 
-def _calc_fcf(ocf: float | None, capex: float | None, fl: float | None) -> float | None:
+def _calc_fcf(
+    ocf: float | None,
+    capex: float | None,
+    fl: float | None,
+    da: float | None = None,
+) -> float | None:
     """
     FCF計算（parser.pyと同じ計算式）。
-      pure_capex = |CapEx| - |FinanceLeasePmts or 0|
-      FCF = OCF - max(0, pure_capex)
+
+    維持CapEx分離方式（v8.2追加）:
+      D&Aが取得できる場合:
+        pure_capex = |CapEx| - |FinanceLeasePmts or 0|
+        maintenance_capex = min(D&A, pure_capex)  ← D&A > CapExのガード
+        FCF = OCF - maintenance_capex
+      D&AがNoneの場合（従来方式フォールバック）:
+        FCF = OCF - max(0, pure_capex)
+
     OCF または CapEx が None の場合は None を返す。
     FinanceLeasePmts が None の場合は 0 として扱う。
     """
     if ocf is None or capex is None:
         return None
     pure_capex = abs(capex) - abs(fl or 0)
+    if da is not None and da > 0 and pure_capex > 0:
+        maintenance_capex = min(da, pure_capex)
+        return ocf - maintenance_capex
     return ocf - max(0, pure_capex)
 
 
@@ -477,10 +492,11 @@ def calc_ttm_series(
             }
 
         # FCF計算（派生値・quarters_used/missingなし）
-        ocf_val = flow.get("OCF", {}).get("val")
+        ocf_val   = flow.get("OCF", {}).get("val")
         capex_val = flow.get("CapEx", {}).get("val")
-        fl_val = flow.get("FinanceLeasePmts", {}).get("val")
-        fcf_val = _calc_fcf(ocf_val, capex_val, fl_val)
+        fl_val    = flow.get("FinanceLeasePmts", {}).get("val")
+        da_val    = flow.get("DA", {}).get("val")  # v8.2: 維持CapEx分離用
+        fcf_val = _calc_fcf(ocf_val, capex_val, fl_val, da_val)
         if fcf_val is not None:
             flow["FCF"] = {"val": fcf_val}
 
