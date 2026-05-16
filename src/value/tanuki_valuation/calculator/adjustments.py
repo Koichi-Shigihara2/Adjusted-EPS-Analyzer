@@ -893,6 +893,170 @@ if __name__ == "__main__":
     print(f"SOFI相当: method={r3.method}  ratio={r3.ratio:.2f}  base=${r3.base_fcf/1e9:.2f}B")
 
 
+# ── R&D資本化補正 v8.2 ──────────────────────────────────────────────
+
+@dataclass
+class RDCapitalizationResult:
+    """
+    R&D資本化補正結果
+
+    R&Dを費用ではなく投資（無形資産）として扱い、
+    3年均等償却した場合のFCF増分を計算する。
+
+    調整後FCF = 元FCF + capitalized_rd - amortization_current
+              = 元FCF + rd_adjustment
+
+    rd_adjustment > 0 : R&D増加局面（FCFが過小評価されていた）
+    rd_adjustment < 0 : R&D減少局面（稀）
+    applied = False   : R&D/Revenue < threshold のため適用せず
+    """
+    applied: bool
+    rd_current: float          # 直近年度R&D費
+    rd_avg_3yr: float          # 過去3年R&D費の平均（償却費の代理）
+    capitalized_rd: float      # 資本化額 = rd_current（当年全額を無形資産計上）
+    amortization_current: float  # 当年償却費 = rd_avg_3yr（3年均等）
+    rd_adjustment: float       # FCF増分 = capitalized_rd - amortization_current
+    rd_revenue_ratio: float    # R&D/Revenue（適用判定用）
+    threshold: float           # 適用閾値（デフォルト0.05）
+    years_used: int            # 実際に使用した年数（3年未満の場合）
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "applied": self.applied,
+            "rd_current": self.rd_current,
+            "rd_avg_3yr": self.rd_avg_3yr,
+            "capitalized_rd": self.capitalized_rd,
+            "amortization_current": self.amortization_current,
+            "rd_adjustment": self.rd_adjustment,
+            "rd_revenue_ratio": round(self.rd_revenue_ratio, 4),
+            "threshold": self.threshold,
+            "years_used": self.years_used,
+            "note": self.note,
+        }
+
+
+def capitalize_rd(
+    ticker: str,
+    sec_data_dir: str,
+    amortization_years: int = 3,
+    rd_threshold: float = 0.05,
+) -> RDCapitalizationResult:
+    """
+    R&D資本化補正を計算する（v8.2）
+
+    R&Dを費用ではなく投資（無形資産）として扱い、
+    3年均等償却した場合のFCF増分を返す。
+
+    計算ロジック:
+        capitalized_rd      = rd_current（当年全額を無形資産計上）
+        amortization_current = mean(rd[t-1], rd[t-2], rd[t-3])（3年平均を当年償却）
+        rd_adjustment       = capitalized_rd - amortization_current
+        調整後FCF           = 元FCF + rd_adjustment
+
+    適用条件:
+        R&D/Revenue >= rd_threshold（デフォルト5%）
+        かつ rd_current > 0
+        かつ 年次データが2年以上存在する
+
+    データソース:
+        common/sec_data/data/{TICKER}/annual_*.json
+        pl.research_and_development / pl.revenue
+
+    Args:
+        ticker          : ティッカーシンボル
+        sec_data_dir    : common/sec_data/data/ ディレクトリパス
+        amortization_years: 償却年数（デフォルト3）
+        rd_threshold    : R&D/Revenue適用閾値（デフォルト0.05）
+
+    Returns:
+        RDCapitalizationResult
+    """
+    import json, os, glob
+
+    NOT_APPLIED = lambda note: RDCapitalizationResult(
+        applied=False,
+        rd_current=0.0, rd_avg_3yr=0.0,
+        capitalized_rd=0.0, amortization_current=0.0,
+        rd_adjustment=0.0, rd_revenue_ratio=0.0,
+        threshold=rd_threshold, years_used=0,
+        note=note,
+    )
+
+    ticker_dir = os.path.join(sec_data_dir, ticker.upper())
+    if not os.path.isdir(ticker_dir):
+        return NOT_APPLIED(f"SEC dataディレクトリなし: {ticker_dir}")
+
+    # annual_*.json を年度降順で読み込む
+    pattern = os.path.join(ticker_dir, "annual_*.json")
+    files = sorted(glob.glob(pattern), reverse=True)
+    if len(files) < 2:
+        return NOT_APPLIED("年次データが2年分未満のため適用不可")
+
+    # R&DとRevenueを年度降順で取得
+    rd_series: list = []   # [(year, rd_value), ...]
+    revenue_latest: float = 0.0
+
+    for path in files:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+        except Exception:
+            continue
+        rd_val = d.get("pl", {}).get("research_and_development")
+        year   = d.get("period")
+        if rd_val is not None and rd_val > 0:
+            rd_series.append((year, float(rd_val)))
+        if revenue_latest == 0.0:
+            rev = d.get("pl", {}).get("revenue")
+            if rev and rev > 0:
+                revenue_latest = float(rev)
+
+    if not rd_series:
+        return NOT_APPLIED("R&Dデータなし（全年度）")
+
+    rd_current = rd_series[0][1]
+
+    # R&D/Revenue チェック
+    rd_revenue_ratio = rd_current / revenue_latest if revenue_latest > 0 else 0.0
+    if rd_revenue_ratio < rd_threshold:
+        return NOT_APPLIED(
+            f"R&D/Revenue={rd_revenue_ratio:.1%} < 閾値{rd_threshold:.0%}のため適用なし"
+        )
+
+    # 過去N年（amortization_years）分のR&D平均を償却費とする
+    # rd_series[0]が直近なので、rd_series[1:]が過去年度
+    past_rd = [v for _, v in rd_series[1: amortization_years + 1]]
+    years_used = len(past_rd)
+    if years_used == 0:
+        return NOT_APPLIED("過去年度R&Dデータなし（償却費計算不可）")
+
+    rd_avg_3yr = sum(past_rd) / years_used
+    capitalized_rd = rd_current
+    amortization_current = rd_avg_3yr
+    rd_adjustment = capitalized_rd - amortization_current
+
+    note = (
+        f"R&D資本化適用: 当年R&D${rd_current/1e9:.2f}B - "
+        f"過去{years_used}年平均償却${rd_avg_3yr/1e9:.2f}B "
+        f"= FCF調整${rd_adjustment/1e9:+.2f}B "
+        f"(R&D/Rev={rd_revenue_ratio:.1%})"
+    )
+
+    return RDCapitalizationResult(
+        applied=True,
+        rd_current=rd_current,
+        rd_avg_3yr=rd_avg_3yr,
+        capitalized_rd=capitalized_rd,
+        amortization_current=amortization_current,
+        rd_adjustment=rd_adjustment,
+        rd_revenue_ratio=rd_revenue_ratio,
+        threshold=rd_threshold,
+        years_used=years_used,
+        note=note,
+    )
+
+
 # ── FCF実力推定（調整済みEPS × FCF転換率）v7.2 ──────────────────────
 
 @dataclass

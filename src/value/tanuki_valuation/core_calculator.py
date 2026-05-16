@@ -19,6 +19,9 @@ v8.1 追加:
   2. 成長率決定
   3. FCF補正（マイナスFCF対応）
   4. FCFベース自動判定（v6.2追加）← NEW
+  4b. FCF外れ値分析（v7.1追加）
+  4c. FCF実力推定（v7.2追加）
+  4d. R&D資本化補正（v8.2追加）← NEW
   5. DCF計算（2段階 or 3段階）
   6. RPO補正（v8.1: セクター別適用率）
   7. 成長オプションPV計算
@@ -61,6 +64,7 @@ from calculator.adjustments import (
     calculate_bs_adjustment, BSAdjustmentResult,  # v7.0追加
     estimate_fcf_from_eps, FCFEstimationResult,   # v7.2追加
     analyze_fcf_outlier, FCFOutlierResult,        # v7.1追加
+    capitalize_rd, RDCapitalizationResult,        # v8.2追加
 )
 
 try:
@@ -90,7 +94,7 @@ class KoichiValuationCalculator:
       - FCFベース自動判定（急拡大銘柄は直近2年平均を使用）
     """
 
-    VERSION = "7.3.0"
+    VERSION = "8.2.0"
 
     def __init__(
         self,
@@ -234,6 +238,32 @@ class KoichiValuationCalculator:
                       f"{fcf_estimation.divergence_warning}")
         else:
             print(f"   [{ticker}] FCF実力推定: フォールバック → {fcf_estimation.note}")
+
+        # ── STEP 4d: R&D資本化補正（v8.2追加）──
+        # R&Dを費用ではなく投資として扱い、FCFの過小評価を補正する
+        # 適用条件: R&D/Revenue >= 5%（軽資産企業・消費財等は非適用）
+        rd_capitalization: RDCapitalizationResult = RDCapitalizationResult(
+            applied=False, rd_current=0.0, rd_avg_3yr=0.0,
+            capitalized_rd=0.0, amortization_current=0.0,
+            rd_adjustment=0.0, rd_revenue_ratio=0.0,
+            threshold=0.05, years_used=0, note="未実行"
+        )
+        if self.sec_data_dir:
+            try:
+                rd_capitalization = capitalize_rd(
+                    ticker=ticker,
+                    sec_data_dir=self.sec_data_dir,
+                )
+                if rd_capitalization.applied:
+                    base_fcf += rd_capitalization.rd_adjustment
+                    sign = "+" if rd_capitalization.rd_adjustment >= 0 else ""
+                    print(f"   [{ticker}] R&D資本化: {sign}${rd_capitalization.rd_adjustment/1e9:.2f}B"
+                          f" → 調整後FCF=${base_fcf/1e9:.2f}B"
+                          f" (R&D/Rev={rd_capitalization.rd_revenue_ratio:.1%})")
+                else:
+                    print(f"   [{ticker}] R&D資本化: 非適用 ({rd_capitalization.note})")
+            except Exception as _rd_e:
+                print(f"   [{ticker}] R&D資本化エラー: {_rd_e}")
 
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
         dcf_type = "two_stage"
@@ -601,6 +631,9 @@ class KoichiValuationCalculator:
             # FCF外れ値分析結果（v7.1追加）
             "fcf_outlier": fcf_outlier_result.to_dict(),
             "fcf_estimation": fcf_estimation.to_dict(),
+
+            # R&D資本化補正結果（v8.2追加）
+            "rd_capitalization": rd_capitalization.to_dict(),
 
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
