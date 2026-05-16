@@ -186,7 +186,7 @@
     .detail-val.neg{color:var(--red)}
 
     /* 総合コメント */
-    .detail-summary{font-size:12px;color:var(--mut);line-height:1.8;padding:14px 18px;background:var(--sur2);border:1px solid var(--bdr)}
+    .detail-summary{font-size:12px;color:var(--mut);line-height:1.8;padding:14px 18px;background:var(--sur2);border:1px solid var(--bdr);margin-bottom:0}
 
     /* Loading / empty */
     .loading{text-align:center;padding:60px;font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.15em}
@@ -883,16 +883,20 @@ function buildVectorPanel(fv) {
 
   const hmLabelW = 54;
 
-  // series_qからQoQ変化率の時系列ヒートマップを生成
-  // 全フィールドで共通の時間軸（直近8Q）を使う
-  // まずラベル（四半期）を取得
-  const refSeries = FIELDS.map(f => fv.fields[f.key]?.series_q || []).find(s => s.length >= 2) || [];
-  const hmLabels = refSeries.map(e => {
-    const y = e.end.slice(2,4);
-    const fp = e.fp || '';
-    return fp.startsWith('Q') ? y+fp : e.end.slice(0,7);
+  // 全フィールドのseries_qから共通の日付軸を構築（union of all end dates, sorted）
+  const allEnds = new Map(); // end → {label, fp}
+  FIELDS.forEach(f => {
+    (fv.fields[f.key]?.series_q || []).forEach(e => {
+      if (!allEnds.has(e.end)) {
+        const y = e.end.slice(2,4);
+        const fp = e.fp || '';
+        allEnds.set(e.end, fp.startsWith('Q') ? y+fp : e.end.slice(0,7));
+      }
+    });
   });
-  const nCols = hmLabels.length;
+  const sortedEnds = [...allEnds.keys()].sort().slice(-10); // 直近10Q
+  const hmLabels = sortedEnds.map(e => allEnds.get(e));
+  const nCols = sortedEnds.length;
 
   const hmHeader = `<div class="fv-hm-row" style="grid-template-columns:${hmLabelW}px repeat(${nCols},1fr)">
     <div class="fv-hm-cell" style="background:var(--sur)"></div>
@@ -901,19 +905,17 @@ function buildVectorPanel(fv) {
 
   const hmRows = FIELDS.map(f => {
     const series = fv.fields[f.key]?.series_q || [];
-    // QoQ変化率を計算（最初のセルはnull）
-    const qoqPcts = series.map((e, j) => {
-      if (j === 0) return null;
-      const prev = series[j-1].val;
-      if (prev == null || prev === 0) return null;
-      return (e.val - prev) / Math.abs(prev) * 100;
-    });
-    // nCols分に合わせる（足りない場合は左をnullで埋める）
-    const padded = Array(nCols).fill(null);
-    for (let i = 0; i < qoqPcts.length && i < nCols; i++) {
-      padded[nCols - qoqPcts.length + i] = qoqPcts[i];
-    }
-    const cells = padded.map(pct => {
+    // end→val のマップを作成
+    const valByEnd = new Map(series.map(e => [e.end, e.val]));
+    // 共通軸に合わせてQoQ変化率を計算
+    const cells = sortedEnds.map((end, j) => {
+      const val = valByEnd.get(end) ?? null;
+      const prevEnd = j > 0 ? sortedEnds[j-1] : null;
+      const prevVal = prevEnd ? (valByEnd.get(prevEnd) ?? null) : null;
+      let pct = null;
+      if (val != null && prevVal != null && prevVal !== 0 && valByEnd.has(end) && valByEnd.has(prevEnd)) {
+        pct = (val - prevVal) / Math.abs(prevVal) * 100;
+      }
       const txt = pct == null ? '—' : (pct > 0 ? '+' : '') + pct.toFixed(0) + '%';
       return `<div class="fv-hm-cell fv-hm-data" data-pct="${pct == null ? '' : pct.toFixed(1)}">${txt}</div>`;
     }).join('');
