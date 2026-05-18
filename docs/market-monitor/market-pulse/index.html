@@ -63,7 +63,7 @@
     .osc-period-btn{font-family:var(--mono);font-size:8px;padding:2px 7px;border:1px solid var(--bdr);background:var(--sur);color:var(--mut);cursor:pointer;transition:all .12s}
     .osc-period-btn:hover{border-color:var(--acc);color:var(--acc)}
     .osc-period-btn.active{background:rgba(59,130,246,.12);border-color:var(--acc);color:var(--acc)}
-    .osc-chart-wrap{flex:1;position:relative;min-height:140px;max-height:160px}
+    .osc-chart-wrap{flex:1;position:relative;min-height:180px;max-height:220px}
     .osc-legend{display:flex;gap:10px;margin-top:4px;flex-wrap:wrap}
     .osc-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:8px;color:var(--mut)}
     .osc-legend-dot{width:6px;height:6px;border-radius:50%}
@@ -198,7 +198,7 @@
     @media(max-width:768px){.tp-cards{grid-template-columns:repeat(3,1fr)}}
     @media(max-width:480px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
     .tp-chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px;margin-bottom:6px}
-    .tp-chart-wrap{position:relative;height:160px}
+    .tp-chart-wrap{position:relative;height:200px}
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -604,7 +604,11 @@ function renderOscChart(){
     const raw=od.map(d=>m.extract(d));let plot=raw;
     if(isMulti&&m.key!=="score"&&m.key!=="fg"){const v=raw.filter(x=>x!=null);if(v.length){const mn=Math.min(...v),mx=Math.max(...v);plot=raw.map(x=>x==null?null:mx===mn?50:(x-mn)/(mx-mn)*100)}}
     return{label:m.label,data:plot,borderColor:m.color,pointBackgroundColor:m.color,pointBorderColor:"transparent",pointRadius:od.length>40?2:(m.key==="score"||m.key==="fg"?4:3),pointHoverRadius:6,borderWidth:m.key==="score"||m.key==="fg"?2:1.5,fill:false,tension:.3,borderDash:m.key==="score"||m.key==="fg"?[]:[4,2],_rawData:raw,_meta:m}});
-  const yC={min:(hasScore||hasFG||isMulti)?0:undefined,max:(hasScore||hasFG||isMulti)?100:undefined,ticks:{color:"#64748b",font:{family:"Space Mono",size:8},stepSize:useZones?20:undefined,callback:useZones?(v=>{if(v===0)return"0";if(v===20)return"FEAR";if(v===50)return"50";if(v===80)return"GREED";if(v===100)return"100";return""}):undefined},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}};
+  // データ範囲±10でクリップ（起伏を見やすく）
+  const allOscVals=datasets.flatMap(d=>d._rawData||d.data).filter(v=>v!=null);
+  const oscMin=allOscVals.length?Math.max(0,Math.floor(Math.min(...allOscVals)/5)*5-5):0;
+  const oscMax=allOscVals.length?Math.min(100,Math.ceil(Math.max(...allOscVals)/5)*5+5):100;
+  const yC={min:(hasScore||hasFG||isMulti)?oscMin:undefined,max:(hasScore||hasFG||isMulti)?oscMax:undefined,ticks:{color:"#64748b",font:{family:"Space Mono",size:8},callback:v=>{if(v===20)return"FEAR▼";if(v===50)return"50";if(v===80)return"GREED▲";return v%10===0?v.toFixed(0):""}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}};
   if(oscChartInst)oscChartInst.destroy();
   oscChartInst=new Chart(document.getElementById("oscChart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:9},bodyFont:{family:"Space Mono",size:10},callbacks:{label:ctx=>{const ds=ctx.dataset,raw=ds._rawData?.[ctx.dataIndex],m=ds._meta;if(m?.key==="score"){const lbl=od[ctx.dataIndex]?.sentiment?.label||"";return raw!=null?` Score: ${raw.toFixed(1)} (${lbl})`:" —"}if(m?.key==="fg"){return raw!=null?` CNN F&G: ${raw.toFixed(0)}`:" —"}return raw!=null?` ${m?.label||ds.label}: ${raw.toFixed(2)}`:" —"}}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:8},maxTicksLimit:12},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:yC}},
     plugins:useZones?[{id:"zoneShading",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;const y35=y.getPixelForValue(35),yB=y.getPixelForValue(0);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y35,right-left,yB-y35);const y65=y.getPixelForValue(65),yT=y.getPixelForValue(100);ctx.fillStyle="rgba(16,185,129,.06)";ctx.fillRect(left,yT,right-left,y65-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.3)";ctx.beginPath();ctx.moveTo(left,y35);ctx.lineTo(right,y35);ctx.stroke();ctx.strokeStyle="rgba(16,185,129,.3)";ctx.beginPath();ctx.moveTo(left,y65);ctx.lineTo(right,y65);ctx.stroke();ctx.setLineDash([])}}]:[]});
@@ -662,17 +666,12 @@ function renderTechPulse(){
     document.getElementById("tpDivBadge").innerHTML=badge;
   } else {divEl.textContent="—";document.getElementById("tpDivBadge").innerHTML=""}
 
-  // 6枚カード
-  const setCard=(id,val,color)=>{const el=document.getElementById(id);el.textContent=val;if(color)el.style.color=color};
-  setCard("tpCFG",fgScore!=null?fgScore.toFixed(0):"—",fgScore!=null?tpColor(fgScore):null);
-  setCard("tpCTP",tpScore!=null?String(tpScore):"—",tpScore!=null?tpColor(tpScore):null);
+  // 3枚カード（補助指標のみ）
+  const setCard=(id,val,color)=>{const el=document.getElementById(id);if(!el)return;el.textContent=val;if(color)el.style.color=color};
   const vxn=tp?.components?.vxn_latest;
   setCard("tpCVXN",vxn!=null?vxn.toFixed(1):"—",null);
   const qqq=tp?.components?.qqq_vs_spy_20d;
   setCard("tpCQQQ",qqq!=null?(qqq>=0?"+":"")+qqq.toFixed(1)+"%":"—",qqq!=null?(qqq>=0?"var(--grn)":"var(--red)"):null);
-  const divDisp=divVal!=null?(divVal>0?"+":"")+Number(divVal).toFixed(1):"—";
-  const divColor=divVal!=null?(Math.abs(divVal)>15?"#a78bfa":(divVal>0?"#10b981":"#f43f5e")):null;
-  setCard("tpCDiv",divDisp,divColor);
   const zDisp=divZ!=null?(divZ>0?"+":"")+Number(divZ).toFixed(2)+"σ":"—";
   const zColor=divZ!=null?(Math.abs(divZ)>1.5?"#f59e0b":Math.abs(divZ)>1.0?"#94a3b8":null):null;
   setCard("tpCZscore",zDisp,zColor);
@@ -689,9 +688,14 @@ function renderTechPulseChart(){
     {label:"CNN F&G",data:od.map(d=>d.fear_greed?.score??null),borderColor:"#f59e0b",pointBackgroundColor:"#f59e0b",pointBorderColor:"transparent",pointRadius:od.length>30?2:3,borderWidth:1.5,fill:false,tension:.3},
     {label:"Tech Pulse",data:od.map(d=>d.tech_pulse?.score??null),borderColor:"#3b82f6",pointBackgroundColor:"#3b82f6",pointBorderColor:"transparent",pointRadius:od.length>30?2:3,borderWidth:2,fill:false,tension:.3}
   ];
+  // データ範囲を計算してy軸を設定（起伏を見やすく）
+  const allVals=ds.flatMap(d=>d.data).filter(v=>v!=null);
+  const dMin=allVals.length?Math.floor(Math.min(...allVals)/5)*5:0;
+  const dMax=allVals.length?Math.ceil(Math.max(...allVals)/5)*5:100;
+  const yMin=Math.max(0,dMin-5), yMax=Math.min(100,dMax+5);
   if(tpChartInst)tpChartInst.destroy();
-  tpChartInst=new Chart(document.getElementById("tpChart"),{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:9},bodyFont:{family:"Space Mono",size:10}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:8},maxTicksLimit:10},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:{min:0,max:100,ticks:{color:"#64748b",font:{family:"Space Mono",size:8},stepSize:20,callback:v=>{if(v===0)return"0";if(v===20)return"FEAR";if(v===50)return"50";if(v===80)return"GREED";if(v===100)return"100";return""}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}}}},
-  plugins:[{id:"tpZones",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;const y20=y.getPixelForValue(20),yB=y.getPixelForValue(0);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y20,right-left,yB-y20);const y80=y.getPixelForValue(80),yT=y.getPixelForValue(100);ctx.fillStyle="rgba(59,130,246,.06)";ctx.fillRect(left,yT,right-left,y80-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.25)";ctx.beginPath();ctx.moveTo(left,y20);ctx.lineTo(right,y20);ctx.stroke();ctx.strokeStyle="rgba(59,130,246,.25)";ctx.beginPath();ctx.moveTo(left,y80);ctx.lineTo(right,y80);ctx.stroke();ctx.setLineDash([])}}]})}
+  tpChartInst=new Chart(document.getElementById("tpChart"),{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:9},bodyFont:{family:"Space Mono",size:10}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:8},maxTicksLimit:10},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:{min:yMin,max:yMax,ticks:{color:"#64748b",font:{family:"Space Mono",size:8},callback:v=>{if(v===20)return"FEAR▼";if(v===50)return"50";if(v===80)return"GREED▲";return v.toFixed(0)}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}}}},
+  plugins:[{id:"tpZones",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;if(yMin<20){const y20=y.getPixelForValue(20),yB=y.getPixelForValue(yMin);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y20,right-left,yB-y20);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.25)";ctx.beginPath();ctx.moveTo(left,y20);ctx.lineTo(right,y20);ctx.stroke();ctx.setLineDash([])}if(yMax>80){const y80=y.getPixelForValue(80),yT=y.getPixelForValue(yMax);ctx.fillStyle="rgba(59,130,246,.06)";ctx.fillRect(left,yT,right-left,y80-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(59,130,246,.25)";ctx.beginPath();ctx.moveTo(left,y80);ctx.lineTo(right,y80);ctx.stroke();ctx.setLineDash([])}const y50=y.getPixelForValue(50);if(y50>chart.chartArea.top&&y50<chart.chartArea.bottom){ctx.setLineDash([2,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(100,116,139,.3)";ctx.beginPath();ctx.moveTo(left,y50);ctx.lineTo(right,y50);ctx.stroke();ctx.setLineDash([])}}}]})}
 
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
