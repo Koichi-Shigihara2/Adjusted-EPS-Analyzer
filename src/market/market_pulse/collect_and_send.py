@@ -657,31 +657,50 @@ def analyse_market(realtime_data, news_context):
     prompt = f"""
 あなたはプロの機関投資家専属アナリストだ。以下の最新数値と需給・ニュースを統合し報告せよ。
 
+【全体要約】
+最初に必ず以下の形式で全体要約を書け（他の項目より前に置くこと）。
+  結論：[市場フェーズ判定]。[現状の核心を1文で]。
+  行動示唆：[具体的な投資行動の示唆を1〜2文で。「様子見」「買い場探し」「利確検討」等の具体的方向性を示せ]。
+
 1. 市場フェーズ判定（晴れ・曇り・嵐）
 結論（例：「判定：曇り」）を必ず冒頭の一文に置き、その後に根拠を続けよ。
 根拠には必ずVIXと前日比出来高比を含めること。価格下落＋出来高増なら「嵐」の予兆として厳しく判定せよ。
 
 2. 金利・債券（米10年債）
+1行解説：現在の利回り水準と方向を端的に述べよ。
+なぜ重要か：株式バリュエーションと資金フローへの影響を投資判断の観点から1文で示せ。
 
 3. 恐怖指数・心理（VIX）
+1行解説：現在のVIX水準と示す心理状態を端的に述べよ。
+なぜ重要か：エントリー・エグジットタイミングの判断基準としての意味を1文で示せ。
 
 4. 通貨の勢い（ドル円）
+1行解説：現在のドル円水準と方向を端的に述べよ。
+なぜ重要か：日本株・輸出株への影響と円ヘッジコストの観点から1文で示せ。
 
 5. 指数・需給（日経平均、S&P500、NYSE騰落統計）
+1行解説：主要指数の方向と出来高の特徴を端的に述べよ。
+なぜ重要か：市場の内部構造（広がりか集中か）の観点から投資判断への意味を1文で示せ。
 出来高比1.1以上かつ価格下落があればディストリビューション（大口売り抜け）の疑いを指摘せよ。
 安値圏からの反発局面において、反発4日目以降に出来高増加を伴う大幅上昇（+1.7%以上）が確認された場合はフォロースルーデイ（買い転換シグナル）として明示せよ。
 NYSE騰落比率が指数と逆行していればヒンデンブルグ・オーメン的な市場内部の脆弱性を指摘せよ。
 
 6. スタイル・規模間相対パフォーマンス（グロース対バリュー比、大型対小型比）
+1行解説：グロース対バリュー・大型対小型の方向を端的に述べよ。
+なぜ重要か：リスク選好度の変化とポートフォリオ傾斜判断への意味を1文で示せ。
 グロース対バリュー比（日次）とその解釈（リスクオン/ディフェンシブ）を一行で述べよ。
 大型対小型比（日次）と質への逃避の有無を一行で述べよ。
 これを踏まえ指数コメントと接続し、市場の立体的な需給構造を考察せよ。
 
 7. コモディティ（原油、金）
+1行解説：原油・金の方向と水準を端的に述べよ。
+なぜ重要か：インフレ期待とリスク回避需要の読み方を投資判断の観点から1文で示せ。
 金対原油比の方向にも触れ、インフレヘッジ需要とリスク回避の強弱を読み解け。
 原油下落時は「地政学リスクの緩和」か「需要減退懸念」かを必ず区別して明記せよ。
 
 8. クレジット・金融コンディション（HYG、LQD、HYG対LQD比）
+1行解説：HYG・LQD・比率の方向と示すクレジット環境を端的に述べよ。
+なぜ重要か：信用収縮リスクの先行指標としての意味を1文で示せ。
 以下の三点を必ず個別に一行ずつ明記した上で総合判定せよ。
   株（S&P500の方向）→ リスクオン/リスクオフ
   債券（米10年債利回りの方向）→ リスクオン/リスクオフ
@@ -697,6 +716,7 @@ NYSE騰落比率が指数と逆行していればヒンデンブルグ・オー�
 10. 総評・相関分析（需給面からの踏み込んだ考察）
 
 制約：
+- 出力の先頭は必ず【全体要約】から始めること。【全体要約】の前に他のテキストを置くことは禁止。
 - 各項目（1〜10）の冒頭に、その項目に関連する数値を「● 指標名: 数値 増減 前日比出来高比 確定日」の形式で必ず1行書くこと。冒頭に全指標をまとめて列挙することは禁止。各項目内に分散して記載せよ。
 - 比較・相対表現は必ず「○○対△△比」の形式で統一すること（例：グロース対バリュー比、大型対小型比、HYG対LQD比）。
 - スタイル・規模比較は日次変化に基づく分析である旨を明記すること。
@@ -768,24 +788,6 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     else:
         all_data = []
 
-    # クレジット判定フィールド生成（sub_scoresから算出）
-    sub_scores = sentiment_data.get("sub_scores", {}) if sentiment_data else {}
-    hyg_score  = sub_scores.get("hyg_lqd_dir", {}).get("score")
-    ad_score   = sub_scores.get("ad_ratio", {}).get("score")
-    dist_score = sub_scores.get("distribution", {}).get("score")
-    hyg_data   = structured_data.get("HYG（ハイイールド債ETF）") or {}
-    lqd_data   = structured_data.get("LQD（投資適格債ETF）") or {}
-    stock_label  = "リスクオフ" if (ad_score is not None and ad_score < 40) or (dist_score is not None and dist_score < 30) else "リスクオン"
-    hyg_neg = hyg_data.get("change_percent", 0) < 0
-    lqd_neg = lqd_data.get("change_percent", 0) < 0
-    bond_label   = "リスクオフ" if (hyg_neg and lqd_neg) else "リスクオン"
-    hyg_vol_surge = (hyg_data.get("vol_ma20_ratio") or 0) >= 1.5 and hyg_neg
-    credit_label = "リスクオフ" if (
-        (hyg_score is not None and hyg_score < 45) or
-        (hyg_neg and lqd_neg) or
-        hyg_vol_surge
-    ) else "リスクオン"
-
     new_entry = {
         "date": date_str,
         "judgment": judgment,
@@ -793,7 +795,6 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "sentiment": sentiment_data,
         "fear_greed": fear_greed_data,
         "tech_pulse": tech_pulse_data,
-        "credit": {"stock": stock_label, "bond": bond_label, "credit": credit_label},
         "summary": report_text
     }
     # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
