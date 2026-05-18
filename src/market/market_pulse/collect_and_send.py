@@ -140,11 +140,22 @@ def compute_sentiment(structured_data):
     else:
         sub_scores["ad_ratio"] = {"score": 0.5, "weight": 0.15, "raw": None}
 
-    # --- 4. HYG/LQD比 変化方向 (12%) ---
+    # --- 4. HYG/LQD比 複合クレジット判定 (12%) ---
     hyg_lqd = structured_data.get("HYG対LQD比")
+    hyg_data = structured_data.get("HYG（ハイイールド債ETF）")
+    lqd_data = structured_data.get("LQD（投資適格債ETF）")
     if hyg_lqd and hyg_lqd.get("change") is not None:
         chg = hyg_lqd["change"]
+        # 軸①: HYG/LQD比率スコア（現行維持）
         score = clamp01((chg + 0.005) / 0.01)
+        # 軸②: HYG・LQD両方マイナス → 債券全体逃避（リスクオフ補正 -0.1）
+        if (hyg_data and hyg_data.get("change_percent") is not None and hyg_data["change_percent"] < 0 and
+                lqd_data and lqd_data.get("change_percent") is not None and lqd_data["change_percent"] < 0):
+            score = clamp01(score - 0.1)
+        # 軸③: HYG出来高急増（20日平均比1.5倍超）× HYG下落 → リスクオフ補正 -0.1
+        if (hyg_data and hyg_data.get("vol_ma20_ratio") is not None and hyg_data["vol_ma20_ratio"] >= 1.5 and
+                hyg_data.get("change_percent") is not None and hyg_data["change_percent"] < 0):
+            score = clamp01(score - 0.1)
         sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.12, "raw": round(chg, 6)}
     else:
         sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.12, "raw": None}
@@ -587,8 +598,8 @@ def get_realtime_data():
 
     # クレジット
     summary += "\n--- クレジット・金融コンディション ---\n"
-    hyg_hist = fetch_hist("HYG")
-    lqd_hist = fetch_hist("LQD")
+    hyg_hist = fetch_hist("HYG", period="30d")
+    lqd_hist = fetch_hist("LQD", period="30d")
     summary += format_line("HYG（ハイイールド債ETF）", hyg_hist)
     summary += format_line("LQD（投資適格債ETF）", lqd_hist)
 
@@ -601,11 +612,15 @@ def get_realtime_data():
             vol_latest = hist['Volume'].iloc[-1]
             vol_prev = hist['Volume'].iloc[-2]
             volume_ratio = vol_latest / vol_prev if vol_prev > 0 else None
+            # 出来高20日平均（HYGリスクオフ判定用）
+            vol_ma20 = float(hist['Volume'].iloc[-21:-1].mean()) if len(hist) >= 21 else float(hist['Volume'].iloc[:-1].mean())
+            vol_ma20_ratio = vol_latest / vol_ma20 if vol_ma20 > 0 else None
             data[name] = {
                 "value": round(latest, 2),
                 "change": round(change, 2),
                 "change_percent": round(change_percent, 2),
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
+                "vol_ma20_ratio": round(vol_ma20_ratio, 2) if vol_ma20_ratio is not None else None,
                 "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
         try:
