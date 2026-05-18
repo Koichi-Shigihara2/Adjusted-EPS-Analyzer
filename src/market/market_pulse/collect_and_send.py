@@ -805,7 +805,47 @@ def extract_judgment(report_text):
     return match.group(1) if match else "不明"
 
 
-def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None, tech_pulse_data=None):
+
+def collect_asset_flow():
+    """
+    資産クラス間資金フロービジュアライザー用データ収集
+    並び順（安全→リスク）: 超短期国債→短期国債→金→長期国債→投資適格社債→HY社債→株式
+    """
+    ASSETS = [
+        {"key": "ultra_short", "label": "超短期国債", "ticker": "SHV",  "desc": "1-3ヶ月T-Bill ETF"},
+        {"key": "short_bond",  "label": "短期国債",   "ticker": "^IRX", "desc": "3ヶ月T-Bill利回り"},
+        {"key": "gold",        "label": "金",          "ticker": "GLD",  "desc": "金ETF"},
+        {"key": "long_bond",   "label": "長期国債",    "ticker": "TLT",  "desc": "20年超米国債ETF"},
+        {"key": "ig_bond",     "label": "投資適格社債","ticker": "LQD",  "desc": "投資適格社債ETF"},
+        {"key": "hy_bond",     "label": "HY社債",      "ticker": "HYG",  "desc": "ハイイールド社債ETF"},
+        {"key": "equity",      "label": "株式",         "ticker": "SPY",  "desc": "S&P500 ETF"},
+    ]
+    result = {}
+    for a in ASSETS:
+        try:
+            hist = fetch_hist(a["ticker"], period="5d")
+            if hist is None or len(hist) < 2:
+                result[a["key"]] = None
+                continue
+            latest = float(hist["Close"].iloc[-1])
+            prev   = float(hist["Close"].iloc[-2])
+            chg_pct = (latest - prev) / prev * 100 if prev > 0 else 0
+            date_str = hist.index[-1].astimezone(JST).strftime("%Y-%m-%d")
+            result[a["key"]] = {
+                "label":    a["label"],
+                "ticker":   a["ticker"],
+                "desc":     a["desc"],
+                "value":    round(latest, 4),
+                "change_pct": round(chg_pct, 3),
+                "date":     date_str,
+            }
+            print(f"[INFO] asset_flow {a['label']}({a['ticker']}): {chg_pct:+.2f}%")
+        except Exception as e:
+            print(f"[WARN] asset_flow {a['ticker']}: {e}")
+            result[a["key"]] = None
+    return result
+
+def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None, tech_pulse_data=None, asset_flow_data=None):
     os.makedirs(DATA_DIR, exist_ok=True)
     jst_now = datetime.now(JST)
     date_str = jst_now.strftime('%Y-%m-%dT%H:%M:%S+09:00')
@@ -834,6 +874,7 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "sentiment": sentiment_data,
         "fear_greed": fear_greed_data,
         "tech_pulse": tech_pulse_data,
+        "asset_flow": asset_flow_data,
         "summary": report_text
     }
     # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
@@ -967,7 +1008,8 @@ if __name__ == "__main__":
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
     report = analyse_market(realtime_text, "\n".join(news))
-    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data)
+    asset_flow_data = collect_asset_flow()
+    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data, asset_flow_data)
     if GMAIL_USER and GMAIL_PASSWORD:
         send_email(report, sentiment_data)
     else:

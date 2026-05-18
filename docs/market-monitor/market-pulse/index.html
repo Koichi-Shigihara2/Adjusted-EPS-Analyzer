@@ -198,6 +198,23 @@
     @media(max-width:768px){.tp-cards{grid-template-columns:repeat(3,1fr)}}
     @media(max-width:480px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
     .tp-chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px;margin-bottom:6px}
+    /* 資産フロー ヒートマップ */
+    .af-card{background:var(--sur);border:1px solid var(--bdr);padding:20px;margin-bottom:6px}
+    .af-title{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px}
+    .af-desc{font-family:var(--sans);font-size:12px;color:var(--mut);margin-bottom:16px}
+    .af-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .af-cell{display:flex;flex-direction:column;align-items:center;padding:12px 6px;border-radius:4px;border:1px solid var(--bdr);transition:transform .1s}
+    .af-cell:hover{transform:translateY(-2px)}
+    .af-cell-label{font-family:var(--mono);font-size:12px;color:var(--mut);margin-bottom:4px;text-align:center}
+    .af-cell-ticker{font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:8px;text-align:center}
+    .af-cell-pct{font-family:var(--mono);font-size:18px;font-weight:700;text-align:center}
+    .af-cell-bar{width:100%;height:4px;border-radius:2px;margin-top:8px;background:rgba(30,40,64,.8)}
+    .af-cell-bar-fill{height:100%;border-radius:2px;transition:width .6s ease}
+    .af-arrow{font-size:13px;margin-top:4px}
+    .af-axis{display:flex;justify-content:space-between;margin-top:8px;padding:0 2px}
+    .af-axis-label{font-family:var(--mono);font-size:11px;color:var(--mut)}
+    @media(max-width:768px){.af-grid{grid-template-columns:repeat(4,1fr)}}
+    @media(max-width:480px){.af-grid{grid-template-columns:repeat(2,1fr)}}
     /* 統一カードレイアウト */
     .unified-card{background:var(--sur);border:1px solid var(--bdr);padding:20px;margin-bottom:6px;display:flex;flex-direction:column;gap:16px}
     .unified-gauge-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:20px;padding-bottom:16px;border-bottom:1px solid var(--bdr)}
@@ -372,6 +389,18 @@
         </div>
       </div>
       <div class="tp-chart-wrap" style="height:200px"><canvas id="tpChart"></canvas></div>
+    </div>
+  </div>
+  <div class="sec">資産クラス間 資金フロー — 安全資産（左）からリスク資産（右）への資金移動を可視化</div>
+  <div class="af-card">
+    <div class="af-title">今日の資金の動き</div>
+    <div class="af-desc">各資産の当日騰落率。<span style="color:var(--grn)">緑（買われた）</span>から<span style="color:var(--red)">赤（売られた）</span>への流れで資金の向きを読む。左ほど安全資産、右ほどリスク資産。</div>
+    <div class="af-grid" id="afGrid">
+      <div class="af-cell" style="background:var(--sur2)"><div class="af-cell-label">—</div></div>
+    </div>
+    <div class="af-axis">
+      <span class="af-axis-label">← 安全資産</span>
+      <span class="af-axis-label">リスク資産 →</span>
     </div>
   </div>
   <div class="sec">市場フェーズ概要 &amp; 表示期間</div>
@@ -719,7 +748,49 @@ function renderTechPulseChart(){
 
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse()}
+function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
+
+function renderAssetFlow(){
+  const latest=allData[allData.length-1];
+  const af=latest?.asset_flow;
+  const grid=document.getElementById("afGrid");
+  if(!grid)return;
+  if(!af){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mut);font-size:13px;padding:20px">データなし（次回Actions実行後に表示）</div>';return;}
+  const ASSETS=[
+    {key:"ultra_short", label:"超短期国債", ticker:"SHV",  desc:"1-3ヶ月"},
+    {key:"short_bond",  label:"短期国債",   ticker:"^IRX", desc:"3ヶ月T-Bill"},
+    {key:"gold",        label:"金",          ticker:"GLD",  desc:"インフレHDG"},
+    {key:"long_bond",   label:"長期国債",    ticker:"TLT",  desc:"20年超"},
+    {key:"ig_bond",     label:"投資適格社債",ticker:"LQD",  desc:"社債"},
+    {key:"hy_bond",     label:"HY社債",      ticker:"HYG",  desc:"高利回り社債"},
+    {key:"equity",      label:"株式",         ticker:"SPY",  desc:"S&P500"},
+  ];
+  // 最大変化率を計算（バーの正規化用）
+  const allPcts=ASSETS.map(a=>af[a.key]?.change_pct??0);
+  const maxAbs=Math.max(...allPcts.map(v=>Math.abs(v)),0.01);
+  grid.innerHTML=ASSETS.map(a=>{
+    const d=af[a.key];
+    if(!d)return`<div class="af-cell" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
+    const pct=d.change_pct;
+    const isPos=pct>=0;
+    const intensity=Math.min(Math.abs(pct)/maxAbs,1);
+    // 色：プラス=緑、マイナス=赤、濃さは変化率に比例
+    const bg=isPos
+      ?`rgba(16,185,129,${0.05+intensity*0.25})`
+      :`rgba(244,63,94,${0.05+intensity*0.25})`;
+    const col=isPos?"var(--grn)":"var(--red)";
+    const arrow=isPos?"▲":"▼";
+    const barW=Math.round(intensity*100);
+    const sign=isPos?"+":"";
+    return`<div class="af-cell" style="background:${bg};border-color:${isPos?"rgba(16,185,129,.3)":"rgba(244,63,94,.3)"}">
+      <div class="af-cell-label">${a.label}</div>
+      <div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div>
+      <div class="af-cell-pct" style="color:${col}">${sign}${pct.toFixed(2)}%</div>
+      <div class="af-arrow" style="color:${col}">${arrow}</div>
+      <div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div>
+    </div>`;
+  }).join("");
+}
 
 // ── INIT ──
 async function init(){
