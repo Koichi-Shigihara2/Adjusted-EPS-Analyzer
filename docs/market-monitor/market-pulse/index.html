@@ -23,7 +23,7 @@
     .nav-links a:hover,.nav-links a.active{color:var(--acc);border-bottom-color:var(--acc)}
 
     .shell{max-width:1280px;margin:0 auto;padding:20px 20px 60px}
-    .sec{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase;margin:24px 0 12px;display:flex;align-items:center;gap:10px}
+    .sec{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--txt);margin:24px 0 12px;display:flex;align-items:center;gap:10px}
     .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
     /* HERO: gauge + oscillator */
@@ -182,7 +182,7 @@
     .tp-gauges-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:10px}
     @media(max-width:640px){.tp-gauges-row{grid-template-columns:1fr}}
     .tp-gauge-card{background:var(--sur);border:1px solid var(--bdr);padding:14px 16px;display:flex;flex-direction:column;align-items:center}
-    .tp-gauge-title{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;align-self:flex-start;margin-bottom:6px}
+    .tp-gauge-title{font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--txt);font-weight:600;align-self:flex-start;margin-bottom:6px}
     .tp-gauge-svg-wrap{position:relative;width:180px;height:106px}
     .tp-gauge-svg-wrap svg{width:100%;height:100%}
     .tp-gauge-center{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center}
@@ -219,7 +219,7 @@
   </div>
 </header>
 <div class="shell">
-  <div class="sec">sentiment oscillator</div>
+  <div class="sec">市場センチメント指数 — 複数指標から算出した強欲・恐怖スコア（0=極度の恐怖 / 50=中立 / 100=極度の強欲）</div>
   <div class="hero">
     <div class="gauge-card">
       <div style="display:flex;justify-content:space-between;align-items:center;width:100%;margin-bottom:6px">
@@ -242,6 +242,9 @@
           <circle cx="110" cy="112" r="4" fill="#e2e8f0"/>
           <text x="14" y="124" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="6" letter-spacing=".06em">FEAR</text>
           <text x="172" y="124" fill="#10b981" font-family="'Space Mono',monospace" font-size="6" letter-spacing=".06em">GREED</text>
+          <text x="10" y="116" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">0</text>
+          <text x="110" y="26" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">50</text>
+          <text x="210" y="116" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">100</text>
         </svg>
         <div class="gauge-center">
           <div class="gauge-score" id="gaugeScore">—</div>
@@ -249,13 +252,9 @@
           <div class="gauge-delta" id="gaugeDelta"></div>
         </div>
       </div>
-      <div style="width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;align-items:start">
-        <div>
-          <div class="sub-scores" id="subScores"></div>
-          <div id="vix9dRow"></div>
-        </div>
-        <div class="breadth-summary" id="breadthSummary"></div>
-      </div>
+      <div class="sub-scores" id="subScores"></div>
+      <div class="breadth-summary" id="breadthSummary"></div>
+      <div id="vix9dRow" style="margin-top:8px"></div>
     </div>
     <div class="osc-card">
       <div class="osc-header">
@@ -269,11 +268,11 @@
       <div class="osc-legend" id="oscLegend"></div>
     </div>
   </div>
-  <div class="sec">tech pulse — ナスダック感情指数</div>
+  <div class="sec">Tech Pulse — NASDAQベース感情指数とCNN Fear &amp; Greedの比較（乖離 = NASDAQ固有の動き）</div>
   <!-- ① 並列ゲージ -->
   <div class="tp-gauges-row">
     <div class="tp-gauge-card">
-      <div class="tp-gauge-title">CNN Fear &amp; Greed</div>
+      <div class="tp-gauge-title">CNN Fear &amp; Greed<div style="font-size:9px;color:var(--mut);font-weight:400;margin-top:1px">S&amp;P500ベース・7指標合成（0=極恐怖/50=中立/100=極強欲）</div></div>
       <div class="tp-gauge-svg-wrap">
         <svg viewBox="0 0 180 106" id="fgGaugeSvg">
           <defs><linearGradient id="fgGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -287,6 +286,9 @@
           <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
           <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="6">FEAR</text>
           <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="6">GREED</text>
+          <text x="8" y="96" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">0</text>
+          <text x="90" y="22" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">50</text>
+          <text x="172" y="96" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">100</text>
         </svg>
         <div class="tp-gauge-center">
           <div class="tp-gauge-score" id="fgGaugeScore">—</div>
@@ -295,7 +297,7 @@
       </div>
     </div>
     <div class="tp-gauge-card">
-      <div class="tp-gauge-title">Tech Pulse (QQQ/VXN)</div>
+      <div class="tp-gauge-title">Tech Pulse<div style="font-size:9px;color:var(--mut);font-weight:400;margin-top:1px">NASDAQベース・QQQ/VXNから算出（0=極恐怖/50=中立/100=極強欲）</div></div>
       <div class="tp-gauge-svg-wrap">
         <svg viewBox="0 0 180 106" id="tpGaugeSvg">
           <defs><linearGradient id="tpGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -309,6 +311,9 @@
           <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
           <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="6">FEAR</text>
           <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="6">GREED</text>
+          <text x="8" y="96" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">0</text>
+          <text x="90" y="22" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">50</text>
+          <text x="172" y="96" fill="#64748b" font-family="'Space Mono',monospace" font-size="7" text-anchor="middle">100</text>
         </svg>
         <div class="tp-gauge-center">
           <div class="tp-gauge-score" id="tpGaugeScore">—</div>
@@ -319,34 +324,22 @@
   </div>
   <!-- ② 乖離インジケーター -->
   <div class="tp-div-card">
-    <div class="tp-div-label">Tech Pulse − F&amp;G</div>
+    <div class="tp-div-label">Tech Pulse − CNN F&amp;G <span style="font-size:10px;color:var(--mut);font-weight:400">（プラス = NASDAQ相対強気 / マイナス = NASDAQ相対弱気）</span></div>
     <div class="tp-div-value" id="tpDivVal">—</div>
     <div id="tpDivBadge"></div>
   </div>
-  <!-- ③ 数値サマリー4枚 -->
+  <!-- ③ 数値サマリー（重複削除・補助指標のみ） -->
   <div class="tp-cards">
     <div class="metric-card">
-      <div class="metric-label" style="color:#f59e0b">F&amp;G Score</div>
-      <div class="metric-value" id="tpCFG">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label" style="color:#3b82f6">Tech Pulse</div>
-      <div class="metric-value" id="tpCTP">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label" style="color:#f43f5e">VXN</div>
+      <div class="metric-label" style="color:#f43f5e">VXN<span style="font-size:9px;color:var(--mut);margin-left:4px">NASDAQ版VIX（高いほど恐怖）</span></div>
       <div class="metric-value" id="tpCVXN">—</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label" style="color:#22d3ee">QQQ vs SPY 20日</div>
+      <div class="metric-label" style="color:#22d3ee">QQQ vs SPY 20日<span style="font-size:9px;color:var(--mut);margin-left:4px">NASDAQの相対強度</span></div>
       <div class="metric-value" id="tpCQQQ">—</div>
     </div>
     <div class="metric-card">
-      <div class="metric-label" style="color:#a78bfa">TECH−F&amp;G 乖離</div>
-      <div class="metric-value" id="tpCDiv">—</div>
-    </div>
-    <div class="metric-card">
-      <div class="metric-label" style="color:#94a3b8">乖離Zスコア（90日）</div>
+      <div class="metric-label" style="color:#94a3b8">乖離Zスコア（90日）<span style="font-size:9px;color:var(--mut);margin-left:4px">過去90日での乖離の異常度</span></div>
       <div class="metric-value" id="tpCZscore">—</div>
     </div>
   </div>
