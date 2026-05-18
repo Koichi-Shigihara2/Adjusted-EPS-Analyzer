@@ -1,15 +1,15 @@
 {
   "ticker": "QBTS",
-  "last_updated": "2026-05-11T12:51:56.884057",
+  "last_updated": "2026-05-18T13:08:47.854805",
   "years": [
     {
       "year": "2025",
       "filing_date": "2025-12-31",
       "gaap_net_income": -355062000.0,
-      "adjusted_net_income": -322664990.0,
+      "adjusted_net_income": -321826460.0,
       "diluted_shares_used": 313029005.75,
       "gaap_eps": -1.134278272868967,
-      "adjusted_eps": -1.0307830395043192,
+      "adjusted_eps": -1.0281042781608107,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -27,7 +27,7 @@
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 200000,
+          "amount": 200000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -40,14 +40,14 @@
         {
           "item_id": "inventory_writeoff",
           "item_name": "在庫評価損・減損",
-          "amount": 9000,
+          "amount": -15000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の在庫評価損",
           "extracted_from": "us-gaap:InventoryWriteDown",
           "category": "在庫・サプライチェーン関連",
-          "net_amount": 9000.0,
+          "net_amount": -15000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -86,11 +86,24 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 3154470.0,
-          "tax_rate_applied": 0.21
+          "net_amount": 3993000.0,
+          "tax_rate_applied": 0.0
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 24000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 24000.0,
+          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 32397010.0
+      "net_adjustment_total": 33235540.0
     },
     {
       "year": "2024",

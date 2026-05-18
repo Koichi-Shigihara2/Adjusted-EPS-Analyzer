@@ -1,7 +1,50 @@
 {
   "ticker": "ASTS",
-  "last_updated": "2026-05-11T12:46:29.131852",
+  "last_updated": "2026-05-18T13:01:50.430551",
   "quarters": [
+    {
+      "gaap_eps": -0.6570998548461288,
+      "adjusted_eps": -0.46785270325126344,
+      "gaap_net_income": -191012000.0,
+      "adjusted_net_income": -135999848.2640919,
+      "diluted_shares_used": 290689457.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 55353000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 55012151.73590809,
+          "tax_rate_applied": 0.006157719800045301
+        }
+      ],
+      "net_adjustment_total": 55012151.73590809,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 290689457.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "唯一の調整項目は株式報酬費用(SBC)の加算調整です。非現金費用という理由で加算されていますが、成長企業において継続的に発生する性質のものであり、株主希薄化などの経済的実態を反映しない可能性があります。調整後EPSはGAAPより改善されていますが、その健全性については注意が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。継続的に発生する株式報酬関連コスト。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.28894933605485174,
       "adjusted_eps": -0.14262131794405988,
@@ -32,18 +75,7 @@
       "diluted_shares": 255982592.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "唯一の調整項目が株式報酬費用(SBC)のadd_backです。非現金項目ではありますが、ASTSのような成長・技術開発段階の企業では人材確保のために毎期継続的に発生する性質のものであり、調整後EPSが実態よりも大幅に改善して見える可能性があります。調整の質としては注意が必要です。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用である株式報酬費用をadd_back。成長企業において継続的に発生する可能性が高い。",
-            "confidence": 0.25
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": -0.4503664332075139,
@@ -108,6 +140,38 @@
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
       "quarter": 2
+    },
+    {
+      "gaap_eps": -0.20406796855476284,
+      "adjusted_eps": -0.169255381705394,
+      "gaap_net_income": -45706000.0,
+      "adjusted_net_income": -37908871.88721507,
+      "diluted_shares_used": 223974396.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 7826000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 7797128.112784927,
+          "tax_rate_applied": 0.0036892265799991215
+        }
+      ],
+      "net_adjustment_total": 7797128.112784927,
+      "filing_date": "2025-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 223974396.0,
+      "period_end": "2025-03-31",
+      "fiscal_year": 2025,
+      "quarter": 1
     },
     {
       "gaap_eps": -0.23208212350566995,

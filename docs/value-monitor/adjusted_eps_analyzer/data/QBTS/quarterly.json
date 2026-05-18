@@ -1,12 +1,91 @@
 {
   "ticker": "QBTS",
-  "last_updated": "2026-05-11T12:51:56.882707",
+  "last_updated": "2026-05-18T13:08:47.853396",
   "quarters": [
     {
+      "gaap_eps": -0.04995466077760622,
+      "adjusted_eps": -0.026330326945539943,
+      "gaap_net_income": -18357000.0,
+      "adjusted_net_income": -9675690.0,
+      "diluted_shares_used": 367473219.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 8019000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 6335010.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 3000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 2370000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": -30000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": -23700.0,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": 8681310.0,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 0.0,
+      "diluted_shares": 367473219.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "ai_analysis": {
+        "health": "Caution",
+        "comment": "株式報酬費用と無形資産償却費が調整の大部分を占めており、これらはQBTSのようなテック企業で継続的に発生する経常項目であるため、調整後EPSの健全性は限定的。在庫評価損は一過性と合理的に判断されるが金額が極めて小さく、全体として非GAAP調整の質は注意を要する水準。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却",
+            "confidence": 0.2
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
+    {
       "gaap_eps": -0.13177376450226302,
-      "adjusted_eps": -0.07301635162480685,
+      "adjusted_eps": -0.07309107095448729,
       "gaap_net_income": -42326000.0,
-      "adjusted_net_income": -23453000.0,
+      "adjusted_net_income": -23477000.0,
       "diluted_shares_used": 321202025.0,
       "adjustments": [
         {
@@ -25,7 +104,7 @@
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 200000,
+          "amount": 200000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -38,18 +117,18 @@
         {
           "item_id": "inventory_writeoff",
           "item_name": "在庫評価損・減損",
-          "amount": 9000,
+          "amount": -15000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の在庫評価損",
           "extracted_from": "us-gaap:InventoryWriteDown",
           "category": "在庫・サプライチェーン関連",
-          "net_amount": 9000.0,
+          "net_amount": -15000.0,
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 18873000.0,
+      "net_adjustment_total": 18849000.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": null,
@@ -58,28 +137,7 @@
       "diluted_shares": 321202025.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用(SBC)が調整額の98%以上を占めており、毎期発生する恒常的な非現金費用である可能性が高いため、調整後EPSの健全性は限定的です。無形資産償却も再発しやすい項目です。在庫評価損は一過性と見られますが影響額が小さいため、全体としてCautionと評価します。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却",
-            "confidence": 0.2
-          },
-          {
-            "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損",
-            "confidence": 0.7
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": -0.4090707883665149,
@@ -147,9 +205,9 @@
     },
     {
       "gaap_eps": -0.01892672621117379,
-      "adjusted_eps": -0.007913298793472004,
+      "adjusted_eps": -0.00490188592519609,
       "gaap_net_income": -5421000.0,
-      "adjusted_net_income": -2266530.0,
+      "adjusted_net_income": -1404000.0,
       "diluted_shares_used": 286420374.0,
       "adjustments": [
         {
@@ -162,11 +220,24 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 3154470.0,
-          "tax_rate_applied": 0.21
+          "net_amount": 3993000.0,
+          "tax_rate_applied": 0.0
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 24000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 24000.0,
+          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 3154470.0,
+      "net_adjustment_total": 4017000.0,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": null,
