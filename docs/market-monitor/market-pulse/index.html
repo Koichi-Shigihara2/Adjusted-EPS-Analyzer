@@ -251,6 +251,7 @@
       </div>
       <div class="sub-scores" id="subScores"></div>
       <div class="breadth-summary" id="breadthSummary"></div>
+      <div id="vix9dRow" style="margin-top:8px"></div>
     </div>
     <div class="osc-card">
       <div class="osc-header">
@@ -573,6 +574,19 @@ function renderGauge(){
   if(filteredData.length>=2){const prev=filteredData[filteredData.length-2]?.sentiment?.score;if(prev!=null){const delta=score-prev;document.getElementById("gaugeDelta").innerHTML=`<span style="color:${delta>=0?'var(--grn)':'var(--red)'}">&#x25${delta>=0?'B2':'BC'} ${delta>0?'+':''}${delta.toFixed(1)}pt</span>`}}
   const subs=s.sub_scores||{};
   document.getElementById("subScores").innerHTML=Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc);return`<div class="sub-row"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}</div></div>`}).join("");
+  // VIX9D表示
+  const vix9dRatio=latest?.indicators?.["VIX9D対VIX比"];
+  const vix9dData=latest?.indicators?.["VIX9D（短期VIX）"];
+  const vixData=latest?.indicators?.["VIX指数"];
+  if(vix9dRatio&&vix9dData&&vixData){
+    const contango=vix9dRatio.contango;
+    const ratio=vix9dRatio.value;
+    const v9=vix9dData.value;
+    const vv=vixData.value;
+    const col=contango?"var(--mut)":"#f59e0b";
+    const state=contango?"順鞘":"⚠ 逆転";
+    document.getElementById("vix9dRow").innerHTML=`<div style="display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 0;border-top:1px solid var(--bdr);margin-top:4px"><span style="color:var(--mut);font-family:var(--mono)">VIX9D</span><span style="font-family:var(--mono);color:var(--txt)">${v9.toFixed(2)}</span><span style="color:var(--mut)">vs VIX ${vv.toFixed(2)}</span><span style="font-family:var(--mono);color:${col};font-weight:700">${state} (${ratio?.toFixed(3)??"-"})</span></div>`;
+  }else{document.getElementById("vix9dRow").innerHTML=""}
   const b=s.breadth;
   if(b&&b.advances!=null){const total=b.advances+b.declines;const aP=total>0?(b.advances/total*100):50;
     document.getElementById("breadthSummary").innerHTML=`<div class="breadth-row"><span class="breadth-label">S&P500 Breadth</span></div><div class="breadth-ad-bar"><div class="adv-fill" style="width:${aP}%"></div><div class="dec-fill" style="width:${100-aP}%"></div></div><div class="breadth-row"><span class="breadth-label">\u25B2${b.advances}</span><span class="breadth-label">AD(5d) ${b.ad_ratio_5d||'-'}</span><span class="breadth-label">\u25BC${b.declines}</span></div><div class="breadth-row" style="margin-top:2px"><span class="breadth-val" style="color:var(--grn)">NH ${b.new_highs_52w||0}</span><span class="breadth-val" style="color:${(b.nh_nl_diff||0)>=0?'var(--grn)':'var(--red)'}">${(b.nh_nl_diff||0)>=0?'+':''}${b.nh_nl_diff||0}</span><span class="breadth-val" style="color:var(--red)">NL ${b.new_lows_52w||0}</span></div>${b.pct_above_50ma!=null?`<div class="breadth-row"><span class="breadth-label">&gt;50MA ${b.pct_above_50ma}%</span>${b.pct_above_200ma!=null?`<span class="breadth-label">&gt;200MA ${b.pct_above_200ma}%</span>`:''}</div>`:''}`}else{document.getElementById("breadthSummary").innerHTML=""}}

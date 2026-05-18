@@ -38,6 +38,7 @@ BREADTH_JSON = os.path.join(DATA_DIR, "breadth_data.json")
 CSV_COLUMNS = [
     "date", "judgment",
     "VIX指数_value", "VIX指数_change", "VIX指数_change_percent",
+    "VIX9D（短期VIX）_value", "VIX9D（短期VIX）_change_percent", "VIX9D対VIX比_value", "VIX9D対VIX比_contango",
     "日経平均_value", "日経平均_change", "日経平均_change_percent",
     "ドル円_value", "ドル円_change", "ドル円_change_percent",
     "米10年債_value", "米10年債_change", "米10年債_change_percent",
@@ -114,11 +115,15 @@ def compute_sentiment(structured_data):
     # breadth_data.json を読み込み
     breadth = _load_latest_breadth()
 
-    # --- 1. VIX水準 (25%) ---
-    vix_data = structured_data.get("VIX指数")
+    # --- 1. VIX水準 (25%) --- ※VIX9D逆転（短期リスクオフ）で補正あり
+    vix_data   = structured_data.get("VIX指数")
+    vix9d_ratio = structured_data.get("VIX9D対VIX比")
     if vix_data and vix_data.get("value") is not None:
         vix = vix_data["value"]
         score = clamp01((35 - vix) / (35 - 12))
+        # VIX9D逆転（VIX9D > VIX）= 短期リスクオフ準備 → -0.05補正
+        if vix9d_ratio and vix9d_ratio.get("contango") is False:
+            score = clamp01(score - 0.05)
         sub_scores["vix_level"] = {"score": score, "weight": 0.25, "raw": vix}
     else:
         sub_scores["vix_level"] = {"score": 0.5, "weight": 0.25, "raw": None}
@@ -482,6 +487,7 @@ def get_realtime_data():
     main_tickers = {
         "米10年債": "^TNX",
         "VIX指数": "^VIX",
+        "VIX9D（短期VIX）": "^VIX9D",
         "ドル円": "JPY=X",
         "日経平均": "^N225",
         "S&P500": "^GSPC",
@@ -584,6 +590,39 @@ def get_realtime_data():
         direction = "大型優勢（質への逃避）" if lsv_diff > 0 else "小型優勢（リスク選好）"
         summary += f"  大型対小型比（日次、S&P500対RUT）: {lsv_diff:+.2f}%pt → {direction}\n"
         data["大型対小型比"] = {"diff_percent": round(lsv_diff, 2)}
+
+    # VIX9D vs VIX比較
+    summary += "\n--- VIX9D vs VIX（短期・中期リスク比較） ---\n"
+    vix9d_hist = fetch_hist("^VIX9D")
+    vix_hist2  = fetch_hist("^VIX")
+    if vix9d_hist is not None and vix_hist2 is not None and len(vix9d_hist) >= 2 and len(vix_hist2) >= 2:
+        vix9d_now  = float(vix9d_hist['Close'].iloc[-1])
+        vix9d_prev = float(vix9d_hist['Close'].iloc[-2])
+        vix_now    = float(vix_hist2['Close'].iloc[-1])
+        vix9d_chg  = vix9d_now - vix9d_prev
+        vix9d_pct  = vix9d_chg / vix9d_prev * 100 if vix9d_prev > 0 else 0
+        ratio      = vix9d_now / vix_now if vix_now > 0 else None
+        contango   = vix9d_now < vix_now  # True=順鞘(通常), False=逆転(短期リスクオフ)
+        state      = "順鞘（通常）" if contango else "逆転（短期リスクオフ準備）"
+        last_date  = vix9d_hist.index[-1].astimezone(JST).strftime('%m/%d')
+        summary += f"● VIX9D: {vix9d_now:.2f} [{vix9d_chg:+.2f} ({vix9d_pct:+.1f}%)] ({last_date} 確定) → {state}\n"
+        if ratio is not None:
+            summary += f"  VIX9D対VIX比: {ratio:.3f} (VIX9D {'>' if not contango else '<'} VIX={vix_now:.2f})\n"
+        data["VIX9D（短期VIX）"] = {
+            "value": round(vix9d_now, 2),
+            "change": round(vix9d_chg, 2),
+            "change_percent": round(vix9d_pct, 2),
+            "date": vix9d_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+        }
+        data["VIX9D対VIX比"] = {
+            "value": round(ratio, 3) if ratio is not None else None,
+            "contango": contango,
+            "date": vix9d_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+        }
+    else:
+        summary += "● VIX9D: 取得失敗\n"
+        data["VIX9D（短期VIX）"] = None
+        data["VIX9D対VIX比"] = None
 
     # クレジット
     summary += "\n--- クレジット・金融コンディション ---\n"
