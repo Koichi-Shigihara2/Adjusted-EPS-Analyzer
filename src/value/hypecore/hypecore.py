@@ -268,6 +268,7 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
         print(f"  警告: upgrades_downgrades取得失敗: {e}")
 
     # ── 2. earnings_history → 四半期EPSサプライズ率 ──────────
+    eps_fetched = False
     try:
         eh = t.earnings_history
         if eh is not None and not eh.empty:
@@ -276,8 +277,6 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
             eh_monthly = eh[["surprisePercent"]].copy()
             eh_monthly.columns = ["eps_surprise"]
             eh_monthly["eps_surprise"] *= 100  # 小数→%
-
-            # 四半期→月次前方補完
             if not result.empty:
                 monthly_idx = result.index
             else:
@@ -292,8 +291,43 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
             else:
                 result = result.join(eps_monthly, how="outer")
             print(f"  EPSサプライズ: {len(eh)}件")
+            eps_fetched = True
     except Exception as e:
         print(f"  警告: earnings_history取得失敗: {e}")
+
+    # フォールバック①: quarterly_earnings から surprisePercent を取得
+    if not eps_fetched:
+        try:
+            qe = t.quarterly_earnings
+            if qe is not None and not qe.empty and "Surprise(%)" in qe.columns:
+                qe = qe.copy()
+                qe.index = pd.to_datetime(qe.index).tz_localize(None)
+                qe_monthly = qe[["Surprise(%)"]].rename(columns={"Surprise(%)": "eps_surprise"})
+                if not result.empty:
+                    monthly_idx = result.index
+                    eps_monthly = qe_monthly.reindex(monthly_idx, method="ffill")
+                    result = result.join(eps_monthly, how="left")
+                print(f"  EPSサプライズ(fallback1): {len(qe)}件")
+                eps_fetched = True
+        except Exception as e:
+            print(f"  警告: quarterly_earnings取得失敗: {e}")
+
+    # フォールバック②: info['earningsGrowth'] を単月スカラーとして使用
+    if not eps_fetched:
+        try:
+            info_snap = t.info
+            eg = info_snap.get("earningsGrowth")
+            if eg is not None:
+                # YoY成長率をサプライズの代理変数として使用（スカラー→全月に適用）
+                if not result.empty:
+                    result["eps_surprise"] = round(float(eg) * 100, 2)
+                print(f"  EPSサプライズ(fallback2/earningsGrowth): {eg:.1%}")
+                eps_fetched = True
+        except Exception as e:
+            print(f"  警告: earningsGrowth取得失敗: {e}")
+
+    if not eps_fetched:
+        print(f"  警告: EPSサプライズ全手段で取得失敗")
 
     # ── 3. recommendations → Buy/Hold/Sell比率（現時点） ──────
     try:
@@ -616,6 +650,13 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
             return dict(phase="入口", label="期待剥落開始",
                 watch="S3から転落直後。Distribution（大口売り抜け）が始まっている可能性。",
                 next="ポジション縮小推奨。実体（次の決算）が強ければ早期底打ちの可能性。")
+        # EPSデータなし＋売上が強い場合は中盤Bに寄せる（誤判定防止）
+        rev_yoy = row.get("rev_yoy")
+        eps_missing = eps_surp is None
+        if eps_missing and rev_yoy is not None and rev_yoy > 15:
+            return dict(phase="中盤B*", label="実体維持の可能性（EPS要確認）",
+                watch=f"売上成長{rev_yoy:+.1f}%は維持されているが、EPSデータが未取得。決算結果を別途確認推奨。",
+                next="次の決算でEPS黒字なら底打ちの可能性。マイナスなら中盤A（実体崩壊）に移行。")
         return dict(phase="中盤A", label="実体も崩壊中",
             watch="売上・EPSの悪化も確認される本格的な下落局面。",
             next="実体の回復（売上加速・EPSサプライズ）が出るまで売り継続。")
@@ -776,11 +817,9 @@ if __name__ == "__main__":
     import sys
     import shutil
 
-    # docs出力先
     _DOCS_DIR = _REPO_ROOT / "docs" / "value-monitor" / "hypecore" / "data"
     _DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    # 全対応銘柄リスト
     ALL_TICKERS = [
         "AAPL","ALAB","AMAT","AMD","AMZN","APP","ASTS","AUR","AVAV","BBAI",
         "BRUN","BSY","CAKE","CART","CEG","CELH","COHR","CRM","CRWV","CWAN",
@@ -791,25 +830,19 @@ if __name__ == "__main__":
     ]
 
     args = sys.argv[1:]
-
     if not args:
-        # 引数なし = PLTRのみ
         tickers = ["PLTR"]
     elif args[0] == "--all":
-        # --all = 全銘柄
         tickers = ALL_TICKERS
     elif args[0] == "--batch":
-        # --batch NVDA TSLA ... = 指定銘柄群
         tickers = args[1:] if len(args) > 1 else ["PLTR"]
     else:
-        # 単一銘柄
         tickers = [args[0]]
 
     success, failed = [], []
     for t in tickers:
         try:
             run_poc(t)
-            # docsにコピー
             src = _OUT_DIR / f"{t}_poc.json"
             dst = _DOCS_DIR / f"{t}_poc.json"
             if src.exists():
