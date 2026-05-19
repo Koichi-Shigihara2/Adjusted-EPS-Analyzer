@@ -774,5 +774,55 @@ def run_poc(ticker: str = "PLTR") -> dict:
 
 if __name__ == "__main__":
     import sys
-    ticker = sys.argv[1] if len(sys.argv) > 1 else "PLTR"
-    run_poc(ticker)
+    import shutil
+
+    # docs出力先
+    _DOCS_DIR = _REPO_ROOT / "docs" / "value-monitor" / "hypecore" / "data"
+    _DOCS_DIR.mkdir(parents=True, exist_ok=True)
+
+    # 全対応銘柄リスト
+    ALL_TICKERS = [
+        "AAPL","ALAB","AMAT","AMD","AMZN","APP","ASTS","AUR","AVAV","BBAI",
+        "BRUN","BSY","CAKE","CART","CEG","CELH","COHR","CRM","CRWV","CWAN",
+        "ELF","GOOGL","GTLB","IONQ","IOT","JOBY","KO","LITE","LLY","LMT",
+        "META","MRVL","MSFT","NOW","NVDA","ONDS","PLTR","QBTS","RBRK","RCAT",
+        "RDW","RKLB","RLMD","RXRX","S","SITM","SOFI","SOUN","SPIR","TSLA",
+        "UNH","VRT","VWAV","ZETA",
+    ]
+
+    args = sys.argv[1:]
+
+    if not args:
+        # 引数なし = PLTRのみ
+        tickers = ["PLTR"]
+    elif args[0] == "--all":
+        # --all = 全銘柄
+        tickers = ALL_TICKERS
+    elif args[0] == "--batch":
+        # --batch NVDA TSLA ... = 指定銘柄群
+        tickers = args[1:] if len(args) > 1 else ["PLTR"]
+    else:
+        # 単一銘柄
+        tickers = [args[0]]
+
+    success, failed = [], []
+    for t in tickers:
+        try:
+            run_poc(t)
+            # docsにコピー
+            src = _OUT_DIR / f"{t}_poc.json"
+            dst = _DOCS_DIR / f"{t}_poc.json"
+            if src.exists():
+                shutil.copy2(src, dst)
+                print(f"  → docs にコピー完了: {dst.name}")
+            success.append(t)
+        except Exception as e:
+            print(f"[ERROR] {t}: {e}")
+            failed.append(t)
+
+    print(f"\n{'='*50}")
+    print(f"完了: {len(success)}銘柄 / 失敗: {len(failed)}銘柄")
+    if failed:
+        print(f"失敗銘柄: {', '.join(failed)}")
+    if success:
+        print(f"成功銘柄: {', '.join(success)}")

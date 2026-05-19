@@ -131,7 +131,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
   </div>
   <div class="ticker-bar">
     <span class="ticker-lbl">TICKER</span>
-    <button class="ticker-btn active" onclick="loadTicker('PLTR',this)">PLTR</button>
+    <div id="tickerBtns" style="display:flex;flex-wrap:wrap;gap:6px"></div>
   </div>
 
   <!-- HERO BAR -->
@@ -517,7 +517,29 @@ function render(data,ticker){
     tbody.appendChild(tr);
   });
 }
-loadTicker('PLTR',document.querySelector('.ticker-btn'));
+// 利用可能な銘柄を確認してボタンを生成
+const ALL_TICKERS=["AAPL","ALAB","AMAT","AMD","AMZN","APP","ASTS","AUR","AVAV","BBAI",
+  "BRUN","BSY","CAKE","CART","CEG","CELH","COHR","CRM","CRWV","CWAN",
+  "ELF","GOOGL","GTLB","IONQ","IOT","JOBY","KO","LITE","LLY","LMT",
+  "META","MRVL","MSFT","NOW","NVDA","ONDS","PLTR","QBTS","RBRK","RCAT",
+  "RDW","RKLB","RLMD","RXRX","S","SITM","SOFI","SOUN","SPIR","TSLA",
+  "UNH","VRT","VWAV","ZETA"];
+const container=document.getElementById('tickerBtns');
+let firstBtn=null;
+(async()=>{
+  for(const t of ALL_TICKERS){
+    try{
+      const r=await fetch(`data/${t}_poc.json`,{method:'HEAD'});
+      if(!r.ok)continue;
+      const btn=document.createElement('button');
+      btn.className='ticker-btn';
+      btn.textContent=t;
+      btn.onclick=()=>loadTicker(t,btn);
+      container.appendChild(btn);
+      if(!firstBtn){firstBtn=btn;btn.classList.add('active');loadTicker(t,btn);}
+    }catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
