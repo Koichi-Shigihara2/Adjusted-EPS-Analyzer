@@ -173,7 +173,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 
   <!-- メイン2カラム：期待 vs 実体＋現状解釈 -->
   <div class="main-grid">
-    <!-- 左：期待指標 -->
+    <!-- 左：期待指標＋遷移確率 -->
     <div class="main-col">
       <div class="col-title">
         <div class="col-dot" style="background:#f97316"></div>
@@ -181,6 +181,11 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
         <span style="font-family:var(--sans);font-size:12px;color:var(--mut);font-weight:400;letter-spacing:0">市場が織り込んでいるもの</span>
       </div>
       <div id="expectMetrics">—</div>
+      <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--bdr)">
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);margin-bottom:12px">1ヶ月後のステージ遷移確率</div>
+        <div class="trans-list" id="transListLeft"></div>
+        <div style="position:relative;height:180px;margin-top:14px"><canvas id="transChart"></canvas></div>
+      </div>
     </div>
     <!-- 右：実体指標＋現状解釈＋内部フェーズ -->
     <div class="main-col">
@@ -233,14 +238,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
     </div>
   </div>
 
-  <!-- 遷移確率 -->
-  <div class="trans-card">
-    <div class="trans-title">1ヶ月後のステージ遷移確率（過去パターンより算出）</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:center">
-      <div class="trans-list" id="transList"></div>
-      <div style="position:relative;height:200px"><canvas id="transChart"></canvas></div>
-    </div>
-  </div>
+
 
   <!-- テーブル -->
   <div class="tbl-card">
@@ -492,7 +490,7 @@ function render(data,ticker){
       scales:{x:xV,y:{ticks:{font:{size:11,family:'Space Mono'},color:tc,callback:v=>`${v>0?'+':''}${v}%`},grid:{color:gc}}}}});
 
   // 遷移確率
-  // 遷移確率チャート
+  // 遷移確率チャート（左カラム内）
   const transData=calcTrans(m,stage);
   if(window.transChartInst)window.transChartInst.destroy();
   window.transChartInst=new Chart(document.getElementById('transChart'),{
@@ -504,13 +502,12 @@ function render(data,ticker){
         borderColor:transData.filter(t=>t.prob>0).map(t=>sh(t.stage)),
         borderWidth:1,hoverOffset:6}]
     },
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'right',labels:{font:{family:'Space Mono',size:11},color:'#b0bec5',padding:10,boxWidth:12}},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'60%',
+      plugins:{legend:{display:true,position:'bottom',labels:{font:{family:'Space Mono',size:11},color:'#b0bec5',padding:8,boxWidth:10}},
         tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,
-          titleFont:{family:'Space Mono',size:11},bodyFont:{family:'Space Mono',size:12},
           callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}
   });
-  document.getElementById('transList').innerHTML=calcTrans(m,stage).map(t=>`
+  document.getElementById('transListLeft').innerHTML=calcTrans(m,stage).map(t=>`
     <div class="trans-row">
       <div class="trans-name" style="color:${sh(t.stage)}">S${t.stage} ${STAGES[t.stage].n}${t.stage===stage?' <span style="font-size:11px;color:var(--mut)">[現在]</span>':''}</div>
       <div class="trans-bar"><div class="trans-fill" style="width:${t.prob}%;background:${sh(t.stage)}80"></div></div>
