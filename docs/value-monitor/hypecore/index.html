@@ -9,7 +9,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
 :root{
   --bg:#0a0d14;--sur:#111520;--sur2:#161c2d;--bdr:#1e2840;
-  --txt:#e2e8f0;--mut:#64748b;
+  --txt:#e2e8f0;--mut:#94a3b8;
   --mono:"Space Mono",monospace;--sans:"Noto Sans JP",sans-serif;
   --grn:#10b981;--red:#f43f5e;--amb:#f59e0b;--blu:#3b82f6;--pur:#a855f7;--cyn:#06b6d4;
 }
@@ -56,7 +56,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 .narrative-body strong{color:var(--txt);font-weight:500}
 
 /* ── メイン2カラム ── */
-.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px;align-items:start}
 .main-col{background:var(--sur);padding:18px 22px}
 .col-title{font-family:var(--mono);font-size:11px;letter-spacing:.15em;margin-bottom:14px;display:flex;align-items:center;gap:8px}
 .col-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
@@ -312,7 +312,7 @@ function buildVsMetrics(d,lc){
   const row=(val,col,label,note)=>`<div class="metric-row"><div class="metric-val" style="color:${col||'var(--txt)'}">${val}</div><div class="metric-info"><div class="metric-label">${label}</div>${note?`<div class="metric-note">${note}</div>`:''}</div></div>`;
   if(lc==='growth')return{
     e:row(fwdPe!=null?fwdPe.toFixed(1)+'x':'—',fwdPe!=null&&fwdPe>60?'#f43f5e':'var(--txt)','ForwardPE（何年分の成長を先食いしているか）','<strong>60x超</strong>は市場が遠い将来まで織り込んでいる過熱サイン')
-     +row(f(ma),ma>=0?'#f97316':'var(--mut)','MA200乖離（成長期待の強度）','成長が認められるほど乖離が拡大する')
+     +row(f(ma),ma>20?'#f97316':ma>=0?'#f59e0b':ma>-10?'var(--txt)':'var(--red)','MA200乖離（成長期待の強度）','成長が認められるほど乖離が拡大する。<strong>マイナス＝MA200割れ</strong>')
      +row(upRate!=null?(upRate*100).toFixed(0)+'%':'—',upRate!=null&&upRate>0.6?'#f97316':'var(--txt)','アナリスト上方修正率（プロの集合知）','<strong>60%超</strong>でプロも成長持続を信じている先行指標'),
     r:row(f(revYoy),(revYoy??0)>30?'#10b981':(revYoy??0)>0?'var(--txt)':'var(--red)','売上成長YoY（成長率の強さ）','絶対値より<strong>加速か減速か</strong>の方向性が重要')
      +row(rule40!=null?'+'+rule40.toFixed(0)+'%':'—',(rule40??0)>40?'#10b981':'var(--txt)','Rule of 40（成長率＋利益率）','<strong>40%超</strong>で成長と収益性のバランスが取れている')
