@@ -39,7 +39,7 @@ STAGE_LABELS = {
 
 # 正解ラベル（PLTR・月次・Koichi感覚値）
 PLTR_GROUND_TRUTH = {
-    "2024-01": 2, "2024-02": 2, "2024-03": 2,
+    "2024-01": 2, "2024-02": 3, "2024-03": 3,
     "2024-04": 2, "2024-05": 2, "2024-06": 3,
     "2024-07": 3, "2024-08": 3, "2024-09": 3,
     "2024-10": 3, "2024-11": 3, "2024-12": 3,
@@ -433,16 +433,20 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
 # ── ステージ判定 ────────────────────────────────────────────
 
-def determine_stage(row: pd.Series, prev_stage: int = 2) -> int:
+def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0) -> int:
     """
     Koichi定義に基づくステージ判定。
+    「期待と実体の関係性」で判断する。
+
+    s3_streak: 直前からS3が何ヶ月連続しているか（S4転落の文脈判定に使用）
 
     判定優先順位:
-      1. S3（陶酔期）: 過熱を最初に検出
-      2. S4（期待剥落期）: S3からの転落・下落継続
-      3. S0（失望/蓄積期）: 深い低迷
-      4. S1（期待覚醒期）: 底打ちからの回復
-      5. S2（期待拡大期）: 上記以外の上昇局面
+      1. S4優先チェック（S3が一定期間続いた後の急落）
+      2. S3（陶酔期）: 期待が実体を大幅超過
+      3. S4（期待剥落期）: 期待の崩壊
+      4. S0（失望/蓄積期）: 深い低迷・無関心
+      5. S1（期待覚醒期）: 期待の萌芽
+      6. S2（期待拡大期）: 期待と実体が噛み合っている
     """
     # テクニカル生値
     ma200_dev   = row.get("ma200_dev",   0) or 0
@@ -471,11 +475,11 @@ def determine_stage(row: pd.Series, prev_stage: int = 2) -> int:
     f = row.get("fundamental_score",  0) or 0
     m = row.get("momentum_score",     0) or 0
 
-    # ── S4優先チェック（S3慣性より先に：急落離脱検出）──────────
-    # S3/S4から-28%超下落かつRSI<47 = 期待剥落確定
-    if prev_stage in (3, 4) and from_peak < -28 and rsi < 47:
+    # ── S4優先チェック（S3が続いた後の急落 = 期待剥落確定）──────
+    # S3が2ヶ月以上続いた後にピーク比-28%超かつRSI<47 → 期待崩壊
+    if prev_stage in (3, 4) and s3_streak >= 2 and from_peak < -28 and rsi < 47:
         return 4
-    # S4慣性（直前S4で下落継続中）
+    # S4慣性（直前S4で下落継続中 → 期待はまだ戻っていない）
     if prev_stage == 4 and from_peak < -8 and ma200_dev < 30:
         return 4
 
@@ -561,6 +565,92 @@ def determine_stage(row: pd.Series, prev_stage: int = 2) -> int:
     return 2
 
 
+
+def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
+    """
+    各ステージの内部フェーズ（入口・中盤・出口）を判定。
+    「今のステージはどこにいるか」「次に何が起きるか」を示す。
+    """
+    ma200  = row.get("ma200_dev",   0) or 0
+    fp     = row.get("from_peak",   0) or 0
+    rsi    = row.get("rsi",        50) or 50
+    mom3m  = row.get("price_mom3m", 0) or 0
+    ma200m = row.get("ma200_mom",   0) or 0
+    rev_yoy   = row.get("rev_yoy")
+    eps_surp  = row.get("eps_surprise")
+
+    real_strong = (rev_yoy is not None and rev_yoy > 30) and (eps_surp is not None and eps_surp > 0)
+
+    if stage == 3:  # 陶酔期
+        if ma200m < -5 and fp < -5:
+            return dict(phase="出口", label="ピークアウト兆候",
+                watch="高値から離れ始め、MA200乖離も縮小中。売りの準備タイミング。高値更新が止まっているか確認。",
+                next="S4（期待剥落期）への移行に備える。ポジション縮小を開始。")
+        if rsi < 40 and ma200 > 30:
+            return dict(phase="出口", label="過熱感に陰り",
+                watch="RSIが低下。モメンタムが弱まっている。出来高・高値更新の有無を確認。",
+                next="出来高を伴う下落が出れば売りシグナル。")
+        if ma200 > 50 and fp > -5:
+            return dict(phase="中盤", label="過熱継続",
+                watch="MA200乖離が高水準で推移。良ニュースへの株価反応が鈍くなっていないか。",
+                next="良決算でも株価が反応しなくなったらS4転換のサイン。")
+        if stage_months <= 3:
+            return dict(phase="入口", label="陶酔期入り",
+                watch="過熱が始まったばかり。まだ上昇余地がある可能性。",
+                next="急いで売らない。MA200乖離がさらに拡大するか監視。")
+        return dict(phase="中盤", label="陶酔継続",
+            watch="期待過熱が続いている。ピークアウトのシグナルを待つ。",
+            next="MA200乖離の縮小・RSI低下・高値更新停止が売りの合図。")
+
+    elif stage == 4:  # 期待剥落期
+        ma200_shrinking = ma200m > -5
+        if real_strong and ma200_shrinking and rsi > 40:
+            return dict(phase="出口", label="底打ち兆候",
+                watch="実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。",
+                next="打診買いの準備を始める。出来高増加を伴う株価反発で本格エントリー。")
+        if real_strong:
+            return dict(phase="中盤B", label="実体維持・期待崩壊中",
+                watch="売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。",
+                next="実体の強さが続けば底は近い。MA200乖離の縮小ペースを監視。")
+        if stage_months <= 2:
+            return dict(phase="入口", label="期待剥落開始",
+                watch="S3から転落直後。Distribution（大口売り抜け）が始まっている可能性。",
+                next="ポジション縮小推奨。実体（次の決算）が強ければ早期底打ちの可能性。")
+        return dict(phase="中盤A", label="実体も崩壊中",
+            watch="売上・EPSの悪化も確認される本格的な下落局面。",
+            next="実体の回復（売上加速・EPSサプライズ）が出るまで売り継続。")
+
+    elif stage == 2:  # 期待拡大期
+        if ma200 > 20 and rsi > 65 and mom3m > 15:
+            return dict(phase="出口", label="過熱の手前",
+                watch="MA200乖離が拡大し過熱圏に近づいている。バリュエーションの拡大速度を確認。",
+                next="S3（陶酔期）移行に備える。利益確定の準備を始める。")
+        if stage_months <= 3:
+            return dict(phase="入口", label="期待拡大開始",
+                watch="期待と実体が噛み合い始めた段階。",
+                next="売上成長の加速・アナリスト上方修正増加が続けばS3へ向かう。")
+        return dict(phase="中盤", label="拡大継続",
+            watch="健全な上昇局面。過熱サインを監視。",
+            next="MA200乖離が20%超かつRSI65超で過熱の兆候。")
+
+    elif stage == 1:  # 期待覚醒期
+        if ma200 > -5 and rsi > 55 and mom3m > 5:
+            return dict(phase="出口", label="S2移行の兆候",
+                watch="底打ちが確認され、モメンタムが回復。",
+                next="S2（期待拡大）への移行が近い。ポジション構築を検討。")
+        return dict(phase="入口", label="覚醒初期",
+            watch="本物の覚醒か、だましの反発かを見極める。出来高が鍵。",
+            next="出来高を伴う連続上昇でS2への移行を確認。")
+
+    else:  # S0 失望/蓄積期
+        if mom3m > 10 and rsi > 40:
+            return dict(phase="出口", label="物語の萌芽",
+                watch="モメンタムが回復し始めた。スマートマネーが動いている可能性。",
+                next="S1（期待覚醒）への移行を確認。出来高急増が確認されればエントリー検討。")
+        return dict(phase="中盤", label="低迷継続",
+            watch="底値形成中。まだ急いで動かない。",
+            next="出来高を伴う株価反発・新しい物語（製品・契約・提携）の出現を待つ。")
+
 def run_poc(ticker: str = "PLTR") -> dict:
     """PoC実行"""
     print(f"\n{'='*55}")
@@ -572,12 +662,28 @@ def run_poc(ticker: str = "PLTR") -> dict:
     # ステージ判定（慣性ルールのため順番に処理）
     stages = []
     prev = 2
+    s3_streak = 0  # S3連続月数
     for _, row in df.iterrows():
-        s = determine_stage(row, prev_stage=prev)
+        s = determine_stage(row, prev_stage=prev, s3_streak=s3_streak)
         stages.append(s)
+        s3_streak = s3_streak + 1 if s == 3 else 0
         prev = s
     df["stage"] = stages
     df["stage_label"] = df["stage"].map(STAGE_LABELS)
+
+    # 内部フェーズ判定
+    substages = []
+    stage_months = 0
+    prev_s = None
+    for _, row in df.iterrows():
+        s = int(row["stage"])
+        if s != prev_s:
+            stage_months = 1
+        else:
+            stage_months += 1
+        substages.append(detect_substage(row, s, stage_months))
+        prev_s = s
+    df["substage"] = substages
 
     df_out = df[df.index >= "2024-01-01"].copy()
 
@@ -641,6 +747,11 @@ def run_poc(ticker: str = "PLTR") -> dict:
             "analyst_downgrade_rate": safe(row.get("analyst_downgrade_rate")),
             "sell_on_good_news":  safe(row.get("sell_on_good_news")),
             "buy_hold_ratio":     safe(row.get("buy_hold_ratio")),
+            # 内部フェーズ
+            "substage_phase":     row["substage"]["phase"] if isinstance(row.get("substage"), dict) else None,
+            "substage_label":     row["substage"]["label"] if isinstance(row.get("substage"), dict) else None,
+            "substage_watch":     row["substage"]["watch"] if isinstance(row.get("substage"), dict) else None,
+            "substage_next":      row["substage"]["next"]  if isinstance(row.get("substage"), dict) else None,
             # スコア
             "expectation_score":  safe(row.get("expectation_score")),
             "fundamental_score":  safe(row.get("fundamental_score")),

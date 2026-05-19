@@ -2,220 +2,413 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HypeCore | On a Journey</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HypeCore — 期待と実体の解剖</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 :root{
   --bg:#0a0d14;--sur:#111520;--sur2:#161c2d;--bdr:#1e2840;
-  --grn:#10b981;--red:#f43f5e;--amb:#f59e0b;
-  --txt:#e2e8f0;--mut:#4a5568;
-  --hc:#f59e0b;
-  --mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;
-  --s0:#64748b;--s1:#06b6d4;--s2:#3b82f6;--s3:#f97316;--s4:#a855f7;
+  --txt:#e2e8f0;--mut:#64748b;
+  --mono:"Space Mono",monospace;--sans:"Noto Sans JP",sans-serif;
+  --grn:#10b981;--red:#f43f5e;--amb:#f59e0b;--blu:#3b82f6;--pur:#a855f7;--cyn:#06b6d4;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:16px;min-height:100vh;padding-bottom:80px}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:999}
-
-header{border-bottom:1px solid var(--bdr);padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.15em;display:flex;align-items:center;gap:12px;text-decoration:none;color:var(--txt)}
-.logo-dot{width:8px;height:8px;background:var(--hc);border-radius:50%;animation:pdot 2s ease-in-out infinite}
-@keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.4)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
-.nav-back{font-family:var(--mono);font-size:11px;color:var(--mut);text-decoration:none;letter-spacing:.1em;transition:color .2s}
-.nav-back:hover{color:var(--txt)}
-
-.shell{max-width:1200px;margin:0 auto;padding:28px 28px 0}
-
-/* HERO */
-.hero{padding:24px 0 28px;border-bottom:1px solid var(--bdr);margin-bottom:24px;display:flex;align-items:flex-end;justify-content:space-between;gap:24px}
-.hero-label{font-family:var(--mono);font-size:10px;letter-spacing:.3em;color:var(--mut);text-transform:uppercase;margin-bottom:10px}
-.hero-title{font-family:var(--mono);font-size:34px;font-weight:700;letter-spacing:.06em}
-.hero-title span{color:var(--hc)}
-.hero-sub{font-size:14px;color:var(--mut);line-height:1.7;margin-top:8px}
-.hero-meta{font-family:var(--mono);font-size:11px;color:var(--mut);text-align:right;line-height:1.8}
-
-/* TICKER */
-.ticker-bar{display:flex;gap:12px;align-items:center;margin-bottom:22px}
-.ticker-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase}
-.ticker-btn{font-family:var(--mono);font-size:24px;font-weight:700;padding:9px 22px;border:2px solid var(--bdr);background:transparent;color:var(--mut);cursor:pointer;transition:all .2s}
-.ticker-btn.active,.ticker-btn:hover{border-color:var(--hc);color:var(--hc);background:rgba(245,158,11,.06)}
-
-/* MAIN CARD */
-.main-card{border:1px solid var(--bdr);border-left:4px solid;background:var(--sur);margin-bottom:16px}
-.main-top{display:grid;grid-template-columns:auto 1fr auto;border-bottom:1px solid var(--bdr)}
-.stage-block{padding:24px 32px;border-right:1px solid var(--bdr);display:flex;flex-direction:column;justify-content:center;min-width:220px}
-.s-code{font-family:var(--mono);font-size:30px;font-weight:700;letter-spacing:.04em;line-height:1}
-.s-desc{font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:8px;line-height:1.5}
-.rec-block{padding:24px 32px;border-right:1px solid var(--bdr);flex:1;display:flex;flex-direction:column;justify-content:center}
-.rec-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
-.rec-title{font-family:var(--mono);font-size:28px;font-weight:700;display:flex;align-items:center;gap:12px}
-.rec-sub{font-family:var(--mono);font-size:12px;color:var(--mut);margin-top:8px;line-height:1.5}
-.mets{padding:24px 32px;display:flex;gap:36px;align-items:center}
-.met{text-align:right}
-.mval{font-family:var(--mono);font-size:24px;font-weight:700}
-.mlbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--mut);text-transform:uppercase;margin-top:4px}
-.reason-bar{padding:14px 32px;background:var(--sur2);display:flex;align-items:flex-start;gap:16px}
-.reason-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;white-space:nowrap;margin-top:3px;min-width:64px}
-.reason-txt{font-family:var(--mono);font-size:13px;color:var(--txt);line-height:1.8}
-.reason-txt strong{font-weight:700}
-.warn{color:var(--amb)}
-
-/* STAGE LEGEND */
-.stage-legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px;padding:16px 22px;background:var(--sur);border:1px solid var(--bdr)}
-.s-pill{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.06em;padding:6px 14px;border:1px solid;white-space:nowrap}
-
-/* TRANSITION (compact) */
-.bottom-row{display:grid;grid-template-columns:260px 1fr;gap:16px;margin-bottom:16px;align-items:start}
-.trans-card{border:1px solid var(--bdr);background:var(--sur);padding:18px 22px}
-.trans-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase;margin-bottom:14px}
-.trans-list{display:flex;flex-direction:column;gap:8px}
-.trans-row{display:flex;align-items:center;gap:10px}
-.trans-name{font-family:var(--mono);font-size:13px;font-weight:700;width:130px;white-space:nowrap}
-.trans-bar{flex:1;background:rgba(255,255,255,.05);border-radius:2px;height:16px;overflow:hidden}
-.trans-fill{height:100%;border-radius:2px}
-.trans-pct{font-family:var(--mono);font-size:14px;font-weight:700;width:36px;text-align:right}
-
-/* CHARTS STACK */
-.charts-stack{display:flex;flex-direction:column;gap:0;border:1px solid var(--bdr);background:var(--bdr)}
-.chart-row{background:var(--sur);padding:0}
-.chart-header{padding:16px 24px 0;display:flex;align-items:center;justify-content:space-between}
-.chart-title{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase}
-.chart-note{font-family:var(--mono);font-size:10px;color:var(--mut)}
-.chart-wrap{position:relative;padding:8px 24px 16px}
-
-/* TABLE */
-.table-card{border:1px solid var(--bdr);background:var(--sur);margin-top:16px}
-.table-hdr{padding:14px 22px;border-bottom:1px solid var(--bdr);font-family:var(--mono);font-size:10px;letter-spacing:.2em;color:var(--mut);text-transform:uppercase}
-.tbl{width:100%;border-collapse:collapse}
-.tbl th{text-align:left;padding:11px 16px;font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;border-bottom:1px solid var(--bdr);background:var(--sur2);white-space:nowrap}
-.tbl td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.03);font-size:14px;vertical-align:middle}
-.tbl tr:hover td{background:var(--sur2)}
-.tbl tr.now-row td{background:rgba(245,158,11,.04)}
-.s-badge{display:inline-block;padding:4px 10px;font-family:var(--mono);font-size:11px;font-weight:700;border:1px solid;letter-spacing:.06em;white-space:nowrap}
-.pos{color:var(--grn)}.neg{color:var(--red)}
-.mono{font-family:var(--mono)}
-.now-tag{font-family:var(--mono);font-size:10px;color:var(--hc);letter-spacing:.08em;margin-left:8px}
+body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;line-height:1.6;min-height:100vh}
+header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.9);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--bdr);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between}
+.logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--amb)}
+.logo-name{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut)}
+.nav-back{font-family:var(--mono);font-size:10px;color:var(--mut);text-decoration:none;letter-spacing:.1em}
+.shell{max-width:1140px;margin:0 auto;padding:24px 24px 60px}
+.hero{padding:32px 0 24px;border-bottom:1px solid var(--bdr);margin-bottom:28px}
+.hero-eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.25em;color:var(--mut);margin-bottom:8px}
+.hero-title{font-family:var(--mono);font-size:36px;font-weight:700;letter-spacing:-.02em}
+.hero-title span{color:var(--amb)}
+.hero-sub{font-size:13px;color:var(--mut);margin-top:8px;max-width:560px;line-height:1.7}
+.ticker-bar{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.ticker-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut)}
+.ticker-btn{font-family:var(--mono);font-size:13px;font-weight:700;padding:6px 18px;
+  border:1px solid var(--bdr);background:transparent;color:var(--mut);cursor:pointer;transition:all .2s}
+.ticker-btn:hover,.ticker-btn.active{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.08)}
+/* ステップラベル */
+.step-hdr{margin:24px 0 8px}
+.step-hdr-title{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut);margin-bottom:4px}
+.step-hdr-desc{font-size:13px;color:var(--mut)}
+/* ライフサイクル+ステージ */
+.ls-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:1px}
+.ls-cell{background:var(--sur);padding:22px 26px}
+.cell-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:8px}
+.cell-value{font-family:var(--mono);font-size:28px;font-weight:700;margin-bottom:8px}
+.cell-desc{font-size:13px;color:var(--mut);line-height:1.6}
+/* 期待の正体 */
+.narrative{background:var(--sur);border:1px solid var(--bdr);border-left-width:4px;padding:22px 26px;margin-bottom:1px}
+.panel-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:10px}
+.narrative-headline{font-size:20px;font-weight:700;margin-bottom:14px;line-height:1.4}
+.narrative-body{font-size:13px;color:var(--mut);line-height:1.9}
+.narrative-body strong{color:var(--txt);font-weight:500}
+/* 期待vs実体 */
+.vs-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:1px}
+.vs-col{background:var(--sur);padding:22px 26px}
+.vs-col-eyebrow{display:flex;align-items:center;gap:8px;margin-bottom:16px}
+.vs-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.vs-col-label{font-family:var(--mono);font-size:9px;letter-spacing:.2em}
+.vs-col-desc{font-size:10px;color:var(--mut)}
+.vs-metric-row{margin-bottom:16px}
+.vs-metric-row:last-child{margin-bottom:0}
+.vs-metric{font-family:var(--mono);font-size:26px;font-weight:700;line-height:1}
+.vs-metric-label{font-size:12px;color:var(--mut);margin-top:4px}
+.vs-metric-note{font-size:11px;color:var(--mut);margin-top:5px;padding-top:5px;border-top:1px solid var(--bdr);line-height:1.5}
+.vs-metric-note strong{color:var(--txt);font-weight:500}
+/* 期待÷実体 */
+.ratio-panel{background:var(--sur);border:1px solid var(--bdr);padding:22px 26px;margin-bottom:1px;display:flex;gap:36px;align-items:flex-start}
+.ratio-left{min-width:160px}
+.ratio-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:10px}
+.ratio-num{font-family:var(--mono);font-size:38px;font-weight:700;line-height:1;margin-bottom:12px}
+.ratio-bar-wrap{height:6px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.ratio-bar-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.ratio-right{flex:1}
+.interp-list{display:flex;flex-direction:column;gap:10px}
+.interp-row{display:flex;gap:10px;font-size:13px;color:var(--mut);line-height:1.6;align-items:flex-start}
+.interp-dot{width:6px;height:6px;border-radius:50%;margin-top:6px;flex-shrink:0}
+.interp-row strong{color:var(--txt);font-weight:500}
+/* 推奨 */
+.rec-bar{background:var(--sur);border:1px solid var(--bdr);border-left-width:4px;padding:20px 26px;margin-bottom:1px;display:flex;align-items:center;gap:24px}
+.rec-icon-wrap{font-size:32px;width:44px;text-align:center;flex-shrink:0}
+.rec-body{flex:1}
+.rec-title{font-family:var(--mono);font-size:20px;font-weight:700;margin-bottom:6px}
+.rec-sub{font-size:13px;color:var(--mut);line-height:1.6}
+.rec-price-wrap{text-align:right;flex-shrink:0}
+.rec-price-lbl{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:4px}
+.rec-price-val{font-family:var(--mono);font-size:26px;font-weight:700}
+/* 内部フェーズパネル */
+.sub-panel{background:var(--sur);border:1px solid var(--bdr);border-left-width:4px;padding:22px 26px;margin-bottom:24px}
+.sub-phase-row{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.sub-phase-badge{font-family:var(--mono);font-size:11px;font-weight:700;padding:4px 14px;border:1px solid;letter-spacing:.1em}
+.sub-phase-label{font-family:var(--mono);font-size:20px;font-weight:700}
+.sub-section{margin-bottom:14px}
+.sub-section-title{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:6px}
+.sub-section-body{font-size:13px;line-height:1.8;color:var(--mut)}
+.sub-section-body strong{color:var(--txt);font-weight:500}
+.sub-next{background:rgba(255,255,255,.03);border:1px solid var(--bdr);padding:14px 18px}
+.sub-next-label{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:6px}
+.sub-next-body{font-size:13px;color:var(--txt);line-height:1.7}
+/* チャート */
+.charts-wrap{border:1px solid var(--bdr);margin-bottom:24px}
+.chart-row{padding:16px 22px}
+.chart-row+.chart-row{border-top:1px solid var(--bdr)}
+.chart-header{display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+.chart-title{font-family:var(--mono);font-size:13px;font-weight:700;letter-spacing:.05em}
+.chart-note{font-size:11px;color:var(--mut)}
+.chart-wrap{position:relative}
+/* 遷移確率 */
+.trans-card{background:var(--sur);border:1px solid var(--bdr);padding:20px 26px;margin-bottom:24px}
+.trans-eyebrow{font-family:var(--mono);font-size:9px;letter-spacing:.2em;color:var(--mut);margin-bottom:16px}
+.trans-list{display:flex;flex-direction:column;gap:9px}
+.trans-row{display:grid;grid-template-columns:170px 1fr 46px;align-items:center;gap:12px}
+.trans-name{font-family:var(--mono);font-size:12px}
+.trans-bar{height:4px;background:var(--bdr);border-radius:2px;overflow:hidden}
+.trans-fill{height:100%;border-radius:2px;transition:width .6s ease}
+.trans-pct{font-family:var(--mono);font-size:12px;text-align:right}
+/* テーブル */
+.tbl-card{border:1px solid var(--bdr)}
+.tbl-hdr{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);padding:14px 22px;border-bottom:1px solid var(--bdr)}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--mut);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bdr);font-weight:400}
+.tbl td{padding:10px 14px;border-bottom:1px solid rgba(30,40,64,.4);vertical-align:top}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr.now-row{background:rgba(245,158,11,.04)}
+.tbl tr.now-row td:first-child{border-left:2px solid var(--amb)}
+.mono{font-family:var(--mono)}.pos{color:var(--grn)}.neg{color:var(--red)}
+.s-badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid;display:inline-block;white-space:nowrap}
+.now-tag{font-family:var(--mono);font-size:9px;color:var(--amb);margin-left:6px}
 </style>
 </head>
 <body>
 <header>
-  <a class="logo" href="/On-a-journey/"><div class="logo-dot"></div>ON A JOURNEY</a>
+  <a class="logo" href="/On-a-journey/"><div class="logo-dot"></div><span class="logo-name">ON A JOURNEY</span></a>
   <a class="nav-back" href="/On-a-journey/">← TOP</a>
 </header>
-
 <div class="shell">
   <div class="hero">
-    <div>
-      <div class="hero-label">Hype Cycle Stage Analyzer</div>
-      <div class="hero-title">HYPE<span>CORE</span></div>
-      <div class="hero-sub">個別銘柄のハイプサイクル上の現在位置を可視化。期待と実体の乖離からステージを自動判定。</div>
-    </div>
-    <div class="hero-meta"><div>PoC v0.3</div><div id="tsEl">—</div></div>
+    <div class="hero-eyebrow">Hype Cycle Stage Analyzer</div>
+    <div class="hero-title">HYPE<span>CORE</span></div>
+    <div class="hero-sub">企業のライフサイクルに応じた「期待と実体の関係性」を解析。ハイプサイクル上の現在位置と、今のステージのどこにいるか（入口・中盤・出口）を判定する。</div>
   </div>
-
   <div class="ticker-bar">
-    <span class="ticker-lbl">Ticker</span>
+    <span class="ticker-lbl">TICKER</span>
     <button class="ticker-btn active" onclick="loadTicker('PLTR',this)">PLTR</button>
   </div>
 
-  <!-- MAIN CARD -->
-  <div class="main-card" id="mainCard">
-    <div class="main-top">
-      <div class="stage-block">
-        <div class="s-code" id="stageCode">—</div>
-        <div class="s-desc" id="stageDesc">—</div>
-      </div>
-      <div class="rec-block" id="recBlock">
-        <div class="rec-lbl">HypeCore 推奨</div>
-        <div class="rec-title" id="recTitle">—</div>
-        <div class="rec-sub" id="recSub">—</div>
-      </div>
-      <div class="mets" id="mets"></div>
+  <!-- STEP 1 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 1 — 企業の現在地を把握する</div>
+    <div class="step-hdr-desc">ライフサイクルによって「期待の正体」が変わる。まずどのフェーズにいるかを確認する。</div>
+  </div>
+  <div class="ls-grid">
+    <div class="ls-cell">
+      <div class="cell-eyebrow">企業ライフサイクル</div>
+      <div class="cell-value" id="lcValue">—</div>
+      <div class="cell-desc" id="lcDesc">—</div>
     </div>
-    <div class="reason-bar">
-      <span class="reason-lbl">判定理由</span>
-      <div class="reason-txt" id="reasonTxt">—</div>
+    <div class="ls-cell">
+      <div class="cell-eyebrow">ハイプサイクル ステージ</div>
+      <div class="cell-value" id="stageValue">—</div>
+      <div class="cell-desc" id="stageDesc">—</div>
     </div>
   </div>
 
-  <!-- STAGE LEGEND -->
-  <div class="stage-legend" id="stageLegend"></div>
+  <!-- STEP 2 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 2 — このフェーズで「何が期待を動かしているか」を理解する</div>
+    <div class="step-hdr-desc">期待の正体を知ることで、どの指標を重視すべきかが変わる。</div>
+  </div>
+  <div class="narrative" id="narrativePanel">
+    <div class="panel-eyebrow">このフェーズの期待の正体</div>
+    <div class="narrative-headline" id="narrativeHeadline">—</div>
+    <div class="narrative-body" id="narrativeBody">—</div>
+  </div>
 
-  <!-- TRANSITION (compact) + placeholder -->
-  <div class="bottom-row">
-    <div class="trans-card">
-      <div class="trans-lbl">1ヶ月後の遷移確率</div>
-      <div class="trans-list" id="transList"></div>
+  <!-- STEP 3 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 3 — 期待と実体の数値を対比する</div>
+    <div class="step-hdr-desc">左（橙）＝市場が織り込んでいるもの　右（緑）＝実際に起きていること。乖離の大きさがステージを決める。</div>
+  </div>
+  <div class="vs-grid">
+    <div class="vs-col">
+      <div class="vs-col-eyebrow">
+        <div class="vs-dot" style="background:#f97316"></div>
+        <span class="vs-col-label" style="color:#f97316">期待指標</span>
+        <span class="vs-col-desc">市場が織り込んでいるもの</span>
+      </div>
+      <div id="expectMetrics">—</div>
     </div>
-    <div style="background:var(--sur);border:1px solid var(--bdr);padding:18px 22px;display:flex;align-items:center;justify-content:center">
-      <span style="font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.1em">カタリスト表示エリア（Phase 2）</span>
+    <div class="vs-col">
+      <div class="vs-col-eyebrow">
+        <div class="vs-dot" style="background:#10b981"></div>
+        <span class="vs-col-label" style="color:#10b981">実体指標</span>
+        <span class="vs-col-desc">実際に起きていること</span>
+      </div>
+      <div id="realMetrics">—</div>
     </div>
   </div>
 
-  <!-- 3チャート縦積み（同一時間軸） -->
-  <div class="charts-stack">
-    <!-- 株価 -->
+  <!-- STEP 4 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 4 — 乖離の現状を判定する</div>
+    <div class="step-hdr-desc">期待が実体をどれだけ超えているか（または下回っているか）を総合判断する。</div>
+  </div>
+  <div class="ratio-panel">
+    <div class="ratio-left">
+      <div class="ratio-eyebrow">期待 ÷ 実体</div>
+      <div class="ratio-num" id="ratioNum">—</div>
+      <div class="ratio-bar-wrap"><div class="ratio-bar-fill" id="ratioBar" style="width:0%"></div></div>
+    </div>
+    <div class="ratio-right">
+      <div class="ratio-eyebrow">現状の解釈</div>
+      <div class="interp-list" id="interpList">—</div>
+    </div>
+  </div>
+
+  <!-- STEP 5 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 5 — 今のステージのどこにいるか</div>
+    <div class="step-hdr-desc">入口・中盤・出口で「次に何が起きるか」が変わる。今注目すべきことと、次のシグナルを示す。</div>
+  </div>
+  <div class="sub-panel" id="subPanel">
+    <div class="sub-phase-row">
+      <div class="sub-phase-badge" id="subBadge">—</div>
+      <div class="sub-phase-label" id="subLabel">—</div>
+    </div>
+    <div class="sub-section">
+      <div class="sub-section-title">👀 今注目すること</div>
+      <div class="sub-section-body" id="subWatch">—</div>
+    </div>
+    <div class="sub-next">
+      <div class="sub-next-label">→ 次に起きること / 次のシグナル</div>
+      <div class="sub-next-body" id="subNext">—</div>
+    </div>
+  </div>
+
+  <!-- STEP 6 -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 6 — HypeCore の投資判断</div>
+    <div class="step-hdr-desc">上記の分析を統合した推奨。あくまでHypeCoreの判断であり、最終的な意思決定はKoichiが行う。</div>
+  </div>
+  <div class="rec-bar" id="recBar">
+    <div class="rec-icon-wrap" id="recIcon">—</div>
+    <div class="rec-body">
+      <div class="rec-title" id="recTitle">—</div>
+      <div class="rec-sub" id="recSub">—</div>
+    </div>
+    <div class="rec-price-wrap">
+      <div class="rec-price-lbl">現在株価</div>
+      <div class="rec-price-val" id="recPrice">—</div>
+    </div>
+  </div>
+
+  <!-- STEP 7 チャート -->
+  <div class="step-hdr">
+    <div class="step-hdr-title">STEP 7 — 時系列で変化を読む</div>
+    <div class="step-hdr-desc">株価（上）・期待の強度（中）・実体の強度（下）を同一時間軸で並べる。ステージ転換のタイミングを視覚的に確認する。</div>
+  </div>
+  <div class="charts-wrap">
     <div class="chart-row">
       <div class="chart-header">
-        <span class="chart-title">株価推移 × ステージ</span>
-        <span class="chart-note" id="nowLabel">▼ 現在位置</span>
+        <span class="chart-title">株価推移 × ステージ判定</span>
+        <span class="chart-note">背景色 = ステージ / ▼NOW = 現在位置</span>
       </div>
       <div class="chart-wrap" style="height:260px"><canvas id="priceChart"></canvas></div>
     </div>
-    <!-- 期待・モメンタム -->
-    <div class="chart-row" style="border-top:1px solid var(--bdr)">
+    <div class="chart-row">
       <div class="chart-header">
-        <span class="chart-title">期待・モメンタム（MA200乖離 / RSI）</span>
-        <span class="chart-note">期待過熱↑ / 期待剥落↓</span>
+        <span class="chart-title">期待の強度</span>
+        <span class="chart-note">MA200乖離（実態から期待で引き離した距離）/ RSI（モメンタム）</span>
       </div>
-      <div class="chart-wrap" style="height:160px"><canvas id="expectChart"></canvas></div>
+      <div class="chart-wrap" style="height:150px"><canvas id="expectChart"></canvas></div>
     </div>
-    <!-- 実体 -->
-    <div class="chart-row" style="border-top:1px solid var(--bdr)">
+    <div class="chart-row">
       <div class="chart-header">
-        <span class="chart-title">実体（売上成長 YoY）</span>
-        <span class="chart-note">四半期ベース</span>
+        <span class="chart-title">実体の強度</span>
+        <span class="chart-note">売上成長YoY — 成長加速か減速かに注目</span>
       </div>
-      <div class="chart-wrap" style="height:140px"><canvas id="fundChart"></canvas></div>
+      <div class="chart-wrap" style="height:130px"><canvas id="fundChart"></canvas></div>
     </div>
   </div>
 
-  <!-- TABLE -->
-  <div class="table-card">
-    <div class="table-hdr">月次詳細データ（新しい順）</div>
+  <!-- 遷移確率 -->
+  <div class="trans-card">
+    <div class="trans-eyebrow">1ヶ月後のステージ遷移確率（過去パターンより算出）</div>
+    <div class="trans-list" id="transList"></div>
+  </div>
+
+  <!-- テーブル -->
+  <div class="tbl-card">
+    <div class="tbl-hdr">月次詳細データ（新しい順）</div>
     <table class="tbl">
       <thead><tr>
-        <th>月</th><th>ステージ</th><th>推奨</th>
-        <th>MA200乖離</th><th>高値比</th><th>RSI</th><th>株価</th><th>判断根拠</th>
+        <th>月</th><th>ステージ</th><th>フェーズ</th><th>HypeCore推奨</th>
+        <th>MA200乖離</th><th>高値比</th><th>RSI</th><th>株価</th>
       </tr></thead>
       <tbody id="tableBody"></tbody>
     </table>
   </div>
 </div>
-
 <script>
 const STAGES={
-  0:{n:'失望/蓄積期', d:'Trough of Disillusionment｜期待剥落完了・底値形成中', h:'#64748b'},
-  1:{n:'期待覚醒期',  d:'Trigger / Early Recovery｜改善兆候＋価格反応開始',    h:'#06b6d4'},
-  2:{n:'期待拡大期',  d:'Inflated Expectations（上昇中）｜マルチプル拡大局面', h:'#3b82f6'},
-  3:{n:'陶酔期',      d:'Peak of Inflated Expectations｜期待が実体を超過',     h:'#f97316'},
-  4:{n:'期待剥落期',  d:'Disillusionment / Distribution｜乖離縮小開始',        h:'#a855f7'},
+  0:{n:'失望/蓄積期',h:'#64748b',desc:'期待が完全に剥落。底値形成中。スマートマネーが静かに仕込む局面。'},
+  1:{n:'期待覚醒期', h:'#06b6d4',desc:'改善の兆し＋価格反応開始。物語が再び語られ始める。'},
+  2:{n:'期待拡大期', h:'#3b82f6',desc:'期待と実体が噛み合っている健全な上昇局面。マルチプル拡大中。'},
+  3:{n:'陶酔期',     h:'#f97316',desc:'期待が実体を大幅に超過。良ニュースは織り込み済み。'},
+  4:{n:'期待剥落期', h:'#a855f7',desc:'期待の崩壊開始。良決算でも株価が下がる。Distribution進行中。'},
 };
 const sh=s=>STAGES[s]?.h||'#fff';
 
+const LIFECYCLE={
+  dawn:{label:'黎明期',color:'#f59e0b',
+    headline:'期待の正体は「物語の信憑性」',
+    body:`この時期の株価は実績ではなく「この会社は将来こうなる」という<strong>物語</strong>で動きます。<br><br>
+      <strong>出来高急増</strong>：誰かが大きく動いた＝物語に賭けた人がいる証拠。出来高を伴わない株価上昇は薄商いの誇張の可能性が高い。<br><br>
+      <strong>MA200乖離</strong>：物語への期待が株価を実態から引き離した距離。<br><br>
+      <strong>高値比（from_peak）</strong>：物語が今も信じられているかどうか（高値圏にいるか）。`},
+  growth:{label:'成長期',color:'#10b981',
+    headline:'期待の正体は「成長率の持続性への賭け」',
+    body:`市場が問いかけているのは「<strong>この成長率はいつまで続くか</strong>」です。<br><br>
+      <strong>売上加速/減速</strong>：30%→35%と30%→25%は絶対値が似ていても市場の受け取り方が真逆。前期比の方向性が最重要。<br><br>
+      <strong>アナリスト修正</strong>：成長期待の「プロによる集合知」。上方修正が増える＝プロも成長持続を信じている先行指標。<br><br>
+      <strong>ForwardPE変化</strong>：市場が何年分の成長を先食いしているか。EPS成長とForwardPEが同時に上昇＝期待が実績を超えて先走っている過熱の核心。<br><br>
+      <strong>EPSサプライズ×株価反応</strong>：予想を上回ったのに株価が下がる＝「もう織り込み済み」。期待剥落の最強シグナル。`},
+  expand:{label:'拡大期',color:'#3b82f6',
+    headline:'期待の正体は「需給と市場地位の強化」',
+    body:`売上成長が証明され、機関投資家が本格参入する局面。期待の源泉は<strong>需給</strong>と<strong>市場での地位確立</strong>です。<br><br>
+      <strong>指数採用・機関保有率</strong>：パッシブ資金の流入が株価を押し上げる。需給主導の上昇。<br><br>
+      <strong>売上規模と成長の安定性</strong>：「確実に成長する」という確信が広がり、プレミアムが正当化される段階。`},
+  mature:{label:'成熟期',color:'#94a3b8',
+    headline:'期待の正体は「安定したキャッシュの確実性」',
+    body:`市場が「どこまで大きくなるか」ではなく「<strong>このキャッシュはどれだけ確実か</strong>」を問うている局面。<br><br>
+      <strong>FCF Yield</strong>：今の株価に対して実際に手元に残るお金の割合。成熟期では主要な価値の錨。高いほど割安。<br><br>
+      <strong>PEG</strong>：成長率に対してどれだけ高い期待を払っているか。<strong>2.0超</strong>は「低い成長に高すぎる期待」のサイン。<br><br>
+      <strong>自社株買い・配当</strong>：キャッシュが余るから株主に返せる。これが止まると期待は一気に崩れる。`},
+};
+
+function detectLifecycle(data){
+  const lat=data.monthly[data.monthly.length-1];
+  const g=(lat.revenue_growth!=null)?lat.revenue_growth*100:(lat.rev_yoy??0);
+  if(g>40)return'growth'; if(g>15)return'expand'; if(g>0)return'mature'; return'dawn';
+}
+
+function buildVsMetrics(d,lc){
+  const ma=d.ma200_dev??0,rsi=d.rsi??50,fp=d.from_peak??0;
+  const fwdPe=d.forward_pe,peg=d.peg_ratio,psr=d.psr;
+  const revYoy=d.rev_yoy,rule40=d.rule40,fcfYield=d.fcf_yield;
+  const epsSurp=d.eps_surprise,upRate=d.analyst_upgrade_rate,volSurge=d.vol_surge;
+  const pivRatio=d.price_iv_ratio;
+  const f=(v,dec=1,u='%')=>v!=null?`${v>=0&&u==='%'?'+':''}${v.toFixed(dec)}${u}`:'—';
+  if(lc==='dawn')return{
+    e:`<div class="vs-metric-row"><div class="vs-metric" style="color:${ma>=0?'#f97316':'var(--mut)'}">${f(ma)}</div><div class="vs-metric-label">MA200乖離（物語が株価を引き離した距離）</div><div class="vs-metric-note">プラスが大きいほど期待が実態を超えている。<strong>過熱の目安は+40%超</strong></div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${fp>-5?'#f97316':'var(--mut)'}">${f(fp)}</div><div class="vs-metric-label">高値比（物語が信じられているか）</div><div class="vs-metric-note">高値圏（0%近辺）= 物語に継続して資金が入っている</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${volSurge!=null&&volSurge>1.5?'#f97316':'var(--txt)'}">${volSurge!=null?volSurge.toFixed(2)+'x':'—'}</div><div class="vs-metric-label">出来高急増（物語に賭けた人がいるか）</div><div class="vs-metric-note"><strong>1.5x超</strong>で大口参入の可能性</div></div>`,
+    r:`<div class="vs-metric-row"><div class="vs-metric" style="color:${(revYoy??0)>0?'#10b981':'var(--red)'}">${f(revYoy)}</div><div class="vs-metric-label">売上成長YoY（実体の芽生え）</div><div class="vs-metric-note">黎明期では<strong>存在自体</strong>が重要</div></div>
+    <div class="vs-metric-row"><div class="vs-metric">${rsi.toFixed(0)}</div><div class="vs-metric-label">RSI（モメンタムの強さ）</div><div class="vs-metric-note"><strong>70超</strong>=過熱 / <strong>30未満</strong>=売られすぎ</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${pivRatio!=null&&pivRatio>1.5?'#f97316':'var(--txt)'}">${pivRatio!=null?pivRatio.toFixed(2)+'x':'—'}</div><div class="vs-metric-label">株価÷理論価格（期待の先食い度）</div><div class="vs-metric-note"><strong>1.0x</strong>が理論適正</div></div>`};
+  if(lc==='growth')return{
+    e:`<div class="vs-metric-row"><div class="vs-metric" style="color:${fwdPe!=null&&fwdPe>60?'#f43f5e':fwdPe!=null?'var(--txt)':'var(--mut)'}">${fwdPe!=null?fwdPe.toFixed(1)+'x':'—'}</div><div class="vs-metric-label">ForwardPE（何年分の成長を先食いしているか）</div><div class="vs-metric-note"><strong>60x超</strong>は市場が遠い将来まで織り込んでいる過熱サイン</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${ma>=0?'#f97316':'var(--mut)'}">${f(ma)}</div><div class="vs-metric-label">MA200乖離（成長期待の強度）</div><div class="vs-metric-note">成長が認められるほど乖離が拡大する</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${upRate!=null&&upRate>0.6?'#f97316':'var(--txt)'}">${upRate!=null?(upRate*100).toFixed(0)+'%':'—'}</div><div class="vs-metric-label">アナリスト上方修正率（プロの集合知）</div><div class="vs-metric-note"><strong>60%超</strong>でプロも成長持続を信じている先行指標</div></div>`,
+    r:`<div class="vs-metric-row"><div class="vs-metric" style="color:${(revYoy??0)>30?'#10b981':(revYoy??0)>0?'var(--txt)':'var(--red)'}">${f(revYoy)}</div><div class="vs-metric-label">売上成長YoY（成長率の強さ）</div><div class="vs-metric-note">絶対値より<strong>加速か減速か</strong>の方向性が重要</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${(rule40??0)>40?'#10b981':'var(--txt)'}">${rule40!=null?'+'+rule40.toFixed(0)+'%':'—'}</div><div class="vs-metric-label">Rule of 40（成長率＋利益率）</div><div class="vs-metric-note"><strong>40%超</strong>で成長と収益性のバランスが取れている</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${epsSurp!=null&&epsSurp>0?'#10b981':'var(--mut)'}">${epsSurp!=null?(epsSurp>0?'+':'')+epsSurp.toFixed(1)+'%':'—'}</div><div class="vs-metric-label">EPSサプライズ（決算の実体）</div><div class="vs-metric-note">プラスなのに株価が下がる＝<strong>期待剥落の最強シグナル</strong></div></div>`};
+  if(lc==='expand')return{
+    e:`<div class="vs-metric-row"><div class="vs-metric" style="color:${psr!=null&&psr>20?'#f97316':'var(--txt)'}">${psr!=null?psr.toFixed(1)+'x':'—'}</div><div class="vs-metric-label">PSR（売上に対する市場の評価）</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${ma>=0?'#f97316':'var(--mut)'}">${f(ma)}</div><div class="vs-metric-label">MA200乖離</div></div>
+    <div class="vs-metric-row"><div class="vs-metric">${rsi.toFixed(0)}</div><div class="vs-metric-label">RSI（需給の強さ）</div><div class="vs-metric-note"><strong>70超</strong>が続く=機関の継続的な買いが入っている</div></div>`,
+    r:`<div class="vs-metric-row"><div class="vs-metric" style="color:${(revYoy??0)>15?'#10b981':'var(--txt)'}">${f(revYoy)}</div><div class="vs-metric-label">売上成長YoY</div><div class="vs-metric-note">拡大期の典型的レンジは<strong>15-40%</strong></div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${(rule40??0)>40?'#10b981':'var(--txt)'}">${rule40!=null?'+'+rule40.toFixed(0)+'%':'—'}</div><div class="vs-metric-label">Rule of 40</div></div>
+    <div class="vs-metric-row"><div class="vs-metric">${pivRatio!=null?pivRatio.toFixed(2)+'x':'—'}</div><div class="vs-metric-label">株価÷理論価格（期待の先食い度）</div></div>`};
+  return{
+    e:`<div class="vs-metric-row"><div class="vs-metric" style="color:${peg!=null&&peg>2?'#f43f5e':'var(--txt)'}">${peg!=null?peg.toFixed(2)+'x':'—'}</div><div class="vs-metric-label">PEG（成長率に対する期待の高さ）</div><div class="vs-metric-note"><strong>1.0x</strong>が理論適正。<strong>2.0x超</strong>は低成長に高すぎる期待</div></div>
+    <div class="vs-metric-row"><div class="vs-metric">${fwdPe!=null?fwdPe.toFixed(1)+'x':'—'}</div><div class="vs-metric-label">ForwardPE</div></div>`,
+    r:`<div class="vs-metric-row"><div class="vs-metric" style="color:${(fcfYield??0)>5?'#10b981':'var(--txt)'}">${fcfYield!=null?fcfYield.toFixed(1)+'%':'—'}</div><div class="vs-metric-label">FCF Yield（成熟期の主要な価値の錨）</div><div class="vs-metric-note">高いほど実体に対して割安。<strong>5%超</strong>で割安水準</div></div>
+    <div class="vs-metric-row"><div class="vs-metric" style="color:${(revYoy??0)>0?'var(--txt)':'var(--red)'}">${f(revYoy)}</div><div class="vs-metric-label">売上成長YoY</div><div class="vs-metric-note">成熟期は<strong>0-15%</strong>の安定成長が健全</div></div>`};
+}
+
+function buildRatio(d,lc,stage){
+  const ma=d.ma200_dev??0,fp=d.from_peak??0,rsi=d.rsi??50;
+  const revYoy=d.rev_yoy,epsSurp=d.eps_surprise,pivRatio=d.price_iv_ratio;
+  let num,color,pct;
+  if(pivRatio!=null){num=pivRatio.toFixed(2)+'x';pct=Math.min(100,pivRatio*50);color=pivRatio>1.5?'#f43f5e':pivRatio>1.0?'#f97316':pivRatio<0.8?'#10b981':'#3b82f6';}
+  else{num=(ma>=0?'+':'')+ma.toFixed(1)+'%';pct=Math.min(100,Math.max(0,(ma+50)/1.5));color=ma>50?'#f43f5e':ma>20?'#f97316':ma>0?'#f59e0b':ma>-20?'#3b82f6':'#10b981';}
+  const items=[];
+  if(stage===3){
+    items.push({c:'#f97316',t:`<strong>期待が実体を大幅超過</strong>。MA200+${ma.toFixed(0)}%は市場が将来の成長を先食いしている水準。`});
+    items.push({c:rsi<50?'#f59e0b':'#f97316',t:rsi<50?`RSI${rsi.toFixed(0)}と低下傾向。過熱感に陰りが見え始めている。`:`RSI${rsi.toFixed(0)}。モメンタムは維持。いつピークアウトしてもおかしくない水準。`});
+  }else if(stage===4){
+    items.push({c:'#a855f7',t:`<strong>期待の崩壊が進行中</strong>。高値から${Math.abs(fp).toFixed(0)}%下落。`});
+    items.push({c:ma<0?'#f43f5e':'#f59e0b',t:ma<0?`MA200割れ(${ma.toFixed(1)}%)。本格的な下落局面。`:`MA200はまだ+${ma.toFixed(0)}%上。実体はある程度維持されているが、期待が先に崩れている。`});
+    if(epsSurp!=null&&epsSurp>5)items.push({c:'#f43f5e',t:`<strong>良決算でも株価が下落</strong>。期待剥落の最強シグナルが出ている。`});
+  }else if(stage===2){
+    items.push({c:'#3b82f6',t:`<strong>期待と実体が噛み合っている</strong>健全な拡大局面。`});
+    if(revYoy!=null&&revYoy>20)items.push({c:'#10b981',t:`売上成長+${revYoy.toFixed(0)}%が期待を支えている。実体が期待に追いついている。`});
+  }else if(stage===1){items.push({c:'#06b6d4',t:`<strong>期待が目覚め始めている</strong>。底打ちからモメンタムが回復中。`});}
+  else{items.push({c:'#64748b',t:`<strong>期待が完全に剥落</strong>した低迷期。スマートマネーが静かに仕込む段階。`});}
+  return{num,color,pct,items};
+}
+
 function getRec(d,prev){
   const ma=d.ma200_dev??0,fp=d.from_peak??0,s=d.stage,ps=prev?.stage??s;
-  if(s===0&&ps===4) return{icon:'▲',title:'強い買い推奨',sub:'底値形成を確認。長期エントリーの好機。',c:'#10b981'};
-  if(s===1)         return{icon:'↑',title:'買い推奨',    sub:'期待覚醒フェーズ。モメンタム回復を確認後エントリー。',c:'#06b6d4'};
-  if(s===2)         return{icon:'→',title:'保有継続',    sub:'期待拡大フェーズ。過熱サインを監視しながら保有。',c:'#94a3b8'};
-  if(s===3&&ma<50)  return{icon:'⚠',title:'保有・要注意',sub:`陶酔期。MA200乖離${ma.toFixed(0)}%。ピークアウトに注意。`,c:'#f0c040'};
-  if(s===3&&ma>=50) return{icon:'↓',title:'売り準備',    sub:`MA200を${ma.toFixed(0)}%超過。高値更新停止確認次第売り。`,c:'#f97316'};
-  if(s===4&&ps===3) return{icon:'▼',title:'売り推奨',    sub:'陶酔期→期待剥落の遷移を検出。ポジション縮小推奨。',c:'#f43f5e'};
-  if(s===4)         return{icon:'▼',title:'売り推奨',    sub:`期待剥落継続。高値から${Math.abs(fp).toFixed(0)}%下落。売りを継続。`,c:'#f43f5e'};
-  if(s===0)         return{icon:'−',title:'様子見',      sub:'失望期継続中。底値確認まで待機。',c:'#64748b'};
-  return{icon:'→',title:'保有継続',sub:'トレンド継続中。',c:'#94a3b8'};
+  const real_strong=(d.rev_yoy!=null&&d.rev_yoy>30)&&(d.eps_surprise!=null&&d.eps_surprise>0);
+  const ma200_shrinking=(d.ma200_mom??0)>-5;
+  if(s===0&&ps===4)return{icon:'▲',title:'強い買い推奨',sub:'底値形成を確認。長期エントリーの好機。',c:sh(0)};
+  if(s===1)return{icon:'↑',title:'買い推奨',sub:'期待覚醒フェーズ。モメンタム回復を確認後エントリー。',c:sh(1)};
+  if(s===2)return{icon:'→',title:'保有継続',sub:'期待拡大フェーズ。過熱サインを監視しながら保有。',c:sh(2)};
+  if(s===3&&ma<50)return{icon:'⚠',title:'保有・要注意',sub:`陶酔期。MA200乖離${ma.toFixed(0)}%。ピークアウトに注意。`,c:sh(3)};
+  if(s===3&&ma>=50)return{icon:'↓',title:'売り準備',sub:`MA200を${ma.toFixed(0)}%超過。高値更新停止確認次第売り。`,c:sh(3)};
+  if(s===4&&ps===3)return{icon:'▼',title:'売り推奨（転換直後）',sub:'陶酔期→期待剥落の遷移を検出。ポジション縮小推奨。',c:sh(4)};
+  if(s===4&&real_strong&&ma200_shrinking)return{icon:'👀',title:'様子見（底打ち兆候）',sub:`実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。打診買いの準備を始める。`,c:'#10b981'};
+  if(s===4&&real_strong)return{icon:'✋',title:'売り継続・底は近い',sub:`売上・EPSは強い。期待の過熱訂正中。実体が下支えするため底打ちは比較的早い可能性。高値から${Math.abs(fp).toFixed(0)}%下落。`,c:'#f59e0b'};
+  if(s===4)return{icon:'▼',title:'売り継続',sub:`期待剥落継続。高値から${Math.abs(fp).toFixed(0)}%下落。実体の回復（売上加速・EPS）を待つ。`,c:sh(4)};
+  return{icon:'−',title:'様子見',sub:'底値確認まで待機。',c:sh(0)};
 }
 
 function calcTrans(m,cur){
@@ -225,50 +418,8 @@ function calcTrans(m,cur){
   return[0,1,2,3,4].map(k=>({stage:k,prob:Math.round((cnt[cur]?.[k]||0)/tot*100)})).sort((a,b)=>b.prob-a.prob);
 }
 
-function buildReason(d,prev){
-  const ma=d.ma200_dev??0,fp=d.from_peak??0,rsi=d.rsi??50,s=d.stage,p=[];
-  if(s===3){
-    p.push(`MA200を<strong>${ma.toFixed(0)}%</strong>上回る過熱水準`);
-    if(rsi>70) p.push(`RSI<strong>${rsi.toFixed(0)}</strong>と過熱圏`);
-    else if(rsi>55) p.push(`RSI<strong>${rsi.toFixed(0)}</strong>で上昇トレンド維持`);
-    else p.push(`<span class="warn">RSI<strong>${rsi.toFixed(0)}</strong>と低下（押し目の可能性）</span>`);
-  }else if(s===4){
-    p.push(`高値から<strong>${Math.abs(fp).toFixed(0)}%</strong>下落`);
-    if(ma<0) p.push(`MA200割れ（<strong>${ma.toFixed(0)}%</strong>）`);
-    else p.push(`MA200はまだ<strong>+${ma.toFixed(0)}%</strong>上（部分的な調整）`);
-    if(rsi<30) p.push(`RSI<strong>${rsi.toFixed(0)}</strong>と売られすぎ水準`);
-  }else if(s===2){
-    if(ma>=0) p.push(`MA200を<strong>${ma.toFixed(0)}%</strong>上回る`);
-    if(fp<-8) p.push(`高値比<strong>-${Math.abs(fp).toFixed(0)}%</strong>の押し目局面`);
-    if(rsi<45) p.push(`<span class="warn">RSI<strong>${rsi.toFixed(0)}</strong>と低め（下落圧力に注意）</span>`);
-    if(ma<0) p.push(`<span class="warn">MA200を下回っているが他条件からデフォルト判定（ロジック精査中）</span>`);
-  }else if(s===0){
-    p.push(`MA200を<strong>${Math.abs(ma).toFixed(0)}%</strong>下回る低迷`);
-    if(fp<-30) p.push(`高値から<strong>${Math.abs(fp).toFixed(0)}%</strong>の深い調整`);
-  }else if(s===1){p.push('安値圏からのモメンタム回復兆候を検出');}
-  return p.join(' ・ ')||'判定根拠データ不足';
-}
-
-function shortRsn(d){
-  const ma=d.ma200_dev??0,fp=d.from_peak??0,rsi=d.rsi??50,s=d.stage;
-  if(s===3) return `MA200+${ma.toFixed(0)}%・RSI${rsi.toFixed(0)}`;
-  if(s===4){const ms=ma<0?`MA200割れ(${ma.toFixed(0)}%)`:`MA200+${ma.toFixed(0)}%`;return `高値-${Math.abs(fp).toFixed(0)}%・${ms}`;}
-  if(s===2) return `MA200+${ma.toFixed(0)}%・ピーク比${fp.toFixed(0)}%・RSI${rsi.toFixed(0)}`;
-  if(s===0) return `MA200${ma.toFixed(0)}%・高値-${Math.abs(fp).toFixed(0)}%`;
-  return `MA200${ma>=0?'+':''}${ma.toFixed(0)}%・RSI${rsi.toFixed(0)}`;
-}
-
-// 凡例
-const legEl=document.getElementById('stageLegend');
-Object.entries(STAGES).forEach(([k,s])=>{
-  const p=document.createElement('div');p.className='s-pill';
-  p.style.cssText=`color:${s.h};border-color:${s.h};background:${s.h}18`;
-  p.textContent=`S${k} ${s.n}`;legEl.appendChild(p);
-});
-document.getElementById('tsEl').textContent=new Date().toLocaleDateString('ja-JP');
-
 let pChart=null,eChart=null,fChart=null;
-const gridC='rgba(255,255,255,.04)',txtC='#4a5568';
+const gc='rgba(255,255,255,.04)',tc='#4a5568';
 
 async function loadTicker(ticker,btn){
   document.querySelectorAll('.ticker-btn').forEach(b=>b.classList.remove('active'));
@@ -279,157 +430,135 @@ async function loadTicker(ticker,btn){
 
 function render(data,ticker){
   const m=data.monthly,lat=m[m.length-1],prev=m[m.length-2];
-  const s=STAGES[lat.stage],rec=getRec(lat,prev);
-  const ma=lat.ma200_dev??0,fp=lat.from_peak??0,rsi=lat.rsi??50,price=lat.price??0;
+  const stage=lat.stage,s=STAGES[stage];
+  const lc=detectLifecycle(data),lcd=LIFECYCLE[lc];
 
-  // MAIN CARD
-  const mc=document.getElementById('mainCard');
-  mc.style.borderLeftColor=s.h; mc.style.borderColor=s.h+'40';
-  document.getElementById('stageCode').textContent=`S${lat.stage} ${s.n}`;
-  document.getElementById('stageCode').style.color=s.h;
-  document.getElementById('stageDesc').textContent=s.d;
-  document.getElementById('recBlock').style.background=rec.c+'08';
-  document.getElementById('recTitle').innerHTML=`<span style="color:${rec.c}">${rec.icon}</span><span style="color:${rec.c};margin-left:10px">${rec.title}</span>`;
-  document.getElementById('recSub').textContent=rec.sub;
-  document.getElementById('mets').innerHTML=`
-    <div class="met"><div class="mval" style="color:${s.h}">$${price.toFixed(2)}</div><div class="mlbl">現在株価</div></div>
-    <div class="met"><div class="mval ${ma>=0?'pos':'neg'}">${ma>=0?'+':''}${ma.toFixed(1)}%</div><div class="mlbl">MA200乖離</div></div>
-    <div class="met"><div class="mval">${rsi.toFixed(0)}</div><div class="mlbl">RSI</div></div>
-    <div class="met"><div class="mval ${fp<-10?'neg':''}">${fp>=0?'+':''}${fp.toFixed(1)}%</div><div class="mlbl">高値比</div></div>
-  `;
-  document.getElementById('reasonTxt').innerHTML=buildReason(lat,prev);
+  // STEP1
+  document.getElementById('lcValue').textContent=lcd.label;
+  document.getElementById('lcValue').style.color=lcd.color;
+  document.getElementById('lcDesc').textContent=`期待の正体：「${lcd.headline}」`;
+  document.getElementById('stageValue').textContent=`S${stage} ${s.n}`;
+  document.getElementById('stageValue').style.color=s.h;
+  document.getElementById('stageDesc').textContent=s.desc;
 
-  // TRANSITION
-  const trans=calcTrans(m,lat.stage);
-  const tl=document.getElementById('transList');tl.innerHTML='';
-  trans.forEach((t,i)=>{
-    const h2=sh(t.stage),isTop=i===0;
-    const div=document.createElement('div');div.className='trans-row';
-    div.innerHTML=`
-      <div class="trans-name" style="color:${h2}">S${t.stage} ${STAGES[t.stage].n}${t.stage===lat.stage?' <span style="font-size:10px;color:var(--mut)">[現在]</span>':''}</div>
-      <div class="trans-bar"><div class="trans-fill" style="width:${t.prob}%;background:${h2}${isTop?'80':'40'}"></div></div>
-      <div class="trans-pct" style="color:${h2}">${t.prob}%</div>
-    `;
-    tl.appendChild(div);
-  });
+  // STEP2
+  const np=document.getElementById('narrativePanel');
+  np.style.borderLeftColor=lcd.color;
+  const nh=document.getElementById('narrativeHeadline');
+  nh.textContent=lcd.headline;nh.style.color=lcd.color;
+  document.getElementById('narrativeBody').innerHTML=lcd.body;
 
-  // ── 3チャート共通ラベル（月次） ──────────────────────────
-  const labels=m.map(d=>d.month);
+  // STEP3
+  const vs=buildVsMetrics(lat,lc);
+  document.getElementById('expectMetrics').innerHTML=vs.e;
+  document.getElementById('realMetrics').innerHTML=vs.r;
 
-  // ステージ背景プラグイン（3チャート共通）
-  function makeBgPlugin(monthly){
-    return{id:'bg',beforeDatasetsDraw(c){
-      const{ctx:cx,chartArea:{left,right,top,bottom},scales}=c;if(!scales.x)return;
-      const step=scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0);
-      monthly.forEach((d,i)=>{
-        const px=scales.x.getPixelForValue(i);cx.save();
-        cx.fillStyle=sh(d.stage)+'30';
-        cx.fillRect(Math.max(left,px-step/2),top,Math.min(right,px+step/2)-Math.max(left,px-step/2),bottom-top);
-        cx.restore();
-      });
-    }};
+  // STEP4
+  const ratio=buildRatio(lat,lc,stage);
+  const rn=document.getElementById('ratioNum');rn.textContent=ratio.num;rn.style.color=ratio.color;
+  const rb=document.getElementById('ratioBar');rb.style.width=ratio.pct+'%';rb.style.background=ratio.color;
+  document.getElementById('interpList').innerHTML=ratio.items.map(it=>
+    `<div class="interp-row"><div class="interp-dot" style="background:${it.c}"></div><div>${it.t}</div></div>`).join('');
+
+  // STEP5 内部フェーズ
+  const phaseColorMap={'入口':'#06b6d4','中盤':'#f59e0b','中盤A':'#f97316','中盤B':'#f59e0b','出口':'#a855f7'};
+  const phase=lat.substage_phase||null;
+  if(phase){
+    const pc=phaseColorMap[phase]||s.h;
+    const sp=document.getElementById('subPanel');sp.style.borderLeftColor=pc;
+    const sb=document.getElementById('subBadge');
+    sb.textContent=phase;sb.style.color=pc;sb.style.borderColor=pc;sb.style.background=pc+'18';
+    const sl=document.getElementById('subLabel');sl.textContent=lat.substage_label||'—';sl.style.color=pc;
+    document.getElementById('subWatch').innerHTML=lat.substage_watch||'—';
+    document.getElementById('subNext').textContent=lat.substage_next||'—';
   }
 
-  // NOW縦線プラグイン
+  // STEP6 推奨
+  const rec=getRec(lat,prev);
+  const rb2=document.getElementById('recBar');rb2.style.borderLeftColor=rec.c;rb2.style.borderColor=rec.c+'40';
+  const ri=document.getElementById('recIcon');ri.textContent=rec.icon;ri.style.color=rec.c;
+  const rt=document.getElementById('recTitle');rt.textContent=rec.title;rt.style.color=rec.c;
+  document.getElementById('recSub').textContent=rec.sub;
+  const rp=document.getElementById('recPrice');rp.textContent=`$${(lat.price??0).toFixed(2)}`;rp.style.color=s.h;
+
+  // STEP7 チャート
+  const labels=m.map(d=>d.month);
+  function makeBg(monthly){return{id:'bg',beforeDatasetsDraw(c){
+    const{ctx:cx,chartArea:{left,right,top,bottom},scales}=c;if(!scales.x)return;
+    const step=scales.x.getPixelForValue(1)-scales.x.getPixelForValue(0);
+    monthly.forEach((d,i)=>{const px=scales.x.getPixelForValue(i);cx.save();
+      cx.fillStyle=sh(d.stage)+'20';cx.fillRect(Math.max(left,px-step/2),top,Math.min(right,px+step/2)-Math.max(left,px-step/2),bottom-top);cx.restore();});
+  }};}
   const nowP={id:'now',afterDatasetsDraw(c){
-    const{ctx:cx,chartArea:{top,bottom},scales}=c;
-    const px=scales.x.getPixelForValue(m.length-1);
-    cx.save();cx.strokeStyle='rgba(245,158,11,.5)';cx.lineWidth=1.5;cx.setLineDash([4,3]);
+    const{ctx:cx,chartArea:{top,bottom},scales}=c;const px=scales.x.getPixelForValue(m.length-1);
+    cx.save();cx.strokeStyle='rgba(245,158,11,.6)';cx.lineWidth=1.5;cx.setLineDash([4,3]);
     cx.beginPath();cx.moveTo(px,top);cx.lineTo(px,bottom);cx.stroke();cx.setLineDash([]);
     cx.fillStyle='rgba(245,158,11,.9)';cx.font='bold 10px Space Mono';cx.textAlign='right';
     cx.fillText('▼ NOW',px-4,top+13);cx.restore();
   }};
-
-  // 共通X軸オプション（ラベルを共有）
-  const xAxis={ticks:{font:{size:11,family:'Space Mono'},color:txtC,maxRotation:0,autoSkip:true,maxTicksLimit:14},grid:{color:gridC}};
-  const xAxisHidden={ticks:{display:false},grid:{color:gridC}};
-
-  // ─── グラフ1: 株価 ───────────────────────────────────────
-  if(pChart) pChart.destroy();
-  pChart=new Chart(document.getElementById('priceChart').getContext('2d'),{
-    type:'line',plugins:[makeBgPlugin(m),nowP],
-    data:{labels,datasets:[{
-      data:m.map(d=>d.price),label:'株価',
-      borderColor:'rgba(255,255,255,.8)',borderWidth:2.5,
-      pointBackgroundColor:m.map(d=>sh(d.stage)),
-      pointBorderColor:m.map(d=>sh(d.stage)),
-      pointBorderWidth:2,pointRadius:4,pointHoverRadius:7,
-      fill:false,tension:.25,
-    }]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:false},tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,
+  const xH={ticks:{display:false},grid:{color:gc}};
+  const xV={ticks:{font:{size:10,family:'Space Mono'},color:tc,maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:gc}};
+  if(pChart)pChart.destroy();
+  pChart=new Chart(document.getElementById('priceChart'),{type:'line',plugins:[makeBg(m),nowP],
+    data:{labels,datasets:[{data:m.map(d=>d.price),borderColor:'rgba(255,255,255,.8)',borderWidth:2,
+      pointBackgroundColor:m.map(d=>sh(d.stage)),pointBorderColor:m.map(d=>sh(d.stage)),
+      pointRadius:4,pointHoverRadius:7,fill:false,tension:.25}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,
         titleFont:{family:'Space Mono',size:11},bodyFont:{family:'Space Mono',size:11},
         callbacks:{title:c=>c[0].label,label:c=>{const d=m[c.dataIndex],r=getRec(d,m[c.dataIndex-1]);
           return[` $${d.price?.toFixed(2)}`,` S${d.stage}: ${STAGES[d.stage]?.n}`,` ${r.icon} ${r.title}`];}}}},
-      scales:{x:xAxisHidden,y:{ticks:{font:{size:11,family:'Space Mono'},color:txtC,callback:v=>`$${v}`},grid:{color:gridC}}}}
-  });
-
-  // ─── グラフ2: 期待・モメンタム（MA200乖離 + RSI） ──────────
-  if(eChart) eChart.destroy();
-  eChart=new Chart(document.getElementById('expectChart').getContext('2d'),{
-    type:'line',plugins:[makeBgPlugin(m)],
+      scales:{x:xH,y:{ticks:{font:{size:11,family:'Space Mono'},color:tc,callback:v=>`$${v}`},grid:{color:gc}}}}});
+  if(eChart)eChart.destroy();
+  eChart=new Chart(document.getElementById('expectChart'),{type:'line',plugins:[makeBg(m)],
     data:{labels,datasets:[
-      {data:m.map(d=>d.ma200_dev),label:'MA200乖離%',
-        borderColor:'#f97316',borderWidth:2,
-        pointBackgroundColor:'#f97316',pointRadius:3,pointHoverRadius:5,
-        fill:false,tension:.3,yAxisID:'y'},
-      {data:m.map(d=>d.rsi),label:'RSI',
-        borderColor:'#3b82f6',borderWidth:1.5,borderDash:[4,2],
-        pointBackgroundColor:'#3b82f6',pointRadius:2,pointHoverRadius:4,
-        fill:false,tension:.3,yAxisID:'y2'},
+      {data:m.map(d=>d.ma200_dev),label:'MA200乖離%',borderColor:'#f97316',borderWidth:2,pointBackgroundColor:'#f97316',pointRadius:2,fill:false,tension:.3,yAxisID:'y'},
+      {data:m.map(d=>d.rsi),label:'RSI',borderColor:'#3b82f6',borderWidth:1.5,borderDash:[4,2],pointBackgroundColor:'#3b82f6',pointRadius:2,fill:false,tension:.3,yAxisID:'y2'},
     ]},
     options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'top',align:'end',
-        labels:{font:{family:'Space Mono',size:10},color:txtC,boxWidth:12,padding:16}},
-        tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,
-          titleFont:{family:'Space Mono',size:11},bodyFont:{family:'Space Mono',size:11}}},
-      scales:{
-        x:xAxisHidden,
-        y:{position:'left',ticks:{font:{size:10,family:'Space Mono'},color:'#f97316',callback:v=>`${v>0?'+':''}${v?.toFixed(0)}%`},grid:{color:gridC},
-           title:{display:true,text:'MA200乖離',color:'#f97316',font:{family:'Space Mono',size:9}}},
-        y2:{position:'right',min:0,max:100,grid:{display:false},
-           ticks:{font:{size:10,family:'Space Mono'},color:'#3b82f6',callback:v=>`${v}`},
-           title:{display:true,text:'RSI',color:'#3b82f6',font:{family:'Space Mono',size:9}}},
-      }}
-  });
-
-  // ─── グラフ3: 実体（売上成長YoY） ──────────────────────────
-  if(fChart) fChart.destroy();
-  const revData=m.map(d=>d.rev_yoy);
-  fChart=new Chart(document.getElementById('fundChart').getContext('2d'),{
-    type:'bar',plugins:[makeBgPlugin(m)],
-    data:{labels,datasets:[{
-      data:revData,label:'売上成長YoY%',
+      plugins:{legend:{display:true,position:'top',align:'end',labels:{font:{family:'Space Mono',size:10},color:tc,boxWidth:12,padding:12}},
+        tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,titleFont:{family:'Space Mono',size:11},bodyFont:{family:'Space Mono',size:11}}},
+      scales:{x:xH,y:{position:'left',ticks:{font:{size:10,family:'Space Mono'},color:'#f97316',callback:v=>`${v>0?'+':''}${v?.toFixed(0)}%`},grid:{color:gc}},
+        y2:{position:'right',min:0,max:100,grid:{display:false},ticks:{font:{size:10,family:'Space Mono'},color:'#3b82f6'}}}}});
+  if(fChart)fChart.destroy();
+  fChart=new Chart(document.getElementById('fundChart'),{type:'bar',plugins:[makeBg(m)],
+    data:{labels,datasets:[{data:m.map(d=>d.rev_yoy),
       backgroundColor:m.map(d=>(d.rev_yoy??0)>=0?'rgba(16,185,129,.5)':'rgba(244,63,94,.5)'),
-      borderColor:m.map(d=>(d.rev_yoy??0)>=0?'#10b981':'#f43f5e'),
-      borderWidth:1,
-    }]},
+      borderColor:m.map(d=>(d.rev_yoy??0)>=0?'#10b981':'#f43f5e'),borderWidth:1}]},
     options:{responsive:true,maintainAspectRatio:false,
       plugins:{legend:{display:false},tooltip:{backgroundColor:'#161c2d',borderColor:'#1e2840',borderWidth:1,
-        titleFont:{family:'Space Mono',size:11},bodyFont:{family:'Space Mono',size:11},
-        callbacks:{label:c=>` 売上成長: ${c.raw!=null?'+'+c.raw?.toFixed(0)+'%':'データなし'}`}}},
-      scales:{x:xAxis,y:{ticks:{font:{size:10,family:'Space Mono'},color:txtC,callback:v=>`${v>0?'+':''}${v}%`},grid:{color:gridC}}}}
-  });
+        callbacks:{label:c=>` 売上成長: ${c.raw!=null?(c.raw>0?'+':'')+c.raw?.toFixed(0)+'%':'データなし'}`}}},
+      scales:{x:xV,y:{ticks:{font:{size:10,family:'Space Mono'},color:tc,callback:v=>`${v>0?'+':''}${v}%`},grid:{color:gc}}}}});
 
-  // TABLE
+  // 遷移確率
+  document.getElementById('transList').innerHTML=calcTrans(m,stage).map(t=>`
+    <div class="trans-row">
+      <div class="trans-name" style="color:${sh(t.stage)}">S${t.stage} ${STAGES[t.stage].n}${t.stage===stage?' <span style="font-size:10px;color:var(--mut)">[現在]</span>':''}</div>
+      <div class="trans-bar"><div class="trans-fill" style="width:${t.prob}%;background:${sh(t.stage)}80"></div></div>
+      <div class="trans-pct" style="color:${sh(t.stage)}">${t.prob}%</div>
+    </div>`).join('');
+
+  // テーブル
   const tbody=document.getElementById('tableBody');tbody.innerHTML='';
   m.filter(d=>d.month>='2024-01').slice().reverse().forEach((d,i,arr)=>{
-    const prevD=arr[i+1],r2=getRec(d,prevD?{stage:prevD.stage}:null),sc=sh(d.stage),isNow=d.month===lat.month;
+    const pD=arr[i+1],rec=getRec(d,pD?{stage:pD.stage,rev_yoy:pD.rev_yoy,eps_surprise:pD.eps_surprise,ma200_mom:pD.ma200_mom}:null);
+    const sc=sh(d.stage),isNow=d.month===lat.month;
+    const ma=d.ma200_dev??0,fp=d.from_peak??0;
+    const phColor={'入口':'#06b6d4','中盤':'#f59e0b','中盤A':'#f97316','中盤B':'#f59e0b','出口':'#a855f7'}[d.substage_phase]||sc;
     const tr=document.createElement('tr');if(isNow)tr.className='now-row';
     tr.innerHTML=`
-      <td class="mono" style="font-size:14px">${d.month}${isNow?'<span class="now-tag">◀ NOW</span>':''}</td>
+      <td class="mono" style="font-size:13px;white-space:nowrap">${d.month}${isNow?'<span class="now-tag">◀ NOW</span>':''}</td>
       <td><span class="s-badge" style="color:${sc};border-color:${sc};background:${sc}18">S${d.stage} ${STAGES[d.stage]?.n}</span></td>
-      <td style="font-family:var(--mono);font-size:14px;color:${r2.c};font-weight:700;white-space:nowrap">${r2.icon} ${r2.title}</td>
-      <td class="mono ${(d.ma200_dev??0)>=0?'pos':'neg'}" style="font-size:14px">${d.ma200_dev!=null?(d.ma200_dev>=0?'+':'')+d.ma200_dev.toFixed(1)+'%':'-'}</td>
-      <td class="mono" style="font-size:14px;color:${(d.from_peak??0)<-15?'var(--red)':'var(--mut)'}">${d.from_peak!=null?(d.from_peak>=0?'+':'')+d.from_peak.toFixed(1)+'%':'-'}</td>
-      <td class="mono" style="font-size:14px">${d.rsi!=null?d.rsi.toFixed(0):'-'}</td>
-      <td class="mono" style="font-size:14px;font-weight:700">$${d.price?.toFixed(2)}</td>
-      <td style="font-family:var(--mono);font-size:12px;color:var(--mut);line-height:1.5">${shortRsn(d)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:${phColor};white-space:nowrap">${d.substage_phase||'—'} ${d.substage_label||''}</td>
+      <td style="font-family:var(--mono);font-size:13px;color:${rec.c};font-weight:700;white-space:nowrap">${rec.icon} ${rec.title}</td>
+      <td class="mono ${ma>=0?'pos':'neg'}" style="font-size:13px">${d.ma200_dev!=null?(ma>=0?'+':'')+ma.toFixed(1)+'%':'—'}</td>
+      <td class="mono" style="font-size:13px;color:${fp<-15?'var(--red)':'var(--mut)'}">${d.from_peak!=null?(fp>=0?'+':'')+fp.toFixed(1)+'%':'—'}</td>
+      <td class="mono" style="font-size:13px">${d.rsi!=null?d.rsi.toFixed(0):'—'}</td>
+      <td class="mono" style="font-size:13px;font-weight:700">$${d.price?.toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
   });
 }
-
 loadTicker('PLTR',document.querySelector('.ticker-btn'));
 </script>
 </body>
