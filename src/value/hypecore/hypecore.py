@@ -213,6 +213,110 @@ def fetch_tanuki_iv(ticker: str) -> pd.Series:
     return pd.Series(dtype=float)
 
 
+def fetch_analyst_history(ticker: str) -> pd.DataFrame:
+    """
+    yfinanceからアナリスト履歴を月次DataFrameに変換。
+
+    取得データ:
+      upgrades_downgrades → 月次アナリスト修正率（上方/下方）
+      earnings_history    → 四半期EPSサプライズ率
+      recommendations     → 直近Buy/Hold/Sell比率（現時点値）
+
+    返却列:
+      analyst_upgrade_rate : 上方修正/(上方+下方) 3ヶ月移動平均
+      analyst_downgrade_rate: 下方修正率
+      eps_surprise         : EPSサプライズ率% (四半期→月次前方補完)
+      buy_hold_ratio       : (StrongBuy+Buy)/全アナリスト (現時点値のみ)
+      sell_on_good_news    : EPSサプライズ>0 かつ 当月株価変化<-3% (bool→float)
+    """
+    t = yf.Ticker(ticker)
+    result = pd.DataFrame()
+
+    # ── 1. upgrades_downgrades → 月次修正率 ──────────────────
+    try:
+        ud = t.upgrades_downgrades
+        if ud is not None and not ud.empty:
+            ud = ud.copy()
+            ud.index = pd.to_datetime(ud.index).tz_localize(None)
+
+            # ToGradeでBuy系/Sell系を分類
+            BUY_GRADES  = {"Buy","Strong Buy","Outperform","Overweight","Market Outperform","Positive"}
+            SELL_GRADES = {"Sell","Strong Sell","Underperform","Underweight","Market Underperform","Negative"}
+
+            ud["is_upgrade"]   = ud["ToGrade"].isin(BUY_GRADES).astype(int)
+            ud["is_downgrade"] = ud["ToGrade"].isin(SELL_GRADES).astype(int)
+
+            monthly_ud = ud.resample("ME").agg(
+                upgrades=("is_upgrade", "sum"),
+                downgrades=("is_downgrade", "sum"),
+            )
+            monthly_ud.index = monthly_ud.index.to_period("M").to_timestamp()
+            monthly_ud["total_changes"] = monthly_ud["upgrades"] + monthly_ud["downgrades"]
+            monthly_ud["analyst_upgrade_rate"] = (
+                monthly_ud["upgrades"] / (monthly_ud["total_changes"] + 1e-9)
+            )
+            monthly_ud["analyst_downgrade_rate"] = (
+                monthly_ud["downgrades"] / (monthly_ud["total_changes"] + 1e-9)
+            )
+            # 3ヶ月移動平均でノイズ除去
+            monthly_ud["analyst_upgrade_rate"] = (
+                monthly_ud["analyst_upgrade_rate"].rolling(3, min_periods=1).mean()
+            )
+            result = monthly_ud[["analyst_upgrade_rate", "analyst_downgrade_rate"]]
+            print(f"  アナリスト修正: {len(ud)}件（{ud.index.min().date()}〜）")
+    except Exception as e:
+        print(f"  警告: upgrades_downgrades取得失敗: {e}")
+
+    # ── 2. earnings_history → 四半期EPSサプライズ率 ──────────
+    try:
+        eh = t.earnings_history
+        if eh is not None and not eh.empty:
+            eh = eh.copy()
+            eh.index = pd.to_datetime(eh.index).tz_localize(None)
+            eh_monthly = eh[["surprisePercent"]].copy()
+            eh_monthly.columns = ["eps_surprise"]
+            eh_monthly["eps_surprise"] *= 100  # 小数→%
+
+            # 四半期→月次前方補完
+            if not result.empty:
+                monthly_idx = result.index
+            else:
+                monthly_idx = pd.date_range(
+                    start=eh_monthly.index.min(),
+                    end=date.today().isoformat(),
+                    freq="MS"
+                )
+            eps_monthly = eh_monthly.reindex(monthly_idx, method="ffill")
+            if result.empty:
+                result = eps_monthly
+            else:
+                result = result.join(eps_monthly, how="outer")
+            print(f"  EPSサプライズ: {len(eh)}件")
+    except Exception as e:
+        print(f"  警告: earnings_history取得失敗: {e}")
+
+    # ── 3. recommendations → Buy/Hold/Sell比率（現時点） ──────
+    try:
+        rec = t.recommendations
+        if rec is not None and not rec.empty:
+            # 直近月（0m）のデータ
+            cur = rec[rec["period"] == "0m"].iloc[0] if len(rec[rec["period"] == "0m"]) > 0 else rec.iloc[0]
+            total = (cur.get("strongBuy", 0) + cur.get("buy", 0) +
+                     cur.get("hold", 0) + cur.get("sell", 0) + cur.get("strongSell", 0))
+            buy_ratio = (cur.get("strongBuy", 0) + cur.get("buy", 0)) / (total + 1e-9)
+            # 現時点値を全期間に設定（将来は月次記録で上書き）
+            if "buy_hold_ratio" not in result.columns:
+                result["buy_hold_ratio"] = np.nan
+            today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
+            if today_ts in result.index:
+                result.loc[today_ts, "buy_hold_ratio"] = buy_ratio
+            print(f"  Buy比率: {buy_ratio:.1%}（現時点）")
+    except Exception as e:
+        print(f"  警告: recommendations取得失敗: {e}")
+
+    return result
+
+
 # ── スコア計算 ────────────────────────────────────────────
 
 def compute_scores(ticker: str) -> pd.DataFrame:
@@ -226,6 +330,9 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     print(f"  財務: {len(fund_df)}行")
 
     iv_series = fetch_tanuki_iv(ticker)
+
+    # アナリスト履歴（月次）
+    analyst_df = fetch_analyst_history(ticker)
 
     # .info（現時点値）
     info = fetch_info_snapshot(ticker)
@@ -261,6 +368,10 @@ def compute_scores(ticker: str) -> pd.DataFrame:
         if today_ts in df.index:
             df.loc[today_ts, key] = info.get(key)
 
+    # アナリスト履歴を結合
+    if not analyst_df.empty:
+        df = df.join(analyst_df, how="left")
+
     # ── 生値指標 ──────────────────────────────────────────
 
     df["peak_24m"]    = df["price"].rolling(24, min_periods=6).max()
@@ -273,6 +384,22 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     vol_avg = df["volume_monthly"].rolling(6, min_periods=3).mean()
     df["vol_surge"] = df["volume_monthly"] / (vol_avg + 1e-9)
 
+    # sell_on_good_news: EPSサプライズ>0 かつ 当月株価変化<-3%（S4の核心シグナル）
+    df["price_mom1m"] = df["price"].pct_change(1) * 100
+    if "eps_surprise" in df.columns:
+        df["sell_on_good_news"] = (
+            (df["eps_surprise"] > 5) & (df["price_mom1m"] < -3)
+        ).astype(float)
+    else:
+        df["sell_on_good_news"] = np.nan
+
+    # アナリストスコア（期待スコアへの寄与）
+    # upgrade_rate高い=期待上昇中、低い=期待剥落中
+    if "analyst_upgrade_rate" in df.columns:
+        df["analyst_score"] = z_score_series(df["analyst_upgrade_rate"])
+    else:
+        df["analyst_score"] = np.nan
+
     # ── Z-scoreスコア ──────────────────────────────────────
 
     # 期待スコア（高いほど期待過熱）
@@ -282,6 +409,9 @@ def compute_scores(ticker: str) -> pd.DataFrame:
             expect_cols.append(z_score_series(df[col]))
     if not df["price_iv_ratio"].isna().all():
         expect_cols.append(z_score_series(df["price_iv_ratio"]))
+    # アナリスト修正率（上方修正が多いほど期待過熱）
+    if "analyst_score" in df.columns and not df["analyst_score"].isna().all():
+        expect_cols.append(df["analyst_score"])
     df["expectation_score"] = pd.concat(expect_cols, axis=1).mean(axis=1) if expect_cols else np.nan
 
     # 実体スコア（高いほど実体良好）
@@ -322,6 +452,12 @@ def determine_stage(row: pd.Series, prev_stage: int = 2) -> int:
     rsi         = row.get("rsi",        50) or 50
     vol_surge   = row.get("vol_surge",   1) or 1
 
+    # アナリスト・EPS指標
+    sell_on_good = row.get("sell_on_good_news", 0) or 0  # 良決算でも下落
+    eps_surprise = row.get("eps_surprise")               # EPSサプライズ率%
+    upgrade_rate = row.get("analyst_upgrade_rate")       # アナリスト上方修正率
+    buy_ratio    = row.get("buy_hold_ratio")             # Buy比率
+
     # バリュエーション（現時点値・NaNの場合は判定に使わない）
     forward_pe  = row.get("forward_pe")
     peg         = row.get("peg_ratio")
@@ -335,61 +471,88 @@ def determine_stage(row: pd.Series, prev_stage: int = 2) -> int:
     f = row.get("fundamental_score",  0) or 0
     m = row.get("momentum_score",     0) or 0
 
+    # ── S4優先チェック（S3慣性より先に：急落離脱検出）──────────
+    # S3/S4から-28%超下落かつRSI<47 = 期待剥落確定
+    if prev_stage in (3, 4) and from_peak < -28 and rsi < 47:
+        return 4
+    # S4慣性（直前S4で下落継続中）
+    if prev_stage == 4 and from_peak < -8 and ma200_dev < 30:
+        return 4
+
     # ── S3: 陶酔期 ──────────────────────────────────────────
     # 【核心】期待が実体を大幅に超過している過熱状態
-    # 条件A: MA200乖離が大きく、かつ上昇継続中
+    # 条件A: MA200乖離が大きく上昇継続中
     if ma200_dev > 40:
         return 3
     if ma200_dev > 25 and rsi > 50:
         return 3
-    # 条件B: バリュエーション過熱（forwardPE or PEGが異常）+ テクニカル過熱
+    # 条件B: MA200 > 12% かつ RSI高騰 かつ上昇モメンタム
+    if ma200_dev > 12 and rsi > 58 and price_mom3m > 5:
+        return 3
+    if ma200_dev > 15 and rsi > 55:
+        return 3
+    # 条件C: バリュエーション過熱
     if forward_pe is not None and forward_pe > 60 and ma200_dev > 15:
         return 3
     if peg is not None and peg > 2.5 and ma200_dev > 10 and rsi > 55:
         return 3
-    # 条件C: Z-scoreベース
+    # 条件D: Buy比率が異常に高い + テクニカル過熱
+    if buy_ratio is not None and buy_ratio > 0.8 and ma200_dev > 15:
+        return 3
+    # 条件E: S3慣性（MA200高水準で-25%未満かつMA200momが悪化していない）
+    if prev_stage == 3 and ma200_dev > 20 and from_peak > -25 and ma200_mom > -10:
+        return 3
+    # 条件F: Z-scoreベース
     if e > 0.7 and m > 0.5:
         return 3
 
     # ── S4: 期待剥落期 ──────────────────────────────────────
     # 【核心】S3から転落開始、または下落継続中
-    # 条件A: 慣性ルール（直前S4 + 下落継続）
-    if prev_stage == 4 and from_peak < -8 and ma200_dev < 20:
+    # 条件A: 良決算でも株価下落（S4の最強シグナル）
+    if sell_on_good == 1 and from_peak < -5:
         return 4
-    # 条件B: MA200乖離が急速に悪化（方向性の転換を捉える）
-    if from_peak < -8 and rsi < 55 and ma200_mom < -10:
+    # 条件B: S3/S4からの転落（ピーク比-25%超かつMA200mom悪化）
+    if prev_stage in (3, 4) and from_peak < -25 and ma200_mom < -10:
         return 4
-    # 条件C: MA200割れ + 下落継続
+    # 条件C: MA200乖離が急速に悪化
+    if from_peak < -8 and rsi < 50 and ma200_mom < -10:
+        return 4
+    # 条件D: MA200割れ + 下落継続
     if ma200_dev < 0 and from_peak < -15 and price_mom3m < -3:
         return 4
-    # 条件D: まだMA200上だが急落局面（RSI<40 + ピーク比-15%）
-    if from_peak < -15 and rsi < 40 and ma200_mom < -15:
+    # 条件E: 大幅下落でMA200がまだプラスでも
+    if from_peak < -40 and ma200_dev < 25:
         return 4
 
     # ── S0: 失望/蓄積期 ──────────────────────────────────────
     # 【核心】機関未参入・深い低迷・スマートマネー仕込み段階
-    # 条件A: MA200を大きく下回り長期低迷
-    if ma200_dev < -20 and m < -0.3:
+    if ma200_dev < -20:
         return 0
-    # 条件B: 空売り比率が高く市場の懐疑が強い + 低迷
     if short_pct is not None and short_pct > 0.08 and ma200_dev < -10:
         return 0
-    # 条件C: 深い下落
     if from_peak < -50 and ma200_dev < -15:
         return 0
 
     # ── S1: 期待覚醒期 ──────────────────────────────────────
     # 【核心】底打ち確認 + 新しいトリガー + 出来高急増
-    # 条件A: MA200下から回復モメンタム
-    if ma200_dev < -10 and price_mom3m > 5:
+    # 条件A: MA200 < -10% から強い反発
+    if ma200_dev < -10 and price_mom3m > 10:
         return 1
-    # 条件B: 出来高急増 + 低迷圏からの回復
-    if vol_surge > 1.5 and ma200_dev < 0 and price_mom3m > 3:
+    # 条件B: MA200 < -5% から急反発
+    if ma200_dev < -5 and price_mom3m > 20:
         return 1
-    # 条件C: アナリストが強気転換し始め（rec_mean < 2 = Buy方向）+ 底値圏
+    # 条件C: 出来高急増 + 低迷圏からの回復（強い上昇のみ）
+    if vol_surge > 1.5 and ma200_dev < 0 and price_mom3m > 10:
+        return 1
+    # 条件D: EPSサプライズ + アナリスト上方修正開始（底値圏）
+    if (eps_surprise is not None and eps_surprise > 10 and
+            upgrade_rate is not None and upgrade_rate > 0.6 and
+            ma200_dev < 5):
+        return 1
+    # 条件E: アナリストが強気転換し始め + 底値圏
     if rec_mean is not None and rec_mean < 2.0 and ma200_dev < -5 and price_mom3m > 0:
         return 1
-    # 条件D: Z-scoreベース
+    # 条件F: Z-scoreベース
     if e < -0.3 and m > 0.5:
         return 1
 
@@ -472,6 +635,12 @@ def run_poc(ticker: str = "PLTR") -> dict:
             "earnings_growth":    safe(row.get("earnings_growth")),
             "recommendation_mean": safe(row.get("recommendation_mean")),
             "short_pct_float":    safe(row.get("short_pct_float")),
+            # アナリスト・EPS
+            "eps_surprise":       safe(row.get("eps_surprise")),
+            "analyst_upgrade_rate": safe(row.get("analyst_upgrade_rate")),
+            "analyst_downgrade_rate": safe(row.get("analyst_downgrade_rate")),
+            "sell_on_good_news":  safe(row.get("sell_on_good_news")),
+            "buy_hold_ratio":     safe(row.get("buy_hold_ratio")),
             # スコア
             "expectation_score":  safe(row.get("expectation_score")),
             "fundamental_score":  safe(row.get("fundamental_score")),
