@@ -285,7 +285,10 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
                     end=date.today().isoformat(),
                     freq="MS"
                 )
-            eps_monthly = eh_monthly.reindex(monthly_idx, method="ffill")
+            eps_monthly = eh_monthly.reindex(monthly_idx, method="ffill", limit=4)
+            # 最新月がNullの場合、最後の有効値で補完
+            if "eps_surprise" in eps_monthly.columns:
+                eps_monthly["eps_surprise"] = eps_monthly["eps_surprise"].ffill()
             if result.empty:
                 result = eps_monthly
             else:
@@ -312,19 +315,26 @@ def fetch_analyst_history(ticker: str) -> pd.DataFrame:
         except Exception as e:
             print(f"  警告: quarterly_earnings取得失敗: {e}")
 
-    # フォールバック②: info['earningsGrowth'] を単月スカラーとして使用
+    # フォールバック②: info['earningsGrowth'] を欠損月のみに適用
     if not eps_fetched:
         try:
             info_snap = t.info
             eg = info_snap.get("earningsGrowth")
             if eg is not None:
-                # YoY成長率をサプライズの代理変数として使用（スカラー→全月に適用）
+                eg_val = round(float(eg) * 100, 2)
                 if not result.empty:
-                    result["eps_surprise"] = round(float(eg) * 100, 2)
+                    if "eps_surprise" not in result.columns:
+                        result["eps_surprise"] = eg_val
+                    else:
+                        result["eps_surprise"] = result["eps_surprise"].fillna(eg_val)
                 print(f"  EPSサプライズ(fallback2/earningsGrowth): {eg:.1%}")
                 eps_fetched = True
         except Exception as e:
             print(f"  警告: earningsGrowth取得失敗: {e}")
+
+    # 最終補完: eps_surpriseのNullを前方補完（最大3ヶ月）
+    if not result.empty and "eps_surprise" in result.columns:
+        result["eps_surprise"] = result["eps_surprise"].ffill(limit=3)
 
     if not eps_fetched:
         print(f"  警告: EPSサプライズ全手段で取得失敗")
@@ -405,6 +415,16 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     # アナリスト履歴を結合
     if not analyst_df.empty:
         df = df.join(analyst_df, how="left")
+
+    # eps_surpriseのffill（join後に欠損が生じる場合の補完）
+    if "eps_surprise" in df.columns:
+        df["eps_surprise"] = df["eps_surprise"].ffill(limit=4)
+    
+    # EPSが完全に取れない場合、earningsGrowthで補完
+    if "eps_surprise" not in df.columns or df["eps_surprise"].isna().all():
+        eg = info.get("earnings_growth")
+        if eg is not None:
+            df["eps_surprise"] = round(float(eg) * 100, 2)
 
     # ── 生値指標 ──────────────────────────────────────────
 
@@ -613,7 +633,11 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
     rev_yoy   = row.get("rev_yoy")
     eps_surp  = row.get("eps_surprise")
 
-    real_strong = (rev_yoy is not None and rev_yoy > 30) and (eps_surp is not None and eps_surp > 0)
+    # 実体の強さ判定：売上>15%（成長継続）またはEPSサプライズ>0（決算良好）のどちらかで実体維持とみなす
+    real_strong = (
+        (rev_yoy is not None and rev_yoy > 15 and (eps_surp is None or eps_surp > -5)) or
+        (eps_surp is not None and eps_surp > 0 and rev_yoy is not None and rev_yoy > 0)
+    )
 
     if stage == 3:  # 陶酔期
         if ma200m < -5 and fp < -5:
