@@ -1,6 +1,6 @@
 {
   "ticker": "VRT",
-  "last_updated": "2026-05-18T13:11:41.859151",
+  "last_updated": "2026-05-19T13:58:54.202751",
   "quarters": [
     {
       "gaap_eps": 0.9948277880673556,
@@ -60,25 +60,9 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整の大部分を占める無形資産償却費(80M)と株式報酬費用(17M)は毎期発生する可能性の高い恒常的項目であり、調整後EPSの持続可能性に疑問が残る。リストラ費用は一過性と評価できるが金額が小さいため全体としてCaution。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用である株式報酬費用をadd backしているが、継続的に発生する恒常的なコストである可能性が高い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却費をadd back。取得後は定期的に発生する費用であり完全に一過性とは言えない。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用としてリストラ費用をadd back。非経常的項目として妥当。",
-            "confidence": 0.8
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {
