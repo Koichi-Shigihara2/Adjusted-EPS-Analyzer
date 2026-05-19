@@ -1,6 +1,6 @@
 {
   "ticker": "ZETA",
-  "last_updated": "2026-05-19T13:59:19.497243",
+  "last_updated": "2026-05-19T15:37:20.065143",
   "quarters": [
     {
       "gaap_eps": -0.05553073200533798,
@@ -76,25 +76,9 @@
         }
       },
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "GAAP EPSが赤字である一方、調整後EPSは黒字化しているが、主な調整項目である株式報酬費用と無形資産償却費は毎期発生する恒常的なコストであるため、調整の健全性は限定的。リストラ費用のみ一過性の確度が高い。投資判断ではコア利益の持続可能性に注意が必要。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用として加算されているが、テック企業では継続的に発生する運用コストであり恒常性の可能性が高い",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に計上される非現金費用であり、完全に一過性とはみなせない",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "リストラ費用は事業再編に伴う一時的な支出であり、ほぼ一過性と判断できる",
-            "confidence": 0.75
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {

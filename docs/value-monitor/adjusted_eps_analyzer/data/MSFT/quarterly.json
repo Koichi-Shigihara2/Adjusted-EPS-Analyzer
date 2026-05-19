@@ -1,6 +1,6 @@
 {
   "ticker": "MSFT",
-  "last_updated": "2026-05-19T13:53:23.499618",
+  "last_updated": "2026-05-19T15:30:45.395079",
   "quarters": [
     {
       "gaap_eps": 4.2683680322364,
@@ -63,20 +63,9 @@
         }
       },
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用と無形資産償却費の両方を加算調整していますが、これらはMicrosoftのようなテック企業で毎期発生する非現金項目であり、一過性とはみなせません。調整幅は約10%と大きくなく一般的ですが、調整後EPSの持続可能性を過大評価するリスクがあるため、健全性は「Caution」と判断します。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として毎期発生する株式報酬費用をadd_back。テック企業では恒常的な運用コストと見なされる。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。M&A後の定期的な非現金費用であり、継続的に発生する。",
-            "confidence": 0.2
-          }
-        ]
+        "health": "Error",
+        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
+        "sources": []
       }
     },
     {
