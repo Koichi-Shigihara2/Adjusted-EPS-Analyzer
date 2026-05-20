@@ -405,10 +405,24 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                         annual_items.append(item)
             annual_data_by_tag[tag] = annual_items
         
-        # 会計年度終了月を特定（NetIncomeLossの年次データを使用）
-        net_income_annual = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+        # 会計年度終了月を特定（複数タグをフォールバックしながら取得）
+        NET_INCOME_ANNUAL_TAGS = [
+            'us-gaap:NetIncomeLoss',
+            'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
+            'us-gaap:NetIncomeLossAvailableToCommonStockholders',
+            'us-gaap:NetIncomeLossAttributableToParent',
+            'us-gaap:IncomeLossFromContinuingOperations',
+        ]
+        net_income_annual = []
+        _annual_tag_used = None
+        for _tag in NET_INCOME_ANNUAL_TAGS:
+            _candidate = annual_data_by_tag.get(_tag, [])
+            if _candidate:
+                net_income_annual = _candidate
+                _annual_tag_used = _tag
+                break
         fiscal_end_month = determine_fiscal_year_end(net_income_annual)
-        print(f"Detected fiscal year end month: {fiscal_end_month}")
+        print(f"Detected fiscal year end month: {fiscal_end_month} (from {_annual_tag_used or 'default'})")
         
         # 希薄化後株式数のマップ（end, start -> value）を作成（Q4計算用に年次も必要）
         diluted_shares_all = tag_data_map.get('us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding', [])
@@ -420,28 +434,43 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         
         # ---------- 10-Qデータを四半期ごとに分類 ----------
         # まず、すべての10-Qデータを期間でフィルタ（70～120日）し、さらに同じend日付で複数ある場合は最も短い期間（四半期）を優先
-        # ここでは各タグごとに候補を作るが、四半期データは各タグで同じ期間セットが存在するため、代表としてNetIncomeLossで期間を決める。
-        net_income_10q = tag_data_map.get('us-gaap:NetIncomeLoss', [])
+        # NetIncomeLossがない銘柄（例: AVAV）のためフォールバックタグを試みる
+        NET_INCOME_QUARTERLY_TAGS = [
+            'us-gaap:NetIncomeLoss',
+            'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
+            'us-gaap:NetIncomeLossAvailableToCommonStockholders',
+            'us-gaap:NetIncomeLossAttributableToParent',
+            'us-gaap:IncomeLossFromContinuingOperations',
+        ]
         quarterly_candidates = []  # 四半期の期間情報を保持
-        for q_item in net_income_10q:
-            if not q_item.get('form', '').startswith('10-Q'):
-                continue
-            if 'start' not in q_item or 'end' not in q_item:
-                continue
-            start = datetime.strptime(q_item['start'], '%Y-%m-%d')
-            end = datetime.strptime(q_item['end'], '%Y-%m-%d')
-            days_diff = (end - start).days
-            if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
-                quarterly_candidates.append({
-                    'start': start,
-                    'end': end,
-                    'end_str': q_item['end'],
-                    'start_str': q_item['start'],
-                    'val': q_item['val'],
-                    'unit': q_item['unit'],
-                    'filed': q_item.get('filed', q_item['end']),
-                    'days': days_diff
-                })
+        _quarterly_tag_used = None
+        for _qtag in NET_INCOME_QUARTERLY_TAGS:
+            net_income_10q = tag_data_map.get(_qtag, [])
+            _q_candidates = []
+            for q_item in net_income_10q:
+                if not q_item.get('form', '').startswith('10-Q'):
+                    continue
+                if 'start' not in q_item or 'end' not in q_item:
+                    continue
+                start = datetime.strptime(q_item['start'], '%Y-%m-%d')
+                end = datetime.strptime(q_item['end'], '%Y-%m-%d')
+                days_diff = (end - start).days
+                if QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX:
+                    _q_candidates.append({
+                        'start': start,
+                        'end': end,
+                        'end_str': q_item['end'],
+                        'start_str': q_item['start'],
+                        'val': q_item['val'],
+                        'unit': q_item['unit'],
+                        'filed': q_item.get('filed', q_item['end']),
+                        'days': days_diff
+                    })
+            if _q_candidates:
+                quarterly_candidates = _q_candidates
+                _quarterly_tag_used = _qtag
+                break
+        print(f"Quarterly candidates: {len(quarterly_candidates)} items (from {_quarterly_tag_used or 'none'})")
         
         # 同じ終了日(end)のデータをグループ化し、最も期間の短いものを採用（四半期データとして適切）
         best_quarterly = {}
@@ -568,8 +597,13 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             
             if q1_key in quarters_map and q2_key in quarters_map and q3_key in quarters_map:
                 # Q1-Q3 のデータがある場合、年次データからQ4を計算
-                # 年次データは NetIncomeLoss の10-Kを使用
-                net_income_annual_items = annual_data_by_tag.get('us-gaap:NetIncomeLoss', [])
+                # 年次データはフォールバックタグを使用（AVAV等のためNetIncomeLoss以外も試みる）
+                net_income_annual_items = []
+                for _atag in NET_INCOME_ANNUAL_TAGS:
+                    _items = annual_data_by_tag.get(_atag, [])
+                    if _items:
+                        net_income_annual_items = _items
+                        break
                 # この fiscal_year に対応する10-Kを探す（endが fiscal_year の終了日と一致するもの）
                 target_k_item = None
                 for item in net_income_annual_items:

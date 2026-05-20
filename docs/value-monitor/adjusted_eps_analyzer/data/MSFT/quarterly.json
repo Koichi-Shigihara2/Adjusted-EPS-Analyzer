@@ -1,6 +1,6 @@
 {
   "ticker": "MSFT",
-  "last_updated": "2026-05-19T15:30:45.395079",
+  "last_updated": "2026-05-20T22:40:14.736160",
   "quarters": [
     {
       "gaap_eps": 4.2683680322364,
@@ -47,7 +47,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 82886000000.0,
       "diluted_shares": 7445000000.0,
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
@@ -55,7 +55,7 @@
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 91.2%）",
         "sbc_contribution": 0.912,
-        "sbc_to_revenue": 0,
+        "sbc_to_revenue": 0.037,
         "sbc_per_share": 0.4138,
         "sector_threshold": {
           "sbc_contribution": 0.4,
@@ -63,9 +63,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "Caution",
+        "comment": "株式報酬費用と無形資産償却費の両調整項目はMicrosoftにおいて定期的に発生する非現金費用であり、真に一過性・非経常的とは判断しにくいため、調整後EPSの健全性は注意を要します。非GAAPとして一般的ですが、恒常コストの加算により実態利益を過大表示する可能性があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただし、テック企業では毎期発生する恒常的な運用コスト。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却としてadd_back。取得後の定期的な償却であり一過性とはみなせない。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
@@ -113,7 +124,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 81273000000.0,
       "diluted_shares": 7460000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2026,
@@ -164,7 +175,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 77673000000.0,
       "diluted_shares": 7466000000.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2026,
@@ -215,7 +226,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 76441000000.0,
       "diluted_shares": 7465000000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
@@ -266,7 +277,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 70066000000.0,
       "diluted_shares": 7461000000.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
@@ -317,7 +328,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 69632000000.0,
       "diluted_shares": 7468000000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2025,
@@ -368,7 +379,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 65585000000.0,
       "diluted_shares": 7470000000.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2025,
@@ -419,7 +430,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 64727000000.0,
       "diluted_shares": 7469000000.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
@@ -470,7 +481,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 61858000000.0,
       "diluted_shares": 7472000000.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
@@ -521,7 +532,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 62020000000.0,
       "diluted_shares": 7468000000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2024,
@@ -572,7 +583,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 56517000000.0,
       "diluted_shares": 7462000000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2024,
@@ -623,7 +634,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 56189000000.0,
       "diluted_shares": 7472000000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
@@ -674,7 +685,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 52857000000.0,
       "diluted_shares": 7464000000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
@@ -725,7 +736,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 52747000000.0,
       "diluted_shares": 7473000000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2023,
@@ -776,7 +787,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 50122000000.0,
       "diluted_shares": 7485000000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2023,
@@ -827,7 +838,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 51865000000.0,
       "diluted_shares": 7540000000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
@@ -878,7 +889,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 49360000000.0,
       "diluted_shares": 7534000000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
@@ -929,7 +940,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 51728000000.0,
       "diluted_shares": 7555000000.0,
       "period_end": "2021-12-31",
       "fiscal_year": 2022,
@@ -980,7 +991,7 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 0.0,
+      "revenue": 45317000000.0,
       "diluted_shares": 7567000000.0,
       "period_end": "2021-09-30",
       "fiscal_year": 2022,
