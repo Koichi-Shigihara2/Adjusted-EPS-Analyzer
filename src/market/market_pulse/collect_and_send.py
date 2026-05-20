@@ -690,21 +690,94 @@ def get_market_news():
     return all_entries
 
 
-def analyse_market(realtime_data, news_context):
+def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_data=None, asset_flow_data=None):
     """xAI Grok API（OpenAI互換エンドポイント）で市場分析を実行する"""
     news_section = news_context if news_context.strip() else "（ニュース取得なし）"
+
+    # Grokに渡すデータにtech_pulse・sentiment・asset_flowを追記
+    extended_data = realtime_data
+
+    if sentiment_data:
+        extended_data += "\n--- センチメント指数（内部構造） ---\n"
+        extended_data += f"● センチメントスコア総合: {sentiment_data.get('score', 'N/A')} ({sentiment_data.get('label', '')})\n"
+        subs = sentiment_data.get("sub_scores", {})
+        sub_names = {
+            "vix_level": "VIX水準",
+            "sp500_ma_dev": "S&P500/50日MA乖離",
+            "ad_ratio": "騰落比率",
+            "hyg_lqd_dir": "クレジット環境",
+            "nh_nl": "新高値vs新安値",
+            "growth_value": "グロース優勢",
+            "distribution": "出来高圧力",
+        }
+        for k, v in subs.items():
+            name = sub_names.get(k, k)
+            extended_data += f"  {name}: スコア={v.get('score', 'N/A'):.0f} (重み={int(v.get('weight',0)*100)}%, 実値={v.get('raw', 'N/A')})\n"
+
+    if tech_pulse_data:
+        extended_data += "\n--- Tech Pulse（NASDAQセンチメント・乖離分析） ---\n"
+        extended_data += f"● Tech Pulseスコア: {tech_pulse_data.get('score', 'N/A')} ({tech_pulse_data.get('label', '')})\n"
+        comp = tech_pulse_data.get("components", {})
+        if comp.get("qqq_vs_ma125") is not None:
+            extended_data += f"● QQQ vs MA125乖離: {comp['qqq_vs_ma125']:+.2f}%\n"
+        if comp.get("qqq_vs_spy_20d") is not None:
+            extended_data += f"● QQQ vs SPY 20日相対強度: {comp['qqq_vs_spy_20d']:+.2f}% （プラス=NASDAQ優勢）\n"
+        if comp.get("vxn_latest") is not None:
+            extended_data += f"● VXN（NASDAQ版VIX）: {comp['vxn_latest']:.2f}\n"
+        if comp.get("vxn_vs_ma50") is not None:
+            extended_data += f"● VXN vs MA50: {comp['vxn_vs_ma50']:+.2f}%\n"
+        div = tech_pulse_data.get("divergence", {})
+        if div.get("value") is not None:
+            extended_data += f"● Tech Pulse vs CNN F&G 乖離値: {div['value']:+.1f} （プラス=NASDAQ過熱、マイナス=NASDAQ調整）\n"
+        if div.get("zscore") is not None:
+            extended_data += f"● 乖離Zスコア（90日）: {div['zscore']:+.2f}σ （±1.5σ超=異常な乖離）\n"
+        if div.get("signal"):
+            extended_data += f"● Tech Pulseシグナル: {div['signal']}\n"
+
+    if asset_flow_data:
+        extended_data += "\n--- 今日の資産クラス間資金フロー ---\n"
+        asset_labels = {
+            "ultra_short": "超短期国債(SHV)",
+            "short_bond": "短期国債(3ヶ月T-Bill)",
+            "gold": "金(GLD)",
+            "long_bond": "長期国債(TLT)",
+            "ig_bond": "投資適格社債(LQD)",
+            "hy_bond": "HY社債(HYG)",
+            "equity": "株式(SPY)",
+        }
+        for key, label in asset_labels.items():
+            d = asset_flow_data.get(key)
+            if d and d.get("change_pct") is not None:
+                direction = "▲買われた" if d["change_pct"] >= 0 else "▼売られた"
+                extended_data += f"● {label}: {d['change_pct']:+.2f}% {direction}\n"
     prompt = f"""
 あなたはプロの機関投資家専属アナリストだ。米国株市場を主軸に、以下の最新数値と需給・ニュースを統合し報告せよ。
 
 【全体要約】
 最初に必ず以下の形式で全体要約を書け（他の項目より前に置くこと）。
-全体要約には必ず以下を含めること：
-- センチメントスコア（数値）・CNN Fear & Greed（数値）・VIX（数値）を明示的に引用すること
-- S&P500・NASDAQの直近の値動きと方向感を具体的な数値で引用すること
-- HYG・LQD比など信用環境の数値を引用すること
+
+全体要約で求めるのは「数値の引用」ではなく、複数の指標を横断して読んだときに初めて見えてくる「構造的な矛盾」「変化の方向性」「体感と実態の乖離」の言語化だ。以下の視点を必ず検討し、該当するものを盛り込め：
+
+視点A【全体 vs 部分の乖離】
+  センチメントスコアやF&Gが示す市場全体の水準と、Tech PulseやQQQ/SPY相対強度が示すNASDAQ固有の動きが乖離していないか。
+  例：市場全体はGREEDでも乖離Zスコアがマイナス方向なら「全体は落ち着いているのにNASDAQだけ調整が生じている」という構造を指摘せよ。
+
+視点B【水準 vs 変化の乖離】
+  絶対値（スコア65、QQQ+110%等）は高くても、Zスコアや前日比の方向が急変しているなら「水準は高いが変化の方向が転換した」という変化点を指摘せよ。
+
+視点C【ポートフォリオ体感 vs 市場実態の乖離】
+  ハイテク株保有者には総悲観に見えても、市場全体のセンチメントはそうでない場合、「あなたの株が下がっているのは市場全体の問題ではなくNASDAQ固有の調整だ」という視点を提供せよ。
+
+視点D【資金フローが示す投資家心理の違い】
+  資産クラス間資金フローを見て、「市場全体からリスクオフ（株・社債・HY債が全て売られた）」と「株から長期債に資金移動（株売り・TLT買い）」では投資家の意図が全く異なる。この違いを必ず分析・解説せよ。
+  リスクオフ全般 → 景気後退懸念・恐怖による逃避
+  株→長期債シフト → 金利低下期待・安全資産への選好（必ずしも悲観ではない）
+  株→金シフト → インフレヘッジ・ドル不信
+  株・債券ともに売られ現金化 → 本格的なリスク回避
+
 形式：
-  ▶ [市場フェーズ判定]。[S&P500/NASDAQ等の具体数値を引用した現状の核心を1〜2文で]。
-  ✦ [具体的な投資行動の示唆を1〜2文。「様子見」「買い場探し」「利確検討」等の具体的方向性を数値根拠とともに示せ]。
+  ▶ [市場の現在地：全体フェーズと最も重要な構造的特徴を1〜2文で。数値は根拠として使うが羅列しない]
+  ✦ [投資行動示唆：上記の構造から導かれる具体的な行動を1〜2文。買い場・様子見・利確の根拠を構造で示せ]
 
 1. 市場フェーズ判定（晴れ・曇り・嵐）
 判定：[晴れ/曇り/嵐] を冒頭に置き、根拠を続けよ（VIXと前日比出来高比を必ず含む）。
@@ -720,7 +793,7 @@ def analyse_market(realtime_data, news_context):
 
 4. 通貨の勢い（ドル円）
 ▷ [現在のドル円水準と方向]
-→ [米国輸出企業・多国籍企業への影響を主軸に、必要な場合のみ日本株への言及を1文で]
+→ [米国輸出企業・多国籍企業への影響を主軸に1文で]
 
 5. 指数・需給（S&P500、NASDAQ、NYSE騰落統計）
 ※米国市場を主軸に分析せよ。日経平均は補足的な位置づけとする。
@@ -733,42 +806,43 @@ NYSE騰落比率が指数と逆行すれば市場内部の脆弱性を指摘せ�
 6. スタイル・規模間相対パフォーマンス（グロース対バリュー比、大型対小型比）
 ▷ [グロース対バリュー・大型対小型の方向（日次変化）]
 → [リスク選好度の変化とポートフォリオ傾斜判断への意味を1文で]
-グロース対バリュー比とリスクオン/ディフェンシブの解釈を一行で述べよ。
-大型対小型比と質への逃避の有無を一行で述べよ。
 
 7. コモディティ（原油、金）
 ▷ [原油・金の方向と水準]
 → [インフレ期待とリスク回避需要の読み方を1文で]
-金対原油比の方向とインフレヘッジ需要・リスク回避の強弱を示せ。
 原油下落時は「地政学リスクの緩和」か「需要減退懸念」かを必ず区別せよ。
 
-8. クレジット・金融コンディション（HYG、LQD、HYG対LQD比）
+8. クレジット・金融コンディション（HYG、LQD、HYG対LQD比）＋資金フロー分析
 ▷ [HYG・LQD・比率の方向と示すクレジット環境]
 → [信用収縮リスクの先行指標としての意味を1文で]
 以下を個別に一行ずつ明記した上で総合判定せよ：
   株（S&P500の方向）→ リスクオン/リスクオフ
   債券（米10年債利回りの方向）→ リスクオン/リスクオフ
   クレジット（HYG対LQD比の方向）→ リスクオン/リスクオフ
+資産クラス間資金フローのデータがあれば、資金の移動先（株→債券、株→金、全面逃避等）から投資家心理の具体的な意図を読み解け。
 
-9. 短期警戒ポイント（重要イベント）
+9. Tech Pulse分析（NASDAQセンチメント・乖離）
+QQQ vs SPY相対強度・VXN・乖離Zスコアを使って以下を分析せよ：
+▷ [NASDAQはS&P500と比べて過熱しているか調整しているか]
+→ [乖離Zスコアの方向から「今起きていること」の本質を1文で]
+NASDAQハイテク株保有者の体感と市場全体の実態が乖離している場合は必ずその構造を指摘せよ。
+
+10. 短期警戒ポイント（重要イベント）
 今後5営業日以内の米国市場に関わる具体的なイベントを列挙し、各イベントに「予想値・前回値・市場への影響シナリオ」を一行で添えよ。
-「地政学リスク」「各国中央銀行の発言」等の汎用表現のみの列挙は禁止。
 
-10. 総評・相関分析（需給面からの踏み込んだ考察）
+11. 総評・相関分析（需給面からの踏み込んだ考察）
 
 制約：
-- 出力の先頭は必ず【全体要約】から始めること。【全体要約】の前に他のテキストを置くことは禁止。
-- 各項目（1〜10）の冒頭に、その項目に関連する数値を「● 指標名: 数値 増減 前日比出来高比 確定日」の形式で必ず1行書くこと。
-- 比較・相対表現は必ず「○○対△△比」の形式で統一すること。
-- 総評では現在のデータから導ける具体的なシグナルや閾値を示せ。「○○する可能性も否定できない」等の汎用的な免責表現は使用禁止。
-- 地政学リスクに言及する場合は必ず具体的な地域・事象・発言者を明記せよ。「地政学リスク」単独の抽象表現は禁止。
-- 出力は必ず日本語（ひらがな・カタカナ・漢字・英数字・記号）のみ使用すること。韓国語・中国語・その他外国語文字の混入は厳禁。
-- Markdown記法（##、**、--- 等）は一切使用禁止。プレーンテキストのみで出力せよ。
-- 仮想通貨は無視。日本語回答。最後に俳句を一句（5-7-5）のみ添えること。複数句・改行は禁止し必ず一行で書くこと。音数（5-7-5）を厳守せよ。
-- 総評・各項目の締め文として「注意が必要である」「注視が必要である」「懸念される」等の汎用表現で終えることは禁止。必ず具体的なシグナルや水準で締めくくれ。
+- 出力の先頭は必ず【全体要約】から始めること。
+- 各項目（1〜11）の冒頭に関連数値を「● 指標名: 数値」形式で1行書くこと。
+- 総評では具体的なシグナルや閾値を示せ。免責的汎用表現は禁止。
+- 地政学リスクに言及する場合は具体的な地域・事象・発言者を明記せよ。
+- 出力は日本語のみ。Markdown記法（##、**等）は禁止。プレーンテキストのみ。
+- 最後に俳句を一句（5-7-5）のみ添えること。一行で書くこと。
+- 締め文として「注意が必要」「懸念される」等の汎用表現で終えることは禁止。
 
 【最新データ】:
-{realtime_data}
+{extended_data}
 
 【背景ニュース】:
 {news_section}
@@ -1008,8 +1082,8 @@ if __name__ == "__main__":
     news = get_market_news()
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
-    report = analyse_market(realtime_text, "\n".join(news))
     asset_flow_data = collect_asset_flow()
+    report = analyse_market(realtime_text, "\n".join(news), sentiment_data, tech_pulse_data, asset_flow_data)
     save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data, asset_flow_data)
     if GMAIL_USER and GMAIL_PASSWORD:
         send_email(report, sentiment_data)
