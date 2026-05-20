@@ -239,7 +239,6 @@
     <a href="#" class="active">Market Pulse</a>
     <a href="/On-a-journey/market-monitor/macro-pulse/">MACRO PULSE</a>
   </div>
-  <div id="lastUpdated" style="font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.06em;white-space:nowrap"></div>
 </header>
 <div class="shell">
   <div class="sec">市場センチメント指数 — 複数指標から算出した強欲・恐怖スコア（0=極度の恐怖 / 50=中立 / 100=極度の強欲）</div>
@@ -590,13 +589,7 @@ function renderChart(){
 function renderLegend(){const a=METRIC_DEFS.filter(m=>activeMetrics.has(m.key));const n=activeMetrics.size>1?' <span style="color:var(--mut);font-size:13px">（正規化表示）</span>':'';document.getElementById("chartLegend").innerHTML=a.map(m=>`<div class="legend-item"><div class="legend-dot" style="background:${m.color}"></div>${m.label}</div>`).join("")+n}
 
 // ── DETAIL ──
-function renderDetail(){const d=filteredData[selectedIdx];const pc=phaseClass(d.judgment);const{stock,bond,credit}=d.credit||{};
-  // Risk-Off Score: リスクオフの数（0-3）をスコア化
-  const riskOffCount=[stock,bond,credit].filter(v=>v==='リスクオフ').length;
-  const riskOffScore=Math.round(riskOffCount/3*100);
-  const riskOffColor=riskOffCount===0?'var(--grn)':riskOffCount===1?'var(--amb)':riskOffCount===2?'#f97316':'var(--red)';
-  const riskOffLabel=riskOffCount===0?'RISK ON':riskOffCount===1?'MILD CAUTION':riskOffCount===2?'RISK CAUTION':'RISK OFF';
-  const crHTML=d.credit?`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='リスクオン'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span><span style="font-family:var(--mono);font-size:12px;color:${riskOffColor};margin-left:8px;font-weight:700" title="Risk-Off Score: 3軸(株・債券・クレジット)のリスクオフ判定数から算出">${riskOffLabel} <span style="font-size:11px;color:var(--mut)">(${riskOffScore})</span></span></div>`:"";document.getElementById("detailInner").innerHTML=`<div class="detail-header"><span class="detail-phase-badge ${pc}">${phaseLabel(d.judgment)}</span><span class="detail-title-text">${fmtDateFull(d.date)}</span></div>${crHTML}<div class="detail-body">${d.summary??"詳細なし"}</div>${d.haiku?`<div class="haiku-box">${d.haiku}</div>`:""}`}
+function renderDetail(){const d=filteredData[selectedIdx];const pc=phaseClass(d.judgment);const{stock,bond,credit}=d.credit||{};const crHTML=d.credit?`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='リスクオン'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span></div>`:"";document.getElementById("detailInner").innerHTML=`<div class="detail-header"><span class="detail-phase-badge ${pc}">${phaseLabel(d.judgment)}</span><span class="detail-title-text">${fmtDateFull(d.date)}</span></div>${crHTML}<div class="detail-body">${d.summary??"詳細なし"}</div>${d.haiku?`<div class="haiku-box">${d.haiku}</div>`:""}`}
 
 // ── GAUGE ──
 function renderGauge(){
@@ -626,8 +619,7 @@ function renderGauge(){
   document.getElementById("gaugeLabel").style.color=color;
   if(filteredData.length>=2){const prev=filteredData[filteredData.length-2]?.sentiment?.score;if(prev!=null){const delta=score-prev;document.getElementById("gaugeDelta").innerHTML=`<span style="color:${delta>=0?'var(--grn)':'var(--red)'}">&#x25${delta>=0?'B2':'BC'} ${delta>0?'+':''}${delta.toFixed(1)}pt</span>`}}
   const subs=s.sub_scores||{};
-  const SUB_TOOLTIPS={vix_level:"VIX恐怖指数（重み25%）",sp500_ma_dev:"S&P500 MA200乖離（重み20%）",ad_ratio:"騰落比率（重み15%）",hyg_lqd_dir:"HYG/LQD信用環境（重み12%）",nh_nl:"新高値vs新安値（重み10%）",growth_value:"グロース/バリュー比（重み10%）",distribution:"需給圧力（重み8%）"};
-  document.getElementById("subScores").innerHTML='<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">スコア構成指標 <span style="font-size:10px">（バーにカーソルで重み表示）</span></div>'+Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc),w=v.weight!=null?Math.round(v.weight*100):null,raw=v.raw!=null?` / 実値: ${typeof v.raw==='number'?v.raw.toFixed(2):v.raw}`:'';const tooltip=SUB_TOOLTIPS[k]||(w!=null?`重み${w}%`:'');return`<div class="sub-row" title="${tooltip}${raw}"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}${w!=null?`<span style="font-size:10px;color:var(--mut);margin-left:2px">(${w}%)</span>`:''}</div></div>`}).join("");
+  document.getElementById("subScores").innerHTML='<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">スコア構成指標</div>'+Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc);const tooltip={vix_level:"恐怖度（低いほどGREED）",sp500_ma_dev:"トレンド強度",ad_ratio:"市場の広がり",hyg_lqd_dir:"信用環境",nh_nl:"新高値vs新安値",growth_value:"リスク選好",distribution:"需給圧力"}[k]||"";return`<div class="sub-row" title="${tooltip}"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}</div></div>`}).join("");
   // VIX9D表示
   const vix9dRatio=latest?.indicators?.["VIX9D対VIX比"];
   const vix9dData=latest?.indicators?.["VIX9D（短期VIX）"];
@@ -663,8 +655,8 @@ function renderOscChart(){
     return{label:m.label,data:plot,borderColor:m.color,pointBackgroundColor:m.color,pointBorderColor:"transparent",pointRadius:od.length>40?2:(m.key==="score"||m.key==="fg"?4:3),pointHoverRadius:6,borderWidth:m.key==="score"||m.key==="fg"?2:1.5,fill:false,tension:.3,borderDash:m.key==="score"||m.key==="fg"?[]:[4,2],_rawData:raw,_meta:m}});
   // データ範囲±10でクリップ（起伏を見やすく）
   const allOscVals=datasets.flatMap(d=>d._rawData||d.data).filter(v=>v!=null);
-  const oscMin=allOscVals.length?Math.max(0,Math.floor(Math.min(...allOscVals)/5)*5-5):0;
-  const oscMax=allOscVals.length?Math.min(100,Math.ceil(Math.max(...allOscVals)/5)*5+5):100;
+  const oscMin=allOscVals.length?Math.max(0,Math.floor(Math.min(...allOscVals)/5)*5-10):0;
+  const oscMax=allOscVals.length?Math.min(100,Math.ceil(Math.max(...allOscVals)/5)*5+10):100;
   const yC={min:(hasScore||hasFG||isMulti)?oscMin:undefined,max:(hasScore||hasFG||isMulti)?oscMax:undefined,ticks:{color:"#64748b",font:{family:"Space Mono",size:12},callback:v=>{if(v===20)return"FEAR▼";if(v===50)return"50";if(v===80)return"GREED▲";return v%10===0?v.toFixed(0):""}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}};
   if(oscChartInst)oscChartInst.destroy();
   oscChartInst=new Chart(document.getElementById("oscChart"),{type:"line",data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:12},bodyFont:{family:"Space Mono",size:13},callbacks:{label:ctx=>{const ds=ctx.dataset,raw=ds._rawData?.[ctx.dataIndex],m=ds._meta;if(m?.key==="score"){const lbl=od[ctx.dataIndex]?.sentiment?.label||"";return raw!=null?` Score: ${raw.toFixed(1)} (${lbl})`:" —"}if(m?.key==="fg"){return raw!=null?` CNN F&G: ${raw.toFixed(0)}`:" —"}return raw!=null?` ${m?.label||ds.label}: ${raw.toFixed(2)}`:" —"}}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:12},maxTicksLimit:12},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:yC}},
@@ -808,17 +800,7 @@ async function init(){
       if(!d.credit){const s=d.summary||"";d.credit={stock:s.includes("リスクオフ")?"リスクオフ":"リスクオン",bond:s.includes("債券")&&s.includes("上昇")?"リスクオフ":"リスクオン",credit:s.includes("HYG対LQD比")&&s.includes("上昇")?"リスクオン":"リスクオフ"}}
       if(!d.sentiment){const vix=d.indicators?.["VIX指数"]?.value;if(vix!=null){const vs=Math.max(0,Math.min(1,(35-vix)/23))*100;const sc=Math.round(vs*.6+20);d.sentiment={score:sc,label:sc<=20?"EXTREME FEAR":sc<=35?"FEAR":sc<=50?"CAUTION":sc<=65?"NEUTRAL":sc<=80?"GREED":"EXTREME GREED",sub_scores:{vix_level:{score:Math.round(vs),weight:.25,raw:vix}}}}else{d.sentiment={score:50,label:"NEUTRAL",sub_scores:{}}}}
       return d}).sort((a,b)=>new Date(a.date)-new Date(b.date))}else{allData=makeSample()}}catch{allData=makeSample()}
-  applyPeriod();renderAll()
-  // 更新時刻JST表示
-  if(allData.length>0){
-    const latestDate=allData[allData.length-1].date;
-    try{
-      const d=new Date(latestDate);
-      const jst=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d);
-      document.getElementById('lastUpdated').textContent='更新 '+jst+' JST';
-    }catch(e){}
-  }
-}
+  applyPeriod();renderAll()}
 init();
 </script>
   <script src="../../common/site-nav.js"></script>
