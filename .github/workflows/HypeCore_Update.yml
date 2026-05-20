@@ -49,7 +49,9 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update HypeCore - $(date +'%Y-%m-%d %H:%M') JST"
+            git stash
             git pull --rebase origin kaihatsu
+            git stash pop
             git push origin kaihatsu
           fi
 
