@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/On-a-journey/favicon.ico">
+<link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 <title>HypeCore — 期待と実体の解剖</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -18,7 +20,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15p
 header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--bdr);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none}
-.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--amb)}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--acc)}
 .logo-name{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut)}
 .nav-back{font-family:var(--mono);font-size:11px;color:var(--mut);text-decoration:none}
 .shell{max-width:1200px;margin:0 auto;padding:20px 20px 60px}
@@ -26,13 +28,13 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 /* ── HERO TITLE ── */
 .page-title{display:flex;align-items:baseline;gap:16px;padding:20px 0 16px;border-bottom:1px solid var(--bdr);margin-bottom:16px}
 .page-title-main{font-family:var(--mono);font-size:32px;font-weight:700}
-.page-title-main span{color:var(--amb)}
+.page-title-main span{color:var(--acc)}
 .page-title-sub{font-size:13px;color:var(--mut)}
 .ticker-bar{display:flex;align-items:center;gap:8px;margin-bottom:16px}
 .ticker-lbl{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--mut)}
 .ticker-btn{font-family:var(--mono);font-size:14px;font-weight:700;padding:5px 16px;
   border:1px solid var(--bdr);background:transparent;color:var(--mut);cursor:pointer;transition:all .15s}
-.ticker-btn:hover,.ticker-btn.active{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.08)}
+.ticker-btn:hover,.ticker-btn.active{border-color:var(--acc);color:var(--acc);background:rgba(236,72,153,.10)}
 
 /* ── HERO BAR（最重要情報を1行に集約）── */
 .hero-bar{display:grid;grid-template-columns:1fr 1px 1fr 1px 1fr 1px 1fr;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
@@ -111,18 +113,18 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 .tbl th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--mut);padding:10px 14px;text-align:left;border-bottom:1px solid var(--bdr);font-weight:400;white-space:nowrap}
 .tbl td{padding:10px 14px;border-bottom:1px solid rgba(30,40,64,.4);vertical-align:middle;font-size:13px}
 .tbl tr:last-child td{border-bottom:none}
-.tbl tr.now-row{background:rgba(245,158,11,.04)}
-.tbl tr.now-row td:first-child{border-left:2px solid var(--amb)}
+.tbl tr.now-row{background:rgba(236,72,153,.06)}
+.tbl tr.now-row td:first-child{border-left:2px solid var(--acc)}
 .mono{font-family:var(--mono)}.pos{color:var(--grn)}.neg{color:var(--red)}
 .s-badge{font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid;display:inline-block;white-space:nowrap}
 .ph-badge{font-family:var(--mono);font-size:10px;white-space:nowrap}
-.now-tag{font-family:var(--mono);font-size:9px;color:var(--amb);margin-left:6px}
+.now-tag{font-family:var(--mono);font-size:9px;color:var(--acc);margin-left:6px}
 </style>
 </head>
-<body>
+<body data-tool="hype">
 <header>
-  <a class="logo" href="/On-a-journey/"><div class="logo-dot"></div><span class="logo-name">ON A JOURNEY</span></a>
-  <a class="nav-back" href="/On-a-journey/">← TOP</a>
+  <a class="logo" href="/On-a-journey/"><img src="/On-a-journey/common/images/logo.png" alt="TANUKI" style="height:22px;width:auto;object-fit:contain;vertical-align:middle"><div class="logo-dot"></div><span class="logo-name">ON A JOURNEY</span></a>
+  <nav class="nav-links"></nav>
 </header>
 <div class="shell">
   <div class="page-title">
@@ -449,9 +451,9 @@ function render(data,ticker){
   }};}
   const nowP={id:'now',afterDatasetsDraw(c){
     const{ctx:cx,chartArea:{top,bottom},scales}=c;const px=scales.x.getPixelForValue(m.length-1);
-    cx.save();cx.strokeStyle='rgba(245,158,11,.6)';cx.lineWidth=1.5;cx.setLineDash([4,3]);
+    cx.save();cx.strokeStyle='rgba(236,72,153,.7)';cx.lineWidth=1.5;cx.setLineDash([4,3]);
     cx.beginPath();cx.moveTo(px,top);cx.lineTo(px,bottom);cx.stroke();cx.setLineDash([]);
-    cx.fillStyle='rgba(245,158,11,.9)';cx.font='bold 10px Space Mono';cx.textAlign='right';
+    cx.fillStyle='rgba(236,72,153,.95)';cx.font='bold 10px Space Mono';cx.textAlign='right';
     cx.fillText('▼ NOW',px-4,top+13);cx.restore();
   }};
   const xH={ticks:{display:false},grid:{color:gc}};
@@ -526,7 +528,7 @@ const _ticker = (_params.get('ticker') || 'PLTR').toUpperCase();
 document.addEventListener('DOMContentLoaded', () => {
   const bar = document.getElementById('tickerBtns');
   if (bar) {
-    bar.innerHTML = `<span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amb)">${_ticker}</span>
+    bar.innerHTML = `<span style="font-family:var(--mono);font-size:14px;font-weight:700;color:var(--acc)">${_ticker}</span>
       <a href="index.html" style="font-size:12px;color:var(--mut);text-decoration:none;margin-left:12px">← 一覧に戻る</a>`;
   }
 });
@@ -543,5 +545,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 })();
 </script>
+<script src="/On-a-journey/common/site-nav.js"></script>
 </body>
 </html>

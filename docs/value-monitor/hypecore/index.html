@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/On-a-journey/favicon.ico">
+<link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 <title>HypeCore — 銘柄一覧</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Noto+Sans+JP:wght@400;500;700&display=swap');
@@ -17,7 +19,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:15p
 header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--bdr);padding:0 24px;height:48px;display:flex;align-items:center;justify-content:space-between}
 .logo{display:flex;align-items:center;gap:8px;text-decoration:none}
-.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--amb)}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--acc)}
 .logo-name{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--mut)}
 .nav-back{font-family:var(--mono);font-size:11px;color:var(--mut);text-decoration:none}
 .shell{max-width:1400px;margin:0 auto;padding:20px 20px 60px}
@@ -25,7 +27,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 /* ── PAGE TITLE ── */
 .page-title{display:flex;align-items:baseline;gap:16px;padding:20px 0 16px;border-bottom:1px solid var(--bdr);margin-bottom:20px}
 .page-title-main{font-family:var(--mono);font-size:32px;font-weight:700}
-.page-title-main span{color:var(--amb)}
+.page-title-main span{color:var(--acc)}
 .page-title-sub{font-size:13px;color:var(--mut)}
 
 /* ── FILTER BAR ── */
@@ -33,7 +35,7 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
 .filter-btn{font-family:var(--mono);font-size:11px;padding:4px 12px;border:1px solid var(--bdr);
   background:transparent;color:var(--mut);cursor:pointer;transition:all .15s;border-radius:2px}
 .filter-btn:hover{border-color:var(--blu);color:var(--blu)}
-.filter-btn.active{border-color:var(--amb);color:var(--amb);background:rgba(245,158,11,.08)}
+.filter-btn.active{border-color:var(--acc);color:var(--acc);background:rgba(236,72,153,.10)}
 .filter-lbl{font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.1em}
 .search-input{font-family:var(--mono);font-size:12px;padding:4px 10px;background:var(--sur);
   border:1px solid var(--bdr);color:var(--txt);width:120px;outline:none}
@@ -47,8 +49,8 @@ thead th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(-
   padding:8px 12px;border-bottom:1px solid var(--bdr);text-align:left;white-space:nowrap;
   cursor:pointer;user-select:none}
 thead th:hover{color:var(--txt)}
-thead th.sort-asc::after{content:' ▲';color:var(--amb)}
-thead th.sort-desc::after{content:' ▼';color:var(--amb)}
+thead th.sort-asc::after{content:' ▲';color:var(--acc)}
+thead th.sort-desc::after{content:' ▼';color:var(--acc)}
 tbody tr{border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s}
 tbody tr:hover{background:var(--sur)}
 tbody td{padding:10px 12px;vertical-align:middle}
@@ -66,11 +68,11 @@ tbody td{padding:10px 12px;vertical-align:middle}
 .rec-hold{color:#f59e0b;font-weight:700}
 .rec-sell{color:#f43f5e;font-weight:700}
 .rec-watch{color:#94a3b8;font-weight:700}
-.ticker-link{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--amb);text-decoration:none}
+.ticker-link{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--acc);text-decoration:none}
 .ticker-link:hover{text-decoration:underline}
 .loading{text-align:center;padding:60px;color:var(--mut);font-family:var(--mono)}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bdr);
-  border-top-color:var(--amb);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
+  border-top-color:var(--acc);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .phase-tag{font-size:11px;color:var(--mut)}
 .num-pos{color:#10b981}
@@ -78,13 +80,14 @@ tbody td{padding:10px 12px;vertical-align:middle}
 .num-neu{color:var(--mut)}
 </style>
 </head>
-<body>
+<body data-tool="hype">
 <header>
-  <a class="logo" href="../../index.html">
+  <a class="logo" href="/On-a-journey/">
+    <img src="/On-a-journey/common/images/logo.png" alt="TANUKI" style="height:22px;width:auto;object-fit:contain;vertical-align:middle">
     <span class="logo-dot"></span>
     <span class="logo-name">ON A JOURNEY</span>
   </a>
-  <a class="nav-back" href="../">← value-monitor</a>
+  <nav class="nav-links"></nav>
 </header>
 
 <div class="shell">
@@ -293,5 +296,6 @@ document.querySelectorAll('thead th[data-col]').forEach(th=>{
 
 loadAll();
 </script>
+<script src="/On-a-journey/common/site-nav.js"></script>
 </body>
 </html>
