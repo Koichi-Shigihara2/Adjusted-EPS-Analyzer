@@ -17,7 +17,7 @@ sys.path.insert(0, repo_root)
 from common.sec_data.config import get_all
 from common.sec_data.fetcher import SECFetcher, load_company_facts
 from common.sec_data.parser import SECParser
-from common.sec_data.quarterly import build_raw_table, save_raw_table
+from common.sec_data.quarterly import build_raw_table, save_raw_table, check_revenue_quality
 from common.sec_data.normalizer import normalize, save_normalized
 from common.sec_data.ttm_calculator import calc_ttm_series, save_ttm_series
 
@@ -83,6 +83,31 @@ def main():
             success += 1
             continue
 
+        # 4b. Revenue品質チェック
+        try:
+            rq = check_revenue_quality(ticker, normalized)
+            status = rq["status"]
+            yoy = f"{rq['latest_rev_yoy']:+.1f}%" if rq["latest_rev_yoy"] is not None else "N/A"
+            if status == "ISSUE":
+                print(f"   [Revenue ❌ ISSUE] yoy={yoy}")
+                for iss in rq["issues"]:
+                    print(f"     ❌ {iss}")
+            elif status == "WARN":
+                print(f"   [Revenue ⚠️  WARN] yoy={yoy}")
+                for w in rq["warnings"]:
+                    print(f"     ⚠️  {w}")
+            else:
+                print(f"   Revenue: OK  yoy={yoy}")
+            # GitHub Actions Step Summary に書き込み
+            summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+            if summary_path and status in ("ISSUE", "WARN"):
+                with open(summary_path, "a", encoding="utf-8") as sf:
+                    icon = "🔴" if status == "ISSUE" else "🟡"
+                    sf.write(f"| {ticker} | {icon} {status} | {yoy} | "
+                             f"{'; '.join(rq['issues'] + rq['warnings'])[:120]} |\n")
+        except Exception as e:
+            print(f"   [WARN] Revenue品質チェックエラー: {e}")
+
         # 5. TTMシリーズ生成
         try:
             ttm_series = calc_ttm_series(ticker, normalized)
@@ -101,6 +126,20 @@ def main():
     if failed:
         print(f"失敗: {', '.join(failed)}")
     print("=" * 60)
+
+    # GitHub Actions Step Summary にRevenue品質チェック結果のヘッダーを追記
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary_path:
+        # ヘッダーが未出力の場合のみ追記（先頭に書く）
+        header = "\n## Revenue品質チェック（WARN/ISSUE銘柄のみ）\n\n| Ticker | Status | YoY | 内容 |\n|:---|:---|---:|:---|\n"
+        try:
+            with open(summary_path, "r", encoding="utf-8") as sf:
+                existing = sf.read()
+        except FileNotFoundError:
+            existing = ""
+        if "Revenue品質チェック" not in existing:
+            with open(summary_path, "a", encoding="utf-8") as sf:
+                sf.write(header)
 
     sys.exit(0 if not failed else 1)
 
