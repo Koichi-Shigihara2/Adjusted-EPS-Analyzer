@@ -653,8 +653,8 @@ function renderOscChart(){
     const raw=od.map(d=>m.extract(d));let plot=raw;
     if(isMulti&&m.key!=="score"&&m.key!=="fg"){const v=raw.filter(x=>x!=null);if(v.length){const mn=Math.min(...v),mx=Math.max(...v);plot=raw.map(x=>x==null?null:mx===mn?50:(x-mn)/(mx-mn)*100)}}
     return{label:m.label,data:plot,borderColor:m.color,pointBackgroundColor:m.color,pointBorderColor:"transparent",pointRadius:od.length>40?2:(m.key==="score"||m.key==="fg"?4:3),pointHoverRadius:6,borderWidth:m.key==="score"||m.key==="fg"?2:1.5,fill:false,tension:.3,borderDash:m.key==="score"||m.key==="fg"?[]:[4,2],_rawData:raw,_meta:m}});
-  // データ範囲±10でクリップ（起伏を見やすく）
-  const allOscVals=datasets.flatMap(d=>d._rawData||d.data).filter(v=>v!=null);
+  // Y軸範囲は正規化後の表示値（plot）で計算する
+  const allOscVals=datasets.flatMap(d=>d.data).filter(v=>v!=null);
   const oscMin=allOscVals.length?Math.max(0,Math.floor(Math.min(...allOscVals)/5)*5-10):0;
   const oscMax=allOscVals.length?Math.min(100,Math.ceil(Math.max(...allOscVals)/5)*5+10):100;
   const yC={min:oscMin,max:oscMax,ticks:{color:"#64748b",font:{family:"Space Mono",size:12},callback:v=>{if(v===20)return"FEAR▼";if(v===50)return"50";if(v===80)return"GREED▲";return v%10===0?v.toFixed(0):""}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}};
