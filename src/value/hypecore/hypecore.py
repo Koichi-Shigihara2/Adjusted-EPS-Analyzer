@@ -662,7 +662,27 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
 
     elif stage == 4:  # 期待剥落期
         ma200_shrinking = ma200m > -5
+        price_iv  = row.get("price_iv_ratio")
+        forward_pe = row.get("forward_pe")
+
+        # バリュエーション過熱チェック
+        # 株価÷IV > 2.0 または FwdPE > 100 の場合は「底打ち兆候」に昇格しない
+        # （実体が強くても期待がまだ過熱しており、さらなる訂正余地が大きい）
+        valuation_overheat = (
+            (price_iv is not None and price_iv > 2.0) or
+            (forward_pe is not None and forward_pe > 100)
+        )
+
         if real_strong and ma200_shrinking and rsi > 40:
+            if valuation_overheat:
+                piv_str = f"株価÷IV={price_iv:.2f}x" if price_iv is not None else ""
+                fpe_str = f"FwdPE={forward_pe:.0f}x" if forward_pe is not None else ""
+                overheat_str = "、".join(filter(None, [piv_str, fpe_str]))
+                return dict(phase="中盤B", label="実体維持・バリュエーション過熱",
+                    watch=f"実体（売上・EPS）は強いが、{overheat_str}と割高感が残る。"
+                           "期待の訂正がまだ終わっていない可能性。",
+                    next="バリュエーションが正常化（FwdPE<60 または 株価÷IV<2.0）するまで様子見。"
+                         "実体の強さだけで底打ちと判断するのは早計。")
             return dict(phase="出口", label="底打ち兆候",
                 watch="実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。",
                 next="打診買いの準備を始める。出来高増加を伴う株価反発で本格エントリー。")
