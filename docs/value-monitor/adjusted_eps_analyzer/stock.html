@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -348,7 +348,17 @@
       padding: 2px 6px; color: var(--mut); white-space: nowrap;
     }
     .amt-cell { font-family: var(--mono); text-align: right; color: var(--grn); }
-  </style>
+  
+    /* Header right-side fix: nav-links が長くなっても検索窓が見切れないように */
+    .hdr-inner { flex-wrap: wrap; row-gap: 8px; }
+    .hdr-right { flex: 1 1 auto; min-width: 0; row-gap: 8px; }
+    .hdr-right .nav-links { flex: 0 1 auto; min-width: 0; flex-wrap: wrap; }
+    .hdr-right .search-row { flex-shrink: 0; }
+    .search-row input { min-width: 150px; }
+    @media (max-width: 1100px) {
+      .hdr-right { width: 100%; justify-content: flex-end; }
+    }
+</style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
 <body data-tool="eps">
@@ -360,7 +370,7 @@
         <span class="logo-dot"></span>
         Adjusted EPS Analyzer
       </a>
-      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+      <div class="hdr-right" style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;justify-content:flex-end">
         <nav class="nav-links">
           <a href="../../">HOME</a>
           <a href="index.html">ダッシュボード</a>
