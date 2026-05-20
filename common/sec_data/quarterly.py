@@ -23,6 +23,11 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
         "approximate": ["DA"],
         "note_discontinuous": ["LTDebt"],
     },
+    # 金融系: Revenueタグを銀行固有のタグに上書き
+    "SOFI": {
+        "revenue_concept": "RevenuesNetOfInterestExpense",
+        "note": "フィンテック銀行。RevenueFromContractWithCustomer は純金利収益の一部のみ。",
+    },
 }
 
 # 会計年度タイプ（将来対応用）
@@ -156,6 +161,16 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
         entries = _get_field_units(company_facts, concept, unit)
 
         if field_name == "Revenue":
+            # 銘柄固有のRevenue概念が指定されている場合はそれを優先使用
+            ticker_revenue_concept = restrictions.get("revenue_concept")
+            if ticker_revenue_concept:
+                override_entries = _get_field_units(company_facts, ticker_revenue_concept, unit)
+                if override_entries:
+                    entries = _process_entries(override_entries)
+                    logger.debug("[%s] Revenue override: %s (%d entries)",
+                                 ticker, ticker_revenue_concept, len(entries))
+                    fields[field_name] = entries
+                    continue
             # Revenueは企業によってタグが途中で変わる・複数タグ併用のため
             # メインタグ＋全フォールバックをマージして最多エントリを確保する
             # 注意: 同一accn内にYTDとstandalone両方が含まれる場合があるため
