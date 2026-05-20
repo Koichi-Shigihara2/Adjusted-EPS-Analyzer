@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 233639189742.87637,
   "intrinsic_value_per_share": 809.609282538521,
   "intrinsic_value_beta": 692.43,
-  "upside_percent_beta": 52.7,
+  "upside_percent_beta": 45.6,
   "intrinsic_value_rf": 4916.99,
-  "upside_percent_rf": 984.2,
+  "upside_percent_rf": 934.0,
   "v0": 116464536105.92491,
   "v0_adjusted": 116819594871.43819,
   "alpha": 1.0,
@@ -16,7 +16,7 @@
   },
   "upside_percent": 78.5,
   "calculation_date": "2026-05-14",
-  "formula": "Koichi式 v7.3.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "wacc": {
     "value": 0.11026,
@@ -235,6 +235,18 @@
     "divergence_ratio": 0.88,
     "divergence_warning": ""
   },
+  "rd_capitalization": {
+    "applied": false,
+    "rd_current": 0.0,
+    "rd_avg_3yr": 0.0,
+    "capitalized_rd": 0.0,
+    "amortization_current": 0.0,
+    "rd_adjustment": 0.0,
+    "rd_revenue_ratio": 0.0,
+    "threshold": 0.05,
+    "years_used": 0,
+    "note": "R&D/Revenue=4.1% < 閾値5%のため適用なし"
+  },
   "bs_adjustment": {
     "cash": 2487096000.0,
     "short_term_investments": 0.0,
@@ -248,7 +260,7 @@
   },
   "rice": {
     "available": false,
-    "q": 1.4637,
+    "q": 1.4294,
     "cf_conversion": 0.0,
     "wacc": 0.1,
     "q_years": 3,
@@ -281,6 +293,7 @@
     "rpo": 0.0,
     "beta": 1.18,
     "sector": "Communication Services",
+    "industry": "Advertising Agencies",
     "eps_data": {
       "ticker": "APP"
     },
@@ -300,11 +313,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 355058765.51327366,
     "alpha_uncapped": 4.61331577720206,
-    "per": 39.368923,
+    "per": 41.27691,
+    "per_adjusted": 42.8,
     "ma200": 530.2904
   },
   "validation": {
-    "validated_at": "2026-05-14",
+    "validated_at": "2026-05-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
