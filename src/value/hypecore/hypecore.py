@@ -630,14 +630,27 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
     rsi    = row.get("rsi",        50) or 50
     mom3m  = row.get("price_mom3m", 0) or 0
     ma200m = row.get("ma200_mom",   0) or 0
-    rev_yoy   = row.get("rev_yoy")
-    eps_surp  = row.get("eps_surprise")
 
-    # 実体の強さ判定：売上>15%（成長継続）またはEPSサプライズ>0（決算良好）のどちらかで実体維持とみなす
-    real_strong = (
+    def _v(val):
+        """pandas NaN を None に変換（NaN は is None で検出できないため）"""
+        return None if pd.isna(val) else val
+
+    rev_yoy   = _v(row.get("rev_yoy"))
+    eps_surp  = _v(row.get("eps_surprise"))
+
+    # 実体の強さ判定
+    # 条件A: 標準（売上>15% かつ EPSが大きくミスしていない、またはEPS黒字サプライズ）
+    _real_standard = (
         (rev_yoy is not None and rev_yoy > 15 and (eps_surp is None or eps_surp > -5)) or
         (eps_surp is not None and eps_surp > 0 and rev_yoy is not None and rev_yoy > 0)
     )
+    # 条件B: 高成長グロース（売上>30%かつEPS大幅ミスでない）
+    # 赤字成長企業でも売上が急拡大していれば「実体崩壊」とは言えない
+    _real_growth = (
+        rev_yoy is not None and rev_yoy > 30 and
+        (eps_surp is None or eps_surp > -30)
+    )
+    real_strong = _real_standard or _real_growth
 
     if stage == 3:  # 陶酔期
         if ma200m < -5 and fp < -5:
@@ -673,7 +686,10 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
             (forward_pe is not None and forward_pe > 100)
         )
 
-        if real_strong and ma200_shrinking and rsi > 40:
+        # 底打ち兆候：実体強い + MA200収縮鈍化 + RSI>40 + 過大下落していない
+        bottoming = real_strong and ma200_shrinking and rsi > 40 and fp > -45
+
+        if bottoming:
             if valuation_overheat:
                 piv_str = f"株価÷IV={price_iv:.2f}x" if price_iv is not None else ""
                 fpe_str = f"FwdPE={forward_pe:.0f}x" if forward_pe is not None else ""
@@ -695,12 +711,17 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
                 watch="S3から転落直後。Distribution（大口売り抜け）が始まっている可能性。",
                 next="ポジション縮小推奨。実体（次の決算）が強ければ早期底打ちの可能性。")
         # EPSデータなし＋売上が強い場合は中盤Bに寄せる（誤判定防止）
-        rev_yoy = row.get("rev_yoy")
         eps_missing = eps_surp is None
         if eps_missing and rev_yoy is not None and rev_yoy > 15:
             return dict(phase="中盤B*", label="実体維持の可能性（EPS要確認）",
                 watch=f"売上成長{rev_yoy:+.1f}%は維持されているが、EPSデータが未取得。決算結果を別途確認推奨。",
                 next="次の決算でEPS黒字なら底打ちの可能性。マイナスなら中盤A（実体崩壊）に移行。")
+        # 中盤A: rev_yoyの水準でラベルを変える
+        # rev_yoyがプラスなら「実体崩壊」とは言えず「軟化」が適切
+        if rev_yoy is not None and rev_yoy > 5:
+            return dict(phase="中盤A", label="実体軟化・期待崩壊中",
+                watch=f"売上成長{rev_yoy:+.1f}%はあるが、EPSが大幅ミスで期待の修正が続いている。",
+                next="次の決算でEPS改善が確認されれば「実体維持」に格上げ。悪化なら本格的な崩壊へ。")
         return dict(phase="中盤A", label="実体も崩壊中",
             watch="売上・EPSの悪化も確認される本格的な下落局面。",
             next="実体の回復（売上加速・EPSサプライズ）が出るまで売り継続。")
