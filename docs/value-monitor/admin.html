@@ -554,6 +554,31 @@
       </div>
     </div>
 
+    <h3 class="section-title" style="margin-top:28px">HYPECORE</h3>
+    <div class="wf-grid">
+      <div class="wf-card">
+        <div class="wf-card-head">
+          <div>
+            <div class="wf-name">HypeCore 更新</div>
+            <div class="wf-desc">ハイプサイクル判定（Stage・フェーズ・推奨）を更新。空=hypecore=true全銘柄</div>
+          </div>
+          <span class="wf-schedule">日曜 JST 22:00</span>
+        </div>
+        <div class="wf-inputs">
+          <div class="form-group" style="flex:1">
+            <label>対象ティッカー（空=hypecore=true全銘柄）</label>
+            <input type="text" class="form-input" id="wf-hypecore-tickers"
+                   placeholder="例: NVDA,PLTR,TSLA"
+                   autocomplete="off" autocorrect="off" autocapitalize="off">
+          </div>
+        </div>
+        <div class="wf-actions">
+          <button class="btn" onclick="runWorkflow('HypeCore_Update.yml', {tickers: document.getElementById('wf-hypecore-tickers').value.trim()}, 'wf-hypecore-result')">▶ 実行</button>
+        </div>
+        <div class="result-msg" id="wf-hypecore-result"></div>
+      </div>
+    </div>
+
     <h3 class="section-title" style="margin-top:28px">EPS / MARKET</h3>
     <div class="wf-grid">
       <div class="wf-card">
