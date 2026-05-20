@@ -17,6 +17,7 @@ from .ai_analyzer import analyze_adjustments
 from .sector_classifier_v2 import SectorClassifierV2
 from .company_metadata import get_company_metadata
 from .maturity_monitor import MaturityMonitor
+from .fair_value_detector import apply_fair_value_detection
 
 # プロジェクトルートを取得（pipeline.py の場所から3階層上）
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -457,6 +458,10 @@ def run(ticker_filter: str = None):
         else:
             print(f"  [AV] Skipping EPS discrepancy check for {ticker} (not in EPS_CHECK_TICKERS)")
         
+        # ★★★ 公正価値変動の自動検出・調整項目化 ★★★
+        print(f"  [FV Auto] Running fair value auto-detection for {ticker}...")
+        quarterly_results = apply_fair_value_detection(quarterly_raw, quarterly_results)
+
         # TTM・年次集計・AI分析
         ttm_results = []
         for i in range(3, len(quarterly_results)):
