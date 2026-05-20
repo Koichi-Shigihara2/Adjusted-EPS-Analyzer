@@ -229,6 +229,7 @@
             <th>Stonks Silo</th>
             <th>TANUKI</th>
             <th>EPS</th>
+            <th>HypeCore</th>
             <th>データ状態</th>
             <th>操作</th>
           </tr>
@@ -263,6 +264,10 @@
             <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--txt)">
               <input type="checkbox" id="regStonks" checked style="accent-color:var(--acc)">
               Stonks Silo
+            </label>
+            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--txt)">
+              <input type="checkbox" id="regHypecore" checked style="accent-color:var(--acc)">
+              HypeCore
             </label>
           </div>
         </div>
@@ -808,14 +813,14 @@ function parseCsv(csv) {
       }
     }
     cols.push(cur.trim());
-    const [ticker, cik, name, eps_sector, stonks_silo, tanuki, eps] = cols;
-    return { ticker: ticker||'', cik: cik||'', name: name||'', eps_sector: eps_sector||'', stonks_silo: stonks_silo||'', tanuki: tanuki||'true', eps: eps||'true' };
+    const [ticker, cik, name, eps_sector, stonks_silo, tanuki, eps, hypecore] = cols;
+    return { ticker: ticker||'', cik: cik||'', name: name||'', eps_sector: eps_sector||'', stonks_silo: stonks_silo||'', tanuki: tanuki||'true', eps: eps||'true', hypecore: hypecore||'true' };
   }).filter(r => r.ticker);
 }
 function buildCsv(rows) {
   const q = v => v.includes(',') ? `"${v.replace(/"/g, '""')}"` : v;
-  return 'ticker,cik,name,eps_sector,stonks_silo,tanuki,eps\n' +
-    rows.map(r => `${q(r.ticker)},${q(r.cik)},${q(r.name||'')},${q(r.eps_sector||'')},${q(r.stonks_silo||'false')},${q(r.tanuki||'true')},${q(r.eps||'true')}`).join('\n') + '\n';
+  return 'ticker,cik,name,eps_sector,stonks_silo,tanuki,eps,hypecore\n' +
+    rows.map(r => `${q(r.ticker)},${q(r.cik)},${q(r.name||'')},${q(r.eps_sector||'')},${q(r.stonks_silo||'false')},${q(r.tanuki||'true')},${q(r.eps||'true')},${q(r.hypecore||'true')}`).join('\n') + '\n';
 }
 function calcWacc(beta) {
   return (RF + beta * RM_RF * 100).toFixed(2) + '%';
@@ -886,10 +891,11 @@ async function loadTickerTab() {
     for (const ticker of tickerList) {
       const hasCik = !!cikMap[ticker];
       const row    = cikRowMap[ticker] || {};
-      const silo   = row.stonks_silo === 'true';
-      const tanuki = row.tanuki !== 'false';
-      const eps    = row.eps    !== 'false';
-      const epsSec = row.eps_sector || '';
+      const silo     = row.stonks_silo === 'true';
+      const tanuki   = row.tanuki !== 'false';
+      const eps      = row.eps    !== 'false';
+      const hypecore = row.hypecore !== 'false';
+      const epsSec   = row.eps_sector || '';
       const tr = document.createElement('tr');
       tr.id = `tr-${ticker}`;
       tr.innerHTML = `
@@ -901,6 +907,7 @@ async function loadTickerTab() {
         <td><span class="badge ${silo ? 'ok' : 'mut'}">${silo ? '対象' : '—'}</span></td>
         <td><span class="badge ${tanuki ? 'ok' : 'warn'}">${tanuki ? '✓' : 'OFF'}</span></td>
         <td><span class="badge ${eps ? 'ok' : 'warn'}">${eps ? '✓' : 'OFF'}</span></td>
+        <td><span class="badge ${hypecore ? 'ok' : 'warn'}">${hypecore ? '✓' : 'OFF'}</span></td>
         <td><span class="badge ${hasCik ? 'ok' : 'warn'}">${hasCik ? 'CIK有' : 'CIK無'}</span></td>
         <td style="display:flex;gap:4px">
           <button class="btn" style="padding:4px 10px;font-size:11px" onclick="toggleEditRow('${ticker}')">✏</button>
@@ -942,6 +949,13 @@ async function loadTickerTab() {
                 <option value="false" ${!eps ? 'selected' : ''}>除外</option>
               </select>
             </div>
+            <div class="form-group" style="margin:0">
+              <label style="font-size:11px">HypeCore</label>
+              <select class="form-input" id="edit-hypecore-${ticker}" style="font-size:12px">
+                <option value="true"  ${hypecore ? 'selected' : ''}>有効</option>
+                <option value="false" ${!hypecore ? 'selected' : ''}>除外</option>
+              </select>
+            </div>
             <button class="btn primary" style="font-size:11px;padding:6px 14px"
                     onclick="saveTickerEdit('${ticker}')">💾 保存</button>
             <button class="btn" style="font-size:11px;padding:6px 10px"
@@ -970,10 +984,11 @@ function toggleEditRow(ticker) {
 }
 
 async function saveTickerEdit(ticker) {
-  const epsSec  = document.getElementById(`edit-eps-${ticker}`)?.value.trim() || '';
-  const silo    = document.getElementById(`edit-silo-${ticker}`)?.value || 'false';
-  const tanuki  = document.getElementById(`edit-tanuki-${ticker}`)?.value || 'true';
-  const eps     = document.getElementById(`edit-eps-flag-${ticker}`)?.value || 'true';
+  const epsSec   = document.getElementById(`edit-eps-${ticker}`)?.value.trim() || '';
+  const silo     = document.getElementById(`edit-silo-${ticker}`)?.value || 'false';
+  const tanuki   = document.getElementById(`edit-tanuki-${ticker}`)?.value || 'true';
+  const eps      = document.getElementById(`edit-eps-flag-${ticker}`)?.value || 'true';
+  const hypecore = document.getElementById(`edit-hypecore-${ticker}`)?.value || 'true';
 
   try {
     const { content: csv, sha: cs } = await fetchFile(CIK_PATH);
@@ -984,18 +999,20 @@ async function saveTickerEdit(ticker) {
     rows[idx].stonks_silo = silo;
     rows[idx].tanuki      = tanuki;
     rows[idx].eps         = eps;
+    rows[idx].hypecore    = hypecore;
     await commitFile(CIK_PATH, buildCsv(rows), `chore: update ${ticker} settings`, cs);
     showResult(`edit-result-${ticker}`, 'success', `✓ ${ticker} を更新しました`);
     // ローカルキャッシュ更新
-    cikRowMap[ticker] = { ...cikRowMap[ticker], eps_sector: epsSec, stonks_silo: silo, tanuki, eps };
+    cikRowMap[ticker] = { ...cikRowMap[ticker], eps_sector: epsSec, stonks_silo: silo, tanuki, eps, hypecore };
     // 行のバッジを即時反映
     const mainTr = document.getElementById(`tr-${ticker}`);
     if (mainTr) {
       const cells = mainTr.querySelectorAll('td');
       cells[4].innerHTML = epsSec || '<span style="color:var(--mut)">—</span>';
-      cells[5].innerHTML = silo === 'true'   ? '<span class="badge ok">対象</span>'   : '<span class="badge mut">—</span>';
-      cells[6].innerHTML = tanuki === 'true' ? '<span class="badge ok">✓</span>'     : '<span class="badge warn">OFF</span>';
-      cells[7].innerHTML = eps === 'true'    ? '<span class="badge ok">✓</span>'     : '<span class="badge warn">OFF</span>';
+      cells[5].innerHTML = silo === 'true'      ? '<span class="badge ok">対象</span>'   : '<span class="badge mut">—</span>';
+      cells[6].innerHTML = tanuki === 'true'    ? '<span class="badge ok">✓</span>'     : '<span class="badge warn">OFF</span>';
+      cells[7].innerHTML = eps === 'true'       ? '<span class="badge ok">✓</span>'     : '<span class="badge warn">OFF</span>';
+      cells[8].innerHTML = hypecore === 'true'  ? '<span class="badge ok">✓</span>'     : '<span class="badge warn">OFF</span>';
     }
   } catch(e) {
     showResult(`edit-result-${ticker}`, 'error', '保存失敗: ' + e.message);
@@ -1173,11 +1190,12 @@ async function fetchSegmentsForTicker(ticker, cik) {
 
 async function registerTicker() {
   const ticker = document.getElementById('regTicker').value.trim().toUpperCase();
-  const doTanuki  = document.getElementById('regTanuki').checked;
-  const doEps     = document.getElementById('regEps').checked;
-  const doStonks  = document.getElementById('regStonks').checked;
+  const doTanuki   = document.getElementById('regTanuki').checked;
+  const doEps      = document.getElementById('regEps').checked;
+  const doStonks   = document.getElementById('regStonks').checked;
+  const doHypecore = document.getElementById('regHypecore').checked;
   if (!ticker) { alert('ティッカーを入力してください'); return; }
-  if (!doTanuki && !doEps && !doStonks) { alert('登録するシステムを選択してください'); return; }
+  if (!doTanuki && !doEps && !doStonks && !doHypecore) { alert('登録するシステムを選択してください'); return; }
 
   const btn = document.getElementById('registerTickerBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>登録中...';
@@ -1240,7 +1258,8 @@ async function registerTicker() {
       if (!existing) {
         if (cik) {
           rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: 'true',
-                      tanuki: doTanuki ? 'true' : 'false', eps: doEps ? 'true' : 'false' });
+                      tanuki: doTanuki ? 'true' : 'false', eps: doEps ? 'true' : 'false',
+                      hypecore: doHypecore ? 'true' : 'false' });
           rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
           files.push({ path: CIK_PATH, content: buildCsv(rows) });
         }
@@ -1249,6 +1268,7 @@ async function registerTicker() {
         if (existing.stonks_silo !== 'true') { existing.stonks_silo = 'true'; changed = true; }
         if (doTanuki && existing.tanuki !== 'true') { existing.tanuki = 'true'; changed = true; }
         if (doEps    && existing.eps    !== 'true') { existing.eps    = 'true'; changed = true; }
+        if (doHypecore && existing.hypecore !== 'true') { existing.hypecore = 'true'; changed = true; }
         if (changed) files.push({ path: CIK_PATH, content: buildCsv(rows) });
       }
     }
@@ -1261,7 +1281,8 @@ async function registerTicker() {
         const existing = rows.find(r => r.ticker.toUpperCase() === ticker);
         if (!existing) {
           rows.push({ ticker, cik, name, eps_sector: '', stonks_silo: doStonks ? 'true' : 'false',
-                      tanuki: 'true', eps: doEps ? 'true' : 'false' });
+                      tanuki: 'true', eps: doEps ? 'true' : 'false',
+                      hypecore: doHypecore ? 'true' : 'false' });
           rows.sort((a, b) => a.ticker.localeCompare(b.ticker));
           files.push({ path: CIK_PATH, content: buildCsv(rows) });
         } else {
@@ -1269,6 +1290,7 @@ async function registerTicker() {
           if (doStonks && existing.stonks_silo !== 'true') { existing.stonks_silo = 'true'; changed = true; }
           if (existing.tanuki !== 'true') { existing.tanuki = 'true'; changed = true; }
           if (doEps && existing.eps !== 'true') { existing.eps = 'true'; changed = true; }
+          if (doHypecore && existing.hypecore !== 'true') { existing.hypecore = 'true'; changed = true; }
           if (changed) files.push({ path: CIK_PATH, content: buildCsv(rows) });
         }
       }
@@ -1320,7 +1342,7 @@ async function registerTicker() {
       return;
     }
 
-    const systems = [doTanuki ? 'TANUKI' : '', doEps ? 'EPS' : '', doStonks ? 'STONKS' : ''].filter(Boolean).join('+');
+    const systems = [doTanuki ? 'TANUKI' : '', doEps ? 'EPS' : '', doStonks ? 'STONKS' : '', doHypecore ? 'HYPECORE' : ''].filter(Boolean).join('+');
     await commitMultipleFiles(files, `chore: register ticker ${ticker} [${systems}]`);
 
     const fileNames = files.map(f => f.path.split('/').pop()).join(', ');

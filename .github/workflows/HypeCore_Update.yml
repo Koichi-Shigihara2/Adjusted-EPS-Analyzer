@@ -1,0 +1,92 @@
+name: HypeCore Update
+
+on:
+  schedule:
+    - cron: '0 13 * * 0'  # Sunday 13:00 UTC (JST 22:00) - SEC Data Update の1時間後
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Target tickers (comma-separated, blank for all hypecore=true)'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  update-hypecore:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests yfinance numpy pandas
+
+      - name: Run HypeCore Pipeline
+        run: |
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
+            python src/value/hypecore/hypecore.py --batch $TICKERS
+          else
+            python src/value/hypecore/hypecore.py --all
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/value-monitor/hypecore/data/
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update HypeCore - $(date +'%Y-%m-%d %H:%M') JST"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi
+
+      - name: Summary
+        run: |
+          echo "## HypeCore Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Ticker | LC | Stage | Phase | Rec |" >> $GITHUB_STEP_SUMMARY
+          echo "|:-------|:---|:------|:------|:----|" >> $GITHUB_STEP_SUMMARY
+          python - << 'EOF'
+          import json, os, glob
+
+          summary_path = os.environ.get("GITHUB_STEP_SUMMARY", "")
+          data_dir = "docs/value-monitor/hypecore/data"
+
+          files = sorted(glob.glob(f"{data_dir}/*_poc.json"))
+          lines = []
+          for f in files:
+              ticker = os.path.basename(f).replace("_poc.json", "")
+              try:
+                  with open(f) as fp:
+                      d = json.load(fp)
+                  months = d.get("monthly_data", [])
+                  if not months:
+                      continue
+                  latest = months[-1]
+                  lc   = latest.get("lifecycle_label", "--")
+                  stage = f"S{latest.get('stage', '--')}"
+                  phase = latest.get("substage_label", "--")[:12]
+                  rec   = latest.get("recommendation", "--")
+                  lines.append(f"| {ticker} | {lc} | {stage} | {phase} | {rec} |")
+              except Exception:
+                  lines.append(f"| {ticker} | -- | -- | -- | error |")
+
+          if summary_path:
+              with open(summary_path, "a") as out:
+                  out.write("\n".join(lines) + "\n")
+          else:
+              print("\n".join(lines))
+          EOF

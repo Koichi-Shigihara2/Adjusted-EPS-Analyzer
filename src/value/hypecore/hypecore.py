@@ -844,14 +844,23 @@ if __name__ == "__main__":
     _DOCS_DIR = _REPO_ROOT / "docs" / "value-monitor" / "hypecore" / "data"
     _DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
-    ALL_TICKERS = [
-        "AAPL","ALAB","AMAT","AMD","AMZN","APP","ASTS","AUR","AVAV","BBAI",
-        "BRUN","BSY","CAKE","CART","CEG","CELH","COHR","CRM","CRWV","CWAN",
-        "ELF","GOOGL","GTLB","IONQ","IOT","JOBY","KO","LITE","LLY","LMT",
-        "META","MRVL","MSFT","NOW","NVDA","ONDS","PLTR","QBTS","RBRK","RCAT",
-        "RDW","RKLB","RLMD","RXRX","S","SITM","SOFI","SOUN","SPIR","TSLA",
-        "UNH","VRT","VWAV","ZETA",
-    ]
+    # cik_lookup.csv の hypecore=true 銘柄を動的に取得
+    try:
+        import sys as _sys
+        _sys.path.insert(0, str(_REPO_ROOT / "common" / "sec_data"))
+        from tickers import get_hypecore_tickers
+        ALL_TICKERS = get_hypecore_tickers()
+        print(f"[INFO] hypecore対象: {len(ALL_TICKERS)}銘柄 (cik_lookup.csv)")
+    except Exception as _e:
+        print(f"[WARN] tickers.py読み込み失敗、フォールバックリストを使用: {_e}")
+        ALL_TICKERS = [
+            "AAPL","ALAB","AMAT","AMD","AMZN","APP","ASTS","AUR","AVAV","BBAI",
+            "BRUN","BSY","CAKE","CART","CEG","CELH","COHR","CRM","CRWV","CWAN",
+            "ELF","GOOGL","GTLB","IONQ","IOT","JOBY","KO","LITE","LLY","LMT",
+            "META","MRVL","MSFT","NOW","NVDA","ONDS","PLTR","QBTS","RBRK","RCAT",
+            "RDW","RKLB","RLMD","RXRX","S","SITM","SOFI","SOUN","SPIR","TSLA",
+            "UNH","VRT","VWAV","ZETA",
+        ]
 
     args = sys.argv[1:]
     if not args:

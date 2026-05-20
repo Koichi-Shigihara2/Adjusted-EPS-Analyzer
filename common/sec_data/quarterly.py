@@ -24,9 +24,37 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
         "note_discontinuous": ["LTDebt"],
     },
     # 金融系: Revenueタグを銀行固有のタグに上書き
+    # 【調査済み 2026-05-20】
+    # SOFIは "Revenues" タグを申告していない。
+    # フォールバックで RevenueFromContractWithCustomerExcludingAssessedTax(~130M, 手数料のみ)と
+    # RevenuesNetOfInterestExpense(~1100M, 全社収益)が同一end/start/filedでマージされ、
+    # max(filed)が不定になるため採用タグがランダムになる。
+    # → revenue_concept で RevenuesNetOfInterestExpense に固定することが必須。
     "SOFI": {
         "revenue_concept": "RevenuesNetOfInterestExpense",
-        "note": "フィンテック銀行。RevenueFromContractWithCustomer は純金利収益の一部のみ。",
+        "note": "フィンテック銀行。Revenuesタグなし。フォールバックが"
+                "RevenueFromContract(130M=手数料のみ)とRevenuesNetOfInterest(1100M=全社収益)を"
+                "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。",
+    },
+    # 健康保険系: Revenues タグで正常取得。Q1季節性あり。
+    # 【調査済み 2026-05-20】
+    # OSCR: Revenues = PremiumsEarnedNet(再保険控除後) + サービス収益(手数料等)
+    #   DirectPremiumsEarned(再保険控除前)は過大になるため不使用。
+    #   Revenues タグが正しい全社収益を返す。
+    # UNH: Revenues = PremiumsEarnedNet(保険料) + OptumRx等サービス収益(約22%)
+    #   PremiumsEarnedNetのみでは21%欠落する。Revenues タグが適切。
+    # 両社ともQ1（1月）に年度更新で会員が急増 → 前Q比+40〜70%は正常パターン。
+    "OSCR": {
+        "seasonal_q1_jump": True,
+        "note": "ACA健康保険。Revenues=PremiumsEarnedNet(再保険後)+手数料。"
+                "DirectPremiumsEarned(再保険前)は過大なので不使用。"
+                "Q1に年間契約更新が集中し前Q比+40〜70%のジャンプが正常。",
+    },
+    "UNH": {
+        "seasonal_q1_jump": True,
+        "note": "健康保険(UnitedHealth Group)。Revenues=PremiumsEarnedNet(79%)+OptumRx等(21%)。"
+                "PremiumsEarnedNetのみでは全社収益の21%が欠落するためRevenues使用。"
+                "Q1季節性あり。",
     },
 }
 
@@ -348,3 +376,187 @@ def save_raw_table(ticker: str, raw: dict) -> str:
         json.dump(raw, f, ensure_ascii=False, indent=2)
     logger.info("[%s] raw table saved → %s", ticker, path)
     return path
+
+
+# ---------------------------------------------------------------------------
+# Revenue品質チェック
+# ---------------------------------------------------------------------------
+
+def check_revenue_quality(ticker: str, normalized: dict) -> dict:
+    """
+    normalized JSONのRevenueフィールドに対して品質チェックを行う。
+
+    チェック項目:
+      1. 四半期件数が少ない（8件未満）
+      2. 最新Q 前Q比の異常値
+         - seasonal_q1_jump=True の銘柄はQ1（3月末）の前Q比チェックをスキップ
+         - それ以外: |QoQ| > 60% → ISSUE, > 35% → WARN
+      3. 最新yoyトレンドの急変（±20pt超）
+      4. 四半期合計とFY年次の整合性（乖離 > 5% → ISSUE）
+      5. 金融・保険系フラグ（seasonal_q1_jump or revenue_concept上書きあり）
+      6. Revenue負値
+
+    戻り値:
+    {
+      "ticker": str,
+      "status": "OK" | "WARN" | "ISSUE",
+      "issues": [str, ...],   # 重大問題
+      "warnings": [str, ...], # 注意事項
+      "latest_rev_yoy": float | None,
+      "latest_q_end": str | None,
+    }
+    """
+    ticker = ticker.upper()
+    restrictions = TICKER_RESTRICTIONS.get(ticker, {})
+    seasonal_q1 = restrictions.get("seasonal_q1_jump", False)
+
+    entries = normalized.get("fields", {}).get("Revenue", [])
+    q_only = sorted(
+        [(e["end"], e["val"]) for e in entries if not e.get("is_annual")],
+        key=lambda x: x[0],
+    )
+    a_only = sorted(
+        [(e["end"], e["val"]) for e in entries if e.get("is_annual")],
+        key=lambda x: x[0],
+    )
+
+    issues: list[str] = []
+    warnings: list[str] = []
+    latest_yoy: float | None = None
+    latest_q_end: str | None = q_only[-1][0] if q_only else None
+
+    if not q_only:
+        issues.append("四半期Revenueエントリなし")
+        return _build_result(ticker, issues, warnings, latest_yoy, latest_q_end)
+
+    # --- チェック1: 件数 ---
+    if len(q_only) < 8:
+        warnings.append(f"四半期データが少ない ({len(q_only)}件 < 8件)")
+
+    # --- チェック2: 最新Q 前Q比 ---
+    if len(q_only) >= 2:
+        latest_end, latest_val = q_only[-1]
+        prev_end, prev_val = q_only[-2]
+        qoq = (latest_val - prev_val) / abs(prev_val) * 100
+        is_q1 = latest_end[5:7] == "03"  # 3月末 = Q1
+
+        if seasonal_q1 and is_q1:
+            # Q1季節性銘柄はQ1ジャンプをスキップし、過去Q1比で異常検出
+            q1_entries = [(e, v) for e, v in q_only if e[5:7] == "03"]
+            if len(q1_entries) >= 3:
+                past_q1_qoqs = []
+                for i in range(1, len(q1_entries) - 1):
+                    # 直前Q4を探して比較
+                    q1_end = q1_entries[i][0]
+                    q4_candidates = [(e, v) for e, v in q_only
+                                     if e < q1_end and e[5:7] == "12"]
+                    if q4_candidates:
+                        q4_end, q4_val = q4_candidates[-1]
+                        past_q1_qoqs.append(
+                            (q1_entries[i][1] - q4_val) / abs(q4_val) * 100
+                        )
+                if past_q1_qoqs:
+                    avg_q1_jump = sum(past_q1_qoqs) / len(past_q1_qoqs)
+                    # Q4を探して現在の実績と比較
+                    q4_for_latest = [(e, v) for e, v in q_only
+                                     if e < latest_end and e[5:7] == "12"]
+                    if q4_for_latest:
+                        _, q4_val = q4_for_latest[-1]
+                        latest_q1_jump = (latest_val - q4_val) / abs(q4_val) * 100
+                        diff = latest_q1_jump - avg_q1_jump
+                        if diff > 30:
+                            warnings.append(
+                                f"Q1季節性ジャンプが過去平均を大幅超過: "
+                                f"今回{latest_q1_jump:.1f}% vs 過去平均{avg_q1_jump:.1f}% "
+                                f"(+{diff:.1f}pt)"
+                            )
+            # Q1スキップのメモをWARNに残す
+            warnings.append(
+                f"seasonal_q1_jump: 前Q比{qoq:+.1f}%はQ1季節性として評価スキップ"
+            )
+        else:
+            if abs(qoq) > 60:
+                issues.append(
+                    f"最新Q 前Q比異常: {qoq:+.1f}% ({prev_end}→{latest_end})"
+                )
+            elif abs(qoq) > 35:
+                warnings.append(
+                    f"最新Q 前Q比大きめ: {qoq:+.1f}% ({prev_end}→{latest_end}) 季節性か要確認"
+                )
+
+    # --- チェック3: yoyトレンド急変 ---
+    if len(q_only) >= 5:
+        yoys = []
+        for i in range(4, len(q_only)):
+            e, v = q_only[i]
+            pe, pv = q_only[i - 4]
+            yoys.append((e, (v - pv) / abs(pv) * 100))
+        latest_yoy = yoys[-1][1]
+        if len(yoys) >= 3:
+            recent = [y for _, y in yoys[-3:]]
+            avg_prev = sum(recent[:-1]) / len(recent[:-1])
+            jump = recent[-1] - avg_prev
+            if jump > 20:
+                warnings.append(
+                    f"最新yoy急加速: {avg_prev:.1f}%→{recent[-1]:.1f}% (+{jump:.1f}pt)"
+                )
+            elif jump < -20:
+                warnings.append(
+                    f"最新yoy急減速: {avg_prev:.1f}%→{recent[-1]:.1f}% ({jump:.1f}pt)"
+                )
+
+    # --- チェック4: 四半期合計 vs FY年次 整合性 ---
+    for a_end, a_val in a_only[-3:]:
+        year = a_end[:4]
+        q_in_year = [v for e, v in q_only if e[:4] == year]
+        if q_in_year:
+            q_total = sum(q_in_year)
+            gap_pct = abs(q_total - a_val) / abs(a_val) * 100
+            if gap_pct > 5:
+                issues.append(
+                    f"FY{year} 年次vs四半期合計 乖離{gap_pct:.1f}%: "
+                    f"annual={a_val/1e6:.0f}M, Q合計={q_total/1e6:.0f}M"
+                )
+
+    # --- チェック5: 金融・保険系フラグ ---
+    if restrictions.get("revenue_concept") or restrictions.get("seasonal_q1_jump"):
+        kind = "銀行/フィンテック" if restrictions.get("revenue_concept") else "保険/季節性"
+        warnings.append(
+            f"特殊銘柄({kind}): TICKER_RESTRICTIONSで管理済み"
+        )
+
+    # --- チェック6: Revenue負値 ---
+    neg = [(e, v) for e, v in q_only if v < 0]
+    if neg:
+        issues.append(
+            f"Revenue負値: {[(e, round(v/1e6, 1)) for e, v in neg]}"
+        )
+
+    return _build_result(ticker, issues, warnings, latest_yoy, latest_q_end)
+
+
+def _build_result(
+    ticker: str,
+    issues: list[str],
+    warnings: list[str],
+    latest_yoy: float | None,
+    latest_q_end: str | None,
+) -> dict:
+    status = "ISSUE" if issues else ("WARN" if warnings else "OK")
+    result = {
+        "ticker": ticker,
+        "status": status,
+        "issues": issues,
+        "warnings": warnings,
+        "latest_rev_yoy": round(latest_yoy, 2) if latest_yoy is not None else None,
+        "latest_q_end": latest_q_end,
+    }
+    logger.info(
+        "[%s] revenue quality: %s  issues=%d warnings=%d  yoy=%s",
+        ticker,
+        status,
+        len(issues),
+        len(warnings),
+        f"{latest_yoy:.1f}%" if latest_yoy is not None else "N/A",
+    )
+    return result
