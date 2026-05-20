@@ -95,6 +95,18 @@ def load_required_xbrl_tags() -> List[str]:
     tags.add("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding")
     tags.add("us-gaap:EarningsPerShareDiluted")   # 直接EPSがあれば便利（ただし計算優先）
 
+    # 売上高（get_revenue()が参照するタグ群 ── ここに追加しないと revenue=0.0 になる）
+    tags.add("us-gaap:Revenues")
+    tags.add("us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax")
+    tags.add("us-gaap:RevenueFromContractWithCustomerIncludingAssessedTax")
+    tags.add("us-gaap:RevenueFromContractWithCustomer")
+    tags.add("us-gaap:NetSales")
+    tags.add("us-gaap:SalesRevenueNet")
+    tags.add("us-gaap:RevenuesNetOfInterestExpense")
+    tags.add("us-gaap:NetInterestIncome")
+    tags.add("us-gaap:InterestIncomeExpenseNet")
+    tags.add("us-gaap:NoninterestIncome")
+
     # その他よく使う調整関連（adjustment_items.json にない場合の保険）
     tags.add("us-gaap:ShareBasedCompensation")
 
