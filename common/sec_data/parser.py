@@ -406,20 +406,13 @@ class SECParser:
             if val is not None:
                 data["cf"][field] = val
         
-        # FCF計算（維持CapEx分離 + ファイナンスリース除外）
+        # FCF計算（ファイナンスリース除外）
         #
-        # 維持CapEx分離（v8.2追加）:
-        #   MaintenanceCapEx = min(D&A, CapEx)  ← D&A > CapExのガード
-        #   FCF = OCF - MaintenanceCapEx
-        #   ※ D&AをMaintenanceCapExの代理変数とする
-        #   ※ GrowthCapEx（= CapEx - D&A）は将来収益を生む投資のため控除しない
-        #
-        # D&AがNoneの場合: 従来方式にフォールバック（OCF - pure_capex）
-        # ファイナンスリース: D&A方式・従来方式いずれもCapExから除外（AMZN等対応）
+        # FCF = OCF - (|CapEx| - |FinanceLeasePmts|)
+        # ファイナンスリースはCapExから除外（AMZN等対応）
         ocf   = data["cf"].get("operating_cash_flow", 0)
         capex = data["cf"].get("capital_expenditure", 0)
         fl    = data["cf"].get("finance_lease_payments", 0)
-        da    = data["cf"].get("depreciation_and_amortization")
 
         # CapEx・ファイナンスリースはSECデータで負値の場合があるためabs()
         abs_capex = abs(capex)
@@ -427,17 +420,8 @@ class SECParser:
         pure_capex = abs_capex - abs_fl  # リース除外後の純CapEx
 
         if ocf != 0:
-            if da is not None and da > 0 and pure_capex > 0:
-                # 維持CapEx分離方式: D&AをMaintenanceCapExの上限として使用
-                maintenance_capex = min(da, pure_capex)
-                data["cf"]["free_cash_flow"] = ocf - maintenance_capex
-                data["cf"]["maintenance_capex"] = maintenance_capex
-                data["cf"]["growth_capex"] = pure_capex - maintenance_capex
-                data["cf"]["fcf_method"] = "maintenance_capex"
-            else:
-                # フォールバック: D&A未取得 or CapEx=0の場合は従来方式
-                data["cf"]["free_cash_flow"] = ocf - max(0, pure_capex)
-                data["cf"]["fcf_method"] = "traditional"
+            data["cf"]["free_cash_flow"] = ocf - max(0, pure_capex)
+            data["cf"]["fcf_method"] = "traditional"
             data["cf"]["finance_lease_payments_applied"] = abs_fl > 0
         
         # Shares

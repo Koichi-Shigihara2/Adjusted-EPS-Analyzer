@@ -334,13 +334,8 @@ def _calc_fcf(
     """
     FCF計算（parser.pyと同じ計算式）。
 
-    維持CapEx分離方式（v8.2追加）:
-      D&Aが取得できる場合:
-        pure_capex = |CapEx| - |FinanceLeasePmts or 0|
-        maintenance_capex = min(D&A, pure_capex)  ← D&A > CapExのガード
-        FCF = OCF - maintenance_capex
-      D&AがNoneの場合（従来方式フォールバック）:
-        FCF = OCF - max(0, pure_capex)
+    FCF = OCF - (|CapEx| - |FinanceLeasePmts|)
+    ファイナンスリースはCapExから除外（AMZN等対応）。
 
     OCF または CapEx が None の場合は None を返す。
     FinanceLeasePmts が None の場合は 0 として扱う。
@@ -348,9 +343,6 @@ def _calc_fcf(
     if ocf is None or capex is None:
         return None
     pure_capex = abs(capex) - abs(fl or 0)
-    if da is not None and da > 0 and pure_capex > 0:
-        maintenance_capex = min(da, pure_capex)
-        return ocf - maintenance_capex
     return ocf - max(0, pure_capex)
 
 
