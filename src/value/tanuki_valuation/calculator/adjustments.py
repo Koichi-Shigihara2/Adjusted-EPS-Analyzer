@@ -217,6 +217,19 @@ def determine_fcf_base(
             cv_threshold=threshold
         )
 
+    # ── 特殊ケース（直近2年平均が5年平均の15%未満）──
+    # 例: 1年黒字・1年赤字でほぼゼロに見える場合（LITEのような一時低迷後回復型）
+    # 見かけ上の近ゼロ平均は実力を著しく過小評価するため5年平均にフォールバック
+    if fcf_5yr_avg > 0 and 0 < fcf_2yr_avg < fcf_5yr_avg * 0.15:
+        return FCFBaseResult(
+            base_fcf=fcf_5yr_avg,
+            method="avg_5yr",
+            fcf_5yr_avg=fcf_5yr_avg,
+            fcf_2yr_avg=fcf_2yr_avg,
+            cv=999.0,
+            cv_threshold=threshold
+        )
+
     # ── 特殊ケース（過去赤字含む）──
     if fcf_5yr_avg <= 0:
         return FCFBaseResult(
@@ -1050,10 +1063,21 @@ def capitalize_rd(
 
     # 過去N年（amortization_years）分のR&D平均を償却費とする
     # rd_series[0]が直近なので、rd_series[1:]が過去年度
-    past_rd = [v for _, v in rd_series[1: amortization_years + 1]]
+    past_rd_raw = [v for _, v in rd_series[1: amortization_years + 1]]
+
+    # IPO年SBC膨張など異常年を除外: 過去R&D > 現在R&Dの3倍は外れ値とみなす
+    past_rd = [v for v in past_rd_raw if v <= rd_current * 3.0]
+
     years_used = len(past_rd)
     if years_used == 0:
         return NOT_APPLIED("過去年度R&Dデータなし（償却費計算不可）")
+
+    # 信頼性確保のため過去2年以上必要（1年では償却基準が不安定）
+    if years_used < 2:
+        return NOT_APPLIED(
+            f"過去年度R&Dデータが{years_used}年のみ（2年以上必要）- "
+            "外れ値除外後データ不足の可能性あり"
+        )
 
     rd_avg_3yr = sum(past_rd) / years_used
     capitalized_rd = rd_current
