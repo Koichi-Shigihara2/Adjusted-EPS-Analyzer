@@ -216,14 +216,37 @@ class SECReader:
     def get_rpo(self, ticker: str) -> float:
         """直近のRPO（残存履行義務）を取得 - SaaS企業向け"""
         annual_data = self.get_annual_range(ticker, 1)
-        
+
         if annual_data:
             rpo = annual_data[0].get("other", {}).get("rpo")
             if rpo:
                 return float(rpo)
-        
+
         return 0.0
-    
+
+    def get_rpo_series(self, ticker: str, quarters: int = 8) -> list[dict]:
+        """
+        normalizedデータからRPO時系列を返す（直近quarters件）
+        戻り値: [{"period": "2025-03", "rpo": 242800000000}, ...]
+        normalizedがない場合は[]を返す
+        """
+        ticker = ticker.upper()
+        normalized_dir = os.path.join(os.path.dirname(__file__), "normalized")
+        path = os.path.join(normalized_dir, f"{ticker}_quarterly_normalized.json")
+
+        normalized = self._load_json(path)
+        if not normalized:
+            return []
+
+        rpo_entries = normalized.get("fields", {}).get("RPO", [])
+        q_entries = [e for e in rpo_entries if not e.get("is_annual")]
+        q_entries = sorted(q_entries, key=lambda x: x["end"], reverse=True)[:quarters]
+
+        return [
+            {"period": e["end"][:7], "rpo": e["val"]}
+            for e in q_entries
+        ]
+
     def get_net_cash(self, ticker: str, sector: Optional[str] = None, industry: str = "") -> dict:
         """
         ネットキャッシュ関連BSデータを取得 v8.1

@@ -36,9 +36,10 @@ def normalize(ticker: str, raw: dict) -> dict:
             continue
         fields_norm[field_name] = _normalize_field(entries)
 
-    # Q4 implied計算（全フロー系フィールド）
+    # Q4 implied計算（フロー系フィールドのみ）
     # FY年次値 - (Q1+Q2+Q3) = Q4 implied
     # Revenue・_COGSを最初に処理してGrossProfit逆算に備える
+    # ※ RPO はストック値（期末残高）のため Q4 implied 対象外
     Q4_IMPLIED_FIELDS = (
         "Revenue", "_COGS",
         "OCF", "ICF", "CFF", "CapEx",

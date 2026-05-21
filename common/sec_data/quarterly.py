@@ -86,6 +86,8 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     # R&D / 販売・マーケティング費（RICE計算用）
     "RD":               ("ResearchAndDevelopmentExpense", "USD"),
     "SM":               ("SellingAndMarketingExpense", "USD"),
+    # RPO: 残存履行義務（SaaS/クラウド企業向けストック値）
+    "RPO":              ("RevenueRemainingPerformanceObligation", "USD"),
     # GrossProfit逆算用（内部フィールド）
     "_COGS":            ("CostOfRevenue", "USD"),
 }
@@ -137,6 +139,11 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
     "GrossProfit": (
         # AMZN等: GrossProfitタグがある場合（normalizer._calc_gross_profitで逆算済みの場合は不要）
         "GrossProfitLoss",
+    ),
+    "RPO": (
+        "RemainingPerformanceObligation",
+        "ContractWithCustomerLiabilityNoncurrent",
+        "DeferredRevenueNoncurrent",
     ),
 }
 
