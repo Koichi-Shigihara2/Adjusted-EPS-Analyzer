@@ -2,7 +2,7 @@
 TANUKI VALUATION - Core Calculator v6.2
 Koichi式株価評価モデル（FCFベース自動判定対応）
 
-P_t = (V_0 + RPO調整 + GrowthOption_PV) × (1 + α)
+P_t = V_0 × (1 + α) + RPO_PV + GrowthOption_PV
 V_0 = 3段階DCF or 2段階DCF（maturity_config参照）
 
 v6.2 追加:
@@ -329,14 +329,49 @@ class KoichiValuationCalculator:
             )
             v0 = dcf_result.v0
 
-        # ── STEP 6: RPO補正 ──
-        rpo_adjustment = adjust_rpo(rpo=rpo, sector=sector, ticker=ticker, industry=industry)
+        # ── STEP 6: RPO補正（normalizedからRPO時系列・利益率を取得）──
+        _rpo_series: list = []
+        _rev_yoy: Optional[float] = None
+        _rev_ttm: Optional[float] = None
+        _op_margin: Optional[float] = None
+        if HAS_SEC_READER and ticker != "Unknown":
+            try:
+                _sec_reader = SECReader()
+                _rpo_ctx = _sec_reader.get_rpo_context(ticker)
+                _rpo_series = _rpo_ctx.get("rpo_series", [])
+                _rev_yoy   = _rpo_ctx.get("rev_yoy")
+                _rev_ttm   = _rpo_ctx.get("rev_ttm")
+                _op_margin = _rpo_ctx.get("op_margin")
+            except Exception:
+                pass
+
+        # rpo_series[-1]=最新, rpo_series[-5]=約4四半期前（前年同期）
+        rpo_latest = _rpo_series[-1]["rpo"] if _rpo_series else rpo
+        rpo_yago   = _rpo_series[-5]["rpo"] if len(_rpo_series) >= 5 else None
+
+        rpo_adjustment = adjust_rpo(
+            rpo=rpo_latest,
+            sector=sector,
+            ticker=ticker,
+            industry=industry,
+            op_margin=_op_margin or 0.0,
+            rpo_yago=rpo_yago,
+            rev_yoy=_rev_yoy,
+            rev_ttm=_rev_ttm,
+        )
         rpo_pv = rpo_adjustment.rpo_pv
         if rpo_adjustment.applied:
             rate_str = f" ({rpo_adjustment.application_rate:.0%} 適用: {rpo_adjustment.sector_category})"
-            print(f"   [{ticker}] RPO補正: ${rpo:,.0f} → PV ${rpo_pv:,.0f}{rate_str}")
-        elif rpo > 0 and not rpo_adjustment.applied:
-            print(f"   [{ticker}] RPO補正: スキップ (適用率0%: {rpo_adjustment.sector_category})")
+            incr_str = (f" incremental=${rpo_adjustment.rpo_incremental/1e9:.1f}B"
+                        if rpo_adjustment.rpo_incremental > 0 else "")
+            margin_str = f" margin={_op_margin:.1%}" if _op_margin is not None else ""
+            print(f"   [{ticker}] RPO補正: ${rpo_latest:,.0f} → PV ${rpo_pv:,.0f}{rate_str}{incr_str}{margin_str}")
+        elif rpo_latest > 0:
+            reason = (f"適用率0%: {rpo_adjustment.sector_category}"
+                      if rpo_adjustment.application_rate == 0.0
+                      else f"赤字(margin={_op_margin:.1%})" if _op_margin is not None and _op_margin <= 0
+                      else "incremental=0")
+            print(f"   [{ticker}] RPO補正: スキップ ({reason})")
 
         # ── STEP 7: 成長オプションPV計算 ──
         go_result: GrowthOptionResult = calculate_growth_option_pv(ticker)
@@ -657,7 +692,7 @@ class KoichiValuationCalculator:
                 "roe_10yr_avg": roe_avg,
                 "current_price": current_price,
                 "latest_revenue": latest_revenue,
-                "rpo": rpo,
+                "rpo": rpo_latest,
                 "beta": wacc_result.beta,
                 "sector": sector,
                 "industry": industry or "",

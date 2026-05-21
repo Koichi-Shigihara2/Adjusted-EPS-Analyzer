@@ -226,9 +226,10 @@ class SECReader:
 
     def get_rpo_series(self, ticker: str, quarters: int = 8) -> list[dict]:
         """
-        normalizedデータからRPO時系列を返す（直近quarters件）
-        戻り値: [{"period": "2025-03", "rpo": 242800000000}, ...]
+        normalizedデータからRPO時系列を返す（直近quarters件、昇順）
+        戻り値: [{"period": "2025-03", "rpo": 242800000000}, ...]  古→新順
         normalizedがない場合は[]を返す
+        rpo_series[-1] が最新、rpo_series[-5] が約4四半期前
         """
         ticker = ticker.upper()
         normalized_dir = os.path.join(os.path.dirname(__file__), "normalized")
@@ -240,12 +241,64 @@ class SECReader:
 
         rpo_entries = normalized.get("fields", {}).get("RPO", [])
         q_entries = [e for e in rpo_entries if not e.get("is_annual")]
-        q_entries = sorted(q_entries, key=lambda x: x["end"], reverse=True)[:quarters]
+        # 昇順ソート後、直近quarters件を取得（[-1]が最新になる）
+        q_entries = sorted(q_entries, key=lambda x: x["end"])[-quarters:]
 
         return [
             {"period": e["end"][:7], "rpo": e["val"]}
             for e in q_entries
         ]
+
+    def get_rpo_context(self, ticker: str) -> dict:
+        """
+        RPO補正に必要なコンテキストをnormalizedから計算して返す
+
+        戻り値:
+            rev_yoy    : Revenue前年比成長率（TTMベース, 8四半期以上で計算）
+            rev_ttm    : TTM Revenue
+            op_margin  : TTM営業利益率（OperatingIncome/Revenue）
+            rpo_series : RPO時系列（昇順、get_rpo_series()と同一）
+        """
+        ticker = ticker.upper()
+        normalized_dir = os.path.join(os.path.dirname(__file__), "normalized")
+        path = os.path.join(normalized_dir, f"{ticker}_quarterly_normalized.json")
+
+        normalized = self._load_json(path)
+        if not normalized:
+            return {"rev_yoy": None, "rev_ttm": None, "op_margin": None, "rpo_series": []}
+
+        fields = normalized.get("fields", {})
+
+        def _q_sorted(field_name: str) -> list:
+            return sorted(
+                [e for e in fields.get(field_name, []) if not e.get("is_annual")],
+                key=lambda x: x["end"],
+            )
+
+        # TTM Revenue（直近4四半期合計）
+        rev_all = _q_sorted("Revenue")
+        rev_ttm: Optional[float] = None
+        rev_yoy: Optional[float] = None
+        if len(rev_all) >= 4:
+            rev_ttm = sum(e["val"] for e in rev_all[-4:])
+            if len(rev_all) >= 8:
+                rev_yago_ttm = sum(e["val"] for e in rev_all[-8:-4])
+                if rev_yago_ttm > 0:
+                    rev_yoy = (rev_ttm - rev_yago_ttm) / rev_yago_ttm
+
+        # TTM OperatingIncome → op_margin
+        oi_all = _q_sorted("OperatingIncome")
+        op_margin: Optional[float] = None
+        if len(oi_all) >= 4 and rev_ttm and rev_ttm > 0:
+            oi_ttm = sum(e["val"] for e in oi_all[-4:])
+            op_margin = oi_ttm / rev_ttm
+
+        return {
+            "rev_yoy":    rev_yoy,
+            "rev_ttm":    rev_ttm,
+            "op_margin":  op_margin,
+            "rpo_series": self.get_rpo_series(ticker),
+        }
 
     def get_net_cash(self, ticker: str, sector: Optional[str] = None, industry: str = "") -> dict:
         """

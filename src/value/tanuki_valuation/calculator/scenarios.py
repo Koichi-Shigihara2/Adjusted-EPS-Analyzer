@@ -160,9 +160,8 @@ def create_scenario_calc_func(
             pv += tv / (1 + wacc) ** t
             v0 = pv
 
-        # P_t = (V0 + RPO_PV) × (1 + α)
-        v0_adjusted = v0 + rpo_pv
-        pt = v0_adjusted * (1 + alpha)
+        # P_t = V0 × (1 + α) + rpo_pv（αの外出し v9.0修正）
+        pt = v0 * (1 + alpha) + rpo_pv
 
         # 1株あたり + BS補正
         if diluted_shares > 0:

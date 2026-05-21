@@ -50,6 +50,8 @@ class RPOAdjustmentResult:
     applied: bool
     application_rate: float = 1.0   # v8.1: セクター別適用率（0.0〜1.0）
     sector_category: str = ""       # v8.1: 判定セクターカテゴリ
+    rpo_incremental: float = 0.0   # 非連続RPO額（前年比成長超過分）
+    op_margin: float = 0.0         # 使用した営業利益率（TTMベース）
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -60,6 +62,8 @@ class RPOAdjustmentResult:
             "applied": self.applied,
             "application_rate": self.application_rate,
             "sector_category": self.sector_category,
+            "rpo_incremental": self.rpo_incremental,
+            "op_margin": self.op_margin,
         }
 
 
@@ -392,55 +396,72 @@ def adjust_rpo(
     assumed_realization_years: float = 1.5,
     sector: Optional[str] = None,
     ticker: str = "",
-    industry: str = "",     # v8.1: industry優先判定
+    industry: str = "",          # v8.1: industry優先判定
+    op_margin: float = 0.0,      # 追加: 営業利益率（TTM）
+    rpo_yago: Optional[float] = None,  # 追加: 前年同期RPO残高
+    rev_yoy: Optional[float] = None,   # 追加: Revenue前年比成長率
+    rev_ttm: Optional[float] = None,   # 追加: TTM Revenue（前年比なし時の代替）
 ) -> RPOAdjustmentResult:
     """
-    RPO補正（残存履行義務の現在価値化）v8.1
+    RPO補正（残存履行義務の現在価値化）v9.0
 
-    v8.1追加: セクター別適用率
-        SaaS (PLTR/MSFT/NOW等):   100% → 全額をPV化
-        Fintech (SOFI等):          50% → 半額をPV化
-        保険 (UNH等):               0% → RPOを適用しない
-        消費者/ハードウェア:         0% → RPOを適用しない
+    3重バグ修正:
+      ① 非連続RPO: 前年比成長超過分のみを補正対象とする
+         前年比あり: rpo_incremental = max(0, rpo - rpo_yago*(1+rev_yoy))
+         前年比なし: rpo_incremental = max(0, rpo - rev_ttm*1.0)
+      ② 利益率補正: 赤字（op_margin<=0）はrpo_pv=0
+         rpo_pv = effective_rpo * op_margin / (1+discount_rate)^years
+      ③ α外出し: rpo_pvはcalculate_intrinsic_value()でαの外に加算
 
-    適用率を掛けてからPV化する（適用率0%の場合は補正なし）。
+    セクター別適用率（v8.1継承）:
+        SaaS (100%) / Fintech (50%) / 保険・消費者 (0%)
     """
     if rpo <= 0:
         return RPOAdjustmentResult(
-            rpo_pv=0.0,
-            rpo_raw=0.0,
+            rpo_pv=0.0, rpo_raw=0.0,
             discount_rate=discount_rate,
             assumed_years=assumed_realization_years,
-            applied=False,
-            application_rate=1.0,
-            sector_category="",
+            applied=False, application_rate=1.0, sector_category="",
+            rpo_incremental=0.0, op_margin=op_margin,
         )
 
     application_rate, sector_category = _get_rpo_application_rate(sector, ticker, industry)
 
-    # 適用率0%はRPOを使わない
     if application_rate == 0.0:
         return RPOAdjustmentResult(
-            rpo_pv=0.0,
-            rpo_raw=rpo,
+            rpo_pv=0.0, rpo_raw=rpo,
             discount_rate=discount_rate,
             assumed_years=assumed_realization_years,
-            applied=False,
-            application_rate=0.0,
+            applied=False, application_rate=0.0,
             sector_category=sector_category,
+            rpo_incremental=0.0, op_margin=op_margin,
         )
 
-    effective_rpo = rpo * application_rate
-    rpo_pv = effective_rpo / (1 + discount_rate) ** assumed_realization_years
+    # ① 非連続RPO計算（前年比成長超過分のみ補正対象）
+    SAAS_NORMAL_RPO_REV_RATIO = 1.0
+    if rpo_yago is not None and rev_yoy is not None:
+        rpo_incremental = max(0.0, rpo - rpo_yago * (1 + rev_yoy))
+    elif rev_ttm is not None and rev_ttm > 0:
+        rpo_incremental = max(0.0, rpo - rev_ttm * SAAS_NORMAL_RPO_REV_RATIO)
+    else:
+        rpo_incremental = 0.0
+
+    # ② 利益率補正（赤字はrpo_pv=0）
+    if op_margin <= 0:
+        rpo_pv = 0.0
+    else:
+        effective_rpo = rpo_incremental * application_rate
+        rpo_pv = effective_rpo * op_margin / (1 + discount_rate) ** assumed_realization_years
 
     return RPOAdjustmentResult(
-        rpo_pv=rpo_pv,
-        rpo_raw=rpo,
+        rpo_pv=rpo_pv, rpo_raw=rpo,
         discount_rate=discount_rate,
         assumed_years=assumed_realization_years,
-        applied=True,
+        applied=rpo_pv > 0,
         application_rate=application_rate,
         sector_category=sector_category,
+        rpo_incremental=rpo_incremental,
+        op_margin=op_margin,
     )
 
 
@@ -479,9 +500,12 @@ def calculate_intrinsic_value(
     alpha: float,
     growth_option_pv: float = 0.0
 ) -> Tuple[float, float]:
-    """本質的価値（P_t）計算"""
-    v0_adjusted = v0 + rpo_pv + growth_option_pv
-    intrinsic_value_pt = v0_adjusted * (1 + alpha)
+    """本質的価値（P_t）計算
+    P_t = V0 × (1 + α) + rpo_pv + growth_option_pv
+    rpo_pvはαの外に出すことで成長プレミアムの二重適用を防ぐ（v9.0修正）
+    """
+    v0_adjusted = v0  # RPO加算前（後方互換のため戻り値として維持）
+    intrinsic_value_pt = v0 * (1 + alpha) + rpo_pv + growth_option_pv
     return v0_adjusted, intrinsic_value_pt
 
 
