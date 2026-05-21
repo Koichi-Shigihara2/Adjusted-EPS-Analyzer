@@ -297,10 +297,8 @@ def fetch_qqq_tech_data():
         if hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21:
             qqq_ret = (hist_qqq['Close'].iloc[-1] / hist_qqq['Close'].iloc[-21] - 1) * 100
             spy_ret = (hist_spy['Close'].iloc[-1] / hist_spy['Close'].iloc[-21] - 1) * 100
-            if abs(spy_ret) >= 0.01:
-                qqq_vs_spy_20d = round((qqq_ret / spy_ret - 1) * 100, 2)
-            else:
-                print(f"[WARN] spy_ret極小({spy_ret:.4f}%)のためqqq_vs_spy_20dをスキップ")
+            # 単純差分（%pt）: QQQ超過リターン。旧式の比率計算は spy_ret≈0 で発散するため廃止
+            qqq_vs_spy_20d = round(qqq_ret - spy_ret, 2)
         print(f"[INFO] QQQ: {qqq_latest:.2f}, vs_MA125={qqq_vs_ma125:+.2f}%, vs_SPY_20d={qqq_vs_spy_20d}")
         return qqq_vs_ma125, qqq_vs_spy_20d
     except Exception as e:
