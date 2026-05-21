@@ -372,6 +372,8 @@ def _load_tech_pulse_history(json_path, window=90):
             v = comp.get(key)
             if v is not None:
                 hist[key].append(float(v))
+    # qqq_vs_spy_20dは旧比率式の外れ値（±50超）を除外して分布を保護
+    hist["qqq_vs_spy_20d"] = [v for v in hist["qqq_vs_spy_20d"] if abs(v) <= 50]
     return hist
 
 
@@ -463,7 +465,8 @@ def calc_tech_pulse_score(qqq_vs_ma125, vxn_vs_ma50, qqq_vs_spy_20d, history_90d
         percentiles.append(percentileofscore(hist["qqq_vs_ma125"], qqq_vs_ma125))
     if vxn_vs_ma50 is not None and hist.get("vxn_vs_ma50"):
         percentiles.append(100 - percentileofscore(hist["vxn_vs_ma50"], vxn_vs_ma50))
-    if qqq_vs_spy_20d is not None and hist.get("qqq_vs_spy_20d"):
+    # 最低5件の履歴がないとパーセンタイルが不安定なため閾値を設ける
+    if qqq_vs_spy_20d is not None and len(hist.get("qqq_vs_spy_20d", [])) >= 5:
         percentiles.append(percentileofscore(hist["qqq_vs_spy_20d"], qqq_vs_spy_20d))
     if not percentiles:
         return 50

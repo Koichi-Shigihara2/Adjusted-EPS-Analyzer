@@ -75,7 +75,8 @@ def _qqq_components(target: date, qqq_hist: pd.DataFrame, spy_hist: pd.DataFrame
         if len(qqq_sub) >= 21 and len(spy_sub) >= 21:
             qqq_ret = (float(qqq_sub["Close"].iloc[-1]) / float(qqq_sub["Close"].iloc[-21]) - 1) * 100
             spy_ret = (float(spy_sub["Close"].iloc[-1]) / float(spy_sub["Close"].iloc[-21]) - 1) * 100
-            qqq_vs_spy_20d = round((qqq_ret / spy_ret - 1) * 100, 2) if spy_ret != 0 else 0.0
+            # 単純差分（%pt）: collect_and_send.py の新式と統一
+            qqq_vs_spy_20d = round(qqq_ret - spy_ret, 2)
         return qqq_vs_ma125, qqq_vs_spy_20d
     except Exception as e:
         print(f"  [WARN] QQQ計算失敗: {e}")
