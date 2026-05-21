@@ -501,7 +501,7 @@ indicators:{"VIX指数":{value:x.vix,change_percent:pct(x.vix,p.vix)},"S&P500":{
 
 // ── CONSTANTS ──
 const PERIODS=[{label:"1W",days:7},{label:"2W",days:14},{label:"1M",days:30},{label:"2M",days:60},{label:"3M",days:90},{label:"6M",days:180},{label:"全期間",days:9999}];
-const DEFAULT_DAYS=14;
+const DEFAULT_DAYS=30;
 const METRIC_DEFS=[{key:"VIX指数",label:"VIX",color:"#f43f5e"},{key:"S&P500",label:"S&P500",color:"#3b82f6"},{key:"NASDAQ",label:"NASDAQ",color:"#22d3ee"},{key:"米10年債",label:"10Y",color:"#10b981"},{key:"ドル円",label:"JPY",color:"#f59e0b"},{key:"WTI原油",label:"OIL",color:"#a78bfa"}];
 const CARD_DEFS=[{key:"S&P500",short:"S&P500",color:"#3b82f6"},{key:"NASDAQ",short:"NASDAQ",color:"#22d3ee"},{key:"米10年債",short:"10Y利回",color:"#10b981"},{key:"ドル円",short:"USD/JPY",color:"#f59e0b"},{key:"WTI原油",short:"WTI原油",color:"#a78bfa"},{key:"金（GOLD）",short:"GOLD",color:"#f59e0b"}];
 const OSC_PERIODS=[{label:"2W",days:14},{label:"1M",days:30},{label:"3M",days:90},{label:"全期間",days:9999}];
@@ -579,6 +579,16 @@ function toggleMetric(k){if(activeMetrics.has(k)){if(activeMetrics.size<=1)retur
 
 // ── MAIN CHART ──
 function renderChart(){
+  const cv=document.getElementById("mainChart");
+  const wrap=cv?cv.closest('.chart-wrap'):null;
+  if(filteredData.length<2){
+    if(chartInst){chartInst.destroy();chartInst=null}
+    if(cv)cv.style.display='none';
+    if(wrap){let fb=wrap.querySelector('.no-data-msg');if(!fb){fb=document.createElement('div');fb.className='no-data-msg';fb.style.cssText='display:flex;align-items:center;justify-content:center;height:100%;color:var(--mut);font-family:var(--mono);font-size:13px;letter-spacing:.06em';wrap.appendChild(fb)}fb.textContent='データ蓄積中（期間を広げると表示）'}
+    return;
+  }
+  if(cv)cv.style.display='';
+  if(wrap){const fb=wrap.querySelector('.no-data-msg');if(fb)fb.remove()}
   const labels=filteredData.map(d=>fmtDate(d.date));
   const datasets=METRIC_DEFS.filter(m=>activeMetrics.has(m.key)).map(m=>{
     const raw=filteredData.map(d=>d.indicators[m.key]?.value??null);
