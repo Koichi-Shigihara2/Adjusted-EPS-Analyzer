@@ -649,6 +649,12 @@ class KoichiValuationCalculator:
             "formula": f"Koichi式 v{self.VERSION}（動的WACC + {dcf_type} DCF + FCFベース自動判定 + 成長オプション）",
             "dcf_type": dcf_type,
 
+            "growth": {
+                "rate": round(high_growth_rate, 4),
+                "source": growth_result.source,
+                "phase1_years": self.high_growth_years,
+            },
+
             "wacc": wacc_result.to_dict(),
             "sensitivity": sensitivity_result.to_dict(),
             "growth_scenarios": {
