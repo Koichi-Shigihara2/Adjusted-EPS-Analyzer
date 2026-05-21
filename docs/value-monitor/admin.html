@@ -201,6 +201,7 @@
     <button class="tab active" onclick="switchTab('tickers', this)">📋 銘柄管理</button>
     <button class="tab" onclick="switchTab('settings', this)">🔧 銘柄設定</button>
     <button class="tab" onclick="switchTab('beta', this)">β 設定</button>
+    <button class="tab" onclick="switchTab('fcf', this)">💰 FCF転換率</button>
     <button class="tab" onclick="switchTab('workflows', this)">🚀 実行</button>
     <button class="tab" onclick="switchTab('status', this)">📊 ステータス</button>
   </div>
@@ -460,6 +461,62 @@
   </div>
 
   <!-- ═══════════════════════════════════════ -->
+  <!-- Tab: FCF転換率                          -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="tab-content" id="tab-fcf">
+    <div class="action-bar">
+      <button class="btn primary" id="saveFcfBtn" onclick="saveFcf()" disabled>💾 保存してコミット</button>
+      <button class="btn" id="resetFcfBtn" onclick="loadFcfTab()" disabled>↺ リセット</button>
+      <button class="btn" id="refreshFcfBtn" onclick="loadFcfTab()" disabled>🔄 再読込</button>
+    </div>
+    <p style="font-size:12px;color:var(--mut);margin-bottom:20px;line-height:1.7">
+      Koichi式 FCF転換率設定。調整済みEPS × 株式数 × FCF転換率 = 推定FCF<br>
+      未設定の銘柄はセクターデフォルト値を使用。セクター未設定の場合は default(70%) を使用します。
+    </p>
+    <!-- 新規銘柄追加フォーム -->
+    <div class="add-form" style="margin-bottom:20px">
+      <h3 style="font-family:var(--mono);font-size:11px;color:var(--acc);margin-bottom:12px">＋ 銘柄個別上書きを追加</h3>
+      <div class="form-grid" style="grid-template-columns:120px 120px 1fr">
+        <div class="form-group">
+          <label>ティッカー</label>
+          <input type="text" class="form-input" id="newFcfTicker" placeholder="例: NVDA"
+                 autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+        </div>
+        <div class="form-group">
+          <label>転換率(%)</label>
+          <input type="number" class="form-input" id="newFcfRate" value="70" step="1" min="10" max="100">
+        </div>
+        <div class="form-group">
+          <label>理由・メモ</label>
+          <input type="text" class="form-input" id="newFcfReason" placeholder="設定理由..."
+                 autocomplete="off">
+        </div>
+      </div>
+      <button class="btn primary" onclick="addFcfRow()" style="font-size:11px">＋ 追加</button>
+    </div>
+    <h3 class="section-title">銘柄別 FCF転換率 上書き設定</h3>
+    <div class="table-wrap">
+      <table id="fcfTable">
+        <thead>
+          <tr>
+            <th>ティッカー</th>
+            <th>転換率(%)</th>
+            <th>理由・メモ</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="fcfTableBody">
+          <tr><td colspan="4" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="divider"></div>
+    <h3 class="section-title">セクターデフォルト転換率</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px" id="fcfSectorDefaults"></div>
+    <div class="result-msg" id="fcfResult"></div>
+  </div>
+
+  <!-- ═══════════════════════════════════════ -->
   <!-- Tab: 実行                               -->
   <!-- ═══════════════════════════════════════ -->
   <div class="tab-content" id="tab-workflows">
@@ -698,6 +755,7 @@ const GO_PATH    = 'config/growth_options_config.json';
 const MAT_PATH   = 'config/maturity_config.json';
 const KPI_PATH   = 'src/value/tanuki_valuation/kpi_config.py';
 const DATA_BASE  = 'docs/value-monitor/tanuki_valuation/data';
+const FCF_PATH   = 'src/value/tanuki_valuation/fcf_conversion_config.json';
 const RF = 0.043;
 const RM_RF = 0.057;
 
@@ -707,6 +765,7 @@ let segSha = null, goSha = null, matSha = null;
 let tickerList = [];
 let cikMap = {}, nameMap = {}, cikRowMap = {};  // cikRowMap: ticker→{cik,name,eps_sector,stonks_silo}
 let betaConfig = null;
+let fcfConfig = null, fcfSha = null;
 let segConfig = null, goConfig = null, matConfig = null;
 
 // ── GitHub API ──
@@ -863,12 +922,13 @@ async function connect() {
     document.getElementById('statusText').style.color = 'var(--grn)';
     ['refreshBtn','fetchSecBtn','updateSelectedBtn','lookupCikBtn','addTickerBtn',
      'deleteSelectedBtn','registerTickerBtn','saveBetaBtn','resetBetaBtn','refreshBetaBtn',
+     'saveFcfBtn','resetFcfBtn','refreshFcfBtn',
      'refreshStatusBtn','saveSettingsBtn','resetSettingsBtn'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = false;
     });
     document.getElementById('settingsTicker').disabled = false;
-    await Promise.all([loadTickerTab(), loadBetaTab(), loadConfigFiles()]);
+    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles()]);
   } catch(e) {
     alert('接続エラー: ' + e.message);
   }
@@ -1581,6 +1641,122 @@ function renderDamodaranRef() {
       <div style="font-size:11px;color:var(--mut);font-family:var(--mono)">${sector}</div>
       <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--acc);margin-top:4px">${beta.toFixed(2)}</div>
       <div style="font-size:11px;color:var(--mut);margin-top:2px">WACC: ${calcWacc(beta)}</div>
+    </div>
+  `).join('');
+}
+
+// ════════════════════════════════════
+// FCF転換率タブ
+// ════════════════════════════════════
+async function loadFcfTab() {
+  const tbody = document.getElementById('fcfTableBody');
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px"><span class="spinner"></span>読み込み中...</td></tr>`;
+  try {
+    const { content, sha } = await fetchFile(FCF_PATH);
+    fcfConfig = JSON.parse(content); fcfSha = sha;
+    renderFcfTable(); renderSectorDefaults();
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
+  }
+}
+
+function renderFcfTable() {
+  const tbody = document.getElementById('fcfTableBody');
+  const overrides = fcfConfig.ticker_overrides || {};
+  tbody.innerHTML = '';
+  for (const [ticker, cfg] of Object.entries(overrides)) {
+    const ratePercent = Math.round((cfg.conversion_rate || 0.7) * 100);
+    const tr = document.createElement('tr');
+    tr.dataset.ticker = ticker;
+    tr.innerHTML = `
+      <td><strong class="mono">${ticker}</strong></td>
+      <td><input type="number" class="beta-input" id="fcfrate-${ticker}" value="${ratePercent}" step="1" min="10" max="100" style="width:80px"></td>
+      <td><input type="text" class="reason-input" id="fcfreason-${ticker}" value="${cfg.reason || ''}" placeholder="設定理由..."></td>
+      <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeFcfRow('${ticker}')">削除</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+  if (Object.keys(overrides).length === 0) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;color:var(--mut);padding:24px">上書き設定なし</td></tr>`;
+  }
+}
+
+function removeFcfRow(ticker) {
+  if (!confirm(`${ticker} のFCF転換率上書きを削除しますか？（セクターデフォルトにフォールバックします）`)) return;
+  delete fcfConfig.ticker_overrides[ticker]; renderFcfTable();
+}
+
+function addFcfRow() {
+  const ticker = document.getElementById('newFcfTicker')?.value.trim().toUpperCase();
+  const ratePercent = parseInt(document.getElementById('newFcfRate')?.value, 10) || 70;
+  const reason = document.getElementById('newFcfReason')?.value.trim() || '';
+
+  if (!ticker) { alert('ティッカーを入力してください'); return; }
+  if (!fcfConfig.ticker_overrides) fcfConfig.ticker_overrides = {};
+  if (fcfConfig.ticker_overrides[ticker]) { alert(`${ticker} は既に設定済みです`); return; }
+
+  const conversion_rate = ratePercent / 100;
+  fcfConfig.ticker_overrides[ticker] = { conversion_rate, reason };
+
+  const tbody = document.getElementById('fcfTableBody');
+  // 「上書き設定なし」行を消す
+  if (tbody.querySelector('td[colspan]')) tbody.innerHTML = '';
+
+  const tr = document.createElement('tr');
+  tr.dataset.ticker = ticker;
+  tr.innerHTML = `
+    <td><strong class="mono">${ticker}</strong></td>
+    <td><input type="number" class="beta-input" id="fcfrate-${ticker}" value="${ratePercent}" step="1" min="10" max="100" style="width:80px"></td>
+    <td><input type="text" class="reason-input" id="fcfreason-${ticker}" value="${reason}" placeholder="設定理由..."></td>
+    <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeFcfRow('${ticker}')">削除</button></td>
+  `;
+  tbody.appendChild(tr);
+
+  document.getElementById('newFcfTicker').value = '';
+  document.getElementById('newFcfRate').value = '70';
+  document.getElementById('newFcfReason').value = '';
+  document.getElementById('newFcfTicker').focus();
+}
+
+async function saveFcf() {
+  const rows = document.querySelectorAll('#fcfTableBody tr[data-ticker]');
+  const newOverrides = {};
+  for (const row of rows) {
+    const ticker = row.dataset.ticker;
+    const ratePercent = parseInt(document.getElementById(`fcfrate-${ticker}`)?.value, 10);
+    const reason = document.getElementById(`fcfreason-${ticker}`)?.value || '';
+    if (isNaN(ratePercent)) continue;
+    newOverrides[ticker] = {
+      conversion_rate: ratePercent / 100,
+      reason
+    };
+  }
+  fcfConfig.ticker_overrides = newOverrides;
+  const btn = document.getElementById('saveFcfBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>保存中...';
+  try {
+    const { sha } = await fetchFile(FCF_PATH);
+    await commitFile(FCF_PATH, JSON.stringify(fcfConfig, null, 2), 'chore: update fcf_conversion_config.json', sha);
+    // 変更のあった銘柄を特定してパイプラインをトリガー
+    const tickers = Object.keys(newOverrides).join(',');
+    if (tickers) {
+      await dispatchWorkflow('TANUKI_VALUATION_Update.yml', { tickers });
+    }
+    showResult('fcfResult', 'success',
+      '✓ fcf_conversion_config.json を保存しました。' +
+      (tickers ? `\nパイプライン再実行をトリガーしました（対象: ${tickers}）。` : ''));
+    fcfSha = sha;
+  } catch(e) { showResult('fcfResult', 'error', '保存失敗: ' + e.message); }
+  finally { btn.disabled = false; btn.innerHTML = '💾 保存してコミット'; }
+}
+
+function renderSectorDefaults() {
+  const container = document.getElementById('fcfSectorDefaults');
+  const rates = fcfConfig.sector_conversion_rates || {};
+  container.innerHTML = Object.entries(rates).map(([sector, rate]) => `
+    <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px 14px">
+      <div style="font-size:11px;color:var(--mut);font-family:var(--mono)">${sector}</div>
+      <div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--acc);margin-top:4px">${Math.round(rate * 100)}%</div>
     </div>
   `).join('');
 }
