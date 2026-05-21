@@ -670,6 +670,9 @@ class KoichiValuationCalculator:
             # R&D資本化補正結果（v8.2追加）
             "rd_capitalization": rd_capitalization.to_dict(),
 
+            # RPO補正結果（v9.0追加: rpo_incremental・op_margin収録）
+            "rpo_adjustment": rpo_adjustment.to_dict(),
+
             # BS評価補正結果（v7.0追加）
             "bs_adjustment": bs_adjustment.to_dict(),
 
