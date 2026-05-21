@@ -21,11 +21,19 @@ import json
 import os
 import sys
 import argparse
-import statistics as _stats
 from datetime import datetime, date, timezone, timedelta
 
 import pandas as pd
 import yfinance as yf
+
+# collect_and_send から divergence 計算の 3 関数をインポート
+# （モジュールレベルの sys.exit を避けるため env チェックは __main__ に移動済み）
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from collect_and_send import (  # noqa: E402
+    _load_div_history,
+    _calc_divergence_zscore,
+    _get_tp_signal,
+)
 
 REPO_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -98,8 +106,15 @@ def _vxn_components(target: date, vxn_series: pd.Series):
         return None, None
 
 
-def _zscore_pass(all_data, window=90):
-    """全エントリの乖離値を計算し 90 日ローリング Z スコアを付与する（インプレース更新）"""
+def _divergence_pass(all_data, window=90):
+    """全エントリの divergence を再計算する（インプレース更新）。
+
+    collect_and_send._load_div_history と同等のウィンドウ収集ロジックを
+    各エントリ基準日で適用し、_calc_divergence_zscore / _get_tp_signal は
+    collect_and_send からインポートしたものをそのまま使用する。
+    （_load_div_history は datetime.now() 基準のため直接呼び出しは不適。
+      各エントリ基準日への適用はここで行う。）
+    """
     for i, entry in enumerate(all_data):
         tp = entry.get("tech_pulse")
         if not tp:
@@ -110,7 +125,6 @@ def _zscore_pass(all_data, window=90):
             continue
         div_val = round(float(tps) - float(fgs), 1)
 
-        # 過去 window 日以内の乖離値を収集
         try:
             cur_dt = datetime.fromisoformat(entry.get("date", ""))
             if cur_dt.tzinfo is None:
@@ -119,9 +133,9 @@ def _zscore_pass(all_data, window=90):
             continue
         cutoff = cur_dt - timedelta(days=window)
 
+        # _load_div_history と同等のロジック（基準日＝各エントリの日付）
         hist_divs = []
-        for j in range(i):
-            prev = all_data[j]
+        for prev in all_data[:i]:
             prev_tp = prev.get("tech_pulse")
             if not prev_tp:
                 continue
@@ -137,27 +151,15 @@ def _zscore_pass(all_data, window=90):
                 continue
             if prev_dt >= cutoff:
                 hist_divs.append(float(prev_tps) - float(prev_fgs))
-
         hist_divs.append(div_val)
-        zscore = None
-        if len(hist_divs) >= 5:
-            mean = _stats.mean(hist_divs)
-            stdev = _stats.stdev(hist_divs)
-            zscore = round((div_val - mean) / stdev, 2) if stdev else 0.0
+
+        zscore = _calc_divergence_zscore(hist_divs)
+        signal = _get_tp_signal(div_val, zscore, float(fgs))
 
         if "divergence" not in tp or tp["divergence"] is None:
             tp["divergence"] = {}
         tp["divergence"]["value"] = div_val
         tp["divergence"]["zscore"] = zscore
-
-        # シグナル判定
-        fg_score = (entry.get("fear_greed") or {}).get("score")
-        signal = ""
-        if zscore is not None and fg_score is not None:
-            if fg_score < 30 and div_val > 10 and zscore > 1.0:
-                signal = "ハイテク先行反発シグナル"
-            elif div_val < -10 and zscore < -1.0:
-                signal = "ハイテク先行下落注意"
         tp["divergence"]["signal"] = signal
 
 
@@ -178,7 +180,7 @@ def main():
     missing_idx = [i for i, d in enumerate(all_data) if not d.get("tech_pulse")]
     if not missing_idx:
         print("[INFO] 全エントリに tech_pulse が存在します。Z スコアの再計算のみ行います。")
-        _zscore_pass(all_data)
+        _divergence_pass(all_data)
         if not args.dry_run:
             with open(JSON_PATH, "w", encoding="utf-8") as f:
                 json.dump(all_data, f, ensure_ascii=False, indent=2)
@@ -259,7 +261,7 @@ def main():
 
     # ── Z スコアを全エントリに付与 ──────────────────────────────────
     print("[INFO] 乖離 Z スコアを再計算中...")
-    _zscore_pass(all_data)
+    _divergence_pass(all_data)
 
     if args.dry_run:
         print("[INFO] --dry-run モード: JSON は保存されません")

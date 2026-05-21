@@ -11,13 +11,6 @@ import csv
 import re
 import requests   # 追加: requests で非ASCII URLを扱う
 
-# --- 必須環境変数チェック ---
-required_env_vars = ["XAI_API_KEY", "GMAIL_USER", "GMAIL_PASSWORD"]
-missing = [v for v in required_env_vars if not os.getenv(v)]
-if missing:
-    print(f"[ERROR] 必須環境変数が設定されていません: {', '.join(missing)}")
-    sys.exit(1)
-
 # --- 設定 ---
 XAI_API_KEY  = os.getenv("XAI_API_KEY")
 GMAIL_USER = os.getenv("GMAIL_USER")
@@ -1029,6 +1022,13 @@ def fetch_cnn_fear_greed():
 
 
 if __name__ == "__main__":
+    # --- 必須環境変数チェック ---
+    required_env_vars = ["XAI_API_KEY", "GMAIL_USER", "GMAIL_PASSWORD"]
+    missing = [v for v in required_env_vars if not os.getenv(v)]
+    if missing:
+        print(f"[ERROR] 必須環境変数が設定されていません: {', '.join(missing)}")
+        sys.exit(1)
+
     realtime_text, structured_data = get_realtime_data()
 
     # センチメントスコア算出
