@@ -231,6 +231,15 @@
     .af-axis{display:flex;justify-content:space-between;margin-top:8px;padding:0 2px}
     .af-axis-label{font-family:var(--mono);font-size:11px;color:var(--mut)}
     @media(max-width:768px){.af-grid{grid-template-columns:repeat(4,1fr)}}
+    /* ASSET FLOW HEATMAP */
+    .af-hm-wrap{margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);overflow-x:auto}
+    .af-hm-title{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
+    .af-hm-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;min-width:420px}
+    .af-hm-th-lbl{padding:3px 8px 3px 0;text-align:left;color:var(--mut);font-weight:400;font-size:10px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+    .af-hm-th{padding:3px 4px;text-align:center;color:var(--mut);font-weight:400;font-size:10px;border-bottom:1px solid var(--bdr);white-space:nowrap}
+    .af-hm-td{padding:5px 3px;text-align:center;white-space:nowrap;font-size:10px;border:1px solid rgba(15,23,42,.4)}
+    .af-hm-asset{padding:5px 8px 5px 0;text-align:left;white-space:nowrap;font-size:11px;color:var(--txt)}
+    .af-flow-judge{margin-top:8px;font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
     @media(max-width:480px){.af-grid{grid-template-columns:repeat(2,1fr)}}
     /* 統一カードレイアウト */
     .unified-card{background:var(--sur);border:1px solid var(--bdr);padding:20px;margin-bottom:6px;display:flex;flex-direction:column;gap:16px}
@@ -423,6 +432,8 @@
       <span class="af-axis-label">← 安全資産</span>
       <span class="af-axis-label">リスク資産 →</span>
     </div>
+    <!-- 資金フロー推移ヒートマップ -->
+    <div id="afHeatmap"></div>
   </div>
   <div class="sec">市場フェーズ概要 &amp; 表示期間</div>
   <div class="top-bar">
@@ -878,7 +889,6 @@ function renderAssetFlow(){
     const pct=d.change_pct;
     const isPos=pct>=0;
     const intensity=Math.min(Math.abs(pct)/maxAbs,1);
-    // 色：プラス=緑、マイナス=赤、濃さは変化率に比例
     const bg=isPos
       ?`rgba(16,185,129,${0.05+intensity*0.25})`
       :`rgba(244,63,94,${0.05+intensity*0.25})`;
@@ -894,6 +904,41 @@ function renderAssetFlow(){
       <div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div>
     </div>`;
   }).join("");
+  renderAfHeatmap();
+}
+
+// ── ASSET FLOW HEATMAP ──
+function renderAfHeatmap(){
+  const el=document.getElementById("afHeatmap");if(!el)return;
+  const withAf=allData.filter(d=>d.asset_flow!=null);
+  if(withAf.length<1){el.innerHTML="";return}
+  const days=withAf.slice(-7);
+  const ASSETS=[
+    {key:"ultra_short",label:"超短期国債",ticker:"SHV", risk:false},
+    {key:"short_bond", label:"短期国債",  ticker:"^IRX",risk:false},
+    {key:"gold",       label:"金",        ticker:"GLD", risk:false},
+    {key:"long_bond",  label:"長期国債",  ticker:"TLT", risk:true},
+    {key:"ig_bond",    label:"投資適格債",ticker:"LQD", risk:true},
+    {key:"hy_bond",    label:"HY社債",    ticker:"HYG", risk:true},
+    {key:"equity",     label:"株式",      ticker:"SPY", risk:true},
+  ];
+  // 色: ±2%を最大濃度として固定スケール
+  const hc=p=>{if(p==null)return"var(--sur2)";const c=Math.max(-2,Math.min(2,p));return c>=0?`rgba(16,185,129,${(0.07+c/2*0.43).toFixed(2)})`:`rgba(244,63,94,${(0.07+(-c)/2*0.43).toFixed(2)})`};
+  const fc=p=>p==null?`<span style="color:var(--mut)">—</span>`:`<span style="color:${p>=0?"var(--grn)":"var(--red)"}">${p>=0?"+":""}${p.toFixed(2)}%</span>`;
+  const dLabels=days.map(d=>{const dt=new Date(d.date);return`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`});
+  const thead=`<thead><tr><th class="af-hm-th-lbl">資産</th>${dLabels.map(l=>`<th class="af-hm-th">${l}</th>`).join("")}</tr></thead>`;
+  const tbody=`<tbody>${ASSETS.map(a=>`<tr><td class="af-hm-asset"><span style="font-weight:700">${a.ticker}</span><span style="font-size:9px;color:var(--mut);margin-left:5px">${a.label}</span></td>${days.map(d=>{const p=d.asset_flow?.[a.key]?.change_pct??null;return`<td class="af-hm-td" style="background:${hc(p)}">${fc(p)}</td>`}).join("")}</tr>`).join("")}</tbody>`;
+  // 直近5日の平均で資金フロー方向を判定
+  const rec=days.slice(-5);
+  const avg=keys=>{const vs=rec.flatMap(d=>keys.map(k=>d.asset_flow?.[k]?.change_pct)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null};
+  const safeAvg=avg(["ultra_short","short_bond"]);
+  const riskAvg=avg(["hy_bond","equity"]);
+  let jTxt,jCol;
+  if(riskAvg!=null&&riskAvg>0.3){jTxt="リスク資産に資金流入";jCol="var(--grn)"}
+  else if(safeAvg!=null&&safeAvg>0.05&&(riskAvg==null||riskAvg<-0.1)){jTxt="安全資産に資金流入";jCol="var(--amb)"}
+  else{jTxt="混在・方向感なし";jCol="var(--mut)"}
+  const avgFmt=v=>v!=null?`${v>=0?"+":""}${v.toFixed(2)}%`:"—";
+  el.innerHTML=`<div class="af-hm-wrap"><div class="af-hm-title">資金フロー推移（直近${days.length}日）</div><table class="af-hm-table">${thead}${tbody}</table><div class="af-flow-judge"><span style="font-size:10px;color:var(--mut)">直近${rec.length}日平均:</span><span style="color:${jCol};font-weight:700">${jTxt}</span><span style="font-size:10px;color:var(--mut)">リスク資産 ${avgFmt(riskAvg)} / 安全資産 ${avgFmt(safeAvg)}</span></div></div>`;
 }
 
 // ── INIT ──
