@@ -41,9 +41,12 @@
     .gauge-delta{font-family:var(--mono);font-size:13px;margin-top:1px}
 
     .sub-scores{width:100%;margin-top:10px;display:flex;flex-direction:column;gap:4px}
-    .sub-row{display:grid;grid-template-columns:80px 1fr 28px;align-items:center;gap:6px}
+    .sub-row{display:grid;grid-template-columns:80px 1fr 28px;align-items:center;gap:6px;position:relative}
     .sub-name{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--mut);text-transform:uppercase;text-align:right}
     .sub-bar-bg{height:5px;background:rgba(30,40,64,.8);position:relative;overflow:hidden}
+    .sub-tip{display:none;position:absolute;left:0;top:calc(100% + 4px);z-index:200;background:#0f172a;border:1px solid var(--bdr);border-radius:6px;padding:9px 11px;width:270px;font-family:var(--mono);font-size:11px;line-height:1.75;color:var(--txt);pointer-events:none;white-space:normal;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+    .sub-row:hover .sub-tip{display:block}
+    .sub-row:nth-last-child(-n+3) .sub-tip{top:auto;bottom:calc(100% + 4px)}
     .sub-bar-fill{height:100%;transition:width .6s ease}
     .sub-val{font-family:var(--mono);font-size:13px;color:var(--mut);text-align:right}
 
@@ -655,8 +658,16 @@ function renderGauge(){
   document.getElementById("gaugeLabel").style.color=color;
   if(filteredData.length>=2){const prev=filteredData[filteredData.length-2]?.sentiment?.score;if(prev!=null){const delta=score-prev;document.getElementById("gaugeDelta").innerHTML=`<span style="color:${delta>=0?'var(--grn)':'var(--red)'}">&#x25${delta>=0?'B2':'BC'} ${delta>0?'+':''}${delta.toFixed(1)}pt</span>`}}
   const subs=s.sub_scores||{};
-  const SUB_TOOLTIPS={vix_level:"VIX恐怖指数（重み25%）",sp500_ma_dev:"S&P500 MA200乖離（重み20%）",ad_ratio:"騰落比率（重み15%）",hyg_lqd_dir:"HYG/LQD信用環境（重み12%）",nh_nl:"新高値vs新安値（重み10%）",growth_value:"グロース/バリュー比（重み10%）",distribution:"需給圧力（重み8%）"};
-  document.getElementById("subScores").innerHTML='<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">スコア構成指標 <span style="font-size:10px">（バーにカーソルで重み表示）</span></div>'+Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc),w=v.weight!=null?Math.round(v.weight*100):null,raw=v.raw!=null?` / 実値: ${typeof v.raw==='number'?v.raw.toFixed(2):v.raw}`:'';const tooltip=SUB_TOOLTIPS[k]||(w!=null?`重み${w}%`:'');return`<div class="sub-row" title="${tooltip}${raw}"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}${w!=null?`<span style="font-size:10px;color:var(--mut);margin-left:2px">(${w}%)</span>`:''}</div></div>`}).join("");
+  const FTIPS={
+    vix_level:{desc:'VIXが低いほど強気スコアが高い',detail:'VIX＜15→強気域　VIX15〜25→中立域　VIX＞30→恐怖域',rawFmt(r){return r!=null?`現在VIX = ${Number(r).toFixed(2)}`:null}},
+    sp500_ma_dev:{desc:'S&P500の50日移動平均からの乖離率',detail:'現在値÷50日MA−1（%）　プラスほど強気',rawFmt(r){return r!=null?`乖離率 = ${r>=0?'+':''}${Number(r).toFixed(2)}%`:null}},
+    ad_ratio:{desc:'値上がり÷値下がり銘柄数の比率（NYSE）',detail:'1.0超=値上がり優勢（強気）　1.0未満=値下がり優勢',rawFmt(r){return r!=null?`ADV÷DEC比 = ${Number(r).toFixed(3)}`:null}},
+    hyg_lqd_dir:{desc:'HYG（高利回り債）÷LQD（投資適格債）の日次変化',detail:'上昇→スプレッド縮小（リスクオン）　下落→スプレッド拡大（リスクオフ）',rawFmt(r){return r!=null?`HYG/LQD変化 = ${r>=0?'+':''}${Number(r).toFixed(6)}`:null}},
+    nh_nl:{desc:'52週新高値数 − 新安値数（市場内部強度）',detail:'プラスが大きいほど市場全体の上昇に広がりがある',rawFmt(r){return r!=null?`NH−NL = ${r>=0?'+':''}${r}`:null}},
+    growth_value:{desc:'グロース(IVW) vs バリュー(IVE) 変化率差',detail:'プラス=グロース優位（リスク選好）　マイナス=バリュー優位（防衛的）',rawFmt(r){return r!=null?`IVW−IVE = ${r>=0?'+':''}${Number(r).toFixed(2)}%`:null}},
+    distribution:{desc:'出来高÷20日平均出来高（分配日の検知）',detail:'出来高増×価格下落→機関投資家の売り圧力（ディストリビューション）',rawFmt(r){return r!=null&&typeof r==='object'?`出来高比 = ${(r.vol_ratio||0).toFixed(2)}倍　変化率 = ${r.chg_pct!=null?(r.chg_pct>=0?'+':'')+r.chg_pct.toFixed(2)+'%':'—'}`:r!=null?`実値 = ${r}`:null}},
+  };
+  document.getElementById("subScores").innerHTML='<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">スコア構成指標 <span style="font-size:10px">（バーにカーソルで詳細表示）</span></div>'+Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc),w=v.weight!=null?Math.round(v.weight*100):null;const fi=FTIPS[k];const rs=fi?fi.rawFmt(v.raw):null;const tip=fi?`<div class="sub-tip"><div style="color:var(--acc);font-weight:700;margin-bottom:5px">${SUB_SCORE_NAMES[k]||k}<span style="color:var(--mut);font-weight:400;margin-left:8px">重み${w}%　スコア${sc.toFixed(0)}</span></div><div style="color:var(--txt)">${fi.desc}</div><div style="color:var(--mut);font-size:10px;margin-top:2px">${fi.detail}</div>${rs?`<div style="color:var(--grn);font-size:10px;margin-top:6px;border-top:1px solid var(--bdr);padding-top:5px">${rs}</div>`:''}</div>`:'';return`<div class="sub-row"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}${w!=null?`<span style="font-size:10px;color:var(--mut);margin-left:2px">(${w}%)</span>`:''}</div>${tip}</div>`}).join("");
   // VIX9D表示
   const vix9dRatio=latest?.indicators?.["VIX9D対VIX比"];
   const vix9dData=latest?.indicators?.["VIX9D（短期VIX）"];
