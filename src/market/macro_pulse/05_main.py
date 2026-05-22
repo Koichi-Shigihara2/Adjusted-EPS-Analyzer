@@ -1648,9 +1648,13 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
 
 # ─────────────────────────────────────────────────────────────────
 #  流動性モニター CSV 更新
-#  M2 / HYスプレッド / FRBバランスシート / TGA / RRP / NET LIQUIDITY
-#  ステルス流動性 = RRPONTSYD(RRP) + WRBWFRBL(準備預金) + WTREGEN(TGA)
-#  NET LIQUIDITY = WALCL - TGA(WTREGEN) - RRP(RRPONTSYD)  [単位: 兆USD]
+#  【単位統一】全カラムを Millions USD で保存
+#    WALCL (FED)  : FRED→Millions USD   そのまま
+#    WTREGEN(TGA) : FRED→Millions USD   そのまま
+#    RRPONTSYD    : FRED→Billions USD   × 1000 → Millions USD
+#    WRBWFRBL     : FRED→Billions USD   × 1000 → Millions USD
+#    M2SL         : FRED→Billions USD   そのまま（別単位・表示専用）
+#  NET LIQUIDITY(兆USD) = (WALCL - WTREGEN - RRPONTSYD_M) / 1,000,000
 # ─────────────────────────────────────────────────────────────────
 LIQUIDITY_COLUMNS = [
     "date", "m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
@@ -1658,7 +1662,9 @@ LIQUIDITY_COLUMNS = [
 ]
 
 def update_liquidity_csv(target_date: date, fred) -> None:
-    """M2SL / BAMLH0A0HYM2 / WALCL / WTREGEN / RRPONTSYD / WRBWFRBL を取得して 05_liquidity.csv に追記・更新する"""
+    """流動性指標を FRED から取得して 05_liquidity.csv に追記・更新する。
+    RRP / reserve_balance は Billions → Millions に変換して保存する。
+    """
     if fred is None:
         logger.warning("[Liquidity] FRED not available. Skipping.")
         return
@@ -1666,31 +1672,34 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     # M2マネーサプライ: 月次, Billions USD (lookback 90日で直近値を確実に捕捉)
     m2_val,  _ = fred_latest(fred, "M2SL",         target_date, lookback=90)
     # FRBバランスシート (WALCL): 週次, Millions USD
-    fed_val, _ = fred_latest(fred, "WALCL",         target_date, lookback=14)
+    fed_val, _ = fred_latest(fred, "WALCL",         target_date, lookback=21)
     # HYスプレッド (BAMLH0A0HYM2): 日次, %
     hy_val,  _ = fred_latest(fred, "BAMLH0A0HYM2", target_date, lookback=7)
     # TGA (WTREGEN): 週次, Millions USD — 代替: FTSD
-    tga_val, _ = fred_latest(fred, "WTREGEN",       target_date, lookback=14)
+    tga_val, _ = fred_latest(fred, "WTREGEN",       target_date, lookback=21)
     if tga_val is None:
-        tga_val, _ = fred_latest(fred, "FTSD",      target_date, lookback=14)
-    # RRP (RRPONTSYD): 日次, Billions USD — 減少=市場に流動性が戻る（ステルス供給）
-    rrp_val, _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
-    # 準備預金残高 (WRBWFRBL): 週次, Billions USD — 増加=銀行に流動性が多い
-    rsv_val, _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=14)
+        tga_val, _ = fred_latest(fred, "FTSD",      target_date, lookback=21)
+    # RRP (RRPONTSYD): 日次, Billions USD → × 1000 で Millions に統一
+    rrp_b,   _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
+    rrp_val    = round(rrp_b * 1000, 4) if rrp_b is not None else None   # Millions USD
+    # 準備預金残高 (WRBWFRBL): 週次, Billions USD → × 1000 で Millions に統一
+    # WRBWFRBL は H.4.1 リリース（木曜公表・1週間ラグ）のため lookback=21 日
+    rsv_b,   _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=21)
+    rsv_val    = round(rsv_b * 1000, 4) if rsv_b is not None else None   # Millions USD
 
     if all(v is None for v in (m2_val, hy_val, fed_val)):
         logger.warning("[Liquidity] All series returned None. Skipping.")
         return
 
-    # NET LIQUIDITY (兆USD) = (WALCL - WTREGEN - RRPONTSYD×1000) / 1,000,000
-    # WALCL・WTREGEN: Millions USD; RRPONTSYD: Billions USD
+    # NET LIQUIDITY (兆USD) = (WALCL_M - WTREGEN_M - RRPONTSYD_M) / 1,000,000
+    # rrp_val はすでに Millions に変換済み
     net_liq = None
     if fed_val is not None and tga_val is not None and rrp_val is not None:
-        net_liq = round((fed_val - tga_val - rrp_val * 1000) / 1_000_000, 4)
+        net_liq = round((fed_val - tga_val - rrp_val) / 1_000_000, 4)
     if net_liq is None:
         logger.warning(
             f"[Liquidity] net_liquidity skipped: "
-            f"fed={fed_val} tga={tga_val} rrp={rrp_val}"
+            f"fed={fed_val} tga={tga_val} rrp_b={rrp_b}"
         )
 
     if os.path.exists(LIQUIDITY_PATH):
@@ -1708,21 +1717,28 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     date_str = target_date.strftime("%Y-%m-%d")
 
     # ── ステルス流動性シグナル計算 ──
-    # 前期比でRRPとTGAを比較（直近より前の最新行を使用）
+    # RRP減少 OR TGA減少 → supply（ステルス供給）
+    # RRP増加 AND TGA増加 → absorb（ステルス吸収）
+    # reserve_balance 増加 かつ rrp/tga が neutral → supply（補助判定）
     stealth_sig = "neutral"
     prev_rows = df[df["date"] < date_str].sort_values("date")
     if not prev_rows.empty:
         prev = prev_rows.iloc[-1]
         prev_rrp = float(prev["rrp"]) if prev.get("rrp", "") != "" else None
         prev_tga = float(prev["tga"]) if prev.get("tga", "") != "" else None
+        prev_rsv = float(prev["reserve_balance"]) if prev.get("reserve_balance", "") != "" else None
         rrp_dec = rrp_val is not None and prev_rrp is not None and rrp_val < prev_rrp
         tga_dec = tga_val is not None and prev_tga is not None and tga_val < prev_tga
         rrp_inc = rrp_val is not None and prev_rrp is not None and rrp_val > prev_rrp
         tga_inc = tga_val is not None and prev_tga is not None and tga_val > prev_tga
+        rsv_inc = rsv_val is not None and prev_rsv is not None and rsv_val > prev_rsv
         if rrp_dec or tga_dec:
             stealth_sig = "supply"
         elif rrp_inc and tga_inc:
             stealth_sig = "absorb"
+        elif rsv_inc:
+            # 準備預金増加（rrp/tga は中立）→ 銀行流動性上昇＝補助的供給シグナル
+            stealth_sig = "supply"
 
     new_row = {
         "date":             date_str,
@@ -1730,9 +1746,9 @@ def update_liquidity_csv(target_date: date, fred) -> None:
         "hy_spread":        str(round(hy_val,  4)) if hy_val  is not None else "",
         "fed_balance":      str(round(fed_val, 4)) if fed_val is not None else "",
         "tga":              str(round(tga_val, 4)) if tga_val is not None else "",
-        "rrp":              str(round(rrp_val, 4)) if rrp_val is not None else "",
+        "rrp":              str(rrp_val)            if rrp_val is not None else "",
         "net_liquidity":    str(net_liq)            if net_liq is not None else "",
-        "reserve_balance":  str(round(rsv_val, 4)) if rsv_val is not None else "",
+        "reserve_balance":  str(rsv_val)            if rsv_val is not None else "",
         "stealth_signal":   stealth_sig,
     }
 
@@ -1752,8 +1768,8 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     logger.info(
         f"[Liquidity] Saved {date_str}: "
         f"m2={new_row['m2']} fed={new_row['fed_balance']} "
-        f"tga={new_row['tga']} rrp={new_row['rrp']} net_liq={new_row['net_liquidity']} "
-        f"rsv={new_row['reserve_balance']} stealth={stealth_sig}"
+        f"tga={new_row['tga']} rrp_M={new_row['rrp']} net_liq={new_row['net_liquidity']} "
+        f"rsv_M={new_row['reserve_balance']} stealth={stealth_sig}"
     )
 
 # ─────────────────────────────────────────────────────────────────

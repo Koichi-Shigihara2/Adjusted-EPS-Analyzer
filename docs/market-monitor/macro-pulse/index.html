@@ -2430,6 +2430,7 @@ function renderLiquidityCards(rows) {
 }
 
 function renderStealthCard(rows, latest) {
+  // CSV 単位：rrp / reserve_balance = Millions USD、tga = Millions USD
   const rrp  = latest.rrp              !== '' ? parseFloat(latest.rrp)              : null;
   const tga  = latest.tga              !== '' ? parseFloat(latest.tga)              : null;
   const rsv  = latest.reserve_balance  !== '' ? parseFloat(latest.reserve_balance)  : null;
@@ -2439,42 +2440,47 @@ function renderStealthCard(rows, latest) {
   const tgaPrev = liqPrevVal(rows, 'tga',             7);
   const rsvPrev = liqPrevVal(rows, 'reserve_balance', 7);
 
-  function stealthChg(cur, prev, unit) {
+  // diff を Billions に変換して表示（RRP / 準備預金は M→B / TGA は M→B）
+  function stealthChg(cur, prev, divBy, unit, inverse) {
     if (cur === null || prev === null) return '<span style="color:var(--mut)">—</span>';
-    const diff = cur - prev;
-    const cls  = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--mut)';
-    const sign = diff > 0 ? '+' : '';
-    return `<span style="color:${cls};font-family:var(--mono);font-size:10px">${sign}${diff.toFixed(1)} ${unit}</span>`;
+    const diff = (cur - prev) / divBy;
+    const isPos = diff > 0;
+    const cls  = inverse ? (isPos ? 'var(--red)' : 'var(--grn)') : (isPos ? 'var(--grn)' : 'var(--red)');
+    const sign = isPos ? '+' : '';
+    return `<span style="color:${cls};font-family:var(--mono);font-size:10px">${sign}${diff.toFixed(2)} ${unit}</span>`;
   }
 
   const badgeCls  = sig === 'supply' ? 'stealth-supply' : sig === 'absorb' ? 'stealth-absorb' : 'stealth-neutral';
   const badgeTxt  = sig === 'supply' ? '▼ ステルス供給中' : sig === 'absorb' ? '▲ ステルス吸収中' : '→ 中立';
   const sigDesc   = sig === 'supply'
-    ? 'REPO残高減少またはTGA減少 → FRBが表に出ない形で市場に流動性を供給'
+    ? 'REPO残高減少・TGA減少・または準備預金増加 → FRBが表に出ない形で市場に流動性を供給'
     : sig === 'absorb'
     ? 'REPO残高増加かつTGA増加 → 市場から流動性が吸収されている'
     : '流動性の方向性は中立';
 
   const metrics = [
     {
+      // rrp は Millions USD → 表示は /1000 で Billions
       label: 'REPO残高 (RRPONTSYD)',
-      val:   rrp !== null ? rrp.toFixed(1) : '—',
+      val:   rrp !== null ? (rrp / 1000).toFixed(1) : '—',
       unit:  'B USD',
-      chg:   stealthChg(rrp, rrpPrev, 'B'),
+      chg:   stealthChg(rrp, rrpPrev, 1000, 'B', true),   // 減少=良い → inverse
       desc:  '減少 → 資金が市場に還流（ステルス供給）',
     },
     {
+      // rsv は Millions USD → 表示は /1000 で Billions
       label: '準備預金 (WRBWFRBL)',
-      val:   rsv !== null ? rsv.toFixed(1) : '—',
+      val:   rsv !== null ? (rsv / 1000).toFixed(0) : '—',
       unit:  'B USD',
-      chg:   stealthChg(rsv, rsvPrev, 'B'),
+      chg:   stealthChg(rsv, rsvPrev, 1000, 'B', false),  // 増加=良い
       desc:  '増加 → 銀行システムに流動性が多い',
     },
     {
+      // tga は Millions USD → 表示は /1000 で Billions
       label: 'TGA残高 (WTREGEN)',
-      val:   tga !== null ? (tga / 1000).toFixed(2) : '—',
-      unit:  '兆 USD',
-      chg:   stealthChg(tga, tgaPrev, 'M'),
+      val:   tga !== null ? (tga / 1000).toFixed(0) : '—',
+      unit:  'B USD',
+      chg:   stealthChg(tga, tgaPrev, 1000, 'B', true),   // 減少=良い → inverse
       desc:  '減少 → 財務省が市場に資金放出（ステルス供給）',
     },
   ];
