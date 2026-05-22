@@ -936,6 +936,33 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     else:
         all_data = []
 
+    # ── Credit / Risk-Off Score 計算 ──
+    # 3軸（株・債券・クレジット）のリスクオフ判定からスコアを算出
+    sp500_chg  = ((structured_data.get("S&P500") or {}).get("change_percent") or 0)
+    hyglqd_chg = ((structured_data.get("HYG対LQD比") or {}).get("change") or 0)
+
+    credit_stock  = "リスクオフ" if sp500_chg  < -1.0 else "リスクオン"
+    credit_credit = "リスクオフ" if hyglqd_chg < 0    else "リスクオン"
+
+    # 債券: TLT上昇 & SPY下落 → 質への逃避 → リスクオフ
+    credit_bond = "リスクオン"
+    if asset_flow_data:
+        tlt_chg = ((asset_flow_data.get("long_bond") or {}).get("change_pct") or 0)
+        eq_chg  = ((asset_flow_data.get("equity")    or {}).get("change_pct") or 0)
+        if tlt_chg > 0.3 and eq_chg < -0.5:
+            credit_bond = "リスクオフ"
+
+    risk_off_count = [credit_stock, credit_bond, credit_credit].count("リスクオフ")
+    risk_off_score = round(risk_off_count / 3 * 100)
+
+    credit_data = {
+        "stock":          credit_stock,
+        "bond":           credit_bond,
+        "credit":         credit_credit,
+        "risk_off_score": risk_off_score,
+    }
+    print(f"[INFO] credit: stock={credit_stock} bond={credit_bond} credit={credit_credit} → risk_off_score={risk_off_score}")
+
     new_entry = {
         "date": date_str,
         "judgment": judgment,
@@ -944,6 +971,7 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "fear_greed": fear_greed_data,
         "tech_pulse": tech_pulse_data,
         "asset_flow": asset_flow_data,
+        "credit": credit_data,
         "summary": report_text
     }
     # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
