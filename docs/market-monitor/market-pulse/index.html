@@ -71,6 +71,19 @@
     .osc-legend-item{display:flex;align-items:center;gap:4px;font-family:var(--mono);font-size:13px;color:var(--mut)}
     .osc-legend-dot{width:6px;height:6px;border-radius:50%}
 
+    /* BACKTEST TABLE */
+    .bt-wrap{margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
+    .bt-title{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
+    .bt-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
+    .bt-table th{padding:5px 8px;text-align:center;color:var(--mut);font-weight:400;border-bottom:1px solid var(--bdr);white-space:nowrap}
+    .bt-table th:first-child{text-align:left}
+    .bt-table td{padding:5px 8px;text-align:center;border-bottom:1px solid rgba(30,40,64,.5)}
+    .bt-table tr:last-child td{border-bottom:none}
+    .bt-current td{background:rgba(59,130,246,.08)}
+    .bt-current td:first-child{border-left:2px solid var(--acc)}
+    .bt-pos{color:var(--grn)}.bt-neg{color:var(--red)}.bt-neu{color:var(--mut)}
+    .bt-note{margin-top:6px;font-size:10px;color:var(--mut);font-family:var(--mono);line-height:1.6}
+
     /* TOP BAR */
     .top-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
     .phase-pills{display:flex;gap:6px;flex-wrap:wrap;flex:1}
@@ -306,6 +319,8 @@
       <div class="osc-chart-wrap" style="min-height:180px;max-height:220px"><canvas id="oscChart"></canvas></div>
       <div class="osc-legend" id="oscLegend"></div>
     </div>
+    <!-- ④ バックテスト表 -->
+    <div id="backtestSection"></div>
   </div>
   <div class="sec">Tech Pulse — NASDAQベース感情指数とCNN Fear &amp; Greedの比較（乖離 = NASDAQ固有の動き）</div>
   <!-- Tech Pulse: ①メーター2つ ②関連指標バー ③折れ線グラフ の縦積み -->
@@ -799,9 +814,45 @@ function renderTechPulseChart(){
   tpChartInst=new Chart(document.getElementById("tpChart"),{type:"line",data:{labels,datasets:ds},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},plugins:{legend:{display:false},tooltip:{backgroundColor:"#111520",borderColor:"#1e2840",borderWidth:1,titleColor:"#64748b",bodyColor:"#e2e8f0",titleFont:{family:"Space Mono",size:12},bodyFont:{family:"Space Mono",size:13}}},scales:{x:{ticks:{color:"#64748b",font:{family:"Space Mono",size:12},maxTicksLimit:10},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}},y:{min:yMin,max:yMax,ticks:{color:"#64748b",font:{family:"Space Mono",size:12},callback:v=>{if(v===20)return"FEAR▼";if(v===50)return"50";if(v===80)return"GREED▲";return v.toFixed(0)}},grid:{color:"rgba(30,40,64,.5)"},border:{color:"#1e2840"}}}},
   plugins:[{id:"tpZones",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;if(yMin<20){const y20=y.getPixelForValue(20),yB=y.getPixelForValue(yMin);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y20,right-left,yB-y20);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.25)";ctx.beginPath();ctx.moveTo(left,y20);ctx.lineTo(right,y20);ctx.stroke();ctx.setLineDash([])}if(yMax>80){const y80=y.getPixelForValue(80),yT=y.getPixelForValue(yMax);ctx.fillStyle="rgba(59,130,246,.06)";ctx.fillRect(left,yT,right-left,y80-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(59,130,246,.25)";ctx.beginPath();ctx.moveTo(left,y80);ctx.lineTo(right,y80);ctx.stroke();ctx.setLineDash([])}const y50=y.getPixelForValue(50);if(y50>chart.chartArea.top&&y50<chart.chartArea.bottom){ctx.setLineDash([2,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(100,116,139,.3)";ctx.beginPath();ctx.moveTo(left,y50);ctx.lineTo(right,y50);ctx.stroke();ctx.setLineDash([])}}}]})}
 
+// ── BACKTEST ──
+function renderBacktest(){
+  const el=document.getElementById("backtestSection");if(!el)return;
+  const valid=allData.filter(d=>d.indicators?.["S&P500"]?.value!=null&&d.sentiment?.score!=null);
+  if(valid.length<5){el.innerHTML="";return}
+  const ZONES=[
+    {label:"Extreme Fear",min:0, max:20, color:"#f43f5e"},
+    {label:"Fear",        min:21,max:40, color:"#f97316"},
+    {label:"Neutral",     min:41,max:60, color:"#f59e0b"},
+    {label:"Greed",       min:61,max:80, color:"#10b981"},
+    {label:"Extreme Greed",min:81,max:100,color:"#3b82f6"},
+  ];
+  const PERIODS=[{label:"翌日",idx:1},{label:"5日後",idx:5},{label:"20日後",idx:20}];
+  const curScore=filteredData[filteredData.length-1]?.sentiment?.score??null;
+  const curZone=curScore!=null?ZONES.findIndex(z=>curScore>=z.min&&curScore<=z.max):-1;
+  const rows=ZONES.map(zone=>{
+    const pr=PERIODS.map(({idx})=>{
+      const rets=[];
+      for(let i=0;i<valid.length-idx;i++){
+        if(valid[i].sentiment.score<zone.min||valid[i].sentiment.score>zone.max)continue;
+        const s0=valid[i].indicators["S&P500"].value;
+        const sN=valid[i+idx]?.indicators?.["S&P500"]?.value;
+        if(s0&&sN)rets.push((sN-s0)/s0*100);
+      }
+      return rets.length?{avg:rets.reduce((a,b)=>a+b,0)/rets.length,n:rets.length}:null;
+    });
+    return{zone,pr};
+  });
+  const fc=r=>{
+    if(!r)return`<span class="bt-neu">—</span>`;
+    const c=r.avg>0.3?'bt-pos':r.avg<-0.3?'bt-neg':'bt-neu';
+    return`<span class="${c}">${r.avg>=0?'+':''}${r.avg.toFixed(2)}%</span><br><span style="font-size:10px;color:var(--mut)">n=${r.n}</span>`;
+  };
+  el.innerHTML=`<div class="bt-wrap"><div class="bt-title">センチメント × S&amp;P500リターン バックテスト</div><table class="bt-table"><thead><tr><th>ゾーン</th>${PERIODS.map(p=>`<th>S&amp;P500<br>${p.label}平均</th>`).join("")}</tr></thead><tbody>${rows.map(({zone,pr},i)=>`<tr class="${i===curZone?'bt-current':''}"><td style="text-align:left"><span style="color:${zone.color};font-weight:${i===curZone?700:400}">${i===curZone?'▶ ':''}${zone.label}</span><br><span style="font-size:10px;color:var(--mut)">${zone.min}〜${zone.max}</span></td>${pr.map(r=>`<td>${fc(r)}</td>`).join("")}</tr>`).join("")}</tbody></table><div class="bt-note">過去データ（${valid.length}日分）に基づく統計。将来を保証するものではありません。${curScore!=null?` 現在スコア: <span style="color:var(--acc);font-weight:700">${Math.round(curScore)}</span>`:''}</div></div>`;
+}
+
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
+function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderBacktest();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
 
 function renderAssetFlow(){
   const latest=allData[allData.length-1];
