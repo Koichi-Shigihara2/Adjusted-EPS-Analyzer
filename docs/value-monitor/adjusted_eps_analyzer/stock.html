@@ -116,11 +116,13 @@
       font-family: var(--mono); font-size: 11px;
       padding: 3px 10px; border-radius: 2px;
     }
-    .badge-Excellent { background: rgba(16,185,129,.25); color: #34d399; border: 1px solid rgba(16,185,129,.4); }
-    .badge-Good      { background: rgba(16,185,129,.15); color: var(--grn); }
-    .badge-Caution                { background: rgba(245,158,11,.15);  color: var(--amb); }
-    .badge-Warning                { background: rgba(244,63,94,.15);   color: var(--red); }
-    .badge-Error                  { background: rgba(100,116,139,.15); color: var(--mut); }
+    .badge-Excellent, .badge-調整なし { background: rgba(16,185,129,.25); color: #34d399; border: 1px solid rgba(16,185,129,.4); }
+    .badge-Good,      .badge-調整小   { background: rgba(16,185,129,.15); color: var(--grn); }
+    .badge-Caution,   .badge-調整中   { background: rgba(245,158,11,.15);  color: var(--amb); }
+    .badge-Warning,   .badge-調整大   { background: rgba(244,63,94,.25);   color: var(--red); border: 1px solid rgba(244,63,94,.4); font-weight:700; }
+    .badge-過大調整                   { background: rgba(244,63,94,.15);   color: var(--red); }
+    .badge-調整小マイナス             { background: rgba(100,116,139,.15); color: var(--mut); }
+    .badge-Error                      { background: rgba(100,116,139,.15); color: var(--mut); }
     .last-updated { font-family: var(--mono); font-size: 10px; color: var(--mut); }
 
     /* ── メトリクスカード ── */
@@ -405,7 +407,7 @@
         <div class="ticker-title" id="ticker-title">—</div>
         <div class="ticker-meta">
           <span style="font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.06em;margin-right:2px">AdjEPS信頼性</span>
-          <span id="health-badge" class="health-badge badge-Good" title="Excellent: 調整項目ゼロ&#10;Good: 一過性調整のみ（正当）&#10;Caution: 一部継続性が疑われる調整あり&#10;Warning: 恒常的な調整が多く信頼性低&#10;Error: 分析不能">Good</span>
+          <span id="health-badge" class="health-badge badge-調整なし" title="調整なし: 差分0%&#10;調整小: 差分1〜20%（過小評価リスク低）&#10;調整中: 差分21〜80%（実力が見えにくい可能性）&#10;調整大: 差分81%以上（過小評価注目）&#10;過大調整: Adj &lt; GAAP（過大評価注意）&#10;Error: 分析不能">調整なし</span>
           <span class="last-updated" id="last-updated"></span>
         </div>
       </div>
@@ -735,15 +737,15 @@
       const commentEl = document.getElementById('ai-comment');
       const sourcesEl = document.getElementById('ai-sources');
       if (!ai) {
-        badge.innerText   = 'Excellent';
-        badge.className   = 'health-badge badge-Excellent';
+        badge.innerText   = '調整なし';
+        badge.className   = 'health-badge badge-調整なし';
         commentEl.innerHTML = '<span style="color:var(--mut)">分析コメント準備中</span>';
         sourcesEl.innerHTML = '';
         return;
       }
-      const h = ai.health || 'Good';
+      const h = ai.health || '調整なし';
       badge.innerText = h;
-      badge.className = `health-badge badge-${h}`;
+      badge.className = `health-badge badge-${h.replace(/[（）\s]/g, '')}`;
       commentEl.innerHTML = `<p>${ai.comment || '分析コメント準備中'}</p>`;
       if (ai.sources && ai.sources.length) {
         let s = '<div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:6px">引用ソース:</div><ul style="list-style:disc;padding-left:20px;line-height:1.8">';

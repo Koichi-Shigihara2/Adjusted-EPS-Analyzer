@@ -212,15 +212,38 @@ def generate_summary(tickers_data: Dict[str, Dict], existing_summary_path: str =
                 prev = data["quarters"][4]
                 if prev["adjusted_eps"] != 0:
                     yoy_growth = (latest["adjusted_eps"] - prev["adjusted_eps"]) / abs(prev["adjusted_eps"])
-            health = "Caution"
-            if "ai_analysis" in latest:
-                health = latest["ai_analysis"].get("health", "Caution")
+
+            # EPS差分比率からhealthを自動計算
+            gaap_eps = latest["gaap_eps"]
+            adj_eps  = latest["adjusted_eps"]
+            ratio = (adj_eps - gaap_eps) / abs(gaap_eps) * 100 if gaap_eps != 0 else 0
+            if ratio == 0:
+                health = "調整なし"
+            elif ratio > 0:
+                if ratio <= 20:
+                    health = "調整小"
+                elif ratio <= 80:
+                    health = "調整中"
+                else:
+                    health = "調整大"
+            else:
+                if ratio >= -20:
+                    health = "調整小（マイナス）"
+                else:
+                    health = "過大調整"
+            # GAAPで赤字→Adjで黒字は強制的に「調整大」
+            if gaap_eps < 0 and adj_eps > 0:
+                health = "調整大"
+
             existing_tickers[ticker] = {
                 "ticker": ticker,
                 "company_name": data.get("company_name", ""),
                 "latest_filing_date": latest["filing_date"],
-                "gaap_eps": latest["gaap_eps"],
-                "adjusted_eps": latest["adjusted_eps"],
+                "gaap_eps": gaap_eps,
+                "adjusted_eps": adj_eps,
+                "eps_diff": round(adj_eps - gaap_eps, 4),
+                "eps_ratio": round(ratio, 1),
+                "gaap_to_adj_positive": gaap_eps < 0 and adj_eps > 0,
                 "yoy_growth": yoy_growth,
                 "health": health
             }

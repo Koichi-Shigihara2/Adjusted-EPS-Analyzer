@@ -1,434 +1,107 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Adjusted EPS Analyzer · ダッシュボード</title>
-  <!-- フォント (MACRO PULSE と同じ) -->
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
-  <!-- DataTables + Excel出力 -->
   <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
   <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
   <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <link rel="icon" href="/On-a-journey/favicon.ico">
   <style>
-    /* 色定義 (MACRO PULSE 完全移植) */
     :root {
-      --bg: #0a0d14;
-      --sur: #111520;
-      --sur2: #161c2d;
-      --bdr: #1e2840;
-      --acc: #3b82f6;
-      --grn: #10b981;
-      --red: #f43f5e;
-      --amb: #f59e0b;
-      --txt: #e2e8f0;
-      --mut: #64748b;
-      --mono: 'Space Mono', monospace;
-      --sans: 'DM Sans', sans-serif;
+      --bg: #0a0d14; --sur: #111520; --sur2: #161c2d; --bdr: #1e2840;
+      --acc: #3b82f6; --grn: #10b981; --red: #f43f5e; --amb: #f59e0b;
+      --txt: #e2e8f0; --mut: #64748b;
+      --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
+    .shell { max-width: 1200px; margin: 0 auto; padding: 0 20px 48px; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--txt);
-      font-family: var(--sans);
-      font-size: 14px;
-      min-height: 100vh;
-    }
-
-    .shell {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 20px 48px;
-    }
-
-    /* ヘッダー */
     header {
-      border-bottom: 1px solid var(--bdr);
-      padding: 16px 0;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 20px;
-      flex-wrap: wrap;
-      gap: 12px;
+      border-bottom: 1px solid var(--bdr); padding: 16px 0;
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
     }
+    .logo { font-family: var(--mono); font-size: 16px; font-weight: 700; letter-spacing: .15em; display: flex; align-items: center; gap: 12px; }
+    .logo-dot { width: 8px; height: 8px; background: var(--acc); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
+    @keyframes pdot { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); } 50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); } }
+    .hdr-r { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .nav-links { display: flex; gap: 16px; }
+    .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .08em; padding: 5px 0; border-bottom: 1px solid transparent; }
+    .nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
+    .search-box { display: flex; align-items: center; gap: 4px; }
+    .search-box input { font-family: var(--mono); font-size: 11px; background: var(--sur2); border: 1px solid var(--bdr); padding: 5px 10px; color: var(--txt); width: 120px; }
+    .search-box button { font-family: var(--mono); font-size: 11px; padding: 5px 12px; border: 1px solid var(--bdr); background: var(--sur2); color: var(--txt); cursor: pointer; }
+    .search-box button:hover { border-color: var(--acc); color: var(--acc); }
 
-    .logo {
-      font-family: var(--mono);
-      font-size: 16px;
-      font-weight: 700;
-      letter-spacing: .15em;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+    .sec { font-family: var(--mono); font-size: 9px; letter-spacing: .2em; color: var(--mut); text-transform: uppercase; margin: 32px 0 14px; display: flex; align-items: center; gap: 10px; }
+    .sec::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
 
-    .logo-dot {
-      width: 8px;
-      height: 8px;
-      background: var(--acc);
-      border-radius: 50%;
-      animation: pdot 2s ease-in-out infinite;
-    }
+    .card { background: var(--sur); border: 1px solid var(--bdr); padding: 18px 20px; }
+    .card-title { font-family: var(--mono); font-size: 9px; letter-spacing: .15em; color: var(--mut); text-transform: uppercase; margin-bottom: 14px; }
+    .top-list { list-style: none; }
+    .top-list li { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
+    .top-list li:last-child { border-bottom: none; }
+    .top-ticker { font-family: var(--mono); font-weight: 700; }
+    .top-ticker a { color: var(--acc); text-decoration: none; }
+    .top-ticker a:hover { text-decoration: underline; }
+    .top-value { font-family: var(--mono); color: var(--grn); }
 
-    @keyframes pdot {
-      0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); }
-      50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); }
-    }
+    /* ── ピン表示セクション ── */
+    .pin-section { margin-bottom: 8px; }
+    .pin-group { margin-bottom: 18px; }
+    .pin-label { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .1em; margin-bottom: 8px; }
+    .pin-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pin-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; padding: 5px 12px; border: 1px solid var(--bdr); background: var(--sur2); text-decoration: none; cursor: pointer; transition: border-color .15s; }
+    .pin-chip:hover { border-color: var(--acc); }
+    .pin-chip a { color: var(--txt); text-decoration: none; }
+    .pin-chip a:hover { color: var(--acc); }
+    .pin-chip.opp { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.06); }
+    .pin-chip.ovr { border-color: rgba(244,63,94,.35); background: rgba(244,63,94,.05); }
+    .pin-chip-dev { font-size: 10px; color: var(--mut); }
+    .pin-chip-dev.pos { color: var(--grn); }
+    .pin-chip-dev.neg { color: var(--red); }
 
-    .hdr-r {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+    /* ── テーブル ── */
+    .table-wrap { background: var(--sur); border: 1px solid var(--bdr); margin-top: 16px; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; color: var(--mut); text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--bdr); text-transform: uppercase; }
+    td { padding: 10px 16px; border-bottom: 1px solid rgba(30,40,64,.5); }
+    tr:last-child td { border-bottom: none; }
+    tr:hover { background: rgba(255,255,255,.02); }
+    .ticker-cell a { color: var(--acc); font-family: var(--mono); text-decoration: none; }
+    .ticker-cell a:hover { text-decoration: underline; }
+    .number { font-family: var(--mono); text-align: right; }
+    .pos { color: var(--grn); }
+    .neg { color: var(--red); }
 
-    .nav-links {
-      display: flex;
-      gap: 16px;
-    }
+    /* ── バッジ ── */
+    .health-badge { display: inline-block; font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; }
+    .sm-badge { display: inline-block; font-family: var(--mono); font-size: 9px; padding: 1px 6px; border-radius: 2px; margin-left: 4px; vertical-align: middle; }
+    .badge-opp  { background: rgba(16,185,129,.15); color: var(--grn); }
+    .badge-tran { background: rgba(245,158,11,.15);  color: var(--amb); }
+    .badge-warn { background: rgba(244,63,94,.15);   color: var(--red); }
 
-    .nav-links a {
-      font-family: var(--mono);
-      font-size: 11px;
-      color: var(--mut);
-      text-decoration: none;
-      letter-spacing: .08em;
-      padding: 5px 0;
-      border-bottom: 1px solid transparent;
-    }
-
-    .nav-links a:hover {
-      color: var(--acc);
-      border-bottom-color: var(--acc);
-    }
-
-    .search-box {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .search-box input {
-      font-family: var(--mono);
-      font-size: 11px;
-      background: var(--sur2);
-      border: 1px solid var(--bdr);
-      padding: 5px 10px;
-      color: var(--txt);
-      width: 120px;
-    }
-
-    .search-box button {
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 5px 12px;
-      border: 1px solid var(--bdr);
-      background: var(--sur2);
-      color: var(--txt);
-      cursor: pointer;
-    }
-
-    .search-box button:hover {
-      border-color: var(--acc);
-      color: var(--acc);
-    }
-
-    /* セクション見出し */
-    .sec {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .2em;
-      color: var(--mut);
-      text-transform: uppercase;
-      margin: 32px 0 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .sec::after {
-      content: '';
-      flex: 1;
-      height: 1px;
-      background: var(--bdr);
-    }
-
-    /* カードグリッド */
-    .grid-2 {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .card {
-      background: var(--sur);
-      border: 1px solid var(--bdr);
-      padding: 18px 20px;
-    }
-
-    .card-title {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .15em;
-      color: var(--mut);
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    .top-list {
-      list-style: none;
-    }
-
-    .top-list li {
-      display: flex;
-      justify-content: space-between;
-      align-items: baseline;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(30,40,64,.5);
-    }
-
-    .top-list li:last-child {
-      border-bottom: none;
-    }
-
-    .top-ticker {
-      font-family: var(--mono);
-      font-weight: 700;
-    }
-
-    .top-ticker a {
-      color: var(--acc);
-      text-decoration: none;
-    }
-
-    .top-ticker a:hover {
-      text-decoration: underline;
-    }
-
-    .top-value {
-      font-family: var(--mono);
-      color: var(--grn);
-    }
-
-    .health-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .health-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 0;
-    }
-
-    .health-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-
-    .health-dot.Excellent { background: var(--grn); }
-    .health-dot.Good { background: var(--grn); opacity: .7; }
-    .health-dot.Caution { background: var(--amb); }
-    .health-dot.Warning { background: var(--red); }
-
-    .health-name {
-      font-family: var(--mono);
-      font-size: 11px;
-      flex: 1;
-    }
-
-    .health-name a {
-      color: var(--txt);
-      text-decoration: none;
-    }
-
-    .health-name a:hover {
-      color: var(--acc);
-    }
-
-    /* テーブル */
-    .table-wrap {
-      background: var(--sur);
-      border: 1px solid var(--bdr);
-      margin-top: 16px;
-      overflow-x: auto;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
-
-    th {
-      font-family: var(--mono);
-      font-size: 9px;
-      letter-spacing: .12em;
-      color: var(--mut);
-      text-align: left;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--bdr);
-      text-transform: uppercase;
-    }
-
-    td {
-      padding: 10px 16px;
-      border-bottom: 1px solid rgba(30,40,64,.5);
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    tr:hover {
-      background: rgba(255,255,255,.02);
-    }
-
-    .ticker-cell a {
-      color: var(--acc);
-      font-family: var(--mono);
-      text-decoration: none;
-    }
-
-    .ticker-cell a:hover {
-      text-decoration: underline;
-    }
-
-    .health-badge {
-      display: inline-block;
-      font-family: var(--mono);
-      font-size: 9px;
-      padding: 2px 8px;
-      border-radius: 2px;
-    }
-
-    .health-Excellent, .health-Good {
-      background: rgba(16,185,129,.15);
-      color: var(--grn);
-    }
-
-    .health-Caution {
-      background: rgba(245,158,11,.15);
-      color: var(--amb);
-    }
-
-    .health-Warning {
-      background: rgba(244,63,94,.15);
-      color: var(--red);
-    }
-
-    .health-Error {
-      background: rgba(100,116,139,.15);
-      color: var(--mut);
-    }
-
-    .number {
-      font-family: var(--mono);
-      text-align: right;
-    }
-
-    /* DataTables スタイル上書き */
-    .dataTables_wrapper {
-      font-family: var(--sans);
-      font-size: 13px;
-      color: var(--txt);
-    }
-    .dataTables_filter input, .dataTables_length select {
-      background: var(--sur2);
-      border: 1px solid var(--bdr);
-      color: var(--txt);
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 4px 8px;
-      margin-left: 6px;
-    }
-    .dataTables_filter label, .dataTables_length label,
-    .dataTables_info, .dataTables_paginate {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--mut);
-    }
-    .dataTables_paginate .paginate_button {
-      font-family: var(--mono);
-      font-size: 10px;
-      color: var(--mut) !important;
-      padding: 3px 8px !important;
-    }
-    .dataTables_paginate .paginate_button.current {
-      background: var(--sur2) !important;
-      border: 1px solid var(--bdr) !important;
-      color: var(--acc) !important;
-    }
-    .dataTables_paginate .paginate_button:hover {
-      background: var(--sur2) !important;
-      border: 1px solid var(--bdr) !important;
-      color: var(--acc) !important;
-    }
-    table.dataTable thead th {
-      background: var(--sur);
-      border-bottom: 1px solid var(--bdr) !important;
-    }
-    table.dataTable thead .sorting::after,
-    table.dataTable thead .sorting_asc::after,
-    table.dataTable thead .sorting_desc::after {
-      opacity: 0.5;
-    }
-    .dt-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-    .excel-btn {
-      font-family: var(--mono);
-      font-size: 10px;
-      padding: 5px 14px;
-      background: rgba(16,185,129,.15);
-      border: 1px solid var(--grn);
-      color: var(--grn);
-      cursor: pointer;
-      letter-spacing: .05em;
-    }
+    /* DataTables 上書き */
+    .dataTables_wrapper { font-family: var(--sans); font-size: 13px; color: var(--txt); }
+    .dataTables_filter input, .dataTables_length select { background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); font-family: var(--mono); font-size: 11px; padding: 4px 8px; margin-left: 6px; }
+    .dataTables_filter label, .dataTables_length label, .dataTables_info, .dataTables_paginate { font-family: var(--mono); font-size: 10px; color: var(--mut); }
+    .dataTables_paginate .paginate_button { font-family: var(--mono); font-size: 10px; color: var(--mut) !important; padding: 3px 8px !important; }
+    .dataTables_paginate .paginate_button.current { background: var(--sur2) !important; border: 1px solid var(--bdr) !important; color: var(--acc) !important; }
+    .dataTables_paginate .paginate_button:hover { background: var(--sur2) !important; border: 1px solid var(--bdr) !important; color: var(--acc) !important; }
+    table.dataTable thead th { background: var(--sur); border-bottom: 1px solid var(--bdr) !important; }
+    table.dataTable thead .sorting::after, table.dataTable thead .sorting_asc::after, table.dataTable thead .sorting_desc::after { opacity: 0.5; }
+    .dt-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .excel-btn { font-family: var(--mono); font-size: 10px; padding: 5px 14px; background: rgba(16,185,129,.15); border: 1px solid var(--grn); color: var(--grn); cursor: pointer; letter-spacing: .05em; }
     .excel-btn:hover { background: rgba(16,185,129,.25); }
 
-    /* ローディング／エラー */
-    .empty {
-      color: var(--mut);
-      font-family: var(--mono);
-      font-size: 11px;
-      padding: 40px;
-      text-align: center;
-    }
-
-    .spin {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border: 2px solid var(--bdr);
-      border-top-color: var(--acc);
-      border-radius: 50%;
-      animation: spin .8s linear infinite;
-      margin-right: 6px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    .empty { color: var(--mut); font-family: var(--mono); font-size: 11px; padding: 40px; text-align: center; }
+    .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--bdr); border-top-color: var(--acc); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 6px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -455,155 +128,225 @@
     </div>
   </header>
 
-  <!-- メインコンテンツ (JSで動的生成) -->
   <div id="dashboard-content">
     <div class="empty"><span class="spin"></span>データを読み込み中...</div>
   </div>
 </div>
 
 <script>
-  (async function() {
-    const contentDiv = document.getElementById('dashboard-content');
+(async function() {
+  const contentDiv = document.getElementById('dashboard-content');
 
-    try {
-      const res = await fetch('data/summary.json?t=' + Date.now());
-      if (!res.ok) throw new Error('データが見つかりません');
-      const data = await res.json();
-      const tickers = data.tickers || [];
+  // ── healthのスタイル ──
+  function healthStyle(h) {
+    if (h === '調整なし')       return 'background:rgba(16,185,129,.15);color:var(--grn)';
+    if (h === '調整小')         return 'background:rgba(16,185,129,.10);color:#6ee7b7';
+    if (h === '調整中')         return 'background:rgba(245,158,11,.15);color:var(--amb)';
+    if (h === '調整大')         return 'background:rgba(244,63,94,.25);color:var(--red);font-weight:700;border:1px solid rgba(244,63,94,.4)';
+    if (h === '過大調整')       return 'background:rgba(244,63,94,.15);color:var(--red)';
+    if (h === '調整小（マイナス）') return 'background:rgba(100,116,139,.15);color:var(--mut)';
+    return 'background:rgba(100,116,139,.15);color:var(--mut)';
+  }
+  function fmt4(v)  { return v != null ? '$' + v.toFixed(4) : '—'; }
+  function fmtDiff(v) {
+    if (v == null) return '—';
+    const s = (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(4);
+    return s;
+  }
+  function fmtRatio(v) { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—'; }
+  function fmtPct(v)   { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+  function fmtGrowth(v){ return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
 
-      // YoY成長率トップ5 (降順、null除外)
-      const withGrowth = tickers.filter(t => t.yoy_growth !== null && t.yoy_growth !== undefined);
-      const topGrowth = [...withGrowth].sort((a,b) => b.yoy_growth - a.yoy_growth).slice(0,5);
+  try {
+    // 1. summary.json 読み込み
+    const res = await fetch('data/summary.json?t=' + Date.now());
+    if (!res.ok) throw new Error('データが見つかりません');
+    const data = await res.json();
+    let tickers = data.tickers || [];
 
-      // 健全性 Excellent の銘柄
-      const excellent = tickers.filter(t => t.health === 'Excellent');
+    // 2. TANUKI 乖離率を並行取得
+    await Promise.allSettled(tickers.map(async t => {
+      try {
+        const r = await fetch(`../tanuki_valuation/data/${t.ticker}/latest.json`);
+        if (r.ok) {
+          const d = await r.json();
+          // upside_percent は % 単位 (例: 119.4) → 0.1194 に変換
+          const up = d.upside_percent;
+          t.deviation_rate = (up != null) ? up / 100 : null;
+        }
+      } catch (_) {}
+    }));
 
-      // テーブル用の全銘柄
-      const allTickers = tickers.sort((a,b) => a.ticker.localeCompare(b.ticker));
+    // 3. 差分比率の大きい順（降順）にデフォルトソート
+    tickers.sort((a, b) => (b.eps_ratio || 0) - (a.eps_ratio || 0));
 
-      function formatPercent(val) {
-        if (val === null || val === undefined) return '—';
-        return (val * 100).toFixed(1) + '%';
-      }
+    // 4. 投資機会・注意グループ
+    const oppGroup  = tickers.filter(t => (t.eps_ratio || 0) > 50 && (t.deviation_rate || 0) > 0.1);
+    const warnGroup = tickers.filter(t => (t.eps_ratio || 0) < -20);
 
-      function healthClass(health) {
-        return 'health-' + (health || 'Good');
-      }
+    // 5. YoY成長率トップ5
+    const withGrowth = tickers.filter(t => t.yoy_growth != null);
+    const topGrowth  = [...withGrowth].sort((a,b) => b.yoy_growth - a.yoy_growth).slice(0, 5);
 
-      function healthDot(health) {
-        return 'health-dot ' + (health || 'Good');
-      }
+    let html = '';
 
-      function formatMoney(val) {
-        if (val === null || val === undefined) return '—';
-        return '$' + val.toFixed(4);
-      }
+    // ── ピン表示：2軸グループ ──
+    if (oppGroup.length > 0 || warnGroup.length > 0) {
+      html += '<div class="pin-section">';
 
-      // HTML構築
-      let html = '';
-
-      // カード行
-      html += '<div class="grid-2">';
-
-      // 左カード: YoY成長率トップ5
-      html += '<div class="card">';
-      html += '<div class="card-title">🔥 TTM調整後EPS成長率トップ5</div>';
-      html += '<ul class="top-list">';
-      if (topGrowth.length === 0) {
-        html += '<li class="empty" style="padding:10px 0">データなし</li>';
-      } else {
-        topGrowth.forEach(t => {
-          const pct = formatPercent(t.yoy_growth);
-          const color = t.yoy_growth >= 0 ? 'var(--grn)' : 'var(--red)';
-          html += `<li><span class="top-ticker"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></span> <span class="top-value" style="color:${color}">${pct}</span></li>`;
+      if (oppGroup.length > 0) {
+        html += '<div class="sec">👁 過小評価候補</div>';
+        html += '<div class="pin-group"><div class="pin-chips">';
+        oppGroup.forEach(t => {
+          const dr = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
+          const drClass = (t.deviation_rate || 0) >= 0 ? 'pos' : 'neg';
+          html += `<span class="pin-chip opp">
+            <a href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
+            <span style="font-size:9px;color:var(--mut)">差分${fmtRatio(t.eps_ratio)}</span>
+            <span class="pin-chip-dev ${drClass}" title="TANUKI乖離率">${dr}</span>
+          </span>`;
         });
+        html += '</div></div>';
       }
-      html += '</ul></div>';
 
-      // 右カード: 健全性 Excellent
-      html += '<div class="card">';
-      html += '<div class="card-title">✨ 健全性 Excellent の銘柄</div>';
-      html += '<div class="health-list">';
-      if (excellent.length === 0) {
-        html += '<div class="empty" style="padding:10px 0">該当なし</div>';
-      } else {
-        excellent.slice(0,8).forEach(t => {
-          html += `<div class="health-item"><span class="${healthDot(t.health)}"></span><span class="health-name"><a href="stock.html?ticker=${t.ticker}">${t.ticker} · ${t.company_name || ''}</a></span></div>`;
+      if (warnGroup.length > 0) {
+        html += '<div class="sec">⚠️ 過大評価注意</div>';
+        html += '<div class="pin-group"><div class="pin-chips">';
+        warnGroup.forEach(t => {
+          html += `<span class="pin-chip ovr">
+            <a href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
+            <span style="font-size:9px;color:var(--red)">差分${fmtRatio(t.eps_ratio)}</span>
+          </span>`;
         });
+        html += '</div></div>';
       }
-      html += '</div></div>';
-      html += '</div>'; // grid-2
 
-      // 全銘柄一覧テーブル
-      html += '<div class="sec">📋 全監視銘柄一覧</div>';
-      html += '<div class="dt-toolbar"><span></span><button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button></div>';
-      html += '<div class="table-wrap">';
-      html += '<table id="main-table"><thead><tr>';
-      html += '<th>ティッカー</th><th>会社名</th><th>最新決算日</th><th>GAAP EPS</th><th>Adjusted EPS</th><th>YoY成長率</th><th>健全性</th>';
-      html += '</tr></thead><tbody>';
+      html += '</div>';
+    }
 
-      allTickers.forEach(t => {
-        html += '<tr>';
-        html += `<td class="ticker-cell"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></td>`;
-        html += `<td>${t.company_name || ''}</td>`;
-        html += `<td>${t.latest_filing_date || ''}</td>`;
-        html += `<td class="number">${formatMoney(t.gaap_eps)}</td>`;
-        html += `<td class="number">${formatMoney(t.adjusted_eps)}</td>`;
-        html += `<td class="number" style="color:${t.yoy_growth >= 0 ? 'var(--grn)' : 'var(--red)'}">${formatPercent(t.yoy_growth)}</td>`;
-        html += `<td><span class="health-badge ${healthClass(t.health)}">${t.health || 'Good'}</span></td>`;
-        html += '</tr>';
+    // ── YoY成長率トップ5 カード（1列） ──
+    html += '<div class="sec">🔥 TTM調整後EPS成長率トップ5</div>';
+    html += '<div class="card" style="margin-bottom:24px">';
+    html += '<ul class="top-list">';
+    if (topGrowth.length === 0) {
+      html += '<li class="empty" style="padding:10px 0">データなし</li>';
+    } else {
+      topGrowth.forEach(t => {
+        const col = t.yoy_growth >= 0 ? 'var(--grn)' : 'var(--red)';
+        html += `<li>
+          <span class="top-ticker"><a href="stock.html?ticker=${t.ticker}">${t.ticker} · ${t.company_name || ''}</a></span>
+          <span class="top-value" style="color:${col}">${fmtGrowth(t.yoy_growth)}</span>
+        </li>`;
       });
-
-      html += '</tbody></table></div>';
-
-      contentDiv.innerHTML = html;
-
-    } catch (e) {
-      contentDiv.innerHTML = `<div class="empty">⚠️ データを読み込めませんでした。<br><small>${e.message}</small></div>`;
     }
-  })();
+    html += '</ul></div>';
 
-  // ★ DataTables 初期化（テーブル描画後に呼ぶ）
-  let dtInstance = null;
-  function initDataTable() {
-    if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
-    const tbl = document.getElementById('main-table');
-    if (!tbl) return;
-    dtInstance = $('#main-table').DataTable({
-      pageLength: 25,
-      order: [[5, 'desc']],  // YoY成長率降順
-      language: {
-        search: '🔍 検索:',
-        lengthMenu: '表示件数: _MENU_',
-        info: '_TOTAL_ 銘柄中 _START_〜_END_ 件',
-        paginate: { previous: '‹', next: '›' },
-        emptyTable: 'データなし',
-        zeroRecords: '該当なし'
-      },
-      columnDefs: [
-        { targets: [3,4,5], type: 'num-fmt' }  // 数値列をソート対応
-      ]
+    // ── 全銘柄一覧テーブル ──
+    html += '<div class="sec">📋 全監視銘柄一覧</div>';
+    html += '<div class="dt-toolbar"><span></span><button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button></div>';
+    html += '<div class="table-wrap">';
+    html += '<table id="main-table"><thead><tr>';
+    html += '<th>ティッカー</th><th>会社名</th><th>最新決算日</th>';
+    html += '<th>GAAP EPS</th><th>Adj EPS</th><th>差分額</th><th>差分比率</th>';
+    html += '<th>YoY成長率</th><th>TANUKI乖離率</th><th>健全性</th>';
+    html += '</tr></thead><tbody>';
+
+    tickers.forEach(t => {
+      const isOpp  = (t.eps_ratio || 0) > 50 && (t.deviation_rate || 0) > 0.1;
+      const isTran = t.gaap_to_adj_positive;
+      const isOver = t.health === '過大調整';
+      const diffNeg = (t.eps_diff || 0) < 0;
+
+      // GAAP→Adj黒字転換バッジ
+      const tranBadge = isTran ? '<span class="sm-badge badge-tran">⚡黒字転換</span>' : '';
+      // 投資機会バッジ
+      const oppBadge  = isOpp  ? '<span class="sm-badge badge-opp">👁 投資機会候補</span>' : '';
+      // 過大評価バッジ
+      const warnBadge = isOver ? '<span class="sm-badge badge-warn">⚠️ 過大評価注意</span>' : '';
+
+      // 差分の色
+      const diffStyle = diffNeg ? 'color:var(--red)' : 'color:var(--grn)';
+      const ratioStyle = (t.eps_ratio || 0) < 0 ? 'color:var(--red)' : 'color:var(--grn)';
+
+      // 乖離率
+      const devTxt   = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
+      const devStyle = (t.deviation_rate || 0) >= 0 ? 'color:var(--grn)' : 'color:var(--red)';
+
+      // ソート用 data-sort
+      const ratioSort = (t.eps_ratio   != null) ? t.eps_ratio   : -9999;
+      const growSort  = (t.yoy_growth  != null) ? t.yoy_growth * 100 : -9999;
+      const devSort   = (t.deviation_rate != null) ? t.deviation_rate * 100 : -9999;
+
+      html += `<tr>
+        <td class="ticker-cell" data-sort="${t.ticker}"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></td>
+        <td>${t.company_name || ''}</td>
+        <td>${t.latest_filing_date || ''}</td>
+        <td class="number">${fmt4(t.gaap_eps)}</td>
+        <td class="number">${fmt4(t.adjusted_eps)}</td>
+        <td class="number" data-sort="${(t.eps_diff||0).toFixed(4)}" style="${diffStyle}">${fmtDiff(t.eps_diff)}</td>
+        <td class="number" data-sort="${ratioSort}" style="${ratioStyle}">${fmtRatio(t.eps_ratio)}</td>
+        <td class="number" data-sort="${growSort}" style="color:${(t.yoy_growth||0)>=0?'var(--grn)':'var(--red)'}">${fmtGrowth(t.yoy_growth)}</td>
+        <td class="number" data-sort="${devSort}" style="${devStyle}">${devTxt}</td>
+        <td>
+          <span class="health-badge" style="${healthStyle(t.health)}">${t.health || '—'}</span>
+          ${tranBadge}${oppBadge}${warnBadge}
+        </td>
+      </tr>`;
     });
-  }
 
-  // ★ Excel出力
-  function exportExcel() {
-    const tbl = document.getElementById('main-table');
-    if (!tbl) return;
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.table_to_sheet(tbl);
-    XLSX.utils.book_append_sheet(wb, ws, 'AEA Summary');
-    XLSX.writeFile(wb, `AEA_summary_${new Date().toISOString().slice(0,10)}.xlsx`);
-  }
+    html += '</tbody></table></div>';
+    contentDiv.innerHTML = html;
 
-  // MutationObserver でテーブル描画を検知してDataTables初期化
-  const observer = new MutationObserver(() => {
-    if (document.getElementById('main-table')) {
-      observer.disconnect();
-      setTimeout(initDataTable, 50);
-    }
+  } catch (e) {
+    contentDiv.innerHTML = `<div class="empty">⚠️ データを読み込めませんでした。<br><small>${e.message}</small></div>`;
+  }
+})();
+
+let dtInstance = null;
+function initDataTable() {
+  if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
+  const tbl = document.getElementById('main-table');
+  if (!tbl) return;
+  dtInstance = $('#main-table').DataTable({
+    pageLength: 25,
+    order: [[6, 'desc']],  // 差分比率 降順
+    language: {
+      search: '🔍 検索:',
+      lengthMenu: '表示件数: _MENU_',
+      info: '_TOTAL_ 銘柄中 _START_〜_END_ 件',
+      paginate: { previous: '‹', next: '›' },
+      emptyTable: 'データなし',
+      zeroRecords: '該当なし'
+    },
+    columnDefs: [
+      { targets: [3,4,5,6,7,8], type: 'num-fmt', orderDataType: 'dom-data-sort' }
+    ]
   });
-  observer.observe(document.getElementById('dashboard-content'), { childList: true, subtree: true });
+  // data-sort による数値ソート
+  $.fn.dataTable.ext.order['dom-data-sort'] = function(settings, col) {
+    return this.api().column(col, { order: 'index' }).nodes().map(td => {
+      const cell = $(td).find('[data-sort]').addBack('[data-sort]');
+      return cell.length ? parseFloat(cell.attr('data-sort')) : parseFloat($(td).text()) || 0;
+    });
+  };
+}
+
+function exportExcel() {
+  const tbl = document.getElementById('main-table');
+  if (!tbl) return;
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb, ws, 'AEA Summary');
+  XLSX.writeFile(wb, `AEA_summary_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+const observer = new MutationObserver(() => {
+  if (document.getElementById('main-table')) {
+    observer.disconnect();
+    setTimeout(initDataTable, 50);
+  }
+});
+observer.observe(document.getElementById('dashboard-content'), { childList: true, subtree: true });
 </script>
   <script src="../../common/site-nav.js"></script>
 </body>
