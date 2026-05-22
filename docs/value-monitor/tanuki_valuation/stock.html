@@ -377,12 +377,137 @@ const fmtB = (n) => {
   return '$' + fmtInt(Math.round(n));
 };
 
+async function loadCfData(d) {
+  try {
+    const url = `../../../common/sec_data/normalized/${ticker}_quarterly_normalized.json`;
+    const res = await fetch(url, { cache: 'no-cache' });
+    if (!res.ok) throw new Error('quarterly not found');
+    const json = await res.json();
+    let records = Array.isArray(json) ? json : (json.data || json.records || []);
+    records = records.filter(r => r.is_annual === false || r.is_annual === 'false');
+    records = records.slice(-8);
+    if (records.length === 0) throw new Error('no quarterly data');
+    renderCfCharts(records);
+  } catch (e) {
+    renderCfFallback(d);
+  }
+}
+
+function renderCfCharts(records) {
+  const section = document.getElementById('cf-waterfall-section');
+  if (!section) return;
+
+  const labels = records.map(r => r.period || r.label || '');
+  const toB = v => v != null ? v / 1e9 : null;
+
+  const ocf      = records.map(r => toB(r.fields?.OCF));
+  const capexNeg = records.map(r => r.fields?.CapEx != null ? -toB(r.fields.CapEx) : null);
+  const fcf      = records.map(r => {
+    const o = r.fields?.OCF, c = r.fields?.CapEx;
+    return (o != null && c != null) ? toB(o - c) : null;
+  });
+  const fcfMargin = records.map(r => {
+    const o = r.fields?.OCF, c = r.fields?.CapEx, rv = r.fields?.Revenue;
+    return (rv > 0 && o != null && c != null) ? ((o - c) / rv * 100) : null;
+  });
+  const sbcPct = records.map(r => {
+    const s = r.fields?.SBC, rv = r.fields?.Revenue;
+    return (rv > 0 && s != null) ? (s / rv * 100) : null;
+  });
+  const daPct = records.map(r => {
+    const da = r.fields?.DA, rv = r.fields?.Revenue;
+    return (rv > 0 && da != null) ? (da / rv * 100) : null;
+  });
+
+  const darkBase = {
+    paper_bgcolor: '#111520',
+    plot_bgcolor: '#111520',
+    font: { family: 'Space Mono', color: '#94a3b8', size: 11 },
+    margin: { t: 48, b: 64, l: 70, r: 24 },
+    showlegend: true,
+    xaxis: { gridcolor: '#1e2840', tickangle: -30 },
+    yaxis: { gridcolor: '#1e2840' },
+    legend: { orientation: 'h', y: -0.35, font: { size: 10 } },
+  };
+  const cfg = { displayModeBar: false, responsive: true };
+
+  Plotly.newPlot('cf-waterfall-chart', [
+    { name: 'OCF',   type: 'bar', x: labels, y: ocf,      marker: { color: '#4ade80' } },
+    { name: 'CapEx', type: 'bar', x: labels, y: capexNeg, marker: { color: '#f87171' } },
+    { name: 'FCF',   type: 'bar', x: labels, y: fcf,      marker: { color: '#c4d0ff' } },
+  ], {
+    paper_bgcolor: darkBase.paper_bgcolor,
+    plot_bgcolor:  darkBase.plot_bgcolor,
+    font: darkBase.font,
+    margin: darkBase.margin,
+    showlegend: darkBase.showlegend,
+    xaxis: darkBase.xaxis,
+    yaxis: { gridcolor: '#1e2840', ticksuffix: 'B' },
+    legend: darkBase.legend,
+    barmode: 'group',
+    title: { text: 'キャッシュフロー推移（四半期）', font: { color: '#94a3b8', size: 13 } },
+  }, cfg);
+
+  Plotly.newPlot('cf-margin-chart', [{
+    name: 'FCFマージン',
+    type: 'scatter',
+    mode: 'lines+markers',
+    x: labels,
+    y: fcfMargin,
+    line: { color: '#c4d0ff', width: 2 },
+    marker: { size: 6, color: '#c4d0ff' },
+  }], {
+    paper_bgcolor: darkBase.paper_bgcolor,
+    plot_bgcolor:  darkBase.plot_bgcolor,
+    font: darkBase.font,
+    margin: darkBase.margin,
+    showlegend: darkBase.showlegend,
+    xaxis: darkBase.xaxis,
+    yaxis: { gridcolor: '#1e2840', ticksuffix: '%' },
+    legend: darkBase.legend,
+    title: { text: 'FCFマージン推移（%）', font: { color: '#94a3b8', size: 13 } },
+  }, cfg);
+
+  Plotly.newPlot('cf-quality-chart', [
+    { name: 'SBC比率', type: 'bar', x: labels, y: sbcPct, marker: { color: '#a78bfa' } },
+    { name: 'D&A比率', type: 'bar', x: labels, y: daPct,  marker: { color: '#fb923c' } },
+  ], {
+    paper_bgcolor: darkBase.paper_bgcolor,
+    plot_bgcolor:  darkBase.plot_bgcolor,
+    font: darkBase.font,
+    margin: darkBase.margin,
+    showlegend: darkBase.showlegend,
+    xaxis: darkBase.xaxis,
+    yaxis: { gridcolor: '#1e2840', ticksuffix: '%' },
+    legend: darkBase.legend,
+    barmode: 'stack',
+    title: { text: 'SBC・D&A比率（対売上高）', font: { color: '#94a3b8', size: 13 } },
+  }, cfg);
+
+  section.style.display = '';
+}
+
+function renderCfFallback(d) {
+  const section = document.getElementById('cf-waterfall-section');
+  if (!section) return;
+  const fcf = d.fcf_estimation?.estimated_fcf || d.fcf_base?.base_fcf || 0;
+  document.getElementById('cf-waterfall-chart').innerHTML =
+    '<div style="padding:32px;color:var(--mut);font-size:13px;text-align:center;line-height:2">' +
+    '四半期詳細データは準備中です。<br>' +
+    '年次FCF: ' + fmtB(fcf) + '（5年平均）' +
+    '</div>';
+  document.getElementById('cf-margin-chart').style.display = 'none';
+  document.getElementById('cf-quality-chart').style.display = 'none';
+  section.style.display = '';
+}
+
 async function loadData() {
   try {
     const response = await fetch(`data/${ticker}/latest.json`, { cache: 'no-cache' });
     if (!response.ok) throw new Error('Data not found');
     globalData = await response.json();
     render(globalData);
+    loadCfData(globalData);
     // 時系列チャート（history.jsonが存在する場合のみ）
     try {
       const hRes = await fetch(`data/${ticker}/history.json`, { cache: 'no-cache' });
@@ -1324,6 +1449,13 @@ function render(d) {
       <h2 class="section-title">VALUATION COMPONENTS</h2>
       <div id="valuation-chart"></div>
     </div>
+
+    <section id="cf-waterfall-section" class="chart-container" style="display:none">
+      <h2 class="section-title">キャッシュフロー分析</h2>
+      <div id="cf-waterfall-chart" style="width:100%;min-height:300px;background:var(--sur);border:1px solid var(--bdr);border-radius:8px"></div>
+      <div id="cf-margin-chart" style="width:100%;min-height:240px;margin-top:16px;background:var(--sur);border:1px solid var(--bdr);border-radius:8px"></div>
+      <div id="cf-quality-chart" style="width:100%;min-height:240px;margin-top:16px;background:var(--sur);border:1px solid var(--bdr);border-radius:8px"></div>
+    </section>
 
     <footer>
       <p>計算日: ${calcDate} | ${formula}</p>
