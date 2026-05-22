@@ -5,7 +5,7 @@ TANUKI SCOREの特選銘柄を毎日選出し、Grok AIによる投資判断レ�
 フロー:
   1. 全銘柄をスコアリング（ファンダ/タイミング/分類）
   2. 選出ロジック（優先①分類変化 → ②Grokニュース → ③ファンダ上位未選出）
-  3. Grok（web_search有効）でレポート生成
+  3. GrokでAIレポート生成
   4. daily_pick.json / history.json を保存
 """
 import json
@@ -195,33 +195,75 @@ def select_ticker(stocks, history, today_str):
     candidates.sort(key=lambda s: (-pick_idx.get(s["ticker"], len(history) + 1), -s["funda"]))
     return candidates[0], "ファンダスコア上位・最長未選出"
 
+# ── Grok API helpers（collect_and_send.py と同方式） ─────────
+def _call_grok(messages, temperature=0.3, max_tokens=4096):
+    """grok-3-mini → grok-3 → grok-2-1212 の順でフォールバック呼び出し"""
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {XAI_API_KEY}",
+    }
+    models = ["grok-3-mini", "grok-3", "grok-2-1212"]
+    last_error = None
+    for model in models:
+        try:
+            print(f"  [grok] 試行: {model}")
+            resp = requests.post(
+                XAI_API_URL,
+                headers=headers,
+                json={
+                    "model":       model,
+                    "messages":    messages,
+                    "max_tokens":  max_tokens,
+                    "temperature": temperature,
+                },
+                timeout=120,
+            )
+            resp.raise_for_status()
+            text = resp.json()["choices"][0]["message"]["content"]
+            print(f"  [grok] 成功: {model}")
+            return text
+        except Exception as e:
+            print(f"  [grok] 失敗 ({model}): {e}")
+            last_error = e
+    raise last_error
+
+def _extract_json(text):
+    """テキストからJSONオブジェクトを抽出する（マークダウンコードブロック対応）"""
+    text = text.strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        pass
+    # ```json ... ``` や ``` ... ``` の中身を取り出す
+    start = text.find('{')
+    end   = text.rfind('}')
+    if start != -1 and end != -1 and end > start:
+        try:
+            return json.loads(text[start:end + 1])
+        except json.JSONDecodeError:
+            pass
+    return None
+
+
 def grok_news_search(ticker_list, date_str):
     """Grokで本日重大ニュースのある銘柄を1件検索する"""
     prompt = (
         f"以下の銘柄リストのうち、今日（{date_str}）重要なニュースがある"
         f"銘柄を1つ選び、その理由を50字以内で答えよ：{', '.join(ticker_list)}\n"
+        f"回答はJSONオブジェクトのみ返すこと。\n"
         f'回答形式: {{"ticker": "XXXX", "reason": "理由"}}'
     )
     try:
-        resp = requests.post(
-            XAI_API_URL,
-            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "grok-3",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.3,
-                "search_parameters": {"mode": "on"},
-                "response_format": {"type": "json_object"},
-            },
-            timeout=45,
-        )
-        resp.raise_for_status()
-        parsed = json.loads(resp.json()["choices"][0]["message"]["content"])
+        text   = _call_grok([{"role": "user", "content": prompt}], temperature=0.3, max_tokens=256)
+        parsed = _extract_json(text)
+        if not parsed:
+            print(f"  [news] JSON解析失敗: {text[:120]}")
+            return None, None
         ticker = parsed.get("ticker", "").upper().strip()
         reason = parsed.get("reason", "")
         if ticker in ticker_list:
-            return ticker, f"{reason}（Grokニュース検索による選出）"
-        print(f"  [news] Returned ticker '{ticker}' not in list, skipping")
+            return ticker, f"{reason}（Grok選出）"
+        print(f"  [news] 返答ticker '{ticker}' がリストにない、スキップ")
     except Exception as e:
         print(f"  [news] Error: {e}")
     return None, None
@@ -285,7 +327,7 @@ def build_data_package(stock, mkt):
     }
 
 def generate_report(stock, mkt):
-    """Grokで投資判断レポートを生成する（web_search有効）"""
+    """Grokで投資判断レポートを生成する"""
     data_pkg = build_data_package(stock, mkt)
     ticker   = stock["ticker"]
     company  = stock["company"]
@@ -309,25 +351,14 @@ def generate_report(stock, mkt):
   "summary": "【総合所見】上記を統合した投資判断（2〜3文）。注目すべき次のトリガーイベントを明記。"
 }}
 
-web検索を積極的に使用し、本日の最新情報を必ず含めてください。"""
+本日（{now_jst}）時点の情報として分析してください。"""
 
-    print(f"  [report] Calling Grok (web_search) for {ticker}...")
+    print(f"  [report] Calling Grok for {ticker}...")
     try:
-        resp = requests.post(
-            XAI_API_URL,
-            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "grok-3",
-                "messages": [{"role": "user", "content": prompt}],
-                "temperature": 0.5,
-                "search_parameters": {"mode": "on"},
-                "response_format": {"type": "json_object"},
-            },
-            timeout=120,
-        )
-        resp.raise_for_status()
-        content = resp.json()["choices"][0]["message"]["content"]
-        parsed  = json.loads(content)
+        text   = _call_grok([{"role": "user", "content": prompt}], temperature=0.5, max_tokens=4096)
+        parsed = _extract_json(text)
+        if not parsed:
+            raise ValueError(f"JSON解析失敗: {text[:200]}")
         # Ensure all required keys exist
         for key in ("fundamental", "expectation", "news", "timing", "summary"):
             if key not in parsed:
