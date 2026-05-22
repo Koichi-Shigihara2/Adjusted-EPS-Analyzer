@@ -3,116 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>統合投資シグナル — INTEGRATED SIGNAL</title>
+  <title>TANUKI SCORE — 統合投資判断</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="icon" href="/On-a-journey/favicon.ico">
   <style>
     :root {
       --bg:  #0a0d14; --sur: #0f1425; --sur2: #141a2e; --bdr: #1b2540;
       --acc: #3b82f6; --grn: #10b981; --red: #f43f5e; --amb: #f59e0b;
-      --cyn: #06b6d4; --pur: #8b5cf6; --ora: #f97316;
+      --cyn: #06b6d4; --pur: #8b5cf6;
       --txt: #e2e8f0; --sub: #7a92b0; --mut: #3d5070;
-      --mono: 'DM Mono', monospace; --sans: 'DM Sans', 'Noto Sans JP', sans-serif;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', 'Noto Sans JP', sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 15px; min-height: 100vh; }
-    .shell { max-width: 960px; margin: 0 auto; padding: 0 24px 60px; }
+    .shell { max-width: 980px; margin: 0 auto; padding: 0 24px 60px; }
 
     /* ── Header ── */
     header {
       border-bottom: 1px solid var(--bdr); padding: 14px 0;
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+      margin-bottom: 22px; flex-wrap: wrap; gap: 10px;
     }
-    .logo { font-family: var(--mono); font-size: 13px; font-weight: 500; letter-spacing: .14em; display: flex; align-items: center; gap: 10px; color: var(--txt); }
-    .logo-dot { width: 7px; height: 7px; background: var(--acc); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
-    @keyframes pdot { 0%,100% { box-shadow:0 0 0 0 rgba(59,130,246,.4); } 50% { box-shadow:0 0 0 5px rgba(59,130,246,0); } }
+    .logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .16em; display: flex; align-items: center; gap: 10px; }
+    .logo-dot { width: 7px; height: 7px; background: var(--grn); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
+    @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0);} }
     nav { display: flex; flex-wrap: wrap; }
-    nav a {
-      font-family: var(--mono); font-size: 11px; color: var(--sub); text-decoration: none;
-      letter-spacing: .06em; padding: 5px 11px; border-right: 1px solid var(--bdr);
-    }
+    nav a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .05em; padding: 5px 10px; border-right: 1px solid var(--bdr); }
     nav a:first-child { border-left: 1px solid var(--bdr); }
-    nav a:hover { color: var(--acc); background: rgba(59,130,246,.06); }
-    nav a.cur { color: var(--acc); }
+    nav a:hover { color: var(--acc); } nav a.cur { color: var(--grn); }
 
     /* ── Section title ── */
-    .sec {
-      font-family: var(--mono); font-size: 11px; font-weight: 500;
-      letter-spacing: .1em; color: var(--mut); margin: 28px 0 14px;
-      display: flex; align-items: center; gap: 10px;
-    }
+    .sec { font-family: var(--mono); font-size: 11px; color: var(--mut); letter-spacing: .1em; margin: 28px 0 12px; display: flex; align-items: center; gap: 10px; }
     .sec::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
-    .sec.grn { color: var(--grn); } .sec.red { color: var(--red); } .sec.acc { color: var(--acc); }
 
-    /* ── Alert banners ── */
-    .alert { padding: 13px 18px; margin-bottom: 10px; display: flex; align-items: flex-start; gap: 12px; border-radius: 2px; }
-    .alert-buy  { background: rgba(16,185,129,.08); border: 1px solid rgba(16,185,129,.28); }
-    .alert-sell { background: rgba(244,63,94,.08);  border: 1px solid rgba(244,63,94,.28); }
-    .alert-ico  { font-size: 18px; line-height: 1.2; }
-    .alert-body { flex: 1; }
-    .alert-ttl  { font-family: var(--mono); font-size: 13px; font-weight: 500; margin-bottom: 6px; }
-    .alert-buy  .alert-ttl { color: var(--grn); } .alert-sell .alert-ttl { color: var(--red); }
-    .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-    .chip { font-family: var(--mono); font-size: 12px; padding: 3px 9px; border-radius: 2px; text-decoration: none; }
-    .chip-buy  { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.3); }
-    .chip-sell { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.3); }
+    /* ── ① Market summary bar ── */
+    .mkt-bar { background: var(--sur); border: 1px solid var(--bdr); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+    .mkt-phase { font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+    .mkt-stats { display: flex; gap: 0; }
+    .mkt-stat { font-family: var(--mono); font-size: 12px; color: var(--sub); padding: 4px 14px; border-left: 1px solid var(--bdr); }
+    .mkt-stat strong { color: var(--txt); font-size: 14px; }
+    .mkt-stat:first-child { border-left: none; }
 
-    /* ── Gauge grid ── */
-    .gauge-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
-    .gauge-card { background: var(--sur); border: 1px solid var(--bdr); padding: 18px 14px; text-align: center; }
-    .gauge-head { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .08em; margin-bottom: 10px; text-transform: uppercase; }
-    .gauge-svg  { width: 100%; max-width: 190px; }
-    .gauge-phase { font-size: 13px; color: var(--txt); margin-top: 10px; line-height: 1.5; }
+    /* ── ② Category board ── */
+    .cat-row { display: grid; gap: 12px; margin-bottom: 12px; }
+    .cat-row.top3 { grid-template-columns: repeat(3, 1fr); }
+    .cat-row.bot2 { grid-template-columns: 2fr 1fr; }
 
-    /* ── Checklist ── */
-    .check-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .check-box  { background: var(--sur); border: 1px solid var(--bdr); padding: 16px 18px; }
-    .check-gttl { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .08em; margin-bottom: 10px; }
-    .check-row  { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(27,37,64,.6); }
-    .check-row:last-child { border-bottom: none; }
-    .check-ico  { font-size: 15px; min-width: 18px; }
-    .check-lbl  { font-size: 13px; color: var(--sub); flex: 1; }
-    .check-val  { font-family: var(--mono); font-size: 12px; }
-    .pass { color: var(--grn); } .fail { color: var(--mut); }
-    .score-card { background: var(--sur); border: 1px solid var(--bdr); padding: 20px; text-align: center; margin-top: 12px; }
-    .score-num  { font-family: var(--mono); font-size: 48px; font-weight: 500; color: var(--acc); }
-    .score-den  { font-size: 22px; color: var(--mut); }
-    .score-sub  { font-size: 13px; color: var(--sub); margin-top: 4px; }
+    .cat-card { background: var(--sur); border: 1px solid var(--bdr); padding: 16px 18px; }
+    .cat-card.shikomi { border-color: rgba(16,185,129,.35); }
+    .cat-card.wait    { border-color: rgba(245,158,11,.35); }
+    .cat-card.profit  { border-color: rgba(59,130,246,.35); }
+    .cat-card.watch   { border-color: var(--bdr); }
+    .cat-card.ronogai { border-color: rgba(244,63,94,.25); }
 
-    /* ── Ranking table ── */
-    .tbl-wrap  { background: var(--sur); border: 1px solid var(--bdr); overflow-x: auto; }
-    .rank-tbl  { width: 100%; border-collapse: collapse; font-size: 14px; }
-    .rank-tbl th {
+    .cat-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
+    .cat-label { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+    .shikomi .cat-label { color: var(--grn); }
+    .wait    .cat-label { color: var(--amb); }
+    .profit  .cat-label { color: var(--acc); }
+    .watch   .cat-label { color: var(--sub); }
+    .ronogai .cat-label { color: var(--red); }
+    .cat-count { font-family: var(--mono); font-size: 12px; color: var(--mut); }
+    .cat-desc  { font-size: 11px; color: var(--mut); margin-bottom: 10px; font-family: var(--mono); letter-spacing: .03em; }
+
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .cat-chip { display: inline-flex; flex-direction: column; padding: 6px 10px; border: 1px solid var(--bdr); background: var(--sur2); text-decoration: none; transition: border-color .12s; }
+    .cat-chip:hover { border-color: var(--sub); }
+    .cat-chip .ckr { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .cat-chip .csc { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-top: 2px; }
+    .shikomi .cat-chip .ckr { color: var(--grn); }
+    .wait    .cat-chip .ckr { color: var(--amb); }
+    .profit  .cat-chip .ckr { color: var(--acc); }
+    .watch   .cat-chip .ckr { color: var(--sub); }
+    .ronogai .cat-chip .ckr { color: var(--red); }
+
+    /* 論外 toggle */
+    .ronogai-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+    .ronogai-toggle .tog-arrow { font-size: 10px; color: var(--mut); transition: transform .2s; }
+    .ronogai-toggle.open .tog-arrow { transform: rotate(180deg); }
+    #ronogai-body { display: none; }
+    .cat-empty { font-family: var(--mono); font-size: 12px; color: var(--mut); padding: 4px 0; }
+
+    /* ── ③ Detail table ── */
+    .tbl-wrap { background: var(--sur); border: 1px solid var(--bdr); overflow-x: auto; }
+    .dtbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .dtbl th {
       font-family: var(--mono); font-size: 10px; color: var(--mut); text-align: left;
-      padding: 9px 12px; border-bottom: 1px solid var(--bdr); white-space: nowrap; background: var(--sur);
+      padding: 9px 12px; border-bottom: 1px solid var(--bdr); white-space: nowrap;
+      background: var(--sur); cursor: pointer; user-select: none; position: relative;
     }
-    .rank-tbl td { padding: 9px 12px; border-bottom: 1px solid rgba(27,37,64,.5); white-space: nowrap; vertical-align: middle; }
-    .rank-tbl tr:last-child td { border-bottom: none; }
-    .rank-tbl tr:hover td { background: rgba(255,255,255,.015); }
-    .rank-num  { font-family: var(--mono); font-size: 11px; color: var(--mut); }
-    .tkr-a     { color: var(--acc); font-family: var(--mono); font-weight: 500; font-size: 13px; text-decoration: none; }
+    .dtbl th:hover { color: var(--sub); }
+    .dtbl th.sorted { color: var(--acc); }
+    .sort-arr { margin-left: 4px; font-size: 9px; opacity: .7; }
+    .dtbl td { padding: 8px 12px; border-bottom: 1px solid rgba(27,37,64,.5); white-space: nowrap; vertical-align: middle; }
+    .dtbl tr:last-child td { border-bottom: none; }
+    .dtbl tr:hover td { background: rgba(255,255,255,.013); }
+
+    .tkr-a { color: var(--acc); font-family: var(--mono); font-weight: 500; font-size: 13px; text-decoration: none; }
     .tkr-a:hover { text-decoration: underline; }
-    .co-name   { font-size: 12px; color: var(--sub); max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-    .num       { font-family: var(--mono); text-align: right; font-size: 13px; }
-    .bar-wrap  { display: flex; align-items: center; gap: 7px; }
-    .bar-bg    { width: 72px; height: 4px; background: var(--bdr); border-radius: 2px; flex-shrink: 0; }
-    .bar-fill  { height: 100%; border-radius: 2px; background: linear-gradient(90deg,var(--acc) 0%,var(--grn) 100%); }
-    .bar-pt    { font-family: var(--mono); font-size: 11px; color: var(--txt); min-width: 32px; }
-    .jdg       { font-family: var(--mono); font-size: 12px; white-space: nowrap; }
-    .tbl-note  { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-top: 8px; letter-spacing: .04em; }
+    .cat-badge { font-family: var(--mono); font-size: 11px; padding: 3px 7px; border-radius: 1px; white-space: nowrap; }
+    .badge-shikomi { background: rgba(16,185,129,.12); color: var(--grn); }
+    .badge-wait    { background: rgba(245,158,11,.12);  color: var(--amb); }
+    .badge-profit  { background: rgba(59,130,246,.12);  color: var(--acc); }
+    .badge-watch   { background: rgba(100,116,139,.12); color: var(--sub); }
+    .badge-ronogai { background: rgba(244,63,94,.10);   color: var(--red); }
 
-    /* Stage colors */
+    .sc-num { font-family: var(--mono); font-size: 13px; text-align: right; }
+    .sc-hi  { color: var(--grn); } .sc-mid { color: var(--amb); } .sc-lo { color: var(--sub); } .sc-no { color: var(--mut); }
+    .num { font-family: var(--mono); font-size: 13px; text-align: right; }
+    .pos { color: var(--grn); } .neg { color: var(--red); } .neu { color: var(--sub); }
     .s1 { color: var(--grn); } .s2 { color: var(--cyn); } .s3 { color: var(--amb); } .s4 { color: var(--red); }
+    .fcf-ok { color: var(--grn); } .fcf-ng { color: var(--mut); }
+    .tbl-note { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-top: 8px; letter-spacing: .04em; }
 
-    /* Spin */
+    /* Loading */
     .spin { display: inline-block; width: 11px; height: 11px; border: 2px solid var(--bdr); border-top-color: var(--acc); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 8px; }
     @keyframes spin { to { transform: rotate(360deg); } }
     .loading { color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 40px; text-align: center; }
 
     @media (max-width: 640px) {
-      .gauge-grid { grid-template-columns: 1fr; }
-      .check-grid { grid-template-columns: 1fr; }
+      .cat-row.top3 { grid-template-columns: 1fr; }
+      .cat-row.bot2 { grid-template-columns: 1fr; }
+      .mkt-stats { flex-wrap: wrap; }
     }
   </style>
   <link rel="stylesheet" href="../common/site-theme.css">
@@ -120,7 +133,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="logo"><span class="logo-dot"></span>INTEGRATED SIGNAL</div>
+    <div class="logo"><span class="logo-dot"></span>TANUKI SCORE</div>
     <nav>
       <a href="../">HOME</a>
       <a href="../value-monitor/tanuki_valuation/">TANUKI</a>
@@ -133,314 +146,303 @@
     </nav>
   </header>
 
-  <div id="alert-banners"></div>
-  <div id="market-meters"><div class="loading"><span class="spin"></span>市場データを取得中...</div></div>
-  <div id="entry-checklist"></div>
-  <div id="opportunity-ranking"><div class="loading"><span class="spin"></span>銘柄データを集計中...</div></div>
+  <div id="mkt-summary"><div class="loading"><span class="spin"></span>市場データを取得中...</div></div>
+  <div id="cat-board"></div>
+  <div id="detail-tbl"></div>
 </div>
 
 <script>
-const TS = '?t=' + Date.now();
-const TANUKI_BASE = '../value-monitor/tanuki_valuation/';
-const HYPE_BASE   = '../value-monitor/hypecore/data/';
-const EPS_BASE    = '../value-monitor/adjusted_eps_analyzer/data/';
-const MKT_PATH    = '../market-monitor/market-pulse/data/market_data.json';
+// ─── Paths ───────────────────────────────────────────────────
+const TS     = '?t=' + Date.now();
+const T_BASE = '../value-monitor/tanuki_valuation/';
+const H_BASE = '../value-monitor/hypecore/data/';
+const E_PATH = '../value-monitor/adjusted_eps_analyzer/data/summary.json';
+const M_PATH = '../market-monitor/market-pulse/data/market_data.json';
 
-// ── Gauge SVG ──────────────────────────────────────────────────
-// Semicircle: center(100,105) radius 80, arc from left(20,105) to right(180,105)
-const ARC_PERIM = Math.PI * 80; // ≈ 251.3
-
-function makeMeter(title, value, maxVal, colorFn, numLabel, subLabel, phaseText) {
-  const pct    = Math.max(0, Math.min(value / maxVal, 1));
-  const color  = colorFn(value);
-  const offset = (ARC_PERIM * (1 - pct)).toFixed(1);
-  const perimS = ARC_PERIM.toFixed(1);
-  return `<div class="gauge-card">
-    <div class="gauge-head">${title}</div>
-    <svg viewBox="0 0 200 120" class="gauge-svg">
-      <path d="M 20 105 A 80 80 0 0 1 180 105" fill="none" stroke="#1b2540" stroke-width="13" stroke-linecap="round"/>
-      <path d="M 20 105 A 80 80 0 0 1 180 105" fill="none" stroke="${color}" stroke-width="13"
-        stroke-linecap="round" stroke-dasharray="${perimS}" stroke-dashoffset="${offset}"/>
-      <text x="100" y="94" text-anchor="middle" fill="#e2e8f0"
-        font-family="DM Mono,monospace" font-size="32" font-weight="500">${numLabel}</text>
-      <text x="100" y="113" text-anchor="middle" fill="#3d5070"
-        font-family="DM Sans,sans-serif" font-size="11">${subLabel}</text>
-    </svg>
-    <div class="gauge-phase">${phaseText}</div>
-  </div>`;
+// ─── Scoring ─────────────────────────────────────────────────
+function calcFunda(revYoy, rule40, epsYoyPct, fcfBase) {
+  let s = 0;
+  // ① rev_yoy (%)
+  s += revYoy  == null ? 0 : revYoy  > 20 ? 25 : revYoy  >= 0 ? 15 : 0;
+  // ② rule40
+  s += rule40  == null ? 0 : rule40  > 40 ? 25 : rule40  >= 20 ? 15 : 0;
+  // ③ EPS YoY (already converted to %)
+  s += epsYoyPct == null ? 0 : epsYoyPct > 20 ? 25 : epsYoyPct >= 0 ? 15 : 0;
+  // ④ FCF positive
+  s += fcfBase == null ? 0 : fcfBase > 0 ? 25 : 0;
+  return s;
 }
 
-// ── Color functions ────────────────────────────────────────────
-// FG: 0=extreme fear(red), 100=extreme greed(green) — conventional display
-function fgColor(v) {
-  if (v < 20) return '#f43f5e';
-  if (v < 40) return '#f97316';
-  if (v < 60) return '#f59e0b';
-  if (v < 80) return '#84cc16';
-  return '#10b981';
-}
-// VIX: higher = more stress = redder
-function vixColor(v) {
-  if (v > 35) return '#f43f5e';
-  if (v > 25) return '#f97316';
-  if (v > 20) return '#f59e0b';
-  return '#10b981';
-}
-// Risk-off: higher = more defensive = redder
-function roColor(v) {
-  if (v >= 67) return '#f43f5e';
-  if (v >= 40) return '#f59e0b';
-  return '#10b981';
+function calcTiming(upside, fg, stage) {
+  let s = 0;
+  // ① upside_percent
+  s += upside == null ? 0 : upside > 30 ? 40 : upside >= 10 ? 25 : upside >= 0 ? 10 : 0;
+  // ② FG (market-wide)
+  s += fg < 30 ? 40 : fg < 50 ? 25 : fg < 70 ? 10 : 0;
+  // ③ HypeCore stage
+  s += stage == null ? 0 : stage === 1 ? 20 : stage === 2 ? 15 : stage === 3 ? 5 : 0;
+  return s;
 }
 
-// ── Phase texts ───────────────────────────────────────────────
-function fgPhase(fg) {
-  if (fg < 20) return '🔴 極度の恐怖 — 歴史的買い場';
-  if (fg < 40) return '🟠 恐怖 — 打診買いチャンス';
-  if (fg < 60) return '🟡 中立 — 様子見';
-  if (fg < 80) return '🟢 強欲 — 利確検討';
-  return '⚪ 極度の強欲 — 警戒';
-}
-function vixPhase(vix) {
-  if (vix > 35) return '🔴 極度の恐怖 — 最高の買い場';
-  if (vix > 25) return '🟠 警戒域 — 下げ圧力あり';
-  if (vix > 20) return '🟡 やや不安定';
-  return '🟢 安定 — 低VIX水準';
-}
-function roPhase(ro) {
-  if (ro >= 67) return '🔴 RISK OFF — 安全資産選好';
-  if (ro >= 40) return '🟡 混在シグナル — 注意';
-  return '🟢 リスクオン — 株式に追い風';
+function classify(f, t) {
+  if (f < 25)            return 'ronogai';
+  if (f >= 50 && t >= 50) return 'shikomi';
+  if (f >= 50)            return 'wait';
+  if (t >= 60)            return 'profit';
+  return 'watch';
 }
 
-// ── Scoring helpers ───────────────────────────────────────────
-function stageScore(s) {
-  return s === 1 ? 1.0 : s === 2 ? 0.7 : s === 3 ? 0.2 : 0.0;
+// ─── Display helpers ─────────────────────────────────────────
+function scClass(v) {
+  return v >= 75 ? 'sc-hi' : v >= 50 ? 'sc-mid' : v >= 25 ? 'sc-lo' : 'sc-no';
+}
+function pct(v, dec = 1) {
+  if (v == null) return '<span class="neu">—</span>';
+  const s = (v >= 0 ? '+' : '') + v.toFixed(dec) + '%';
+  return `<span class="${v >= 0 ? 'pos' : 'neg'}">${s}</span>`;
+}
+function mktMessage(fg) {
+  if (fg < 30) return '🔴 極度の恐怖 — 歴史的な仕込み場。全ての仕込み時銘柄を検討';
+  if (fg < 50) return '🟠 恐怖 — 仕込み時銘柄への打診買いチャンス';
+  if (fg < 70) return '🟡 中立 — 仕込み待ち銘柄の監視継続。急がない';
+  return '🟢 強欲 — 利確検討銘柄の整理タイミング';
 }
 
-function stageCell(stage, label) {
-  if (stage == null) return '<span style="color:var(--mut)">—</span>';
-  const cls  = `s${stage}`;
-  const lbl  = label || ['','蓄積期','上昇期','陶酔期','崩壊期'][stage] || '—';
-  return `<span class="${cls}" style="font-family:var(--mono);font-size:12px">P${stage} ${lbl}</span>`;
+const CAT_META = {
+  shikomi: { label: '🟢 仕込み時',   cls: 'shikomi', badge: 'badge-shikomi', desc: 'ファンダ≥50 · タイミング≥50' },
+  wait:    { label: '🟡 仕込み待ち', cls: 'wait',    badge: 'badge-wait',    desc: 'ファンダ≥50 · タイミング<50' },
+  profit:  { label: '🔵 利確検討',   cls: 'profit',  badge: 'badge-profit',  desc: 'ファンダ25-49 · タイミング≥60' },
+  watch:   { label: '⚪ 様子見',     cls: 'watch',   badge: 'badge-watch',   desc: 'ファンダ25+ · その他' },
+  ronogai: { label: '🔴 論外',       cls: 'ronogai', badge: 'badge-ronogai', desc: 'ファンダ<25' },
+};
+
+// ─── Sortable table state ─────────────────────────────────────
+let _stocks  = [];
+let _sortCol = 'funda';
+let _sortDir = -1;
+
+function sortAndRender(col) {
+  if (_sortCol === col) _sortDir = -_sortDir;
+  else { _sortCol = col; _sortDir = -1; }
+  renderDetailTable();
 }
 
-function judgment(score) {
-  if (score > 0.6) return '<span class="jdg" style="color:var(--red)">🔴 強買い</span>';
-  if (score > 0.4) return '<span class="jdg" style="color:var(--ora)">🟠 買い検討</span>';
-  if (score > 0.2) return '<span class="jdg" style="color:var(--amb)">🟡 ウォッチ</span>';
-  return '<span class="jdg" style="color:var(--mut)">⚪ 対象外</span>';
+const COL_KEYS = ['ticker','cat','funda','timing','revYoy','rule40','epsYoy','fcf','upside','stage'];
+
+// ─── Render ③ Detail table ───────────────────────────────────
+function renderDetailTable() {
+  const sorted = [..._stocks].sort((a, b) => {
+    const av = a[_sortCol], bv = b[_sortCol];
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1; if (bv == null) return -1;
+    return _sortDir * (typeof av === 'string' ? av.localeCompare(bv) : av - bv);
+  });
+
+  const stageLabel = (s, lbl) => {
+    if (s == null) return '<span class="neu">—</span>';
+    const cls = `s${s}`;
+    return `<span class="${cls}" style="font-family:var(--mono);font-size:12px">${lbl || ['','蓄積期','上昇期','陶酔期','崩壊期'][s] || '—'}</span>`;
+  };
+
+  const thArr = (col, label) => {
+    const isSorted = _sortCol === col;
+    const arr = isSorted ? (_sortDir === -1 ? '▼' : '▲') : '';
+    return `<th class="${isSorted ? 'sorted' : ''}" onclick="sortAndRender('${col}')">${label}${arr ? `<span class="sort-arr">${arr}</span>` : ''}</th>`;
+  };
+
+  const tbody = sorted.map(s => {
+    const m = CAT_META[s.cat];
+    const fcfDisp = s.fcf == null ? '<span class="neu">—</span>'
+                  : s.fcf > 0    ? '<span class="fcf-ok" style="font-family:var(--mono)">✓</span>'
+                                 : '<span class="fcf-ng" style="font-family:var(--mono)">✗</span>';
+    return `<tr>
+      <td><a class="tkr-a" href="${T_BASE}stock.html?ticker=${s.ticker}">${s.ticker}</a></td>
+      <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
+      <td class="sc-num ${scClass(s.funda)}">${s.funda}</td>
+      <td class="sc-num ${scClass(s.timing)}">${s.timing}</td>
+      <td class="num">${pct(s.revYoy)}</td>
+      <td class="num"><span class="${s.rule40 == null ? 'neu' : s.rule40 > 40 ? 'pos' : s.rule40 >= 20 ? 'neu' : 'neg'}" style="font-family:var(--mono)">${s.rule40 != null ? s.rule40.toFixed(1) : '—'}</span></td>
+      <td class="num">${pct(s.epsYoy)}</td>
+      <td style="text-align:center">${fcfDisp}</td>
+      <td class="num">${pct(s.upside)}</td>
+      <td>${stageLabel(s.stage, s.stageL)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('detail-tbl').innerHTML = `
+    <div class="sec">③ 全銘柄詳細 — ヘッダークリックでソート</div>
+    <div class="tbl-wrap">
+      <table class="dtbl">
+        <thead><tr>
+          ${thArr('ticker','銘柄')}
+          ${thArr('cat','分類')}
+          ${thArr('funda','ファンダ')}
+          ${thArr('timing','タイミング')}
+          ${thArr('revYoy','売上成長')}
+          ${thArr('rule40','Rule40')}
+          ${thArr('epsYoy','EPS成長')}
+          <th>FCF</th>
+          ${thArr('upside','TANUKI乖離')}
+          ${thArr('stage','フェーズ')}
+        </tr></thead>
+        <tbody>${tbody}</tbody>
+      </table>
+    </div>
+    <div class="tbl-note">
+      ファンダ/タイミング: 0–100pt · 🟢75+ 🟡50+ ⚪25+ · 売上成長/EPS成長/TANUKI乖離は最新期
+    </div>`;
 }
 
-function colored(v, suffix = '%', digits = 1) {
-  if (v == null) return '<span style="color:var(--mut)">—</span>';
-  const s = (v >= 0 ? '+' : '') + v.toFixed(digits) + suffix;
-  const c = v >= 0 ? 'var(--grn)' : 'var(--red)';
-  return `<span style="color:${c};font-family:var(--mono);font-size:13px">${s}</span>`;
-}
-
-// ── Main ──────────────────────────────────────────────────────
+// ─── Main ─────────────────────────────────────────────────────
 (async function () {
 
   // 1. Market data
   let mkt = null;
   try {
-    const r = await fetch(MKT_PATH + TS);
+    const r = await fetch(M_PATH + TS);
     if (r.ok) { const arr = await r.json(); mkt = arr[arr.length - 1]; }
   } catch (_) {}
 
-  const fg      = mkt?.fear_greed?.score          ?? 50;
+  const fg      = mkt?.fear_greed?.score             ?? 50;
   const vix     = mkt?.indicators?.['VIX指数']?.value ?? 20;
-  const riskOff = mkt?.credit?.risk_off_score     ?? 50;
+  const riskOff = mkt?.credit?.risk_off_score         ?? 50;
   const mktDate = (mkt?.date ?? '').slice(0, 10);
-  const jdgTxt  = mkt?.judgment ?? '—';
 
-  // 2. Tickers list
+  // ① Market summary (render immediately)
+  document.getElementById('mkt-summary').innerHTML = `
+    <div class="sec">① 市場の今 <span style="font-size:10px;color:var(--mut);margin-left:4px">${mktDate}</span></div>
+    <div class="mkt-bar">
+      <div class="mkt-phase">${mktMessage(fg)}</div>
+      <div class="mkt-stats">
+        <div class="mkt-stat">FG <strong style="color:${fg<30?'var(--red)':fg<50?'var(--amb)':fg<70?'var(--sub)':'var(--grn)'}">${fg.toFixed(0)}</strong></div>
+        <div class="mkt-stat">VIX <strong style="color:${vix>35?'var(--red)':vix>25?'var(--amb)':vix>20?'var(--sub)':'var(--grn)'}">${vix.toFixed(1)}</strong></div>
+        <div class="mkt-stat">Risk-Off <strong style="color:${riskOff>=67?'var(--red)':riskOff>=40?'var(--amb)':'var(--grn)'}">${riskOff}</strong></div>
+      </div>
+    </div>`;
+
+  // 2. Tickers
   let tickers = [];
   try {
-    const r = await fetch(TANUKI_BASE + 'data/tickers.json' + TS);
+    const r = await fetch(T_BASE + 'data/tickers.json' + TS);
     if (r.ok) { const d = await r.json(); tickers = d.tickers || []; }
   } catch (_) {}
 
-  // 3. Parallel per-ticker fetch
+  // 3. Per-ticker data (parallel)
   const [tanukiMap, hypeMap, epsMap] = await Promise.all([
 
-    Promise.allSettled(tickers.map(async ticker => {
+    Promise.allSettled(tickers.map(async tk => {
       try {
-        const r = await fetch(`${TANUKI_BASE}data/${ticker}/latest.json${TS}`);
-        if (r.ok) return [ticker, await r.json()];
+        const r = await fetch(`${T_BASE}data/${tk}/latest.json${TS}`);
+        if (r.ok) return [tk, await r.json()];
       } catch (_) {}
-      return [ticker, null];
-    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null, null]).filter(([k]) => k))),
+      return [tk, null];
+    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
 
-    Promise.allSettled(tickers.map(async ticker => {
+    Promise.allSettled(tickers.map(async tk => {
       try {
-        const r = await fetch(`${HYPE_BASE}${ticker}_poc.json${TS}`);
-        if (r.ok) return [ticker, await r.json()];
+        const r = await fetch(`${H_BASE}${tk}_poc.json${TS}`);
+        if (r.ok) return [tk, await r.json()];
       } catch (_) {}
-      return [ticker, null];
-    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null, null]).filter(([k]) => k))),
+      return [tk, null];
+    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
 
-    fetch(`${EPS_BASE}summary.json${TS}`)
-      .then(r => r.ok ? r.json() : { tickers: [] })
-      .then(d => Object.fromEntries((d.tickers || []).map(t => [t.ticker, t])))
-      .catch(() => ({}))
+    fetch(E_PATH + TS)
+      .then(r => r.ok ? r.json() : {tickers:[]})
+      .then(d => Object.fromEntries((d.tickers||[]).map(t=>[t.ticker,t])))
+      .catch(()=>({}))
   ]);
 
-  // 4. Build per-stock scores
-  const sentScore = (100 - fg) / 100; // market-wide, identical for all
-
-  const stocks = tickers.map(ticker => {
+  // 4. Build stocks array
+  _stocks = tickers.map(ticker => {
     const tk = tanukiMap[ticker];
     const hc = hypeMap[ticker];
     const ep = epsMap[ticker];
 
-    const upside   = tk?.upside_percent ?? null;
-    const lastMo   = hc?.monthly?.[hc.monthly.length - 1] ?? null;
-    const stage    = lastMo?.stage        ?? null;
-    const stageL   = lastMo?.stage_label  ?? null;
-    const epsRatio = ep?.eps_ratio        ?? 0;
-    const company  = ep?.company_name     ?? ticker;
+    const lastMo  = hc?.monthly?.[hc.monthly.length - 1] ?? null;
+    const revYoy  = lastMo?.rev_yoy   ?? null;
+    const rule40  = lastMo?.rule40    ?? null;
+    const stage   = lastMo?.stage     ?? null;
+    const stageL  = lastMo?.stage_label ?? null;
+    const upside  = tk?.fcf_base != null ? tk.upside_percent : (tk?.upside_percent ?? null);
+    const fcfBase = tk?.fcf_base?.base_fcf ?? null;
+    const rawUp   = tk?.upside_percent ?? null;
+    const epsYoyDec = ep?.yoy_growth ?? null;
+    const epsYoy  = epsYoyDec != null ? epsYoyDec * 100 : null;
 
-    const upSc  = upside != null ? Math.min(upside / 100, 2.0) : 0;
-    const stSc  = stage  != null ? stageScore(stage) : 0;
-    const epSc  = Math.max(0, Math.min(epsRatio, 500)) / 500;
+    const funda  = calcFunda(revYoy, rule40, epsYoy, fcfBase);
+    const timing = calcTiming(rawUp, fg, stage);
+    const cat    = classify(funda, timing);
 
-    const buyScore = sentScore * 0.15 + upSc * 0.45 + stSc * 0.25 + epSc * 0.15;
-
-    return { ticker, company, upside, stage, stageL, epsRatio, buyScore };
+    return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase, upside: rawUp, stage, stageL };
   });
 
-  stocks.sort((a, b) => b.buyScore - a.buyScore);
+  // 5. Categorize
+  const cats = { shikomi:[], wait:[], profit:[], watch:[], ronogai:[] };
+  _stocks.forEach(s => cats[s.cat].push(s));
 
-  // 5. Alert conditions
-  const buySignals  = stocks.filter(s => fg < 30 && (s.upside ?? 0) > 30 && (s.stage ?? 99) <= 2);
-  const sellSignals = stocks.filter(s => s.stage === 4 && (s.upside ?? 0) < 0);
+  // Sort each category by funda desc within
+  Object.values(cats).forEach(arr => arr.sort((a,b)=>b.funda-a.funda));
 
-  // ─── Render: Alert banners ─────────────────────────────────
-  let alertHTML = '';
-  if (buySignals.length) {
-    alertHTML += `<div class="alert alert-buy">
-      <span class="alert-ico">🟢</span>
-      <div class="alert-body">
-        <div class="alert-ttl">強い買いシグナル — FG${fg.toFixed(0)} × 割安 × 蓄積/上昇期</div>
-        <div class="chips">${buySignals.map(s =>
-          `<a class="chip chip-buy" href="${TANUKI_BASE}stock.html?ticker=${s.ticker}">${s.ticker}</a>`
-        ).join('')}</div>
+  // ② Category board
+  function catCard(key, stocks) {
+    const m = CAT_META[key];
+    const chips = stocks.length === 0
+      ? '<span class="cat-empty">銘柄なし</span>'
+      : stocks.map(s => `<a class="cat-chip" href="${T_BASE}stock.html?ticker=${s.ticker}">
+          <span class="ckr">${s.ticker}</span>
+          <span class="csc">F:${s.funda} · T:${s.timing}</span>
+        </a>`).join('');
+    return `<div class="cat-card ${m.cls}">
+      <div class="cat-head">
+        <span class="cat-label">${m.label}</span>
+        <span class="cat-count">${stocks.length}銘柄</span>
       </div>
-    </div>`;
-  }
-  if (sellSignals.length) {
-    alertHTML += `<div class="alert alert-sell">
-      <span class="alert-ico">🔴</span>
-      <div class="alert-body">
-        <div class="alert-ttl">売り検討アラート — 崩壊期(P4) × 割高（TANUKI upside &lt; 0）</div>
-        <div class="chips">${sellSignals.map(s =>
-          `<a class="chip chip-sell" href="${TANUKI_BASE}stock.html?ticker=${s.ticker}">${s.ticker}</a>`
-        ).join('')}</div>
-      </div>
-    </div>`;
-  }
-  document.getElementById('alert-banners').innerHTML = alertHTML;
-
-  // ─── Render: Market meters ─────────────────────────────────
-  document.getElementById('market-meters').innerHTML = `
-    <div class="sec acc">① 市場環境メーター
-      <span style="font-size:10px;color:var(--mut);font-weight:400;margin-left:4px">${mktDate} · 判定: ${jdgTxt}</span>
-    </div>
-    <div class="gauge-grid">
-      ${makeMeter('A. 市場センチメント', fg, 100, fgColor,
-          fg.toFixed(0), 'Fear & Greed Index', fgPhase(fg))}
-      ${makeMeter('B. テクニカルストレス', vix, 50, vixColor,
-          vix.toFixed(1), 'VIX 指数', vixPhase(vix))}
-      ${makeMeter('C. リスクオフ圧力', riskOff, 100, roColor,
-          riskOff.toFixed(0), 'Risk-Off Score', roPhase(riskOff))}
-    </div>`;
-
-  // ─── Render: Entry checklist ───────────────────────────────
-  const cond1 = fg < 50;
-  const cond2 = vix > 20;
-  const cnt3  = stocks.filter(s => (s.upside  ?? 0) > 20).length;
-  const cnt4  = stocks.filter(s => s.stage === 1 || s.stage === 2).length;
-  const cnt5  = stocks.filter(s => s.epsRatio > 20).length;
-  const mktOk = (cond1 ? 1 : 0) + (cond2 ? 1 : 0);
-
-  function row(pass, lbl, val) {
-    return `<div class="check-row">
-      <span class="check-ico">${pass ? '✅' : '⬜'}</span>
-      <span class="check-lbl">${lbl}</span>
-      <span class="check-val ${pass ? 'pass' : 'fail'}">${val}</span>
+      <div class="cat-desc">${m.desc}</div>
+      <div class="cat-chips">${chips}</div>
     </div>`;
   }
 
-  document.getElementById('entry-checklist').innerHTML = `
-    <div class="sec">② エントリーチェックリスト</div>
-    <div class="check-grid">
-      <div class="check-box">
-        <div class="check-gttl">MARKET CONDITIONS — 全銘柄共通</div>
-        ${row(cond1, '市場センチメント &lt; 50（恐怖域）',      `FG ${fg.toFixed(0)}`)}
-        ${row(cond2, 'VIX &gt; 20（不安定局面）',              `VIX ${vix.toFixed(1)}`)}
-      </div>
-      <div class="check-box">
-        <div class="check-gttl">STOCK CONDITIONS — 充足銘柄数 / ${stocks.length}銘柄</div>
-        ${row(cnt3 > 0, 'TANUKI upside &gt; 20%（割安）',      `${cnt3}銘柄`)}
-        ${row(cnt4 > 0, 'HypeCore stage ≤ 2（蓄積/上昇期）',   `${cnt4}銘柄`)}
-        ${row(cnt5 > 0, 'EPS差分比率 &gt; 20%（実力乖離）',    `${cnt5}銘柄`)}
-      </div>
+  // 論外 gets a toggle
+  const ronMeta = CAT_META.ronogai;
+  const ronChips = cats.ronogai.length === 0
+    ? '<span class="cat-empty">銘柄なし</span>'
+    : cats.ronogai.map(s => `<a class="cat-chip" href="${T_BASE}stock.html?ticker=${s.ticker}">
+        <span class="ckr">${s.ticker}</span>
+        <span class="csc">F:${s.funda} · T:${s.timing}</span>
+      </a>`).join('');
+
+  const ronCard = `<div class="cat-card ronogai">
+    <div class="cat-head ronogai-toggle" id="ron-toggle" onclick="toggleRonogai()">
+      <span class="cat-label">${ronMeta.label}</span>
+      <span class="cat-count">${cats.ronogai.length}銘柄 <span class="tog-arrow">▼</span></span>
     </div>
-    <div class="score-card">
-      <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:4px;letter-spacing:.08em">市場条件 充足スコア</div>
-      <div class="score-num">${mktOk}<span class="score-den"> / 2</span></div>
-      <div class="score-sub">銘柄別スコアは下表の「買いスコア」で確認</div>
+    <div class="cat-desc">${ronMeta.desc}</div>
+    <div id="ronogai-body" class="cat-chips">${ronChips}</div>
+  </div>`;
+
+  document.getElementById('cat-board').innerHTML = `
+    <div class="sec">② 5分類ボード — ファンダ × タイミング</div>
+    <div class="cat-row top3">
+      ${catCard('shikomi', cats.shikomi)}
+      ${catCard('wait',    cats.wait)}
+      ${catCard('profit',  cats.profit)}
+    </div>
+    <div class="cat-row bot2">
+      ${catCard('watch',   cats.watch)}
+      ${ronCard}
     </div>`;
 
-  // ─── Render: Opportunity ranking ───────────────────────────
-  // Theoretical max buyScore = 1.0×0.15 + 2.0×0.45 + 1.0×0.25 + 1.0×0.15 = 1.45
-  const MAX_SCORE = 1.45;
-  const fgLabel = `<span style="font-family:var(--mono);font-size:12px;color:${fgColor(fg)}">FG${fg.toFixed(0)}</span>`;
-
-  const rows = stocks.slice(0, 20).map((s, i) => {
-    const barPct = Math.min(s.buyScore / MAX_SCORE * 100, 100).toFixed(0);
-    return `<tr>
-      <td class="rank-num">${i + 1}</td>
-      <td><a class="tkr-a" href="${TANUKI_BASE}stock.html?ticker=${s.ticker}">${s.ticker}</a></td>
-      <td class="co-name">${s.company}</td>
-      <td>
-        <div class="bar-wrap">
-          <div class="bar-bg"><div class="bar-fill" style="width:${barPct}%"></div></div>
-          <span class="bar-pt">${barPct}pt</span>
-        </div>
-      </td>
-      <td class="num">${fgLabel}</td>
-      <td class="num">${colored(s.upside)}</td>
-      <td>${stageCell(s.stage, s.stageL)}</td>
-      <td class="num">${colored(s.epsRatio)}</td>
-      <td>${judgment(s.buyScore)}</td>
-    </tr>`;
-  }).join('');
-
-  document.getElementById('opportunity-ranking').innerHTML = `
-    <div class="sec grn">③ 投資機会ランキング — 買いスコア複合評価 Top 20</div>
-    <div class="tbl-wrap">
-      <table class="rank-tbl">
-        <thead><tr>
-          <th>#</th>
-          <th>銘柄</th>
-          <th>会社名</th>
-          <th>買いスコア</th>
-          <th class="num">市場FG</th>
-          <th class="num">TANUKI乖離</th>
-          <th>フェーズ</th>
-          <th class="num">EPS差分</th>
-          <th>判定</th>
-        </tr></thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-    <div class="tbl-note">
-      買いスコア = 市場センチメント(15%) + TANUKI乖離度(45%) + HypePhase(25%) + EPS差分比率(15%) · 最大理論値 1.45
-    </div>`;
+  // ③ Detail table (default sort: funda desc)
+  renderDetailTable();
 })();
+
+function toggleRonogai() {
+  const body   = document.getElementById('ronogai-body');
+  const toggle = document.getElementById('ron-toggle');
+  const open   = body.style.display !== 'none' && body.style.display !== '';
+  body.style.display  = open ? 'none' : 'flex';
+  toggle.classList.toggle('open', !open);
+}
 </script>
   <script src="../common/site-nav.js"></script>
 </body>
