@@ -1264,7 +1264,7 @@ function render(d) {
               <div class="input-item"><span class="input-label">RPO_PV</span><span class="input-value">${fmtB(rpoPV)}</span></div>
               <div class="input-item"><span class="input-label">GrowthOption_PV</span><span class="input-value">${fmtB(goPv)}</span></div>
               <div class="input-item"><span class="input-label">希薄化後株式数</span><span class="input-value">${fmtInt(dilutedShares)}</span></div>
-              <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB((v0 + rpoPV + goPv) * (1 + alpha))}</span></div>
+              <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB(v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha))}</span></div>
               <div class="input-item"><span class="input-label">BS補正/株</span><span class="input-value">${bsNetCashPerShare >= 0 ? '+' : ''}$${fmt(bsNetCashPerShare)}</span></div>
               <div class="input-item"><span class="input-label">1株当り</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
             </div>
@@ -1703,7 +1703,7 @@ function applyLayer2Toggle() {
   const shares    = d.components?.diluted_shares || 1;
   const bs        = d.bs_adjustment?.net_cash_per_share || 0;
 
-  const pt = (v0 + rpoPV + goPv) * (1 + alpha);
+  const pt = v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha);
   const adjIvps = pt / shares + bs;
 
   const el = document.getElementById('layer2AdjustedIvps');
@@ -1723,7 +1723,7 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
   const hasGO = goPv > 0;
 
   const totalV0 = v0 + rpoPV + goPv;
-  const alphaPremium = totalV0 * alpha;
+  const alphaPremium = (v0 + goPv) * alpha;
 
   // ラベル・値・measure を動的構築
   const x = [];
@@ -1772,7 +1772,7 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
   x.push('本質価値 P_t');
   y.push(0);
   measure.push('total');
-  text.push(fmtB(totalV0 * (1 + alpha)));
+  text.push(fmtB(v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha)));
 
   Plotly.newPlot('valuation-chart', [{
     type: 'waterfall',
