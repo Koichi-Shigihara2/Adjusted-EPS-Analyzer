@@ -1120,11 +1120,14 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>RPO_PV = RPO / (1 + 15%)^1.5</code>
-              <p class="formula-desc">SaaS・長期契約企業のRPOを15%割引率で現在価値化。</p>
+              <code>RPO_incremental = max(0, RPO - RPO_前年 × (1 + Revenue_YoY))</code>
+              <code>RPO_PV = RPO_incremental × application_rate × op_margin / (1 + 15%)^1.5</code>
+              <p class="formula-desc">前年比を超えた非連続需要分のみを利益率で補正してPV化。赤字企業（op_margin≤0）はゼロ。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">RPO（生値）</span><span class="input-value">${fmtB(rpo)}</span></div>
+              <div class="input-item"><span class="input-label">非連続RPO</span><span class="input-value">${fmtB(d.rpo_adjustment?.rpo_incremental)}</span></div>
+              <div class="input-item"><span class="input-label">営業利益率</span><span class="input-value">${fmtPct(d.rpo_adjustment?.op_margin)}</span></div>
               <div class="input-item"><span class="input-label">RPO現在価値</span><span class="input-value highlight">${fmtB(rpoPV)}</span></div>
             </div>
           </div>
@@ -1145,8 +1148,8 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>α = min(1.0, max(0, (ROE × 0.6 / Rm) × 0.7))</code>
-              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、Rm（市場期待リターン・βなし）との比で質的プレミアムを計算。上限1.0。βWACCを使わないことでLayer1のβ独立性を維持。</p>
+              <code>α = min(cap, max(0, (ROE × 0.6 / Rm) × 0.7))</code>
+              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、Rm（市場期待リターン・βなし）との比で質的プレミアムを計算。セクター別上限（Technology:0.8、mega_tech/Communication Services:1.0、Healthcare:0.7等）。βWACCを使わないことでLayer1のβ独立性を維持。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">ROE（平均）</span><span class="input-value">${fmtPct(roeAvg)}</span></div>
@@ -1253,8 +1256,8 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>P_t = (V₀ + RPO_PV) × (1 + α) / 株式数 + GrowthOption_PV × (1 + α) / 株式数 + BS補正/株</code>
-              <p class="formula-desc">既存事業（V₀+RPO）と未参入事業（成長オプション）それぞれにαを乗じて加算。αはこの企業固有の価値創造能力の乗数として両者に等しく適用される。</p>
+              <code>P_t = V₀ × (1 + α) / 株式数 + RPO_PV / 株式数 + GrowthOption_PV × (1 + α) / 株式数 + BS補正/株</code>
+              <p class="formula-desc">RPO_PVはαの外に加算（確定受注は成長プレミアムの対象外）。成長オプションにはαを適用。αはこの企業固有の価値創造能力の乗数として既存事業と未参入事業に適用される。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">V₀</span><span class="input-value">${fmtB(v0)}</span></div>

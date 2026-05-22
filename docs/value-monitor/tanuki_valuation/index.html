@@ -226,7 +226,7 @@
       </div>
       <div class="method-card">
         <h3>α 成長期待プレミアム</h3>
-        <p>ROE平均 × 内部留保率から個別成長率を算出しWACC比で質的補正を適用。上限1.0。<br><code>α = (ROE × 0.6 / WACC) × 0.7</code></p>
+        <p>ROE平均 × 内部留保率から個別成長率を算出しWACC比で質的補正を適用。セクター別上限（mega_tech:1.0 / Technology:0.8 / Healthcare:0.7等）。<br><code>α = (ROE × 0.6 / WACC) × 0.7</code></p>
       </div>
       <div class="method-card">
         <h3>RICE（投資効率指標）</h3>
@@ -234,7 +234,7 @@
       </div>
       <div class="method-card">
         <h3>RPO補正 / BS評価補正</h3>
-        <p>SaaS企業向けRPOを15%割引率で現在価値化。ネットキャッシュ/純負債を1株あたり価値に加算。</p>
+        <p>前年比超過の非連続需要分×利益率でPV化。αの外に加算。赤字企業はゼロ。ネットキャッシュ/純負債を1株あたり価値に加算。</p>
       </div>
     </div>
   </div>
@@ -250,7 +250,7 @@
         <div class="legend-item">
           <div class="legend-term">理論株価 BASE</div>
           <div class="legend-desc">BASEシナリオ（セグメント加重成長率 × 1.0）で計算した1株あたり本質的価値。WACC=Rm固定（10%）のβなし版。現在株価との差が「乖離率」として表示される。</div>
-          <div class="legend-formula">P_t = (V₀ + RPO_PV + GO_PV) × (1 + α) ÷ 株式数 + BS補正</div>
+          <div class="legend-formula">P_t = V₀ × (1 + α) ÷ 株式数 + RPO_PV ÷ 株式数 + GO_PV × (1 + α) ÷ 株式数 + BS補正</div>
         </div>
 
         <div class="legend-item">
@@ -290,10 +290,10 @@
         <h3>🔢 指標の説明（α / RICE / Q / CF）</h3>
 
         <div class="legend-item">
-          <div class="legend-term">α（アルファ）<span class="tag tag-amb">上限1.0</span></div>
-          <div class="legend-desc">成長期待プレミアム。ROE平均から個別の成長率ポテンシャルを推定し、市場期待リターン（Rm=10%）との比率で質的補正を加える。高いほど「ROEが高く成長余力がある」企業。上限1.0でキャップ。</div>
-          <div class="legend-formula">α = min(1.0, ROE_avg × 0.6 / Rm × 0.7)</div>
-          <div class="legend-note">α=1.0（キャップ適用）= 極めて高いROE。例: NVDA / CELH</div>
+          <div class="legend-term">α（アルファ）<span class="tag tag-amb">セクター別上限</span></div>
+          <div class="legend-desc">成長期待プレミアム。ROE平均から個別の成長率ポテンシャルを推定し、市場期待リターン（Rm=10%）との比率で質的補正を加える。高いほど「ROEが高く成長余力がある」企業。セクター別キャップ（mega_tech=1.0 / Technology=0.8 / Healthcare=0.7 / Utilities=0.5等）。</div>
+          <div class="legend-formula">α = min(sector_cap, ROE_avg × 0.6 / Rm × 0.7)</div>
+          <div class="legend-note">α=cap（キャップ適用）= 極めて高いROE。例: NVDA（mega_tech=1.0）/ LLY（Healthcare=0.7）</div>
         </div>
 
         <div class="legend-item">
