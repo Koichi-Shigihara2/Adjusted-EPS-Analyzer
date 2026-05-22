@@ -18,8 +18,8 @@
       --mono: 'Space Mono', monospace; --sans: 'DM Sans', sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 14px; min-height: 100vh; }
-    .shell { max-width: 1200px; margin: 0 auto; padding: 0 20px 48px; }
+    body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 15px; min-height: 100vh; }
+    .shell { max-width: 1400px; margin: 0 auto; padding: 0 20px 48px; }
 
     header {
       border-bottom: 1px solid var(--bdr); padding: 16px 0;
@@ -31,75 +31,106 @@
     @keyframes pdot { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); } 50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); } }
     .hdr-r { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .nav-links { display: flex; gap: 16px; }
-    .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .08em; padding: 5px 0; border-bottom: 1px solid transparent; }
+    .nav-links a { font-family: var(--mono); font-size: 12px; color: var(--mut); text-decoration: none; letter-spacing: .08em; padding: 5px 0; border-bottom: 1px solid transparent; }
     .nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
     .search-box { display: flex; align-items: center; gap: 4px; }
-    .search-box input { font-family: var(--mono); font-size: 11px; background: var(--sur2); border: 1px solid var(--bdr); padding: 5px 10px; color: var(--txt); width: 120px; }
-    .search-box button { font-family: var(--mono); font-size: 11px; padding: 5px 12px; border: 1px solid var(--bdr); background: var(--sur2); color: var(--txt); cursor: pointer; }
+    .search-box input { font-family: var(--mono); font-size: 13px; background: var(--sur2); border: 1px solid var(--bdr); padding: 5px 10px; color: var(--txt); width: 140px; }
+    .search-box button { font-family: var(--mono); font-size: 13px; padding: 5px 12px; border: 1px solid var(--bdr); background: var(--sur2); color: var(--txt); cursor: pointer; }
     .search-box button:hover { border-color: var(--acc); color: var(--acc); }
 
-    .sec { font-family: var(--mono); font-size: 9px; letter-spacing: .2em; color: var(--mut); text-transform: uppercase; margin: 32px 0 14px; display: flex; align-items: center; gap: 10px; }
+    .sec { font-family: var(--mono); font-size: 15px; font-weight: 700; color: var(--mut); margin: 28px 0 14px; display: flex; align-items: center; gap: 10px; }
     .sec::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
+    .sec.grn { color: var(--grn); }
+    .sec.red { color: var(--red); }
 
     .card { background: var(--sur); border: 1px solid var(--bdr); padding: 18px 20px; }
-    .card-title { font-family: var(--mono); font-size: 9px; letter-spacing: .15em; color: var(--mut); text-transform: uppercase; margin-bottom: 14px; }
+    .card-title { font-family: var(--mono); font-size: 13px; color: var(--mut); margin-bottom: 14px; }
     .top-list { list-style: none; }
-    .top-list li { display: flex; justify-content: space-between; align-items: baseline; padding: 8px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
+    .top-list li { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
     .top-list li:last-child { border-bottom: none; }
-    .top-ticker { font-family: var(--mono); font-weight: 700; }
+    .top-ticker { font-family: var(--mono); font-weight: 700; font-size: 15px; }
     .top-ticker a { color: var(--acc); text-decoration: none; }
     .top-ticker a:hover { text-decoration: underline; }
-    .top-value { font-family: var(--mono); color: var(--grn); }
+    .top-value { font-family: var(--mono); font-size: 15px; color: var(--grn); }
 
     /* ── ピン表示セクション ── */
     .pin-section { margin-bottom: 8px; }
     .pin-group { margin-bottom: 18px; }
-    .pin-label { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .1em; margin-bottom: 8px; }
-    .pin-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-    .pin-chip { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 11px; padding: 5px 12px; border: 1px solid var(--bdr); background: var(--sur2); text-decoration: none; cursor: pointer; transition: border-color .15s; }
-    .pin-chip:hover { border-color: var(--acc); }
-    .pin-chip a { color: var(--txt); text-decoration: none; }
-    .pin-chip a:hover { color: var(--acc); }
-    .pin-chip.opp { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.06); }
-    .pin-chip.ovr { border-color: rgba(244,63,94,.35); background: rgba(244,63,94,.05); }
-    .pin-chip-dev { font-size: 10px; color: var(--mut); }
+    .pin-label { font-family: var(--mono); font-size: 14px; color: var(--mut); margin-bottom: 10px; }
+    .pin-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+    .pin-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: var(--mono); font-size: 14px; padding: 7px 14px;
+      border: 1px solid var(--bdr); background: var(--sur2);
+      text-decoration: none; color: var(--txt); cursor: pointer;
+      transition: border-color .15s;
+    }
+    .pin-chip:hover { border-color: var(--acc); color: var(--acc); }
+    .pin-chip.opp { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.06); color: var(--txt); }
+    .pin-chip.opp:hover { border-color: var(--grn); color: var(--grn); }
+    .pin-chip.ovr { border-color: rgba(244,63,94,.35); background: rgba(244,63,94,.05); color: var(--txt); }
+    .pin-chip.ovr:hover { border-color: var(--red); color: var(--red); }
+    .pin-chip-ratio { font-size: 12px; color: var(--mut); }
+    .pin-chip-dev { font-size: 13px; }
     .pin-chip-dev.pos { color: var(--grn); }
     .pin-chip-dev.neg { color: var(--red); }
 
     /* ── テーブル ── */
     .table-wrap { background: var(--sur); border: 1px solid var(--bdr); margin-top: 16px; overflow-x: auto; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    th { font-family: var(--mono); font-size: 9px; letter-spacing: .12em; color: var(--mut); text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--bdr); text-transform: uppercase; }
-    td { padding: 10px 16px; border-bottom: 1px solid rgba(30,40,64,.5); }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      font-family: var(--mono); font-size: 13px; color: var(--mut);
+      text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--bdr);
+      white-space: nowrap; background: var(--sur);
+    }
+    td { font-size: 15px; padding: 10px 14px; border-bottom: 1px solid rgba(30,40,64,.5); white-space: nowrap; }
     tr:last-child td { border-bottom: none; }
     tr:hover { background: rgba(255,255,255,.02); }
-    .ticker-cell a { color: var(--acc); font-family: var(--mono); text-decoration: none; }
+    .ticker-cell { width: 80px; min-width: 80px; }
+    .ticker-cell a { color: var(--acc); font-family: var(--mono); font-size: 14px; text-decoration: none; font-weight: 700; }
     .ticker-cell a:hover { text-decoration: underline; }
     .number { font-family: var(--mono); text-align: right; }
     .pos { color: var(--grn); }
     .neg { color: var(--red); }
 
     /* ── バッジ ── */
-    .health-badge { display: inline-block; font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; }
-    .sm-badge { display: inline-block; font-family: var(--mono); font-size: 9px; padding: 1px 6px; border-radius: 2px; margin-left: 4px; vertical-align: middle; }
+    .health-badge { display: inline-block; font-family: var(--mono); font-size: 13px; padding: 4px 10px; border-radius: 2px; }
+    .sm-badge { display: inline-block; font-family: var(--mono); font-size: 13px; padding: 4px 10px; border-radius: 2px; margin-left: 4px; vertical-align: middle; white-space: nowrap; }
     .badge-opp  { background: rgba(16,185,129,.15); color: var(--grn); }
     .badge-tran { background: rgba(245,158,11,.15);  color: var(--amb); }
     .badge-warn { background: rgba(244,63,94,.15);   color: var(--red); }
 
     /* DataTables 上書き */
-    .dataTables_wrapper { font-family: var(--sans); font-size: 13px; color: var(--txt); }
-    .dataTables_filter input, .dataTables_length select { background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); font-family: var(--mono); font-size: 11px; padding: 4px 8px; margin-left: 6px; }
-    .dataTables_filter label, .dataTables_length label, .dataTables_info, .dataTables_paginate { font-family: var(--mono); font-size: 10px; color: var(--mut); }
-    .dataTables_paginate .paginate_button { font-family: var(--mono); font-size: 10px; color: var(--mut) !important; padding: 3px 8px !important; }
+    .dataTables_wrapper { font-family: var(--sans); font-size: 14px; color: var(--txt); }
+    .dataTables_filter input, .dataTables_length select {
+      background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt);
+      font-family: var(--mono); font-size: 13px; padding: 4px 8px; margin-left: 6px;
+    }
+    .dataTables_filter label, .dataTables_length label, .dataTables_info, .dataTables_paginate {
+      font-family: var(--mono); font-size: 13px; color: var(--mut);
+    }
+    .dataTables_paginate .paginate_button { font-family: var(--mono); font-size: 13px; color: var(--mut) !important; padding: 4px 10px !important; }
     .dataTables_paginate .paginate_button.current { background: var(--sur2) !important; border: 1px solid var(--bdr) !important; color: var(--acc) !important; }
     .dataTables_paginate .paginate_button:hover { background: var(--sur2) !important; border: 1px solid var(--bdr) !important; color: var(--acc) !important; }
     table.dataTable thead th { background: var(--sur); border-bottom: 1px solid var(--bdr) !important; }
     table.dataTable thead .sorting::after, table.dataTable thead .sorting_asc::after, table.dataTable thead .sorting_desc::after { opacity: 0.5; }
-    .dt-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
-    .excel-btn { font-family: var(--mono); font-size: 10px; padding: 5px 14px; background: rgba(16,185,129,.15); border: 1px solid var(--grn); color: var(--grn); cursor: pointer; letter-spacing: .05em; }
-    .excel-btn:hover { background: rgba(16,185,129,.25); }
 
-    .empty { color: var(--mut); font-family: var(--mono); font-size: 11px; padding: 40px; text-align: center; }
+    .dt-toolbar { display: flex; justify-content: flex-end; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .excel-btn {
+      font-family: var(--mono); font-size: 13px; padding: 6px 16px;
+      background: rgba(16,185,129,.15); border: 1px solid var(--grn); color: var(--grn);
+      cursor: pointer;
+    }
+    .excel-btn:hover { background: rgba(16,185,129,.25); }
+    .filter-btn {
+      font-family: var(--mono); font-size: 13px; padding: 6px 16px;
+      background: transparent; border: 1px solid var(--bdr); color: var(--mut);
+      cursor: pointer; transition: all .15s;
+    }
+    .filter-btn:hover { border-color: var(--amb); color: var(--amb); }
+    .filter-btn.active { background: rgba(245,158,11,.15); border-color: var(--amb); color: var(--amb); }
+
+    .empty { color: var(--mut); font-family: var(--mono); font-size: 13px; padding: 40px; text-align: center; }
     .spin { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--bdr); border-top-color: var(--acc); border-radius: 50%; animation: spin .8s linear infinite; margin-right: 6px; }
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
@@ -134,28 +165,43 @@
 </div>
 
 <script>
+// ── healthのスタイル ──
+function healthStyle(h) {
+  if (h === '調整なし')          return 'background:rgba(16,185,129,.15);color:var(--grn)';
+  if (h === '調整小')            return 'background:rgba(16,185,129,.10);color:#6ee7b7';
+  if (h === '調整中')            return 'background:rgba(245,158,11,.15);color:var(--amb)';
+  if (h === '調整大')            return 'background:rgba(244,63,94,.25);color:var(--red);font-weight:700;border:1px solid rgba(244,63,94,.4)';
+  if (h === '過大調整')          return 'background:rgba(244,63,94,.15);color:var(--red)';
+  if (h === '調整小（マイナス）') return 'background:rgba(100,116,139,.15);color:var(--mut)';
+  return 'background:rgba(100,116,139,.15);color:var(--mut)';
+}
+function fmt4(v)    { return v != null ? '$' + v.toFixed(4) : '—'; }
+function fmtDiff(v) {
+  if (v == null) return '—';
+  return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(4);
+}
+function fmtRatio(v)  { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—'; }
+function fmtPct(v)    { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+function fmtGrowth(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+
+// ── 黒字転換フィルター ──
+let tranFilterActive = false;
+const tranFilterFn = function(settings, data, dataIndex) {
+  if (!tranFilterActive) return true;
+  const api = new $.fn.dataTable.Api(settings);
+  const node = api.row(dataIndex).node();
+  return node && node.getAttribute('data-tran') === '1';
+};
+
+function toggleTranFilter() {
+  tranFilterActive = !tranFilterActive;
+  const btn = document.getElementById('tran-filter-btn');
+  if (btn) btn.classList.toggle('active', tranFilterActive);
+  if (dtInstance) dtInstance.draw();
+}
+
 (async function() {
   const contentDiv = document.getElementById('dashboard-content');
-
-  // ── healthのスタイル ──
-  function healthStyle(h) {
-    if (h === '調整なし')       return 'background:rgba(16,185,129,.15);color:var(--grn)';
-    if (h === '調整小')         return 'background:rgba(16,185,129,.10);color:#6ee7b7';
-    if (h === '調整中')         return 'background:rgba(245,158,11,.15);color:var(--amb)';
-    if (h === '調整大')         return 'background:rgba(244,63,94,.25);color:var(--red);font-weight:700;border:1px solid rgba(244,63,94,.4)';
-    if (h === '過大調整')       return 'background:rgba(244,63,94,.15);color:var(--red)';
-    if (h === '調整小（マイナス）') return 'background:rgba(100,116,139,.15);color:var(--mut)';
-    return 'background:rgba(100,116,139,.15);color:var(--mut)';
-  }
-  function fmt4(v)  { return v != null ? '$' + v.toFixed(4) : '—'; }
-  function fmtDiff(v) {
-    if (v == null) return '—';
-    const s = (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(4);
-    return s;
-  }
-  function fmtRatio(v) { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—'; }
-  function fmtPct(v)   { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
-  function fmtGrowth(v){ return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
 
   try {
     // 1. summary.json 読み込み
@@ -170,7 +216,6 @@
         const r = await fetch(`../tanuki_valuation/data/${t.ticker}/latest.json`);
         if (r.ok) {
           const d = await r.json();
-          // upside_percent は % 単位 (例: 119.4) → 0.1194 に変換
           const up = d.upside_percent;
           t.deviation_rate = (up != null) ? up / 100 : null;
         }
@@ -195,28 +240,28 @@
       html += '<div class="pin-section">';
 
       if (oppGroup.length > 0) {
-        html += '<div class="sec">👁 過小評価候補</div>';
+        html += '<div class="sec grn">👁 過小評価候補 — Non-GAAP調整で実力が隠れている可能性</div>';
         html += '<div class="pin-group"><div class="pin-chips">';
         oppGroup.forEach(t => {
           const dr = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
           const drClass = (t.deviation_rate || 0) >= 0 ? 'pos' : 'neg';
-          html += `<span class="pin-chip opp">
-            <a href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
-            <span style="font-size:9px;color:var(--mut)">差分${fmtRatio(t.eps_ratio)}</span>
+          html += `<a class="pin-chip opp" href="stock.html?ticker=${t.ticker}">
+            <strong>${t.ticker}</strong>
+            <span class="pin-chip-ratio">差分${fmtRatio(t.eps_ratio)}</span>
             <span class="pin-chip-dev ${drClass}" title="TANUKI乖離率">${dr}</span>
-          </span>`;
+          </a>`;
         });
         html += '</div></div>';
       }
 
       if (warnGroup.length > 0) {
-        html += '<div class="sec">⚠️ 過大評価注意</div>';
+        html += '<div class="sec red">⚠️ 過大評価注意 — 調整でGAAPより悪く見せている可能性</div>';
         html += '<div class="pin-group"><div class="pin-chips">';
         warnGroup.forEach(t => {
-          html += `<span class="pin-chip ovr">
-            <a href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
-            <span style="font-size:9px;color:var(--red)">差分${fmtRatio(t.eps_ratio)}</span>
-          </span>`;
+          html += `<a class="pin-chip ovr" href="stock.html?ticker=${t.ticker}">
+            <strong>${t.ticker}</strong>
+            <span class="pin-chip-ratio" style="color:var(--red)">差分${fmtRatio(t.eps_ratio)}</span>
+          </a>`;
         });
         html += '</div></div>';
       }
@@ -224,10 +269,9 @@
       html += '</div>';
     }
 
-    // ── YoY成長率トップ5 カード（1列） ──
+    // ── YoY成長率トップ5 カード ──
     html += '<div class="sec">🔥 TTM調整後EPS成長率トップ5</div>';
-    html += '<div class="card" style="margin-bottom:24px">';
-    html += '<ul class="top-list">';
+    html += '<div class="card" style="margin-bottom:24px"><ul class="top-list">';
     if (topGrowth.length === 0) {
       html += '<li class="empty" style="padding:10px 0">データなし</li>';
     } else {
@@ -243,12 +287,16 @@
 
     // ── 全銘柄一覧テーブル ──
     html += '<div class="sec">📋 全監視銘柄一覧</div>';
-    html += '<div class="dt-toolbar"><span></span><button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button></div>';
+    html += '<div class="dt-toolbar">';
+    html += '<button class="filter-btn" id="tran-filter-btn" onclick="toggleTranFilter()">⚡ 黒字転換のみ</button>';
+    html += '<button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button>';
+    html += '</div>';
+
     html += '<div class="table-wrap">';
     html += '<table id="main-table"><thead><tr>';
-    html += '<th>ティッカー</th><th>会社名</th><th>最新決算日</th>';
+    html += '<th>ティッカー</th><th>会社名</th><th>決算日</th>';
     html += '<th>GAAP EPS</th><th>Adj EPS</th><th>差分額</th><th>差分比率</th>';
-    html += '<th>YoY成長率</th><th>TANUKI乖離率</th><th>健全性</th>';
+    html += '<th>YoY成長</th><th>乖離率</th><th>調整区分</th>';
     html += '</tr></thead><tbody>';
 
     tickers.forEach(t => {
@@ -257,28 +305,21 @@
       const isOver = t.health === '過大調整';
       const diffNeg = (t.eps_diff || 0) < 0;
 
-      // GAAP→Adj黒字転換バッジ
       const tranBadge = isTran ? '<span class="sm-badge badge-tran">⚡黒字転換</span>' : '';
-      // 投資機会バッジ
       const oppBadge  = isOpp  ? '<span class="sm-badge badge-opp">👁 投資機会候補</span>' : '';
-      // 過大評価バッジ
       const warnBadge = isOver ? '<span class="sm-badge badge-warn">⚠️ 過大評価注意</span>' : '';
 
-      // 差分の色
-      const diffStyle = diffNeg ? 'color:var(--red)' : 'color:var(--grn)';
+      const diffStyle  = diffNeg ? 'color:var(--red)' : 'color:var(--grn)';
       const ratioStyle = (t.eps_ratio || 0) < 0 ? 'color:var(--red)' : 'color:var(--grn)';
+      const devTxt     = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
+      const devStyle   = (t.deviation_rate || 0) >= 0 ? 'color:var(--grn)' : 'color:var(--red)';
 
-      // 乖離率
-      const devTxt   = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
-      const devStyle = (t.deviation_rate || 0) >= 0 ? 'color:var(--grn)' : 'color:var(--red)';
+      const ratioSort = (t.eps_ratio      != null) ? t.eps_ratio              : -9999;
+      const growSort  = (t.yoy_growth     != null) ? t.yoy_growth  * 100      : -9999;
+      const devSort   = (t.deviation_rate != null) ? t.deviation_rate * 100   : -9999;
 
-      // ソート用 data-sort
-      const ratioSort = (t.eps_ratio   != null) ? t.eps_ratio   : -9999;
-      const growSort  = (t.yoy_growth  != null) ? t.yoy_growth * 100 : -9999;
-      const devSort   = (t.deviation_rate != null) ? t.deviation_rate * 100 : -9999;
-
-      html += `<tr>
-        <td class="ticker-cell" data-sort="${t.ticker}"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></td>
+      html += `<tr data-tran="${isTran ? '1' : '0'}">
+        <td class="ticker-cell"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></td>
         <td>${t.company_name || ''}</td>
         <td>${t.latest_filing_date || ''}</td>
         <td class="number">${fmt4(t.gaap_eps)}</td>
@@ -287,9 +328,8 @@
         <td class="number" data-sort="${ratioSort}" style="${ratioStyle}">${fmtRatio(t.eps_ratio)}</td>
         <td class="number" data-sort="${growSort}" style="color:${(t.yoy_growth||0)>=0?'var(--grn)':'var(--red)'}">${fmtGrowth(t.yoy_growth)}</td>
         <td class="number" data-sort="${devSort}" style="${devStyle}">${devTxt}</td>
-        <td>
-          <span class="health-badge" style="${healthStyle(t.health)}">${t.health || '—'}</span>
-          ${tranBadge}${oppBadge}${warnBadge}
+        <td style="white-space:nowrap">
+          <span class="health-badge" style="${healthStyle(t.health)}">${t.health || '—'}</span>${tranBadge}${oppBadge}${warnBadge}
         </td>
       </tr>`;
     });
@@ -307,6 +347,22 @@ function initDataTable() {
   if (dtInstance) { dtInstance.destroy(); dtInstance = null; }
   const tbl = document.getElementById('main-table');
   if (!tbl) return;
+
+  // 黒字転換フィルター登録
+  if ($.fn.dataTable.ext.search.indexOf(tranFilterFn) === -1) {
+    $.fn.dataTable.ext.search.push(tranFilterFn);
+  }
+
+  // data-sort による数値ソート
+  if (!$.fn.dataTable.ext.order['dom-data-sort']) {
+    $.fn.dataTable.ext.order['dom-data-sort'] = function(settings, col) {
+      return this.api().column(col, { order: 'index' }).nodes().map(td => {
+        const cell = $(td).find('[data-sort]').addBack('[data-sort]');
+        return cell.length ? parseFloat(cell.attr('data-sort')) : parseFloat($(td).text()) || 0;
+      });
+    };
+  }
+
   dtInstance = $('#main-table').DataTable({
     pageLength: 25,
     order: [[6, 'desc']],  // 差分比率 降順
@@ -319,16 +375,9 @@ function initDataTable() {
       zeroRecords: '該当なし'
     },
     columnDefs: [
-      { targets: [3,4,5,6,7,8], type: 'num-fmt', orderDataType: 'dom-data-sort' }
+      { targets: [3,4,5,6,7,8], orderDataType: 'dom-data-sort', type: 'num' }
     ]
   });
-  // data-sort による数値ソート
-  $.fn.dataTable.ext.order['dom-data-sort'] = function(settings, col) {
-    return this.api().column(col, { order: 'index' }).nodes().map(td => {
-      const cell = $(td).find('[data-sort]').addBack('[data-sort]');
-      return cell.length ? parseFloat(cell.attr('data-sort')) : parseFloat($(td).text()) || 0;
-    });
-  };
 }
 
 function exportExcel() {
