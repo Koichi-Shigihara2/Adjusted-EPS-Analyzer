@@ -1,0 +1,420 @@
+"""
+daily_pick.py
+TANUKI SCOREの特選銘柄を毎日選出し、Grok AIによる投資判断レポートを生成する。
+
+フロー:
+  1. 全銘柄をスコアリング（ファンダ/タイミング/分類）
+  2. 選出ロジック（優先①分類変化 → ②Grokニュース → ③ファンダ上位未選出）
+  3. Grok（web_search有効）でレポート生成
+  4. daily_pick.json / history.json を保存
+"""
+import json
+import os
+import sys
+import requests
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
+# ── Paths ─────────────────────────────────────────────────────
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+DOCS         = PROJECT_ROOT / "docs"
+TANUKI_DATA  = DOCS / "value-monitor" / "tanuki_valuation" / "data"
+HYPE_DATA    = DOCS / "value-monitor" / "hypecore" / "data"
+EPS_DATA     = DOCS / "value-monitor" / "adjusted_eps_analyzer" / "data"
+MKT_PATH     = DOCS / "market-monitor" / "market-pulse" / "data" / "market_data.json"
+OUT_DIR      = DOCS / "integrated-dashboard"
+PICK_FILE    = OUT_DIR / "daily_pick.json"
+HIST_FILE    = OUT_DIR / "history.json"
+
+JST = timezone(timedelta(hours=9))
+
+XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
+XAI_API_URL = "https://api.x.ai/v1/chat/completions"
+
+# ── Scoring（index.htmlのJS実装と同一ロジック） ───────────────
+def _pt(cond_hi, cond_mid, pts_hi, pts_mid, val):
+    if val is None:
+        return 0
+    if cond_hi(val):
+        return pts_hi
+    if cond_mid(val):
+        return pts_mid
+    return 0
+
+def calc_funda(rev_yoy, rule40, eps_yoy_pct, fcf_base):
+    s = 0
+    s += _pt(lambda v: v > 20,  lambda v: v >= 0,  25, 15, rev_yoy)
+    s += _pt(lambda v: v > 40,  lambda v: v >= 20, 25, 15, rule40)
+    s += _pt(lambda v: v > 20,  lambda v: v >= 0,  25, 15, eps_yoy_pct)
+    s += 25 if (fcf_base is not None and fcf_base > 0) else 0
+    return s
+
+def calc_timing(upside, fg, stage):
+    s = 0
+    if upside is not None:
+        s += 40 if upside > 30 else 25 if upside >= 10 else 10 if upside >= 0 else 0
+    s += 40 if fg < 30 else 25 if fg < 50 else 10 if fg < 70 else 0
+    if stage is not None:
+        s += 20 if stage == 1 else 15 if stage == 2 else 5 if stage == 3 else 0
+    return s
+
+def classify(f, t):
+    if f < 25:             return "論外"
+    if f >= 50 and t >= 50: return "仕込み時"
+    if f >= 50:             return "仕込み待ち"
+    if t >= 60:             return "利確検討"
+    return "様子見"
+
+# ── Data loaders ──────────────────────────────────────────────
+def load_json(path):
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+def load_tickers():
+    d = load_json(TANUKI_DATA / "tickers.json")
+    return d.get("tickers", []) if isinstance(d, dict) else []
+
+def load_market():
+    data = load_json(MKT_PATH)
+    return data[-1] if isinstance(data, list) and data else {}
+
+def load_tanuki(ticker):
+    return load_json(TANUKI_DATA / ticker / "latest.json") or {}
+
+def load_hype(ticker):
+    d = load_json(HYPE_DATA / f"{ticker}_poc.json")
+    if not isinstance(d, dict):
+        return {}
+    monthly = d.get("monthly", [])
+    return monthly[-1] if monthly else {}
+
+def load_eps_summary():
+    d = load_json(EPS_DATA / "summary.json")
+    if not isinstance(d, dict):
+        return {}
+    return {t["ticker"]: t for t in d.get("tickers", [])}
+
+def load_eps_annual_latest(ticker):
+    d = load_json(EPS_DATA / ticker / "annual.json")
+    if not isinstance(d, dict):
+        return {}
+    years = d.get("years", [])
+    return years[0] if years else {}
+
+def load_history():
+    h = load_json(HIST_FILE)
+    return h if isinstance(h, list) else []
+
+def save_history(history):
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(HIST_FILE, "w", encoding="utf-8") as f:
+        json.dump(history, f, ensure_ascii=False, indent=2)
+
+# ── Score all stocks ──────────────────────────────────────────
+def score_all(tickers, mkt):
+    fg          = mkt.get("fear_greed", {}).get("score", 50)
+    eps_summary = load_eps_summary()
+    results     = []
+
+    for ticker in tickers:
+        tk = load_tanuki(ticker)
+        hc = load_hype(ticker)
+        ep = eps_summary.get(ticker, {})
+
+        rev_yoy   = hc.get("rev_yoy")
+        rule40    = hc.get("rule40")
+        yoy_dec   = ep.get("yoy_growth")
+        eps_yoy   = yoy_dec * 100 if yoy_dec is not None else None
+        fcf_raw   = tk.get("fcf_base")
+        fcf_base  = (
+            fcf_raw.get("base_fcf") if isinstance(fcf_raw, dict)
+            else fcf_raw if isinstance(fcf_raw, (int, float))
+            else None
+        )
+        upside = tk.get("upside_percent")
+        stage  = hc.get("stage")
+
+        f   = calc_funda(rev_yoy, rule40, eps_yoy, fcf_base)
+        t   = calc_timing(upside, fg, stage)
+        cat = classify(f, t)
+
+        results.append({
+            "ticker":  ticker,
+            "company": ep.get("company_name", ticker),
+            "funda":   f,
+            "timing":  t,
+            "category": cat,
+        })
+
+    return results
+
+# ── Selection logic ───────────────────────────────────────────
+def select_ticker(stocks, history, today_str):
+    """
+    優先①: 前日から分類が変わった銘柄
+    優先②: Grokニュース検索で重大ニュースのある銘柄
+    優先③: ファンダ上位・最長未選出
+    """
+    today_cats = {s["ticker"]: s["category"] for s in stocks}
+
+    # 優先①: 前日の全分類と比較
+    if history:
+        yesterday = history[0]
+        prev_cats = yesterday.get("all_categories", {})
+        if prev_cats:
+            changed = [
+                s for s in stocks
+                if prev_cats.get(s["ticker"]) and prev_cats[s["ticker"]] != s["category"]
+            ]
+            if changed:
+                # カテゴリ重要度（仕込み時 → 仕込み待ち → 利確検討 の順で優先）
+                order = {"仕込み時": 0, "仕込み待ち": 1, "利確検討": 2, "様子見": 3, "論外": 4}
+                changed.sort(key=lambda s: (order.get(s["category"], 9), -s["funda"]))
+                best = changed[0]
+                old_cat = prev_cats.get(best["ticker"], "不明")
+                return best, f"分類変化: {old_cat} → {best['category']}"
+
+    # 優先②: Grokニュース検索（API設定済みかつ良質銘柄のみ対象）
+    if XAI_API_KEY:
+        candidates = [s["ticker"] for s in stocks if s["category"] in ("仕込み時", "仕込み待ち")][:20]
+        if candidates:
+            pick, reason = grok_news_search(candidates, today_str)
+            if pick:
+                s = next((x for x in stocks if x["ticker"] == pick), None)
+                if s:
+                    return s, reason
+
+    # 優先③: ファンダ上位・最長未選出（直近の選出銘柄は除外）
+    last_pick = history[0]["ticker"] if history else None
+    candidates = [s for s in stocks if s["ticker"] != last_pick] or stocks
+
+    pick_idx = {h["ticker"]: i for i, h in enumerate(history)}
+    candidates.sort(key=lambda s: (-pick_idx.get(s["ticker"], len(history) + 1), -s["funda"]))
+    return candidates[0], "ファンダスコア上位・最長未選出"
+
+def grok_news_search(ticker_list, date_str):
+    """Grokで本日重大ニュースのある銘柄を1件検索する"""
+    prompt = (
+        f"以下の銘柄リストのうち、今日（{date_str}）重要なニュースがある"
+        f"銘柄を1つ選び、その理由を50字以内で答えよ：{', '.join(ticker_list)}\n"
+        f'回答形式: {{"ticker": "XXXX", "reason": "理由"}}'
+    )
+    try:
+        resp = requests.post(
+            XAI_API_URL,
+            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "grok-3",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "search_parameters": {"mode": "on"},
+                "response_format": {"type": "json_object"},
+            },
+            timeout=45,
+        )
+        resp.raise_for_status()
+        parsed = json.loads(resp.json()["choices"][0]["message"]["content"])
+        ticker = parsed.get("ticker", "").upper().strip()
+        reason = parsed.get("reason", "")
+        if ticker in ticker_list:
+            return ticker, f"{reason}（Grokニュース検索による選出）"
+        print(f"  [news] Returned ticker '{ticker}' not in list, skipping")
+    except Exception as e:
+        print(f"  [news] Error: {e}")
+    return None, None
+
+# ── Report generation ─────────────────────────────────────────
+def build_data_package(stock, mkt):
+    """Grokに渡す統合データパッケージを構築する"""
+    ticker = stock["ticker"]
+    tk     = load_tanuki(ticker)
+    hc     = load_hype(ticker)
+    ann    = load_eps_annual_latest(ticker)
+
+    fcf_raw  = tk.get("fcf_base")
+    fcf_base = (
+        fcf_raw.get("base_fcf") if isinstance(fcf_raw, dict)
+        else fcf_raw if isinstance(fcf_raw, (int, float))
+        else None
+    )
+    rpo_raw = tk.get("rpo_adjustment")
+    rpo_pv  = rpo_raw.get("rpo_pv") if isinstance(rpo_raw, dict) else None
+
+    return {
+        "ticker":     ticker,
+        "company":    stock["company"],
+        "funda_score":  stock["funda"],
+        "timing_score": stock["timing"],
+        "category":   stock["category"],
+        "tanuki": {
+            "intrinsic_value_per_share": tk.get("intrinsic_value_per_share"),
+            "upside_percent":            tk.get("upside_percent"),
+            "fcf_base":                  fcf_base,
+            "growth_rate":               tk.get("growth", {}).get("rate") if isinstance(tk.get("growth"), dict) else None,
+            "wacc":                      tk.get("wacc", {}).get("value") if isinstance(tk.get("wacc"), dict) else None,
+            "alpha":                     tk.get("alpha"),
+            "rpo_pv":                    rpo_pv,
+        },
+        "hypecore": {
+            "stage":              hc.get("stage"),
+            "stage_label":        hc.get("stage_label"),
+            "substage_label":     hc.get("substage_label"),
+            "rev_yoy":            hc.get("rev_yoy"),
+            "rule40":             hc.get("rule40"),
+            "peg_ratio":          hc.get("peg_ratio"),
+            "short_pct_float":    hc.get("short_pct_float"),
+            "eps_surprise":       hc.get("eps_surprise"),
+            "expectation_score":  hc.get("expectation_score"),
+            "fundamental_score":  hc.get("fundamental_score"),
+            "momentum_score":     hc.get("momentum_score"),
+        },
+        "eps_annual": {
+            "gaap_eps":      ann.get("gaap_eps"),
+            "adjusted_eps":  ann.get("adjusted_eps"),
+            "adjustments":   ann.get("adjustments", [])[:5],
+        },
+        "market": {
+            "fear_greed_score": mkt.get("fear_greed", {}).get("score"),
+            "tech_pulse_score": mkt.get("tech_pulse", {}).get("score") if isinstance(mkt.get("tech_pulse"), dict) else None,
+            "risk_off_score":   mkt.get("credit", {}).get("risk_off_score") if isinstance(mkt.get("credit"), dict) else None,
+            "vix":              mkt.get("indicators", {}).get("VIX指数", {}).get("value") if isinstance(mkt.get("indicators"), dict) else None,
+        },
+    }
+
+def generate_report(stock, mkt):
+    """Grokで投資判断レポートを生成する（web_search有効）"""
+    data_pkg = build_data_package(stock, mkt)
+    ticker   = stock["ticker"]
+    company  = stock["company"]
+    now_jst  = datetime.now(JST).strftime("%Y-%m-%d %H:%M JST")
+
+    prompt = f"""あなたは投資アナリストです。以下のデータと最新ニュースを統合して、\
+{ticker}（{company}）の投資判断レポートを日本語で作成してください。
+
+【定量データ】
+{json.dumps(data_pkg, ensure_ascii=False, indent=2)}
+
+【作成日時】{now_jst}
+
+以下のJSONキーを持つオブジェクトを返してください。各値は200〜400字の分析文です：
+
+{{
+  "fundamental": "【ファンダメンタル評価】売上成長・収益性・FCF・理論株価との乖離を分析。企業のビジネスモデルの強み・弱みを踏まえた評価。",
+  "expectation": "【期待値評価】HypeCoreフェーズと市場の期待度を分析。Non-GAAP調整による市場の誤認可能性の評価。",
+  "news": "【今日のニュース・時事】web検索で本日時点の最新ニュースを調査。株価に影響する重要な事象（契約・決算・規制・競合動向等）を記載。情報源と日付を明記。",
+  "timing": "【タイミング評価】市場センチメント・HypeCoreフェーズ・TANUKI乖離率を統合評価。今買うべきか/待つべきか/売るべきかを明確に。",
+  "summary": "【総合所見】上記を統合した投資判断（2〜3文）。注目すべき次のトリガーイベントを明記。"
+}}
+
+web検索を積極的に使用し、本日の最新情報を必ず含めてください。"""
+
+    print(f"  [report] Calling Grok (web_search) for {ticker}...")
+    try:
+        resp = requests.post(
+            XAI_API_URL,
+            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "grok-3",
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.5,
+                "search_parameters": {"mode": "on"},
+                "response_format": {"type": "json_object"},
+            },
+            timeout=120,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
+        parsed  = json.loads(content)
+        # Ensure all required keys exist
+        for key in ("fundamental", "expectation", "news", "timing", "summary"):
+            if key not in parsed:
+                parsed[key] = "（データ取得エラー）"
+        return parsed
+    except Exception as e:
+        print(f"  [report] Error: {e}")
+        return {
+            "fundamental": "レポート生成エラー",
+            "expectation": "レポート生成エラー",
+            "news":        "レポート生成エラー",
+            "timing":      "レポート生成エラー",
+            "summary":     f"Grok APIの呼び出し中にエラーが発生しました: {e}",
+        }
+
+# ── Main ──────────────────────────────────────────────────────
+def main():
+    now_jst   = datetime.now(JST)
+    today_str = now_jst.strftime("%Y-%m-%d")
+    print(f"[daily_pick] Starting — {today_str} JST")
+
+    mkt     = load_market()
+    tickers = load_tickers()
+    history = load_history()
+
+    if not tickers:
+        print("[daily_pick] No tickers found. Exiting.")
+        sys.exit(1)
+
+    # Score all
+    print(f"[daily_pick] Scoring {len(tickers)} tickers...")
+    stocks = score_all(tickers, mkt)
+    stocks.sort(key=lambda s: (-s["funda"], -s["timing"]))
+
+    # Select
+    print("[daily_pick] Selecting ticker...")
+    selected, reason = select_ticker(stocks, history, today_str)
+    print(f"[daily_pick] Selected: {selected['ticker']} ({selected['category']}) — {reason}")
+
+    # Generate report
+    if not XAI_API_KEY:
+        print("[daily_pick] XAI_API_KEY not set — skipping report.")
+        report = {
+            "fundamental": "APIキー未設定のためレポートを生成できません。",
+            "expectation":  "APIキー未設定のためレポートを生成できません。",
+            "news":         "APIキー未設定のためレポートを生成できません。",
+            "timing":       "APIキー未設定のためレポートを生成できません。",
+            "summary":      "XAI_API_KEY 環境変数を設定してください。",
+        }
+    else:
+        report = generate_report(selected, mkt)
+
+    # Build output
+    generated_at = now_jst.strftime("%Y-%m-%dT%H:%M:%S+09:00")
+    output = {
+        "generated_at":     generated_at,
+        "ticker":           selected["ticker"],
+        "company":          selected["company"],
+        "selection_reason": reason,
+        "funda_score":      selected["funda"],
+        "timing_score":     selected["timing"],
+        "category":         selected["category"],
+        "report":           report,
+    }
+
+    # Save daily_pick.json
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    with open(PICK_FILE, "w", encoding="utf-8") as f:
+        json.dump(output, f, ensure_ascii=False, indent=2)
+    print(f"[daily_pick] Saved → {PICK_FILE}")
+
+    # Update history (keep 30 days, store all_categories for priority① detection)
+    all_cats = {s["ticker"]: s["category"] for s in stocks}
+    history.insert(0, {
+        "date":           today_str,
+        "ticker":         selected["ticker"],
+        "company":        selected["company"],
+        "reason":         reason,
+        "category":       selected["category"],
+        "funda_score":    selected["funda"],
+        "timing_score":   selected["timing"],
+        "all_categories": all_cats,
+    })
+    history = history[:30]
+    save_history(history)
+    print(f"[daily_pick] History updated ({len(history)} entries)")
+    print("[daily_pick] Done.")
+
+if __name__ == "__main__":
+    main()
