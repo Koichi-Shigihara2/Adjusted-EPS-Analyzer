@@ -44,19 +44,10 @@
     .sec.red { color: var(--red); }
 
     .card { background: var(--sur); border: 1px solid var(--bdr); padding: 18px 20px; }
-    .card-title { font-family: var(--mono); font-size: 13px; color: var(--mut); margin-bottom: 14px; }
-    .top-list { list-style: none; }
-    .top-list li { display: flex; justify-content: space-between; align-items: baseline; padding: 10px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
-    .top-list li:last-child { border-bottom: none; }
-    .top-ticker { font-family: var(--mono); font-weight: 700; font-size: 15px; }
-    .top-ticker a { color: var(--acc); text-decoration: none; }
-    .top-ticker a:hover { text-decoration: underline; }
-    .top-value { font-family: var(--mono); font-size: 15px; color: var(--grn); }
 
     /* ── ピン表示セクション ── */
     .pin-section { margin-bottom: 8px; }
     .pin-group { margin-bottom: 18px; }
-    .pin-label { font-family: var(--mono); font-size: 14px; color: var(--mut); margin-bottom: 10px; }
     .pin-chips { display: flex; flex-wrap: wrap; gap: 10px; }
     .pin-chip {
       display: inline-flex; align-items: center; gap: 8px;
@@ -65,7 +56,6 @@
       text-decoration: none; color: var(--txt); cursor: pointer;
       transition: border-color .15s;
     }
-    .pin-chip:hover { border-color: var(--acc); color: var(--acc); }
     .pin-chip.opp { border-color: rgba(16,185,129,.4); background: rgba(16,185,129,.06); color: var(--txt); }
     .pin-chip.opp:hover { border-color: var(--grn); color: var(--grn); }
     .pin-chip.ovr { border-color: rgba(244,63,94,.35); background: rgba(244,63,94,.05); color: var(--txt); }
@@ -75,6 +65,22 @@
     .pin-chip-dev.pos { color: var(--grn); }
     .pin-chip-dev.neg { color: var(--red); }
 
+    /* ── 投資機会ランキング ── */
+    .opp-list { list-style: none; }
+    .opp-item { padding: 14px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
+    .opp-item:last-child { border-bottom: none; }
+    .opp-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+    .opp-rank { font-family: var(--mono); font-size: 12px; color: var(--mut); width: 20px; }
+    .opp-ticker { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--acc); text-decoration: none; }
+    .opp-ticker:hover { text-decoration: underline; }
+    .opp-name { font-size: 13px; color: var(--mut); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .opp-score-lbl { font-family: var(--mono); font-size: 13px; color: var(--txt); min-width: 40px; text-align: right; }
+    .opp-bar-wrap { height: 5px; background: rgba(30,40,64,.8); border-radius: 3px; margin-bottom: 7px; }
+    .opp-bar { height: 100%; background: linear-gradient(90deg, var(--acc) 0%, var(--grn) 100%); border-radius: 3px; transition: width .4s ease; }
+    .opp-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
+    .opp-m { font-family: var(--mono); font-size: 12px; color: var(--mut); }
+    .opp-m strong { color: var(--txt); }
+
     /* ── テーブル ── */
     .table-wrap { background: var(--sur); border: 1px solid var(--bdr); margin-top: 16px; overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; }
@@ -82,6 +88,7 @@
       font-family: var(--mono); font-size: 13px; color: var(--mut);
       text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--bdr);
       white-space: nowrap; background: var(--sur);
+      position: relative;
     }
     td { font-size: 15px; padding: 10px 14px; border-bottom: 1px solid rgba(30,40,64,.5); white-space: nowrap; }
     tr:last-child td { border-bottom: none; }
@@ -92,6 +99,30 @@
     .number { font-family: var(--mono); text-align: right; }
     .pos { color: var(--grn); }
     .neg { color: var(--red); }
+
+    /* ── th ツールチップ ── */
+    th[data-tip] { cursor: help; }
+    th[data-tip]:hover::after {
+      content: attr(data-tip);
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      z-index: 200;
+      background: #0f172a;
+      color: var(--txt);
+      font-family: var(--sans);
+      font-size: 13px;
+      font-weight: 400;
+      line-height: 1.5;
+      white-space: normal;
+      width: 220px;
+      padding: 8px 12px;
+      border: 1px solid var(--bdr);
+      letter-spacing: 0;
+      text-transform: none;
+      pointer-events: none;
+      box-shadow: 0 4px 16px rgba(0,0,0,.5);
+    }
 
     /* ── バッジ ── */
     .health-badge { display: inline-block; font-family: var(--mono); font-size: 13px; padding: 4px 10px; border-radius: 2px; }
@@ -165,24 +196,30 @@
 </div>
 
 <script>
-// ── healthのスタイル ──
+// ── health スタイル ──
 function healthStyle(h) {
-  if (h === '調整なし')          return 'background:rgba(16,185,129,.15);color:var(--grn)';
-  if (h === '調整小')            return 'background:rgba(16,185,129,.10);color:#6ee7b7';
-  if (h === '調整中')            return 'background:rgba(245,158,11,.15);color:var(--amb)';
-  if (h === '調整大')            return 'background:rgba(244,63,94,.25);color:var(--red);font-weight:700;border:1px solid rgba(244,63,94,.4)';
-  if (h === '過大調整')          return 'background:rgba(244,63,94,.15);color:var(--red)';
+  if (h === '調整なし')           return 'background:rgba(16,185,129,.15);color:var(--grn)';
+  if (h === '調整小')             return 'background:rgba(16,185,129,.10);color:#6ee7b7';
+  if (h === '調整中')             return 'background:rgba(245,158,11,.15);color:var(--amb)';
+  if (h === '調整大')             return 'background:rgba(244,63,94,.25);color:var(--red);font-weight:700;border:1px solid rgba(244,63,94,.4)';
+  if (h === '過大調整')           return 'background:rgba(244,63,94,.15);color:var(--red)';
   if (h === '調整小（マイナス）') return 'background:rgba(100,116,139,.15);color:var(--mut)';
   return 'background:rgba(100,116,139,.15);color:var(--mut)';
 }
 function fmt4(v)    { return v != null ? '$' + v.toFixed(4) : '—'; }
-function fmtDiff(v) {
-  if (v == null) return '—';
-  return (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(4);
-}
+function fmtDiff(v) { return v == null ? '—' : (v >= 0 ? '+$' : '-$') + Math.abs(v).toFixed(4); }
 function fmtRatio(v)  { return v != null ? (v >= 0 ? '+' : '') + v.toFixed(1) + '%' : '—'; }
 function fmtPct(v)    { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
 function fmtGrowth(v) { return v != null ? (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%' : '—'; }
+
+// ── 投資機会スコア計算 ──
+function calcOppScore(t) {
+  const epsScore  = Math.max(0, Math.min(t.eps_ratio || 0, 500)) / 500;
+  const growScore = Math.max(0, Math.min((t.yoy_growth || 0) * 100, 300)) / 300;
+  const deviation = t.deviation_rate || 0;
+  const devBonus  = deviation > 0 ? 1.3 : 1.0;
+  return (epsScore * 0.5 + growScore * 0.5) * devBonus;
+}
 
 // ── 黒字転換フィルター ──
 let tranFilterActive = false;
@@ -222,16 +259,19 @@ function toggleTranFilter() {
       } catch (_) {}
     }));
 
-    // 3. 差分比率の大きい順（降順）にデフォルトソート
+    // 3. 差分比率の大きい順にデフォルトソート
     tickers.sort((a, b) => (b.eps_ratio || 0) - (a.eps_ratio || 0));
 
-    // 4. 投資機会・注意グループ
+    // 4. 投資機会ランキング（eps_ratio>20 または 黒字転換）
+    const rankCandidates = tickers
+      .filter(t => t.gaap_to_adj_positive || (t.eps_ratio || 0) > 20)
+      .map(t => ({ ...t, _oppScore: calcOppScore(t) }))
+      .sort((a, b) => b._oppScore - a._oppScore)
+      .slice(0, 5);
+
+    // 5. ピン表示グループ
     const oppGroup  = tickers.filter(t => (t.eps_ratio || 0) > 50 && (t.deviation_rate || 0) > 0.1);
     const warnGroup = tickers.filter(t => (t.eps_ratio || 0) < -20);
-
-    // 5. YoY成長率トップ5
-    const withGrowth = tickers.filter(t => t.yoy_growth != null);
-    const topGrowth  = [...withGrowth].sort((a,b) => b.yoy_growth - a.yoy_growth).slice(0, 5);
 
     let html = '';
 
@@ -269,17 +309,32 @@ function toggleTranFilter() {
       html += '</div>';
     }
 
-    // ── YoY成長率トップ5 カード ──
-    html += '<div class="sec">🔥 TTM調整後EPS成長率トップ5</div>';
-    html += '<div class="card" style="margin-bottom:24px"><ul class="top-list">';
-    if (topGrowth.length === 0) {
-      html += '<li class="empty" style="padding:10px 0">データなし</li>';
+    // ── 投資機会ランキング ──
+    html += '<div class="sec">🎯 投資機会ランキング — EPS調整 × 成長率 × 割安度の複合評価</div>';
+    html += '<div class="card" style="margin-bottom:24px"><ul class="opp-list">';
+    if (rankCandidates.length === 0) {
+      html += '<li class="empty" style="padding:10px 0">対象銘柄なし</li>';
     } else {
-      topGrowth.forEach(t => {
-        const col = t.yoy_growth >= 0 ? 'var(--grn)' : 'var(--red)';
-        html += `<li>
-          <span class="top-ticker"><a href="stock.html?ticker=${t.ticker}">${t.ticker} · ${t.company_name || ''}</a></span>
-          <span class="top-value" style="color:${col}">${fmtGrowth(t.yoy_growth)}</span>
+      rankCandidates.forEach((t, i) => {
+        const barPct  = Math.round(t._oppScore / 1.3 * 100);
+        const isTran  = t.gaap_to_adj_positive;
+        const tranBadge = isTran ? '<span class="sm-badge badge-tran" style="font-size:12px;padding:2px 7px">⚡黒字転換</span>' : '';
+        const devTxt  = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
+        const devCol  = (t.deviation_rate || 0) >= 0 ? 'var(--grn)' : 'var(--red)';
+        html += `<li class="opp-item">
+          <div class="opp-row1">
+            <span class="opp-rank">${i + 1}.</span>
+            <a class="opp-ticker" href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
+            <span class="opp-name">${t.company_name || ''}</span>
+            ${tranBadge}
+            <span class="opp-score-lbl">${barPct}pt</span>
+          </div>
+          <div class="opp-bar-wrap"><div class="opp-bar" style="width:${barPct}%"></div></div>
+          <div class="opp-metrics">
+            <span class="opp-m">差分比率 <strong style="color:var(--grn)">${fmtRatio(t.eps_ratio)}</strong></span>
+            <span class="opp-m">YoY成長 <strong style="color:${(t.yoy_growth||0)>=0?'var(--grn)':'var(--red)'}">${fmtGrowth(t.yoy_growth)}</strong></span>
+            <span class="opp-m">乖離率 <strong style="color:${devCol}">${devTxt}</strong></span>
+          </div>
         </li>`;
       });
     }
@@ -292,17 +347,23 @@ function toggleTranFilter() {
     html += '<button class="excel-btn" onclick="exportExcel()">⬇ Excel出力</button>';
     html += '</div>';
 
-    html += '<div class="table-wrap">';
-    html += '<table id="main-table"><thead><tr>';
-    html += '<th>ティッカー</th><th>会社名</th><th>決算日</th>';
-    html += '<th>GAAP EPS</th><th>Adj EPS</th><th>差分額</th><th>差分比率</th>';
-    html += '<th>YoY成長</th><th>乖離率</th><th>調整区分</th>';
+    html += '<div class="table-wrap"><table id="main-table"><thead><tr>';
+    html += '<th data-tip="銘柄コード。クリックで詳細画面へ">ティッカー</th>';
+    html += '<th data-tip="企業の正式名称">会社名</th>';
+    html += '<th data-tip="最新の決算申告日（SEC EDGAR基準）">決算日</th>';
+    html += '<th data-tip="一般会計原則に基づく1株利益。SBC・のれん償却等のコストを全て含む">GAAP EPS</th>';
+    html += '<th data-tip="企業が公表するNon-GAAP調整後EPS。一過性・非現金コストを除外した実力値">Adj EPS</th>';
+    html += '<th data-tip="Adj EPS − GAAP EPS。プラス＝GAAPで実力が過小評価されている可能性">差分額</th>';
+    html += '<th data-tip="差分額 ÷ |GAAP EPS| × 100。高いほどGAAPと実力の乖離が大きい">差分比率</th>';
+    html += '<th data-tip="調整後EPSの前年同期比成長率。企業の実力ベースの成長を測る">YoY成長</th>';
+    html += '<th data-tip="TANUKIの理論株価と現在株価の乖離率。プラス＝割安、マイナス＝割高">乖離率</th>';
+    html += '<th data-tip="EPS差分比率に基づく分類。調整大ほどNon-GAAP調整が大きく市場の誤認リスクが高い">調整区分</th>';
     html += '</tr></thead><tbody>';
 
     tickers.forEach(t => {
-      const isOpp  = (t.eps_ratio || 0) > 50 && (t.deviation_rate || 0) > 0.1;
-      const isTran = t.gaap_to_adj_positive;
-      const isOver = t.health === '過大調整';
+      const isOpp   = (t.eps_ratio || 0) > 50 && (t.deviation_rate || 0) > 0.1;
+      const isTran  = t.gaap_to_adj_positive;
+      const isOver  = t.health === '過大調整';
       const diffNeg = (t.eps_diff || 0) < 0;
 
       const tranBadge = isTran ? '<span class="sm-badge badge-tran">⚡黒字転換</span>' : '';
@@ -314,9 +375,9 @@ function toggleTranFilter() {
       const devTxt     = t.deviation_rate != null ? fmtPct(t.deviation_rate) : '—';
       const devStyle   = (t.deviation_rate || 0) >= 0 ? 'color:var(--grn)' : 'color:var(--red)';
 
-      const ratioSort = (t.eps_ratio      != null) ? t.eps_ratio              : -9999;
-      const growSort  = (t.yoy_growth     != null) ? t.yoy_growth  * 100      : -9999;
-      const devSort   = (t.deviation_rate != null) ? t.deviation_rate * 100   : -9999;
+      const ratioSort = t.eps_ratio      != null ? t.eps_ratio              : -9999;
+      const growSort  = t.yoy_growth     != null ? t.yoy_growth  * 100      : -9999;
+      const devSort   = t.deviation_rate != null ? t.deviation_rate * 100   : -9999;
 
       html += `<tr data-tran="${isTran ? '1' : '0'}">
         <td class="ticker-cell"><a href="stock.html?ticker=${t.ticker}">${t.ticker}</a></td>
@@ -348,12 +409,10 @@ function initDataTable() {
   const tbl = document.getElementById('main-table');
   if (!tbl) return;
 
-  // 黒字転換フィルター登録
   if ($.fn.dataTable.ext.search.indexOf(tranFilterFn) === -1) {
     $.fn.dataTable.ext.search.push(tranFilterFn);
   }
 
-  // data-sort による数値ソート
   if (!$.fn.dataTable.ext.order['dom-data-sort']) {
     $.fn.dataTable.ext.order['dom-data-sort'] = function(settings, col) {
       return this.api().column(col, { order: 'index' }).nodes().map(td => {
@@ -365,14 +424,12 @@ function initDataTable() {
 
   dtInstance = $('#main-table').DataTable({
     pageLength: 25,
-    order: [[6, 'desc']],  // 差分比率 降順
+    order: [[6, 'desc']],
     language: {
-      search: '🔍 検索:',
-      lengthMenu: '表示件数: _MENU_',
+      search: '🔍 検索:', lengthMenu: '表示件数: _MENU_',
       info: '_TOTAL_ 銘柄中 _START_〜_END_ 件',
       paginate: { previous: '‹', next: '›' },
-      emptyTable: 'データなし',
-      zeroRecords: '該当なし'
+      emptyTable: 'データなし', zeroRecords: '該当なし'
     },
     columnDefs: [
       { targets: [3,4,5,6,7,8], orderDataType: 'dom-data-sort', type: 'num' }
