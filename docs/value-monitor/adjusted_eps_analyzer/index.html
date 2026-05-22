@@ -102,27 +102,6 @@
 
     /* ── th ツールチップ ── */
     th[data-tip] { cursor: help; }
-    th[data-tip]:hover::after {
-      content: attr(data-tip);
-      position: absolute;
-      top: calc(100% + 4px);
-      left: 0;
-      z-index: 200;
-      background: #0f172a;
-      color: var(--txt);
-      font-family: var(--sans);
-      font-size: 13px;
-      font-weight: 400;
-      line-height: 1.5;
-      white-space: normal;
-      width: 220px;
-      padding: 8px 12px;
-      border: 1px solid var(--bdr);
-      letter-spacing: 0;
-      text-transform: none;
-      pointer-events: none;
-      box-shadow: 0 4px 16px rgba(0,0,0,.5);
-    }
 
     /* ── バッジ ── */
     .health-badge { display: inline-block; font-family: var(--mono); font-size: 13px; padding: 4px 10px; border-radius: 2px; }
@@ -168,6 +147,7 @@
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
 <body data-tool="eps">
+<div id="tip-box" style="display:none;position:fixed;z-index:9999;background:#0f172a;color:#e2e8f0;font-size:13px;line-height:1.6;padding:10px 14px;border:1px solid #334155;border-radius:4px;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;font-family:'DM Sans',sans-serif;font-weight:400;white-space:normal;"></div>
 <div class="shell">
   <header>
     <div class="logo">
@@ -434,6 +414,22 @@ function initDataTable() {
     columnDefs: [
       { targets: [3,4,5,6,7,8], orderDataType: 'dom-data-sort', type: 'num' }
     ]
+  });
+
+  // DataTables初期化後にth[data-tip]へイベントを付与
+  const tipBox = document.getElementById('tip-box');
+  document.querySelectorAll('#main-table th[data-tip]').forEach(th => {
+    th.addEventListener('mouseenter', () => {
+      tipBox.textContent = th.dataset.tip;
+      tipBox.style.display = 'block';
+    });
+    th.addEventListener('mousemove', e => {
+      tipBox.style.left = (e.clientX + 14) + 'px';
+      tipBox.style.top  = (e.clientY + 14) + 'px';
+    });
+    th.addEventListener('mouseleave', () => {
+      tipBox.style.display = 'none';
+    });
   });
 }
 
