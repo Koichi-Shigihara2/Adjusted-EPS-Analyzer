@@ -622,40 +622,8 @@ def get_realtime_data():
     summary += "\n--- クレジット・金融コンディション ---\n"
     hyg_hist = fetch_hist("HYG")
     lqd_hist = fetch_hist("LQD")
-    tlt_hist = fetch_hist("TLT")
-    spy_hist = fetch_hist("SPY")
     summary += format_line("HYG（ハイイールド債ETF）", hyg_hist)
     summary += format_line("LQD（投資適格債ETF）", lqd_hist)
-    summary += format_line("TLT（長期国債ETF）", tlt_hist)
-    summary += format_line("SPY（S&P500 ETF）", spy_hist)
-
-    if tlt_hist is not None and len(tlt_hist) >= 2:
-        tlt_latest = float(tlt_hist['Close'].iloc[-1])
-        tlt_prev   = float(tlt_hist['Close'].iloc[-2])
-        tlt_chg    = tlt_latest - tlt_prev
-        tlt_chg_pct = (tlt_chg / tlt_prev) * 100
-        data["TLT（長期国債ETF）"] = {
-            "value": round(tlt_latest, 2),
-            "change": round(tlt_chg, 2),
-            "change_percent": round(tlt_chg_pct, 2),
-            "date": tlt_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
-        }
-    else:
-        data["TLT（長期国債ETF）"] = None
-
-    if spy_hist is not None and len(spy_hist) >= 2:
-        spy_latest = float(spy_hist['Close'].iloc[-1])
-        spy_prev   = float(spy_hist['Close'].iloc[-2])
-        spy_chg    = spy_latest - spy_prev
-        spy_chg_pct = (spy_chg / spy_prev) * 100
-        data["SPY（S&P500 ETF）"] = {
-            "value": round(spy_latest, 2),
-            "change": round(spy_chg, 2),
-            "change_percent": round(spy_chg_pct, 2),
-            "date": spy_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
-        }
-    else:
-        data["SPY（S&P500 ETF）"] = None
 
     if hyg_hist is not None and lqd_hist is not None:
         for hist, name in [(hyg_hist, "HYG（ハイイールド債ETF）"), (lqd_hist, "LQD（投資適格債ETF）")]:
@@ -978,18 +946,14 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     # クレジット: HYG変化率 < LQD変化率 → スプレッド拡大 → リスクオフ
     credit_credit = "リスクオフ" if (hyg_chg_pct - lqd_chg_pct) < 0 else "リスクオン"
 
-    # 債券: TLT上昇 & SPY下落 → 質への逃避 → リスクオフ（structured_dataを優先、なければasset_flow_dataにフォールバック）
-    credit_bond  = "リスクオン"
-    tlt_chg_pct  = ((structured_data.get("TLT（長期国債ETF）") or {}).get("change_percent"))
-    spy_chg_pct  = ((structured_data.get("SPY（S&P500 ETF）") or {}).get("change_percent"))
-    if tlt_chg_pct is not None and spy_chg_pct is not None:
-        if tlt_chg_pct > 0.3 and spy_chg_pct < -0.5:
-            credit_bond = "リスクオフ"
-    elif asset_flow_data:
-        tlt_chg = ((asset_flow_data.get("long_bond") or {}).get("change_pct") or 0)
-        eq_chg  = ((asset_flow_data.get("equity")    or {}).get("change_pct") or 0)
-        if tlt_chg > 0.3 and eq_chg < -0.5:
-            credit_bond = "リスクオフ"
+    # 債券: asset_flow_dataのTLT(long_bond)上昇 & SPY(equity)下落 → 質への逃避 → リスクオフ
+    credit_bond = "リスクオン"
+    tlt_af = ((asset_flow_data or {}).get("long_bond") or {})
+    spy_af = ((asset_flow_data or {}).get("equity")    or {})
+    tlt_af_chg = tlt_af.get("change_pct") or 0
+    spy_af_chg = spy_af.get("change_pct") or 0
+    if tlt_af_chg > 0.3 and spy_af_chg < -0.5:
+        credit_bond = "リスクオフ"
 
     risk_off_count = [credit_stock, credit_bond, credit_credit].count("リスクオフ")
     risk_off_score = round(risk_off_count / 3 * 100)
