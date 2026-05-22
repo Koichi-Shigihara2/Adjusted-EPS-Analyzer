@@ -149,6 +149,7 @@
     .credit-badge{font-family:var(--mono);font-size:13px;letter-spacing:.06em;padding:2px 7px;border:1px solid}
     .risk-on{border-color:rgba(16,185,129,.4);color:var(--grn);background:rgba(16,185,129,.07)}
     .risk-off{border-color:rgba(244,63,94,.4);color:var(--red);background:rgba(244,63,94,.07)}
+    .risk-neutral{border-color:rgba(148,163,184,.4);color:var(--mut);background:rgba(148,163,184,.07)}
     .detail-body{font-size:13px;color:var(--txt);line-height:1.8;white-space:pre-wrap;font-family:var(--sans)}
     .detail-body::-webkit-scrollbar{width:4px}.detail-body::-webkit-scrollbar-track{background:var(--sur)}.detail-body::-webkit-scrollbar-thumb{background:var(--bdr)}
     .haiku-box{margin-top:12px;padding:8px 12px;border-left:2px solid var(--acc);background:rgba(59,130,246,.06);font-family:var(--mono);font-size:14px;color:var(--acc);letter-spacing:.06em}
@@ -604,24 +605,25 @@ function renderLegend(){const a=METRIC_DEFS.filter(m=>activeMetrics.has(m.key));
 function renderDetail(){
   const d=filteredData[selectedIdx];const pc=phaseClass(d.judgment);
   const{stock,bond,credit}=d.credit||{};
-  const riskOffCount=[stock,bond,credit].filter(v=>v==='リスクオフ').length;
-  // JSONにrisk_off_scoreがあれば優先、なければ3軸カウントから計算
-  const riskOffScore=d.credit?.risk_off_score??Math.round(riskOffCount/3*100);
-
-  // 3ゾーン判定（0-33: RISK ON, 34-66: RISK CAUTION, 67-100: RISK OFF）
-  const zone=riskOffScore<=33?'on':riskOffScore<=66?'caution':'off';
-  const riskOffColor=zone==='on'?'var(--grn)':zone==='caution'?'var(--amb)':'var(--red)';
-  const riskOffLabel=zone==='on'?'RISK ON':zone==='caution'?'RISK CAUTION':'RISK OFF';
-
-  // 確信度計算
-  let conf;
-  if(zone==='on')      conf=Math.round((34-riskOffScore)/34*100);
-  else if(zone==='caution') conf=Math.round((1-Math.abs(riskOffScore-50)/17)*100);
-  else                 conf=Math.round((riskOffScore-66)/34*100);
-  conf=Math.max(0,Math.min(100,conf));
-  const confLabel=conf>=70?'高':conf>=40?'中':'低';
-
-  const crHTML=d.credit?`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='リスクオン'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span><span style="font-family:var(--mono);margin-left:8px;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${riskOffColor}">${riskOffLabel}</span><span style="font-size:14px;font-weight:700;color:${riskOffColor}">${riskOffScore}</span><span style="font-size:11px;color:var(--mut)">/ 100</span><span style="font-size:10px;color:var(--mut);border:1px solid var(--bdr);padding:1px 5px">確信度 ${confLabel} ${conf}%</span></span></div>`:"";
+  const hasScore=d.credit?.risk_off_score!=null;
+  let crHTML="";
+  if(d.credit&&hasScore){
+    const riskOffScore=d.credit.risk_off_score;
+    // 3ゾーン判定（0-33: RISK ON, 34-66: RISK CAUTION, 67-100: RISK OFF）
+    const zone=riskOffScore<=33?'on':riskOffScore<=66?'caution':'off';
+    const riskOffColor=zone==='on'?'var(--grn)':zone==='caution'?'var(--amb)':'var(--red)';
+    const riskOffLabel=zone==='on'?'RISK ON':zone==='caution'?'RISK CAUTION':'RISK OFF';
+    // 確信度計算
+    let conf;
+    if(zone==='on')      conf=Math.round((34-riskOffScore)/34*100);
+    else if(zone==='caution') conf=Math.round((1-Math.abs(riskOffScore-50)/17)*100);
+    else                 conf=Math.round((riskOffScore-66)/34*100);
+    conf=Math.max(0,Math.min(100,conf));
+    const confLabel=conf>=70?'高':conf>=40?'中':'低';
+    crHTML=`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='リスクオン'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span><span style="font-family:var(--mono);margin-left:8px;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${riskOffColor}">${riskOffLabel}</span><span style="font-size:14px;font-weight:700;color:${riskOffColor}">${riskOffScore}</span><span style="font-size:11px;color:var(--mut)">/ 100</span><span style="font-size:10px;color:var(--mut);border:1px solid var(--bdr);padding:1px 5px">確信度 ${confLabel} ${conf}%</span></span></div>`;
+  } else if(d.credit){
+    crHTML=`<div class="credit-row"><span class="credit-badge risk-neutral">株 —</span><span class="credit-badge risk-neutral">債券 —</span><span class="credit-badge risk-neutral">クレジット —</span><span style="font-family:var(--mono);margin-left:8px;font-size:12px;color:var(--mut)">Risk-Off Score: —</span></div>`;
+  }
   document.getElementById("detailInner").innerHTML=`<div class="detail-header"><span class="detail-phase-badge ${pc}">${phaseLabel(d.judgment)}</span><span class="detail-title-text">${fmtDateFull(d.date)}</span></div>${crHTML}<div class="detail-body">${d.summary??"詳細なし"}</div>${d.haiku?`<div class="haiku-box">${d.haiku}</div>`:""}`
 }
 
@@ -837,8 +839,7 @@ async function init(){
   try{const resp=await fetch('./data/market_data.json');const json=await resp.json();
     if(Array.isArray(json)&&json.length>0){allData=json.map(d=>{
       const j=d.judgment||"不明";d.judgment=j==="曇"?"曇り":j==="晴"?"晴れ":j;
-      if(!d.credit){const s=d.summary||"";const _st=s.includes("リスクオフ")?"リスクオフ":"リスクオン";const _bo=s.includes("債券")&&s.includes("上昇")?"リスクオフ":"リスクオン";const _cr=s.includes("HYG対LQD比")&&s.includes("上昇")?"リスクオン":"リスクオフ";const _cnt=[_st,_bo,_cr].filter(v=>v==='リスクオフ').length;d.credit={stock:_st,bond:_bo,credit:_cr,risk_off_score:Math.round(_cnt/3*100)}}
-      else if(d.credit.risk_off_score==null){const _cnt=[d.credit.stock,d.credit.bond,d.credit.credit].filter(v=>v==='リスクオフ').length;d.credit.risk_off_score=Math.round(_cnt/3*100)}
+      if(!d.credit){d.credit={stock:"—",bond:"—",credit:"—",risk_off_score:null}}
       if(!d.sentiment){const vix=d.indicators?.["VIX指数"]?.value;if(vix!=null){const vs=Math.max(0,Math.min(1,(35-vix)/23))*100;const sc=Math.round(vs*.6+20);d.sentiment={score:sc,label:sc<=20?"EXTREME FEAR":sc<=35?"FEAR":sc<=50?"CAUTION":sc<=65?"NEUTRAL":sc<=80?"GREED":"EXTREME GREED",sub_scores:{vix_level:{score:Math.round(vs),weight:.25,raw:vix}}}}else{d.sentiment={score:50,label:"NEUTRAL",sub_scores:{}}}}
       return d}).sort((a,b)=>new Date(a.date)-new Date(b.date))}else{allData=makeSample()}}catch{allData=makeSample()}
   applyPeriod();renderAll()
