@@ -1926,23 +1926,55 @@ function computeScoreAsOf(asOf) {
 
   function calcSignal(ind, val) {
     if(val === null) return {score:50, w:0};
+    function lerp(v, x0,y0, x1,y1){
+      const t = Math.max(0, Math.min(1, (v-x0)/(x1-x0)));
+      return Math.round(y0 + t*(y1-y0));
+    }
     switch(ind) {
       case 'yc':
-        return {score: val<-0.5?90:val<0?70:val<0.5?40:15, w:20};
+        if(val<=-0.5) return {score:90,w:20};
+        if(val<=0.0)  return {score:lerp(val,-0.5,90,0.0,68),w:20};
+        if(val<=0.5)  return {score:lerp(val,0.0,68,0.5,28),w:20};
+        if(val<=1.5)  return {score:lerp(val,0.5,28,1.5,10),w:20};
+        return {score:10,w:20};
       case 'hy':
-        return {score: val>6?90:val>4.5?70:val>3.5?40:15, w:15};
-      case 'cbcc2':
-        return {score: val>=1500?15:val>=1300?35:val>=1100?60:85, w:10};
+        if(val<=2.5)  return {score:10,w:15};
+        if(val<=3.5)  return {score:lerp(val,2.5,10,3.5,35),w:15};
+        if(val<=4.5)  return {score:lerp(val,3.5,35,4.5,65),w:15};
+        if(val<=6.0)  return {score:lerp(val,4.5,65,6.0,88),w:15};
+        return {score:90,w:15};
+      case 'cbcc2':  // Building Permits
+        if(val<=800)  return {score:88,w:10};
+        if(val<=1100) return {score:lerp(val,800,88,1100,65),w:10};
+        if(val<=1400) return {score:lerp(val,1100,65,1400,30),w:10};
+        if(val<=1800) return {score:lerp(val,1400,30,1800,12),w:10};
+        return {score:10,w:10};
       case 'philly':
-        return {score: val<-10?88:val<0?65:val<5?35:12, w:18};
+        if(val<=-15)  return {score:88,w:18};
+        if(val<=0)    return {score:lerp(val,-15,88,0,55),w:18};
+        if(val<=10)   return {score:lerp(val,0,55,10,15),w:18};
+        return {score:12,w:18};
       case 'cfnai':
-        return {score: val<-0.7?82:val<-0.35?50:18, w:12};
+        if(val<=-0.7)  return {score:82,w:12};
+        if(val<=-0.35) return {score:lerp(val,-0.7,82,-0.35,50),w:12};
+        if(val<=0.0)   return {score:lerp(val,-0.35,50,0.0,30),w:12};
+        return {score:18,w:12};
       case 'claims':
-        return {score: val>300000?85:val>250000?60:val>215000?35:15, w:10};
-      case 'cbcc':
-        return {score: val<60?82:val<75?72:val<90?60:30, w:8};
+        if(val<=180000) return {score:10,w:10};
+        if(val<=215000) return {score:lerp(val,180000,10,215000,28),w:10};
+        if(val<=250000) return {score:lerp(val,215000,28,250000,55),w:10};
+        if(val<=300000) return {score:lerp(val,250000,55,300000,80),w:10};
+        return {score:85,w:10};
+      case 'cbcc':  // Michigan
+        if(val<=55)  return {score:82,w:8};
+        if(val<=75)  return {score:lerp(val,55,82,75,55),w:8};
+        if(val<=95)  return {score:lerp(val,75,55,95,25),w:8};
+        return {score:20,w:8};
       case 'sahm':
-        return {score: val>=0.5?88:val>=0.3?50:12, w:7};
+        if(val<=0)   return {score:10,w:7};
+        if(val<=0.3) return {score:lerp(val,0,10,0.3,40),w:7};
+        if(val<=0.5) return {score:lerp(val,0.3,40,0.5,80),w:7};
+        return {score:88,w:7};
     }
     return {score:50, w:0};
   }
