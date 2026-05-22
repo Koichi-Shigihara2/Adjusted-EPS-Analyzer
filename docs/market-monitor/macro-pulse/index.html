@@ -274,6 +274,22 @@
     .liq-card-chg-label{font-family:var(--mono);font-size:9px;color:var(--mut)}
     .liq-card-date{font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px}
     .hollow-rally-badge{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 10px;border:1px solid rgba(245,158,11,.5);background:rgba(245,158,11,.08);color:var(--amb);margin-top:10px;width:100%}
+    /* ステルス流動性カード */
+    .stealth-card{background:var(--sur2);border:1px solid var(--bdr);padding:14px 16px;display:flex;flex-direction:column;gap:8px;grid-column:1/-1;margin-top:4px}
+    .stealth-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    .stealth-title{font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase}
+    .stealth-badge{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 10px;border:1px solid}
+    .stealth-supply{color:#10b981;border-color:rgba(16,185,129,.5);background:rgba(16,185,129,.08);animation:stealth-pulse 2s ease-in-out infinite}
+    .stealth-absorb{color:#f43f5e;border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.08)}
+    .stealth-neutral{color:var(--mut);border-color:var(--bdr);background:transparent}
+    @keyframes stealth-pulse{0%,100%{opacity:1}50%{opacity:.65}}
+    .stealth-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    @media(max-width:600px){.stealth-metrics{grid-template-columns:1fr}}
+    .stealth-metric{display:flex;flex-direction:column;gap:3px}
+    .stealth-metric-label{font-family:var(--mono);font-size:8px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase}
+    .stealth-metric-val{font-family:var(--mono);font-size:18px;font-weight:700;line-height:1}
+    .stealth-metric-chg{font-family:var(--mono);font-size:10px}
+    .stealth-metric-desc{font-family:var(--mono);font-size:9px;color:var(--mut);line-height:1.4}
 
     /* ════════════════════════════════════════════════════════
        ★ v3 — 3か月先予測UI への再構成
@@ -2410,7 +2426,78 @@ function renderLiquidityCards(rows) {
       ${commentHtml}
       <div class="liq-card-date">${c.date}</div>
     </div>
-  `;}).join('');
+  `;}).join('') + renderStealthCard(rows, latest);
+}
+
+function renderStealthCard(rows, latest) {
+  const rrp  = latest.rrp              !== '' ? parseFloat(latest.rrp)              : null;
+  const tga  = latest.tga              !== '' ? parseFloat(latest.tga)              : null;
+  const rsv  = latest.reserve_balance  !== '' ? parseFloat(latest.reserve_balance)  : null;
+  const sig  = latest.stealth_signal   || 'neutral';
+
+  const rrpPrev = liqPrevVal(rows, 'rrp',             7);
+  const tgaPrev = liqPrevVal(rows, 'tga',             7);
+  const rsvPrev = liqPrevVal(rows, 'reserve_balance', 7);
+
+  function stealthChg(cur, prev, unit) {
+    if (cur === null || prev === null) return '<span style="color:var(--mut)">—</span>';
+    const diff = cur - prev;
+    const cls  = diff > 0 ? 'var(--grn)' : diff < 0 ? 'var(--red)' : 'var(--mut)';
+    const sign = diff > 0 ? '+' : '';
+    return `<span style="color:${cls};font-family:var(--mono);font-size:10px">${sign}${diff.toFixed(1)} ${unit}</span>`;
+  }
+
+  const badgeCls  = sig === 'supply' ? 'stealth-supply' : sig === 'absorb' ? 'stealth-absorb' : 'stealth-neutral';
+  const badgeTxt  = sig === 'supply' ? '▼ ステルス供給中' : sig === 'absorb' ? '▲ ステルス吸収中' : '→ 中立';
+  const sigDesc   = sig === 'supply'
+    ? 'REPO残高減少またはTGA減少 → FRBが表に出ない形で市場に流動性を供給'
+    : sig === 'absorb'
+    ? 'REPO残高増加かつTGA増加 → 市場から流動性が吸収されている'
+    : '流動性の方向性は中立';
+
+  const metrics = [
+    {
+      label: 'REPO残高 (RRPONTSYD)',
+      val:   rrp !== null ? rrp.toFixed(1) : '—',
+      unit:  'B USD',
+      chg:   stealthChg(rrp, rrpPrev, 'B'),
+      desc:  '減少 → 資金が市場に還流（ステルス供給）',
+    },
+    {
+      label: '準備預金 (WRBWFRBL)',
+      val:   rsv !== null ? rsv.toFixed(1) : '—',
+      unit:  'B USD',
+      chg:   stealthChg(rsv, rsvPrev, 'B'),
+      desc:  '増加 → 銀行システムに流動性が多い',
+    },
+    {
+      label: 'TGA残高 (WTREGEN)',
+      val:   tga !== null ? (tga / 1000).toFixed(2) : '—',
+      unit:  '兆 USD',
+      chg:   stealthChg(tga, tgaPrev, 'M'),
+      desc:  '減少 → 財務省が市場に資金放出（ステルス供給）',
+    },
+  ];
+
+  return `<div class="stealth-card">
+    <div class="stealth-header">
+      <span class="stealth-title">🕵️ ステルス流動性モニター</span>
+      <span class="stealth-badge ${badgeCls}">${badgeTxt}</span>
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--mut);line-height:1.5">${sigDesc}</div>
+    <div class="stealth-metrics">
+      ${metrics.map(m => `<div class="stealth-metric">
+        <div class="stealth-metric-label">${m.label}</div>
+        <div style="display:flex;align-items:baseline;gap:5px">
+          <div class="stealth-metric-val">${m.val}</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--mut)">${m.unit}</div>
+        </div>
+        <div class="stealth-metric-chg">${m.chg} <span style="color:var(--mut)">前週比</span></div>
+        <div class="stealth-metric-desc">${m.desc}</div>
+      </div>`).join('')}
+    </div>
+    <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px">${latest.date}</div>
+  </div>`;
 }
 
 async function loadLiquidityData() {

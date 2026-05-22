@@ -1649,12 +1649,16 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
 # ─────────────────────────────────────────────────────────────────
 #  流動性モニター CSV 更新
 #  M2 / HYスプレッド / FRBバランスシート / TGA / RRP / NET LIQUIDITY
+#  ステルス流動性 = RRPONTSYD(RRP) + WRBWFRBL(準備預金) + WTREGEN(TGA)
 #  NET LIQUIDITY = WALCL - TGA(WTREGEN) - RRP(RRPONTSYD)  [単位: 兆USD]
 # ─────────────────────────────────────────────────────────────────
-LIQUIDITY_COLUMNS = ["date", "m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity"]
+LIQUIDITY_COLUMNS = [
+    "date", "m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
+    "reserve_balance", "stealth_signal",
+]
 
 def update_liquidity_csv(target_date: date, fred) -> None:
-    """M2SL / BAMLH0A0HYM2 / WALCL / WTREGEN / RRPONTSYD を取得して 05_liquidity.csv に追記・更新する"""
+    """M2SL / BAMLH0A0HYM2 / WALCL / WTREGEN / RRPONTSYD / WRBWFRBL を取得して 05_liquidity.csv に追記・更新する"""
     if fred is None:
         logger.warning("[Liquidity] FRED not available. Skipping.")
         return
@@ -1669,8 +1673,10 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     tga_val, _ = fred_latest(fred, "WTREGEN",       target_date, lookback=14)
     if tga_val is None:
         tga_val, _ = fred_latest(fred, "FTSD",      target_date, lookback=14)
-    # RRP (RRPONTSYD): 日次, Billions USD
+    # RRP (RRPONTSYD): 日次, Billions USD — 減少=市場に流動性が戻る（ステルス供給）
     rrp_val, _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
+    # 準備預金残高 (WRBWFRBL): 週次, Billions USD — 増加=銀行に流動性が多い
+    rsv_val, _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=14)
 
     if all(v is None for v in (m2_val, hy_val, fed_val)):
         logger.warning("[Liquidity] All series returned None. Skipping.")
@@ -1700,17 +1706,38 @@ def update_liquidity_csv(target_date: date, fred) -> None:
         df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
 
     date_str = target_date.strftime("%Y-%m-%d")
+
+    # ── ステルス流動性シグナル計算 ──
+    # 前期比でRRPとTGAを比較（直近より前の最新行を使用）
+    stealth_sig = "neutral"
+    prev_rows = df[df["date"] < date_str].sort_values("date")
+    if not prev_rows.empty:
+        prev = prev_rows.iloc[-1]
+        prev_rrp = float(prev["rrp"]) if prev.get("rrp", "") != "" else None
+        prev_tga = float(prev["tga"]) if prev.get("tga", "") != "" else None
+        rrp_dec = rrp_val is not None and prev_rrp is not None and rrp_val < prev_rrp
+        tga_dec = tga_val is not None and prev_tga is not None and tga_val < prev_tga
+        rrp_inc = rrp_val is not None and prev_rrp is not None and rrp_val > prev_rrp
+        tga_inc = tga_val is not None and prev_tga is not None and tga_val > prev_tga
+        if rrp_dec or tga_dec:
+            stealth_sig = "supply"
+        elif rrp_inc and tga_inc:
+            stealth_sig = "absorb"
+
     new_row = {
-        "date":          date_str,
-        "m2":            str(round(m2_val,  4)) if m2_val  is not None else "",
-        "hy_spread":     str(round(hy_val,  4)) if hy_val  is not None else "",
-        "fed_balance":   str(round(fed_val, 4)) if fed_val is not None else "",
-        "tga":           str(round(tga_val, 4)) if tga_val is not None else "",
-        "rrp":           str(round(rrp_val, 4)) if rrp_val is not None else "",
-        "net_liquidity": str(net_liq)            if net_liq is not None else "",
+        "date":             date_str,
+        "m2":               str(round(m2_val,  4)) if m2_val  is not None else "",
+        "hy_spread":        str(round(hy_val,  4)) if hy_val  is not None else "",
+        "fed_balance":      str(round(fed_val, 4)) if fed_val is not None else "",
+        "tga":              str(round(tga_val, 4)) if tga_val is not None else "",
+        "rrp":              str(round(rrp_val, 4)) if rrp_val is not None else "",
+        "net_liquidity":    str(net_liq)            if net_liq is not None else "",
+        "reserve_balance":  str(round(rsv_val, 4)) if rsv_val is not None else "",
+        "stealth_signal":   stealth_sig,
     }
 
-    update_cols = ["m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity"]
+    update_cols = ["m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
+                   "reserve_balance", "stealth_signal"]
     if date_str in df["date"].values:
         idx = df.index[df["date"] == date_str][0]
         for col in update_cols:
@@ -1725,7 +1752,8 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     logger.info(
         f"[Liquidity] Saved {date_str}: "
         f"m2={new_row['m2']} fed={new_row['fed_balance']} "
-        f"tga={new_row['tga']} rrp={new_row['rrp']} net_liq={new_row['net_liquidity']}"
+        f"tga={new_row['tga']} rrp={new_row['rrp']} net_liq={new_row['net_liquidity']} "
+        f"rsv={new_row['reserve_balance']} stealth={stealth_sig}"
     )
 
 # ─────────────────────────────────────────────────────────────────
