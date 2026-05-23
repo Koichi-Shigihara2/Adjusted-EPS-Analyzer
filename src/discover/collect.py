@@ -47,7 +47,7 @@ def fetch_news(ticker: str) -> list:
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 5,
-        "from": (datetime.now(JST) - timedelta(days=1)).strftime("%Y-%m-%d"),
+        "from": (datetime.now(JST) - timedelta(days=2)).strftime("%Y-%m-%d"),
         "excludeDomains": "seekingalpha.com,fool.com,benzinga.com,nypost.com,dailymail.co.uk,thesun.co.uk,tmz.com",
         "apiKey": NEWS_API_KEY,
     }
@@ -145,12 +145,16 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
 
 def classify_news_with_grok_search(ticker: str, company: str) -> dict:
     """NEWS_APIで記事が取れない場合のGrokによる代替検索"""
-    prompt = f"""{company}（{ticker}）に関する直近24時間の重要ニュースを
+    prompt = f"""{company}（{ticker}）に関する直近48時間（週末含む）のニュースを
 web検索で調べてください。
 
-投資家として重要なニュース（決算・契約・製品・規制・人事等）が
-あれば以下のJSON形式で回答してください。
-重要なニュースがない場合は items を空にしてください。
+以下のカテゴリに該当するニュースがあれば（軽微なものも含む）JSON形式で回答してください：
+- 決算・業績・ガイダンス
+- 大型契約・提携・買収
+- 製品発表・承認・規制
+- 株価に影響しうる経営陣コメント
+
+なければ items を空にしてください。
 
 {{
   "items": [
