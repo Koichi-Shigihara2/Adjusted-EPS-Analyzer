@@ -16,7 +16,8 @@
     { key: 'eps',    label: 'EPS Analyzer',      href: BASE + '/value-monitor/adjusted_eps_analyzer/' },
     { key: 'mp',     label: 'Market Pulse',      href: BASE + '/market-monitor/market-pulse/' },
     { key: 'macro',  label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
-    { key: 'score',  label: 'TANUKI SCORE',      href: BASE + '/integrated-dashboard/' }
+    { key: 'score',    label: 'TANUKI SCORE',      href: BASE + '/integrated-dashboard/' },
+    { key: 'discover', label: 'DISCOVER',          href: BASE + '/discover/' }
   ];
 
   function build(activeKey) {

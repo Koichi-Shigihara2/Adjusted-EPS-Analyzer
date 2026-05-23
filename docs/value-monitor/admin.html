@@ -204,6 +204,7 @@
     <button class="tab" onclick="switchTab('fcf', this)">💰 FCF転換率</button>
     <button class="tab" onclick="switchTab('workflows', this)">🚀 実行</button>
     <button class="tab" onclick="switchTab('status', this)">📊 ステータス</button>
+    <button class="tab" onclick="switchTab('discover', this)">🔍 Discover設定</button>
   </div>
 
   <!-- ═══════════════════════════════════════ -->
@@ -740,6 +741,36 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════ -->
+  <!-- Tab: Discover設定                       -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="tab-content" id="tab-discover">
+    <div class="action-bar">
+      <button class="btn primary" id="saveDiscoverBtn" onclick="saveDiscoverConfig()" disabled>💾 Discover設定を保存</button>
+      <span id="discoverMsg" class="result-msg"></span>
+    </div>
+
+    <h3 class="section-title">① 銘柄区分・メモ管理</h3>
+    <div class="table-wrap">
+      <table id="discoverTable">
+        <thead>
+          <tr>
+            <th>ティッカー</th>
+            <th>区分</th>
+            <th style="width:40%">メモ</th>
+          </tr>
+        </thead>
+        <tbody id="discoverTableBody">
+          <tr><td colspan="3" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+    <h3 class="section-title">② 新規候補 — Grok発見銘柄</h3>
+    <div id="discoverCandidates" style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">接続後に表示されます</div>
+  </div>
+
 </div><!-- /shell -->
 
 <script>
@@ -928,7 +959,7 @@ async function connect() {
       if (el) el.disabled = false;
     });
     document.getElementById('settingsTicker').disabled = false;
-    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles()]);
+    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles(), loadDiscoverTab()]);
   } catch(e) {
     alert('接続エラー: ' + e.message);
   }
@@ -941,6 +972,7 @@ function switchTab(name, btn) {
   btn.classList.add('active');
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'status') loadStatusTab();
+  if (name === 'discover') loadDiscoverTab();
 }
 function toggleAll(cb) {
   document.querySelectorAll('.ticker-check').forEach(c => c.checked = cb.checked);
@@ -2385,6 +2417,165 @@ async function runWorkflow(workflowFile, inputs, resultId) {
   } finally {
     btn.disabled = false; btn.innerHTML = '▶ 実行';
   }
+}
+
+// ════════════════════════════════════
+// Discover設定タブ
+// ════════════════════════════════════
+const DISCOVER_CONFIG_PATH  = 'config/discover_config.json';
+const DISCOVER_REPORT_PATH  = 'docs/discover/data/daily_report.json';
+const DISCOVER_CATEGORIES   = ['保有中', '監視中', '様子見', '休眠'];
+
+let discoverConfig = null;
+let discoverConfigSha = null;
+
+async function loadDiscoverTab() {
+  try {
+    const [cfgRes, reportRes, yamlRes] = await Promise.allSettled([
+      fetchFile(DISCOVER_CONFIG_PATH),
+      fetchFile(DISCOVER_REPORT_PATH),
+      fetchFile(YAML_PATH),
+    ]);
+
+    // Config
+    if (cfgRes.status === 'fulfilled') {
+      discoverConfig    = JSON.parse(cfgRes.value.content);
+      discoverConfigSha = cfgRes.value.sha;
+    } else {
+      discoverConfig = { tickers: {}, candidates: [] };
+      discoverConfigSha = null;
+    }
+
+    // Ticker list (from tickers.yaml for the full list)
+    let allTickers = tickerList.length ? tickerList : [];
+    if (yamlRes.status === 'fulfilled') {
+      allTickers = parseYaml(yamlRes.value.content);
+    }
+
+    renderDiscoverTable(allTickers);
+
+    // Candidates from daily_report
+    let candidates = [];
+    if (reportRes.status === 'fulfilled') {
+      const report = JSON.parse(reportRes.value.content);
+      candidates = report.candidates || [];
+    }
+    renderDiscoverCandidates(candidates);
+
+    document.getElementById('saveDiscoverBtn').disabled = false;
+
+  } catch(e) {
+    console.error('Discover読み込みエラー:', e);
+  }
+}
+
+function renderDiscoverTable(allTickers) {
+  const tbody = document.getElementById('discoverTableBody');
+  const cfgTickers = discoverConfig?.tickers || {};
+
+  // allTickersにconfigの銘柄も加える（configにのみある銘柄を漏らさないため）
+  const merged = [...new Set([...allTickers, ...Object.keys(cfgTickers)])];
+
+  tbody.innerHTML = merged.map(ticker => {
+    const info = cfgTickers[ticker] || { category: '監視中', memo: '' };
+    const catOptions = DISCOVER_CATEGORIES.map(c =>
+      `<option value="${c}" ${info.category === c ? 'selected' : ''}>${c}</option>`
+    ).join('');
+    return `<tr>
+      <td><a class="mono" href="../tanuki_valuation/stock.html?ticker=${ticker}" style="color:var(--acc);text-decoration:none" target="_blank">${ticker}</a></td>
+      <td>
+        <select class="form-input discover-cat" data-ticker="${ticker}" style="width:100px;padding:5px 8px">
+          ${catOptions}
+        </select>
+      </td>
+      <td>
+        <textarea class="form-input discover-memo" data-ticker="${ticker}" rows="2"
+          style="width:100%;resize:vertical;font-family:var(--sans);font-size:12px"
+          placeholder="メモ...">${escAttr(info.memo || '')}</textarea>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function renderDiscoverCandidates(candidates) {
+  const el = document.getElementById('discoverCandidates');
+  if (!candidates.length) {
+    el.innerHTML = '<span style="color:var(--mut)">候補データなし（次回Discover実行後に表示）</span>';
+    return;
+  }
+  el.innerHTML = `<div style="display:flex;flex-direction:column;gap:10px">` +
+    candidates.map(c => `
+      <div style="background:var(--sur);border:1px solid var(--bdr);padding:14px 16px;display:flex;align-items:flex-start;gap:14px">
+        <div style="flex:1">
+          <div style="font-family:var(--mono);font-size:15px;font-weight:700;color:#06b6d4">${escHtml(c.ticker||'?')}</div>
+          <div style="font-size:12px;color:var(--sub);margin-bottom:6px">${escHtml(c.company||'')} · ${escHtml(c.sector||'')}</div>
+          <div style="font-size:13px;color:var(--txt);margin-bottom:4px">${escHtml(c.reason||'')}</div>
+          ${c.risk ? `<div style="font-size:11px;color:var(--amb)">⚠️ ${escHtml(c.risk)}</div>` : ''}
+        </div>
+        <button class="btn success" onclick="addCandidateToWatch('${escAttr(c.ticker)}','${escAttr(c.company||'')}')">+ 監視リストに追加</button>
+      </div>
+    `).join('') + `</div>`;
+}
+
+async function addCandidateToWatch(ticker, company) {
+  if (!discoverConfig) return;
+  if (discoverConfig.tickers[ticker]) {
+    alert(`${ticker} はすでに登録されています`);
+    return;
+  }
+  discoverConfig.tickers[ticker] = { category: '監視中', memo: company };
+  discoverConfig.last_updated = new Date().toISOString().slice(0, 10);
+
+  try {
+    const content = JSON.stringify(discoverConfig, null, 2) + '\n';
+    const res = await commitFile(DISCOVER_CONFIG_PATH, content,
+      `feat(discover): 候補銘柄 ${ticker} を監視リストに追加`, discoverConfigSha);
+    discoverConfigSha = res.content.sha;
+    showResult('discoverMsg', 'success', `✓ ${ticker} を監視リストに追加しました`);
+    await loadDiscoverTab();
+  } catch(e) {
+    showResult('discoverMsg', 'error', `追加失敗: ${e.message}`);
+  }
+}
+
+async function saveDiscoverConfig() {
+  if (!discoverConfig) return;
+  const btn = document.getElementById('saveDiscoverBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>保存中...';
+
+  // テーブルから値を読み取る
+  document.querySelectorAll('.discover-cat').forEach(sel => {
+    const t = sel.dataset.ticker;
+    if (!discoverConfig.tickers[t]) discoverConfig.tickers[t] = {};
+    discoverConfig.tickers[t].category = sel.value;
+  });
+  document.querySelectorAll('.discover-memo').forEach(ta => {
+    const t = ta.dataset.ticker;
+    if (!discoverConfig.tickers[t]) discoverConfig.tickers[t] = {};
+    discoverConfig.tickers[t].memo = ta.value;
+  });
+  discoverConfig.last_updated = new Date().toISOString().slice(0, 10);
+
+  try {
+    const content = JSON.stringify(discoverConfig, null, 2) + '\n';
+    const res = await commitFile(DISCOVER_CONFIG_PATH, content,
+      'feat(discover): 銘柄区分・メモ更新', discoverConfigSha);
+    discoverConfigSha = res.content.sha;
+    showResult('discoverMsg', 'success', '✓ Discover設定を保存しました');
+  } catch(e) {
+    showResult('discoverMsg', 'error', `保存失敗: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '💾 Discover設定を保存';
+  }
+}
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function escAttr(s) {
+  return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');
 }
 </script>
   <script src="../common/site-nav.js"></script>
