@@ -265,7 +265,7 @@ function classify(f, t, stock) {
   if (f >= 50) {
     if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
     if (upside != null && upside > 20 && t >= 50)     return 'BUY';
-    if (upside != null && upside > 0  && t < 50)      return 'WATCH';
+    if (upside != null && upside > 0)                  return 'WATCH';
     return 'HOLD';
   }
 
@@ -291,7 +291,7 @@ function mktMessage(fg) {
 
 const CAT_META = {
   BUY:  { label:'BUY',  icon:'🟢', color:'#22c55e', cls:'buy',       badge:'badge-BUY',  desc:'ファンダ≥50 · 割安(>10%) · タイミング≥50 — 今すぐ仕込む' },
-  WATCH:{ label:'WATCH',icon:'🟡', color:'#eab308', cls:'watch-cat', badge:'badge-WATCH', desc:'ファンダ≥50 · 割安(>0%) · タイミング待ち — 市場が恐怖になれば即買い' },
+  WATCH:{ label:'WATCH',icon:'🟡', color:'#eab308', cls:'watch-cat', badge:'badge-WATCH', desc:'ファンダ≥50 · 割安(0-20%) — 購入候補ウォッチリスト' },
   HOLD: { label:'HOLD', icon:'🔵', color:'#3b82f6', cls:'hold',      badge:'badge-HOLD',  desc:'ファンダ良好 · 許容範囲内 — 保有継続・新規不要' },
   TRIM: { label:'TRIM', icon:'🟠', color:'#f97316', cls:'trim',      badge:'badge-TRIM',  desc:'ファンダ良好 · 割高(-30%超) · 陶酔期以降 — 一部利確検討' },
   SELL: { label:'SELL', icon:'🔴', color:'#ef4444', cls:'sell',      badge:'badge-SELL',  desc:'ファンダ劣化 または 長期下落トレンド — 保有再考' },
