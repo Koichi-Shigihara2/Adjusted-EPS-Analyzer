@@ -41,7 +41,7 @@ if _current_dir not in sys.path:
     sys.path.insert(0, _current_dir)
 
 from typing import Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 
 from calculator import (
     calculate_wacc, WACCResult,
@@ -645,7 +645,7 @@ class KoichiValuationCalculator:
             "alpha_was_capped": alpha_result.was_capped,
             "future_values": future_values,
             "upside_percent": round(upside_percent, 1),
-            "calculation_date": datetime.now().strftime("%Y-%m-%d"),
+            "calculation_date": datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%dT%H:%M:%S+09:00"),
             "formula": f"Koichi式 v{self.VERSION}（動的WACC + {dcf_type} DCF + FCFベース自動判定 + 成長オプション）",
             "dcf_type": dcf_type,
 

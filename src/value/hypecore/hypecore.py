@@ -11,7 +11,7 @@ HypeCore PoC v2 - src/value/hypecore/poc.py
 
 import json
 import warnings
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import numpy as np
@@ -866,10 +866,12 @@ def run_poc(ticker: str = "PLTR") -> dict:
             "price_iv_ratio":     safe(row.get("price_iv_ratio")),
         })
 
+    JST = timezone(timedelta(hours=9))
     result = {
-        "ticker":    ticker,
-        "generated": date.today().isoformat(),
-        "monthly":   out,
+        "ticker":       ticker,
+        "generated":    date.today().isoformat(),
+        "generated_at": datetime.now(JST).strftime("%Y-%m-%dT%H:%M:%S+09:00"),
+        "monthly":      out,
     }
     out_path = _OUT_DIR / f"{ticker}_poc.json"
     with open(out_path, "w", encoding="utf-8") as f:

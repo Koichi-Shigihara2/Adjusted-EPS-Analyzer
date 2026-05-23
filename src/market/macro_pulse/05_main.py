@@ -24,7 +24,7 @@ MACRO PULSE — Economic Indicators Auto-Update  v6.0
 """
 
 import os, sys, time, json, logging, argparse, traceback, re
-from datetime import datetime, timedelta, date
+from datetime import datetime, timedelta, date, timezone
 from io import StringIO
 
 import pandas as pd
@@ -1714,7 +1714,8 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     else:
         df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
 
-    date_str = target_date.strftime("%Y-%m-%d")
+    JST = timezone(timedelta(hours=9))
+    date_str = datetime.now(JST).strftime("%Y-%m-%dT%H:%M:%S+09:00")
 
     # ── ステルス流動性シグナル計算 ──
     # RRP減少 OR TGA減少 → supply（ステルス供給）

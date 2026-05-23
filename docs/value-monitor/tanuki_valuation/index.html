@@ -584,12 +584,12 @@ async function loadTickers() {
 function toJST(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
-  if (isNaN(d)) return dateStr.slice(0, 10);
+  if (isNaN(d)) return '—';
   return d.toLocaleString('ja-JP', {
     timeZone: 'Asia/Tokyo',
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit'
-  });
+  }) + ' JST';
 }
 
 loadTickers();

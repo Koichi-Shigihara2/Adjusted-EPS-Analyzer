@@ -193,12 +193,12 @@ let filterStage='all', filterRec='all', searchQ='';
 function toJST(dateStr) {
   if (!dateStr) return '—';
   const d = new Date(dateStr);
-  if (isNaN(d)) return String(dateStr).slice(0, 10);
+  if (isNaN(d)) return '—';
   return d.toLocaleString('ja-JP', {
     timeZone: 'Asia/Tokyo',
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit'
-  });
+  }) + ' JST';
 }
 
 async function loadAll(){
@@ -206,7 +206,7 @@ async function loadAll(){
     ALL_TICKERS.map(t=>fetch(`data/${t}_poc.json`).then(r=>r.ok?r.json():null).catch(()=>null))
   );
   allRows=[];
-  let latestMonth='';
+  let latestGeneratedAt='';
   for(let i=0;i<ALL_TICKERS.length;i++){
     const t=ALL_TICKERS[i];
     const data=results[i].status==='fulfilled'?results[i].value:null;
@@ -214,7 +214,7 @@ async function loadAll(){
     const m=data.monthly, lat=m[m.length-1], prev=m[m.length-2];
     const lc=detectLifecycle(data);
     const rec=getRec(lat,prev);
-    if(lat.month&&lat.month>latestMonth) latestMonth=lat.month;
+    if(data.generated_at&&data.generated_at>latestGeneratedAt) latestGeneratedAt=data.generated_at;
     allRows.push({
       ticker:t,
       lc, lcLabel:LC_LABEL[lc]||lc,
@@ -230,9 +230,9 @@ async function loadAll(){
       peak:lat.from_peak??null,
     });
   }
-  if(latestMonth){
+  if(latestGeneratedAt){
     const el=document.getElementById('last-updated');
-    if(el) el.textContent=latestMonth;
+    if(el) el.textContent=toJST(latestGeneratedAt);
   }
   renderTable();
 }
