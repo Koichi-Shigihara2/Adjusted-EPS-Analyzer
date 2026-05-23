@@ -383,10 +383,41 @@ async function loadCfData(d) {
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) throw new Error('quarterly not found');
     const json = await res.json();
-    let records = Array.isArray(json) ? json : (json.data || json.records || []);
-    records = records.filter(r => r.is_annual === false || r.is_annual === 'false');
-    records = records.slice(-8);
-    if (records.length === 0) throw new Error('no quarterly data');
+    const fields = json.fields;
+    if (!fields) throw new Error('no fields');
+
+    function getQ(key) {
+      return (fields[key] || [])
+        .filter(e => e.is_annual === false)
+        .sort((a, b) => a.end.localeCompare(b.end))
+        .slice(-8);
+    }
+
+    const ocfArr   = getQ('OCF');
+    const capexArr = getQ('CapEx');
+    const revArr   = getQ('Revenue');
+    const sbcArr   = getQ('SBC');
+    const daArr    = getQ('DA');
+
+    if (ocfArr.length === 0) throw new Error('no quarterly OCF data');
+
+    const endSet = [...new Set(ocfArr.map(e => e.end))];
+
+    function valByEnd(arr, end) {
+      const e = arr.find(x => x.end === end);
+      return e ? e.val : null;
+    }
+
+    const records = endSet.map(end => ({
+      end,
+      label:   end.slice(0, 7),
+      OCF:     valByEnd(ocfArr,   end),
+      CapEx:   valByEnd(capexArr, end),
+      Revenue: valByEnd(revArr,   end),
+      SBC:     valByEnd(sbcArr,   end),
+      DA:      valByEnd(daArr,    end),
+    }));
+
     renderCfCharts(records);
   } catch (e) {
     renderCfFallback(d);
@@ -397,25 +428,25 @@ function renderCfCharts(records) {
   const section = document.getElementById('cf-waterfall-section');
   if (!section) return;
 
-  const labels = records.map(r => r.period || r.label || '');
+  const labels = records.map(r => r.label);
   const toB = v => v != null ? v / 1e9 : null;
 
-  const ocf      = records.map(r => toB(r.fields?.OCF));
-  const capexNeg = records.map(r => r.fields?.CapEx != null ? -toB(r.fields.CapEx) : null);
+  const ocf      = records.map(r => toB(r.OCF));
+  const capexNeg = records.map(r => r.CapEx != null ? -toB(r.CapEx) : null);
   const fcf      = records.map(r => {
-    const o = r.fields?.OCF, c = r.fields?.CapEx;
+    const o = r.OCF, c = r.CapEx;
     return (o != null && c != null) ? toB(o - c) : null;
   });
   const fcfMargin = records.map(r => {
-    const o = r.fields?.OCF, c = r.fields?.CapEx, rv = r.fields?.Revenue;
+    const o = r.OCF, c = r.CapEx, rv = r.Revenue;
     return (rv > 0 && o != null && c != null) ? ((o - c) / rv * 100) : null;
   });
   const sbcPct = records.map(r => {
-    const s = r.fields?.SBC, rv = r.fields?.Revenue;
+    const s = r.SBC, rv = r.Revenue;
     return (rv > 0 && s != null) ? (s / rv * 100) : null;
   });
   const daPct = records.map(r => {
-    const da = r.fields?.DA, rv = r.fields?.Revenue;
+    const da = r.DA, rv = r.Revenue;
     return (rv > 0 && da != null) ? (da / rv * 100) : null;
   });
 
