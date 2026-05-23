@@ -370,12 +370,17 @@ def main():
         for r in result["skip_reasons"]:
             print(f"    - {r}")
 
-    # 通知
-    if not args.dry_run:
-        from notify import send_signal
-        send_signal(result, cfg)
+    # ENTRYシグナル出力（news_bot.pyが受け取り通知）
+    if result["action"] == "ENTRY" and pd and sr:
+        print(
+            f"ENTRY_SIGNAL: ticker={ticker} "
+            f"impact={sr['score']} "
+            f"analysts={pd['analysts']} "
+            f"inst_pct={pd['inst_ownership']} "
+            f"drop={pd['drop_from_high']}"
+        )
 
-        # 状態更新（ENTRYの場合のみ）
+    if not args.dry_run:
         if result["action"] == "ENTRY":
             state["open_position"] = {
                 "ticker":      ticker,
@@ -383,9 +388,9 @@ def main():
                 "entry_price": pd["current_price"] if pd else None,
             }
             save_state(state)
-            print("\n✅ エントリー候補をDiscordに通知しました。Moomooで手動発注してください。")
+            print("\n✅ エントリー候補 — Moomooで手動発注してください。")
         else:
-            print(f"\n⏭ スキップ。Discordに通知しました。")
+            print(f"\n⏭ スキップ（{result['action']}）。")
     else:
         print("\n[DRY RUN] 通知・状態更新はスキップされました。")
 
