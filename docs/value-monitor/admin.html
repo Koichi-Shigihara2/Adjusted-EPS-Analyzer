@@ -2797,9 +2797,16 @@ async function savePortfolio() {
 
   try {
     const content = JSON.stringify(portfolioConfig, null, 2) + '\n';
-    const res = await commitFile(PORTFOLIO_PATH, content,
-      'feat(portfolio): ポートフォリオ更新', portfolioConfigSha);
-    portfolioConfigSha = res.content.sha;
+    const result = await commitMultipleFiles(
+      [
+        { path: PORTFOLIO_PATH,                           content },
+        { path: 'docs/portfolio/data/portfolio.json',     content },
+      ],
+      'feat(portfolio): ポートフォリオ更新'
+    );
+    // 次回保存のためにSHAを更新
+    const { content: refreshed, sha: newSha } = await fetchFile(PORTFOLIO_PATH);
+    portfolioConfigSha = newSha;
     const totalPos = Object.values(portfolioConfig.brokers)
       .reduce((sum, b) => sum + Object.keys(b.positions || {}).length, 0);
     showResult('portfolioMsg', 'success',
