@@ -73,6 +73,13 @@
 
     .no-news{font-family:var(--mono);font-size:12px;color:var(--mut);padding:10px 18px 14px}
 
+    /* ── カード折りたたみ ── */
+    .ticker-card[data-collapsed] .ticker-card-head{cursor:pointer;user-select:none}
+    .card-toggle-icon{font-family:var(--mono);font-size:11px;color:var(--mut);padding-left:8px;flex-shrink:0}
+    .low-toggle{display:block;background:none;border:1px solid var(--bdr);color:var(--mut);font-family:var(--mono);font-size:10px;letter-spacing:.05em;padding:5px 12px;cursor:pointer;margin-top:4px;text-align:left;transition:color .2s,border-color .2s}
+    .low-toggle:hover{color:var(--acc);border-color:var(--acc)}
+    .low-items{display:flex;flex-direction:column;gap:8px;margin-top:4px}
+
     /* ── 候補カード ── */
     .cand-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px}
     .cand-card{background:var(--sur);border:1px solid var(--bdr);padding:18px}
@@ -161,13 +168,23 @@ async function loadData() {
       const items = classified.items || [];
       const summary = classified.summary || '';
 
-      html += `<div class="ticker-card">
-        <div class="ticker-card-head">
+      const cardId = 'card-' + ticker.replace(/[^A-Za-z0-9]/g, '-');
+      const lowId  = 'low-'  + ticker.replace(/[^A-Za-z0-9]/g, '-');
+
+      const highMedItems = items.filter(i => i.importance !== '低');
+      const lowItems     = items.filter(i => i.importance === '低');
+      const allLow = items.length > 0 && highMedItems.length === 0;
+      const shouldCollapse = imp === '低' && (items.length === 0 || allLow);
+
+      html += `<div class="ticker-card" id="${cardId}"${shouldCollapse ? ' data-collapsed=""' : ''}>
+        <div class="ticker-card-head"${shouldCollapse ? ` onclick="toggleCard('${cardId}')"` : ''}>
           <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
           <span class="tc-cat cat-${cat}">${cat}</span>
           <span class="tc-imp imp-${imp}">${imp}</span>
           <span class="tc-summary">${summary}</span>
-        </div>`;
+          ${shouldCollapse ? '<span class="card-toggle-icon">▶</span>' : ''}
+        </div>
+        <div class="ticker-card-body"${shouldCollapse ? ' style="display:none"' : ''}>`;
 
       if (memo) {
         html += `<div class="tc-memo">📝 ${memo}</div>`;
@@ -175,7 +192,8 @@ async function loadData() {
 
       if (items.length > 0) {
         html += '<div class="news-items">';
-        for (const item of items) {
+
+        for (const item of highMedItems) {
           const c = item.category || '一般';
           html += `<div class="news-item">
             <div class="news-item-head">
@@ -186,12 +204,30 @@ async function loadData() {
             <div class="news-sum">${escHtml(item.summary || '')}</div>
           </div>`;
         }
+
+        if (lowItems.length > 0) {
+          html += `<button class="low-toggle" onclick="toggleLow(this,'${lowId}')">▼ 低重要度ニュースを表示（${lowItems.length}件）</button>
+          <div class="low-items" id="${lowId}" style="display:none">`;
+          for (const item of lowItems) {
+            const c = item.category || '一般';
+            html += `<div class="news-item">
+              <div class="news-item-head">
+                <span class="news-cat cat-${c}">${c}</span>
+                <span class="news-imp imp-${item.importance} sm">${item.importance}</span>
+                <span class="news-title">${escHtml(item.title || '')}</span>
+              </div>
+              <div class="news-sum">${escHtml(item.summary || '')}</div>
+            </div>`;
+          }
+          html += '</div>';
+        }
+
         html += '</div>';
       } else {
         html += `<div class="no-news">直近24時間の重要ニュースなし</div>`;
       }
 
-      html += '</div>';
+      html += '</div></div>';
     }
 
     if (sorted.length === 0) {
@@ -234,6 +270,34 @@ async function loadData() {
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleCard(cardId) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  const body = card.querySelector('.ticker-card-body');
+  const icon = card.querySelector('.card-toggle-icon');
+  const collapsed = card.hasAttribute('data-collapsed');
+  if (collapsed) {
+    card.removeAttribute('data-collapsed');
+    body.style.display = '';
+    if (icon) icon.textContent = '▼';
+  } else {
+    card.setAttribute('data-collapsed', '');
+    body.style.display = 'none';
+    if (icon) icon.textContent = '▶';
+  }
+}
+
+function toggleLow(btn, id) {
+  const div = document.getElementById(id);
+  if (!div) return;
+  const hidden = div.style.display === 'none';
+  div.style.display = hidden ? '' : 'none';
+  const n = div.querySelectorAll('.news-item').length;
+  btn.textContent = hidden
+    ? '▲ 低重要度ニュースを折りたたむ'
+    : '▼ 低重要度ニュースを表示（' + n + '件）';
 }
 
 loadData();

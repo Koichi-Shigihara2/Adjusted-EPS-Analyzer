@@ -29,11 +29,12 @@ def fetch_news(ticker: str, company_name: str) -> list:
         return []
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": f"{ticker} OR {company_name}",
+        "q": f'"{ticker}" AND (stock OR earnings OR revenue OR contract OR FDA OR AI OR acquisition)',
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 5,
         "from": (datetime.now(JST) - timedelta(days=1)).strftime("%Y-%m-%d"),
+        "excludeDomains": "nypost.com,dailymail.co.uk,thesun.co.uk,tmz.com",
         "apiKey": NEWS_API_KEY,
     }
     try:
@@ -108,19 +109,23 @@ def classify_news(ticker: str, articles: list) -> dict:
     return {"items": [], "summary": "分類失敗"}
 
 
-def explore_candidates() -> list:
+def explore_candidates(existing_tickers: list) -> list:
     if not XAI_API_KEY:
         return []
 
-    prompt = """
+    existing_str = ", ".join(existing_tickers)
+    prompt = f"""
 以下の条件を満たす米国株の新規投資候補を3〜5銘柄探してください：
 - AI・宇宙・医療・エネルギー転換等の成長分野
 - 機関投資家の保有比率が増加傾向
 - 売上成長率20%以上
 - まだ一般的に広く知られていない（時価総額100億〜1000億ドル程度）
 
+以下の銘柄は既に監視リストに登録済みのため除外してください：
+{existing_str}
+
 各銘柄について以下のJSON形式で回答してください（コードブロック不要）：
-{"candidates": [{"ticker": "XXXX", "company": "会社名", "sector": "セクター", "reason": "注目理由（100字以内）", "risk": "主なリスク（50字以内）"}]}
+{{"candidates": [{{"ticker": "XXXX", "company": "会社名", "sector": "セクター", "reason": "注目理由（100字以内）", "risk": "主なリスク（50字以内）"}}]}}
 """
     try:
         text = call_grok(prompt, max_tokens=1000)
@@ -157,7 +162,8 @@ def main():
         }
 
     print("新規候補探索中...")
-    candidates = explore_candidates()
+    existing = list(config.get("tickers", {}).keys())
+    candidates = explore_candidates(existing)
 
     report = {
         "generated_at": now_jst.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
