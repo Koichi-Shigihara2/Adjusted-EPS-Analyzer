@@ -379,7 +379,7 @@ const fmtB = (n) => {
 
 async function loadCfData(d) {
   try {
-    const url = `../../../common/sec_data/normalized/${ticker}_quarterly_normalized.json`;
+    const url = `/On-a-journey/common/sec_data/normalized/${ticker}_quarterly_normalized.json`;
     const res = await fetch(url, { cache: 'no-cache' });
     if (!res.ok) throw new Error('quarterly not found');
     const json = await res.json();
