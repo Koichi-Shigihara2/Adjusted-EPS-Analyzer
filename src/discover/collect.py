@@ -24,17 +24,32 @@ def load_config() -> dict:
         return json.load(f)
 
 
-def fetch_news(ticker: str, company_name: str) -> list:
+def get_company_name(ticker: str) -> str:
+    try:
+        path = Path("docs/value-monitor/tanuki_valuation/data/tickers.json")
+        with open(path) as f:
+            tickers = json.load(f)
+        for t in tickers:
+            if t.get("ticker") == ticker:
+                return t.get("name", ticker)
+    except Exception:
+        pass
+    return ticker
+
+
+def fetch_news(ticker: str) -> list:
     if not NEWS_API_KEY:
         return []
+    company = get_company_name(ticker)
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": f'"{ticker}" AND (stock OR earnings OR revenue OR contract OR FDA OR AI OR acquisition)',
+        "q": f'{ticker} OR "{company}"',
+        "searchIn": "title",
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 5,
         "from": (datetime.now(JST) - timedelta(days=1)).strftime("%Y-%m-%d"),
-        "excludeDomains": "nypost.com,dailymail.co.uk,thesun.co.uk,tmz.com",
+        "excludeDomains": "seekingalpha.com,fool.com,benzinga.com,nypost.com,dailymail.co.uk,thesun.co.uk,tmz.com",
         "apiKey": NEWS_API_KEY,
     }
     try:
@@ -73,9 +88,12 @@ def call_grok(prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> s
     raise last_error
 
 
-def classify_news(ticker: str, articles: list) -> dict:
+def classify_news(ticker: str, articles: list, company: str = "") -> dict:
     if not articles or not XAI_API_KEY:
         return {"items": [], "summary": "データなし"}
+
+    if not company:
+        company = ticker
 
     headlines = "\n".join([
         f"- {a.get('title', '')} ({a.get('publishedAt', '')[:10]})"
@@ -83,14 +101,26 @@ def classify_news(ticker: str, articles: list) -> dict:
     ])
 
     prompt = f"""
-以下は{ticker}に関する直近24時間のニュースヘッドラインです。
-各ニュースを以下のカテゴリに分類し、投資家として重要度（高/中/低）を判定してください。
+以下は{ticker}（{company}）に関する直近24時間のニュースヘッドラインです。
+各ニュースを以下のカテゴリに分類し、投資家として重要度（高/中/低/なし）を判定してください。
 
 カテゴリ：
 - カタリスト（決算・FDA承認・大型契約・提携・新製品）
 - リスク（規制・訴訟・競合参入・業績悪化）
 - ブレイクスルー（技術革新・市場拡大・業界変革）
 - 一般（その他）
+
+【除外条件】以下のニュースは重要度「なし」として除外してください：
+- {ticker}（{company}）が主役ではなく、複数銘柄の中の1つとして言及されている記事
+  （例：「注目10銘柄」「AI株ランキング」「ETFの組入れ上位」等）
+- マクロ経済・金利・市場全体に関する記事（個別銘柄の言及なし）
+- AI業界全体・半導体セクター全体の話題で個別企業の具体的情報がない記事
+- ETF・投資信託の組入銘柄として言及されているだけの記事
+- 複数企業を並べたランキング・比較記事
+
+【主役判定の基準】
+記事のタイトルまたは本文の冒頭で{ticker}または{company}が
+主要な話題として取り上げられている場合のみ対象とする
 
 ヘッドライン：
 {headlines}
@@ -103,7 +133,9 @@ def classify_news(ticker: str, articles: list) -> dict:
         text = text.replace("```json", "").replace("```", "").strip()
         m = re.search(r'\{.*\}', text, re.DOTALL)
         if m:
-            return json.loads(m.group())
+            data = json.loads(m.group())
+            data["items"] = [i for i in data.get("items", []) if i.get("importance") != "なし"]
+            return data
     except Exception as e:
         print(f"Grok分類エラー ({ticker}): {e}")
     return {"items": [], "summary": "分類失敗"}
@@ -152,8 +184,9 @@ def main():
     results = {}
     for ticker, info in active.items():
         print(f"  {ticker} ({info['category']}) 収集中...")
-        articles  = fetch_news(ticker, ticker)
-        classified = classify_news(ticker, articles)
+        company    = get_company_name(ticker)
+        articles   = fetch_news(ticker)
+        classified = classify_news(ticker, articles, company)
         results[ticker] = {
             "category":      info["category"],
             "memo":          info.get("memo", ""),
