@@ -151,6 +151,36 @@
       .cat-row.bot2 { grid-template-columns: 1fr; }
       .mkt-stats { flex-wrap: wrap; }
     }
+
+    /* ── 6-cat cards & badges ── */
+    .cat-card.buy      { border-color: rgba(34,197,94,.35); }
+    .cat-card.watch-cat{ border-color: rgba(234,179,8,.35); }
+    .cat-card.hold     { border-color: rgba(59,130,246,.35); }
+    .cat-card.trim     { border-color: rgba(249,115,22,.35); }
+    .cat-card.sell     { border-color: rgba(239,68,68,.35); }
+    .cat-card.pass     { border-color: rgba(71,85,105,.25); }
+    .buy       .cat-label { color: #22c55e; }
+    .watch-cat .cat-label { color: #eab308; }
+    .hold      .cat-label { color: #3b82f6; }
+    .trim      .cat-label { color: #f97316; }
+    .sell      .cat-label { color: #ef4444; }
+    .pass      .cat-label { color: #475569; }
+    .buy       .cat-chip .ckr { color: #22c55e; }
+    .watch-cat .cat-chip .ckr { color: #eab308; }
+    .hold      .cat-chip .ckr { color: #3b82f6; }
+    .trim      .cat-chip .ckr { color: #f97316; }
+    .sell      .cat-chip .ckr { color: #ef4444; }
+    .pass      .cat-chip .ckr { color: #475569; }
+    .badge-BUY  { background: rgba(34,197,94,.12);  color: #22c55e; }
+    .badge-WATCH{ background: rgba(234,179,8,.12);  color: #eab308; }
+    .badge-HOLD { background: rgba(59,130,246,.12); color: #3b82f6; }
+    .badge-TRIM { background: rgba(249,115,22,.12); color: #f97316; }
+    .badge-SELL { background: rgba(239,68,68,.10);  color: #ef4444; }
+    .badge-PASS { background: rgba(71,85,105,.10);  color: #475569; }
+    .chip-tags {
+      font-size: 9px; color: #94a3b8; margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px;
+    }
   </style>
   <link rel="stylesheet" href="../common/site-theme.css">
 </head>
@@ -209,12 +239,37 @@ function calcTiming(upside, fg, stage) {
   return s;
 }
 
-function classify(f, t) {
-  if (f < 25)            return 'ronogai';
-  if (f >= 50 && t >= 50) return 'shikomi';
-  if (f >= 50)            return 'wait';
-  if (t >= 60)            return 'profit';
-  return 'watch';
+function classify(f, t, stock) {
+  // TODO: FCF予想機能実装後は fcf_forecast?.next_4q を fcfBase の代替として使用
+  // 現在は fcf_base.base_fcf（過去5年平均）で代替
+  const upside  = stock.upside  ?? null;
+  const stage   = stock.stage   ?? 0;
+  const revYoy  = stock.revYoy  ?? 0;
+  const rule40  = stock.rule40  ?? 0;
+  const ma200   = stock.ma200   ?? 0;
+  const fcfBase = stock.fcfBase ?? null;
+  const fcfEst  = stock.fcfEst  ?? null;
+
+  // PASS: ファンダ不良
+  if (f < 25) return 'PASS';
+
+  // SELL: ファンダ劣化 または 長期下落トレンド（軽量版）
+  const sellFunda = revYoy < 0 && rule40 < 20 && (
+    fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
+  );
+  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10;
+  if (f >= 25 && (sellFunda || sellTech)) return 'SELL';
+
+  // ファンダ良好（≥50）の分類
+  if (f >= 50) {
+    if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
+    if (upside != null && upside > 10 && t >= 50)     return 'BUY';
+    if (upside != null && upside > 0  && t < 50)      return 'WATCH';
+    return 'HOLD';
+  }
+
+  // ファンダ普通（25-49）
+  return 'HOLD';
 }
 
 // ─── Display helpers ─────────────────────────────────────────
@@ -234,11 +289,12 @@ function mktMessage(fg) {
 }
 
 const CAT_META = {
-  shikomi: { label: '🟢 仕込み時',   cls: 'shikomi', badge: 'badge-shikomi', desc: 'ファンダ≥50 · タイミング≥50' },
-  wait:    { label: '🟡 仕込み待ち', cls: 'wait',    badge: 'badge-wait',    desc: 'ファンダ≥50 · タイミング<50' },
-  profit:  { label: '🔵 利確検討',   cls: 'profit',  badge: 'badge-profit',  desc: 'ファンダ25-49 · タイミング≥60' },
-  watch:   { label: '⚪ 様子見',     cls: 'watch',   badge: 'badge-watch',   desc: 'ファンダ25+ · その他' },
-  ronogai: { label: '🔴 論外',       cls: 'ronogai', badge: 'badge-ronogai', desc: 'ファンダ<25' },
+  BUY:  { label:'BUY',  icon:'🟢', color:'#22c55e', cls:'buy',       badge:'badge-BUY',  desc:'ファンダ≥50 · 割安(>10%) · タイミング≥50 — 今すぐ仕込む' },
+  WATCH:{ label:'WATCH',icon:'🟡', color:'#eab308', cls:'watch-cat', badge:'badge-WATCH', desc:'ファンダ≥50 · 割安(>0%) · タイミング待ち — 市場が恐怖になれば即買い' },
+  HOLD: { label:'HOLD', icon:'🔵', color:'#3b82f6', cls:'hold',      badge:'badge-HOLD',  desc:'ファンダ良好 · 許容範囲内 — 保有継続・新規不要' },
+  TRIM: { label:'TRIM', icon:'🟠', color:'#f97316', cls:'trim',      badge:'badge-TRIM',  desc:'ファンダ良好 · 割高(-30%超) · 陶酔期以降 — 一部利確検討' },
+  SELL: { label:'SELL', icon:'🔴', color:'#ef4444', cls:'sell',      badge:'badge-SELL',  desc:'ファンダ劣化 または 長期下落トレンド — 保有再考' },
+  PASS: { label:'PASS', icon:'⬛', color:'#475569', cls:'pass',      badge:'badge-PASS',  desc:'ファンダ<25 — 対象外' },
 };
 
 // ─── Sortable table state ─────────────────────────────────────
@@ -282,7 +338,7 @@ function renderDetailTable() {
                                  : '<span class="fcf-ng" style="font-family:var(--mono)">✗</span>';
     return `<tr>
       <td><a class="tkr-a" href="${T_BASE}stock.html?ticker=${s.ticker}">${s.ticker}</a></td>
-      <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
+      <td><span class="cat-badge ${m.badge}">${m.icon} ${m.label}</span></td>
       <td class="sc-num ${scClass(s.funda)}">${s.funda}</td>
       <td class="sc-num ${scClass(s.timing)}">${s.timing}</td>
       <td class="num">${pct(s.revYoy)}</td>
@@ -394,21 +450,65 @@ function renderDetailTable() {
     const epsYoyDec = ep?.yoy_growth ?? null;
     const epsYoy  = epsYoyDec != null ? epsYoyDec * 100 : null;
 
+    const ma200      = lastMo?.ma200_dev ?? 0;
+    const fcfEst     = tk?.fcf_estimation?.estimated_fcf ?? null;
+    const substage   = lastMo?.substage_label ?? '';
+    const stageLabel = lastMo?.stage_label ?? '';
+
     const funda  = calcFunda(revYoy, rule40, epsYoy, fcfBase);
     const timing = calcTiming(rawUp, fg, stage);
-    const cat    = classify(funda, timing);
 
-    return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase, upside: rawUp, stage, stageL };
+    const stockObj = {
+      upside: rawUp, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
+      ma200, fcfBase, fcfEst,
+    };
+    const cat = classify(funda, timing, stockObj);
+
+    // sellReason for chip display
+    let sellReason = '';
+    if (cat === 'SELL') {
+      const _sellFunda = (revYoy ?? 0) < 0 && (rule40 ?? 0) < 20 && (
+        fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
+      );
+      sellReason = _sellFunda ? 'funda' : 'tech';
+    }
+
+    return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
+             upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason };
   });
 
   // 5. Categorize
-  const cats = { shikomi:[], wait:[], profit:[], watch:[], ronogai:[] };
-  _stocks.forEach(s => cats[s.cat].push(s));
+  const cats = { BUY:[], WATCH:[], HOLD:[], TRIM:[], SELL:[], PASS:[] };
+  _stocks.forEach(s => (cats[s.cat] || []).push(s));
 
-  // Sort each category by funda desc within
-  Object.values(cats).forEach(arr => arr.sort((a,b)=>b.funda-a.funda));
+  // Sort each category by funda desc; WATCH: 底打ち substage first
+  Object.keys(cats).forEach(k => {
+    if (k === 'WATCH') {
+      cats[k].sort((a, b) => {
+        const aBot = (a.substage || '').includes('底') ? 0 : 1;
+        const bBot = (b.substage || '').includes('底') ? 0 : 1;
+        return aBot !== bBot ? aBot - bBot : b.funda - a.funda;
+      });
+    } else {
+      cats[k].sort((a, b) => b.funda - a.funda);
+    }
+  });
 
   // ② Category board
+  function chipTag(key, s) {
+    if (key === 'WATCH' && s.upside != null && s.upside > 0) {
+      const sub = s.substage ? ' ' + s.substage : '';
+      return `<span class="chip-tags">割安+${s.upside.toFixed(0)}%${sub}</span>`;
+    }
+    if (key === 'TRIM' && s.upside != null) {
+      return `<span class="chip-tags">割高${s.upside.toFixed(0)}% · ${s.stageLabel || ''}</span>`;
+    }
+    if (key === 'SELL') {
+      return `<span class="chip-tags">${s.sellReason === 'funda' ? '売上鈍化·FCF悪化' : '長期下落·期待剥落'}</span>`;
+    }
+    return '';
+  }
+
   function catCard(key, stocks) {
     const m = CAT_META[key];
     const chips = stocks.length === 0
@@ -416,10 +516,11 @@ function renderDetailTable() {
       : stocks.map(s => `<a class="cat-chip" href="${T_BASE}stock.html?ticker=${s.ticker}">
           <span class="ckr">${s.ticker}</span>
           <span class="csc">F:${s.funda} · T:${s.timing}</span>
+          ${chipTag(key, s)}
         </a>`).join('');
     return `<div class="cat-card ${m.cls}">
       <div class="cat-head">
-        <span class="cat-label">${m.label}</span>
+        <span class="cat-label">${m.icon} ${m.label}</span>
         <span class="cat-count">${stocks.length}銘柄</span>
       </div>
       <div class="cat-desc">${m.desc}</div>
@@ -427,34 +528,37 @@ function renderDetailTable() {
     </div>`;
   }
 
-  // 論外 gets a toggle
-  const ronMeta = CAT_META.ronogai;
-  const ronChips = cats.ronogai.length === 0
-    ? '<span class="cat-empty">銘柄なし</span>'
-    : cats.ronogai.map(s => `<a class="cat-chip" href="${T_BASE}stock.html?ticker=${s.ticker}">
-        <span class="ckr">${s.ticker}</span>
-        <span class="csc">F:${s.funda} · T:${s.timing}</span>
-      </a>`).join('');
-
-  const ronCard = `<div class="cat-card ronogai">
-    <div class="cat-head ronogai-toggle" id="ron-toggle" onclick="toggleRonogai()">
-      <span class="cat-label">${ronMeta.label}</span>
-      <span class="cat-count">${cats.ronogai.length}銘柄 <span class="tog-arrow">▼</span></span>
-    </div>
-    <div class="cat-desc">${ronMeta.desc}</div>
-    <div id="ronogai-body" class="cat-chips">${ronChips}</div>
-  </div>`;
+  function collapsedCard(key, stocks) {
+    const m   = CAT_META[key];
+    const id  = key.toLowerCase();
+    const chips = stocks.length === 0
+      ? '<span class="cat-empty">銘柄なし</span>'
+      : stocks.map(s => `<a class="cat-chip" href="${T_BASE}stock.html?ticker=${s.ticker}">
+          <span class="ckr">${s.ticker}</span>
+          <span class="csc">F:${s.funda} · T:${s.timing}</span>
+          ${chipTag(key, s)}
+        </a>`).join('');
+    return `<div class="cat-card ${m.cls}">
+      <div class="cat-head ronogai-toggle" id="${id}-toggle" onclick="toggleCat('${id}')">
+        <span class="cat-label">${m.icon} ${m.label}</span>
+        <span class="cat-count">${stocks.length}銘柄 <span class="tog-arrow">▼</span></span>
+      </div>
+      <div class="cat-desc">${m.desc}</div>
+      <div id="${id}-body" class="cat-chips" style="display:none">${chips}</div>
+    </div>`;
+  }
 
   document.getElementById('cat-board').innerHTML = `
-    <div class="sec">② 5分類ボード — ファンダ × タイミング</div>
+    <div class="sec">② 6分類ボード — ファンダ × タイミング</div>
     <div class="cat-row top3">
-      ${catCard('shikomi', cats.shikomi)}
-      ${catCard('wait',    cats.wait)}
-      ${catCard('profit',  cats.profit)}
+      ${catCard('BUY',   cats.BUY)}
+      ${catCard('WATCH', cats.WATCH)}
+      ${catCard('HOLD',  cats.HOLD)}
     </div>
-    <div class="cat-row bot2">
-      ${catCard('watch',   cats.watch)}
-      ${ronCard}
+    <div class="cat-row top3">
+      ${catCard('TRIM',           cats.TRIM)}
+      ${collapsedCard('SELL',     cats.SELL)}
+      ${collapsedCard('PASS',     cats.PASS)}
     </div>`;
 
   // ③ Detail table (default sort: funda desc)
@@ -531,12 +635,13 @@ function renderDetailTable() {
   }
 })();
 
-function toggleRonogai() {
-  const body   = document.getElementById('ronogai-body');
-  const toggle = document.getElementById('ron-toggle');
-  const open   = body.style.display !== 'none' && body.style.display !== '';
-  body.style.display  = open ? 'none' : 'flex';
-  toggle.classList.toggle('open', !open);
+function toggleCat(id) {
+  const body   = document.getElementById(id + '-body');
+  const toggle = document.getElementById(id + '-toggle');
+  if (!body) return;
+  const open = body.style.display !== 'none' && body.style.display !== '';
+  body.style.display = open ? 'none' : 'flex';
+  if (toggle) toggle.classList.toggle('open', !open);
 }
 </script>
   <script src="../common/site-nav.js"></script>
