@@ -33,12 +33,18 @@ jobs:
         run: |
           python src/value/tanuki_score/daily_pick.py
 
+      - name: Portfolio snapshot
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: python src/portfolio/snapshot.py
+
       - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/integrated-dashboard/daily_pick.json \
-                  docs/integrated-dashboard/history.json
+                  docs/integrated-dashboard/history.json \
+                  docs/portfolio/data/history.json
           git diff --staged --quiet || git commit -m \
             "chore: auto-update TANUKI SCORE daily pick $(date -u '+%Y-%m-%d %H:%M') UTC"
           git pull --rebase origin kaihatsu
