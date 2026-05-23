@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PORTFOLIO — On a Journey</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/On-a-journey/favicon.ico">
+  <style>
+    :root {
+      --bg:#0a0d14; --sur:#111520; --sur2:#161c2d; --bdr:#1e2840;
+      --acc:#3b82f6; --grn:#10b981; --red:#f43f5e; --amb:#f59e0b; --orn:#f97316;
+      --txt:#e2e8f0; --mut:#64748b;
+      --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;min-height:100vh}
+    .shell{max-width:1200px;margin:0 auto;padding:0 20px 60px}
+
+    header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px}
+    .logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:10px;color:var(--txt);text-decoration:none}
+    .logo-dot{width:8px;height:8px;background:var(--orn);border-radius:50%;animation:pdot 2s ease-in-out infinite}
+    @keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(249,115,22,.4)}50%{box-shadow:0 0 0 6px rgba(249,115,22,0)}}
+    nav.nav-links{display:flex;flex-wrap:wrap;gap:12px}
+    nav.nav-links a{font-family:var(--mono);font-size:11px;color:var(--mut);text-decoration:none;padding:4px 0;border-bottom:1px solid transparent;transition:all .2s}
+    nav.nav-links a:hover{color:var(--acc);border-bottom-color:var(--acc)}
+
+    .last-updated{font-family:var(--mono);font-size:11px;color:var(--mut);text-align:right;padding:4px 16px;letter-spacing:.05em;border-bottom:1px solid var(--bdr)}
+    .last-updated::before{content:"最終更新: "}
+
+    /* Summary cards */
+    .summary-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:24px 0}
+    .s-card{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:16px 18px}
+    .s-card-label{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
+    .s-card-value{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:.04em}
+    .s-card-sub{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:4px}
+    .pos{color:var(--grn)} .neg{color:var(--red)} .neu{color:var(--mut)}
+
+    /* Section title */
+    .sec{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--acc);letter-spacing:.15em;margin:28px 0 12px;display:flex;align-items:center;gap:10px}
+    .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+    /* Portfolio table */
+    .tbl-wrap{overflow-x:auto;background:var(--sur);border:1px solid var(--bdr)}
+    table{width:100%;border-collapse:collapse;min-width:1100px}
+    th{font-family:var(--mono);font-size:10px;color:var(--mut);text-align:left;padding:10px 12px;background:var(--sur2);border-bottom:1px solid var(--bdr);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
+    td{padding:9px 12px;border-bottom:1px solid rgba(30,40,64,.5);font-size:13px;white-space:nowrap;vertical-align:middle}
+    tr:hover td{background:rgba(255,255,255,.015)}
+    tr.total-row td{background:var(--sur2);font-weight:600;border-top:1px solid var(--bdr)}
+    tr.cash-row td{background:var(--sur2);color:var(--mut)}
+    .mono{font-family:var(--mono);font-size:12px}
+    .tkr-a{color:var(--acc);font-family:var(--mono);font-weight:700;font-size:13px;text-decoration:none}
+    .tkr-a:hover{text-decoration:underline}
+
+    /* Score badges */
+    .cat-badge{font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:3px;white-space:nowrap}
+    .badge-BUY  {background:rgba(34,197,94,.12);  color:#22c55e}
+    .badge-WATCH{background:rgba(234,179,8,.12);  color:#eab308}
+    .badge-HOLD {background:rgba(59,130,246,.12); color:#3b82f6}
+    .badge-TRIM {background:rgba(249,115,22,.12); color:#f97316}
+    .badge-SELL {background:rgba(239,68,68,.10);  color:#ef4444}
+    .badge-PASS {background:rgba(71,85,105,.10);  color:#475569}
+    .badge-warn {background:rgba(245,158,11,.1);  color:var(--amb);font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:3px}
+
+    /* Phase distribution */
+    .dist-bar{display:flex;flex-wrap:wrap;gap:16px;background:var(--sur);border:1px solid var(--bdr);padding:16px 20px;border-radius:8px;margin-bottom:24px}
+    .dist-item{font-family:var(--mono);font-size:12px;color:var(--txt)}
+    .dist-label{color:var(--mut);font-size:11px;margin-right:4px}
+
+    /* Loading */
+    .spinner{display:inline-block;width:12px;height:12px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin 1s linear infinite;vertical-align:middle;margin-right:6px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .loading{color:var(--mut);font-family:var(--mono);font-size:12px;padding:40px;text-align:center}
+
+    @media(max-width:700px){
+      .summary-cards{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+  <link rel="stylesheet" href="../common/site-theme.css">
+</head>
+<body data-tool="portfolio">
+<div class="shell">
+  <header>
+    <a href="../" class="logo">
+      <img src="../common/images/logo.png" alt="logo" style="height:28px;width:auto;object-fit:contain" onerror="this.style.display='none'">
+      <span class="logo-dot"></span>
+      PORTFOLIO
+    </a>
+    <nav class="nav-links">
+      <a href="../">HOME</a>
+      <a href="../integrated-dashboard/">TANUKI SCORE</a>
+      <a href="../value-monitor/tanuki_valuation/">TANUKI</a>
+      <a href="../value-monitor/hypecore/">HYPE CORE</a>
+    </nav>
+  </header>
+  <div class="last-updated" id="last-updated"></div>
+
+  <div id="summary-section"><div class="loading"><span class="spinner"></span>データ読み込み中...</div></div>
+  <div id="table-section"></div>
+  <div id="dist-section"></div>
+</div>
+
+<script>
+// ── Config ──
+const BASE      = '/On-a-journey';
+const PF_PATH   = BASE + '/config/portfolio.json';
+const T_BASE    = BASE + '/value-monitor/tanuki_valuation/data/';
+const H_BASE    = BASE + '/value-monitor/hypecore/data/';
+const M_PATH    = BASE + '/market-monitor/market-pulse/data/market_data.json';
+const DISC_PATH = BASE + '/config/discover_config.json';
+const TS        = '?t=' + Date.now();
+
+// ── Utilities ──
+function toJST(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '—';
+  return d.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  }) + ' JST';
+}
+
+function fmt$(v) {
+  if (v == null) return '—';
+  return '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+function fmtPct(v, dec=1) {
+  if (v == null) return '—';
+  const s = (v>=0?'+':'') + v.toFixed(dec) + '%';
+  return `<span class="${v>=0?'pos':'neg'}">${s}</span>`;
+}
+
+// ── Score logic (from integrated-dashboard) ──
+function calcFunda(revYoy, rule40, epsYoy, fcfBase) {
+  let s = 0;
+  s += revYoy  == null ? 0 : revYoy  > 20 ? 25 : revYoy  >= 0 ? 15 : 0;
+  s += rule40  == null ? 0 : rule40  > 40 ? 25 : rule40  >= 20 ? 15 : 0;
+  s += epsYoy  == null ? 0 : epsYoy  > 20 ? 25 : epsYoy  >= 0 ? 15 : 0;
+  s += fcfBase == null ? 0 : fcfBase > 0 ? 25 : 0;
+  return s;
+}
+function calcTiming(upside, fg, stage) {
+  let s = 0;
+  s += upside == null ? 0 : upside > 30 ? 40 : upside >= 10 ? 25 : upside >= 0 ? 10 : 0;
+  s += fg < 30 ? 40 : fg < 50 ? 25 : fg < 70 ? 10 : 0;
+  s += stage == null ? 0 : stage === 1 ? 20 : stage === 2 ? 15 : stage === 3 ? 5 : 0;
+  return s;
+}
+function classify(f, t, stock) {
+  const { upside, stage, revYoy, rule40, ma200, fcfBase, fcfEst } = stock;
+  if (f < 25) return 'PASS';
+  const sellFunda = revYoy < 0 && rule40 < 20 && (
+    fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
+  );
+  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10 && f < 50;
+  if (f >= 25 && (sellFunda || sellTech)) return 'SELL';
+  if (f >= 50) {
+    if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
+    if (upside != null && upside > 20 && t >= 50)     return 'BUY';
+    if (upside != null && upside > 0)                  return 'WATCH';
+    return 'HOLD';
+  }
+  return 'HOLD';
+}
+
+const CAT_META = {
+  BUY:  { badge:'badge-BUY',   label:'BUY'   },
+  WATCH:{ badge:'badge-WATCH', label:'WATCH'  },
+  HOLD: { badge:'badge-HOLD',  label:'HOLD'   },
+  TRIM: { badge:'badge-TRIM',  label:'TRIM'   },
+  SELL: { badge:'badge-SELL',  label:'SELL'   },
+  PASS: { badge:'badge-PASS',  label:'PASS'   },
+};
+
+// ── Main ──
+(async function () {
+
+  // Fetch all data in parallel
+  const [pfRes, mktRes, discRes] = await Promise.allSettled([
+    fetch(PF_PATH + TS).then(r => r.ok ? r.json() : null),
+    fetch(M_PATH  + TS).then(r => r.ok ? r.json() : null),
+    fetch(DISC_PATH + TS).then(r => r.ok ? r.json() : null),
+  ]);
+
+  const pf   = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
+  const mktArr = mktRes.status === 'fulfilled' ? mktRes.value : null;
+  const disc = discRes.status === 'fulfilled' ? discRes.value : null;
+
+  if (!pf) {
+    document.getElementById('summary-section').innerHTML =
+      '<p style="color:var(--mut);font-family:var(--mono);font-size:13px;padding:40px">portfolio.json を取得できませんでした。</p>';
+    return;
+  }
+
+  // Last updated
+  const lu = document.getElementById('last-updated');
+  if (lu && pf.last_updated) lu.textContent = toJST(pf.last_updated + 'T00:00:00+09:00');
+
+  const mkt  = Array.isArray(mktArr) ? mktArr[mktArr.length - 1] : null;
+  const fg   = mkt?.fear_greed?.score ?? 50;
+  const cash = pf.cash ?? 0;
+  const positions = pf.positions ?? {};
+  const tickers = Object.keys(positions);
+
+  if (tickers.length === 0) {
+    document.getElementById('summary-section').innerHTML =
+      '<p style="color:var(--mut);font-family:var(--mono);font-size:13px;padding:40px">保有銘柄がありません。ADMIN からポートフォリオを設定してください。</p>';
+    return;
+  }
+
+  // Per-ticker data (parallel)
+  const [tanukiMap, hypeMap] = await Promise.all([
+    Promise.allSettled(tickers.map(async tk => {
+      try {
+        const r = await fetch(`${T_BASE}${tk}/latest.json${TS}`);
+        if (r.ok) return [tk, await r.json()];
+      } catch(_) {}
+      return [tk, null];
+    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
+
+    Promise.allSettled(tickers.map(async tk => {
+      try {
+        const r = await fetch(`${H_BASE}${tk}_poc.json${TS}`);
+        if (r.ok) return [tk, await r.json()];
+      } catch(_) {}
+      return [tk, null];
+    })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
+  ]);
+
+  // Discover config: 「保有中」category map
+  const discTickers = disc?.tickers ?? {};
+
+  // Build rows
+  let totalCost   = 0;
+  let totalValue  = 0;
+  let totalPnl    = 0;
+
+  const phaseCount = {};
+
+  const rows = tickers.map(ticker => {
+    const pos     = positions[ticker];
+    const shares  = pos.shares  ?? 0;
+    const avgCost = pos.avg_cost ?? 0;
+    const memo    = pos.memo    ?? '';
+
+    const tk = tanukiMap[ticker];
+    const hc = hypeMap[ticker];
+
+    const lastMo       = hc?.monthly?.[hc.monthly.length - 1] ?? null;
+    const currentPrice = tk?.components?.current_price ?? null;
+    const ivps         = tk?.scenario_valuations?.base?.intrinsic_value_per_share
+                       ?? tk?.intrinsic_value_per_share ?? null;
+    const upside       = tk?.upside_percent ?? null;
+    const revYoy       = lastMo?.rev_yoy    ?? null;
+    const rule40       = lastMo?.rule40     ?? null;
+    const stage        = lastMo?.stage      ?? null;
+    const stageLabel   = lastMo?.stage_label    ?? '—';
+    const substageLabel= lastMo?.substage_label ?? '';
+    const fcfBase      = tk?.fcf_base?.base_fcf ?? null;
+    const fcfEst       = tk?.fcf_estimation?.estimated_fcf ?? null;
+    const ma200        = lastMo?.ma200_dev ?? 0;
+
+    const posValue = currentPrice != null ? shares * currentPrice : null;
+    const posCost  = shares * avgCost;
+    const posPnl   = posValue != null ? posValue - posCost : null;
+    const pnlPct   = avgCost > 0 && currentPrice != null
+                     ? (currentPrice - avgCost) / avgCost * 100 : null;
+
+    if (posValue  != null) totalValue += posValue;
+    totalCost += posCost;
+    if (posPnl != null) totalPnl += posPnl;
+
+    const funda  = calcFunda(revYoy, rule40, null, fcfBase);
+    const timing = calcTiming(upside, fg, stage);
+    const stockObj = {
+      upside, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
+      ma200, fcfBase, fcfEst,
+    };
+    const cat = classify(funda, timing, stockObj);
+
+    // Phase distribution
+    if (stageLabel && stageLabel !== '—') {
+      phaseCount[stageLabel] = (phaseCount[stageLabel] || 0) + 1;
+    }
+
+    // Discover config check
+    const discInfo = discTickers[ticker];
+    const notHolding = discInfo && discInfo.category !== '保有中';
+
+    return { ticker, shares, avgCost, memo, currentPrice, ivps, upside,
+             posValue, posCost, posPnl, pnlPct,
+             stageLabel, substageLabel, cat, funda, timing, notHolding };
+  });
+
+  const totalAssets = totalValue + cash;
+  const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+  const cashRatio   = totalAssets > 0 ? (cash / totalAssets) * 100 : 0;
+
+  // ① Summary cards
+  document.getElementById('summary-section').innerHTML = `
+    <div class="summary-cards">
+      <div class="s-card">
+        <div class="s-card-label">総資産</div>
+        <div class="s-card-value">${fmt$(totalAssets)}</div>
+        <div class="s-card-sub">時価 + キャッシュ</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">時価残高合計</div>
+        <div class="s-card-value">${fmt$(totalValue)}</div>
+        <div class="s-card-sub">株式評価額</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">評価損益</div>
+        <div class="s-card-value ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</div>
+        <div class="s-card-sub ${totalPnlPct>=0?'pos':'neg'}">${(totalPnlPct>=0?'+':'')+totalPnlPct.toFixed(2)}%</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">キャッシュ比率</div>
+        <div class="s-card-value">${cashRatio.toFixed(1)}%</div>
+        <div class="s-card-sub">${fmt$(cash)}</div>
+      </div>
+    </div>`;
+
+  // ② Portfolio table
+  const tableRows = rows.map(r => {
+    const m = CAT_META[r.cat] ?? CAT_META['PASS'];
+    const warnBadge = r.notHolding
+      ? `<span class="badge-warn" title="discover_config.jsonの区分が保有中ではありません">⚠️ 区分未反映</span>` : '';
+    return `<tr>
+      <td>
+        <a class="tkr-a" href="../value-monitor/tanuki_valuation/stock.html?ticker=${r.ticker}">${r.ticker}</a>
+        ${warnBadge}
+      </td>
+      <td class="mono">${r.shares.toLocaleString()}</td>
+      <td class="mono">${r.avgCost > 0 ? fmt$(r.avgCost) : '—'}</td>
+      <td class="mono">${r.posCost > 0 ? fmt$(r.posCost) : '—'}</td>
+      <td class="mono">${r.currentPrice != null ? fmt$(r.currentPrice) : '—'}</td>
+      <td class="mono">${r.posValue != null ? fmt$(r.posValue) : '—'}</td>
+      <td class="mono ${r.posPnl != null ? (r.posPnl>=0?'pos':'neg') : ''}">${r.posPnl != null ? fmt$(r.posPnl) : '—'}</td>
+      <td>${fmtPct(r.pnlPct)}</td>
+      <td class="mono">${r.ivps != null ? fmt$(r.ivps) : '—'}</td>
+      <td>${fmtPct(r.upside)}</td>
+      <td style="font-size:12px;color:var(--txt)">${r.stageLabel}${r.substageLabel ? '<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>' : ''}</td>
+      <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
+      <td style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo || ''}</td>
+    </tr>`;
+  }).join('');
+
+  const totPnlPct2 = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
+  const totalRow = `<tr class="total-row">
+    <td class="mono" colspan="3">TOTAL</td>
+    <td class="mono">${fmt$(totalCost)}</td>
+    <td></td>
+    <td class="mono">${fmt$(totalValue)}</td>
+    <td class="mono ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</td>
+    <td>${fmtPct(totPnlPct2)}</td>
+    <td colspan="5"></td>
+  </tr>`;
+
+  const cashRow = `<tr class="cash-row">
+    <td class="mono">CASH</td>
+    <td colspan="4">—</td>
+    <td class="mono">${fmt$(cash)}</td>
+    <td colspan="7">—</td>
+  </tr>`;
+
+  document.getElementById('table-section').innerHTML = `
+    <div class="sec">② ポートフォリオ明細</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>銘柄</th>
+          <th>株数</th>
+          <th>取得単価</th>
+          <th>取得総額</th>
+          <th>現在株価</th>
+          <th>時価残高</th>
+          <th>評価損益額</th>
+          <th>評価損益率</th>
+          <th>理論株価</th>
+          <th>乖離率</th>
+          <th>フェーズ</th>
+          <th>スコア</th>
+          <th>メモ</th>
+        </tr></thead>
+        <tbody>
+          ${tableRows}
+          ${totalRow}
+          ${cashRow}
+        </tbody>
+      </table>
+    </div>`;
+
+  // ③ Phase distribution
+  const distItems = Object.entries(phaseCount)
+    .sort((a, b) => b[1] - a[1])
+    .map(([label, cnt]) => `<div class="dist-item"><span class="dist-label">${label}</span>${cnt}銘柄</div>`)
+    .join('');
+
+  document.getElementById('dist-section').innerHTML = `
+    <div class="sec">③ フェーズ分布</div>
+    <div class="dist-bar">${distItems || '<span style="color:var(--mut)">データなし</span>'}</div>`;
+
+})();
+</script>
+  <script src="../common/site-nav.js"></script>
+</body>
+</html>

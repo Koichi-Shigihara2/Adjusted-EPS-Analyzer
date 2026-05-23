@@ -205,6 +205,7 @@
     <button class="tab" onclick="switchTab('workflows', this)">🚀 実行</button>
     <button class="tab" onclick="switchTab('status', this)">📊 ステータス</button>
     <button class="tab" onclick="switchTab('discover', this)">🔍 Discover設定</button>
+    <button class="tab" onclick="switchTab('portfolio', this)">💼 ポートフォリオ</button>
   </div>
 
   <!-- ═══════════════════════════════════════ -->
@@ -771,6 +772,44 @@
     <div id="discoverCandidates" style="color:var(--mut);font-family:var(--mono);font-size:12px;padding:8px 0">接続後に表示されます</div>
   </div>
 
+  <!-- ═══════════════════════════════════════ -->
+  <!-- Tab: ポートフォリオ                     -->
+  <!-- ═══════════════════════════════════════ -->
+  <div class="tab-content" id="tab-portfolio">
+    <div class="action-bar">
+      <button class="btn primary" id="savePortfolioBtn" onclick="savePortfolio()" disabled>💾 ポートフォリオを保存</button>
+      <span id="portfolioMsg" class="result-msg"></span>
+    </div>
+
+    <h3 class="section-title">① キャッシュ残高</h3>
+    <div class="add-form" style="margin-bottom:24px">
+      <div class="form-group" style="max-width:240px">
+        <label>キャッシュ残高 (USD)</label>
+        <input type="number" class="form-input" id="portfolioCash" value="0" min="0" step="100" placeholder="例: 10000">
+      </div>
+    </div>
+
+    <h3 class="section-title">② 保有銘柄</h3>
+    <p style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.6">
+      保有株数を 0 にした銘柄は保存時に除外されます。
+    </p>
+    <div class="table-wrap">
+      <table id="portfolioTable">
+        <thead>
+          <tr>
+            <th>ティッカー</th>
+            <th>保有株数</th>
+            <th>取得単価 (USD)</th>
+            <th>メモ</th>
+          </tr>
+        </thead>
+        <tbody id="portfolioTableBody">
+          <tr><td colspan="4" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
 </div><!-- /shell -->
 
 <script>
@@ -959,7 +998,7 @@ async function connect() {
       if (el) el.disabled = false;
     });
     document.getElementById('settingsTicker').disabled = false;
-    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles(), loadDiscoverTab()]);
+    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles(), loadDiscoverTab(), loadPortfolioTab()]);
   } catch(e) {
     alert('接続エラー: ' + e.message);
   }
@@ -973,6 +1012,7 @@ function switchTab(name, btn) {
   document.getElementById('tab-' + name).classList.add('active');
   if (name === 'status') loadStatusTab();
   if (name === 'discover') loadDiscoverTab();
+  if (name === 'portfolio') loadPortfolioTab();
 }
 function toggleAll(cb) {
   document.querySelectorAll('.ticker-check').forEach(c => c.checked = cb.checked);
@@ -2576,6 +2616,103 @@ function escHtml(s) {
 }
 function escAttr(s) {
   return String(s).replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════
+// ポートフォリオタブ
+// ════════════════════════════════════
+const PORTFOLIO_PATH = 'config/portfolio.json';
+let portfolioConfig = null;
+let portfolioConfigSha = null;
+
+async function loadPortfolioTab() {
+  const tbody = document.getElementById('portfolioTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px"><span class="spinner"></span>読み込み中...</td></tr>`;
+
+  try {
+    const [pfRes, yamlRes] = await Promise.allSettled([
+      fetchFile(PORTFOLIO_PATH),
+      fetchFile(YAML_PATH),
+    ]);
+
+    if (pfRes.status === 'fulfilled') {
+      portfolioConfig    = JSON.parse(pfRes.value.content);
+      portfolioConfigSha = pfRes.value.sha;
+    } else {
+      portfolioConfig    = { last_updated: '', cash: 0, positions: {} };
+      portfolioConfigSha = null;
+    }
+
+    document.getElementById('portfolioCash').value = portfolioConfig.cash || 0;
+
+    let allTickers = tickerList.length ? tickerList : [];
+    if (yamlRes.status === 'fulfilled') allTickers = parseYaml(yamlRes.value.content);
+
+    renderPortfolioTable(allTickers);
+    document.getElementById('savePortfolioBtn').disabled = false;
+  } catch(e) {
+    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
+  }
+}
+
+function renderPortfolioTable(allTickers) {
+  const tbody = document.getElementById('portfolioTableBody');
+  const positions = portfolioConfig?.positions || {};
+
+  const allRows = [...new Set([...allTickers, ...Object.keys(positions)])].sort();
+
+  tbody.innerHTML = allRows.map(ticker => {
+    const pos = positions[ticker] || {};
+    const shares    = pos.shares    ?? 0;
+    const avg_cost  = pos.avg_cost  ?? 0;
+    const memo      = pos.memo      ?? '';
+    return `<tr>
+      <td><a class="mono" href="../tanuki_valuation/stock.html?ticker=${ticker}" style="color:var(--acc);text-decoration:none" target="_blank">${ticker}</a></td>
+      <td><input type="number" class="form-input pf-shares" data-ticker="${ticker}"
+           value="${shares}" min="0" step="1" style="width:100px;padding:5px 8px"></td>
+      <td><input type="number" class="form-input pf-cost" data-ticker="${ticker}"
+           value="${avg_cost}" min="0" step="0.01" style="width:120px;padding:5px 8px"></td>
+      <td><textarea class="form-input pf-memo" data-ticker="${ticker}" rows="2"
+           style="width:100%;resize:vertical;font-family:var(--sans);font-size:12px"
+           placeholder="メモ...">${escAttr(memo)}</textarea></td>
+    </tr>`;
+  }).join('');
+}
+
+async function savePortfolio() {
+  if (!portfolioConfig) return;
+  const btn = document.getElementById('savePortfolioBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>保存中...';
+
+  const cash = parseFloat(document.getElementById('portfolioCash').value) || 0;
+  const positions = {};
+  document.querySelectorAll('.pf-shares').forEach(input => {
+    const ticker = input.dataset.ticker;
+    const shares = parseFloat(input.value) || 0;
+    if (shares <= 0) return;
+    const avg_cost = parseFloat(document.querySelector(`.pf-cost[data-ticker="${ticker}"]`)?.value) || 0;
+    const memo     = document.querySelector(`.pf-memo[data-ticker="${ticker}"]`)?.value?.trim() || '';
+    positions[ticker] = { shares, avg_cost, memo };
+  });
+
+  portfolioConfig.cash         = cash;
+  portfolioConfig.positions    = positions;
+  portfolioConfig.last_updated = new Date().toISOString().slice(0, 10);
+
+  try {
+    const content = JSON.stringify(portfolioConfig, null, 2) + '\n';
+    const res = await commitFile(PORTFOLIO_PATH, content,
+      'feat(portfolio): ポートフォリオ更新', portfolioConfigSha);
+    portfolioConfigSha = res.content.sha;
+    showResult('portfolioMsg', 'success', `✓ ポートフォリオを保存しました（${Object.keys(positions).length}銘柄）`);
+  } catch(e) {
+    showResult('portfolioMsg', 'error', `保存失敗: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '💾 ポートフォリオを保存';
+  }
 }
 </script>
   <script src="../common/site-nav.js"></script>

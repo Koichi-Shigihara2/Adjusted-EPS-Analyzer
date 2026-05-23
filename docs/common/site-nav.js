@@ -17,7 +17,8 @@
     { key: 'mp',     label: 'Market Pulse',      href: BASE + '/market-monitor/market-pulse/' },
     { key: 'macro',  label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
     { key: 'score',    label: 'TANUKI SCORE',      href: BASE + '/integrated-dashboard/' },
-    { key: 'discover', label: 'DISCOVER',          href: BASE + '/discover/' }
+    { key: 'discover',   label: 'DISCOVER',    href: BASE + '/discover/' },
+    { key: 'portfolio',  label: 'PORTFOLIO',   href: BASE + '/portfolio/' }
   ];
 
   function build(activeKey) {
