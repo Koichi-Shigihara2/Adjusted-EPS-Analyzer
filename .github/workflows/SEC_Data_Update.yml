@@ -52,6 +52,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "Update SEC Data - $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
             git push origin kaihatsu
           fi
 
