@@ -776,37 +776,34 @@
   <!-- Tab: ポートフォリオ                     -->
   <!-- ═══════════════════════════════════════ -->
   <div class="tab-content" id="tab-portfolio">
+
+    <!-- パスワード変更 -->
+    <div class="config-panel" style="margin-bottom:24px">
+      <h3>🔑 パスワード変更</h3>
+      <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;margin-top:12px">
+        <div class="form-group" style="margin:0">
+          <label>新しいパスワード（4文字以上）</label>
+          <input type="password" class="form-input" id="newPwInput"
+                 placeholder="新しいパスワード" autocomplete="new-password" style="width:220px">
+        </div>
+        <button class="btn primary" id="changePwBtn" onclick="changePortfolioPassword()" disabled>変更</button>
+      </div>
+      <div class="result-msg" id="pwChangeResult" style="margin-top:10px"></div>
+    </div>
+
+    <!-- ブローカータブ -->
+    <h3 class="section-title">ブローカー別設定</h3>
+    <p style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.6">
+      discover_config.json の「保有中」銘柄のみ表示されます。保有株数 0 は保存時に除外されます。
+    </p>
+    <div class="tabs" id="pf-broker-tabs" style="margin-bottom:0"></div>
+    <div id="pf-broker-content" style="background:var(--sur);border:1px solid var(--bdr);border-top:none;padding:16px;margin-bottom:20px">
+      <div style="color:var(--mut);font-size:13px;padding:20px">接続後に表示されます</div>
+    </div>
+
     <div class="action-bar">
       <button class="btn primary" id="savePortfolioBtn" onclick="savePortfolio()" disabled>💾 ポートフォリオを保存</button>
       <span id="portfolioMsg" class="result-msg"></span>
-    </div>
-
-    <h3 class="section-title">① キャッシュ残高</h3>
-    <div class="add-form" style="margin-bottom:24px">
-      <div class="form-group" style="max-width:240px">
-        <label>キャッシュ残高 (USD)</label>
-        <input type="number" class="form-input" id="portfolioCash" value="0" min="0" step="100" placeholder="例: 10000">
-      </div>
-    </div>
-
-    <h3 class="section-title">② 保有銘柄</h3>
-    <p style="font-size:12px;color:var(--mut);margin-bottom:12px;line-height:1.6">
-      保有株数を 0 にした銘柄は保存時に除外されます。
-    </p>
-    <div class="table-wrap">
-      <table id="portfolioTable">
-        <thead>
-          <tr>
-            <th>ティッカー</th>
-            <th>保有株数</th>
-            <th>取得単価 (USD)</th>
-            <th>メモ</th>
-          </tr>
-        </thead>
-        <tbody id="portfolioTableBody">
-          <tr><td colspan="4" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
-        </tbody>
-      </table>
     </div>
   </div>
 
@@ -2621,84 +2618,181 @@ function escAttr(s) {
 // ════════════════════════════════════
 // ポートフォリオタブ
 // ════════════════════════════════════
-const PORTFOLIO_PATH = 'config/portfolio.json';
-let portfolioConfig = null;
+const PORTFOLIO_PATH      = 'config/portfolio.json';
+const PORTFOLIO_HTML_PATH = 'docs/portfolio/index.html';
+let portfolioConfig    = null;
 let portfolioConfigSha = null;
+let pfDiscoverTickers  = []; // 保有中 tickers
+let currentBrokerTab   = null;
 
 async function loadPortfolioTab() {
-  const tbody = document.getElementById('portfolioTableBody');
-  if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:20px"><span class="spinner"></span>読み込み中...</td></tr>`;
+  const content = document.getElementById('pf-broker-content');
+  if (content) content.innerHTML = '<div style="color:var(--mut);padding:16px"><span class="spinner"></span>読み込み中...</div>';
 
   try {
-    const [pfRes, yamlRes] = await Promise.allSettled([
+    const [pfRes, discRes] = await Promise.allSettled([
       fetchFile(PORTFOLIO_PATH),
-      fetchFile(YAML_PATH),
+      fetchFile(DISCOVER_CONFIG_PATH),
     ]);
 
     if (pfRes.status === 'fulfilled') {
       portfolioConfig    = JSON.parse(pfRes.value.content);
       portfolioConfigSha = pfRes.value.sha;
     } else {
-      portfolioConfig    = { last_updated: '', cash: 0, positions: {} };
+      portfolioConfig = {
+        last_updated: '',
+        brokers: {
+          'SBI証券': { cash: 0, positions: {} },
+          'Moomoo':  { cash: 0, positions: {} },
+          'その他':  { cash: 0, positions: {} },
+        }
+      };
       portfolioConfigSha = null;
     }
 
-    document.getElementById('portfolioCash').value = portfolioConfig.cash || 0;
+    // ブローカーキー確認（旧形式フォールバック）
+    if (!portfolioConfig.brokers) {
+      portfolioConfig.brokers = {
+        'SBI証券': { cash: portfolioConfig.cash ?? 0, positions: portfolioConfig.positions ?? {} }
+      };
+    }
 
-    let allTickers = tickerList.length ? tickerList : [];
-    if (yamlRes.status === 'fulfilled') allTickers = parseYaml(yamlRes.value.content);
+    // 保有中 tickers
+    pfDiscoverTickers = [];
+    if (discRes.status === 'fulfilled') {
+      const discCfg = JSON.parse(discRes.value.content);
+      pfDiscoverTickers = Object.entries(discCfg.tickers || {})
+        .filter(([, info]) => info.category === '保有中')
+        .map(([t]) => t)
+        .sort();
+    }
 
-    renderPortfolioTable(allTickers);
+    renderBrokerTabs();
     document.getElementById('savePortfolioBtn').disabled = false;
+    document.getElementById('changePwBtn').disabled = false;
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="4" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
+    if (content) content.innerHTML = `<div style="color:var(--red);padding:16px">エラー: ${e.message}</div>`;
   }
 }
 
-function renderPortfolioTable(allTickers) {
-  const tbody = document.getElementById('portfolioTableBody');
-  const positions = portfolioConfig?.positions || {};
+function renderBrokerTabs() {
+  const brokerNames = Object.keys(portfolioConfig.brokers || {});
+  if (brokerNames.length === 0) {
+    portfolioConfig.brokers = { 'SBI証券': { cash: 0, positions: {} } };
+  }
+  if (!currentBrokerTab || !portfolioConfig.brokers[currentBrokerTab]) {
+    currentBrokerTab = Object.keys(portfolioConfig.brokers)[0];
+  }
 
-  const allRows = [...new Set([...allTickers, ...Object.keys(positions)])].sort();
+  const tabsEl = document.getElementById('pf-broker-tabs');
+  tabsEl.innerHTML = Object.keys(portfolioConfig.brokers).map(name =>
+    `<button class="tab ${name === currentBrokerTab ? 'active' : ''}"
+     onclick="switchPfBroker(this)"
+     data-broker-name="${escAttr(name)}">${escHtml(name)}</button>`
+  ).join('') +
+  `<button class="tab" onclick="addPfBroker()" style="color:var(--grn)">＋追加</button>`;
 
-  tbody.innerHTML = allRows.map(ticker => {
-    const pos = positions[ticker] || {};
-    const shares    = pos.shares    ?? 0;
-    const avg_cost  = pos.avg_cost  ?? 0;
-    const memo      = pos.memo      ?? '';
+  renderBrokerContent(currentBrokerTab);
+}
+
+function switchPfBroker(btn) {
+  saveCurrentBrokerValues();
+  currentBrokerTab = btn.dataset.brokerName;
+  document.querySelectorAll('#pf-broker-tabs .tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  renderBrokerContent(currentBrokerTab);
+}
+
+function saveCurrentBrokerValues() {
+  if (!currentBrokerTab || !portfolioConfig.brokers[currentBrokerTab]) return;
+  const broker = portfolioConfig.brokers[currentBrokerTab];
+  const cashEl = document.getElementById('pf-cash-current');
+  if (cashEl) broker.cash = parseFloat(cashEl.value) || 0;
+
+  broker.positions = {};
+  document.querySelectorAll('.pf-shares').forEach(el => {
+    if (el.dataset.broker !== currentBrokerTab) return;
+    const ticker = el.dataset.ticker;
+    const shares = parseFloat(el.value) || 0;
+    if (shares <= 0) return;
+    const costEl = document.querySelector(`.pf-cost[data-ticker="${ticker}"]`);
+    const memoEl = document.querySelector(`.pf-memo[data-ticker="${ticker}"]`);
+    broker.positions[ticker] = {
+      shares,
+      avg_cost: parseFloat(costEl?.value) || 0,
+      memo: memoEl?.value?.trim() || '',
+    };
+  });
+}
+
+function renderBrokerContent(brokerName) {
+  const broker    = portfolioConfig.brokers[brokerName] || { cash: 0, positions: {} };
+  const container = document.getElementById('pf-broker-content');
+
+  const rows = pfDiscoverTickers.map(ticker => {
+    const pos      = broker.positions?.[ticker] || {};
+    const shares   = pos.shares   ?? 0;
+    const avg_cost = pos.avg_cost ?? 0;
+    const memo     = pos.memo     ?? '';
     return `<tr>
-      <td><a class="mono" href="../tanuki_valuation/stock.html?ticker=${ticker}" style="color:var(--acc);text-decoration:none" target="_blank">${ticker}</a></td>
-      <td><input type="number" class="form-input pf-shares" data-ticker="${ticker}"
+      <td><a class="mono" href="../tanuki_valuation/stock.html?ticker=${ticker}"
+             style="color:var(--acc);text-decoration:none" target="_blank">${ticker}</a></td>
+      <td><input type="number" class="form-input pf-shares"
+           data-ticker="${ticker}" data-broker="${escAttr(brokerName)}"
            value="${shares}" min="0" step="1" style="width:100px;padding:5px 8px"></td>
-      <td><input type="number" class="form-input pf-cost" data-ticker="${ticker}"
+      <td><input type="number" class="form-input pf-cost"
+           data-ticker="${ticker}"
            value="${avg_cost}" min="0" step="0.01" style="width:120px;padding:5px 8px"></td>
-      <td><textarea class="form-input pf-memo" data-ticker="${ticker}" rows="2"
+      <td><textarea class="form-input pf-memo"
+           data-ticker="${ticker}" rows="2"
            style="width:100%;resize:vertical;font-family:var(--sans);font-size:12px"
            placeholder="メモ...">${escAttr(memo)}</textarea></td>
     </tr>`;
   }).join('');
+
+  const emptyMsg = pfDiscoverTickers.length === 0
+    ? `<tr><td colspan="4" style="text-align:center;color:var(--mut);padding:16px">
+         discover_config.json に「保有中」銘柄がありません。<br>
+         Discover設定タブで銘柄を「保有中」に変更してください。
+       </td></tr>`
+    : rows;
+
+  container.innerHTML = `
+    <div class="form-group" style="max-width:240px;margin-bottom:16px">
+      <label>キャッシュ残高 (USD)</label>
+      <input type="number" class="form-input" id="pf-cash-current"
+             value="${broker.cash || 0}" min="0" step="100">
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>ティッカー（保有中）</th>
+          <th>保有株数</th>
+          <th>取得単価 (USD)</th>
+          <th>メモ</th>
+        </tr></thead>
+        <tbody>${emptyMsg}</tbody>
+      </table>
+    </div>`;
+}
+
+function addPfBroker() {
+  const name = prompt('ブローカー名を入力してください:');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  if (portfolioConfig.brokers[trimmed]) { alert(`"${trimmed}" は既に存在します`); return; }
+  saveCurrentBrokerValues();
+  portfolioConfig.brokers[trimmed] = { cash: 0, positions: {} };
+  currentBrokerTab = trimmed;
+  renderBrokerTabs();
 }
 
 async function savePortfolio() {
-  if (!portfolioConfig) return;
+  saveCurrentBrokerValues();
   const btn = document.getElementById('savePortfolioBtn');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span>保存中...';
 
-  const cash = parseFloat(document.getElementById('portfolioCash').value) || 0;
-  const positions = {};
-  document.querySelectorAll('.pf-shares').forEach(input => {
-    const ticker = input.dataset.ticker;
-    const shares = parseFloat(input.value) || 0;
-    if (shares <= 0) return;
-    const avg_cost = parseFloat(document.querySelector(`.pf-cost[data-ticker="${ticker}"]`)?.value) || 0;
-    const memo     = document.querySelector(`.pf-memo[data-ticker="${ticker}"]`)?.value?.trim() || '';
-    positions[ticker] = { shares, avg_cost, memo };
-  });
-
-  portfolioConfig.cash         = cash;
-  portfolioConfig.positions    = positions;
   portfolioConfig.last_updated = new Date().toISOString().slice(0, 10);
 
   try {
@@ -2706,12 +2800,44 @@ async function savePortfolio() {
     const res = await commitFile(PORTFOLIO_PATH, content,
       'feat(portfolio): ポートフォリオ更新', portfolioConfigSha);
     portfolioConfigSha = res.content.sha;
-    showResult('portfolioMsg', 'success', `✓ ポートフォリオを保存しました（${Object.keys(positions).length}銘柄）`);
+    const totalPos = Object.values(portfolioConfig.brokers)
+      .reduce((sum, b) => sum + Object.keys(b.positions || {}).length, 0);
+    showResult('portfolioMsg', 'success',
+      `✓ 保存しました（${Object.keys(portfolioConfig.brokers).length}証券会社・${totalPos}ポジション）`);
   } catch(e) {
     showResult('portfolioMsg', 'error', `保存失敗: ${e.message}`);
   } finally {
     btn.disabled = false;
     btn.innerHTML = '💾 ポートフォリオを保存';
+  }
+}
+
+async function changePortfolioPassword() {
+  const pw = document.getElementById('newPwInput').value;
+  if (!pw || pw.length < 4) {
+    showResult('pwChangeResult', 'error', '4文字以上のパスワードを入力してください');
+    return;
+  }
+  const btn = document.getElementById('changePwBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>変更中...';
+  try {
+    const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+    const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+    const { content: html, sha } = await fetchFile(PORTFOLIO_HTML_PATH);
+    const newHtml = html.replace(/const PW_HASH = "[a-f0-9]+"/, `const PW_HASH = "${hash}"`);
+    if (newHtml === html) {
+      showResult('pwChangeResult', 'error', 'PW_HASH の書き換え箇所が見つかりませんでした');
+      return;
+    }
+    await commitFile(PORTFOLIO_HTML_PATH, newHtml, 'feat(portfolio): パスワード変更', sha);
+    showResult('pwChangeResult', 'success', '✓ パスワードを変更しました。GitHub Pages 反映まで数分かかります。');
+    document.getElementById('newPwInput').value = '';
+  } catch(e) {
+    showResult('pwChangeResult', 'error', `変更失敗: ${e.message}`);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '変更';
   }
 }
 </script>

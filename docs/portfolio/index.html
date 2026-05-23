@@ -17,6 +17,19 @@
     body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;min-height:100vh}
     .shell{max-width:1200px;margin:0 auto;padding:0 20px 60px}
 
+    /* Auth */
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+    .auth-box{text-align:center;padding:48px 40px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;width:340px}
+    .auth-title{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--orn);letter-spacing:.1em;margin-bottom:8px}
+    .auth-sub{font-family:var(--mono);font-size:11px;color:var(--mut);margin-bottom:28px}
+    .auth-row{display:flex;gap:8px;justify-content:center}
+    .auth-input{font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);width:190px;border-radius:4px;outline:none}
+    .auth-input:focus{border-color:var(--acc)}
+    .auth-btn{padding:10px 18px;background:var(--orn);color:#fff;border:none;cursor:pointer;font-family:var(--mono);font-size:13px;border-radius:4px;transition:opacity .2s}
+    .auth-btn:hover{opacity:.85}
+    #pw-error{color:var(--red);font-size:11px;font-family:var(--mono);margin-top:12px;min-height:16px}
+
+    /* Header */
     header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:0;flex-wrap:wrap;gap:10px}
     .logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:10px;color:var(--txt);text-decoration:none}
     .logo-dot{width:8px;height:8px;background:var(--orn);border-radius:50%;animation:pdot 2s ease-in-out infinite}
@@ -36,8 +49,14 @@
     .s-card-sub{font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:4px}
     .pos{color:var(--grn)} .neg{color:var(--red)} .neu{color:var(--mut)}
 
+    /* Broker summary */
+    .broker-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+    .broker-card{background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px 16px;flex:1;min-width:180px}
+    .broker-name{font-family:var(--mono);font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+    .broker-val{font-family:var(--mono);font-size:15px;font-weight:700}
+
     /* Section title */
-    .sec{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--acc);letter-spacing:.15em;margin:28px 0 12px;display:flex;align-items:center;gap:10px}
+    .sec{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--orn);letter-spacing:.15em;margin:28px 0 12px;display:flex;align-items:center;gap:10px}
     .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
 
     /* Portfolio table */
@@ -46,7 +65,8 @@
     th{font-family:var(--mono);font-size:10px;color:var(--mut);text-align:left;padding:10px 12px;background:var(--sur2);border-bottom:1px solid var(--bdr);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
     td{padding:9px 12px;border-bottom:1px solid rgba(30,40,64,.5);font-size:13px;white-space:nowrap;vertical-align:middle}
     tr:hover td{background:rgba(255,255,255,.015)}
-    tr.total-row td{background:var(--sur2);font-weight:600;border-top:1px solid var(--bdr)}
+    tr.total-row td{background:var(--sur2);font-weight:600;border-top:2px solid var(--bdr)}
+    tr.broker-row td{background:rgba(22,28,45,.6);color:var(--mut);font-size:12px}
     tr.cash-row td{background:var(--sur2);color:var(--mut)}
     .mono{font-family:var(--mono);font-size:12px}
     .tkr-a{color:var(--acc);font-family:var(--mono);font-weight:700;font-size:13px;text-decoration:none}
@@ -60,7 +80,7 @@
     .badge-TRIM {background:rgba(249,115,22,.12); color:#f97316}
     .badge-SELL {background:rgba(239,68,68,.10);  color:#ef4444}
     .badge-PASS {background:rgba(71,85,105,.10);  color:#475569}
-    .badge-warn {background:rgba(245,158,11,.1);  color:var(--amb);font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:3px}
+    .badge-warn {background:rgba(245,158,11,.1);  color:var(--amb);font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:3px;white-space:nowrap}
 
     /* Phase distribution */
     .dist-bar{display:flex;flex-wrap:wrap;gap:16px;background:var(--sur);border:1px solid var(--bdr);padding:16px 20px;border-radius:8px;margin-bottom:24px}
@@ -79,6 +99,22 @@
   <link rel="stylesheet" href="../common/site-theme.css">
 </head>
 <body data-tool="portfolio">
+
+<!-- ── Auth screen ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">💼 PORTFOLIO</div>
+    <div class="auth-sub">このページはパスワードで保護されています</div>
+    <div class="auth-row">
+      <input type="password" id="pw-input" class="auth-input" placeholder="Password" autocomplete="current-password">
+      <button class="auth-btn" onclick="checkPassword()">Enter</button>
+    </div>
+    <div id="pw-error"></div>
+  </div>
+</div>
+
+<!-- ── Main content ── -->
+<div id="main-content" style="display:none">
 <div class="shell">
   <header>
     <a href="../" class="logo">
@@ -96,11 +132,45 @@
   <div class="last-updated" id="last-updated"></div>
 
   <div id="summary-section"><div class="loading"><span class="spinner"></span>データ読み込み中...</div></div>
+  <div id="broker-summary-section"></div>
   <div id="table-section"></div>
   <div id="dist-section"></div>
 </div>
+</div><!-- /main-content -->
 
 <script>
+// ── Auth ──
+const PW_HASH = "9881928f60e14fcbd7a28d2166ee4e8ba456daa9df696159dcae35050762895b";
+const SESSION_KEY = "portfolio_auth";
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function checkPassword() {
+  const pw = document.getElementById('pw-input').value;
+  const hash = await sha256(pw);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    loadData();
+  } else {
+    document.getElementById('pw-error').textContent = 'パスワードが違います';
+  }
+}
+
+document.getElementById('pw-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') checkPassword();
+});
+
+if (sessionStorage.getItem(SESSION_KEY) === '1') {
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('main-content').style.display = 'block';
+  loadData();
+}
+
 // ── Config ──
 const BASE      = '/On-a-journey';
 const PF_PATH   = BASE + '/config/portfolio.json';
@@ -121,7 +191,6 @@ function toJST(dateStr) {
     hour: '2-digit', minute: '2-digit'
   }) + ' JST';
 }
-
 function fmt$(v) {
   if (v == null) return '—';
   return '$' + v.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
@@ -132,12 +201,12 @@ function fmtPct(v, dec=1) {
   return `<span class="${v>=0?'pos':'neg'}">${s}</span>`;
 }
 
-// ── Score logic (from integrated-dashboard) ──
-function calcFunda(revYoy, rule40, epsYoy, fcfBase) {
+// ── Score logic ──
+function calcFunda(revYoy, rule40, fcfBase) {
   let s = 0;
   s += revYoy  == null ? 0 : revYoy  > 20 ? 25 : revYoy  >= 0 ? 15 : 0;
   s += rule40  == null ? 0 : rule40  > 40 ? 25 : rule40  >= 20 ? 15 : 0;
-  s += epsYoy  == null ? 0 : epsYoy  > 20 ? 25 : epsYoy  >= 0 ? 15 : 0;
+  s += 0; // epsYoy not available
   s += fcfBase == null ? 0 : fcfBase > 0 ? 25 : 0;
   return s;
 }
@@ -148,14 +217,13 @@ function calcTiming(upside, fg, stage) {
   s += stage == null ? 0 : stage === 1 ? 20 : stage === 2 ? 15 : stage === 3 ? 5 : 0;
   return s;
 }
-function classify(f, t, stock) {
-  const { upside, stage, revYoy, rule40, ma200, fcfBase, fcfEst } = stock;
+function classify(f, t, { upside, stage, revYoy, rule40, ma200, fcfBase, fcfEst }) {
   if (f < 25) return 'PASS';
   const sellFunda = revYoy < 0 && rule40 < 20 && (
     fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
   );
   const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10 && f < 50;
-  if (f >= 25 && (sellFunda || sellTech)) return 'SELL';
+  if (sellFunda || sellTech) return 'SELL';
   if (f >= 50) {
     if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
     if (upside != null && upside > 20 && t >= 50)     return 'BUY';
@@ -164,29 +232,26 @@ function classify(f, t, stock) {
   }
   return 'HOLD';
 }
-
 const CAT_META = {
-  BUY:  { badge:'badge-BUY',   label:'BUY'   },
-  WATCH:{ badge:'badge-WATCH', label:'WATCH'  },
-  HOLD: { badge:'badge-HOLD',  label:'HOLD'   },
-  TRIM: { badge:'badge-TRIM',  label:'TRIM'   },
-  SELL: { badge:'badge-SELL',  label:'SELL'   },
-  PASS: { badge:'badge-PASS',  label:'PASS'   },
+  BUY:  { badge:'badge-BUY',   label:'BUY'  },
+  WATCH:{ badge:'badge-WATCH', label:'WATCH' },
+  HOLD: { badge:'badge-HOLD',  label:'HOLD'  },
+  TRIM: { badge:'badge-TRIM',  label:'TRIM'  },
+  SELL: { badge:'badge-SELL',  label:'SELL'  },
+  PASS: { badge:'badge-PASS',  label:'PASS'  },
 };
 
-// ── Main ──
-(async function () {
-
-  // Fetch all data in parallel
+// ── Main data loader ──
+async function loadData() {
   const [pfRes, mktRes, discRes] = await Promise.allSettled([
-    fetch(PF_PATH + TS).then(r => r.ok ? r.json() : null),
-    fetch(M_PATH  + TS).then(r => r.ok ? r.json() : null),
+    fetch(PF_PATH   + TS).then(r => r.ok ? r.json() : null),
+    fetch(M_PATH    + TS).then(r => r.ok ? r.json() : null),
     fetch(DISC_PATH + TS).then(r => r.ok ? r.json() : null),
   ]);
 
-  const pf   = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
-  const mktArr = mktRes.status === 'fulfilled' ? mktRes.value : null;
-  const disc = discRes.status === 'fulfilled' ? discRes.value : null;
+  const pf     = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
+  const mktArr = mktRes.status === 'fulfilled' ? mktRes.value  : null;
+  const disc   = discRes.status === 'fulfilled' ? discRes.value : null;
 
   if (!pf) {
     document.getElementById('summary-section').innerHTML =
@@ -194,25 +259,62 @@ const CAT_META = {
     return;
   }
 
-  // Last updated
   const lu = document.getElementById('last-updated');
   if (lu && pf.last_updated) lu.textContent = toJST(pf.last_updated + 'T00:00:00+09:00');
 
-  const mkt  = Array.isArray(mktArr) ? mktArr[mktArr.length - 1] : null;
-  const fg   = mkt?.fear_greed?.score ?? 50;
-  const cash = pf.cash ?? 0;
-  const positions = pf.positions ?? {};
-  const tickers = Object.keys(positions);
+  const mkt = Array.isArray(mktArr) ? mktArr[mktArr.length - 1] : null;
+  const fg  = mkt?.fear_greed?.score ?? 50;
 
-  if (tickers.length === 0) {
+  // 保有中 tickers from discover_config
+  const discTickers = disc?.tickers ?? {};
+  const holdingTickers = Object.entries(discTickers)
+    .filter(([, info]) => info.category === '保有中')
+    .map(([t]) => t)
+    .sort();
+
+  // Brokers
+  const brokers = pf.brokers ?? {};
+
+  // Aggregate positions across brokers (weighted avg cost)
+  // posAgg[ticker] = { totalShares, totalCost, memos[] }
+  const posAgg = {};
+  let totalCashAll = 0;
+  const brokerSummaries = [];
+
+  for (const [brokerName, brokerData] of Object.entries(brokers)) {
+    const bCash = brokerData.cash ?? 0;
+    totalCashAll += bCash;
+    let bValue = 0; // filled after price fetch
+
+    const bPositions = brokerData.positions ?? {};
+    for (const [ticker, pos] of Object.entries(bPositions)) {
+      const shares   = pos.shares   ?? 0;
+      const avg_cost = pos.avg_cost ?? 0;
+      if (shares <= 0) continue;
+      if (!posAgg[ticker]) posAgg[ticker] = { totalShares: 0, totalCost: 0, memos: [] };
+      posAgg[ticker].totalShares += shares;
+      posAgg[ticker].totalCost   += shares * avg_cost;
+      if (pos.memo) posAgg[ticker].memos.push(pos.memo);
+    }
+    brokerSummaries.push({ name: brokerName, cash: bCash, positions: bPositions });
+  }
+
+  // Tickers to display: 保有中 from discover_config (for table)
+  // Also include any tickers that are in posAgg but not in holdingTickers (warn them)
+  const displayTickers = holdingTickers.length > 0 ? holdingTickers
+    : Object.keys(posAgg).sort();
+
+  if (displayTickers.length === 0 && Object.keys(posAgg).length === 0) {
     document.getElementById('summary-section').innerHTML =
       '<p style="color:var(--mut);font-family:var(--mono);font-size:13px;padding:40px">保有銘柄がありません。ADMIN からポートフォリオを設定してください。</p>';
     return;
   }
 
-  // Per-ticker data (parallel)
+  // Fetch tanuki + hypecore data for all tickers in posAgg
+  const allTickers = [...new Set([...displayTickers, ...Object.keys(posAgg)])];
+
   const [tanukiMap, hypeMap] = await Promise.all([
-    Promise.allSettled(tickers.map(async tk => {
+    Promise.allSettled(allTickers.map(async tk => {
       try {
         const r = await fetch(`${T_BASE}${tk}/latest.json${TS}`);
         if (r.ok) return [tk, await r.json()];
@@ -220,7 +322,7 @@ const CAT_META = {
       return [tk, null];
     })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
 
-    Promise.allSettled(tickers.map(async tk => {
+    Promise.allSettled(allTickers.map(async tk => {
       try {
         const r = await fetch(`${H_BASE}${tk}_poc.json${TS}`);
         if (r.ok) return [tk, await r.json()];
@@ -229,74 +331,69 @@ const CAT_META = {
     })).then(rs => Object.fromEntries(rs.map(r => r.value ?? [null,null]).filter(([k])=>k))),
   ]);
 
-  // Discover config: 「保有中」category map
-  const discTickers = disc?.tickers ?? {};
-
-  // Build rows
-  let totalCost   = 0;
-  let totalValue  = 0;
-  let totalPnl    = 0;
-
+  // Build aggregated rows for display
+  let totalCost  = 0;
+  let totalValue = 0;
+  let totalPnl   = 0;
   const phaseCount = {};
 
-  const rows = tickers.map(ticker => {
-    const pos     = positions[ticker];
-    const shares  = pos.shares  ?? 0;
-    const avgCost = pos.avg_cost ?? 0;
-    const memo    = pos.memo    ?? '';
+  const rows = displayTickers.map(ticker => {
+    const agg = posAgg[ticker] ?? { totalShares: 0, totalCost: 0, memos: [] };
+    const totalShares = agg.totalShares;
+    const totalPosCost = agg.totalCost;
+    const weightedAvgCost = totalShares > 0 ? totalPosCost / totalShares : 0;
 
     const tk = tanukiMap[ticker];
     const hc = hypeMap[ticker];
+    const lastMo        = hc?.monthly?.[hc.monthly.length - 1] ?? null;
+    const currentPrice  = tk?.components?.current_price ?? null;
+    const ivps          = tk?.scenario_valuations?.base?.intrinsic_value_per_share
+                        ?? tk?.intrinsic_value_per_share ?? null;
+    const upside        = tk?.upside_percent ?? null;
+    const revYoy        = lastMo?.rev_yoy    ?? null;
+    const rule40        = lastMo?.rule40     ?? null;
+    const stage         = lastMo?.stage      ?? null;
+    const stageLabel    = lastMo?.stage_label    ?? '—';
+    const substageLabel = lastMo?.substage_label ?? '';
+    const fcfBase       = tk?.fcf_base?.base_fcf ?? null;
+    const fcfEst        = tk?.fcf_estimation?.estimated_fcf ?? null;
+    const ma200         = lastMo?.ma200_dev ?? 0;
 
-    const lastMo       = hc?.monthly?.[hc.monthly.length - 1] ?? null;
-    const currentPrice = tk?.components?.current_price ?? null;
-    const ivps         = tk?.scenario_valuations?.base?.intrinsic_value_per_share
-                       ?? tk?.intrinsic_value_per_share ?? null;
-    const upside       = tk?.upside_percent ?? null;
-    const revYoy       = lastMo?.rev_yoy    ?? null;
-    const rule40       = lastMo?.rule40     ?? null;
-    const stage        = lastMo?.stage      ?? null;
-    const stageLabel   = lastMo?.stage_label    ?? '—';
-    const substageLabel= lastMo?.substage_label ?? '';
-    const fcfBase      = tk?.fcf_base?.base_fcf ?? null;
-    const fcfEst       = tk?.fcf_estimation?.estimated_fcf ?? null;
-    const ma200        = lastMo?.ma200_dev ?? 0;
+    const posValue = currentPrice != null && totalShares > 0 ? totalShares * currentPrice : null;
+    const posPnl   = posValue != null ? posValue - totalPosCost : null;
+    const pnlPct   = weightedAvgCost > 0 && currentPrice != null
+                   ? (currentPrice - weightedAvgCost) / weightedAvgCost * 100 : null;
 
-    const posValue = currentPrice != null ? shares * currentPrice : null;
-    const posCost  = shares * avgCost;
-    const posPnl   = posValue != null ? posValue - posCost : null;
-    const pnlPct   = avgCost > 0 && currentPrice != null
-                     ? (currentPrice - avgCost) / avgCost * 100 : null;
+    if (posValue != null) totalValue += posValue;
+    if (totalShares > 0)  totalCost  += totalPosCost;
+    if (posPnl != null)   totalPnl   += posPnl;
 
-    if (posValue  != null) totalValue += posValue;
-    totalCost += posCost;
-    if (posPnl != null) totalPnl += posPnl;
-
-    const funda  = calcFunda(revYoy, rule40, null, fcfBase);
-    const timing = calcTiming(upside, fg, stage);
-    const stockObj = {
-      upside, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
-      ma200, fcfBase, fcfEst,
-    };
-    const cat = classify(funda, timing, stockObj);
-
-    // Phase distribution
-    if (stageLabel && stageLabel !== '—') {
+    if (stageLabel && stageLabel !== '—' && totalShares > 0) {
       phaseCount[stageLabel] = (phaseCount[stageLabel] || 0) + 1;
     }
 
-    // Discover config check
-    const discInfo = discTickers[ticker];
-    const notHolding = discInfo && discInfo.category !== '保有中';
+    const funda  = calcFunda(revYoy, rule40, fcfBase);
+    const timing = calcTiming(upside, fg, stage);
+    const cat    = classify(funda, timing, {
+      upside, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
+      ma200, fcfBase, fcfEst,
+    });
 
-    return { ticker, shares, avgCost, memo, currentPrice, ivps, upside,
-             posValue, posCost, posPnl, pnlPct,
-             stageLabel, substageLabel, cat, funda, timing, notHolding };
+    // Warn if in posAgg but not in discover 保有中
+    const inDiscover   = discTickers[ticker];
+    const notHolding   = inDiscover ? inDiscover.category !== '保有中' : false;
+    const notInDisc    = !inDiscover && totalShares > 0;
+
+    const memo = [...new Set(agg.memos)].join(' / ');
+
+    return { ticker, totalShares, weightedAvgCost, totalPosCost, currentPrice, posValue,
+             posPnl, pnlPct, ivps, upside, stageLabel, substageLabel,
+             cat, funda, timing, notHolding, notInDisc, memo };
   });
 
-  const totalAssets = totalValue + cash;
+  const totalAssets = totalValue + totalCashAll;
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
-  const cashRatio   = totalAssets > 0 ? (cash / totalAssets) * 100 : 0;
+  const cashRatio   = totalAssets > 0 ? (totalCashAll / totalAssets) * 100 : 0;
 
   // ① Summary cards
   document.getElementById('summary-section').innerHTML = `
@@ -319,61 +416,86 @@ const CAT_META = {
       <div class="s-card">
         <div class="s-card-label">キャッシュ比率</div>
         <div class="s-card-value">${cashRatio.toFixed(1)}%</div>
-        <div class="s-card-sub">${fmt$(cash)}</div>
+        <div class="s-card-sub">${fmt$(totalCashAll)}</div>
       </div>
     </div>`;
 
-  // ② Portfolio table
+  // ② Broker summary
+  const brokerCards = brokerSummaries.map(b => {
+    const bTotalCost = Object.values(b.positions).reduce((s, p) => s + (p.shares||0)*(p.avg_cost||0), 0);
+    const bTotalValue = Object.entries(b.positions).reduce((s, [tk, p]) => {
+      const price = tanukiMap[tk]?.components?.current_price ?? null;
+      return s + (price != null ? (p.shares||0) * price : 0);
+    }, 0);
+    const bPnl = bTotalValue - bTotalCost;
+    const bAssets = bTotalValue + b.cash;
+    return `<div class="broker-card">
+      <div class="broker-name">${b.name}</div>
+      <div class="broker-val">${fmt$(bAssets)}</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:4px">
+        株式: ${fmt$(bTotalValue)} / CASH: ${fmt$(b.cash)}
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;margin-top:4px;${bPnl>=0?'color:var(--grn)':'color:var(--red)'}">${bPnl>=0?'+':''}${fmt$(bPnl)}</div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('broker-summary-section').innerHTML = `
+    <div class="sec">② ブローカー別サマリー</div>
+    <div class="broker-summary">${brokerCards}</div>`;
+
+  // ③ Table
   const tableRows = rows.map(r => {
     const m = CAT_META[r.cat] ?? CAT_META['PASS'];
-    const warnBadge = r.notHolding
-      ? `<span class="badge-warn" title="discover_config.jsonの区分が保有中ではありません">⚠️ 区分未反映</span>` : '';
+    const warn = r.notHolding
+      ? `<span class="badge-warn" title="discover_configの区分が保有中ではありません">⚠️ 区分未反映</span>` : '';
+    const notInWarn = r.notInDisc
+      ? `<span class="badge-warn" title="discover_configに未登録">⚠️ 未登録</span>` : '';
+    const sharesDisp = r.totalShares > 0 ? r.totalShares.toLocaleString() : '<span class="neu">—</span>';
     return `<tr>
       <td>
         <a class="tkr-a" href="../value-monitor/tanuki_valuation/stock.html?ticker=${r.ticker}">${r.ticker}</a>
-        ${warnBadge}
+        ${warn}${notInWarn}
       </td>
-      <td class="mono">${r.shares.toLocaleString()}</td>
-      <td class="mono">${r.avgCost > 0 ? fmt$(r.avgCost) : '—'}</td>
-      <td class="mono">${r.posCost > 0 ? fmt$(r.posCost) : '—'}</td>
+      <td class="mono">${sharesDisp}</td>
+      <td class="mono">${r.weightedAvgCost > 0 ? fmt$(r.weightedAvgCost) : '—'}</td>
+      <td class="mono">${r.totalPosCost > 0 ? fmt$(r.totalPosCost) : '—'}</td>
       <td class="mono">${r.currentPrice != null ? fmt$(r.currentPrice) : '—'}</td>
       <td class="mono">${r.posValue != null ? fmt$(r.posValue) : '—'}</td>
       <td class="mono ${r.posPnl != null ? (r.posPnl>=0?'pos':'neg') : ''}">${r.posPnl != null ? fmt$(r.posPnl) : '—'}</td>
       <td>${fmtPct(r.pnlPct)}</td>
       <td class="mono">${r.ivps != null ? fmt$(r.ivps) : '—'}</td>
       <td>${fmtPct(r.upside)}</td>
-      <td style="font-size:12px;color:var(--txt)">${r.stageLabel}${r.substageLabel ? '<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>' : ''}</td>
+      <td style="font-size:12px">${r.stageLabel}${r.substageLabel?'<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>':''}</td>
       <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
-      <td style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo || ''}</td>
+      <td style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo||''}</td>
     </tr>`;
   }).join('');
 
-  const totPnlPct2 = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
   const totalRow = `<tr class="total-row">
     <td class="mono" colspan="3">TOTAL</td>
     <td class="mono">${fmt$(totalCost)}</td>
     <td></td>
     <td class="mono">${fmt$(totalValue)}</td>
     <td class="mono ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</td>
-    <td>${fmtPct(totPnlPct2)}</td>
+    <td>${fmtPct(totalPnlPct)}</td>
     <td colspan="5"></td>
   </tr>`;
 
   const cashRow = `<tr class="cash-row">
-    <td class="mono">CASH</td>
+    <td class="mono">CASH (全ブローカー合計)</td>
     <td colspan="4">—</td>
-    <td class="mono">${fmt$(cash)}</td>
+    <td class="mono">${fmt$(totalCashAll)}</td>
     <td colspan="7">—</td>
   </tr>`;
 
   document.getElementById('table-section').innerHTML = `
-    <div class="sec">② ポートフォリオ明細</div>
+    <div class="sec">③ ポートフォリオ明細（保有中銘柄・全ブローカー合算）</div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
           <th>銘柄</th>
-          <th>株数</th>
-          <th>取得単価</th>
+          <th>合計株数</th>
+          <th>加重平均単価</th>
           <th>取得総額</th>
           <th>現在株価</th>
           <th>時価残高</th>
@@ -393,17 +515,16 @@ const CAT_META = {
       </table>
     </div>`;
 
-  // ③ Phase distribution
+  // ④ Phase distribution
   const distItems = Object.entries(phaseCount)
-    .sort((a, b) => b[1] - a[1])
-    .map(([label, cnt]) => `<div class="dist-item"><span class="dist-label">${label}</span>${cnt}銘柄</div>`)
+    .sort((a,b) => b[1]-a[1])
+    .map(([label,cnt]) => `<div class="dist-item"><span class="dist-label">${label}</span>${cnt}銘柄</div>`)
     .join('');
 
   document.getElementById('dist-section').innerHTML = `
-    <div class="sec">③ フェーズ分布</div>
+    <div class="sec">④ フェーズ分布</div>
     <div class="dist-bar">${distItems || '<span style="color:var(--mut)">データなし</span>'}</div>`;
-
-})();
+}
 </script>
   <script src="../common/site-nav.js"></script>
 </body>
