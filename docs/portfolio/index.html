@@ -161,15 +161,19 @@ async function checkPassword() {
   }
 }
 
-document.getElementById('pw-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter') checkPassword();
+document.addEventListener('DOMContentLoaded', () => {
+  const pwInput = document.getElementById('pw-input');
+  if (pwInput) {
+    pwInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPassword();
+    });
+  }
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    loadData();
+  }
 });
-
-if (sessionStorage.getItem(SESSION_KEY) === '1') {
-  document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('main-content').style.display = 'block';
-  loadData();
-}
 
 // ── Config ──
 const BASE      = '/On-a-journey';
@@ -177,7 +181,7 @@ const PF_PATH   = BASE + '/portfolio/data/portfolio.json';
 const T_BASE    = BASE + '/value-monitor/tanuki_valuation/data/';
 const H_BASE    = BASE + '/value-monitor/hypecore/data/';
 const M_PATH    = BASE + '/market-monitor/market-pulse/data/market_data.json';
-const DISC_PATH = BASE + '/config/discover_config.json';
+const DISC_PATH = BASE + '/portfolio/data/discover_config.json';
 const TS        = '?t=' + Date.now();
 
 // ── Utilities ──

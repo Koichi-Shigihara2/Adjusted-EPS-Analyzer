@@ -2565,9 +2565,15 @@ async function addCandidateToWatch(ticker, company) {
 
   try {
     const content = JSON.stringify(discoverConfig, null, 2) + '\n';
-    const res = await commitFile(DISCOVER_CONFIG_PATH, content,
-      `feat(discover): 候補銘柄 ${ticker} を監視リストに追加`, discoverConfigSha);
-    discoverConfigSha = res.content.sha;
+    await commitMultipleFiles(
+      [
+        { path: DISCOVER_CONFIG_PATH,                       content },
+        { path: 'docs/portfolio/data/discover_config.json', content },
+      ],
+      `feat(discover): 候補銘柄 ${ticker} を監視リストに追加`
+    );
+    const { sha: newSha } = await fetchFile(DISCOVER_CONFIG_PATH);
+    discoverConfigSha = newSha;
     showResult('discoverMsg', 'success', `✓ ${ticker} を監視リストに追加しました`);
     await loadDiscoverTab();
   } catch(e) {
@@ -2596,9 +2602,15 @@ async function saveDiscoverConfig() {
 
   try {
     const content = JSON.stringify(discoverConfig, null, 2) + '\n';
-    const res = await commitFile(DISCOVER_CONFIG_PATH, content,
-      'feat(discover): 銘柄区分・メモ更新', discoverConfigSha);
-    discoverConfigSha = res.content.sha;
+    await commitMultipleFiles(
+      [
+        { path: DISCOVER_CONFIG_PATH,                       content },
+        { path: 'docs/portfolio/data/discover_config.json', content },
+      ],
+      'feat(discover): 銘柄区分・メモ更新'
+    );
+    const { sha: newSha } = await fetchFile(DISCOVER_CONFIG_PATH);
+    discoverConfigSha = newSha;
     showResult('discoverMsg', 'success', '✓ Discover設定を保存しました');
   } catch(e) {
     showResult('discoverMsg', 'error', `保存失敗: ${e.message}`);
