@@ -43,8 +43,7 @@ def fetch_news(ticker: str) -> list:
     company = get_company_name(ticker)
     url = "https://newsapi.org/v2/everything"
     params = {
-        "q": f'{ticker} OR "{company}"',
-        "searchIn": "title",
+        "q": f'"{company}" OR "{ticker} stock"',
         "language": "en",
         "sortBy": "publishedAt",
         "pageSize": 5,
@@ -54,7 +53,9 @@ def fetch_news(ticker: str) -> list:
     }
     try:
         res = requests.get(url, params=params, timeout=10)
-        return res.json().get("articles", [])
+        articles = res.json().get("articles", [])
+        print(f"    NEWS_API: {len(articles)}件取得 ({ticker})")
+        return articles
     except Exception as e:
         print(f"NEWS_API error ({ticker}): {e}")
         return []
@@ -65,10 +66,11 @@ GROK_HEADERS = {"Content-Type": "application/json"}
 GROK_MODELS = ["grok-3-mini", "grok-3", "grok-2-1212"]
 
 
-def call_grok(prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> str:
+def call_grok(prompt: str, max_tokens: int = 800, temperature: float = 0.3, model_override: str = None) -> str:
     headers = {**GROK_HEADERS, "Authorization": f"Bearer {XAI_API_KEY}"}
+    models = [model_override] if model_override else GROK_MODELS
     last_error = None
-    for model in GROK_MODELS:
+    for model in models:
         try:
             print(f"[INFO] Grokモデル試行中: {model}")
             resp = requests.post(GROK_URL, headers=headers, json={
@@ -141,6 +143,37 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
     return {"items": [], "summary": "分類失敗"}
 
 
+def classify_news_with_grok_search(ticker: str, company: str) -> dict:
+    """NEWS_APIで記事が取れない場合のGrokによる代替検索"""
+    prompt = f"""{company}（{ticker}）に関する直近24時間の重要ニュースを
+web検索で調べてください。
+
+投資家として重要なニュース（決算・契約・製品・規制・人事等）が
+あれば以下のJSON形式で回答してください。
+重要なニュースがない場合は items を空にしてください。
+
+{{
+  "items": [
+    {{"title": "...", "category": "カタリスト/リスク/ブレイクスルー/一般",
+      "importance": "高/中/低", "summary": "30字以内の日本語要約"}}
+  ],
+  "top_importance": "高/中/低",
+  "summary": "全体を50字以内で要約"
+}}"""
+    result = call_grok(prompt, max_tokens=800, model_override="grok-3")
+    if not result:
+        return {"items": [], "summary": "データなし", "top_importance": "低"}
+    try:
+        m = re.search(r'\{.*\}', result, re.DOTALL)
+        if m:
+            data = json.loads(m.group())
+            data["items"] = [i for i in data.get("items", []) if i.get("importance") != "なし"]
+            return data
+    except Exception:
+        pass
+    return {"items": [], "summary": "データなし", "top_importance": "低"}
+
+
 def explore_candidates(existing_tickers: list) -> list:
     if not XAI_API_KEY:
         return []
@@ -184,9 +217,15 @@ def main():
     results = {}
     for ticker, info in active.items():
         print(f"  {ticker} ({info['category']}) 収集中...")
-        company    = get_company_name(ticker)
-        articles   = fetch_news(ticker)
-        classified = classify_news(ticker, articles, company)
+        company  = get_company_name(ticker)
+        articles = fetch_news(ticker)
+        if articles:
+            classified = classify_news(ticker, articles, company)
+        elif info.get("category") in ["保有中", "監視中"]:
+            print(f"    NEWS_API 0件 → Grok web検索で代替")
+            classified = classify_news_with_grok_search(ticker, company)
+        else:
+            classified = {"items": [], "summary": "データなし", "top_importance": "低"}
         results[ticker] = {
             "category":      info["category"],
             "memo":          info.get("memo", ""),
