@@ -547,8 +547,18 @@ let chartInst=null,oscChartInst=null,oscDays=30,activeOscMetrics=new Set(["score
 
 // ── UTIL ──
 const phaseClass=j=>j==="晴れ"?"sunny":j==="嵐"?"storm":"cloudy";
-const fmtDate=iso=>{const d=new Date(iso);return`${d.getMonth()+1}/${d.getDate()}`};
-const fmtDateFull=iso=>{const d=new Date(iso);return`${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()}`};
+const fmtDate=iso=>{
+  if(!iso) return '—';
+  const d=new Date(iso);
+  const jst=new Date(d.toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
+  return`${jst.getMonth()+1}/${jst.getDate()}`;
+};
+const fmtDateFull=iso=>{
+  if(!iso) return '—';
+  const d=new Date(iso);
+  const jst=new Date(d.toLocaleString('en-US',{timeZone:'Asia/Tokyo'}));
+  return`${jst.getFullYear()}/${String(jst.getMonth()+1).padStart(2,'0')}/${String(jst.getDate()).padStart(2,'0')}`;
+};
 const fmtChg=v=>{if(v==null)return{text:"-",cls:"flat"};const t=(v>=0?"+":"")+v.toFixed(2)+"%";return{text:t,cls:v>0.05?"up":v<-0.05?"down":"flat"}};
 const phaseLabel=j=>j==="晴れ"?"\u2600 晴れ":j==="嵐"?"\u26C8 嵐":"\u2601 曇り";
 function sentimentColor(s){if(s<=20)return"#f43f5e";if(s<=35)return"#fb7185";if(s<=50)return"#f59e0b";if(s<=65)return"#64748b";if(s<=80)return"#22d3ee";return"#10b981"}
