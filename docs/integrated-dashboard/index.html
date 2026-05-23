@@ -257,13 +257,14 @@ function classify(f, t, stock) {
   const sellFunda = revYoy < 0 && rule40 < 20 && (
     fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
   );
-  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10;
+  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10 && f < 50;
+  // 中長期スタンス：ファンダが良好(f≥50)な場合はテクニカル悪化だけでは売らない
   if (f >= 25 && (sellFunda || sellTech)) return 'SELL';
 
   // ファンダ良好（≥50）の分類
   if (f >= 50) {
     if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
-    if (upside != null && upside > 10 && t >= 50)     return 'BUY';
+    if (upside != null && upside > 20 && t >= 50)     return 'BUY';
     if (upside != null && upside > 0  && t < 50)      return 'WATCH';
     return 'HOLD';
   }
