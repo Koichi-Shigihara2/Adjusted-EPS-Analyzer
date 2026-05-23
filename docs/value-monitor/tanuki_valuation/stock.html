@@ -450,6 +450,13 @@ function renderCfCharts(records) {
     return (rv > 0 && da != null) ? (da / rv * 100) : null;
   });
 
+  // TTM FCF（直近4四半期合計）でFCF赤字判定
+  const ttmFcf = fcf.slice(-4).reduce((sum, v) => sum + (v ?? 0), 0);
+  const fcfNegative = ttmFcf < 0;
+
+  // SBC比率が100%超の四半期があるか判定
+  const sbcOver100 = sbcPct.some(v => v != null && v > 100);
+
   const darkBase = {
     paper_bgcolor: '#111520',
     plot_bgcolor: '#111520',
@@ -462,6 +469,7 @@ function renderCfCharts(records) {
   };
   const cfg = { displayModeBar: false, responsive: true };
 
+  // チャート①: CF推移
   Plotly.newPlot('cf-waterfall-chart', [
     { name: 'OCF',   type: 'bar', x: labels, y: ocf,      marker: { color: '#4ade80' } },
     { name: 'CapEx', type: 'bar', x: labels, y: capexNeg, marker: { color: '#f87171' } },
@@ -476,9 +484,17 @@ function renderCfCharts(records) {
     yaxis: { gridcolor: '#1e2840', ticksuffix: 'B' },
     legend: darkBase.legend,
     barmode: 'group',
-    title: { text: 'キャッシュフロー推移（四半期）', font: { color: '#94a3b8', size: 13 } },
+    title: { text: 'キャッシュフロー推移（四半期）- ' + ticker, font: { color: '#94a3b8', size: 13 } },
   }, cfg);
 
+  // チャート②: FCFマージン（FCF赤字バナー付き）
+  const marginEl = document.getElementById('cf-margin-chart');
+  if (fcfNegative) {
+    const banner = document.createElement('div');
+    banner.style.cssText = 'padding:8px 14px;background:rgba(248,113,113,0.15);border:1px solid rgba(248,113,113,0.5);border-radius:6px;color:#f87171;font-size:12px;margin-bottom:8px';
+    banner.textContent = '⚠️ FCF赤字 — 現在FCFはマイナス。CapExが営業CFを上回っています';
+    marginEl.parentNode.insertBefore(banner, marginEl);
+  }
   Plotly.newPlot('cf-margin-chart', [{
     name: 'FCFマージン',
     type: 'scatter',
@@ -494,11 +510,23 @@ function renderCfCharts(records) {
     margin: darkBase.margin,
     showlegend: darkBase.showlegend,
     xaxis: darkBase.xaxis,
-    yaxis: { gridcolor: '#1e2840', ticksuffix: '%' },
+    yaxis: {
+      gridcolor: '#1e2840',
+      ticksuffix: '%',
+      title: fcfNegative ? { text: 'マイナス = FCF赤字', font: { color: '#f87171', size: 10 } } : {},
+    },
     legend: darkBase.legend,
-    title: { text: 'FCFマージン推移（%）', font: { color: '#94a3b8', size: 13 } },
+    title: { text: 'FCFマージン推移（%）- ' + ticker, font: { color: '#94a3b8', size: 13 } },
   }, cfg);
 
+  // チャート③: SBC・D&A比率（上限キャップ・注記付き）
+  const qualityEl = document.getElementById('cf-quality-chart');
+  if (sbcOver100) {
+    const note = document.createElement('div');
+    note.style.cssText = 'padding:4px 14px 8px;color:#94a3b8;font-size:11px';
+    note.textContent = '※ 売上規模に対してSBCが極めて大きい（成長初期企業）';
+    qualityEl.parentNode.insertBefore(note, qualityEl);
+  }
   Plotly.newPlot('cf-quality-chart', [
     { name: 'SBC比率', type: 'bar', x: labels, y: sbcPct, marker: { color: '#a78bfa' } },
     { name: 'D&A比率', type: 'bar', x: labels, y: daPct,  marker: { color: '#fb923c' } },
@@ -509,10 +537,12 @@ function renderCfCharts(records) {
     margin: darkBase.margin,
     showlegend: darkBase.showlegend,
     xaxis: darkBase.xaxis,
-    yaxis: { gridcolor: '#1e2840', ticksuffix: '%' },
+    yaxis: sbcOver100
+      ? { gridcolor: '#1e2840', ticksuffix: '%', range: [0, 200] }
+      : { gridcolor: '#1e2840', ticksuffix: '%' },
     legend: darkBase.legend,
     barmode: 'stack',
-    title: { text: 'SBC・D&A比率（対売上高）', font: { color: '#94a3b8', size: 13 } },
+    title: { text: 'SBC・D&A比率（対売上高）- ' + ticker, font: { color: '#94a3b8', size: 13 } },
   }, cfg);
 
   section.style.display = '';
