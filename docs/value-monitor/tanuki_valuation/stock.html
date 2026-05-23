@@ -782,6 +782,7 @@ function render(d) {
         <div class="version-tag">${(d.formula || '').match(/v[\d.]+/) ? (d.formula.match(/v[\d.]+/)[0]) : 'v6.2'} | ${calcDate}</div>
       </div>
     </header>
+    <div class="last-updated">${toJST(calcDate)}</div>
 
     <div class="hero">
       <div class="ticker-header">
@@ -2014,6 +2015,17 @@ function renderHistoryChart(data) {
     yaxis: { gridcolor: '#1e2840', tickprefix: '$', tickformat: ',.0f' },
     hovermode: 'x unified',
   }, { displayModeBar: false, responsive: true });
+}
+
+function toJST(dateStr) {
+  if (!dateStr || dateStr === '—') return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr.slice(0, 10);
+  return d.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
 }
 
 loadData();

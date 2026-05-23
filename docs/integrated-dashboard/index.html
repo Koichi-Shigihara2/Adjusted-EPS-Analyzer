@@ -199,6 +199,7 @@
       <a href="index.html" class="cur">TANUKI SCORE</a>
     </nav>
   </header>
+  <div class="last-updated" id="last-updated"></div>
 
   <div id="mkt-summary"><div class="loading"><span class="spin"></span>市場データを取得中...</div></div>
   <div id="daily-pick"></div>
@@ -389,6 +390,7 @@ function renderDetailTable() {
   const vix     = mkt?.indicators?.['VIX指数']?.value ?? 20;
   const riskOff = mkt?.credit?.risk_off_score         ?? 50;
   const mktDate = (mkt?.date ?? '').slice(0, 10);
+  document.getElementById('last-updated').textContent = toJST(mkt?.date ?? '');
 
   // ① Market summary (render immediately)
   document.getElementById('mkt-summary').innerHTML = `
@@ -643,6 +645,17 @@ function toggleCat(id) {
   const open = body.style.display !== 'none' && body.style.display !== '';
   body.style.display = open ? 'none' : 'flex';
   if (toggle) toggle.classList.toggle('open', !open);
+}
+
+function toJST(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr.slice(0, 10);
+  return d.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
 }
 </script>
   <script src="../common/site-nav.js"></script>

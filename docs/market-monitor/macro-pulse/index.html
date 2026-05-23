@@ -520,6 +520,7 @@
       <button class="btn btn-p" onclick="loadCSVData()">↻ 更新</button>
     </div>
   </header>
+  <div class="last-updated" id="last-updated"></div>
 
   <!-- Notices -->
   <div id="notice" class="notice" style="display:none"><span class="ntag" id="ntag">INFO</span><span id="nmsg"></span></div>
@@ -2538,6 +2539,17 @@ function renderStealthCard(rows, latest) {
   </div>`;
 }
 
+function toJST(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return String(dateStr).slice(0, 10);
+  return d.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
 async function loadLiquidityData() {
   try {
     const res = await fetch(LIQUIDITY_PATH + '?t=' + Date.now());
@@ -2545,6 +2557,9 @@ async function loadLiquidityData() {
     const rows = parseCSVRaw(await res.text());
     if (!rows.length) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
     rows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const latestDate = rows[rows.length - 1]?.date;
+    const lu = document.getElementById('last-updated');
+    if (lu && latestDate) lu.textContent = toJST(latestDate);
     renderLiquidityCards(rows);
   } catch(e) {
     console.warn('liquidity:', e);

@@ -267,6 +267,7 @@
   </div>
   <div id="lastUpdated" style="font-family:var(--mono);font-size:11px;color:var(--mut);letter-spacing:.06em;white-space:nowrap"></div>
 </header>
+<div class="last-updated" id="last-updated"></div>
 <div class="shell">
   <div class="sec">市場センチメント指数 — 複数指標から算出した強欲・恐怖スコア（0=極度の恐怖 / 50=中立 / 100=極度の強欲）</div>
   <!-- Sentiment: ①メーター ②バー ③グラフ の縦積み -->
@@ -956,6 +957,8 @@ async function init(){
       const d=new Date(latestDate);
       const jst=new Intl.DateTimeFormat('ja-JP',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'}).format(d);
       document.getElementById('lastUpdated').textContent='更新 '+jst+' JST';
+      const lu=document.getElementById('last-updated');
+      if(lu) lu.textContent=jst;
     }catch(e){}
   }
 }

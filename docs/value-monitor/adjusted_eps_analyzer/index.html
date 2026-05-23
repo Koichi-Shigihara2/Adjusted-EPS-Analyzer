@@ -169,6 +169,7 @@
       </div>
     </div>
   </header>
+  <div class="last-updated" id="last-updated"></div>
 
   <div id="dashboard-content">
     <div class="empty"><span class="spin"></span>データを読み込み中...</div>
@@ -226,6 +227,7 @@ function toggleTranFilter() {
     if (!res.ok) throw new Error('データが見つかりません');
     const data = await res.json();
     let tickers = data.tickers || [];
+    document.getElementById('last-updated').textContent = toJST(data.last_updated);
 
     // 2. TANUKI 乖離率を並行取得
     await Promise.allSettled(tickers.map(async t => {
@@ -449,6 +451,17 @@ const observer = new MutationObserver(() => {
   }
 });
 observer.observe(document.getElementById('dashboard-content'), { childList: true, subtree: true });
+
+function toJST(dateStr) {
+  if (!dateStr) return '—';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return dateStr.slice(0, 10);
+  return d.toLocaleString('ja-JP', {
+    timeZone: 'Asia/Tokyo',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
 </script>
   <script src="../../common/site-nav.js"></script>
 </body>
