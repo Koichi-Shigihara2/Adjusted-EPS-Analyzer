@@ -1714,8 +1714,7 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     else:
         df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
 
-    JST = timezone(timedelta(hours=9))
-    date_str = datetime.now(JST).strftime("%Y-%m-%dT%H:%M:%S+09:00")
+    date_str = target_date.strftime("%Y-%m-%d")
 
     # ── ステルス流動性シグナル計算 ──
     # RRP減少 OR TGA減少 → supply（ステルス供給）
@@ -1766,6 +1765,13 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     df = df.sort_values("date").reset_index(drop=True)
     os.makedirs(BASE_DATA_DIR, exist_ok=True)
     df.to_csv(LIQUIDITY_PATH, index=False, encoding="utf-8")
+
+    JST = timezone(timedelta(hours=9))
+    meta = {"generated_at": datetime.now(JST).strftime("%Y-%m-%dT%H:%M:%S+09:00")}
+    meta_path = os.path.join(BASE_DATA_DIR, "05_meta.json")
+    with open(meta_path, "w") as f:
+        json.dump(meta, f)
+
     logger.info(
         f"[Liquidity] Saved {date_str}: "
         f"m2={new_row['m2']} fed={new_row['fed_balance']} "

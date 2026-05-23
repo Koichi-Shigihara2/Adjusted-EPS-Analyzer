@@ -2239,6 +2239,7 @@ function toggleAiCard(card) {
 // 💧 LIQUIDITY MONITOR
 // ═══════════════════════════════════════════════════════
 const LIQUIDITY_PATH = 'data/05_liquidity.csv';
+const LIQUIDITY_META_PATH = 'data/05_meta.json';
 
 function liqPrevVal(rows, col, daysBack) {
   const latestDate = new Date(rows[rows.length - 1].date);
@@ -2552,14 +2553,18 @@ function toJST(dateStr) {
 
 async function loadLiquidityData() {
   try {
-    const res = await fetch(LIQUIDITY_PATH + '?t=' + Date.now());
-    if (!res.ok) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
-    const rows = parseCSVRaw(await res.text());
+    const [csvRes, metaRes] = await Promise.allSettled([
+      fetch(LIQUIDITY_PATH + '?t=' + Date.now()),
+      fetch(LIQUIDITY_META_PATH + '?t=' + Date.now()).then(r => r.ok ? r.json() : null),
+    ]);
+    const csvResponse = csvRes.status === 'fulfilled' ? csvRes.value : null;
+    if (!csvResponse?.ok) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
+    const rows = parseCSVRaw(await csvResponse.text());
     if (!rows.length) { document.getElementById('liqGrid').innerHTML = '<div class="empty">データなし</div>'; return; }
     rows.sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-    const latestDate = rows[rows.length - 1]?.date;
+    const meta = metaRes.status === 'fulfilled' ? metaRes.value : null;
     const lu = document.getElementById('last-updated');
-    if (lu && latestDate) lu.textContent = toJST(latestDate);
+    if (lu && meta?.generated_at) lu.textContent = toJST(meta.generated_at);
     renderLiquidityCards(rows);
   } catch(e) {
     console.warn('liquidity:', e);
