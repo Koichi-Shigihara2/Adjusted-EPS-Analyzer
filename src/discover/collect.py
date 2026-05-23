@@ -44,6 +44,34 @@ def fetch_news(ticker: str, company_name: str) -> list:
         return []
 
 
+GROK_URL = "https://api.x.ai/v1/chat/completions"
+GROK_HEADERS = {"Content-Type": "application/json"}
+GROK_MODELS = ["grok-3-mini", "grok-3", "grok-2-1212"]
+
+
+def call_grok(prompt: str, max_tokens: int = 800, temperature: float = 0.3) -> str:
+    headers = {**GROK_HEADERS, "Authorization": f"Bearer {XAI_API_KEY}"}
+    last_error = None
+    for model in GROK_MODELS:
+        try:
+            print(f"[INFO] Grokモデル試行中: {model}")
+            resp = requests.post(GROK_URL, headers=headers, json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": max_tokens,
+                "temperature": temperature,
+            }, timeout=120)
+            resp.raise_for_status()
+            text = resp.json()["choices"][0]["message"]["content"]
+            print(f"[OK] Grokモデル成功: {model}")
+            return text
+        except Exception as e:
+            print(f"[WARN] Grokモデル失敗 ({model}): {e}")
+            last_error = e
+    print("[ERROR] すべてのGrokモデルで失敗しました")
+    raise last_error
+
+
 def classify_news(ticker: str, articles: list) -> dict:
     if not articles or not XAI_API_KEY:
         return {"items": [], "summary": "データなし"}
@@ -70,17 +98,7 @@ def classify_news(ticker: str, articles: list) -> dict:
 {{"items": [{{"title": "...", "category": "カタリスト", "importance": "高", "summary": "30字以内の日本語要約"}}], "top_importance": "高/中/低", "summary": "全体を50字以内で要約"}}
 """
     try:
-        res = requests.post(
-            "https://api.x.ai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "grok-3-mini",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 800,
-            },
-            timeout=30,
-        )
-        text = res.json()["choices"][0]["message"]["content"]
+        text = call_grok(prompt, max_tokens=800)
         text = text.replace("```json", "").replace("```", "").strip()
         m = re.search(r'\{.*\}', text, re.DOTALL)
         if m:
@@ -105,18 +123,7 @@ def explore_candidates() -> list:
 {"candidates": [{"ticker": "XXXX", "company": "会社名", "sector": "セクター", "reason": "注目理由（100字以内）", "risk": "主なリスク（50字以内）"}]}
 """
     try:
-        res = requests.post(
-            "https://api.x.ai/v1/chat/completions",
-            headers={"Authorization": f"Bearer {XAI_API_KEY}", "Content-Type": "application/json"},
-            json={
-                "model": "grok-3",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": 1000,
-                "search_parameters": {"mode": "on"},
-            },
-            timeout=60,
-        )
-        text = res.json()["choices"][0]["message"]["content"]
+        text = call_grok(prompt, max_tokens=1000)
         text = text.replace("```json", "").replace("```", "").strip()
         m = re.search(r'\{.*\}', text, re.DOTALL)
         if m:
