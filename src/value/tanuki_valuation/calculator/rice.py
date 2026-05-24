@@ -271,7 +271,7 @@ RICE_EXCLUDED_SECTORS = {
 
 # industryベースの除外（sectorがHealthcareでも保険会社はRICE除外）
 RICE_EXCLUDED_INDUSTRIES = {
-    "Healthcare Plans",    # UNH・OSCR等: 保険会社はsector=Healthcareだが構造は保険
+    "Healthcare Plans",    # 保険会社はsector=Healthcareだが構造は保険
 }
 
 

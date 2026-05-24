@@ -36,26 +36,6 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
                 "RevenueFromContract(130M=手数料のみ)とRevenuesNetOfInterest(1100M=全社収益)を"
                 "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。",
     },
-    # 健康保険系: Revenues タグで正常取得。Q1季節性あり。
-    # 【調査済み 2026-05-20】
-    # OSCR: Revenues = PremiumsEarnedNet(再保険控除後) + サービス収益(手数料等)
-    #   DirectPremiumsEarned(再保険控除前)は過大になるため不使用。
-    #   Revenues タグが正しい全社収益を返す。
-    # UNH: Revenues = PremiumsEarnedNet(保険料) + OptumRx等サービス収益(約22%)
-    #   PremiumsEarnedNetのみでは21%欠落する。Revenues タグが適切。
-    # 両社ともQ1（1月）に年度更新で会員が急増 → 前Q比+40〜70%は正常パターン。
-    "OSCR": {
-        "seasonal_q1_jump": True,
-        "note": "ACA健康保険。Revenues=PremiumsEarnedNet(再保険後)+手数料。"
-                "DirectPremiumsEarned(再保険前)は過大なので不使用。"
-                "Q1に年間契約更新が集中し前Q比+40〜70%のジャンプが正常。",
-    },
-    "UNH": {
-        "seasonal_q1_jump": True,
-        "note": "健康保険(UnitedHealth Group)。Revenues=PremiumsEarnedNet(79%)+OptumRx等(21%)。"
-                "PremiumsEarnedNetのみでは全社収益の21%が欠落するためRevenues使用。"
-                "Q1季節性あり。",
-    },
 }
 
 # 会計年度タイプ（将来対応用）
@@ -123,7 +103,7 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
         "MarketingAndAdvertisingExpense",
         "MarketingExpense",
         "AdvertisingExpense",
-        # SGA全体をフォールバック（SM単独タグ未申告の銘柄向け: JOBY/AUR/NVDA/CIX/ELF/KO/UNH等）
+        # SGA全体をフォールバック（SM単独タグ未申告の銘柄向け: JOBY/NVDA/CIX/ELF/KO等）
         "SellingGeneralAndAdministrativeExpense",
         "GeneralAndAdministrativeExpense",
     ),

@@ -77,7 +77,7 @@ yfinanceが提供する個別株βは市場の投機・需給ノイズに歪み�
 | Consumer_Beverage | 0.55 | CELH |
 | Space_Defense | 0.85 | RKLB |
 | Cloud_Services | 1.10 | MSFT, AMZN |
-| Healthcare_Support | 0.86 | UNH |
+| Healthcare_Support | 0.86 | — |
 
 データソース：[NYU Stern — Damodaran Online](https://pages.stern.nyu.edu/~adamodar/)（Beta by Sector、通常1〜2月更新）
 

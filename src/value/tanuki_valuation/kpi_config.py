@@ -323,30 +323,6 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
-    "VWAV": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
-    "AUR": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
-    "XNDU": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
     "RDW": {
         "fiscal_year_end": 12,
         "revenue_unit": "B USD",
@@ -363,23 +339,7 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
-    "SNDL": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
     "JOBY": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
-    "ARQQ": {
         "fiscal_year_end": 12,
         "revenue_unit": "B USD",
         "segments": [],
@@ -396,14 +356,6 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
     "MRVL": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
-    "RLMD": {
         "fiscal_year_end": 12,
         "revenue_unit": "B USD",
         "segments": [],
@@ -523,14 +475,6 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
-    "OSCR": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
     "RBRK": {
         "fiscal_year_end": 12,
         "revenue_unit": "B USD",
@@ -619,15 +563,8 @@ KPI_DEFINITIONS: Dict[str, Dict[str, Any]] = {
         "operational_kpis": [],
         "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
     },
-    "BRUN": {
-        "fiscal_year_end": 12,
-        "revenue_unit": "B USD",
-        "segments": [],
-        "financial_kpis": ["segment_revenue"],
-        "operational_kpis": [],
-        "notes": "デフォルト設定。セグメント情報に基づいて更新してください。",
-    },
 }
+
 
 
 # ============================================================
