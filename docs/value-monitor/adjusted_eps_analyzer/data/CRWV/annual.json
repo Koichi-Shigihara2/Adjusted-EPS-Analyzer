@@ -1,6 +1,6 @@
 {
   "ticker": "CRWV",
-  "last_updated": "2026-05-19T15:25:54.984570",
+  "last_updated": "2026-05-24T03:35:28.662956",
   "years": [
     {
       "year": "2025",
@@ -122,10 +122,10 @@
       "year": "2024",
       "filing_date": "2024-12-31",
       "gaap_net_income": -863000000.0,
-      "adjusted_net_income": -824483739.3221096,
+      "adjusted_net_income": -177510773.24401784,
       "diluted_shares_used": 212665000.0,
       "gaap_eps": -4.0580255331154635,
-      "adjusted_eps": -3.876913170113134,
+      "adjusted_eps": -0.8346966978300042,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -180,6 +180,19 @@
           "tax_rate_applied": 0.1309422029998617
         },
         {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": 341133000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnDerivatives",
+          "category": "公正価値変動関連",
+          "net_amount": 296464293.4640482,
+          "tax_rate_applied": 0.1309422029998617
+        },
+        {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 7660000,
@@ -203,6 +216,19 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 858058.4720896524,
+          "tax_rate_applied": 0.1419415279103475
+        },
+        {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": 310231000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnDerivatives",
+          "category": "公正価値変動関連",
+          "net_amount": 266196337.854845,
           "tax_rate_applied": 0.1419415279103475
         },
         {
@@ -230,9 +256,22 @@
           "category": "買収・統合関連",
           "net_amount": 864741.8949661395,
           "tax_rate_applied": 0.13525810503386063
+        },
+        {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": 97500000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnDerivatives",
+          "category": "公正価値変動関連",
+          "net_amount": 84312334.75919859,
+          "tax_rate_applied": 0.13525810503386063
         }
       ],
-      "net_adjustment_total": 38516260.677890435
+      "net_adjustment_total": 685489226.7559822
     }
   ]
 }

@@ -1,7 +1,105 @@
 {
   "ticker": "ELF",
-  "last_updated": "2026-05-19T15:26:45.462332",
+  "last_updated": "2026-05-24T03:36:20.216585",
   "quarters": [
+    {
+      "gaap_eps": -0.8317404348459968,
+      "adjusted_eps": 0.6396153529691029,
+      "gaap_net_income": -49365000.0,
+      "adjusted_net_income": 37962098.00136271,
+      "diluted_shares_used": 59351449.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 77051000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 46118164.68884851,
+          "tax_rate_applied": 0.40145923234158526
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 11200000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 6703656.597774245,
+          "tax_rate_applied": 0.40145923234158526
+        },
+        {
+          "item_id": "contingent_consideration_fv",
+          "item_name": "偶発対価公正価値変動損益",
+          "amount": 57649000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の買収偶発対価時価変動",
+          "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
+          "category": "公正価値変動関連",
+          "net_amount": 34505276.71473995,
+          "tax_rate_applied": 0.40145923234158526
+        }
+      ],
+      "net_adjustment_total": 87327098.00136271,
+      "filing_date": "2026-03-31",
+      "form": "10-K",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 449292000.0,
+      "diluted_shares": 59351449.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "偶発対価公正価値変動損益",
+              "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
+              "xbrl_value": 57649000,
+              "adjustment_amount": 57649000,
+              "net_amount": 34505276.71473995
+            }
+          ],
+          "condition1": "FV変動が純利益の117%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "GAAP EPSが-0.83と大幅赤字である一方、Adjusted EPSは+0.64と黒字化しており、調整額が極めて大きい（SBC77M、偶発対価57Mが主因）。SBCと無形資産償却は恒常的な非現金費用であり実質的なコスト（特にSBCの希薄化効果）を無視した過大調整の可能性が高いため、企業の実力は調整後ほど強くないと見るべき。市場がGAAP EPS中心に判断する場合、成長ポテンシャルを過小評価しているリスクはあるが、調整の質が低く再発可能性の高い項目が多いため、むしろ過大評価リスクの方が大きい。投資家はキャッシュフローとSBCの継続性を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが成長企業では毎期発生する恒常的コストであり、希薄化効果を伴う",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aから生じる定期的な非現金費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "contingent_consideration_fv",
+            "snippet": "偶発対価の公正価値変動は非現金・非経常的な買収関連項目",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.6541863649292976,
       "adjusted_eps": 1.15182174508326,
@@ -41,27 +139,11 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 489505000.0,
       "diluted_shares": 60190799.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2026,
-      "quarter": 3,
-      "ai_analysis": {
-        "health": "Caution",
-        "comment": "調整項目は株式報酬費用と無形資産償却費の2項目で、ともに非現金費用としてadd_backされていますが、基準に基づけばいずれも毎期発生する恒常的な性質が強く（SBCは報酬コストとして継続、無形資産償却は買収後も定期的に発生）、一過性とは判断しにくい内容です。GAAP EPS 0.65に対しAdjusted EPS 1.15と約76%の上方修正となっており、調整依存度が高いため健全性はCautionと評価します。投資家はコア利益の持続可能性を慎重に検証すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。ただし毎期発生する可能性が高く、恒常的なコストの性質を持つ。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。定期的に発生する償却であり一過性とは言えない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "quarter": 3
     },
     {
       "gaap_eps": 0.050273593392344954,
@@ -102,7 +184,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 343936000.0,
       "diluted_shares": 59593910.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2026,
@@ -147,7 +229,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 353739000.0,
       "diluted_shares": 57675035.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2026,
@@ -192,7 +274,7 @@
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 332645000.0,
       "diluted_shares": 58345174.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
@@ -237,7 +319,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 355320000.0,
       "diluted_shares": 58353219.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2025,
@@ -282,7 +364,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 301075000.0,
       "diluted_shares": 58482530.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2025,
@@ -327,56 +409,11 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 324477000.0,
       "diluted_shares": 58551423.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2025,
       "quarter": 1
-    },
-    {
-      "gaap_eps": 0.25138239552143066,
-      "adjusted_eps": 0.5972655831554807,
-      "gaap_net_income": 14527000.0,
-      "adjusted_net_income": 34515054.677963674,
-      "diluted_shares_used": 57788454.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 33425000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 17432504.30817836,
-          "tax_rate_applied": 0.47845910820707976
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 4900000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 2555550.3697853093,
-          "tax_rate_applied": 0.47845910820707976
-        }
-      ],
-      "net_adjustment_total": 19988054.67796367,
-      "filing_date": "2024-03-31",
-      "form": "10-K",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 57788454.0,
-      "period_end": "2024-03-31",
-      "fiscal_year": 2024,
-      "quarter": 4
     },
     {
       "gaap_eps": 0.4633456266629835,
@@ -417,7 +454,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 270943000.0,
       "diluted_shares": 58030115.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2024,
@@ -462,56 +499,11 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 215507000.0,
       "diluted_shares": 57438152.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2024,
       "quarter": 2
-    },
-    {
-      "gaap_eps": 0.926562201851935,
-      "adjusted_eps": 1.0694615071180207,
-      "gaap_net_income": 52977000.0,
-      "adjusted_net_income": 61147392.10098402,
-      "diluted_shares_used": 57175870.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 7200000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 6394219.905117933,
-          "tax_rate_applied": 0.11191390206695388
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 2000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 1776172.1958660923,
-          "tax_rate_applied": 0.11191390206695388
-        }
-      ],
-      "net_adjustment_total": 8170392.100984025,
-      "filing_date": "2023-06-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 0.0,
-      "diluted_shares": 57175870.0,
-      "period_end": "2023-06-30",
-      "fiscal_year": 2024,
-      "quarter": 1
     }
   ]
 }

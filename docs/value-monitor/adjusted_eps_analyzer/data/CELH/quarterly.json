@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-05-19T15:24:56.016743",
+  "last_updated": "2026-05-24T03:34:48.719034",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -70,7 +70,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 782615000.0,
       "diluted_shares": 259764000.0,
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
@@ -90,7 +90,7 @@
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 45.4%）",
         "sbc_contribution": 0.454,
-        "sbc_to_revenue": 0,
+        "sbc_to_revenue": 0.01,
         "sbc_per_share": 0.0294,
         "sector_threshold": {
           "sbc_contribution": 0.4,
@@ -98,27 +98,27 @@
         }
       },
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "株式報酬費用と無形資産償却費は継続的に発生する性質の項目であり、調整後EPSの持続可能性を過大評価するリスクがある。異常貸倒引当とリストラ費用は一過性として一定の合理性があるが、全体として調整の質は中程度で注意を要する。",
+        "health": "調整中",
+        "comment": "調整項目には恒常的なSBC（株式報酬）と無形資産償却（買収関連で毎期発生しやすい）が含まれる一方、リストラ費用や異常貸倒引当金は一過性と判断される。市場がGAAP EPS（0.42）を基準に評価する場合、非現金・一時的費用により同社の実力（調整後EPS 0.49、成長するコア事業の収益力）が過小評価されるリスクがある。ただしSBC・償却のadd_backは調整の過大化要因となり、持続可能利益を過大視する逆リスクも存在。投資家は調整後EPSの持続性とフリーキャッシュフローを重点検証すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが成長企業では毎期発生する継続的な報酬コスト",
+            "snippet": "非現金費用として株式報酬費用をadd_back。ただし恒常的に発生する運用コストであり、毎期の事業活動に紐づく。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は複数期にわたる経常的費用",
+            "snippet": "買収関連無形資産の償却費をadd_back。M&A後の定期的な非現金費用であり、恒常的な性格が強い。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として異常変動分を調整",
-            "confidence": 0.65
+            "snippet": "マクロ変動による一時的影響として異常貸倒引当金をadd_back。非経常的な変動分と位置づけられる。",
+            "confidence": 0.7
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用",
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd_back。非経常的イベントに起因するコスト。",
             "confidence": 0.8
           }
         ]
@@ -192,7 +192,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 721628000.0,
       "diluted_shares": 254911000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
@@ -252,7 +252,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 725106000.0,
       "diluted_shares": 257778000.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
@@ -299,7 +299,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 739259000.0,
       "diluted_shares": 260211000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
@@ -360,7 +360,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 329276000.0,
       "diluted_shares": 237172000.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
@@ -433,7 +433,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 332197000.0,
       "diluted_shares": 237404000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
@@ -480,7 +480,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 265748000.0,
       "diluted_shares": 233696000.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
@@ -527,7 +527,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 401977000.0,
       "diluted_shares": 237595000.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
@@ -588,7 +588,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 355708000.0,
       "diluted_shares": 237523000.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
@@ -661,7 +661,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 347435000.0,
       "diluted_shares": 236964000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
@@ -708,7 +708,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 384757000.0,
       "diluted_shares": 237273000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
@@ -743,7 +743,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 325883000.0,
       "diluted_shares": 236832000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
@@ -816,7 +816,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 259939000.0,
       "diluted_shares": 236277000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
@@ -889,7 +889,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 177963000.0,
       "diluted_shares": 75649000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
@@ -924,7 +924,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 188233000.0,
       "diluted_shares": 75796000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
@@ -959,7 +959,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 154020000.0,
       "diluted_shares": 78372000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
@@ -1032,7 +1032,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 0.0,
+      "revenue": 133388000.0,
       "diluted_shares": 78289000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,

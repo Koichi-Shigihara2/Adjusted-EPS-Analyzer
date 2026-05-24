@@ -1,6 +1,6 @@
 {
   "ticker": "QBTS",
-  "last_updated": "2026-05-19T15:32:17.454018",
+  "last_updated": "2026-05-24T03:40:39.112625",
   "quarters": [
     {
       "gaap_eps": -0.04995466077760622,
@@ -54,28 +54,28 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2858000.0,
       "diluted_shares": 367473219.0,
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
       "ai_analysis": {
-        "health": "Caution",
-        "comment": "SBCと無形資産償却という定期的に発生する項目が調整額の大部分を占めており（それぞれ約800万USD、300万USD）、これらを非GAAPで除外するのは一般的だが経済実態を歪曲する可能性が高い。在庫評価損は一過性とされるが金額が小さく影響は限定的。調整後のEPS改善は見かけ上のものであり、健全性は注意を要する水準。",
+        "health": "調整大",
+        "comment": "市場がGAAP EPS(-0.05)で判断する場合、SBCや無形資産償却といった非現金かつ比較的恒常的な項目が損失を拡大させるため、企業の実力(Adjusted EPS -0.026)がわかりにくくなっており、過小評価のリスクがある。在庫評価損は一過性だが影響額は軽微。SBCは恒常的なコストであり希薄化効果も無視できないため、調整を過度に信用すると過大評価リスクも生じる。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用であるが、テック企業では毎期継続的に発生する恒常的な報酬コスト",
+            "snippet": "非現金費用として毎期発生する株式報酬費用であり、恒常的な可能性が高い",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は非現金だが、買収の経済的コストを反映する繰り返し発生する費用",
+            "snippet": "買収関連無形資産の償却で、恒常的に発生する非現金費用",
             "confidence": 0.2
           },
           {
             "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損として調整されており、真に非経常的な項目と判断される",
+            "snippet": "一過性の在庫評価損とされ、調整の根拠が明確",
             "confidence": 0.8
           }
         ]
@@ -133,7 +133,7 @@
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2752000.0,
       "diluted_shares": 321202025.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
@@ -141,9 +141,9 @@
     },
     {
       "gaap_eps": -0.4090707883665149,
-      "adjusted_eps": -0.3941690408222203,
+      "adjusted_eps": -0.11285036475712408,
       "gaap_net_income": -139986000.0,
-      "adjusted_net_income": -134886550.0,
+      "adjusted_net_income": -38617940.0,
       "diluted_shares_used": 342204831.0,
       "adjustments": [
         {
@@ -158,24 +158,56 @@
           "category": "株式報酬関連",
           "net_amount": 5099450.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 121859000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 96268610.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 5099450.0,
+      "net_adjustment_total": 101368060.0,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 3739000.0,
       "diluted_shares": 342204831.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 121859000,
+              "adjustment_amount": 121859000,
+              "net_amount": 96268610.0
+            }
+          ],
+          "condition1": "FV変動が純利益の87%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.5535402035231918,
-      "adjusted_eps": -0.5361062459235795,
+      "adjusted_eps": -0.16487872244737833,
       "gaap_net_income": -167329000.0,
-      "adjusted_net_income": -162058910.0,
+      "adjusted_net_income": -49840990.0,
       "diluted_shares_used": 302288793.0,
       "adjustments": [
         {
@@ -190,18 +222,50 @@
           "category": "株式報酬関連",
           "net_amount": 5270090.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 142048000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 112217920.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 5270090.0,
+      "net_adjustment_total": 117488010.0,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 3095000.0,
       "diluted_shares": 302288793.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 142048000,
+              "adjustment_amount": 142048000,
+              "net_amount": 112217920.0
+            }
+          ],
+          "condition1": "FV変動が純利益の85%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.01892672621117379,
@@ -242,7 +306,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 15001000.0,
       "diluted_shares": 286420374.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
@@ -250,9 +314,9 @@
     },
     {
       "gaap_eps": -0.4480165828541628,
-      "adjusted_eps": -0.39708758460569904,
+      "adjusted_eps": -0.11639832766777501,
       "gaap_net_income": -86077000.0,
-      "adjusted_net_income": -76292060.0,
+      "adjusted_net_income": -22363500.0,
       "diluted_shares_used": 192129049.0,
       "adjustments": [
         {
@@ -293,18 +357,50 @@
           "category": "在庫・サプライチェーン関連",
           "net_amount": 105860.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 68264000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 53928560.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 9784940.0,
+      "net_adjustment_total": 63713500.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2309000.0,
       "diluted_shares": 192129049.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 68264000.0,
+              "adjustment_amount": 68264000.0,
+              "net_amount": 53928560.0
+            }
+          ],
+          "condition1": "純利益変動426% / 売上変動21% = 20.7倍（閾値5倍）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.11266681523222205,
@@ -332,7 +428,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1870000.0,
       "diluted_shares": 201585533.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
@@ -364,7 +460,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2183000.0,
       "diluted_shares": 172139085.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
@@ -396,7 +492,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2465000.0,
       "diluted_shares": 161308490.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
@@ -454,7 +550,7 @@
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2906000.0,
       "diluted_shares": 137993736.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
@@ -486,7 +582,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2562000.0,
       "diluted_shares": 133222318.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
@@ -518,7 +614,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1707000.0,
       "diluted_shares": 127337903.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
@@ -550,7 +646,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1583000.0,
       "diluted_shares": 123144097.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
@@ -621,7 +717,7 @@
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 2394000.0,
       "diluted_shares": 119647777.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
@@ -653,7 +749,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1695000.0,
       "diluted_shares": 116256805.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
@@ -685,7 +781,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1371000.0,
       "diluted_shares": 125472590.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
@@ -717,7 +813,7 @@
       "form": "10-Q",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 0.0,
+      "revenue": 1713000.0,
       "diluted_shares": 125385841.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,

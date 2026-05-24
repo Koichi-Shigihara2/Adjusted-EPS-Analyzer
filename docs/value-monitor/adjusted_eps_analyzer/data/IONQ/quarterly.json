@@ -1,6 +1,6 @@
 {
   "ticker": "IONQ",
-  "last_updated": "2026-05-20T22:40:46.020471",
+  "last_updated": "2026-05-24T03:37:18.663698",
   "quarters": [
     {
       "gaap_eps": 2.1694467538500017,
@@ -95,9 +95,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "GAAP EPSが+2.17とプラスである一方、Adjusted EPSは-0.23と赤字を維持しており、主にワラント公正価値変動による大規模な非現金利益がGAAPを押し上げている。SBCと無形資産償却は恒常的な調整項目であるため、企業の実力はAdjusted EPSに近く本業は依然赤字基調。市場がGAAP EPSのみで判断する場合、収益性を過大評価するリスクが大きく、過小評価の可能性は低い。投資家は調整後EPS、SBCの継続性、ワラント変動のボラティリティに注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "毎期発生する株式報酬費用であり、成長企業で恒常的な非現金コストとして機能する。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の定期的な償却費で、複数年にわたり発生する非現金項目。",
+            "confidence": 0.2
+          },
+          {
+            "item": "warrant_fv_change",
+            "snippet": "非現金・非経常のワラント時価評価変動であり、株価連動の一時的な影響が大きい。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "COHR",
-  "last_updated": "2026-05-19T15:25:18.106798",
+  "last_updated": "2026-05-24T03:35:01.138361",
   "years": [
     {
       "year": "2025",
@@ -174,10 +174,10 @@
       "year": "2024",
       "filing_date": "2024-12-31",
       "gaap_net_income": 67643000.0,
-      "adjusted_net_income": 551649658.6649319,
+      "adjusted_net_income": 563234360.6073297,
       "diluted_shares_used": 154348750.0,
       "gaap_eps": 0.43824779922092016,
-      "adjusted_eps": 3.5740468171263577,
+      "adjusted_eps": 3.6491021832527295,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -297,6 +297,19 @@
           "tax_rate_applied": 0.2978432685867381
         },
         {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": 30000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnDerivativeInstrumentsNetPretax",
+          "category": "公正価値変動関連",
+          "net_amount": 21064701.94239786,
+          "tax_rate_applied": 0.2978432685867381
+        },
+        {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 26413000,
@@ -321,9 +334,22 @@
           "category": "リストラ・事業再編関連",
           "net_amount": 9108700.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": -12000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnDerivativeInstrumentsNetPretax",
+          "category": "公正価値変動関連",
+          "net_amount": -9480000.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 484006658.6649319
+      "net_adjustment_total": 495591360.6073297
     },
     {
       "year": "2023",

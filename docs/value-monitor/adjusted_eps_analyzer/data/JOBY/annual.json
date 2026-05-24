@@ -1,6 +1,6 @@
 {
   "ticker": "JOBY",
-  "last_updated": "2026-05-19T15:28:38.884900",
+  "last_updated": "2026-05-24T03:37:43.930542",
   "years": [
     {
       "year": "2025",
@@ -238,10 +238,10 @@
       "year": "2023",
       "filing_date": "2023-12-31",
       "gaap_net_income": -513050000.0,
-      "adjusted_net_income": -361448797.24963254,
+      "adjusted_net_income": -294762782.3077778,
       "diluted_shares_used": 645306649.0,
       "gaap_eps": -0.7950483708715048,
-      "adjusted_eps": -0.5601194374949522,
+      "adjusted_eps": -0.45677939746097024,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -296,6 +296,19 @@
           "tax_rate_applied": 0.0180296200901481
         },
         {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": -116109000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnDerivativeInstrumentsNetPretax",
+          "category": "公正価値変動関連",
+          "net_amount": -114015598.84095299,
+          "tax_rate_applied": 0.0180296200901481
+        },
+        {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
           "amount": 25222000,
@@ -319,6 +332,19 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 1499706.3173241313,
+          "tax_rate_applied": 0.00019578845057914923
+        },
+        {
+          "item_id": "derivative_fv_change",
+          "item_name": "デリバティブ公正価値変動損益",
+          "amount": 180737000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のデリバティブ時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnDerivativeInstrumentsNetPretax",
+          "category": "公正価値変動関連",
+          "net_amount": 180701613.78280768,
           "tax_rate_applied": 0.00019578845057914923
         },
         {
@@ -348,7 +374,7 @@
           "tax_rate_applied": 0.00029993207420672376
         }
       ],
-      "net_adjustment_total": 151601202.75036746
+      "net_adjustment_total": 218287217.69222218
     }
   ]
 }

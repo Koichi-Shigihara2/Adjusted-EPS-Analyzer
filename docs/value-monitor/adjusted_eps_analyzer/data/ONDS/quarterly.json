@@ -1,15 +1,29 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-05-19T15:31:32.256362",
+  "last_updated": "2026-05-24T03:40:10.613002",
   "quarters": [
     {
-      "gaap_eps": 0.5612949534198725,
-      "adjusted_eps": 0.5612949534198725,
+      "gaap_eps": 785.7727644864914,
+      "adjusted_eps": 119.23838979783672,
       "gaap_net_income": 362796000.0,
-      "adjusted_net_income": 362796000.0,
-      "diluted_shares_used": 646355357.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjusted_net_income": 55053080.0,
+      "diluted_shares_used": 461706.0,
+      "adjustments": [
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": -389548000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": -307742920.0,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": -307742920.0,
       "filing_date": "2026-03-31",
       "form": "10-Q",
       "sector": "通信・インフラ",
@@ -17,15 +31,34 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
-      "diluted_shares": 646355357.0,
+      "revenue": 50122000.0,
+      "diluted_shares": 461706.0,
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": -389548000,
+              "adjustment_amount": -389548000,
+              "net_amount": -307742920.0
+            }
+          ],
+          "condition1": "FV変動が純利益の107%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      },
       "maturity_monitor": {
-        "alert": null,
+        "alert": "SBC/売上高が25%超（現在 39.2%）",
         "sbc_contribution": 0,
-        "sbc_to_revenue": 0,
+        "sbc_to_revenue": 0.392,
         "sbc_per_share": 42.5769,
         "sector_threshold": {
           "sbc_contribution": 0.4,
@@ -33,16 +66,22 @@
         }
       },
       "ai_analysis": {
-        "health": "Excellent",
-        "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
-        "sources": []
+        "health": "調整大",
+        "comment": "ワラント公正価値変動は非現金・非経常項目であり一過性とみなせるが、調整額が約3.9億ドルと極めて巨額のためGAAP EPS（785.77）とAdjusted EPS（119.24）の乖離が非常に大きい。市場がGAAP EPSのみで判断する場合、企業の実力（コア事業の収益力）が歪んで見え、過大評価のリスクが高い（一時的な公正価値ゲインがGAAPを押し上げている可能性）。投資家は調整後EPSやキャッシュフロー指標に注目し、ワラント残存期間中のボラティリティを監視すべき。過小評価リスクは低い。",
+        "sources": [
+          {
+            "item": "warrant_fv_change",
+            "snippet": "非現金・非経常のワラント時価評価変動",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {
       "gaap_eps": -0.4503228314146702,
-      "adjusted_eps": -0.4517793018861969,
+      "adjusted_eps": -0.08101061915777227,
       "gaap_net_income": -99867644.0,
-      "adjusted_net_income": -100190644.0,
+      "adjusted_net_income": -17965644.0,
       "diluted_shares_used": 221769000.0,
       "adjustments": [
         {
@@ -57,9 +96,22 @@
           "category": "税効果関連",
           "net_amount": -323000,
           "tax_rate_applied": 0.0
+        },
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 82225000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 82225000.0,
+          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": -323000.0,
+      "net_adjustment_total": 81902000.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "通信・インフラ",
@@ -67,20 +119,53 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 30111302.0,
       "diluted_shares": 221769000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4
+      "quarter": 4,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 82225000,
+              "adjustment_amount": 82225000,
+              "net_amount": 82225000.0
+            }
+          ],
+          "condition1": "FV変動が純利益の82%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.02878255102840349,
-      "adjusted_eps": -0.02878255102840349,
+      "adjusted_eps": -0.04973480791374949,
       "gaap_net_income": -7480856.0,
-      "adjusted_net_income": -7480856.0,
+      "adjusted_net_income": -12926544.83,
       "diluted_shares_used": 259909415.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjustments": [
+        {
+          "item_id": "investment_fv_change",
+          "item_name": "投資公正価値変動損益",
+          "amount": -6893277,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の投資時価評価変動",
+          "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
+          "category": "公正価値変動関連",
+          "net_amount": -5445688.83,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": -5445688.83,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "通信・インフラ",
@@ -88,11 +173,30 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 10098310.0,
       "diluted_shares": 259909415.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "投資公正価値変動損益",
+              "xbrl_tag": "us-gaap:UnrealizedGainLossOnInvestments",
+              "xbrl_value": 6893277,
+              "adjustment_amount": -6893277,
+              "net_amount": -5445688.83
+            }
+          ],
+          "condition1": "FV変動が純利益の92%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.07135702669521386,
@@ -109,18 +213,18 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 6273388.0,
       "diluted_shares": 150652998.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
       "quarter": 2
     },
     {
-      "gaap_eps": -0.1346257273642434,
-      "adjusted_eps": -0.1346257273642434,
+      "gaap_eps": -134.62549402409408,
+      "adjusted_eps": -134.62549402409408,
       "gaap_net_income": -14136350.0,
       "adjusted_net_income": -14136350.0,
-      "diluted_shares_used": 105004818.0,
+      "diluted_shares_used": 105005.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
       "filing_date": "2025-03-31",
@@ -130,8 +234,8 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
-      "diluted_shares": 105004818.0,
+      "revenue": 4248000.0,
+      "diluted_shares": 105005.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
       "quarter": 1
@@ -165,7 +269,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 4129042.0,
       "diluted_shares": 69917062.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
@@ -186,7 +290,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 1480792.0,
       "diluted_shares": 70741662.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
@@ -207,7 +311,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 957851.0,
       "diluted_shares": 66377505.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
@@ -228,7 +332,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 625009.0,
       "diluted_shares": 63035122.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
@@ -249,7 +353,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 4961285.0,
       "diluted_shares": 52740215.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
@@ -270,7 +374,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 2665190.0,
       "diluted_shares": 53892848.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
@@ -291,7 +395,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 5468964.0,
       "diluted_shares": 51112218.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
@@ -312,7 +416,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 2595991.0,
       "diluted_shares": 47697767.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
@@ -333,7 +437,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 632489.0,
       "diluted_shares": 42661607.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
@@ -354,7 +458,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 0.0,
+      "revenue": 604219.0,
       "diluted_shares": 42167548.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
