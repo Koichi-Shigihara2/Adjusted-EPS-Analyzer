@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
@@ -62,6 +62,8 @@
       align-items: center;
       gap: 12px;
     }
+    a.logo { text-decoration: none; color: inherit; cursor: pointer; }
+    a.logo:hover .logo-dot { box-shadow: 0 0 0 4px rgba(59,130,246,.25); }
     .logo-dot {
       width: 8px;
       height: 8px;
@@ -197,11 +199,11 @@
 <body data-tool="eps">
 <div class="shell">
   <header>
-    <div class="logo">
+    <a href="/On-a-journey/" class="logo" aria-label="Go to home">
       <img src="../../common/images/logo.png" alt="TANUKI" style="height:30px; width:auto; object-fit:contain">
       <span class="logo-dot"></span>
       Adjusted EPS Analyzer
-    </div>
+    </a>
     <div class="hdr-r">
       <div class="nav-links">
         <a href="../../">HOME</a>
