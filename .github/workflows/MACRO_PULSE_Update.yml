@@ -67,7 +67,7 @@ jobs:
 
       - name: Fill S&P500 returns (t+1/5/10/20)
         if: |
-          (github.event_name == 'schedule' && github.event.schedule == '0 13 * * *') ||
+          (github.event_name == 'schedule' && github.event.schedule == '3 13 * * *') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'fill-returns')
         env:
           FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
@@ -76,7 +76,7 @@ jobs:
 
       - name: Update schedule + fed context (weekly)
         if: |
-          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 6') ||
+          (github.event_name == 'schedule' && github.event.schedule == '7 22 * * 6') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'update-schedule')
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
@@ -87,7 +87,7 @@ jobs:
 
       - name: Generate weekly AI analysis (Sunday)
         if: |
-          (github.event_name == 'schedule' && github.event.schedule == '0 22 * * 0') ||
+          (github.event_name == 'schedule' && github.event.schedule == '11 22 * * 0') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'weekly-analysis')
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
