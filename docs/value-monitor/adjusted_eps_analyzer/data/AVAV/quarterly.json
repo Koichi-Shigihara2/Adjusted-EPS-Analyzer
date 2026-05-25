@@ -1,6 +1,6 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-05-24T03:33:14.726145",
+  "last_updated": "2026-05-25T13:42:10.603058",
   "quarters": [
     {
       "gaap_eps": 0.22123834706778503,
@@ -119,37 +119,32 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "巨額ののれん減損(1.56億ドル)がGAAP EPSを0.22に押し下げているが、これは非現金の一過性項目のため調整後EPS 5.48が実力をより反映している可能性が高い。市場がGAAP中心に判断する場合、企業の実力が見えにくく過小評価リスクがある。一方、SBCや無形資産償却は恒常的コストであり、これらを加算し続ける調整は持続可能性に疑問を残す。投資家はコア事業の収益力と減損の背景要因を注視すべき。",
+        "comment": "のれん減損156Mという巨額の一過性非現金項目がGAAP EPSを0.22に大きく押し下げており、Adjusted EPS 5.48が示すコア事業の実力が見えにくくなっている。市場がGAAP中心に評価する場合、企業の実力を過小評価するリスクが高い。特にgoodwill_impairmentとinventory_writeoffは一過性だが、sbcやamortization_intangiblesは恒常的に発生するため、調整の持続可能性に注意。投資家はコア利益のトレンドとSBCの希薄化効果を注視すべきで、過小評価の機会がある一方、のれん減損が過去のM&A戦略の失敗を示唆する過大評価リスクも残る。",
         "sources": [
           {
+            "item": "goodwill_impairment",
+            "snippet": "非現金減損",
+            "confidence": 0.8
+          },
+          {
             "item": "sbc",
-            "snippet": "非現金費用だが、企業が継続的に付与する恒常的な株式報酬コスト",
+            "snippet": "非現金費用",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の継続的な償却費用で毎期発生する",
-            "confidence": 0.2
-          },
-          {
-            "item": "goodwill_impairment",
-            "snippet": "非現金の一過性減損損失で、特定の会計期間に集中した大規模項目",
-            "confidence": 0.8
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的な異常変動分で金額も極めて小さい",
-            "confidence": 0.85
+            "snippet": "買収関連無形資産の償却",
+            "confidence": 0.3
           },
           {
             "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損で、特定の事業環境要因によるもの",
-            "confidence": 0.7
+            "snippet": "一過性の在庫評価損",
+            "confidence": 0.75
           },
           {
             "item": "investment_fv_change",
-            "snippet": "非現金かつ非経常的な投資の公正価値変動損益",
-            "confidence": 0.75
+            "snippet": "非現金・非経常の投資時価評価変動",
+            "confidence": 0.7
           }
         ]
       }

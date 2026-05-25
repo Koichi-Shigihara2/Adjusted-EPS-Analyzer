@@ -1,6 +1,6 @@
 {
   "ticker": "SOUN",
-  "last_updated": "2026-05-24T03:42:13.198301",
+  "last_updated": "2026-05-25T13:51:12.158472",
   "quarters": [
     {
       "gaap_eps": -0.0582340118035465,
@@ -96,21 +96,21 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目のうちcontingent_consideration_fvが大きく、GAAP EPS(-0.058)に非現金の一時的利益を含みAdjusted EPS(-0.095)と乖離。市場がGAAP EPSで判断する場合、コア損失の実態が見えにくく企業実力を過大評価するリスクが高い(過小評価の可能性は低い)。SBCと償却は恒常的コストのため調整の妥当性に注意が必要。投資家はSBCの継続性とコアオペレーションの赤字縮小トレンドを注視すべきで、過大評価リスクが主。",
+        "comment": "調整項目のうちcontingent_consideration_fvの-39M規模のadd_backが大きく、GAAP EPS(-0.058)を一時的な公正価値評価益で押し上げており、Adjusted EPS(-0.0945)が実態に近い継続損失を示す。市場がGAAP EPSのみで判断する場合、企業の実力（コアオペレーションの損失幅）を過大評価しやすく、将来的な調整リスクで株価が急落する過大評価の可能性が高い。SBCとamortizationは恒常コストのため調整は妥当だが、FV変動の一過性に依存したGAAPの信頼性は低い。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用",
+            "snippet": "株式報酬費用は非現金費用だがテック企業では毎期発生する恒常的な運用コストであり、調整の正当性は中程度。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却",
+            "snippet": "買収関連無形資産の償却は非現金だが、買収後複数期にわたって発生する準恒常的費用。",
             "confidence": 0.2
           },
           {
             "item": "contingent_consideration_fv",
-            "snippet": "非現金・非経常の買収偶発対価時価変動",
+            "snippet": "偶発対価の公正価値変動は買収契約に基づく非現金・非経常項目で、毎期の評価変動は一過性が高い。",
             "confidence": 0.75
           }
         ]
