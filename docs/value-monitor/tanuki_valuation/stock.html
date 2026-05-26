@@ -330,6 +330,37 @@
       .wacc-slider { width: 100%; }
       #valMetricsRow { grid-template-columns: 1fr !important; }
     }
+
+    /* ── 3マトリクス並列表示 ── */
+    .matrix-panel-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 900px) {
+      .matrix-panel-row { grid-template-columns: 1fr; }
+    }
+    .matrix-panel {
+      background: var(--sur);
+      border: 1px solid var(--bdr);
+      border-radius: 10px;
+      padding: 14px;
+      min-width: 0;
+    }
+    .matrix-panel-title {
+      font-family: var(--mono);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--acc);
+      letter-spacing: .06em;
+      margin-bottom: 3px;
+    }
+    .matrix-panel-note {
+      font-size: 10px;
+      color: var(--mut);
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -568,6 +599,7 @@ async function loadData() {
     if (!response.ok) throw new Error('Data not found');
     globalData = await response.json();
     render(globalData);
+    loadAndRenderMatrices();
     loadCfData(globalData);
     // 時系列チャート（history.jsonが存在する場合のみ）
     try {
@@ -1058,6 +1090,13 @@ function render(d) {
         })()}
       </div>
       ` : ''}
+    </div>
+
+    <div class="chart-container" id="all-matrices-section" style="margin-top:32px">
+      <h2 class="section-title">RICE × VALUATION MATRIX（全銘柄比較）</h2>
+      <div id="all-matrices-grid" class="matrix-panel-row">
+        <div style="grid-column:1/-1;padding:20px;text-align:center;color:var(--mut);font-size:12px;font-family:var(--mono)">マトリクスを読み込み中...</div>
+      </div>
     </div>
 
     <div class="calc-section">
@@ -2026,6 +2065,148 @@ function toJST(dateStr) {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit'
   }) + ' JST';
+}
+
+function buildScatterSVG(points, opts) {
+  const W = 400, H = 290;
+  const PL = 48, PR = 12, PT = 12, PB = 36;
+  const IW = W - PL - PR, IH = H - PT - PB;
+  const { xMin, xMax, xThresh, yMin, yMax, yThresh, xLabel, yLabel, currentTicker } = opts;
+
+  function sx(v) { return PL + (v - xMin) / (xMax - xMin) * IW; }
+  function sy(v) { return PT + (1 - (v - yMin) / (yMax - yMin)) * IH; }
+
+  const xZ = sx(xThresh);
+  const yT = sy(yThresh);
+
+  let out = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="background:#0d1117;border:1px solid #1e2840;border-radius:6px;width:100%;max-width:' + W + 'px;">';
+
+  // quadrant fills
+  out += '<rect x="' + xZ + '" y="' + PT + '" width="' + (PL + IW - xZ) + '" height="' + (yT - PT) + '" fill="rgba(74,222,128,0.05)"/>';
+  out += '<rect x="' + PL + '" y="' + PT + '" width="' + (xZ - PL) + '" height="' + (yT - PT) + '" fill="rgba(251,191,36,0.05)"/>';
+  out += '<rect x="' + xZ + '" y="' + yT + '" width="' + (PL + IW - xZ) + '" height="' + (PT + IH - yT) + '" fill="rgba(148,163,184,0.05)"/>';
+  out += '<rect x="' + PL + '" y="' + yT + '" width="' + (xZ - PL) + '" height="' + (PT + IH - yT) + '" fill="rgba(248,113,113,0.05)"/>';
+
+  // axis threshold lines
+  out += '<line x1="' + xZ + '" y1="' + PT + '" x2="' + xZ + '" y2="' + (PT + IH) + '" stroke="#1e2840" stroke-width="1"/>';
+  out += '<line x1="' + PL + '" y1="' + yT + '" x2="' + (PL + IW) + '" y2="' + yT + '" stroke="#1e2840" stroke-width="1"/>';
+
+  // axis labels
+  out += '<text x="' + (W / 2) + '" y="' + (H - 4) + '" font-size="9" fill="#475569" text-anchor="middle" font-family="monospace">' + xLabel + '</text>';
+  out += '<text x="10" y="' + (PT + IH / 2) + '" font-size="9" fill="#475569" text-anchor="middle" font-family="monospace" transform="rotate(-90,10,' + (PT + IH / 2) + ')">' + yLabel + '</text>';
+
+  // x-axis tick labels
+  out += '<text x="' + PL + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#334155" text-anchor="middle" font-family="monospace">' + xMin + '</text>';
+  out += '<text x="' + xZ + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#475569" text-anchor="middle" font-family="monospace">' + xThresh + '</text>';
+  out += '<text x="' + (PL + IW) + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#334155" text-anchor="middle" font-family="monospace">' + xMax + '</text>';
+
+  // y-axis tick labels
+  out += '<text x="' + (PL - 4) + '" y="' + (PT + 4) + '" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">' + yMax + '</text>';
+  out += '<text x="' + (PL - 4) + '" y="' + (yT + 4) + '" font-size="8" fill="#475569" text-anchor="end" font-family="monospace">' + yThresh + '</text>';
+  out += '<text x="' + (PL - 4) + '" y="' + (PT + IH + 4) + '" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">' + yMin + '</text>';
+
+  // points
+  for (const p of points) {
+    const cx = Math.max(PL + 3, Math.min(PL + IW - 3, sx(p.x)));
+    const cy = Math.max(PT + 3, Math.min(PT + IH - 3, sy(p.y)));
+    const isCurrent = p.ticker === currentTicker;
+    const qx = p.x >= xThresh, qy = p.y >= yThresh;
+    let col = isCurrent ? '#c4d0ff' : (qx && qy ? '#4ade80' : (!qx && qy ? '#facc15' : (qx && !qy ? '#94a3b8' : '#f87171')));
+    const anchor = cx > W / 2 ? 'end' : 'start';
+    const lx = anchor === 'end' ? cx - 8 : cx + 8;
+    out += '<title>' + p.ticker + ': x=' + p.x.toFixed(1) + ' y=' + p.y.toFixed(2) + '</title>';
+    out += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (isCurrent ? 7 : 5) + '" fill="' + col + '" opacity="0.85"/>';
+    if (isCurrent) out += '<circle cx="' + cx + '" cy="' + cy + '" r="9" fill="none" stroke="' + col + '" stroke-width="1.5" opacity="0.5"/>';
+    out += '<text x="' + lx + '" y="' + (cy + 4) + '" font-size="9" fill="' + col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
+  }
+
+  out += '</svg>';
+  return out;
+}
+
+async function loadAndRenderMatrices() {
+  try {
+    const tickersRes = await fetch('data/tickers.json', { cache: 'no-cache' });
+    if (!tickersRes.ok) return;
+    const tickers = await tickersRes.json();
+
+    const latestResults = await Promise.allSettled(
+      tickers.map(t => fetch('data/' + t + '/latest.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null))
+    );
+
+    let stonksData = {};
+    try {
+      const sr = await fetch('../stonks-silo/data/results.json', { cache: 'no-cache' });
+      if (sr.ok) { const sj = await sr.json(); stonksData = sj.tickers || {}; }
+    } catch (e) {}
+
+    const m1 = [], m2 = [], m3 = [];
+
+    tickers.forEach((t, i) => {
+      const d = latestResults[i].status === 'fulfilled' ? latestResults[i].value : null;
+      if (!d) return;
+      const upside = d.upside_percent ?? null;
+      const rice = d.rice || {};
+      const note = rice.note || '';
+      const riceVal = rice.base?.rice ?? null;
+
+      if (upside === null) return;
+
+      if (rice.available && riceVal !== null) {
+        m1.push({ ticker: t, x: upside, y: riceVal });
+      } else if (note.includes('セクター除外')) {
+        const roe = d.components?.roe_10yr_avg ?? null;
+        if (roe !== null) m2.push({ ticker: t, x: upside, y: roe * 100 });
+      } else if (note.includes('Q異常値')) {
+        const sd = stonksData[t];
+        const rm = sd?.runway?.runway_months ?? null;
+        const runway = rm !== null ? Math.min(5, rm / 12) : 5;
+        const rgObj = sd?.deficit_quality?.revenue_growth_pct || {};
+        const rgKeys = Object.keys(rgObj).map(Number).sort((a, b) => b - a);
+        let revGrowth = null;
+        for (const k of rgKeys) { if (rgObj[k] !== null) { revGrowth = rgObj[k]; break; } }
+        if (revGrowth !== null) {
+          m3.push({ ticker: t, x: runway, y: Math.min(200, revGrowth) });
+        }
+      }
+    });
+
+    const grid = document.getElementById('all-matrices-grid');
+    if (!grid) return;
+
+    const panels = [
+      {
+        id: 1, title: '① 投資効率系（RICE算出可）',
+        note: 'Y軸: RICE (base) | X軸: 乖離率%\nYThresh=2.0（RICE基準） XThresh=0%',
+        points: m1,
+        opts: { xMin: -100, xMax: 200, xThresh: 0, yMin: 0, yMax: 10, yThresh: 2, xLabel: '乖離率 →', yLabel: 'RICE →' },
+      },
+      {
+        id: 2, title: '② 収益性系（セクター除外）',
+        note: 'Y軸: ROE 10yr avg% | X軸: 乖離率%\nYThresh=15%（高ROE基準） XThresh=0%',
+        points: m2,
+        opts: { xMin: -100, xMax: 200, xThresh: 0, yMin: -20, yMax: 60, yThresh: 15, xLabel: '乖離率 →', yLabel: 'ROE% →' },
+      },
+      {
+        id: 3, title: '③ 成長性系（Q異常値）',
+        note: 'Y軸: 売上成長率%(cap 200%) | X軸: Runway(年)\nYThresh=20% XThresh=1年',
+        points: m3,
+        opts: { xMin: 0, xMax: 5, xThresh: 1, yMin: -50, yMax: 200, yThresh: 20, xLabel: 'Runway(年) →', yLabel: '成長率% →' },
+      },
+    ];
+
+    grid.innerHTML = panels.map(panel => {
+      const svg = buildScatterSVG(panel.points, { ...panel.opts, currentTicker: ticker });
+      const count = panel.points.length;
+      return '<div class="matrix-panel">'
+        + '<div class="matrix-panel-title">' + panel.title + ' <span style="font-weight:400;color:var(--mut)">(' + count + '銘柄)</span></div>'
+        + '<div class="matrix-panel-note">' + panel.note.replace(/\n/g, '<br>') + '</div>'
+        + svg
+        + '</div>';
+    }).join('');
+  } catch (e) {
+    console.warn('loadAndRenderMatrices failed:', e);
+  }
 }
 
 loadData();
