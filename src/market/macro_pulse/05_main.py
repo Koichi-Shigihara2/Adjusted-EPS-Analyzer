@@ -1,4 +1,4 @@
-﻿"""
+"""
 MACRO PULSE — Economic Indicators Auto-Update  v6.0
 ====================================================
 変更点 (v5.0 → v6.0):
@@ -1183,9 +1183,15 @@ def save_weekly_analysis(df: pd.DataFrame):
     df.to_csv(WEEKLY_ANALYSIS_PATH, index=False, encoding="utf-8")
     logger.info(f"weekly_analysis.csv saved: {WEEKLY_ANALYSIS_PATH} ({len(df)} rows)")
 
+_EPOCH = datetime(1970, 1, 1)
+
+def _to_ms(dt: datetime) -> float:
+    """datetime → ミリ秒（1970-01-01基準）。Windowsの timestamp() バグ回避。"""
+    return (dt - _EPOCH).total_seconds() * 1000
+
 def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
     """events.csv から target_date 時点のスコアと各指標の値を計算する"""
-    target_ms = datetime.combine(target_date, datetime.max.time()).timestamp() * 1000
+    target_ms = _to_ms(datetime.combine(target_date, datetime.max.time()))
 
     # indicator -> [(date, actual)] sorted by date
     ind_data = {}
@@ -1198,7 +1204,7 @@ def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
         try:
             val = float(actual_str)
             d = datetime.strptime(date_str, "%Y-%m-%d")
-            d_ms = d.timestamp() * 1000
+            d_ms = _to_ms(d)
             if d_ms > target_ms:
                 continue
             if ind not in ind_data:
