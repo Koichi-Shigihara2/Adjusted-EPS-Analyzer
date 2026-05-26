@@ -96,28 +96,38 @@ class RICEResult:
         return d
 
 
-def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, int]:
+def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, int, bool]:
     """
-    Q = OCF ÷ 純利益（直近3年平均）
+    Q = OCF ÷ (純利益 + SBC)（直近3年平均、SBC補正済み）
+
+    SBC補正: SBCは非現金費用であり純利益を圧縮するため、
+    キャッシュ転換効率の分母には純利益+SBCを使用する。
+    SBCが取得できない年はSBC=0として扱う（後退互換）。
+    分母は最小値1を保証する。
 
     Args:
         annual_data: get_annual_range()の返却値（新しい順）
         years: 計算年数
 
     Returns:
-        (Q値, 使用年数)
+        (Q値, 使用年数, SBC補正が適用されたか)
     """
     q_list = []
+    sbc_applied_any = False
     for data in annual_data[:years]:
         ocf = data.get("cf", {}).get("operating_cash_flow")
         ni  = data.get("pl", {}).get("net_income")
-        if ocf is not None and ni is not None and ni != 0:
-            q_list.append(ocf / ni)
+        sbc = data.get("cf", {}).get("stock_based_compensation") or 0.0
+        if ocf is not None and ni is not None:
+            if sbc != 0.0:
+                sbc_applied_any = True
+            denom = max(ni + sbc, 1)
+            q_list.append(ocf / denom)
 
     if not q_list:
-        return 0.0, 0
+        return 0.0, 0, False
 
-    return sum(q_list) / len(q_list), len(q_list)
+    return sum(q_list) / len(q_list), len(q_list), sbc_applied_any
 
 
 def _calc_cf_lagged(
@@ -329,7 +339,7 @@ def calculate_rice(
         )
 
     # ── Q計算 ──
-    q, q_used = _calc_q(annual_data, q_years)
+    q, q_used, sbc_adjusted = _calc_q(annual_data, q_years)
     if q_used == 0:
         return RICEResult(
             q=0.0, cf_conversion=0.0, wacc=wacc,
@@ -386,6 +396,8 @@ def calculate_rice(
 
     # ── ノート生成（データ不足 + 異常値警告を統合） ──
     note_parts = []
+    if sbc_adjusted:
+        note_parts.append("SBC補正済み（純利益+SBCを分母に使用）")
     if q_used < q_years:
         note_parts.append(f"Q: {q_used}年のみ使用（{q_years}年要求）")
     if cf_used < cf_years:
