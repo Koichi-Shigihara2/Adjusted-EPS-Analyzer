@@ -145,8 +145,9 @@ def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
         result.append({
             "period": f"TTM@{s.get('ttm_end', '?')}",
             "cf": {
-                "operating_cash_flow": flow.get("OCF", {}).get("val"),
-                "capital_expenditure": flow.get("CapEx", {}).get("val"),
+                "operating_cash_flow":    flow.get("OCF", {}).get("val"),
+                "capital_expenditure":    flow.get("CapEx", {}).get("val"),
+                "stock_based_compensation": flow.get("SBC", {}).get("val"),
             },
             "pl": {
                 "revenue":                  flow.get("Revenue", {}).get("val"),
@@ -340,6 +341,7 @@ class TanukiDataFetcher:
                 if industry:
                     print(f"   [{ticker}] yfinance industry: {industry}")
 
+
                 # PER（株価収益率）
                 per = info.get("trailingPE") or info.get("forwardPE") or None
                 if per is not None and per > 0:
@@ -425,7 +427,16 @@ class TanukiDataFetcher:
             "fcf_ttm_periods": fcf_ttm_periods,
             "rice_annual_data": rice_annual_data,
             "rice_data_source": rice_data_source,
+            "rice_sector": self._get_rice_sector(ticker, sector),
         }
+
+    def _get_rice_sector(self, ticker: str, yf_sector: str) -> str:
+        """RICE除外判定用セクター取得。beta_config.jsonのrice_sectorを優先する。"""
+        override = self._beta_overrides.get(ticker, {}).get("rice_sector", "")
+        if override:
+            print(f"   [{ticker}] RICE sector override: {yf_sector} → {override}")
+            return override
+        return yf_sector
     
     def _calc_fcf_2yr_avg(self, fcf_list: list) -> float:
         """
