@@ -196,7 +196,8 @@ class TanukiValuationPipeline:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
 
         date_str = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
-        history_path = os.path.join(history_dir, f"{date_str}.json")
+        filename_safe = date_str.replace(":", "-")
+        history_path = os.path.join(history_dir, f"{filename_safe}.json")
         with open(history_path, "w", encoding="utf-8") as f:
             json.dump(valuation, f, ensure_ascii=False, indent=2)
 
