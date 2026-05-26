@@ -594,12 +594,13 @@ class KoichiValuationCalculator:
             if _rice_data:
                 _current_per = financials.get("per") or financials.get("current_per") or 0.0
                 _sc_val = scenario_result.to_dict() if scenario_result else None
+                _rice_sector = financials.get("rice_sector") or sector or ""
                 rice_result = calculate_rice(
                     annual_data=_rice_data,
                     wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
                     scenario_valuations=_sc_val,
                     current_per=_current_per,
-                    sector=sector or "",
+                    sector=_rice_sector,
                     industry=industry or "",
                 )
                 if rice_result.available:
