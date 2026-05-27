@@ -292,7 +292,7 @@ function mktMessage(fg) {
 }
 
 const CAT_META = {
-  BUY:  { label:'BUY',  icon:'🟢', color:'#22c55e', cls:'buy',       badge:'badge-BUY',  desc:'ファンダ≥50 · 割安(>10%) · タイミング≥50 — 今すぐ仕込む' },
+  BUY:  { label:'BUY',  icon:'🟢', color:'#22c55e', cls:'buy',       badge:'badge-BUY',  desc:'ファンダ≥50 · 割安(>10%) · タイミング≥50 — 今仕込んでもよい' },
   WATCH:{ label:'WATCH',icon:'🟡', color:'#eab308', cls:'watch-cat', badge:'badge-WATCH', desc:'ファンダ≥50 · 割安(0-20%) — 購入候補ウォッチリスト' },
   HOLD: { label:'HOLD', icon:'🔵', color:'#3b82f6', cls:'hold',      badge:'badge-HOLD',  desc:'ファンダ良好 · 許容範囲内 — 保有継続・新規不要' },
   TRIM: { label:'TRIM', icon:'🟠', color:'#f97316', cls:'trim',      badge:'badge-TRIM',  desc:'ファンダ良好 · 割高(-30%超) · 陶酔期以降 — 一部利確検討' },
@@ -560,9 +560,9 @@ function renderDetailTable() {
       ${catCard('HOLD',  cats.HOLD)}
     </div>
     <div class="cat-row top3">
-      ${catCard('TRIM',           cats.TRIM)}
-      ${collapsedCard('SELL',     cats.SELL)}
-      ${collapsedCard('PASS',     cats.PASS)}
+      ${catCard('TRIM', cats.TRIM)}
+      ${catCard('SELL', cats.SELL)}
+      ${catCard('PASS', cats.PASS)}
     </div>`;
 
   // ③ Detail table (default sort: funda desc)
