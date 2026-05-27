@@ -2199,29 +2199,26 @@ function buildScatterSVG(points, opts) {
     return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, qy, col };
   }).sort((a, b) => a.cx - b.cx);
 
-  // draw dots wrapped in <g><title> for hover tooltip
-  for (const p of plotted) {
+  // draw dots + labels together per ticker: non-current first so current renders on top
+  const fs = opts.fontSize || 8;
+  const sortedAll = [...plotted.filter(p => !p.isCurrent), ...plotted.filter(p => p.isCurrent)];
+  for (const p of sortedAll) {
     const tip = p.ticker + '\n' + yLabel.replace(' →', '') + ': ' + p.y.toFixed(2) + '\n' + xLabel.replace(' →', '') + ': ' + p.x.toFixed(1);
+    const anchor = p.cx > W / 2 ? 'end' : 'start';
+    const lx = anchor === 'end' ? p.cx - 6 : p.cx + 6;
+    const ly = p.cy + 3;
+    if (!p.isCurrent) out += '<a href="stock.html?ticker=' + p.ticker + '" style="cursor:pointer;">';
     out += '<g><title>' + tip + '</title>';
     out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="' + (p.isCurrent ? 6 : 4) + '" fill="' + p.col + '" opacity="0.9"/>';
     if (p.isCurrent) out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="8" fill="none" stroke="' + p.col + '" stroke-width="1.5" opacity="0.5"/>';
     out += '</g>';
-  }
-
-  // draw labels for all dots; dense clusters overlap (use tooltip)
-  const fs = opts.fontSize || 8;
-  // non-current first so currentTicker renders on top
-  const sortedLabels = [...plotted.filter(p => !p.isCurrent), ...plotted.filter(p => p.isCurrent)];
-  for (const p of sortedLabels) {
-    const anchor = p.cx > W / 2 ? 'end' : 'start';
-    const lx = anchor === 'end' ? p.cx - 6 : p.cx + 6;
-    const ly = p.cy + 3;
     if (p.isCurrent) {
       const tw = p.ticker.length * 5 + 4;
       const rx = anchor === 'end' ? lx - tw : lx - 2;
       out += '<rect x="' + rx + '" y="' + (ly - 10) + '" width="' + tw + '" height="13" fill="rgba(0,0,0,0.7)" rx="2"/>';
     }
     out += '<text x="' + lx + '" y="' + ly + '" font-size="' + fs + '" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
+    if (!p.isCurrent) out += '</a>';
   }
 
   out += '</svg>';
