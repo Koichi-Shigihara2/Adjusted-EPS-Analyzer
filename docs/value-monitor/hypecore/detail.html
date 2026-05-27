@@ -214,6 +214,9 @@ header{position:sticky;top:0;z-index:100;background:rgba(10,13,20,.95);backdrop-
     </div>
   </div>
 
+  <!-- 追加H: バリュエーション倍率パネル -->
+  <div id="valMultiples" style="display:none;background:var(--sur);border:1px solid var(--bdr);padding:16px 22px;margin-bottom:16px"></div>
+
   <!-- チャート -->
   <div class="charts-wrap">
     <div class="chart-row">
@@ -387,12 +390,16 @@ const gc='rgba(255,255,255,.04)',tc='#4a5568';
 
 async function loadTicker(ticker,btn){
   document.querySelectorAll('.ticker-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  try{const r=await fetch(`data/${ticker}_poc.json`);render(await r.json(),ticker);}
-  catch(e){console.error(e);}
+  if(btn)btn.classList.add('active');
+  try{
+    const r=await fetch(`data/${ticker}_poc.json`);
+    let tanukiLatest=null;
+    try{const tr=await fetch(`../../tanuki_valuation/data/${ticker}/latest.json`,{cache:'no-store'});if(tr.ok)tanukiLatest=await tr.json();}catch(e){}
+    render(await r.json(),ticker,tanukiLatest);
+  }catch(e){console.error(e);}
 }
 
-function render(data,ticker){
+function render(data,ticker,tanukiLatest){
   const m=data.monthly,lat=m[m.length-1],prev=m[m.length-2];
   const stage=lat.stage,s=STAGES[stage];
   const lc=detectLifecycle(data),lcd=LIFECYCLE[lc];
@@ -518,7 +525,59 @@ function render(data,ticker){
     `;
     tbody.appendChild(tr);
   });
+
+  // 追加H: バリュエーション倍率パネル
+  renderValMultiples(lat, tanukiLatest?.components ?? null);
 }
+
+function renderValMultiples(lat, comps) {
+  const panel = document.getElementById('valMultiples');
+  if (!panel) return;
+  // latest.json優先、なければpoc.jsonのフィールドで補完
+  const per    = comps?.per      ?? null;
+  const peg    = comps?.peg      ?? lat.peg_ratio ?? null;
+  const ps     = comps?.ps       ?? lat.psr ?? null;
+  const evEb   = comps?.ev_ebitda ?? null;
+  if (per === null && peg === null && ps === null && evEb === null) {
+    panel.style.display = 'none'; return;
+  }
+  const fv = (v, dec, u) => v !== null ? `${v.toFixed(dec)}${u}` : '<span style="color:var(--mut)">N/A</span>';
+  const pegColor = peg === null ? 'var(--txt)' : peg < 1 ? 'var(--grn)' : peg > 2 ? 'var(--red)' : 'var(--txt)';
+  const psColor  = ps  === null ? 'var(--txt)' : ps  > 20 ? 'var(--red)' : ps < 5  ? 'var(--grn)' : 'var(--txt)';
+  const signals = [];
+  if (peg !== null) {
+    if      (peg < 1.0) signals.push(`<span style="color:var(--grn)">✓ PEG&lt;1.0：成長率対比で割安水準</span>`);
+    else if (peg <= 2.0) signals.push(`<span style="color:var(--amb)">〜 PEG 1.0〜2.0：成長率対比で適正水準</span>`);
+    else                 signals.push(`<span style="color:var(--red)">✗ PEG&gt;2.0：成長率対比で割高水準</span>`);
+  }
+  if (ps !== null && ps > 20) signals.push(`<span style="color:var(--red)">✗ PS&gt;20：売上対比で高水準の期待が織り込まれている</span>`);
+  else if (ps !== null && ps < 5) signals.push(`<span style="color:var(--grn)">✓ PS&lt;5：売上対比で低水準</span>`);
+  panel.innerHTML = `
+    <div style="font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);margin-bottom:12px">EXPECTATION PREMIUM INDICATORS</div>
+    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px 32px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">PER</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700">${fv(per,1,'x')}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">PS</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${psColor}">${fv(ps,1,'x')}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">PEG</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${pegColor}">${fv(peg,2,'')}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">EV/EBITDA</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700">${fv(evEb,1,'x')}</span>
+      </div>
+    </div>
+    ${signals.length ? `<div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;font-size:12px;line-height:1.6">${signals.map(s=>`<div>${s}</div>`).join('')}</div>` : ''}
+    <div style="font-family:var(--mono);font-size:10px;color:var(--mut)">ℹ 市場提供値（yfinance）— TANUKIの独自計算値（IV）とは別物</div>
+  `;
+  panel.style.display = 'block';
+}
+
 // 利用可能な銘柄を確認してボタンを生成
 // URLパラメータから銘柄を取得
 const _params = new URLSearchParams(location.search);
@@ -538,8 +597,12 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     const r = await fetch(`data/${_ticker}_poc.json`);
     if (!r.ok) throw new Error(`${_ticker} のデータが見つかりません`);
-    const fakeBtn = { classList: { add: () => {}, remove: () => {} } };
-    render(await r.json(), _ticker);
+    let tanukiLatest = null;
+    try {
+      const tr = await fetch(`../../tanuki_valuation/data/${_ticker}/latest.json`, {cache:'no-store'});
+      if (tr.ok) tanukiLatest = await tr.json();
+    } catch(e) {}
+    render(await r.json(), _ticker, tanukiLatest);
   } catch(e) {
     document.body.innerHTML += `<div style="padding:40px;color:var(--red);font-family:var(--mono)">${e.message}</div>`;
   }
