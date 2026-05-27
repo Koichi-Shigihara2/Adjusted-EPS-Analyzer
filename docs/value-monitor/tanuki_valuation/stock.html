@@ -2208,11 +2208,10 @@ function buildScatterSVG(points, opts) {
     out += '</g>';
   }
 
-  // draw labels only for: currentTicker, y >= yThresh, or x >= xThresh
-  // no deoverlap — labels sit at dot position; dense clusters overlap (use tooltip)
-  const labelPoints = plotted.filter(p => p.isCurrent || p.qy || p.qx);
+  // draw labels for all dots; dense clusters overlap (use tooltip)
+  const fs = opts.fontSize || 8;
   // non-current first so currentTicker renders on top
-  const sortedLabels = [...labelPoints.filter(p => !p.isCurrent), ...labelPoints.filter(p => p.isCurrent)];
+  const sortedLabels = [...plotted.filter(p => !p.isCurrent), ...plotted.filter(p => p.isCurrent)];
   for (const p of sortedLabels) {
     const anchor = p.cx > W / 2 ? 'end' : 'start';
     const lx = anchor === 'end' ? p.cx - 6 : p.cx + 6;
@@ -2222,7 +2221,7 @@ function buildScatterSVG(points, opts) {
       const rx = anchor === 'end' ? lx - tw : lx - 2;
       out += '<rect x="' + rx + '" y="' + (ly - 10) + '" width="' + tw + '" height="13" fill="rgba(0,0,0,0.7)" rx="2"/>';
     }
-    out += '<text x="' + lx + '" y="' + ly + '" font-size="8" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
+    out += '<text x="' + lx + '" y="' + ly + '" font-size="' + fs + '" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
   }
 
   out += '</svg>';
@@ -2305,25 +2304,25 @@ async function loadAndRenderMatrices() {
         id: 1, title: '① 投資効率系（RICE算出可）',
         note: 'Y軸: RICE (base) | X軸: 乖離率%\nYThresh=2.0（RICE基準） XThresh=0%',
         points: m1,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: 0, yMax: 13, yThresh: 2, xLabel: '乖離率 →', yLabel: 'RICE →' },
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: 0, yMax: 13, yThresh: 2, xLabel: '乖離率 →', yLabel: 'RICE →', fontSize: 8 },
       },
       {
         id: 2, title: '② 収益性系（セクター除外）',
         note: 'Y軸: ROE 10yr avg% | X軸: 乖離率%\nYThresh=15%（高ROE基準） XThresh=0%',
         points: m2,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -20, yMax: 60, yThresh: 15, xLabel: '乖離率 →', yLabel: 'ROE% →' },
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -20, yMax: 60, yThresh: 15, xLabel: '乖離率 →', yLabel: 'ROE% →', fontSize: 9 },
       },
       {
         id: 3, title: '③ 成長性系（Q異常値）',
         note: 'Y軸: 売上成長率%(cap 150%) | X軸: Runway(年)\nYThresh=20% XThresh=1年（Runway上限3年）',
         points: m3,
-        opts: { xMin: 0, xMax: 3, xThresh: 1, yMin: -50, yMax: 150, yThresh: 20, xLabel: 'Runway(年) →', yLabel: '成長率% →' },
+        opts: { xMin: 0, xMax: 3, xThresh: 1, yMin: -50, yMax: 150, yThresh: 20, xLabel: 'Runway(年) →', yLabel: '成長率% →', fontSize: 8 },
       },
       {
         id: 4, title: '④ キャッシュ創出力系（FCFマージン）',
         note: 'Y軸: FCFマージン% | X軸: 乖離率%\nYThresh=15% XThresh=0%（cap 50%）',
         points: m4,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -5, yMax: 50, yThresh: 15, xLabel: '乖離率 →', yLabel: 'FCFマージン% →', svgH: 340 },
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -5, yMax: 50, yThresh: 15, xLabel: '乖離率 →', yLabel: 'FCFマージン% →', svgH: 340, fontSize: 7 },
       },
     ];
 
