@@ -2067,7 +2067,7 @@ function toJST(dateStr) {
 }
 
 function buildScatterSVG(points, opts) {
-  const W = 400, H = 360;
+  const W = 400, H = 300;
   const PL = 48, PR = 12, PT = 12, PB = 36;
   const IW = W - PL - PR, IH = H - PT - PB;
   const { xMin, xMax, xThresh, yMin, yMax, yThresh, xLabel, yLabel, currentTicker } = opts;
@@ -2104,26 +2104,29 @@ function buildScatterSVG(points, opts) {
   out += '<text x="' + (PL - 4) + '" y="' + (yT + 4) + '" font-size="8" fill="#94a3b8" text-anchor="end" font-family="monospace">' + yThresh + '</text>';
   out += '<text x="' + (PL - 4) + '" y="' + (PT + IH + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + yMin + '</text>';
 
-  // points — compute screen coords first, then draw with de-overlap
+  // points — compute screen coords, preserve original values for tooltip/label logic
   const plotted = points.map(p => {
     const cx = Math.max(PL + 3, Math.min(PL + IW - 3, sx(p.x)));
     const cy = Math.max(PT + 3, Math.min(PT + IH - 3, sy(p.y)));
     const isCurrent = p.ticker === currentTicker;
     const qx = p.x >= xThresh, qy = p.y >= yThresh;
     const col = isCurrent ? '#c4d0ff' : (qx && qy ? '#4ade80' : (!qx && qy ? '#facc15' : (qx && !qy ? '#94a3b8' : '#f87171')));
-    return { ticker: p.ticker, cx, cy, isCurrent, col };
+    return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, qy, col };
   }).sort((a, b) => a.cx - b.cx);
 
-  // draw dots first (so labels render on top)
+  // draw dots wrapped in <g><title> for hover tooltip
   for (const p of plotted) {
-    out += '<title>' + p.ticker + '</title>';
+    const tip = p.ticker + '\n' + yLabel.replace(' →', '') + ': ' + p.y.toFixed(2) + '\n' + xLabel.replace(' →', '') + ': ' + p.x.toFixed(1);
+    out += '<g><title>' + tip + '</title>';
     out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="' + (p.isCurrent ? 6 : 4) + '" fill="' + p.col + '" opacity="0.9"/>';
     if (p.isCurrent) out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="8" fill="none" stroke="' + p.col + '" stroke-width="1.5" opacity="0.5"/>';
+    out += '</g>';
   }
 
-  // draw labels with simple y-deoverlap
+  // draw labels only for: currentTicker, y >= yThresh (high Y), or x >= xThresh (undervalued)
+  const labelPoints = plotted.filter(p => p.isCurrent || p.qy || p.qx);
   const usedLabelY = [];
-  for (const p of plotted) {
+  for (const p of labelPoints) {
     const anchor = p.cx > W / 2 ? 'end' : 'start';
     const lx = anchor === 'end' ? p.cx - 7 : p.cx + 7;
     let ly = p.cy + 4;
@@ -2131,9 +2134,7 @@ function buildScatterSVG(points, opts) {
       if (Math.abs(used - ly) < 12) { ly += 14; }
     }
     usedLabelY.push(ly);
-    const dense = p.cx < PL + IW * 0.4 && p.cy > PT + IH * 0.6;
-    const fs = dense ? '7' : '8';
-    out += '<text x="' + lx + '" y="' + ly + '" font-size="' + fs + '" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
+    out += '<text x="' + lx + '" y="' + ly + '" font-size="8" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
   }
 
   out += '</svg>';
