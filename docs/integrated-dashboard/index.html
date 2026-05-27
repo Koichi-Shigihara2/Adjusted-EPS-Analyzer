@@ -489,9 +489,13 @@ function renderDetailTable() {
       if (fcfBU !== null && latRev !== null && latRev !== 0) fcfMgn = fcfBU / latRev * 100;
     }
 
+    const per = tk?.components?.per ?? null;
+    const peg = tk?.components?.peg ?? null;
+    const ps  = tk?.components?.ps  ?? null;
+
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             riceAvailable, riceNote, riceVal, roe, fcfMgn };
+             riceAvailable, riceNote, riceVal, roe, fcfMgn, per, peg, ps };
   });
 
   // 5. Categorize
@@ -536,6 +540,21 @@ function renderDetailTable() {
     return `<span style="background:${bg};color:${fg};font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:3px;line-height:1.4">${prefix} ${xL}×${yL}</span>`;
   }
 
+  function multBadge(s) {
+    const parts = [];
+    if (s.per != null) parts.push(`PER ${s.per.toFixed(1)}x`);
+    if (s.peg != null) {
+      const pegCol = s.peg < 1 ? '#4ade80' : s.peg > 2 ? '#f87171' : '#94a3b8';
+      parts.push(`<span style="color:${pegCol}">PEG ${s.peg.toFixed(2)}</span>`);
+    }
+    if (s.ps != null) {
+      const psCol = s.ps > 20 ? '#f87171' : '#94a3b8';
+      parts.push(`<span style="color:${psCol}">PS ${s.ps.toFixed(1)}x</span>`);
+    }
+    if (!parts.length) return '';
+    return `<span class="chip-tags" title="市場提供値（yfinance）">${parts.join(' ｜ ')}</span>`;
+  }
+
   function chipTag(key, s) {
     if (key === 'WATCH' && s.upside != null && s.upside > 0) {
       const sub = s.substage ? ' ' + s.substage : '';
@@ -559,6 +578,7 @@ function renderDetailTable() {
           <span class="csc">F:${s.funda} · T:${s.timing}</span>
           ${chipTag(key, s)}
           ${matrixBadge(s)}
+          ${multBadge(s)}
         </a>`).join('');
     return `<div class="cat-card ${m.cls}">
       <div class="cat-head">
@@ -580,6 +600,7 @@ function renderDetailTable() {
           <span class="csc">F:${s.funda} · T:${s.timing}</span>
           ${chipTag(key, s)}
           ${matrixBadge(s)}
+          ${multBadge(s)}
         </a>`).join('');
     return `<div class="cat-card ${m.cls}">
       <div class="cat-head ronogai-toggle" id="${id}-toggle" onclick="toggleCat('${id}')">
