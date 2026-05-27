@@ -592,6 +592,39 @@ function renderCfFallback(d) {
   section.style.display = '';
 }
 
+async function loadAndRenderHypeSignal() {
+  const el = document.getElementById('hype-signal-row');
+  if (!el) return;
+  const d = globalData;
+  const rv = d.rice?.base?.rice;
+  const uv = d.upside_percent;
+  if (rv == null || uv == null) return;
+  const isH = rv >= 2.0, isU = uv >= 0;
+  const quadrant = isU && isH ? 1 : !isU && isH ? 2 : isU && !isH ? 3 : 4;
+  let stage = null, stageLabel = '';
+  try {
+    const pocRes = await fetch(`../../value-monitor/hypecore/data/${ticker}_poc.json`, { cache: 'no-cache' });
+    if (pocRes.ok) {
+      const poc = await pocRes.json();
+      const last = poc.monthly?.[poc.monthly.length - 1];
+      if (last) { stage = last.stage; stageLabel = last.stage_label || ''; }
+    }
+  } catch(e) {}
+  let signalEmoji, signalText, signalColor;
+  if      (quadrant === 1 && stage === 2) { signalEmoji = '🟢'; signalText = '最優先候補（高効率×割安×成長期）';    signalColor = 'var(--green)'; }
+  else if (quadrant === 1 && stage === 1) { signalEmoji = '🟡'; signalText = '高リスク高リターン（高効率×割安×黎明期）'; signalColor = 'var(--yellow)'; }
+  else if (quadrant === 1 && stage === 3) { signalEmoji = '🟡'; signalText = '成熟優良株（高効率×割安×成熟期）';    signalColor = 'var(--yellow)'; }
+  else if (quadrant === 2 && stage === 2) { signalEmoji = '🟠'; signalText = '押し目待ち（高効率×割高×成長期）';    signalColor = '#fb923c'; }
+  else if (quadrant === 3 && stage === 2) { signalEmoji = '🔵'; signalText = '割安成長（低効率×割安×成長期）';     signalColor = '#60a5fa'; }
+  else                                    { signalEmoji = '⚪'; signalText = '様子見';                       signalColor = 'var(--mut)'; }
+  const stageDisp = stage ? ` <span style="font-size:10px;color:var(--mut);font-family:var(--mono)">[Phase${stage}: ${stageLabel}]</span>` : '';
+  el.innerHTML =
+    '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--bdr);border-radius:6px;">' +
+    '<span style="font-size:11px;color:var(--mut);font-family:var(--mono);letter-spacing:.04em">MATRIX×HYPE</span>' +
+    '<span style="font-size:12px;font-weight:700;color:' + signalColor + '">' + signalEmoji + '&nbsp;' + signalText + stageDisp + '</span>' +
+    '</div>';
+}
+
 async function loadData() {
   try {
     const response = await fetch(`data/${ticker}/latest.json`, { cache: 'no-cache' });
@@ -599,6 +632,7 @@ async function loadData() {
     globalData = await response.json();
     render(globalData);
     loadAndRenderMatrices();
+    loadAndRenderHypeSignal();
     loadCfData(globalData);
     // 時系列チャート（history.jsonが存在する場合のみ）
     try {
@@ -1085,7 +1119,9 @@ function render(d) {
             +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">RICE (base)</span><span style="font-family:var(--mono);color:var(--txt)">'+rv.toFixed(2)+'</span></div>'
             +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">乖離率</span><span style="font-family:var(--mono);color:'+(uv>=0?'var(--green)':'var(--red)')+'">'+(uv>=0?'+':'')+uv.toFixed(1)+'%</span></div>'
             +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">RICE閾値</span><span style="font-family:var(--mono);color:var(--mut)">2.0（基準）</span></div>'
-            +'</div></div></div></div>';
+            +'</div>'
+            +'<div id="hype-signal-row" style="margin-top:10px"></div>'
+            +'</div></div></div>';
         })()}
       </div>
       ` : ''}
