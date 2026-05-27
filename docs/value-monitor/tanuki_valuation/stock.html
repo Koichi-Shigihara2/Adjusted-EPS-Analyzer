@@ -2287,12 +2287,17 @@ async function loadAndRenderMatrices() {
         }
       }
 
-      // m4: FCFマージン（m1+m2対象、fcf_base_used / latest_revenue）
-      if (rice.available || note.includes('セクター除外')) {
-        const fcf = d.components?.fcf_base_used ?? null;
-        const rev = d.components?.latest_revenue ?? null;
-        if (fcf !== null && rev !== null && rev !== 0) {
-          m4.push({ ticker: t, x: upside, y: Math.min(50, fcf / rev * 100) });
+      // m4: FCFマージン（FCFデータがある全銘柄対象）
+      // 優先順位: 1) fcf_estimation.fcf_margin, 2) components.fcf_base_used/latest_revenue
+      {
+        let fcfMgn = d.fcf_estimation?.fcf_margin ?? null;
+        if (fcfMgn === null) {
+          const fcf = d.components?.fcf_base_used ?? null;
+          const rev = d.components?.latest_revenue ?? null;
+          if (fcf !== null && rev !== null && rev !== 0) fcfMgn = fcf / rev * 100;
+        }
+        if (fcfMgn !== null && upside !== null) {
+          m4.push({ ticker: t, x: upside, y: Math.min(50, fcfMgn) });
         }
       }
     });
