@@ -577,7 +577,7 @@ function toggleGuide() {
 
 // Detail panel
 // ---------------------------------------------------------------------------
-function toggleDetail(ticker) {
+async function toggleDetail(ticker) {
   if (openTicker === ticker) {
     closeDetail(ticker);
     openTicker = null;
@@ -598,6 +598,26 @@ function toggleDetail(ticker) {
   // 財務トレンドチャート初期化
   const fvEl = inner.querySelector('[data-fv-uid]');
   if (fvEl) setTimeout(() => initFvCharts(fvEl.dataset.fvUid), 50);
+
+  // 追加I/K: tanuki latest.json から次回決算日・黒字転換目算を非同期注入
+  try {
+    const tr = await fetch(`/On-a-journey/value-monitor/tanuki_valuation/data/${ticker}/latest.json`, {cache:'no-store'});
+    if (tr.ok) {
+      const tk = await tr.json();
+      // Addition I: 次回決算日
+      const ned = tk.next_earnings_date;
+      const nedEl = document.getElementById(`ned-${ticker}`);
+      if (nedEl && ned) nedEl.innerHTML = `次回決算: <span style="color:var(--txt)">${ned}</span>`;
+      else if (nedEl) nedEl.style.display = 'none';
+      // Addition K: 黒字転換目算
+      const be = tk.breakeven_estimate;
+      const beEl = document.getElementById(`eps-be-${ticker}`);
+      if (beEl && be) {
+        beEl.style.display = 'block';
+        beEl.innerHTML = `<div style="font-size:9px;color:var(--mut);margin-bottom:3px;letter-spacing:.1em;text-transform:uppercase">黒字転換目算（調整後EPS線形推定）</div><div style="color:var(--grn);font-family:var(--mono);font-size:13px">${be}年頃（推定）</div><div style="font-size:10px;color:var(--mut);margin-top:2px">直近4Q調整後EPSトレンドを線形外挿</div>`;
+      }
+    }
+  } catch(e) {}
 }
 
 function closeDetail(ticker) {
@@ -755,6 +775,8 @@ function buildDetail(ticker, d) {
       <div class="conclusion-ticker">${ticker}</div>
       <div class="conclusion-verdict" style="color:${vc};border-color:${vbc};background:${vbg}">${verdictLabel}</div>
       <div class="conclusion-summary">${summaryOneLiner}</div>
+      <div id="ned-${ticker}" style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:4px">次回決算: —</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:2px">機関保有: N/A</div>
     </div>
     <div class="conclusion-pillars">
       <div class="pillar-mini">
@@ -843,6 +865,7 @@ function buildDetail(ticker, d) {
         <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
         <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${(ra.monthly_burn||0)>0?`+${fmtB(ra.monthly_burn)}/月 <span style="font-size:9px;color:var(--mut)">（OCF ${fmtB(ra.ocf_annual)} - CapEx ${fmtB(ra.capex_annual)} = CF黒字）</span>`:`${fmtB(ra.monthly_burn)}/月`}</span></div>
         <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+        <div id="eps-be-${ticker}" style="display:none;padding:8px 0;border-top:1px solid var(--bdr);margin-top:6px"></div>
       </div>
       <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)">
         <div class="detail-col-title">③ 黒字化パス · 詳細</div>
