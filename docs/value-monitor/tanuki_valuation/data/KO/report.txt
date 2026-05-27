@@ -1,16 +1,16 @@
 KO INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-27T19:32:25+09:00
-Price: $80.46
+Generated: 2026-05-27T23:33:41+09:00
+Price: $82.07
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -28.3%
-  MA200_Deviation: +10.5%
+  Deviation_Rate: -29.7%
+  MA200_Deviation: +12.7%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.75 (Buy)
-Comment: 割高(-28%超)、FCF黒字、売上安定成長
+Comment: 割高(-30%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_10yr_avg = 36.8%
-Deviation_Rate: -28.3%
+Deviation_Rate: -29.7%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -55,17 +55,34 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $80.46
+Current_Price: $82.07
 Intrinsic_Value_BASE: $57.66
-Deviation_BASE: -28.3%
+Deviation_BASE: -29.7%
 Scenarios:
-BEAR: Growth=3.5%, IV=$54.23, Deviation=-32.6%
-BASE: Growth=5.0%, IV=$57.66, Deviation=-28.3%
-BULL: Growth=6.0%, IV=$60.05, Deviation=-25.4%
+BEAR: Growth=3.5%, IV=$54.23, Deviation=-33.9%
+BASE: Growth=5.0%, IV=$57.66, Deviation=-29.7%
+BULL: Growth=6.0%, IV=$60.05, Deviation=-26.8%
 WACC: 7.72%
 Beta: 0.6
 FCF_Conversion_Rate: 0.7 (Industry: Beverages - Non-Alcoholic)
 RPO_PV: $0 (Remaining Performance Obligation premium)
+Financial_Health:
+  Net_Debt: $-8.78B (negative=net cash)
+  Total_Debt: $1.50B  Cash: $10.27B
+  SBC_TTM: $279M
+  Dilution_3yr_Annual: -0.28%/yr
+  Next_Earnings_Date: 2026-07-21
+FCF_History:
+  2021: $11.26B (FCF_Margin: 29.1%)
+  2022: $9.53B (FCF_Margin: 22.2%)
+  2023: $9.75B (FCF_Margin: 21.3%)
+  2024: $4.74B (FCF_Margin: 10.1%)
+  2025: $5.30B (FCF_Margin: 11.0%)
+  FCF_CAGR_3yr: -17.8%
+Segment_Breakdown:
+  Beverages: $47.9B (100%, YoY 5%)
+  Segment_Weighted_Growth: 5.0%
+  (= basis for TANUKI forward growth rate G)
 Definition:
 
 Intrinsic Value: Calculated via FCF-based DCF model
@@ -77,6 +94,14 @@ FCF_Conversion_Rate: Industry-standard ratio to estimate
 FCF from OCF (accounts for capex intensity by sector)
 RPO: Remaining Performance Obligation, booked future
 revenue not yet recognized; added as DCF premium
+Net_Debt: Total Debt - Cash. Negative = net cash (safer)
+Dilution_3yr_Annual: Share count CAGR over 3 years
+3%/yr = meaningful shareholder dilution risk
+FCF_CAGR_3yr: FCF compound growth rate (3yr)
+Positive = improving cash generation trend
+Segment_Weighted_Growth: Weighted avg of segment growth
+This is the direct basis for TANUKI G scenario
+Next_Earnings_Date: Next quarterly earnings release
 
 
 [4. RICE METRICS]
@@ -128,6 +153,21 @@ AcquisitionCost / Other
 Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
+PER_Comparison:
+  Market_PER_GAAP: 25.8x
+  Adjusted_EPS_PER: 26.5x
+  Delta: +0.7x (more expensive on adjusted basis)
+Forward_Estimates:
+  Next_Earnings_Date: 2026-07-21
+  Next_Quarter_EPS: N/A (no analyst estimates in data)
+  Next_FY_EPS: N/A (no analyst estimates in data)
+Definition:
+
+Market_PER_GAAP: Price / GAAP EPS (market-provided)
+Adjusted_EPS_PER: Price / Adjusted EPS (self-calculated)
+Gap between the two reveals SBC and one-time impact
+Forward_Estimates: Analyst consensus (external data)
+Compare with TANUKI G scenario for cross-validation
 
 
 [6. HYPECORE]
@@ -141,6 +181,13 @@ Phase_History (recent 6 months):
 2026-03: Phase2 (期待拡大期)
 2026-04: Phase2 (期待拡大期)
 2026-05: Phase3 (陶酔期)
+Valuation_Multiples (market-provided, yfinance):
+  PER: 25.8x
+  PEG: 4.12
+  PS:  7.2x
+  EV_EBITDA: 22.7x
+  PEG_Signal: 割高水準（成長率対比でPEG>2.0）
+  PS_Signal: 適正水準
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -156,6 +203,15 @@ Alpha: Growth expectation premium added to IV
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
+Valuation_Multiples: Market-provided values (yfinance),
+NOT self-calculated. Distinct from TANUKI IV.
+PER: Price / GAAP EPS (trailing)
+PEG: PER / Forward EPS Growth Rate
+PEG<1.0 = growth not fully priced in
+PEG>2.0 = high growth expectation embedded
+PS: Price / Revenue (TTM)
+High PS = market expects significant margin expansion
+EV/EBITDA: Debt-adjusted valuation multiple
 
 
 [7. STONKS SILO]
@@ -165,6 +221,8 @@ Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: 1.75 (Buy)
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 12.1%
+Next_Earnings_Date: 2026-07-21
+Breakeven_Estimate: N/A (profitable or insufficient data)
 Definition:
 
 Short_Interest: % of float sold short
@@ -175,6 +233,8 @@ Runway: Cash / Annual_FCF_Burn_Rate (years)
 Critical for pre-profit companies; <1yr = distress risk
 Revenue_Growth_YoY: TTM vs prior TTM
 Primary growth metric for RICE-excluded tickers
+Breakeven_Estimate: Projected year when adjusted EPS turns positive
+based on recent 4Q linear trend. Rough estimate only.
 
 ==============================================
 DISCLAIMER: This report is generated automatically

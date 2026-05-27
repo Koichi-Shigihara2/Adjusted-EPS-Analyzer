@@ -1,16 +1,16 @@
 CRWV INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-27T19:32:23+09:00
-Price: $105.89
+Generated: 2026-05-27T23:33:36+09:00
+Price: $100.86
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -41.5%
-  MA200_Deviation: +5.7%
+  Deviation_Rate: -38.6%
+  MA200_Deviation: +0.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.91 (Buy)
-Comment: 割高(-42%超)、FCF黒字、売上成長加速
+Comment: 割高(-39%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ③成長性系
 Quadrant: 左下
 Label: 割高×低成長
 Key_Metric_Y: Revenue_Growth (see HYPECORE)
-Deviation_Rate: -41.5%
+Deviation_Rate: -38.6%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -55,17 +55,29 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $105.89
+Current_Price: $100.86
 Intrinsic_Value_BASE: $61.90
-Deviation_BASE: -41.5%
+Deviation_BASE: -38.6%
 Scenarios:
-BEAR: Growth=45.5%, IV=$20.18, Deviation=-80.9%
-BASE: Growth=65.0%, IV=$61.90, Deviation=-41.5%
-BULL: Growth=78.0%, IV=$99.14, Deviation=-6.4%
+BEAR: Growth=45.5%, IV=$20.18, Deviation=-80.0%
+BASE: Growth=65.0%, IV=$61.90, Deviation=-38.6%
+BULL: Growth=78.0%, IV=$99.14, Deviation=-1.7%
 WACC: 12.00%
 Beta: 1.35
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
 RPO_PV: $0 (Remaining Performance Obligation premium)
+Financial_Health:
+  Net_Debt: $+24.95B (negative=net cash)
+  Total_Debt: $28.08B  Cash: $3.13B
+  SBC_TTM: $630M
+  Dilution_3yr_Annual: N/A
+  Next_Earnings_Date: 2026-05-08
+FCF_History:
+  2025: $-7.19B (FCF_Margin: -140.2%)
+Segment_Breakdown:
+  Cloud Infrastructure: $5.1B (100%, YoY 65%)
+  Segment_Weighted_Growth: 65.0%
+  (= basis for TANUKI forward growth rate G)
 Definition:
 
 Intrinsic Value: Calculated via FCF-based DCF model
@@ -77,6 +89,14 @@ FCF_Conversion_Rate: Industry-standard ratio to estimate
 FCF from OCF (accounts for capex intensity by sector)
 RPO: Remaining Performance Obligation, booked future
 revenue not yet recognized; added as DCF premium
+Net_Debt: Total Debt - Cash. Negative = net cash (safer)
+Dilution_3yr_Annual: Share count CAGR over 3 years
+3%/yr = meaningful shareholder dilution risk
+FCF_CAGR_3yr: FCF compound growth rate (3yr)
+Positive = improving cash generation trend
+Segment_Weighted_Growth: Weighted avg of segment growth
+This is the direct basis for TANUKI G scenario
+Next_Earnings_Date: Next quarterly earnings release
 
 
 [4. RICE METRICS]
@@ -128,6 +148,20 @@ AcquisitionCost / Other
 Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
+PER_Comparison:
+  Market_PER_GAAP: -160.9x
+  Adjusted_EPS_PER: N/A
+Forward_Estimates:
+  Next_Earnings_Date: 2026-05-08
+  Next_Quarter_EPS: N/A (no analyst estimates in data)
+  Next_FY_EPS: N/A (no analyst estimates in data)
+Definition:
+
+Market_PER_GAAP: Price / GAAP EPS (market-provided)
+Adjusted_EPS_PER: Price / Adjusted EPS (self-calculated)
+Gap between the two reveals SBC and one-time impact
+Forward_Estimates: Analyst consensus (external data)
+Compare with TANUKI G scenario for cross-validation
 
 
 [6. HYPECORE]
@@ -141,6 +175,12 @@ Phase_History (recent 6 months):
 2026-03: Phase4 (期待剥落期)
 2026-04: Phase4 (期待剥落期)
 2026-05: Phase4 (期待剥落期)
+Valuation_Multiples (market-provided, yfinance):
+  PER: -160.9x
+  PEG: N/A
+  PS:  8.8x
+  EV_EBITDA: 30.0x
+  PS_Signal: 適正水準
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -156,6 +196,15 @@ Alpha: Growth expectation premium added to IV
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
+Valuation_Multiples: Market-provided values (yfinance),
+NOT self-calculated. Distinct from TANUKI IV.
+PER: Price / GAAP EPS (trailing)
+PEG: PER / Forward EPS Growth Rate
+PEG<1.0 = growth not fully priced in
+PEG>2.0 = high growth expectation embedded
+PS: Price / Revenue (TTM)
+High PS = market expects significant margin expansion
+EV/EBITDA: Debt-adjusted valuation multiple
 
 
 [7. STONKS SILO]
@@ -165,6 +214,8 @@ Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: 1.91 (Buy)
 Runway_Months: 5.2
 Revenue_Growth_YoY: 111.6%
+Next_Earnings_Date: 2026-05-08
+Breakeven_Estimate: N/A (profitable or insufficient data)
 Definition:
 
 Short_Interest: % of float sold short
@@ -175,6 +226,8 @@ Runway: Cash / Annual_FCF_Burn_Rate (years)
 Critical for pre-profit companies; <1yr = distress risk
 Revenue_Growth_YoY: TTM vs prior TTM
 Primary growth metric for RICE-excluded tickers
+Breakeven_Estimate: Projected year when adjusted EPS turns positive
+based on recent 4Q linear trend. Rough estimate only.
 
 ==============================================
 DISCLAIMER: This report is generated automatically

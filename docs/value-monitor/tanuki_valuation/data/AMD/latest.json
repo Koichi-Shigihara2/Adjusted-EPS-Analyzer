@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 452704226313.40814,
   "intrinsic_value_per_share": 307.31042414426145,
   "intrinsic_value_beta": 282.13,
-  "upside_percent_beta": -44.0,
+  "upside_percent_beta": -42.1,
   "intrinsic_value_rf": 1798.25,
-  "upside_percent_rf": 256.9,
+  "upside_percent_rf": 269.1,
   "v0": 270318112156.46362,
   "v0_adjusted": 270318112156.46362,
   "alpha": 0.6730521159489544,
@@ -14,8 +14,8 @@
     "2年後": 477.1,
     "3年後": 594.47
   },
-  "upside_percent": -39.0,
-  "calculation_date": "2026-05-27T19:32:20+09:00",
+  "upside_percent": -36.9,
+  "calculation_date": "2026-05-27T23:33:28+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -288,17 +288,17 @@
     "bear": {
       "growth_rate": 0.172,
       "rice": 1.038,
-      "rice_per_ratio": 0.0062
+      "rice_per_ratio": 0.0064
     },
     "base": {
       "growth_rate": 0.246,
       "rice": 1.485,
-      "rice_per_ratio": 0.0089
+      "rice_per_ratio": 0.0092
     },
     "bull": {
       "growth_rate": 0.295,
       "rice": 1.781,
-      "rice_per_ratio": 0.0107
+      "rice_per_ratio": 0.011
     }
   },
   "fcf_source": "ttm_series",
@@ -319,7 +319,7 @@
     ],
     "diluted_shares": 1630600639,
     "roe_10yr_avg": 0.16025050379737013,
-    "current_price": 503.89,
+    "current_price": 487.15,
     "latest_revenue": 34639000000.0,
     "rpo": 264000000,
     "beta": 1.1,
@@ -344,8 +344,11 @@
     "rpo_pv": 13976077.304807888,
     "growth_option_pv": 433960713.40511227,
     "alpha_uncapped": 0.6730521159489544,
-    "per": 166.851,
-    "per_adjusted": 99.25,
+    "per": 161.28146,
+    "per_adjusted": 95.96,
+    "peg": 1.21,
+    "ps": 21.208603,
+    "ev_ebitda": 109.444,
     "ma200": 232.5338
   },
   "validation": {
@@ -374,5 +377,80 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
-  "score_comment": "割高(-39%超)、FCF黒字、売上成長加速"
+  "score_comment": "割高(-37%超)、FCF黒字、売上成長加速",
+  "fcf_history": [
+    {
+      "year": 2021,
+      "fcf": 3220000000,
+      "fcf_margin": 19.6
+    },
+    {
+      "year": 2022,
+      "fcf": 3115000000,
+      "fcf_margin": 13.2
+    },
+    {
+      "year": 2023,
+      "fcf": 1121000000,
+      "fcf_margin": 4.9
+    },
+    {
+      "year": 2024,
+      "fcf": 2405000000,
+      "fcf_margin": 9.3
+    },
+    {
+      "year": 2025,
+      "fcf": 6735000000,
+      "fcf_margin": 19.4
+    }
+  ],
+  "financial_health": {
+    "total_debt": 3222000000,
+    "cash_and_equivalents": 5539000000,
+    "net_debt": -2317000000,
+    "sbc_ttm": 1638000000,
+    "dilution_3yr_annual_pct": 1.36,
+    "shares_yr_now": "2025",
+    "shares_yr_3ago": "2022"
+  },
+  "next_earnings_date": "2026-08-05",
+  "segments": [
+    {
+      "name": "Data Center",
+      "weight": 0.62,
+      "growth": 0.35,
+      "estimated_revenue": 21476180000.0
+    },
+    {
+      "name": "Client",
+      "weight": 0,
+      "growth": 0.08,
+      "estimated_revenue": 0.0
+    },
+    {
+      "name": "Gaming",
+      "weight": 0,
+      "growth": -0.1,
+      "estimated_revenue": 0.0
+    },
+    {
+      "name": "Embedded",
+      "weight": 0.1,
+      "growth": 0.15,
+      "estimated_revenue": 3463900000.0
+    },
+    {
+      "name": "Client and Gaming",
+      "weight": 0.28,
+      "growth": 0.05,
+      "estimated_revenue": 9698920000.0
+    },
+    {
+      "name": "All Other",
+      "weight": 0,
+      "growth": 0,
+      "estimated_revenue": 0.0
+    }
+  ]
 }

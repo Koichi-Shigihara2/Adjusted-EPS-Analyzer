@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 630071810259.4241,
   "intrinsic_value_per_share": 68.84697789146813,
   "intrinsic_value_beta": 63.57,
-  "upside_percent_beta": -76.0,
+  "upside_percent_beta": -76.4,
   "intrinsic_value_rf": 382.54,
-  "upside_percent_rf": 44.2,
+  "upside_percent_rf": 41.9,
   "v0": 356572473652.7619,
   "v0_adjusted": 356572473652.7619,
   "alpha": 0.7655800120776206,
@@ -14,8 +14,8 @@
     "2年後": 86.27,
     "3年後": 96.57
   },
-  "upside_percent": -74.0,
-  "calculation_date": "2026-05-27T19:32:20+09:00",
+  "upside_percent": -74.5,
+  "calculation_date": "2026-05-27T23:33:29+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -304,17 +304,17 @@
     "bear": {
       "growth_rate": 0.084,
       "rice": 0.831,
-      "rice_per_ratio": 0.0263
+      "rice_per_ratio": 0.0258
     },
     "base": {
       "growth_rate": 0.119,
       "rice": 1.177,
-      "rice_per_ratio": 0.0372
+      "rice_per_ratio": 0.0366
     },
     "bull": {
       "growth_rate": 0.143,
       "rice": 1.415,
-      "rice_per_ratio": 0.0447
+      "rice_per_ratio": 0.044
     }
   },
   "fcf_source": "ttm_series",
@@ -335,7 +335,7 @@
     ],
     "diluted_shares": 10757109436,
     "roe_10yr_avg": 0.18228095525657637,
-    "current_price": 265.29,
+    "current_price": 269.57,
     "latest_revenue": 716924000000.0,
     "rpo": 4400000000,
     "beta": 1.1,
@@ -360,8 +360,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 31.657518,
-    "per_adjusted": 30.69,
+    "per": 32.16826,
+    "per_adjusted": 31.18,
+    "peg": 1.83,
+    "ps": 3.9039958,
+    "ev_ebitda": 18.903,
     "ma200": 230.7654
   },
   "validation": {
@@ -390,5 +393,62 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 80,
-  "score_comment": "割高(-74%超)、FCF黒字、売上安定成長"
+  "score_comment": "割高(-74%超)、FCF黒字、売上安定成長",
+  "fcf_history": [
+    {
+      "year": 2021,
+      "fcf": -3563000000,
+      "fcf_margin": -0.8
+    },
+    {
+      "year": 2022,
+      "fcf": -8952000000,
+      "fcf_margin": -1.7
+    },
+    {
+      "year": 2023,
+      "fcf": 36601000000,
+      "fcf_margin": 6.4
+    },
+    {
+      "year": 2024,
+      "fcf": 34921000000,
+      "fcf_margin": 5.5
+    },
+    {
+      "year": 2025,
+      "fcf": 9252000000,
+      "fcf_margin": 1.3
+    }
+  ],
+  "financial_health": {
+    "total_debt": 69291000000,
+    "cash_and_equivalents": 86810000000,
+    "net_debt": -17519000000,
+    "sbc_ttm": 19467000000,
+    "dilution_3yr_annual_pct": 2.05,
+    "shares_yr_now": "2025",
+    "shares_yr_3ago": "2022"
+  },
+  "next_earnings_date": "2026-07-31",
+  "segments": [
+    {
+      "name": "North America",
+      "weight": 0.6,
+      "growth": 0.1,
+      "estimated_revenue": 430154400000.0
+    },
+    {
+      "name": "International",
+      "weight": 0.22,
+      "growth": 0.09,
+      "estimated_revenue": 157723280000.0
+    },
+    {
+      "name": "AWS",
+      "weight": 0.18,
+      "growth": 0.22,
+      "estimated_revenue": 129046320000.0
+    }
+  ]
 }

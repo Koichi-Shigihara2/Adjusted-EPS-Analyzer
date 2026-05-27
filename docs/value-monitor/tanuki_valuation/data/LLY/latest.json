@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 682868345841.8556,
   "intrinsic_value_per_share": 792.0817508776369,
   "intrinsic_value_beta": 726.26,
-  "upside_percent_beta": -31.8,
+  "upside_percent_beta": -33.4,
   "intrinsic_value_rf": 4648.82,
-  "upside_percent_rf": 336.6,
+  "upside_percent_rf": 326.0,
   "v0": 401687262259.91504,
   "v0_adjusted": 401687262259.91504,
   "alpha": 0.7,
@@ -14,8 +14,8 @@
     "2年後": 1047.53,
     "3年後": 1204.65
   },
-  "upside_percent": -25.6,
-  "calculation_date": "2026-05-27T19:32:26+09:00",
+  "upside_percent": -27.4,
+  "calculation_date": "2026-05-27T23:33:42+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -219,17 +219,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.589,
-      "rice_per_ratio": 0.0155
+      "rice_per_ratio": 0.0152
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.841,
-      "rice_per_ratio": 0.0222
+      "rice_per_ratio": 0.0217
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 1.009,
-      "rice_per_ratio": 0.0266
+      "rice_per_ratio": 0.026
     }
   },
   "fcf_source": "ttm_series",
@@ -249,8 +249,8 @@
       6243400000
     ],
     "diluted_shares": 891741406,
-    "roe_10yr_avg": 0.9795165919228621,
-    "current_price": 1064.74,
+    "roe_10yr_avg": 0.979516591922862,
+    "current_price": 1091.24,
     "latest_revenue": 65179000000.0,
     "rpo": 0.0,
     "beta": 1.1,
@@ -266,7 +266,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 101972961743.6026,
     "pv_terminal": 299714300516.31244,
-    "roe_used": 0.9795165919228621,
+    "roe_used": 0.979516591922862,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -274,9 +274,12 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 4.113969686076021,
-    "per": 37.87762,
-    "per_adjusted": 44.96,
+    "alpha_uncapped": 4.113969686076019,
+    "per": 38.820347,
+    "per_adjusted": 46.08,
+    "peg": 1.43,
+    "ps": 13.468752,
+    "ev_ebitda": 27.269,
     "ma200": 930.37244
   },
   "validation": {
@@ -305,5 +308,50 @@
   },
   "tanuki_score": "HOLD",
   "funda_score": 100,
-  "score_comment": "割高(-26%超)、FCF黒字、売上成長加速"
+  "score_comment": "割高(-27%超)、FCF黒字、売上成長加速",
+  "fcf_history": [
+    {
+      "year": 2021,
+      "fcf": 7260700000,
+      "fcf_margin": 25.6
+    },
+    {
+      "year": 2022,
+      "fcf": 7084400000,
+      "fcf_margin": 24.8
+    },
+    {
+      "year": 2023,
+      "fcf": 4240100000,
+      "fcf_margin": 12.4
+    },
+    {
+      "year": 2024,
+      "fcf": 8817900000,
+      "fcf_margin": 19.6
+    },
+    {
+      "year": 2025,
+      "fcf": 16813000000,
+      "fcf_margin": 25.8
+    }
+  ],
+  "financial_health": {
+    "total_debt": 42503000000,
+    "cash_and_equivalents": 7268000000,
+    "net_debt": 35235000000,
+    "sbc_ttm": 626000000,
+    "dilution_3yr_annual_pct": -0.2,
+    "shares_yr_now": "2025",
+    "shares_yr_3ago": "2022"
+  },
+  "next_earnings_date": "2026-08-05",
+  "segments": [
+    {
+      "name": "General",
+      "weight": 1,
+      "growth": 0.15,
+      "estimated_revenue": 65179000000.0
+    }
+  ]
 }
