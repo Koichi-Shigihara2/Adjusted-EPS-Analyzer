@@ -450,13 +450,17 @@ class TanukiValuationPipeline:
             try:
                 with open(q_path, encoding="utf-8") as f:
                     q_data = json.load(f)
+                # quarters[0] = 最新、降順で格納
                 quarters = q_data.get("quarters", [])
                 if quarters:
-                    items = [a.get("item_id", "") for a in quarters[-1].get("adjustments", [])]
+                    items = [a.get("item_id", "") for a in quarters[0].get("adjustments", [])]
                     adj_items_str = "/".join(items) if items else "N/A"
-                    for q in quarters[-4:]:
+                    for q in quarters[:4]:
+                        fy = q.get("fiscal_year", "?")
+                        qt = q.get("quarter", "?")
+                        q_label = f"{fy} Q{qt}" if isinstance(qt, int) else f"{fy} {qt}"
                         recent_quarters.append({
-                            "label": f"{q.get('fiscal_year','?')} {q.get('quarter','?')}",
+                            "label": q_label,
                             "actual": q.get("adjusted_eps"),
                         })
             except Exception:
@@ -472,6 +476,7 @@ class TanukiValuationPipeline:
         phase_history = []
         short_int = "N/A"
         rev_yoy_hype = None
+        rec_mean = None
         if os.path.exists(poc_path):
             try:
                 with open(poc_path, encoding="utf-8") as f:
@@ -490,6 +495,7 @@ class TanukiValuationPipeline:
                     if si is not None:
                         short_int = f"{si * 100:.1f}"
                     rev_yoy_hype = last.get("rev_yoy")
+                    rec_mean = last.get("recommendation_mean")
             except Exception:
                 pass
 
@@ -538,17 +544,43 @@ class TanukiValuationPipeline:
         L.append(f"Generated: {now}")
         L.append(f"Price: ${current_price:,.2f}" if current_price else "Price: N/A")
         L.append("")
+        # --- Timing score components ---
+        ma200 = comps.get("ma200")
+        ma200_dev = None
+        if ma200 and current_price:
+            ma200_dev = (current_price / ma200 - 1) * 100
+        rec_label = "N/A"
+        if rec_mean is not None:
+            if rec_mean <= 1.5:
+                rec_label = f"{rec_mean:.2f} (Strong Buy)"
+            elif rec_mean <= 2.5:
+                rec_label = f"{rec_mean:.2f} (Buy)"
+            elif rec_mean <= 3.5:
+                rec_label = f"{rec_mean:.2f} (Hold)"
+            elif rec_mean <= 4.5:
+                rec_label = f"{rec_mean:.2f} (Sell)"
+            else:
+                rec_label = f"{rec_mean:.2f} (Strong Sell)"
+        timing_lines = [
+            f"  Deviation_Rate: {upside:+.1f}%" if upside is not None else "  Deviation_Rate: N/A",
+            f"  MA200_Deviation: {ma200_dev:+.1f}%" if ma200_dev is not None else "  MA200_Deviation: N/A",
+            f"  HypeCore_Phase: {hype_phase}",
+            f"  Analyst_Consensus: {rec_label}",
+        ]
+
         L.append("[1. TANUKI SCORE]")
         L.append(f"Classification: {score}")
         L.append(f"Funda_Score: {funda_score}/100")
-        L.append("Timing_Score: N/A")
+        L.append("Timing_Score (components):")
+        L.extend(timing_lines)
         L.append(f"Comment: {score_comment}")
         L.append("Definition:")
         L.append("")
         L.append("Funda_Score: Composite score of financial health,")
         L.append("growth, and profitability (0-100)")
-        L.append("Timing_Score: Composite of deviation rate,")
-        L.append("market sentiment, and hype phase (0-100)")
+        L.append("Timing_Score: Reference indicators — deviation from IV,")
+        L.append("MA200 momentum, hype phase, analyst consensus")
+        L.append("(composite score requires FG index, shown as components)")
         L.append("BUY: Funda>=50 AND upside>10% AND Timing>=50")
         L.append("WATCH: Funda>=50 AND upside 0-20%")
         L.append("HOLD: Funda good, within tolerance range")
@@ -563,6 +595,11 @@ class TanukiValuationPipeline:
         L.append(f"Label: {label}")
         L.append(f"Key_Metric_Y: {key_metric_y}")
         L.append(f"Deviation_Rate: {upside:+.1f}%" if upside is not None else "Deviation_Rate: N/A")
+        L.append("Thresholds:")
+        L.append("  RICE_Threshold: 2.0 (above=high efficiency)")
+        L.append("  ROE_Threshold: 15% (above=high profitability)")
+        L.append("  FCFMargin_Threshold: 15% (above=high cash generation)")
+        L.append("  Deviation_Threshold: 0% (positive=undervalued)")
         L.append("Definition:")
         L.append("")
         L.append("Matrix①(投資効率系): Y=RICE, X=Deviation Rate")
@@ -681,15 +718,15 @@ class TanukiValuationPipeline:
             L.append("N/A")
         L.append("Definition:")
         L.append("")
-        L.append("HypeCore measures product/technology lifecycle stage")
-        L.append("Phase1 (黎明期/Dawn): Technology proof-of-concept,")
-        L.append("pre-market formation, high uncertainty")
-        L.append("Phase2 (成長期/Growth): Rapid revenue expansion,")
-        L.append("competitive entry, market share battle")
-        L.append("Phase3 (成熟期/Maturity): Growth deceleration,")
-        L.append("margin optimization, cash generation focus")
-        L.append("Phase4 (衰退期/Decline): Market contraction,")
-        L.append("disruption by alternatives")
+        L.append("HypeCore measures market sentiment and hype lifecycle stage")
+        L.append("Phase1 (黎明期/Dawn): Early awareness, pre-euphoria,")
+        L.append("price below MA200, low momentum")
+        L.append("Phase2 (期待拡大期/Expansion): Rising expectations,")
+        L.append("price approaching or above MA200, momentum building")
+        L.append("Phase3 (陶酔期/Euphoria): Peak sentiment, price well above")
+        L.append("MA200, high RSI, strong volume surge")
+        L.append("Phase4 (期待剥落期/Deflation): Sentiment reversal,")
+        L.append("price falling from peak, expectation reset")
         L.append("Alpha: Growth expectation premium added to IV")
         L.append("Higher alpha in Phase1-2, lower in Phase3-4")
         L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
@@ -699,8 +736,8 @@ class TanukiValuationPipeline:
         L.append("[7. STONKS SILO]")
         L.append(f"Short_Report_Target: {short_target}")
         L.append(f"Short_Interest: {short_int}%")
-        L.append("Institutional_Ownership: N/A")
-        L.append("Analyst_Rating: N/A")
+        L.append("Institutional_Ownership: N/A (not in data source)")
+        L.append(f"Analyst_Consensus: {rec_label}")
         L.append(f"Runway_Months: {runway_m}" if stonks_data and runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append("Definition:")
