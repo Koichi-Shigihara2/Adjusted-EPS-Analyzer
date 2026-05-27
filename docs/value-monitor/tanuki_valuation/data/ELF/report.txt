@@ -1,18 +1,23 @@
 ELF INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-27T19:16:45+09:00
+Generated: 2026-05-27T19:32:24+09:00
 Price: $54.13
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 75/100
-Timing_Score: N/A
+Timing_Score (components):
+  Deviation_Rate: +73.2%
+  MA200_Deviation: -41.0%
+  HypeCore_Phase: Phase4 (期待剥落期)
+  Analyst_Consensus: 1.76 (Buy)
 Comment: 割安圏(73%)で買い余地大、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
 growth, and profitability (0-100)
-Timing_Score: Composite of deviation rate,
-market sentiment, and hype phase (0-100)
+Timing_Score: Reference indicators — deviation from IV,
+MA200 momentum, hype phase, analyst consensus
+(composite score requires FG index, shown as components)
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
@@ -27,6 +32,11 @@ Quadrant: 右下
 Label: 割安×低ROE
 Key_Metric_Y: ROE_10yr_avg = 10.4%
 Deviation_Rate: +73.2%
+Thresholds:
+  RICE_Threshold: 2.0 (above=high efficiency)
+  ROE_Threshold: 15% (above=high profitability)
+  FCFMargin_Threshold: 15% (above=high cash generation)
+  Deviation_Threshold: 0% (positive=undervalued)
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
@@ -101,13 +111,13 @@ Interpretation: RICE>2.0 = high reinvestment efficiency
 [5. EPS ANALYZER]
 Latest_Adjusted_EPS: $0.6396
 Latest_GAAP_EPS: $-0.8317
-Adjustment_Delta: $1.4714 (sbc/amortization_intangibles)
+Adjustment_Delta: $1.4714 (sbc/amortization_intangibles/contingent_consideration_fv)
 YoY_Growth: -52.3%
 Recent Surprises (Adjusted EPS):
-  2025 2: Actual=$0.6272 vs Est=N/A -> N/A%
-  2025 1: Actual=$1.1050 vs Est=N/A -> N/A%
-  2024 3: Actual=$0.7245 vs Est=N/A -> N/A%
-  2024 2: Actual=$0.7719 vs Est=N/A -> N/A%
+  2026 Q4: Actual=$0.6396 vs Est=N/A -> N/A%
+  2026 Q3: Actual=$1.1518 vs Est=N/A -> N/A%
+  2026 Q2: Actual=$0.5590 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$0.7377 vs Est=N/A -> N/A%
 Definition:
 
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
@@ -133,15 +143,15 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 Definition:
 
-HypeCore measures product/technology lifecycle stage
-Phase1 (黎明期/Dawn): Technology proof-of-concept,
-pre-market formation, high uncertainty
-Phase2 (成長期/Growth): Rapid revenue expansion,
-competitive entry, market share battle
-Phase3 (成熟期/Maturity): Growth deceleration,
-margin optimization, cash generation focus
-Phase4 (衰退期/Decline): Market contraction,
-disruption by alternatives
+HypeCore measures market sentiment and hype lifecycle stage
+Phase1 (黎明期/Dawn): Early awareness, pre-euphoria,
+price below MA200, low momentum
+Phase2 (期待拡大期/Expansion): Rising expectations,
+price approaching or above MA200, momentum building
+Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
+MA200, high RSI, strong volume surge
+Phase4 (期待剥落期/Deflation): Sentiment reversal,
+price falling from peak, expectation reset
 Alpha: Growth expectation premium added to IV
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
@@ -151,8 +161,8 @@ and HypeCore phase
 [7. STONKS SILO]
 Short_Report_Target: no
 Short_Interest: 14.8%
-Institutional_Ownership: N/A
-Analyst_Rating: N/A
+Institutional_Ownership: N/A (not in data source)
+Analyst_Consensus: 1.76 (Buy)
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 37.8%
 Definition:

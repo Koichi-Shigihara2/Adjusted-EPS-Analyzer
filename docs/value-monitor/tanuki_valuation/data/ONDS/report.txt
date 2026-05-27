@@ -1,18 +1,23 @@
 ONDS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-27T19:16:49+09:00
+Generated: 2026-05-27T19:32:27+09:00
 Price: $9.77
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
-Timing_Score: N/A
+Timing_Score (components):
+  Deviation_Rate: -82.6%
+  MA200_Deviation: +11.4%
+  HypeCore_Phase: Phase4 (期待剥落期)
+  Analyst_Consensus: 1.25 (Strong Buy)
 Comment: 割高(-83%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
 growth, and profitability (0-100)
-Timing_Score: Composite of deviation rate,
-market sentiment, and hype phase (0-100)
+Timing_Score: Reference indicators — deviation from IV,
+MA200 momentum, hype phase, analyst consensus
+(composite score requires FG index, shown as components)
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
@@ -27,6 +32,11 @@ Quadrant: 左下
 Label: 割高×低成長
 Key_Metric_Y: Revenue_Growth (see HYPECORE)
 Deviation_Rate: -82.6%
+Thresholds:
+  RICE_Threshold: 2.0 (above=high efficiency)
+  ROE_Threshold: 15% (above=high profitability)
+  FCFMargin_Threshold: 15% (above=high cash generation)
+  Deviation_Threshold: 0% (positive=undervalued)
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
@@ -101,13 +111,13 @@ Interpretation: RICE>2.0 = high reinvestment efficiency
 [5. EPS ANALYZER]
 Latest_Adjusted_EPS: $119.2384
 Latest_GAAP_EPS: $785.7728
-Adjustment_Delta: $-666.5344 (N/A)
+Adjustment_Delta: $-666.5344 (warrant_fv_change)
 YoY_Growth: 188.6%
 Recent Surprises (Adjusted EPS):
-  2023 2: Actual=$-0.1753 vs Est=N/A -> N/A%
-  2023 1: Actual=$-0.3031 vs Est=N/A -> N/A%
-  2022 3: Actual=$-0.3183 vs Est=N/A -> N/A%
-  2022 2: Actual=$-0.2701 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$119.2384 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$-0.0810 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$-0.0497 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$-0.0714 vs Est=N/A -> N/A%
 Definition:
 
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
@@ -133,15 +143,15 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 Definition:
 
-HypeCore measures product/technology lifecycle stage
-Phase1 (黎明期/Dawn): Technology proof-of-concept,
-pre-market formation, high uncertainty
-Phase2 (成長期/Growth): Rapid revenue expansion,
-competitive entry, market share battle
-Phase3 (成熟期/Maturity): Growth deceleration,
-margin optimization, cash generation focus
-Phase4 (衰退期/Decline): Market contraction,
-disruption by alternatives
+HypeCore measures market sentiment and hype lifecycle stage
+Phase1 (黎明期/Dawn): Early awareness, pre-euphoria,
+price below MA200, low momentum
+Phase2 (期待拡大期/Expansion): Rising expectations,
+price approaching or above MA200, momentum building
+Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
+MA200, high RSI, strong volume surge
+Phase4 (期待剥落期/Deflation): Sentiment reversal,
+price falling from peak, expectation reset
 Alpha: Growth expectation premium added to IV
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
@@ -151,8 +161,8 @@ and HypeCore phase
 [7. STONKS SILO]
 Short_Report_Target: yes
 Short_Interest: 34.0%
-Institutional_Ownership: N/A
-Analyst_Rating: N/A
+Institutional_Ownership: N/A (not in data source)
+Analyst_Consensus: 1.25 (Strong Buy)
 Runway_Months: 162.1
 Revenue_Growth_YoY: 605.3%
 Definition:
