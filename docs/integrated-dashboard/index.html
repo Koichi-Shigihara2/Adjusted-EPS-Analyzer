@@ -477,8 +477,21 @@ function renderDetailTable() {
       sellReason = _sellFunda ? 'funda' : 'tech';
     }
 
+    // Matrix position fields for badge
+    const riceAvailable = tk?.rice?.available ?? false;
+    const riceNote      = tk?.rice?.note ?? '';
+    const riceVal       = tk?.rice?.base?.rice ?? null;
+    const roe           = tk?.components?.roe_10yr_avg ?? null;
+    let fcfMgn = tk?.fcf_estimation?.fcf_margin ?? null;
+    if (fcfMgn === null) {
+      const fcfBU  = tk?.components?.fcf_base_used ?? null;
+      const latRev = tk?.components?.latest_revenue ?? null;
+      if (fcfBU !== null && latRev !== null && latRev !== 0) fcfMgn = fcfBU / latRev * 100;
+    }
+
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
-             upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason };
+             upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
+             riceAvailable, riceNote, riceVal, roe, fcfMgn };
   });
 
   // 5. Categorize
@@ -499,6 +512,30 @@ function renderDetailTable() {
   });
 
   // ② Category board
+  function matrixBadge(s) {
+    const up = s.upside;
+    if (up === null) return '';
+    let prefix, qx, qy, yHigh, yLow;
+    if (s.riceAvailable) {
+      prefix = '①'; qx = up >= 0; qy = s.riceVal !== null && s.riceVal >= 2;
+      yHigh = '高効率'; yLow = '低効率';
+    } else if (s.riceNote.includes('セクター除外')) {
+      prefix = '②'; qx = up >= 0; qy = s.roe !== null && s.roe * 100 >= 15;
+      yHigh = '高ROE'; yLow = '低ROE';
+    } else {
+      prefix = '④'; qx = up >= 0; qy = s.fcfMgn !== null && s.fcfMgn >= 15;
+      yHigh = '高FCF'; yLow = '低FCF';
+    }
+    const xL = qx ? '割安' : '割高';
+    const yL = qy ? yHigh : yLow;
+    let bg, fg;
+    if      ( qx &&  qy) { bg = '#14532d'; fg = '#4ade80'; }
+    else if (!qx &&  qy) { bg = '#713f12'; fg = '#facc15'; }
+    else if ( qx && !qy) { bg = '#1e293b'; fg = '#94a3b8'; }
+    else                 { bg = '#450a0a'; fg = '#f87171'; }
+    return `<span style="background:${bg};color:${fg};font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:3px;line-height:1.4">${prefix} ${xL}×${yL}</span>`;
+  }
+
   function chipTag(key, s) {
     if (key === 'WATCH' && s.upside != null && s.upside > 0) {
       const sub = s.substage ? ' ' + s.substage : '';
@@ -521,6 +558,7 @@ function renderDetailTable() {
           <span class="ckr">${s.ticker}</span>
           <span class="csc">F:${s.funda} · T:${s.timing}</span>
           ${chipTag(key, s)}
+          ${matrixBadge(s)}
         </a>`).join('');
     return `<div class="cat-card ${m.cls}">
       <div class="cat-head">
@@ -541,6 +579,7 @@ function renderDetailTable() {
           <span class="ckr">${s.ticker}</span>
           <span class="csc">F:${s.funda} · T:${s.timing}</span>
           ${chipTag(key, s)}
+          ${matrixBadge(s)}
         </a>`).join('');
     return `<div class="cat-card ${m.cls}">
       <div class="cat-head ronogai-toggle" id="${id}-toggle" onclick="toggleCat('${id}')">
