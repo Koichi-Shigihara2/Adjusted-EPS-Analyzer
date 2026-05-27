@@ -404,7 +404,12 @@
 
       <!-- 銘柄ヘッダー -->
       <div class="ticker-row">
-        <div class="ticker-title" id="ticker-title">—</div>
+        <div>
+          <div class="ticker-title" id="ticker-title">—</div>
+          <div id="next-earnings-row" style="display:none;margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--mut)">
+            次回決算: <span id="next-earnings-date" style="color:var(--txt)">—</span>
+          </div>
+        </div>
         <div class="ticker-meta">
           <span style="font-family:var(--mono);font-size:9px;color:var(--mut);letter-spacing:.06em;margin-right:2px">AdjEPS信頼性</span>
           <span id="health-badge" class="health-badge badge-調整なし" title="調整なし: 差分0%&#10;調整小: 差分1〜20%（過小評価リスク低）&#10;調整中: 差分21〜80%（実力が見えにくい可能性）&#10;調整大: 差分81%以上（過小評価注目）&#10;過大調整: Adj &lt; GAAP（過大評価注意）&#10;Error: 分析不能">調整なし</span>
@@ -429,6 +434,28 @@
         <div class="metric-card">
           <div class="metric-label">YoY成長率</div>
           <div class="metric-val" id="yoy">—</div>
+        </div>
+      </div>
+
+      <!-- PER比較（Addition G） -->
+      <div id="per-comparison" style="display:none;background:var(--sur);border:1px solid var(--bdr);padding:14px 16px;margin-bottom:20px">
+        <div style="font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;margin-bottom:10px">PER 比較</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:4px">市場 PER（GAAP）</div>
+            <div id="per-gaap" style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--txt)">—</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:4px">調整後 EPS PER</div>
+            <div id="per-adj" style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--grn)">—</div>
+          </div>
+          <div>
+            <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-bottom:4px">乖離（調整後 − GAAP）</div>
+            <div style="display:flex;align-items:baseline;gap:8px">
+              <div id="per-delta" style="font-family:var(--mono);font-size:20px;font-weight:700">—</div>
+              <div id="per-delta-exp" style="font-family:var(--mono);font-size:9px;color:var(--mut)"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -499,6 +526,7 @@
     let currentTicker = 'TSLA';
     let quarterlyData = null;
     let ttmData = null;
+    let tanukiData = null;
     let chart = null;
     let currentTab = 'quarterly';
 
@@ -533,6 +561,12 @@
           if (tResp.ok) ttmData = await tResp.json();
         } catch (e) {}
 
+        tanukiData = null;
+        try {
+          const tkResp = await fetch(`../tanuki_valuation/data/${currentTicker}/latest.json`, { cache: 'no-store' });
+          if (tkResp.ok) tanukiData = await tkResp.json();
+        } catch (e) {}
+
         document.getElementById('ticker-title').innerText = currentTicker;
         document.getElementById('last-updated').innerText =
           `最終更新: ${new Date(quarterlyData.last_updated).toLocaleDateString('ja-JP')}`;
@@ -543,10 +577,51 @@
         document.getElementById('content').style.display = 'block';
 
         switchTab('quarterly');
+        updateTanukiInfo(tanukiData);
       } catch (error) {
         console.error('Error:', error);
         showLoading(false);
         document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    function updateTanukiInfo(data) {
+      const earningsRow = document.getElementById('next-earnings-row');
+      const perPanel = document.getElementById('per-comparison');
+
+      if (!data) {
+        if (earningsRow) earningsRow.style.display = 'none';
+        if (perPanel) perPanel.style.display = 'none';
+        return;
+      }
+
+      // Addition E: 次回決算日
+      const ned = data.next_earnings_date;
+      if (ned && earningsRow) {
+        document.getElementById('next-earnings-date').innerText = ned;
+        earningsRow.style.display = 'block';
+      } else if (earningsRow) {
+        earningsRow.style.display = 'none';
+      }
+
+      // Addition G: PER比較
+      const comps = data.components || {};
+      const perGaap = comps.per;
+      const perAdj = comps.per_adjusted;
+      if (perPanel && (perGaap != null || perAdj != null)) {
+        if (perGaap != null) document.getElementById('per-gaap').innerText = `${perGaap.toFixed(1)}x`;
+        if (perAdj != null) document.getElementById('per-adj').innerText = `${perAdj.toFixed(1)}x`;
+        if (perGaap != null && perAdj != null) {
+          const delta = perAdj - perGaap;
+          const deltaEl = document.getElementById('per-delta');
+          deltaEl.innerText = `${delta >= 0 ? '+' : ''}${delta.toFixed(1)}x`;
+          deltaEl.style.color = delta < 0 ? 'var(--grn)' : 'var(--red)';
+          const expEl = document.getElementById('per-delta-exp');
+          if (expEl) expEl.innerText = delta < 0 ? '調整後で割安' : '調整後で割高';
+        }
+        perPanel.style.display = 'block';
+      } else if (perPanel) {
+        perPanel.style.display = 'none';
       }
     }
 
