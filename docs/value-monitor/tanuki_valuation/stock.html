@@ -376,6 +376,7 @@ const params = new URLSearchParams(window.location.search);
 const ticker = params.get('ticker') || 'NVDA';
 
 let globalData = null;
+let globalHistoryData = null;
 
 const fmt = (n) => n?.toFixed(2) ?? '—';
 const fmtInt = (n) => n?.toLocaleString() ?? '—';
@@ -592,6 +593,44 @@ function renderCfFallback(d) {
   section.style.display = '';
 }
 
+function toggleScoreHistory() {
+  const body = document.getElementById('score-history-body');
+  const lbl  = document.getElementById('score-history-label');
+  if (!body || !lbl) return;
+  const open = body.style.display === 'none';
+  body.style.display = open ? '' : 'none';
+  lbl.textContent = (open ? '▼' : '▶') + ' 過去のスコア履歴';
+}
+
+function loadAndRenderScoreHistory() {
+  if (!globalHistoryData) return;
+  const SCORE_COLOR = { BUY:'var(--green)', WATCH:'var(--yellow)', HOLD:'#3b82f6', TRIM:'#f97316', SELL:'#ef4444', PASS:'#475569' };
+  const SCORE_ICON  = { BUY:'🟢', WATCH:'🟡', HOLD:'🔵', TRIM:'🟠', SELL:'🔴', PASS:'⬛' };
+  const scored = globalHistoryData.filter(e => e.tanuki_score).slice(-5).reverse();
+  if (scored.length === 0) return;
+  const section = document.getElementById('score-history-section');
+  if (section) section.style.display = '';
+  const rows = scored.map(e => {
+    const sc  = e.tanuki_score;
+    const col = SCORE_COLOR[sc] || 'var(--mut)';
+    const ico = SCORE_ICON[sc]  || '⚪';
+    const star = e.funda_score != null ? `★${(e.funda_score / 20).toFixed(1)}` : '';
+    const cmt  = e.score_comment ? `「${e.score_comment}」` : '';
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--bdr)">'
+      + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">'
+      + `<span style="font-family:var(--mono);font-size:12px;color:var(--mut)">${e.date}</span>`
+      + `<span style="font-weight:700;color:${col}">${ico} ${sc}</span>`
+      + (star ? `<span style="font-family:var(--mono);font-size:12px;color:var(--mut)">${star}</span>` : '')
+      + '</div>'
+      + (cmt ? `<div style="font-size:12px;color:var(--mut);padding-left:4px">${cmt}</div>` : '')
+      + '</div>';
+  }).join('');
+  const body = document.getElementById('score-history-body');
+  if (body) body.innerHTML =
+    `<div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-bottom:8px">直近${scored.length}件（新しい順）</div>`
+    + rows;
+}
+
 async function loadAndRenderHypeSignal() {
   const el = document.getElementById('hype-signal-row');
   if (!el) return;
@@ -634,12 +673,14 @@ async function loadData() {
     loadAndRenderMatrices();
     loadAndRenderHypeSignal();
     loadCfData(globalData);
-    // 時系列チャート（history.jsonが存在する場合のみ）
+    // 時系列チャート＆スコア履歴（history.jsonが存在する場合のみ）
     try {
       const hRes = await fetch(`data/${ticker}/history.json`, { cache: 'no-cache' });
       if (hRes.ok) {
         const historyData = await hRes.json();
+        globalHistoryData = historyData;
         if (historyData.length >= 2) renderHistoryChart(historyData);
+        loadAndRenderScoreHistory();
       }
     } catch (e) { /* history.json未存在は無視 */ }
   } catch (error) {
@@ -1125,6 +1166,14 @@ function render(d) {
         })()}
       </div>
       ` : ''}
+    </div>
+
+    <!-- 過去のスコア履歴（パイプライン実行後から蓄積） -->
+    <div class="chart-container" id="score-history-section" style="margin-top:24px;display:none">
+      <div style="cursor:pointer;user-select:none;padding-bottom:4px" onclick="toggleScoreHistory()">
+        <span id="score-history-label" style="font-size:14px;font-weight:700;color:var(--txt);font-family:var(--mono);letter-spacing:.04em">▶ 過去のスコア履歴</span>
+      </div>
+      <div id="score-history-body" style="display:none;margin-top:4px"></div>
     </div>
 
     <div class="chart-container" id="all-matrices-section" style="margin-top:32px">
