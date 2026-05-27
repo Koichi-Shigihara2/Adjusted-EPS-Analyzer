@@ -5,7 +5,7 @@ on:
     - cron: "15 22 * * *"
     - cron: "3 13 * * *"
     - cron: "7 22 * * 6"
-    - cron: "11 22 * * 0"
+    - cron: "11 22 * * 6"
   workflow_dispatch:
     inputs:
       mode:
@@ -85,9 +85,9 @@ jobs:
         run: |
           python src/market/macro_pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
 
-      - name: Generate weekly AI analysis (Sunday)
+      - name: Generate weekly AI analysis (Saturday)
         if: |
-          (github.event_name == 'schedule' && github.event.schedule == '11 22 * * 0') ||
+          (github.event_name == 'schedule' && github.event.schedule == '11 22 * * 6') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'weekly-analysis')
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
