@@ -303,6 +303,9 @@ class TanukiDataFetcher:
         sector = "default"
         industry = ""       # v8.1: 保険判定精度向上のためindustryも取得
         per = None
+        peg = None
+        ps = None
+        ev_ebitda = None
         ma200 = None
         
         if HAS_YFINANCE:
@@ -347,14 +350,35 @@ class TanukiDataFetcher:
                 if per is not None and per > 0:
                     print(f"   [{ticker}] yfinance PER: {per:.1f}")
 
+                # PEG（成長調整PER）
+                peg_raw = info.get("pegRatio") or None
+                if peg_raw is not None and peg_raw > 0:
+                    peg = float(peg_raw)
+                    print(f"   [{ticker}] yfinance PEG: {peg:.2f}")
+
+                # PS（株価売上高倍率）
+                ps_raw = info.get("priceToSalesTrailing12Months") or None
+                if ps_raw is not None and ps_raw > 0:
+                    ps = float(ps_raw)
+                    print(f"   [{ticker}] yfinance PS: {ps:.2f}")
+
+                # EV/EBITDA
+                ev_ebitda_raw = info.get("enterpriseToEbitda") or None
+                if ev_ebitda_raw is not None and ev_ebitda_raw > 0:
+                    ev_ebitda = float(ev_ebitda_raw)
+                    print(f"   [{ticker}] yfinance EV/EBITDA: {ev_ebitda:.2f}")
+
                 # 200日移動平均
                 ma200 = info.get("twoHundredDayAverage") or None
                 if ma200 is not None and ma200 > 0:
                     print(f"   [{ticker}] yfinance 200MA: ${ma200:.2f}")
-                    
+
             except Exception as e:
                 print(f"   [{ticker}] yfinance取得エラー: {e}")
                 per = None
+                peg = None
+                ps = None
+                ev_ebitda = None
                 ma200 = None
         
         # ========================================
@@ -418,6 +442,9 @@ class TanukiDataFetcher:
             "sector": sector,
             "industry": industry,
             "per": per,
+            "peg": peg,
+            "ps": ps,
+            "ev_ebitda": ev_ebitda,
             "ma200": ma200,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,

@@ -729,6 +729,9 @@ class KoichiValuationCalculator:
                     current_price=financials.get("current_price", 0),
                     eps_data_dir=self.eps_data_dir,
                 ),
+                "peg": financials.get("peg"),
+                "ps": financials.get("ps"),
+                "ev_ebitda": financials.get("ev_ebitda"),
                 "ma200": financials.get("ma200"),
             }
         }

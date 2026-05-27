@@ -812,6 +812,32 @@ class TanukiValuationPipeline:
                 L.append(f"{m_str}: Phase{st} ({sl})")
         else:
             L.append("N/A")
+
+        # Valuation multiples (market-provided via yfinance)
+        per_val = comps.get("per")
+        peg_val = comps.get("peg")
+        ps_val = comps.get("ps")
+        ev_ebitda_val = comps.get("ev_ebitda")
+        L.append("Valuation_Multiples (market-provided, yfinance):")
+        L.append(f"  PER: {per_val:.1f}x" if per_val is not None else "  PER: N/A")
+        L.append(f"  PEG: {peg_val:.2f}" if peg_val is not None else "  PEG: N/A")
+        L.append(f"  PS:  {ps_val:.1f}x" if ps_val is not None else "  PS:  N/A")
+        L.append(f"  EV_EBITDA: {ev_ebitda_val:.1f}x" if ev_ebitda_val is not None else "  EV_EBITDA: N/A")
+        if peg_val is not None:
+            if peg_val < 1.0:
+                L.append("  PEG_Signal: 割安水準（成長率対比でPEG<1.0）")
+            elif peg_val <= 2.0:
+                L.append("  PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）")
+            else:
+                L.append("  PEG_Signal: 割高水準（成長率対比でPEG>2.0）")
+        if ps_val is not None:
+            if ps_val > 20:
+                L.append("  PS_Signal: 高水準（売上対比で高い期待が織り込み済み）")
+            elif ps_val < 5:
+                L.append("  PS_Signal: 低水準（売上対比で低い期待）")
+            else:
+                L.append("  PS_Signal: 適正水準")
+
         L.append("Definition:")
         L.append("")
         L.append("HypeCore measures market sentiment and hype lifecycle stage")
@@ -827,6 +853,15 @@ class TanukiValuationPipeline:
         L.append("Higher alpha in Phase1-2, lower in Phase3-4")
         L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
         L.append("and HypeCore phase")
+        L.append("Valuation_Multiples: Market-provided values (yfinance),")
+        L.append("NOT self-calculated. Distinct from TANUKI IV.")
+        L.append("PER: Price / GAAP EPS (trailing)")
+        L.append("PEG: PER / Forward EPS Growth Rate")
+        L.append("PEG<1.0 = growth not fully priced in")
+        L.append("PEG>2.0 = high growth expectation embedded")
+        L.append("PS: Price / Revenue (TTM)")
+        L.append("High PS = market expects significant margin expansion")
+        L.append("EV/EBITDA: Debt-adjusted valuation multiple")
         L.append("")
         L.append("")
         L.append("[7. STONKS SILO]")
@@ -836,6 +871,9 @@ class TanukiValuationPipeline:
         L.append(f"Analyst_Consensus: {rec_label}")
         L.append(f"Runway_Months: {runway_m}" if stonks_data and runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
+        L.append(f"Next_Earnings_Date: {next_earnings}")
+        breakeven_est = extra.get("breakeven_estimate")
+        L.append(f"Breakeven_Estimate: {breakeven_est}年頃（推定）" if breakeven_est is not None else "Breakeven_Estimate: N/A (profitable or insufficient data)")
         L.append("Definition:")
         L.append("")
         L.append("Short_Interest: % of float sold short")
@@ -846,6 +884,8 @@ class TanukiValuationPipeline:
         L.append("Critical for pre-profit companies; <1yr = distress risk")
         L.append("Revenue_Growth_YoY: TTM vs prior TTM")
         L.append("Primary growth metric for RICE-excluded tickers")
+        L.append("Breakeven_Estimate: Projected year when adjusted EPS turns positive")
+        L.append("based on recent 4Q linear trend. Rough estimate only.")
         L.append("")
         L.append("==============================================")
         L.append("DISCLAIMER: This report is generated automatically")
@@ -951,6 +991,39 @@ class TanukiValuationPipeline:
                     result["next_earnings_date"] = str(dates[0])
         except Exception:
             pass
+
+        # --- breakeven estimate from EPS quarterly.json (deficit tickers only) ---
+        eps_q_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data", ticker, "quarterly.json"
+        )
+        if os.path.exists(eps_q_path):
+            try:
+                with open(eps_q_path, encoding="utf-8") as f:
+                    eps_q_data = json.load(f)
+                quarters_list = eps_q_data.get("quarters", [])
+                recent_eps = [
+                    q.get("adjusted_eps") for q in quarters_list[:4]
+                    if q.get("adjusted_eps") is not None
+                ]
+                if len(recent_eps) >= 2 and recent_eps[0] < 0:
+                    vals = list(reversed(recent_eps))  # oldest→newest
+                    n = len(vals)
+                    x_mean = (n - 1) / 2.0
+                    y_mean = sum(vals) / n
+                    denom = sum((i - x_mean) ** 2 for i in range(n))
+                    if denom > 0:
+                        slope = sum((i - x_mean) * (vals[i] - y_mean) for i in range(n)) / denom
+                        intercept = y_mean - slope * x_mean
+                        if slope > 0:
+                            x_zero = -intercept / slope
+                            quarters_until = x_zero - (n - 1)
+                            if 0 < quarters_until < 20:
+                                from datetime import datetime as _dt
+                                years_until = quarters_until / 4.0
+                                breakeven_year = round(_dt.now().year + years_until)
+                                result["breakeven_estimate"] = breakeven_year
+            except Exception:
+                pass
 
         # --- segment_config ---
         seg_path = os.path.join(self.repo_root, "config", "segment_config.json")
