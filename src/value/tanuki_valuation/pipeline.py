@@ -506,10 +506,27 @@ class TanukiValuationPipeline:
                 pass
 
         short_target = "yes" if stonks_data else "no"
-        runway_m = stonks_data.get("runway", {}).get("runway_months", "N/A") if stonks_data else "N/A"
-        rev_growth_stonks = stonks_data.get("deficit_quality", {}).get("revenue_growth_pct") if stonks_data else None
-        if rev_growth_stonks is not None:
-            rev_growth_str = f"{rev_growth_stonks:.1f}"
+
+        runway_raw = stonks_data.get("runway", {}).get("runway_months") if stonks_data else None
+        if isinstance(runway_raw, (int, float)):
+            runway_m = f"{runway_raw:.1f}"
+        elif runway_raw is not None:
+            runway_m = str(runway_raw)
+        else:
+            runway_m = "N/A"
+
+        rev_growth_raw = stonks_data.get("deficit_quality", {}).get("revenue_growth_pct") if stonks_data else None
+        if isinstance(rev_growth_raw, dict):
+            valid = {k: v for k, v in rev_growth_raw.items() if v is not None}
+            latest_key = max(valid.keys()) if valid else None
+            rev_growth_val = valid.get(latest_key) if latest_key else None
+        elif isinstance(rev_growth_raw, (int, float)):
+            rev_growth_val = rev_growth_raw
+        else:
+            rev_growth_val = None
+
+        if rev_growth_val is not None:
+            rev_growth_str = f"{rev_growth_val:.1f}"
         elif rev_yoy_hype is not None:
             rev_growth_str = f"{rev_yoy_hype:.1f}"
         else:
@@ -684,7 +701,7 @@ class TanukiValuationPipeline:
         L.append(f"Short_Interest: {short_int}%")
         L.append("Institutional_Ownership: N/A")
         L.append("Analyst_Rating: N/A")
-        L.append(f"Runway_Months: {runway_m}" if stonks_data else "Runway_Months: N/A (profitable or not in STONKS)")
+        L.append(f"Runway_Months: {runway_m}" if stonks_data and runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append("Definition:")
         L.append("")
