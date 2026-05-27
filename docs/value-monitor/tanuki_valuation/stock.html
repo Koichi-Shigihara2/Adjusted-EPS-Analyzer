@@ -334,7 +334,7 @@
     /* ── 3マトリクス並列表示 ── */
     .matrix-panel-row {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 16px;
     }
     @media (max-width: 900px) {
@@ -2172,7 +2172,7 @@ async function loadAndRenderMatrices() {
       if (sr.ok) { const sj = await sr.json(); stonksData = sj.tickers || {}; console.log('[matrices] stonks keys:', Object.keys(stonksData).length); }
     } catch (e) { console.error('[matrices] stonks fetch failed:', e); }
 
-    const m1 = [], m2 = [], m3 = [];
+    const m1 = [], m2 = [], m3 = [], m4 = [];
 
     tickers.forEach((t, i) => {
       const d = latestResults[i].status === 'fulfilled' ? latestResults[i].value : null;
@@ -2201,11 +2201,21 @@ async function loadAndRenderMatrices() {
           m3.push({ ticker: t, x: runway, y: Math.min(150, revGrowth) });
         }
       }
+
+      // m4: FCFマージン（m1+m2対象、fcf_base_used / latest_revenue）
+      if (rice.available || note.includes('セクター除外')) {
+        const fcf = d.components?.fcf_base_used ?? null;
+        const rev = d.components?.latest_revenue ?? null;
+        if (fcf !== null && rev !== null && rev !== 0) {
+          m4.push({ ticker: t, x: upside, y: Math.min(50, fcf / rev * 100) });
+        }
+      }
     });
 
     console.log('[matrices] m1 投資効率系:', m1.length, m1.map(p => p.ticker));
     console.log('[matrices] m2 収益性系:', m2.length, m2.map(p => p.ticker));
     console.log('[matrices] m3 成長性系:', m3.length, m3.map(p => p.ticker));
+    console.log('[matrices] m4 キャッシュ創出力系:', m4.length, m4.map(p => p.ticker));
 
     const grid = document.getElementById('all-matrices-grid');
     if (!grid) return;
@@ -2228,6 +2238,12 @@ async function loadAndRenderMatrices() {
         note: 'Y軸: 売上成長率%(cap 150%) | X軸: Runway(年)\nYThresh=20% XThresh=1年（Runway上限3年）',
         points: m3,
         opts: { xMin: 0, xMax: 3, xThresh: 1, yMin: -50, yMax: 150, yThresh: 20, xLabel: 'Runway(年) →', yLabel: '成長率% →' },
+      },
+      {
+        id: 4, title: '④ キャッシュ創出力系（FCFマージン）',
+        note: 'Y軸: FCFマージン% | X軸: 乖離率%\nYThresh=15% XThresh=0%（cap 50%）',
+        points: m4,
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -5, yMax: 50, yThresh: 15, xLabel: '乖離率 →', yLabel: 'FCFマージン% →' },
       },
     ];
 
