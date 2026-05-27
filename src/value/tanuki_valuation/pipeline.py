@@ -334,13 +334,26 @@ class TanukiValuationPipeline:
         with open(history_summary_path, "w", encoding="utf-8") as f:
             json.dump(history_summary, f, ensure_ascii=False, indent=2)
 
-        report_text = self._generate_report(ticker, valuation, score_data)
+        # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存
+        extra = self._load_extra_data(ticker, valuation)
+        latest_data.update(extra)
+        with open(latest_path, "w", encoding="utf-8") as f:
+            json.dump(latest_data, f, ensure_ascii=False, indent=2)
+
+        report_text = self._generate_report(ticker, valuation, score_data, extra)
         self._save_report(ticker, report_text)
 
         print(f"   💾 保存: {latest_path}")
 
-    def _generate_report(self, ticker: str, valuation: dict, score_data: dict) -> str:
+    def _generate_report(self, ticker: str, valuation: dict, score_data: dict, extra: dict = None) -> str:
         """銘柄別統合レポートをプレーンテキストで生成"""
+        if extra is None:
+            extra = {}
+        fcf_history = extra.get("fcf_history", [])
+        fin_health = extra.get("financial_health", {})
+        segments = extra.get("segments", [])
+        next_earnings = extra.get("next_earnings_date", "N/A")
+
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
         rice = valuation.get("rice", {})
@@ -630,6 +643,54 @@ class TanukiValuationPipeline:
         L.append(f"Beta: {beta}")
         L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
         L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
+        L.append("Financial_Health:")
+        net_debt = fin_health.get("net_debt")
+        total_debt = fin_health.get("total_debt")
+        cash = fin_health.get("cash_and_equivalents")
+        sbc_ttm = fin_health.get("sbc_ttm")
+        dilution_3yr = fin_health.get("dilution_3yr_annual_pct")
+        L.append(f"  Net_Debt: ${net_debt/1e9:+.2f}B (negative=net cash)" if net_debt is not None else "  Net_Debt: N/A")
+        L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B" if total_debt is not None else "  Total_Debt: N/A")
+        L.append(f"  SBC_TTM: ${sbc_ttm/1e6:,.0f}M" if sbc_ttm is not None else "  SBC_TTM: N/A")
+        L.append(f"  Dilution_3yr_Annual: {dilution_3yr:+.2f}%/yr" if dilution_3yr is not None else "  Dilution_3yr_Annual: N/A")
+        L.append(f"  Next_Earnings_Date: {next_earnings}")
+        L.append("FCF_History:")
+        if fcf_history:
+            for fh in fcf_history:
+                yr = fh.get("year", "?")
+                fcf_v = fh.get("fcf")
+                fcf_m = fh.get("fcf_margin")
+                if fcf_v is not None:
+                    fcf_str = f"${fcf_v/1e9:.2f}B"
+                    mgn_str = f" (FCF_Margin: {fcf_m:.1f}%)" if fcf_m is not None else ""
+                    L.append(f"  {yr}: {fcf_str}{mgn_str}")
+                else:
+                    L.append(f"  {yr}: N/A")
+            # FCF CAGR 3yr
+            valid_fcf = [(fh["year"], fh["fcf"]) for fh in fcf_history if fh.get("fcf") is not None]
+            if len(valid_fcf) >= 4:
+                yr_old, fcf_old = valid_fcf[-4]
+                yr_new, fcf_new = valid_fcf[-1]
+                if fcf_old > 0 and fcf_new > 0:
+                    cagr = ((fcf_new / fcf_old) ** (1 / 3) - 1) * 100
+                    L.append(f"  FCF_CAGR_3yr: {cagr:+.1f}%")
+        else:
+            L.append("  N/A")
+        L.append("Segment_Breakdown:")
+        if segments:
+            total_w = sum(s.get("weight", 0) for s in segments)
+            for seg in segments:
+                name = seg.get("name", "?")
+                w = seg.get("weight", 0)
+                g = seg.get("growth", 0)
+                rev_est = seg.get("estimated_revenue", 0)
+                pct = w * 100
+                L.append(f"  {name}: ${rev_est/1e9:.1f}B ({pct:.0f}%, YoY {g*100:.0f}%)")
+            seg_wg = sum(s.get("weight", 0) * s.get("growth", 0) for s in segments) / max(total_w, 1e-9)
+            L.append(f"  Segment_Weighted_Growth: {seg_wg*100:.1f}%")
+            L.append("  (= basis for TANUKI forward growth rate G)")
+        else:
+            L.append("  N/A (segment data not configured)")
         L.append("Definition:")
         L.append("")
         L.append("Intrinsic Value: Calculated via FCF-based DCF model")
@@ -641,6 +702,14 @@ class TanukiValuationPipeline:
         L.append("FCF from OCF (accounts for capex intensity by sector)")
         L.append("RPO: Remaining Performance Obligation, booked future")
         L.append("revenue not yet recognized; added as DCF premium")
+        L.append("Net_Debt: Total Debt - Cash. Negative = net cash (safer)")
+        L.append("Dilution_3yr_Annual: Share count CAGR over 3 years")
+        L.append("3%/yr = meaningful shareholder dilution risk")
+        L.append("FCF_CAGR_3yr: FCF compound growth rate (3yr)")
+        L.append("Positive = improving cash generation trend")
+        L.append("Segment_Weighted_Growth: Weighted avg of segment growth")
+        L.append("This is the direct basis for TANUKI G scenario")
+        L.append("Next_Earnings_Date: Next quarterly earnings release")
         L.append("")
         L.append("")
         L.append("[4. RICE METRICS]")
@@ -704,6 +773,33 @@ class TanukiValuationPipeline:
         L.append("Surprise Rate = (Actual - Estimate) / |Estimate| x 100")
         L.append("Positive surprise historically correlates with")
         L.append("short-term price appreciation (PEAD effect)")
+        # PER comparison
+        per_gaap = comps.get("per")
+        per_adj = comps.get("per_adjusted")
+        L.append("PER_Comparison:")
+        if per_gaap is not None:
+            L.append(f"  Market_PER_GAAP: {per_gaap:.1f}x")
+        else:
+            L.append("  Market_PER_GAAP: N/A")
+        if per_adj is not None:
+            L.append(f"  Adjusted_EPS_PER: {per_adj:.1f}x")
+            if per_gaap is not None:
+                delta = per_adj - per_gaap
+                sign = "cheaper on adjusted basis" if delta < 0 else "more expensive on adjusted basis"
+                L.append(f"  Delta: {delta:+.1f}x ({sign})")
+        else:
+            L.append("  Adjusted_EPS_PER: N/A")
+        L.append("Forward_Estimates:")
+        L.append(f"  Next_Earnings_Date: {next_earnings}")
+        L.append("  Next_Quarter_EPS: N/A (no analyst estimates in data)")
+        L.append("  Next_FY_EPS: N/A (no analyst estimates in data)")
+        L.append("Definition:")
+        L.append("")
+        L.append("Market_PER_GAAP: Price / GAAP EPS (market-provided)")
+        L.append("Adjusted_EPS_PER: Price / Adjusted EPS (self-calculated)")
+        L.append("Gap between the two reveals SBC and one-time impact")
+        L.append("Forward_Estimates: Analyst consensus (external data)")
+        L.append("Compare with TANUKI G scenario for cross-validation")
         L.append("")
         L.append("")
         L.append("[6. HYPECORE]")
@@ -757,6 +853,129 @@ class TanukiValuationPipeline:
         L.append("Not investment advice.")
 
         return "\n".join(L)
+
+    def _load_extra_data(self, ticker: str, valuation: dict) -> dict:
+        """sec_data annual JSONとyfinanceからfcf_history/financial_health/next_earnings_dateを取得"""
+        result = {}
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        comps = valuation.get("components", {})
+        latest_revenue = comps.get("latest_revenue") or 0
+
+        # --- FCF history & financial health from annual_YYYY.json ---
+        fcf_history = []
+        debt_cash_by_year = {}
+        sbc_by_year = {}
+
+        if os.path.exists(sec_dir):
+            years_available = sorted([
+                int(fn[7:11]) for fn in os.listdir(sec_dir)
+                if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+            ], reverse=True)[:5]
+
+            for yr in sorted(years_available):
+                ann_path = os.path.join(sec_dir, f"annual_{yr}.json")
+                try:
+                    with open(ann_path, encoding="utf-8") as f:
+                        ann = json.load(f)
+                    cf = ann.get("cf", {})
+                    bs = ann.get("bs", {})
+                    rev = ann.get("pl", {}).get("revenue") or 0
+                    fcf_val = cf.get("free_cash_flow")
+                    fcf_margin = (fcf_val / rev * 100) if (fcf_val is not None and rev) else None
+                    fcf_history.append({
+                        "year": yr,
+                        "fcf": fcf_val,
+                        "fcf_margin": round(fcf_margin, 1) if fcf_margin is not None else None,
+                    })
+                    debt_cash_by_year[yr] = {
+                        "lt_debt": bs.get("long_term_debt", 0) or 0,
+                        "st_debt": bs.get("short_term_debt", 0) or 0,
+                        "cash": bs.get("cash_and_equivalents", 0) or 0,
+                    }
+                    sbc_by_year[yr] = cf.get("stock_based_compensation")
+                except Exception:
+                    pass
+
+        result["fcf_history"] = fcf_history
+
+        # net_debt / SBC from latest available year
+        if debt_cash_by_year:
+            latest_yr = max(debt_cash_by_year.keys())
+            dc = debt_cash_by_year[latest_yr]
+            total_debt = dc["lt_debt"] + dc["st_debt"]
+            cash = dc["cash"]
+            result["financial_health"] = {
+                "total_debt": total_debt,
+                "cash_and_equivalents": cash,
+                "net_debt": total_debt - cash,
+                "sbc_ttm": sbc_by_year.get(latest_yr),
+            }
+
+        # 希薄化率: 株式分割調整済みのnormalized JSONのSharesDiluted年次データを使用
+        norm_path = os.path.join(
+            self.repo_root, "common", "sec_data", "normalized", f"{ticker}_quarterly_normalized.json"
+        )
+        if os.path.exists(norm_path):
+            try:
+                with open(norm_path, encoding="utf-8") as f:
+                    norm = json.load(f)
+                shares_series = norm.get("fields", {}).get("SharesDiluted", [])
+                annual_shares = sorted(
+                    [e for e in shares_series if e.get("is_annual") and e.get("fp") == "FY" and e.get("val")],
+                    key=lambda e: e.get("end", "")
+                )
+                if len(annual_shares) >= 4:
+                    s_now_entry = annual_shares[-1]
+                    s_3ago_entry = annual_shares[-4]
+                    s_now = s_now_entry["val"]
+                    s_3ago = s_3ago_entry["val"]
+                    yr_now = s_now_entry.get("end", "")[:4]
+                    yr_3ago = s_3ago_entry.get("end", "")[:4]
+                    if s_now and s_3ago > 0:
+                        dilution_3yr = ((s_now / s_3ago) ** (1 / 3) - 1) * 100
+                        if "financial_health" not in result:
+                            result["financial_health"] = {}
+                        result["financial_health"]["dilution_3yr_annual_pct"] = round(dilution_3yr, 2)
+                        result["financial_health"]["shares_yr_now"] = yr_now
+                        result["financial_health"]["shares_yr_3ago"] = yr_3ago
+            except Exception:
+                pass
+
+        # --- next_earnings_date from yfinance calendar ---
+        try:
+            import yfinance as yf
+            cal = yf.Ticker(ticker).calendar
+            if cal and "Earnings Date" in cal:
+                dates = cal["Earnings Date"]
+                if dates:
+                    result["next_earnings_date"] = str(dates[0])
+        except Exception:
+            pass
+
+        # --- segment_config ---
+        seg_path = os.path.join(self.repo_root, "config", "segment_config.json")
+        if os.path.exists(seg_path):
+            try:
+                with open(seg_path, encoding="utf-8") as f:
+                    seg_conf = json.load(f).get(ticker, {})
+                segs = seg_conf.get("segments", {})
+                if segs and latest_revenue:
+                    seg_list = []
+                    for name, info in segs.items():
+                        w = info.get("weight", 0)
+                        g = info.get("growth", 0)
+                        est_rev = latest_revenue * w
+                        seg_list.append({
+                            "name": name,
+                            "weight": w,
+                            "growth": g,
+                            "estimated_revenue": est_rev,
+                        })
+                    result["segments"] = seg_list
+            except Exception:
+                pass
+
+        return result
 
     def _save_report(self, ticker: str, report_text: str) -> None:
         ticker_dir = os.path.join(self.output_dir, ticker)
