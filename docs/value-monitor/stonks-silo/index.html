@@ -521,7 +521,7 @@ function render() {
       <td style="padding:10px 6px 10px 10px;width:28px">
         <span onclick="togglePin('${ticker}',event)" title="ピン留め" style="cursor:pointer;font-size:13px;color:${isPinned?'var(--stonks)':'var(--bdr)'};transition:color .15s">★</span>
       </td>
-      <td><span class="ticker-cell">${ticker}</span></td>
+      <td><a class="ticker-cell" href="../tanuki_valuation/stock.html?ticker=${ticker}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:inherit;transition:color .15s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='inherit'">${ticker}</a></td>
       <td>${verdictBadge(d.overall_verdict)}</td>
       <td>${deficitBadge(dq.verdict)}</td>
       <td class="r">${runwayHtml}</td>
