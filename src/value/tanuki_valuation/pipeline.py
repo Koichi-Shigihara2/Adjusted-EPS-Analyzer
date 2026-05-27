@@ -334,7 +334,382 @@ class TanukiValuationPipeline:
         with open(history_summary_path, "w", encoding="utf-8") as f:
             json.dump(history_summary, f, ensure_ascii=False, indent=2)
 
+        report_text = self._generate_report(ticker, valuation, score_data)
+        self._save_report(ticker, report_text)
+
         print(f"   💾 保存: {latest_path}")
+
+    def _generate_report(self, ticker: str, valuation: dict, score_data: dict) -> str:
+        """銘柄別統合レポートをプレーンテキストで生成"""
+        now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
+        comps = valuation.get("components", {})
+        rice = valuation.get("rice", {})
+        scenarios = valuation.get("scenario_valuations", {})
+        fcf_est = valuation.get("fcf_estimation", {})
+        wacc_data = valuation.get("wacc", {})
+
+        current_price = comps.get("current_price", 0) or 0
+        upside = valuation.get("upside_percent")
+        base_iv_top = valuation.get("intrinsic_value_per_share")
+        wacc_val = wacc_data.get("value", 0) if isinstance(wacc_data, dict) else 0
+        beta = comps.get("beta", "N/A")
+        rpo_pv = comps.get("rpo_pv", 0) or 0
+        sector = comps.get("sector", "")
+        industry = comps.get("industry", "")
+        roe = comps.get("roe_10yr_avg")
+
+        score = score_data.get("score", "N/A")
+        funda_score = score_data.get("funda_score", "N/A")
+        score_comment = score_data.get("score_comment", "N/A")
+
+        # --- Matrix position ---
+        rice_available = rice.get("available", False)
+        rice_note = rice.get("note", "")
+        rice_base_data = rice.get("base", {})
+        rice_base_val = rice_base_data.get("rice")
+
+        if rice_available:
+            matrix = "①投資効率系"
+            key_metric_y = f"RICE = {rice_base_val:.3f}" if rice_base_val is not None else "RICE = N/A"
+            qx = upside is not None and upside >= 0
+            qy = rice_base_val is not None and rice_base_val >= 2
+            yH, yL = "高効率", "低効率"
+        elif "セクター除外" in rice_note:
+            matrix = "②収益性系"
+            roe_pct = roe * 100 if roe is not None else None
+            key_metric_y = f"ROE_10yr_avg = {roe_pct:.1f}%" if roe_pct is not None else "ROE = N/A"
+            qx = upside is not None and upside >= 0
+            qy = roe_pct is not None and roe_pct >= 15
+            yH, yL = "高ROE", "低ROE"
+        elif "Q異常値" in rice_note:
+            matrix = "③成長性系"
+            key_metric_y = "Revenue_Growth (see HYPECORE)"
+            qx = False
+            qy = False
+            yH, yL = "高成長", "低成長"
+        else:
+            matrix = "④キャッシュ創出力系"
+            fcf_margin = fcf_est.get("fcf_margin")
+            if fcf_margin is None:
+                fcb = comps.get("fcf_base_used")
+                rev = comps.get("latest_revenue")
+                if fcb and rev:
+                    fcf_margin = fcb / rev * 100
+            key_metric_y = f"FCF_Margin = {fcf_margin:.1f}%" if fcf_margin is not None else "FCF_Margin = N/A"
+            qx = upside is not None and upside >= 0
+            qy = fcf_margin is not None and fcf_margin >= 15
+            yH, yL = "高FCF", "低FCF"
+
+        xL = "割安" if qx else "割高"
+        yL_label = yH if qy else yL
+        quadrant = ("右上" if qy else "右下") if qx else ("左上" if qy else "左下")
+        label = f"{xL}×{yL_label}"
+
+        # --- Scenario valuations ---
+        bear_sc = scenarios.get("bear", {})
+        base_sc = scenarios.get("base", {})
+        bull_sc = scenarios.get("bull", {})
+        bear_g = (bear_sc.get("growth_rate") or 0) * 100
+        base_g = (base_sc.get("growth_rate") or 0) * 100
+        bull_g = (bull_sc.get("growth_rate") or 0) * 100
+        bear_iv = bear_sc.get("intrinsic_value_per_share") or 0
+        base_iv = base_sc.get("intrinsic_value_per_share") or base_iv_top or 0
+        bull_iv = bull_sc.get("intrinsic_value_per_share") or 0
+
+        def dev(iv):
+            if iv and current_price:
+                return (iv - current_price) / current_price * 100
+            return 0.0
+
+        fcf_conv = fcf_est.get("conversion_rate", "N/A")
+        fcf_industry = fcf_est.get("sector", "") or industry
+
+        # --- RICE components ---
+        rice_q = rice.get("q", "N/A")
+        rice_cf = rice.get("cf_conversion", "N/A")
+        rice_wacc = rice.get("wacc", "N/A")
+        rice_bear_d = rice.get("bear", {})
+        rice_bull_d = rice.get("bull", {})
+        sbc_adjusted = "SBC補正済み" in rice_note
+        excl_reason = rice_note if not rice_available else "N/A"
+
+        # --- EPS data ---
+        eps_summary_entry = self._load_eps_map().get(ticker, {})
+        adj_eps = eps_summary_entry.get("adjusted_eps")
+        gaap_eps_val = eps_summary_entry.get("gaap_eps")
+        eps_diff = eps_summary_entry.get("eps_diff")
+        yoy_growth = eps_summary_entry.get("yoy_growth")
+        yoy_pct = f"{yoy_growth * 100:.1f}" if yoy_growth is not None else "N/A"
+
+        adj_items_str = "N/A"
+        recent_quarters = []
+        q_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data", ticker, "quarterly.json"
+        )
+        if os.path.exists(q_path):
+            try:
+                with open(q_path, encoding="utf-8") as f:
+                    q_data = json.load(f)
+                quarters = q_data.get("quarters", [])
+                if quarters:
+                    items = [a.get("item_id", "") for a in quarters[-1].get("adjustments", [])]
+                    adj_items_str = "/".join(items) if items else "N/A"
+                    for q in quarters[-4:]:
+                        recent_quarters.append({
+                            "label": f"{q.get('fiscal_year','?')} {q.get('quarter','?')}",
+                            "actual": q.get("adjusted_eps"),
+                        })
+            except Exception:
+                pass
+
+        # --- HypeCore data ---
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        hype_phase = "N/A"
+        hype_alpha = valuation.get("alpha", "N/A")
+        hype_signal = "N/A"
+        phase_history = []
+        short_int = "N/A"
+        rev_yoy_hype = None
+        if os.path.exists(poc_path):
+            try:
+                with open(poc_path, encoding="utf-8") as f:
+                    poc = json.load(f)
+                monthly = poc.get("monthly", [])
+                if monthly:
+                    last = monthly[-1]
+                    stage = last.get("stage")
+                    stage_label = last.get("stage_label", f"Phase{stage}")
+                    hype_phase = f"Phase{stage} ({stage_label})" if stage else "N/A"
+                    substage = last.get("substage_label", "")
+                    substage_watch = last.get("substage_watch", "")
+                    hype_signal = f"{substage} — {substage_watch}" if substage else "N/A"
+                    phase_history = [(m.get("month", "?"), m.get("stage"), m.get("stage_label", "")) for m in monthly[-6:]]
+                    si = last.get("short_pct_float")
+                    if si is not None:
+                        short_int = f"{si * 100:.1f}"
+                    rev_yoy_hype = last.get("rev_yoy")
+            except Exception:
+                pass
+
+        # --- STONKS SILO data ---
+        stonks_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "stonks-silo", "data", "results.json"
+        )
+        stonks_data = {}
+        if os.path.exists(stonks_path):
+            try:
+                with open(stonks_path, encoding="utf-8") as f:
+                    stonks_data = json.load(f).get("tickers", {}).get(ticker, {})
+            except Exception:
+                pass
+
+        short_target = "yes" if stonks_data else "no"
+        runway_m = stonks_data.get("runway", {}).get("runway_months", "N/A") if stonks_data else "N/A"
+        rev_growth_stonks = stonks_data.get("deficit_quality", {}).get("revenue_growth_pct") if stonks_data else None
+        if rev_growth_stonks is not None:
+            rev_growth_str = f"{rev_growth_stonks:.1f}"
+        elif rev_yoy_hype is not None:
+            rev_growth_str = f"{rev_yoy_hype:.1f}"
+        else:
+            rev_growth_str = "N/A"
+
+        # --- Build report lines ---
+        L = []
+        L.append(f"{ticker} INTEGRATED INVESTMENT REPORT")
+        L.append(f"Generated: {now}")
+        L.append(f"Price: ${current_price:,.2f}" if current_price else "Price: N/A")
+        L.append("")
+        L.append("[1. TANUKI SCORE]")
+        L.append(f"Classification: {score}")
+        L.append(f"Funda_Score: {funda_score}/100")
+        L.append("Timing_Score: N/A")
+        L.append(f"Comment: {score_comment}")
+        L.append("Definition:")
+        L.append("")
+        L.append("Funda_Score: Composite score of financial health,")
+        L.append("growth, and profitability (0-100)")
+        L.append("Timing_Score: Composite of deviation rate,")
+        L.append("market sentiment, and hype phase (0-100)")
+        L.append("BUY: Funda>=50 AND upside>10% AND Timing>=50")
+        L.append("WATCH: Funda>=50 AND upside 0-20%")
+        L.append("HOLD: Funda good, within tolerance range")
+        L.append("TRIM: Funda good, overvalued(>-30%), post-euphoria")
+        L.append("SELL: Funda deteriorating or long-term downtrend")
+        L.append("PASS: Funda<25, excluded from consideration")
+        L.append("")
+        L.append("")
+        L.append("[2. MATRIX POSITION]")
+        L.append(f"Matrix: {matrix}")
+        L.append(f"Quadrant: {quadrant}")
+        L.append(f"Label: {label}")
+        L.append(f"Key_Metric_Y: {key_metric_y}")
+        L.append(f"Deviation_Rate: {upside:+.1f}%" if upside is not None else "Deviation_Rate: N/A")
+        L.append("Definition:")
+        L.append("")
+        L.append("Matrix①(投資効率系): Y=RICE, X=Deviation Rate")
+        L.append("RICE = (G x Q x CF) / WACC")
+        L.append("Applied to: RICE-calculable tickers")
+        L.append("Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate")
+        L.append("Applied to: Sector-excluded tickers")
+        L.append("(Consumer/Financial/Utilities/RealEstate/Insurance)")
+        L.append("Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)")
+        L.append("Applied to: Q-anomaly tickers (deep deficit)")
+        L.append("Matrix④(キャッシュ創出力系): Y=FCF_Margin%, X=Deviation Rate")
+        L.append("Applied to: All tickers with FCF data")
+        L.append("Deviation_Rate = (Intrinsic_Value - Current_Price)")
+        L.append("/ Current_Price x 100")
+        L.append("Positive deviation = undervalued (intrinsic > current)")
+        L.append("")
+        L.append("")
+        L.append("[3. TANUKI VALUATION]")
+        L.append(f"Current_Price: ${current_price:,.2f}" if current_price else "Current_Price: N/A")
+        L.append(f"Intrinsic_Value_BASE: ${base_iv:,.2f}" if base_iv else "Intrinsic_Value_BASE: N/A")
+        L.append(f"Deviation_BASE: {dev(base_iv):+.1f}%")
+        L.append("Scenarios:")
+        L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
+        L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
+        L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
+        wacc_pct = wacc_val * 100 if isinstance(wacc_val, (int, float)) else None
+        L.append(f"WACC: {wacc_pct:.2f}%" if wacc_pct is not None else "WACC: N/A")
+        L.append(f"Beta: {beta}")
+        L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
+        L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
+        L.append("Definition:")
+        L.append("")
+        L.append("Intrinsic Value: Calculated via FCF-based DCF model")
+        L.append("Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value")
+        L.append("Terminal_Value = FCF_final x (1+g) / (WACC - g)")
+        L.append("WACC = Rf + Beta x (Rm - Rf)")
+        L.append("Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)")
+        L.append("FCF_Conversion_Rate: Industry-standard ratio to estimate")
+        L.append("FCF from OCF (accounts for capex intensity by sector)")
+        L.append("RPO: Remaining Performance Obligation, booked future")
+        L.append("revenue not yet recognized; added as DCF premium")
+        L.append("")
+        L.append("")
+        L.append("[4. RICE METRICS]")
+        L.append(f"Available: {str(rice_available).lower()}")
+        L.append(f"Exclusion_Reason: {excl_reason}")
+        if rice_available:
+            L.append(f"BEAR: RICE={rice_bear_d.get('rice', 'N/A')}")
+            L.append(f"BASE: RICE={rice_base_data.get('rice', 'N/A')}")
+            L.append(f"BULL: RICE={rice_bull_d.get('rice', 'N/A')}")
+        else:
+            L.append("BEAR: RICE=N/A")
+            L.append("BASE: RICE=N/A")
+            L.append("BULL: RICE=N/A")
+        L.append("Components (BASE scenario):")
+        g_val = rice_base_data.get("growth_rate")
+        L.append(f"G  = {g_val*100:.1f}%  [TANUKI forward growth rate]" if g_val is not None else "G  = N/A")
+        L.append(f"Q  = {rice_q}   [OCF / (NetIncome + SBC), 3yr avg]")
+        if rice_cf != "N/A":
+            L.append(f"CF = {rice_cf}  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]")
+        else:
+            L.append("CF = N/A")
+        L.append(f"WACC = {rice_wacc * 100:.1f}%" if isinstance(rice_wacc, (int, float)) else f"WACC = {rice_wacc}")
+        L.append(f"SBC_Adjusted: {str(sbc_adjusted).lower()}")
+        L.append("Definition:")
+        L.append("")
+        L.append("RICE measures reinvestment efficiency and compounding power")
+        L.append("G: Scenario-specific forward revenue growth rate")
+        L.append("Q: Cash conversion quality")
+        L.append("Q = OCF / max(NetIncome + SBC, 1), 3-year average")
+        L.append("SBC added back to denominator to normalize")
+        L.append("for stock-based compensation distortion")
+        L.append("CF: Capital efficiency of growth investment")
+        L.append("CF = RevGrowthRate / InvestmentIntensity (1yr lag)")
+        L.append("InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg")
+        L.append("WACC: Weighted Average Cost of Capital")
+        L.append("Primary basis: Rm=10% (Beta=0 scenario)")
+        L.append("Reference: Beta-adjusted WACC also calculated")
+        L.append("Interpretation: RICE>2.0 = high reinvestment efficiency")
+        L.append("")
+        L.append("")
+        L.append("[5. EPS ANALYZER]")
+        L.append(f"Latest_Adjusted_EPS: ${adj_eps:.4f}" if isinstance(adj_eps, (int, float)) else "Latest_Adjusted_EPS: N/A")
+        L.append(f"Latest_GAAP_EPS: ${gaap_eps_val:.4f}" if isinstance(gaap_eps_val, (int, float)) else "Latest_GAAP_EPS: N/A")
+        L.append(f"Adjustment_Delta: ${eps_diff:.4f} ({adj_items_str})" if isinstance(eps_diff, (int, float)) else "Adjustment_Delta: N/A")
+        L.append(f"YoY_Growth: {yoy_pct}%")
+        L.append("Recent Surprises (Adjusted EPS):")
+        if recent_quarters:
+            for q in recent_quarters:
+                act = q.get("actual")
+                act_str = f"${act:.4f}" if isinstance(act, (int, float)) else "N/A"
+                L.append(f"  {q['label']}: Actual={act_str} vs Est=N/A -> N/A%")
+        else:
+            L.append("  N/A")
+        L.append("Definition:")
+        L.append("")
+        L.append("Adjusted EPS: GAAP EPS excluding SBC, one-time charges,")
+        L.append("M&A costs, and other non-recurring items")
+        L.append("Adjustment items classified as:")
+        L.append("SBC / Restructuring / Amortization / LegalSettlement /")
+        L.append("AcquisitionCost / Other")
+        L.append("Surprise Rate = (Actual - Estimate) / |Estimate| x 100")
+        L.append("Positive surprise historically correlates with")
+        L.append("short-term price appreciation (PEAD effect)")
+        L.append("")
+        L.append("")
+        L.append("[6. HYPECORE]")
+        L.append(f"Current_Phase: {hype_phase}")
+        L.append(f"Alpha_Premium: {hype_alpha}" if hype_alpha != "N/A" else "Alpha_Premium: N/A")
+        L.append(f"HYPE_Signal: {hype_signal}")
+        L.append("Phase_History (recent 6 months):")
+        if phase_history:
+            for m_str, st, sl in phase_history:
+                L.append(f"{m_str}: Phase{st} ({sl})")
+        else:
+            L.append("N/A")
+        L.append("Definition:")
+        L.append("")
+        L.append("HypeCore measures product/technology lifecycle stage")
+        L.append("Phase1 (黎明期/Dawn): Technology proof-of-concept,")
+        L.append("pre-market formation, high uncertainty")
+        L.append("Phase2 (成長期/Growth): Rapid revenue expansion,")
+        L.append("competitive entry, market share battle")
+        L.append("Phase3 (成熟期/Maturity): Growth deceleration,")
+        L.append("margin optimization, cash generation focus")
+        L.append("Phase4 (衰退期/Decline): Market contraction,")
+        L.append("disruption by alternatives")
+        L.append("Alpha: Growth expectation premium added to IV")
+        L.append("Higher alpha in Phase1-2, lower in Phase3-4")
+        L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
+        L.append("and HypeCore phase")
+        L.append("")
+        L.append("")
+        L.append("[7. STONKS SILO]")
+        L.append(f"Short_Report_Target: {short_target}")
+        L.append(f"Short_Interest: {short_int}%")
+        L.append("Institutional_Ownership: N/A")
+        L.append("Analyst_Rating: N/A")
+        L.append(f"Runway_Months: {runway_m}" if stonks_data else "Runway_Months: N/A (profitable or not in STONKS)")
+        L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
+        L.append("Definition:")
+        L.append("")
+        L.append("Short_Interest: % of float sold short")
+        L.append("High short interest -> squeeze risk if positive catalyst")
+        L.append("Institutional_Ownership: % held by institutions")
+        L.append("High ownership -> stable shareholder base")
+        L.append("Runway: Cash / Annual_FCF_Burn_Rate (years)")
+        L.append("Critical for pre-profit companies; <1yr = distress risk")
+        L.append("Revenue_Growth_YoY: TTM vs prior TTM")
+        L.append("Primary growth metric for RICE-excluded tickers")
+        L.append("")
+        L.append("==============================================")
+        L.append("DISCLAIMER: This report is generated automatically")
+        L.append("from financial data for reference purposes only.")
+        L.append("Not investment advice.")
+
+        return "\n".join(L)
+
+    def _save_report(self, ticker: str, report_text: str) -> None:
+        ticker_dir = os.path.join(self.output_dir, ticker)
+        report_path = os.path.join(ticker_dir, "report.txt")
+        with open(report_path, "w", encoding="utf-8") as f:
+            f.write(report_text)
+        print(f"   📄 レポート: {report_path}")
 
     def _save_tickers_index(self, success_tickers: List[str]) -> None:
         index_path = os.path.join(self.output_dir, "tickers.json")
