@@ -410,10 +410,31 @@ async function loadData() {
     document.getElementById('hero-count').textContent = Object.keys(allData).length;
 
     render();
+    loadTanukiBadges(Object.keys(allData));
   } catch(e) {
     document.getElementById('tbl-body').innerHTML =
       `<tr><td colspan="9" class="empty">データ読み込みエラー: ${e.message}</td></tr>`;
   }
+}
+
+async function loadTanukiBadges(tickers) {
+  const SCORE_COLOR = {
+    BUY:'#4ade80', WATCH:'#60a5fa', HOLD:'#facc15',
+    TRIM:'#fb923c', SELL:'#f87171', PASS:'#94a3b8'
+  };
+  await Promise.allSettled(tickers.map(async ticker => {
+    try {
+      const r = await fetch(`../tanuki_valuation/data/${ticker}/latest.json?t=${Date.now()}`);
+      if (!r.ok) return;
+      const d = await r.json();
+      const score = d.tanuki_score;
+      if (!score) return;
+      const el = document.getElementById(`tscore-${ticker}`);
+      if (!el) return;
+      const col = SCORE_COLOR[score] || '#94a3b8';
+      el.innerHTML = `<span style="background:rgba(0,0,0,0.4);color:${col};font-family:var(--mono);font-size:9px;padding:1px 5px;border-radius:3px;border:1px solid ${col}40">${score}</span>`;
+    } catch(_) {}
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -521,7 +542,7 @@ function render() {
       <td style="padding:10px 6px 10px 10px;width:28px">
         <span onclick="togglePin('${ticker}',event)" title="ピン留め" style="cursor:pointer;font-size:13px;color:${isPinned?'var(--stonks)':'var(--bdr)'};transition:color .15s">★</span>
       </td>
-      <td><a class="ticker-cell" href="../tanuki_valuation/stock.html?ticker=${ticker}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:inherit;transition:color .15s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='inherit'">${ticker}</a></td>
+      <td style="white-space:nowrap"><a class="ticker-cell" href="../tanuki_valuation/stock.html?ticker=${ticker}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:inherit;transition:color .15s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='inherit'">${ticker}</a><span id="tscore-${ticker}" style="margin-left:5px"></span></td>
       <td>${verdictBadge(d.overall_verdict)}</td>
       <td>${deficitBadge(dq.verdict)}</td>
       <td class="r">${runwayHtml}</td>

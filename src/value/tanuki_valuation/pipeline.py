@@ -285,7 +285,13 @@ class TanukiValuationPipeline:
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
 
+        # TANUKIスコアを先に計算してlatest.jsonとhistory.json両方に保存
+        score_data = self._compute_tanuki_score(ticker, valuation)
+
         latest_data = {k: v for k, v in valuation.items() if k != "calculation_steps"}
+        latest_data["tanuki_score"]  = score_data.get("score")
+        latest_data["funda_score"]   = score_data.get("funda_score")
+        latest_data["score_comment"] = score_data.get("score_comment")
         latest_path = os.path.join(ticker_dir, "latest.json")
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
@@ -305,8 +311,6 @@ class TanukiValuationPipeline:
                     history_summary = json.load(f)
             except Exception:
                 history_summary = []
-
-        score_data = self._compute_tanuki_score(ticker, valuation)
 
         entry = {
             "date": date_str,
