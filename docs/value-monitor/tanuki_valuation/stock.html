@@ -2129,10 +2129,23 @@ function buildScatterSVG(points, opts) {
   for (const p of labelPoints) {
     const anchor = p.cx > W / 2 ? 'end' : 'start';
     const lx = anchor === 'end' ? p.cx - 7 : p.cx + 7;
+
+    // try below dot first
     let ly = p.cy + 4;
     for (const used of usedLabelY) {
       if (Math.abs(used - ly) < 12) { ly += 14; }
     }
+
+    // if pushed below SVG boundary, try above dot instead
+    if (ly > H - 6) {
+      ly = p.cy - 10;
+      for (const used of usedLabelY) {
+        if (Math.abs(used - ly) < 12) { ly -= 14; }
+      }
+    }
+
+    // skip if still out of bounds
+    if (ly < PT + 2 || ly > H - 2) continue;
     usedLabelY.push(ly);
     out += '<text x="' + lx + '" y="' + ly + '" font-size="8" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
   }
