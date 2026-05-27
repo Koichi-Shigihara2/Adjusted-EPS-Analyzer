@@ -2152,7 +2152,7 @@ function toJST(dateStr) {
 }
 
 function buildScatterSVG(points, opts) {
-  const W = 400, H = 300;
+  const W = 400, H = opts.svgH || 300;
   const PL = 48, PR = 12, PT = 12, PB = 36;
   const IW = W - PL - PR, IH = H - PT - PB;
   const { xMin, xMax, xThresh, yMin, yMax, yThresh, xLabel, yLabel, currentTicker } = opts;
@@ -2218,14 +2218,14 @@ function buildScatterSVG(points, opts) {
     // try below dot first
     let ly = p.cy + 4;
     for (const used of usedLabelY) {
-      if (Math.abs(used - ly) < 12) { ly += 14; }
+      if (Math.abs(used - ly) < 14) { ly += 16; }
     }
 
     // if pushed below SVG boundary, try above dot instead
     if (ly > H - 6) {
       ly = p.cy - 10;
       for (const used of usedLabelY) {
-        if (Math.abs(used - ly) < 12) { ly -= 14; }
+        if (Math.abs(used - ly) < 14) { ly -= 16; }
       }
     }
 
@@ -2333,7 +2333,7 @@ async function loadAndRenderMatrices() {
         id: 4, title: '④ キャッシュ創出力系（FCFマージン）',
         note: 'Y軸: FCFマージン% | X軸: 乖離率%\nYThresh=15% XThresh=0%（cap 50%）',
         points: m4,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -5, yMax: 50, yThresh: 15, xLabel: '乖離率 →', yLabel: 'FCFマージン% →' },
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -5, yMax: 50, yThresh: 15, xLabel: '乖離率 →', yLabel: 'FCFマージン% →', svgH: 340 },
       },
     ];
 
