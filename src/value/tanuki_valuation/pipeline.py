@@ -185,6 +185,101 @@ class TanukiValuationPipeline:
         failed = [k for k, v in checks.items() if not v.get("pass", True)]
         return ", ".join(failed) if failed else "unknown"
 
+    def _load_eps_map(self) -> dict:
+        if hasattr(self, "_eps_summary_cache"):
+            return self._eps_summary_cache
+        eps_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data", "summary.json"
+        )
+        result = {}
+        if os.path.exists(eps_path):
+            try:
+                with open(eps_path, encoding="utf-8") as f:
+                    data = json.load(f)
+                result = {t["ticker"]: t for t in data.get("tickers", [])}
+            except Exception:
+                pass
+        self._eps_summary_cache = result
+        return result
+
+    def _compute_tanuki_score(self, ticker: str, valuation: dict) -> dict:
+        """TANUKI SCOREをパイプライン時に計算（JS classify/calcFundaのPython移植）"""
+        upside   = valuation.get("upside_percent")
+        fcf_base = valuation.get("fcf_base", {}).get("base_fcf")
+
+        rev_yoy = rule40 = stage = None
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        if os.path.exists(poc_path):
+            try:
+                with open(poc_path, encoding="utf-8") as f:
+                    poc = json.load(f)
+                monthly = poc.get("monthly") or []
+                last = monthly[-1] if monthly else {}
+                rev_yoy = last.get("rev_yoy")
+                rule40  = last.get("rule40")
+                stage   = last.get("stage")
+            except Exception:
+                pass
+
+        eps_yoy = None
+        eps_entry = self._load_eps_map().get(ticker, {})
+        yoy_dec = eps_entry.get("yoy_growth")
+        if yoy_dec is not None:
+            eps_yoy = yoy_dec * 100
+
+        # calcFunda (JS移植)
+        funda = 0
+        funda += 25 if rev_yoy is not None and rev_yoy > 20 else 15 if rev_yoy is not None and rev_yoy >= 0 else 0
+        funda += 25 if rule40  is not None and rule40  > 40 else 15 if rule40  is not None and rule40  >= 20 else 0
+        funda += 25 if eps_yoy is not None and eps_yoy > 20 else 15 if eps_yoy is not None and eps_yoy >= 0 else 0
+        funda += 25 if fcf_base is not None and fcf_base > 0 else 0
+
+        # classify (JS移植: FG=50固定でtiming省略し upside直接判定)
+        fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
+        sell_funda = (
+            rev_yoy is not None and rev_yoy < 0
+            and rule40 is not None and rule40 < 20
+            and (fcf_base is not None and fcf_base < 0
+                 or (fcf_est is not None and fcf_base is not None and fcf_est < fcf_base * 0.8))
+        )
+        if funda < 25:
+            score = "PASS"
+        elif sell_funda:
+            score = "SELL"
+        elif funda >= 50:
+            if upside is not None and upside < -30 and stage is not None and stage >= 3:
+                score = "TRIM"
+            elif upside is not None and upside > 20:
+                score = "BUY"
+            elif upside is not None and upside > 0:
+                score = "WATCH"
+            else:
+                score = "HOLD"
+        else:
+            score = "HOLD"
+
+        comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda)
+        return {"score": score, "funda_score": funda, "score_comment": comment}
+
+    def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda) -> str:
+        """スコアに基づくルールベースコメント（30字程度の日本語）"""
+        parts = []
+        if upside is not None:
+            if   upside >  30: parts.append(f"割安圏({upside:.0f}%)で買い余地大")
+            elif upside >  10: parts.append(f"割安({upside:.0f}%)傾向")
+            elif upside >   0: parts.append(f"若干割安({upside:.0f}%)")
+            elif upside > -20: parts.append("フェアバリュー近辺")
+            else:              parts.append(f"割高({upside:.0f}%超)")
+        if fcf_base is not None:
+            parts.append("FCF黒字" if fcf_base > 0 else "FCF赤字注意")
+        if rev_yoy is not None:
+            if   rev_yoy > 20: parts.append("売上成長加速")
+            elif rev_yoy > 0:  parts.append("売上安定成長")
+            else:              parts.append("売上成長停滞")
+        return "、".join(parts[:3]) if parts else f"{score}（データ不足）"
+
     def _save_result(self, ticker: str, valuation: dict) -> None:
         ticker_dir = os.path.join(self.output_dir, ticker)
         history_dir = os.path.join(ticker_dir, "history")
@@ -211,6 +306,8 @@ class TanukiValuationPipeline:
             except Exception:
                 history_summary = []
 
+        score_data = self._compute_tanuki_score(ticker, valuation)
+
         entry = {
             "date": date_str,
             "intrinsic_value_per_share": valuation.get("intrinsic_value_per_share"),
@@ -221,6 +318,9 @@ class TanukiValuationPipeline:
             "growth_rate": valuation.get("growth_scenarios", {}).get("primary", {}).get("rate"),
             "scenario_bear": valuation.get("scenario_valuations", {}).get("bear", {}).get("intrinsic_value_per_share"),
             "scenario_bull": valuation.get("scenario_valuations", {}).get("bull", {}).get("intrinsic_value_per_share"),
+            "tanuki_score":  score_data.get("score"),
+            "funda_score":   score_data.get("funda_score"),
+            "score_comment": score_data.get("score_comment"),
         }
         # 同日エントリを上書き
         history_summary = [e for e in history_summary if e.get("date") != date_str]
