@@ -131,6 +131,12 @@
     .weight-total{font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:4px;text-align:center}
     .weight-total.ok{color:var(--grn);background:rgba(16,185,129,.1)}
     .weight-total.ng{color:var(--red);background:rgba(244,63,94,.1)}
+    .setting-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+    .setting-label{font-family:var(--mono);font-size:12px;color:var(--txt);min-width:140px;display:flex;flex-direction:column;gap:2px}
+    .setting-hint{font-size:10px;color:var(--mut)}
+    .setting-control{display:flex;align-items:center;flex:1}
+    .setting-select{font-family:var(--mono);font-size:12px;background:var(--sur2);border:1px solid var(--bdr);padding:6px 10px;color:var(--txt);border-radius:4px;min-width:280px}
+    .setting-select:focus{outline:none;border-color:var(--acc)}
 
     /* ── ステータスタブ ── */
     .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:24px}
@@ -298,6 +304,23 @@
     </div>
 
     <div id="settingsAlerts"></div>
+
+    <!-- Damodaran業種設定 -->
+    <div class="config-panel" id="panelDamodaran" style="display:none">
+      <h3>📊 Damodaran業種分類</h3>
+      <div class="setting-row" id="damodaran-row">
+        <label class="setting-label">
+          Damodaran業種
+          <span class="setting-hint">成長率ベンチマーク（fundgrEB.xls）</span>
+        </label>
+        <div class="setting-control">
+          <select id="damodaranIndustry" class="setting-select">
+            <!-- JSで動的生成 -->
+          </select>
+          <span id="damodaran-current" class="setting-hint" style="margin-left:8px;color:#64748b;"></span>
+        </div>
+      </div>
+    </div>
 
     <!-- セグメント成長率 -->
     <div class="config-panel" id="panelSegment" style="display:none">
@@ -825,6 +848,48 @@ const DATA_BASE  = 'docs/value-monitor/tanuki_valuation/data';
 const FCF_PATH   = 'src/value/tanuki_valuation/fcf_conversion_config.json';
 const RF = 0.043;
 const RM_RF = 0.057;
+const DAMODARAN_INDUSTRIES = [
+  "",
+  "Advertising","Aerospace/Defense","Air Transport","Apparel",
+  "Auto & Truck","Auto Parts",
+  "Bank (Money Center)","Banks (Regional)",
+  "Beverage (Alcoholic)","Beverage (Soft)","Broadcasting",
+  "Brokerage & Investment Banking","Building Materials",
+  "Business & Consumer Services","Cable TV",
+  "Chemical (Basic)","Chemical (Diversified)","Chemical (Specialty)",
+  "Coal & Related Energy","Computer Services","Computers/Peripherals",
+  "Construction Supplies","Diversified",
+  "Drugs (Biotechnology)","Drugs (Pharmaceutical)",
+  "Education","Electrical Equipment",
+  "Electronics (Consumer & Office)","Electronics (General)",
+  "Engineering/Construction","Entertainment",
+  "Environmental & Waste Services","Farming/Agriculture",
+  "Financial Svcs. (Non-bank & Insurance)",
+  "Food Processing","Food Wholesalers","Furn/Home Furnishings",
+  "Green & Renewable Energy","Healthcare Products",
+  "Healthcare Support Services","Heathcare Information and Technology",
+  "Homebuilding","Hospitals/Healthcare Facilities","Hotel/Gaming",
+  "Household Products","Information Services",
+  "Insurance (General)","Insurance (Life)","Insurance (Prop/Cas.)",
+  "Investments & Asset Management","Machinery","Metals & Mining",
+  "Office Equipment & Services",
+  "Oil/Gas (Integrated)","Oil/Gas (Production and Exploration)",
+  "Oil/Gas Distribution","Oilfield Svcs/Equip.",
+  "Packaging & Container","Paper/Forest Products","Power",
+  "Precious Metals","Publishing & Newspapers","R.E.I.T.",
+  "Real Estate (Development)","Real Estate (General/Diversified)",
+  "Real Estate (Operations & Services)","Recreation","Reinsurance",
+  "Restaurant/Dining",
+  "Retail (Automotive)","Retail (Building Supply)","Retail (Distributors)",
+  "Retail (General)","Retail (Grocery and Food)","Retail (REITs)",
+  "Retail (Special Lines)","Rubber& Tires",
+  "Semiconductor","Semiconductor Equip","Shipbuilding & Marine","Shoe",
+  "Software (Entertainment)","Software (Internet)",
+  "Software (System & Application)","Steel",
+  "Telecom (Wireless)","Telecom. Equipment","Telecom. Services","Tobacco",
+  "Transportation","Transportation (Railroads)","Trucking",
+  "Utility (General)","Utility (Water)",
+];
 
 let token = '';
 let yamlSha = null, betaSha = null;
@@ -1853,7 +1918,7 @@ async function loadTickerSettings() {
   alertsDiv.innerHTML = '';
 
   if (!ticker) {
-    ['panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
+    ['panelDamodaran','panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
     return;
@@ -1865,7 +1930,7 @@ async function loadTickerSettings() {
   }
 
   // パネルを表示
-  ['panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
+  ['panelDamodaran','panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
     document.getElementById(id).style.display = 'block';
   });
 
@@ -1913,6 +1978,16 @@ async function loadTickerSettings() {
   alertsDiv.innerHTML = alerts.map(a =>
     `<div class="alert-box ${a.type}" style="white-space:pre-line">${a.msg}</div>`
   ).join('');
+
+  // ── Damodaran業種セレクトボックスを構築 ──
+  const damodaranSel = document.getElementById('damodaranIndustry');
+  damodaranSel.innerHTML = DAMODARAN_INDUSTRIES
+    .map(ind => `<option value="${ind}">${ind === "" ? "— 未設定 —" : ind}</option>`)
+    .join('');
+  const currentIndustry = await fetchDamodaranIndustry(ticker);
+  damodaranSel.value = currentIndustry || "";
+  const hint = document.getElementById('damodaran-current');
+  hint.textContent = currentIndustry ? `（現在: ${currentIndustry}）` : '（未登録）';
 }
 
 async function fetchLatestJson(ticker) {
@@ -1920,6 +1995,68 @@ async function fetchLatestJson(ticker) {
     const { content } = await fetchFile(`${DATA_BASE}/${ticker}/latest.json`);
     return JSON.parse(content);
   } catch(e) { return null; }
+}
+
+async function fetchDamodaranIndustry(ticker) {
+  try {
+    const path = 'src/value/tanuki_valuation/growth_sanity.py';
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}?ref=${BRANCH}`,
+      { headers: apiHeaders() }
+    );
+    const data = await res.json();
+    const content = atob(data.content.replace(/\n/g, ''));
+    const re = new RegExp(`"${ticker}"\\s*:\\s*"([^"]+)"`);
+    const match = content.match(re);
+    return match ? match[1] : null;
+  } catch {
+    return null;
+  }
+}
+
+async function saveDamodaranIndustry(ticker, industry) {
+  const path = 'src/value/tanuki_valuation/growth_sanity.py';
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+      { headers: apiHeaders() }
+    );
+    const data = await res.json();
+    const sha = data.sha;
+    const rawContent = atob(data.content.replace(/\n/g, ''));
+
+    let newContent;
+    const existingRe = new RegExp(`([ \\t]*"${ticker}"\\s*:)[^\\n]*(\\n)`);
+    if (existingRe.test(rawContent)) {
+      newContent = rawContent.replace(
+        existingRe,
+        `$1 "${industry}",  # admin.html$2`
+      );
+    } else {
+      newContent = rawContent.replace(
+        /^(TICKER_INDUSTRY_OVERRIDES\s*=\s*\{[\s\S]*?)(^\})/m,
+        `$1    "${ticker}": "${industry}",  # admin.html\n$2`
+      );
+    }
+
+    const encoded = btoa(unescape(encodeURIComponent(newContent)));
+    await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
+      {
+        method: 'PUT',
+        headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: `feat: register Damodaran industry for ${ticker} [admin]`,
+          content: encoded,
+          sha: sha,
+          branch: BRANCH,
+        }),
+      }
+    );
+    console.log(`[Damodaran] ${ticker} → "${industry}" saved`);
+  } catch (e) {
+    console.error('[Damodaran] save failed:', e);
+  }
 }
 
 function renderSegmentRows(segments) {
@@ -2264,12 +2401,19 @@ async function saveAllSettings() {
       `chore: update settings for ${ticker} (segment/maturity/growth_options)`
     );
 
+    // ── Damodaran業種を growth_sanity.py に保存 ──
+    const damodaranIndustry = document.getElementById('damodaranIndustry').value;
+    if (damodaranIndustry) {
+      await saveDamodaranIndustry(ticker, damodaranIndustry);
+    }
+
     showResult('settingsResult', 'success',
       `✓ ${ticker} の設定を1コミットで保存しました。\n` +
       `  セグメント: ${Object.keys(segments).length}件\n` +
       `  成熟プロファイル: ${matType}\n` +
-      `  成長オプション: ${options.length}件\n\n` +
-      `次回のパイプライン実行から反映されます。`
+      `  成長オプション: ${options.length}件\n` +
+      (damodaranIndustry ? `  Damodaran業種: ${damodaranIndustry}\n` : '') +
+      `\n次回のパイプライン実行から反映されます。`
     );
     await loadConfigFiles();
     await loadTickerSettings();
