@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 227531422437.7814,
   "intrinsic_value_per_share": 288.4400351869274,
   "intrinsic_value_beta": 264.55,
-  "upside_percent_beta": 48.4,
+  "upside_percent_beta": 47.7,
   "intrinsic_value_rf": 1687.94,
-  "upside_percent_rf": 846.7,
+  "upside_percent_rf": 842.5,
   "v0": 182327073334.6322,
   "v0_adjusted": 182327073334.6322,
   "alpha": 0.24675801142610873,
@@ -14,8 +14,8 @@
     "2年後": 381.46,
     "3年後": 438.68
   },
-  "upside_percent": 61.8,
-  "calculation_date": "2026-05-28T02:30:41+09:00",
+  "upside_percent": 61.1,
+  "calculation_date": "2026-05-29T00:14:07+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -244,17 +244,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.221,
-      "rice_per_ratio": 0.0097
+      "rice_per_ratio": 0.0106
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.315,
-      "rice_per_ratio": 0.0138
+      "rice_per_ratio": 0.0152
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.378,
-      "rice_per_ratio": 0.0166
+      "rice_per_ratio": 0.0182
     }
   },
   "fcf_source": "ttm_series",
@@ -274,7 +274,7 @@
     ],
     "diluted_shares": 818053744,
     "roe_10yr_avg": 0.05875190748240685,
-    "current_price": 178.29,
+    "current_price": 179.095,
     "latest_revenue": 41525000000.0,
     "rpo": 59500000000,
     "beta": 1.1,
@@ -299,15 +299,15 @@
     "rpo_pv": 213683057.95306396,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.24675801142610873,
-    "per": 22.828424,
-    "per_adjusted": 17.12,
+    "per": 20.752607,
+    "per_adjusted": 17.2,
     "peg": 0.97,
-    "ps": 3.5123613,
-    "ev_ebitda": 13.822,
-    "ma200": 222.0708
+    "ps": 3.5282202,
+    "ev_ebitda": 13.706,
+    "ma200": 221.7558
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -332,7 +332,7 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 80,
-  "score_comment": "割安圏(62%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(61%)で買い余地大、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2021,
@@ -377,5 +377,20 @@
       "growth": 0.15,
       "estimated_revenue": 41525000000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.15,
+    "industry_benchmark": 0.21630769255217946,
+    "damodaran_industry": "Software (System & Application)",
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.161622364736846,
+    "rev_cagr_5yr": 0.14335729427517552,
+    "g_fundamental": -0.043228855296495575,
+    "signals": [
+      "業界平均Software (System & Application)(21.6%)の0.7倍以内 ✅",
+      "過去実績(3yr:16.2% / 5yr:14.3%)と整合 ✅"
+    ],
+    "warnings": []
+  }
 }

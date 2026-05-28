@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3958274931047.0527,
   "intrinsic_value_per_share": 406.55418383132184,
   "intrinsic_value_beta": 332.97,
-  "upside_percent_beta": -14.8,
+  "upside_percent_beta": -14.6,
   "intrinsic_value_rf": 2225.95,
-  "upside_percent_rf": 469.8,
+  "upside_percent_rf": 470.7,
   "v0": 2019920644376.017,
   "v0_adjusted": 2019920644376.017,
   "alpha": 0.9116297263806581,
@@ -14,8 +14,8 @@
     "2年後": 537.66,
     "3年後": 618.31
   },
-  "upside_percent": 4.1,
-  "calculation_date": "2026-05-28T02:30:43+09:00",
+  "upside_percent": 4.2,
+  "calculation_date": "2026-05-29T00:14:10+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -250,7 +250,7 @@
     ],
     "diluted_shares": 12115444154,
     "roe_10yr_avg": 0.21705469675729958,
-    "current_price": 390.665,
+    "current_price": 390.03,
     "latest_revenue": 402836000000.0,
     "rpo": 467600000000,
     "beta": 1.267,
@@ -275,15 +275,15 @@
     "rpo_pv": 96934582327.88492,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.9116297263806581,
-    "per": 29.79901,
-    "per_adjusted": 30.27,
+    "per": 29.773281,
+    "per_adjusted": 30.22,
     "peg": 1.51,
-    "ps": 11.202609,
-    "ev_ebitda": 29.016,
-    "ma200": 297.15344
+    "ps": 11.184399,
+    "ev_ebitda": 29.012,
+    "ma200": 298.0905
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -353,5 +353,21 @@
       "growth": 0.15,
       "estimated_revenue": 402836000000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.15,
+    "industry_benchmark": 0.22254050630989433,
+    "damodaran_industry": "Software (Entertainment)",
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.12511745609215974,
+    "rev_cagr_5yr": 0.1715483907713573,
+    "g_fundamental": 0.16139776603510256,
+    "signals": [
+      "業界平均Software (Entertainment)(22.3%)の0.7倍以内 ✅",
+      "過去実績(3yr:12.5% / 5yr:17.2%)と整合 ✅",
+      "RR×ROIC上限(16.1%)以内 ✅"
+    ],
+    "warnings": []
+  }
 }

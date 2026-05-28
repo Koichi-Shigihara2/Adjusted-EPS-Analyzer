@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 11111578590.01721,
   "intrinsic_value_per_share": 36.80763296186702,
   "intrinsic_value_beta": 34.11,
-  "upside_percent_beta": -83.8,
+  "upside_percent_beta": -84.8,
   "intrinsic_value_rf": 195.13,
-  "upside_percent_rf": -7.4,
+  "upside_percent_rf": -13.3,
   "v0": 11111578590.01721,
   "v0_adjusted": 11111578590.01721,
   "alpha": 0.0,
@@ -14,8 +14,8 @@
     "2年後": 48.68,
     "3年後": 55.98
   },
-  "upside_percent": -82.5,
-  "calculation_date": "2026-05-28T02:30:46+09:00",
+  "upside_percent": -83.6,
+  "calculation_date": "2026-05-29T00:14:14+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -232,17 +232,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.65,
-      "rice_per_ratio": 0.0047
+      "rice_per_ratio": 0.0044
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.929,
-      "rice_per_ratio": 0.0067
+      "rice_per_ratio": 0.0063
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 1.115,
-      "rice_per_ratio": 0.0081
+      "rice_per_ratio": 0.0076
     }
   },
   "fcf_source": "ttm_series",
@@ -263,7 +263,7 @@
     ],
     "diluted_shares": 353466247,
     "roe_10yr_avg": 0.0,
-    "current_price": 210.67,
+    "current_price": 225.08,
     "latest_revenue": 2167937000.0,
     "rpo": 2543500000,
     "beta": 1.1,
@@ -288,15 +288,15 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 138.13702,
-    "per_adjusted": 147.59,
+    "per": 147.58571,
+    "per_adjusted": 157.68,
     "peg": 2.38,
-    "ps": 31.978258,
+    "ps": 34.1656,
     "ev_ebitda": null,
-    "ma200": 204.1317
+    "ma200": 204.1548
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -321,7 +321,7 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 90,
-  "score_comment": "割高(-82%超)、FCF黒字、売上成長加速",
+  "score_comment": "割高(-84%超)、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
@@ -366,5 +366,20 @@
       "growth": 0.15,
       "estimated_revenue": 2167937000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.15,
+    "industry_benchmark": 0.21630769255217946,
+    "damodaran_industry": "Software (System & Application)",
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.30510334305337783,
+    "rev_cagr_5yr": 0.38134445310176823,
+    "g_fundamental": null,
+    "signals": [
+      "業界平均Software (System & Application)(21.6%)の0.7倍以内 ✅",
+      "過去実績(3yr:30.5% / 5yr:38.1%)と整合 ✅"
+    ],
+    "warnings": []
+  }
 }

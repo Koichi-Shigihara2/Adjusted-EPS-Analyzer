@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 242610820366.64603,
   "intrinsic_value_per_share": 334.3790854769636,
   "intrinsic_value_beta": 308.11,
-  "upside_percent_beta": -31.1,
+  "upside_percent_beta": -32.2,
   "intrinsic_value_rf": 1873.36,
-  "upside_percent_rf": 318.8,
+  "upside_percent_rf": 312.1,
   "v0": 134783789092.58112,
   "v0_adjusted": 134783789092.58112,
   "alpha": 0.8,
@@ -14,8 +14,8 @@
     "2年後": 442.22,
     "3年後": 508.55
   },
-  "upside_percent": -25.3,
-  "calculation_date": "2026-05-28T02:30:38+09:00",
+  "upside_percent": -26.4,
+  "calculation_date": "2026-05-29T00:14:02+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -229,7 +229,7 @@
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.159,
-      "rice_per_ratio": 0.0038
+      "rice_per_ratio": 0.0037
     }
   },
   "fcf_source": "ttm_series",
@@ -250,7 +250,7 @@
     ],
     "diluted_shares": 793959430,
     "roe_10yr_avg": 0.3917494031323076,
-    "current_price": 447.34,
+    "current_price": 454.595,
     "latest_revenue": 28368000000.0,
     "rpo": 2566000000.0,
     "beta": 1.1,
@@ -275,15 +275,15 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.6453474931556915,
-    "per": 42.043232,
-    "per_adjusted": 45.81,
+    "per": 42.805557,
+    "per_adjusted": 46.55,
     "peg": 1.54,
-    "ps": 12.237107,
-    "ev_ebitda": 38.835,
-    "ma200": 288.6035
+    "ps": 12.43557,
+    "ev_ebitda": 38.266,
+    "ma200": 289.9204
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -308,7 +308,7 @@
   },
   "tanuki_score": "HOLD",
   "funda_score": 65,
-  "score_comment": "割高(-25%超)、FCF黒字、売上成長停滞",
+  "score_comment": "割高(-26%超)、FCF黒字、売上成長停滞",
   "fcf_history": [
     {
       "year": 2021,
@@ -353,5 +353,20 @@
       "growth": 0.15,
       "estimated_revenue": 28368000000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.15,
+    "industry_benchmark": null,
+    "damodaran_industry": null,
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.032334704568867556,
+    "rev_cagr_5yr": 0.10522310397599743,
+    "g_fundamental": 0.09250342135942013,
+    "signals": [
+      "過去実績(3yr:3.2% / 5yr:10.5%)より高め（減速想定あり） ℹ️",
+      "RR×ROIC上限(9.3%)超（期待値先行型） ℹ️"
+    ],
+    "warnings": []
+  }
 }

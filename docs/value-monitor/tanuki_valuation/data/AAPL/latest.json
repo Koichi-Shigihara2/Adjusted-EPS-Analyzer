@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3099485516370.6187,
   "intrinsic_value_per_share": 316.61574147175895,
   "intrinsic_value_beta": 207.74,
-  "upside_percent_beta": -33.1,
+  "upside_percent_beta": -33.4,
   "intrinsic_value_rf": 1800.27,
-  "upside_percent_rf": 479.6,
+  "upside_percent_rf": 477.3,
   "v0": 1549742758185.3093,
   "v0_adjusted": 1549742758185.3093,
   "alpha": 1.0,
@@ -14,8 +14,8 @@
     "2年後": 418.73,
     "3年後": 481.54
   },
-  "upside_percent": 1.9,
-  "calculation_date": "2026-05-28T02:30:37+09:00",
+  "upside_percent": 1.5,
+  "calculation_date": "2026-05-29T00:14:01+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -219,17 +219,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.48,
-      "rice_per_ratio": 0.0128
+      "rice_per_ratio": 0.0127
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.686,
-      "rice_per_ratio": 0.0183
+      "rice_per_ratio": 0.0182
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.824,
-      "rice_per_ratio": 0.0219
+      "rice_per_ratio": 0.0218
     }
   },
   "fcf_source": "ttm_series",
@@ -250,7 +250,7 @@
     ],
     "diluted_shares": 14687356000,
     "roe_10yr_avg": 1.095797481703121,
-    "current_price": 310.58,
+    "current_price": 311.825,
     "latest_revenue": 416161000000.0,
     "rpo": 13700000000.0,
     "beta": 1.59,
@@ -275,15 +275,15 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 4.602349423153108,
-    "per": 37.600483,
-    "per_adjusted": 35.3,
+    "per": 37.705563,
+    "per_adjusted": 35.44,
     "peg": 2.68,
-    "ps": 10.1045065,
-    "ev_ebitda": 28.409,
-    "ma200": 261.99094
+    "ps": 10.145012,
+    "ev_ebitda": 28.64,
+    "ma200": 262.39844
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -353,5 +353,21 @@
       "growth": 0.15,
       "estimated_revenue": 416161000000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.15,
+    "industry_benchmark": 0.09564794907580026,
+    "damodaran_industry": "Computers/Peripherals",
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.01812535743479393,
+    "rev_cagr_5yr": 0.08677354924090741,
+    "g_fundamental": 0.007221626534684399,
+    "signals": [
+      "業界平均Computers/Peripherals(9.6%)の1.6倍 ℹ️",
+      "過去実績(3yr:1.8% / 5yr:8.7%)より高め（減速想定あり） ℹ️",
+      "RR×ROIC上限(0.7%)超（期待値先行型） ℹ️"
+    ],
+    "warnings": []
+  }
 }

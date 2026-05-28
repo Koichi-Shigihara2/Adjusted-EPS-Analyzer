@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 216821219738.36746,
   "intrinsic_value_per_share": 79.62010101629974,
   "intrinsic_value_beta": 67.29,
-  "upside_percent_beta": -84.7,
+  "upside_percent_beta": -84.8,
   "intrinsic_value_rf": 401.52,
-  "upside_percent_rf": -8.9,
+  "upside_percent_rf": -9.1,
   "v0": 135087689859.25423,
   "v0_adjusted": 135087689859.25423,
   "alpha": 0.6,
@@ -14,8 +14,8 @@
     "2年後": 100.95,
     "3年後": 113.67
   },
-  "upside_percent": -81.9,
-  "calculation_date": "2026-05-28T02:30:50+09:00",
+  "upside_percent": -82.0,
+  "calculation_date": "2026-05-29T00:14:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -305,7 +305,7 @@
     "bear": {
       "growth_rate": 0.088,
       "rice": 0.181,
-      "rice_per_ratio": 0.0004
+      "rice_per_ratio": 0.0005
     },
     "base": {
       "growth_rate": 0.126,
@@ -336,7 +336,7 @@
     ],
     "diluted_shares": 3755723871,
     "roe_10yr_avg": 0.14650137533291652,
-    "current_price": 440.72,
+    "current_price": 441.575,
     "latest_revenue": 94827000000.0,
     "rpo": 10150000000,
     "beta": 1.25,
@@ -361,15 +361,15 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 680915963.5607014,
     "alpha_uncapped": 0.6153057763982493,
-    "per": 408.07407,
-    "per_adjusted": 215.04,
+    "per": 401.43182,
+    "per_adjusted": 215.46,
     "peg": 5.97,
-    "ps": 16.910906,
-    "ev_ebitda": 144.247,
-    "ma200": 410.5843
+    "ps": 16.943714,
+    "ev_ebitda": 146.539,
+    "ma200": 411.13785
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -445,5 +445,21 @@
       "growth": 0.3,
       "estimated_revenue": 12327510000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "PLAUSIBLE",
+    "phase1_growth": 0.126,
+    "industry_benchmark": -0.008665302719898493,
+    "damodaran_industry": "Auto & Truck",
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.051943257367141005,
+    "rev_cagr_5yr": 0.24630713363610557,
+    "g_fundamental": 0.04739959608007916,
+    "signals": [
+      "業界平均(Auto & Truck)はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
+      "過去実績(3yr:5.2% / 5yr:24.6%)と整合 ✅",
+      "RR×ROIC上限(4.7%)超（期待値先行型） ℹ️"
+    ],
+    "warnings": []
+  }
 }

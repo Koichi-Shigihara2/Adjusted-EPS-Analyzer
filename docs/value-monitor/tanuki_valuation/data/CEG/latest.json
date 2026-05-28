@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 44577192854.79549,
   "intrinsic_value_per_share": 119.04261117024967,
   "intrinsic_value_beta": 108.43,
-  "upside_percent_beta": -62.5,
+  "upside_percent_beta": -62.1,
   "intrinsic_value_rf": 740.63,
-  "upside_percent_rf": 155.8,
+  "upside_percent_rf": 159.2,
   "v0": 29718128569.86366,
   "v0_adjusted": 29718128569.86366,
   "alpha": 0.5,
@@ -14,8 +14,8 @@
     "2年後": 157.43,
     "3年後": 181.04
   },
-  "upside_percent": -58.9,
-  "calculation_date": "2026-05-28T02:30:40+09:00",
+  "upside_percent": -58.3,
+  "calculation_date": "2026-05-29T00:14:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -248,7 +248,7 @@
     ],
     "diluted_shares": 361190063,
     "roe_10yr_avg": 0.1976835653255732,
-    "current_price": 289.48,
+    "current_price": 285.73,
     "latest_revenue": 25533000000.0,
     "rpo": 12034000000,
     "beta": 1.1,
@@ -273,15 +273,15 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.8302709743674074,
-    "per": 25.128471,
-    "per_adjusted": 30.52,
+    "per": 24.802952,
+    "per_adjusted": 30.13,
     "peg": 3.74,
-    "ps": 3.5007634,
-    "ev_ebitda": 16.446,
-    "ma200": 323.94058
+    "ps": 3.4554133,
+    "ev_ebitda": 15.861,
+    "ma200": 323.70514
   },
   "validation": {
-    "validated_at": "2026-05-28",
+    "validated_at": "2026-05-29",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -306,7 +306,7 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
-  "score_comment": "割高(-59%超)、FCF黒字、売上成長加速",
+  "score_comment": "割高(-58%超)、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2022,
@@ -346,5 +346,21 @@
       "growth": 0.15,
       "estimated_revenue": 25533000000.0
     }
-  ]
+  ],
+  "growth_sanity": {
+    "verdict": "REVIEW",
+    "phase1_growth": 0.15,
+    "industry_benchmark": null,
+    "damodaran_industry": null,
+    "damodaran_year": 2025,
+    "rev_cagr_3yr": 0.01469039149633189,
+    "rev_cagr_5yr": null,
+    "g_fundamental": 0.09945305835716794,
+    "signals": [
+      "RR×ROIC上限(9.9%)超（期待値先行型） ℹ️"
+    ],
+    "warnings": [
+      "過去実績(3yr:1.5% / 5yr:N/A)の10.2倍超 ⚠️"
+    ]
+  }
 }
