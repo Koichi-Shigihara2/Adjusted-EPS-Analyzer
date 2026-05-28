@@ -25,6 +25,7 @@ from typing import List, Optional
 from data_fetcher import TanukiDataFetcher
 from core_calculator import KoichiValuationCalculator
 from validator import validate_calculation
+from growth_sanity import check_growth_sanity, calc_fundamental_growth
 
 
 class TanukiValuationPipeline:
@@ -337,6 +338,28 @@ class TanukiValuationPipeline:
         # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存
         extra = self._load_extra_data(ticker, valuation)
         latest_data.update(extra)
+
+        # ---- Growth Sanity Check ----
+        try:
+            _phase1_growth = (
+                valuation.get("growth", {}).get("rate")
+                or valuation.get("growth_scenarios", {}).get("primary", {}).get("rate")
+                or 0
+            )
+            _annual_revs = self._load_annual_revenues(ticker)
+            _g_fund = self._calc_g_fundamental(ticker)
+            latest_data["growth_sanity"] = check_growth_sanity(
+                ticker=ticker,
+                phase1_growth=_phase1_growth,
+                sector=None,
+                annual_revenues=_annual_revs,
+                g_fundamental=_g_fund,
+            )
+        except Exception as e:
+            import logging as _logging
+            _logging.getLogger(__name__).warning(f"[{ticker}] growth_sanity failed: {e}")
+            latest_data["growth_sanity"] = None
+
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
 
@@ -1049,6 +1072,57 @@ class TanukiValuationPipeline:
                 pass
 
         return result
+
+    def _load_annual_revenues(self, ticker: str) -> list:
+        """SEC年次データから売上高リストを古い順で返す"""
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        if not os.path.exists(sec_dir):
+            return []
+        years = sorted([
+            int(fn[7:11]) for fn in os.listdir(sec_dir)
+            if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+        ])
+        revs = []
+        for yr in years:
+            try:
+                with open(os.path.join(sec_dir, f"annual_{yr}.json"), encoding="utf-8") as f:
+                    ann = json.load(f)
+                rev = ann.get("pl", {}).get("revenue")
+                if rev and rev > 0:
+                    revs.append(float(rev))
+            except Exception:
+                pass
+        return revs
+
+    def _calc_g_fundamental(self, ticker: str) -> float | None:
+        """最新年次データから RR×ROIC ファンダメンタル成長率を計算"""
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        if not os.path.exists(sec_dir):
+            return None
+        years = sorted([
+            int(fn[7:11]) for fn in os.listdir(sec_dir)
+            if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+        ])
+        if not years:
+            return None
+        try:
+            with open(os.path.join(sec_dir, f"annual_{years[-1]}.json"), encoding="utf-8") as f:
+                ann = json.load(f)
+            pl = ann.get("pl", {})
+            cf = ann.get("cf", {})
+            bs = ann.get("bs", {})
+            return calc_fundamental_growth(
+                operating_income=pl.get("operating_income") or 0,
+                tax_rate=0.21,
+                total_equity=bs.get("stockholders_equity") or bs.get("total_equity") or 0,
+                total_debt=(bs.get("long_term_debt") or 0) + (bs.get("short_term_debt") or 0),
+                cash=bs.get("cash_and_equivalents") or 0,
+                capex=abs(cf.get("capital_expenditure") or cf.get("capital_expenditures") or 0),
+                depreciation=cf.get("depreciation_and_amortization") or cf.get("depreciation_amortization") or 0,
+                delta_working_capital=0,
+            )
+        except Exception:
+            return None
 
     def _save_report(self, ticker: str, report_text: str) -> None:
         ticker_dir = os.path.join(self.output_dir, ticker)

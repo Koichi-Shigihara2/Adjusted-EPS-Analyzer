@@ -843,6 +843,7 @@ function render(d) {
 
   const scenarioValuations = d.scenario_valuations;
   const futureVals = d.future_values || {};
+  const sanity = d.growth_sanity || null;
 
   // フェアPER / PEG / PSR
   const perCurrent   = d.components?.per || null;
@@ -1077,6 +1078,8 @@ function render(d) {
             '</table>';
         })()}
       </div>
+
+      <div id="growth-sanity-container"></div>
 
       ${(() => {
         const segs = d.segments;
@@ -1766,6 +1769,35 @@ function render(d) {
   `;
 
   renderChart(dcfType, pvPhase1, pvPhase2, pvHigh, pvTerminal, rpoPV, goPv, alpha, v0);
+
+  // ---- Growth Sanity ----
+  if (sanity) {
+    const verdictColor = {
+      'PLAUSIBLE':  '#22c55e',
+      'REVIEW':     '#eab308',
+      'AGGRESSIVE': '#f97316',
+    }[sanity.verdict] || '#6b7280';
+    const signalItems = (sanity.signals || [])
+      .map(s => `<li style="margin:2px 0;font-size:12px;">${s}</li>`).join('');
+    const warnItems = (sanity.warnings || [])
+      .map(w => `<li style="margin:2px 0;font-size:12px;color:#f97316;">${w}</li>`).join('');
+    const sanityHTML = `
+      <div style="margin-top:12px;padding:10px 14px;background:#0f1623;border:1px solid #1e2a3a;border-radius:6px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+          <span style="color:${verdictColor};font-weight:bold;font-size:13px;">● ${sanity.verdict}</span>
+          <span style="color:#94a3b8;font-size:12px;">
+            成長率根拠 (Phase1: ${(sanity.phase1_growth * 100).toFixed(1)}%)
+            ${sanity.damodaran_industry ? ` — ${sanity.damodaran_industry}` : ''}
+            ${sanity.damodaran_year ? ` [Damodaran ${sanity.damodaran_year}]` : ''}
+          </span>
+        </div>
+        <ul style="margin:0;padding-left:16px;list-style:disc;">
+          ${signalItems}${warnItems}
+        </ul>
+      </div>`;
+    const el = document.getElementById('growth-sanity-container');
+    if (el) el.innerHTML = sanityHTML;
+  }
 
   // 割引率別理論株価の表示（テンプレートリテラル外で安全に処理）
   // メイン: ivps = Rmβなし（10%）
