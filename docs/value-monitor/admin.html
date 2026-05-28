@@ -131,12 +131,6 @@
     .weight-total{font-family:var(--mono);font-size:12px;padding:6px 10px;border-radius:4px;text-align:center}
     .weight-total.ok{color:var(--grn);background:rgba(16,185,129,.1)}
     .weight-total.ng{color:var(--red);background:rgba(244,63,94,.1)}
-    .setting-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-    .setting-label{font-family:var(--mono);font-size:12px;color:var(--txt);min-width:140px;display:flex;flex-direction:column;gap:2px}
-    .setting-hint{font-size:10px;color:var(--mut)}
-    .setting-control{display:flex;align-items:center;flex:1}
-    .setting-select{font-family:var(--mono);font-size:12px;background:var(--sur2);border:1px solid var(--bdr);padding:6px 10px;color:var(--txt);border-radius:4px;min-width:280px}
-    .setting-select:focus{outline:none;border-color:var(--acc)}
 
     /* ── ステータスタブ ── */
     .status-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;margin-bottom:24px}
@@ -305,23 +299,6 @@
 
     <div id="settingsAlerts"></div>
 
-    <!-- Damodaran業種設定 -->
-    <div class="config-panel" id="panelDamodaran" style="display:none">
-      <h3>📊 Damodaran業種分類</h3>
-      <div class="setting-row" id="damodaran-row">
-        <label class="setting-label">
-          Damodaran業種
-          <span class="setting-hint">成長率ベンチマーク（fundgrEB.xls）</span>
-        </label>
-        <div class="setting-control">
-          <select id="damodaranIndustry" class="setting-select">
-            <!-- JSで動的生成 -->
-          </select>
-          <span id="damodaran-current" class="setting-hint" style="margin-left:8px;color:#64748b;"></span>
-        </div>
-      </div>
-    </div>
-
     <!-- セグメント成長率 -->
     <div class="config-panel" id="panelSegment" style="display:none">
       <h3>📈 セグメント成長率・ウェイト</h3>
@@ -471,11 +448,12 @@
             <th class="no-transform">設定β</th>
             <th>推定WACC</th>
             <th>理由・メモ</th>
+            <th>Damodaran業種上書き</th>
             <th>操作</th>
           </tr>
         </thead>
         <tbody id="betaTableBody">
-          <tr><td colspan="7" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:var(--mut);padding:24px">接続後に表示されます</td></tr>
         </tbody>
       </table>
     </div>
@@ -890,6 +868,105 @@ const DAMODARAN_INDUSTRIES = [
   "Transportation","Transportation (Railroads)","Trucking",
   "Utility (General)","Utility (Water)",
 ];
+
+// beta_config セクターキー → fundgrEB 業種名（growth_sanity 自動マッピング参照）
+const SECTOR_TO_DAMODARAN_JS = {
+  "Semiconductor":        "Semiconductor",
+  "Semiconductor_Equip":  "Semiconductor Equip",
+  "Software_System":      "Software (System & Application)",
+  "Software_Internet":    "Software (Internet)",
+  "Software_Entertainment":"Software (Entertainment)",
+  "Cloud_Services":       "Software (System & Application)",
+  "Computer_Services":    "Computer Services",
+  "Computers_Peripherals":"Computers/Peripherals",
+  "AdTech_Internet":      "Advertising",
+  "Advertising":          "Advertising",
+  "Aerospace_Defense":    "Aerospace/Defense",
+  "Space_Defense":        "Aerospace/Defense",
+  "Air_Transport":        "Air Transport",
+  "Apparel":              "Apparel",
+  "Auto_Truck":           "Auto & Truck",
+  "Auto_Parts":           "Auto Parts",
+  "EV_Automotive":        "Auto & Truck",
+  "Bank_Money_Center":    "Bank (Money Center)",
+  "Banks_Regional":       "Banks (Regional)",
+  "Beverage_Alcoholic":   "Beverage (Alcoholic)",
+  "Beverage_Soft":        "Beverage (Soft)",
+  "Consumer_Beverage":    "Beverage (Soft)",
+  "Broadcasting":         "Broadcasting",
+  "Brokerage_IB":         "Brokerage & Investment Banking",
+  "Building_Materials":   "Building Materials",
+  "Business_Consumer_Svcs":"Business & Consumer Services",
+  "Cable_TV":             "Cable TV",
+  "Chemical_Basic":       "Chemical (Basic)",
+  "Chemical_Specialty":   "Chemical (Specialty)",
+  "Coal_Energy":          "Coal & Related Energy",
+  "Construction_Supplies":"Construction Supplies",
+  "Diversified":          "Diversified",
+  "Drugs_Biotech":        "Drugs (Biotechnology)",
+  "Drugs_Pharma":         "Drugs (Pharmaceutical)",
+  "Education":            "Education",
+  "Electrical_Equipment": "Electrical Equipment",
+  "Electronics_General":  "Electronics (General)",
+  "Engineering_Construction":"Engineering/Construction",
+  "Entertainment":        "Entertainment",
+  "Environmental_Waste":  "Environmental & Waste Services",
+  "Farming_Agriculture":  "Farming/Agriculture",
+  "Financial_NonBank":    "Financial Svcs. (Non-bank & Insurance)",
+  "Fintech":              "Financial Svcs. (Non-bank & Insurance)",
+  "Food_Processing":      "Food Processing",
+  "Food_Wholesalers":     "Food Wholesalers",
+  "Green_Renewable":      "Green & Renewable Energy",
+  "Healthcare_IT":        "Heathcare Information and Technology",
+  "Healthcare_Products":  "Healthcare Products",
+  "Healthcare_Support":   "Healthcare Support Services",
+  "Homebuilding":         "Homebuilding",
+  "Hospitals_Healthcare": "Hospitals/Healthcare Facilities",
+  "Hotel_Gaming":         "Hotel/Gaming",
+  "Household_Products":   "Household Products",
+  "Information_Services": "Information Services",
+  "Insurance_General":    "Insurance (General)",
+  "Insurance_Life":       "Insurance (Life)",
+  "Insurance_PropCas":    "Insurance (Prop/Cas.)",
+  "Investments_AM":       "Investments & Asset Management",
+  "Machinery":            "Machinery",
+  "Metals_Mining":        "Metals & Mining",
+  "Oil_Gas_Distribution": "Oil/Gas Distribution",
+  "Oil_Gas_Exploration":  "Oil/Gas (Production and Exploration)",
+  "Oil_Gas_Integrated":   "Oil/Gas (Integrated)",
+  "Oilfield_Services":    "Oilfield Svcs/Equip.",
+  "Packaging":            "Packaging & Container",
+  "Paper_Forest":         "Paper/Forest Products",
+  "Power_Utility":        "Power",
+  "Precious_Metals":      "Precious Metals",
+  "Publishing":           "Publishing & Newspapers",
+  "REIT":                 "R.E.I.T.",
+  "REIT_Retail":          "Retail (REITs)",
+  "Real_Estate_Dev":      "Real Estate (Development)",
+  "Real_Estate_General":  "Real Estate (General/Diversified)",
+  "Real_Estate_Ops":      "Real Estate (Operations & Services)",
+  "Recreation":           "Recreation",
+  "Restaurant_Dining":    "Restaurant/Dining",
+  "Retail_Automotive":    "Retail (Automotive)",
+  "Retail_Building":      "Retail (Building Supply)",
+  "Retail_Distributors":  "Retail (Distributors)",
+  "Retail_General":       "Retail (General)",
+  "Retail_Grocery":       "Retail (Grocery and Food)",
+  "Retail_Special":       "Retail (Special Lines)",
+  "Shipbuilding":         "Shipbuilding & Marine",
+  "Shoe":                 "Shoe",
+  "Steel":                "Steel",
+  "Telecom_Equipment":    "Telecom. Equipment",
+  "Telecom_Services":     "Telecom. Services",
+  "Telecom_Wireless":     "Telecom (Wireless)",
+  "Transportation":       "Transportation",
+  "Transportation_Railroad":"Transportation (Railroads)",
+  "Trucking":             "Trucking",
+  "Utility_General":      "Utility (General)",
+  "Utility_Water":        "Utility (Water)",
+};
+
+let damodaranOverrides = {}; // ticker → Damodaran industry name（growth_sanity.py から読み込み）
 
 let token = '';
 let yamlSha = null, betaSha = null;
@@ -1639,10 +1716,13 @@ async function fetchSecData() {
 // ════════════════════════════════════
 async function loadBetaTab() {
   const tbody = document.getElementById('betaTableBody');
-  tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:20px"><span class="spinner"></span>読み込み中...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:20px"><span class="spinner"></span>読み込み中...</td></tr>`;
   try {
-    const { content, sha } = await fetchFile(BETA_PATH);
-    betaConfig = JSON.parse(content); betaSha = sha;
+    const [betaFile] = await Promise.all([
+      fetchFile(BETA_PATH),
+      loadGrowthSanityOverrides(),
+    ]);
+    betaConfig = JSON.parse(betaFile.content); betaSha = betaFile.sha;
     renderBetaTable(); renderDamodaranRef();
     // 新規追加フォームの業種セレクトを更新
     const damoRef = betaConfig._damodaran_ref_2025 || {};
@@ -1652,7 +1732,7 @@ async function loadBetaTab() {
         Object.keys(damoRef).map(s => `<option value="${s}">${s}</option>`).join('');
     }
   } catch(e) {
-    tbody.innerHTML = `<tr><td colspan="7" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="color:var(--red);padding:16px">エラー: ${e.message}</td></tr>`;
   }
 }
 
@@ -1679,9 +1759,18 @@ function renderBetaTable() {
       <td><input type="number" class="beta-input" id="beta-${ticker}" value="${cfg.beta}" step="0.01" min="0.3" max="3.0" oninput="updateWaccPreview('${ticker}')"></td>
       <td class="wacc-preview" id="wacc-${ticker}">${calcWacc(cfg.beta)}</td>
       <td><input type="text" class="reason-input" id="reason-${ticker}" value="${cfg.reason || ''}" placeholder="設定理由..."></td>
+      <td>
+        <div id="damo-auto-${ticker}" style="color:#64748b;font-size:10px;margin-bottom:3px;"></div>
+        <select class="beta-input" id="damodaran-ovr-${ticker}" style="width:200px;font-size:11px">
+          <option value="">— 自動マッピングを使用 —</option>
+          ${DAMODARAN_INDUSTRIES.filter(i=>i).map(ind=>`<option value="${ind}" ${damodaranOverrides[ticker]===ind?'selected':''}>${ind}</option>`).join('')}
+        </select>
+      </td>
       <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeBetaRow('${ticker}')">削除</button></td>
     `;
     tbody.appendChild(tr);
+    // auto-map 表示を初期化
+    updateDamoAutoMap(ticker, cfg.sector);
   }
 }
 
@@ -1694,6 +1783,13 @@ function updateDamoRef(ticker) {
   const refBeta = (betaConfig._damodaran_ref_2025 || {})[sector];
   const el = document.getElementById(`damo-${ticker}`);
   if (el) el.textContent = refBeta != null ? refBeta.toFixed(2) : '—';
+  updateDamoAutoMap(ticker, sector);
+}
+function updateDamoAutoMap(ticker, sector) {
+  const autoDiv = document.getElementById(`damo-auto-${ticker}`);
+  if (!autoDiv) return;
+  const autoMapped = SECTOR_TO_DAMODARAN_JS[sector];
+  autoDiv.textContent = autoMapped ? `自動: ${autoMapped}` : '自動マッピングなし';
 }
 function removeBetaRow(ticker) {
   if (!confirm(`${ticker} のβ設定を削除しますか？（yfinanceβにフォールバックします）`)) return;
@@ -1732,10 +1828,18 @@ function addBetaRow() {
     <td><input type="number" class="beta-input" id="beta-${ticker}" value="${beta}" step="0.01" min="0.3" max="3.0" oninput="updateWaccPreview('${ticker}')"></td>
     <td class="wacc-preview" id="wacc-${ticker}">${calcWacc(beta)}</td>
     <td><input type="text" class="reason-input" id="reason-${ticker}" value="${reason}" placeholder="設定理由..."></td>
+    <td>
+      <div id="damo-auto-${ticker}" style="color:#64748b;font-size:10px;margin-bottom:3px;"></div>
+      <select class="beta-input" id="damodaran-ovr-${ticker}" style="width:200px;font-size:11px">
+        <option value="">— 自動マッピングを使用 —</option>
+        ${DAMODARAN_INDUSTRIES.filter(i=>i).map(ind=>`<option value="${ind}">${ind}</option>`).join('')}
+      </select>
+    </td>
     <td><button class="btn danger" style="padding:4px 10px;font-size:11px" onclick="removeBetaRow('${ticker}')">削除</button></td>
   `;
   // テーブルに行を追加
   tbody.appendChild(tr);
+  updateDamoAutoMap(ticker, sector);
 
   // フォームをクリア
   document.getElementById('newBetaTicker').value = '';
@@ -1755,14 +1859,27 @@ async function saveBeta() {
     if (isNaN(beta)) continue;
     newOverrides[ticker] = { ...betaConfig.overrides[ticker], beta, sector, reason };
   }
+  // Damodaran オーバーライド変更を収集
+  const damoChanges = [];
+  for (const row of rows) {
+    const ticker = row.dataset.ticker;
+    const newInd = document.getElementById(`damodaran-ovr-${ticker}`)?.value || '';
+    const oldInd = damodaranOverrides[ticker] || '';
+    if (newInd !== oldInd) damoChanges.push({ ticker, industry: newInd });
+  }
+
   betaConfig.overrides = newOverrides;
   const btn = document.getElementById('saveBetaBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>保存中...';
   try {
     const { sha } = await fetchFile(BETA_PATH);
     await commitFile(BETA_PATH, JSON.stringify(betaConfig, null, 2), 'chore: update beta_config.json', sha);
+    if (damoChanges.length > 0) {
+      await applyDamodaranChanges(damoChanges);
+    }
     showResult('betaResult', 'success',
       '✓ beta_config.json を保存しました。次回のパイプライン実行から反映されます。\n' +
+      (damoChanges.length > 0 ? `  Damodaran上書き更新: ${damoChanges.map(c=>c.ticker).join(', ')}\n` : '') +
       '「🔄 再読込」ボタンで最新の内容を確認できます。');
   } catch(e) { showResult('betaResult', 'error', '保存失敗: ' + e.message); }
   finally { btn.disabled = false; btn.innerHTML = '💾 保存してコミット'; }
@@ -1918,7 +2035,7 @@ async function loadTickerSettings() {
   alertsDiv.innerHTML = '';
 
   if (!ticker) {
-    ['panelDamodaran','panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
+    ['panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
       document.getElementById(id).style.display = 'none';
     });
     return;
@@ -1930,7 +2047,7 @@ async function loadTickerSettings() {
   }
 
   // パネルを表示
-  ['panelDamodaran','panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
+  ['panelSegment','panelMaturity','panelGrowthOptions'].forEach(id => {
     document.getElementById(id).style.display = 'block';
   });
 
@@ -1978,16 +2095,6 @@ async function loadTickerSettings() {
   alertsDiv.innerHTML = alerts.map(a =>
     `<div class="alert-box ${a.type}" style="white-space:pre-line">${a.msg}</div>`
   ).join('');
-
-  // ── Damodaran業種セレクトボックスを構築 ──
-  const damodaranSel = document.getElementById('damodaranIndustry');
-  damodaranSel.innerHTML = DAMODARAN_INDUSTRIES
-    .map(ind => `<option value="${ind}">${ind === "" ? "— 未設定 —" : ind}</option>`)
-    .join('');
-  const currentIndustry = await fetchDamodaranIndustry(ticker);
-  damodaranSel.value = currentIndustry || "";
-  const hint = document.getElementById('damodaran-current');
-  hint.textContent = currentIndustry ? `（現在: ${currentIndustry}）` : '（未登録）';
 }
 
 async function fetchLatestJson(ticker) {
@@ -1997,7 +2104,8 @@ async function fetchLatestJson(ticker) {
   } catch(e) { return null; }
 }
 
-async function fetchDamodaranIndustry(ticker) {
+// growth_sanity.py の TICKER_INDUSTRY_OVERRIDES を一括取得してキャッシュ
+async function loadGrowthSanityOverrides() {
   try {
     const path = 'src/value/tanuki_valuation/growth_sanity.py';
     const res = await fetch(
@@ -2006,15 +2114,22 @@ async function fetchDamodaranIndustry(ticker) {
     );
     const data = await res.json();
     const content = atob(data.content.replace(/\n/g, ''));
-    const re = new RegExp(`"${ticker}"\\s*:\\s*"([^"]+)"`);
-    const match = content.match(re);
-    return match ? match[1] : null;
-  } catch {
-    return null;
+    damodaranOverrides = {};
+    const blockMatch = content.match(/TICKER_INDUSTRY_OVERRIDES\s*=\s*\{([\s\S]*?)^\}/m);
+    if (blockMatch) {
+      const re = /"([A-Z0-9]+)"\s*:\s*"([^"]+)"/g;
+      let m;
+      while ((m = re.exec(blockMatch[1])) !== null) {
+        damodaranOverrides[m[1]] = m[2];
+      }
+    }
+  } catch(e) {
+    console.error('[Damodaran] failed to load overrides:', e);
   }
 }
 
-async function saveDamodaranIndustry(ticker, industry) {
+// TICKER_INDUSTRY_OVERRIDES への変更を1コミットで一括適用
+async function applyDamodaranChanges(changes) {
   const path = 'src/value/tanuki_valuation/growth_sanity.py';
   try {
     const res = await fetch(
@@ -2022,42 +2137,51 @@ async function saveDamodaranIndustry(ticker, industry) {
       { headers: apiHeaders() }
     );
     const data = await res.json();
-    const sha = data.sha;
-    const rawContent = atob(data.content.replace(/\n/g, ''));
+    let content = atob(data.content.replace(/\n/g, ''));
 
-    let newContent;
-    const existingRe = new RegExp(`([ \\t]*"${ticker}"\\s*:)[^\\n]*(\\n)`);
-    if (existingRe.test(rawContent)) {
-      newContent = rawContent.replace(
-        existingRe,
-        `$1 "${industry}",  # admin.html$2`
-      );
-    } else {
-      newContent = rawContent.replace(
-        /^(TICKER_INDUSTRY_OVERRIDES\s*=\s*\{[\s\S]*?)(^\})/m,
-        `$1    "${ticker}": "${industry}",  # admin.html\n$2`
-      );
+    for (const { ticker, industry } of changes) {
+      const existingRe = new RegExp(`[ \\t]*"${ticker}"\\s*:[^\\n]*\\n`);
+      if (industry) {
+        if (existingRe.test(content)) {
+          content = content.replace(existingRe, `    "${ticker}": "${industry}",  # admin.html\n`);
+        } else {
+          content = content.replace(
+            /^(TICKER_INDUSTRY_OVERRIDES\s*=\s*\{[\s\S]*?)(^\})/m,
+            `$1    "${ticker}": "${industry}",  # admin.html\n$2`
+          );
+        }
+      } else {
+        if (existingRe.test(content)) {
+          content = content.replace(existingRe, '');
+        }
+      }
     }
 
-    const encoded = btoa(unescape(encodeURIComponent(newContent)));
+    const encoded = btoa(unescape(encodeURIComponent(content)));
+    const tickers = changes.map(c => c.ticker).join(', ');
     await fetch(
       `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`,
       {
         method: 'PUT',
         headers: { ...apiHeaders(), 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: `feat: register Damodaran industry for ${ticker} [admin]`,
+          message: `feat: update Damodaran overrides for ${tickers} [admin]`,
           content: encoded,
-          sha: sha,
+          sha: data.sha,
           branch: BRANCH,
         }),
       }
     );
-    console.log(`[Damodaran] ${ticker} → "${industry}" saved`);
-  } catch (e) {
-    console.error('[Damodaran] save failed:', e);
+    for (const { ticker, industry } of changes) {
+      if (industry) damodaranOverrides[ticker] = industry;
+      else delete damodaranOverrides[ticker];
+    }
+    console.log(`[Damodaran] batch update: ${tickers}`);
+  } catch(e) {
+    console.error('[Damodaran] batch save failed:', e);
   }
 }
+
 
 function renderSegmentRows(segments) {
   const container = document.getElementById('segmentRows');
@@ -2401,19 +2525,12 @@ async function saveAllSettings() {
       `chore: update settings for ${ticker} (segment/maturity/growth_options)`
     );
 
-    // ── Damodaran業種を growth_sanity.py に保存 ──
-    const damodaranIndustry = document.getElementById('damodaranIndustry').value;
-    if (damodaranIndustry) {
-      await saveDamodaranIndustry(ticker, damodaranIndustry);
-    }
-
     showResult('settingsResult', 'success',
       `✓ ${ticker} の設定を1コミットで保存しました。\n` +
       `  セグメント: ${Object.keys(segments).length}件\n` +
       `  成熟プロファイル: ${matType}\n` +
-      `  成長オプション: ${options.length}件\n` +
-      (damodaranIndustry ? `  Damodaran業種: ${damodaranIndustry}\n` : '') +
-      `\n次回のパイプライン実行から反映されます。`
+      `  成長オプション: ${options.length}件\n\n` +
+      `次回のパイプライン実行から反映されます。`
     );
     await loadConfigFiles();
     await loadTickerSettings();
