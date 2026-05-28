@@ -112,6 +112,9 @@ TICKER_INDUSTRY_OVERRIDES = {
     "LUNR":  "Aerospace/Defense",                 # SIC→Metals&Mining を上書き
     "S":     "Software (System & Application)",   # SIC→Utility(Water) を上書き
     "DIS":   "Entertainment",                     # SIC→Real Estate を上書き
+    "CEG":   "Power",                             # Constellation Energy
+    "CIX":   "Machinery",                         # CompX International
+    "LMT":   "Aerospace/Defense",                 # Lockheed Martin
 }
 
 
