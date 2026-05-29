@@ -165,7 +165,7 @@ TICKER_INDUSTRY_OVERRIDES = {
     "OKTA":  "Software (Internet)",               # SIC→Services-Prepackaged を上書き
     "SHOP":  "Software (Internet)",               # SIC→Retail(General) を上書き
     "SQ":    "Financial Svcs. (Non-bank & Insurance)",  # SIC→Services-Computers を上書き
-    "META":  "Software (Entertainment)",          # SIC→Services-Computer を上書き
+    "META":  "Advertising",                       # SIC→Services-Computer を上書き。収益99%が広告
     "AMZN":  "Software (System & Application)",   # SIC→Retail(General)、クラウド主軸
     "NET":   "Software (System & Application)",   # SIC→Telecom を上書き
     "ZS":    "Software (System & Application)",   # SIC→Steel を上書き

@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 2064252935535.2966,
+  "intrinsic_value_pt": 2708895436926.515,
   "intrinsic_value_per_share": 1241.753093159935,
-  "intrinsic_value_beta": 822.2,
-  "upside_percent_beta": 30.0,
+  "intrinsic_value_beta": 1076.16,
+  "upside_percent_beta": 70.1,
   "intrinsic_value_rf": 6958.97,
   "upside_percent_rf": 1000.2,
-  "v0": 1032126467767.6483,
-  "v0_adjusted": 1032126467767.6483,
+  "v0": 1354447718463.2576,
+  "v0_adjusted": 1354447718463.2576,
   "alpha": 1.0,
   "alpha_was_capped": true,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 1888.55
   },
   "upside_percent": 96.3,
-  "calculation_date": "2026-05-30T07:46:09+09:00",
+  "calculation_date": "2026-05-30T08:10:39+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.13363000000000003,
-    "beta": 1.59,
+    "value": 0.11026,
+    "beta": 1.18,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 1032126467767.6483,
-    "pv_high_growth": 338930447242.47327,
-    "pv_terminal": 693196020525.175,
+    "v0": 1354447718463.2576,
+    "pv_high_growth": 361158805012.3601,
+    "pv_terminal": 993288913450.8975,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 74656843673.86165,
-        "discount_factor": 1.1336300000000001,
-        "pv": 65856446701.18261
+        "discount_factor": 1.11026,
+        "pv": 67242667189.54267
       },
       {
         "year": 2,
         "fcf": 85855370224.94089,
-        "discount_factor": 1.2851169769000004,
-        "pv": 66807436029.709854
+        "discount_factor": 1.2326772676,
+        "pv": 69649512067.4203
       },
       {
         "year": 3,
         "fcf": 98733675758.682,
-        "discount_factor": 1.4568471585231475,
-        "pv": 67772157965.2676
+        "discount_factor": 1.368592263125576,
+        "pv": 72142506149.49051
       },
       {
         "year": 4,
         "fcf": 113543727122.4843,
-        "discount_factor": 1.651525644316596,
-        "pv": 68750810811.33855
+        "discount_factor": 1.5194932460578021,
+        "pv": 74724733010.2085
       },
       {
         "year": 5,
         "fcf": 130575286190.85693,
-        "discount_factor": 1.8722190161666228,
-        "pv": 69743595734.97467
+        "discount_factor": 1.6870325713681353,
+        "pv": 77399386595.69809
       }
     ],
     "terminal_fcf": 134492544776.58264,
-    "terminal_value": 1297814771558.2612,
+    "terminal_value": 1675710749770.5288,
     "v0_rm": 1564623494745.6309
   },
   "fcf_base": {
@@ -253,19 +253,19 @@
     "current_price": 632.51,
     "latest_revenue": 200966000000.0,
     "rpo": 1080000000.0,
-    "beta": 1.59,
+    "beta": 1.18,
     "sector": "Communication Services",
     "industry": "Internet Content & Information",
     "eps_data": {
       "ticker": "META"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Software_Internet)",
+    "_beta_source": "beta_config(Advertising)",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 338930447242.47327,
-    "pv_terminal": 693196020525.175,
+    "pv_high": 361158805012.3601,
+    "pv_terminal": 993288913450.8975,
     "roe_used": 0.2434686084716823,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -293,7 +293,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $338.93B + pv_terminal $693.20B = $1032.13B (差異0.00%)"
+        "detail": "2段階: pv_high $361.16B + pv_terminal $993.29B = $1354.45B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -305,8 +305,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t/株数整合性崩壊とV0混在が致命的",
-    "ai_concerns": "P_t vs per-share value inconsistent; V0 vs V0_rm usage ambiguous"
+    "ai_comment": "P_t/株式数計算とα適用V0の整合性に重大な不整合あり",
+    "ai_concerns": "P_t/株価不整合、V0_rmとβWACC混在"
   },
   "tanuki_score": "BUY",
   "funda_score": 100,
@@ -361,14 +361,14 @@
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
-    "industry_benchmark": 0.22254050630989433,
-    "damodaran_industry": "Software (Entertainment)",
+    "industry_benchmark": -0.05683728818408143,
+    "damodaran_industry": "Advertising",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.19893831442939258,
     "rev_cagr_5yr": 0.18511415178759827,
     "g_fundamental": 0.21271146205552363,
     "signals": [
-      "業界平均Software (Entertainment)(22.3%)の0.7倍以内 ✅",
+      "業界平均(Advertising)はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "過去実績(3yr:19.9% / 5yr:18.5%)と整合 ✅",
       "RR×ROIC上限(21.3%)以内 ✅"
     ],

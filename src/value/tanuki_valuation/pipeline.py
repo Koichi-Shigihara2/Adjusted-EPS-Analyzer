@@ -733,7 +733,18 @@ class TanukiValuationPipeline:
             _sign = "premium" if _delta >= 0 else "discount"
             L.append(f"(DCF Base vs TTM actual: {_delta:+.1f}pt {_sign})")
         wacc_pct = wacc_val * 100 if isinstance(wacc_val, (int, float)) else None
-        L.append(f"WACC: {wacc_pct:.2f}%" if wacc_pct is not None else "WACC: N/A")
+        _beta_is_default = False
+        try:
+            _bc_path = os.path.join(self.repo_root, "config", "beta_config.json")
+            with open(_bc_path, encoding="utf-8") as _bcf:
+                _beta_is_default = json.load(_bcf).get("overrides", {}).get(ticker, {}).get("reason") == "デフォルト設定"
+        except Exception:
+            pass
+        if wacc_pct is not None:
+            _wacc_suffix = " (β=sector default、個別検証推奨)" if _beta_is_default else ""
+            L.append(f"WACC: {wacc_pct:.2f}%{_wacc_suffix}")
+        else:
+            L.append("WACC: N/A")
         terminal_g_used = comps.get("terminal_growth_used")
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
@@ -791,6 +802,10 @@ class TanukiValuationPipeline:
             seg_wg = sum(s.get("weight", 0) * s.get("growth", 0) for s in segments) / max(total_w, 1e-9)
             L.append(f"  Segment_Weighted_Growth: {seg_wg*100:.1f}%")
             L.append("  (= basis for TANUKI forward growth rate G)")
+            if len(segments) == 1 and segments[0].get("name") == "General":
+                _rev_warn = f"{_ttm_rev:.1f}%" if _ttm_rev is not None else "N/A"
+                L.append("  Warning: セグメント未設定。デフォルト成長率15%を使用。")
+                L.append(f"  TTM実績({_rev_warn})との乖離に注意。")
         else:
             L.append("  N/A (segment data not configured)")
         L.append("Definition:")
