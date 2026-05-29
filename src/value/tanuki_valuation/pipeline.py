@@ -1029,19 +1029,55 @@ class TanukiValuationPipeline:
                 if len(annual_shares) >= 4:
                     s_now_entry = annual_shares[-1]
                     s_3ago_entry = annual_shares[-4]
-                    s_now = s_now_entry["val"]
-                    s_3ago = s_3ago_entry["val"]
                     yr_now = s_now_entry.get("end", "")[:4]
                     yr_3ago = s_3ago_entry.get("end", "")[:4]
+
+                    # 株式分割による不連続を検出・補正（最新基準に統一）
+                    # 判定: FY値の前年比が2.5倍超 かつ 同年の四半期中央値と2.5倍超乖離
+                    #   → 遡及的分割調整（stock split retroactive restatement）として補正
+                    # 判定: FY値の前年比が2.5倍超 だが 四半期中央値と近い
+                    #   → IPO等の実際の希薄化として補正なし
+                    q_vals_by_year = {}
+                    for e in shares_series:
+                        if not e.get("is_annual") and e.get("val"):
+                            yr = e.get("end", "")[:4]
+                            q_vals_by_year.setdefault(yr, []).append(e["val"])
+
+                    raw_vals = [e["val"] for e in annual_shares]
+                    adj_vals = list(raw_vals)
+                    split_factor = 1.0
+                    for i in range(len(raw_vals) - 1, 0, -1):
+                        ratio = raw_vals[i] / raw_vals[i - 1] if raw_vals[i - 1] > 0 else 1.0
+                        if ratio > 2.5 or ratio < 0.4:
+                            # 四半期値との比較で遡及的分割調整か実際の希薄化かを判別
+                            yr_i = annual_shares[i].get("end", "")[:4]
+                            q_list = q_vals_by_year.get(yr_i, [])
+                            if q_list:
+                                q_median = sorted(q_list)[len(q_list) // 2]
+                                fy_q_ratio = raw_vals[i] / q_median if q_median > 0 else 1.0
+                                is_split = fy_q_ratio > 2.5 or fy_q_ratio < 0.4
+                            else:
+                                is_split = False  # 四半期データなし → 実際の希薄化と判断
+                            if is_split:
+                                split_factor *= ratio
+                                for j in range(i):
+                                    adj_vals[j] = raw_vals[j] * split_factor
+
+                    s_now = adj_vals[-1]
+                    s_3ago = adj_vals[-4]
+
                     if s_now and s_3ago > 0:
                         dilution_3yr = ((s_now / s_3ago) ** (1 / 3) - 1) * 100
                         if "financial_health" not in result:
                             result["financial_health"] = {}
                         result["financial_health"]["dilution_3yr_annual_pct"] = round(dilution_3yr, 2)
-                        result["financial_health"]["shares_yr_now"] = s_now
-                        result["financial_health"]["shares_yr_3ago"] = s_3ago
+                        result["financial_health"]["shares_yr_now"] = s_now_entry["val"]
+                        result["financial_health"]["shares_yr_3ago"] = s_3ago_entry["val"]
                         result["financial_health"]["shares_yr_now_label"] = yr_now
                         result["financial_health"]["shares_yr_3ago_label"] = yr_3ago
+                        if abs(split_factor - 1.0) > 0.01:
+                            result["financial_health"]["split_adjusted"] = True
+                            result["financial_health"]["split_factor"] = round(split_factor, 4)
             except Exception:
                 pass
 
