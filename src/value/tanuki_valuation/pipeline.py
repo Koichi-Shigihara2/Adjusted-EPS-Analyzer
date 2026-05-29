@@ -348,10 +348,11 @@ class TanukiValuationPipeline:
             )
             _annual_revs = self._load_annual_revenues(ticker)
             _g_fund = self._calc_g_fundamental(ticker)
+            _sector = self._load_beta_sector(ticker)
             latest_data["growth_sanity"] = check_growth_sanity(
                 ticker=ticker,
                 phase1_growth=_phase1_growth,
-                sector=None,
+                sector=_sector,
                 annual_revenues=_annual_revs,
                 g_fundamental=_g_fund,
             )
@@ -1149,6 +1150,16 @@ class TanukiValuationPipeline:
                 depreciation=cf.get("depreciation_and_amortization") or cf.get("depreciation_amortization") or 0,
                 delta_working_capital=0,
             )
+        except Exception:
+            return None
+
+    def _load_beta_sector(self, ticker: str) -> str | None:
+        """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""
+        beta_path = os.path.join(self.repo_root, "config", "beta_config.json")
+        try:
+            with open(beta_path, encoding="utf-8") as f:
+                beta_cfg = json.load(f)
+            return beta_cfg.get("overrides", {}).get(ticker, {}).get("sector")
         except Exception:
             return None
 
