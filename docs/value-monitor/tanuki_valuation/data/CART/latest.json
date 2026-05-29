@@ -1,21 +1,21 @@
 {
-  "intrinsic_value_pt": 22184087017.443867,
-  "intrinsic_value_per_share": 105.42497033746463,
-  "intrinsic_value_beta": 97.31,
-  "upside_percent_beta": 143.6,
-  "intrinsic_value_rf": 580.8,
-  "upside_percent_rf": 1354.2,
-  "v0": 13865054385.902416,
-  "v0_adjusted": 13865054385.902416,
+  "intrinsic_value_pt": 18516303427.900494,
+  "intrinsic_value_per_share": 88.47791626926893,
+  "intrinsic_value_beta": 81.71,
+  "upside_percent_beta": 105.6,
+  "intrinsic_value_rf": 485.26,
+  "upside_percent_rf": 1120.9,
+  "v0": 11572689642.437809,
+  "v0_adjusted": 11572689642.437809,
   "alpha": 0.6,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 121.23,
-    "2年後": 139.42,
-    "3年後": 160.33
+    "1年後": 101.75,
+    "2年後": 117.01,
+    "3年後": 134.57
   },
-  "upside_percent": 164.0,
-  "calculation_date": "2026-05-29T21:35:58+09:00",
+  "upside_percent": 122.6,
+  "calculation_date": "2026-05-29T23:56:24+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        102.88,
-        123.41,
-        146.26
+        86.35,
+        103.49,
+        122.56
       ],
       [
-        88.38,
-        105.42,
-        124.05
+        74.25,
+        88.48,
+        104.02
       ],
       [
-        77.52,
-        91.96,
-        107.46
+        65.18,
+        77.24,
+        90.18
       ]
     ],
     "wacc_values": [
@@ -76,15 +76,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.105,
-      "intrinsic_value_per_share": 88.49
+      "intrinsic_value_per_share": 74.35
     },
     "base": {
       "growth_rate": 0.15,
-      "intrinsic_value_per_share": 105.42
+      "intrinsic_value_per_share": 88.48
     },
     "bull": {
       "growth_rate": 0.18,
-      "intrinsic_value_per_share": 118.2
+      "intrinsic_value_per_share": 99.14
     }
   },
   "growth_options": {
@@ -95,44 +95,44 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 13865054385.902416,
-    "pv_high_growth": 3519804567.643338,
-    "pv_terminal": 10345249818.259079,
+    "v0": 11572689642.437809,
+    "pv_high_growth": 2937861239.4617133,
+    "pv_terminal": 8634828402.976095,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 718447145.9335409,
+        "fcf": 599663413.7142583,
         "discount_factor": 1.1057000000000001,
-        "pv": 649766795.6349288
+        "pv": 542338259.6674128
       },
       {
         "year": 2,
-        "fcf": 826214217.823572,
+        "fcf": 689612925.771397,
         "discount_factor": 1.2225724900000003,
-        "pv": 675799778.4029738
+        "pv": 564067105.5598484
       },
       {
         "year": 3,
-        "fcf": 950146350.4971077,
+        "fcf": 793054864.6371065,
         "discount_factor": 1.3517984021930005,
-        "pv": 702875775.674613
+        "pv": 586666520.2078553
       },
       {
         "year": 4,
-        "fcf": 1092668303.0716739,
+        "fcf": 912013094.3326725,
         "discount_factor": 1.4946834933048008,
-        "pv": 731036575.9480916
+        "pv": 610171383.0505866
       },
       {
         "year": 5,
-        "fcf": 1256568548.532425,
+        "fcf": 1048815058.4825733,
         "discount_factor": 1.6526715385471185,
-        "pv": 760325641.9827306
+        "pv": 634617970.9760102
       }
     ],
-    "terminal_fcf": 1294265604.9883976,
-    "terminal_value": 17097299933.79653,
-    "v0_rm": 15056881980.85614
+    "terminal_fcf": 1080279510.2370505,
+    "terminal_value": 14270535141.83686,
+    "v0_rm": 12567467627.421154
   },
   "fcf_base": {
     "base_fcf": 621750000.0,
@@ -157,7 +157,19 @@
         {
           "category": "金融関連",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 11000000.0,
+          "amount": 3000000,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 3000000,
+          "reason": "マクロ変動による一時的影響"
+        },
+        {
+          "category": "金融関連",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 5000000.0,
           "reason": "マクロ変動による一時的影響"
         },
         {
@@ -175,13 +187,13 @@
   "fcf_estimation": {
     "applied": true,
     "method": "adj_eps_estimated",
-    "adj_net_income": 892480926.6255169,
+    "adj_net_income": 744923495.2972155,
     "conversion_rate": 0.7,
-    "estimated_fcf": 624736648.6378617,
+    "estimated_fcf": 521446446.7080508,
     "raw_fcf": 621750000.0,
     "sector": "",
-    "note": "調整済み純利益$0.89B × 転換率70%[sector()] = 推定FCF$0.62B（従来$0.62Bの1.0倍）",
-    "divergence_ratio": 1.0,
+    "note": "調整済み純利益$0.74B × 転換率70%[sector()] = 推定FCF$0.52B（従来$0.62Bの0.8倍）",
+    "divergence_ratio": 0.84,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -237,7 +249,7 @@
   "components": {
     "fcf_5yr_avg": 621750000.0,
     "fcf_2yr_avg": 799500000.0,
-    "fcf_base_used": 624736648.6378617,
+    "fcf_base_used": 521446446.7080508,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       866000000,
@@ -247,7 +259,7 @@
     ],
     "diluted_shares": 235029814,
     "roe_10yr_avg": 0.16263741667815845,
-    "current_price": 39.94,
+    "current_price": 39.745,
     "latest_revenue": 3742000000.0,
     "rpo": 0.0,
     "beta": 1.1,
@@ -261,8 +273,8 @@
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 3519804567.643338,
-    "pv_terminal": 10345249818.259079,
+    "pv_high": 2937861239.4617133,
+    "pv_terminal": 8634828402.976095,
     "roe_used": 0.16263741667815845,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -272,10 +284,10 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.6830771500482654,
-    "per": 22.188889,
-    "per_adjusted": 12.54,
+    "per": 22.080555,
+    "per_adjusted": 14.96,
     "peg": 2.31,
-    "ps": 2.429371,
+    "ps": 2.4175103,
     "ev_ebitda": 14.783,
     "ma200": 40.5825
   },
@@ -285,11 +297,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $15.06B + RPO $0.00B + GO $0.00B) × (1+0.600) / 0.235B + BS $+2.92/株 = $105.42 (差異0.00%)"
+        "detail": "(V₀ $12.57B + RPO $0.00B + GO $0.00B) × (1+0.600) / 0.235B + BS $+2.92/株 = $88.48 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $3.52B + pv_terminal $10.35B = $13.87B (差異0.00%)"
+        "detail": "2段階: pv_high $2.94B + pv_terminal $8.63B = $11.57B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -305,7 +317,7 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 80,
-  "score_comment": "割安圏(164%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(123%)で買い余地大、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2023,

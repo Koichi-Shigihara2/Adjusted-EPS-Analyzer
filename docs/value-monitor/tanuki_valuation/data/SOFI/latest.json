@@ -1,21 +1,21 @@
 {
-  "intrinsic_value_pt": 26270560434.5284,
-  "intrinsic_value_per_share": 27.94998474864565,
-  "intrinsic_value_beta": 24.32,
-  "upside_percent_beta": 43.3,
-  "intrinsic_value_rf": 142.61,
-  "upside_percent_rf": 740.4,
-  "v0": 20901955868.84864,
-  "v0_adjusted": 20901955868.84864,
+  "intrinsic_value_pt": 23805542912.077065,
+  "intrinsic_value_per_share": 25.687970763779305,
+  "intrinsic_value_beta": 22.4,
+  "upside_percent_beta": 23.3,
+  "intrinsic_value_rf": 129.59,
+  "upside_percent_rf": 613.2,
+  "v0": 18940684901.72847,
+  "v0_adjusted": 18940684901.72847,
   "alpha": 0.25684699553312584,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 34.18,
-    "2年後": 41.81,
-    "3年後": 51.13
+    "1年後": 31.42,
+    "2年後": 38.43,
+    "3年後": 46.99
   },
-  "upside_percent": 64.7,
-  "calculation_date": "2026-05-29T21:36:13+09:00",
+  "upside_percent": 41.4,
+  "calculation_date": "2026-05-29T23:56:43+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        25.0,
-        32.28,
-        41.44
+        23.02,
+        29.61,
+        37.91
       ],
       [
-        21.91,
-        27.95,
-        35.41
+        20.22,
+        25.69,
+        32.45
       ],
       [
-        19.59,
-        24.71,
-        30.92
+        18.12,
+        22.75,
+        28.38
       ]
     ],
     "wacc_values": [
@@ -76,15 +76,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.156,
-      "intrinsic_value_per_share": 22.47
+      "intrinsic_value_per_share": 20.72
     },
     "base": {
       "growth_rate": 0.223,
-      "intrinsic_value_per_share": 27.95
+      "intrinsic_value_per_share": 25.69
     },
     "bull": {
       "growth_rate": 0.268,
-      "intrinsic_value_per_share": 32.3
+      "intrinsic_value_per_share": 29.63
     }
   },
   "growth_options": {
@@ -95,44 +95,44 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 20901955868.84864,
-    "pv_high_growth": 5178119426.172859,
-    "pv_terminal": 15723836442.675781,
+    "v0": 18940684901.72847,
+    "pv_high_growth": 4692246460.094627,
+    "pv_terminal": 14248438441.633842,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 941871882.0474072,
+        "fcf": 853494220.7128763,
         "discount_factor": 1.1114,
-        "pv": 847464353.1108576
+        "pv": 767945132.9070328
       },
       {
         "year": 2,
-        "fcf": 1151909311.743979,
+        "fcf": 1043823431.9318478,
         "discount_factor": 1.23520996,
-        "pv": 932561547.4667797
+        "pv": 845057492.842632
       },
       {
         "year": 3,
-        "fcf": 1408785088.2628863,
+        "fcf": 1276596057.25265,
         "discount_factor": 1.3728123495439999,
-        "pv": 1026203682.3392762
+        "pv": 929913004.9905877
       },
       {
         "year": 4,
-        "fcf": 1722944162.9455101,
+        "fcf": 1561276978.0199912,
         "discount_factor": 1.5257436452832014,
-        "pv": 1129248788.4658403
+        "pv": 1023289189.403895
       },
       {
         "year": 5,
-        "fcf": 2107160711.2823591,
+        "fcf": 1909441744.1184492,
         "discount_factor": 1.69571148736775,
-        "pv": 1242641054.7901053
+        "pv": 1126041639.9504802
       }
     ],
-    "terminal_fcf": 2170375532.62083,
-    "terminal_value": 26663090081.33698,
-    "v0_rm": 24603746586.785233
+    "terminal_fcf": 1966724996.4420028,
+    "terminal_value": 24161240742.530746,
+    "v0_rm": 22295129433.164673
   },
   "fcf_base": {
     "base_fcf": 49548240.0,
@@ -157,11 +157,11 @@
         {
           "category": "リストラ・事業再編関連",
           "item_name": "リストラ費用",
-          "amount": 948000,
+          "amount": 948000.0,
           "reason": "一過性の事業再編費用"
         }
       ],
-      "total_transient_amount": 948000
+      "total_transient_amount": 948000.0
     },
     "action": "flagged",
     "note": "FY2025 FCF($-5862.8M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -169,14 +169,14 @@
   "fcf_estimation": {
     "applied": true,
     "method": "adj_eps_estimated",
-    "adj_net_income": 873268616.2606478,
+    "adj_net_income": 770035744.709975,
     "conversion_rate": 0.7,
-    "estimated_fcf": 611288031.3824534,
+    "estimated_fcf": 539025021.2969825,
     "raw_fcf": 49548240.0,
     "sector": "",
-    "note": "調整済み純利益$0.87B × 転換率70%[sector()] = 推定FCF$0.61B（従来$0.05Bの12.3倍）",
-    "divergence_ratio": 12.34,
-    "divergence_warning": "FCF推定値が生FCFの12.3倍。調整済み純利益$0.9B × 70%転換率= 推定FCF$0.6B（生FCF$0.0B比）。成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
+    "note": "調整済み純利益$0.77B × 転換率70%[sector()] = 推定FCF$0.54B（従来$0.05Bの10.9倍）",
+    "divergence_ratio": 10.88,
+    "divergence_warning": "FCF推定値が生FCFの10.9倍。調整済み純利益$0.8B × 70%転換率= 推定FCF$0.5B（生FCF$0.0B比）。成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
   },
   "rd_capitalization": {
     "applied": true,
@@ -231,7 +231,7 @@
   "components": {
     "fcf_5yr_avg": -4275646200.0,
     "fcf_2yr_avg": -3797450000.0,
-    "fcf_base_used": 770132364.7157867,
+    "fcf_base_used": 697869354.6303158,
     "fcf_base_method": "avg_5yr",
     "fcf_list_raw": [
       -5862754000,
@@ -242,7 +242,7 @@
     ],
     "diluted_shares": 1282741200,
     "roe_10yr_avg": 0.061154046555506165,
-    "current_price": 16.97,
+    "current_price": 18.17,
     "latest_revenue": 619353000.0,
     "rpo": 8535000.0,
     "beta": 1.2,
@@ -256,8 +256,8 @@
     "high_growth_rate_used": 0.22300000000000003,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 5178119426.172859,
-    "pv_terminal": 15723836442.675781,
+    "pv_high": 4692246460.094627,
+    "pv_terminal": 14248438441.633842,
     "roe_used": 0.061154046555506165,
     "fcf_floor_applied": 4325194440.0,
     "fcf_growth_floor": 0.15,
@@ -267,10 +267,10 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.25684699553312584,
-    "per": 37.71111,
-    "per_adjusted": 23.86,
+    "per": 40.37778,
+    "per_adjusted": 28.97,
     "peg": 1.06,
-    "ps": 5.5695343,
+    "ps": 5.963373,
     "ev_ebitda": null,
     "ma200": 23.241425
   },
@@ -280,11 +280,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $24.60B + RPO $0.00B + GO $0.00B) × (1+0.257) / 1.283B + BS $+3.84/株 = $27.95 (差異0.00%)"
+        "detail": "(V₀ $22.30B + RPO $0.00B + GO $0.00B) × (1+0.257) / 1.283B + BS $+3.84/株 = $25.69 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $5.18B + pv_terminal $15.72B = $20.90B (差異0.00%)"
+        "detail": "2段階: pv_high $4.69B + pv_terminal $14.25B = $18.94B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -300,7 +300,7 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 100,
-  "score_comment": "割安圏(65%)で買い余地大、FCF黒字、売上成長加速",
+  "score_comment": "割安圏(41%)で買い余地大、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
