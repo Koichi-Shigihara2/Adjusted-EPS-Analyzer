@@ -496,7 +496,7 @@ function renderTable() {
       <td>${r.growth != null ? fmtPct2(r.growth) : '—'}</td>
       <td class="grp-border">${r.alpha != null ? r.alpha.toFixed(3) : '—'}</td>
       <td>${r.wacc != null ? fmtPct2(r.wacc) : '—'}</td>
-      <td>${r.q != null ? r.q.toFixed(2) : '—'}</td>
+      <td>${r.q != null && Math.abs(r.q) < 100 ? r.q.toFixed(1) : '—'}</td>
       <td>${r.cf != null ? r.cf.toFixed(2) : '—'}</td>
       <td class="muted grp-border">${r.date}</td>
     `;
