@@ -1,9 +1,9 @@
 """
 growth_sanity.py
-成長率サニティチェックモジュール
+æé·çãµããã£ãã§ãã¯ã¢ã¸ã¥ã¼ã«
 
-設定された Phase1 成長率が業界ベンチマーク・過去実績と比べて
-明らかに非現実的でないかを検証し、根拠サマリーを生成する。
+è¨­å®ããã Phase1 æé·çãæ¥­çãã³ããã¼ã¯ã»éå»å®ç¸¾ã¨æ¯ã¹ã¦
+æããã«éç¾å®çã§ãªãããæ¤è¨¼ããæ ¹æ ãµããªã¼ãçæããã
 """
 
 import os
@@ -13,11 +13,11 @@ import xlrd
 
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────
-# Damodaran キャッシュのパス
-# このスクリプトは src/value/tanuki_valuation/ にあるため
-# リポジトリルートを基準にした絶対パスで参照する
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# Damodaran ã­ã£ãã·ã¥ã®ãã¹
+# ãã®ã¹ã¯ãªããã¯ src/value/tanuki_valuation/ ã«ãããã
+# ãªãã¸ããªã«ã¼ããåºæºã«ããçµ¶å¯¾ãã¹ã§åç§ãã
+# âââââââââââââââââââââââââââââââââââââââââââââ
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR)))
 _CACHE_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuation", "common", "damodaran_cache")
@@ -26,13 +26,13 @@ _INDNAME_PATH = os.path.join(_CACHE_DIR, "indname.xls")
 _META_PATH = os.path.join(_CACHE_DIR, "cache_meta.json")
 
 
-# ─────────────────────────────────────────────
-# TANUKI sector → Damodaran Industry Name マッピング
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# TANUKI sector â Damodaran Industry Name ãããã³ã°
 #
-# 【重要】Damodaran の分類は SIC コードベースのため
-# 実態と乖離する銘柄がある（例: MSFT→Trucking, ZS→Steel）。
-# ticker_overrides で個別上書きを優先する。
-# ─────────────────────────────────────────────
+# ãéè¦ãDamodaran ã®åé¡ã¯ SIC ã³ã¼ããã¼ã¹ã®ãã
+# å®æã¨ä¹é¢ããéæãããï¼ä¾: MSFTâTrucking, ZSâSteelï¼ã
+# ticker_overrides ã§åå¥ä¸æ¸ããåªåããã
+# âââââââââââââââââââââââââââââââââââââââââââââ
 SECTOR_TO_DAMODARAN = {
     "semiconductor":     "Semiconductor",
     "semiconductor_eq":  "Semiconductor Equip",
@@ -57,15 +57,14 @@ SECTOR_TO_DAMODARAN = {
     "retail_auto":       "Retail (Automotive)",
 }
 
-# 銘柄個別の Damodaran 分類上書き
-# indname.xls で実際に確認したマッピング（SICベース分類が実態と乖離する場合）
+# éæåå¥ã® Damodaran åé¡ä¸æ¸ã
+# indname.xls ã§å®éã«ç¢ºèªãããããã³ã°ï¼SICãã¼ã¹åé¡ãå®æã¨ä¹é¢ããå ´åï¼
 TICKER_INDUSTRY_OVERRIDES = {
-    # 正しく分類されている銘柄（確認済み）
+    # æ­£ããåé¡ããã¦ããéæï¼ç¢ºèªæ¸ã¿ï¼
     "NVDA":  "Semiconductor",
     "AAPL":  "Computers/Peripherals",
     "CRWD":  "Software (System & Application)",
     "DDOG":  "Software (System & Application)",
-    "PLTR":  "Software (System & Application)",
     "APP":   "Software (System & Application)",
     "MSTR":  "Software (System & Application)",
     "ADBE":  "Software (System & Application)",
@@ -100,27 +99,26 @@ TICKER_INDUSTRY_OVERRIDES = {
     "LYFT":  "Transportation",
     "GOOGL": "Software (Entertainment)",
     "META":  "Software (Entertainment)",
-    # SICベース分類が実態と乖離 → 実態に近い業種に上書き
-    "MSFT":  "Software (System & Application)",   # SIC→Trucking を上書き
-    "AMZN":  "Software (System & Application)",   # SIC→Retail(General)、クラウド主軸
-    "NET":   "Software (System & Application)",   # SIC→Telecom を上書き
-    "ZS":    "Software (System & Application)",   # SIC→Steel を上書き
-    "SNOW":  "Software (System & Application)",   # SIC→Transportation を上書き
-    "ANET":  "Telecom. Equipment",                # SIC→Telecom.Services を上書き
-    "ARM":   "Semiconductor",                     # SIC→Transportation を上書き
-    "CELH":  "Beverage (Soft)",                   # SIC→Steel を上書き
-    "LUNR":  "Aerospace/Defense",                 # SIC→Metals&Mining を上書き
-    "S":     "Software (System & Application)",   # SIC→Utility(Water) を上書き
-    "DIS":   "Entertainment",                     # SIC→Real Estate を上書き
+    # SICãã¼ã¹åé¡ãå®æã¨ä¹é¢ â å®æã«è¿ãæ¥­ç¨®ã«ä¸æ¸ã
+    "MSFT":  "Software (System & Application)",   # SICâTrucking ãä¸æ¸ã
+    "NET":   "Software (System & Application)",   # SICâTelecom ãä¸æ¸ã
+    "ZS":    "Software (System & Application)",   # SICâSteel ãä¸æ¸ã
+    "SNOW":  "Software (System & Application)",   # SICâTransportation ãä¸æ¸ã
+    "ANET":  "Telecom. Equipment",                # SICâTelecom.Services ãä¸æ¸ã
+    "ARM":   "Semiconductor",                     # SICâTransportation ãä¸æ¸ã
+    "CELH":  "Beverage (Soft)",                   # SICâSteel ãä¸æ¸ã
+    "LUNR":  "Aerospace/Defense",                 # SICâMetals&Mining ãä¸æ¸ã
+    "S":     "Software (System & Application)",   # SICâUtility(Water) ãä¸æ¸ã
+    "DIS":   "Entertainment",                     # SICâReal Estate ãä¸æ¸ã
     "CEG":   "Power",                             # Constellation Energy
     "CIX":   "Machinery",                         # CompX International
     "LMT":   "Aerospace/Defense",                 # Lockheed Martin
 }
 
 
-# ─────────────────────────────────────────────
-# Damodaran データ読み込み（起動時1回だけ実行）
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# Damodaran ãã¼ã¿èª­ã¿è¾¼ã¿ï¼èµ·åæ1åã ãå®è¡ï¼
+# âââââââââââââââââââââââââââââââââââââââââââââ
 _damodaran_data: dict = {}   # {industry_name: {roc, rr, g_ebit}}
 _damodaran_loaded = False
 
@@ -138,7 +136,7 @@ def _load_damodaran():
     try:
         wb = xlrd.open_workbook(_FUNDGR_PATH)
         sh = wb.sheet_by_name("Industry Averages")
-        # row7 がヘッダー: Industry Name / Number of Firms / ROC / Reinvestment Rate / Expected Growth in EBIT
+        # row7 ããããã¼: Industry Name / Number of Firms / ROC / Reinvestment Rate / Expected Growth in EBIT
         for i in range(8, sh.nrows):
             row = sh.row_values(i)
             name = str(row[0]).strip()
@@ -151,7 +149,7 @@ def _load_damodaran():
 
         logger.info(f"Damodaran data loaded: {len(_damodaran_data)} industries")
 
-        # キャッシュ年を確認して古ければ警告
+        # ã­ã£ãã·ã¥å¹´ãç¢ºèªãã¦å¤ããã°è­¦å
         if os.path.exists(_META_PATH):
             with open(_META_PATH, encoding="utf-8") as f:
                 meta = json.load(f)
@@ -171,14 +169,14 @@ def _load_damodaran():
 
 def get_industry_benchmark(ticker: str, sector: str | None) -> dict | None:
     """
-    ticker と sector から Damodaran の業種ベンチマークを返す。
-    戻り値: {"industry": str, "g_ebit": float, "roc": float, "rr": float} or None
+    ticker ã¨ sector ãã Damodaran ã®æ¥­ç¨®ãã³ããã¼ã¯ãè¿ãã
+    æ»ãå¤: {"industry": str, "g_ebit": float, "roc": float, "rr": float} or None
     """
     _load_damodaran()
     if not _damodaran_data:
         return None
 
-    # 優先順位: ticker個別上書き > sector マッピング
+    # åªåé ä½: tickeråå¥ä¸æ¸ã > sector ãããã³ã°
     industry_name = TICKER_INDUSTRY_OVERRIDES.get(ticker)
     if industry_name is None and sector:
         industry_name = SECTOR_TO_DAMODARAN.get(sector)
@@ -197,13 +195,13 @@ def get_industry_benchmark(ticker: str, sector: str | None) -> dict | None:
     }
 
 
-# ─────────────────────────────────────────────
-# Revenue CAGR 計算
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# Revenue CAGR è¨ç®
+# âââââââââââââââââââââââââââââââââââââââââââââ
 def calc_revenue_cagr(annual_revenues: list[float]) -> dict:
     """
-    annual_revenues: 古い順のリスト [rev_oldest, ..., rev_latest]
-    戻り値: {"cagr_3yr": float|None, "cagr_5yr": float|None}
+    annual_revenues: å¤ãé ã®ãªã¹ã [rev_oldest, ..., rev_latest]
+    æ»ãå¤: {"cagr_3yr": float|None, "cagr_5yr": float|None}
     """
     result = {"cagr_3yr": None, "cagr_5yr": None}
     if not annual_revenues or len(annual_revenues) < 2:
@@ -226,9 +224,9 @@ def calc_revenue_cagr(annual_revenues: list[float]) -> dict:
     return result
 
 
-# ─────────────────────────────────────────────
-# ファンダメンタル成長率（RR × ROIC）
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# ãã¡ã³ãã¡ã³ã¿ã«æé·çï¼RR Ã ROICï¼
+# âââââââââââââââââââââââââââââââââââââââââââââ
 def calc_fundamental_growth(
     operating_income: float,
     tax_rate: float,
@@ -240,8 +238,8 @@ def calc_fundamental_growth(
     delta_working_capital: float,
 ) -> float | None:
     """
-    g = Reinvestment Rate × ROIC
-    計算不能（負のROIC等）の場合は None を返す。
+    g = Reinvestment Rate Ã ROIC
+    è¨ç®ä¸è½ï¼è² ã®ROICç­ï¼ã®å ´åã¯ None ãè¿ãã
     """
     try:
         nopat = operating_income * (1 - tax_rate)
@@ -258,7 +256,7 @@ def calc_fundamental_growth(
         reinvestment_rate = reinvestment / nopat
 
         g = reinvestment_rate * roic
-        # 異常値を除外（-100%〜+200%の範囲外）
+        # ç°å¸¸å¤ãé¤å¤ï¼-100%ã+200%ã®ç¯å²å¤ï¼
         if not (-1.0 <= g <= 2.0):
             return None
         return g
@@ -266,9 +264,9 @@ def calc_fundamental_growth(
         return None
 
 
-# ─────────────────────────────────────────────
-# メイン判定関数
-# ─────────────────────────────────────────────
+# âââââââââââââââââââââââââââââââââââââââââââââ
+# ã¡ã¤ã³å¤å®é¢æ°
+# âââââââââââââââââââââââââââââââââââââââââââââ
 def check_growth_sanity(
     ticker: str,
     phase1_growth: float,
@@ -277,9 +275,9 @@ def check_growth_sanity(
     g_fundamental: float | None = None,
 ) -> dict:
     """
-    成長率サニティチェックを実行し、結果 dict を返す。
+    æé·çãµããã£ãã§ãã¯ãå®è¡ããçµæ dict ãè¿ãã
 
-    戻り値例:
+    æ»ãå¤ä¾:
     {
         "verdict": "PLAUSIBLE",          # PLAUSIBLE / REVIEW / AGGRESSIVE
         "phase1_growth": 0.20,
@@ -296,54 +294,54 @@ def check_growth_sanity(
     signals = []
     warnings = []
 
-    # --- Damodaran ベンチマーク取得 ---
+    # --- Damodaran ãã³ããã¼ã¯åå¾ ---
     benchmark = get_industry_benchmark(ticker, sector)
     industry_g = benchmark["g_ebit"] if benchmark else None
 
-    # --- Revenue CAGR 計算 ---
+    # --- Revenue CAGR è¨ç® ---
     cagr = calc_revenue_cagr(annual_revenues or [])
 
-    # --- チェック1: 業界ベンチマーク比較 ---
+    # --- ãã§ãã¯1: æ¥­çãã³ããã¼ã¯æ¯è¼ ---
     if industry_g is not None and industry_g > 0:
         ratio = phase1_growth / industry_g
         ind_label = f"{benchmark['industry']}({industry_g:.1%})"
         if ratio <= 1.5:
-            signals.append(f"業界平均{ind_label}の{ratio:.1f}倍以内 ✅")
+            signals.append(f"æ¥­çå¹³å{ind_label}ã®{ratio:.1f}åä»¥å â")
         elif ratio <= 2.5:
-            signals.append(f"業界平均{ind_label}の{ratio:.1f}倍 ℹ️")
+            signals.append(f"æ¥­çå¹³å{ind_label}ã®{ratio:.1f}å â¹ï¸")
         else:
-            warnings.append(f"業界平均{ind_label}の{ratio:.1f}倍超 ⚠️")
+            warnings.append(f"æ¥­çå¹³å{ind_label}ã®{ratio:.1f}åè¶ â ï¸")
     elif industry_g is not None and industry_g <= 0:
-        # 業界平均がマイナスの場合（単純比較不可）
-        signals.append(f"業界平均({benchmark['industry']})はマイナス成長。個別銘柄の独自評価が必要 ℹ️")
+        # æ¥­çå¹³åããã¤ãã¹ã®å ´åï¼åç´æ¯è¼ä¸å¯ï¼
+        signals.append(f"æ¥­çå¹³å({benchmark['industry']})ã¯ãã¤ãã¹æé·ãåå¥éæã®ç¬èªè©ä¾¡ãå¿è¦ â¹ï¸")
 
-    # --- チェック2: 過去実績 CAGR 比較 ---
+    # --- ãã§ãã¯2: éå»å®ç¸¾ CAGR æ¯è¼ ---
     historical_cagrs = [v for v in [cagr.get("cagr_3yr"), cagr.get("cagr_5yr")] if v and v > 0]
     if historical_cagrs:
         best = max(historical_cagrs)
         ratio_hist = phase1_growth / best
         label_3yr = f"{cagr['cagr_3yr']:.1%}" if cagr.get("cagr_3yr") else "N/A"
         label_5yr = f"{cagr['cagr_5yr']:.1%}" if cagr.get("cagr_5yr") else "N/A"
-        hist_label = f"過去実績(3yr:{label_3yr} / 5yr:{label_5yr})"
+        hist_label = f"éå»å®ç¸¾(3yr:{label_3yr} / 5yr:{label_5yr})"
         if ratio_hist <= 1.3:
-            signals.append(f"{hist_label}と整合 ✅")
+            signals.append(f"{hist_label}ã¨æ´å â")
         elif ratio_hist <= 2.0:
-            signals.append(f"{hist_label}より高め（減速想定あり） ℹ️")
+            signals.append(f"{hist_label}ããé«ãï¼æ¸éæ³å®ããï¼ â¹ï¸")
         else:
-            warnings.append(f"{hist_label}の{ratio_hist:.1f}倍超 ⚠️")
+            warnings.append(f"{hist_label}ã®{ratio_hist:.1f}åè¶ â ï¸")
 
-    # --- チェック3: ファンダメンタル成長率（RR×ROIC）上限 ---
+    # --- ãã§ãã¯3: ãã¡ã³ãã¡ã³ã¿ã«æé·çï¼RRÃROICï¼ä¸é ---
     if g_fundamental is not None and g_fundamental > 0:
         if phase1_growth <= g_fundamental * 1.2:
-            signals.append(f"RR×ROIC上限({g_fundamental:.1%})以内 ✅")
+            signals.append(f"RRÃROICä¸é({g_fundamental:.1%})ä»¥å â")
         else:
-            signals.append(f"RR×ROIC上限({g_fundamental:.1%})超（期待値先行型） ℹ️")
+            signals.append(f"RRÃROICä¸é({g_fundamental:.1%})è¶ï¼æå¾å¤åè¡åï¼ â¹ï¸")
 
-    # --- データ不足の場合 ---
+    # --- ãã¼ã¿ä¸è¶³ã®å ´å ---
     if not signals and not warnings:
-        signals.append("ベンチマークデータ不足のため自動検証スキップ ℹ️")
+        signals.append("ãã³ããã¼ã¯ãã¼ã¿ä¸è¶³ã®ããèªåæ¤è¨¼ã¹ã­ãã â¹ï¸")
 
-    # --- 総合判定 ---
+    # --- ç·åå¤å® ---
     if len(warnings) == 0:
         verdict = "PLAUSIBLE"
     elif len(warnings) == 1:
@@ -351,7 +349,7 @@ def check_growth_sanity(
     else:
         verdict = "AGGRESSIVE"
 
-    # Damodaran キャッシュ年を取得
+    # Damodaran ã­ã£ãã·ã¥å¹´ãåå¾
     damodaran_year = None
     if os.path.exists(_META_PATH):
         try:
