@@ -37,6 +37,17 @@ for _mod_name in ("data_fetcher", "core_calculator", "validator", "growth_sanity
 import pipeline  # noqa: E402
 from pipeline import TanukiValuationPipeline  # noqa: E402
 
+# ─────────────────────────────────────────────
+# hypecore の detect_substage をインポート
+# pandas は venv に存在する前提
+# ─────────────────────────────────────────────
+_HYPECORE_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "src", "value", "hypecore")
+)
+sys.path.insert(0, _HYPECORE_DIR)
+import pandas as pd
+from hypecore import detect_substage  # noqa: E402
+
 
 # ─────────────────────────────────────────────
 # テスト共通ヘルパー
@@ -408,3 +419,56 @@ class TestGrowthSanity:
         assert result["verdict"] == "PLAUSIBLE"
         assert not any("⚠️" in w for w in result["warnings"]), \
             f"warnings に予期しない ⚠️: {result['warnings']}"
+
+
+# ─────────────────────────────────────────────
+# 7. hypecore substage_watch の eps_surprise 分岐
+#    detect_substage() が eps_surprise の実際の値に応じて
+#    「大幅ミス」か「軽微なミス」かを正しく出力することを検証
+#
+#    Stage4 中盤A ブランチ到達条件:
+#      stage=4, stage_months>2, real_strong=False（rev_yoy<=15 かつ eps_surp<=0）,
+#      eps_surp is not None, rev_yoy > 5
+# ─────────────────────────────────────────────
+
+def _make_stage4_row(rev_yoy: float, eps_surprise: float) -> pd.Series:
+    """Stage4 中盤A ブランチに到達するための最小限の pd.Series を生成する。
+    real_strong=False になるよう rev_yoy を 15% 以下に設定する。
+    """
+    return pd.Series({
+        "ma200_dev":    -15.0,   # MA200 を下回っている（Stage4 らしい状態）
+        "from_peak":    -20.0,   # 高値から -20%
+        "rsi":           35.0,   # RSI 低下
+        "price_mom3m":  -10.0,
+        "ma200_mom":     -3.0,
+        "rev_yoy":      rev_yoy,
+        "eps_surprise": eps_surprise,
+        "price_iv_ratio": None,
+        "forward_pe":     None,
+    })
+
+
+class TestHypecoreSubstageWatch:
+    def test_minor_eps_miss_does_not_say_large_miss(self):
+        """eps_surprise=-0.46%（軽微なミス）→ substage_watch に「大幅ミス」を含まない"""
+        row = _make_stage4_row(rev_yoy=10.0, eps_surprise=-0.46)
+        result = detect_substage(row, stage=4, stage_months=3)
+
+        assert result["label"] == "実体軟化・期待崩壊中"
+        assert "大幅ミス" not in result["watch"], \
+            f"軽微なミスなのに「大幅ミス」が含まれている: {result['watch']}"
+        # 実際の eps_surprise 値がテキストに反映されているか
+        assert "-0.46" in result["watch"] or "わずかに" in result["watch"], \
+            f"予想比の値が watch に含まれていない: {result['watch']}"
+
+    def test_large_eps_miss_says_large_miss(self):
+        """eps_surprise=-10%（大幅ミス）→ substage_watch に「大幅ミス」を含む"""
+        row = _make_stage4_row(rev_yoy=10.0, eps_surprise=-10.0)
+        result = detect_substage(row, stage=4, stage_months=3)
+
+        assert result["label"] == "実体軟化・期待崩壊中"
+        assert "大幅ミス" in result["watch"], \
+            f"大幅ミスなのに「大幅ミス」が含まれていない: {result['watch']}"
+        # 実際の eps_surprise 値（-10.0）がテキストに反映されているか
+        assert "-10.0" in result["watch"], \
+            f"予想比の値が watch に含まれていない: {result['watch']}"

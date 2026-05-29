@@ -719,8 +719,15 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
         # 中盤A: rev_yoyの水準でラベルを変える
         # rev_yoyがプラスなら「実体崩壊」とは言えず「軟化」が適切
         if rev_yoy is not None and rev_yoy > 5:
+            # eps_surprise の実際の値に応じてテキストを分岐（固定「大幅ミス」を回避）
+            if eps_surp is not None and eps_surp < -5:
+                eps_text = f"EPSが予想比{eps_surp:+.1f}%の大幅ミスで期待の修正が続いている。"
+            elif eps_surp is not None and eps_surp < 0:
+                eps_text = f"EPSが予想比{eps_surp:+.1f}%とわずかにミスしている。"
+            else:
+                eps_text = "EPSは予想並みまたは超過。株価調整はバリュエーション面の見直し。"
             return dict(phase="中盤A", label="実体軟化・期待崩壊中",
-                watch=f"売上成長{rev_yoy:+.1f}%はあるが、EPSが大幅ミスで期待の修正が続いている。",
+                watch=f"売上成長{rev_yoy:+.1f}%はあるが、{eps_text}",
                 next="次の決算でEPS改善が確認されれば「実体維持」に格上げ。悪化なら本格的な崩壊へ。")
         return dict(phase="中盤A", label="実体も崩壊中",
             watch="売上・EPSの悪化も確認される本格的な下落局面。",
