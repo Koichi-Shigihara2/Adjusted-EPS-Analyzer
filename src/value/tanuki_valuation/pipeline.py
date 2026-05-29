@@ -810,7 +810,7 @@ class TanukiValuationPipeline:
         L.append("")
         L.append("")
         L.append(f"[{n+1}. EPS ANALYZER]")
-        L.append(f"Latest_Adjusted_EPS: ${adj_eps:.4f}" if isinstance(adj_eps, (int, float)) else "Latest_Adjusted_EPS: N/A")
+        L.append(f"Latest_Adjusted_EPS: ${adj_eps:.4f} (直近四半期値)" if isinstance(adj_eps, (int, float)) else "Latest_Adjusted_EPS: N/A")
         L.append(f"Latest_GAAP_EPS: ${gaap_eps_val:.4f}" if isinstance(gaap_eps_val, (int, float)) else "Latest_GAAP_EPS: N/A")
         L.append(f"Adjustment_Delta: ${eps_diff:.4f} ({adj_items_str})" if isinstance(eps_diff, (int, float)) else "Adjustment_Delta: N/A")
         L.append(f"YoY_Growth: {yoy_pct}%")
@@ -835,13 +835,29 @@ class TanukiValuationPipeline:
         # PER comparison
         per_gaap = comps.get("per")
         per_adj = comps.get("per_adjusted")
+        # annual_eps を annual.json から取得（Adjusted_EPS_PER の注記用）
+        annual_eps_for_note = None
+        try:
+            _annual_path = os.path.join(
+                self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data",
+                ticker, "annual.json"
+            )
+            if os.path.exists(_annual_path):
+                with open(_annual_path, encoding="utf-8") as _f:
+                    _annual = json.load(_f)
+                _years = _annual.get("years", [])
+                if _years:
+                    annual_eps_for_note = _years[0].get("adjusted_eps")
+        except Exception:
+            pass
         L.append("PER_Comparison:")
         if per_gaap is not None:
             L.append(f"  Market_PER_GAAP: {per_gaap:.1f}x")
         else:
             L.append("  Market_PER_GAAP: N/A")
         if per_adj is not None:
-            L.append(f"  Adjusted_EPS_PER: {per_adj:.1f}x")
+            note = f" (年次EPSベース: ${annual_eps_for_note:.4f})" if isinstance(annual_eps_for_note, (int, float)) else ""
+            L.append(f"  Adjusted_EPS_PER: {per_adj:.1f}x{note}")
             if per_gaap is not None:
                 delta = per_adj - per_gaap
                 sign = "cheaper on adjusted basis" if delta < 0 else "more expensive on adjusted basis"
