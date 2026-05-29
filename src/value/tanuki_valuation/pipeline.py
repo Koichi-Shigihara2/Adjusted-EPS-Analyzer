@@ -248,6 +248,8 @@ class TanukiValuationPipeline:
                 with open(stonks_path, encoding="utf-8") as f:
                     _stonks_ticker = json.load(f).get("tickers", {}).get(ticker, {})
                 _runway_raw = _stonks_ticker.get("runway", {}).get("runway_months")
+                if _runway_raw is None:
+                    _runway_raw = valuation.get("computed_runway_months")
                 if isinstance(_runway_raw, (int, float)) and _runway_raw < 12:
                     funda = max(0, funda - 30)
             except Exception:
@@ -610,6 +612,8 @@ class TanukiValuationPipeline:
         short_target = "yes" if stonks_data else "no"
 
         runway_raw = stonks_data.get("runway", {}).get("runway_months") if stonks_data else None
+        if runway_raw is None and extra:
+            runway_raw = extra.get("computed_runway_months")
         if isinstance(runway_raw, (int, float)):
             runway_m = f"{runway_raw:.1f}"
         elif runway_raw is not None:
@@ -1010,7 +1014,7 @@ class TanukiValuationPipeline:
         L.append(f"Short_Interest: {short_int}%")
         L.append("Institutional_Ownership: N/A (not in data source)")
         L.append(f"Analyst_Consensus: {rec_label}")
-        L.append(f"Runway_Months: {runway_m}" if stonks_data and runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
+        L.append(f"Runway_Months: {runway_m}" if runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append(f"Next_Earnings_Date: {next_earnings}")
         breakeven_est = extra.get("breakeven_estimate")
@@ -1091,6 +1095,19 @@ class TanukiValuationPipeline:
                 "net_debt": total_debt - cash,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
             }
+            # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
+            # 条件: 直近四半期EPS<0, 直近年FCF<0, またはcash<$100M のいずれか
+            _latest_fcf = fcf_history[-1]["fcf"] if fcf_history else None
+            _latest_q_eps = self._load_eps_map().get(ticker, {}).get("gaap_eps")
+            _needs_runway = (
+                (_latest_q_eps is not None and _latest_q_eps < 0)
+                or (_latest_fcf is not None and _latest_fcf < 0)
+                or cash < 100_000_000
+            )
+            if _needs_runway and _latest_fcf is not None and _latest_fcf < 0:
+                _monthly_burn = abs(_latest_fcf) / 12
+                if _monthly_burn > 0:
+                    result["computed_runway_months"] = cash / _monthly_burn
 
         # 希薄化率: 株式分割調整済みのnormalized JSONのSharesDiluted年次データを使用
         norm_path = os.path.join(
