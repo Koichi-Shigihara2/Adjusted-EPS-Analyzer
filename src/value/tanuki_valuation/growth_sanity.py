@@ -174,6 +174,7 @@ TICKER_INDUSTRY_OVERRIDES = {
     "S":     "Software (System & Application)",   # SIC→Utility(Water) を上書き
     "DIS":   "Entertainment",                     # SIC→Real Estate を上書き
     "CIX":   "Electrical Equipment",              # SIC→Machinery を上書き
+    "AAPL":  "Computers/Peripherals",             # SIC→Software_Internet デフォルトを上書き。indname.xls実態分類
 }
 
 
