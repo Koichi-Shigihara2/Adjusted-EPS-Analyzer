@@ -307,6 +307,7 @@ class TanukiDataFetcher:
         ps = None
         ev_ebitda = None
         ma200 = None
+        forward_eps = None
         
         if HAS_YFINANCE:
             try:
@@ -373,6 +374,12 @@ class TanukiDataFetcher:
                 if ma200 is not None and ma200 > 0:
                     print(f"   [{ticker}] yfinance 200MA: ${ma200:.2f}")
 
+                # Forward EPS（アナリスト予想EPS）
+                forward_eps_raw = info.get("forwardEps")
+                if forward_eps_raw is not None and isinstance(forward_eps_raw, (int, float)):
+                    forward_eps = float(forward_eps_raw)
+                    print(f"   [{ticker}] yfinance forwardEps: ${forward_eps:.4f}")
+
             except Exception as e:
                 print(f"   [{ticker}] yfinance取得エラー: {e}")
                 per = None
@@ -380,6 +387,7 @@ class TanukiDataFetcher:
                 ps = None
                 ev_ebitda = None
                 ma200 = None
+                forward_eps = None
         
         # ========================================
         # 3. β決定（beta_config.json > yfinance > セクターデフォルト）
@@ -446,6 +454,7 @@ class TanukiDataFetcher:
             "ps": ps,
             "ev_ebitda": ev_ebitda,
             "ma200": ma200,
+            "forward_eps": forward_eps,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,
             "_beta_source": beta_source,

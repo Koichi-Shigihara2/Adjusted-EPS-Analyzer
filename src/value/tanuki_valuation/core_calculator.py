@@ -733,6 +733,7 @@ class KoichiValuationCalculator:
                 "ps": financials.get("ps"),
                 "ev_ebitda": financials.get("ev_ebitda"),
                 "ma200": financials.get("ma200"),
+                "forward_eps": financials.get("forward_eps"),
             }
         }
 

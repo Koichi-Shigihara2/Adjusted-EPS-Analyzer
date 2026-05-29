@@ -893,10 +893,14 @@ class TanukiValuationPipeline:
                 L.append(f"  Delta: {delta:+.1f}x ({sign})")
         else:
             L.append("  Adjusted_EPS_PER: N/A")
+        forward_eps = comps.get("forward_eps")
         L.append("Forward_Estimates:")
         L.append(f"  Next_Earnings_Date: {next_earnings}")
         L.append("  Next_Quarter_EPS: N/A (no analyst estimates in data)")
-        L.append("  Next_FY_EPS: N/A (no analyst estimates in data)")
+        if forward_eps is not None:
+            L.append(f"  Next_FY_EPS: ${forward_eps:.2f} (yfinance forward EPS)")
+        else:
+            L.append("  Next_FY_EPS: N/A (no analyst estimates in data)")
         L.append("Definition:")
         L.append("")
         L.append("Market_PER_GAAP: Price / GAAP EPS (market-provided)")
