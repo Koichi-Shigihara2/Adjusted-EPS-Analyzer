@@ -15,7 +15,7 @@
     "3年後": 3.58
   },
   "upside_percent": -66.8,
-  "calculation_date": "2026-05-30T08:07:54+09:00",
+  "calculation_date": "2026-05-30T08:44:33+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -327,8 +327,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "株数計算不整合と成長率矛盾が致命的",
-    "ai_concerns": "ROE×retention=0 vs 29% growth mismatch; share calc error"
+    "ai_comment": "per-share mismatch + growth/ROE inconsistency",
+    "ai_concerns": "ROE=0% contradicts 29% growth & 60% retention"
   },
   "tanuki_score": "PASS",
   "funda_score": 15,
@@ -387,6 +387,8 @@
       "estimated_revenue": 38301600.0
     }
   ],
+  "segment_configured": true,
+  "segment_ttm_applied": false,
   "growth_sanity": {
     "verdict": "REVIEW",
     "phase1_growth": 0.29,

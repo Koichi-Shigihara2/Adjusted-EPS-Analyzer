@@ -26,6 +26,7 @@ from data_fetcher import TanukiDataFetcher
 from core_calculator import KoichiValuationCalculator
 from validator import validate_calculation
 from growth_sanity import check_growth_sanity, calc_fundamental_growth
+import segment_config as _seg_cfg
 
 
 class TanukiValuationPipeline:
@@ -89,8 +90,9 @@ class TanukiValuationPipeline:
                     error_count += 1
                     continue
 
+                self._inject_ttm_for_general_segment(ticker)
                 valuation = self.calculator.calculate_pt(financials)
-                
+
                 if "error" in valuation:
                     print(f"❌ {ticker} 計算エラー: {valuation['error']}")
                     error_count += 1
@@ -413,6 +415,8 @@ class TanukiValuationPipeline:
         fin_health = extra.get("financial_health", {})
         segments = extra.get("segments", [])
         next_earnings = extra.get("next_earnings_date", "N/A")
+        _seg_ttm_applied = extra.get("segment_ttm_applied", False)
+        _seg_configured = extra.get("segment_configured", True)
 
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
@@ -800,12 +804,12 @@ class TanukiValuationPipeline:
                 pct = w * 100
                 L.append(f"  {name}: ${rev_est/1e9:.1f}B ({pct:.0f}%, YoY {g*100:.0f}%)")
             seg_wg = sum(s.get("weight", 0) * s.get("growth", 0) for s in segments) / max(total_w, 1e-9)
-            L.append(f"  Segment_Weighted_Growth: {seg_wg*100:.1f}%")
+            if not _seg_configured:
+                _seg_suffix = " (TTM実績値を自動適用)" if _seg_ttm_applied else " (デフォルト値)"
+            else:
+                _seg_suffix = ""
+            L.append(f"  Segment_Weighted_Growth: {seg_wg*100:.1f}%{_seg_suffix}")
             L.append("  (= basis for TANUKI forward growth rate G)")
-            if len(segments) == 1 and segments[0].get("name") == "General":
-                _rev_warn = f"{_ttm_rev:.1f}%" if _ttm_rev is not None else "N/A"
-                L.append("  Warning: セグメント未設定。デフォルト成長率15%を使用。")
-                L.append(f"  TTM実績({_rev_warn})との乖離に注意。")
         else:
             L.append("  N/A (segment data not configured)")
         L.append("Definition:")
@@ -1261,10 +1265,16 @@ class TanukiValuationPipeline:
                     seg_conf = json.load(f).get(ticker, {})
                 segs = seg_conf.get("segments", {})
                 if segs and latest_revenue:
+                    is_general_fallback = (len(segs) == 1 and "General" in segs)
                     seg_list = []
                     for name, info in segs.items():
                         w = info.get("weight", 0)
                         g = info.get("growth", 0)
+                        # General fallback: TTMオーバーライドが注入されていれば表示用growthも合わせる
+                        if is_general_fallback and name == "General":
+                            ttm_override = _seg_cfg._GROWTH_OVERRIDES.get(ticker)
+                            if ttm_override is not None:
+                                g = ttm_override
                         est_rev = latest_revenue * w
                         seg_list.append({
                             "name": name,
@@ -1273,6 +1283,12 @@ class TanukiValuationPipeline:
                             "estimated_revenue": est_rev,
                         })
                     result["segments"] = seg_list
+                    if is_general_fallback:
+                        result["segment_configured"] = False
+                        result["segment_ttm_applied"] = ticker in _seg_cfg._GROWTH_OVERRIDES
+                    else:
+                        result["segment_configured"] = True
+                        result["segment_ttm_applied"] = False
             except Exception:
                 pass
 
@@ -1328,6 +1344,52 @@ class TanukiValuationPipeline:
             )
         except Exception:
             return None
+
+    def _inject_ttm_for_general_segment(self, ticker: str) -> None:
+        """General 1セグメント銘柄に TTM Revenue Growth を注入し、DCF成長率を実績ベースに変更する"""
+        _seg_cfg._ensure_loaded()
+        config = _seg_cfg._SEGMENT_CONFIG.get(ticker, {})
+        segs = config.get("segments", {})
+        if not (len(segs) == 1 and "General" in segs):
+            return  # 個別セグメント設定あり → 介入しない
+
+        ttm_g = None
+        # 1st: poc.json から rev_yoy を取得
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        if os.path.exists(poc_path):
+            try:
+                with open(poc_path, encoding="utf-8") as f:
+                    monthly = json.load(f).get("monthly") or []
+                if monthly:
+                    ttm_g = monthly[-1].get("rev_yoy")
+            except Exception:
+                pass
+        # 2nd: stonks-silo から rev_growth を取得
+        if ttm_g is None:
+            stonks_path = os.path.join(
+                self.repo_root, "docs", "value-monitor", "stonks-silo", "data", "results.json"
+            )
+            if os.path.exists(stonks_path):
+                try:
+                    with open(stonks_path, encoding="utf-8") as f:
+                        s_data = json.load(f).get("tickers", {}).get(ticker, {})
+                    rv = s_data.get("deficit_quality", {}).get("rev_growth")
+                    if isinstance(rv, (int, float)):
+                        ttm_g = rv
+                except Exception:
+                    pass
+
+        if ttm_g is not None:
+            import math as _math
+            # TTM > 100% またはinfは早期ステージ銘柄の外れ値 → フォールバック
+            if _math.isfinite(ttm_g) and -50 <= ttm_g <= 100:
+                _seg_cfg.set_growth_override(ticker, ttm_g / 100)
+            else:
+                _seg_cfg.clear_growth_override(ticker)
+        else:
+            _seg_cfg.clear_growth_override(ticker)
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""

@@ -1,16 +1,16 @@
 CWAN INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T08:09:08+09:00
+Generated: 2026-05-30T08:46:35+09:00
 Price: $24.34
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: BUY
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -56.6%
+  Deviation_Rate: +271.8%
   MA200_Deviation: +11.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 3.00 (Hold)
-Comment: 割高(-57%超)、FCF黒字、売上成長加速
+Comment: 割安圏(272%)で買い余地大、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,10 +28,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 1.207
-Deviation_Rate: -56.6%
+Quadrant: 右上
+Label: 割安×高効率
+Key_Metric_Y: RICE = 5.987
+Deviation_Rate: +271.8%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,14 +56,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $24.34
-Intrinsic_Value_BASE: $10.57
-Deviation_BASE: -56.6%
+Intrinsic_Value_BASE: $90.50
+Deviation_BASE: +271.8%
 Scenarios:
-BEAR: Growth=10.5%, IV=$8.42, Deviation=-65.4%
-BASE: Growth=15.0%, IV=$10.57, Deviation=-56.6%
-BULL: Growth=18.0%, IV=$12.20, Deviation=-49.9%
+BEAR: Growth=52.1%, IV=$45.67, Deviation=+87.6%
+BASE: Growth=74.4%, IV=$90.50, Deviation=+271.8%
+BULL: Growth=89.3%, IV=$135.83, Deviation=+458.1%
 TTM_Revenue_Growth: 61.9%
-(DCF Base vs TTM actual: -46.9pt discount)
+(DCF Base vs TTM actual: +12.5pt premium)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -83,11 +83,9 @@ FCF_History:
   2025: $0.16B (FCF_Margin: 22.5%)
   FCF_CAGR_3yr: +48.4%
 Segment_Breakdown:
-  General: $0.7B (100%, YoY 15%)
-  Segment_Weighted_Growth: 15.0%
+  General: $0.7B (100%, YoY 74%)
+  Segment_Weighted_Growth: 74.4% (TTM実績値を自動適用)
   (= basis for TANUKI forward growth rate G)
-  Warning: セグメント未設定。デフォルト成長率15%を使用。
-  TTM実績(61.9%)との乖離に注意。
 Definition:
 
 Intrinsic Value: Calculated via FCF-based DCF model
@@ -114,22 +112,22 @@ Next_Earnings_Date: Next quarterly earnings release
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
-判定         : PLAUSIBLE
+Phase1成長率 : 74.4%
+判定         : AGGRESSIVE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
-  - 業界平均Software (System & Application)(21.6%)の0.7倍以内 ✅
-  - 過去実績(3yr:34.1% / 5yr:N/A)と整合 ✅
+  - 業界平均Software (System & Application)(21.6%)の3.4倍超 ⚠️
+  - 過去実績(3yr:34.1% / 5yr:N/A)の2.2倍超 ⚠️
 
 
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.845
-BASE: RICE=1.207
-BULL: RICE=1.449
+BEAR: RICE=4.193
+BASE: RICE=5.987
+BULL: RICE=7.187
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 74.4%  [TANUKI forward growth rate]
 Q  = 0.9804   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.8208  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%

@@ -15,7 +15,7 @@
     "3年後": 7.65
   },
   "upside_percent": -95.6,
-  "calculation_date": "2026-05-30T08:07:41+09:00",
+  "calculation_date": "2026-05-30T08:43:59+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -290,8 +290,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_tと1株価値の整合性欠如が致命的",
-    "ai_concerns": "Negative V0/P_t vs positive $5.03 per share mismatch"
+    "ai_comment": "P_t/shares計算とα適用に重大不整合",
+    "ai_concerns": "Negative V0 vs positive $5.03/share; FCF<0 with 15% growth"
   },
   "tanuki_score": "TRIM",
   "funda_score": 75,
@@ -339,6 +339,8 @@
       "estimated_revenue": 70918000.0
     }
   ],
+  "segment_configured": false,
+  "segment_ttm_applied": false,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,

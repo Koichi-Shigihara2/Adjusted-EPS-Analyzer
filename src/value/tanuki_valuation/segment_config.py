@@ -72,6 +72,9 @@ def _load_json(filename: str) -> Dict[str, Any]:
 _SEGMENT_CONFIG: Dict[str, Any] = {}
 _GROWTH_OPTIONS_CONFIG: Dict[str, Any] = {}
 
+# General fallback銘柄へのTTM Revenue Growth注入（pipeline.pyから設定）
+_GROWTH_OVERRIDES: Dict[str, float] = {}
+
 def _ensure_loaded() -> None:
     """設定が未ロードなら読み込む（遅延初期化）"""
     global _SEGMENT_CONFIG, _GROWTH_OPTIONS_CONFIG
@@ -87,6 +90,16 @@ def reload_config() -> None:
     _SEGMENT_CONFIG = {}
     _GROWTH_OPTIONS_CONFIG = {}
     _ensure_loaded()
+
+
+def set_growth_override(ticker: str, growth_rate: float) -> None:
+    """General fallback銘柄にTTM Revenue Growthを注入する（pipeline.pyから呼ぶ）"""
+    _GROWTH_OVERRIDES[ticker] = growth_rate
+
+
+def clear_growth_override(ticker: str) -> None:
+    """TTMオーバーライドをクリアする"""
+    _GROWTH_OVERRIDES.pop(ticker, None)
 
 
 # ============================================================
@@ -108,6 +121,17 @@ def get_segment_growth(ticker: str) -> Optional[Dict[str, Any]]:
     segments = config.get("segments", {})
     if not segments:
         return None
+
+    # General 1セグメントかつTTMオーバーライドが設定されている場合
+    if len(segments) == 1 and "General" in segments and ticker in _GROWTH_OVERRIDES:
+        ttm_g = _GROWTH_OVERRIDES[ticker]
+        return {
+            "enabled": True,
+            "weighted_growth": ttm_g,
+            "fiscal_year": config.get("fiscal_year"),
+            "segments": segments,
+            "source": "segment_ttm",
+        }
 
     weighted_growth = sum(
         seg.get("weight", 0) * seg.get("growth", 0)

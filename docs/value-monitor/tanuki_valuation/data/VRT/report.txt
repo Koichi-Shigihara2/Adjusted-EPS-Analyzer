@@ -1,16 +1,16 @@
 VRT INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T08:12:52+09:00
+Generated: 2026-05-30T08:51:41+09:00
 Price: $315.71
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -64.4%
+  Deviation_Rate: -36.4%
   MA200_Deviation: +50.0%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.50 (Strong Buy)
-Comment: 割高(-64%超)、FCF黒字、売上成長加速
+Comment: 割高(-36%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 3.176
-Deviation_Rate: -64.4%
+Key_Metric_Y: RICE = 6.373
+Deviation_Rate: -36.4%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,14 +56,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $315.71
-Intrinsic_Value_BASE: $112.24
-Deviation_BASE: -64.4%
+Intrinsic_Value_BASE: $200.85
+Deviation_BASE: -36.4%
 Scenarios:
-BEAR: Growth=10.5%, IV=$93.18, Deviation=-70.5%
-BASE: Growth=15.0%, IV=$112.24, Deviation=-64.4%
-BULL: Growth=18.0%, IV=$126.61, Deviation=-59.9%
+BEAR: Growth=21.1%, IV=$142.97, Deviation=-54.7%
+BASE: Growth=30.1%, IV=$200.85, Deviation=-36.4%
+BULL: Growth=36.2%, IV=$249.04, Deviation=-21.1%
 TTM_Revenue_Growth: 30.1%
-(DCF Base vs TTM actual: -15.1pt discount)
+(DCF Base vs TTM actual: -0.0pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -82,11 +82,9 @@ FCF_History:
   2024: $1.15B (FCF_Margin: 14.4%)
   2025: $1.89B (FCF_Margin: 18.5%)
 Segment_Breakdown:
-  General: $10.2B (100%, YoY 15%)
-  Segment_Weighted_Growth: 15.0%
+  General: $10.2B (100%, YoY 30%)
+  Segment_Weighted_Growth: 30.1% (TTM実績値を自動適用)
   (= basis for TANUKI forward growth rate G)
-  Warning: セグメント未設定。デフォルト成長率15%を使用。
-  TTM実績(30.1%)との乖離に注意。
 Definition:
 
 Intrinsic Value: Calculated via FCF-based DCF model
@@ -113,22 +111,22 @@ Next_Earnings_Date: Next quarterly earnings release
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
-判定         : PLAUSIBLE
+Phase1成長率 : 30.1%
+判定         : REVIEW
 業界ベンチマーク: Electrical Equipment / 8.5% (Damodaran 2025)
 signals:
-  - 業界平均Electrical Equipment(8.5%)の1.8倍 ℹ️
-  - 過去実績(3yr:21.6% / 5yr:18.5%)と整合 ✅
+  - 過去実績(3yr:21.6% / 5yr:18.5%)より高め（減速想定あり） ℹ️
+  - 業界平均Electrical Equipment(8.5%)の3.5倍超 ⚠️
 
 
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=2.223
-BASE: RICE=3.176
-BULL: RICE=3.811
+BEAR: RICE=4.468
+BASE: RICE=6.373
+BULL: RICE=7.665
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 30.1%  [TANUKI forward growth rate]
 Q  = 2.0127   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 1.052  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%

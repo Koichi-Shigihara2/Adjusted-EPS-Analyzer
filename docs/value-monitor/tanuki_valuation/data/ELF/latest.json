@@ -1,25 +1,25 @@
 {
-  "intrinsic_value_pt": 4216643629.5203247,
-  "intrinsic_value_per_share": 79.53823491527575,
-  "intrinsic_value_beta": 73.44,
-  "upside_percent_beta": 31.1,
-  "intrinsic_value_rf": 436.82,
-  "upside_percent_rf": 680.0,
-  "v0": 2930534514.924202,
-  "v0_adjusted": 2930534514.924202,
+  "intrinsic_value_pt": 9689854641.56887,
+  "intrinsic_value_per_share": 180.43096521902334,
+  "intrinsic_value_beta": 165.52,
+  "upside_percent_beta": 195.6,
+  "intrinsic_value_rf": 1060.43,
+  "upside_percent_rf": 1793.6,
+  "v0": 6734373583.983992,
+  "v0_adjusted": 6734373583.983992,
   "alpha": 0.43886502890391244,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 91.47,
-    "2年後": 105.19,
-    "3年後": 120.97
+    "1年後": 248.57,
+    "2年後": 342.44,
+    "3年後": 471.76
   },
-  "upside_percent": 42.0,
-  "calculation_date": "2026-05-30T08:09:19+09:00",
+  "upside_percent": 222.2,
+  "calculation_date": "2026-05-30T08:46:49+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
-    "rate": 0.15,
+    "rate": 0.3776,
     "source": "segment_weighted",
     "phase1_years": 5
   },
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        77.63,
-        93.05,
-        110.23
+        128.89,
+        213.54,
+        348.77
       ],
       [
-        66.73,
-        79.54,
-        93.54
+        110.19,
+        180.43,
+        290.61
       ],
       [
-        58.56,
-        69.42,
-        81.07
+        96.18,
+        155.7,
+        247.37
       ]
     ],
     "wacc_values": [
@@ -63,28 +63,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.15,
+      "rate": 0.37765,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.15,
+      "weighted_growth": 0.37765,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.105,
-      "intrinsic_value_per_share": 66.81
+      "growth_rate": 0.264,
+      "intrinsic_value_per_share": 121.6
     },
     "base": {
-      "growth_rate": 0.15,
-      "intrinsic_value_per_share": 79.54
+      "growth_rate": 0.378,
+      "intrinsic_value_per_share": 180.43
     },
     "bull": {
-      "growth_rate": 0.18,
-      "intrinsic_value_per_share": 89.14
+      "growth_rate": 0.453,
+      "intrinsic_value_per_share": 231.52
     }
   },
   "growth_options": {
@@ -95,44 +95,44 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 2930534514.924202,
-    "pv_high_growth": 743950112.5761583,
-    "pv_terminal": 2186584402.348044,
+    "v0": 6734373583.983992,
+    "pv_high_growth": 1339621061.4738364,
+    "pv_terminal": 5394752522.510155,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 151851849.96084625,
+        "fcf": 181911913.9987477,
         "discount_factor": 1.1057000000000001,
-        "pv": 137335488.7951942
+        "pv": 164521944.46843418
       },
       {
         "year": 2,
-        "fcf": 174629627.45497316,
+        "fcf": 250610948.3203748,
         "discount_factor": 1.2225724900000003,
-        "pv": 142837851.23855773
+        "pv": 204986575.74110368
       },
       {
         "year": 3,
-        "fcf": 200824071.57321912,
+        "fcf": 345254172.95356435,
         "discount_factor": 1.3517984021930005,
-        "pv": 148560666.4776534
+        "pv": 255403595.97515735
       },
       {
         "year": 4,
-        "fcf": 230947682.309202,
+        "fcf": 475639411.3694779,
         "discount_factor": 1.4946834933048008,
-        "pv": 154512766.97956172
+        "pv": 318220823.0036859
       },
       {
         "year": 5,
-        "fcf": 265589834.65558225,
+        "fcf": 655264635.0731612,
         "discount_factor": 1.6526715385471185,
-        "pv": 160703339.08519122
+        "pv": 396488122.28545517
       }
     ],
-    "terminal_fcf": 273557529.69524974,
-    "terminal_value": 3613705808.3916736,
-    "v0_rm": 3182440624.0269737
+    "terminal_fcf": 674922574.1253561,
+    "terminal_value": 8915753951.457806,
+    "v0_rm": 7350390249.850692
   },
   "fcf_base": {
     "base_fcf": 119574500.0,
@@ -246,11 +246,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Household_Products)",
-    "high_growth_rate_used": 0.15,
+    "high_growth_rate_used": 0.37765,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 743950112.5761583,
-    "pv_terminal": 2186584402.348044,
+    "pv_high": 1339621061.4738364,
+    "pv_terminal": 5394752522.510155,
     "roe_used": 0.1044916735485506,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -274,11 +274,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $3.18B + RPO $0.00B + GO $0.00B) × (1+0.439) / 0.059B + BS $+2.50/株 = $79.54 (差異0.00%)"
+        "detail": "(V₀ $7.35B + RPO $0.00B + GO $0.00B) × (1+0.439) / 0.059B + BS $+2.50/株 = $180.43 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.74B + pv_terminal $2.19B = $2.93B (差異0.00%)"
+        "detail": "2段階: pv_high $1.34B + pv_terminal $5.39B = $6.73B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -290,12 +290,12 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t/株数整合性とα計算に重大不整合あり",
-    "ai_concerns": "1株価とP_tの不整合、α計算不一致"
+    "ai_comment": "P_tとαの整合性に重大な不一致あり",
+    "ai_concerns": "高成長37.8%とα乖離が設計外"
   },
   "tanuki_score": "BUY",
   "funda_score": 75,
-  "score_comment": "割安圏(42%)で買い余地大、FCF黒字、売上成長加速",
+  "score_comment": "割安圏(222%)で買い余地大、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
@@ -339,13 +339,15 @@
     {
       "name": "General",
       "weight": 1,
-      "growth": 0.15,
+      "growth": 0.37765,
       "estimated_revenue": 1313517000.0
     }
   ],
+  "segment_configured": false,
+  "segment_ttm_applied": true,
   "growth_sanity": {
     "verdict": "REVIEW",
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.3776,
     "industry_benchmark": 0.02670167423350216,
     "damodaran_industry": "Household Products",
     "damodaran_year": 2025,
@@ -356,7 +358,7 @@
       "過去実績(3yr:49.6% / 5yr:35.9%)と整合 ✅"
     ],
     "warnings": [
-      "業界平均Household Products(2.7%)の5.6倍超 ⚠️"
+      "業界平均Household Products(2.7%)の14.1倍超 ⚠️"
     ]
   }
 }
