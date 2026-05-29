@@ -253,6 +253,15 @@ class TanukiValuationPipeline:
             except Exception:
                 pass
 
+        # 希薄化ペナルティ（3年平均年率 > 20% → -15, > 40% → -25）
+        fin_health = valuation.get("financial_health", {})
+        dilution_pct = fin_health.get("dilution_3yr_annual_pct")
+        if dilution_pct is not None:
+            if dilution_pct > 40:
+                funda = max(0, funda - 25)
+            elif dilution_pct > 20:
+                funda = max(0, funda - 15)
+
         # classify (JS移植: FG=50固定でtiming省略し upside直接判定)
         fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
         sell_funda = (
@@ -445,9 +454,21 @@ class TanukiValuationPipeline:
             yH, yL = "高ROE", "低ROE"
         elif "Q異常値" in rice_note:
             matrix = "③成長性系"
-            key_metric_y = "Revenue_Growth (see HYPECORE)"
-            qx = False
-            qy = False
+            qx = upside is not None and upside >= 0
+            _rev_yoy_m3 = None
+            _poc_m3 = os.path.join(
+                self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+            )
+            if os.path.exists(_poc_m3):
+                try:
+                    with open(_poc_m3, encoding="utf-8") as _pf:
+                        _monthly_m3 = (json.load(_pf).get("monthly") or [])
+                    if _monthly_m3:
+                        _rev_yoy_m3 = _monthly_m3[-1].get("rev_yoy")
+                except Exception:
+                    pass
+            qy = _rev_yoy_m3 is not None and _rev_yoy_m3 > 0
+            key_metric_y = f"Revenue_Growth = {_rev_yoy_m3:.1f}%" if _rev_yoy_m3 is not None else "Revenue_Growth (see HYPECORE)"
             yH, yL = "高成長", "低成長"
         else:
             matrix = "④キャッシュ創出力系"
@@ -556,6 +577,15 @@ class TanukiValuationPipeline:
                     if (hype_signal != "N/A" and "売上・EPSは強い" in hype_signal
                             and yoy_growth is not None and yoy_growth < 0):
                         hype_signal = hype_signal.replace("売上・EPSは強い", "売上は強いがEPS前年比マイナス")
+                    if (hype_signal != "N/A" and "EPSの悪化も確認" in hype_signal
+                            and yoy_growth is not None and yoy_growth > 0):
+                        hype_signal = hype_signal.replace(
+                            "実体も崩壊中",
+                            "売上低迷・EPS改善中"
+                        ).replace(
+                            "売上・EPSの悪化も確認される本格的な下落局面。",
+                            f"売上は低迷だがEPS前年比{yoy_growth * 100:+.0f}%で改善中。実体回復の兆しを慎重に見極める局面。"
+                        )
                     phase_history = [(m.get("month", "?"), m.get("stage"), m.get("stage_label", "")) for m in monthly[-6:]]
                     si = last.get("short_pct_float")
                     if si is not None:
