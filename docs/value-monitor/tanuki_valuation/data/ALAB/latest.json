@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 8933747416.295658,
   "intrinsic_value_per_share": 57.5778190930534,
   "intrinsic_value_beta": 53.1,
-  "upside_percent_beta": -84.4,
+  "upside_percent_beta": -84.5,
   "intrinsic_value_rf": 320.08,
-  "upside_percent_rf": -5.8,
+  "upside_percent_rf": -6.6,
   "v0": 5333791064.975622,
   "v0_adjusted": 5333791064.975622,
   "alpha": 0.674933889885409,
@@ -14,8 +14,8 @@
     "2年後": 76.15,
     "3年後": 87.57
   },
-  "upside_percent": -83.0,
-  "calculation_date": "2026-05-30T02:41:06+09:00",
+  "upside_percent": -83.2,
+  "calculation_date": "2026-05-30T07:40:08+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -219,17 +219,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 3.201,
-      "rice_per_ratio": 0.0139
+      "rice_per_ratio": 0.0137
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 4.573,
-      "rice_per_ratio": 0.0198
+      "rice_per_ratio": 0.0196
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 5.488,
-      "rice_per_ratio": 0.0238
+      "rice_per_ratio": 0.0235
     }
   },
   "fcf_source": "ttm_series",
@@ -249,7 +249,7 @@
     ],
     "diluted_shares": 171407939,
     "roe_10yr_avg": 0.1606985452108117,
-    "current_price": 339.62,
+    "current_price": 342.85,
     "latest_revenue": 852525000.0,
     "rpo": 0.0,
     "beta": 1.1,
@@ -274,17 +274,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.674933889885409,
-    "per": 231.03401,
-    "per_adjusted": 177.16,
+    "per": 233.2313,
+    "per_adjusted": 178.85,
     "peg": null,
-    "ps": 58.129627,
+    "ps": 58.682476,
     "ev_ebitda": 251.55,
     "ma200": 173.083,
     "forward_eps": 4.20669
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -304,7 +304,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "P_t/株数整合性欠如、V0_rm使用の不整合",
+    "ai_concerns": "P_t vs per-share and V0_rm inconsistency"
   },
   "tanuki_score": "TRIM",
   "funda_score": 75,

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 448976883.4421079,
   "intrinsic_value_per_share": 3.7238842080113046,
   "intrinsic_value_beta": 4.05,
-  "upside_percent_beta": -71.5,
+  "upside_percent_beta": -72.1,
   "intrinsic_value_rf": 15.89,
-  "upside_percent_rf": 11.9,
+  "upside_percent_rf": 9.6,
   "v0": 448976883.4421079,
   "v0_adjusted": 448976883.4421079,
   "alpha": 0.0,
@@ -14,8 +14,8 @@
     "2年後": 4.92,
     "3年後": 5.66
   },
-  "upside_percent": -73.8,
-  "calculation_date": "2026-05-30T02:41:17+09:00",
+  "upside_percent": -74.3,
+  "calculation_date": "2026-05-30T07:47:52+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -167,7 +167,7 @@
     "estimated_fcf": 3258320.0,
     "raw_fcf": 3258320.0,
     "sector": "",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/RCAT/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\RCAT\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -235,7 +235,7 @@
     ],
     "diluted_shares": 152192265,
     "roe_10yr_avg": 0.0,
-    "current_price": 14.195,
+    "current_price": 14.5,
     "latest_revenue": 40729000.0,
     "rpo": 270,
     "beta": 0.87,
@@ -260,17 +260,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -39.430553,
+    "per": -40.277775,
     "per_adjusted": null,
     "peg": null,
-    "ps": 39.58895,
+    "ps": 40.43958,
     "ev_ebitda": null,
     "ma200": 11.20625,
     "forward_eps": -0.36
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -290,7 +290,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "P_t/shares計算不整合が致命的",
+    "ai_concerns": "P_t vs per-share mismatch; ROE=0 with 15% growth inconsistent"
   },
   "tanuki_score": "TRIM",
   "funda_score": 75,

@@ -1,13 +1,13 @@
 RBRK INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T02:41:16+09:00
-Price: $78.18
+Generated: 2026-05-30T07:47:40+09:00
+Price: $78.63
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -65.0%
-  MA200_Deviation: +14.7%
+  Deviation_Rate: -65.2%
+  MA200_Deviation: +15.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.10 (Strong Buy)
 Comment: 割高(-65%超)、FCF黒字、売上成長加速
@@ -31,7 +31,7 @@ Matrix: ③成長性系
 Quadrant: 左上
 Label: 割高×高成長
 Key_Metric_Y: Revenue_Growth = 46.3%
-Deviation_Rate: -65.0%
+Deviation_Rate: -65.2%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -55,14 +55,17 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $78.18
+Current_Price: $78.63
 Intrinsic_Value_BASE: $27.34
-Deviation_BASE: -65.0%
+Deviation_BASE: -65.2%
 Scenarios:
-BEAR: Growth=10.5%, IV=$23.13, Deviation=-70.4%
-BASE: Growth=15.0%, IV=$27.34, Deviation=-65.0%
-BULL: Growth=18.0%, IV=$30.51, Deviation=-61.0%
+BEAR: Growth=10.5%, IV=$23.13, Deviation=-70.6%
+BASE: Growth=15.0%, IV=$27.34, Deviation=-65.2%
+BULL: Growth=18.0%, IV=$30.51, Deviation=-61.2%
+TTM_Revenue_Growth: 48.5%
+(DCF Base vs TTM actual: -33.5pt discount)
 WACC: 10.57%
+Terminal_Growth_Rate: 3.0%
 Beta: 1.1
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
 RPO_PV: $0 (Remaining Performance Obligation premium)
@@ -90,6 +93,10 @@ FCF_Conversion_Rate: Industry-standard ratio to estimate
 FCF from OCF (accounts for capex intensity by sector)
 RPO: Remaining Performance Obligation, booked future
 revenue not yet recognized; added as DCF premium
+Note: RPO premium is added as a conservatism adjustment
+for contracted-but-unrecognized revenue visibility,
+not as additional DCF cash flow. Applied only to
+profitable SaaS tickers with RPO/Revenue > 0.3.
 Net_Debt: Total Debt - Cash. Negative = net cash (safer)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 3%/yr = meaningful shareholder dilution risk
@@ -137,6 +144,9 @@ Reference: Beta-adjusted WACC also calculated
 Interpretation: RICE>2.0 = high reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
+RICE is a proprietary screening metric inspired by
+Damodaran's reinvestment efficiency framework.
+Use as relative ranking tool, not absolute valuation.
 
 
 [6. EPS ANALYZER]
@@ -160,7 +170,7 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 134.2x
+  Market_PER_GAAP: 134.9x
   Adjusted_EPS_PER: N/A
 Forward_Estimates:
   Next_Earnings_Date: 2026-06-05
@@ -178,7 +188,7 @@ Compare with TANUKI G scenario for cross-validation
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
 Alpha_Premium: 0.0
-HYPE_Signal: 実体維持・バリュエーション過熱 — 実体（売上・EPS）は強いが、株価÷IV=5.39x、FwdPE=114xと割高感が残る。期待の訂正がまだ終わっていない可能性。
+HYPE_Signal: 実体維持・バリュエーション過熱 — 実体（売上・EPS）は強いが、株価÷IV=2.88x、FwdPE=135xと割高感が残る。期待の訂正がまだ終わっていない可能性。
 Phase_History (recent 6 months):
 2025-12: Phase4 (期待剥落期)
 2026-01: Phase4 (期待剥落期)
@@ -187,9 +197,9 @@ Phase_History (recent 6 months):
 2026-04: Phase4 (期待剥落期)
 2026-05: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 134.2x
+  PER: 134.9x
   PEG: N/A
-  PS:  12.2x
+  PS:  12.3x
   EV_EBITDA: N/A
   PS_Signal: 適正水準
 Definition:
@@ -220,7 +230,7 @@ EV/EBITDA: Debt-adjusted valuation multiple
 
 [8. STONKS SILO]
 Short_Report_Target: yes
-Short_Interest: 8.1%
+Short_Interest: 10.0%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: 1.10 (Strong Buy)
 Runway_Months: N/A (profitable or not in STONKS)

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 14140768293.221138,
   "intrinsic_value_per_share": 109.73576854842314,
   "intrinsic_value_beta": 102.22,
-  "upside_percent_beta": -25.6,
+  "upside_percent_beta": -26.8,
   "intrinsic_value_rf": 550.15,
-  "upside_percent_rf": 300.3,
+  "upside_percent_rf": 293.7,
   "v0": 14140768293.221138,
   "v0_adjusted": 14140768293.221138,
   "alpha": 0.0,
@@ -14,8 +14,8 @@
     "2年後": 145.13,
     "3年後": 166.9
   },
-  "upside_percent": -20.2,
-  "calculation_date": "2026-05-30T02:41:20+09:00",
+  "upside_percent": -21.5,
+  "calculation_date": "2026-05-30T07:49:56+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -232,17 +232,17 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.624,
-      "rice_per_ratio": 0.0209
+      "rice_per_ratio": 0.0205
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.891,
-      "rice_per_ratio": 0.0298
+      "rice_per_ratio": 0.0293
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 1.07,
-      "rice_per_ratio": 0.0358
+      "rice_per_ratio": 0.0352
     }
   },
   "fcf_source": "ttm_series",
@@ -263,7 +263,7 @@
     ],
     "diluted_shares": 161709525,
     "roe_10yr_avg": 0.0,
-    "current_price": 137.44,
+    "current_price": 139.73,
     "latest_revenue": 2673115000.0,
     "rpo": 6050800000,
     "beta": 1.1,
@@ -288,17 +288,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 29.8949,
-    "per_adjusted": 43.43,
+    "per": 30.393002,
+    "per_adjusted": 44.15,
     "peg": 1.42,
-    "ps": 7.00328,
+    "ps": 7.119967,
     "ev_ebitda": null,
     "ma200": 222.21733,
     "forward_eps": 4.59744
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -318,11 +318,12 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "shares計算とROE整合性に重大不整合",
+    "ai_concerns": "ROE-growth mismatch + per-share inconsistency"
   },
   "tanuki_score": "HOLD",
   "funda_score": 50,
-  "score_comment": "割高(-20%超)、FCF黒字",
+  "score_comment": "割高(-22%超)、FCF黒字",
   "fcf_history": [
     {
       "year": 2021,

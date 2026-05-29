@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 356257738919.13196,
   "intrinsic_value_per_share": 57.685557673493705,
   "intrinsic_value_beta": 84.84,
-  "upside_percent_beta": 6.8,
+  "upside_percent_beta": 7.4,
   "intrinsic_value_rf": 304.35,
-  "upside_percent_rf": 283.1,
+  "upside_percent_rf": 285.2,
   "v0": 222661086824.45746,
   "v0_adjusted": 222661086824.45746,
   "alpha": 0.6,
@@ -14,8 +14,8 @@
     "2年後": 63.6,
     "3年後": 66.78
   },
-  "upside_percent": -27.4,
-  "calculation_date": "2026-05-30T02:41:13+09:00",
+  "upside_percent": -27.0,
+  "calculation_date": "2026-05-30T07:45:25+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -234,8 +234,8 @@
       8909000000
     ],
     "diluted_shares": 4302482418,
-    "roe_10yr_avg": 0.3675234999062005,
-    "current_price": 79.4399,
+    "roe_10yr_avg": 0.3675234999062004,
+    "current_price": 79.01,
     "latest_revenue": 47941000000.0,
     "rpo": 0.0,
     "beta": 0.6,
@@ -251,7 +251,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 43285001182.23176,
     "pv_terminal": 179376085642.2257,
-    "roe_used": 0.3675234999062005,
+    "roe_used": 0.3675234999062004,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -259,18 +259,18 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.543598699606042,
-    "per": 24.981102,
-    "per_adjusted": 25.68,
+    "alpha_uncapped": 1.5435986996060416,
+    "per": 24.845913,
+    "per_adjusted": 25.54,
     "peg": 4.12,
-    "ps": 6.935086,
-    "ev_ebitda": 22.668,
+    "ps": 6.8975554,
+    "ev_ebitda": 22.307,
     "ma200": 72.92025,
     "forward_eps": 3.48363
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -290,7 +290,8 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": null
+    "ai_comment": "数値整合性に重大な不整合あり",
+    "ai_concerns": "P_t and per-share mismatch; dual V0 (β vs Rm) not reconciled in table"
   },
   "tanuki_score": "HOLD",
   "funda_score": 80,

@@ -2,20 +2,20 @@
   "intrinsic_value_pt": 4769152753.665072,
   "intrinsic_value_per_share": 16.33895299252374,
   "intrinsic_value_beta": 15.34,
-  "upside_percent_beta": -53.4,
+  "upside_percent_beta": -52.4,
   "intrinsic_value_rf": 75.16,
-  "upside_percent_rf": 128.2,
+  "upside_percent_rf": 133.4,
   "v0": 3959907670.2568913,
   "v0_adjusted": 3959907670.2568913,
-  "alpha": 0.2043595838070849,
+  "alpha": 0.20435958380708494,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 18.79,
     "2年後": 21.61,
     "3年後": 24.85
   },
-  "upside_percent": -50.4,
-  "calculation_date": "2026-05-30T02:41:11+09:00",
+  "upside_percent": -49.3,
+  "calculation_date": "2026-05-30T07:43:20+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -234,8 +234,8 @@
       326302000
     ],
     "diluted_shares": 408355715,
-    "roe_10yr_avg": 0.04865704376359165,
-    "current_price": 32.93,
+    "roe_10yr_avg": 0.04865704376359166,
+    "current_price": 32.2,
     "latest_revenue": 3247000000.0,
     "rpo": 519000000,
     "beta": 1.1,
@@ -251,7 +251,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 1005268404.8169295,
     "pv_terminal": 2954639265.439962,
-    "roe_used": 0.04865704376359165,
+    "roe_used": 0.04865704376359166,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -259,18 +259,18 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.2043595838070849,
-    "per": 470.4286,
-    "per_adjusted": 54.11,
+    "alpha_uncapped": 0.20435958380708494,
+    "per": 460.0,
+    "per_adjusted": 52.91,
     "peg": 0.12,
-    "ps": 3.9411354,
+    "ps": 3.8537674,
     "ev_ebitda": 48.411,
     "ma200": 61.074,
     "forward_eps": 1.79845
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -290,11 +290,12 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "shares計算とP_tの整合性欠如が致命的",
+    "ai_concerns": "per-share value inconsistent with P_t/shares; V0_rm vs V0 mismatch unresolved"
   },
   "tanuki_score": "HOLD",
   "funda_score": 50,
-  "score_comment": "割高(-50%超)、FCF黒字",
+  "score_comment": "割高(-49%超)、FCF黒字",
   "fcf_history": [
     {
       "year": 2021,

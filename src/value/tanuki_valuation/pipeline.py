@@ -725,8 +725,18 @@ class TanukiValuationPipeline:
         L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
         L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
         L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
+        # TTM Revenue Growth（BASE成長率 vs 実績の乖離を表示）
+        _ttm_rev = rev_growth_val if rev_growth_val is not None else rev_yoy_hype
+        if _ttm_rev is not None:
+            L.append(f"TTM_Revenue_Growth: {_ttm_rev:.1f}%")
+            _delta = base_g - _ttm_rev
+            _sign = "premium" if _delta >= 0 else "discount"
+            L.append(f"(DCF Base vs TTM actual: {_delta:+.1f}pt {_sign})")
         wacc_pct = wacc_val * 100 if isinstance(wacc_val, (int, float)) else None
         L.append(f"WACC: {wacc_pct:.2f}%" if wacc_pct is not None else "WACC: N/A")
+        terminal_g_used = comps.get("terminal_growth_used")
+        terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
+        L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
         L.append(f"Beta: {beta}")
         L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
         L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
@@ -794,6 +804,10 @@ class TanukiValuationPipeline:
         L.append("FCF from OCF (accounts for capex intensity by sector)")
         L.append("RPO: Remaining Performance Obligation, booked future")
         L.append("revenue not yet recognized; added as DCF premium")
+        L.append("Note: RPO premium is added as a conservatism adjustment")
+        L.append("for contracted-but-unrecognized revenue visibility,")
+        L.append("not as additional DCF cash flow. Applied only to")
+        L.append("profitable SaaS tickers with RPO/Revenue > 0.3.")
         L.append("Net_Debt: Total Debt - Cash. Negative = net cash (safer)")
         L.append("Dilution_3yr_Annual: Share count CAGR over 3 years")
         L.append("3%/yr = meaningful shareholder dilution risk")
@@ -870,6 +884,9 @@ class TanukiValuationPipeline:
         L.append("Interpretation: RICE>2.0 = high reinvestment efficiency")
         L.append("Note: RICE uses Rm=10% (Beta=0) as a universal benchmark")
         L.append("for cross-ticker comparability. DCF uses ticker-specific WACC.")
+        L.append("RICE is a proprietary screening metric inspired by")
+        L.append("Damodaran's reinvestment efficiency framework.")
+        L.append("Use as relative ranking tool, not absolute valuation.")
         L.append("")
         L.append("")
         L.append(f"[{n+1}. EPS ANALYZER]")

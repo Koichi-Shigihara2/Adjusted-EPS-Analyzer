@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3844493300.636215,
   "intrinsic_value_per_share": 14.067005305491534,
   "intrinsic_value_beta": 13.1,
-  "upside_percent_beta": -23.2,
+  "upside_percent_beta": -20.9,
   "intrinsic_value_rf": 70.77,
-  "upside_percent_rf": 314.8,
+  "upside_percent_rf": 327.6,
   "v0": 3844493300.636215,
   "v0_adjusted": 3844493300.636215,
   "alpha": 0.0,
@@ -14,8 +14,8 @@
     "2年後": 18.61,
     "3年後": 21.4
   },
-  "upside_percent": -17.5,
-  "calculation_date": "2026-05-30T02:41:17+09:00",
+  "upside_percent": -15.0,
+  "calculation_date": "2026-05-30T07:48:29+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -234,7 +234,7 @@
     ],
     "diluted_shares": 341482098,
     "roe_10yr_avg": 0.0,
-    "current_price": 17.06,
+    "current_price": 16.55,
     "latest_revenue": 1001278000.0,
     "rpo": 1300000000,
     "beta": 1.1,
@@ -259,17 +259,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 34.525326,
+    "per": 33.41814,
     "per_adjusted": null,
     "peg": null,
-    "ps": 5.8182487,
+    "ps": 5.6443152,
     "ev_ebitda": null,
     "ma200": 15.62555,
-    "forward_eps": 0.49413
+    "forward_eps": 0.49524
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "basic_checks_only",
+    "model": "grok-3-mini",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -289,7 +289,8 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": null
+    "ai_comment": "株数計算とROE整合性に重大不整合",
+    "ai_concerns": "ROE-growth矛盾 + 株数除算不整合"
   },
   "tanuki_score": "HOLD",
   "funda_score": 75,
