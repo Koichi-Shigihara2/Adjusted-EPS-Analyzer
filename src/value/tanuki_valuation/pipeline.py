@@ -207,6 +207,8 @@ class TanukiValuationPipeline:
         """TANUKI SCOREをパイプライン時に計算（JS classify/calcFundaのPython移植）"""
         upside   = valuation.get("upside_percent")
         fcf_base = valuation.get("fcf_base", {}).get("base_fcf")
+        fcf_history = valuation.get("fcf_history", [])
+        fcf_latest = fcf_history[-1].get("fcf") if fcf_history else None
 
         rev_yoy = rule40 = stage = None
         poc_path = os.path.join(
@@ -237,6 +239,20 @@ class TanukiValuationPipeline:
         funda += 25 if eps_yoy is not None and eps_yoy > 20 else 15 if eps_yoy is not None and eps_yoy >= 0 else 0
         funda += 25 if fcf_base is not None and fcf_base > 0 else 0
 
+        # Runway < 12ヶ月のペナルティ（資金枯渇リスク）
+        stonks_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "stonks-silo", "data", "results.json"
+        )
+        if os.path.exists(stonks_path):
+            try:
+                with open(stonks_path, encoding="utf-8") as f:
+                    _stonks_ticker = json.load(f).get("tickers", {}).get(ticker, {})
+                _runway_raw = _stonks_ticker.get("runway", {}).get("runway_months")
+                if isinstance(_runway_raw, (int, float)) and _runway_raw < 12:
+                    funda = max(0, funda - 30)
+            except Exception:
+                pass
+
         # classify (JS移植: FG=50固定でtiming省略し upside直接判定)
         fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
         sell_funda = (
@@ -261,10 +277,10 @@ class TanukiValuationPipeline:
         else:
             score = "HOLD"
 
-        comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda)
+        comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
         return {"score": score, "funda_score": funda, "score_comment": comment}
 
-    def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda) -> str:
+    def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
         """スコアに基づくルールベースコメント（30字程度の日本語）"""
         parts = []
         if upside is not None:
@@ -274,7 +290,12 @@ class TanukiValuationPipeline:
             elif upside > -20: parts.append("フェアバリュー近辺")
             else:              parts.append(f"割高({upside:.0f}%超)")
         if fcf_base is not None:
-            parts.append("FCF黒字" if fcf_base > 0 else "FCF赤字注意")
+            if fcf_latest is not None and fcf_latest < 0:
+                parts.append("FCFマイナス（投資フェーズ）")
+            elif fcf_base > 0:
+                parts.append("FCF黒字")
+            else:
+                parts.append("FCF赤字注意")
         if rev_yoy is not None:
             if   rev_yoy > 20: parts.append("売上成長加速")
             elif rev_yoy > 0:  parts.append("売上安定成長")
@@ -286,8 +307,12 @@ class TanukiValuationPipeline:
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
 
+        # fcf_history等をスコア計算前に読み込み（fcf_latest判定のため）
+        extra = self._load_extra_data(ticker, valuation)
+        valuation_enriched = {**valuation, **extra}
+
         # TANUKIスコアを先に計算してlatest.jsonとhistory.json両方に保存
-        score_data = self._compute_tanuki_score(ticker, valuation)
+        score_data = self._compute_tanuki_score(ticker, valuation_enriched)
 
         latest_data = {k: v for k, v in valuation.items() if k != "calculation_steps"}
         latest_data["tanuki_score"]  = score_data.get("score")
@@ -335,8 +360,7 @@ class TanukiValuationPipeline:
         with open(history_summary_path, "w", encoding="utf-8") as f:
             json.dump(history_summary, f, ensure_ascii=False, indent=2)
 
-        # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存
-        extra = self._load_extra_data(ticker, valuation)
+        # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存（extraは上で取得済み）
         latest_data.update(extra)
 
         # ---- Growth Sanity Check ----
@@ -529,6 +553,9 @@ class TanukiValuationPipeline:
                     substage = last.get("substage_label", "")
                     substage_watch = last.get("substage_watch", "")
                     hype_signal = f"{substage} — {substage_watch}" if substage else "N/A"
+                    if (hype_signal != "N/A" and "売上・EPSは強い" in hype_signal
+                            and yoy_growth is not None and yoy_growth < 0):
+                        hype_signal = hype_signal.replace("売上・EPSは強い", "売上は強いがEPS前年比マイナス")
                     phase_history = [(m.get("month", "?"), m.get("stage"), m.get("stage_label", "")) for m in monthly[-6:]]
                     si = last.get("short_pct_float")
                     if si is not None:
