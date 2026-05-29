@@ -807,6 +807,8 @@ class TanukiValuationPipeline:
         L.append("Primary basis: Rm=10% (Beta=0 scenario)")
         L.append("Reference: Beta-adjusted WACC also calculated")
         L.append("Interpretation: RICE>2.0 = high reinvestment efficiency")
+        L.append("Note: RICE uses Rm=10% (Beta=0) as a universal benchmark")
+        L.append("for cross-ticker comparability. DCF uses ticker-specific WACC.")
         L.append("")
         L.append("")
         L.append(f"[{n+1}. EPS ANALYZER]")
