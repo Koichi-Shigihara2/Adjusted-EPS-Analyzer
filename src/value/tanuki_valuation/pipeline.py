@@ -363,12 +363,13 @@ class TanukiValuationPipeline:
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
 
-        report_text = self._generate_report(ticker, valuation, score_data, extra)
+        report_text = self._generate_report(ticker, valuation, score_data, extra,
+                                             growth_sanity=latest_data.get("growth_sanity"))
         self._save_report(ticker, report_text)
 
         print(f"   💾 保存: {latest_path}")
 
-    def _generate_report(self, ticker: str, valuation: dict, score_data: dict, extra: dict = None) -> str:
+    def _generate_report(self, ticker: str, valuation: dict, score_data: dict, extra: dict = None, growth_sanity: dict = None) -> str:
         """銘柄別統合レポートをプレーンテキストで生成"""
         if extra is None:
             extra = {}
@@ -735,7 +736,34 @@ class TanukiValuationPipeline:
         L.append("Next_Earnings_Date: Next quarterly earnings release")
         L.append("")
         L.append("")
-        L.append("[4. RICE METRICS]")
+
+        # --- [4. 成長率根拠] growth_sanity セクション ---
+        has_sanity = growth_sanity is not None
+        if has_sanity:
+            gs_verdict = growth_sanity.get("verdict", "N/A")
+            gs_p1g = growth_sanity.get("phase1_growth")
+            gs_ind = growth_sanity.get("damodaran_industry")
+            gs_bench = growth_sanity.get("industry_benchmark")
+            gs_year = growth_sanity.get("damodaran_year")
+            gs_signals = growth_sanity.get("signals", [])
+            gs_warnings = growth_sanity.get("warnings", [])
+            L.append("[4. 成長率根拠]")
+            L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
+            L.append(f"判定         : {gs_verdict}")
+            if gs_ind and gs_bench is not None:
+                damo_tag = f" (Damodaran {gs_year})" if gs_year else ""
+                L.append(f"業界ベンチマーク: {gs_ind} / {gs_bench * 100:.1f}%{damo_tag}")
+            else:
+                L.append("業界ベンチマーク: N/A")
+            L.append("signals:")
+            for sig in gs_signals + gs_warnings:
+                L.append(f"  - {sig}")
+            L.append("")
+            L.append("")
+
+        # セクション番号: growth_sanity あり → [5]〜[8]、なし → [4]〜[7]
+        n = 5 if has_sanity else 4
+        L.append(f"[{n}. RICE METRICS]")
         L.append(f"Available: {str(rice_available).lower()}")
         L.append(f"Exclusion_Reason: {excl_reason}")
         if rice_available:
@@ -773,7 +801,7 @@ class TanukiValuationPipeline:
         L.append("Interpretation: RICE>2.0 = high reinvestment efficiency")
         L.append("")
         L.append("")
-        L.append("[5. EPS ANALYZER]")
+        L.append(f"[{n+1}. EPS ANALYZER]")
         L.append(f"Latest_Adjusted_EPS: ${adj_eps:.4f}" if isinstance(adj_eps, (int, float)) else "Latest_Adjusted_EPS: N/A")
         L.append(f"Latest_GAAP_EPS: ${gaap_eps_val:.4f}" if isinstance(gaap_eps_val, (int, float)) else "Latest_GAAP_EPS: N/A")
         L.append(f"Adjustment_Delta: ${eps_diff:.4f} ({adj_items_str})" if isinstance(eps_diff, (int, float)) else "Adjustment_Delta: N/A")
@@ -825,7 +853,7 @@ class TanukiValuationPipeline:
         L.append("Compare with TANUKI G scenario for cross-validation")
         L.append("")
         L.append("")
-        L.append("[6. HYPECORE]")
+        L.append(f"[{n+2}. HYPECORE]")
         L.append(f"Current_Phase: {hype_phase}")
         L.append(f"Alpha_Premium: {hype_alpha}" if hype_alpha != "N/A" else "Alpha_Premium: N/A")
         L.append(f"HYPE_Signal: {hype_signal}")
@@ -887,7 +915,7 @@ class TanukiValuationPipeline:
         L.append("EV/EBITDA: Debt-adjusted valuation multiple")
         L.append("")
         L.append("")
-        L.append("[7. STONKS SILO]")
+        L.append(f"[{n+3}. STONKS SILO]")
         L.append(f"Short_Report_Target: {short_target}")
         L.append(f"Short_Interest: {short_int}%")
         L.append("Institutional_Ownership: N/A (not in data source)")
