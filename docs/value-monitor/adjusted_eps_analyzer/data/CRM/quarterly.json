@@ -1,7 +1,84 @@
 {
   "ticker": "CRM",
-  "last_updated": "2026-05-25T13:44:03.047347",
+  "last_updated": "2026-05-29T23:42:41.975694",
   "quarters": [
+    {
+      "gaap_eps": 2.4190585533869116,
+      "adjusted_eps": 3.2520823918740622,
+      "gaap_net_income": 2107000000.0,
+      "adjusted_net_income": 2832563763.322308,
+      "diluted_shares_used": 871000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 857000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 663615950.0183756,
+          "tax_rate_applied": 0.22565233370084528
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 80000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 61947813.303932376,
+          "tax_rate_applied": 0.22565233370084528
+        }
+      ],
+      "net_adjustment_total": 725563763.3223081,
+      "filing_date": "2026-04-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 11133000000.0,
+      "diluted_shares": 871000000.0,
+      "period_end": "2026-04-30",
+      "fiscal_year": 2027,
+      "quarter": 1,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 118.1%）",
+        "sbc_contribution": 1.181,
+        "sbc_to_revenue": 0.077,
+        "sbc_per_share": 0.9839,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "SBCは恒常的なコスト（毎期発生する非現金だが実質的な報酬費用）である一方、リストラ費用は一過性。調整によりAdjusted EPSがGAAP比で約34%押し上げられており、市場がGAAP EPSで判断する場合、企業の実力（特にSBCを除いたキャッシュ生成力）が過小評価される可能性がある。ただしSBCの大型加回しは持続可能性を過大に見せ、株主希薄化を無視した過大評価リスクも高い。投資家はSBCの今後のトレンドと真のオーナー利益を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、テック企業では恒常的に発生する運用コストであり、株主希薄化を伴うため調整の正当性は低い",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、調整の対象として適切",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 2.032426778242678,
       "adjusted_eps": 3.1637133891213387,
@@ -12,7 +89,7 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 1083000000.0,
+          "amount": 1083000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -25,7 +102,7 @@
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 286000000.0,
+          "amount": 286000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -51,33 +128,7 @@
       "diluted_shares": 956000000.0,
       "period_end": "2026-01-31",
       "fiscal_year": 2026,
-      "quarter": 4,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 100.1%）",
-        "sbc_contribution": 1.001,
-        "sbc_to_revenue": 0.097,
-        "sbc_per_share": 1.1328,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目の大部分を占めるSBC（株式報酬費用）はテック企業CRMにとって恒常的な運用コストであり、リストラ費用のみが一過性と判断される。GAAP EPS（2.03）に対しAdjusted EPS（3.16）は55%超の開きがあり、市場がGAAPベースで評価する場合、非現金だが実質的な希薄化コストが利益を圧縮するため企業の実力が見えにくく、過小評価のリスクがある。ただしSBCの恒常性を無視した過大調整は実力の過大評価リスクも生む。投資家はフリーキャッシュフローとSBCの将来トレンドを注視し、調整後数値の信頼性を慎重に検証すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、CRMのようなテック企業では毎期継続的に発生する恒常的コストであり、調整の正当性は低い。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "リストラ費用は一過性の事業再編費用としてadd_backされており、調整の根拠が明確で非経常的性質が強い。",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 2.1911764705882355,
@@ -242,7 +293,7 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 803000000.0,
+          "amount": 803000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -255,7 +306,7 @@
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 298000000.0,
+          "amount": 298000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -446,7 +497,7 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 674000000.0,
+          "amount": 674000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -459,7 +510,7 @@
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 173000000.0,
+          "amount": 173000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -709,76 +760,6 @@
       "period_end": "2022-10-31",
       "fiscal_year": 2023,
       "quarter": 3
-    },
-    {
-      "gaap_eps": 0.06793206793206794,
-      "adjusted_eps": 0.704035964035964,
-      "gaap_net_income": 68000000.0,
-      "adjusted_net_income": 704740000.0,
-      "diluted_shares_used": 1001000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 851000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 672290000.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "investment_fv_change",
-          "item_name": "投資公正価値変動損益",
-          "amount": -45000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金・非経常の投資時価評価変動",
-          "extracted_from": "us-gaap:GainLossOnInvestments",
-          "category": "公正価値変動関連",
-          "net_amount": -35550000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 636740000.0,
-      "filing_date": "2022-07-31",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 7720000000.0,
-      "diluted_shares": 1001000000.0,
-      "period_end": "2022-07-31",
-      "fiscal_year": 2023,
-      "quarter": 2,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
-          "detected_items": [
-            {
-              "item_name": "投資公正価値変動損益",
-              "xbrl_tag": "us-gaap:GainLossOnInvestments",
-              "xbrl_value": 45000000,
-              "adjustment_amount": -45000000,
-              "net_amount": -35550000.0
-            }
-          ],
-          "condition1": "前年同期データなし（条件1スキップ）",
-          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
-        }
-      }
     }
   ]
 }

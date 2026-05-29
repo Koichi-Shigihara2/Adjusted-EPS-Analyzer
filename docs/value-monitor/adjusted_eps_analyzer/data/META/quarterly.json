@@ -1,6 +1,6 @@
 {
   "ticker": "META",
-  "last_updated": "2026-05-29T21:33:47.886545",
+  "last_updated": "2026-05-29T23:46:15.545374",
   "quarters": [
     {
       "gaap_eps": 10.44188767550702,
@@ -50,12 +50,12 @@
         }
       },
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "SBCは恒常的に発生する非現金費用であり一過性ではないため、調整により実力値が大きく上方修正されている(GAAP EPS 10.44→Adjusted 12.25)。市場がGAAP EPSのみで判断する場合、METAの現金創出力や成長実態が見えにくくなり企業実力を過小評価するリスクがある。ただしSBCは株式希薄化を伴う実質コストであるため、調整後EPSを過信すると過大評価リスクも存在する。投資家はSBCの継続規模、希薄化効果、及びフリーキャッシュフローとの整合性を注視すべき。",
+        "health": "過大調整",
+        "comment": "SBC（株式報酬費用）はMetaにとって毎期発生する恒常的な人材獲得コストであり、非現金ながら株主希薄化の実質的影響を伴うため、一過性調整とは言えない。GAAP EPS（10.44）に対しAdjusted EPS（12.25）と約17%の上方修正となっており、市場がGAAPベースで評価する場合、企業の実力が保守的に見え過小評価の可能性がある。ただしSBCは本質的に経常コストのため、この過大な調整によりAdjustedベースでは実力の過大評価リスクが生じる。投資家はSBCトレンド、希薄化率、フリーキャッシュフローへの影響を注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用として毎期継続的に発生する恒常的コストであり、調整によりEPSが大幅に上方修正されるが真の経済的コストを過小表示する可能性がある",
+            "snippet": "株式報酬費用は非現金費用だが、テック企業では恒常的に発生する報酬コストであり一過性ではない（毎期発生するSBC）。",
             "confidence": 0.2
           }
         ]
@@ -114,22 +114,22 @@
     },
     {
       "gaap_eps": 1.0532659409020217,
-      "adjusted_eps": 2.823087091757387,
+      "adjusted_eps": 2.8233942457231724,
       "gaap_net_income": 2709000000.0,
-      "adjusted_net_income": 7260980000.0,
+      "adjusted_net_income": 7261770000.0,
       "diluted_shares_used": 2572000000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 5555000000,
+          "amount": 5556000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 4388450000.0,
+          "net_amount": 4389240000.0,
           "tax_rate_applied": 0.21
         },
         {
@@ -146,7 +146,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 4551980000.0,
+      "net_adjustment_total": 4552770000.0,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "Technology",
@@ -173,12 +173,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 4834000000,
+          "amount": 4834000000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 4316794487.191974,
           "tax_rate_applied": 0.10699327943897925
@@ -305,7 +305,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 3741106497.5872517,
           "tax_rate_applied": 0.11973964762652901
@@ -351,12 +351,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 4616000000,
+          "amount": 4616000000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 4114553157.685688,
           "tax_rate_applied": 0.10863233152389778
@@ -483,7 +483,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 2885009700.42796,
           "tax_rate_applied": 0.1738231098430813
@@ -529,12 +529,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 4060000000,
+          "amount": 4060000000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 3402483589.7987733,
           "tax_rate_applied": 0.16194985472936618
@@ -687,7 +687,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 2470217001.43472,
           "tax_rate_applied": 0.21180057388809181
@@ -725,22 +725,22 @@
     },
     {
       "gaap_eps": 2.4647991153704387,
-      "adjusted_eps": 3.4897412346864622,
+      "adjusted_eps": 3.490042334016462,
       "gaap_net_income": 6687000000.0,
-      "adjusted_net_income": 9467667969.704372,
+      "adjusted_net_income": 9468484852.18666,
       "diluted_shares_used": 2713000000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 3351000000,
+          "amount": 3352000000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 2737373198.1431713,
+          "net_amount": 2738190080.625458,
           "tax_rate_applied": 0.18311751771316884
         },
         {
@@ -757,7 +757,7 @@
           "tax_rate_applied": 0.18311751771316884
         }
       ],
-      "net_adjustment_total": 2780667969.7043734,
+      "net_adjustment_total": 2781484852.18666,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "Technology",

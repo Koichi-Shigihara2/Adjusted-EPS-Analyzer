@@ -1,6 +1,6 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-05-25T13:49:05.827103",
+  "last_updated": "2026-05-29T23:47:46.931485",
   "quarters": [
     {
       "gaap_eps": 785.7727644864914,
@@ -66,8 +66,8 @@
         }
       },
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "ワラント公正価値変動による巨額の非現金利益（推定389M USD規模）がGAAP EPS（785.77）を大幅に押し上げており、調整後EPSは119.24と実態が大きく下方修正されます。この項目は非現金・非経常的ですが、ワラントが残存する限り変動が毎期発生する可能性があり、完全に一過性とは言えません。市場がGAAP EPSで判断する場合、企業の実力（特にコア事業の収益力）を過大評価するリスクが高く、過小評価の可能性は低いです。投資家は調整後ベースでの持続可能性と、将来のワラント決済・株式希薄化リスクを注視すべきで、過大評価による株価下落余地に警戒が必要です。",
+        "health": "過大調整",
+        "comment": "ワラント公正価値変動は非現金で非経常的な項目とされるが、調整額(-3.9億ドル)が極めて巨額でGAAP EPS(785)を大幅に上方に歪めている。市場がGAAP EPSのみで判断する場合、企業の実力(調整後EPS119)を過大評価するリスクが顕著であり、過小評価の可能性は低い。ただしワラント負債の変動は今後も発生しうるボラティリティ要因のため、投資家は調整後ベースの実力と潜在的希薄化リスクを注視すべき。",
         "sources": [
           {
             "item": "warrant_fv_change",
@@ -87,20 +87,20 @@
         {
           "item_id": "tax_one_time",
           "item_name": "一過性税効果",
-          "amount": -323000,
+          "amount": -323000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": false,
           "reason": "法人税率変更・過年度税額戻し等の一過性影響",
           "extracted_from": "us-gaap:IncomeTaxReconciliationOtherReconcilingItems",
           "category": "税効果関連",
-          "net_amount": -323000,
+          "net_amount": -323000.0,
           "tax_rate_applied": 0.0
         },
         {
           "item_id": "warrant_fv_change",
           "item_name": "ワラント公正価値変動損益",
-          "amount": 82225000,
+          "amount": 82225000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -119,7 +119,7 @@
         "sbc",
         "amortization_intangibles"
       ],
-      "revenue": 30111302.0,
+      "revenue": 30111120.0,
       "diluted_shares": 221769000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
@@ -134,8 +134,8 @@
             {
               "item_name": "ワラント公正価値変動損益",
               "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
-              "xbrl_value": 82225000,
-              "adjustment_amount": 82225000,
+              "xbrl_value": 82225000.0,
+              "adjustment_amount": 82225000.0,
               "net_amount": 82225000.0
             }
           ],
@@ -250,7 +250,7 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 993000.0,
+          "amount": 993000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,

@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-05-25T13:43:41.314402",
+  "last_updated": "2026-05-29T23:42:20.117072",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -75,18 +75,6 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.42384241080365254,
-          "official_eps": 0.33,
-          "eps_diff_pct": 28.4,
-          "note": "XBRLと公式発表のGAAP EPSに28%の差異があります。公式EPS: $0.33, XBRL計算EPS: $0.42。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      },
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 45.4%）",
         "sbc_contribution": 0.454,
@@ -99,26 +87,26 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目にはSBCや無形資産償却といった恒常的・非現金項目と、リストラ費用・異常貸倒引当金といった一過性項目が混在。GAAP EPSはこれらを反映して0.42程度に留まる一方、Adjusted EPSは0.49まで上昇しており、市場がGAAPベースで判断している場合にCELHの真の実力（キャッシュ生成力や事業再編後の収益性）が過小評価されている可能性が高い。投資家はSBCの経済的実態とリストラの一時性を慎重に見極める必要があり、過小評価リスクが優勢だがSBCを過度に加算調整するリスクも存在する。",
+        "comment": "調整項目にはSBCと無形資産償却といった恒常的コスト（毎期発生しやすい）が含まれる一方、異常貸倒引当とリストラは一過性と判断される。市場がGAAP EPS（0.42）で評価する場合、非現金・一時的費用により企業の実力（Adjusted EPS 0.49）が過小評価されている可能性がある。ただしSBCは株主希薄化を伴う継続コストのため、調整後数値を過信すると過大評価リスクも存在。投資家はコア収益力とSBCの長期影響を注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、継続的に発生する恒常的な経営コストである。",
+            "snippet": "非現金費用であるが恒常的に発生する株式報酬費用",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は非現金だが、買収の経済的コストを反映する準恒常的項目。",
-            "confidence": 0.3
+            "snippet": "買収関連無形資産の償却で継続的に発生する可能性が高い",
+            "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的・異常な貸倒引当金繰入であり、非経常的とみなせる。",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的・異常変動分として加算",
+            "confidence": 0.8
           },
           {
             "item": "restructuring",
-            "snippet": "事業再編に伴うリストラ費用は典型的な一過性項目。",
+            "snippet": "一過性の事業再編費用",
             "confidence": 0.8
           }
         ]
@@ -126,28 +114,28 @@
     },
     {
       "gaap_eps": 0.09704955847334952,
-      "adjusted_eps": 0.37165429628085594,
+      "adjusted_eps": 0.3368820572348065,
       "gaap_net_income": 24739000.0,
-      "adjusted_net_income": 94738768.31924927,
+      "adjusted_net_income": 85874942.09178177,
       "diluted_shares_used": 254911000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 23021000.0,
+          "amount": 9203000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 13633603.499868335,
+          "net_amount": 5450243.38687669,
           "tax_rate_applied": 0.4077753572882005
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 5900000.0,
+          "amount": 5900000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -160,20 +148,20 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 8523000.0,
+          "amount": 7374000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 5047530.629832666,
+          "net_amount": 4367064.515356809,
           "tax_rate_applied": 0.4077753572882005
         },
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 80754000.0,
+          "amount": 80754000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -184,7 +172,7 @@
           "tax_rate_applied": 0.4077753572882005
         }
       ],
-      "net_adjustment_total": 69999768.31924927,
+      "net_adjustment_total": 61135942.091781765,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "一般消費財 / 製造 / EV",
@@ -196,27 +184,28 @@
       "diluted_shares": 254911000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.09704955847334952,
-          "official_eps": 0.04,
-          "eps_diff_pct": 142.6,
-          "note": "XBRLと公式発表のGAAP EPSに143%の差異があります。公式EPS: $0.04, XBRL計算EPS: $0.10。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": -0.23669203733445057,
-      "adjusted_eps": 0.44223239009691007,
+      "adjusted_eps": 0.4558938530099332,
       "gaap_net_income": -61014000.0,
-      "adjusted_net_income": 113997781.05440128,
+      "adjusted_net_income": 117519405.64119455,
       "diluted_shares_used": 257778000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 7384000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 5117826.40206291,
+          "tax_rate_applied": 0.3069032499914803
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -228,6 +217,19 @@
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
           "net_amount": 4019961.150049414,
+          "tax_rate_applied": 0.3069032499914803
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": -2303000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": -1596201.8152696209,
           "tax_rate_applied": 0.3069032499914803
         },
         {
@@ -244,7 +246,7 @@
           "tax_rate_applied": 0.3069032499914803
         }
       ],
-      "net_adjustment_total": 175011781.05440128,
+      "net_adjustment_total": 178533405.64119455,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -256,27 +258,28 @@
       "diluted_shares": 257778000.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": -0.23669203733445057,
-          "official_eps": -0.3,
-          "eps_diff_pct": 21.1,
-          "note": "XBRLと公式発表のGAAP EPSに21%の差異があります。公式EPS: $-0.30, XBRL計算EPS: $-0.24。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 3
     },
     {
       "gaap_eps": 0.38374626745218304,
-      "adjusted_eps": 0.40093800538307295,
+      "adjusted_eps": 0.4302410262770001,
       "gaap_net_income": 99855000.0,
-      "adjusted_net_income": 104328479.3187348,
+      "adjusted_net_income": 111953447.68856448,
       "diluted_shares_used": 260211000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 6434000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 4962476.885644769,
+          "tax_rate_applied": 0.22871046228710462
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -289,9 +292,22 @@
           "category": "買収・統合関連",
           "net_amount": 4473479.318734794,
           "tax_rate_applied": 0.22871046228710462
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 3452000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 2662491.484184915,
+          "tax_rate_applied": 0.22871046228710462
         }
       ],
-      "net_adjustment_total": 4473479.318734794,
+      "net_adjustment_total": 12098447.688564477,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -364,68 +380,56 @@
       "diluted_shares": 237172000.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
-      "quarter": 1,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.1872860202722075,
-          "official_eps": 0.15,
-          "eps_diff_pct": 24.9,
-          "note": "XBRLと公式発表のGAAP EPSに25%の差異があります。公式EPS: $0.15, XBRL計算EPS: $0.19。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 1
     },
     {
       "gaap_eps": -0.07951003352934238,
-      "adjusted_eps": -0.021701908982156997,
+      "adjusted_eps": -0.06246908223955788,
       "gaap_net_income": -18876000.0,
-      "adjusted_net_income": -5152120.0,
+      "adjusted_net_income": -14830410.0,
       "diluted_shares_used": 237404000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 16028000.0,
+          "amount": 5906000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 12662120.0,
+          "net_amount": 4665740.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 300000.0,
+          "amount": 200000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 237000.0,
+          "net_amount": 158000.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 1044000.0,
+          "amount": -985000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 824760.0,
+          "net_amount": -778150.0,
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 13723880.0,
+      "net_adjustment_total": 4045590.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "一般消費財 / 製造 / EV",
@@ -437,27 +441,28 @@
       "diluted_shares": 237404000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": -0.07951003352934238,
-          "official_eps": -0.13,
-          "eps_diff_pct": 38.8,
-          "note": "XBRLと公式発表のGAAP EPSに39%の差異があります。公式EPS: $-0.13, XBRL計算EPS: $-0.08。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 0.027197726961522662,
-      "adjusted_eps": 0.02753042086930887,
+      "adjusted_eps": 0.04610472174101297,
       "gaap_net_income": 6356000.0,
-      "adjusted_net_income": 6433749.235474006,
+      "adjusted_net_income": 10774489.051987767,
       "diluted_shares_used": 233696000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 5376000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 4179798.899082569,
+          "tax_rate_applied": 0.22250764525993882
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -470,9 +475,22 @@
           "category": "買収・統合関連",
           "net_amount": 77749.23547400611,
           "tax_rate_applied": 0.22250764525993882
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 207000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 160940.91743119268,
+          "tax_rate_applied": 0.22250764525993882
         }
       ],
-      "net_adjustment_total": 77749.23547400611,
+      "net_adjustment_total": 4418489.051987767,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -484,27 +502,28 @@
       "diluted_shares": 233696000.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.027197726961522662,
-          "official_eps": -0.0024,
-          "eps_diff_pct": 1233.2,
-          "note": "XBRLと公式発表のGAAP EPSに1233%の差異があります。公式EPS: $-0.00, XBRL計算EPS: $0.03。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 3
     },
     {
       "gaap_eps": 0.3357941034112671,
-      "adjusted_eps": 0.33611503516515573,
+      "adjusted_eps": 0.35719383276056443,
       "gaap_net_income": 79783000.0,
-      "adjusted_net_income": 79859251.78006518,
+      "adjusted_net_income": 84867468.6947463,
       "diluted_shares_used": 237595000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 4746000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 3618909.4818935115,
+          "tax_rate_applied": 0.23748219934818554
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -517,9 +536,22 @@
           "category": "買収・統合関連",
           "net_amount": 76251.78006518145,
           "tax_rate_applied": 0.23748219934818554
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1822000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1389307.432787606,
+          "tax_rate_applied": 0.23748219934818554
         }
       ],
-      "net_adjustment_total": 76251.78006518145,
+      "net_adjustment_total": 5084468.694746299,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -592,68 +624,56 @@
       "diluted_shares": 237523000.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.3275935383099742,
-          "official_eps": 0.27,
-          "eps_diff_pct": 21.3,
-          "note": "XBRLと公式発表のGAAP EPSに21%の差異があります。公式EPS: $0.27, XBRL計算EPS: $0.33。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 1
     },
     {
       "gaap_eps": 0.21149204098512855,
-      "adjusted_eps": 0.26886742289968096,
+      "adjusted_eps": 0.2293380851099745,
       "gaap_net_income": 50116000.0,
-      "adjusted_net_income": 63711900.0,
+      "adjusted_net_income": 54344870.0,
       "diluted_shares_used": 236964000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 15719000.0,
+          "amount": 5005000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 12418010.0,
+          "net_amount": 3953950.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 200000.0,
+          "amount": 100000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 158000.0,
+          "net_amount": 79000.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 1291000.0,
+          "amount": 248000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 1019890.0,
+          "net_amount": 195920.0,
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 13595900.0,
+      "net_adjustment_total": 4228870.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
       "sector": "一般消費財 / 製造 / EV",
@@ -665,27 +685,28 @@
       "diluted_shares": 236964000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.21149204098512855,
-          "official_eps": 0.17,
-          "eps_diff_pct": 24.4,
-          "note": "XBRLと公式発表のGAAP EPSに24%の差異があります。公式EPS: $0.17, XBRL計算EPS: $0.21。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 0.353807639301564,
-      "adjusted_eps": 0.35414541928084853,
+      "adjusted_eps": 0.37363870188535786,
       "gaap_net_income": 83949000.0,
-      "adjusted_net_income": 84029146.06902477,
+      "adjusted_net_income": 88654375.71244451,
       "diluted_shares_used": 237273000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 4979000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 3990472.77674352,
+          "tax_rate_applied": 0.19853930975225548
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -698,9 +719,22 @@
           "category": "買収・統合関連",
           "net_amount": 80146.06902477446,
           "tax_rate_applied": 0.19853930975225548
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 792000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 634756.8666762137,
+          "tax_rate_applied": 0.19853930975225548
         }
       ],
-      "net_adjustment_total": 80146.06902477446,
+      "net_adjustment_total": 4705375.712444508,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -716,11 +750,24 @@
     },
     {
       "gaap_eps": 0.21749172409133902,
-      "adjusted_eps": 0.21780486457667678,
+      "adjusted_eps": 0.23654945402899488,
       "gaap_net_income": 51509000.0,
-      "adjusted_net_income": 51583161.68742351,
+      "adjusted_net_income": 56022480.29659492,
       "diluted_shares_used": 236832000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 5735000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 4253172.773738392,
+          "tax_rate_applied": 0.25838312576488376
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -733,9 +780,22 @@
           "category": "買収・統合関連",
           "net_amount": 74161.68742351163,
           "tax_rate_applied": 0.25838312576488376
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 251000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 186145.83543301417,
+          "tax_rate_applied": 0.25838312576488376
         }
       ],
-      "net_adjustment_total": 74161.68742351163,
+      "net_adjustment_total": 4513480.296594917,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -747,19 +807,7 @@
       "diluted_shares": 236832000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.21749172409133902,
-          "official_eps": 0.17,
-          "eps_diff_pct": 27.9,
-          "note": "XBRLと公式発表のGAAP EPSに28%の差異があります。公式EPS: $0.17, XBRL計算EPS: $0.22。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 2
     },
     {
       "gaap_eps": 0.17448587886252154,
@@ -820,68 +868,56 @@
       "diluted_shares": 236277000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.17448587886252154,
-          "official_eps": -0.0916,
-          "eps_diff_pct": 290.5,
-          "note": "XBRLと公式発表のGAAP EPSに290%の差異があります。公式EPS: $-0.09, XBRL計算EPS: $0.17。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 1
     },
     {
       "gaap_eps": -0.2805456780658039,
-      "adjusted_eps": -0.08785205356316673,
+      "adjusted_eps": -0.20084495498949093,
       "gaap_net_income": -21223000.0,
-      "adjusted_net_income": -6645920.0,
+      "adjusted_net_income": -15193720.0,
       "diluted_shares_used": 75649000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 16355000.0,
+          "amount": 5885000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 12920450.0,
+          "net_amount": 4649150.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 200000.0,
+          "amount": 100000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 158000.0,
+          "net_amount": 79000.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 1897000.0,
+          "amount": 1647000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 1498630.0,
+          "net_amount": 1301130.0,
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 14577080.0,
+      "net_adjustment_total": 6029280.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "一般消費財 / 製造 / EV",
@@ -889,7 +925,7 @@
         "inventory_writeoff",
         "gov_subsidy_timing"
       ],
-      "revenue": 177963000.0,
+      "revenue": 177964000.0,
       "diluted_shares": 75649000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
@@ -897,11 +933,24 @@
     },
     {
       "gaap_eps": -2.3998100163597025,
-      "adjusted_eps": -2.398810524394893,
+      "adjusted_eps": -2.3338235568430035,
       "gaap_net_income": -181896000.0,
-      "adjusted_net_income": -181820242.50703532,
+      "adjusted_net_income": -176894490.3144723,
       "diluted_shares_used": 75796000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 6263000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 4744691.784377475,
+          "tax_rate_applied": 0.24242507035326905
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -914,9 +963,22 @@
           "category": "買収・統合関連",
           "net_amount": 75757.49296467309,
           "tax_rate_applied": 0.24242507035326905
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 239000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 181060.4081855687,
+          "tax_rate_applied": 0.24242507035326905
         }
       ],
-      "net_adjustment_total": 75757.49296467309,
+      "net_adjustment_total": 5001509.685527717,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -932,11 +994,24 @@
     },
     {
       "gaap_eps": 0.11685295768897055,
-      "adjusted_eps": 0.11782933601190647,
+      "adjusted_eps": 0.15901297367334347,
       "gaap_net_income": 9158000.0,
-      "adjusted_net_income": 9234520.721925134,
+      "adjusted_net_income": 12462164.772727273,
       "diluted_shares_used": 78372000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 4207000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 3219226.7713903743,
+          "tax_rate_applied": 0.2347927807486631
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
@@ -949,9 +1024,22 @@
           "category": "買収・統合関連",
           "net_amount": 76520.72192513368,
           "tax_rate_applied": 0.2347927807486631
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 11000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 8417.279411764704,
+          "tax_rate_applied": 0.2347927807486631
         }
       ],
-      "net_adjustment_total": 76520.72192513368,
+      "net_adjustment_total": 3304164.772727273,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -963,19 +1051,7 @@
       "diluted_shares": 78372000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
-      "quarter": 2,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.11685295768897055,
-          "official_eps": 0.04,
-          "eps_diff_pct": 192.1,
-          "note": "XBRLと公式発表のGAAP EPSに192%の差異があります。公式EPS: $0.04, XBRL計算EPS: $0.12。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 2
     },
     {
       "gaap_eps": 0.0853121128127834,
@@ -1036,19 +1112,7 @@
       "diluted_shares": 78289000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
-      "quarter": 1,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "eps_discrepancy": {
-          "flag": "EPS_DISCREPANCY",
-          "xbrl_eps": 0.0853121128127834,
-          "official_eps": 0.03,
-          "eps_diff_pct": 184.4,
-          "note": "XBRLと公式発表のGAAP EPSに184%の差異があります。公式EPS: $0.03, XBRL計算EPS: $0.09。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
-        }
-      }
+      "quarter": 1
     }
   ]
 }

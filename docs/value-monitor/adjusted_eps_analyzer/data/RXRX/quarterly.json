@@ -1,6 +1,6 @@
 {
   "ticker": "RXRX",
-  "last_updated": "2026-05-25T13:50:10.150261",
+  "last_updated": "2026-05-29T23:48:46.743193",
   "quarters": [
     {
       "gaap_eps": -0.2219971954717046,
@@ -61,16 +61,16 @@
       },
       "ai_analysis": {
         "health": "過大調整",
-        "comment": "調整項目のSBCと無形資産償却はともに恒常的に発生する項目（毎期の運用コストおよび買収後償却）であり、一過性とは判断しにくい。市場がGAAP EPS（-0.222）を基準に評価する場合、非現金費用が強調されて企業の実力（特にAIバイオ企業の長期投資価値やキャッシュ生成力）が過小評価される可能性がある。ただしSBCは株主希薄化を伴う実質コストのため、これを加算したAdjusted EPS（-0.159）を過度に信頼すると過大評価リスクが生じる。投資家は調整の持続可能性と希薄化後株式数を注視し、過小評価の機会と過大調整の罠の両方を考慮すべき。",
+        "comment": "調整項目のSBCと無形資産償却はともに恒常的な非現金費用であり、特にSBCはバイオテック企業で毎期発生する本質的なコスト（株主希薄化を伴う）。これを加算還元したAdjusted EPS(-0.16)はGAAP EPS(-0.22)より大幅に改善して見えるが、市場がGAAPベースで判断する場合に一時的に実力が過小評価される可能性はある。ただし恒常的コストを除外しすぎているため、過大評価リスクの方が大きく、投資家は希薄化影響とキャッシュバーン率に注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "毎期発生する株式報酬費用で恒常的な非現金コスト。バイオテック企業では継続的な人材投資として避けられない性質を持つ。",
+            "snippet": "非現金費用だが恒常的な株式報酬であり、毎期発生する可能性が高い(0.2)",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の定期的な償却費であり、過去のM&Aに基づく恒常的費用。一過性調整としては不適切。",
+            "snippet": "買収関連無形資産の償却は定期的に発生する恒常的非現金費用(0.2)",
             "confidence": 0.2
           }
         ]
@@ -78,28 +78,28 @@
     },
     {
       "gaap_eps": -0.24164250805899845,
-      "adjusted_eps": -0.023117843078267197,
+      "adjusted_eps": -0.1568607147171213,
       "gaap_net_income": -108122000.0,
-      "adjusted_net_income": -10343988.93384324,
+      "adjusted_net_income": -70186716.45513496,
       "diluted_shares_used": 447446109.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 75165000.0,
+          "amount": 23763000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 75070573.35254669,
+          "net_amount": 23733147.536440726,
           "tax_rate_applied": 0.0012562581980084613
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 12900000.0,
+          "amount": 12900000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -112,18 +112,18 @@
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 9836000,
+          "amount": 1320000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 9823643.44436439,
+          "net_amount": 1318341.739178629,
           "tax_rate_applied": 0.0012562581980084613
         }
       ],
-      "net_adjustment_total": 97778011.06615676,
+      "net_adjustment_total": 37935283.54486504,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "ヘルスケア / バイオ",
@@ -139,22 +139,22 @@
     },
     {
       "gaap_eps": -0.3629918103000007,
-      "adjusted_eps": -0.2769866262351178,
+      "adjusted_eps": -0.2763781200946109,
       "gaap_net_income": -162253000.0,
-      "adjusted_net_income": -123809710.82896765,
+      "adjusted_net_income": -123537715.85824345,
       "diluted_shares_used": 446988046.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 25044000,
+          "amount": 25243000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 25043536.936825886,
+          "net_amount": 25242533.257318955,
           "tax_rate_applied": 1.8489984591679507e-05
         },
         {
@@ -169,9 +169,22 @@
           "category": "買収・統合関連",
           "net_amount": 13399752.234206472,
           "tax_rate_applied": 1.8489984591679507e-05
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 73000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 72998.6502311248,
+          "tax_rate_applied": 1.8489984591679507e-05
         }
       ],
-      "net_adjustment_total": 38443289.171032354,
+      "net_adjustment_total": 38715284.14175655,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -187,22 +200,22 @@
     },
     {
       "gaap_eps": -0.41186632065681955,
-      "adjusted_eps": -0.32057607892284234,
+      "adjusted_eps": -0.2994888261604284,
       "gaap_net_income": -171897000.0,
-      "adjusted_net_income": -133796000.0,
+      "adjusted_net_income": -124995000.0,
       "diluted_shares_used": 417361147.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 25801000,
+          "amount": 26159000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 25801000.0,
+          "net_amount": 26159000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -217,9 +230,22 @@
           "category": "買収・統合関連",
           "net_amount": 12300000.0,
           "tax_rate_applied": 0.0
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 8443000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 8443000.0,
+          "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 38101000.0,
+      "net_adjustment_total": 46902000.0,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -283,39 +309,39 @@
     },
     {
       "gaap_eps": -0.6524483501243253,
-      "adjusted_eps": -0.38803413676665816,
+      "adjusted_eps": -0.5137052717100365,
       "gaap_net_income": -178906000.0,
-      "adjusted_net_income": -106401733.193359,
+      "adjusted_net_income": -140861656.44076365,
       "diluted_shares_used": 274207146.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 65561000.0,
+          "amount": 30784000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 65150590.536179475,
+          "net_amount": 30591293.28511995,
           "tax_rate_applied": 0.006259963451145068
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 7400000.0,
+          "amount": 7500000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 7353676.270461527,
+          "net_amount": 7453050.274116412,
           "tax_rate_applied": 0.006259963451145068
         }
       ],
-      "net_adjustment_total": 72504266.806641,
+      "net_adjustment_total": 38044343.55923636,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "ヘルスケア / バイオ",
@@ -331,22 +357,22 @@
     },
     {
       "gaap_eps": -0.3391640109989896,
-      "adjusted_eps": -0.2620013030428962,
+      "adjusted_eps": -0.2601996740973481,
       "gaap_net_income": -95842000.0,
-      "adjusted_net_income": -74037126.79383329,
+      "adjusted_net_income": -73528016.99503528,
       "diluted_shares_used": 282583048.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 17743000,
+          "amount": 18253000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 17712029.725633655,
+          "net_amount": 18221139.52443167,
           "tax_rate_applied": 0.0017454925529135092
         },
         {
@@ -363,7 +389,7 @@
           "tax_rate_applied": 0.0017454925529135092
         }
       ],
-      "net_adjustment_total": 21804873.20616671,
+      "net_adjustment_total": 22313983.004964724,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -379,22 +405,22 @@
     },
     {
       "gaap_eps": -0.4027309917712281,
-      "adjusted_eps": -0.3211769700240549,
+      "adjusted_eps": -0.31885248738185024,
       "gaap_net_income": -97540000.0,
-      "adjusted_net_income": -77787908.79332674,
+      "adjusted_net_income": -77224927.44460194,
       "diluted_shares_used": 242196409.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 15958000,
+          "amount": 16524000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 15872891.10061899,
+          "net_amount": 16435872.44934379,
           "tax_rate_applied": 0.005333306139930453
         },
         {
@@ -411,7 +437,7 @@
           "tax_rate_applied": 0.005333306139930453
         }
       ],
-      "net_adjustment_total": 19752091.20667326,
+      "net_adjustment_total": 20315072.555398062,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -475,39 +501,39 @@
     },
     {
       "gaap_eps": -0.4474108428436844,
-      "adjusted_eps": -0.225973406901443,
+      "adjusted_eps": -0.35758571061705663,
       "gaap_net_income": -92996000.0,
-      "adjusted_net_income": -46969409.17801727,
+      "adjusted_net_income": -74325513.73405592,
       "diluted_shares_used": 207853702.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 44689000.0,
+          "amount": 16086000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 42818708.85449937,
+          "net_amount": 15412780.564198727,
           "tax_rate_applied": 0.04185126419254467
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 3348000.0,
+          "amount": 3400000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 3207881.9674833603,
+          "net_amount": 3257705.701745348,
           "tax_rate_applied": 0.04185126419254467
         }
       ],
-      "net_adjustment_total": 46026590.82198273,
+      "net_adjustment_total": 18670486.265944075,
       "filing_date": "2023-12-31",
       "form": "10-K",
       "sector": "ヘルスケア / バイオ",
@@ -523,22 +549,22 @@
     },
     {
       "gaap_eps": -0.4339953401898348,
-      "adjusted_eps": -0.34188383362622043,
+      "adjusted_eps": -0.33978423997037877,
       "gaap_net_income": -93017000.0,
-      "adjusted_net_income": -73275000.0,
+      "adjusted_net_income": -72825000.0,
       "diluted_shares_used": 214327186.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 16342000,
+          "amount": 16792000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 16342000.0,
+          "net_amount": 16792000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -555,7 +581,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 19742000.0,
+      "net_adjustment_total": 20192000.0,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -571,22 +597,22 @@
     },
     {
       "gaap_eps": -0.38093398732148065,
-      "adjusted_eps": -0.3164553269802134,
+      "adjusted_eps": -0.3143502255722903,
       "gaap_net_income": -76726000.0,
-      "adjusted_net_income": -63739000.0,
+      "adjusted_net_income": -63315000.0,
       "diluted_shares_used": 201415475.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 11387000,
+          "amount": 11811000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 11387000.0,
+          "net_amount": 11811000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -603,7 +629,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 12987000.0,
+      "net_adjustment_total": 13411000.0,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -667,39 +693,39 @@
     },
     {
       "gaap_eps": -0.3275197849904277,
-      "adjusted_eps": -0.19975220449635353,
+      "adjusted_eps": -0.28195686770883305,
       "gaap_net_income": -57492000.0,
-      "adjusted_net_income": -35064000.0,
+      "adjusted_net_income": -49494000.0,
       "diluted_shares_used": 175537487.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 22277000.0,
+          "amount": 7695000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 22277000.0,
+          "net_amount": 7695000.0,
           "tax_rate_applied": 0.0
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 151000.0,
+          "amount": 303000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 151000.0,
+          "net_amount": 303000.0,
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 22428000.0,
+      "net_adjustment_total": 7998000.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "ヘルスケア / バイオ",
@@ -715,22 +741,22 @@
     },
     {
       "gaap_eps": -0.34851478617728493,
-      "adjusted_eps": -0.2981849728173458,
+      "adjusted_eps": -0.29672045539342273,
       "gaap_net_income": -60445000.0,
-      "adjusted_net_income": -51716000.0,
+      "adjusted_net_income": -51462000.0,
       "diluted_shares_used": 173435970.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 8653000,
+          "amount": 8907000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 8653000.0,
+          "net_amount": 8907000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -747,7 +773,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 8729000.0,
+      "net_adjustment_total": 8983000.0,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -763,22 +789,22 @@
     },
     {
       "gaap_eps": -0.38069270161107455,
-      "adjusted_eps": -0.3483082721283875,
+      "adjusted_eps": -0.3472978918648072,
       "gaap_net_income": -65560000.0,
-      "adjusted_net_income": -59983000.0,
+      "adjusted_net_income": -59809000.0,
       "diluted_shares_used": 172212390.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 5501000,
+          "amount": 5675000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 5501000.0,
+          "net_amount": 5675000.0,
           "tax_rate_applied": 0.0
         },
         {
@@ -795,7 +821,7 @@
           "tax_rate_applied": 0.0
         }
       ],
-      "net_adjustment_total": 5577000.0,
+      "net_adjustment_total": 5751000.0,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",

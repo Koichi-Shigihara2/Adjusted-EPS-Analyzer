@@ -1,6 +1,6 @@
 {
   "ticker": "BSY",
-  "last_updated": "2026-05-25T13:42:36.796950",
+  "last_updated": "2026-05-29T23:41:28.801399",
   "quarters": [
     {
       "gaap_eps": 0.2963803325334758,
@@ -63,17 +63,17 @@
         }
       },
       "ai_analysis": {
-        "health": "調整中",
-        "comment": "SBCと無形資産償却はいずれも恒常的に発生する非現金費用であるため、GAAP EPSは企業の実力をある程度過小評価している可能性がある。市場がGAAPベースで判断する場合、調整後EPSが示すキャッシュ生成力が見えにくくなり、過小評価リスクが生じる。ただしSBCは株主希薄化を伴う実質コストであり、無形資産償却も買収の経済的影響を反映するため、調整を過度に信頼すると持続可能性を過大評価するリスクもある。投資家はフリーキャッシュフローとSBCの希薄化効果を特に注視すべき。",
+        "health": "調整大",
+        "comment": "調整項目である株式報酬費用（SBC）と無形資産償却費はともに恒常的に発生する項目であり、特にSBCはテック企業で毎期続く運用コスト、無形資産償却も買収後の継続費用です。市場がGAAP EPS（0.296）を基準に評価する場合、非現金調整を加えたAdjusted EPS（0.368）の企業実力が見えにくくなり、実力を過小評価するリスクがあります。ただしこれらは実質的なコスト（特にSBCの希薄化効果）のため、調整を過信すると過大評価のリスクも伴います。投資家はキャッシュフロー生成力とSBCの継続規模を注視すべきです。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコストであり、株主希薄化を伴う（0.2: 恒常的な可能性が高い）",
+            "snippet": "非現金費用としてadd_backされているが、毎期発生する恒常的な株式報酬コストであり一過性ではない",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は非現金だが定期的に発生する恒常的性格が強い費用（0.2: 恒常的な可能性が高い）",
+            "snippet": "買収関連無形資産の償却としてadd_backされているが、買収後は継続して発生する恒常的費用",
             "confidence": 0.2
           }
         ]
@@ -81,28 +81,28 @@
     },
     {
       "gaap_eps": 0.17604292697404164,
-      "adjusted_eps": 0.3418795192265803,
+      "adjusted_eps": 0.25261919844879516,
       "gaap_net_income": 58638000.0,
-      "adjusted_net_income": 113876380.0,
+      "adjusted_net_income": 84144730.0,
       "diluted_shares_used": 333089213.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 55174000.0,
+          "amount": 17539000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 43587460.0,
+          "net_amount": 13855810.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 8211000.0,
+          "amount": 8211000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -115,7 +115,7 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 6537000,
+          "amount": 6537000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -126,7 +126,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 55238380.0,
+      "net_adjustment_total": 25506730.0,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -158,7 +158,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 12377568.379389923,
           "tax_rate_applied": 0.3139580767437133
@@ -204,12 +204,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 19593000,
+          "amount": 19593000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 17401570.42768215,
           "tax_rate_applied": 0.1118475768038509
@@ -298,28 +298,28 @@
     },
     {
       "gaap_eps": 0.15008051836438258,
-      "adjusted_eps": 0.3167199874998115,
+      "adjusted_eps": 0.22631029440933337,
       "gaap_net_income": 50093000.0,
-      "adjusted_net_income": 105712950.0,
+      "adjusted_net_income": 75536530.0,
       "diluted_shares_used": 333774167.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 54759000.0,
+          "amount": 16561000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 43259610.0,
+          "net_amount": 13083190.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 8281000.0,
+          "amount": 8281000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -332,7 +332,7 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 7365000,
+          "amount": 7365000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -343,7 +343,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 55619950.0,
+      "net_adjustment_total": 25443530.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -375,7 +375,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 11578572.646958886,
           "tax_rate_applied": 0.28069996602106695
@@ -421,12 +421,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 22101000,
+          "amount": 22101000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 20578585.685483873,
           "tax_rate_applied": 0.06888440860215053
@@ -515,28 +515,28 @@
     },
     {
       "gaap_eps": 0.5400993618617094,
-      "adjusted_eps": 0.7042441247551722,
+      "adjusted_eps": 0.6172666690832819,
       "gaap_net_income": 179585000.0,
-      "adjusted_net_income": 234163730.0,
+      "adjusted_net_income": 205243410.0,
       "diluted_shares_used": 332503633.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 53488000.0,
+          "amount": 16880000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 42255520.0,
+          "net_amount": 13335200.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 8948000.0,
+          "amount": 8948000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -549,7 +549,7 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 6651000,
+          "amount": 6651000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -560,7 +560,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 54578730.0,
+      "net_adjustment_total": 25658410.0,
       "filing_date": "2023-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -592,7 +592,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 14109828.849168116,
           "tax_rate_applied": 0.2374714197379963
@@ -638,12 +638,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 18104000,
+          "amount": 18104000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 16527893.716786496,
           "tax_rate_applied": 0.08705845576742732
@@ -732,28 +732,28 @@
     },
     {
       "gaap_eps": 0.0775307454075693,
-      "adjusted_eps": 0.1764082179093788,
+      "adjusted_eps": 0.13433989195213905,
       "gaap_net_income": 25722000.0,
-      "adjusted_net_income": 58526100.28720349,
+      "adjusted_net_income": 44569295.47920434,
       "diluted_shares_used": 331765158.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 60107000.0,
+          "amount": 23847000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 32891655.228167213,
+          "net_amount": 13049516.732262524,
           "tax_rate_applied": 0.4527816189767046
         },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": 10245000.0,
+          "amount": 10245000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -766,31 +766,18 @@
         {
           "item_id": "loan_loss_provision_abnormal",
           "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 4594000.0,
+          "amount": 350000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 2513921.242421019,
-          "tax_rate_applied": 0.4527816189767046
-        },
-        {
-          "item_id": "derivative_fv_change",
-          "item_name": "デリバティブ公正価値変動損益",
-          "amount": -14999000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金・非経常のデリバティブ時価評価変動",
-          "extracted_from": "us-gaap:UnrealizedGainLossOnDerivatives",
-          "category": "公正価値変動関連",
-          "net_amount": -8207728.496968407,
+          "net_amount": 191526.43335815336,
           "tax_rate_applied": 0.4527816189767046
         }
       ],
-      "net_adjustment_total": 32804100.287203487,
+      "net_adjustment_total": 18847295.47920434,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -805,32 +792,13 @@
       "diluted_shares": 331765158.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4,
-      "special_flags": [
-        "EPS_DISCREPANCY"
-      ],
-      "special_notes": {
-        "fair_value_auto_detect": {
-          "flag": "EPS_DISCREPANCY",
-          "detected_items": [
-            {
-              "item_name": "デリバティブ公正価値変動損益",
-              "xbrl_tag": "us-gaap:UnrealizedGainLossOnDerivatives",
-              "xbrl_value": 14999000.0,
-              "adjustment_amount": -14999000.0,
-              "net_amount": -8207728.496968407
-            }
-          ],
-          "condition1": "前年同期データなし（条件1スキップ）",
-          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
-        }
-      }
+      "quarter": 4
     },
     {
       "gaap_eps": 0.11377727472800006,
-      "adjusted_eps": 0.18506820679594843,
+      "adjusted_eps": 0.1885014466068617,
       "gaap_net_income": 36997000.0,
-      "adjusted_net_income": 60178699.68496175,
+      "adjusted_net_income": 61295087.58920726,
       "diluted_shares_used": 325170383.0,
       "adjustments": [
         {
@@ -841,7 +809,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 14899179.764685713,
           "tax_rate_applied": 0.2071108634619918
@@ -858,9 +826,22 @@
           "category": "買収・統合関連",
           "net_amount": 8282519.920276034,
           "tax_rate_applied": 0.2071108634619918
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 1408000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 1116387.9042455156,
+          "tax_rate_applied": 0.2071108634619918
         }
       ],
-      "net_adjustment_total": 23181699.684961747,
+      "net_adjustment_total": 24298087.58920726,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "Technology",
@@ -879,20 +860,20 @@
     },
     {
       "gaap_eps": 0.16755086542476283,
-      "adjusted_eps": 0.24405706840291186,
+      "adjusted_eps": 0.25180993024976495,
       "gaap_net_income": 55673000.0,
-      "adjusted_net_income": 81094115.11990431,
+      "adjusted_net_income": 83670198.96468559,
       "diluted_shares_used": 332275216.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 17469000,
+          "amount": 17469000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
           "net_amount": 15867986.136983078,
           "tax_rate_applied": 0.09164885585991882
@@ -909,9 +890,22 @@
           "category": "買収・統合関連",
           "net_amount": 9553128.982921233,
           "tax_rate_applied": 0.09164885585991882
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 2836000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 2576083.8447812703,
+          "tax_rate_applied": 0.09164885585991882
         }
       ],
-      "net_adjustment_total": 25421115.11990431,
+      "net_adjustment_total": 27997198.96468558,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "Technology",

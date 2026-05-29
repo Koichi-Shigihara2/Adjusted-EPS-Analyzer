@@ -1,6 +1,6 @@
 {
   "ticker": "RDW",
-  "last_updated": "2026-05-25T13:49:54.338612",
+  "last_updated": "2026-05-29T23:48:31.646007",
   "quarters": [
     {
       "gaap_eps": -0.3950074919344677,
@@ -48,7 +48,7 @@
         {
           "item_id": "goodwill_impairment",
           "item_name": "のれん減損",
-          "amount": 20898000.0,
+          "amount": 20898000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -61,7 +61,7 @@
         {
           "item_id": "inventory_writeoff",
           "item_name": "在庫評価損・減損",
-          "amount": 13645000,
+          "amount": 13645000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -184,26 +184,26 @@
     },
     {
       "gaap_eps": -1.0154634082661342,
-      "adjusted_eps": -0.4077311825608004,
+      "adjusted_eps": -0.49176388257185927,
       "gaap_net_income": -67169000.0,
-      "adjusted_net_income": -26969850.0,
+      "adjusted_net_income": -32528290.0,
       "diluted_shares_used": 66146155.0,
       "adjustments": [
         {
           "item_id": "warrant_fv_change",
           "item_name": "ワラント公正価値変動損益",
-          "amount": 50885000.0,
+          "amount": 43849000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金・非経常のワラント時価評価変動",
           "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
           "category": "公正価値変動関連",
-          "net_amount": 40199150.0,
+          "net_amount": 34640710.0,
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 40199150.0,
+      "net_adjustment_total": 34640710.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "宇宙・航空",
@@ -226,9 +226,9 @@
             {
               "item_name": "ワラント公正価値変動損益",
               "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
-              "xbrl_value": 50885000.0,
-              "adjustment_amount": 50885000.0,
-              "net_amount": 40199150.0
+              "xbrl_value": 43849000,
+              "adjustment_amount": 43849000,
+              "net_amount": 34640710.0
             }
           ],
           "condition1": "純利益変動710% / 売上変動10% = 74.2倍（閾値5倍）",
@@ -259,12 +259,26 @@
     },
     {
       "gaap_eps": -0.2753657652471236,
-      "adjusted_eps": -0.2753657652471236,
+      "adjusted_eps": -0.16742594682171408,
       "gaap_net_income": -18092000.0,
-      "adjusted_net_income": -18092000.0,
+      "adjusted_net_income": -11000170.0,
       "diluted_shares_used": 65701704.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjustments": [
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 8977000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 7091830.0,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": 7091830.0,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "宇宙・航空",
@@ -276,7 +290,26 @@
       "diluted_shares": 65701704.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 8977000.0,
+              "adjustment_amount": 8977000.0,
+              "net_amount": 7091830.0
+            }
+          ],
+          "condition1": "純利益変動231% / 売上変動30% = 7.7倍（閾値5倍）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.123451544757796,
@@ -393,7 +426,7 @@
         {
           "item_id": "goodwill_impairment",
           "item_name": "のれん減損",
-          "amount": 10608000.0,
+          "amount": 10608000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
@@ -518,12 +551,26 @@
     },
     {
       "gaap_eps": -0.5507307196559909,
-      "adjusted_eps": -0.5507307196559909,
+      "adjusted_eps": -0.6862678015552716,
       "gaap_net_income": -24252000.0,
-      "adjusted_net_income": -24252000.0,
+      "adjusted_net_income": -30220516.36,
       "diluted_shares_used": 44036040.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjustments": [
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": -7555084,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": -5968516.36,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": -5968516.36,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "宇宙・航空",
@@ -535,7 +582,26 @@
       "diluted_shares": 44036040.0,
       "period_end": "2021-09-30",
       "fiscal_year": 2021,
-      "quarter": 3
+      "quarter": 3,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": -7555084,
+              "adjustment_amount": -7555084,
+              "net_amount": -5968516.36
+            }
+          ],
+          "condition1": "前年同期データなし（条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.1546290322580645,

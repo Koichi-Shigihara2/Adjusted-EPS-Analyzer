@@ -772,7 +772,67 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
 
                 if abs(q4_val) > 0.01:  # 0でなければ保存
                     data[adj_tag] = {'value': q4_val, 'unit': 'USD'}
-        
+
+        # ★★★ Q2/Q3 YTD差分補完（YTDのみ存在する調整項目への対応）★★★
+        # KO/NOW/MRVL等はXBRLで3ヶ月値を報告せずYTD累計値のみ → Q2=YTD6m-Q1, Q3=YTD9m-YTD6m
+        print("\n=== Filling Q2/Q3 adjustment items via YTD diff ===")
+        for fiscal_year in fiscal_years:
+            q1_key = (fiscal_year, 1)
+            q2_key = (fiscal_year, 2)
+            q3_key = (fiscal_year, 3)
+            if q1_key not in quarters_map or q2_key not in quarters_map or q3_key not in quarters_map:
+                continue
+            q1_data = quarters_map[q1_key]
+            q2_data = quarters_map[q2_key]
+            q3_data = quarters_map[q3_key]
+            q1_start_str = q1_data.get('start')
+            q2_end_str   = q2_data.get('end')
+            q3_end_str   = q3_data.get('end')
+            if not q1_start_str or not q2_end_str or not q3_end_str:
+                continue
+            for adj_tag in adjustment_tags:
+                # YTD_6m検索（start=Q1_start, end=Q2_end, days 140-210）
+                ytd_6m_val = None
+                for item in tag_data_map.get(adj_tag, []):
+                    if (item.get('form', '').startswith('10-Q') and
+                            item.get('start', '') == q1_start_str and
+                            item.get('end', '') == q2_end_str):
+                        d = (datetime.strptime(item['end'], '%Y-%m-%d') -
+                             datetime.strptime(item['start'], '%Y-%m-%d')).days
+                        if 140 <= d <= 210:
+                            ytd_6m_val = item['val']
+                            break
+                # YTD_9m検索（start=Q1_start, end=Q3_end, days 200-310）
+                ytd_9m_val = None
+                for item in tag_data_map.get(adj_tag, []):
+                    if (item.get('form', '').startswith('10-Q') and
+                            item.get('start', '') == q1_start_str and
+                            item.get('end', '') == q3_end_str):
+                        d = (datetime.strptime(item['end'], '%Y-%m-%d') -
+                             datetime.strptime(item['start'], '%Y-%m-%d')).days
+                        if 200 <= d <= 310:
+                            ytd_9m_val = item['val']
+                            break
+                if ytd_6m_val is None and ytd_9m_val is None:
+                    continue
+                q1_val = normalize_value(q1_data.get(adj_tag))
+                # Q2: 欠落かつ YTD_6m 存在 → Q2 = YTD_6m - Q1
+                if adj_tag not in q2_data and ytd_6m_val is not None:
+                    q2_val = ytd_6m_val - q1_val
+                    if abs(q2_val) > 0.01:
+                        q2_data[adj_tag] = {'value': q2_val, 'unit': 'USD'}
+                        print(f"  [YTD6m] {adj_tag} Q2 FY{fiscal_year}: {q2_val:,.0f} (ytd6m={ytd_6m_val:,.0f}, q1={q1_val:,.0f})")
+                # Q3: 欠落かつ YTD_9m 存在 → Q3 = YTD_9m - YTD_6m (YTD_6m不在時は - Q1 - Q2)
+                if adj_tag not in q3_data and ytd_9m_val is not None:
+                    q2_val_now = normalize_value(q2_data.get(adj_tag))
+                    if ytd_6m_val is not None:
+                        q3_val = ytd_9m_val - ytd_6m_val
+                    else:
+                        q3_val = ytd_9m_val - q1_val - q2_val_now
+                    if abs(q3_val) > 0.01:
+                        q3_data[adj_tag] = {'value': q3_val, 'unit': 'USD'}
+                        print(f"  [YTD9m] {adj_tag} Q3 FY{fiscal_year}: {q3_val:,.0f} (ytd9m={ytd_9m_val:,.0f})")
+
         # ★★★ 税引前利益の計算（net_income + tax_expense）- 強化版 ★★★
         print("\n=== Computing pretax_income from net_income + tax_expense ===")
         
