@@ -396,7 +396,7 @@ def check_growth_sanity(
         if phase1_growth <= g_fundamental * 1.2:
             signals.append(f"RR×ROIC上限({g_fundamental:.1%})以内 ✅")
         else:
-            signals.append(f"RR×ROIC上限({g_fundamental:.1%})超（期待値先行型） ℹ️")
+            signals.append(f"RR×ROIC({g_fundamental:.1%})：再投資より還元重視型、または期待値先行 ℹ️")
 
     # --- データ不足の場合 ---
     if not signals and not warnings:

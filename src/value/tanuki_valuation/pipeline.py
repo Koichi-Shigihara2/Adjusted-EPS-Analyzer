@@ -470,6 +470,7 @@ class TanukiValuationPipeline:
         rice_bull_d = rice.get("bull", {})
         sbc_adjusted = "SBC補正済み" in rice_note
         excl_reason = rice_note if not rice_available else "N/A"
+        is_financial = "Financial" in (sector or "") or "Financial" in (excl_reason or "")
 
         # --- EPS data ---
         eps_summary_entry = self._load_eps_map().get(ticker, {})
@@ -687,7 +688,12 @@ class TanukiValuationPipeline:
                 fcf_m = fh.get("fcf_margin")
                 if fcf_v is not None:
                     fcf_str = f"${fcf_v/1e9:.2f}B"
-                    mgn_str = f" (FCF_Margin: {fcf_m:.1f}%)" if fcf_m is not None else ""
+                    if is_financial:
+                        mgn_str = " (Financial sector: N/A)"
+                    elif fcf_m is not None:
+                        mgn_str = f" (FCF_Margin: {fcf_m:.1f}%)"
+                    else:
+                        mgn_str = ""
                     L.append(f"  {yr}: {fcf_str}{mgn_str}")
                 else:
                     L.append(f"  {yr}: N/A")
@@ -778,7 +784,8 @@ class TanukiValuationPipeline:
         L.append("Components (BASE scenario):")
         g_val = rice_base_data.get("growth_rate")
         L.append(f"G  = {g_val*100:.1f}%  [TANUKI forward growth rate]" if g_val is not None else "G  = N/A")
-        L.append(f"Q  = {rice_q}   [OCF / (NetIncome + SBC), 3yr avg]")
+        q_display = "–" if (rice_q != "N/A" and isinstance(rice_q, (int, float)) and abs(rice_q) >= 100) else rice_q
+        L.append(f"Q  = {q_display}   [OCF / (NetIncome + SBC), 3yr avg]")
         if rice_cf != "N/A":
             L.append(f"CF = {rice_cf}  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]")
         else:
@@ -856,7 +863,10 @@ class TanukiValuationPipeline:
         L.append("")
         L.append(f"[{n+2}. HYPECORE]")
         L.append(f"Current_Phase: {hype_phase}")
-        L.append(f"Alpha_Premium: {hype_alpha}" if hype_alpha != "N/A" else "Alpha_Premium: N/A")
+        if hype_alpha != "N/A" and isinstance(hype_alpha, (int, float)):
+            L.append(f"Alpha_Premium: {round(hype_alpha, 2)}")
+        else:
+            L.append("Alpha_Premium: N/A")
         L.append(f"HYPE_Signal: {hype_signal}")
         L.append("Phase_History (recent 6 months):")
         if phase_history:
