@@ -727,6 +727,10 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             q2_key = (fiscal_year, 2)
             q3_key = (fiscal_year, 3)
             
+            # Q3期末日とQ1期首日を取得（YTD値検索に使用）
+            q3_end_str   = quarters_map[q3_key].get('end')   if q3_key in quarters_map else None
+            q1_start_str = quarters_map[q1_key].get('start') if q1_key in quarters_map else None
+
             for adj_tag in adjustment_tags:
                 # 年次データから adj_tag の値を取得
                 annual_items = annual_data_by_tag.get(adj_tag, [])
@@ -737,24 +741,37 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                         break
                 if annual_val is None:
                     continue
-                
-                # Q1-3の合計を計算
-                q1_val = 0
-                if q1_key in quarters_map and adj_tag in quarters_map[q1_key]:
-                    q1_val = normalize_value(quarters_map[q1_key][adj_tag])
-                q2_val = 0
-                if q2_key in quarters_map and adj_tag in quarters_map[q2_key]:
-                    q2_val = normalize_value(quarters_map[q2_key][adj_tag])
-                q3_val = 0
-                if q3_key in quarters_map and adj_tag in quarters_map[q3_key]:
-                    q3_val = normalize_value(quarters_map[q3_key][adj_tag])
-                q123_sum = q1_val + q2_val + q3_val
-                
-                # Q4値 = 年次 - Q1-3合計
-                q4_val = annual_val - q123_sum
+
+                # ★ YTD 9-month値を tag_data_map から直接探す（タグ混在問題への対策）
+                # Q2/Q3が別タグ（例: AllocatedShareBasedCompensationExpense）を使う場合、
+                # 同タグのQ1-3合算では正しく減算できない。YTD累計値を使う方が確実。
+                ytd_9m_val = None
+                if q3_end_str and q1_start_str:
+                    for item in tag_data_map.get(adj_tag, []):
+                        if (item.get('form', '').startswith('10-Q') and
+                                item.get('start', '') == q1_start_str and
+                                item.get('end', '') == q3_end_str):
+                            d = (datetime.strptime(item['end'], '%Y-%m-%d') -
+                                 datetime.strptime(item['start'], '%Y-%m-%d')).days
+                            if 200 <= d <= 310:
+                                ytd_9m_val = item['val']
+                                break
+
+                if ytd_9m_val is not None:
+                    # YTD法: Q4 = Annual - YTD_Q3（タグ混在に依存しない）
+                    q4_val = annual_val - ytd_9m_val
+                    print(f"  [YTD] {adj_tag} Q4 {filing_date}: {q4_val:,.0f} (annual={annual_val:,.0f}, ytd_9m={ytd_9m_val:,.0f})")
+                else:
+                    # フォールバック: 同タグのQ1-3合計を減算
+                    q1_val = normalize_value(quarters_map[q1_key].get(adj_tag)) if q1_key in quarters_map else 0
+                    q2_val = normalize_value(quarters_map[q2_key].get(adj_tag)) if q2_key in quarters_map else 0
+                    q3_val = normalize_value(quarters_map[q3_key].get(adj_tag)) if q3_key in quarters_map else 0
+                    q123_sum = q1_val + q2_val + q3_val
+                    q4_val = annual_val - q123_sum
+                    print(f"  [Q1-3sum] {adj_tag} Q4 {filing_date}: {q4_val:,.0f} (annual={annual_val:,.0f}, q123={q123_sum:,.0f})")
+
                 if abs(q4_val) > 0.01:  # 0でなければ保存
                     data[adj_tag] = {'value': q4_val, 'unit': 'USD'}
-                    print(f"  Added {adj_tag} to Q4 {filing_date}: {q4_val:,.0f} (annual={annual_val:,.0f}, Q1-3 sum={q123_sum:,.0f})")
         
         # ★★★ 税引前利益の計算（net_income + tax_expense）- 強化版 ★★★
         print("\n=== Computing pretax_income from net_income + tax_expense ===")
