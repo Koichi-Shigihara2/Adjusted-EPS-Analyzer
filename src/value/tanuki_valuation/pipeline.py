@@ -1038,8 +1038,10 @@ class TanukiValuationPipeline:
                         if "financial_health" not in result:
                             result["financial_health"] = {}
                         result["financial_health"]["dilution_3yr_annual_pct"] = round(dilution_3yr, 2)
-                        result["financial_health"]["shares_yr_now"] = yr_now
-                        result["financial_health"]["shares_yr_3ago"] = yr_3ago
+                        result["financial_health"]["shares_yr_now"] = s_now
+                        result["financial_health"]["shares_yr_3ago"] = s_3ago
+                        result["financial_health"]["shares_yr_now_label"] = yr_now
+                        result["financial_health"]["shares_yr_3ago_label"] = yr_3ago
             except Exception:
                 pass
 
