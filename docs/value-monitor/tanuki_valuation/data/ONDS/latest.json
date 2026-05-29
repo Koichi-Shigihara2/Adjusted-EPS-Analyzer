@@ -1,10 +1,10 @@
 {
   "intrinsic_value_pt": 274267503.47811216,
-  "intrinsic_value_per_share": 1.7014946586832411,
+  "intrinsic_value_per_share": 1.7027551074768241,
   "intrinsic_value_beta": 1.65,
-  "upside_percent_beta": -87.3,
+  "upside_percent_beta": -87.5,
   "intrinsic_value_rf": 4.62,
-  "upside_percent_rf": -64.5,
+  "upside_percent_rf": -65.1,
   "v0": 274267503.47811216,
   "v0_adjusted": 274267503.47811216,
   "alpha": 0.0,
@@ -14,8 +14,8 @@
     "2年後": 2.87,
     "3年後": 3.73
   },
-  "upside_percent": -86.9,
-  "calculation_date": "2026-05-29T02:40:48+09:00",
+  "upside_percent": -87.1,
+  "calculation_date": "2026-05-29T19:52:17+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -33,7 +33,7 @@
   "sensitivity": {
     "matrix": [
       [
-        1.57,
+        1.58,
         1.81,
         2.15
       ],
@@ -200,7 +200,7 @@
     "long_term_debt": 0.0,
     "short_term_debt": 1500000.0,
     "net_cash": 549244000.0,
-    "net_cash_per_share": 1.101817374783191,
+    "net_cash_per_share": 1.1026335891472543,
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none"
@@ -233,9 +233,9 @@
       -47499043,
       -20359156
     ],
-    "diluted_shares": 498489144,
+    "diluted_shares": 498120142,
     "roe_10yr_avg": 0.0,
-    "current_price": 13.005,
+    "current_price": 13.25,
     "latest_revenue": 50731000.0,
     "rpo": 205000,
     "beta": 1.1,
@@ -260,12 +260,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 144.5,
+    "per": 147.22221,
     "per_adjusted": null,
     "peg": null,
-    "ps": 67.10679,
+    "ps": 68.3204,
     "ev_ebitda": null,
-    "ma200": 8.80575
+    "ma200": 8.85485
   },
   "validation": {
     "validated_at": "2026-05-29",
@@ -340,10 +340,10 @@
     }
   ],
   "growth_sanity": {
-    "verdict": "PLAUSIBLE",
+    "verdict": "REVIEW",
     "phase1_growth": 0.3,
-    "industry_benchmark": null,
-    "damodaran_industry": null,
+    "industry_benchmark": 0.09607252569343137,
+    "damodaran_industry": "Semiconductor",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 1.8790498355579106,
     "rev_cagr_5yr": 0.8793796192673113,
@@ -351,6 +351,8 @@
     "signals": [
       "過去実績(3yr:187.9% / 5yr:87.9%)と整合 ✅"
     ],
-    "warnings": []
+    "warnings": [
+      "業界平均Semiconductor(9.6%)の3.1倍超 ⚠️"
+    ]
   }
 }
