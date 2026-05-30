@@ -1,6 +1,6 @@
 {
   "ticker": "AVGO",
-  "last_updated": "2026-05-30T13:04:47.267793",
+  "last_updated": "2026-05-30T13:12:22.521239",
   "quarters": [
     {
       "gaap_eps": 0.0,
@@ -76,9 +76,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "無形資産償却は買収を繰り返すAVGOにとって恒常的性格が強く、リストラ費用・訴訟和解は一過性と判断される。GAAP EPSが0.0に対し、多額のadd-back調整によりAdjusted EPSの実力は大幅に上方修正されるため、市場がGAAPのみで判断する場合に企業の実力が見えにくくなり、過小評価のリスクが高い。ただし無形資産償却の恒常的調整が大きいため、Adjustedベースで過大評価するリスクも存在。投資家は償却費の持続性と今後の買収戦略を注視すべき。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却。これは買収を繰り返す企業では毎期発生する恒常的な非現金費用に該当する。",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "一過性の事業再編費用。リストラ費用は通常、事業統合後の非経常的項目として一時的に扱われる。",
+            "confidence": 0.8
+          },
+          {
+            "item": "litigation_settlement",
+            "snippet": "非経常的な訴訟関連費用。訴訟和解金は典型的な一過性・非経常項目である。",
+            "confidence": 0.95
+          }
+        ]
       }
     }
   ]
