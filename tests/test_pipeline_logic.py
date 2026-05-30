@@ -520,6 +520,54 @@ class TestRecommendedGrowth:
 
 
 # ─────────────────────────────────────────────
+# 8. 高成長逓減モデル vs 中央値モデル
+# ─────────────────────────────────────────────
+
+class TestGrowthDecayModel:
+    """TTM > 50% → 逓減モデル、≤ 50% → 中央値モデルのテスト"""
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
+    })
+    def test_high_ttm_uses_decay_model(self, _mock):
+        """TTM 93% (cagr_3yr) → 逓減モデル適用"""
+        # revenues[-1]/revenues[-4] = 719/100 = 7.19 → cagr_3yr ≈ 93%
+        result = _gs.check_growth_sanity(
+            "TEST", phase1_growth=0.93, sector="Semiconductor",
+            annual_revenues=[100.0, 200.0, 400.0, 719.0],
+        )
+        assert result["growth_model"] == "decay"
+        assert result["recommended_g"] is not None
+        # (min(0.93, 1.0) + 0.096) / 2 ≈ 0.513
+        expected = (0.93 + 0.096) / 2
+        assert abs(result["recommended_g"] - expected) < 0.01
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Software (System & Application)", "g_ebit": 0.10, "roc": 0.20, "rr": 0.60,
+    })
+    def test_low_ttm_uses_median_model(self, _mock):
+        """TTM 30% (cagr_3yr) → 中央値モデル維持"""
+        # revenues[-1]/revenues[-4] = 220/100 = 2.2 → cagr_3yr ≈ 30%
+        result = _gs.check_growth_sanity(
+            "TEST", phase1_growth=0.30, sector="Software_System",
+            annual_revenues=[100.0, 140.0, 180.0, 220.0],
+        )
+        assert result["growth_model"] == "median"
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Software (System & Application)", "g_ebit": 0.10, "roc": 0.20, "rr": 0.60,
+    })
+    def test_boundary_ttm_50_uses_median(self, _mock):
+        """TTM exactly 50% → 境界値は中央値モデル（> 50% でなければ逓減不適用）"""
+        # revenues[-1]/revenues[-4] = 337/100 = 3.37 → cagr_3yr ≈ 49.9%
+        result = _gs.check_growth_sanity(
+            "TEST", phase1_growth=0.50, sector="Software_System",
+            annual_revenues=[100.0, 150.0, 200.0, 337.0],
+        )
+        assert result["growth_model"] == "median"
+
+
+# ─────────────────────────────────────────────
 # 10. hypecore substage_watch の eps_surprise 分岐
 #    detect_substage() が eps_surprise の実際の値に応じて
 #    「大幅ミス」か「軽微なミス」かを正しく出力することを検証

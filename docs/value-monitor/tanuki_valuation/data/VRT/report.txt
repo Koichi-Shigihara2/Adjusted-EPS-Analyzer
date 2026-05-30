@@ -1,5 +1,5 @@
 VRT INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:25:50+09:00
+Generated: 2026-05-30T14:07:12+09:00
 Price: $315.71
 
 [1. TANUKI SCORE]
@@ -117,6 +117,7 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 30.1%
+成長モデル: 中央値モデル（TTM21.6%のため中央値モデル適用）
 推奨成長率内訳:
   中央値ベース:          18.5%
   最終推奨値:            18.5%
@@ -130,8 +131,10 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
-                  industry_benchmark, g_fundamental] (≥2 required)
+  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
+    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  Else: median of [rev_cagr_3yr, rev_cagr_5yr,
+        industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

@@ -1,5 +1,5 @@
 QBTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:25:46+09:00
+Generated: 2026-05-30T14:07:08+09:00
 Price: $30.14
 
 [1. TANUKI SCORE]
@@ -116,8 +116,8 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
+成長モデル: 逓減モデル（TTM50.8% → 業界9.6%へ5年線形逓減、平均30.2%）
 推奨成長率内訳:
-  中央値ベース:          30.2%
   最終推奨値:            30.2%
 判定         : PLAUSIBLE
 業界ベンチマーク: Computers/Peripherals / 9.6% (Damodaran 2025)
@@ -129,8 +129,10 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
-                  industry_benchmark, g_fundamental] (≥2 required)
+  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
+    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  Else: median of [rev_cagr_3yr, rev_cagr_5yr,
+        industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

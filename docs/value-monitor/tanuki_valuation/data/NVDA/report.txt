@@ -1,5 +1,5 @@
 NVDA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:25:44+09:00
+Generated: 2026-05-30T14:07:06+09:00
 Price: $211.14
 
 [1. TANUKI SCORE]
@@ -117,9 +117,9 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 32.5%
+成長モデル: 逓減モデル（TTM100.0% → 業界9.6%へ5年線形逓減、平均54.8%）
 推奨成長率内訳:
-  中央値ベース:          38.3%
-  最終推奨値:            38.3%
+  最終推奨値:            54.8%
 判定         : REVIEW
 業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
 signals:
@@ -131,8 +131,10 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
-                  industry_benchmark, g_fundamental] (≥2 required)
+  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
+    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  Else: median of [rev_cagr_3yr, rev_cagr_5yr,
+        industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

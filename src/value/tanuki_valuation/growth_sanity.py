@@ -440,20 +440,35 @@ def check_growth_sanity(
         else:
             recommended_g_median = (_rec_candidates[_n // 2 - 1] + _rec_candidates[_n // 2]) / 2
 
-    # ─── recommended_g: 中央値のみ ───
-    recommended_g = recommended_g_median  # None if < 2 candidates
+    # ─── recommended_g ───
+    _cagr_vals = [v for v in [cagr.get("cagr_3yr"), cagr.get("cagr_5yr")] if v is not None and v > 0]
+    _ttm_best = max(_cagr_vals) if _cagr_vals else None
 
-    # 上限キャップ: max(industry_benchmark × 3, 50%)
-    if recommended_g is not None:
-        _cap = max(
-            industry_g * 3.0 if (industry_g is not None and industry_g > 0) else 0.50,
-            0.50,
-        )
-        recommended_g = min(recommended_g, _cap)
+    if _ttm_best is not None and _ttm_best > 0.50:
+        # 高成長逓減モデル: 5年間で線形逓減する平均値
+        start_g = min(_ttm_best, 1.0)
+        end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
+        recommended_g = (start_g + end_g) / 2
+        growth_model = "decay"
+        growth_model_reason = f"TTM{start_g:.1%} → 業界{end_g:.1%}へ5年線形逓減、平均{recommended_g:.1%}"
+    else:
+        # 中央値モデル
+        recommended_g = recommended_g_median  # None if < 2 candidates
+        growth_model = "median"
+        _reason_ttm = f"TTM{_ttm_best:.1%}" if _ttm_best is not None else "TTMデータなし"
+        growth_model_reason = f"{_reason_ttm}のため中央値モデル適用"
 
-    # マイナス成長は自動調整対象外
-    if recommended_g is not None and recommended_g < 0:
-        recommended_g = None
+        # 上限キャップ: max(industry_benchmark × 3, 50%)
+        if recommended_g is not None:
+            _cap = max(
+                industry_g * 3.0 if (industry_g is not None and industry_g > 0) else 0.50,
+                0.50,
+            )
+            recommended_g = min(recommended_g, _cap)
+
+        # マイナス成長は自動調整対象外
+        if recommended_g is not None and recommended_g < 0:
+            recommended_g = None
 
     return {
         "verdict": verdict,
@@ -466,6 +481,8 @@ def check_growth_sanity(
         "g_fundamental": g_fundamental,
         "recommended_g_median": recommended_g_median,
         "recommended_g": recommended_g,
+        "growth_model": growth_model,
+        "growth_model_reason": growth_model_reason,
         "signals": signals,
         "warnings": warnings,
     }

@@ -362,6 +362,7 @@ class TanukiValuationPipeline:
                         valuation["validation"] = _orig_validation
                     extra = self._load_extra_data(ticker, valuation)
                     _phase1_auto_adjusted = True
+                    valuation["phase1_growth"] = _recommended_g
             except Exception as _e:
                 import logging as _logging
                 _logging.getLogger(__name__).warning(
@@ -902,9 +903,14 @@ class TanukiValuationPipeline:
             L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
             _gs_rec_median = growth_sanity.get("recommended_g_median")
             _gs_rec_g = growth_sanity.get("recommended_g")
+            _gs_growth_model = growth_sanity.get("growth_model")
+            _gs_growth_model_reason = growth_sanity.get("growth_model_reason")
+            if _gs_growth_model:
+                _model_label = "逓減モデル" if _gs_growth_model == "decay" else "中央値モデル"
+                L.append(f"成長モデル: {_model_label}（{_gs_growth_model_reason}）")
             if _gs_rec_g is not None:
                 L.append("推奨成長率内訳:")
-                if _gs_rec_median is not None:
+                if _gs_growth_model == "median" and _gs_rec_median is not None:
                     L.append(f"  中央値ベース:          {_gs_rec_median*100:.1f}%")
                 L.append(f"  最終推奨値:            {_gs_rec_g*100:.1f}%")
             L.append(f"判定         : {gs_verdict}")
@@ -921,8 +927,10 @@ class TanukiValuationPipeline:
             L.append("Growth Rate Methodology:")
             L.append("Layer 1 (Segment configured): Manual segment weighted average")
             L.append("Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF")
-            L.append("  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,")
-            L.append("                  industry_benchmark, g_fundamental] (≥2 required)")
+            L.append("  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model")
+            L.append("    recommended_g = (min(TTM,100%) + industry_benchmark) / 2")
+            L.append("  Else: median of [rev_cagr_3yr, rev_cagr_5yr,")
+            L.append("        industry_benchmark, g_fundamental] (≥2 required)")
             L.append("Layer 3: TTM Revenue Growth (if recommended_g unavailable)")
             L.append("Layer 4: Default 15% (final fallback)")
             L.append("Industry benchmark: Damodaran 2025 fundgrEB.xls")
