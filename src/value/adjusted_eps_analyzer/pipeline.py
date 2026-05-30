@@ -5,11 +5,13 @@ import yaml
 import json
 import os
 import csv
+import threading
 import requests
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from typing import Dict, List, Any, Optional
 
-from .extract_key_facts import extract_quarterly_facts, normalize_value
+from .extract_key_facts import extract_quarterly_facts, normalize_value, get_cik as get_cik_func
 from .adjustment_detector import detect_adjustments, get_sbc_xbrl_tags
 from .tax_adjuster import apply_tax_adjustments
 from .eps_calculator import calculate_eps
@@ -28,13 +30,14 @@ print("DEBUG: PROJECT_ROOT =", PROJECT_ROOT)
 # ============================================
 ALPHA_VANTAGE_API_KEY = os.environ.get("ALPHA_VANTAGE_API_KEY", "")
 EPS_DISCREPANCY_THRESHOLD = 0.20  # 20%以上の差異で警告
+EPS_CHECK_TICKERS = ['SOUN', 'CELH']
 
 def fetch_alpha_vantage_earnings(ticker: str) -> List[Dict]:
     """Alpha Vantage APIから四半期EPS情報を取得"""
     if not ALPHA_VANTAGE_API_KEY:
         print("  [AV] Warning: ALPHA_VANTAGE_API_KEY not set, skipping EPS discrepancy check")
         return []
-    
+
     url = f"https://www.alphavantage.co/query?function=EARNINGS&symbol={ticker}&apikey={ALPHA_VANTAGE_API_KEY}"
     try:
         response = requests.get(url, timeout=15)
@@ -57,56 +60,56 @@ def fetch_alpha_vantage_earnings(ticker: str) -> List[Dict]:
 def check_eps_discrepancy(ticker: str, quarterly_results: List[Dict]) -> Dict[str, Dict]:
     """
     XBRLから計算したEPSとAlpha Vantage APIの公式EPSを比較し、差異が大きい四半期を検出
-    
+
     Returns:
         Dict[period_end, special_note_dict]
     """
     if not ALPHA_VANTAGE_API_KEY:
         return {}
-    
+
     print(f"  [AV] Checking EPS discrepancy for {ticker}...")
     av_data = fetch_alpha_vantage_earnings(ticker)
     if not av_data:
         return {}
-    
+
     # Alpha VantageデータをfiscalDateEndingでインデックス化
     av_by_date = {}
     for item in av_data:
         date_str = item.get('fiscalDateEnding', '')
         if date_str:
             av_by_date[date_str] = item
-    
+
     discrepancies = {}
-    
+
     for q in quarterly_results:
         period_end = q.get('period_end', q.get('filing_date', ''))
         if not period_end:
             continue
-        
+
         av_item = av_by_date.get(period_end)
         if not av_item:
             continue
-        
+
         # Alpha Vantageの公式値（reportedEPS）
         try:
             av_eps = float(av_item.get('reportedEPS', 0) or 0)
         except (ValueError, TypeError):
             av_eps = 0
-        
+
         # XBRLから計算した値
         xbrl_eps = q.get('gaap_eps', 0)
-        
+
         # 差異を計算（EPSベース）
         if av_eps and abs(av_eps) > 0.001:
             eps_diff_ratio = abs(xbrl_eps - av_eps) / abs(av_eps)
         else:
             eps_diff_ratio = 0
-        
+
         # 閾値を超えたら警告
         if eps_diff_ratio > EPS_DISCREPANCY_THRESHOLD:
             print(f"    [AV] Discrepancy detected for {period_end}:")
             print(f"          XBRL EPS: ${xbrl_eps:.4f}, Official EPS: ${av_eps:.4f} (diff: {eps_diff_ratio*100:.1f}%)")
-            
+
             discrepancies[period_end] = {
                 'flag': 'EPS_DISCREPANCY',
                 'xbrl_eps': xbrl_eps,
@@ -119,13 +122,13 @@ def check_eps_discrepancy(ticker: str, quarterly_results: List[Dict]) -> Dict[st
                     f"当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
                 )
             }
-    
+
     if discrepancies:
         print(f"  [AV] Found {len(discrepancies)} quarters with EPS discrepancy")
         print(f"  [AV] DEBUG: discrepancies keys = {list(discrepancies.keys())}")
     else:
         print(f"  [AV] No significant EPS discrepancy found")
-    
+
     return discrepancies
 
 def load_cik_data() -> List[Dict]:
@@ -202,7 +205,7 @@ def generate_summary(tickers_data: Dict[str, Dict], existing_summary_path: str =
             print(f"  [Summary] Loaded {len(existing_tickers)} existing tickers from summary.json")
         except Exception as e:
             print(f"  [Summary] Warning: Could not load existing summary.json: {e}")
-    
+
     # 新しいデータで更新
     for ticker, data in tickers_data.items():
         if data.get("quarters") and len(data["quarters"]) > 0:
@@ -247,7 +250,7 @@ def generate_summary(tickers_data: Dict[str, Dict], existing_summary_path: str =
                 "yoy_growth": yoy_growth,
                 "health": health
             }
-    
+
     summary = {
         "last_updated": datetime.now().isoformat(),
         "tickers": list(existing_tickers.values())
@@ -284,87 +287,38 @@ def get_revenue(period_data: Dict) -> float:
         return net_interest + non_interest
     return 0.0
 
-def run(ticker_filter: str = None):
-    config_base = os.path.join(PROJECT_ROOT, "config")
-    with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
-        tickers = yaml.safe_load(f)["tickers"]
-    
-    if ticker_filter:
-        requested = [t.strip().upper() for t in ticker_filter.split(',') if t.strip()]
-        for t in requested:
-            if t not in tickers:
-                print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
-        tickers = requested
-    
-    with open(os.path.join(config_base, "adjustment_items.json"), 'r', encoding='utf-8') as f:
-        adjustment_config = json.load(f)
-    
-    cik_lookup_path = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
-    classifier = SectorClassifierV2(
-        os.path.join(PROJECT_ROOT, "config", "sectors.yaml"),
-        cik_lookup_path=cik_lookup_path,
-    )
 
-    cik_data = load_cik_data()
-    ticker_to_name = {row['ticker']: row.get('name', '') for row in cik_data}
-
-    # eps 列が "false" の銘柄をスキップ（ticker_filter 未指定時のみ適用）
-    # ticker_filter 指定時は明示的に処理したい銘柄なので除外しない
-    if not ticker_filter:
-        eps_skipped = [row['ticker'] for row in cik_data
-                       if row.get('eps', 'true').strip().lower() == 'false']
-        if eps_skipped:
-            print(f"   ℹ️  EPSスキップ銘柄: {', '.join(eps_skipped)}")
-            tickers = [t for t in tickers if t not in eps_skipped]
-    
-    maturity_config = adjustment_config.get('maturity_defaults', {})
-    
-    all_tickers_data = {}
-    DATA_ROOT = os.path.join(PROJECT_ROOT, "docs", "value-monitor", "adjusted_eps_analyzer", "data")
-
-    # ★ YTD 変換用の基本タグ（固定）
-    BASE_SBC_YTD_TAGS = [
-        'us-gaap:ShareBasedCompensation',
-        'us-gaap:AllocatedShareBasedCompensationExpense',
-        'us-gaap:EmployeeBenefitsAndShareBasedCompensation',
-        'us-gaap:StockBasedCompensation',
-        'us-gaap:ShareBasedCompensationExpense',
-        'us-gaap:RestrictedStockExpense',
-    ]
-    # adjustment_items.json から SBC 関連タグを動的に取得しマージ
-    dynamic_sbc_tags = get_sbc_xbrl_tags()
-    SBC_YTD_TAGS = list(set(BASE_SBC_YTD_TAGS + dynamic_sbc_tags))
-    print(f"  [pipeline] SBC YTD tags: {SBC_YTD_TAGS}")
-
-    for ticker in tickers:
+def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
+                       DATA_ROOT, SBC_YTD_TAGS, maturity_config):
+    """1銘柄を処理して (ticker, data_dict) を返す。エラー時は (ticker, None)。"""
+    try:
         print(f"\n=== Processing {ticker} ===")
-        
+
         quarterly_raw = extract_quarterly_facts(ticker, years=10)
         if not quarterly_raw:
             print(f"{ticker}: データなし")
-            continue
-        
-        from .extract_key_facts import get_cik as get_cik_func
+            return (ticker, None)
+
         try:
             cik = get_cik_func(ticker)
         except:
             cik = None
-        
+
         metadata = {}
         if cik:
             metadata = get_company_metadata(cik)
-        
+
         sector = classifier.classify(
             ticker,
             sic_code=metadata.get('sic', ''),
             company_name=metadata.get('name', ''),
         )
-        
+
         print(f"  Sector: {sector or 'Unknown（除外項目なしで処理）'}")
-        
+
         sector_exclusions = classifier.get_exclusions_for_sector(sector) if sector else []
         exclusion_item_ids = [ex['item_id'] for ex in sector_exclusions]
-        
+
         # YTD累計SBCタグを四半期差分に変換（動的タグリスト使用）
         raw_sorted = sorted(quarterly_raw, key=lambda x: x['filing_date'])
         for sbc_tag in SBC_YTD_TAGS:
@@ -404,7 +358,7 @@ def run(ticker_filter: str = None):
         quarterly_results = []
         for i, period_data in enumerate(quarterly_raw):
             print(f"\nProcessing quarter {i+1}/{len(quarterly_raw)}: {period_data['filing_date']} ({period_data['form']})")
-            
+
             data = {
                 "net_income": normalize_value(period_data.get("net_income")),
                 "diluted_shares": normalize_value(period_data.get("diluted_shares")),
@@ -413,14 +367,14 @@ def run(ticker_filter: str = None):
                 "revenue": get_revenue(period_data),
                 "filing_date": period_data["filing_date"],
                 "form": period_data["form"],
-                "raw_facts": {k: v for k, v in period_data.items() 
+                "raw_facts": {k: v for k, v in period_data.items()
                             if k not in ["net_income", "diluted_shares", "tax_expense", "pretax_income", "filing_date", "form"]}
             }
-            
+
             adjustments_raw = detect_adjustments(period_data, adjustment_config, sector, sector_exclusions)
             net_adjustment, detailed = apply_tax_adjustments(adjustments_raw, data)
             data["total_adjustments"] = net_adjustment
-            
+
             result = calculate_eps(data, net_adjustment, detailed)
             result["filing_date"] = data["filing_date"]
             result["form"] = data["form"]
@@ -432,13 +386,13 @@ def run(ticker_filter: str = None):
             result["period_end"] = period_data.get("end", period_data["filing_date"])
             result["fiscal_year"] = period_data.get("fiscal_year")
             result["quarter"] = period_data.get("quarter")
-            
+
             quarterly_results.append(result)
-            
+
             print(f"  {result['filing_date']} ({result['form']}): "
                   f"GAAP EPS=${result['gaap_eps']:.4f} → "
                   f"Adj EPS=${result['adjusted_eps']:.4f}")
-        
+
         # 成熟度監視
         if sector and quarterly_results:
             latest_for_monitor = max(quarterly_results, key=lambda x: x["filing_date"])
@@ -458,17 +412,12 @@ def run(ticker_filter: str = None):
             _pending_maturity = maturity_status
         else:
             _pending_maturity = None
-        
-        # ★★★ EPS差分検知（Alpha Vantage API vs XBRL） ★★★
-        # Alpha Vantage無料枠は25リクエスト/日なので、全銘柄実行時のみ実行
-        # または特定銘柄（SOUN等）のみ実行
-        EPS_CHECK_TICKERS = ['SOUN', 'CELH']  # 差分検知対象銘柄
-        
+
+        # EPS差分検知（Alpha Vantage API vs XBRL）
         if ticker in EPS_CHECK_TICKERS:
             eps_discrepancies = check_eps_discrepancy(ticker, quarterly_results)
             if eps_discrepancies:
                 print(f"  [AV] Applying discrepancies to {len(eps_discrepancies)} quarters...")
-                # 差異が見つかった四半期に special_notes を追加
                 matched_count = 0
                 for q in quarterly_results:
                     period_end = q.get('period_end', q.get('filing_date', ''))
@@ -480,8 +429,8 @@ def run(ticker_filter: str = None):
                 print(f"  [AV] Applied special_flags to {matched_count} quarters")
         else:
             print(f"  [AV] Skipping EPS discrepancy check for {ticker} (not in EPS_CHECK_TICKERS)")
-        
-        # ★★★ 公正価値変動の自動検出・調整項目化 ★★★
+
+        # 公正価値変動の自動検出・調整項目化
         print(f"  [FV Auto] Running fair value auto-detection for {ticker}...")
         quarterly_results = apply_fair_value_detection(quarterly_raw, quarterly_results)
 
@@ -491,9 +440,9 @@ def run(ticker_filter: str = None):
             ttm = calculate_ttm(quarterly_results, i)
             if ttm:
                 ttm_results.append(ttm)
-        
+
         annual_results = aggregate_annual(quarterly_results)
-        
+
         if quarterly_results:
             quarterly_results.sort(key=lambda x: x["filing_date"], reverse=True)
             latest = quarterly_results[0]
@@ -506,33 +455,110 @@ def run(ticker_filter: str = None):
             except Exception as e:
                 print(f"  [AI] Failed to parse AI result: {e}")
                 latest["ai_analysis"] = {"health": "Error", "comment": str(ai_result), "sources": []}
-        
+
         # 保存
         ticker_dir = os.path.join(DATA_ROOT, ticker)
         os.makedirs(ticker_dir, exist_ok=True)
-        
+
         with open(os.path.join(ticker_dir, "quarterly.json"), "w", encoding="utf-8") as f:
             json.dump({
                 "ticker": ticker,
                 "last_updated": datetime.now().isoformat(),
                 "quarters": quarterly_results
             }, f, indent=2, ensure_ascii=False)
-        
+
         if ttm_results:
             with open(os.path.join(ticker_dir, "ttm.json"), "w", encoding="utf-8") as f:
                 json.dump({"ticker": ticker, "last_updated": datetime.now().isoformat(), "ttm": ttm_results}, f, indent=2, ensure_ascii=False)
-        
+
         if annual_results:
             with open(os.path.join(ticker_dir, "annual.json"), "w", encoding="utf-8") as f:
                 json.dump({"ticker": ticker, "last_updated": datetime.now().isoformat(), "years": annual_results}, f, indent=2, ensure_ascii=False)
-        
-        all_tickers_data[ticker] = {
+
+        print(f"✓ {ticker} 保存完了: {ticker_dir}/")
+
+        return (ticker, {
             "quarters": quarterly_results,
             "company_name": ticker_to_name.get(ticker, metadata.get('name', ''))
+        })
+
+    except Exception as e:
+        import traceback
+        print(f"✗ {ticker} 処理エラー: {e}")
+        traceback.print_exc()
+        return (ticker, None)
+
+
+def run(ticker_filter: str = None):
+    config_base = os.path.join(PROJECT_ROOT, "config")
+    with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
+        tickers = yaml.safe_load(f)["tickers"]
+
+    if ticker_filter:
+        requested = [t.strip().upper() for t in ticker_filter.split(',') if t.strip()]
+        for t in requested:
+            if t not in tickers:
+                print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
+        tickers = requested
+
+    with open(os.path.join(config_base, "adjustment_items.json"), 'r', encoding='utf-8') as f:
+        adjustment_config = json.load(f)
+
+    cik_lookup_path = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
+    classifier = SectorClassifierV2(
+        os.path.join(PROJECT_ROOT, "config", "sectors.yaml"),
+        cik_lookup_path=cik_lookup_path,
+    )
+
+    cik_data = load_cik_data()
+    ticker_to_name = {row['ticker']: row.get('name', '') for row in cik_data}
+
+    # eps 列が "false" の銘柄をスキップ（ticker_filter 未指定時のみ適用）
+    if not ticker_filter:
+        eps_skipped = [row['ticker'] for row in cik_data
+                       if row.get('eps', 'true').strip().lower() == 'false']
+        if eps_skipped:
+            print(f"   ℹ️  EPSスキップ銘柄: {', '.join(eps_skipped)}")
+            tickers = [t for t in tickers if t not in eps_skipped]
+
+    maturity_config = adjustment_config.get('maturity_defaults', {})
+
+    all_tickers_data = {}
+    lock = threading.Lock()
+    DATA_ROOT = os.path.join(PROJECT_ROOT, "docs", "value-monitor", "adjusted_eps_analyzer", "data")
+
+    # ★ YTD 変換用の基本タグ（固定）
+    BASE_SBC_YTD_TAGS = [
+        'us-gaap:ShareBasedCompensation',
+        'us-gaap:AllocatedShareBasedCompensationExpense',
+        'us-gaap:EmployeeBenefitsAndShareBasedCompensation',
+        'us-gaap:StockBasedCompensation',
+        'us-gaap:ShareBasedCompensationExpense',
+        'us-gaap:RestrictedStockExpense',
+    ]
+    # adjustment_items.json から SBC 関連タグを動的に取得しマージ
+    dynamic_sbc_tags = get_sbc_xbrl_tags()
+    SBC_YTD_TAGS = list(set(BASE_SBC_YTD_TAGS + dynamic_sbc_tags))
+    print(f"  [pipeline] SBC YTD tags: {SBC_YTD_TAGS}")
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(
+                process_one_ticker, ticker, adjustment_config, classifier,
+                ticker_to_name, DATA_ROOT, SBC_YTD_TAGS, maturity_config
+            ): ticker
+            for ticker in tickers
         }
-        
-        print(f"✓ {ticker} 保存完了: {ticker_dir}/")
-    
+        for future in as_completed(futures):
+            _ticker = futures[future]
+            try:
+                result_ticker, result_data = future.result()
+                if result_data is not None:
+                    with lock:
+                        all_tickers_data[result_ticker] = result_data
+            except Exception as e:
+                print(f"✗ {_ticker} 未捕捉エラー: {e}")
+
     if all_tickers_data:
         summary_path = os.path.join(DATA_ROOT, "summary.json")
         summary = generate_summary(all_tickers_data, existing_summary_path=summary_path)

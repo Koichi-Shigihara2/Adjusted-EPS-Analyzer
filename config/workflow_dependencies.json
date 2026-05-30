@@ -57,6 +57,12 @@
     "TANUKI_VALUATION_Update",
     "TANUKI_Score_Update"
   ],
+  "bulk_update_phases": [
+    {"phase": 1, "parallel": false, "workflows": ["SEC_Data_Update"]},
+    {"phase": 2, "parallel": true,  "workflows": ["HypeCore_Update", "Adjusted_EPS_Update", "Stonks_Silo_Update"]},
+    {"phase": 3, "parallel": false, "workflows": ["TANUKI_VALUATION_Update"]},
+    {"phase": 4, "parallel": false, "workflows": ["TANUKI_Score_Update"]}
+  ],
   "new_ticker_order": [
     "SEC_Data_Update",
     "HypeCore_Update",

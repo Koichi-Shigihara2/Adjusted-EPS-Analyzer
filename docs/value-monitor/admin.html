@@ -2733,9 +2733,18 @@ function updateBulkPreview() {
   const bar = document.getElementById('bulk-preview-bar');
   if (!bar || !_bulkDeps) return;
   const mode = document.querySelector('input[name="bulk-mode"]:checked')?.value || 'bulk';
-  const order = mode === 'new_ticker' ? _bulkDeps.new_ticker_order : _bulkDeps.bulk_update_order;
-  const labels = order.map(k => _bulkDeps.workflows[k]?.label || k);
-  bar.textContent = labels.join('  →  ');
+
+  if (mode === 'bulk' && _bulkDeps.bulk_update_phases) {
+    const phaseLabels = _bulkDeps.bulk_update_phases.map(phase => {
+      const labels = phase.workflows.map(k => _bulkDeps.workflows[k]?.label || k);
+      return phase.parallel ? labels.join(' + ') + '（並列）' : labels.join('');
+    });
+    bar.textContent = phaseLabels.join('  →  ');
+  } else {
+    const order = mode === 'new_ticker' ? _bulkDeps.new_ticker_order : _bulkDeps.bulk_update_order;
+    const labels = order.map(k => _bulkDeps.workflows[k]?.label || k);
+    bar.textContent = labels.join('  →  ');
+  }
 }
 
 function renderBulkStatusList(rows) {
@@ -2817,59 +2826,148 @@ async function runBulkUpdate() {
     const deps = await loadBulkDeps();
     if (!deps) throw new Error('workflow_dependencies.json を読み込めませんでした');
 
-    const order = mode === 'new_ticker' ? deps.new_ticker_order : deps.bulk_update_order;
-    const wfs   = deps.workflows;
+    const wfs = deps.workflows;
+    const usePhasedExecution = mode === 'bulk' && deps.bulk_update_phases;
 
-    const rows = order.map(k => ({
-      key:           k,
-      label:         wfs[k]?.label          || k,
-      yml:           wfs[k]?.yml            || '',
-      acceptsTickers:wfs[k]?.accepts_tickers !== false,
-      inputParam:    wfs[k]?.input_param    || 'tickers',
-      status:        'pending',
-      error:         ''
-    }));
+    // フラットなrowsリストを構築
+    let rows;
+    if (usePhasedExecution) {
+      rows = [];
+      for (const phase of deps.bulk_update_phases) {
+        for (const k of phase.workflows) {
+          rows.push({
+            key:           k,
+            label:         wfs[k]?.label          || k,
+            yml:           wfs[k]?.yml            || '',
+            acceptsTickers:wfs[k]?.accepts_tickers !== false,
+            inputParam:    wfs[k]?.input_param    || 'tickers',
+            status:        'pending',
+            error:         ''
+          });
+        }
+      }
+    } else {
+      const order = mode === 'new_ticker' ? deps.new_ticker_order : deps.bulk_update_order;
+      rows = order.map(k => ({
+        key:           k,
+        label:         wfs[k]?.label          || k,
+        yml:           wfs[k]?.yml            || '',
+        acceptsTickers:wfs[k]?.accepts_tickers !== false,
+        inputParam:    wfs[k]?.input_param    || 'tickers',
+        status:        'pending',
+        error:         ''
+      }));
+    }
 
     renderBulkStatusList(rows);
 
-    for (let i = 0; i < rows.length; i++) {
-      rows[i].status = 'running';
-      renderBulkStatusList(rows);
+    if (usePhasedExecution) {
+      // フェーズベース実行（Phase 2 は並列 dispatch + 並列ポーリング）
+      let rowIndex = 0;
+      let failed = false;
 
-      // ── dispatch ──
-      try {
-        const inputs = {};
-        if (rows[i].acceptsTickers && tickersInput) {
-          inputs[rows[i].inputParam] = tickersInput;
+      for (const phase of deps.bulk_update_phases) {
+        if (failed) break;
+
+        const phaseIndices = phase.workflows.map(() => rowIndex++);
+
+        // 全フェーズ内ワークフローを running に
+        for (const idx of phaseIndices) {
+          rows[idx].status = 'running';
         }
-        await dispatchWorkflow(rows[i].yml, inputs);
-      } catch(e) {
-        rows[i].status = 'error';
-        rows[i].error  = `dispatch失敗: ${e.message}`;
         renderBulkStatusList(rows);
-        break;
+
+        // 全ワークフローを同時 dispatch
+        const dispatchResults = await Promise.all(
+          phaseIndices.map(async (idx) => {
+            const row = rows[idx];
+            try {
+              const inputs = {};
+              if (row.acceptsTickers && tickersInput) inputs[row.inputParam] = tickersInput;
+              await dispatchWorkflow(row.yml, inputs);
+              return { idx, ok: true };
+            } catch(e) {
+              return { idx, ok: false, error: `dispatch失敗: ${e.message}` };
+            }
+          })
+        );
+
+        for (const dr of dispatchResults) {
+          if (!dr.ok) {
+            rows[dr.idx].status = 'error';
+            rows[dr.idx].error  = dr.error;
+            failed = true;
+          }
+        }
+        renderBulkStatusList(rows);
+        if (failed) break;
+
+        // 全ワークフローを並列ポーリング（各行が独立してノート更新）
+        for (const idx of phaseIndices) {
+          updateBulkStatusNote(idx, '実行中（0秒経過）');
+        }
+
+        const pollResults = await Promise.all(
+          phaseIndices.map(idx => pollWorkflowCompletion(rows[idx].yml, idx))
+        );
+
+        for (let i = 0; i < phaseIndices.length; i++) {
+          const idx    = phaseIndices[i];
+          const result = pollResults[i];
+          if (result.timedOut) {
+            rows[idx].status = 'error';
+            rows[idx].error  = 'タイムアウト（20分）：手動で次のワークフローを実行してください';
+            failed = true;
+          } else if (!result.success) {
+            rows[idx].status = 'error';
+            rows[idx].error  = `完了（${result.conclusion}）：依存ステップを停止します`;
+            failed = true;
+          } else {
+            rows[idx].status = 'success';
+          }
+        }
+        renderBulkStatusList(rows);
       }
 
-      // ── 完了ポーリング ──
-      updateBulkStatusNote(i, '実行中（0秒経過）');
-      const result = await pollWorkflowCompletion(rows[i].yml, i);
-
-      if (result.timedOut) {
-        rows[i].status = 'error';
-        rows[i].error  = 'タイムアウト（20分）：手動で次のワークフローを実行してください';
+    } else {
+      // 逐次実行（new_ticker モードまたは phases 未定義）
+      for (let i = 0; i < rows.length; i++) {
+        rows[i].status = 'running';
         renderBulkStatusList(rows);
-        break;
-      }
 
-      if (!result.success) {
-        rows[i].status = 'error';
-        rows[i].error  = `完了（${result.conclusion}）：依存ステップを停止します`;
+        try {
+          const inputs = {};
+          if (rows[i].acceptsTickers && tickersInput) {
+            inputs[rows[i].inputParam] = tickersInput;
+          }
+          await dispatchWorkflow(rows[i].yml, inputs);
+        } catch(e) {
+          rows[i].status = 'error';
+          rows[i].error  = `dispatch失敗: ${e.message}`;
+          renderBulkStatusList(rows);
+          break;
+        }
+
+        updateBulkStatusNote(i, '実行中（0秒経過）');
+        const result = await pollWorkflowCompletion(rows[i].yml, i);
+
+        if (result.timedOut) {
+          rows[i].status = 'error';
+          rows[i].error  = 'タイムアウト（20分）：手動で次のワークフローを実行してください';
+          renderBulkStatusList(rows);
+          break;
+        }
+
+        if (!result.success) {
+          rows[i].status = 'error';
+          rows[i].error  = `完了（${result.conclusion}）：依存ステップを停止します`;
+          renderBulkStatusList(rows);
+          break;
+        }
+
+        rows[i].status = 'success';
         renderBulkStatusList(rows);
-        break;
       }
-
-      rows[i].status = 'success';
-      renderBulkStatusList(rows);
     }
 
   } catch(e) {
