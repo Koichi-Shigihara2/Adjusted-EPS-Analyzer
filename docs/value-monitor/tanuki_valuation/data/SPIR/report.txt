@@ -1,5 +1,5 @@
 SPIR INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T12:15:33+09:00
+Generated: 2026-05-30T12:37:20+09:00
 Price: $22.84
 
 [1. TANUKI SCORE]
@@ -107,8 +107,11 @@ Dilution_3yr_Annual: Share count CAGR over 3 years
 3%/yr = meaningful shareholder dilution risk
 FCF_CAGR_3yr: FCF compound growth rate (3yr)
 Positive = improving cash generation trend
-Segment_Weighted_Growth: Weighted avg of segment growth
-This is the direct basis for TANUKI G scenario
+Segment_Weighted_Growth: Weighted avg of segment growth rates
+For manually configured segments: used directly as DCF growth rate G
+For unconfigured segments: TTM Revenue Growth is auto-applied,
+then adjusted via recommended_g (median of historical CAGR,
+industry benchmark, RR×ROIC, weighted by HypeCore phase)
 Next_Earnings_Date: Next quarterly earnings release
 
 
@@ -121,6 +124,22 @@ Phase1成長率 : -33.7%
 業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
 signals:
   - 業界平均Aerospace/Defense(10.9%)の-3.1倍以内 ✅
+Definition:
+
+Growth Rate Methodology:
+Layer 1 (Segment configured): Manual segment weighted average
+Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
+  recommended_g = avg(median_g, hypecore_weighted_g)
+  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
+            industry_benchmark, g_fundamental]
+  hypecore_weighted_g: phase-weighted blend
+    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
+    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
+    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
+    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+Layer 4: Default 15% (final fallback)
+Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
@@ -155,6 +174,8 @@ for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
 Damodaran's reinvestment efficiency framework.
 Use as relative ranking tool, not absolute valuation.
+G used in RICE reflects the auto-adjusted recommended_g
+for unconfigured segments.
 
 
 [6. EPS ANALYZER]

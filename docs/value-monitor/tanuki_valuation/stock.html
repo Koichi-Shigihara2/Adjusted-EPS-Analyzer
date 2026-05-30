@@ -1284,7 +1284,7 @@ function render(d) {
           <div class="calc-step-body">
             <div class="formula-box">
               <code>優先順位: segment_weighted &gt; fcf_cagr &gt; default(25%)</code>
-              <p class="formula-desc">セグメント別売上構成比×成長率で加重平均を算出。未定義銘柄はFCF CAGR（15〜50%クリップ）。</p>
+              <p class="formula-desc">セグメント別売上構成比×成長率で加重平均を算出。未定義銘柄はFCF CAGR（15〜50%クリップ）。<br>セグメント未設定銘柄は推奨成長率（rev CAGR / 業界ベンチマーク / g_fundamentalの中央値 × HypeCoreフェーズ補正の平均）をDCFに自動適用。</p>
               <div class="inputs-grid" style="margin-top:8px">
                 <div class="input-item"><span class="input-label">FCF CAGR 下限</span><span class="input-value">${fmtPct(d.components?.fcf_growth_floor || 0.15)}</span></div>
                 <div class="input-item"><span class="input-label">FCF CAGR 上限</span><span class="input-value">${fmtPct(d.components?.fcf_growth_cap || 0.50)}</span></div>
@@ -1781,6 +1781,29 @@ function render(d) {
       .map(s => `<li style="margin:2px 0;font-size:12px;">${s}</li>`).join('');
     const warnItems = (sanity.warnings || [])
       .map(w => `<li style="margin:2px 0;font-size:12px;color:#f97316;">${w}</li>`).join('');
+
+    const autoAdjusted = d.phase1_growth_auto_adjusted || false;
+    const recG  = sanity.recommended_g;
+    const recM  = sanity.recommended_g_median;
+    const recH  = sanity.recommended_g_hypecore;
+    const hStage = sanity.hypecore_stage_used;
+    const STAGE_LABELS = {1:'黎明期', 2:'期待拡大期', 3:'陶酔期', 4:'期待剥落期'};
+
+    let recBlock = '';
+    if (recG != null) {
+      let rows = '';
+      if (recM != null) rows += `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0"><span style="color:#64748b">中央値ベース</span><span style="font-family:var(--mono);color:#94a3b8">${(recM*100).toFixed(1)}%</span></div>`;
+      if (recH != null) {
+        const sl = hStage ? `Phase${hStage}・${STAGE_LABELS[hStage]||''}` : '';
+        rows += `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0"><span style="color:#64748b">HypeCoreフェーズ補正${sl?' ('+sl+')':''}</span><span style="font-family:var(--mono);color:#94a3b8">${(recH*100).toFixed(1)}%</span></div>`;
+      }
+      rows += `<div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0;border-top:1px solid #1e2a3a;margin-top:3px"><span style="color:#94a3b8;font-weight:600">最終推奨値</span><span style="font-family:var(--mono);color:#c4d0ff;font-weight:700">${(recG*100).toFixed(1)}%</span></div>`;
+      const adjBanner = autoAdjusted
+        ? `<div style="margin-top:6px;padding:4px 8px;background:rgba(196,208,255,0.1);border:1px solid rgba(196,208,255,0.3);border-radius:4px;font-size:11px;color:#c4d0ff">✓ DCFに自動適用済（推奨値・中央値ベース）</div>`
+        : '';
+      recBlock = `<div style="margin-top:8px;padding:8px 10px;background:#0a0f1a;border:1px solid #1e2a3a;border-radius:4px"><div style="font-size:10px;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">推奨成長率内訳</div>${rows}${adjBanner}</div>`;
+    }
+
     const sanityHTML = `
       <div style="margin-top:12px;padding:10px 14px;background:#0f1623;border:1px solid #1e2a3a;border-radius:6px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -1794,6 +1817,7 @@ function render(d) {
         <ul style="margin:0;padding-left:16px;list-style:disc;">
           ${signalItems}${warnItems}
         </ul>
+        ${recBlock}
       </div>`;
     const el = document.getElementById('growth-sanity-container');
     if (el) el.innerHTML = sanityHTML;

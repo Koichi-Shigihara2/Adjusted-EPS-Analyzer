@@ -218,8 +218,8 @@
         <p>高成長期→移行期→永続成長の3段階で鈍化カーブを表現。銘柄ごとに成熟プロファイルを設定可能。<br><code>maturity_config.py</code></p>
       </div>
       <div class="method-card">
-        <h3>セグメント加重成長率</h3>
-        <p>10-K開示のセグメント別売上構成比×成長率で企業固有のCAGRを算出。FCF CAGRより優先される。</p>
+        <h3>セグメント加重成長率 / 推奨成長率</h3>
+        <p>10-K開示のセグメント別売上構成比×成長率で企業固有のCAGRを算出。FCF CAGRより優先される。セグメント未設定銘柄は<strong>推奨成長率</strong>（rev CAGR / 業界ベンチマーク / g_fundamentalの中央値 × HypeCoreフェーズ重み付き平均の平均値）をDCFに自動適用。</p>
       </div>
       <div class="method-card">
         <h3>成長オプション（仮説セグメント）</h3>
@@ -275,7 +275,7 @@
 
         <div class="legend-item">
           <div class="legend-term">成長率 BASE <span class="tag tag-mut">G</span></div>
-          <div class="legend-desc">TANUKIが使用するBASEシナリオの高成長期成長率。セグメント加重成長率（segment_config.py設定値）が優先される。RICEのGとして使用される。</div>
+          <div class="legend-desc">TANUKIが使用するBASEシナリオの高成長期成長率。セグメント加重成長率（segment_config.py設定値）が優先される。セグメント未設定銘柄は推奨成長率（中央値ベース × HypeCoreフェーズ補正の平均）を自動適用（列末尾に「推奨値・中央値を自動適用」と表示）。RICEのGとして使用される。</div>
           <div class="legend-note">Bull = BASE × 1.2 / Bear = BASE × 0.7</div>
         </div>
 
@@ -338,7 +338,7 @@
 
         <div class="legend-item">
           <div class="legend-term"><span class="badge seg" style="font-size:11px;padding:2px 8px">SEG</span></div>
-          <div class="legend-desc">成長率にセグメント加重成長率を採用。10-K開示のセグメント別売上 × Koichi設定成長率の加重平均。FCF CAGRより企業の実態を反映するため最優先される。</div>
+          <div class="legend-desc">成長率にセグメント加重成長率を採用。10-K開示のセグメント別売上 × Koichi設定成長率の加重平均。FCF CAGRより企業の実態を反映するため最優先される。SEGバッジがない銘柄でも、推奨成長率（rev CAGR・業界ベンチマーク・g_fundamentalの中央値 × HypeCoreフェーズ補正）がDCFに自動適用される場合は「推奨値・中央値を自動適用」と表示される。</div>
           <div class="legend-note">segment_config.pyで銘柄ごとに設定。</div>
         </div>
 
