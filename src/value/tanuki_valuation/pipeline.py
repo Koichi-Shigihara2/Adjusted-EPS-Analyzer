@@ -429,8 +429,8 @@ class TanukiValuationPipeline:
             "ma200": valuation.get("components", {}).get("ma200"),
             "upside_percent": valuation.get("upside_percent"),
             "growth_rate": valuation.get("growth_scenarios", {}).get("primary", {}).get("rate"),
-            "scenario_bear": valuation.get("scenario_valuations", {}).get("bear", {}).get("intrinsic_value_per_share"),
-            "scenario_bull": valuation.get("scenario_valuations", {}).get("bull", {}).get("intrinsic_value_per_share"),
+            "scenario_bear": (valuation.get("scenario_valuations") or {}).get("bear", {}).get("intrinsic_value_per_share"),
+            "scenario_bull": (valuation.get("scenario_valuations") or {}).get("bull", {}).get("intrinsic_value_per_share"),
             "tanuki_score":  score_data.get("score"),
             "funda_score":   score_data.get("funda_score"),
             "score_comment": score_data.get("score_comment"),
@@ -480,7 +480,7 @@ class TanukiValuationPipeline:
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
         rice = valuation.get("rice", {})
-        scenarios = valuation.get("scenario_valuations", {})
+        scenarios = valuation.get("scenario_valuations") or {}
         fcf_est = valuation.get("fcf_estimation", {})
         wacc_data = valuation.get("wacc", {})
 
