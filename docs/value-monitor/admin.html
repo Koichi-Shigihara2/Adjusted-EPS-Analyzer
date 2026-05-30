@@ -2741,20 +2741,63 @@ function updateBulkPreview() {
 function renderBulkStatusList(rows) {
   const statusEl = document.getElementById('bulk-status');
   if (!statusEl) return;
-  const icons = { pending: '⏸', running: '⏳', success: '✅', error: '❌' };
+  const icons    = { pending: '⏸', running: '⏳', success: '✅', error: '❌' };
   const noteText = { pending: '待機中', running: '実行中...', success: '完了', error: '' };
-  const colors  = { pending: 'var(--mut)', running: 'var(--acc)', success: 'var(--grn)', error: 'var(--red)' };
+  const colors   = { pending: 'var(--mut)', running: 'var(--acc)', success: 'var(--grn)', error: 'var(--red)' };
   statusEl.innerHTML = '<ul class="bulk-status-list">' +
-    rows.map(r => {
+    rows.map((r, i) => {
       const icon  = icons[r.status]  || '⏸';
       const note  = r.status === 'error' ? (r.error || 'エラー') : (noteText[r.status] || '');
       const color = colors[r.status] || 'var(--mut)';
       return `<li class="bulk-status-item">
-        <span class="bulk-status-icon">${icon}</span>
-        <span class="bulk-status-label" style="color:${color}">${r.label}</span>
-        <span class="bulk-status-note">${note}</span>
+        <span class="bulk-status-icon" id="bulk-icon-${i}">${icon}</span>
+        <span class="bulk-status-label" id="bulk-label-${i}" style="color:${color}">${r.label}</span>
+        <span class="bulk-status-note" id="bulk-note-${i}">${note}</span>
       </li>`;
     }).join('') + '</ul>';
+}
+
+function updateBulkStatusNote(rowIdx, note) {
+  const el = document.getElementById(`bulk-note-${rowIdx}`);
+  if (el) el.textContent = note;
+}
+
+// GitHub Actionsのワークフロー完了をポーリング（最大20分、10秒間隔）
+async function pollWorkflowCompletion(ymlFile, rowIdx) {
+  const MAX_MS       = 20 * 60 * 1000;  // 20分
+  const POLL_MS      = 10 * 1000;        // 10秒間隔
+  const INITIAL_MS   =  8 * 1000;        // dispatch後8秒待機（GitHub登録待ち）
+
+  const startTime = Date.now();
+  await new Promise(r => setTimeout(r, INITIAL_MS));
+
+  while (true) {
+    const elapsed = Math.round((Date.now() - startTime) / 1000);
+    if (elapsed >= MAX_MS / 1000) {
+      return { success: false, conclusion: 'timeout', timedOut: true };
+    }
+    updateBulkStatusNote(rowIdx, `実行中（${elapsed}秒経過）`);
+
+    try {
+      const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${encodeURIComponent(ymlFile)}/runs?branch=${BRANCH}&per_page=1`;
+      const res = await fetch(url, { headers: apiHeaders() });
+      if (res.ok) {
+        const data   = await res.json();
+        const latest = data.workflow_runs?.[0];
+        if (latest && latest.status === 'completed') {
+          return {
+            success:    latest.conclusion === 'success',
+            conclusion: latest.conclusion || 'unknown',
+            timedOut:   false
+          };
+        }
+      }
+    } catch(_) {
+      // ポーリングエラーは無視して継続
+    }
+
+    await new Promise(r => setTimeout(r, POLL_MS));
+  }
 }
 
 async function runBulkUpdate() {
@@ -2779,10 +2822,10 @@ async function runBulkUpdate() {
 
     const rows = order.map(k => ({
       key:           k,
-      label:         wfs[k]?.label         || k,
-      yml:           wfs[k]?.yml           || '',
+      label:         wfs[k]?.label          || k,
+      yml:           wfs[k]?.yml            || '',
       acceptsTickers:wfs[k]?.accepts_tickers !== false,
-      inputParam:    wfs[k]?.input_param   || 'tickers',
+      inputParam:    wfs[k]?.input_param    || 'tickers',
       status:        'pending',
       error:         ''
     }));
@@ -2793,25 +2836,40 @@ async function runBulkUpdate() {
       rows[i].status = 'running';
       renderBulkStatusList(rows);
 
+      // ── dispatch ──
       try {
         const inputs = {};
         if (rows[i].acceptsTickers && tickersInput) {
           inputs[rows[i].inputParam] = tickersInput;
         }
         await dispatchWorkflow(rows[i].yml, inputs);
-        rows[i].status = 'success';
       } catch(e) {
         rows[i].status = 'error';
-        rows[i].error  = e.message;
+        rows[i].error  = `dispatch失敗: ${e.message}`;
         renderBulkStatusList(rows);
         break;
       }
 
-      renderBulkStatusList(rows);
+      // ── 完了ポーリング ──
+      updateBulkStatusNote(i, '実行中（0秒経過）');
+      const result = await pollWorkflowCompletion(rows[i].yml, i);
 
-      if (i < rows.length - 1) {
-        await new Promise(r => setTimeout(r, 3000));
+      if (result.timedOut) {
+        rows[i].status = 'error';
+        rows[i].error  = 'タイムアウト（20分）：手動で次のワークフローを実行してください';
+        renderBulkStatusList(rows);
+        break;
       }
+
+      if (!result.success) {
+        rows[i].status = 'error';
+        rows[i].error  = `完了（${result.conclusion}）：依存ステップを停止します`;
+        renderBulkStatusList(rows);
+        break;
+      }
+
+      rows[i].status = 'success';
+      renderBulkStatusList(rows);
     }
 
   } catch(e) {
