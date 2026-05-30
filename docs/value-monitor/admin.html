@@ -2771,66 +2771,99 @@ function updateBulkStatusNote(rowIdx, note) {
   if (el) el.textContent = note;
 }
 
-// dispatch前に現在の最新run_idを取得（なければnull）
+// dispatch前に現在の最新run_idを取得
+// 戻り値: run_id(数値) | null(過去run無し) | 'ERROR'(API失敗 — null と区別するため)
 async function getLatestRunId(ymlFile) {
+  console.log(`[getLatestRunId] ${ymlFile} 開始`);
   try {
     const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${encodeURIComponent(ymlFile)}/runs?branch=${BRANCH}&per_page=1`;
     const res = await fetch(url, { headers: apiHeaders() });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.error(`[getLatestRunId] ${ymlFile} API error: HTTP ${res.status}`);
+      return 'ERROR';
+    }
     const data = await res.json();
-    return data.workflow_runs?.[0]?.id ?? null;
+    const id = data.workflow_runs?.[0]?.id ?? null;
+    console.log(`[getLatestRunId] ${ymlFile} → prevRunId=${id ?? 'none(初回)'}`);
+    return id;
   } catch(e) {
-    return null;
+    console.error(`[getLatestRunId] ${ymlFile} fetch失敗: ${e}`);
+    return 'ERROR';
   }
 }
 
 // dispatch後に新しいrun_idを特定（prevRunId と異なるrunが出現するまで待機、最大60秒・3秒間隔）
-// 時刻ベースではなくID比較なので時計ズレ・古いrun誤検知が起きない
-async function getRunIdAfterDispatch(ymlFile, prevRunId) {
+// prevRunId='ERROR' の場合は時刻ベースフォールバック（dispatch直前15秒をカットオフ）
+async function getRunIdAfterDispatch(ymlFile, prevRunId, dispatchedAt) {
+  console.log(`[getRunIdAfterDispatch] ${ymlFile} 開始 prevRunId=${prevRunId ?? 'none'}`);
   const MAX_WAIT_MS = 60 * 1000;
   const POLL_MS     =  3 * 1000;
   const deadline    = Date.now() + MAX_WAIT_MS;
+  // getLatestRunId が失敗した場合のフォールバック: dispatch直前15秒をカットオフ
+  const timeCutoff  = (prevRunId === 'ERROR') ? (dispatchedAt - 15 * 1000) : null;
 
   while (Date.now() < deadline) {
     await new Promise(r => setTimeout(r, POLL_MS));
     try {
       const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/workflows/${encodeURIComponent(ymlFile)}/runs?branch=${BRANCH}&per_page=1`;
       const res = await fetch(url, { headers: apiHeaders() });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        console.error(`[getRunIdAfterDispatch] ${ymlFile} API error: HTTP ${res.status}`);
+        continue;
+      }
       const data = await res.json();
       const latest = data.workflow_runs?.[0];
-      if (latest && latest.id !== prevRunId) {
-        console.log(`[poll] ${ymlFile}: new run id=${latest.id} (prev=${prevRunId ?? 'none'}) status=${latest.status}`);
-        return latest.id;
+
+      if (!latest) {
+        console.log(`[getRunIdAfterDispatch] ${ymlFile} runs一覧が空`);
+        continue;
       }
-      console.log(`[poll] ${ymlFile}: waiting for new run (latest id=${latest?.id ?? 'none'}, prev=${prevRunId ?? 'none'})`);
+
+      // ID比較（通常ケース）
+      if (prevRunId !== 'ERROR') {
+        if (latest.id !== prevRunId) {
+          console.log(`[getRunIdAfterDispatch] ${ymlFile} 新run発見: id=${latest.id} (prev=${prevRunId ?? 'none'}) status=${latest.status}`);
+          return latest.id;
+        }
+        console.log(`[getRunIdAfterDispatch] ${ymlFile} 新run待ち: latest_id=${latest.id} === prevRunId`);
+
+      // 時刻フォールバック（getLatestRunId失敗時）
+      } else {
+        const runCreatedAt = new Date(latest.created_at).getTime();
+        if (runCreatedAt >= timeCutoff) {
+          console.log(`[getRunIdAfterDispatch] ${ymlFile} 新run発見(時刻FB): id=${latest.id} created_at=${latest.created_at} status=${latest.status}`);
+          return latest.id;
+        }
+        console.log(`[getRunIdAfterDispatch] ${ymlFile} 新run待ち(時刻FB): latest created_at=${latest.created_at}`);
+      }
     } catch(e) {
-      console.warn(`[poll] getRunIdAfterDispatch error: ${e}`);
+      console.error(`[getRunIdAfterDispatch] ${ymlFile} fetch例外: ${e}`);
     }
   }
+  console.error(`[getRunIdAfterDispatch] ${ymlFile} 60秒タイムアウト — new run見つからず`);
   return null;
 }
 
 // GitHub Actionsのワークフロー完了をポーリング（最大20分、10秒間隔）
-// prevRunId: dispatch直前に取得した run_id — ID比較で新runを確実に追跡
-async function pollWorkflowCompletion(ymlFile, rowIdx, prevRunId) {
+async function pollWorkflowCompletion(ymlFile, rowIdx, prevRunId, dispatchedAt) {
+  console.log(`[pollWorkflowCompletion] ${ymlFile} 開始 rowIdx=${rowIdx} prevRunId=${prevRunId ?? 'none'}`);
   const MAX_MS  = 20 * 60 * 1000;  // 20分
   const POLL_MS = 10 * 1000;        // 10秒間隔
   const startTime = Date.now();
 
-  // 新しく作成された run_id が確定するまで待機してから追跡
   updateBulkStatusNote(rowIdx, 'run取得中...');
-  const runId = await getRunIdAfterDispatch(ymlFile, prevRunId);
+  const runId = await getRunIdAfterDispatch(ymlFile, prevRunId, dispatchedAt);
   if (!runId) {
-    console.error(`[poll] ${ymlFile}: new run not found within 60s`);
+    console.error(`[pollWorkflowCompletion] ${ymlFile} run_id取得失敗 → タイムアウト扱い`);
+    updateBulkStatusNote(rowIdx, 'run_id取得失敗（60秒タイムアウト）');
     return { success: false, conclusion: 'not_found', timedOut: true };
   }
-  console.log(`[poll] ${ymlFile}: tracking run_id=${runId}`);
+  console.log(`[pollWorkflowCompletion] ${ymlFile} run_id=${runId} を追跡開始`);
 
-  // 特定の run_id のみをポーリング（最新runへの誤参照を防ぐ）
   while (true) {
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     if (elapsed >= MAX_MS / 1000) {
+      console.error(`[pollWorkflowCompletion] ${ymlFile} 20分タイムアウト`);
       return { success: false, conclusion: 'timeout', timedOut: true };
     }
     updateBulkStatusNote(rowIdx, `実行中（${elapsed}秒経過）`);
@@ -2838,10 +2871,13 @@ async function pollWorkflowCompletion(ymlFile, rowIdx, prevRunId) {
     try {
       const url = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/actions/runs/${runId}`;
       const res = await fetch(url, { headers: apiHeaders() });
-      if (res.ok) {
+      if (!res.ok) {
+        console.error(`[pollWorkflowCompletion] ${ymlFile} run_id=${runId} API error: HTTP ${res.status}`);
+      } else {
         const run = await res.json();
-        console.log(`[poll] ${ymlFile} run_id=${runId} status=${run.status} conclusion=${run.conclusion}`);
+        console.log(`[pollWorkflowCompletion] ${ymlFile} run_id=${runId} status=${run.status} conclusion=${run.conclusion ?? '-'}`);
         if (run.status === 'completed') {
+          console.log(`[pollWorkflowCompletion] ${ymlFile} 完了: conclusion=${run.conclusion}`);
           return {
             success:    run.conclusion === 'success',
             conclusion: run.conclusion || 'unknown',
@@ -2849,8 +2885,8 @@ async function pollWorkflowCompletion(ymlFile, rowIdx, prevRunId) {
           };
         }
       }
-    } catch(_) {
-      // ポーリングエラーは無視して継続
+    } catch(e) {
+      console.error(`[pollWorkflowCompletion] ${ymlFile} fetch例外: ${e}`);
     }
 
     await new Promise(r => setTimeout(r, POLL_MS));
@@ -2876,6 +2912,7 @@ async function runBulkUpdate() {
 
     const wfs = deps.workflows;
     const usePhasedExecution = mode === 'bulk' && deps.bulk_update_phases;
+    console.log(`[runBulkUpdate] mode=${mode} usePhasedExecution=${usePhasedExecution} phases=${deps.bulk_update_phases?.length ?? 0}`);
 
     // フラットなrowsリストを構築
     let rows;
@@ -2918,6 +2955,7 @@ async function runBulkUpdate() {
         if (failed) break;
 
         const phaseIndices = phase.workflows.map(() => rowIndex++);
+        console.log(`[runBulkUpdate] Phase ${phase.phase} 開始 parallel=${phase.parallel} workflows=${phase.workflows.join(',')} indices=${phaseIndices}`);
 
         // 全フェーズ内ワークフローを running に
         for (const idx of phaseIndices) {
@@ -2932,21 +2970,28 @@ async function runBulkUpdate() {
             prevRunIds[idx] = await getLatestRunId(rows[idx].yml);
           })
         );
+        console.log(`[runBulkUpdate] Phase ${phase.phase} prevRunIds:`, JSON.stringify(prevRunIds));
 
-        // 全ワークフローを同時 dispatch
+        // 全ワークフローを同時 dispatch（dispatchedAt も記録してフォールバック用に渡す）
+        const dispatchedAts = {};
         const dispatchResults = await Promise.all(
           phaseIndices.map(async (idx) => {
             const row = rows[idx];
             try {
               const inputs = {};
               if (row.acceptsTickers && tickersInput) inputs[row.inputParam] = tickersInput;
+              console.log(`[runBulkUpdate] dispatch開始: ${row.yml} inputs=${JSON.stringify(inputs)}`);
+              dispatchedAts[idx] = Date.now();
               await dispatchWorkflow(row.yml, inputs);
+              console.log(`[runBulkUpdate] dispatch完了: ${row.yml}`);
               return { idx, ok: true };
             } catch(e) {
+              console.error(`[runBulkUpdate] dispatch失敗: ${row.yml} error=${e.message}`);
               return { idx, ok: false, error: `dispatch失敗: ${e.message}` };
             }
           })
         );
+        console.log(`[runBulkUpdate] Phase ${phase.phase} dispatchResults:`, JSON.stringify(dispatchResults));
 
         for (const dr of dispatchResults) {
           if (!dr.ok) {
@@ -2959,9 +3004,11 @@ async function runBulkUpdate() {
         if (failed) break;
 
         // 全ワークフローを並列ポーリング（prevRunId で新runをID確認してから追跡）
+        console.log(`[runBulkUpdate] Phase ${phase.phase} ポーリング開始 (Promise.all × ${phaseIndices.length})`);
         const pollResults = await Promise.all(
-          phaseIndices.map(idx => pollWorkflowCompletion(rows[idx].yml, idx, prevRunIds[idx] ?? null))
+          phaseIndices.map(idx => pollWorkflowCompletion(rows[idx].yml, idx, prevRunIds[idx] ?? null, dispatchedAts[idx] ?? Date.now()))
         );
+        console.log(`[runBulkUpdate] Phase ${phase.phase} ポーリング完了:`, JSON.stringify(pollResults));
 
         for (let i = 0; i < phaseIndices.length; i++) {
           const idx    = phaseIndices[i];
@@ -2987,21 +3034,29 @@ async function runBulkUpdate() {
         rows[i].status = 'running';
         renderBulkStatusList(rows);
 
+        console.log(`[runBulkUpdate] 逐次: ${rows[i].yml} prevRunId取得中`);
         const prevRunId = await getLatestRunId(rows[i].yml);
+        let seqDispatchedAt;
         try {
           const inputs = {};
           if (rows[i].acceptsTickers && tickersInput) {
             inputs[rows[i].inputParam] = tickersInput;
           }
+          console.log(`[runBulkUpdate] dispatch開始: ${rows[i].yml} inputs=${JSON.stringify(inputs)}`);
+          seqDispatchedAt = Date.now();
           await dispatchWorkflow(rows[i].yml, inputs);
+          console.log(`[runBulkUpdate] dispatch完了: ${rows[i].yml}`);
         } catch(e) {
+          console.error(`[runBulkUpdate] dispatch失敗: ${rows[i].yml} error=${e.message}`);
           rows[i].status = 'error';
           rows[i].error  = `dispatch失敗: ${e.message}`;
           renderBulkStatusList(rows);
           break;
         }
 
-        const result = await pollWorkflowCompletion(rows[i].yml, i, prevRunId);
+        console.log(`[runBulkUpdate] ポーリング開始: ${rows[i].yml}`);
+        const result = await pollWorkflowCompletion(rows[i].yml, i, prevRunId, seqDispatchedAt);
+        console.log(`[runBulkUpdate] ポーリング完了: ${rows[i].yml}`, JSON.stringify(result));
 
         if (result.timedOut) {
           rows[i].status = 'error';
