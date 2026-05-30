@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-30
+最終更新: 2026-05-30（システム全体バックログ追記）
 
 ---
 
@@ -58,6 +58,14 @@
 - 問題: 業種・成長段階によって適切な永続成長率は異なる
 - 改善: セクター別 tv_g テーブルを設定（例：テック 3.5%、公益 2.0%）
 
+### [NET-1] financial_health.net_debt と bs_adjustment.net_cash の不整合
+- 現状: report.txt の Net_Debt は total_debt - cash のみ（短期投資除外）
+- 問題: bs_adjustment は短期投資を含むため両者で値が異なる
+  例: AAPL Net_Debt表示 +$67.09B vs 実態 -$48.33B（差 $18.76B）
+- 改善: financial_health.net_debt の計算に短期投資を含める
+  または report.txt に「短期投資除外」の注記を追加
+- Gemini指摘: 2026-05-30
+
 ---
 
 ## 優先度：低（アイデア段階）
@@ -80,6 +88,25 @@
 - 現状: WACC固定での3シナリオ（bear/base/bull）
 - 改善: WACC変化時のIV感応度テーブルを追加
   例: WACC 9% / 10% / 11% × 成長率 base での IV変化
+
+### [ARCH-1] ボトルネック企業プレミアム
+- 現状: 未実装
+- 内容: NVDA・ASML等の独占的ポジションを持つ企業への追加プレミアム
+- 設計: 手動フラグ（bottleneck: true）+ α加算の形
+- 記録日: 2026-04-12
+
+### [EVAL-1] PEAD バックテスト
+- 現状: 設計済み・未着手
+- 内容: 決算サプライズ後の株価ドリフト戦略のバックテスト
+- 制約: データコスト高のため延期中
+
+### [EVAL-2] 期待値エンジン（仮称）
+- 現状: 構想中
+- 内容: 各サブポート戦略の期待値を統合管理するエンジン
+
+### [EVAL-3] モート強度の相対スクリーニング軸化
+- 現状: 構想中
+- 内容: 競争優位性（モート）を定量化してスクリーニングに組み込む
 
 ---
 
@@ -140,3 +167,43 @@
 
 ### ✅ [FEAT-7] ユニットテスト24件追加
 - 回帰バグ検出の基盤を整備
+
+---
+
+## システム全体バックログ（TANUKI VALUATION以外）
+
+### 【Stonks Silo】
+- [ ] フロントエンド（HTML）未実装
+- [ ] GitHub Actions 未設定
+- [ ] gross_margin 全銘柄 null 問題（粗利率計算不可銘柄が多い）
+- 現状: 計算ロジック骨格は完成・results.json出力済み（BBAI/ONDS/RKLB/SOFI/SOUN）
+
+### 【Moomoo API】
+- [ ] β自動計算（SPY日次リターンからbeta_config.jsonを自動更新）
+- [ ] advance/decline比率収集（MACRO PULSE向け）
+- [ ] CANSLIM候補スクリーニングリスト（US株対象）
+- [ ] 資金フロー（大口/小口）表示
+- [ ] 決算ウォッチ用プレ/アフターマーケットデータ
+- [ ] Momentum Burst 2023-2024バックテスト（データクォータ回復待ち・約2026-06-01）
+
+### 【Market Pulse】
+- [ ] 予測バックテスト表示
+- [ ] 資産クラス資金フロービジュアライザーUI調整（実装済みだがUI調整待ち）
+
+### 【Short report contrarian戦略】
+- [ ] GitHub Actions化（現在は手動実行）
+- 現状: バックテストv4完了。最優先サブポート戦略
+
+### 【情報収集支援システム】
+- [ ] カタリスト×割安検知（価格下落+空売り比率+カタリスト接近）
+- [ ] テック/市場ブレークスルーニュース分類
+- [ ] NEWS_API_KEY + Grok使用、yfinance/FMP連携
+
+### 【完了済み（過去セッション）】
+- ✅ MACRO PULSE 流動性モニター・NET LIQUIDITY実装
+- ✅ MACRO PULSE Hollow Rally検知
+- ✅ MACRO PULSE ステルス流動性（TGA/RRP）可視化
+- ✅ αキャップ（上限1.0）実装
+- ✅ RPO補正実装
+- ✅ ネットキャッシュ補正を有利子負債のみに限定（実装済みを確認）
+- ✅ Stonks Silo yfinance ModuleNotFoundError修正
