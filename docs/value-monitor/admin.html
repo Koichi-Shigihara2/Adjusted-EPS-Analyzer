@@ -152,6 +152,21 @@
     /* ── Maturity ── */
     .maturity-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 
+    /* ── 一括更新 ── */
+    .bulk-card{background:linear-gradient(135deg,var(--sur) 0%,rgba(59,130,246,.05) 100%);border:2px solid rgba(59,130,246,.35);border-radius:10px;padding:22px;margin-bottom:28px}
+    .bulk-card-head{display:flex;align-items:center;gap:14px;margin-bottom:18px}
+    .bulk-title{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--acc)}
+    .bulk-desc{font-size:12px;color:var(--mut);margin-top:2px}
+    .bulk-mode-row{display:flex;gap:20px}
+    .bulk-mode-label{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;color:var(--txt)}
+    .bulk-preview-bar{font-family:var(--mono);font-size:11px;color:var(--acc);background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:6px;padding:10px 14px;margin-bottom:16px;line-height:1.9;word-break:break-all}
+    .bulk-status-list{list-style:none;margin-top:4px;border:1px solid var(--bdr);border-radius:6px;overflow:hidden}
+    .bulk-status-item{display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--bdr);background:var(--sur)}
+    .bulk-status-item:last-child{border-bottom:none}
+    .bulk-status-icon{font-size:14px;width:20px;text-align:center;flex-shrink:0}
+    .bulk-status-label{flex:1;font-family:var(--mono);font-size:12px}
+    .bulk-status-note{font-size:11px;color:var(--mut);font-family:var(--mono)}
+
     @media(max-width:700px){
       .form-grid{grid-template-columns:1fr}
       .wf-grid{grid-template-columns:1fr}
@@ -526,6 +541,46 @@
     <p style="font-size:12px;color:var(--mut);margin-bottom:20px;line-height:1.7">
       GitHub Actionsワークフローを手動実行します。実行後の結果はGitHub Actions画面で確認してください。
     </p>
+
+    <!-- ── 一括更新 ── -->
+    <div class="bulk-card">
+      <div class="bulk-card-head">
+        <span style="font-size:24px;line-height:1">🔄</span>
+        <div>
+          <div class="bulk-title">一括更新</div>
+          <div class="bulk-desc">正しい依存関係順序で全て実行します</div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px">
+        <div class="form-group" style="flex:1;margin:0;min-width:220px">
+          <label>対象ティッカー（空=全銘柄）</label>
+          <input type="text" class="form-input" id="bulk-tickers"
+                 placeholder="例: ADBE,BKNG,AVGO"
+                 autocomplete="off" autocorrect="off" autocapitalize="off">
+        </div>
+        <div>
+          <label style="font-family:var(--mono);font-size:11px;color:var(--mut);display:block;margin-bottom:6px">実行モード</label>
+          <div class="bulk-mode-row">
+            <label class="bulk-mode-label">
+              <input type="radio" name="bulk-mode" value="bulk" checked onchange="updateBulkPreview()" style="accent-color:var(--acc)">
+              全銘柄更新
+            </label>
+            <label class="bulk-mode-label">
+              <input type="radio" name="bulk-mode" value="new_ticker" onchange="updateBulkPreview()" style="accent-color:var(--acc)">
+              新規銘柄のみ
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-family:var(--mono);font-size:10px;color:var(--mut);letter-spacing:.08em;margin-bottom:5px">実行順序プレビュー:</div>
+      <div class="bulk-preview-bar" id="bulk-preview-bar">接続後に表示されます</div>
+
+      <button class="btn primary" id="bulk-run-btn" onclick="runBulkUpdate()" disabled>▶ 一括実行開始</button>
+      <div id="bulk-status" style="margin-top:14px;display:none"></div>
+    </div>
+
     <h3 class="section-title">TANUKI VALUATION</h3>
     <div class="wf-grid">
       <div class="wf-card">
@@ -1132,12 +1187,12 @@ async function connect() {
     ['refreshBtn','fetchSecBtn','updateSelectedBtn','lookupCikBtn','addTickerBtn',
      'deleteSelectedBtn','registerTickerBtn','saveBetaBtn','resetBetaBtn','refreshBetaBtn',
      'saveFcfBtn','resetFcfBtn','refreshFcfBtn',
-     'refreshStatusBtn','saveSettingsBtn','resetSettingsBtn'].forEach(id => {
+     'refreshStatusBtn','saveSettingsBtn','resetSettingsBtn','bulk-run-btn'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.disabled = false;
     });
     document.getElementById('settingsTicker').disabled = false;
-    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles(), loadDiscoverTab(), loadPortfolioTab()]);
+    await Promise.all([loadTickerTab(), loadBetaTab(), loadFcfTab(), loadConfigFiles(), loadDiscoverTab(), loadPortfolioTab(), initBulkUpdate()]);
   } catch(e) {
     alert('接続エラー: ' + e.message);
   }
@@ -1152,6 +1207,7 @@ function switchTab(name, btn) {
   if (name === 'status') loadStatusTab();
   if (name === 'discover') loadDiscoverTab();
   if (name === 'portfolio') loadPortfolioTab();
+  if (name === 'workflows') initBulkUpdate();
 }
 function toggleAll(cb) {
   document.querySelectorAll('.ticker-check').forEach(c => c.checked = cb.checked);
@@ -2645,6 +2701,124 @@ async function loadStatusTab() {
 
   } catch(e) {
     grid.innerHTML = `<div style="color:var(--red)">エラー: ${e.message}</div>`;
+  }
+}
+
+// ════════════════════════════════════
+// 一括更新
+// ════════════════════════════════════
+const WF_DEPS_PATH = 'config/workflow_dependencies.json';
+let _bulkDeps = null;
+
+async function loadBulkDeps() {
+  if (_bulkDeps) return _bulkDeps;
+  try {
+    const { content } = await fetchFile(WF_DEPS_PATH);
+    _bulkDeps = JSON.parse(content);
+  } catch(e) {
+    console.warn('[bulk] workflow_dependencies.json 読み込み失敗:', e.message);
+    _bulkDeps = null;
+  }
+  return _bulkDeps;
+}
+
+async function initBulkUpdate() {
+  if (!token) return;
+  const deps = await loadBulkDeps();
+  if (!deps) return;
+  updateBulkPreview();
+}
+
+function updateBulkPreview() {
+  const bar = document.getElementById('bulk-preview-bar');
+  if (!bar || !_bulkDeps) return;
+  const mode = document.querySelector('input[name="bulk-mode"]:checked')?.value || 'bulk';
+  const order = mode === 'new_ticker' ? _bulkDeps.new_ticker_order : _bulkDeps.bulk_update_order;
+  const labels = order.map(k => _bulkDeps.workflows[k]?.label || k);
+  bar.textContent = labels.join('  →  ');
+}
+
+function renderBulkStatusList(rows) {
+  const statusEl = document.getElementById('bulk-status');
+  if (!statusEl) return;
+  const icons = { pending: '⏸', running: '⏳', success: '✅', error: '❌' };
+  const noteText = { pending: '待機中', running: '実行中...', success: '完了', error: '' };
+  const colors  = { pending: 'var(--mut)', running: 'var(--acc)', success: 'var(--grn)', error: 'var(--red)' };
+  statusEl.innerHTML = '<ul class="bulk-status-list">' +
+    rows.map(r => {
+      const icon  = icons[r.status]  || '⏸';
+      const note  = r.status === 'error' ? (r.error || 'エラー') : (noteText[r.status] || '');
+      const color = colors[r.status] || 'var(--mut)';
+      return `<li class="bulk-status-item">
+        <span class="bulk-status-icon">${icon}</span>
+        <span class="bulk-status-label" style="color:${color}">${r.label}</span>
+        <span class="bulk-status-note">${note}</span>
+      </li>`;
+    }).join('') + '</ul>';
+}
+
+async function runBulkUpdate() {
+  if (!token) { alert('先にGitHubトークンで接続してください'); return; }
+  const tickersInput = (document.getElementById('bulk-tickers')?.value || '').trim();
+  const mode = document.querySelector('input[name="bulk-mode"]:checked')?.value || 'bulk';
+  const btn  = document.getElementById('bulk-run-btn');
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>起動中...';
+
+  const statusEl = document.getElementById('bulk-status');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = '';
+
+  try {
+    const deps = await loadBulkDeps();
+    if (!deps) throw new Error('workflow_dependencies.json を読み込めませんでした');
+
+    const order = mode === 'new_ticker' ? deps.new_ticker_order : deps.bulk_update_order;
+    const wfs   = deps.workflows;
+
+    const rows = order.map(k => ({
+      key:           k,
+      label:         wfs[k]?.label         || k,
+      yml:           wfs[k]?.yml           || '',
+      acceptsTickers:wfs[k]?.accepts_tickers !== false,
+      inputParam:    wfs[k]?.input_param   || 'tickers',
+      status:        'pending',
+      error:         ''
+    }));
+
+    renderBulkStatusList(rows);
+
+    for (let i = 0; i < rows.length; i++) {
+      rows[i].status = 'running';
+      renderBulkStatusList(rows);
+
+      try {
+        const inputs = {};
+        if (rows[i].acceptsTickers && tickersInput) {
+          inputs[rows[i].inputParam] = tickersInput;
+        }
+        await dispatchWorkflow(rows[i].yml, inputs);
+        rows[i].status = 'success';
+      } catch(e) {
+        rows[i].status = 'error';
+        rows[i].error  = e.message;
+        renderBulkStatusList(rows);
+        break;
+      }
+
+      renderBulkStatusList(rows);
+
+      if (i < rows.length - 1) {
+        await new Promise(r => setTimeout(r, 3000));
+      }
+    }
+
+  } catch(e) {
+    statusEl.innerHTML += `<div style="color:var(--red);font-family:var(--mono);font-size:12px;margin-top:10px;padding:8px 12px;background:rgba(244,63,94,.08);border:1px solid var(--red);border-radius:4px">❌ ${e.message}</div>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '▶ 一括実行開始';
   }
 }
 

@@ -1,0 +1,81 @@
+{
+  "workflows": {
+    "SEC_Data_Update": {
+      "label": "① SEC データ取得",
+      "yml": "SEC_Data_Update.yml",
+      "depends_on": [],
+      "outputs": ["common/sec_data/"],
+      "accepts_tickers": true,
+      "input_param": "tickers"
+    },
+    "HypeCore_Update": {
+      "label": "② HypeCore",
+      "yml": "HypeCore_Update.yml",
+      "depends_on": ["SEC_Data_Update"],
+      "outputs": ["docs/value-monitor/hypecore/"],
+      "accepts_tickers": true,
+      "input_param": "tickers"
+    },
+    "Adjusted_EPS_Update": {
+      "label": "③ EPS Analyzer",
+      "yml": "Adjusted_Eps_Analyzer_update.yml",
+      "depends_on": ["SEC_Data_Update"],
+      "outputs": ["docs/value-monitor/adjusted_eps_analyzer/"],
+      "accepts_tickers": true,
+      "input_param": "ticker"
+    },
+    "Stonks_Silo_Update": {
+      "label": "④ Stonks Silo",
+      "yml": "Stonks_Silo_Update.yml",
+      "depends_on": ["SEC_Data_Update"],
+      "outputs": ["docs/value-monitor/stonks-silo/"],
+      "accepts_tickers": false,
+      "input_param": "tickers"
+    },
+    "TANUKI_VALUATION_Update": {
+      "label": "⑤ TANUKI VALUATION",
+      "yml": "TANUKI_VALUATION_Update.yml",
+      "depends_on": ["HypeCore_Update", "Adjusted_EPS_Update", "Stonks_Silo_Update"],
+      "outputs": ["docs/value-monitor/tanuki_valuation/data/"],
+      "accepts_tickers": true,
+      "input_param": "tickers"
+    },
+    "TANUKI_Score_Update": {
+      "label": "⑥ TANUKI SCORE",
+      "yml": "TANUKI_Score_Update.yml",
+      "depends_on": ["TANUKI_VALUATION_Update"],
+      "outputs": ["docs/integrated-dashboard/"],
+      "accepts_tickers": false,
+      "input_param": "tickers"
+    }
+  },
+  "bulk_update_order": [
+    "SEC_Data_Update",
+    "HypeCore_Update",
+    "Adjusted_EPS_Update",
+    "Stonks_Silo_Update",
+    "TANUKI_VALUATION_Update",
+    "TANUKI_Score_Update"
+  ],
+  "new_ticker_order": [
+    "SEC_Data_Update",
+    "HypeCore_Update",
+    "Adjusted_EPS_Update",
+    "TANUKI_VALUATION_Update",
+    "TANUKI_Score_Update"
+  ],
+  "known_issues": [
+    {
+      "issue": "HypeCore循環依存",
+      "detail": "HypeCoreはTANUKI latest.jsonを参照するが、TANUKIもHypeCoreを参照。初回実行時は前回値を使用",
+      "severity": "low",
+      "workaround": "2回実行することで完全同期。通常の定期実行では問題なし"
+    },
+    {
+      "issue": "TANUKI Score と Market Pulse の順序",
+      "detail": "TANUKI Score (22:30) が Market Pulse (翌8:05) より先に実行されるため前日データを参照",
+      "severity": "low",
+      "workaround": "手動実行時はMarket Pulseを先に実行してからScoreを実行"
+    }
+  ]
+}
