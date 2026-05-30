@@ -456,7 +456,10 @@ def check_growth_sanity(
         end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
         recommended_g = (start_g + end_g) / 2
         growth_model = "decay"
-        growth_model_reason = f"TTM{start_g:.1%} → 業界{end_g:.1%}へ5年線形逓減、平均{recommended_g:.1%}"
+        growth_model_reason = (
+            f"TTM{start_g:.1%}と業界平均{end_g:.1%}の中間値{recommended_g:.1%}を採用"
+            f"（将来の成長減速を織り込んだ保守的推定）"
+        )
     else:
         # 中央値モデル
         recommended_g = recommended_g_median  # None if < 2 candidates
