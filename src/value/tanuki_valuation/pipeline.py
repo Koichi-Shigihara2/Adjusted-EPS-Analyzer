@@ -332,6 +332,13 @@ class TanukiValuationPipeline:
         _annual_revs = self._load_annual_revenues(ticker)
         _g_fund = self._calc_g_fundamental(ticker)
         _sector = self._load_beta_sector(ticker)
+        _hypecore_data = self._load_hypecore_data(ticker)
+        _hypecore_stage = _hypecore_data.get("stage")
+        _ttm_rev_yoy_pct = _hypecore_data.get("rev_yoy")
+        _ttm_rev_yoy_dec = (
+            _ttm_rev_yoy_pct / 100
+            if isinstance(_ttm_rev_yoy_pct, (int, float)) else None
+        )
         try:
             _growth_sanity = check_growth_sanity(
                 ticker=ticker,
@@ -339,6 +346,8 @@ class TanukiValuationPipeline:
                 sector=_sector,
                 annual_revenues=_annual_revs,
                 g_fundamental=_g_fund,
+                hypecore_stage=_hypecore_stage,
+                ttm_rev_yoy=_ttm_rev_yoy_dec,
             )
         except Exception as _e:
             import logging as _logging
@@ -897,9 +906,19 @@ class TanukiValuationPipeline:
             gs_warnings = growth_sanity.get("warnings", [])
             L.append("[4. 成長率根拠]")
             L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
+            _gs_rec_median = growth_sanity.get("recommended_g_median")
+            _gs_rec_hype = growth_sanity.get("recommended_g_hypecore")
             _gs_rec_g = growth_sanity.get("recommended_g")
+            _gs_hype_stage = growth_sanity.get("hypecore_stage_used")
+            _GS_STAGE_LABELS = {1: "黎明期", 2: "期待拡大期", 3: "陶酔期", 4: "期待剥落期"}
             if _gs_rec_g is not None:
-                L.append(f"推奨成長率(中央値): {_gs_rec_g*100:.1f}%")
+                L.append("推奨成長率内訳:")
+                if _gs_rec_median is not None:
+                    L.append(f"  中央値ベース:          {_gs_rec_median*100:.1f}%")
+                if _gs_rec_hype is not None and _gs_hype_stage is not None:
+                    _sl = _GS_STAGE_LABELS.get(_gs_hype_stage, f"Phase{_gs_hype_stage}")
+                    L.append(f"  HypeCoreフェーズ補正:  {_gs_rec_hype*100:.1f}% (Phase{_gs_hype_stage}・{_sl})")
+                L.append(f"  最終推奨値:            {_gs_rec_g*100:.1f}%")
             L.append(f"判定         : {gs_verdict}")
             if gs_ind and gs_bench is not None:
                 damo_tag = f" (Damodaran {gs_year})" if gs_year else ""
@@ -1440,6 +1459,26 @@ class TanukiValuationPipeline:
                 _seg_cfg.clear_growth_override(ticker)
         else:
             _seg_cfg.clear_growth_override(ticker)
+
+    def _load_hypecore_data(self, ticker: str) -> dict:
+        """poc.json から HypeCoreの最新 stage と rev_yoy を取得"""
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        if not os.path.exists(poc_path):
+            return {}
+        try:
+            with open(poc_path, encoding="utf-8") as f:
+                monthly = json.load(f).get("monthly") or []
+            if monthly:
+                last = monthly[-1]
+                return {
+                    "stage": last.get("stage"),
+                    "rev_yoy": last.get("rev_yoy"),
+                }
+        except Exception:
+            pass
+        return {}
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""
