@@ -1,16 +1,16 @@
 TDY INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T19:27:17+09:00
+Generated: 2026-05-30T19:32:59+09:00
 Price: $619.83
 
 [1. TANUKI SCORE]
 Classification: HOLD
-Funda_Score: 25/100
+Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -9.2%
+  Deviation_Rate: -15.9%
   MA200_Deviation: +6.3%
-  HypeCore_Phase: N/A
-  Analyst_Consensus: N/A
-Comment: フェアバリュー近辺、FCF黒字
+  HypeCore_Phase: Phase4 (期待剥落期)
+  Analyst_Consensus: 1.69 (Buy)
+Comment: フェアバリュー近辺、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = N/A
-Deviation_Rate: -9.2%
+Deviation_Rate: -15.9%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,18 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $619.83
-Intrinsic_Value_BASE: $563.03
-Deviation_BASE: -9.2%
+Intrinsic_Value_BASE: $521.57
+Deviation_BASE: -15.9%
 Scenarios:
 BEAR: Growth=0.0%, IV=$0.00, Deviation=+0.0%
-BASE: Growth=0.0%, IV=$563.03, Deviation=-9.2%
+BASE: Growth=0.0%, IV=$521.57, Deviation=-15.9%
 BULL: Growth=0.0%, IV=$0.00, Deviation=+0.0%
+TTM_Revenue_Growth: 7.6%
+(DCF Base vs TTM actual: -7.6pt discount)
 WACC: 9.71%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.95
-FCF_Base: $819.42M (5yr平均)
+FCF_Conversion_Rate: 0.7 (Industry: Scientific & Technical Instruments)
 RPO_PV: $155,279,617 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $+2.57B (negative=net cash)
@@ -178,12 +180,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: N/A
-Latest_GAAP_EPS: N/A
-Adjustment_Delta: N/A
-YoY_Growth: N/A%
+Latest_Adjusted_EPS: $5.9451 (直近四半期値)
+Latest_GAAP_EPS: $4.8462
+Adjustment_Delta: $1.0989 (sbc/amortization_intangibles)
+YoY_Growth: 18.8%
 Recent Surprises (Adjusted EPS):
-  N/A
+  2026 Q1: Actual=$5.9451 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$6.7152 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$5.7603 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$5.5502 vs Est=N/A -> N/A%
 Definition:
 
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
@@ -196,7 +201,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 31.4x
-  Adjusted_EPS_PER: N/A
+  Adjusted_EPS_PER: 26.9x (年次EPSベース: $23.0320)
+  Delta: -4.5x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-22
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -211,11 +217,16 @@ Compare with TANUKI G scenario for cross-validation
 
 
 [7. HYPECORE]
-Current_Phase: N/A
+Current_Phase: Phase4 (期待剥落期)
 Alpha_Premium: 0.44
-HYPE_Signal: N/A
+HYPE_Signal: 実体維持・期待崩壊中 — 売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。
 Phase_History (recent 6 months):
-N/A
+2025-12: Phase4 (期待剥落期)
+2026-01: Phase3 (陶酔期)
+2026-02: Phase3 (陶酔期)
+2026-03: Phase4 (期待剥落期)
+2026-04: Phase2 (期待拡大期)
+2026-05: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 31.4x
   PEG: 1.40
@@ -251,11 +262,11 @@ EV/EBITDA: Debt-adjusted valuation multiple
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: N/A%
+Short_Interest: 3.8%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: N/A
+Analyst_Consensus: 1.69 (Buy)
 Runway_Months: N/A (profitable or not in STONKS)
-Revenue_Growth_YoY: N/A%
+Revenue_Growth_YoY: 7.6%
 Next_Earnings_Date: 2026-07-22
 Breakeven_Estimate: N/A (profitable or insufficient data)
 Definition:

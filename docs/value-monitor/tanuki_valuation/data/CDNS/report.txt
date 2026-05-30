@@ -1,16 +1,16 @@
 CDNS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T19:27:15+09:00
+Generated: 2026-05-30T19:32:58+09:00
 Price: $374.93
 
 [1. TANUKI SCORE]
-Classification: HOLD
-Funda_Score: 25/100
+Classification: TRIM
+Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -42.6%
+  Deviation_Rate: -53.0%
   MA200_Deviation: +16.0%
-  HypeCore_Phase: N/A
-  Analyst_Consensus: N/A
-Comment: 割高(-43%超)、FCF黒字
+  HypeCore_Phase: Phase3 (陶酔期)
+  Analyst_Consensus: 1.44 (Strong Buy)
+Comment: 割高(-53%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = N/A
-Deviation_Rate: -42.6%
+Deviation_Rate: -53.0%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,25 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $374.93
-Intrinsic_Value_BASE: $215.38
-Deviation_BASE: -42.6%
+Intrinsic_Value_BASE: $176.22
+Deviation_BASE: -53.0%
 Scenarios:
 BEAR: Growth=0.0%, IV=$0.00, Deviation=+0.0%
-BASE: Growth=0.0%, IV=$215.38, Deviation=-42.6%
+BASE: Growth=0.0%, IV=$176.22, Deviation=-53.0%
 BULL: Growth=0.0%, IV=$0.00, Deviation=+0.0%
+TTM_Revenue_Growth: 18.7%
+(DCF Base vs TTM actual: -18.7pt discount)
 WACC: 11.71%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.3
-FCF_Base: $1,287.93M (5yr平均)
+Valuation_Gap_Analysis:
+  DCF_IV:           $176 (保守的FCFベース・現在実力値)
+  Market_Price:     $375
+  Gap:              -53% (市場が将来成長を先取り)
+  Implied_FCF_2030: $6.82B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $1.04B
+  Required_Growth:  46%/yr (現在FCFから必要成長率を逆算)
+FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
 RPO_PV: $377,644,521 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $-3.00B (negative=net cash)
@@ -178,12 +187,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: N/A
-Latest_GAAP_EPS: N/A
-Adjustment_Delta: N/A
-YoY_Growth: N/A%
+Latest_Adjusted_EPS: $1.6800 (直近四半期値)
+Latest_GAAP_EPS: $1.2263
+Adjustment_Delta: $0.4537 (sbc/amortization_intangibles/restructuring)
+YoY_Growth: 26.6%
 Recent Surprises (Adjusted EPS):
-  N/A
+  2026 Q1: Actual=$1.6800 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$1.7885 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$1.4590 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$0.8531 vs Est=N/A -> N/A%
 Definition:
 
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
@@ -196,7 +208,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 87.8x
-  Adjusted_EPS_PER: N/A
+  Adjusted_EPS_PER: 69.1x (年次EPSベース: $5.4286)
+  Delta: -18.7x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -211,11 +224,16 @@ Compare with TANUKI G scenario for cross-validation
 
 
 [7. HYPECORE]
-Current_Phase: N/A
+Current_Phase: Phase3 (陶酔期)
 Alpha_Premium: 0.8
-HYPE_Signal: N/A
+HYPE_Signal: 陶酔期入り — 過熱が始まったばかり。まだ上昇余地がある可能性。
 Phase_History (recent 6 months):
-N/A
+2025-12: Phase4 (期待剥落期)
+2026-01: Phase4 (期待剥落期)
+2026-02: Phase4 (期待剥落期)
+2026-03: Phase4 (期待剥落期)
+2026-04: Phase4 (期待剥落期)
+2026-05: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 87.8x
   PEG: 3.55
@@ -251,11 +269,11 @@ EV/EBITDA: Debt-adjusted valuation multiple
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: N/A%
+Short_Interest: 2.0%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: N/A
+Analyst_Consensus: 1.44 (Strong Buy)
 Runway_Months: N/A (profitable or not in STONKS)
-Revenue_Growth_YoY: N/A%
+Revenue_Growth_YoY: 18.7%
 Next_Earnings_Date: 2026-07-28
 Breakeven_Estimate: N/A (profitable or insufficient data)
 Definition:
