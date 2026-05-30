@@ -1,5 +1,5 @@
 ONDS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T15:11:58+09:00
+Generated: 2026-05-30T15:26:16+09:00
 Price: $13.22
 
 [1. TANUKI SCORE]
@@ -27,10 +27,10 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ③成長性系
-Quadrant: 左上
-Label: 割高×高成長
-Key_Metric_Y: Revenue_Growth = 1079.9%
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = -2.557
 Deviation_Rate: -87.3%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
@@ -139,17 +139,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: Q異常値（Q=-19160890.15）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=-1.79
+BASE: RICE=-2.557
+BULL: RICE=-3.068
 Components (BASE scenario):
-G  = N/A
-Q  = –   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 30.0%  [TANUKI forward growth rate]
+Q  = -0.4514   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 1.8879  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: false
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power

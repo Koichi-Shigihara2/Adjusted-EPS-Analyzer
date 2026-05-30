@@ -118,11 +118,17 @@ def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, i
         ocf = data.get("cf", {}).get("operating_cash_flow")
         ni  = data.get("pl", {}).get("net_income")
         sbc = data.get("cf", {}).get("stock_based_compensation") or 0.0
+        rev = data.get("pl", {}).get("revenue") or 0.0
         if ocf is not None and ni is not None:
             if sbc != 0.0:
                 sbc_applied_any = True
-            denom = max(ni + sbc, 1)
-            q_list.append(ocf / denom)
+            earnings = ni + sbc
+            # 赤字または利益がほぼゼロ（売上の1%未満）→ Q未定義のためスキップ
+            if earnings <= 0:
+                continue
+            if rev > 0 and abs(earnings) < rev * 0.01:
+                continue
+            q_list.append(ocf / earnings)
 
     if not q_list:
         return 0.0, 0, False

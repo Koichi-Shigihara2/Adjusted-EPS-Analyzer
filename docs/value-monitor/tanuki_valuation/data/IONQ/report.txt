@@ -1,5 +1,5 @@
 IONQ INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T15:11:53+09:00
+Generated: 2026-05-30T15:26:11+09:00
 Price: $72.07
 
 [1. TANUKI SCORE]
@@ -27,10 +27,10 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ③成長性系
-Quadrant: 左上
-Label: 割高×高成長
-Key_Metric_Y: Revenue_Growth = 754.7%
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.406
 Deviation_Rate: -70.9%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
@@ -136,17 +136,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: Q異常値（Q=-75699000.08）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.284
+BASE: RICE=0.406
+BULL: RICE=0.487
 Components (BASE scenario):
-G  = N/A
-Q  = –   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 15.0%  [TANUKI forward growth rate]
+Q  = -0.253   [OCF / (NetIncome + SBC), 3yr avg]
+CF = -1.0701  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: false
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power

@@ -1,5 +1,5 @@
 COHR INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T15:11:50+09:00
+Generated: 2026-05-30T15:26:06+09:00
 Price: $361.47
 
 [1. TANUKI SCORE]
@@ -27,10 +27,10 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ③成長性系
-Quadrant: 左上
-Label: 割高×高成長
-Key_Metric_Y: Revenue_Growth = 20.5%
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 1.008
 Deviation_Rate: -90.9%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
@@ -143,17 +143,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: Q異常値（Q=188312000.99）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.708
+BASE: RICE=1.008
+BULL: RICE=1.214
 Components (BASE scenario):
-G  = N/A
-Q  = –   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 20.5%  [TANUKI forward growth rate]
+Q  = 1.4864   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.3307  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: false
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power

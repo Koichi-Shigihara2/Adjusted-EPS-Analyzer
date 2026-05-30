@@ -15,7 +15,7 @@
     "3年後": 73.96
   },
   "upside_percent": 18.1,
-  "calculation_date": "2026-05-30T15:11:53+09:00",
+  "calculation_date": "2026-05-30T15:26:10+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -206,16 +206,31 @@
     "sector_guard": "none"
   },
   "rice": {
-    "available": false,
-    "q": 23618000.2503,
-    "cf_conversion": 0.0,
+    "available": true,
+    "q": 0.3754,
+    "cf_conversion": 0.3174,
     "wacc": 0.1,
-    "q_years": 3,
-    "cf_years": 0,
-    "avg_intensity": 0.0,
-    "avg_rev_growth_lagged": 0.0,
+    "q_years": 2,
+    "cf_years": 3,
+    "avg_intensity": 0.9339,
+    "avg_rev_growth_lagged": 0.2966,
     "warnings": true,
-    "note": "Q異常値（Q=23618000.25）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外"
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / Q: 2年のみ使用（3年要求）",
+    "bear": {
+      "growth_rate": 0.184,
+      "rice": 0.219,
+      "rice_per_ratio": 0.0069
+    },
+    "base": {
+      "growth_rate": 0.263,
+      "rice": 0.313,
+      "rice_per_ratio": 0.0099
+    },
+    "bull": {
+      "growth_rate": 0.316,
+      "rice": 0.377,
+      "rice_per_ratio": 0.0119
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-01-31",
