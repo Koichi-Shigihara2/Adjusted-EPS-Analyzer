@@ -339,6 +339,7 @@ class TanukiValuationPipeline:
                 sector=_sector,
                 annual_revenues=_annual_revs,
                 g_fundamental=_g_fund,
+                ttm_actual=_phase1_growth if _phase1_growth > 0 else None,
             )
         except Exception as _e:
             import logging as _logging
@@ -762,7 +763,9 @@ class TanukiValuationPipeline:
         L.append(f"Deviation_BASE: {dev(base_iv):+.1f}%")
         if _phase1_auto_adjusted and _phase1_growth_original is not None and _recommended_g is not None:
             L.append(f"Growth_Rate_Original: {_phase1_growth_original*100:.1f}% (TTM実績)")
-            L.append(f"Growth_Rate_Adjusted: {_recommended_g*100:.1f}% (推奨値・中央値ベース)")
+            _gs_model_here = growth_sanity.get("growth_model") if growth_sanity else None
+            _model_suffix = "逓減モデル" if _gs_model_here == "decay" else "中央値ベース"
+            L.append(f"Growth_Rate_Adjusted: {_recommended_g*100:.1f}% (推奨値・{_model_suffix})")
         L.append("Scenarios:")
         if _phase1_auto_adjusted:
             L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f} （推奨値ベース）")

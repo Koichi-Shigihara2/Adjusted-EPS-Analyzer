@@ -335,6 +335,7 @@ def check_growth_sanity(
     sector: str | None = None,
     annual_revenues: list[float] | None = None,
     g_fundamental: float | None = None,
+    ttm_actual: float | None = None,  # TTM Revenue YoY (decimal) from STONKS/SEC
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
@@ -442,11 +443,16 @@ def check_growth_sanity(
 
     # ─── recommended_g ───
     _cagr_vals = [v for v in [cagr.get("cagr_3yr"), cagr.get("cagr_5yr")] if v is not None and v > 0]
-    _ttm_best = max(_cagr_vals) if _cagr_vals else None
+    _ttm_best_cagr = max(_cagr_vals) if _cagr_vals else None
+    _ttm_actual_pos = ttm_actual if (ttm_actual is not None and ttm_actual > 0) else None
+    # 逓減モデルのトリガー: ttm_actual / cagr_3yr / cagr_5yr のいずれかが 50% 超
+    _trigger_vals = [v for v in [_ttm_actual_pos, *_cagr_vals] if v is not None]
+    _trigger_max = max(_trigger_vals) if _trigger_vals else None
 
-    if _ttm_best is not None and _ttm_best > 0.50:
+    if _trigger_max is not None and _trigger_max > 0.50:
         # 高成長逓減モデル: 5年間で線形逓減する平均値
-        start_g = min(_ttm_best, 1.0)
+        _start_raw = _ttm_actual_pos if _ttm_actual_pos is not None else _ttm_best_cagr
+        start_g = min(_start_raw, 1.0)
         end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
         recommended_g = (start_g + end_g) / 2
         growth_model = "decay"
@@ -455,7 +461,7 @@ def check_growth_sanity(
         # 中央値モデル
         recommended_g = recommended_g_median  # None if < 2 candidates
         growth_model = "median"
-        _reason_ttm = f"TTM{_ttm_best:.1%}" if _ttm_best is not None else "TTMデータなし"
+        _reason_ttm = f"TTM{_trigger_max:.1%}" if _trigger_max is not None else "TTMデータなし"
         growth_model_reason = f"{_reason_ttm}のため中央値モデル適用"
 
         # 上限キャップ: max(industry_benchmark × 3, 50%)

@@ -566,6 +566,21 @@ class TestGrowthDecayModel:
         )
         assert result["growth_model"] == "median"
 
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
+    })
+    def test_ttm_actual_triggers_decay_without_cagr_data(self, _mock):
+        """ttm_actual=93.4% のみで逓減モデルがトリガーされる（CAGR履歴なし）"""
+        result = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=0.934, sector="Semiconductor",
+            annual_revenues=None,  # CAGR データなし
+            ttm_actual=0.934,
+        )
+        assert result["growth_model"] == "decay"
+        # (min(0.934, 1.0) + 0.096) / 2 ≈ 0.515
+        expected = (0.934 + 0.096) / 2
+        assert abs(result["recommended_g"] - expected) < 0.005
+
 
 # ─────────────────────────────────────────────
 # 10. hypecore substage_watch の eps_surprise 分岐
