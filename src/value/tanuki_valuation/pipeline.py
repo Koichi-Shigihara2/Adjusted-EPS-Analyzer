@@ -29,6 +29,24 @@ from growth_sanity import check_growth_sanity, calc_fundamental_growth
 import segment_config as _seg_cfg
 
 
+def _dilution_severity_info(dil_pct: float | None) -> tuple:
+    """希薄化率から (severity, badge, report_comment) を返す"""
+    if dil_pct is None:
+        return None, None, None
+    if dil_pct < 0:
+        return "positive", "自社株買いによる株主還元 ✅", "株主数が減少し1株あたり価値が向上している。"
+    elif dil_pct < 3:
+        return "low", "許容範囲内 ✅", "希薄化はほぼ無視できるレベル。"
+    elif dil_pct < 10:
+        return "medium", "やや高い希薄化 ℹ️ 要注意", f"継続なら1株価値を年率{dil_pct:.1f}%毀損。SBC水準を確認推奨。"
+    elif dil_pct < 30:
+        return "high", "高い希薄化 ⚠️ SBC・増資を確認", f"継続なら1株価値を年率{dil_pct:.1f}%毀損。SBC・増資の内訳を確認。"
+    elif dil_pct < 50:
+        return "severe", "深刻な希薄化 ⚠️ 株主価値毀損リスク大", f"継続なら1株価値を年率{dil_pct:.1f}%毀損。株主価値毀損リスク大。"
+    else:
+        return "critical", "極度の希薄化 🚨 IPO直後か継続増資か要確認", f"IPO後の株式発行が主因の可能性。継続なら1株価値を年率{dil_pct:.1f}%毀損。"
+
+
 class TanukiValuationPipeline:
     """TANUKI VALUATION パイプライン"""
 
@@ -430,6 +448,11 @@ class TanukiValuationPipeline:
         latest_data["growth_sanity"] = _growth_sanity
         latest_data["phase1_growth_original"] = _phase1_growth_original
         latest_data["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
+        _dil_pct = (latest_data.get("financial_health") or {}).get("dilution_3yr_annual_pct")
+        _dil_sev, _dil_badge, _ = _dilution_severity_info(_dil_pct)
+        if _dil_sev:
+            latest_data["dilution_severity"] = _dil_sev
+            latest_data["dilution_comment"] = _dil_badge
 
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
@@ -807,10 +830,15 @@ class TanukiValuationPipeline:
         cash = fin_health.get("cash_and_equivalents")
         sbc_ttm = fin_health.get("sbc_ttm")
         dilution_3yr = fin_health.get("dilution_3yr_annual_pct")
+        _dil_sev, _dil_badge, _dil_rpt = _dilution_severity_info(dilution_3yr)
         L.append(f"  Net_Debt: ${net_debt/1e9:+.2f}B (negative=net cash)" if net_debt is not None else "  Net_Debt: N/A")
         L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B" if total_debt is not None else "  Total_Debt: N/A")
         L.append(f"  SBC_TTM: ${sbc_ttm/1e6:,.0f}M" if sbc_ttm is not None else "  SBC_TTM: N/A")
-        L.append(f"  Dilution_3yr_Annual: {dilution_3yr:+.2f}%/yr" if dilution_3yr is not None else "  Dilution_3yr_Annual: N/A")
+        if dilution_3yr is not None:
+            L.append(f"  Dilution_3yr_Annual: {dilution_3yr:+.2f}%/yr  {_dil_badge}")
+            L.append(f"  Dilution_Comment: {_dil_rpt}")
+        else:
+            L.append("  Dilution_3yr_Annual: N/A")
         L.append(f"  Next_Earnings_Date: {next_earnings}")
         L.append("FCF_History:")
         if fcf_history:
