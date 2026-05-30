@@ -1204,6 +1204,50 @@ function render(d) {
         })()}
       </div>
       ` : ''}
+
+      ${(() => {
+        const _baseIv = d.scenario_valuations?.base?.intrinsic_value_per_share || ivps;
+        const _devPct = currentPrice > 0 && _baseIv > 0 ? (_baseIv - currentPrice) / currentPrice * 100 : null;
+        if (_devPct === null || _devPct > -50) return '';
+        const _shares = dilutedShares;
+        const _nd = d.financial_health?.net_debt || 0;
+        const _fcfCur = fcfBaseUsed;
+        const _rm = d.wacc?.market_return || 0.10;
+        const _tvG = terminalGrowth;
+        if (_shares <= 0 || _fcfCur <= 0 || _rm <= _tvG) return '';
+        const _ev = currentPrice * _shares + _nd;
+        const _fcfTerm = _ev * (_rm - _tvG) / (1 + _tvG);
+        const _reqGr = _fcfCur > 0 && _fcfTerm > 0 ? (Math.pow(_fcfTerm / _fcfCur, 1/5) - 1) * 100 : null;
+        const _mult = _fcfCur > 0 && _fcfTerm > 0 ? (_fcfTerm / _fcfCur).toFixed(1) : null;
+        const _fcfCurStr = _fcfCur >= 1e9 ? '$' + (_fcfCur/1e9).toFixed(2) + 'B' : '$' + (_fcfCur/1e6).toFixed(0) + 'M';
+        const _fcfTermStr = '$' + (_fcfTerm/1e9).toFixed(1) + 'B';
+        const _baseIvStr = '$' + _baseIv.toFixed(0);
+        const _priceStr = '$' + currentPrice.toFixed(0);
+        const _growthPct = d.growth?.rate != null ? (d.growth.rate * 100).toFixed(1) + '%' : '—';
+        let html = '<div class="future-section" style="margin-top:16px;border:1px solid rgba(248,113,113,0.3);background:rgba(248,113,113,0.04);border-radius:12px;padding:20px">';
+        html += '<h3 class="section-title" style="color:var(--red)">市場 vs DCF 乖離分析（Reverse DCF）</h3>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:8px">';
+        html += '<div><div style="font-size:11px;color:var(--mut);margin-bottom:4px">DCF価値（保守的）</div>';
+        html += '<div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--acc)">' + _baseIvStr + '</div></div>';
+        html += '<div><div style="font-size:11px;color:var(--mut);margin-bottom:4px">現在株価</div>';
+        html += '<div style="font-family:var(--mono);font-size:22px;font-weight:700;color:var(--red)">' + _priceStr + '</div></div>';
+        html += '</div>';
+        html += '<div style="margin-top:12px;display:grid;gap:8px;font-family:var(--mono);font-size:12px">';
+        html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">乖離率</span><span style="color:var(--red);font-weight:700">' + _devPct.toFixed(0) + '%（市場が将来成長を先取り）</span></div>';
+        html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">株価を正当化するFCF（5年後）</span><span style="color:var(--yellow)">' + _fcfTermStr + '</span></div>';
+        html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">現在FCF（DCFベース）</span><span style="color:var(--txt)">' + _fcfCurStr + '</span></div>';
+        if (_reqGr !== null) {
+          html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">必要成長率（5年）</span><span style="color:var(--orange);font-weight:700">' + _reqGr.toFixed(0) + '%/yr</span></div>';
+        }
+        html += '<div style="display:flex;justify-content:space-between"><span style="color:var(--mut)">現在成長率設定（DCF BASE）</span><span style="color:var(--txt)">' + _growthPct + '</span></div>';
+        html += '</div>';
+        if (_mult !== null) {
+          html += '<div style="margin-top:12px;padding:8px 12px;background:rgba(251,191,36,0.1);border-radius:6px;font-size:12px;color:var(--yellow)">市場は現在の <span style="font-family:var(--mono);font-weight:700">' + _mult + 'x</span> のFCFを5年後に期待している</div>';
+        }
+        html += '<div style="margin-top:8px;font-size:10px;color:var(--mut)">算出式: EV×(Rm−g_TV)/(1+g_TV)｜Rm=' + (_rm*100).toFixed(1) + '%｜g_TV=' + (_tvG*100).toFixed(1) + '%</div>';
+        html += '</div>';
+        return html;
+      })()}
     </div>
 
     <!-- 過去のスコア履歴（パイプライン実行後から蓄積） -->

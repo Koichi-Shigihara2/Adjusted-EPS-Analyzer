@@ -823,6 +823,27 @@ class TanukiValuationPipeline:
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
         L.append(f"Beta: {beta}")
+        # --- Valuation Gap Analysis (reverse DCF) ---
+        if upside is not None and upside <= -50 and current_price > 0 and base_iv > 0:
+            _gap_shares = comps.get("diluted_shares") or 0
+            _gap_nd     = fin_health.get("net_debt") or 0
+            _gap_fcf    = comps.get("fcf_base_used") or 0
+            _gap_rm     = wacc_data.get("market_return", 0.10) if isinstance(wacc_data, dict) else 0.10
+            _gap_tvg    = terminal_g_used if isinstance(terminal_g_used, (int, float)) else 0.03
+            if _gap_shares > 0 and _gap_fcf > 0 and _gap_rm > _gap_tvg:
+                _gap_ev   = current_price * _gap_shares + _gap_nd
+                _gap_term = _gap_ev * (_gap_rm - _gap_tvg) / (1 + _gap_tvg)
+                _gap_rg   = (_gap_term / _gap_fcf) ** (1 / 5) - 1 if _gap_fcf > 0 and _gap_term > 0 else None
+                L.append("Valuation_Gap_Analysis:")
+                L.append(f"  DCF_IV:           ${base_iv:,.0f} (保守的FCFベース・現在実力値)")
+                L.append(f"  Market_Price:     ${current_price:,.0f}")
+                L.append(f"  Gap:              {upside:+.0f}% (市場が将来成長を先取り)")
+                L.append(f"  Implied_FCF_2030: ${_gap_term/1e9:.2f}B (現在株価を正当化するために必要な5年後FCF)")
+                L.append(f"  Current_FCF:      ${_gap_fcf/1e9:.2f}B")
+                if _gap_rg is not None:
+                    L.append(f"  Required_Growth:  {_gap_rg*100:.0f}%/yr (現在FCFから必要成長率を逆算)")
+                else:
+                    L.append("  Required_Growth:  N/A")
         if not fcf_est.get("applied", True):
             # raw_fcf フォールバック: 実際のFCFベース値を表示
             _fcf_base_used = comps.get("fcf_base_used", 0)
@@ -934,6 +955,10 @@ class TanukiValuationPipeline:
         L.append("then adjusted via recommended_g (median of historical CAGR,")
         L.append("industry benchmark, RR×ROIC, weighted by HypeCore phase)")
         L.append("Next_Earnings_Date: Next quarterly earnings release")
+        L.append("Valuation_Gap_Analysis: Reverse DCF calculation showing")
+        L.append("what FCF growth rate the current market price implies.")
+        L.append("Useful for growth stocks where DCF underestimates")
+        L.append("market-priced future potential.")
         L.append("")
         L.append("")
 
