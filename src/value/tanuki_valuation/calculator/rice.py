@@ -42,12 +42,14 @@ class RICEScenario:
     growth_rate: float          # G: forward成長率
     rice: float                 # RICE値
     rice_per_ratio: float       # RICE / PER（PERが利用可能な場合のみ）
+    rice_adj: float = 0.0       # RICE_adj: CF_adj（CapExのみ投資強度）使用版
 
     def to_dict(self) -> Dict[str, Any]:
         return {
             "growth_rate": round(self.growth_rate, 4),
             "rice": round(self.rice, 3),
             "rice_per_ratio": round(self.rice_per_ratio, 4),
+            "rice_adj": round(self.rice_adj, 3),
         }
 
 
@@ -65,6 +67,9 @@ class RICEResult:
     avg_intensity: float        # 平均投資強度
     avg_rev_growth: float       # 平均売上成長率（ラグあり）
 
+    # CF_adj（R&D除外・CapExのみ投資強度）
+    cf_adj: float = 0.0         # CF_adj = RevGrowth / (CapEx/Revenue) のみ
+
     # シナリオ別RICE
     bear: Optional[RICEScenario] = None
     base: Optional[RICEScenario] = None
@@ -79,6 +84,7 @@ class RICEResult:
             "available": self.available,
             "q": round(self.q, 4),
             "cf_conversion": round(self.cf_conversion, 4),
+            "cf_adj": round(self.cf_adj, 4),
             "wacc": round(self.wacc, 4),
             "q_years": self.q_years,
             "cf_years": self.cf_years,
@@ -138,7 +144,7 @@ def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, i
 
 def _calc_cf_lagged(
     annual_data: List[Dict[str, Any]], years: int = 3
-) -> Tuple[float, int, float, float, List[str]]:
+) -> Tuple[float, float, int, float, float, List[str]]:
     """
     CF = 売上成長率(t+1) ÷ 投資強度(t)（1年ラグ・直近N点平均）
 
@@ -152,7 +158,9 @@ def _calc_cf_lagged(
         years: 使用するラグペアの数（最低3点）
 
     Returns:
-        (CF値, 使用年数, 平均投資強度, 平均売上成長率, 警告リスト)
+        (CF値, CF_adj値, 使用年数, 平均投資強度, 平均売上成長率, 警告リスト)
+        CF     : R&D+CapEx+SM ベースの投資強度で計算（既存）
+        CF_adj : CapEx のみの投資強度で計算（R&D資本化想定）
 
     異常値検出:
         - R&Dフィールドが存在しない年がある場合 → 警告
@@ -164,8 +172,9 @@ def _calc_cf_lagged(
     CF_POINT_MAX   = 50.0   # CF点の警告閾値
     CF_POINT_CLAMP = 10.0   # CF点のクリップ上限（異常値による理論株価への影響を防ぐ）
 
-    cf_list        = []
-    intensity_list = []
+    cf_list         = []
+    cf_adj_list     = []   # CapEx のみの投資強度ベース
+    intensity_list  = []
     rev_growth_list = []
     warnings: List[str] = []
 
@@ -265,14 +274,22 @@ def _calc_cf_lagged(
         intensity_list.append(intensity_t)
         rev_growth_list.append(rev_growth_t1)
 
-    if not cf_list:
-        return 0.0, 0, 0.0, 0.0, warnings
+        # ── CF_adj: CapEx のみの投資強度で計算（R&D を資本として扱う想定）──
+        intensity_adj_t = abs(capex_t) / rev_t
+        if intensity_adj_t > 0:
+            cf_point_adj = rev_growth_t1 / intensity_adj_t
+            cf_point_adj = max(-CF_POINT_CLAMP, min(CF_POINT_CLAMP, cf_point_adj))
+            cf_adj_list.append(cf_point_adj)
 
-    cf_avg         = sum(cf_list) / len(cf_list)
+    if not cf_list:
+        return 0.0, 0.0, 0, 0.0, 0.0, warnings
+
+    cf_avg     = sum(cf_list) / len(cf_list)
+    cf_adj_avg = sum(cf_adj_list) / len(cf_adj_list) if cf_adj_list else 0.0
     intensity_avg  = sum(intensity_list) / len(intensity_list)
     rev_growth_avg = sum(rev_growth_list) / len(rev_growth_list)
 
-    return cf_avg, len(cf_list), intensity_avg, rev_growth_avg, warnings
+    return cf_avg, cf_adj_avg, len(cf_list), intensity_avg, rev_growth_avg, warnings
 
 
 # RICEを構造的に計算できないセクター（投資強度の定義が成立しない）
@@ -368,7 +385,7 @@ def calculate_rice(
         )
 
     # ── CF計算（1年ラグ） ──
-    cf, cf_used, avg_intensity, avg_rev_growth, cf_warnings = _calc_cf_lagged(annual_data, cf_years)
+    cf, cf_adj, cf_used, avg_intensity, avg_rev_growth, cf_warnings = _calc_cf_lagged(annual_data, cf_years)
     if cf_used == 0:
         return RICEResult(
             q=q, cf_conversion=0.0, wacc=wacc,
@@ -394,10 +411,12 @@ def calculate_rice(
 
             rice_val = (g * q * cf) / wacc
             ratio = rice_val / current_per if current_per > 0 else 0.0
+            rice_adj_val = (g * q * cf_adj) / wacc if cf_adj > 0 and wacc > 0 else 0.0
             scenarios[sc_name] = RICEScenario(
                 growth_rate=g,
                 rice=rice_val,
                 rice_per_ratio=ratio,
+                rice_adj=rice_adj_val,
             )
 
     # ── ノート生成（データ不足 + 異常値警告を統合） ──
@@ -414,6 +433,7 @@ def calculate_rice(
     return RICEResult(
         q=q,
         cf_conversion=cf,
+        cf_adj=cf_adj,
         wacc=wacc,
         q_years=q_used,
         cf_years=cf_used,

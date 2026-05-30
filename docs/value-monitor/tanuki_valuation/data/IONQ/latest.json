@@ -15,7 +15,7 @@
     "3年後": 31.85
   },
   "upside_percent": -70.9,
-  "calculation_date": "2026-05-30T15:32:58+09:00",
+  "calculation_date": "2026-05-30T17:03:55+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -209,6 +209,7 @@
     "available": true,
     "q": -0.253,
     "cf_conversion": -1.0701,
+    "cf_adj": 0.2695,
     "wacc": 0.1,
     "q_years": 1,
     "cf_years": 3,
@@ -219,17 +220,20 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.284,
-      "rice_per_ratio": 0.0015
+      "rice_per_ratio": 0.0015,
+      "rice_adj": -0.072
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 0.406,
-      "rice_per_ratio": 0.0022
+      "rice_per_ratio": 0.0022,
+      "rice_adj": -0.102
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.487,
-      "rice_per_ratio": 0.0026
+      "rice_per_ratio": 0.0026,
+      "rice_adj": -0.123
     }
   },
   "fcf_source": "ttm_series",

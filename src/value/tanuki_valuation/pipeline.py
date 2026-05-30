@@ -575,6 +575,7 @@ class TanukiValuationPipeline:
         # --- RICE components ---
         rice_q = rice.get("q", "N/A")
         rice_cf = rice.get("cf_conversion", "N/A")
+        rice_cf_adj = rice.get("cf_adj")          # R&D除外CF（CapExのみ投資強度）
         rice_wacc = rice.get("wacc", "N/A")
         rice_bear_d = rice.get("bear", {})
         rice_bull_d = rice.get("bull", {})
@@ -1006,6 +1007,11 @@ class TanukiValuationPipeline:
             L.append(f"CF = {rice_cf}  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]")
         else:
             L.append("CF = N/A")
+        if isinstance(rice_cf_adj, (int, float)) and rice_cf_adj > 0:
+            L.append(f"CF_adj = {rice_cf_adj:.4f}  [R&D除外・CapExのみ投資強度]")
+            _rice_base_adj = (rice_base_data.get("rice_adj") if rice_available else None)
+            if isinstance(_rice_base_adj, (int, float)) and _rice_base_adj > 0:
+                L.append(f"RICE_adj = {_rice_base_adj:.3f}  [参考：R&D資本化想定]")
         L.append(f"WACC = {rice_wacc * 100:.1f}%" if isinstance(rice_wacc, (int, float)) else f"WACC = {rice_wacc}")
         L.append(f"SBC_Adjusted: {str(sbc_adjusted).lower()}")
         L.append("Definition:")

@@ -1120,6 +1120,7 @@ function render(d) {
               <th class="scenario-header">シナリオ</th>
               <th>成長率</th>
               <th>RICE</th>
+              <th>RICE_adj</th>
               <th>RICE/PER</th>
             </tr>
           </thead>
@@ -1128,22 +1129,26 @@ function render(d) {
               <td class="scenario-name bear">🐻 BEAR</td>
               <td>${fmtPct(riceBear.growth_rate)}</td>
               <td>${riceBear.rice != null ? riceBear.rice.toFixed(1) : '—'}</td>
+              <td style="color:var(--mut)">${riceBear.rice_adj != null && riceBear.rice_adj > 0 ? riceBear.rice_adj.toFixed(1) : '—'}</td>
               <td>${riceBear.rice_per_ratio != null ? riceBear.rice_per_ratio.toFixed(2) : '—'}</td>
             </tr>
             <tr class="base-row">
               <td class="scenario-name base">📊 BASE</td>
               <td>${fmtPct(riceBase.growth_rate)}</td>
               <td>${riceBase.rice != null ? riceBase.rice.toFixed(1) : '—'}</td>
+              <td style="color:var(--mut)">${riceBase.rice_adj != null && riceBase.rice_adj > 0 ? riceBase.rice_adj.toFixed(1) : '—'}</td>
               <td>${riceBase.rice_per_ratio != null ? riceBase.rice_per_ratio.toFixed(2) : '—'}</td>
             </tr>
             <tr>
               <td class="scenario-name bull">🐂 BULL</td>
               <td>${fmtPct(riceBull.growth_rate)}</td>
               <td>${riceBull.rice != null ? riceBull.rice.toFixed(1) : '—'}</td>
+              <td style="color:var(--mut)">${riceBull.rice_adj != null && riceBull.rice_adj > 0 ? riceBull.rice_adj.toFixed(1) : '—'}</td>
               <td>${riceBull.rice_per_ratio != null ? riceBull.rice_per_ratio.toFixed(2) : '—'}</td>
             </tr>
           </tbody>
         </table>
+        <div style="font-size:10px;color:var(--mut);margin-top:6px">RICE_adj: R&D資本化想定（CapExのみ投資強度）参考値</div>
         ${riceWarnings ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:6px;font-size:12px;color:var(--yellow)">⚠️ ${riceNote}</div>` : ''}
         ${(() => {
           const rv = riceBase.rice, uv = upside;
