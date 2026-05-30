@@ -1,0 +1,320 @@
+{
+  "intrinsic_value_pt": 4492328945.577887,
+  "intrinsic_value_per_share": 9.808840961677943,
+  "intrinsic_value_beta": 7.8,
+  "upside_percent_beta": -97.8,
+  "intrinsic_value_rf": 127.64,
+  "upside_percent_rf": -64.7,
+  "v0": 4333167259.024734,
+  "v0_adjusted": 4333167259.024734,
+  "alpha": 0.0367310276845801,
+  "alpha_was_capped": false,
+  "future_values": {
+    "1年後": 11.76,
+    "2年後": 14.09,
+    "3年後": 16.89
+  },
+  "upside_percent": -97.3,
+  "calculation_date": "2026-05-30T13:12:15+09:00",
+  "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "dcf_type": "two_stage",
+  "growth": {
+    "rate": 0.1985,
+    "source": "segment_weighted",
+    "phase1_years": 5
+  },
+  "wacc": {
+    "value": 0.10570000000000002,
+    "beta": 1.1,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "matrix": [
+      [
+        7.54,
+        14.26,
+        22.39
+      ],
+      [
+        4.23,
+        9.81,
+        16.43
+      ],
+      [
+        1.75,
+        6.48,
+        11.99
+      ]
+    ],
+    "wacc_values": [
+      0.09,
+      0.1,
+      0.11
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "base_wacc": 0.1,
+    "base_years": 5
+  },
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.19849987954676257,
+      "source": "segment_weighted"
+    },
+    "segment": {
+      "enabled": true,
+      "weighted_growth": 0.19849987954676257,
+      "fiscal_year": "FY2025",
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.139,
+      "intrinsic_value_per_share": 4.63
+    },
+    "base": {
+      "growth_rate": 0.198,
+      "intrinsic_value_per_share": 9.81
+    },
+    "bull": {
+      "growth_rate": 0.238,
+      "intrinsic_value_per_share": 13.85
+    }
+  },
+  "growth_options": {
+    "total_pv": 0,
+    "count": 0,
+    "applied": false,
+    "options": []
+  },
+  "maturity_profile": null,
+  "dcf_components": {
+    "v0": 4333167259.024734,
+    "pv_high_growth": 1037498834.9446317,
+    "pv_terminal": 3295668424.080102,
+    "high_growth_detail": [
+      {
+        "year": 1,
+        "fcf": 194015637.400781,
+        "discount_factor": 1.1057000000000001,
+        "pv": 175468605.7708067
+      },
+      {
+        "year": 2,
+        "fcf": 232527718.0550244,
+        "discount_factor": 1.2225724900000003,
+        "pv": 190195444.40675604
+      },
+      {
+        "year": 3,
+        "fcf": 278684442.0802303,
+        "discount_factor": 1.3517984021930005,
+        "pv": 206158286.345157
+      },
+      {
+        "year": 4,
+        "fcf": 334003270.26471275,
+        "discount_factor": 1.4946834933048008,
+        "pv": 223460867.6424325
+      },
+      {
+        "year": 5,
+        "fcf": 400302879.180483,
+        "discount_factor": 1.6526715385471185,
+        "pv": 242215630.77947938
+      }
+    ],
+    "terminal_fcf": 412311965.5558975,
+    "terminal_value": 5446657404.965619,
+    "v0_rm": 4711947318.148465
+  },
+  "fcf_base": {
+    "base_fcf": 31790400.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 31790400.0,
+    "fcf_2yr_avg": -139199500.0,
+    "cv": 999.0,
+    "cv_threshold": 0.5,
+    "ratio": 999.0,
+    "threshold": 0.5
+  },
+  "fcf_outlier": {
+    "detected": true,
+    "rule": "latest_negative",
+    "fiscal_year": 2025,
+    "fcf_value": -536355000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 3609000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 19276000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 53927000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 73769000,
+          "reason": "一過性の事業再編費用"
+        }
+      ],
+      "total_transient_amount": 150581000
+    },
+    "action": "excluded",
+    "note": "FY2025 FCF($-536.4M)がマイナス。一過性費用合計$151M(リストラ・事業再編関連(リストラ費用 $4M)、リストラ・事業再編関連(リストラ費用 $19M)、リストラ・事業再編関連(リストラ費用 $54M)、リストラ・事業再編関連(リストラ費用 $74M))による影響と判断し除外。5年平均($32M)を採用。"
+  },
+  "fcf_estimation": {
+    "applied": false,
+    "method": "raw_fcf",
+    "adj_net_income": 0,
+    "conversion_rate": 0,
+    "estimated_fcf": 31790400.0,
+    "raw_fcf": 31790400.0,
+    "sector": "",
+    "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
+    "divergence_ratio": 1.0,
+    "divergence_warning": ""
+  },
+  "rd_capitalization": {
+    "applied": true,
+    "rd_current": 581924000.0,
+    "rd_avg_3yr": 451832333.3333333,
+    "capitalized_rd": 581924000.0,
+    "amortization_current": 451832333.3333333,
+    "rd_adjustment": 130091666.66666669,
+    "rd_revenue_ratio": 0.1002,
+    "threshold": 0.05,
+    "years_used": 3,
+    "note": "R&D資本化適用: 当年R&D$0.58B - 過去3年平均償却$0.45B = FCF調整$+0.13B (R&D/Rev=10.0%)"
+  },
+  "rpo_adjustment": {
+    "rpo_pv": 0.0,
+    "rpo_raw": 11000000,
+    "discount_rate": 0.15,
+    "assumed_realization_years": 1.5,
+    "applied": false,
+    "application_rate": 1.0,
+    "sector_category": "SaaS",
+    "rpo_incremental": 0.0,
+    "op_margin": 0.014559190704026182
+  },
+  "bs_adjustment": {
+    "cash": 909200000.0,
+    "short_term_investments": 0.0,
+    "long_term_debt": 3686921000.0,
+    "short_term_debt": 188306000.0,
+    "net_cash": -2966027000.0,
+    "net_cash_per_share": -15.160689501677426,
+    "fiscal_year": 2025,
+    "applied": true,
+    "sector_guard": "none"
+  },
+  "rice": {
+    "available": false,
+    "q": 188312000.9909,
+    "cf_conversion": 0.0,
+    "wacc": 0.1,
+    "q_years": 3,
+    "cf_years": 0,
+    "avg_intensity": 0.0,
+    "avg_rev_growth_lagged": 0.0,
+    "warnings": true,
+    "note": "Q異常値（Q=188312000.99）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外"
+  },
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
+  "components": {
+    "fcf_5yr_avg": 31790400.0,
+    "fcf_2yr_avg": -139199500.0,
+    "fcf_base_used": 161882066.6666667,
+    "fcf_base_method": "avg_5yr",
+    "fcf_list_raw": [
+      -536355000,
+      257956000,
+      226511000,
+      129874000,
+      80966000
+    ],
+    "diluted_shares": 195639321,
+    "roe_10yr_avg": 0.008745482782042882,
+    "current_price": 361.47,
+    "latest_revenue": 5810115000.0,
+    "rpo": 11000000,
+    "beta": 1.1,
+    "sector": "Technology",
+    "industry": "Scientific & Technical Instruments",
+    "eps_data": {
+      "ticker": "COHR"
+    },
+    "_shares_source": "yf_implied",
+    "_beta_source": "beta_config(Electronics_General)",
+    "high_growth_rate_used": 0.19849987954676257,
+    "high_growth_years": 5,
+    "terminal_growth_used": 0.03,
+    "pv_high": 1037498834.9446317,
+    "pv_terminal": 3295668424.080102,
+    "roe_used": 0.008745482782042882,
+    "fcf_floor_applied": 0.0,
+    "fcf_growth_floor": 0.15,
+    "fcf_growth_cap": 0.5,
+    "bear_multiplier": 0.7,
+    "bull_multiplier": 1.2,
+    "rpo_pv": 0.0,
+    "growth_option_pv": 0,
+    "alpha_uncapped": 0.0367310276845801,
+    "per": 172.12859,
+    "per_adjusted": 79.48,
+    "peg": 0.92,
+    "ps": 10.711429,
+    "ev_ebitda": 54.85,
+    "ma200": 203.1726,
+    "forward_eps": 8.09568
+  },
+  "validation": {
+    "validated_at": "2026-05-30",
+    "model": "basic_checks_only",
+    "checks": {
+      "pt_shares_consistency": {
+        "pass": true,
+        "detail": "(V₀ $4.84B + RPO $0.00B + GO $0.00B) × (1+0.037) / 0.196B + BS $-15.16/株 = $10.48 (差異0.00%)"
+      },
+      "dcf_components": {
+        "pass": true,
+        "detail": "2段階: pv_high $1.06B + pv_terminal $3.39B = $4.45B (差異0.00%)"
+      },
+      "formula_verification": {
+        "pass": true,
+        "detail": "α計算: ROE 0.9% × 60% / Rm 10.00% × 0.7 = 0.0367 (実際0.0367)"
+      },
+      "anomaly_detection": {
+        "pass": true,
+        "detail": "異常値なし"
+      }
+    },
+    "overall": "PASS",
+    "ai_comment": null
+  }
+}

@@ -6,6 +6,7 @@ growth_sanity.py
 明らかに非現実的でないかを検証し、根拠サマリーを生成する。
 """
 
+import math
 import os
 import json
 import logging
@@ -461,7 +462,13 @@ def check_growth_sanity(
 
     # ─── Stage 2: HypeCoreフェーズ重み付き ───
     recommended_g_hypecore = None
-    if hypecore_stage is not None and ttm_rev_yoy is not None:
+    # 【4】inf/None/非有限TTMはHypeCore計算をスキップ
+    _ttm_valid = (
+        hypecore_stage is not None
+        and ttm_rev_yoy is not None
+        and math.isfinite(ttm_rev_yoy)
+    )
+    if _ttm_valid:
         _w = _HYPECORE_STAGE_WEIGHTS.get(hypecore_stage)
         if _w is not None:
             # historical: rev_cagr_3yr / rev_cagr_5yr の中央値
@@ -480,7 +487,19 @@ def check_growth_sanity(
                           else _historical)
 
             if _benchmark is not None:
-                if _historical is not None:
+                # 【1】TTM異常値の除外: TTMが150%超はTTM項を除外して再正規化
+                _ttm_is_outlier = ttm_rev_yoy > 1.50
+                if _ttm_is_outlier:
+                    if _historical is not None:
+                        _total_w = _w["historical"] + _w["benchmark"]
+                        recommended_g_hypecore = (
+                            (_w["historical"] / _total_w) * _historical
+                            + (_w["benchmark"] / _total_w) * _benchmark
+                        )
+                    else:
+                        # historical もなければ benchmark のみ
+                        recommended_g_hypecore = _benchmark
+                elif _historical is not None:
                     recommended_g_hypecore = (
                         _w["ttm"] * ttm_rev_yoy
                         + _w["historical"] * _historical
@@ -502,6 +521,18 @@ def check_growth_sanity(
     elif recommended_g_hypecore is not None:
         recommended_g = recommended_g_hypecore
     else:
+        recommended_g = None
+
+    # 【2】上限キャップ: max(industry_benchmark × 3.0, 50%)
+    if recommended_g is not None:
+        _cap = max(
+            industry_g * 3.0 if (industry_g is not None and industry_g > 0) else 0.50,
+            0.50,
+        )
+        recommended_g = min(recommended_g, _cap)
+
+    # 【3】マイナス成長は自動調整対象外
+    if recommended_g is not None and recommended_g < 0:
         recommended_g = None
 
     return {
