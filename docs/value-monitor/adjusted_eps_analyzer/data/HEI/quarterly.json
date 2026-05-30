@@ -1,6 +1,6 @@
 {
   "ticker": "HEI",
-  "last_updated": "2026-05-30T13:32:17.511620",
+  "last_updated": "2026-05-30T13:44:49.732490",
   "quarters": [
     {
       "gaap_eps": 1.6573638245385205,
@@ -34,9 +34,15 @@
       "fiscal_year": 2026,
       "quarter": 2,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "この調整は買収関連無形資産の償却費（恒常的な非現金費用）を加算戻ししたもので、毎期発生する性質上、真に一過性とは言えません。市場がGAAP EPS（1.66）で判断している場合、非現金償却によるEPS圧縮で企業の実力が過小評価されているように見えますが、実際は調整後EPS（1.88）が買収の経済的コストを無視して過大に見せているリスクが高いです。投資家は過大調整による過大評価リスクに注意し、キャッシュフロー生成力や買収のリターン持続可能性を重点的に検証すべきです。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は毎期継続して発生する非現金費用であり、恒常的なコストとして扱うべき項目である",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
