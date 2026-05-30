@@ -175,6 +175,18 @@ TICKER_INDUSTRY_OVERRIDES = {
     "DIS":   "Entertainment",                     # SIC→Real Estate を上書き
     "CIX":   "Electrical Equipment",              # SIC→Machinery を上書き
     "AAPL":  "Computers/Peripherals",             # SIC→Software_Internet デフォルトを上書き。indname.xls実態分類
+    "ADBE":  "Software (System & Application)",   # Creative/Document Cloud SaaS
+    "BKNG":  "Software (Internet)",               # OTA予約プラットフォーム
+    "AVGO":  "Semiconductor",                     # AI ASIC+ネットワーク半導体
+    "ADSK":  "Software (System & Application)",   # AEC/製造業向けSaaS
+    "CDNS":  "Software (System & Application)",   # EDA半導体設計ツール
+    "PAYS":  "Financial Svcs. (Non-bank & Insurance)",  # 小型FinTech・プリペイドカード
+    "INTU":  "Software (System & Application)",   # 税務・会計SaaS
+    "HEI":   "Aerospace/Defense",                 # 航空MRO部品・防衛電子機器
+    "HWM":   "Aerospace/Defense",                 # 航空エンジン精密部品
+    "HON":   "Machinery",                         # 産業コングロマリット（Machinery分類）
+    "TDY":   "Aerospace/Defense",                 # 防衛センサー・計測機器
+    "KULR":  "Aerospace/Defense",                 # 熱管理テック・宇宙防衛向け
 }
 
 
