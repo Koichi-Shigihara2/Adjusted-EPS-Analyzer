@@ -1,12 +1,12 @@
 COHR INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:19+09:00
+Generated: 2026-05-30T13:25:36+09:00
 Price: $361.47
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -97.3%
+  Deviation_Rate: -97.1%
   MA200_Deviation: +77.9%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.60 (Buy)
@@ -31,7 +31,7 @@ Matrix: ③成長性系
 Quadrant: 左上
 Label: 割高×高成長
 Key_Metric_Y: Revenue_Growth = 20.5%
-Deviation_Rate: -97.3%
+Deviation_Rate: -97.1%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $361.47
-Intrinsic_Value_BASE: $9.81
-Deviation_BASE: -97.3%
+Intrinsic_Value_BASE: $10.48
+Deviation_BASE: -97.1%
 Growth_Rate_Original: 20.5% (TTM実績)
-Growth_Rate_Adjusted: 19.8% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 20.5% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=13.9%, IV=$4.63 （推奨値ベース）
-BASE: Growth=19.8%, IV=$9.81 （推奨値ベース）
-BULL: Growth=23.8%, IV=$13.85 （推奨値ベース）
+BEAR: Growth=14.4%, IV=$5.02 （推奨値ベース）
+BASE: Growth=20.5%, IV=$10.48 （推奨値ベース）
+BULL: Growth=24.7%, IV=$14.77 （推奨値ベース）
 TTM_Revenue_Growth: 20.5%
-(DCF Base vs TTM actual: -0.7pt discount)
+(DCF Base vs TTM actual: -0.0pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -85,8 +85,8 @@ FCF_History:
   2025: $0.19B (FCF_Margin: 3.3%)
   FCF_CAGR_3yr: +24.7%
 Segment_Breakdown:
-  General: $5.8B (100%, YoY 20%)
-  Segment_Weighted_Growth: 19.8% (推奨値・中央値を自動適用)
+  General: $5.8B (100%, YoY 21%)
+  Segment_Weighted_Growth: 20.5% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -120,8 +120,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 20.5%
 推奨成長率内訳:
   中央値ベース:          20.5%
-  HypeCoreフェーズ補正:  19.2% (Phase3・陶酔期)
-  最終推奨値:            19.8%
+  最終推奨値:            20.5%
 判定         : PLAUSIBLE
 業界ベンチマーク: Electronics (General) / 13.8% (Damodaran 2025)
 signals:
@@ -132,14 +131,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

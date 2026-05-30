@@ -6,7 +6,6 @@ growth_sanity.py
 明らかに非現実的でないかを検証し、根拠サマリーを生成する。
 """
 
-import math
 import os
 import json
 import logging
@@ -327,23 +326,6 @@ def calc_fundamental_growth(
         return None
 
 
-# HypeCoreフェーズ別推奨成長率の重み付けテーブル
-# Phase1（黎明期）: TTM実績重視 / Phase4（剥落期）: 業界ベンチマーク重視
-_HYPECORE_STAGE_WEIGHTS = {
-    1: {"ttm": 0.5, "historical": 0.3, "benchmark": 0.2},
-    2: {"ttm": 0.4, "historical": 0.3, "benchmark": 0.3},
-    3: {"ttm": 0.2, "historical": 0.3, "benchmark": 0.5},
-    4: {"ttm": 0.1, "historical": 0.3, "benchmark": 0.6},
-}
-
-_HYPECORE_STAGE_LABELS = {
-    1: "黎明期",
-    2: "期待拡大期",
-    3: "陶酔期",
-    4: "期待剥落期",
-}
-
-
 # ─────────────────────────────────────────────
 # メイン判定関数
 # ─────────────────────────────────────────────
@@ -353,8 +335,6 @@ def check_growth_sanity(
     sector: str | None = None,
     annual_revenues: list[float] | None = None,
     g_fundamental: float | None = None,
-    hypecore_stage: int | None = None,
-    ttm_rev_yoy: float | None = None,  # decimal（例: 0.221 = 22.1%）
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
@@ -460,70 +440,10 @@ def check_growth_sanity(
         else:
             recommended_g_median = (_rec_candidates[_n // 2 - 1] + _rec_candidates[_n // 2]) / 2
 
-    # ─── Stage 2: HypeCoreフェーズ重み付き ───
-    recommended_g_hypecore = None
-    # 【4】inf/None/非有限TTMはHypeCore計算をスキップ
-    _ttm_valid = (
-        hypecore_stage is not None
-        and ttm_rev_yoy is not None
-        and math.isfinite(ttm_rev_yoy)
-    )
-    if _ttm_valid:
-        _w = _HYPECORE_STAGE_WEIGHTS.get(hypecore_stage)
-        if _w is not None:
-            # historical: rev_cagr_3yr / rev_cagr_5yr の中央値
-            _hist_vals = [v for v in [cagr.get("cagr_3yr"), cagr.get("cagr_5yr")]
-                          if v is not None and v > 0]
-            if _hist_vals:
-                _hist_sorted = sorted(_hist_vals)
-                _n_h = len(_hist_sorted)
-                _historical = (_hist_sorted[_n_h // 2] if _n_h % 2 == 1
-                               else (_hist_sorted[_n_h // 2 - 1] + _hist_sorted[_n_h // 2]) / 2)
-            else:
-                _historical = None
+    # ─── recommended_g: 中央値のみ ───
+    recommended_g = recommended_g_median  # None if < 2 candidates
 
-            # benchmark: industry_g 優先、なければ historical
-            _benchmark = (industry_g if (industry_g is not None and industry_g > 0)
-                          else _historical)
-
-            if _benchmark is not None:
-                # 【1】TTM異常値の除外: TTMが150%超はTTM項を除外して再正規化
-                _ttm_is_outlier = ttm_rev_yoy > 1.50
-                if _ttm_is_outlier:
-                    if _historical is not None:
-                        _total_w = _w["historical"] + _w["benchmark"]
-                        recommended_g_hypecore = (
-                            (_w["historical"] / _total_w) * _historical
-                            + (_w["benchmark"] / _total_w) * _benchmark
-                        )
-                    else:
-                        # historical もなければ benchmark のみ
-                        recommended_g_hypecore = _benchmark
-                elif _historical is not None:
-                    recommended_g_hypecore = (
-                        _w["ttm"] * ttm_rev_yoy
-                        + _w["historical"] * _historical
-                        + _w["benchmark"] * _benchmark
-                    )
-                else:
-                    # historical なし: ttm と benchmark で再正規化
-                    _total_w = _w["ttm"] + _w["benchmark"]
-                    recommended_g_hypecore = (
-                        (_w["ttm"] / _total_w) * ttm_rev_yoy
-                        + (_w["benchmark"] / _total_w) * _benchmark
-                    )
-
-    # ─── 最終 recommended_g ───
-    if recommended_g_median is not None and recommended_g_hypecore is not None:
-        recommended_g = (recommended_g_median + recommended_g_hypecore) / 2
-    elif recommended_g_median is not None:
-        recommended_g = recommended_g_median
-    elif recommended_g_hypecore is not None:
-        recommended_g = recommended_g_hypecore
-    else:
-        recommended_g = None
-
-    # 【2】上限キャップ: max(industry_benchmark × 3.0, 50%)
+    # 上限キャップ: max(industry_benchmark × 3, 50%)
     if recommended_g is not None:
         _cap = max(
             industry_g * 3.0 if (industry_g is not None and industry_g > 0) else 0.50,
@@ -531,7 +451,7 @@ def check_growth_sanity(
         )
         recommended_g = min(recommended_g, _cap)
 
-    # 【3】マイナス成長は自動調整対象外
+    # マイナス成長は自動調整対象外
     if recommended_g is not None and recommended_g < 0:
         recommended_g = None
 
@@ -545,9 +465,7 @@ def check_growth_sanity(
         "rev_cagr_5yr": cagr.get("cagr_5yr"),
         "g_fundamental": g_fundamental,
         "recommended_g_median": recommended_g_median,
-        "recommended_g_hypecore": recommended_g_hypecore,
         "recommended_g": recommended_g,
-        "hypecore_stage_used": hypecore_stage,
         "signals": signals,
         "warnings": warnings,
     }

@@ -1,5 +1,5 @@
 TSLA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:33+09:00
+Generated: 2026-05-30T13:25:50+09:00
 Price: $435.79
 
 [1. TANUKI SCORE]
@@ -119,8 +119,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 12.6%
 推奨成長率内訳:
   中央値ベース:          5.2%
-  HypeCoreフェーズ補正:  15.3% (Phase2・期待拡大期)
-  最終推奨値:            10.2%
+  最終推奨値:            5.2%
 判定         : PLAUSIBLE
 業界ベンチマーク: Auto & Truck / -0.9% (Damodaran 2025)
 signals:
@@ -132,14 +131,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

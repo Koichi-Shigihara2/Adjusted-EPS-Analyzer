@@ -1,16 +1,16 @@
 IOT INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:24+09:00
+Generated: 2026-05-30T13:25:40+09:00
 Price: $34.99
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -45.3%
+  Deviation_Rate: -43.3%
   MA200_Deviation: +2.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.59 (Buy)
-Comment: 割高(-45%超)、FCF黒字、売上成長加速
+Comment: 割高(-43%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ③成長性系
 Quadrant: 左上
 Label: 割高×高成長
 Key_Metric_Y: Revenue_Growth = 28.3%
-Deviation_Rate: -45.3%
+Deviation_Rate: -43.3%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $34.99
-Intrinsic_Value_BASE: $19.14
-Deviation_BASE: -45.3%
+Intrinsic_Value_BASE: $19.85
+Deviation_BASE: -43.3%
 Growth_Rate_Original: 28.3% (TTM実績)
-Growth_Rate_Adjusted: 27.5% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 28.5% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=19.2%, IV=$14.20 （推奨値ベース）
-BASE: Growth=27.5%, IV=$19.14 （推奨値ベース）
-BULL: Growth=33.0%, IV=$23.18 （推奨値ベース）
+BEAR: Growth=19.9%, IV=$14.59 （推奨値ベース）
+BASE: Growth=28.5%, IV=$19.85 （推奨値ベース）
+BULL: Growth=34.2%, IV=$24.19 （推奨値ベース）
 TTM_Revenue_Growth: 29.6%
-(DCF Base vs TTM actual: -2.1pt discount)
+(DCF Base vs TTM actual: -1.1pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -83,8 +83,8 @@ FCF_History:
   2025: $0.11B (FCF_Margin: 9.1%)
   2026: $0.21B (FCF_Margin: 12.8%)
 Segment_Breakdown:
-  General: $1.6B (100%, YoY 27%)
-  Segment_Weighted_Growth: 27.5% (推奨値・中央値を自動適用)
+  General: $1.6B (100%, YoY 28%)
+  Segment_Weighted_Growth: 28.5% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -118,8 +118,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 28.3%
 推奨成長率内訳:
   中央値ベース:          28.5%
-  HypeCoreフェーズ補正:  26.4% (Phase4・期待剥落期)
-  最終推奨値:            27.5%
+  最終推奨値:            28.5%
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
@@ -130,14 +129,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

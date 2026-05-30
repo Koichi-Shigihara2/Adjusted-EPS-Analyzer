@@ -1,16 +1,16 @@
 RBRK INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:30+09:00
+Generated: 2026-05-30T13:25:46+09:00
 Price: $78.63
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: WATCH
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -49.8%
+  Deviation_Rate: +2.0%
   MA200_Deviation: +15.4%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.10 (Strong Buy)
-Comment: 割高(-50%超)、FCF黒字、売上成長加速
+Comment: 若干割安(2%)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,10 +28,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ③成長性系
-Quadrant: 左上
-Label: 割高×高成長
+Quadrant: 右上
+Label: 割安×高成長
 Key_Metric_Y: Revenue_Growth = 46.3%
-Deviation_Rate: -49.8%
+Deviation_Rate: +2.0%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $78.63
-Intrinsic_Value_BASE: $39.45
-Deviation_BASE: -49.8%
-Growth_Rate_Original: 46.3% (TTM実績)
-Growth_Rate_Adjusted: 25.2% (推奨値・中央値ベース)
+Intrinsic_Value_BASE: $80.17
+Deviation_BASE: +2.0%
 Scenarios:
-BEAR: Growth=17.6%, IV=$30.09 （推奨値ベース）
-BASE: Growth=25.2%, IV=$39.45 （推奨値ベース）
-BULL: Growth=30.2%, IV=$47.01 （推奨値ベース）
+BEAR: Growth=32.4%, IV=$50.76, Deviation=-35.4%
+BASE: Growth=46.3%, IV=$80.17, Deviation=+2.0%
+BULL: Growth=55.6%, IV=$106.81, Deviation=+35.8%
 TTM_Revenue_Growth: 48.5%
-(DCF Base vs TTM actual: -23.3pt discount)
+(DCF Base vs TTM actual: -2.2pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -81,8 +79,8 @@ FCF_History:
   2025: $0.03B (FCF_Margin: 3.5%)
   2026: $0.25B (FCF_Margin: 19.2%)
 Segment_Breakdown:
-  General: $1.3B (100%, YoY 25%)
-  Segment_Weighted_Growth: 25.2% (推奨値・中央値を自動適用)
+  General: $1.3B (100%, YoY 46%)
+  Segment_Weighted_Growth: 46.3% (TTM実績値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -114,9 +112,6 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 46.3%
-推奨成長率内訳:
-  HypeCoreフェーズ補正:  25.2% (Phase4・期待剥落期)
-  最終推奨値:            25.2%
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
@@ -126,14 +121,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

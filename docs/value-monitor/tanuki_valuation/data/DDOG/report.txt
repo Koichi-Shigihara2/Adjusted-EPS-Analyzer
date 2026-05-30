@@ -1,16 +1,16 @@
 DDOG INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:21+09:00
+Generated: 2026-05-30T13:25:38+09:00
 Price: $247.35
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -43.3%
+  Deviation_Rate: -43.8%
   MA200_Deviation: +71.9%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.42 (Strong Buy)
-Comment: 割高(-43%超)、FCF黒字、売上成長加速
+Comment: 割高(-44%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 1.218
-Deviation_Rate: -43.3%
+Key_Metric_Y: RICE = 1.205
+Deviation_Rate: -43.8%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $247.35
-Intrinsic_Value_BASE: $140.35
-Deviation_BASE: -43.3%
+Intrinsic_Value_BASE: $138.91
+Deviation_BASE: -43.8%
 Growth_Rate_Original: 32.1% (TTM実績)
-Growth_Rate_Adjusted: 27.2% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 26.9% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=19.1%, IV=$103.61 （推奨値ベース）
-BASE: Growth=27.2%, IV=$140.35 （推奨値ベース）
-BULL: Growth=32.7%, IV=$170.42 （推奨値ベース）
+BEAR: Growth=18.9%, IV=$102.83 （推奨値ベース）
+BASE: Growth=26.9%, IV=$138.91 （推奨値ベース）
+BULL: Growth=32.3%, IV=$168.39 （推奨値ベース）
 TTM_Revenue_Growth: 32.2%
-(DCF Base vs TTM actual: -5.0pt discount)
+(DCF Base vs TTM actual: -5.3pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -86,7 +86,7 @@ FCF_History:
   FCF_CAGR_3yr: +37.7%
 Segment_Breakdown:
   General: $3.4B (100%, YoY 27%)
-  Segment_Weighted_Growth: 27.2% (推奨値・中央値を自動適用)
+  Segment_Weighted_Growth: 26.9% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -120,8 +120,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 32.1%
 推奨成長率内訳:
   中央値ベース:          26.9%
-  HypeCoreフェーズ補正:  27.5% (Phase3・陶酔期)
-  最終推奨値:            27.2%
+  最終推奨値:            26.9%
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
@@ -132,14 +131,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
@@ -148,11 +141,11 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.856
-BASE: RICE=1.218
-BULL: RICE=1.465
+BEAR: RICE=0.847
+BASE: RICE=1.205
+BULL: RICE=1.447
 Components (BASE scenario):
-G  = 27.2%  [TANUKI forward growth rate]
+G  = 26.9%  [TANUKI forward growth rate]
 Q  = 1.2434   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.3602  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
@@ -202,9 +195,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 650.9x
+  Market_PER_GAAP: 618.4x
   Adjusted_EPS_PER: 122.2x (年次EPSベース: $2.0238)
-  Delta: -528.7x (cheaper on adjusted basis)
+  Delta: -496.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -230,7 +223,7 @@ Phase_History (recent 6 months):
 2026-04: Phase4 (期待剥落期)
 2026-05: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 650.9x
+  PER: 618.4x
   PEG: 1.38
   PS:  24.0x
   EV_EBITDA: 2441.6x

@@ -1,16 +1,16 @@
 MRVL INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:26+09:00
+Generated: 2026-05-30T13:25:43+09:00
 Price: $205.00
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -57.9%
+  Deviation_Rate: -60.5%
   MA200_Deviation: +108.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.48 (Strong Buy)
-Comment: 割高(-58%超)、FCF黒字、売上成長加速
+Comment: 割高(-60%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ③成長性系
 Quadrant: 左上
 Label: 割高×高成長
 Key_Metric_Y: Revenue_Growth = 22.1%
-Deviation_Rate: -57.9%
+Deviation_Rate: -60.5%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $205.00
-Intrinsic_Value_BASE: $86.26
-Deviation_BASE: -57.9%
+Intrinsic_Value_BASE: $80.91
+Deviation_BASE: -60.5%
 Growth_Rate_Original: 22.1% (TTM実績)
-Growth_Rate_Adjusted: 11.1% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 9.6% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=7.8%, IV=$74.88 （推奨値ベース）
-BASE: Growth=11.1%, IV=$86.26 （推奨値ベース）
-BULL: Growth=13.4%, IV=$94.59 （推奨値ベース）
+BEAR: Growth=6.7%, IV=$71.52 （推奨値ベース）
+BASE: Growth=9.6%, IV=$80.91 （推奨値ベース）
+BULL: Growth=11.5%, IV=$87.70 （推奨値ベース）
 TTM_Revenue_Growth: 22.1%
-(DCF Base vs TTM actual: -11.0pt discount)
+(DCF Base vs TTM actual: -12.5pt discount)
 WACC: 12.85% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.5
@@ -85,8 +85,8 @@ FCF_History:
   2026: $1.40B (FCF_Margin: 17.0%)
   FCF_CAGR_3yr: +8.9%
 Segment_Breakdown:
-  General: $8.2B (100%, YoY 11%)
-  Segment_Weighted_Growth: 11.1% (推奨値・中央値を自動適用)
+  General: $8.2B (100%, YoY 10%)
+  Segment_Weighted_Growth: 9.6% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -120,8 +120,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 22.1%
 推奨成長率内訳:
   中央値ベース:          9.6%
-  HypeCoreフェーズ補正:  12.7% (Phase3・陶酔期)
-  最終推奨値:            11.1%
+  最終推奨値:            9.6%
 判定         : PLAUSIBLE
 業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
 signals:
@@ -133,14 +132,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

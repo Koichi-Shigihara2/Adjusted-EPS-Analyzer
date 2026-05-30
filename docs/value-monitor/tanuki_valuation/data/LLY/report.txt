@@ -1,12 +1,12 @@
 LLY INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:25+09:00
+Generated: 2026-05-30T13:25:42+09:00
 Price: $1,105.00
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -9.2%
+  Deviation_Rate: -6.2%
   MA200_Deviation: +17.9%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.74 (Buy)
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 1.166
-Deviation_Rate: -9.2%
+Key_Metric_Y: RICE = 1.211
+Deviation_Rate: -6.2%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $1,105.00
-Intrinsic_Value_BASE: $1,003.61
-Deviation_BASE: -9.2%
+Intrinsic_Value_BASE: $1,036.41
+Deviation_BASE: -6.2%
 Growth_Rate_Original: 55.5% (TTM実績)
-Growth_Rate_Adjusted: 20.8% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 21.6% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=14.5%, IV=$779.38 （推奨値ベース）
-BASE: Growth=20.8%, IV=$1,003.61 （推奨値ベース）
-BULL: Growth=24.9%, IV=$1,179.72 （推奨値ベース）
+BEAR: Growth=15.1%, IV=$798.09 （推奨値ベース）
+BASE: Growth=21.6%, IV=$1,036.41 （推奨値ベース）
+BULL: Growth=25.9%, IV=$1,224.61 （推奨値ベース）
 TTM_Revenue_Growth: 55.5%
-(DCF Base vs TTM actual: -34.7pt discount)
+(DCF Base vs TTM actual: -33.9pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -85,8 +85,8 @@ FCF_History:
   2025: $16.81B (FCF_Margin: 25.8%)
   FCF_CAGR_3yr: +33.4%
 Segment_Breakdown:
-  General: $65.2B (100%, YoY 21%)
-  Segment_Weighted_Growth: 20.8% (推奨値・中央値を自動適用)
+  General: $65.2B (100%, YoY 22%)
+  Segment_Weighted_Growth: 21.6% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -120,8 +120,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 55.5%
 推奨成長率内訳:
   中央値ベース:          21.6%
-  HypeCoreフェーズ補正:  19.9% (Phase3・陶酔期)
-  最終推奨値:            20.8%
+  最終推奨値:            21.6%
 判定         : REVIEW
 業界ベンチマーク: Drugs (Pharmaceutical) / 1.7% (Damodaran 2025)
 signals:
@@ -132,14 +131,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
@@ -148,11 +141,11 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.813
-BASE: RICE=1.166
-BULL: RICE=1.396
+BEAR: RICE=0.847
+BASE: RICE=1.211
+BULL: RICE=1.452
 Components (BASE scenario):
-G  = 20.8%  [TANUKI forward growth rate]
+G  = 21.6%  [TANUKI forward growth rate]
 Q  = 0.6452   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.8691  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%

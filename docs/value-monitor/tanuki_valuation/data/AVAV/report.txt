@@ -1,16 +1,16 @@
 AVAV INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:16+09:00
+Generated: 2026-05-30T13:25:32+09:00
 Price: $207.24
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -63.8%
+  Deviation_Rate: -69.8%
   MA200_Deviation: -21.0%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.63 (Buy)
-Comment: 割高(-64%超)、FCFマイナス（投資フェーズ）、売上成長加速
+Comment: 割高(-70%超)、FCFマイナス（投資フェーズ）、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 11.6%
-Deviation_Rate: -63.8%
+Deviation_Rate: -69.8%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $207.24
-Intrinsic_Value_BASE: $75.05
-Deviation_BASE: -63.8%
+Intrinsic_Value_BASE: $62.66
+Deviation_BASE: -69.8%
 Growth_Rate_Original: 15.0% (TTM実績)
-Growth_Rate_Adjusted: 22.2% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 17.4% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=15.5%, IV=$58.09 （推奨値ベース）
-BASE: Growth=22.2%, IV=$75.05 （推奨値ベース）
-BULL: Growth=26.6%, IV=$88.50 （推奨値ベース）
+BEAR: Growth=12.2%, IV=$50.94 （推奨値ベース）
+BASE: Growth=17.4%, IV=$62.66 （推奨値ベース）
+BULL: Growth=20.9%, IV=$71.65 （推奨値ベース）
 TTM_Revenue_Growth: 14.5%
-(DCF Base vs TTM actual: +7.7pt premium)
+(DCF Base vs TTM actual: +2.9pt premium)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -84,8 +84,8 @@ FCF_History:
   2024: $-0.01B (FCF_Margin: -1.1%)
   2025: $-0.02B (FCF_Margin: -2.9%)
 Segment_Breakdown:
-  General: $0.8B (100%, YoY 22%)
-  Segment_Weighted_Growth: 22.2% (推奨値・中央値を自動適用)
+  General: $0.8B (100%, YoY 17%)
+  Segment_Weighted_Growth: 17.4% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -119,8 +119,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 15.0%
 推奨成長率内訳:
   中央値ベース:          17.4%
-  HypeCoreフェーズ補正:  26.9% (Phase4・期待剥落期)
-  最終推奨値:            22.2%
+  最終推奨値:            17.4%
 判定         : PLAUSIBLE
 業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
 signals:
@@ -131,14 +130,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls

@@ -1,16 +1,16 @@
 BSY INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:16+09:00
+Generated: 2026-05-30T13:25:33+09:00
 Price: $32.64
 
 [1. TANUKI SCORE]
-Classification: BUY
+Classification: WATCH
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: +20.7%
+  Deviation_Rate: +8.9%
   MA200_Deviation: -21.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.69 (Buy)
-Comment: 割安(21%)傾向、FCF黒字、売上安定成長
+Comment: 若干割安(9%)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×低効率
-Key_Metric_Y: RICE = 0.556
-Deviation_Rate: +20.7%
+Key_Metric_Y: RICE = 0.475
+Deviation_Rate: +8.9%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $32.64
-Intrinsic_Value_BASE: $39.39
-Deviation_BASE: +20.7%
+Intrinsic_Value_BASE: $35.56
+Deviation_BASE: +8.9%
 Growth_Rate_Original: 14.5% (TTM実績)
-Growth_Rate_Adjusted: 15.7% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 13.4% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=11.0%, IV=$31.99 （推奨値ベース）
-BASE: Growth=15.7%, IV=$39.39 （推奨値ベース）
-BULL: Growth=18.9%, IV=$45.01 （推奨値ベース）
+BEAR: Growth=9.4%, IV=$29.67 （推奨値ベース）
+BASE: Growth=13.4%, IV=$35.56 （推奨値ベース）
+BULL: Growth=16.1%, IV=$39.95 （推奨値ベース）
 TTM_Revenue_Growth: 14.5%
-(DCF Base vs TTM actual: +1.2pt premium)
+(DCF Base vs TTM actual: -1.1pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -85,8 +85,8 @@ FCF_History:
   2025: $0.52B (FCF_Margin: 34.6%)
   FCF_CAGR_3yr: +26.7%
 Segment_Breakdown:
-  General: $1.5B (100%, YoY 16%)
-  Segment_Weighted_Growth: 15.7% (推奨値・中央値を自動適用)
+  General: $1.5B (100%, YoY 13%)
+  Segment_Weighted_Growth: 13.4% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -120,8 +120,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 14.5%
 推奨成長率内訳:
   中央値ベース:          13.4%
-  HypeCoreフェーズ補正:  18.1% (Phase4・期待剥落期)
-  最終推奨値:            15.7%
+  最終推奨値:            13.4%
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
@@ -132,14 +131,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
@@ -148,11 +141,11 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.39
-BASE: RICE=0.556
-BULL: RICE=0.67
+BEAR: RICE=0.333
+BASE: RICE=0.475
+BULL: RICE=0.571
 Components (BASE scenario):
-G  = 15.7%  [TANUKI forward growth rate]
+G  = 13.4%  [TANUKI forward growth rate]
 Q  = 1.3673   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.2592  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%

@@ -1,16 +1,16 @@
 CEG INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T13:16:18+09:00
+Generated: 2026-05-30T13:25:34+09:00
 Price: $287.75
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -66.1%
+  Deviation_Rate: -68.6%
   MA200_Deviation: -11.0%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.76 (Buy)
-Comment: 割高(-66%超)、FCF黒字、売上成長加速
+Comment: 割高(-69%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,7 +31,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_10yr_avg = 19.8%
-Deviation_Rate: -66.1%
+Deviation_Rate: -68.6%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $287.75
-Intrinsic_Value_BASE: $97.52
-Deviation_BASE: -66.1%
+Intrinsic_Value_BASE: $90.40
+Deviation_BASE: -68.6%
 Growth_Rate_Original: 63.8% (TTM実績)
-Growth_Rate_Adjusted: 10.7% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 9.1% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=7.5%, IV=$83.66 （推奨値ベース）
-BASE: Growth=10.7%, IV=$97.52 （推奨値ベース）
-BULL: Growth=12.8%, IV=$107.64 （推奨値ベース）
+BEAR: Growth=6.3%, IV=$79.16 （推奨値ベース）
+BASE: Growth=9.1%, IV=$90.40 （推奨値ベース）
+BULL: Growth=10.9%, IV=$98.50 （推奨値ベース）
 TTM_Revenue_Growth: 63.8%
-(DCF Base vs TTM actual: -53.1pt discount)
+(DCF Base vs TTM actual: -54.7pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -83,8 +83,8 @@ FCF_History:
   2024: $-5.03B (FCF_Margin: -21.3%)
   2025: $1.29B (FCF_Margin: 5.0%)
 Segment_Breakdown:
-  General: $25.5B (100%, YoY 11%)
-  Segment_Weighted_Growth: 10.7% (推奨値・中央値を自動適用)
+  General: $25.5B (100%, YoY 9%)
+  Segment_Weighted_Growth: 9.1% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -118,8 +118,7 @@ Next_Earnings_Date: Next quarterly earnings release
 Phase1成長率 : 63.8%
 推奨成長率内訳:
   中央値ベース:          9.1%
-  HypeCoreフェーズ補正:  12.3% (Phase4・期待剥落期)
-  最終推奨値:            10.7%
+  最終推奨値:            9.1%
 判定         : AGGRESSIVE
 業界ベンチマーク: Power / 9.1% (Damodaran 2025)
 signals:
@@ -131,14 +130,8 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  recommended_g = avg(median_g, hypecore_weighted_g)
-  median_g: median of [rev_cagr_3yr, rev_cagr_5yr,
-            industry_benchmark, g_fundamental]
-  hypecore_weighted_g: phase-weighted blend
-    Phase1(Dawn):      ttm×0.5 + historical×0.3 + benchmark×0.2
-    Phase2(Expansion): ttm×0.4 + historical×0.3 + benchmark×0.3
-    Phase3(Euphoria):  ttm×0.2 + historical×0.3 + benchmark×0.5
-    Phase4(Deflation): ttm×0.1 + historical×0.3 + benchmark×0.6
+  recommended_g = median of [rev_cagr_3yr, rev_cagr_5yr,
+                  industry_benchmark, g_fundamental] (≥2 required)
 Layer 3: TTM Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
