@@ -15,7 +15,7 @@
     "3年後": 278.06
   },
   "upside_percent": -43.5,
-  "calculation_date": "2026-05-30T08:46:20+09:00",
+  "calculation_date": "2026-05-30T12:06:26+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -313,12 +313,12 @@
     "peg": null,
     "ps": 9.596327,
     "ev_ebitda": 30.634,
-    "ma200": 99.8433,
+    "ma200": 99.6472,
     "forward_eps": -0.62702
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -338,8 +338,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "株数計算とROE成長矛盾が致命的",
-    "ai_concerns": "ROE=0%と65%成長の矛盾、株数整合性欠如"
+    "ai_comment": null
   },
   "tanuki_score": "HOLD",
   "funda_score": 45,
@@ -369,6 +368,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.65,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.65,
@@ -378,6 +380,7 @@
     "rev_cagr_3yr": null,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": null,
     "signals": [
       "業界平均(Information Services)はマイナス成長。個別銘柄の独自評価が必要 ℹ️"
     ],

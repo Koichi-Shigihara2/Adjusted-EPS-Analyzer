@@ -15,7 +15,7 @@
     "3年後": 59.99
   },
   "upside_percent": -20.9,
-  "calculation_date": "2026-05-30T08:45:01+09:00",
+  "calculation_date": "2026-05-30T12:06:23+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -315,12 +315,12 @@
     "peg": 1.32,
     "ps": 0.8626979,
     "ev_ebitda": 15.313,
-    "ma200": 56.66455,
+    "ma200": 56.68295,
     "forward_eps": 4.44919
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -340,8 +340,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "1株価とP_tの整合性欠如が致命的",
-    "ai_concerns": "1株価とP_tの不整合、V0_rmとβ版の混在表示"
+    "ai_comment": null
   },
   "tanuki_score": "HOLD",
   "funda_score": 65,
@@ -401,6 +400,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.047,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.07757185304465225,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.047,
@@ -410,6 +412,7 @@
     "rev_cagr_3yr": 0.08620678669388293,
     "rev_cagr_5yr": 0.08608422498880985,
     "g_fundamental": 0.043693257417968624,
+    "recommended_g": 0.07757185304465225,
     "signals": [
       "業界平均Restaurant/Dining(6.9%)の0.7倍以内 ✅",
       "過去実績(3yr:8.6% / 5yr:8.6%)と整合 ✅",

@@ -1,25 +1,25 @@
 {
-  "intrinsic_value_pt": 332257245.7649958,
-  "intrinsic_value_per_share": 3.436482585260441,
-  "intrinsic_value_beta": 3.19,
-  "upside_percent_beta": -89.4,
-  "intrinsic_value_rf": 8.75,
-  "upside_percent_rf": -71.0,
-  "v0": 332257245.7649958,
-  "v0_adjusted": 332257245.7649958,
+  "intrinsic_value_pt": 581411964.1337928,
+  "intrinsic_value_per_share": 4.3190437906067585,
+  "intrinsic_value_beta": 3.86,
+  "upside_percent_beta": -87.2,
+  "intrinsic_value_rf": 14.18,
+  "upside_percent_rf": -53.0,
+  "v0": 581411964.1337928,
+  "v0_adjusted": 581411964.1337928,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 3.96,
-    "2年後": 4.55,
-    "3年後": 5.23
+    "1年後": 5.62,
+    "2年後": 7.32,
+    "3年後": 9.53
   },
-  "upside_percent": -88.6,
-  "calculation_date": "2026-05-30T08:50:07+09:00",
+  "upside_percent": -85.7,
+  "calculation_date": "2026-05-30T12:06:38+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
-    "rate": 0.15,
+    "rate": 0.3017,
     "source": "segment_weighted",
     "phase1_years": 5
   },
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        3.41,
-        3.64,
-        3.89
+        3.89,
+        4.69,
+        5.84
       ],
       [
-        3.25,
-        3.44,
-        3.64
+        3.65,
+        4.32,
+        5.25
       ],
       [
-        3.12,
-        3.29,
-        3.46
+        3.48,
+        4.04,
+        4.82
       ]
     ],
     "wacc_values": [
@@ -63,28 +63,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.15,
+      "rate": 0.301708636960634,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.15,
+      "weighted_growth": 0.301708636960634,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.105,
-      "intrinsic_value_per_share": 3.25
+      "growth_rate": 0.211,
+      "intrinsic_value_per_share": 3.74
     },
     "base": {
-      "growth_rate": 0.15,
-      "intrinsic_value_per_share": 3.44
+      "growth_rate": 0.302,
+      "intrinsic_value_per_share": 4.32
     },
     "bull": {
-      "growth_rate": 0.18,
-      "intrinsic_value_per_share": 3.58
+      "growth_rate": 0.362,
+      "intrinsic_value_per_share": 4.8
     }
   },
   "growth_options": {
@@ -95,44 +95,44 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 332257245.7649958,
-    "pv_high_growth": 95831452.78330785,
-    "pv_terminal": 236425792.981688,
+    "v0": 581411964.1337928,
+    "pv_high_growth": 142098428.1577469,
+    "pv_terminal": 439313535.97604585,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 20249154.0,
+        "fcf": 22920433.611257367,
         "discount_factor": 1.1182400000000001,
-        "pv": 18108057.30433538
+        "pv": 20496882.253592577
       },
       {
         "year": 2,
-        "fcf": 23286527.099999998,
+        "fcf": 29835726.39465653,
         "discount_factor": 1.2504606976000003,
-        "pv": 18622358.25939484
+        "pv": 23859787.398292497
       },
       {
         "year": 3,
-        "fcf": 26779506.164999995,
+        "fcf": 38837422.737918764,
         "discount_factor": 1.3983151704842245,
-        "pv": 19151266.274059292
+        "pv": 27774441.38324674
       },
       {
         "year": 4,
-        "fcf": 30796432.089749992,
+        "fcf": 50555008.61524017,
         "discount_factor": 1.5636519562422793,
-        "pv": 19695196.214737605
+        "pv": 32331369.147346847
       },
       {
         "year": 5,
-        "fcf": 35415896.90321249,
+        "fcf": 65807891.356077395,
         "discount_factor": 1.7485381635483666,
-        "pv": 20254574.73078073
+        "pv": 37635947.975268245
       }
     ],
-    "terminal_fcf": 36478373.810308866,
-    "terminal_value": 413399521.87566704,
-    "v0_rm": 424372375.4988435
+    "terminal_fcf": 67782128.09675972,
+    "terminal_value": 768156483.4174944,
+    "v0_rm": 751312911.248765
   },
   "fcf_base": {
     "base_fcf": 1966960.0,
@@ -265,11 +265,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Computers_Peripherals)",
-    "high_growth_rate_used": 0.15,
+    "high_growth_rate_used": 0.301708636960634,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 95831452.78330785,
-    "pv_terminal": 236425792.981688,
+    "pv_high": 142098428.1577469,
+    "pv_terminal": 439313535.97604585,
     "roe_used": 0.0,
     "fcf_floor_applied": 59817760.0,
     "fcf_growth_floor": 0.15,
@@ -284,12 +284,12 @@
     "peg": null,
     "ps": 897.23706,
     "ev_ebitda": null,
-    "ma200": 23.14485,
+    "ma200": 23.203,
     "forward_eps": -0.37857
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -309,12 +309,11 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "1株価値算出の除算ミスが致命的",
-    "ai_concerns": "1株価値と株式数の除算結果が大幅に乖離"
+    "ai_comment": null
   },
   "tanuki_score": "PASS",
   "funda_score": 10,
-  "score_comment": "割高(-89%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
+  "score_comment": "割高(-86%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
   "fcf_history": [
     {
       "year": 2022,
@@ -355,12 +354,15 @@
     {
       "name": "General",
       "weight": 1,
-      "growth": 0.15,
+      "growth": 0.301708636960634,
       "estimated_revenue": 24587000.0
     }
   ],
   "segment_configured": false,
-  "segment_ttm_applied": false,
+  "segment_ttm_applied": true,
+  "phase1_growth_original": 0.15,
+  "phase1_growth_auto_adjusted": true,
+  "recommended_g": 0.301708636960634,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
@@ -370,6 +372,7 @@
     "rev_cagr_3yr": 0.5077693248454678,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": 0.301708636960634,
     "signals": [
       "業界平均Computers/Peripherals(9.6%)の1.6倍 ℹ️",
       "過去実績(3yr:50.8% / 5yr:N/A)と整合 ✅"

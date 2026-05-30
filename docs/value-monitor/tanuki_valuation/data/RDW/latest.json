@@ -1,25 +1,25 @@
 {
-  "intrinsic_value_pt": 4995994165.094119,
-  "intrinsic_value_per_share": 22.12790246563443,
-  "intrinsic_value_beta": 25.14,
-  "upside_percent_beta": 2.3,
-  "intrinsic_value_rf": 135.1,
-  "upside_percent_rf": 449.9,
-  "v0": 4995994165.094119,
-  "v0_adjusted": 4995994165.094119,
+  "intrinsic_value_pt": 1326703326.564834,
+  "intrinsic_value_per_share": 5.9417982167054335,
+  "intrinsic_value_beta": 6.69,
+  "upside_percent_beta": -72.8,
+  "intrinsic_value_rf": 33.84,
+  "upside_percent_rf": 37.7,
+  "v0": 1326703326.564834,
+  "v0_adjusted": 1326703326.564834,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 34.95,
-    "2年後": 55.21,
-    "3年後": 87.2
+    "1年後": 7.09,
+    "2年後": 8.46,
+    "3年後": 10.1
   },
-  "upside_percent": -9.9,
-  "calculation_date": "2026-05-30T08:50:28+09:00",
+  "upside_percent": -75.8,
+  "calculation_date": "2026-05-30T12:06:40+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
-    "rate": 0.5795,
+    "rate": 0.1935,
     "source": "segment_weighted",
     "phase1_years": 5
   },
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        12.22,
-        26.37,
-        56.08
+        5.44,
+        7.0,
+        8.86
       ],
       [
-        10.39,
-        22.13,
-        46.33
+        4.65,
+        5.94,
+        7.46
       ],
       [
-        9.02,
-        18.97,
-        39.09
+        4.06,
+        5.15,
+        6.42
       ]
     ],
     "wacc_values": [
@@ -63,28 +63,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.57948,
+      "rate": 0.19354172036563827,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.57948,
+      "weighted_growth": 0.19354172036563827,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.406,
-      "intrinsic_value_per_share": 12.71
+      "growth_rate": 0.135,
+      "intrinsic_value_per_share": 4.74
     },
     "base": {
-      "growth_rate": 0.579,
-      "intrinsic_value_per_share": 22.13
+      "growth_rate": 0.194,
+      "intrinsic_value_per_share": 5.94
     },
     "bull": {
-      "growth_rate": 0.695,
-      "intrinsic_value_per_share": 31.1
+      "growth_rate": 0.232,
+      "intrinsic_value_per_share": 6.88
     }
   },
   "growth_options": {
@@ -95,44 +95,44 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 4995994165.094119,
-    "pv_high_growth": 710922551.3878504,
-    "pv_terminal": 4285071613.706269,
+    "v0": 1326703326.564834,
+    "pv_high_growth": 270918414.9501648,
+    "pv_terminal": 1055784911.6146692,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 65141145.81706668,
+        "fcf": 49224222.684105314,
         "discount_factor": 1.09259,
-        "pv": 59620851.204080835
+        "pv": 45052785.29375641
       },
       {
         "year": 2,
-        "fcf": 102889136.99514048,
+        "fcf": 58751163.42604833,
         "discount_factor": 1.1937529080999998,
-        "pv": 86189643.01322693
+        "pv": 49215514.38945419
       },
       {
         "year": 3,
-        "fcf": 162511334.10108447,
+        "fcf": 70121964.6690085,
         "discount_factor": 1.3042824898609788,
-        "pv": 124598264.0757573
+        "pv": 53762865.95435523
       },
       {
         "year": 4,
-        "fcf": 256683401.9859809,
+        "fcf": 83693490.3464669,
         "discount_factor": 1.4250460055972067,
-        "pv": 180122887.9473335
+        "pv": 58730377.8388493
       },
       {
         "year": 5,
-        "fcf": 405426299.7688171,
+        "fcf": 99891672.45152704,
         "discount_factor": 1.556991015255452,
-        "pv": 260390905.14745182
+        "pv": 64156871.47374967
       }
     ],
-    "terminal_fcf": 417589088.76188165,
-    "terminal_value": 6671818002.266842,
-    "v0_rm": 4397547211.772065
+    "terminal_fcf": 102888422.62507285,
+    "terminal_value": 1643847621.4263115,
+    "v0_rm": 1177827943.2997131
   },
   "fcf_base": {
     "base_fcf": 26830480.0,
@@ -253,11 +253,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Aerospace_Defense)",
-    "high_growth_rate_used": 0.57948,
+    "high_growth_rate_used": 0.19354172036563827,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 710922551.3878504,
-    "pv_terminal": 4285071613.706269,
+    "pv_high": 270918414.9501648,
+    "pv_terminal": 1055784911.6146692,
     "roe_used": 0.0,
     "fcf_floor_applied": 68588080.0,
     "fcf_growth_floor": 0.15,
@@ -272,12 +272,12 @@
     "peg": null,
     "ps": 13.175164,
     "ev_ebitda": null,
-    "ma200": 9.2362,
+    "ma200": 9.31195,
     "forward_eps": -0.41
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -297,12 +297,11 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_tと1株価値の整合性のみ要修正",
-    "ai_concerns": "表記P_tとintrinsic_valueの不整合、V0_rmとの混在"
+    "ai_comment": null
   },
   "tanuki_score": "PASS",
   "funda_score": 5,
-  "score_comment": "フェアバリュー近辺、FCFマイナス（投資フェーズ）、売上成長加速",
+  "score_comment": "割高(-76%超)、FCFマイナス（投資フェーズ）、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
@@ -348,12 +347,15 @@
     {
       "name": "General",
       "weight": 1,
-      "growth": 0.57948,
+      "growth": 0.19354172036563827,
       "estimated_revenue": 335381000.0
     }
   ],
   "segment_configured": false,
   "segment_ttm_applied": true,
+  "phase1_growth_original": 0.5795,
+  "phase1_growth_auto_adjusted": true,
+  "recommended_g": 0.19354172036563827,
   "growth_sanity": {
     "verdict": "AGGRESSIVE",
     "phase1_growth": 0.5795,
@@ -363,6 +365,7 @@
     "rev_cagr_3yr": 0.2783318711878786,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": 0.19354172036563827,
     "signals": [],
     "warnings": [
       "業界平均Aerospace/Defense(10.9%)の5.3倍超 ⚠️",

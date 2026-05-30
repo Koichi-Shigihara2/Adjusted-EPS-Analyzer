@@ -422,7 +422,105 @@ class TestGrowthSanity:
 
 
 # ─────────────────────────────────────────────
-# 7. hypecore substage_watch の eps_surprise 分岐
+# 7. recommended_g
+#    check_growth_sanity の recommended_g 算出ロジックを検証
+# ─────────────────────────────────────────────
+
+class TestRecommendedGrowth:
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor",
+        "g_ebit": 0.096,
+        "roc": 0.10,
+        "rr": 0.50,
+    })
+    def test_recommended_g_is_median_of_two_candidates(self, _mock):
+        """industry_g + g_fundamental の2候補 → recommended_g が中央値になる"""
+        # annual_revenues 3件 → cagr_3yr/5yr = None（len<4 なので算出不可）
+        result = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=0.934, sector="Semiconductor",
+            annual_revenues=[100.0, 200.0, 400.0],
+            g_fundamental=0.026,
+        )
+        # candidates: [0.096, 0.026] → sorted: [0.026, 0.096] → median = 0.061
+        assert "recommended_g" in result
+        assert result["recommended_g"] is not None
+        assert abs(result["recommended_g"] - 0.061) < 0.001
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Software (System & Application)",
+        "g_ebit": 0.216,
+        "roc": 0.20,
+        "rr": 0.60,
+    })
+    def test_recommended_g_is_median_of_four_candidates(self, _mock):
+        """4候補 → recommended_g が中央値（中央2要素の平均）になる"""
+        # annual_revenues 6件 → cagr_3yr/5yr 両方算出可
+        result = _gs.check_growth_sanity(
+            "NOW", phase1_growth=0.221, sector="Software_System",
+            annual_revenues=[500.0, 650.0, 900.0, 1200.0, 1700.0, 2300.0],
+            g_fundamental=0.014,
+        )
+        assert "recommended_g" in result
+        # candidates 4つすべて > 0 → median = 中央2要素の平均
+        # cagr_3yr/5yr の実計算値 + industry=0.216 + g_fundamental=0.014
+        # 候補は4個 → recommended_g は None でない
+        assert result["recommended_g"] is not None
+
+    @patch.object(_gs, "get_industry_benchmark", return_value=None)
+    def test_single_candidate_gives_none_recommended_g(self, _mock):
+        """industry_g=None + cagr 不可 → 候補1件 → recommended_g = None"""
+        result = _gs.check_growth_sanity(
+            "TEST", phase1_growth=0.20, sector=None,
+            annual_revenues=[100.0, 200.0],  # 2件 → cagr 計算不可
+            g_fundamental=0.03,
+        )
+        # candidates = [0.03] のみ（1件）→ None
+        assert result.get("recommended_g") is None
+
+    def test_segment_configured_no_auto_adjusted_in_report(self, tmp_path):
+        """segment_configured=True → レポートに Growth_Rate_Original/Adjusted が出力されない"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+
+        extra = {
+            **_minimal_extra(),
+            "segment_configured": True,
+            "segment_ttm_applied": False,
+            "phase1_growth_auto_adjusted": False,
+            "phase1_growth_original": None,
+            "recommended_g": None,
+        }
+        report = pipe._generate_report(
+            "NVDA", _minimal_valuation(), _minimal_score_data(), extra
+        )
+
+        assert "Growth_Rate_Original" not in report
+        assert "Growth_Rate_Adjusted" not in report
+
+    def test_segment_unconfigured_auto_adjusted_shows_in_report(self, tmp_path):
+        """segment_configured=False + auto_adjusted=True → Growth_Rate_Original/Adjusted が出力される"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+
+        extra = {
+            **_minimal_extra(),
+            "segment_configured": False,
+            "segment_ttm_applied": True,
+            "phase1_growth_auto_adjusted": True,
+            "phase1_growth_original": 0.934,   # TTM: 93.4%
+            "recommended_g": 0.061,             # 推奨: 6.1%
+        }
+        report = pipe._generate_report(
+            "ALAB", _minimal_valuation(), _minimal_score_data(), extra
+        )
+
+        assert "Growth_Rate_Original: 93.4% (TTM実績)" in report
+        assert "Growth_Rate_Adjusted: 6.1% (推奨値・中央値ベース)" in report
+        assert "（推奨値ベース）" in report
+
+
+# ─────────────────────────────────────────────
+# 8. hypecore substage_watch の eps_surprise 分岐
 #    detect_substage() が eps_surprise の実際の値に応じて
 #    「大幅ミス」か「軽微なミス」かを正しく出力することを検証
 #

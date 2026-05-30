@@ -15,7 +15,7 @@
     "3年後": 203.68
   },
   "upside_percent": -45.7,
-  "calculation_date": "2026-05-30T08:49:59+09:00",
+  "calculation_date": "2026-05-30T12:06:38+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -368,13 +368,13 @@
     "per_adjusted": 174.82,
     "peg": 1.9,
     "ps": 71.83436,
-    "ev_ebitda": 166.442,
-    "ma200": 161.93625,
+    "ev_ebitda": 182.122,
+    "ma200": 161.7841,
     "forward_eps": 2.07428
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -394,8 +394,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "1株価値計算に不整合あり",
-    "ai_concerns": "P_t/shares mismatch; V0_rm vs V0 base unclear"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
@@ -455,6 +454,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.338,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.32747220544577993,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.338,
@@ -464,6 +466,7 @@
     "rev_cagr_3yr": 0.32917125287657845,
     "rev_cagr_5yr": 0.3257731580149814,
     "g_fundamental": 0.0012973985624481846,
+    "recommended_g": 0.32747220544577993,
     "signals": [
       "業界平均Software (Internet)(48.6%)の0.7倍以内 ✅",
       "過去実績(3yr:32.9% / 5yr:32.6%)と整合 ✅",

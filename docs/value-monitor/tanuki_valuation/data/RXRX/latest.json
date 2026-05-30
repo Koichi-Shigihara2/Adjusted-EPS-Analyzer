@@ -15,7 +15,7 @@
     "3年後": 19.0
   },
   "upside_percent": 247.8,
-  "calculation_date": "2026-05-30T08:50:37+09:00",
+  "calculation_date": "2026-05-30T12:06:41+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -284,12 +284,12 @@
     "peg": null,
     "ps": 28.692873,
     "ev_ebitda": null,
-    "ma200": 4.283625,
+    "ma200": 4.274525,
     "forward_eps": -0.87875
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -309,8 +309,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "1株価値計算の整合性エラー",
-    "ai_concerns": "1株価値とP_tの不整合、ROE=0%と15%成長の乖離"
+    "ai_comment": null
   },
   "tanuki_score": "HOLD",
   "funda_score": 35,
@@ -366,6 +365,9 @@
   ],
   "segment_configured": false,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.15,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
@@ -375,6 +377,7 @@
     "rev_cagr_3yr": 0.23297053387848754,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": null,
     "signals": [
       "業界平均(Drugs (Biotechnology))はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "過去実績(3yr:23.3% / 5yr:N/A)と整合 ✅"

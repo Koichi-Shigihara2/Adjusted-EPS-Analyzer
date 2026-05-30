@@ -15,7 +15,7 @@
     "3年後": 56.3
   },
   "upside_percent": 5.7,
-  "calculation_date": "2026-05-30T08:45:44+09:00",
+  "calculation_date": "2026-05-30T12:06:24+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -314,13 +314,13 @@
     "per_adjusted": 23.01,
     "peg": 0.34,
     "ps": 2.8650312,
-    "ev_ebitda": 15.279,
-    "ma200": 47.18405,
+    "ev_ebitda": 15.298,
+    "ma200": 47.0768,
     "forward_eps": 2.03009
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -340,8 +340,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "数値提示の整合性に問題あり、計算ロジック自体は概ね正常",
-    "ai_concerns": "提示P_tと1株価値の不整合、V0_rmとβ-WACCの混在表示"
+    "ai_comment": null
   },
   "tanuki_score": "WATCH",
   "funda_score": 100,
@@ -403,6 +402,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.17,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.33278521461983773,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.17,
@@ -412,6 +414,7 @@
     "rev_cagr_3yr": 0.5670754693024982,
     "rev_cagr_5yr": 0.8065277672764715,
     "g_fundamental": 0.004511338693389211,
+    "recommended_g": 0.33278521461983773,
     "signals": [
       "業界平均Beverage (Soft)(9.8%)の1.7倍 ℹ️",
       "過去実績(3yr:56.7% / 5yr:80.7%)と整合 ✅",

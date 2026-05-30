@@ -15,7 +15,7 @@
     "3年後": 553.49
   },
   "upside_percent": -1.4,
-  "calculation_date": "2026-05-30T08:47:04+09:00",
+  "calculation_date": "2026-05-30T12:06:29+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -275,17 +275,17 @@
     "rpo_pv": 96934582327.88492,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.911629726380658,
-    "per": 29.011442,
+    "per": 28.989328,
     "per_adjusted": 30.83,
     "peg": 1.53,
     "ps": 10.906531,
-    "ev_ebitda": 29.11,
-    "ma200": 299.03616,
+    "ev_ebitda": 28.374,
+    "ma200": 299.92114,
     "forward_eps": 14.48958
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
@@ -305,8 +305,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "P_t/株価表示に整合性欠如、他は正常",
-    "ai_concerns": "Table P_t inconsistent with reported 375.07 (uses different V0_rm)"
+    "ai_comment": null
   },
   "tanuki_score": "HOLD",
   "funda_score": 100,
@@ -372,6 +371,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.1385,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.16139776603510256,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.1385,
@@ -381,6 +383,7 @@
     "rev_cagr_3yr": 0.12511745609215974,
     "rev_cagr_5yr": 0.1715483907713573,
     "g_fundamental": 0.16139776603510256,
+    "recommended_g": 0.16139776603510256,
     "signals": [
       "過去実績(3yr:12.5% / 5yr:17.2%)と整合 ✅",
       "RR×ROIC上限(16.1%)以内 ✅"

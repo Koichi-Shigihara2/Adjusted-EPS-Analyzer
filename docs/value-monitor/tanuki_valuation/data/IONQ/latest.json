@@ -15,7 +15,7 @@
     "3年後": 31.85
   },
   "upside_percent": -70.9,
-  "calculation_date": "2026-05-30T08:47:21+09:00",
+  "calculation_date": "2026-05-30T12:06:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -265,12 +265,12 @@
     "peg": null,
     "ps": 143.76791,
     "ev_ebitda": null,
-    "ma200": 47.69525,
+    "ma200": 47.8406,
     "forward_eps": -1.04241
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -290,8 +290,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t/shares不整合とROE-growth矛盾が致命的",
-    "ai_concerns": "ROE=0% vs 15% growth inconsistent; per-share mismatch"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 75,
@@ -347,6 +346,9 @@
   ],
   "segment_configured": false,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.15,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
@@ -356,6 +358,7 @@
     "rev_cagr_3yr": -0.527817434288189,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": null,
     "signals": [
       "業界平均Computers/Peripherals(9.6%)の1.6倍 ℹ️"
     ],

@@ -15,7 +15,7 @@
     "3年後": 2101.8
   },
   "upside_percent": -64.2,
-  "calculation_date": "2026-05-30T08:47:59+09:00",
+  "calculation_date": "2026-05-30T12:06:32+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -297,17 +297,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.09586674892041948,
-    "per": 150.52113,
+    "per": 151.58865,
     "per_adjusted": 120.31,
     "peg": 0.63,
     "ps": 26.730387,
     "ev_ebitda": 120.759,
-    "ma200": 454.278,
+    "ma200": 457.95453,
     "forward_eps": 18.10067
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -327,8 +327,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "株数除算と成長率整合性に重大不整合あり",
-    "ai_concerns": "ROE 2.28% vs 高成長率 90.1% 矛盾; 株数計算不整合"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
@@ -383,6 +382,9 @@
   ],
   "segment_configured": false,
   "segment_ttm_applied": true,
+  "phase1_growth_original": 0.9012,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": null,
   "growth_sanity": {
     "verdict": "REVIEW",
     "phase1_growth": 0.9012,
@@ -392,6 +394,7 @@
     "rev_cagr_3yr": -0.013334398405285608,
     "rev_cagr_5yr": -0.004035779952454299,
     "g_fundamental": null,
+    "recommended_g": null,
     "signals": [],
     "warnings": [
       "業界平均Telecom. Equipment(11.9%)の7.6倍超 ⚠️"

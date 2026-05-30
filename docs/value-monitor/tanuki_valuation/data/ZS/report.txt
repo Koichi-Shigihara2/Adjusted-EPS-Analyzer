@@ -1,16 +1,16 @@
 ZS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T08:51:58+09:00
+Generated: 2026-05-30T12:06:45+09:00
 Price: $139.73
 
 [1. TANUKI SCORE]
-Classification: HOLD
+Classification: BUY
 Funda_Score: 50/100
 Timing_Score (components):
-  Deviation_Rate: -21.5%
-  MA200_Deviation: -37.1%
+  Deviation_Rate: +52.3%
+  MA200_Deviation: -36.9%
   HypeCore_Phase: N/A
   Analyst_Consensus: N/A
-Comment: 割高(-22%超)、FCF黒字
+Comment: 割安圏(52%)で買い余地大、FCF黒字
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,10 +28,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.891
-Deviation_Rate: -21.5%
+Quadrant: 右上
+Label: 割安×高効率
+Key_Metric_Y: RICE = 2.068
+Deviation_Rate: +52.3%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,12 +56,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $139.73
-Intrinsic_Value_BASE: $109.74
-Deviation_BASE: -21.5%
+Intrinsic_Value_BASE: $212.88
+Deviation_BASE: +52.4%
+Growth_Rate_Original: 15.0% (TTM実績)
+Growth_Rate_Adjusted: 34.8% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$94.05, Deviation=-32.7%
-BASE: Growth=15.0%, IV=$109.74, Deviation=-21.5%
-BULL: Growth=18.0%, IV=$121.57, Deviation=-13.0%
+BEAR: Growth=24.4%, IV=$150.80 （推奨値ベース）
+BASE: Growth=34.8%, IV=$212.88 （推奨値ベース）
+BULL: Growth=41.8%, IV=$265.94 （推奨値ベース）
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -81,8 +83,8 @@ FCF_History:
   2025: $0.81B (FCF_Margin: 30.2%)
   FCF_CAGR_3yr: +47.4%
 Segment_Breakdown:
-  General: $2.7B (100%, YoY 15%)
-  Segment_Weighted_Growth: 15.0% (デフォルト値)
+  General: $2.7B (100%, YoY 35%)
+  Segment_Weighted_Growth: 34.8% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -111,6 +113,7 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
+推奨成長率(中央値): 34.8%
 判定         : PLAUSIBLE
 業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
 signals:
@@ -121,11 +124,11 @@ signals:
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.624
-BASE: RICE=0.891
-BULL: RICE=1.07
+BEAR: RICE=1.45
+BASE: RICE=2.068
+BULL: RICE=2.484
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 34.8%  [TANUKI forward growth rate]
 Q  = 1.6877   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.3521  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%

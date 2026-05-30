@@ -15,7 +15,7 @@
     "3年後": 985.46
   },
   "upside_percent": 45.9,
-  "calculation_date": "2026-05-30T08:49:07+09:00",
+  "calculation_date": "2026-05-30T12:06:35+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -353,17 +353,17 @@
     "rpo_pv": 104234638976.31055,
     "growth_option_pv": 1288731815.566697,
     "alpha_uncapped": 1.3978546158277088,
-    "per": 26.831942,
+    "per": 26.81596,
     "per_adjusted": 25.33,
     "peg": 1.32,
     "ps": 10.508521,
-    "ev_ebitda": 17.452,
-    "ma200": 458.85645,
+    "ev_ebitda": 18.388,
+    "ma200": 458.46146,
     "forward_eps": 19.33773
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
@@ -383,8 +383,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "P_tと1株価値の整合性欠如、提示数値に矛盾",
-    "ai_concerns": "P_t vs per-share mismatch; dual V0 usage unclear"
+    "ai_comment": null
   },
   "tanuki_score": "BUY",
   "funda_score": 80,
@@ -450,6 +449,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.1447,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.13472494991786776,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.1447,
@@ -459,6 +461,7 @@
     "rev_cagr_3yr": 0.12423114652863054,
     "rev_cagr_5yr": 0.145218753307105,
     "g_fundamental": 0.11839882911735816,
+    "recommended_g": 0.13472494991786776,
     "signals": [
       "業界平均Software (System & Application)(21.6%)の0.7倍以内 ✅",
       "過去実績(3yr:12.4% / 5yr:14.5%)と整合 ✅",

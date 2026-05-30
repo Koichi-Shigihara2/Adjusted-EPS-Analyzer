@@ -15,7 +15,7 @@
     "3年後": 552.65
   },
   "upside_percent": -44.6,
-  "calculation_date": "2026-05-30T08:43:05+09:00",
+  "calculation_date": "2026-05-30T12:06:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -298,7 +298,7 @@
     "bull": {
       "growth_rate": 0.295,
       "rice": 1.781,
-      "rice_per_ratio": 0.0104
+      "rice_per_ratio": 0.0103
     }
   },
   "fcf_source": "ttm_series",
@@ -344,17 +344,17 @@
     "rpo_pv": 13976077.304807888,
     "growth_option_pv": 433960713.40511227,
     "alpha_uncapped": 0.6730521159489544,
-    "per": 172.03333,
+    "per": 172.60869,
     "per_adjusted": 112.94,
     "peg": 1.25,
     "ps": 22.468971,
-    "ev_ebitda": 112.56,
-    "ma200": 235.87675,
+    "ev_ebitda": 112.123,
+    "ma200": 237.5825,
     "forward_eps": 12.95954
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -374,8 +374,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t-to-per-share arithmetic mismatch; dual-V0 usage",
-    "ai_concerns": "P_t uses β-WACC V0 but per-share uses Rm=10% V0 (inconsistent reporting)"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
@@ -459,6 +458,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.246,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.11625425952355783,
   "growth_sanity": {
     "verdict": "REVIEW",
     "phase1_growth": 0.246,
@@ -468,6 +470,7 @@
     "rev_cagr_3yr": 0.13643599335368428,
     "rev_cagr_5yr": 0.2882389065515516,
     "g_fundamental": 0.007465146171846676,
+    "recommended_g": 0.11625425952355783,
     "signals": [
       "過去実績(3yr:13.6% / 5yr:28.8%)と整合 ✅",
       "RR×ROIC(0.7%)：再投資より還元重視型、または期待値先行 ℹ️"

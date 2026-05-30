@@ -15,7 +15,7 @@
     "3年後": 1888.55
   },
   "upside_percent": 96.3,
-  "calculation_date": "2026-05-30T08:48:40+09:00",
+  "calculation_date": "2026-05-30T12:06:34+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -279,13 +279,13 @@
     "per_adjusted": 20.9,
     "peg": 0.92,
     "ps": 7.469091,
-    "ev_ebitda": 14.804,
-    "ma200": 667.35895,
+    "ev_ebitda": 14.74,
+    "ma200": 666.5715,
     "forward_eps": 36.16212
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -305,8 +305,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t/1株計算の整合性欠如とα上限が主因",
-    "ai_concerns": "P_t=2×V0、1株価額不整合、α上限到達"
+    "ai_comment": null
   },
   "tanuki_score": "BUY",
   "funda_score": 100,
@@ -360,6 +359,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.15,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.19893831442939258,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
@@ -369,6 +371,7 @@
     "rev_cagr_3yr": 0.19893831442939258,
     "rev_cagr_5yr": 0.18511415178759827,
     "g_fundamental": 0.21271146205552363,
+    "recommended_g": 0.19893831442939258,
     "signals": [
       "業界平均(Advertising)はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "過去実績(3yr:19.9% / 5yr:18.5%)と整合 ✅",

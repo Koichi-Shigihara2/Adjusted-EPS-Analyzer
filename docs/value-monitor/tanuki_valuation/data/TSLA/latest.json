@@ -15,7 +15,7 @@
     "3年後": 104.25
   },
   "upside_percent": -83.2,
-  "calculation_date": "2026-05-30T08:51:30+09:00",
+  "calculation_date": "2026-05-30T12:06:43+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -310,7 +310,7 @@
     "base": {
       "growth_rate": 0.126,
       "rice": 0.26,
-      "rice_per_ratio": 0.0007
+      "rice_per_ratio": 0.0006
     },
     "bull": {
       "growth_rate": 0.151,
@@ -361,17 +361,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 680915963.5607014,
     "alpha_uncapped": 0.6153057763982493,
-    "per": 392.6036,
+    "per": 399.80734,
     "per_adjusted": 247.82,
     "peg": 6.09,
     "ps": 16.721737,
     "ev_ebitda": 144.992,
-    "ma200": 411.6532,
+    "ma200": 412.12796,
     "forward_eps": 2.50969
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -391,8 +391,7 @@
       }
     },
     "overall": "WARN",
-    "ai_comment": "P_t/株数整合性欠如で致命的エラー",
-    "ai_concerns": "P_t and per-share mismatch; V0 vs V0_rm confusion in table"
+    "ai_comment": null
   },
   "tanuki_score": "HOLD",
   "funda_score": 65,
@@ -452,6 +451,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.126,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.051943257367141005,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.126,
@@ -461,6 +463,7 @@
     "rev_cagr_3yr": 0.051943257367141005,
     "rev_cagr_5yr": 0.24630713363610557,
     "g_fundamental": 0.04739959608007916,
+    "recommended_g": 0.051943257367141005,
     "signals": [
       "業界平均(Auto & Truck)はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "過去実績(3yr:5.2% / 5yr:24.6%)と整合 ✅",

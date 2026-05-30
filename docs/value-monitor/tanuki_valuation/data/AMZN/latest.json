@@ -15,7 +15,7 @@
     "3年後": 96.57
   },
   "upside_percent": -74.6,
-  "calculation_date": "2026-05-30T08:43:19+09:00",
+  "calculation_date": "2026-05-30T12:06:20+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -304,17 +304,17 @@
     "bear": {
       "growth_rate": 0.084,
       "rice": 0.831,
-      "rice_per_ratio": 0.0266
+      "rice_per_ratio": 0.0263
     },
     "base": {
       "growth_rate": 0.119,
       "rice": 1.177,
-      "rice_per_ratio": 0.0377
+      "rice_per_ratio": 0.0372
     },
     "bull": {
       "growth_rate": 0.143,
       "rice": 1.415,
-      "rice_per_ratio": 0.0453
+      "rice_per_ratio": 0.0447
     }
   },
   "fcf_source": "ttm_series",
@@ -360,17 +360,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 514577921.03373003,
     "alpha_uncapped": 0.7655800120776206,
-    "per": 31.251734,
+    "per": 31.653803,
     "per_adjusted": 31.31,
     "peg": 1.83,
     "ps": 3.9194918,
-    "ev_ebitda": 19.504,
-    "ma200": 231.2747,
+    "ev_ebitda": 19.272,
+    "ma200": 231.52055,
     "forward_eps": 9.86169
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -390,8 +390,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "per-share calc inconsistent with P_t",
-    "ai_concerns": "V0 vs V0_rm mix + per-share error"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 80,
@@ -457,6 +456,9 @@
   ],
   "segment_configured": true,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.1194,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": 0.1498239831038885,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.1194,
@@ -466,6 +468,7 @@
     "rev_cagr_3yr": 0.11731283601806397,
     "rev_cagr_5yr": 0.13178194800406007,
     "g_fundamental": 0.16786601820371697,
+    "recommended_g": 0.1498239831038885,
     "signals": [
       "業界平均Software (System & Application)(21.6%)の0.6倍以内 ✅",
       "過去実績(3yr:11.7% / 5yr:13.2%)と整合 ✅",

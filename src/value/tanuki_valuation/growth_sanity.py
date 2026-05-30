@@ -420,6 +420,27 @@ def check_growth_sanity(
         except Exception:
             pass
 
+    # --- recommended_g: 複数指標の中央値（candidates >= 2 の場合のみ） ---
+    _rec_candidates = []
+    if cagr.get("cagr_3yr") is not None and cagr["cagr_3yr"] > 0:
+        _rec_candidates.append(cagr["cagr_3yr"])
+    if cagr.get("cagr_5yr") is not None and cagr["cagr_5yr"] > 0:
+        _rec_candidates.append(cagr["cagr_5yr"])
+    if industry_g is not None and industry_g > 0:
+        _rec_candidates.append(industry_g)
+    if g_fundamental is not None and g_fundamental > 0:
+        _rec_candidates.append(g_fundamental)
+
+    if len(_rec_candidates) >= 2:
+        _rec_candidates.sort()
+        _n = len(_rec_candidates)
+        if _n % 2 == 1:
+            recommended_g = _rec_candidates[_n // 2]
+        else:
+            recommended_g = (_rec_candidates[_n // 2 - 1] + _rec_candidates[_n // 2]) / 2
+    else:
+        recommended_g = None
+
     return {
         "verdict": verdict,
         "phase1_growth": phase1_growth,
@@ -429,6 +450,7 @@ def check_growth_sanity(
         "rev_cagr_3yr": cagr.get("cagr_3yr"),
         "rev_cagr_5yr": cagr.get("cagr_5yr"),
         "g_fundamental": g_fundamental,
+        "recommended_g": recommended_g,
         "signals": signals,
         "warnings": warnings,
     }

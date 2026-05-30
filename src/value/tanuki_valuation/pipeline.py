@@ -128,7 +128,7 @@ class TanukiValuationPipeline:
                     }
                     validation_stats["error"] += 1
 
-                self._save_result(ticker, valuation)
+                self._save_result(ticker, valuation, financials)
                 results[ticker] = valuation
                 success_count += 1
                 
@@ -315,16 +315,66 @@ class TanukiValuationPipeline:
             else:              parts.append("売上成長停滞")
         return "、".join(parts[:3]) if parts else f"{score}（データ不足）"
 
-    def _save_result(self, ticker: str, valuation: dict) -> None:
+    def _save_result(self, ticker: str, valuation: dict, financials: dict = None) -> None:
         ticker_dir = os.path.join(self.output_dir, ticker)
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
 
         # fcf_history等をスコア計算前に読み込み（fcf_latest判定のため）
         extra = self._load_extra_data(ticker, valuation)
-        valuation_enriched = {**valuation, **extra}
+
+        # ---- Growth Sanity Check（original phase1_growth で実行） ----
+        _phase1_growth = (
+            valuation.get("growth", {}).get("rate")
+            or valuation.get("growth_scenarios", {}).get("primary", {}).get("rate")
+            or 0
+        )
+        _annual_revs = self._load_annual_revenues(ticker)
+        _g_fund = self._calc_g_fundamental(ticker)
+        _sector = self._load_beta_sector(ticker)
+        try:
+            _growth_sanity = check_growth_sanity(
+                ticker=ticker,
+                phase1_growth=_phase1_growth,
+                sector=_sector,
+                annual_revenues=_annual_revs,
+                g_fundamental=_g_fund,
+            )
+        except Exception as _e:
+            import logging as _logging
+            _logging.getLogger(__name__).warning(f"[{ticker}] growth_sanity failed: {_e}")
+            _growth_sanity = None
+
+        # ---- recommended_g による DCF 自動再計算（segment_configured=False のみ） ----
+        _phase1_growth_original = _phase1_growth
+        _phase1_auto_adjusted = False
+        _recommended_g = _growth_sanity.get("recommended_g") if _growth_sanity else None
+        _is_seg_unconfigured = not extra.get("segment_configured", True)
+
+        if _is_seg_unconfigured and _recommended_g is not None and financials is not None:
+            try:
+                _seg_cfg.set_growth_override(ticker, _recommended_g)
+                _valuation_adj = self.calculator.calculate_pt(financials)
+                if "error" not in _valuation_adj:
+                    _orig_validation = valuation.get("validation")
+                    valuation = _valuation_adj
+                    if _orig_validation:
+                        valuation["validation"] = _orig_validation
+                    extra = self._load_extra_data(ticker, valuation)
+                    _phase1_auto_adjusted = True
+            except Exception as _e:
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    f"[{ticker}] DCF re-run with recommended_g failed: {_e}"
+                )
+
+        # auto-adjustment フラグを extra に追加（_generate_report に渡すため）
+        extra["phase1_growth_original"] = _phase1_growth_original
+        extra["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
+        extra["recommended_g"] = _recommended_g
 
         # TANUKIスコアを先に計算してlatest.jsonとhistory.json両方に保存
+        valuation_enriched = {**valuation, **extra}
         score_data = self._compute_tanuki_score(ticker, valuation_enriched)
 
         latest_data = {k: v for k, v in valuation.items() if k != "calculation_steps"}
@@ -375,34 +425,15 @@ class TanukiValuationPipeline:
 
         # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存（extraは上で取得済み）
         latest_data.update(extra)
-
-        # ---- Growth Sanity Check ----
-        try:
-            _phase1_growth = (
-                valuation.get("growth", {}).get("rate")
-                or valuation.get("growth_scenarios", {}).get("primary", {}).get("rate")
-                or 0
-            )
-            _annual_revs = self._load_annual_revenues(ticker)
-            _g_fund = self._calc_g_fundamental(ticker)
-            _sector = self._load_beta_sector(ticker)
-            latest_data["growth_sanity"] = check_growth_sanity(
-                ticker=ticker,
-                phase1_growth=_phase1_growth,
-                sector=_sector,
-                annual_revenues=_annual_revs,
-                g_fundamental=_g_fund,
-            )
-        except Exception as e:
-            import logging as _logging
-            _logging.getLogger(__name__).warning(f"[{ticker}] growth_sanity failed: {e}")
-            latest_data["growth_sanity"] = None
+        latest_data["growth_sanity"] = _growth_sanity
+        latest_data["phase1_growth_original"] = _phase1_growth_original
+        latest_data["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
 
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
 
         report_text = self._generate_report(ticker, valuation, score_data, extra,
-                                             growth_sanity=latest_data.get("growth_sanity"))
+                                             growth_sanity=_growth_sanity)
         self._save_report(ticker, report_text)
 
         print(f"   💾 保存: {latest_path}")
@@ -417,6 +448,9 @@ class TanukiValuationPipeline:
         next_earnings = extra.get("next_earnings_date", "N/A")
         _seg_ttm_applied = extra.get("segment_ttm_applied", False)
         _seg_configured = extra.get("segment_configured", True)
+        _phase1_auto_adjusted = extra.get("phase1_growth_auto_adjusted", False)
+        _phase1_growth_original = extra.get("phase1_growth_original")
+        _recommended_g = extra.get("recommended_g")
 
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
@@ -725,10 +759,18 @@ class TanukiValuationPipeline:
         L.append(f"Current_Price: ${current_price:,.2f}" if current_price else "Current_Price: N/A")
         L.append(f"Intrinsic_Value_BASE: ${base_iv:,.2f}" if base_iv else "Intrinsic_Value_BASE: N/A")
         L.append(f"Deviation_BASE: {dev(base_iv):+.1f}%")
+        if _phase1_auto_adjusted and _phase1_growth_original is not None and _recommended_g is not None:
+            L.append(f"Growth_Rate_Original: {_phase1_growth_original*100:.1f}% (TTM実績)")
+            L.append(f"Growth_Rate_Adjusted: {_recommended_g*100:.1f}% (推奨値・中央値ベース)")
         L.append("Scenarios:")
-        L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
-        L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
-        L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
+        if _phase1_auto_adjusted:
+            L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f} （推奨値ベース）")
+            L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f} （推奨値ベース）")
+            L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f} （推奨値ベース）")
+        else:
+            L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
+            L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
+            L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
         # TTM Revenue Growth（BASE成長率 vs 実績の乖離を表示）
         _ttm_rev = rev_growth_val if rev_growth_val is not None else rev_yoy_hype
         if _ttm_rev is not None:
@@ -805,7 +847,12 @@ class TanukiValuationPipeline:
                 L.append(f"  {name}: ${rev_est/1e9:.1f}B ({pct:.0f}%, YoY {g*100:.0f}%)")
             seg_wg = sum(s.get("weight", 0) * s.get("growth", 0) for s in segments) / max(total_w, 1e-9)
             if not _seg_configured:
-                _seg_suffix = " (TTM実績値を自動適用)" if _seg_ttm_applied else " (デフォルト値)"
+                if _phase1_auto_adjusted:
+                    _seg_suffix = " (推奨値・中央値を自動適用)"
+                elif _seg_ttm_applied:
+                    _seg_suffix = " (TTM実績値を自動適用)"
+                else:
+                    _seg_suffix = " (デフォルト値)"
             else:
                 _seg_suffix = ""
             L.append(f"  Segment_Weighted_Growth: {seg_wg*100:.1f}%{_seg_suffix}")
@@ -850,6 +897,9 @@ class TanukiValuationPipeline:
             gs_warnings = growth_sanity.get("warnings", [])
             L.append("[4. 成長率根拠]")
             L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
+            _gs_rec_g = growth_sanity.get("recommended_g")
+            if _gs_rec_g is not None:
+                L.append(f"推奨成長率(中央値): {_gs_rec_g*100:.1f}%")
             L.append(f"判定         : {gs_verdict}")
             if gs_ind and gs_bench is not None:
                 damo_tag = f" (Damodaran {gs_year})" if gs_year else ""

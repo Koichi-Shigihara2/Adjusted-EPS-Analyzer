@@ -15,7 +15,7 @@
     "3年後": 9.82
   },
   "upside_percent": -45.7,
-  "calculation_date": "2026-05-30T08:47:37+09:00",
+  "calculation_date": "2026-05-30T12:06:31+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -265,12 +265,12 @@
     "peg": null,
     "ps": 150.70425,
     "ev_ebitda": null,
-    "ma200": 12.88035,
+    "ma200": 12.8498,
     "forward_eps": -0.595
   },
   "validation": {
     "validated_at": "2026-05-30",
-    "model": "grok-3-mini",
+    "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
@@ -290,8 +290,7 @@
       }
     },
     "overall": "PASS",
-    "ai_comment": "P_t/shares計算不整合が致命的",
-    "ai_concerns": "per-share mismatch + ROE=0 vs 15% growth conflict"
+    "ai_comment": null
   },
   "tanuki_score": "TRIM",
   "funda_score": 90,
@@ -347,6 +346,9 @@
   ],
   "segment_configured": false,
   "segment_ttm_applied": false,
+  "phase1_growth_original": 0.15,
+  "phase1_growth_auto_adjusted": false,
+  "recommended_g": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
@@ -356,6 +358,7 @@
     "rev_cagr_3yr": null,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
+    "recommended_g": null,
     "signals": [
       "業界平均Aerospace/Defense(10.9%)の1.4倍以内 ✅"
     ],

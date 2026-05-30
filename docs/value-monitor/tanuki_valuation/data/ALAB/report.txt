@@ -1,16 +1,16 @@
 ALAB INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T08:42:47+09:00
+Generated: 2026-05-30T12:06:18+09:00
 Price: $342.85
 
 [1. TANUKI SCORE]
-Classification: BUY
+Classification: TRIM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: +94.7%
-  MA200_Deviation: +98.1%
+  Deviation_Rate: -88.2%
+  MA200_Deviation: +97.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.89 (Buy)
-Comment: 割安圏(95%)で買い余地大、FCF黒字、売上成長加速
+Comment: 割高(-88%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,10 +28,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 右上
-Label: 割安×高効率
-Key_Metric_Y: RICE = 28.477
-Deviation_Rate: +94.7%
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 1.860
+Deviation_Rate: -88.2%
 Thresholds:
   RICE_Threshold: 2.0 (above=high efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,14 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $342.85
-Intrinsic_Value_BASE: $667.57
-Deviation_BASE: +94.7%
+Intrinsic_Value_BASE: $40.36
+Deviation_BASE: -88.2%
+Growth_Rate_Original: 93.4% (TTM実績)
+Growth_Rate_Adjusted: 6.1% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=65.4%, IV=$313.28, Deviation=-8.6%
-BASE: Growth=93.4%, IV=$667.57, Deviation=+94.7%
-BULL: Growth=112.1%, IV=$1,046.64, Deviation=+205.3%
+BEAR: Growth=4.3%, IV=$37.44 （推奨値ベース）
+BASE: Growth=6.1%, IV=$40.36 （推奨値ベース）
+BULL: Growth=7.3%, IV=$42.41 （推奨値ベース）
 TTM_Revenue_Growth: 93.4%
-(DCF Base vs TTM actual: +0.0pt premium)
+(DCF Base vs TTM actual: -87.3pt discount)
 WACC: 10.57% (β=sector default、個別検証推奨)
 Terminal_Growth_Rate: 3.0%
 Beta: 1.1
@@ -79,8 +81,8 @@ FCF_History:
   2024: $0.10B (FCF_Margin: 25.8%)
   2025: $0.28B (FCF_Margin: 33.1%)
 Segment_Breakdown:
-  General: $0.9B (100%, YoY 93%)
-  Segment_Weighted_Growth: 93.4% (TTM実績値を自動適用)
+  General: $0.9B (100%, YoY 6%)
+  Segment_Weighted_Growth: 6.1% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -109,6 +111,7 @@ Next_Earnings_Date: Next quarterly earnings release
 
 [4. 成長率根拠]
 Phase1成長率 : 93.4%
+推奨成長率(中央値): 6.1%
 判定         : REVIEW
 業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
 signals:
@@ -119,11 +122,11 @@ signals:
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=19.94
-BASE: RICE=28.477
-BULL: RICE=34.178
+BEAR: RICE=1.311
+BASE: RICE=1.86
+BULL: RICE=2.226
 Components (BASE scenario):
-G  = 93.4%  [TANUKI forward growth rate]
+G  = 6.1%  [TANUKI forward growth rate]
 Q  = 0.7322   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 4.1638  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
@@ -202,7 +205,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 233.2x
   PEG: N/A
   PS:  58.7x
-  EV_EBITDA: 251.6x
+  EV_EBITDA: 246.9x
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
 
