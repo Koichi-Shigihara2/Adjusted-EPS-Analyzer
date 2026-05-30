@@ -203,6 +203,21 @@ class KoichiValuationCalculator:
             )
             print(f"   [{ticker}] FCF外れ値: {fcf_outlier_result.rule} → {action_tag}（{transient_str}）")
 
+        # ── STEP 4b後: FCF外れ値除外後の base_fcf 再計算 ──
+        # action="excluded" のとき外れ値年（fcf_list[0]）を除いた残りで平均を再計算し上書き
+        _fcf_outlier_excl_avg: float | None = None
+        if fcf_outlier_result.action == "excluded" and len(fcf_list_raw) > 1:
+            _remaining = fcf_list_raw[1:]   # 外れ値は常に fcf_list[0]
+            _excl_avg = sum(_remaining) / len(_remaining)
+            if _excl_avg > 0:
+                _old_base_fcf = base_fcf
+                base_fcf = _excl_avg
+                _fcf_outlier_excl_avg = _excl_avg
+                print(
+                    f"   [{ticker}] FCF外れ値除外後再計算: {len(_remaining)}年平均"
+                    f" ${base_fcf/1e6:.0f}M ← 除外前${_old_base_fcf/1e6:.0f}M"
+                )
+
         # ── STEP 4c: FCF実力推定（調整済みEPS × FCF転換率）v7.2 ──
         _sector = ""
         try:
@@ -697,6 +712,7 @@ class KoichiValuationCalculator:
                 "fcf_2yr_avg": fcf_2yr_avg,
                 "fcf_base_used": base_fcf,
                 "fcf_base_method": fcf_base_result.method,
+                "fcf_outlier_excl_avg": _fcf_outlier_excl_avg,
                 "fcf_list_raw": fcf_list_raw,
                 "diluted_shares": diluted_shares,
                 "roe_10yr_avg": roe_avg,
