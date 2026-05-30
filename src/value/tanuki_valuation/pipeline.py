@@ -822,7 +822,23 @@ class TanukiValuationPipeline:
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
         L.append(f"Beta: {beta}")
-        L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
+        if not fcf_est.get("applied", True):
+            # raw_fcf フォールバック: 実際のFCFベース値を表示
+            _fcf_base_used = comps.get("fcf_base_used", 0)
+            _excl_avg      = comps.get("fcf_outlier_excl_avg")
+            _rd_applied    = valuation.get("rd_capitalization", {}).get("applied", False)
+            _fcf_list_len  = len(comps.get("fcf_list_raw") or [])
+            _desc_parts = []
+            if _excl_avg is not None:
+                _n_rem = _fcf_list_len - 1 if _fcf_list_len > 1 else 1
+                _desc_parts.append(f"外れ値除外後{_n_rem}yr平均")
+            else:
+                _desc_parts.append("直近2yr平均" if comps.get("fcf_base_method") == "recent_2yr" else "5yr平均")
+            if _rd_applied:
+                _desc_parts.append("R&D補正")
+            L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")
+        else:
+            L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
         L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
         L.append("Financial_Health:")
         net_debt = fin_health.get("net_debt")
@@ -997,7 +1013,7 @@ class TanukiValuationPipeline:
         L.append("RICE measures reinvestment efficiency and compounding power")
         L.append("G: Scenario-specific forward revenue growth rate")
         L.append("Q: Cash conversion quality")
-        L.append("Q = OCF / max(NetIncome + SBC, 1), 3-year average")
+        L.append("Q = OCF / (NetIncome + SBC), 3-year average (赤字年・利益ほぼゼロ年は除外)")
         L.append("SBC added back to denominator to normalize")
         L.append("for stock-based compensation distortion")
         L.append("CF: Capital efficiency of growth investment")
