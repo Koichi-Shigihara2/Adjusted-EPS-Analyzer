@@ -675,6 +675,73 @@ class TestHypecoreSubstageWatch:
 
 
 # ─────────────────────────────────────────────
+# 9b. GROWTH_PREMIUM 判定（DCF-2）
+#     逆DCF Required Growth が TTM 成長率を下回る場合に GROWTH_PREMIUM が返ることを検証
+# ─────────────────────────────────────────────
+
+class TestGrowthPremiumScore:
+    """_compute_tanuki_score の GROWTH_PREMIUM 判定を検証"""
+
+    def _make_pipe(self, tmp_path):
+        from pipeline import TanukiValuationPipeline  # type: ignore[import]
+        output_dir = tmp_path / "out" / "tanuki" / "data"
+        output_dir.mkdir(parents=True)
+        pipe = TanukiValuationPipeline(output_dir=str(output_dir), use_ai_validation=False)
+        pipe._eps_summary_cache = {}
+        return pipe
+
+    def _base_valuation(self, upside: float, ttm_growth: float, req_growth_factor: float = 0.5) -> dict:
+        """テスト用 valuation dict。req_growth が ttm_growth の req_growth_factor 倍になるよう設定"""
+        # price * shares = EV。fcf_base から逆算して required_growth = ttm_growth * factor になるよう調整
+        # required_fcf5 = EV*(wacc-tvg)/(1+tvg) = fcf_base * (1+req_g)^5
+        # EV = required_fcf5 / (wacc-tvg) * (1+tvg)
+        fcf_base = 1_000_000_000  # $1B
+        wacc, tvg = 0.10, 0.03
+        req_g = ttm_growth * req_growth_factor
+        required_fcf5 = fcf_base * (1 + req_g) ** 5
+        ev = required_fcf5 * (1 + tvg) / (wacc - tvg)
+        shares = 1_000_000_000  # 10億株
+        price = ev / shares
+        return {
+            "upside_percent": upside,
+            "components": {
+                "current_price": price,
+                "diluted_shares": shares,
+                "fcf_base_used": fcf_base,
+            },
+            "financial_health": {"net_debt": 0},
+            "wacc": {"value": wacc, "market_return": wacc},
+            "growth_sanity": {"phase1_growth": ttm_growth},
+        }
+
+    def test_growth_premium_when_required_growth_below_ttm(self, tmp_path):
+        """Required Growth < TTM 成長率 → GROWTH_PREMIUM"""
+        pipe = self._make_pipe(tmp_path)
+        # upside=-40%, stage=3, funda>=50 の状態でテストするため poc.json をモック不要
+        # _compute_tanuki_score を直接呼ぶかわりに _calc_required_growth をテスト
+        val = self._base_valuation(upside=-40.0, ttm_growth=0.80, req_growth_factor=0.5)
+        req = pipe._calc_required_growth(val)
+        assert req is not None
+        assert req < val["growth_sanity"]["phase1_growth"], \
+            "Required Growth が TTM を下回るはず（GROWTH_PREMIUM の条件）"
+
+    def test_trim_when_required_growth_exceeds_ttm(self, tmp_path):
+        """Required Growth > TTM 成長率 → TRIM（GROWTH_PREMIUM にならない）"""
+        pipe = self._make_pipe(tmp_path)
+        val = self._base_valuation(upside=-40.0, ttm_growth=0.20, req_growth_factor=2.0)
+        req = pipe._calc_required_growth(val)
+        assert req is not None
+        assert req > val["growth_sanity"]["phase1_growth"], \
+            "Required Growth が TTM を上回るはず（TRIM の条件）"
+
+    def test_required_growth_returns_none_without_price(self, tmp_path):
+        """株価データ不足のとき None を返す"""
+        pipe = self._make_pipe(tmp_path)
+        val = {"components": {"current_price": 0}, "financial_health": {}, "wacc": {}, "growth_sanity": {}}
+        assert pipe._calc_required_growth(val) is None
+
+
+# ─────────────────────────────────────────────
 # 9. _calc_q: GAAP赤字年スキップ（BUG-2b）
 #    NI<0 の年は SBC で earnings がプラスになっても Q 計算から除外されることを検証
 #    背景: MRVL TTM2025-02-01 で NI=-469M, SBC=+608M → earnings=139M

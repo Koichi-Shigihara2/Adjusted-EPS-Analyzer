@@ -223,6 +223,34 @@ class TanukiValuationPipeline:
         self._eps_summary_cache = result
         return result
 
+    @staticmethod
+    def _calc_required_growth(valuation: dict) -> float | None:
+        """
+        逆DCF: 現在株価を正当化する必要成長率（5年CAGR）を計算（DCF-2）
+
+        EV = FCF_5 / (WACC - tv_g) を解いて FCF_5 を求め、
+        必要CAGR = (FCF_5 / FCF_0)^(1/5) - 1 を返す。
+        データ不足や非正値の場合は None を返す。
+        """
+        comps        = valuation.get("components", {})
+        price        = comps.get("current_price") or 0
+        shares       = comps.get("diluted_shares") or comps.get("implied_shares") or 0
+        fcf_base     = comps.get("fcf_base_used") or 0
+        net_debt     = (valuation.get("financial_health", {}).get("net_debt") or 0)
+        wacc_data    = valuation.get("wacc", {})
+        wacc         = wacc_data.get("market_return", 0.10) if isinstance(wacc_data, dict) else 0.10
+        tv_g         = 0.03
+
+        if not (price > 0 and shares > 0 and fcf_base > 0 and wacc > tv_g):
+            return None
+        ev = price * shares + net_debt
+        if ev <= 0:
+            return None
+        required_fcf5 = ev * (wacc - tv_g) / (1 + tv_g)
+        if required_fcf5 <= 0:
+            return None
+        return (required_fcf5 / fcf_base) ** 0.2 - 1
+
     def _compute_tanuki_score(self, ticker: str, valuation: dict) -> dict:
         """TANUKI SCOREをパイプライン時に計算（JS classify/calcFundaのPython移植）"""
         upside   = valuation.get("upside_percent")
@@ -298,7 +326,16 @@ class TanukiValuationPipeline:
             score = "SELL"
         elif funda >= 50:
             if upside is not None and upside < -30 and stage is not None and stage >= 3:
-                score = "TRIM"
+                # DCF-2: 逆DCFの必要成長率が現在TTM成長率を下回る場合は GROWTH_PREMIUM
+                # （DCFが保守的でも現在の成長が市場の要求をすでに上回っている）
+                _ttm_g = valuation.get("growth_sanity", {}).get("phase1_growth")
+                _req_g = self._calc_required_growth(valuation)
+                if (_req_g is not None and _ttm_g is not None
+                        and _req_g > 0.05       # 意味のある Required Growth（TV超え）
+                        and _req_g < _ttm_g):   # 現在成長率がすでに Required Growth を超過
+                    score = "GROWTH_PREMIUM"
+                else:
+                    score = "TRIM"
             elif upside is not None and upside > 20:
                 score = "BUY"
             elif upside is not None and upside > 0:
@@ -314,6 +351,8 @@ class TanukiValuationPipeline:
     def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
         """スコアに基づくルールベースコメント（30字程度の日本語）"""
         parts = []
+        if score == "GROWTH_PREMIUM":
+            parts.append("成長率が市場要求を上回る")
         if upside is not None:
             if   upside >  30: parts.append(f"割安圏({upside:.0f}%)で買い余地大")
             elif upside >  10: parts.append(f"割安({upside:.0f}%)傾向")
@@ -402,7 +441,10 @@ class TanukiValuationPipeline:
         extra["recommended_g"] = _recommended_g
 
         # TANUKIスコアを先に計算してlatest.jsonとhistory.json両方に保存
+        # growth_sanity は後で latest_data に追加されるが、
+        # GROWTH_PREMIUM 判定（DCF-2）に必要なため事前に注入する
         valuation_enriched = {**valuation, **extra}
+        valuation_enriched["growth_sanity"] = _growth_sanity
         score_data = self._compute_tanuki_score(ticker, valuation_enriched)
 
         latest_data = {k: v for k, v in valuation.items() if k != "calculation_steps"}
@@ -765,7 +807,8 @@ class TanukiValuationPipeline:
         L.append("BUY: Funda>=50 AND upside>10% AND Timing>=50")
         L.append("WATCH: Funda>=50 AND upside 0-20%")
         L.append("HOLD: Funda good, within tolerance range")
-        L.append("TRIM: Funda good, overvalued(>-30%), post-euphoria")
+        L.append("TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM")
+        L.append("GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth")
         L.append("SELL: Funda deteriorating or long-term downtrend")
         L.append("PASS: Funda<25, excluded from consideration")
         L.append("")

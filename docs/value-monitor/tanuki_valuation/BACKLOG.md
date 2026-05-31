@@ -21,12 +21,18 @@
   maturity_config で three_stage DCF の銘柄（NVDA等）→ Phase2で成長減速を既に表現済み
   将来: segment_configured 銘柄への逓減対応は DCF-1b として別途検討
 
-### [DCF-2] 高成長銘柄向け判定カテゴリの追加
-- 現状: TRIM判定がDCF乖離率に過度に依存
-- 問題: DCFが保守的な高成長銘柄で自動的にTRIM判定になる
-- 改善: 逆DCF Required Growthが閾値超の場合
-  「GROWTH_PREMIUM」カテゴリを追加
-- GPT指摘: 2026-05-30
+### ✅ [DCF-2] 高成長銘柄向け GROWTH_PREMIUM カテゴリ追加（2026-05-31 完了）
+- 概要: 通常TRIM条件（upside<-30%・funda≥50・phase≥3）でも
+  逆DCF Required Growth < TTM成長率の場合は GROWTH_PREMIUM を返す
+  （現在の成長率が市場要求をすでに上回っているため、プレミアムに根拠あり）
+- 実装:
+  pipeline.py: _calc_required_growth() 追加（逆DCF・5年CAGR）
+  _compute_tanuki_score(): GROWTH_PREMIUM vs TRIM の分岐追加
+  valuation_enriched に growth_sanity を事前注入（タイミングバグ修正）
+- 実績: ALAB（RequiredG=75% < TTM=93%）→ GROWTH_PREMIUM
+        SITM（RequiredG=77% < TTM=88%）→ GROWTH_PREMIUM
+        LITE/PLTR（RequiredG > TTM）→ TRIM（従来通り）
+- テスト: 3件追加（計40件）
 
 ### [DCF-3] β個別推定の精緻化
 - 現状: セクターデフォルトβを使用する銘柄が多い
