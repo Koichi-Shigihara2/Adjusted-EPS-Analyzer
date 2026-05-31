@@ -510,6 +510,16 @@ class TanukiValuationPipeline:
         latest_data["growth_sanity"] = _growth_sanity
         latest_data["phase1_growth_original"] = _phase1_growth_original
         latest_data["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
+        # DESIGN-1: ERP を latest.json に保存（フロント参考表示用）
+        _comps_ld = latest_data.get("components", {})
+        _fwd_eps_ld = _comps_ld.get("forward_eps")
+        _cp_ld = _comps_ld.get("current_price") or 0
+        _wacc_ld = latest_data.get("wacc", {})
+        _rf_ld = _wacc_ld.get("risk_free_rate", 0.043) if isinstance(_wacc_ld, dict) else 0.043
+        if _fwd_eps_ld is not None and _cp_ld > 0:
+            _ey_ld = _fwd_eps_ld / _cp_ld
+            latest_data["erp"] = round(_ey_ld - _rf_ld, 4)
+            latest_data["forward_earnings_yield"] = round(_ey_ld, 4)
         _dil_pct = (latest_data.get("financial_health") or {}).get("dilution_3yr_annual_pct")
         _dil_sev, _dil_badge, _ = _dilution_severity_info(_dil_pct)
         if _dil_sev:
@@ -1271,6 +1281,32 @@ class TanukiValuationPipeline:
         L.append("Higher alpha in Phase1-2, lower in Phase3-4")
         L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
         L.append("and HypeCore phase")
+        # ── DESIGN-1: ERP（株式リスクプレミアム）参考表示 ──
+        # ERP = Forward Earnings Yield - Risk Free Rate
+        # 益利回り = ForwardEPS / 現在株価、Rf = WACC計算に使用した10年国債利回り
+        _fwd_eps_erp = comps.get("forward_eps")
+        _rf_erp = wacc_data.get("risk_free_rate", 0.043) if isinstance(wacc_data, dict) else 0.043
+        _erp = None
+        _ey = None
+        if _fwd_eps_erp is not None and isinstance(_fwd_eps_erp, (int, float)) and current_price > 0:
+            _ey = _fwd_eps_erp / current_price
+            _erp = _ey - _rf_erp
+        L.append("ERP (Equity Risk Premium, 参考表示):")
+        if _erp is not None:
+            L.append(f"  Forward_Earnings_Yield: {_ey*100:.2f}%  (ForwardEPS ${_fwd_eps_erp:.2f} / Price ${current_price:,.2f})")
+            L.append(f"  Risk_Free_Rate (10Y):  {_rf_erp*100:.2f}%")
+            L.append(f"  ERP: {_erp*100:.2f}%")
+            if _erp >= 0.04:
+                L.append("  ERP_Signal: 株式に明確な割安感（ERP≥4%）")
+            elif _erp >= 0.02:
+                L.append("  ERP_Signal: 株式の相対的魅力あり（ERP 2〜4%）")
+            elif _erp >= 0.0:
+                L.append("  ERP_Signal: 株式プレミアムは薄い（ERP 0〜2%）")
+            else:
+                L.append(f"  ERP_Signal: 株式に割高感（ERPがマイナス {_erp*100:.2f}%）")
+        else:
+            L.append("  N/A (ForwardEPS 未取得)")
+
         L.append("Valuation_Multiples: Market-provided values (yfinance),")
         L.append("NOT self-calculated. Distinct from TANUKI IV.")
         L.append("PER: Price / GAAP EPS (trailing)")
@@ -1280,6 +1316,11 @@ class TanukiValuationPipeline:
         L.append("PS: Price / Revenue (TTM)")
         L.append("High PS = market expects significant margin expansion")
         L.append("EV/EBITDA: Debt-adjusted valuation multiple")
+        L.append("ERP: Forward Earnings Yield - Risk Free Rate (10Y Treasury)")
+        L.append("ERP>2% = equities offer meaningful premium over bonds")
+        L.append("ERP<0% = bonds more attractive than stocks on yield basis")
+        L.append("Note: Uses ForwardEPS from yfinance (analyst consensus).")
+        L.append("High-growth / pre-profit stocks may show misleading ERP.")
         L.append("")
         L.append("")
         L.append(f"[{n+3}. STONKS SILO]")
