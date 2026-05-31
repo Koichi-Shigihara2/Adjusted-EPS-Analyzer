@@ -186,7 +186,7 @@ def detect_macro_surprises(events: pd.DataFrame, lookback_days: int = 60) -> lis
     for cat, inds in category_deteriorated.items():
         if len(inds) >= 2:
             alerts.append(
-                f"[複合{cat}サプライズ] {cat}系指標が同時悪化: {chr(32)+chr(47)+chr(32).join(inds)}"
+                f"[複合{cat}サプライズ] {cat}系指標が同時悪化: {' / '.join(inds)}"
             )
 
     return alerts
