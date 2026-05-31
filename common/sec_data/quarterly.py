@@ -91,6 +91,12 @@ _REVENUE_FALLBACKS = (
 
 # RD・SM・CapEx・SBC フォールバック概念（primaryと重複しない候補のみ）
 _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
+    "NetIncome": (
+        # AVGO: NetIncomeLossの四半期データが2019以前で途絶えているため ProfitLoss を使用
+        # BKNG/AVAV: NetIncomeLoss自体が未申告のため以下をフォールバック
+        "ProfitLoss",
+        "NetIncomeLossAvailableToCommonStockholdersBasic",
+    ),
     "CapEx": (
         # NVDAなど: PP&E以外の生産的資産支出も含む広義CapEx
         "PaymentsToAcquireProductiveAssets",
@@ -219,7 +225,10 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
         # ② Q件数が少ない（4件未満）場合もフォールバックを試みてより多い方を採用
         #    ※ SMはメインタグで少数取れていてもSGA等に乗り換えると意味が変わるため除外
         _FALLBACK_MIN = 4
-        _FALLBACK_MIN_FIELDS = {"Cash", "SBC", "CapEx", "GrossProfit"}
+        # NetIncome: quarterly数が少ない場合もフォールバックを試みる
+        #   AVGO等: NetIncomeLossの四半期データが5年窓外で q_count=0 になる場合に
+        #   ProfitLossへのフォールバックが必要（annualはあるため not processed=False）
+        _FALLBACK_MIN_FIELDS = {"Cash", "SBC", "CapEx", "GrossProfit", "NetIncome"}
         if field_name in _FIELD_FALLBACKS:
             q_count = sum(1 for e in processed if not e.get("is_annual"))
             use_min = field_name in _FALLBACK_MIN_FIELDS and q_count < _FALLBACK_MIN
