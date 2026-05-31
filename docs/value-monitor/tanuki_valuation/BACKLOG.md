@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-30（システム全体バックログ追記）
+最終更新: 2026-05-31（RICE-1完了）
 
 ---
 
@@ -47,11 +47,19 @@
   大幅乖離（>0.5）: 25銘柄更新
 - 設定ファイル: config/beta_config.json（_updated_at/source フィールド追加）
 
-### [RICE-1] RICEから成長率依存を減らす
+### ✅ [RICE-1] RICEから成長率依存を減らす（2026-05-31 完了）
 - 現状: RICE = (G × Q × CF) / WACC でGが支配的
 - 問題: 成長率が高い銘柄が機械的に高RICE評価になる
-- 改善: ダモドラン式 ROIC×Reinvestment Rate ベースへの再設計を検討
-- GPT指摘: 2026-05-30
+- 実装: 価値創造係数（VC_Factor）を導入
+  新式: RICE = (G × VC_Factor × Q × CF) / WACC
+  VC_Factor = clamp(ROIC / WACC_Rm, 0.3, 2.0)
+  ROIC = NOPAT / Invested_Capital（最新年次、実効税率21%固定）
+  ROIC > WACC（10%）: 再投資が価値創造 → G を最大2倍に増幅
+  ROIC < WACC: 再投資が価値毀損 → G を最小0.3倍にペナルティ
+  ROIC 不明（赤字企業等）: VC_Factor=1.0（後退互換）
+- 結果例: NVDA ROIC/WACC=6.6→cap2.0、MRVL ROIC/WACC=0.63（ペナルティ）
+- テスト: 5件追加（計45件）
+- 変更ファイル: calculator/rice.py, core_calculator.py, pipeline.py
 
 ---
 
