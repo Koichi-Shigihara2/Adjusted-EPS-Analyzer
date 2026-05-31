@@ -1,5 +1,5 @@
 CWAN INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:13+09:00
+Generated: 2026-05-31T11:41:03+09:00
 Price: $24.34
 
 [1. TANUKI SCORE]
@@ -28,12 +28,12 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 右上
-Label: 割安×高効率
-Key_Metric_Y: RICE = 3.863
+Quadrant: 右下
+Label: 割安×低効率
+Key_Metric_Y: RICE = 0.065
 Deviation_Rate: +63.7%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -148,15 +148,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=2.704
-BASE: RICE=3.863
-BULL: RICE=4.635
+BEAR: RICE=0.045
+BASE: RICE=0.065
+BULL: RICE=0.078
 Components (BASE scenario):
 G  = 48.0%  [TANUKI forward growth rate]
-Q  = 0.9804   [OCF / (NetIncome + SBC), 3yr avg]
+Q  = 0.0164   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.8208  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 9.7761  [R&D除外・CapExのみ投資強度]
-RICE_adj = 46.006  [参考：R&D資本化想定]
+RICE_adj = 0.770  [参考：R&D資本化想定]
 WACC = 10.0%
 SBC_Adjusted: true
 Definition:
@@ -173,7 +173,7 @@ InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
