@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1完了）
+最終更新: 2026-05-31（RICE-1・WACC-1完了）
 
 ---
 
@@ -81,10 +81,18 @@
 - 問題: 四半期サプライズ率が計算できない
 - 改善: 有料API検討 or yfinance の quarterly_earnings 活用
 
-### [WACC-1] ターミナル成長率の銘柄別設定
-- 現状: 全銘柄一律 tv_g = 3%
-- 問題: 業種・成長段階によって適切な永続成長率は異なる
-- 改善: セクター別 tv_g テーブルを設定（例：テック 3.5%、公益 2.0%）
+### ✅ [WACC-1] ターミナル成長率の銘柄別設定（2026-05-31 完了）
+- 変更: 全銘柄一律 3.0% → Damodaran 業種ベースのセクター別設定
+- テーブル:
+  テック・半導体・SaaS: 3.5%（デジタル経済の長期構造成長）
+  防衛・ヘルスケア・金融: 3.0%
+  消費者・飲食: 2.5%（成熟市場）
+  業種不明: 3.0%（デフォルト維持）
+- 実装:
+  maturity_config.py: _DAMODARAN_TV_G・_TICKER_TV_G テーブル追加
+  get_terminal_growth(): 直引き→業種→デフォルトの3段階フォールバック
+  pipeline.py: _calc_required_growth(tv_g) パラメータ化・GROWTH_PREMIUM判定に適用
+- テスト: 7件追加（計52件）
 
 ### ✅ [NET-1] financial_health.net_debt と bs_adjustment.net_cash の不整合（2026-05-31 完了）
 - 修正: pipeline.py _load_extra_data() で short_term_investments を net_debt に加算
