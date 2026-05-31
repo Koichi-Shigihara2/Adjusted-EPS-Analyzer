@@ -91,6 +91,25 @@
 
     .updated{font-family:var(--mono);font-size:11px;color:var(--mut);text-align:right;margin-top:16px}
 
+    /* テーマフィルター・バッジ・サマリー */
+    .theme-filter-bar{background:var(--sur);border:1px solid var(--bdr);padding:12px 16px;margin-bottom:16px}
+    .theme-badge{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;white-space:nowrap}
+    .theme-summary-card{background:var(--sur);border:1px solid var(--bdr);padding:14px 18px;margin-bottom:10px;border-radius:4px}
+
+    /* テーマカード */
+    .theme-card{background:var(--sur);border:1px solid var(--bdr);padding:18px;margin-bottom:12px}
+    .theme-name{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--txt);margin-bottom:10px}
+    .theme-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+
+    /* 候補カード拡張バッジ */
+    .cand-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
+    .cand-meta .cand-sector{margin-bottom:0}
+    .cand-catalyst{background:rgba(139,92,246,.12);color:var(--pur)}
+    .conv-高{background:rgba(16,185,129,.12);color:#10b981}
+    .conv-中{background:rgba(245,158,11,.12);color:#f59e0b}
+    .conv-低{background:rgba(100,116,139,.1);color:#64748b}
+    .screen-pass{background:rgba(16,185,129,.08);color:#10b981}
+
     @media(max-width:640px){.ticker-card-head{flex-wrap:wrap}.tc-summary{margin-left:0;width:100%}}
   </style>
   <link rel="stylesheet" href="../common/site-theme.css">
@@ -112,41 +131,242 @@
 </div>
 
 <script>
-const REPORT_PATH   = '/On-a-journey/discover/data/daily_report.json';
-const CONFIG_PATH   = '/On-a-journey/../config/discover_config.json';
-const TANUKI_BASE   = '/On-a-journey/value-monitor/tanuki_valuation/';
-const TS            = '?t=' + Date.now();
+const REPORT_PATH    = '/On-a-journey/discover/data/daily_report.json';
+const CONFIG_PATH    = '/On-a-journey/../config/discover_config.json';
+const TANUKI_BASE    = '/On-a-journey/value-monitor/tanuki_valuation/';
+const HYPE_BASE      = '/On-a-journey/value-monitor/hypecore/data/';
+const THEME_CFG_PATH = '/On-a-journey/config/theme_config.json';
+const TS             = '?t=' + Date.now();
 
 const CAT_ORDER = ['保有中', '監視中', '様子見'];
+
+let _catFilter   = '全て';
+let _themeFilter = '全テーマ';
+let _state       = null;
+
+function setFilter(type, val) {
+  if (type === 'cat') _catFilter = val;
+  else _themeFilter = val;
+  if (_state) renderTickerSection();
+}
+
+function buildNewsItem(item) {
+  const c = item.category || '一般';
+  const dateStr = item.published_at
+    ? `<span style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-left:auto;flex-shrink:0">${escHtml(item.published_at)}</span>`
+    : '';
+  const urlLink = (item.url && item.url.startsWith('http'))
+    ? ` <a href="${escHtml(item.url)}" target="_blank" rel="noopener" style="color:var(--mut);text-decoration:none;margin-left:4px">↗</a>`
+    : '';
+  return `<div class="news-item">
+    <div class="news-item-head">
+      <span class="news-cat cat-${c}">${c}</span>
+      <span class="news-imp imp-${item.importance} sm">${item.importance}</span>
+      <span class="news-title">${escHtml(item.title || '')}</span>
+      ${dateStr}
+    </div>
+    <div class="news-sum">${escHtml(item.summary || '')}${urlLink}</div>
+  </div>`;
+}
+
+function buildFilterBar(themeConfig) {
+  const cats = ['全て', '保有中', '監視中', '様子見'];
+  const FS = 'font-family:var(--mono);font-size:10px;padding:4px 10px;border:1px solid var(--bdr);background:var(--sur2);color:var(--mut);cursor:pointer;border-radius:2px;transition:all .15s';
+  const catBtns = cats.map(c =>
+    `<button id="cat-btn-${c}" onclick="setFilter('cat','${c}')" style="${FS}">${c}</button>`
+  ).join('');
+  let themeBtns = `<button id="theme-btn-全テーマ" onclick="setFilter('theme','全テーマ')" style="${FS}">全テーマ</button>`;
+  (themeConfig?.themes ?? []).forEach(t => {
+    themeBtns += `<button id="theme-btn-${escHtml(t.id)}" onclick="setFilter('theme','${escHtml(t.id)}')" style="${FS};color:${t.color}">${escHtml(t.label)}</button>`;
+  });
+  return `<div class="theme-filter-bar">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">区分:</span>${catBtns}
+    </div>
+    ${themeConfig ? `<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+      <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">テーマ:</span>${themeBtns}
+    </div>` : ''}
+  </div>`;
+}
+
+function updateFilterButtons() {
+  const s = _state;
+  ['全て', '保有中', '監視中', '様子見'].forEach(c => {
+    const btn = document.getElementById('cat-btn-' + c);
+    if (!btn) return;
+    const on = _catFilter === c;
+    btn.style.background  = on ? 'var(--acc)' : 'var(--sur2)';
+    btn.style.color       = on ? '#fff' : 'var(--mut)';
+    btn.style.borderColor = on ? 'var(--acc)' : 'var(--bdr)';
+  });
+  ['全テーマ', ...(s?.themeConfig?.themes ?? []).map(t => t.id)].forEach(id => {
+    const btn = document.getElementById('theme-btn-' + id);
+    if (!btn) return;
+    const on = _themeFilter === id;
+    const tm = s?.themeConfig?.themes?.find(t => t.id === id);
+    const col = tm ? tm.color : 'var(--acc)';
+    btn.style.background  = on ? col + '33' : 'var(--sur2)';
+    btn.style.borderColor = on ? col : 'var(--bdr)';
+    btn.style.color       = on && !tm ? 'var(--acc)' : (tm ? col : 'var(--mut)');
+  });
+}
+
+function renderTickerSection() {
+  const el = document.getElementById('ticker-section');
+  if (!el || !_state) return;
+  const { tickers, configTickers, themeConfig } = _state;
+  const themeMapById = {};
+  (themeConfig?.themes ?? []).forEach(t => { themeMapById[t.id] = t; });
+
+  const sorted = Object.entries(tickers)
+    .filter(([ticker, data]) => {
+      if (_catFilter !== '全て' && data.category !== _catFilter) return false;
+      if (_themeFilter !== '全テーマ') {
+        const th = configTickers[ticker]?.themes ?? [];
+        if (!th.includes(_themeFilter)) return false;
+      }
+      return true;
+    })
+    .sort(([, a], [, b]) => {
+      const ai = CAT_ORDER.indexOf(a.category);
+      const bi = CAT_ORDER.indexOf(b.category);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+
+  let html = '<div class="sec">銘柄別ニュース</div><div class="ticker-cards">';
+
+  for (const [ticker, data] of sorted) {
+    const cat  = data.category || '—';
+    const imp  = data.top_importance || '低';
+    const memo = configTickers[ticker]?.memo || data.memo || '';
+    const classified = data.classified || {};
+    const items = classified.items || [];
+    const summary = classified.summary || '';
+    const themes = configTickers[ticker]?.themes ?? [];
+    const cardId = 'card-' + ticker.replace(/[^A-Za-z0-9]/g, '-');
+    const lowId  = 'low-'  + ticker.replace(/[^A-Za-z0-9]/g, '-');
+    const highMedItems = items.filter(i => i.importance !== '低');
+    const lowItems_    = items.filter(i => i.importance === '低');
+    const allLow = items.length > 0 && highMedItems.length === 0;
+    const shouldCollapse = imp === '低' && (items.length === 0 || allLow);
+    const themeBadges = themes.map(id => {
+      const tm = themeMapById[id];
+      return tm ? `<span class="theme-badge" style="background:${tm.color}22;color:${tm.color}">${escHtml(tm.label)}</span>` : '';
+    }).join('');
+    html += `<div class="ticker-card" id="${cardId}"${shouldCollapse ? ' data-collapsed=""' : ''}>
+      <div class="ticker-card-head"${shouldCollapse ? ` onclick="toggleCard('${cardId}')"` : ''}>
+        <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
+        <span class="tc-cat cat-${cat}">${cat}</span>
+        ${themeBadges}
+        <span class="tc-imp imp-${imp}">${imp}</span>
+        <span class="tc-summary">${summary}</span>
+        ${shouldCollapse ? '<span class="card-toggle-icon">▶</span>' : ''}
+      </div>
+      <div class="ticker-card-body"${shouldCollapse ? ' style="display:none"' : ''}>`;
+    if (memo) html += `<div class="tc-memo">📝 ${memo}</div>`;
+    if (items.length > 0) {
+      html += '<div class="news-items">';
+      for (const item of highMedItems) html += buildNewsItem(item);
+      if (lowItems_.length > 0) {
+        html += `<button class="low-toggle" onclick="toggleLow(this,'${lowId}')">▼ 低重要度ニュースを表示（${lowItems_.length}件）</button>
+        <div class="low-items" id="${lowId}" style="display:none">`;
+        for (const item of lowItems_) html += buildNewsItem(item);
+        html += '</div>';
+      }
+      html += '</div>';
+    } else {
+      html += `<div class="no-news">直近24時間の重要ニュースなし</div>`;
+    }
+    html += '</div></div>';
+  }
+
+  if (sorted.length === 0) {
+    html += '<div class="no-news" style="padding:20px;text-align:center">表示する銘柄がありません</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+  updateFilterButtons();
+}
+
+function buildThemeSummarySection(themeConfig, configTickers, tickers, hypeMap) {
+  const themes = themeConfig?.themes ?? [];
+  if (!themes.length) return '';
+  let cards = '';
+  for (const theme of themes) {
+    const tklist = Object.entries(configTickers)
+      .filter(([, v]) => Array.isArray(v.themes) && v.themes.includes(theme.id))
+      .map(([tk]) => tk);
+    if (!tklist.length) continue;
+    const catCount = {}, phaseCount = {};
+    for (const tk of tklist) {
+      const cat = tickers[tk]?.category || '-';
+      catCount[cat] = (catCount[cat] || 0) + 1;
+      const hc = hypeMap[tk];
+      const sl = hc?.monthly?.[hc.monthly.length - 1]?.stage_label ?? '-';
+      phaseCount[sl] = (phaseCount[sl] || 0) + 1;
+    }
+    const catDisp   = Object.entries(catCount).map(([k, v]) => `${k}:${v}`).join(' / ') || '-';
+    const phaseDisp = Object.entries(phaseCount).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k}:${v}`).join(' / ') || '-';
+    cards += `<div class="theme-summary-card">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;flex-wrap:wrap">
+        <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:${theme.color}">${escHtml(theme.label)}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--mut)">${tklist.length}銘柄</span>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-left:auto">${tklist.join(', ')}</span>
+      </div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-bottom:3px">区分: ${catDisp}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--mut)">フェーズ: ${phaseDisp}</div>
+    </div>`;
+  }
+  return cards ? '<div class="sec">📊 テーマ別サマリー</div>' + cards : '';
+}
 
 async function loadData() {
   const app = document.getElementById('app');
   try {
-    const [reportRes, configRes] = await Promise.allSettled([
+    const [reportRes, configRes, themeCfgRes] = await Promise.allSettled([
       fetch(REPORT_PATH + TS).then(r => r.ok ? r.json() : null),
       fetch('/On-a-journey/config/discover_config.json' + TS).then(r => r.ok ? r.json() : null),
+      fetch(THEME_CFG_PATH + TS).then(r => r.ok ? r.json() : null),
     ]);
 
-    const report = reportRes.status === 'fulfilled' ? reportRes.value : null;
-    const config = configRes.status === 'fulfilled' ? configRes.value : null;
+    const report      = reportRes.status   === 'fulfilled' ? reportRes.value   : null;
+    const config      = configRes.status   === 'fulfilled' ? configRes.value   : null;
+    const themeConfig = themeCfgRes.status === 'fulfilled' ? themeCfgRes.value : null;
 
-    const tickers  = report?.tickers  || {};
-    const candidates = report?.candidates || [];
-    const configTickers = config?.tickers || {};
-    const generatedAt  = report?.generated_at || '';
+    const tickers       = report?.tickers    || {};
+    const candidates    = report?.candidates || [];
+    const configTickers = config?.tickers    || {};
+    const generatedAt   = report?.generated_at || '';
+    const macroThemes   = report?.macro_themes ?? [];
+
     if (generatedAt) {
       const lu = document.getElementById('last-updated');
       if (lu) lu.textContent = toJST(generatedAt);
     }
 
-    // 要注目（top_importance=高）
+    // Fetch _poc.json for all config tickers (parallel)
+    const allConfigTickers = Object.keys(configTickers);
+    const hypeResults = await Promise.allSettled(
+      allConfigTickers.map(async tk => {
+        try {
+          const r = await fetch(`${HYPE_BASE}${tk}_poc.json${TS}`);
+          if (r.ok) return [tk, await r.json()];
+        } catch (_) {}
+        return [tk, null];
+      })
+    );
+    const hypeMap = Object.fromEntries(
+      hypeResults.map(r => r.value ?? [null, null]).filter(([k]) => k)
+    );
+
+    _state = { tickers, configTickers, candidates, macroThemes, generatedAt, themeConfig, hypeMap };
+
     const highItems = Object.entries(tickers)
       .filter(([, v]) => v.top_importance === '高')
       .map(([t]) => t);
 
-    let html = '';
+    let html = buildFilterBar(themeConfig);
 
-    // ── 要注目バナー ──
     if (highItems.length > 0) {
       html += `<div class="alert-banner">
         <div class="alert-banner-title">🔴 要注目銘柄 — 重要ニュースあり</div>
@@ -154,102 +374,25 @@ async function loadData() {
       </div>`;
     }
 
-    // ── 銘柄別ニュース ──
-    html += '<div class="sec">銘柄別ニュース</div>';
-    html += '<div class="ticker-cards">';
-
-    // 区分順でソート
-    const sorted = Object.entries(tickers).sort(([, a], [, b]) => {
-      const ai = CAT_ORDER.indexOf(a.category);
-      const bi = CAT_ORDER.indexOf(b.category);
-      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
-    });
-
-    for (const [ticker, data] of sorted) {
-      const cat  = data.category || '—';
-      const imp  = data.top_importance || '低';
-      const memo = configTickers[ticker]?.memo || data.memo || '';
-      const classified = data.classified || {};
-      const items = classified.items || [];
-      const summary = classified.summary || '';
-
-      const cardId = 'card-' + ticker.replace(/[^A-Za-z0-9]/g, '-');
-      const lowId  = 'low-'  + ticker.replace(/[^A-Za-z0-9]/g, '-');
-
-      const highMedItems = items.filter(i => i.importance !== '低');
-      const lowItems     = items.filter(i => i.importance === '低');
-      const allLow = items.length > 0 && highMedItems.length === 0;
-      const shouldCollapse = imp === '低' && (items.length === 0 || allLow);
-
-      html += `<div class="ticker-card" id="${cardId}"${shouldCollapse ? ' data-collapsed=""' : ''}>
-        <div class="ticker-card-head"${shouldCollapse ? ` onclick="toggleCard('${cardId}')"` : ''}>
-          <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
-          <span class="tc-cat cat-${cat}">${cat}</span>
-          <span class="tc-imp imp-${imp}">${imp}</span>
-          <span class="tc-summary">${summary}</span>
-          ${shouldCollapse ? '<span class="card-toggle-icon">▶</span>' : ''}
-        </div>
-        <div class="ticker-card-body"${shouldCollapse ? ' style="display:none"' : ''}>`;
-
-      if (memo) {
-        html += `<div class="tc-memo">📝 ${memo}</div>`;
-      }
-
-      if (items.length > 0) {
-        html += '<div class="news-items">';
-
-        for (const item of highMedItems) {
-          const c = item.category || '一般';
-          html += `<div class="news-item">
-            <div class="news-item-head">
-              <span class="news-cat cat-${c}">${c}</span>
-              <span class="news-imp imp-${item.importance} sm">${item.importance}</span>
-              <span class="news-title">${escHtml(item.title || '')}</span>
-            </div>
-            <div class="news-sum">${escHtml(item.summary || '')}</div>
-          </div>`;
-        }
-
-        if (lowItems.length > 0) {
-          html += `<button class="low-toggle" onclick="toggleLow(this,'${lowId}')">▼ 低重要度ニュースを表示（${lowItems.length}件）</button>
-          <div class="low-items" id="${lowId}" style="display:none">`;
-          for (const item of lowItems) {
-            const c = item.category || '一般';
-            html += `<div class="news-item">
-              <div class="news-item-head">
-                <span class="news-cat cat-${c}">${c}</span>
-                <span class="news-imp imp-${item.importance} sm">${item.importance}</span>
-                <span class="news-title">${escHtml(item.title || '')}</span>
-              </div>
-              <div class="news-sum">${escHtml(item.summary || '')}</div>
-            </div>`;
-          }
-          html += '</div>';
-        }
-
-        html += '</div>';
-      } else {
-        html += `<div class="no-news">直近24時間の重要ニュースなし</div>`;
-      }
-
-      html += '</div></div>';
-    }
-
-    if (sorted.length === 0) {
-      html += '<div class="no-news" style="padding:20px;text-align:center">データなし — 次回更新をお待ちください</div>';
-    }
-
-    html += '</div>';
+    html += '<div id="ticker-section"></div>';
 
     // ── 新規候補 ──
     html += '<div class="sec">新規候補 — Grok発見</div>';
     if (candidates.length > 0) {
       html += '<div class="cand-grid">';
       for (const c of candidates) {
+        const catalystBadge = c.catalyst_type ? `<span class="news-cat cand-catalyst">${escHtml(c.catalyst_type)}</span>` : '';
+        const convBadge = c.conviction ? `<span class="news-cat conv-${escHtml(c.conviction)}">確信度: ${escHtml(c.conviction)}</span>` : '';
+        const passBadges = Array.isArray(c.screening_pass) && c.screening_pass.length > 0
+          ? c.screening_pass.map(p => `<span class="news-cat screen-pass">${escHtml(p)}</span>`).join('') : '';
         html += `<div class="cand-card">
           <div class="cand-ticker">${escHtml(c.ticker || '?')}</div>
           <div class="cand-company">${escHtml(c.company || '')}</div>
-          <span class="cand-sector">${escHtml(c.sector || '')}</span>
+          <div class="cand-meta">
+            <span class="cand-sector">${escHtml(c.sector || '')}</span>
+            ${catalystBadge}${convBadge}
+          </div>
+          ${passBadges ? `<div class="cand-meta">${passBadges}</div>` : ''}
           <div class="cand-reason">${escHtml(c.reason || '')}</div>
           ${c.risk ? `<div class="cand-risk">⚠️ ${escHtml(c.risk)}</div>` : ''}
         </div>`;
@@ -259,7 +402,34 @@ async function loadData() {
       html += '<div style="font-family:var(--mono);font-size:12px;color:var(--mut);padding:10px 0">候補データなし</div>';
     }
 
-    // 更新日時
+    // 🔭 特大テーマ候補
+    if (macroThemes.length > 0) {
+      const genDate = macroThemes[0]?.generated_at ?? '';
+      html += `<div class="sec">🔭 特大テーマ候補
+        <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">※ Grokの見解（参考）</span>
+        ${genDate ? `<span style="font-family:var(--mono);font-size:10px;color:var(--mut)">生成日: ${escHtml(genDate)}</span>` : ''}
+      </div>`;
+      for (const t of macroThemes) {
+        const tkBadges = Array.isArray(t.related_tickers) && t.related_tickers.length > 0
+          ? t.related_tickers.map(tk => `<span class="news-cat" style="color:var(--acc);background:rgba(6,182,212,.12)">${escHtml(tk)}</span>`).join('') : '';
+        html += `<div class="theme-card">
+          <div class="theme-name">${escHtml(t.theme || '')}</div>
+          <div class="theme-meta">
+            <span class="news-cat" style="color:var(--mut);background:var(--sur2)">時間軸: ${escHtml(t.horizon || '')}</span>
+            ${t.conviction ? `<span class="news-cat conv-${escHtml(t.conviction)}">確信度: ${escHtml(t.conviction)}</span>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--txt);line-height:1.65;margin-bottom:10px">${escHtml(t.background || '')}</div>
+          ${tkBadges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">関連銘柄:</span>${tkBadges}</div>` : ''}
+          ${t.catalyst ? `<div style="font-size:12px;color:var(--mut)">📍 ${escHtml(t.catalyst)}</div>` : ''}
+        </div>`;
+      }
+    }
+
+    // 📊 テーマ別サマリー
+    if (themeConfig) {
+      html += buildThemeSummarySection(themeConfig, configTickers, tickers, hypeMap);
+    }
+
     if (generatedAt) {
       const dt = new Date(generatedAt);
       const label = dt.toLocaleString('ja-JP', {timeZone:'Asia/Tokyo', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
@@ -267,6 +437,7 @@ async function loadData() {
     }
 
     app.innerHTML = html;
+    renderTickerSection();
 
   } catch (e) {
     app.innerHTML = `<div class="loading" style="color:var(--red)">エラー: ${e.message}</div>`;
