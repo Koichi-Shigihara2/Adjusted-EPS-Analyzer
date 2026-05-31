@@ -60,11 +60,6 @@ class DeficitQuality:
     mature_profit_note: str = ""              # 投資除外後も赤字の場合に注記
     revenue_outlier_years: list[int] = field(default_factory=list)  # 外れ値除去された年
 
-    # DESIGN-11: ユニットエコノミクス改善評価
-    gross_margin_trend: dict = field(default_factory=dict)        # {year: gross_margin%}（複数年）
-    loss_per_revenue_trend: dict = field(default_factory=dict)    # {year: |NI|/Revenue%}（赤字のみ）
-    unit_economics_score: Optional[float] = None                  # 0-100（高いほど黒字化の質が良い）
-    unit_economics_label: str = "不明"                            # 評価ラベル
 
 
 @dataclass
@@ -281,77 +276,6 @@ class StonksAnalyzer:
         else:
             dilution_risk = "LOW"
 
-        # ── DESIGN-11: ユニットエコノミクス改善評価 ──
-        # グロスマージン複数年トレンド
-        gm_trend: dict[int, Optional[float]] = {}
-        for yr in years:
-            yr_pl = records[yr]["pl"]
-            yr_rev = yr_pl.get("revenue_sanitized") or yr_pl.get("revenue")
-            yr_gp = yr_pl.get("gross_profit")
-            if yr_rev and yr_rev > 0 and yr_gp is not None:
-                gm_trend[yr] = round(yr_gp / yr_rev * 100, 1)
-            else:
-                gm_trend[yr] = None
-
-        # Loss per Revenue トレンド（赤字年のみ：|純損失| / 売上）
-        lpr_trend: dict[int, Optional[float]] = {}
-        for yr in years:
-            yr_pl = records[yr]["pl"]
-            yr_rev = yr_pl.get("revenue_sanitized") or yr_pl.get("revenue")
-            yr_ni = yr_pl.get("net_income")
-            if yr_rev and yr_rev > 0 and yr_ni is not None and yr_ni < 0:
-                lpr_trend[yr] = round(abs(yr_ni) / yr_rev * 100, 1)
-            else:
-                lpr_trend[yr] = None
-
-        # ユニットエコノミクス改善スコア (0-100)
-        _ue_score = 0.0
-
-        # GM水準スコア (20pt)
-        if gross_margin is not None:
-            if gross_margin >= 80:    _ue_score += 20
-            elif gross_margin >= 60:  _ue_score += 15
-            elif gross_margin >= 40:  _ue_score += 10
-            elif gross_margin >= 20:  _ue_score += 5
-
-        # GMトレンドスコア (20pt): 直近2年の改善方向
-        _gm_vals = [(yr, v) for yr, v in gm_trend.items() if v is not None]
-        if len(_gm_vals) >= 2:
-            _gm_delta = _gm_vals[-1][1] - _gm_vals[-2][1]
-            if _gm_delta > 3:    _ue_score += 20    # 3pt超改善
-            elif _gm_delta > 0:  _ue_score += 12    # 小幅改善
-            elif _gm_delta > -3: _ue_score += 6     # ほぼ横ばい
-            # それ以下 (悪化) は加点なし
-        elif len(_gm_vals) == 1:
-            _ue_score += 8  # データ1年のみ: 中立扱い
-
-        # Loss/Revenue 水準スコア (30pt): 損失比率が低いほど良い
-        _lpr_latest = lpr_trend.get(latest_year)
-        if _lpr_latest is not None:
-            if _lpr_latest <= 10:    _ue_score += 30   # 損失/売上 10%以下
-            elif _lpr_latest <= 30:  _ue_score += 20   # 30%以下
-            elif _lpr_latest <= 60:  _ue_score += 10   # 60%以下
-            # それ以上 (60%超) は加点なし
-        elif net_income is not None and net_income >= 0:
-            _ue_score += 30  # 既に黒字 → 満点
-
-        # Loss/Revenue トレンドスコア (30pt): 改善しているほど良い
-        _lpr_vals = [(yr, v) for yr, v in lpr_trend.items() if v is not None]
-        if len(_lpr_vals) >= 2:
-            _lpr_delta = _lpr_vals[-2][1] - _lpr_vals[-1][1]  # 前年-最新（減少=改善）
-            if _lpr_delta > 15:   _ue_score += 30   # 15pt超改善（急速な損失圧縮）
-            elif _lpr_delta > 5:  _ue_score += 20   # 5〜15pt改善
-            elif _lpr_delta > 0:  _ue_score += 10   # 小幅改善
-            # 悪化 or 横ばいは加点なし
-        elif net_income is not None and net_income >= 0:
-            _ue_score += 30  # 既に黒字 → 満点
-
-        _ue_score = round(min(100.0, _ue_score), 1)
-        if _ue_score >= 75:    _ue_label = "★★★ 優秀（黒字化の質が高い）"
-        elif _ue_score >= 55:  _ue_label = "★★☆ 良好（着実な改善）"
-        elif _ue_score >= 35:  _ue_label = "★☆☆ 要注意（改善の兆しあり）"
-        else:                  _ue_label = "☆☆☆ 低調（改善が不明確）"
-
         return DeficitQuality(
             latest_year=latest_year,
             revenue=revenue,
@@ -373,10 +297,6 @@ class StonksAnalyzer:
             sbc_yoy_change=sbc_yoy_change,
             dilution_risk=dilution_risk,
             revenue_outlier_years=revenue_outlier_years,
-            gross_margin_trend=gm_trend,
-            loss_per_revenue_trend=lpr_trend,
-            unit_economics_score=_ue_score,
-            unit_economics_label=_ue_label,
         )
 
     def _deficit_verdict(
