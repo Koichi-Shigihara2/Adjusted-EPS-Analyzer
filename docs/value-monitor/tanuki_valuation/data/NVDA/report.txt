@@ -1,5 +1,5 @@
 NVDA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:19+09:00
+Generated: 2026-05-31T13:00:05+09:00
 Price: $211.14
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -33,7 +34,7 @@ Label: 割安×高効率
 Key_Metric_Y: RICE = 11.736
 Deviation_Rate: +125.1%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,9 +65,9 @@ BASE: Growth=32.5%, IV=$475.20, Deviation=+125.1%
 BULL: Growth=39.0%, IV=$598.03, Deviation=+183.2%
 TTM_Revenue_Growth: 73.2%
 (DCF Base vs TTM actual: -40.7pt discount)
-WACC: 10.29%
+WACC: 17.09%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.05
+Beta: 2.244
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
 RPO_PV: $170,800,744 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -122,15 +123,14 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 32.5%
-成長モデル: 逓減モデル（TTM32.5%と業界平均9.6%の中間値21.1%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（TTM32.5%と業界平均10.0%の中間値21.3%を採用（将来の成長減速を織り込んだ保守的推定））
 推奨成長率内訳:
-  最終推奨値:            21.1%
-判定         : REVIEW
-業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
+  最終推奨値:            21.3%
+判定         : PLAUSIBLE
+業界ベンチマーク: N/A
 signals:
   - 過去実績(3yr:100.0% / 5yr:66.9%)と整合 ✅
   - RR×ROIC(2.0%)：再投資より還元重視型、または期待値先行 ℹ️
-  - 業界平均Semiconductor(9.6%)の3.4倍超 ⚠️
 Definition:
 
 Growth Rate Methodology:
@@ -173,7 +173,7 @@ InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -233,7 +233,7 @@ Phase_History (recent 6 months):
 2026-05: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 32.4x
-  PEG: 0.66
+  PEG: 0.65
   PS:  20.2x
   EV_EBITDA: 30.6x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
