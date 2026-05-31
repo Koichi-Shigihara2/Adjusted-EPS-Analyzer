@@ -1,5 +1,5 @@
 HWM INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:28+09:00
+Generated: 2026-05-31T13:44:05+09:00
 Price: $258.25
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -29,11 +30,11 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低効率
+Label: 割高×N/A
 Key_Metric_Y: RICE = N/A
 Deviation_Rate: -62.8%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,9 +65,9 @@ BASE: Growth=0.0%, IV=$95.95, Deviation=-62.8%
 BULL: Growth=0.0%, IV=$0.00, Deviation=+0.0%
 TTM_Revenue_Growth: 19.1%
 (DCF Base vs TTM actual: -19.1pt discount)
-WACC: 10.57%
+WACC: 11.09%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.191
 Valuation_Gap_Analysis:
   DCF_IV:           $96 (保守的FCFベース・現在実力値)
   Market_Price:     $258
@@ -162,6 +163,8 @@ Q  = 1.2115   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 1.4264  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 3.2871  [R&D除外・CapExのみ投資強度]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 2.06  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -174,10 +177,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by

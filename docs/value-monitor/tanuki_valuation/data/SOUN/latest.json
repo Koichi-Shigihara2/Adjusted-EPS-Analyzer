@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 2553285127.9562645,
+  "intrinsic_value_pt": 1080550048.6865635,
   "intrinsic_value_per_share": 6.906932625145033,
-  "intrinsic_value_beta": 6.47,
-  "upside_percent_beta": -28.1,
+  "intrinsic_value_beta": 3.07,
+  "upside_percent_beta": -65.9,
   "intrinsic_value_rf": 38.37,
   "upside_percent_rf": 326.3,
-  "v0": 2553285127.9562645,
-  "v0_adjusted": 2553285127.9562645,
+  "v0": 1080550048.6865635,
+  "v0_adjusted": 1080550048.6865635,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 18.96
   },
   "upside_percent": -23.3,
-  "calculation_date": "2026-05-31T11:41:01+09:00",
+  "calculation_date": "2026-05-31T13:43:58+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.10456000000000001,
-    "beta": 1.08,
+    "value": 0.1855,
+    "beta": 2.5,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 2553285127.9562645,
-    "pv_high_growth": 491125097.4582031,
-    "pv_terminal": 2062160030.4980617,
+    "v0": 1080550048.6865635,
+    "pv_high_growth": 386266877.3180395,
+    "pv_terminal": 694283171.3685241,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 63888906.666666664,
-        "discount_factor": 1.10456,
-        "pv": 57841046.81200357
+        "discount_factor": 1.1855,
+        "pv": 53891949.95079432
       },
       {
         "year": 2,
         "fcf": 89444469.33333333,
-        "discount_factor": 1.2200527936,
-        "pv": 73311966.33664535
+        "discount_factor": 1.40541025,
+        "pv": 63642960.717935085
       },
       {
         "year": 3,
         "fcf": 125222257.06666665,
-        "discount_factor": 1.3476215136988159,
-        "pv": 92920939.44312984
+        "discount_factor": 1.666113851375,
+        "pv": 75158283.42902498
       },
       {
         "year": 4,
         "fcf": 175311159.8933333,
-        "discount_factor": 1.488528819171164,
-        "pv": 117774783.82376853
+        "discount_factor": 1.9751779708050625,
+        "pv": 88757146.18358073
       },
       {
         "year": 5,
         "fcf": 245435623.85066658,
-        "discount_factor": 1.644169392503701,
-        "pv": 149276361.04265583
+        "discount_factor": 2.3415734843894014,
+        "pv": 104816537.03670436
       }
     ],
     "terminal_fcf": 252798692.56618658,
-    "terminal_value": 3390540404.5894117,
+    "terminal_value": 1625715064.7343187,
     "v0_rm": 2740620711.153608
   },
   "fcf_base": {
@@ -240,19 +240,19 @@
     "current_price": 9.0,
     "latest_revenue": 168920000.0,
     "rpo": 64700000,
-    "beta": 1.08,
+    "beta": 2.5,
     "sector": "Technology",
     "industry": "Software - Application",
     "eps_data": {
       "ticker": "SOUN"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Software_Internet)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.4,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 491125097.4582031,
-    "pv_terminal": 2062160030.4980617,
+    "pv_high": 386266877.3180395,
+    "pv_terminal": 694283171.3685241,
     "roe_used": 0.0,
     "fcf_floor_applied": 102170400.0,
     "fcf_growth_floor": 0.15,
@@ -280,7 +280,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.49B + pv_terminal $2.06B = $2.55B (差異0.00%)"
+        "detail": "2段階: pv_high $0.39B + pv_terminal $0.69B = $1.08B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -327,7 +327,8 @@
   "financial_health": {
     "total_debt": 0,
     "cash_and_equivalents": 248490000,
-    "net_debt": -248490000,
+    "short_term_investments": 0.0,
+    "net_debt": -248490000.0,
     "sbc_ttm": 80620000,
     "dilution_3yr_annual_pct": 37.56,
     "shares_yr_now": 409456342,
@@ -350,22 +351,21 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.4,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.4428757012015927,
+  "recommended_g": 0.25,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.4,
-    "industry_benchmark": 0.4857514024031853,
-    "damodaran_industry": "Software (Internet)",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.7572705647837659,
     "rev_cagr_5yr": null,
     "g_fundamental": null,
-    "recommended_g_median": 0.6215109835934756,
-    "recommended_g": 0.4428757012015927,
+    "recommended_g_median": null,
+    "recommended_g": 0.25,
     "growth_model": "decay",
-    "growth_model_reason": "TTM40.0%と業界平均48.6%の中間値44.3%を採用（将来の成長減速を織り込んだ保守的推定）",
+    "growth_model_reason": "TTM40.0%と業界平均10.0%の中間値25.0%を採用（将来の成長減速を織り込んだ保守的推定）",
     "signals": [
-      "業界平均Software (Internet)(48.6%)の0.8倍以内 ✅",
       "過去実績(3yr:75.7% / 5yr:N/A)と整合 ✅"
     ],
     "warnings": []

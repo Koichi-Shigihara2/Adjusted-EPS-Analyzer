@@ -1,5 +1,5 @@
 AAPL INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T13:23:43+09:00
+Generated: 2026-05-31T13:43:35+09:00
 Price: $312.06
 
 [1. TANUKI SCORE]
@@ -31,7 +31,7 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.343
+Key_Metric_Y: RICE = 0.686
 Deviation_Rate: -27.5%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
@@ -153,16 +153,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.238
-BASE: RICE=0.343
-BULL: RICE=0.412
+BEAR: RICE=0.476
+BASE: RICE=0.686
+BULL: RICE=0.824
 Components (BASE scenario):
 G  = 7.5%  [TANUKI forward growth rate]
 Q  = 0.9941   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.4602  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 2.1174  [R&D除外・CapExのみ投資強度]
-RICE_adj = 1.579  [参考：R&D資本化想定]
+RICE_adj = 3.157  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 7.46  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -175,6 +177,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

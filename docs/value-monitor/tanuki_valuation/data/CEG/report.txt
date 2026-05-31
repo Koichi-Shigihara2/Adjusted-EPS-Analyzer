@@ -1,12 +1,12 @@
 CEG INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T12:46:51+09:00
+Generated: 2026-05-31T13:43:41+09:00
 Price: $287.75
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -2.5%
+  Deviation_Rate: -0.8%
   MA200_Deviation: -11.0%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.76 (Buy)
@@ -32,7 +32,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_10yr_avg = 19.8%
-Deviation_Rate: -2.5%
+Deviation_Rate: -0.8%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,19 +57,19 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $287.75
-Intrinsic_Value_BASE: $167.38
-Deviation_BASE: -41.8%
+Intrinsic_Value_BASE: $285.42
+Deviation_BASE: -0.8%
 Growth_Rate_Original: 63.8% (TTM実績)
-Growth_Rate_Adjusted: 36.5% (推奨値・逓減モデル)
+Growth_Rate_Adjusted: 36.9% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=25.5%, IV=$133.05 （推奨値ベース）
-BASE: Growth=36.5%, IV=$167.38 （推奨値ベース）
-BULL: Growth=43.7%, IV=$193.20 （推奨値ベース）
+BEAR: Growth=25.8%, IV=$187.54 （推奨値ベース）
+BASE: Growth=36.9%, IV=$285.42 （推奨値ベース）
+BULL: Growth=44.3%, IV=$370.04 （推奨値ベース）
 TTM_Revenue_Growth: 63.8%
-(DCF Base vs TTM actual: -27.3pt discount)
-WACC: 10.57% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: -26.9pt discount)
+WACC: 10.88%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.155
 FCF_Conversion_Rate: 0.45 (Industry: Utilities - Independent Power Producers)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -85,8 +85,8 @@ FCF_History:
   2024: $-5.03B (FCF_Margin: -21.3%)
   2025: $1.29B (FCF_Margin: 5.0%)
 Segment_Breakdown:
-  General: $25.5B (100%, YoY 36%)
-  Segment_Weighted_Growth: 36.5% (推奨値・中央値を自動適用)
+  General: $25.5B (100%, YoY 37%)
+  Segment_Weighted_Growth: 36.9% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -122,14 +122,13 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 63.8%
-成長モデル: 逓減モデル（TTM63.8%と業界平均9.1%の中間値36.5%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（TTM63.8%と業界平均10.0%の中間値36.9%を採用（将来の成長減速を織り込んだ保守的推定））
 推奨成長率内訳:
-  最終推奨値:            36.5%
-判定         : AGGRESSIVE
-業界ベンチマーク: Power / 9.1% (Damodaran 2025)
+  最終推奨値:            36.9%
+判定         : REVIEW
+業界ベンチマーク: N/A
 signals:
   - RR×ROIC(9.9%)：再投資より還元重視型、または期待値先行 ℹ️
-  - 業界平均Power(9.1%)の7.0倍超 ⚠️
   - 過去実績(3yr:1.5% / 5yr:N/A)の43.5倍超 ⚠️
 Definition:
 
@@ -168,6 +167,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

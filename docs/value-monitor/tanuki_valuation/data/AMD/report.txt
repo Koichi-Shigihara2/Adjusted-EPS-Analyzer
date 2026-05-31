@@ -1,5 +1,5 @@
 AMD INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:07+09:00
+Generated: 2026-05-31T13:43:37+09:00
 Price: $516.10
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -30,10 +31,10 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 1.485
+Key_Metric_Y: RICE = 0.714
 Deviation_Rate: -44.6%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,13 +65,13 @@ BASE: Growth=24.6%, IV=$285.69, Deviation=-44.6%
 BULL: Growth=29.5%, IV=$330.28, Deviation=-36.0%
 TTM_Revenue_Growth: 37.8%
 (DCF Base vs TTM actual: -13.2pt discount)
-WACC: 10.57%
+WACC: 17.97%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 2.399
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
 RPO_PV: $13,976,077 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-2.32B (negative=net cash)
+  Net_Debt: $-7.33B (negative=net cash)
   Total_Debt: $3.22B  Cash: $5.54B
   SBC_TTM: $1,638M
   Dilution_3yr_Annual: +1.36%/yr  許容範囲内 ✅
@@ -128,14 +129,13 @@ market-priced future potential.
 Phase1成長率 : 24.6%
 成長モデル: 中央値モデル（TTM28.8%のため中央値モデル適用）
 推奨成長率内訳:
-  中央値ベース:          11.6%
-  最終推奨値:            11.6%
-判定         : REVIEW
-業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
+  中央値ベース:          13.6%
+  最終推奨値:            13.6%
+判定         : PLAUSIBLE
+業界ベンチマーク: N/A
 signals:
   - 過去実績(3yr:13.6% / 5yr:28.8%)と整合 ✅
   - RR×ROIC(0.7%)：再投資より還元重視型、または期待値先行 ℹ️
-  - 業界平均Semiconductor(9.6%)の2.6倍超 ⚠️
 Definition:
 
 Growth Rate Methodology:
@@ -153,16 +153,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=1.038
-BASE: RICE=1.485
-BULL: RICE=1.781
+BEAR: RICE=0.499
+BASE: RICE=0.714
+BULL: RICE=0.856
 Components (BASE scenario):
 G  = 24.6%  [TANUKI forward growth rate]
 Q  = 0.9946   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.607  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 7.6074  [R&D除外・CapExのみ投資強度]
-RICE_adj = 18.613  [参考：R&D資本化想定]
+RICE_adj = 8.951  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 0.48  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 0.48  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -175,10 +177,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -238,7 +244,7 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 172.6x
-  PEG: 1.25
+  PEG: 1.24
   PS:  22.5x
   EV_EBITDA: 112.1x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）

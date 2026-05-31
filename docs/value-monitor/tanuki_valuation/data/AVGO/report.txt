@@ -1,5 +1,5 @@
 AVGO INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:52:07+09:00
+Generated: 2026-05-31T13:44:02+09:00
 Price: $446.77
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -30,7 +31,7 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 2.308
+Key_Metric_Y: RICE = 4.616
 Deviation_Rate: -42.3%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
@@ -64,9 +65,9 @@ BASE: Growth=17.9%, IV=$257.65, Deviation=-42.3%
 BULL: Growth=21.5%, IV=$295.07, Deviation=-34.0%
 TTM_Revenue_Growth: 29.5%
 (DCF Base vs TTM actual: -11.6pt discount)
-WACC: 11.14%
+WACC: 12.51%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.2
+Beta: 1.44
 FCF_Base: $24,660.20M (5yr平均 + R&D補正)
 RPO_PV: $6,089,153,580 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -149,16 +150,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=1.625
-BASE: RICE=2.308
-BULL: RICE=2.772
+BEAR: RICE=3.249
+BASE: RICE=4.616
+BULL: RICE=5.544
 Components (BASE scenario):
 G  = 17.9%  [TANUKI forward growth rate]
 Q  = 1.1193   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 1.152  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 9.6818  [R&D除外・CapExのみ投資強度]
-RICE_adj = 19.398  [参考：R&D資本化想定]
+RICE_adj = 38.795  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 2.95  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -171,6 +174,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

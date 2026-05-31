@@ -1,5 +1,5 @@
 ASTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T12:30:07+09:00
+Generated: 2026-05-31T13:43:38+09:00
 Price: $113.41
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -56,23 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $113.41
-Intrinsic_Value_BASE: $5.06
+Intrinsic_Value_BASE: $5.07
 Deviation_BASE: -95.5%
 Growth_Rate_Original: 15.0% (TTM実績)
-Growth_Rate_Adjusted: 13.4% (推奨値・逓減モデル)
+Growth_Rate_Adjusted: 12.5% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=9.4%, IV=$5.11 （推奨値ベース）
-BASE: Growth=13.4%, IV=$5.06 （推奨値ベース）
-BULL: Growth=16.1%, IV=$5.04 （推奨値ベース）
+BEAR: Growth=8.7%, IV=$5.12 （推奨値ベース）
+BASE: Growth=12.5%, IV=$5.07 （推奨値ベース）
+BULL: Growth=15.0%, IV=$5.03 （推奨値ベース）
 TTM_Revenue_Growth: 1511.8%
-(DCF Base vs TTM actual: -1498.4pt discount)
-WACC: 9.37% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: -1499.3pt discount)
+WACC: 18.55%
 Terminal_Growth_Rate: 3.0%
-Beta: 0.89
+Beta: 2.5
 FCF_Base: $-6.84M (5yr平均 + R&D補正)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.12B (negative=net cash)
+  Net_Debt: $-2.12B (negative=net cash)
   Total_Debt: $2.22B  Cash: $2.34B
   SBC_TTM: $47M
   Dilution_3yr_Annual: N/A
@@ -84,8 +85,8 @@ FCF_History:
   2024: $-0.30B (FCF_Margin: -6824.3%)
   2025: $-1.14B (FCF_Margin: -1602.2%)
 Segment_Breakdown:
-  General: $0.1B (100%, YoY 13%)
-  Segment_Weighted_Growth: 13.4% (推奨値・中央値を自動適用)
+  General: $0.1B (100%, YoY 12%)
+  Segment_Weighted_Growth: 12.5% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -121,13 +122,12 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 逓減モデル（TTM15.0%と業界平均11.9%の中間値13.4%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（TTM15.0%と業界平均10.0%の中間値12.5%を採用（将来の成長減速を織り込んだ保守的推定））
 推奨成長率内訳:
-  最終推奨値:            13.4%
+  最終推奨値:            12.5%
 判定         : PLAUSIBLE
-業界ベンチマーク: Telecom. Equipment / 11.9% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Telecom. Equipment(11.9%)の1.3倍以内 ✅
   - 過去実績(3yr:78.8% / 5yr:N/A)と整合 ✅
 Definition:
 
@@ -166,6 +166,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

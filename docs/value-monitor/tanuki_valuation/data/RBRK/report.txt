@@ -1,5 +1,5 @@
 RBRK INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:21+09:00
+Generated: 2026-05-31T13:43:55+09:00
 Price: $78.63
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -33,7 +34,7 @@ Label: 割安×高FCF
 Key_Metric_Y: FCF_Margin = 16.5%
 Deviation_Rate: +2.0%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,9 +65,9 @@ BASE: Growth=46.3%, IV=$80.17, Deviation=+2.0%
 BULL: Growth=55.6%, IV=$106.81, Deviation=+35.8%
 TTM_Revenue_Growth: 48.5%
 (DCF Base vs TTM actual: -2.2pt discount)
-WACC: 10.57% (β=sector default、個別検証推奨)
+WACC: 7.88%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 0.628
 FCF_Base: $217.67M (直近2yr平均)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -119,9 +120,9 @@ market-priced future potential.
 Phase1成長率 : 46.3%
 成長モデル: 中央値モデル（TTM46.3%のため中央値モデル適用）
 判定         : PLAUSIBLE
-業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Software (System & Application)(21.6%)の2.1倍 ℹ️
+  - ベンチマークデータ不足のため自動検証スキップ ℹ️
 Definition:
 
 Growth Rate Methodology:
@@ -159,10 +160,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by

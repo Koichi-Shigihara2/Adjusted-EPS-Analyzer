@@ -15,7 +15,7 @@
     "3年後": 1105.41
   },
   "upside_percent": 125.1,
-  "calculation_date": "2026-05-31T13:00:05+09:00",
+  "calculation_date": "2026-05-31T13:43:53+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -316,24 +316,26 @@
     "avg_intensity": 0.2714,
     "avg_rev_growth_lagged": 1.2103,
     "warnings": true,
-    "note": "SBC補正済み（純利益+SBCを分母に使用）",
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=6.60)",
+    "vc_factor": 2.0,
+    "roic_wacc_ratio": 6.596,
     "bear": {
       "growth_rate": 0.227,
-      "rice": 8.197,
-      "rice_per_ratio": 0.2531,
-      "rice_adj": 17.739
+      "rice": 16.394,
+      "rice_per_ratio": 0.5062,
+      "rice_adj": 35.479
     },
     "base": {
       "growth_rate": 0.325,
-      "rice": 11.736,
-      "rice_per_ratio": 0.3624,
-      "rice_adj": 25.398
+      "rice": 23.472,
+      "rice_per_ratio": 0.7248,
+      "rice_adj": 50.795
     },
     "bull": {
       "growth_rate": 0.39,
-      "rice": 14.083,
-      "rice_per_ratio": 0.4349,
-      "rice_adj": 30.477
+      "rice": 28.166,
+      "rice_per_ratio": 0.8698,
+      "rice_adj": 60.954
     }
   },
   "fcf_source": "ttm_series",
@@ -444,7 +446,8 @@
   "financial_health": {
     "total_debt": 9467000000,
     "cash_and_equivalents": 10605000000,
-    "net_debt": -1138000000,
+    "short_term_investments": 0.0,
+    "net_debt": -1138000000.0,
     "sbc_ttm": 6386000000,
     "dilution_3yr_annual_pct": -0.74,
     "shares_yr_now": 24514000000,

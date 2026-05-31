@@ -1,5 +1,5 @@
 JOBY INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:16+09:00
+Generated: 2026-05-31T13:43:49+09:00
 Price: $11.90
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -33,7 +34,7 @@ Label: 割高×高FCF
 Key_Metric_Y: FCF_Margin = 384.1%
 Deviation_Rate: -45.7%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,13 +65,13 @@ BASE: Growth=15.0%, IV=$6.46, Deviation=-45.7%
 BULL: Growth=18.0%, IV=$7.09, Deviation=-40.4%
 TTM_Revenue_Growth: 39183.1%
 (DCF Base vs TTM actual: -39168.1pt discount)
-WACC: 9.26% (β=sector default、個別検証推奨)
+WACC: 18.55%
 Terminal_Growth_Rate: 3.0%
-Beta: 0.87
+Beta: 2.5
 FCF_Base: $205.21M (5yr平均 + R&D補正)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.24B (negative=net cash)
+  Net_Debt: $-1.41B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.24B
   SBC_TTM: $128M
   Dilution_3yr_Annual: +12.16%/yr  高い希薄化 ⚠️ SBC・増資を確認
@@ -122,9 +123,9 @@ market-priced future potential.
 Phase1成長率 : 15.0%
 成長モデル: 中央値モデル（TTM15.0%のため中央値モデル適用）
 判定         : PLAUSIBLE
-業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Aerospace/Defense(10.9%)の1.4倍以内 ✅
+  - ベンチマークデータ不足のため自動検証スキップ ℹ️
 Definition:
 
 Growth Rate Methodology:
@@ -162,10 +163,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by

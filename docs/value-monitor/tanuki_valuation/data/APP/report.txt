@@ -1,5 +1,5 @@
 APP INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:07+09:00
+Generated: 2026-05-31T13:43:38+09:00
 Price: $613.09
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -33,7 +34,7 @@ Label: 割安×高FCF
 Key_Metric_Y: FCF_Margin = 48.0%
 Deviation_Rate: +30.2%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,9 +65,9 @@ BASE: Growth=34.3%, IV=$798.15, Deviation=+30.2%
 BULL: Growth=41.1%, IV=$966.77, Deviation=+57.7%
 TTM_Revenue_Growth: 59.0%
 (DCF Base vs TTM actual: -24.7pt discount)
-WACC: 11.03%
+WACC: 17.79%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.18
+Beta: 2.366
 FCF_Conversion_Rate: 0.7 (Industry: Advertising Agencies)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -168,10 +169,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -231,7 +236,7 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 53.2x
-  PEG: 1.56
+  PEG: 1.69
   PS:  33.4x
   EV_EBITDA: 42.5x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）

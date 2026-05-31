@@ -1,5 +1,5 @@
 ZS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:41:02+09:00
+Generated: 2026-05-31T13:44:00+09:00
 Price: $139.73
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -64,9 +65,9 @@ Scenarios:
 BEAR: Growth=24.4%, IV=$150.80 （推奨値ベース）
 BASE: Growth=34.8%, IV=$212.88 （推奨値ベース）
 BULL: Growth=41.8%, IV=$265.94 （推奨値ベース）
-WACC: 10.57% (β=sector default、個別検証推奨)
+WACC: 9.78%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 0.962
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -167,6 +168,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

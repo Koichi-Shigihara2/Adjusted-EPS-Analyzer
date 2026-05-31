@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 172016988.85903716,
+  "intrinsic_value_pt": 129197431.53524807,
   "intrinsic_value_per_share": 5.684481670378399,
-  "intrinsic_value_beta": 4.0,
-  "upside_percent_beta": -16.4,
+  "intrinsic_value_beta": 3.07,
+  "upside_percent_beta": -35.8,
   "intrinsic_value_rf": 31.61,
   "upside_percent_rf": 561.4,
-  "v0": 172016988.85903716,
-  "v0_adjusted": 172016988.85903716,
+  "v0": 129197431.53524807,
+  "v0_adjusted": 129197431.53524807,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 11.1
   },
   "upside_percent": 18.9,
-  "calculation_date": "2026-05-30T22:51:29+09:00",
+  "calculation_date": "2026-05-31T13:44:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.1285,
-    "beta": 1.5,
+    "value": 0.157171,
+    "beta": 2.003,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -77,43 +77,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 172016988.85903716,
-    "pv_high_growth": 48601725.84123047,
-    "pv_terminal": 123415263.01780668,
+    "v0": 129197431.53524807,
+    "pv_high_growth": 44876163.61777844,
+    "pv_terminal": 84321267.91746964,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 8847807.066666666,
-        "discount_factor": 1.1285,
-        "pv": 7840325.2695318265
+        "discount_factor": 1.157171,
+        "pv": 7646067.060673545
       },
       {
         "year": 2,
         "fcf": 11059758.833333332,
-        "discount_factor": 1.2735122500000002,
-        "pv": 8684454.219685229
+        "discount_factor": 1.3390447232409999,
+        "pv": 8259439.465594913
       },
       {
         "year": 3,
         "fcf": 13824698.541666664,
-        "discount_factor": 1.4371585741250001,
-        "pv": 9619466.34878736
+        "discount_factor": 1.549503721437511,
+        "pv": 8922016.99834652
       },
       {
         "year": 4,
         "fcf": 17280873.17708333,
-        "discount_factor": 1.621833450900063,
-        "pv": 10655146.598125119
+        "discount_factor": 1.793040770839566,
+        "pv": 9637746.925850328
       },
       {
         "year": 5,
         "fcf": 21601091.47135416,
-        "discount_factor": 1.830239049340721,
-        "pv": 11802333.40510093
+        "discount_factor": 2.0748547818331913,
+        "pv": 10410893.167313136
       }
     ],
     "terminal_fcf": 22249124.215494785,
-    "terminal_value": 225879433.65984553,
+    "terminal_value": 174954385.94879952,
     "v0_rm": 250142614.5661692
   },
   "fcf_base": {
@@ -241,19 +241,19 @@
     "current_price": 4.78,
     "latest_revenue": 16170404.0,
     "rpo": 0.0,
-    "beta": 1.5,
+    "beta": 2.003,
     "sector": "Technology",
     "industry": "Electronic Components",
     "eps_data": {
       "ticker": "KULR"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Aerospace_Defense)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.25,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 48601725.84123047,
-    "pv_terminal": 123415263.01780668,
+    "pv_high": 44876163.61777844,
+    "pv_terminal": 84321267.91746964,
     "roe_used": 0.0,
     "fcf_floor_applied": 23917583.52,
     "fcf_growth_floor": 0.15,
@@ -272,7 +272,7 @@
     "forward_eps": 0.0
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -281,7 +281,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.05B + pv_terminal $0.12B = $0.17B (差異0.00%)"
+        "detail": "2段階: pv_high $0.04B + pv_terminal $0.08B = $0.13B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -328,7 +328,8 @@
   "financial_health": {
     "total_debt": 494796,
     "cash_and_equivalents": 13300188,
-    "net_debt": -12805392,
+    "short_term_investments": 0.0,
+    "net_debt": -12805392.0,
     "sbc_ttm": 6522581,
     "dilution_3yr_annual_pct": -27.82,
     "shares_yr_now": 39727205,

@@ -637,6 +637,7 @@ class KoichiValuationCalculator:
                 _current_per = financials.get("per") or financials.get("current_per") or 0.0
                 _sc_val = scenario_result.to_dict() if scenario_result else None
                 _rice_sector = financials.get("rice_sector") or sector or ""
+                _roic_wacc_ratio = financials.get("roic_wacc_ratio")
                 rice_result = calculate_rice(
                     annual_data=_rice_data,
                     wacc=_rm,  # v7.3: RICEもRmβなし基準に統一
@@ -644,11 +645,13 @@ class KoichiValuationCalculator:
                     current_per=_current_per,
                     sector=_rice_sector,
                     industry=industry or "",
+                    roic_wacc_ratio=_roic_wacc_ratio,  # RICE-1
                 )
                 if rice_result.available:
                     _base_rice = rice_result.base.rice if rice_result.base else 0.0
+                    _vc_info = f"  vc={rice_result.vc_factor:.2f}" if rice_result.vc_factor is not None else ""
                     print(f"   [{ticker}] RICE: Q={rice_result.q:.2f}  "
-                          f"CF={rice_result.cf_conversion:.2f}  base={_base_rice:.1f}")
+                          f"CF={rice_result.cf_conversion:.2f}  base={_base_rice:.1f}{_vc_info}")
                 else:
                     print(f"   [{ticker}] RICE: 計算不可 ({rice_result.note})")
         except Exception as _rice_e:

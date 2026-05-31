@@ -1,16 +1,16 @@
 RDW INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T12:49:05+09:00
+Generated: 2026-05-31T13:43:56+09:00
 Price: $24.57
 
 [1. TANUKI SCORE]
 Classification: PASS
 Funda_Score: 5/100
 Timing_Score (components):
-  Deviation_Rate: -58.1%
+  Deviation_Rate: -58.7%
   MA200_Deviation: +163.9%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.50 (Strong Buy)
-Comment: 割高(-58%超)、FCFマイナス（投資フェーズ）、売上成長加速
+Comment: 割高(-59%超)、FCFマイナス（投資フェーズ）、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 12.3%
-Deviation_Rate: -58.1%
+Deviation_Rate: -58.7%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,23 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $24.57
-Intrinsic_Value_BASE: $6.80
-Deviation_BASE: -72.3%
+Intrinsic_Value_BASE: $10.14
+Deviation_BASE: -58.7%
 Growth_Rate_Original: 58.0% (TTM実績)
-Growth_Rate_Adjusted: 34.4% (推奨値・逓減モデル)
+Growth_Rate_Adjusted: 34.0% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=24.1%, IV=$5.58 （推奨値ベース）
-BASE: Growth=34.4%, IV=$6.80 （推奨値ベース）
-BULL: Growth=41.3%, IV=$7.71 （推奨値ベース）
+BEAR: Growth=23.8%, IV=$7.02 （推奨値ベース）
+BASE: Growth=34.0%, IV=$10.14 （推奨値ベース）
+BULL: Growth=40.8%, IV=$12.80 （推奨値ベース）
 TTM_Revenue_Growth: 10.3%
-(DCF Base vs TTM actual: +24.1pt premium)
-WACC: 9.26% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: +23.7pt premium)
+WACC: 18.11%
 Terminal_Growth_Rate: 3.0%
-Beta: 0.87
+Beta: 2.422
 Valuation_Gap_Analysis:
-  DCF_IV:           $7 (保守的FCFベース・現在実力値)
+  DCF_IV:           $10 (保守的FCFベース・現在実力値)
   Market_Price:     $25
-  Gap:              -58% (市場が将来成長を先取り)
+  Gap:              -59% (市場が将来成長を先取り)
   Implied_FCF_2030: $0.33B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.04B
   Required_Growth:  52%/yr (現在FCFから必要成長率を逆算)
@@ -94,7 +94,7 @@ FCF_History:
   2025: $-0.19B (FCF_Margin: -56.7%)
 Segment_Breakdown:
   General: $0.3B (100%, YoY 34%)
-  Segment_Weighted_Growth: 34.4% (推奨値・中央値を自動適用)
+  Segment_Weighted_Growth: 34.0% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -130,13 +130,12 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 58.0%
-成長モデル: 逓減モデル（TTM58.0%と業界平均10.9%の中間値34.4%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（TTM58.0%と業界平均10.0%の中間値34.0%を採用（将来の成長減速を織り込んだ保守的推定））
 推奨成長率内訳:
-  最終推奨値:            34.4%
-判定         : AGGRESSIVE
-業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
+  最終推奨値:            34.0%
+判定         : REVIEW
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Aerospace/Defense(10.9%)の5.3倍超 ⚠️
   - 過去実績(3yr:27.8% / 5yr:N/A)の2.1倍超 ⚠️
 Definition:
 
@@ -175,6 +174,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 5562144299.695298,
+  "intrinsic_value_pt": 2105083975.561626,
   "intrinsic_value_per_share": 6.459446806198073,
-  "intrinsic_value_beta": 7.09,
-  "upside_percent_beta": -40.5,
+  "intrinsic_value_beta": 3.57,
+  "upside_percent_beta": -70.0,
   "intrinsic_value_rf": 29.78,
   "upside_percent_rf": 150.2,
-  "v0": 5562144299.695298,
-  "v0_adjusted": 5562144299.695298,
+  "v0": 2105083975.561626,
+  "v0_adjusted": 2105083975.561626,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 9.82
   },
   "upside_percent": -45.7,
-  "calculation_date": "2026-05-30T22:51:16+09:00",
+  "calculation_date": "2026-05-31T13:43:49+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.09259,
-    "beta": 0.87,
+    "value": 0.1855,
+    "beta": 2.5,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 5562144299.695298,
-    "pv_high_growth": 1199596104.787845,
-    "pv_terminal": 4362548194.907454,
+    "v0": 2105083975.561626,
+    "pv_high_growth": 937486597.9882458,
+    "pv_terminal": 1167597377.57338,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 235994949.99999997,
-        "discount_factor": 1.09259,
-        "pv": 215995890.4987232
+        "discount_factor": 1.1855,
+        "pv": 199067861.66174608
       },
       {
         "year": 2,
         "fcf": 271394192.49999994,
-        "discount_factor": 1.1937529080999998,
-        "pv": 227345366.58172938
+        "discount_factor": 1.40541025,
+        "pv": 193106740.54070684
       },
       {
         "year": 3,
         "fcf": 312103321.3749999,
-        "discount_factor": 1.3042824898609788,
-        "pv": 239291199.41514084
+        "discount_factor": 1.666113851375,
+        "pv": 187324126.20988008
       },
       {
         "year": 4,
         "fcf": 358918819.58124983,
-        "discount_factor": 1.4250460055972067,
-        "pv": 251864724.487147
+        "discount_factor": 1.9751779708050625,
+        "pv": 181714673.25294143
       },
       {
         "year": 5,
         "fcf": 412756642.51843727,
-        "discount_factor": 1.556991015255452,
-        "pv": 265098923.80510443
+        "discount_factor": 2.3415734843894014,
+        "pv": 176273196.32297143
       }
     ],
     "terminal_fcf": 425139341.7939904,
-    "terminal_value": 6792448343.089796,
+    "terminal_value": 2734015059.768427,
     "v0_rm": 4945872678.790964
   },
   "fcf_base": {
@@ -240,19 +240,19 @@
     "current_price": 11.9,
     "latest_revenue": 53425000.0,
     "rpo": 0.0,
-    "beta": 0.87,
+    "beta": 2.5,
     "sector": "Industrials",
     "industry": "Airports & Air Services",
     "eps_data": {
       "ticker": "JOBY"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Aerospace_Defense)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1199596104.787845,
-    "pv_terminal": 4362548194.907454,
+    "pv_high": 937486597.9882458,
+    "pv_terminal": 1167597377.57338,
     "roe_used": 0.0,
     "fcf_floor_applied": 440130800.0,
     "fcf_growth_floor": 0.15,
@@ -271,7 +271,7 @@
     "forward_eps": -0.595
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -280,7 +280,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.20B + pv_terminal $4.36B = $5.56B (差異0.00%)"
+        "detail": "2段階: pv_high $0.94B + pv_terminal $1.17B = $2.11B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -327,7 +327,8 @@
   "financial_health": {
     "total_debt": 0,
     "cash_and_equivalents": 240810000,
-    "net_debt": -240810000,
+    "short_term_investments": 1167106000.0,
+    "net_debt": -1407916000.0,
     "sbc_ttm": 127887000,
     "dilution_3yr_annual_pct": 12.16,
     "shares_yr_now": 826240955,
@@ -354,8 +355,8 @@
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
-    "industry_benchmark": 0.10875156954339793,
-    "damodaran_industry": "Aerospace/Defense",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": null,
     "rev_cagr_5yr": null,
@@ -365,7 +366,7 @@
     "growth_model": "median",
     "growth_model_reason": "TTM15.0%のため中央値モデル適用",
     "signals": [
-      "業界平均Aerospace/Defense(10.9%)の1.4倍以内 ✅"
+      "ベンチマークデータ不足のため自動検証スキップ ℹ️"
     ],
     "warnings": []
   },

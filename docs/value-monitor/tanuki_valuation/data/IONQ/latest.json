@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 4246899572.2890005,
+  "intrinsic_value_pt": 2308719278.50241,
   "intrinsic_value_per_share": 20.94052233505502,
-  "intrinsic_value_beta": 17.79,
-  "upside_percent_beta": -75.3,
+  "intrinsic_value_beta": 12.59,
+  "upside_percent_beta": -82.5,
   "intrinsic_value_rf": 88.34,
   "upside_percent_rf": 22.6,
-  "v0": 4246899572.2890005,
-  "v0_adjusted": 4246899572.2890005,
+  "v0": 2308719278.50241,
+  "v0_adjusted": 2308719278.50241,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 31.85
   },
   "upside_percent": -70.9,
-  "calculation_date": "2026-05-30T22:51:15+09:00",
+  "calculation_date": "2026-05-31T13:43:48+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.11824000000000001,
-    "beta": 1.32,
+    "value": 0.1855,
+    "beta": 2.5,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 4246899572.2890005,
-    "pv_high_growth": 1224914011.732715,
-    "pv_terminal": 3021985560.556286,
+    "v0": 2308719278.50241,
+    "pv_high_growth": 1028174366.0775586,
+    "pv_terminal": 1280544912.4248512,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 258823921.99999997,
-        "discount_factor": 1.1182400000000001,
-        "pv": 231456504.86478746
+        "discount_factor": 1.1855,
+        "pv": 218324691.6912695
       },
       {
         "year": 2,
         "fcf": 297647510.29999995,
-        "discount_factor": 1.2504606976000003,
-        "pv": 238030280.25692654
+        "discount_factor": 1.40541025,
+        "pv": 211786921.50565997
       },
       {
         "year": 3,
         "fcf": 342294636.8449999,
-        "discount_factor": 1.3983151704842245,
-        "pv": 244790762.53350398
+        "discount_factor": 1.666113851375,
+        "pv": 205444925.96500123
       },
       {
         "year": 4,
         "fcf": 393638832.3717499,
-        "discount_factor": 1.5636519562422793,
-        "pv": 251743254.50129625
+        "discount_factor": 1.9751779708050625,
+        "pv": 199292842.56410915
       },
       {
         "year": 5,
         "fcf": 452684657.2275123,
-        "discount_factor": 1.7485381635483666,
-        "pv": 258893209.57620066
+        "discount_factor": 2.3415734843894014,
+        "pv": 193324984.35151878
       }
     ],
     "terminal_fcf": 466265196.94433767,
-    "terminal_value": 5284057082.324769,
+    "terminal_value": 2998490012.5037794,
     "v0_rm": 5424311683.098827
   },
   "fcf_base": {
@@ -258,19 +258,19 @@
     "current_price": 72.07,
     "latest_revenue": 130016000.0,
     "rpo": 470000000,
-    "beta": 1.32,
+    "beta": 2.5,
     "sector": "Technology",
     "industry": "Computer Hardware",
     "eps_data": {
       "ticker": "IONQ"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Computers_Peripherals)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1224914011.732715,
-    "pv_terminal": 3021985560.556286,
+    "pv_high": 1028174366.0775586,
+    "pv_terminal": 1280544912.4248512,
     "roe_used": 0.0,
     "fcf_floor_applied": 173249480.0,
     "fcf_growth_floor": 0.15,
@@ -289,7 +289,7 @@
     "forward_eps": -1.04241
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -298,7 +298,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.22B + pv_terminal $3.02B = $4.25B (差異0.00%)"
+        "detail": "2段階: pv_high $1.03B + pv_terminal $1.28B = $2.31B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -345,7 +345,8 @@
   "financial_health": {
     "total_debt": 0,
     "cash_and_equivalents": 1030865000,
-    "net_debt": -1030865000,
+    "short_term_investments": 1361291000.0,
+    "net_debt": -2392156000.0,
     "sbc_ttm": 312032000,
     "dilution_3yr_annual_pct": 12.34,
     "shares_yr_now": 280345046,
@@ -372,8 +373,8 @@
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.15,
-    "industry_benchmark": 0.09564794907580026,
-    "damodaran_industry": "Computers/Peripherals",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": -0.527817434288189,
     "rev_cagr_5yr": null,
@@ -383,7 +384,7 @@
     "growth_model": "median",
     "growth_model_reason": "TTM15.0%のため中央値モデル適用",
     "signals": [
-      "業界平均Computers/Peripherals(9.6%)の1.6倍 ℹ️"
+      "ベンチマークデータ不足のため自動検証スキップ ℹ️"
     ],
     "warnings": []
   },

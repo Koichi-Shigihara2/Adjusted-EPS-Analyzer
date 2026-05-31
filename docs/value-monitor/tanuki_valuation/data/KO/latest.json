@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 356257738919.13196,
+  "intrinsic_value_pt": 506189455209.4897,
   "intrinsic_value_per_share": 57.685557673493705,
-  "intrinsic_value_beta": 84.84,
-  "upside_percent_beta": 7.4,
+  "intrinsic_value_beta": 119.69,
+  "upside_percent_beta": 51.5,
   "intrinsic_value_rf": 304.35,
   "upside_percent_rf": 285.2,
-  "v0": 222661086824.45746,
-  "v0_adjusted": 222661086824.45746,
+  "v0": 316368409505.931,
+  "v0_adjusted": 316368409505.931,
   "alpha": 0.6,
   "alpha_was_capped": true,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 66.78
   },
   "upside_percent": -27.0,
-  "calculation_date": "2026-05-30T22:51:16+09:00",
+  "calculation_date": "2026-05-31T13:43:49+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.07719999999999999,
-    "beta": 0.6,
+    "value": 0.063292,
+    "beta": 0.356,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 222661086824.45746,
-    "pv_high_growth": 43285001182.23176,
-    "pv_terminal": 179376085642.2257,
+    "v0": 316368409505.931,
+    "pv_high_growth": 44983529744.64766,
+    "pv_terminal": 271384879761.28336,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 9808302327.71855,
-        "discount_factor": 1.0772,
-        "pv": 9105367923.98677
+        "discount_factor": 1.063292,
+        "pv": 9224467340.785551
       },
       {
         "year": 2,
         "fcf": 10298717444.104477,
-        "discount_factor": 1.16035984,
-        "pv": 8875451466.938461
+        "discount_factor": 1.1305898772639997,
+        "pv": 9109154124.948584
       },
       {
         "year": 3,
         "fcf": 10813653316.309702,
-        "discount_factor": 1.2499396196479997,
-        "pv": 8651340549.8379
+        "discount_factor": 1.2021471717757928,
+        "pv": 8995282416.491438
       },
       {
         "year": 4,
         "fcf": 11354335982.125187,
-        "discount_factor": 1.3464349582848252,
-        "pv": 8432888579.028774
+        "discount_factor": 1.2782334705718261,
+        "pv": 8882834195.41952
       },
       {
         "year": 5,
         "fcf": 11922052781.231447,
-        "discount_factor": 1.4503797370644138,
-        "pv": 8219952662.439857
+        "discount_factor": 1.359135423391258,
+        "pv": 8771791667.00257
       }
     ],
     "terminal_fcf": 12279714364.66839,
-    "terminal_value": 260163439929.4151,
+    "terminal_value": 368848803456.3375,
     "v0_rm": 149635061039.20728
   },
   "fcf_base": {
@@ -236,24 +236,24 @@
       8909000000
     ],
     "diluted_shares": 4302482418,
-    "roe_10yr_avg": 0.3675234999062005,
+    "roe_10yr_avg": 0.3675234999062004,
     "current_price": 79.01,
     "latest_revenue": 47941000000.0,
     "rpo": 0.0,
-    "beta": 0.6,
+    "beta": 0.356,
     "sector": "Consumer Defensive",
     "industry": "Beverages - Non-Alcoholic",
     "eps_data": {
       "ticker": "KO"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Consumer_Beverage)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.05,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 43285001182.23176,
-    "pv_terminal": 179376085642.2257,
-    "roe_used": 0.3675234999062005,
+    "pv_high": 44983529744.64766,
+    "pv_terminal": 271384879761.28336,
+    "roe_used": 0.3675234999062004,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -261,17 +261,17 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.543598699606042,
+    "alpha_uncapped": 1.5435986996060416,
     "per": 24.845913,
     "per_adjusted": 25.54,
-    "peg": 4.12,
+    "peg": 4.05,
     "ps": 6.8975554,
     "ev_ebitda": 22.307,
     "ma200": 72.96175,
     "forward_eps": 3.48363
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -280,7 +280,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $43.29B + pv_terminal $179.38B = $222.66B (差異0.00%)"
+        "detail": "2段階: pv_high $44.98B + pv_terminal $271.38B = $316.37B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -327,7 +327,8 @@
   "financial_health": {
     "total_debt": 1495000000,
     "cash_and_equivalents": 10270000000,
-    "net_debt": -8775000000,
+    "short_term_investments": 0.0,
+    "net_debt": -8775000000.0,
     "sbc_ttm": 279000000,
     "dilution_3yr_annual_pct": -0.28,
     "shares_yr_now": 4313000000,
@@ -348,22 +349,21 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.05,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.06142891185648054,
+  "recommended_g": 0.045396255450115414,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.05,
-    "industry_benchmark": 0.09849495993717726,
-    "damodaran_industry": "Beverage (Soft)",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.03689014114187783,
     "rev_cagr_5yr": 0.07746156826284567,
     "g_fundamental": 0.045396255450115414,
-    "recommended_g_median": 0.06142891185648054,
-    "recommended_g": 0.06142891185648054,
+    "recommended_g_median": 0.045396255450115414,
+    "recommended_g": 0.045396255450115414,
     "growth_model": "median",
     "growth_model_reason": "TTM7.7%のため中央値モデル適用",
     "signals": [
-      "業界平均Beverage (Soft)(9.8%)の0.5倍以内 ✅",
       "過去実績(3yr:3.7% / 5yr:7.7%)と整合 ✅",
       "RR×ROIC上限(4.5%)以内 ✅"
     ],

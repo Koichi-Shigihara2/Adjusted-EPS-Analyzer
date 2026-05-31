@@ -1,16 +1,16 @@
 IOT INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:41:04+09:00
+Generated: 2026-05-31T13:43:48+09:00
 Price: $34.99
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -43.3%
+  Deviation_Rate: -43.7%
   MA200_Deviation: +2.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.59 (Buy)
-Comment: 割高(-43%超)、FCF黒字、売上成長加速
+Comment: 割高(-44%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -30,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.899
-Deviation_Rate: -43.3%
+Key_Metric_Y: RICE = 0.893
+Deviation_Rate: -43.7%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,19 +57,17 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $34.99
-Intrinsic_Value_BASE: $19.85
-Deviation_BASE: -43.3%
-Growth_Rate_Original: 28.3% (TTM実績)
-Growth_Rate_Adjusted: 28.5% (推奨値・中央値ベース)
+Intrinsic_Value_BASE: $19.71
+Deviation_BASE: -43.7%
 Scenarios:
-BEAR: Growth=19.9%, IV=$14.59 （推奨値ベース）
-BASE: Growth=28.5%, IV=$19.85 （推奨値ベース）
-BULL: Growth=34.2%, IV=$24.19 （推奨値ベース）
+BEAR: Growth=19.8%, IV=$14.51, Deviation=-58.5%
+BASE: Growth=28.3%, IV=$19.71, Deviation=-43.7%
+BULL: Growth=34.0%, IV=$24.00, Deviation=-31.4%
 TTM_Revenue_Growth: 29.6%
-(DCF Base vs TTM actual: -1.1pt discount)
-WACC: 10.57% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: -1.3pt discount)
+WACC: 11.62%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.284
 FCF_Base: $280.01M (直近2yr平均 + R&D補正)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -85,7 +84,7 @@ FCF_History:
   2026: $0.21B (FCF_Margin: 12.8%)
 Segment_Breakdown:
   General: $1.6B (100%, YoY 28%)
-  Segment_Weighted_Growth: 28.5% (推奨値・中央値を自動適用)
+  Segment_Weighted_Growth: 28.3% (TTM実績値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -122,13 +121,9 @@ market-priced future potential.
 [4. 成長率根拠]
 Phase1成長率 : 28.3%
 成長モデル: 中央値モデル（TTM35.4%のため中央値モデル適用）
-推奨成長率内訳:
-  中央値ベース:          28.5%
-  最終推奨値:            28.5%
 判定         : PLAUSIBLE
-業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Software (System & Application)(21.6%)の1.3倍以内 ✅
   - 過去実績(3yr:35.4% / 5yr:N/A)と整合 ✅
 Definition:
 
@@ -147,15 +142,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.628
-BASE: RICE=0.899
-BULL: RICE=1.079
+BEAR: RICE=0.625
+BASE: RICE=0.893
+BULL: RICE=1.073
 Components (BASE scenario):
-G  = 28.5%  [TANUKI forward growth rate]
+G  = 28.3%  [TANUKI forward growth rate]
 Q  = 0.72   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.4383  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 20.519  [参考：R&D資本化想定]
+RICE_adj = 20.375  [参考：R&D資本化想定]
 WACC = 10.0%
 SBC_Adjusted: true
 Definition:
@@ -169,6 +164,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

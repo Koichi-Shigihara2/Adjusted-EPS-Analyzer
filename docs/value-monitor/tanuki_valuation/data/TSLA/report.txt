@@ -1,5 +1,5 @@
 TSLA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:24+09:00
+Generated: 2026-05-31T13:43:59+09:00
 Price: $435.79
 
 [1. TANUKI SCORE]
@@ -21,19 +21,20 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ②収益性系
 Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.260
+Label: 割高×低ROE
+Key_Metric_Y: ROE_10yr_avg = 14.7%
 Deviation_Rate: -83.2%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,20 +65,20 @@ BASE: Growth=12.6%, IV=$73.02, Deviation=-83.2%
 BULL: Growth=15.1%, IV=$78.45, Deviation=-82.0%
 TTM_Revenue_Growth: 15.8%
 (DCF Base vs TTM actual: -3.2pt discount)
-WACC: 11.43%
+WACC: 14.52%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.25
+Beta: 1.793
 Valuation_Gap_Analysis:
   DCF_IV:           $73 (保守的FCFベース・現在実力値)
   Market_Price:     $436
   Gap:              -83% (市場が将来成長を先取り)
-  Implied_FCF_2030: $110.66B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $108.79B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $6.89B
   Required_Growth:  74%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Auto Manufacturers)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-8.36B (negative=net cash)
+  Net_Debt: $-35.91B (negative=net cash)
   Total_Debt: $8.15B  Cash: $16.51B
   SBC_TTM: $2,825M
   Dilution_3yr_Annual: +0.51%/yr  許容範囲内 ✅
@@ -134,9 +135,8 @@ Phase1成長率 : 12.6%
   中央値ベース:          5.2%
   最終推奨値:            5.2%
 判定         : PLAUSIBLE
-業界ベンチマーク: Auto & Truck / -0.9% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均(Auto & Truck)はマイナス成長。個別銘柄の独自評価が必要 ℹ️
   - 過去実績(3yr:5.2% / 5yr:24.6%)と整合 ✅
   - RR×ROIC(4.7%)：再投資より還元重視型、または期待値先行 ℹ️
 Definition:
@@ -154,19 +154,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.181
-BASE: RICE=0.26
-BULL: RICE=0.311
+Available: false
+Exclusion_Reason: セクター除外（Consumer Cyclical）: 投資強度の定義が成立しないため計算対象外
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 12.6%  [TANUKI forward growth rate]
-Q  = 1.6928   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.1217  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 0.2381  [R&D除外・CapExのみ投資強度]
-RICE_adj = 0.508  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -178,10 +176,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -241,7 +243,7 @@ Phase_History (recent 6 months):
 2026-05: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 399.8x
-  PEG: 6.09
+  PEG: 6.00
   PS:  16.7x
   EV_EBITDA: 145.0x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）

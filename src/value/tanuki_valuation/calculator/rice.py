@@ -70,6 +70,10 @@ class RICEResult:
     # CF_adj（R&D除外・CapExのみ投資強度）
     cf_adj: float = 0.0         # CF_adj = RevGrowth / (CapEx/Revenue) のみ
 
+    # RICE-1: 価値創造係数（Damodaran式 ROIC/WACC）
+    vc_factor: Optional[float] = None  # clamp(ROIC/WACC, 0.3, 2.0)。None=未適用
+    roic_wacc_ratio: Optional[float] = None  # 元のROIC/WACC比（参照用）
+
     # シナリオ別RICE
     bear: Optional[RICEScenario] = None
     base: Optional[RICEScenario] = None
@@ -93,6 +97,10 @@ class RICEResult:
             "warnings": self.note != "",   # 警告ありフラグ（フロントで表示判定用）
             "note": self.note,
         }
+        if self.vc_factor is not None:
+            d["vc_factor"] = round(self.vc_factor, 3)
+        if self.roic_wacc_ratio is not None:
+            d["roic_wacc_ratio"] = round(self.roic_wacc_ratio, 3)
         if self.bear:
             d["bear"] = self.bear.to_dict()
         if self.base:
@@ -325,6 +333,7 @@ def calculate_rice(
     cf_years: int = 3,
     sector: str = "",
     industry: str = "",
+    roic_wacc_ratio: Optional[float] = None,
 ) -> RICEResult:
     """
     RICE計算メイン関数
@@ -403,6 +412,15 @@ def calculate_rice(
             note="CF計算不可（Revenue/CapExデータなし）"
         )
 
+    # ── RICE-1: 価値創造係数（Damodaran式 ROIC/WACC）──
+    # ROIC > WACC: 再投資が価値を創造 → G に正の倍率（上限2.0）
+    # ROIC < WACC: 再投資が価値を毀損 → G を割引（下限0.3）
+    # roic_wacc_ratio=None: 従来通り（後退互換）
+    if roic_wacc_ratio is not None:
+        vc_factor = max(0.3, min(roic_wacc_ratio, 2.0))
+    else:
+        vc_factor = 1.0
+
     # ── シナリオ別RICE計算 ──
     scenarios: Dict[str, Optional[RICEScenario]] = {
         "bear": None, "base": None, "bull": None
@@ -417,9 +435,9 @@ def calculate_rice(
             if g is None:
                 continue
 
-            rice_val = (g * q * cf) / wacc
+            rice_val = (g * vc_factor * q * cf) / wacc
             ratio = rice_val / current_per if current_per > 0 else 0.0
-            rice_adj_val = (g * q * cf_adj) / wacc if cf_adj > 0 and wacc > 0 else 0.0
+            rice_adj_val = (g * vc_factor * q * cf_adj) / wacc if cf_adj > 0 and wacc > 0 else 0.0
             scenarios[sc_name] = RICEScenario(
                 growth_rate=g,
                 rice=rice_val,
@@ -435,6 +453,8 @@ def calculate_rice(
         note_parts.append(f"Q: {q_used}年のみ使用（{q_years}年要求）")
     if cf_used < cf_years:
         note_parts.append(f"CF: {cf_used}点のみ使用（{cf_years}点要求）")
+    if roic_wacc_ratio is not None:
+        note_parts.append(f"RICE-1価値創造係数={vc_factor:.2f}(ROIC/WACC={roic_wacc_ratio:.2f})")
     note_parts.extend(cf_warnings)
     note = " / ".join(note_parts) if note_parts else ""
 
@@ -447,6 +467,8 @@ def calculate_rice(
         cf_years=cf_used,
         avg_intensity=avg_intensity,
         avg_rev_growth=avg_rev_growth,
+        vc_factor=vc_factor if roic_wacc_ratio is not None else None,
+        roic_wacc_ratio=roic_wacc_ratio,
         bear=scenarios["bear"],
         base=scenarios["base"],
         bull=scenarios["bull"],

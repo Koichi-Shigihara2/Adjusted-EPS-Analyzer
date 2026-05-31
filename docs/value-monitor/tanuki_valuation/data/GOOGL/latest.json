@@ -1,13 +1,13 @@
 {
-  "intrinsic_value_pt": 3651598068038.2188,
-  "intrinsic_value_per_share": 375.06916902857193,
+  "intrinsic_value_pt": 3651598068038.2183,
+  "intrinsic_value_per_share": 375.0691690285718,
   "intrinsic_value_beta": 307.65,
   "upside_percent_beta": -19.1,
   "intrinsic_value_rf": 2040.92,
   "upside_percent_rf": 436.6,
   "v0": 1859493727606.1707,
   "v0_adjusted": 1859493727606.1707,
-  "alpha": 0.9116297263806581,
+  "alpha": 0.911629726380658,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 427.02,
@@ -15,7 +15,7 @@
     "3年後": 553.49
   },
   "upside_percent": -1.4,
-  "calculation_date": "2026-05-30T22:51:14+09:00",
+  "calculation_date": "2026-05-31T13:43:46+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -216,24 +216,26 @@
     "avg_intensity": 0.3576,
     "avg_rev_growth_lagged": 0.148,
     "warnings": true,
-    "note": "SBC補正済み（純利益+SBCを分母に使用）",
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=2.34)",
+    "vc_factor": 2.0,
+    "roic_wacc_ratio": 2.34,
     "bear": {
       "growth_rate": 0.097,
-      "rice": 0.399,
-      "rice_per_ratio": 0.0138,
-      "rice_adj": 1.131
+      "rice": 0.799,
+      "rice_per_ratio": 0.0276,
+      "rice_adj": 2.263
     },
     "base": {
       "growth_rate": 0.139,
-      "rice": 0.572,
-      "rice_per_ratio": 0.0197,
-      "rice_adj": 1.621
+      "rice": 1.145,
+      "rice_per_ratio": 0.0395,
+      "rice_adj": 3.243
     },
     "bull": {
       "growth_rate": 0.166,
-      "rice": 0.684,
-      "rice_per_ratio": 0.0236,
-      "rice_adj": 1.936
+      "rice": 1.367,
+      "rice_per_ratio": 0.0472,
+      "rice_adj": 3.873
     }
   },
   "fcf_source": "ttm_series",
@@ -254,7 +256,7 @@
       63781000000
     ],
     "diluted_shares": 12115444154,
-    "roe_10yr_avg": 0.21705469675729958,
+    "roe_10yr_avg": 0.21705469675729955,
     "current_price": 380.34,
     "latest_revenue": 402836000000.0,
     "rpo": 467600000000,
@@ -265,13 +267,13 @@
       "ticker": "GOOGL"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "yfinance",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.1385,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "pv_high": 528534712032.2314,
     "pv_terminal": 1330959015573.9392,
-    "roe_used": 0.21705469675729958,
+    "roe_used": 0.21705469675729955,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -279,17 +281,17 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 96934582327.88492,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.9116297263806581,
+    "alpha_uncapped": 0.911629726380658,
     "per": 28.989328,
     "per_adjusted": 30.83,
-    "peg": 1.53,
+    "peg": 1.5,
     "ps": 10.906531,
     "ev_ebitda": 28.374,
     "ma200": 299.92114,
     "forward_eps": 14.48958
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -345,7 +347,8 @@
   "financial_health": {
     "total_debt": 51081000000,
     "cash_and_equivalents": 30708000000,
-    "net_debt": 20373000000,
+    "short_term_investments": 96135000000.0,
+    "net_debt": -75762000000.0,
     "sbc_ttm": 24953000000,
     "dilution_3yr_annual_pct": -2.41,
     "shares_yr_now": 12230000000,

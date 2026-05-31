@@ -1,5 +1,5 @@
 SOUN INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:41:01+09:00
+Generated: 2026-05-31T13:43:58+09:00
 Price: $9.00
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -64,9 +65,9 @@ BASE: Growth=40.0%, IV=$6.91, Deviation=-23.2%
 BULL: Growth=48.0%, IV=$8.82, Deviation=-2.0%
 TTM_Revenue_Growth: 99.4%
 (DCF Base vs TTM actual: -59.4pt discount)
-WACC: 10.46%
+WACC: 18.55%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.08
+Beta: 2.5
 FCF_Base: $45.63M (5yr平均 + R&D補正)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -120,13 +121,12 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 40.0%
-成長モデル: 逓減モデル（TTM40.0%と業界平均48.6%の中間値44.3%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（TTM40.0%と業界平均10.0%の中間値25.0%を採用（将来の成長減速を織り込んだ保守的推定））
 推奨成長率内訳:
-  最終推奨値:            44.3%
+  最終推奨値:            25.0%
 判定         : PLAUSIBLE
-業界ベンチマーク: Software (Internet) / 48.6% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Software (Internet)(48.6%)の0.8倍以内 ✅
   - 過去実績(3yr:75.7% / 5yr:N/A)と整合 ✅
 Definition:
 
@@ -165,6 +165,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

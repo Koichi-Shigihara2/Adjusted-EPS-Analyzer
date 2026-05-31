@@ -1,16 +1,16 @@
 ESTC INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:41:03+09:00
+Generated: 2026-05-31T13:43:46+09:00
 Price: $64.70
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -25.1%
+  Deviation_Rate: -19.2%
   MA200_Deviation: -6.9%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.90 (Buy)
-Comment: 割高(-25%超)、FCF黒字、売上成長加速
+Comment: フェアバリュー近辺、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -30,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.210
-Deviation_Rate: -25.1%
+Key_Metric_Y: RICE = 0.233
+Deviation_Rate: -19.2%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,23 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $64.70
-Intrinsic_Value_BASE: $48.43
-Deviation_BASE: -25.1%
+Intrinsic_Value_BASE: $52.26
+Deviation_BASE: -19.2%
 Growth_Rate_Original: 23.1% (TTM実績)
-Growth_Rate_Adjusted: 21.6% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 24.0% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=15.1%, IV=$39.44 （推奨値ベース）
-BASE: Growth=21.6%, IV=$48.43 （推奨値ベース）
-BULL: Growth=26.0%, IV=$55.54 （推奨値ベース）
+BEAR: Growth=16.8%, IV=$41.59 （推奨値ベース）
+BASE: Growth=24.0%, IV=$52.26 （推奨値ベース）
+BULL: Growth=28.8%, IV=$60.82 （推奨値ベース）
 TTM_Revenue_Growth: 17.0%
-(DCF Base vs TTM actual: +4.6pt premium)
-WACC: 10.57% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: +7.0pt premium)
+WACC: 9.34%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 0.885
 FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.16B (negative=net cash)
+  Net_Debt: $-0.83B (negative=net cash)
   Total_Debt: $0.57B  Cash: $0.73B
   SBC_TTM: N/A
   Dilution_3yr_Annual: +1.91%/yr  許容範囲内 ✅
@@ -86,8 +87,8 @@ FCF_History:
   2025: $0.26B (FCF_Margin: 17.7%)
   FCF_CAGR_3yr: +334.7%
 Segment_Breakdown:
-  General: $1.5B (100%, YoY 22%)
-  Segment_Weighted_Growth: 21.6% (推奨値・中央値を自動適用)
+  General: $1.5B (100%, YoY 24%)
+  Segment_Weighted_Growth: 24.0% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -125,12 +126,11 @@ market-priced future potential.
 Phase1成長率 : 23.1%
 成長モデル: 中央値モデル（TTM28.2%のため中央値モデル適用）
 推奨成長率内訳:
-  中央値ベース:          21.6%
-  最終推奨値:            21.6%
+  中央値ベース:          24.0%
+  最終推奨値:            24.0%
 判定         : PLAUSIBLE
-業界ベンチマーク: Software (System & Application) / 21.6% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Software (System & Application)(21.6%)の1.1倍以内 ✅
   - 過去実績(3yr:19.8% / 5yr:28.2%)と整合 ✅
 Definition:
 
@@ -149,15 +149,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.147
-BASE: RICE=0.21
-BULL: RICE=0.253
+BEAR: RICE=0.163
+BASE: RICE=0.233
+BULL: RICE=0.28
 Components (BASE scenario):
-G  = 21.6%  [TANUKI forward growth rate]
+G  = 24.0%  [TANUKI forward growth rate]
 Q  = 0.4032   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.2411  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 8.709  [参考：R&D資本化想定]
+RICE_adj = 9.677  [参考：R&D資本化想定]
 WACC = 10.0%
 SBC_Adjusted: true
 Definition:
@@ -171,6 +171,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

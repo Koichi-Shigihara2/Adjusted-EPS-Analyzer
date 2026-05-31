@@ -748,7 +748,7 @@ class TestGrowthPremiumScore:
 #          Q = 1871M/139M = 13.43 という偽高Q が発生し Q異常値誤判定が起きていた
 # ─────────────────────────────────────────────
 
-from calculator.rice import _calc_q  # type: ignore[import]
+from calculator.rice import _calc_q, calculate_rice  # type: ignore[import]
 
 
 def _make_entry(ni: float, sbc: float, ocf: float, rev: float) -> dict:
@@ -756,6 +756,114 @@ def _make_entry(ni: float, sbc: float, ocf: float, rev: float) -> dict:
         "cf": {"operating_cash_flow": ocf, "stock_based_compensation": sbc},
         "pl": {"net_income": ni, "revenue": rev},
     }
+
+
+# ─────────────────────────────────────────────
+# RICE-1: 価値創造係数（roic_wacc_ratio）テスト
+#    ROIC/WACC が RICE 計算に正しく反映されることを検証
+# ─────────────────────────────────────────────
+
+_RICE_MOCK_ANNUAL = [
+    # FY2023（最新）
+    {"period": "FY2023",
+     "pl": {"revenue": 26_000e6, "net_income": 3_000e6, "research_and_development": 2_000e6},
+     "cf": {"operating_cash_flow": 5_000e6, "capital_expenditure": -500e6, "stock_based_compensation": 400e6},
+     "data_quality": {}},
+    # FY2022
+    {"period": "FY2022",
+     "pl": {"revenue": 20_000e6, "net_income": 2_500e6, "research_and_development": 1_800e6},
+     "cf": {"operating_cash_flow": 4_000e6, "capital_expenditure": -400e6, "stock_based_compensation": 350e6},
+     "data_quality": {}},
+    # FY2021
+    {"period": "FY2021",
+     "pl": {"revenue": 16_000e6, "net_income": 2_000e6, "research_and_development": 1_600e6},
+     "cf": {"operating_cash_flow": 3_200e6, "capital_expenditure": -350e6, "stock_based_compensation": 300e6},
+     "data_quality": {}},
+    # FY2020
+    {"period": "FY2020",
+     "pl": {"revenue": 13_000e6, "net_income": 1_600e6, "research_and_development": 1_400e6},
+     "cf": {"operating_cash_flow": 2_600e6, "capital_expenditure": -300e6, "stock_based_compensation": 280e6},
+     "data_quality": {}},
+]
+_RICE_MOCK_SCENARIOS = {
+    "bear": {"growth_rate": 0.15, "intrinsic_value_per_share": 200.0},
+    "base": {"growth_rate": 0.25, "intrinsic_value_per_share": 280.0},
+    "bull": {"growth_rate": 0.35, "intrinsic_value_per_share": 360.0},
+}
+
+
+class TestRiceValueCreationFactor:
+    """RICE-1: roic_wacc_ratio による価値創造係数のテスト"""
+
+    def test_high_roic_wacc_amplifies_rice(self):
+        """ROIC/WACC=2.0（ROIC=20%・WACC=10%）→ vc_factor=2.0でRICEが2倍になる"""
+        base = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=None,
+        )
+        boosted = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=2.0,
+        )
+        assert base.available and boosted.available
+        assert boosted.base.rice == pytest.approx(base.base.rice * 2.0, rel=1e-6)
+        assert boosted.vc_factor == pytest.approx(2.0, rel=1e-6)
+
+    def test_low_roic_wacc_penalizes_rice(self):
+        """ROIC/WACC=0.5（ROIC=5%・WACC=10%）→ vc_factor=0.5でRICEが半減"""
+        base = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=None,
+        )
+        penalized = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=0.5,
+        )
+        assert base.available and penalized.available
+        assert penalized.base.rice == pytest.approx(base.base.rice * 0.5, rel=1e-6)
+        assert penalized.vc_factor == pytest.approx(0.5, rel=1e-6)
+
+    def test_no_roic_wacc_is_backward_compatible(self):
+        """roic_wacc_ratio=None → vc_factor=None、RICE値は従来と同じ"""
+        result = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=None,
+        )
+        assert result.available
+        assert result.vc_factor is None
+        assert result.roic_wacc_ratio is None
+
+    def test_vc_factor_floor_at_0_3(self):
+        """roic_wacc_ratio=0.1（極端に低いROIC）→ vc_factor は 0.3 でフロアされる"""
+        result = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=0.1,
+        )
+        assert result.available
+        assert result.vc_factor == pytest.approx(0.3, rel=1e-6)
+
+    def test_vc_factor_cap_at_2_0(self):
+        """roic_wacc_ratio=5.0（極端に高いROIC）→ vc_factor は 2.0 でキャップされる"""
+        result = calculate_rice(
+            annual_data=_RICE_MOCK_ANNUAL,
+            wacc=0.10,
+            scenario_valuations=_RICE_MOCK_SCENARIOS,
+            roic_wacc_ratio=5.0,
+        )
+        assert result.available
+        assert result.vc_factor == pytest.approx(2.0, rel=1e-6)
 
 
 class TestCalcQNegativeNI:

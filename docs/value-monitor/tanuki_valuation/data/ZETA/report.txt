@@ -1,16 +1,16 @@
 ZETA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T11:41:02+09:00
+Generated: 2026-05-31T13:44:00+09:00
 Price: $22.89
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: +52.4%
+  Deviation_Rate: +114.1%
   MA200_Deviation: +23.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.43 (Strong Buy)
-Comment: 割安圏(52%)で買い余地大、FCF黒字、売上成長加速
+Comment: 割安圏(114%)で買い余地大、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -31,7 +32,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右下
 Label: 割安×低FCF
 Key_Metric_Y: FCF_Margin = 11.2%
-Deviation_Rate: +52.4%
+Deviation_Rate: +114.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,19 +57,17 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $22.89
-Intrinsic_Value_BASE: $34.89
-Deviation_BASE: +52.4%
-Growth_Rate_Original: 49.9% (TTM実績)
-Growth_Rate_Adjusted: 39.4% (推奨値・中央値ベース)
+Intrinsic_Value_BASE: $49.01
+Deviation_BASE: +114.1%
 Scenarios:
-BEAR: Growth=27.6%, IV=$23.21 （推奨値ベース）
-BASE: Growth=39.4%, IV=$34.89 （推奨値ベース）
-BULL: Growth=47.3%, IV=$45.13 （推奨値ベース）
+BEAR: Growth=34.9%, IV=$29.99, Deviation=+31.0%
+BASE: Growth=49.9%, IV=$49.01, Deviation=+114.1%
+BULL: Growth=59.9%, IV=$66.52, Deviation=+190.6%
 TTM_Revenue_Growth: 29.7%
-(DCF Base vs TTM actual: +9.7pt premium)
-WACC: 10.57% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: +20.2pt premium)
+WACC: 11.66%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.292
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
@@ -86,8 +85,8 @@ FCF_History:
   2025: $0.19B (FCF_Margin: 14.2%)
   FCF_CAGR_3yr: +48.7%
 Segment_Breakdown:
-  General: $1.3B (100%, YoY 39%)
-  Segment_Weighted_Growth: 39.4% (推奨値・中央値を自動適用)
+  General: $1.3B (100%, YoY 50%)
+  Segment_Weighted_Growth: 49.9% (TTM実績値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -124,13 +123,9 @@ market-priced future potential.
 [4. 成長率根拠]
 Phase1成長率 : 49.9%
 成長モデル: 中央値モデル（TTM49.9%のため中央値モデル適用）
-推奨成長率内訳:
-  中央値ベース:          39.4%
-  最終推奨値:            39.4%
 判定         : PLAUSIBLE
-業界ベンチマーク: Software (Internet) / 48.6% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Software (Internet)(48.6%)の1.0倍以内 ✅
   - 過去実績(3yr:30.2% / 5yr:N/A)より高め（減速想定あり） ℹ️
 Definition:
 
@@ -169,6 +164,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

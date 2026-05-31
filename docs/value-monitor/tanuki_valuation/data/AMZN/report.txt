@@ -1,5 +1,5 @@
 AMZN INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:07+09:00
+Generated: 2026-05-31T13:43:37+09:00
 Price: $270.64
 
 [1. TANUKI SCORE]
@@ -21,19 +21,20 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 1.177
+Matrix: ②収益性系
+Quadrant: 左上
+Label: 割高×高ROE
+Key_Metric_Y: ROE_10yr_avg = 18.2%
 Deviation_Rate: -66.8%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,20 +65,20 @@ BASE: Growth=11.9%, IV=$89.79, Deviation=-66.8%
 BULL: Growth=14.3%, IV=$98.43, Deviation=-63.6%
 TTM_Revenue_Growth: 16.6%
 (DCF Base vs TTM actual: -4.7pt discount)
-WACC: 10.57%
+WACC: 12.67%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.468
 Valuation_Gap_Analysis:
   DCF_IV:           $90 (保守的FCFベース・現在実力値)
   Market_Price:     $271
   Gap:              -67% (市場が将来成長を先取り)
-  Implied_FCF_2030: $196.67B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $194.20B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $20.58B
   Required_Growth:  57%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $20,582.00M (外れ値除外後4yr平均)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-17.52B (negative=net cash)
+  Net_Debt: $-53.74B (negative=net cash)
   Total_Debt: $69.29B  Cash: $86.81B
   SBC_TTM: $19,467M
   Dilution_3yr_Annual: +2.05%/yr  許容範囲内 ✅
@@ -154,19 +155,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.831
-BASE: RICE=1.177
-BULL: RICE=1.415
+Available: false
+Exclusion_Reason: セクター除外（Consumer Cyclical）: 投資強度の定義が成立しないため計算対象外
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 11.9%  [TANUKI forward growth rate]
-Q  = 1.5374   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.6435  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 1.0679  [R&D除外・CapExのみ投資強度]
-RICE_adj = 1.954  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -178,10 +177,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by

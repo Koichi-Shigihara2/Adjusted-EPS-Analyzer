@@ -1,5 +1,5 @@
 NVDA INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T13:00:05+09:00
+Generated: 2026-05-31T13:43:53+09:00
 Price: $211.14
 
 [1. TANUKI SCORE]
@@ -31,7 +31,7 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 右上
 Label: 割安×高効率
-Key_Metric_Y: RICE = 11.736
+Key_Metric_Y: RICE = 23.472
 Deviation_Rate: +125.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
@@ -148,16 +148,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=8.197
-BASE: RICE=11.736
-BULL: RICE=14.083
+BEAR: RICE=16.394
+BASE: RICE=23.472
+BULL: RICE=28.166
 Components (BASE scenario):
 G  = 32.5%  [TANUKI forward growth rate]
 Q  = 0.7815   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 4.6208  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 25.398  [参考：R&D資本化想定]
+RICE_adj = 50.795  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 6.60  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -170,6 +172,10 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated

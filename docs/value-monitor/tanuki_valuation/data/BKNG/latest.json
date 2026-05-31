@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 191411900066.1559,
+  "intrinsic_value_pt": 221688655538.67786,
   "intrinsic_value_per_share": 306.7763141278499,
-  "intrinsic_value_beta": 242.62,
-  "upside_percent_beta": 44.9,
+  "intrinsic_value_beta": 281.69,
+  "upside_percent_beta": 68.2,
   "intrinsic_value_rf": 1749.96,
   "upside_percent_rf": 945.2,
-  "v0": 119632437541.34744,
-  "v0_adjusted": 119632437541.34744,
+  "v0": 138555409711.67365,
+  "v0_adjusted": 138555409711.67365,
   "alpha": 0.6,
   "alpha_was_capped": true,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 466.57
   },
   "upside_percent": 83.2,
-  "calculation_date": "2026-05-31T11:52:08+09:00",
+  "calculation_date": "2026-05-31T13:44:01+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.11710000000000001,
-    "beta": 1.3,
+    "value": 0.105814,
+    "beta": 1.102,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -77,43 +77,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 119632437541.34744,
-    "pv_high_growth": 34138279222.458992,
-    "pv_terminal": 85494158318.88846,
+    "v0": 138555409711.67365,
+    "pv_high_growth": 35218605982.1314,
+    "pv_terminal": 103336803729.54225,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 7190949999.999999,
-        "discount_factor": 1.1171,
-        "pv": 6437158714.528689
+        "discount_factor": 1.105814,
+        "pv": 6502856719.122745
       },
       {
         "year": 2,
         "fcf": 8269592499.999998,
-        "discount_factor": 1.2479124099999999,
-        "pv": 6626741134.820511
+        "discount_factor": 1.2228246025960001,
+        "pv": 6762697186.86068
       },
       {
         "year": 3,
         "fcf": 9510031374.999996,
-        "discount_factor": 1.394042953211,
-        "pv": 6821906995.831695
+        "discount_factor": 1.3522165650950935,
+        "pv": 7032920332.795369
       },
       {
         "year": 4,
         "fcf": 10936536081.249994,
-        "discount_factor": 1.557285383032008,
-        "pv": 7022820736.913838
+        "discount_factor": 1.4953000087140658,
+        "pv": 7313941026.894825
       },
       {
         "year": 5,
         "fcf": 12577016493.437492,
-        "discount_factor": 1.7396435013850562,
-        "pv": 7229651640.364258
+        "discount_factor": 1.653523683836136,
+        "pv": 7606190716.457783
       }
     ],
     "terminal_fcf": 12954326988.240618,
-    "terminal_value": 148729356925.83945,
+    "terminal_value": 170869852378.72446,
     "v0_rm": 150704594058.27066
   },
   "fcf_base": {
@@ -222,19 +222,19 @@
     "current_price": 167.43,
     "latest_revenue": 26917000000.0,
     "rpo": 0.0,
-    "beta": 1.3,
+    "beta": 1.102,
     "sector": "Consumer Cyclical",
     "industry": "Travel Services",
     "eps_data": {
       "ticker": "BKNG"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Software_Internet)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.15,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 34138279222.458992,
-    "pv_terminal": 85494158318.88846,
+    "pv_high": 35218605982.1314,
+    "pv_terminal": 103336803729.54225,
     "roe_used": 0.4286006491822,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -262,7 +262,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $34.14B + pv_terminal $85.49B = $119.63B (差異0.00%)"
+        "detail": "2段階: pv_high $35.22B + pv_terminal $103.34B = $138.56B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -309,7 +309,8 @@
   "financial_health": {
     "total_debt": 20616000000,
     "cash_and_equivalents": 17203000000,
-    "net_debt": 3413000000,
+    "short_term_investments": 0.0,
+    "net_debt": 3413000000.0,
     "sbc_ttm": null,
     "dilution_3yr_annual_pct": -6.59,
     "shares_yr_now": 32639000,

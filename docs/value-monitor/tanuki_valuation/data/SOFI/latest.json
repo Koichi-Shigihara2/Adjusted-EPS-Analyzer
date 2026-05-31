@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 23805542912.077065,
+  "intrinsic_value_pt": 13711248660.020208,
   "intrinsic_value_per_share": 25.687970763779305,
-  "intrinsic_value_beta": 22.4,
-  "upside_percent_beta": 22.9,
+  "intrinsic_value_beta": 14.53,
+  "upside_percent_beta": -20.2,
   "intrinsic_value_rf": 129.59,
   "upside_percent_rf": 611.3,
-  "v0": 18940684901.72847,
-  "v0_adjusted": 18940684901.72847,
+  "v0": 10909242500.2808,
+  "v0_adjusted": 10909242500.2808,
   "alpha": 0.25684699553312584,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 46.99
   },
   "upside_percent": 41.0,
-  "calculation_date": "2026-05-30T22:51:23+09:00",
+  "calculation_date": "2026-05-31T13:43:57+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.1114,
-    "beta": 1.2,
+    "value": 0.164182,
+    "beta": 2.126,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 18940684901.72847,
-    "pv_high_growth": 4692246460.094627,
-    "pv_terminal": 14248438441.633842,
+    "v0": 10909242500.2808,
+    "pv_high_growth": 4055228677.178071,
+    "pv_terminal": 6854013823.102728,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 853494220.7128763,
-        "discount_factor": 1.1114,
-        "pv": 767945132.9070328
+        "discount_factor": 1.164182,
+        "pv": 733127827.7046684
       },
       {
         "year": 2,
         "fcf": 1043823431.9318478,
-        "discount_factor": 1.23520996,
-        "pv": 845057492.842632
+        "discount_factor": 1.355319729124,
+        "pv": 770167665.607963
       },
       {
         "year": 3,
         "fcf": 1276596057.25265,
-        "discount_factor": 1.3728123495439999,
-        "pv": 929913004.9905877
+        "discount_factor": 1.5778388328910369,
+        "pv": 809078868.285662
       },
       {
         "year": 4,
         "fcf": 1561276978.0199912,
-        "discount_factor": 1.5257436452832014,
-        "pv": 1023289189.403895
+        "discount_factor": 1.8368915681527531,
+        "pv": 849955982.7530102
       },
       {
         "year": 5,
         "fcf": 1909441744.1184492,
-        "discount_factor": 1.69571148736775,
-        "pv": 1126041639.9504802
+        "discount_factor": 2.1384760995952083,
+        "pv": 892898332.8267672
       }
     ],
     "terminal_fcf": 1966724996.4420028,
-    "terminal_value": 24161240742.530746,
+    "terminal_value": 14657144747.000364,
     "v0_rm": 22295129433.164673
   },
   "fcf_base": {
@@ -247,19 +247,19 @@
     "current_price": 18.22,
     "latest_revenue": 619353000.0,
     "rpo": 8535000.0,
-    "beta": 1.2,
+    "beta": 2.126,
     "sector": "Financial Services",
     "industry": "Credit Services",
     "eps_data": {
       "ticker": "SOFI"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Fintech)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.22300000000000003,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 4692246460.094627,
-    "pv_terminal": 14248438441.633842,
+    "pv_high": 4055228677.178071,
+    "pv_terminal": 6854013823.102728,
     "roe_used": 0.061154046555506165,
     "fcf_floor_applied": 4325194440.0,
     "fcf_growth_floor": 0.15,
@@ -271,14 +271,14 @@
     "alpha_uncapped": 0.25684699553312584,
     "per": 40.488888,
     "per_adjusted": 29.05,
-    "peg": 1.06,
+    "peg": 1.14,
     "ps": 5.9797826,
     "ev_ebitda": null,
     "ma200": 23.214275,
     "forward_eps": 0.78024
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -287,7 +287,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $4.69B + pv_terminal $14.25B = $18.94B (差異0.00%)"
+        "detail": "2段階: pv_high $4.06B + pv_terminal $6.85B = $10.91B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -334,7 +334,8 @@
   "financial_health": {
     "total_debt": 0,
     "cash_and_equivalents": 4929452000,
-    "net_debt": -4929452000,
+    "short_term_investments": 0.0,
+    "net_debt": -4929452000.0,
     "sbc_ttm": 262058000,
     "dilution_3yr_annual_pct": 11.59,
     "shares_yr_now": 1251767000,
@@ -373,7 +374,7 @@
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.223,
     "industry_benchmark": null,
-    "damodaran_industry": "Financial Svcs. (Non-bank & Insurance)",
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.17985536934222757,
     "rev_cagr_5yr": null,

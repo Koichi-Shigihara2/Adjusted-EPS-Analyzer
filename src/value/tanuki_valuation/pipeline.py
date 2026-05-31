@@ -109,6 +109,12 @@ class TanukiValuationPipeline:
                     continue
 
                 self._inject_ttm_for_general_segment(ticker)
+
+                # RICE-1: ROIC/WACC_Rm を事前計算してDCF前に注入
+                _roic_wacc = self._calc_roic_wacc_ratio(ticker)
+                if _roic_wacc is not None:
+                    financials["roic_wacc_ratio"] = _roic_wacc
+
                 valuation = self.calculator.calculate_pt(financials)
 
                 if "error" in valuation:
@@ -1098,6 +1104,12 @@ class TanukiValuationPipeline:
             if isinstance(_rice_base_adj, (int, float)) and _rice_base_adj > 0:
                 L.append(f"RICE_adj = {_rice_base_adj:.3f}  [参考：R&D資本化想定]")
         L.append(f"WACC = {rice_wacc * 100:.1f}%" if isinstance(rice_wacc, (int, float)) else f"WACC = {rice_wacc}")
+        _vc_factor = rice.get("vc_factor")
+        _roic_wacc_ratio = rice.get("roic_wacc_ratio")
+        if _vc_factor is not None:
+            L.append(f"VC_Factor = {_vc_factor:.2f}  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]")
+            if _roic_wacc_ratio is not None:
+                L.append(f"ROIC_WACC_Ratio = {_roic_wacc_ratio:.2f}  [NOPAT/InvestedCapital / 0.10]")
         L.append(f"SBC_Adjusted: {str(sbc_adjusted).lower()}")
         L.append("Definition:")
         L.append("")
@@ -1110,6 +1122,10 @@ class TanukiValuationPipeline:
         L.append("CF: Capital efficiency of growth investment")
         L.append("CF = RevGrowthRate / InvestmentIntensity (1yr lag)")
         L.append("InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg")
+        L.append("VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)")
+        L.append("ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)")
+        L.append("ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)")
+        L.append("ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)")
         L.append("WACC: Weighted Average Cost of Capital")
         L.append("Primary basis: Rm=10% (Beta=0 scenario)")
         L.append("Reference: Beta-adjusted WACC also calculated")
@@ -1609,6 +1625,47 @@ class TanukiValuationPipeline:
                 _seg_cfg.clear_growth_override(ticker)
         else:
             _seg_cfg.clear_growth_override(ticker)
+
+    def _calc_roic_wacc_ratio(self, ticker: str, wacc_rm: float = 0.10) -> float | None:
+        """最新年次データから ROIC/WACC_Rm を計算（RICE-1 価値創造係数）
+
+        ROIC = NOPAT / Invested_Capital
+        NOPAT = Operating_Income × (1 - 21%)（実効税率固定）
+        Invested_Capital = Equity + Net_Debt（総資本 - 現金）
+        戻り値: ROIC/wacc_rm（例: ROIC=15%・WACC=10% → 1.5）
+        計算不可（赤字・負の投資資本）は None を返す。
+        """
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        if not os.path.exists(sec_dir):
+            return None
+        years = sorted([
+            int(fn[7:11]) for fn in os.listdir(sec_dir)
+            if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+        ])
+        if not years:
+            return None
+        try:
+            with open(os.path.join(sec_dir, f"annual_{years[-1]}.json"), encoding="utf-8") as f:
+                ann = json.load(f)
+            pl = ann.get("pl", {})
+            bs = ann.get("bs", {})
+            oi = pl.get("operating_income") or 0
+            nopat = oi * (1 - 0.21)
+            if nopat <= 0:
+                return None
+            equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0
+            lt_debt = bs.get("long_term_debt") or 0
+            st_debt = bs.get("short_term_debt") or 0
+            cash = bs.get("cash_and_equivalents") or 0
+            invested_capital = equity + lt_debt + st_debt - cash
+            if invested_capital <= 0:
+                return None
+            roic = nopat / invested_capital
+            if not (0 < roic < 10.0):  # 合理的な範囲外はスキップ
+                return None
+            return roic / wacc_rm
+        except Exception:
+            return None
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""

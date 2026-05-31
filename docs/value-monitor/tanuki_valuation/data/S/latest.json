@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 6159178120.625286,
+  "intrinsic_value_pt": 8265412611.97805,
   "intrinsic_value_per_share": 21.406648328607105,
-  "intrinsic_value_beta": 19.8,
-  "upside_percent_beta": 19.6,
+  "intrinsic_value_beta": 25.95,
+  "upside_percent_beta": 56.8,
   "intrinsic_value_rf": 115.91,
   "upside_percent_rf": 600.3,
-  "v0": 6159178120.625286,
-  "v0_adjusted": 6159178120.625286,
+  "v0": 8265412611.97805,
+  "v0_adjusted": 8265412611.97805,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -15,7 +15,7 @@
     "3年後": 44.37
   },
   "upside_percent": 29.3,
-  "calculation_date": "2026-05-30T22:51:22+09:00",
+  "calculation_date": "2026-05-31T13:43:57+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -24,8 +24,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.10570000000000002,
-    "beta": 1.1,
+    "value": 0.087745,
+    "beta": 0.785,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -95,43 +95,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 6159178120.625286,
-    "pv_high_growth": 1354931234.347662,
-    "pv_terminal": 4804246886.277624,
+    "v0": 8265412611.97805,
+    "pv_high_growth": 1430107884.308927,
+    "pv_terminal": 6835304727.669124,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 220854226.9248086,
-        "discount_factor": 1.1057000000000001,
-        "pv": 199741545.55920103
+        "discount_factor": 1.087745,
+        "pv": 203038604.56707096
       },
       {
         "year": 2,
         "fcf": 281576830.92129236,
-        "discount_factor": 1.2225724900000003,
-        "pv": 230315039.16900036
+        "discount_factor": 1.1831891850249998,
+        "pv": 237981241.27997577
       },
       {
         "year": 3,
         "fcf": 358994766.89061236,
-        "discount_factor": 1.3517984021930005,
-        "pv": 265568272.8343376
+        "discount_factor": 1.2870081200650185,
+        "pv": 278937452.91403157
       },
       {
         "year": 4,
         "fcf": 457698320.67919487,
-        "discount_factor": 1.4946834933048008,
-        "pv": 306217552.23054403
+        "discount_factor": 1.3999366475601236,
+        "pv": 326942166.61653465
       },
       {
         "year": 5,
         "fcf": 583539850.9204094,
-        "discount_factor": 1.6526715385471185,
-        "pv": 353088824.5545789
+        "discount_factor": 1.5227740887002865,
+        "pv": 383208418.9313141
       }
     ],
     "terminal_fcf": 601046046.4480218,
-    "terminal_value": 7939842093.104645,
+    "terminal_value": 10408624927.66511,
     "v0_rm": 6709610743.998243
   },
   "fcf_base": {
@@ -239,19 +239,19 @@
     "current_price": 16.55,
     "latest_revenue": 1001278000.0,
     "rpo": 1300000000,
-    "beta": 1.1,
+    "beta": 0.785,
     "sector": "Technology",
     "industry": "Software - Infrastructure",
     "eps_data": {
       "ticker": "S"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Software_System)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.27494426908640146,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "pv_high": 1354931234.347662,
-    "pv_terminal": 4804246886.277624,
+    "pv_high": 1430107884.308927,
+    "pv_terminal": 6835304727.669124,
     "roe_used": 0.0,
     "fcf_floor_applied": 130275740.0,
     "fcf_growth_floor": 0.15,
@@ -270,7 +270,7 @@
     "forward_eps": 0.49469
   },
   "validation": {
-    "validated_at": "2026-05-30",
+    "validated_at": "2026-05-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -279,7 +279,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.12B + pv_terminal $3.58B = $4.70B (差異0.00%)"
+        "detail": "2段階: pv_high $1.18B + pv_terminal $5.10B = $6.28B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -327,7 +327,8 @@
   "financial_health": {
     "total_debt": 0,
     "cash_and_equivalents": 169627000,
-    "net_debt": -169627000,
+    "short_term_investments": 459041000.0,
+    "net_debt": -628668000.0,
     "sbc_ttm": 297587000,
     "dilution_3yr_annual_pct": 5.92,
     "shares_yr_now": 330111148,

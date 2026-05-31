@@ -1,16 +1,16 @@
 AMAT INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:06+09:00
+Generated: 2026-05-31T13:43:36+09:00
 Price: $450.06
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -44.3%
+  Deviation_Rate: -42.6%
   MA200_Deviation: +53.8%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.50 (Strong Buy)
-Comment: 割高(-44%超)、FCF黒字、売上成長停滞
+Comment: 割高(-43%超)、FCF黒字、売上成長停滞
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -30,10 +31,10 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.075
-Deviation_Rate: -44.3%
+Key_Metric_Y: RICE = 0.164
+Deviation_Rate: -42.6%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,23 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $450.06
-Intrinsic_Value_BASE: $250.65
-Deviation_BASE: -44.3%
+Intrinsic_Value_BASE: $258.18
+Deviation_BASE: -42.6%
 Growth_Rate_Original: -2.1% (TTM実績)
-Growth_Rate_Adjusted: 8.5% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 9.3% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=6.0%, IV=$225.62 （推奨値ベース）
-BASE: Growth=8.5%, IV=$250.65 （推奨値ベース）
-BULL: Growth=10.2%, IV=$268.62 （推奨値ベース）
+BEAR: Growth=6.5%, IV=$230.42 （推奨値ベース）
+BASE: Growth=9.3%, IV=$258.18 （推奨値ベース）
+BULL: Growth=11.1%, IV=$278.22 （推奨値ベース）
 TTM_Revenue_Growth: -2.1%
-(DCF Base vs TTM actual: +10.6pt premium)
-WACC: 10.57% (β=sector default、個別検証推奨)
+(DCF Base vs TTM actual: +11.4pt premium)
+WACC: 13.73%
 Terminal_Growth_Rate: 3.0%
-Beta: 1.1
+Beta: 1.654
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductor Equipment & Materials)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.69B (negative=net cash)
+  Net_Debt: $-2.02B (negative=net cash)
   Total_Debt: $6.55B  Cash: $7.24B
   SBC_TTM: $668M
   Dilution_3yr_Annual: -2.69%/yr  自社株買いによる株主還元 ✅
@@ -87,7 +88,7 @@ FCF_History:
   FCF_CAGR_3yr: +7.3%
 Segment_Breakdown:
   General: $28.4B (100%, YoY 9%)
-  Segment_Weighted_Growth: 8.5% (推奨値・中央値を自動適用)
+  Segment_Weighted_Growth: 9.3% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -125,12 +126,11 @@ market-priced future potential.
 Phase1成長率 : -2.1%
 成長モデル: 中央値モデル（TTM10.5%のため中央値モデル適用）
 推奨成長率内訳:
-  中央値ベース:          8.5%
-  最終推奨値:            8.5%
+  中央値ベース:          9.3%
+  最終推奨値:            9.3%
 判定         : PLAUSIBLE
-業界ベンチマーク: Semiconductor Equip / 7.8% (Damodaran 2025)
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Semiconductor Equip(7.8%)の-0.3倍以内 ✅
   - 過去実績(3yr:3.2% / 5yr:10.5%)と整合 ✅
   - RR×ROIC上限(9.3%)以内 ✅
 Definition:
@@ -150,16 +150,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.053
-BASE: RICE=0.075
-BULL: RICE=0.09
+BEAR: RICE=0.114
+BASE: RICE=0.164
+BULL: RICE=0.196
 Components (BASE scenario):
-G  = 8.5%  [TANUKI forward growth rate]
+G  = 9.3%  [TANUKI forward growth rate]
 Q  = 1.1368   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.0775  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 0.3503  [R&D除外・CapExのみ投資強度]
-RICE_adj = 0.339  [参考：R&D資本化想定]
+RICE_adj = 0.741  [参考：R&D資本化想定]
 WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 3.32  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -172,10 +174,14 @@ for stock-based compensation distortion
 CF: Capital efficiency of growth investment
 CF = RevGrowthRate / InvestmentIntensity (1yr lag)
 InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
