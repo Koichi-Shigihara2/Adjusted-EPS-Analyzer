@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1・WACC-1完了）
+最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1完了）
 
 ---
 
@@ -293,13 +293,11 @@
 
 ## 設計相談メモ（2026-05-31）
 
-### [DESIGN-1] ERPとフェーズ判定の統合
-- 概要: 益利回り（1/フォワードPER）- 10年債利回り = ERP を
-  HypeCoreのフェーズ判定の補助指標として追加
-- 方針: まず参考表示（案B）から実装し、
-  フェーズ判定への組み込みは効果確認後に検討
-- データ: forwardPE（yfinance取得済み）、DGS10（FRED取得済み）
-- 実装難易度: 低
+### ✅ [DESIGN-1] ERP参考表示（2026-05-31 完了）
+- 実装: ERP = ForwardEPS/Price - Rf（10年国債利回り）を HYPECORE セクションに追加
+  ERP≥4%: 明確な割安感 / 2〜4%: 魅力あり / 0〜2%: 薄い / <0%: 割高感
+  pipeline.py: _generate_report() 追加 + latest.json に erp/forward_earnings_yield 保存
+- 残タスク: HypeCoreフェーズ判定への組み込みは効果確認後に検討（DESIGN-1b）
 
 ### [DESIGN-2] マクロによる銘柄フェーズ変化の認識
 - 概要: マクロ環境（金利・流動性・センチメント）の変化が
