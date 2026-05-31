@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1・DESIGN-13完了）
+最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1・DESIGN-12・DESIGN-13完了）
 
 ---
 
@@ -411,16 +411,14 @@
 - データ: グロスマージン・純損失・売上（SEC取得済み）
 - 実装難易度: 中
 
-### [DESIGN-12] ステルス流動性のレベル感改善
-- 概要: 現状の「EASING/TIGHTENING」二値表示を3層構造に変更
-  Layer1: FRB政策意図（EASING/TIGHTENING）
-  Layer2: ステルス流動性（TGA/RRP動向）
-  Layer3: NET実質流動性スコア（統合判定）
-- アラート追加:
-  ステルス吸収4週以上継続→「政策EASINGの効果が限定的」
-  NET流動性3週連続減少→「実質的にTIGHTENINGに近い状態」
-  ステルス吸収額が政策供給額を超過→「EASING認識の見直しを推奨」
-- 実装難易度: 低〜中
+### ✅ [DESIGN-12] ステルス流動性の3層構造改善（2026-05-31 完了）
+- 実装: 3層構造でステルスカードを再構成
+  Layer1: FRBレジーム（fed_context.csvから非同期取得）
+  Layer2: ステルス流動性（従来のsupply/absorb/neutral＋連続週数）
+  Layer3: NET流動性トレンド（▼▼▼で視認性）
+- 新カラム: stealth_absorb_weeks / net_liq_decline_weeks / stealth_alert
+- 警戒アラート: 3条件を評価して赤枠ボックス表示
+- 変更: 05_main.py（計算）/ index.html（3ペイン表示）
 
 ### ✅ [DESIGN-13] MACROPULSEでマクロサプライズ検知（2026-05-31 完了）
 - 実装: detect_macro_surprises()を05_main.pyに追加
