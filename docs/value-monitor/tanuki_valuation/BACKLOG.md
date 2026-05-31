@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1・DESIGN-12・DESIGN-13完了）
+最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1・DESIGN-11・DESIGN-12・DESIGN-13完了）
 
 ---
 
@@ -404,12 +404,14 @@
 - 実装難易度: 低
 - 実装: pipeline.py Matrix①のラベル三分類化 + テスト5件追加
 
-### [DESIGN-11] STONKSSILOにユニットエコノミクス改善評価
-- 概要: 赤字企業の「黒字化の質」を評価する指標を追加
-  グロスマージントレンド + Loss per Revenueの改善率
-  = ユニットエコノミクス改善スコア
-- データ: グロスマージン・純損失・売上（SEC取得済み）
-- 実装難易度: 中
+### ✅ [DESIGN-11] STONKSSILOユニットエコノミクス改善評価（2026-05-31 完了）
+- 実装: DeficitQualityに4フィールド追加（analyzer.py）
+  gross_margin_trend: 複数年の粗利率推移
+  loss_per_revenue_trend: 赤字/売上比の推移
+  unit_economics_score: 0-100（GM水準20+GMトレンド20+LPR水準30+LPRトレンド30）
+  unit_economics_label: ★★★優秀 / ★★☆良好 / ★☆☆要注意 / ☆☆☆低調
+- 評価例: RBRK 90点（GM80%・損失縮小）/ BBAI 5点（GM低下・損失拡大）
+- 変更: discover/stonks-silo/src/analyzer.py のみ
 
 ### ✅ [DESIGN-12] ステルス流動性の3層構造改善（2026-05-31 完了）
 - 実装: 3層構造でステルスカードを再構成
