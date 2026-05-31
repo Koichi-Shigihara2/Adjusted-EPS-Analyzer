@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1完了）
+最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・DESIGN-9完了）
 
 ---
 
@@ -386,14 +386,14 @@
   HYPEMIX的な視点（フェーズ分散）も同時表示
 - 実装難易度: 中
 
-### [DESIGN-9] RIMモデルでの企業価値計算
-- 概要: DCFと並列でRIM（残余利益モデル）を実装
-  株主価値 = 簿価 + Σ(ROE-Ke)×簿価/(1+Ke)^t
-  DCFとRIMの両値を表示し中央値を参考値として活用
-- 適用銘柄: 純資産プラス・ROE安定・成熟企業
-  （純資産マイナス・上場3年未満・赤字企業は自動スキップ）
-- データ: 純資産・ROE・Ke（Ke=WACC）は取得済み
-- 実装難易度: 中
+### ✅ [DESIGN-9] RIMモデルでの企業価値計算（2026-05-31 完了）
+- 式: RIM = BV × (ROE - tv_g) / (Ke - tv_g)（Gordon Growth RIM・単ステージ）
+  BV=純資産/株式数、ROE=10年平均、Ke=β込みWACC、tv_g=セクター別（WACC-1）
+- スキップ: 純資産マイナス / ROE≤0 / 金融セクター / Ke≤tv_g
+- 表示: report.txt に [n. RIM VALUATION (参考)] + DCFとの中央値表示
+  latest.json に rim フィールド保存
+- 変更: pipeline.py のみ（_calc_rim_value()追加）
+- 備考: 自社株買い超過でBVが小さい銘柄（NVDA等）ではRIMが過小になる
 
 ### ✅ [DESIGN-10] RICEの三分類見直し（2026-05-31 完了）
 - 概要: 現行の閾値2.0（高/低の二分類）を三分類に変更
