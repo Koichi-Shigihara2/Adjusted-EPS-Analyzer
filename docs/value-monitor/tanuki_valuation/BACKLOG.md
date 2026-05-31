@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1完了）
+最終更新: 2026-05-31（RICE-1・WACC-1・DESIGN-1・GROWTH-1・DESIGN-13完了）
 
 ---
 
@@ -422,13 +422,15 @@
   ステルス吸収額が政策供給額を超過→「EASING認識の見直しを推奨」
 - 実装難易度: 低〜中
 
-### [DESIGN-13] MACROPULSEでマクロサプライズ検知
-- 概要: 経済指標の前月比急変を検知してアラート表示
-  市場予想との比較は困難なため前月比・前年比の急変で代替
-  複合サプライズ（複数指標同時悪化）も検知
-- 表示: MACRO PULSE上部にサプライズアラートバナーを追加
-  カタリスト種別（インフレ/雇用/景気）で色分け
-- 実装難易度: 中
+### ✅ [DESIGN-13] MACROPULSEでマクロサプライズ検知（2026-05-31 完了）
+- 実装: detect_macro_surprises()を05_main.pyに追加
+  9指標の前回比急変を閾値検知（NFP±5万、Claims±2万、Philly±10pt等）
+  逆指標判定あり（Claims↑=悪化、NFP↓=悪化）
+  同カテゴリ2件以上同時悪化→「複合サプライズ」
+  カテゴリ: インフレ/雇用/景気（色分けバッジ）
+- 保存: weekly_analysis.csv に surprise_alerts カラム追加
+- 表示: AI WEEKLY COMMENTARY直前に.surprise-banner追加（空時は非表示）
+  Discord通知にもサプライズ一覧を追記
 
 ### [DESIGN-14] 非線形的成長の検知スコア
 - 概要: 構造変化×経営者実行力×業界変曲点の3要素で
