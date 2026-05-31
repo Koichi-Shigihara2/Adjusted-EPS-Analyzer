@@ -16,6 +16,10 @@
   pipeline.py: _tapering_g_end を growth_sanity から取得して渡す
 - 実績: 10銘柄に逓減DCF適用（ALAB例: 51.5%→9.6%、IV $667→$206）
 - テスト: 5件追加（計37件）
+- 適用外の銘柄と理由:
+  segment_configured=True の銘柄（NVDA/META/GOOGL等）→ 手動設定済みのため再計算ブロック非実行
+  maturity_config で three_stage DCF の銘柄（NVDA等）→ Phase2で成長減速を既に表現済み
+  将来: segment_configured 銘柄への逓減対応は DCF-1b として別途検討
 
 ### [DCF-2] 高成長銘柄向け判定カテゴリの追加
 - 現状: TRIM判定がDCF乖離率に過度に依存
