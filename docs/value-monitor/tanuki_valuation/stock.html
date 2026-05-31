@@ -843,6 +843,7 @@ function render(d) {
 
   const scenarioValuations = d.scenario_valuations;
   const futureVals = d.future_values || {};
+  const returnMetrics = d.return_metrics || null;
   const sanity = d.growth_sanity || null;
 
   // フェアPER / PEG / PSR
@@ -1069,13 +1070,45 @@ function render(d) {
               '<td class="current-val">$' + fmt(sc.baseVal) + '</td>' +
               tds + '</tr>';
           }).join('');
+
+          // DESIGN-3: 現在株価行（期待リターン表示）
+          let currentRow = '';
+          if (currentPrice > 0 && returnMetrics) {
+            const rmTds = yearLabels.map(k => {
+              const rm = returnMetrics[k];
+              if (!rm) return '<td>—</td>';
+              const retPct = rm.expected_return_pct;
+              const col = retPct >= 0 ? '#10b981' : '#f43f5e';
+              const sign = retPct >= 0 ? '+' : '';
+              return '<td><span style="font-size:10px;color:var(--mut)">$' + fmt(rm.future_value) + '</span><br>' +
+                '<span style="font-size:14px;font-weight:700;color:' + col + '">' + sign + retPct.toFixed(1) + '%</span></td>';
+            }).join('');
+            currentRow = '<tr>' +
+              '<td class="scenario-name" style="color:var(--mut)">現在株価<br>' +
+              '<span style="font-size:10px;font-weight:400;opacity:.7;">$' + currentPrice.toFixed(2) + '</span></td>' +
+              '<td class="current-val" style="color:var(--mut)">—</td>' +
+              rmTds + '</tr>';
+          }
+
+          // DESIGN-3: 5年BASE年率換算リターン
+          let annualReturnStr = '';
+          if (currentPrice > 0 && returnMetrics && returnMetrics['5年後']) {
+            const fv5 = returnMetrics['5年後'].future_value;
+            const annRate = (Math.pow(fv5 / currentPrice, 0.2) - 1) * 100;
+            const col = annRate >= 0 ? '#10b981' : '#f43f5e';
+            const sign = annRate >= 0 ? '+' : '';
+            annualReturnStr = '<div style="margin-top:8px;font-family:var(--mono);font-size:12px;color:var(--mut)">' +
+              '5年BASEシナリオ年率換算: <span style="color:' + col + ';font-weight:700">' +
+              sign + annRate.toFixed(1) + '% / 年</span></div>';
+          }
+
           return '<table class="future-table">' +
             '<thead><tr>' +
             '<th class="scenario-header">シナリオ / 成長率</th>' +
             '<th>現在</th>' + thYears +
             '</tr></thead>' +
-            '<tbody>' + tbRows + '</tbody>' +
-            '</table>';
+            '<tbody>' + tbRows + currentRow + '</tbody>' +
+            '</table>' + annualReturnStr;
         })()}
       </div>
 

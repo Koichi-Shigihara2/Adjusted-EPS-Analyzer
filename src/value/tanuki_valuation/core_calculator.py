@@ -54,6 +54,7 @@ from calculator import (
     calculate_sensitivity_matrix, create_sensitivity_calc_func, SensitivityResult,
     calculate_scenario_valuations, create_scenario_calc_func as create_scenario_func, ScenarioResult,
     calculate_future_values,
+    calculate_return_metrics,
 )
 
 from calculator.dcf import calculate_three_stage_dcf, ThreeStageDCFResult
@@ -620,9 +621,19 @@ class KoichiValuationCalculator:
             current_value=_future_base_val,
             high_growth_rate=high_growth_rate,
             high_growth_years=self.high_growth_years,
-            terminal_growth=terminal_growth
+            terminal_growth=terminal_growth,
+            projection_years=5,
         )
-        print(f"   [{ticker}] 1〜3年後理論株価: {future_values}")
+        print(f"   [{ticker}] 1〜5年後理論株価: {future_values}")
+
+        # DESIGN-3: 期待リターン指標（current_price が有効な場合のみ）
+        _return_metrics: dict | None = None
+        if current_price and current_price > 0:
+            _return_metrics = calculate_return_metrics(
+                current_value=_future_base_val,
+                current_price=current_price,
+                future_values=future_values,
+            )
 
         # ── STEP 13: RICE計算（v8.0追加）──
         rice_result: RICEResult = RICEResult(
@@ -690,6 +701,7 @@ class KoichiValuationCalculator:
             "alpha": float(alpha),
             "alpha_was_capped": alpha_result.was_capped,
             "future_values": future_values,
+            "return_metrics": _return_metrics,
             "upside_percent": round(upside_percent, 1),
             "calculation_date": datetime.now(timezone(timedelta(hours=9))).strftime("%Y-%m-%dT%H:%M:%S+09:00"),
             "formula": f"Koichi式 v{self.VERSION}（動的WACC + {dcf_type} DCF + FCFベース自動判定 + 成長オプション）",
