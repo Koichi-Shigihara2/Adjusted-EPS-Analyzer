@@ -401,6 +401,7 @@ class TanukiValuationPipeline:
         _annual_revs = self._load_annual_revenues(ticker)
         _g_fund = self._calc_g_fundamental(ticker)
         _sector = self._load_beta_sector(ticker)
+        _hype_phase = self._load_hype_phase(ticker)  # GROWTH-1
         try:
             _growth_sanity = check_growth_sanity(
                 ticker=ticker,
@@ -409,6 +410,7 @@ class TanukiValuationPipeline:
                 annual_revenues=_annual_revs,
                 g_fundamental=_g_fund,
                 ttm_actual=_phase1_growth if _phase1_growth > 0 else None,
+                hype_phase=_hype_phase,  # GROWTH-1
             )
         except Exception as _e:
             import logging as _logging
@@ -1035,7 +1037,11 @@ class TanukiValuationPipeline:
         L.append("For manually configured segments: used directly as DCF growth rate G")
         L.append("For unconfigured segments: TTM Revenue Growth is auto-applied,")
         L.append("then adjusted via recommended_g (median of historical CAGR,")
-        L.append("industry benchmark, RR×ROIC, weighted by HypeCore phase)")
+        L.append("industry benchmark, RR×ROIC)")
+        L.append("GROWTH-1: Decay model weight adjusted by HypeCore phase:")
+        L.append("  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)")
+        L.append("  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)")
+        L.append("  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)")
         L.append("Next_Earnings_Date: Next quarterly earnings release")
         L.append("Valuation_Gap_Analysis: Reverse DCF calculation showing")
         L.append("what FCF growth rate the current market price implies.")
@@ -1062,7 +1068,9 @@ class TanukiValuationPipeline:
             _gs_growth_model_reason = growth_sanity.get("growth_model_reason")
             if _gs_growth_model:
                 _model_label = "逓減モデル" if _gs_growth_model == "decay" else "中央値モデル"
-                L.append(f"成長モデル: {_model_label}（{_gs_growth_model_reason}）")
+                _phase_used = growth_sanity.get("hype_phase_used")
+                _phase_suffix = f"  HypePhase={_phase_used}" if _phase_used is not None else ""
+                L.append(f"成長モデル: {_model_label}（{_gs_growth_model_reason}）{_phase_suffix}")
             if _gs_rec_g is not None:
                 L.append("推奨成長率内訳:")
                 if _gs_growth_model == "median" and _gs_rec_median is not None:
@@ -1713,6 +1721,24 @@ class TanukiValuationPipeline:
             return roic / wacc_rm
         except Exception:
             return None
+
+    def _load_hype_phase(self, ticker: str) -> int | None:
+        """poc.json から最新の HypeCore フェーズ（1〜4）を返す（GROWTH-1）"""
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        if not os.path.exists(poc_path):
+            return None
+        try:
+            with open(poc_path, encoding="utf-8") as f:
+                monthly = json.load(f).get("monthly") or []
+            if monthly:
+                stage = monthly[-1].get("stage")
+                if isinstance(stage, int) and 1 <= stage <= 4:
+                    return stage
+        except Exception:
+            pass
+        return None
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""

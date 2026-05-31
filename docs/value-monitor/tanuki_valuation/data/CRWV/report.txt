@@ -1,5 +1,5 @@
 CRWV INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T16:24:56+09:00
+Generated: 2026-05-31T16:32:32+09:00
 Price: $109.53
 
 [1. TANUKI SCORE]
@@ -106,7 +106,11 @@ Segment_Weighted_Growth: Weighted avg of segment growth rates
 For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
-industry benchmark, RR×ROIC, weighted by HypeCore phase)
+industry benchmark, RR×ROIC)
+GROWTH-1: Decay model weight adjusted by HypeCore phase:
+  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
+  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
+  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -116,9 +120,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 65.0%
-成長モデル: 逓減モデル（TTM65.0%と業界平均10.0%の中間値37.5%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（Phase4(剥落)に基づきTTM65.0%×35%＋業界平均10.0%×65%＝29.2%を採用）  HypePhase=4
 推奨成長率内訳:
-  最終推奨値:            37.5%
+  最終推奨値:            29.2%
 判定         : PLAUSIBLE
 業界ベンチマーク: Information Services / -5.9% (Damodaran 2025)
 signals:

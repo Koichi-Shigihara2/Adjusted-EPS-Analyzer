@@ -348,6 +348,7 @@ def check_growth_sanity(
     annual_revenues: list[float] | None = None,
     g_fundamental: float | None = None,
     ttm_actual: float | None = None,  # TTM Revenue YoY (decimal) from STONKS/SEC
+    hype_phase: int | None = None,    # GROWTH-1: HypeCoreフェーズ（1〜4）
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
@@ -462,15 +463,29 @@ def check_growth_sanity(
     _trigger_max = max(_trigger_vals) if _trigger_vals else None
 
     if _trigger_max is not None and _trigger_max > 0.50:
-        # 高成長逓減モデル: 5年間で線形逓減する平均値
+        # ── GROWTH-1: HypeCoreフェーズで逓減カーブの傾きを調整 ──
+        # Phase 1-2（黎明〜拡大）: TTM寄り（成長継続余地あり） → TTM重みを高く
+        # Phase 3 （陶酔期）      : バランス（旧来の50:50）
+        # Phase 4 （剥落期）      : 業界平均寄り（正規化加速）  → 業界平均重みを高く
+        # hype_phase=None        : Phase3相当のデフォルト挙動
+        if hype_phase is None or hype_phase == 3:
+            _ttm_weight = 0.50   # 従来通り
+        elif hype_phase <= 2:
+            _ttm_weight = 0.65   # TTM寄り: Phase1-2は高成長が続きやすい
+        else:
+            _ttm_weight = 0.35   # 業界平均寄り: Phase4は正規化が速い
+
         _start_raw = _ttm_actual_pos if _ttm_actual_pos is not None else _ttm_best_cagr
         start_g = min(_start_raw, 1.0)
         end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
-        recommended_g = (start_g + end_g) / 2
+        recommended_g = start_g * _ttm_weight + end_g * (1 - _ttm_weight)
         growth_model = "decay"
+        _phase_label = {1: "Phase1(黎明)", 2: "Phase2(拡大)", 3: "Phase3(陶酔)", 4: "Phase4(剥落)"}.get(
+            hype_phase, "Phase不明"
+        )
         growth_model_reason = (
-            f"TTM{start_g:.1%}と業界平均{end_g:.1%}の中間値{recommended_g:.1%}を採用"
-            f"（将来の成長減速を織り込んだ保守的推定）"
+            f"{_phase_label}に基づきTTM{start_g:.1%}×{_ttm_weight:.0%}＋"
+            f"業界平均{end_g:.1%}×{1-_ttm_weight:.0%}＝{recommended_g:.1%}を採用"
         )
     else:
         # 中央値モデル
@@ -504,6 +519,7 @@ def check_growth_sanity(
         "recommended_g": recommended_g,
         "growth_model": growth_model,
         "growth_model_reason": growth_model_reason,
+        "hype_phase_used": hype_phase,
         "signals": signals,
         "warnings": warnings,
     }

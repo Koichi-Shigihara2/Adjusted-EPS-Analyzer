@@ -622,6 +622,73 @@ class TestGrowthDecayModel:
 
 
 # ─────────────────────────────────────────────
+# GROWTH-1: HypeCoreフェーズ別逓減モデル重み調整
+#    check_growth_sanity の hype_phase パラメータで
+#    TTM / 業界平均の重みが変わることを検証
+# ─────────────────────────────────────────────
+
+class TestGrowthDecayModelPhaseWeight:
+    """GROWTH-1: フェーズ別逓減カーブの傾き調整テスト"""
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
+    })
+    def test_phase1_gives_ttm_heavy_recommended_g(self, _mock):
+        """Phase1（黎明期）→ TTM重み65%: recommended_g がフェーズなし(50%)より高い"""
+        ttm, industry = 0.80, 0.096
+        result_phase1 = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=ttm, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=ttm, hype_phase=1,
+        )
+        result_no_phase = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=ttm, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=ttm, hype_phase=None,
+        )
+        assert result_phase1["growth_model"] == "decay"
+        # Phase1: TTM×0.65 + industry×0.35
+        expected_phase1 = ttm * 0.65 + industry * 0.35
+        assert abs(result_phase1["recommended_g"] - expected_phase1) < 0.001
+        # Phase1 は フェーズなし(50:50) より recommended_g が高い
+        assert result_phase1["recommended_g"] > result_no_phase["recommended_g"]
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
+    })
+    def test_phase4_gives_industry_heavy_recommended_g(self, _mock):
+        """Phase4（剥落期）→ 業界平均重み65%: recommended_g がフェーズなし(50%)より低い"""
+        ttm, industry = 0.80, 0.096
+        result_phase4 = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=ttm, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=ttm, hype_phase=4,
+        )
+        result_no_phase = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=ttm, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=ttm, hype_phase=None,
+        )
+        assert result_phase4["growth_model"] == "decay"
+        # Phase4: TTM×0.35 + industry×0.65
+        expected_phase4 = ttm * 0.35 + industry * 0.65
+        assert abs(result_phase4["recommended_g"] - expected_phase4) < 0.001
+        # Phase4 は フェーズなし(50:50) より recommended_g が低い
+        assert result_phase4["recommended_g"] < result_no_phase["recommended_g"]
+
+    @patch.object(_gs, "get_industry_benchmark", return_value={
+        "industry": "Semiconductor", "g_ebit": 0.096, "roc": 0.20, "rr": 0.60,
+    })
+    def test_phase3_equals_default_50_50(self, _mock):
+        """Phase3（陶酔期）→ 従来と同じ50:50の挙動"""
+        ttm, industry = 0.80, 0.096
+        result_phase3 = _gs.check_growth_sanity(
+            "ALAB", phase1_growth=ttm, sector="Semiconductor",
+            annual_revenues=None, ttm_actual=ttm, hype_phase=3,
+        )
+        expected_50_50 = ttm * 0.50 + industry * 0.50
+        assert abs(result_phase3["recommended_g"] - expected_50_50) < 0.001
+        # 戻り値に hype_phase_used が記録されている
+        assert result_phase3["hype_phase_used"] == 3
+
+
+# ─────────────────────────────────────────────
 # 10. hypecore substage_watch の eps_surprise 分岐
 #    detect_substage() が eps_surprise の実際の値に応じて
 #    「大幅ミス」か「軽微なミス」かを正しく出力することを検証

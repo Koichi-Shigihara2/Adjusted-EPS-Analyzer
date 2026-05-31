@@ -1,12 +1,12 @@
 QBTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T16:25:06+09:00
+Generated: 2026-05-31T16:32:42+09:00
 Price: $30.14
 
 [1. TANUKI SCORE]
 Classification: PASS
 Funda_Score: 10/100
 Timing_Score (components):
-  Deviation_Rate: -89.0%
+  Deviation_Rate: -89.1%
   MA200_Deviation: +29.9%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.33 (Strong Buy)
@@ -32,7 +32,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左上
 Label: 割高×高FCF
 Key_Metric_Y: FCF_Margin = 71.6%
-Deviation_Rate: -89.0%
+Deviation_Rate: -89.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,16 +57,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $30.14
-Intrinsic_Value_BASE: $3.33
-Deviation_BASE: -89.0%
+Intrinsic_Value_BASE: $3.30
+Deviation_BASE: -89.1%
 Growth_Rate_Original: 15.0% (TTM実績)
-Growth_Rate_Adjusted: 12.5% (推奨値・逓減モデル)
+Growth_Rate_Adjusted: 11.8% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=8.7%, IV=$3.18 （推奨値ベース）
-BASE: Growth=12.5%, IV=$3.33 （推奨値ベース）
-BULL: Growth=15.0%, IV=$3.44 （推奨値ベース）
+BEAR: Growth=8.2%, IV=$3.16 （推奨値ベース）
+BASE: Growth=11.7%, IV=$3.30 （推奨値ベース）
+BULL: Growth=14.1%, IV=$3.40 （推奨値ベース）
 TTM_Revenue_Growth: 178.5%
-(DCF Base vs TTM actual: -166.0pt discount)
+(DCF Base vs TTM actual: -166.8pt discount)
 WACC: 15.39%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.945
@@ -93,7 +93,7 @@ FCF_History:
   2025: $-0.08B (FCF_Margin: -308.5%)
 Segment_Breakdown:
   General: $0.0B (100%, YoY 12%)
-  Segment_Weighted_Growth: 12.5% (推奨値・中央値を自動適用)
+  Segment_Weighted_Growth: 11.8% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -119,7 +119,11 @@ Segment_Weighted_Growth: Weighted avg of segment growth rates
 For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
-industry benchmark, RR×ROIC, weighted by HypeCore phase)
+industry benchmark, RR×ROIC)
+GROWTH-1: Decay model weight adjusted by HypeCore phase:
+  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
+  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
+  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -129,9 +133,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 逓減モデル（TTM15.0%と業界平均10.0%の中間値12.5%を採用（将来の成長減速を織り込んだ保守的推定））
+成長モデル: 逓減モデル（Phase4(剥落)に基づきTTM15.0%×35%＋業界平均10.0%×65%＝11.8%を採用）  HypePhase=4
 推奨成長率内訳:
-  最終推奨値:            12.5%
+  最終推奨値:            11.8%
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:

@@ -1,5 +1,5 @@
 TDY INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T16:25:15+09:00
+Generated: 2026-05-31T16:32:52+09:00
 Price: $619.83
 
 [1. TANUKI SCORE]
@@ -110,7 +110,11 @@ Segment_Weighted_Growth: Weighted avg of segment growth rates
 For manually configured segments: used directly as DCF growth rate G
 For unconfigured segments: TTM Revenue Growth is auto-applied,
 then adjusted via recommended_g (median of historical CAGR,
-industry benchmark, RR×ROIC, weighted by HypeCore phase)
+industry benchmark, RR×ROIC)
+GROWTH-1: Decay model weight adjusted by HypeCore phase:
+  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
+  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
+  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
 Next_Earnings_Date: Next quarterly earnings release
 Valuation_Gap_Analysis: Reverse DCF calculation showing
 what FCF growth rate the current market price implies.
@@ -120,7 +124,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 中央値モデル（TTM15.0%のため中央値モデル適用）
+成長モデル: 中央値モデル（TTM15.0%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          10.9%
   最終推奨値:            10.9%
