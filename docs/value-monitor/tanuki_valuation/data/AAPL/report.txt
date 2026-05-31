@@ -1,5 +1,5 @@
 AAPL INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-31T16:05:52+09:00
+Generated: 2026-05-31T16:24:49+09:00
 Price: $312.06
 
 [1. TANUKI SCORE]
@@ -150,34 +150,7 @@ Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
-[5. RIM VALUATION (参考)]
-RIM_IV_per_share: $77.51
-RIM_Deviation: -75.2%
-Midpoint_DCF_RIM: $158.87 (-49.1%)
-Components:
-  Book_Value_per_share: $5.02
-  ROE_10yr_avg: 109.6%
-  Ke (WACC_beta): 10.37%
-  Terminal_Growth: 3.5%
-  Value_Creation: ROE > Ke → 再投資が価値を創造（RIM > BV）
-Definition:
-
-RIM (Residual Income Model): Equity value = BV + PV of future RI
-Formula: RIM = BV × (ROE - tv_g) / (Ke - tv_g)
-  Gordon Growth RIM (single-stage perpetuity)
-BV: Latest book value per share (stockholders_equity / shares)
-ROE: 10-year average return on equity
-Ke: Beta-adjusted WACC (cost of equity)
-tv_g: Sector-specific terminal growth rate (WACC-1)
-ROE > Ke → value creation per unit of BV (RIM > BV)
-ROE = Ke → no excess return (RIM = BV)
-ROE < Ke → value destruction (RIM < BV)
-Midpoint: Average of DCF IV and RIM IV as reference.
-Note: RIM is most reliable for mature, capital-efficient firms.
-Pre-profit/negative-equity firms are excluded automatically.
-
-
-[6. RICE METRICS]
+[5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
 BEAR: RICE=0.476
@@ -221,7 +194,7 @@ G used in RICE reflects the auto-adjusted recommended_g
 for unconfigured segments.
 
 
-[7. EPS ANALYZER]
+[6. EPS ANALYZER]
 Latest_Adjusted_EPS: $2.2063 (直近四半期値)
 Latest_GAAP_EPS: $2.0086
 Adjustment_Delta: $0.1978 (sbc)
@@ -258,7 +231,7 @@ Forward_Estimates: Analyst consensus (external data)
 Compare with TANUKI G scenario for cross-validation
 
 
-[8. HYPECORE]
+[7. HYPECORE]
 Current_Phase: Phase3 (陶酔期)
 Alpha_Premium: 1.0
 HYPE_Signal: 陶酔期入り — 過熱が始まったばかり。まだ上昇余地がある可能性。
@@ -312,7 +285,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 High-growth / pre-profit stocks may show misleading ERP.
 
 
-[9. STONKS SILO]
+[8. STONKS SILO]
 Short_Report_Target: no
 Short_Interest: 0.9%
 Institutional_Ownership: N/A (not in data source)

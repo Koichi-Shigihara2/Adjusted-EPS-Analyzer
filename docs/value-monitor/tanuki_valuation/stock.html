@@ -712,8 +712,6 @@ function render(d) {
   // メイン: ivps = Rmβなし（10%）← intrinsic_value_per_share
   const ivpsBeta = d.intrinsic_value_beta || 0;  // 参考①: β込みWACC
   const ivpsRf = d.intrinsic_value_rf || 0;      // 参考②: Rf理論上限
-  const rimData = d.rim || null;                  // 参考③: RIM（残余利益モデル）
-  const ivpsRim = rimData?.rim_iv_per_share || 0;
   const upsideRf = d.upside_percent_rf || 0;
   const upsieBeta = d.upside_percent_beta || 0;
   const currentPrice = d.components?.current_price || 0;
@@ -1919,35 +1917,6 @@ function render(d) {
         '<div style="' + subStyle + '">メインとの差 $' + fmt(ivpsRf - ivps) + ' = リスクプレミアム全体</div>' +
         '</div>';
     }
-    if (ivpsRim > 0) {
-      const rimRoe = rimData?.roe_used || 0;
-      const rimKe  = rimData?.ke_used  || 0;
-      const rimBv  = rimData?.book_value_per_share || 0;
-      const rimUp  = rimData?.upside_rim_pct;
-      const midpoint = (ivps + ivpsRim) / 2;
-      const midUp = currentPrice > 0 ? ((midpoint - currentPrice) / currentPrice * 100) : null;
-      const rimUpStr = rimUp != null ? (rimUp >= 0 ? '▲' : '▼') + Math.abs(rimUp).toFixed(1) + '%' : '—';
-      const midUpStr = midUp != null ? (midUp >= 0 ? '▲' : '▼') + Math.abs(midUp).toFixed(1) + '%' : '—';
-      const midUpColor = midUp != null ? (midUp >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--mut)';
-      const rimValueCreation = rimRoe > rimKe
-        ? '<span style="color:var(--green);font-size:10px">ROE>Ke 価値創造</span>'
-        : '<span style="color:var(--red);font-size:10px">ROE<Ke 価値毀損</span>';
-      html +=
-        '<div style="' + boxStyle + '">' +
-        '<div style="' + lblStyle + '">参考③ RIM（残余利益モデル）' + rimValueCreation + '</div>' +
-        '<div style="' + valStyle + '">$' + fmt(ivpsRim) +
-          '<span style="font-size:11px;font-weight:400;color:var(--mut);margin-left:8px">' + rimUpStr + '</span>' +
-        '</div>' +
-        '<div style="' + subStyle + '">BV=$' + fmt(rimBv) + '  ROE=' + (rimRoe*100).toFixed(1) + '%  Ke=' + (rimKe*100).toFixed(2) + '%</div>' +
-        '<div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px">' +
-        '<div style="' + lblStyle + '">DCF・RIM 中央値</div>' +
-        '<div style="font-family:var(--mono);font-size:15px;font-weight:700;color:' + midUpColor + '">' +
-          '$' + fmt(midpoint) +
-          '<span style="font-size:11px;font-weight:400;margin-left:8px">' + midUpStr + '</span>' +
-        '</div>' +
-        '</div>' +
-        '</div>';
-    }
     rfBlock.innerHTML = html;
   }
 
@@ -1976,23 +1945,6 @@ function render(d) {
         '<div style="display:flex;justify-content:space-between">' +
         '<span style="color:var(--mut)">βの効果（メイン - β込み）</span>' +
         '<span style="font-family:var(--mono);color:var(--mut)">' + (ivps - ivpsBeta >= 0 ? '+' : '') + '$' + fmt(ivps - ivpsBeta) + '</span>' +
-        '</div></div>';
-    }
-    if (ivpsRim > 0) {
-      const diffR = currentPrice - ivpsRim;
-      const diffRColor = diffR >= 0 ? 'var(--red)' : 'var(--green)';
-      const midpoint = (ivps + ivpsRim) / 2;
-      const diffM = currentPrice - midpoint;
-      const diffMColor = diffM >= 0 ? 'var(--red)' : 'var(--green)';
-      html +=
-        '<div style="border-top:1px solid var(--bdr);margin-top:6px;padding-top:6px;font-size:11px">' +
-        '<div style="display:flex;justify-content:space-between;margin-bottom:2px">' +
-        '<span style="color:var(--mut)">vs RIM（参考③）</span>' +
-        '<span style="font-family:var(--mono);color:' + diffRColor + '">' + (diffR >= 0 ? '+' : '') + '$' + fmt(Math.abs(diffR)) + '</span>' +
-        '</div>' +
-        '<div style="display:flex;justify-content:space-between">' +
-        '<span style="color:var(--mut)">vs DCF・RIM中央値</span>' +
-        '<span style="font-family:var(--mono);color:' + diffMColor + '">' + (diffM >= 0 ? '+' : '') + '$' + fmt(Math.abs(diffM)) + '</span>' +
         '</div></div>';
     }
     html += '</div>';
