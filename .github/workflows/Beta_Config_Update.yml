@@ -1,0 +1,68 @@
+name: Beta Config Update
+
+on:
+  # 毎月第1日曜日 JST 8:00 に実行
+  schedule:
+    - cron: '0 23 1-7 * 0'   # UTC 23:00 Sun (JST 8:00 Mon, 月初週の日曜)
+  # 手動実行（新規銘柄登録後など）
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Target tickers (comma-separated, blank for all)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Dry run (no config update)'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  update-beta:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install yfinance requests
+
+      - name: Run Beta Config Update
+        env:
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          DRY_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
+            python src/value/tanuki_valuation/beta_fetcher.py $TICKERS $DRY_FLAG
+          else
+            python src/value/tanuki_valuation/beta_fetcher.py $DRY_FLAG
+          fi
+
+      - name: Commit and push changes
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add config/beta_config.json
+          if git diff --staged --quiet; then
+            echo "β値に変化なし"
+          else
+            git commit -m "chore: beta_config.json 月次自動更新 $(date +'%Y-%m-%d') [skip ci]"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi

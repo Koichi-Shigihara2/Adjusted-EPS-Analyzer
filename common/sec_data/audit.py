@@ -3,8 +3,9 @@ common/sec_data/audit.py
 SECデータ品質監査スクリプト
 
 使用方法:
-    python common/sec_data/audit.py              # 全銘柄監査
+    python common/sec_data/audit.py              # 全銘柄監査（SECデータのみ）
     python common/sec_data/audit.py AVGO BKNG   # 特定銘柄のみ
+    python common/sec_data/audit.py --check-beta # β乖離チェックも実施
 
 終了コード:
     0 = 問題なし または 軽微な問題のみ
@@ -154,8 +155,73 @@ def post_discord(message: str) -> bool:
         return False
 
 
+def audit_beta_drift(tickers: list[str]) -> list[dict]:
+    """
+    beta_config.json と yfinance の実測β値を比較し、
+    乖離が大きい銘柄をリストアップする。
+
+    yfinance が利用できない場合は空リストを返す（graceful skip）。
+    """
+    try:
+        import yfinance as yf
+        import time as _time
+    except ImportError:
+        print("  [beta] yfinance 未インストール → βチェックをスキップ")
+        return []
+
+    repo_root = os.path.join(os.path.dirname(__file__), "..", "..")
+    cfg_path  = os.path.join(repo_root, "config", "beta_config.json")
+    if not os.path.exists(cfg_path):
+        return []
+
+    cfg       = json.load(open(cfg_path, encoding="utf-8"))
+    overrides = cfg.get("overrides", {})
+    DRIFT_THRESHOLD = 0.5  # この差分以上を「大きな乖離」と判定
+
+    drift_list = []
+    for ticker in tickers:
+        try:
+            info   = yf.Ticker(ticker).info
+            yf_b   = info.get("beta")
+            cfg_b  = overrides.get(ticker, {}).get("beta")
+            src    = overrides.get(ticker, {}).get("source", "")
+
+            if yf_b is None:
+                continue
+            if cfg_b is None:
+                drift_list.append({
+                    "ticker": ticker,
+                    "cfg": None,
+                    "yf":  round(yf_b, 3),
+                    "diff": None,
+                    "level": "critical",
+                    "msg": f"beta_config未設定（yfinance={yf_b:.2f}）",
+                })
+                continue
+
+            diff = abs(yf_b - cfg_b)
+            if diff >= DRIFT_THRESHOLD:
+                level = "critical" if diff >= 1.0 else "warning"
+                drift_list.append({
+                    "ticker": ticker,
+                    "cfg":  cfg_b,
+                    "yf":   round(yf_b, 3),
+                    "diff": round(yf_b - cfg_b, 2),
+                    "level": level,
+                    "src":  src,
+                    "msg":  f"β乖離 config={cfg_b} / yfinance={yf_b:.2f} (差{yf_b-cfg_b:+.2f})",
+                })
+            _time.sleep(0.12)
+        except Exception:
+            pass
+
+    return drift_list
+
+
 def main():
-    tickers = sys.argv[1:] if len(sys.argv) > 1 else get_registered_tickers()
+    check_beta = "--check-beta" in sys.argv
+    args       = [a for a in sys.argv[1:] if not a.startswith("--")]
+    tickers    = args if args else get_registered_tickers()
     if not tickers:
         print("監査対象銘柄が見つかりません。tickers.json を確認してください。")
         sys.exit(1)
@@ -180,8 +246,43 @@ def main():
             for msg in r["critical"]:
                 print(f"   {r['ticker']:6s}: {msg}")
 
+    # ── β乖離チェック（--check-beta 指定時）──
+    beta_drift = []
+    if check_beta:
+        print("\n=== β乖離チェック ===")
+        beta_drift = audit_beta_drift(tickers)
+        beta_critical = [d for d in beta_drift if d["level"] == "critical"]
+        beta_warning  = [d for d in beta_drift if d["level"] == "warning"]
+        if not beta_drift:
+            print("🟢 β乖離: 問題なし")
+        else:
+            if beta_critical:
+                print(f"🔴 重大β乖離: {len(beta_critical)}銘柄")
+                for d in beta_critical:
+                    print(f"   {d['ticker']:6s}: {d['msg']}")
+            if beta_warning:
+                print(f"🟡 β警告: {len(beta_warning)}銘柄")
+                for d in beta_warning:
+                    print(f"   {d['ticker']:6s}: {d['msg']}")
+        if beta_drift:
+            print("\n対処方法:")
+            print("  python src/value/tanuki_valuation/beta_fetcher.py --dry-run")
+            print("  python src/value/tanuki_valuation/beta_fetcher.py")
+
     # Discord通知
     message = build_discord_message(tickers, critical, warning, run_date)
+
+    # β乖離情報を Discord メッセージに追記
+    if check_beta and beta_drift:
+        beta_lines = ["\n**⚡ β乖離検知**"]
+        for d in beta_drift[:8]:  # 最大8件
+            icon = "🔴" if d["level"] == "critical" else "🟡"
+            beta_lines.append(f"　{icon} `{d['ticker']}`: {d['msg']}")
+        if len(beta_drift) > 8:
+            beta_lines.append(f"　... 他{len(beta_drift)-8}銘柄")
+        beta_lines.append("\n```\npython src/value/tanuki_valuation/beta_fetcher.py\n```")
+        message = message + "\n" + "\n".join(beta_lines) if message else "\n".join(beta_lines)
+
     if post_discord(message):
         print("\nDiscord通知: 送信完了")
 
@@ -201,6 +302,11 @@ def main():
                 f.write("### 🟡 警告\n")
                 for r in warning:
                     f.write(f"- `{r['ticker']}`: {', '.join(r['warning'])}\n")
+            if check_beta and beta_drift:
+                f.write("\n### ⚡ β乖離\n")
+                for d in beta_drift:
+                    icon = "🔴" if d["level"] == "critical" else "🟡"
+                    f.write(f"- {icon} `{d['ticker']}`: {d['msg']}\n")
 
     # 重大問題があれば exit 1
     if critical:

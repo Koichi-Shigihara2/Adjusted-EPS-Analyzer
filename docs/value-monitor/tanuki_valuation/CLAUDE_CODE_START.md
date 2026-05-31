@@ -103,6 +103,31 @@ python common/sec_data/audit.py
 
 ---
 
+## 新規銘柄登録時の必須手順
+
+cik_lookup.csv に新規銘柄を追加した後、以下を必ず実行すること。
+
+```bash
+# Step 1: SEC データ取得
+python common/sec_data/update.py [TICKER]
+
+# Step 2: β を yfinance から自動取得して beta_config.json に登録
+python src/value/tanuki_valuation/beta_fetcher.py [TICKER]
+
+# Step 3: TANUKI VALUATION パイプライン実行
+python src/value/tanuki_valuation/pipeline.py [TICKER]
+
+# Step 4: データ品質確認（β設定含む）
+python common/sec_data/audit.py [TICKER] --check-beta
+```
+
+**注意事項：**
+- Step 2 を忘れると β=未設定のまま yfinance の raw 値が使われる
+- 異常値が疑われる場合は `--dry-run` で差分確認してから適用
+- LMT 等 Damodaran 手動設定銘柄は `beta_fetcher.py` の `DAMODARAN_OVERRIDES` に追加
+
+---
+
 ## よく使うコマンド
 
 ### 単体テスト実行
