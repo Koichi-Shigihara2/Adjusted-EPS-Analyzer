@@ -1305,13 +1305,13 @@ class TanukiValuationPipeline:
             L.append(f"  Risk_Free_Rate (10Y):  {_rf_erp*100:.2f}%")
             L.append(f"  ERP: {_erp*100:.2f}%")
             if _erp >= 0.04:
-                L.append("  ERP_Signal: 株式に明確な割安感（ERP≥4%）")
+                L.append("  ERP_Signal: 期待冷却圏（成長期待が市場に織り込まれていない）")
             elif _erp >= 0.02:
-                L.append("  ERP_Signal: 株式の相対的魅力あり（ERP 2〜4%）")
+                L.append("  ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）")
             elif _erp >= 0.0:
-                L.append("  ERP_Signal: 株式プレミアムは薄い（ERP 0〜2%）")
+                L.append("  ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）")
             else:
-                L.append(f"  ERP_Signal: 株式に割高感（ERPがマイナス {_erp*100:.2f}%）")
+                L.append("  ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）")
         else:
             L.append("  N/A (ForwardEPS 未取得)")
 
@@ -1325,10 +1325,12 @@ class TanukiValuationPipeline:
         L.append("High PS = market expects significant margin expansion")
         L.append("EV/EBITDA: Debt-adjusted valuation multiple")
         L.append("ERP: Forward Earnings Yield - Risk Free Rate (10Y Treasury)")
-        L.append("ERP>2% = equities offer meaningful premium over bonds")
-        L.append("ERP<0% = bonds more attractive than stocks on yield basis")
+        L.append("ERP reflects market EXPECTATION level, not price cheapness.")
+        L.append("ERP<0%  = 期待過熱圏: market prices in aggressive future growth")
+        L.append("ERP0-2% = 期待やや過熱: growth expectations building in price")
+        L.append("ERP2-4% = 期待中立: moderate growth expectations")
+        L.append("ERP≥4%  = 期待冷却圏: little growth expectation in price")
         L.append("Note: Uses ForwardEPS from yfinance (analyst consensus).")
-        L.append("High-growth / pre-profit stocks may show misleading ERP.")
         L.append("")
         L.append("")
         L.append(f"[{n+3}. STONKS SILO]")
