@@ -405,13 +405,13 @@
 - 実装: pipeline.py Matrix①のラベル三分類化 + テスト5件追加
 
 ### ✅ [DESIGN-11] STONKSSILOユニットエコノミクス改善評価（2026-05-31 完了）
-- 実装: DeficitQualityに4フィールド追加（analyzer.py）
-  gross_margin_trend: 複数年の粗利率推移
-  loss_per_revenue_trend: 赤字/売上比の推移
-  unit_economics_score: 0-100（GM水準20+GMトレンド20+LPR水準30+LPRトレンド30）
-  unit_economics_label: ★★★優秀 / ★★☆良好 / ★☆☆要注意 / ☆☆☆低調
-- 評価例: RBRK 90点（GM80%・損失縮小）/ BBAI 5点（GM低下・損失拡大）
-- 変更: discover/stonks-silo/src/analyzer.py のみ
+- バックエンド: DeficitQualityに4フィールド追加（analyzer.py）
+  gross_margin_trend / loss_per_revenue_trend / unit_economics_score / unit_economics_label
+  スコア: GM水準20+GMトレンド20+損失/売上水準30+損失/売上改善率30
+- フロントエンド: index.html にUE表示を統合
+  テーブル「黒字化の質」列（★★★バッジ）/ UEフィルターボタン（優秀/良好/低調）
+  詳細パネル: UE3ペインカード（スコアゲージ・GM棒グラフ・LPR圧縮棒グラフ）
+- 評価例: RBRK 90点★★★ / RKLB 55点★★☆ / BBAI 5点☆☆☆
 
 ### ✅ [DESIGN-12] ステルス流動性の3層構造改善（2026-05-31 完了）
 - 実装: 3層構造でステルスカードを再構成
