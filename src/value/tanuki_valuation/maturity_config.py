@@ -22,7 +22,7 @@ phase1.growth = null の場合は segment_config の加重平均成長率を流�
 
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 
 # ============================================================
@@ -48,6 +48,102 @@ def _find_config_dir() -> str:
         "migrate_config_to_json.py を実行してください。"
     )
 
+
+# ============================================================
+# WACC-1: Damodaran 業種別ターミナル成長率テーブル
+# 長期 GDP 成長率（〜2%）＋セクター別構造成長プレミアム
+# ============================================================
+_DAMODARAN_TV_G: Dict[str, float] = {
+    # テクノロジー：デジタル経済の長期構造成長を反映（3.5%）
+    "Software (System & Application)": 0.035,
+    "Software (Internet)":             0.035,
+    "Computers/Peripherals":           0.035,
+    "Semiconductor":                   0.035,
+    "Semiconductor Equip":             0.035,
+    "Information Services":            0.035,
+    "Heathcare Information and Technology": 0.035,
+    # 広告・エンターテインメント
+    "Advertising":                     0.030,
+    "Software (Entertainment)":        0.030,
+    "Entertainment":                   0.025,
+    "Broadcasting":                    0.020,
+    # 防衛・産業
+    "Aerospace/Defense":               0.030,
+    "Machinery":                       0.025,
+    "Electrical Equipment":            0.025,
+    # ヘルスケア・製薬
+    "Drugs (Biotechnology)":           0.030,
+    "Drugs (Pharmaceutical)":          0.030,
+    "Healthcare Products":             0.030,
+    "Healthcare Support Services":     0.025,
+    # 金融
+    "Financial Svcs. (Non-bank & Insurance)": 0.030,
+    "Bank (Money Center)":             0.025,
+    "Banks (Regional)":                0.025,
+    # 消費者：成熟市場・価格決定力は限定的（2.5%）
+    "Restaurant/Dining":               0.025,
+    "Beverage (Soft)":                 0.025,
+    "Beverage (Alcoholic)":            0.020,
+    "Retail (General)":                0.025,
+    "Retail (Special Lines)":          0.025,
+    "Apparel":                         0.020,
+    # モビリティ・通信
+    "Auto & Truck":                    0.030,
+    "Air Transport":                   0.030,
+    "Telecom. Equipment":              0.025,
+    "Telecom. Services":               0.020,
+    # 公益・不動産（規制産業、低成長）
+    "Power":                           0.020,
+    "Utility (General)":               0.020,
+    "Utility (Water)":                 0.020,
+    "R.E.I.T.":                        0.025,
+    "Real Estate (Development)":       0.025,
+}
+
+# ============================================================
+# WACC-1: ポートフォリオ銘柄別ターミナル成長率（直引きテーブル）
+# _DAMODARAN_TV_G の業種マッピングを適用した結果をキャッシュ。
+# 新規銘柄追加時はここに追記する。
+# ============================================================
+_TICKER_TV_G: Dict[str, float] = {
+    # ── 半導体・フォトニクス（3.5%）──
+    "NVDA": 0.035, "AMD": 0.035, "AVGO": 0.035, "AMAT": 0.035,
+    "MRVL": 0.035, "COHR": 0.035, "LITE": 0.035, "SITM": 0.035,
+    "ALAB": 0.035,
+    # ── ビッグテック（3.5%）──
+    "MSFT": 0.035, "AMZN": 0.035, "GOOGL": 0.035, "AAPL": 0.035,
+    "TSLA": 0.035,
+    # ── 広告プラットフォーム（3.0%）──
+    "META": 0.030,
+    # ── エンタープライズ・SaaS（3.5%）──
+    "NOW": 0.035, "CRM": 0.035, "ADBE": 0.035, "ADSK": 0.035,
+    "INTU": 0.035, "CDNS": 0.035, "BSY": 0.035, "CSGP": 0.035,
+    # ── サイバーセキュリティ・SaaS（3.5%）──
+    "DDOG": 0.035, "ZS": 0.035, "NET": 0.035, "S": 0.035,
+    "GTLB": 0.035, "ESTC": 0.035, "RBRK": 0.035, "IOT": 0.035,
+    "CWAN": 0.035,
+    # ── インターネット・プラットフォーム（3.5%）──
+    "BKNG": 0.035, "CART": 0.035,
+    # ── AI・アナリティクス（3.5%）──
+    "PLTR": 0.035, "APP": 0.035, "ZETA": 0.035, "CRWV": 0.035,
+    # ── FinTech（金融寄り 3.0%）──
+    "PAYS": 0.030, "SOFI": 0.030,
+    # ── 防衛・航空宇宙（3.0%）──
+    "LMT": 0.030, "HEI": 0.030, "HWM": 0.030, "TDY": 0.030,
+    "KULR": 0.030, "AVAV": 0.030,
+    # ── 産業機械（2.5%）──
+    "HON": 0.025,
+    # ── 電力インフラ（3.0%）──
+    "VRT": 0.030, "CEG": 0.030,
+    # ── ヘルスケア・製薬（3.0%）──
+    "LLY": 0.030, "RXRX": 0.030,
+    # ── 消費者・飲食料（2.5%）──
+    "CAKE": 0.025, "KO": 0.025, "CELH": 0.025, "ELF": 0.025,
+    # ── 宇宙・投機的テック（3.5% or 3.0%）──
+    "RKLB": 0.035, "ASTS": 0.035, "SPIR": 0.030,
+    "IONQ": 0.030, "JOBY": 0.030, "QBTS": 0.030,
+    "SOUN": 0.030, "BBAI": 0.030, "RCAT": 0.030, "ONDS": 0.030,
+}
 
 _DEFAULT_PROFILE: Dict[str, Any] = {
     "type": "two_stage",
@@ -109,10 +205,52 @@ def is_three_stage(ticker: str) -> bool:
     return profile.get("type") == "three_stage"
 
 
+def _lookup_tv_g_by_industry(ticker: str) -> Optional[float]:
+    """
+    ターミナル成長率をセクター別テーブルから解決する。
+
+    優先順位:
+    1. _TICKER_TV_G（ポートフォリオ銘柄直引きテーブル）
+    2. growth_sanity.TICKER_INDUSTRY_OVERRIDES → _DAMODARAN_TV_G
+       （TICKER_INDUSTRY_OVERRIDES はSIC誤分類銘柄のみ登録済み）
+    growth_sanity がテストでモック済みの場合は gracefully に None を返す。
+    """
+    # 直引きテーブルを優先
+    tv_g = _TICKER_TV_G.get(ticker)
+    if tv_g is not None:
+        return tv_g
+    # growth_sanity の SIC 上書きマッピングで解決
+    try:
+        import growth_sanity as _gs
+        overrides = getattr(_gs, "TICKER_INDUSTRY_OVERRIDES", None)
+        if isinstance(overrides, dict):
+            industry = overrides.get(ticker)
+            if industry and isinstance(industry, str):
+                return _DAMODARAN_TV_G.get(industry)
+    except Exception:
+        pass
+    return None
+
+
 def get_terminal_growth(ticker: str) -> float:
-    """銘柄のターミナル成長率を取得"""
+    """銘柄のターミナル成長率を取得
+
+    優先順位:
+    1. maturity_config.json の ticker 個別設定（3.0% 以外に明示設定された場合）
+    2. growth_sanity.TICKER_INDUSTRY_OVERRIDES → _DAMODARAN_TV_G（セクター別）
+    3. デフォルト 3.0%
+    """
+    _DEFAULT_TV_G = 0.03
     profile = get_maturity_profile(ticker)
-    return profile.get("terminal_growth", 0.03)
+    ticker_tv_g = profile.get("terminal_growth", _DEFAULT_TV_G)
+    # JSON に 3.0% 以外の値が明示設定されていればそれを使う
+    if abs(ticker_tv_g - _DEFAULT_TV_G) > 1e-5:
+        return ticker_tv_g
+    # セクター別フォールバック
+    sector_tv_g = _lookup_tv_g_by_industry(ticker)
+    if sector_tv_g is not None:
+        return sector_tv_g
+    return _DEFAULT_TV_G
 
 
 if __name__ == "__main__":

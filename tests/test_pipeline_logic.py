@@ -749,6 +749,7 @@ class TestGrowthPremiumScore:
 # ─────────────────────────────────────────────
 
 from calculator.rice import _calc_q, calculate_rice  # type: ignore[import]
+import maturity_config as _mc  # type: ignore[import]
 
 
 def _make_entry(ni: float, sbc: float, ocf: float, rev: float) -> dict:
@@ -964,3 +965,62 @@ class TestTaperingDCF:
             wacc=wacc, high_growth_years=5,
         )
         assert abs(tapering.v0 - fixed.v0) < 1.0, "g_start==g_endのとき2段階DCFと同値になるべき"
+
+
+# ─────────────────────────────────────────────
+# WACC-1: セクター別ターミナル成長率
+#    get_terminal_growth() のフォールバックロジックを検証
+# ─────────────────────────────────────────────
+
+class TestTerminalGrowthBySector:
+    """WACC-1: get_terminal_growth() のセクター別フォールバック検証"""
+
+    def test_software_industry_returns_35_pct(self):
+        """Software (System & Application) 銘柄 → tv_g = 3.5%"""
+        with patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.035):
+            result = _mc.get_terminal_growth("NOW")
+        assert result == pytest.approx(0.035, rel=1e-6)
+
+    def test_consumer_industry_returns_25_pct(self):
+        """Restaurant/Dining 銘柄 → tv_g = 2.5%"""
+        with patch.object(_mc, "_lookup_tv_g_by_industry", return_value=0.025):
+            result = _mc.get_terminal_growth("CAKE")
+        assert result == pytest.approx(0.025, rel=1e-6)
+
+    def test_unknown_ticker_returns_default_30_pct(self):
+        """業種不明銘柄 → tv_g = 3.0%（デフォルト）"""
+        with patch.object(_mc, "_lookup_tv_g_by_industry", return_value=None):
+            result = _mc.get_terminal_growth("UNKNOWN_XYZ")
+        assert result == pytest.approx(0.030, rel=1e-6)
+
+    def test_damodaran_tv_g_table_has_software_35_pct(self):
+        """_DAMODARAN_TV_G テーブルに Software (System & Application) → 3.5% が含まれる"""
+        assert _mc._DAMODARAN_TV_G.get("Software (System & Application)") == pytest.approx(0.035)
+
+    def test_damodaran_tv_g_table_has_restaurant_25_pct(self):
+        """_DAMODARAN_TV_G テーブルに Restaurant/Dining → 2.5% が含まれる"""
+        assert _mc._DAMODARAN_TV_G.get("Restaurant/Dining") == pytest.approx(0.025)
+
+    def test_damodaran_tv_g_table_has_utility_20_pct(self):
+        """_DAMODARAN_TV_G テーブルに Power → 2.0% が含まれる"""
+        assert _mc._DAMODARAN_TV_G.get("Power") == pytest.approx(0.020)
+
+    def test_calc_required_growth_uses_tv_g_parameter(self, tmp_path):
+        """_calc_required_growth は tv_g パラメータを正しく使用する"""
+        pipe = _make_pipe(tmp_path)
+        # 同じ valuation でも tv_g が違えば Required Growth が変わる
+        val = {
+            "components": {
+                "current_price": 100.0,
+                "diluted_shares": 1_000_000_000,
+                "fcf_base_used": 5_000_000_000,
+            },
+            "financial_health": {"net_debt": 0},
+            "wacc": {"value": 0.10, "market_return": 0.10},
+        }
+        req_30 = pipe._calc_required_growth(val, tv_g=0.030)
+        req_35 = pipe._calc_required_growth(val, tv_g=0.035)
+        assert req_30 is not None and req_35 is not None
+        # tv_g が高いほど分子(wacc - tv_g)が小さくなり required_fcf5 が小さくなる
+        # → 必要成長率は低下する
+        assert req_35 < req_30, "tv_g=3.5% のとき required_growth は tv_g=3.0% より低いはず"

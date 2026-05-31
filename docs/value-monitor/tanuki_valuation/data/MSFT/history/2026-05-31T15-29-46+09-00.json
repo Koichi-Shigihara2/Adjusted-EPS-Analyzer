@@ -1,0 +1,395 @@
+{
+  "intrinsic_value_pt": 4651832760974.293,
+  "intrinsic_value_per_share": 687.7952876002369,
+  "intrinsic_value_beta": 632.74,
+  "upside_percent_beta": 40.5,
+  "intrinsic_value_rf": 5987.98,
+  "upside_percent_rf": 1230.0,
+  "v0": 2273154695091.208,
+  "v0_adjusted": 2273154695091.208,
+  "alpha": 1.0,
+  "alpha_was_capped": true,
+  "future_values": {
+    "1年後": 787.32,
+    "2年後": 901.25,
+    "3年後": 1031.66
+  },
+  "upside_percent": 52.8,
+  "calculation_date": "2026-05-31T15:29:46+09:00",
+  "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "dcf_type": "three_stage",
+  "growth": {
+    "rate": 0.1447,
+    "source": "segment_weighted",
+    "phase1_years": 5
+  },
+  "wacc": {
+    "value": 0.105301,
+    "beta": 1.093,
+    "risk_free_rate": 0.043,
+    "market_return": 0.1,
+    "method": "CAPM"
+  },
+  "sensitivity": {
+    "matrix": [
+      [
+        701.75,
+        821.09,
+        952.71
+      ],
+      [
+        591.84,
+        687.8,
+        791.71
+      ],
+      [
+        511.46,
+        590.55,
+        674.68
+      ]
+    ],
+    "wacc_values": [
+      0.09,
+      0.1,
+      0.11
+    ],
+    "growth_years": [
+      3,
+      5,
+      7
+    ],
+    "base_wacc": 0.1,
+    "base_years": 5
+  },
+  "growth_scenarios": {
+    "primary": {
+      "rate": 0.1447,
+      "source": "segment_weighted"
+    },
+    "segment": {
+      "enabled": true,
+      "weighted_growth": 0.1447,
+      "fiscal_year": "FY2025",
+      "source": "segment_config"
+    }
+  },
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.101,
+      "intrinsic_value_per_share": 578.92
+    },
+    "base": {
+      "growth_rate": 0.145,
+      "intrinsic_value_per_share": 687.8
+    },
+    "bull": {
+      "growth_rate": 0.174,
+      "intrinsic_value_per_share": 769.73
+    }
+  },
+  "growth_options": {
+    "total_pv": 1288731815.566697,
+    "count": 1,
+    "applied": true,
+    "options": [
+      {
+        "name": "Copilot Enterprise",
+        "tam": 80000000000,
+        "penetration": 0.2,
+        "fcf_margin": 0.35,
+        "probability": 0.35,
+        "delay_years": 3,
+        "expected_fcf": 1959999999.9999998,
+        "pv": 1288731815.566697,
+        "note": "M365 Copilotの企業向け拡大。"
+      }
+    ]
+  },
+  "maturity_profile": {
+    "type": "three_stage",
+    "phase1": {
+      "years": 5,
+      "growth": null
+    },
+    "phase2": {
+      "years": 5,
+      "growth": 0.08
+    },
+    "terminal_growth": 0.03
+  },
+  "dcf_components": {
+    "v0": 2273154695091.208,
+    "pv_phase1": 472658608485.88934,
+    "pv_phase2": 472606421241.9291,
+    "pv_high_growth": 945265029727.8184,
+    "pv_terminal": 1327889665363.39,
+    "phase1_detail": [
+      {
+        "year": 1,
+        "phase": "phase1",
+        "growth_rate": 0.1447,
+        "fcf": 97297854661.83258,
+        "discount_factor": 1.105301,
+        "pv": 88028378389.08368
+      },
+      {
+        "year": 2,
+        "phase": "phase1",
+        "growth_rate": 0.1447,
+        "fcf": 111376854231.39977,
+        "discount_factor": 1.2216903006010003,
+        "pv": 91166193409.74457
+      },
+      {
+        "year": 3,
+        "phase": "phase1",
+        "growth_rate": 0.1447,
+        "fcf": 127493085038.68332,
+        "discount_factor": 1.3503355109445863,
+        "pv": 94415857396.43283
+      },
+      {
+        "year": 4,
+        "phase": "phase1",
+        "growth_rate": 0.1447,
+        "fcf": 145941334443.7808,
+        "discount_factor": 1.4925271905825621,
+        "pv": 97781357260.77934
+      },
+      {
+        "year": 5,
+        "phase": "phase1",
+        "growth_rate": 0.1447,
+        "fcf": 167059045537.79587,
+        "discount_factor": 1.6496917962780968,
+        "pv": 101266822029.84895
+      }
+    ],
+    "phase2_detail": [
+      {
+        "year": 6,
+        "phase": "phase2",
+        "growth_rate": 0.08,
+        "fcf": 180423769180.81955,
+        "discount_factor": 1.8234059921179768,
+        "pv": 98948763994.81848
+      },
+      {
+        "year": 7,
+        "phase": "phase2",
+        "growth_rate": 0.08,
+        "fcf": 194857670715.28513,
+        "discount_factor": 2.015412466493992,
+        "pv": 96683767692.60498
+      },
+      {
+        "year": 8,
+        "phase": "phase2",
+        "growth_rate": 0.08,
+        "fcf": 210446284372.50793,
+        "discount_factor": 2.227637414628276,
+        "pv": 94470618508.45459
+      },
+      {
+        "year": 9,
+        "phase": "phase2",
+        "growth_rate": 0.08,
+        "fcf": 227281987122.3086,
+        "discount_factor": 2.4622098620260484,
+        "pv": 92308129630.87064
+      },
+      {
+        "year": 10,
+        "phase": "phase2",
+        "growth_rate": 0.08,
+        "fcf": 245464546092.0933,
+        "discount_factor": 2.7214830227072535,
+        "pv": 90195141415.18039
+      }
+    ],
+    "terminal_fcf": 254055805205.31653,
+    "terminal_value": 3613829180314.882,
+    "dcf_type": "three_stage",
+    "v0_rm": 2477652006432.6914
+  },
+  "fcf_base": {
+    "base_fcf": 65070800000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 65070800000.0,
+    "fcf_2yr_avg": 73566500000.0,
+    "cv": 0.177,
+    "cv_threshold": 0.5,
+    "ratio": 0.177,
+    "threshold": 0.5
+  },
+  "fcf_outlier": {
+    "detected": false,
+    "rule": "none",
+    "fiscal_year": 2025,
+    "fcf_value": 75744000000,
+    "threshold_pct": 0.0,
+    "transient_evidence": {
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0.0
+    },
+    "action": "none",
+    "note": ""
+  },
+  "fcf_estimation": {
+    "applied": true,
+    "method": "adj_eps_estimated",
+    "adj_net_income": 132638159966.94803,
+    "conversion_rate": 0.6,
+    "estimated_fcf": 79582895980.16881,
+    "raw_fcf": 65070800000.0,
+    "sector": "",
+    "note": "調整済み純利益$132.64B × 転換率60%[ticker_override(Azure AI投資でCapEx急増（TTM $75B超）。)] = 推定FCF$79.58B（従来$65.07Bの1.2倍）",
+    "divergence_ratio": 1.22,
+    "divergence_warning": ""
+  },
+  "rd_capitalization": {
+    "applied": true,
+    "rd_current": 32488000000.0,
+    "rd_avg_3yr": 27072333333.333332,
+    "capitalized_rd": 32488000000.0,
+    "amortization_current": 27072333333.333332,
+    "rd_adjustment": 5415666666.666668,
+    "rd_revenue_ratio": 0.1153,
+    "threshold": 0.05,
+    "years_used": 3,
+    "note": "R&D資本化適用: 当年R&D$32.49B - 過去3年平均償却$27.07B = FCF調整$+5.42B (R&D/Rev=11.5%)"
+  },
+  "rpo_adjustment": {
+    "rpo_pv": 104234638976.31055,
+    "rpo_raw": 633000000000,
+    "discount_rate": 0.15,
+    "assumed_realization_years": 1.5,
+    "applied": true,
+    "application_rate": 1.0,
+    "sector_category": "SaaS",
+    "rpo_incremental": 274661449575.94165,
+    "op_margin": 0.4680164512855316
+  },
+  "bs_adjustment": {
+    "cash": 30242000000.0,
+    "short_term_investments": 64323000000.0,
+    "long_term_debt": 43151000000.0,
+    "short_term_debt": 2999000000.0,
+    "net_cash": 48415000000.0,
+    "net_cash_per_share": 6.5175238026834785,
+    "fiscal_year": 2025,
+    "applied": true,
+    "sector_guard": "none"
+  },
+  "rice": {
+    "available": true,
+    "q": 1.1947,
+    "cf_conversion": 0.3845,
+    "cf_adj": 0.9152,
+    "wacc": 0.1,
+    "q_years": 3,
+    "cf_years": 3,
+    "avg_intensity": 0.3974,
+    "avg_rev_growth_lagged": 0.1532,
+    "warnings": true,
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=2.83)",
+    "vc_factor": 2.0,
+    "roic_wacc_ratio": 2.825,
+    "bear": {
+      "growth_rate": 0.101,
+      "rice": 0.928,
+      "rice_per_ratio": 0.0346,
+      "rice_adj": 2.209
+    },
+    "base": {
+      "growth_rate": 0.145,
+      "rice": 1.332,
+      "rice_per_ratio": 0.0497,
+      "rice_adj": 3.171
+    },
+    "bull": {
+      "growth_rate": 0.174,
+      "rice": 1.599,
+      "rice_per_ratio": 0.0596,
+      "rice_adj": 3.805
+    }
+  },
+  "fcf_source": "ttm_series",
+  "fcf_ttm_end": "2026-03-31",
+  "fcf_ttm_periods": 5,
+  "rice_data_source": "ttm_series",
+  "components": {
+    "fcf_5yr_avg": 65070800000.0,
+    "fcf_2yr_avg": 73566500000.0,
+    "fcf_base_used": 84998562646.83548,
+    "fcf_base_method": "avg_5yr",
+    "fcf_outlier_excl_avg": null,
+    "fcf_list_raw": [
+      75744000000,
+      71389000000,
+      71738000000,
+      58437000000,
+      48046000000
+    ],
+    "diluted_shares": 7428434704,
+    "roe_10yr_avg": 0.33282252757802594,
+    "current_price": 450.24,
+    "latest_revenue": 281724000000.0,
+    "rpo": 633000000000,
+    "beta": 1.093,
+    "sector": "Technology",
+    "industry": "Software - Infrastructure",
+    "eps_data": {
+      "ticker": "MSFT"
+    },
+    "_shares_source": "yf_implied",
+    "_beta_source": "beta_config()",
+    "high_growth_rate_used": 0.1447,
+    "high_growth_years": 5,
+    "terminal_growth_used": 0.035,
+    "pv_high": 945265029727.8184,
+    "pv_terminal": 1327889665363.39,
+    "roe_used": 0.33282252757802594,
+    "fcf_floor_applied": 0.0,
+    "fcf_growth_floor": 0.15,
+    "fcf_growth_cap": 0.5,
+    "bear_multiplier": 0.7,
+    "bull_multiplier": 1.2,
+    "rpo_pv": 104234638976.31055,
+    "growth_option_pv": 1288731815.566697,
+    "alpha_uncapped": 1.3978546158277088,
+    "per": 26.81596,
+    "per_adjusted": 25.33,
+    "peg": 1.39,
+    "ps": 10.508521,
+    "ev_ebitda": 18.388,
+    "ma200": 458.46146,
+    "forward_eps": 19.33773
+  },
+  "validation": {
+    "validated_at": "2026-05-31",
+    "model": "basic_checks_only",
+    "checks": {
+      "pt_shares_consistency": {
+        "pass": false,
+        "detail": "(V₀ $2477.65B + RPO $104.23B + GO $1.29B) × (1+1.000) / 7.428B + BS $+6.52/株 = $702.00 (差異2.07%)"
+      },
+      "dcf_components": {
+        "pass": true,
+        "detail": "3段階: P1 $472.66B + P2 $472.61B + TV $1327.89B = $2273.15B (差異0.00%)"
+      },
+      "formula_verification": {
+        "pass": true,
+        "detail": "α計算: ROE 33.3% × 60% / Rm 10.00% × 0.7 = 1.3979 → cap適用 → 1.0000"
+      },
+      "anomaly_detection": {
+        "pass": true,
+        "detail": "異常値なし"
+      }
+    },
+    "overall": "WARN",
+    "ai_comment": null
+  }
+}

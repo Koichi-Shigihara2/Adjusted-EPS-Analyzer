@@ -1,21 +1,21 @@
 {
-  "intrinsic_value_pt": 19605376477.65674,
-  "intrinsic_value_per_share": 83.85437073549997,
-  "intrinsic_value_beta": 86.34,
-  "upside_percent_beta": 116.9,
-  "intrinsic_value_rf": 457.14,
-  "upside_percent_rf": 1048.6,
-  "v0": 12253360298.535461,
-  "v0_adjusted": 12253360298.535461,
+  "intrinsic_value_pt": 20872670362.696255,
+  "intrinsic_value_per_share": 88.89523933797273,
+  "intrinsic_value_beta": 91.73,
+  "upside_percent_beta": 130.5,
+  "intrinsic_value_rf": 729.98,
+  "upside_percent_rf": 1734.1,
+  "v0": 13045418976.685158,
+  "v0_adjusted": 13045418976.685158,
   "alpha": 0.6,
   "alpha_was_capped": true,
   "future_values": {
-    "1年後": 95.25,
-    "2年後": 108.21,
-    "3年後": 122.93
+    "1年後": 100.99,
+    "2年後": 114.73,
+    "3年後": 130.33
   },
-  "upside_percent": 110.7,
-  "calculation_date": "2026-05-31T13:43:40+09:00",
+  "upside_percent": 123.4,
+  "calculation_date": "2026-05-31T15:30:11+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -33,19 +33,19 @@
   "sensitivity": {
     "matrix": [
       [
-        83.48,
-        97.98,
-        113.73
+        90.12,
+        105.19,
+        121.56
       ],
       [
-        71.82,
-        83.85,
-        96.69
+        76.54,
+        88.9,
+        102.07
       ],
       [
-        63.07,
-        73.28,
-        83.96
+        66.59,
+        76.96,
+        87.82
       ]
     ],
     "wacc_values": [
@@ -76,15 +76,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.095,
-      "intrinsic_value_per_share": 71.55
+      "intrinsic_value_per_share": 75.74
     },
     "base": {
       "growth_rate": 0.136,
-      "intrinsic_value_per_share": 83.85
+      "intrinsic_value_per_share": 88.9
     },
     "bull": {
       "growth_rate": 0.163,
-      "intrinsic_value_per_share": 93.04
+      "intrinsic_value_per_share": 98.72
     }
   },
   "growth_options": {
@@ -95,9 +95,9 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 12253360298.535461,
+    "v0": 13045418976.685158,
     "pv_high_growth": 2890786042.9853873,
-    "pv_terminal": 9362574255.550074,
+    "pv_terminal": 10154632933.69977,
     "high_growth_detail": [
       {
         "year": 1,
@@ -130,9 +130,9 @@
         "pv": 618157147.8142552
       }
     ],
-    "terminal_fcf": 1016149736.6976318,
-    "terminal_value": 14942279783.804598,
-    "v0_rm": 11888298223.15725
+    "terminal_fcf": 1021082502.4097562,
+    "terminal_value": 16206372548.365305,
+    "v0_rm": 12628769729.430756
   },
   "fcf_base": {
     "base_fcf": 621750000.0,
@@ -274,9 +274,9 @@
     "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.13601000000000002,
     "high_growth_years": 5,
-    "terminal_growth_used": 0.03,
+    "terminal_growth_used": 0.035,
     "pv_high": 2890786042.9853873,
-    "pv_terminal": 9362574255.550074,
+    "pv_terminal": 10154632933.69977,
     "roe_used": 0.16263741667815845,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -288,7 +288,7 @@
     "alpha_uncapped": 0.6830771500482654,
     "per": 22.11111,
     "per_adjusted": 14.98,
-    "peg": 2.31,
+    "peg": 2.3,
     "ps": 2.4208555,
     "ev_ebitda": 14.729,
     "ma200": 40.5266,
@@ -300,11 +300,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $11.89B + RPO $0.00B + GO $0.00B) × (1+0.600) / 0.235B + BS $+2.92/株 = $83.85 (差異0.00%)"
+        "detail": "(V₀ $12.63B + RPO $0.00B + GO $0.00B) × (1+0.600) / 0.235B + BS $+2.92/株 = $88.90 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $2.89B + pv_terminal $9.36B = $12.25B (差異0.00%)"
+        "detail": "2段階: pv_high $2.89B + pv_terminal $10.15B = $13.05B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -320,7 +320,7 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 55,
-  "score_comment": "割安圏(111%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(123%)で買い余地大、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2023,

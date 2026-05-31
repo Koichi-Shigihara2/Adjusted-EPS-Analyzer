@@ -230,12 +230,13 @@ class TanukiValuationPipeline:
         return result
 
     @staticmethod
-    def _calc_required_growth(valuation: dict) -> float | None:
+    def _calc_required_growth(valuation: dict, tv_g: float = 0.03) -> float | None:
         """
         逆DCF: 現在株価を正当化する必要成長率（5年CAGR）を計算（DCF-2）
 
         EV = FCF_5 / (WACC - tv_g) を解いて FCF_5 を求め、
         必要CAGR = (FCF_5 / FCF_0)^(1/5) - 1 を返す。
+        tv_g: セクター別ターミナル成長率（WACC-1）。デフォルト 3.0%。
         データ不足や非正値の場合は None を返す。
         """
         comps        = valuation.get("components", {})
@@ -245,7 +246,6 @@ class TanukiValuationPipeline:
         net_debt     = (valuation.get("financial_health", {}).get("net_debt") or 0)
         wacc_data    = valuation.get("wacc", {})
         wacc         = wacc_data.get("market_return", 0.10) if isinstance(wacc_data, dict) else 0.10
-        tv_g         = 0.03
 
         if not (price > 0 and shares > 0 and fcf_base > 0 and wacc > tv_g):
             return None
@@ -335,7 +335,13 @@ class TanukiValuationPipeline:
                 # DCF-2: 逆DCFの必要成長率が現在TTM成長率を下回る場合は GROWTH_PREMIUM
                 # （DCFが保守的でも現在の成長が市場の要求をすでに上回っている）
                 _ttm_g = valuation.get("growth_sanity", {}).get("phase1_growth")
-                _req_g = self._calc_required_growth(valuation)
+                # WACC-1: セクター別ターミナル成長率を逆DCFに適用
+                try:
+                    from maturity_config import get_terminal_growth as _get_tv_g
+                    _tv_g = _get_tv_g(ticker)
+                except Exception:
+                    _tv_g = 0.03
+                _req_g = self._calc_required_growth(valuation, tv_g=_tv_g)
                 if (_req_g is not None and _ttm_g is not None
                         and _req_g > 0.05       # 意味のある Required Growth（TV超え）
                         and _req_g < _ttm_g):   # 現在成長率がすでに Required Growth を超過
