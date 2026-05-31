@@ -1,6 +1,6 @@
 """
 TANUKI VALUATION - DCF Calculator
-2段階 / 3段階 DCFモデル
+2段階 / 3段階 / 線形逓減 DCFモデル
 
 責務: 高成長期 + ターミナル価値の現在価値計算
 
@@ -8,6 +8,11 @@ v6.1 追加:
   - calculate_three_stage_dcf(): 3段階DCF（高成長→移行→ターミナル）
   - ThreeStageDCFResult: 3段階結果データクラス
   既存の calculate_two_stage_dcf() は完全に維持（変更なし）
+
+v9.0 追加（DCF-1）:
+  - calculate_tapering_dcf(): Phase1内で成長率を線形逓減させるDCF
+  - TaperingDCFResult: 逓減型結果データクラス
+  高成長銘柄で「成長の減速」を年次単位で織り込む
 """
 
 from typing import Dict, Any, List, Optional
@@ -235,6 +240,114 @@ def calculate_three_stage_dcf(
         phase2_detail=phase2_detail,
         terminal_fcf=terminal_fcf,
         terminal_value=terminal_value
+    )
+
+
+# ========================================
+# 線形逓減DCF（v9.0 DCF-1）
+# ========================================
+
+@dataclass
+class TaperingDCFResult:
+    """DCF計算結果（線形逓減型）"""
+    v0: float
+    pv_high_growth: float
+    pv_terminal: float
+    high_growth_detail: List[Dict[str, float]]  # 年別詳細（年別成長率含む）
+    terminal_fcf: float
+    terminal_value: float
+    g_start: float   # Phase1開始成長率
+    g_end: float     # Phase1終了成長率（業界ベンチマーク）
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "v0": self.v0,
+            "pv_high_growth": self.pv_high_growth,
+            "pv_terminal": self.pv_terminal,
+            "high_growth_detail": self.high_growth_detail,
+            "terminal_fcf": self.terminal_fcf,
+            "terminal_value": self.terminal_value,
+            "g_start": round(self.g_start, 4),
+            "g_end": round(self.g_end, 4),
+            "dcf_type": "tapering",
+        }
+
+
+def calculate_tapering_dcf(
+    base_fcf: float,
+    g_start: float,
+    g_end: float,
+    wacc: float,
+    high_growth_years: int = 5,
+    terminal_growth: float = 0.03,
+) -> TaperingDCFResult:
+    """
+    線形逓減DCF計算（DCF-1）
+
+    Phase1内でg_startからg_endへ年次線形逓減させる。
+      Year 1: g_start
+      Year N: g_end
+      中間: 線形補間
+
+    設計意図:
+      高成長率（例: 93%）を5年間固定で使うのではなく、
+      Year1=93% → Year5=10%（業界平均）へ逓減させることで
+      「成長の減速」を現実的に織り込む。
+
+    Args:
+        base_fcf: ベースFCF
+        g_start: Phase1開始成長率（推奨成長率 or Phase1成長率）
+        g_end: Phase1終了成長率（業界ベンチマーク等）
+        wacc: 割引率
+        high_growth_years: Phase1年数（デフォルト5年）
+        terminal_growth: 永続成長率
+
+    Returns:
+        TaperingDCFResult
+    """
+    current_fcf = base_fcf
+    pv_high = 0.0
+    high_growth_detail = []
+
+    for t in range(high_growth_years):
+        # 線形補間: t=0でg_start、t=N-1でg_end
+        if high_growth_years == 1:
+            g_t = g_start
+        else:
+            g_t = g_start + (g_end - g_start) * t / (high_growth_years - 1)
+
+        current_fcf *= (1 + g_t)
+        discount_factor = (1 + wacc) ** (t + 1)
+        pv_year = current_fcf / discount_factor
+        pv_high += pv_year
+
+        high_growth_detail.append({
+            "year": t + 1,
+            "growth_rate": round(g_t, 4),
+            "fcf": current_fcf,
+            "discount_factor": round(discount_factor, 6),
+            "pv": pv_year,
+        })
+
+    # ターミナル価値（Phase1最終FCF × TV成長率 → 割引）
+    terminal_fcf = current_fcf * (1 + terminal_growth)
+    if wacc <= terminal_growth:
+        terminal_value = terminal_fcf * 20
+    else:
+        terminal_value = terminal_fcf / (wacc - terminal_growth)
+    pv_terminal = terminal_value / (1 + wacc) ** high_growth_years
+
+    v0 = pv_high + pv_terminal
+
+    return TaperingDCFResult(
+        v0=v0,
+        pv_high_growth=pv_high,
+        pv_terminal=pv_terminal,
+        high_growth_detail=high_growth_detail,
+        terminal_fcf=terminal_fcf,
+        terminal_value=terminal_value,
+        g_start=g_start,
+        g_end=g_end,
     )
 
 

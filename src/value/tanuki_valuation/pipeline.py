@@ -370,10 +370,18 @@ class TanukiValuationPipeline:
         _recommended_g = _growth_sanity.get("recommended_g") if _growth_sanity else None
         _is_seg_unconfigured = not extra.get("segment_configured", True)
 
+        # DCF-1: 線形逓減DCFの適用条件
+        # growth_model == "decay"（TTM>50%の高成長銘柄）かつ業界ベンチマーク取得済みの場合
+        _tapering_g_end: float | None = None
+        if (_growth_sanity
+                and _growth_sanity.get("growth_model") == "decay"
+                and _growth_sanity.get("industry_benchmark") is not None):
+            _tapering_g_end = _growth_sanity["industry_benchmark"]
+
         if _is_seg_unconfigured and _recommended_g is not None and financials is not None:
             try:
                 _seg_cfg.set_growth_override(ticker, _recommended_g)
-                _valuation_adj = self.calculator.calculate_pt(financials)
+                _valuation_adj = self.calculator.calculate_pt(financials, tapering_g_end=_tapering_g_end)
                 if "error" not in _valuation_adj:
                     _orig_validation = valuation.get("validation")
                     valuation = _valuation_adj

@@ -116,8 +116,8 @@ class KoichiValuationCalculator:
         self.eps_data_dir = eps_data_dir
         self.sec_data_dir = sec_data_dir  # v7.1: EPSアナライザーdataディレクトリ
 
-    def calculate_pt(self, financials: Dict[str, Any]) -> Dict[str, Any]:
-        """メイン計算関数"""
+    def calculate_pt(self, financials: Dict[str, Any], tapering_g_end: float | None = None) -> Dict[str, Any]:
+        """メイン計算関数。tapering_g_end が設定された場合は線形逓減DCFを適用（DCF-1）"""
 
         # ── データ抽出 ──
         fcf_avg        = financials.get("fcf_5yr_avg", 0.0)
@@ -334,14 +334,40 @@ class KoichiValuationCalculator:
             v0 = three_stage_result.v0
             dcf_type = "three_stage"
         else:
-            print(f"   [{ticker}] DCF: 2段階  g={high_growth_rate:.1%}  TV={terminal_growth:.1%}")
-            dcf_result = calculate_two_stage_dcf(
-                base_fcf=base_fcf,
-                high_growth_rate=high_growth_rate,
-                wacc=wacc,
-                high_growth_years=self.high_growth_years,
-                terminal_growth=terminal_growth
+            # 線形逓減DCF（DCF-1）: growth_model==decayの高成長銘柄に適用
+            _use_tapering = (
+                tapering_g_end is not None
+                and high_growth_rate > tapering_g_end
             )
+            if _use_tapering:
+                from calculator.dcf import calculate_tapering_dcf, TaperingDCFResult
+                print(f"   [{ticker}] DCF: 逓減  g={high_growth_rate:.1%}→{tapering_g_end:.1%}  TV={terminal_growth:.1%}")
+                _tapering_result = calculate_tapering_dcf(
+                    base_fcf=base_fcf,
+                    g_start=high_growth_rate,
+                    g_end=tapering_g_end,
+                    wacc=wacc,
+                    high_growth_years=self.high_growth_years,
+                    terminal_growth=terminal_growth,
+                )
+                dcf_result = DCFResult(
+                    v0=_tapering_result.v0,
+                    pv_high_growth=_tapering_result.pv_high_growth,
+                    pv_terminal=_tapering_result.pv_terminal,
+                    high_growth_detail=_tapering_result.high_growth_detail,
+                    terminal_fcf=_tapering_result.terminal_fcf,
+                    terminal_value=_tapering_result.terminal_value,
+                )
+                dcf_type = "tapering"
+            else:
+                print(f"   [{ticker}] DCF: 2段階  g={high_growth_rate:.1%}  TV={terminal_growth:.1%}")
+                dcf_result = calculate_two_stage_dcf(
+                    base_fcf=base_fcf,
+                    high_growth_rate=high_growth_rate,
+                    wacc=wacc,
+                    high_growth_years=self.high_growth_years,
+                    terminal_growth=terminal_growth
+                )
             v0 = dcf_result.v0
 
         # ── STEP 6: RPO補正（normalizedからRPO時系列・利益率を取得）──
@@ -576,6 +602,7 @@ class KoichiValuationCalculator:
                 net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
                 phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
                 phase2_years=_phase2_years,                            # v7.1: 3段階対応
+                tapering_g_end=tapering_g_end,                         # DCF-1: 線形逓減
             )
             scenario_result = calculate_scenario_valuations(
                 calc_func=scenario_calc_func,

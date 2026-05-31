@@ -721,3 +721,71 @@ class TestCalcQNegativeNI:
         # years=3 なので先頭3件のみ参照 → 黒字は先頭1件のみ
         assert used == 1
         assert q < 5.0, f"Q={q:.2f} が Q_MAX=5.0 を超えてはならない（Q異常値誤判定防止）"
+
+
+# ─────────────────────────────────────────────
+# 10. calculate_tapering_dcf（DCF-1）
+#     Phase1内で成長率を線形逓減させるDCFの年次成長率と価値計算を検証
+# ─────────────────────────────────────────────
+
+_CALC_DIR = os.path.normpath(
+    os.path.join(os.path.dirname(__file__), "..", "src", "value", "tanuki_valuation", "calculator")
+)
+sys.path.insert(0, _CALC_DIR)
+from dcf import calculate_tapering_dcf, calculate_two_stage_dcf  # type: ignore[import]
+
+
+class TestTaperingDCF:
+    def test_year1_equals_g_start(self):
+        """Year1の成長率がg_startと一致する"""
+        result = calculate_tapering_dcf(
+            base_fcf=1_000_000, g_start=0.50, g_end=0.10,
+            wacc=0.12, high_growth_years=5,
+        )
+        assert abs(result.high_growth_detail[0]["growth_rate"] - 0.50) < 1e-9
+
+    def test_last_year_equals_g_end(self):
+        """Year5の成長率がg_endと一致する"""
+        result = calculate_tapering_dcf(
+            base_fcf=1_000_000, g_start=0.50, g_end=0.10,
+            wacc=0.12, high_growth_years=5,
+        )
+        assert abs(result.high_growth_detail[-1]["growth_rate"] - 0.10) < 1e-9
+
+    def test_growth_rates_are_linearly_decreasing(self):
+        """中間年の成長率が線形補間になっている"""
+        result = calculate_tapering_dcf(
+            base_fcf=1_000_000, g_start=0.50, g_end=0.10,
+            wacc=0.12, high_growth_years=5,
+        )
+        rates = [d["growth_rate"] for d in result.high_growth_detail]
+        # Year2 = 0.50 + (0.10-0.50)*1/4 = 0.40
+        assert abs(rates[1] - 0.40) < 1e-9
+        # Year3 = 0.50 + (0.10-0.50)*2/4 = 0.30
+        assert abs(rates[2] - 0.30) < 1e-9
+
+    def test_tapering_gives_lower_value_than_fixed_high_growth(self):
+        """逓減DCFは高成長固定DCFより低い価値を返す（高成長銘柄への保守的評価）"""
+        base_fcf, wacc = 1_000_000, 0.12
+        tapering = calculate_tapering_dcf(
+            base_fcf=base_fcf, g_start=0.50, g_end=0.10,
+            wacc=wacc, high_growth_years=5,
+        )
+        fixed = calculate_two_stage_dcf(
+            base_fcf=base_fcf, high_growth_rate=0.50,
+            wacc=wacc, high_growth_years=5,
+        )
+        assert tapering.v0 < fixed.v0, "逓減DCFは固定高成長DCFより低い価値であるべき"
+
+    def test_equal_start_end_matches_two_stage(self):
+        """g_start == g_end の場合は2段階DCFと同等になる"""
+        base_fcf, wacc, g = 1_000_000, 0.12, 0.20
+        tapering = calculate_tapering_dcf(
+            base_fcf=base_fcf, g_start=g, g_end=g,
+            wacc=wacc, high_growth_years=5,
+        )
+        fixed = calculate_two_stage_dcf(
+            base_fcf=base_fcf, high_growth_rate=g,
+            wacc=wacc, high_growth_years=5,
+        )
+        assert abs(tapering.v0 - fixed.v0) < 1.0, "g_start==g_endのとき2段階DCFと同値になるべき"

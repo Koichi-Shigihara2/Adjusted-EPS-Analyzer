@@ -6,12 +6,16 @@
 
 ## 優先度：高（次の改修サイクルで対応）
 
-### [DCF-1] 本当の5年逓減DCFエンジン
-- 現状: Phase1成長率を固定値として全年度に適用
-- 問題: 高成長企業で「成長の減速」が織り込まれない
-- 改善: Year1→Year5で成長率を線形逓減させるDCFエンジンに変更
-- 例: ALAB Year1=93%, Year2=72%, Year3=51%, Year4=30%, Year5=10%
-- GPT指摘: 2026-05-30
+### ✅ [DCF-1] 本当の5年逓減DCFエンジン（2026-05-31 完了）
+- 概要: Phase1内でg_start（推奨成長率）→g_end（業界ベンチマーク）へ年次線形逓減
+- 適用条件: growth_model=="decay"（TTM>50%）かつindustry_benchmark取得済みの未設定銘柄
+- 実装:
+  calculator/dcf.py: calculate_tapering_dcf() 追加
+  calculator/scenarios.py: tapering_g_end パラメータ追加
+  core_calculator.py: calculate_pt(tapering_g_end) に対応
+  pipeline.py: _tapering_g_end を growth_sanity から取得して渡す
+- 実績: 10銘柄に逓減DCF適用（ALAB例: 51.5%→9.6%、IV $667→$206）
+- テスト: 5件追加（計37件）
 
 ### [DCF-2] 高成長銘柄向け判定カテゴリの追加
 - 現状: TRIM判定がDCF乖離率に過度に依存
