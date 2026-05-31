@@ -2429,7 +2429,7 @@ function buildScatterSVG(points, opts) {
     const isCurrent = p.ticker === currentTicker;
     const qx = p.x >= xThresh, qy = p.y >= yThresh;
     const col = isCurrent ? '#c4d0ff' : (qx && qy ? '#4ade80' : (!qx && qy ? '#facc15' : (qx && !qy ? '#94a3b8' : '#f87171')));
-    return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, qy, col };
+    return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, qy, col, type: p.type };
   }).sort((a, b) => a.cx - b.cx);
 
   // draw dots + labels together per ticker: non-current first so current renders on top
@@ -2440,9 +2440,12 @@ function buildScatterSVG(points, opts) {
     const anchor = p.cx > W / 2 ? 'end' : 'start';
     const lx = anchor === 'end' ? p.cx - 6 : p.cx + 6;
     const ly = p.cy + 3;
+    const r = p.isCurrent ? 6 : 4;
+    // q_anomaly（Q>5の黒字株）は白ストロークで通常の赤字株と区別
+    const strokeAttr = p.type === 'q_anomaly' ? ' stroke="white" stroke-width="1.5"' : '';
     if (!p.isCurrent) out += '<a href="stock.html?ticker=' + p.ticker + '" style="cursor:pointer;">';
     out += '<g><title>' + tip + '</title>';
-    out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="' + (p.isCurrent ? 6 : 4) + '" fill="' + p.col + '" opacity="0.9"/>';
+    out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="' + r + '" fill="' + p.col + '" opacity="0.9"' + strokeAttr + '/>';
     if (p.isCurrent) out += '<circle cx="' + p.cx + '" cy="' + p.cy + '" r="8" fill="none" stroke="' + p.col + '" stroke-width="1.5" opacity="0.5"/>';
     out += '</g>';
     if (p.isCurrent) {
@@ -2493,16 +2496,18 @@ async function loadAndRenderMatrices() {
       } else if (note.includes('セクター除外')) {
         const roe = d.components?.roe_10yr_avg ?? null;
         if (roe !== null) m2.push({ ticker: t, x: upside, y: roe * 100 });
-      } else if (note.includes('Q異常値')) {
+      } else if (note.includes('Q異常値') || note.includes('Q計算不可')) {
+        const pointType = note.includes('Q異常値') ? 'q_anomaly' : 'q_unavail';
         const sd = stonksData[t];
         const rm = sd?.runway?.runway_months ?? null;
+        // runway未取得の場合は3yr（上限）をデフォルトとし、大型・資金十分扱いにする
         const runway = rm !== null ? Math.min(3, rm / 12) : 3;
         const rgObj = sd?.deficit_quality?.revenue_growth_pct || {};
         const rgKeys = Object.keys(rgObj).map(Number).sort((a, b) => b - a);
         let revGrowth = null;
         for (const k of rgKeys) { if (rgObj[k] !== null) { revGrowth = rgObj[k]; break; } }
         if (revGrowth !== null) {
-          m3.push({ ticker: t, x: runway, y: Math.min(150, revGrowth) });
+          m3.push({ ticker: t, x: runway, y: Math.min(150, Math.max(-50, revGrowth)), type: pointType });
         }
       }
 
@@ -2543,8 +2548,8 @@ async function loadAndRenderMatrices() {
         opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: -20, yMax: 60, yThresh: 15, xLabel: '乖離率 →', yLabel: 'ROE% →', fontSize: 9 },
       },
       {
-        id: 3, title: '③ 成長性系（Q異常値）',
-        note: 'Y軸: 売上成長率%(cap 150%) | X軸: Runway(年)\nYThresh=20% XThresh=1年（Runway上限3年）',
+        id: 3, title: '③ 成長性系（赤字・Q異常）',
+        note: 'Y軸: 売上成長率%(stonks-silo, cap 150%) | X軸: Runway(年,上限3)\nYThresh=20% XThresh=1年 | ●Q計算不可(赤字) ◎Q異常値(Q>5)',
         points: m3,
         opts: { xMin: 0, xMax: 3, xThresh: 1, yMin: -50, yMax: 150, yThresh: 20, xLabel: 'Runway(年) →', yLabel: '成長率% →', fontSize: 8 },
       },
