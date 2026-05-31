@@ -15,7 +15,7 @@
     "3年後": 106.54
   },
   "upside_percent": -60.5,
-  "calculation_date": "2026-05-31T11:09:21+09:00",
+  "calculation_date": "2026-05-31T11:06:16+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -206,35 +206,17 @@
     "sector_guard": "none"
   },
   "rice": {
-    "available": true,
-    "q": 0.5147,
-    "cf_conversion": 0.3898,
-    "cf_adj": 3.1177,
+    "available": false,
+    "q": 6.972,
+    "cf_conversion": 0.0,
+    "cf_adj": 0.0,
     "wacc": 0.1,
-    "q_years": 1,
-    "cf_years": 3,
-    "avg_intensity": 0.3592,
-    "avg_rev_growth_lagged": 0.1411,
+    "q_years": 2,
+    "cf_years": 0,
+    "avg_intensity": 0.0,
+    "avg_rev_growth_lagged": 0.0,
     "warnings": true,
-    "note": "SBC補正済み（純利益+SBCを分母に使用） / Q: 1年のみ使用（3年要求） / 販売・マーケティング費未取得（FYTTM@2025-02-01, TTM@2024-02-03, TTM@2023-01-28）: 投資強度が過小になる可能性",
-    "bear": {
-      "growth_rate": 0.067,
-      "rice": 0.134,
-      "rice_per_ratio": 0.0019,
-      "rice_adj": 1.075
-    },
-    "base": {
-      "growth_rate": 0.096,
-      "rice": 0.193,
-      "rice_per_ratio": 0.0027,
-      "rice_adj": 1.541
-    },
-    "bull": {
-      "growth_rate": 0.115,
-      "rice": 0.231,
-      "rice_per_ratio": 0.0033,
-      "rice_adj": 1.846
-    }
+    "note": "Q異常値（Q=6.97）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外"
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-01-31",
@@ -311,82 +293,5 @@
     "overall": "PASS",
     "ai_comment": null
   },
-  "phase1_growth": 0.09607252569343137,
-  "tanuki_score": "TRIM",
-  "funda_score": 90,
-  "score_comment": "割高(-60%超)、FCF黒字、売上成長加速",
-  "fcf_history": [
-    {
-      "year": 2022,
-      "fcf": 650044000,
-      "fcf_margin": 14.6
-    },
-    {
-      "year": 2023,
-      "fcf": 1082600000,
-      "fcf_margin": 18.3
-    },
-    {
-      "year": 2024,
-      "fcf": 1034200000,
-      "fcf_margin": 18.8
-    },
-    {
-      "year": 2025,
-      "fcf": 1396600000,
-      "fcf_margin": 24.2
-    },
-    {
-      "year": 2026,
-      "fcf": 1396400000,
-      "fcf_margin": 17.0
-    }
-  ],
-  "financial_health": {
-    "total_debt": 4970400000,
-    "cash_and_equivalents": 2638800000,
-    "net_debt": 2331600000,
-    "sbc_ttm": 590800000,
-    "dilution_3yr_annual_pct": 0.71,
-    "shares_yr_now": 869700000,
-    "shares_yr_3ago": 851400000,
-    "shares_yr_now_label": "2026",
-    "shares_yr_3ago_label": "2023"
-  },
-  "next_earnings_date": "2026-08-28",
-  "segments": [
-    {
-      "name": "General",
-      "weight": 1,
-      "growth": 0.09607252569343137,
-      "estimated_revenue": 8194600000.0
-    }
-  ],
-  "segment_configured": false,
-  "segment_ttm_applied": true,
-  "phase1_growth_original": 0.2208,
-  "phase1_growth_auto_adjusted": true,
-  "recommended_g": 0.09607252569343137,
-  "growth_sanity": {
-    "verdict": "PLAUSIBLE",
-    "phase1_growth": 0.2208,
-    "industry_benchmark": 0.09607252569343137,
-    "damodaran_industry": "Semiconductor",
-    "damodaran_year": 2025,
-    "rev_cagr_3yr": 0.11449587642355707,
-    "rev_cagr_5yr": null,
-    "g_fundamental": 0.00795673076923077,
-    "recommended_g_median": 0.09607252569343137,
-    "recommended_g": 0.09607252569343137,
-    "growth_model": "median",
-    "growth_model_reason": "TTM22.1%のため中央値モデル適用",
-    "signals": [
-      "業界平均Semiconductor(9.6%)の2.3倍 ℹ️",
-      "過去実績(3yr:11.4% / 5yr:N/A)より高め（減速想定あり） ℹ️",
-      "RR×ROIC(0.8%)：再投資より還元重視型、または期待値先行 ℹ️"
-    ],
-    "warnings": []
-  },
-  "dilution_severity": "low",
-  "dilution_comment": "許容範囲内 ✅"
+  "phase1_growth": 0.09607252569343137
 }

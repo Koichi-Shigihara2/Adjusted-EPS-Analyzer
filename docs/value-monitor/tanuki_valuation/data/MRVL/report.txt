@@ -1,5 +1,5 @@
 MRVL INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:18+09:00
+Generated: 2026-05-31T11:09:21+09:00
 Price: $205.00
 
 [1. TANUKI SCORE]
@@ -27,13 +27,13 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ③成長性系
-Quadrant: 左上
-Label: 割高×高成長
-Key_Metric_Y: Revenue_Growth = 22.1%
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.193
 Deviation_Rate: -60.5%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -155,17 +155,19 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: Q異常値（Q=6.97）: 保険会社フロートまたは赤字急拡大企業。RICE計算除外
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.134
+BASE: RICE=0.193
+BULL: RICE=0.231
 Components (BASE scenario):
-G  = N/A
-Q  = 6.972   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 9.6%  [TANUKI forward growth rate]
+Q  = 0.5147   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.3898  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 3.1177  [R&D除外・CapExのみ投資強度]
+RICE_adj = 1.541  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -180,7 +182,7 @@ InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -240,10 +242,10 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
   PER: 70.4x
-  PEG: 2.33
+  PEG: 1.17
   PS:  20.6x
   EV_EBITDA: 66.7x
-  PEG_Signal: 割高水準（成長率対比でPEG>2.0）
+  PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
 
