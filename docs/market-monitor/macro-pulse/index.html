@@ -2534,6 +2534,11 @@ function renderStealthCard(rows, latest) {
     return `<span style="color:${cls};font-family:var(--mono);font-size:10px">${sign}${diff.toFixed(2)} ${unit}</span>`;
   }
 
+  // DESIGN-12: 3層構造データ取得
+  const absorbWeeks  = latest.stealth_absorb_weeks  !== '' ? parseInt(latest.stealth_absorb_weeks)  : 0;
+  const declineWeeks = latest.net_liq_decline_weeks !== '' ? parseInt(latest.net_liq_decline_weeks) : 0;
+  const stealthAlerts = (latest.stealth_alert || '').split('|').map(s=>s.trim()).filter(s=>s.length>0);
+
   const badgeCls  = sig === 'supply' ? 'stealth-supply' : sig === 'absorb' ? 'stealth-absorb' : 'stealth-neutral';
   const badgeTxt  = sig === 'supply' ? '▼ ステルス供給中' : sig === 'absorb' ? '▲ ステルス吸収中' : '→ 中立';
   const sigDesc   = sig === 'supply'
@@ -2569,12 +2574,46 @@ function renderStealthCard(rows, latest) {
     },
   ];
 
+  // DESIGN-12: Layer 3 — NET流動性トレンドバッジ
+  const layer3Color  = declineWeeks >= 3 ? 'var(--red)' : declineWeeks >= 1 ? 'var(--amb)' : 'var(--grn)';
+  const layer3Icon   = declineWeeks >= 3 ? '▼▼▼' : declineWeeks >= 2 ? '▼▼' : declineWeeks >= 1 ? '▼' : '→ 安定';
+  const layer3Label  = declineWeeks >= 3 ? `NET流動性${declineWeeks}週連続減少` : declineWeeks >= 1 ? `NET流動性${declineWeeks}週減少` : 'NET流動性 安定';
+
+  // DESIGN-12: 警戒アラートHTML
+  const alertHtml = stealthAlerts.length > 0
+    ? `<div style="margin-top:8px;padding:7px 10px;border:1px solid rgba(248,113,113,.4);border-radius:5px;background:rgba(248,113,113,.08)">`
+      + stealthAlerts.map(a =>
+          `<div style="font-family:var(--mono);font-size:9px;color:#f87171;line-height:1.6">⚠ ${a}</div>`
+        ).join('')
+      + `</div>`
+    : '';
+
   return `<div class="stealth-card">
     <div class="stealth-header">
-      <span class="stealth-title">🕵️ ステルス流動性モニター</span>
+      <span class="stealth-title">🕵️ ステルス流動性モニター（3層構造）</span>
       <span class="stealth-badge ${badgeCls}">${badgeTxt}</span>
     </div>
+    <!-- DESIGN-12 Layer 1/2/3 -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:8px 0;border-bottom:1px solid var(--bdr);margin-bottom:8px">
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em;margin-bottom:3px">LAYER 1 — FRB政策意図</div>
+        <div id="stealthLayer1" style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--acc)">—</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);margin-top:2px">fed_context.regime</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em;margin-bottom:3px">LAYER 2 — ステルス流動性</div>
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:${
+          sig==='supply'?'var(--grn)':sig==='absorb'?'var(--red)':'var(--mut)'}">${badgeTxt}</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);margin-top:2px">RRP${absorbWeeks>0?'吸収'+absorbWeeks+'週':''}・TGA動向</div>
+      </div>
+      <div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.1em;margin-bottom:3px">LAYER 3 — NET流動性スコア</div>
+        <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:${layer3Color}">${layer3Icon}</div>
+        <div style="font-family:var(--mono);font-size:8px;color:var(--mut);margin-top:2px">${layer3Label}</div>
+      </div>
+    </div>
     <div style="font-family:var(--mono);font-size:9px;color:var(--mut);line-height:1.5">${sigDesc}</div>
+    ${alertHtml}
     <div class="stealth-metrics">
       ${metrics.map(m => `<div class="stealth-metric">
         <div class="stealth-metric-label">${m.label}</div>
@@ -2588,6 +2627,23 @@ function renderStealthCard(rows, latest) {
     </div>
     <div style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-top:2px">${latest.date}</div>
   </div>`;
+}
+
+// DESIGN-12: Layer 1 (FRB regime) を fed_context から取得してstealthLayer1に注入
+function updateStealthLayer1() {
+  const el1 = document.getElementById('stealthLayer1');
+  if (!el1) return;
+  fetch('data/05_fed_context.csv?t=' + Date.now())
+    .then(r => r.ok ? r.text() : '')
+    .then(text => {
+      const rows = parseCSVRaw(text);
+      if (!rows.length) return;
+      const latest = rows[rows.length - 1];
+      const regime = latest.regime || '—';
+      const color = regime === 'EASING' ? 'var(--grn)' : regime === 'TIGHTENING' ? 'var(--red)' : 'var(--acc)';
+      el1.style.color = color;
+      el1.textContent = regime;
+    }).catch(() => {});
 }
 
 function toJST(dateStr) {
@@ -2616,6 +2672,7 @@ async function loadLiquidityData() {
     const lu = document.getElementById('last-updated');
     if (lu && meta?.generated_at) lu.textContent = toJST(meta.generated_at);
     renderLiquidityCards(rows);
+    updateStealthLayer1();  // DESIGN-12: Layer1 (FRB regime) を注入
   } catch(e) {
     console.warn('liquidity:', e);
     document.getElementById('liqGrid').innerHTML = '<div class="empty">読み込みエラー</div>';

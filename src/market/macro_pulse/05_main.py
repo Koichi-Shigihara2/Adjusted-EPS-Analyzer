@@ -1781,6 +1781,10 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
 LIQUIDITY_COLUMNS = [
     "date", "m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
     "reserve_balance", "stealth_signal",
+    # DESIGN-12: 3層構造
+    "stealth_absorb_weeks",   # 連続ステルス吸収週数
+    "net_liq_decline_weeks",  # NET流動性連続減少週数
+    "stealth_alert",          # 警戒アラート（|区切り）
 ]
 
 def update_liquidity_csv(target_date: date, fred) -> None:
@@ -1862,6 +1866,49 @@ def update_liquidity_csv(target_date: date, fred) -> None:
             # 準備預金増加（rrp/tga は中立）→ 銀行流動性上昇＝補助的供給シグナル
             stealth_sig = "supply"
 
+    # ── DESIGN-12: Layer 3 — 連続週数 & 警戒アラート計算 ──
+
+    # 連続ステルス吸収週数（現在週を含む）
+    _sig_history = list(df[df["date"] < date_str].sort_values("date").tail(7)["stealth_signal"])
+    _sig_history.append(stealth_sig)
+    _absorb_weeks = 0
+    for _s in reversed(_sig_history):
+        if _s == "absorb":
+            _absorb_weeks += 1
+        else:
+            break
+
+    # NET流動性の連続減少週数
+    _nl_rows = df[(df["date"] < date_str) & (df["net_liquidity"] != "")].sort_values("date").tail(5)
+    _nl_vals: list[float] = [float(r) for r in _nl_rows["net_liquidity"] if r != ""]
+    if net_liq is not None:
+        _nl_vals.append(net_liq)
+    _decline_weeks = 0
+    for _i in range(len(_nl_vals) - 1, 0, -1):
+        if _nl_vals[_i] < _nl_vals[_i - 1]:
+            _decline_weeks += 1
+        else:
+            break
+
+    # ステルス吸収額 vs FED供給額の比較
+    _fed_prev = float(prev_rows.iloc[-1].get("fed_balance", 0) or 0) if not prev_rows.empty else None
+    _stealth_absorb_vol  = None  # rrp増加 + tga増加 (Millions USD)
+    _fed_supply_vol      = None  # fed_balance増加 (Millions USD)
+    if (prev_rrp is not None and rrp_val is not None and
+            prev_tga is not None and tga_val is not None and _fed_prev is not None and fed_val is not None):
+        _stealth_absorb_vol = max(0, (rrp_val - prev_rrp) + (tga_val - prev_tga))
+        _fed_supply_vol     = max(0, fed_val - _fed_prev)
+
+    # 警戒アラート文字列（|区切り）
+    _alerts: list[str] = []
+    if _absorb_weeks >= 4:
+        _alerts.append(f"政策EASINGの効果が限定的（ステルス吸収{_absorb_weeks}週継続）")
+    if _decline_weeks >= 3:
+        _alerts.append(f"実質的にTIGHTENINGに近い状態（NET流動性{_decline_weeks}週連続減少）")
+    if (_stealth_absorb_vol is not None and _fed_supply_vol is not None
+            and _stealth_absorb_vol > 0 and _stealth_absorb_vol > _fed_supply_vol):
+        _alerts.append("EASING認識の見直しを推奨（ステルス吸収額が政策供給額を超過）")
+
     new_row = {
         "date":             date_str,
         "m2":               str(round(m2_val,  4)) if m2_val  is not None else "",
@@ -1872,10 +1919,16 @@ def update_liquidity_csv(target_date: date, fred) -> None:
         "net_liquidity":    str(net_liq)            if net_liq is not None else "",
         "reserve_balance":  str(rsv_val)            if rsv_val is not None else "",
         "stealth_signal":   stealth_sig,
+        "stealth_absorb_weeks":  str(_absorb_weeks),
+        "net_liq_decline_weeks": str(_decline_weeks),
+        "stealth_alert":         "|".join(_alerts),
     }
+    if _alerts:
+        logger.info(f"[Stealth L3] alerts={_alerts}")
 
     update_cols = ["m2", "hy_spread", "fed_balance", "tga", "rrp", "net_liquidity",
-                   "reserve_balance", "stealth_signal"]
+                   "reserve_balance", "stealth_signal",
+                   "stealth_absorb_weeks", "net_liq_decline_weeks", "stealth_alert"]
     if date_str in df["date"].values:
         idx = df.index[df["date"] == date_str][0]
         for col in update_cols:
