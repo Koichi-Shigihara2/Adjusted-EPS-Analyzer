@@ -268,6 +268,45 @@ class TestMatrixLabel:
 
 
 # ─────────────────────────────────────────────
+# 3b. RICE三分類ラベル (DESIGN-10)
+#     RICE値に応じて 高効率/中効率/低効率 の三分類が正しく表示されることを検証
+# ─────────────────────────────────────────────
+
+class TestRiceEfficiencyLabel:
+    def _make_report_with_rice(self, tmp_path, rice_val: float) -> str:
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=30.0)
+        val["rice"]["base"] = {"rice": rice_val}
+        return pipe._generate_report("TEST", val, _minimal_score_data(), _minimal_extra())
+
+    def test_rice_above_2_shows_high_efficiency(self, tmp_path):
+        """RICE >= 2.0 → Label に「高効率」が含まれる"""
+        report = self._make_report_with_rice(tmp_path, 3.0)
+        assert "高効率" in report
+
+    def test_rice_between_1_and_2_shows_medium_efficiency(self, tmp_path):
+        """1.0 <= RICE < 2.0 → Label に「中効率」が含まれる"""
+        report = self._make_report_with_rice(tmp_path, 1.5)
+        assert "中効率" in report
+
+    def test_rice_below_1_shows_low_efficiency(self, tmp_path):
+        """RICE < 1.0 → Label に「低効率」が含まれる"""
+        report = self._make_report_with_rice(tmp_path, 0.5)
+        assert "低効率" in report
+
+    def test_rice_exactly_2_shows_high_efficiency(self, tmp_path):
+        """RICE = 2.0（境界値）→「高効率」"""
+        report = self._make_report_with_rice(tmp_path, 2.0)
+        assert "高効率" in report
+
+    def test_rice_exactly_1_shows_medium_efficiency(self, tmp_path):
+        """RICE = 1.0（均衡点・境界値）→「中効率」"""
+        report = self._make_report_with_rice(tmp_path, 1.0)
+        assert "中効率" in report
+
+
+# ─────────────────────────────────────────────
 # 4. Funda_Score ペナルティ
 #    _compute_tanuki_score のペナルティ適用ロジックを検証
 #    poc.json・EPS キャッシュなしで基本スコアを固定し、ペナルティ量を確認する
