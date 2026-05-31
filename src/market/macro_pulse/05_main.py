@@ -80,8 +80,116 @@ WEEKLY_ANALYSIS_COLUMNS = [
     "summary", "factor_analysis", "watchpoints",
     "indicator_comments", "indicator_deltas",
     "score_change_1w", "score_change_1m",
+    "surprise_alerts",
     "model", "updated_at",
 ]
+
+# ─────────────────────────────────────────────────────────────────
+#  DESIGN-13: マクロサプライズ検知
+# ─────────────────────────────────────────────────────────────────
+_SURPRISE_CATEGORIES = {
+    "NFP":                              "雇用",
+    "Initial Claims 4W MA":            "雇用",
+    "Sahm Rule Recession Indicator":   "雇用",
+    "Michigan Inflation 1Y":           "インフレ",
+    "Michigan Inflation 5Y":           "インフレ",
+    "Michigan Consumer Sentiment":     "景気",
+    "Philadelphia Fed Manufacturing":  "景気",
+    "Chicago Fed National Activity":   "景気",
+    "Building Permits":                "景気",
+}
+
+# 上昇が悪化方向の指標
+_INVERSE_INDICATORS = {
+    "Initial Claims 4W MA",
+    "Michigan Inflation 1Y",
+    "Michigan Inflation 5Y",
+    "Sahm Rule Recession Indicator",
+}
+
+# 「サプライズ」とみなす前回比の閾値（絶対値）
+_SURPRISE_THRESHOLDS = {
+    "NFP":                             50_000,  # 5万人
+    "Initial Claims 4W MA":            20_000,  # 2万件
+    "Sahm Rule Recession Indicator":    0.20,   # 0.2pp
+    "Michigan Inflation 1Y":            0.30,   # 0.3pp
+    "Michigan Inflation 5Y":            0.30,   # 0.3pp
+    "Michigan Consumer Sentiment":      8.0,    # 8pt
+    "Philadelphia Fed Manufacturing":  10.0,    # 10pt
+    "Chicago Fed National Activity":    0.30,   # 0.3pt
+    "Building Permits":               100.0,    # 10万件（単位: 千件）
+}
+
+
+def detect_macro_surprises(events: pd.DataFrame, lookback_days: int = 60) -> list[str]:
+    """
+    DESIGN-13: 経済指標の前回比急変を検知してアラート文字列リストを返す。
+
+    戻り値: セミコロン区切りで weekly_analysis.csv に保存するリスト要素。
+    例: ["[雇用] NFP: -75,000人 ↓ 急悪化（前回250000→最新175000）",
+         "[複合景気サプライズ] 景気系指標が複数同時悪化: Philly Fed, CFNAI"]
+    """
+    _DAILY = {'Yield Curve 10Y-2Y', 'HY Spread', 'VIX', 'Michigan Inflation 5Y'}
+    today = date.today()
+    cutoff = (today - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
+    today_str = today.strftime("%Y-%m-%d")
+
+    recent = events[
+        (events["release_date"] >= cutoff) &
+        (events["release_date"] <= today_str) &
+        (~events["indicator"].isin(_DAILY)) &
+        (events["actual"].str.strip() != "") &
+        (events["actual"].str.strip() != "nan")
+    ].copy()
+
+    alerts: list[str] = []
+    category_deteriorated: dict[str, list[str]] = {}
+
+    for ind_name, threshold in _SURPRISE_THRESHOLDS.items():
+        rows = recent[recent["indicator"] == ind_name].sort_values("release_date")
+        if len(rows) < 2:
+            continue
+        try:
+            val_now  = float(rows.iloc[-1]["actual"])
+            val_prev = float(rows.iloc[-2]["actual"])
+        except (ValueError, TypeError):
+            continue
+
+        delta = val_now - val_prev
+        if abs(delta) < threshold:
+            continue
+
+        is_inverse  = ind_name in _INVERSE_INDICATORS
+        deteriorated = (delta > 0) if is_inverse else (delta < 0)
+        direction   = "急悪化" if deteriorated else "急改善"
+        arrow       = "↑" if delta > 0 else "↓"
+        cat         = _SURPRISE_CATEGORIES.get(ind_name, "その他")
+
+        # 単位に応じたフォーマット
+        if ind_name == "NFP":
+            delta_str = f"{delta:+,.0f}人"
+        elif ind_name == "Initial Claims 4W MA":
+            delta_str = f"{delta:+,.0f}件"
+        elif ind_name == "Building Permits":
+            delta_str = f"{delta:+.1f}千件"
+        else:
+            delta_str = f"{delta:+.2f}"
+
+        alerts.append(
+            f"[{cat}] {ind_name}: {delta_str} {arrow} {direction}"
+            f"（前回{val_prev:.3g}→最新{val_now:.3g}）"
+        )
+        if deteriorated:
+            category_deteriorated.setdefault(cat, []).append(ind_name)
+
+    # 複合サプライズ: 同カテゴリで2件以上悪化
+    for cat, inds in category_deteriorated.items():
+        if len(inds) >= 2:
+            alerts.append(
+                f"[複合{cat}サプライズ] {cat}系指標が同時悪化: {chr(32)+chr(47)+chr(32).join(inds)}"
+            )
+
+    return alerts
 
 # ─────────────────────────────────────────────────────────────────
 #  指標マスタ（v6.0 確定12指標）※変更なし
@@ -1546,6 +1654,10 @@ def run_weekly_analysis(target_date: date):
         deltas_str_parts.append(f"{ind_name}:{d['value']}:{w}:{m}")
     deltas_str = ";".join(deltas_str_parts)
 
+    # DESIGN-13: マクロサプライズ検知
+    _surprises = detect_macro_surprises(events, lookback_days=60)
+    _surprises_str = ";".join(_surprises) if _surprises else ""
+
     new_row = {
         "analysis_date": target_date.strftime("%Y-%m-%d"),
         "score":         str(score_data['score']),
@@ -1557,9 +1669,12 @@ def run_weekly_analysis(target_date: date):
         "indicator_deltas": _sanitize(deltas_str),
         "score_change_1w": str(score_1w),
         "score_change_1m": str(score_1m),
+        "surprise_alerts": _sanitize(_surprises_str),
         "model":         "gemini-2.5-flash",
         "updated_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
+    if _surprises:
+        logger.info(f"[surprise] {len(_surprises)} alerts detected: {_surprises}")
 
     # 同日の既存行を上書き
     wa_df = wa_df[wa_df["analysis_date"] != target_date.strftime("%Y-%m-%d")]
@@ -1567,10 +1682,11 @@ def run_weekly_analysis(target_date: date):
     save_weekly_analysis(wa_df)
 
     # Discord通知
+    _surprise_discord = ("\n\n⚡ **サプライズ検知:**\n" + "\n".join(f"• {a}" for a in _surprises)) if _surprises else ""
     discord_msg = (
         f"📊 **MACRO PULSE — 週次AI解説** ({target_date.strftime('%Y-%m-%d')})\n\n"
         f"**スコア: {score_data['score']}/100 ({score_data['phase']})** "
-        f"(先週比{score_1w:+d} / 前月比{score_1m:+d})\n\n"
+        f"(先週比{score_1w:+d} / 前月比{score_1m:+d}){_surprise_discord}\n\n"
         f"**総括:** {analysis.get('summary', '—')}\n\n"
         f"**要因分析:** {analysis.get('factor_analysis', '—')}\n\n"
         f"**注視ポイント:** {analysis.get('watchpoints', '—')}"

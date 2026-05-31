@@ -80,6 +80,17 @@
     .ps-label{font-family:var(--mono);font-size:8px;color:var(--mut);letter-spacing:.12em;text-align:center;margin-top:2px}
     /* アラート */
     .phase-alert{padding:10px 24px;font-family:var(--mono);font-size:10px;border-top:1px solid rgba(245,158,11,.25);background:rgba(245,158,11,.05);display:none;align-items:flex-start;gap:10px;line-height:1.7}
+    /* DESIGN-13: マクロサプライズバナー */
+    .surprise-banner{display:none;margin-bottom:14px;border:1px solid rgba(248,113,113,.35);border-radius:8px;overflow:hidden}
+    .surprise-banner-hd{display:flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(248,113,113,.12);font-family:var(--mono);font-size:10px;font-weight:700;color:#f87171;letter-spacing:.06em}
+    .surprise-banner-body{padding:8px 14px 10px;display:flex;flex-direction:column;gap:5px}
+    .surprise-item{display:flex;align-items:flex-start;gap:8px;font-family:var(--mono);font-size:10px;line-height:1.5}
+    .surprise-badge{display:inline-block;padding:1px 7px;border-radius:3px;font-size:9px;font-weight:700;white-space:nowrap;flex-shrink:0}
+    .badge-inflation{background:rgba(245,158,11,.25);color:#f59e0b}
+    .badge-employment{background:rgba(59,130,246,.25);color:#60a5fa}
+    .badge-economy{background:rgba(239,68,68,.25);color:#f87171}
+    .badge-compound{background:rgba(168,85,247,.25);color:#c084fc}
+    .badge-other{background:rgba(100,116,139,.25);color:#94a3b8}
     /* シグナルグリッド */
     .phase-signals{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;border-top:1px solid var(--bdr);background:var(--bdr)}
     .pg-sig{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--sur2)}
@@ -636,6 +647,12 @@
         <span class="cmp-snap-label" id="cmp-custom-label">日付を選択</span>
       </div>
     </div>
+  </div>
+
+  <!-- DESIGN-13: マクロサプライズバナー（週次更新） -->
+  <div class="surprise-banner" id="surpriseBanner">
+    <div class="surprise-banner-hd">⚡ MACRO SURPRISE ALERT — 前回比急変検知</div>
+    <div class="surprise-banner-body" id="surpriseBannerBody"></div>
   </div>
 
   <!-- AI週次解説（①の直後） -->
@@ -2111,6 +2128,38 @@ function renderWeeklyAnalysis(rows) {
 
   // 日付降順でソート
   const sorted = [...rows].sort((a,b)=>(b.analysis_date||'').localeCompare(a.analysis_date||''));
+
+  // ── DESIGN-13: サプライズバナー（最新週のデータを使用）──
+  const latestRow = sorted[0] || {};
+  const surpriseRaw = latestRow.surprise_alerts || '';
+  const banner = el('surpriseBanner');
+  const bannerBody = el('surpriseBannerBody');
+  if(banner && bannerBody){
+    const surpriseList = surpriseRaw.split(';').map(s=>s.trim()).filter(s=>s.length>0);
+    if(surpriseList.length > 0){
+      banner.style.display = 'block';
+      const catClass = {
+        'インフレ': 'badge-inflation',
+        '雇用':     'badge-employment',
+        '景気':     'badge-economy',
+        '複合':     'badge-compound',
+      };
+      bannerBody.innerHTML = surpriseList.map(alert => {
+        // "[カテゴリ] テキスト" の形式からバッジ抽出
+        const m = alert.match(/^\[([^\]]+)\]/);
+        const cat = m ? m[1] : 'その他';
+        const text = alert.replace(/^\[[^\]]+\]\s*/, '');
+        const baseCat = Object.keys(catClass).find(k => cat.startsWith(k)) || 'その他';
+        const badgeCls = catClass[baseCat] || 'badge-other';
+        return `<div class="surprise-item">
+          <span class="surprise-badge ${badgeCls}">${cat}</span>
+          <span style="color:var(--txt)">${text}</span>
+        </div>`;
+      }).join('');
+    } else {
+      banner.style.display = 'none';
+    }
+  }
 
   // 直近12週分のみ表示
   const display = sorted.slice(0, 12);
