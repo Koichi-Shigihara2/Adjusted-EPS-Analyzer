@@ -188,6 +188,13 @@
 ### ✅ [FEAT-7] ユニットテスト24件追加
 - 回帰バグ検出の基盤を整備
 
+### ✅ [FEAT-10] β再発防止の3施策（2026-05-31）
+- beta_fetcher.py: 全銘柄βをyfinanceから自動取得・更新（cap2.5/floor0.3）
+  Damodaran手動設定は保護、sourceフィールドで取得元を記録
+- audit.py --check-beta: SEC監査にβ乖離チェック追加（0.5超で警告、1.0超で重大）
+- Beta_Config_Update.yml: 月次自動更新ワークフロー（第1日曜JST8:00）
+- CLAUDE_CODE_START.md: 新規銘柄登録Step2にbeta_fetcher.py追加
+
 ---
 
 ## 完了済み（2026-05-31 本日対応）
