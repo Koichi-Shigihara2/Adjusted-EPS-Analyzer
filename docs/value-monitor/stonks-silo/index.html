@@ -185,6 +185,19 @@
     .detail-val.pos{color:var(--grn)}
     .detail-val.neg{color:var(--red)}
 
+    /* DESIGN-11: ユニットエコノミクスバッジ */
+    .ue-badge{font-family:var(--mono);font-size:8px;letter-spacing:.08em;padding:2px 7px;border:1px solid;white-space:nowrap}
+    .ue-excellent{color:#10b981;border-color:rgba(16,185,129,.4);background:rgba(16,185,129,.08)}
+    .ue-good{color:#3b82f6;border-color:rgba(59,130,246,.4);background:rgba(59,130,246,.08)}
+    .ue-watch{color:#f59e0b;border-color:rgba(245,158,11,.3);background:transparent}
+    .ue-poor{color:#64748b;border-color:rgba(100,116,139,.3);background:transparent}
+    /* UE ミニトレンドバー */
+    .ue-trend-row{display:flex;gap:2px;align-items:flex-end;height:36px}
+    .ue-trend-col{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0}
+    .ue-trend-bar-pos{background:rgba(16,185,129,.5);border-top:1px solid #10b981;width:100%;min-height:2px}
+    .ue-trend-bar-neg{background:rgba(244,63,94,.3);border-top:1px solid #f43f5e;width:100%;min-height:2px}
+    .ue-trend-yr{font-family:var(--mono);font-size:7px;color:var(--mut);margin-top:2px;white-space:nowrap}
+
     /* 総合コメント */
     .detail-summary{font-size:12px;color:var(--mut);line-height:1.8;padding:14px 18px;background:var(--sur2);border:1px solid var(--bdr);margin-bottom:0}
 
@@ -285,6 +298,10 @@
     <button class="filter-btn" data-filter="PROMISING">バランス有望</button>
     <button class="filter-btn" data-filter="WATCH">条件付き観察</button>
     <button class="filter-btn" data-filter="AVOID">基準未達</button>
+    <span style="font-family:var(--mono);font-size:9px;color:var(--mut);margin:0 4px">|</span>
+    <button class="filter-btn" data-filter="UE_EXCELLENT" title="ユニットエコノミクス スコア75+">★★★ UE優秀</button>
+    <button class="filter-btn" data-filter="UE_GOOD" title="ユニットエコノミクス スコア55-74">★★☆ UE良好</button>
+    <button class="filter-btn" data-filter="UE_LOW" title="ユニットエコノミクス スコア34以下">☆☆☆ UE低調</button>
   </div>
 
   <!-- Table -->
@@ -293,14 +310,15 @@
       <colgroup>
         <col style="width:28px">
         <col style="width:72px">
-        <col style="width:118px">
-        <col style="width:90px">
-        <col style="width:96px">
+        <col style="width:108px">
+        <col style="width:80px">
         <col style="width:84px">
-        <col style="width:76px">
         <col style="width:72px">
-        <col style="width:76px">
-        <col style="width:96px">
+        <col style="width:66px">
+        <col style="width:64px">
+        <col style="width:86px">
+        <col style="width:66px">
+        <col style="width:86px">
       </colgroup>
       <thead>
         <tr>
@@ -351,6 +369,12 @@
             <span class="th-inner" style="justify-content:flex-end">
               <span class="tip-wrap">黒字化<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス</span></span>
               <span class="sort-arr" onclick="setSort('be')" style="color:var(--mut)"> ⇅</span>
+            </span>
+          </th>
+          <th data-sort="ue">
+            <span class="th-inner">
+              <span class="tip-wrap">黒字化の質<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">ユニットエコノミクス改善スコア(0-100)。粗利率水準(20pt)+粗利率トレンド(20pt)+損失/売上水準(30pt)+損失/売上改善率(30pt)。★★★≥75 / ★★☆55-74 / ★☆☆35-54 / ☆☆☆&lt;35</span></span>
+              <span class="sort-arr" onclick="setSort('ue')" style="color:var(--mut)"> ⇅</span>
             </span>
           </th>
           <th class="r" data-sort="score">
@@ -454,6 +478,7 @@ function getSortVal(ticker, d, key) {
     case 'trend':   return ['ACCELERATING','IMPROVING','FLAT','DETERIORATING','UNKNOWN'].indexOf(pp.ocf_trend);
     case 'price':   return v.current_price ?? -1;
     case 'gm':      return dq.gross_margin ?? -1;
+    case 'ue':      return dq.unit_economics_score ?? -1;
     case 'be':      return pp.ocf_breakeven_year || pp.gaap_breakeven_year || 9999;
     default: return 0;
   }
@@ -492,7 +517,13 @@ function togglePin(ticker, e) {
 function render() {
   const body = document.getElementById('tbl-body');
   let rows = Object.entries(allData)
-    .filter(([t, d]) => currentFilter === 'ALL' || d.overall_verdict === currentFilter);
+    .filter(([t, d]) => {
+      if (currentFilter === 'ALL') return true;
+      if (currentFilter === 'UE_EXCELLENT') return (d.deficit_quality?.unit_economics_score ?? -1) >= 75;
+      if (currentFilter === 'UE_GOOD')      return (d.deficit_quality?.unit_economics_score ?? -1) >= 55 && (d.deficit_quality?.unit_economics_score ?? -1) < 75;
+      if (currentFilter === 'UE_LOW')       return (d.deficit_quality?.unit_economics_score ?? 100) <= 34;
+      return d.overall_verdict === currentFilter;
+    });
 
   rows.sort((a, b) => {
     const av = getSortVal(a[0], a[1], sortKey);
@@ -550,6 +581,7 @@ function render() {
       <td class="r" style="font-family:var(--mono);font-size:11px">${v.current_price != null ? '$'+v.current_price.toFixed(2) : '—'}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px">${dq.gross_margin != null ? dq.gross_margin.toFixed(1)+'%' : '—'}</td>
       <td class="r">${beCell}</td>
+      <td>${ueBadge(dq.unit_economics_score, dq.unit_economics_label)}</td>
       <td class="r">
         <div class="score-bar">
           <div class="score-track"><div class="score-fill" style="width:${score}%;background:${scoreColor(score)}"></div></div>
@@ -558,7 +590,7 @@ function render() {
       </td>
     </tr>
     <tr id="detail-${ticker}" style="display:none">
-      <td colspan="10" style="padding:0">
+      <td colspan="11" style="padding:0">
         <div class="detail" id="detail-inner-${ticker}"></div>
       </td>
     </tr>`;
@@ -769,6 +801,48 @@ function buildDetail(ticker, d) {
     : '—';
   const reproBar = reproLabel === 'データ不足' ? '' : `<div class="repro-bar"><div class="repro-left"><div class="repro-title">拡大再生産</div><div class="repro-dots" style="color:${reproColor}">${reproDots}</div><div class="repro-label" style="color:${reproColor}">${reproLabel}</div></div><div class="repro-detail">${reproDetailText}</div></div>`;
 
+  // DESIGN-11: UE ミニトレンド生成ヘルパー
+  function buildUeTrendBars(trendObj, invert, maxPct, labelSuffix) {
+    const entries = Object.entries(trendObj || {}).filter(([,v]) => v !== null).sort(([a],[b]) => a-b);
+    if (!entries.length) return '<span style="color:var(--mut);font-size:10px">データなし</span>';
+    const maxVal = Math.max(...entries.map(([,v]) => Math.abs(v)), maxPct || 1);
+    return '<div class="ue-trend-row">' + entries.map(([yr, v]) => {
+      const pct = Math.max(4, Math.round(Math.abs(v) / maxVal * 34));
+      const isGood = invert ? (v !== null && v < (entries[0][1] || v)) : v >= 0;
+      const col = isGood ? '#10b981' : '#f43f5e';
+      const bgCls = v >= 0 ? 'ue-trend-bar-pos' : 'ue-trend-bar-neg';
+      return `<div class="ue-trend-col">
+        <div style="flex:1;display:flex;align-items:flex-end"><div class="${bgCls}" style="height:${pct}px;width:100%;background:${v>=0?'rgba(16,185,129,.5)':'rgba(244,63,94,.3)'};border-top:1px solid ${v>=0?'#10b981':'#f43f5e'}"></div></div>
+        <div class="ue-trend-yr">${String(yr).slice(-2)}</div>
+        <div style="font-family:var(--mono);font-size:7px;color:${col};text-align:center">${v != null ? v.toFixed(0)+labelSuffix : ''}</div>
+      </div>`;
+    }).join('') + '</div>';
+  }
+
+  const ueScore = dq.unit_economics_score;
+  const ueLabel = dq.unit_economics_label || '不明';
+  const gmTrend = dq.gross_margin_trend || {};
+  const lprTrend = dq.loss_per_revenue_trend || {};
+  const ueSection = ueScore != null ? `
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin:0 0 16px">
+    <div style="background:var(--sur2);padding:12px 14px;text-align:center">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);margin-bottom:8px">📊 ユニットエコノミクス</div>
+      <div style="font-family:var(--mono);font-size:26px;font-weight:700;color:${ueScore>=75?'var(--grn)':ueScore>=55?'#3b82f6':ueScore>=35?'var(--amb)':'var(--mut)'}">${ueScore}</div>
+      <div style="margin-top:6px">${ueBadge(ueScore, ueLabel)}</div>
+      <div style="font-size:10px;color:var(--mut);margin-top:6px">${ueLabel.replace(/[★☆]+\s*/,'')}</div>
+    </div>
+    <div style="background:var(--sur2);padding:12px 14px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);margin-bottom:6px">粗利率トレンド（%）</div>
+      ${buildUeTrendBars(gmTrend, false, 100, '%')}
+      <div style="font-size:9px;color:var(--mut);margin-top:4px">改善中→緑 / 低水準→赤</div>
+    </div>
+    <div style="background:var(--sur2);padding:12px 14px">
+      <div style="font-family:var(--mono);font-size:8px;letter-spacing:.15em;color:var(--mut);margin-bottom:6px">損失/売上比 圧縮率（%）<span style="font-size:8px;color:var(--mut)">↓小さいほど良い</span></div>
+      ${buildUeTrendBars(lprTrend, true, null, '%')}
+      <div style="font-size:9px;color:var(--mut);margin-top:4px">損失縮小=ユニット改善の証拠</div>
+    </div>
+  </div>` : '';
+
   return `
   <div class="conclusion-layer">
     <div class="conclusion-left">
@@ -799,6 +873,7 @@ function buildDetail(ticker, d) {
   ${reproBar}
   <div class="detail-inner">
 
+  ${ueSection}
   <div class="pillar-row">
     <div class="pillar">
       <div class="pillar-title">① 赤字品質</div>
@@ -855,6 +930,7 @@ function buildDetail(ticker, d) {
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBCトレンド（前年比）<span class="tip-icon">?</span><span class="tip-box">株式報酬の前年比変化率。増加=希薄化拡大(赤) / 減少=改善(緑)</span></span></span><span class="detail-val ${dq.sbc_yoy_change!=null?(dq.sbc_yoy_change>0?'neg':'pos'):''}">${fmtPct(dq.sbc_yoy_change)}</span></div>
       <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">判定</div>
       <div class="detail-row"><span class="detail-key">投資性赤字</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
+      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">黒字化の質 (UE)<span class="tip-icon">?</span><span class="tip-box">ユニットエコノミクス改善スコア(0-100)。粗利率水準・改善率・損失/売上比・圧縮速度の4軸合計</span></span></span><span class="detail-val">${ueBadge(dq.unit_economics_score, dq.unit_economics_label)}</span></div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">赤字固定化リスク<span class="tip-icon">?</span><span class="tip-box">良い赤字×OCF改善中→LOW / 悪い赤字×悪化中→HIGH</span></span></span>${riskBadge(dq.deficit_fixed_risk)}</div>
       <div class="detail-row"><span class="detail-key"><span class="tip-wrap">希薄化リスク<span class="tip-icon">?</span><span class="tip-box">SBC比率による株主希薄化リスク。≥15%=HIGH / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span>${riskBadge(dq.dilution_risk)}</div>
     </div>
@@ -1202,6 +1278,13 @@ function fmtShort(v) {
 function fmtPct(v) {
   if (v === null || v === undefined) return '—';
   return `${v.toFixed(1)}%`;
+}
+
+function ueBadge(score, label) {
+  if (score == null) return '<span style="color:var(--mut);font-size:10px">—</span>';
+  const stars = score >= 75 ? '★★★' : score >= 55 ? '★★☆' : score >= 35 ? '★☆☆' : '☆☆☆';
+  const cls   = score >= 75 ? 'ue-excellent' : score >= 55 ? 'ue-good' : score >= 35 ? 'ue-watch' : 'ue-poor';
+  return `<span class="ue-badge ${cls}"><span style="letter-spacing:1px">${stars}</span><span style="display:block;font-size:7px;opacity:.8;margin-top:1px">${score}</span></span>`;
 }
 
 function riskBadge(level) {
