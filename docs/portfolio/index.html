@@ -99,8 +99,23 @@
     .chart-btn.active{background:var(--orn);color:#fff;border-color:var(--orn)}
     .chart-empty{color:var(--mut);font-family:var(--mono);font-size:12px;padding:48px;text-align:center}
 
+    /* HYPEMIX */
+    .hypemix-wrap{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:20px 24px;margin-bottom:24px}
+    .hypemix-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .hypemix-badge{font-family:var(--mono);font-size:11px;padding:3px 10px;border-radius:3px;font-weight:700;letter-spacing:.05em}
+    .hbadge-good{background:rgba(16,185,129,.15);color:#10b981}
+    .hbadge-caution{background:rgba(245,158,11,.15);color:#f59e0b}
+    .hbadge-danger{background:rgba(244,63,94,.15);color:#f43f5e}
+    .hypemix-charts{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:20px}
+    .hypemix-chart-card{text-align:center}
+    .hypemix-chart-title{font-family:var(--mono);font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.12em;margin-bottom:12px}
+    .hypemix-dev{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+    .hypemix-dev-row{font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px}
+    .hypemix-proposal{font-family:var(--mono);font-size:12px;line-height:1.9;background:var(--sur2);border:1px solid var(--bdr);border-radius:4px;padding:12px 16px;word-break:break-word}
+
     @media(max-width:700px){
       .summary-cards{grid-template-columns:repeat(2,1fr)}
+      .hypemix-charts{grid-template-columns:1fr}
     }
   </style>
   <link rel="stylesheet" href="../common/site-theme.css">
@@ -141,6 +156,7 @@
   <div id="summary-section"><div class="loading"><span class="spinner"></span>データ読み込み中...</div></div>
   <div id="broker-summary-section"></div>
   <div id="table-section"></div>
+  <div id="hypemix-section"></div>
   <div id="dist-section"></div>
   <div id="chart-section"></div>
 </div>
@@ -528,6 +544,9 @@ async function loadData() {
       </table>
     </div>`;
 
+  // HYPEMIX
+  renderHypemix(posAgg, hypeMap);
+
   // ④ Phase distribution
   const distItems = Object.entries(phaseCount)
     .sort((a,b) => b[1]-a[1])
@@ -540,6 +559,144 @@ async function loadData() {
 
   // ⑤ History chart
   loadHistoryChart();
+}
+
+// ── HYPEMIX ──
+function renderHypemix(posAgg, hypeMap) {
+  const PHASE_CFG = [
+    { label: '失望/蓄積期', color: '#64748b', target: 10 },
+    { label: '期待覚醒期',  color: '#10b981', target: 20 },
+    { label: '期待拡大期',  color: '#3b82f6', target: 30 },
+    { label: '陶酔期',      color: '#f59e0b', target: 30 },
+    { label: '期待剥落期',  color: '#f43f5e', target: 10 },
+  ];
+
+  const phaseMap = {};
+  PHASE_CFG.forEach(p => { phaseMap[p.label] = []; });
+
+  const holdings = Object.keys(posAgg);
+  const total = holdings.length;
+
+  holdings.forEach(ticker => {
+    const hc = hypeMap[ticker];
+    const lastMo = hc?.monthly?.[hc.monthly.length - 1] ?? null;
+    const sl = lastMo?.stage_label ?? null;
+    const key = PHASE_CFG.find(p => p.label === sl)?.label ?? null;
+    if (key) phaseMap[key].push(ticker);
+  });
+
+  const phaseData = PHASE_CFG.map(p => ({
+    ...p,
+    count:   phaseMap[p.label].length,
+    tickers: phaseMap[p.label],
+    pct:     total > 0 ? phaseMap[p.label].length / total * 100 : 0,
+  }));
+
+  const s3s4pct = total > 0
+    ? (phaseMap['陶酔期'].length + phaseMap['期待剥落期'].length) / total * 100
+    : 0;
+  const [badgeCls, badgeTxt] =
+    s3s4pct <= 40 ? ['hbadge-good',    '良好']   :
+    s3s4pct <= 60 ? ['hbadge-caution', '要注意'] :
+                    ['hbadge-danger',   '危険'];
+
+  const devHtml = phaseData.map(d => {
+    const diff = d.pct - d.target;
+    const col  = diff >= 6 ? 'var(--red)' : diff <= -6 ? 'var(--grn)' : 'var(--txt)';
+    const sign = diff >= 0 ? '+' : '';
+    return `<div class="hypemix-dev-row">
+      <span style="color:${d.color}">■</span>
+      <span style="flex:1">${d.label}</span>
+      <span style="color:${col}">${d.pct.toFixed(1)}% → ${d.target}%（${sign}${diff.toFixed(1)}%）</span>
+    </div>`;
+  }).join('');
+
+  const s3pct    = phaseData.find(d => d.label === '陶酔期')?.pct ?? 0;
+  const s4pct    = phaseData.find(d => d.label === '期待剥落期')?.pct ?? 0;
+  const earlyPct = ['失望/蓄積期', '期待覚醒期', '期待拡大期']
+    .reduce((s, l) => s + (phaseData.find(d => d.label === l)?.pct ?? 0), 0);
+
+  const proposals = [];
+  if (s3pct > 40)
+    proposals.push(`陶酔期の銘柄（${phaseMap['陶酔期'].join(', ')}）が過多です。一部利確を検討してください。`);
+  if (s4pct > 40)
+    proposals.push(`期待剥落期の銘柄（${phaseMap['期待剥落期'].join(', ')}）が多い状態です。底打ちシグナルを確認してください。`);
+  if (earlyPct < 30)
+    proposals.push('仕込みゾーンの銘柄が不足しています。Discoverで新規候補を探してください。');
+  if (!proposals.length)
+    proposals.push('フェーズ分布はバランス良好です。');
+
+  const sec = document.getElementById('hypemix-section');
+  if (!sec) return;
+  sec.innerHTML = `
+    <div class="sec">HYPEMIX</div>
+    <div class="hypemix-wrap">
+      <div class="hypemix-hdr">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--mut)">保有${total}銘柄のフェーズ分布</span>
+        <span class="hypemix-badge ${badgeCls}">${badgeTxt}</span>
+      </div>
+      <div class="hypemix-charts">
+        <div class="hypemix-chart-card">
+          <div class="hypemix-chart-title">現状</div>
+          <canvas id="hm-current" style="max-height:240px"></canvas>
+        </div>
+        <div class="hypemix-chart-card">
+          <div class="hypemix-chart-title">目標</div>
+          <canvas id="hm-target" style="max-height:240px"></canvas>
+        </div>
+      </div>
+      <div class="hypemix-dev">${devHtml}</div>
+      <div class="hypemix-proposal">${proposals.join('<br>')}</div>
+    </div>`;
+
+  const mkChart = (id, data, isActual) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels: PHASE_CFG.map(p => p.label),
+        datasets: [{
+          data,
+          backgroundColor: PHASE_CFG.map(p => p.color + 'cc'),
+          borderColor: '#0a0d14',
+          borderWidth: 2,
+          hoverBackgroundColor: PHASE_CFG.map(p => p.color),
+        }],
+      },
+      options: {
+        responsive: true,
+        cutout: '60%',
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: (items) => items[0]?.label ?? '',
+              label: (ctx) => {
+                if (isActual) {
+                  const pct  = total > 0 ? (ctx.parsed / total * 100).toFixed(1) : '0.0';
+                  const tks  = phaseMap[ctx.label] ?? [];
+                  const lines = [`${pct}% (${ctx.parsed}銘柄)`];
+                  if (tks.length) lines.push(tks.join(', '));
+                  return lines;
+                }
+                return `${ctx.parsed}%`;
+              },
+            },
+            backgroundColor: 'rgba(17,21,32,.95)',
+            borderColor: '#1e2840',
+            borderWidth: 1,
+            titleFont: { family: 'Space Mono, monospace', size: 11 },
+            bodyFont:  { family: 'Space Mono, monospace', size: 11 },
+            padding: 10,
+          },
+        },
+      },
+    });
+  };
+
+  mkChart('hm-current', phaseData.map(d => d.count), true);
+  mkChart('hm-target',  PHASE_CFG.map(p => p.target), false);
 }
 
 // ── History chart ──
@@ -645,6 +802,7 @@ function renderHistoryChart() {
   Plotly.react(el, traces, layout, { responsive: true, displayModeBar: false });
 }
 </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
   <script src="../common/site-nav.js"></script>
 </body>
