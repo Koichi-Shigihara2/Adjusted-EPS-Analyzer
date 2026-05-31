@@ -10,7 +10,7 @@ import json
 import os
 import re
 import requests
-from datetime import datetime, timezone, timedelta
+from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 
 XAI_API_KEY = os.getenv("XAI_API_KEY")
@@ -128,7 +128,7 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
 {headlines}
 
 以下のJSON形式で回答してください（他のテキスト不要）：
-{{"items": [{{"title": "...", "category": "カタリスト", "importance": "高", "summary": "30字以内の日本語要約"}}], "top_importance": "高/中/低", "summary": "全体を50字以内で要約"}}
+{{"items": [{{"title": "...", "category": "カタリスト", "importance": "高", "summary": "30字以内の日本語要約", "url": "元記事のURLまたはnull", "published_at": "YYYY-MM-DDまたはnull"}}], "top_importance": "高/中/低", "summary": "全体を50字以内で要約"}}
 """
     try:
         text = call_grok(prompt, max_tokens=800)
@@ -159,7 +159,8 @@ web検索で調べてください。
 {{
   "items": [
     {{"title": "...", "category": "カタリスト/リスク/ブレイクスルー/一般",
-      "importance": "高/中/低", "summary": "30字以内の日本語要約"}}
+      "importance": "高/中/低", "summary": "30字以内の日本語要約",
+      "url": "元記事のURLまたはnull", "published_at": "YYYY-MM-DDまたはnull"}}
   ],
   "top_importance": "高/中/低",
   "summary": "全体を50字以内で要約"
@@ -203,7 +204,7 @@ def explore_candidates(existing_tickers: list) -> list:
 {existing_str}
 
 各銘柄について以下のJSON形式で回答してください（コードブロック不要）：
-{{"candidates": [{{"ticker": "XXXX", "company": "会社名", "sector": "セクター", "market_cap_b": 時価総額（十億ドル）, "revenue_growth_pct": 売上成長率（%）, "institutional_ownership_pct": 機関投資家保有率（%）, "reason": "注目理由と見落とされていた背景（100字以内）", "risk": "主なリスク（50字以内）"}}]}}
+{{"candidates": [{{"ticker": "XXXX", "company": "会社名", "sector": "セクター", "market_cap_b": 時価総額（十億ドル）, "revenue_growth_pct": 売上成長率（%）, "institutional_ownership_pct": 機関投資家保有率（%）, "reason": "注目理由と見落とされていた背景（100字以内）", "risk": "主なリスク（50字以内）", "screening_pass": ["通過条件1", ...（実際に満たすものを最大5件）], "catalyst_type": "決算サプライズ|製品発表|規制変化|市場拡大|その他", "conviction": "高|中|低"}}]}}
 """
     try:
         text = call_grok(prompt, max_tokens=1000)
@@ -214,6 +215,48 @@ def explore_candidates(existing_tickers: list) -> list:
             return data.get("candidates", [])
     except Exception as e:
         print(f"候補探索エラー: {e}")
+    return []
+
+
+def explore_macro_themes(existing_tickers: list) -> list:
+    if not XAI_API_KEY:
+        return []
+
+    existing_str = ", ".join(existing_tickers)
+    today = date.today().isoformat()
+    prompt = f"""あなたは機関投資家向けのテーマ分析アナリストです。
+web検索を使い、今後6〜18ヶ月で市場を動かす可能性がある
+「特大テーマ候補」を3件分析してください。
+
+以下の登録銘柄リストを参考に、関連する銘柄があれば
+related_tickersに含めてください（リスト外の銘柄は含めない）：
+{existing_str}
+
+以下のJSON形式のみで回答してください。前置き・後置き不要：
+{{
+  "themes": [
+    {{
+      "theme": "テーマ名（20字以内）",
+      "horizon": "投資時間軸（例: 6〜12ヶ月）",
+      "conviction": "高|中|低",
+      "background": "根拠・背景（100字以内）",
+      "related_tickers": ["登録銘柄のtickerのみ"],
+      "catalyst": "具体的なトリガーイベント（50字以内）"
+    }}
+  ]
+}}"""
+    try:
+        text = call_grok(prompt, max_tokens=1200, model_override="grok-3")
+        text = text.replace("```json", "").replace("```", "").strip()
+        m = re.search(r'\{.*\}', text, re.DOTALL)
+        if m:
+            data = json.loads(m.group())
+            themes = data.get("themes", [])
+            for theme in themes:
+                theme["generated_at"] = today
+            return themes
+    except Exception as e:
+        print(f"テーマ探索エラー: {e}")
     return []
 
 
@@ -250,18 +293,31 @@ def main():
     existing = list(config.get("tickers", {}).keys())
     candidates = explore_candidates(existing)
 
+    out = Path("docs/discover/data/daily_report.json")
+    if now_jst.weekday() == 6:
+        print("特大テーマ探索中（日曜日）...")
+        macro_themes = explore_macro_themes(existing)
+    else:
+        try:
+            with open(out, encoding="utf-8") as f:
+                prev = json.load(f)
+            macro_themes = prev.get("macro_themes", [])
+            print(f"特大テーマ引継ぎ: {len(macro_themes)}件")
+        except Exception:
+            macro_themes = []
+
     report = {
         "generated_at": now_jst.strftime("%Y-%m-%dT%H:%M:%S+09:00"),
         "tickers":      results,
         "candidates":   candidates,
+        "macro_themes": macro_themes,
     }
 
-    out = Path("docs/discover/data/daily_report.json")
     out.parent.mkdir(parents=True, exist_ok=True)
     with open(out, "w", encoding="utf-8") as f:
         json.dump(report, f, ensure_ascii=False, indent=2)
 
-    print(f"完了: {len(results)}銘柄 + 候補{len(candidates)}件")
+    print(f"完了: {len(results)}銘柄 + 候補{len(candidates)}件 + テーマ{len(macro_themes)}件")
 
 
 if __name__ == "__main__":
