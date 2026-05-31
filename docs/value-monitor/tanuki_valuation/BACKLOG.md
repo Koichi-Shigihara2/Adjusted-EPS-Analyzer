@@ -170,6 +170,45 @@
 
 ---
 
+## 完了済み（2026-05-31 本日対応）
+
+### ✅ [DESIGN-10] RICEの三分類見直し
+- 詳細は上記 設計相談メモ 参照
+
+### ✅ [BUG-2b] _calc_q: GAAP赤字年のSBC偽陽性Q値
+- 発見: NI<0年にSBCで earnings>0 になるとQ計算に混入し異常Q値が発生
+  例: NI=-469M, SBC=+608M → earnings=139M → Q=OCF/139M=13.43
+- 影響: MRVL（Q=6.97→0.51）をはじめ11銘柄のRICE値が不正確だった
+  NET/ZS/ZETA/SOUN: 誤ってRICE有りと判定（正しくはQ計算不可）
+- 修正: `calculator/rice.py` _calc_q に `if ni < 0: continue` を追加
+- テスト: 3件追加（計32件）
+
+### ✅ [BUG-11] quarterly.py: NetIncomeフォールバック未設定
+- 発見: AVGO/BKNG/AVAVのTTM系列でNI=None（Q計算不可・RICE誤分類）
+  原因: quarterly.py が NetIncomeLoss のみ参照し ProfitLoss 等を見ていなかった
+  AVGO: NetIncomeLossの四半期データが2019以前で途絶 → ProfitLossが必要
+  BKNG: NetIncomeLoss自体が未申告 → NetIncomeLossAvailableToCommonStockholdersBasicが必要
+  また _FALLBACK_MIN_FIELDS に NetIncome がなく q_count<4でもフォールバック未発動
+- 修正: `common/sec_data/quarterly.py` に NetIncome フォールバック追加
+  _FIELD_FALLBACKS["NetIncome"] = (ProfitLoss, NetIncomeLossAvailableToCommonStockholdersBasic)
+  _FALLBACK_MIN_FIELDS に NetIncome を追加
+- 結果: AVGO RICE=2.3(Matrix①正常), BKNG セクター除外(Matrix②正常), AVAV Q取得成功
+
+### ✅ [FEAT-8] SECデータ品質監査の自動化
+- `common/sec_data/audit.py` 作成
+  NI/OCF/Revenue の全件・一部 None を検出、重大問題は Discord 通知
+- `.github/workflows/SEC_Data_Audit.yml` 作成
+  SEC_Data_Update 完了後に自動実行
+- `CLAUDE_CODE_START.md` にパイプラインコード変更時の必須手順を追記
+
+### ✅ [FEAT-9] Matrix③散布図: Q計算不可銘柄を表示
+- 赤字銘柄（Q計算不可）が散布図に表示されていなかった
+- stock.html の loadAndRenderMatrices を修正
+  Q計算不可銘柄もMatrix③にルーティング（11銘柄が新規表示）
+  Q異常値（Q>5）との視覚区別: 白ストローク付きドットで区別
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
