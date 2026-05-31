@@ -46,6 +46,39 @@ git push origin kaihatsu
 - 新機能には必ずテストを追加する
 - テスト失敗のままコミットしない
 
+### パイプラインコード変更時の追加手順
+
+以下のファイルを変更した場合は、コミット前に影響銘柄を特定して再生成する。
+
+**対象ファイル（変更したら必ず監査を実行）：**
+- `common/sec_data/quarterly.py`
+- `common/sec_data/normalizer.py`
+- `common/sec_data/ttm_calculator.py`
+- `common/sec_data/parser.py`
+- `src/value/tanuki_valuation/calculator/rice.py`
+- `src/value/tanuki_valuation/core_calculator.py`
+
+**手順：**
+
+```bash
+# Step 1: データ品質監査（影響銘柄を特定）
+python common/sec_data/audit.py
+
+# Step 2: quarterly.py / normalizer.py / ttm_calculator.py を変更した場合
+python common/sec_data/update.py [影響銘柄]
+
+# Step 3: rice.py / core_calculator.py を変更した場合
+#   → TTMデータ変更なし。影響銘柄のパイプラインのみ再実行
+python src/value/tanuki_valuation/pipeline.py [影響銘柄]
+
+# Step 4: 再監査で問題消滅を確認
+python common/sec_data/audit.py
+```
+
+**影響銘柄の特定方法（rice.py変更時）：**
+全銘柄 TTM を走査して変更前後の Q 値を比較するスクリプトを都度作成するか、
+変更内容から論理的に対象銘柄を絞り込む（例：ni < 0 チェック追加 → 赤字年が含まれる銘柄）。
+
 ---
 
 ## BACKLOG優先順位の目安

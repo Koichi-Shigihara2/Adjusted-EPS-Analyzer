@@ -1,0 +1,48 @@
+name: SEC Data Quality Audit
+
+on:
+  # SEC更新ワークフロー完了後に自動実行
+  workflow_run:
+    workflows: ["SEC Data Update"]
+    types: [completed]
+  # 手動実行
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Target tickers (comma-separated, blank for all)'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run SEC Data Quality Audit
+        env:
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: |
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
+            python common/sec_data/audit.py $TICKERS
+          else
+            python common/sec_data/audit.py
+          fi
+        # 重大問題があっても workflow は続行（通知のみ・強制停止しない）
+        continue-on-error: true
