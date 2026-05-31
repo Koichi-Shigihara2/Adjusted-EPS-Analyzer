@@ -78,13 +78,12 @@
 - 問題: 業種・成長段階によって適切な永続成長率は異なる
 - 改善: セクター別 tv_g テーブルを設定（例：テック 3.5%、公益 2.0%）
 
-### [NET-1] financial_health.net_debt と bs_adjustment.net_cash の不整合
-- 現状: report.txt の Net_Debt は total_debt - cash のみ（短期投資除外）
-- 問題: bs_adjustment は短期投資を含むため両者で値が異なる
-  例: AAPL Net_Debt表示 +$67.09B vs 実態 -$48.33B（差 $18.76B）
-- 改善: financial_health.net_debt の計算に短期投資を含める
-  または report.txt に「短期投資除外」の注記を追加
-- Gemini指摘: 2026-05-30
+### ✅ [NET-1] financial_health.net_debt と bs_adjustment.net_cash の不整合（2026-05-31 完了）
+- 修正: pipeline.py _load_extra_data() で short_term_investments を net_debt に加算
+  net_debt = total_debt - cash - short_term_investments
+  bs_adjustment.short_term_investments を参照して整合を取る
+- 結果: AAPL Net_Debt +67.09B → +48.33B（bs_adjustmentと一致）
+  financial_health に short_term_investments フィールドを追加
 
 ---
 

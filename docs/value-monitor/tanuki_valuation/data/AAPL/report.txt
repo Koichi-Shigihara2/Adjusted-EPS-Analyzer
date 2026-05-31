@@ -1,5 +1,5 @@
 AAPL INTEGRATED INVESTMENT REPORT
-Generated: 2026-05-30T22:51:06+09:00
+Generated: 2026-05-31T13:23:43+09:00
 Price: $312.06
 
 [1. TANUKI SCORE]
@@ -21,7 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
+GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -33,7 +34,7 @@ Label: 割高×低効率
 Key_Metric_Y: RICE = 0.343
 Deviation_Rate: -27.5%
 Thresholds:
-  RICE_Threshold: 2.0 (above=high efficiency)
+  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -64,13 +65,13 @@ BASE: Growth=7.5%, IV=$226.32, Deviation=-27.5%
 BULL: Growth=9.0%, IV=$240.94, Deviation=-22.8%
 TTM_Revenue_Growth: 16.6%
 (DCF Base vs TTM actual: -9.1pt discount)
-WACC: 9.14%
+WACC: 10.37%
 Terminal_Growth_Rate: 3.0%
-Beta: 0.85
+Beta: 1.065
 FCF_Conversion_Rate: 0.7 (Industry: Consumer Electronics)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $+67.09B (negative=net cash)
+  Net_Debt: $+48.33B (negative=net cash)
   Total_Debt: $103.03B  Cash: $35.93B
   SBC_TTM: $12,863M
   Dilution_3yr_Annual: -2.77%/yr  自社株買いによる株主還元 ✅
@@ -177,7 +178,7 @@ InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
 WACC: Weighted Average Cost of Capital
 Primary basis: Rm=10% (Beta=0 scenario)
 Reference: Beta-adjusted WACC also calculated
-Interpretation: RICE>2.0 = high reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by

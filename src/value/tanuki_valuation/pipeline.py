@@ -1340,10 +1340,14 @@ class TanukiValuationPipeline:
             dc = debt_cash_by_year[latest_yr]
             total_debt = dc["lt_debt"] + dc["st_debt"]
             cash = dc["cash"]
+            # NET-1: 短期投資（short_term_investments）を現金同等物として net_debt に加算
+            # bs_adjustment がすでに短期投資を含んでいるため、financial_health と整合を取る
+            st_invest = valuation.get("bs_adjustment", {}).get("short_term_investments", 0.0) or 0.0
             result["financial_health"] = {
                 "total_debt": total_debt,
                 "cash_and_equivalents": cash,
-                "net_debt": total_debt - cash,
+                "short_term_investments": st_invest,
+                "net_debt": total_debt - cash - st_invest,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
             }
             # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
