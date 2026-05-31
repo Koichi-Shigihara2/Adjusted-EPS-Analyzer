@@ -672,3 +672,52 @@ class TestHypecoreSubstageWatch:
         # 実際の eps_surprise 値（-10.0）がテキストに反映されているか
         assert "-10.0" in result["watch"], \
             f"予想比の値が watch に含まれていない: {result['watch']}"
+
+
+# ─────────────────────────────────────────────
+# 9. _calc_q: GAAP赤字年スキップ（BUG-2b）
+#    NI<0 の年は SBC で earnings がプラスになっても Q 計算から除外されることを検証
+#    背景: MRVL TTM2025-02-01 で NI=-469M, SBC=+608M → earnings=139M
+#          Q = 1871M/139M = 13.43 という偽高Q が発生し Q異常値誤判定が起きていた
+# ─────────────────────────────────────────────
+
+from calculator.rice import _calc_q  # type: ignore[import]
+
+
+def _make_entry(ni: float, sbc: float, ocf: float, rev: float) -> dict:
+    return {
+        "cf": {"operating_cash_flow": ocf, "stock_based_compensation": sbc},
+        "pl": {"net_income": ni, "revenue": rev},
+    }
+
+
+class TestCalcQNegativeNI:
+    def test_negative_ni_skipped_even_when_sbc_makes_earnings_positive(self):
+        """NI<0 かつ SBC で earnings>0 になる年はスキップされる（MRVLケース）"""
+        data = [
+            _make_entry(ni=-469e6, sbc=608e6, ocf=1871e6, rev=6424e6),  # earns=139M, Q=13.4 → SKIP
+        ]
+        q, used, _ = _calc_q(data)
+        assert used == 0, "GAAP赤字年はSBCでelearnings>0でもスキップされるべき"
+
+    def test_positive_ni_year_is_included(self):
+        """NI>0 の年は通常通り計算に含まれる"""
+        data = [
+            _make_entry(ni=2888e6, sbc=592e6, ocf=1791e6, rev=8518e6),  # Q=0.51
+        ]
+        q, used, _ = _calc_q(data)
+        assert used == 1
+        assert abs(q - 1791e6 / (2888e6 + 592e6)) < 0.01
+
+    def test_mrvl_pattern_excludes_negative_ni_year(self):
+        """MRVLパターン: 赤字TTM年を除外し黒字年のみでQ平均を計算"""
+        data = [
+            _make_entry(ni=2888e6,  sbc=592e6, ocf=1791e6, rev=8518e6),  # Q=0.51  ✓
+            _make_entry(ni=-469e6,  sbc=608e6, ocf=1871e6, rev=6424e6),  # SKIP（NI<0）
+            _make_entry(ni=-1157e6, sbc=622e6, ocf=1709e6, rev=5612e6),  # SKIP（NI<0）
+            _make_entry(ni=-13e6,   sbc=552e6, ocf=1446e6, rev=5891e6),  # SKIP（NI<0）
+        ]
+        q, used, _ = _calc_q(data, years=3)
+        # years=3 なので先頭3件のみ参照 → 黒字は先頭1件のみ
+        assert used == 1
+        assert q < 5.0, f"Q={q:.2f} が Q_MAX=5.0 を超えてはならない（Q異常値誤判定防止）"

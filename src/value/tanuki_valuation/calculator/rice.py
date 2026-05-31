@@ -109,7 +109,12 @@ def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, i
     SBC補正: SBCは非現金費用であり純利益を圧縮するため、
     キャッシュ転換効率の分母には純利益+SBCを使用する。
     SBCが取得できない年はSBC=0として扱う（後退互換）。
-    分母は最小値1を保証する。
+
+    スキップ条件（優先順）:
+      1. NI < 0: GAAP赤字年はスキップ（SBCで辛うじてプラスになる偽陽性を防ぐ）
+         例: NI=-469M, SBC=+608M → earnings=139M だがQ=OCF/139M が巨大化
+      2. earnings(NI+SBC) <= 0
+      3. earnings < 売上の1%（利益がほぼゼロの年）
 
     Args:
         annual_data: get_annual_range()の返却値（新しい順）
@@ -128,8 +133,11 @@ def _calc_q(annual_data: List[Dict[str, Any]], years: int = 3) -> Tuple[float, i
         if ocf is not None and ni is not None:
             if sbc != 0.0:
                 sbc_applied_any = True
+            # GAAP赤字年はSBCで偽陽性が生じるため先にスキップ
+            if ni < 0:
+                continue
             earnings = ni + sbc
-            # 赤字または利益がほぼゼロ（売上の1%未満）→ Q未定義のためスキップ
+            # 利益がほぼゼロ（売上の1%未満）→ Q未定義のためスキップ
             if earnings <= 0:
                 continue
             if rev > 0 and abs(earnings) < rev * 0.01:
