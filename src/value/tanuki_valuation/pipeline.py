@@ -510,6 +510,11 @@ class TanukiValuationPipeline:
         latest_data["growth_sanity"] = _growth_sanity
         latest_data["phase1_growth_original"] = _phase1_growth_original
         latest_data["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
+        # DESIGN-9: RIM を latest.json に保存
+        _rim_result = self._calc_rim_value(ticker, latest_data)
+        if _rim_result:
+            latest_data["rim"] = _rim_result
+
         # DESIGN-1: ERP を latest.json に保存（フロント参考表示用）
         _comps_ld = latest_data.get("components", {})
         _fwd_eps_ld = _comps_ld.get("forward_eps")
@@ -1092,8 +1097,60 @@ class TanukiValuationPipeline:
             L.append("")
             L.append("")
 
-        # セクション番号: growth_sanity あり → [5]〜[8]、なし → [4]〜[7]
-        n = 5 if has_sanity else 4
+        # ── DESIGN-9: RIM（残余利益モデル）参考表示 ──
+        _rim = valuation.get("rim")  # _save_result() で計算済みの場合に参照
+        # _save_result() 経由でない直接呼出し用に再計算
+        if _rim is None:
+            _rim = self._calc_rim_value(ticker, {**valuation, "components": comps, "wacc": wacc_data})
+        _rim_n_offset = 1 if has_sanity else 0  # セクション番号オフセット
+        _rim_n = 4 + _rim_n_offset
+        L.append(f"[{_rim_n}. RIM VALUATION (参考)]")
+        if _rim:
+            _rim_iv = _rim["rim_iv_per_share"]
+            _rim_bv = _rim["book_value_per_share"]
+            _rim_roe = _rim["roe_used"]
+            _rim_ke = _rim["ke_used"]
+            _rim_g = _rim["tv_g_used"]
+            _rim_up = _rim.get("upside_rim_pct")
+            L.append(f"RIM_IV_per_share: ${_rim_iv:,.2f}")
+            L.append(f"RIM_Deviation: {_rim_up:+.1f}%" if _rim_up is not None else "RIM_Deviation: N/A")
+            # DCF との比較（中央値）
+            if base_iv > 0 and _rim_iv > 0:
+                _mid = (_rim_iv + base_iv) / 2
+                _mid_up = (_mid - current_price) / current_price * 100 if current_price > 0 else None
+                L.append(f"Midpoint_DCF_RIM: ${_mid:,.2f}" + (f" ({_mid_up:+.1f}%)" if _mid_up is not None else ""))
+            L.append("Components:")
+            L.append(f"  Book_Value_per_share: ${_rim_bv:,.2f}")
+            L.append(f"  ROE_10yr_avg: {_rim_roe*100:.1f}%")
+            L.append(f"  Ke (WACC_beta): {_rim_ke*100:.2f}%")
+            L.append(f"  Terminal_Growth: {_rim_g*100:.1f}%")
+            if _rim_roe > _rim_ke:
+                L.append("  Value_Creation: ROE > Ke → 再投資が価値を創造（RIM > BV）")
+            else:
+                L.append("  Value_Creation: ROE < Ke → 再投資が資本コスト未満（RIM < BV）")
+        else:
+            L.append("RIM_IV: N/A")
+            L.append("Reason: 純資産マイナス / ROE不可 / 金融セクター / Ke≤tv_g のいずれかに該当")
+        L.append("Definition:")
+        L.append("")
+        L.append("RIM (Residual Income Model): Equity value = BV + PV of future RI")
+        L.append("Formula: RIM = BV × (ROE - tv_g) / (Ke - tv_g)")
+        L.append("  Gordon Growth RIM (single-stage perpetuity)")
+        L.append("BV: Latest book value per share (stockholders_equity / shares)")
+        L.append("ROE: 10-year average return on equity")
+        L.append("Ke: Beta-adjusted WACC (cost of equity)")
+        L.append("tv_g: Sector-specific terminal growth rate (WACC-1)")
+        L.append("ROE > Ke → value creation per unit of BV (RIM > BV)")
+        L.append("ROE = Ke → no excess return (RIM = BV)")
+        L.append("ROE < Ke → value destruction (RIM < BV)")
+        L.append("Midpoint: Average of DCF IV and RIM IV as reference.")
+        L.append("Note: RIM is most reliable for mature, capital-efficient firms.")
+        L.append("Pre-profit/negative-equity firms are excluded automatically.")
+        L.append("")
+        L.append("")
+
+        # セクション番号: growth_sanity あり → [6]〜[9]、なし → [5]〜[8]
+        n = 6 if has_sanity else 5
         L.append(f"[{n}. RICE METRICS]")
         L.append(f"Available: {str(rice_available).lower()}")
         L.append(f"Exclusion_Reason: {excl_reason}")
@@ -1713,6 +1770,91 @@ class TanukiValuationPipeline:
             return roic / wacc_rm
         except Exception:
             return None
+
+    def _calc_rim_value(self, ticker: str, valuation: dict) -> dict | None:
+        """
+        DESIGN-9: RIM（残余利益モデル）での1株当たり企業価値計算
+
+        式: RIM_per_share = BV × (ROE - tv_g) / (Ke - tv_g)
+            ※ Gordon Growth RIM（単ステージ永続成長モデル）
+
+        スキップ条件:
+          - 純資産マイナスまたは0（負債超過・データ不足）
+          - ROE <= 0（赤字・成長なし）
+          - Ke <= tv_g（WACC ≦ 永続成長率 → 計算不能）
+          - 金融セクター（ROE の定義が異なる）
+        """
+        # ─ Ke（株主資本コスト = β込みWACC）─
+        wacc_data = valuation.get("wacc", {})
+        ke = wacc_data.get("value") if isinstance(wacc_data, dict) else None
+        if not ke or ke <= 0:
+            return None
+
+        # ─ ROE（10年平均）─
+        comps = valuation.get("components", {})
+        roe = comps.get("roe_10yr_avg")
+        if roe is None or roe <= 0:
+            return None
+
+        # ─ 金融セクター除外 ─
+        sector = comps.get("sector", "") or ""
+        industry = comps.get("industry", "") or ""
+        _fin_kw = ("Financial", "Insurance", "Bank", "Real Estate", "Utility")
+        if any(kw in sector or kw in industry for kw in _fin_kw):
+            return None
+
+        # ─ セクター別ターミナル成長率（WACC-1と同じ値を使用）─
+        try:
+            from maturity_config import get_terminal_growth as _get_tv_g
+            tv_g = _get_tv_g(ticker)
+        except Exception:
+            tv_g = 0.03
+
+        if ke <= tv_g:
+            return None
+
+        # ─ 簿価（BV per share）─
+        diluted_shares = comps.get("diluted_shares") or comps.get("implied_shares") or 0
+        if diluted_shares <= 0:
+            return None
+
+        bv_per_share = None
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        if os.path.exists(sec_dir):
+            years = sorted([
+                int(fn[7:11]) for fn in os.listdir(sec_dir)
+                if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+            ])
+            if years:
+                try:
+                    with open(os.path.join(sec_dir, f"annual_{years[-1]}.json"), encoding="utf-8") as f:
+                        ann = json.load(f)
+                    bs = ann.get("bs", {})
+                    equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0
+                    if equity > 0:
+                        bv_per_share = equity / diluted_shares
+                except Exception:
+                    pass
+
+        if bv_per_share is None or bv_per_share <= 0:
+            return None  # 純資産マイナス（自社株買い超過等）はスキップ
+
+        # ─ RIM 計算 ─
+        rim_per_share = bv_per_share * (roe - tv_g) / (ke - tv_g)
+        if rim_per_share <= 0:
+            return None
+
+        current_price = comps.get("current_price") or 0
+        upside_rim = ((rim_per_share - current_price) / current_price * 100) if current_price > 0 else None
+
+        return {
+            "rim_iv_per_share": round(rim_per_share, 2),
+            "book_value_per_share": round(bv_per_share, 2),
+            "roe_used": round(roe, 4),
+            "ke_used": round(ke, 4),
+            "tv_g_used": round(tv_g, 4),
+            "upside_rim_pct": round(upside_rim, 1) if upside_rim is not None else None,
+        }
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""
