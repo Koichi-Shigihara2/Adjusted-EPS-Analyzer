@@ -187,6 +187,10 @@ TICKER_INDUSTRY_OVERRIDES = {
     "HON":   "Machinery",                         # 産業コングロマリット（Machinery分類）
     "TDY":   "Aerospace/Defense",                 # 防衛センサー・計測機器
     "KULR":  "Aerospace/Defense",                 # 熱管理テック・宇宙防衛向け
+    "CEG":   "Power",                             # 原子力主体の規制電力会社
+    "VST":   "Power",                             # 原子力+ガス火力のハイブリッド電力会社
+    "SCCO":  "Metals & Mining",                   # ペルー・メキシコ中心の銅鉱山
+    "FCX":   "Metals & Mining",                   # グラスバーグ鉱山主力の銅生産会社
 }
 
 
