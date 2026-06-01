@@ -183,9 +183,10 @@ function buildNewsItem(item) {
     ? `<span style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-left:auto;flex-shrink:0">${escHtml(item.published_at)}</span>`
     : '';
   const hasUrl = item.url && item.url.startsWith('http');
-  const titleHtml = hasUrl
-    ? `<a class="news-title news-title-link" href="${escHtml(item.url)}" target="_blank" rel="noopener">${escHtml(item.title || '')}</a>`
-    : `<span class="news-title">${escHtml(item.title || '')}</span>`;
+  const href = hasUrl
+    ? escHtml(item.url)
+    : `https://www.google.com/search?q=${encodeURIComponent(item.title || '')}`;
+  const titleHtml = `<a class="news-title news-title-link" href="${href}" target="_blank" rel="noopener">${escHtml(item.title || '')}</a>`;
   const sourceHtml = item.source
     ? `<div class="news-source">via ${escHtml(item.source)}</div>`
     : '';
