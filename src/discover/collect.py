@@ -128,10 +128,10 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
 {headlines}
 
 以下のJSON形式で回答してください（他のテキスト不要）：
-{{"items": [{{"title": "...", "category": "カタリスト", "importance": "高", "summary": "30字以内の日本語要約", "url": "元記事のURLまたはnull", "published_at": "YYYY-MM-DDまたはnull"}}], "top_importance": "高/中/低", "summary": "全体を50字以内で要約"}}
+{{"items": [{{"title": "...", "category": "カタリスト", "importance": "高", "summary": "30字以内の日本語要約", "url": "元記事のURLまたはnull", "source": "出典メディア名またはnull", "published_at": "YYYY-MM-DDまたはnull"}}], "top_importance": "高/中/低", "summary": "全体を50字以内で要約", "conditions_met": ["ニュースから読み取れる銘柄の通過条件（最大3件、なければ空配列）"], "risk_flags": ["ニュースから読み取れるリスク要因（最大3件、なければ空配列）"]}}
 """
     try:
-        text = call_grok(prompt, max_tokens=800)
+        text = call_grok(prompt, max_tokens=1000)
         text = text.replace("```json", "").replace("```", "").strip()
         m = re.search(r'\{.*\}', text, re.DOTALL)
         if m:
@@ -160,12 +160,15 @@ web検索で調べてください。
   "items": [
     {{"title": "...", "category": "カタリスト/リスク/ブレイクスルー/一般",
       "importance": "高/中/低", "summary": "30字以内の日本語要約",
-      "url": "元記事のURLまたはnull", "published_at": "YYYY-MM-DDまたはnull"}}
+      "url": "元記事のURLまたはnull", "source": "出典メディア名またはnull",
+      "published_at": "YYYY-MM-DDまたはnull"}}
   ],
   "top_importance": "高/中/低",
-  "summary": "全体を50字以内で要約"
+  "summary": "全体を50字以内で要約",
+  "conditions_met": ["ニュースから読み取れる銘柄の通過条件（最大3件、なければ空配列）"],
+  "risk_flags": ["ニュースから読み取れるリスク要因（最大3件、なければ空配列）"]
 }}"""
-    result = call_grok(prompt, max_tokens=800, model_override="grok-3")
+    result = call_grok(prompt, max_tokens=1000, model_override="grok-3")
     if not result:
         return {"items": [], "summary": "データなし", "top_importance": "低"}
     try:

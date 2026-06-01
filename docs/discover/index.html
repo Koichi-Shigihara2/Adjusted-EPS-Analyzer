@@ -111,6 +111,33 @@
     .screen-pass{background:rgba(16,185,129,.08);color:#10b981}
 
     @media(max-width:640px){.ticker-card-head{flex-wrap:wrap}.tc-summary{margin-left:0;width:100%}}
+
+    /* ── ゾーンレイアウト ── */
+    .zone-header{font-family:var(--mono);font-size:10px;letter-spacing:.12em;margin:24px 0 12px;display:flex;align-items:center;gap:12px}
+    .zone-header:not(.zone-nonews)::after{content:'';flex:1;height:1px;background:var(--bdr)}
+    .zone-alert{color:var(--red)}
+    .zone-alert::after{background:rgba(244,63,94,.3)!important}
+    .zone-normal{color:var(--sub)}
+    .zone-nonews{color:var(--mut);justify-content:space-between}
+    .zone-alert-cards .ticker-card{border-left:3px solid rgba(244,63,94,.6)}
+    .no-news-toggle{background:none;border:1px solid var(--bdr);color:var(--mut);font-family:var(--mono);font-size:9px;padding:3px 10px;cursor:pointer;border-radius:2px;transition:all .15s}
+    .no-news-toggle:hover{color:var(--acc);border-color:var(--acc)}
+
+    /* ── ニュースタイトルリンク / 出典 ── */
+    .news-title-link{color:var(--txt);text-decoration:none;transition:color .15s}
+    .news-title-link:hover{color:var(--acc);text-decoration:underline}
+    .news-source{font-size:0.72em;color:var(--mut);margin-top:2px}
+
+    /* ── 条件・リスクパネル ── */
+    .conditions-panel{padding:4px 18px 8px}
+    .cond-toggle{background:none;border:none;color:var(--mut);font-family:var(--mono);font-size:10px;cursor:pointer;padding:0;letter-spacing:.04em;transition:color .15s}
+    .cond-toggle:hover{color:var(--acc)}
+    .cond-body{margin-top:6px;border-top:1px solid var(--bdr);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+    .cond-label{font-family:var(--mono);font-size:9px;color:var(--sub);margin-bottom:4px;letter-spacing:.05em}
+    .cond-items{display:flex;flex-wrap:wrap;gap:4px}
+    .cond-item{font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:2px}
+    .cond-pass{background:rgba(16,185,129,.08);color:var(--grn);border:1px solid rgba(16,185,129,.2)}
+    .cond-risk{background:rgba(244,63,94,.08);color:var(--red);border:1px solid rgba(244,63,94,.2)}
   </style>
   <link rel="stylesheet" href="../common/site-theme.css">
 </head>
@@ -155,17 +182,22 @@ function buildNewsItem(item) {
   const dateStr = item.published_at
     ? `<span style="font-family:var(--mono);font-size:9px;color:var(--mut);margin-left:auto;flex-shrink:0">${escHtml(item.published_at)}</span>`
     : '';
-  const urlLink = (item.url && item.url.startsWith('http'))
-    ? ` <a href="${escHtml(item.url)}" target="_blank" rel="noopener" style="color:var(--mut);text-decoration:none;margin-left:4px">↗</a>`
+  const hasUrl = item.url && item.url.startsWith('http');
+  const titleHtml = hasUrl
+    ? `<a class="news-title news-title-link" href="${escHtml(item.url)}" target="_blank" rel="noopener">${escHtml(item.title || '')}</a>`
+    : `<span class="news-title">${escHtml(item.title || '')}</span>`;
+  const sourceHtml = item.source
+    ? `<div class="news-source">via ${escHtml(item.source)}</div>`
     : '';
   return `<div class="news-item">
     <div class="news-item-head">
-      <span class="news-cat cat-${c}">${c}</span>
-      <span class="news-imp imp-${item.importance} sm">${item.importance}</span>
-      <span class="news-title">${escHtml(item.title || '')}</span>
+      <span class="news-cat cat-${escHtml(c)}">${escHtml(c)}</span>
+      <span class="news-imp imp-${escHtml(item.importance || '低')} sm">${escHtml(item.importance || '低')}</span>
+      ${titleHtml}
       ${dateStr}
     </div>
-    <div class="news-sum">${escHtml(item.summary || '')}${urlLink}</div>
+    <div class="news-sum">${escHtml(item.summary || '')}</div>
+    ${sourceHtml}
   </div>`;
 }
 
@@ -211,6 +243,68 @@ function updateFilterButtons() {
   });
 }
 
+function buildConditionsPanel(classified) {
+  const conditions = classified.conditions_met ?? [];
+  const risks      = classified.risk_flags     ?? [];
+  if (!conditions.length && !risks.length) return '';
+  const panelId = 'cp-' + Math.random().toString(36).slice(2, 8);
+  let content = '';
+  if (conditions.length) {
+    content += `<div><div class="cond-label">📋 スクリーニング通過条件</div><div class="cond-items">${conditions.map(c => `<span class="cond-item cond-pass">${escHtml(c)}</span>`).join('')}</div></div>`;
+  }
+  if (risks.length) {
+    content += `<div><div class="cond-label">⚠️ リスクフラグ</div><div class="cond-items">${risks.map(r => `<span class="cond-item cond-risk">${escHtml(r)}</span>`).join('')}</div></div>`;
+  }
+  return `<div class="conditions-panel">
+    <button class="cond-toggle" onclick="toggleCond(this,'${panelId}')">▼ 詳細</button>
+    <div class="cond-body" id="${panelId}" style="display:none">${content}</div>
+  </div>`;
+}
+
+function buildTickerCard(ticker, data, configTickers, themeMapById) {
+  const cat        = data.category || '—';
+  const imp        = data.top_importance || '低';
+  const memo       = configTickers[ticker]?.memo || data.memo || '';
+  const classified = data.classified || {};
+  const items      = classified.items || [];
+  const summary    = classified.summary || '';
+  const themes     = configTickers[ticker]?.themes ?? [];
+  const cardId     = 'card-' + ticker.replace(/[^A-Za-z0-9]/g, '-');
+  const lowId      = 'low-'  + ticker.replace(/[^A-Za-z0-9]/g, '-');
+  const highMedItems = items.filter(i => i.importance !== '低');
+  const lowItems_    = items.filter(i => i.importance === '低');
+  const themeBadges  = themes.map(id => {
+    const tm = themeMapById[id];
+    return tm ? `<span class="theme-badge" style="background:${tm.color}22;color:${tm.color}">${escHtml(tm.label)}</span>` : '';
+  }).join('');
+  let html = `<div class="ticker-card" id="${cardId}">
+    <div class="ticker-card-head">
+      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
+      <span class="tc-cat cat-${escHtml(cat)}">${escHtml(cat)}</span>
+      ${themeBadges}
+      <span class="tc-imp imp-${escHtml(imp)}">${escHtml(imp)}</span>
+      <span class="tc-summary">${escHtml(summary)}</span>
+    </div>
+    <div class="ticker-card-body">`;
+  if (memo) html += `<div class="tc-memo">📝 ${escHtml(memo)}</div>`;
+  html += buildConditionsPanel(classified);
+  if (items.length > 0) {
+    html += '<div class="news-items">';
+    for (const item of highMedItems) html += buildNewsItem(item);
+    if (lowItems_.length > 0) {
+      html += `<button class="low-toggle" onclick="toggleLow(this,'${lowId}')">▼ 低重要度ニュースを表示（${lowItems_.length}件）</button>
+        <div class="low-items" id="${lowId}" style="display:none">`;
+      for (const item of lowItems_) html += buildNewsItem(item);
+      html += '</div>';
+    }
+    html += '</div>';
+  } else {
+    html += `<div class="no-news">直近24時間の重要ニュースなし</div>`;
+  }
+  html += '</div></div>';
+  return html;
+}
+
 function renderTickerSection() {
   const el = document.getElementById('ticker-section');
   if (!el || !_state) return;
@@ -233,57 +327,38 @@ function renderTickerSection() {
       return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
     });
 
-  let html = '<div class="sec">銘柄別ニュース</div><div class="ticker-cards">';
+  const highZone   = sorted.filter(([, d]) => (d.classified?.items ?? []).length > 0 && d.top_importance === '高');
+  const normalZone = sorted.filter(([, d]) => (d.classified?.items ?? []).length > 0 && d.top_importance !== '高');
+  const noNewsZone = sorted.filter(([, d]) => (d.classified?.items ?? []).length === 0);
 
-  for (const [ticker, data] of sorted) {
-    const cat  = data.category || '—';
-    const imp  = data.top_importance || '低';
-    const memo = configTickers[ticker]?.memo || data.memo || '';
-    const classified = data.classified || {};
-    const items = classified.items || [];
-    const summary = classified.summary || '';
-    const themes = configTickers[ticker]?.themes ?? [];
-    const cardId = 'card-' + ticker.replace(/[^A-Za-z0-9]/g, '-');
-    const lowId  = 'low-'  + ticker.replace(/[^A-Za-z0-9]/g, '-');
-    const highMedItems = items.filter(i => i.importance !== '低');
-    const lowItems_    = items.filter(i => i.importance === '低');
-    const allLow = items.length > 0 && highMedItems.length === 0;
-    const shouldCollapse = imp === '低' && (items.length === 0 || allLow);
-    const themeBadges = themes.map(id => {
-      const tm = themeMapById[id];
-      return tm ? `<span class="theme-badge" style="background:${tm.color}22;color:${tm.color}">${escHtml(tm.label)}</span>` : '';
-    }).join('');
-    html += `<div class="ticker-card" id="${cardId}"${shouldCollapse ? ' data-collapsed=""' : ''}>
-      <div class="ticker-card-head"${shouldCollapse ? ` onclick="toggleCard('${cardId}')"` : ''}>
-        <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
-        <span class="tc-cat cat-${cat}">${cat}</span>
-        ${themeBadges}
-        <span class="tc-imp imp-${imp}">${imp}</span>
-        <span class="tc-summary">${summary}</span>
-        ${shouldCollapse ? '<span class="card-toggle-icon">▶</span>' : ''}
-      </div>
-      <div class="ticker-card-body"${shouldCollapse ? ' style="display:none"' : ''}>`;
-    if (memo) html += `<div class="tc-memo">📝 ${memo}</div>`;
-    if (items.length > 0) {
-      html += '<div class="news-items">';
-      for (const item of highMedItems) html += buildNewsItem(item);
-      if (lowItems_.length > 0) {
-        html += `<button class="low-toggle" onclick="toggleLow(this,'${lowId}')">▼ 低重要度ニュースを表示（${lowItems_.length}件）</button>
-        <div class="low-items" id="${lowId}" style="display:none">`;
-        for (const item of lowItems_) html += buildNewsItem(item);
-        html += '</div>';
-      }
-      html += '</div>';
-    } else {
-      html += `<div class="no-news">直近24時間の重要ニュースなし</div>`;
-    }
-    html += '</div></div>';
+  let html = '';
+
+  if (highZone.length > 0) {
+    html += '<div class="zone-header zone-alert">🔴 要注目ゾーン</div><div class="ticker-cards zone-alert-cards">';
+    for (const [ticker, data] of highZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
+    html += '</div>';
+  }
+
+  if (normalZone.length > 0) {
+    html += '<div class="zone-header zone-normal">📰 通常ニュースゾーン</div><div class="ticker-cards">';
+    for (const [ticker, data] of normalZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
+    html += '</div>';
+  }
+
+  if (noNewsZone.length > 0) {
+    html += `<div class="zone-header zone-nonews">
+      <span>🔍 ニュースなし銘柄</span>
+      <button class="no-news-toggle" id="no-news-btn" onclick="toggleNoNewsZone()">ニュースなし ${noNewsZone.length}銘柄を表示</button>
+    </div>
+    <div id="no-news-zone" class="ticker-cards" style="display:none">`;
+    for (const [ticker, data] of noNewsZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
+    html += '</div>';
   }
 
   if (sorted.length === 0) {
     html += '<div class="no-news" style="padding:20px;text-align:center">表示する銘柄がありません</div>';
   }
-  html += '</div>';
+
   el.innerHTML = html;
   updateFilterButtons();
 }
@@ -361,23 +436,38 @@ async function loadData() {
 
     _state = { tickers, configTickers, candidates, macroThemes, generatedAt, themeConfig, hypeMap };
 
-    const highItems = Object.entries(tickers)
-      .filter(([, v]) => v.top_importance === '高')
-      .map(([t]) => t);
-
     let html = buildFilterBar(themeConfig);
-
-    if (highItems.length > 0) {
-      html += `<div class="alert-banner">
-        <div class="alert-banner-title">🔴 要注目銘柄 — 重要ニュースあり</div>
-        <div class="alert-chips">${highItems.map(t => `<span class="alert-chip">${t}</span>`).join('')}</div>
-      </div>`;
-    }
-
     html += '<div id="ticker-section"></div>';
 
+    // 🌐 新規発掘ゾーン
+    html += '<div class="sec">🌐 新規発掘ゾーン</div>';
+
+    // 🔭 特大テーマ候補（発掘銘柄カードの前に表示）
+    if (macroThemes.length > 0) {
+      const genDate = macroThemes[0]?.generated_at ?? '';
+      html += `<div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:.1em;margin:0 0 12px;display:flex;align-items:center;gap:10px">
+        📡 今週の特大テーマ候補
+        <span style="color:var(--mut)">※ Grokの見解（参考）</span>
+        ${genDate ? `<span style="color:var(--mut)">生成日: ${escHtml(genDate)}</span>` : ''}
+      </div>`;
+      for (const t of macroThemes) {
+        const tkBadges = Array.isArray(t.related_tickers) && t.related_tickers.length > 0
+          ? t.related_tickers.map(tk => `<span class="news-cat" style="color:var(--acc);background:rgba(6,182,212,.12)">${escHtml(tk)}</span>`).join('') : '';
+        html += `<div class="theme-card">
+          <div class="theme-name">${escHtml(t.theme || '')}</div>
+          <div class="theme-meta">
+            <span class="news-cat" style="color:var(--mut);background:var(--sur2)">時間軸: ${escHtml(t.horizon || '')}</span>
+            ${t.conviction ? `<span class="news-cat conv-${escHtml(t.conviction)}">確信度: ${escHtml(t.conviction)}</span>` : ''}
+          </div>
+          <div style="font-size:13px;color:var(--txt);line-height:1.65;margin-bottom:10px">${escHtml(t.background || '')}</div>
+          ${tkBadges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">関連銘柄:</span>${tkBadges}</div>` : ''}
+          ${t.catalyst ? `<div style="font-size:12px;color:var(--mut)">📍 ${escHtml(t.catalyst)}</div>` : ''}
+        </div>`;
+      }
+    }
+
     // ── 新規候補 ──
-    html += '<div class="sec">新規候補 — Grok発見</div>';
+    html += '<div style="font-family:var(--mono);font-size:10px;color:var(--sub);letter-spacing:.1em;margin:20px 0 12px;display:flex;align-items:center;gap:10px">🔍 新規候補 — Grok発見</div>';
     if (candidates.length > 0) {
       html += '<div class="cand-grid">';
       for (const c of candidates) {
@@ -400,29 +490,6 @@ async function loadData() {
       html += '</div>';
     } else {
       html += '<div style="font-family:var(--mono);font-size:12px;color:var(--mut);padding:10px 0">候補データなし</div>';
-    }
-
-    // 🔭 特大テーマ候補
-    if (macroThemes.length > 0) {
-      const genDate = macroThemes[0]?.generated_at ?? '';
-      html += `<div class="sec">🔭 特大テーマ候補
-        <span style="font-family:var(--mono);font-size:10px;color:var(--mut)">※ Grokの見解（参考）</span>
-        ${genDate ? `<span style="font-family:var(--mono);font-size:10px;color:var(--mut)">生成日: ${escHtml(genDate)}</span>` : ''}
-      </div>`;
-      for (const t of macroThemes) {
-        const tkBadges = Array.isArray(t.related_tickers) && t.related_tickers.length > 0
-          ? t.related_tickers.map(tk => `<span class="news-cat" style="color:var(--acc);background:rgba(6,182,212,.12)">${escHtml(tk)}</span>`).join('') : '';
-        html += `<div class="theme-card">
-          <div class="theme-name">${escHtml(t.theme || '')}</div>
-          <div class="theme-meta">
-            <span class="news-cat" style="color:var(--mut);background:var(--sur2)">時間軸: ${escHtml(t.horizon || '')}</span>
-            ${t.conviction ? `<span class="news-cat conv-${escHtml(t.conviction)}">確信度: ${escHtml(t.conviction)}</span>` : ''}
-          </div>
-          <div style="font-size:13px;color:var(--txt);line-height:1.65;margin-bottom:10px">${escHtml(t.background || '')}</div>
-          ${tkBadges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">関連銘柄:</span>${tkBadges}</div>` : ''}
-          ${t.catalyst ? `<div style="font-size:12px;color:var(--mut)">📍 ${escHtml(t.catalyst)}</div>` : ''}
-        </div>`;
-      }
     }
 
     // 📊 テーマ別サマリー
@@ -485,6 +552,26 @@ function toggleLow(btn, id) {
   btn.textContent = hidden
     ? '▲ 低重要度ニュースを折りたたむ'
     : '▼ 低重要度ニュースを表示（' + n + '件）';
+}
+
+function toggleNoNewsZone() {
+  const zone = document.getElementById('no-news-zone');
+  const btn  = document.getElementById('no-news-btn');
+  if (!zone) return;
+  const hidden = zone.style.display === 'none';
+  zone.style.display = hidden ? '' : 'none';
+  if (btn) {
+    const n = zone.querySelectorAll('.ticker-card').length;
+    btn.textContent = hidden ? `ニュースなし ${n}銘柄を非表示` : `ニュースなし ${n}銘柄を表示`;
+  }
+}
+
+function toggleCond(btn, id) {
+  const body = document.getElementById(id);
+  if (!body) return;
+  const hidden = body.style.display === 'none';
+  body.style.display = hidden ? '' : 'none';
+  btn.textContent = hidden ? '▲ 詳細を閉じる' : '▼ 詳細';
 }
 
 loadData();
