@@ -706,7 +706,11 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
         }
         for k, v in subs.items():
             name = sub_names.get(k, k)
-            extended_data += f"  {name}: スコア={v.get('score', 'N/A'):.0f} (重み={int(v.get('weight',0)*100)}%, 実値={v.get('raw', 'N/A')})\n"
+            raw = v.get('raw', 'N/A')
+            # distributionのraw値にS&P500限定であることを明示
+            if k == "distribution" and isinstance(raw, dict):
+                raw = f"S&P500の前日比出来高比={raw.get('vol_ratio', 'N/A')}, 前日比変化率={raw.get('chg_pct', 'N/A')}%"
+            extended_data += f"  {name}: スコア={v.get('score', 'N/A'):.0f} (重み={int(v.get('weight',0)*100)}%, 実値={raw})\n"
 
     if tech_pulse_data:
         extended_data += "\n--- Tech Pulse（NASDAQセンチメント・乖離分析） ---\n"
@@ -724,7 +728,7 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
         if div.get("value") is not None:
             extended_data += f"● Tech Pulse vs CNN F&G 乖離値: {div['value']:+.1f} （プラス=NASDAQ過熱、マイナス=NASDAQ調整）\n"
         if div.get("zscore") is not None:
-            extended_data += f"● 乖離Zスコア（90日）: {div['zscore']:+.2f}σ （±1.5σ超=異常な乖離）\n"
+            extended_data += f"● 乖離Zスコア（90日）: {div['zscore']:+.2f}σ （正=NASDAQ優位/負=S&P500優位、±1.5σ超=異常な乖離）\n"
         if div.get("signal"):
             extended_data += f"● Tech Pulseシグナル: {div['signal']}\n"
 
@@ -774,12 +778,14 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
   ✦ [投資行動示唆：上記の構造から導かれる具体的な行動を1〜2文。買い場・様子見・利確の根拠を構造で示せ]
 
 1. 市場フェーズ判定（晴れ・曇り・嵐）
-判定：[晴れ/曇り/嵐] を冒頭に置き、根拠を続けよ（VIXと前日比出来高比を必ず含む）。
+判定：[晴れ/曇り/嵐] を冒頭に置き、根拠を続けよ（VIXとS&P500の前日比出来高比を必ず含む）。
 価格下落＋出来高増なら「嵐」の予兆として厳しく判定せよ。
+【出来高比ルール】出来高比はS&P500・NASDAQなど指数を限定して記述すること（例：「S&P500の出来高比は0.47と低水準」）。複数指数の出来高比をまとめて「0.5未満」等と一般化することは禁止。
 
 2. 金利・債券（米10年債）
 ▷ [現在の利回り水準と方向]
 → [株式バリュエーションと資金フローへの影響を1文で]
+【債券ルール】米10年債利回りが上昇している場合は「バリュエーション圧縮圧力」と「債券安（債券売り）」が同時に生じていることを明示せよ。「債券リスクオン」という表現は禁止。債券の状態は「債券買い（安全資産への逃避）」または「債券売り（利回り上昇）」で表現せよ。
 
 3. 恐怖指数・心理（VIX）
 ▷ [現在のVIX水準と示す心理状態]
@@ -811,15 +817,17 @@ NYSE騰落比率が指数と逆行すれば市場内部の脆弱性を指摘せ�
 → [信用収縮リスクの先行指標としての意味を1文で]
 以下を個別に一行ずつ明記した上で総合判定せよ：
   株（S&P500の方向）→ リスクオン/リスクオフ
-  債券（米10年債利回りの方向）→ リスクオン/リスクオフ
+  債券（米10年債利回りの方向）→ 債券売り（利回り上昇＝バリュエーション圧縮）/債券買い（利回り低下＝安全資産選好）
   クレジット（HYG対LQD比の方向）→ リスクオン/リスクオフ
 資産クラス間資金フローのデータがあれば、資金の移動先（株→債券、株→金、全面逃避等）から投資家心理の具体的な意図を読み解け。
+【信用収縮ルール】「信用収縮」「HYスプレッド拡大」という表現が許可されるのは、HYGのみが下落しLQDが相対的に上昇している場合（HYG変化率 < LQD変化率、かつLQD変化率 ≥ 0）に限る。HYGとLQDが同時に下落している場合は金利上昇によるデュレーションリスクが主因であり、「金利上昇圧力」または「デュレーションリスク」と表現すること。「信用収縮」は禁止。
 
 9. Tech Pulse分析（NASDAQセンチメント・乖離）
 QQQ vs SPY相対強度・VXN・乖離Zスコアを使って以下を分析せよ：
 ▷ [NASDAQはS&P500と比べて過熱しているか調整しているか]
 → [乖離Zスコアの方向から「今起きていること」の本質を1文で]
 NASDAQハイテク株保有者の体感と市場全体の実態が乖離している場合は必ずその構造を指摘せよ。
+【乖離Zスコアの定義】乖離値 = Tech Pulseスコア − CNN F&G スコア。正（プラス）＝NASDAQが全体より強い（NASDAQ優位）、負（マイナス）＝NASDAQが全体より弱い（S&P500優位）。「ZスコアがマイナスだからNASDAQは強い」という解釈は誤りであり禁止。Zスコアがマイナスの場合は「NASDAQが相対的に弱い・調整圧力がある」と表現すること。
 
 10. 短期警戒ポイント（重要イベント）
 今後5営業日以内の米国市場に関わる具体的なイベントを列挙し、各イベントに「予想値・前回値・市場への影響シナリオ」を一行で添えよ。
@@ -946,16 +954,21 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     # クレジット: HYG変化率 < LQD変化率 → スプレッド拡大 → リスクオフ
     credit_credit = "リスクオフ" if (hyg_chg_pct - lqd_chg_pct) < 0 else "リスクオン"
 
-    # 債券: asset_flow_dataのTLT(long_bond)上昇 & SPY(equity)下落 → 質への逃避 → リスクオフ
-    credit_bond = "リスクオン"
+    # 債券: TLT(long_bond)上昇 & SPY(equity)下落 → 質への逃避 → 債券買い
+    # TLTが下落（利回り上昇＝債券安）の場合は債券売り。"リスクオン/オフ"表記は誤解を招くため廃止。
+    credit_bond = "債券売り"
     tlt_af = ((asset_flow_data or {}).get("long_bond") or {})
     spy_af = ((asset_flow_data or {}).get("equity")    or {})
     tlt_af_chg = tlt_af.get("change_pct") or 0
     spy_af_chg = spy_af.get("change_pct") or 0
     if tlt_af_chg > 0.3 and spy_af_chg < -0.5:
-        credit_bond = "リスクオフ"
+        credit_bond = "債券買い"
 
-    risk_off_count = [credit_stock, credit_bond, credit_credit].count("リスクオフ")
+    risk_off_count = sum([
+        credit_stock  == "リスクオフ",
+        credit_bond   == "債券買い",   # 質への逃避（旧: リスクオフ）をリスクオフシグナルとして計上
+        credit_credit == "リスクオフ",
+    ])
     risk_off_score = round(risk_off_count / 3 * 100)
 
     credit_data = {

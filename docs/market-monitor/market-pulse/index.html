@@ -526,7 +526,7 @@ function makeSample(){const b=[{d:"2026-03-09",j:"晴れ",vix:22.05,sp:5740,ndq:
 return b.map((x,i)=>{const p=i>0?b[i-1]:x;const pct=(a,pp)=>pp?+((a-pp)/pp*100).toFixed(2):0;
 const vS=Math.max(0,Math.min(1,(35-x.vix)/23))*100;const sS=Math.round(vS*.6+20);
 const sL=sS<=20?"EXTREME FEAR":sS<=35?"FEAR":sS<=50?"CAUTION":sS<=65?"NEUTRAL":sS<=80?"GREED":"EXTREME GREED";
-return{date:x.d+"T19:30:00+09:00",judgment:x.j,credit:{stock:"リスクオン",bond:"リスクオン",credit:"リスクオン"},
+return{date:x.d+"T19:30:00+09:00",judgment:x.j,credit:{stock:"リスクオン",bond:"債券売り",credit:"リスクオン"},
 sentiment:{score:sS,label:sL,sub_scores:{vix_level:{score:Math.round(vS),weight:.25,raw:x.vix},sp500_ma_dev:{score:50,weight:.20,raw:null},ad_ratio:{score:50,weight:.15,raw:null},hyg_lqd_dir:{score:50,weight:.12,raw:null},nh_nl:{score:50,weight:.10,raw:null},growth_value:{score:50,weight:.10,raw:null},distribution:{score:50,weight:.08,raw:null}},breadth:null},
 fear_greed:x.fg!=null?{score:x.fg,rating:x.fg<=25?"extreme fear":x.fg<=45?"fear":x.fg<=55?"neutral":x.fg<=75?"greed":"extreme greed"}:null,
 summary:`1. 市場フェーズ判定\n● VIX指数: ${x.vix}  判定：${x.j}\n\n5. 指数・需給\n● S&P500: ${x.sp}\n● NASDAQ: ${x.ndq}\n\n10. 総評\nフェーズ「${x.j}」。`,
@@ -661,7 +661,7 @@ function renderDetail(){
     else                 conf=Math.round((riskOffScore-66)/34*100);
     conf=Math.max(0,Math.min(100,conf));
     const confLabel=conf>=70?'高':conf>=40?'中':'低';
-    crHTML=`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='リスクオン'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span><span style="font-family:var(--mono);margin-left:8px;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${riskOffColor}">${riskOffLabel}</span><span style="font-size:14px;font-weight:700;color:${riskOffColor}">${riskOffScore}</span><span style="font-size:11px;color:var(--mut)">/ 100</span><span style="font-size:10px;color:var(--mut);border:1px solid var(--bdr);padding:1px 5px">確信度 ${confLabel} ${conf}%</span></span></div>`;
+    crHTML=`<div class="credit-row"><span class="credit-badge ${stock==='リスクオン'?'risk-on':'risk-off'}">株 ${stock}</span><span class="credit-badge ${bond==='債券売り'?'risk-on':'risk-off'}">債券 ${bond}</span><span class="credit-badge ${credit==='リスクオン'?'risk-on':'risk-off'}">クレジット ${credit}</span><span style="font-family:var(--mono);margin-left:8px;display:inline-flex;align-items:center;gap:5px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:${riskOffColor}">${riskOffLabel}</span><span style="font-size:14px;font-weight:700;color:${riskOffColor}">${riskOffScore}</span><span style="font-size:11px;color:var(--mut)">/ 100</span><span style="font-size:10px;color:var(--mut);border:1px solid var(--bdr);padding:1px 5px">確信度 ${confLabel} ${conf}%</span></span></div>`;
   } else if(d.credit){
     crHTML=`<div class="credit-row"><span class="credit-badge risk-neutral">株 —</span><span class="credit-badge risk-neutral">債券 —</span><span class="credit-badge risk-neutral">クレジット —</span><span style="font-family:var(--mono);margin-left:8px;font-size:12px;color:var(--mut)">Risk-Off Score: —</span></div>`;
   }
