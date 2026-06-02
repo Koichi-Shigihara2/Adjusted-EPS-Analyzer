@@ -1169,8 +1169,8 @@ FOMC Statement ({fomc_date}):
 
 Market Context:
 - Current FF Rate: {ff_current}%
-- 12-month ahead FF futures implied rate: {zq_rate}%
-- Market-implied rate changes in 12M: {cuts_implied:+.1f} cuts (25bp each)
+- 12-month ahead FF futures implied rate: {zq_rate}% (proxy: DGS1, includes term premium 0.2-0.3%, may underestimate actual cuts)
+- Market-implied rate changes in 12M: {cuts_implied:+.1f} cuts (25bp each) [Note: DGS1 proxy value; actual market pricing via FF futures may differ]
 
 Respond ONLY in this exact JSON format (no markdown, no extra text):
 {{"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":"日本語で100字以内で判断理由を記載。"}}"""
