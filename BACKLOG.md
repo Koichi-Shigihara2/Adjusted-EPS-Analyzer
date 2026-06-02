@@ -526,10 +526,9 @@
 ## 追加課題（2026-05-31）
 
 ### ✅ [ACTION-2] 判定実績の自動追跡・検証ループ（2026-06-03 完了）
-- pipeline.py 実行時に score_history.json へ判定スナップショット追記（price/score/phase）
-- score_verifier.py 新規作成: 30d/60d/90d 後リターンを yfinance で取得・書き込み
-- index.html: 判定別勝率テーブル＋直近20件テーブルを HYPEMIX 下に追加
-- 全69銘柄の score_history.json を 2026-06-03 時点で初期生成済み
+- score_history.json に判定スナップショットを日次追記
+- score_verifier.py で 30/60/90日後リターンを自動計算
+- index.html に判定別勝率テーブル＋直近20件を表示
 
 ### ✅ [ACTION-4] HYPEMIXポートフォリオ管理（2026-06-03 完了）
 - フェーズ分布バー・目標乖離・リバランス提案・銘柄テーブルを TANUKI index.html に追加
