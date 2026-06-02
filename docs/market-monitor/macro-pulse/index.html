@@ -2301,11 +2301,20 @@ function liqPrevVal(rows, col, daysBack) {
   return null;
 }
 
+// 週次系列のラグで最新行が空欄になっても直前の有効値を返す
+function latestNonEmpty(rows, col) {
+  for (let i = rows.length - 1; i >= 0; i--) {
+    const v = rows[i][col];
+    if (v !== '' && v !== undefined && v !== null) return parseFloat(v);
+  }
+  return null;
+}
+
 function renderLiquidityCards(rows) {
   const latest = rows[rows.length - 1];
-  const m2      = latest.m2            !== '' ? parseFloat(latest.m2)            : null;
-  const fed     = latest.fed_balance   !== '' ? parseFloat(latest.fed_balance)   : null;
-  const netLiq  = latest.net_liquidity !== '' ? parseFloat(latest.net_liquidity) : null;
+  const m2      = latestNonEmpty(rows, 'm2');
+  const fed     = latestNonEmpty(rows, 'fed_balance');
+  const netLiq  = latestNonEmpty(rows, 'net_liquidity');
 
   const m2Prev     = liqPrevVal(rows, 'm2',            28);
   const fedPrev    = liqPrevVal(rows, 'fed_balance',    7);
@@ -2515,9 +2524,10 @@ function renderLiquidityCards(rows) {
 
 function renderStealthCard(rows, latest) {
   // CSV 単位：rrp / reserve_balance = Millions USD、tga = Millions USD
-  const rrp  = latest.rrp              !== '' ? parseFloat(latest.rrp)              : null;
-  const tga  = latest.tga              !== '' ? parseFloat(latest.tga)              : null;
-  const rsv  = latest.reserve_balance  !== '' ? parseFloat(latest.reserve_balance)  : null;
+  // 週次ラグで最新行が空欄の場合は直前の有効値を使う
+  const rrp  = latestNonEmpty(rows, 'rrp');
+  const tga  = latestNonEmpty(rows, 'tga');
+  const rsv  = latestNonEmpty(rows, 'reserve_balance');
   const sig  = latest.stealth_signal   || 'neutral';
 
   const rrpPrev = liqPrevVal(rows, 'rrp',             7);

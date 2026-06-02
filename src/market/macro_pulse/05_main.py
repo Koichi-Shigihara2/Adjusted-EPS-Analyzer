@@ -1213,7 +1213,7 @@ def update_fed_context(target_date: date, fred):
     zq_ticker, zq_price, zq_rate = get_zq_futures(target_date, fred)
     ff_current = get_ff_current(fred)
     if ff_current is None:
-        ff_current = 4.375
+        ff_current = 3.625  # 現行誘導目標 3.50-3.75% の中心値（FRED取得失敗時の fallback）
 
     cuts_implied = None
     if zq_rate is not None and ff_current is not None:
@@ -1808,10 +1808,10 @@ def update_liquidity_csv(target_date: date, fred) -> None:
     # RRP (RRPONTSYD): 日次, Billions USD → × 1000 で Millions に統一
     rrp_b,   _ = fred_latest(fred, "RRPONTSYD",     target_date, lookback=14)
     rrp_val    = round(rrp_b * 1000, 4) if rrp_b is not None else None   # Millions USD
-    # 準備預金残高 (WRBWFRBL): 週次, Billions USD → × 1000 で Millions に統一
+    # 準備預金残高 (WRBWFRBL): 週次, Millions USD（FREDはMillions USD単位で返す）
     # WRBWFRBL は H.4.1 リリース（木曜公表・1週間ラグ）のため lookback=21 日
-    rsv_b,   _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=21)
-    rsv_val    = round(rsv_b * 1000, 4) if rsv_b is not None else None   # Millions USD
+    rsv_m,   _ = fred_latest(fred, "WRBWFRBL",      target_date, lookback=21)
+    rsv_val    = round(rsv_m, 4) if rsv_m is not None else None   # Millions USD（×1000 不要）
 
     if all(v is None for v in (m2_val, hy_val, fed_val)):
         logger.warning("[Liquidity] All series returned None. Skipping.")
@@ -1841,6 +1841,34 @@ def update_liquidity_csv(target_date: date, fred) -> None:
         df = pd.DataFrame(columns=LIQUIDITY_COLUMNS)
 
     date_str = target_date.strftime("%Y-%m-%d")
+
+    # ── Carry-forward: 週次系列が今日 FRED から取得できない場合に直前値を補完 ──
+    # 理由: WALCL/WTREGEN は木曜公表・RRPONTSYD は日次のため、非公表日は None になる。
+    # fed/tga/rrp のどれか 1 つでも None だと net_liquidity が空欄になるため、
+    # CSV に保存済みの直前値を使って計算できるようにする。
+    _prev_df = df[df["date"] < date_str].sort_values("date")
+    if not _prev_df.empty:
+        def _carryforward(current_val, col_name, label):
+            if current_val is not None:
+                return current_val
+            prev_rows = _prev_df[_prev_df[col_name] != ""]
+            if not prev_rows.empty:
+                carried = float(prev_rows.iloc[-1][col_name])
+                logger.info(
+                    f"[Liquidity] {label} carry-forward from "
+                    f"{prev_rows.iloc[-1]['date']}: {carried}"
+                )
+                return carried
+            return None
+        fed_val = _carryforward(fed_val, "fed_balance",     "fed_balance")
+        tga_val = _carryforward(tga_val, "tga",             "tga")
+        rrp_val = _carryforward(rrp_val, "rrp",             "rrp")
+        rsv_val = _carryforward(rsv_val, "reserve_balance", "reserve_balance")
+
+    # carry-forward 後に net_liq を再計算（初回計算で None だった場合に対応）
+    if net_liq is None and fed_val is not None and tga_val is not None and rrp_val is not None:
+        net_liq = round((fed_val - tga_val - rrp_val) / 1_000_000, 4)
+        logger.info(f"[Liquidity] net_liquidity recomputed after carry-forward: {net_liq}")
 
     # ── ステルス流動性シグナル計算 ──
     # RRP減少 OR TGA減少 → supply（ステルス供給）
