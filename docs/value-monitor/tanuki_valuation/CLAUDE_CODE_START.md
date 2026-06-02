@@ -4,6 +4,7 @@
 
 ### Step 1: 現状確認
 以下のファイルを読んでください：
+- SYSTEM_MAP.md（システム間の依存関係・変更影響範囲を把握）
 - docs/value-monitor/tanuki_valuation/BACKLOG.md
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
