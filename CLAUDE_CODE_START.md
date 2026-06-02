@@ -5,7 +5,7 @@
 ### Step 1: 現状確認
 以下のファイルを読んでください：
 - SYSTEM_MAP.md（システム間の依存関係・変更影響範囲を把握）
-- docs/value-monitor/tanuki_valuation/BACKLOG.md
+- BACKLOG.md
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
@@ -158,8 +158,8 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 ## BACKLOG管理ルール
 
 ### BACKLOGファイルの場所
-- TANUKI VALUATION系: docs/value-monitor/tanuki_valuation/BACKLOG.md
-- システム全体バックログ: docs/value-monitor/tanuki_valuation/BACKLOG.md の末尾セクションに統合
+- TANUKI VALUATION系: BACKLOG.md
+- システム全体バックログ: BACKLOG.md の末尾セクションに統合
 - 編集前に必ず grep で行を特定してから変更する（行番号の直接指定は誤差が出るため禁止）
 
 ```bash
