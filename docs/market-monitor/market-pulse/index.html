@@ -73,17 +73,19 @@
     .osc-legend-dot{width:6px;height:6px;border-radius:50%}
 
     /* BACKTEST TABLE */
-    .bt-wrap{margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr)}
-    .bt-title{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
-    .bt-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12px}
-    .bt-table th{padding:5px 8px;text-align:center;color:var(--mut);font-weight:400;border-bottom:1px solid var(--bdr);white-space:nowrap}
-    .bt-table th:first-child{text-align:left}
-    .bt-table td{padding:5px 8px;text-align:center;border-bottom:1px solid rgba(30,40,64,.5)}
-    .bt-table tr:last-child td{border-bottom:none}
-    .bt-current td{background:rgba(59,130,246,.08)}
-    .bt-current td:first-child{border-left:2px solid var(--acc)}
-    .bt-pos{color:var(--grn)}.bt-neg{color:var(--red)}.bt-neu{color:var(--mut)}
-    .bt-note{margin-top:6px;font-size:10px;color:var(--mut);font-family:var(--mono);line-height:1.6}
+    .mini-gauges-wrap{padding:14px 16px;border-top:1px solid var(--bdr)}
+    .mini-gauges-title{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--mut);text-transform:uppercase;margin-bottom:10px;text-align:center}
+    .mini-gauges-row{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .mini-gauge-card{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:130px}
+    .mini-gauge-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--mut);font-weight:700}
+    .mini-gauge-svg-wrap{position:relative;width:140px;height:82px}
+    .mini-gauge-svg-wrap svg{width:100%;height:100%}
+    .mini-gauge-center{position:absolute;bottom:0;left:50%;transform:translateX(-50%);text-align:center;white-space:nowrap}
+    .mini-gauge-score{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1}
+    .mini-gauge-zone{font-family:var(--mono);font-size:10px;letter-spacing:.04em;margin-top:1px}
+    .mini-gauge-delta{font-family:var(--mono);font-size:10px;margin-top:1px}
+    .mini-gauge-ret{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:1px}
+    .mini-gauge-note{font-family:var(--mono);font-size:10px;color:var(--mut);text-align:center;margin-top:6px}
 
     /* TOP BAR */
     .top-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
@@ -216,32 +218,27 @@
     @media(max-width:768px){.tp-cards{grid-template-columns:repeat(3,1fr)}}
     @media(max-width:480px){.tp-cards{grid-template-columns:repeat(2,1fr)}}
     .tp-chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px;margin-bottom:6px}
-    /* 資産フロー ヒートマップ */
+    /* 資産フロー 縦統合グリッド */
     .af-card{background:var(--sur);border:1px solid var(--bdr);padding:20px;margin-bottom:6px}
     .af-title{font-family:var(--mono);font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px}
     .af-desc{font-family:var(--sans);font-size:12px;color:var(--mut);margin-bottom:16px}
-    .af-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
-    .af-cell{display:flex;flex-direction:column;align-items:center;padding:12px 6px;border-radius:4px;border:1px solid var(--bdr);transition:transform .1s}
-    .af-cell:hover{transform:translateY(-2px)}
+    .af-unified-grid{display:grid;grid-template-columns:60px repeat(7,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);border-radius:4px;overflow:hidden;margin-bottom:10px}
+    .af-u-corner{background:var(--sur2)}
+    .af-u-tile{display:flex;flex-direction:column;align-items:center;padding:12px 4px;background:var(--sur);transition:transform .1s}
+    .af-u-tile:hover{transform:translateY(-2px)}
     .af-cell-label{font-family:var(--mono);font-size:12px;color:var(--mut);margin-bottom:4px;text-align:center}
     .af-cell-ticker{font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:8px;text-align:center}
     .af-cell-pct{font-family:var(--mono);font-size:18px;font-weight:700;text-align:center}
     .af-cell-bar{width:100%;height:4px;border-radius:2px;margin-top:8px;background:rgba(30,40,64,.8)}
     .af-cell-bar-fill{height:100%;border-radius:2px;transition:width .6s ease}
     .af-arrow{font-size:13px;margin-top:4px}
-    .af-axis{display:flex;justify-content:space-between;margin-top:8px;padding:0 2px}
+    .af-u-date{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--mono);font-size:11px;color:var(--mut);padding:4px 2px;background:var(--sur2);text-align:center;line-height:1.3}
+    .af-u-today{color:var(--acc);font-weight:700}
+    .af-u-cell{padding:5px 3px;text-align:center;font-family:var(--mono);font-size:10px;white-space:nowrap;background:var(--sur)}
+    .af-axis{display:flex;justify-content:space-between;margin-top:4px;padding:0 2px}
     .af-axis-label{font-family:var(--mono);font-size:11px;color:var(--mut)}
-    @media(max-width:768px){.af-grid{grid-template-columns:repeat(4,1fr)}}
-    /* ASSET FLOW HEATMAP */
-    .af-hm-wrap{margin-top:14px;padding-top:12px;border-top:1px solid var(--bdr);overflow-x:auto}
-    .af-hm-title{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--mut);text-transform:uppercase;margin-bottom:8px}
-    .af-hm-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;min-width:420px}
-    .af-hm-th-lbl{padding:3px 8px 3px 0;text-align:left;color:var(--mut);font-weight:400;font-size:10px;border-bottom:1px solid var(--bdr);white-space:nowrap}
-    .af-hm-th{padding:3px 4px;text-align:center;color:var(--mut);font-weight:400;font-size:10px;border-bottom:1px solid var(--bdr);white-space:nowrap}
-    .af-hm-td{padding:5px 3px;text-align:center;white-space:nowrap;font-size:10px;border:1px solid rgba(15,23,42,.4)}
-    .af-hm-asset{padding:5px 8px 5px 0;text-align:left;white-space:nowrap;font-size:11px;color:var(--txt)}
     .af-flow-judge{margin-top:8px;font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-    @media(max-width:480px){.af-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:768px){.af-unified-grid{grid-template-columns:50px repeat(7,1fr)}.af-cell-pct{font-size:14px}}
     /* 統一カードレイアウト */
     .unified-card{background:var(--sur);border:1px solid var(--bdr);padding:20px;margin-bottom:6px;display:flex;flex-direction:column;gap:16px}
     .unified-gauge-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:20px;padding-bottom:16px;border-bottom:1px solid var(--bdr)}
@@ -330,8 +327,8 @@
       <div class="osc-chart-wrap" style="min-height:180px;max-height:220px"><canvas id="oscChart"></canvas></div>
       <div class="osc-legend" id="oscLegend"></div>
     </div>
-    <!-- ④ バックテスト表 -->
-    <div id="backtestSection"></div>
+    <!-- ④ 予測ミニゲージ -->
+    <div id="miniGaugesSection"></div>
   </div>
   <div class="sec">Tech Pulse — NASDAQベース感情指数とCNN Fear &amp; Greedの比較（乖離 = NASDAQ固有の動き）</div>
   <!-- Tech Pulse: ①メーター2つ ②関連指標バー ③折れ線グラフ の縦積み -->
@@ -427,15 +424,7 @@
   <div class="af-card">
     <div class="af-title">今日の資金の動き</div>
     <div class="af-desc">各資産の当日騰落率。<span style="color:var(--grn)">緑（買われた）</span>から<span style="color:var(--red)">赤（売られた）</span>への流れで資金の向きを読む。左ほど安全資産、右ほどリスク資産。</div>
-    <div class="af-grid" id="afGrid">
-      <div class="af-cell" style="background:var(--sur2)"><div class="af-cell-label">—</div></div>
-    </div>
-    <div class="af-axis">
-      <span class="af-axis-label">← 安全資産</span>
-      <span class="af-axis-label">リスク資産 →</span>
-    </div>
-    <!-- 資金フロー推移ヒートマップ -->
-    <div id="afHeatmap"></div>
+    <div id="afUnified"></div>
   </div>
   <div class="sec">市場フェーズ概要 &amp; 表示期間</div>
   <div class="top-bar">
@@ -838,110 +827,108 @@ function renderTechPulseChart(){
   plugins:[{id:"tpZones",beforeDraw(chart){const{ctx,chartArea:{left,right},scales:{y}}=chart;if(yMin<20){const y20=y.getPixelForValue(20),yB=y.getPixelForValue(yMin);ctx.fillStyle="rgba(244,63,94,.06)";ctx.fillRect(left,y20,right-left,yB-y20);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(244,63,94,.25)";ctx.beginPath();ctx.moveTo(left,y20);ctx.lineTo(right,y20);ctx.stroke();ctx.setLineDash([])}if(yMax>80){const y80=y.getPixelForValue(80),yT=y.getPixelForValue(yMax);ctx.fillStyle="rgba(59,130,246,.06)";ctx.fillRect(left,yT,right-left,y80-yT);ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(59,130,246,.25)";ctx.beginPath();ctx.moveTo(left,y80);ctx.lineTo(right,y80);ctx.stroke();ctx.setLineDash([])}const y50=y.getPixelForValue(50);if(y50>chart.chartArea.top&&y50<chart.chartArea.bottom){ctx.setLineDash([2,4]);ctx.lineWidth=1;ctx.strokeStyle="rgba(100,116,139,.3)";ctx.beginPath();ctx.moveTo(left,y50);ctx.lineTo(right,y50);ctx.stroke();ctx.setLineDash([])}}}]})}
 
 // ── BACKTEST ──
-function renderBacktest(){
-  const el=document.getElementById("backtestSection");if(!el)return;
+function renderMiniGauges(){
+  const el=document.getElementById("miniGaugesSection");if(!el)return;
+  const curScore=filteredData[filteredData.length-1]?.sentiment?.score??null;
+  if(curScore==null){el.innerHTML="";return}
   const valid=allData.filter(d=>d.indicators?.["S&P500"]?.value!=null&&d.sentiment?.score!=null);
   if(valid.length<5){el.innerHTML="";return}
   const ZONES=[
-    {label:"Extreme Fear",min:0, max:20, color:"#f43f5e"},
-    {label:"Fear",        min:21,max:40, color:"#f97316"},
-    {label:"Neutral",     min:41,max:60, color:"#f59e0b"},
-    {label:"Greed",       min:61,max:80, color:"#10b981"},
+    {label:"Extreme Fear",min:0,  max:20, color:"#f43f5e"},
+    {label:"Fear",        min:21, max:40, color:"#f97316"},
+    {label:"Neutral",    min:41, max:60, color:"#f59e0b"},
+    {label:"Greed",      min:61, max:80, color:"#10b981"},
     {label:"Extreme Greed",min:81,max:100,color:"#3b82f6"},
   ];
-  const PERIODS=[{label:"翌日",idx:1},{label:"5日後",idx:5},{label:"20日後",idx:20}];
-  const curScore=filteredData[filteredData.length-1]?.sentiment?.score??null;
-  const curZone=curScore!=null?ZONES.findIndex(z=>curScore>=z.min&&curScore<=z.max):-1;
-  const rows=ZONES.map(zone=>{
-    const pr=PERIODS.map(({idx})=>{
-      const rets=[];
-      for(let i=0;i<valid.length-idx;i++){
-        if(valid[i].sentiment.score<zone.min||valid[i].sentiment.score>zone.max)continue;
-        const s0=valid[i].indicators["S&P500"].value;
-        const sN=valid[i+idx]?.indicators?.["S&P500"]?.value;
-        if(s0&&sN)rets.push((sN-s0)/s0*100);
-      }
-      return rets.length?{avg:rets.reduce((a,b)=>a+b,0)/rets.length,n:rets.length}:null;
-    });
-    return{zone,pr};
-  });
-  const fc=r=>{
-    if(!r)return`<span class="bt-neu">—</span>`;
-    const c=r.avg>0.3?'bt-pos':r.avg<-0.3?'bt-neg':'bt-neu';
-    return`<span class="${c}">${r.avg>=0?'+':''}${r.avg.toFixed(2)}%</span><br><span style="font-size:10px;color:var(--mut)">n=${r.n}</span>`;
-  };
-  el.innerHTML=`<div class="bt-wrap"><div class="bt-title">センチメント × S&amp;P500リターン バックテスト</div><table class="bt-table"><thead><tr><th>ゾーン</th>${PERIODS.map(p=>`<th>S&amp;P500<br>${p.label}平均</th>`).join("")}</tr></thead><tbody>${rows.map(({zone,pr},i)=>`<tr class="${i===curZone?'bt-current':''}"><td style="text-align:left"><span style="color:${zone.color};font-weight:${i===curZone?700:400}">${i===curZone?'▶ ':''}${zone.label}</span><br><span style="font-size:10px;color:var(--mut)">${zone.min}〜${zone.max}</span></td>${pr.map(r=>`<td>${fc(r)}</td>`).join("")}</tr>`).join("")}</tbody></table><div class="bt-note">過去データ（${valid.length}日分）に基づく統計。将来を保証するものではありません。${curScore!=null?` 現在スコア: <span style="color:var(--acc);font-weight:700">${Math.round(curScore)}</span>`:''}</div></div>`;
+  const FWD=[{label:"明日は？",idx:1},{label:"5日後は？",idx:5},{label:"20日後は？",idx:20}];
+  const curZone=ZONES.find(z=>curScore>=z.min&&curScore<=z.max)||ZONES[2];
+  function getAvgRet(idx){
+    const rets=[];
+    for(let i=0;i<valid.length-idx;i++){
+      if(valid[i].sentiment.score<curZone.min||valid[i].sentiment.score>curZone.max)continue;
+      const s0=valid[i].indicators["S&P500"].value;
+      const sN=valid[i+idx]?.indicators?.["S&P500"]?.value;
+      if(s0&&sN)rets.push((sN-s0)/s0*100);
+    }
+    return rets.length?{avg:rets.reduce((a,b)=>a+b,0)/rets.length,n:rets.length}:null;
+  }
+  function zoneInfo(sc){return ZONES.find(z=>sc>=z.min&&sc<=z.max)||{label:"—",color:"var(--mut)"};}
+  function miniSVG(cSc,pSc,uid){
+    const cx=70,cy=72,r=56,tipR=(r*0.85).toFixed(1);
+    const cAng=((cSc/100)*180-90).toFixed(1);
+    const pAng=((pSc/100)*180-90).toFixed(1);
+    const gid=`mgG${uid}`;
+    const tipY=(cy-r*0.85).toFixed(1);
+    return`<svg viewBox="0 0 140 80"><defs><linearGradient id="${gid}" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#f43f5e"/><stop offset="25%" stop-color="#f59e0b"/><stop offset="50%" stop-color="#64748b"/><stop offset="75%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs><path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="#1e2840" stroke-width="8" stroke-linecap="round"/><path d="M ${cx-r} ${cy} A ${r} ${r} 0 0 1 ${cx+r} ${cy}" fill="none" stroke="url(#${gid})" stroke-width="8" stroke-linecap="round" opacity="0.35"/><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${tipY}" stroke="${sentimentColor(cSc)}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linecap="round" transform="rotate(${cAng},${cx},${cy})"/><line x1="${cx}" y1="${cy}" x2="${cx}" y2="${tipY}" stroke="${sentimentColor(pSc)}" stroke-width="2.5" stroke-linecap="round" transform="rotate(${pAng},${cx},${cy})"/><circle cx="${cx}" cy="${cy}" r="3" fill="#e2e8f0"/></svg>`;
+  }
+  const cards=FWD.map(({label,idx})=>{
+    const ret=getAvgRet(idx);
+    const predSc=ret?Math.min(100,Math.max(0,curScore+ret.avg*2)):curScore;
+    const delta=predSc-curScore;
+    const dStr=(delta>=0?"+":"")+delta.toFixed(1)+"pt";
+    const dColor=delta>0.5?"var(--grn)":delta<-0.5?"var(--red)":"var(--mut)";
+    const pz=zoneInfo(predSc);
+    const retStr=ret?`S&P500 ${ret.avg>=0?"+":""}${ret.avg.toFixed(2)}% (n=${ret.n})`:"データ不足";
+    return`<div class="mini-gauge-card"><div class="mini-gauge-lbl">${label}</div><div class="mini-gauge-svg-wrap">${miniSVG(curScore,predSc,idx)}<div class="mini-gauge-center"><div class="mini-gauge-score" style="color:${sentimentColor(predSc)}">${Math.round(predSc)}</div><div class="mini-gauge-zone" style="color:${pz.color}">${pz.label}</div><div class="mini-gauge-delta" style="color:${dColor}">${dStr}</div></div></div><div class="mini-gauge-ret">${retStr}</div></div>`;
+  }).join("");
+  el.innerHTML=`<div class="mini-gauges-wrap"><div class="mini-gauges-title">センチメント予測 — 現在ゾーン(${curZone.label})の過去平均リターンから推計</div><div class="mini-gauges-row">${cards}</div><div class="mini-gauge-note">点線=現在スコア(${Math.round(curScore)}) / 実線=予測スコア ／ S&amp;P500 +1% ≈ センチメント +2pt換算</div></div>`;
 }
 
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderBacktest();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
+function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderMiniGauges();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
 
 function renderAssetFlow(){
   const latest=allData[allData.length-1];
   const af=latest?.asset_flow;
-  const grid=document.getElementById("afGrid");
-  if(!grid)return;
-  if(!af){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--mut);font-size:13px;padding:20px">データなし（次回Actions実行後に表示）</div>';return;}
+  const el=document.getElementById("afUnified");
+  if(!el)return;
+  if(!af){el.innerHTML='<div style="text-align:center;color:var(--mut);font-size:13px;padding:20px">データなし（次回Actions実行後に表示）</div>';return;}
   const ASSETS=[
-    {key:"ultra_short", label:"超短期国債", ticker:"SHV",  desc:"1-3ヶ月"},
-    {key:"short_bond",  label:"短期国債",   ticker:"^IRX", desc:"3ヶ月T-Bill"},
-    {key:"gold",        label:"金",          ticker:"GLD",  desc:"インフレHDG"},
-    {key:"long_bond",   label:"長期国債",    ticker:"TLT",  desc:"20年超"},
-    {key:"ig_bond",     label:"投資適格社債",ticker:"LQD",  desc:"社債"},
-    {key:"hy_bond",     label:"HY社債",      ticker:"HYG",  desc:"高利回り社債"},
-    {key:"equity",      label:"株式",         ticker:"SPY",  desc:"S&P500"},
+    {key:"ultra_short",label:"超短期国債",ticker:"SHV",  desc:"1-3ヶ月"},
+    {key:"short_bond", label:"短期国債",  ticker:"^IRX",desc:"3ヶ月T-Bill"},
+    {key:"gold",       label:"金",        ticker:"GLD",  desc:"インフレHDG"},
+    {key:"long_bond",  label:"長期国債",  ticker:"TLT",  desc:"20年超"},
+    {key:"ig_bond",    label:"投資適格社債",ticker:"LQD",desc:"社債"},
+    {key:"hy_bond",    label:"HY社債",    ticker:"HYG",  desc:"高利回り社債"},
+    {key:"equity",     label:"株式",      ticker:"SPY",  desc:"S&P500"},
   ];
-  // 最大変化率を計算（バーの正規化用）
   const allPcts=ASSETS.map(a=>af[a.key]?.change_pct??0);
   const maxAbs=Math.max(...allPcts.map(v=>Math.abs(v)),0.01);
-  grid.innerHTML=ASSETS.map(a=>{
+  const hc=p=>{if(p==null)return"var(--sur2)";const c=Math.max(-2,Math.min(2,p));return c>=0?`rgba(16,185,129,${(0.07+c/2*0.43).toFixed(2)})`:`rgba(244,63,94,${(0.07+(-c)/2*0.43).toFixed(2)})`};
+  const fc=p=>p==null?`<span style="color:var(--mut)">—</span>`:`<span style="color:${p>=0?"var(--grn)":"var(--red)"}">${p>=0?"+":""}${p.toFixed(2)}%</span>`;
+
+  // ── ヘッダー行: 今日のタイル ──
+  const cornerCell=`<div class="af-u-corner"></div>`;
+  const tiles=ASSETS.map(a=>{
     const d=af[a.key];
-    if(!d)return`<div class="af-cell" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
+    if(!d)return`<div class="af-u-tile" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
     const pct=d.change_pct;
     const isPos=pct>=0;
     const intensity=Math.min(Math.abs(pct)/maxAbs,1);
-    const bg=isPos
-      ?`rgba(16,185,129,${0.05+intensity*0.25})`
-      :`rgba(244,63,94,${0.05+intensity*0.25})`;
+    const bg=isPos?`rgba(16,185,129,${0.05+intensity*0.25})`:`rgba(244,63,94,${0.05+intensity*0.25})`;
     const col=isPos?"var(--grn)":"var(--red)";
     const arrow=isPos?"▲":"▼";
     const barW=Math.round(intensity*100);
     const sign=isPos?"+":"";
-    return`<div class="af-cell" style="background:${bg};border-color:${isPos?"rgba(16,185,129,.3)":"rgba(244,63,94,.3)"}">
-      <div class="af-cell-label">${a.label}</div>
-      <div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div>
-      <div class="af-cell-pct" style="color:${col}">${sign}${pct.toFixed(2)}%</div>
-      <div class="af-arrow" style="color:${col}">${arrow}</div>
-      <div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div>
-    </div>`;
+    return`<div class="af-u-tile" style="background:${bg}"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div><div class="af-cell-pct" style="color:${col}">${sign}${pct.toFixed(2)}%</div><div class="af-arrow" style="color:${col}">${arrow}</div><div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div></div>`;
   }).join("");
-  renderAfHeatmap();
-}
 
-// ── ASSET FLOW HEATMAP ──
-function renderAfHeatmap(){
-  const el=document.getElementById("afHeatmap");if(!el)return;
+  // ── 日付行: 直近7日を降順（最新が上）──
   const withAf=allData.filter(d=>d.asset_flow!=null);
-  if(withAf.length<1){el.innerHTML="";return}
-  const days=withAf.slice(-7);
-  const ASSETS=[
-    {key:"ultra_short",label:"超短期国債",ticker:"SHV", risk:false},
-    {key:"short_bond", label:"短期国債",  ticker:"^IRX",risk:false},
-    {key:"gold",       label:"金",        ticker:"GLD", risk:false},
-    {key:"long_bond",  label:"長期国債",  ticker:"TLT", risk:true},
-    {key:"ig_bond",    label:"投資適格債",ticker:"LQD", risk:true},
-    {key:"hy_bond",    label:"HY社債",    ticker:"HYG", risk:true},
-    {key:"equity",     label:"株式",      ticker:"SPY", risk:true},
-  ];
-  // 色: ±2%を最大濃度として固定スケール
-  const hc=p=>{if(p==null)return"var(--sur2)";const c=Math.max(-2,Math.min(2,p));return c>=0?`rgba(16,185,129,${(0.07+c/2*0.43).toFixed(2)})`:`rgba(244,63,94,${(0.07+(-c)/2*0.43).toFixed(2)})`};
-  const fc=p=>p==null?`<span style="color:var(--mut)">—</span>`:`<span style="color:${p>=0?"var(--grn)":"var(--red)"}">${p>=0?"+":""}${p.toFixed(2)}%</span>`;
-  const dLabels=days.map(d=>{const dt=new Date(d.date);return`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`});
-  const thead=`<thead><tr><th class="af-hm-th-lbl">資産</th>${dLabels.map(l=>`<th class="af-hm-th">${l}</th>`).join("")}</tr></thead>`;
-  const tbody=`<tbody>${ASSETS.map(a=>`<tr><td class="af-hm-asset"><span style="font-weight:700">${a.ticker}</span><span style="font-size:9px;color:var(--mut);margin-left:5px">${a.label}</span></td>${days.map(d=>{const p=d.asset_flow?.[a.key]?.change_pct??null;return`<td class="af-hm-td" style="background:${hc(p)}">${fc(p)}</td>`}).join("")}</tr>`).join("")}</tbody>`;
-  // 直近5日の平均で資金フロー方向を判定
-  const rec=days.slice(-5);
+  const days=[...withAf.slice(-7)].reverse();
+  const todayDate=latest?.date;
+  const dateRows=days.map(d=>{
+    const dt=new Date(d.date);
+    const lbl=`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;
+    const isToday=d.date===todayDate;
+    const dateLbl=`<div class="af-u-date${isToday?' af-u-today':''}">${lbl}${isToday?`<span style="font-size:8px;display:block">今日</span>`:''}</div>`;
+    const cells=ASSETS.map(a=>{const p=d.asset_flow?.[a.key]?.change_pct??null;return`<div class="af-u-cell" style="background:${hc(p)}">${fc(p)}</div>`}).join("");
+    return dateLbl+cells;
+  }).join("");
+
+  // ── 5日平均 フッター ──
+  const rec=withAf.slice(-5);
   const avg=keys=>{const vs=rec.flatMap(d=>keys.map(k=>d.asset_flow?.[k]?.change_pct)).filter(v=>v!=null);return vs.length?vs.reduce((a,b)=>a+b,0)/vs.length:null};
   const safeAvg=avg(["ultra_short","short_bond"]);
   const riskAvg=avg(["hy_bond","equity"]);
@@ -950,7 +937,8 @@ function renderAfHeatmap(){
   else if(safeAvg!=null&&safeAvg>0.05&&(riskAvg==null||riskAvg<-0.1)){jTxt="安全資産に資金流入";jCol="var(--amb)"}
   else{jTxt="混在・方向感なし";jCol="var(--mut)"}
   const avgFmt=v=>v!=null?`${v>=0?"+":""}${v.toFixed(2)}%`:"—";
-  el.innerHTML=`<div class="af-hm-wrap"><div class="af-hm-title">資金フロー推移（直近${days.length}日）</div><table class="af-hm-table">${thead}${tbody}</table><div class="af-flow-judge"><span style="font-size:10px;color:var(--mut)">直近${rec.length}日平均:</span><span style="color:${jCol};font-weight:700">${jTxt}</span><span style="font-size:10px;color:var(--mut)">リスク資産 ${avgFmt(riskAvg)} / 安全資産 ${avgFmt(safeAvg)}</span></div></div>`;
+
+  el.innerHTML=`<div class="af-unified-grid">${cornerCell}${tiles}${dateRows}</div><div class="af-axis"><span class="af-axis-label">← 安全資産</span><span class="af-axis-label">リスク資産 →</span></div><div class="af-flow-judge"><span style="font-size:10px;color:var(--mut)">直近${rec.length}日平均:</span><span style="color:${jCol};font-weight:700">${jTxt}</span><span style="font-size:10px;color:var(--mut)">リスク資産 ${avgFmt(riskAvg)} / 安全資産 ${avgFmt(safeAvg)}</span></div>`;
 }
 
 // ── INIT ──
