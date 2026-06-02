@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 34058085558.5478,
+  "intrinsic_value_pt": 22807992525.500313,
   "intrinsic_value_per_share": 36.3872949102181,
-  "intrinsic_value_beta": 47.45,
-  "upside_percent_beta": -69.3,
+  "intrinsic_value_beta": 14.09,
+  "upside_percent_beta": -91.1,
   "intrinsic_value_rf": 266.15,
-  "upside_percent_rf": 72.0,
-  "v0": 22705390372.3652,
-  "v0_adjusted": 22705390372.3652,
+  "upside_percent_rf": 68.0,
+  "v0": 15205328350.333542,
+  "v0_adjusted": 15205328350.333542,
   "alpha": 0.5,
   "alpha_was_capped": true,
   "future_values": {
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 39.01,
       "value_growth_pct": 7.2,
-      "expected_return_pct": -74.8
+      "expected_return_pct": -75.4
     },
     "2年後": {
       "future_value": 41.82,
       "value_growth_pct": 14.9,
-      "expected_return_pct": -73.0
+      "expected_return_pct": -73.6
     },
     "3年後": {
       "future_value": 44.83,
       "value_growth_pct": 23.2,
-      "expected_return_pct": -71.0
+      "expected_return_pct": -71.7
     },
     "4年後": {
       "future_value": 48.06,
       "value_growth_pct": 32.1,
-      "expected_return_pct": -68.9
+      "expected_return_pct": -69.7
     },
     "5年後": {
       "future_value": 51.52,
       "value_growth_pct": 41.6,
-      "expected_return_pct": -66.7
+      "expected_return_pct": -67.5
     }
   },
-  "upside_percent": -76.5,
-  "calculation_date": "2026-06-02T05:23:15+09:00",
+  "upside_percent": -77.0,
+  "calculation_date": "2026-06-03T03:10:20+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -53,8 +53,8 @@
     "phase1_years": 5
   },
   "wacc": {
-    "value": 0.09145,
-    "beta": 0.85,
+    "value": 0.125479,
+    "beta": 1.447,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -124,43 +124,43 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 22705390372.3652,
-    "pv_high_growth": 6049285043.134028,
-    "pv_terminal": 16656105329.231173,
+    "v0": 15205328350.333542,
+    "pv_high_growth": 5528301774.647788,
+    "pv_terminal": 9677026575.685753,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 1368408000.0,
-        "discount_factor": 1.09145,
-        "pv": 1253752347.7942188
+        "discount_factor": 1.125479,
+        "pv": 1215844986.8900266
       },
       {
         "year": 2,
         "fcf": 1466933376.0,
-        "discount_factor": 1.1912631025,
-        "pv": 1231410066.274591
+        "discount_factor": 1.2667029794409999,
+        "pv": 1158072097.2546875
       },
       {
         "year": 3,
         "fcf": 1572552579.072,
-        "discount_factor": 1.300204113223625,
-        "pv": 1209465931.6014125
+        "discount_factor": 1.425647602598277,
+        "pv": 1103044382.2203925
       },
       {
         "year": 4,
         "fcf": 1685776364.7651842,
-        "discount_factor": 1.4191077793779256,
-        "pv": 1187912848.666191
+        "discount_factor": 1.6045364381247058,
+        "pv": 1050631400.266252
       },
       {
         "year": 5,
         "fcf": 1807152263.0282776,
-        "discount_factor": 1.548885185802037,
-        "pv": 1166743848.797615
+        "discount_factor": 1.8058720658441556,
+        "pv": 1000708908.016429
       }
     ],
     "terminal_fcf": 1843295308.2888432,
-    "terminal_value": 25798394797.604523,
+    "terminal_value": 17475471973.462425,
     "v0_rm": 20218105267.780785
   },
   "fcf_base": {
@@ -291,22 +291,22 @@
     ],
     "diluted_shares": 337182468,
     "roe_10yr_avg": 0.31463744980710356,
-    "current_price": 154.76,
+    "current_price": 158.38,
     "latest_revenue": 17738000000.0,
     "rpo": 7474000000,
-    "beta": 0.85,
+    "beta": 1.447,
     "sector": "Utilities",
     "industry": "Utilities - Independent Power Producers",
     "eps_data": {
       "ticker": "VST"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Power)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.07200000000000001,
     "high_growth_years": 5,
     "terminal_growth_used": 0.02,
-    "pv_high": 6049285043.134028,
-    "pv_terminal": 16656105329.231173,
+    "pv_high": 5528301774.647788,
+    "pv_terminal": 9677026575.685753,
     "roe_used": 0.31463744980710356,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -316,16 +316,16 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.3214772891898348,
-    "per": 25.879597,
-    "per_adjusted": 26.27,
+    "per": 26.529314,
+    "per_adjusted": 26.88,
     "peg": 0.48,
-    "ps": 2.6835873,
-    "ev_ebitda": 11.161,
-    "ma200": 173.2398,
+    "ps": 2.7463593,
+    "ev_ebitda": 10.889,
+    "ma200": 172.9872,
     "forward_eps": 10.95725
   },
   "validation": {
-    "validated_at": "2026-06-02",
+    "validated_at": "2026-06-03",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -334,7 +334,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $6.05B + pv_terminal $16.66B = $22.71B (差異0.00%)"
+        "detail": "2段階: pv_high $5.53B + pv_terminal $9.68B = $15.21B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -350,7 +350,7 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
-  "score_comment": "割高(-76%超)、FCF黒字、売上成長加速",
+  "score_comment": "割高(-77%超)、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
@@ -437,8 +437,8 @@
     ],
     "warnings": []
   },
-  "erp": 0.0278,
-  "forward_earnings_yield": 0.0708,
+  "erp": 0.0262,
+  "forward_earnings_yield": 0.0692,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅"
 }
