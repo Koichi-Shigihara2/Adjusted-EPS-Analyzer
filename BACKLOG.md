@@ -525,6 +525,11 @@
 
 ## 追加課題（2026-05-31）
 
+### ✅ [ACTION-4] HYPEMIXポートフォリオ管理（2026-06-03 完了）
+- フェーズ分布バー・目標乖離・リバランス提案・銘柄テーブルを TANUKI index.html に追加
+- 現状: P4=52%（目標10%比+42pt超過）・P1=0%（目標20%比-20pt不足）を検出
+- 実装: docs/value-monitor/tanuki_valuation/index.html に renderHypemix() 関数追加
+
 ### ✅ [ACTION-10] TANUKI SCOREの変化検知機能（2026-05-31 完了）
 - 背景:
   現状のTANUKI SCOREは「状態の表示」であり
