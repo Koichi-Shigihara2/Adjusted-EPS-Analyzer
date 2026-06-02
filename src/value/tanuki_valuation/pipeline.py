@@ -507,6 +507,30 @@ class TanukiValuationPipeline:
         with open(history_summary_path, "w", encoding="utf-8") as f:
             json.dump(history_summary, f, ensure_ascii=False, indent=2)
 
+        # score_history.json（ACTION-2: 判定実績追跡用）
+        score_history_path = os.path.join(ticker_dir, "score_history.json")
+        score_history: list = []
+        if os.path.exists(score_history_path):
+            try:
+                with open(score_history_path, encoding="utf-8") as f:
+                    score_history = json.load(f)
+            except Exception:
+                score_history = []
+        date_only = date_str[:10]
+        sh_entry = {
+            "date": date_only,
+            "tanuki_score": score_data.get("score"),
+            "funda_score": score_data.get("funda_score"),
+            "price_at_judgment": valuation.get("components", {}).get("current_price"),
+            "upside_pct": valuation.get("upside_percent"),
+            "hype_phase": (_growth_sanity.get("hype_phase_used") if isinstance(_growth_sanity, dict) else None),
+        }
+        score_history = [e for e in score_history if e.get("date") != date_only]
+        score_history.append(sh_entry)
+        score_history.sort(key=lambda e: e.get("date", ""))
+        with open(score_history_path, "w", encoding="utf-8") as f:
+            json.dump(score_history, f, ensure_ascii=False, indent=2)
+
         # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存（extraは上で取得済み）
         latest_data.update(extra)
         latest_data["growth_sanity"] = _growth_sanity
