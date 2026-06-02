@@ -693,7 +693,9 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
 
     if sentiment_data:
         extended_data += "\n--- センチメント指数（内部構造） ---\n"
-        extended_data += f"● センチメントスコア総合: {sentiment_data.get('score', 'N/A')} ({sentiment_data.get('label', '')})\n"
+        _s = sentiment_data.get('score', 'N/A')
+        _s_str = f"{_s:.0f}" if isinstance(_s, (int, float)) else str(_s)
+        extended_data += f"● センチメントスコア総合: {_s_str} ({sentiment_data.get('label', '')})\n"
         subs = sentiment_data.get("sub_scores", {})
         sub_names = {
             "vix_level": "VIX水準",
@@ -710,6 +712,15 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
             # distributionのraw値にS&P500限定であることを明示
             if k == "distribution" and isinstance(raw, dict):
                 raw = f"S&P500の前日比出来高比={raw.get('vol_ratio', 'N/A')}, 前日比変化率={raw.get('chg_pct', 'N/A')}%"
+            # nh_nlはNH・NL個別値を明示（差分のみでは市場の広がりが不明確）
+            elif k == "nh_nl" and isinstance(raw, (int, float)):
+                _breadth = sentiment_data.get("breadth") or {}
+                _nh = _breadth.get("new_highs_52w")
+                _nl = _breadth.get("new_lows_52w")
+                if _nh is not None and _nl is not None:
+                    raw = f"NH（新高値）={_nh}, NL（新安値）={_nl}, NH-NL差={int(raw):+d}"
+                else:
+                    raw = f"NH-NL差={int(raw):+d}"
             extended_data += f"  {name}: スコア={v.get('score', 'N/A'):.0f} (重み={int(v.get('weight',0)*100)}%, 実値={raw})\n"
 
     if tech_pulse_data:
@@ -802,6 +813,7 @@ def analyse_market(realtime_data, news_context, sentiment_data=None, tech_pulse_
 出来高比1.1以上かつ価格下落があればディストリビューションの疑いを指摘せよ。
 安値圏からの反発局面で出来高増加を伴う大幅上昇（+1.7%以上）はフォロースルーデイとして明示せよ。
 NYSE騰落比率が指数と逆行すれば市場内部の脆弱性を指摘せよ。
+新高値(NH)・新安値(NL)の両値を本文に明記し（例: NH=120, NL=45）、NH-NL差の拡大/縮小トレンドから市場の広がりを分析すること。
 
 6. スタイル・規模間相対パフォーマンス（グロース対バリュー比、大型対小型比）
 ▷ [グロース対バリュー・大型対小型の方向（日次変化）]
@@ -842,6 +854,11 @@ NASDAQハイテク株保有者の体感と市場全体の実態が乖離して�
 - 出力は日本語のみ。Markdown記法（##、**等）は禁止。プレーンテキストのみ。
 - 最後に俳句を一句（5-7-5）のみ添えること。一行で書くこと。
 - 締め文として「注意が必要」「懸念される」等の汎用表現で終えることは禁止。
+- センチメントスコアは整数で表記すること（小数点なし）。例: 65、72。小数（65.2）は禁止。
+- VIXは必ず小数点以下2桁で表記すること（例: 16.05、23.18）。1桁表記（16.1）は禁止。
+- Risk-Off Score算出根拠: 株（リスクオフ）=+33pt、債券買い（質への逃避）=+33pt、クレジット（リスクオフ）=+34ptの3軸合計（0/33/67/100の4段階）。レポート冒頭の全体要約でRisk-Off Scoreと現在の構成（どの軸がオン/オフか）を1行明記すること。
+- VIX9Dの変化を表現する際、上昇が+1pt未満の場合は「急騰」を使用せず「上昇加速(+Xpt)」と表現すること。急激な上昇（+3pt以上）の場合のみ「急騰」を許可する。
+- VIX9DがVIX30Dを下回りつつも上昇加速している場合は「短期安定構造（VIX9D<VIX30D）を維持しながら9Dが上昇加速している移行期」という文脈を必ず明記すること。
 
 【最新データ】:
 {extended_data}
