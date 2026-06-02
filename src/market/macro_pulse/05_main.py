@@ -1864,6 +1864,7 @@ def update_liquidity_csv(target_date: date, fred) -> None:
         tga_val = _carryforward(tga_val, "tga",             "tga")
         rrp_val = _carryforward(rrp_val, "rrp",             "rrp")
         rsv_val = _carryforward(rsv_val, "reserve_balance", "reserve_balance")
+        hy_val  = _carryforward(hy_val,  "hy_spread",       "hy_spread")
 
     # carry-forward 後に net_liq を再計算（初回計算で None だった場合に対応）
     if net_liq is None and fed_val is not None and tga_val is not None and rrp_val is not None:
