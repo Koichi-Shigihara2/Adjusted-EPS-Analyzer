@@ -159,7 +159,7 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 
 ### BACKLOGファイルの場所
 - TANUKI VALUATION系: docs/value-monitor/tanuki_valuation/BACKLOG.md
-- システム全体: リポジトリルートの BACKLOG.md（またはdocs/直下）
+- システム全体バックログ: docs/value-monitor/tanuki_valuation/BACKLOG.md の末尾セクションに統合
 - 編集前に必ず grep で行を特定してから変更する（行番号の直接指定は誤差が出るため禁止）
 
 ```bash
