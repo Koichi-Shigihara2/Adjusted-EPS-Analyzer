@@ -151,3 +151,43 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 - [ ] 全銘柄再生成で成功率確認
 - [ ] BACKLOG.mdの該当項目を「完了済み」に移動
 - [ ] コミット・プッシュ完了
+
+---
+
+## BACKLOG管理ルール
+
+### BACKLOGファイルの場所
+- TANUKI VALUATION系: docs/value-monitor/tanuki_valuation/BACKLOG.md
+- システム全体: リポジトリルートの BACKLOG.md（またはdocs/直下）
+- 編集前に必ず grep で行を特定してから変更する（行番号の直接指定は誤差が出るため禁止）
+
+```bash
+# 対象行の特定
+grep -n "\[MP-5\]\|IMPLIED CUTS" BACKLOG.md
+```
+
+### BACKLOG更新のタイミング
+- タスク完了後、**メモリではなくBACKLOG.mdに記録する**
+- 完了時のフォーマット:
+  - `[ ]` → `✅ [XX-N] タスク名（YYYY-MM-DD 完了）`
+  - 実装内容を箇条書きで3行以内に要約して残す
+
+### コミットルール（BACKLOG更新時）
+git add BACKLOG.md
+git commit -m "docs: [タスクID] 完了済みに更新"
+git pull --rebase origin kaihatsu
+git push origin kaihatsu
+
+---
+
+## Market Pulse プロンプト修正時の注意
+
+対象ファイル: src/market/market_pulse/collect_and_send.py
+
+修正時に必ず確認すること：
+- 出来高比はS&P500/NASDAQを個別表記（まとめ表現禁止）
+- 債券バッジは「債券売り/債券買い」（「リスクオン/オフ」は禁止）
+- HYG・LQD同時下落は「信用収縮」禁止→「金利上昇圧力」に限定
+- 乖離Zスコアの符号：正=NASDAQ優位 / 負=S&P500優位
+
+修正後は index.html のバッジ表示との整合性も確認すること。
