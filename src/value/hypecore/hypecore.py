@@ -584,11 +584,17 @@ def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0) -> 
 
     # ── S0: 失望/蓄積期 ──────────────────────────────────────
     # 【核心】機関未参入・深い低迷・スマートマネー仕込み段階
-    if ma200_dev < -20:
-        return 0
-    if short_pct is not None and short_pct > 0.08 and ma200_dev < -10:
-        return 0
-    if from_peak < -50 and ma200_dev < -15:
+    _is_s0 = (
+        ma200_dev < -20
+        or (short_pct is not None and short_pct > 0.08 and ma200_dev < -10)
+        or (from_peak < -50 and ma200_dev < -15)
+    )
+    if _is_s0:
+        # S0→S1昇格: 反発モメンタムが強ければS1に昇格
+        # 浅い低迷（MA200 > -20%）: 3M+10%超で昇格
+        # 深い低迷（MA200 <= -20%）: 3M+20%超の強烈反発のみ昇格
+        if (ma200_dev > -20 and price_mom3m > 10) or (ma200_dev <= -20 and price_mom3m > 20):
+            return 1
         return 0
 
     # ── S1: 期待覚醒期 ──────────────────────────────────────
