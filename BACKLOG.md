@@ -531,8 +531,7 @@
 - score_history.json に判定スナップショットを日次追記
 - score_verifier.py で 30/60/90日後リターンを自動計算
 - index.html に判定別勝率テーブル＋直近20件を表示
-- ⚠️ score_verifier.py の定期実行が未登録
-  → Windows Task Scheduler または GitHub Actions への追加が必要
+- ✅ score_verifier.py の定期実行: Score_Verifier.yml 登録済み（毎日 JST 9:00）
   → 2026-07-03 以降に初回リターンが記録される
 
 ### ✅ [ACTION-4] HYPEMIXポートフォリオ管理（2026-06-03 完了）
