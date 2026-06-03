@@ -132,7 +132,7 @@ python common/sec_data/audit.py [TICKER] --check-beta
 ## よく使うコマンド
 
 ### 単体テスト実行
-python src/value/tanuki_valuation/pipeline.py --ticker NVDA
+python src/value/tanuki_valuation/pipeline.py NVDA
 
 ### 全銘柄再生成
 python src/value/tanuki_valuation/pipeline.py
