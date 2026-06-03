@@ -703,13 +703,49 @@ def get_ff_current(fred):
     v, _ = fred_latest(fred, "FEDFUNDS", date.today(), lookback=45)
     return round(v, 4) if v is not None else None
 
-def get_zq_futures(target_date: date, fred=None):
+def get_implied_cuts(target_date: date, fred=None):
+    """
+    IMPLIED CUTS = 市場が織り込む今後1年の利下げ回数。
+
+    DGS1（1年国債利回り）を基準に ZQ=F（フロントマンスFF Futures）で
+    term premium を補正した調整後レートを 12M先implied rate として使用。
+
+      adjusted_rate = DGS1 - clamp(DGS1 - ZQ_implied, -0.5%, +0.5%)
+      implied_cuts  = (FEDFUNDS - adjusted_rate) / 0.25
+
+    ZQ=F 取得失敗時は DGS1 をそのまま使用（旧来の挙動にフォールバック）。
+    """
+    import yfinance as yf
+
     if fred is None:
         return None, None, None
+
     dgs1, _ = fred_latest(fred, "DGS1", target_date, lookback=30)
     if dgs1 is None:
         return None, None, None
-    return "FRED:DGS1", round(dgs1, 4), round(dgs1, 4)
+
+    zq_ticker  = "ZQ=F+DGS1"
+    zq_price_v = None
+    dgs1_adj   = dgs1
+
+    try:
+        hist = yf.Ticker("ZQ=F").history(period="5d")
+        if not hist.empty:
+            zq_price_v = round(float(hist["Close"].iloc[-1]), 4)
+            zq_implied = round(100.0 - zq_price_v, 4)
+            term_premium = max(-0.5, min(0.5, dgs1 - zq_implied))
+            dgs1_adj = round(dgs1 - term_premium, 4)
+        else:
+            zq_ticker = "FRED:DGS1"
+    except Exception:
+        zq_ticker = "FRED:DGS1"
+
+    return zq_ticker, zq_price_v, round(dgs1_adj, 4)
+
+
+# 後方互換エイリアス
+def get_zq_futures(target_date: date, fred=None):
+    return get_implied_cuts(target_date, fred)
 
 # ─────────────────────────────────────────────────────────────────
 #  金融環境スナップショット（変更なし）
@@ -1169,8 +1205,8 @@ FOMC Statement ({fomc_date}):
 
 Market Context:
 - Current FF Rate: {ff_current}%
-- 12-month ahead FF futures implied rate: {zq_rate}% (proxy: DGS1, includes term premium 0.2-0.3%, may underestimate actual cuts)
-- Market-implied rate changes in 12M: {cuts_implied:+.1f} cuts (25bp each) [Note: DGS1 proxy value; actual market pricing via FF futures may differ]
+- 12-month ahead FF futures implied rate: {zq_rate}% (ZQ=F front-month corrected; DGS1 adjusted for term premium)
+- Market-implied rate changes in 12M: {cuts_implied:+.1f} cuts (25bp each)
 
 Respond ONLY in this exact JSON format (no markdown, no extra text):
 {{"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":"日本語で100字以内で判断理由を記載。"}}"""
