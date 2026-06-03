@@ -262,7 +262,15 @@
 - ✅ GitHub Actions 設定済み（Stonks_Silo_Update.yml）
 - ✅ gross_margin: ASTS/JOBY のみ null（construction_phase として扱い）→ 他20銘柄は取得済み
 - ✅ [DESIGN-11] unit_economics_score バックエンド補完（2026-06-03）: 全22銘柄に適用
-- 現状: 22銘柄・results.json更新済み
+- 現状: 26銘柄・results.json更新済み
+- [ ] [SS-1] 営業利益ETAの四半期系列合成（優先度：低・実装するか未定、2026-06-03記録）
+  - 問題: OperatingIncome は financial_vectors に series_q が存在するが、
+    現在の financial_trend_calculator.py が normalized 四半期データから生成しているため
+    series_q のエントリ数は十分ある。ただし加重平均QoQ（calcEtaInfo）が「改善トレンドなし」
+    を返す銘柄（NET・IONQ 等）では ETA 数値が出ず、ピルが「改善トレンドなし」固定になる。
+  - 根本: 営業利益の QoQ 改善が単調でなく（赤字幅の拡縮が混在）、wAvg ≤ 0 になるケースが多い。
+    GrossProfit − RD − SG&A で合成した別系列で計算するか、ETA 算法を変更する必要がある。
+  - 影響: ETA ピルが「改善トレンドなし」のまま。機能上の欠落ではなく表示品質の問題。
 
 ### 【Moomoo API】
 - [ ] β自動計算（SPY日次リターンからbeta_config.jsonを自動更新）
