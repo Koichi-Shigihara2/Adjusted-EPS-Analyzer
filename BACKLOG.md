@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-01（DISCOVER全面改修 8-1/8-2/8-5/8-6 完了）
+最終更新: 2026-06-03（MP-3/4/5・ACTION-2/4/6・DESIGN-11 完了）
 
 ---
 
@@ -531,6 +531,9 @@
 - score_history.json に判定スナップショットを日次追記
 - score_verifier.py で 30/60/90日後リターンを自動計算
 - index.html に判定別勝率テーブル＋直近20件を表示
+- ⚠️ score_verifier.py の定期実行が未登録
+  → Windows Task Scheduler または GitHub Actions への追加が必要
+  → 2026-07-03 以降に初回リターンが記録される
 
 ### ✅ [ACTION-4] HYPEMIXポートフォリオ管理（2026-06-03 完了）
 - フェーズ分布バー・目標乖離・リバランス提案・銘柄テーブルを TANUKI index.html に追加
