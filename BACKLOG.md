@@ -258,10 +258,11 @@
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
-- [ ] フロントエンド（HTML）未実装
-- [ ] GitHub Actions 未設定
-- [ ] gross_margin 全銘柄 null 問題（粗利率計算不可銘柄が多い）
-- 現状: 計算ロジック骨格は完成・results.json出力済み（BBAI/ONDS/RKLB/SOFI/SOUN）
+- ✅ フロントエンド（HTML）実装済み（index.html 1298行）
+- ✅ GitHub Actions 設定済み（Stonks_Silo_Update.yml）
+- ✅ gross_margin: ASTS/JOBY のみ null（construction_phase として扱い）→ 他20銘柄は取得済み
+- ✅ [DESIGN-11] unit_economics_score バックエンド補完（2026-06-03）: 全22銘柄に適用
+- 現状: 22銘柄・results.json更新済み
 
 ### 【Moomoo API】
 - [ ] β自動計算（SPY日次リターンからbeta_config.jsonを自動更新）
@@ -447,14 +448,13 @@
 - 実装難易度: 低
 - 実装: pipeline.py Matrix①のラベル三分類化 + テスト5件追加
 
-### ✅ [DESIGN-11] STONKSSILOユニットエコノミクス改善評価（2026-05-31 完了）
+### ✅ [DESIGN-11] STONKSSILOユニットエコノミクス改善評価（2026-05-31設計 / 2026-06-03バックエンド補完）
 - バックエンド: DeficitQualityに4フィールド追加（analyzer.py）
-  gross_margin_trend / loss_per_revenue_trend / unit_economics_score / unit_economics_label
+  gross_margin_trend / gross_margin_note / unit_economics_score / unit_economics_label
   スコア: GM水準20+GMトレンド20+損失/売上水準30+損失/売上改善率30
-- フロントエンド: index.html にUE表示を統合
-  テーブル「黒字化の質」列（★★★バッジ）/ UEフィルターボタン（優秀/良好/低調）
-  詳細パネル: UE3ペインカード（スコアゲージ・GM棒グラフ・LPR圧縮棒グラフ）
-- 評価例: RBRK 90点★★★ / RKLB 55点★★☆ / BBAI 5点☆☆☆
+  ASTS/JOBY は gross_margin=null → gross_margin_note="construction_phase"・スコアskip
+- フロントエンド: index.html にUE表示を統合（実装済み）
+- 2026-06-03 再生成: IOT 100点★★★ / AVAV 90点★★★ / ZETA 90点★★★ / RBRK 85点★★★
 
 ### ✅ [DESIGN-12] ステルス流動性の3層構造改善（2026-05-31 完了）
 - 実装: 3層構造でステルスカードを再構成

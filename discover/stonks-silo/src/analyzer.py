@@ -60,6 +60,12 @@ class DeficitQuality:
     mature_profit_note: str = ""              # 投資除外後も赤字の場合に注記
     revenue_outlier_years: list[int] = field(default_factory=list)  # 外れ値除去された年
 
+    # ユニットエコノミクス（DESIGN-11）
+    gross_margin_trend: Optional[str] = None      # "improving"/"stable"/"declining"
+    gross_margin_note: str = ""                    # "construction_phase" など
+    unit_economics_score: Optional[float] = None   # 0-100
+    unit_economics_label: Optional[str] = None     # "優秀"/"良好"/"低調"
+
 
 
 @dataclass
@@ -276,6 +282,79 @@ class StonksAnalyzer:
         else:
             dilution_risk = "LOW"
 
+        # ── DESIGN-11: Unit Economics ──
+        # 粗利率系列（複数年）
+        gm_series: dict[int, Optional[float]] = {}
+        for yr in years:
+            yr_pl = records[yr]["pl"]
+            yr_rev = yr_pl.get("revenue_sanitized")
+            yr_gp  = yr_pl.get("gross_profit")
+            if yr_rev and yr_rev > 0 and yr_gp is not None:
+                gm_series[yr] = yr_gp / yr_rev * 100
+            else:
+                gm_series[yr] = None
+
+        # 粗利率トレンド（直近3年の先頭→末尾の変化量）
+        gm_vals = [gm_series[yr] for yr in years[-3:] if gm_series.get(yr) is not None]
+        if len(gm_vals) >= 2:
+            gm_delta = gm_vals[-1] - gm_vals[0]
+            gross_margin_trend: Optional[str] = (
+                "improving" if gm_delta > 2.0 else ("declining" if gm_delta < -2.0 else "stable")
+            )
+        else:
+            gross_margin_trend = None
+
+        # 粗利率が取得できない銘柄は建設フェーズ扱い
+        gross_margin_note = "construction_phase" if gross_margin is None else ""
+
+        # LPR（損失/売上比率）
+        def _lpr(ni: Optional[float], rev: Optional[float]) -> Optional[float]:
+            if ni is None or rev is None or rev <= 0:
+                return None
+            return abs(min(ni, 0.0)) / rev * 100  # 黒字なら 0%
+
+        lpr_latest = _lpr(net_income, revenue_san)
+        lpr_prev: Optional[float] = None
+        if len(years) >= 2:
+            _prev_pl = records[years[-2]]["pl"]
+            lpr_prev = _lpr(_prev_pl.get("net_income"), _prev_pl.get("revenue_sanitized"))
+
+        # Unit Economics スコア（gross_margin が null の場合はスキップ）
+        ue_score: Optional[float] = None
+        ue_label: Optional[str] = None
+        if gross_margin is not None:
+            s = 0.0
+            # GM 水準 (20pt)
+            if gross_margin >= 50:
+                s += 20.0
+            elif gross_margin >= 30:
+                s += 10.0
+            # GM トレンド (20pt)
+            if gross_margin_trend == "improving":
+                s += 20.0
+            elif gross_margin_trend == "stable":
+                s += 10.0
+            # LPR 水準 (30pt)
+            if lpr_latest is None:
+                s += 15.0
+            elif lpr_latest <= 10.0:
+                s += 30.0
+            elif lpr_latest <= 30.0:
+                s += 15.0
+            # LPR 改善 (30pt)
+            if lpr_prev is None or lpr_latest is None:
+                s += 15.0
+            elif lpr_latest == 0.0 and lpr_prev == 0.0:
+                s += 30.0  # 連続黒字
+            elif lpr_prev > 0.0:
+                improvement = (lpr_prev - lpr_latest) / lpr_prev * 100.0
+                if improvement >= 30.0:
+                    s += 30.0
+                elif improvement >= 10.0:
+                    s += 15.0
+            ue_score = round(s, 1)
+            ue_label = "優秀" if s >= 70.0 else ("良好" if s >= 40.0 else "低調")
+
         return DeficitQuality(
             latest_year=latest_year,
             revenue=revenue,
@@ -297,6 +376,10 @@ class StonksAnalyzer:
             sbc_yoy_change=sbc_yoy_change,
             dilution_risk=dilution_risk,
             revenue_outlier_years=revenue_outlier_years,
+            gross_margin_trend=gross_margin_trend,
+            gross_margin_note=gross_margin_note,
+            unit_economics_score=ue_score,
+            unit_economics_label=ue_label,
         )
 
     def _deficit_verdict(
