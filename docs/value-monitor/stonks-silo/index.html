@@ -211,18 +211,17 @@
     .sort-arr{font-size:9px;cursor:pointer;padding:2px 3px;color:var(--mut);flex-shrink:0}
     .sort-arr:hover{color:var(--txt)}
   /* ── 黒字化への道のり ── */
-  .profpath{margin-top:14px;padding:12px 14px;background:var(--sur2);border:1px solid var(--bdr)}
-  .profpath-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px;text-transform:uppercase}
-  .profpath-zone{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);margin-bottom:6px}
-  .profpath-row{display:grid;grid-template-columns:72px 10px 1fr 72px 120px;gap:6px 8px;align-items:center;margin-bottom:5px;min-height:18px}
-  .profpath-label{font-size:11px;color:var(--mut)}
-  .profpath-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;justify-self:center}
-  .profpath-bar{position:relative;height:5px;background:var(--bdr);border-radius:3px;overflow:visible}
-  .profpath-fill{position:absolute;top:0;height:100%;border-radius:3px}
-  .profpath-zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#f43f5e55;left:50%}
-  .profpath-val{font-family:var(--mono);font-size:11px;text-align:right;white-space:nowrap}
-  .profpath-eta{font-size:10px;text-align:right}
-  .profpath-pill{display:inline-block;padding:1px 7px;border-radius:10px;font-family:var(--mono);font-size:9px;white-space:nowrap}
+  .profpath{margin-top:14px;padding:12px 14px 8px;background:var(--sur2);border:1px solid var(--bdr)}
+  .profpath-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:8px;text-transform:uppercase}
+  .profpath-row{display:grid;grid-template-columns:64px 1fr;gap:0 8px;margin-bottom:1px}
+  .profpath-label{font-size:10px;color:var(--mut);text-align:right;padding-right:4px;display:flex;align-items:center;justify-content:flex-end}
+  .profpath-track{position:relative;height:34px}
+  .profpath-track.is-target{height:46px}
+  .profpath-zeroline{position:absolute;left:40%;top:0;bottom:0;width:2px;background:#E24B4A;opacity:.55;pointer-events:none}
+  .profpath-dot{position:absolute;border-radius:50%;top:50%;transform:translate(-50%,-50%)}
+  .profpath-dv{position:absolute;top:calc(50% + 8px);transform:translateX(-50%);font-family:var(--mono);font-size:8px;white-space:nowrap;line-height:1;pointer-events:none}
+  .profpath-dv.is-target{top:calc(50% + 12px);font-size:9px}
+  .profpath-pill{position:absolute;left:42%;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9px;white-space:nowrap;padding:1px 7px;border-radius:10px;pointer-events:none}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 </head>
@@ -644,17 +643,16 @@ async function toggleDetail(ticker) {
         const latest = quarters[0].adjusted_eps;
         if (latest != null) {
           const isPos = latest >= 0;
-          // ドット更新
+          const scaleEPS = 1.5;
+          const left = isPos
+            ? Math.min(40 + latest / scaleEPS * 55, 94)
+            : Math.max(5, 40 - Math.abs(latest) / scaleEPS * 35);
+          const col = isPos ? 'var(--grn)' : '#a855f7';
           const dot = adjEl.querySelector('.profpath-dot');
-          if (dot) dot.style.background = isPos ? 'var(--grn)' : '#a855f7';
-          // 値更新
-          const val = adjEl.querySelector('.profpath-val');
-          if (val) {
-            val.style.color = isPos ? 'var(--grn)' : '#a855f7';
-            val.textContent = (isPos ? '+' : '') + latest.toFixed(2);
-          }
-          // 達成済みなら薄く
-          if (isPos) adjEl.style.opacity = '0.45';
+          if (dot) { dot.style.left = left.toFixed(1) + '%'; dot.style.background = col; }
+          const dv = adjEl.querySelector('.profpath-dv');
+          if (dv) { dv.style.left = left.toFixed(1) + '%'; dv.style.color = col; dv.textContent = (isPos?'+':'') + latest.toFixed(2); }
+          if (isPos) adjEl.style.opacity = '0.42';
         }
       }
     }
@@ -689,7 +687,6 @@ function buildProfitPath(ticker, d) {
   const getSeries = k => fv[k]?.series_q || [];
   const getLatest = k => { const s = getSeries(k); return s.length ? s[s.length - 1].val : null; };
 
-  // FCF = 同じ期末でOCF-CapExが揃う最新値
   const calcFcfSeries = () => {
     const om = Object.fromEntries(getSeries('OCF').map(e => [e.end, e.val]));
     const cm = Object.fromEntries(getSeries('CapEx').map(e => [e.end, e.val]));
@@ -697,18 +694,17 @@ function buildProfitPath(ticker, d) {
     return ends.filter(e => om[e] != null && cm[e] != null).map(e => ({ end: e, val: om[e] - cm[e] }));
   };
   const fcfSeries = calcFcfSeries();
-  const fcfVal = fcfSeries.length ? fcfSeries[fcfSeries.length - 1].val : null;
+  const fcfVal   = fcfSeries.length ? fcfSeries[fcfSeries.length - 1].val : null;
 
-  const rev = Math.abs(getLatest('Revenue') || 0);
   const metrics = [
-    { key: 'gp',  label: '粗利益',   val: getLatest('GrossProfit'), series: getSeries('GrossProfit'), eta: false },
-    { key: 'oi',  label: '営業利益', val: null,                      series: [],                       eta: false },
-    { key: 'ni',  label: '純利益',   val: getLatest('NetIncome'),    series: getSeries('NetIncome'),   eta: true  },
-    { key: 'fcf', label: 'FCF',      val: fcfVal,                    series: fcfSeries,                eta: true  },
-    { key: 'adj', label: 'Adj.EPS', val: null,                      series: [],                       eta: false },
+    { key: 'gp',  label: '粗利益',  val: getLatest('GrossProfit'), series: getSeries('GrossProfit'), eta: false },
+    { key: 'oi',  label: '営業利益', val: null,                     series: [],                       eta: false },
+    { key: 'ni',  label: '純利益',   val: getLatest('NetIncome'),   series: getSeries('NetIncome'),   eta: true  },
+    { key: 'fcf', label: 'FCF',     val: fcfVal,                   series: fcfSeries,                eta: true  },
+    { key: 'adj', label: 'Adj.EPS', val: null,                     series: [],                       eta: false },
   ];
 
-  // 状態付与：achieved→target(最初の赤字)→pending の順
+  // 状態付与
   let targetFound = false;
   metrics.forEach(m => {
     if (m.val === null)  m.state = 'nodata';
@@ -717,50 +713,81 @@ function buildProfitPath(ticker, d) {
     else                 m.state = 'pending';
   });
 
-  const dotCol = { achieved: 'var(--grn)', target: '#a855f7', pending: 'var(--mut)', nodata: 'var(--bdr)' };
+  // スケール: ドル系は max abs値、EPS は固定1.5
+  const dollarAbsVals = metrics.filter(m => m.key !== 'adj' && m.val != null).map(m => Math.abs(m.val));
+  const scaleD   = dollarAbsVals.length ? Math.max(...dollarAbsVals) : 1;
+  const scaleEPS = 1.5;
 
-  const makeBar = v => {
-    if (v == null || !rev) return `<div class="profpath-bar"><div class="profpath-zero"></div></div>`;
-    const pct = Math.min(Math.abs(v) / rev, 1.0) * 50;
-    const fill = v >= 0
-      ? `<div class="profpath-fill" style="left:50%;width:${pct}%;background:var(--grn)30;border:1px solid var(--grn)55"></div>`
-      : `<div class="profpath-fill" style="right:50%;width:${pct}%;background:#f43f5e22;border:1px solid #f43f5e44"></div>`;
-    return `<div class="profpath-bar">${fill}<div class="profpath-zero"></div></div>`;
+  // ドット left% 計算
+  const dotLeft = (m) => {
+    if (m.val == null) return null;
+    const s = m.key === 'adj' ? scaleEPS : scaleD;
+    if (m.val >= 0) return Math.min(40 + m.val / s * 55, 94);
+    return Math.max(5, 40 - Math.abs(m.val) / s * 35);
   };
 
+  const dotCol = { achieved: 'var(--grn)', target: '#a855f7', pending: 'var(--mut)', nodata: 'transparent' };
+  const dotSz  = state => state === 'target' ? 18 : 10;
+
   const fmtV = (v, key) => {
-    if (v == null) return '—';
-    const sign = v >= 0 ? '+' : '';
-    if (key === 'adj') return sign + v.toFixed(2);
+    if (v == null) return null;
+    if (key === 'adj') return (v >= 0 ? '+' : '') + v.toFixed(2);
     const abs = Math.abs(v);
-    const s = abs >= 1e9 ? (abs/1e9).toFixed(1)+'B' : abs >= 1e6 ? (Math.round(abs/1e6))+'M' : abs.toFixed(0);
+    const s = abs >= 1e9 ? (abs/1e9).toFixed(1)+'B' : abs >= 1e6 ? Math.round(abs/1e6)+'M' : abs.toFixed(0);
     return (v < 0 ? '-' : '+') + s;
   };
 
-  const etaPill = m => {
+  const etaPillHtml = m => {
     if (!m.eta || m.state !== 'target') return '';
     const e = calcEtaInfo(m.series);
-    if (e.type === 'insufficient') return `<span class="profpath-pill" style="background:rgba(100,116,139,.12);color:var(--mut)">データ不足</span>`;
-    if (e.type === 'no_trend')     return `<span class="profpath-pill" style="background:rgba(244,63,94,.08);color:var(--mut)">改善トレンドなし</span>`;
-    return `<span class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${e.opt}〜${e.pes}ヶ月</span>`;
+    if (e.type === 'insufficient') return `<div class="profpath-pill" style="background:rgba(100,116,139,.12);color:var(--mut)">データ不足</div>`;
+    if (e.type === 'no_trend')     return `<div class="profpath-pill" style="background:rgba(244,63,94,.08);color:var(--mut)">改善トレンドなし</div>`;
+    return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${e.opt}〜${e.pes}ヶ月</div>`;
   };
 
+  let firstRow = true;
   const rows = metrics.map(m => {
-    const dim = m.state === 'achieved' ? 'opacity:.45' : m.state === 'pending' ? 'opacity:.35' : '';
-    const valCol = m.val == null ? 'var(--mut)' : m.val >= 0 ? 'var(--grn)' : m.state === 'target' ? '#a855f7' : 'var(--mut)';
-    const adjId = m.key === 'adj' ? ` id="profpath-adj-${ticker}"` : '';
-    return `<div class="profpath-row" style="${dim}"${adjId}>
+    const isTarget = m.state === 'target';
+    const left     = dotLeft(m);
+    const sz       = dotSz(m.state);
+    const valStr   = fmtV(m.val, m.key);
+    const valCol   = m.val == null ? 'var(--mut)' : m.val >= 0 ? 'var(--grn)' : isTarget ? '#a855f7' : 'var(--mut)';
+    const rowOpacity = m.state === 'achieved' ? 'opacity:.42' : m.state === 'pending' ? 'opacity:.3' : '';
+    const rowBg    = isTarget ? ';background:rgba(168,85,247,.04);border-radius:4px' : '';
+    const adjId    = m.key === 'adj' ? ` id="profpath-adj-${ticker}"` : '';
+
+    // ゼロラインラベル（最初の行のみ）
+    const zeroLbl  = firstRow
+      ? `<span style="position:absolute;top:2px;left:40%;transform:translateX(-50%);font-size:8px;color:#E24B4A99;font-family:var(--mono)">0</span>`
+      : '';
+    if (firstRow) firstRow = false;
+
+    // ドット & 値ラベル
+    const dotHtml = left != null
+      ? `<div class="profpath-dot" style="left:${left.toFixed(1)}%;width:${sz}px;height:${sz}px;background:${dotCol[m.state]}${isTarget?';box-shadow:0 0 0 3px rgba(168,85,247,.18)':''}"></div>
+         <div class="profpath-dv${isTarget?' is-target':''}" style="left:${left.toFixed(1)}%;color:${valCol}">${valStr??'—'}</div>`
+      : `<div class="profpath-dv" style="left:40%;color:var(--mut)">—</div>`;
+
+    return `<div class="profpath-row" style="${rowOpacity}${rowBg}"${adjId}>
       <span class="profpath-label">${m.label}</span>
-      <span class="profpath-dot" style="background:${dotCol[m.state]}"></span>
-      ${makeBar(m.val)}
-      <span class="profpath-val" style="color:${valCol}">${fmtV(m.val, m.key)}</span>
-      <span class="profpath-eta">${etaPill(m)}</span>
+      <div class="profpath-track${isTarget?' is-target':''}">
+        <div class="profpath-zeroline">${zeroLbl}</div>
+        ${dotHtml}
+        ${etaPillHtml(m)}
+      </div>
     </div>`;
   }).join('');
 
   return `<div class="profpath">
     <div class="profpath-title">黒字化への道のり</div>
-    <div class="profpath-zone"><span>← 赤字ゾーン</span><span>黒字ゾーン →</span></div>
+    <div style="display:grid;grid-template-columns:64px 1fr;gap:0 8px;margin-bottom:3px">
+      <span></span>
+      <div style="position:relative;display:flex;justify-content:space-between">
+        <span style="font-size:9px;color:var(--mut)">← 赤字ゾーン</span>
+        <span style="font-size:9px;color:var(--mut)">黒字ゾーン →</span>
+        <span style="position:absolute;left:40%;transform:translateX(-50%);font-size:8px;color:#E24B4Acc">▼</span>
+      </div>
+    </div>
     ${rows}
   </div>`;
 }
