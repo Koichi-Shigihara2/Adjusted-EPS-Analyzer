@@ -705,6 +705,7 @@ function calcEtaInfo(seriesQ) {
   const wAvg = diffs.reduce((s, d, i) => s + d * w[i], 0) / tw;
   if (wAvg <= 0) return { type: 'no_trend' };
   const etaQ = Math.abs(latest) / wAvg;
+  if (etaQ < 1) return { type: 'imminent' };
   return { type: 'eta', opt: Math.round(etaQ * 3 * 0.7), pes: Math.round(etaQ * 3 * 1.3) };
 }
 
@@ -774,6 +775,7 @@ function buildProfitPath(ticker, d) {
     const e = calcEtaInfo(m.series);
     if (e.type === 'insufficient') return `<div class="profpath-pill" style="background:rgba(100,116,139,.12);color:var(--mut)">データ不足</div>`;
     if (e.type === 'no_trend')     return `<div class="profpath-pill" style="background:rgba(244,63,94,.08);color:var(--mut)">改善トレンドなし</div>`;
+    if (e.type === 'imminent')     return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">間近（1Q以内）</div>`;
     const median = Math.round((e.opt + e.pes) / 2);
     return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${median}ヶ月（楽観${e.opt}〜悲観${e.pes}）</div>`;
   };
