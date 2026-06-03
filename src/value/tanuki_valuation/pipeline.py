@@ -401,7 +401,8 @@ class TanukiValuationPipeline:
         _annual_revs = self._load_annual_revenues(ticker)
         _g_fund = self._calc_g_fundamental(ticker)
         _sector = self._load_beta_sector(ticker)
-        _hype_phase = self._load_hype_phase(ticker)  # GROWTH-1
+        _hype_info   = self._load_hype_info(ticker)      # GROWTH-1
+        _hype_phase  = _hype_info.get("phase")
         try:
             _growth_sanity = check_growth_sanity(
                 ticker=ticker,
@@ -410,7 +411,9 @@ class TanukiValuationPipeline:
                 annual_revenues=_annual_revs,
                 g_fundamental=_g_fund,
                 ttm_actual=_phase1_growth if _phase1_growth > 0 else None,
-                hype_phase=_hype_phase,  # GROWTH-1
+                hype_phase=_hype_phase,                           # GROWTH-1
+                hype_phase_label=_hype_info.get("stage_label"),
+                hype_substage_label=_hype_info.get("substage_label"),
             )
         except Exception as _e:
             import logging as _logging
@@ -1750,21 +1753,29 @@ class TanukiValuationPipeline:
 
     def _load_hype_phase(self, ticker: str) -> int | None:
         """poc.json から最新の HypeCore フェーズ（1〜4）を返す（GROWTH-1）"""
+        return self._load_hype_info(ticker).get("phase")
+
+    def _load_hype_info(self, ticker: str) -> dict:
+        """poc.json から最新フェーズ・stage_label・substage_label を返す"""
         poc_path = os.path.join(
             self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
         )
         if not os.path.exists(poc_path):
-            return None
+            return {}
         try:
             with open(poc_path, encoding="utf-8") as f:
                 monthly = json.load(f).get("monthly") or []
             if monthly:
-                stage = monthly[-1].get("stage")
-                if isinstance(stage, int) and 1 <= stage <= 4:
-                    return stage
+                last = monthly[-1]
+                stage = last.get("stage")
+                return {
+                    "phase":          stage if isinstance(stage, int) and 1 <= stage <= 4 else None,
+                    "stage_label":    last.get("stage_label"),
+                    "substage_label": last.get("substage_label"),
+                }
         except Exception:
             pass
-        return None
+        return {}
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""

@@ -154,6 +154,14 @@ SECTOR_TO_DAMODARAN = {
 
 # 銘柄個別の Damodaran 分類上書き
 # indname.xls で実際に確認したマッピング（SICベース分類が実態と乖離する場合）
+_PHASE_LABELS: dict[int, str] = {
+    0: "失望/蓄積期",
+    1: "期待覚醒期",
+    2: "期待拡大期",
+    3: "陶酔期",
+    4: "期待剥落期",
+}
+
 TICKER_INDUSTRY_OVERRIDES = {
     # SICベース分類が実態と乖離 → 実態に近い業種に上書き
     "APP":   "Software (System & Application)",   # SIC→Retail(General) を上書き
@@ -352,7 +360,9 @@ def check_growth_sanity(
     annual_revenues: list[float] | None = None,
     g_fundamental: float | None = None,
     ttm_actual: float | None = None,  # TTM Revenue YoY (decimal) from STONKS/SEC
-    hype_phase: int | None = None,    # GROWTH-1: HypeCoreフェーズ（1〜4）
+    hype_phase: int | None = None,         # GROWTH-1: HypeCoreフェーズ（1〜4）
+    hype_phase_label: str | None = None,   # poc.json の stage_label
+    hype_substage_label: str | None = None, # poc.json の substage_label
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
@@ -524,6 +534,8 @@ def check_growth_sanity(
         "growth_model": growth_model,
         "growth_model_reason": growth_model_reason,
         "hype_phase_used": hype_phase,
+        "hype_phase_label": hype_phase_label or (_PHASE_LABELS.get(hype_phase) if hype_phase is not None else None),
+        "hype_substage_label": hype_substage_label,
         "signals": signals,
         "warnings": warnings,
     }
