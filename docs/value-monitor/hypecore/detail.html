@@ -394,7 +394,7 @@ async function loadTicker(ticker,btn){
   try{
     const r=await fetch(`data/${ticker}_poc.json`);
     let tanukiLatest=null;
-    try{const tr=await fetch(`../../tanuki_valuation/data/${ticker}/latest.json`,{cache:'no-store'});if(tr.ok)tanukiLatest=await tr.json();}catch(e){}
+    try{const tr=await fetch(`../tanuki_valuation/data/${ticker}/latest.json`,{cache:'no-store'});if(tr.ok)tanukiLatest=await tr.json();}catch(e){}
     render(await r.json(),ticker,tanukiLatest);
   }catch(e){console.error(e);}
 }
@@ -617,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!r.ok) throw new Error(`${_ticker} のデータが見つかりません`);
     let tanukiLatest = null;
     try {
-      const tr = await fetch(`../../tanuki_valuation/data/${_ticker}/latest.json`, {cache:'no-store'});
+      const tr = await fetch(`../tanuki_valuation/data/${_ticker}/latest.json`, {cache:'no-store'});
       if (tr.ok) tanukiLatest = await tr.json();
     } catch(e) {}
     render(await r.json(), _ticker, tanukiLatest);
