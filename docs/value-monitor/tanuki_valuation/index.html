@@ -122,37 +122,6 @@
     .loading{display:inline-block;width:14px;height:14px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
 
-    /* ── HYPEMIX ── */
-    .hm-card{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:24px;margin-top:0}
-    .hm-subtitle{color:var(--mut);font-size:13px;margin-bottom:18px;line-height:1.6}
-    .hm-sec-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;margin:18px 0 8px;border-left:2px solid var(--acc);padding-left:8px}
-    .hm-bar{height:28px;display:flex;border-radius:4px;overflow:hidden;margin-bottom:8px;background:var(--sur2)}
-    .hm-bar-seg{height:100%;transition:width .6s ease}
-    .hm-legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:4px}
-    .hm-legend-item{display:flex;align-items:center;gap:5px;font-size:12px}
-    .hm-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block}
-    .hm-count{font-family:var(--mono);font-size:11px;margin-left:2px}
-    .hm-dev-grid{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
-    .hm-dev-row{display:grid;grid-template-columns:130px 1fr 52px;gap:10px;align-items:center}
-    .hm-dev-phase{display:flex;align-items:center;gap:6px;font-size:12px}
-    .hm-dev-bars{display:flex;flex-direction:column;gap:3px}
-    .hm-dev-bar-bg{height:15px;background:var(--sur2);border-radius:2px;overflow:hidden;display:flex;align-items:center}
-    .hm-dev-bar-fill{height:100%;display:flex;align-items:center;padding-left:4px;border-radius:2px;min-width:2px;white-space:nowrap}
-    .hm-dev-delta{font-family:var(--mono);font-size:12px;font-weight:700;text-align:right}
-    .hm-suggestions{display:flex;flex-direction:column;gap:6px;margin-bottom:4px}
-    .hm-suggestion{padding:8px 12px;border-radius:4px;font-size:13px;line-height:1.6;border-left:3px solid var(--bdr)}
-    .hm-sug-warn{background:rgba(244,63,94,.07);border-left-color:var(--red)}
-    .hm-sug-info{background:rgba(59,130,246,.07);border-left-color:var(--acc)}
-    .hm-sug-ok{background:rgba(16,185,129,.07);border-left-color:var(--grn)}
-    .hm-table-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:4px;max-height:380px;overflow-y:auto}
-    .hm-table{width:100%;border-collapse:collapse;font-size:13px}
-    .hm-table thead th{background:var(--sur2);padding:7px 12px;text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--mut);position:sticky;top:0;border-bottom:1px solid var(--bdr)}
-    .hm-table tbody tr{border-bottom:1px solid rgba(30,40,64,.5)}
-    .hm-table tbody tr:last-child{border-bottom:none}
-    .hm-table tbody tr:hover{background:var(--sur2)}
-    .hm-table td{padding:6px 12px}
-    .hm-phase-badge{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
-
     #status-msg{text-align:center;padding:40px;color:var(--mut);font-size:13px}
 
     /* ── 判定実績 ── */
@@ -252,9 +221,6 @@
       </tbody>
     </table>
   </div>
-
-  <!-- ── HYPEMIX ── -->
-  <div id="hypemix-section" style="margin-top:32px"></div>
 
   <!-- ── 判定実績 ── -->
   <div id="score-verify-section" style="margin-top:32px"></div>
@@ -621,7 +587,6 @@ async function loadTickers() {
   sortRows();
   renderTable();
   updateSortHeaders();
-  renderHypemix(valid);
   const tickers = valid.map(r => r.ticker);
   loadScoreHistory(tickers).then(renderScoreVerify);
 
@@ -737,138 +702,6 @@ function renderScoreVerify(allEntries) {
         <table class="sv-table">
           <thead><tr><th>銘柄</th><th>判定日</th><th>判定</th><th>判定時株価</th><th>30日後</th><th>60日後</th></tr></thead>
           <tbody>${recentRows || noData}</tbody>
-        </table>
-      </div>
-    </div>`;
-}
-
-// ── HYPEMIX ──
-function renderHypemix(results) {
-  const el = document.getElementById('hypemix-section');
-  if (!el) return;
-
-  const PHASES = [
-    { num: 1, label: '黎明期', color: '#3b82f6', target: 0.20 },
-    { num: 2, label: '拡大期', color: '#10b981', target: 0.40 },
-    { num: 3, label: '陶酔期', color: '#f59e0b', target: 0.30 },
-    { num: 4, label: '剥落期', color: '#f43f5e', target: 0.10 },
-  ];
-
-  // Phase → ticker のマッピング
-  const phaseTickers = { 1: [], 2: [], 3: [], 4: [] };
-  for (const r of results) {
-    const phase = r.data?.growth_sanity?.hype_phase_used;
-    if (phase && phaseTickers[phase]) phaseTickers[phase].push(r.ticker);
-  }
-  const total = PHASES.reduce((s, p) => s + phaseTickers[p.num].length, 0);
-  if (total === 0) { el.innerHTML = ''; return; }
-
-  // ① フェーズ分布バー
-  const barHTML = PHASES.map(p => {
-    const n = phaseTickers[p.num].length;
-    if (n === 0) return '';
-    const pct = (n / total * 100).toFixed(1);
-    return `<div class="hm-bar-seg" style="width:${pct}%;background:${p.color}" title="Phase${p.num} ${p.label}: ${n}銘柄 (${pct}%)"></div>`;
-  }).join('');
-
-  const legendHTML = PHASES.map(p => {
-    const n = phaseTickers[p.num].length;
-    const pct = (n / total * 100).toFixed(0);
-    return `<div class="hm-legend-item">
-      <span class="hm-dot" style="background:${p.color}"></span>
-      <span>Phase${p.num} ${p.label}</span>
-      <span class="hm-count">${n}銘柄 <span style="color:var(--mut)">(${pct}%)</span></span>
-    </div>`;
-  }).join('');
-
-  // ② 目標HYPEMIXとの乖離
-  const devHTML = PHASES.map(p => {
-    const n = phaseTickers[p.num].length;
-    const cur = n / total;
-    const dev = cur - p.target;
-    const devStr = (dev >= 0 ? '+' : '') + (dev * 100).toFixed(0) + 'pt';
-    const devColor = Math.abs(dev) > 0.10 ? (dev > 0 ? 'var(--red)' : 'var(--grn)') : 'var(--mut)';
-    return `<div class="hm-dev-row">
-      <div class="hm-dev-phase">
-        <span class="hm-dot" style="background:${p.color}"></span>
-        <span>P${p.num} ${p.label}</span>
-      </div>
-      <div class="hm-dev-bars">
-        <div class="hm-dev-bar-bg">
-          <div class="hm-dev-bar-fill" style="width:${(p.target*100).toFixed(0)}%;background:var(--bdr)">
-            <span style="font-size:9px;color:var(--mut)">目標${(p.target*100).toFixed(0)}%</span>
-          </div>
-        </div>
-        <div class="hm-dev-bar-bg">
-          <div class="hm-dev-bar-fill" style="width:${(cur*100).toFixed(0)}%;background:${p.color}60">
-            <span style="font-size:9px;color:var(--txt)">現在${(cur*100).toFixed(0)}%</span>
-          </div>
-        </div>
-      </div>
-      <div class="hm-dev-delta" style="color:${devColor}">${devStr}</div>
-    </div>`;
-  }).join('');
-
-  // ③ リバランス提案
-  const sugs = [];
-  for (const p of PHASES) {
-    const n = phaseTickers[p.num].length;
-    const cur = n / total;
-    const dev = cur - p.target;
-    if (dev > 0.10) {
-      const list = phaseTickers[p.num].slice(0, 12).join(' / ') + (phaseTickers[p.num].length > 12 ? '…' : '');
-      if (p.num === 4) {
-        sugs.push(`<div class="hm-suggestion hm-sug-warn">⚠ Phase4（剥落期）が目標比率を+${(dev*100).toFixed(0)}pt超過 — <strong>売り・ポジション縮小を検討</strong><br><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">${list}</span></div>`);
-      } else if (p.num === 3) {
-        sugs.push(`<div class="hm-suggestion hm-sug-warn">⚠ Phase3（陶酔期）が目標比率を+${(dev*100).toFixed(0)}pt超過 — <strong>利益確定・ポジション管理を強化</strong></div>`);
-      }
-    } else if (dev < -0.10) {
-      if (p.num === 1) {
-        sugs.push(`<div class="hm-suggestion hm-sug-info">◎ Phase1（黎明期）が目標比率を${(dev*100).toFixed(0)}pt下回る — <strong>未発掘銘柄の発掘を検討</strong>（DISCOVER を活用）</div>`);
-      } else if (p.num === 2) {
-        sugs.push(`<div class="hm-suggestion hm-sug-info">◎ Phase2（拡大期）が目標比率を${(dev*100).toFixed(0)}pt下回る — <strong>成長初期銘柄へのエントリーを検討</strong></div>`);
-      }
-    }
-  }
-  if (sugs.length === 0) {
-    sugs.push(`<div class="hm-suggestion hm-sug-ok">✓ 現在の配分は目標HYPEMIXに近い状態です（全フェーズ乖離 ±10pt以内）</div>`);
-  }
-
-  // ④ 銘柄フェーズ一覧（フェーズ順・各フェーズ内はticker昇順）
-  const tableRowsHTML = PHASES.flatMap(p =>
-    [...phaseTickers[p.num]].sort().map(ticker => {
-      const r = results.find(x => x.ticker === ticker);
-      const d = r?.data;
-      const upside = d?.upside_percent;
-      const ts = d?.tanuki_score;
-      const judgment = typeof ts === 'string' ? ts : (ts?.judgment ?? '—');
-      const uStr = upside != null ? `${upside >= 0 ? '+' : ''}${upside.toFixed(1)}%` : '—';
-      const uCol = upside != null ? (upside >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--mut)';
-      return `<tr>
-        <td style="font-family:var(--mono);font-weight:700"><a href="stock.html?ticker=${ticker}" style="color:var(--txt);text-decoration:none">${ticker}</a></td>
-        <td><span class="hm-phase-badge" style="background:${p.color}20;color:${p.color};border-color:${p.color}40">P${p.num} ${p.label}</span></td>
-        <td style="color:var(--mut);font-size:12px">${judgment}</td>
-        <td style="color:${uCol};font-family:var(--mono);font-size:12px">${uStr}</td>
-      </tr>`;
-    })
-  ).join('');
-
-  el.innerHTML = `
-    <h2 class="section-title">HYPEMIX — HypeCoreフェーズ分散管理</h2>
-    <div class="hm-card">
-      <div class="hm-subtitle">保有銘柄のHypeCoreフェーズを意図的に分散させ、全銘柄が同時に期待剥落期（Phase4）へ移行するリスクを管理する。目標配分: P1=20% / P2=40% / P3=30% / P4=10%</div>
-      <div class="hm-sec-lbl">① フェーズ分布（${total}銘柄）</div>
-      <div class="hm-bar">${barHTML}</div>
-      <div class="hm-legend">${legendHTML}</div>
-      <div class="hm-sec-lbl">② 目標HYPEMIXとの乖離</div>
-      <div class="hm-dev-grid">${devHTML}</div>
-      <div class="hm-sec-lbl">③ リバランス提案</div>
-      <div class="hm-suggestions">${sugs.join('')}</div>
-      <div class="hm-sec-lbl">④ 銘柄フェーズ一覧（フェーズ順）</div>
-      <div class="hm-table-wrap">
-        <table class="hm-table">
-          <thead><tr><th>銘柄</th><th>フェーズ</th><th>TANUKI判定</th><th>理論株価乖離率</th></tr></thead>
-          <tbody>${tableRowsHTML}</tbody>
         </table>
       </div>
     </div>`;
