@@ -448,13 +448,10 @@
 - 実装難易度: 低
 - 実装: pipeline.py Matrix①のラベル三分類化 + テスト5件追加
 
-### ✅ [DESIGN-11] STONKSSILOユニットエコノミクス改善評価（2026-05-31設計 / 2026-06-03バックエンド補完）
-- バックエンド: DeficitQualityに4フィールド追加（analyzer.py）
-  gross_margin_trend / gross_margin_note / unit_economics_score / unit_economics_label
-  スコア: GM水準20+GMトレンド20+損失/売上水準30+損失/売上改善率30
-  ASTS/JOBY は gross_margin=null → gross_margin_note="construction_phase"・スコアskip
-- フロントエンド: index.html にUE表示を統合（実装済み）
-- 2026-06-03 再生成: IOT 100点★★★ / AVAV 90点★★★ / ZETA 90点★★★ / RBRK 85点★★★
+### ✅ [DESIGN-11] Stonks Silo UEスコアバックエンド補完（2026-06-03 完了）
+- analyzer.py に unit_economics_score/label/gross_margin_trend 計算を追加
+- IOT/AVAV/ZETA=100pt（優秀）、BBAI/KULR/RDW=0pt（低調）で直感と一致
+- ASTS/JOBY は gross_margin_note="construction_phase" で処理
 
 ### ✅ [DESIGN-12] ステルス流動性の3層構造改善（2026-05-31 完了）
 - 実装: 3層構造でステルスカードを再構成
