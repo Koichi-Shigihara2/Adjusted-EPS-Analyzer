@@ -381,7 +381,11 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
     # .info（現時点値）
     info = fetch_info_snapshot(ticker)
-    print(f"  .info: ForwardPE={info.get('forward_pe'):.1f} PEG={info.get('peg_ratio')} "
+    _fpe = info.get('forward_pe')
+    print(f"  .info: ForwardPE={_fpe:.1f} PEG={info.get('peg_ratio')} "
+          f"RevGrowth={info.get('revenue_growth')}"
+          if _fpe is not None else
+          f"  .info: ForwardPE=N/A PEG={info.get('peg_ratio')} "
           f"RevGrowth={info.get('revenue_growth')}")
 
     # 結合
