@@ -167,12 +167,36 @@ python src/value/tanuki_valuation/pipeline.py [TICKER]
 
 # Step 4: データ品質確認（β設定含む）
 python common/sec_data/audit.py [TICKER] --check-beta
+
+# Step 5: HypeCore 実行
+python src/value/hypecore/hypecore.py --batch [TICKER]
+# 失敗した場合はログを確認。データ不足銘柄（上場直後等）は失敗することがある。
+
+# Step 6: Discover 監視リストに追加
+python3 -c "
+import json, shutil
+from datetime import date
+ticker = '[TICKER]'
+with open('config/discover_config.json', encoding='utf-8') as f:
+    config = json.load(f)
+if ticker not in config.get('tickers', {}):
+    config['tickers'][ticker] = {'category': '監視中', 'memo': '', 'themes': []}
+    config['last_updated'] = str(date.today())
+    with open('config/discover_config.json', 'w', encoding='utf-8') as f:
+        json.dump(config, f, ensure_ascii=False, indent=2)
+    shutil.copy('config/discover_config.json', 'docs/portfolio/data/discover_config.json')
+    print(f'{ticker} をDiscover監視リストに追加しました')
+else:
+    print(f'{ticker} はすでに登録済みです')
+"
 ```
 
 **注意事項：**
 - Step 2 を忘れると β=未設定のまま yfinance の raw 値が使われる
 - 異常値が疑われる場合は `--dry-run` で差分確認してから適用
 - LMT 等 Damodaran 手動設定銘柄は `beta_fetcher.py` の `DAMODARAN_OVERRIDES` に追加
+- Step 5 HypeCore は yfinance 依存。KULR 等データ不足銘柄は失敗するが無視してよい
+- Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
 
 ---
 

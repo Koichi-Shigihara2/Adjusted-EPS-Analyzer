@@ -1,55 +1,433 @@
 {
-  "last_updated": "2026-05-31",
+  "last_updated": "2026-06-03",
   "tickers": {
-    "NVDA": {"category": "保有中",  "memo": "", "themes": ["ai_infra"]},
-    "PLTR": {"category": "保有中",  "memo": "", "themes": ["ai_infra"]},
-    "AAPL": {"category": "監視中",  "memo": "", "themes": []},
-    "MSFT": {"category": "監視中",  "memo": "", "themes": []},
-    "GOOGL":{"category": "監視中",  "memo": "", "themes": []},
-    "META": {"category": "監視中",  "memo": "", "themes": []},
-    "AMZN": {"category": "監視中",  "memo": "", "themes": []},
-    "TSLA": {"category": "保有中",  "memo": "", "themes": ["other"]},
-    "CELH": {"category": "保有中",  "memo": "", "themes": ["consumer"]},
-    "ALAB": {"category": "監視中",  "memo": "", "themes": ["ai_infra"]},
-    "AMAT": {"category": "監視中",  "memo": "", "themes": ["ai_infra"]},
-    "AMD":  {"category": "監視中",  "memo": "", "themes": ["ai_infra"]},
-    "APP":  {"category": "保有中",  "memo": "", "themes": ["ai_infra"]},
-    "ASTS": {"category": "監視中",  "memo": "", "themes": []},
-    "AVAV": {"category": "監視中",  "memo": "", "themes": ["defense"]},
-    "BBAI": {"category": "休眠",    "memo": "", "themes": []},
-    "BSY":  {"category": "監視中",  "memo": "", "themes": []},
-    "CAKE": {"category": "監視中",  "memo": "", "themes": []},
-    "CART": {"category": "監視中",  "memo": "", "themes": []},
-    "CEG":  {"category": "監視中",  "memo": "", "themes": ["energy"]},
-    "COHR": {"category": "監視中",  "memo": "", "themes": ["ai_infra"]},
-    "CRM":  {"category": "監視中",  "memo": "", "themes": []},
-    "CRWV": {"category": "保有中",  "memo": "", "themes": ["ai_infra"]},
-    "CWAN": {"category": "監視中",  "memo": "", "themes": []},
-    "ELF":  {"category": "監視中",  "memo": "", "themes": []},
-    "GTLB": {"category": "監視中",  "memo": "", "themes": []},
-    "IONQ": {"category": "監視中",  "memo": "", "themes": ["quantum"]},
-    "IOT":  {"category": "監視中",  "memo": "", "themes": []},
-    "JOBY": {"category": "監視中",  "memo": "", "themes": []},
-    "KO":   {"category": "監視中",  "memo": "", "themes": []},
-    "LITE": {"category": "監視中",  "memo": "", "themes": []},
-    "LLY":  {"category": "監視中",  "memo": "", "themes": ["biotech"]},
-    "LMT":  {"category": "監視中",  "memo": "", "themes": ["defense"]},
-    "MRVL": {"category": "監視中",  "memo": "", "themes": ["ai_infra"]},
-    "NOW":  {"category": "監視中",  "memo": "", "themes": []},
-    "ONDS": {"category": "監視中",  "memo": "", "themes": []},
-    "QBTS": {"category": "監視中",  "memo": "", "themes": ["quantum"]},
-    "RBRK": {"category": "監視中",  "memo": "", "themes": []},
-    "RCAT": {"category": "監視中",  "memo": "", "themes": []},
-    "RDW":  {"category": "監視中",  "memo": "", "themes": []},
-    "RKLB": {"category": "監視中",  "memo": "", "themes": ["defense"]},
-    "RXRX": {"category": "監視中",  "memo": "", "themes": ["biotech"]},
-    "S":    {"category": "監視中",  "memo": "", "themes": []},
-    "SITM": {"category": "監視中",  "memo": "", "themes": []},
-    "SOFI": {"category": "保有中",  "memo": "", "themes": ["fintech"]},
-    "SOUN": {"category": "保有中",  "memo": "", "themes": ["ai_infra"]},
-    "SPIR": {"category": "監視中",  "memo": "", "themes": []},
-    "VRT":  {"category": "監視中",  "memo": "", "themes": []},
-    "ZETA": {"category": "監視中",  "memo": "", "themes": []}
+    "NVDA": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "PLTR": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "AAPL": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "MSFT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "GOOGL": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "META": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "AMZN": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "TSLA": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "other"
+      ]
+    },
+    "CELH": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "consumer"
+      ]
+    },
+    "ALAB": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "AMAT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "AMD": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "APP": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "ASTS": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "AVAV": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "defense"
+      ]
+    },
+    "BBAI": {
+      "category": "休眠",
+      "memo": "",
+      "themes": []
+    },
+    "BSY": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CAKE": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CART": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CEG": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "energy"
+      ]
+    },
+    "COHR": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "CRM": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CRWV": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "CWAN": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ELF": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "GTLB": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "IONQ": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "quantum"
+      ]
+    },
+    "IOT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "JOBY": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "KO": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "LITE": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "LLY": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "biotech"
+      ]
+    },
+    "LMT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "defense"
+      ]
+    },
+    "MRVL": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "NOW": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ONDS": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "QBTS": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "quantum"
+      ]
+    },
+    "RBRK": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "RCAT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "RDW": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "RKLB": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "defense"
+      ]
+    },
+    "RXRX": {
+      "category": "監視中",
+      "memo": "",
+      "themes": [
+        "biotech"
+      ]
+    },
+    "S": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "SITM": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "SOFI": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "fintech"
+      ]
+    },
+    "SOUN": {
+      "category": "保有中",
+      "memo": "",
+      "themes": [
+        "ai_infra"
+      ]
+    },
+    "SPIR": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "VRT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ZETA": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CIX": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "DDOG": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ESTC": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "NET": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ADBE": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "BKNG": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "AVGO": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "ADSK": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CDNS": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "PAYS": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "INTU": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "HEI": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "HWM": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "HON": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "TDY": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "KULR": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "VST": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "SCCO": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "FCX": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "V": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "CPRT": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "MSCI": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "FICO": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "HQY": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "DOCN": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "FRSH": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "TASK": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    },
+    "FOUR": {
+      "category": "監視中",
+      "memo": "",
+      "themes": []
+    }
   },
   "candidates": []
 }
