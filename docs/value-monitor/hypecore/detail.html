@@ -533,15 +533,31 @@ function render(data,ticker,tanukiLatest){
 function renderValMultiples(lat, comps) {
   const panel = document.getElementById('valMultiples');
   if (!panel) return;
-  // latest.json優先、なければpoc.jsonのフィールドで補完
-  const per    = comps?.per      ?? null;
-  const peg    = comps?.peg      ?? lat.peg_ratio ?? null;
-  const ps     = comps?.ps       ?? lat.psr ?? null;
-  const evEb   = comps?.ev_ebitda ?? null;
-  if (per === null && peg === null && ps === null && evEb === null) {
+
+  // 2-A: latest.jsonが未取得の場合でもセクションを表示（ローディング表示）
+  if (comps === null) {
+    panel.innerHTML = `<div style="font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);margin-bottom:8px">EXPECTATION PREMIUM INDICATORS</div>
+      <div style="font-family:var(--mono);font-size:12px;color:var(--mut)">TANUKIデータ読込中...</div>`;
+    panel.style.display = 'block';
+    return;
+  }
+
+  // 2-C: latest.json優先、なければpoc.jsonのev_ebitdaでフォールバック（正値のみ）
+  const per        = comps?.per      ?? null;
+  const perIsFwd   = comps?.per_is_forward ?? false;  // 2-D: trailing/forward判別
+  const peg        = comps?.peg      ?? lat.peg_ratio ?? null;
+  const ps         = comps?.ps       ?? lat.psr ?? null;
+  const evEbRaw    = comps?.ev_ebitda ?? (lat.ev_ebitda != null && lat.ev_ebitda > 0 ? lat.ev_ebitda : null);
+  // 2-E: 負のEV/EBITDAは表示しない（EBITDA<0は意味をなさない）
+  const evEb       = (evEbRaw != null && evEbRaw > 0) ? evEbRaw : null;
+  // 2-E: 負のPERは「—」で表示（赤字銘柄のtrailing PE）
+  const perDisplay = (per !== null && per > 0) ? per : null;
+
+  if (perDisplay === null && peg === null && ps === null && evEb === null) {
     panel.style.display = 'none'; return;
   }
-  const fv = (v, dec, u) => v !== null ? `${v.toFixed(dec)}${u}` : '<span style="color:var(--mut)">N/A</span>';
+
+  const fv = (v, dec, u) => v !== null ? `${v.toFixed(dec)}${u}` : '<span style="color:var(--mut)">—</span>';
   const pegColor = peg === null ? 'var(--txt)' : peg < 1 ? 'var(--grn)' : peg > 2 ? 'var(--red)' : 'var(--txt)';
   const psColor  = ps  === null ? 'var(--txt)' : ps  > 20 ? 'var(--red)' : ps < 5  ? 'var(--grn)' : 'var(--txt)';
   const signals = [];
@@ -552,12 +568,14 @@ function renderValMultiples(lat, comps) {
   }
   if (ps !== null && ps > 20) signals.push(`<span style="color:var(--red)">✗ PS&gt;20：売上対比で高水準の期待が織り込まれている</span>`);
   else if (ps !== null && ps < 5) signals.push(`<span style="color:var(--grn)">✓ PS&lt;5：売上対比で低水準</span>`);
+  // 2-D: trailing/forward表示分け
+  const perLabel = perIsFwd ? 'FwdPE' : 'PER';
   panel.innerHTML = `
     <div style="font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:var(--mut);margin-bottom:12px">EXPECTATION PREMIUM INDICATORS</div>
     <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px 32px;margin-bottom:12px">
       <div style="display:flex;justify-content:space-between;align-items:baseline">
-        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">PER</span>
-        <span style="font-family:var(--mono);font-size:18px;font-weight:700">${fv(per,1,'x')}</span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">${perLabel}${perIsFwd ? ' <span style="font-size:9px;color:var(--acc)">(Fwd)</span>' : ''}</span>
+        <span style="font-family:var(--mono);font-size:18px;font-weight:700">${fv(perDisplay,1,'x')}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:baseline">
         <span style="font-family:var(--mono);font-size:12px;color:var(--mut)">PS</span>

@@ -121,6 +121,7 @@ def fetch_info_snapshot(ticker: str) -> dict:
         "volume_vs_avg":      cur_vol / avg_vol if avg_vol else None,
         "market_cap":         info.get("marketCap"),
         "shares":             info.get("sharesOutstanding"),
+        "ev_ebitda":          info.get("enterpriseToEbitda"),  # 負値も格納（UIで変換）
     }
 
 
@@ -407,7 +408,7 @@ def compute_scores(ticker: str) -> pd.DataFrame:
     today_ts = pd.Timestamp(date.today()).to_period("M").to_timestamp()
     for key in ["forward_pe", "peg_ratio", "revenue_growth", "earnings_growth",
                 "recommendation_mean", "short_pct_float", "volume_vs_avg",
-                "gross_margins", "psr"]:
+                "gross_margins", "psr", "ev_ebitda"]:
         df[key] = np.nan
         if today_ts in df.index:
             df.loc[today_ts, key] = info.get(key)
@@ -885,6 +886,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
             "momentum_score":     safe(row.get("momentum_score")),
             # IV
             "price_iv_ratio":     safe(row.get("price_iv_ratio")),
+            "ev_ebitda":          safe(row.get("ev_ebitda")),   # 負値も格納（UIで変換）
             # 低ベース効果: 前年rev_yoy<-10% かつ 今年rev_yoy>50%
             "low_base_effect":    bool(row.get("low_base_effect", False)),
         })

@@ -782,6 +782,7 @@ class KoichiValuationCalculator:
                 "growth_option_pv": growth_option_pv,
                 "alpha_uncapped": alpha_result.alpha_uncapped,
                 "per": financials.get("per"),
+                "per_is_forward": financials.get("per_is_forward", False),
                 "per_adjusted": _calc_adjusted_per(
                     ticker=ticker,
                     current_price=financials.get("current_price", 0),

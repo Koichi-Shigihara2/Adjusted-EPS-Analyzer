@@ -347,9 +347,16 @@ class TanukiDataFetcher:
 
 
                 # PER（株価収益率）
-                per = info.get("trailingPE") or info.get("forwardPE") or None
+                _trailing_pe = info.get("trailingPE")
+                _forward_pe  = info.get("forwardPE")
+                per = _trailing_pe or _forward_pe or None
+                per_is_forward = (
+                    (_trailing_pe is None or _trailing_pe <= 0)
+                    and _forward_pe is not None and _forward_pe > 0
+                )
                 if per is not None and per > 0:
-                    print(f"   [{ticker}] yfinance PER: {per:.1f}")
+                    _pe_src = "Fwd" if per_is_forward else "Trailing"
+                    print(f"   [{ticker}] yfinance PER({_pe_src}): {per:.1f}")
 
                 # PEG（成長調整PER）
                 peg_raw = info.get("pegRatio") or None
@@ -450,6 +457,7 @@ class TanukiDataFetcher:
             "sector": sector,
             "industry": industry,
             "per": per,
+            "per_is_forward": per_is_forward,
             "peg": peg,
             "ps": ps,
             "ev_ebitda": ev_ebitda,
