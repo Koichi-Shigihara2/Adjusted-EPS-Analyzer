@@ -12,7 +12,7 @@ import sys
 import os
 import json
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, PropertyMock
 
 # ─────────────────────────────────────────────
 # sys.path 設定と依存モジュールのスタブ化
@@ -1091,3 +1091,81 @@ class TestTerminalGrowthBySector:
         # tv_g が高いほど分子(wacc - tv_g)が小さくなり required_fcf5 が小さくなる
         # → 必要成長率は低下する
         assert req_35 < req_30, "tv_g=3.5% のとき required_growth は tv_g=3.0% より低いはず"
+
+
+# ─────────────────────────────────────────────────────────────────
+# safe_yf_utils テスト
+# ─────────────────────────────────────────────────────────────────
+_REPO_ROOT_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+if _REPO_ROOT_DIR not in sys.path:
+    sys.path.insert(0, _REPO_ROOT_DIR)
+
+from common.yfinance_utils import safe_yf_ticker, safe_yf_history
+
+
+class TestSafeYfTicker:
+    def test_returns_none_on_network_failure(self):
+        """fast_info アクセスで例外が出たとき None を返す"""
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls:
+            mock_instance = MagicMock()
+            type(mock_instance).fast_info = PropertyMock(
+                side_effect=Exception("network error")
+            )
+            mock_cls.return_value = mock_instance
+            result = safe_yf_ticker("AAPL", retries=0, wait=0)
+            assert result is None
+
+    def test_returns_ticker_on_success(self):
+        """fast_info が正常に返ったとき Ticker オブジェクトを返す"""
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls:
+            mock_instance = MagicMock()
+            # fast_info は例外を出さない（MagicMock デフォルト）
+            mock_cls.return_value = mock_instance
+            result = safe_yf_ticker("AAPL", retries=0, wait=0)
+            assert result is mock_instance
+
+    def test_retries_on_failure(self):
+        """retries=1 のとき sleep が1回呼ばれる（リトライ発生の証拠）"""
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls, \
+             patch("common.yfinance_utils.time.sleep") as mock_sleep:
+            mock_instance = MagicMock()
+            type(mock_instance).fast_info = PropertyMock(
+                side_effect=Exception("flaky")
+            )
+            mock_cls.return_value = mock_instance
+            result = safe_yf_ticker("AAPL", retries=1, wait=0)
+        assert result is None
+        assert mock_sleep.call_count == 1  # retries=1 → 1回スリープ
+
+
+class TestSafeYfHistory:
+    def test_returns_empty_df_on_failure(self):
+        """例外が出たとき空 DataFrame を返す"""
+        import pandas as pd
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls:
+            mock_cls.return_value.history.side_effect = Exception("timeout")
+            result = safe_yf_history("AAPL", period="5d", retries=0)
+            assert isinstance(result, pd.DataFrame)
+            assert result.empty
+
+    def test_returns_data_on_success(self):
+        """正常時は DataFrame を返す"""
+        import pandas as pd
+        fake_df = pd.DataFrame({"Close": [100.0, 101.0]})
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls:
+            mock_cls.return_value.history.return_value = fake_df
+            result = safe_yf_history("AAPL", period="5d", retries=0)
+            assert not result.empty
+            assert "Close" in result.columns
+
+    def test_accepts_start_end_kwargs(self):
+        """start/end キーワード引数を history に渡せる"""
+        import pandas as pd
+        fake_df = pd.DataFrame({"Close": [150.0]})
+        with patch("common.yfinance_utils.yf.Ticker") as mock_cls:
+            mock_cls.return_value.history.return_value = fake_df
+            result = safe_yf_history("AAPL", period=None, start="2026-01-01", end="2026-01-05", retries=0)
+            mock_cls.return_value.history.assert_called_once_with(
+                period=None, start="2026-01-01", end="2026-01-05"
+            )
+            assert not result.empty

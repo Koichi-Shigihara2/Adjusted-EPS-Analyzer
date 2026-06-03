@@ -36,6 +36,17 @@ REPO_ROOT   = Path(__file__).resolve().parents[3]
 CONFIG_PATH = REPO_ROOT / "config" / "beta_config.json"
 DATA_DIR    = REPO_ROOT / "docs" / "value-monitor" / "tanuki_valuation" / "data"
 
+# common/ を import できるように repo root を sys.path に追加
+_repo_str = str(REPO_ROOT)
+if _repo_str not in sys.path:
+    sys.path.insert(0, _repo_str)
+
+try:
+    from common.yfinance_utils import safe_yf_ticker as _safe_yf_ticker
+    _USE_SAFE_YF = True
+except ImportError:
+    _USE_SAFE_YF = False
+
 BETA_CAP    = 2.5
 BETA_FLOOR  = 0.3
 DRIFT_WARN  = 0.5   # この差分以上で「大きな乖離」と判定
@@ -70,7 +81,16 @@ def get_registered_tickers() -> list[str]:
 
 
 def fetch_yfinance_beta(ticker: str) -> Optional[float]:
-    """yfinance から5年βを取得する。失敗時は None を返す。"""
+    """yfinance から5年βを取得する。失敗時は None を返す。リトライあり。"""
+    if _USE_SAFE_YF:
+        t = _safe_yf_ticker(ticker)
+        if t is None:
+            return None
+        try:
+            return t.info.get("beta")
+        except Exception as e:
+            print(f"  [{ticker}] yfinance info取得エラー: {e}", file=sys.stderr)
+            return None
     try:
         import yfinance as yf
         info = yf.Ticker(ticker).info

@@ -23,16 +23,34 @@ def _data_dir() -> str:
     return os.path.join(_repo_root(), "docs", "value-monitor", "tanuki_valuation", "data")
 
 
+# common/ を import できるように repo root を sys.path に追加
+_repo = _repo_root()
+if _repo not in sys.path:
+    sys.path.insert(0, _repo)
+
+try:
+    from common.yfinance_utils import safe_yf_history as _safe_yf_history
+    _USE_SAFE_YF = True
+except ImportError:
+    _USE_SAFE_YF = False
+
+
 def fetch_price_after(ticker: str, base_date: str, days: int) -> float | None:
     """base_date から days 日後の終値を返す。未経過 or 取得失敗なら None。"""
     try:
-        import yfinance as yf
-        base = datetime.strptime(base_date, "%Y-%m-%d").date()
+        base   = datetime.strptime(base_date, "%Y-%m-%d").date()
         target = base + timedelta(days=days)
         if target > dt_date.today():
             return None
         end = target + timedelta(days=5)
-        hist = yf.Ticker(ticker).history(start=target.isoformat(), end=end.isoformat())
+        if _USE_SAFE_YF:
+            hist = _safe_yf_history(
+                ticker, period=None,
+                start=target.isoformat(), end=end.isoformat(),
+            )
+        else:
+            import yfinance as yf
+            hist = yf.Ticker(ticker).history(start=target.isoformat(), end=end.isoformat())
         if hist.empty:
             return None
         return float(hist["Close"].iloc[0])
