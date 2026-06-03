@@ -235,6 +235,67 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 
 ---
 
+## 銘柄削除時の必須手順
+
+### 削除対象の判断基準
+- 投資対象として見込みがなくなった銘柄
+- 上場廃止・買収・合併により追跡不要になった銘柄
+- リポジトリサイズ管理のため（目安：100銘柄を超えたら低優先銘柄を削除）
+
+### 削除手順
+
+```bash
+# Step 1: 削除対象を確認
+grep [TICKER] config/cik_lookup.csv
+grep [TICKER] config/discover_config.json
+
+# Step 2: 設定ファイルから削除
+# cik_lookup.csv から該当行を削除
+grep -v "^[TICKER]," config/cik_lookup.csv > /tmp/cik_tmp.csv
+mv /tmp/cik_tmp.csv config/cik_lookup.csv
+
+# beta_config.json から削除
+python3 -c "
+import json
+with open('config/beta_config.json') as f:
+    d = json.load(f)
+d.get('overrides', {}).pop('[TICKER]', None)
+with open('config/beta_config.json', 'w') as f:
+    json.dump(d, f, indent=2)
+"
+
+# discover_config.json から削除
+python3 -c "
+import json, shutil
+with open('config/discover_config.json') as f:
+    d = json.load(f)
+d['tickers'] = {k: v for k, v in d['tickers'].items() if k != '[TICKER]'}
+with open('config/discover_config.json', 'w', encoding='utf-8') as f:
+    json.dump(d, f, ensure_ascii=False, indent=2)
+shutil.copy('config/discover_config.json',
+            'docs/portfolio/data/discover_config.json')
+"
+
+# Step 3: データファイルを削除
+rm -rf common/sec_data/data/[TICKER]
+rm -f common/sec_data/normalized/[TICKER]_quarterly_normalized.json
+rm -f common/sec_data/raw/[TICKER]_quarterly_raw.json
+rm -f common/sec_data/ttm/[TICKER]_ttm_series.json
+rm -rf docs/value-monitor/tanuki_valuation/data/[TICKER]
+rm -f docs/value-monitor/hypecore/data/[TICKER]_poc.json
+
+# Step 4: 健全性チェックで不整合がないことを確認
+python common/system_health.py
+
+# Step 5: コミット
+git add -A
+git commit -m "chore: [TICKER] 銘柄削除"
+git pull --rebase origin kaihatsu
+git push origin kaihatsu
+```
+
+---
+
 ## 作業完了時のチェックリスト
 
 - [ ] pytest 全件パス
@@ -262,6 +323,9 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 **③ CLAUDE_CODE_START.md 自体の内容**
 - よく使うコマンドが現在の構成と一致しているか
 - 登録銘柄数・ファイルパス等の記載が最新か
+- 新規銘柄登録手順・削除手順のステップが実態と一致しているか
+- 手順を実際に実施した際に漏れ・誤りがあれば即座に手順書を更新する
+  （気づいた時点で更新・次回以降に先送りしない）
 
 **④ SYSTEM_MAP.md の更新確認**
 以下のいずれかに該当する作業を行った場合は必ずSYSTEM_MAP.mdを更新する：
