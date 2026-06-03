@@ -56,16 +56,17 @@ _NORM_DIR = _REPO_ROOT / "common" / "sec_data" / "normalized"
 # 計算対象フィールド
 # invert=True: 値が下がる方が改善（原価率）
 VECTOR_FIELDS = [
-    {"name": "Revenue",     "invert": False, "weight": 1.5},
-    {"name": "GrossProfit", "invert": False, "weight": 1.5},  # 原価率の合成
-    {"name": "RD",          "invert": False, "weight": 1.0},  # 投資継続性（増加=良い）
-    {"name": "NetIncome",   "invert": False, "weight": 2.0},  # 損益改善
-    {"name": "OCF",         "invert": False, "weight": 2.0},  # 現金創出力
-    {"name": "CapEx",       "invert": False, "weight": 0.5},  # 投資強度（参考）
+    {"name": "Revenue",         "invert": False, "weight": 1.5},
+    {"name": "GrossProfit",     "invert": False, "weight": 1.5},  # 原価率の合成
+    {"name": "OperatingIncome", "invert": False, "weight": 1.5},  # 営業利益（黒字化への道のり用）
+    {"name": "RD",              "invert": False, "weight": 1.0},  # 投資継続性（増加=良い）
+    {"name": "NetIncome",       "invert": False, "weight": 2.0},  # 損益改善
+    {"name": "OCF",             "invert": False, "weight": 2.0},  # 現金創出力
+    {"name": "CapEx",           "invert": False, "weight": 0.5},  # 投資強度（参考）
 ]
 
 # ヒートマップ対象フィールド（全フィールド・データある四半期のみ表示）
-HEATMAP_FIELDS = {"Revenue", "GrossProfit", "RD", "NetIncome", "OCF"}
+HEATMAP_FIELDS = {"Revenue", "GrossProfit", "OperatingIncome", "RD", "NetIncome", "OCF"}
 
 # サブパネル用（別折りたたみ）
 SUB_FIELDS = ["SM", "SBC"]
