@@ -804,6 +804,14 @@ def run_poc(ticker: str = "PLTR") -> dict:
         prev_s = s
     df["substage"] = substages
 
+    # 低ベース効果検出: 前年(12ヶ月前)のrev_yoyがマイナスかつ今年が50%超
+    df["prev_rev_yoy"] = df["rev_yoy"].shift(12)
+    df["low_base_effect"] = (
+        df["prev_rev_yoy"].notna()
+        & (df["prev_rev_yoy"] < -10)
+        & (df["rev_yoy"].fillna(0) > 50)
+    )
+
     df_out = df[df.index >= "2024-01-01"].copy()
 
     # PLTRのみ正解ラベルと比較
@@ -877,6 +885,8 @@ def run_poc(ticker: str = "PLTR") -> dict:
             "momentum_score":     safe(row.get("momentum_score")),
             # IV
             "price_iv_ratio":     safe(row.get("price_iv_ratio")),
+            # 低ベース効果: 前年rev_yoy<-10% かつ 今年rev_yoy>50%
+            "low_base_effect":    bool(row.get("low_base_effect", False)),
         })
 
     JST = timezone(timedelta(hours=9))

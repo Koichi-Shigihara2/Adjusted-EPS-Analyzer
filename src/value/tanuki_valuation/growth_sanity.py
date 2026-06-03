@@ -162,6 +162,13 @@ _PHASE_LABELS: dict[int, str] = {
     4: "期待剥落期",
 }
 
+# 銘柄個別のベンチマーク成長率直接指定（Damodaran未分類 or 保守的調整が必要な銘柄）
+# Damodaran 業種マッピングより優先される
+_TICKER_BENCHMARK_OVERRIDES: dict[str, float] = {
+    "CELH": 0.06,  # Beverage (Soft)成熟期: 高成長期終了後の正規化を考慮し保守的に6%設定
+                   # ※Damodaran Beverage (Soft) g_ebit=9.85%だが、デストック後の実力値として保守化
+}
+
 TICKER_INDUSTRY_OVERRIDES = {
     # SICベース分類が実態と乖離 → 実態に近い業種に上書き
     "APP":   "Software (System & Application)",   # SIC→Retail(General) を上書き
@@ -261,6 +268,15 @@ def get_industry_benchmark(ticker: str, sector: str | None) -> dict | None:
     _load_damodaran()
     if not _damodaran_data:
         return None
+
+    # 最優先: 銘柄個別ベンチマーク直接指定
+    if ticker in _TICKER_BENCHMARK_OVERRIDES:
+        return {
+            "industry": f"{ticker}_custom",
+            "g_ebit":   _TICKER_BENCHMARK_OVERRIDES[ticker],
+            "roc":      None,
+            "rr":       None,
+        }
 
     # 優先順位: ticker個別上書き > sector マッピング
     industry_name = TICKER_INDUSTRY_OVERRIDES.get(ticker)
