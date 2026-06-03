@@ -218,9 +218,9 @@
   .profpath-track{position:relative;height:34px}
   .profpath-track.is-target{height:46px}
   .profpath-zeroline{position:absolute;left:40%;top:0;bottom:0;width:2px;background:#E24B4A;opacity:.55;pointer-events:none}
+  .profpath-trackline{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--txt);opacity:.1;pointer-events:none}
   .profpath-dot{position:absolute;border-radius:50%;top:50%;transform:translate(-50%,-50%)}
   .profpath-dv{position:absolute;top:calc(50% + 8px);transform:translateX(-50%);font-family:var(--mono);font-size:8px;white-space:nowrap;line-height:1;pointer-events:none}
-  .profpath-dv.is-target{top:calc(50% + 12px);font-size:9px}
   .profpath-pill{position:absolute;left:42%;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:9px;white-space:nowrap;padding:1px 7px;border-radius:10px;pointer-events:none}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
@@ -642,16 +642,34 @@ async function toggleDetail(ticker) {
       if (adjEl && quarters.length) {
         const latest = quarters[0].adjusted_eps;
         if (latest != null) {
+          // 修正3: data属性からスケールを取得してleft%を再計算
+          const profpathEl = adjEl.closest('.profpath');
+          const EPS_SCALE = 1.5;
+          const ZERO = 40;
           const isPos = latest >= 0;
-          const scaleEPS = 1.5;
           const left = isPos
-            ? Math.min(40 + latest / scaleEPS * 55, 94)
-            : Math.max(5, 40 - Math.abs(latest) / scaleEPS * 35);
+            ? Math.min(ZERO + (latest / EPS_SCALE) * (100 - ZERO) * 0.85, 98)
+            : Math.max(2, ZERO - (Math.abs(latest) / EPS_SCALE) * ZERO * 0.85);
           const col = isPos ? 'var(--grn)' : '#a855f7';
-          const dot = adjEl.querySelector('.profpath-dot');
-          if (dot) { dot.style.left = left.toFixed(1) + '%'; dot.style.background = col; }
+          // ドット追加（nodata状態のためDOMにない可能性あり）
+          const track = adjEl.querySelector('.profpath-track');
+          if (track) {
+            let dot = adjEl.querySelector('.profpath-dot');
+            if (!dot) {
+              dot = document.createElement('div');
+              dot.className = 'profpath-dot';
+              dot.style.cssText = `width:10px;height:10px;background:${col};left:${left.toFixed(1)}%`;
+              track.appendChild(dot);
+            } else {
+              dot.style.left = left.toFixed(1) + '%';
+              dot.style.background = col;
+            }
+          }
           const dv = adjEl.querySelector('.profpath-dv');
           if (dv) { dv.style.left = left.toFixed(1) + '%'; dv.style.color = col; dv.textContent = (isPos?'+':'') + latest.toFixed(2); }
+          // ラベルのopacityを戻す
+          const lbl = adjEl.querySelector('.profpath-label');
+          if (lbl) lbl.style.opacity = '';
           if (isPos) adjEl.style.opacity = '0.42';
         }
       }
@@ -704,30 +722,36 @@ function buildProfitPath(ticker, d) {
     { key: 'adj', label: 'Adj.EPS', val: null,                     series: [],                       eta: false },
   ];
 
-  // 状態付与
+  // 修正6: ラダー状態（null除外・上=done/最初の負=target/下=pending）
   let targetFound = false;
   metrics.forEach(m => {
-    if (m.val === null)  m.state = 'nodata';
-    else if (m.val >= 0) m.state = 'achieved';
-    else if (!targetFound) { m.state = 'target'; targetFound = true; }
-    else                 m.state = 'pending';
+    if (m.val === null) { m.state = 'nodata'; return; }
+    if (m.val >= 0)     { m.state = 'done';   return; }
+    if (!targetFound)   { m.state = 'target'; targetFound = true; }
+    else                { m.state = 'pending'; }
   });
 
-  // スケール: ドル系は max abs値、EPS は固定1.5
-  const dollarAbsVals = metrics.filter(m => m.key !== 'adj' && m.val != null).map(m => Math.abs(m.val));
-  const scaleD   = dollarAbsVals.length ? Math.max(...dollarAbsVals) : 1;
-  const scaleEPS = 1.5;
+  // 修正1: 赤字側・黒字側で独立スケール（EPS除く）
+  const ZERO = 40;
+  const negVals  = metrics.filter(m => m.key !== 'adj' && m.val != null && m.val < 0).map(m => Math.abs(m.val));
+  const posVals  = metrics.filter(m => m.key !== 'adj' && m.val != null && m.val >= 0).map(m => m.val);
+  const leftScale  = negVals.length && Math.max(...negVals) > 0 ? Math.max(...negVals) : 1;
+  const rightScale = posVals.length && Math.max(...posVals) > 0 ? Math.max(...posVals) : 1;
+  const EPS_SCALE  = 1.5;
 
-  // ドット left% 計算
-  const dotLeft = (m) => {
-    if (m.val == null) return null;
-    const s = m.key === 'adj' ? scaleEPS : scaleD;
-    if (m.val >= 0) return Math.min(40 + m.val / s * 55, 94);
-    return Math.max(5, 40 - Math.abs(m.val) / s * 35);
+  const dotLeftCalc = (val, key) => {
+    if (val == null) return null;
+    if (key === 'adj') {
+      if (val >= 0) return Math.min(ZERO + (val / EPS_SCALE) * (100 - ZERO) * 0.85, 98);
+      return Math.max(2, ZERO - (Math.abs(val) / EPS_SCALE) * ZERO * 0.85);
+    }
+    if (val >= 0) return Math.min(ZERO + (val / rightScale) * (100 - ZERO) * 0.85, 98);
+    return Math.max(2, ZERO - (Math.abs(val) / leftScale) * ZERO * 0.85);
   };
 
-  const dotCol = { achieved: 'var(--grn)', target: '#a855f7', pending: 'var(--mut)', nodata: 'transparent' };
-  const dotSz  = state => state === 'target' ? 18 : 10;
+  // 修正2: ドットサイズ統一（10px）
+  const DOT_SZ = 10;
+  const dotCol = { done: 'var(--grn)', target: '#a855f7', pending: 'var(--mut)', nodata: 'transparent' };
 
   const fmtV = (v, key) => {
     if (v == null) return null;
@@ -748,44 +772,51 @@ function buildProfitPath(ticker, d) {
   let firstRow = true;
   const rows = metrics.map(m => {
     const isTarget = m.state === 'target';
-    const left     = dotLeft(m);
-    const sz       = dotSz(m.state);
+    const isNodata = m.state === 'nodata';
+    const left     = dotLeftCalc(m.val, m.key);
     const valStr   = fmtV(m.val, m.key);
     const valCol   = m.val == null ? 'var(--mut)' : m.val >= 0 ? 'var(--grn)' : isTarget ? '#a855f7' : 'var(--mut)';
-    const rowOpacity = m.state === 'achieved' ? 'opacity:.42' : m.state === 'pending' ? 'opacity:.3' : '';
+    const rowOpacity = m.state === 'done' ? 'opacity:.42' : m.state === 'pending' ? 'opacity:.3' : '';
     const rowBg    = isTarget ? ';background:rgba(168,85,247,.04);border-radius:4px' : '';
     const adjId    = m.key === 'adj' ? ` id="profpath-adj-${ticker}"` : '';
 
     // ゼロラインラベル（最初の行のみ）
-    const zeroLbl  = firstRow
-      ? `<span style="position:absolute;top:2px;left:40%;transform:translateX(-50%);font-size:8px;color:#E24B4A99;font-family:var(--mono)">0</span>`
+    const zeroLbl = firstRow
+      ? `<span style="position:absolute;top:2px;left:${ZERO}%;transform:translateX(-50%);font-size:8px;color:#E24B4A99;font-family:var(--mono)">0</span>`
       : '';
     if (firstRow) firstRow = false;
 
-    // ドット & 値ラベル
-    const dotHtml = left != null
-      ? `<div class="profpath-dot" style="left:${left.toFixed(1)}%;width:${sz}px;height:${sz}px;background:${dotCol[m.state]}${isTarget?';box-shadow:0 0 0 3px rgba(168,85,247,.18)':''}"></div>
-         <div class="profpath-dv${isTarget?' is-target':''}" style="left:${left.toFixed(1)}%;color:${valCol}">${valStr??'—'}</div>`
-      : `<div class="profpath-dv" style="left:40%;color:var(--mut)">—</div>`;
+    // 修正5: no-dataはドットなし、「—」のみ
+    // 修正4: 全行にトラックライン
+    const trackLine = `<div class="profpath-trackline"></div>`;
+    const dotHtml = isNodata
+      ? `<div class="profpath-dv" style="left:${ZERO}%;color:var(--mut)">—</div>`
+      : `<div class="profpath-dot" style="left:${left.toFixed(1)}%;width:${DOT_SZ}px;height:${DOT_SZ}px;background:${dotCol[m.state]}${isTarget?';box-shadow:0 0 0 3px rgba(168,85,247,.2)':''}"></div>
+         <div class="profpath-dv" style="left:${left.toFixed(1)}%;color:${valCol}">${valStr??'—'}</div>`;
+
+    // 修正5: no-data時はラベルを薄く
+    const labelStyle = isNodata ? 'opacity:.4' : '';
 
     return `<div class="profpath-row" style="${rowOpacity}${rowBg}"${adjId}>
-      <span class="profpath-label">${m.label}</span>
+      <span class="profpath-label" style="${labelStyle}">${m.label}</span>
       <div class="profpath-track${isTarget?' is-target':''}">
         <div class="profpath-zeroline">${zeroLbl}</div>
+        ${trackLine}
         ${dotHtml}
         ${etaPillHtml(m)}
       </div>
     </div>`;
   }).join('');
 
-  return `<div class="profpath">
+  // 修正3: スケール値をdata属性で保持（非同期AdjEPS注入が参照）
+  return `<div class="profpath" data-left="${leftScale}" data-right="${rightScale}">
     <div class="profpath-title">黒字化への道のり</div>
     <div style="display:grid;grid-template-columns:64px 1fr;gap:0 8px;margin-bottom:3px">
       <span></span>
       <div style="position:relative;display:flex;justify-content:space-between">
         <span style="font-size:9px;color:var(--mut)">← 赤字ゾーン</span>
         <span style="font-size:9px;color:var(--mut)">黒字ゾーン →</span>
-        <span style="position:absolute;left:40%;transform:translateX(-50%);font-size:8px;color:#E24B4Acc">▼</span>
+        <span style="position:absolute;left:${ZERO}%;transform:translateX(-50%);font-size:8px;color:#E24B4Acc">▼</span>
       </div>
     </div>
     ${rows}
