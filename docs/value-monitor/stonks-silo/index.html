@@ -642,15 +642,21 @@ async function toggleDetail(ticker) {
       if (adjEl && quarters.length) {
         const latest = quarters[0].adjusted_eps;
         if (latest != null) {
-          // 修正3: data属性からスケールを取得してleft%を再計算
-          const profpathEl = adjEl.closest('.profpath');
-          const EPS_SCALE = 1.5;
+          // 修正3: Adj.EPS専用スケール（シリーズ全体の最大abs値基準）
+          const epsVals = quarters.map(q => q.adjusted_eps).filter(v => v != null);
+          const posEps  = epsVals.filter(v => v > 0);
+          const negEps  = epsVals.filter(v => v < 0);
+          const rightScaleEPS = Math.max(0.5, posEps.length ? Math.max(...posEps) : 0.5);
+          const leftScaleEPS  = Math.max(0.5, negEps.length ? Math.max(...negEps.map(Math.abs)) : 0.5);
           const ZERO = 40;
           const isPos = latest >= 0;
+          const scaleEPS = isPos ? rightScaleEPS : leftScaleEPS;
           const left = isPos
-            ? Math.min(ZERO + (latest / EPS_SCALE) * (100 - ZERO) * 0.85, 98)
-            : Math.max(2, ZERO - (Math.abs(latest) / EPS_SCALE) * ZERO * 0.85);
-          const col = isPos ? 'var(--grn)' : '#a855f7';
+            ? Math.min(ZERO + (latest / scaleEPS) * (100 - ZERO) * 0.85, 98)
+            : Math.max(2, ZERO - (Math.abs(latest) / scaleEPS) * ZERO * 0.85);
+          // ラダー状態に合わせた色: done=緑 / target=紫 / pending=灰色
+          const adjTargetKey = adjEl.closest('.profpath')?.dataset.targetKey ?? '';
+          const col = isPos ? 'var(--grn)' : (adjTargetKey === 'adj' ? '#a855f7' : 'var(--mut)');
           // ドット追加（nodata状態のためDOMにない可能性あり）
           const track = adjEl.querySelector('.profpath-track');
           if (track) {
@@ -670,7 +676,9 @@ async function toggleDetail(ticker) {
           // ラベルのopacityを戻す
           const lbl = adjEl.querySelector('.profpath-label');
           if (lbl) lbl.style.opacity = '';
+          // done=0.42, pending=0.3, target=そのまま（フル表示）
           if (isPos) adjEl.style.opacity = '0.42';
+          else if (adjTargetKey !== 'adj') adjEl.style.opacity = '0.3';
         }
       }
     }
@@ -716,7 +724,7 @@ function buildProfitPath(ticker, d) {
 
   const metrics = [
     { key: 'gp',  label: '粗利益',  val: getLatest('GrossProfit'), series: getSeries('GrossProfit'), eta: false },
-    { key: 'oi',  label: '営業利益', val: null,                     series: [],                       eta: false },
+    { key: 'oi',  label: '営業利益', val: getLatest('OperatingIncome'), series: getSeries('OperatingIncome'), eta: false },
     { key: 'ni',  label: '純利益',   val: getLatest('NetIncome'),   series: getSeries('NetIncome'),   eta: true  },
     { key: 'fcf', label: 'FCF',     val: fcfVal,                   series: fcfSeries,                eta: true  },
     { key: 'adj', label: 'Adj.EPS', val: null,                     series: [],                       eta: false },
@@ -766,7 +774,8 @@ function buildProfitPath(ticker, d) {
     const e = calcEtaInfo(m.series);
     if (e.type === 'insufficient') return `<div class="profpath-pill" style="background:rgba(100,116,139,.12);color:var(--mut)">データ不足</div>`;
     if (e.type === 'no_trend')     return `<div class="profpath-pill" style="background:rgba(244,63,94,.08);color:var(--mut)">改善トレンドなし</div>`;
-    return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${e.opt}〜${e.pes}ヶ月</div>`;
+    const median = Math.round((e.opt + e.pes) / 2);
+    return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${median}ヶ月（楽観${e.opt}〜悲観${e.pes}）</div>`;
   };
 
   let firstRow = true;
@@ -808,8 +817,9 @@ function buildProfitPath(ticker, d) {
     </div>`;
   }).join('');
 
-  // 修正3: スケール値をdata属性で保持（非同期AdjEPS注入が参照）
-  return `<div class="profpath" data-left="${leftScale}" data-right="${rightScale}">
+  // targetKey: ラダーで 'target' 状態の指標キーを data 属性で保持（非同期AdjEPS注入が参照）
+  const targetKey = metrics.find(m => m.state === 'target')?.key ?? '';
+  return `<div class="profpath" data-left="${leftScale}" data-right="${rightScale}" data-target-key="${targetKey}">
     <div class="profpath-title">黒字化への道のり</div>
     <div style="display:grid;grid-template-columns:64px 1fr;gap:0 8px;margin-bottom:3px">
       <span></span>
