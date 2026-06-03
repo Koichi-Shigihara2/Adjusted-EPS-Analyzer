@@ -289,10 +289,10 @@
   - ①債券バッジ「リスクオン/オフ」→「債券売り/買い」に変更（collect_and_send.py + index.html）
   - ②信用収縮誤解釈防止：HYG・LQD同時下落→「金利上昇圧力/デュレーションリスク」限定。HYGのみ下落時のみ「信用スプレッド拡大」を許可するプロンプト制約を追加
   - ③乖離Zスコア符号定義明示：正=NASDAQ優位/負=S&P500優位をextended_dataとプロンプト両方に付記
-- ✅ [MP-5] IMPLIED CUTS プロキシ注釈追加（2026-06-03 暫定対応完了）
-  - 05_main.py（1172行）: Geminiプロンプトのレート渡し部分にDGS1プロキシ・term premium注記を追加
-  - index.html（545行）: IMPLIED CUTS数値直下に「※プロキシ値・term premium含む」をvar(--mut)で表示
-  - 根本解決（FF Futures/SOFR OIS）は引き続き要検討
+- ✅ [MP-5] IMPLIED CUTS根本解決（2026-06-03 完了）
+  - get_implied_cuts(): ZQ=F implied rate でterm premium補正・FRED FEDFUNDS/DGS1使用
+  - 旧: DGS1生値 -0.82cuts（誤）→ 新: ZQ=F補正 +0.01cuts（実態）
+  - ZQ=F取得失敗時はDGS1生値にフォールバック
 - ✅ [MP-4] センチメントゲージへのバックテスト予測ミニゲージ統合（2026-06-03 完了）
   - バックテスト表を削除し「明日は？」「5日後は？」「20日後は？」のSVGミニゲージ3つに置換
   - 現在ゾーンの過去平均リターンから予測スコア計算（S&P500 +1%≈+2pt換算）
