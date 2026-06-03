@@ -208,6 +208,20 @@ if ticker not in config.get('tickers', {}):
 else:
     print(f'{ticker} はすでに登録済みです')
 "
+
+# Step 7: monitor_tickers.yaml に追加（SEC定期更新・EPS Analyzer・admin.html の対象）
+python3 -c "
+ticker = '[TICKER]'
+with open('config/monitor_tickers.yaml', encoding='utf-8') as f:
+    content = f.read()
+existing = {l.strip().lstrip('- ') for l in content.splitlines() if l.strip().startswith('- ')}
+if ticker not in existing:
+    with open('config/monitor_tickers.yaml', 'a', encoding='utf-8') as f:
+        f.write(f'  - {ticker}\n')
+    print(f'{ticker} を monitor_tickers.yaml に追加しました')
+else:
+    print(f'{ticker} はすでに登録済みです')
+"
 ```
 
 **注意事項：**
@@ -216,6 +230,7 @@ else:
 - LMT 等 Damodaran 手動設定銘柄は `beta_fetcher.py` の `DAMODARAN_OVERRIDES` に追加
 - Step 5 HypeCore は yfinance 依存。KULR 等データ不足銘柄は失敗するが無視してよい
 - Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
+- Step 7 の monitor_tickers.yaml は **単純リスト形式**（yaml.dump 使用不可 → コメントが消える）
 
 ---
 
