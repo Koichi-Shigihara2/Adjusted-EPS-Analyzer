@@ -291,6 +291,17 @@ shutil.copy('config/discover_config.json',
             'docs/portfolio/data/discover_config.json')
 "
 
+# monitor_tickers.yaml から削除
+python3 -c "
+ticker = '[TICKER]'
+with open('config/monitor_tickers.yaml', encoding='utf-8') as f:
+    lines = f.readlines()
+lines = [l for l in lines if l.strip() != f'- {ticker}']
+with open('config/monitor_tickers.yaml', 'w', encoding='utf-8') as f:
+    f.writelines(lines)
+print(f'{ticker} を monitor_tickers.yaml から削除しました')
+"
+
 # Step 3: データファイルを削除
 rm -rf common/sec_data/data/[TICKER]
 rm -f common/sec_data/normalized/[TICKER]_quarterly_normalized.json
