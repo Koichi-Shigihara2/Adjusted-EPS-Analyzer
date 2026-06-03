@@ -210,6 +210,19 @@
     .th-inner{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
     .sort-arr{font-size:9px;cursor:pointer;padding:2px 3px;color:var(--mut);flex-shrink:0}
     .sort-arr:hover{color:var(--txt)}
+  /* ── 黒字化への道のり ── */
+  .profpath{margin-top:14px;padding:12px 14px;background:var(--sur2);border:1px solid var(--bdr)}
+  .profpath-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px;text-transform:uppercase}
+  .profpath-zone{display:flex;justify-content:space-between;font-size:9px;color:var(--mut);margin-bottom:6px}
+  .profpath-row{display:grid;grid-template-columns:72px 10px 1fr 72px 120px;gap:6px 8px;align-items:center;margin-bottom:5px;min-height:18px}
+  .profpath-label{font-size:11px;color:var(--mut)}
+  .profpath-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;justify-self:center}
+  .profpath-bar{position:relative;height:5px;background:var(--bdr);border-radius:3px;overflow:visible}
+  .profpath-fill{position:absolute;top:0;height:100%;border-radius:3px}
+  .profpath-zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:#f43f5e55;left:50%}
+  .profpath-val{font-family:var(--mono);font-size:11px;text-align:right;white-space:nowrap}
+  .profpath-eta{font-size:10px;text-align:right}
+  .profpath-pill{display:inline-block;padding:1px 7px;border-radius:10px;font-family:var(--mono);font-size:9px;white-space:nowrap}
   </style>
   <link rel="stylesheet" href="/On-a-journey/common/site-theme.css">
 </head>
@@ -619,6 +632,33 @@ async function toggleDetail(ticker) {
       }
     }
   } catch(e) {}
+
+  // 黒字化への道のり: Adj.EPS 非同期注入
+  try {
+    const ar = await fetch(`/On-a-journey/value-monitor/adjusted_eps_analyzer/data/${ticker}/quarterly.json`, {cache:'no-store'});
+    if (ar.ok) {
+      const aq = await ar.json();
+      const quarters = aq.quarters || [];
+      const adjEl = document.getElementById(`profpath-adj-${ticker}`);
+      if (adjEl && quarters.length) {
+        const latest = quarters[0].adjusted_eps;
+        if (latest != null) {
+          const isPos = latest >= 0;
+          // ドット更新
+          const dot = adjEl.querySelector('.profpath-dot');
+          if (dot) dot.style.background = isPos ? 'var(--grn)' : '#a855f7';
+          // 値更新
+          const val = adjEl.querySelector('.profpath-val');
+          if (val) {
+            val.style.color = isPos ? 'var(--grn)' : '#a855f7';
+            val.textContent = (isPos ? '+' : '') + latest.toFixed(2);
+          }
+          // 達成済みなら薄く
+          if (isPos) adjEl.style.opacity = '0.45';
+        }
+      }
+    }
+  } catch(e) {}
 }
 
 function closeDetail(ticker) {
@@ -626,6 +666,103 @@ function closeDetail(ticker) {
   const inner = document.getElementById(`detail-inner-${ticker}`);
   if (inner) inner.classList.remove('open');
   if (row) row.style.display = 'none';
+}
+
+// ── 黒字化への道のり ──────────────────────────────────────────
+function calcEtaInfo(seriesQ) {
+  if (!seriesQ || seriesQ.length < 3) return { type: 'insufficient' };
+  const vals = seriesQ.slice(-4).map(s => s.val);
+  const latest = vals[vals.length - 1];
+  if (latest >= 0) return { type: 'achieved' };
+  const diffs = [];
+  for (let i = 1; i < vals.length; i++) diffs.push(vals[i] - vals[i - 1]);
+  const w = diffs.map((_, i) => i + 1);
+  const tw = w.reduce((a, b) => a + b, 0);
+  const wAvg = diffs.reduce((s, d, i) => s + d * w[i], 0) / tw;
+  if (wAvg <= 0) return { type: 'no_trend' };
+  const etaQ = Math.abs(latest) / wAvg;
+  return { type: 'eta', opt: Math.round(etaQ * 3 * 0.7), pes: Math.round(etaQ * 3 * 1.3) };
+}
+
+function buildProfitPath(ticker, d) {
+  const fv = d?.financial_vectors?.fields || {};
+  const getSeries = k => fv[k]?.series_q || [];
+  const getLatest = k => { const s = getSeries(k); return s.length ? s[s.length - 1].val : null; };
+
+  // FCF = 同じ期末でOCF-CapExが揃う最新値
+  const calcFcfSeries = () => {
+    const om = Object.fromEntries(getSeries('OCF').map(e => [e.end, e.val]));
+    const cm = Object.fromEntries(getSeries('CapEx').map(e => [e.end, e.val]));
+    const ends = [...new Set([...Object.keys(om), ...Object.keys(cm)])].sort();
+    return ends.filter(e => om[e] != null && cm[e] != null).map(e => ({ end: e, val: om[e] - cm[e] }));
+  };
+  const fcfSeries = calcFcfSeries();
+  const fcfVal = fcfSeries.length ? fcfSeries[fcfSeries.length - 1].val : null;
+
+  const rev = Math.abs(getLatest('Revenue') || 0);
+  const metrics = [
+    { key: 'gp',  label: '粗利益',   val: getLatest('GrossProfit'), series: getSeries('GrossProfit'), eta: false },
+    { key: 'oi',  label: '営業利益', val: null,                      series: [],                       eta: false },
+    { key: 'ni',  label: '純利益',   val: getLatest('NetIncome'),    series: getSeries('NetIncome'),   eta: true  },
+    { key: 'fcf', label: 'FCF',      val: fcfVal,                    series: fcfSeries,                eta: true  },
+    { key: 'adj', label: 'Adj.EPS', val: null,                      series: [],                       eta: false },
+  ];
+
+  // 状態付与：achieved→target(最初の赤字)→pending の順
+  let targetFound = false;
+  metrics.forEach(m => {
+    if (m.val === null)  m.state = 'nodata';
+    else if (m.val >= 0) m.state = 'achieved';
+    else if (!targetFound) { m.state = 'target'; targetFound = true; }
+    else                 m.state = 'pending';
+  });
+
+  const dotCol = { achieved: 'var(--grn)', target: '#a855f7', pending: 'var(--mut)', nodata: 'var(--bdr)' };
+
+  const makeBar = v => {
+    if (v == null || !rev) return `<div class="profpath-bar"><div class="profpath-zero"></div></div>`;
+    const pct = Math.min(Math.abs(v) / rev, 1.0) * 50;
+    const fill = v >= 0
+      ? `<div class="profpath-fill" style="left:50%;width:${pct}%;background:var(--grn)30;border:1px solid var(--grn)55"></div>`
+      : `<div class="profpath-fill" style="right:50%;width:${pct}%;background:#f43f5e22;border:1px solid #f43f5e44"></div>`;
+    return `<div class="profpath-bar">${fill}<div class="profpath-zero"></div></div>`;
+  };
+
+  const fmtV = (v, key) => {
+    if (v == null) return '—';
+    const sign = v >= 0 ? '+' : '';
+    if (key === 'adj') return sign + v.toFixed(2);
+    const abs = Math.abs(v);
+    const s = abs >= 1e9 ? (abs/1e9).toFixed(1)+'B' : abs >= 1e6 ? (Math.round(abs/1e6))+'M' : abs.toFixed(0);
+    return (v < 0 ? '-' : '+') + s;
+  };
+
+  const etaPill = m => {
+    if (!m.eta || m.state !== 'target') return '';
+    const e = calcEtaInfo(m.series);
+    if (e.type === 'insufficient') return `<span class="profpath-pill" style="background:rgba(100,116,139,.12);color:var(--mut)">データ不足</span>`;
+    if (e.type === 'no_trend')     return `<span class="profpath-pill" style="background:rgba(244,63,94,.08);color:var(--mut)">改善トレンドなし</span>`;
+    return `<span class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${e.opt}〜${e.pes}ヶ月</span>`;
+  };
+
+  const rows = metrics.map(m => {
+    const dim = m.state === 'achieved' ? 'opacity:.45' : m.state === 'pending' ? 'opacity:.35' : '';
+    const valCol = m.val == null ? 'var(--mut)' : m.val >= 0 ? 'var(--grn)' : m.state === 'target' ? '#a855f7' : 'var(--mut)';
+    const adjId = m.key === 'adj' ? ` id="profpath-adj-${ticker}"` : '';
+    return `<div class="profpath-row" style="${dim}"${adjId}>
+      <span class="profpath-label">${m.label}</span>
+      <span class="profpath-dot" style="background:${dotCol[m.state]}"></span>
+      ${makeBar(m.val)}
+      <span class="profpath-val" style="color:${valCol}">${fmtV(m.val, m.key)}</span>
+      <span class="profpath-eta">${etaPill(m)}</span>
+    </div>`;
+  }).join('');
+
+  return `<div class="profpath">
+    <div class="profpath-title">黒字化への道のり</div>
+    <div class="profpath-zone"><span>← 赤字ゾーン</span><span>黒字ゾーン →</span></div>
+    ${rows}
+  </div>`;
 }
 
 function buildDetail(ticker, d) {
@@ -883,6 +1020,7 @@ function buildDetail(ticker, d) {
   <div class="detail-summary">${formatSummary(d.summary)}${pp.discontinuous_growth ? '<div style="margin-top:8px;font-size:10px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:6px">※黒字化予測は過去トレンドの外挿であり、直近の急成長局面では実際の黒字化が予測より早まる可能性があります</div>' : ''}</div>
 
   ${buildVectorPanel(d.financial_vectors)}
+  ${buildProfitPath(ticker, d)}
   </div>
   <div class="color-legend-bar">
     <span class="cl-item"><span class="cl-dot" style="background:#3b82f6"></span>良い赤字（戦略的投資）</span>
