@@ -725,7 +725,7 @@ function buildProfitPath(ticker, d) {
 
   const metrics = [
     { key: 'gp',  label: '粗利益',  val: getLatest('GrossProfit'), series: getSeries('GrossProfit'), eta: false },
-    { key: 'oi',  label: '営業利益', val: getLatest('OperatingIncome'), series: getSeries('OperatingIncome'), eta: false },
+    { key: 'oi',  label: '営業利益', val: getLatest('OperatingIncome'), series: getSeries('OperatingIncome'), eta: true  },
     { key: 'ni',  label: '純利益',   val: getLatest('NetIncome'),   series: getSeries('NetIncome'),   eta: true  },
     { key: 'fcf', label: 'FCF',     val: fcfVal,                   series: fcfSeries,                eta: true  },
     { key: 'adj', label: 'Adj.EPS', val: null,                     series: [],                       eta: false },
@@ -754,7 +754,12 @@ function buildProfitPath(ticker, d) {
       if (val >= 0) return Math.min(ZERO + (val / EPS_SCALE) * (100 - ZERO) * 0.85, 98);
       return Math.max(2, ZERO - (Math.abs(val) / EPS_SCALE) * ZERO * 0.85);
     }
-    if (val >= 0) return Math.min(ZERO + (val / rightScale) * (100 - ZERO) * 0.85, 98);
+    if (val >= 0) {
+      // 対数スケール: GrossProfit が巨大でも他の正値がゼロ付近に密集しない
+      const logRef = rightScale > 0 ? Math.log10(rightScale + 1) : 1;
+      const logVal = Math.log10(val + 1);
+      return Math.min(ZERO + (logVal / logRef) * (100 - ZERO) * 0.85, 98);
+    }
     return Math.max(2, ZERO - (Math.abs(val) / leftScale) * ZERO * 0.85);
   };
 
