@@ -1,0 +1,34 @@
+name: System Health Check
+
+on:
+  schedule:
+    - cron: '30 23 * * *'  # 毎日 JST 8:30（UTC 23:30）※Score_Verifier(JST 9:00)の直前
+  workflow_dispatch:
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+          fetch-depth: 50  # git log でコミット日時を確認するために必要
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install yfinance requests
+
+      - name: Run System Health Check
+        env:
+          DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
+        run: python common/system_health.py
