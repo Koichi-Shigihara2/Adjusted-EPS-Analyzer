@@ -525,6 +525,11 @@
 
 ## 追加課題（2026-05-31）
 
+### ✅ [ACTION-6] Macro Extreme Fear戦略実行支援（2026-06-03 完了）
+- docs/value-monitor/extreme-fear/index.html を新規作成
+- F&Gゲージ・買い候補TOP10・過去EF実績・シミュレーター・メモ欄の5セクション
+- スコアリング: BUY+40/WATCH+20/upside+30/funda+20/Phase≤2+10/Phase4-20pt
+
 ### ✅ [ACTION-2] 判定実績の自動追跡・検証ループ（2026-06-03 完了）
 - score_history.json に判定スナップショットを日次追記
 - score_verifier.py で 30/60/90日後リターンを自動計算
