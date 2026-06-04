@@ -541,6 +541,8 @@
 - index.html に判定別勝率テーブル＋直近20件を表示
 - ✅ score_verifier.py の定期実行: Score_Verifier.yml 登録済み（毎日 JST 9:00）
   → 2026-07-03 以降に初回リターンが記録される
+- ✅ 判定実績セクションをTANUKI VALUATION→TANUKI SCOREに移設（2026-06-04）
+  docs/value-monitor/tanuki_score/index.html を新設
 
 ### ✅ [ACTION-4] HYPEMIXポートフォリオ管理（2026-06-03 完了）
 - フェーズ分布バー・目標乖離・リバランス提案・銘柄テーブルを TANUKI index.html に追加
