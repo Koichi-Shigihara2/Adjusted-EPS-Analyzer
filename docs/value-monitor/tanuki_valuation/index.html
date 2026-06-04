@@ -32,23 +32,23 @@
     .nav-links a:hover{color:var(--acc);border-bottom-color:var(--acc)}
     .nav-links a.active{color:var(--acc);border-bottom-color:var(--acc)}
 
-    .hero{text-align:center;padding:36px 0 28px;border-bottom:1px solid var(--bdr)}
-    .hero-title{font-family:var(--mono);font-size:26px;font-weight:700;letter-spacing:.08em}
-    .hero-subtitle{color:var(--mut);margin-top:10px;font-size:13px;max-width:620px;margin-left:auto;margin-right:auto}
-    .formula-preview{background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px 20px;margin-top:20px;display:inline-block}
-    .formula-preview code{font-family:var(--mono);font-size:12px;color:var(--acc)}
+    .hero{text-align:center;padding:20px 0 14px;border-bottom:1px solid var(--bdr)}
+    .hero-title{font-family:var(--mono);font-size:20px;font-weight:700;letter-spacing:.08em}
+    .hero-subtitle{color:var(--mut);margin-top:8px;font-size:12px;max-width:620px;margin-left:auto;margin-right:auto}
+    .formula-preview{background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:8px 16px;margin-top:12px;display:inline-block}
+    .formula-preview code{font-family:var(--mono);font-size:11px;color:var(--acc)}
 
-    .stats-bar{display:flex;gap:32px;justify-content:center;padding:16px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
+    .stats-bar{display:flex;gap:20px;justify-content:center;padding:10px 0;border-bottom:1px solid var(--bdr);flex-wrap:wrap}
     .stat-item{text-align:center}
-    .stat-value{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--acc)}
-    .stat-label{font-size:10px;color:var(--mut);margin-top:2px;text-transform:none;letter-spacing:.08em}
+    .stat-value{font-family:var(--mono);font-size:16px;font-weight:700;color:var(--acc)}
+    .stat-label{font-size:10px;color:var(--mut);margin-top:1px;text-transform:none;letter-spacing:.08em}
 
     /* ── テーブル ── */
     .table-wrap{margin-top:24px;overflow-x:auto;border-radius:8px;border:1px solid var(--bdr)}
-    table{width:100%;border-collapse:collapse;min-width:900px}
+    table{width:100%;border-collapse:collapse;min-width:820px}
     thead tr{background:var(--sur2)}
     thead th{
-      padding:10px 14px;font-family:var(--mono);font-size:10px;font-weight:700;
+      padding:6px 10px;font-family:var(--mono);font-size:10px;font-weight:700;
       color:var(--mut);text-transform:uppercase;letter-spacing:.06em;
       text-align:right;white-space:nowrap;border-bottom:1px solid var(--bdr);
       cursor:pointer;user-select:none;position:relative;
@@ -69,7 +69,7 @@
     tbody tr:hover{background:var(--sur2)}
 
     tbody td{
-      padding:10px 14px;font-family:var(--mono);font-size:12px;
+      padding:6px 10px;font-family:var(--mono);font-size:12px;
       color:var(--txt);text-align:right;white-space:nowrap;
     }
     tbody td:first-child{text-align:left;font-size:13px;font-weight:700;color:var(--acc)}
@@ -396,6 +396,7 @@ const fmtPct  = (n) => n != null ? (n >= 0 ? '+' : '') + (n * 100).toFixed(1) + 
 const fmtPct2 = (n) => n != null ? (n * 100).toFixed(1) + '%' : '—';
 const fmtNum  = (n) => n != null ? n.toFixed(2) : '—';
 const fmtDlr  = (n) => n != null && n > 0 ? '$' + n.toFixed(2) : '—';
+const fmtDate = (d) => d ? d.slice(5).replace('-', '/') : '—';
 
 // ── ソート状態 ──
 let sortCol = 'upside';
@@ -499,7 +500,7 @@ function renderTable() {
       <td>${r.wacc != null ? fmtPct2(r.wacc) : '—'}</td>
       <td>${r.q != null && Math.abs(r.q) < 100 ? r.q.toFixed(1) : '—'}</td>
       <td>${r.cf != null ? r.cf.toFixed(2) : '—'}</td>
-      <td class="muted grp-border">${r.date}</td>
+      <td class="muted grp-border" title="${r.date}">${fmtDate(r.date)}</td>
     `;
     tbody.appendChild(tr);
   }

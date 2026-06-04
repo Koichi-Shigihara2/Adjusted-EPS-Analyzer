@@ -53,7 +53,7 @@ thead th.sort-asc::after{content:' ▲';color:var(--acc)}
 thead th.sort-desc::after{content:' ▼';color:var(--acc)}
 tbody tr{border-bottom:1px solid var(--bdr);cursor:pointer;transition:background .1s}
 tbody tr:hover{background:var(--sur)}
-tbody td{padding:10px 12px;vertical-align:middle}
+tbody td{padding:5px 10px;vertical-align:middle}
 
 /* ── BADGES ── */
 .badge{display:inline-block;font-family:var(--mono);font-size:11px;font-weight:700;
@@ -74,7 +74,7 @@ tbody td{padding:10px 12px;vertical-align:middle}
 .spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--bdr);
   border-top-color:var(--acc);border-radius:50%;animation:spin .6s linear infinite;margin-right:8px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.phase-tag{font-size:11px;color:var(--mut)}
+.phase-tag{font-size:11px;color:var(--mut);display:inline-block;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
 .num-pos{color:#10b981}
 .num-neg{color:#f43f5e}
 .num-neu{color:var(--mut)}
@@ -270,7 +270,7 @@ function renderTable(){
       <td><a class="ticker-link" href="detail.html?ticker=${r.ticker}" onclick="event.stopPropagation()">${r.ticker}</a></td>
       <td><span class="badge badge-lc" style="font-size:10px">${r.lcLabel}</span></td>
       <td><span class="badge ${STAGE_CLASS[r.stage]}">${STAGE_LABEL[r.stage]}</span></td>
-      <td><span class="phase-tag">${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}</span></td>
+      <td><span class="phase-tag" title="${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}">${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}</span></td>
       <td><span class="${recClass(r.rec.cat)}">${r.rec.text}</span></td>
       <td class="num-neu" style="font-family:var(--mono)">${r.price!=null?'$'+r.price.toFixed(2):'—'}</td>
       <td class="num-neu ${pivColor}" style="font-family:var(--mono)">${r.piv!=null?r.piv.toFixed(2)+'x':'—'}</td>

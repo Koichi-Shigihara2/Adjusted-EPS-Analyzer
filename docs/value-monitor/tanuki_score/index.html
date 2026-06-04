@@ -48,32 +48,32 @@
     .mkt-stat:first-child { border-left: none; }
 
     /* ── ② Category board ── */
-    .cat-row { display: grid; gap: 12px; margin-bottom: 12px; }
+    .cat-row { display: grid; gap: 8px; margin-bottom: 8px; }
     .cat-row.top3 { grid-template-columns: repeat(3, 1fr); }
     .cat-row.bot2 { grid-template-columns: 2fr 1fr; }
 
-    .cat-card { background: var(--sur); border: 1px solid var(--bdr); padding: 16px 18px; }
+    .cat-card { background: var(--sur); border: 1px solid var(--bdr); padding: 8px 10px; }
     .cat-card.shikomi { border-color: rgba(16,185,129,.35); }
     .cat-card.wait    { border-color: rgba(245,158,11,.35); }
     .cat-card.profit  { border-color: rgba(59,130,246,.35); }
     .cat-card.watch   { border-color: var(--bdr); }
     .cat-card.ronogai { border-color: rgba(244,63,94,.25); }
 
-    .cat-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 12px; }
-    .cat-label { font-family: var(--mono); font-size: 14px; font-weight: 500; }
+    .cat-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+    .cat-label { font-family: var(--mono); font-size: 12px; font-weight: 500; }
     .shikomi .cat-label { color: var(--grn); }
     .wait    .cat-label { color: var(--amb); }
     .profit  .cat-label { color: var(--acc); }
     .watch   .cat-label { color: var(--sub); }
     .ronogai .cat-label { color: var(--red); }
-    .cat-count { font-family: var(--mono); font-size: 12px; color: var(--mut); }
-    .cat-desc  { font-size: 11px; color: var(--mut); margin-bottom: 10px; font-family: var(--mono); letter-spacing: .03em; }
+    .cat-count { font-family: var(--mono); font-size: 11px; color: var(--mut); }
+    .cat-desc  { font-size: 10px; color: var(--mut); margin-bottom: 4px; font-family: var(--mono); letter-spacing: .03em; }
 
-    .cat-chips { display: flex; flex-wrap: wrap; gap: 7px; }
-    .cat-chip { display: inline-flex; flex-direction: column; padding: 6px 10px; border: 1px solid var(--bdr); background: var(--sur2); text-decoration: none; transition: border-color .12s; }
+    .cat-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+    .cat-chip { display: inline-flex; flex-direction: column; padding: 3px 7px; border: 1px solid var(--bdr); background: var(--sur2); text-decoration: none; transition: border-color .12s; }
     .cat-chip:hover { border-color: var(--sub); }
-    .cat-chip .ckr { font-family: var(--mono); font-size: 13px; font-weight: 500; }
-    .cat-chip .csc { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-top: 2px; }
+    .cat-chip .ckr { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+    .cat-chip .csc { font-family: var(--mono); font-size: 9px; color: var(--mut); margin-top: 1px; }
     .shikomi .cat-chip .ckr { color: var(--grn); }
     .wait    .cat-chip .ckr { color: var(--amb); }
     .profit  .cat-chip .ckr { color: var(--acc); }

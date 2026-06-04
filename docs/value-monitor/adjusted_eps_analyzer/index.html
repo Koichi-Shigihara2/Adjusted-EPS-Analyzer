@@ -68,17 +68,18 @@
 
     /* ── 投資機会ランキング ── */
     .opp-list { list-style: none; }
-    .opp-item { padding: 14px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
+    .opp-item { padding: 8px 0; border-bottom: 1px solid rgba(30,40,64,.5); }
     .opp-item:last-child { border-bottom: none; }
-    .opp-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+    .opp-row1 { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
     .opp-rank { font-family: var(--mono); font-size: 12px; color: var(--mut); width: 20px; }
-    .opp-ticker { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--acc); text-decoration: none; }
+    .opp-ticker { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--acc); text-decoration: none; }
     .opp-ticker:hover { text-decoration: underline; }
-    .opp-name { font-size: 13px; color: var(--mut); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .opp-score-lbl { font-family: var(--mono); font-size: 13px; color: var(--txt); min-width: 40px; text-align: right; }
-    .opp-bar-wrap { height: 5px; background: rgba(30,40,64,.8); border-radius: 3px; margin-bottom: 7px; }
+    .opp-name { font-size: 12px; color: var(--mut); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .opp-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+    .opp-bar-wrap { flex: 1; max-width: 60%; height: 5px; background: rgba(30,40,64,.8); border-radius: 3px; }
     .opp-bar { height: 100%; background: linear-gradient(90deg, var(--acc) 0%, var(--grn) 100%); border-radius: 3px; transition: width .4s ease; }
-    .opp-metrics { display: flex; gap: 18px; flex-wrap: wrap; }
+    .opp-score-lbl { font-family: var(--mono); font-size: 12px; color: var(--txt); white-space: nowrap; }
+    .opp-metrics { display: flex; gap: 12px; flex-wrap: wrap; }
     .opp-m { font-family: var(--mono); font-size: 12px; color: var(--mut); }
     .opp-m strong { color: var(--txt); }
 
@@ -310,9 +311,11 @@ function toggleTranFilter() {
             <a class="opp-ticker" href="stock.html?ticker=${t.ticker}">${t.ticker}</a>
             <span class="opp-name">${t.company_name || ''}</span>
             ${tranBadge}
+          </div>
+          <div class="opp-bar-row">
+            <div class="opp-bar-wrap"><div class="opp-bar" style="width:${barPct}%"></div></div>
             <span class="opp-score-lbl">${barPct}pt</span>
           </div>
-          <div class="opp-bar-wrap"><div class="opp-bar" style="width:${barPct}%"></div></div>
           <div class="opp-metrics">
             <span class="opp-m">差分比率 <strong style="color:var(--grn)">${fmtRatio(t.eps_ratio)}</strong></span>
             <span class="opp-m">YoY成長 <strong style="color:${(t.yoy_growth||0)>=0?'var(--grn)':'var(--red)'}">${fmtGrowth(t.yoy_growth)}</strong></span>
