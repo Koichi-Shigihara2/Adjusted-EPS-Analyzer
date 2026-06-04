@@ -159,10 +159,10 @@
 
 <script>
 const REPORT_PATH    = '/On-a-journey/discover/data/daily_report.json';
-const CONFIG_PATH    = '/On-a-journey/../config/discover_config.json';
+const CONFIG_PATH    = '/On-a-journey/portfolio/data/discover_config.json';
 const TANUKI_BASE    = '/On-a-journey/value-monitor/tanuki_valuation/';
 const HYPE_BASE      = '/On-a-journey/value-monitor/hypecore/data/';
-const THEME_CFG_PATH = '/On-a-journey/config/theme_config.json';
+const THEME_CFG_PATH = '/On-a-journey/portfolio/data/theme_config.json';
 const TS             = '?t=' + Date.now();
 
 const CAT_ORDER = ['保有中', '監視中', '様子見'];
@@ -401,7 +401,7 @@ async function loadData() {
   try {
     const [reportRes, configRes, themeCfgRes] = await Promise.allSettled([
       fetch(REPORT_PATH + TS).then(r => r.ok ? r.json() : null),
-      fetch('/On-a-journey/config/discover_config.json' + TS).then(r => r.ok ? r.json() : null),
+      fetch('/On-a-journey/portfolio/data/discover_config.json' + TS).then(r => r.ok ? r.json() : null),
       fetch(THEME_CFG_PATH + TS).then(r => r.ok ? r.json() : null),
     ]);
 
