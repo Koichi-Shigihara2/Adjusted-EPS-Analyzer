@@ -465,3 +465,41 @@ if errors:
 else:
     print("リンク切れなし ✅")
 ```
+
+---
+
+## 新規HTMLページ作成時の必須チェックリスト
+
+### ① リンク切れチェック（HTMLファイル作成・移設・削除後は必須）
+
+```bash
+python ~/check_links.py
+```
+
+リンク切れ0件を確認してからコミットすること。
+
+### ② site-nav.js への登録（新規ページ作成時は必須）
+
+`docs/common/site-nav.js` の `ITEMS` 配列に新ページのエントリを追加：
+
+```js
+{ key: 'xxx', label: 'PAGE NAME', href: BASE + '/path/to/page/' }
+```
+
+新規HTMLの `<body>` タグに `data-tool="xxx"` を設定すること（key と完全一致）。
+これを忘れるとナビが正しく生成されず、activeハイライトも当たらない。
+
+**確認コマンド：**
+
+```bash
+grep -n "data-tool" docs/path/to/new/index.html
+grep -n "key:.*'xxx'" docs/common/site-nav.js
+```
+
+### ③ ナビのactiveハイライト確認（新規ページ作成時は必須）
+
+```bash
+python -m http.server 8767 --directory docs
+```
+
+ブラウザで新規ページを開いてナビの該当項目がハイライトされていることを目視確認すること。
