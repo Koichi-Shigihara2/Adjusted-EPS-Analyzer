@@ -124,25 +124,6 @@
 
     #status-msg{text-align:center;padding:40px;color:var(--mut);font-size:13px}
 
-    /* ── 判定実績 ── */
-    .sv-card{background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:24px;margin-top:0}
-    .sv-subtitle{color:var(--mut);font-size:13px;margin-bottom:14px;line-height:1.6}
-    .sv-sec-lbl{font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--acc);text-transform:uppercase;margin:14px 0 8px;border-left:2px solid var(--acc);padding-left:8px}
-    .sv-table-wrap{overflow-x:auto;border:1px solid var(--bdr);border-radius:4px;max-height:300px;overflow-y:auto}
-    .sv-table{width:100%;border-collapse:collapse;font-size:13px}
-    .sv-table thead th{background:var(--sur2);padding:7px 12px;text-align:left;font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--mut);position:sticky;top:0;border-bottom:1px solid var(--bdr)}
-    .sv-table tbody tr{border-bottom:1px solid rgba(30,40,64,.5)}
-    .sv-table tbody tr:last-child{border-bottom:none}
-    .sv-table tbody tr:hover{background:var(--sur2)}
-    .sv-table td{padding:6px 12px}
-    .sv-badge{font-family:var(--mono);font-size:11px;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap}
-    .sv-badge.sv-buy{background:rgba(16,185,129,.15);color:#10b981;border-color:rgba(16,185,129,.3)}
-    .sv-badge.sv-growth-premium{background:rgba(16,185,129,.1);color:#10b981;border-color:rgba(16,185,129,.2)}
-    .sv-badge.sv-watch{background:rgba(59,130,246,.15);color:#3b82f6;border-color:rgba(59,130,246,.3)}
-    .sv-badge.sv-hold{background:rgba(100,116,139,.15);color:#94a3b8;border-color:rgba(100,116,139,.3)}
-    .sv-badge.sv-trim{background:rgba(245,158,11,.15);color:#f59e0b;border-color:rgba(245,158,11,.3)}
-    .sv-badge.sv-sell{background:rgba(244,63,94,.15);color:#f43f5e;border-color:rgba(244,63,94,.3)}
-    .sv-badge.sv-pass{background:rgba(100,116,139,.1);color:var(--mut);border-color:rgba(100,116,139,.2)}
   </style>
   <link rel="stylesheet" href="../../common/site-theme.css">
 </head>
@@ -221,9 +202,6 @@
       </tbody>
     </table>
   </div>
-
-  <!-- ── 判定実績 ── -->
-  <div id="score-verify-section" style="margin-top:32px"></div>
 
   <div class="methodology">
     <h2 class="section-title">METHODOLOGY</h2>
@@ -588,7 +566,6 @@ async function loadTickers() {
   renderTable();
   updateSortHeaders();
   const tickers = valid.map(r => r.ticker);
-  loadScoreHistory(tickers).then(renderScoreVerify);
 
   // ── stats bar 更新 ──
   document.getElementById('total-tickers').textContent = valid.length || '--';
@@ -615,96 +592,6 @@ function toJST(dateStr) {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit'
   }) + ' JST';
-}
-
-// ── 判定実績 ──
-async function loadScoreHistory(tickers) {
-  const all = await Promise.all(
-    tickers.map(async ticker => {
-      try {
-        const res = await fetch(`data/${ticker}/score_history.json`, { cache: 'no-cache' });
-        if (!res.ok) return [];
-        const entries = await res.json();
-        return entries.map(e => ({ ...e, ticker }));
-      } catch { return []; }
-    })
-  );
-  return all.flat();
-}
-
-function renderScoreVerify(allEntries) {
-  const el = document.getElementById('score-verify-section');
-  if (!el) return;
-  if (!allEntries.length) { el.innerHTML = ''; return; }
-
-  const SCORE_TYPES = ['BUY', 'GROWTH_PREMIUM', 'WATCH', 'HOLD', 'TRIM', 'SELL', 'PASS'];
-  const byScore = {};
-  for (const e of allEntries) {
-    const s = e.tanuki_score;
-    if (!s) continue;
-    if (!byScore[s]) byScore[s] = { total: 0, win30: 0, n30: 0, win60: 0, n60: 0, ret30s: [] };
-    const b = byScore[s];
-    b.total++;
-    if (e.return_30d != null) { b.n30++; if (e.return_30d > 0) b.win30++; b.ret30s.push(e.return_30d); }
-    if (e.return_60d != null) { b.n60++; if (e.return_60d > 0) b.win60++; }
-  }
-
-  const badgeCls = s => `sv-badge sv-${(s||'').toLowerCase().replace('_premium','-premium').replace('_','-')}`;
-
-  const winRows = SCORE_TYPES.filter(s => byScore[s]).map(s => {
-    const b = byScore[s];
-    const w30 = b.n30 > 0 ? `${(b.win30/b.n30*100).toFixed(0)}% <span style="color:var(--mut)">(${b.n30}件)</span>` : '—';
-    const w60 = b.n60 > 0 ? `${(b.win60/b.n60*100).toFixed(0)}% <span style="color:var(--mut)">(${b.n60}件)</span>` : '—';
-    const avg30 = b.ret30s.length > 0 ? b.ret30s.reduce((a,c) => a+c, 0) / b.ret30s.length : null;
-    const avg30Str = avg30 != null ? `<span style="color:${avg30>=0?'var(--grn)':'var(--red)'}">${avg30>=0?'+':''}${avg30.toFixed(1)}%</span>` : '—';
-    return `<tr>
-      <td><span class="${badgeCls(s)}">${s}</span></td>
-      <td style="font-family:var(--mono)">${b.total}</td>
-      <td style="font-family:var(--mono)">${w30}</td>
-      <td style="font-family:var(--mono)">${w60}</td>
-      <td style="font-family:var(--mono)">${avg30Str}</td>
-    </tr>`;
-  }).join('');
-
-  const fmtR = r => r != null
-    ? `<span style="color:${r>=0?'var(--grn)':'var(--red)'}">${r>=0?'+':''}${r.toFixed(1)}%</span>`
-    : '<span style="color:var(--mut)">—</span>';
-
-  const recentRows = [...allEntries]
-    .filter(e => e.date && e.tanuki_score)
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 20)
-    .map(e => `<tr>
-      <td style="font-family:var(--mono);font-weight:700"><a href="stock.html?ticker=${e.ticker}" style="color:var(--txt);text-decoration:none">${e.ticker}</a></td>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--mut)">${e.date}</td>
-      <td><span class="${badgeCls(e.tanuki_score)}">${e.tanuki_score}</span></td>
-      <td style="font-family:var(--mono);font-size:12px">${e.price_at_judgment != null ? '$'+e.price_at_judgment.toFixed(2) : '—'}</td>
-      <td style="font-family:var(--mono);font-size:12px">${fmtR(e.return_30d)}</td>
-      <td style="font-family:var(--mono);font-size:12px">${fmtR(e.return_60d)}</td>
-    </tr>`)
-    .join('');
-
-  const noData = `<tr><td colspan="99" style="text-align:center;color:var(--mut);padding:16px">データなし（pipeline.py 実行後に表示）</td></tr>`;
-
-  el.innerHTML = `
-    <h2 class="section-title">判定実績 — TANUKI SCORE バックテスト</h2>
-    <div class="sv-card">
-      <div class="sv-subtitle">判定時株価とN日後株価を比較した事後検証。<code>score_verifier.py</code>を定期実行することでリターンが蓄積される。</div>
-      <div class="sv-sec-lbl">① 判定別勝率（30日・60日後リターン）</div>
-      <div class="sv-table-wrap">
-        <table class="sv-table">
-          <thead><tr><th>判定</th><th>件数</th><th>30日勝率</th><th>60日勝率</th><th>平均30dリターン</th></tr></thead>
-          <tbody>${winRows || noData}</tbody>
-        </table>
-      </div>
-      <div class="sv-sec-lbl">② 直近20件</div>
-      <div class="sv-table-wrap">
-        <table class="sv-table">
-          <thead><tr><th>銘柄</th><th>判定日</th><th>判定</th><th>判定時株価</th><th>30日後</th><th>60日後</th></tr></thead>
-          <tbody>${recentRows || noData}</tbody>
-        </table>
-      </div>
-    </div>`;
 }
 
 loadTickers();
