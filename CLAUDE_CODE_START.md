@@ -327,6 +327,7 @@ git push origin kaihatsu
 - [ ] pytest 全件パス
 - [ ] 単体テストで動作確認
 - [ ] 全銘柄再生成で成功率確認
+- [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
 - [ ] BACKLOG.mdの該当項目を「完了済み」に移動
 - [ ] コミット・プッシュ完了
 
@@ -409,3 +410,58 @@ git push origin kaihatsu
 - 乖離Zスコアの符号：正=NASDAQ優位 / 負=S&P500優位
 
 修正後は index.html のバッジ表示との整合性も確認すること。
+
+---
+
+## リンク整合性チェック（HTMLファイルを新規作成・移設・削除した場合は必須）
+
+```bash
+python ~/check_links.py
+```
+
+リンク切れが0件であることを確認してからコミットすること。
+スクリプトが存在しない場合は以下で再作成：
+
+```python
+# ~/check_links.py
+import os, re
+from pathlib import Path
+
+DOCS_ROOT = Path("docs")
+html_files = sorted(DOCS_ROOT.rglob("*.html"))
+
+PATTERNS = [
+    r'href=["\']([^"\'#?]+)["\']',
+    r"fetch\(['\"]([^'\"?#]+)['\"]",
+    r"src=['\"]([^'\"?#]+)['\"]",
+]
+
+errors = []
+
+for html_path in html_files:
+    base_dir = html_path.parent
+    content = html_path.read_text(encoding="utf-8", errors="ignore")
+    for pat in PATTERNS:
+        for match in re.finditer(pat, content):
+            raw = match.group(1).strip()
+            if raw.startswith(("http", "//", "data:", "mailto:", "#", "javascript")) or not raw:
+                continue
+            if raw.startswith("/"):
+                target = DOCS_ROOT / raw.lstrip("/")
+            else:
+                target = (base_dir / raw).resolve()
+                try:
+                    target.relative_to(Path("docs").resolve())
+                except ValueError:
+                    errors.append(f"[OUT-OF-DOCS] {html_path} → {raw}")
+                    continue
+            if not target.exists():
+                errors.append(f"[DEAD] {html_path} → {raw}  (resolved: {target})")
+
+print(f"=== チェック対象: {len(html_files)} ファイル ===\n")
+if errors:
+    for e in errors: print(e)
+    print(f"\n合計 {len(errors)} 件のリンク切れ")
+else:
+    print("リンク切れなし ✅")
+```
