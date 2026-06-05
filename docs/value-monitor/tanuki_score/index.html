@@ -207,6 +207,15 @@
     .sv-badge.sv-sell           { background: rgba(244,63,94,.15);  color: #f43f5e; border-color: rgba(244,63,94,.3); }
     .sv-badge.sv-pass           { background: rgba(100,116,139,.1); color: var(--sub); border-color: rgba(100,116,139,.2); }
 
+    /* accordion */
+    .sec-accordion { cursor: pointer; user-select: none; }
+    .sec-accordion:hover { color: var(--acc); }
+    .board-desc { font-size: 12px; color: var(--sub); line-height: 1.6; margin: 6px 0 14px; padding: 0 2px; }
+    .sv-note { font-size: 11px; color: var(--mut); margin-top: 10px; padding: 8px 10px; background: var(--sur2); border-radius: 4px; border-left: 3px solid var(--bdr); }
+    .sv-section-toggle { cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; }
+    .sv-section-toggle:hover { opacity: .8; }
+    .sv-toggle-hint { font-size: 11px; color: var(--mut); }
+
     footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--bdr); text-align: center; font-size: 11px; color: var(--mut); }
     footer a { color: var(--acc); text-decoration: none; }
     .last-updated { font-family: var(--mono); font-size: 11px; color: var(--mut); text-align: right; padding: 6px 0 0; }
@@ -629,16 +638,22 @@ function renderDetailTable() {
   }
 
   document.getElementById('cat-board').innerHTML = `
-    <div class="sec">② 6分類ボード — ファンダ × タイミング</div>
-    <div class="cat-row top3">
-      ${catCard('BUY',   cats.BUY)}
-      ${catCard('WATCH', cats.WATCH)}
-      ${catCard('HOLD',  cats.HOLD)}
+    <div class="sec sec-accordion" onclick="toggleCatBoard()">
+      投資アクション早見表
+      <span id="cat-board-arrow" style="font-size:11px;color:var(--mut);margin-left:8px">▶ 展開して見る</span>
     </div>
-    <div class="cat-row top3">
-      ${catCard('TRIM', cats.TRIM)}
-      ${catCard('SELL', cats.SELL)}
-      ${catCard('PASS', cats.PASS)}
+    <div id="cat-board-body" style="display:none">
+      <div class="board-desc">ファンダメンタル評価（ファンダスコア）× 市場タイミング（乖離率・フェーズ）の2軸でアクションを分類。自分の銘柄がどのセルにいるかを確認する。</div>
+      <div class="cat-row top3">
+        ${catCard('BUY',   cats.BUY)}
+        ${catCard('WATCH', cats.WATCH)}
+        ${catCard('HOLD',  cats.HOLD)}
+      </div>
+      <div class="cat-row top3">
+        ${catCard('TRIM', cats.TRIM)}
+        ${catCard('SELL', cats.SELL)}
+        ${catCard('PASS', cats.PASS)}
+      </div>
     </div>`;
 
   // ③ Detail table
@@ -720,6 +735,24 @@ function toggleCat(id) {
   const open = body.style.display !== 'none' && body.style.display !== '';
   body.style.display = open ? 'none' : 'flex';
   if (toggle) toggle.classList.toggle('open', !open);
+}
+
+function toggleCatBoard() {
+  const body  = document.getElementById('cat-board-body');
+  const arrow = document.getElementById('cat-board-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none' && body.style.display !== '';
+  body.style.display = open ? 'none' : '';
+  if (arrow) arrow.textContent = open ? '▶ 展開して見る' : '▲ 折りたたむ';
+}
+
+function toggleScoreVerify() {
+  const body  = document.getElementById('sv-body');
+  const arrow = document.getElementById('sv-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none' && body.style.display !== '';
+  body.style.display = open ? 'none' : '';
+  if (arrow) arrow.textContent = open ? '▶ 展開して見る' : '▲ 折りたたむ';
 }
 
 function toJST(dateStr) {
@@ -806,16 +839,24 @@ function renderScoreVerify(allEntries) {
   const noData = `<tr><td colspan="99" style="text-align:center;color:var(--mut);padding:16px">データなし（pipeline.py 実行後に表示）</td></tr>`;
 
   el.innerHTML = `
-    <h2 class="section-title">④ 判定実績 — TANUKI SCORE バックテスト</h2>
+    <h2 class="section-title sv-section-toggle" onclick="toggleScoreVerify()">
+      ④ 判定実績 — TANUKI SCORE バックテスト
+      <span class="sv-toggle-hint" id="sv-arrow">▶ 展開して見る</span>
+    </h2>
+    <div id="sv-body" style="display:none">
     <div class="sv-card">
-      <div class="sv-subtitle">判定時株価とN日後株価を比較した事後検証。<code>score_verifier.py</code>を定期実行することでリターンが蓄積される。</div>
+      <div class="sv-subtitle">
+        TANUKI SCOREが BUY / WATCH / HOLD 等と判定した銘柄を、判定日から30日後・60日後に保有した場合のリターン実績。母数が少ないため参考値として活用。
+        <br><code style="font-size:11px">score_verifier.py</code>を定期実行することでリターンが蓄積される（初回記録: 2026-07-03以降）。
+      </div>
       <div class="sv-sec-lbl">判定別勝率（30日・60日後リターン）</div>
       <div class="sv-table-wrap">
         <table class="sv-table">
-          <thead><tr><th>判定</th><th>件数</th><th>30日勝率</th><th>60日勝率</th><th>平均30dリターン</th></tr></thead>
+          <thead><tr><th>判定</th><th>件数(n)</th><th>30日勝率</th><th>60日勝率</th><th>平均30dリターン</th></tr></thead>
           <tbody>${winRows || noData}</tbody>
         </table>
       </div>
+      <div class="sv-note">※ n &lt; 10 の場合は統計的信頼性が低い。過去実績は将来を保証しない。</div>
       <div class="sv-sec-lbl">直近20件</div>
       <div class="sv-table-wrap">
         <table class="sv-table">
@@ -823,6 +864,7 @@ function renderScoreVerify(allEntries) {
           <tbody>${recentRows || noData}</tbody>
         </table>
       </div>
+    </div>
     </div>`;
 }
 </script>

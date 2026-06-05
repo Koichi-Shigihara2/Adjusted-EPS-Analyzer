@@ -343,15 +343,30 @@ function renderTickerSection() {
 
   let html = '';
 
-  if (highZone.length > 0) {
-    html += '<div class="zone-header zone-alert">🔴 要注目ゾーン</div><div class="ticker-cards zone-alert-cards">';
-    for (const [ticker, data] of highZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
+  // 要注目ゾーン: 高＋中を合わせて最低5件表示
+  const midZone = sorted.filter(([, d]) => (d.classified?.items ?? []).length > 0 && d.top_importance === '中');
+  const alertZone = [...highZone];
+  if (alertZone.length < 5) {
+    for (const item of midZone) {
+      if (alertZone.length >= 5) break;
+      if (!alertZone.find(([t]) => t === item[0])) alertZone.push(item);
+    }
+  }
+  html += '<div class="zone-header zone-alert">🔴 要注目ゾーン</div>';
+  if (alertZone.length > 0) {
+    html += '<div class="ticker-cards zone-alert-cards">';
+    for (const [ticker, data] of alertZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
     html += '</div>';
+  } else {
+    html += '<div style="font-family:var(--mono);font-size:12px;color:var(--mut);padding:14px 4px">本日の要注目ニュースはありません</div>';
   }
 
-  if (normalZone.length > 0) {
+  // 通常ニュースゾーン: 要注目ゾーンに昇格したものを除外
+  const alertTickers = new Set(alertZone.map(([t]) => t));
+  const normalZoneFiltered = normalZone.filter(([t]) => !alertTickers.has(t));
+  if (normalZoneFiltered.length > 0) {
     html += '<div class="zone-header zone-normal">📰 通常ニュースゾーン</div><div class="ticker-cards">';
-    for (const [ticker, data] of normalZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
+    for (const [ticker, data] of normalZoneFiltered) html += buildTickerCard(ticker, data, configTickers, themeMapById);
     html += '</div>';
   }
 
@@ -500,11 +515,6 @@ async function loadData() {
       html += '</div>';
     } else {
       html += '<div style="font-family:var(--mono);font-size:12px;color:var(--mut);padding:10px 0">候補データなし</div>';
-    }
-
-    // 📊 テーマ別サマリー
-    if (themeConfig) {
-      html += buildThemeSummarySection(themeConfig, configTickers, tickers, hypeMap);
     }
 
     if (generatedAt) {

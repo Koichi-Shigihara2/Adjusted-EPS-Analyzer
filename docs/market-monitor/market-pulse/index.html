@@ -365,7 +365,12 @@
         <div class="tp-div-value" id="tpDivVal" style="font-size:28px">—</div>
         <div id="tpDivBadge" style="margin-top:4px"></div>
         <div id="tpDivZscore" style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:3px;text-align:center"></div>
-        <div style="font-size:13px;color:var(--mut);margin-top:4px;text-align:center">＋=NASDAQ強気<br>−=NASDAQ弱気</div>
+        <div style="font-size:11px;color:var(--mut);margin-top:4px;text-align:center;line-height:1.6">
+          乖離 = Tech Pulse − CNN F&amp;G<br>
+          ＋=NASDAQ固有の強気（NASDAQがS&amp;P500より楽観）<br>
+          −=NASDAQ固有の弱気（NASDAQがS&amp;P500より悲観）<br>
+          <span style="color:var(--amb)">±20以上で要注目</span>
+        </div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center">
         <div class="tp-gauge-title" style="text-align:center">Tech Pulse<div style="font-size:13px;color:var(--mut);font-weight:400;margin-top:1px">NASDAQベース・QQQ/VXNから算出（0=恐怖/50=中立/100=強欲）</div></div>
@@ -784,9 +789,14 @@ function renderTechPulse(){
   if(divVal!=null){
     divEl.textContent=(divVal>0?"+":"")+Number(divVal).toFixed(0);
     divEl.style.color=divVal>0?"#10b981":divVal<0?"#f43f5e":"var(--mut)";
+    // ±20以上で強調（フォントサイズ拡大 + アウトライン）
+    const absDiv=Math.abs(divVal);
+    divEl.style.fontSize=absDiv>=20?"36px":"28px";
+    divEl.style.textShadow=absDiv>=20?(divVal>0?"0 0 8px rgba(16,185,129,.5)":"0 0 8px rgba(244,63,94,.5)"):"";
     let badge="";
     if(divSig==="ハイテク先行反発シグナル")badge='<div class="tp-signal tp-signal-buy">ハイテク先行反発シグナル</div>';
     else if(divSig==="ハイテク先行下落注意")badge='<div class="tp-signal tp-signal-sell">ハイテク先行下落注意</div>';
+    else if(absDiv>=20)badge=`<div class="tp-signal ${divVal>0?"tp-signal-buy":"tp-signal-sell"}">乖離${divVal>0?"+":""}${Number(divVal).toFixed(0)} 要注目水準</div>`;
     document.getElementById("tpDivBadge").innerHTML=badge;
   } else {divEl.textContent="—";document.getElementById("tpDivBadge").innerHTML=""}
   const zsEl=document.getElementById("tpDivZscore");

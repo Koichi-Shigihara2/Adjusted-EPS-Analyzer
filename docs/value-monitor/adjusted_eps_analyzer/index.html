@@ -82,6 +82,10 @@
     .opp-metrics { display: flex; gap: 12px; flex-wrap: wrap; }
     .opp-m { font-family: var(--mono); font-size: 12px; color: var(--mut); }
     .opp-m strong { color: var(--txt); }
+    .opp-section-toggle { cursor: pointer; user-select: none; }
+    .opp-section-toggle:hover { color: var(--acc); }
+    .opp-toggle-hint { font-size: 11px; color: var(--mut); margin-left: 8px; }
+    .opp-desc { font-size: 12px; color: var(--sub, #94a3b8); line-height: 1.6; margin: 0 0 12px; }
 
     /* ── テーブル ── */
     .table-wrap { background: var(--sur); border: 1px solid var(--bdr); margin-top: 16px; overflow-x: auto; }
@@ -294,7 +298,9 @@ function toggleTranFilter() {
     }
 
     // ── 投資機会ランキング ──
-    html += '<div class="sec">🎯 投資機会ランキング — EPS調整 × 成長率 × 割安度の複合評価</div>';
+    html += '<div class="sec opp-section-toggle" onclick="toggleOppSection()">🎯 投資機会ランキング<span class="opp-toggle-hint" id="opp-arrow">▶ 展開して見る</span></div>';
+    html += '<div id="opp-body" style="display:none">';
+    html += '<div class="opp-desc">投資機会スコア = EPS調整品質 × 成長率 × 割安度の3軸複合評価。スコアが高い銘柄ほど「良い利益成長が市場に未評価」の可能性が高い。</div>';
     html += '<div class="card" style="margin-bottom:24px"><ul class="opp-list">';
     if (rankCandidates.length === 0) {
       html += '<li class="empty" style="padding:10px 0">対象銘柄なし</li>';
@@ -325,6 +331,7 @@ function toggleTranFilter() {
       });
     }
     html += '</ul></div>';
+    html += '</div>'; // end #opp-body
 
     // ── 全銘柄一覧テーブル ──
     html += '<div class="sec">📋 全監視銘柄一覧</div>';
@@ -465,6 +472,15 @@ function toJST(dateStr) {
     year: 'numeric', month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit'
   });
+}
+
+function toggleOppSection() {
+  const body  = document.getElementById('opp-body');
+  const arrow = document.getElementById('opp-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none' && body.style.display !== '';
+  body.style.display = open ? 'none' : '';
+  if (arrow) arrow.textContent = open ? '▶ 展開して見る' : '▲ 折りたたむ';
 }
 </script>
   <script src="../../common/site-nav.js"></script>

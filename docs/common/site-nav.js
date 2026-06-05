@@ -9,16 +9,16 @@
   var BASE = '/On-a-journey';
 
   var ITEMS = [
-    { key: 'home',   label: 'HOME',              href: BASE + '/' },
-    { key: 'tanuki', label: 'TANUKI Valuation',  href: BASE + '/value-monitor/tanuki_valuation/' },
-    { key: 'stonks', label: 'STONKS SILO',       href: BASE + '/value-monitor/stonks-silo/' },
-    { key: 'hype',   label: 'HYPE CORE',         href: BASE + '/value-monitor/hypecore/' },
-    { key: 'eps',    label: 'EPS Analyzer',      href: BASE + '/value-monitor/adjusted_eps_analyzer/' },
-    { key: 'mp',     label: 'Market Pulse',      href: BASE + '/market-monitor/market-pulse/' },
-    { key: 'macro',  label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
-    { key: 'tanuki-score', label: 'TANUKI SCORE',   href: BASE + '/value-monitor/tanuki_score/' },
-    { key: 'discover',   label: 'DISCOVER',    href: BASE + '/discover/' },
-    { key: 'portfolio',  label: 'PORTFOLIO',   href: BASE + '/portfolio/' }
+    { key: 'home',         label: 'HOME',             href: BASE + '/' },
+    { key: 'tanuki-score', label: 'TANUKI SCORE',      href: BASE + '/value-monitor/tanuki_score/' },
+    { key: 'tanuki',       label: 'TANUKI Valuation',  href: BASE + '/value-monitor/tanuki_valuation/' },
+    { key: 'eps',          label: 'EPS Analyzer',      href: BASE + '/value-monitor/adjusted_eps_analyzer/' },
+    { key: 'stonks',       label: 'STONKS SILO',       href: BASE + '/value-monitor/stonks-silo/' },
+    { key: 'mp',           label: 'Market Pulse',      href: BASE + '/market-monitor/market-pulse/' },
+    { key: 'macro',        label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
+    { key: 'hype',         label: 'HYPE CORE',         href: BASE + '/value-monitor/hypecore/' },
+    { key: 'discover',     label: 'DISCOVER',          href: BASE + '/discover/' },
+    { key: 'portfolio',    label: 'PORTFOLIO',         href: BASE + '/portfolio/' }
   ];
 
   function build(activeKey) {
