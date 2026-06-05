@@ -27,7 +27,6 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 14px; min-height: 100vh; line-height: 1.6; }
 
-    /* ── Header ── */
     header {
       border-bottom: 1px solid var(--bdr); padding: 14px 20px;
       display: flex; align-items: center; justify-content: space-between;
@@ -44,29 +43,22 @@
     .site-nav { display: flex; gap: 14px; flex-wrap: wrap; }
     .nav-sep { display: inline-block; width: 1px; height: 12px; background: var(--bdr); margin: auto 0; }
 
-    /* ── Shell ── */
     .shell { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
 
-    /* ── Section header ── */
     .sec {
       font-family: var(--mono); font-size: 11px; color: var(--sub);
       letter-spacing: .1em; margin: 32px 0 14px;
       display: flex; align-items: center; gap: 10px;
     }
     .sec::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
-    .sec-badge {
-      font-family: var(--mono); font-size: 9px; padding: 2px 7px;
-      border-radius: 2px; letter-spacing: .06em;
-    }
+    .sec-badge { font-family: var(--mono); font-size: 9px; padding: 2px 7px; border-radius: 2px; letter-spacing: .06em; }
     .sec-badge.core { background: rgba(240,165,0,.15); color: var(--core); border: 1px solid rgba(240,165,0,.3); }
     .sec-badge.sat  { background: rgba(74,158,255,.12); color: var(--sat);  border: 1px solid rgba(74,158,255,.25); }
 
-    /* ── Cards ── */
     .card { background: var(--sur); border: 1px solid var(--bdr); border-radius: 6px; padding: 20px; margin-bottom: 12px; }
     .card.core-card { border-left: 3px solid var(--core); }
     .card.sat-card  { border-left: 3px solid var(--sat); }
 
-    /* ── Tables ── */
     .tbl-wrap { overflow-x: auto; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 600px; }
     thead th {
@@ -88,8 +80,10 @@
       display: inline-block; font-family: var(--mono); font-size: 10px;
       padding: 2px 8px; border-radius: 2px; letter-spacing: .04em;
     }
-    .health-ok  { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.25); }
-    .health-na  { background: rgba(100,116,139,.1);  color: var(--mut); border: 1px solid var(--bdr); }
+    .health-ok   { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.25); }
+    .health-warn { background: rgba(245,158,11,.12); color: var(--amb); border: 1px solid rgba(245,158,11,.25); }
+    .health-bad  { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.25); }
+    .health-na   { background: rgba(100,116,139,.1); color: var(--mut); border: 1px solid var(--bdr); }
     .action-btn {
       font-family: var(--mono); font-size: 10px; padding: 3px 9px;
       background: transparent; border: 1px solid var(--bdr); color: var(--sub);
@@ -98,24 +92,20 @@
     .action-btn:hover { border-color: var(--acc); color: var(--acc); }
     .empty-row td { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 24px; }
 
-    /* ── Form ── */
     .form-card { background: var(--sur); border: 1px solid var(--bdr); border-radius: 6px; padding: 24px; }
     .form-card.core-form { border-top: 2px solid var(--core); }
     .form-card.sat-form  { border-top: 2px solid var(--sat); }
-
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
     .form-row.full { grid-template-columns: 1fr; }
     .form-row.three { grid-template-columns: 1fr 1fr 1fr; }
     @media (max-width: 640px) { .form-row, .form-row.three { grid-template-columns: 1fr; } }
-
     .field { display: flex; flex-direction: column; gap: 6px; }
     .field label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; }
     .field label .req { color: var(--red); margin-left: 2px; }
     .field input, .field textarea, .field select {
       background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt);
       font-family: var(--sans); font-size: 13px; padding: 9px 12px;
-      border-radius: 4px; outline: none; transition: border-color .15s;
-      resize: vertical;
+      border-radius: 4px; outline: none; transition: border-color .15s; resize: vertical;
     }
     .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--acc); }
     .field input[type="number"] { font-family: var(--mono); }
@@ -123,8 +113,6 @@
     .field textarea.tall { min-height: 110px; }
     .field .hint { font-size: 11px; color: var(--mut); }
     .field select option { background: var(--sur2); }
-
-    /* ── Type selector ── */
     .type-row { display: flex; gap: 12px; margin-bottom: 20px; }
     .type-btn {
       flex: 1; padding: 12px; border: 1px solid var(--bdr); background: var(--sur2);
@@ -134,16 +122,12 @@
     .type-btn:hover { border-color: var(--sub); color: var(--txt); }
     .type-btn.active-core { border-color: var(--core); color: var(--core); background: rgba(240,165,0,.06); }
     .type-btn.active-sat  { border-color: var(--sat);  color: var(--sat);  background: rgba(74,158,255,.06); }
-
-    /* ── KPI notice ── */
     .kpi-notice {
       background: rgba(240,165,0,.06); border: 1px solid rgba(240,165,0,.2);
       padding: 12px 16px; border-radius: 4px; font-size: 12px; color: var(--sub);
       font-family: var(--mono); line-height: 1.7;
     }
     .kpi-notice strong { color: var(--core); }
-
-    /* ── Buttons ── */
     .btn {
       padding: 10px 22px; font-family: var(--mono); font-size: 12px; letter-spacing: .06em;
       border: none; border-radius: 4px; cursor: pointer; transition: opacity .15s;
@@ -152,12 +136,9 @@
     .btn-register { background: var(--core); color: #000; font-weight: 700; }
     .btn-register.sat-mode { background: var(--sat); color: #fff; }
     .btn-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-
-    /* ── Token input ── */
     .token-row {
       display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
-      padding: 12px 16px; background: var(--sur2); border: 1px solid var(--bdr);
-      border-radius: 4px;
+      padding: 12px 16px; background: var(--sur2); border: 1px solid var(--bdr); border-radius: 4px;
     }
     .token-row label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; white-space: nowrap; }
     .token-row input {
@@ -166,16 +147,12 @@
       border-radius: 3px; outline: none; transition: border-color .15s;
     }
     .token-row input:focus { border-color: var(--acc); }
-
-    /* ── Save status ── */
     #save-status {
       display: none; border-radius: 4px; padding: 12px 16px; margin-top: 16px;
       font-family: var(--mono); font-size: 12px; letter-spacing: .04em; line-height: 1.7;
     }
     #save-status.ok  { display: block; background: rgba(16,185,129,.08);  border: 1px solid rgba(16,185,129,.3);  color: var(--grn); }
     #save-status.err { display: block; background: rgba(244,63,94,.08);   border: 1px solid rgba(244,63,94,.3);   color: var(--red); }
-
-    /* ── Archived section ── */
     .archive-toggle {
       display: flex; align-items: center; gap: 8px; cursor: pointer;
       padding: 10px 0; color: var(--mut); font-family: var(--mono); font-size: 11px;
@@ -186,17 +163,131 @@
     .archive-arrow.open { transform: rotate(90deg); }
     #archive-body { display: none; }
     #archive-body.open { display: block; }
-
-    /* ── Validation error ── */
     .field .err { font-size: 11px; color: var(--red); font-family: var(--mono); display: none; }
     .field.invalid input,.field.invalid textarea,.field.invalid select { border-color: var(--red); }
     .field.invalid .err { display: block; }
-
-    /* ── Misc ── */
     .tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 2px; }
     .tag.core { background: rgba(240,165,0,.1); color: var(--core); border: 1px solid rgba(240,165,0,.2); }
     .tag.sat  { background: rgba(74,158,255,.1); color: var(--sat);  border: 1px solid rgba(74,158,255,.2); }
     .days-badge { font-family: var(--mono); font-size: 11px; color: var(--sub); }
+
+    /* ── Modal ───────────────────────────────────────────── */
+    .modal-ov {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.7); z-index: 200;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-ov.open { display: flex; }
+    .modal-box {
+      background: var(--sur); border: 1px solid var(--bdr); border-radius: 8px;
+      width: min(740px, 100%); max-height: 88vh;
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--bdr); flex-shrink: 0;
+    }
+    .modal-head-left { display: flex; align-items: center; gap: 10px; }
+    .modal-tkr { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--core); }
+    .modal-close {
+      background: transparent; border: 1px solid var(--bdr); color: var(--sub);
+      width: 28px; height: 28px; border-radius: 4px; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; justify-content: center; transition: all .15s;
+    }
+    .modal-close:hover { border-color: var(--red); color: var(--red); }
+    .modal-tabs {
+      display: flex; border-bottom: 1px solid var(--bdr); flex-shrink: 0;
+      padding: 0 20px; overflow-x: auto;
+    }
+    .m-tab {
+      font-family: var(--mono); font-size: 11px; letter-spacing: .06em;
+      padding: 10px 14px; border: none; background: transparent; color: var(--mut);
+      cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap;
+    }
+    .m-tab:hover { color: var(--sub); }
+    .m-tab.active { color: var(--core); border-bottom-color: var(--core); }
+    .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
+
+    /* ── Thesis tab ── */
+    .t-block { margin-bottom: 20px; }
+    .t-label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 6px; }
+    .t-text { font-size: 13px; line-height: 1.8; color: var(--txt); white-space: pre-wrap; word-break: break-word; }
+    .t-meta { display: flex; gap: 24px; font-family: var(--mono); font-size: 11px; color: var(--mut); margin-top: 4px; }
+
+    /* ── Review tab ── */
+    .rv-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .rv-quarter { font-family: var(--mono); font-size: 16px; font-weight: 700; }
+    .rv-date { font-family: var(--mono); font-size: 10px; color: var(--mut); }
+    .gauge-wrap { margin-bottom: 14px; }
+    .gauge-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+    .gauge-num { font-family: var(--mono); font-size: 22px; font-weight: 700; }
+    .gauge-bar { height: 8px; background: var(--sur2); border-radius: 4px; overflow: hidden; }
+    .gauge-fill { height: 100%; border-radius: 4px; }
+    .rec-badge {
+      display: inline-block; font-family: var(--mono); font-size: 11px; font-weight: 700;
+      padding: 3px 10px; border-radius: 3px; letter-spacing: .05em;
+    }
+    .rec-continue { background: rgba(16,185,129,.15); color: var(--grn); border: 1px solid rgba(16,185,129,.3); }
+    .rec-watch    { background: rgba(245,158,11,.15);  color: var(--amb); border: 1px solid rgba(245,158,11,.3); }
+    .rec-revise   { background: rgba(244,63,94,.12);   color: var(--red); border: 1px solid rgba(244,63,94,.25); }
+    .rec-exit     { background: rgba(244,63,94,.22);   color: var(--red); border: 2px solid rgba(244,63,94,.5); }
+    .rv-summary { font-size: 13px; line-height: 1.7; color: var(--txt); margin: 10px 0 14px; }
+    .rv-lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+    @media (max-width: 540px) { .rv-lists { grid-template-columns: 1fr; } }
+    .rv-list-box { background: var(--sur2); border-radius: 4px; padding: 12px; }
+    .rv-list-title { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; margin-bottom: 8px; }
+    .rv-list-title.pos { color: var(--grn); }
+    .rv-list-title.neg { color: var(--amb); }
+    .rv-list { list-style: none; }
+    .rv-list li { font-size: 12px; line-height: 1.6; padding: 3px 0 3px 14px; position: relative; color: var(--sub); border-bottom: 1px solid rgba(30,40,64,.4); }
+    .rv-list li:last-child { border-bottom: none; }
+    .rv-list li::before { content: '›'; position: absolute; left: 0; }
+    .rv-list.pos li::before { color: var(--grn); }
+    .rv-list.neg li::before { color: var(--amb); }
+    .bias-box { background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.3); border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 12px; color: var(--red); line-height: 1.6; }
+    .bias-box strong { display: block; font-family: var(--mono); font-size: 10px; margin-bottom: 4px; }
+    .exit-box { background: var(--sur2); border-radius: 4px; padding: 12px; margin-bottom: 14px; }
+    .exit-box-label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 6px; }
+    .exit-dist-badge { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 2px; margin-right: 6px; }
+    .ed-far   { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.25); }
+    .ed-close { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.25); }
+    .ed-watch { background: rgba(245,158,11,.12); color: var(--amb); border: 1px solid rgba(245,158,11,.25); }
+    .nkpi-title { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 8px; }
+    .nkpi-list { display: flex; flex-wrap: wrap; gap: 6px; list-style: none; margin-bottom: 14px; }
+    .nkpi-item { font-family: var(--mono); font-size: 10px; padding: 3px 9px; background: rgba(59,130,246,.1); color: var(--acc); border: 1px solid rgba(59,130,246,.25); border-radius: 2px; }
+    .hist-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 0; color: var(--mut); font-family: var(--mono); font-size: 11px; user-select: none; }
+    .hist-toggle:hover { color: var(--sub); }
+    .hist-body { display: none; }
+    .hist-body.open { display: block; }
+    .hist-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(30,40,64,.4); cursor: pointer; transition: color .12s; }
+    .hist-item:hover { color: var(--acc); }
+    .hist-item:last-child { border-bottom: none; }
+    .hist-q { font-family: var(--mono); font-size: 12px; }
+    .hist-sc { font-family: var(--mono); font-size: 11px; color: var(--mut); }
+    .no-rv { font-family: var(--mono); font-size: 12px; color: var(--mut); text-align: center; padding: 40px; }
+
+    /* ── KPI tab ── */
+    .kpi-card { background: var(--sur2); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
+    .kpi-card-name { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-bottom: 8px; }
+
+    /* ── DCF tab ── */
+    .dcf-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+    .dcf-tbl th { background: var(--sur2); padding: 7px 10px; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; border-bottom: 1px solid var(--bdr); text-align: center; }
+    .dcf-tbl th:first-child { text-align: left; }
+    .dcf-tbl td { padding: 6px 10px; border-bottom: 1px solid rgba(30,40,64,.4); }
+    .dcf-tbl td:first-child { color: var(--sub); font-family: var(--mono); font-size: 11px; }
+    .dcf-tbl td:not(:first-child) { text-align: center; font-family: var(--mono); }
+    .dcf-bear { color: var(--red); }
+    .dcf-base { color: var(--acc); }
+    .dcf-bull { color: var(--grn); }
+    .dcf-sec { background: var(--sur2); border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+    .dcf-sec-title { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; margin-bottom: 8px; }
+    .dcf-sec-title.assum { color: var(--sub); }
+    .dcf-sec-title.risk  { color: var(--red); }
+    .dcf-ul { list-style: none; }
+    .dcf-ul li { font-size: 12px; line-height: 1.6; padding: 3px 0 3px 14px; position: relative; color: var(--sub); }
+    .dcf-ul li::before { content: '›'; position: absolute; left: 0; color: var(--mut); }
+    .sat-note { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 32px; border: 1px dashed var(--bdr); border-radius: 4px; margin-top: 16px; }
   </style>
 </head>
 <body data-tool="tail">
@@ -210,9 +301,7 @@
 
 <div class="shell">
 
-  <!-- ① 俯瞰ビュー -->
   <div class="sec">OVERVIEW <span class="sec-badge core">CORE</span></div>
-
   <div class="tbl-wrap">
     <table id="core-table">
       <thead>
@@ -233,7 +322,6 @@
   </div>
 
   <div class="sec" style="margin-top:24px">OVERVIEW <span class="sec-badge sat">SATELLITE</span></div>
-
   <div class="tbl-wrap">
     <table id="sat-table">
       <thead>
@@ -253,18 +341,13 @@
     </table>
   </div>
 
-  <!-- ② 登録フォーム -->
   <div class="sec" style="margin-top:40px">NEW POSITION</div>
 
   <div class="form-card" id="form-card">
-
-    <!-- GitHub PAT -->
     <div class="token-row">
       <label>GH TOKEN</label>
       <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx (contents:write)" autocomplete="off">
     </div>
-
-    <!-- ティッカー + タイプ -->
     <div class="form-row" style="margin-bottom:20px">
       <div class="field" id="field-ticker">
         <label>TICKER <span class="req">*</span></label>
@@ -280,7 +363,6 @@
       </div>
     </div>
 
-    <!-- Core フォーム -->
     <div id="form-core">
       <div class="form-row full">
         <div class="field" id="field-thesis">
@@ -321,7 +403,6 @@
       </div>
     </div>
 
-    <!-- Satellite フォーム -->
     <div id="form-sat" style="display:none">
       <div class="form-row">
         <div class="field" id="field-strategy">
@@ -369,17 +450,12 @@
       </div>
     </div>
 
-    <!-- 登録ボタン -->
     <div class="btn-row">
       <button class="btn btn-register" id="btn-register" onclick="registerPosition()">登録 → GitHub に保存</button>
     </div>
-
-    <!-- 保存結果 -->
     <div id="save-status"></div>
-
   </div>
 
-  <!-- ③ アーカイブ済みポジション -->
   <div style="margin-top:40px">
     <div class="archive-toggle" onclick="toggleArchive()">
       <span class="archive-arrow" id="archive-arrow">▶</span>
@@ -391,11 +467,8 @@
         <table>
           <thead>
             <tr>
-              <th>TICKER</th>
-              <th>タイプ</th>
-              <th>テーゼ / 戦略名</th>
-              <th>エントリー日</th>
-              <th class="num">エントリー価格</th>
+              <th>TICKER</th><th>タイプ</th><th>テーゼ / 戦略名</th>
+              <th>エントリー日</th><th class="num">エントリー価格</th>
             </tr>
           </thead>
           <tbody id="archive-tbody">
@@ -408,18 +481,44 @@
 
 </div><!-- /shell -->
 
+<!-- ── Detail Modal ─────────────────────────────────── -->
+<div class="modal-ov" id="modal-ov" onclick="handleOverlayClick(event)">
+  <div class="modal-box" id="modal-box">
+    <div class="modal-head">
+      <div class="modal-head-left">
+        <span class="modal-tkr" id="modal-tkr-label"></span>
+        <span class="tag core" id="modal-type-tag"></span>
+      </div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-tabs" id="modal-tabs"></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
 <script src="../../common/site-nav.js"></script>
 <script>
 /* ─── State ─── */
-var currentType = 'core';
-var loadedPositions = {};   // ticker → thesis object
-var positionsIndex = [];    // ["PLTR_thesis.json", ...]
+var currentType      = 'core';
+var loadedPositions  = {};
+var positionsIndex   = [];
+var loadedReviews    = {};       // { PLTR: { '2026Q1': reviewData } }
+var reviewQByTicker  = {};       // { PLTR: [entries newest-first] }
+var modalTicker      = null;
+var modalTabIdx      = 0;
+var kpiCache         = {};       // { PLTR: kpiData }
+
+var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ'];
+var TABS_SAT  = ['戦略'];
 
 /* ─── Init ─── */
 document.addEventListener('DOMContentLoaded', function () {
   setTodayDefaults();
   setupStrategyToggle();
   loadPositions();
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') closeModal();
+  });
 });
 
 function setTodayDefaults() {
@@ -437,12 +536,10 @@ function setType(t) {
   fc.className = 'form-card ' + (t === 'core' ? 'core-form' : 'sat-form');
   document.getElementById('btn-core').className = 'type-btn' + (t === 'core' ? ' active-core' : '');
   document.getElementById('btn-sat').className  = 'type-btn' + (t === 'satellite' ? ' active-sat' : '');
-  var rb = document.getElementById('btn-register');
-  rb.className = 'btn btn-register' + (t === 'satellite' ? ' sat-mode' : '');
+  document.getElementById('btn-register').className = 'btn btn-register' + (t === 'satellite' ? ' sat-mode' : '');
   hideStatus();
 }
 
-/* ─── Strategy custom input toggle ─── */
 function setupStrategyToggle() {
   document.getElementById('inp-strategy').addEventListener('change', function () {
     var custom = document.getElementById('inp-strategy-custom');
@@ -450,49 +547,70 @@ function setupStrategyToggle() {
     if (this.value !== '__custom__') custom.value = '';
   });
 }
-
 function getStrategyName() {
   var sel = document.getElementById('inp-strategy').value;
-  if (sel === '__custom__') return document.getElementById('inp-strategy-custom').value.trim();
-  return sel;
+  return sel === '__custom__' ? document.getElementById('inp-strategy-custom').value.trim() : sel;
 }
 
-/* ─── Load positions ─── */
+/* ─── Load positions + reviews ─── */
 function loadPositions() {
-  fetch('data/positions_index.json?_=' + Date.now())
+  var posP = fetch('data/positions_index.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : { positions: [] }; })
     .catch(function () { return { positions: [] }; })
     .then(function (idx) {
       positionsIndex = idx.positions || [];
-      var fetches = positionsIndex.map(function (fname) {
+      return Promise.all(positionsIndex.map(function (fname) {
         return fetch('data/positions/' + fname + '?_=' + Date.now())
           .then(function (r) { return r.ok ? r.json() : null; })
           .catch(function () { return null; });
-      });
-      return Promise.all(fetches);
+      }));
     })
     .then(function (items) {
-      items.forEach(function (p) {
-        if (p && p.ticker) loadedPositions[p.ticker] = p;
+      items.forEach(function (p) { if (p && p.ticker) loadedPositions[p.ticker] = p; });
+    });
+
+  Promise.all([posP, loadReviewQueue()]).then(function () { renderOverview(); });
+}
+
+function loadReviewQueue() {
+  return fetch('data/review_queue.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : { queue: [] }; })
+    .catch(function () { return { queue: [] }; })
+    .then(function (data) {
+      var completed = (data.queue || []).filter(function (e) { return e.status === 'completed'; });
+      completed.forEach(function (e) {
+        if (!reviewQByTicker[e.ticker]) reviewQByTicker[e.ticker] = [];
+        reviewQByTicker[e.ticker].push(e);
       });
-      renderOverview();
+      Object.keys(reviewQByTicker).forEach(function (t) {
+        reviewQByTicker[t].sort(function (a, b) { return b.quarter.localeCompare(a.quarter); });
+      });
+      return Promise.all(completed.map(function (e) {
+        var path = 'data/reviews/' + e.ticker + '_' + e.quarter + '_review.json?_=' + Date.now();
+        return fetch(path)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; })
+          .then(function (rv) {
+            if (rv) {
+              if (!loadedReviews[e.ticker]) loadedReviews[e.ticker] = {};
+              loadedReviews[e.ticker][e.quarter] = rv;
+            }
+          });
+      }));
     });
 }
 
-/* ─── Render overview tables ─── */
+/* ─── Render overview ─── */
 function renderOverview() {
   var coreItems = [], satItems = [], archItems = [];
   Object.values(loadedPositions).forEach(function (p) {
     if (p.status === 'archived') { archItems.push(p); return; }
-    if (p.type === 'core') coreItems.push(p);
-    else satItems.push(p);
+    if (p.type === 'core') coreItems.push(p); else satItems.push(p);
   });
-
   renderCoreTable(coreItems);
   renderSatTable(satItems);
   renderArchiveTable(archItems);
-  document.getElementById('archive-count').textContent =
-    archItems.length ? '(' + archItems.length + ')' : '';
+  document.getElementById('archive-count').textContent = archItems.length ? '(' + archItems.length + ')' : '';
 }
 
 function renderCoreTable(items) {
@@ -502,10 +620,10 @@ function renderCoreTable(items) {
     return;
   }
   tbody.innerHTML = items.map(function (p) {
-    var healthHtml = '<span class="health-pill health-ok">OK</span>';
-    var entryDate  = p.entry_date || '—';
-    var entryPrice = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
-    var updatedAt  = p.updated_at ? p.updated_at.slice(0, 10) : '—';
+    var healthHtml  = buildHealthPill(p.ticker);
+    var latestRvQ   = getLatestReviewQuarter(p.ticker);
+    var entryDate   = p.entry_date  || '—';
+    var entryPrice  = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
     return [
       '<tr>',
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
@@ -513,8 +631,8 @@ function renderCoreTable(items) {
       '<td class="num">' + esc(entryDate) + '</td>',
       '<td class="num">' + esc(entryPrice) + '</td>',
       '<td class="num" style="color:var(--mut)">—</td>',
-      '<td class="num">' + esc(updatedAt) + '</td>',
-      '<td><button class="action-btn" onclick="showDetail(\'' + esc(p.ticker) + '\')">詳細</button></td>',
+      '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
+      '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
       '</tr>'
     ].join('');
   }).join('');
@@ -537,9 +655,9 @@ function renderSatTable(items) {
       '<td><span class="tag sat">' + esc(p.strategy_name || '—') + '</span></td>',
       '<td class="num">' + esc(entryDate || '—') + '</td>',
       '<td class="num">' + esc(entryPrice) + '</td>',
-      '<td style="font-size:12px;color:var(--sub)">' + esc(exitCond) + '</td>',
+      '<td style="font-size:12px;color:var(--sub)">' + exitCond + '</td>',
       '<td class="num"><span class="days-badge">' + esc(String(holdDays)) + '</span></td>',
-      '<td><button class="action-btn" onclick="showDetail(\'' + esc(p.ticker) + '\')">詳細</button></td>',
+      '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
       '</tr>'
     ].join('');
   }).join('');
@@ -553,46 +671,328 @@ function renderArchiveTable(items) {
   }
   tbody.innerHTML = items.map(function (p) {
     var typeTag = '<span class="tag ' + p.type.slice(0,3) + '">' + p.type.toUpperCase() + '</span>';
-    var desc = p.type === 'core'
-      ? truncate(p.thesis || '—', 40)
-      : esc(p.strategy_name || '—');
+    var desc = p.type === 'core' ? truncate(p.thesis || '—', 40) : esc(p.strategy_name || '—');
     var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
-    return [
-      '<tr>',
-      '<td><span class="tkr" style="color:var(--mut)">' + esc(p.ticker) + '</span></td>',
-      '<td>' + typeTag + '</td>',
-      '<td style="font-size:12px;color:var(--sub)">' + desc + '</td>',
-      '<td class="num">' + esc(p.entry_date || '—') + '</td>',
-      '<td class="num">' + esc(ep) + '</td>',
-      '</tr>'
-    ].join('');
+    return '<tr><td><span class="tkr" style="color:var(--mut)">' + esc(p.ticker) + '</span></td>' +
+      '<td>' + typeTag + '</td><td style="font-size:12px;color:var(--sub)">' + desc + '</td>' +
+      '<td class="num">' + esc(p.entry_date || '—') + '</td><td class="num">' + esc(ep) + '</td></tr>';
   }).join('');
 }
 
-/* ─── Detail modal (simple alert for Phase 1) ─── */
-function showDetail(ticker) {
+/* ─── Health pill ─── */
+function buildHealthPill(ticker) {
+  var reviews = loadedReviews[ticker];
+  if (!reviews) return '<span class="health-pill health-na">—</span>';
+  var qs = Object.keys(reviews).sort().reverse();
+  if (!qs.length) return '<span class="health-pill health-na">—</span>';
+  var s1    = reviews[qs[0]].stage1;
+  var score = s1.health_score;
+  var rec   = (s1.recommendation || '').toUpperCase();
+  var cls, sym;
+  if (rec === 'CONTINUE')       { cls = 'health-ok';   sym = '✓'; }
+  else if (rec === 'WATCH')     { cls = 'health-warn'; sym = '⚠'; }
+  else if (rec === 'REVISE' || rec === 'EXIT') { cls = 'health-bad'; sym = '✗'; }
+  else {
+    cls = (score >= 71) ? 'health-ok' : (score >= 41) ? 'health-warn' : 'health-bad';
+    sym = (score >= 71) ? '✓' : (score >= 41) ? '⚠' : '✗';
+  }
+  return '<span class="health-pill ' + cls + '" title="' + esc(rec) + '">' + sym + ' ' + score + '</span>';
+}
+
+function getLatestReviewQuarter(ticker) {
+  var reviews = loadedReviews[ticker];
+  if (!reviews) return '—';
+  var qs = Object.keys(reviews).sort().reverse();
+  return qs.length ? qs[0] : '—';
+}
+
+/* ─── Modal ─── */
+function openModal(ticker) {
   var p = loadedPositions[ticker];
   if (!p) return;
-  var lines = ['[ ' + ticker + ' — ' + p.type.toUpperCase() + ' ]', ''];
-  if (p.type === 'core') {
-    lines.push('テーゼ: ' + (p.thesis || '—'));
-    lines.push('');
-    lines.push('エントリーストーリー: ' + (p.entry_story || '—'));
-    lines.push('');
-    lines.push('エグジットの目安: ' + (p.exit_guide || '—'));
-    if (p.kpis && p.kpis.length) {
-      lines.push('');
-      lines.push('KPI: ' + p.kpis.join(', '));
-    }
-  } else {
-    lines.push('戦略名: ' + (p.strategy_name || '—'));
-    lines.push('エントリー条件: ' + (p.entry_condition || '—'));
-    lines.push('エグジット条件: ' + (p.exit_condition || '—'));
-    lines.push('想定保有期間: ' + (p.holding_period || '—'));
+  modalTicker = ticker;
+  modalTabIdx = 0;
+
+  document.getElementById('modal-tkr-label').textContent = ticker;
+  var typeTag = document.getElementById('modal-type-tag');
+  var isCore  = (p.type === 'core');
+  typeTag.textContent = isCore ? 'CORE' : 'SATELLITE';
+  typeTag.className   = 'tag ' + (isCore ? 'core' : 'sat');
+
+  var tabs = isCore ? TABS_CORE : TABS_SAT;
+  document.getElementById('modal-tabs').innerHTML = tabs.map(function (t, i) {
+    return '<button class="m-tab' + (i === 0 ? ' active' : '') + '" onclick="switchTab(' + i + ')">' + t + '</button>';
+  }).join('');
+
+  renderModalBody(ticker, 0);
+
+  document.getElementById('modal-ov').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (isCore && !kpiCache[ticker]) {
+    fetch('data/kpi/' + ticker + '_layer2.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) {
+        if (d) {
+          kpiCache[ticker] = d;
+          if (modalTicker === ticker && modalTabIdx === 2) renderModalBody(ticker, 2);
+        }
+      });
   }
-  if (p.entry_price) lines.push('エントリー価格: $' + Number(p.entry_price).toFixed(2));
-  if (p.entry_date)  lines.push('エントリー日: ' + p.entry_date);
-  alert(lines.join('\n'));
+}
+
+function closeModal() {
+  document.getElementById('modal-ov').classList.remove('open');
+  document.body.style.overflow = '';
+  modalTicker = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-ov')) closeModal();
+}
+
+function switchTab(n) {
+  modalTabIdx = n;
+  document.querySelectorAll('.m-tab').forEach(function (b, i) { b.classList.toggle('active', i === n); });
+  renderModalBody(modalTicker, n);
+}
+
+function renderModalBody(ticker, n) {
+  var p      = loadedPositions[ticker];
+  var isCore = (p && p.type === 'core');
+  var body   = document.getElementById('modal-body');
+  if (!isCore) { body.innerHTML = buildTabSat(p); return; }
+  if (n === 0) body.innerHTML = buildTabThesis(p);
+  else if (n === 1) body.innerHTML = buildTabReview(ticker, null);
+  else if (n === 2) body.innerHTML = buildTabKpi(ticker);
+  else if (n === 3) body.innerHTML = buildTabDcf(ticker);
+}
+
+/* ─── Tab 0: テーゼ ─── */
+function buildTabThesis(p) {
+  var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+  return [
+    tBlock('投資テーゼ', p.thesis || '—'),
+    tBlock('ENTRY STORY', p.entry_story || '—'),
+    tBlock('EXIT GUIDE', p.exit_guide || '—'),
+    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + esc(ep) + '</span></div>'
+  ].join('');
+}
+function tBlock(label, text) {
+  return '<div class="t-block"><div class="t-label">' + esc(label) + '</div><div class="t-text">' + esc(text) + '</div></div>';
+}
+
+/* ─── Tab 1: レビュー ─── */
+function buildTabReview(ticker, targetQ) {
+  var reviews = loadedReviews[ticker];
+  if (!reviews) return '<div class="no-rv">まだ四半期レビューがありません。<br>決算提出後に自動生成されます。</div>';
+  var qs = Object.keys(reviews).sort().reverse();
+  if (!qs.length) return '<div class="no-rv">レビューデータなし</div>';
+  var q  = targetQ || qs[0];
+  var rv = reviews[q];
+  if (!rv) return '<div class="no-rv">指定された四半期のレビューが見つかりません。</div>';
+
+  var s1        = rv.stage1 || {};
+  var score     = s1.health_score || 0;
+  var rec       = s1.recommendation || 'WATCH';
+  var gc        = score >= 71 ? 'var(--grn)' : score >= 41 ? 'var(--amb)' : 'var(--red)';
+  var recCls    = 'rec-' + rec.toLowerCase();
+  var genDate   = rv.generated_at ? rv.generated_at.slice(0, 10) : '—';
+
+  var posHtml = (s1.positives || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+  var conHtml = (s1.concerns  || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
+
+  var biasHtml = '';
+  if (s1.optimism_bias_warning) {
+    biasHtml = '<div class="bias-box"><strong>⚠ 楽観バイアス警告</strong>' + esc(s1.optimism_bias_warning) + '</div>';
+  }
+
+  var ed    = s1.exit_distance || '—';
+  var edCls = ed.includes('遠') ? 'ed-far' : ed.includes('近い') ? 'ed-close' : 'ed-watch';
+
+  var nkHtml = (s1.next_kpis || []).map(function (k) { return '<li class="nkpi-item">' + esc(k) + '</li>'; }).join('');
+
+  var histHtml = '';
+  if (qs.length > 1) {
+    var others = qs.filter(function (x) { return x !== q; });
+    var histItems = others.map(function (oq) {
+      var or = reviews[oq] && reviews[oq].stage1;
+      var osc = or ? or.health_score : '?';
+      var orc = or ? or.recommendation : '';
+      return '<div class="hist-item" onclick="showReviewQ(\'' + esc(ticker) + '\',\'' + esc(oq) + '\')">' +
+        '<span class="hist-q">' + esc(oq) + '</span>' +
+        '<span class="rec-badge rec-' + esc((orc || '').toLowerCase()) + '" style="font-size:10px">' + esc(orc) + '</span>' +
+        '<span class="hist-sc">' + osc + '点</span></div>';
+    }).join('');
+    histHtml = '<div style="margin-top:14px">' +
+      '<div class="hist-toggle" onclick="toggleHist(this)"><span>▶</span><span>過去のレビュー (' + others.length + '件)</span></div>' +
+      '<div class="hist-body">' + histItems + '</div></div>';
+  }
+
+  return [
+    '<div class="rv-head"><span class="rv-quarter">' + esc(q) + '</span><span class="rv-date">生成: ' + esc(genDate) + '</span></div>',
+    '<div class="gauge-wrap">',
+    '<div class="gauge-top"><span class="gauge-num" style="color:' + gc + '">' + score + '</span>',
+    '<span class="rec-badge ' + recCls + '">' + esc(rec) + '</span></div>',
+    '<div class="gauge-bar"><div class="gauge-fill" style="width:' + score + '%;background:' + gc + '"></div></div></div>',
+    '<div class="rv-summary">' + esc(s1.summary || '') + '</div>',
+    biasHtml,
+    '<div class="rv-lists">',
+    '<div class="rv-list-box"><div class="rv-list-title pos">ポジティブ点</div><ul class="rv-list pos">' + posHtml + '</ul></div>',
+    '<div class="rv-list-box"><div class="rv-list-title neg">懸念点</div><ul class="rv-list neg">' + conHtml + '</ul></div>',
+    '</div>',
+    '<div class="exit-box"><div class="exit-box-label">エグジット条件との距離感</div>',
+    '<span class="exit-dist-badge ' + edCls + '">' + esc(ed) + '</span>',
+    '<span style="font-size:12px;color:var(--sub)">' + esc(s1.exit_distance_reason || '') + '</span></div>',
+    '<div class="nkpi-title">次四半期の確認KPI</div>',
+    '<ul class="nkpi-list">' + nkHtml + '</ul>',
+    histHtml,
+  ].join('');
+}
+
+function showReviewQ(ticker, quarter) {
+  document.getElementById('modal-body').innerHTML = buildTabReview(ticker, quarter);
+}
+
+function toggleHist(el) {
+  var body = el.nextElementSibling;
+  var open = body.classList.toggle('open');
+  el.querySelector('span:first-child').textContent = open ? '▼' : '▶';
+}
+
+/* ─── Tab 2: KPIトレンド ─── */
+function buildTabKpi(ticker) {
+  var kd = kpiCache[ticker];
+  if (!kd) return '<div style="text-align:center;color:var(--mut);padding:40px;font-family:var(--mono);font-size:12px">KPIデータ読み込み中...</div>';
+  var kpis = kd.kpis || {};
+  var names = Object.keys(kpis);
+  if (!names.length) return '<div style="text-align:center;color:var(--mut);padding:40px;font-family:var(--mono);font-size:12px">KPIデータなし</div>';
+  return names.map(function (kname) {
+    return '<div class="kpi-card"><div class="kpi-card-name">' + esc(kname) + '</div>' +
+      buildSparkline(kpis[kname]) + '</div>';
+  }).join('');
+}
+
+function buildSparkline(kinfo) {
+  var rawData = (kinfo.data || []).slice().sort(function (a, b) { return a.quarter.localeCompare(b.quarter); });
+  var unit    = kinfo.unit || '';
+  if (!rawData.length) return '<p style="color:var(--mut);font-size:12px;text-align:center">データなし</p>';
+
+  var W = 440, H = 120, PL = 50, PR = 14, PT = 12, PB = 26;
+  var cW = W - PL - PR, cH = H - PT - PB, n = rawData.length;
+  var vals = rawData.map(function (d) { return d.value; });
+  var minV = Math.min.apply(null, vals);
+  var maxV = Math.max.apply(null, vals);
+  var rng  = maxV === minV ? 1 : maxV - minV;
+
+  function xAt(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
+  function yAt(v) { return PT + cH - ((v - minV) / rng) * cH; }
+  function fv(v) {
+    if (unit === 'USD') {
+      if (Math.abs(v) < 2)  return (v * 100).toFixed(1) + '%';
+      if (Math.abs(v) >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+      if (Math.abs(v) >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+    }
+    return String(v);
+  }
+
+  var pts = rawData.map(function (d, i) { return xAt(i).toFixed(1) + ',' + yAt(d.value).toFixed(1); });
+  var circles = rawData.map(function (d, i) {
+    return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(d.value).toFixed(1) + '"' +
+      ' r="3.5" fill="var(--acc)" stroke="var(--bg)" stroke-width="1.5">' +
+      '<title>' + d.quarter + ': ' + fv(d.value) + '</title></circle>';
+  }).join('');
+
+  var lv = rawData[n - 1];
+  var lx = xAt(n - 1), ly = yAt(lv.value);
+  var anchor = (lx > W * 0.72) ? 'end' : 'start';
+  var lxOff  = (anchor === 'end') ? -6 : 6;
+  var lyAdj  = (ly < PT + 16) ? ly + 14 : ly - 5;
+  var lastLbl = '<text x="' + (lx + lxOff) + '" y="' + lyAdj + '"' +
+    ' text-anchor="' + anchor + '" font-size="10" fill="var(--acc)">' + fv(lv.value) + '</text>';
+
+  var showSet = new Set([0, n - 1]);
+  var step = Math.max(1, Math.ceil(n / 4));
+  for (var i = 0; i < n; i += step) showSet.add(i);
+  var xLbls = rawData.map(function (d, idx) {
+    if (!showSet.has(idx)) return '';
+    return '<text x="' + xAt(idx).toFixed(1) + '" y="' + (H - 5) + '" text-anchor="middle" font-size="9" fill="var(--mut)">' + d.quarter + '</text>';
+  }).join('');
+
+  var yLbls =
+    '<text x="' + (PL - 3) + '" y="' + (PT + 4) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + fv(maxV) + '</text>' +
+    '<text x="' + (PL - 3) + '" y="' + (PT + cH) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + fv(minV) + '</text>';
+
+  var midY = (PT + cH / 2).toFixed(1);
+  var grid = '<line x1="' + PL + '" y1="' + midY + '" x2="' + (W - PR) + '" y2="' + midY +
+    '" stroke="var(--bdr)" stroke-dasharray="3,3" stroke-width="1"/>';
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
+    grid + yLbls +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round"/>' +
+    circles + lastLbl + xLbls + '</svg>';
+}
+
+/* ─── Tab 3: DCFシナリオ ─── */
+function buildTabDcf(ticker) {
+  var reviews = loadedReviews[ticker];
+  if (!reviews) return '<div class="no-rv">レビューデータなし</div>';
+  var qs = Object.keys(reviews).sort().reverse();
+  if (!qs.length) return '<div class="no-rv">レビューデータなし</div>';
+  var s2 = reviews[qs[0]].stage2 || {};
+  var sc = s2.scenarios || {};
+  if (!Object.keys(sc).length) return '<div class="no-rv">DCFデータなし</div>';
+
+  var rows = [
+    { key: 'revenue_growth_y1',        label: '売上成長率 Y1' },
+    { key: 'revenue_growth_y2',        label: '売上成長率 Y2' },
+    { key: 'revenue_growth_y3',        label: '売上成長率 Y3' },
+    { key: 'terminal_growth',          label: 'ターミナル成長率' },
+    { key: 'operating_margin_terminal',label: '最終営業利益率' },
+  ];
+  function fp(v) { return v != null ? (v * 100).toFixed(1) + '%' : '—'; }
+
+  var thead = '<tr><th>指標</th><th class="dcf-bear">BEAR</th><th class="dcf-base">BASE</th><th class="dcf-bull">BULL</th></tr>';
+  var tbody = rows.map(function (r) {
+    return '<tr><td>' + esc(r.label) + '</td>' +
+      ['bear', 'base', 'bull'].map(function (s) {
+        return '<td class="dcf-' + s + '">' + fp((sc[s] || {})[r.key]) + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+
+  var rationaleHtml = ['bear', 'base', 'bull'].map(function (s) {
+    var rat = (sc[s] || {}).rationale;
+    if (!rat) return '';
+    return '<div class="kpi-card" style="margin-bottom:8px"><div class="kpi-card-name dcf-' + s + '">' +
+      s.toUpperCase() + ' シナリオ根拠</div><div style="font-size:12px;color:var(--sub);line-height:1.6">' +
+      esc(rat) + '</div></div>';
+  }).join('');
+
+  var assumHtml = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
+  var riskHtml  = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+
+  return [
+    '<div style="margin-bottom:4px;font-family:var(--mono);font-size:10px;color:var(--sub)">' + esc(qs[0]) + ' Grok DCFパラメータ</div>',
+    '<table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>',
+    rationaleHtml,
+    assumHtml ? '<div class="dcf-sec"><div class="dcf-sec-title assum">KEY ASSUMPTIONS</div><ul class="dcf-ul">' + assumHtml + '</ul></div>' : '',
+    riskHtml  ? '<div class="dcf-sec"><div class="dcf-sec-title risk">RISK FACTORS</div><ul class="dcf-ul">' + riskHtml + '</ul></div>' : '',
+  ].join('');
+}
+
+/* ─── Tab Satellite ─── */
+function buildTabSat(p) {
+  if (!p) return '';
+  var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+  return [
+    tBlock('STRATEGY',         p.strategy_name   || '—'),
+    tBlock('ENTRY CONDITION',  p.entry_condition  || '—'),
+    tBlock('EXIT CONDITION',   p.exit_condition   || '—'),
+    tBlock('HOLDING PERIOD',   p.holding_period   || '—'),
+    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + esc(ep) + '</span></div>',
+    '<div class="sat-note">Satellite ポジションは四半期レビュー対象外です</div>'
+  ].join('');
 }
 
 /* ─── Archive toggle ─── */
@@ -610,11 +1010,7 @@ var BRANCH     = 'kaihatsu';
 
 function token() { return document.getElementById('gh-token').value.trim(); }
 function apiHeaders() {
-  return {
-    'Authorization': 'Bearer ' + token(),
-    'Accept': 'application/vnd.github+json',
-    'Content-Type': 'application/json'
-  };
+  return { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
 }
 async function fetchFile(path) {
   var url = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path + '?ref=' + BRANCH;
@@ -625,7 +1021,7 @@ async function fetchFile(path) {
   return { content: content, sha: data.sha };
 }
 async function commitFile(path, content, message, sha) {
-  var url = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path;
+  var url  = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path;
   var body = { message: message, content: btoa(unescape(encodeURIComponent(content))), branch: BRANCH };
   if (sha) body.sha = sha;
   var res = await fetch(url, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) });
@@ -637,15 +1033,9 @@ async function commitFile(path, content, message, sha) {
 async function registerPosition() {
   hideStatus();
   clearErrors();
-
   var ticker = document.getElementById('inp-ticker').value.trim().toUpperCase();
   if (!ticker) { markError('field-ticker'); return; }
-
-  if (!token()) {
-    showStatus('GitHub PAT トークンを入力してください', 'err');
-    document.getElementById('gh-token').focus();
-    return;
-  }
+  if (!token()) { showStatus('GitHub PAT トークンを入力してください', 'err'); document.getElementById('gh-token').focus(); return; }
 
   var now = new Date().toISOString().replace('Z', '+09:00');
   var thesis;
@@ -656,27 +1046,14 @@ async function registerPosition() {
     var exitGuide     = document.getElementById('inp-exit-guide').value.trim();
     var entryPriceRaw = document.getElementById('inp-entry-price-core').value;
     var entryDate     = document.getElementById('inp-entry-date-core').value || null;
-
     var valid = true;
     if (!thesisText)  { markError('field-thesis');       valid = false; }
     if (!entryStory)  { markError('field-entry-story');  valid = false; }
     if (!exitGuide)   { markError('field-exit-guide');   valid = false; }
     if (!valid) return;
-
-    thesis = {
-      ticker:       ticker,
-      type:         'core',
-      status:       'active',
-      version:      1,
-      created_at:   now,
-      updated_at:   now,
-      thesis:       thesisText,
-      entry_story:  entryStory,
-      exit_guide:   exitGuide,
-      kpis:         [],
-      entry_price:  entryPriceRaw ? parseFloat(entryPriceRaw) : null,
-      entry_date:   entryDate
-    };
+    thesis = { ticker, type: 'core', status: 'active', version: 1, created_at: now, updated_at: now,
+               thesis: thesisText, entry_story: entryStory, exit_guide: exitGuide, kpis: [],
+               entry_price: entryPriceRaw ? parseFloat(entryPriceRaw) : null, entry_date: entryDate };
   } else {
     var strategyName  = getStrategyName();
     var entryCond     = document.getElementById('inp-entry-cond').value.trim();
@@ -684,28 +1061,15 @@ async function registerPosition() {
     var holdingPeriod = document.getElementById('inp-holding-period').value.trim();
     var entryPriceRaw = document.getElementById('inp-entry-price-sat').value;
     var entryDate     = document.getElementById('inp-entry-date-sat').value || null;
-
     var valid = true;
     if (!strategyName)  { markError('field-strategy');       valid = false; }
     if (!holdingPeriod) { markError('field-holding-period'); valid = false; }
     if (!entryCond)     { markError('field-entry-cond');     valid = false; }
     if (!exitCond)      { markError('field-exit-cond');      valid = false; }
     if (!valid) return;
-
-    thesis = {
-      ticker:          ticker,
-      type:            'satellite',
-      status:          'active',
-      version:         1,
-      created_at:      now,
-      updated_at:      now,
-      strategy_name:   strategyName,
-      entry_condition: entryCond,
-      exit_condition:  exitCond,
-      holding_period:  holdingPeriod,
-      entry_price:     entryPriceRaw ? parseFloat(entryPriceRaw) : null,
-      entry_date:      entryDate
-    };
+    thesis = { ticker, type: 'satellite', status: 'active', version: 1, created_at: now, updated_at: now,
+               strategy_name: strategyName, entry_condition: entryCond, exit_condition: exitCond,
+               holding_period: holdingPeriod, entry_price: entryPriceRaw ? parseFloat(entryPriceRaw) : null, entry_date: entryDate };
   }
 
   var fname      = ticker + '_thesis.json';
@@ -713,23 +1077,17 @@ async function registerPosition() {
   var indexPath  = 'docs/portfolio/tail/data/positions_index.json';
   var newIndex   = positionsIndex.filter(function (f) { return f !== fname; });
   newIndex.push(fname);
-  var thesisJson = JSON.stringify(thesis, null, 2);
-  var indexJson  = JSON.stringify({ positions: newIndex }, null, 2);
 
   var btn = document.getElementById('btn-register');
   btn.disabled = true;
   btn.textContent = '保存中…';
 
   try {
-    var thesisSha = null;
+    var thesisSha = null, indexSha = null;
     try { thesisSha = (await fetchFile(thesisPath)).sha; } catch (e) {}
-
-    var indexSha = null;
-    try { indexSha = (await fetchFile(indexPath)).sha; } catch (e) {}
-
-    await commitFile(thesisPath, thesisJson, 'feat: TANUKI TAIL ' + ticker + ' テーゼ登録', thesisSha);
-    await commitFile(indexPath,  indexJson,  'feat: TANUKI TAIL positions_index 更新',     indexSha);
-
+    try { indexSha  = (await fetchFile(indexPath)).sha;  } catch (e) {}
+    await commitFile(thesisPath, JSON.stringify(thesis, null, 2), 'feat: TANUKI TAIL ' + ticker + ' テーゼ登録', thesisSha);
+    await commitFile(indexPath,  JSON.stringify({ positions: newIndex }, null, 2), 'feat: TANUKI TAIL positions_index 更新', indexSha);
     loadedPositions[ticker] = thesis;
     positionsIndex = newIndex;
     renderOverview();
@@ -749,39 +1107,16 @@ function showStatus(msg, type) {
   el.className = type;
   el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-function hideStatus() {
-  var el = document.getElementById('save-status');
-  el.className = '';
-  el.textContent = '';
-}
-
-/* ─── Validation helpers ─── */
-function markError(fieldId) {
-  var el = document.getElementById(fieldId);
-  if (el) el.classList.add('invalid');
-}
-
-function clearErrors() {
-  document.querySelectorAll('.field.invalid').forEach(function (el) {
-    el.classList.remove('invalid');
-  });
-}
+function hideStatus() { var el = document.getElementById('save-status'); el.className = ''; el.textContent = ''; }
+function markError(id) { var el = document.getElementById(id); if (el) el.classList.add('invalid'); }
+function clearErrors() { document.querySelectorAll('.field.invalid').forEach(function (el) { el.classList.remove('invalid'); }); }
 
 /* ─── Utility ─── */
 function esc(s) {
-  return String(s)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-function truncate(s, n) {
-  return esc(s.length > n ? s.slice(0, n) + '…' : s);
-}
-
-function calcDays(dateStr) {
-  var diff = Date.now() - new Date(dateStr).getTime();
-  return Math.max(0, Math.floor(diff / 86400000)) + '日';
-}
+function truncate(s, n) { return esc(s.length > n ? s.slice(0, n) + '…' : s); }
+function calcDays(d) { return Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 86400000)) + '日'; }
 </script>
 </body>
 </html>
