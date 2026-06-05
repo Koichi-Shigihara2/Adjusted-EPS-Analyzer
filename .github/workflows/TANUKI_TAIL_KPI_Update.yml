@@ -1,0 +1,80 @@
+name: TANUKI TAIL KPI Update
+
+on:
+  schedule:
+    - cron: '0 23 * * 0'  # 毎週日曜 23:00 UTC = 月曜 08:00 JST
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: '対象ティッカー（カンマ区切り、空白で全銘柄）'
+        required: false
+        default: ''
+      quarters:
+        description: '取得四半期数'
+        required: false
+        default: '8'
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  fetch-kpi:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Determine tickers
+        id: tickers
+        run: |
+          INPUT="${{ github.event.inputs.ticker }}"
+          if [ -z "$INPUT" ]; then
+            # tail_kpi_map.json のキーを全銘柄として使用
+            TICKERS=$(python3 -c "
+          import json
+          with open('docs/portfolio/tail/data/tail_kpi_map.json') as f:
+              data = json.load(f)
+          print(' '.join(data.keys()))
+          ")
+          else
+            # カンマ区切り → スペース区切り
+            TICKERS=$(echo "$INPUT" | tr ',' ' ' | tr -s ' ')
+          fi
+          echo "tickers=$TICKERS" >> $GITHUB_OUTPUT
+          echo "Tickers: $TICKERS"
+
+      - name: Fetch KPI data
+        run: |
+          QUARTERS="${{ github.event.inputs.quarters }}"
+          QUARTERS="${QUARTERS:-8}"
+          TICKERS="${{ steps.tickers.outputs.tickers }}"
+          python src/tail/xbrl_segment_fetcher.py \
+            --ticker $TICKERS \
+            --quarters "$QUARTERS"
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/portfolio/tail/data/kpi/
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "chore: TANUKI TAIL KPI 自動更新 $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi

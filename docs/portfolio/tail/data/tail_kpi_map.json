@@ -1,0 +1,104 @@
+{
+  "PLTR": [
+    {
+      "kpi_name": "Commercial売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "pltr:CommercialOperatingSegmentMember",
+         "valid_from": "2020-09-30", "valid_to": null}
+      ],
+      "fallback_tags": ["pltr:CommercialMember", "pltr:CommercialSegmentMember"],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "Government売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "pltr:GovernmentOperatingSegmentMember",
+         "valid_from": "2020-09-30", "valid_to": null}
+      ],
+      "fallback_tags": ["pltr:GovernmentSegmentMember"],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "貢献利益率（Commercial）",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "pltr:CommercialOperatingSegmentMember",
+         "valid_from": "2020-09-30", "valid_to": null}
+      ],
+      "fallback_tags": ["pltr:CommercialMember", "pltr:CommercialSegmentMember"],
+      "fallback_action": "alert",
+      "revenue_tag": "pltr:ContributionMargin",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    }
+  ],
+  "SOFI": [
+    {
+      "kpi_name": "Lending売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "sofi:LendingSegmentMember",
+         "valid_from": "2021-06-30", "valid_to": null}
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenuesNetOfInterestExpense",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "Technology Platform売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "sofi:TechnologyPlatformSegmentMember",
+         "valid_from": "2021-06-30", "valid_to": null}
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenuesNetOfInterestExpense",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "Financial Services売上",
+      "change_risk": "medium",
+      "tag_history": [
+        {"tag": "sofi:FinancialServicesSegmentMember",
+         "valid_from": "2021-06-30", "valid_to": null}
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenuesNetOfInterestExpense",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    }
+  ],
+  "TSLA": [
+    {
+      "kpi_name": "Automotive売上",
+      "change_risk": "low",
+      "tag_history": [
+        {"tag": "tsla:AutomotiveSegmentMember",
+         "valid_from": "2019-01-01", "valid_to": null}
+      ],
+      "fallback_tags": ["tsla:AutomotiveMember"],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "Energy Generation & Storage売上",
+      "change_risk": "low",
+      "tag_history": [
+        {"tag": "tsla:EnergyGenerationAndStorageSegmentMember",
+         "valid_from": "2019-01-01", "valid_to": null}
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:Revenues",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    }
+  ]
+}
