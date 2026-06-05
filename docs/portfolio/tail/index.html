@@ -659,7 +659,7 @@ function renderCoreTable(items) {
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
       '<td>' + healthHtml + '</td>',
       '<td class="num">' + esc(entryDate) + '</td>',
-      '<td class="num">' + esc(entryPrice) + '</td>',
+      '<td class="num">' + entryPrice + '</td>',
       '<td class="num" style="color:var(--mut)">—</td>',
       '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
       '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
@@ -684,7 +684,7 @@ function renderSatTable(items) {
       '<td><span class="tkr sat">' + esc(p.ticker) + '</span></td>',
       '<td><span class="tag sat">' + esc(p.strategy_name || '—') + '</span></td>',
       '<td class="num">' + esc(entryDate || '—') + '</td>',
-      '<td class="num">' + esc(entryPrice) + '</td>',
+      '<td class="num">' + entryPrice + '</td>',
       '<td style="font-size:12px;color:var(--sub)">' + exitCond + '</td>',
       '<td class="num"><span class="days-badge">' + esc(String(holdDays)) + '</span></td>',
       '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
@@ -705,7 +705,7 @@ function renderArchiveTable(items) {
     var ep = getDisplayPrice(p.ticker, p.entry_price);
     return '<tr><td><span class="tkr" style="color:var(--mut)">' + esc(p.ticker) + '</span></td>' +
       '<td>' + typeTag + '</td><td style="font-size:12px;color:var(--sub)">' + desc + '</td>' +
-      '<td class="num">' + esc(p.entry_date || '—') + '</td><td class="num">' + esc(ep) + '</td></tr>';
+      '<td class="num">' + esc(p.entry_date || '—') + '</td><td class="num">' + ep + '</td></tr>';
   }).join('');
 }
 
@@ -806,7 +806,7 @@ function buildTabThesis(p) {
     tBlock('投資テーゼ', p.thesis || '—'),
     tBlock('ENTRY STORY', p.entry_story || '—'),
     tBlock('EXIT GUIDE', p.exit_guide || '—'),
-    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + esc(ep) + '</span></div>'
+    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + ep + '</span></div>'
   ].join('');
 }
 function tBlock(label, text) {
@@ -1020,7 +1020,7 @@ function buildTabSat(p) {
     tBlock('ENTRY CONDITION',  p.entry_condition  || '—'),
     tBlock('EXIT CONDITION',   p.exit_condition   || '—'),
     tBlock('HOLDING PERIOD',   p.holding_period   || '—'),
-    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + esc(ep) + '</span></div>',
+    '<div class="t-meta"><span>エントリー日: ' + esc(p.entry_date || '—') + '</span><span>価格: ' + ep + '</span></div>',
     '<div class="sat-note">Satellite ポジションは四半期レビュー対象外です</div>'
   ].join('');
 }
