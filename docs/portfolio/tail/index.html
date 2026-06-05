@@ -151,26 +151,29 @@
     .btn:hover { opacity: .85; }
     .btn-register { background: var(--core); color: #000; font-weight: 700; }
     .btn-register.sat-mode { background: var(--sat); color: #fff; }
-    .btn-dl { background: var(--sur2); border: 1px solid var(--bdr); color: var(--sub); }
-
     .btn-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
-    .form-note { font-size: 11px; color: var(--mut); font-family: var(--mono); }
 
-    /* ── Download result panel ── */
-    #dl-panel {
-      display: none; background: var(--sur2); border: 1px solid rgba(16,185,129,.3);
-      border-radius: 4px; padding: 16px 20px; margin-top: 16px;
+    /* ── Token input ── */
+    .token-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+      padding: 12px 16px; background: var(--sur2); border: 1px solid var(--bdr);
+      border-radius: 4px;
     }
-    #dl-panel.show { display: block; }
-    .dl-title { font-family: var(--mono); font-size: 11px; color: var(--grn); margin-bottom: 10px; letter-spacing: .06em; }
-    .dl-file-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-    .dl-filename { font-family: var(--mono); font-size: 11px; color: var(--sub); flex: 1; }
-    .dl-btn {
-      padding: 5px 12px; background: var(--grn); color: #000; border: none;
-      border-radius: 3px; font-family: var(--mono); font-size: 11px; cursor: pointer;
-      transition: opacity .15s; white-space: nowrap; font-weight: 700;
+    .token-row label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; white-space: nowrap; }
+    .token-row input {
+      flex: 1; background: var(--bg); border: 1px solid var(--bdr); color: var(--txt);
+      font-family: var(--mono); font-size: 12px; padding: 7px 10px;
+      border-radius: 3px; outline: none; transition: border-color .15s;
     }
-    .dl-btn:hover { opacity: .85; }
+    .token-row input:focus { border-color: var(--acc); }
+
+    /* ── Save status ── */
+    #save-status {
+      display: none; border-radius: 4px; padding: 12px 16px; margin-top: 16px;
+      font-family: var(--mono); font-size: 12px; letter-spacing: .04em; line-height: 1.7;
+    }
+    #save-status.ok  { display: block; background: rgba(16,185,129,.08);  border: 1px solid rgba(16,185,129,.3);  color: var(--grn); }
+    #save-status.err { display: block; background: rgba(244,63,94,.08);   border: 1px solid rgba(244,63,94,.3);   color: var(--red); }
 
     /* ── Archived section ── */
     .archive-toggle {
@@ -254,6 +257,12 @@
   <div class="sec" style="margin-top:40px">NEW POSITION</div>
 
   <div class="form-card" id="form-card">
+
+    <!-- GitHub PAT -->
+    <div class="token-row">
+      <label>GH TOKEN</label>
+      <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx (contents:write)" autocomplete="off">
+    </div>
 
     <!-- ティッカー + タイプ -->
     <div class="form-row" style="margin-bottom:20px">
@@ -362,19 +371,11 @@
 
     <!-- 登録ボタン -->
     <div class="btn-row">
-      <button class="btn btn-register" id="btn-register" onclick="registerPosition()">登録 → JSON 生成</button>
-      <span class="form-note">生成された JSON を指定パスに配置してください</span>
+      <button class="btn btn-register" id="btn-register" onclick="registerPosition()">登録 → GitHub に保存</button>
     </div>
 
-    <!-- ダウンロードパネル -->
-    <div id="dl-panel">
-      <div class="dl-title">✓ 登録完了 — 以下のファイルを保存してください</div>
-      <div id="dl-files"></div>
-      <div class="hint" style="font-size:11px;color:var(--mut);margin-top:10px;font-family:var(--mono)">
-        保存先: <code>docs/portfolio/tail/data/positions/{ticker}_thesis.json</code> および
-        <code>docs/portfolio/tail/data/positions_index.json</code>
-      </div>
-    </div>
+    <!-- 保存結果 -->
+    <div id="save-status"></div>
 
   </div>
 
@@ -438,7 +439,7 @@ function setType(t) {
   document.getElementById('btn-sat').className  = 'type-btn' + (t === 'satellite' ? ' active-sat' : '');
   var rb = document.getElementById('btn-register');
   rb.className = 'btn btn-register' + (t === 'satellite' ? ' sat-mode' : '');
-  hideDlPanel();
+  hideStatus();
 }
 
 /* ─── Strategy custom input toggle ─── */
@@ -602,13 +603,49 @@ function toggleArchive() {
   arrow.classList.toggle('open', open);
 }
 
+/* ─── GitHub API ─── */
+var REPO_OWNER = 'Koichi-Shigihara2';
+var REPO_NAME  = 'On-a-journey';
+var BRANCH     = 'kaihatsu';
+
+function token() { return document.getElementById('gh-token').value.trim(); }
+function apiHeaders() {
+  return {
+    'Authorization': 'Bearer ' + token(),
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json'
+  };
+}
+async function fetchFile(path) {
+  var url = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path + '?ref=' + BRANCH;
+  var res = await fetch(url, { headers: apiHeaders() });
+  if (!res.ok) throw new Error('取得失敗: ' + path + ' (' + res.status + ')');
+  var data = await res.json();
+  var content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+  return { content: content, sha: data.sha };
+}
+async function commitFile(path, content, message, sha) {
+  var url = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path;
+  var body = { message: message, content: btoa(unescape(encodeURIComponent(content))), branch: BRANCH };
+  if (sha) body.sha = sha;
+  var res = await fetch(url, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) { var err = await res.json(); throw new Error('コミット失敗: ' + err.message); }
+  return await res.json();
+}
+
 /* ─── Registration ─── */
-function registerPosition() {
-  hideDlPanel();
+async function registerPosition() {
+  hideStatus();
   clearErrors();
 
   var ticker = document.getElementById('inp-ticker').value.trim().toUpperCase();
   if (!ticker) { markError('field-ticker'); return; }
+
+  if (!token()) {
+    showStatus('GitHub PAT トークンを入力してください', 'err');
+    document.getElementById('gh-token').focus();
+    return;
+  }
 
   var now = new Date().toISOString().replace('Z', '+09:00');
   var thesis;
@@ -671,63 +708,51 @@ function registerPosition() {
     };
   }
 
-  /* positions_index.json を更新 */
-  var fname = ticker + '_thesis.json';
-  var newIndex = positionsIndex.filter(function (f) { return f !== fname; });
+  var fname      = ticker + '_thesis.json';
+  var thesisPath = 'docs/portfolio/tail/data/positions/' + fname;
+  var indexPath  = 'docs/portfolio/tail/data/positions_index.json';
+  var newIndex   = positionsIndex.filter(function (f) { return f !== fname; });
   newIndex.push(fname);
-  var indexJson = JSON.stringify({ positions: newIndex }, null, 2);
   var thesisJson = JSON.stringify(thesis, null, 2);
+  var indexJson  = JSON.stringify({ positions: newIndex }, null, 2);
 
-  /* ダウンロードリンク生成 */
-  var files = [
-    { name: fname,                  content: thesisJson,  path: 'docs/portfolio/tail/data/positions/' + fname },
-    { name: 'positions_index.json', content: indexJson,   path: 'docs/portfolio/tail/data/positions_index.json' }
-  ];
-  showDlPanel(files);
+  var btn = document.getElementById('btn-register');
+  btn.disabled = true;
+  btn.textContent = '保存中…';
 
-  /* ローカル状態を更新して俯瞰ビューを再描画 */
-  loadedPositions[ticker] = thesis;
-  positionsIndex = newIndex;
-  renderOverview();
+  try {
+    var thesisSha = null;
+    try { thesisSha = (await fetchFile(thesisPath)).sha; } catch (e) {}
+
+    var indexSha = null;
+    try { indexSha = (await fetchFile(indexPath)).sha; } catch (e) {}
+
+    await commitFile(thesisPath, thesisJson, 'feat: TANUKI TAIL ' + ticker + ' テーゼ登録', thesisSha);
+    await commitFile(indexPath,  indexJson,  'feat: TANUKI TAIL positions_index 更新',     indexSha);
+
+    loadedPositions[ticker] = thesis;
+    positionsIndex = newIndex;
+    renderOverview();
+    showStatus('✓ ' + fname + ' を GitHub (kaihatsu) に保存しました', 'ok');
+  } catch (err) {
+    showStatus('保存失敗: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '登録 → GitHub に保存';
+  }
 }
 
-/* ─── Download panel ─── */
-function showDlPanel(files) {
-  var panel = document.getElementById('dl-panel');
-  var container = document.getElementById('dl-files');
-  container.innerHTML = files.map(function (f, i) {
-    return [
-      '<div class="dl-file-row">',
-      '<span class="dl-filename">' + esc(f.path) + '</span>',
-      '<button class="dl-btn" onclick="downloadFile(' + i + ')">ダウンロード</button>',
-      '</div>'
-    ].join('');
-  }).join('');
-
-  /* ファイルデータをパネルに保持 */
-  panel._files = files;
-  panel.classList.add('show');
-  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+/* ─── Status helpers ─── */
+function showStatus(msg, type) {
+  var el = document.getElementById('save-status');
+  el.textContent = msg;
+  el.className = type;
+  el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
-
-function hideDlPanel() {
-  var panel = document.getElementById('dl-panel');
-  panel.classList.remove('show');
-}
-
-function downloadFile(idx) {
-  var panel = document.getElementById('dl-panel');
-  var f = panel._files[idx];
-  if (!f) return;
-  var blob = new Blob([f.content], { type: 'application/json' });
-  var url  = URL.createObjectURL(blob);
-  var a    = document.createElement('a');
-  a.href     = url;
-  a.download = f.name;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+function hideStatus() {
+  var el = document.getElementById('save-status');
+  el.className = '';
+  el.textContent = '';
 }
 
 /* ─── Validation helpers ─── */
