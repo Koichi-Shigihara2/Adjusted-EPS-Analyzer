@@ -288,6 +288,63 @@
     .dcf-ul li { font-size: 12px; line-height: 1.6; padding: 3px 0 3px 14px; position: relative; color: var(--sub); }
     .dcf-ul li::before { content: '›'; position: absolute; left: 0; color: var(--mut); }
     .sat-note { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 32px; border: 1px dashed var(--bdr); border-radius: 4px; margin-top: 16px; }
+
+    /* ── KPI setup badge & modal ── */
+    .kpi-setup-btn {
+      font-family: var(--mono); font-size: 9px; padding: 1px 6px; margin-left: 6px;
+      background: rgba(245,158,11,.12); color: var(--amb); border: 1px solid rgba(245,158,11,.3);
+      border-radius: 2px; cursor: pointer; letter-spacing: .04em; vertical-align: middle;
+      transition: all .15s;
+    }
+    .kpi-setup-btn:hover { background: rgba(245,158,11,.22); }
+    .kpi-modal-ov {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7);
+      z-index: 300; align-items: center; justify-content: center; padding: 16px;
+    }
+    .kpi-modal-ov.open { display: flex; }
+    .kpi-modal-box {
+      background: var(--sur); border: 1px solid var(--bdr); border-radius: 8px;
+      width: min(680px, 100%); max-height: 88vh; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .kpi-modal-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--bdr); flex-shrink: 0;
+    }
+    .kpi-modal-title { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--core); }
+    .kpi-modal-body  { flex: 1; overflow-y: auto; padding: 20px; }
+    .kpi-item {
+      border: 1px solid var(--bdr); border-radius: 4px; padding: 12px 14px; margin-bottom: 8px;
+      transition: border-color .12s; cursor: pointer;
+    }
+    .kpi-item:hover { border-color: var(--sub); }
+    .kpi-item.selected { border-color: var(--acc); background: rgba(59,130,246,.06); }
+    .kpi-item-head { display: flex; align-items: flex-start; gap: 10px; }
+    .kpi-item-cb { margin-top: 2px; accent-color: var(--acc); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
+    .kpi-item-name { font-family: var(--mono); font-size: 12px; font-weight: 700; color: var(--txt); }
+    .kpi-item-auto { font-family: var(--mono); font-size: 9px; padding: 1px 5px; border-radius: 2px; margin-left: 6px;
+      background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.25); }
+    .kpi-item-body { margin-top: 6px; margin-left: 24px; }
+    .kpi-item-desc { font-size: 12px; color: var(--sub); line-height: 1.5; margin-bottom: 4px; }
+    .kpi-item-meta { display: flex; gap: 16px; flex-wrap: wrap; }
+    .kpi-meta-pair { font-family: var(--mono); font-size: 10px; }
+    .kpi-meta-pair .kml { color: var(--mut); margin-right: 4px; }
+    .kpi-meta-pair .kmv-warn { color: var(--amb); }
+    .kpi-meta-pair .kmv-exit { color: var(--red); }
+    .kpi-meta-pair .kmv-rel  { color: var(--sub); }
+    .kpi-manual-section { margin-top: 16px; border-top: 1px solid var(--bdr); padding-top: 14px; }
+    .kpi-manual-title { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 8px; }
+    .kpi-manual-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    @media (max-width: 480px) { .kpi-manual-grid { grid-template-columns: 1fr; } }
+    .kpi-manual-grid input { background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt);
+      font-family: var(--sans); font-size: 12px; padding: 7px 10px; border-radius: 3px; outline: none; }
+    .kpi-modal-foot {
+      padding: 14px 20px; border-top: 1px solid var(--bdr); display: flex; align-items: center;
+      justify-content: space-between; flex-shrink: 0; flex-wrap: wrap; gap: 10px;
+    }
+    .kpi-sel-count { font-family: var(--mono); font-size: 11px; color: var(--sub); }
+    .kpi-loading { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 40px; }
+    .kpi-error   { background: rgba(244,63,94,.08); border: 1px solid rgba(244,63,94,.3); border-radius: 4px;
+      padding: 12px; color: var(--red); font-family: var(--mono); font-size: 12px; }
   </style>
 </head>
 <body data-tool="tail">
@@ -496,6 +553,23 @@
   </div>
 </div>
 
+<!-- ── KPI Setup Modal ──────────────────────────────── -->
+<div class="kpi-modal-ov" id="kpi-modal-ov" onclick="handleKpiOverlayClick(event)">
+  <div class="kpi-modal-box" id="kpi-modal-box">
+    <div class="kpi-modal-head">
+      <span class="kpi-modal-title" id="kpi-modal-title"></span>
+      <button class="modal-close" onclick="closeKpiModal()">✕</button>
+    </div>
+    <div class="kpi-modal-body" id="kpi-modal-body">
+      <div class="kpi-loading">KPI提案を読み込み中...</div>
+    </div>
+    <div class="kpi-modal-foot">
+      <span class="kpi-sel-count" id="kpi-sel-count">0件選択</span>
+      <button class="btn btn-register" id="kpi-confirm-btn" onclick="confirmKpis()">確定 → GitHub に保存</button>
+    </div>
+  </div>
+</div>
+
 <script src="../../common/site-nav.js"></script>
 <script>
 /* ─── State ─── */
@@ -508,6 +582,8 @@ var modalTicker      = null;
 var modalTabIdx      = 0;
 var kpiCache         = {};       // { PLTR: kpiData }
 var portfolioAvgCost = {};       // { PLTR: 58.39, SOFI: 16.25, ... } 加重平均取得単価
+var kpiModalTicker  = null;
+var loadedProposals = {};        // { PLTR: proposalData }
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ'];
 var TABS_SAT  = ['戦略'];
@@ -651,13 +727,17 @@ function renderCoreTable(items) {
   }
   tbody.innerHTML = items.map(function (p) {
     var healthHtml  = buildHealthPill(p.ticker);
+    var kpiMissing  = (!p.kpis || p.kpis.length === 0);
+    var kpiBadge    = kpiMissing
+      ? '<button class="kpi-setup-btn" onclick="event.stopPropagation();openKpiModal(\'' + esc(p.ticker) + '\')">⚠ KPI未設定</button>'
+      : '';
     var latestRvQ   = getLatestReviewQuarter(p.ticker);
     var entryDate   = p.entry_date  || '—';
     var entryPrice  = getDisplayPrice(p.ticker, p.entry_price);
     return [
       '<tr>',
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
-      '<td>' + healthHtml + '</td>',
+      '<td>' + healthHtml + kpiBadge + '</td>',
       '<td class="num">' + esc(entryDate) + '</td>',
       '<td class="num">' + entryPrice + '</td>',
       '<td class="num" style="color:var(--mut)">—</td>',
@@ -1147,6 +1227,150 @@ function esc(s) {
 }
 function truncate(s, n) { return esc(s.length > n ? s.slice(0, n) + '…' : s); }
 function calcDays(d) { return Math.max(0, Math.floor((Date.now() - new Date(d).getTime()) / 86400000)) + '日'; }
+
+/* ─── KPI Setup Modal ─── */
+function openKpiModal(ticker) {
+  kpiModalTicker = ticker;
+  document.getElementById('kpi-modal-title').textContent = ticker + ' — KPI設定（Step 0）';
+  document.getElementById('kpi-modal-body').innerHTML = '<div class="kpi-loading">KPI提案を読み込み中...</div>';
+  document.getElementById('kpi-sel-count').textContent = '0件選択';
+  document.getElementById('kpi-modal-ov').classList.add('open');
+  document.body.style.overflow = 'hidden';
+
+  if (loadedProposals[ticker]) {
+    renderKpiModal(ticker);
+  } else {
+    fetch('data/kpi_proposals/' + ticker + '_proposal.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) {
+        if (d) loadedProposals[ticker] = d;
+        renderKpiModal(ticker);
+      });
+  }
+}
+
+function closeKpiModal() {
+  document.getElementById('kpi-modal-ov').classList.remove('open');
+  document.body.style.overflow = '';
+  kpiModalTicker = null;
+}
+
+function handleKpiOverlayClick(e) {
+  if (e.target === document.getElementById('kpi-modal-ov')) closeKpiModal();
+}
+
+function renderKpiModal(ticker) {
+  var body = document.getElementById('kpi-modal-body');
+  var proposal = loadedProposals[ticker];
+  var kpis = proposal ? (proposal.proposed_kpis || []) : [];
+
+  if (!proposal) {
+    body.innerHTML = '<div class="kpi-error">⚠ KPI提案ファイルが見つかりません。<br>python src/tail/kpi_proposer.py --ticker ' + esc(ticker) + ' を実行してください。</div>';
+    return;
+  }
+
+  var itemsHtml = kpis.map(function (k, i) {
+    var autoTag = k.auto_fetchable ? '<span class="kpi-item-auto">自動取得可</span>' : '';
+    return '<div class="kpi-item" id="kpi-item-' + i + '" onclick="toggleKpiItem(' + i + ')">' +
+      '<div class="kpi-item-head">' +
+      '<input type="checkbox" class="kpi-item-cb" id="kpi-cb-' + i + '" onclick="event.stopPropagation();syncKpiItem(' + i + ')">' +
+      '<span class="kpi-item-name">' + esc(k.name || '') + '</span>' + autoTag +
+      '</div>' +
+      '<div class="kpi-item-body">' +
+      '<div class="kpi-item-desc">' + esc(k.description || '') + '</div>' +
+      '<div class="kpi-item-meta">' +
+      '<span class="kpi-meta-pair"><span class="kml">警戒:</span><span class="kmv-warn">' + esc(k.warning_threshold || '—') + '</span></span>' +
+      '<span class="kpi-meta-pair"><span class="kml">EX閾値:</span><span class="kmv-exit">' + esc(k.exit_threshold || '—') + '</span></span>' +
+      '<span class="kpi-meta-pair"><span class="kml">関連:</span><span class="kmv-rel">' + esc(k.related_exit_condition || '—') + '</span></span>' +
+      '<span class="kpi-meta-pair"><span class="kml">ソース:</span><span style="color:var(--sub)">' + esc(k.source || '—') + '</span></span>' +
+      '</div></div></div>';
+  }).join('');
+
+  var manualHtml = '<div class="kpi-manual-section"><div class="kpi-manual-title">手動追加（任意）</div>' +
+    '<div class="kpi-manual-grid">' +
+    '<input id="kpi-add-name"  placeholder="KPI名" style="grid-column:1/-1">' +
+    '<input id="kpi-add-warn"  placeholder="警戒ライン">' +
+    '<input id="kpi-add-exit"  placeholder="エグジット閾値">' +
+    '<input id="kpi-add-src"   placeholder="ソース（決算資料など）">' +
+    '<input id="kpi-add-desc"  placeholder="説明（任意）">' +
+    '</div></div>';
+
+  body.innerHTML = itemsHtml + manualHtml;
+  updateKpiSelCount();
+}
+
+function toggleKpiItem(i) {
+  var cb = document.getElementById('kpi-cb-' + i);
+  cb.checked = !cb.checked;
+  syncKpiItem(i);
+}
+
+function syncKpiItem(i) {
+  var cb = document.getElementById('kpi-cb-' + i);
+  document.getElementById('kpi-item-' + i).classList.toggle('selected', cb.checked);
+  updateKpiSelCount();
+}
+
+function updateKpiSelCount() {
+  var checked = document.querySelectorAll('.kpi-item-cb:checked').length;
+  document.getElementById('kpi-sel-count').textContent = checked + '件選択';
+}
+
+async function confirmKpis() {
+  var ticker = kpiModalTicker;
+  if (!ticker) return;
+  if (!token()) {
+    alert('GitHub PAT トークンを入力してください（メインフォームのGH TOKENフィールド）');
+    return;
+  }
+
+  var proposal  = loadedProposals[ticker];
+  var allKpis   = proposal ? (proposal.proposed_kpis || []) : [];
+  var selected  = [];
+
+  document.querySelectorAll('.kpi-item-cb').forEach(function (cb, i) {
+    if (cb.checked && i < allKpis.length) selected.push(allKpis[i]);
+  });
+
+  var addName = document.getElementById('kpi-add-name');
+  if (addName && addName.value.trim()) {
+    selected.push({
+      name:               addName.value.trim(),
+      description:        (document.getElementById('kpi-add-desc') || {value:''}).value.trim(),
+      source:             (document.getElementById('kpi-add-src')  || {value:''}).value.trim(),
+      warning_threshold:  (document.getElementById('kpi-add-warn') || {value:''}).value.trim(),
+      exit_threshold:     (document.getElementById('kpi-add-exit') || {value:''}).value.trim(),
+      related_exit_condition: '',
+      auto_fetchable: false,
+    });
+  }
+
+  if (!selected.length) { alert('KPIを1件以上選択してください'); return; }
+
+  var btn = document.getElementById('kpi-confirm-btn');
+  btn.disabled = true; btn.textContent = '保存中…';
+
+  try {
+    var thesisPath = 'docs/portfolio/tail/data/positions/' + ticker + '_thesis.json';
+    var file = await fetchFile(thesisPath);
+    var thesis = JSON.parse(file.content);
+    thesis.kpis       = selected;
+    thesis.updated_at = new Date().toISOString().replace('Z', '+09:00');
+
+    await commitFile(thesisPath, JSON.stringify(thesis, null, 2),
+      'feat: TANUKI TAIL ' + ticker + ' KPI確定（' + selected.length + '件）', file.sha);
+
+    loadedPositions[ticker] = thesis;
+    renderOverview();
+    closeKpiModal();
+    showStatus('✓ ' + ticker + ' の監視KPI（' + selected.length + '件）を保存しました', 'ok');
+  } catch (err) {
+    alert('保存失敗: ' + err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '確定 → GitHub に保存';
+  }
+}
 </script>
 </body>
 </html>

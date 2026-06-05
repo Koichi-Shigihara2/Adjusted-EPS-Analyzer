@@ -308,6 +308,31 @@ def _build_macro_text(macro_ctx: Optional[Dict[str, Any]]) -> str:
     return "\n".join(lines) or "（主要フィールドが空）"
 
 
+def _build_kpi_monitoring_section(thesis: Dict[str, Any]) -> str:
+    kpis = thesis.get("kpis") or []
+    if not kpis:
+        return ""
+    table = _build_kpi_monitoring_text(kpis)
+    return (
+        f"\n## 監視KPIと警戒ライン\n{table}\n\n"
+        "※ 各KPIの現状値（決算資料から読み取れる範囲）と警戒ラインとの距離感を評価に含めること。\n"
+    )
+
+
+def _build_kpi_monitoring_text(kpis: List[Dict[str, Any]]) -> str:
+    if not kpis:
+        return ""
+    header = "| KPI名 | 警戒ライン | エグジット閾値 | 関連条件 |"
+    sep    = "| --- | --- | --- | --- |"
+    rows   = [header, sep]
+    for k in kpis:
+        rows.append(
+            f"| {k.get('name','')} | {k.get('warning_threshold','')} "
+            f"| {k.get('exit_threshold','')} | {k.get('related_exit_condition','')} |"
+        )
+    return "\n".join(rows)
+
+
 def build_stage1_prompt(
     thesis: Dict[str, Any],
     kpi_table: str,
@@ -345,7 +370,7 @@ def build_stage1_prompt(
 
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-{val_section}
+{val_section}{_build_kpi_monitoring_section(thesis)}
 ## 評価してください
 
 1. テーゼ健全度（0-100点）と根拠
@@ -362,6 +387,7 @@ def build_stage1_prompt(
    - EXIT: テーゼが崩れている
 
 4. 次四半期に確認すべきKPI（優先度順）
+   （監視KPI設定がある場合、警戒ラインへの接近度も含めて評価すること）
 
 5. 上記エグジット条件との距離感（現在どの程度近いか）
 

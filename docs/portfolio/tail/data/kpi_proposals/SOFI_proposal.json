@@ -1,0 +1,79 @@
+{
+  "ticker": "SOFI",
+  "generated_at": "2026-06-06T08:37:14.972715+09:00",
+  "thesis_version": 1,
+  "proposed_kpis": [
+    {
+      "name": "クロスバイ率",
+      "description": "既存会員による複数プロダクト利用率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "35%以下",
+      "exit_threshold": "30%以下が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false
+    },
+    {
+      "name": "会員数四半期純増数",
+      "description": "四半期ごとの新規会員純増数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "60万人以下",
+      "exit_threshold": "50万人未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false
+    },
+    {
+      "name": "Galileo有効口座数",
+      "description": "Galileoプラットフォームの有効口座数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前四半期比横ばい",
+      "exit_threshold": "2四半期連続で純減",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": false
+    },
+    {
+      "name": "テクノロジー部門売上成長率",
+      "description": "Galileo/Technisysを含むB2B売上の四半期成長率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "5%以下",
+      "exit_threshold": "0%以下またはマイナス",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": false
+    },
+    {
+      "name": "正味貸倒率（NCO）",
+      "description": "融資ポートフォリオの正味貸倒率",
+      "source": "決算資料（10-Q/10-K）",
+      "warning_threshold": "過去平均+0.5pt",
+      "exit_threshold": "想定許容範囲超過で急上昇",
+      "related_exit_condition": "エグジット条件③",
+      "auto_fetchable": true
+    },
+    {
+      "name": "預金残高純増額",
+      "description": "四半期ごとの預金残高の純増額",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前四半期比で鈍化",
+      "exit_threshold": "2四半期連続で純減または大幅減少",
+      "related_exit_condition": "エグジット条件④",
+      "auto_fetchable": true
+    },
+    {
+      "name": "純金利マージン（NIM）",
+      "description": "銀行事業の純金利マージン",
+      "source": "決算資料（10-Q/10-K）",
+      "warning_threshold": "前年比-0.3pt",
+      "exit_threshold": "前年比-0.5pt超の縮小",
+      "related_exit_condition": "エグジット条件④",
+      "auto_fetchable": true
+    },
+    {
+      "name": "GAAP純利益",
+      "description": "四半期GAAP純利益の黒字/赤字",
+      "source": "決算資料（10-Q/10-K）",
+      "warning_threshold": "黒字幅の大幅縮小",
+      "exit_threshold": "四半期赤字転落",
+      "related_exit_condition": "総括",
+      "auto_fetchable": true
+    }
+  ]
+}

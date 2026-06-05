@@ -1,0 +1,70 @@
+{
+  "ticker": "TSLA",
+  "generated_at": "2026-06-06T08:37:20.534218+09:00",
+  "thesis_version": 1,
+  "proposed_kpis": [
+    {
+      "name": "FSD他社ライセンス契約数",
+      "description": "他社へのFSDライセンス供与が成立した件数",
+      "source": "決算説明会資料・プレスリリース",
+      "warning_threshold": "1件未満",
+      "exit_threshold": "2四半期連続で0件",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false
+    },
+    {
+      "name": "ロボタクシー運行許可州数",
+      "description": "商業運行が認可されている州の数",
+      "source": "規制当局発表・決算資料",
+      "warning_threshold": "2州以下",
+      "exit_threshold": "1州以下が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false
+    },
+    {
+      "name": "エネルギー事業粗利益率",
+      "description": "Megapackを含むエネルギー事業の粗利益率",
+      "source": "決算資料（10-Q/10-K）",
+      "warning_threshold": "前四半期比3pt低下",
+      "exit_threshold": "20%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": true
+    },
+    {
+      "name": "Megapack受注残高",
+      "description": "エネルギー事業の未履行受注残高（百万ドル）",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "前四半期比10%減",
+      "exit_threshold": "前年比20%減が2四半期連続",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": false
+    },
+    {
+      "name": "Optimus工場内展開台数",
+      "description": "自社工場で実際に稼働しているOptimus台数",
+      "source": "決算説明会・工場視察情報",
+      "warning_threshold": "100台未満",
+      "exit_threshold": "50台未満が2四半期連続",
+      "related_exit_condition": "エグジット条件③",
+      "auto_fetchable": false
+    },
+    {
+      "name": "Optimus外部販売台数",
+      "description": "自社以外へのOptimus販売台数",
+      "source": "決算資料・プレスリリース",
+      "warning_threshold": "0台",
+      "exit_threshold": "4四半期連続で0台",
+      "related_exit_condition": "エグジット条件③",
+      "auto_fetchable": false
+    },
+    {
+      "name": "FSD関連規制是正件数",
+      "description": "NHTSAなどからFSD・Autopilotに対して出された是正措置件数",
+      "source": "規制当局公表・ニュース",
+      "warning_threshold": "2件以上/四半期",
+      "exit_threshold": "恒久的な運行禁止措置",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false
+    }
+  ]
+}
