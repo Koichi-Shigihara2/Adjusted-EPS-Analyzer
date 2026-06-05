@@ -40,6 +40,7 @@ REVIEWS_DIR       = os.path.join(DATA_DIR, "reviews")
 REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
 TANUKI_DATA_DIR   = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
 MACRO_DATA_DIR    = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
+PORTFOLIO_PATH    = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -180,6 +181,25 @@ def load_macro_context() -> Optional[Dict[str, Any]]:
     return ctx if ctx else None
 
 
+def get_avg_cost(ticker: str) -> Optional[float]:
+    if not os.path.exists(PORTFOLIO_PATH):
+        return None
+    with open(PORTFOLIO_PATH, encoding="utf-8") as f:
+        portfolio = json.load(f)
+    total_cost   = 0.0
+    total_shares = 0.0
+    for broker_data in portfolio.get("brokers", {}).values():
+        pos = broker_data.get("positions", {}).get(ticker)
+        if pos:
+            shares   = float(pos.get("shares",   0))
+            avg_cost = float(pos.get("avg_cost",  0))
+            total_cost   += avg_cost * shares
+            total_shares += shares
+    if total_shares == 0:
+        return None
+    return round(total_cost / total_shares, 2)
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # KPI テーブル整形
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -255,12 +275,14 @@ STAGE1_SYSTEM = (
     "あなたは長期投資家Koichiの投資テーゼ検証パートナーです。"
     "感情的な応援ではなく、証拠に基づいた冷静な評価をしてください。"
     "楽観的バイアスには明示的に警告を発してください。"
+    "回答はすべて日本語で記述してください。"
 )
 
 STAGE2_SYSTEM = (
     "あなたはDCFモデルの入力パラメータを生成する専門家です。"
     "楽観バイアスを避け、ベア/ベース/ブルの3シナリオを必ず提示してください。"
     "経営者の発言は10%割り引いて解釈してください。"
+    "rationale・key_assumptions・risk_factorsはすべて日本語で記述してください。"
 )
 
 
@@ -293,6 +315,7 @@ def build_stage1_prompt(
     valuation: Optional[Dict[str, Any]],
     ticker: str,
     quarter: str,
+    entry_price: Optional[float] = None,
 ) -> str:
     val_section = ""
     if valuation:
@@ -303,6 +326,10 @@ def build_stage1_prompt(
             f"乖離率（upside）: {valuation['deviation_rate']}%\n"
             f"TANUKI判定: {valuation['tanuki_score']}\n"
         )
+        if entry_price is not None:
+            val_section += f"加重平均取得単価: ${entry_price}\n"
+    elif entry_price is not None:
+        val_section = f"\n## 取得コスト\n加重平均取得単価: ${entry_price}\n"
 
     return f"""## 投資テーゼ（{ticker}）
 {thesis.get('thesis', '未設定')}
@@ -446,6 +473,12 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         print(f"  [ERROR] {ticker} の thesis.json がないためスキップ")
         return None
 
+    entry_price: Optional[float] = thesis.get("entry_price")
+    if entry_price is None:
+        entry_price = get_avg_cost(ticker)
+        if entry_price is not None:
+            print(f"  [INFO] entry_price: portfolio.jsonから取得 ${entry_price}")
+
     kpi_table    = build_kpi_table(kpi_data)    if kpi_data else "（KPIデータなし）"
     kpi_snapshot = build_kpi_snapshot(kpi_data) if kpi_data else {}
     macro_snapshot = {
@@ -461,6 +494,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         valuation=valuation,
         ticker=ticker,
         quarter=quarter,
+        entry_price=entry_price,
     )
 
     if dry_run:

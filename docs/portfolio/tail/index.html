@@ -507,6 +507,7 @@ var reviewQByTicker  = {};       // { PLTR: [entries newest-first] }
 var modalTicker      = null;
 var modalTabIdx      = 0;
 var kpiCache         = {};       // { PLTR: kpiData }
+var portfolioAvgCost = {};       // { PLTR: 58.39, SOFI: 16.25, ... } 加重平均取得単価
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ'];
 var TABS_SAT  = ['戦略'];
@@ -569,7 +570,7 @@ function loadPositions() {
       items.forEach(function (p) { if (p && p.ticker) loadedPositions[p.ticker] = p; });
     });
 
-  Promise.all([posP, loadReviewQueue()]).then(function () { renderOverview(); });
+  Promise.all([posP, loadReviewQueue(), loadPortfolio()]).then(function () { renderOverview(); });
 }
 
 function loadReviewQueue() {
@@ -600,6 +601,35 @@ function loadReviewQueue() {
     });
 }
 
+function loadPortfolio() {
+  return fetch('../data/portfolio.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (data) {
+      if (!data) return;
+      var totals = {};  // { ticker: { cost, shares } }
+      Object.values(data.brokers || {}).forEach(function (broker) {
+        Object.entries(broker.positions || {}).forEach(function (kv) {
+          var ticker = kv[0], pos = kv[1];
+          if (!totals[ticker]) totals[ticker] = { cost: 0, shares: 0 };
+          totals[ticker].cost   += (pos.avg_cost || 0) * (pos.shares || 0);
+          totals[ticker].shares += (pos.shares || 0);
+        });
+      });
+      Object.keys(totals).forEach(function (t) {
+        if (totals[t].shares > 0)
+          portfolioAvgCost[t] = Math.round(totals[t].cost / totals[t].shares * 100) / 100;
+      });
+    });
+}
+
+function getDisplayPrice(ticker, thesisPrice) {
+  if (thesisPrice != null) return '$' + Number(thesisPrice).toFixed(2);
+  var avg = portfolioAvgCost[ticker];
+  if (avg != null) return '<span title="portfolio.json 加重平均取得単価">$' + avg.toFixed(2) + '</span>';
+  return '—';
+}
+
 /* ─── Render overview ─── */
 function renderOverview() {
   var coreItems = [], satItems = [], archItems = [];
@@ -623,7 +653,7 @@ function renderCoreTable(items) {
     var healthHtml  = buildHealthPill(p.ticker);
     var latestRvQ   = getLatestReviewQuarter(p.ticker);
     var entryDate   = p.entry_date  || '—';
-    var entryPrice  = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+    var entryPrice  = getDisplayPrice(p.ticker, p.entry_price);
     return [
       '<tr>',
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
@@ -646,7 +676,7 @@ function renderSatTable(items) {
   }
   tbody.innerHTML = items.map(function (p) {
     var entryDate  = p.entry_date || null;
-    var entryPrice = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+    var entryPrice = getDisplayPrice(p.ticker, p.entry_price);
     var holdDays   = entryDate ? calcDays(entryDate) : '—';
     var exitCond   = p.exit_condition ? truncate(p.exit_condition, 30) : '—';
     return [
@@ -672,7 +702,7 @@ function renderArchiveTable(items) {
   tbody.innerHTML = items.map(function (p) {
     var typeTag = '<span class="tag ' + p.type.slice(0,3) + '">' + p.type.toUpperCase() + '</span>';
     var desc = p.type === 'core' ? truncate(p.thesis || '—', 40) : esc(p.strategy_name || '—');
-    var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+    var ep = getDisplayPrice(p.ticker, p.entry_price);
     return '<tr><td><span class="tkr" style="color:var(--mut)">' + esc(p.ticker) + '</span></td>' +
       '<td>' + typeTag + '</td><td style="font-size:12px;color:var(--sub)">' + desc + '</td>' +
       '<td class="num">' + esc(p.entry_date || '—') + '</td><td class="num">' + esc(ep) + '</td></tr>';
@@ -771,7 +801,7 @@ function renderModalBody(ticker, n) {
 
 /* ─── Tab 0: テーゼ ─── */
 function buildTabThesis(p) {
-  var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+  var ep = getDisplayPrice(p.ticker, p.entry_price);
   return [
     tBlock('投資テーゼ', p.thesis || '—'),
     tBlock('ENTRY STORY', p.entry_story || '—'),
@@ -984,7 +1014,7 @@ function buildTabDcf(ticker) {
 /* ─── Tab Satellite ─── */
 function buildTabSat(p) {
   if (!p) return '';
-  var ep = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '—';
+  var ep = getDisplayPrice(p.ticker, p.entry_price);
   return [
     tBlock('STRATEGY',         p.strategy_name   || '—'),
     tBlock('ENTRY CONDITION',  p.entry_condition  || '—'),
