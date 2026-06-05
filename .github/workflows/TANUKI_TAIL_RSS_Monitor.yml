@@ -44,12 +44,32 @@ jobs:
             python src/tail/edgar_rss_monitor.py
           fi
 
+      - name: Run quarterly review generator (pending only)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: |
+          PENDING=$(python -c "
+          import json
+          with open('docs/portfolio/tail/data/review_queue.json') as f:
+              q = json.load(f)
+          pending = [e for e in q.get('queue', []) if e.get('status') == 'pending']
+          print(len(pending))
+          ")
+          echo "pending件数: $PENDING"
+          if [ "$PENDING" -gt 0 ]; then
+            python src/tail/quarterly_review_generator.py
+          else
+            echo "pending なし → レビュー生成スキップ"
+          fi
+
       - name: Commit updated state
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/portfolio/tail/data/rss_state.json \
-                  docs/portfolio/tail/data/review_queue.json
+                  docs/portfolio/tail/data/review_queue.json \
+                  docs/portfolio/tail/data/reviews/
           if git diff --staged --quiet; then
             echo "変更なし"
           else
