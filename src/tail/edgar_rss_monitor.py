@@ -63,7 +63,7 @@ ALERT_BIZ_DAYS = 3
 _ENTRY_RE = re.compile(r'<entry\b[^>]*>(.*?)</entry>', re.DOTALL | re.IGNORECASE)
 _ACCN_RE  = re.compile(r'<accession-number>\s*([0-9\-]+)\s*</accession-number>', re.IGNORECASE)
 _DATE_RE  = re.compile(r'<filing-date>\s*(\d{4}-\d{2}-\d{2})\s*</filing-date>', re.IGNORECASE)
-_FORM_RE  = re.compile(r'<filing-type>\s*(10-[QK](?:/A)?)\s*</filing-type>', re.IGNORECASE)
+_FORM_RE  = re.compile(r'<filing-type>\s*(10-[QK])\s*</filing-type>', re.IGNORECASE)
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

@@ -381,19 +381,47 @@ def build_stage1_prompt(
 }}"""
 
 
+def _calc_yoy_text(kpi_data: Optional[Dict[str, Any]]) -> str:
+    if not kpi_data:
+        return ""
+    kpis = kpi_data.get("kpis", {})
+    lines: List[str] = []
+    for kname, kinfo in kpis.items():
+        dp = {d["quarter"]: d["value"] for d in kinfo.get("data", [])}
+        # 最新四半期を探して前年同期と比較
+        for q in sorted(dp, reverse=True):
+            year = int(q[:4])
+            qnum = q[4:]
+            prev_q = f"{year - 1}{qnum}"
+            if prev_q in dp:
+                curr, prev = dp[q], dp[prev_q]
+                unit = kinfo.get("unit", "")
+                if unit == "USD" and abs(curr) >= 2:
+                    yoy = (curr - prev) / abs(prev) * 100 if prev else 0
+                    lines.append(f"  {kname}: {q}={_fmt_kpi_value(curr, unit)} vs {prev_q}={_fmt_kpi_value(prev, unit)} → YoY {yoy:+.1f}%")
+                else:
+                    diff = (curr - prev) * 100
+                    lines.append(f"  {kname}: {q}={curr*100:.1f}% vs {prev_q}={prev*100:.1f}% → 前年比 {diff:+.1f}pt")
+                break
+    return "\n".join(lines)
+
+
 def build_stage2_prompt(
     ticker: str,
     quarter: str,
     kpi_table: str,
     stage1: Dict[str, Any],
+    kpi_data: Optional[Dict[str, Any]] = None,
 ) -> str:
+    yoy_text = _calc_yoy_text(kpi_data)
+    yoy_section = f"\n## KPI 前年同期比（参考）\n{yoy_text}\n" if yoy_text else ""
     concerns_str = json.dumps(stage1.get("concerns", []), ensure_ascii=False)
     return f"""## 銘柄: {ticker}
 ## 対象四半期: {quarter}
 
 ## 直近KPI
 {kpi_table}
-
+{yoy_section}
 ## Stage 1 評価結果
 健全度: {stage1.get('health_score', 'N/A')}点 ({stage1.get('health_label', 'N/A')})
 懸念点: {concerns_str}
@@ -515,7 +543,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
     print(f"  → health_score={stage1.get('health_score')}, recommendation={stage1.get('recommendation')}")
 
     # Stage 2
-    stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1)
+    stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1, kpi_data)
     print(f"\n  ── Stage 2: DCFパラメータ生成 ({ticker} {quarter}) ──")
     stage2_raw = call_grok(
         user_prompt=stage2_prompt,

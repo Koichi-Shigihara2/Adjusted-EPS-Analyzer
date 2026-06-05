@@ -1,70 +1,68 @@
 {
   "ticker": "PLTR",
   "quarter": "2026Q1",
-  "generated_at": "2026-06-06T07:53:48.363331+09:00",
+  "generated_at": "2026-06-06T08:26:05.788971+09:00",
   "stage1": {
-    "health_score": 72,
+    "health_score": 68,
     "health_label": "WATCH",
-    "summary": "商用・政府売上ともに継続的に拡大し貢献利益率も改善傾向にあるが、株価が理論株価を34.6%上回っておりRule of 40の持続可能性とAIPの差別化が依然として不確実。マクロ環境は中立で利下げタイミングが鍵。",
+    "summary": "商用・政府売上は堅調に成長し貢献利益率も改善傾向だが、理論株価との大幅乖離とAIPの独自性維持に不確実性が残る。マクロ環境は中立。",
     "positives": [
-      "商用売上成長率が前四半期比で加速しNDRの高水準を維持している",
-      "政府セクターも安定成長し全体売上の基盤を支えている",
-      "貢献利益率が73%まで改善し収益性の向上が確認できる"
+      "商用売上成長率が継続的に高水準を維持",
+      "貢献利益率が73%まで改善し収益性向上"
     ],
     "concerns": [
-      "理論株価との乖離が大きく過大評価リスクが高い",
-      "AIPの独自性がビッグテックとの競争で維持できるか不透明",
-      "SBCによる希薄化がEPS成長を圧迫する可能性"
+      "株価が理論株価を34.6%上回る過大評価",
+      "Rule of 40が持続可能か不透明"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "KPIはテーゼ方向と一致するが、株価水準とマクロ不確実性を考慮し次四半期で成長持続を確認する必要がある",
+    "recommendation_reason": "KPIはテーゼ方向と一致するが、楽観バイアスによる過大評価リスクが高いため次四半期でNDRと成長率を確認する必要がある。",
     "next_kpis": [
-      "Commercial売上成長率とNDR",
-      "Rule of 40（売上成長率＋営業利益率）",
-      "Governmentセクターの新規大型契約更新状況"
+      "Commercial NDR",
+      "Government売上成長率",
+      "Rule of 40"
     ],
-    "exit_distance": "やや遠い",
-    "exit_distance_reason": "NDRは依然150%近辺で高水準を維持しておりAIPコモディティ化や政府独占喪失の兆候は現時点で確認できない",
-    "optimism_bias_warning": "テーゼがAI・地政学トレンドの頂点に立つという強気前提に強く依存しており、競合台頭や規制リスクを過小評価している可能性がある"
+    "exit_distance": "やや近い",
+    "exit_distance_reason": "AIPコモディティ化の兆候はまだないが、株価乖離が大きいため成長鈍化でEXIT条件に近づく可能性あり",
+    "optimism_bias_warning": "テーゼに『世界征服』という過度に楽観的な表現が多く、ビッグテックとの競争や規制リスクを過小評価している兆候が見られる"
   },
   "stage2": {
     "ticker": "PLTR",
     "quarter": "2026Q1",
     "scenarios": {
       "bear": {
-        "revenue_growth_y1": 0.18,
-        "revenue_growth_y2": 0.14,
-        "revenue_growth_y3": 0.11,
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.18,
+        "revenue_growth_y3": 0.12,
         "terminal_growth": 0.025,
-        "operating_margin_terminal": 0.18,
-        "rationale": "競争激化とAIP差別化の困難により商用成長が鈍化。SBC希薄化で利益が圧迫され、全体成長は低水準に留まる。"
+        "operating_margin_terminal": 0.22,
+        "rationale": "直近のYoY成長率は高いが、Rule of 40の持続可能性に懸念があり、経営者発言を10%割り引いて保守的に成長鈍化を想定。政府部門の安定に加え商業部門の拡大余地は限定的と判断。"
       },
       "base": {
-        "revenue_growth_y1": 0.28,
-        "revenue_growth_y2": 0.2,
-        "revenue_growth_y3": 0.15,
-        "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.22,
-        "rationale": "商用セグメントの拡大は継続するが、政府依存が残り成長は過去ピークから低下。マージン改善は緩やかでSBC影響を一部反映。"
-      },
-      "bull": {
         "revenue_growth_y1": 0.38,
         "revenue_growth_y2": 0.25,
-        "revenue_growth_y3": 0.18,
+        "revenue_growth_y3": 0.16,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.26,
+        "rationale": "商業貢献利益率の改善傾向を一部織り込むが、過大評価指摘を考慮し成長率は直近実績から下方修正。政府・商業のバランス成長をベースケースとした。"
+      },
+      "bull": {
+        "revenue_growth_y1": 0.48,
+        "revenue_growth_y2": 0.32,
+        "revenue_growth_y3": 0.2,
         "terminal_growth": 0.035,
-        "operating_margin_terminal": 0.27,
-        "rationale": "商用AI需要がさらに加速し高成長を維持。マージン向上も進むが、経営者発言を10%割り引いて控えめに設定。"
+        "operating_margin_terminal": 0.3,
+        "rationale": "商業部門の利益率向上と大型契約拡大を想定するが、経営者発言を10%割り引き、持続可能性に上限を設けた強気シナリオ。"
       }
     },
     "key_assumptions": [
-      "商用売上成長は直近トレンドを基にしつつ将来鈍化を想定",
-      "貢献利益率73%を上限に徐々に安定化",
-      "ターミナル期は永続成長率を低めに設定"
+      "2026Q1実績を起点に3年間の売上成長率を段階的に低下させる",
+      "ターミナル期の営業利益率は貢献利益率の改善を上限に抑制",
+      "WACCはソフトウェア企業平均を参考に12.5%を固定"
     ],
     "risk_factors": [
-      "AIP独自性の喪失によるビッグテックとの競争激化",
-      "SBCによる株式希薄化でEPS成長が圧迫される可能性",
-      "理論株価との乖離拡大による過大評価是正リスク"
+      "株価が理論株価を34.6%上回る過大評価状態が継続する可能性",
+      "Rule of 40の持続可能性が不透明で成長鈍化リスクが高い",
+      "政府部門依存度が高く、予算変動による収益不安定化の恐れ"
     ]
   },
   "kpi_snapshot": {
