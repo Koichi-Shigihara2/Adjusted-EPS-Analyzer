@@ -282,6 +282,18 @@
 - [ ] 資金フロー（大口/小口）表示
 - [ ] 決算ウォッチ用プレ/アフターマーケットデータ
 
+【Moomoo API Skill 移行】※2026-06-07以降着手
+- 背景: moomoo証券が2026年4月にリリースしたClaude Code向けSkillパック
+  自然言語指示で発注・バックテスト・戦略変更が可能
+  現在の手製trader.pyと基本アーキテクチャ（ローカルPC+OpenD）は同じ
+- 前提: signal.jsonの蓄積データ（2026-04-04〜）でバックテストを実施してから移行判断
+- 手順:
+  ① Claude CodeにMoomoo API Skillをインストール・動作確認
+  ② 蓄積済みsignal.jsonデータ（約62件）でF&G Level2×TQQQ戦略をバックテスト
+  ③ 結果が良好なら手製trader.pyをAPI Skillに移行
+- 懸念: OpenDはローカルPC起動が必要（PC停止で自動売買も停止する制約は変わらず）
+- 参考: https://www.moomoo.com/ja/community/feed/moomoo-api-skills-now-unlocked-ai-becomes-a-24-7-116413328916486
+
 ### 【Market Pulse】
 - ✅ [MP-1] AIレポート「出来高比」表現の修正（2026-06-02 完了）
   - 修正: S&P500/NASDAQ を個別表記に変換してGrokに渡すよう collect_and_send.py を修正
