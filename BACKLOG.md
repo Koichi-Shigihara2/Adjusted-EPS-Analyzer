@@ -66,10 +66,18 @@
 ## 優先度：中（こなれてきたら対応）
 
 ### [SEGMENT-1] 主要銘柄のセグメント精緻設定
-- 現状: 36銘柄がTTM実績自動適用（General 100%）
-- 問題: セグメント別成長率の差異が反映されない
-- 対象: 時価総額上位の未設定銘柄から順次
-- 現状の自動化: TTM実績値を自動適用済み（デフォルト15%より改善）
+- 現状: 35銘柄がTTM実績自動適用（General 100%）
+- 対象外（General 100%で正しい）:
+  SaaS単一事業: DDOG/NET/NOW/ZS/RBRK/GTLB/ESTC/IOT/CWAN/S/ZETA/SITM/CART/CRM
+  赤字初期段階: ASTS/JOBY/IONQ/QBTS/RXRX/RDW/RCAT/SPIR/CIX
+- 対象（複数事業・精緻化する価値あり）12銘柄:
+  LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV
+- 方針: Grokにセグメント構成を自動提案させてadmin.htmlから設定
+- 優先順位: 時価総額上位から順次（LLY→LMT→MRVL→AMAT→VRT）
+- 新規銘柄追加時のルール:
+  ① 単一事業（SaaS・純粋プレイ）→ General 100%のままでよい
+  ② 複数事業セグメントが決算資料に明示されている → 対象リストに追加
+  ③ 赤字初期段階 → 対象外（STONKS SILOで管理）
 
 ### ✅ [GROWTH-1] 成長逓減モデルの精緻化（2026-05-31 完了）
 - 旧: recommended_g = (TTM + 業界平均) / 2（固定50:50）
