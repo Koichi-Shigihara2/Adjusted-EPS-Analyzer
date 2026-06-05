@@ -18,7 +18,8 @@
     { key: 'macro',        label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
     { key: 'hype',         label: 'HYPE CORE',         href: BASE + '/value-monitor/hypecore/' },
     { key: 'discover',     label: 'DISCOVER',          href: BASE + '/discover/' },
-    { key: 'portfolio',    label: 'PORTFOLIO',         href: BASE + '/portfolio/' }
+    { key: 'portfolio',    label: 'PORTFOLIO',         href: BASE + '/portfolio/' },
+    { key: 'tail',         label: 'TANUKI TAIL',       href: BASE + '/portfolio/tail/' }
   ];
 
   function build(activeKey) {
