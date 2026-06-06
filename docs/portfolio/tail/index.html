@@ -265,6 +265,20 @@
     .hist-q { font-family: var(--mono); font-size: 12px; }
     .hist-sc { font-family: var(--mono); font-size: 11px; color: var(--mut); }
     .no-rv { font-family: var(--mono); font-size: 12px; color: var(--mut); text-align: center; padding: 40px; }
+    .pred-section { margin-top: 14px; }
+    .pred-toggle { display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 8px 0; color: var(--mut); font-family: var(--mono); font-size: 11px; user-select: none; }
+    .pred-toggle:hover { color: var(--sub); }
+    .pred-body { display: none; }
+    .pred-body.open { display: block; }
+    .pred-entry-header { font-family: var(--mono); font-size: 10px; color: var(--sub); margin: 12px 0 6px; letter-spacing: .04em; }
+    .pred-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    .pred-table th { text-align: left; padding: 4px 6px; font-family: var(--mono); font-size: 10px; color: var(--mut); border-bottom: 1px solid rgba(30,40,64,.5); }
+    .pred-table td { padding: 5px 6px; border-bottom: 1px solid rgba(30,40,64,.25); vertical-align: middle; }
+    .pred-table tbody tr:last-child td { border-bottom: none; }
+    .pred-ok  { color: var(--mut); }
+    .pred-up  { color: var(--grn); }
+    .pred-dn  { color: var(--red); }
+    .pred-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,.08); }
 
     /* ── KPI tab ── */
     .kpi-card { background: var(--sur2); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
@@ -587,7 +601,8 @@ var portfolioAvgCost = {};       // { PLTR: 58.39, SOFI: 16.25, ... } 加重平�
 var latestValCache   = {};       // { TSLA: { current_price, intrinsic_value, ... } }
 var kpiModalTicker  = null;
 var loadedProposals = {};        // { PLTR: proposalData }
-var loadedScenarios = {};        // { PLTR: { bear: {}, base: {}, bull: {} } }
+var loadedScenarios      = {};   // { PLTR: { bear: {}, base: {}, bull: {} } }
+var predictionHistory    = {};   // { PLTR: [...], SOFI: [...], TSLA: [...] }
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点'];
 var TABS_SAT  = ['戦略'];
@@ -650,7 +665,7 @@ function loadPositions() {
       items.forEach(function (p) { if (p && p.ticker) loadedPositions[p.ticker] = p; });
     });
 
-  Promise.all([posP, loadReviewQueue(), loadPortfolio()]).then(function () {
+  Promise.all([posP, loadReviewQueue(), loadPortfolio(), loadPredictionHistory()]).then(function () {
     var satTickers = Object.values(loadedPositions)
       .filter(function (p) { return p.type === 'satellite' && p.status !== 'archived'; })
       .map(function (p) { return p.ticker; });
@@ -660,6 +675,15 @@ function loadPositions() {
       renderOverview();
     }
   });
+}
+
+function loadPredictionHistory() {
+  return fetch('data/prediction_history.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : {}; })
+    .catch(function () { return {}; })
+    .then(function (data) {
+      Object.assign(predictionHistory, data);
+    });
 }
 
 function loadReviewQueue() {
@@ -1007,6 +1031,8 @@ function buildTabReview(ticker, targetQ) {
       '<div class="hist-body">' + histItems + '</div></div>';
   }
 
+  var predHtml = _buildPredictionSection(ticker, q);
+
   return [
     '<div class="rv-head"><span class="rv-quarter">' + esc(q) + '</span><span class="rv-date">生成: ' + esc(genDate) + '</span></div>',
     '<div class="gauge-wrap">',
@@ -1024,8 +1050,76 @@ function buildTabReview(ticker, targetQ) {
     '<span style="font-size:12px;color:var(--sub)">' + esc(s1.exit_distance_reason || '') + '</span></div>',
     '<div class="nkpi-title">次四半期の確認KPI</div>',
     '<ul class="nkpi-list">' + nkHtml + '</ul>',
+    predHtml,
     histHtml,
   ].join('');
+}
+
+function _fmtPredVal(v) {
+  if (v === null || v === undefined) return 'N/A';
+  if (typeof v === 'number' && Math.abs(v) <= 10) return (v * 100).toFixed(1) + '%';
+  if (Math.abs(v) >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+  if (Math.abs(v) >= 1e6) return '$' + Math.round(v / 1e6) + 'M';
+  return String(v);
+}
+
+function _buildPredictionSection(ticker, currentQ) {
+  var entries = (predictionHistory[ticker] || []).filter(function (e) {
+    return e.kpi_forecast_available && e.matchable && e.scenario === 'base';
+  });
+  // currentQの1年後が目標だったエントリ（= review_quarterが1年前）を優先表示
+  // 直近2件
+  var recent = entries.slice(-2);
+  if (!recent.length) return '';
+
+  var rows = [];
+  recent.forEach(function (entry) {
+    var preds = entry.predictions || {};
+    var kpiKeys = Object.keys(preds);
+    if (!kpiKeys.length) return;
+
+    var tableRows = kpiKeys.map(function (kn) {
+      var p = preds[kn];
+      var dev = p.deviation_pct;
+      var acc = p.accuracy;
+      var devStr = dev !== null && dev !== undefined ? (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%' : 'N/A';
+      var devCls = acc === 'accurate' ? 'pred-ok' : acc === 'under_estimated' ? 'pred-up' : 'pred-dn';
+      var badge = acc === 'accurate' ? '' : acc === 'under_estimated' ? '過小評価' : '過大評価';
+      return '<tr>' +
+        '<td>' + esc(kn) + '</td>' +
+        '<td>' + esc(_fmtPredVal(p.predicted)) + '</td>' +
+        '<td>' + esc(_fmtPredVal(p.actual)) + '</td>' +
+        '<td class="' + devCls + '">' + devStr + (badge ? ' <span class="pred-badge">' + badge + '</span>' : '') + '</td>' +
+        '</tr>';
+    }).join('');
+
+    rows.push(
+      '<div class="pred-entry-header">' +
+        esc(entry.review_quarter) + ' レビュー予測 → ' + esc(entry.forecast_target) + ' 実績' +
+      '</div>' +
+      '<table class="pred-table">' +
+        '<thead><tr><th>KPI</th><th>予測値</th><th>実績値</th><th>乖離率</th></tr></thead>' +
+        '<tbody>' + tableRows + '</tbody>' +
+      '</table>'
+    );
+  });
+
+  if (!rows.length) return '';
+
+  var body = rows.join('');
+  return '<div class="pred-section">' +
+    '<div class="pred-toggle" onclick="togglePred(this)">' +
+      '<span class="pred-toggle-icon">▶</span>' +
+      '<span>過去予測の振り返り</span>' +
+    '</div>' +
+    '<div class="pred-body">' + body + '</div>' +
+  '</div>';
+}
+
+function togglePred(el) {
+  var body = el.nextElementSibling;
+  var open = body.classList.toggle('open');
+  el.querySelector('.pred-toggle-icon').textContent = open ? '▼' : '▶';
 }
 
 function showReviewQ(ticker, quarter) {

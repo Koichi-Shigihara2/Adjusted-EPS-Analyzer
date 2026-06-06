@@ -114,6 +114,10 @@ jobs:
             echo "ティッカーなし → DCF bridge スキップ"
           fi
 
+      - name: Run prediction_tracker (予測vs実績照合)
+        run: |
+          python src/tail/prediction_tracker.py
+
       - name: Commit updated state
         run: |
           git config user.name  "github-actions[bot]"
@@ -123,7 +127,8 @@ jobs:
                   docs/portfolio/tail/data/reviews/ \
                   docs/portfolio/tail/data/kpi/ \
                   docs/portfolio/tail/data/tail_kpi_map.json \
-                  docs/portfolio/scenario/
+                  docs/portfolio/scenario/ \
+                  docs/portfolio/tail/data/prediction_history.json
           if git diff --staged --quiet; then
             echo "変更なし"
           else

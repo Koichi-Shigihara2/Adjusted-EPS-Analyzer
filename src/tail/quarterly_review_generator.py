@@ -42,7 +42,8 @@ REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
 TANUKI_DATA_DIR       = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
 MACRO_DATA_DIR        = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
 PORTFOLIO_PATH        = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
-COMMON_NORMALIZED_DIR = os.path.join(repo_root, "docs", "common", "sec_data", "normalized")
+COMMON_NORMALIZED_DIR    = os.path.join(repo_root, "docs", "common", "sec_data", "normalized")
+PREDICTION_HISTORY_PATH  = os.path.join(DATA_DIR, "prediction_history.json")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -793,6 +794,65 @@ def _load_past_health_scores(ticker: str, current_quarter: str, n: int = 8) -> s
     return " / ".join(f"{q}:{hs}({rec})" for q, hs, rec in recent)
 
 
+def _load_past_predictions(ticker: str, max_entries: int = 2) -> str:
+    """prediction_history.json から直近2件の予測振り返りテキストを返す"""
+    if not os.path.exists(PREDICTION_HISTORY_PATH):
+        return ""
+    try:
+        with open(PREDICTION_HISTORY_PATH, encoding="utf-8") as f:
+            history = json.load(f)
+    except Exception:
+        return ""
+
+    entries = history.get(ticker, [])
+    matchable = [
+        e for e in entries
+        if e.get("kpi_forecast_available") and e.get("matchable") and e.get("scenario") == "base"
+    ]
+    if not matchable:
+        return ""
+
+    recent = matchable[-max_entries:]
+    lines = []
+    for entry in recent:
+        rq = entry["review_quarter"]
+        tq = entry["forecast_target"]
+        preds = entry.get("predictions", {})
+        if not preds:
+            continue
+
+        def _fmt(v: Any) -> str:
+            if v is None:
+                return "N/A"
+            if isinstance(v, float) and abs(v) <= 10:
+                return f"{v * 100:.1f}%"
+            if abs(v) >= 1_000_000_000:
+                return f"${v / 1e9:.2f}B"
+            if abs(v) >= 1_000_000:
+                return f"${v / 1e6:.0f}M"
+            return str(v)
+
+        lines.append(f"【{rq}レビュー → {tq}実績】")
+        lines.append("| KPI | 予測値 | 実績値 | 乖離率 |")
+        lines.append("|-----|--------|--------|--------|")
+        for kpi_name, p in preds.items():
+            dev = p.get("deviation_pct")
+            dev_str = f"{dev:+.1f}%" if dev is not None else "N/A"
+            lines.append(f"| {kpi_name} | {_fmt(p['predicted'])} | {_fmt(p['actual'])} | {dev_str} |")
+        lines.append("")
+
+    if not lines:
+        return ""
+
+    body = "\n".join(lines)
+    return (
+        f"## 過去予測の振り返り\n"
+        f"{body}\n"
+        f"過去の予測精度を踏まえて今回の評価の楽観バイアスを調整してください。"
+        f"特に過去に過大評価したKPIには追加の保守的調整を加えてください。\n"
+    )
+
+
 def build_stage1_prompt(
     thesis: Dict[str, Any],
     kpi_table: str,
@@ -804,6 +864,7 @@ def build_stage1_prompt(
     kpi_data_layer2: Optional[Dict[str, Any]] = None,
     kpi_data_layer3: Optional[Dict[str, Any]] = None,
     past_health_scores: str = "",
+    past_predictions: str = "",
 ) -> str:
     val_section = ""
     if valuation:
@@ -831,6 +892,9 @@ def build_stage1_prompt(
         if past_health_scores else ""
     )
 
+    # 過去予測振り返りセクション
+    prediction_section = f"\n{past_predictions}" if past_predictions else ""
+
     return f"""## 投資テーゼ（{ticker}）
 {thesis.get('thesis', '未設定')}
 
@@ -845,7 +909,7 @@ def build_stage1_prompt(
 {yoy_section}{qoq_section}
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-{val_section}{health_trend_section}{_build_kpi_monitoring_section(thesis, kpi_data_layer2, kpi_data_layer3, quarter)}
+{val_section}{health_trend_section}{prediction_section}{_build_kpi_monitoring_section(thesis, kpi_data_layer2, kpi_data_layer3, quarter)}
 ## 評価してください
 
 1. テーゼ健全度（0-100点）と根拠
@@ -1376,6 +1440,11 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
     if past_health:
         print(f"  [INFO] 過去健全度推移: {past_health}")
 
+    # 過去予測振り返りテキストを取得
+    past_predictions = _load_past_predictions(ticker)
+    if past_predictions:
+        print(f"  [INFO] 過去予測振り返り: 利用可能")
+
     stage1_prompt = build_stage1_prompt(
         thesis=thesis,
         kpi_table=kpi_table,
@@ -1387,6 +1456,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         kpi_data_layer2=kpi_data,
         kpi_data_layer3=kpi_layer3,
         past_health_scores=past_health,
+        past_predictions=past_predictions,
     )
 
     if dry_run:
