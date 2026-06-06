@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "generated_at": "2026-06-06T08:37:08.593981+09:00",
+  "generated_at": "2026-06-06T08:57:36.523517+09:00",
   "thesis_version": 1,
   "proposed_kpis": [
     {
@@ -10,61 +10,89 @@
       "warning_threshold": "120%以下",
       "exit_threshold": "110%未満が2四半期連続",
       "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
-    },
-    {
-      "name": "顧客解約率（チャーンレート）",
-      "description": "四半期ごとの顧客離脱率",
-      "source": "決算資料（IR開示）",
-      "warning_threshold": "前四半期比上昇",
-      "exit_threshold": "継続的な上昇傾向（2四半期以上）",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
+      "auto_fetchable": false,
+      "extraction_hint": "net dollar retention",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
     },
     {
       "name": "米民間売上成長率",
-      "description": "米国商業セクターの売上YoY成長率",
-      "source": "決算資料（10-Q/XBRL）",
+      "description": "US Commercial売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
       "warning_threshold": "40%以下",
       "exit_threshold": "30%未満が2四半期連続",
       "related_exit_condition": "エグジット条件②",
-      "auto_fetchable": true
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "pltr:CommercialOperatingSegmentMember"
     },
     {
-      "name": "Rule of 40スコア",
-      "description": "売上成長率＋営業利益率の合計値",
-      "source": "決算資料（10-Q/XBRL）",
-      "warning_threshold": "80以下",
-      "exit_threshold": "50以下が2四半期連続",
-      "related_exit_condition": "エグジット条件②",
-      "auto_fetchable": true
-    },
-    {
-      "name": "政府セクター売上比率",
-      "description": "総売上に占める政府・防衛セクターの割合",
-      "source": "決算資料（10-Q/XBRL）",
-      "warning_threshold": "前年比5ポイント低下",
-      "exit_threshold": "前年比10ポイント以上低下",
+      "name": "政府部門売上成長率",
+      "description": "Government売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "15%以下",
+      "exit_threshold": "10%未満が2四半期連続",
       "related_exit_condition": "エグジット条件③",
-      "auto_fetchable": true
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "pltr:GovernmentOperatingSegmentMember"
     },
     {
-      "name": "SBC希薄化影響（EPS調整後）",
-      "description": "株式報酬費用による1株当たり利益の希薄化率",
-      "source": "決算資料（10-Q/XBRL）",
-      "warning_threshold": "前四半期比上昇",
-      "exit_threshold": "EPS成長が2四半期連続で停止",
+      "name": "営業利益率",
+      "description": "営業利益の売上に対する比率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "15%以下",
+      "exit_threshold": "10%未満が2四半期連続",
       "related_exit_condition": "エグジット条件②",
-      "auto_fetchable": true
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:OperatingIncomeLoss",
+      "xbrl_dimension": null,
+      "xbrl_member": null
     },
     {
-      "name": "大型政府契約更新・新規受注件数",
-      "description": "TITANなど主要政府プロジェクトの契約状況",
-      "source": "IR発表・プレスリリース",
-      "warning_threshold": "更新遅延または減少",
-      "exit_threshold": "主要契約の更新失敗またはリプレイス",
-      "related_exit_condition": "エグジット条件③",
-      "auto_fetchable": false
+      "name": "顧客解約率",
+      "description": "既存顧客の解約・減額による売上減少率",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "5%以上",
+      "exit_threshold": "8%以上が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false,
+      "extraction_hint": "churn rate",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    },
+    {
+      "name": "株式報酬費用",
+      "description": "四半期ごとの株式ベース報酬費用総額",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "前年比+30%以上",
+      "exit_threshold": "売上比15%超が継続",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:ShareBasedCompensation",
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    },
+    {
+      "name": "希薄化後EPS成長率",
+      "description": "1株当たり利益の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "0%以下",
+      "exit_threshold": "マイナス成長が2四半期連続",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:DilutedEarningsPerShare",
+      "xbrl_dimension": null,
+      "xbrl_member": null
     }
   ]
 }

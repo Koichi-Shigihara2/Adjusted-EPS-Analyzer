@@ -1,70 +1,98 @@
 {
   "ticker": "TSLA",
-  "generated_at": "2026-06-06T08:37:20.534218+09:00",
+  "generated_at": "2026-06-06T08:57:52.210923+09:00",
   "thesis_version": 1,
   "proposed_kpis": [
     {
-      "name": "FSD他社ライセンス契約数",
-      "description": "他社へのFSDライセンス供与が成立した件数",
-      "source": "決算説明会資料・プレスリリース",
-      "warning_threshold": "1件未満",
-      "exit_threshold": "2四半期連続で0件",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
-    },
-    {
-      "name": "ロボタクシー運行許可州数",
-      "description": "商業運行が認可されている州の数",
-      "source": "規制当局発表・決算資料",
-      "warning_threshold": "2州以下",
-      "exit_threshold": "1州以下が2四半期連続",
-      "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
-    },
-    {
       "name": "エネルギー事業粗利益率",
-      "description": "Megapackを含むエネルギー事業の粗利益率",
-      "source": "決算資料（10-Q/10-K）",
-      "warning_threshold": "前四半期比3pt低下",
+      "description": "エネルギー生成・蓄電セグメントの粗利益率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "25%以下",
       "exit_threshold": "20%未満が2四半期連続",
       "related_exit_condition": "エグジット条件②",
-      "auto_fetchable": true
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:GrossProfit",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "tsla:EnergyGenerationAndStorageMember"
     },
     {
-      "name": "Megapack受注残高",
-      "description": "エネルギー事業の未履行受注残高（百万ドル）",
-      "source": "決算資料（IR開示）",
-      "warning_threshold": "前四半期比10%減",
-      "exit_threshold": "前年比20%減が2四半期連続",
+      "name": "エネルギー受注残高",
+      "description": "Megapackを中心としたエネルギー事業の未履行受注残高",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "前四半期比減少",
+      "exit_threshold": "2四半期連続で減少",
       "related_exit_condition": "エグジット条件②",
-      "auto_fetchable": false
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:ContractWithCustomerLiability",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "tsla:EnergyGenerationAndStorageMember"
     },
     {
-      "name": "Optimus工場内展開台数",
-      "description": "自社工場で実際に稼働しているOptimus台数",
-      "source": "決算説明会・工場視察情報",
-      "warning_threshold": "100台未満",
-      "exit_threshold": "50台未満が2四半期連続",
-      "related_exit_condition": "エグジット条件③",
-      "auto_fetchable": false
-    },
-    {
-      "name": "Optimus外部販売台数",
-      "description": "自社以外へのOptimus販売台数",
-      "source": "決算資料・プレスリリース",
-      "warning_threshold": "0台",
-      "exit_threshold": "4四半期連続で0台",
-      "related_exit_condition": "エグジット条件③",
-      "auto_fetchable": false
-    },
-    {
-      "name": "FSD関連規制是正件数",
-      "description": "NHTSAなどからFSD・Autopilotに対して出された是正措置件数",
-      "source": "規制当局公表・ニュース",
-      "warning_threshold": "2件以上/四半期",
-      "exit_threshold": "恒久的な運行禁止措置",
+      "name": "FSDライセンス契約成立数",
+      "description": "他社へのFSDソフトウェアライセンス供与契約の累計成立件数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "1件未満",
+      "exit_threshold": "2年連続で0件",
       "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
+      "auto_fetchable": false,
+      "extraction_hint": "number of FSD license agreements",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    },
+    {
+      "name": "ロボタクシー運行許可状況",
+      "description": "テキサス・カリフォルニア等でのロボタクシー商業運行許可の有無",
+      "source": "規制当局・IR開示",
+      "warning_threshold": "許可更新の遅延",
+      "exit_threshold": "許可取消または恒久禁止",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": false,
+      "extraction_hint": "robotaxi operating permit status",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    },
+    {
+      "name": "Optimus累計生産台数",
+      "description": "Optimus人型ロボットの工場内累計生産・稼働台数",
+      "source": "決算資料（IR開示）",
+      "warning_threshold": "年間1,000台未満",
+      "exit_threshold": "外部販売0台が2年以上継続",
+      "related_exit_condition": "エグジット条件③",
+      "auto_fetchable": false,
+      "extraction_hint": "Optimus units produced and deployed",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    },
+    {
+      "name": "サービス売上成長率",
+      "description": "FSD・ソフトウェア関連サービス売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "30%以下",
+      "exit_threshold": "20%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件①",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "tsla:ServicesAndOtherMember"
+    },
+    {
+      "name": "自動車売上総利益率",
+      "description": "自動車セグメント全体の売上総利益率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "18%以下",
+      "exit_threshold": "15%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件④",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:GrossProfit",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "tsla:AutomotiveMember"
     }
   ]
 }

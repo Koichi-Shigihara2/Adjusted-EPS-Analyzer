@@ -10,19 +10,21 @@ TANUKI TAIL — kpi_proposer.py
     python src/tail/kpi_proposer.py --ticker PLTR SOFI TSLA
     python src/tail/kpi_proposer.py --ticker PLTR --dry-run
 
-出力: docs/portfolio/tail/data/kpi_proposals/{ticker}_proposal.json
+出力:
+    docs/portfolio/tail/data/kpi_proposals/{ticker}_proposal.json
+    docs/portfolio/tail/data/tail_kpi_map.json（auto_fetchable=true 分を自動追記）
 環境変数:
     XAI_API_KEY  xAI Grok API キー（必須）
 """
 
 import os
-import sys
+import csv
 import json
 import re
 import time
 import argparse
 import requests
-from datetime import datetime
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from typing import Optional, Dict, Any, List
 
@@ -33,6 +35,8 @@ repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
 KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
+KPI_MAP_PATH      = os.path.join(DATA_DIR, "tail_kpi_map.json")
+CIK_LOOKUP_PATH   = os.path.join(repo_root, "config", "cik_lookup.csv")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -43,8 +47,9 @@ GROK_MODELS = ["grok-3-mini", "grok-3", "grok-2-1212"]
 
 KPI_SYSTEM = (
     "あなたは投資テーゼの監視指標設計の専門家です。"
-    "テーゼとエグジット条件から、四半期ごとに確認すべき"
-    "具体的なKPIを提案してください。"
+    "テーゼとエグジット条件から、四半期ごとに確認すべき具体的なKPIを提案してください。"
+    "auto_fetchable=trueのKPIには必ずxbrl_tag・xbrl_dimension・xbrl_memberを記入してください。"
+    "xbrl_tagはus-gaap名前空間またはカスタム名前空間で記述してください。"
     "回答はすべて日本語で記述してください。"
 )
 
@@ -106,13 +111,25 @@ def load_thesis(ticker: str) -> Optional[Dict[str, Any]]:
         return json.load(f)
 
 
+def load_cik(ticker: str) -> Optional[str]:
+    if not os.path.exists(CIK_LOOKUP_PATH):
+        return None
+    with open(CIK_LOOKUP_PATH, encoding="utf-8") as f:
+        for row in csv.DictReader(f):
+            if row.get("ticker", "").upper() == ticker.upper():
+                return row.get("cik", "").strip()
+    return None
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # プロンプト構築
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-def build_kpi_prompt(thesis: Dict[str, Any]) -> str:
-    ticker = thesis.get("ticker", "")
+def build_kpi_prompt(thesis: Dict[str, Any], cik: Optional[str] = None) -> str:
+    ticker  = thesis.get("ticker", "")
+    cik_str = cik or "不明"
     return f"""## 銘柄: {ticker}
+## CIK: {cik_str}
 ## 投資テーゼ
 {thesis.get('thesis', '未設定')}
 
@@ -126,17 +143,89 @@ def build_kpi_prompt(thesis: Dict[str, Any]) -> str:
       "name": "NDR（ネット・ダラー・リテンション）",
       "description": "既存顧客からの売上維持・拡大率",
       "source": "決算資料（IR開示）",
-      "warning_threshold": "110%以下",
+      "warning_threshold": "120%以下",
       "exit_threshold": "110%未満が2四半期連続",
       "related_exit_condition": "エグジット条件①",
-      "auto_fetchable": false
+      "auto_fetchable": false,
+      "extraction_hint": "net dollar retention",
+      "xbrl_tag": null,
+      "xbrl_dimension": null,
+      "xbrl_member": null
+    }},
+    {{
+      "name": "米民間売上成長率",
+      "description": "US Commercial売上の前年同期比成長率",
+      "source": "EDGAR XBRL",
+      "warning_threshold": "40%以下",
+      "exit_threshold": "30%未満が2四半期連続",
+      "related_exit_condition": "エグジット条件②",
+      "auto_fetchable": true,
+      "extraction_hint": null,
+      "xbrl_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "xbrl_dimension": "us-gaap:StatementBusinessSegmentsAxis",
+      "xbrl_member": "pltr:CommercialOperatingSegmentMember"
     }}
   ]
 }}
 
-auto_fetchable: EDGARのXBRLから自動取得できる場合true（売上・利益などの財務指標）。
-非財務指標（NDR・解約率・顧客数など）はfalse。
-JSONのみ返してください（説明文不要）。"""
+ルール:
+- auto_fetchable=true: EDGARのXBRLから取得可能な財務指標（売上・利益・残高等）
+  → xbrl_tag・xbrl_dimension・xbrl_memberを必ず具体的に記入
+  → xbrl_memberは "{ticker.lower()}:XxxMember" 形式で記入
+- auto_fetchable=false: NDR・解約率・顧客数・規制状況等の非財務指標
+  → extraction_hintに決算資料でよく使われる英語表現を記入
+  → xbrl_tag/dimension/memberはnull
+- JSONのみ返してください（説明文不要）"""
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# tail_kpi_map.json への自動追記
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def update_tail_kpi_map(ticker: str, proposed_kpis: List[Dict[str, Any]]) -> int:
+    if os.path.exists(KPI_MAP_PATH):
+        with open(KPI_MAP_PATH, encoding="utf-8") as f:
+            kpi_map: Dict[str, Any] = json.load(f)
+    else:
+        kpi_map = {}
+
+    existing = kpi_map.get(ticker, [])
+    existing_names = {e.get("kpi_name", "") for e in existing}
+
+    added = 0
+    today = str(date.today())
+    for kpi in proposed_kpis:
+        if not kpi.get("auto_fetchable"):
+            continue
+        xbrl_tag  = kpi.get("xbrl_tag")
+        xbrl_dim  = kpi.get("xbrl_dimension")
+        xbrl_mem  = kpi.get("xbrl_member")
+        kpi_name  = kpi.get("name", "")
+
+        if not xbrl_tag or kpi_name in existing_names:
+            continue
+
+        entry: Dict[str, Any] = {
+            "kpi_name":     kpi_name,
+            "change_risk":  "medium",
+            "tag_history":  [{"tag": xbrl_mem or "", "valid_from": today, "valid_to": None}],
+            "fallback_tags":    [],
+            "fallback_action":  "alert",
+            "revenue_tag":  xbrl_tag,
+            "dimension":    xbrl_dim or "",
+        }
+        existing.append(entry)
+        existing_names.add(kpi_name)
+        added += 1
+        print(f"    [kpi_map] 追加: {kpi_name} → {xbrl_tag}")
+
+    if added > 0:
+        kpi_map[ticker] = existing
+        with open(KPI_MAP_PATH, "w", encoding="utf-8") as f:
+            json.dump(kpi_map, f, ensure_ascii=False, indent=2)
+        print(f"  ✓ tail_kpi_map.json を更新 (+{added}件)")
+
+    return added
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -156,15 +245,16 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
         print(f"  [SKIP] {ticker} は core 銘柄ではありません（type={thesis.get('type')}）")
         return None
 
-    prompt = build_kpi_prompt(thesis)
+    cik    = load_cik(ticker)
+    prompt = build_kpi_prompt(thesis, cik)
 
     if dry_run:
         print("\n=== [DRY-RUN] KPIプロンプト ===")
-        print(prompt[:600])
+        print(prompt[:800])
         print("...\n=== DRY-RUN 完了 ===")
         return None
 
-    raw = call_grok(user_prompt=prompt, system_prompt=KPI_SYSTEM, max_tokens=3000, temperature=0.4)
+    raw    = call_grok(user_prompt=prompt, system_prompt=KPI_SYSTEM, max_tokens=3000, temperature=0.4)
     result = extract_json_from_response(raw)
 
     os.makedirs(KPI_PROPOSALS_DIR, exist_ok=True)
@@ -183,7 +273,12 @@ def propose_kpis(ticker: str, dry_run: bool = False) -> Optional[str]:
     print(f"  ✓ {len(kpis)} 件のKPI提案を保存: {out_path}")
     for k in kpis:
         auto = "✓自動" if k.get("auto_fetchable") else "手動"
-        print(f"    [{auto}] {k.get('name', '?')} — 警戒: {k.get('warning_threshold', '?')}")
+        hint = k.get("xbrl_tag") or k.get("extraction_hint") or ""
+        print(f"    [{auto}] {k.get('name', '?')} — 警戒: {k.get('warning_threshold', '?')} ({hint})")
+
+    # auto_fetchable=true のKPIをtail_kpi_map.jsonに自動追記
+    update_tail_kpi_map(ticker, kpis)
+
     return out_path
 
 

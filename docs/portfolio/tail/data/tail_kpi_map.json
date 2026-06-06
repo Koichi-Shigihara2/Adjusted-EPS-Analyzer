@@ -4,10 +4,16 @@
       "kpi_name": "Commercial売上",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "pltr:CommercialOperatingSegmentMember",
-         "valid_from": "2020-09-30", "valid_to": null}
+        {
+          "tag": "pltr:CommercialOperatingSegmentMember",
+          "valid_from": "2020-09-30",
+          "valid_to": null
+        }
       ],
-      "fallback_tags": ["pltr:CommercialMember", "pltr:CommercialSegmentMember"],
+      "fallback_tags": [
+        "pltr:CommercialMember",
+        "pltr:CommercialSegmentMember"
+      ],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
@@ -16,10 +22,15 @@
       "kpi_name": "Government売上",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "pltr:GovernmentOperatingSegmentMember",
-         "valid_from": "2020-09-30", "valid_to": null}
+        {
+          "tag": "pltr:GovernmentOperatingSegmentMember",
+          "valid_from": "2020-09-30",
+          "valid_to": null
+        }
       ],
-      "fallback_tags": ["pltr:GovernmentSegmentMember"],
+      "fallback_tags": [
+        "pltr:GovernmentSegmentMember"
+      ],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
@@ -28,13 +39,94 @@
       "kpi_name": "貢献利益率（Commercial）",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "pltr:CommercialOperatingSegmentMember",
-         "valid_from": "2020-09-30", "valid_to": null}
+        {
+          "tag": "pltr:CommercialOperatingSegmentMember",
+          "valid_from": "2020-09-30",
+          "valid_to": null
+        }
       ],
-      "fallback_tags": ["pltr:CommercialMember", "pltr:CommercialSegmentMember"],
+      "fallback_tags": [
+        "pltr:CommercialMember",
+        "pltr:CommercialSegmentMember"
+      ],
       "fallback_action": "alert",
       "revenue_tag": "pltr:ContributionMargin",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "米民間売上成長率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "pltr:CommercialOperatingSegmentMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "政府部門売上成長率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "pltr:GovernmentOperatingSegmentMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "営業利益率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:OperatingIncomeLoss",
+      "dimension": ""
+    },
+    {
+      "kpi_name": "株式報酬費用",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:ShareBasedCompensation",
+      "dimension": ""
+    },
+    {
+      "kpi_name": "希薄化後EPS成長率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:DilutedEarningsPerShare",
+      "dimension": ""
     }
   ],
   "SOFI": [
@@ -42,8 +134,11 @@
       "kpi_name": "Lending売上",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "sofi:LendingSegmentMember",
-         "valid_from": "2021-06-30", "valid_to": null}
+        {
+          "tag": "sofi:LendingSegmentMember",
+          "valid_from": "2021-06-30",
+          "valid_to": null
+        }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
@@ -54,8 +149,11 @@
       "kpi_name": "Technology Platform売上",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "sofi:TechnologyPlatformSegmentMember",
-         "valid_from": "2021-06-30", "valid_to": null}
+        {
+          "tag": "sofi:TechnologyPlatformSegmentMember",
+          "valid_from": "2021-06-30",
+          "valid_to": null
+        }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
@@ -66,13 +164,76 @@
       "kpi_name": "Financial Services売上",
       "change_risk": "medium",
       "tag_history": [
-        {"tag": "sofi:FinancialServicesSegmentMember",
-         "valid_from": "2021-06-30", "valid_to": null}
+        {
+          "tag": "sofi:FinancialServicesSegmentMember",
+          "valid_from": "2021-06-30",
+          "valid_to": null
+        }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:RevenuesNetOfInterestExpense",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "Technology Platform売上成長率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "sofi:TechnologyPlatformMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "正味貸倒率（NCO）",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "sofi:PersonalLoansMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:NetChargeOffs",
+      "dimension": "sofi:LoanPortfolioAxis"
+    },
+    {
+      "kpi_name": "純金利マージン（NIM）",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:NetInterestMargin",
+      "dimension": ""
+    },
+    {
+      "kpi_name": "GAAP純利益",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:NetIncomeLoss",
+      "dimension": ""
     }
   ],
   "TSLA": [
@@ -80,10 +241,15 @@
       "kpi_name": "Automotive売上",
       "change_risk": "low",
       "tag_history": [
-        {"tag": "tsla:AutomotiveSegmentMember",
-         "valid_from": "2019-01-01", "valid_to": null}
+        {
+          "tag": "tsla:AutomotiveSegmentMember",
+          "valid_from": "2019-01-01",
+          "valid_to": null
+        }
       ],
-      "fallback_tags": ["tsla:AutomotiveMember"],
+      "fallback_tags": [
+        "tsla:AutomotiveMember"
+      ],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:Revenues",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
@@ -92,12 +258,75 @@
       "kpi_name": "Energy Generation & Storage売上",
       "change_risk": "low",
       "tag_history": [
-        {"tag": "tsla:EnergyGenerationAndStorageSegmentMember",
-         "valid_from": "2019-01-01", "valid_to": null}
+        {
+          "tag": "tsla:EnergyGenerationAndStorageSegmentMember",
+          "valid_from": "2019-01-01",
+          "valid_to": null
+        }
       ],
       "fallback_tags": [],
       "fallback_action": "alert",
       "revenue_tag": "us-gaap:Revenues",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "エネルギー事業粗利益率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "tsla:EnergyGenerationAndStorageMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:GrossProfit",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "エネルギー受注残高",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "tsla:EnergyGenerationAndStorageMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:ContractWithCustomerLiability",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "サービス売上成長率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "tsla:ServicesAndOtherMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax",
+      "dimension": "us-gaap:StatementBusinessSegmentsAxis"
+    },
+    {
+      "kpi_name": "自動車売上総利益率",
+      "change_risk": "medium",
+      "tag_history": [
+        {
+          "tag": "tsla:AutomotiveMember",
+          "valid_from": "2026-06-06",
+          "valid_to": null
+        }
+      ],
+      "fallback_tags": [],
+      "fallback_action": "alert",
+      "revenue_tag": "us-gaap:GrossProfit",
       "dimension": "us-gaap:StatementBusinessSegmentsAxis"
     }
   ]

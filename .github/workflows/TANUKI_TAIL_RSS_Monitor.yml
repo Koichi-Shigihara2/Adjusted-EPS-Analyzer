@@ -44,6 +44,42 @@ jobs:
             python src/tail/edgar_rss_monitor.py
           fi
 
+      - name: Run xbrl_segment_fetcher (layer2 - pending tickers only)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          TICKERS=$(python -c "
+          import json
+          with open('docs/portfolio/tail/data/review_queue.json') as f:
+              q = json.load(f)
+          tickers = list({e['ticker'] for e in q.get('queue', []) if e.get('status') == 'pending'})
+          print(' '.join(tickers))
+          ")
+          if [ -n "$TICKERS" ]; then
+            echo "layer2 取得対象: $TICKERS"
+            python src/tail/xbrl_segment_fetcher.py --ticker $TICKERS
+          else
+            echo "pending なし → layer2 スキップ"
+          fi
+
+      - name: Run text_kpi_extractor (layer3 - pending tickers only)
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: |
+          TICKERS=$(python -c "
+          import json
+          with open('docs/portfolio/tail/data/review_queue.json') as f:
+              q = json.load(f)
+          tickers = list({e['ticker'] for e in q.get('queue', []) if e.get('status') == 'pending'})
+          print(' '.join(tickers))
+          ")
+          if [ -n "$TICKERS" ]; then
+            echo "layer3 取得対象: $TICKERS"
+            python src/tail/text_kpi_extractor.py --ticker $TICKERS
+          else
+            echo "pending なし → layer3 スキップ"
+          fi
+
       - name: Run quarterly review generator (pending only)
         env:
           XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
@@ -69,7 +105,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/portfolio/tail/data/rss_state.json \
                   docs/portfolio/tail/data/review_queue.json \
-                  docs/portfolio/tail/data/reviews/
+                  docs/portfolio/tail/data/reviews/ \
+                  docs/portfolio/tail/data/kpi/ \
+                  docs/portfolio/tail/data/tail_kpi_map.json
           if git diff --staged --quiet; then
             echo "変更なし"
           else

@@ -36,6 +36,7 @@ repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
 KPI_DIR           = os.path.join(DATA_DIR, "kpi")
+KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
 REVIEWS_DIR       = os.path.join(DATA_DIR, "reviews")
 REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
 TANUKI_DATA_DIR   = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
@@ -127,6 +128,14 @@ def load_layer2_kpi(ticker: str) -> Optional[Dict[str, Any]]:
     path = os.path.join(KPI_DIR, f"{ticker}_layer2.json")
     if not os.path.exists(path):
         print(f"  [WARN] layer2.json 未発見: {path}")
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_layer3_kpi(ticker: str) -> Optional[Dict[str, Any]]:
+    path = os.path.join(KPI_DIR, f"{ticker}_layer3.json")
+    if not os.path.exists(path):
         return None
     with open(path, encoding="utf-8") as f:
         return json.load(f)
@@ -308,28 +317,75 @@ def _build_macro_text(macro_ctx: Optional[Dict[str, Any]]) -> str:
     return "\n".join(lines) or "（主要フィールドが空）"
 
 
-def _build_kpi_monitoring_section(thesis: Dict[str, Any]) -> str:
+def _build_kpi_monitoring_section(
+    thesis: Dict[str, Any],
+    kpi_data_layer2: Optional[Dict[str, Any]] = None,
+    kpi_data_layer3: Optional[Dict[str, Any]] = None,
+    quarter: str = "",
+) -> str:
     kpis = thesis.get("kpis") or []
     if not kpis:
         return ""
-    table = _build_kpi_monitoring_text(kpis)
+    table = _build_kpi_status_table(kpis, kpi_data_layer2, kpi_data_layer3, quarter)
     return (
-        f"\n## 監視KPIと警戒ライン\n{table}\n\n"
-        "※ 各KPIの現状値（決算資料から読み取れる範囲）と警戒ラインとの距離感を評価に含めること。\n"
+        f"\n## 監視KPI実績（{quarter}）\n{table}\n\n"
+        "※ 各KPIの実績値と警戒ラインとの距離感を評価に含めること。\n"
+        "※ 実績値が「— 未取得」のKPIも次四半期の確認優先度に含めること。\n"
     )
 
 
-def _build_kpi_monitoring_text(kpis: List[Dict[str, Any]]) -> str:
-    if not kpis:
-        return ""
-    header = "| KPI名 | 警戒ライン | エグジット閾値 | 関連条件 |"
-    sep    = "| --- | --- | --- | --- |"
+def _lookup_layer2_value(kpi_name: str, kpi_data_layer2: Dict[str, Any], quarter: str) -> Optional[Any]:
+    kpis = kpi_data_layer2.get("kpis", {})
+    for name, kinfo in kpis.items():
+        if name == kpi_name:
+            for dp in kinfo.get("data", []):
+                if dp.get("quarter") == quarter:
+                    return dp.get("value")
+    return None
+
+
+def _build_kpi_status_table(
+    thesis_kpis: List[Dict[str, Any]],
+    kpi_data_layer2: Optional[Dict[str, Any]],
+    kpi_data_layer3: Optional[Dict[str, Any]],
+    quarter: str,
+) -> str:
+    header = "| KPI名 | 実績値 | 警戒ライン | エグジット閾値 | 状態 |"
+    sep    = "| --- | --- | --- | --- | --- |"
     rows   = [header, sep]
-    for k in kpis:
-        rows.append(
-            f"| {k.get('name','')} | {k.get('warning_threshold','')} "
-            f"| {k.get('exit_threshold','')} | {k.get('related_exit_condition','')} |"
-        )
+
+    l3_kpis = (kpi_data_layer3 or {}).get("kpis", {})
+
+    for k in thesis_kpis:
+        name      = k.get("name", "")
+        warn      = k.get("warning_threshold", "—")
+        exit_thr  = k.get("exit_threshold", "—")
+        auto_f    = k.get("auto_fetchable", False)
+
+        actual_val: Optional[Any] = None
+        confidence = "high"
+
+        if auto_f and kpi_data_layer2:
+            actual_val = _lookup_layer2_value(name, kpi_data_layer2, quarter)
+        elif name in l3_kpis:
+            entry      = l3_kpis[name]
+            actual_val = entry.get("value")
+            confidence = entry.get("confidence", "medium")
+
+        if actual_val is not None:
+            if confidence == "high":
+                status = "✅ 取得済"
+            elif confidence == "medium":
+                status = "⚠ 中精度"
+            else:
+                status = "❌ 低精度"
+            display = str(actual_val)
+        else:
+            status  = "— 未取得"
+            display = "—"
+
+        rows.append(f"| {name} | {display} | {warn} | {exit_thr} | {status} |")
+
     return "\n".join(rows)
 
 
@@ -341,6 +397,8 @@ def build_stage1_prompt(
     ticker: str,
     quarter: str,
     entry_price: Optional[float] = None,
+    kpi_data_layer2: Optional[Dict[str, Any]] = None,
+    kpi_data_layer3: Optional[Dict[str, Any]] = None,
 ) -> str:
     val_section = ""
     if valuation:
@@ -370,7 +428,7 @@ def build_stage1_prompt(
 
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-{val_section}{_build_kpi_monitoring_section(thesis)}
+{val_section}{_build_kpi_monitoring_section(thesis, kpi_data_layer2, kpi_data_layer3, quarter)}
 ## 評価してください
 
 1. テーゼ健全度（0-100点）と根拠
@@ -518,10 +576,11 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
     print(f"  {ticker} {quarter} レビュー生成開始")
     print(f"{'─' * 60}")
 
-    thesis    = load_thesis(ticker)
-    kpi_data  = load_layer2_kpi(ticker)
-    macro_ctx = load_macro_context()
-    valuation = load_tanuki_valuation(ticker)
+    thesis     = load_thesis(ticker)
+    kpi_data   = load_layer2_kpi(ticker)
+    kpi_layer3 = load_layer3_kpi(ticker)
+    macro_ctx  = load_macro_context()
+    valuation  = load_tanuki_valuation(ticker)
 
     if not thesis:
         print(f"  [ERROR] {ticker} の thesis.json がないためスキップ")
@@ -549,6 +608,8 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         ticker=ticker,
         quarter=quarter,
         entry_price=entry_price,
+        kpi_data_layer2=kpi_data,
+        kpi_data_layer3=kpi_layer3,
     )
 
     if dry_run:
@@ -585,14 +646,15 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
     output_path = os.path.join(REVIEWS_DIR, f"{ticker}_{quarter}_review.json")
 
     review = {
-        "ticker":         ticker,
-        "quarter":        quarter,
-        "generated_at":   now_jst.isoformat(),
-        "stage1":         stage1,
-        "stage2":         stage2,
-        "kpi_snapshot":   kpi_snapshot,
-        "macro_snapshot": macro_snapshot,
-        "thesis_version": thesis.get("version", 1),
+        "ticker":           ticker,
+        "quarter":          quarter,
+        "generated_at":     now_jst.isoformat(),
+        "stage1":           stage1,
+        "stage2":           stage2,
+        "kpi_snapshot":     kpi_snapshot,
+        "layer3_snapshot":  kpi_layer3.get("kpis", {}) if kpi_layer3 else {},
+        "macro_snapshot":   macro_snapshot,
+        "thesis_version":   thesis.get("version", 1),
     }
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(review, f, ensure_ascii=False, indent=2)

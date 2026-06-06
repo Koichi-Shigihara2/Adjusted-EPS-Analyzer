@@ -250,6 +250,53 @@ admin.html の「実行」タブ → 一括更新ボタンを使用
 
 ---
 
+## TANUKI TAIL 銘柄追加手順
+
+TANUKI TAIL（長期投資テーゼ管理）に新規銘柄を追加する場合、
+以下の順序で実施すること。
+
+```bash
+# Step T1: TANUKI TAILページでテーゼ登録（UIで実施）
+#   → docs/portfolio/tail/data/positions/{TICKER}_thesis.json が生成される
+
+# Step T2: KPI提案生成（Grok）
+python src/tail/kpi_proposer.py --ticker {TICKER}
+# → docs/portfolio/tail/data/kpi_proposals/{ticker}_proposal.json 生成
+# → tail_kpi_map.json に auto_fetchable=true 分が自動追記
+
+# Step T3: TANUKI TAILページでKPI確定（UIで実施）
+#   → thesis.json の kpis フィールドにKPIが保存される
+#   → 「⚠ KPI未設定」バッジが消える
+
+# Step T4: XBRL セグメントデータ取得（layer2）
+python src/tail/xbrl_segment_fetcher.py --ticker {TICKER}
+# → docs/portfolio/tail/data/kpi/{ticker}_layer2.json 生成
+
+# Step T5: テキストKPI抽出（layer3）
+python src/tail/text_kpi_extractor.py --ticker {TICKER}
+# → docs/portfolio/tail/data/kpi/{ticker}_layer3.json 生成
+# → auto_fetchable=false のKPIを10-Q MD&A + 8-K EX-99.1 から抽出
+
+# Step T6: コミット
+git add docs/portfolio/tail/data/kpi_proposals/ \
+        docs/portfolio/tail/data/tail_kpi_map.json \
+        docs/portfolio/tail/data/kpi/
+git commit -m "feat: TANUKI TAIL {TICKER} 銘柄追加 layer2/layer3 初期データ"
+git pull --rebase origin kaihatsu
+git push origin kaihatsu
+```
+
+**Step T6以降**: 次回RSS検知時（EDGAR 10-Q/10-K 提出）から四半期レビューが自動生成される。
+
+**注意事項:**
+- Step T2 は thesis.type="core" の銘柄のみ対象（satellite銘柄はスキップ）
+- Step T5 が失敗した場合（EX-99.1未発見等）でも Step T6 に進んでよい
+  → レビュー生成時に layer3 未取得KPIは「— 未取得」と表示される
+- CIK が cik_lookup.csv にない場合、Step T2/T4/T5 前に追加すること:
+  `echo "{TICKER},{CIK},{会社名},,,true,true,true" >> config/cik_lookup.csv`
+
+---
+
 ## 銘柄削除時の必須手順
 
 ### 削除対象の判断基準
