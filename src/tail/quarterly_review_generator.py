@@ -299,6 +299,10 @@ CALL2_SYSTEM = (
     "定量データではなく、定性的な視点・歴史的類比・構造的問いかけを提供してください。"
     "「売れ」「買え」は言わない。最後は必ず問いかけで締める。"
     "根拠がある事象のみ言及し、データ不足時は「確認が必要」と明示する。"
+    "必ずWeb検索を使って前回レビュー以降の最新情報を調べてください。"
+    "検索した情報には出典（メディア名・日付）を明示してください。"
+    "テーゼに書かれていることの言い換えは禁止です。"
+    "Koichiさんが気づいていない視点・盲点を提供してください。"
     "回答はすべて日本語で記述してください。"
 )
 
@@ -556,18 +560,73 @@ def build_stage2_prompt(
 }}"""
 
 
+def _load_past_call2(ticker: str, current_quarter: str, max_items: int = 2) -> List[Dict[str, Any]]:
+    """同一tickerの直近2回分のcall2結果を返す（current_quarterを除く）"""
+    if not os.path.exists(REVIEWS_DIR):
+        return []
+    candidates: List[tuple] = []
+    for fname in os.listdir(REVIEWS_DIR):
+        if fname.startswith(f"{ticker}_") and fname.endswith("_review.json"):
+            q = fname[len(ticker) + 1 : -len("_review.json")]
+            if q != current_quarter:
+                candidates.append((q, fname))
+    candidates.sort(key=lambda x: x[0], reverse=True)
+
+    results: List[Dict[str, Any]] = []
+    for q, fname in candidates[:max_items]:
+        fpath = os.path.join(REVIEWS_DIR, fname)
+        try:
+            with open(fpath, encoding="utf-8") as f:
+                rv = json.load(f)
+            c2 = rv.get("call2")
+            if c2:
+                results.append({"quarter": q, "call2": c2})
+        except Exception:
+            pass
+    return results
+
+
 def build_call2_prompt(
     ticker: str,
     quarter: str,
     thesis: Dict[str, Any],
     stage1: Dict[str, Any],
     macro_ctx: Optional[Dict[str, Any]],
+    kpi_status_table: str = "",
+    past_call2: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     concerns_str = "\n".join(f"・{c}" for c in (stage1.get("concerns") or []))
     bias_warning = stage1.get("optimism_bias_warning") or "なし"
     macro_score  = (macro_ctx or {}).get("score", "不明")
     macro_phase  = (macro_ctx or {}).get("phase", "不明")
     entry_story  = (thesis.get("entry_story") or "未設定")[:500]
+    last_quarter = (past_call2[0]["quarter"] if past_call2 else "前回") if past_call2 else "前回"
+
+    # 過去Call2の引き継ぎセクション
+    past_section = ""
+    if past_call2:
+        parts: List[str] = []
+        for item in past_call2:
+            q = item["quarter"]
+            c2 = item["call2"]
+            q_parts: List[str] = []
+            if c2.get("thesis_questions"):
+                q_parts.append(f"前回の問いかけ ({q}):\n" + "\n".join(f"・{x}" for x in c2["thesis_questions"]))
+            if c2.get("next_review_focus"):
+                q_parts.append(f"前回の次回確認論点 ({q}):\n" + "\n".join(f"・{x}" for x in c2["next_review_focus"]))
+            if q_parts:
+                parts.append("\n".join(q_parts))
+        if parts:
+            past_section = "\n## 過去レビューの引き継ぎ事項\n" + "\n\n".join(parts) + "\n"
+
+    # KPIステータステーブルセクション
+    kpi_section = ""
+    if kpi_status_table:
+        kpi_section = (
+            f"\n## 今四半期のKPIステータス（{quarter}）\n"
+            f"{kpi_status_table}\n"
+            "各KPIの現状値と警戒ライン対比を参照して定性分析に活かしてください。\n"
+        )
 
     return f"""## 銘柄: {ticker}
 ## 対象四半期: {quarter}
@@ -586,30 +645,43 @@ def build_call2_prompt(
 
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-
+{past_section}{kpi_section}
 ## 以下の7項目を分析してください:
 
-1. 5観点での気になる点
-   ビジネスモデル・成長性・競争優位・経営・市場環境の5軸で前回レビュー以降に変化した点を分析してください。
+1. 5観点での気になる点（Web検索必須）
+   Web検索で{ticker}の{last_quarter}以降のニュース・アナリストレポート・競合動向を調べて分析してください。
+   テーゼに書かれていることの繰り返しは禁止。
+   Koichiさんが見落としている可能性がある点を重点的に指摘してください。
+   検索した情報には出典（メディア名・日付）を明示してください。
+   ビジネスモデル・成長性・競争優位・経営・市場環境の5軸で回答してください。
 
 2. エントリーストーリーの進捗
    「{entry_story[:100]}」は現在どの程度実現しているか。
+   Web検索で最新情報を確認して回答してください。
 
 3. 世の中の注目ポイント
-   この銘柄に対して市場・メディア・アナリストが今最も注目している点は何か。
+   Web検索でこの銘柄に対して市場・メディア・アナリストが今最も注目している点を調べてください。
+   出典（メディア名・日付）を明示してください。
 
 4. 歴史的類比
-   似た事業モデル・成長軌跡を歩んだ企業の事例とその後どうなったかを示してください。
+   {ticker}のビジネスモデル・成長軌跡・リスク構造が最も似ている歴史的企業を1社選んでください。
+   その企業が最終的にどうなったか・何が転換点だったかを{ticker}のテーゼに当てはめて具体的に論じてください。
+   一般的な類比（SaaSはSalesforce等）は禁止。テーゼ固有の課題に対応した類比を選んでください。
 
 5. マクロ環境を踏まえた留意点
    現在のマクロ環境（スコア{macro_score}・{macro_phase}）がこの銘柄のテーゼに与える影響。
 
 6. テーゼへの問いかけ
-   「その確信は今も妥当か」「希望的観測になっていないか」
-   テーゼの前提に対して鋭い問いを3つ立ててください。
+   以下の注意を守ってください：
+   ・テーゼに書かれていることの言い換えになっている問いは禁止
+   ・Koichiさんが見落としている盲点・反論・構造的リスクを3つ問いかけてください
+   ・テーゼの前提そのものを揺るがす問いを作ってください
+   ・過去の問いかけと重複する問いも禁止
 
 7. 次回確認すべき論点
-   次の四半期レビューで必ず確認すべき点を優先度順に3つ挙げてください。
+   次の四半期決算（{ticker} 次回）で実際に確認できる具体的な論点を
+   優先度順に3つ挙げてください。
+   過去の次回確認論点と重複するものは除いてください。
 
 以下のJSON形式のみで回答してください（説明文・前置き不要）：
 {{
@@ -763,7 +835,17 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         print(f"  [WARN] Stage 2 失敗（スキップ）: {e}")
 
     # Call 2 — 定性分析、失敗しても継続
-    call2_prompt = build_call2_prompt(ticker, quarter, thesis, stage1, macro_ctx)
+    call2_kpi_table = _build_kpi_status_table(
+        thesis.get("kpis") or [], kpi_data, kpi_layer3, quarter
+    ) if thesis.get("kpis") else ""
+    past_call2_items = _load_past_call2(ticker, quarter)
+    if past_call2_items:
+        print(f"  [INFO] 過去Call2引き継ぎ: {[x['quarter'] for x in past_call2_items]}")
+    call2_prompt = build_call2_prompt(
+        ticker, quarter, thesis, stage1, macro_ctx,
+        kpi_status_table=call2_kpi_table,
+        past_call2=past_call2_items,
+    )
     print(f"\n  ── Call 2: 定性分析 ({ticker} {quarter}) ──")
     try:
         call2_raw = call_grok(
