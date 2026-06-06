@@ -240,7 +240,6 @@ def update_tail_kpi_map(ticker: str, proposed_kpis: List[Dict[str, Any]]) -> int
     }
 
     added = 0
-    today = str(date.today())
     for kpi in proposed_kpis:
         if not kpi.get("auto_fetchable"):
             continue
@@ -261,7 +260,7 @@ def update_tail_kpi_map(ticker: str, proposed_kpis: List[Dict[str, Any]]) -> int
         entry: Dict[str, Any] = {
             "kpi_name":     kpi_name,
             "change_risk":  "medium",
-            "tag_history":  [{"tag": xbrl_mem, "valid_from": today, "valid_to": None}],
+            "tag_history":  [{"tag": xbrl_mem, "valid_from": "2010-01-01", "valid_to": None}],
             "fallback_tags":    [],
             "fallback_action":  "alert",
             "revenue_tag":  xbrl_tag,

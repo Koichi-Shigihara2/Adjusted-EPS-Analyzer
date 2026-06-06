@@ -285,7 +285,7 @@ def extract_fact(
         except ValueError:
             continue
         ctx   = contexts.get(cref, {})
-        end   = ctx.get("end", "")
+        end   = ctx.get("end") or ""
         start = ctx.get("start")
         # 優先度: ① period_end 年月一致  ② quarterly 期間  ③ その他
         pm = end.startswith(pe_ym)
