@@ -1,30 +1,30 @@
 {
   "ticker": "TSLA",
   "quarter": "2026Q1",
-  "generated_at": "2026-06-06T12:29:54.291369+09:00",
+  "generated_at": "2026-06-06T12:36:20.027070+09:00",
   "stage1": {
-    "health_score": 62,
+    "health_score": 42,
     "health_label": "WATCH",
-    "summary": "自動車売上は変動が大きく、エネルギー事業も安定せず、テーゼの核心であるFSD・Optimus・Megapackの進捗を示すKPIが未取得のため健全度は中程度。理論株価との乖離が極めて大きい点もリスクを示唆。",
+    "summary": "テーゼの方向性自体は一貫しているが、KPIデータがほぼ未取得で検証不能。理論株価との80.9%乖離が最大のリスク要因。",
     "positives": [
-      "エネルギー売上は2024Q1比で増加傾向",
-      "マクロ環境で流動性緩和の兆し"
+      "エネルギー売上は2025Q3で一時的に増加",
+      "マクロ流動性はEASING方向で緩和シグナル"
     ],
     "concerns": [
-      "自動車売上が2025Q3から大幅減",
-      "FSD・Optimus関連KPIがすべて未取得でテーゼ検証不能",
-      "理論株価乖離率-80.9%と過大評価の可能性が高い"
+      "自動車売上が2026Q1で前四半期比大幅減",
+      "FSD・Optimus・エネルギー粗利率の重要KPIがすべて未取得",
+      "理論株価76.26ドルに対し現在価格が5倍超"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "テーゼの前提となる重要KPIが未取得で方向性が確認できないため、次四半期で実績取得を優先すべき。",
+    "recommendation_reason": "KPI実績の取得と理論株価乖離の是正を次四半期で確認する必要がある。",
     "next_kpis": [
-      "FSDライセンス契約成立数（2年連続0件で警戒）",
-      "エネルギー事業粗利益率（25%以下接近で要確認）",
-      "Optimus累計生産台数（外部販売0台継続を確認）"
+      "FSDライセンス契約成立数（2年連続0件でエグジット）",
+      "エネルギー事業粗利益率（25%以下で警戒）",
+      "Optimus累計生産台数（外部販売0台継続でリスク）"
     ],
     "exit_distance": "遠い",
-    "exit_distance_reason": "エグジット条件の多くが未達または未観測だが、FSD他社供与ゼロとMegapack受注減が確認されれば急接近する。",
-    "optimism_bias_warning": "テーゼは未実現のAI技術に過度に依存しており、現在の売上データとの乖離が大きい。楽観的バイアスの可能性が高い。"
+    "exit_distance_reason": "具体的なエグジット条件（許可取消・粗利率急落・外部販売ゼロなど）に該当する実績はまだ確認されていない。",
+    "optimism_bias_warning": "理論株価を大幅に上回る現在の株価水準は、将来の物理世界AI成長を過度に織り込んだ楽観的バイアスの可能性が高い。"
   },
   "stage2": {
     "ticker": "TSLA",
@@ -32,38 +32,38 @@
     "scenarios": {
       "bear": {
         "revenue_growth_y1": 0.05,
-        "revenue_growth_y2": 0.08,
-        "revenue_growth_y3": 0.1,
+        "revenue_growth_y2": 0.06,
+        "revenue_growth_y3": 0.08,
         "terminal_growth": 0.02,
-        "operating_margin_terminal": 0.15,
-        "rationale": "2025Q3からの自動車売上急減とEnergy売上の前年比マイナスを考慮し、FSD/Optimus未達リスクを反映した下方シナリオ"
+        "operating_margin_terminal": 0.12,
+        "rationale": "2026Q1自動車売上は前四半期比で大幅減少し、エネルギー売上も前年比マイナス。FSD・Optimusの進捗未達と競争激化を考慮し、保守的な成長率を設定。"
       },
       "base": {
         "revenue_growth_y1": 0.12,
-        "revenue_growth_y2": 0.15,
-        "revenue_growth_y3": 0.15,
+        "revenue_growth_y2": 0.1,
+        "revenue_growth_y3": 0.12,
         "terminal_growth": 0.025,
-        "operating_margin_terminal": 0.18,
-        "rationale": "直近YoY+20%の自動車売上を10%割り引いて解釈し、Energyの変動を織り込んだ中立的シナリオ"
+        "operating_margin_terminal": 0.16,
+        "rationale": "直近のYoY成長は自動車で+20%を示すがQoQ減少と未取得KPIを踏まえ、緩やかな回復を想定。経営者発言は10%割り引きで解釈。"
       },
       "bull": {
-        "revenue_growth_y1": 0.2,
-        "revenue_growth_y2": 0.22,
-        "revenue_growth_y3": 0.2,
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.15,
+        "revenue_growth_y3": 0.15,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.22,
-        "rationale": "楽観バイアスを排除しつつ、Energy回復と限定的なFSD進展を想定した上限シナリオ"
+        "operating_margin_terminal": 0.2,
+        "rationale": "エネルギー事業の安定と新製品寄与を最大限に見積もるが、理論株価との乖離と健全度42点を考慮し過度な楽観は排除。"
       }
     },
     "key_assumptions": [
-      "自動車売上は2025Q3水準を上回らない前提で成長率を設定",
-      "Energy Generation & Storageは変動が大きいため保守的に扱う",
-      "ターミナル期の営業利益率は過去実績を10%割り引いて算出"
+      "自動車売上の四半期変動を基に成長率を抑制",
+      "エネルギー粗利率の改善は限定的と想定",
+      "WACCは市場平均水準を維持"
     ],
     "risk_factors": [
-      "FSD・Optimus関連KPI未取得による収益化不確実性",
-      "自動車売上の大幅減少継続リスク",
-      "理論株価との-80.9%乖離による過大評価是正圧力"
+      "FSD・OptimusのKPI未達による収益化遅れ",
+      "中国・欧州市場での競争激化と価格圧力",
+      "マクロ経済悪化による需要減退"
     ]
   },
   "kpi_snapshot": {
