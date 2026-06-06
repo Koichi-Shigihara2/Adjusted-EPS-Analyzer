@@ -174,6 +174,10 @@ def load_layer1_financials(ticker: str) -> Dict[str, Any]:
             qs.sort(key=lambda x: x.get("end", ""), reverse=True)
             return qs[0] if qs else None
 
+        def _end_to_quarter(end: str) -> str:
+            yr, mo, _ = end.split("-")
+            return f"{yr}Q{(int(mo) - 1) // 3 + 1}"
+
         rev = _latest_q(fields.get("Revenue", []))
         oi  = _latest_q(fields.get("OperatingIncome", []))
         sbc = _latest_q(fields.get("SBC", []))
@@ -186,6 +190,30 @@ def load_layer1_financials(ticker: str) -> Dict[str, Any]:
             result["sbc_quarterly"] = sbc["val"]
         if ni and sd and sd.get("val"):
             result["eps_diluted"] = round(ni["val"] / sd["val"], 4)
+
+        # 直近4四半期の営業利益率推移
+        rev_qs = sorted(
+            [x for x in fields.get("Revenue", [])
+             if not x.get("is_annual") and not x.get("is_ytd", False)],
+            key=lambda x: x.get("end", ""), reverse=True,
+        )[:4]
+        oi_map = {
+            x["end"]: x["val"]
+            for x in fields.get("OperatingIncome", [])
+            if not x.get("is_annual") and not x.get("is_ytd", False)
+        }
+        opm_history = []
+        for r in reversed(rev_qs):
+            end = r.get("end", "")
+            rev_val = r.get("val", 0)
+            oi_val  = oi_map.get(end)
+            if rev_val and oi_val is not None:
+                opm_history.append({
+                    "quarter":          _end_to_quarter(end),
+                    "operating_margin": round(oi_val / rev_val, 4),
+                })
+        if opm_history:
+            result["operating_margin_history"] = opm_history
 
     latest_path = os.path.join(TANUKI_DATA_DIR, ticker, "latest.json")
     if os.path.exists(latest_path):
@@ -964,6 +992,22 @@ def build_stage2_prompt(
 注意: 現在値が取得できている項目のみ予想値を生成してください。
 """
 
+    # 営業利益率推移セクション
+    opm_history = (layer1 or {}).get("operating_margin_history", [])
+    opm_trend_section = ""
+    if opm_history:
+        trend_str  = " → ".join(
+            f"{h['quarter']}: {h['operating_margin']*100:.1f}%"
+            for h in opm_history
+        )
+        latest_opm = opm_history[-1]["operating_margin"] * 100
+        opm_trend_section = f"""
+## 営業利益率の直近推移（GAAP）
+{trend_str}
+※ 4四半期連続で急改善中。シナリオの最終営業利益率はこの推移を踏まえて設定してください。
+現在{latest_opm:.1f}%から下落するシナリオは特別な理由がない限り避けてください。
+"""
+
     return f"""## 銘柄: {ticker}
 ## 対象四半期: {quarter}
 
@@ -973,7 +1017,7 @@ def build_stage2_prompt(
 ## Stage 1 評価結果
 健全度: {stage1.get('health_score', 'N/A')}点 ({stage1.get('health_label', 'N/A')})
 懸念点: {concerns_str}
-{kpi_instruction}
+{opm_trend_section}{kpi_instruction}
 ## DCFパラメータを生成してください
 
 以下のJSONフォーマットのみで出力してください（説明文不要）：
