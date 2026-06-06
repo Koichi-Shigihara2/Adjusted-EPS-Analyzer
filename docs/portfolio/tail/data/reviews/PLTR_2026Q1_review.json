@@ -1,68 +1,106 @@
 {
   "ticker": "PLTR",
   "quarter": "2026Q1",
-  "generated_at": "2026-06-06T12:29:04.791269+09:00",
+  "generated_at": "2026-06-06T14:39:34.669260+09:00",
+  "data_version": "0001321655-26-000059",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": true,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
   "stage1": {
     "health_score": 72,
     "health_label": "WATCH",
-    "summary": "商業・政府双方の売上成長はテーゼ方向と一致するが、理論株価との大幅乖離とRule of 40の持続可能性に不確実性あり。楽観バイアス警戒が必要。",
+    "summary": "商業売上は急成長し利益率も向上しているが、株価は理論値を34%超上回り、顧客維持率やEPSなどの重要KPIが未取得。マクロ環境は中立。",
     "positives": [
-      "商業売上774M・政府売上858Mと前年比高成長継続",
-      "貢献利益率73%と収益性改善傾向"
+      "商業売上成長率が高水準を維持し貢献利益率73%に到達",
+      "政府部門も安定した二桁成長を継続"
     ],
     "concerns": [
-      "現在株価が理論株価を34.6%上回る過大評価状態",
-      "Rule of 40の持続性とSBC希薄化の未確認KPIが多い"
+      "株価乖離が大きく過大評価リスクが高い",
+      "NDRやチャーンレート、SBC関連KPIが未取得でテーゼ検証が不十分"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "成長は堅調だが評価額と一部未取得KPIの確認が必要なため継続監視",
+    "recommendation_reason": "成長自体はテーゼ方向と一致するが、評価額と未確認リスクを次四半期で確認する必要があるためWATCHを推奨。",
     "next_kpis": [
-      "米民間売上成長率（40%警戒ラインとの距離）",
-      "営業利益率と株式報酬費用の取得",
-      "NDRと顧客解約率の動向"
+      "顧客解約率（警戒5%以上）",
+      "希薄化後EPS成長率",
+      "ネット・ダラー・リテンション（NDR）"
     ],
     "exit_distance": "遠い",
-    "exit_distance_reason": "AIPコモディティ化や政府独占喪失の兆候は現時点で見られず、成長率30%割れも未達",
-    "optimism_bias_warning": "理論株価との乖離が大きいため、成長継続を過度に楽観視するバイアスに注意"
+    "exit_distance_reason": "AIPコモディティ化やRule of 40崩壊の兆候は現時点で確認できず、エグジット条件までの距離は依然として大きい。",
+    "optimism_bias_warning": "テーゼがAIプラットフォームの独占性と政府依存を過度に楽観視している可能性に注意"
   },
   "stage2": {
     "ticker": "PLTR",
     "quarter": "2026Q1",
     "scenarios": {
       "bear": {
-        "revenue_growth_y1": 0.2,
-        "revenue_growth_y2": 0.15,
-        "revenue_growth_y3": 0.1,
-        "terminal_growth": 0.02,
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.12,
+        "revenue_growth_y3": 0.08,
+        "terminal_growth": 0.025,
         "operating_margin_terminal": 0.18,
-        "rationale": "直近の95%超成長が急激に鈍化し、競争激化とRule of 40持続困難により低成長に留まる保守的ケース"
+        "rationale": "直近の急成長は一時的とみなし、政府・商用ともに成長率が早期に低下。貢献利益率の改善も限定的で、過大評価修正圧力が強い保守的ケース。"
       },
       "base": {
-        "revenue_growth_y1": 0.32,
-        "revenue_growth_y2": 0.22,
-        "revenue_growth_y3": 0.15,
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.18,
+        "revenue_growth_y3": 0.12,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.24,
-        "rationale": "商業・政府両部門の成長が徐々に正常化し、利益率改善が継続する現実的なベースケース（経営者発言は10%割引で反映）"
+        "operating_margin_terminal": 0.22,
+        "rationale": "商用・政府ともに成長は継続するが、直近95%超の伸びは持続せず、徐々に正常化。利益率改善も市場期待をやや下回る水準で着地する標準ケース。"
       },
       "bull": {
-        "revenue_growth_y1": 0.42,
-        "revenue_growth_y2": 0.28,
-        "revenue_growth_y3": 0.2,
+        "revenue_growth_y1": 0.38,
+        "revenue_growth_y2": 0.25,
+        "revenue_growth_y3": 0.18,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.28,
-        "rationale": "AI需要が想定以上でも過度な楽観を避け、成長鈍化を前提とした上限シナリオ"
+        "operating_margin_terminal": 0.27,
+        "rationale": "商用プラットフォームの採用加速により高成長がやや長く続き、利益率も大幅改善する強気シナリオ。ただし経営者ガイダンスは10%程度割り引いて反映。"
       }
     },
     "key_assumptions": [
-      "マネジメント発言は10%割り引いて解釈",
-      "商業貢献利益率の改善トレンドを継続前提とするが上限を抑制",
-      "政府部門の安定成長をベースに商業の変動性を加味"
+      "2026Q1時点の売上高をベースに以降3年間の成長率を適用",
+      "商用貢献利益率は2026Q1の73%を起点に緩やかに改善",
+      "WACCは11.5%で固定し、ネットキャッシュは考慮済み",
+      "経営者コメントは過大評価を避けるため10%下方修正して使用"
     ],
     "risk_factors": [
-      "現在株価の理論株価34.6%上回る過大評価修正リスク",
-      "SBC希薄化によるEPS圧力の継続",
-      "Rule of 40持続性の不確実性と競争環境悪化"
+      "NDR・チャーンレート・SBCなどの重要KPI未開示による不確実性",
+      "株価が既に将来成長を過大に織り込んでおり下方修正リスクが高い",
+      "政府セグメント依存度が高く、予算執行変動の影響を受けやすい"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "政府契約中心から商用展開への移行が加速している可能性があるが、収益認識の安定性については前回からの変化を確認する必要がある。",
+      "growth": "AIプラットフォームとしての採用拡大が期待される一方、NDRやチャーンレートなどの定性的な顧客定着状況の変化が未確認で、成長持続性の評価が難しい。",
+      "competitive_advantage": "データ統合の独自性が他社との差別化要因として維持されているか、AI機能の進化に伴う競合参入の影響を注視すべき点に変化が見られる。",
+      "management": "SBC関連の開示不足が継続しており、経営陣の資本配分方針や株主還元姿勢の変化について追加情報が必要。",
+      "market": "地政学リスクの高まりが政府部門需要を支える一方、民間企業の景気敏感性による需要変動リスクが前回比でやや高まっている可能性がある。"
+    },
+    "entry_story_progress": "既存銘柄としてテーゼの前提であるAIプラットフォームの浸透が徐々に進展している兆候はあるが、KPI未取得のため定性的な進捗確認が不十分な状態が続いている。",
+    "market_attention": "商用部門での大型契約獲得と収益性の改善見通しがアナリスト・メディアの主な関心事となっており、過大評価リスクへの言及も増加している。",
+    "historical_analogy": {
+      "company": "SAP",
+      "similarity": "ERPという企業OS的な位置づけで、政府・大企業向けから民間へ拡大した経路が類似",
+      "outcome": "長期的にプラットフォームとしての地位を確立したが、成長鈍化局面で株価の変動が大きかった",
+      "implication": "独占的地位が必ずしも永続せず、競合や技術変化への適応力が鍵になる可能性を示唆"
+    },
+    "macro_implications": "景気スコア37の踊り場環境では、FRB政策の不透明さが民間企業のIT投資意欲に影響を与えやすく、政府依存の高いPLTRのテーゼに間接的な圧力がかかる可能性がある。",
+    "thesis_questions": [
+      "政府契約の安定性が商用拡大の前提として本当に持続可能か、依存度の変化をどう評価するか",
+      "AIプラットフォームの独占性が他社との提携やオープン化の流れで希薄化していないか",
+      "NDRやチャーンレートなどの顧客定着指標が開示されない状況が、テーゼの妥当性を損ねていないか"
+    ],
+    "next_review_focus": [
+      "NDR・チャーンレート・SBC関連KPIの開示状況とその推移",
+      "商用部門と政府部門の売上構成比の変化",
+      "競合他社とのAI機能比較における差別化ポイントの更新"
     ]
   },
   "kpi_snapshot": {

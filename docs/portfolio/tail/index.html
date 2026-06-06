@@ -387,13 +387,15 @@
           <th>戦略名</th>
           <th>登録日</th>
           <th class="num">取得単価</th>
+          <th class="num">現在価格</th>
+          <th class="num">損益率</th>
           <th>エグジット条件</th>
           <th class="num" title="TANUKI TAILへの登録日からの日数">監視日数</th>
           <th>アクション</th>
         </tr>
       </thead>
       <tbody id="sat-tbody">
-        <tr class="empty-row"><td colspan="7">登録済みポジションなし。下のフォームから登録してください。</td></tr>
+        <tr class="empty-row"><td colspan="9">登録済みポジションなし。下のフォームから登録してください。</td></tr>
       </tbody>
     </table>
   </div>
@@ -582,10 +584,11 @@ var modalTicker      = null;
 var modalTabIdx      = 0;
 var kpiCache         = {};       // { PLTR: kpiData }
 var portfolioAvgCost = {};       // { PLTR: 58.39, SOFI: 16.25, ... } 加重平均取得単価
+var latestValCache   = {};       // { TSLA: { current_price, intrinsic_value, ... } }
 var kpiModalTicker  = null;
 var loadedProposals = {};        // { PLTR: proposalData }
 
-var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ'];
+var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点'];
 var TABS_SAT  = ['戦略'];
 
 /* ─── Init ─── */
@@ -646,7 +649,16 @@ function loadPositions() {
       items.forEach(function (p) { if (p && p.ticker) loadedPositions[p.ticker] = p; });
     });
 
-  Promise.all([posP, loadReviewQueue(), loadPortfolio()]).then(function () { renderOverview(); });
+  Promise.all([posP, loadReviewQueue(), loadPortfolio()]).then(function () {
+    var satTickers = Object.values(loadedPositions)
+      .filter(function (p) { return p.type === 'satellite' && p.status !== 'archived'; })
+      .map(function (p) { return p.ticker; });
+    if (satTickers.length) {
+      loadValuations(satTickers).then(function () { renderOverview(); });
+    } else {
+      renderOverview();
+    }
+  });
 }
 
 function loadReviewQueue() {
@@ -697,6 +709,25 @@ function loadPortfolio() {
           portfolioAvgCost[t] = Math.round(totals[t].cost / totals[t].shares * 100) / 100;
       });
     });
+}
+
+function loadValuations(tickers) {
+  return Promise.all(tickers.map(function (ticker) {
+    var path = '../../value-monitor/tanuki_valuation/data/' + ticker + '/latest.json?_=' + Date.now();
+    return fetch(path)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) {
+        if (!d) return;
+        var comp = d.components || {};
+        latestValCache[ticker] = {
+          current_price:   comp.current_price           || null,
+          intrinsic_value: d.intrinsic_value_per_share  || null,
+          upside_percent:  d.upside_percent             || null,
+          tanuki_score:    d.tanuki_score               || null,
+        };
+      });
+  }));
 }
 
 function getDisplayPrice(ticker, thesisPrice) {
@@ -751,20 +782,36 @@ function renderCoreTable(items) {
 function renderSatTable(items) {
   var tbody = document.getElementById('sat-tbody');
   if (!items.length) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="7">登録済みポジションなし。下のフォームから登録してください。</td></tr>';
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="9">登録済みポジションなし。下のフォームから登録してください。</td></tr>';
     return;
   }
   tbody.innerHTML = items.map(function (p) {
-    var entryDate  = p.entry_date || null;
-    var entryPrice = getDisplayPrice(p.ticker, p.entry_price);
-    var holdDays   = entryDate ? calcDays(entryDate) : '—';
-    var exitCond   = p.exit_condition ? truncate(p.exit_condition, 30) : '—';
+    var entryDate     = p.entry_date || null;
+    var rawEntryPrice = p.entry_price != null ? p.entry_price : portfolioAvgCost[p.ticker];
+    var entryPrice    = getDisplayPrice(p.ticker, p.entry_price);
+    var holdDays      = entryDate ? calcDays(entryDate) : '—';
+    var exitCond      = p.exit_condition ? truncate(p.exit_condition, 30) : '—';
+
+    var val = latestValCache[p.ticker];
+    var currentPriceHtml = '—';
+    var plHtml = '—';
+    if (val && val.current_price != null) {
+      currentPriceHtml = '$' + Number(val.current_price).toFixed(2);
+      if (rawEntryPrice != null && rawEntryPrice > 0) {
+        var pl = (val.current_price - rawEntryPrice) / rawEntryPrice * 100;
+        var plColor = pl >= 0 ? 'var(--grn)' : 'var(--red)';
+        plHtml = '<span style="color:' + plColor + '">' + (pl >= 0 ? '+' : '') + pl.toFixed(1) + '%</span>';
+      }
+    }
+
     return [
       '<tr>',
       '<td><span class="tkr sat">' + esc(p.ticker) + '</span></td>',
       '<td><span class="tag sat">' + esc(p.strategy_name || '—') + '</span></td>',
       '<td class="num">' + esc(entryDate || '—') + '</td>',
       '<td class="num">' + entryPrice + '</td>',
+      '<td class="num">' + currentPriceHtml + '</td>',
+      '<td class="num">' + plHtml + '</td>',
       '<td style="font-size:12px;color:var(--sub)">' + exitCond + '</td>',
       '<td class="num"><span class="days-badge">' + esc(String(holdDays)) + '</span></td>',
       '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
@@ -877,6 +924,7 @@ function renderModalBody(ticker, n) {
   else if (n === 1) body.innerHTML = buildTabReview(ticker, null);
   else if (n === 2) body.innerHTML = buildTabKpi(ticker);
   else if (n === 3) body.innerHTML = buildTabDcf(ticker);
+  else if (n === 4) body.innerHTML = buildTabCall2(ticker);
 }
 
 /* ─── Tab 0: テーゼ ─── */
@@ -1088,6 +1136,75 @@ function buildTabDcf(ticker) {
     rationaleHtml,
     assumHtml ? '<div class="dcf-sec"><div class="dcf-sec-title assum">KEY ASSUMPTIONS</div><ul class="dcf-ul">' + assumHtml + '</ul></div>' : '',
     riskHtml  ? '<div class="dcf-sec"><div class="dcf-sec-title risk">RISK FACTORS</div><ul class="dcf-ul">' + riskHtml + '</ul></div>' : '',
+  ].join('');
+}
+
+/* ─── Tab 4: AI視点 ─── */
+function buildTabCall2(ticker) {
+  var reviews = loadedReviews[ticker];
+  if (!reviews) return '<div class="no-rv">レビューデータなし</div>';
+  var qs = Object.keys(reviews).sort().reverse();
+  if (!qs.length) return '<div class="no-rv">レビューデータなし</div>';
+  var rv = reviews[qs[0]];
+  var c2 = rv && rv.call2;
+  if (!c2) return '<div class="no-rv">AI定性分析データがありません。<br>次回のレビュー生成で自動追加されます。</div>';
+
+  var fp = c2.five_perspectives || {};
+  var fpLabels = [
+    { key: 'business_model',        label: 'ビジネスモデル' },
+    { key: 'growth',                label: '成長性' },
+    { key: 'competitive_advantage', label: '競争優位' },
+    { key: 'management',            label: '経営' },
+    { key: 'market',                label: '市場環境' },
+  ];
+  var fpHtml = fpLabels.map(function (item) {
+    var txt = fp[item.key] || '—';
+    return '<div class="kpi-card" style="margin-bottom:6px">' +
+      '<div class="kpi-card-name">' + esc(item.label) + '</div>' +
+      '<div style="font-size:12px;color:var(--sub);line-height:1.6">' + esc(txt) + '</div></div>';
+  }).join('');
+
+  var ha = c2.historical_analogy || {};
+  var haHtml = ha.company ? [
+    '<div class="kpi-card" style="background:var(--row-hover);border-left:3px solid var(--acc);margin-bottom:8px">',
+    '<div class="kpi-card-name">歴史的類比: ' + esc(ha.company) + '</div>',
+    '<div style="font-size:12px;line-height:1.6;color:var(--sub)">',
+    '<strong>類似点:</strong> ' + esc(ha.similarity || '—') + '<br>',
+    '<strong>その後:</strong> ' + esc(ha.outcome || '—') + '<br>',
+    '<strong>示唆:</strong> ' + esc(ha.implication || '—'),
+    '</div></div>',
+  ].join('') : '';
+
+  var espHtml   = c2.entry_story_progress ? tBlock('エントリーストーリー進捗', c2.entry_story_progress) : '';
+  var maHtml    = c2.market_attention     ? tBlock('世の中の注目ポイント',       c2.market_attention)    : '';
+  var macroHtml = c2.macro_implications   ? tBlock('マクロ環境の示唆',           c2.macro_implications)  : '';
+
+  var tqHtml = '';
+  if (c2.thesis_questions && c2.thesis_questions.length) {
+    var qItems = c2.thesis_questions.map(function (q) {
+      return '<li style="margin-bottom:6px">' + esc(q) + '</li>';
+    }).join('');
+    tqHtml = '<div class="bias-box" style="border-color:var(--red);margin-bottom:8px">' +
+      '<strong>テーゼへの問いかけ</strong><ul style="margin:6px 0 0 16px;padding:0">' + qItems + '</ul></div>';
+  }
+
+  var nrfHtml = '';
+  if (c2.next_review_focus && c2.next_review_focus.length) {
+    var badges = c2.next_review_focus.map(function (f, i) {
+      return '<span class="tag core" style="margin:2px 4px 2px 0;display:inline-block">' + (i + 1) + '. ' + esc(f) + '</span>';
+    }).join('');
+    nrfHtml = '<div class="dcf-sec"><div class="dcf-sec-title assum">次回確認論点</div><div style="padding:6px 0">' + badges + '</div></div>';
+  }
+
+  return [
+    '<div class="rv-head"><span class="rv-quarter">' + esc(qs[0]) + '</span><span class="rv-date">AI定性分析</span></div>',
+    '<div style="margin-bottom:12px"><div class="nkpi-title">5観点での気になる点</div>' + fpHtml + '</div>',
+    haHtml,
+    espHtml,
+    maHtml,
+    macroHtml,
+    tqHtml,
+    nrfHtml,
   ].join('');
 }
 

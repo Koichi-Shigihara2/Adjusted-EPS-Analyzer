@@ -294,6 +294,14 @@ STAGE2_SYSTEM = (
     "rationale・key_assumptions・risk_factorsはすべて日本語で記述してください。"
 )
 
+CALL2_SYSTEM = (
+    "あなたは長期投資家Koichiの広い視野を補う投資パートナーです。"
+    "定量データではなく、定性的な視点・歴史的類比・構造的問いかけを提供してください。"
+    "「売れ」「買え」は言わない。最後は必ず問いかけで締める。"
+    "根拠がある事象のみ言及し、データ不足時は「確認が必要」と明示する。"
+    "回答はすべて日本語で記述してください。"
+)
+
 
 def _build_macro_text(macro_ctx: Optional[Dict[str, Any]]) -> str:
     if not macro_ctx:
@@ -548,6 +556,84 @@ def build_stage2_prompt(
 }}"""
 
 
+def build_call2_prompt(
+    ticker: str,
+    quarter: str,
+    thesis: Dict[str, Any],
+    stage1: Dict[str, Any],
+    macro_ctx: Optional[Dict[str, Any]],
+) -> str:
+    concerns_str = "\n".join(f"・{c}" for c in (stage1.get("concerns") or []))
+    bias_warning = stage1.get("optimism_bias_warning") or "なし"
+    macro_score  = (macro_ctx or {}).get("score", "不明")
+    macro_phase  = (macro_ctx or {}).get("phase", "不明")
+    entry_story  = (thesis.get("entry_story") or "未設定")[:500]
+
+    return f"""## 銘柄: {ticker}
+## 対象四半期: {quarter}
+
+## 投資テーゼ
+{thesis.get('thesis', '未設定')}
+
+## エントリーストーリー
+{entry_story}
+
+## Call 1 評価結果サマリー
+健全度: {stage1.get('health_score', 'N/A')}点 ({stage1.get('health_label', 'N/A')})
+主な懸念:
+{concerns_str if concerns_str else '（なし）'}
+楽観バイアス警告: {bias_warning}
+
+## マクロ環境
+{_build_macro_text(macro_ctx)}
+
+## 以下の7項目を分析してください:
+
+1. 5観点での気になる点
+   ビジネスモデル・成長性・競争優位・経営・市場環境の5軸で前回レビュー以降に変化した点を分析してください。
+
+2. エントリーストーリーの進捗
+   「{entry_story[:100]}」は現在どの程度実現しているか。
+
+3. 世の中の注目ポイント
+   この銘柄に対して市場・メディア・アナリストが今最も注目している点は何か。
+
+4. 歴史的類比
+   似た事業モデル・成長軌跡を歩んだ企業の事例とその後どうなったかを示してください。
+
+5. マクロ環境を踏まえた留意点
+   現在のマクロ環境（スコア{macro_score}・{macro_phase}）がこの銘柄のテーゼに与える影響。
+
+6. テーゼへの問いかけ
+   「その確信は今も妥当か」「希望的観測になっていないか」
+   テーゼの前提に対して鋭い問いを3つ立ててください。
+
+7. 次回確認すべき論点
+   次の四半期レビューで必ず確認すべき点を優先度順に3つ挙げてください。
+
+以下のJSON形式のみで回答してください（説明文・前置き不要）：
+{{
+  "five_perspectives": {{
+    "business_model": "...",
+    "growth": "...",
+    "competitive_advantage": "...",
+    "management": "...",
+    "market": "..."
+  }},
+  "entry_story_progress": "...",
+  "market_attention": "...",
+  "historical_analogy": {{
+    "company": "...",
+    "similarity": "...",
+    "outcome": "...",
+    "implication": "..."
+  }},
+  "macro_implications": "...",
+  "thesis_questions": ["問い1", "問い2", "問い3"],
+  "next_review_focus": ["論点1", "論点2", "論点3"]
+}}"""
+
+
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # キュー I/O
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -568,9 +654,27 @@ def save_queue(queue: Dict[str, Any]) -> None:
 # 1銘柄レビュー生成
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+def _mark_older_reviews_not_latest(ticker: str) -> None:
+    if not os.path.exists(REVIEWS_DIR):
+        return
+    for fname in os.listdir(REVIEWS_DIR):
+        if fname.startswith(f"{ticker}_") and fname.endswith("_review.json"):
+            fpath = os.path.join(REVIEWS_DIR, fname)
+            try:
+                with open(fpath, encoding="utf-8") as f:
+                    existing = json.load(f)
+                if existing.get("is_latest"):
+                    existing["is_latest"] = False
+                    with open(fpath, "w", encoding="utf-8") as f:
+                        json.dump(existing, f, ensure_ascii=False, indent=2)
+            except Exception:
+                pass
+
+
 def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[str]:
     ticker  = entry["ticker"]
     quarter = entry["quarter"]
+    accn    = entry.get("accn", "")
     now_jst = datetime.now(JST)
 
     print(f"\n{'─' * 60}")
@@ -619,43 +723,89 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         print("...\n=== DRY-RUN 完了（Grok呼び出しなし） ===")
         return None
 
-    # Stage 1
-    print(f"\n  ── Stage 1: テーゼ健全度評価 ({ticker} {quarter}) ──")
-    stage1_raw = call_grok(
-        user_prompt=stage1_prompt,
-        system_prompt=STAGE1_SYSTEM,
-        max_tokens=2000,
-        temperature=0.3,
-    )
-    stage1 = extract_json_from_response(stage1_raw)
-    print(f"  → health_score={stage1.get('health_score')}, recommendation={stage1.get('recommendation')}")
+    # 成功フラグ
+    call1_success:     bool = False
+    stage2_json_valid: bool = False
+    call2_success:     bool = False
+    stage2:            Dict[str, Any] = {}
+    call2:             Optional[Dict[str, Any]] = None
 
-    # Stage 2
+    # Stage 1 — 失敗時は例外を再 raise
+    print(f"\n  ── Stage 1: テーゼ健全度評価 ({ticker} {quarter}) ──")
+    try:
+        stage1_raw = call_grok(
+            user_prompt=stage1_prompt,
+            system_prompt=STAGE1_SYSTEM,
+            max_tokens=2000,
+            temperature=0.3,
+        )
+        stage1 = extract_json_from_response(stage1_raw)
+        call1_success = True
+        print(f"  → health_score={stage1.get('health_score')}, recommendation={stage1.get('recommendation')}")
+    except Exception as e:
+        print(f"  [ERROR] Stage 1 失敗: {e}")
+        raise
+
+    # Stage 2 — 失敗しても継続
     stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1, kpi_data)
     print(f"\n  ── Stage 2: DCFパラメータ生成 ({ticker} {quarter}) ──")
-    stage2_raw = call_grok(
-        user_prompt=stage2_prompt,
-        system_prompt=STAGE2_SYSTEM,
-        max_tokens=2000,
-        temperature=0.2,
-    )
-    stage2 = extract_json_from_response(stage2_raw)
-    print(f"  → シナリオ: {list(stage2.get('scenarios', {}).keys())}")
+    try:
+        stage2_raw = call_grok(
+            user_prompt=stage2_prompt,
+            system_prompt=STAGE2_SYSTEM,
+            max_tokens=2000,
+            temperature=0.2,
+        )
+        stage2 = extract_json_from_response(stage2_raw)
+        stage2_json_valid = True
+        print(f"  → シナリオ: {list(stage2.get('scenarios', {}).keys())}")
+    except Exception as e:
+        print(f"  [WARN] Stage 2 失敗（スキップ）: {e}")
 
-    # 出力保存
+    # Call 2 — 定性分析、失敗しても継続
+    call2_prompt = build_call2_prompt(ticker, quarter, thesis, stage1, macro_ctx)
+    print(f"\n  ── Call 2: 定性分析 ({ticker} {quarter}) ──")
+    try:
+        call2_raw = call_grok(
+            user_prompt=call2_prompt,
+            system_prompt=CALL2_SYSTEM,
+            max_tokens=3000,
+            temperature=0.5,
+        )
+        call2 = extract_json_from_response(call2_raw)
+        call2_success = True
+        print(f"  → 5観点・歴史的類比・問いかけ 生成完了")
+    except Exception as e:
+        print(f"  [WARN] Call 2 失敗（スキップ）: {e}")
+
+    # 同一tickerの既存レビューをis_latest=falseに更新してから保存
+    _mark_older_reviews_not_latest(ticker)
+
     os.makedirs(REVIEWS_DIR, exist_ok=True)
     output_path = os.path.join(REVIEWS_DIR, f"{ticker}_{quarter}_review.json")
 
     review = {
-        "ticker":           ticker,
-        "quarter":          quarter,
-        "generated_at":     now_jst.isoformat(),
-        "stage1":           stage1,
-        "stage2":           stage2,
-        "kpi_snapshot":     kpi_snapshot,
-        "layer3_snapshot":  kpi_layer3.get("kpis", {}) if kpi_layer3 else {},
-        "macro_snapshot":   macro_snapshot,
-        "thesis_version":   thesis.get("version", 1),
+        "ticker":               ticker,
+        "quarter":              quarter,
+        "generated_at":         now_jst.isoformat(),
+        # idempotencyフィールド
+        "data_version":         accn,
+        "is_latest":            True,
+        "layer1_complete":      bool(accn),
+        "layer2_complete":      kpi_data.get("layer2_complete", False) if kpi_data else False,
+        "layer2_missing_kpis":  kpi_data.get("missing_kpis", []) if kpi_data else [],
+        "stage2_json_valid":    stage2_json_valid,
+        "grok_call1_success":   call1_success,
+        "grok_call2_success":   call2_success,
+        "transcript_available": False,
+        # コンテンツ
+        "stage1":          stage1,
+        "stage2":          stage2,
+        "call2":           call2,
+        "kpi_snapshot":    kpi_snapshot,
+        "layer3_snapshot": kpi_layer3.get("kpis", {}) if kpi_layer3 else {},
+        "macro_snapshot":  macro_snapshot,
+        "thesis_version":  thesis.get("version", 1),
     }
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(review, f, ensure_ascii=False, indent=2)
