@@ -379,6 +379,13 @@ def _compare_threshold(value: Any, threshold_str: Any) -> Optional[bool]:
 
     threshold_val = float(m.group(1))
 
+    # 万・億などの日本語単位を実数に変換（例: "60万人以下" → 600000）
+    _JP_UNITS = (("億", 100_000_000), ("万", 10_000))
+    for kanji, mult in _JP_UNITS:
+        if kanji in s:
+            threshold_val *= mult
+            break
+
     # 実績値が小数比率（-1〜1）でthresholdが%形式なら%変換
     if "%" in s and -1.0 < actual < 1.0 and actual != 0:
         actual = actual * 100
@@ -649,9 +656,16 @@ def _calc_qoq_text(kpi_data: Optional[Dict[str, Any]], quarter: str = "") -> str
             q_num = int(curr_q[5:])  # "Q1" → "1"
         except (ValueError, IndexError):
             continue
-        prev_q = f"{year - 1}Q4" if q_num == 1 else f"{year}Q{q_num - 1}"
-        if prev_q not in dp:
-            continue
+        strict_prev_q = f"{year - 1}Q4" if q_num == 1 else f"{year}Q{q_num - 1}"
+        is_strict_qoq = strict_prev_q in dp
+        if is_strict_qoq:
+            prev_q = strict_prev_q
+        else:
+            # 前四半期データ欠損（10-K未処理等）→ 直近利用可能な前四半期にフォールバック
+            candidates = sorted([q for q in dp if q < curr_q], reverse=True)
+            if not candidates:
+                continue
+            prev_q = candidates[0]
         curr_val = dp[curr_q]
         prev_val = dp[prev_q]
         if curr_val is None or prev_val is None:
@@ -661,19 +675,20 @@ def _calc_qoq_text(kpi_data: Optional[Dict[str, Any]], quarter: str = "") -> str
             prev_f = float(prev_val)
         except (TypeError, ValueError):
             continue
-        unit = kinfo.get("unit", "")
+        unit  = kinfo.get("unit", "")
+        label = "QoQ" if is_strict_qoq else f"前回比({prev_q}→{curr_q})"
         if unit == "USD" and abs(curr_f) >= 2:
             if prev_f != 0:
                 qoq = (curr_f - prev_f) / abs(prev_f) * 100
                 lines.append(
                     f"  {kname}: {curr_q}={_fmt_kpi_value(curr_f, unit)}"
-                    f" vs {prev_q}={_fmt_kpi_value(prev_f, unit)} → QoQ {qoq:+.1f}%"
+                    f" vs {prev_q}={_fmt_kpi_value(prev_f, unit)} → {label} {qoq:+.1f}%"
                 )
         else:
             diff = (curr_f - prev_f) * 100
             lines.append(
                 f"  {kname}: {curr_q}={curr_f * 100:.1f}%"
-                f" vs {prev_q}={prev_f * 100:.1f}% → 前Q比 {diff:+.1f}pt"
+                f" vs {prev_q}={prev_f * 100:.1f}% → {label} {diff:+.1f}pt"
             )
     return "\n".join(lines)
 
