@@ -27,7 +27,7 @@ import argparse
 import requests
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Tuple
 
 # ── パス設定 ──────────────────────────────────────────────────
 script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -277,6 +277,158 @@ def build_kpi_snapshot(kpi_data: Dict[str, Any], max_quarters: int = 4) -> Dict[
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# 閾値判定
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def _resolve_kpi_value(
+    kpi: Dict[str, Any],
+    kpi_data_layer2: Optional[Dict[str, Any]],
+    quarter: str,
+) -> Tuple[Optional[float], str]:
+    """
+    KPIの実績値を取得し、閾値比較に適した値（YoY%・比率%）に変換する。
+
+    Returns: (comparable_value, display_str)
+      - comparable_value: 閾値と同スケールの値（None = データなし or 変換不可）
+      - display_str: テーブル表示用文字列
+
+    変換ルール:
+      - KPI名に「成長率」「YoY」「前年」を含む、または警戒ラインに「前年比」「YoY」を含む
+        → layer2の生値から前年同期比（YoY%）を計算して使用
+      - 生値が大きな通貨値（>=2）かつ警戒ラインが%形式
+        → YoY成長率を計算して使用
+      - 小数比率（0-1の範囲）
+        → ×100してパーセント変換
+      - それ以外
+        → 生値をそのまま使用
+    """
+    lookup_key = kpi.get("layer2_name") or kpi.get("name", "")
+    kpis       = (kpi_data_layer2 or {}).get("kpis", {})
+    kinfo      = kpis.get(lookup_key)
+    if not kinfo:
+        return None, "—"
+
+    dp_map = {dp["quarter"]: dp["value"] for dp in kinfo.get("data", [])}
+    curr_val = dp_map.get(quarter)
+    if curr_val is None:
+        return None, "—"
+
+    unit      = kinfo.get("unit", "")
+    kpi_name  = kpi.get("name", "")
+    warn_thr  = str(kpi.get("warning_threshold", ""))
+
+    try:
+        curr_f = float(curr_val)
+    except (TypeError, ValueError):
+        return None, str(curr_val)
+
+    # YoY計算が必要か判定
+    needs_yoy = any(kw in kpi_name for kw in ["成長率", "YoY", "前年"])
+    needs_yoy = needs_yoy or any(kw in warn_thr for kw in ["前年比", "YoY"])
+    needs_yoy = needs_yoy or (abs(curr_f) >= 2 and "%" in warn_thr)
+
+    if needs_yoy:
+        year   = int(quarter[:4])
+        prev_q = f"{year - 1}{quarter[4:]}"
+        prev_v = dp_map.get(prev_q)
+        if prev_v is not None:
+            try:
+                prev_f = float(prev_v)
+                if prev_f != 0:
+                    yoy = (curr_f - prev_f) / abs(prev_f) * 100
+                    if abs(curr_f) >= 2:
+                        display = f"{_fmt_kpi_value(curr_f, unit)} (YoY {yoy:+.1f}%)"
+                    else:
+                        display = f"{yoy:+.1f}%"
+                    return yoy, display
+            except (TypeError, ValueError):
+                pass
+        if abs(curr_f) >= 2:
+            return None, f"{_fmt_kpi_value(curr_f, unit)} (前年比不明)"
+
+    # 小数比率（0〜1）→ パーセント変換
+    if -1.0 < curr_f < 1.0 and curr_f != 0:
+        pct = curr_f * 100
+        return pct, f"{pct:.1f}%"
+
+    return curr_f, _fmt_kpi_value(curr_f, unit)
+
+
+def _compare_threshold(value: Any, threshold_str: Any) -> Optional[bool]:
+    """
+    実績値が警戒ラインを超えているか（問題ありか）を判定。
+
+    Returns:
+      True  = 警戒ライン超え（問題あり）
+      False = 正常（ライン内）
+      None  = 判定不能（数値変換失敗 or 閾値に数値なし）
+
+    threshold_str 例: "30%未満", "110%以下", "15%超", "前年比+30%以上"
+    """
+    if value is None or threshold_str is None or str(threshold_str).strip() == "—":
+        return None
+    try:
+        actual = float(value)
+    except (TypeError, ValueError):
+        return None
+
+    s = str(threshold_str).strip()
+    m = re.search(r"([+-]?\d+(?:\.\d+)?)", s)
+    if not m:
+        return None  # 数値なし → 判定不能（"前Q比上昇"等）
+
+    threshold_val = float(m.group(1))
+
+    # 実績値が小数比率（-1〜1）でthresholdが%形式なら%変換
+    if "%" in s and -1.0 < actual < 1.0 and actual != 0:
+        actual = actual * 100
+
+    # 比較方向を判定（キーワード優先順序に注意）
+    if "未満" in s:
+        return actual < threshold_val
+    elif "以下" in s or "割れ" in s or "下回" in s:
+        return actual <= threshold_val
+    elif "超え" in s or "超過" in s or "上回" in s:
+        return actual > threshold_val
+    elif "以上" in s:
+        return actual >= threshold_val
+    elif "超" in s:
+        return actual > threshold_val
+    else:
+        # デフォルト: 下回りを警戒（成長率等の下限閾値想定）
+        return actual < threshold_val
+
+
+def _check_consecutive_warning(
+    kpi: Dict[str, Any],
+    kpi_data_layer2: Optional[Dict[str, Any]],
+    current_quarter: str,
+    threshold_str: Any,
+    n: int = 2,
+) -> bool:
+    """直近n四半期（current_quarterを含む最新n件）で連続して警戒ライン超えか確認"""
+    if not kpi_data_layer2:
+        return False
+    lookup_key = kpi.get("layer2_name") or kpi.get("name", "")
+    kpis       = kpi_data_layer2.get("kpis", {})
+    kinfo      = kpis.get(lookup_key)
+    if not kinfo:
+        return False
+
+    all_q    = sorted({dp["quarter"] for dp in kinfo.get("data", [])}, reverse=True)
+    target_q = [q for q in all_q if q <= current_quarter][:n]
+
+    if len(target_q) < n:
+        return False
+
+    for q in target_q:
+        comp_val, _ = _resolve_kpi_value(kpi, kpi_data_layer2, q)
+        if _compare_threshold(comp_val, threshold_str) is not True:
+            return False
+    return True
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # プロンプト構築
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -370,36 +522,188 @@ def _build_kpi_status_table(
     l3_kpis = (kpi_data_layer3 or {}).get("kpis", {})
 
     for k in thesis_kpis:
-        name      = k.get("name", "")
-        warn      = k.get("warning_threshold", "—")
-        exit_thr  = k.get("exit_threshold", "—")
-        auto_f    = k.get("auto_fetchable", False)
+        name     = k.get("name", "")
+        warn     = k.get("warning_threshold", "—")
+        exit_thr = k.get("exit_threshold", "—")
+        auto_f   = k.get("auto_fetchable", False)
 
-        actual_val: Optional[Any] = None
+        comp_val: Optional[float] = None
+        display  = "—"
         confidence = "high"
 
+        # layer2から取得（_resolve_kpi_valueでYoY/比率変換も実施）
         if auto_f and kpi_data_layer2:
-            actual_val = _lookup_layer2_value(k, kpi_data_layer2, quarter)
-        elif name in l3_kpis:
-            entry      = l3_kpis[name]
-            actual_val = entry.get("value")
-            confidence = entry.get("confidence", "medium")
+            comp_val, display = _resolve_kpi_value(k, kpi_data_layer2, quarter)
 
-        if actual_val is not None:
-            if confidence == "high":
-                status = "✅ 取得済"
-            elif confidence == "medium":
-                status = "⚠ 中精度"
+        # auto_fetchable=True でも layer2 にデータがなければ layer3 にフォールバック
+        if comp_val is None and name in l3_kpis:
+            entry_l3   = l3_kpis[name]
+            v_num      = entry_l3.get("value_numeric")
+            raw_v      = v_num if v_num is not None else entry_l3.get("value")
+            confidence = entry_l3.get("confidence", "medium")
+            if raw_v is not None:
+                try:
+                    comp_val = float(raw_v)
+                    display  = str(raw_v)
+                except (TypeError, ValueError):
+                    display = str(raw_v)
+
+        if comp_val is not None:
+            # exit_thresholdに「連続」が含まれる場合は連続チェックで判定
+            exit_thr_str = str(exit_thr)
+            if "連続" in exit_thr_str and kpi_data_layer2:
+                exit_breach = (
+                    _compare_threshold(comp_val, exit_thr) is True
+                    and _check_consecutive_warning(k, kpi_data_layer2, quarter, exit_thr)
+                )
             else:
-                status = "❌ 低精度"
-            display = str(actual_val)
+                exit_breach = _compare_threshold(comp_val, exit_thr) is True
+
+            warn_breach = _compare_threshold(comp_val, warn)
+
+            if exit_breach:
+                status = "❌ 危険"
+            elif warn_breach is True:
+                if kpi_data_layer2 and _check_consecutive_warning(
+                    k, kpi_data_layer2, quarter, warn
+                ):
+                    status = "❌ 2Q連続"
+                else:
+                    status = "⚠ 警戒"
+            elif warn_breach is False:
+                status = "✅ 正常"
+            else:
+                # 閾値が数値でないため判定不能 → 信頼度で代替表示
+                if confidence == "high":
+                    status = "✅ 取得済"
+                elif confidence == "medium":
+                    status = "⚠ 中精度"
+                else:
+                    status = "❌ 低精度"
         else:
-            status  = "— 未取得"
-            display = "—"
+            status = "— 未取得"
 
         rows.append(f"| {name} | {display} | {warn} | {exit_thr} | {status} |")
 
     return "\n".join(rows)
+
+
+def _build_layer3_text(kpi_data_layer3: Optional[Dict[str, Any]]) -> str:
+    """Layer3 KPI（テキスト抽出）を整形テキストで返す"""
+    if not kpi_data_layer3:
+        return ""
+    kpis = kpi_data_layer3.get("kpis", {})
+    if not kpis:
+        return ""
+    lines: List[str] = []
+    for name, info in kpis.items():
+        v_num   = info.get("value_numeric")
+        v_str   = info.get("value")
+        conf    = info.get("confidence", "medium")
+        period  = info.get("period", "")
+        display = str(v_num) if v_num is not None else (str(v_str) if v_str is not None else "—")
+        lines.append(f"  {name}: {display}  ({period}, 信頼度:{conf})")
+    return "\n".join(lines)
+
+
+def _calc_yoy_text(kpi_data: Optional[Dict[str, Any]]) -> str:
+    if not kpi_data:
+        return ""
+    kpis = kpi_data.get("kpis", {})
+    lines: List[str] = []
+    for kname, kinfo in kpis.items():
+        dp = {d["quarter"]: d["value"] for d in kinfo.get("data", [])}
+        # 最新四半期を探して前年同期と比較
+        for q in sorted(dp, reverse=True):
+            year = int(q[:4])
+            qnum = q[4:]
+            prev_q = f"{year - 1}{qnum}"
+            if prev_q in dp:
+                curr, prev = dp[q], dp[prev_q]
+                unit = kinfo.get("unit", "")
+                if unit == "USD" and abs(curr) >= 2:
+                    yoy = (curr - prev) / abs(prev) * 100 if prev else 0
+                    lines.append(f"  {kname}: {q}={_fmt_kpi_value(curr, unit)} vs {prev_q}={_fmt_kpi_value(prev, unit)} → YoY {yoy:+.1f}%")
+                else:
+                    diff = (curr - prev) * 100
+                    lines.append(f"  {kname}: {q}={curr*100:.1f}% vs {prev_q}={prev*100:.1f}% → 前年比 {diff:+.1f}pt")
+                break
+    return "\n".join(lines)
+
+
+def _calc_qoq_text(kpi_data: Optional[Dict[str, Any]], quarter: str = "") -> str:
+    """各KPIの前四半期比（QoQ）を計算して整形テキストで返す"""
+    if not kpi_data:
+        return ""
+    kpis = kpi_data.get("kpis", {})
+    lines: List[str] = []
+    for kname, kinfo in kpis.items():
+        dp    = {d["quarter"]: d["value"] for d in kinfo.get("data", [])}
+        all_q = sorted(dp.keys(), reverse=True)
+        if not all_q:
+            continue
+        curr_q = quarter if (quarter and quarter in dp) else all_q[0]
+        # 前四半期を計算
+        try:
+            year  = int(curr_q[:4])
+            q_num = int(curr_q[5:])  # "Q1" → "1"
+        except (ValueError, IndexError):
+            continue
+        prev_q = f"{year - 1}Q4" if q_num == 1 else f"{year}Q{q_num - 1}"
+        if prev_q not in dp:
+            continue
+        curr_val = dp[curr_q]
+        prev_val = dp[prev_q]
+        if curr_val is None or prev_val is None:
+            continue
+        try:
+            curr_f = float(curr_val)
+            prev_f = float(prev_val)
+        except (TypeError, ValueError):
+            continue
+        unit = kinfo.get("unit", "")
+        if unit == "USD" and abs(curr_f) >= 2:
+            if prev_f != 0:
+                qoq = (curr_f - prev_f) / abs(prev_f) * 100
+                lines.append(
+                    f"  {kname}: {curr_q}={_fmt_kpi_value(curr_f, unit)}"
+                    f" vs {prev_q}={_fmt_kpi_value(prev_f, unit)} → QoQ {qoq:+.1f}%"
+                )
+        else:
+            diff = (curr_f - prev_f) * 100
+            lines.append(
+                f"  {kname}: {curr_q}={curr_f * 100:.1f}%"
+                f" vs {prev_q}={prev_f * 100:.1f}% → 前Q比 {diff:+.1f}pt"
+            )
+    return "\n".join(lines)
+
+
+def _load_past_health_scores(ticker: str, current_quarter: str, n: int = 8) -> str:
+    """過去n四半期分の health_score 推移を文字列で返す（current_quarter を除く）"""
+    if not os.path.exists(REVIEWS_DIR):
+        return ""
+    entries: List[Tuple[str, int, str]] = []
+    for fname in os.listdir(REVIEWS_DIR):
+        if not (fname.startswith(f"{ticker}_") and fname.endswith("_review.json")):
+            continue
+        q = fname[len(ticker) + 1 : -len("_review.json")]
+        if q == current_quarter:
+            continue
+        fpath = os.path.join(REVIEWS_DIR, fname)
+        try:
+            with open(fpath, encoding="utf-8") as f:
+                rv = json.load(f)
+            hs  = rv.get("stage1", {}).get("health_score")
+            rec = rv.get("stage1", {}).get("recommendation", "")
+            if hs is not None:
+                entries.append((q, int(hs), rec))
+        except Exception:
+            pass
+    if not entries:
+        return ""
+    entries.sort(key=lambda x: x[0])
+    recent = entries[-n:]
+    return " / ".join(f"{q}:{hs}({rec})" for q, hs, rec in recent)
 
 
 def build_stage1_prompt(
@@ -412,6 +716,7 @@ def build_stage1_prompt(
     entry_price: Optional[float] = None,
     kpi_data_layer2: Optional[Dict[str, Any]] = None,
     kpi_data_layer3: Optional[Dict[str, Any]] = None,
+    past_health_scores: str = "",
 ) -> str:
     val_section = ""
     if valuation:
@@ -427,6 +732,18 @@ def build_stage1_prompt(
     elif entry_price is not None:
         val_section = f"\n## 取得コスト\n加重平均取得単価: ${entry_price}\n"
 
+    # YoY / QoQ セクション
+    yoy_text = _calc_yoy_text(kpi_data_layer2)
+    qoq_text = _calc_qoq_text(kpi_data_layer2, quarter)
+    yoy_section = f"\n## KPI 前年同期比（YoY）\n{yoy_text}\n" if yoy_text else ""
+    qoq_section = f"\n## KPI 前四半期比（QoQ）\n{qoq_text}\n" if qoq_text else ""
+
+    # 健全度推移セクション
+    health_trend_section = (
+        f"\n## テーゼ健全度の推移（過去）\n{past_health_scores}\n"
+        if past_health_scores else ""
+    )
+
     return f"""## 投資テーゼ（{ticker}）
 {thesis.get('thesis', '未設定')}
 
@@ -438,10 +755,10 @@ def build_stage1_prompt(
 
 ## 直近KPI実績（{quarter}）
 {kpi_table}
-
+{yoy_section}{qoq_section}
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-{val_section}{_build_kpi_monitoring_section(thesis, kpi_data_layer2, kpi_data_layer3, quarter)}
+{val_section}{health_trend_section}{_build_kpi_monitoring_section(thesis, kpi_data_layer2, kpi_data_layer3, quarter)}
 ## 評価してください
 
 1. テーゼ健全度（0-100点）と根拠
@@ -478,29 +795,9 @@ def build_stage1_prompt(
 }}"""
 
 
-def _calc_yoy_text(kpi_data: Optional[Dict[str, Any]]) -> str:
-    if not kpi_data:
-        return ""
-    kpis = kpi_data.get("kpis", {})
-    lines: List[str] = []
-    for kname, kinfo in kpis.items():
-        dp = {d["quarter"]: d["value"] for d in kinfo.get("data", [])}
-        # 最新四半期を探して前年同期と比較
-        for q in sorted(dp, reverse=True):
-            year = int(q[:4])
-            qnum = q[4:]
-            prev_q = f"{year - 1}{qnum}"
-            if prev_q in dp:
-                curr, prev = dp[q], dp[prev_q]
-                unit = kinfo.get("unit", "")
-                if unit == "USD" and abs(curr) >= 2:
-                    yoy = (curr - prev) / abs(prev) * 100 if prev else 0
-                    lines.append(f"  {kname}: {q}={_fmt_kpi_value(curr, unit)} vs {prev_q}={_fmt_kpi_value(prev, unit)} → YoY {yoy:+.1f}%")
-                else:
-                    diff = (curr - prev) * 100
-                    lines.append(f"  {kname}: {q}={curr*100:.1f}% vs {prev_q}={prev*100:.1f}% → 前年比 {diff:+.1f}pt")
-                break
-    return "\n".join(lines)
+def _calc_yoy_text_stage2(kpi_data: Optional[Dict[str, Any]]) -> str:
+    """Stage 2 プロンプト専用の YoY テキスト（_calc_yoy_text と同一ロジック）"""
+    return _calc_yoy_text(kpi_data)
 
 
 def build_stage2_prompt(
@@ -594,26 +891,61 @@ def build_call2_prompt(
     macro_ctx: Optional[Dict[str, Any]],
     kpi_status_table: str = "",
     past_call2: Optional[List[Dict[str, Any]]] = None,
+    kpi_data: Optional[Dict[str, Any]] = None,
+    kpi_data_layer3: Optional[Dict[str, Any]] = None,
+    past_health_scores: str = "",
 ) -> str:
-    concerns_str = "\n".join(f"・{c}" for c in (stage1.get("concerns") or []))
-    bias_warning = stage1.get("optimism_bias_warning") or "なし"
+    # Stage1 全結果
+    concerns_str   = "\n".join(f"・{c}" for c in (stage1.get("concerns") or []))
+    positives_str  = "\n".join(f"・{p}" for p in (stage1.get("positives") or []))
+    next_kpis_str  = "\n".join(f"・{k}" for k in (stage1.get("next_kpis") or []))
+    bias_warning   = stage1.get("optimism_bias_warning") or "なし"
+    recommendation = stage1.get("recommendation") or stage1.get("health_label") or "N/A"
+    exit_dist      = stage1.get("exit_distance") or "不明"
+    exit_dist_rsn  = stage1.get("exit_distance_reason") or ""
+
     macro_score  = (macro_ctx or {}).get("score", "不明")
     macro_phase  = (macro_ctx or {}).get("phase", "不明")
     entry_story  = (thesis.get("entry_story") or "未設定")[:500]
     last_quarter = (past_call2[0]["quarter"] if past_call2 else "前回") if past_call2 else "前回"
 
-    # 過去Call2の引き継ぎセクション
+    # 過去Call2の引き継ぎセクション（拡張版: five_perspectives・historical_analogy・entry_story_progressを追加）
     past_section = ""
     if past_call2:
         parts: List[str] = []
         for item in past_call2:
-            q = item["quarter"]
+            q  = item["quarter"]
             c2 = item["call2"]
             q_parts: List[str] = []
+            # 5観点サマリー
+            if c2.get("five_perspectives"):
+                fp = c2["five_perspectives"]
+                fp_lines = [f"    {k}: {str(v)[:60]}" for k, v in fp.items() if v]
+                if fp_lines:
+                    q_parts.append(f"前回5観点サマリー ({q}):\n" + "\n".join(fp_lines))
+            # 歴史的類比
+            ha = c2.get("historical_analogy") or {}
+            if ha.get("company"):
+                q_parts.append(
+                    f"前回歴史的類比 ({q}): {ha['company']}"
+                    f"（示唆: {str(ha.get('implication', ''))[:80]}）"
+                )
+            # エントリーストーリー進捗
+            if c2.get("entry_story_progress"):
+                q_parts.append(
+                    f"前回エントリー進捗 ({q}): {str(c2['entry_story_progress'])[:100]}"
+                )
+            # 問いかけ・次回確認論点
             if c2.get("thesis_questions"):
-                q_parts.append(f"前回の問いかけ ({q}):\n" + "\n".join(f"・{x}" for x in c2["thesis_questions"]))
+                q_parts.append(
+                    f"前回の問いかけ ({q}):\n" +
+                    "\n".join(f"・{x}" for x in c2["thesis_questions"])
+                )
             if c2.get("next_review_focus"):
-                q_parts.append(f"前回の次回確認論点 ({q}):\n" + "\n".join(f"・{x}" for x in c2["next_review_focus"]))
+                q_parts.append(
+                    f"前回の次回確認論点 ({q}):\n" +
+                    "\n".join(f"・{x}" for x in c2["next_review_focus"])
+                )
             if q_parts:
                 parts.append("\n".join(q_parts))
         if parts:
@@ -628,6 +960,30 @@ def build_call2_prompt(
             "各KPIの現状値と警戒ライン対比を参照して定性分析に活かしてください。\n"
         )
 
+    # KPI実績テーブル（直近8四半期）＋ YoY・QoQ
+    kpi_table_section = ""
+    if kpi_data:
+        kpi_tbl  = build_kpi_table(kpi_data, max_quarters=8)
+        yoy_text = _calc_yoy_text(kpi_data)
+        qoq_text = _calc_qoq_text(kpi_data, quarter)
+        kpi_table_section = f"\n## KPI実績データ（直近8四半期）\n{kpi_tbl}\n"
+        if yoy_text:
+            kpi_table_section += f"\n### YoY（前年同期比）\n{yoy_text}\n"
+        if qoq_text:
+            kpi_table_section += f"\n### QoQ（前四半期比）\n{qoq_text}\n"
+
+    # Layer3抽出値セクション
+    l3_section = ""
+    l3_text = _build_layer3_text(kpi_data_layer3)
+    if l3_text:
+        l3_section = f"\n## Layer3 テキスト抽出KPI（非自動取得分）\n{l3_text}\n"
+
+    # 健全度推移セクション
+    health_trend_section = (
+        f"\n## テーゼ健全度の推移（過去）\n{past_health_scores}\n"
+        if past_health_scores else ""
+    )
+
     return f"""## 銘柄: {ticker}
 ## 対象四半期: {quarter}
 
@@ -637,15 +993,21 @@ def build_call2_prompt(
 ## エントリーストーリー
 {entry_story}
 
-## Call 1 評価結果サマリー
+## Call 1 評価結果（全体）
 健全度: {stage1.get('health_score', 'N/A')}点 ({stage1.get('health_label', 'N/A')})
+判定: {recommendation}
+ポジティブ点:
+{positives_str if positives_str else '（なし）'}
 主な懸念:
 {concerns_str if concerns_str else '（なし）'}
 楽観バイアス警告: {bias_warning}
+エグジット距離: {exit_dist}（{exit_dist_rsn}）
+次四半期確認KPI:
+{next_kpis_str if next_kpis_str else '（なし）'}
 
 ## マクロ環境
 {_build_macro_text(macro_ctx)}
-{past_section}{kpi_section}
+{health_trend_section}{past_section}{kpi_table_section}{l3_section}{kpi_section}
 ## 以下の7項目を分析してください:
 
 1. 5観点での気になる点（Web検索必須）
@@ -744,10 +1106,11 @@ def _mark_older_reviews_not_latest(ticker: str) -> None:
 
 
 def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[str]:
-    ticker  = entry["ticker"]
-    quarter = entry["quarter"]
-    accn    = entry.get("accn", "")
-    now_jst = datetime.now(JST)
+    ticker     = entry["ticker"]
+    quarter    = entry["quarter"]
+    accn       = entry.get("accn", "")
+    filed_date = entry.get("filed", "")
+    now_jst    = datetime.now(JST)
 
     print(f"\n{'─' * 60}")
     print(f"  {ticker} {quarter} レビュー生成開始")
@@ -777,6 +1140,11 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         "stealth_signal": macro_ctx.get("stealth_signal") if macro_ctx else None,
     }
 
+    # 過去health_score推移を取得（プロンプト構築前）
+    past_health = _load_past_health_scores(ticker, quarter)
+    if past_health:
+        print(f"  [INFO] 過去健全度推移: {past_health}")
+
     stage1_prompt = build_stage1_prompt(
         thesis=thesis,
         kpi_table=kpi_table,
@@ -787,6 +1155,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         entry_price=entry_price,
         kpi_data_layer2=kpi_data,
         kpi_data_layer3=kpi_layer3,
+        past_health_scores=past_health,
     )
 
     if dry_run:
@@ -845,6 +1214,9 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         ticker, quarter, thesis, stage1, macro_ctx,
         kpi_status_table=call2_kpi_table,
         past_call2=past_call2_items,
+        kpi_data=kpi_data,
+        kpi_data_layer3=kpi_layer3,
+        past_health_scores=past_health,
     )
     print(f"\n  ── Call 2: 定性分析 ({ticker} {quarter}) ──")
     try:
@@ -872,6 +1244,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         "generated_at":         now_jst.isoformat(),
         # idempotencyフィールド
         "data_version":         accn,
+        "filed_date":           filed_date,
         "is_latest":            True,
         "layer1_complete":      bool(accn),
         "layer2_complete":      kpi_data.get("layer2_complete", False) if kpi_data else False,
