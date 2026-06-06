@@ -587,6 +587,7 @@ var portfolioAvgCost = {};       // { PLTR: 58.39, SOFI: 16.25, ... } 加重平�
 var latestValCache   = {};       // { TSLA: { current_price, intrinsic_value, ... } }
 var kpiModalTicker  = null;
 var loadedProposals = {};        // { PLTR: proposalData }
+var loadedScenarios = {};        // { PLTR: { bear: {}, base: {}, bull: {} } }
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点'];
 var TABS_SAT  = ['戦略'];
@@ -727,6 +728,18 @@ function loadValuations(tickers) {
           tanuki_score:    d.tanuki_score               || null,
         };
       });
+  }));
+}
+
+function ensureScenariosLoaded(ticker) {
+  if (loadedScenarios[ticker]) return Promise.resolve();
+  loadedScenarios[ticker] = {};   // mark as loading
+  return Promise.all(['bear', 'base', 'bull'].map(function (sc) {
+    var path = '../scenario/' + ticker + '/' + sc + '.json?_=' + Date.now();
+    return fetch(path)
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) { if (d) loadedScenarios[ticker][sc] = d; });
   }));
 }
 
@@ -896,6 +909,12 @@ function openModal(ticker) {
           if (modalTicker === ticker && modalTabIdx === 2) renderModalBody(ticker, 2);
         }
       });
+  }
+
+  if (isCore && !loadedScenarios[ticker]) {
+    ensureScenariosLoaded(ticker).then(function () {
+      if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
+    });
   }
 }
 
@@ -1100,17 +1119,145 @@ function buildTabDcf(ticker) {
   if (!qs.length) return '<div class="no-rv">レビューデータなし</div>';
   var s2 = reviews[qs[0]].stage2 || {};
   var sc = s2.scenarios || {};
-  if (!Object.keys(sc).length) return '<div class="no-rv">DCFデータなし</div>';
 
+  var scd = loadedScenarios[ticker];
+  var hasScenario = scd && (scd.bear || scd.base || scd.bull);
+
+  // シナリオファイル未ロード → フェッチ開始してフォールバック表示
+  if (!hasScenario) {
+    if (!scd) {  // まだフェッチ開始していない
+      ensureScenariosLoaded(ticker).then(function () {
+        if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
+      });
+    }
+    if (!Object.keys(sc).length) return '<div class="no-rv">DCFデータなし</div>';
+    return _buildLegacyDcfTable(qs[0], sc, s2);
+  }
+
+  return _buildFuturePriceTable(ticker, qs[0], scd, sc, s2);
+}
+
+function _buildFuturePriceTable(ticker, quarter, scd, sc, s2) {
+  var anyScen  = scd.base || scd.bear || scd.bull || {};
+  var baseIv   = anyScen.base_intrinsic_value;
+  var curPrice = anyScen.current_price;
+  var periods  = ['現在', '1年後', '3年後', '5年後'];
+
+  function fv(v) { return (v != null && v !== 0) ? '$' + Number(v).toFixed(0) : '—'; }
+  function getVal(sd, period) {
+    if (!sd) return null;
+    if (period === '現在') return sd.base_intrinsic_value;
+    return (sd.future_values || {})[period] || null;
+  }
+  function cellStyle(val) {
+    if (val == null || !curPrice) return '';
+    return val >= curPrice ? 'color:var(--grn);font-weight:600' : '';
+  }
+
+  // ── 将来理論価格テーブル ──
+  var thead = '<tr><th></th>' + periods.map(function (p) {
+    return '<th style="text-align:center;font-family:var(--mono);font-size:10px">' + p + '</th>';
+  }).join('') + '</tr>';
+
+  var scRows = [
+    { key: 'bear', em: '🐻', cls: 'dcf-bear' },
+    { key: 'base', em: '📊', cls: 'dcf-base' },
+    { key: 'bull', em: '🐂', cls: 'dcf-bull' },
+  ];
+  var tbody = scRows.map(function (row) {
+    var sd = scd[row.key];
+    return '<tr>' +
+      '<td style="font-family:var(--mono);font-size:11px" class="' + row.cls + '">' +
+      row.em + ' ' + row.key.toUpperCase() + '</td>' +
+      periods.map(function (p) {
+        var v = getVal(sd, p);
+        return '<td class="num ' + row.cls + '" style="' + cellStyle(v) + '">' + fv(v) + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+
+  // 現在株価ライン（分離行）
+  var cpRow = curPrice
+    ? '<tr style="border-top:2px solid var(--amb)">' +
+      '<td style="color:var(--amb);font-family:var(--mono);font-size:11px">現在株価</td>' +
+      '<td class="num" style="color:var(--amb)">' + fv(curPrice) + '</td>' +
+      '<td colspan="3" style="text-align:center;color:var(--mut);font-size:10px;font-family:var(--mono)">' +
+      '← 緑字のセル = 現在株価を超える時点</td></tr>'
+    : '';
+
+  var metaHtml =
+    '<div style="margin-bottom:8px;font-family:var(--mono);font-size:10px;color:var(--sub)">' +
+    esc(quarter) + ' 将来理論価格（起点: $' +
+    (baseIv ? Number(baseIv).toFixed(2) : '—') +
+    ' / 現在株価: $' +
+    (curPrice ? Number(curPrice).toFixed(2) : '—') + '）</div>';
+
+  var tableHtml =
+    '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead +
+    '</thead><tbody>' + tbody + cpRow + '</tbody></table></div>';
+
+  // ── シナリオ前提（折りたたみ） ──
+  var aRows = [
+    { label: '売上成長率 Y1/Y2/Y3', fn: function (sd) {
+      var a = sd.assumptions || {};
+      return [a.Y1_growth, a.Y2_growth, a.Y3_growth]
+        .map(function (v) { return v != null ? (v * 100).toFixed(1) + '%' : '—'; }).join(' / ');
+    }},
+    { label: '加重成長率（使用値）', fn: function (sd) {
+      var wg = (sd.assumptions || {}).weighted_growth;
+      return wg != null ? (wg * 100).toFixed(1) + '%' : '—';
+    }},
+    { label: 'ターミナル成長率', fn: function (sd) {
+      var v = (sd.assumptions || {}).terminal_growth;
+      return v != null ? (v * 100).toFixed(1) + '%' : '—';
+    }},
+    { label: '最終営業利益率', fn: function (sd) {
+      var v = (sd.assumptions || {}).operating_margin;
+      return v != null ? (v * 100).toFixed(1) + '%' : '—';
+    }},
+  ];
+  var aHead = '<tr><th>前提</th><th class="dcf-bear">BEAR</th><th class="dcf-base">BASE</th><th class="dcf-bull">BULL</th></tr>';
+  var aBody = aRows.map(function (r) {
+    return '<tr><td>' + esc(r.label) + '</td>' +
+      ['bear', 'base', 'bull'].map(function (s) {
+        return '<td class="num dcf-' + s + '">' + (scd[s] ? r.fn(scd[s]) : '—') + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+
+  var rationaleHtml = ['bear', 'base', 'bull'].map(function (s) {
+    var rat = (sc[s] || {}).rationale;
+    return rat
+      ? '<div class="kpi-card" style="margin-bottom:8px"><div class="kpi-card-name dcf-' + s + '">' +
+        s.toUpperCase() + ' 根拠</div><div style="font-size:12px;color:var(--sub);line-height:1.6">' +
+        esc(rat) + '</div></div>'
+      : '';
+  }).join('');
+
+  var assumHtml = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
+  var riskHtml  = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+
+  var detailsHtml =
+    '<details style="margin-top:12px"><summary style="font-family:var(--mono);font-size:10px;' +
+    'color:var(--sub);cursor:pointer;padding:4px 0;list-style:none">' +
+    '▶ シナリオ前提を表示</summary>' +
+    '<div style="margin-top:8px">' +
+    '<table class="dcf-tbl"><thead>' + aHead + '</thead><tbody>' + aBody + '</tbody></table>' +
+    rationaleHtml +
+    (assumHtml ? '<div class="dcf-sec"><div class="dcf-sec-title assum">KEY ASSUMPTIONS</div><ul class="dcf-ul">' + assumHtml + '</ul></div>' : '') +
+    (riskHtml  ? '<div class="dcf-sec"><div class="dcf-sec-title risk">RISK FACTORS</div><ul class="dcf-ul">' + riskHtml + '</ul></div>' : '') +
+    '</div></details>';
+
+  return metaHtml + tableHtml + detailsHtml;
+}
+
+function _buildLegacyDcfTable(quarter, sc, s2) {
   var rows = [
-    { key: 'revenue_growth_y1',        label: '売上成長率 Y1' },
-    { key: 'revenue_growth_y2',        label: '売上成長率 Y2' },
-    { key: 'revenue_growth_y3',        label: '売上成長率 Y3' },
-    { key: 'terminal_growth',          label: 'ターミナル成長率' },
-    { key: 'operating_margin_terminal',label: '最終営業利益率' },
+    { key: 'revenue_growth_y1',         label: '売上成長率 Y1' },
+    { key: 'revenue_growth_y2',         label: '売上成長率 Y2' },
+    { key: 'revenue_growth_y3',         label: '売上成長率 Y3' },
+    { key: 'terminal_growth',           label: 'ターミナル成長率' },
+    { key: 'operating_margin_terminal', label: '最終営業利益率' },
   ];
   function fp(v) { return v != null ? (v * 100).toFixed(1) + '%' : '—'; }
-
   var thead = '<tr><th>指標</th><th class="dcf-bear">BEAR</th><th class="dcf-base">BASE</th><th class="dcf-bull">BULL</th></tr>';
   var tbody = rows.map(function (r) {
     return '<tr><td>' + esc(r.label) + '</td>' +
@@ -1118,20 +1265,17 @@ function buildTabDcf(ticker) {
         return '<td class="dcf-' + s + '">' + fp((sc[s] || {})[r.key]) + '</td>';
       }).join('') + '</tr>';
   }).join('');
-
   var rationaleHtml = ['bear', 'base', 'bull'].map(function (s) {
     var rat = (sc[s] || {}).rationale;
-    if (!rat) return '';
-    return '<div class="kpi-card" style="margin-bottom:8px"><div class="kpi-card-name dcf-' + s + '">' +
-      s.toUpperCase() + ' シナリオ根拠</div><div style="font-size:12px;color:var(--sub);line-height:1.6">' +
-      esc(rat) + '</div></div>';
+    return rat
+      ? '<div class="kpi-card" style="margin-bottom:8px"><div class="kpi-card-name dcf-' + s + '">' +
+        s.toUpperCase() + ' シナリオ根拠</div><div style="font-size:12px;color:var(--sub);line-height:1.6">' + esc(rat) + '</div></div>'
+      : '';
   }).join('');
-
   var assumHtml = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
   var riskHtml  = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
-
   return [
-    '<div style="margin-bottom:4px;font-family:var(--mono);font-size:10px;color:var(--sub)">' + esc(qs[0]) + ' Grok DCFパラメータ</div>',
+    '<div style="margin-bottom:4px;font-family:var(--mono);font-size:10px;color:var(--sub)">' + esc(quarter) + ' Grok DCFパラメータ（将来価格データ生成中...）</div>',
     '<table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>',
     rationaleHtml,
     assumHtml ? '<div class="dcf-sec"><div class="dcf-sec-title assum">KEY ASSUMPTIONS</div><ul class="dcf-ul">' + assumHtml + '</ul></div>' : '',

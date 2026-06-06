@@ -99,6 +99,21 @@ jobs:
             echo "pending なし → レビュー生成スキップ"
           fi
 
+      - name: Run tail_dcf_bridge (scenario files)
+        run: |
+          TICKERS=$(python -c "
+          import os
+          val_dir = 'docs/value-monitor/tanuki_valuation/data'
+          tickers = sorted(d for d in os.listdir(val_dir) if os.path.isdir(os.path.join(val_dir, d)))
+          print(' '.join(tickers))
+          ")
+          if [ -n "$TICKERS" ]; then
+            echo "DCF bridge 対象: $TICKERS"
+            python src/tail/tail_dcf_bridge.py --ticker $TICKERS
+          else
+            echo "ティッカーなし → DCF bridge スキップ"
+          fi
+
       - name: Commit updated state
         run: |
           git config user.name  "github-actions[bot]"
@@ -107,7 +122,8 @@ jobs:
                   docs/portfolio/tail/data/review_queue.json \
                   docs/portfolio/tail/data/reviews/ \
                   docs/portfolio/tail/data/kpi/ \
-                  docs/portfolio/tail/data/tail_kpi_map.json
+                  docs/portfolio/tail/data/tail_kpi_map.json \
+                  docs/portfolio/scenario/
           if git diff --staged --quiet; then
             echo "変更なし"
           else

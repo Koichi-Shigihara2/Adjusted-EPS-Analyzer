@@ -1354,6 +1354,15 @@ def main() -> None:
                 entry["completed_at"] = now_jst.isoformat()
                 entry["review_path"]  = output_path
                 generated.append(f"{entry['ticker']} {entry['quarter']}")
+                if not args.dry_run:
+                    try:
+                        _tail_dir = os.path.dirname(os.path.abspath(__file__))
+                        if _tail_dir not in sys.path:
+                            sys.path.insert(0, _tail_dir)
+                        from tail_dcf_bridge import generate_scenario_files as _dcf_gen
+                        _dcf_gen(entry["ticker"])
+                    except Exception as _bridge_e:
+                        print(f"  [WARN] DCF bridge 失敗（スキップ）: {_bridge_e}")
         except Exception as e:
             print(f"  [ERROR] {entry['ticker']} {entry['quarter']} 失敗: {e}")
             entry["status"] = "error"
