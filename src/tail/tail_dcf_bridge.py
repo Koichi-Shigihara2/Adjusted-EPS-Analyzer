@@ -22,7 +22,7 @@ import sys
 import json
 import argparse
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # calculate_future_values を tanuki_valuation から直接 import
 _THIS_DIR  = os.path.dirname(os.path.abspath(__file__))   # src/tail
@@ -38,8 +38,9 @@ from future_values import calculate_future_values          # noqa: E402
 REVIEWS_DIR   = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "reviews")
 VALUATION_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuation", "data")
 SCENARIO_DIR  = os.path.join(_REPO_ROOT, "docs", "portfolio", "scenario")
-POSITIONS_DIR = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
-KPI_DIR       = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "kpi")
+POSITIONS_DIR         = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
+KPI_DIR               = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "kpi")
+COMMON_NORMALIZED_DIR = os.path.join(_REPO_ROOT, "docs", "common", "sec_data", "normalized")
 
 JST = timezone(timedelta(hours=9))
 
@@ -92,23 +93,52 @@ def _build_current_kpi_values(
     thesis: Optional[Dict[str, Any]],
     layer2: Optional[Dict[str, Any]],
 ) -> Dict[str, Any]:
-    """thesis.kpis の name → 最新 layer2 値のマッピングを返す"""
-    if not thesis or not layer2:
+    """layer2.kpis の全KPI → 最新値のマッピングを返す（layer2_name をキーに）"""
+    if not layer2:
         return {}
-    kpis_layer2 = layer2.get("kpis", {})
     result: Dict[str, Any] = {}
-    for kpi in (thesis.get("kpis") or []):
-        name = kpi.get("name", "")
-        l2_name = kpi.get("layer2_name", "")
-        if not name:
-            continue
-        # layer2_name があればその最新値を取得
-        lookup = l2_name or name
-        entry = kpis_layer2.get(lookup)
-        if entry:
-            data = entry.get("data", [])
-            if data:
-                result[name] = data[0].get("value")  # data[0] = 最新四半期
+    for l2_name, entry in layer2.get("kpis", {}).items():
+        data = entry.get("data", [])
+        if data:
+            result[l2_name] = data[0].get("value")
+    return result
+
+
+def _load_layer1_financials(ticker: str) -> Dict[str, Any]:
+    """SEC normalized quarterly data + latest.json から財務指標（layer1）を取得"""
+    result: Dict[str, Any] = {}
+    norm_path = os.path.join(COMMON_NORMALIZED_DIR, f"{ticker}_quarterly_normalized.json")
+    if os.path.exists(norm_path):
+        with open(norm_path, encoding="utf-8") as f:
+            data = json.load(f)
+        fields = data.get("fields", {})
+
+        def _lq(fd: list) -> Optional[Dict[str, Any]]:
+            qs = [x for x in fd if not x.get("is_annual") and not x.get("is_ytd", False)]
+            qs.sort(key=lambda x: x.get("end", ""), reverse=True)
+            return qs[0] if qs else None
+
+        rev = _lq(fields.get("Revenue", []))
+        oi  = _lq(fields.get("OperatingIncome", []))
+        sbc = _lq(fields.get("SBC", []))
+        ni  = _lq(fields.get("NetIncome", []))
+        sd  = _lq(fields.get("SharesDiluted", []))
+
+        if rev and oi and rev.get("val"):
+            result["operating_margin"] = round(oi["val"] / rev["val"], 4)
+        if sbc:
+            result["sbc_quarterly"] = sbc["val"]
+        if ni and sd and sd.get("val"):
+            result["eps_diluted"] = round(ni["val"] / sd["val"], 4)
+
+    latest_path = os.path.join(VALUATION_DIR, ticker, "latest.json")
+    if os.path.exists(latest_path):
+        with open(latest_path, encoding="utf-8") as f:
+            lat = json.load(f)
+        fwd_eps = (lat.get("components") or {}).get("forward_eps")
+        if fwd_eps:
+            result["eps_forward"] = fwd_eps
+
     return result
 
 
@@ -148,7 +178,30 @@ def generate_scenario_files(ticker: str) -> bool:
 
     thesis  = _load_thesis(ticker)
     layer2  = _load_layer2_kpi(ticker)
-    current_kpi_values = _build_current_kpi_values(thesis, layer2)
+    layer1  = _load_layer1_financials(ticker)
+
+    # kpi_current: layer2_name キーの現在値 + layer1 財務指標
+    l2_current = _build_current_kpi_values(thesis, layer2)
+    kpi_current: Dict[str, Any] = dict(l2_current)
+    kpi_layer1_keys: List[str] = []
+    for l1_src, json_key in [("operating_margin", "営業利益率"),
+                               ("sbc_quarterly",    "SBC"),
+                               ("eps_diluted",      "希薄化後EPS")]:
+        if l1_src in layer1:
+            kpi_current[json_key] = layer1[l1_src]
+            kpi_layer1_keys.append(json_key)
+
+    # kpi_format: JS側フォーマット（"usd" | "pct" | "usd_small"）
+    kpi_format: Dict[str, str] = {}
+    for key, val in kpi_current.items():
+        if key == "希薄化後EPS":
+            kpi_format[key] = "usd_small"
+        elif key == "SBC" or (val is not None and abs(val) >= 1e6):
+            kpi_format[key] = "usd"
+        elif val is not None and abs(val) <= 10:
+            kpi_format[key] = "pct"
+        else:
+            kpi_format[key] = "usd_small"
 
     scenarios = review.get("stage2", {}).get("scenarios", {})
     if not scenarios:
@@ -179,18 +232,7 @@ def generate_scenario_files(ticker: str) -> bool:
         terminal = float(sc.get("terminal_growth", 0.03))
         op_margin = float(sc.get("operating_margin_terminal", 0))
         wg       = _weighted_growth(y1, y2, y3)
-        raw_kpi_forecasts = sc.get("kpi_forecasts") or {}
-        kpi_forecasts: Dict[str, Any] = {}
-        for kpi_name, fc in raw_kpi_forecasts.items():
-            cur = current_kpi_values.get(kpi_name)
-            entry: Dict[str, Any] = {}
-            if cur is not None:
-                entry["current"] = cur
-            if isinstance(fc, dict):
-                entry.update({k: v for k, v in fc.items() if k != "current"})
-            else:
-                entry["value"] = fc
-            kpi_forecasts[kpi_name] = entry
+        kpi_forecasts = sc.get("kpi_forecasts") or {}
 
         future_vals = calculate_future_values(
             current_value     = current_iv,
@@ -218,6 +260,9 @@ def generate_scenario_files(ticker: str) -> bool:
             "current_price":        round(current_price, 2),
             "future_values":        future_vals,
             "kpi_forecasts":        kpi_forecasts,
+            "kpi_current":          kpi_current,
+            "kpi_layer1_keys":      kpi_layer1_keys,
+            "kpi_format":           kpi_format,
             "generated_at":         now_jst.isoformat(),
         }
 

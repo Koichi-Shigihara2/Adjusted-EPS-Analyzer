@@ -39,9 +39,10 @@ KPI_DIR           = os.path.join(DATA_DIR, "kpi")
 KPI_PROPOSALS_DIR = os.path.join(DATA_DIR, "kpi_proposals")
 REVIEWS_DIR       = os.path.join(DATA_DIR, "reviews")
 REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
-TANUKI_DATA_DIR   = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
-MACRO_DATA_DIR    = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
-PORTFOLIO_PATH    = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
+TANUKI_DATA_DIR       = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
+MACRO_DATA_DIR        = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
+PORTFOLIO_PATH        = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
+COMMON_NORMALIZED_DIR = os.path.join(repo_root, "docs", "common", "sec_data", "normalized")
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -155,6 +156,49 @@ def load_tanuki_valuation(ticker: str) -> Optional[Dict[str, Any]]:
         "deviation_rate":  round(data.get("upside_percent") or 0, 1),
         "tanuki_score":    data.get("tanuki_score", "N/A"),
     }
+
+
+def load_layer1_financials(ticker: str) -> Dict[str, Any]:
+    """SEC normalized quarterly data + latest.json から財務指標（layer1）を取得"""
+    result: Dict[str, Any] = {}
+
+    norm_path = os.path.join(COMMON_NORMALIZED_DIR, f"{ticker}_quarterly_normalized.json")
+    if os.path.exists(norm_path):
+        with open(norm_path, encoding="utf-8") as f:
+            data = json.load(f)
+        fields = data.get("fields", {})
+
+        def _latest_q(field_data: list) -> Optional[Dict[str, Any]]:
+            qs = [x for x in field_data
+                  if not x.get("is_annual") and not x.get("is_ytd", False)]
+            qs.sort(key=lambda x: x.get("end", ""), reverse=True)
+            return qs[0] if qs else None
+
+        rev = _latest_q(fields.get("Revenue", []))
+        oi  = _latest_q(fields.get("OperatingIncome", []))
+        sbc = _latest_q(fields.get("SBC", []))
+        ni  = _latest_q(fields.get("NetIncome", []))
+        sd  = _latest_q(fields.get("SharesDiluted", []))
+
+        if rev and oi and rev.get("val"):
+            result["operating_margin"] = round(oi["val"] / rev["val"], 4)
+        if sbc:
+            result["sbc_quarterly"] = sbc["val"]
+        if ni and sd and sd.get("val"):
+            result["eps_diluted"] = round(ni["val"] / sd["val"], 4)
+
+    latest_path = os.path.join(TANUKI_DATA_DIR, ticker, "latest.json")
+    if os.path.exists(latest_path):
+        with open(latest_path, encoding="utf-8") as f:
+            lat = json.load(f)
+        sbc_ttm = (lat.get("financial_health") or {}).get("sbc_ttm")
+        if sbc_ttm:
+            result["sbc_ttm"] = sbc_ttm
+        fwd_eps = (lat.get("components") or {}).get("forward_eps")
+        if fwd_eps:
+            result["eps_forward"] = fwd_eps
+
+    return result
 
 
 def load_macro_context() -> Optional[Dict[str, Any]]:
@@ -822,6 +866,7 @@ def build_stage2_prompt(
     stage1: Dict[str, Any],
     kpi_data: Optional[Dict[str, Any]] = None,
     thesis_kpis: Optional[List[Dict[str, Any]]] = None,
+    layer1: Optional[Dict[str, Any]] = None,
 ) -> str:
     yoy_text = _calc_yoy_text(kpi_data)
     yoy_section = f"\n## KPI 前年同期比（参考）\n{yoy_text}\n" if yoy_text else ""
@@ -829,32 +874,94 @@ def build_stage2_prompt(
 
     kpi_schema_lines = ""
     kpi_instruction = ""
-    if thesis_kpis:
-        kpi_names = [k.get("name", "") for k in thesis_kpis if k.get("name")]
-        if kpi_names:
-            schema_entries = ",\n        ".join(
-                '"' + n + '": {"1年後": 0, "3年後": 0}' for n in kpi_names
+    l2_kpis = (kpi_data or {}).get("kpis", {})
+
+    # ── KPIあり: layer2 全KPI（thesis参照に限定しない） ──
+    l2_keys: List[str] = []
+    l2_display: List[str] = []
+    l2_unit_hints: List[str] = []
+    for l2_name, entry in l2_kpis.items():
+        data = entry.get("data", [])
+        cur_val = data[0].get("value") if data else None
+        if cur_val is not None:
+            if abs(cur_val) >= 1e6:
+                l2_display.append(
+                    f"  - {l2_name}: 現在={int(cur_val):,}（USD絶対値）"
+                )
+                l2_unit_hints.append(f"  {l2_name}: USD絶対値（整数）例: {int(cur_val):,}")
+            elif abs(cur_val) <= 10:
+                l2_display.append(f"  - {l2_name}: 現在={cur_val*100:.1f}%")
+                l2_unit_hints.append(f"  {l2_name}: 比率（小数）例: {cur_val}")
+            else:
+                l2_display.append(f"  - {l2_name}: 現在={cur_val}")
+                l2_unit_hints.append(f"  {l2_name}: 数値")
+        else:
+            l2_display.append(f"  - {l2_name}（現在値取得なし）")
+            l2_unit_hints.append(f"  {l2_name}: USD絶対値（整数）")
+        l2_keys.append(l2_name)
+
+    # ── KPIなし: layer1 financial metrics ──
+    l1_keys: List[str] = []
+    l1_display: List[str] = []
+    l1_unit_hints: List[str] = []
+    if layer1:
+        if "operating_margin" in layer1:
+            l1_keys.append("営業利益率")
+            l1_display.append(
+                f"  - 営業利益率: {layer1['operating_margin']*100:.1f}%（最新四半期実績）"
             )
-            kpi_schema_lines = ',\n      "kpi_forecasts": {\n        ' + schema_entries + '\n      }'
-            kpi_lines = []
-            for k in thesis_kpis:
-                name = k.get("name", "")
-                if not name:
-                    continue
-                l2 = k.get("layer2_name", "")
-                if l2:
-                    kpi_lines.append(f"  - {name}（対応layer2: {l2} → USD絶対値（整数）で予測）")
-                elif any(x in name for x in ("率", "マージン")):
-                    kpi_lines.append(f"  - {name}（比率を小数で予測 例: 30%→0.30）")
-                else:
-                    kpi_lines.append(f"  - {name}（USD絶対値（整数）で予測）")
-            kpi_list_str = "\n".join(kpi_lines)
-            kpi_instruction = f"""
+            l1_unit_hints.append(
+                f"  営業利益率: 比率（小数）例: {layer1['operating_margin']}"
+            )
+        if "sbc_quarterly" in layer1:
+            l1_keys.append("SBC")
+            sbc_q = int(layer1["sbc_quarterly"])
+            l1_display.append(
+                f"  - SBC: {sbc_q:,}（${sbc_q/1e6:.0f}M/Q, USD絶対値, 最新四半期）"
+            )
+            l1_unit_hints.append(
+                f"  SBC: USD絶対値（整数）例: {sbc_q:,}"
+            )
+        if "eps_diluted" in layer1:
+            l1_keys.append("希薄化後EPS")
+            l1_display.append(
+                f"  - 希薄化後EPS: {layer1['eps_diluted']:.4f}（USD/株, 最新四半期）"
+            )
+            l1_unit_hints.append(
+                f"  希薄化後EPS: USD/株（小数）例: {layer1['eps_diluted']:.4f}"
+            )
+
+    all_keys = l2_keys + l1_keys
+
+    if all_keys:
+        schema_vals = ",\n          ".join(f'"{k}": 0' for k in all_keys)
+        kpi_schema_lines = (
+            ',\n      "kpi_forecasts": {\n'
+            '        "1年後": {\n          ' + schema_vals + '\n        },\n'
+            '        "3年後": {\n          ' + schema_vals + '\n        }\n'
+            '      }'
+        )
+        l2_sec   = "\n".join(l2_display)   if l2_display   else "  （なし）"
+        l1_sec   = "\n".join(l1_display)   if l1_display   else "  （なし）"
+        unit_sec = "\n".join(l2_unit_hints + l1_unit_hints)
+
+        kpi_instruction = f"""
 ## KPI予想値の指示
-kpi_forecastsには以下のKPIの1年後・3年後の予想値を必ず数値で記載してください。
-現在の実績値を起点として各シナリオの成長率・マージン前提を適用して計算してください。
-対象KPIと単位:
-{kpi_list_str}
+
+以下の2種類のデータを起点にKPI予想値を生成してください。
+
+【KPIあり（layer2実績値・高精度）】
+{l2_sec}
+→ 各シナリオの成長率を適用して1年後・3年後を予想してください。
+
+【KPIなし（財務指標・全社レベル）】
+{l1_sec}
+→ 全社成長率とシナリオの最終営業利益率を踏まえて1年後・3年後を予想してください。
+
+出力単位:
+{unit_sec}
+
+注意: 現在値が取得できている項目のみ予想値を生成してください。
 """
 
     return f"""## 銘柄: {ticker}
@@ -1200,6 +1307,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
     kpi_layer3 = load_layer3_kpi(ticker)
     macro_ctx  = load_macro_context()
     valuation  = load_tanuki_valuation(ticker)
+    layer1     = load_layer1_financials(ticker)
 
     if not thesis:
         print(f"  [ERROR] {ticker} の thesis.json がないためスキップ")
@@ -1267,13 +1375,16 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         raise
 
     # Stage 2 — 失敗しても継続
-    stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1, kpi_data, thesis_kpis=thesis.get("kpis", []))
+    stage2_prompt = build_stage2_prompt(
+        ticker, quarter, kpi_table, stage1, kpi_data,
+        thesis_kpis=thesis.get("kpis", []), layer1=layer1,
+    )
     print(f"\n  ── Stage 2: DCFパラメータ生成 ({ticker} {quarter}) ──")
     try:
         stage2_raw = call_grok(
             user_prompt=stage2_prompt,
             system_prompt=STAGE2_SYSTEM,
-            max_tokens=2000,
+            max_tokens=3000,
             temperature=0.2,
         )
         stage2 = extract_json_from_response(stage2_raw)

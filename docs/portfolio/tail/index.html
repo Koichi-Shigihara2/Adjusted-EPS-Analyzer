@@ -1248,34 +1248,56 @@ function _buildFuturePriceTable(ticker, quarter, scd, sc, s2) {
 
   // ── KPI予想値テーブル ──
   var kpiDetailsHtml = '';
-  var baseKpiFc = (scd.base || {}).kpi_forecasts;
-  if (baseKpiFc && Object.keys(baseKpiFc).length > 0) {
-    function fmtKpiVal(v) {
+  var baseKpiFc   = (scd.base || {}).kpi_forecasts || {};
+  var kpiCurrent  = (scd.base || {}).kpi_current   || {};
+  var kpiL1Keys   = (scd.base || {}).kpi_layer1_keys || [];
+  var kpiFmt      = (scd.base || {}).kpi_format     || {};
+  var allKpiKeys  = Object.keys(kpiCurrent);
+  if (allKpiKeys.length > 0 && (baseKpiFc['1年後'] || baseKpiFc['3年後'])) {
+    function fmtKv(v, fmt) {
       if (v == null) return '—';
       var n = Number(v);
       if (isNaN(n)) return String(v);
-      if (Math.abs(n) >= 1e9)  return '$' + (n / 1e9).toFixed(2) + 'B';
-      if (Math.abs(n) >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
-      if (Math.abs(n) >= 1000) return '$' + n.toFixed(0);
-      if (Math.abs(n) <= 10)   return (n * 100).toFixed(1) + '%';
+      fmt = fmt || (Math.abs(n) >= 1e6 ? 'usd' : Math.abs(n) <= 2 ? 'pct' : 'usd_small');
+      if (fmt === 'usd') {
+        if (Math.abs(n) >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+        if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(0) + 'M';
+        return '$' + n.toFixed(0);
+      }
+      if (fmt === 'pct')      return (n * 100).toFixed(1) + '%';
+      if (fmt === 'usd_small') return '$' + n.toFixed(2);
       return n.toFixed(2);
     }
-    var kfcHead = '<tr><th>KPI</th><th style="text-align:center">現在</th>' +
-      ['bear','base','bull'].map(function(s){
-        return '<th class="dcf-' + s + '" style="text-align:center">' + s.toUpperCase() + '<br><span style="font-size:9px">1年後</span></th>' +
-               '<th class="dcf-' + s + '" style="text-align:center">' + s.toUpperCase() + '<br><span style="font-size:9px">3年後</span></th>';
+    var l2Keys = allKpiKeys.filter(function(k) { return kpiL1Keys.indexOf(k) === -1; });
+    var l1Keys = allKpiKeys.filter(function(k) { return kpiL1Keys.indexOf(k) !== -1; });
+    var kfcHead = '<tr><th>KPI</th><th style="text-align:center;font-family:var(--mono);font-size:10px">現在</th>' +
+      ['bear','base','bull'].map(function(s) {
+        return '<th class="dcf-' + s + '" style="text-align:center;font-family:var(--mono);font-size:10px">' +
+               s.toUpperCase() + '<br><span style="font-size:9px">1年後</span></th>' +
+               '<th class="dcf-' + s + '" style="text-align:center;font-family:var(--mono);font-size:10px">' +
+               s.toUpperCase() + '<br><span style="font-size:9px">3年後</span></th>';
       }).join('') + '</tr>';
-    var kfcBody = Object.keys(baseKpiFc).map(function(kpiName) {
-      var curVal = (baseKpiFc[kpiName] || {}).current;
+    function buildKfcRow(kpiName, isL1) {
+      var fmt     = kpiFmt[kpiName];
+      var curVal  = kpiCurrent[kpiName];
+      var nameHtml = isL1
+        ? '<span style="color:var(--mut)">' + esc(kpiName) + '</span> <span style="font-size:9px;color:var(--mut);font-family:var(--mono)">(財務推計)</span>'
+        : esc(kpiName);
       return '<tr>' +
-        '<td style="font-size:11px">' + esc(kpiName) + '</td>' +
-        '<td class="num" style="color:var(--sub)">' + fmtKpiVal(curVal) + '</td>' +
+        '<td style="font-size:11px">' + nameHtml + '</td>' +
+        '<td class="num" style="color:var(--sub)">' + fmtKv(curVal, fmt) + '</td>' +
         ['bear','base','bull'].map(function(s) {
-          var fc = ((scd[s] || {}).kpi_forecasts || {})[kpiName] || {};
-          return '<td class="num dcf-' + s + '">' + fmtKpiVal(fc['1年後']) + '</td>' +
-                 '<td class="num dcf-' + s + '">' + fmtKpiVal(fc['3年後']) + '</td>';
+          var fc1 = ((scd[s] || {}).kpi_forecasts || {})['1年後'] || {};
+          var fc3 = ((scd[s] || {}).kpi_forecasts || {})['3年後'] || {};
+          return '<td class="num dcf-' + s + '">' + fmtKv(fc1[kpiName], fmt) + '</td>' +
+                 '<td class="num dcf-' + s + '">' + fmtKv(fc3[kpiName], fmt) + '</td>';
         }).join('') + '</tr>';
-    }).join('');
+    }
+    var kfcBody = l2Keys.map(function(k) { return buildKfcRow(k, false); }).join('');
+    if (l1Keys.length > 0) {
+      kfcBody += '<tr style="border-top:1px solid var(--bdr)"><td colspan="8" style="padding:2px 0"></td></tr>';
+      kfcBody += l1Keys.map(function(k) { return buildKfcRow(k, true); }).join('');
+    }
     kpiDetailsHtml =
       '<details style="margin-top:8px"><summary style="font-family:var(--mono);font-size:10px;' +
       'color:var(--sub);cursor:pointer;padding:4px 0;list-style:none">' +
