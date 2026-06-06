@@ -1,0 +1,95 @@
+{
+  "ticker": "PLTR",
+  "quarter": "2025Q3",
+  "generated_at": "2026-06-06T09:14:19.259267+09:00",
+  "stage1": {
+    "health_score": 62,
+    "health_label": "WATCH",
+    "summary": "商業・政府ともに売上は堅調に拡大し利益率も改善しているが、理論株価を大幅に超過する株価水準と未取得KPIの多さが健全性を低下させている。",
+    "positives": [
+      "商業売上が前年比で高成長を維持",
+      "貢献利益率が73%まで上昇し収益性が向上"
+    ],
+    "concerns": [
+      "理論株価との乖離が34.6%と大きく過大評価リスクが高い",
+      "Rule of 40やNDRなどの重要KPIが未取得で検証不能"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "成長自体はテーゼ方向と一致するが、株価水準と未検証KPIを考慮し次四半期で確認を要する",
+    "next_kpis": [
+      "米民間売上成長率（警戒40%以下）",
+      "顧客解約率（警戒5%以上）",
+      "希薄化後EPS成長率"
+    ],
+    "exit_distance": "中程度",
+    "exit_distance_reason": "AIPコモディティ化や政府独占喪失の兆候は現時点でないが、成長率30%割れが2四半期続けば距離が急接近する",
+    "optimism_bias_warning": "AI世界征服という表現に象徴される過度な長期楽観がテーゼ全体に散見される。競合の追随可能性とNDR低下リスクを過小評価していないか再検証を推奨"
+  },
+  "stage2": {
+    "ticker": "PLTR",
+    "quarter": "2025Q3",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.14,
+        "revenue_growth_y3": 0.11,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.22,
+        "rationale": "直近の急成長は継続せず、政府・商用ともに需要が減速。貢献利益率の改善も限定的で、理論株価との乖離是正圧力が強い。"
+      },
+      "base": {
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.22,
+        "revenue_growth_y3": 0.17,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.27,
+        "rationale": "商用売上の成長は継続するが、経営者発言を10%割り引いて評価。Rule of 40未達リスクを考慮し、利益率改善は緩やか。"
+      },
+      "bull": {
+        "revenue_growth_y1": 0.38,
+        "revenue_growth_y2": 0.28,
+        "revenue_growth_y3": 0.22,
+        "terminal_growth": 0.035,
+        "operating_margin_terminal": 0.32,
+        "rationale": "商用貢献利益率がさらに向上し、政府案件も堅調。ただし過大評価修正リスクを残しつつ、NDR改善を前提とした上限シナリオ。"
+      }
+    },
+    "key_assumptions": [
+      "2026Q1時点の売上を起点に、商用・政府の成長率を別途加重平均して算出",
+      "貢献利益率の改善は直近トレンドを維持するが、営業利益率への変換で20%程度の調整を適用",
+      "WACCは9.5%を固定し、terminal value算出にGordon成長モデルを採用"
+    ],
+    "risk_factors": [
+      "Rule of 40やNDRなどの重要KPI未開示により、持続可能性の検証が困難",
+      "理論株価との34.6%乖離が是正されるリスクが高く、複数シナリオで株価下落余地を内包",
+      "政府売上の依存度が高く、予算執行遅延や政策変更による急激な成長鈍化可能性"
+    ]
+  },
+  "kpi_snapshot": {
+    "Commercial売上": {
+      "2026Q1": 774173000,
+      "2025Q3": 548416000,
+      "2025Q2": 450714000,
+      "2025Q1": 396892000
+    },
+    "Government売上": {
+      "2026Q1": 858410000,
+      "2025Q3": 632676000,
+      "2025Q2": 552983000,
+      "2025Q1": 486963000
+    },
+    "貢献利益率（Commercial）": {
+      "2026Q1": 0.73,
+      "2025Q3": 0.66,
+      "2025Q2": 0.64,
+      "2025Q1": 0.61
+    }
+  },
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "37",
+    "phase": "踊り場",
+    "stealth_signal": "supply"
+  },
+  "thesis_version": 1
+}
