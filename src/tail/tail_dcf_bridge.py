@@ -38,6 +38,8 @@ from future_values import calculate_future_values          # noqa: E402
 REVIEWS_DIR   = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "reviews")
 VALUATION_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuation", "data")
 SCENARIO_DIR  = os.path.join(_REPO_ROOT, "docs", "portfolio", "scenario")
+POSITIONS_DIR = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
+KPI_DIR       = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "kpi")
 
 JST = timezone(timedelta(hours=9))
 
@@ -68,6 +70,46 @@ def _load_latest_review(ticker: str) -> Optional[Dict[str, Any]]:
             return rv
     with open(os.path.join(REVIEWS_DIR, files[0]), encoding="utf-8") as f:
         return json.load(f)
+
+
+def _load_thesis(ticker: str) -> Optional[Dict[str, Any]]:
+    path = os.path.join(POSITIONS_DIR, f"{ticker}_thesis.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _load_layer2_kpi(ticker: str) -> Optional[Dict[str, Any]]:
+    path = os.path.join(KPI_DIR, f"{ticker}_layer2.json")
+    if not os.path.exists(path):
+        return None
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _build_current_kpi_values(
+    thesis: Optional[Dict[str, Any]],
+    layer2: Optional[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """thesis.kpis の name → 最新 layer2 値のマッピングを返す"""
+    if not thesis or not layer2:
+        return {}
+    kpis_layer2 = layer2.get("kpis", {})
+    result: Dict[str, Any] = {}
+    for kpi in (thesis.get("kpis") or []):
+        name = kpi.get("name", "")
+        l2_name = kpi.get("layer2_name", "")
+        if not name:
+            continue
+        # layer2_name があればその最新値を取得
+        lookup = l2_name or name
+        entry = kpis_layer2.get(lookup)
+        if entry:
+            data = entry.get("data", [])
+            if data:
+                result[name] = data[0].get("value")  # data[0] = 最新四半期
+    return result
 
 
 def _fcf_margin(valuation: Dict[str, Any]) -> float:
@@ -104,6 +146,10 @@ def generate_scenario_files(ticker: str) -> bool:
         print(f"  [WARN] {ticker}: レビュー未発見 → スキップ")
         return False
 
+    thesis  = _load_thesis(ticker)
+    layer2  = _load_layer2_kpi(ticker)
+    current_kpi_values = _build_current_kpi_values(thesis, layer2)
+
     scenarios = review.get("stage2", {}).get("scenarios", {})
     if not scenarios:
         print(f"  [WARN] {ticker}: stage2.scenarios 未発見 → スキップ")
@@ -133,6 +179,18 @@ def generate_scenario_files(ticker: str) -> bool:
         terminal = float(sc.get("terminal_growth", 0.03))
         op_margin = float(sc.get("operating_margin_terminal", 0))
         wg       = _weighted_growth(y1, y2, y3)
+        raw_kpi_forecasts = sc.get("kpi_forecasts") or {}
+        kpi_forecasts: Dict[str, Any] = {}
+        for kpi_name, fc in raw_kpi_forecasts.items():
+            cur = current_kpi_values.get(kpi_name)
+            entry: Dict[str, Any] = {}
+            if cur is not None:
+                entry["current"] = cur
+            if isinstance(fc, dict):
+                entry.update({k: v for k, v in fc.items() if k != "current"})
+            else:
+                entry["value"] = fc
+            kpi_forecasts[kpi_name] = entry
 
         future_vals = calculate_future_values(
             current_value     = current_iv,
@@ -159,6 +217,7 @@ def generate_scenario_files(ticker: str) -> bool:
             "base_intrinsic_value": round(current_iv, 2),
             "current_price":        round(current_price, 2),
             "future_values":        future_vals,
+            "kpi_forecasts":        kpi_forecasts,
             "generated_at":         now_jst.isoformat(),
         }
 

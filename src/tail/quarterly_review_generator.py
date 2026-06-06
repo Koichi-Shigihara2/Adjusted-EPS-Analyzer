@@ -821,10 +821,42 @@ def build_stage2_prompt(
     kpi_table: str,
     stage1: Dict[str, Any],
     kpi_data: Optional[Dict[str, Any]] = None,
+    thesis_kpis: Optional[List[Dict[str, Any]]] = None,
 ) -> str:
     yoy_text = _calc_yoy_text(kpi_data)
     yoy_section = f"\n## KPI 前年同期比（参考）\n{yoy_text}\n" if yoy_text else ""
     concerns_str = json.dumps(stage1.get("concerns", []), ensure_ascii=False)
+
+    kpi_schema_lines = ""
+    kpi_instruction = ""
+    if thesis_kpis:
+        kpi_names = [k.get("name", "") for k in thesis_kpis if k.get("name")]
+        if kpi_names:
+            schema_entries = ",\n        ".join(
+                '"' + n + '": {"1年後": 0, "3年後": 0}' for n in kpi_names
+            )
+            kpi_schema_lines = ',\n      "kpi_forecasts": {\n        ' + schema_entries + '\n      }'
+            kpi_lines = []
+            for k in thesis_kpis:
+                name = k.get("name", "")
+                if not name:
+                    continue
+                l2 = k.get("layer2_name", "")
+                if l2:
+                    kpi_lines.append(f"  - {name}（対応layer2: {l2} → USD絶対値（整数）で予測）")
+                elif any(x in name for x in ("率", "マージン")):
+                    kpi_lines.append(f"  - {name}（比率を小数で予測 例: 30%→0.30）")
+                else:
+                    kpi_lines.append(f"  - {name}（USD絶対値（整数）で予測）")
+            kpi_list_str = "\n".join(kpi_lines)
+            kpi_instruction = f"""
+## KPI予想値の指示
+kpi_forecastsには以下のKPIの1年後・3年後の予想値を必ず数値で記載してください。
+現在の実績値を起点として各シナリオの成長率・マージン前提を適用して計算してください。
+対象KPIと単位:
+{kpi_list_str}
+"""
+
     return f"""## 銘柄: {ticker}
 ## 対象四半期: {quarter}
 
@@ -834,7 +866,7 @@ def build_stage2_prompt(
 ## Stage 1 評価結果
 健全度: {stage1.get('health_score', 'N/A')}点 ({stage1.get('health_label', 'N/A')})
 懸念点: {concerns_str}
-
+{kpi_instruction}
 ## DCFパラメータを生成してください
 
 以下のJSONフォーマットのみで出力してください（説明文不要）：
@@ -848,7 +880,7 @@ def build_stage2_prompt(
       "revenue_growth_y3": 0.10,
       "terminal_growth": 0.03,
       "operating_margin_terminal": 0.20,
-      "rationale": "..."
+      "rationale": "..."{kpi_schema_lines}
     }},
     "base": {{
       "revenue_growth_y1": 0.25,
@@ -856,7 +888,7 @@ def build_stage2_prompt(
       "revenue_growth_y3": 0.18,
       "terminal_growth": 0.03,
       "operating_margin_terminal": 0.25,
-      "rationale": "..."
+      "rationale": "..."{kpi_schema_lines}
     }},
     "bull": {{
       "revenue_growth_y1": 0.35,
@@ -864,7 +896,7 @@ def build_stage2_prompt(
       "revenue_growth_y3": 0.25,
       "terminal_growth": 0.035,
       "operating_margin_terminal": 0.30,
-      "rationale": "..."
+      "rationale": "..."{kpi_schema_lines}
     }}
   }},
   "key_assumptions": ["...", "..."],
@@ -1235,7 +1267,7 @@ def generate_review(entry: Dict[str, Any], dry_run: bool = False) -> Optional[st
         raise
 
     # Stage 2 — 失敗しても継続
-    stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1, kpi_data)
+    stage2_prompt = build_stage2_prompt(ticker, quarter, kpi_table, stage1, kpi_data, thesis_kpis=thesis.get("kpis", []))
     print(f"\n  ── Stage 2: DCFパラメータ生成 ({ticker} {quarter}) ──")
     try:
         stage2_raw = call_grok(

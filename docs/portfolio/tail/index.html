@@ -1246,7 +1246,46 @@ function _buildFuturePriceTable(ticker, quarter, scd, sc, s2) {
     (riskHtml  ? '<div class="dcf-sec"><div class="dcf-sec-title risk">RISK FACTORS</div><ul class="dcf-ul">' + riskHtml + '</ul></div>' : '') +
     '</div></details>';
 
-  return metaHtml + tableHtml + detailsHtml;
+  // ── KPI予想値テーブル ──
+  var kpiDetailsHtml = '';
+  var baseKpiFc = (scd.base || {}).kpi_forecasts;
+  if (baseKpiFc && Object.keys(baseKpiFc).length > 0) {
+    function fmtKpiVal(v) {
+      if (v == null) return '—';
+      var n = Number(v);
+      if (isNaN(n)) return String(v);
+      if (Math.abs(n) >= 1e9)  return '$' + (n / 1e9).toFixed(2) + 'B';
+      if (Math.abs(n) >= 1e6)  return '$' + (n / 1e6).toFixed(0) + 'M';
+      if (Math.abs(n) >= 1000) return '$' + n.toFixed(0);
+      if (Math.abs(n) <= 10)   return (n * 100).toFixed(1) + '%';
+      return n.toFixed(2);
+    }
+    var kfcHead = '<tr><th>KPI</th><th style="text-align:center">現在</th>' +
+      ['bear','base','bull'].map(function(s){
+        return '<th class="dcf-' + s + '" style="text-align:center">' + s.toUpperCase() + '<br><span style="font-size:9px">1年後</span></th>' +
+               '<th class="dcf-' + s + '" style="text-align:center">' + s.toUpperCase() + '<br><span style="font-size:9px">3年後</span></th>';
+      }).join('') + '</tr>';
+    var kfcBody = Object.keys(baseKpiFc).map(function(kpiName) {
+      var curVal = (baseKpiFc[kpiName] || {}).current;
+      return '<tr>' +
+        '<td style="font-size:11px">' + esc(kpiName) + '</td>' +
+        '<td class="num" style="color:var(--sub)">' + fmtKpiVal(curVal) + '</td>' +
+        ['bear','base','bull'].map(function(s) {
+          var fc = ((scd[s] || {}).kpi_forecasts || {})[kpiName] || {};
+          return '<td class="num dcf-' + s + '">' + fmtKpiVal(fc['1年後']) + '</td>' +
+                 '<td class="num dcf-' + s + '">' + fmtKpiVal(fc['3年後']) + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+    kpiDetailsHtml =
+      '<details style="margin-top:8px"><summary style="font-family:var(--mono);font-size:10px;' +
+      'color:var(--sub);cursor:pointer;padding:4px 0;list-style:none">' +
+      '▶ KPI予想値を表示</summary>' +
+      '<div style="margin-top:8px"><div class="tbl-wrap">' +
+      '<table class="dcf-tbl"><thead>' + kfcHead + '</thead><tbody>' + kfcBody + '</tbody></table>' +
+      '</div></div></details>';
+  }
+
+  return metaHtml + tableHtml + kpiDetailsHtml + detailsHtml;
 }
 
 function _buildLegacyDcfTable(quarter, sc, s2) {
