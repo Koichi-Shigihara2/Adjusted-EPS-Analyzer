@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-05（PEAD・Momentum Burst 削除）
+最終更新: 2026-06-07（TANUKI TAIL主要機能完了）
 
 ---
 
@@ -323,6 +323,15 @@
   - grid-template-columns: 60px + 7列でタイルをヘッダー兼任にした統合グリッドに変更
   - 日付行を降順（最新上）でタイル直下に縦連結、色分け・軸ラベル・5日平均フッター維持
   - renderAssetFlow/renderAfHeatmapを1関数に統合、旧クラス（af-grid/af-hm-*）を削除
+
+### 【TANUKI TAIL】
+- ✅ KPIステータス判定修正（layer2生値→YoY%変換・5状態管理、2026-06-06 完了）
+- ✅ Call 2定性分析（8Q KPIテーブル・layer3・stage1全結果・past_call2拡張、2026-06-06 完了）
+- ✅ tail_dcf_bridge.py（将来理論価格・3シナリオ理論株価計算、2026-06-06 完了）
+- ✅ satellite_monitor.py（4条件監視・Discord通知・JST8:00/17:00定期実行、2026-06-07 完了）
+- ✅ predictions振り返り（prediction_tracker.py・1年後KPI予測精度追跡、2026-06-07 完了）
+- ✅ journal.json（判断ログ）（投資判断記録・satellite連携・UIモーダル登録、2026-06-07 完了）
+- ✅ satellite変化通知（価格±20%・exit条件・Grokニュース・決算接近の4条件、2026-06-07 完了）
 
 ### 【Short report contrarian戦略】
 - [ ] GitHub Actions化（現在は手動実行）
