@@ -334,10 +334,11 @@ def _build_kpi_monitoring_section(
     )
 
 
-def _lookup_layer2_value(kpi_name: str, kpi_data_layer2: Dict[str, Any], quarter: str) -> Optional[Any]:
+def _lookup_layer2_value(kpi: Dict[str, Any], kpi_data_layer2: Dict[str, Any], quarter: str) -> Optional[Any]:
+    lookup_key = kpi.get("layer2_name") or kpi.get("name", "")
     kpis = kpi_data_layer2.get("kpis", {})
     for name, kinfo in kpis.items():
-        if name == kpi_name:
+        if name == lookup_key:
             for dp in kinfo.get("data", []):
                 if dp.get("quarter") == quarter:
                     return dp.get("value")
@@ -366,7 +367,7 @@ def _build_kpi_status_table(
         confidence = "high"
 
         if auto_f and kpi_data_layer2:
-            actual_val = _lookup_layer2_value(name, kpi_data_layer2, quarter)
+            actual_val = _lookup_layer2_value(k, kpi_data_layer2, quarter)
         elif name in l3_kpis:
             entry      = l3_kpis[name]
             actual_val = entry.get("value")
