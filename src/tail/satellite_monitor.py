@@ -34,6 +34,7 @@ VALUATION_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuat
 PORTFOLIO_PATH = os.path.join(_REPO_ROOT, "docs", "portfolio", "data", "portfolio.json")
 RSS_STATE_PATH = os.path.join(DATA_DIR, "rss_state.json")
 ALERTS_PATH   = os.path.join(DATA_DIR, "satellite_alerts.json")
+JOURNAL_PATH  = os.path.join(DATA_DIR, "journal.json")
 
 JST = timezone(timedelta(hours=9))
 
@@ -117,6 +118,58 @@ def _load_alerts() -> Dict[str, Any]:
 def _save_alerts(alerts: Dict[str, Any]) -> None:
     with open(ALERTS_PATH, "w", encoding="utf-8") as f:
         json.dump(alerts, f, ensure_ascii=False, indent=2)
+
+
+def _load_journal() -> Dict[str, Any]:
+    if not os.path.exists(JOURNAL_PATH):
+        return {"entries": []}
+    with open(JOURNAL_PATH, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _save_journal(journal: Dict[str, Any]) -> None:
+    with open(JOURNAL_PATH, "w", encoding="utf-8") as f:
+        json.dump(journal, f, ensure_ascii=False, indent=2)
+
+
+def _append_journal_watchlist(
+    ticker: str,
+    reason: str,
+    tags: List[str],
+    dry_run: bool = False,
+) -> None:
+    """satellite_monitorのアラートをjournal.jsonにwatchlistエントリとして追記"""
+    now_jst = datetime.now(JST)
+    date_str = now_jst.strftime("%Y-%m-%d")
+    journal = _load_journal()
+    entries = journal.get("entries", [])
+
+    # IDの重複を避けるために連番を決定
+    existing_ids = {e.get("id", "") for e in entries}
+    seq = 1
+    while f"{date_str}-{ticker}-{seq:03d}" in existing_ids:
+        seq += 1
+    entry_id = f"{date_str}-{ticker}-{seq:03d}"
+
+    entry: Dict[str, Any] = {
+        "id": entry_id,
+        "timestamp": now_jst.isoformat(),
+        "ticker": ticker,
+        "type": "watchlist",
+        "action": "satellite_alert",
+        "reason": reason,
+        "thesis_version": None,
+        "health_score_at_action": None,
+        "macro_score_at_action": None,
+        "tags": tags,
+    }
+    if not dry_run:
+        entries.append(entry)
+        journal["entries"] = entries
+        _save_journal(journal)
+        print(f"  [Journal] 追記: {entry_id} ({ticker} watchlist)")
+    else:
+        print(f"  [DRY-RUN] Journal追記予定: {entry_id} ({ticker} watchlist) — {reason[:60]}")
 
 
 # ── アラート重複制御 ─────────────────────────────────────────────
@@ -318,7 +371,7 @@ def monitor_ticker(
     dry_run: bool = False,
     skip_news: bool = False,
 ) -> List[str]:
-    """1銘柄を監視して発生した通知メッセージリストを返す"""
+    """1銘柄を監視して発生した通知メッセージリストを返す。アラート発生時はjournalにも追記する。"""
     ticker        = pos["ticker"]
     exit_cond     = pos.get("exit_condition", "（条件未設定）")
     strategy_name = pos.get("strategy_name", "")
@@ -349,6 +402,8 @@ def monitor_ticker(
           f"{' (cooldown)' if cond1_triggered and in_cooldown else ''}")
     if cond1_triggered and not in_cooldown:
         direction = "上昇" if change_pct > 0 else "下落"
+        reason_j = f"価格変動アラート: {change_pct:+.1f}%（{direction}）（自動記録）"
+        tags_j = ["satellite_alert", "price_up" if change_pct > 0 else "price_drop"]
         msg = (
             f"⚡ **{ticker}** 価格変動アラート\n"
             f"変動率: {change_pct:+.1f}% （{direction}）\n"
@@ -357,6 +412,7 @@ def monitor_ticker(
         )
         messages.append(msg)
         _record_alert(alerts, ticker, cond1_label)
+        _append_journal_watchlist(ticker, reason_j, tags_j, dry_run=dry_run)
 
     # ── 条件② エグジット数値充足 ──
     cond2_triggered, target = _check_exit_numeric(ticker, current_price, exit_cond, entry_price)
@@ -368,6 +424,7 @@ def monitor_ticker(
     else:
         print(f"    ②エグジット数値: 数値抽出不可（定性条件）")
     if cond2_triggered and not in_cooldown2:
+        reason_j = f"エグジット条件充足: 目標${target:.2f}到達（自動記録）"
         msg = (
             f"🚨 **{ticker}** エグジット条件充足\n"
             f"条件: {exit_cond}\n"
@@ -375,6 +432,7 @@ def monitor_ticker(
         )
         messages.append(msg)
         _record_alert(alerts, ticker, cond2_label)
+        _append_journal_watchlist(ticker, reason_j, ["satellite_alert", "exit_target"], dry_run=dry_run)
 
     # ── 条件③ テーゼ否定ニュース ──
     cond3_label = "thesis_news"
@@ -387,14 +445,17 @@ def monitor_ticker(
         news_triggered = news.get("alert", False)
         print(f"    ③テーゼ否定ニュース: {'🔔 TRIGGERED' if news_triggered else 'OK (なし)'}")
         if news_triggered:
+            news_title = news.get('news_title', '(タイトル不明)')
+            reason_j = f"テーゼ否定ニュース検知: {news_title[:80]}（自動記録）"
             msg = (
                 f"📰 **{ticker}** 要注意ニュース\n"
-                f"{news.get('news_title', '(タイトル不明)')}\n"
+                f"{news_title}\n"
                 f"関連性: {news.get('relevance', '')}\n"
                 f"URL: {news.get('news_url', 'N/A')}"
             )
             messages.append(msg)
             _record_alert(alerts, ticker, cond3_label)
+            _append_journal_watchlist(ticker, reason_j, ["satellite_alert", "thesis_news"], dry_run=dry_run)
 
     # ── 条件④ 決算接近 ──
     cond4_triggered, est_date, days_until = _check_earnings_approach(ticker, rss_state)
@@ -407,6 +468,7 @@ def monitor_ticker(
     else:
         print(f"    ④決算接近: rss_stateデータなし → スキップ")
     if cond4_triggered and not in_cooldown4:
+        reason_j = f"決算接近: 推定{est_date}（約{days_until}日後）（自動記録）"
         msg = (
             f"📅 **{ticker}** 決算接近\n"
             f"推定決算日: {est_date}（約{days_until}日後）\n"
@@ -414,6 +476,7 @@ def monitor_ticker(
         )
         messages.append(msg)
         _record_alert(alerts, ticker, cond4_label)
+        _append_journal_watchlist(ticker, reason_j, ["satellite_alert", "earnings_approach"], dry_run=dry_run)
 
     return messages
 

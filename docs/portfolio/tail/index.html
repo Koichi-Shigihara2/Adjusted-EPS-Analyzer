@@ -280,6 +280,33 @@
     .pred-dn  { color: var(--red); }
     .pred-badge { font-size: 9px; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,.08); }
 
+    /* ── Journal section ── */
+    .journal-entry { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(30,40,64,.4); }
+    .journal-entry:last-child { border-bottom: none; }
+    .journal-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .journal-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px; }
+    .journal-ticker { font-family: var(--mono); font-weight: 600; font-size: 12px; }
+    .journal-type { font-family: var(--mono); font-size: 10px; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,.06); color: var(--sub); }
+    .journal-date { font-family: var(--mono); font-size: 10px; color: var(--mut); }
+    .journal-reason { font-size: 12px; color: var(--txt); line-height: 1.5; }
+    .journal-detail { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-top: 4px; }
+    .journal-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+    .journal-tag { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: rgba(255,255,255,.05); color: var(--mut); border: 1px solid rgba(255,255,255,.08); }
+    .journal-filter { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+    .journal-filter select { background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); padding: 5px 8px; border-radius: 4px; font-size: 11px; font-family: var(--mono); }
+    .journal-filter-label { font-family: var(--mono); font-size: 10px; color: var(--mut); }
+    .jnl-btn { font-size: 11px; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--bdr); background: var(--sur2); color: var(--sub); cursor: pointer; }
+    .jnl-btn:hover { color: var(--acc); border-color: var(--acc); }
+    /* ── Journal modal ── */
+    .jmod-field { margin-bottom: 14px; }
+    .jmod-field label { font-family: var(--mono); font-size: 10px; color: var(--sub); display: block; margin-bottom: 5px; }
+    .jmod-field input, .jmod-field select, .jmod-field textarea { width: 100%; box-sizing: border-box; background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); padding: 7px 9px; border-radius: 4px; font-size: 12px; font-family: inherit; resize: vertical; }
+    .jmod-field textarea { min-height: 72px; }
+    .jmod-row { display: flex; gap: 12px; }
+    .jmod-row .jmod-field { flex: 1; }
+    .jmod-extra { display: none; }
+    .jmod-extra.show { display: block; }
+
     /* ── KPI tab ── */
     .kpi-card { background: var(--sur2); border-radius: 4px; padding: 14px; margin-bottom: 14px; }
     .kpi-card-name { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-bottom: 8px; }
@@ -413,6 +440,25 @@
       </tbody>
     </table>
   </div>
+
+  <!-- ── Journal section ── -->
+  <div class="sec" style="margin-top:40px">DECISION LOG</div>
+  <div style="margin-bottom:12px" class="journal-filter">
+    <span class="journal-filter-label">TICKER</span>
+    <select id="jnl-filter-ticker" onchange="renderJournal()">
+      <option value="">全銘柄</option>
+    </select>
+    <span class="journal-filter-label" style="margin-left:8px">TYPE</span>
+    <select id="jnl-filter-type" onchange="renderJournal()">
+      <option value="">全タイプ</option>
+      <option value="entry">🟢 entry</option>
+      <option value="exit">🔴 exit</option>
+      <option value="thesis_revision">🔵 thesis_revision</option>
+      <option value="watchlist">🟡 watchlist</option>
+      <option value="memo">⚪ memo</option>
+    </select>
+  </div>
+  <div id="journal-list" style="min-height:60px"></div>
 
   <div class="sec" style="margin-top:40px">NEW POSITION</div>
 
@@ -569,6 +615,78 @@
   </div>
 </div>
 
+<!-- ── Journal Modal ───────────────────────────────── -->
+<div class="modal-ov" id="jnl-modal-ov" onclick="handleJnlOverlayClick(event)" style="display:none">
+  <div class="modal-box" style="max-width:500px;width:94vw">
+    <div class="modal-head">
+      <span id="jnl-modal-title" style="font-family:var(--mono);font-size:13px">判断ログ登録</span>
+      <button class="modal-close" onclick="closeJournalModal()">✕</button>
+    </div>
+    <div style="padding:20px">
+      <div class="jmod-field">
+        <label>TICKER</label>
+        <input type="text" id="jnl-ticker" readonly style="color:var(--acc);font-weight:600">
+      </div>
+      <div class="jmod-row">
+        <div class="jmod-field">
+          <label>TYPE <span class="req">*</span></label>
+          <select id="jnl-type" onchange="onJnlTypeChange()">
+            <option value="entry">🟢 entry（買い）</option>
+            <option value="exit">🔴 exit（売り）</option>
+            <option value="thesis_revision">🔵 thesis_revision（テーゼ修正）</option>
+            <option value="watchlist">🟡 watchlist（監視強化）</option>
+            <option value="memo">⚪ memo（メモ）</option>
+          </select>
+        </div>
+        <div class="jmod-field">
+          <label>DATE</label>
+          <input type="date" id="jnl-date">
+        </div>
+      </div>
+      <div class="jmod-field">
+        <label>REASON <span class="req">*</span></label>
+        <textarea id="jnl-reason" placeholder="判断理由・背景を記入してください"></textarea>
+      </div>
+      <!-- entry / exit 追加項目 -->
+      <div class="jmod-extra" id="jnl-trade-fields">
+        <div class="jmod-row">
+          <div class="jmod-field">
+            <label>PRICE（任意）</label>
+            <input type="number" id="jnl-price" placeholder="例: 136.77" step="0.01">
+          </div>
+          <div class="jmod-field">
+            <label>SHARES（任意）</label>
+            <input type="number" id="jnl-shares" placeholder="例: 50" step="1">
+          </div>
+        </div>
+      </div>
+      <!-- thesis_revision 追加項目 -->
+      <div class="jmod-extra" id="jnl-revision-fields">
+        <div class="jmod-field">
+          <label>修正箇所</label>
+          <input type="text" id="jnl-revised-item" placeholder="例: エグジット条件">
+        </div>
+        <div class="jmod-field">
+          <label>修正前</label>
+          <textarea id="jnl-old-thesis" style="min-height:50px" placeholder="修正前の内容"></textarea>
+        </div>
+        <div class="jmod-field">
+          <label>修正後</label>
+          <textarea id="jnl-new-thesis" style="min-height:50px" placeholder="修正後の内容"></textarea>
+        </div>
+      </div>
+      <div class="jmod-field">
+        <label>TAGS（カンマ区切り・任意）</label>
+        <input type="text" id="jnl-tags" placeholder="例: 決算後, 追加購入">
+      </div>
+      <div id="jnl-status" style="font-family:var(--mono);font-size:11px;margin-bottom:12px;display:none"></div>
+      <button class="btn btn-register" onclick="registerJournal()" id="jnl-submit-btn">
+        保存 → GitHub に記録
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── KPI Setup Modal ──────────────────────────────── -->
 <div class="kpi-modal-ov" id="kpi-modal-ov" onclick="handleKpiOverlayClick(event)">
   <div class="kpi-modal-box" id="kpi-modal-box">
@@ -603,6 +721,7 @@ var kpiModalTicker  = null;
 var loadedProposals = {};        // { PLTR: proposalData }
 var loadedScenarios      = {};   // { PLTR: { bear: {}, base: {}, bull: {} } }
 var predictionHistory    = {};   // { PLTR: [...], SOFI: [...], TSLA: [...] }
+var journalData          = [];   // entries array
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点'];
 var TABS_SAT  = ['戦略'];
@@ -665,7 +784,7 @@ function loadPositions() {
       items.forEach(function (p) { if (p && p.ticker) loadedPositions[p.ticker] = p; });
     });
 
-  Promise.all([posP, loadReviewQueue(), loadPortfolio(), loadPredictionHistory()]).then(function () {
+  Promise.all([posP, loadReviewQueue(), loadPortfolio(), loadPredictionHistory(), loadJournal()]).then(function () {
     var satTickers = Object.values(loadedPositions)
       .filter(function (p) { return p.type === 'satellite' && p.status !== 'archived'; })
       .map(function (p) { return p.ticker; });
@@ -683,6 +802,17 @@ function loadPredictionHistory() {
     .catch(function () { return {}; })
     .then(function (data) {
       Object.assign(predictionHistory, data);
+    });
+}
+
+function loadJournal() {
+  return fetch('data/journal.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : { entries: [] }; })
+    .catch(function () { return { entries: [] }; })
+    .then(function (data) {
+      journalData = (data.entries || []).slice().reverse(); // 新しい順
+      renderJournal();
+      _populateJournalTickerFilter();
     });
 }
 
@@ -785,6 +915,7 @@ function renderOverview() {
   renderSatTable(satItems);
   renderArchiveTable(archItems);
   document.getElementById('archive-count').textContent = archItems.length ? '(' + archItems.length + ')' : '';
+  renderJournal();
 }
 
 function renderCoreTable(items) {
@@ -810,7 +941,8 @@ function renderCoreTable(items) {
       '<td class="num">' + entryPrice + '</td>',
       '<td class="num" style="color:var(--mut)">—</td>',
       '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
-      '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
+      '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
+        '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',
       '</tr>'
     ].join('');
   }).join('');
@@ -851,7 +983,8 @@ function renderSatTable(items) {
       '<td class="num">' + plHtml + '</td>',
       '<td style="font-size:12px;color:var(--sub)">' + exitCond + '</td>',
       '<td class="num"><span class="days-badge">' + esc(String(holdDays)) + '</span></td>',
-      '<td><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button></td>',
+      '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
+        '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',
       '</tr>'
     ].join('');
   }).join('');
@@ -1130,6 +1263,175 @@ function toggleHist(el) {
   var body = el.nextElementSibling;
   var open = body.classList.toggle('open');
   el.querySelector('span:first-child').textContent = open ? '▼' : '▶';
+}
+
+/* ─── Journal ─── */
+var JOURNAL_ICONS = { entry: '🟢', exit: '🔴', thesis_revision: '🔵', watchlist: '🟡', memo: '⚪' };
+
+function _populateJournalTickerFilter() {
+  var sel = document.getElementById('jnl-filter-ticker');
+  if (!sel) return;
+  var tickers = Array.from(new Set(journalData.map(function (e) { return e.ticker; }))).sort();
+  sel.innerHTML = '<option value="">全銘柄</option>' +
+    tickers.map(function (t) { return '<option value="' + t + '">' + t + '</option>'; }).join('');
+}
+
+function renderJournal() {
+  var list = document.getElementById('journal-list');
+  if (!list) return;
+  var filterTicker = (document.getElementById('jnl-filter-ticker') || {}).value || '';
+  var filterType   = (document.getElementById('jnl-filter-type')   || {}).value || '';
+
+  var entries = journalData.filter(function (e) {
+    if (filterTicker && e.ticker !== filterTicker) return false;
+    if (filterType   && e.type   !== filterType)   return false;
+    return true;
+  });
+
+  if (!entries.length) {
+    list.innerHTML = '<div style="font-family:var(--mono);font-size:12px;color:var(--mut);padding:20px 0">判断ログなし</div>';
+    return;
+  }
+
+  list.innerHTML = entries.map(function (e) {
+    var icon = JOURNAL_ICONS[e.type] || '⚪';
+    var date = (e.timestamp || '').slice(0, 10);
+    var detail = '';
+    if (e.price) detail += '$' + Number(e.price).toFixed(2);
+    if (e.shares) detail += (detail ? ' × ' : '') + e.shares + '株';
+    if (e.health_score_at_action != null) detail += (detail ? ' | ' : '') + 'HS:' + e.health_score_at_action;
+    var tags = (e.tags || []).map(function (t) {
+      return '<span class="journal-tag">' + esc(t) + '</span>';
+    }).join('');
+    return '<div class="journal-entry">' +
+      '<span class="journal-icon">' + icon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="journal-meta">' +
+          '<span class="journal-ticker">' + esc(e.ticker) + '</span>' +
+          '<span class="journal-type">' + esc(e.type) + '</span>' +
+          '<span class="journal-date">' + esc(date) + '</span>' +
+        '</div>' +
+        '<div class="journal-reason">' + esc(e.reason || '') + '</div>' +
+        (detail ? '<div class="journal-detail">' + esc(detail) + '</div>' : '') +
+        (tags ? '<div class="journal-tags">' + tags + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function openJournalModal(ticker) {
+  document.getElementById('jnl-ticker').value = ticker;
+  document.getElementById('jnl-modal-title').textContent = '📝 判断ログ登録 — ' + ticker;
+  document.getElementById('jnl-type').value   = 'memo';
+  document.getElementById('jnl-date').value   = new Date().toISOString().slice(0, 10);
+  document.getElementById('jnl-reason').value = '';
+  document.getElementById('jnl-price').value  = '';
+  document.getElementById('jnl-shares').value = '';
+  document.getElementById('jnl-tags').value   = '';
+  var revFields = ['jnl-revised-item', 'jnl-old-thesis', 'jnl-new-thesis'];
+  revFields.forEach(function (id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  onJnlTypeChange();
+  _showJnlStatus('', '');
+  document.getElementById('jnl-modal-ov').style.display = 'flex';
+}
+
+function closeJournalModal() {
+  document.getElementById('jnl-modal-ov').style.display = 'none';
+}
+
+function handleJnlOverlayClick(e) {
+  if (e.target === document.getElementById('jnl-modal-ov')) closeJournalModal();
+}
+
+function onJnlTypeChange() {
+  var type = document.getElementById('jnl-type').value;
+  var tradeEl = document.getElementById('jnl-trade-fields');
+  var revEl   = document.getElementById('jnl-revision-fields');
+  tradeEl.classList.toggle('show', type === 'entry' || type === 'exit');
+  revEl.classList.toggle('show',   type === 'thesis_revision');
+}
+
+function _showJnlStatus(msg, cls) {
+  var el = document.getElementById('jnl-status');
+  el.textContent = msg;
+  el.style.color = cls === 'err' ? 'var(--red)' : cls === 'ok' ? 'var(--grn)' : 'var(--sub)';
+  el.style.display = msg ? 'block' : 'none';
+}
+
+async function registerJournal() {
+  var ticker = document.getElementById('jnl-ticker').value.trim();
+  var type   = document.getElementById('jnl-type').value;
+  var dateV  = document.getElementById('jnl-date').value;
+  var reason = document.getElementById('jnl-reason').value.trim();
+
+  if (!reason) { _showJnlStatus('理由を入力してください', 'err'); return; }
+  if (!token()) { _showJnlStatus('GH TOKENを入力してください（ページ下部）', 'err'); return; }
+
+  var btn = document.getElementById('jnl-submit-btn');
+  btn.disabled = true;
+  _showJnlStatus('保存中...', '');
+
+  try {
+    // 既存journal.jsonを取得
+    var jnlPath = 'docs/portfolio/tail/data/journal.json';
+    var file = await fetchFile(jnlPath);
+    var jnl  = JSON.parse(file.content);
+
+    // ID生成
+    var existing = new Set((jnl.entries || []).map(function (e) { return e.id; }));
+    var seq = 1;
+    while (existing.has(dateV + '-' + ticker + '-' + String(seq).padStart(3, '0'))) seq++;
+    var id = dateV + '-' + ticker + '-' + String(seq).padStart(3, '0');
+
+    // 自動付与項目
+    var hs = null;
+    var reviews = loadedReviews[ticker] || {};
+    var latestQ = Object.keys(reviews).sort().pop();
+    if (latestQ) hs = (reviews[latestQ].stage1 || {}).health_score || null;
+
+    var entry = {
+      id: id,
+      timestamp: dateV + 'T00:00:00+09:00',
+      ticker: ticker,
+      type: type,
+      action: type,
+      reason: reason,
+      thesis_version: null,
+      health_score_at_action: hs,
+      macro_score_at_action: null,
+      tags: document.getElementById('jnl-tags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean),
+    };
+
+    // trade fields
+    var priceV  = parseFloat(document.getElementById('jnl-price').value);
+    var sharesV = parseInt(document.getElementById('jnl-shares').value);
+    if (!isNaN(priceV))  entry.price  = priceV;
+    if (!isNaN(sharesV)) entry.shares = sharesV;
+
+    // revision fields
+    if (type === 'thesis_revision') {
+      var ri = document.getElementById('jnl-revised-item').value.trim();
+      var ot = document.getElementById('jnl-old-thesis').value.trim();
+      var nt = document.getElementById('jnl-new-thesis').value.trim();
+      if (ri) entry.revised_item = ri;
+      if (ot) entry.old_thesis   = ot;
+      if (nt) entry.new_thesis   = nt;
+    }
+
+    jnl.entries.push(entry);
+    await commitFile(jnlPath, JSON.stringify(jnl, null, 2), 'journal: ' + ticker + ' ' + type + ' — ' + dateV, file.sha);
+
+    // ローカルを更新
+    journalData.unshift(entry);
+    _populateJournalTickerFilter();
+    renderJournal();
+    _showJnlStatus('✓ 保存完了: ' + id, 'ok');
+    setTimeout(closeJournalModal, 1500);
+  } catch (err) {
+    _showJnlStatus('エラー: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 /* ─── Tab 2: KPIトレンド ─── */
