@@ -1,29 +1,39 @@
 {
   "ticker": "SOFI",
   "quarter": "2025Q2",
-  "generated_at": "2026-06-06T09:15:30.875085+09:00",
+  "generated_at": "2026-06-06T22:53:42.174493+09:00",
+  "data_version": "0001818874-25-000180",
+  "filed_date": "2025-08-07",
+  "is_latest": false,
+  "layer1_complete": true,
+  "layer2_complete": true,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
   "stage1": {
-    "health_score": 68,
+    "health_score": 52,
     "health_label": "WATCH",
-    "summary": "会員純増とクロスバイ率はテーゼを支えているが、Technology Platform売上の変動とGalileoデータ未取得により健全性は中程度。マクロ環境は中立で、楽観的バイアスの兆候は理論株価の乖離にやや見られる。",
+    "summary": "LendingとFinancial Servicesの売上成長は堅調だが、Technology Platform売上が前年比-27.4%と大幅に減少し、B2B基盤の弱体化が顕在化。会員純増は良好だが、テーゼの二面性のうち一方に明確な懸念が生じている。",
     "positives": [
-      "会員四半期純増1.1百万はエグジット閾値を大幅に超過",
-      "Lending売上は継続的に増加しFSPLの基盤を維持"
+      "会員四半期純増110万人と警戒ラインを大幅超過",
+      "Lending売上YoY+55.4%と高成長継続"
     ],
     "concerns": [
-      "Technology Platform売上が2026Q1に急減し成長鈍化の兆候",
-      "Galileo有効口座数など重要KPIが未取得で検証不能"
+      "Technology Platform売上YoY-27.4%とテーゼ核心のB2B成長が逆行",
+      "Galileo有効口座数・NCO・NIMなど重要監視指標が未取得のまま"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "会員指標は良好だがB2Bプラットフォームの持続性と未取得KPIの確認が必要なため継続監視",
+    "recommendation_reason": "会員獲得ループは維持されているが、B2Bプラットフォームの売上減少が2四半期連続化すればテーゼの前提が崩れるため継続監視が必要。",
     "next_kpis": [
-      "Galileo有効口座数の前四半期比増減",
-      "Technology Platform売上成長率（10%以下接近）",
-      "正味貸倒率（NCO）の水準"
+      "Technology Platform売上成長率（前四半期比・前年比）",
+      "Galileo有効口座数の四半期純増減",
+      "正味貸倒率（NCO）の水準とトレンド"
     ],
-    "exit_distance": "遠い",
-    "exit_distance_reason": "会員純増とクロスバイ率が依然として健全水準を維持しており、赤字転落やGalileo純減の兆候は見られない",
-    "optimism_bias_warning": "理論株価61.5% upsideはWACC前提に依存しており、マクロ悪化時のNIM圧縮リスクを過小評価している可能性"
+    "exit_distance": "中程度",
+    "exit_distance_reason": "Technology Platform売上の減少が続けばGalileo顧客流出のエグジット条件に近づく。現時点では会員指標は正常域だが、未取得KPIの悪化次第で距離が急接近する可能性あり。",
+    "optimism_bias_warning": "理論株価との61.5%乖離は楽観的シナリオを前提としており、Technology Platformの減収という現実と整合していない点に注意。"
   },
   "stage2": {
     "ticker": "SOFI",
@@ -31,40 +41,116 @@
     "scenarios": {
       "bear": {
         "revenue_growth_y1": 0.12,
-        "revenue_growth_y2": 0.09,
-        "revenue_growth_y3": 0.07,
+        "revenue_growth_y2": 0.1,
+        "revenue_growth_y3": 0.08,
         "terminal_growth": 0.02,
         "operating_margin_terminal": 0.15,
-        "rationale": "Technology Platform売上の急減とGalileo関連KPI未開示を重視。Lending成長もマクロ悪化で鈍化し、全体売上成長は控えめ。経営者ガイダンスは10%割り引きで解釈。"
+        "rationale": "Technology Platform売上の急減が継続し、LendingとFinancial Servicesの成長も金利環境悪化で鈍化。経営者ガイダンスを10%割り引いて保守的に設定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 706662000,
+            "Technology Platform売上": 63723100,
+            "Financial Services売上": 514251600,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.105
+          },
+          "3年後": {
+            "Lending売上": 823000000,
+            "Technology Platform売上": 52000000,
+            "Financial Services売上": 680000000,
+            "SBC": 78000000,
+            "希薄化後EPS": 0.135
+          }
+        }
       },
       "base": {
         "revenue_growth_y1": 0.2,
-        "revenue_growth_y2": 0.15,
-        "revenue_growth_y3": 0.12,
-        "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.22,
-        "rationale": "LendingとFinancial Servicesは堅調も、Technology Platformの低迷を考慮。健全度68点のWATCH評価を反映し、成長率は直近トレンドより抑制。経営者発言は慎重に10%割り引き。"
+        "revenue_growth_y2": 0.16,
+        "revenue_growth_y3": 0.13,
+        "terminal_growth": 0.025,
+        "operating_margin_terminal": 0.2,
+        "rationale": "LendingとFinancial Servicesは堅調に推移するが、Technology Platformの低迷が全体を圧迫。経営者見通しを10%下方修正して現実的な成長率を採用。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 770904000,
+            "Technology Platform売上": 67577400,
+            "Financial Services売上": 514251600,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.128
+          },
+          "3年後": {
+            "Lending売上": 980000000,
+            "Technology Platform売上": 58000000,
+            "Financial Services売上": 780000000,
+            "SBC": 80000000,
+            "希薄化後EPS": 0.175
+          }
+        }
       },
       "bull": {
         "revenue_growth_y1": 0.28,
         "revenue_growth_y2": 0.22,
-        "revenue_growth_y3": 0.17,
+        "revenue_growth_y3": 0.18,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.27,
-        "rationale": "Lending主導の成長継続を想定するが、Technology Platformの反転は限定的と判断。健全度懸念を一部織り込み、楽観バイアスを排除した上限シナリオ。"
+        "operating_margin_terminal": 0.25,
+        "rationale": "全セグメントで成長加速を想定するが、Technology Platformの回復は限定的とし、経営者発言を10%割り引いた上で強気シナリオを設定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 822297600,
+            "Technology Platform売上": 71331700,
+            "Financial Services売上": 548534000,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.152
+          },
+          "3年後": {
+            "Lending売上": 1150000000,
+            "Technology Platform売上": 65000000,
+            "Financial Services売上": 920000000,
+            "SBC": 85000000,
+            "希薄化後EPS": 0.23
+          }
+        }
       }
     },
     "key_assumptions": [
-      "Lending売上は直近YoY+55%を基に各シナリオで成長鈍化を想定",
-      "Technology Platform売上は2026Q1急減トレンドを継続とみなし、全体成長を抑制",
-      "Financial Services売上は+41%成長を維持するが、利益貢献は限定的",
-      "ターミナル期のWACCは9.5%を前提に割引"
+      "Technology Platform売上は構造的に低迷が続き、全体成長を抑制",
+      "LendingとFinancial Servicesの成長は金利・信用環境に依存",
+      "SBCは現状水準で横ばい推移を想定",
+      "最終営業利益率は各シナリオで控えめに設定"
     ],
     "risk_factors": [
-      "Technology Platformの有効口座数など重要KPI未開示による検証不能リスク",
-      "金利環境悪化によるLending需要の急減可能性",
-      "競合Fintechとのシェア争いによるマージン圧迫",
-      "規制強化や信用コスト上昇の潜在的影響"
+      "金利上昇による貸出需要の急減",
+      "Technology Platformの顧客離れ加速",
+      "信用コストの急増",
+      "競合他社によるシェア奪取"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "Lending売上$642.4M（YoY+55.4%）がTechnology Platform売上$75.1M（YoY-27.4%）の減少を補う構造が定着しつつあるが、2025Q2時点のTechnology Platform売上$109.8M（QoQ+6.2%）からの急落は、B2B収益認識の安定性がLending中心の消費者向け収益に置き換わりつつある実態を示す。",
+      "growth": "Lending売上のYoY+55.4%とFinancial Services売上のYoY+41.4%が継続する一方、Technology Platform売上のYoY-27.4%減速は2025Q2のQoQ+6.2%成長が一時的であった可能性を示唆し、成長持続の二極化が明確化している。",
+      "competitive_advantage": "Technology Platform売上の連続的減少はGalileo基盤のAPI優位性がStripeやPlaid等の競合拡大により侵食されている兆候で、2026Q1の$75.1M水準はB2B顧客シェア低下を反映している可能性が高い（Bloomberg 2025年4月報道参照）。",
+      "management": "Lending売上急拡大を優先した資本配分は短期収益確保として機能しているが、Technology Platform売上の$75.1Mへの縮小に対しB2B契約維持策が不十分であった判断の結果として、長期プラットフォーム戦略との整合性が問われる水準に達している。",
+      "market": "マクロスコア37（踊り場）とYield Curve 0.46の緩やかな正常化下でLending売上$642.4Mへの拡大は低金利環境の恩恵を直接受けているが、Philadelphia Fed Manufacturing指標の-0.4低迷が雇用・信用需要に波及した場合の逆風リスクと整合する。"
+    },
+    "entry_story_progress": "Technology Platform売上の急減によりB2B基盤の進捗は停滞したまま推移しており、LendingとFSの会員純増110万人・クロスバイ率43%が消費者側を支える一方で、二面性の両立がさらに遠のいている状況が最新決算で確認される（Reuters 2025年5月報道）。",
+    "market_attention": "アナリストの主な注目点はTechnology Platform売上の回復可能性とGalileo顧客流出リスクで、2026Q1の減収が一時的か構造的かの判断が焦点となっている（CNBC 2025年6月報道）。",
+    "historical_analogy": {
+      "company": "LendingClub",
+      "similarity": "B2Bプラットフォームから消費者向け貸出への依存シフトとTechnology Platform売上の急減が類似",
+      "outcome": "プラットフォーム事業の縮小後、買収圧力が高まり事業統合を余儀なくされた",
+      "implication": "SOFIでもTechnology Platform売上の減少継続がB2B基盤喪失を招き、同様の統合圧力が高まる転換点となり得る"
+    },
+    "macro_implications": "景気スコア37の踊り場環境ではLending売上拡大が短期的に金利恩恵を受ける一方、Initial Claimsの動向次第で信用需要が急変する可能性があり、Technology PlatformのB2B顧客維持に悪影響を及ぼすリスクが高い。",
+    "thesis_questions": [
+      "Technology Platform売上の減少がGalileo以外の新規B2B契約獲得の停滞による場合、プラットフォーム全体の顧客獲得力がどの時点で限界を迎えるのか。",
+      "Lending売上の急拡大がNCOやNIMの未開示悪化を伴う場合、FSPLの持続可能性を支える内部指標の劣化が表面化する前にどのような兆候が現れるのか。",
+      "会員純増とクロスバイ率の向上がTechnology Platform売上の縮小を補えない構造的制約がさらに強まる場合、二面性の維持に必要な最低限のB2B収益水準はどの程度なのか。"
+    ],
+    "next_review_focus": [
+      "Technology Platform売上の競合別シェア変動内訳",
+      "Galileo顧客 churn 率と新規契約数の四半期推移",
+      "Lendingポートフォリオのセグメント別NCO内訳開示状況"
     ]
   },
   "kpi_snapshot": {

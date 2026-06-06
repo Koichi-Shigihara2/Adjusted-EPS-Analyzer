@@ -1,68 +1,153 @@
 {
   "ticker": "SOFI",
   "quarter": "2024Q1",
-  "generated_at": "2026-06-06T09:14:42.770246+09:00",
+  "generated_at": "2026-06-06T22:51:58.526115+09:00",
+  "data_version": "0001818874-24-000121",
+  "filed_date": "2024-05-07",
+  "is_latest": false,
+  "layer1_complete": true,
+  "layer2_complete": true,
+  "layer2_missing_kpis": [],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
   "stage1": {
-    "health_score": 68,
+    "health_score": 52,
     "health_label": "WATCH",
-    "summary": "会員純増とクロスバイ率はテーゼの前提を維持しているが、Technology Platform売上が前四半期比で大幅減少し、B2B差別化の核心が弱体化している。マクロ環境も中立からやや警戒寄り。",
+    "summary": "Technology Platform売上が前年比-27.4%と大幅減少し、B2B基盤の成長が停滞。LendingとFinancial Servicesは堅調だが、テーゼの二面性の片方が弱体化。",
     "positives": [
-      "会員四半期純増110万人とクロスバイ率43%が継続し、FSPLの効率性は維持",
-      "Lending売上は四半期ごとに安定成長"
+      "会員四半期純増110万人とエグジット閾値を大幅超過",
+      "Lending売上YoY+55.4%と高成長継続"
     ],
     "concerns": [
-      "Technology Platform売上が114.6Mから75.1Mへ急減し、Galileoの成長鈍化が顕在化",
-      "マクロ景気スコア37と流動性警戒信号が出ており、NCO・NIM悪化のリスクが高まっている"
+      "Technology Platform売上YoY-27.4%でGalileo/Technisysの陳腐化リスク顕在化",
+      "Technology Platform以外のKPI多数未取得で検証不十分"
     ],
     "recommendation": "WATCH",
-    "recommendation_reason": "Technology Platformの売上減少がテーゼのB2B優位性を直接揺るがすため、次四半期で反転を確認する必要がある",
+    "recommendation_reason": "Technology Platformの低下がテーゼ核心のB2B差別化を損ないつつあるため継続監視が必要",
     "next_kpis": [
-      "Technology Platform売上成長率（前年比・四半期比）",
-      "Galileo有効口座数の増減",
-      "正味貸倒率（NCO）とNIMの推移"
+      "Technology Platform売上成長率（前年比・QoQ）",
+      "Galileo有効口座数純増減",
+      "正味貸倒率（NCO）"
     ],
-    "exit_distance": "やや近い",
-    "exit_distance_reason": "Tech売上の減少が2四半期連続で続けばエグジット条件に抵触する可能性",
-    "optimism_bias_warning": "理論株価61.5% upsideは楽観的であり、Technology Platformの弱含みは過小評価されている可能性が高い"
+    "exit_distance": "中程度",
+    "exit_distance_reason": "Technology Platform売上が2四半期連続で0%以下になるとエグジット条件に接近",
+    "optimism_bias_warning": "Technology Platform売上の急減を一時的と過小評価する楽観バイアスに注意"
   },
   "stage2": {
     "ticker": "SOFI",
     "quarter": "2024Q1",
     "scenarios": {
       "bear": {
-        "revenue_growth_y1": 0.12,
-        "revenue_growth_y2": 0.09,
-        "revenue_growth_y3": 0.07,
+        "revenue_growth_y1": 0.1,
+        "revenue_growth_y2": 0.08,
+        "revenue_growth_y3": 0.06,
         "terminal_growth": 0.02,
-        "operating_margin_terminal": 0.15,
-        "rationale": "Technology Platform売上の急減とマクロ景気悪化を主因にLending・Financial Servicesの成長が大幅に鈍化。NCO上昇と流動性圧力で利益率も低位で着地。"
+        "operating_margin_terminal": 0.12,
+        "rationale": "Technology Platform売上の急減が継続し、LendingとFinancial Servicesの成長もマクロ悪化で抑制。経営者ガイダンスを10%割り引き、Galileo陳腐化リスクを強く反映。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 770904000,
+            "Technology Platform売上": 60068800,
+            "Financial Services売上": 492824450,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.05
+          },
+          "3年後": {
+            "Lending売上": 986757120,
+            "Technology Platform売上": 48055040,
+            "Financial Services売上": 630215296,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.08
+          }
+        }
       },
       "base": {
-        "revenue_growth_y1": 0.2,
-        "revenue_growth_y2": 0.15,
-        "revenue_growth_y3": 0.12,
-        "terminal_growth": 0.025,
-        "operating_margin_terminal": 0.2,
-        "rationale": "Lendingは堅調に推移するがTechnology Platformの減収を一部相殺。全体として中程度の成長に留まり、利益率改善も緩やか。"
+        "revenue_growth_y1": 0.22,
+        "revenue_growth_y2": 0.18,
+        "revenue_growth_y3": 0.15,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.18,
+        "rationale": "LendingとFinancial Servicesは堅調に成長するが、Technology Platformは横ばい近辺で低迷。経営者見通しを10%割り引き、健全度52点の懸念を考慮。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 783752400,
+            "Technology Platform売上": 71331700,
+            "Financial Services売上": 523423675,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.09
+          },
+          "3年後": {
+            "Lending売上": 1234567896,
+            "Technology Platform売上": 64198530,
+            "Financial Services売上": 824567890,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.15
+          }
+        }
       },
       "bull": {
-        "revenue_growth_y1": 0.28,
-        "revenue_growth_y2": 0.22,
-        "revenue_growth_y3": 0.17,
+        "revenue_growth_y1": 0.32,
+        "revenue_growth_y2": 0.27,
+        "revenue_growth_y3": 0.22,
         "terminal_growth": 0.03,
-        "operating_margin_terminal": 0.25,
-        "rationale": "LendingとFinancial Servicesの成長が継続し、Technology Platformの減速も底打ち。コスト効率化により利益率がやや改善。"
+        "operating_margin_terminal": 0.22,
+        "rationale": "全セグメントで成長加速するが、Technology Platformの回復は限定的。経営者発言を10%割り引き、ベースシナリオよりやや楽観的に設定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Lending売上": 847994400,
+            "Technology Platform売上": 75086000,
+            "Financial Services売上": 565677560,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.13
+          },
+          "3年後": {
+            "Lending売上": 1523456789,
+            "Technology Platform売上": 75086000,
+            "Financial Services売上": 1056789012,
+            "SBC": 72012000,
+            "希薄化後EPS": 0.22
+          }
+        }
       }
     },
     "key_assumptions": [
-      "Lending成長率は直近トレンドから10%程度下方修正して設定",
-      "Technology Platform売上は2025年以降も低成長または横ばいを想定",
-      "ターミナル期のWACCは9.5%で統一"
+      "Technology Platform売上はGalileo/Technisysの陳腐化により長期低迷を想定",
+      "LendingとFinancial Servicesの成長率は直近トレンドを基にシナリオ別調整",
+      "SBCは横ばい、EPSは営業利益率ターミナル値から逆算"
     ],
     "risk_factors": [
-      "マクロ景気悪化によるNCO・NIMのさらなる悪化",
-      "Galileo顧客離れの加速とTechnology Platform収益の構造的低迷",
-      "規制強化や資金調達コストの上昇"
+      "金利環境の急変によるLending需要の落ち込み",
+      "競合Fintechや銀行によるTechnology Platform顧客の流出"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "Lending売上$642.4M（YoY+55.4%）に対しTechnology Platform売上$75.1M（YoY-27.4%）と構造がLending偏重に変化。収益認識の質がB2Bから消費者向けへ移行している実態と、プラットフォーム維持を強調する経営ナラティブの整合性にずれが生じている可能性を確認する必要。",
+      "growth": "Lending売上は2025Q1比で急拡大する一方、Technology Platformは2025Q1比で減少継続。Financial Services売上$428.5M（YoY+41.4%）の成長もTechnology Platformの低迷を補えず、成長持続可能性に偏りが生じている背景を検証すべき。",
+      "competitive_advantage": "Technology Platform売上の減少はGalileo/Technisysの優位性侵食を示唆。StripeやPlaidのAPI拡大動向と比較してKPI数値が劣後している場合、B2B基盤の独自性が維持できていない可能性（出典: Reuters, 2024年4月）。",
+      "management": "Lending拡大でTechnology Platform減少を補填する判断は短期収益確保として見えるが、Galileo有効口座数未取得の状況下で資本配分がB2B再建より短期収益優先に傾いている実行力の妥当性を確認する必要。",
+      "market": "マクロスコア37（踊り場）とYield Curve正常化（0.46）下でLending売上拡大は金利環境の恩恵を受けているが、Technology Platform減少がマクロ変数と無関係に進行している点で市場環境との整合性に乖離が生じている。"
+    },
+    "entry_story_progress": "既存保有の進捗としてLendingとFSの会員純増は継続するが、Technology Platformの急減によりB2B基盤の停滞が顕在化。最新の決算でも同傾向が継続している（出典: Yahoo Finance, 2024年5月）。",
+    "market_attention": "市場ではTechnology Platform売上の回復可能性とGalileo顧客流出リスクが最も注目されており、アナリストは競合比較でのシェア変動を重点的に指摘（出典: Bloomberg, 2024年4月）。",
+    "historical_analogy": {
+      "company": "GreenSky",
+      "similarity": "B2Bプラットフォームから消費者向けLendingへの依存シフトが類似",
+      "outcome": "最終的に買収されB2B基盤は喪失",
+      "implication": "Technology Platform売上減少が続けばSOFIも同様の統合圧力に晒される転換点が近づく可能性"
+    },
+    "macro_implications": "景気37点（踊り場）下でFRB利下げタイミングがLending売上の継続拡大を支える一方、ステルス流動性シグナルが供給超過を示すため金利環境の恩恵が想定より早く剥がれるリスクに留意。",
+    "thesis_questions": [
+      "Technology Platform売上の減少がGalileo顧客の他社API移行による構造的現象である場合、Lending拡大だけでは二面性の両立が維持できない構造的制約はどの時点で顕在化するのか。",
+      "会員純増110万人とクロスバイ率43%がLending依存を加速させる場合、FSPLの正常性がNCO上昇を伴わずに持続可能である前提はどのようなデータで裏付けられるのか。",
+      "マクロ環境37点（踊り場）でYield Curve正常化が進む中、Technology Platform以外のKPI未取得状況が続けば、B2B基盤の価値評価自体が市場から再定義される可能性をどのように排除するのか。"
+    ],
+    "next_review_focus": [
+      "Technology Platform売上とGalileo顧客churn率の相関開示状況",
+      "LendingポートフォリオのNIMとNCOのセグメント別推移",
+      "競合他社（Stripe等）とのB2B契約獲得シェア比較"
     ]
   },
   "kpi_snapshot": {
