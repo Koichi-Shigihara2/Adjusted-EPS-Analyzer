@@ -976,11 +976,13 @@ def build_call2_prompt(
         )
 
     # KPI実績テーブル（直近8四半期）＋ YoY・QoQ
+    # kpi_tbl / yoy_text / qoq_text は命令文への直接埋め込みにも使用するため先に計算
+    kpi_tbl  = build_kpi_table(kpi_data, max_quarters=8) if kpi_data else "（KPIデータなし）"
+    yoy_text = _calc_yoy_text(kpi_data) if kpi_data else ""
+    qoq_text = _calc_qoq_text(kpi_data, quarter) if kpi_data else ""
+
     kpi_table_section = ""
     if kpi_data:
-        kpi_tbl  = build_kpi_table(kpi_data, max_quarters=8)
-        yoy_text = _calc_yoy_text(kpi_data)
-        qoq_text = _calc_qoq_text(kpi_data, quarter)
         kpi_table_section = f"\n## KPI実績データ（直近8四半期）\n{kpi_tbl}\n"
         if yoy_text:
             kpi_table_section += f"\n### YoY（前年同期比）\n{yoy_text}\n"
@@ -1025,12 +1027,42 @@ def build_call2_prompt(
 {health_trend_section}{past_section}{kpi_table_section}{l3_section}{kpi_section}
 ## 以下の7項目を分析してください:
 
-1. 5観点での気になる点（Web検索必須）
-   Web検索で{ticker}の{last_quarter}以降のニュース・アナリストレポート・競合動向を調べて分析してください。
-   テーゼに書かれていることの繰り返しは禁止。
-   Koichiさんが見落としている可能性がある点を重点的に指摘してください。
-   検索した情報には出典（メディア名・日付）を明示してください。
-   ビジネスモデル・成長性・競争優位・経営・市場環境の5軸で回答してください。
+1. 5観点での分析（KPI実績を起点として必ず使用すること）
+
+   【重要】以下のKPI実績データを各観点の「起点」として分析してください。
+   各観点で必ず対応するKPI数値（$額・YoY%・QoQ%等）を具体的に引用してください。
+   Web検索はKPI数値の文脈補完・競合情報確認のために使用し（数値が先、文脈が後）、
+   出典（メディア名・日付）を明示してください。
+   テーゼの言い換えは禁止。Koichiさんが見落としている視点を指摘してください。
+
+   ## 今四半期KPI実績（起点として必ず使用すること）
+{kpi_tbl}
+
+   YoY（前年同期比）:
+{yoy_text if yoy_text else "   （前年同期比データなし）"}
+
+   QoQ（前回比）:
+{qoq_text if qoq_text else "   （前回比データなし）"}
+
+   ① ビジネスモデル
+     上記KPI実績を踏まえて収益構造の変化・収益認識の質を分析する。
+     数値が示す実態と経営陣のナラティブの整合性を論じること。
+
+   ② 成長性
+     KPIのYoY・QoQ（前回比）トレンドから成長の持続可能性を分析する。
+     成長が加速・減速している部分の数値的根拠と背景理由を論じること。
+
+   ③ 競争優位
+     KPI数値が競合優位の維持・強化・侵食のどれを示しているか分析する。
+     Web検索で競合動向を確認してKPI数値と対比して補完すること。
+
+   ④ 経営
+     KPI数値から経営陣の実行力・資本配分の妥当性を評価する。
+     数値の変化が経営判断の結果として妥当かを論じること。
+
+   ⑤ 市場環境
+     マクロ環境（スコア{macro_score}・{macro_phase}）とKPIトレンドの
+     整合性を分析する。KPI数値をマクロ変数と紐づけて解釈すること。
 
 2. エントリーストーリーの進捗
    「{entry_story[:100]}」は現在どの程度実現しているか。
