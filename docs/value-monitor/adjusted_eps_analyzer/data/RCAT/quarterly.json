@@ -1,6 +1,6 @@
 {
   "ticker": "RCAT",
-  "last_updated": "2026-06-01T16:21:23.724518",
+  "last_updated": "2026-06-08T14:24:07.455486",
   "quarters": [
     {
       "gaap_eps": -0.2197259321781441,
@@ -63,9 +63,20 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する非現金費用であり、特にSBCは継続的な報酬コスト、償却費は買収後の定期費用として毎期計上される性質を持つ。市場がGAAP EPS(-0.22)で判断する場合、非現金項目の影響で企業の実力（キャッシュ生成力）を過小評価するリスクがあるが、SBCによる株式希薄化を無視した調整は実態を過大に示しており、過大評価のリスクも同時に存在する。投資家は調整の持続可能性と希薄化効果を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストであるため一過性とはみなせない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の定期的な非現金償却であり、恒常的な性格が強い。",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

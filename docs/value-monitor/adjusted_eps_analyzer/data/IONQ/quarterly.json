@@ -1,6 +1,6 @@
 {
   "ticker": "IONQ",
-  "last_updated": "2026-06-01T16:19:56.509968",
+  "last_updated": "2026-06-08T14:23:15.814361",
   "quarters": [
     {
       "gaap_eps": 2.1694467538500017,
@@ -95,9 +95,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "GAAP EPSが2.17（プラス）である一方、Adjusted EPSは-0.23（赤字）と大幅に悪化する主因は、ワラント公正価値変動による約10.5億ドルの非現金利益を調整で除去したためです。SBCと無形資産償却は恒常的な調整ですが、ワラント変動は非経常的一過性項目です。市場がGAAP EPSのみで判断する場合、IONQのコア事業の実力（継続的な赤字）を隠蔽し、企業実力を過大評価するリスクが高いです。過小評価ではなく過大評価の懸念が強く、投資家は調整後EPSとキャッシュバーン、量子コンピューティングの進捗を注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用。株式報酬関連の恒常的コストとして毎期発生。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却。恒常的な非現金費用。",
+            "confidence": 0.2
+          },
+          {
+            "item": "warrant_fv_change",
+            "snippet": "非現金・非経常のワラント時価評価変動。SPAC関連でボラティリティが高い一過性項目。",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {

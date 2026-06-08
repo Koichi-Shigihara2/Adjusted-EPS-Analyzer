@@ -1,6 +1,6 @@
 {
   "ticker": "SOUN",
-  "last_updated": "2026-06-01T16:21:51.883564",
+  "last_updated": "2026-06-08T14:24:26.295115",
   "quarters": [
     {
       "gaap_eps": -0.0582340118035465,
@@ -95,9 +95,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "調整項目のうちcontingent_consideration_fv(-3939万ドル)が大規模で、GAAP EPSを大幅に改善(損失を縮小)させる一過性要因であるため、市場がGAAP EPSのみで判断する場合に企業の実力(コア損失の大きさ)が見えにくくなっている。SBCと無形資産償却は恒常的コストだが、偶発対価変動の排除によりAdjusted EPSが-0.0945と大幅に悪化。投資家は実力より良好に見えるGAAPに過度に依拠すると過大評価リスクが高い一方、調整後ベースでは過小評価の可能性も否定できない。SBCの恒常性に特に注意が必要。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だがテック企業では継続的に発生する恒常的な報酬コストであり、毎期の事業運営に不可欠",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で定期的に発生する非現金費用であり、恒常的な調整項目",
+            "confidence": 0.25
+          },
+          {
+            "item": "contingent_consideration_fv",
+            "snippet": "非現金・非経常の買収偶発対価時価変動であり、ボラティリティが高く一過性の性質が強い",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {

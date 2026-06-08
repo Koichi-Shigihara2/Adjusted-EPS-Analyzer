@@ -1,6 +1,6 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-06-01T16:21:03.358771",
+  "last_updated": "2026-06-08T14:23:48.926498",
   "quarters": [
     {
       "gaap_eps": 0.33860471954830246,
@@ -50,9 +50,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCはPLTRのようなテック企業で恒常的に発生する報酬コストであり、非一過性の項目です。この調整によりAdjusted EPSがGAAP比で約23%上方修正されています。市場がGAAP EPSで判断する場合、SBCの影響で企業の実力（キャッシュ創出力）が過小評価される可能性がありますが、SBCは実質的な株主希薄化コストであるため、調整依存は過大評価リスクを伴います。投資家はSBCの推移、希薄化後株数、FCFを特に注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされているが、テック企業では毎期発生する恒常的コストであり、特にPLTRはSBC規模が大きい",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "QBTS",
-  "last_updated": "2026-06-01T16:21:07.891225",
+  "last_updated": "2026-06-08T14:23:56.191206",
   "quarters": [
     {
       "gaap_eps": -0.04995466077760622,
@@ -60,9 +60,25 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却は恒常的な非現金費用である一方、在庫評価損は一過性とされる。GAAP EPS(-0.05)がAdjusted EPS(-0.026)より大幅に悪いため、市場がGAAPベースで判断する場合、非現金項目を排除した企業の実力が見えにくく、過小評価の可能性が高い。ただしSBCは継続的なコスト(希薄化含む)であるため、調整を過信すると過大評価リスクもある。投資家はコア事業のキャッシュフロー持続性とSBCの希薄化効果に特に注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "毎期発生する株式報酬費用であり、恒常的な非現金費用。テック企業では継続的に計上される。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の定期的な償却費で、恒常的な性質を持つ。",
+            "confidence": 0.2
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損と明記されており、調整の根拠として非経常的。",
+            "confidence": 0.7
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "DDOG",
-  "last_updated": "2026-06-01T16:19:27.619964",
+  "last_updated": "2026-06-08T14:22:46.469865",
   "quarters": [
     {
       "gaap_eps": 0.14414458875171016,
@@ -76,9 +76,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "主な調整はSBC（恒常的・非現金だが報酬としての実質コスト）と無形資産償却（継続的買収関連）であり、一過性とは言い難い。貸倒引当異常分のみマクロ要因による一時的項目。GAAP EPS 0.14に対し調整後0.64と差が大きく、市場がGAAPベースで評価する場合、DDOGの事業実力（特に成長性）を過小評価するリスクが高い。ただしSBCの継続性と株主希薄化を考慮すると、調整後EPSを過信する過大評価リスクも存在。投資家はSBC比率のトレンドとキャッシュフローへの影響を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だがテック企業で毎期発生する恒常的報酬コスト",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で継続的に発生する経費",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響として異常変動分を調整",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {

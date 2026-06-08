@@ -1,6 +1,6 @@
 {
   "ticker": "NET",
-  "last_updated": "2026-06-01T16:20:37.400910",
+  "last_updated": "2026-06-08T14:23:36.788684",
   "quarters": [
     {
       "gaap_eps": -0.06501807869549805,
@@ -76,9 +76,25 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却は恒常的に発生する調整項目（特にSBCは114MUSDと規模が大きく、毎期発生する非現金コスト）であり、貸倒引当金異常分のみが一過性。GAAP EPSがマイナスであるため、市場が企業の実力（調整後プラスEPS）を過小評価している可能性がある。ただしSBCの恒常性と株式希薄化効果を考慮すると、調整依存度が高く過大評価リスクも存在。投資家は調整後EPSだけでなく、フリーキャッシュフローやSBCの希薄化影響を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用はテック企業で恒常的に発生する非現金報酬コストであり、毎期の事業運営に不可欠",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は過去のM&Aに基づく恒常的な非現金費用",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的な異常変動分であり、真に非経常的と判断可能",
+            "confidence": 0.75
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "LLY",
-  "last_updated": "2026-06-01T16:20:22.841356",
+  "last_updated": "2026-06-08T14:23:24.438476",
   "quarters": [
     {
       "gaap_eps": 8.255385645719388,
@@ -47,9 +47,15 @@
         }
       },
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "調整小",
+        "comment": "調整項目はSBC（株式報酬費用）のみで、これは恒常的に発生する非現金費用です。市場がGAAP EPSで判断する場合、Adjusted EPS（8.41）がGAAP（8.26）を上回るため、企業の実力（特に成長投資への人的資本配分）がやや見えにくくなり、過小評価の可能性があります。ただしSBCは毎期発生する本質的コストであり、株式希薄化効果も伴うため、調整を過度に信用すると過大評価リスクが生じます。投資家はフリーキャッシュフローと潜在株式数の増加を併せて監視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされているが、製薬企業において継続的に発生する恒常的な株式報酬コストであり、一過性ではない",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {

@@ -1,6 +1,6 @@
 {
   "ticker": "JOBY",
-  "last_updated": "2026-06-01T16:20:06.821863",
+  "last_updated": "2026-06-08T14:23:14.945948",
   "quarters": [
     {
       "gaap_eps": -0.11653375611108793,
@@ -47,9 +47,20 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析中にリクエストエラーが発生しました: Request failed: HTTPSConnectionPool(host='api.x.ai', port=443): Read timed out. (read timeout=30)",
-        "sources": []
+        "health": "過大調整",
+        "comment": "SBCと無形資産償却はともに恒常的に発生する非現金費用（成長企業では毎期計上される）であるため、Adjusted EPSは実態よりも損失を過少表示している。市場がGAAP EPSで評価する場合、企業の実力（継続的な損失規模）が正確に反映されやすく、過小評価の可能性は低い。むしろ調整を過信すると希薄化や将来キャッシュアウトを無視した過大評価リスクがある。投資家はSBCの継続性と株式希薄化効果、キャッシュバーンに注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は成長企業において毎期発生する恒常的な非現金費用であり、一過性とは言えない（confidence基準: 0.2）",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で一定期間繰り返し発生する恒常的費用と見なされ、一過性ではない（confidence基準: 0.2）",
+            "confidence": 0.2
+          }
+        ]
       }
     },
     {
