@@ -1,16 +1,16 @@
 TASK INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-06T01:37:16+09:00
-Price: $5.78
+Generated: 2026-06-09T02:28:05+09:00
+Price: $5.62
 
 [1. TANUKI SCORE]
-Classification: HOLD
-Funda_Score: 40/100
+Classification: BUY
+Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: +313.3%
-  MA200_Deviation: -49.6%
+  Deviation_Rate: +401.4%
+  MA200_Deviation: -50.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: N/A
-Comment: 割安圏(313%)で買い余地大、FCF黒字、売上安定成長
+  Analyst_Consensus: 2.75 (Hold)
+Comment: 割安圏(401%)で買い余地大、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×低効率
 Key_Metric_Y: RICE = 0.655
-Deviation_Rate: +313.3%
+Deviation_Rate: +401.4%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,19 +56,19 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $5.78
-Intrinsic_Value_BASE: $23.87
-Deviation_BASE: +313.3%
+Current_Price: $5.62
+Intrinsic_Value_BASE: $28.18
+Deviation_BASE: +401.4%
 Scenarios:
-BEAR: Growth=5.6%, IV=$21.54, Deviation=+273.0%
-BASE: Growth=8.0%, IV=$23.87, Deviation=+313.3%
-BULL: Growth=9.6%, IV=$25.53, Deviation=+342.1%
+BEAR: Growth=5.6%, IV=$25.44, Deviation=+352.7%
+BASE: Growth=8.0%, IV=$28.18, Deviation=+401.4%
+BULL: Growth=9.6%, IV=$30.13, Deviation=+436.1%
 TTM_Revenue_Growth: 10.2%
 (DCF Base vs TTM actual: -2.2pt discount)
-WACC: 16.01%
+WACC: 15.82%
 Terminal_Growth_Rate: 3.0%
-Beta: 2.054
-FCF_Base: $83.37M (直近2yr平均)
+Beta: 2.021
+FCF_Conversion_Rate: 0.7 (Industry: Information Technology Services)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $+0.05B (negative=net cash)
@@ -194,12 +194,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: N/A
-Latest_GAAP_EPS: N/A
-Adjustment_Delta: N/A
-YoY_Growth: N/A%
+Latest_Adjusted_EPS: $0.3456 (直近四半期値)
+Latest_GAAP_EPS: $0.2614
+Adjustment_Delta: $0.0842 (sbc/amortization_intangibles/loan_loss_provision_abnormal)
+YoY_Growth: 4.1%
 Recent Surprises (Adjusted EPS):
-  N/A
+  2026 Q1: Actual=$0.3456 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$0.4176 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$0.4306 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$0.3247 vs Est=N/A -> N/A%
 Definition:
 
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
@@ -211,8 +214,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 5.1x
-  Adjusted_EPS_PER: N/A
+  Market_PER_GAAP: 5.0x
+  Adjusted_EPS_PER: 3.7x (年次EPSベース: $1.5050)
+  Delta: -1.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-07
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -229,7 +233,7 @@ Compare with TANUKI G scenario for cross-validation
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
 Alpha_Premium: 0.48
-HYPE_Signal: 底打ち兆候 — 実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。
+HYPE_Signal: 実体維持・期待崩壊中 — 売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。
 Phase_History (recent 6 months):
 2026-01: Phase4 (期待剥落期)
 2026-02: Phase4 (期待剥落期)
@@ -238,10 +242,10 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 5.1x
+  PER: 5.0x
   PEG: N/A
   PS:  0.4x
-  EV_EBITDA: 4.3x
+  EV_EBITDA: 4.2x
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
 
@@ -259,9 +263,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 26.33%  (ForwardEPS $1.52 / Price $5.78)
+  Forward_Earnings_Yield: 27.06%  (ForwardEPS $1.52 / Price $5.62)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 22.03%
+  ERP: 22.76%
   ERP_Signal: 期待冷却圏（成長期待が市場に織り込まれていない）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -285,7 +289,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 12.8%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: N/A
+Analyst_Consensus: 2.75 (Hold)
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 10.2%
 Next_Earnings_Date: 2026-08-07
