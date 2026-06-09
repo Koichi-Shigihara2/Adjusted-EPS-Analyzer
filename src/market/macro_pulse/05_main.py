@@ -1474,15 +1474,15 @@ def _get_recent_events_summary(events: pd.DataFrame, target_date: date, days: in
             })
     return sorted(recent, key=lambda x: x['date'], reverse=True)
 
-def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
-                                          recent_events: list,
-                                          score_1w: int, score_1m: int,
-                                          fed_context: dict,
-                                          indicator_deltas: dict = None) -> dict:
-    """Gemini APIで週次AI解説を生成"""
-    api_key = os.environ.get("GEMINI_API_KEY", "")
+def generate_weekly_analysis_with_grok(target_date: date, score_data: dict,
+                                        recent_events: list,
+                                        score_1w: int, score_1m: int,
+                                        fed_context: dict,
+                                        indicator_deltas: dict = None) -> dict:
+    """xAI Grok APIで週次AI解説を生成"""
+    api_key = os.environ.get("XAI_API_KEY", "")
     if not api_key:
-        logger.warning("GEMINI_API_KEY not set. Generating fallback analysis.")
+        logger.warning("XAI_API_KEY not set. Generating fallback analysis.")
         return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
 
     # 指標サマリを構築（差分情報を含む）
@@ -1551,61 +1551,53 @@ def generate_weekly_analysis_with_gemini(target_date: date, score_data: dict,
 以下のJSON形式で回答してください（マークダウンなし、バッククォートなし）:
 {{"summary":"全体の景気判断を3〜4文で簡潔に（150字以内）","factor_analysis":"スコア変動の要因分析を3〜5文で。各指標の差分データを根拠として言及すること（200字以内）","watchpoints":"今後1〜2週間で注視すべきポイントを2〜3個（200字以内）","indicator_comments":"Yield Curve 10Y-2Y:コメント;HY Spread:コメント;Philadelphia Fed Manufacturing:コメント;Chicago Fed National Activity:コメント;Initial Claims 4W MA:コメント;Building Permits:コメント;Michigan Consumer Sentiment:コメント;Sahm Rule Recession Indicator:コメント の形式で必ず半角セミコロン(;)で8個に区切る。各コメントは20字以内。句読点に全角セミコロンや。を使わないこと"}}"""
 
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload = {
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    models = ["grok-3-mini", "grok-3", "grok-2-1212"]
+    text = None
+    used_model = None
+    prompt_len = len(prompt)
+    logger.info(f"Grok weekly analysis: prompt length={prompt_len} chars")
+    for model in models:
+        try:
+            logger.info(f"Grokモデル試行中: {model}")
+            r = requests.post(url, headers=headers, json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 4096,
                 "temperature": 0.3,
-                "maxOutputTokens": 4096,
-                "thinkingConfig": {"thinkingBudget": 1024}
-            }
-        }
-        prompt_len = len(prompt)
-        logger.info(f"Gemini weekly analysis: prompt length={prompt_len} chars")
-        for attempt in range(3):
-            r = requests.post(url, json=payload, headers={"Content-Type": "application/json"}, timeout=90)
-            logger.info(f"Gemini response: status={r.status_code}")
-            if r.status_code == 429:
-                try:
-                    err_body = r.text[:500]
-                    logger.warning(f"Gemini 429 body: {err_body}")
-                except Exception:
-                    pass
-                wait = 30 * (2 ** attempt)
-                if attempt < 2:
-                    logger.warning(f"Gemini rate limit. Retry in {wait}s...")
-                    time.sleep(wait)
-                    continue
-                return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
+            }, timeout=60)
             r.raise_for_status()
+            text = r.json()["choices"][0]["message"]["content"]
+            used_model = model
+            logger.info(f"Grokモデル成功: {model}")
             break
+        except Exception as e:
+            logger.warning(f"Grokモデル失敗 ({model}): {e}")
+            text = None
 
-        data = r.json()
-        # Gemini 2.5 Flash は thinking model のため parts に複数ブロックが返る
-        # text ブロックのみ結合してJSONを探す
-        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        raw_texts = []
-        for part in parts:
-            if "text" in part:
-                raw_texts.append(part["text"])
-        raw = "\n".join(raw_texts).strip()
-        logger.info(f"Gemini raw response length={len(raw)} chars, first 300: {raw[:300]}")
-        m = re.search(r'\{.*\}', raw, re.DOTALL)
-        if m:
-            result = json.loads(m.group())
-            logger.info("Weekly analysis generated via Gemini.")
-            return result
-        else:
-            logger.warning(f"No JSON found in Gemini response. Full response: {raw[:500]}")
+    if not text:
+        logger.error("すべてのGrokモデルで失敗しました")
+        return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
 
-    except Exception as e:
-        logger.warning(f"Gemini API error for weekly analysis: {e}")
+    raw = text.strip()
+    logger.info(f"Grok raw response length={len(raw)} chars, first 300: {raw[:300]}")
+    m = re.search(r'\{.*\}', raw, re.DOTALL)
+    if m:
+        result = json.loads(m.group())
+        result["_used_model"] = used_model
+        logger.info(f"Weekly analysis generated via Grok ({used_model}).")
+        return result
+    else:
+        logger.warning(f"No JSON found in Grok response. Full response: {raw[:500]}")
 
     return _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m)
 
 def _fallback_weekly_analysis(target_date, score_data, score_1w, score_1m):
-    """Gemini失敗時のフォールバック"""
+    """Grok失敗時のフォールバック"""
     score = score_data['score']
     phase = score_data['phase']
     direction = "改善" if score_1w < 0 else "悪化" if score_1w > 0 else "横ばい"
@@ -1662,8 +1654,8 @@ def run_weekly_analysis(target_date: date):
         except Exception:
             pass
 
-    # Gemini で解説生成
-    analysis = generate_weekly_analysis_with_gemini(
+    # Grok で解説生成
+    analysis = generate_weekly_analysis_with_grok(
         target_date, score_data, recent_events, score_1w, score_1m, fed_context,
         indicator_deltas
     )
@@ -1706,7 +1698,7 @@ def run_weekly_analysis(target_date: date):
         "score_change_1w": str(score_1w),
         "score_change_1m": str(score_1m),
         "surprise_alerts": _sanitize(_surprises_str),
-        "model":         "gemini-2.5-flash",
+        "model":         analysis.get("_used_model", "grok-unknown"),
         "updated_at":    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
     }
     if _surprises:

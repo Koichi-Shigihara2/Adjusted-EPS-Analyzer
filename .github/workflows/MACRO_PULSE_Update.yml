@@ -51,7 +51,7 @@ jobs:
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
           FMP_API_KEY:      ${{ secrets.FMP_API_KEY }}
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY:      ${{ secrets.XAI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
           python src/market/macro_pulse/05_main.py --date $(date -u +%Y-%m-%d)
@@ -80,7 +80,7 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'update-schedule')
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY:      ${{ secrets.XAI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
           python src/market/macro_pulse/05_main.py --update-schedule --date $(date -u +%Y-%m-%d)
@@ -91,7 +91,7 @@ jobs:
           (github.event_name == 'workflow_dispatch' && github.event.inputs.mode == 'weekly-analysis')
         env:
           FRED_API_KEY:     ${{ secrets.FRED_API_KEY }}
-          GEMINI_API_KEY:   ${{ secrets.GEMINI_API_KEY }}
+          XAI_API_KEY:      ${{ secrets.XAI_API_KEY }}
           DISCORD_WEB_HOOK: ${{ secrets.DISCORD_WEB_HOOK }}
         run: |
           echo "Waiting 60s for Gemini API rate limit cooldown..."
