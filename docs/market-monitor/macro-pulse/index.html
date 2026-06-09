@@ -1758,7 +1758,7 @@ function renderRecentSignals() {
   if(!DATA.length){wrap.innerHTML='<div class="empty">データなし</div>';return;}
 
   const today=new Date(); today.setHours(0,0,0,0);
-  const cutOld=new Date(today); cutOld.setDate(cutOld.getDate()-14);
+  const cutOld=new Date(today); cutOld.setDate(cutOld.getDate()-90);
   const cutOldMs=cutOld.getTime(), todayMs=today.getTime();
 
   const recent=[];
@@ -1779,7 +1779,7 @@ function renderRecentSignals() {
   }
 
   if(!recent.length){
-    wrap.innerHTML='<div class="empty" style="padding:24px">直近2週間に発表された指標はありません</div>';
+    wrap.innerHTML='<div class="empty" style="padding:24px">直近90日間に発表された指標はありません</div>';
     return;
   }
 
