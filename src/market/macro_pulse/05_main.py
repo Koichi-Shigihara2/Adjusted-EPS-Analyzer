@@ -1194,8 +1194,8 @@ def _fallback_regime(ff_current, zq_rate, cuts_implied):
     else:
         return {"regime":"BALANCED","dominant_concern":"BALANCED","dominant_label":"両睨み","ai_reason":f"ZQ先物の織り込みが{cuts_implied:+.1f}回でBALANCED局面と判定（AI分析なし）。"}
 
-def analyze_fomc_with_gemini(fomc_date, stmt_text, ff_current, zq_rate, cuts_implied):
-    api_key = os.environ.get("GEMINI_API_KEY", "")
+def analyze_fomc_with_grok(fomc_date, stmt_text, ff_current, zq_rate, cuts_implied):
+    api_key = os.environ.get("XAI_API_KEY", "")
     if not api_key:
         return _fallback_regime(ff_current, zq_rate, cuts_implied)
     prompt = f"""You are a Federal Reserve policy analyst. Analyze the following FOMC statement and market data.
@@ -1210,33 +1210,42 @@ Market Context:
 
 Respond ONLY in this exact JSON format (no markdown, no extra text):
 {{"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":"日本語で100字以内で判断理由を記載。"}}"""
-    try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={api_key}"
-        payload = {"contents":[{"parts":[{"text":prompt}]}],"generationConfig":{"temperature":0.1,"maxOutputTokens":1024,"thinkingConfig":{"thinkingBudget":512}}}
-        for attempt in range(3):
-            r = requests.post(url, json=payload, headers={"Content-Type":"application/json"}, timeout=60)
-            if r.status_code == 429:
-                wait = 15 * (2 ** attempt)
-                if attempt < 2:
-                    time.sleep(wait)
-                    continue
-                return _fallback_regime(ff_current, zq_rate, cuts_implied)
+    url = "https://api.x.ai/v1/chat/completions"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}",
+    }
+    models = ["grok-3-mini", "grok-3", "grok-2-1212"]
+    text = None
+    for model in models:
+        try:
+            logger.info(f"Grokモデル試行中 (FOMC): {model}")
+            r = requests.post(url, headers=headers, json={
+                "model": model,
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 1024,
+                "temperature": 0.1,
+            }, timeout=60)
             r.raise_for_status()
+            text = r.json()["choices"][0]["message"]["content"]
+            logger.info(f"Grokモデル成功 (FOMC): {model}")
             break
-        data = r.json()
-        parts = data.get("candidates", [{}])[0].get("content", {}).get("parts", [])
-        raw_texts = [part["text"] for part in parts if "text" in part]
-        raw = "\n".join(raw_texts).strip()
-        m = re.search(r'\{.*\}', raw, re.DOTALL)
-        if m:
-            parsed = json.loads(m.group())
-            _VALID_REGIMES = {"EASING", "BALANCED", "TIGHTENING"}
-            if parsed.get("regime") not in _VALID_REGIMES:
-                logger.warning(f"Gemini returned invalid regime '{parsed.get('regime')}'. Using fallback.")
-                return _fallback_regime(ff_current, zq_rate, cuts_implied)
-            return parsed
-    except Exception as e:
-        logger.warning(f"Gemini API error: {e}")
+        except Exception as e:
+            logger.warning(f"Grokモデル失敗 (FOMC) ({model}): {e}")
+            text = None
+    if not text:
+        logger.error("すべてのGrokモデルで失敗しました (FOMC)")
+        return _fallback_regime(ff_current, zq_rate, cuts_implied)
+    raw = text.strip()
+    m = re.search(r'\{.*\}', raw, re.DOTALL)
+    if m:
+        parsed = json.loads(m.group())
+        _VALID_REGIMES = {"EASING", "BALANCED", "TIGHTENING"}
+        if parsed.get("regime") not in _VALID_REGIMES:
+            logger.warning(f"Grok returned invalid regime '{parsed.get('regime')}'. Using fallback.")
+            return _fallback_regime(ff_current, zq_rate, cuts_implied)
+        return parsed
+    logger.warning(f"No JSON found in Grok response (FOMC). Full response: {raw[:500]}")
     return _fallback_regime(ff_current, zq_rate, cuts_implied)
 
 def update_fed_context(target_date: date, fred):
@@ -1274,7 +1283,7 @@ def update_fed_context(target_date: date, fred):
     else:
         fomc_date, stmt_text = fetch_latest_fomc_statement()
         if stmt_text:
-            analysis = analyze_fomc_with_gemini(
+            analysis = analyze_fomc_with_grok(
                 fomc_date or target_date.strftime("%Y-%m-%d"),
                 stmt_text, ff_current, zq_rate if zq_rate is not None else ff_current,
                 cuts_implied if cuts_implied is not None else 0)
