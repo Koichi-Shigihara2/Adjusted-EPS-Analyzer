@@ -741,7 +741,7 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
 - 前日比計算（営業日前日との比較）
 - GitHub Actionsのcron設定見直し
 
-## BUG-TTM-1: TTM Revenue GrowthがQ1単四半期YoYと混同されている
+## ✅ BUG-TTM-1 (2026-06-10 完了): TTM Revenue GrowthがQ1単四半期YoYと混同されている
 **優先度:** 高
 **分類:** バグ / pipeline.py
 
@@ -762,7 +762,7 @@ TTMは「直近4四半期合計 / 前4四半期合計 - 1」で計算する。
 
 ---
 
-## BUG-NETDEBT-1: Net Debt / Cashの定義不整合
+## ✅ BUG-NETDEBT-1 (2026-06-10 完了): Net Debt / Cashの定義不整合
 **優先度:** 高
 **分類:** バグ / pipeline.py
 
