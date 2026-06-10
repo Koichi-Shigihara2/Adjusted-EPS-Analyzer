@@ -740,3 +740,40 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
 - チャートのX軸表示（営業日のみプロット）
 - 前日比計算（営業日前日との比較）
 - GitHub Actionsのcron設定見直し
+
+## BUG-TTM-1: TTM Revenue GrowthがQ1単四半期YoYと混同されている
+**優先度:** 高
+**分類:** バグ / pipeline.py
+
+### 問題
+TTM Revenue Growthとして表示・DCF計算に使用されている値が、
+実際にはQ1単四半期のYoY成長率である場合がある。
+
+### 確認された事例
+- PLTR: 84.7%（真のTTMは約67.8%）
+- TSLA: 15.8%（真のTTMは約+2.25%）
+
+### 影響
+DCFの成長率基準値が過大評価される → 内在価値が過大になる
+
+### 修正方針
+TTMは「直近4四半期合計 / 前4四半期合計 - 1」で計算する。
+単四半期YoYとの混同を防ぐため、計算式を明示的にlog出力する。
+
+---
+
+## BUG-NETDEBT-1: Net Debt / Cashの定義不整合
+**優先度:** 高
+**分類:** バグ / pipeline.py
+
+### 問題
+Cash表示値とNet Debt計算値の参照タイミング・定義が不整合。
+
+### 確認された事例
+- PLTR: Cash $1.42B（FY2025末）vs 実際Q1末$2.29B。Net Debt -$7.18Bは短期投資含みだがCash定義と矛盾。
+- SOFI: Total Debt $0（実際$1.82B）、Cash $4.93B（実際$3.40B）。
+
+### 修正方針
+1. CashはSEC最新四半期末の値を使用（FY末ではなく直近10-Q）
+2. Net Debt = Total Debt - Cash - Short_Term_Investments と定義を統一
+3. Total Debtを明示的に取得・表示する（$0は異常値として警告）
