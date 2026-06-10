@@ -4,6 +4,40 @@
 
 ## 2026-06-10 完了
 
+### ✅ BUG-FCFBASE-2 (2026-06-10 完了): FCF赤字銘柄DCFガード
+- DCF_Reliability: HIGH/LOW を report.txt に追加（revenue_floor適用時 = LOW）
+- FCF_Base 表示を調整前後併記（実績avg: $-XX.XM を付記）
+- 「5yr平均」を実データ年数で動的化（fcf_list_raw の len を使用）
+
+### ✅ BUG-MATRIX4-1 (2026-06-10 完了): Matrix④ Y軸をFCF_History実績と統一
+- Matrix④ Key_Metric_Y を fcf_history 最新年の実績マージンに修正
+- （従来: FCF_Base/Revenue の比率 → 過大評価バイアスあり）
+
+### ✅ BUG-NETDEBT-4 (2026-06-10 完了): レポートNet Debt内訳表示
+- Total_Debt/Cash 行に ST_Invest を追加表示（残高 > 0 の場合）
+- 定義文を "Total Debt - Cash - Short_Term_Investments" に修正
+
+### ✅ BUG-WACC-DISP-1 (2026-06-10 完了): 割引率表示の分離
+- "WACC: XX%" を "Discount_Rate_Primary: 10.00%" + "WACC_CAPM_Reference: XX%" に分離
+- 定義文も両者の役割を明記
+
+### ✅ BUG-RPO-1 (2026-06-10 完了): RPO適用条件の強制
+- SECTOR_RATES["Technology"] を (1.0, "SaaS") から (0.0, "Non-SaaS") に変更
+- SaaS whitelist または industry キーワード（software/cloud/saas/internet）必須に
+- NVDA（Semiconductors）の rpo_pv が $170.8M → $0 に修正
+
+### ✅ BUG-ROEAVG-1 (2026-06-10 完了): ROE平均修正
+- reader.py: 損失年度も含む全期間を平均（従来: 連続黒字期間のみ・上方バイアスあり）
+- winsorize: |ROE| > 80% → ±80% にキャップ（CELH 119% → 80%）
+- 動的ラベル: "ROE_avg (Nyr)" 表示、外れ値処理時は "(outlier-adjusted)" タグ追加
+- SOFI: -3.9% (6yr) / CELH: -8.5% (10yr, outlier-adjusted)
+
+### ✅ FEAT-SEGCHECK-1 (2026-06-10 完了): セグメント鮮度ガード
+- segment_config.json 更新:
+  - APP: Apps segment 削除 → Software Platform 100%（2024年 Apps 売却済み）
+  - TSLA: Services and Other セグメント追加（12%）、Automotive 87%→77%
+- APP の Segment_Weighted_Growth: 34.2% → 45.0% に修正
+
 ### ✅ BUG-NETDEBT-3 (2026-06-10 完了): reader.py 主要IV計算経路修正
 - 内容: Net Debt補完が主要IVに反映されていなかった問題を解消
 - AVGO -$14 / KO -$8 の過大評価を解消

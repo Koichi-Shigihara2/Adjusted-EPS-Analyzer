@@ -414,7 +414,7 @@ def _get_rpo_application_rate(
                 return 1.0, "SaaS"
 
     SECTOR_RATES: Dict[str, Tuple[float, str]] = {
-        "Technology": (1.0, "SaaS"),
+        "Technology": (0.0, "Non-SaaS"),          # SaaSホワイトリストまたはindustryキーワード必須
         "Communication Services": (1.0, "SaaS"),
         "Consumer Cyclical": (0.0, "Consumer"),
         "Consumer Defensive": (0.0, "Consumer"),

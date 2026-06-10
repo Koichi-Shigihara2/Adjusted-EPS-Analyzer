@@ -220,6 +220,8 @@ class TanukiDataFetcher:
         fcf_avg = 0.0
         sec_diluted = 0
         roe_avg = 0.0
+        roe_years_used = 0
+        roe_outlier_adj = False
         revenue = 0.0
         rpo = 0.0
         net_cash_data = {"net_cash": 0.0, "available": False}  # BS評価補正用
@@ -254,8 +256,8 @@ class TanukiDataFetcher:
                 if sec_diluted > 0:
                     print(f"   [{ticker}] SEC shares: {sec_diluted:,.0f}")
                 
-                roe_avg = self.sec_reader.get_roe_avg(ticker, years=10)
-                print(f"   [{ticker}] SEC ROE avg: {roe_avg:.1%}")
+                roe_avg, roe_years_used, roe_outlier_adj = self.sec_reader.get_roe_avg_detail(ticker, years=10)
+                print(f"   [{ticker}] SEC ROE avg: {roe_avg:.1%} ({roe_years_used}yr)")
                 
                 revenue = self.sec_reader.get_latest_revenue(ticker)
                 print(f"   [{ticker}] SEC revenue: ${revenue:,.0f}")
@@ -449,6 +451,8 @@ class TanukiDataFetcher:
             "net_cash_data": net_cash_data,
             "diluted_shares": final_shares,
             "roe_10yr_avg": roe_avg,
+            "roe_years_used": roe_years_used,
+            "roe_outlier_adj": roe_outlier_adj,
             "current_price": current_price,
             "latest_revenue": revenue,
             "rpo": rpo,

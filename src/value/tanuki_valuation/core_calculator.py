@@ -125,6 +125,8 @@ class KoichiValuationCalculator:
         fcf_2yr_avg    = financials.get("fcf_2yr_avg", 0.0)   # v6.2追加
         diluted_shares = financials.get("diluted_shares", 0)
         roe_avg        = financials.get("roe_10yr_avg", 0.0)
+        roe_years_used = financials.get("roe_years_used", 0)
+        roe_outlier_adj = financials.get("roe_outlier_adj", False)
         latest_revenue = financials.get("latest_revenue", 0.0)
         fcf_list_raw   = financials.get("fcf_list_raw", [])
         current_price  = financials.get("current_price", 0.0)
@@ -759,6 +761,8 @@ class KoichiValuationCalculator:
                 "fcf_list_raw": fcf_list_raw,
                 "diluted_shares": diluted_shares,
                 "roe_10yr_avg": roe_avg,
+                "roe_years_used": roe_years_used,
+                "roe_outlier_adj": roe_outlier_adj,
                 "current_price": current_price,
                 "latest_revenue": latest_revenue,
                 "rpo": rpo_latest,

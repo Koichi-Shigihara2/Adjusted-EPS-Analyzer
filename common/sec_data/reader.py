@@ -143,27 +143,33 @@ class SECReader:
         return sum(fcf_list) / len(fcf_list) if fcf_list else 0.0
     
     def get_roe_avg(self, ticker: str, years: int = 10) -> float:
+        """後方互換ラッパー: get_roe_avg_detail() の value のみを返す"""
+        avg, _, _ = self.get_roe_avg_detail(ticker, years)
+        return avg
+
+    def get_roe_avg_detail(self, ticker: str, years: int = 10):
         """
         ROE平均を取得（純利益÷株主資本）
-        赤字年度を含まない直近の連続黒字期間のみ使用
+        損失年度を含む全期間を使用し、|ROE|>80%はwinsorize。
+        Returns: (roe_avg: float, years_used: int, outlier_adjusted: bool)
         """
         annual_data = self.get_annual_range(ticker, years)
-        
+
         roe_list = []
+        outlier_adjusted = False
         for data in annual_data:
             net_income = data.get("pl", {}).get("net_income")
             equity = data.get("bs", {}).get("stockholders_equity")
-            
+
             if net_income is not None and equity and equity > 0:
-                if net_income > 0:
-                    # 黒字年度のみ追加
-                    roe = net_income / equity
-                    roe_list.append(roe)
-                else:
-                    # 赤字に到達したら打ち切り（直近連続黒字のみ使用）
-                    break
-        
-        return sum(roe_list) / len(roe_list) if roe_list else 0.0
+                roe = net_income / equity
+                if abs(roe) > 0.80:
+                    roe = 0.80 if roe > 0 else -0.80
+                    outlier_adjusted = True
+                roe_list.append(roe)
+
+        avg = sum(roe_list) / len(roe_list) if roe_list else 0.0
+        return avg, len(roe_list), outlier_adjusted
     
     def get_diluted_shares(self, ticker: str) -> int:
         """

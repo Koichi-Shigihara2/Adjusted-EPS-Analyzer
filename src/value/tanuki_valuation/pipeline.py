@@ -656,7 +656,10 @@ class TanukiValuationPipeline:
         elif "セクター除外" in rice_note:
             matrix = "②収益性系"
             roe_pct = roe * 100 if roe is not None else None
-            key_metric_y = f"ROE_10yr_avg = {roe_pct:.1f}%" if roe_pct is not None else "ROE = N/A"
+            _roe_n = comps.get("roe_years_used") or "?"
+            _roe_outlier = comps.get("roe_outlier_adj", False)
+            _roe_tag = " (outlier-adjusted)" if _roe_outlier else ""
+            key_metric_y = f"ROE_avg ({_roe_n}yr) = {roe_pct:.1f}%{_roe_tag}" if roe_pct is not None else "ROE = N/A"
             qx = upside is not None and upside >= 0
             qy = roe_pct is not None and roe_pct >= 15
             yH, yL = "高ROE", "低ROE"
@@ -680,7 +683,17 @@ class TanukiValuationPipeline:
             yH, yL = "高成長", "低成長"
         else:
             matrix = "④キャッシュ創出力系"
-            fcf_margin = fcf_est.get("fcf_margin")
+            # B-2: FCF_History最新年の実績マージンを使用（FCF_Base/Revenueではなく）
+            fcf_margin = None
+            if fcf_history:
+                _fh_latest = fcf_history[-1]
+                _fh_margin = _fh_latest.get("fcf_margin")
+                _fh_fcf = _fh_latest.get("fcf")
+                _fh_rev = comps.get("latest_revenue")
+                if _fh_margin is not None:
+                    fcf_margin = _fh_margin
+                elif _fh_fcf is not None and _fh_rev:
+                    fcf_margin = _fh_fcf / _fh_rev * 100
             if fcf_margin is None:
                 fcb = comps.get("fcf_base_used")
                 rev = comps.get("latest_revenue")
@@ -965,11 +978,13 @@ class TanukiValuationPipeline:
                 _beta_is_default = json.load(_bcf).get("overrides", {}).get(ticker, {}).get("reason") == "デフォルト設定"
         except Exception:
             pass
+        _dr_primary = wacc_data.get("market_return", 0.10) if isinstance(wacc_data, dict) else 0.10
+        L.append(f"Discount_Rate_Primary: {_dr_primary*100:.2f}% (DCF discount rate used)")
         if wacc_pct is not None:
             _wacc_suffix = " (β=sector default、個別検証推奨)" if _beta_is_default else ""
-            L.append(f"WACC: {wacc_pct:.2f}%{_wacc_suffix}")
+            L.append(f"WACC_CAPM_Reference: {wacc_pct:.2f}%{_wacc_suffix}")
         else:
-            L.append("WACC: N/A")
+            L.append("WACC_CAPM_Reference: N/A")
         terminal_g_used = comps.get("terminal_growth_used")
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
@@ -1001,21 +1016,33 @@ class TanukiValuationPipeline:
             _excl_avg      = comps.get("fcf_outlier_excl_avg")
             _rd_applied    = valuation.get("rd_capitalization", {}).get("applied", False)
             _fcf_list_len  = len(comps.get("fcf_list_raw") or [])
+            _floor_applied = comps.get("fcf_floor_applied", 0) or 0
+            # B-1: DCF_Reliability判定（revenue floorが使われた場合はLOW）
+            _dcf_reliability = "LOW" if _floor_applied > 0 else "HIGH"
             _desc_parts = []
             if _excl_avg is not None:
                 _n_rem = _fcf_list_len - 1 if _fcf_list_len > 1 else 1
                 _desc_parts.append(f"外れ値除外後{_n_rem}yr平均")
             else:
+                # B-1: 実データ年数で動的化
+                _data_n = _fcf_list_len if _fcf_list_len > 0 else 5
                 _method_label = {
                     "recent_1yr":       "直近1yr（CAGR減少）",
-                    "recent_2yr":       "直近2yr平均",
-                    "avg_5yr_recovery": "5yr平均（回復判定）",
-                    "avg_5yr":          "5yr平均",
-                }.get(comps.get("fcf_base_method", ""), "5yr平均")
+                    "recent_2yr":       f"直近2yr平均",
+                    "avg_5yr_recovery": f"{_data_n}yr平均（回復判定）",
+                    "avg_5yr":          f"{_data_n}yr平均",
+                }.get(comps.get("fcf_base_method", ""), f"{_data_n}yr平均")
                 _desc_parts.append(_method_label)
             if _rd_applied:
                 _desc_parts.append("R&D補正")
-            L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")
+            # B-1: 調整前後併記（revenue floor適用時）
+            if _floor_applied > 0:
+                _fcf_raw_avg = comps.get("fcf_5yr_avg", 0) or 0
+                L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)}) [実績avg: ${_fcf_raw_avg/1e6:,.1f}M]")
+                L.append(f"DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)")
+            else:
+                L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")
+                L.append(f"DCF_Reliability: HIGH")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
         L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
@@ -1027,7 +1054,14 @@ class TanukiValuationPipeline:
         dilution_3yr = fin_health.get("dilution_3yr_annual_pct")
         _dil_sev, _dil_badge, _dil_rpt = _dilution_severity_info(dilution_3yr)
         L.append(f"  Net_Debt: ${net_debt/1e9:+.2f}B (negative=net cash)" if net_debt is not None else "  Net_Debt: N/A")
-        L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B" if total_debt is not None else "  Total_Debt: N/A")
+        _st_invest = fin_health.get("short_term_investments") or 0
+        if total_debt is not None:
+            if _st_invest > 0:
+                L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B  ST_Invest: ${_st_invest/1e9:.2f}B")
+            else:
+                L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B")
+        else:
+            L.append("  Total_Debt: N/A")
         L.append(f"  SBC_TTM: ${sbc_ttm/1e6:,.0f}M" if sbc_ttm is not None else "  SBC_TTM: N/A")
         if dilution_3yr is not None:
             L.append(f"  Dilution_3yr_Annual: {dilution_3yr:+.2f}%/yr  {_dil_badge}")
@@ -1093,6 +1127,7 @@ class TanukiValuationPipeline:
         L.append("Terminal_Value = FCF_final x (1+g) / (WACC - g)")
         L.append("WACC = Rf + Beta x (Rm - Rf)")
         L.append("Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)")
+        L.append("Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values")
         L.append("FCF_Conversion_Rate: Industry-standard ratio to estimate")
         L.append("FCF from OCF (accounts for capex intensity by sector)")
         L.append("RPO: Remaining Performance Obligation, booked future")
@@ -1101,8 +1136,13 @@ class TanukiValuationPipeline:
         L.append("for contracted-but-unrecognized revenue visibility,")
         L.append("not as additional DCF cash flow. Applied only to")
         L.append("profitable SaaS tickers with RPO/Revenue > 0.3.")
-        L.append("Net_Debt: Total Debt - Cash. Negative = net cash (safer)")
+        L.append("Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)")
+        if sector == "Financial Services":
+            L.append("⚠️ Financial_Institution_Note: For banks/fintech (e.g., SOFI), Total_Debt includes")
+            L.append("customer deposits and funding liabilities — not comparable to corporate debt.")
+            L.append("Net_Debt interpretation is limited; use equity-based metrics instead.")
         L.append("Dilution_3yr_Annual: Share count CAGR over 3 years")
+        L.append("Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)")
         L.append("3%/yr = meaningful shareholder dilution risk")
         L.append("FCF_CAGR_3yr: FCF compound growth rate (3yr)")
         L.append("Positive = improving cash generation trend")
@@ -1223,9 +1263,8 @@ class TanukiValuationPipeline:
         L.append("ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)")
         L.append("ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)")
         L.append("ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)")
-        L.append("WACC: Weighted Average Cost of Capital")
-        L.append("Primary basis: Rm=10% (Beta=0 scenario)")
-        L.append("Reference: Beta-adjusted WACC also calculated")
+        L.append("Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)")
+        L.append("WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)")
         L.append("Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency")
         L.append("Note: RICE uses Rm=10% (Beta=0) as a universal benchmark")
         L.append("for cross-ticker comparability. DCF uses ticker-specific WACC.")
@@ -1251,6 +1290,8 @@ class TanukiValuationPipeline:
             L.append("  N/A")
         L.append("Definition:")
         L.append("")
+        L.append("EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from")
+        L.append("press release figures if restatements or segment changes occurred.")
         L.append("Adjusted EPS: GAAP EPS excluding SBC, one-time charges,")
         L.append("M&A costs, and other non-recurring items")
         L.append("Adjustment items classified as:")
@@ -1279,7 +1320,10 @@ class TanukiValuationPipeline:
             pass
         L.append("PER_Comparison:")
         if per_gaap is not None:
-            L.append(f"  Market_PER_GAAP: {per_gaap:.1f}x")
+            if per_gaap > 0:
+                L.append(f"  Market_PER_GAAP: {per_gaap:.1f}x")
+            else:
+                L.append("  Market_PER_GAAP: N/M (EPS negative)")
         else:
             L.append("  Market_PER_GAAP: N/A")
         if per_adj is not None:
@@ -1425,6 +1469,8 @@ class TanukiValuationPipeline:
         L.append("Runway: Cash / Annual_FCF_Burn_Rate (years)")
         L.append("Critical for pre-profit companies; <1yr = distress risk")
         L.append("Revenue_Growth_YoY: TTM vs prior TTM")
+        L.append("Note: TTM may reflect restated (continuing operations) figures for")
+        L.append("companies that divested business units (e.g., APP Apps segment 2024).")
         L.append("Primary growth metric for RICE-excluded tickers")
         L.append("Breakeven_Estimate: Projected year when adjusted EPS turns positive")
         L.append("based on recent 4Q linear trend. Rough estimate only.")
