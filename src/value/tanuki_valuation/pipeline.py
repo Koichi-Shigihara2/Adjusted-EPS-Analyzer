@@ -1503,6 +1503,15 @@ class TanukiValuationPipeline:
                     if _cash_entries:
                         _latest_q_cash = max(_cash_entries, key=lambda e: e["end"])["val"]
                         cash = _latest_q_cash
+                    # BUG-NETDEBT-2: annual JSONでlong_term_debtが欠落した場合にnormalized値で補完
+                    if dc["lt_debt"] == 0:
+                        _lt_entries = [
+                            e for e in _norm.get("fields", {}).get("LTDebt", [])
+                            if e.get("val") is not None
+                        ]
+                        if _lt_entries:
+                            _latest_lt = max(_lt_entries, key=lambda e: e["end"])["val"]
+                            total_debt = _latest_lt + dc["st_debt"]
                 except Exception:
                     pass
 
@@ -1710,6 +1719,22 @@ class TanukiValuationPipeline:
                 pass
         return revs
 
+    def _get_normalized_lt_debt(self, ticker: str) -> float:
+        """annual JSONでlong_term_debtが欠落した場合の補完値をnormalized quarterlyから取得"""
+        norm_path = os.path.join(
+            self.repo_root, "common", "sec_data", "normalized",
+            f"{ticker}_quarterly_normalized.json"
+        )
+        try:
+            with open(norm_path, encoding="utf-8") as _f:
+                _norm = json.load(_f)
+            _lt_entries = [e for e in _norm.get("fields", {}).get("LTDebt", []) if e.get("val") is not None]
+            if _lt_entries:
+                return max(_lt_entries, key=lambda e: e["end"])["val"]
+        except Exception:
+            pass
+        return 0
+
     def _calc_g_fundamental(self, ticker: str) -> float | None:
         """最新年次データから RR×ROIC ファンダメンタル成長率を計算"""
         sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
@@ -1731,7 +1756,7 @@ class TanukiValuationPipeline:
                 operating_income=pl.get("operating_income") or 0,
                 tax_rate=0.21,
                 total_equity=bs.get("stockholders_equity") or bs.get("total_equity") or 0,
-                total_debt=(bs.get("long_term_debt") or 0) + (bs.get("short_term_debt") or 0),
+                total_debt=(bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)) + (bs.get("short_term_debt") or 0),
                 cash=bs.get("cash_and_equivalents") or 0,
                 capex=abs(cf.get("capital_expenditure") or cf.get("capital_expenditures") or 0),
                 depreciation=cf.get("depreciation_and_amortization") or cf.get("depreciation_amortization") or 0,
@@ -1814,7 +1839,7 @@ class TanukiValuationPipeline:
             if nopat <= 0:
                 return None
             equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0
-            lt_debt = bs.get("long_term_debt") or 0
+            lt_debt = bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)
             st_debt = bs.get("short_term_debt") or 0
             cash = bs.get("cash_and_equivalents") or 0
             invested_capital = equity + lt_debt + st_debt - cash
