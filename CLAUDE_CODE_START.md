@@ -148,6 +148,31 @@ python common/sec_data/audit.py
 
 ---
 
+## 重要ルール
+
+### AI APIキー管理ルール
+
+- システム全体のAI APIはxAI（XAI_API_KEY）に統一されている
+- 新規AI API呼び出しを実装する際は必ずGrok（`api.x.ai/v1/chat/completions`）を使用すること
+- モデルはフォールバック方式：`["grok-3-mini", "grok-3", "grok-2-1212"]` の順で試行
+- GeminiやOpenAI等の別APIを使用しているコードを発見した場合はGrokに移行すること
+
+### 自動生成データファイルのgit管理ルール
+
+- `docs/` 以下の自動生成JSON/CSVは `.gitattributes` で `merge=ours` 設定済み
+- `git pull --rebase` でコンフリクトが発生した場合、対象データファイルは自動でローカル版が採用される
+- 新たに自動生成データファイルを追加した場合は `.gitattributes` にも追記すること
+  （対象: `docs/market-monitor/`, `docs/portfolio/tail/data/`, `docs/value-monitor/tanuki_valuation/data/`）
+- **`git checkout --theirs` をデータファイルに使用してはならない**
+  （JSONが古いリモート版で上書きされデータが消失する）
+
+### 表示期間フィルタのルール
+
+- HTMLの日付フィルタ（`getDate()-N`）は指標の更新頻度に合わせて設定すること
+- 月次指標を含むセクションは最低90日以上を確保すること（14日では月次指標が表示されない）
+
+---
+
 ## BACKLOG優先順位の目安
 
 ### 今すぐ着手可能（優先度高・難易度低）
