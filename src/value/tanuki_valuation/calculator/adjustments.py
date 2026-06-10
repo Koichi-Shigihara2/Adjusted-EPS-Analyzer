@@ -249,6 +249,36 @@ def determine_fcf_base(
     except Exception:
         cv = 999.0
 
+    # ── TANUKI-DCF-1① FCF減少トレンド判定 ──
+    # fcf_list[0]=直近, fcf_list[-1]=最古。CAGR<-5%なら直近値を基準に使用
+    # ただし回復途上（直近>3yr平均 or 前期比+20%以上）はavg_5yr維持
+    _n = len(fcf_list) - 1
+    # 最古値が負（先行投資期）の場合はCAGR計算不能 → スキップしてCV判定に委ねる
+    _cagr = (fcf_list[0] / fcf_list[-1]) ** (1 / _n) - 1 if fcf_list[-1] > 0 else None
+    if _cagr is not None and _cagr < -0.05:
+        _fcf_3yr_avg = sum(fcf_list[:3]) / 3
+        _prev = fcf_list[1] if len(fcf_list) >= 2 else fcf_list[0]
+        _recovering_vs_mid = fcf_list[0] > _fcf_3yr_avg
+        _recovering_vs_prev = _prev > 0 and (fcf_list[0] / _prev - 1) >= 0.20
+        if _recovering_vs_mid or _recovering_vs_prev:
+            return FCFBaseResult(
+                base_fcf=fcf_5yr_avg,
+                method="avg_5yr_recovery",
+                fcf_5yr_avg=fcf_5yr_avg,
+                fcf_2yr_avg=fcf_2yr_avg,
+                cv=cv,
+                cv_threshold=threshold,
+            )
+        else:
+            return FCFBaseResult(
+                base_fcf=fcf_list[0],
+                method="recent_1yr",
+                fcf_5yr_avg=fcf_5yr_avg,
+                fcf_2yr_avg=fcf_2yr_avg,
+                cv=cv,
+                cv_threshold=threshold,
+            )
+
     # ── CV判定 ──
     if cv <= threshold:
         # 安定 → avg_5yr（成熟企業）

@@ -966,7 +966,13 @@ class TanukiValuationPipeline:
                 _n_rem = _fcf_list_len - 1 if _fcf_list_len > 1 else 1
                 _desc_parts.append(f"外れ値除外後{_n_rem}yr平均")
             else:
-                _desc_parts.append("直近2yr平均" if comps.get("fcf_base_method") == "recent_2yr" else "5yr平均")
+                _method_label = {
+                    "recent_1yr":       "直近1yr（CAGR減少）",
+                    "recent_2yr":       "直近2yr平均",
+                    "avg_5yr_recovery": "5yr平均（回復判定）",
+                    "avg_5yr":          "5yr平均",
+                }.get(comps.get("fcf_base_method", ""), "5yr平均")
+                _desc_parts.append(_method_label)
             if _rd_applied:
                 _desc_parts.append("R&D補正")
             L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")

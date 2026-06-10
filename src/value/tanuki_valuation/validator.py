@@ -106,7 +106,7 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
 ## Koichi式 v6.2 算式
 
 ```
-1. FCFベース: {fcf_base_method}（直近2年平均 or 5年平均の自動判定）
+1. FCFベース: {fcf_base_method}（直近1yr/2yr平均 or 5yr平均の自動判定）
 2. WACC: CAPM動的計算（銘柄別β反映）
 3. DCF: {dcf_desc}
 4. α（成長期待プレミアム）:
