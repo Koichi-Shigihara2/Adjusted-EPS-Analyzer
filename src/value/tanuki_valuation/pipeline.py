@@ -1440,6 +1440,36 @@ class TanukiValuationPipeline:
             dc = debt_cash_by_year[latest_yr]
             total_debt = dc["lt_debt"] + dc["st_debt"]
             cash = dc["cash"]
+
+            # BUG-NETDEBT-1: cashを最新四半期値で上書き（annualはFY末で最大3ヶ月古い）
+            norm_path = os.path.join(
+                self.repo_root, "common", "sec_data", "normalized",
+                f"{ticker}_quarterly_normalized.json"
+            )
+            if os.path.exists(norm_path):
+                try:
+                    with open(norm_path, encoding="utf-8") as _f:
+                        _norm = json.load(_f)
+                    _cash_entries = [
+                        e for e in _norm.get("fields", {}).get("Cash", [])
+                        if not e.get("is_annual") and not e.get("is_ytd") and e.get("val") is not None
+                    ]
+                    if _cash_entries:
+                        _latest_q_cash = max(_cash_entries, key=lambda e: e["end"])["val"]
+                        cash = _latest_q_cash
+                except Exception:
+                    pass
+
+            # total_debt=0 かつ total_liabilities が大きい場合は警告（金融機関等）
+            _ann_total_liab = 0
+            try:
+                _ann_bs = json.load(open(os.path.join(sec_dir, f"annual_{latest_yr}.json"), encoding="utf-8")).get("bs", {})
+                _ann_total_liab = _ann_bs.get("total_liabilities") or 0
+            except Exception:
+                pass
+            if total_debt == 0 and _ann_total_liab > 1_000_000_000:
+                print(f"[WARN] [{ticker}] total_debt=0 だが total_liabilities=${_ann_total_liab/1e9:.1f}B（金融機関等の可能性）")
+
             # NET-1: 短期投資（short_term_investments）を現金同等物として net_debt に加算
             # bs_adjustment がすでに短期投資を含んでいるため、financial_health と整合を取る
             st_invest = valuation.get("bs_adjustment", {}).get("short_term_investments", 0.0) or 0.0
