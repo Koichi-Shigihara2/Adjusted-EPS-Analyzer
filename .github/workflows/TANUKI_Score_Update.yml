@@ -42,6 +42,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
           git add docs/integrated-dashboard/daily_pick.json \
                   docs/integrated-dashboard/history.json \
                   docs/portfolio/data/history.json

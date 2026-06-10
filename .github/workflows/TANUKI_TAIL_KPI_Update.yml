@@ -70,6 +70,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
           git add docs/portfolio/tail/data/kpi/
           if git diff --staged --quiet; then
             echo "変更なし"

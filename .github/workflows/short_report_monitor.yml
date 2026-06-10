@@ -34,6 +34,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
           git stash
           git pull --rebase origin kaihatsu
           git stash pop
@@ -77,6 +78,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
           git add src/subport/short_report/state.json \
                   src/subport/short_report/trades.csv || true
           git diff --staged --quiet || git commit -m "chore: update position state [skip ci]"
