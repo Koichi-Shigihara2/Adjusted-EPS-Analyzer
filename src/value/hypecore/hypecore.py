@@ -155,7 +155,9 @@ def fetch_quarterly_fundamentals(ticker: str) -> pd.DataFrame:
     if rev.empty:
         return pd.DataFrame()
 
-    rev_yoy    = rev.pct_change(4) * 100
+    rev_ttm       = rev.rolling(4).sum()
+    rev_ttm_prior = rev_ttm.shift(4)
+    rev_yoy       = (rev_ttm / rev_ttm_prior - 1) * 100
     ni_yoy     = ni.pct_change(4) * 100 if not ni.empty else pd.Series(dtype=float)
     op_margin  = (ni / rev * 100) if (not ni.empty) else pd.Series(dtype=float)
     rule40     = rev_yoy + op_margin if not op_margin.empty else pd.Series(dtype=float)
