@@ -1214,3 +1214,119 @@ class TestDetermineStageS0S1Promotion:
         """浅い低迷（MA200=-15%, short>8%）+ 反発+8% → S0維持（+10% 未達）"""
         row = _make_row(ma200_dev=-15, price_mom3m=8, short_pct_float=0.10, rsi=45)
         assert determine_stage(row, prev_stage=2) == 0
+
+
+# ─────────────────────────────────────────────
+# 15. adjust_rpo: RPO比率条件ゲート (B-5 whitelist方式+比率条件)
+# ─────────────────────────────────────────────
+from calculator.adjustments import adjust_rpo, _get_rpo_application_rate  # type: ignore[import]
+
+
+class TestRpoRatioGate:
+    """whitelist通過/keyword通過+比率条件/keyword通過+比率未達を検証"""
+
+    def test_whitelist_ticker_bypasses_ratio_check(self):
+        """whitelist登録銘柄は比率<0.3でも exclusion_reason が設定されない"""
+        # ratio=0.03 < 0.30: 非whitelist銘柄なら除外されるが GOOGL(whitelist) は免除
+        result_wl = adjust_rpo(
+            rpo=3_000_000_000,   # RPO $3B
+            sector="Communication Services",
+            ticker="GOOGL",      # whitelist登録済み
+            industry="Internet Content & Information",
+            op_margin=0.30,
+            rev_ttm=100_000_000_000,  # ratio=0.03 < 0.30
+        )
+        result_nwl = adjust_rpo(
+            rpo=3_000_000_000,
+            sector="Technology",
+            ticker="NONWHITE",   # whitelist未登録
+            industry="Software - Application",
+            op_margin=0.30,
+            rev_ttm=100_000_000_000,  # ratio=0.03 < 0.30
+        )
+        # whitelist → 比率チェック免除 → exclusion_reason なし
+        assert result_wl.exclusion_reason == ""
+        # 非whitelist → 比率チェックで除外
+        assert "not applied" in result_nwl.exclusion_reason
+
+    def test_keyword_ticker_below_ratio_is_excluded(self):
+        """softwareキーワードで通過しても RPO/Revenue<0.3 なら除外される"""
+        result = adjust_rpo(
+            rpo=2_000_000_000,   # RPO $2B
+            sector="Technology",
+            ticker="TESTSOFT",   # whitelist未登録
+            industry="Software - Application",
+            op_margin=0.25,
+            rev_ttm=20_000_000_000,  # Revenue $20B → ratio=0.10 < 0.30
+        )
+        assert result.rpo_pv == 0.0
+        assert "not applied" in result.exclusion_reason
+        assert "0.10" in result.exclusion_reason
+
+    def test_keyword_ticker_above_ratio_is_applied(self):
+        """softwareキーワードで通過し RPO/Revenue>=0.3 なら exclusion_reason なしで適用"""
+        # rpo=25B > rev_ttm=20B → rpo_incremental>0 かつ ratio=1.25 >= 0.30
+        result = adjust_rpo(
+            rpo=25_000_000_000,  # RPO $25B
+            sector="Technology",
+            ticker="TESTSOFT2",  # whitelist未登録
+            industry="Software - Application",
+            op_margin=0.20,
+            rev_ttm=20_000_000_000,  # Revenue $20B → ratio=1.25 >= 0.30
+        )
+        assert result.exclusion_reason == ""
+        assert result.rpo_pv > 0
+
+
+# ─────────────────────────────────────────────
+# 16. _compute_tanuki_score: DCF_Reliability=LOW → WATCH丸め
+# ─────────────────────────────────────────────
+
+class TestDcfReliabilityLowRounding:
+    """DCF_Reliability=LOW (fcf_floor_applied>0) のとき WATCH に丸められる"""
+
+    def test_low_reliability_rounds_hold_to_watch(self, tmp_path):
+        """HOLD銘柄でfcf_floor_applied>0 → WATCH に丸められ、コメントにLOW旨が入る"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        valuation = {
+            "upside_percent": -5.0,   # HOLDになる条件
+            "components": {
+                "fcf_floor_applied": 1_000_000_000,  # LOW判定トリガー
+                "diluted_shares": None,
+            },
+            "fcf_base": {"base_fcf": 500_000_000},
+            "financial_health": {},
+            "fcf_estimation": {},
+        }
+        result = pipe._compute_tanuki_score("LOWTEST", valuation)
+        assert result["score"] == "WATCH"
+        assert "LOW" in result["score_comment"]
+
+    def test_low_reliability_keeps_sell(self, tmp_path):
+        """ファンダ劣化SELLはfcf_floor_applied>0でもSELLのまま維持される"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        # SELLになる条件: 25 <= funda < 50 かつ sell_funda=True
+        # sell_funda = rev_yoy<0 and rule40<20 and fcf_est < fcf_base*0.8
+        # funda: rev_yoy=-5 → +0, rule40=15 → +0, eps_yoy=None → +0, fcf_base>0 → +25 = 25
+        poc_dir = tmp_path / "docs" / "value-monitor" / "hypecore" / "data"
+        poc_dir.mkdir(parents=True, exist_ok=True)
+        (poc_dir / "SELLTEST_poc.json").write_text(json.dumps({
+            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40": 15.0}]
+        }), encoding="utf-8")
+        valuation = {
+            "upside_percent": 30.0,
+            "components": {
+                "fcf_floor_applied": 1_000_000_000,  # LOW判定トリガー
+                "diluted_shares": None,
+            },
+            "fcf_base": {"base_fcf": 1_000_000},      # FCF正（funda+25）
+            "financial_health": {},
+            "fcf_estimation": {                         # fcf_est < fcf_base*0.8 → sell_funda
+                "estimated_fcf": 600_000,
+            },
+        }
+        result = pipe._compute_tanuki_score("SELLTEST", valuation)
+        # funda=25, sell_funda=True → SELL。LOW丸め対象外（SELL維持）
+        assert result["score"] == "SELL"

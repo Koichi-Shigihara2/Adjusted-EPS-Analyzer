@@ -19,8 +19,11 @@ v8.1 追加:
   - calculate_bs_adjustment() が sector_guard を net_cash_data から受け取る
 """
 
+import json
+import os
+from pathlib import Path
 from typing import Dict, Any, Optional, Tuple, List
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass
@@ -52,6 +55,7 @@ class RPOAdjustmentResult:
     sector_category: str = ""       # v8.1: 判定セクターカテゴリ
     rpo_incremental: float = 0.0   # 非連続RPO額（前年比成長超過分）
     op_margin: float = 0.0         # 使用した営業利益率（TTMベース）
+    exclusion_reason: str = ""     # 比率条件除外時の理由 e.g. "RPO/Revenue=0.12 < 0.3, not applied"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -64,6 +68,7 @@ class RPOAdjustmentResult:
             "sector_category": self.sector_category,
             "rpo_incremental": self.rpo_incremental,
             "op_margin": self.op_margin,
+            "exclusion_reason": self.exclusion_reason,
         }
 
 
@@ -374,11 +379,34 @@ def _is_insurance(ticker: str, sector: Optional[str], industry: str) -> bool:
     return sector == "Insurance"
 
 
+def _load_rpo_config() -> Dict[str, Any]:
+    """rpo_config.json を読み込む（存在しない場合はデフォルト値を返す）"""
+    config_path = Path(__file__).parents[4] / "config" / "rpo_config.json"
+    try:
+        with open(config_path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {
+            "whitelist": {
+                "CRM": {}, "NOW": {}, "PLTR": {}, "MSFT": {},
+                "SNOW": {}, "DDOG": {}, "ZS": {}, "CRWD": {},
+                "NET": {}, "TEAM": {}, "HUBS": {}, "MDB": {},
+                "ESTC": {}, "BILL": {}, "GTLB": {},
+            },
+            "industry_keywords": ["software", "cloud", "saas"],
+            "min_rpo_revenue_ratio": 0.30,
+        }
+
+
 def _get_rpo_application_rate(
-    sector: Optional[str], ticker: str, industry: str = ""
-) -> Tuple[float, str]:
+    sector: Optional[str], ticker: str, industry: str = "",
+    rpo_cfg: Optional[Dict[str, Any]] = None,
+) -> Tuple[float, str, bool]:
     """
-    セクター別RPO適用率を返す（v8.1: industry優先判定）
+    セクター別RPO適用率を返す（v9.2: via_whitelist フラグ追加）
+
+    Returns: (application_rate, sector_category, via_whitelist)
+      via_whitelist=True → 比率条件チェックをスキップ（明示登録済み）
 
     RPOは「将来の収益確実性」の代理指標:
       - SaaS/クラウド (100%): サブスクリプション契約バックログ → 収益化確実
@@ -386,35 +414,34 @@ def _get_rpo_application_rate(
       - 保険 (0%):            保険準備金 → 収益でなく義務
       - その他 (0%):          製品デリバリー完了後が多い
 
-    判定順: SaaSホワイトリスト → 保険判定(_is_insurance) → sector/industry
+    判定順: config whitelist → 保険判定(_is_insurance) → industry keyword → sector fallback
     """
-    SAAS_TICKERS = {
-        "PLTR", "MSFT", "NOW", "CRM", "SNOW", "DDOG", "ZS", "CRWD",
-        "NET", "TEAM", "HUBS", "MDB", "ESTC", "BILL", "GTLB",
-    }
+    if rpo_cfg is None:
+        rpo_cfg = _load_rpo_config()
+    whitelist: Dict[str, Any] = rpo_cfg.get("whitelist", {})
+    industry_keywords: list = rpo_cfg.get("industry_keywords", ["software", "cloud", "saas"])
 
-    # SaaSホワイトリスト優先
-    if ticker.upper() in SAAS_TICKERS:
-        return 1.0, "SaaS"
+    # configホワイトリスト優先（比率チェック免除）
+    if ticker.upper() in whitelist:
+        return 1.0, "SaaS", True
 
     # 保険判定（industry優先）
     if _is_insurance(ticker, sector, industry):
-        return 0.0, "Insurance"
+        return 0.0, "Insurance", False
 
     # Fintech
     if sector == "Financial Services":
-        return 0.5, "Fintech"
+        return 0.5, "Fintech", False
 
-    # industry文字列でSaaS/Tech系を追加判定
+    # industry文字列でSaaS/Tech系を追加判定（configキーワードのみ使用）
     if industry:
         industry_lower = industry.lower()
-        if any(kw in industry_lower for kw in ("software", "cloud", "saas", "internet")):
-            # sectorがTechnology/Communication Servicesでない場合でもSaaSと判定
+        if any(kw in industry_lower for kw in industry_keywords):
             if sector in ("Technology", "Communication Services"):
-                return 1.0, "SaaS"
+                return 1.0, "SaaS", False
 
     SECTOR_RATES: Dict[str, Tuple[float, str]] = {
-        "Technology": (0.0, "Non-SaaS"),          # SaaSホワイトリストまたはindustryキーワード必須
+        "Technology": (0.0, "Non-SaaS"),          # whitelist/keywordなしはNon-SaaS
         "Communication Services": (1.0, "SaaS"),
         "Consumer Cyclical": (0.0, "Consumer"),
         "Consumer Defensive": (0.0, "Consumer"),
@@ -428,9 +455,9 @@ def _get_rpo_application_rate(
 
     if sector:
         rate, category = SECTOR_RATES.get(sector, (0.0, "Non-SaaS"))
-        return rate, category
+        return rate, category, False
 
-    return 0.0, "Unknown"
+    return 0.0, "Unknown", False
 
 
 def adjust_rpo(
@@ -468,7 +495,10 @@ def adjust_rpo(
             rpo_incremental=0.0, op_margin=op_margin,
         )
 
-    application_rate, sector_category = _get_rpo_application_rate(sector, ticker, industry)
+    rpo_cfg = _load_rpo_config()
+    application_rate, sector_category, via_whitelist = _get_rpo_application_rate(
+        sector, ticker, industry, rpo_cfg=rpo_cfg
+    )
 
     if application_rate == 0.0:
         return RPOAdjustmentResult(
@@ -479,6 +509,23 @@ def adjust_rpo(
             sector_category=sector_category,
             rpo_incremental=0.0, op_margin=op_margin,
         )
+
+    # 比率条件ゲート（whitelist登録済みは免除）
+    # whitelist以外で RPO/Revenue < min_ratio の場合は適用しない
+    if not via_whitelist and rev_ttm is not None and rev_ttm > 0:
+        rpo_rev_ratio = rpo / rev_ttm
+        min_ratio: float = rpo_cfg.get("min_rpo_revenue_ratio", 0.30)
+        if rpo_rev_ratio < min_ratio:
+            excl = f"RPO/Revenue={rpo_rev_ratio:.2f} < {min_ratio}, not applied"
+            return RPOAdjustmentResult(
+                rpo_pv=0.0, rpo_raw=rpo,
+                discount_rate=discount_rate,
+                assumed_years=assumed_realization_years,
+                applied=False, application_rate=application_rate,
+                sector_category=sector_category,
+                rpo_incremental=0.0, op_margin=op_margin,
+                exclusion_reason=excl,
+            )
 
     # ① 非連続RPO計算（前年比成長超過分のみ補正対象）
     SAAS_NORMAL_RPO_REV_RATIO = 1.0

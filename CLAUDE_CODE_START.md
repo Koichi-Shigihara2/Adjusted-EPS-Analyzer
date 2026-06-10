@@ -253,6 +253,9 @@ else:
 - Step 5 HypeCore は yfinance 依存。KULR 等データ不足銘柄は失敗するが無視してよい
 - Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
 - Step 7 の monitor_tickers.yaml は **単純リスト形式**（yaml.dump 使用不可 → コメントが消える）
+- SaaS系銘柄でRPOプレミアムを適用する場合は `config/rpo_config.json` の
+  whitelist に理由コメント付きで明示登録する（industry keyword 依存禁止）
+  理由: keyword は将来銘柄追加時に意図しない適用の再発リスクあり（GOOGL等参照）
 
 ---
 

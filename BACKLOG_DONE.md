@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-06-11 完了
+
+### ✅ BUG-RPO-1 whitelist構造化 (2026-06-11 完了): RPO適用をwhitelist+比率条件に構造化
+- _get_rpo_application_rate に via_whitelist フラグを追加（whitelist登録銘柄は比率チェック免除）
+- adjust_rpo に RPO/Revenue < 0.3 の比率ゲートを実装（whitelist以外全員適用）
+- exclusion_reason を rpo_adjustment に格納、report.txt の RPO_PV 行に除外理由を表示
+- V(ratio=0.11)・BSY(ratio=0.18)が除外、GOOGL/MSCI は維持
+
+### ✅ DCF_Reliability=LOW SCORE丸め (2026-06-11 完了): LOWのとき WATCH に統一
+- _compute_tanuki_score にて fcf_floor_applied > 0 の場合 SELL/PASS 以外を WATCH に丸める
+- score_comment に「DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH」を付記
+- CRWV: HOLD → WATCH に変更（期待通り）
+
+---
+
 ## 2026-06-10 完了
 
 ### ✅ BUG-FCFBASE-2 (2026-06-10 完了): FCF赤字銘柄DCFガード

@@ -358,6 +358,15 @@ class TanukiValuationPipeline:
             score = "HOLD"
 
         comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
+
+        # DCF_Reliability=LOW 丸め
+        # revenue_floor適用（FCF実績マイナス）は理論株価の信頼性が低いため
+        # upside依存の判定を抑制して WATCH に統一する。SELL/PASS（ファンダ劣化）は維持。
+        _floor_applied = valuation.get("components", {}).get("fcf_floor_applied", 0) or 0
+        if _floor_applied > 0 and score not in ("SELL", "PASS"):
+            score = "WATCH"
+            comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
+
         return {"score": score, "funda_score": funda, "score_comment": comment}
 
     def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
@@ -1045,7 +1054,11 @@ class TanukiValuationPipeline:
                 L.append(f"DCF_Reliability: HIGH")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
-        L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
+        _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
+        if _rpo_excl:
+            L.append(f"RPO_PV: $0 ({_rpo_excl})")
+        else:
+            L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
         L.append("Financial_Health:")
         net_debt = fin_health.get("net_debt")
         total_debt = fin_health.get("total_debt")
