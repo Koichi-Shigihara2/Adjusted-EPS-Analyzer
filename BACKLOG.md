@@ -814,3 +814,9 @@ LT債務欠落のまま net_cash_per_share を計算し、IV に直接加算し�
 修正: SECReader.get_lt_debt_from_normalized() ヘルパーを追加（normalized quarterlyフォールバック）。
 get_net_cash() と pipeline._get_normalized_lt_debt() の両経路に適用（共通化）。
 commit: 76d972ab8
+
+## ✅ BUG-NETDEBT-3 (2026-06-10 完了): reader.py::get_net_cash() LT債務欠落
+**分類:** バグ / reader.py
+bs_adjustment.net_cash_per_share（主要IVに直接加算）がNETDEBT-2の修正を反映していなかった。
+reader.py に get_lt_debt_from_normalized() 共通ヘルパーを追加し二重実装を解消。
+影響: AVGO IV $272→$259、KO $55→$46、SOFI $26→$21、ZS $226→$219
