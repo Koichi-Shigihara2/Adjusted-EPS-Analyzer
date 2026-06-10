@@ -300,6 +300,23 @@ class SECReader:
             "rpo_series": self.get_rpo_series(ticker),
         }
 
+    def get_lt_debt_from_normalized(self, ticker: str) -> float:
+        """annual JSONでlong_term_debtが欠落した場合の補完値をnormalized quarterlyから取得。
+
+        BUG-NETDEBT-2/3の共通修正ロジック。pipeline.pyの同名メソッドもここに委譲。
+        """
+        norm_path = os.path.join(os.path.dirname(self.data_dir), "normalized",
+                                 f"{ticker}_quarterly_normalized.json")
+        try:
+            with open(norm_path, encoding="utf-8") as f:
+                norm = json.load(f)
+            lt_entries = [e for e in norm.get("fields", {}).get("LTDebt", []) if e.get("val") is not None]
+            if lt_entries:
+                return float(max(lt_entries, key=lambda e: e["end"])["val"])
+        except Exception:
+            pass
+        return 0.0
+
     def get_net_cash(self, ticker: str, sector: Optional[str] = None, industry: str = "") -> dict:
         """
         ネットキャッシュ関連BSデータを取得 v8.1
@@ -347,6 +364,10 @@ class SECReader:
         st_inv  = bs.get("short_term_investments", 0) or 0
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
+
+        # BUG-NETDEBT-3: annual JSONでlong_term_debtが欠落した場合にnormalized quarterlyで補完
+        if lt_debt == 0:
+            lt_debt = self.get_lt_debt_from_normalized(ticker)
 
         # ── セクターガード（v8.1: industry優先判定）──
         # _is_insurance()と同じロジックをここで直接適用

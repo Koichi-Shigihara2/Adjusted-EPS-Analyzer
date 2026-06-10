@@ -1720,19 +1720,9 @@ class TanukiValuationPipeline:
         return revs
 
     def _get_normalized_lt_debt(self, ticker: str) -> float:
-        """annual JSONでlong_term_debtが欠落した場合の補完値をnormalized quarterlyから取得"""
-        norm_path = os.path.join(
-            self.repo_root, "common", "sec_data", "normalized",
-            f"{ticker}_quarterly_normalized.json"
-        )
-        try:
-            with open(norm_path, encoding="utf-8") as _f:
-                _norm = json.load(_f)
-            _lt_entries = [e for e in _norm.get("fields", {}).get("LTDebt", []) if e.get("val") is not None]
-            if _lt_entries:
-                return max(_lt_entries, key=lambda e: e["end"])["val"]
-        except Exception:
-            pass
+        """annual JSONでlong_term_debtが欠落した場合の補完値を取得。SECReaderに委譲（BUG-NETDEBT-3共通化）"""
+        if self.fetcher and self.fetcher.sec_reader:
+            return self.fetcher.sec_reader.get_lt_debt_from_normalized(ticker)
         return 0
 
     def _calc_g_fundamental(self, ticker: str) -> float | None:
