@@ -403,6 +403,10 @@ class TanukiValuationPipeline:
         _sector = self._load_beta_sector(ticker)
         _hype_info   = self._load_hype_info(ticker)      # GROWTH-1
         _hype_phase  = _hype_info.get("phase")
+        _fcf_margins = [
+            e["fcf_margin"] for e in extra.get("fcf_history", [])
+            if e.get("fcf_margin") is not None
+        ]
         try:
             _growth_sanity = check_growth_sanity(
                 ticker=ticker,
@@ -414,6 +418,7 @@ class TanukiValuationPipeline:
                 hype_phase=_hype_phase,                           # GROWTH-1
                 hype_phase_label=_hype_info.get("stage_label"),
                 hype_substage_label=_hype_info.get("substage_label"),
+                fcf_margins=_fcf_margins or None,                  # TANUKI-DCF-1③
             )
         except Exception as _e:
             import logging as _logging
@@ -452,10 +457,36 @@ class TanukiValuationPipeline:
                     f"[{ticker}] DCF re-run with recommended_g failed: {_e}"
                 )
 
+        # ── TANUKI-DCF-1③ FCFマージン悪化 → BEAR乗数補正 ──
+        _fcf_margin_bear_mult = (_growth_sanity.get("fcf_margin_bear_multiplier", 1.0)
+                                  if _growth_sanity else 1.0)
+        _fcf_margin_note      = (_growth_sanity.get("fcf_margin_note") if _growth_sanity else None)
+        _bear_mult_applied = False
+        if _fcf_margin_bear_mult < 1.0 and financials is not None:
+            try:
+                _valuation_bear = self.calculator.calculate_pt(
+                    financials,
+                    tapering_g_end=_tapering_g_end,
+                    bear_multiplier=0.7 * _fcf_margin_bear_mult,
+                )
+                if "error" not in _valuation_bear:
+                    _sv_bear = _valuation_bear.get("scenario_valuations")
+                    if _sv_bear and valuation.get("scenario_valuations"):
+                        valuation["scenario_valuations"]["bear"] = _sv_bear.get("bear", {})
+                    _bear_mult_applied = True
+                    print(f"   [{ticker}] BEAR補正適用: bear_multiplier={0.7*_fcf_margin_bear_mult:.3f} ({_fcf_margin_note})")
+            except Exception as _e:
+                import logging as _logging
+                _logging.getLogger(__name__).warning(
+                    f"[{ticker}] BEAR multiplier re-run failed: {_e}"
+                )
+
         # auto-adjustment フラグを extra に追加（_generate_report に渡すため）
         extra["phase1_growth_original"] = _phase1_growth_original
         extra["phase1_growth_auto_adjusted"] = _phase1_auto_adjusted
         extra["recommended_g"] = _recommended_g
+        extra["fcf_margin_bear_mult_applied"] = _bear_mult_applied
+        extra["fcf_margin_note"] = _fcf_margin_note
 
         # TANUKIスコアを先に計算してlatest.jsonとhistory.json両方に保存
         # growth_sanity は後で latest_data に追加されるが、
@@ -577,6 +608,8 @@ class TanukiValuationPipeline:
         _phase1_auto_adjusted = extra.get("phase1_growth_auto_adjusted", False)
         _phase1_growth_original = extra.get("phase1_growth_original")
         _recommended_g = extra.get("recommended_g")
+        _bear_mult_applied = extra.get("fcf_margin_bear_mult_applied", False)
+        _fcf_margin_note   = extra.get("fcf_margin_note")
 
         now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
         comps = valuation.get("components", {})
@@ -915,6 +948,8 @@ class TanukiValuationPipeline:
             _g_diff = (_phase1_growth_original - _recommended_g) * 100
             _warn = f"  ⚠️ +{_g_diff:.1f}pt above recommended" if _g_diff >= 5.0 else ""
             L.append(f"Growth_Rate_Rec: {_recommended_g*100:.1f}% (recommended{_warn})")
+        if _bear_mult_applied and _fcf_margin_note:
+            L.append(f"FCF_Margin_Bear_Adj: {_fcf_margin_note}")
         # TTM Revenue Growth（BASE成長率 vs 実績の乖離を表示）
         _ttm_rev = rev_growth_val if rev_growth_val is not None else rev_yoy_hype
         if _ttm_rev is not None:

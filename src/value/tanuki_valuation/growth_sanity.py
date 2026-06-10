@@ -379,6 +379,7 @@ def check_growth_sanity(
     hype_phase: int | None = None,         # GROWTH-1: HypeCoreフェーズ（1〜4）
     hype_phase_label: str | None = None,   # poc.json の stage_label
     hype_substage_label: str | None = None, # poc.json の substage_label
+    fcf_margins: list[float] | None = None,  # TANUKI-DCF-1③: FCFマージン時系列（古い順）
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
@@ -536,6 +537,21 @@ def check_growth_sanity(
         if recommended_g is not None and recommended_g < 0:
             recommended_g = None
 
+    # ── TANUKI-DCF-1③ FCFマージン悪化補正係数 ──
+    # fcf_margins は古い順。直近3年平均 vs 最新でトレンドを判定
+    fcf_margin_bear_multiplier = 1.0
+    fcf_margin_note = None
+    if fcf_margins and len(fcf_margins) >= 3:
+        _latest_m = fcf_margins[-1]
+        _avg3_m   = sum(fcf_margins[-3:]) / 3
+        if _avg3_m > 0 and (_avg3_m - _latest_m) >= 2.0:
+            _ratio = min(1.0, _latest_m / _avg3_m)
+            fcf_margin_bear_multiplier = round(max(_ratio, 0.4), 4)
+            fcf_margin_note = (
+                f"FCFマージン悪化({_avg3_m:.1f}%→{_latest_m:.1f}%) "
+                f"BEAR補正係数={fcf_margin_bear_multiplier:.3f}"
+            )
+
     return {
         "verdict": verdict,
         "phase1_growth": phase1_growth,
@@ -554,4 +570,6 @@ def check_growth_sanity(
         "hype_substage_label": hype_substage_label,
         "signals": signals,
         "warnings": warnings,
+        "fcf_margin_bear_multiplier": fcf_margin_bear_multiplier,
+        "fcf_margin_note": fcf_margin_note,
     }

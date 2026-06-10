@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -61.6,
-  "calculation_date": "2026-06-10T12:18:40+09:00",
+  "calculation_date": "2026-06-10T13:12:36+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -104,8 +104,8 @@
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.084,
-      "intrinsic_value_per_share": 81.55
+      "growth_rate": 0.033,
+      "intrinsic_value_per_share": 66.73
     },
     "base": {
       "growth_rate": 0.119,
@@ -477,6 +477,8 @@
   "phase1_growth_original": 0.1194,
   "phase1_growth_auto_adjusted": false,
   "recommended_g": 0.1498239831038885,
+  "fcf_margin_bear_mult_applied": true,
+  "fcf_margin_note": "FCFマージン悪化(4.4%→1.3%) BEAR補正係数=0.400",
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "phase1_growth": 0.1194,
@@ -498,7 +500,9 @@
       "過去実績(3yr:11.7% / 5yr:13.2%)と整合 ✅",
       "RR×ROIC上限(16.8%)以内 ✅"
     ],
-    "warnings": []
+    "warnings": [],
+    "fcf_margin_bear_multiplier": 0.4,
+    "fcf_margin_note": "FCFマージン悪化(4.4%→1.3%) BEAR補正係数=0.400"
   },
   "erp": -0.0026,
   "forward_earnings_yield": 0.0404,

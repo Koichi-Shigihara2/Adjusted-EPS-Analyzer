@@ -117,7 +117,7 @@ class KoichiValuationCalculator:
         self.eps_data_dir = eps_data_dir
         self.sec_data_dir = sec_data_dir  # v7.1: EPSアナライザーdataディレクトリ
 
-    def calculate_pt(self, financials: Dict[str, Any], tapering_g_end: float | None = None) -> Dict[str, Any]:
+    def calculate_pt(self, financials: Dict[str, Any], tapering_g_end: float | None = None, bear_multiplier: float = 0.7) -> Dict[str, Any]:
         """メイン計算関数。tapering_g_end が設定された場合は線形逓減DCFを適用（DCF-1）"""
 
         # ── データ抽出 ──
@@ -607,7 +607,8 @@ class KoichiValuationCalculator:
             )
             scenario_result = calculate_scenario_valuations(
                 calc_func=scenario_calc_func,
-                base_growth_rate=high_growth_rate
+                base_growth_rate=high_growth_rate,
+                bear_multiplier=bear_multiplier,
             )
 
         # ── STEP 12: 将来価値予測 ──
