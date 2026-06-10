@@ -175,23 +175,20 @@ python common/sec_data/audit.py
 
 ## BACKLOG優先順位の目安
 
-### 今すぐ着手可能（優先度高・難易度低）
-- DESIGN-10: RICE三分類（閾値見直し）
-- DISCOVER-1: Discoverプロンプト改善（小型・未発掘銘柄優先）
-- ACTION-10: TANUKI SCOREの変化検知機能
-- ACTION-6: Macro Extreme Fear戦略の実行支援
+### 今すぐ着手可能（優先度中・難易度低〜中）
+- TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
+- MP-BIZDAY-1: MARKET PULSE営業日ベース化
+- SEGMENT-1: セグメント精緻設定（LLY→LMT→MRVL→AMAT→VRTの順）
 
-### 順次着手（優先度高・難易度中）
-- ACTION-2: 判定実績の自動追跡・検証ループ
-- ACTION-4: HYPEMIXポートフォリオ管理
-- DESIGN-11: STONKSSILOユニットエコノミクス改善評価
-- DESIGN-12: ステルス流動性のレベル感改善
-- DESIGN-13: MACROPULSEマクロサプライズ検知
+### 順次着手（優先度中・難易度中〜高）
+- TSCORE-TRAP-1: 投資トラップ検出（10種+逆シグナル）
+- SEC-CTRL-1: 内部統制評価（Item4/9A・実装先はTANUKI TAIL有力）
+- TANUKI-FIN-1: 金融株DDM対応
 
-### 着手条件あり（先にDESIGN-4・5の設計が必要）
-- HYPOTHESIS-1: 投資仮説管理
-- HYPOTHESIS-2: KPI仮説・AI原案生成
-- DESIGN-15: 期待と理論価格の関係の整理
+### 着手条件あり
+- DESIGN-15: 期待と理論価格の整理（DESIGN-4・5の設計確定後）
+- Moomoo API Skill移行（signal.jsonバックテスト実施後）
+- Moomoo API系4件（クォータ回復後）
 
 ---
 
@@ -400,7 +397,7 @@ git push origin kaihatsu
 - [ ] 単体テストで動作確認
 - [ ] 全銘柄再生成で成功率確認
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
-- [ ] BACKLOG.mdの該当項目を「完了済み」に移動
+- [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動
 - [ ] コミット・プッシュ完了
 
 ---
@@ -425,6 +422,8 @@ git push origin kaihatsu
 - 新規銘柄登録手順・削除手順のステップが実態と一致しているか
 - 手順を実際に実施した際に漏れ・誤りがあれば即座に手順書を更新する
   （気づいた時点で更新・次回以降に先送りしない）
+- BACKLOG優先順位の目安が BACKLOG.md の実態と一致しているか
+  （完了済み項目が残っていないか）
 
 **④ SYSTEM_MAP.md の更新確認**
 以下のいずれかに該当する作業を行った場合は必ずSYSTEM_MAP.mdを更新する：
@@ -448,23 +447,23 @@ git push origin kaihatsu
 ## BACKLOG管理ルール
 
 ### BACKLOGファイルの場所
-- TANUKI VALUATION系: BACKLOG.md
-- システム全体バックログ: BACKLOG.md の末尾セクションに統合
-- 編集前に必ず grep で行を特定してから変更する（行番号の直接指定は誤差が出るため禁止）
-
-```bash
-# 対象行の特定
-grep -n "\[MP-5\]\|IMPLIED CUTS" BACKLOG.md
-```
+- アクティブな課題: BACKLOG.md（TANUKI VALUATION系+システム全体を統合）
+- 完了済みアーカイブ: BACKLOG_DONE.md
+- Step 1 で読むのは BACKLOG.md のみ。BACKLOG_DONE.md は
+  過去の実装経緯を調べる必要があるときだけ参照する
+- 編集前に必ず grep で行を特定してから変更する（行番号の直接指定は禁止）
 
 ### BACKLOG更新のタイミング
-- タスク完了後、**メモリではなくBACKLOG.mdに記録する**
-- 完了時のフォーマット:
-  - `[ ]` → `✅ [XX-N] タスク名（YYYY-MM-DD 完了）`
-  - 実装内容を箇条書きで3行以内に要約して残す
+- タスク完了後、メモリではなくファイルに記録する
+- 完了時の手順:
+  ① BACKLOG.md から該当項目を削除
+  ② BACKLOG_DONE.md の該当日付セクション（なければ新設・新しい日付が上）に
+     `✅ [XX-N] タスク名（YYYY-MM-DD 完了）` として移動
+  ③ 実装内容を箇条書きで3行以内に要約して残す
+- 新規課題の追加は BACKLOG.md の該当優先度セクションへ
 
 ### コミットルール（BACKLOG更新時）
-git add BACKLOG.md
+git add BACKLOG.md BACKLOG_DONE.md
 git commit -m "docs: [タスクID] 完了済みに更新"
 git pull --rebase origin kaihatsu
 git push origin kaihatsu
