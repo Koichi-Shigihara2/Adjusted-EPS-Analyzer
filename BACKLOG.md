@@ -799,3 +799,9 @@ Cash表示値とNet Debt計算値の参照タイミング・定義が不整合�
 1. CashはSEC最新四半期末の値を使用（FY末ではなく直近10-Q）
 2. Net Debt = Total Debt - Cash - Short_Term_Investments と定義を統一
 3. Total Debtを明示的に取得・表示する（$0は異常値として警告）
+
+## ✅ BUG-NETDEBT-2 (2026-06-10 完了): LTDebt取得漏れ
+**分類:** バグ / pipeline.py
+annual_2025.jsonでLongTermDebtタグが取得できない銘柄（KO/AVGO/SOFI/ZS）でTotal Debt過小評価。
+normalized quarterlyのLTDebt最新値でフォールバック補完。
+KO: Net Debt -$9.1B(純現金・誤)→+$27.4B(純有利子負債・正)
