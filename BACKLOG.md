@@ -624,7 +624,7 @@
 
 ---
 
-## TANUKI-DCF-1 (①②2026-06-10完了、③未着手): DCF基準FCFの採用方法改善
+## ✅ TANUKI-DCF-1 (①②③2026-06-10完了): DCF基準FCFの採用方法改善
 **優先度:** 中
 **分類:** 設計課題 / TANUKI VALUATION
 
@@ -761,6 +761,26 @@ DCFの成長率基準値が過大評価される → 内在価値が過大にな
 ### 修正方針
 TTMは「直近4四半期合計 / 前4四半期合計 - 1」で計算する。
 単四半期YoYとの混同を防ぐため、計算式を明示的にlog出力する。
+
+---
+
+## ✅ BUG-NETDEBT-2 (2026-06-10 完了): annual_2025.jsonでlong_term_debtが欠落
+**優先度:** 高
+**分類:** バグ / pipeline.py / パーサー
+
+### 問題
+4銘柄（AVGO, KO, SOFI, ZS）の `annual_2025.json` に `long_term_debt` が欠落。
+パーサーが2025年10-K filing の LongTermDebt タグを抽出できていないため、
+Total Debt / Net Debt が過小評価されていた。
+
+### 確認された影響
+- KO: total_debt $1.5B（short_debt のみ）→ 修正後 $38.0B
+- AVGO: total_debt ~$3B → 修正後 $69.2B
+
+### 修正方針
+`_load_extra_data()`, `_calc_g_fundamental()`, `_calc_roic_wacc_ratio()` にて
+annual BS の `long_term_debt` が 0 の場合、normalized quarterly JSON の `LTDebt`
+最新値（`_get_normalized_lt_debt()` ヘルパー）でフォールバック補完。
 
 ---
 
