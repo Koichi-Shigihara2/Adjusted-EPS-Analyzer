@@ -910,6 +910,11 @@ class TanukiValuationPipeline:
             L.append(f"BEAR: Growth={bear_g:.1f}%, IV=${bear_iv:,.2f}, Deviation={dev(bear_iv):+.1f}%")
             L.append(f"BASE: Growth={base_g:.1f}%, IV=${base_iv:,.2f}, Deviation={dev(base_iv):+.1f}%")
             L.append(f"BULL: Growth={bull_g:.1f}%, IV=${bull_iv:,.2f}, Deviation={dev(bull_iv):+.1f}%")
+        # TANUKI-DCF-1②: segment_configured銘柄でrecommended_gと乖離がある場合に警告表示
+        if not _phase1_auto_adjusted and _recommended_g is not None and _phase1_growth_original is not None:
+            _g_diff = (_phase1_growth_original - _recommended_g) * 100
+            _warn = f"  ⚠️ +{_g_diff:.1f}pt above recommended" if _g_diff >= 5.0 else ""
+            L.append(f"Growth_Rate_Rec: {_recommended_g*100:.1f}% (recommended{_warn})")
         # TTM Revenue Growth（BASE成長率 vs 実績の乖離を表示）
         _ttm_rev = rev_growth_val if rev_growth_val is not None else rev_yoy_hype
         if _ttm_rev is not None:
