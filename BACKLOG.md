@@ -805,3 +805,12 @@ Cash表示値とNet Debt計算値の参照タイミング・定義が不整合�
 annual_2025.jsonでLongTermDebtタグが取得できない銘柄（KO/AVGO/SOFI/ZS）でTotal Debt過小評価。
 normalized quarterlyのLTDebt最新値でフォールバック補完。
 KO: Net Debt -$9.1B(純現金・誤)→+$27.4B(純有利子負債・正)
+
+## ✅ BUG-NETDEBT-3 (2026-06-10 完了): reader.py::get_net_cash() のLTDebt欠落バグ
+**分類:** バグ / reader.py / IV直接影響
+reader.py の get_net_cash() は BUG-NETDEBT-2 修正（pipeline.py）とは別経路。
+LT債務欠落のまま net_cash_per_share を計算し、IV に直接加算していた。
+影響銘柄のIV過大評価: AVGO +$13.88, KO +$8.48, SOFI +$4.28, ZS +$7.10
+修正: SECReader.get_lt_debt_from_normalized() ヘルパーを追加（normalized quarterlyフォールバック）。
+get_net_cash() と pipeline._get_normalized_lt_debt() の両経路に適用（共通化）。
+commit: 76d972ab8
