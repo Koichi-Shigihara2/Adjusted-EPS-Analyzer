@@ -1412,6 +1412,19 @@ class TanukiValuationPipeline:
                 L.append("  PS_Signal: 低水準（売上対比で低い期待）")
             else:
                 L.append("  PS_Signal: 適正水準")
+            # A-6: yfinance PS と自社計算値の乖離検出（ステール値の可能性）
+            _ps_shares = comps.get("diluted_shares") or comps.get("implied_shares") or 0
+            _ps_rev    = comps.get("latest_revenue") or 0
+            _is_fin    = "financial" in (sector or "").lower() or "bank" in (sector or "").lower()
+            if current_price and _ps_shares and _ps_rev and not _is_fin:
+                _ps_calc = (current_price * _ps_shares) / _ps_rev
+                if _ps_calc > 0:
+                    _ps_ratio = ps_val / _ps_calc
+                    if _ps_ratio > 2.5 or _ps_ratio < 0.4:
+                        L.append(
+                            f"  PS_AnomalyWarn: yfinance PS({ps_val:.1f}x) 自社計算({_ps_calc:.1f}x)"
+                            f" 乖離{_ps_ratio:.1f}倍 → ステール値の可能性"
+                        )
 
         L.append("Definition:")
         L.append("")
@@ -1747,7 +1760,26 @@ class TanukiValuationPipeline:
                             ttm_override = _seg_cfg._GROWTH_OVERRIDES.get(ticker)
                             if ttm_override is not None:
                                 g = ttm_override
-                        est_rev = latest_revenue * w
+                            # A-3: TTM売上が年次より新しければそちらを使用(非12月期銘柄の陳腐化対策)
+                            _ttm_path = os.path.join(
+                                self.repo_root, "common", "sec_data", "ttm",
+                                f"{ticker}_ttm_series.json"
+                            )
+                            _ttm_rev_for_seg = latest_revenue
+                            if os.path.exists(_ttm_path):
+                                try:
+                                    with open(_ttm_path, encoding="utf-8") as _tf:
+                                        _ttm_s = json.load(_tf)
+                                    _ttm_entry = (_ttm_s.get("series") or [None])[0]
+                                    if _ttm_entry:
+                                        _rv = (_ttm_entry.get("flow") or {}).get("Revenue", {}).get("val")
+                                        if _rv and float(_rv) > latest_revenue:
+                                            _ttm_rev_for_seg = float(_rv)
+                                except Exception:
+                                    pass
+                            est_rev = _ttm_rev_for_seg * w
+                        else:
+                            est_rev = latest_revenue * w
                         seg_list.append({
                             "name": name,
                             "weight": w,

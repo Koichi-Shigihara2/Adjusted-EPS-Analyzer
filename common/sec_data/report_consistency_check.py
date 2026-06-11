@@ -12,6 +12,7 @@ report_consistency_check.py
   NG  8. Matrix④高FCFラベル赤字 Matrix④ Label="高FCF" & 最新FCF実績マイナス
   WARN 5. NetDebt旧表示        Net_Debt行あり & ST_Invest 非ゼロ（latest.json）& 報告なし
   WARN 6. 負PER数値表示        Market_PER_GAAP が負数（N/M 未変換）
+  WARN 10. PS異常値            yfinance PSが自社計算値(price×shares/rev)の2.5倍超 or 0.4倍未満
 """
 
 import os
@@ -306,6 +307,25 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 warn.append(
                     f"  [WARN-9 セグメント設定陳腐化] segment_config fiscal_year={fy_str}"
                     f" (現在{gen_yr}年、{gen_yr - fy_yr}年前のデータ)"
+                )
+
+    # ── CHECK 10: PS異常値 (警告) ────────────────────────────
+    # yfinance PSが自社計算値(price×shares/revenue)と大きく乖離する場合にWARN
+    comp = latest.get("components", {}) or {}
+    ps_yf   = comp.get("ps")
+    price   = comp.get("current_price") or 0
+    shares  = comp.get("diluted_shares") or 0
+    rev     = comp.get("latest_revenue") or 0
+    sector  = (comp.get("sector") or "").lower()
+    is_fin  = "financial" in sector or "bank" in sector
+    if ps_yf is not None and price and shares and rev and not is_fin:
+        ps_calc = (price * shares) / rev
+        if ps_calc > 0:
+            ratio = ps_yf / ps_calc
+            if ratio > 2.5 or ratio < 0.4:
+                warn.append(
+                    f"  [WARN-10 PS異常値] yfinance PS={ps_yf:.1f}x vs 自社計算={ps_calc:.1f}x"
+                    f" (乖離{ratio:.1f}倍) → ステール値の可能性"
                 )
 
     return ng, warn
