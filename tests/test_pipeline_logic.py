@@ -1642,3 +1642,81 @@ class TestMatrix2ROEDefinitionDynamicYear:
 
         assert "Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate" in report, \
             "roe_years_used 未設定のとき ROE_10yr_avg がデフォルト値として表示されるべき"
+
+
+# ─────────────────────────────────────────────
+# 20. 回帰防止: SEC-REV-FINTECH-1 (2026-06-11)
+#
+#   金融セクター銘柄(SOFI等)で parser.py が狭義 revenue タグ
+#   (RevenueFromContract...) を採用し annual revenue が過小になる問題。
+#   quarterly.py の TICKER_RESTRICTIONS[ticker]["revenue_concept"] で
+#   指定されたタグのみを使うことで広義 revenue を採用する。
+# ─────────────────────────────────────────────
+
+class TestFinancialSectorRevenueParsing:
+    """
+    SEC-REV-FINTECH-1 回帰防止:
+    TICKER_RESTRICTIONS に revenue_concept が設定されている銘柄では
+    parser.py が指定タグのみを使って annual revenue を取得することを保証する。
+    """
+
+    def test_revenue_concept_override_uses_single_tag(self, tmp_path):
+        """revenue_concept 指定銘柄では指定タグのみが使われ広義 revenue が採用される"""
+        import sys
+        sys.path.insert(0, str(tmp_path))
+
+        from common.sec_data.parser import SECParser
+        from common.sec_data.quarterly import TICKER_RESTRICTIONS
+
+        # TICKER_RESTRICTIONS に revenue_concept が登録されていること
+        assert "SOFI" in TICKER_RESTRICTIONS, "SOFI が TICKER_RESTRICTIONS に未登録"
+        assert "revenue_concept" in TICKER_RESTRICTIONS["SOFI"], \
+            "SOFI の revenue_concept が TICKER_RESTRICTIONS に未設定"
+        override_concept = TICKER_RESTRICTIONS["SOFI"]["revenue_concept"]
+        assert override_concept == "RevenuesNetOfInterestExpense"
+
+        # parser が SOFI の company_facts.json を読んで正しい revenue を返すこと
+        # (実際のファイルが存在する場合のみテスト)
+        import os
+        facts_path = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "SOFI", "company_facts.json"
+        )
+        if not os.path.exists(facts_path):
+            return  # CI 環境でファイルがない場合はスキップ
+
+        p = SECParser()
+        result = p.parse_company_facts("SOFI")
+        assert result is not None
+
+        # FY2025 の revenue が RevenuesNetOfInterestExpense の値 ($3.61B) に近いこと
+        # (RevenueFromContractWithCustomer の狭義値 $619M ではないこと)
+        fy2025_rev = result["annual"].get(2025, {}).get("pl", {}).get("revenue")
+        assert fy2025_rev is not None, "FY2025 revenue が None"
+        assert fy2025_rev > 1_000_000_000, (
+            f"SOFI FY2025 revenue = ${fy2025_rev/1e9:.2f}B が $1B 未満 "
+            f"(狭義 revenue タグ ${619e6/1e9:.2f}B が採用されるリグレッション)"
+        )
+
+    def test_revenue_concept_not_applied_to_normal_ticker(self, tmp_path):
+        """revenue_concept 未設定銘柄は通常の MERGE_ALL_TAGS 動作を使う"""
+        from common.sec_data.quarterly import TICKER_RESTRICTIONS
+
+        # AAPL には revenue_concept が設定されていないこと
+        aapl_restrictions = TICKER_RESTRICTIONS.get("AAPL", {})
+        assert "revenue_concept" not in aapl_restrictions, \
+            "AAPL に revenue_concept が誤って設定されている"
+
+    def test_ticker_restrictions_revenue_concept_values_are_valid_xbrl_tags(self):
+        """TICKER_RESTRICTIONS の revenue_concept 値が有効な XBRL タグ形式であること"""
+        from common.sec_data.quarterly import TICKER_RESTRICTIONS
+        from common.sec_data.parser import SECParser
+
+        valid_tags = set(SECParser.XBRL_MAPPING.get("revenue", []))
+        for ticker, restrictions in TICKER_RESTRICTIONS.items():
+            concept = restrictions.get("revenue_concept")
+            if concept:
+                assert concept in valid_tags, (
+                    f"{ticker}: revenue_concept='{concept}' が "
+                    f"SECParser.XBRL_MAPPING['revenue'] に含まれていない "
+                    "(parser.py が採用できないタグが指定されている)"
+                )

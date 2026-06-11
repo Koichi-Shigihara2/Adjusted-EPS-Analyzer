@@ -9,6 +9,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from .config import get_ticker_info
+from .quarterly import TICKER_RESTRICTIONS
 
 
 class SECParser:
@@ -214,7 +215,11 @@ class SECParser:
         
         facts = raw_data.get("facts", {})
         us_gaap = facts.get("us-gaap", {})
-        
+
+        # 銘柄別 revenue_concept オーバーライド（quarterly.py の TICKER_RESTRICTIONS から参照）
+        # 金融系銘柄（SOFI等）は MERGE_ALL_TAGS による先着タグ優先で狭義revenuタグが勝つ問題を回避
+        _rev_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("revenue_concept")
+
         # 全項目を抽出
         extracted = {}
         for field_name, xbrl_keys in self.XBRL_MAPPING.items():
@@ -224,6 +229,10 @@ class SECParser:
             # WeightedAverageNumberOfDilutedSharesOutstanding（加重平均希薄化後）より
             # 大きい場合に誤った値が取得される問題があった
             merge_all = field_name in self.MERGE_ALL_TAGS_FIELDS
+            # revenue_concept が指定されている場合はそのタグのみ使用（mergeなし）
+            if field_name == "revenue" and _rev_concept_override:
+                xbrl_keys = [_rev_concept_override]
+                merge_all = False
             extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all)
         
         # 年次データを集約
