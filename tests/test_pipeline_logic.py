@@ -1330,3 +1330,113 @@ class TestDcfReliabilityLowRounding:
         result = pipe._compute_tanuki_score("SELLTEST", valuation)
         # funda=25, sell_funda=True → SELL。LOW丸め対象外（SELL維持）
         assert result["score"] == "SELL"
+
+
+# ─────────────────────────────────────────────
+# 17. 汎用性検証: 新規銘柄自動適用 (回帰防止)
+#
+#     「実績FCF全年マイナス・RPO比率0.1・上場2年・ROEに損失年含む」
+#     相当の新規銘柄に対して全修正が自動適用されることを確認する。
+#     個別銘柄のif分岐ではなく汎用ロジックが駆動することを証明する。
+# ─────────────────────────────────────────────
+
+_SEC_READER_DIR = os.path.normpath(os.path.join(os.path.dirname(__file__), ".."))
+if _SEC_READER_DIR not in sys.path:
+    sys.path.insert(0, _SEC_READER_DIR)
+from common.sec_data.reader import SECReader  # type: ignore[import]
+
+
+class TestNewTickerIntegration:
+    """
+    汎用性検証: 「実績FCF全年マイナス・RPO比率0.10・上場2年・ROEに損失年含む」
+    相当の新規銘柄 (NEWCO) に対し、全修正が特定銘柄ハードコードなしで
+    自動適用されることを確認する回帰防止テスト群。
+    """
+
+    @staticmethod
+    def _make_neg_fcf_valuation(upside: float = -5.0) -> dict:
+        """実績FCF全年マイナス新規銘柄のバリュエーション dict（_minimal_valuation ベース）"""
+        val = _minimal_valuation(upside=upside)
+        # FCF全年マイナス → revenue_floor適用 → FCF_Reliability=LOW
+        val["fcf_estimation"] = {"applied": False, "sector": "Technology"}
+        val["components"].update({
+            "fcf_base_used":    900_000_000,
+            "fcf_floor_applied": 900_000_000,   # > 0 → DCF_Reliability=LOW
+            "fcf_5yr_avg":     -6_000_000_000,  # 実績avg negative
+            "fcf_base_method": "avg_5yr",
+            "fcf_list_raw":    [-8e9, -6e9, -4e9],
+        })
+        # RICE未計算 → Matrix④ を使わせる
+        val["rice"] = {"available": False, "note": ""}
+        return val
+
+    def test_dcf_reliability_low_shown_in_report_for_negative_fcf_ticker(self, tmp_path):
+        """新規銘柄: 実績FCF全年マイナス → DCF_Reliability=LOW が report に自動表示される"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_neg_fcf_valuation()
+        score_data = {"score": "WATCH", "funda_score": 25, "score_comment": "DCF信頼性LOW"}
+        report = pipe._generate_report("NEWCO", val, score_data, _minimal_extra())
+        assert "DCF_Reliability: LOW" in report
+
+    def test_rpo_ratio_below_threshold_auto_excluded_for_new_ticker(self):
+        """新規銘柄: RPO/Revenue=0.10 → whitelist未登録の場合に自動的に rpo_pv=0 かつ除外理由が設定される"""
+        result = adjust_rpo(
+            rpo=5_000_000_000,         # RPO $5B
+            sector="Technology",
+            ticker="NEWCO",             # whitelist未登録
+            industry="Software - Application",
+            op_margin=0.25,
+            rev_ttm=50_000_000_000,    # Revenue $50B → ratio=0.10 < 0.30
+        )
+        assert result.rpo_pv == 0.0
+        assert "not applied" in result.exclusion_reason
+        assert "0.10" in result.exclusion_reason
+
+    def test_matrix4_uses_actual_negative_fcf_margin_for_new_ticker(self, tmp_path):
+        """新規銘柄: rice未計算 → Matrix④ が fcf_history の実績マイナスマージンを使う"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_neg_fcf_valuation(upside=-5.0)
+        extra = _minimal_extra()
+        extra["fcf_history"] = [{"fcf": -500_000_000, "fcf_margin": -125.0, "year": 2024}]
+        score_data = {"score": "WATCH", "funda_score": 25, "score_comment": "test"}
+        report = pipe._generate_report("NEWCO", val, score_data, extra)
+        assert "④キャッシュ創出力系" in report
+        assert "FCF_Margin = -125.0%" in report
+
+    def test_roe_avg_includes_negative_year_in_calculation(self, tmp_path):
+        """新規銘柄: reader.py が損失年度を除外せず全期間平均でROEを算出する"""
+        sec_dir = tmp_path / "NEWCO"
+        sec_dir.mkdir()
+        # 2022: -20%、2023: -10%、2024: +6% → 平均 -8%
+        for yr, ni in [(2022, -200_000_000), (2023, -100_000_000), (2024, 60_000_000)]:
+            (sec_dir / f"annual_{yr}.json").write_text(json.dumps({
+                "pl": {"net_income": ni},
+                "bs": {"stockholders_equity": 1_000_000_000},
+            }), encoding="utf-8")
+
+        reader = SECReader(data_dir=str(tmp_path))
+        avg, years_used, _ = reader.get_roe_avg_detail("NEWCO", years=10)
+
+        assert years_used == 3, f"損失年を含む全3年が計算に使われるべき (got {years_used})"
+        assert avg < 0, f"損失年込み平均はマイナスになるべき (got {avg:.2%})"
+        assert abs(avg - (-0.08)) < 0.005, f"平均ROE ≈ -8% のはず (got {avg:.2%})"
+
+    def test_watch_score_auto_applied_for_negative_fcf_new_ticker(self, tmp_path):
+        """新規銘柄: FCF全年マイナス(floor適用) → SCORE が WATCH に自動丸めされる"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        valuation = {
+            "upside_percent": -5.0,
+            "components": {
+                "fcf_floor_applied": 900_000_000,  # LOW判定トリガー
+                "diluted_shares": None,
+            },
+            "fcf_base": {"base_fcf": 900_000_000},
+            "financial_health": {},
+            "fcf_estimation": {},
+        }
+        result = pipe._compute_tanuki_score("NEWCO", valuation)
+        assert result["score"] == "WATCH"
+        assert "LOW" in result["score_comment"]
