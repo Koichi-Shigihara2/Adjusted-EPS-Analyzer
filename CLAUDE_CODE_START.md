@@ -244,6 +244,11 @@ if ticker not in existing:
 else:
     print(f'{ticker} はすでに登録済みです')
 "
+
+# Step 8: 登録パイプライン健全性チェック（必須）
+python common/sec_data/registration_validator.py [TICKER]
+# NG=0 を確認してからコミットする。
+# WARN は内容を確認して対処が必要なもののみ対応する（上場直後の SEC 件数不足は許容）。
 ```
 
 **注意事項：**
@@ -253,6 +258,10 @@ else:
 - Step 5 HypeCore は yfinance 依存。KULR 等データ不足銘柄は失敗するが無視してよい
 - Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
 - Step 7 の monitor_tickers.yaml は **単純リスト形式**（yaml.dump 使用不可 → コメントが消える）
+- Step 8 の NG は必ず解消してからコミットする。主なNG要因:
+  - `P2-A NG`: latest_revenue が TTM の 3 倍以上乖離 → SEC パーサーのタグ確認
+  - `P1-Step3 NG`: latest.json 未生成 → pipeline.py を再実行
+  - `P1-Step7 NG`: monitor_tickers 未登録 → Step 7 を再確認
 - SaaS系銘柄でRPOプレミアムを適用する場合は `config/rpo_config.json` の
   whitelist に理由コメント付きで明示登録する（industry keyword 依存禁止）
   理由: keyword は将来銘柄追加時に意図しない適用の再発リスクあり（GOOGL等参照）

@@ -7,7 +7,18 @@
 
 ## 優先度：高（次の改修サイクルで対応）
 
-現在なし
+### [SEC-REV-FINTECH-1] SOFI: annual_*.json の revenue が手数料収入のみを取得している
+**検出:** registration_validator.py P2-A NG (2026-06-11)
+**症状:** `latest_revenue` = $0.62B (annual_2025.json) ≠ TTM Revenue = $4.11B (ratio=6.6x)
+**根本原因:**
+- `quarterly.py` の `FINANCIAL_OVERRIDES["SOFI"]` で `revenue_concept = "RevenuesNetOfInterestExpense"` を固定 → TTM計算は正しく$4.11B
+- `parser.py` の `MERGE_ALL_TAGS_FIELDS` "revenue" は複数タグをマージし、年次10-Kでは `RevenueFromContractWithCustomerExcludingAssessedTax`（手数料収入のみ、~$619M）が優先採用される
+- 年次と四半期でタグ申告が異なるため parser.py のタグ選択が狂う
+**影響:** `latest_revenue` が6.6倍過小 → PS Ratio・Matrix④ FCFマージン・セグメント重み付けが歪む
+**修正方針:**
+- `parser.py` に `quarterly.py` と同じ `FINANCIAL_OVERRIDES` の `revenue_concept` オーバーライドを適用する
+- SOFI: `revenue` タグ候補を `RevenuesNetOfInterestExpense` に固定して再パース・再生成
+**着手条件:** なし（単独対応可）
 
 ---
 
