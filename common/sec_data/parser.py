@@ -49,8 +49,11 @@ class SECParser:
             "AvailableForSaleSecurities",
         ],
         "long_term_debt": [
-            "LongTermDebt",
+            # LongTermDebtNoncurrent を優先する。
+            # LongTermDebt は current+non-current の合計値のため、LongTermDebtCurrent と
+            # 組み合わせると Total_Debt が二重計上される（BUG-NETDEBT-2）。
             "LongTermDebtNoncurrent",
+            "LongTermDebt",
             "LongTermNotesPayable",
             "SeniorNotes",
         ],

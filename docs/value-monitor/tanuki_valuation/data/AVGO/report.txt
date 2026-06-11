@@ -1,16 +1,16 @@
 AVGO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-11T20:41:48+09:00
-Price: $372.10
+Generated: 2026-06-11T23:39:31+09:00
+Price: $377.50
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -30.9%
-  MA200_Deviation: +4.3%
+  Deviation_Rate: -26.6%
+  MA200_Deviation: +5.7%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: 1.33 (Strong Buy)
-Comment: 割高(-31%超)、FCF黒字、売上成長加速
+Comment: 割高(-27%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 3.459
-Deviation_Rate: -30.9%
+Key_Metric_Y: RICE = 3.470
+Deviation_Rate: -26.6%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -43,7 +43,7 @@ Definition:
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
 RICE = (G x Q x CF) / WACC
 Applied to: RICE-calculable tickers
-Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
+Matrix②(収益性系): Y=ROE_8yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
 (Consumer/Financial/Utilities/RealEstate/Insurance)
 Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $372.10
-Intrinsic_Value_BASE: $257.24
-Deviation_BASE: -30.9%
+Current_Price: $377.50
+Intrinsic_Value_BASE: $276.94
+Deviation_BASE: -26.6%
 Scenarios:
-BEAR: Growth=12.6%, IV=$205.58, Deviation=-44.8%
-BASE: Growth=17.9%, IV=$257.24, Deviation=-30.9%
-BULL: Growth=21.5%, IV=$297.06, Deviation=-20.2%
+BEAR: Growth=12.6%, IV=$221.53, Deviation=-41.3%
+BASE: Growth=17.9%, IV=$276.94, Deviation=-26.6%
+BULL: Growth=21.5%, IV=$319.64, Deviation=-15.3%
 Growth_Rate_Rec: 15.7% (recommended)
 TTM_Revenue_Growth: 25.2%
 (DCF Base vs TTM actual: -7.3pt discount)
@@ -70,12 +70,12 @@ Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.51%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.44
-FCF_Base: $24,660.20M (5yr平均 + R&D補正)
+FCF_Base: $26,448.00M (5yr平均 + R&D補正)
 DCF_Reliability: HIGH
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $+55.03B (negative=net cash)
-  Total_Debt: $69.21B  Cash: $14.17B
+  Net_Debt: $+48.43B (negative=net cash)
+  Total_Debt: $68.06B  Cash: $19.63B
   SBC_TTM: $7,568M
   Dilution_3yr_Annual: +4.67%/yr  やや高い希薄化 ℹ️ 要注意
   Dilution_Comment: 継続なら1株価値を年率4.7%毀損。SBC水準を確認推奨。
@@ -159,18 +159,18 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=2.435
-BASE: RICE=3.459
-BULL: RICE=4.155
+BEAR: RICE=2.442
+BASE: RICE=3.47
+BULL: RICE=4.168
 Components (BASE scenario):
 G  = 17.9%  [TANUKI forward growth rate]
-Q  = 1.1193   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.152  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 9.6818  [R&D除外・CapExのみ投資強度]
-RICE_adj = 29.073  [参考：R&D資本化想定]
+Q  = 1.0186   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 1.2588  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
+RICE_adj = 27.565  [参考：R&D資本化想定]
 WACC = 10.0%
-VC_Factor = 1.50  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.50  [NOPAT/InvestedCapital / 0.10]
+VC_Factor = 1.51  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 1.51  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -219,7 +219,7 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 61.7x
+  Market_PER_GAAP: 62.6x
   Adjusted_EPS_PER: N/A
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
@@ -246,9 +246,9 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 2026-06: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 61.7x
+  PER: 62.6x
   PEG: 0.72
-  PS:  23.5x
+  PS:  23.8x
   EV_EBITDA: 43.1x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
@@ -268,9 +268,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.20%  (ForwardEPS $19.35 / Price $372.10)
+  Forward_Earnings_Yield: 5.13%  (ForwardEPS $19.35 / Price $377.50)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.90%
+  ERP: 0.83%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

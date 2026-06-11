@@ -4,6 +4,30 @@
 
 ## 2026-06-11 完了
 
+### ✅ BUG-NETDEBT-2 (2026-06-11 完了): LongTermDebt優先順位修正による二重計上防止
+- 原因: `XBRL_MAPPING["long_term_debt"]` の先頭が `LongTermDebt`（current+non-current合計）だった
+  `short_term_debt` で `LongTermDebtCurrent` を別途加算するため、current分が二重計上されていた
+- 修正: `parser.py` の `long_term_debt` マッピングを `LongTermDebtNoncurrent` 優先に変更
+- 影響: 48銘柄の annual.json を再生成、全銘柄の pipeline を再実行
+- DOCN 例: Total_Debt $1.62B → $1.30B、Net_Debt $0.88B → $0.55B
+- 回帰テスト: `tests/test_pipeline_logic.py` Section 21 (3件追加、計89件合格)
+
+### ✅ SEC-REV-FINTECH-1 (2026-06-11 完了): 金融系銘柄 annual revenue 過小評価の修正
+- 原因: `MERGE_ALL_TAGS` 動作で狭義 `RevenueFromContractWithCustomer`($0.62B) が
+  広義 `RevenuesNetOfInterestExpense`($3.61B) より先に見つかりrevenuが過小計上
+- 修正: `parser.py` に `TICKER_RESTRICTIONS["revenue_concept"]` オーバーライドを実装
+  指定タグのみ使用し merge_all=False でシングルタグ取得
+- SOFI: FY2024 annual revenue $0.62B → $3.61B 是正
+- 回帰テスト: `tests/test_pipeline_logic.py` Section 20 (3件追加)
+
+### ✅ 登録パイプラインWARN清掃 (2026-06-11 完了): WARN 23→10 件
+- CSGP/ZS: HypeCore実行によりデータ整備
+- BKNG/FCX: `eps=false` 設定（XBRL quarterly NetIncomeLoss データ欠如）
+- ASML: IFRS外国企業のため cik_lookup.csv から削除
+- 孤立エントリ削除: CRWD/FIG/MDB/PUBM/WEAV (tanuki=false なのにエントリ残存) + REKR/SENS/VUZI
+- `registration_validator.py` に `eps_disabled` 除外ロジック追加
+- `CLAUDE_CODE_START.md` に EPS analyzer Step 5b / IFRS注意事項 を補強
+
 ### ✅ BUG-RPO-1 whitelist構造化 (2026-06-11 完了): RPO適用をwhitelist+比率条件に構造化
 - _get_rpo_application_rate に via_whitelist フラグを追加（whitelist登録銘柄は比率チェック免除）
 - adjust_rpo に RPO/Revenue < 0.3 の比率ゲートを実装（whitelist以外全員適用）

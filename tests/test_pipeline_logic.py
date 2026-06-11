@@ -1720,3 +1720,59 @@ class TestFinancialSectorRevenueParsing:
                     f"SECParser.XBRL_MAPPING['revenue'] に含まれていない "
                     "(parser.py が採用できないタグが指定されている)"
                 )
+
+
+# =============================================================================
+# Section 21: BUG-NETDEBT-2 LongTermDebt二重計上修正 回帰テスト
+# =============================================================================
+
+class TestLongTermDebtPriorityNoncurrent:
+    """BUG-NETDEBT-2: LongTermDebt (total) と LongTermDebtCurrent の二重計上防止"""
+
+    def test_xbrl_mapping_priority_noncurrent_first(self):
+        """XBRL_MAPPING の long_term_debt は LongTermDebtNoncurrent が最優先"""
+        from common.sec_data.parser import SECParser
+
+        priority = SECParser.XBRL_MAPPING["long_term_debt"]
+        assert priority[0] == "LongTermDebtNoncurrent", (
+            f"long_term_debt[0]={priority[0]!r} should be 'LongTermDebtNoncurrent'. "
+            "BUG-NETDEBT-2: LongTermDebt (total) が先頭だと LongTermDebtCurrent との二重計上が発生する"
+        )
+        assert "LongTermDebt" in priority, "LongTermDebt フォールバックが priority リストに必要"
+        # LongTermDebt は LongTermDebtNoncurrent より後ろ
+        assert priority.index("LongTermDebt") > priority.index("LongTermDebtNoncurrent"), \
+            "LongTermDebt は LongTermDebtNoncurrent より後ろに位置すること"
+
+    def test_short_term_debt_uses_current_tag(self):
+        """short_term_debt は LongTermDebtCurrent タグを持つこと（total との分離確認）"""
+        from common.sec_data.parser import SECParser
+
+        st_priority = SECParser.XBRL_MAPPING.get("short_term_debt", [])
+        assert "LongTermDebtCurrent" in st_priority, \
+            "short_term_debt mapping に LongTermDebtCurrent がない"
+
+    def test_docn_total_debt_corrected(self):
+        """DOCN の annual JSON で Total_Debt が是正されていること (BUG-NETDEBT-2 後)"""
+        import os, json
+
+        annual_path = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "DOCN", "annual.json"
+        )
+        if not os.path.exists(annual_path):
+            return  # データファイル非存在時はスキップ
+
+        with open(annual_path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        # FY2024 の Total_Debt を確認（LTD_total+LTDcurrent の二重計上なら ~$1.62B になる）
+        fy2024 = data.get("2024", {})
+        lt = fy2024.get("bs", {}).get("long_term_debt")
+        st = fy2024.get("bs", {}).get("short_term_debt", 0) or 0
+        if lt is None:
+            return  # データ構造が異なる場合はスキップ
+
+        total = lt + st
+        assert total < 1_500_000_000, (
+            f"DOCN FY2024 Total_Debt=${total/1e9:.2f}B が $1.5B 超 "
+            "— BUG-NETDEBT-2 が再発している可能性 (修正後は ~$1.30B が期待値)"
+        )
