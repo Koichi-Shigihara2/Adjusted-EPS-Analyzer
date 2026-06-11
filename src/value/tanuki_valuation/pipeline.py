@@ -943,7 +943,8 @@ class TanukiValuationPipeline:
         L.append("Matrix①(投資効率系): Y=RICE, X=Deviation Rate")
         L.append("RICE = (G x Q x CF) / WACC")
         L.append("Applied to: RICE-calculable tickers")
-        L.append("Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate")
+        _roe_n_def = comps.get("roe_years_used") or 10
+        L.append(f"Matrix②(収益性系): Y=ROE_{_roe_n_def}yr_avg, X=Deviation Rate")
         L.append("Applied to: Sector-excluded tickers")
         L.append("(Consumer/Financial/Utilities/RealEstate/Insurance)")
         L.append("Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)")
@@ -1749,7 +1750,9 @@ class TanukiValuationPipeline:
                 with open(seg_path, encoding="utf-8") as f:
                     seg_conf = json.load(f).get(ticker, {})
                 segs = seg_conf.get("segments", {})
-                if segs and latest_revenue:
+                if not segs:
+                    result["segment_configured"] = False
+                elif segs and latest_revenue:
                     is_general_fallback = (len(segs) == 1 and "General" in segs)
                     seg_list = []
                     for name, info in segs.items():

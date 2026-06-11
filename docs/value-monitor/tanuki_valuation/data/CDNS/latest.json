@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -51.6,
-  "calculation_date": "2026-06-11T20:41:49+09:00",
+  "calculation_date": "2026-06-11T21:25:37+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 157.62
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 186.46
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 208.23
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -261,7 +274,25 @@
     "warnings": true,
     "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=4.77)",
     "vc_factor": 2.0,
-    "roic_wacc_ratio": 4.767
+    "roic_wacc_ratio": 4.767,
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.568,
+      "rice_per_ratio": 0.0063,
+      "rice_adj": 9.597
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 0.811,
+      "rice_per_ratio": 0.009,
+      "rice_adj": 13.71
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 0.973,
+      "rice_per_ratio": 0.0108,
+      "rice_adj": 16.452
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
@@ -342,6 +373,7 @@
     "overall": "WARN",
     "ai_comment": null
   },
+  "phase1_growth": 0.1457277629468552,
   "tanuki_score": "TRIM",
   "funda_score": 80,
   "score_comment": "割高(-52%超)、FCF黒字、売上安定成長",
@@ -385,8 +417,9 @@
     "shares_yr_3ago_label": "2022"
   },
   "next_earnings_date": "2026-07-28",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
-  "phase1_growth_auto_adjusted": false,
+  "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.1457277629468552,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,

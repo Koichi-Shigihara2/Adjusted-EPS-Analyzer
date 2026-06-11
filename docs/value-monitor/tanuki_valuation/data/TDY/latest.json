@@ -10,7 +10,7 @@
   "alpha": 0.4432465787486262,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 595.96,
+    "1年後": 595.95,
     "2年後": 685.35,
     "3年後": 788.15,
     "4年後": 906.37,
@@ -18,7 +18,7 @@
   },
   "return_metrics": {
     "1年後": {
-      "future_value": 595.96,
+      "future_value": 595.95,
       "value_growth_pct": 15.0,
       "expected_return_pct": -0.9
     },
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -13.8,
-  "calculation_date": "2026-06-11T20:41:52+09:00",
+  "calculation_date": "2026-06-11T21:25:42+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 423.45
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 518.22
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 589.72
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -237,7 +250,25 @@
     "warnings": true,
     "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=0.69(ROIC/WACC=0.69) / R&D未取得（FYTTM@2023-04-02）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "vc_factor": 0.694,
-    "roic_wacc_ratio": 0.694
+    "roic_wacc_ratio": 0.694,
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.238,
+      "rice_per_ratio": 0.0078,
+      "rice_adj": 1.971
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 0.34,
+      "rice_per_ratio": 0.0111,
+      "rice_adj": 2.815
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 0.408,
+      "rice_per_ratio": 0.0134,
+      "rice_adj": 3.378
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-29",
@@ -318,6 +349,7 @@
     "overall": "PASS",
     "ai_comment": null
   },
+  "phase1_growth": 0.10875156954339793,
   "tanuki_score": "HOLD",
   "funda_score": 70,
   "score_comment": "フェアバリュー近辺、FCF黒字、売上安定成長",
@@ -361,8 +393,9 @@
     "shares_yr_3ago_label": "2023"
   },
   "next_earnings_date": "2026-07-22",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
-  "phase1_growth_auto_adjusted": false,
+  "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.10875156954339793,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,

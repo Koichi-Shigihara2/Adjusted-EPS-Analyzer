@@ -1,5 +1,5 @@
 ADSK INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-11T20:41:49+09:00
+Generated: 2026-06-11T21:25:37+09:00
 Price: $221.28
 
 [1. TANUKI SCORE]
@@ -30,8 +30,8 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 右下
-Label: 割安×N/A
-Key_Metric_Y: RICE = N/A
+Label: 割安×低効率
+Key_Metric_Y: RICE = 0.860
 Deviation_Rate: +47.4%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
@@ -43,7 +43,7 @@ Definition:
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
 RICE = (G x Q x CF) / WACC
 Applied to: RICE-calculable tickers
-Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
+Matrix②(収益性系): Y=ROE_7yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
 (Consumer/Financial/Utilities/RealEstate/Insurance)
 Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
@@ -59,13 +59,14 @@ Positive deviation = undervalued (intrinsic > current)
 Current_Price: $221.28
 Intrinsic_Value_BASE: $326.10
 Deviation_BASE: +47.4%
+Growth_Rate_Original: 15.0% (TTM実績)
+Growth_Rate_Adjusted: 13.7% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=0.0%, IV=$0.00, Deviation=+0.0%
-BASE: Growth=0.0%, IV=$326.10, Deviation=+47.4%
-BULL: Growth=0.0%, IV=$0.00, Deviation=+0.0%
-Growth_Rate_Rec: 13.7% (recommended)
+BEAR: Growth=10.5%, IV=$272.06 （推奨値ベース）
+BASE: Growth=15.0%, IV=$326.10 （推奨値ベース）
+BULL: Growth=18.0%, IV=$366.89 （推奨値ベース）
 TTM_Revenue_Growth: 18.3%
-(DCF Base vs TTM actual: -18.3pt discount)
+(DCF Base vs TTM actual: -3.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 11.68%
 Terminal_Growth_Rate: 3.5%
@@ -154,14 +155,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+BEAR: RICE=0.602
+BASE: RICE=0.86
+BULL: RICE=1.032
 Components (BASE scenario):
-G  = N/A
+G  = 15.0%  [TANUKI forward growth rate]
 Q  = 1.1754   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.2438  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
+RICE_adj = 35.263  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 3.78  [NOPAT/InvestedCapital / 0.10]

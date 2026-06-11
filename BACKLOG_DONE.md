@@ -28,6 +28,20 @@
 - ラベル変更: `FCF_CAGR_3yr` → `FCF_CAGR_{span}yr`（スパン明示）
 - 結果: CAKE FCF_CAGR_4yr: +1.5%（旧: FCF_CAGR_3yr: +2.0%）
 
+### ✅ BUG-SCAN-FULLSCAN-1 (2026-06-11 完了): 全79銘柄スキャンによるバグ3件の発見と修正
+- **Fix1 (core_calculator.py)**: `scenario_valuations` を `growth_result.source == "segment_weighted"` ゲートなしで全銘柄に計算
+  - 旧バグ: segment未設定の15銘柄でBEAR/BULLが $0.00 / Growth=0.0% になっていた
+  - 修正: `if growth_result.source == "segment_weighted":` ガードを削除し無条件計算に変更
+- **Fix2 (pipeline.py _load_extra_data)**: segment_config.json 未登録銘柄に `segment_configured=False` をセット
+  - 旧バグ: 未登録銘柄では `extra.get("segment_configured", True)` が True を返し `_is_seg_unconfigured=False` になっていた
+  - 修正: `not segs` のとき `result["segment_configured"] = False` を追加
+- **Fix3 (pipeline.py _generate_report)**: Matrix② 定義文の ROE 年数を `roe_years_used` から動的生成
+  - 旧バグ: 固定文字列 `"ROE_10yr_avg"` を使用、6年・8年集計の銘柄で不一致
+  - 修正: `_roe_n_def = comps.get("roe_years_used") or 10` で動的に年数を取得
+- スキャナー: `common/sec_data/phase1_scan.py` を新規作成（10カテゴリ 全銘柄検査）
+- 再実行: 影響15銘柄 + Matrix②5銘柄 を再生成 → NG=0 / WARN=12(期限切れ決算日11件+軽微逆転1件)
+- 回帰テスト: `tests/test_pipeline_logic.py` にFix1/Fix2/Fix3の回帰防止テスト6件を追加 (計83件合格)
+
 ### ✅ CONFIG-CAKE-SEG-1 (2026-06-11 完了): CAKEセグメント設定の名称・注記修正
 - 修正: segment_config.json CAKE エントリー更新
   "Restaurant Sales" → "Restaurant Operations"（North Italia/FRC brands含む）

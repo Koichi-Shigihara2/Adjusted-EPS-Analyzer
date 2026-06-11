@@ -590,28 +590,27 @@ class KoichiValuationCalculator:
         )
 
         # ── STEP 11: シナリオ分析 ──
+        # growth source を問わず全銘柄でシナリオを計算する
         scenario_result: Optional[ScenarioResult] = None
-        if growth_result.source == "segment_weighted":
-            # シナリオ計算: Phase1年数・Phase2・BS補正を渡す（v7.1）
-            _scenario_p1_years = _sensitivity_base_years  # Phase1実際年数
-            scenario_calc_func = create_scenario_func(
-                base_fcf=base_fcf,
-                wacc=_rm,  # v7.3: Rmβなし（メイン理論株価と整合）
-                high_growth_years=_scenario_p1_years,
-                diluted_shares=diluted_shares,
-                rpo_pv=rpo_pv + growth_option_pv,
-                alpha=alpha,
-                terminal_growth=terminal_growth,
-                net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
-                phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
-                phase2_years=_phase2_years,                            # v7.1: 3段階対応
-                tapering_g_end=tapering_g_end,                         # DCF-1: 線形逓減
-            )
-            scenario_result = calculate_scenario_valuations(
-                calc_func=scenario_calc_func,
-                base_growth_rate=high_growth_rate,
-                bear_multiplier=bear_multiplier,
-            )
+        _scenario_p1_years = _sensitivity_base_years  # Phase1実際年数
+        scenario_calc_func = create_scenario_func(
+            base_fcf=base_fcf,
+            wacc=_rm,  # v7.3: Rmβなし（メイン理論株価と整合）
+            high_growth_years=_scenario_p1_years,
+            diluted_shares=diluted_shares,
+            rpo_pv=rpo_pv + growth_option_pv,
+            alpha=alpha,
+            terminal_growth=terminal_growth,
+            net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
+            phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
+            phase2_years=_phase2_years,                            # v7.1: 3段階対応
+            tapering_g_end=tapering_g_end,                         # DCF-1: 線形逓減
+        )
+        scenario_result = calculate_scenario_valuations(
+            calc_func=scenario_calc_func,
+            base_growth_rate=high_growth_rate,
+            bear_multiplier=bear_multiplier,
+        )
 
         # ── STEP 12: 将来価値予測 ──
         # BASE シナリオの ivps を起点とする（segment_weighted の場合）

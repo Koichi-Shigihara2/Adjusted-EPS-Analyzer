@@ -11,7 +11,7 @@
   "alpha_was_capped": true,
   "future_values": {
     "1年後": 1074.78,
-    "2年後": 1235.99,
+    "2年後": 1236.0,
     "3年後": 1421.39,
     "4年後": 1634.6,
     "5年後": 1879.79
@@ -23,8 +23,8 @@
       "expected_return_pct": -11.9
     },
     "2年後": {
-      "future_value": 1235.99,
-      "value_growth_pct": 32.2,
+      "future_value": 1236.0,
+      "value_growth_pct": 32.3,
       "expected_return_pct": 1.3
     },
     "3年後": {
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -23.4,
-  "calculation_date": "2026-06-11T20:41:55+09:00",
+  "calculation_date": "2026-06-11T21:25:39+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 756.83
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 934.59
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 1068.7
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -255,7 +268,25 @@
     "warnings": true,
     "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=4.64)",
     "vc_factor": 2.0,
-    "roic_wacc_ratio": 4.638
+    "roic_wacc_ratio": 4.638,
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.863,
+      "rice_per_ratio": 0.0223,
+      "rice_adj": 19.609
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 1.233,
+      "rice_per_ratio": 0.0318,
+      "rice_adj": 28.013
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 1.48,
+      "rice_per_ratio": 0.0382,
+      "rice_adj": 33.615
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
@@ -309,7 +340,7 @@
     "peg": 0.81,
     "ps": 12.543824,
     "ev_ebitda": 27.286,
-    "ma200": 1439.9437,
+    "ma200": 1438.965,
     "forward_eps": 54.32563
   },
   "validation": {
@@ -336,6 +367,7 @@
     "overall": "WARN",
     "ai_comment": null
   },
+  "phase1_growth": 0.2637698406802508,
   "tanuki_score": "HOLD",
   "funda_score": 100,
   "score_comment": "割高(-23%超)、FCF黒字、売上成長加速",
@@ -379,8 +411,9 @@
     "shares_yr_3ago_label": "2022"
   },
   "next_earnings_date": "2026-04-29",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
-  "phase1_growth_auto_adjusted": false,
+  "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.2637698406802508,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,

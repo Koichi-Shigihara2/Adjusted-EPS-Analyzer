@@ -12,9 +12,9 @@
   "future_values": {
     "1年後": 26.81,
     "2年後": 30.83,
-    "3年後": 35.46,
-    "4年後": 40.78,
-    "5年後": 46.89
+    "3年後": 35.45,
+    "4年後": 40.77,
+    "5年後": 46.88
   },
   "return_metrics": {
     "1年後": {
@@ -24,27 +24,27 @@
     },
     "2年後": {
       "future_value": 30.83,
-      "value_growth_pct": 32.2,
+      "value_growth_pct": 32.3,
       "expected_return_pct": 228.3
     },
     "3年後": {
-      "future_value": 35.46,
+      "future_value": 35.45,
       "value_growth_pct": 52.1,
-      "expected_return_pct": 277.6
+      "expected_return_pct": 277.5
     },
     "4年後": {
-      "future_value": 40.78,
+      "future_value": 40.77,
       "value_growth_pct": 74.9,
-      "expected_return_pct": 334.3
+      "expected_return_pct": 334.2
     },
     "5年後": {
-      "future_value": 46.89,
+      "future_value": 46.88,
       "value_growth_pct": 101.1,
-      "expected_return_pct": 399.4
+      "expected_return_pct": 399.3
     }
   },
   "upside_percent": 148.3,
-  "calculation_date": "2026-06-11T20:41:56+09:00",
+  "calculation_date": "2026-06-11T21:25:40+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 19.93
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 23.31
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 25.87
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -237,7 +250,25 @@
     "warnings": true,
     "note": "SBC補正済み（純利益+SBCを分母に使用） / Q: 1年のみ使用（3年要求） / RICE-1価値創造係数=0.30(ROIC/WACC=0.23)",
     "vc_factor": 0.3,
-    "roic_wacc_ratio": 0.225
+    "roic_wacc_ratio": 0.225,
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.039,
+      "rice_per_ratio": 0.0025,
+      "rice_adj": 1.679
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 0.055,
+      "rice_per_ratio": 0.0036,
+      "rice_adj": 2.398
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 0.067,
+      "rice_per_ratio": 0.0043,
+      "rice_adj": 2.878
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
@@ -361,6 +392,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "next_earnings_date": "2026-07-29",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
   "phase1_growth_auto_adjusted": false,
   "recommended_g": null,

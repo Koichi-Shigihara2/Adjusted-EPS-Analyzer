@@ -1518,3 +1518,127 @@ class TestMatrix4TailNoneRegression:
         import re
         m = re.search(r'FCF_Margin = ([+-]?\d+\.?\d*)%', report)
         assert m is None, f"floor適用時に正値が表示された: {m.group(0)}"
+
+
+# ─────────────────────────────────────────────
+# 19. 回帰防止: Fix1/Fix2/Fix3 (2026-06-11 バグ修正)
+#
+#   Fix1: scenario_valuations を growth source に関わらず全銘柄で計算する
+#   Fix2: segment_config.json 未登録銘柄に segment_configured=False をセット
+#   Fix3: Matrix② 定義文の ROE 年数を roe_years_used から動的に生成する
+# ─────────────────────────────────────────────
+
+class TestScenarioValuationsAlwaysRendered:
+    """Fix1 回帰防止: scenario_valuations が None のとき BEAR/BULL が $0.00 になるリグレッション検出"""
+
+    def test_bear_bull_non_zero_when_scenario_valuations_populated(self, tmp_path):
+        """scenario_valuations に BEAR/BULL が設定されていれば report に非ゼロ IV が表示される"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=30.0)
+        val["scenario_valuations"] = {
+            "bear": {"growth_rate": 0.15, "intrinsic_value_per_share": 110.0},
+            "base": {"growth_rate": 0.25, "intrinsic_value_per_share": 140.0},
+            "bull": {"growth_rate": 0.35, "intrinsic_value_per_share": 175.0},
+        }
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("SCENTEST", val, score_data, _minimal_extra())
+
+        # BEAR/BULL の IV が 0.00 でないこと（旧バグでは segment_weighted 以外は $0.00 になっていた）
+        assert "BEAR: Growth=15.0%, IV=$110.00" in report, \
+            "BEAR IV が正しく表示されていない (segment_weighted 以外でシナリオが計算されないリグレッション)"
+        assert "BULL: Growth=35.0%, IV=$175.00" in report, \
+            "BULL IV が正しく表示されていない"
+
+    def test_bear_bull_show_zero_when_scenario_valuations_absent(self, tmp_path):
+        """scenario_valuations が None のときは BEAR/BULL が $0.00 になること（旧バグ再現・検出用）"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=30.0)
+        val["scenario_valuations"] = None  # 旧バグ: segment_weighted 以外はここが None だった
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("SCENTEST_NULL", val, score_data, _minimal_extra())
+
+        assert "BEAR: Growth=0.0%, IV=$0.00" in report
+        assert "BULL: Growth=0.0%, IV=$0.00" in report
+
+
+class TestSegmentConfiguredFalseForUnconfiguredTicker:
+    """Fix2 回帰防止: segment_config.json 未登録銘柄に segment_configured=False がセットされること"""
+
+    def test_absent_ticker_gets_segment_configured_false(self, tmp_path):
+        """segment_config.json に存在しない銘柄は segment_configured=False になる"""
+        pipe = _make_pipe(tmp_path)
+        # repo_root/config/segment_config.json を作成（OTHERTICKER のみ登録）
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "segment_config.json").write_text(
+            json.dumps({"OTHERTICKER": {"segments": {"Cloud": {"weight": 1.0, "growth": 0.15}}}}),
+            encoding="utf-8",
+        )
+        valuation = {"components": {"latest_revenue": 1_000_000_000}}
+        result = pipe._load_extra_data("NEWTICKER", valuation)
+
+        assert result.get("segment_configured") is False, (
+            "segment_config.json 未登録銘柄で segment_configured=False がセットされていない"
+            " (旧バグ: キーが存在せず extra.get('segment_configured', True) が True になっていた)"
+        )
+
+    def test_registered_ticker_gets_segment_configured_true(self, tmp_path):
+        """segment_config.json に登録済みの銘柄は segment_configured=True になる"""
+        pipe = _make_pipe(tmp_path)
+        config_dir = tmp_path / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        (config_dir / "segment_config.json").write_text(
+            json.dumps({"REGTICKER": {"segments": {"Cloud": {"weight": 1.0, "growth": 0.20}}}}),
+            encoding="utf-8",
+        )
+        valuation = {"components": {"latest_revenue": 5_000_000_000}}
+        result = pipe._load_extra_data("REGTICKER", valuation)
+
+        assert result.get("segment_configured") is True, \
+            "登録済み銘柄で segment_configured=True がセットされていない"
+
+
+class TestMatrix2ROEDefinitionDynamicYear:
+    """Fix3 回帰防止: Matrix② 定義文の ROE 年数が roe_years_used から動的に生成されること"""
+
+    @staticmethod
+    def _make_sector_excluded_valuation(roe_years_used: int = 6) -> dict:
+        """Matrix②（セクター除外）を使うバリュエーション dict"""
+        val = _minimal_valuation(upside=20.0)
+        val["rice"] = {
+            "available": False,
+            "note": "セクター除外",
+            "base": {},
+            "bear": {},
+            "bull": {},
+        }
+        val["components"]["roe_10yr_avg"] = 0.18
+        val["components"]["roe_years_used"] = roe_years_used
+        return val
+
+    def test_matrix2_definition_uses_roe_years_used(self, tmp_path):
+        """roe_years_used=6 のとき Matrix② 定義文に ROE_6yr_avg が含まれる"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_sector_excluded_valuation(roe_years_used=6)
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("ROE6TEST", val, score_data, _minimal_extra())
+
+        assert "Matrix②(収益性系): Y=ROE_6yr_avg, X=Deviation Rate" in report, \
+            "roe_years_used=6 のとき ROE_6yr_avg が表示されるべき (旧バグ: 固定 ROE_10yr_avg)"
+        assert "ROE_10yr_avg" not in report.split("[2. MATRIX POSITION]")[1].split("[3.")[0], \
+            "roe_years_used=6 なのに ROE_10yr_avg が残っている"
+
+    def test_matrix2_definition_default_10yr(self, tmp_path):
+        """roe_years_used が未設定のとき Matrix② 定義文に ROE_10yr_avg が含まれる"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_sector_excluded_valuation()
+        val["components"].pop("roe_years_used", None)  # キーを削除してデフォルト動作を確認
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("ROE10DEFAULT", val, score_data, _minimal_extra())
+
+        assert "Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate" in report, \
+            "roe_years_used 未設定のとき ROE_10yr_avg がデフォルト値として表示されるべき"

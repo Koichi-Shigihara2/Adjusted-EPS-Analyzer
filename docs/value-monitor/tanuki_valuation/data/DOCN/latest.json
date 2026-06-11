@@ -11,8 +11,8 @@
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 12.93,
-    "2年後": 14.87,
-    "3年後": 17.1,
+    "2年後": 14.86,
+    "3年後": 17.09,
     "4年後": 19.66,
     "5年後": 22.61
   },
@@ -23,13 +23,13 @@
       "expected_return_pct": -92.5
     },
     "2年後": {
-      "future_value": 14.87,
-      "value_growth_pct": 32.3,
+      "future_value": 14.86,
+      "value_growth_pct": 32.2,
       "expected_return_pct": -91.3
     },
     "3年後": {
-      "future_value": 17.1,
-      "value_growth_pct": 52.1,
+      "future_value": 17.09,
+      "value_growth_pct": 52.0,
       "expected_return_pct": -90.0
     },
     "4年後": {
@@ -39,12 +39,12 @@
     },
     "5年後": {
       "future_value": 22.61,
-      "value_growth_pct": 101.1,
+      "value_growth_pct": 101.2,
       "expected_return_pct": -86.8
     }
   },
   "upside_percent": -93.4,
-  "calculation_date": "2026-06-11T20:41:56+09:00",
+  "calculation_date": "2026-06-11T21:25:38+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 7.22
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 11.24
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 14.28
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -255,7 +268,25 @@
     "warnings": true,
     "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=0.93(ROIC/WACC=0.93)",
     "vc_factor": 0.927,
-    "roic_wacc_ratio": 0.927
+    "roic_wacc_ratio": 0.927,
+    "bear": {
+      "growth_rate": 0.105,
+      "rice": 0.408,
+      "rice_per_ratio": 0.0054,
+      "rice_adj": 0.933
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "rice": 0.583,
+      "rice_per_ratio": 0.0077,
+      "rice_adj": 1.332
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "rice": 0.699,
+      "rice_per_ratio": 0.0093,
+      "rice_adj": 1.599
+    }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
@@ -309,7 +340,7 @@
     "peg": 1.54,
     "ps": 18.864412,
     "ev_ebitda": 62.579,
-    "ma200": 68.45535,
+    "ma200": 69.15505,
     "forward_eps": 1.75723
   },
   "validation": {
@@ -379,6 +410,7 @@
     "shares_yr_3ago_label": "2024"
   },
   "next_earnings_date": "2026-08-04",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
   "phase1_growth_auto_adjusted": false,
   "recommended_g": null,

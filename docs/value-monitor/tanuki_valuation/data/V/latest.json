@@ -11,10 +11,10 @@
   "alpha_was_capped": true,
   "future_values": {
     "1年後": 437.83,
-    "2年後": 503.51,
+    "2年後": 503.5,
     "3年後": 579.03,
-    "4年後": 665.89,
-    "5年後": 765.77
+    "4年後": 665.88,
+    "5年後": 765.76
   },
   "return_metrics": {
     "1年後": {
@@ -23,8 +23,8 @@
       "expected_return_pct": 35.6
     },
     "2年後": {
-      "future_value": 503.51,
-      "value_growth_pct": 32.3,
+      "future_value": 503.5,
+      "value_growth_pct": 32.2,
       "expected_return_pct": 55.9
     },
     "3年後": {
@@ -33,18 +33,18 @@
       "expected_return_pct": 79.3
     },
     "4年後": {
-      "future_value": 665.89,
+      "future_value": 665.88,
       "value_growth_pct": 74.9,
       "expected_return_pct": 106.2
     },
     "5年後": {
-      "future_value": 765.77,
+      "future_value": 765.76,
       "value_growth_pct": 101.1,
       "expected_return_pct": 137.1
     }
   },
   "upside_percent": 17.9,
-  "calculation_date": "2026-06-11T20:41:54+09:00",
+  "calculation_date": "2026-06-11T21:25:43+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -97,7 +97,20 @@
     },
     "segment": null
   },
-  "scenario_valuations": null,
+  "scenario_valuations": {
+    "bear": {
+      "growth_rate": 0.105,
+      "intrinsic_value_per_share": 317.63
+    },
+    "base": {
+      "growth_rate": 0.15,
+      "intrinsic_value_per_share": 380.72
+    },
+    "bull": {
+      "growth_rate": 0.18,
+      "intrinsic_value_per_share": 428.33
+    }
+  },
   "growth_options": {
     "total_pv": 0,
     "count": 0,
@@ -282,7 +295,7 @@
     "peg": 1.4,
     "ps": 14.274458,
     "ev_ebitda": 20.542,
-    "ma200": 329.95804,
+    "ma200": 329.82266,
     "forward_eps": 14.86375
   },
   "validation": {
@@ -309,6 +322,7 @@
     "overall": "WARN",
     "ai_comment": null
   },
+  "phase1_growth": 0.10921242130254294,
   "tanuki_score": "WATCH",
   "funda_score": 65,
   "score_comment": "割安(18%)傾向、FCF黒字、売上安定成長",
@@ -347,8 +361,9 @@
     "sbc_ttm": 897000000
   },
   "next_earnings_date": "2026-07-29",
+  "segment_configured": false,
   "phase1_growth_original": 0.15,
-  "phase1_growth_auto_adjusted": false,
+  "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.10921242130254294,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
