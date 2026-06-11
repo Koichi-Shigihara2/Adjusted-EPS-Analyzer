@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 308389811.07963806,
   "intrinsic_value_per_share": 3.5452777690717614,
   "intrinsic_value_beta": 3.12,
-  "upside_percent_beta": -72.2,
+  "upside_percent_beta": -71.3,
   "intrinsic_value_rf": 14.82,
-  "upside_percent_rf": 31.9,
+  "upside_percent_rf": 36.0,
   "v0": 308389811.07963806,
   "v0_adjusted": 308389811.07963806,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 4.02,
       "value_growth_pct": 13.2,
-      "expected_return_pct": -64.2
+      "expected_return_pct": -63.1
     },
     "2年後": {
       "future_value": 4.55,
       "value_growth_pct": 28.2,
-      "expected_return_pct": -59.5
+      "expected_return_pct": -58.2
     },
     "3年後": {
       "future_value": 5.16,
       "value_growth_pct": 45.4,
-      "expected_return_pct": -54.1
+      "expected_return_pct": -52.6
     },
     "4年後": {
       "future_value": 5.84,
       "value_growth_pct": 64.5,
-      "expected_return_pct": -48.0
+      "expected_return_pct": -46.4
     },
     "5年後": {
       "future_value": 6.61,
       "value_growth_pct": 86.2,
-      "expected_return_pct": -41.2
+      "expected_return_pct": -39.3
     }
   },
-  "upside_percent": -68.4,
-  "calculation_date": "2026-06-11T02:32:12+09:00",
+  "upside_percent": -67.5,
+  "calculation_date": "2026-06-11T17:38:55+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -196,7 +196,7 @@
     "estimated_fcf": 3258320.0,
     "raw_fcf": 3258320.0,
     "sector": "",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/RCAT/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\RCAT\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -221,7 +221,8 @@
     "application_rate": 0.0,
     "sector_category": "Non-SaaS",
     "rpo_incremental": 0.0,
-    "op_margin": -1.492046912222833
+    "op_margin": -1.492046912222833,
+    "exclusion_reason": ""
   },
   "bs_adjustment": {
     "cash": 167865000.0,
@@ -265,8 +266,10 @@
       -16019064
     ],
     "diluted_shares": 152192265,
-    "roe_10yr_avg": 0.0,
-    "current_price": 11.235,
+    "roe_10yr_avg": -0.555907252157317,
+    "roe_years_used": 7,
+    "roe_outlier_adj": true,
+    "current_price": 10.895,
     "latest_revenue": 40729000.0,
     "rpo": 270,
     "beta": 1.242,
@@ -282,7 +285,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 87091762.52262382,
     "pv_terminal": 221298048.55701426,
-    "roe_used": 0.0,
+    "roe_used": -0.555907252157317,
     "fcf_floor_applied": 41393458.6,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -291,13 +294,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -31.208332,
+    "per": -30.26389,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 31.3337,
+    "ps": 30.385468,
     "ev_ebitda": null,
-    "ma200": 11.37675,
+    "ma200": 11.385525,
     "forward_eps": -0.36
   },
   "validation": {
@@ -314,7 +317,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 0.0% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE -55.6% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -325,9 +328,9 @@
     "ai_comment": null
   },
   "phase1_growth": 0.1325,
-  "tanuki_score": "HOLD",
+  "tanuki_score": "WATCH",
   "funda_score": 75,
-  "score_comment": "割高(-68%超)、FCF黒字、売上成長加速",
+  "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
   "fcf_history": [
     {
       "year": 2021,
@@ -402,6 +405,6 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.075,
-  "forward_earnings_yield": -0.032
+  "erp": -0.076,
+  "forward_earnings_yield": -0.033
 }

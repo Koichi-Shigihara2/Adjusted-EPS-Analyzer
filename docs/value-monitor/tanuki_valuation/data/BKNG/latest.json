@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 237025302765.15314,
   "intrinsic_value_per_share": 326.26811226361616,
   "intrinsic_value_beta": 301.48,
-  "upside_percent_beta": 88.9,
+  "upside_percent_beta": 87.7,
   "intrinsic_value_rf": 2804.99,
-  "upside_percent_rf": 1657.7,
+  "upside_percent_rf": 1646.1,
   "v0": 148140814228.2207,
   "v0_adjusted": 148140814228.2207,
   "alpha": 0.6,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 375.21,
       "value_growth_pct": 15.0,
-      "expected_return_pct": 135.1
+      "expected_return_pct": 133.6
     },
     "2年後": {
       "future_value": 431.49,
       "value_growth_pct": 32.3,
-      "expected_return_pct": 170.4
+      "expected_return_pct": 168.6
     },
     "3年後": {
       "future_value": 496.21,
       "value_growth_pct": 52.1,
-      "expected_return_pct": 210.9
+      "expected_return_pct": 208.9
     },
     "4年後": {
       "future_value": 570.64,
       "value_growth_pct": 74.9,
-      "expected_return_pct": 257.6
+      "expected_return_pct": 255.2
     },
     "5年後": {
       "future_value": 656.24,
       "value_growth_pct": 101.1,
-      "expected_return_pct": 311.2
+      "expected_return_pct": 308.5
     }
   },
-  "upside_percent": 104.5,
-  "calculation_date": "2026-06-11T02:32:16+09:00",
+  "upside_percent": 103.1,
+  "calculation_date": "2026-06-11T17:39:01+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -178,7 +178,7 @@
     "estimated_fcf": 6253000000.0,
     "raw_fcf": 6253000000.0,
     "sector": "",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/BKNG/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\BKNG\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -203,7 +203,8 @@
     "application_rate": 1.0,
     "sector_category": "",
     "rpo_incremental": 0.0,
-    "op_margin": 0.32629031675515585
+    "op_margin": 0.32629031675515585,
+    "exclusion_reason": ""
   },
   "bs_adjustment": {
     "cash": 17203000000.0,
@@ -247,8 +248,10 @@
       3924000000
     ],
     "diluted_shares": 774878436,
-    "roe_10yr_avg": 0.4286006491821999,
-    "current_price": 159.58,
+    "roe_10yr_avg": 0.38300077931287885,
+    "roe_years_used": 7,
+    "roe_outlier_adj": true,
+    "current_price": 160.64,
     "latest_revenue": 26917000000.0,
     "rpo": 0.0,
     "beta": 1.088,
@@ -264,7 +267,7 @@
     "terminal_growth_used": 0.035,
     "pv_high": 35296975328.89212,
     "pv_terminal": 112843838899.32857,
-    "roe_used": 0.4286006491821999,
+    "roe_used": 0.38300077931287885,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -272,14 +275,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.8001227265652395,
-    "per": 21.05277,
+    "alpha_uncapped": 1.608603273114091,
+    "per": 21.192612,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": 0.7,
-    "ps": 4.4661794,
-    "ev_ebitda": 12.548,
-    "ma200": 193.02168,
+    "ps": 4.4958453,
+    "ev_ebitda": 12.298,
+    "ma200": 192.6995,
     "forward_eps": 12.3037
   },
   "validation": {
@@ -296,7 +299,7 @@
       },
       "formula_verification": {
         "pass": false,
-        "detail": "α計算: ROE 42.9% × 60% / Rm 10.00% × 0.7 = 1.8001 → cap適用 → 0.6000"
+        "detail": "α計算: ROE 38.3% × 60% / Rm 10.00% × 0.7 = 1.6086 → cap適用 → 0.6000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -308,7 +311,7 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 55,
-  "score_comment": "割安圏(104%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(103%)で買い余地大、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2021,
@@ -378,8 +381,8 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0341,
-  "forward_earnings_yield": 0.0771,
+  "erp": 0.0336,
+  "forward_earnings_yield": 0.0766,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅"
 }

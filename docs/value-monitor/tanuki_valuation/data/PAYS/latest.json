@@ -1,50 +1,50 @@
 {
-  "intrinsic_value_pt": 446044541.31489694,
-  "intrinsic_value_per_share": 6.467203477552663,
-  "intrinsic_value_beta": 8.21,
-  "upside_percent_beta": 17.7,
-  "intrinsic_value_rf": 34.94,
-  "upside_percent_rf": 400.5,
+  "intrinsic_value_pt": 412773759.8986194,
+  "intrinsic_value_per_share": 6.003803127434804,
+  "intrinsic_value_beta": 7.62,
+  "upside_percent_beta": 9.6,
+  "intrinsic_value_rf": 32.33,
+  "upside_percent_rf": 365.1,
   "v0": 269027041.11333615,
   "v0_adjusted": 269027041.11333615,
-  "alpha": 0.6383196782204031,
+  "alpha": 0.51464890788226,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 7.44,
-    "2年後": 8.55,
-    "3年後": 9.84,
-    "4年後": 11.31,
-    "5年後": 13.01
+    "1年後": 6.9,
+    "2年後": 7.94,
+    "3年後": 9.13,
+    "4年後": 10.5,
+    "5年後": 12.08
   },
   "return_metrics": {
     "1年後": {
-      "future_value": 7.44,
-      "value_growth_pct": 15.0,
-      "expected_return_pct": 6.6
+      "future_value": 6.9,
+      "value_growth_pct": 14.9,
+      "expected_return_pct": -0.7
     },
     "2年後": {
-      "future_value": 8.55,
+      "future_value": 7.94,
       "value_growth_pct": 32.2,
-      "expected_return_pct": 22.5
+      "expected_return_pct": 14.2
     },
     "3年後": {
-      "future_value": 9.84,
-      "value_growth_pct": 52.2,
-      "expected_return_pct": 41.0
+      "future_value": 9.13,
+      "value_growth_pct": 52.1,
+      "expected_return_pct": 31.4
     },
     "4年後": {
-      "future_value": 11.31,
+      "future_value": 10.5,
       "value_growth_pct": 74.9,
-      "expected_return_pct": 62.0
+      "expected_return_pct": 51.1
     },
     "5年後": {
-      "future_value": 13.01,
+      "future_value": 12.08,
       "value_growth_pct": 101.2,
-      "expected_return_pct": 86.4
+      "expected_return_pct": 73.8
     }
   },
-  "upside_percent": -7.3,
-  "calculation_date": "2026-06-11T02:32:17+09:00",
+  "upside_percent": -13.6,
+  "calculation_date": "2026-06-11T17:39:02+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -62,19 +62,19 @@
   "sensitivity": {
     "matrix": [
       [
-        6.31,
-        7.54,
-        8.91
+        5.86,
+        7.0,
+        8.26
       ],
       [
-        5.45,
-        6.47,
-        7.58
+        5.06,
+        6.0,
+        7.04
       ],
       [
-        4.8,
-        5.66,
-        6.59
+        4.46,
+        5.26,
+        6.12
       ]
     ],
     "wacc_values": [
@@ -203,7 +203,8 @@
     "application_rate": 1.0,
     "sector_category": "SaaS",
     "rpo_incremental": 51722617.0,
-    "op_margin": 0.1261845792053481
+    "op_margin": 0.1261845792053481,
+    "exclusion_reason": ""
   },
   "bs_adjustment": {
     "cash": 21067651.0,
@@ -249,8 +250,10 @@
       20966391
     ],
     "diluted_shares": 55905773,
-    "roe_10yr_avg": 0.15198087576676267,
-    "current_price": 6.98,
+    "roe_10yr_avg": 0.12253545425768098,
+    "roe_years_used": 10,
+    "roe_outlier_adj": false,
+    "current_price": 6.95,
     "latest_revenue": 82028176.0,
     "rpo": 143191068.0,
     "beta": 0.739,
@@ -266,7 +269,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 51903645.34077402,
     "pv_terminal": 217123395.77256212,
-    "roe_used": 0.15198087576676267,
+    "roe_used": 0.12253545425768098,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -274,14 +277,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 5292245.885508972,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.6383196782204031,
-    "per": 41.058823,
+    "alpha_uncapped": 0.51464890788226,
+    "per": 40.88235,
     "per_is_forward": false,
-    "per_adjusted": 32.95,
+    "per_adjusted": 32.8,
     "peg": null,
-    "ps": 4.266196,
-    "ev_ebitda": 18.219,
-    "ma200": 5.2301,
+    "ps": 4.2478595,
+    "ev_ebitda": 18.384,
+    "ma200": 5.2385,
     "forward_eps": 0.43667
   },
   "validation": {
@@ -290,7 +293,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $0.21B + RPO $0.01B + GO $0.00B) × (1+0.638) / 0.056B + BS $+0.23/株 = $6.53 (差異0.93%)"
+        "detail": "(V₀ $0.21B + RPO $0.01B + GO $0.00B) × (1+0.515) / 0.056B + BS $+0.23/株 = $6.05 (差異0.81%)"
       },
       "dcf_components": {
         "pass": true,
@@ -298,7 +301,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 15.2% × 60% / Rm 10.00% × 0.7 = 0.6383 (実際0.6383)"
+        "detail": "α計算: ROE 12.3% × 60% / Rm 10.00% × 0.7 = 0.5146 (実際0.5146)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -379,8 +382,8 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0196,
-  "forward_earnings_yield": 0.0626,
+  "erp": 0.0198,
+  "forward_earnings_yield": 0.0628,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意"
 }

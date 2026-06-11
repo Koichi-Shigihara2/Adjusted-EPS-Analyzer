@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -75.4,
-  "calculation_date": "2026-06-11T02:32:14+09:00",
+  "calculation_date": "2026-06-11T17:38:57+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -221,7 +221,8 @@
     "application_rate": 1.0,
     "sector_category": "",
     "rpo_incremental": 0.0,
-    "op_margin": -0.1347913864490028
+    "op_margin": -0.1347913864490028,
+    "exclusion_reason": ""
   },
   "bs_adjustment": {
     "cash": 0.0,
@@ -283,8 +284,10 @@
       26922000
     ],
     "diluted_shares": 26396828,
-    "roe_10yr_avg": 0.0,
-    "current_price": 664.36,
+    "roe_10yr_avg": -0.05605465173437143,
+    "roe_years_used": 7,
+    "roe_outlier_adj": false,
+    "current_price": 664.23,
     "latest_revenue": 326660000.0,
     "rpo": 0.0,
     "beta": 2.5,
@@ -300,7 +303,7 @@
     "terminal_growth_used": 0.035,
     "pv_high": 583830859.8987793,
     "pv_terminal": 1058107702.2107667,
-    "roe_used": 0.0,
+    "roe_used": -0.05605465173437143,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -309,13 +312,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 62.311012,
+    "per": 62.298817,
     "per_is_forward": true,
-    "per_adjusted": 218.75,
+    "per_adjusted": 218.7,
     "peg": 3.82,
-    "ps": 46.160557,
-    "ev_ebitda": 5265.609,
-    "ma200": 392.02884,
+    "ps": 46.151527,
+    "ev_ebitda": 5304.991,
+    "ma200": 394.20697,
     "forward_eps": 10.662
   },
   "validation": {
@@ -332,7 +335,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 0.0% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE -5.6% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -424,8 +427,8 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.027,
-  "forward_earnings_yield": 0.016,
+  "erp": -0.0269,
+  "forward_earnings_yield": 0.0161,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意"
 }

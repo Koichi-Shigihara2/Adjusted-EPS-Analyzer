@@ -1,16 +1,16 @@
 PLTR INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-11T02:32:12+09:00
-Price: $131.46
+Generated: 2026-06-11T17:38:53+09:00
+Price: $130.21
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -31.9%
-  MA200_Deviation: -18.3%
+  Deviation_Rate: -53.8%
+  MA200_Deviation: -19.1%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.90 (Buy)
-Comment: 割高(-32%超)、FCF黒字、売上成長加速
+Comment: 割高(-54%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 5.410
-Deviation_Rate: -31.9%
+Deviation_Rate: -53.8%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,24 +56,32 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $131.46
-Intrinsic_Value_BASE: $89.47
-Deviation_BASE: -31.9%
+Current_Price: $130.21
+Intrinsic_Value_BASE: $60.10
+Deviation_BASE: -53.8%
 Scenarios:
-BEAR: Growth=23.7%, IV=$62.57, Deviation=-52.4%
-BASE: Growth=33.8%, IV=$89.47, Deviation=-31.9%
-BULL: Growth=40.6%, IV=$112.43, Deviation=-14.5%
+BEAR: Growth=23.7%, IV=$42.42, Deviation=-67.4%
+BASE: Growth=33.8%, IV=$60.10, Deviation=-53.8%
+BULL: Growth=40.6%, IV=$75.19, Deviation=-42.3%
 Growth_Rate_Rec: 32.6% (recommended)
 TTM_Revenue_Growth: 67.7%
 (DCF Base vs TTM actual: -33.9pt discount)
-WACC: 12.97%
+Discount_Rate_Primary: 10.00% (DCF discount rate used)
+WACC_CAPM_Reference: 12.97%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.521
+Valuation_Gap_Analysis:
+  DCF_IV:           $60 (保守的FCFベース・現在実力値)
+  Market_Price:     $130
+  Gap:              -54% (市場が将来成長を先取り)
+  Implied_FCF_2030: $19.10B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $1.74B
+  Required_Growth:  61%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
 RPO_PV: $561,681,608 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $-8.04B (negative=net cash)
-  Total_Debt: $0.00B  Cash: $2.29B
+  Total_Debt: $0.00B  Cash: $2.29B  ST_Invest: $5.75B
   SBC_TTM: $684M
   Dilution_3yr_Annual: +7.52%/yr  やや高い希薄化 ℹ️ 要注意
   Dilution_Comment: 継続なら1株価値を年率7.5%毀損。SBC水準を確認推奨。
@@ -97,6 +105,7 @@ Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
 Terminal_Value = FCF_final x (1+g) / (WACC - g)
 WACC = Rf + Beta x (Rm - Rf)
 Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
+Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
 FCF_Conversion_Rate: Industry-standard ratio to estimate
 FCF from OCF (accounts for capex intensity by sector)
 RPO: Remaining Performance Obligation, booked future
@@ -105,8 +114,9 @@ Note: RPO premium is added as a conservatism adjustment
 for contracted-but-unrecognized revenue visibility,
 not as additional DCF cash flow. Applied only to
 profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash. Negative = net cash (safer)
+Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
 Dilution_3yr_Annual: Share count CAGR over 3 years
+Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
 FCF_CAGR_3yr: FCF compound growth rate (3yr)
 Positive = improving cash generation trend
@@ -182,9 +192,8 @@ VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
 ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
 ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
-WACC: Weighted Average Cost of Capital
-Primary basis: Rm=10% (Beta=0 scenario)
-Reference: Beta-adjusted WACC also calculated
+Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
 Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
@@ -207,6 +216,8 @@ Recent Surprises (Adjusted EPS):
   2025 Q2: Actual=$0.1892 vs Est=N/A -> N/A%
 Definition:
 
+EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
+press release figures if restatements or segment changes occurred.
 Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
 M&A costs, and other non-recurring items
 Adjustment items classified as:
@@ -216,9 +227,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 149.4x
-  Adjusted_EPS_PER: 146.8x (年次EPSベース: $0.8954)
-  Delta: -2.6x (cheaper on adjusted basis)
+  Market_PER_GAAP: 146.3x
+  Adjusted_EPS_PER: 145.4x (年次EPSベース: $0.8954)
+  Delta: -0.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -234,7 +245,7 @@ Compare with TANUKI G scenario for cross-validation
 
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
-Alpha_Premium: 0.52
+Alpha_Premium: 0.0
 HYPE_Signal: 実体維持・期待崩壊中 — 売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。
 Phase_History (recent 6 months):
 2026-01: Phase4 (期待剥落期)
@@ -244,10 +255,10 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 149.4x
+  PER: 146.3x
   PEG: 1.96
-  PS:  60.3x
-  EV_EBITDA: 153.1x
+  PS:  59.8x
+  EV_EBITDA: 150.8x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -266,9 +277,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 1.58%  (ForwardEPS $2.07 / Price $131.46)
+  Forward_Earnings_Yield: 1.59%  (ForwardEPS $2.07 / Price $130.21)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.72%
+  ERP: -2.71%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -306,6 +317,8 @@ High ownership -> stable shareholder base
 Runway: Cash / Annual_FCF_Burn_Rate (years)
 Critical for pre-profit companies; <1yr = distress risk
 Revenue_Growth_YoY: TTM vs prior TTM
+Note: TTM may reflect restated (continuing operations) figures for
+companies that divested business units (e.g., APP Apps segment 2024).
 Primary growth metric for RICE-excluded tickers
 Breakeven_Estimate: Projected year when adjusted EPS turns positive
 based on recent 4Q linear trend. Rough estimate only.
