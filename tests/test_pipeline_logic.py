@@ -1776,3 +1776,124 @@ class TestLongTermDebtPriorityNoncurrent:
             f"DOCN FY2024 Total_Debt=${total/1e9:.2f}B が $1.5B 超 "
             "— BUG-NETDEBT-2 が再発している可能性 (修正後は ~$1.30B が期待値)"
         )
+
+
+# =============================================================================
+# Section 22: BUG-REV-SPAC-1 / A-2-TTM 回帰テスト (2026-06-12)
+# =============================================================================
+
+class TestIonqRevenueSPACBug:
+    """BUG-REV-SPAC-1: IONQの2022年10-K Revenuesタグ($1,235M)誤採用防止"""
+
+    def test_ionq_revenue_concept_restriction_defined(self):
+        """IONQ が TICKER_RESTRICTIONS に revenue_concept を持つこと"""
+        from common.sec_data.quarterly import TICKER_RESTRICTIONS
+
+        assert "IONQ" in TICKER_RESTRICTIONS, "IONQ が TICKER_RESTRICTIONS に未登録"
+        assert "revenue_concept" in TICKER_RESTRICTIONS["IONQ"], \
+            "IONQ の revenue_concept が TICKER_RESTRICTIONS に未設定"
+        assert TICKER_RESTRICTIONS["IONQ"]["revenue_concept"] == \
+            "RevenueFromContractWithCustomerExcludingAssessedTax", \
+            "IONQ の revenue_concept が期待値と異なる"
+
+    def test_ionq_annual_2022_revenue_corrected(self):
+        """IONQ annual_2022.json の revenue が $1,235M ではなく ~$11M であること"""
+        import os, json
+
+        annual_path = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "IONQ", "annual_2022.json"
+        )
+        if not os.path.exists(annual_path):
+            return
+
+        with open(annual_path, encoding="utf-8") as f:
+            data = json.load(f)
+
+        rev = data.get("pl", {}).get("revenue")
+        assert rev is not None, "IONQ annual_2022.json に revenue が存在しない"
+        assert rev < 100_000_000, (
+            f"IONQ 2022 revenue=${rev/1e6:.1f}M が $100M 超 "
+            "— BUG-REV-SPAC-1 が再発している可能性 (正しい値は ~$11M)"
+        )
+
+    def test_ionq_fcf_margin_2022_not_anomalous(self):
+        """IONQ FCF_Margin 2022 が他年と同程度の桁であること (孤立年でないこと)"""
+        import os, json
+
+        sec_dir = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "IONQ"
+        )
+        if not os.path.exists(sec_dir):
+            return
+
+        margins = {}
+        for yr in [2021, 2022, 2023, 2024, 2025]:
+            p = os.path.join(sec_dir, f"annual_{yr}.json")
+            if not os.path.exists(p):
+                continue
+            with open(p, encoding="utf-8") as f:
+                d = json.load(f)
+            rev = d.get("pl", {}).get("revenue") or 0
+            fcf = d.get("cf", {}).get("free_cash_flow")
+            if fcf is not None and rev > 0:
+                margins[yr] = abs(fcf / rev * 100)
+
+        if 2022 not in margins or len(margins) < 3:
+            return
+
+        other_margins = [v for y, v in margins.items() if y != 2022]
+        avg_other = sum(other_margins) / len(other_margins)
+        margin_2022 = margins[2022]
+        assert margin_2022 > avg_other / 100, (
+            f"IONQ FCF_Margin 2022 ({margin_2022:.1f}%) が他年平均 ({avg_other:.1f}%) の"
+            "1/100未満 — BUG-REV-SPAC-1 型の孤立年異常が再発している可能性"
+        )
+
+
+class TestTTMTerminologyDistinction:
+    """A-2-TTM: TTM_YoY_Growth (実績) と CAGR_max (成長モデル判定指標) の区別
+    注意: _gs は test_pipeline_logic.py 先頭で import された本物の growth_sanity モジュール。
+          sys.modules["growth_sanity"] は MagicMock に差し替え済みのため _gs を直接使う。
+    """
+
+    def test_growth_model_reason_no_bare_ttm_in_median_label(self):
+        """中央値モデル reason に 'TTM' を単独使用しないこと (CAGR_max= で表示)"""
+        # cagr_3yr < 50%・cagr_5yr < 50% のケース → 中央値モデル
+        result = _gs.check_growth_sanity(
+            ticker="TEST_MEDIAN",
+            phase1_growth=0.15,
+            annual_revenues=[100e6, 110e6, 120e6, 135e6, 150e6],  # ~11% CAGR
+            ttm_actual=0.15,
+        )
+        reason = result.get("growth_model_reason", "")
+        model = result.get("growth_model")
+
+        if model == "median":
+            # "CAGR_max=" で始まる形式に変わっているはず
+            assert not reason.startswith("TTM"), (
+                f"中央値モデルの reason='{reason}' が 'TTM' で始まる "
+                "(旧形式 'TTMxx%のため中央値...' → 新形式 'CAGR_max=xx%のため...' に変更すべき)"
+            )
+
+    def test_growth_model_decay_uses_cagr_max_label_when_cagr_triggers(self):
+        """CAGR > 50% で逓減モデルが発動する場合 reason に 'CAGR_max' が含まれること"""
+        # IONQ修正後相当: cagr_3yr ≈ 127% が逓減トリガー、phase1_growth=15%
+        result = _gs.check_growth_sanity(
+            ticker="TEST_IONQ",
+            phase1_growth=0.15,
+            annual_revenues=[2.1e6, 11.1e6, 22.0e6, 43.1e6, 130.0e6],
+            ttm_actual=0.15,
+        )
+        model = result.get("growth_model")
+        reason = result.get("growth_model_reason", "")
+
+        assert model == "decay", f"逓減モデルが発動されるべき (actual model={model}, reason={reason})"
+        assert "CAGR_max" in reason, (
+            f"reason='{reason}' に 'CAGR_max' が含まれない "
+            "(CAGR_3yr>50%が逓減トリガーのため CAGR_max= で表示すべき)"
+        )
+        assert "TTM_YoY" not in reason, (
+            f"reason='{reason}' に 'TTM_YoY' が含まれる "
+            "(CAGR起動の逓減モデルで TTM_YoY ラベルは不正確)"
+        )
+

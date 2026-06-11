@@ -506,7 +506,17 @@ def check_growth_sanity(
         else:
             _ttm_weight = 0.35   # 業界平均寄り: Phase4は正規化が速い
 
-        _start_raw = _ttm_actual_pos if _ttm_actual_pos is not None else _ttm_best_cagr
+        # A-2: decay モデルの start_g を「逓減を発動させた最大値」に統一。
+        # ttm_actual (phase1_growth) と cagr_3yr/5yr の最大値をスタート点とする。
+        # これにより start_g と _trigger_max が常に一致し、ラベルも正確になる。
+        _start_raw_ttm  = _ttm_actual_pos or 0.0
+        _start_raw_cagr = _ttm_best_cagr  or 0.0
+        if _start_raw_cagr > _start_raw_ttm:
+            _start_raw = _start_raw_cagr
+            _start_src = "CAGR_max"
+        else:
+            _start_raw = _start_raw_ttm
+            _start_src = "G入力値"   # phase1_growth (セグメント設定値 or TTM注入値)
         start_g = min(_start_raw, 1.0)
         end_g = industry_g if (industry_g is not None and industry_g > 0) else 0.10
         recommended_g = start_g * _ttm_weight + end_g * (1 - _ttm_weight)
@@ -515,15 +525,17 @@ def check_growth_sanity(
             hype_phase, "Phase不明"
         )
         growth_model_reason = (
-            f"{_phase_label}に基づきTTM{start_g:.1%}×{_ttm_weight:.0%}＋"
+            f"{_phase_label}に基づき{_start_src}={start_g:.1%}×{_ttm_weight:.0%}＋"
             f"業界平均{end_g:.1%}×{1-_ttm_weight:.0%}＝{recommended_g:.1%}を採用"
         )
     else:
         # 中央値モデル
         recommended_g = recommended_g_median  # None if < 2 candidates
         growth_model = "median"
-        _reason_ttm = f"TTM{_trigger_max:.1%}" if _trigger_max is not None else "TTMデータなし"
-        growth_model_reason = f"{_reason_ttm}のため中央値モデル適用"
+        # A-2: _trigger_max は max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) であり
+        # "TTM YoY Revenue Growth" とは別物。CAGR_max として表示する。
+        _reason_cagr = f"CAGR_max={_trigger_max:.1%}" if _trigger_max is not None else "CAGRデータなし"
+        growth_model_reason = f"{_reason_cagr}のため中央値モデル適用"
 
         # 上限キャップ: max(industry_benchmark × 3, 50%)
         if recommended_g is not None:

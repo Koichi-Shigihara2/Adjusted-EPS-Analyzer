@@ -10,8 +10,10 @@ report_consistency_check.py
   NG  4. 割引率1段             Discount_Rate_Primary 行なし（旧WACC単独形式）
   NG  7. RPO条件違反           RPO_PV>0 & whitelist外 & RPO/Revenue<0.3
   NG  8. Matrix④高FCFラベル赤字 Matrix④ Label="高FCF" & 最新FCF実績マイナス
+  NG  11. Revenue桁違い        annual_JSONの隣接年Revenue比が10倍超（誤XBRLタグ検出）
   WARN 5. NetDebt旧表示        Net_Debt行あり & ST_Invest 非ゼロ（latest.json）& 報告なし
   WARN 6. 負PER数値表示        Market_PER_GAAP が負数（N/M 未変換）
+  WARN 9. セグメント設定陳腐化  segment_config fiscal_yearが2年以上前
   WARN 10. PS異常値            yfinance PSが自社計算値(price×shares/rev)の2.5倍超 or 0.4倍未満
 """
 
@@ -25,6 +27,7 @@ import sys
 SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, "../.."))
 DATA_DIR     = os.path.join(REPO_ROOT, "docs/value-monitor/tanuki_valuation/data")
+SEC_DATA_DIR = os.path.join(REPO_ROOT, "common/sec_data/data")
 RPO_CONFIG   = os.path.join(REPO_ROOT, "config/rpo_config.json")
 SEG_CONFIG   = os.path.join(REPO_ROOT, "config/segment_config.json")
 
@@ -326,6 +329,49 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 warn.append(
                     f"  [WARN-10 PS異常値] yfinance PS={ps_yf:.1f}x vs 自社計算={ps_calc:.1f}x"
                     f" (乖離{ratio:.1f}倍) → ステール値の可能性"
+                )
+
+    # ── CHECK 11: Revenue桁違い (NG) ──────────────────────────
+    # BUG-REV-SPAC-1型の誤XBRLタグ検出。
+    # 隣接年Revenue比が10倍超かつベース年 > $1M (スタートアップ微少値を除外) の場合はNG。
+    # IONQ 2022: Revenuesタグが$1,235M(SPAC調達)を誤タグ → 正常年$11M との比 112倍
+    sec_ticker_dir = os.path.join(SEC_DATA_DIR, ticker)
+    if os.path.isdir(sec_ticker_dir):
+        _annual_revs: dict[int, float] = {}
+        for _fn in sorted(os.listdir(sec_ticker_dir)):
+            if _fn.startswith("annual_") and _fn.endswith(".json") and _fn[7:11].isdigit():
+                _yr = int(_fn[7:11])
+                try:
+                    with open(os.path.join(sec_ticker_dir, _fn), encoding="utf-8") as _f:
+                        _d = json.load(_f)
+                    _r = _d.get("pl", {}).get("revenue")
+                    if _r is not None:
+                        _annual_revs[_yr] = _r
+                except Exception:
+                    pass
+        _yrs = sorted(_annual_revs.keys())
+        for _i, _yr in enumerate(_yrs):
+            _r = _annual_revs[_yr]
+            if _r <= 1_000_000:
+                continue  # スタートアップ微少値はスキップ
+            # 孤立年チェック: 前後両年が存在し、どちらも当該年の5%未満 → 誤XBRLタグ疑い
+            # (IONQ 2022: 前=$2.1M/後=$22M vs $1,235M → どちらも1.8%以下 → 異常)
+            # (ASTS 2025: 後年データなし → 正常な高成長トレンドとして除外)
+            _prev = _annual_revs.get(_yrs[_i - 1]) if _i > 0 else None
+            _next = _annual_revs.get(_yrs[_i + 1]) if _i < len(_yrs) - 1 else None
+            if _prev is None or _next is None:
+                continue  # 両端年はスキップ（孤立か判定不能）
+            if _prev <= 0 or _next <= 0:
+                continue
+            _threshold = _r * 0.05  # 前後が当該年の5%未満なら異常
+            if _prev < _threshold and _next < _threshold:
+                _ratio_prev = _r / _prev
+                _ratio_next = _r / _next
+                ng.append(
+                    f"  [NG-11 Revenue孤立年] {_yr}=${_r/1e6:.1f}M"
+                    f" (前年{_yrs[_i-1]}=${_prev/1e6:.1f}M: {_ratio_prev:.0f}x,"
+                    f" 翌年{_yrs[_i+1]}=${_next/1e6:.1f}M: {_ratio_next:.0f}x)"
+                    f" → XBRLタグ誤り疑い(TICKER_RESTRICTIONSで修正)"
                 )
 
     return ng, warn

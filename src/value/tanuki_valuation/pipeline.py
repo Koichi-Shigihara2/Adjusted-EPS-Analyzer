@@ -921,8 +921,8 @@ class TanukiValuationPipeline:
         L.append("BUY: Funda>=50 AND upside>10% AND Timing>=50")
         L.append("WATCH: Funda>=50 AND upside 0-20%")
         L.append("HOLD: Funda good, within tolerance range")
-        L.append("TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM")
-        L.append("GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth")
+        L.append("TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY")
+        L.append("GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth")
         L.append("SELL: Funda deteriorating or long-term downtrend")
         L.append("PASS: Funda<25, excluded from consideration")
         L.append("")
@@ -981,10 +981,11 @@ class TanukiValuationPipeline:
             L.append(f"Growth_Rate_Rec: {_recommended_g*100:.1f}% (recommended{_warn})")
         if _bear_mult_applied and _fcf_margin_note:
             L.append(f"FCF_Margin_Bear_Adj: {_fcf_margin_note}")
-        # TTM Revenue Growth（BASE成長率 vs 実績の乖離を表示）
+        # TTM_YoY_Growth（実績TTM YoY成長率 vs DCF BASE成長率の乖離を表示）
+        # A-2: [4]の"CAGR_max"(rev_cagr_3yr/5yr/phase1_gの最大値)と区別するため TTM_YoY_Growth に改称
         _ttm_rev = rev_growth_val if rev_growth_val is not None else rev_yoy_hype
         if _ttm_rev is not None:
-            L.append(f"TTM_Revenue_Growth: {_ttm_rev:.1f}%")
+            L.append(f"TTM_YoY_Growth: {_ttm_rev:.1f}%")
             _delta = base_g - _ttm_rev
             _sign = "premium" if _delta >= 0 else "discount"
             L.append(f"(DCF Base vs TTM actual: {_delta:+.1f}pt {_sign})")
@@ -1226,11 +1227,12 @@ class TanukiValuationPipeline:
             L.append("Growth Rate Methodology:")
             L.append("Layer 1 (Segment configured): Manual segment weighted average")
             L.append("Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF")
-            L.append("  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model")
-            L.append("    recommended_g = (min(TTM,100%) + industry_benchmark) / 2")
+            L.append("  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model")
+            L.append("    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2")
             L.append("  Else: median of [rev_cagr_3yr, rev_cagr_5yr,")
             L.append("        industry_benchmark, g_fundamental] (≥2 required)")
-            L.append("Layer 3: TTM Revenue Growth (if recommended_g unavailable)")
+            L.append("  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])")
+            L.append("Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)")
             L.append("Layer 4: Default 15% (final fallback)")
             L.append("Industry benchmark: Damodaran 2025 fundgrEB.xls")
             L.append("")

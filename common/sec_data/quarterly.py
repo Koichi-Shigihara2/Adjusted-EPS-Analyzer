@@ -36,6 +36,17 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
                 "RevenueFromContract(130M=手数料のみ)とRevenuesNetOfInterest(1100M=全社収益)を"
                 "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。",
     },
+    # BUG-REV-SPAC-1 (2026-06-12 修正)
+    # IONQの2022年10-KにおいてRevenuesタグが$1,235M (SPAC関連資金調達額) を誤タグして報告している。
+    # merge_all_tags=True + 同一end_date (2022-12-31) でRevenuesが先頭タグのため勝ち、
+    # 正しい営業収益RevenueFromContractWithCustomer($11.1M)が採用されない。
+    # → revenue_conceptで正しいタグに固定。
+    "IONQ": {
+        "revenue_concept": "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "note": "量子コンピューティング企業。2022年10-KのRevenuesタグが"
+                "SPAC調達金($1,235M)を誤タグ。正しい営業収益は"
+                "RevenueFromContractWithCustomerExcludingAssessedTax($11.1M)。",
+    },
 }
 
 # 会計年度タイプ（将来対応用）

@@ -2,6 +2,21 @@
 
 ---
 
+## 2026-06-12 完了
+
+### ✅ BUG-REV-SPAC-1 / A-2-TTM (2026-06-12 完了): IONQレビュー指摘: FCF_Margin単年異常 / TTM二義性
+- **BUG-REV-SPAC-1 (A-1)**: IONQの2022年10-K `Revenues` タグが$1,235M(SPAC調達金)を誤タグ
+  正規営業収益 `RevenueFromContractWithCustomerExcludingAssessedTax`=$11.1M と重複
+  `merge_all_tags=True` + 同一end_date で先頭タグ `Revenues` が勝ち、FCF_Margin 2022=-4.4% に (正常値は-485%)
+  修正: `TICKER_RESTRICTIONS["IONQ"]["revenue_concept"]` で単一タグ固定
+  横断スキャン: 全79銘柄に同型バグなし (ASTS/JOBY/RCATは正常高成長)
+- **A-2-TTM**: [3]`TTM_Revenue_Growth=201.9%` (実TTM YoY) と
+  [4]`TTM15.0%のため中央値モデル適用` (`_trigger_max`=max(phase1_g, CAGR)) が同一`TTM`表記
+  修正: [3]→`TTM_YoY_Growth`, [4]中央値→`CAGR_max=XX%`, [4]逓減→`CAGR_max=`/`G入力値=`
+  逓減モデルの start_g もCAGR最大値を優先するよう修正 (IONQ: recommended_g 12.5%→55%)
+- **CHECK-11追加**: `report_consistency_check.py` に Revenue孤立年チェック(前後両年<5%の孤立異常値)
+- 回帰テスト: Section 22 (5件追加、計94件合格)
+
 ## 2026-06-11 完了
 
 ### ✅ BUG-NETDEBT-2 (2026-06-11 完了): LongTermDebt優先順位修正による二重計上防止
