@@ -1440,3 +1440,81 @@ class TestNewTickerIntegration:
         result = pipe._compute_tanuki_score("NEWCO", valuation)
         assert result["score"] == "WATCH"
         assert "LOW" in result["score_comment"]
+
+
+# ─────────────────────────────────────────────
+# 18. BUG-MATRIX4-1追補: fcf_history末尾None銘柄のMatrix④回帰防止
+#
+#     上場後まもない / SEC年次未取得年が末尾にある銘柄（RCATパターン）で
+#     fcf_history[-1]がNoneのとき、実績マイナスのマージンを正しく採用し
+#     revenue_floor正値にフォールバックしないことを確認する。
+# ─────────────────────────────────────────────
+
+class TestMatrix4TailNoneRegression:
+    """
+    BUG-MATRIX4-1追補:
+    fcf_history の末尾エントリーが fcf=None/fcf_margin=None の銘柄(RCATパターン)で
+    Matrix④ Key_Metric_Y が実績マイナスマージンを採用することを保証する回帰防止テスト。
+    """
+
+    @staticmethod
+    def _make_tail_none_valuation(upside: float = -67.0) -> dict:
+        """末尾None + floor適用 のバリュエーション dict（RCATパターン）"""
+        val = _minimal_valuation(upside=upside)
+        val["fcf_estimation"] = {"applied": False, "sector": "Technology"}
+        val["components"].update({
+            "fcf_base_used":     41_393_459.0,   # revenue_floor適用後の正値
+            "fcf_floor_applied": 41_393_459.0,   # > 0 → DCF_Reliability=LOW
+            "fcf_5yr_avg":      -16_000_000.0,
+            "fcf_base_method":  "avg_5yr",
+            "fcf_list_raw":     [-1.4e6, -16.4e6, -31.6e6],
+            "latest_revenue":    101_800_000.0,
+        })
+        val["rice"] = {"available": False, "note": ""}
+        return val
+
+    def test_matrix4_tail_none_uses_last_real_margin(self, tmp_path):
+        """末尾None銘柄: reversed()で2023年(-319.3%)を採用、+40.7%にフォールバックしない"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_tail_none_valuation()
+        extra = _minimal_extra()
+        # 2024/2025 は fcf=None/fcf_margin=None（SEC未取得）、2023 が最後の実績
+        extra["fcf_history"] = [
+            {"year": 2021, "fcf": -1_399_001,  "fcf_margin": -28.0},
+            {"year": 2022, "fcf": -16_383_009, "fcf_margin": -254.8},
+            {"year": 2023, "fcf": -31_649_633, "fcf_margin": -319.3},
+            {"year": 2024, "fcf": None,         "fcf_margin": None},
+            {"year": 2025, "fcf": None,         "fcf_margin": None},
+        ]
+        score_data = {"score": "WATCH", "funda_score": 25, "score_comment": "DCF信頼性LOW"}
+        report = pipe._generate_report("RCATLIKE", val, score_data, extra)
+
+        # 実績マイナスマージン(2023年=-319.3%)が使われること
+        assert "FCF_Margin = -319.3%" in report, (
+            "末尾NoneのときKey_Metric_Yが revenue_floor正値(+40.7%)を使うリグレッション"
+        )
+        # 高FCFラベルになっていないこと
+        assert "割高×高FCF" not in report
+        assert "低FCF" in report
+
+    def test_matrix4_all_none_floor_applied_shows_na(self, tmp_path):
+        """全年None + floor適用: revenue_floor正値でなくN/Aを表示する"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = self._make_tail_none_valuation()
+        extra = _minimal_extra()
+        # 全年 None（理論上の極端ケース）
+        extra["fcf_history"] = [
+            {"year": 2024, "fcf": None, "fcf_margin": None},
+            {"year": 2025, "fcf": None, "fcf_margin": None},
+        ]
+        score_data = {"score": "WATCH", "funda_score": 25, "score_comment": "DCF信頼性LOW"}
+        report = pipe._generate_report("ALLNONE", val, score_data, extra)
+
+        # floor適用時は revenue_floor正値でなく N/A になること
+        assert "FCF_Margin = N/A" in report
+        # 40.7% のような正値が出ていないこと
+        import re
+        m = re.search(r'FCF_Margin = ([+-]?\d+\.?\d*)%', report)
+        assert m is None, f"floor適用時に正値が表示された: {m.group(0)}"

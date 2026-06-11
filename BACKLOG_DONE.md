@@ -27,6 +27,9 @@
 ### ✅ BUG-MATRIX4-1 (2026-06-10 完了): Matrix④ Y軸をFCF_History実績と統一
 - Matrix④ Key_Metric_Y を fcf_history 最新年の実績マージンに修正
 - （従来: FCF_Base/Revenue の比率 → 過大評価バイアスあり）
+- **追補 (2026-06-11)**: fcf_history[-1]がNone(上場直後・SEC未取得年末尾)の銘柄で
+  revenue_floor正値にフォールバックするバグを修正（RCATで検出）
+  → reversed()で最新非Noneエントリーを採用 / 全None+floor適用時はN/A表示
 
 ### ✅ BUG-NETDEBT-4 (2026-06-10 完了): レポートNet Debt内訳表示
 - Total_Debt/Cash 行に ST_Invest を追加表示（残高 > 0 の場合）

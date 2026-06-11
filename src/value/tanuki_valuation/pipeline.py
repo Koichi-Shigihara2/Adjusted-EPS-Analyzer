@@ -693,21 +693,29 @@ class TanukiValuationPipeline:
         else:
             matrix = "④キャッシュ創出力系"
             # B-2: FCF_History最新年の実績マージンを使用（FCF_Base/Revenueではなく）
+            # BUG-MATRIX4-1追補: fcf_history末尾がNone(未取得年)の銘柄向け
+            #   reversed()で最新の非Noneエントリーを探して実績値を採用する
             fcf_margin = None
             if fcf_history:
-                _fh_latest = fcf_history[-1]
-                _fh_margin = _fh_latest.get("fcf_margin")
-                _fh_fcf = _fh_latest.get("fcf")
                 _fh_rev = comps.get("latest_revenue")
-                if _fh_margin is not None:
-                    fcf_margin = _fh_margin
-                elif _fh_fcf is not None and _fh_rev:
-                    fcf_margin = _fh_fcf / _fh_rev * 100
+                for _fh_entry in reversed(fcf_history):
+                    _fh_margin = _fh_entry.get("fcf_margin")
+                    _fh_fcf   = _fh_entry.get("fcf")
+                    if _fh_margin is not None:
+                        fcf_margin = _fh_margin
+                        break
+                    if _fh_fcf is not None and _fh_rev:
+                        fcf_margin = _fh_fcf / _fh_rev * 100
+                        break
             if fcf_margin is None:
-                fcb = comps.get("fcf_base_used")
-                rev = comps.get("latest_revenue")
-                if fcb and rev:
-                    fcf_margin = fcb / rev * 100
+                # フォールバック: fcf_floor_applied>0 は実績FCFマイナスを示すため
+                # revenue_floor正値をY軸に使わず N/A とする
+                _floor = comps.get("fcf_floor_applied", 0) or 0
+                if _floor <= 0:
+                    fcb = comps.get("fcf_base_used")
+                    rev = comps.get("latest_revenue")
+                    if fcb and rev:
+                        fcf_margin = fcb / rev * 100
             key_metric_y = f"FCF_Margin = {fcf_margin:.1f}%" if fcf_margin is not None else "FCF_Margin = N/A"
             qx = upside is not None and upside >= 0
             qy = fcf_margin is not None and fcf_margin >= 15
