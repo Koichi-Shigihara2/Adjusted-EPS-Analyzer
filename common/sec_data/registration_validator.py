@@ -14,6 +14,7 @@ Usage:
     P4. Config 孤立エントリ (discover_config/cik_lookup の非監視残存)
     P5. 自動更新ワークフロー カバレッジ
 """
+import csv
 import json
 import os
 import re
@@ -130,7 +131,8 @@ class Issues:
 def check_p1_registration_completeness(ticker: str, issues: Issues,
                                         beta_overrides: dict,
                                         discover_tickers: set,
-                                        monitor_set: set) -> None:
+                                        monitor_set: set,
+                                        eps_disabled: set = None) -> None:
     """7ステップ各段のデータ存在確認"""
 
     # Step 1: SEC annual data
@@ -156,10 +158,11 @@ def check_p1_registration_completeness(ticker: str, issues: Issues,
     if not os.path.exists(poc_path):
         issues.warn("P1-Step5-HypeCore", f"{ticker}: _poc.json 未生成 (hypecore 未実行?)")
 
-    # Step 5.5: EPS analyzer
-    eps_path = os.path.join(EPS_DIR, ticker)
-    if not os.path.exists(eps_path):
-        issues.warn("P1-Step5b-EPS", f"{ticker}: EPS analyzer データなし")
+    # Step 5.5: EPS analyzer (cik_lookup.csv の eps=false 銘柄はスキップ)
+    if not (eps_disabled and ticker in eps_disabled):
+        eps_path = os.path.join(EPS_DIR, ticker)
+        if not os.path.exists(eps_path):
+            issues.warn("P1-Step5b-EPS", f"{ticker}: EPS analyzer データなし")
 
     # Step 6: discover_config
     if ticker not in discover_tickers:
@@ -304,7 +307,6 @@ def check_p4_orphan_configs(issues: Issues, monitor_set: set) -> None:
     # cik_lookup の非監視残存 (annual data あり)
     try:
         with open(CIK_CSV, encoding="utf-8") as f:
-            import csv
             cik_tickers = {row["ticker"].strip() for row in csv.DictReader(f)
                            if row.get("ticker", "").strip()}
     except Exception:
@@ -387,12 +389,23 @@ def run(target_tickers: Optional[list] = None, summary_only: bool = False) -> Is
 
     tickers_to_check = target_tickers if target_tickers else monitor_tickers
 
+    # cik_lookup.csv の eps=false 銘柄を収集（EPS analyzer 非対応銘柄の WARN 抑制用）
+    eps_disabled: set = set()
+    try:
+        with open(CIK_CSV, encoding="utf-8") as f:
+            for row in csv.DictReader(f):
+                if row.get("eps", "true").strip().lower() == "false":
+                    eps_disabled.add(row["ticker"].strip())
+    except Exception:
+        pass
+
     all_issues = Issues()
 
     # ── P1 / P2: 銘柄ごとチェック ────────────────────────────────────
     for t in tickers_to_check:
         check_p1_registration_completeness(t, all_issues, beta_overrides,
-                                           discover_tickers, monitor_set)
+                                           discover_tickers, monitor_set,
+                                           eps_disabled=eps_disabled)
         check_p2_data_quality(t, all_issues)
 
     # ── P3: segment_config（全銘柄対象）──────────────────────────────

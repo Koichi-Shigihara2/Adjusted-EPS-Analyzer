@@ -213,6 +213,11 @@ python common/sec_data/audit.py [TICKER] --check-beta
 python src/value/hypecore/hypecore.py --batch [TICKER]
 # 失敗した場合はログを確認。データ不足銘柄（上場直後等）は失敗することがある。
 
+# Step 5b: EPS Analyzer 実行（cik_lookup.csv の eps=true 銘柄のみ）
+python -m src.value.adjusted_eps_analyzer.pipeline --ticker [TICKER]
+# eps=false の銘柄はスキップ（XBRL非対応・上場直後等）
+# "データなし"で失敗する場合は cik_lookup.csv の eps 列を false に設定する
+
 # Step 6: Discover 監視リストに追加
 python3 -c "
 import json, shutil
@@ -256,6 +261,10 @@ python common/sec_data/registration_validator.py [TICKER]
 - 異常値が疑われる場合は `--dry-run` で差分確認してから適用
 - LMT 等 Damodaran 手動設定銘柄は `beta_fetcher.py` の `DAMODARAN_OVERRIDES` に追加
 - Step 5 HypeCore は yfinance 依存。KULR 等データ不足銘柄は失敗するが無視してよい
+- Step 5b EPS Analyzer: 非US GAAP（IFRS系外国企業、例: ASML）は us-gaap タグが欠如しているため
+  update.py で annual データ 0 件になる。その場合は cik_lookup.csv の eps 列を false に設定すること。
+  XBRL形式が US GAAP でも NetIncomeLoss の四半期データが欠損している銘柄（BKNG, FCX 等）も
+  同様に eps=false を設定する（EPS Analyzer は四半期 NetIncomeLoss を必須とする）
 - Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
 - Step 7 の monitor_tickers.yaml は **単純リスト形式**（yaml.dump 使用不可 → コメントが消える）
 - Step 8 の NG は必ず解消してからコミットする。主なNG要因:
@@ -390,6 +399,7 @@ rm -f common/sec_data/raw/[TICKER]_quarterly_raw.json
 rm -f common/sec_data/ttm/[TICKER]_ttm_series.json
 rm -rf docs/value-monitor/tanuki_valuation/data/[TICKER]
 rm -f docs/value-monitor/hypecore/data/[TICKER]_poc.json
+rm -rf docs/value-monitor/adjusted_eps_analyzer/data/[TICKER]
 
 # Step 4: 健全性チェックで不整合がないことを確認
 python common/system_health.py
