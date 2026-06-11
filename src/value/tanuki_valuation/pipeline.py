@@ -1112,9 +1112,10 @@ class TanukiValuationPipeline:
             if len(valid_fcf) >= 4:
                 yr_old, fcf_old = valid_fcf[-4]
                 yr_new, fcf_new = valid_fcf[-1]
-                if fcf_old > 0 and fcf_new > 0:
-                    cagr = ((fcf_new / fcf_old) ** (1 / 3) - 1) * 100
-                    L.append(f"  FCF_CAGR_3yr: {cagr:+.1f}%")
+                span = yr_new - yr_old  # 実際の年数(年次データ欠落時は3より大きくなる)
+                if fcf_old > 0 and fcf_new > 0 and span > 0:
+                    cagr = ((fcf_new / fcf_old) ** (1 / span) - 1) * 100
+                    L.append(f"  FCF_CAGR_{span}yr: {cagr:+.1f}%")
         else:
             L.append("  N/A")
         L.append("Segment_Breakdown:")

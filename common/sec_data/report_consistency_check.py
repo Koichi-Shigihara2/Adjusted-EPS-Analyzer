@@ -21,10 +21,23 @@ import glob
 import sys
 
 # ─── パス設定 ────────────────────────────────────────────────
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT   = os.path.normpath(os.path.join(SCRIPT_DIR, "../.."))
-DATA_DIR    = os.path.join(REPO_ROOT, "docs/value-monitor/tanuki_valuation/data")
-RPO_CONFIG  = os.path.join(REPO_ROOT, "config/rpo_config.json")
+SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, "../.."))
+DATA_DIR     = os.path.join(REPO_ROOT, "docs/value-monitor/tanuki_valuation/data")
+RPO_CONFIG   = os.path.join(REPO_ROOT, "config/rpo_config.json")
+SEG_CONFIG   = os.path.join(REPO_ROOT, "config/segment_config.json")
+
+_SEG_CFG_CACHE: dict = {}
+
+def _load_seg_config() -> dict:
+    global _SEG_CFG_CACHE
+    if not _SEG_CFG_CACHE:
+        try:
+            with open(SEG_CONFIG, encoding="utf-8") as f:
+                _SEG_CFG_CACHE = json.load(f)
+        except Exception:
+            pass
+    return _SEG_CFG_CACHE
 
 
 # ─── ユーティリティ ──────────────────────────────────────────
@@ -75,6 +88,7 @@ def _parse_report(text: str) -> dict:
         "rpo_pv_value": None,
         "rpo_pv_line": None,
         "fcf_history": [],                   # [(year, neg_fcf, margin_or_None)]
+        "_raw_lines": lines,                 # CHECK-9 用
     }
 
     in_fcf_section = False
@@ -272,6 +286,27 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 f"  [NG-8 Matrix④高FCFラベル赤字]"
                 f" Label={lbl!r} & 最新FCF({latest_entry[0]})実績マイナス"
             )
+
+    # ── CHECK 9: セグメント設定鮮度 (警告) ──────────────────
+    # segment_configのfiscal_yearが2年以上前の場合、陳腐化の可能性を警告
+    seg_cfg = _load_seg_config().get(ticker, {})
+    if seg_cfg.get("enabled") and seg_cfg.get("fiscal_year"):
+        fy_str = seg_cfg["fiscal_year"]  # e.g. "FY2025"
+        m_fy = re.match(r"FY(\d{4})", fy_str)
+        if m_fy:
+            fy_yr = int(m_fy.group(1))
+            # report内のGenerated行から生成年を取得
+            gen_yr = None
+            for line in (parsed.get("_raw_lines") or []):
+                mm = re.search(r"Generated: (\d{4})-", line)
+                if mm:
+                    gen_yr = int(mm.group(1))
+                    break
+            if gen_yr and (gen_yr - fy_yr) >= 2:
+                warn.append(
+                    f"  [WARN-9 セグメント設定陳腐化] segment_config fiscal_year={fy_str}"
+                    f" (現在{gen_yr}年、{gen_yr - fy_yr}年前のデータ)"
+                )
 
     return ng, warn
 

@@ -15,6 +15,31 @@
 - score_comment に「DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH」を付記
 - CRWV: HOLD → WATCH に変更（期待通り）
 
+### ✅ BUG-ROE-NI-1 (2026-06-11 完了): ROE集計でnet_incomeがNoneの年を除外していた問題
+- 原因: SEC XBRL旧フォーマット(2015-2019頃)は net_income=None だがeps_diluted×sharesから代替推計可能
+- 修正: get_roe_avg_detail() に `eps_diluted × shares_diluted` フォールバックを追加（NI=None時）
+- 結果: CAKE 5yr平均ROE 5.2%→13.4% (有効年数 5→10年、COVID赤字年の影響が薄まる)
+- 汎用修正: 同様の旧SEC形式を持つ全銘柄に自動適用
+
+### ✅ BUG-FCF-CAGR-SPAN-1 (2026-06-11 完了): FCF CAGR計算の固定3年指数バグ
+- 原因: `(fcf_new/fcf_old)**(1/3)` の固定指数が年次データ欠落時に誤ったCAGRを算出
+  CAKE: annual_2022.json 欠落 → 実際は4年スパンなのに3年として計算
+- 修正: `span = yr_new - yr_old` で実際の年数差を算出し `(1/span)` を使用
+- ラベル変更: `FCF_CAGR_3yr` → `FCF_CAGR_{span}yr`（スパン明示）
+- 結果: CAKE FCF_CAGR_4yr: +1.5%（旧: FCF_CAGR_3yr: +2.0%）
+
+### ✅ CONFIG-CAKE-SEG-1 (2026-06-11 完了): CAKEセグメント設定の名称・注記修正
+- 修正: segment_config.json CAKE エントリー更新
+  "Restaurant Sales" → "Restaurant Operations"（North Italia/FRC brands含む）
+  "Bakery Operations" → "Bakery & Other"（外部卸売バクリー配送のみ）
+- fiscal_year: FY2025 に更新
+
+### ✅ FEAT-CHECK9-1 (2026-06-11 完了): consistency_check CHECK-9 セグメント設定陳腐化検知
+- report_consistency_check.py に CHECK-9 追加（WARN）
+- segment_config の fiscal_year が Generated年から2年以上前の場合 WARN-9 を発行
+- _raw_lines を _parse_report() 結果に追加して Generated 行の年を取得
+- 現状: FY2025設定(2026年生成)は1年差のためWARN未発動（設計通り）
+
 ---
 
 ## 2026-06-10 完了

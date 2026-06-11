@@ -161,6 +161,14 @@ class SECReader:
             net_income = data.get("pl", {}).get("net_income")
             equity = data.get("bs", {}).get("stockholders_equity")
 
+            # net_income が None の場合、eps_diluted × shares_diluted で代替推計する
+            # (古いSEC XBRLファイルで net_income タグが欠落している銘柄への対処)
+            if net_income is None:
+                eps_d = data.get("pl", {}).get("eps_diluted")
+                sh_d  = (data.get("shares", {}) or {}).get("shares_diluted")
+                if eps_d is not None and sh_d:
+                    net_income = eps_d * sh_d
+
             if net_income is not None and equity and equity > 0:
                 roe = net_income / equity
                 if abs(roe) > 0.80:
