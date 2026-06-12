@@ -141,8 +141,14 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
    すでに TRIM/GROWTH_PREMIUM として表示されており、実害は軽微の可能性
 
 #### 着手条件
-- 全銘柄の成長モデル・Deviation・Classificationへの影響を横断スキャンしてから判断
-- 特に ASTS / JOBY / QBTS / RKLB 等の他初期段階銘柄での挙動を確認
+- ✅ 2026-06-12 横断スキャン完了（growth_model_audit.py 実施・79銘柄）
+- スキャン結果: クランプ発動 4 件（IONQ/NVDA/ONDS/RCAT）
+  - NVDA ($216B): 実態のある100%成長 → 懸念なし
+  - IONQ ($0.13B): cagr=127% → rec_g=55% → Upside=+12.4% → 唯一の要注意ケース
+  - ONDS ($0.05B)/RCAT ($0.04B): クランプ高だがUpside<0で実害なし
+- 現状判断: IONQ は Score=WATCH で管理可能。対処案4（現状維持）を仮採用。
+  ただし IONQ が BUY/GROWTH_PREMIUM に昇格したら売上規模フィルタを検討。
+- **次アクション**: CEG/VST 外部AIレビュー後に余力があれば対処案1（80%クランプ）を試算
 
 ### [ARCH-DATA-1] SECデータ正規化レイヤーの強化
 **優先度:** 中

@@ -4,6 +4,13 @@
 
 ## 2026-06-12 完了
 
+### ✅ CHECK-13 / WARN-12修正 (2026-06-12 完了): RICE負値ラベル回帰検知 + 偽陽性除去
+- `report_consistency_check.py` に CHECK-13 追加（RICE<0 時 Matrix Label 確認）
+- CHECK-12 の `_latest` 変数名バグ修正（正: `latest`）→ WARN-12 が正常検知されるように
+- WARN-12 の false positive 除去: quarterly_STI ≈ annual_STI のとき誤検出しないよう `_sti_already_qtr` 条件追加
+- 修正後: NG-13 発生 5 件 → 影響 5 銘柄を再生成 → NG=0 確認
+- テスト: `TestRiceNegativeLabel` 3 件追加（total: 100 件パス）
+
 ### ✅ RICE-3 (2026-06-12 完了): 負 RICE 値の閾値定義明記
 - OCF 赤字時に RICE が負値になるが「低効率」と誤表示されていた問題を修正
 - `pipeline.py` の rice_efficiency 判定に `< 0 → "N/A (OCF赤字)"` ブランチを追加（4分類化）

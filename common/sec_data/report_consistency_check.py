@@ -16,6 +16,7 @@ report_consistency_check.py
   WARN 9. セグメント設定陳腐化  segment_config fiscal_yearが2年以上前
   WARN 10. PS異常値            yfinance PSが自社計算値(price×shares/rev)の2.5倍超 or 0.4倍未満
   WARN 12. Cash-STI期ズレ      latest.jsonのCashが最新四半期値なのにST_Investが年次値のまま
+  NG  13. RICE負値ラベルなし   rice.available=true かつ RICE<0 なのに Matrix Label に N/A/OCF赤字 なし
 """
 
 import os
@@ -396,13 +397,15 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 _q_sti12    = _q_bs12.get("short_term_investments") or 0
                 # Cashが四半期値に更新済み かつ ST_Investが存在し値が変化する場合のみチェック
                 if _q_cash12 != _ann_cash12 and _q_sti12 > 0 and _q_sti12 != _ann_sti12:
-                    _fh12     = _latest.get("financial_health", {})
+                    _fh12     = latest.get("financial_health", {})
                     _rep_cash = _fh12.get("cash_and_equivalents") or 0
                     _rep_sti  = _fh12.get("short_term_investments") or 0
-                    # レポートCash≈四半期値 かつ レポートSTI≈年次値 → 期ズレ未修正
+                    # レポートCash≈四半期値 かつ レポートSTI≈年次値 かつ STI≠四半期値 → 期ズレ未修正
+                    # （quarterly STI ≈ annual STI の偽陽性を除外: PLTR/QBTS など）
                     _cash_ok = abs(_rep_cash - _q_cash12) < max(1_000_000, _q_cash12 * 0.01)
                     _sti_stale = abs(_rep_sti - _ann_sti12) < max(1_000_000, _ann_sti12 * 0.01)
-                    if _cash_ok and _sti_stale:
+                    _sti_already_qtr = abs(_rep_sti - _q_sti12) < max(1_000_000, _q_sti12 * 0.01)
+                    if _cash_ok and _sti_stale and not _sti_already_qtr:
                         warn.append(
                             f"  [WARN-12 Cash-STI期ズレ] Cash={_rep_cash/1e6:.0f}M({_q_period12})"
                             f" だがST_Invest={_rep_sti/1e6:.0f}M(年次{_ann_period12})のまま"
@@ -410,6 +413,19 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                         )
         except Exception:
             pass
+
+    # CHECK-13: RICE負値ラベル確認（RICE-3 回帰検知）
+    # rice.available=true かつ BASE RICE < 0 なら Matrix Label が "N/A" か "OCF赤字" を含むこと
+    _rice_ld = latest.get("rice", {})
+    if _rice_ld.get("available", False):
+        _rice_base_val = (_rice_ld.get("base") or {}).get("rice")
+        if _rice_base_val is not None and _rice_base_val < 0:
+            _label_c13 = parsed.get("label", "") or ""
+            if "N/A" not in _label_c13 and "OCF赤字" not in _label_c13:
+                ng.append(
+                    f"  [NG-13 RICE負値ラベルなし] BASE RICE={_rice_base_val:.3f} "
+                    f"だが Label='{_label_c13}' に 'N/A (OCF赤字)' なし"
+                )
 
     return ng, warn
 

@@ -1972,3 +1972,66 @@ class TestSTInvestQuarterlyOverride:
             "テストの前提が崩れた(期が一致するか値が同じ)"
         )
 
+
+class TestRiceNegativeLabel:
+    """RICE-3 回帰防止: OCF赤字で RICE < 0 のとき Matrix Label が 'N/A (OCF赤字)' になること"""
+
+    def test_negative_rice_label_contains_ocf_loss(self, tmp_path):
+        """rice.base.rice < 0 のとき Label が 'N/A (OCF赤字)' を含む"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=10.0)
+        val["rice"] = {
+            "available": True,
+            "note": "",
+            "base": {"rice": -0.55},
+            "q": -0.25,
+            "cf_conversion": 0.40,
+            "wacc": 0.10,
+            "bear": {"rice": -0.38},
+            "bull": {"rice": -0.65},
+        }
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("NEGRICE", val, score_data, _minimal_extra())
+
+        assert "N/A (OCF赤字)" in report, (
+            "RICE < 0 のとき Matrix Label に 'N/A (OCF赤字)' が含まれていない"
+            " (RICE-3 回帰: rice_efficiency が '低効率' に戻った可能性)"
+        )
+
+    def test_zero_rice_label_is_low_efficiency(self, tmp_path):
+        """rice.base.rice == 0.0 は '低効率' (負値と境界を明確にする)"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=10.0)
+        val["rice"] = {
+            "available": True,
+            "note": "",
+            "base": {"rice": 0.0},
+            "q": 0.0,
+            "cf_conversion": 0.5,
+            "wacc": 0.10,
+            "bear": {},
+            "bull": {},
+        }
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("ZERORICE", val, score_data, _minimal_extra())
+
+        assert "低効率" in report, (
+            "RICE == 0.0 のとき '低効率' が表示されていない (負値との境界が崩れた可能性)"
+        )
+        assert "N/A (OCF赤字)" not in report, (
+            "RICE == 0.0 は '低効率' であり 'N/A (OCF赤字)' ではない"
+        )
+
+    def test_positive_rice_label_is_not_ocf_loss(self, tmp_path):
+        """rice.base.rice > 0 は 'N/A (OCF赤字)' を含まない (正常系の非汚染確認)"""
+        pipe = _make_pipe(tmp_path)
+        pipe._eps_summary_cache = {}
+        val = _minimal_valuation(upside=30.0)
+        score_data = _minimal_score_data()
+        report = pipe._generate_report("POSRICE", val, score_data, _minimal_extra())
+
+        assert "N/A (OCF赤字)" not in report, (
+            "RICE > 0 なのに 'N/A (OCF赤字)' ラベルが出現した (正常系への誤波及)"
+        )
