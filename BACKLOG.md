@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-13 (5)
+最終更新: 2026-06-13 (6)
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -8,17 +8,15 @@
 ## 優先度：中（こなれてきたら対応）
 
 ### [SEGMENT-1] 主要銘柄のセグメント精緻設定
+- 完了済み（2026-06-13）: VST/FCX/SCCO/CEG/KO（filing準拠セグメントに修正）
 - 現状: 35銘柄がTTM実績自動適用（General 100%）
 - 対象外（General 100%で正しい）:
   SaaS単一事業: DDOG/NET/NOW/ZS/RBRK/GTLB/ESTC/IOT/CWAN/S/ZETA/SITM/CART/CRM
   赤字初期段階: ASTS/JOBY/IONQ/QBTS/RXRX/RDW/RCAT/SPIR/CIX
 - 対象（複数事業・精緻化する価値あり）12銘柄:
   LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV
-- **CEG追加対象**: segment_config.json の CEG セグメント設定が10-Kのセグメント定義（Nuclear Power / Natural Gas / LS Power）に準拠しているか確認・更新が必要
-  現状は手動設定（Nuclear_Generation/Commercial_Industrial/Nuclear_Fleet_Services）で
-  Calpine統合後の事業再編を反映していない可能性あり
 - 方針: Grokにセグメント構成を自動提案させてadmin.htmlから設定
-- 優先順位: 時価総額上位から順次（LLY→LMT→MRVL→AMAT→VRT→CEG）
+- 優先順位: 時価総額上位から順次（LLY→LMT→MRVL→AMAT→VRT）
 - 新規銘柄追加時のルール:
   ① 単一事業（SaaS・純粋プレイ）→ General 100%のままでよい
   ② 複数事業セグメントが決算資料に明示されている → 対象リストに追加

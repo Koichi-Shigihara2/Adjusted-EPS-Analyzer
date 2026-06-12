@@ -4,6 +4,20 @@
 
 ## 2026-06-13 完了
 
+### ✅ REPORT-6 (2026-06-13 完了): DCF透明性強化
+- `pipeline.py` の report.txt [3]TANUKI VALUATIONに`DCF_FCF_PV`/`DCF_TV_PV`を追加（全銘柄）
+- FCF外れ値除外銘柄のみ`DCF_FCF_Base_Detail`/`DCF_FCF_Base_Excluded`を追加出力
+- 3段階DCF(three_stage)は`pv_phase1+pv_phase2`、2段階は`pv_high_growth`でFCF現在価値を算出
+- pytest: 122件全パス / 全78銘柄再生成: FAIL=0 / NG=0
+
+### ✅ SEGMENT-1 VST/FCX/SCCO/CEG/KO (2026-06-13 完了): filing準拠セグメント修正
+- VST: Texas_ERCOT/East_Nuclear/Retail/West（地理別、wg 7.2%→7.85%、IV $31.36→$33.69）
+- FCX: Indonesia/North_America/South_America（Gold独立セグ削除、wg 8.3%→6.4%、IV $3.95→$3.34）
+- SCCO: Peruvian_Operations/Mexican_Operations（OtherMetals削除、wg 8.6%→8.45%、IV $17.48→$17.36）
+- CEG: Mid_Atlantic/Midwest/ERCOT/New_York/Other_Retail（Calpine統合後、wg 10.3%→9.65%、IV $52.48→$49.54）
+- KO: North_America_NAOU/International/Global_Ventures（wg 5.0%→4.7%、IV $46.39→$45.71）
+- 残タスク: LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV（12銘柄）
+
 ### ✅ BUG-NETDEBT-4 (2026-06-13 完了): 同一時点原則による Net Debt 計算修正
 - **原因1**: BUG-NETDEBT-1でCashは最新quarterly上書きされるが、Total_Debtは年次のまま（時点混在）
 - **原因2**: CEG等は10-QでLTDebtをLongTermDebtNoncurrentタグで報告するが、quarterly.pyがLongTermDebt(annual tag)のみ参照してNone扱い
