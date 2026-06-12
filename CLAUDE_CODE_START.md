@@ -77,6 +77,10 @@ git pull --rebase origin kaihatsu
 git push origin kaihatsu
 - `git push --force` は絶対に使わない
 - results.json を含むコミットは必ず rebase してから push
+- **バグ修正時の再生成順序を守る（巻き戻り防止）**:
+  「コード修正 → コミット＆push → 全銘柄再生成 → 再生成結果をコミット＆push」の順で行う。
+  「再生成が先・コード修正pushが後」にすると、Actions自動再生成が修正前コードで走り
+  修正前レポートが本番に残存する（2026-06-11事例: 再生成02:32 → 修正push04:49）。
 
 ### テストルール
 - 実装後に必ず pytest を実行する
@@ -146,6 +150,13 @@ python common/sec_data/audit.py
 全銘柄 TTM を走査して変更前後の Q 値を比較するスクリプトを都度作成するか、
 変更内容から論理的に対象銘柄を絞り込む（例：ni < 0 チェック追加 → 赤字年が含まれる銘柄）。
 
+**全銘柄再生成後の必須検証：**
+```bash
+python common/sec_data/report_consistency_check.py
+# NG=0 を確認してからコミットする
+# WARN は内容確認の上、対処が必要なもののみ修正する
+```
+
 ---
 
 ## 重要ルール
@@ -156,6 +167,44 @@ python common/sec_data/audit.py
 - 新規AI API呼び出しを実装する際は必ずGrok（`api.x.ai/v1/chat/completions`）を使用すること
 - モデルはフォールバック方式：`["grok-3-mini", "grok-3", "grok-2-1212"]` の順で試行
 - GeminiやOpenAI等の別APIを使用しているコードを発見した場合はGrokに移行すること
+
+### 財務指標計算における期ズレ防止ルール（BUG-NETDEBT-5の教訓）
+
+Net Debt 等、複数の BS 項目（Cash / ST_Invest / Debt）を組み合わせて計算する場合、
+**すべての項目が同一決算期（同じ as-of 日）から取得されていること**を確認する。
+
+- **NG例**: Cash は最新四半期（Q1 2026）・ST_Invest は年次（FY2025）から混在取得
+- **OK例**: Cash・ST_Invest・Debt のすべてを同じ四半期 bs から取得
+
+**normalized JSON にフィールドが存在しない項目は自動上書き経路から漏れやすい。**
+BUG-NETDEBT-1 で Cash は自動更新されても、ShortTermInvestments がない場合は
+ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済み）。
+新たに BS 項目を追加するときも同様のズレが起きないか確認すること。
+
+### レポート定義の明示ルール（外部AIレビュー誤指摘の予防）
+
+外部 AI が「計算がおかしい」と指摘するパターンのうち、設計仕様として明示化しておくもの：
+
+- **FCF_History の CapEx 定義**: 素の OCF − PP&E 購入（Capitalized Software 除く・FinanceLease 除外）。
+  R&D 資本化補正・maintenance CapEx 分離は FCF_Base にのみ反映し、FCF_History には乗せない。
+  外部 AI が「CapEx が過少だ」と指摘してきた場合は FCF_Base との差分を確認してから判断する。
+- **OperatingLeaseLiability は Total_Debt に含めない**: ASC 842 オペレーティングリースは
+  利付き借入（金融負債）ではなく将来リース支払義務。IONQ の $30M 等は意図的に除外。
+  EV 計算にリースを含める「アジャステッド EV」方式を採用する場合は設計変更として明示すること。
+
+### 外部AIレビューの活用と品質還元ループ
+
+大きな修正後は `report.txt` を外部 AI（Grok / Claude 等）に敬対的レビューさせることで
+ロジックバグを早期に発見できる。
+
+**レビューの仕分けルール（指摘 → 分類 → 対応）：**
+1. **本物のバグ**: 再現可能な計算誤り → 修正 → `report_consistency_check.py` に検出項目を追加して恒久化
+2. **設計仕様**: 意図的なモデル選択（FCF_Base方式・OperatingLease除外等）→ 定義文を明記して予防
+3. **外部データ差**: AI の学習データと XBRL 値の差 → 一次ソース（SEC EDGAR）で照合して判定
+
+**サンプル選定のコツ:**
+- 主力9銘柄だけでなく、消費セクター・金融・赤字初期（IONQ/JOBY等）をセクター横断でかけると
+  属性固有のバグ（SPAC誤タグ・金融収益混入・CAGR過大等）が出やすい。
 
 ### 自動生成データファイルのgit管理ルール
 
@@ -418,6 +467,11 @@ git push origin kaihatsu
 - [ ] pytest 全件パス
 - [ ] 単体テストで動作確認
 - [ ] 全銘柄再生成で成功率確認
+- [ ] **`python common/sec_data/report_consistency_check.py` を実行し NG=0 を確認**
+  - 現行チェック項目: FCF符号矛盾 / DCF_Reliability欠落 / LOW丸め / 割引率2段 /
+    NetDebt旧表示 / 負PER / RPO条件 / Matrix④高FCFラベル赤字 / セグメント鮮度 /
+    PS異常値 / Revenue孤立年(NG-11) / Cash-STI期ズレ(WARN-12)
+  - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
 - [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動
 - [ ] コミット・プッシュ完了
