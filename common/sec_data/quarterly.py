@@ -137,6 +137,11 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
         # AMZN等: GrossProfitタグがある場合（normalizer._calc_gross_profitで逆算済みの場合は不要）
         "GrossProfitLoss",
     ),
+    "LTDebt": (
+        # CEG等: 10-QがLongTermDebt(total)を申告せずLongTermDebtNoncurrentのみ申告する場合
+        # LongTermDebt(quarterly)が0件でもLongTermDebtNoncurrentで四半期値を取得できる
+        "LongTermDebtNoncurrent",
+    ),
     "RPO": (
         "RemainingPerformanceObligation",
         "ContractWithCustomerLiabilityNoncurrent",
@@ -239,7 +244,7 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
         # NetIncome: quarterly数が少ない場合もフォールバックを試みる
         #   AVGO等: NetIncomeLossの四半期データが5年窓外で q_count=0 になる場合に
         #   ProfitLossへのフォールバックが必要（annualはあるため not processed=False）
-        _FALLBACK_MIN_FIELDS = {"Cash", "SBC", "CapEx", "GrossProfit", "NetIncome"}
+        _FALLBACK_MIN_FIELDS = {"Cash", "SBC", "CapEx", "GrossProfit", "NetIncome", "LTDebt"}
         if field_name in _FIELD_FALLBACKS:
             q_count = sum(1 for e in processed if not e.get("is_annual"))
             use_min = field_name in _FALLBACK_MIN_FIELDS and q_count < _FALLBACK_MIN

@@ -34,7 +34,7 @@ def _dilution_severity_info(dil_pct: float | None) -> tuple:
     if dil_pct is None:
         return None, None, None
     if dil_pct < 0:
-        return "positive", "自社株買いによる株主還元 ✅", "株主数が減少し1株あたり価値が向上している。"
+        return "positive", "自社株買いによる株主還元 ✅", "株式数が減少し1株あたり価値が向上している。"
     elif dil_pct < 3:
         return "low", "許容範囲内 ✅", "希薄化はほぼ無視できるレベル。"
     elif dil_pct < 10:
@@ -993,10 +993,17 @@ class TanukiValuationPipeline:
             L.append(f"(DCF Base vs TTM actual: {_delta:+.1f}pt {_sign})")
         wacc_pct = wacc_val * 100 if isinstance(wacc_val, (int, float)) else None
         _beta_is_default = False
+        _beta_stale_days = None
         try:
+            from datetime import date as _date_cls
             _bc_path = os.path.join(self.repo_root, "config", "beta_config.json")
             with open(_bc_path, encoding="utf-8") as _bcf:
-                _beta_is_default = json.load(_bcf).get("overrides", {}).get(ticker, {}).get("reason") == "デフォルト設定"
+                _bc = json.load(_bcf)
+            _bc_override = _bc.get("overrides", {}).get(ticker, {})
+            _beta_is_default = _bc_override.get("reason") == "デフォルト設定"
+            _bc_as_of = _bc_override.get("as_of")
+            if _bc_as_of:
+                _beta_stale_days = (_date_cls.today() - _date_cls.fromisoformat(_bc_as_of)).days
         except Exception:
             pass
         _dr_primary = wacc_data.get("market_return", 0.10) if isinstance(wacc_data, dict) else 0.10
@@ -1009,7 +1016,8 @@ class TanukiValuationPipeline:
         terminal_g_used = comps.get("terminal_growth_used")
         terminal_g_pct = terminal_g_used * 100 if isinstance(terminal_g_used, (int, float)) else None
         L.append(f"Terminal_Growth_Rate: {terminal_g_pct:.1f}%" if terminal_g_pct is not None else "Terminal_Growth_Rate: N/A")
-        L.append(f"Beta: {beta}")
+        _beta_stale_flag = f"  ⚠️ override設定から{_beta_stale_days}日経過、要更新確認" if (_beta_stale_days is not None and _beta_stale_days > 90) else ""
+        L.append(f"Beta: {beta}{_beta_stale_flag}")
         # --- Valuation Gap Analysis (reverse DCF) ---
         if upside is not None and upside <= -50 and current_price > 0 and base_iv > 0:
             _gap_shares = comps.get("diluted_shares") or 0
@@ -1066,6 +1074,13 @@ class TanukiValuationPipeline:
                 L.append(f"DCF_Reliability: HIGH")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
+            _fcf_est_val = fcf_est.get("estimated_fcf") or comps.get("fcf_base_used") or 0
+            _fcf_adj_ni  = fcf_est.get("adj_net_income")
+            if _fcf_est_val > 0:
+                if _fcf_adj_ni:
+                    L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M (= Adj_NI ${_fcf_adj_ni/1e6:,.0f}M × FCF_Conv {fcf_conv})")
+                else:
+                    L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M")
         _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
         if _rpo_excl:
             L.append(f"RPO_PV: $0 ({_rpo_excl})")
@@ -1087,10 +1102,21 @@ class TanukiValuationPipeline:
                 L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B")
         else:
             L.append("  Total_Debt: N/A")
+        _nd_period = fin_health.get("net_debt_period")
+        if _nd_period:
+            L.append(f"  Net_Debt_Period: {_nd_period}")
         L.append(f"  SBC_TTM: ${sbc_ttm/1e6:,.0f}M" if sbc_ttm is not None else "  SBC_TTM: N/A")
         if dilution_3yr is not None:
             L.append(f"  Dilution_3yr_Annual: {dilution_3yr:+.2f}%/yr  {_dil_badge}")
             L.append(f"  Dilution_Comment: {_dil_rpt}")
+            # 期中大規模発行フラグ: yf_implied株数と直近annual株数の乖離 > 5%
+            _yf_implied_shares = comps.get("diluted_shares") or 0
+            _ann_sec_shares = fin_health.get("shares_yr_now") or 0
+            if _yf_implied_shares > 0 and _ann_sec_shares > 0:
+                _shares_dev = (_yf_implied_shares - _ann_sec_shares) / _ann_sec_shares * 100
+                if abs(_shares_dev) > 5:
+                    _dir = "+" if _shares_dev > 0 else ""
+                    L.append(f"  ⚠️ 期中に大規模な株式{'発行' if _shares_dev > 0 else '買戻し'}の可能性（{_dir}{_shares_dev:.1f}%乖離: yf={_yf_implied_shares/1e6:.0f}M vs SEC={_ann_sec_shares/1e6:.0f}M）")
         else:
             L.append("  Dilution_3yr_Annual: N/A")
         L.append(f"  Next_Earnings_Date: {next_earnings}")
@@ -1573,50 +1599,63 @@ class TanukiValuationPipeline:
             total_debt = dc["lt_debt"] + dc["st_debt"]
             cash = dc["cash"]
 
-            # BUG-NETDEBT-1: cashを最新四半期値で上書き（annualはFY末で最大3ヶ月古い）
-            norm_path = os.path.join(
-                self.repo_root, "common", "sec_data", "normalized",
-                f"{ticker}_quarterly_normalized.json"
-            )
-            if os.path.exists(norm_path):
-                try:
-                    with open(norm_path, encoding="utf-8") as _f:
-                        _norm = json.load(_f)
-                    _cash_entries = [
-                        e for e in _norm.get("fields", {}).get("Cash", [])
-                        if not e.get("is_annual") and not e.get("is_ytd") and e.get("val") is not None
-                    ]
-                    if _cash_entries:
-                        _latest_q_cash = max(_cash_entries, key=lambda e: e["end"])["val"]
-                        cash = _latest_q_cash
-                    # BUG-NETDEBT-2: annual JSONでlong_term_debtが欠落した場合にnormalized値で補完
-                    if dc["lt_debt"] == 0:
-                        _lt_entries = [
-                            e for e in _norm.get("fields", {}).get("LTDebt", [])
-                            if e.get("val") is not None
-                        ]
-                        if _lt_entries:
-                            _latest_lt = max(_lt_entries, key=lambda e: e["end"])["val"]
-                            total_debt = _latest_lt + dc["st_debt"]
-                except Exception:
-                    pass
-
-            # BUG-NETDEBT-5: ST_Investも最新四半期bsから上書き（Cashと対称）
-            # normalized JSONにShortTermInvestmentsフィールドがないため、
-            # 最新quarterly_*.jsonのbs.short_term_investmentsを直接参照する。
+            # BUG-NETDEBT-4: 同一時点原則による統合上書き（BUG-NETDEBT-1/5を統合）
+            # 最新quarterly_*.jsonからCash/LTDebt/STDebt/STIを一括取得し、
+            # 全項目を同一filing日時から参照する（時点混在の解消）。
+            _net_debt_period = f"FY{latest_yr}"  # デフォルト: 年次
             _q_st_invest_override: "float | None" = None
+            _q_full_override = False  # 四半期から全BS項目を取得できたか
             try:
-                _q_files_sti = sorted([
+                _q_files_nd = sorted([
                     f for f in os.listdir(sec_dir)
                     if f.startswith("quarterly_") and f.endswith(".json")
                 ])
-                if _q_files_sti:
-                    with open(os.path.join(sec_dir, _q_files_sti[-1]), encoding="utf-8") as _qf_sti:
-                        _q_sti_raw = json.load(_qf_sti).get("bs", {}).get("short_term_investments") or 0
-                    if _q_sti_raw > 0:
-                        _q_st_invest_override = float(_q_sti_raw)
+                if _q_files_nd:
+                    with open(os.path.join(sec_dir, _q_files_nd[-1]), encoding="utf-8") as _qf_nd:
+                        _latest_q_nd = json.load(_qf_nd)
+                    _qbs_nd   = _latest_q_nd.get("bs", {})
+                    _q_cash   = _qbs_nd.get("cash_and_equivalents")
+                    _q_lt     = _qbs_nd.get("long_term_debt")
+                    _q_st     = _qbs_nd.get("short_term_debt")
+                    _q_sti    = _qbs_nd.get("short_term_investments") or 0
+                    _q_period = _latest_q_nd.get("period", "")
+                    if _q_cash is not None and _q_lt is not None:
+                        # LTDebtが明示的に取得できる → 全項目を同一時点で統一
+                        # LTDebtがNone（パース失敗・未申告）の場合は負債は年次で維持
+                        cash       = float(_q_cash)
+                        lt_debt    = float(_q_lt)
+                        st_debt    = float(_q_st or 0)
+                        total_debt = lt_debt + st_debt
+                        _net_debt_period = _q_period
+                        _q_full_override = True
+                    elif _q_cash is not None:
+                        # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
+                        cash = float(_q_cash)
+                        _net_debt_period = f"Cash={_q_period}/Debt=FY{latest_yr}"
+                    if _q_sti > 0:
+                        _q_st_invest_override = float(_q_sti)
             except Exception:
                 pass
+
+            # BUG-NETDEBT-2補完: 年次JSONのlt_debt=0かつ四半期から全項目取得できなかった場合
+            # → normalized LTDebtで補完（reader.get_net_cash()のBUG-NETDEBT-3と同等処理）
+            if not _q_full_override and dc["lt_debt"] == 0:
+                _norm_path = os.path.join(
+                    self.repo_root, "common", "sec_data", "normalized",
+                    f"{ticker.upper()}_quarterly_normalized.json"
+                )
+                try:
+                    with open(_norm_path, encoding="utf-8") as _nf:
+                        _norm_data = json.load(_nf)
+                    _lt_entries = [
+                        e for e in _norm_data.get("fields", {}).get("LTDebt", [])
+                        if e.get("val") is not None and e.get("val", 0) > 0
+                    ]
+                    if _lt_entries:
+                        _norm_lt = max(_lt_entries, key=lambda e: e.get("end", ""))["val"]
+                        total_debt = _norm_lt + dc["st_debt"]
+                except Exception:
+                    pass
 
             # total_debt=0 かつ total_liabilities が大きい場合は警告（金融機関等）
             _ann_total_liab = 0
@@ -1639,6 +1678,7 @@ class TanukiValuationPipeline:
                 "short_term_investments": st_invest,
                 "net_debt": total_debt - cash - st_invest,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
+                "net_debt_period": _net_debt_period,
             }
             # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
             # 条件: 直近四半期EPS<0, 直近年FCF<0, またはcash<$100M のいずれか

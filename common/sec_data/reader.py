@@ -383,6 +383,38 @@ class SECReader:
         if lt_debt == 0:
             lt_debt = self.get_lt_debt_from_normalized(ticker)
 
+        # BUG-NETDEBT-4: 同一時点原則（最新quarterly_*.jsonから全項目一括取得）
+        # BUG-NETDEBT-1はCashのみ四半期上書きしていたが、負債が年次に留まる非対称性を解消。
+        # 四半期にCash+負債が揃う場合は全項目を同一filingから参照する。
+        ticker_dir = os.path.join(self.data_dir, ticker.upper())
+        try:
+            _q_files = sorted([
+                f for f in os.listdir(ticker_dir)
+                if f.startswith("quarterly_") and f.endswith(".json")
+            ])
+            if _q_files:
+                with open(os.path.join(ticker_dir, _q_files[-1]), encoding="utf-8") as _qf:
+                    _latest_q = json.load(_qf)
+                _qbs = _latest_q.get("bs", {})
+                _q_cash = _qbs.get("cash_and_equivalents")
+                _q_lt   = _qbs.get("long_term_debt")
+                _q_st   = _qbs.get("short_term_debt")
+                _q_sti  = _qbs.get("short_term_investments") or 0
+                if _q_cash is not None and _q_lt is not None:
+                    # LTDebtが明示的に取得できる → 全項目を同一時点で統一（最優先）
+                    # LTDebtがNone（パース失敗）の場合はフォールバック（負債は年次維持）
+                    cash    = float(_q_cash)
+                    lt_debt = float(_q_lt)
+                    st_debt = float(_q_st or 0)
+                    st_inv  = float(_q_sti)
+                elif _q_cash is not None:
+                    # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
+                    cash   = float(_q_cash)
+                    if _q_sti > 0:
+                        st_inv = float(_q_sti)
+        except Exception:
+            pass
+
         # ── セクターガード（v8.1: industry優先判定）──
         # _is_insurance()と同じロジックをここで直接適用
         # （adjustments.pyのimportを避けるため複製）
