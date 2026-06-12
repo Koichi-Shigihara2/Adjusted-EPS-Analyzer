@@ -651,15 +651,17 @@ class TanukiValuationPipeline:
             matrix = "①投資効率系"
             key_metric_y = f"RICE = {rice_base_val:.3f}" if rice_base_val is not None else "RICE = N/A"
             qx = upside is not None and upside >= 0
-            # RICE三分類: ≥2.0=高効率, 1.0〜2.0=中効率, <1.0=低効率（均衡点=1.0）
+            # RICE四分類: ≥2.0=高効率, 1.0〜2.0=中効率, 0〜1.0=低効率, <0=N/A（OCF赤字）
             if rice_base_val is None:
                 rice_efficiency = "N/A"
             elif rice_base_val >= 2.0:
                 rice_efficiency = "高効率"
             elif rice_base_val >= 1.0:
                 rice_efficiency = "中効率"
-            else:
+            elif rice_base_val >= 0:
                 rice_efficiency = "低効率"
+            else:
+                rice_efficiency = "N/A (OCF赤字)"
             qy = rice_base_val is not None and rice_base_val >= 1.0
             yH, yL = rice_efficiency, rice_efficiency
         elif "セクター除外" in rice_note:
@@ -934,7 +936,7 @@ class TanukiValuationPipeline:
         L.append(f"Key_Metric_Y: {key_metric_y}")
         L.append(f"Deviation_Rate: {upside:+.1f}%" if upside is not None else "Deviation_Rate: N/A")
         L.append("Thresholds:")
-        L.append("  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)")
+        L.append("  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)")
         L.append("  ROE_Threshold: 15% (above=high profitability)")
         L.append("  FCFMargin_Threshold: 15% (above=high cash generation)")
         L.append("  Deviation_Threshold: 0% (positive=undervalued)")
@@ -1290,7 +1292,7 @@ class TanukiValuationPipeline:
         L.append("ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)")
         L.append("Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)")
         L.append("WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)")
-        L.append("Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency")
+        L.append("Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)")
         L.append("Note: RICE uses Rm=10% (Beta=0) as a universal benchmark")
         L.append("for cross-ticker comparability. DCF uses ticker-specific WACC.")
         L.append("RICE is a proprietary screening metric inspired by")

@@ -4,6 +4,12 @@
 
 ## 2026-06-12 完了
 
+### ✅ RICE-3 (2026-06-12 完了): 負 RICE 値の閾値定義明記
+- OCF 赤字時に RICE が負値になるが「低効率」と誤表示されていた問題を修正
+- `pipeline.py` の rice_efficiency 判定に `< 0 → "N/A (OCF赤字)"` ブランチを追加（4分類化）
+- Matrix Label・RICE_Threshold・Interpretation 定義文すべてに `<0=undefined (OCF negative)` を追記
+- IONQ 確認: RICE=-0.552 で Label が "N/A (OCF赤字)" に正しく表示されることを確認
+
 ### ✅ BUG-NETDEBT-5 (2026-06-12 完了): ST_Invest期ズレ修正(年次→最新四半期)
 - **原因**: BUG-NETDEBT-1でCashは最新四半期bs値に上書きされるが、ST_Investはannual年次のまま
   normalized JSONにShortTermInvestmentsフィールドがなく自動更新経路がなかった

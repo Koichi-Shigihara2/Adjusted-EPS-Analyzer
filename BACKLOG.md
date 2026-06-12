@@ -1,24 +1,7 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-12 (2)
+最終更新: 2026-06-12 (4)
 完了済み項目は BACKLOG_DONE.md にアーカイブ
-
----
-
-## 優先度：高（次の改修サイクルで対応）
-
-### [SEC-REV-FINTECH-1] SOFI: annual_*.json の revenue が手数料収入のみを取得している
-**検出:** registration_validator.py P2-A NG (2026-06-11)
-**症状:** `latest_revenue` = $0.62B (annual_2025.json) ≠ TTM Revenue = $4.11B (ratio=6.6x)
-**根本原因:**
-- `quarterly.py` の `FINANCIAL_OVERRIDES["SOFI"]` で `revenue_concept = "RevenuesNetOfInterestExpense"` を固定 → TTM計算は正しく$4.11B
-- `parser.py` の `MERGE_ALL_TAGS_FIELDS` "revenue" は複数タグをマージし、年次10-Kでは `RevenueFromContractWithCustomerExcludingAssessedTax`（手数料収入のみ、~$619M）が優先採用される
-- 年次と四半期でタグ申告が異なるため parser.py のタグ選択が狂う
-**影響:** `latest_revenue` が6.6倍過小 → PS Ratio・Matrix④ FCFマージン・セグメント重み付けが歪む
-**修正方針:**
-- `parser.py` に `quarterly.py` と同じ `FINANCIAL_OVERRIDES` の `revenue_concept` オーバーライドを適用する
-- SOFI: `revenue` タグ候補を `RevenuesNetOfInterestExpense` に固定して再パース・再生成
-**着手条件:** なし（単独対応可）
 
 ---
 
@@ -227,19 +210,6 @@ CHECK 項目が十分育ってから（現状 CHECK-12。検証ループ継続�
 - 改善: DCF / PEG / EV/Sales / RICE / HypeCoreを並列スコアカード表示
 - GPT提案: 2026-05-30
 
-### [RICE-3] 負の RICE 値の閾値定義明記
-**優先度:** 低（軽微・表示のみ）
-**検出契機:** IONQレビュー（2026-06-12）
-
-#### 問題
-- Q (OCF) が赤字の場合、RICE スコアが負値になる
-- 現行の閾値テーブルは正値前提（例: ≥30 優秀 / ≥15 良好 / <15 要改善）
-- 負値の区分が未定義 → レポート上の解釈が曖昧
-
-#### 対処
-- 閾値定義文に `< 0: 効率測定不能（OCF赤字）` を追記
-- 表示ラベルを `N/A (OCF赤字)` または `赤字` に変更する選択肢も検討
-- 実装箇所: `pipeline.py` の RICE 計算・表示ブロック
 
 ### [RICE-2] CF_adj のMatrix判定への組み込み
 - 現状: RICE_adj は表示のみ（Matrix判定はRICE生値を使用）
