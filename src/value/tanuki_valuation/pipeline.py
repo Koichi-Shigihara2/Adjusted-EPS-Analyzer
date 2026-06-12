@@ -1081,6 +1081,28 @@ class TanukiValuationPipeline:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M (= Adj_NI ${_fcf_adj_ni/1e6:,.0f}M × FCF_Conv {fcf_conv})")
                 else:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M")
+        # REPORT-6: DCF透明性強化 — FCF現在価値・TV現在価値・FCF外れ値詳細
+        _dcf_comps_r6 = valuation.get("dcf_components", {})
+        _dcf_type_r6 = valuation.get("dcf_type", "two_stage")
+        if _dcf_type_r6 == "three_stage":
+            _pv_fcf_r6 = (_dcf_comps_r6.get("pv_phase1") or 0) + (_dcf_comps_r6.get("pv_phase2") or 0)
+        else:
+            _pv_fcf_r6 = _dcf_comps_r6.get("pv_high_growth") or comps.get("pv_high") or 0
+        _pv_term_r6 = _dcf_comps_r6.get("pv_terminal") or comps.get("pv_terminal") or 0
+        _hg_yrs_r6  = comps.get("high_growth_years") or 5
+        if _pv_fcf_r6:
+            L.append(f"DCF_FCF_PV: ${_pv_fcf_r6/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum)")
+        if _pv_term_r6:
+            L.append(f"DCF_TV_PV:  ${_pv_term_r6/1e9:.2f}B (terminal value present value)")
+        _fcf_outlier_r6 = valuation.get("fcf_outlier", {})
+        if _fcf_outlier_r6.get("action") == "excluded" and _fcf_outlier_r6.get("fcf_value") is not None:
+            _excl_fy_r6  = _fcf_outlier_r6.get("fiscal_year", "?")
+            _excl_val_r6 = _fcf_outlier_r6.get("fcf_value", 0)
+            _excl_n_r6   = max(len(comps.get("fcf_list_raw") or []) - 1, 1)
+            _excl_thr_r6 = int((_fcf_outlier_r6.get("threshold_pct") or 0.6) * 100)
+            _r6_base     = comps.get("fcf_base_used") or 0
+            L.append(f"DCF_FCF_Base_Detail: ${_r6_base/1e6:,.1f}M (外れ値${_excl_val_r6/1e6:,.0f}M/FY{_excl_fy_r6}除外後{_excl_n_r6}点平均)")
+            L.append(f"DCF_FCF_Base_Excluded: FY{_excl_fy_r6}=${_excl_val_r6/1e6:,.0f}M (outlier: >{_excl_thr_r6}% deviation from {_excl_n_r6}yr series)")
         _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
         if _rpo_excl:
             L.append(f"RPO_PV: $0 ({_rpo_excl})")

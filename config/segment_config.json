@@ -287,10 +287,20 @@
     "enabled": true,
     "fiscal_year": "FY2025",
     "segments": {
-      "Beverages": {
-        "weight": 1,
+      "North_America_NAOU": {
+        "weight": 0.47,
+        "growth": 0.04,
+        "note": "北米飲料。Coca-Cola・Fairlife・Simply等。KO 10-K North America Operating Unit (NAOU) セグメント準拠。Damodaran成熟消費財=3-5%。"
+      },
+      "International": {
+        "weight": 0.49,
         "growth": 0.05,
-        "note": "Global beverage portfolio."
+        "note": "EMEA・ラテンアメリカ・アジア太平洋を統合。新興国成長が先進国を補完。KO 10-K国際セグメント準拠。"
+      },
+      "Global_Ventures": {
+        "weight": 0.04,
+        "growth": 0.09,
+        "note": "Costa Coffee・innocent等グローバル投資ブランド。成長余地あり。KO 10-K Global Ventures セグメント準拠。"
       }
     }
   },
@@ -466,20 +476,30 @@
     "enabled": true,
     "fiscal_year": "FY2025",
     "segments": {
-      "Nuclear_Generation": {
-        "weight": 0.65,
-        "growth": 0.12,
-        "note": "原子力発電。AIデータセンター向け長期電力供給契約。"
+      "Mid_Atlantic": {
+        "weight": 0.35,
+        "growth": 0.10,
+        "note": "PJM/Mid-Atlantic原子力（Three Mile Island・Limerick等）。AI向け核電PPA拡大中。CEG 10-K Mid-Atlantic セグメント準拠。"
       },
-      "Commercial_Industrial": {
-        "weight": 0.25,
+      "Midwest": {
+        "weight": 0.20,
         "growth": 0.08,
-        "note": "商業・工業向け電力販売。"
+        "note": "PJM/MISO中西部原子力（Byron・Quad Cities・Dresden・Clinton等）。安定ベースロード。CEG 10-K Midwest セグメント準拠。"
       },
-      "Other_Energy": {
-        "weight": 0.1,
-        "growth": 0.05,
-        "note": "再生可能エネルギー・その他。"
+      "ERCOT": {
+        "weight": 0.25,
+        "growth": 0.13,
+        "note": "Calpine統合(2025)後のERCOT天然ガス＋South Texas原子力。AI/データセンター電力需要急増。"
+      },
+      "New_York": {
+        "weight": 0.10,
+        "growth": 0.07,
+        "note": "ニューヨーク原子力（Nine Mile Point・Ginna・James FitzPatrick）。CEG 10-K New York セグメント準拠。"
+      },
+      "Other_Retail": {
+        "weight": 0.10,
+        "growth": 0.06,
+        "note": "その他電力販売・小売。New England・中西部外。"
       }
     }
   },
@@ -827,20 +847,25 @@
     "enabled": true,
     "fiscal_year": "FY2025",
     "segments": {
-      "Nuclear_Power": {
-        "weight": 0.15,
-        "growth": 0.15,
-        "note": "原子力発電。Energyハブ事業の高成長ドライバー。"
+      "Texas_ERCOT": {
+        "weight": 0.40,
+        "growth": 0.10,
+        "note": "ERCOT内ガス火力・再エネ発電。AI/データセンター向け電力需要増。Comanche Peak原子力。2025 10-K基準。"
       },
-      "Natural_Gas_Power": {
-        "weight": 0.7,
-        "growth": 0.06,
-        "note": "天然ガス火力発電。主力セグメント。"
+      "East_Nuclear": {
+        "weight": 0.30,
+        "growth": 0.08,
+        "note": "Energy Harbor統合原子力(PJM圏)。長期PPA・AI需要増。Perry/Beaver Valley/Davis-Besse等。"
       },
-      "Retail_Energy": {
-        "weight": 0.15,
+      "Retail": {
+        "weight": 0.25,
         "growth": 0.05,
-        "note": "小売電力販売。"
+        "note": "TXU Energy小売電力。安定顧客基盤。競争的小売市場。"
+      },
+      "West": {
+        "weight": 0.05,
+        "growth": 0.04,
+        "note": "CAISO・その他西部市場。小規模。"
       }
     }
   },
@@ -848,20 +873,15 @@
     "enabled": true,
     "fiscal_year": "FY2025",
     "segments": {
-      "Copper_Peru": {
+      "Peruvian_Operations": {
         "weight": 0.55,
         "growth": 0.08,
-        "note": "ペルー銅鉱山。Cuajone・Toquepala・Illoプロジェクト。"
+        "note": "ペルー銅鉱山。Cuajone・Toquepala・Illoプロジェクト。SCCO Annual Report 2025報告セグメント準拠。"
       },
-      "Copper_Mexico": {
-        "weight": 0.4,
-        "growth": 0.1,
-        "note": "メキシコ銅鉱山。Buenavista del Cobre（世界最大級）。"
-      },
-      "Other_Metals": {
-        "weight": 0.05,
-        "growth": 0.04,
-        "note": "モリブデン・銀・亜鉛等の副産物。"
+      "Mexican_Operations": {
+        "weight": 0.45,
+        "growth": 0.09,
+        "note": "メキシコ銅鉱山。Buenavista del Cobre・La Caridad。SCCO Annual Report 2025報告セグメント準拠。"
       }
     }
   },
@@ -869,20 +889,20 @@
     "enabled": true,
     "fiscal_year": "FY2025",
     "segments": {
-      "Copper_Indonesia": {
-        "weight": 0.5,
-        "growth": 0.1,
-        "note": "グラスバーグ鉱山（インドネシア）。世界最大規模の銅・金鉱山。"
+      "Indonesia": {
+        "weight": 0.48,
+        "growth": 0.08,
+        "note": "グラスバーグ鉱山（インドネシア）。地下採掘移行完了後の生産ランプアップ。FCX 10-K Indonesia Mining セグメント準拠。"
       },
-      "Copper_Americas": {
-        "weight": 0.4,
-        "growth": 0.07,
-        "note": "北米（Morenci等）・南米の銅鉱山。"
+      "North_America": {
+        "weight": 0.30,
+        "growth": 0.04,
+        "note": "Morenci・Bagdad・Sierrita等米国銅鉱山。安定生産。FCX 10-K Americas Mining (北米)。"
       },
-      "Gold_Molybdenum": {
-        "weight": 0.1,
-        "growth": 0.05,
-        "note": "金・モリブデンの副産物。"
+      "South_America": {
+        "weight": 0.22,
+        "growth": 0.06,
+        "note": "Cerro Verde(ペルー)・El Abra(チリ)等。拡張プロジェクト進行中。FCX 10-K Americas Mining (南米)。"
       }
     }
   },
