@@ -1,16 +1,16 @@
 ADSK INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T02:42:43+09:00
-Price: $214.50
+Generated: 2026-06-12T20:25:34+09:00
+Price: $205.57
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: +52.0%
-  MA200_Deviation: -21.3%
+  Deviation_Rate: +58.6%
+  MA200_Deviation: -24.5%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.36 (Strong Buy)
-Comment: 割安圏(52%)で買い余地大、FCF黒字、売上安定成長
+Comment: 割安圏(59%)で買い余地大、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,8 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
-GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×低効率
 Key_Metric_Y: RICE = 0.860
-Deviation_Rate: +52.0%
+Deviation_Rate: +58.6%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $214.50
+Current_Price: $205.57
 Intrinsic_Value_BASE: $326.10
-Deviation_BASE: +52.0%
+Deviation_BASE: +58.6%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 13.7% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=10.5%, IV=$272.06 （推奨値ベース）
 BASE: Growth=15.0%, IV=$326.10 （推奨値ベース）
 BULL: Growth=18.0%, IV=$366.89 （推奨値ベース）
-TTM_Revenue_Growth: 18.3%
+TTM_YoY_Growth: 18.3%
 (DCF Base vs TTM actual: -3.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 11.68%
@@ -74,8 +74,8 @@ Beta: 1.295
 FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
 RPO_PV: $61,726,427 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.52B (negative=net cash)
-  Total_Debt: $2.50B  Cash: $2.67B  ST_Invest: $0.35B
+  Net_Debt: $-0.42B (negative=net cash)
+  Total_Debt: $2.50B  Cash: $2.67B  ST_Invest: $0.25B
   SBC_TTM: $788M
   Dilution_3yr_Annual: -0.46%/yr  自社株買いによる株主還元 ✅
   Dilution_Comment: 株主数が減少し1株あたり価値が向上している。
@@ -129,7 +129,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 中央値モデル（TTM15.0%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          13.7%
   最終推奨値:            13.7%
@@ -143,11 +143,12 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
-    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
   Else: median of [rev_cagr_3yr, rev_cagr_5yr,
         industry_benchmark, g_fundamental] (≥2 required)
-Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
@@ -218,9 +219,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 31.3x
-  Adjusted_EPS_PER: 26.9x (年次EPSベース: $7.9866)
-  Delta: -4.4x (cheaper on adjusted basis)
+  Market_PER_GAAP: 30.0x
+  Adjusted_EPS_PER: 25.7x (年次EPSベース: $7.9866)
+  Delta: -4.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -246,10 +247,10 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 31.3x
-  PEG: 0.86
-  PS:  6.0x
-  EV_EBITDA: 21.7x
+  PER: 30.0x
+  PEG: 0.85
+  PS:  5.8x
+  EV_EBITDA: 20.2x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 適正水準
 Definition:
@@ -268,9 +269,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.65%  (ForwardEPS $14.26 / Price $214.50)
+  Forward_Earnings_Yield: 6.94%  (ForwardEPS $14.26 / Price $205.57)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 2.35%
+  ERP: 2.64%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

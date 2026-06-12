@@ -1,13 +1,13 @@
 AMZN INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T02:42:28+09:00
-Price: $239.71
+Generated: 2026-06-12T20:25:36+09:00
+Price: $241.51
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -62.3%
-  MA200_Deviation: +3.1%
+  Deviation_Rate: -62.5%
+  MA200_Deviation: +3.9%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.35 (Strong Buy)
 Comment: 割高(-62%超)、FCF黒字、売上安定成長
@@ -21,8 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
-GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -32,7 +32,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_avg (10yr) = 16.5%
-Deviation_Rate: -62.3%
+Deviation_Rate: -62.5%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $239.71
+Current_Price: $241.51
 Intrinsic_Value_BASE: $90.47
-Deviation_BASE: -62.3%
+Deviation_BASE: -62.5%
 Scenarios:
-BEAR: Growth=3.3%, IV=$64.46, Deviation=-73.1%
-BASE: Growth=11.9%, IV=$90.47, Deviation=-62.3%
-BULL: Growth=14.3%, IV=$99.18, Deviation=-58.6%
+BEAR: Growth=3.3%, IV=$64.46, Deviation=-73.3%
+BASE: Growth=11.9%, IV=$90.47, Deviation=-62.5%
+BULL: Growth=14.3%, IV=$99.18, Deviation=-58.9%
 Growth_Rate_Rec: 15.1% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(4.4%→1.3%) BEAR補正係数=0.400
-TTM_Revenue_Growth: 14.2%
+TTM_YoY_Growth: 14.2%
 (DCF Base vs TTM actual: -2.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.53%
@@ -73,17 +73,17 @@ Terminal_Growth_Rate: 3.5%
 Beta: 1.444
 Valuation_Gap_Analysis:
   DCF_IV:           $90 (保守的FCFベース・現在実力値)
-  Market_Price:     $240
+  Market_Price:     $242
   Gap:              -62% (市場が将来成長を先取り)
-  Implied_FCF_2030: $157.42B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $158.32B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $20.58B
   Required_Growth:  50%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $20,582.00M (外れ値除外後4yr平均)
 DCF_Reliability: HIGH
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-71.93B (negative=net cash)
-  Total_Debt: $66.10B  Cash: $101.82B  ST_Invest: $36.22B
+  Net_Debt: $-76.99B (negative=net cash)
+  Total_Debt: $66.10B  Cash: $101.82B  ST_Invest: $41.27B
   SBC_TTM: $19,467M
   Dilution_3yr_Annual: +2.05%/yr  許容範囲内 ✅
   Dilution_Comment: 希薄化はほぼ無視できるレベル。
@@ -140,7 +140,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 11.9%
-成長モデル: 中央値モデル（TTM13.2%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=13.2%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          15.1%
   最終推奨値:            15.1%
@@ -155,11 +155,12 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
-    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
   Else: median of [rev_cagr_3yr, rev_cagr_5yr,
         industry_benchmark, g_fundamental] (≥2 required)
-Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
@@ -226,9 +227,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 31.9x
-  Adjusted_EPS_PER: 27.7x (年次EPSベース: $8.6449)
-  Delta: -4.1x (cheaper on adjusted basis)
+  Market_PER_GAAP: 31.7x
+  Adjusted_EPS_PER: 27.9x (年次EPSベース: $8.6449)
+  Delta: -3.7x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-31
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -254,10 +255,10 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 31.9x
+  PER: 31.7x
   PEG: 1.83
   PS:  3.5x
-  EV_EBITDA: 17.0x
+  EV_EBITDA: 17.3x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -276,9 +277,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.11%  (ForwardEPS $9.86 / Price $239.71)
+  Forward_Earnings_Yield: 4.08%  (ForwardEPS $9.86 / Price $241.51)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.19%
+  ERP: -0.22%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

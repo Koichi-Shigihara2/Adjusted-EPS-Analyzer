@@ -1599,6 +1599,23 @@ class TanukiValuationPipeline:
                 except Exception:
                     pass
 
+            # BUG-NETDEBT-5: ST_Investも最新四半期bsから上書き（Cashと対称）
+            # normalized JSONにShortTermInvestmentsフィールドがないため、
+            # 最新quarterly_*.jsonのbs.short_term_investmentsを直接参照する。
+            _q_st_invest_override: "float | None" = None
+            try:
+                _q_files_sti = sorted([
+                    f for f in os.listdir(sec_dir)
+                    if f.startswith("quarterly_") and f.endswith(".json")
+                ])
+                if _q_files_sti:
+                    with open(os.path.join(sec_dir, _q_files_sti[-1]), encoding="utf-8") as _qf_sti:
+                        _q_sti_raw = json.load(_qf_sti).get("bs", {}).get("short_term_investments") or 0
+                    if _q_sti_raw > 0:
+                        _q_st_invest_override = float(_q_sti_raw)
+            except Exception:
+                pass
+
             # total_debt=0 かつ total_liabilities が大きい場合は警告（金融機関等）
             _ann_total_liab = 0
             try:
@@ -1612,6 +1629,8 @@ class TanukiValuationPipeline:
             # NET-1: 短期投資（short_term_investments）を現金同等物として net_debt に加算
             # bs_adjustment がすでに短期投資を含んでいるため、financial_health と整合を取る
             st_invest = valuation.get("bs_adjustment", {}).get("short_term_investments", 0.0) or 0.0
+            if _q_st_invest_override is not None:
+                st_invest = _q_st_invest_override  # BUG-NETDEBT-5: 最新四半期値で上書き
             result["financial_health"] = {
                 "total_debt": total_debt,
                 "cash_and_equivalents": cash,

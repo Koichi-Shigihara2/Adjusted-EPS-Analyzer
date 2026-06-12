@@ -1,12 +1,12 @@
 ESTC INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T02:42:33+09:00
-Price: $60.30
+Generated: 2026-06-12T20:25:38+09:00
+Price: $60.22
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -7.9%
+  Deviation_Rate: -7.8%
   MA200_Deviation: -12.5%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 2.00 (Buy)
@@ -21,8 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
-GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.233
-Deviation_Rate: -7.9%
+Deviation_Rate: -7.8%
 Thresholds:
   RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $60.30
+Current_Price: $60.22
 Intrinsic_Value_BASE: $55.55
-Deviation_BASE: -7.9%
+Deviation_BASE: -7.8%
 Growth_Rate_Original: 24.8% (TTM実績)
 Growth_Rate_Adjusted: 24.0% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=16.8%, IV=$44.05 （推奨値ベース）
 BASE: Growth=24.0%, IV=$55.55 （推奨値ベース）
 BULL: Growth=28.8%, IV=$64.78 （推奨値ベース）
-TTM_Revenue_Growth: 17.0%
+TTM_YoY_Growth: 17.0%
 (DCF Base vs TTM actual: +7.0pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 9.91%
@@ -74,8 +74,8 @@ Beta: 0.984
 FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $-0.84B (negative=net cash)
-  Total_Debt: $0.57B  Cash: $0.74B  ST_Invest: $0.67B
+  Net_Debt: $-0.68B (negative=net cash)
+  Total_Debt: $0.57B  Cash: $0.74B  ST_Invest: $0.51B
   SBC_TTM: N/A
   Dilution_3yr_Annual: +1.91%/yr  許容範囲内 ✅
   Dilution_Comment: 希薄化はほぼ無視できるレベル。
@@ -131,7 +131,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 24.8%
-成長モデル: 中央値モデル（TTM28.2%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=28.2%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          24.0%
   最終推奨値:            24.0%
@@ -144,11 +144,12 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
-    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
   Else: median of [rev_cagr_3yr, rev_cagr_5yr,
         industry_benchmark, g_fundamental] (≥2 required)
-Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
@@ -219,7 +220,7 @@ short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 17.6x
   Adjusted_EPS_PER: 55.2x (年次EPSベース: $1.0914)
-  Delta: +37.7x (more expensive on adjusted basis)
+  Delta: +37.6x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -267,9 +268,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.38%  (ForwardEPS $3.85 / Price $60.30)
+  Forward_Earnings_Yield: 6.39%  (ForwardEPS $3.85 / Price $60.22)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 2.08%
+  ERP: 2.09%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

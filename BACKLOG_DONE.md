@@ -4,6 +4,18 @@
 
 ## 2026-06-12 完了
 
+### ✅ BUG-NETDEBT-5 (2026-06-12 完了): ST_Invest期ズレ修正(年次→最新四半期)
+- **原因**: BUG-NETDEBT-1でCashは最新四半期bs値に上書きされるが、ST_Investはannual年次のまま
+  normalized JSONにShortTermInvestmentsフィールドがなく自動更新経路がなかった
+- **修正**: pipeline.py の financial_health 計算ブロックに BUG-NETDEBT-5 ブロック追加
+  最新 `quarterly_*.json` の `bs.short_term_investments` で上書き（値が0なら年次にフォールバック）
+- **影響26銘柄**: IONQ(-$0.18B)、META(-$12.04B)、MSFT(+$18.16B)、GOOGL(+$7.36B)、
+  AAPL(-$4.17B)、AMD(-$1.75B)、AMZN(-$5.05B)、JOBY(-$0.42B) 等
+  IONQ: Net_Debt -$1.85B → **-$2.03B**（$1,361M→$1,540M、Q1 2026 から）
+- **CHECK-12追加**: `report_consistency_check.py` にCash-STI期整合チェック（WARN-12）
+  Cash≈四半期値 かつ STI≈年次値 なら期ズレ未修正として警告。26銘柄修正後NG=0確認済み
+- 回帰テスト: Section 23 (3件追加、計97件合格)
+
 ### ✅ BUG-REV-SPAC-1 / A-2-TTM (2026-06-12 完了): IONQレビュー指摘: FCF_Margin単年異常 / TTM二義性
 - **BUG-REV-SPAC-1 (A-1)**: IONQの2022年10-K `Revenues` タグが$1,235M(SPAC調達金)を誤タグ
   正規営業収益 `RevenueFromContractWithCustomerExcludingAssessedTax`=$11.1M と重複

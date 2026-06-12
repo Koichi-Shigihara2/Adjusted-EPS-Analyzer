@@ -15,6 +15,7 @@ report_consistency_check.py
   WARN 6. 負PER数値表示        Market_PER_GAAP が負数（N/M 未変換）
   WARN 9. セグメント設定陳腐化  segment_config fiscal_yearが2年以上前
   WARN 10. PS異常値            yfinance PSが自社計算値(price×shares/rev)の2.5倍超 or 0.4倍未満
+  WARN 12. Cash-STI期ズレ      latest.jsonのCashが最新四半期値なのにST_Investが年次値のまま
 """
 
 import os
@@ -373,6 +374,42 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                     f" 翌年{_yrs[_i+1]}=${_next/1e6:.1f}M: {_ratio_next:.0f}x)"
                     f" → XBRLタグ誤り疑い(TICKER_RESTRICTIONSで修正)"
                 )
+
+    # CHECK-12: Cash-ST_Invest 期整合チェック（BUG-NETDEBT-5回帰検知）
+    # Cashが最新四半期値に更新されているのにST_Investが年次のままなら期ズレ
+    _ann_files_c12 = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "annual_*.json")))
+    _q_files_c12   = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "quarterly_*.json")))
+    if _ann_files_c12 and _q_files_c12:
+        try:
+            with open(_ann_files_c12[-1], encoding="utf-8") as _f12:
+                _ann12 = json.load(_f12)
+            with open(_q_files_c12[-1], encoding="utf-8") as _f12q:
+                _q12   = json.load(_f12q)
+            _ann_period12 = _ann12.get("period", "")
+            _q_period12   = _q12.get("period", "")
+            if _ann_period12 != _q_period12:
+                _ann_bs12  = _ann12.get("bs", {})
+                _q_bs12    = _q12.get("bs", {})
+                _ann_cash12 = _ann_bs12.get("cash_and_equivalents") or 0
+                _q_cash12   = _q_bs12.get("cash_and_equivalents") or 0
+                _ann_sti12  = _ann_bs12.get("short_term_investments") or 0
+                _q_sti12    = _q_bs12.get("short_term_investments") or 0
+                # Cashが四半期値に更新済み かつ ST_Investが存在し値が変化する場合のみチェック
+                if _q_cash12 != _ann_cash12 and _q_sti12 > 0 and _q_sti12 != _ann_sti12:
+                    _fh12     = _latest.get("financial_health", {})
+                    _rep_cash = _fh12.get("cash_and_equivalents") or 0
+                    _rep_sti  = _fh12.get("short_term_investments") or 0
+                    # レポートCash≈四半期値 かつ レポートSTI≈年次値 → 期ズレ未修正
+                    _cash_ok = abs(_rep_cash - _q_cash12) < max(1_000_000, _q_cash12 * 0.01)
+                    _sti_stale = abs(_rep_sti - _ann_sti12) < max(1_000_000, _ann_sti12 * 0.01)
+                    if _cash_ok and _sti_stale:
+                        warn.append(
+                            f"  [WARN-12 Cash-STI期ズレ] Cash={_rep_cash/1e6:.0f}M({_q_period12})"
+                            f" だがST_Invest={_rep_sti/1e6:.0f}M(年次{_ann_period12})のまま"
+                            f" → 正={_q_sti12/1e6:.0f}M"
+                        )
+        except Exception:
+            pass
 
     return ng, warn
 

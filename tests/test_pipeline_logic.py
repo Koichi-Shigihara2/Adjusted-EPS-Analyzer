@@ -1897,3 +1897,78 @@ class TestTTMTerminologyDistinction:
             "(CAGR起動の逓減モデルで TTM_YoY ラベルは不正確)"
         )
 
+
+# =====================================================================
+# Section 23: BUG-NETDEBT-5 回帰テスト
+# ST_Investの期ズレ修正: CashはBUG-NETDEBT-1で最新四半期値に更新済みだが
+# ST_Investはannual年次のままだったバグ。最新quarterly_*.jsonのbs値に上書き。
+# =====================================================================
+
+class TestSTInvestQuarterlyOverride:
+    """BUG-NETDEBT-5: ST_Investが最新四半期bsから上書きされること
+
+    IONQ FY2025 annual: ST_Invest=$1,361M
+    IONQ Q1 2026 quarterly: ST_Invest=$1,539M (→ 修正後の正値)
+    修正後 Net_Debt: -$1.85B → -$2.03B
+    """
+
+    def test_ionq_st_invest_uses_quarterly_value(self):
+        """IONQ: latest.json の ST_Invest が quarterly_2026Q1 の値 ($1,539M) であること"""
+        import json, os
+        latest_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "docs", "value-monitor", "tanuki_valuation", "data", "IONQ", "latest.json"
+        )
+        if not os.path.exists(latest_path):
+            return
+        with open(latest_path, encoding="utf-8") as f:
+            latest = json.load(f)
+        fh = latest.get("financial_health", {})
+        st_invest = fh.get("short_term_investments", 0) or 0
+        # quarterly_2026Q1 のST_Invest = $1,539,932,000
+        # annual_2025 のST_Invest      = $1,361,291,000 (旧バグ値)
+        assert st_invest > 1_400_000_000, (
+            f"IONQ ST_Invest={st_invest/1e6:.0f}M が年次値($1,361M)に近い。"
+            "BUG-NETDEBT-5: quarterly値($1,539M)で上書きされていない可能性"
+        )
+
+    def test_ionq_net_debt_corrected(self):
+        """IONQ: Net_Debt が -$2.03B 近辺 (旧バグ値 -$1.85B でないこと)"""
+        import json, os
+        latest_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "docs", "value-monitor", "tanuki_valuation", "data", "IONQ", "latest.json"
+        )
+        if not os.path.exists(latest_path):
+            return
+        with open(latest_path, encoding="utf-8") as f:
+            latest = json.load(f)
+        fh = latest.get("financial_health", {})
+        net_debt = fh.get("net_debt")
+        if net_debt is None:
+            return
+        # 正しいNet_Debt ≈ -$2.03B (旧バグ値は -$1.85B)
+        assert net_debt < -1_900_000_000, (
+            f"IONQ Net_Debt={net_debt/1e9:.2f}B が -$1.9B より大きい。"
+            "BUG-NETDEBT-5: ST_Invest期ズレが再発している可能性"
+        )
+
+    def test_ionq_quarterly_st_invest_exists_and_differs_from_annual(self):
+        """IONQ: 最新quarterlyのST_Investがannualと異なること(テスト前提確認)"""
+        import json, os, glob as _glob
+        sec_dir = os.path.join(
+            os.path.dirname(__file__), "..", "common", "sec_data", "data", "IONQ"
+        )
+        ann_files = sorted(_glob.glob(os.path.join(sec_dir, "annual_*.json")))
+        q_files   = sorted(_glob.glob(os.path.join(sec_dir, "quarterly_*.json")))
+        if not ann_files or not q_files:
+            return
+        with open(ann_files[-1], encoding="utf-8") as f:
+            ann_sti = json.load(f).get("bs", {}).get("short_term_investments", 0) or 0
+        with open(q_files[-1], encoding="utf-8") as f:
+            q_sti = json.load(f).get("bs", {}).get("short_term_investments", 0) or 0
+        assert q_sti != ann_sti, (
+            f"IONQ annual_ST_Invest={ann_sti/1e6:.0f}M == quarterly_ST_Invest={q_sti/1e6:.0f}M "
+            "テストの前提が崩れた(期が一致するか値が同じ)"
+        )
+
