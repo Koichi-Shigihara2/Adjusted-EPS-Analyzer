@@ -1,16 +1,16 @@
 ADSK INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T20:25:34+09:00
-Price: $205.57
+Generated: 2026-06-13T00:15:45+09:00
+Price: $200.68
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: +58.6%
-  MA200_Deviation: -24.5%
+  Deviation_Rate: +63.3%
+  MA200_Deviation: -26.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.36 (Strong Buy)
-Comment: 割安圏(59%)で買い余地大、FCF黒字、売上安定成長
+Comment: 割安圏(63%)で買い余地大、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,9 +32,9 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×低効率
 Key_Metric_Y: RICE = 0.860
-Deviation_Rate: +58.6%
+Deviation_Rate: +63.3%
 Thresholds:
-  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
+  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $205.57
-Intrinsic_Value_BASE: $326.10
-Deviation_BASE: +58.6%
+Current_Price: $200.68
+Intrinsic_Value_BASE: $327.65
+Deviation_BASE: +63.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 13.7% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$272.06 （推奨値ベース）
-BASE: Growth=15.0%, IV=$326.10 （推奨値ベース）
-BULL: Growth=18.0%, IV=$366.89 （推奨値ベース）
+BEAR: Growth=10.5%, IV=$273.61 （推奨値ベース）
+BASE: Growth=15.0%, IV=$327.65 （推奨値ベース）
+BULL: Growth=18.0%, IV=$368.44 （推奨値ベース）
 TTM_YoY_Growth: 18.3%
 (DCF Base vs TTM actual: -3.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,13 +72,15 @@ WACC_CAPM_Reference: 11.68%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.295
 FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
+DCF_FCF_Base: $1,206M (= Adj_NI $1,723M × FCF_Conv 0.7)
 RPO_PV: $61,726,427 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $-0.42B (negative=net cash)
   Total_Debt: $2.50B  Cash: $2.67B  ST_Invest: $0.25B
+  Net_Debt_Period: 2027Q1
   SBC_TTM: $788M
   Dilution_3yr_Annual: -0.46%/yr  自社株買いによる株主還元 ✅
-  Dilution_Comment: 株主数が減少し1株あたり価値が向上している。
+  Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-08-28
 FCF_History:
   2022: $1.48B (FCF_Margin: 33.6%)
@@ -186,7 +188,7 @@ ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
 WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
-Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -219,9 +221,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 30.0x
-  Adjusted_EPS_PER: 25.7x (年次EPSベース: $7.9866)
-  Delta: -4.3x (cheaper on adjusted basis)
+  Market_PER_GAAP: 29.3x
+  Adjusted_EPS_PER: 25.1x (年次EPSベース: $7.9866)
+  Delta: -4.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -247,9 +249,9 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 30.0x
+  PER: 29.3x
   PEG: 0.85
-  PS:  5.8x
+  PS:  5.6x
   EV_EBITDA: 20.2x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 適正水準
@@ -269,9 +271,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.94%  (ForwardEPS $14.26 / Price $205.57)
+  Forward_Earnings_Yield: 7.10%  (ForwardEPS $14.26 / Price $200.68)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 2.64%
+  ERP: 2.80%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

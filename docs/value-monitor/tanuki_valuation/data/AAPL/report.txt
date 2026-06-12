@@ -1,13 +1,13 @@
 AAPL INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T20:25:33+09:00
-Price: $295.63
+Generated: 2026-06-13T00:15:20+09:00
+Price: $292.61
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -18.5%
-  MA200_Deviation: +10.9%
+  Deviation_Rate: -17.1%
+  MA200_Deviation: +9.8%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: 1.98 (Buy)
 Comment: フェアバリュー近辺、FCF黒字、売上安定成長
@@ -32,9 +32,9 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.686
-Deviation_Rate: -18.5%
+Deviation_Rate: -17.1%
 Thresholds:
-  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
+  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $295.63
-Intrinsic_Value_BASE: $241.07
-Deviation_BASE: -18.5%
+Current_Price: $292.61
+Intrinsic_Value_BASE: $242.56
+Deviation_BASE: -17.1%
 Scenarios:
-BEAR: Growth=4.8%, IV=$215.11, Deviation=-27.2%
-BASE: Growth=7.5%, IV=$241.07, Deviation=-18.5%
-BULL: Growth=9.0%, IV=$256.69, Deviation=-13.2%
+BEAR: Growth=4.8%, IV=$216.59, Deviation=-26.0%
+BASE: Growth=7.5%, IV=$242.56, Deviation=-17.1%
+BULL: Growth=9.0%, IV=$258.17, Deviation=-11.8%
 Growth_Rate_Rec: 5.2% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(25.8%→23.7%) BEAR補正係数=0.917
 TTM_YoY_Growth: 12.8%
@@ -72,13 +72,15 @@ WACC_CAPM_Reference: 10.49%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.086
 FCF_Conversion_Rate: 0.7 (Industry: Consumer Electronics)
+DCF_FCF_Base: $89,554M (= Adj_NI $127,934M × FCF_Conv 0.7)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
-  Net_Debt: $+22.17B (negative=net cash)
-  Total_Debt: $90.68B  Cash: $45.57B  ST_Invest: $22.93B
+  Net_Debt: $+14.21B (negative=net cash)
+  Total_Debt: $82.71B  Cash: $45.57B  ST_Invest: $22.93B
+  Net_Debt_Period: 2026Q2
   SBC_TTM: $12,863M
   Dilution_3yr_Annual: -2.77%/yr  自社株買いによる株主還元 ✅
-  Dilution_Comment: 株主数が減少し1株あたり価値が向上している。
+  Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-07-31
 FCF_History:
   2021: $92.95B (FCF_Margin: 25.4%)
@@ -193,7 +195,7 @@ ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
 WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
-Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -226,8 +228,8 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 35.8x
-  Adjusted_EPS_PER: 34.6x (年次EPSベース: $8.5547)
+  Market_PER_GAAP: 35.5x
+  Adjusted_EPS_PER: 34.2x (年次EPSベース: $8.5547)
   Delta: -1.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-31
@@ -254,9 +256,9 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 2026-06: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 35.8x
+  PER: 35.5x
   PEG: 2.39
-  PS:  9.6x
+  PS:  9.5x
   EV_EBITDA: 27.2x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
@@ -276,9 +278,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.25%  (ForwardEPS $9.60 / Price $295.63)
+  Forward_Earnings_Yield: 3.28%  (ForwardEPS $9.60 / Price $292.61)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.05%
+  ERP: -1.02%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

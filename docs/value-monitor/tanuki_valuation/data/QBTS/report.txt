@@ -1,16 +1,16 @@
 QBTS INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T20:25:42+09:00
-Price: $23.82
+Generated: 2026-06-13T00:15:38+09:00
+Price: $24.30
 
 [1. TANUKI SCORE]
 Classification: PASS
 Funda_Score: 10/100
 Timing_Score (components):
-  Deviation_Rate: -83.5%
-  MA200_Deviation: +0.7%
+  Deviation_Rate: -87.1%
+  MA200_Deviation: +2.8%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.33 (Strong Buy)
-Comment: 割高(-84%超)、FCFマイナス（投資フェーズ）、売上成長停滞
+Comment: 割高(-87%超)、FCFマイナス（投資フェーズ）、売上成長停滞
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,9 +32,9 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = -308.5%
-Deviation_Rate: -83.5%
+Deviation_Rate: -87.1%
 Thresholds:
-  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
+  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $23.82
-Intrinsic_Value_BASE: $3.93
-Deviation_BASE: -83.5%
+Current_Price: $24.30
+Intrinsic_Value_BASE: $3.13
+Deviation_BASE: -87.1%
 Growth_Rate_Original: -41.8% (TTM実績)
 Growth_Rate_Adjusted: 24.3% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=17.0%, IV=$3.53 （推奨値ベース）
-BASE: Growth=24.3%, IV=$3.93 （推奨値ベース）
-BULL: Growth=29.1%, IV=$4.24 （推奨値ベース）
+BEAR: Growth=17.0%, IV=$2.73 （推奨値ベース）
+BASE: Growth=24.3%, IV=$3.13 （推奨値ベース）
+BULL: Growth=29.1%, IV=$3.45 （推奨値ベース）
 TTM_YoY_Growth: 178.5%
 (DCF Base vs TTM actual: -154.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,21 +72,23 @@ WACC_CAPM_Reference: 16.01%
 Terminal_Growth_Rate: 3.0%
 Beta: 2.055
 Valuation_Gap_Analysis:
-  DCF_IV:           $4 (保守的FCFベース・現在実力値)
+  DCF_IV:           $3 (保守的FCFベース・現在実力値)
   Market_Price:     $24
-  Gap:              -84% (市場が将来成長を先取り)
-  Implied_FCF_2030: $0.56B (現在株価を正当化するために必要な5年後FCF)
+  Gap:              -87% (市場が将来成長を先取り)
+  Implied_FCF_2030: $0.57B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.02B
-  Required_Growth:  100%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  101%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $17.61M (5yr平均 + R&D補正) [実績avg: $-57.9M]
 DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $-0.55B (negative=net cash)
   Total_Debt: $0.04B  Cash: $0.34B  ST_Invest: $0.25B
+  Net_Debt_Period: 2026Q1
   SBC_TTM: $23M
   Dilution_3yr_Annual: +38.98%/yr  深刻な希薄化 ⚠️ 株主価値毀損リスク大
   Dilution_Comment: 継続なら1株価値を年率39.0%毀損。株主価値毀損リスク大。
+  ⚠️ 期中に大規模な株式発行の可能性（+15.3%乖離: yf=370M vs SEC=321M）
   Next_Earnings_Date: 2026-08-06
 FCF_History:
   2022: $-0.05B (FCF_Margin: -636.4%)
@@ -188,7 +190,7 @@ ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
 WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
-Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -248,9 +250,9 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: -61.9x
+  PER: -63.2x
   PEG: N/A
-  PS:  709.1x
+  PS:  723.5x
   EV_EBITDA: N/A
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -269,9 +271,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: -1.61%  (ForwardEPS $-0.38 / Price $23.82)
+  Forward_Earnings_Yield: -1.58%  (ForwardEPS $-0.38 / Price $24.30)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -5.91%
+  ERP: -5.88%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

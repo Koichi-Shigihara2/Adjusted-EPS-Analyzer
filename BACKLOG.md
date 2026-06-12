@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-12 (4)
+最終更新: 2026-06-13 (5)
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -14,12 +14,28 @@
   赤字初期段階: ASTS/JOBY/IONQ/QBTS/RXRX/RDW/RCAT/SPIR/CIX
 - 対象（複数事業・精緻化する価値あり）12銘柄:
   LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV
+- **CEG追加対象**: segment_config.json の CEG セグメント設定が10-Kのセグメント定義（Nuclear Power / Natural Gas / LS Power）に準拠しているか確認・更新が必要
+  現状は手動設定（Nuclear_Generation/Commercial_Industrial/Nuclear_Fleet_Services）で
+  Calpine統合後の事業再編を反映していない可能性あり
 - 方針: Grokにセグメント構成を自動提案させてadmin.htmlから設定
-- 優先順位: 時価総額上位から順次（LLY→LMT→MRVL→AMAT→VRT）
+- 優先順位: 時価総額上位から順次（LLY→LMT→MRVL→AMAT→VRT→CEG）
 - 新規銘柄追加時のルール:
   ① 単一事業（SaaS・純粋プレイ）→ General 100%のままでよい
   ② 複数事業セグメントが決算資料に明示されている → 対象リストに追加
   ③ 赤字初期段階 → 対象外（STONKS SILOで管理）
+
+### [REPORT-4] CEG: LS Power向け資産売却の追跡メモ
+- CEGは2026年後半に LS Power 向け天然ガス資産（$5B規模）のクローズを予定
+- このクローズ後、負債返済が進みNet Debtが大幅に改善する見込み
+- 次回CEGレポート生成時に「LS Power売却後のNet Debt試算」をコメントとして追記することを検討
+- 参照: Calpine買収発表資料、CEG Q1 2026 10-Q
+
+### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
+- 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
+- 銀行免許取得後（2022年以降）は標準LongTermDebtタグを使用しない可能性
+- 影響: IV計算と表示は一致（両方とも$5.49Bを使用）しているが、実際の現在負債と乖離している可能性
+- 対処: SEC EDGAR の最新10-K/10-Q でSOFI Technologies Sr. Notes等の明細を確認し、
+  手動でnormalized jsonを更新、またはカスタム設定で正確な値を固定
 
 ### [EPS-1] アナリスト予想EPS四半期値の取得
 - 現状: Next_Quarter_EPSはN/A（Alpha Vantage無料枠の制約）

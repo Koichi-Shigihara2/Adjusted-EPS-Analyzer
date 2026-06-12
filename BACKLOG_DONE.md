@@ -2,6 +2,26 @@
 
 ---
 
+## 2026-06-13 完了
+
+### ✅ BUG-NETDEBT-4 (2026-06-13 完了): 同一時点原則による Net Debt 計算修正
+- **原因1**: BUG-NETDEBT-1でCashは最新quarterly上書きされるが、Total_Debtは年次のまま（時点混在）
+- **原因2**: CEG等は10-QでLTDebtをLongTermDebtNoncurrentタグで報告するが、quarterly.pyがLongTermDebt(annual tag)のみ参照してNone扱い
+- **修正**: quarterly.py に `LongTermDebtNoncurrent` を `_FIELD_FALLBACKS["LTDebt"]` に追加
+- **修正**: reader.py + pipeline.py に BUG-NETDEBT-4 ブロック実装（quarterly に Cash+LTDebt が揃う場合に全BS項目を同一filingから参照）
+- **修正**: pipeline.py に BUG-NETDEBT-2 補完復活（annual lt_debt=0 かつ quarterly LTDebt未取得の場合にnormalized LTDebtで補完）
+- **条件設計**: `_q_lt is not None` が必須ゲート。`_q_lt=None`（パース失敗）時は cash-only → BUG-NETDEBT-2 でnormalized補完
+- **影響銘柄 (Net_Debt が実質変化)**:
+  - CEG: Net_Debt $+8.10B → **+$21.30B**（Calpine買収負債$16.99B Q1 2026反映）、IV $97.39 → **$52.48**（乖離 -61% → -79%）
+  - KO: Net_Debt **-$9.08B → +$27.42B**（annual lt=None → normalized $36.5B補完）
+  - ELF: Net_Debt -$0.20B → **+$0.65B**（term loan $0.85B）
+  - SOFI: Net_Debt -$3.40B → **+$2.08B**（normalized LTDebt $5.49B、2022データ※）
+  - ZS: Net_Debt -$1.20B → **-$0.05B**（convertible notes $1.15B）
+  - JOBY: Net_Debt -$2.47B → **-$1.77B**（Toyota financing $0.70B）
+  - ※SOFI: 2022-12-31以降の10-Qに標準LTDebtタグなし（銀行移行後の報告変更）。IV計算パスと表示パスは一致。
+- **display改善追加**: DCF_FCF_Base行、Net_Debt_Period行、dilution乖離フラグ、beta staleness警告（90日超）、株式数表示修正
+- 回帰テスト: 100件パス（変更なし）
+
 ## 2026-06-12 完了
 
 ### ✅ CHECK-13 / WARN-12修正 (2026-06-12 完了): RICE負値ラベル回帰検知 + 偽陽性除去

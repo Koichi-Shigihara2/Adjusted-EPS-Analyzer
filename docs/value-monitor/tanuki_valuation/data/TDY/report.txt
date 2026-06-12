@@ -1,13 +1,13 @@
 TDY INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T02:42:45+09:00
-Price: $625.99
+Generated: 2026-06-13T00:15:48+09:00
+Price: $625.30
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -15.7%
-  MA200_Deviation: +6.9%
+  Deviation_Rate: -15.0%
+  MA200_Deviation: +6.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.69 (Buy)
 Comment: フェアバリュー近辺、FCF黒字、売上安定成長
@@ -21,8 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
-GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -32,9 +32,9 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.352
-Deviation_Rate: -15.7%
+Deviation_Rate: -15.0%
 Thresholds:
-  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
+  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,29 +56,31 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $625.99
-Intrinsic_Value_BASE: $527.94
-Deviation_BASE: -15.7%
+Current_Price: $625.30
+Intrinsic_Value_BASE: $531.57
+Deviation_BASE: -15.0%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 10.9% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$433.17 （推奨値ベース）
-BASE: Growth=15.0%, IV=$527.94 （推奨値ベース）
-BULL: Growth=18.0%, IV=$599.44 （推奨値ベース）
-TTM_Revenue_Growth: 7.9%
+BEAR: Growth=10.5%, IV=$436.80 （推奨値ベース）
+BASE: Growth=15.0%, IV=$531.57 （推奨値ベース）
+BULL: Growth=18.0%, IV=$603.07 （推奨値ベース）
+TTM_YoY_Growth: 7.9%
 (DCF Base vs TTM actual: +7.1pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 9.65%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.939
 FCF_Conversion_Rate: 0.7 (Industry: Scientific & Technical Instruments)
+DCF_FCF_Base: $764M (= Adj_NI $1,092M × FCF_Conv 0.7)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $+1.95B (negative=net cash)
   Total_Debt: $2.48B  Cash: $0.52B
+  Net_Debt_Period: 2026Q1
   SBC_TTM: N/A
   Dilution_3yr_Annual: -0.21%/yr  自社株買いによる株主還元 ✅
-  Dilution_Comment: 株主数が減少し1株あたり価値が向上している。
+  Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-07-22
 FCF_History:
   2021: $0.72B (FCF_Margin: 15.7%)
@@ -129,7 +131,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 中央値モデル（TTM15.0%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          10.9%
   最終推奨値:            10.9%
@@ -143,11 +145,12 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
-    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
   Else: median of [rev_cagr_3yr, rev_cagr_5yr,
         industry_benchmark, g_fundamental] (≥2 required)
-Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
@@ -185,7 +188,7 @@ ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
 WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
-Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -219,7 +222,7 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 31.7x
-  Adjusted_EPS_PER: 27.2x (年次EPSベース: $23.0320)
+  Adjusted_EPS_PER: 27.1x (年次EPSベース: $23.0320)
   Delta: -4.6x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-22
@@ -249,7 +252,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 31.7x
   PEG: 1.40
   PS:  4.7x
-  EV_EBITDA: 19.4x
+  EV_EBITDA: 20.1x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -268,9 +271,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.16%  (ForwardEPS $26.06 / Price $625.99)
+  Forward_Earnings_Yield: 4.17%  (ForwardEPS $26.06 / Price $625.30)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.14%
+  ERP: -0.13%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

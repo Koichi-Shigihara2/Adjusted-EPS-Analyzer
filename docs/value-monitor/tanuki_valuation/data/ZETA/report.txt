@@ -1,16 +1,16 @@
 ZETA INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-12T02:42:41+09:00
-Price: $19.71
+Generated: 2026-06-13T00:15:43+09:00
+Price: $20.07
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: +54.9%
-  MA200_Deviation: +5.3%
+  Deviation_Rate: +51.5%
+  MA200_Deviation: +7.2%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: N/A
-Comment: 割安圏(55%)で買い余地大、FCF黒字、売上成長加速
+Comment: 割安圏(52%)で買い余地大、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -21,8 +21,8 @@ MA200 momentum, hype phase, analyst consensus
 BUY: Funda>=50 AND upside>10% AND Timing>=50
 WATCH: Funda>=50 AND upside 0-20%
 HOLD: Funda good, within tolerance range
-TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM
-GROWTH_PREMIUM: Would-be-TRIM, but TTM growth already exceeds required growth
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
 SELL: Funda deteriorating or long-term downtrend
 PASS: Funda<25, excluded from consideration
 
@@ -32,9 +32,9 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 右下
 Label: 割安×低FCF
 Key_Metric_Y: FCF_Margin = 14.2%
-Deviation_Rate: +54.9%
+Deviation_Rate: +51.5%
 Thresholds:
-  RICE_Threshold: 2.0/1.0 (>=2.0=high, 1.0-2.0=medium, <1.0=low efficiency)
+  RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
   FCFMargin_Threshold: 15% (above=high cash generation)
   Deviation_Threshold: 0% (positive=undervalued)
@@ -56,27 +56,30 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $19.71
-Intrinsic_Value_BASE: $30.54
-Deviation_BASE: +54.9%
+Current_Price: $20.07
+Intrinsic_Value_BASE: $30.41
+Deviation_BASE: +51.5%
 Scenarios:
-BEAR: Growth=23.5%, IV=$21.31, Deviation=+8.1%
-BASE: Growth=33.6%, IV=$30.54, Deviation=+54.9%
-BULL: Growth=40.3%, IV=$38.38, Deviation=+94.7%
-TTM_Revenue_Growth: 29.7%
+BEAR: Growth=23.5%, IV=$21.19, Deviation=+5.6%
+BASE: Growth=33.6%, IV=$30.41, Deviation=+51.5%
+BULL: Growth=40.3%, IV=$38.26, Deviation=+90.6%
+TTM_YoY_Growth: 29.7%
 (DCF Base vs TTM actual: +3.9pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 11.97%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.345
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
+DCF_FCF_Base: $107M (= Adj_NI $152M × FCF_Conv 0.7)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $-0.09B (negative=net cash)
   Total_Debt: $0.20B  Cash: $0.29B
+  Net_Debt_Period: 2026Q1
   SBC_TTM: $178M
   Dilution_3yr_Annual: +16.67%/yr  高い希薄化 ⚠️ SBC・増資を確認
   Dilution_Comment: 継続なら1株価値を年率16.7%毀損。SBC・増資の内訳を確認。
+  ⚠️ 期中に大規模な株式発行の可能性（+12.9%乖離: yf=249M vs SEC=221M）
   Next_Earnings_Date: 2026-05-01
 FCF_History:
   2021: $0.03B (FCF_Margin: 7.6%)
@@ -129,7 +132,7 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 33.6%
-成長モデル: 中央値モデル（TTM33.6%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=33.6%のため中央値モデル適用）  HypePhase=4
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
@@ -139,11 +142,12 @@ Definition:
 Growth Rate Methodology:
 Layer 1 (Segment configured): Manual segment weighted average
 Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
-  If TTM(max of rev_cagr_3yr/5yr) > 50%: decay model
-    recommended_g = (min(TTM,100%) + industry_benchmark) / 2
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
   Else: median of [rev_cagr_3yr, rev_cagr_5yr,
         industry_benchmark, g_fundamental] (≥2 required)
-Layer 3: TTM Revenue Growth (if recommended_g unavailable)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
 Layer 4: Default 15% (final fallback)
 Industry benchmark: Damodaran 2025 fundgrEB.xls
 
@@ -177,7 +181,7 @@ ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
 ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
 Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
 WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
-Interpretation: RICE>=2.0=high / 1.0-2.0=medium / <1.0=low reinvestment efficiency
+Interpretation: RICE>=2.0=high / 1.0-2.0=medium / 0-1.0=low / <0=undefined (OCF negative)
 Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
 for cross-ticker comparability. DCF uses ticker-specific WACC.
 RICE is a proprietary screening metric inspired by
@@ -210,9 +214,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 16.6x
-  Adjusted_EPS_PER: 28.3x (年次EPSベース: $0.6975)
-  Delta: +11.7x (more expensive on adjusted basis)
+  Market_PER_GAAP: 16.9x
+  Adjusted_EPS_PER: 28.8x (年次EPSベース: $0.6975)
+  Delta: +11.9x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-05-01
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -238,10 +242,10 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 16.6x
+  PER: 16.9x
   PEG: 0.77
-  PS:  3.4x
-  EV_EBITDA: 55.2x
+  PS:  3.5x
+  EV_EBITDA: 55.6x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -260,9 +264,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.03%  (ForwardEPS $1.19 / Price $19.71)
+  Forward_Earnings_Yield: 5.92%  (ForwardEPS $1.19 / Price $20.07)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.73%
+  ERP: 1.62%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
