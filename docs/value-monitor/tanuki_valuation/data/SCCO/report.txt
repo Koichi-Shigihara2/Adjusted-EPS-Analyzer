@@ -1,13 +1,13 @@
 SCCO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T01:55:50+09:00
-Price: $189.65
+Generated: 2026-06-13T07:53:42+09:00
+Price: $189.79
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -90.8%
-  MA200_Deviation: +21.1%
+  Deviation_Rate: -90.9%
+  MA200_Deviation: +21.2%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 3.59 (Sell)
 Comment: 割高(-91%超)、FCF黒字、売上成長加速
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 3.055
-Deviation_Rate: -90.8%
+Key_Metric_Y: RICE = 3.020
+Deviation_Rate: -90.9%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,16 +56,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $189.65
-Intrinsic_Value_BASE: $17.48
-Deviation_BASE: -90.8%
+Current_Price: $189.79
+Intrinsic_Value_BASE: $17.36
+Deviation_BASE: -90.9%
 Scenarios:
-BEAR: Growth=6.0%, IV=$15.53, Deviation=-91.8%
-BASE: Growth=8.6%, IV=$17.48, Deviation=-90.8%
-BULL: Growth=10.3%, IV=$18.88, Deviation=-90.0%
+BEAR: Growth=5.9%, IV=$15.46, Deviation=-91.9%
+BASE: Growth=8.5%, IV=$17.36, Deviation=-90.9%
+BULL: Growth=10.1%, IV=$18.73, Deviation=-90.1%
 Growth_Rate_Rec: 9.4% (recommended)
 TTM_YoY_Growth: 21.7%
-(DCF Base vs TTM actual: -13.1pt discount)
+(DCF Base vs TTM actual: -13.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.62%
 Terminal_Growth_Rate: 3.0%
@@ -74,11 +74,13 @@ Valuation_Gap_Analysis:
   DCF_IV:           $17 (保守的FCFベース・現在実力値)
   Market_Price:     $190
   Gap:              -91% (市場が将来成長を先取り)
-  Implied_FCF_2030: $10.85B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $10.86B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.54B
   Required_Growth:  82%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Copper)
 DCF_FCF_Base: $537M (= Adj_NI $767M × FCF_Conv 0.7)
+DCF_FCF_PV: $2.53B (5yr discounted FCF sum)
+DCF_TV_PV:  $6.58B (terminal value present value)
 RPO_PV: $0 (Remaining Performance Obligation premium)
 Financial_Health:
   Net_Debt: $+1.40B (negative=net cash)
@@ -96,10 +98,9 @@ FCF_History:
   2025: $3.43B (FCF_Margin: 25.5%)
   FCF_CAGR_3yr: +22.7%
 Segment_Breakdown:
-  Copper_Peru: $7.4B (55%, YoY 8%)
-  Copper_Mexico: $5.4B (40%, YoY 10%)
-  Other_Metals: $0.7B (5%, YoY 4%)
-  Segment_Weighted_Growth: 8.6%
+  Peruvian_Operations: $7.4B (55%, YoY 8%)
+  Mexican_Operations: $6.0B (45%, YoY 9%)
+  Segment_Weighted_Growth: 8.5%
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -140,7 +141,7 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 8.6%
+Phase1成長率 : 8.5%
 成長モデル: 中央値モデル（CAGR_max=10.9%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          9.4%
@@ -169,15 +170,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=2.132
-BASE: RICE=3.055
-BULL: RICE=3.659
+BEAR: RICE=2.096
+BASE: RICE=3.02
+BULL: RICE=3.588
 Components (BASE scenario):
-G  = 8.6%  [TANUKI forward growth rate]
+G  = 8.5%  [TANUKI forward growth rate]
 Q  = 1.2769   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 1.3911  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.5722  [R&D除外・CapExのみ投資強度]
-RICE_adj = 3.453  [参考：R&D資本化想定]
+RICE_adj = 3.413  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 3.96  [NOPAT/InvestedCapital / 0.10]
@@ -232,7 +233,7 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 32.1x
+  Market_PER_GAAP: 32.2x
   Adjusted_EPS_PER: 41.0x (年次EPSベース: $4.6299)
   Delta: +8.8x (more expensive on adjusted basis)
 Forward_Estimates:
@@ -260,7 +261,7 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 32.1x
+  PER: 32.2x
   PEG: 5.41
   PS:  10.9x
   EV_EBITDA: 17.4x
@@ -282,7 +283,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.55%  (ForwardEPS $6.74 / Price $189.65)
+  Forward_Earnings_Yield: 3.55%  (ForwardEPS $6.74 / Price $189.79)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -0.75%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
