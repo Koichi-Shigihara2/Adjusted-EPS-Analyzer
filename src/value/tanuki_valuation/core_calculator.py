@@ -724,7 +724,17 @@ class KoichiValuationCalculator:
             "scenario_valuations": scenario_result.to_dict() if scenario_result else None,
             "growth_options": go_result.to_dict(),
             "maturity_profile": maturity_profile,
-            "dcf_components": {**dcf_components, "v0_rm": float(_v0_rm)},
+            "dcf_components": {
+                **dcf_components,
+                "v0_rm":     float(_v0_rm),
+                "pv_fcf_rm": float(_res_rm.pv_high_growth),
+                "pv_tv_rm":  float(_res_rm.pv_terminal),
+                # 3段階専用: Phase1/Phase2 の Rm 内訳
+                **({
+                    "pv_phase1_rm": float(_res_rm.pv_phase1),
+                    "pv_phase2_rm": float(_res_rm.pv_phase2),
+                } if hasattr(_res_rm, "pv_phase1") else {}),
+            },
 
             # FCFベース判定結果（v6.2追加）
             "fcf_base": fcf_base_result.to_dict(),

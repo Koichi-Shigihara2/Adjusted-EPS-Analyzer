@@ -943,7 +943,7 @@ class TanukiValuationPipeline:
         L.append("Definition:")
         L.append("")
         L.append("Matrix①(投資効率系): Y=RICE, X=Deviation Rate")
-        L.append("RICE = (G x Q x CF) / WACC")
+        L.append("RICE = (G × VC_Factor × Q × CF) / WACC")
         L.append("Applied to: RICE-calculable tickers")
         _roe_n_def = comps.get("roe_years_used") or 10
         L.append(f"Matrix②(収益性系): Y=ROE_{_roe_n_def}yr_avg, X=Deviation Rate")
@@ -1069,11 +1069,15 @@ class TanukiValuationPipeline:
                 _fcf_raw_avg = comps.get("fcf_5yr_avg", 0) or 0
                 L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)}) [実績avg: ${_fcf_raw_avg/1e6:,.1f}M]")
                 L.append(f"DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)")
+                L.append("  [Policy A: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。")
+                L.append("   FCF実績がマイナスのためIVはrevenue_floorベース推定値。IV絶対値より方向感参考用。]")
             else:
                 L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")
-                L.append(f"DCF_Reliability: HIGH")
+                L.append(f"DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
+            L.append("  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from")
+            L.append("   adjusted net income; differs from OCF→FCF conversion rate.]")
             _fcf_est_val = fcf_est.get("estimated_fcf") or comps.get("fcf_base_used") or 0
             _fcf_adj_ni  = fcf_est.get("adj_net_income")
             if _fcf_est_val > 0:
@@ -1081,19 +1085,88 @@ class TanukiValuationPipeline:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M (= Adj_NI ${_fcf_adj_ni/1e6:,.0f}M × FCF_Conv {fcf_conv})")
                 else:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M")
-        # REPORT-6: DCF透明性強化 — FCF現在価値・TV現在価値・FCF外れ値詳細
+        # REPORT-6: DCF再現性ブロック（上から足すとIVになる完全構造）
         _dcf_comps_r6 = valuation.get("dcf_components", {})
-        _dcf_type_r6 = valuation.get("dcf_type", "two_stage")
-        if _dcf_type_r6 == "three_stage":
-            _pv_fcf_r6 = (_dcf_comps_r6.get("pv_phase1") or 0) + (_dcf_comps_r6.get("pv_phase2") or 0)
+        _dcf_type_r6  = valuation.get("dcf_type", "two_stage")
+        _hg_yrs_r6    = comps.get("high_growth_years") or 5
+        _alpha_r6     = valuation.get("alpha", 0) or 0
+        _go_pv_r6     = comps.get("growth_option_pv", 0) or 0
+        _shares_r6    = comps.get("diluted_shares") or 0
+        _shares_src_r6 = comps.get("_shares_source", "unknown")
+        _nc_ps_r6     = (valuation.get("bs_adjustment") or {}).get("net_cash_per_share", 0) or 0
+        _nc_total_r6  = _shares_r6 * _nc_ps_r6 if _shares_r6 > 0 else 0
+
+        # Rm=10% ベースの内訳（IV式の実際の構成要素）
+        _pv_fcf_rm = _dcf_comps_r6.get("pv_fcf_rm")   # Phase1+Phase2 or FCF PV (Rm=10%)
+        _pv_tv_rm  = _dcf_comps_r6.get("pv_tv_rm")    # Terminal Value PV (Rm=10%)
+        _v0_rm     = _dcf_comps_r6.get("v0_rm")        # V0 = FCF_PV + TV_PV (Rm=10%)
+        _p1_rm     = _dcf_comps_r6.get("pv_phase1_rm") # 3段階: Phase1 PV (Rm)
+        _p2_rm     = _dcf_comps_r6.get("pv_phase2_rm") # 3段階: Phase2 PV (Rm)
+
+        # FCF_PV 行
+        if _pv_fcf_rm is not None:
+            if _dcf_type_r6 == "three_stage" and _p1_rm is not None:
+                L.append(f"DCF_FCF_PV: ${_pv_fcf_rm/1e9:.2f}B"
+                          f" (Ph1=${_p1_rm/1e9:.2f}B + Ph2=${_p2_rm/1e9:.2f}B, {_hg_yrs_r6}yr, pre-alpha, Rm=10%)")
+            else:
+                L.append(f"DCF_FCF_PV: ${_pv_fcf_rm/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum, pre-alpha, Rm=10%)")
+        elif _dcf_type_r6 == "three_stage":
+            _pv_fcf_capm = (_dcf_comps_r6.get("pv_phase1") or 0) + (_dcf_comps_r6.get("pv_phase2") or 0)
+            L.append(f"DCF_FCF_PV: ${_pv_fcf_capm/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum, pre-alpha)")
         else:
-            _pv_fcf_r6 = _dcf_comps_r6.get("pv_high_growth") or comps.get("pv_high") or 0
-        _pv_term_r6 = _dcf_comps_r6.get("pv_terminal") or comps.get("pv_terminal") or 0
-        _hg_yrs_r6  = comps.get("high_growth_years") or 5
-        if _pv_fcf_r6:
-            L.append(f"DCF_FCF_PV: ${_pv_fcf_r6/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum)")
-        if _pv_term_r6:
-            L.append(f"DCF_TV_PV:  ${_pv_term_r6/1e9:.2f}B (terminal value present value)")
+            _pv_fcf_capm = _dcf_comps_r6.get("pv_high_growth") or comps.get("pv_high") or 0
+            if _pv_fcf_capm:
+                L.append(f"DCF_FCF_PV: ${_pv_fcf_capm/1e9:.2f}B ({_hg_yrs_r6}yr discounted FCF sum, pre-alpha)")
+
+        # TV_PV 行
+        _pv_tv_show = _pv_tv_rm if _pv_tv_rm is not None else (_dcf_comps_r6.get("pv_terminal") or comps.get("pv_terminal") or 0)
+        if _pv_tv_show:
+            L.append(f"DCF_TV_PV:  ${_pv_tv_show/1e9:.2f}B (terminal value present value, pre-alpha, Rm=10%)"
+                     if _pv_tv_rm is not None
+                     else f"DCF_TV_PV:  ${_pv_tv_show/1e9:.2f}B (terminal value present value, pre-alpha)")
+
+        # V0 = FCF_PV + TV_PV
+        if _v0_rm is not None:
+            L.append(f"DCF_v0:     ${_v0_rm/1e9:.2f}B (= FCF_PV + TV_PV, Rm=10% enterprise value)")
+
+        # Alpha
+        L.append(f"Alpha_Premium: {_alpha_r6:.4f} (HypeCore expectation premium; Rm basis)")
+
+        # V0 × (1+alpha) ← これが従来欠落していたキー項目
+        _v0_x_alpha_r6 = (_v0_rm * (1 + _alpha_r6)) if _v0_rm is not None else None
+        if _v0_x_alpha_r6 is not None:
+            L.append(f"DCF_v0_x_alpha: ${_v0_x_alpha_r6/1e9:.2f}B (= v0 × (1+alpha))")
+
+        # RPO_PV
+        _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
+        if _rpo_excl:
+            L.append(f"RPO_PV: $0 ({_rpo_excl})")
+        else:
+            L.append(f"RPO_PV: ${rpo_pv/1e9:.3f}B" if rpo_pv >= 1e8
+                     else f"RPO_PV: ${rpo_pv:,.0f}")
+            if rpo_pv > 0:
+                L[-1] += " (Remaining Performance Obligation premium)"
+
+        # Growth_Option_PV
+        if _go_pv_r6 > 0:
+            L.append(f"Growth_Option_PV: ${_go_pv_r6/1e9:.3f}B (optional segment premium)")
+        else:
+            L.append("Growth_Option_PV: $0")
+
+        # Equity bridge
+        _pt_r6 = (_v0_x_alpha_r6 or 0) + rpo_pv + _go_pv_r6
+        _eq_val_r6 = _pt_r6 + _nc_total_r6
+        if _v0_x_alpha_r6 is not None:
+            L.append(f"Equity_Value: ${_eq_val_r6/1e9:.2f}B"
+                      f" (= v0_x_alpha + RPO_PV + GO_PV"
+                      + (f" + Net_Cash ${_nc_total_r6/1e9:.2f}B)" if _nc_total_r6 != 0 else ")"))
+        if _shares_r6 > 0:
+            L.append(f"Shares_Used: {_shares_r6/1e6:.1f}M (source: {_shares_src_r6})")
+        iv_r6 = valuation.get("intrinsic_value_per_share")
+        if iv_r6 is not None:
+            L.append(f"→ Intrinsic_Value: ${iv_r6:.2f} (= Equity_Value ÷ Shares_Used)")
+
+        # FCF外れ値詳細（既存）
         _fcf_outlier_r6 = valuation.get("fcf_outlier", {})
         if _fcf_outlier_r6.get("action") == "excluded" and _fcf_outlier_r6.get("fcf_value") is not None:
             _excl_fy_r6  = _fcf_outlier_r6.get("fiscal_year", "?")
@@ -1103,11 +1176,6 @@ class TanukiValuationPipeline:
             _r6_base     = comps.get("fcf_base_used") or 0
             L.append(f"DCF_FCF_Base_Detail: ${_r6_base/1e6:,.1f}M (外れ値${_excl_val_r6/1e6:,.0f}M/FY{_excl_fy_r6}除外後{_excl_n_r6}点平均)")
             L.append(f"DCF_FCF_Base_Excluded: FY{_excl_fy_r6}=${_excl_val_r6/1e6:,.0f}M (outlier: >{_excl_thr_r6}% deviation from {_excl_n_r6}yr series)")
-        _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
-        if _rpo_excl:
-            L.append(f"RPO_PV: $0 ({_rpo_excl})")
-        else:
-            L.append(f"RPO_PV: ${rpo_pv:,.0f} (Remaining Performance Obligation premium)")
         L.append("Financial_Health:")
         net_debt = fin_health.get("net_debt")
         total_debt = fin_health.get("total_debt")
@@ -1196,21 +1264,30 @@ class TanukiValuationPipeline:
             L.append("  N/A (segment data not configured)")
         L.append("Definition:")
         L.append("")
-        L.append("Intrinsic Value: Calculated via FCF-based DCF model")
-        L.append("Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value")
-        L.append("Terminal_Value = FCF_final x (1+g) / (WACC - g)")
-        L.append("WACC = Rf + Beta x (Rm - Rf)")
-        L.append("Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)")
-        L.append("Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values")
-        L.append("FCF_Conversion_Rate: Industry-standard ratio to estimate")
-        L.append("FCF from OCF (accounts for capex intensity by sector)")
-        L.append("RPO: Remaining Performance Obligation, booked future")
-        L.append("revenue not yet recognized; added as DCF premium")
-        L.append("Note: RPO premium is added as a conservatism adjustment")
-        L.append("for contracted-but-unrecognized revenue visibility,")
-        L.append("not as additional DCF cash flow. Applied only to")
-        L.append("profitable SaaS tickers with RPO/Revenue > 0.3.")
-        L.append("Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)")
+        L.append("IV Formula (full chain):")
+        L.append("  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]")
+        L.append("  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV")
+        L.append("  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)")
+        L.append("  IV/share = Equity ÷ Shares_Used")
+        L.append("Discount rate: Rm=10% (market return, Beta=0 benchmark).")
+        L.append("This intentionally excludes market-risk beta to derive")
+        L.append("fundamental value independent of market sentiment.")
+        L.append("高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを")
+        L.append("意図的に除外した本源価値の設計。市場リスク調整後は")
+        L.append("WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）")
+        L.append("WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).")
+        L.append("DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).")
+        L.append("Alpha: HypeCore expectation premium (ROE × retention / Rm).")
+        L.append("Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.")
+        L.append("RPO: Remaining Performance Obligation. Added outside alpha")
+        L.append("to avoid double-counting (v9.0 fix). Applied only to")
+        L.append("profitable SaaS with RPO/Revenue > 0.3.")
+        L.append("Growth_Option_PV: Optional segment-level growth premium.")
+        L.append("Equity bridge: adds Net_Cash (= -Net_Debt) per share.")
+        L.append("Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.")
+        L.append("Lease liabilities excluded (ASC842/IFRS16 operating leases are not")
+        L.append("interest-bearing debt; excluded by design. Adjusted EV approach")
+        L.append("must be stated explicitly if leases are included.)")
         if sector == "Financial Services":
             L.append("⚠️ Financial_Institution_Note: For banks/fintech (e.g., SOFI), Total_Debt includes")
             L.append("customer deposits and funding liabilities — not comparable to corporate debt.")
@@ -1785,13 +1862,28 @@ class TanukiValuationPipeline:
                 pass
 
         # --- next_earnings_date from yfinance calendar ---
+        # 過去日の場合はリスト内の次の未来日を採用する（Phase3-1修正）
         try:
             import yfinance as yf
+            from datetime import date as _date_cls
             cal = yf.Ticker(ticker).calendar
             if cal and "Earnings Date" in cal:
                 dates = cal["Earnings Date"]
                 if dates:
-                    result["next_earnings_date"] = str(dates[0])
+                    today = _date_cls.today()
+                    _next = None
+                    for _d in dates:
+                        try:
+                            _d_val = _d.date() if hasattr(_d, "date") else _date_cls.fromisoformat(str(_d)[:10])
+                            if _d_val >= today:
+                                _next = _d_val
+                                break
+                        except Exception:
+                            continue
+                    if _next is not None:
+                        result["next_earnings_date"] = str(_next)
+                    else:
+                        result["next_earnings_date"] = str(dates[0])  # 全て過去なら最後の値
         except Exception:
             pass
 

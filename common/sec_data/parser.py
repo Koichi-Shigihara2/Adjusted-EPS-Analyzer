@@ -271,12 +271,14 @@ class SECParser:
             }
         """
         result = {"annual": {}, "quarterly": {}}
-        # 期末日を記録（同一FYで最新のend日付を優先するため）
+        # 期末日を記録（同一end_yearで最新のend日付を優先するため）
         annual_end_dates = {}
         quarterly_end_dates = {}
-        
-        # 最新FYを特定するため、全キーの最大FYを事前に調べる
-        max_fy_in_data = 0
+
+        # 最新期末年を特定するため、全キーの最大 end_date 年を事前に調べる
+        # ※ fyではなくend_dateの年を使う: SEC XBRLのfyは比較年度の参照先fyと同じ値が
+        #   付与される場合があり(FCX等)、end_dateの年がデータの実際の会計年度末年に対応する
+        max_end_year_in_data = 0
         for key in xbrl_keys:
             if key not in us_gaap:
                 continue
@@ -286,46 +288,51 @@ class SECParser:
                     continue
                 for entry in units[unit_type]:
                     if entry.get("form") == "10-K" and entry.get("fp") == "FY":
-                        fy = entry.get("fy", 0)
-                        if fy > max_fy_in_data:
-                            max_fy_in_data = fy
-        
+                        end_date = entry.get("end", "")
+                        if entry.get("fy") is not None and end_date and len(end_date) >= 4:
+                            end_year = int(end_date[:4])
+                            if end_year > max_end_year_in_data:
+                                max_end_year_in_data = end_year
+
         for key in xbrl_keys:
             if key not in us_gaap:
                 continue
-            
+
             units = us_gaap[key].get("units", {})
-            
+
             # USD or shares
             for unit_type in ["USD", "shares", "USD/shares"]:
                 if unit_type not in units:
                     continue
-                
+
                 for entry in units[unit_type]:
                     form = entry.get("form", "")
                     fy = entry.get("fy")
                     fp = entry.get("fp", "")
                     val = entry.get("val")
                     end_date = entry.get("end", "")
-                    
+
                     if val is None or fy is None:
                         continue
-                    
-                    # 年次（10-K）
+
+                    # 年次（10-K）- end_dateの年をキーとして使用
                     if form == "10-K" and fp == "FY":
+                        # end_dateの年が会計年度末を正確に示す（fyはSECの参照先fyと
+                        # 同じ値が付与される比較年度エントリが存在するため信頼性が低い）
+                        end_year = int(end_date[:4]) if end_date and len(end_date) >= 4 else fy
                         if use_max:
                             # 最大値を採用（株式数の異常値対策）
-                            if fy not in result["annual"] or val > result["annual"][fy]:
-                                result["annual"][fy] = val
-                                annual_end_dates[fy] = end_date
+                            if end_year not in result["annual"] or val > result["annual"][end_year]:
+                                result["annual"][end_year] = val
+                                annual_end_dates[end_year] = end_date
                         else:
-                            # 同一FYでは最新のend日付を優先
-                            if fy not in result["annual"]:
-                                result["annual"][fy] = val
-                                annual_end_dates[fy] = end_date
-                            elif end_date > annual_end_dates.get(fy, ""):
-                                result["annual"][fy] = val
-                                annual_end_dates[fy] = end_date
+                            # 同一end_yearでは最新のend日付を優先
+                            if end_year not in result["annual"]:
+                                result["annual"][end_year] = val
+                                annual_end_dates[end_year] = end_date
+                            elif end_date > annual_end_dates.get(end_year, ""):
+                                result["annual"][end_year] = val
+                                annual_end_dates[end_year] = end_date
                     
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
@@ -353,9 +360,9 @@ class SECParser:
                 continue  # 全キーを検索
             
             if result["annual"]:
-                # 最新FYのデータがあるか確認
-                if max_fy_in_data in result["annual"]:
-                    break  # 最新FYが取れたので終了
+                # 最新期末年のデータがあるか確認
+                if max_end_year_in_data in result["annual"]:
+                    break  # 最新期末年が取れたので終了
                 # 最新FYがない場合は次のキーを試す → resultをクリア
                 result = {"annual": {}, "quarterly": {}}
                 annual_end_dates = {}
