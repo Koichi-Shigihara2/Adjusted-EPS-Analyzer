@@ -177,6 +177,22 @@ pytest と test_iv_formula が全通過しても**過去年度データの破壊
 - **「テスト全通過」は年度割り当ての正しさを保証しない**ことを前提に、
   必ず before/after の全件差分で担保してからコミットする
 
+**aggregate_annual を変更した場合の追加確認（ANNUAL-FY-1の教訓）：**
+
+`aggregate_annual`（EPS Analyzer pipeline.py）のグループ化ロジックを変更した場合、
+IV に直接影響する `estimate_fcf_from_eps` 経由の波及が起きる。
+（2026-06-13 事例: filing_date[:4] → fiscal_year に変更した際、
+NVDA +18% / MSFT -12% / AVAV +93% / IOT applied=False→True 等、20銘柄のIVが変化）
+
+そのため以下を必須とする:
+- `adjustments.py の estimate_fcf_from_eps` が参照する `annual.json years[0]` の
+  adjusted_net_income が変わった銘柄を全件抽出する
+- IOT等の applied=False→True の変化（赤字→黒字化）は特に要注意:
+  本物の黒字化なら許容、ゼロ近傍アーティファクトならゲート閾値を見直す
+- **年度判定の定義が3箇所に分散している点に注意**（ARCH-DATA-1参照）:
+  parser.py（期末日年）/ extract_key_facts.py（会計年度）/ aggregate_annual（会計年度）。
+  変更する際は3箇所の定義が矛盾しないか確認すること。
+
 ---
 
 ## 重要ルール
@@ -232,6 +248,13 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 - **IV割引率（Rm=10%/β=0）は市場リスクを意図的に除外した本源価値**: 高β銘柄では市場WACC比で
   IVが高めに出るが設計通り。市場リスク調整後の参照は WACC_CAPM_Reference でのIVを併用する旨を
   定義文に記載（外部AIは「高β銘柄でIV過大」を頻繁に誤指摘するため）。
+- **比較表示する2つの倍率は必ず同一期ベースで計算する（EPS-PER-TTM-1の教訓）**:
+  GAAP PER（yfinance trailingPE = TTM）と Adjusted_EPS_PER を並べる場合、
+  後者も同じTTM（直近4四半期の adjusted_eps 合計）を分母にしなければ比較が無意味になる。
+  年次FYを使うとGAAP（TTM）と期間が食い違い、成長株では ADJ > GAAP の逆転が常態化する
+  （実例: NVDA 48.3x vs GAAP 31.4x → TTM統一後 30.3x に正常化）。
+  新たにPER・EV・PS等の倍率を並列表示する場合は、両者の分母期間が同一か必ず確認すること。
+  片方が TTM なら他方も TTM、片方が NTM（Forward）なら他方も NTM に揃える。
 
 ### 外部AIレビューの活用と品質還元ループ
 
@@ -268,8 +291,8 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 ### 今すぐ着手可能（優先度中・難易度低〜中）
 - TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
 - MP-BIZDAY-1: MARKET PULSE営業日ベース化
-- SEGMENT-1: セグメント精緻設定の残り12銘柄（LLY→LMT→MRVL→AMAT→VRTの順。
-  VST/FCX/SCCO/CEG/KOは2026-06-13完了済み）
+- ARCH-DATA-1: SECデータ正規化レイヤー強化（PARSER-1/BUG-NETDEBT-6/ANNUAL-FY-1が第一〜三歩として完了。
+  次の前倒し対象: 年度判定の共通関数化（parser.py/extract_key_facts.py/aggregate_annualの3箇所を統合））
 
 ### 順次着手（優先度中・難易度中〜高）
 - TSCORE-TRAP-1: 投資トラップ検出（10種+逆シグナル）
@@ -365,6 +388,26 @@ python common/sec_data/registration_validator.py [TICKER]
 - SaaS系銘柄でRPOプレミアムを適用する場合は `config/rpo_config.json` の
   whitelist に理由コメント付きで明示登録する（industry keyword 依存禁止）
   理由: keyword は将来銘柄追加時に意図しない適用の再発リスクあり（GOOGL等参照）
+
+**新規銘柄のセグメント設定判断ルール（SEGMENT-1 全17銘柄完了の教訓）：**
+
+segment_config.json の設定要否は **ASC 280 の formal operating segment 数** で判断する。
+製品別・エンドマーケット別の売上開示（disaggregated revenue）は **formal segment ではない**。
+
+| 判定 | 条件 | 設定 | 例 |
+|------|------|------|-----|
+| LLY型（設定不要） | formal segment が1つ | General 100%のまま | LLY/MRVL/BSY/ALAB/ELF |
+| LMT型（設定対象） | formal segment が2つ以上 | 比率・成長率を設定 | LMT/AMAT/VRT/COHR/LITE |
+
+設定する際の注意:
+- セグメントの名称・比率は 10-K の **"Segment Information"（ASC 280）** セクションの数値を使う
+- 製品別や顧客別の disaggregated revenue（ASC 606）は使わない（VST/CEGで架空セグメントを埋めた失敗参照）
+- **growth rate の設定根拠を segment_config.json の comment フィールドに記録する**
+  （例: "FY2024 YoY +13%、中期ガイダンス考慮で10%設定"）
+- weighted_growth が recommended_g より大幅に高い場合はIV上昇（LMT +12%型）、
+  低い場合はIV下落（COHR -57%型）。どちらも「正しい是正」だが before/after を記録すること
+- COHR/LITEのような光通信デバイス・M&A統合後の銘柄は rec_g が急成長TTMを引いて過大になりやすい。
+  設定後のIV下落が大きい（-50%超）場合でも、長期成長率として妥当なら正しい是正
 
 ---
 
