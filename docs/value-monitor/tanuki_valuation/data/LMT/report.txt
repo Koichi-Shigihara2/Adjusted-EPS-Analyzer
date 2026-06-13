@@ -1,16 +1,16 @@
 LMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T17:00:17+09:00
+Generated: 2026-06-13T21:22:30+09:00
 Price: $540.33
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 40/100
 Timing_Score (components):
-  Deviation_Rate: -42.8%
+  Deviation_Rate: -35.8%
   MA200_Deviation: +0.6%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 2.62 (Hold)
-Comment: 割高(-43%超)、FCF黒字、売上安定成長
+Comment: 割高(-36%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,9 +30,9 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左上
-Label: 割高×中効率
-Key_Metric_Y: RICE = 1.282
-Deviation_Rate: -42.8%
+Label: 割高×高効率
+Key_Metric_Y: RICE = 2.066
+Deviation_Rate: -35.8%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,16 +57,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $540.33
-Intrinsic_Value_BASE: $309.13
-Deviation_BASE: -42.8%
-Growth_Rate_Original: 4.6% (TTM実績)
-Growth_Rate_Adjusted: 3.6% (推奨値・中央値ベース)
+Intrinsic_Value_BASE: $347.08
+Deviation_BASE: -35.8%
 Scenarios:
-BEAR: Growth=2.5%, IV=$291.57 （推奨値ベース）
-BASE: Growth=3.6%, IV=$309.13 （推奨値ベース）
-BULL: Growth=4.3%, IV=$321.22 （推奨値ベース）
+BEAR: Growth=4.0%, IV=$316.82, Deviation=-41.4%
+BASE: Growth=5.8%, IV=$347.08, Deviation=-35.8%
+BULL: Growth=6.9%, IV=$368.32, Deviation=-31.8%
+Growth_Rate_Rec: 3.6% (recommended)
 TTM_YoY_Growth: 4.6%
-(DCF Base vs TTM actual: -1.0pt discount)
+(DCF Base vs TTM actual: +1.2pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 8.52%
 Terminal_Growth_Rate: 3.0%
@@ -75,16 +74,16 @@ FCF_Conversion_Rate: 0.7 (Industry: Aerospace & Defense)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $3,512M (= Adj_NI $5,017M × FCF_Conv 0.7)
-DCF_FCF_PV: $14.72B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $38.27B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $52.99B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $15.64B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $42.49B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $58.13B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $90.08B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $98.83B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $71.27B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-18.80B)
+Equity_Value: $80.02B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-18.80B)
 Shares_Used: 230.6M (source: yf_implied)
-→ Intrinsic_Value: $309.13 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $347.08 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+18.80B (negative=net cash)
   Total_Debt: $20.70B  Cash: $1.89B
@@ -101,8 +100,11 @@ FCF_History:
   2025: $6.91B (FCF_Margin: 9.2%)
   FCF_CAGR_3yr: +4.1%
 Segment_Breakdown:
-  General: $77.3B (100%, YoY 4%)
-  Segment_Weighted_Growth: 3.6% (推奨値・中央値を自動適用)
+  Aeronautics: $30.0B (40%, YoY 5%)
+  Missiles_Fire_Control: $13.5B (18%, YoY 10%)
+  Rotary_Mission_Systems: $18.0B (24%, YoY 6%)
+  Space: $13.5B (18%, YoY 3%)
+  Segment_Weighted_Growth: 5.8%
   (= basis for TANUKI forward growth rate G)
 Definition:
 
@@ -152,15 +154,15 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 4.6%
-成長モデル: 中央値モデル（CAGR_max=4.6%のため中央値モデル適用）  HypePhase=4
+Phase1成長率 : 5.8%
+成長モデル: 中央値モデル（CAGR_max=5.8%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          3.6%
   最終推奨値:            3.6%
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
-  - 過去実績(3yr:4.4% / 5yr:2.8%)と整合 ✅
+  - 過去実績(3yr:4.4% / 5yr:2.8%)より高め（減速想定あり） ℹ️
 Definition:
 
 Growth Rate Methodology:
@@ -179,15 +181,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.89
-BASE: RICE=1.282
-BULL: RICE=1.531
+BEAR: RICE=1.425
+BASE: RICE=2.066
+BULL: RICE=2.457
 Components (BASE scenario):
-G  = 3.6%  [TANUKI forward growth rate]
+G  = 5.8%  [TANUKI forward growth rate]
 Q  = 1.4194   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 1.2546  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.2546  [R&D除外・CapExのみ投資強度]
-RICE_adj = 1.282  [参考：R&D資本化想定]
+RICE_adj = 2.066  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 2.51  [NOPAT/InvestedCapital / 0.10]
