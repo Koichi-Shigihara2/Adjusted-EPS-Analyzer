@@ -39,6 +39,27 @@
 - 3段階DCF(three_stage)は`pv_phase1+pv_phase2`、2段階は`pv_high_growth`でFCF現在価値を算出
 - pytest: 122件全パス / 全78銘柄再生成: FAIL=0 / NG=0
 
+### ✅ SEGMENT-1 後半バッチ完了 (2026-06-13 完了): LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV（12銘柄）
+- **単一セグメント確認・修正不要（LLY型）**: LLY / MRVL / BSY / ALAB / ELF（5銘柄）
+  - MRVL補足: 5エンドマーケット = disaggregated revenue（ASC 606）≠ ASC 280 formal segment。FY2026から2カテゴリ報告へ変更予定だが従来通り単一
+- **複数セグメント設定（LMT型）・IV変化一覧**:
+
+| Ticker | セグメント数 | 設定内容 | IV before | IV after | 変化率 |
+|--------|------------|---------|-----------|----------|--------|
+| LMT | 4 | Aeronautics(40%/5%)/MFC(18%/10%)/RMS(24%/6%)/Space(18%/3%) | $309 | $347 | +12.3% |
+| AMAT | 3 | Semiconductor_Systems(74%/8%)/Applied_Global_Services(23%/6%)/Display(3%/2%) | $274 | $253 | -7.5% |
+| VRT | 3 | Americas(56%/15%)/Asia_Pacific(22%/13%)/EMEA(22%/13%) | $129 | $101 | -21.0% |
+| COHR | 3 | Networking(59%/20%)/Lasers(25%/10%)/Materials(16%/6%) FY2025 | $90 | $39 | -56.5% |
+| LITE | 2 | Cloud_Networking(86%/20%)/Industrial_Tech(14%/4%) FY2025 | $60 | $27 | -56.0% |
+| CSGP | 2 | North_America(95%/10%)/International(5%/20%) FY2025 | $13.6 | $11.78 | -13.6% |
+| AVAV | 3 | Uncrewed_Systems(40%/12%)/Loitering_Munitions(50%/20%)/MacCready_Works(10%/15%) | $135.53 | $94.23 | -30.5% |
+
+- **growth_floor bypass**: segment_configured=True の場合 recommended_g サニティ回避（weighted_growth 直接採用）
+- **COHR/LITE の大幅低下**: FCF base が超小型（$31.8M/$62.1M）のためΔgrowth が IV に直接増幅
+- **weighted_growth 計算**: sum(weight_i × g_i)。AVAV weighted_g = 16.3%（before recommended_g 25.64%）
+- CSGP 補足: net_debt/shares_used=None は全銘柄共通の latest.json 仕様（report.txt の値は正常）
+- pytest: 108件全パス / 全銘柄再生成 FAIL=0
+
 ### ✅ SEGMENT-1 VST/FCX/SCCO/CEG/KO (2026-06-13 完了): filing準拠セグメント修正
 - VST: Texas_ERCOT/East_Nuclear/Retail/West（地理別、wg 7.2%→7.85%、IV $31.36→$33.69）
 - FCX: Indonesia/North_America/South_America（Gold独立セグ削除、wg 8.3%→6.4%、IV $3.95→$3.34）
