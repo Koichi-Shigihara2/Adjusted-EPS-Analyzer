@@ -1848,6 +1848,14 @@ class TanukiValuationPipeline:
                     s_now = adj_vals[-1]
                     s_3ago = adj_vals[-4]
 
+                    # SEC株式数がyfinance由来の株式数と10倍以上乖離している場合は
+                    # XBRLの報告が信頼できない（UP-C構造等）→希薄化計算をスキップ
+                    _yf_shares = comps.get("diluted_shares") or 0
+                    if _yf_shares > 0 and s_now > 0:
+                        _sec_yf_ratio = _yf_shares / s_now
+                        if _sec_yf_ratio > 10 or _sec_yf_ratio < 0.1:
+                            s_now = None  # sanity check fail → skip
+
                     if s_now and s_3ago > 0:
                         dilution_3yr = ((s_now / s_3ago) ** (1 / 3) - 1) * 100
                         if "financial_health" not in result:
