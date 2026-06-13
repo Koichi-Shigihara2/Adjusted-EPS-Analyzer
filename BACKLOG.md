@@ -206,7 +206,22 @@ consistency_check を「出口の保険」から「設計の一部」に格上�
 - `registration_validator`（登録時ゲート）と対をなす「再生成時ゲート」
 
 #### 着手条件
-CHECK 項目が十分育ってから（現状 CHECK-12。検証ループ継続で項目追加中）
+CHECK 項目が十分育ってから（現状 CHECK-13。検証ループ継続で項目追加中）
+
+#### チェック項目追加候補（BUG-FOUR-1の教訓・2026-06-14）
+
+**report_consistency_check.py に追加すべき項目（レポート出力層）:**
+- CHECK-13: 四半期EPSが現在株価の50%超 → ERROR（株式数単位ミス等の異常値検知）
+- CHECK-14: 四半期EPSが株価を上回る → ERROR
+- CHECK-15: TTM EPS計算に使用した四半期数が4未満 → WARNING（年次データで代替している状態）
+
+**audit.py に追加すべき項目（SECデータ取得層）:**
+- yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力
+- 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示
+
+**役割分担の原則:**
+- データ取得品質の問題（XBRLパース・単位・タグ欠落）→ audit.py
+- 計算・表示の問題（EPS異常値・TTM期間ズレ）→ report_consistency_check.py
 
 ### [MP-BIZDAY-1] MARKET PULSE 営業日ベース化
 **優先度:** 中
