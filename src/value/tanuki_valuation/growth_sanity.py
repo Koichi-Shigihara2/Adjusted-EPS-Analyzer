@@ -206,6 +206,8 @@ TICKER_INDUSTRY_OVERRIDES = {
     "VST":   "Power",                             # 原子力+ガス火力のハイブリッド電力会社
     "SCCO":  "Metals & Mining",                   # ペルー・メキシコ中心の銅鉱山
     "FCX":   "Metals & Mining",                   # グラスバーグ鉱山主力の銅生産会社
+    "FOUR":  "Computer Services",                 # 決済処理・アクワイアリング（取引手数料収入96%）
+                                                  # Fintech→Financial Svcs.(Non-bank)はg_ebit=Noneのため不使用
 }
 
 
