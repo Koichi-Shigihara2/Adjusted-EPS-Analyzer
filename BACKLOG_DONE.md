@@ -736,6 +736,8 @@ Cash表示値とNet Debt計算値の参照タイミング・定義が不整合�
 
 ---
 
+## 2026-06-14 完了
+
 ## [BUG-FOUR-1] FOUR（Shift4 Payments）EPS・株式数・希薄化異常値 ✅ 2026-06-14
 
 ### 症状
@@ -765,4 +767,3 @@ SEC/yfinance乖離10倍サニティチェックはFOUR以外にも適用され�
 UP-C構造（上場会社がLLC管理会社になる形態）ではXBRL株式数が
 経済的実態を反映しないケースがある。新規銘柄登録時にUP-C構造の
 有無を確認し、該当する場合はeps=false設定を検討する。
-- Stonks Silo yfinance ModuleNotFoundError修正
