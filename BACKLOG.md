@@ -176,6 +176,12 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
   （AAPL/MSFT/NVDA/CRM/ELF/HQY/COHR等）の年度割り当てが正規化された。
 - **BUG-NETDEBT-6（2026-06-13 完了）で同一時点原則を実装**: BS項目を同一filingから
   取得する規則を pipeline に導入済み（下記方針の第1項に対応）。
+- **ANNUAL-FY-1（2026-06-13 完了）が第三歩**: aggregate_annual の filing_date[:4] →
+  fiscal_year フィールドベースに変更。非12月FY企業のFY跨ぎ混合を解消し、
+  estimate_fcf_from_eps 経由のIV誤計算を是正（NVDA +18% / MSFT -12% 等、20銘柄）。
+  **残課題**: 年度判定が parser.py（期末日年）/ extract_key_facts.py（会計年度）/
+  aggregate_annual（会計年度）の3箇所に分散している。次の前倒し対象として
+  共通関数化（単一定義）を検討する。
 
 #### 残りの方針
 計算ロジックに渡す前に、SECの変種を統一フォーマットに均す

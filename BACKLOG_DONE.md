@@ -4,6 +4,26 @@
 
 ## 2026-06-13 完了
 
+### ✅ EPS-PER-TTM-1 (2026-06-13 完了): 調整後PERをGAAPと同一TTM期に統一
+- **根本課題**: `_calc_adjusted_per` が `annual.json years[0].adjusted_eps`（年次FY）を分母に使うため、GAAP PER（yfinance trailingPE = TTM）と期間不一致。成長株で ADJ>GAAP 逆転（NVDA: 48.3x vs 31.4x）
+- **修正**: `core_calculator._calc_adjusted_per` を `quarterly.json` 直近4Q `adjusted_eps` 合計（TTM）に変更。4Q未満は None（年次フォールバック禁止）
+- **文言**: report.txt 注記「年次EPSベース」→「TTM調整後EPS: $x.xxxx」、Definition に「same trailing 12M period」明記
+- **検証**: NVDA 48.3x → 30.3x（Delta -1.1x）、46銘柄 ADJ/GAAP 非対称を解消
+- pytest: 105件全パス / 全78銘柄再生成 FAIL=0
+
+### ✅ ANNUAL-FY-1 (2026-06-13 完了): aggregate_annualを会計年度ベース集計に修正（IV影響あり）
+- **根本課題**: `aggregate_annual`（pipeline.py）が `filing_date[:4]` でグループ化するため、非12月FY企業で FY跨ぎ混合が発生。例: NVDA annual.json year=2025 = FY2025Q4+FY2026Q1-Q3（混合）→ 誤FCF推定値を経由してIVに影響
+- **修正**: `fiscal_year` フィールドベースに変更。フィールド未設定の場合は `filing_date[:4]` にフォールバック
+- **PARSER-1との関係**: 独立した修正。parser.py は期末日年キー、aggregate_annual は会計年度キーで別レイヤー
+- **影響**: 20銘柄の annual.json 更新 → `estimate_fcf_from_eps` 経由でIVに波及
+  - 大型: NVDA +18% ($201→$238) / MSFT -12% ($621→$546) / AVAV +93% ($54→$105)
+  - IOT: applied=False→True（FY2026 adj_ni +$265.8M、本物の黒字化）
+  - COHR/LITE/RBRK/S: applied=False のまま（IV変化なし）
+- **スポットチェック**: NVDA FY2026=$5.12/AAPL FY2025=$8.11/MSFT FY2025=$15.44（10-K通年と一致）
+- **consistency_check追加**: TestAnnualFYConsistency（3件）- 年跨ぎ混合の恒久ガード
+- **ARCH-DATA-1注記**: 年度判定が parser.py / extract_key_facts.py / aggregate_annual の3箇所に分散。共通関数化は次の前倒し対象
+- pytest: 108件全パス / 全78銘柄再生成 FAIL=0
+
 ### ✅ PARSER-1 (2026-06-13 完了): 年次キーを fy→end_date年 に変更
 - **根本課題**: FCX の FY2025 10-K で `fy=2025, end='2024-12-31'` エントリが混入し、`annual_2024.json` が生成されない年度ズレ
 - **修正1**: `_extract_values` の年次辞書キーを `fy` → `int(end_date[:4])` に変更（end_year ベース）
