@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -53.1,
-  "calculation_date": "2026-06-13T07:53:37+09:00",
+  "calculation_date": "2026-06-13T11:54:44+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -156,7 +156,9 @@
     ],
     "terminal_fcf": 2162859703.661426,
     "terminal_value": 29429465441.081818,
-    "v0_rm": 26608614958.091076
+    "v0_rm": 26608614958.091076,
+    "pv_fcf_rm": 5947604053.648239,
+    "pv_tv_rm": 20661010904.442837
   },
   "fcf_base": {
     "base_fcf": 1287930000.0,
@@ -284,13 +286,13 @@
     "base": {
       "growth_rate": 0.15,
       "rice": 0.811,
-      "rice_per_ratio": 0.0091,
+      "rice_per_ratio": 0.009,
       "rice_adj": 13.71
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 0.973,
-      "rice_per_ratio": 0.0109,
+      "rice_per_ratio": 0.0108,
       "rice_adj": 16.452
     }
   },
@@ -312,7 +314,7 @@
       1153602000
     ],
     "diluted_shares": 275816000,
-    "roe_10yr_avg": 0.27531422571666087,
+    "roe_10yr_avg": 0.27361259072483496,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 384.96,
@@ -331,7 +333,7 @@
     "terminal_growth_used": 0.035,
     "pv_high": 5808315035.556706,
     "pv_terminal": 17583996915.861122,
-    "roe_used": 0.27531422571666087,
+    "roe_used": 0.27361259072483496,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -339,14 +341,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 377644521.44368875,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.1563197480099754,
-    "per": 89.52557,
+    "alpha_uncapped": 1.1491728810443067,
+    "per": 90.154564,
     "per_is_forward": false,
     "per_adjusted": 70.91,
     "peg": 3.66,
     "ps": 19.205202,
-    "ev_ebitda": 53.31,
-    "ma200": 325.29456,
+    "ev_ebitda": 53.477,
+    "ma200": 325.4992,
     "forward_eps": 9.385
   },
   "validation": {
@@ -363,7 +365,7 @@
       },
       "formula_verification": {
         "pass": false,
-        "detail": "α計算: ROE 27.5% × 60% / Rm 10.00% × 0.7 = 1.1563 → cap適用 → 0.8000"
+        "detail": "α計算: ROE 27.4% × 60% / Rm 10.00% × 0.7 = 1.1492 → cap適用 → 0.8000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -380,8 +382,8 @@
   "fcf_history": [
     {
       "year": 2021,
-      "fcf": 1035660000,
-      "fcf_margin": 34.7
+      "fcf": 810109000,
+      "fcf_margin": 30.2
     },
     {
       "year": 2022,

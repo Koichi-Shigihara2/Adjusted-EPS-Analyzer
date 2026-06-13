@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 144.3,
-  "calculation_date": "2026-06-13T07:53:26+09:00",
+  "calculation_date": "2026-06-13T11:54:34+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -261,7 +261,11 @@
     "terminal_fcf": 697165783951.0309,
     "terminal_value": 5221668019466.3545,
     "dcf_type": "three_stage",
-    "v0_rm": 6067221794436.374
+    "v0_rm": 6067221794436.374,
+    "pv_fcf_rm": 1932028107941.0132,
+    "pv_tv_rm": 4135193686495.361,
+    "pv_phase1_rm": 741646144242.8219,
+    "pv_phase2_rm": 1190381963698.1914
   },
   "fcf_base": {
     "base_fcf": 107307500000.0,
@@ -386,7 +390,7 @@
       7103000000
     ],
     "diluted_shares": 24221000000,
-    "roe_10yr_avg": 0.4445659170875199,
+    "roe_10yr_avg": 0.3711717103249847,
     "roe_years_used": 10,
     "roe_outlier_adj": true,
     "current_price": 205.19,
@@ -405,7 +409,7 @@
     "terminal_growth_used": 0.035,
     "pv_high": 1340107233114.7217,
     "pv_terminal": 1100195986892.1074,
-    "roe_used": 0.4445659170875199,
+    "roe_used": 0.3711717103249847,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -413,14 +417,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 1859714437.220018,
-    "alpha_uncapped": 1.8671768517675833,
+    "alpha_uncapped": 1.5589211833649355,
     "per": 31.374619,
     "per_is_forward": false,
     "per_adjusted": 48.32,
     "peg": 0.63,
     "ps": 19.60585,
-    "ev_ebitda": 29.71,
-    "ma200": 189.1428,
+    "ev_ebitda": 29.751,
+    "ma200": 189.2599,
     "forward_eps": 12.72715
   },
   "validation": {
@@ -437,7 +441,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 44.5% × 60% / Rm 10.00% × 0.7 = 1.8672 → cap適用 → 1.0000"
+        "detail": "α計算: ROE 37.1% × 60% / Rm 10.00% × 0.7 = 1.5589 → cap適用 → 1.0000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -453,13 +457,13 @@
   "fcf_history": [
     {
       "year": 2022,
-      "fcf": 9108000000,
-      "fcf_margin": 33.8
+      "fcf": 8132000000,
+      "fcf_margin": 30.2
     },
     {
       "year": 2023,
-      "fcf": 5641000000,
-      "fcf_margin": 20.9
+      "fcf": 3808000000,
+      "fcf_margin": 14.1
     },
     {
       "year": 2024,

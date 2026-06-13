@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -86.6,
-  "calculation_date": "2026-06-13T07:53:28+09:00",
+  "calculation_date": "2026-06-13T11:54:35+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -161,7 +161,9 @@
     ],
     "terminal_fcf": 53754078.36802975,
     "terminal_value": 413063959.4884523,
-    "v0_rm": 605658554.5030307
+    "v0_rm": 605658554.5030307,
+    "pv_fcf_rm": 128843505.07299457,
+    "pv_tv_rm": 476815049.4300361
   },
   "fcf_base": {
     "base_fcf": 1966960.0,
@@ -285,8 +287,8 @@
       -38740000
     ],
     "diluted_shares": 370445170,
-    "roe_10yr_avg": -0.6083134834493036,
-    "roe_years_used": 2,
+    "roe_10yr_avg": -0.5806867304196929,
+    "roe_years_used": 4,
     "roe_outlier_adj": true,
     "current_price": 23.37,
     "latest_revenue": 24587000.0,
@@ -304,7 +306,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 108723669.10584565,
     "pv_terminal": 196550728.49561477,
-    "roe_used": -0.6083134834493036,
+    "roe_used": -0.5806867304196929,
     "fcf_floor_applied": 59817760.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -319,7 +321,7 @@
     "peg": null,
     "ps": 695.7011,
     "ev_ebitda": null,
-    "ma200": 23.645,
+    "ma200": 23.6846,
     "forward_eps": -0.38467
   },
   "validation": {
@@ -336,7 +338,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE -60.8% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE -58.1% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -351,6 +353,11 @@
   "funda_score": 10,
   "score_comment": "割高(-87%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
   "fcf_history": [
+    {
+      "year": 2021,
+      "fcf": -36574000,
+      "fcf_margin": -582.5
+    },
     {
       "year": 2022,
       "fcf": -45649000,
@@ -410,9 +417,9 @@
     "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.5077693248454678,
-    "rev_cagr_5yr": null,
+    "rev_cagr_5yr": 0.36650482007724916,
     "g_fundamental": null,
-    "recommended_g_median": null,
+    "recommended_g_median": 0.43713707246135847,
     "recommended_g": 0.2427192636959137,
     "growth_model": "decay",
     "growth_model_reason": "Phase4(剥落)に基づきCAGR_max=50.8%×35%＋業界平均10.0%×65%＝24.3%を採用",
@@ -420,7 +427,7 @@
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体も崩壊中",
     "signals": [
-      "過去実績(3yr:50.8% / 5yr:N/A)と整合 ✅"
+      "過去実績(3yr:50.8% / 5yr:36.7%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,

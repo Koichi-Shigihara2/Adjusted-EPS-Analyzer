@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -26.1,
-  "calculation_date": "2026-06-13T07:53:40+09:00",
+  "calculation_date": "2026-06-13T11:54:47+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -161,7 +161,9 @@
     ],
     "terminal_fcf": 6586305466.594829,
     "terminal_value": 99715454218.6315,
-    "v0_rm": 75020809085.10672
+    "v0_rm": 75020809085.10672,
+    "pv_fcf_rm": 20493109026.575977,
+    "pv_tv_rm": 54527700058.53074
   },
   "fcf_base": {
     "base_fcf": 5231800000.0,
@@ -258,7 +260,7 @@
     "base": {
       "growth_rate": 0.085,
       "rice": -0.276,
-      "rice_per_ratio": -0.0079,
+      "rice_per_ratio": -0.0078,
       "rice_adj": 0.0
     },
     "bull": {
@@ -286,7 +288,7 @@
       2614000000
     ],
     "diluted_shares": 633653119,
-    "roe_10yr_avg": 0.290837870687756,
+    "roe_10yr_avg": 0.2919913205352972,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 220.31,
@@ -305,7 +307,7 @@
     "terminal_growth_used": 0.025,
     "pv_high": 20998338357.8117,
     "pv_terminal": 64496658280.12231,
-    "roe_used": 0.290837870687756,
+    "roe_used": 0.2919913205352972,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -313,14 +315,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.221519056888575,
-    "per": 35.13716,
+    "alpha_uncapped": 1.226363546248248,
+    "per": 35.19329,
     "per_is_forward": false,
     "per_adjusted": 23.27,
     "peg": 2.01,
     "ps": 3.7068539,
-    "ev_ebitda": 19.386,
-    "ma200": 212.92986,
+    "ev_ebitda": 19.474,
+    "ma200": 212.98259,
     "forward_eps": 11.44614
   },
   "validation": {
@@ -337,7 +339,7 @@
       },
       "formula_verification": {
         "pass": false,
-        "detail": "α計算: ROE 29.1% × 60% / Rm 10.00% × 0.7 = 1.2215 → cap適用 → 0.7000"
+        "detail": "α計算: ROE 29.2% × 60% / Rm 10.00% × 0.7 = 1.2264 → cap適用 → 0.7000"
       },
       "anomaly_detection": {
         "pass": true,
@@ -352,7 +354,7 @@
   "score_comment": "割高(-26%超)、FCF黒字、売上安定成長",
   "fcf_history": [
     {
-      "year": 2020,
+      "year": 2021,
       "fcf": 5210000000,
       "fcf_margin": 15.1
     },
@@ -421,7 +423,7 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.0854,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.0182371617394117,
+  "recommended_g": 0.0278500503505279,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
@@ -431,10 +433,10 @@
     "damodaran_industry": "Machinery",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.0182371617394117,
-    "rev_cagr_5yr": 0.0039620507289688245,
+    "rev_cagr_5yr": 0.0278500503505279,
     "g_fundamental": -0.011057322037627902,
-    "recommended_g_median": 0.0182371617394117,
-    "recommended_g": 0.0182371617394117,
+    "recommended_g_median": 0.0278500503505279,
+    "recommended_g": 0.0278500503505279,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=8.5%のため中央値モデル適用",
     "hype_phase_used": 4,
@@ -444,7 +446,7 @@
       "業界平均Machinery(8.4%)の1.0倍以内 ✅"
     ],
     "warnings": [
-      "過去実績(3yr:1.8% / 5yr:0.4%)の4.7倍超 ⚠️"
+      "過去実績(3yr:1.8% / 5yr:2.8%)の3.1倍超 ⚠️"
     ],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null

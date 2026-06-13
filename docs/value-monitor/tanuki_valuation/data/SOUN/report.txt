@@ -1,5 +1,5 @@
 SOUN INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:32+09:00
+Generated: 2026-06-13T11:54:39+09:00
 Price: $6.90
 
 [1. TANUKI SCORE]
@@ -7,7 +7,7 @@ Classification: WATCH
 Funda_Score: 50/100
 Timing_Score (components):
   Deviation_Rate: -1.0%
-  MA200_Deviation: -37.7%
+  MA200_Deviation: -37.6%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: N/A
 Comment: DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_3yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -72,9 +72,18 @@ Terminal_Growth_Rate: 3.0%
 Beta: 2.5
 FCF_Base: $45.63M (5yr平均 + R&D補正) [実績avg: $-88.7M]
 DCF_Reliability: LOW ⚠️ (FCF実績マイナス: revenue_floor適用, IV参考値)
-DCF_FCF_PV: $0.39B (5yr discounted FCF sum)
-DCF_TV_PV:  $0.69B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+  [Policy A: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   FCF実績がマイナスのためIVはrevenue_floorベース推定値。IV絶対値より方向感参考用。]
+DCF_FCF_PV: $0.50B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $2.24B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $2.74B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $2.74B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $2.96B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.22B)
+Shares_Used: 432.8M (source: yf_implied)
+→ Intrinsic_Value: $6.83 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.13B (negative=net cash)
   Total_Debt: $0.09B  Cash: $0.22B
@@ -85,7 +94,7 @@ Financial_Health:
   ⚠️ 期中に大規模な株式発行の可能性（+5.7%乖離: yf=433M vs SEC=409M）
   Next_Earnings_Date: 2026-08-07
 FCF_History:
-  2021: $-0.00B
+  2021: $-0.00B (FCF_Margin: -4.1%)
   2022: $-0.09B (FCF_Margin: -302.1%)
   2023: $-0.07B (FCF_Margin: -149.3%)
   2024: $-0.11B (FCF_Margin: -129.2%)
@@ -96,21 +105,30 @@ Segment_Breakdown:
   (= basis for TANUKI forward growth rate G)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk

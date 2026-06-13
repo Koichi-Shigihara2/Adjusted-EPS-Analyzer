@@ -1,5 +1,5 @@
 LMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:23+09:00
+Generated: 2026-06-13T11:54:31+09:00
 Price: $540.33
 
 [1. TANUKI SCORE]
@@ -7,7 +7,7 @@ Classification: HOLD
 Funda_Score: 40/100
 Timing_Score (components):
   Deviation_Rate: -42.8%
-  MA200_Deviation: +0.7%
+  MA200_Deviation: +0.6%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 2.62 (Hold)
 Comment: 割高(-43%超)、FCF黒字、売上安定成長
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_9yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -72,10 +72,19 @@ WACC_CAPM_Reference: 8.52%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.74
 FCF_Conversion_Rate: 0.7 (Industry: Aerospace & Defense)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $3,512M (= Adj_NI $5,017M × FCF_Conv 0.7)
-DCF_FCF_PV: $15.31B (5yr discounted FCF sum)
-DCF_TV_PV:  $51.95B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_FCF_PV: $14.72B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $38.27B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $52.99B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $90.08B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $71.27B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-18.80B)
+Shares_Used: 230.6M (source: yf_implied)
+→ Intrinsic_Value: $309.13 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+18.80B (negative=net cash)
   Total_Debt: $20.70B  Cash: $1.89B
@@ -97,21 +106,30 @@ Segment_Breakdown:
   (= basis for TANUKI forward growth rate G)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -255,7 +273,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 26.2x
   PEG: 1.16
   PS:  1.7x
-  EV_EBITDA: 18.2x
+  EV_EBITDA: 17.9x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:

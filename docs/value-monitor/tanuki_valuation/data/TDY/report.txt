@@ -1,13 +1,13 @@
 TDY INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:41+09:00
+Generated: 2026-06-13T11:54:48+09:00
 Price: $626.02
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -15.1%
-  MA200_Deviation: +6.8%
+  Deviation_Rate: -17.3%
+  MA200_Deviation: +6.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.69 (Buy)
 Comment: フェアバリュー近辺、FCF黒字、売上安定成長
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.352
-Deviation_Rate: -15.1%
+Deviation_Rate: -17.3%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -41,9 +41,9 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
-Matrix②(収益性系): Y=ROE_8yr_avg, X=Deviation Rate
+Matrix②(収益性系): Y=ROE_9yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
 (Consumer/Financial/Utilities/RealEstate/Insurance)
 Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
@@ -57,14 +57,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $626.02
-Intrinsic_Value_BASE: $531.57
-Deviation_BASE: -15.1%
+Intrinsic_Value_BASE: $475.60
+Deviation_BASE: -24.0%
 Growth_Rate_Original: 15.0% (TTM実績)
-Growth_Rate_Adjusted: 10.9% (推奨値・中央値ベース)
+Growth_Rate_Adjusted: 25.3% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=10.5%, IV=$436.80 （推奨値ベース）
-BASE: Growth=15.0%, IV=$531.57 （推奨値ベース）
-BULL: Growth=18.0%, IV=$603.07 （推奨値ベース）
+BEAR: Growth=10.5%, IV=$425.15 （推奨値ベース）
+BASE: Growth=15.0%, IV=$475.60 （推奨値ベース）
+BULL: Growth=18.0%, IV=$508.76 （推奨値ベース）
 TTM_YoY_Growth: 7.9%
 (DCF Base vs TTM actual: +7.1pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,10 +72,19 @@ WACC_CAPM_Reference: 9.65%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.939
 FCF_Conversion_Rate: 0.7 (Industry: Scientific & Technical Instruments)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $764M (= Adj_NI $1,092M × FCF_Conv 0.7)
-DCF_FCF_PV: $4.42B (5yr discounted FCF sum)
-DCF_TV_PV:  $15.01B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_FCF_PV: $4.33B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $13.91B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $18.25B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.4215 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $25.94B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $23.98B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-1.95B)
+Shares_Used: 46.3M (source: yf_implied)
+→ Intrinsic_Value: $517.61 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+1.95B (negative=net cash)
   Total_Debt: $2.48B  Cash: $0.52B
@@ -85,31 +94,40 @@ Financial_Health:
   Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-07-22
 FCF_History:
-  2021: $0.72B (FCF_Margin: 15.7%)
-  2022: $0.39B (FCF_Margin: 7.2%)
+  2021: $0.55B (FCF_Margin: 17.7%)
+  2022: $0.72B (FCF_Margin: 15.7%)
   2023: $0.72B (FCF_Margin: 12.8%)
   2024: $1.11B (FCF_Margin: 19.5%)
   2025: $1.07B (FCF_Margin: 17.6%)
-  FCF_CAGR_3yr: +39.7%
+  FCF_CAGR_3yr: +14.1%
 Segment_Breakdown:
   N/A (segment data not configured)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -133,15 +151,14 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
+成長モデル: 逓減モデル（Phase4(剥落)に基づきCAGR_max=52.2%×35%＋業界平均10.9%×65%＝25.3%を採用）  HypePhase=4
 推奨成長率内訳:
-  中央値ベース:          10.9%
-  最終推奨値:            10.9%
+  最終推奨値:            25.3%
 判定         : PLAUSIBLE
 業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
 signals:
   - 業界平均Aerospace/Defense(10.9%)の1.4倍以内 ✅
-  - 過去実績(3yr:3.9% / 5yr:14.7%)と整合 ✅
+  - 過去実績(3yr:9.8% / 5yr:52.2%)と整合 ✅
 Definition:
 
 Growth Rate Methodology:
@@ -223,7 +240,7 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 31.8x
+  Market_PER_GAAP: 31.7x
   Adjusted_EPS_PER: 27.2x (年次EPSベース: $23.0320)
   Delta: -4.6x (cheaper on adjusted basis)
 Forward_Estimates:
@@ -241,7 +258,7 @@ Compare with TANUKI G scenario for cross-validation
 
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
-Alpha_Premium: 0.44
+Alpha_Premium: 0.42
 HYPE_Signal: 底打ち兆候 — 実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。
 Phase_History (recent 6 months):
 2026-01: Phase3 (陶酔期)
@@ -251,7 +268,7 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 31.8x
+  PER: 31.7x
   PEG: 1.40
   PS:  4.7x
   EV_EBITDA: 20.1x

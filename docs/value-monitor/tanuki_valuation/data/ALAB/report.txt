@@ -1,16 +1,16 @@
 ALAB INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:06+09:00
+Generated: 2026-06-13T11:54:15+09:00
 Price: $367.15
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: HOLD
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -88.5%
-  MA200_Deviation: +102.6%
+  Deviation_Rate: -17.8%
+  MA200_Deviation: +101.6%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.89 (Buy)
-Comment: 割高(-88%超)、FCF黒字、売上成長加速
+Comment: フェアバリュー近辺、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 4.958
-Deviation_Rate: -88.5%
+Key_Metric_Y: RICE = 18.178
+Deviation_Rate: -17.8%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_2yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -57,30 +57,34 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $367.15
-Intrinsic_Value_BASE: $42.37
-Deviation_BASE: -88.5%
+Intrinsic_Value_BASE: $301.69
+Deviation_BASE: -17.8%
+Growth_Rate_Original: 15.0% (TTM実績)
+Growth_Rate_Adjusted: 55.0% (推奨値・逓減モデル)
 Scenarios:
-BEAR: Growth=10.5%, IV=$35.48, Deviation=-90.3%
-BASE: Growth=15.0%, IV=$42.37, Deviation=-88.5%
-BULL: Growth=18.0%, IV=$47.58, Deviation=-87.0%
+BEAR: Growth=38.5%, IV=$176.79 （推奨値ベース）
+BASE: Growth=55.0%, IV=$301.69 （推奨値ベース）
+BULL: Growth=66.0%, IV=$419.30 （推奨値ベース）
 TTM_YoY_Growth: 104.2%
-(DCF Base vs TTM actual: -89.2pt discount)
+(DCF Base vs TTM actual: -49.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 18.55%
 Terminal_Growth_Rate: 3.5%
 Beta: 2.5
-Valuation_Gap_Analysis:
-  DCF_IV:           $42 (保守的FCFベース・現在実力値)
-  Market_Price:     $367
-  Gap:              -88% (市場が将来成長を先取り)
-  Implied_FCF_2030: $3.94B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $0.24B
-  Required_Growth:  75%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $240M (= Adj_NI $343M × FCF_Conv 0.7)
-DCF_FCF_PV: $1.10B (5yr discounted FCF sum)
-DCF_TV_PV:  $1.42B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_FCF_PV: $6.72B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $37.89B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $44.61B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.1559 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $51.56B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $51.71B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.15B)
+Shares_Used: 171.4M (source: yf_implied)
+→ Intrinsic_Value: $301.69 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.15B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.15B
@@ -90,29 +94,41 @@ Financial_Health:
   Dilution_Comment: IPO後の株式発行が主因の可能性。継続なら1株価値を年率73.8%毀損。
   Next_Earnings_Date: 2026-08-05
 FCF_History:
+  2021: N/A
+  2022: $-0.04B (FCF_Margin: -49.8%)
+  2023: $-0.02B (FCF_Margin: -13.4%)
   2024: $0.10B (FCF_Margin: 25.8%)
   2025: $0.28B (FCF_Margin: 33.1%)
 Segment_Breakdown:
-  General: $1.1B (100%, YoY 15%)
-  Segment_Weighted_Growth: 15.0% (デフォルト値)
+  General: $1.1B (100%, YoY 55%)
+  Segment_Weighted_Growth: 55.0% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -136,10 +152,13 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 15.0%
-成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=3
+成長モデル: 逓減モデル（Phase3(陶酔)に基づきCAGR_max=100.0%×50%＋業界平均10.0%×50%＝55.0%を採用）  HypePhase=3
+推奨成長率内訳:
+  最終推奨値:            55.0%
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
+  - 過去実績(3yr:120.2% / 5yr:N/A)と整合 ✅
   - RR×ROIC(2.6%)：再投資より還元重視型、または期待値先行 ℹ️
 Definition:
 
@@ -159,15 +178,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=3.47
-BASE: RICE=4.958
-BULL: RICE=5.949
+BEAR: RICE=12.725
+BASE: RICE=18.178
+BULL: RICE=21.814
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 55.0%  [TANUKI forward growth rate]
 Q  = 0.6929   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 4.1638  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 11.906  [参考：R&D資本化想定]
+RICE_adj = 43.657  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 1.15  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 1.15  [NOPAT/InvestedCapital / 0.10]
@@ -253,7 +272,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 249.8x
   PEG: N/A
   PS:  62.8x
-  EV_EBITDA: 265.0x
+  EV_EBITDA: 264.8x
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
 

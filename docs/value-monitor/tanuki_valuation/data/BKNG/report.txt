@@ -1,5 +1,5 @@
 BKNG INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:36+09:00
+Generated: 2026-06-13T11:54:43+09:00
 Price: $164.94
 
 [1. TANUKI SCORE]
@@ -7,7 +7,7 @@ Classification: BUY
 Funda_Score: 55/100
 Timing_Score (components):
   Deviation_Rate: +98.6%
-  MA200_Deviation: -14.1%
+  MA200_Deviation: -14.0%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.54 (Buy)
 Comment: 割安圏(99%)で買い余地大、FCF黒字、売上安定成長
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_7yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -72,10 +72,17 @@ WACC_CAPM_Reference: 10.50%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.088
 FCF_Base: $6,253.00M (5yr平均)
-DCF_Reliability: HIGH
-DCF_FCF_PV: $35.30B (5yr discounted FCF sum)
-DCF_TV_PV:  $112.84B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
+DCF_FCF_PV: $35.80B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $124.35B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $160.14B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $256.23B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $253.84B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-2.39B)
+Shares_Used: 774.9M (source: yf_implied)
+→ Intrinsic_Value: $327.59 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+2.39B (negative=net cash)
   Total_Debt: $18.41B  Cash: $16.02B
@@ -96,21 +103,30 @@ Segment_Breakdown:
   N/A (segment data not configured)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -247,7 +263,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 21.7x
   PEG: 0.71
   PS:  4.6x
-  EV_EBITDA: 12.5x
+  EV_EBITDA: 12.6x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:

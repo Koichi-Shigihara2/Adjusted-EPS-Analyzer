@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -5.0,
-  "calculation_date": "2026-06-13T07:53:31+09:00",
+  "calculation_date": "2026-06-13T11:54:39+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -161,7 +161,9 @@
     ],
     "terminal_fcf": 1966724996.4420028,
     "terminal_value": 14497029399.413273,
-    "v0_rm": 22295129433.164673
+    "v0_rm": 22295129433.164673,
+    "pv_fcf_rm": 4849679620.532103,
+    "pv_tv_rm": 17445449812.632572
   },
   "fcf_base": {
     "base_fcf": 289068320.0,
@@ -273,9 +275,9 @@
       -1188194000
     ],
     "diluted_shares": 1282741200,
-    "roe_10yr_avg": -0.03941651356554138,
+    "roe_10yr_avg": -0.15120344803977956,
     "roe_years_used": 6,
-    "roe_outlier_adj": false,
+    "roe_outlier_adj": true,
     "current_price": 16.58,
     "latest_revenue": 3613354000.0,
     "rpo": 8535000.0,
@@ -292,7 +294,7 @@
     "terminal_growth_used": 0.03,
     "pv_high": 4039281605.763884,
     "pv_terminal": 6736155427.012254,
-    "roe_used": -0.03941651356554138,
+    "roe_used": -0.15120344803977956,
     "fcf_floor_applied": 4564714520.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -307,7 +309,7 @@
     "peg": 1.08,
     "ps": 5.441537,
     "ev_ebitda": null,
-    "ma200": 22.898375,
+    "ma200": 22.853174,
     "forward_eps": 0.78024
   },
   "validation": {
@@ -324,7 +326,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE -3.9% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE -15.1% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -403,7 +405,7 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.223,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": null,
+  "recommended_g": 0.38418889891107877,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
@@ -413,17 +415,17 @@
     "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.31930345986002884,
-    "rev_cagr_5yr": null,
+    "rev_cagr_5yr": 0.4490743379621287,
     "g_fundamental": null,
-    "recommended_g_median": null,
-    "recommended_g": null,
+    "recommended_g_median": 0.38418889891107877,
+    "recommended_g": 0.38418889891107877,
     "growth_model": "median",
-    "growth_model_reason": "CAGR_max=31.9%のため中央値モデル適用",
+    "growth_model_reason": "CAGR_max=44.9%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "底打ち兆候",
     "signals": [
-      "過去実績(3yr:31.9% / 5yr:N/A)と整合 ✅"
+      "過去実績(3yr:31.9% / 5yr:44.9%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,

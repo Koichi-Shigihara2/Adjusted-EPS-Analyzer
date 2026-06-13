@@ -1,16 +1,16 @@
 GTLB INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:19+09:00
+Generated: 2026-06-13T11:54:27+09:00
 Price: $27.79
 
 [1. TANUKI SCORE]
 Classification: BUY
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: +37.4%
-  MA200_Deviation: -20.5%
+  Deviation_Rate: +107.7%
+  MA200_Deviation: -20.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 2.52 (Hold)
-Comment: 割安圏(37%)で買い余地大、FCF黒字、売上成長加速
+Comment: 割安圏(108%)で買い余地大、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×N/A (OCF赤字)
-Key_Metric_Y: RICE = -0.129
-Deviation_Rate: +37.4%
+Key_Metric_Y: RICE = -0.189
+Deviation_Rate: +107.7%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_5yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -57,23 +57,34 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $27.79
-Intrinsic_Value_BASE: $38.20
-Deviation_BASE: +37.5%
+Intrinsic_Value_BASE: $57.71
+Deviation_BASE: +107.7%
+Growth_Rate_Original: 25.8% (TTM実績)
+Growth_Rate_Adjusted: 37.7% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=18.1%, IV=$28.80, Deviation=+3.6%
-BASE: Growth=25.8%, IV=$38.20, Deviation=+37.5%
-BULL: Growth=31.0%, IV=$45.82, Deviation=+64.9%
+BEAR: Growth=26.4%, IV=$39.02 （推奨値ベース）
+BASE: Growth=37.7%, IV=$57.71 （推奨値ベース）
+BULL: Growth=45.3%, IV=$73.96 （推奨値ベース）
 TTM_YoY_Growth: 25.8%
-(DCF Base vs TTM actual: -0.0pt discount)
+(DCF Base vs TTM actual: +11.9pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 9.78%
 Terminal_Growth_Rate: 3.5%
 Beta: 0.961
 FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $85M (= Adj_NI $121M × FCF_Conv 0.7)
-DCF_FCF_PV: $1.23B (5yr discounted FCF sum)
-DCF_TV_PV:  $5.23B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_FCF_PV: $1.66B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $7.87B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $9.52B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $9.52B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $9.75B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.22B)
+Shares_Used: 168.9M (source: yf_implied)
+→ Intrinsic_Value: $57.71 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.22B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.22B
@@ -89,26 +100,35 @@ FCF_History:
   2025: $-0.07B (FCF_Margin: -8.9%)
   2026: $0.22B (FCF_Margin: 23.2%)
 Segment_Breakdown:
-  General: $1.0B (100%, YoY 26%)
-  Segment_Weighted_Growth: 25.8% (TTM実績値を自動適用)
+  General: $1.0B (100%, YoY 38%)
+  Segment_Weighted_Growth: 37.7% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -132,11 +152,14 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 25.8%
-成長モデル: 中央値モデル（CAGR_max=31.1%のため中央値モデル適用）  HypePhase=4
+成長モデル: 中央値モデル（CAGR_max=44.4%のため中央値モデル適用）  HypePhase=4
+推奨成長率内訳:
+  中央値ベース:          37.7%
+  最終推奨値:            37.7%
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
-  - 過去実績(3yr:31.1% / 5yr:N/A)と整合 ✅
+  - 過去実績(3yr:31.1% / 5yr:44.4%)と整合 ✅
 Definition:
 
 Growth Rate Methodology:
@@ -155,11 +178,11 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=-0.091
-BASE: RICE=-0.129
-BULL: RICE=-0.156
+BEAR: RICE=-0.132
+BASE: RICE=-0.189
+BULL: RICE=-0.227
 Components (BASE scenario):
-G  = 25.8%  [TANUKI forward growth rate]
+G  = 37.7%  [TANUKI forward growth rate]
 Q  = -0.158   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.3174  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]

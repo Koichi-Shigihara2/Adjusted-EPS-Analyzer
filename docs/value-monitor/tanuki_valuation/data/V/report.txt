@@ -1,5 +1,5 @@
 V INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:43+09:00
+Generated: 2026-06-13T11:54:50+09:00
 Price: $322.39
 
 [1. TANUKI SCORE]
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -72,10 +72,17 @@ WACC_CAPM_Reference: 8.66%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.765
 FCF_Base: $20,095.20M (5yr平均)
-DCF_Reliability: HIGH
-DCF_FCF_PV: $119.49B (5yr discounted FCF sum)
-DCF_TV_PV:  $485.52B (terminal value present value)
+DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
+DCF_FCF_PV: $115.04B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $369.28B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $484.32B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.5000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $726.48B (= v0 × (1+alpha))
 RPO_PV: $0 (RPO/Revenue=0.11 < 0.3, not applied)
+Growth_Option_PV: $0
+Equity_Value: $716.46B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-10.01B)
+Shares_Used: 1901.7M (source: yf_implied)
+→ Intrinsic_Value: $376.74 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+11.57B (negative=net cash)
   Total_Debt: $23.98B  Cash: $12.40B
@@ -94,21 +101,30 @@ Segment_Breakdown:
   N/A (segment data not configured)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 ⚠️ Financial_Institution_Note: For banks/fintech (e.g., SOFI), Total_Debt includes
 customer deposits and funding liabilities — not comparable to corporate debt.
 Net_Debt interpretation is limited; use equity-based metrics instead.
@@ -251,7 +267,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 28.1x
   PEG: 1.40
   PS:  14.2x
-  EV_EBITDA: 20.3x
+  EV_EBITDA: 20.5x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:

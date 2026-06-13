@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 18.7,
-  "calculation_date": "2026-06-13T07:53:11+09:00",
+  "calculation_date": "2026-06-13T11:54:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -161,7 +161,9 @@
     ],
     "terminal_fcf": 538938222.8507845,
     "terminal_value": 8379535774.158601,
-    "v0_rm": 6703453940.695092
+    "v0_rm": 6703453940.695092,
+    "pv_fcf_rm": 1555173411.7772644,
+    "pv_tv_rm": 5148280528.917828
   },
   "fcf_base": {
     "base_fcf": 408423800.0,
@@ -293,9 +295,9 @@
       293820000
     ],
     "diluted_shares": 303796674,
-    "roe_10yr_avg": 0.26431574176025663,
-    "roe_years_used": 4,
-    "roe_outlier_adj": false,
+    "roe_10yr_avg": 0.36219047847831815,
+    "roe_years_used": 7,
+    "roe_outlier_adj": true,
     "current_price": 30.67,
     "latest_revenue": 1501779000.0,
     "rpo": 284419000,
@@ -312,7 +314,7 @@
     "terminal_growth_used": 0.035,
     "pv_high": 1558116644.994316,
     "pv_terminal": 5219239361.108069,
-    "roe_used": 0.26431574176025663,
+    "roe_used": 0.36219047847831815,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -320,14 +322,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 1.1101261153930777,
+    "alpha_uncapped": 1.521200009608936,
     "per": 35.252872,
     "per_is_forward": false,
     "per_adjusted": 27.85,
     "peg": 1.35,
     "ps": 5.990315,
-    "ev_ebitda": 23.889,
-    "ma200": 40.75335,
+    "ev_ebitda": 23.96,
+    "ma200": 40.63775,
     "forward_eps": 1.58085
   },
   "validation": {
@@ -344,7 +346,7 @@
       },
       "formula_verification": {
         "pass": false,
-        "detail": "α計算: ROE 26.4% × 60% / Rm 10.00% × 0.7 = 1.1101 → cap適用 → 0.8000"
+        "detail": "α計算: ROE 36.2% × 60% / Rm 10.00% × 0.7 = 1.5212 → cap適用 → 0.8000"
       },
       "anomaly_detection": {
         "pass": true,

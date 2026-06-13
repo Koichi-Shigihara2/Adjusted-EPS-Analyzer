@@ -1,16 +1,16 @@
 LLY INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T07:53:22+09:00
+Generated: 2026-06-13T11:54:30+09:00
 Price: $1,133.00
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: +10.9%
-  MA200_Deviation: +18.5%
+  Deviation_Rate: +17.1%
+  MA200_Deviation: +18.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 1.74 (Buy)
-Comment: 割安(11%)傾向、FCF黒字、売上成長加速
+Comment: 割安(17%)傾向、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 右上
 Label: 割安×中効率
 Key_Metric_Y: RICE = 1.492
-Deviation_Rate: +10.9%
+Deviation_Rate: +17.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -41,7 +41,7 @@ Thresholds:
 Definition:
 
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
-RICE = (G x Q x CF) / WACC
+RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
 Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
@@ -57,14 +57,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $1,133.00
-Intrinsic_Value_BASE: $1,256.29
-Deviation_BASE: +10.9%
+Intrinsic_Value_BASE: $1,326.91
+Deviation_BASE: +17.1%
 Growth_Rate_Original: 47.4% (TTM実績)
 Growth_Rate_Adjusted: 26.6% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=18.6%, IV=$919.03 （推奨値ベース）
-BASE: Growth=26.6%, IV=$1,256.29 （推奨値ベース）
-BULL: Growth=32.0%, IV=$1,531.31 （推奨値ベース）
+BEAR: Growth=18.6%, IV=$971.32 （推奨値ベース）
+BASE: Growth=26.6%, IV=$1,326.91 （推奨値ベース）
+BULL: Growth=32.0%, IV=$1,616.89 （推奨値ベース）
 TTM_YoY_Growth: 47.4%
 (DCF Base vs TTM actual: -20.8pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,10 +72,19 @@ WACC_CAPM_Reference: 8.58%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.75
 FCF_Conversion_Rate: 0.7 (Industry: Drug Manufacturers - General)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $14,971M (= Adj_NI $21,387M × FCF_Conv 0.7)
-DCF_FCF_PV: $147.45B (5yr discounted FCF sum)
-DCF_TV_PV:  $723.89B (terminal value present value)
-RPO_PV: $0 (Remaining Performance Obligation premium)
+DCF_FCF_PV: $148.94B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $569.51B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $718.44B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $1221.35B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $1183.26B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-38.09B)
+Shares_Used: 891.7M (source: yf_implied)
+→ Intrinsic_Value: $1326.91 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+38.09B (negative=net cash)
   Total_Debt: $43.37B  Cash: $5.28B
@@ -97,21 +106,30 @@ Segment_Breakdown:
   (= basis for TANUKI forward growth rate G)
 Definition:
 
-Intrinsic Value: Calculated via FCF-based DCF model
-Formula: IV = sum(FCF_t / (1+WACC)^t) + Terminal_Value
-Terminal_Value = FCF_final x (1+g) / (WACC - g)
-WACC = Rf + Beta x (Rm - Rf)
-Rm=10% (market return basis, Beta=0 gives Rf+risk_premium)
-Beta: yfinance Beta used as-is; WACC capped 6%-25% for extreme values
-FCF_Conversion_Rate: Industry-standard ratio to estimate
-FCF from OCF (accounts for capex intensity by sector)
-RPO: Remaining Performance Obligation, booked future
-revenue not yet recognized; added as DCF premium
-Note: RPO premium is added as a conservatism adjustment
-for contracted-but-unrecognized revenue visibility,
-not as additional DCF cash flow. Applied only to
-profitable SaaS tickers with RPO/Revenue > 0.3.
-Net_Debt: Total Debt - Cash - Short_Term_Investments. Negative = net cash (safer)
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
 Dilution_3yr_Annual: Share count CAGR over 3 years
 Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
 3%/yr = meaningful shareholder dilution risk
@@ -253,7 +271,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 40.3x
   PEG: 1.56
   PS:  14.0x
-  EV_EBITDA: 29.6x
+  EV_EBITDA: 28.9x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:
