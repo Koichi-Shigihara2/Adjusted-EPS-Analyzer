@@ -274,6 +274,9 @@ class SECParser:
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
         annual_end_dates = {}
         quarterly_end_dates = {}
+        # fy==end_yearの完全一致フラグ: 非December FY企業でQ1等中間期エントリが
+        # 同一end_yearを持ち全年データを上書きするのを防ぐ（INTU等の対策）
+        annual_exact_match = {}
 
         # 最新期末年を特定するため、全キーの最大 end_date 年を事前に調べる
         # ※ fyではなくend_dateの年を使う: SEC XBRLのfyは比較年度の参照先fyと同じ値が
@@ -320,19 +323,30 @@ class SECParser:
                         # end_dateの年が会計年度末を正確に示す（fyはSECの参照先fyと
                         # 同じ値が付与される比較年度エントリが存在するため信頼性が低い）
                         end_year = int(end_date[:4]) if end_date and len(end_date) >= 4 else fy
+                        # fy==end_yearはFY通年データとして信頼度が高い（exact match）
+                        # fy!=end_yearは比較年度エントリ（FCX等）または中間期エントリ（INTU Q1等）
+                        exact = (fy == end_year)
                         if use_max:
                             # 最大値を採用（株式数の異常値対策）
                             if end_year not in result["annual"] or val > result["annual"][end_year]:
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
                         else:
-                            # 同一end_yearでは最新のend日付を優先
                             if end_year not in result["annual"]:
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
-                            elif end_date > annual_end_dates.get(end_year, ""):
+                                annual_exact_match[end_year] = exact
+                            elif exact and not annual_exact_match.get(end_year, True):
+                                # exact matchで上書き: 非December FY企業のQ1等中間期エントリ
+                                # (fy=N+1, end_year=N) が全年データ(fy=N, end_year=N)を上書きするのを防ぐ
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
+                                annual_exact_match[end_year] = True
+                            elif exact == annual_exact_match.get(end_year, False):
+                                # 同じexact_matchレベル: 最新のend_dateを優先
+                                if end_date > annual_end_dates.get(end_year, ""):
+                                    result["annual"][end_year] = val
+                                    annual_end_dates[end_year] = end_date
                     
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
@@ -367,11 +381,13 @@ class SECParser:
                 result = {"annual": {}, "quarterly": {}}
                 annual_end_dates = {}
                 quarterly_end_dates = {}
+                annual_exact_match = {}
             elif result["quarterly"] and not result["annual"]:
                 # quarterlyのみでannualがない場合も次のキーを試す → resultをクリア
                 result = {"annual": {}, "quarterly": {}}
                 annual_end_dates = {}
                 quarterly_end_dates = {}
+                annual_exact_match = {}
         
         return result
     
