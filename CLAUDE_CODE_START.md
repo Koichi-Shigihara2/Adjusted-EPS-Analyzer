@@ -157,6 +157,26 @@ python common/sec_data/report_consistency_check.py
 # WARN は内容確認の上、対処が必要なもののみ修正する
 ```
 
+**年度キー・年度割り当てに関わる変更時の追加検証（PARSER-1の教訓・必須）：**
+
+`parser.py` の年次辞書キーや年度割り当てロジックを変更した場合、
+pytest と test_iv_formula が全通過しても**過去年度データの破壊を見逃す**。
+（2026-06-13 事例: 年次キーを fy→end_date年 に変更した際、INTU FY2019 revenue が
+10-K内Q1比較値 $1.16B で通年値 $6.78B を上書きする regression が発生したが、
+式の整合テストでは検出できなかった）
+
+そのため以下を必須とする:
+```bash
+# 変更前後で annual_YYYY.json の主要系列が変わった銘柄を全件抽出
+#   対象フィールド: revenue / net_income / fcf / total_debt
+#   特に non-December 決算企業（AAPL/MSFT/NVDA/CRM/ELF/HQY/COHR/INTU等）と
+#   上場直後・SPAC銘柄は FY 10-K 内の他時点比較値が混入しやすい
+```
+- 差分が出た銘柄は 10-K 実績との一致を 3 銘柄以上スポットチェックする
+- IV/FCF_Base/CAGR が動いた銘柄を一覧化する（直近5年系列が変われば波及する）
+- **「テスト全通過」は年度割り当ての正しさを保証しない**ことを前提に、
+  必ず before/after の全件差分で担保してからコミットする
+
 ---
 
 ## 重要ルール
@@ -191,6 +211,27 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 - **OperatingLeaseLiability は Total_Debt に含めない**: ASC 842 オペレーティングリースは
   利付き借入（金融負債）ではなく将来リース支払義務。IONQ の $30M 等は意図的に除外。
   EV 計算にリースを含める「アジャステッド EV」方式を採用する場合は設計変更として明示すること。
+- **DCF構成要素は「上から足すと必ずIVになる」構造で表示する（REPORT-6拡張の教訓・必須）**:
+  外部AIは report.txt のDCF項目を順に足してIVを逆算する。途中の段（特に α 乗算）が
+  非表示だと「IV再現不能」と誤指摘される（2026-06-13: α≒0の小型株では偶然近似でき、
+  α=1.0のメガキャップで一斉に破綻が顕在化）。DCFブロックは必ず次の順序で全段を表示する:
+  `DCF_FCF_PV → DCF_TV_PV → DCF_v0(=PV合計) → Alpha_Premium → DCF_v0_x_alpha(=v0×(1+α))
+   → RPO_PV → Growth_Option_PV → Equity_Value(=上記−Net_Debt、優先株があれば控除行追加)
+   → Shares_Used(source明記) → Intrinsic_Value`。
+  DCF構成要素を追加・変更する際は test_iv_formula.py で「表示項目を積み上げてIVに一致」を
+  必ず回帰テストすること。
+- **DCF_Reliability=LOW の判定仕様（Policy A・明文化済み）**:
+  FCF実績マイナスで revenue_floor 適用時は DCF_Reliability=LOW とし、IVは参考値扱い。
+  TANUKI SCORE 分類は BUY/TRIM/HOLD/WATCH → **WATCH に丸める**（SELL/PASS は維持）。
+  乖離率は表示するが分類判定には使用しない。この仕様を変更する場合は CRWV/SOUN/RKLB/JOBY/CEG 等
+  該当銘柄への影響を確認すること。
+- **RICE 定義式は実装に一致させる**: 表示する定義式は `(G × VC_Factor × Q × CF) / WACC`。
+  VC_Factor を式本体から省くと外部AIが「定義と計算値が2倍ずれる」と誤指摘する（注記バグ）。
+- **FCF_Conversion_Rate は Adj_NI への変換率であり OCF→FCF 変換率ではない**: 高FCFマージン企業
+  （ADBE/PLTR等）では実績FCFを下回るが、これは正常化前提による保守設計。定義文に明記する。
+- **IV割引率（Rm=10%/β=0）は市場リスクを意図的に除外した本源価値**: 高β銘柄では市場WACC比で
+  IVが高めに出るが設計通り。市場リスク調整後の参照は WACC_CAPM_Reference でのIVを併用する旨を
+  定義文に記載（外部AIは「高β銘柄でIV過大」を頻繁に誤指摘するため）。
 
 ### 外部AIレビューの活用と品質還元ループ
 
@@ -227,7 +268,8 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 ### 今すぐ着手可能（優先度中・難易度低〜中）
 - TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
 - MP-BIZDAY-1: MARKET PULSE営業日ベース化
-- SEGMENT-1: セグメント精緻設定（LLY→LMT→MRVL→AMAT→VRTの順）
+- SEGMENT-1: セグメント精緻設定の残り12銘柄（LLY→LMT→MRVL→AMAT→VRTの順。
+  VST/FCX/SCCO/CEG/KOは2026-06-13完了済み）
 
 ### 順次着手（優先度中・難易度中〜高）
 - TSCORE-TRAP-1: 投資トラップ検出（10種+逆シグナル）
@@ -470,7 +512,8 @@ git push origin kaihatsu
 - [ ] **`python common/sec_data/report_consistency_check.py` を実行し NG=0 を確認**
   - 現行チェック項目: FCF符号矛盾 / DCF_Reliability欠落 / LOW丸め / 割引率2段 /
     NetDebt旧表示 / 負PER / RPO条件 / Matrix④高FCFラベル赤字 / セグメント鮮度 /
-    PS異常値 / Revenue孤立年(NG-11) / Cash-STI期ズレ(WARN-12)
+    PS異常値 / Revenue孤立年(NG-11) / Cash-STI期ズレ(WARN-12) / RICE負値ラベル(NG-13) /
+    決算後未更新データ検出(STALE-CHECK-1)
   - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
 - [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動

@@ -4,6 +4,15 @@
 
 ## 2026-06-13 完了
 
+### ✅ PARSER-1 (2026-06-13 完了): 年次キーを fy→end_date年 に変更
+- **根本課題**: FCX の FY2025 10-K で `fy=2025, end='2024-12-31'` エントリが混入し、`annual_2024.json` が生成されない年度ズレ
+- **修正1**: `_extract_values` の年次辞書キーを `fy` → `int(end_date[:4])` に変更（end_year ベース）
+- **副作用**: INTU（FY end=7月31日）で FY2020 10-K 内の Q1 比較値（`fy=2020, end='2019-10-31', val=$1.16B`）が `end_year=2019` として通年値（$6.78B）を上書きする regression が発生
+- **修正2**: `annual_exact_match` 辞書を追加し、`fy==end_year`（exact match）が存在する年度は non-exact エントリによる上書きを禁止する一般解で解決
+- **波及検証**: 差分 150件はすべて non-December 決算企業（AAPL/MSFT/NVDA/CRM/ELF/HQY/COHR 等）の FY2019 以前の revenue/NI が正しい FYE 値へ修正されたもので、潜在バグ群の一括解消
+- **IV への影響**: 直近5年 FCF 系列は不変のため IV/FCF_Base/CAGR への波及ゼロ
+- **検証**: 全 78 銘柄再パース成功（FAIL=0）、exact matchなし競合 234件の tie-break（最新 end_date 優先）は意図通り動作確認済み
+
 ### ✅ REPORT-6 (2026-06-13 完了): DCF透明性強化
 - `pipeline.py` の report.txt [3]TANUKI VALUATIONに`DCF_FCF_PV`/`DCF_TV_PV`を追加（全銘柄）
 - FCF外れ値除外銘柄のみ`DCF_FCF_Base_Detail`/`DCF_FCF_Base_Excluded`を追加出力
@@ -18,15 +27,19 @@
 - KO: North_America_NAOU/International/Global_Ventures（wg 5.0%→4.7%、IV $46.39→$45.71）
 - 残タスク: LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV（12銘柄）
 
-### ✅ BUG-NETDEBT-4 (2026-06-13 完了): 同一時点原則による Net Debt 計算修正
-- **原因1**: BUG-NETDEBT-1でCashは最新quarterly上書きされるが、Total_Debtは年次のまま（時点混在）
+### ✅ BUG-NETDEBT-6 (2026-06-13 完了): 同一時点原則による Net Debt 計算修正
+> ⚠️ ID注記: 本項は当初 BUG-NETDEBT-4 と命名していたが、2026-06-10 完了分に
+> 同一 ID（レポート Net Debt 内訳表示）が既存のため BUG-NETDEBT-6 に改番（NETDEBT-5まで使用済み）。
+- **原因1**: BUG-NETDEBT-1でCashは最新quarterly上書きされるが、Total_Debtは年次のまま（時点混在）。
+  さらに表示値とequity bridge投入値が別物（表示$8.10B vs engine net_cash -$5.26B）という二重の不整合
 - **原因2**: CEG等は10-QでLTDebtをLongTermDebtNoncurrentタグで報告するが、quarterly.pyがLongTermDebt(annual tag)のみ参照してNone扱い
 - **修正**: quarterly.py に `LongTermDebtNoncurrent` を `_FIELD_FALLBACKS["LTDebt"]` に追加
-- **修正**: reader.py + pipeline.py に BUG-NETDEBT-4 ブロック実装（quarterly に Cash+LTDebt が揃う場合に全BS項目を同一filingから参照）
+- **修正**: reader.py + pipeline.py に同一時点原則ブロック実装（quarterly に Cash+LTDebt が揃う場合に全BS項目を同一filingから参照）
 - **修正**: pipeline.py に BUG-NETDEBT-2 補完復活（annual lt_debt=0 かつ quarterly LTDebt未取得の場合にnormalized LTDebtで補完）
 - **条件設計**: `_q_lt is not None` が必須ゲート。`_q_lt=None`（パース失敗）時は cash-only → BUG-NETDEBT-2 でnormalized補完
 - **影響銘柄 (Net_Debt が実質変化)**:
-  - CEG: Net_Debt $+8.10B → **+$21.30B**（Calpine買収負債$16.99B Q1 2026反映）、IV $97.39 → **$52.48**（乖離 -61% → -79%）
+  - CEG: Net_Debt $+8.10B → **+$21.30B**（Calpine買収負債$16.99B Q1 2026反映）、IV $97.39 → **$52.48**
+    （乖離 -61% → -79%。ΔIV -$44.91/sh = 100% Net Debt起因: Cash -$7.96 / LTDebt -$27.29 / STDebt -$9.67、FCFベース寄与ゼロ）
   - KO: Net_Debt **-$9.08B → +$27.42B**（annual lt=None → normalized $36.5B補完）
   - ELF: Net_Debt -$0.20B → **+$0.65B**（term loan $0.85B）
   - SOFI: Net_Debt -$3.40B → **+$2.08B**（normalized LTDebt $5.49B、2022データ※）
@@ -35,6 +48,39 @@
   - ※SOFI: 2022-12-31以降の10-Qに標準LTDebtタグなし（銀行移行後の報告変更）。IV計算パスと表示パスは一致。
 - **display改善追加**: DCF_FCF_Base行、Net_Debt_Period行、dilution乖離フラグ、beta staleness警告（90日超）、株式数表示修正
 - 回帰テスト: 100件パス（変更なし）
+
+### ✅ REPORT-6拡張: DCF再現性の完全確立 (2026-06-13 完了)
+- 背景: VST時点のREPORT-6（DCF_FCF_PV/TV_PV追加）では、α倍率・equity bridge・採用株数が
+  非表示のため外部AIが「IV再現不能」を全メガキャップで誤指摘（MSFT/NVDA/APP/PLTR/TSLA等）。
+  PV2項の和だけではα乗算後段が見えず、α≒0の小型株でのみ偶然近似できていた
+- 修正: report.txt [3]DCFブロックを「上から足すと必ずIVになる」構造に再構成
+  DCF_FCF_PV → DCF_TV_PV → DCF_v0 → Alpha_Premium → DCF_v0_x_alpha
+  → RPO_PV → Growth_Option_PV → Equity_Value(−Net_Debt) → Shares_Used(source明記) → Intrinsic_Value
+- 優先株がある銘柄（CELH等）はequity bridgeに控除行を追加表示
+- 検証: test_iv_formula.py 5件（MSFT/NVDA/CELH/PLTR/TSLA、誤差<$0.01）。IV値自体は不変（表示追加のみ）
+- 効果: 外部レビュー最頻出指摘「IV再現不能」を構造的に解消
+
+### ✅ MATRIX-1 (2026-06-13 完了): ROE_avg窓長のreport.txt明示
+- 採用案: (b)動的採用+report表示。Matrix象限ロジック・ROE計算自体は不変（低リスク）
+- report.txt [2] Key_Metric_Y を `ROE_avg (Nyr, equity>0全年) = XX%` に変更
+- 窓長Nyrは銘柄ごとのequity>0年数を動的算出して表示（VST=7yr/CEG=4yr等）
+- 効果: 外部AIが「なぜ固定窓長でないか」を誤検出しなくなる（再現性の可視化）
+- 補足設計論点（未対応・低優先）: VST ROE_avg(7yr)=10.5% vs 直近3yr≈31% のように
+  窓長次第で象限が動く件は表示で可視化済み。固定窓長化(a)は全銘柄IV波及のため見送り
+
+### ✅ STALE-CHECK-1 (2026-06-13 完了): 決算後未更新データの検出
+- report_consistency_check に決算日経過後の未更新検出を追加
+- 検出11件: FICO/ZETA/BBAI/CELH/COHR/CRWV/RCAT/CPRT/ZS/HQY/RBRK（4〜5月決算後未更新）
+- 次回更新サイクルでSEC再取得を実施予定（残タスク）
+
+### ✅ 独自仕様の注記追加 (2026-06-13 完了): 外部AI誤検出の恒久防止
+- RICE定義式を実装に一致: `(G × VC_Factor × Q × CF) / WACC`（VC_Factorが式本体から欠落していた注記バグ）
+- FCF_Conversion注記: Adj_NI×rate であり OCF→FCF変換率とは別物。高FCFマージン企業で実績FCFを
+  下回るのは正常化前提による保守設計と明記
+- IV/割引率注記: 高β銘柄でWACC比IVが高めに出るのは市場リスクを意図的に除外した本源価値の設計。
+  市場リスク調整後はWACC_CAPM_ReferenceでのIVを併用
+- DCF_Reliability=LOW判定（Policy A明文化）: LOW時はBUY/TRIM/HOLD/WATCH→WATCH、SELL/PASS維持。
+  IVは参考値、乖離率は表示するが分類には使用しない
 
 ## 2026-06-12 完了
 
@@ -169,6 +215,8 @@
   → reversed()で最新非Noneエントリーを採用 / 全None+floor適用時はN/A表示
 
 ### ✅ BUG-NETDEBT-4 (2026-06-10 完了): レポートNet Debt内訳表示
+> 注記: これは表示のみの修正。同一時点原則によるNet Debt計算修正（当初BUG-NETDEBT-4と
+> 重複命名されていた2026-06-13分）は BUG-NETDEBT-6 に改番済み（2026-06-13セクション参照）。
 - Total_Debt/Cash 行に ST_Invest を追加表示（残高 > 0 の場合）
 - 定義文を "Total Debt - Cash - Short_Term_Investments" に修正
 
