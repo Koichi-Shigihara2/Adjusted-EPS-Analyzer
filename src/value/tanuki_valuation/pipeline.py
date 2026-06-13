@@ -1455,19 +1455,21 @@ class TanukiValuationPipeline:
         # PER comparison
         per_gaap = comps.get("per")
         per_adj = comps.get("per_adjusted")
-        # annual_eps を annual.json から取得（Adjusted_EPS_PER の注記用）
-        annual_eps_for_note = None
+        # TTM調整後EPSを quarterly.json から計算（Adjusted_EPS_PER の注記用・GAAP PERと同一TTM期）
+        ttm_adj_eps_for_note = None
         try:
-            _annual_path = os.path.join(
+            _q_path = os.path.join(
                 self.repo_root, "docs", "value-monitor", "adjusted_eps_analyzer", "data",
-                ticker, "annual.json"
+                ticker, "quarterly.json"
             )
-            if os.path.exists(_annual_path):
-                with open(_annual_path, encoding="utf-8") as _f:
-                    _annual = json.load(_f)
-                _years = _annual.get("years", [])
-                if _years:
-                    annual_eps_for_note = _years[0].get("adjusted_eps")
+            if os.path.exists(_q_path):
+                with open(_q_path, encoding="utf-8") as _f:
+                    _qdata = json.load(_f)
+                _qs = _qdata.get("quarters", [])
+                if len(_qs) >= 4:
+                    _ttm = sum(q.get("adjusted_eps", 0) for q in _qs[:4])
+                    if _ttm > 0:
+                        ttm_adj_eps_for_note = _ttm
         except Exception:
             pass
         L.append("PER_Comparison:")
@@ -1479,7 +1481,7 @@ class TanukiValuationPipeline:
         else:
             L.append("  Market_PER_GAAP: N/A")
         if per_adj is not None:
-            note = f" (年次EPSベース: ${annual_eps_for_note:.4f})" if isinstance(annual_eps_for_note, (int, float)) else ""
+            note = f" (TTM調整後EPS: ${ttm_adj_eps_for_note:.4f})" if isinstance(ttm_adj_eps_for_note, (int, float)) else ""
             L.append(f"  Adjusted_EPS_PER: {per_adj:.1f}x{note}")
             if per_gaap is not None:
                 delta = per_adj - per_gaap
@@ -1497,8 +1499,8 @@ class TanukiValuationPipeline:
             L.append("  Next_FY_EPS: N/A (no analyst estimates in data)")
         L.append("Definition:")
         L.append("")
-        L.append("Market_PER_GAAP: Price / GAAP EPS (market-provided)")
-        L.append("Adjusted_EPS_PER: Price / Adjusted EPS (self-calculated)")
+        L.append("Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)")
+        L.append("Adjusted_EPS_PER: Price / Adjusted EPS TTM (self-calculated, same trailing 12M period)")
         L.append("Gap between the two reveals SBC and one-time impact")
         L.append("Forward_Estimates: Analyst consensus (external data)")
         L.append("Compare with TANUKI G scenario for cross-validation")

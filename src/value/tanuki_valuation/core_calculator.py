@@ -819,27 +819,31 @@ def _calc_adjusted_per(
     eps_data_dir: str,
 ) -> Optional[float]:
     """
-    EPS Analyzerの調整後EPSから調整後PERを計算する。
+    EPS Analyzerの調整後TTM EPS（直近4Q合計）から調整後PERを計算する。
+    GAAP PER（yfinance trailingPE = TTM）と同一期間ベースで比較可能。
+
+    4Q分の四半期データが揃わない場合はNoneを返す（年次フォールバックなし）。
 
     Returns:
-        調整後PER（float）またはNone（データなし・EPS<=0の場合）
+        調整後PER（float）またはNone（データなし・EPS<=0・4Q未満の場合）
     """
     import os, json as _json
     if not eps_data_dir or current_price <= 0:
         return None
-    eps_file = os.path.join(eps_data_dir, ticker.upper(), "annual.json")
-    if not os.path.exists(eps_file):
+    q_file = os.path.join(eps_data_dir, ticker.upper(), "quarterly.json")
+    if not os.path.exists(q_file):
         return None
     try:
-        with open(eps_file, "r", encoding="utf-8") as f:
-            eps_data = _json.load(f)
-        years = eps_data.get("years", [])
-        if not years:
+        with open(q_file, "r", encoding="utf-8") as f:
+            q_data = _json.load(f)
+        quarters = q_data.get("quarters", [])
+        if len(quarters) < 4:
             return None
-        adj_eps = years[0].get("adjusted_eps")
-        if adj_eps is None or adj_eps <= 0:
+        # quartersは新しい順に格納 → 先頭4件がTTM
+        ttm_adj_eps = sum(q.get("adjusted_eps", 0) for q in quarters[:4])
+        if ttm_adj_eps <= 0:
             return None
-        return round(current_price / adj_eps, 2)
+        return round(current_price / ttm_adj_eps, 2)
     except Exception:
         return None
 
