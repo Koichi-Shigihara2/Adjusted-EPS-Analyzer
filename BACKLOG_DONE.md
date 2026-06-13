@@ -733,4 +733,36 @@ Cash表示値とNet Debt計算値の参照タイミング・定義が不整合�
 - フロントエンド（HTML）実装済み（index.html 1298行）
 - GitHub Actions 設定済み（Stonks_Silo_Update.yml）
 - gross_margin: ASTS/JOBY のみ null（construction_phase として扱い）→ 他20銘柄は取得済み
+
+---
+
+## [BUG-FOUR-1] FOUR（Shift4 Payments）EPS・株式数・希薄化異常値 ✅ 2026-06-14
+
+### 症状
+- Latest_Adjusted_EPS: $49.93（正常値: ~$0.40）
+- TTM調整後EPS: $119.70（正常値: ~$1.20）
+- Dilution_3yr_Annual: -29.86%/yr（誤）
+- ⚠️ 株式数乖離警告: yf=99M vs SEC=1M (+7332.8%)
+
+### 根本原因
+FOUR の UP-C LLC 構造変更（2021-2022）後、XBRL の
+WeightedAverageNumberOfDilutedSharesOutstanding が
+Class A 株式のみを報告（~1.33M）し、実際の経済的持分（~99M）の
+約1/74 しか反映されない。10-Q には株式数タグが一切存在しないため、
+TTM が4四半期合計ではなく4年分の年次EPS合計になる二次バグも発生。
+
+### 修正内容
+1. `config/cik_lookup.csv`: FOURのepsフラグ true→false（EPS Analyzerスキップ）
+2. `src/value/tanuki_valuation/pipeline.py`: yf/SEC株式数乖離>10倍の場合に
+   希薄化計算をスキップするサニティチェック追加（comps参照修正も含む）
+3. `config/discover_config.json`: FOURのmemoにUP-C構造の注意事項を記録
+
+### 汎用効果
+SEC/yfinance乖離10倍サニティチェックはFOUR以外にも適用される。
+同様のUP-C構造銘柄（APP等）でXBRL異常が発生した際も自動保護される。
+
+### 教訓
+UP-C構造（上場会社がLLC管理会社になる形態）ではXBRL株式数が
+経済的実態を反映しないケースがある。新規銘柄登録時にUP-C構造の
+有無を確認し、該当する場合はeps=false設定を検討する。
 - Stonks Silo yfinance ModuleNotFoundError修正
