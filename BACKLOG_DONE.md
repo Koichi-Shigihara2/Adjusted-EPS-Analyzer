@@ -4,6 +4,17 @@
 
 ## 2026-06-13 完了
 
+### ✅ STALE-CHECK-1 フォローアップ (2026-06-13 完了): 11銘柄ステールデータ更新
+- **対象**: FICO/ZETA/BBAI/CELH/COHR/CRWV/RCAT/CPRT/ZS/HQY/RBRK（4〜5月決算後未更新）
+- **手順**: update.py → pipeline.py → audit.py → consistency_check
+- **結果**: 全11銘柄 SEC 再取得完了（11/11）、pipeline PASS=9 WARN=2 FAIL=0 ERROR=0
+  - WARN=2 は FICO/CPRT の formula_verification（既存）
+  - WARN-8（ステール警告）: 全消去確認済み
+- **IV 更新後**: FICO=$928/ZETA=$30.4/BBAI=$1.79/CELH=$21.2/COHR=$39.1/CRWV=$159.8/RCAT=$3.49/CPRT=$49.3/ZS=$141.9/HQY=$105.8/RBRK=$135.7
+- **audit.py**: 正常77銘柄・警告2件（CART/JOBY 既存 Revenue None）NG=0
+- **consistency_check**: NG=0 全銘柄整合（残警告: ELF WARN-10、LMT/VRT WARN-9 は既存）
+- **pytest**: 108件全パス
+
 ### ✅ EPS-PER-TTM-1 (2026-06-13 完了): 調整後PERをGAAPと同一TTM期に統一
 - **根本課題**: `_calc_adjusted_per` が `annual.json years[0].adjusted_eps`（年次FY）を分母に使うため、GAAP PER（yfinance trailingPE = TTM）と期間不一致。成長株で ADJ>GAAP 逆転（NVDA: 48.3x vs 31.4x）
 - **修正**: `core_calculator._calc_adjusted_per` を `quarterly.json` 直近4Q `adjusted_eps` 合計（TTM）に変更。4Q未満は None（年次フォールバック禁止）
