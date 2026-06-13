@@ -320,6 +320,19 @@ python src/value/tanuki_valuation/beta_fetcher.py [TICKER]
 # Step 3: TANUKI VALUATION パイプライン実行
 python src/value/tanuki_valuation/pipeline.py [TICKER]
 
+# Step 3.5: セグメント設定（SEGMENT-1ルール準拠）
+# ASC 280 の formal operating segment 数を 10-K で確認し、以下のルールで判断する：
+#
+# LLY型（設定不要）: formal segment が1つ → General 100%のままでOK、このステップをスキップ
+# LMT型（設定対象）: formal segment が2つ以上 → 以下を実施：
+#   1. 10-K の "Segment Information"（ASC 280）セクションで各セグメントの売上比率を確認
+#   2. 各セグメントの過去YoYとガイダンスを参考にgrowth rateを設定
+#   3. config/segment_config.json に比率・成長率・根拠コメントを記録
+#   4. pipeline.py を再実行してIV before/afterを確認・記録
+#
+# 注意: 製品別・エンドマーケット別の disaggregated revenue（ASC 606）は
+#       formal segment ではないため使用しない（VST/CEGの失敗事例参照）
+
 # Step 4: データ品質確認（β設定含む）
 python common/sec_data/audit.py [TICKER] --check-beta
 
