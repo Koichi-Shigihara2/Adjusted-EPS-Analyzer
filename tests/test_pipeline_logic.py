@@ -2035,3 +2035,124 @@ class TestRiceNegativeLabel:
         assert "N/A (OCF赤字)" not in report, (
             "RICE > 0 なのに 'N/A (OCF赤字)' ラベルが出現した (正常系への誤波及)"
         )
+
+
+# =============================================================================
+# Section 25: ANNUAL-FY-1 回帰テスト (2026-06-13)
+# aggregate_annual が fiscal_year フィールドベースで集計すること
+# 非12月FY企業で filing_date[:4] 年跨ぎ混合が発生しないことを保証
+# =============================================================================
+
+class TestAnnualFYConsistency:
+    """ANNUAL-FY-1: annual.json の各年が単一FYの4Qで構成されること
+
+    aggregate_annual の filing_date[:4] → fiscal_year フィールドへの変更により
+    非12月FY企業（NVDA/AAPL/MSFT/INTU等）の年跨ぎFY混合を解消。
+    """
+
+    def test_aggregate_annual_uses_fiscal_year_field(self):
+        """fiscal_year フィールドがあればそれを優先してグループ化すること"""
+        from src.value.adjusted_eps_analyzer.pipeline import aggregate_annual
+
+        # NVDA FY2026 (1月決算): Q1-Q4 全て fiscal_year=2026
+        quarters_fy2026 = [
+            {"gaap_net_income": 18e9, "net_adjustment_total": 1e9,
+             "diluted_shares_used": 24.6e9, "adjusted_eps": 0.82,
+             "filing_date": "2025-04-27", "fiscal_year": 2026, "quarter": 1, "adjustments": []},
+            {"gaap_net_income": 26e9, "net_adjustment_total": 1.4e9,
+             "diluted_shares_used": 24.5e9, "adjusted_eps": 1.14,
+             "filing_date": "2025-07-27", "fiscal_year": 2026, "quarter": 2, "adjustments": []},
+            {"gaap_net_income": 32e9, "net_adjustment_total": 1.5e9,
+             "diluted_shares_used": 24.5e9, "adjusted_eps": 1.36,
+             "filing_date": "2025-10-26", "fiscal_year": 2026, "quarter": 3, "adjustments": []},
+            {"gaap_net_income": 43e9, "net_adjustment_total": 1.2e9,
+             "diluted_shares_used": 24.5e9, "adjusted_eps": 1.81,
+             "filing_date": "2026-01-25", "fiscal_year": 2026, "quarter": 4, "adjustments": []},
+        ]
+        # FY2025 Q4: filing_date=2025-01-26 → 旧ロジックでは year=2025 グループに混入
+        quarters_fy2025_q4 = [
+            {"gaap_net_income": 22e9, "net_adjustment_total": 1.0e9,
+             "diluted_shares_used": 24.8e9, "adjusted_eps": 0.93,
+             "filing_date": "2025-01-26", "fiscal_year": 2025, "quarter": 4, "adjustments": []},
+        ]
+        all_quarters = quarters_fy2025_q4 + quarters_fy2026
+
+        result = aggregate_annual(all_quarters)
+        fy2026 = next((r for r in result if r["year"] == "2026"), None)
+
+        assert fy2026 is not None, "FY2026 が集計されていない"
+        # FY2026 の4Q合計: (18+26+32+43)B + (1+1.4+1.5+1.2)B = 119B + 5.1B = 124.1B
+        expected_adj_ni = (18 + 26 + 32 + 43 + 1 + 1.4 + 1.5 + 1.2) * 1e9
+        assert abs(fy2026["adjusted_net_income"] - expected_adj_ni) < 1e9, (
+            f"FY2026 adjusted_net_income={fy2026['adjusted_net_income']/1e9:.1f}B "
+            f"が期待値 {expected_adj_ni/1e9:.1f}B と乖離 "
+            "— fiscal_year ベース集計が機能していない可能性"
+        )
+
+        # FY2025 Q4 が FY2026 グループに混入していないこと
+        fy2025 = next((r for r in result if r["year"] == "2025"), None)
+        assert fy2025 is None, (
+            "FY2025 が4件未満なのに集計されている（Q4のみのため正しくはスキップ）"
+        )
+
+    def test_aggregate_annual_fallback_without_fiscal_year(self):
+        """fiscal_year フィールドが無い場合は filing_date[:4] にフォールバックすること"""
+        from src.value.adjusted_eps_analyzer.pipeline import aggregate_annual
+
+        quarters = [
+            {"gaap_net_income": 10e9, "net_adjustment_total": 0.5e9,
+             "diluted_shares_used": 10e9, "adjusted_eps": 1.05,
+             "filing_date": "2025-03-31", "quarter": 1, "adjustments": []},
+            {"gaap_net_income": 11e9, "net_adjustment_total": 0.5e9,
+             "diluted_shares_used": 10e9, "adjusted_eps": 1.15,
+             "filing_date": "2025-06-30", "quarter": 2, "adjustments": []},
+            {"gaap_net_income": 12e9, "net_adjustment_total": 0.5e9,
+             "diluted_shares_used": 10e9, "adjusted_eps": 1.25,
+             "filing_date": "2025-09-30", "quarter": 3, "adjustments": []},
+            {"gaap_net_income": 13e9, "net_adjustment_total": 0.5e9,
+             "diluted_shares_used": 10e9, "adjusted_eps": 1.35,
+             "filing_date": "2025-12-31", "quarter": 4, "adjustments": []},
+        ]
+        result = aggregate_annual(quarters)
+        assert len(result) == 1, f"結果が1件でない: {len(result)}"
+        assert result[0]["year"] == "2025", f"year が 2025 でない: {result[0]['year']}"
+
+    def test_nvda_annual_json_fy_not_mixed(self):
+        """NVDA annual.json の各 year エントリが単一FYの4Qで構成されること（年跨ぎ混合なし）"""
+        import json, os
+
+        annual_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "docs", "value-monitor", "adjusted_eps_analyzer", "data", "NVDA", "annual.json"
+        )
+        q_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "docs", "value-monitor", "adjusted_eps_analyzer", "data", "NVDA", "quarterly.json"
+        )
+        if not os.path.exists(annual_path) or not os.path.exists(q_path):
+            return
+
+        with open(annual_path, encoding="utf-8") as f:
+            annual = json.load(f)
+        with open(q_path, encoding="utf-8") as f:
+            q_data = json.load(f)
+
+        # quarterly.json の fiscal_year → year マッピングを構築
+        fy_to_quarters = {}
+        for q in q_data.get("quarters", []):
+            fy = q.get("fiscal_year")
+            if fy is not None:
+                fy_to_quarters.setdefault(str(fy), []).append(q)
+
+        for year_entry in annual.get("years", []):
+            yr = year_entry["year"]
+            qs_in_fy = fy_to_quarters.get(yr, [])
+            if not qs_in_fy:
+                continue  # quarterly.json に対応FYなし（古いデータ等）はスキップ
+
+            # 各QのFYが全て yr と一致するか
+            mixed = [q for q in qs_in_fy if str(q.get("fiscal_year", "")) != yr]
+            assert not mixed, (
+                f"NVDA annual.json year={yr} に異なる fiscal_year の四半期が混入: "
+                f"{[q['filing_date'] for q in mixed]}"
+            )

@@ -162,9 +162,12 @@ def calculate_ttm(quarterly_results: List[Dict], end_idx: int) -> Optional[Dict]
     }
 
 def aggregate_annual(quarterly_results: List[Dict]) -> List[Dict]:
+    # fiscal_year フィールドを優先してグループ化（非12月FY企業のFY跨ぎ混合を解消）
+    # fiscal_year が無い場合は filing_date[:4] にフォールバック
     annual_map = {}
     for q in quarterly_results:
-        year = q["filing_date"][:4]
+        fy = q.get("fiscal_year")
+        year = str(fy) if fy is not None else q["filing_date"][:4]
         if year not in annual_map:
             annual_map[year] = []
         annual_map[year].append(q)

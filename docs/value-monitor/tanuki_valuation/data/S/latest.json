@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 98.7,
-  "calculation_date": "2026-06-13T16:55:36+09:00",
+  "calculation_date": "2026-06-13T17:00:24+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -187,10 +187,35 @@
     "fcf_value": 27952000,
     "threshold_pct": 0.6,
     "transient_evidence": {
-      "found": false,
-      "source": null,
-      "items": [],
-      "total_transient_amount": 0.0
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 44000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 3171000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 3883000,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 5167000,
+          "reason": "一過性の事業再編費用"
+        }
+      ],
+      "total_transient_amount": 12265000
     },
     "action": "flagged",
     "note": "FY2026 FCF($28M)が5年平均($-50M)から156%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
@@ -198,12 +223,12 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": -112408930.6888926,
+    "adj_net_income": -152268434.94726574,
     "conversion_rate": 0.7,
     "estimated_fcf": 80102240.0,
     "raw_fcf": 80102240.0,
     "sector": "",
-    "note": "調整済み純利益がマイナス($-112M) → 従来FCFを使用",
+    "note": "調整済み純利益がマイナス($-152M) → 従来FCFを使用",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
