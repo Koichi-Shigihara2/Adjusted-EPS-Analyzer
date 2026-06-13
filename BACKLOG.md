@@ -14,6 +14,10 @@
   ① 単一事業（SaaS・純粋プレイ）→ General 100%のままでよい
   ② 複数事業セグメントが決算資料に明示されている → BACKLOG_DONE.md記録後 segment_config.json 更新
   ③ 赤字初期段階 → 対象外（STONKS SILOで管理）
+  ④ 年次フォローアップルール:
+     report_consistency_check.py の WARN-9（segment陳腐化）が
+     発生した銘柄は決算年度更新のタイミングでsegment_config.jsonを見直す
+     現在のWARN-9対象: LMT（FY2024）/ VRT（FY2024）
 
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
