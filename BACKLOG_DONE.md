@@ -4,6 +4,12 @@
 
 ## 2026-06-14
 
+✅ [MP-REGIME-LABEL] REGIME判定ソース明示（2026-06-14 完了）
+- fed_context に regime_source 列を追加（Grok成功時: "FOMC声明分析（Grok）" / fallback時: "DGS1数値ベース"）
+- index.html の REGIME セルにサブラベルとして判定ソースを表示
+- 旧CSVは ai_reason から後付け推定して補完（3月:DGS1ベース / 4-6月:Grok）
+- _fallback_regime の文言を "ZQ先物が…" → "DGS1ベースで…" に更新
+
 ✅ [MP-1YEFF-FIX] 1Y EXPECTED FF 表示値バグ修正（2026-06-14 完了）
 - 原因: ラベルが "FRED T1YFF" と表示されていたが T1YFF は DGS1-FEDFUNDS スプレッドであり絶対金利ではない
 - 修正: DGS1（1年国債利回り）を直接使用 → 表示値 3.62% → 3.85% / IMPLIED CUTS +0.02 → -0.90回
