@@ -698,6 +698,32 @@ for entry in data[-5:]:
 - `sentiment.score`: 0〜100 の範囲（負値・100超は異常）
 - `sentiment.label`: EXTREME FEAR / FEAR / CAUTION / NEUTRAL / GREED / EXTREME GREED のいずれか
 
+### CSV列追加後の必須ゲートチェック
+
+**列追加・collect_and_send.py 実行後に必ず実行すること：**
+
+```python
+python3 -c "
+import csv
+with open('docs/market-monitor/market-pulse/data/market_data.csv') as f:
+    reader = csv.reader(f)
+    header = next(reader)
+    rows = list(reader)
+    header_len = len(header)
+    errors = []
+    for i, row in enumerate(rows):
+        if len(row) != header_len:
+            errors.append(f'行{i+2}: {len(row)}列 (ヘッダー{header_len}列)')
+    if errors:
+        print('❌ 列数不一致:')
+        for e in errors: print(' ', e)
+    else:
+        print(f'✅ 全{len(rows)}行 列数一致（{header_len}列）')
+"
+```
+
+✅ が出ること。❌ が出た場合は以下の対処へ。
+
 ### 列ズレが発生した場合の対処
 1. CSV の旧行（列追加前）と新ヘッダーの列数差を確認
 2. ずれた列数分だけオフセットした正しいフィールドを特定
