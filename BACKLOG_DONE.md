@@ -9,6 +9,11 @@
 - 修正: market_data.json 42件再計算・91件→58件に重複集約
 - 再発防止: collect_and_send.py に sentiment_score の 0〜100 範囲チェック追加
 
+✅ [MP-PRED-FIX] センチメント予測リターン異常値修正（2026-06-14 完了）
+- 原因: 同一列ズレバグによりS&P500.valueに0.08等の誤値 → getAvgRetが+9億%を出力
+- 修正: 5/21-6/7の17エントリ全indicators再構築・index.htmlに防衛チェック追加
+- Tech Pulse 5/21-6/5欠落はCSV未保存のため復元不可（許容）
+
 ---
 
 ## 2026-06-13 完了
