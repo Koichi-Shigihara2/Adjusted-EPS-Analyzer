@@ -858,7 +858,7 @@ function renderMiniGauges(){
       if(valid[i].sentiment.score<curZone.min||valid[i].sentiment.score>curZone.max)continue;
       const s0=valid[i].indicators["S&P500"].value;
       const sN=valid[i+idx]?.indicators?.["S&P500"]?.value;
-      if(s0&&sN)rets.push((sN-s0)/s0*100);
+      if(s0>1000&&sN>1000)rets.push((sN-s0)/s0*100);
     }
     return rets.length?{avg:rets.reduce((a,b)=>a+b,0)/rets.length,n:rets.length}:null;
   }
