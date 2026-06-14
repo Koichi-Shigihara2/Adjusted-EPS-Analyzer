@@ -19,6 +19,12 @@
      発生した銘柄は決算年度更新のタイミングでsegment_config.jsonを見直す
      現在のWARN-9対象: LMT（FY2024）/ VRT（FY2024）
 
+### [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新
+**優先度:** 低
+- LMT・VRTのsegment_configのfiscal_yearがFY2024（2年前）で鮮度切れ
+- registration_validator.py で P3-FY NG 判定中
+- 対応: 両銘柄の10-Kを確認しsegment_config.jsonをFY2025ベースに更新
+
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
 - 銀行免許取得後（2022年以降）は標準LongTermDebtタグを使用しない可能性
@@ -105,6 +111,15 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
 - TANUKI VALUATIONと横並びで主要データ（PER/PBR/ROE/配当利回り等）を保持できる
   金融株専用セクションまたは別フレームワークの設計
 - 無理にFCFベースDCFに当てはめることを廃止
+
+### [TANUKI-ENB-1] ENB（Enbridge）IFRS対応方針決定
+**優先度:** 低
+- ENBはカナダ企業（40-F/IFRS）のためFCFデータ取得不可
+- 現状: tanuki=false, eps=false でTANUKI VALUATION・EPSアナライザーをスキップ中
+- HypeCoreおよびDISCOVER登録は済み
+- 対応方針を選択する:
+  - A) IFRSフォーマット対応を実装して有効化（工数大）
+  - B) カナダ企業は永続除外として現状維持
 
 ### [REPORT-2] アナリスト目標株価レンジの表示
 - 現状: Analyst_Consensusのラベルのみ（Buy/Hold/Sell）
