@@ -659,6 +659,53 @@ git push origin kaihatsu
 
 ---
 
+## Market Pulse CSV列追加時の注意（MP-HISTORY-FIX / MP-PRED-FIX の教訓）
+
+対象: collect_and_send.py に新しい指標列を追加するとき
+
+### 必須確認手順
+
+**列追加後は必ず以下を実行すること：**
+
+```bash
+# 1. ヘッダー列数と最新行の列数が一致しているか確認
+python3 -c "
+import csv
+with open('docs/market-monitor/market-pulse/data/market_data.csv') as f:
+    reader = csv.reader(f)
+    header = next(reader)
+    rows = list(reader)
+    print(f'ヘッダー列数: {len(header)}')
+    for row in rows[-3:]:
+        print(f'データ列数: {len(row)}  (日付: {row[0]})')
+"
+
+# 2. 主要フィールドの値域チェック
+python3 -c "
+import json
+with open('docs/market-monitor/market-pulse/data/market_data.json') as f:
+    data = json.load(f)
+for entry in data[-5:]:
+    ind = entry.get('indicators', {})
+    sp = (ind.get('S&P500') or {}).get('value', '?')
+    score = (entry.get('sentiment') or {}).get('score', '?')
+    print(f\"{entry['date'][:10]}: S&P500={sp}, score={score}\")
+"
+```
+
+**正常値の目安：**
+- `S&P500.value`: 3000〜15000 の範囲（0.08 等の小数は列ズレ）
+- `sentiment.score`: 0〜100 の範囲（負値・100超は異常）
+- `sentiment.label`: EXTREME FEAR / FEAR / CAUTION / NEUTRAL / GREED / EXTREME GREED のいずれか
+
+### 列ズレが発生した場合の対処
+1. CSV の旧行（列追加前）と新ヘッダーの列数差を確認
+2. ずれた列数分だけオフセットした正しいフィールドを特定
+3. market_data.json の異常期間エントリを CSV 生データから再構築
+4. index.html 側の計算ロジックに防衛チェックを追加
+
+---
+
 ## リンク整合性チェック（HTMLファイルを新規作成・移設・削除した場合は必須）
 
 ```bash
