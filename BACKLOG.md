@@ -1,7 +1,40 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-13 (9)
+最終更新: 2026-06-14
 完了済み項目は BACKLOG_DONE.md にアーカイブ
+
+---
+
+## 優先度：高（早急に対応）
+
+### [BUG-LYFT-EPS-1] LYFT Q4 2025 繰延税金資産（DTA）認識による adj_eps 異常高値
+**優先度:** 高
+**分類:** バグ / EPS Analyzer / 税務調整ロジック
+
+#### 症状
+- LYFT Q4 2025 adj_eps = $6.7875（他四半期: $0.19〜$0.27）
+- CHECK-14 で NG 検知（adj_eps > LYFT株価 × 50%）
+
+#### 根本原因
+Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation allowance release）が
+発生し、`IncomeTaxExpenseBenefit` に大規模な負値（税メリット）が計上された。
+- Q4 GAAP NI = $2.755B（他四半期: $23M〜$120M）
+- 現在の `tax_one_time` 調整は `IncomeTaxReconciliationOtherReconcilingItems` タグを
+  使用しているが、DTA リリース分は `IncomeTaxExpenseBenefit` 本体に含まれており
+  このタグでは捕捉できない。
+
+#### 修正方針（未着手・複雑）
+`IncomeTaxExpenseBenefit` が著しく負値（大規模税メリット）の場合に
+一時的要因として検出・除外するロジックを追加する。
+1. 各四半期の税引前利益（PreTaxIncome）を推定
+2. `IncomeTaxExpenseBenefit` が PreTaxIncome を大きく上回る場合 →
+   DTA 認識と判断し調整対象とする
+3. 直近4四半期の税費用中央値を使って代替課税額を推定
+
+#### 現状
+- CHECK-14 が NG 検知するため手動確認は可能
+- 誤った adj_eps が EPS Analyzer に残存（LYFT のみ）
+- 根本修正は実装工数大のため BACKLOG 管理
 
 ---
 
@@ -228,7 +261,7 @@ ROEをデュポン分解（純利益率 × 資産回転率 × 財務レバレッ
 **分類:** アーキテクチャ / 根本対策
 
 #### 背景
-`report_consistency_check.py` は現在 CHECK-1〜12 を持つが、
+`report_consistency_check.py` は現在 CHECK-1〜16 を持つが、
 再生成後に手動実行する「事後チェック」に留まる。間違った数字が
 本番反映され外部AIに指摘されて初めて気づく後手構造が残る。
 
@@ -240,22 +273,11 @@ consistency_check を「出口の保険」から「設計の一部」に格上�
 - `registration_validator`（登録時ゲート）と対をなす「再生成時ゲート」
 
 #### 着手条件
-CHECK 項目が十分育ってから（現状 CHECK-13。検証ループ継続で項目追加中）
+CHECK 項目が十分育ってから（現状 CHECK-16。CHECK-14/15/16 は 2026-06-14 実装済み）
 
-#### チェック項目追加候補（BUG-FOUR-1の教訓・2026-06-14）
-
-**report_consistency_check.py に追加すべき項目（レポート出力層）:**
-- CHECK-13: 四半期EPSが現在株価の50%超 → ERROR（株式数単位ミス等の異常値検知）
-- CHECK-14: 四半期EPSが株価を上回る → ERROR
-- CHECK-15: TTM EPS計算に使用した四半期数が4未満 → WARNING（年次データで代替している状態）
-
-**audit.py に追加すべき項目（SECデータ取得層）:**
+**audit.py に追加すべき項目（SECデータ取得層・未着手）:**
 - yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力
 - 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示
-
-**役割分担の原則:**
-- データ取得品質の問題（XBRLパース・単位・タグ欠落）→ audit.py
-- 計算・表示の問題（EPS異常値・TTM期間ズレ）→ report_consistency_check.py
 
 ### [MP-BIZDAY-1] MARKET PULSE 営業日ベース化
 **優先度:** 中

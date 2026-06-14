@@ -889,7 +889,51 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         
         # 日付順にソート（新しい順）して返す（UIの期待に合わせて）
         quarterly_list.sort(key=lambda x: x['filing_date'], reverse=True)
-        
+
+        # 株式数サニティチェック（2段階）
+        # ① 全期間の平均株式数が 1M 未満 → 全社的に千株単位で申告（例: LOAR）→ 全期間 ×1000
+        # ② 個別四半期が中央値の 1% 未満かつ ×1000 が中央値の 2 倍以内 → 単独期の申告ミス（例: ONDS）→ 当該期 ×1000
+        if quarterly_list:
+            _valid_shares = [
+                normalize_value(q.get('diluted_shares', {'value': 0}))
+                for q in quarterly_list
+                if normalize_value(q.get('diluted_shares', {'value': 0})) > 0
+            ]
+            if _valid_shares:
+                _avg_shares = sum(_valid_shares) / len(_valid_shares)
+                if 0 < _avg_shares < 1_000_000:
+                    # ① 全期間の千株単位補正
+                    print(f"[WARN] {ticker}: 平均株式数={_avg_shares:,.0f} < 1M → 千株単位と判断し ×1000 補正")
+                    for q in quarterly_list:
+                        ds = q.get('diluted_shares')
+                        if ds and isinstance(ds, dict) and normalize_value(ds) > 0:
+                            ds['value'] = ds['value'] * 1000
+                else:
+                    # ② 単独期の外れ値補正: 直近8四半期の中央値の 1% 未満は千株単位と判断し ×1000
+                    # （直近中央値を使う: 古い期間の株式数が少なく全期間中央値が低くなるケースを防ぐ）
+                    _dated_shares = sorted(
+                        [(q.get('filing_date', ''), normalize_value(q.get('diluted_shares', {'value': 0})))
+                         for q in quarterly_list
+                         if normalize_value(q.get('diluted_shares', {'value': 0})) > 0],
+                        reverse=True
+                    )
+                    _recent_shares = [s for _, s in _dated_shares[:8]]
+                    if _recent_shares:
+                        _sorted_r = sorted(_recent_shares)
+                        _med_r = _sorted_r[len(_sorted_r) // 2]
+                        if _med_r > 0:
+                            for q in quarterly_list:
+                                ds = q.get('diluted_shares')
+                                if not (ds and isinstance(ds, dict)):
+                                    continue
+                                _sv = normalize_value(ds)
+                                if 0 < _sv < _med_r * 0.01:
+                                    print(
+                                        f"[WARN] {ticker}: {q.get('filing_date','?')} 株式数={_sv:,.0f}"
+                                        f" << 直近中央値={_med_r:,.0f} → 千株単位と判断し ×1000 補正"
+                                    )
+                                    ds['value'] = ds['value'] * 1000
+
         print(f"\n{ticker}: {len(quarterly_list)}件の四半期データを取得")
         return quarterly_list
         

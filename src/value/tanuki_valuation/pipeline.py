@@ -1330,16 +1330,24 @@ class TanukiValuationPipeline:
             _gs_rec_g = growth_sanity.get("recommended_g")
             _gs_growth_model = growth_sanity.get("growth_model")
             _gs_growth_model_reason = growth_sanity.get("growth_model_reason")
-            if _gs_growth_model:
-                _model_label = "逓減モデル" if _gs_growth_model == "decay" else "中央値モデル"
-                _phase_used = growth_sanity.get("hype_phase_used")
-                _phase_suffix = f"  HypePhase={_phase_used}" if _phase_used is not None else ""
-                L.append(f"成長モデル: {_model_label}（{_gs_growth_model_reason}）{_phase_suffix}")
-            if _gs_rec_g is not None:
-                L.append("推奨成長率内訳:")
-                if _gs_growth_model == "median" and _gs_rec_median is not None:
-                    L.append(f"  中央値ベース:          {_gs_rec_median*100:.1f}%")
-                L.append(f"  最終推奨値:            {_gs_rec_g*100:.1f}%")
+            _phase_used = growth_sanity.get("hype_phase_used")
+            _phase_suffix = f"  HypePhase={_phase_used}" if _phase_used is not None else ""
+            if _seg_configured:
+                # Layer 1: セグメント加重平均を DCF G として直接使用
+                L.append(f"成長モデル: セグメント加重モデル（Layer 1）{_phase_suffix}")
+                if gs_p1g is not None:
+                    L.append(f"DCF適用値:  {gs_p1g * 100:.1f}%（セグメント加重平均 → DCF G として直接使用）")
+                if _gs_rec_g is not None:
+                    L.append(f"推奨成長率: {_gs_rec_g * 100:.1f}%（Layer 2 参考値・DCF未適用）")
+            else:
+                if _gs_growth_model:
+                    _model_label = "逓減モデル" if _gs_growth_model == "decay" else "中央値モデル"
+                    L.append(f"成長モデル: {_model_label}（{_gs_growth_model_reason}）{_phase_suffix}")
+                if _gs_rec_g is not None:
+                    L.append("推奨成長率内訳:")
+                    if _gs_growth_model == "median" and _gs_rec_median is not None:
+                        L.append(f"  中央値ベース:          {_gs_rec_median*100:.1f}%")
+                    L.append(f"  最終推奨値:            {_gs_rec_g*100:.1f}%")
             L.append(f"判定         : {gs_verdict}")
             if gs_ind and gs_bench is not None:
                 damo_tag = f" (Damodaran {gs_year})" if gs_year else ""

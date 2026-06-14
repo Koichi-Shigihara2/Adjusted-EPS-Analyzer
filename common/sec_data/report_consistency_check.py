@@ -17,6 +17,9 @@ report_consistency_check.py
   WARN 10. PS異常値            yfinance PSが自社計算値(price×shares/rev)の2.5倍超 or 0.4倍未満
   WARN 12. Cash-STI期ズレ      latest.jsonのCashが最新四半期値なのにST_Investが年次値のまま
   NG  13. RICE負値ラベルなし   rice.available=true かつ RICE<0 なのに Matrix Label に N/A/OCF赤字 なし
+  NG  14. EPS>株価50%          EPS Analyzer直近Q adj_eps が株価の50%超（単位バグ検出）
+  NG  15. EPS>株価             EPS Analyzer直近Q adj_eps が株価を上回る（単位バグ確実）
+  WARN 16. TTM四半期不足       EPS Analyzer TTM計算に使用した四半期数が4未満
 """
 
 import os
@@ -30,6 +33,7 @@ SCRIPT_DIR   = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT    = os.path.normpath(os.path.join(SCRIPT_DIR, "../.."))
 DATA_DIR     = os.path.join(REPO_ROOT, "docs/value-monitor/tanuki_valuation/data")
 SEC_DATA_DIR = os.path.join(REPO_ROOT, "common/sec_data/data")
+EPS_DATA_DIR = os.path.join(REPO_ROOT, "docs/value-monitor/adjusted_eps_analyzer/data")
 RPO_CONFIG   = os.path.join(REPO_ROOT, "config/rpo_config.json")
 SEG_CONFIG   = os.path.join(REPO_ROOT, "config/segment_config.json")
 
@@ -71,6 +75,18 @@ def _read_latest(ticker: str) -> dict:
         return {}
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _read_eps_quarterly(ticker: str) -> list:
+    path = os.path.join(EPS_DATA_DIR, ticker, "quarterly.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+        return d if isinstance(d, list) else d.get("quarters", [])
+    except Exception:
+        return []
 
 
 # ─── パーサ ──────────────────────────────────────────────────
@@ -425,6 +441,49 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 ng.append(
                     f"  [NG-13 RICE負値ラベルなし] BASE RICE={_rice_base_val:.3f} "
                     f"だが Label='{_label_c13}' に 'N/A (OCF赤字)' なし"
+                )
+
+    # CHECK-14/15: EPS異常値チェック（単位バグ・大型一時利益検出）
+    # EPS Analyzer quarterly.json の直近Q adj_eps / gaap_eps を株価と比較する
+    _price_c14 = None
+    for _pline in parsed.get("_raw_lines", []):
+        _pm = re.match(r'^Price:\s*\$([0-9,.]+)', _pline.strip())
+        if _pm:
+            try:
+                _price_c14 = float(_pm.group(1).replace(",", ""))
+            except Exception:
+                pass
+            break
+
+    if _price_c14 and _price_c14 > 0:
+        _eps_qs = _read_eps_quarterly(ticker)
+        if _eps_qs:
+            _latest_q = sorted(_eps_qs, key=lambda x: x.get("filing_date", ""))[-1]
+            _latest_adj = abs(_latest_q.get("adjusted_eps", 0) or 0)
+            _latest_gaap = abs(_latest_q.get("gaap_eps", 0) or 0)
+            _max_eps = max(_latest_adj, _latest_gaap)
+            if _max_eps > _price_c14:
+                ng.append(
+                    f"  [NG-15 EPS>株価] 直近Q adj_eps={_latest_adj:.2f} gaap_eps={_latest_gaap:.2f}"
+                    f" > Price=${_price_c14:.2f}"
+                    f" (filing:{_latest_q.get('filing_date','?')})"
+                )
+            elif _max_eps > _price_c14 * 0.5:
+                ng.append(
+                    f"  [NG-14 EPS>株価50%] 直近Q adj_eps={_latest_adj:.2f} gaap_eps={_latest_gaap:.2f}"
+                    f" > Price*0.5=${_price_c14 * 0.5:.2f}"
+                    f" (filing:{_latest_q.get('filing_date','?')})"
+                )
+
+            # CHECK-16: TTM計算に使われる四半期数チェック（4件未満は不完全なTTM）
+            _recent = sorted(
+                [q for q in _eps_qs if q.get("filing_date", "") >= "2023-01-01"],
+                key=lambda x: x.get("filing_date", ""),
+                reverse=True
+            )
+            if 0 < len(_recent) < 4:
+                warn.append(
+                    f"  [WARN-16 TTM四半期不足] EPS Analyzer TTM計算に{len(_recent)}四半期しかない（4必要）"
                 )
 
     return ng, warn

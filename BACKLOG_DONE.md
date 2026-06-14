@@ -787,6 +787,38 @@ Cash表示値とNet Debt計算値の参照タイミング・定義が不整合�
 
 ## 2026-06-14 完了
 
+✅ [BUG-EPS-UNIT-1] LOAR/ONDS EPS per-share 株式数単位バグ修正 + CHECK-14/15/16追加 ✅ 2026-06-14
+- **症状**: LOAR adj_eps=$151/$396/$320（実株価$68）、ONDS Q1 2026 adj_eps=$119.24
+- **根本原因**: SEC XBRL の WeightedAverageNumberOfDilutedSharesOutstanding が
+  千株単位で報告されているが unit="shares" と誤記されているケース
+  LOAR: 全四半期平均95,913 << 1M → 全期間千株単位と判断
+  ONDS Q1 2026: 461,706 << 直近8Q中央値×1% → 孤立四半期の千株単位
+- **修正**: `extract_key_facts.py` に 2段階サニティチェックを追加
+  Stage①: 全期間平均 < 1M → 全四半期 ×1000（LOAR適用）
+  Stage②: 直近8Q中央値の1%未満の孤立四半期 → その四半期 ×1000（ONDS適用）
+- **CHECK追加**: `report_consistency_check.py` に CHECK-14/15/16 追加
+  CHECK-14: adj_eps > 現在株価×50% → NG（単位ミス異常値検知）
+  CHECK-15: adj_eps > 現在株価 → NG（さらに深刻な単位ミス）
+  CHECK-16: 直近4Q未満のデータ → WARN（TTM不完全）
+- **結果**: LOAR FY2025 GAAP_EPS $752.20→$0.7522、Adj_EPS→$1.1061 ✓
+  ONDS Q1 2026 株式数461,706→461,706,000、adj_eps $119.24→$0.1192 ✓
+  consistency_check: NG=0 確認済み
+
+✅ [BUG-INTU-GROWTH-1] INTU Section 4 Layer 1 成長率表示バグ修正 ✅ 2026-06-14
+- **症状**: INTU の [4. 成長率根拠] で "中央値モデル" が 19.7% を参照し
+  DCF適用値 12.8% との関係が不明瞭
+- **根本原因**: Layer 1（segment_configured=True）銘柄でも Layer 2 と同じ
+  表示フローを使っており、DCF G（セグメント加重平均直接）とラベルが乖離
+- **修正**: `pipeline.py` Section 4 を `_seg_configured` で分岐
+  Layer 1: "セグメント加重モデル（Layer 1）" と表示、recommended_g を "Layer 2 参考値・DCF未適用" と明記
+  Layer 2: 従来通り "中央値モデル/逓減モデル"
+- **結果**: INTU 報告が "DCF適用値: 12.8%（セグメント加重平均）/ 推奨成長率: 19.7%（Layer 2 参考値）" と整合 ✓
+
+✅ [BUG-INTU-NETDEBT-1] INTU 短期投資 Net Debt 欠落調査 → 誤検知 ✅ 2026-06-14
+- **疑惑**: INTU の短期投資がNet Debt計算から漏れている可能性
+- **調査結果**: INTU の XBRL には ShortTermInvestments タグが存在しない
+  INTUの財務構造上 short_term_investments=0 は正しい値。修正不要。
+
 ## [BUG-FOUR-1] FOUR（Shift4 Payments）EPS・株式数・希薄化異常値 ✅ 2026-06-14
 
 ### 症状
