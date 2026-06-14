@@ -4,6 +4,13 @@
 
 ## 2026-06-14
 
+✅ [MP-1YEFF-FIX] 1Y EXPECTED FF 表示値バグ修正（2026-06-14 完了）
+- 原因: ラベルが "FRED T1YFF" と表示されていたが T1YFF は DGS1-FEDFUNDS スプレッドであり絶対金利ではない
+- 修正: DGS1（1年国債利回り）を直接使用 → 表示値 3.62% → 3.85% / IMPLIED CUTS +0.02 → -0.90回
+- ZQ=F term premium 補正ロジックを廃止しシンプル化
+- サブラベルを「正値=利下げ織り込み / 負値=利上げ・高止まり織り込み」に更新
+- 解釈: DGS1(3.85%) > FF(3.625%) = 市場は高金利継続を織り込み中（-0.90 = BALANCED判定）
+
 ✅ [MP-DISPLAY-FIX] Macro Pulse 表示バグ3件修正・データ取得ロジック改善（2026-06-14 完了）
 - 修正1: NET LIQUIDITY / HY Spread の "++" 二重符号 → chgHtml の sign と fmt lambda が二重加算していた
 - 修正2 (コードではなくデータ問題): refresh_monthly_indicators の obs_to_release_lag 導入
