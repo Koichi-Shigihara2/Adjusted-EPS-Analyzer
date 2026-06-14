@@ -657,7 +657,7 @@
 
   <!-- AI週次解説（①の直後） -->
   <div class="ai-wrap" style="margin-top:14px">
-    <div class="ai-title"><span class="ai-title-icon">🤖</span>AI WEEKLY COMMENTARY — 毎週日曜自動生成（Gemini 2.5 Flash）</div>
+    <div class="ai-title"><span class="ai-title-icon">🤖</span>AI WEEKLY COMMENTARY — 毎週日曜自動生成（GROK-3-MINI）</div>
     <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin:4px 0 8px;padding:6px 10px;background:rgba(100,116,139,.08);border-left:2px solid var(--bdr)">
       ※ スコアは週報生成時点の値。最新スコアはページ上部のゲージを参照。毎週土曜JST 7:11に自動更新。
     </div>
@@ -2442,7 +2442,7 @@ function renderLiquidityCards(rows) {
       label: 'NET LIQUIDITY',
       val:   netLiq !== null ? netLiq.toFixed(2) : '—',
       unit:  '兆 USD',
-      chg:   chgHtml(netLiq, netLiqPrev, d => (d >= 0 ? '+' : '') + d.toFixed(3) + '兆', false),
+      chg:   chgHtml(netLiq, netLiqPrev, d => d.toFixed(3) + '兆', false),
       chgLabel: '前週比',
       date:  latest.date,
       levelBar: levelBar(nlRank, false),
@@ -2453,7 +2453,7 @@ function renderLiquidityCards(rows) {
       label: 'HY スプレッド',
       val:   hyVal !== null ? hyVal.toFixed(2) : '—',
       unit:  '%',
-      chg:   chgHtml(hyVal, hyPrev, d => (d >= 0 ? '+' : '') + d.toFixed(3) + '%', true),
+      chg:   chgHtml(hyVal, hyPrev, d => d.toFixed(3) + '%', true),
       chgLabel: '前週比',
       date:  latest.date,
       levelBar: levelBar(hyRank, true),
