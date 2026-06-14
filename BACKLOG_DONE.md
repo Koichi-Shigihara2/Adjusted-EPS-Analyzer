@@ -4,6 +4,13 @@
 
 ## 2026-06-14
 
+✅ [MP-DIV-ZSCORE-FIX] divergence z-score データソース不整合修正（2026-06-14 完了）
+- 原因: `_load_div_history` が fear_greed.score（CNN, ~34）を使って履歴構築していたが、
+  当日 div_value は fg_score_tech（feargreedchart.com, ~57）から計算 → ソース不一致
+- 影響: 誤ったz-score（-0.11 ≒ 平均以下と誤判断 vs 正しくは +0.82 = 平均より上）
+- 修正: 保存済み tech_pulse.divergence.value を優先使用 / 旧エントリは components.fg_score で再計算
+- 次回 collect_and_send.py 実行からz-scoreが正確に算出される
+
 ✅ [MP-REGIME-LABEL] REGIME判定ソース明示（2026-06-14 完了）
 - fed_context に regime_source 列を追加（Grok成功時: "FOMC声明分析（Grok）" / fallback時: "DGS1数値ベース"）
 - index.html の REGIME セルにサブラベルとして判定ソースを表示
