@@ -539,7 +539,7 @@
 
   <!-- FED Regime Bar -->
   <div class="regime-bar" id="regimeBar">
-    <div class="rb-cell"><span class="rb-label">REGIME</span><span class="rb-val" id="rb-regime">—</span></div>
+    <div class="rb-cell"><span class="rb-label">REGIME</span><span class="rb-val" id="rb-regime">—</span><span class="rb-sub" id="rb-regime-src"></span></div>
     <div class="rb-cell"><span class="rb-label">FF RATE</span><span class="rb-val" id="rb-ff">—</span><span class="rb-sub">誘導目標中心値</span></div>
     <div class="rb-cell"><span class="rb-label">1Y EXPECTED FF</span><span class="rb-val" id="rb-exp">—</span><span class="rb-sub" id="rb-src">FRED DGS1（1年国債利回り）</span></div>
     <div class="rb-cell"><span class="rb-label">IMPLIED CUTS</span><span class="rb-val" id="rb-cuts">—</span><span class="rb-sub">12M / 25bp each</span><span style="font-size:10px;color:var(--mut);display:block;margin-top:2px;">正値=利下げ織り込み / 負値=利上げ/高止まり織り込み</span></div>
@@ -962,8 +962,10 @@ function renderRegimeBar(d) {
   const cuts=parseFloat(d.cuts_implied);
   const concern=d.dominant_label||d.dominant_concern||'—';
   const reason=d.ai_reason||'';
+  const regimeSrc=d.regime_source||'';
   const cls=regime==='EASING'?'rg-easing':regime==='TIGHTENING'?'rg-tightening':'rg-balanced';
   el('rb-regime').innerHTML=`<span class="rb-regime ${cls}">${regime}</span>`;
+  el('rb-regime-src').textContent=regimeSrc;
   el('rb-ff').textContent=isNaN(ff)?'—':ff.toFixed(3)+'%';
   el('rb-exp').textContent=isNaN(expFF)?'—':expFF.toFixed(3)+'%';
   el('rb-cuts').textContent=isNaN(cuts)?'—':(cuts>=0?'+':'')+cuts.toFixed(2)+'回';

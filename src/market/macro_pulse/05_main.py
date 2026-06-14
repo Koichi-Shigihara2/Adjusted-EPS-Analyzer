@@ -72,7 +72,7 @@ FED_CONTEXT_COLUMNS = [
     "record_date", "fomc_date", "regime",
     "dominant_concern", "dominant_label",
     "ff_current", "zq_ticker", "zq_price", "zq_rate",
-    "cuts_implied", "ai_reason", "updated_at",
+    "cuts_implied", "ai_reason", "regime_source", "updated_at",
 ]
 
 WEEKLY_ANALYSIS_COLUMNS = [
@@ -1169,14 +1169,15 @@ def fetch_latest_fomc_statement():
         return None, None
 
 def _fallback_regime(ff_current, zq_rate, cuts_implied):
+    src = "DGS1数値ベース"
     if cuts_implied is None:
-        return {"regime":"BALANCED","dominant_concern":"BALANCED","dominant_label":"両睨み","ai_reason":"データ取得失敗のためルールベース判定。"}
+        return {"regime":"BALANCED","dominant_concern":"BALANCED","dominant_label":"両睨み","ai_reason":"データ取得失敗のためルールベース判定。","regime_source":src}
     if cuts_implied >= 1.0:
-        return {"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":f"ZQ先物が{cuts_implied:.1f}回の利下げを織り込み。EASING局面と判定（AI分析なし）。"}
+        return {"regime":"EASING","dominant_concern":"EMPLOYMENT_FOCUS","dominant_label":"雇用重視","ai_reason":f"DGS1ベースで{cuts_implied:.1f}回の利下げを織り込み。EASING局面と判定（AI分析なし）。","regime_source":src}
     elif cuts_implied <= -1.0:
-        return {"regime":"TIGHTENING","dominant_concern":"INFLATION_FOCUS","dominant_label":"インフレ警戒","ai_reason":f"ZQ先物が{abs(cuts_implied):.1f}回の利上げを織り込み。TIGHTENING局面と判定（AI分析なし）。"}
+        return {"regime":"TIGHTENING","dominant_concern":"INFLATION_FOCUS","dominant_label":"インフレ警戒","ai_reason":f"DGS1ベースで{abs(cuts_implied):.1f}回の利上げを織り込み。TIGHTENING局面と判定（AI分析なし）。","regime_source":src}
     else:
-        return {"regime":"BALANCED","dominant_concern":"BALANCED","dominant_label":"両睨み","ai_reason":f"ZQ先物の織り込みが{cuts_implied:+.1f}回でBALANCED局面と判定（AI分析なし）。"}
+        return {"regime":"BALANCED","dominant_concern":"BALANCED","dominant_label":"両睨み","ai_reason":f"DGS1ベースの織り込みが{cuts_implied:+.1f}回でBALANCED局面と判定（AI分析なし）。","regime_source":src}
 
 def analyze_fomc_with_grok(fomc_date, stmt_text, ff_current, zq_rate, cuts_implied):
     api_key = os.environ.get("XAI_API_KEY", "")
@@ -1228,6 +1229,7 @@ Respond ONLY in this exact JSON format (no markdown, no extra text):
         if parsed.get("regime") not in _VALID_REGIMES:
             logger.warning(f"Grok returned invalid regime '{parsed.get('regime')}'. Using fallback.")
             return _fallback_regime(ff_current, zq_rate, cuts_implied)
+        parsed["regime_source"] = "FOMC声明分析（Grok）"
         return parsed
     logger.warning(f"No JSON found in Grok response (FOMC). Full response: {raw[:500]}")
     return _fallback_regime(ff_current, zq_rate, cuts_implied)
@@ -1235,7 +1237,17 @@ Respond ONLY in this exact JSON format (no markdown, no extra text):
 def update_fed_context(target_date: date, fred):
     logger.info("=== Updating Fed Context ===")
     if os.path.exists(FED_CONTEXT_PATH):
-        ctx_df = pd.read_csv(FED_CONTEXT_PATH, dtype=str)
+        ctx_df = pd.read_csv(FED_CONTEXT_PATH, dtype=str).fillna("")
+        # 旧CSV に存在しない列を補完
+        for c in FED_CONTEXT_COLUMNS:
+            if c not in ctx_df.columns:
+                ctx_df[c] = ""
+        # regime_source の後付け推定（既存行）
+        if "regime_source" in ctx_df.columns:
+            mask = ctx_df["regime_source"] == ""
+            ctx_df.loc[mask, "regime_source"] = ctx_df.loc[mask, "ai_reason"].apply(
+                lambda r: "DGS1数値ベース" if "AI分析なし" in str(r) else (
+                    "FOMC声明分析（Grok）" if r else "DGS1数値ベース"))
     else:
         ctx_df = pd.DataFrame(columns=FED_CONTEXT_COLUMNS)
 
@@ -1287,6 +1299,7 @@ def update_fed_context(target_date: date, fred):
             "zq_rate":          _n(zq_rate),
             "cuts_implied":     _n(cuts_implied),
             "ai_reason":        analysis.get("ai_reason", ""),
+            "regime_source":    analysis.get("regime_source", "DGS1数値ベース"),
             "updated_at":       datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
         ctx_df = pd.concat([ctx_df, pd.DataFrame([new_row])], ignore_index=True)
