@@ -387,7 +387,10 @@ def _load_prev_tech_pulse_score(json_path):
 
 
 def _load_div_history(json_path, window=90):
-    """過去window日分の乖離値（TP score − F&G score）リストを返す"""
+    """過去window日分の乖離値（TP score − feargreedchart.com F&G）リストを返す。
+    保存済み divergence.value を優先使用し、ない場合は components.fg_score で再計算。
+    fear_greed.score（CNN）は feargreedchart.com と異なるため使用しない。
+    """
     if not os.path.exists(json_path):
         return []
     try:
@@ -406,8 +409,13 @@ def _load_div_history(json_path, window=90):
             continue
         if d < cutoff:
             continue
+        div_stored = ((entry.get("tech_pulse") or {}).get("divergence") or {}).get("value")
+        if div_stored is not None:
+            result.append(float(div_stored))
+            continue
+        # 旧エントリ（divergence.value 未記録）: components.fg_score で再計算
         tp_s = (entry.get("tech_pulse") or {}).get("score")
-        fg_s = (entry.get("fear_greed") or {}).get("score")
+        fg_s = ((entry.get("tech_pulse") or {}).get("components") or {}).get("fg_score")
         if tp_s is not None and fg_s is not None:
             result.append(float(tp_s) - float(fg_s))
     return result
