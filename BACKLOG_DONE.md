@@ -2,6 +2,15 @@
 
 ---
 
+## 2026-06-14
+
+✅ [MP-HISTORY-FIX] Market Pulse 過去データ異常値修正・バリデーション追加（2026-06-14 完了）
+- 原因: VIX9D列追加時のCSVヘッダズレでsentiment_scoreに誤値（-2.66〜1.41）が42件混入
+- 修正: market_data.json 42件再計算・91件→58件に重複集約
+- 再発防止: collect_and_send.py に sentiment_score の 0〜100 範囲チェック追加
+
+---
+
 ## 2026-06-13 完了
 
 ### ✅ STALE-CHECK-1 フォローアップ (2026-06-13 完了): 11銘柄ステールデータ更新
