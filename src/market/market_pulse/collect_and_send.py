@@ -387,9 +387,9 @@ def _load_prev_tech_pulse_score(json_path):
 
 
 def _load_div_history(json_path, window=90):
-    """過去window日分の乖離値（TP score − feargreedchart.com F&G）リストを返す。
-    保存済み divergence.value を優先使用し、ない場合は components.fg_score で再計算。
-    fear_greed.score（CNN）は feargreedchart.com と異なるため使用しない。
+    """過去window日分の乖離値（TP score − CNN F&G）リストを返す。
+    保存済み divergence.value を優先使用し、ない場合は components.fg_score で代替計算。
+    divergence.value は CNN F&G ベースで保存されているため一貫性が保たれる。
     """
     if not os.path.exists(json_path):
         return []
@@ -1130,13 +1130,14 @@ if __name__ == "__main__":
         tp_score = _prev_tp_score
     tp_label = _tp_label(tp_score)
 
-    # 乖離・Zスコア・シグナル
-    div_value = round(float(tp_score) - float(fg_score_tech), 1) if fg_score_tech is not None else None
+    # 乖離・Zスコア・シグナル（乖離=Tech Pulse - CNN F&G、画面表示と統一）
+    fg_cnn_score = (fear_greed_data or {}).get("score")
+    div_value = round(float(tp_score) - float(fg_cnn_score), 1) if fg_cnn_score is not None else None
     div_hist = _load_div_history(JSON_PATH, window=90)
     if div_value is not None:
         div_hist.append(div_value)
     div_zscore = _calc_divergence_zscore(div_hist)
-    tp_signal = _get_tp_signal(div_value, div_zscore, fg_score_tech)
+    tp_signal = _get_tp_signal(div_value, div_zscore, fg_cnn_score)
 
     tech_pulse_data = {
         "score": tp_score,
