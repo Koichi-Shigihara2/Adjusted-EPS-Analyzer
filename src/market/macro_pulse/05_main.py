@@ -220,6 +220,7 @@ INDICATOR_CONFIG = {
         "fred_id": "PAYEMS",
         "input_method": "FRED",
         "fred_release_id": 50,
+        "obs_to_release_lag": 35,  # obs_date=月初1日, 翌月第1金曜に発表
         "slug": "nfp",
         "threshold_bull": 200000,
         "threshold_bear": 100000,
@@ -230,6 +231,7 @@ INDICATOR_CONFIG = {
         "fred_id": "IC4WSA",
         "input_method": "FRED",
         "fred_release_id": 321,
+        "obs_to_release_lag": 7,   # obs_date=週末, 翌木曜に発表
         "slug": "ic4wsa",
         "threshold_bull": 250000,
         "threshold_bear": 300000,
@@ -240,6 +242,7 @@ INDICATOR_CONFIG = {
         "fred_id": "MICH",
         "input_method": "FRED",
         "fred_release_id": None,
+        "obs_to_release_lag": 10,  # obs_date=月初1日, 速報は約10日後
         "michigan_rule": True,
         "slug": "mich_1y",
         "threshold_bull": 2.5,
@@ -262,6 +265,7 @@ INDICATOR_CONFIG = {
         "fred_id": "UMCSENT",
         "input_method": "FRED",
         "fred_release_id": None,
+        "obs_to_release_lag": 10,  # obs_date=月初1日, 速報は約10日後
         "michigan_rule": True,
         "slug": "mich_sent",
         "threshold_bull": 90.0,
@@ -273,6 +277,7 @@ INDICATOR_CONFIG = {
         "fred_id": "PERMIT",
         "input_method": "FRED",
         "fred_release_id": None,   # FRED Release Calendar が空のためルールベース算出
+        "obs_to_release_lag": 47,  # obs_date=月初1日, 翌々月第3週に発表
         "permit_rule": True,       # 毎月第3週火曜（Housing Starts と同日発表）
         "slug": "permit",
         "threshold_bull": 1400.0,
@@ -1769,26 +1774,49 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
         if val is None or obs_date is None:
             continue
 
-        # FREDのobs_dateが月初1日等になる場合、scheduleの実発表日で上書き
+        # FREDのobs_dateが月初1日等になる場合、scheduleの実発表日で上書き。
+        # obs_to_release_lag を使って「この obs_date が実際に発表される release_date」に
+        # 絞り込んだウィンドウでスケジュールを検索する。ウィンドウが広すぎると
+        # 既存スロット（前回分）を飛ばして未来スロットに誤マッピングされるため、
+        # lag ± 14 日の狭い範囲だけを見る。
         release_date = obs_date
+        cfg_ind = INDICATOR_CONFIG.get(ind_name, {})
+        lag = cfg_ind.get("obs_to_release_lag", 35)
+        win_start = (obs_date + timedelta(days=max(1, lag - 14))).strftime("%Y-%m-%d")
+        win_end   = (obs_date + timedelta(days=lag + 14)).strftime("%Y-%m-%d")
         sched_hits = schedule[
             (schedule["indicator"] == ind_name) &
-            (schedule["release_date"] >= obs_date.strftime("%Y-%m-%d")) &
-            (schedule["release_date"] <= (obs_date + timedelta(days=60)).strftime("%Y-%m-%d"))
-        ]
-        if not sched_hits.empty:
-            try:
-                release_date = datetime.strptime(sched_hits["release_date"].iloc[0], "%Y-%m-%d").date()
-                logger.info(f"[monthly-refresh] {ind_name}: obs={obs_date} → sched_release={release_date}")
-            except Exception:
-                pass
+            (schedule["release_date"] >= win_start) &
+            (schedule["release_date"] <= win_end)
+        ].sort_values("release_date")
 
-        event_id = make_event_id(ind_name, release_date)
-        existing = events[events["event_id"] == event_id]
-        if not existing.empty:
-            actual_str = str(existing.iloc[0].get("actual", "")).strip()
-            if actual_str not in ("", "nan"):
-                continue  # 既に正常データあり → スキップ
+        if not sched_hits.empty:
+            found_slot = False
+            for _, srow in sched_hits.iterrows():
+                try:
+                    candidate_date = datetime.strptime(srow["release_date"], "%Y-%m-%d").date()
+                except Exception:
+                    continue
+                candidate_id = make_event_id(ind_name, candidate_date)
+                existing_c = events[events["event_id"] == candidate_id]
+                if not existing_c.empty:
+                    actual_str = str(existing_c.iloc[0].get("actual", "")).strip()
+                    if actual_str not in ("", "nan"):
+                        continue  # このスロットは既にデータあり → 次を試す
+                release_date = candidate_date
+                found_slot = True
+                logger.info(f"[monthly-refresh] {ind_name}: obs={obs_date} → sched_release={release_date}")
+                break
+            if not found_slot:
+                continue  # ウィンドウ内の全スロットに正常データあり → スキップ
+        else:
+            # スケジュールなし（またはウィンドウ外） → obs_date ベースの event_id を確認
+            event_id = make_event_id(ind_name, release_date)
+            existing = events[events["event_id"] == event_id]
+            if not existing.empty:
+                actual_str = str(existing.iloc[0].get("actual", "")).strip()
+                if actual_str not in ("", "nan"):
+                    continue  # 既に正常データあり → スキップ
 
         try:
             row = fetch_event_row(ind_name, target_date, fred, fin_ctx, schedule, events)
