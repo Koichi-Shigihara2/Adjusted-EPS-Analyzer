@@ -996,6 +996,14 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     }
     print(f"[INFO] credit: stock={credit_stock} bond={credit_bond} credit={credit_credit} → risk_off_score={risk_off_score}")
 
+    # sentiment スコア範囲チェック（CSV列ズレ等による異常値混入を防ぐ）
+    _sent_score = (sentiment_data or {}).get("score")
+    if _sent_score is not None and not (0 <= _sent_score <= 100):
+        raise ValueError(
+            f"[ERROR] sentiment_score が 0〜100 範囲外です: {_sent_score}。"
+            "collect_and_send.py の compute_sentiment 出力を確認してください。"
+        )
+
     new_entry = {
         "date": date_str,
         "judgment": judgment,
