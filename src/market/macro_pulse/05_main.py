@@ -710,18 +710,13 @@ def get_ff_current(fred):
 
 def get_implied_cuts(target_date: date, fred=None):
     """
-    IMPLIED CUTS = 市場が織り込む今後1年の利下げ回数。
+    1Y EXPECTED FF = DGS1（FRED: 1年国債利回り）をそのまま使用。
+    term premium 補正や ZQ=F 先物取得は廃止し、シンプルに DGS1 を採用。
 
-    DGS1（1年国債利回り）を基準に ZQ=F（フロントマンスFF Futures）で
-    term premium を補正した調整後レートを 12M先implied rate として使用。
-
-      adjusted_rate = DGS1 - clamp(DGS1 - ZQ_implied, -0.5%, +0.5%)
-      implied_cuts  = (FEDFUNDS - adjusted_rate) / 0.25
-
-    ZQ=F 取得失敗時は DGS1 をそのまま使用（旧来の挙動にフォールバック）。
+    IMPLIED CUTS = (ff_current - DGS1) / 0.25
+      正値: 市場が利下げを織り込み（DGS1 < ff_current）
+      負値: 市場が利上げ/高止まりを織り込み（DGS1 > ff_current）
     """
-    import yfinance as yf
-
     if fred is None:
         return None, None, None
 
@@ -729,23 +724,7 @@ def get_implied_cuts(target_date: date, fred=None):
     if dgs1 is None:
         return None, None, None
 
-    zq_ticker  = "ZQ=F+DGS1"
-    zq_price_v = None
-    dgs1_adj   = dgs1
-
-    try:
-        hist = yf.Ticker("ZQ=F").history(period="5d")
-        if not hist.empty:
-            zq_price_v = round(float(hist["Close"].iloc[-1]), 4)
-            zq_implied = round(100.0 - zq_price_v, 4)
-            term_premium = max(-0.5, min(0.5, dgs1 - zq_implied))
-            dgs1_adj = round(dgs1 - term_premium, 4)
-        else:
-            zq_ticker = "FRED:DGS1"
-    except Exception:
-        zq_ticker = "FRED:DGS1"
-
-    return zq_ticker, zq_price_v, round(dgs1_adj, 4)
+    return "FRED:DGS1", None, round(dgs1, 4)
 
 
 # 後方互換エイリアス
