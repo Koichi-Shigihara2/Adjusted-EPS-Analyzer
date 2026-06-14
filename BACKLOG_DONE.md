@@ -4,6 +4,15 @@
 
 ## 2026-06-14
 
+✅ [MP-DISPLAY-FIX] Macro Pulse 表示バグ3件修正・データ取得ロジック改善（2026-06-14 完了）
+- 修正1: NET LIQUIDITY / HY Spread の "++" 二重符号 → chgHtml の sign と fmt lambda が二重加算していた
+- 修正2 (コードではなくデータ問題): refresh_monthly_indicators の obs_to_release_lag 導入
+  - obs_date+60日の広すぎるウィンドウで既存スロットを飛ばし未来スロットに誤マッピングする問題を修正
+  - NFP 2026-06-05 (5月雇用統計) / Building Permits 2026-05-19 を正常取得
+  - Recent Signals の最新表示が 5/15 → 6/5 に改善
+  - Michigan CS / Mich Inf 1Y は FRED データが April 止まり（FRED 側ラグ、許容）
+- 修正3: AI Weekly Commentary ヘッダー "Gemini 2.5 Flash" → "GROK-3-MINI"
+
 ✅ [MP-HISTORY-FIX] Market Pulse 過去データ異常値修正・バリデーション追加（2026-06-14 完了）
 - 原因: VIX9D列追加時のCSVヘッダズレでsentiment_scoreに誤値（-2.66〜1.41）が42件混入
 - 修正: market_data.json 42件再計算・91件→58件に重複集約
