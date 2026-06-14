@@ -4,6 +4,12 @@
 
 ## 2026-06-14
 
+✅ [MP-DIV-UNIFY] 乖離計算ソースをCNN F&Gに統一（2026-06-14 完了）
+- 原因: 乖離=Tech Pulse - feargreedchart.com(~57)で、画面表示のCNN F&G(~34)と不一致
+- 修正: div_value = tech_pulse.score - fear_greed.score(CNN) → 乖離+15→+38に正常化
+- _get_tp_signal のfg_score<30判定もCNNスコアに更新
+- z-score履歴はdivergence.value優先参照(前コミット修正済み)のため次回実行からCNNベースで再計算
+
 ✅ [MP-DIV-ZSCORE-FIX] divergence z-score データソース不整合修正（2026-06-14 完了）
 - 原因: `_load_div_history` が fear_greed.score（CNN, ~34）を使って履歴構築していたが、
   当日 div_value は fg_score_tech（feargreedchart.com, ~57）から計算 → ソース不一致
