@@ -76,13 +76,13 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 #### 案件一覧
 | 銘柄 | 指摘内容 | 対応状況 |
 |------|---------|---------|
-| SCCO | EPS quarterly 株数（163.7M）vs latest.json 株数（834.3M）が 5.1x 乖離 | yfinance に 5:1 分割記録なし（2006/2008 に分割済み、以降は小数点以下の株式配当のみ）。株式分割ではない別原因（Treasury株会計・公開株数との乖離等）の可能性。要別途調査 |
+| SCCO | EPS quarterly 株数（163.7M）vs 実際（821M）が 5.1x 乖離 | 根本原因特定: cik_lookup.csv の CIK 誤登録（0000077360=旧Southern Peru Copper → 正: 0001001838=Southern Copper Corp）。cik修正で解決。BUG-SCCO-CIK-1として記録済み |
 | NOW | adj_eps が SEC XBRL 値と乖離している疑い | 根本原因特定済み: 2025-12-18 5:1株式分割未対応。BUG-NOW-SPLIT-1 として修正実装済み（2026-06-15） |
 | MRVL | EPS 四半期データに異常値の可能性 | 根本原因特定済み: Q3 FY2026 DTA認識 NI $1.9B（BUG-LYFT-EPS-1 と同類）。BUG-LYFT-EPS-1 現状欄に追記済み |
 | LMT | Q2 2025 EPS $1.46（他Q比1/4〜1/5）、Adjustment_Delta=$0.0000 | 原因: TR-3C訓練機プログラム損失 ~$1.3B がOperatingIncomeに埋没しXBRLタグなし。EPS Analyzerは正常動作（設計上の限界）。自動調整不可のプログラム損失はLIMITATION-1として記録。コード修正不要。 |
 
 #### 次アクション
-1. SCCO: 株数乖離の根本原因を SEC EDGAR で確認（yfinance に 5:1 分割記録なし、別原因の可能性）
+1. SCCO: 調査完了・CIK修正済み（BUG-SCCO-CIK-1）→ EPS Analyzer 再実行・全体検証が残タスク
 2. LYFT/MRVL の DTA 除外ロジック実装（BUG-LYFT-EPS-1 本体）
 3. LMT: 調査完了・LIMITATION登録のみ（コード修正不要）
 
