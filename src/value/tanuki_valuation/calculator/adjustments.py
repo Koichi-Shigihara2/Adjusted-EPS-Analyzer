@@ -897,8 +897,14 @@ def analyze_fcf_outlier(
     fcf_deviation = abs(latest_fcf - fcf_5yr_avg) if fcf_5yr_avg != 0 else abs(latest_fcf)
     # latest_negativeの場合: 一過性費用の金額が5年平均の10%以上なら除外
     # deviation_largeの場合:  一過性費用の金額がFCF乖離の20%以上なら除外
+    #   ただし: latest_fcf > fcf_5yr_avg（上方乖離）のケースは除外しない
+    #   一過性コストはFCFを下押しするため、上方乖離を「一過性コスト由来」とするのは矛盾
+    #   （もし本当に上方乖離が一時的なら flagged として報告するに留める）
+    is_upward_deviation = rule == "deviation_large" and latest_fcf > fcf_5yr_avg
     if rule == "latest_negative":
         transient_explains = transient_found and transient_total >= abs(fcf_5yr_avg) * 0.10
+    elif is_upward_deviation:
+        transient_explains = False  # 上方乖離は一過性コストで除外しない（FCF-OUTLIER-1）
     else:
         transient_explains = transient_found and transient_total >= fcf_deviation * 0.20
 

@@ -25,6 +25,16 @@
 - **JNJ**: IV $363.76 → $202.12（G=15%→1.47% で upside +51% → -16.1%）
 - **VZ**: G=15%→0.9% で IV 大幅変動
 
+✅ [FCF-OUTLIER-1] FCF外れ値誤除外修正（DOCN/LITE/VST） ✅ 2026-06-15
+- **根本原因**: `analyze_fcf_outlier` が "deviation_large" ルールで `latest_fcf > fcf_5yr_avg`（上方乖離）のケースを一過性コストで「除外」していた。
+  一過性コストはFCFを下押しするため、上方乖離が「コスト由来」とするのは矛盾。
+- **修正**: `adjustments.py` の `transient_explains` 計算で `is_upward_deviation`（上方乖離）の場合は `False` に強制
+  → action が "excluded" → "flagged" に変更
+- **DOCN**: FCF base = 4yr avg $86M → 5yr avg $104M（除外撤回）
+- **LITE**: FCF base = 4yr avg $49M → 5yr avg $62M（除外撤回）  
+- **VST**: FCF base = 4yr avg ? → 5yr avg $1276M（除外撤回）
+- テスト: 130/130 pass, consistency_check NG=0
+
 ✅ [CHECK-17/18/19] 回帰検知チェック3件を report_consistency_check.py に追加 ✅ 2026-06-15
 - **CHECK-17 [NG]**: 直近3年の全四半期 adj_eps=gaap_eps=0.0 → BUG-EPS-ZERO-1 回帰検知
 - **CHECK-18 [WARN]**: recommended_g あり & phase1_growth_auto_adjusted=False & source≠segment_weighted & rate≈15% → DCF-DEFAULT-G-1 回帰検知
