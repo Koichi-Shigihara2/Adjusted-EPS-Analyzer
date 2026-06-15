@@ -25,6 +25,8 @@ from datetime import datetime
 TTM_DIR  = os.path.join(os.path.dirname(__file__), "ttm")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
                         "value-monitor", "tanuki_valuation", "data")
+EPS_DIR  = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
+                        "value-monitor", "adjusted_eps_analyzer", "data")
 
 
 def get_registered_tickers() -> list[str]:
@@ -76,6 +78,32 @@ def audit_ticker(ticker: str) -> dict:
     # TTMエントリ数が少ない
     if n < 3:
         result["warning"].append(f"TTMエントリ{n}件（3件未満・上場間もない可能性）")
+
+    # 株数乖離チェック: EPS quarterly.json の希薄化株数 vs latest.json の希薄化株数
+    # 5倍超の乖離はデータソース不一致の疑い
+    _q_path = os.path.join(EPS_DIR, ticker, "quarterly.json")
+    _l_path  = os.path.join(DATA_DIR, ticker, "latest.json")
+    if os.path.exists(_q_path) and os.path.exists(_l_path):
+        try:
+            _qdata = json.load(open(_q_path, encoding="utf-8"))
+            _qs = _qdata if isinstance(_qdata, list) else _qdata.get("quarters", [])
+            _recent_q = sorted(
+                [q for q in _qs if (q.get("filing_date") or "") >= "2022-01-01"],
+                key=lambda q: q.get("filing_date", ""),
+            )
+            if _recent_q:
+                _eps_shares = _recent_q[-1].get("diluted_shares") or 0
+                _ld = json.load(open(_l_path, encoding="utf-8"))
+                _val_shares = (_ld.get("components") or {}).get("diluted_shares") or 0
+                if _eps_shares > 1e6 and _val_shares > 1e6:
+                    _ratio = max(_eps_shares, _val_shares) / min(_eps_shares, _val_shares)
+                    if _ratio >= 5.0:
+                        result["warning"].append(
+                            f"株数乖離{_ratio:.1f}x: EPS={_eps_shares/1e6:.1f}M"
+                            f" vs DCF={_val_shares/1e6:.1f}M → データソース不一致疑い"
+                        )
+        except Exception:
+            pass
 
     return result
 

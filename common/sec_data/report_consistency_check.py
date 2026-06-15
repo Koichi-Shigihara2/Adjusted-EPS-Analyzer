@@ -20,6 +20,9 @@ report_consistency_check.py
   NG  14. EPS>株価50%          EPS Analyzer直近Q adj_eps が株価の50%超（単位バグ検出）
   NG  15. EPS>株価             EPS Analyzer直近Q adj_eps が株価を上回る（単位バグ確実）
   WARN 16. TTM四半期不足       EPS Analyzer TTM計算に使用した四半期数が4未満
+  NG  17. EPS全値$0.0          quarterly.json の全四半期 adj_eps=0.0（BUG-EPS-ZERO-1 回帰検知）
+  WARN 18. G=15%デフォルト未調整 recommended_g あり & phase1_growth_auto_adjusted=False（DCF-DEFAULT-G-1 回帰）
+  NG  19. SEC株数=0            quarterly.json に diluted_shares=0 の四半期（株数取得失敗）
 """
 
 import os
@@ -485,6 +488,56 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 warn.append(
                     f"  [WARN-16 TTM四半期不足] EPS Analyzer TTM計算に{len(_recent)}四半期しかない（4必要）"
                 )
+
+    # CHECK-17: EPS全値$0.0（BUG-EPS-ZERO-1 回帰検知）
+    # 直近3年の四半期で全てadj_eps=gaap_eps=0.0の場合、株式数取得失敗の可能性
+    _eps_qs_c17 = _read_eps_quarterly(ticker)
+    _recent_c17 = [q for q in _eps_qs_c17 if (q.get("filing_date") or "") >= "2022-01-01"]
+    if len(_recent_c17) >= 2:
+        _all_adj_zero = all(abs(q.get("adjusted_eps") or 0) < 1e-9 for q in _recent_c17)
+        _all_gaap_zero = all(abs(q.get("gaap_eps") or 0) < 1e-9 for q in _recent_c17)
+        if _all_adj_zero and _all_gaap_zero:
+            ng.append(
+                f"  [NG-17 EPS全値$0.0] 直近{len(_recent_c17)}四半期すべてadj_eps=gaap_eps=0.0"
+                f" → 株式数取得失敗疑い(BUG-EPS-ZERO-1 回帰)"
+            )
+
+    # CHECK-18: G=15%デフォルト未調整（DCF-DEFAULT-G-1 回帰検知）
+    # recommended_gがあるのにphase1_growth_auto_adjusted=Falseかつ成長率が15%のままならWARN
+    _g_c18 = latest.get("growth") or {}
+    _rate_c18 = _g_c18.get("rate")
+    _source_c18 = _g_c18.get("source", "")
+    _rec_g_c18 = latest.get("recommended_g")
+    _auto_adj_c18 = latest.get("phase1_growth_auto_adjusted", False)
+    if (
+        _rate_c18 is not None
+        and _rec_g_c18 is not None
+        and not _auto_adj_c18
+        and _source_c18 != "segment_weighted"  # segment_configによる意図的設定は除外
+        and abs(_rate_c18 - 0.15) < 0.002      # 15%デフォルトのまま
+        and abs(_rate_c18 - _rec_g_c18) > 0.05 # recommended_gと5%以上乖離
+    ):
+        warn.append(
+            f"  [WARN-18 G=15%デフォルト未調整] growth.rate={_rate_c18:.1%}"
+            f" & recommended_g={_rec_g_c18:.1%} だがauto_adjusted=False"
+            f" → DCF-DEFAULT-G-1 回帰の可能性"
+        )
+
+    # CHECK-19: SEC株数=0（BUG-EPS-ZERO-1 回帰検知）
+    # 直近3年の四半期でdiluted_shares=0かつnet_income非ゼロの場合はNG
+    _eps_qs_c19 = _read_eps_quarterly(ticker)
+    _recent_c19 = [q for q in _eps_qs_c19 if (q.get("filing_date") or "") >= "2022-01-01"]
+    _zero_shares_c19 = [
+        q for q in _recent_c19
+        if (q.get("gaap_net_income") or 0) != 0 and (q.get("diluted_shares") or 0) == 0
+    ]
+    if _zero_shares_c19:
+        _dates_c19 = [q.get("filing_date", "?") for q in _zero_shares_c19[:3]]
+        ng.append(
+            f"  [NG-19 SEC株数=0] {len(_zero_shares_c19)}四半期でdiluted_shares=0"
+            f" (例: {', '.join(_dates_c19)})"
+            f" → 株式数取得失敗(BUG-EPS-ZERO-1 回帰)"
+        )
 
     return ng, warn
 

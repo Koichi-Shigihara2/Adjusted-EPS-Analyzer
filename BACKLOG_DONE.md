@@ -25,6 +25,18 @@
 - **JNJ**: IV $363.76 → $202.12（G=15%→1.47% で upside +51% → -16.1%）
 - **VZ**: G=15%→0.9% で IV 大幅変動
 
+✅ [CHECK-17/18/19] 回帰検知チェック3件を report_consistency_check.py に追加 ✅ 2026-06-15
+- **CHECK-17 [NG]**: 直近3年の全四半期 adj_eps=gaap_eps=0.0 → BUG-EPS-ZERO-1 回帰検知
+- **CHECK-18 [WARN]**: recommended_g あり & phase1_growth_auto_adjusted=False & source≠segment_weighted & rate≈15% → DCF-DEFAULT-G-1 回帰検知
+- **CHECK-19 [NG]**: 直近3年の四半期で diluted_shares=0 かつ NI≠0 → 株式数取得失敗回帰検知
+- **日付フィルタ**: 2022-01-01以降のみ対象（旧上場前・スピンオフ前データの偽陽性を除外）
+- **テスト結果**: 96銘柄 NG=0 / 警告=3件（既知: ELF PS乖離, LMT/VRT segment陳腐化）
+
+✅ [AUDIT-SHARES-1] audit.py に yfinance/SEC 株数乖離チェック(5x閾値)を追加 ✅ 2026-06-15
+- **実装**: `audit_ticker` に株数乖離チェックを追加（EPS quarterly.json latest vs latest.json components.diluted_shares）
+- **閾値**: 5倍以上の乖離で WARN 出力
+- **検出例**: SCCO 株数乖離 5.1x（EPS=163.7M vs DCF=834.3M）→ データソース不一致疑い
+
 ## 2026-06-14
 
 ✅ [MP-DIV-UNIFY] 乖離計算ソースをCNN F&Gに統一（2026-06-14 完了）
