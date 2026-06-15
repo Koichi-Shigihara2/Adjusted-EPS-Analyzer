@@ -1,14 +1,14 @@
 HEI INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T17:00:32+09:00
-Price: $331.61
+Generated: 2026-06-16T03:46:12+09:00
+Price: $336.61
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: HOLD
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -60.3%
-  MA200_Deviation: +5.9%
-  HypeCore_Phase: Phase4 (期待剥落期)
+  Deviation_Rate: -60.4%
+  MA200_Deviation: +7.5%
+  HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: 1.83 (Buy)
 Comment: 割高(-60%超)、FCF黒字、売上安定成長
 Definition:
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 2.996
-Deviation_Rate: -60.3%
+Deviation_Rate: -60.4%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $331.61
-Intrinsic_Value_BASE: $131.61
-Deviation_BASE: -60.3%
+Current_Price: $336.61
+Intrinsic_Value_BASE: $133.15
+Deviation_BASE: -60.4%
 Scenarios:
-BEAR: Growth=7.0%, IV=$116.47, Deviation=-64.9%
-BASE: Growth=10.0%, IV=$131.61, Deviation=-60.3%
-BULL: Growth=12.0%, IV=$142.62, Deviation=-57.0%
+BEAR: Growth=7.0%, IV=$117.83, Deviation=-65.0%
+BASE: Growth=10.0%, IV=$133.15, Deviation=-60.4%
+BULL: Growth=12.0%, IV=$144.28, Deviation=-57.1%
 Growth_Rate_Rec: 20.2% (recommended)
 TTM_YoY_Growth: 18.8%
 (DCF Base vs TTM actual: -8.8pt discount)
@@ -71,26 +71,26 @@ WACC_CAPM_Reference: 10.20%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.035
 Valuation_Gap_Analysis:
-  DCF_IV:           $132 (保守的FCFベース・現在実力値)
-  Market_Price:     $332
+  DCF_IV:           $133 (保守的FCFベース・現在実力値)
+  Market_Price:     $337
   Gap:              -60% (市場が将来成長を先取り)
-  Implied_FCF_2030: $3.13B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $3.18B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.56B
   Required_Growth:  41%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Aerospace & Defense)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $557M (= Adj_NI $795M × FCF_Conv 0.7)
-DCF_FCF_PV: $2.78B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $8.19B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $10.97B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_Base: $563M (= Adj_NI $805M × FCF_Conv 0.7)
+DCF_FCF_PV: $2.82B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $8.29B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $11.10B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6562 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $18.17B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $18.39B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $18.38B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.21B)
+Equity_Value: $18.60B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.21B)
 Shares_Used: 139.7M (source: yf_implied)
-→ Intrinsic_Value: $131.61 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $133.15 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.21B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.21B
@@ -160,10 +160,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 10.0%
-成長モデル: 中央値モデル（CAGR_max=26.6%のため中央値モデル適用）  HypePhase=4
-推奨成長率内訳:
-  中央値ベース:          20.2%
-  最終推奨値:            20.2%
+成長モデル: セグメント加重モデル（Layer 1）  HypePhase=2
+DCF適用値:  10.0%（セグメント加重平均 → DCF G として直接使用）
+推奨成長率: 20.2%（Layer 2 参考値・DCF未適用）
 判定         : PLAUSIBLE
 業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
 signals:
@@ -228,15 +227,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $1.8820 (直近四半期値)
-Latest_GAAP_EPS: $1.6574
-Adjustment_Delta: $0.2247 (amortization_intangibles)
-YoY_Growth: 44.0%
+Latest_Adjusted_EPS: $2.0025 (直近四半期値)
+Latest_GAAP_EPS: $1.7745
+Adjustment_Delta: $0.2280 (amortization_intangibles)
+YoY_Growth: 42.2%
 Recent Surprises (Adjusted EPS):
-  2026 Q2: Actual=$1.8820 vs Est=N/A -> N/A%
-  2026 Q1: Actual=$1.5718 vs Est=N/A -> N/A%
-  2025 Q4: Actual=$1.4816 vs Est=N/A -> N/A%
-  2025 Q3: Actual=$1.4552 vs Est=N/A -> N/A%
+  2026 Q2: Actual=$2.0025 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$1.6771 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$1.2518 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$1.5526 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -250,9 +249,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 59.2x
-  Adjusted_EPS_PER: 51.9x (TTM調整後EPS: $6.3906)
-  Delta: -7.3x (cheaper on adjusted basis)
+  Market_PER_GAAP: 60.1x
+  Adjusted_EPS_PER: 51.9x (TTM調整後EPS: $6.4840)
+  Delta: -8.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-26
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -267,20 +266,20 @@ Compare with TANUKI G scenario for cross-validation
 
 
 [7. HYPECORE]
-Current_Phase: Phase4 (期待剥落期)
+Current_Phase: Phase2 (期待拡大期)
 Alpha_Premium: 0.66
-HYPE_Signal: 実体維持・バリュエーション過熱 — 実体（売上・EPS）は強いが、株価÷IV=2.51x、FwdPE=48xと割高感が残る。期待の訂正がまだ終わっていない可能性。
+HYPE_Signal: 期待拡大開始 — 期待と実体が噛み合い始めた段階。
 Phase_History (recent 6 months):
 2026-01: Phase2 (期待拡大期)
 2026-02: Phase2 (期待拡大期)
 2026-03: Phase4 (期待剥落期)
 2026-04: Phase4 (期待剥落期)
 2026-05: Phase3 (陶酔期)
-2026-06: Phase4 (期待剥落期)
+2026-06: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 59.2x
+  PER: 60.1x
   PEG: 3.03
-  PS:  9.4x
+  PS:  9.6x
   EV_EBITDA: 35.9x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
@@ -300,9 +299,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.07%  (ForwardEPS $6.85 / Price $331.61)
+  Forward_Earnings_Yield: 2.03%  (ForwardEPS $6.85 / Price $336.61)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.23%
+  ERP: -2.27%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

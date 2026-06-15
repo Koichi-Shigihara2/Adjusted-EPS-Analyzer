@@ -1,16 +1,16 @@
 KO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T17:00:15+09:00
-Price: $82.62
+Generated: 2026-06-16T03:46:01+09:00
+Price: $80.75
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -44.7%
-  MA200_Deviation: +12.4%
+  Deviation_Rate: -43.4%
+  MA200_Deviation: +9.9%
   HypeCore_Phase: Phase2 (期待拡大期)
-  Analyst_Consensus: 1.75 (Buy)
-Comment: 割高(-45%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: 1.80 (Buy)
+Comment: 割高(-43%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_avg (10yr) = 36.8%
-Deviation_Rate: -44.7%
+Deviation_Rate: -43.4%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,21 +56,21 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $82.62
+Current_Price: $80.75
 Intrinsic_Value_BASE: $45.71
-Deviation_BASE: -44.7%
+Deviation_BASE: -43.4%
 Scenarios:
-BEAR: Growth=2.6%, IV=$41.21, Deviation=-50.1%
-BASE: Growth=4.7%, IV=$45.71, Deviation=-44.7%
-BULL: Growth=5.6%, IV=$47.79, Deviation=-42.2%
+BEAR: Growth=2.6%, IV=$41.21, Deviation=-49.0%
+BASE: Growth=4.7%, IV=$45.71, Deviation=-43.4%
+BULL: Growth=5.6%, IV=$47.79, Deviation=-40.8%
 Growth_Rate_Rec: 3.7% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(14.1%→11.0%) BEAR補正係数=0.778
 TTM_YoY_Growth: 5.1%
 (DCF Base vs TTM actual: -0.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
-WACC_CAPM_Reference: 7.43%
+WACC_CAPM_Reference: 6.32%
 Terminal_Growth_Rate: 2.5%
-Beta: 0.55
+Beta: 0.354
 FCF_Conversion_Rate: 0.7 (Industry: Beverages - Non-Alcoholic)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -79,7 +79,7 @@ DCF_FCF_PV: $40.36B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $99.68B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $140.05B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $224.08B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $224.07B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $196.66B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-27.42B)
@@ -155,10 +155,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 4.7%
-成長モデル: 中央値モデル（CAGR_max=7.7%のため中央値モデル適用）  HypePhase=2
-推奨成長率内訳:
-  中央値ベース:          3.7%
-  最終推奨値:            3.7%
+成長モデル: セグメント加重モデル（Layer 1）  HypePhase=2
+DCF適用値:  4.7%（セグメント加重平均 → DCF G として直接使用）
+推奨成長率: 3.7%（Layer 2 参考値・DCF未適用）
 判定         : PLAUSIBLE
 業界ベンチマーク: N/A
 signals:
@@ -219,15 +218,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $0.9213 (直近四半期値)
-Latest_GAAP_EPS: $0.9096
-Adjustment_Delta: $0.0117 (sbc/litigation_settlement)
-YoY_Growth: 17.4%
+Latest_Adjusted_EPS: $0.9311 (直近四半期値)
+Latest_GAAP_EPS: $0.9193
+Adjustment_Delta: $0.0118 (sbc/litigation_settlement)
+YoY_Growth: 18.5%
 Recent Surprises (Adjusted EPS):
-  2026 Q1: Actual=$0.9213 vs Est=N/A -> N/A%
-  2025 Q4: Actual=$0.5407 vs Est=N/A -> N/A%
-  2025 Q3: Actual=$0.8727 vs Est=N/A -> N/A%
-  2025 Q2: Actual=$0.8957 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$0.9311 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$0.5441 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$0.8696 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$0.8940 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -241,9 +240,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 26.0x
-  Adjusted_EPS_PER: 25.6x (TTM調整後EPS: $3.2303)
-  Delta: -0.4x (cheaper on adjusted basis)
+  Market_PER_GAAP: 25.4x
+  Adjusted_EPS_PER: 24.9x (TTM調整後EPS: $3.2389)
+  Delta: -0.5x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-21
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -269,9 +268,9 @@ Phase_History (recent 6 months):
 2026-05: Phase2 (期待拡大期)
 2026-06: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 26.0x
+  PER: 25.4x
   PEG: 4.23
-  PS:  7.2x
+  PS:  7.0x
   EV_EBITDA: 23.2x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
@@ -291,10 +290,10 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.22%  (ForwardEPS $3.48 / Price $82.62)
+  Forward_Earnings_Yield: 4.31%  (ForwardEPS $3.48 / Price $80.75)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.08%
-  ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
+  ERP: 0.01%
+  ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
 PER: Price / GAAP EPS (trailing)
@@ -317,7 +316,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.1%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: 1.75 (Buy)
+Analyst_Consensus: 1.80 (Buy)
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 5.1%
 Next_Earnings_Date: 2026-07-21

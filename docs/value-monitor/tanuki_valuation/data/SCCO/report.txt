@@ -1,16 +1,16 @@
 SCCO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T17:00:34+09:00
-Price: $189.79
+Generated: 2026-06-16T03:46:14+09:00
+Price: $194.26
 
 [1. TANUKI SCORE]
 Classification: TRIM
-Funda_Score: 90/100
+Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -90.9%
-  MA200_Deviation: +20.8%
+  Deviation_Rate: -45.4%
+  MA200_Deviation: +23.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 3.59 (Sell)
-Comment: 割高(-91%超)、FCF黒字、売上成長加速
+Comment: 割高(-45%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 3.020
-Deviation_Rate: -90.9%
+Deviation_Rate: -45.4%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $189.79
-Intrinsic_Value_BASE: $17.36
-Deviation_BASE: -90.9%
+Current_Price: $194.26
+Intrinsic_Value_BASE: $106.12
+Deviation_BASE: -45.4%
 Scenarios:
-BEAR: Growth=5.9%, IV=$15.46, Deviation=-91.9%
-BASE: Growth=8.5%, IV=$17.36, Deviation=-90.9%
-BULL: Growth=10.1%, IV=$18.73, Deviation=-90.1%
+BEAR: Growth=5.9%, IV=$95.33, Deviation=-50.9%
+BASE: Growth=8.5%, IV=$106.12, Deviation=-45.4%
+BULL: Growth=10.1%, IV=$113.86, Deviation=-41.4%
 Growth_Rate_Rec: 9.4% (recommended)
 TTM_YoY_Growth: 21.7%
 (DCF Base vs TTM actual: -13.2pt discount)
@@ -70,27 +70,20 @@ Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.62%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.108
-Valuation_Gap_Analysis:
-  DCF_IV:           $17 (保守的FCFベース・現在実力値)
-  Market_Price:     $190
-  Gap:              -91% (市場が将来成長を先取り)
-  Implied_FCF_2030: $10.86B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $0.54B
-  Required_Growth:  82%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Copper)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $537M (= Adj_NI $767M × FCF_Conv 0.7)
-DCF_FCF_PV: $2.57B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $7.36B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $9.93B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_Base: $3,039M (= Adj_NI $4,341M × FCF_Conv 0.7)
+DCF_FCF_PV: $14.56B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $41.65B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $56.21B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $15.89B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $89.94B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $14.49B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-1.40B)
+Equity_Value: $88.53B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-1.40B)
 Shares_Used: 834.3M (source: yf_implied)
-→ Intrinsic_Value: $17.36 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $106.12 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+1.40B (negative=net cash)
   Total_Debt: $6.75B  Cash: $4.92B  ST_Invest: $0.43B
@@ -160,10 +153,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 8.5%
-成長モデル: 中央値モデル（CAGR_max=10.9%のため中央値モデル適用）  HypePhase=4
-推奨成長率内訳:
-  中央値ベース:          9.4%
-  最終推奨値:            9.4%
+成長モデル: セグメント加重モデル（Layer 1）  HypePhase=4
+DCF適用値:  8.5%（セグメント加重平均 → DCF G として直接使用）
+推奨成長率: 9.4%（Layer 2 参考値・DCF未適用）
 判定         : PLAUSIBLE
 業界ベンチマーク: Metals & Mining / 8.8% (Damodaran 2025)
 signals:
@@ -229,15 +221,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $1.2853 (直近四半期値)
-Latest_GAAP_EPS: $1.0531
-Adjustment_Delta: $0.2321 (sbc/amortization_intangibles/loan_loss_provision_abnormal/restructuring)
-YoY_Growth: 14.8%
+Latest_Adjusted_EPS: $1.9252 (直近四半期値)
+Latest_GAAP_EPS: $1.9252
+Adjustment_Delta: $0.0000 (N/A)
+YoY_Growth: 66.7%
 Recent Surprises (Adjusted EPS):
-  2026 Q1: Actual=$1.2853 vs Est=N/A -> N/A%
-  2025 Q4: Actual=$1.2021 vs Est=N/A -> N/A%
-  2025 Q3: Actual=$1.2142 vs Est=N/A -> N/A%
-  2025 Q2: Actual=$1.0941 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$1.9252 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$1.5777 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$1.3503 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$1.2091 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -251,13 +243,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 32.2x
-  Adjusted_EPS_PER: 39.6x (TTM調整後EPS: $4.7956)
-  Delta: +7.4x (more expensive on adjusted basis)
+  Market_PER_GAAP: 32.9x
+  Adjusted_EPS_PER: 32.0x (TTM調整後EPS: $6.0622)
+  Delta: -0.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $6.74 (yfinance forward EPS)
+  Next_FY_EPS: $6.84 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -279,9 +271,9 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 32.2x
+  PER: 32.9x
   PEG: 5.41
-  PS:  10.9x
+  PS:  11.1x
   EV_EBITDA: 18.1x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
@@ -301,9 +293,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.55%  (ForwardEPS $6.74 / Price $189.79)
+  Forward_Earnings_Yield: 3.52%  (ForwardEPS $6.84 / Price $194.26)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.75%
+  ERP: -0.78%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

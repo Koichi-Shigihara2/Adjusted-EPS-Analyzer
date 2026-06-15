@@ -1,16 +1,16 @@
 AVGO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T17:00:29+09:00
-Price: $382.07
+Generated: 2026-06-16T03:46:10+09:00
+Price: $394.45
 
 [1. TANUKI SCORE]
 Classification: HOLD
-Funda_Score: 75/100
+Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -27.2%
-  MA200_Deviation: +6.7%
+  Deviation_Rate: -49.3%
+  MA200_Deviation: +10.2%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: 1.33 (Strong Buy)
-Comment: 割高(-27%超)、FCF黒字、売上成長加速
+Comment: 割高(-49%超)、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
 Key_Metric_Y: RICE = 3.470
-Deviation_Rate: -27.2%
+Deviation_Rate: -49.3%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,32 +56,34 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $382.07
-Intrinsic_Value_BASE: $278.32
-Deviation_BASE: -27.2%
+Current_Price: $394.45
+Intrinsic_Value_BASE: $200.01
+Deviation_BASE: -49.3%
 Scenarios:
-BEAR: Growth=12.6%, IV=$222.92, Deviation=-41.7%
-BASE: Growth=17.9%, IV=$278.32, Deviation=-27.2%
-BULL: Growth=21.5%, IV=$321.03, Deviation=-16.0%
+BEAR: Growth=12.6%, IV=$159.68, Deviation=-59.5%
+BASE: Growth=17.9%, IV=$200.01, Deviation=-49.3%
+BULL: Growth=21.5%, IV=$231.09, Deviation=-41.4%
 Growth_Rate_Rec: 15.7% (recommended)
-TTM_YoY_Growth: 25.2%
-(DCF Base vs TTM actual: -7.3pt discount)
+TTM_YoY_Growth: 32.3%
+(DCF Base vs TTM actual: -14.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 12.51%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.44
-FCF_Base: $26,448.00M (5yr平均 + R&D補正)
-DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $163.83B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $596.96B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $760.79B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+FCF_Conversion_Rate: 0.7 (Industry: Semiconductors)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
+DCF_FCF_Base: $14,769M (= Adj_NI $21,099M × FCF_Conv 0.7)
+DCF_FCF_PV: $119.25B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $434.54B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $553.79B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $1369.42B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $996.83B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $1324.14B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-45.28B)
+Equity_Value: $951.55B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-45.28B)
 Shares_Used: 4757.6M (source: yf_implied)
-→ Intrinsic_Value: $278.32 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $200.01 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+45.28B (negative=net cash)
   Total_Debt: $64.91B  Cash: $19.63B
@@ -151,10 +153,9 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 17.9%
-成長モデル: 中央値モデル（CAGR_max=24.4%のため中央値モデル適用）  HypePhase=2
-推奨成長率内訳:
-  中央値ベース:          15.7%
-  最終推奨値:            15.7%
+成長モデル: セグメント加重モデル（Layer 1）  HypePhase=2
+DCF適用値:  17.9%（セグメント加重平均 → DCF G として直接使用）
+推奨成長率: 15.7%（Layer 2 参考値・DCF未適用）
 判定         : PLAUSIBLE
 業界ベンチマーク: Semiconductor / 9.6% (Damodaran 2025)
 signals:
@@ -220,12 +221,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $0.0000 (直近四半期値)
-Latest_GAAP_EPS: $0.0000
-Adjustment_Delta: $0.0000 (amortization_intangibles/restructuring/litigation_settlement)
-YoY_Growth: N/A%
+Latest_Adjusted_EPS: $2.6744 (直近四半期値)
+Latest_GAAP_EPS: $1.9094
+Adjustment_Delta: $0.7651 (sbc/amortization_intangibles)
+YoY_Growth: 44.4%
 Recent Surprises (Adjusted EPS):
-  2019 Q4: Actual=$0.0000 vs Est=N/A -> N/A%
+  2026 Q2: Actual=$2.6744 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$2.2639 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$1.2492 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$1.8126 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -239,8 +243,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 63.7x
-  Adjusted_EPS_PER: N/A
+  Market_PER_GAAP: 65.7x
+  Adjusted_EPS_PER: 49.3x (TTM調整後EPS: $8.0001)
+  Delta: -16.4x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -266,9 +271,9 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 2026-06: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 63.7x
+  PER: 65.7x
   PEG: 0.69
-  PS:  24.1x
+  PS:  24.9x
   EV_EBITDA: 44.3x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
@@ -288,9 +293,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.06%  (ForwardEPS $19.35 / Price $382.07)
+  Forward_Earnings_Yield: 4.91%  (ForwardEPS $19.35 / Price $394.45)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.76%
+  ERP: 0.61%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -316,7 +321,7 @@ Short_Interest: 1.3%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: 1.33 (Strong Buy)
 Runway_Months: N/A (profitable or not in STONKS)
-Revenue_Growth_YoY: 25.2%
+Revenue_Growth_YoY: 32.3%
 Next_Earnings_Date: 2026-09-04
 Breakeven_Estimate: N/A (profitable or insufficient data)
 Definition:
