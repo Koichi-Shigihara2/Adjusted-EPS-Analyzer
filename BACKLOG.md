@@ -65,6 +65,27 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - 対処: SEC EDGAR の最新10-K/10-Q でSOFI Technologies Sr. Notes等の明細を確認し、
   手動でnormalized jsonを更新、またはカスタム設定で正確な値を固定
 
+### [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
+**優先度:** 低〜中（調査してから判断）
+**分類:** データ品質 / 外部AIレビュー
+
+#### 背景
+全78銘柄の外部AIレビュー（2026-06-15 完了）で発見された、本日未修正の指摘事項。
+今後の個別バグとして切り出す候補。
+
+#### 案件一覧
+| 銘柄 | 指摘内容 | 対応状況 |
+|------|---------|---------|
+| SCCO | EPS quarterly 株数（163.7M）vs latest.json 株数（834.3M）が 5.1x 乖離 | AUDIT-SHARES-1（audit.py 5x WARNING）で検知済み。根本原因未調査 |
+| NOW | adj_eps が SEC XBRL 値と乖離している疑い | 未調査 |
+| MRVL | EPS 四半期データに異常値の可能性 | 未調査 |
+
+#### 次アクション
+1. SCCO: shares 乖離の根本原因を特定（EPS quarterly の diluted_shares の参照ソース確認）
+2. NOW/MRVL: report.txt を再確認して指摘が妥当か一次ソース（SEC EDGAR）照合
+
+---
+
 ### [EPS-1] アナリスト予想EPS四半期値の取得
 - 現状: Next_Quarter_EPSはN/A（Alpha Vantage無料枠の制約）
 - 問題: 四半期サプライズ率が計算できない
@@ -273,7 +294,9 @@ consistency_check を「出口の保険」から「設計の一部」に格上�
 - `registration_validator`（登録時ゲート）と対をなす「再生成時ゲート」
 
 #### 着手条件
-CHECK 項目が十分育ってから（現状 CHECK-19。CHECK-14/15/16 は 2026-06-14、CHECK-17/18/19 は 2026-06-15 実装済み）
+CHECK 項目が十分育ってから（現状 CHECK-1〜19 + STALE-CHECK-1。CHECK-14/15/16 は 2026-06-14、CHECK-17/18/19 は 2026-06-15 実装済み）
+
+**次アクション**: consistency_check をパイプライン出口ゲートとして組み込む（ARCH-CHECK-1 の本体着手）
 
 **audit.py に追加すべき項目（SECデータ取得層・一部着手済み）:**
 - ✅ yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力（2026-06-15 実装）

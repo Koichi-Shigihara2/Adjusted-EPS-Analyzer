@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-03
+最終更新: 2026-06-15
 
 ---
 
@@ -28,7 +28,8 @@ SEC EDGAR
 ├─ quarterly.py      # 四半期データ取得・正規化
 ├─ normalizer.py     # フィールド正規化
 ├─ ttm_calculator.py # TTM系列計算
-└─ parser.py         # XBRL解析
+├─ parser.py         # XBRL解析
+└─ extract_key_facts.py  # EPS逆算・株数3段フォールバック（quarterly.json生成）
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
 ├─ core_calculator.py    # DCF・理論株価
@@ -54,8 +55,11 @@ PORTFOLIO     ← 手動入力 / 証券会社API
 |---|---|
 | quarterly.py / normalizer.py / ttm_calculator.py | 全銘柄TTM再生成（update.py）→ audit.py |
 | parser.py | 影響銘柄のupdate.py → audit.py |
+| extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
+| calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）|
 | calculator/rice.py | 影響銘柄のpipeline.py再実行 |
+| config/maturity_config.json | 影響銘柄のpipeline.py再実行（alpha上限・WACC・成熟度設定変更時）|
 | growth_sanity.py | HypeCoreデータ確認 → 影響銘柄のpipeline.py再実行 |
 | hypecore結果（hypecore_results.json） | growth_sanity経由でDCF成長率が変わるため影響銘柄のpipeline.py再実行 |
 | pipeline.py | audit.py → 全銘柄pipeline.py再実行 |

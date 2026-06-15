@@ -248,6 +248,19 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 - **IV割引率（Rm=10%/β=0）は市場リスクを意図的に除外した本源価値**: 高β銘柄では市場WACC比で
   IVが高めに出るが設計通り。市場リスク調整後の参照は WACC_CAPM_Reference でのIVを併用する旨を
   定義文に記載（外部AIは「高β銘柄でIV過大」を頻繁に誤指摘するため）。
+- **ROE=N/A（負債超過）表示仕様**: 全年度で株主資本≤0の銘柄（PM/TSLA等）は ROE=0% ではなく
+  ROE=N/A（負債超過）と表示する。`reader.py get_roe_avg_detail` が `(None, 0, False)` を返し、
+  `pipeline.py` が `roe_years_used==0` をシグナルとして N/A 表示に切り替える仕様。
+  `roe_avg or 0.0` のような OR 短絡評価は None を 0.0 に変換するため禁止（ROE-ZERO-1の教訓）。
+- **industry_alpha_caps 方針**: セクター別 `_alpha_caps` よりも業種別 `_industry_alpha_caps` を優先する。
+  同一セクター内で業種差が大きい場合（例: Communication Services 内の Telecom Services）に使用。
+  `core_calculator.py` でのチェック順は `_mega_tech_tickers` → `_industry_alpha_caps` → `_alpha_caps`。
+  新銘柄でαが過大になる場合は業種名（yfinance `info.industry`）を確認してから設定すること。
+- **FCF外れ値の除外方向性ルール（FCF-OUTLIER-1の教訓）**: 上方乖離（latest_fcf > 5yr_avg）の場合、
+  一過性コスト（impairment等）が検出されても `transient_explains=False` とし FCF を除外しない。
+  一過性コストは FCF を下げる方向に働くため、FCF が高い年に一過性コストがあれば
+  「コストがなければさらに高かった」ことを意味し、除外の根拠にならない。
+  除外が許可されるのは下方乖離（latest_fcf < 0 か latest_fcf < 5yr_avg）のみ。
 - **比較表示する2つの倍率は必ず同一期ベースで計算する（EPS-PER-TTM-1の教訓）**:
   GAAP PER（yfinance trailingPE = TTM）と Adjusted_EPS_PER を並べる場合、
   後者も同じTTM（直近4四半期の adjusted_eps 合計）を分母にしなければ比較が無意味になる。
@@ -269,6 +282,8 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 **サンプル選定のコツ:**
 - 主力9銘柄だけでなく、消費セクター・金融・赤字初期（IONQ/JOBY等）をセクター横断でかけると
   属性固有のバグ（SPAC誤タグ・金融収益混入・CAGR過大等）が出やすい。
+- 成熟・ディフェンシブセクター（通信: VZ/T、公益: CEG/VST、タバコ: PM/MO等）を含めると
+  ROE=N/A（負債超過）/ alpha上限抵触 / FCF外れ値 等の設計端ケースを検出しやすい。
 
 ### 自動生成データファイルのgit管理ルール
 
@@ -289,6 +304,7 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 ## BACKLOG優先順位の目安
 
 ### 今すぐ着手可能（優先度中・難易度低〜中）
+- **ARCH-CHECK-1**: consistency_check をパイプライン出口ゲートとして組み込む（CHECK-1〜19 + STALE-CHECK-1 実装済み。ゲート化の前倒し着手可）
 - TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
 - MP-BIZDAY-1: MARKET PULSE営業日ベース化
 - ARCH-DATA-1: SECデータ正規化レイヤー強化（PARSER-1/BUG-NETDEBT-6/ANNUAL-FY-1が第一〜三歩として完了。
@@ -566,10 +582,12 @@ git push origin kaihatsu
 - [ ] 単体テストで動作確認
 - [ ] 全銘柄再生成で成功率確認
 - [ ] **`python common/sec_data/report_consistency_check.py` を実行し NG=0 を確認**
-  - 現行チェック項目: FCF符号矛盾 / DCF_Reliability欠落 / LOW丸め / 割引率2段 /
-    NetDebt旧表示 / 負PER / RPO条件 / Matrix④高FCFラベル赤字 / セグメント鮮度 /
-    PS異常値 / Revenue孤立年(NG-11) / Cash-STI期ズレ(WARN-12) / RICE負値ラベル(NG-13) /
-    決算後未更新データ検出(STALE-CHECK-1)
+  - 現行チェック項目（CHECK-1〜19 + STALE-CHECK-1）:
+    CHECK-1:FCF符号矛盾 / CHECK-2:DCF_Reliability欠落 / CHECK-3:LOW丸め / CHECK-4:割引率2段 /
+    CHECK-5:NetDebt旧表示 / CHECK-6:負PER / CHECK-7:RPO条件 / CHECK-8:Matrix④高FCFラベル赤字 /
+    CHECK-9:セグメント鮮度 / CHECK-10:PS異常値 / CHECK-11:Revenue孤立年 / CHECK-12:Cash-STI期ズレ /
+    CHECK-13:RICE負値ラベル / CHECK-14:EPS>株価50% / CHECK-15:EPS>株価 / CHECK-16:TTM四半期不足 /
+    CHECK-17:EPS全値$0 / CHECK-18:G=15%未調整 / CHECK-19:SEC株数=0 / STALE-CHECK-1:決算後未更新
   - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
 - [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動
