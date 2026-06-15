@@ -93,6 +93,7 @@ def load_required_xbrl_tags() -> List[str]:
 
     # EPS計算に必須
     tags.add("us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding")
+    tags.add("us-gaap:WeightedAverageNumberOfSharesOutstandingBasic")   # 希薄化後が取れない場合の代用
     tags.add("us-gaap:EarningsPerShareDiluted")   # 直接EPSがあれば便利（ただし計算優先）
 
     # 売上高（get_revenue()が参照するタグ群 ── ここに追加しないと revenue=0.0 になる）
@@ -866,6 +867,78 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             else:
                 print(f"  Cannot compute pretax_income for {data['filing_date']}: missing net_income or tax_expense (tax tags checked: {tax_tag_candidates})")
         
+        # ---------- 株式数フォールバック① EarningsPerShareDiluted から逆算（XOM 等 WA 株数未提供銘柄） ----------
+        print("\n=== Share count fallback: EPS-derived ===")
+        _eps_items = tag_data_map.get('us-gaap:EarningsPerShareDiluted', [])
+        _eps_map: Dict[str, float] = {}
+        for _item in _eps_items:
+            if not _item.get('form', '').startswith('10-Q'):
+                continue
+            if 'start' not in _item or 'end' not in _item:
+                continue
+            _s = datetime.strptime(_item['start'], '%Y-%m-%d')
+            _e = datetime.strptime(_item['end'], '%Y-%m-%d')
+            if QUARTER_DAYS_MIN <= (_e - _s).days <= QUARTER_DAYS_MAX:
+                _eps_map[_item['end']] = _item['val']
+        for _key, _data in quarters_map.items():
+            if normalize_value(_data.get('diluted_shares', {'value': 0})) != 0:
+                continue
+            _ni = normalize_value(_data.get('net_income', {'value': 0}))
+            _eps = _eps_map.get(_data.get('filing_date', ''))
+            if _eps and abs(_eps) > 1e-9 and _ni != 0:
+                _implied = abs(_ni / _eps)
+                if _implied > 1e5:
+                    _data['diluted_shares'] = {'value': _implied, 'unit': 'shares'}
+                    print(f"  [EPS逆算] {_data['filing_date']}: {_implied/1e6:.1f}M株 (NI={_ni/1e9:.3f}B / EPS={_eps:.4f})")
+
+        # ---------- 株式数フォールバック② WeightedAverageNumberOfSharesOutstandingBasic を代用 ----------
+        print("\n=== Share count fallback: Basic shares ===")
+        _basic_items = tag_data_map.get('us-gaap:WeightedAverageNumberOfSharesOutstandingBasic', [])
+        _basic_map: Dict[str, float] = {}
+        for _item in _basic_items:
+            if not _item.get('form', '').startswith('10-Q'):
+                continue
+            if 'start' not in _item or 'end' not in _item:
+                continue
+            _s = datetime.strptime(_item['start'], '%Y-%m-%d')
+            _e = datetime.strptime(_item['end'], '%Y-%m-%d')
+            if QUARTER_DAYS_MIN <= (_e - _s).days <= QUARTER_DAYS_MAX:
+                _basic_map[_item['end']] = _item['val']
+        for _key, _data in quarters_map.items():
+            if normalize_value(_data.get('diluted_shares', {'value': 0})) != 0:
+                continue
+            _basic = _basic_map.get(_data.get('filing_date', ''))
+            if _basic and _basic > 1e5:
+                _data['diluted_shares'] = {'value': _basic, 'unit': 'shares'}
+                print(f"  [Basic株数代用] {_data['filing_date']}: {_basic/1e6:.1f}M株")
+
+        # ---------- 株式数フォールバック③ yfinance 現在株式数を代用（V 等 SEC に株数未提供） ----------
+        # 全四半期で diluted_shares がない（または0）かつ net_income がある場合に発動
+        _missing_shares_quarters = [
+            _d for _d in quarters_map.values()
+            if normalize_value(_d.get('diluted_shares', {'value': 0})) == 0
+               and normalize_value(_d.get('net_income', {'value': 0})) != 0
+        ]
+        if _missing_shares_quarters:
+            print(f"\n=== Share count fallback: yfinance ({len(_missing_shares_quarters)} quarters missing shares) ===")
+            try:
+                import yfinance as _yf
+                _yt = _yf.Ticker(ticker)
+                _info = _yt.info
+                _yf_shares = (
+                    _info.get('sharesOutstanding')
+                    or _info.get('impliedSharesOutstanding')
+                )
+                if _yf_shares and _yf_shares > 1e5:
+                    print(f"  [yfinance] {ticker}: {_yf_shares/1e6:.1f}M株")
+                    for _data in _missing_shares_quarters:
+                        _data['diluted_shares'] = {'value': float(_yf_shares), 'unit': 'shares'}
+                        print(f"    → {_data['filing_date']}: yfinance株数を適用")
+                else:
+                    print(f"  [yfinance] 株数取得失敗: {_yf_shares}")
+            except Exception as _yf_err:
+                print(f"  [yfinance] エラー: {_yf_err}")
+
         # ---------- 最終的なリストに変換 ----------
         quarterly_list = []
         # キーを (fiscal_year, quarter) でソート（古い順）

@@ -114,6 +114,15 @@ def get_segment_growth(ticker: str) -> Optional[Dict[str, Any]]:
         {enabled, weighted_growth, fiscal_year, segments, source} or None
     """
     _ensure_loaded()
+
+    # _GROWTH_OVERRIDES が設定されていれば全銘柄で最優先（DCF自動再計算用）
+    if ticker in _GROWTH_OVERRIDES:
+        return {
+            "enabled": True,
+            "weighted_growth": _GROWTH_OVERRIDES[ticker],
+            "source": "growth_override",
+        }
+
     config = _SEGMENT_CONFIG.get(ticker)
     if not config or config.get("_meta") or not config.get("enabled", False):
         return None
@@ -121,17 +130,6 @@ def get_segment_growth(ticker: str) -> Optional[Dict[str, Any]]:
     segments = config.get("segments", {})
     if not segments:
         return None
-
-    # General 1セグメントかつTTMオーバーライドが設定されている場合
-    if len(segments) == 1 and "General" in segments and ticker in _GROWTH_OVERRIDES:
-        ttm_g = _GROWTH_OVERRIDES[ticker]
-        return {
-            "enabled": True,
-            "weighted_growth": ttm_g,
-            "fiscal_year": config.get("fiscal_year"),
-            "segments": segments,
-            "source": "segment_ttm",
-        }
 
     weighted_growth = sum(
         seg.get("weight", 0) * seg.get("growth", 0)

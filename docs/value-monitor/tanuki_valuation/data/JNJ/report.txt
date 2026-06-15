@@ -1,16 +1,16 @@
 JNJ INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-14T17:18:17+09:00
+Generated: 2026-06-15T11:17:09+09:00
 Price: $240.87
 
 [1. TANUKI SCORE]
-Classification: BUY
+Classification: HOLD
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: +51.0%
+  Deviation_Rate: -16.1%
   MA200_Deviation: +12.2%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: 2.00 (Buy)
-Comment: 割安圏(51%)で買い余地大、FCF黒字、売上安定成長
+Comment: フェアバリュー近辺、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -29,10 +29,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 右下
-Label: 割安×低効率
-Key_Metric_Y: RICE = 0.514
-Deviation_Rate: +51.0%
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.051
+Deviation_Rate: -16.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,16 +57,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $240.87
-Intrinsic_Value_BASE: $363.76
-Deviation_BASE: +51.0%
+Intrinsic_Value_BASE: $202.12
+Deviation_BASE: -16.1%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 1.5% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$301.42 （推奨値ベース）
-BASE: Growth=15.0%, IV=$363.76 （推奨値ベース）
-BULL: Growth=18.0%, IV=$410.79 （推奨値ベース）
+BEAR: Growth=1.0%, IV=$198.04 （推奨値ベース）
+BASE: Growth=1.5%, IV=$202.12 （推奨値ベース）
+BULL: Growth=1.8%, IV=$204.88 （推奨値ベース）
 TTM_YoY_Growth: 7.9%
-(DCF Base vs TTM actual: +7.1pt premium)
+(DCF Base vs TTM actual: -6.4pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 6.01%
 Terminal_Growth_Rate: 3.0%
@@ -75,16 +75,16 @@ FCF_Conversion_Rate: 0.7 (Industry: Drug Manufacturers - General)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $22,176M (= Adj_NI $31,679M × FCF_Conv 0.7)
-DCF_FCF_PV: $126.95B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $407.51B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $534.46B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $87.61B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $217.97B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $305.57B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $908.58B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $519.48B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $875.64B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-32.94B)
+Equity_Value: $486.54B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-32.94B)
 Shares_Used: 2407.2M (source: yf_implied)
-→ Intrinsic_Value: $363.76 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $202.12 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+32.94B (negative=net cash)
   Total_Debt: $54.99B  Cash: $21.69B  ST_Invest: $0.36B
@@ -150,7 +150,8 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
+Phase1成長率 : 1.5% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
 成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=3
 推奨成長率内訳:
   中央値ベース:          1.5%
@@ -177,15 +178,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.36
-BASE: RICE=0.514
-BULL: RICE=0.617
+BEAR: RICE=0.034
+BASE: RICE=0.051
+BULL: RICE=0.062
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 1.5%  [TANUKI forward growth rate]
 Q  = 1.0373   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.3302  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.8307  [R&D除外・CapExのみ投資強度]
-RICE_adj = 2.849  [参考：R&D資本化想定]
+RICE_adj = 0.285  [参考：R&D資本化想定]
 WACC = 10.0%
 SBC_Adjusted: true
 Definition:

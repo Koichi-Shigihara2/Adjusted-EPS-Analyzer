@@ -2,6 +2,29 @@
 
 ---
 
+## 2026-06-15
+
+✅ [BUG-EPS-ZERO-1] V/XOM/VZ EPS=$0 修正・株式数フォールバック追加 ✅ 2026-06-15
+- **V (Visa)**: WeightedAverageNumberOfDilutedSharesOutstanding が XBRL 10-Q に存在しないため EPS=$0 → yfinance fallback で 20四半期に拡充（ただし Class A 株数 ~1.66B = 稀薄化後 2.07B の過小）
+- **XOM**: 同タグ 10-Q 未提供 → EarningsPerShareDiluted 逆算（NI/EPS）で 8四半期分を補完、Q4 は yfinance fallback
+- **VZ**: quarterly.json は既に有効（18四半期 valid）、EPS pipeline 再実行で summary.json に反映
+- **実装**: `extract_key_facts.py` に 3段フォールバック追加（①EPS逆算 ②Basic株数代用 ③yfinance）
+- **required_tags に追加**: `us-gaap:WeightedAverageNumberOfSharesOutstandingBasic`
+
+✅ [BUG-IV-DISP-1] KULR/S/TDY IV表示不整合修正（tapering 未適用バグ） ✅ 2026-06-15
+- **根本原因**: `core_calculator.py` の `_calc_ivps_with_wacc` が `dcf_type == "tapering"` 時でも 2段階 DCF に fallthrough → メイン IV がタペリング未適用、シナリオ BASE はタペリング適用で不整合
+- **修正**: `_calc_ivps_with_wacc` に `elif dcf_type == "tapering"` ブランチを追加
+- **修正**: `_res_rm` 計算ブロックにも tapering ブランチを追加（STEP11 表示の一貫性）
+- **効果**: KULR IV $5.57 → $5.63（ScenBASE との差 $1.23 → $0.00）、S $29.50 → $23.65、TDY $517.61 → $596.10
+
+✅ [DCF-DEFAULT-G-1] G=15%デフォルト問題修正（set_growth_override が segment 未設定銘柄に無効だったバグ） ✅ 2026-06-15
+- **根本原因**: `segment_config.py` の `get_segment_growth` が `_GROWTH_OVERRIDES` を参照するのは segment_config.json に登録 かつ "General" 単一セグメント銘柄のみ → JNJ/MO/PEP/PM/WMT/VZ 等の未設定銘柄では override が無効
+- **修正**: `get_segment_growth` 冒頭に `if ticker in _GROWTH_OVERRIDES: return override` を追加（全銘柄対象）
+- **修正**: `pipeline.py` の auto-adjustment ブロックに `finally: clear_growth_override(ticker)` を追加
+- **修正**: `pipeline.py` Section 4 表示: `Phase1成長率` を DCF 適用値（推奨成長率）に変更、元成長率を別行表示
+- **JNJ**: IV $363.76 → $202.12（G=15%→1.47% で upside +51% → -16.1%）
+- **VZ**: G=15%→0.9% で IV 大幅変動
+
 ## 2026-06-14
 
 ✅ [MP-DIV-UNIFY] 乖離計算ソースをCNN F&Gに統一（2026-06-14 完了）

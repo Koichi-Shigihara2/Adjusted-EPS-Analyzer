@@ -1,16 +1,16 @@
 WMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-14T17:18:21+09:00
+Generated: 2026-06-15T11:17:11+09:00
 Price: $121.04
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -44.8%
+  Deviation_Rate: -64.2%
   MA200_Deviation: +4.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.49 (Strong Buy)
-Comment: 割高(-45%超)、FCF黒字、売上安定成長
+Comment: 割高(-64%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ②収益性系
 Quadrant: 左上
 Label: 割高×高ROE
 Key_Metric_Y: ROE_avg (10yr) = 17.0%
-Deviation_Rate: -44.8%
+Deviation_Rate: -64.2%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,34 +57,41 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $121.04
-Intrinsic_Value_BASE: $66.76
-Deviation_BASE: -44.8%
+Intrinsic_Value_BASE: $43.37
+Deviation_BASE: -64.2%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 5.3% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$54.97 （推奨値ベース）
-BASE: Growth=15.0%, IV=$66.76 （推奨値ベース）
-BULL: Growth=18.0%, IV=$75.66 （推奨値ベース）
+BEAR: Growth=3.7%, IV=$40.26 （推奨値ベース）
+BASE: Growth=5.3%, IV=$43.37 （推奨値ベース）
+BULL: Growth=6.3%, IV=$45.54 （推奨値ベース）
 TTM_YoY_Growth: 5.9%
-(DCF Base vs TTM actual: +9.1pt premium)
+(DCF Base vs TTM actual: -0.6pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 7.71%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.599
+Valuation_Gap_Analysis:
+  DCF_IV:           $43 (保守的FCFベース・現在実力値)
+  Market_Price:     $121
+  Gap:              -64% (市場が将来成長を先取り)
+  Implied_FCF_2030: $67.97B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $14.73B
+  Required_Growth:  36%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Discount Stores)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $14,733M (= Adj_NI $21,047M × FCF_Conv 0.7)
-DCF_FCF_PV: $84.34B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $270.74B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $355.08B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $64.69B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $174.03B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $238.73B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $568.13B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $381.96B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $531.29B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-36.83B)
+Equity_Value: $345.13B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-36.83B)
 Shares_Used: 7958.1M (source: yf_implied)
-→ Intrinsic_Value: $66.76 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $43.37 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+36.83B (negative=net cash)
   Total_Debt: $47.56B  Cash: $10.73B
@@ -150,7 +157,8 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
+Phase1成長率 : 5.3% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
 成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          5.3%

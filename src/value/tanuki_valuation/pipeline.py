@@ -465,6 +465,8 @@ class TanukiValuationPipeline:
                 _logging.getLogger(__name__).warning(
                     f"[{ticker}] DCF re-run with recommended_g failed: {_e}"
                 )
+            finally:
+                _seg_cfg.clear_growth_override(ticker)
 
         # ── TANUKI-DCF-1③ FCFマージン悪化 → BEAR乗数補正 ──
         _fcf_margin_bear_mult = (_growth_sanity.get("fcf_margin_bear_multiplier", 1.0)
@@ -1325,7 +1327,11 @@ class TanukiValuationPipeline:
             gs_signals = growth_sanity.get("signals", [])
             gs_warnings = growth_sanity.get("warnings", [])
             L.append("[4. 成長率根拠]")
-            L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
+            if _phase1_auto_adjusted and _recommended_g is not None:
+                L.append(f"Phase1成長率 : {_recommended_g * 100:.1f}% (DCF適用値・推奨成長率)")
+                L.append(f"元成長率      : {gs_p1g * 100:.1f}% (推奨適用前)" if gs_p1g is not None else "元成長率 : N/A")
+            else:
+                L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
             _gs_rec_median = growth_sanity.get("recommended_g_median")
             _gs_rec_g = growth_sanity.get("recommended_g")
             _gs_growth_model = growth_sanity.get("growth_model")

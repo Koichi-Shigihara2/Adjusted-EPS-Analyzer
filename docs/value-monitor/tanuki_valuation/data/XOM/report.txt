@@ -1,16 +1,16 @@
 XOM INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-14T17:18:21+09:00
+Generated: 2026-06-15T11:19:21+09:00
 Price: $147.01
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 25/100
 Timing_Score (components):
-  Deviation_Rate: +10.7%
+  Deviation_Rate: +19.1%
   MA200_Deviation: +9.7%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 2.36 (Buy)
-Comment: 割安(11%)傾向、FCF黒字、売上成長停滞
+Comment: 割安(19%)傾向、FCF黒字、売上成長停滞
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×N/A (OCF赤字)
 Key_Metric_Y: RICE = -1.625
-Deviation_Rate: +10.7%
+Deviation_Rate: +19.1%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,30 +57,32 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $147.01
-Intrinsic_Value_BASE: $162.69
-Deviation_BASE: +10.7%
+Intrinsic_Value_BASE: $175.11
+Deviation_BASE: +19.1%
 Scenarios:
-BEAR: Growth=11.2%, IV=$134.51, Deviation=-8.5%
-BASE: Growth=15.9%, IV=$162.69, Deviation=+10.7%
-BULL: Growth=19.1%, IV=$184.10, Deviation=+25.2%
+BEAR: Growth=11.2%, IV=$144.77, Deviation=-1.5%
+BASE: Growth=15.9%, IV=$175.11, Deviation=+19.1%
+BULL: Growth=19.1%, IV=$198.16, Deviation=+34.8%
 TTM_YoY_Growth: -4.4%
 (DCF Base vs TTM actual: +20.3pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 6.01%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.3
-FCF_Base: $18,754.00M (直近1yr（CAGR減少）)
-DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $110.12B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $359.06B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $469.19B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+FCF_Conversion_Rate: 0.7 (Industry: Oil & Gas Integrated)
+  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
+   adjusted net income; differs from OCF→FCF conversion rate.]
+DCF_FCF_Base: $20,191M (= Adj_NI $28,844M × FCF_Conv 0.7)
+DCF_FCF_PV: $118.56B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $386.57B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $505.13B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.4325 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $672.11B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $723.60B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $674.34B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $2.23B)
+Equity_Value: $725.83B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $2.23B)
 Shares_Used: 4144.9M (source: yf_implied)
-→ Intrinsic_Value: $162.69 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $175.11 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-2.23B (negative=net cash)
   Total_Debt: $6.20B  Cash: $8.44B
@@ -206,15 +208,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $0.0000 (直近四半期値)
-Latest_GAAP_EPS: $0.0000
+Latest_Adjusted_EPS: $1.0000 (直近四半期値)
+Latest_GAAP_EPS: $1.0000
 Adjustment_Delta: $0.0000 (N/A)
-YoY_Growth: N/A%
+YoY_Growth: -43.2%
 Recent Surprises (Adjusted EPS):
-  2025 Q4: Actual=$0.0000 vs Est=N/A -> N/A%
-  2024 Q4: Actual=$0.0000 vs Est=N/A -> N/A%
-  2023 Q4: Actual=$0.0000 vs Est=N/A -> N/A%
-  2022 Q4: Actual=$0.0000 vs Est=N/A -> N/A%
+  2026 Q1: Actual=$1.0000 vs Est=N/A -> N/A%
+  2025 Q4: Actual=$1.5684 vs Est=N/A -> N/A%
+  2025 Q3: Actual=$1.7600 vs Est=N/A -> N/A%
+  2025 Q2: Actual=$1.6400 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -229,7 +231,8 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 24.7x
-  Adjusted_EPS_PER: N/A
+  Adjusted_EPS_PER: 24.6x (TTM調整後EPS: $5.9684)
+  Delta: -0.1x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-31
   Next_Quarter_EPS: N/A (no analyst estimates in data)

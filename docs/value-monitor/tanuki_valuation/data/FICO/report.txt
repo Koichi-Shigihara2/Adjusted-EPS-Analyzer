@@ -1,16 +1,16 @@
 FICO INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-13T22:38:40+09:00
+Generated: 2026-06-15T11:21:26+09:00
 Price: $1,179.19
 
 [1. TANUKI SCORE]
-Classification: HOLD
+Classification: BUY
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -21.3%
+  Deviation_Rate: +28.2%
   MA200_Deviation: -17.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: 1.85 (Buy)
-Comment: 割高(-21%超)、FCF黒字、売上成長加速
+  Analyst_Consensus: 1.81 (Buy)
+Comment: 割安(28%)傾向、FCF黒字、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -29,10 +29,10 @@ PASS: Funda<25, excluded from consideration
 
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
-Quadrant: 左上
-Label: 割高×中効率
-Key_Metric_Y: RICE = 1.233
-Deviation_Rate: -21.3%
+Quadrant: 右上
+Label: 割安×高効率
+Key_Metric_Y: RICE = 2.171
+Deviation_Rate: +28.2%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,16 +57,16 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $1,179.19
-Intrinsic_Value_BASE: $928.26
-Deviation_BASE: -21.3%
+Intrinsic_Value_BASE: $1,511.21
+Deviation_BASE: +28.2%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 26.4% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$750.84 （推奨値ベース）
-BASE: Growth=15.0%, IV=$928.26 （推奨値ベース）
-BULL: Growth=18.0%, IV=$1,062.11 （推奨値ベース）
+BEAR: Growth=18.5%, IV=$1,084.00 （推奨値ベース）
+BASE: Growth=26.4%, IV=$1,511.21 （推奨値ベース）
+BULL: Growth=31.7%, IV=$1,859.03 （推奨値ベース）
 TTM_YoY_Growth: 22.6%
-(DCF Base vs TTM actual: -7.6pt discount)
+(DCF Base vs TTM actual: +3.8pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 11.61%
 Terminal_Growth_Rate: 3.0%
@@ -75,16 +75,16 @@ FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $545M (= Adj_NI $779M × FCF_Conv 0.7)
-DCF_FCF_PV: $3.29B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $10.55B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $13.84B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $4.44B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $16.91B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $21.35B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $24.91B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $38.43B (= v0 × (1+alpha))
 RPO_PV: $36,556,815 (Remaining Performance Obligation premium)
 Growth_Option_PV: $0
-Equity_Value: $21.53B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-3.42B)
+Equity_Value: $35.05B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-3.42B)
 Shares_Used: 23.2M (source: yf_implied)
-→ Intrinsic_Value: $928.26 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $1511.21 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+3.42B (negative=net cash)
   Total_Debt: $3.64B  Cash: $0.22B
@@ -151,7 +151,8 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
+Phase1成長率 : 26.4% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
 成長モデル: 中央値モデル（CAGR_max=39.7%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          26.4%
@@ -178,15 +179,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.863
-BASE: RICE=1.233
-BULL: RICE=1.48
+BEAR: RICE=1.521
+BASE: RICE=2.171
+BULL: RICE=2.606
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 26.4%  [TANUKI forward growth rate]
 Q  = 0.9338   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.4403  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 28.013  [参考：R&D資本化想定]
+RICE_adj = 49.302  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 6.21  [NOPAT/InvestedCapital / 0.10]
@@ -317,7 +318,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 9.6%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: 1.85 (Buy)
+Analyst_Consensus: 1.81 (Buy)
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 22.6%
 Next_Earnings_Date: 2026-04-29

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3702627376.862354,
   "intrinsic_value_per_share": 17.534886198638617,
   "intrinsic_value_beta": 8.14,
-  "upside_percent_beta": -92.2,
+  "upside_percent_beta": -92.1,
   "intrinsic_value_rf": 138.08,
-  "upside_percent_rf": 32.4,
+  "upside_percent_rf": 34.9,
   "v0": 3702627376.862354,
   "v0_adjusted": 3702627376.862354,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 23.09,
       "value_growth_pct": 31.7,
-      "expected_return_pct": -77.9
+      "expected_return_pct": -77.4
     },
     "2年後": {
       "future_value": 30.41,
       "value_growth_pct": 73.5,
-      "expected_return_pct": -70.8
+      "expected_return_pct": -70.3
     },
     "3年後": {
       "future_value": 40.04,
       "value_growth_pct": 128.4,
-      "expected_return_pct": -61.6
+      "expected_return_pct": -60.9
     },
     "4年後": {
       "future_value": 52.74,
       "value_growth_pct": 200.9,
-      "expected_return_pct": -49.4
+      "expected_return_pct": -48.5
     },
     "5年後": {
       "future_value": 69.46,
       "value_growth_pct": 296.2,
-      "expected_return_pct": -33.4
+      "expected_return_pct": -32.2
     }
   },
-  "upside_percent": -83.2,
-  "calculation_date": "2026-06-12T23:52:35+09:00",
+  "upside_percent": -82.9,
+  "calculation_date": "2026-06-15T11:21:31+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -161,7 +161,9 @@
     ],
     "terminal_fcf": 817377792.2240331,
     "terminal_value": 5433139409.770033,
-    "v0_rm": 9574490237.653479
+    "v0_rm": 9574490237.653479,
+    "pv_fcf_rm": 1766377927.0855138,
+    "pv_tv_rm": 7808112310.567965
   },
   "fcf_base": {
     "base_fcf": 48143920.0,
@@ -269,7 +271,7 @@
     "roe_10yr_avg": -0.23033710509598923,
     "roe_years_used": 6,
     "roe_outlier_adj": false,
-    "current_price": 104.295,
+    "current_price": 102.39,
     "latest_revenue": 601799000.0,
     "rpo": 2219756000,
     "beta": 2.499,
@@ -294,17 +296,17 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -14345.942,
+    "per": -14083.906,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 95.89109,
+    "ps": 94.13959,
     "ev_ebitda": null,
-    "ma200": 72.335075,
+    "ma200": 72.60638,
     "forward_eps": -0.00727
   },
   "validation": {
-    "validated_at": "2026-06-12",
+    "validated_at": "2026-06-15",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -391,7 +393,7 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.317,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": null,
+  "recommended_g": 0.3326587005508407,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
@@ -401,17 +403,17 @@
     "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.41816168117879515,
-    "rev_cagr_5yr": null,
+    "rev_cagr_5yr": 0.7647391444309735,
     "g_fundamental": null,
-    "recommended_g_median": null,
-    "recommended_g": null,
-    "growth_model": "median",
-    "growth_model_reason": "CAGR_max=41.8%のため中央値モデル適用",
-    "hype_phase_used": 3,
-    "hype_phase_label": "陶酔期",
-    "hype_substage_label": "陶酔期入り",
+    "recommended_g_median": 0.5914504128048843,
+    "recommended_g": 0.3326587005508407,
+    "growth_model": "decay",
+    "growth_model_reason": "Phase4(剥落)に基づきCAGR_max=76.5%×35%＋業界平均10.0%×65%＝33.3%を採用",
+    "hype_phase_used": 4,
+    "hype_phase_label": "期待剥落期",
+    "hype_substage_label": "実体維持・期待崩壊中",
     "signals": [
-      "過去実績(3yr:41.8% / 5yr:N/A)と整合 ✅"
+      "過去実績(3yr:41.8% / 5yr:76.5%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,

@@ -1,16 +1,16 @@
 GEV INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-14T17:18:17+09:00
+Generated: 2026-06-15T11:21:26+09:00
 Price: $940.66
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -38.8%
+  Deviation_Rate: -55.3%
   MA200_Deviation: +23.1%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: 1.59 (Buy)
-Comment: 割高(-39%超)、FCF黒字、売上安定成長
+Comment: 割高(-55%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左上
 Label: 割高×高効率
-Key_Metric_Y: RICE = 10.796
-Deviation_Rate: -38.8%
+Key_Metric_Y: RICE = 5.254
+Deviation_Rate: -55.3%
 Thresholds:
   RICE_Threshold: 2.0/1.0/0 (>=2.0=high, 1.0-2.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,34 +57,41 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $940.66
-Intrinsic_Value_BASE: $575.22
-Deviation_BASE: -38.8%
+Intrinsic_Value_BASE: $420.67
+Deviation_BASE: -55.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 7.3% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$480.17 （推奨値ベース）
-BASE: Growth=15.0%, IV=$575.22 （推奨値ベース）
-BULL: Growth=18.0%, IV=$646.93 （推奨値ベース）
+BEAR: Growth=5.1%, IV=$383.86 （推奨値ベース）
+BASE: Growth=7.3%, IV=$420.67 （推奨値ベース）
+BULL: Growth=8.7%, IV=$446.83 （推奨値ベース）
 TTM_YoY_Growth: 10.3%
-(DCF Base vs TTM actual: +4.7pt premium)
+(DCF Base vs TTM actual: -3.0pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 10.26%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.045
+Valuation_Gap_Analysis:
+  DCF_IV:           $421 (保守的FCFベース・現在実力値)
+  Market_Price:     $941
+  Gap:              -55% (市場が将来成長を先取り)
+  Implied_FCF_2030: $17.18B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $3.77B
+  Required_Growth:  35%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Specialty Industrial Machinery)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $3,774M (= Adj_NI $5,392M × FCF_Conv 0.7)
-DCF_FCF_PV: $21.61B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $69.36B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $90.96B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $17.52B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $49.01B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $66.53B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $154.64B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $113.10B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $154.57B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.06B)
+Equity_Value: $113.04B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.06B)
 Shares_Used: 268.7M (source: yf_implied)
-→ Intrinsic_Value: $575.22 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $420.67 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.06B (negative=net cash)
   Total_Debt: $0.06B  Cash: $0.00B
@@ -148,7 +155,8 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
+Phase1成長率 : 7.3% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
 成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          7.3%
@@ -176,15 +184,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=7.557
-BASE: RICE=10.796
-BULL: RICE=12.955
+BEAR: RICE=3.671
+BASE: RICE=5.254
+BULL: RICE=6.262
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 7.3%  [TANUKI forward growth rate]
 Q  = 2.0469   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 3.6047  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 5.1962  [R&D除外・CapExのみ投資強度]
-RICE_adj = 15.563  [参考：R&D資本化想定]
+RICE_adj = 7.574  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 0.97  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 0.97  [NOPAT/InvestedCapital / 0.10]

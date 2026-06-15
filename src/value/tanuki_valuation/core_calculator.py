@@ -501,6 +501,24 @@ class KoichiValuationCalculator:
                     phase2_years=_p2["years"],
                     terminal_growth=terminal_growth,
                 )
+            elif dcf_type == "tapering" and tapering_g_end is not None:
+                from calculator.dcf import calculate_tapering_dcf as _calc_tap
+                _tap = _calc_tap(
+                    base_fcf=base_fcf,
+                    g_start=high_growth_rate,
+                    g_end=tapering_g_end,
+                    wacc=discount_rate,
+                    high_growth_years=self.high_growth_years,
+                    terminal_growth=terminal_growth,
+                )
+                _res = DCFResult(
+                    v0=_tap.v0,
+                    pv_high_growth=_tap.pv_high_growth,
+                    pv_terminal=_tap.pv_terminal,
+                    high_growth_detail=_tap.high_growth_detail,
+                    terminal_fcf=_tap.terminal_fcf,
+                    terminal_value=_tap.terminal_value,
+                )
             else:
                 _res = calculate_two_stage_dcf(
                     base_fcf=base_fcf,
@@ -533,6 +551,13 @@ class KoichiValuationCalculator:
                 phase1_growth_rate=_p1["growth"] if _p1["growth"] is not None else high_growth_rate,
                 phase2_growth_rate=_p2["growth"], wacc=_rm,
                 phase1_years=_p1["years"], phase2_years=_p2["years"],
+                terminal_growth=terminal_growth,
+            )
+        elif dcf_type == "tapering" and tapering_g_end is not None:
+            from calculator.dcf import calculate_tapering_dcf as _calc_tap_rm
+            _res_rm = _calc_tap_rm(
+                base_fcf=base_fcf, g_start=high_growth_rate, g_end=tapering_g_end,
+                wacc=_rm, high_growth_years=self.high_growth_years,
                 terminal_growth=terminal_growth,
             )
         else:
