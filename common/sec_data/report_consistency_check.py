@@ -25,6 +25,7 @@ report_consistency_check.py
   NG  19. SEC株数=0            quarterly.json に diluted_shares=0 の四半期（株数取得失敗）
 """
 
+import argparse
 import os
 import re
 import json
@@ -542,18 +543,54 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
     return ng, warn
 
 
+# ─── CLI ─────────────────────────────────────────────────────
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="TANUKI VALUATION report.txt 整合性チェック"
+    )
+    parser.add_argument(
+        "--fail-on-ng",
+        action="store_true",
+        help="NG件数 > 0 のとき sys.exit(1) で終了する（省略時は常にexit(0)）",
+    )
+    parser.add_argument(
+        "--ticker",
+        type=str,
+        default=None,
+        help="チェック対象銘柄（カンマ区切り可。例: NVDA または NVDA,AAPL）",
+    )
+    parser.add_argument(
+        "--quiet",
+        action="store_true",
+        help="PASS行を表示しない（NGとWARNのみ出力）",
+    )
+    return parser.parse_args()
+
+
 # ─── メイン ──────────────────────────────────────────────────
 
-def main():
+def run_checks(args=None) -> tuple[int, int]:
+    """整合性チェックを実行し (ng_count, warn_count) を返す。"""
     whitelist = _load_rpo_whitelist()
+    quiet = getattr(args, "quiet", False)
+    ticker_filter = None
+    if args and args.ticker:
+        ticker_filter = {t.strip().upper() for t in args.ticker.split(",")}
 
-    tickers = sorted([
+    all_tickers = sorted([
         d for d in os.listdir(DATA_DIR)
         if os.path.isdir(os.path.join(DATA_DIR, d))
         and os.path.exists(os.path.join(DATA_DIR, d, "report.txt"))
     ])
 
-    print(f"=== TANUKI VALUATION report.txt 整合性チェック ({len(tickers)} 銘柄) ===\n")
+    if ticker_filter:
+        tickers = [t for t in all_tickers if t in ticker_filter]
+    else:
+        tickers = all_tickers
+
+    if not quiet:
+        print(f"=== TANUKI VALUATION report.txt 整合性チェック ({len(tickers)} 銘柄) ===\n")
 
     total_ng   = 0
     total_warn = 0
@@ -567,7 +604,8 @@ def main():
             total_warn += len(warn)
 
     if not flagged:
-        print("✅ 全銘柄整合 — NG=0 / 警告=0\n")
+        if not quiet:
+            print("✅ 全銘柄整合 — NG=0 / 警告=0\n")
     else:
         for ticker, ng, warn in flagged:
             icon = "❌" if ng else "⚠️"
@@ -578,13 +616,25 @@ def main():
                 print(item)
             print()
 
-    print("─" * 50)
-    print(f"合計: NG={total_ng} 件 / 警告={total_warn} 件  (対象 {len(tickers)} 銘柄)")
-    if total_ng == 0:
-        print("✅ NG=0 全銘柄整合")
-    return total_ng
+    if not quiet:
+        print("─" * 50)
+        print(f"合計: NG={total_ng} 件 / 警告={total_warn} 件  (対象 {len(tickers)} 銘柄)")
+        if total_ng == 0:
+            print("✅ NG=0 全銘柄整合")
+
+    return total_ng, total_warn
 
 
 if __name__ == "__main__":
-    rc = main()
-    sys.exit(0 if rc == 0 else 1)
+    args = parse_args()
+    ng_count, warn_count = run_checks(args)
+
+    print(f"\n{'='*50}")
+    print(f"結果: NG={ng_count}件 / WARN={warn_count}件")
+
+    if args.fail_on_ng and ng_count > 0:
+        print("❌ ゲート失敗: NGが存在するためexit(1)で終了します")
+        sys.exit(1)
+    else:
+        print("✅ ゲート通過")
+        sys.exit(0)

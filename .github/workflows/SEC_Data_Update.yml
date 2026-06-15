@@ -40,6 +40,14 @@ jobs:
             python common/sec_data/update.py
           fi
 
+      - name: Consistency Check Gate
+        run: |
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet --ticker "${{ github.event.inputs.tickers }}"
+          else
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet
+          fi
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"

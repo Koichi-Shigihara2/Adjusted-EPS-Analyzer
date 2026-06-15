@@ -60,6 +60,15 @@ jobs:
             echo "changes=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Consistency Check Gate
+        if: steps.git-check.outputs.changes == 'true'
+        run: |
+          if [ -n "${{ github.event.inputs.ticker }}" ]; then
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet --ticker "${{ github.event.inputs.ticker }}"
+          else
+            python common/sec_data/report_consistency_check.py --fail-on-ng --quiet
+          fi
+
       - name: Commit and push if changed
         if: steps.git-check.outputs.changes == 'true'
         run: |

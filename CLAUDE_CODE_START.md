@@ -75,6 +75,10 @@ git add [変更ファイル]
 git commit -m "feat/fix/docs: 変更内容の説明"
 git pull --rebase origin kaihatsu
 git push origin kaihatsu
+
+# ※ パイプラインコード変更後の再生成コミット時は、pushの前に手動でも確認可能：
+# python common/sec_data/report_consistency_check.py --fail-on-ng
+# （GitHub Actionsの自動ゲートで止まるが、ローカルで先に確認したい場合）
 - `git push --force` は絶対に使わない
 - results.json を含むコミットは必ず rebase してから push
 - **バグ修正時の再生成順序を守る（巻き戻り防止）**:
@@ -304,7 +308,6 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 ## BACKLOG優先順位の目安
 
 ### 今すぐ着手可能（優先度中・難易度低〜中）
-- **ARCH-CHECK-1**: consistency_check をパイプライン出口ゲートとして組み込む（CHECK-1〜19 + STALE-CHECK-1 実装済み。ゲート化の前倒し着手可）
 - TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
 - MP-BIZDAY-1: MARKET PULSE営業日ベース化
 - ARCH-DATA-1: SECデータ正規化レイヤー強化（PARSER-1/BUG-NETDEBT-6/ANNUAL-FY-1が第一〜三歩として完了。
