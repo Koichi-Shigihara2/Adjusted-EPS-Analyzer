@@ -38,11 +38,14 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
   DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
 
-### [BUG-SCCO-CIK-1] SCCO CIK誤登録によるEPS異常値
+### [BUG-SCCO-CIK-1] SCCO CIK誤登録＋ProfitLoss未対応によるEPS異常値 ✅ 修正完了（2026-06-15）
 - **発見日**: 2026-06-15
-- **現状**: cik_lookup.csv に旧エンティティ CIK 0000077360（Southern Peru Copper、2012年で終了）が登録されており、EPS Analyzerが旧エンティティのデータ（NI ~$172M、株数163M）を取得している。正しいCIKは 0001001838（Southern Copper Corp）。quarterly.jsonは別経路で正常取得済み。
-- **修正方針**: cik_lookup.csv の SCCO CIK を 0001001838 に変更 → EPS Analyzer 再実行
-- **影響範囲**: EPS Analyzer（SCCO）のみ。TANUKI VALUATIONは影響なし。
+- **根本原因（二重）**:
+  1. cik_lookup.csv に誤CIK 0000077360（=PENTAIR plc、全く別会社）が登録されていた → 0001001838（Southern Copper Corp）に修正
+  2. SCCO は 2012年以降 NetIncomeLoss を申告せず ProfitLoss タグに切り替えた。EPS Analyzerは ProfitLoss をフォールバックとして持っていなかった → extract_key_facts.py に ProfitLoss 追加（最新データ優先の選択ロジックも実装）
+- **修正内容**: config/cik_lookup.csv 変更 + src/value/adjusted_eps_analyzer/extract_key_facts.py 修正（ProfitLoss対応）
+- **検証済み**: Q1 2026 gaap_eps=$1.9252, diluted_shares=821,700,000, net_income=$1,581,900,000 — 正常値確認
+- **影響範囲**: EPS Analyzer（SCCO）。TANUKI VALUATIONは別CIK経路で影響なし。
 
 ---
 
@@ -82,13 +85,13 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 #### 案件一覧
 | 銘柄 | 指摘内容 | 対応状況 |
 |------|---------|---------|
-| SCCO | EPS quarterly 株数（163.7M）vs 実際（821M）が 5.1x 乖離 | 根本原因特定: cik_lookup.csv の CIK 誤登録（0000077360=旧Southern Peru Copper → 正: 0001001838=Southern Copper Corp）。cik修正で解決。BUG-SCCO-CIK-1として記録済み |
+| SCCO | EPS quarterly 株数（163.7M）vs 実際（821M）が 5.1x 乖離 | 修正完了（2026-06-15）: CIK誤登録（0000077360=PENTAIRplc）修正 + ProfitLossフォールバック追加。Q1 2026: shares=821.7M, EPS=$1.93 正常確認。BUG-SCCO-CIK-1参照 |
 | NOW | adj_eps が SEC XBRL 値と乖離している疑い | 根本原因特定済み: 2025-12-18 5:1株式分割未対応。BUG-NOW-SPLIT-1 として修正実装済み（2026-06-15） |
 | MRVL | EPS 四半期データに異常値の可能性 | 根本原因特定済み: Q3 FY2026 DTA認識 NI $1.9B（BUG-LYFT-EPS-1 と同類）。BUG-LYFT-EPS-1 現状欄に追記済み |
 | LMT | Q2 2025 EPS $1.46（他Q比1/4〜1/5）、Adjustment_Delta=$0.0000 | 原因: TR-3C訓練機プログラム損失 ~$1.3B がOperatingIncomeに埋没しXBRLタグなし。EPS Analyzerは正常動作（設計上の限界）。自動調整不可のプログラム損失はLIMITATION-1として記録。コード修正不要。 |
 
 #### 次アクション
-1. SCCO: 調査完了・CIK修正済み（BUG-SCCO-CIK-1）→ EPS Analyzer 再実行・全体検証が残タスク
+1. SCCO: 修正完了・検証済み（BUG-SCCO-CIK-1）
 2. LYFT/MRVL の DTA 除外ロジック実装（BUG-LYFT-EPS-1 本体）
 3. LMT: 調査完了・LIMITATION登録のみ（コード修正不要）
 

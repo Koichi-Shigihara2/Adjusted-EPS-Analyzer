@@ -73,6 +73,7 @@ def load_required_xbrl_tags() -> List[str]:
     tags.add("us-gaap:NetIncomeLossAttributableToParent")                  # 親会社帰属
     tags.add("us-gaap:NetIncomeLossAvailableToCommonStockholders")        # 普通株主帰属（基本）
     tags.add("us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic")   # 普通株主帰属（基本）※代替
+    tags.add("us-gaap:ProfitLoss")                                         # SCCOなど: 2012以降NetIncomeLoss未申告、ProfitLossで代替
 
     # 税引前利益（継続事業）系 → 四半期でよく使われるバリエーションを網羅
     tags.add("us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxExpenseBenefit")   # 標準・最優先
@@ -413,15 +414,20 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             'us-gaap:NetIncomeLossAvailableToCommonStockholders',
             'us-gaap:NetIncomeLossAttributableToParent',
             'us-gaap:IncomeLossFromContinuingOperations',
+            'us-gaap:ProfitLoss',
         ]
         net_income_annual = []
         _annual_tag_used = None
-        for _tag in NET_INCOME_ANNUAL_TAGS:
-            _candidate = annual_data_by_tag.get(_tag, [])
-            if _candidate:
-                net_income_annual = _candidate
-                _annual_tag_used = _tag
-                break
+        _annual_tag_map = {t: annual_data_by_tag.get(t, []) for t in NET_INCOME_ANNUAL_TAGS if annual_data_by_tag.get(t)}
+        if _annual_tag_map:
+            # 最新10-K/10-Qの終了日が最も新しいタグを採用
+            def _annual_latest(items):
+                return max((i.get('end', '') for i in items), default='')
+            _annual_tag_used = max(
+                _annual_tag_map.keys(),
+                key=lambda t: (_annual_latest(_annual_tag_map[t]), -NET_INCOME_ANNUAL_TAGS.index(t))
+            )
+            net_income_annual = _annual_tag_map[_annual_tag_used]
         fiscal_end_month = determine_fiscal_year_end(net_income_annual)
         print(f"Detected fiscal year end month: {fiscal_end_month} (from {_annual_tag_used or 'default'})")
         
@@ -442,9 +448,11 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             'us-gaap:NetIncomeLossAvailableToCommonStockholders',
             'us-gaap:NetIncomeLossAttributableToParent',
             'us-gaap:IncomeLossFromContinuingOperations',
+            'us-gaap:ProfitLoss',
         ]
-        quarterly_candidates = []  # 四半期の期間情報を保持
-        _quarterly_tag_used = None
+        # タグごとに四半期候補を収集し、最新データを持つタグを選択する
+        # (SCCO等: NetIncomeLossは2012で終了、ProfitLossが2026まで継続)
+        _tag_candidates_map = {}
         for _qtag in NET_INCOME_QUARTERLY_TAGS:
             net_income_10q = tag_data_map.get(_qtag, [])
             _q_candidates = []
@@ -468,9 +476,21 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                         'days': days_diff
                     })
             if _q_candidates:
-                quarterly_candidates = _q_candidates
-                _quarterly_tag_used = _qtag
-                break
+                _tag_candidates_map[_qtag] = _q_candidates
+
+        quarterly_candidates = []
+        _quarterly_tag_used = None
+        if _tag_candidates_map:
+            # 最新エントリが最も新しいタグを採用（同率の場合は優先順位リスト順）
+            def _latest_end(cands):
+                return max(c['end_str'] for c in cands)
+            best_tag = max(
+                _tag_candidates_map.keys(),
+                key=lambda t: (_latest_end(_tag_candidates_map[t]),
+                               -NET_INCOME_QUARTERLY_TAGS.index(t))
+            )
+            quarterly_candidates = _tag_candidates_map[best_tag]
+            _quarterly_tag_used = best_tag
         print(f"Quarterly candidates: {len(quarterly_candidates)} items (from {_quarterly_tag_used or 'none'})")
         
         # 同じ終了日(end)のデータをグループ化し、最も期間の短いものを採用（四半期データとして適切）
@@ -566,7 +586,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         net_income_priority = [
             'us-gaap:NetIncomeLossAvailableToCommonStockholders',
             'us-gaap:NetIncomeLossAttributableToParent',
-            'us-gaap:NetIncomeLoss'
+            'us-gaap:NetIncomeLoss',
+            'us-gaap:ProfitLoss',
         ]
         print("\n=== Selecting net_income with priority tags ===")
         for key, data in quarters_map.items():
@@ -598,13 +619,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             
             if q1_key in quarters_map and q2_key in quarters_map and q3_key in quarters_map:
                 # Q1-Q3 のデータがある場合、年次データからQ4を計算
-                # 年次データはフォールバックタグを使用（AVAV等のためNetIncomeLoss以外も試みる）
-                net_income_annual_items = []
-                for _atag in NET_INCOME_ANNUAL_TAGS:
-                    _items = annual_data_by_tag.get(_atag, [])
-                    if _items:
-                        net_income_annual_items = _items
-                        break
+                # 四半期選択と同じタグを使用（quarterly/_annual_tag_usedと一貫性を保つ）
+                net_income_annual_items = net_income_annual
                 # この fiscal_year に対応する10-Kを探す（endが fiscal_year の終了日と一致するもの）
                 target_k_item = None
                 for item in net_income_annual_items:
@@ -708,8 +724,9 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         # 簡易的に、特定のタグを調整項目とみなす（実際には設定ファイルから取得すべき）
         # ここでは、'us-gaap:ShareBasedCompensation', 'us-gaap:RestructuringCharges' などを例示
         adjustment_tags = [tag for tag in required_tags if tag not in tax_tag_candidates and tag not in [
-            'us-gaap:NetIncomeLoss', 'us-gaap:NetIncomeLossAttributableToParent', 
+            'us-gaap:NetIncomeLoss', 'us-gaap:NetIncomeLossAttributableToParent',
             'us-gaap:NetIncomeLossAvailableToCommonStockholders', 'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
+            'us-gaap:ProfitLoss',
             'us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding',
             'us-gaap:EarningsPerShareDiluted', 'us-gaap:IncomeLossFromContinuingOperations',
             'us-gaap:IncomeFromContinuingOperations', 'us-gaap:IncomeLossFromContinuingOperationsBeforeIncomeTaxExpenseBenefit',
