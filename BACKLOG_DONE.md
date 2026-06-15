@@ -4,6 +4,13 @@
 
 ## 2026-06-15
 
+✅ [BUG-NOW-SPLIT-1] NOW 株式分割未対応修正（2026-06-15 完了）
+- ServiceNow 2025-12-18 5:1分割でQ2/Q3 FY2025の株数が分割前（~209M）のまま残存
+- `config/split_history.yaml`（新規）+ `pipeline.py` に `apply_split_adjustments()` を実装
+- threshold = post_split_avg / ratio × 1.5 で補正済み四半期（Q1 FY2025など）を誤補正しない
+- TTM adj_eps $9.75 → 正常値 ~$3.28 に修正・Adjusted_EPS_PER 10.5x → 31.2x に修正
+- 次回 Adjusted_EPS_Analyzer パイプライン実行で quarterly.json が再生成される
+
 ✅ [ARCH-CHECK-1] consistency_check をパイプライン出口ゲート化（2026-06-15 完了）
 - `report_consistency_check.py` に `--fail-on-ng` / `--ticker` / `--quiet` オプションを argparse で追加
 - SEC_Data_Update / TANUKI_VALUATION_Update / Adjusted_Eps_Analyzer_update / Stonks_Silo_Update の4本に `Consistency Check Gate` ステップを挿入（git push の直前）

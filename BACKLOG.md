@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-15（BUG-NOW-SPLIT-1 追加、REVIEW-1 更新）
+最終更新: 2026-06-15
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -37,33 +37,6 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - 根本修正は実装工数大のため BACKLOG 管理
 - **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
   DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
-
-### [BUG-NOW-SPLIT-1] 株式分割遡及補正未適用による adj_eps 異常高値（NOW / SCCO）
-**優先度:** 高
-**分類:** バグ / EPS Analyzer / 株式分割対応
-
-#### 症状
-- NOW Q3/Q2 FY2025: adj_eps $4.21/$3.89（正しくは $0.84/$0.78）。TTM $9.75 → 正常値 ~$3.28（約3倍過大）
-- SCCO: EPS quarterly 株数 163.7M vs latest.json 株数 834.3M = 5.1x 乖離（同じ株式分割問題と推定）
-
-#### 根本原因
-SEC XBRL は旧ファイリングを遡及修正しない。株式分割前に提出された10-Qの
-`diluted_shares` は分割前株数のまま。パイプラインが直接旧10-Qから抽出するため
-分割後提出の最新ファイリング（比較期間）から取得されない四半期は補正されない。
-
-- **NOW**: 2025-12-18 に 5:1 株式分割（~209M → ~1,046M）
-  - Q2/Q3 FY2025 は分割前10-Q から取得 → 未補正
-  - Q1 FY2025 は FY2025 10-K（分割後提出）の比較期間から取得 → 偶然補正済み
-
-#### 修正方針
-`config/split_history.yaml` に分割情報を記述し、`pipeline.py` の `process_one_ticker`
-で `apply_split_adjustments()` を呼ぶことで分割前四半期の株数・EPSを遡及補正する。
-- threshold 判定: `post_split_avg / ratio × 1.5` 未満なら分割前と判断
-- `split_adjusted: true` フラグを付与して補正済みを識別
-
-#### 現状
-- NOW: pipeline.py 修正済み（2026-06-15）。次回パイプライン実行で quarterly.json が再生成される
-- SCCO: 分割情報（日付・比率）を確認して `split_history.yaml` に追加予定
 
 ---
 
