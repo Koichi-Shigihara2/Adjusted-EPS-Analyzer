@@ -51,9 +51,10 @@
 | LMT | Q2 2025 EPS $1.46（他Q比1/4〜1/5）、Adjustment_Delta=$0.0000 | 原因: TR-3C訓練機プログラム損失 ~$1.3B がOperatingIncomeに埋没しXBRLタグなし。EPS Analyzerは正常動作（設計上の限界）。自動調整不可のプログラム損失はLIMITATION-1として記録。コード修正不要。 |
 
 #### 次アクション
-1. SCCO: 修正完了・検証済み（BUG-SCCO-CIK-1）
-2. LYFT/MRVL の DTA 除外ロジック実装（BUG-LYFT-EPS-1 本体）
-3. LMT: 調査完了・LIMITATION登録のみ（コード修正不要）
+1. SCCO: 修正完了・検証済み（BUG-SCCO-CIK-1）✅
+2. LYFT/MRVL: DTA除外ロジック実装完了（BUG-LYFT-EPS-1）✅
+3. LMT: 調査完了・LIMITATION登録のみ（コード修正不要）✅
+4. LYFT・MRVL の TANUKI_VALUATION 再生成で IV への影響確認（次回セッション）
 
 ---
 
