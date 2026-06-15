@@ -4,6 +4,11 @@
 
 ## 2026-06-15
 
+✅ [ARCH-CHECK-1] consistency_check をパイプライン出口ゲート化（2026-06-15 完了）
+- `report_consistency_check.py` に `--fail-on-ng` / `--ticker` / `--quiet` オプションを argparse で追加
+- SEC_Data_Update / TANUKI_VALUATION_Update / Adjusted_Eps_Analyzer_update / Stonks_Silo_Update の4本に `Consistency Check Gate` ステップを挿入（git push の直前）
+- NG>0 かつ `--fail-on-ng` 指定時に exit(1) → Actionsに赤バッジ表示でサイレント失敗を防止
+
 ✅ [BUG-EPS-ZERO-1] V/XOM/VZ EPS=$0 修正・株式数フォールバック追加 ✅ 2026-06-15
 - **V (Visa)**: WeightedAverageNumberOfDilutedSharesOutstanding が XBRL 10-Q に存在しないため EPS=$0 → yfinance fallback で 20四半期に拡充（ただし Class A 株数 ~1.66B = 稀薄化後 2.07B の過小）
 - **XOM**: 同タグ 10-Q 未提供 → EarningsPerShareDiluted 逆算（NI/EPS）で 8四半期分を補完、Q4 は yfinance fallback
