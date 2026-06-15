@@ -410,7 +410,20 @@ python common/sec_data/registration_validator.py [TICKER]
 - Step 5b EPS Analyzer: 非US GAAP（IFRS系外国企業、例: ASML）は us-gaap タグが欠如しているため
   update.py で annual データ 0 件になる。その場合は cik_lookup.csv の eps 列を false に設定すること。
   XBRL形式が US GAAP でも NetIncomeLoss の四半期データが欠損している銘柄（BKNG, FCX 等）も
-  同様に eps=false を設定する（EPS Analyzer は四半期 NetIncomeLoss を必須とする）
+  同様に eps=false を設定する。
+  ※ NetIncomeLoss が古いデータしか持たない場合は ProfitLoss タグへ自動フォールバックする（SCCO対応 2026-06-15）。
+    タグ選択ロジック: 「最初に見つかったタグ」→「最新エントリが最も新しいタグを優先」（extract_key_facts.py）
+
+**EPS Analyzer 設計ルール（2026-06-15 更新）：**
+- **ProfitLoss フォールバック（extract_key_facts.py）**: NetIncomeLoss が 5年以上古い場合、ProfitLoss タグへ
+  自動フォールバック。タグ選択は「最新エントリが最も新しいタグ優先」ロジック。対象: SCCO 等の再編企業
+- **DTA 自動補正（pipeline.py `apply_dta_adjustments()`）**: 繰延税金資産（DTA）認識による adj_eps 異常高値を
+  自動検出・補正。
+  - Type-A: `pretax ≤ 0 かつ NI > 0`（損失→DTA還付で黒字化） ← LYFT Q4 2025 型
+  - Type-B: `NI > pretax × 3`（黒字にDTAが上乗せ）
+  - 補正値: `adjusted_net = pretax - median(正常四半期の税費用)`
+- **split_history.yaml 管理**: 株式分割が確認された銘柄は `config/split_history.yaml` に追記する。
+  現在登録済み: NOW（2025-12-18 5:1）。追記後は EPS Analyzer を単体実行して TTM adj_eps を確認すること。
 - Step 6 の discover_config.json は **dict 形式**（キー=ticker）。list 形式のコードは誤り
 - Step 7 の monitor_tickers.yaml は **単純リスト形式**（yaml.dump 使用不可 → コメントが消える）
 - Step 8 の NG は必ず解消してからコミットする。主なNG要因:
