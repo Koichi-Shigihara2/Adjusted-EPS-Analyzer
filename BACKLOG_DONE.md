@@ -4,6 +4,12 @@
 
 ## 2026-06-15
 
+✅ [BUG-LYFT-EPS-1] DTA（繰延税金資産）認識による adj_eps 異常高値（2026-06-15 完了）
+- 対象: LYFT Q4 2025（GAAP NI $2.755B、他四半期 $23M〜$120M）、MRVL は DTA 非該当と確定
+- 根本原因: `IncomeTaxExpenseBenefit` に大規模負値（-$2,897M）が発生するが既存の `tax_one_time` タグでは捕捉不可
+- 修正: `pipeline.py` に `apply_dta_adjustments()` を追加。Type-A（pretax≤0かつNI>0）/ Type-B（NI>pretax×3）の2パターンを検出し、正常四半期の税費用中央値で補正
+- 検証: LYFT Q4 adj_eps $6.5964 → **-$0.3469** ✓ / MRVL tax=+$314M → DTA非該当・正常処理 ✓
+
 ✅ [BUG-SCCO-CIK-1] SCCO CIK誤登録＋ProfitLoss未対応によるEPS異常値（2026-06-15 完了）
 - **根本原因（二重）**:
   1. cik_lookup.csv に誤CIK 0000077360（=PENTAIR plc、全く別会社）が登録 → 0001001838（Southern Copper Corp）に修正

@@ -7,28 +7,6 @@
 
 ## 優先度：高（早急に対応）
 
-### [BUG-LYFT-EPS-1] LYFT Q4 2025 繰延税金資産（DTA）認識による adj_eps 異常高値 ✅ 修正完了（2026-06-15）
-**優先度:** 高
-**分類:** バグ / EPS Analyzer / 税務調整ロジック
-
-#### 根本原因
-Q4 2025 に繰延税金資産（DTA）評価性引当金の解除が発生。
-`IncomeTaxExpenseBenefit` = -$2,897M（大規模税メリット）→ GAAP NI $2.755B に膨張。
-pretax_income = -$142M（税引前は損失）。
-
-#### 修正内容（2026-06-15 実装）
-`pipeline.py` に `apply_dta_adjustments()` を追加。検出条件：
-- `tax_expense < 0`（大規模税メリット）
-- `|tax_expense| > |net_income| * 0.5`（税メリットが NI の 50%超）
-- `pretax <= 0 かつ net > 0`（type-A: DTA で損失→黒字化）
-- または `pretax > 0 かつ net > pretax * 3`（type-B: DTA で利益膨張）
-
-補正: `adjusted_net = pretax - median_normal_tax`、`adjusted_eps` を更新（gaap_eps 維持）
-
-#### 検証
-- LYFT Q4 2025: gaap_eps=$6.5964 → **adj_eps=-$0.3469** [DTA] ✓
-- MRVL Q3 FY2026: tax_expense=+$314M（正値）→ DTA 非該当、正常処理 ✓
-
 ---
 
 ## 優先度：中（こなれてきたら対応）
