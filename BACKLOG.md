@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-15
+最終更新: 2026-06-15（BUG-NOW-SPLIT-1 追加、REVIEW-1 更新）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -35,6 +35,35 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - CHECK-14 が NG 検知するため手動確認は可能
 - 誤った adj_eps が EPS Analyzer に残存（LYFT のみ）
 - 根本修正は実装工数大のため BACKLOG 管理
+- **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
+  DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
+
+### [BUG-NOW-SPLIT-1] 株式分割遡及補正未適用による adj_eps 異常高値（NOW / SCCO）
+**優先度:** 高
+**分類:** バグ / EPS Analyzer / 株式分割対応
+
+#### 症状
+- NOW Q3/Q2 FY2025: adj_eps $4.21/$3.89（正しくは $0.84/$0.78）。TTM $9.75 → 正常値 ~$3.28（約3倍過大）
+- SCCO: EPS quarterly 株数 163.7M vs latest.json 株数 834.3M = 5.1x 乖離（同じ株式分割問題と推定）
+
+#### 根本原因
+SEC XBRL は旧ファイリングを遡及修正しない。株式分割前に提出された10-Qの
+`diluted_shares` は分割前株数のまま。パイプラインが直接旧10-Qから抽出するため
+分割後提出の最新ファイリング（比較期間）から取得されない四半期は補正されない。
+
+- **NOW**: 2025-12-18 に 5:1 株式分割（~209M → ~1,046M）
+  - Q2/Q3 FY2025 は分割前10-Q から取得 → 未補正
+  - Q1 FY2025 は FY2025 10-K（分割後提出）の比較期間から取得 → 偶然補正済み
+
+#### 修正方針
+`config/split_history.yaml` に分割情報を記述し、`pipeline.py` の `process_one_ticker`
+で `apply_split_adjustments()` を呼ぶことで分割前四半期の株数・EPSを遡及補正する。
+- threshold 判定: `post_split_avg / ratio × 1.5` 未満なら分割前と判断
+- `split_adjusted: true` フラグを付与して補正済みを識別
+
+#### 現状
+- NOW: pipeline.py 修正済み（2026-06-15）。次回パイプライン実行で quarterly.json が再生成される
+- SCCO: 分割情報（日付・比率）を確認して `split_history.yaml` に追加予定
 
 ---
 
@@ -76,13 +105,13 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 #### 案件一覧
 | 銘柄 | 指摘内容 | 対応状況 |
 |------|---------|---------|
-| SCCO | EPS quarterly 株数（163.7M）vs latest.json 株数（834.3M）が 5.1x 乖離 | AUDIT-SHARES-1（audit.py 5x WARNING）で検知済み。根本原因未調査 |
-| NOW | adj_eps が SEC XBRL 値と乖離している疑い | 未調査 |
-| MRVL | EPS 四半期データに異常値の可能性 | 未調査 |
+| SCCO | EPS quarterly 株数（163.7M）vs latest.json 株数（834.3M）が 5.1x 乖離 | yfinance に 5:1 分割記録なし（2006/2008 に分割済み、以降は小数点以下の株式配当のみ）。株式分割ではない別原因（Treasury株会計・公開株数との乖離等）の可能性。要別途調査 |
+| NOW | adj_eps が SEC XBRL 値と乖離している疑い | 根本原因特定済み: 2025-12-18 5:1株式分割未対応。BUG-NOW-SPLIT-1 として修正実装済み（2026-06-15） |
+| MRVL | EPS 四半期データに異常値の可能性 | 根本原因特定済み: Q3 FY2026 DTA認識 NI $1.9B（BUG-LYFT-EPS-1 と同類）。BUG-LYFT-EPS-1 現状欄に追記済み |
 
 #### 次アクション
-1. SCCO: shares 乖離の根本原因を特定（EPS quarterly の diluted_shares の参照ソース確認）
-2. NOW/MRVL: report.txt を再確認して指摘が妥当か一次ソース（SEC EDGAR）照合
+1. SCCO: 株数乖離の根本原因を SEC EDGAR で確認（yfinance に 5:1 分割記録なし、別原因の可能性）
+2. LYFT/MRVL の DTA 除外ロジック実装（BUG-LYFT-EPS-1 本体）
 
 ---
 

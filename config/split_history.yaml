@@ -1,0 +1,14 @@
+# 株式分割履歴設定
+# ratio: 新株/旧株比率（1旧株 → ratio新株）
+# date: 効力発生日（この日付より前で分割前株数のままの四半期に遡及補正を適用）
+#
+# 判定ロジック:
+#   post_split_avg = split_date以降の四半期の平均株数
+#   pre_split_threshold = post_split_avg / ratio × 1.5
+#   period_end < split_date かつ diluted_shares_used < pre_split_threshold の四半期を補正
+
+splits:
+  NOW:
+    - date: "2025-12-18"
+      ratio: 5
+      notes: "ServiceNow 5-for-1株式分割（2025年12月18日効力発生）"

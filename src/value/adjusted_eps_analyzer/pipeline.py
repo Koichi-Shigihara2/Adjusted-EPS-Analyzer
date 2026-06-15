@@ -131,6 +131,74 @@ def check_eps_discrepancy(ticker: str, quarterly_results: List[Dict]) -> Dict[st
 
     return discrepancies
 
+def load_split_history() -> Dict[str, List[Dict]]:
+    """config/split_history.yaml を読み込む。ファイルがなければ {} を返す。"""
+    path = os.path.join(PROJECT_ROOT, "config", "split_history.yaml")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            data = yaml.safe_load(f)
+        return data.get("splits", {})
+    except Exception as e:
+        print(f"Warning: split_history.yaml 読み込みエラー: {e}")
+        return {}
+
+
+def apply_split_adjustments(ticker: str, quarterly_results: List[Dict], split_history: Dict) -> List[Dict]:
+    """
+    株式分割の遡及補正を quarterly_results に適用する。
+    分割前の期間（period_end < split_date）で pre-split 株数のままの四半期を補正。
+    SEC XBRL は旧ファイリングを遡及修正しないため、分割前提出の10-Qでは
+    diluted_shares が分割前のままになる。この関数で一括補正する。
+    """
+    splits = split_history.get(ticker, [])
+    if not splits:
+        return quarterly_results
+
+    for split in splits:
+        split_date = split['date']
+        ratio = float(split['ratio'])
+
+        # 分割後四半期の平均株数（閾値計算に使用）
+        post_split_shares = [
+            q.get('diluted_shares_used', 0)
+            for q in quarterly_results
+            if q.get('period_end', q.get('filing_date', '')) >= split_date
+            and q.get('diluted_shares_used', 0) > 0
+        ]
+        if not post_split_shares:
+            print(f"  [SPLIT] {ticker}: 分割後データなし, スキップ (split_date={split_date})")
+            continue
+
+        post_split_avg = sum(post_split_shares) / len(post_split_shares)
+        # 1.5倍の余裕: 比較期間から取得済みで既に補正されている四半期を誤補正しない
+        pre_split_threshold = post_split_avg / ratio * 1.5
+
+        print(f"  [SPLIT] {ticker}: date={split_date}, ratio={ratio}x, "
+              f"post_avg={post_split_avg:,.0f}, threshold<{pre_split_threshold:,.0f}")
+
+        adjusted_count = 0
+        for q in quarterly_results:
+            period_end = q.get('period_end', q.get('filing_date', ''))
+            if period_end >= split_date:
+                continue
+            shares = q.get('diluted_shares_used', 0)
+            if shares <= 0 or shares > pre_split_threshold:
+                continue  # すでに分割後株数に補正済みの四半期はスキップ
+
+            q['diluted_shares_used'] = shares * ratio
+            q['diluted_shares'] = q.get('diluted_shares', shares) * ratio
+            q['gaap_eps'] = q.get('gaap_eps', 0) / ratio
+            q['adjusted_eps'] = q.get('adjusted_eps', 0) / ratio
+            q['split_adjusted'] = True
+            adjusted_count += 1
+
+        print(f"  [SPLIT] {ticker}: {adjusted_count}四半期を {ratio}x 分割補正済み")
+
+    return quarterly_results
+
+
 def load_cik_data() -> List[Dict]:
     cik_file = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
     data = []
@@ -292,7 +360,7 @@ def get_revenue(period_data: Dict) -> float:
 
 
 def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
-                       DATA_ROOT, SBC_YTD_TAGS, maturity_config):
+                       DATA_ROOT, SBC_YTD_TAGS, maturity_config, split_history=None):
     """1銘柄を処理して (ticker, data_dict) を返す。エラー時は (ticker, None)。"""
     try:
         print(f"\n=== Processing {ticker} ===")
@@ -395,6 +463,10 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
             print(f"  {result['filing_date']} ({result['form']}): "
                   f"GAAP EPS=${result['gaap_eps']:.4f} → "
                   f"Adj EPS=${result['adjusted_eps']:.4f}")
+
+        # 株式分割遡及補正
+        if split_history:
+            quarterly_results = apply_split_adjustments(ticker, quarterly_results, split_history)
 
         # 成熟度監視
         if sector and quarterly_results:
@@ -525,6 +597,7 @@ def run(ticker_filter: str = None):
             tickers = [t for t in tickers if t not in eps_skipped]
 
     maturity_config = adjustment_config.get('maturity_defaults', {})
+    split_history = load_split_history()
 
     all_tickers_data = {}
     lock = threading.Lock()
@@ -548,7 +621,7 @@ def run(ticker_filter: str = None):
         futures = {
             executor.submit(
                 process_one_ticker, ticker, adjustment_config, classifier,
-                ticker_to_name, DATA_ROOT, SBC_YTD_TAGS, maturity_config
+                ticker_to_name, DATA_ROOT, SBC_YTD_TAGS, maturity_config, split_history
             ): ticker
             for ticker in tickers
         }
