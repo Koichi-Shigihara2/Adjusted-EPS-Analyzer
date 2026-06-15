@@ -38,6 +38,12 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
   DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
 
+### [BUG-SCCO-CIK-1] SCCO CIK誤登録によるEPS異常値
+- **発見日**: 2026-06-15
+- **現状**: cik_lookup.csv に旧エンティティ CIK 0000077360（Southern Peru Copper、2012年で終了）が登録されており、EPS Analyzerが旧エンティティのデータ（NI ~$172M、株数163M）を取得している。正しいCIKは 0001001838（Southern Copper Corp）。quarterly.jsonは別経路で正常取得済み。
+- **修正方針**: cik_lookup.csv の SCCO CIK を 0001001838 に変更 → EPS Analyzer 再実行
+- **影響範囲**: EPS Analyzer（SCCO）のみ。TANUKI VALUATIONは影響なし。
+
 ---
 
 ## 優先度：中（こなれてきたら対応）
