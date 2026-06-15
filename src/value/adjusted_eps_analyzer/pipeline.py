@@ -199,6 +199,74 @@ def apply_split_adjustments(ticker: str, quarterly_results: List[Dict], split_hi
     return quarterly_results
 
 
+def apply_dta_adjustments(ticker: str, quarterly_results: List[Dict]) -> List[Dict]:
+    """
+    DTA（繰延税金資産）認識による adj_eps 異常高値を検出・補正する。
+
+    検出条件（すべて満たす場合）:
+      1. tax_expense < 0  （大規模税メリット）
+      2. |tax_expense| > pretax_income * 0.5  （税メリットが税引前利益の50%超）
+      3. pretax_income > 0  （黒字四半期）
+      4. net_income > pretax_income * 3  （NI が税引前利益の3倍超 = DTA膨張）
+
+    補正方法:
+      - 他の正常四半期の tax_expense 中央値を代替税費用として使用
+      - adjusted_net_income = pretax_income - median_normal_tax
+      - adjusted_eps を更新（gaap_eps は変更しない）
+    """
+    import statistics
+
+    for i, result in enumerate(quarterly_results):
+        tax_expense  = result.get("tax_expense", 0) or 0
+        net_income   = result.get("gaap_net_income", 0) or 0
+        pretax       = result.get("pretax_income", 0) or 0
+        diluted      = result.get("diluted_shares_used", 0) or 0
+
+        # pretax_income がない場合は推定
+        if not pretax and net_income and tax_expense:
+            pretax = net_income + tax_expense
+
+        # 検出条件:
+        #   (A) pretax <= 0 なのに net_income > 0  (LYFT型: 税引前損失→DTA還付で黒字化)
+        #   (B) pretax > 0  かつ net_income > pretax * 3  (税引前黒字→DTA膨張)
+        #   + tax_expense < 0 かつ |tax_expense| > |net_income| * 0.5  (大規模DTA)
+        is_type_a = (pretax <= 0 and net_income > 0)
+        is_type_b = (pretax > 0 and net_income > pretax * 3)
+        if not (tax_expense < 0
+                and abs(tax_expense) > abs(net_income) * 0.5
+                and (is_type_a or is_type_b)):
+            continue
+
+        # 正常四半期（tax_expense > 0）の中央値
+        normal_tax = [q.get("tax_expense", 0) for j, q in enumerate(quarterly_results)
+                      if j != i and (q.get("tax_expense", 0) or 0) > 0]
+        if not normal_tax:
+            print(f"  [DTA] {result['filing_date']}: DTA検出したが正常四半期の税データなし → スキップ")
+            continue
+
+        median_tax = statistics.median(normal_tax)
+        adj_net    = pretax - median_tax
+        adj_eps    = adj_net / diluted if diluted else 0
+
+        print(f"  [DTA detected] {ticker} {result['filing_date']}: "
+              f"tax={tax_expense:,.0f}, pretax={pretax:,.0f}, net={net_income:,.0f} "
+              f"→ median_tax={median_tax:,.0f}, adj_net={adj_net:,.0f}, adj_eps={adj_eps:.4f}")
+
+        result["adjusted_net_income"] = adj_net
+        result["adjusted_eps"]        = adj_eps
+        result["net_adjustment_total"] = adj_net - net_income
+        result["dta_detected"]        = True
+        result["adjustments"] = result.get("adjustments", []) + [{
+            "item_id":   "tax_one_time_dta",
+            "item_name": "DTA認識（繰延税金資産）除外",
+            "amount":    adj_net - net_income,
+            "net_amount": adj_net - net_income,
+            "note":      f"tax_expense={tax_expense:,.0f}, median_normal_tax={median_tax:,.0f}",
+        }]
+
+    return quarterly_results
+
+
 def load_cik_data() -> List[Dict]:
     cik_file = os.path.join(PROJECT_ROOT, "config", "cik_lookup.csv")
     data = []
@@ -457,6 +525,8 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
             result["period_end"] = period_data.get("end", period_data["filing_date"])
             result["fiscal_year"] = period_data.get("fiscal_year")
             result["quarter"] = period_data.get("quarter")
+            result["tax_expense"] = data.get("tax_expense", 0) or 0
+            result["pretax_income"] = data.get("pretax_income", 0) or 0
 
             quarterly_results.append(result)
 
@@ -467,6 +537,9 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
         # 株式分割遡及補正
         if split_history:
             quarterly_results = apply_split_adjustments(ticker, quarterly_results, split_history)
+
+        # DTA（繰延税金資産）認識による異常 adj_eps の検出・補正
+        quarterly_results = apply_dta_adjustments(ticker, quarterly_results)
 
         # 成熟度監視
         if sector and quarterly_results:

@@ -7,36 +7,27 @@
 
 ## 優先度：高（早急に対応）
 
-### [BUG-LYFT-EPS-1] LYFT Q4 2025 繰延税金資産（DTA）認識による adj_eps 異常高値
+### [BUG-LYFT-EPS-1] LYFT Q4 2025 繰延税金資産（DTA）認識による adj_eps 異常高値 ✅ 修正完了（2026-06-15）
 **優先度:** 高
 **分類:** バグ / EPS Analyzer / 税務調整ロジック
 
-#### 症状
-- LYFT Q4 2025 adj_eps = $6.7875（他四半期: $0.19〜$0.27）
-- CHECK-14 で NG 検知（adj_eps > LYFT株価 × 50%）
-
 #### 根本原因
-Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation allowance release）が
-発生し、`IncomeTaxExpenseBenefit` に大規模な負値（税メリット）が計上された。
-- Q4 GAAP NI = $2.755B（他四半期: $23M〜$120M）
-- 現在の `tax_one_time` 調整は `IncomeTaxReconciliationOtherReconcilingItems` タグを
-  使用しているが、DTA リリース分は `IncomeTaxExpenseBenefit` 本体に含まれており
-  このタグでは捕捉できない。
+Q4 2025 に繰延税金資産（DTA）評価性引当金の解除が発生。
+`IncomeTaxExpenseBenefit` = -$2,897M（大規模税メリット）→ GAAP NI $2.755B に膨張。
+pretax_income = -$142M（税引前は損失）。
 
-#### 修正方針（未着手・複雑）
-`IncomeTaxExpenseBenefit` が著しく負値（大規模税メリット）の場合に
-一時的要因として検出・除外するロジックを追加する。
-1. 各四半期の税引前利益（PreTaxIncome）を推定
-2. `IncomeTaxExpenseBenefit` が PreTaxIncome を大きく上回る場合 →
-   DTA 認識と判断し調整対象とする
-3. 直近4四半期の税費用中央値を使って代替課税額を推定
+#### 修正内容（2026-06-15 実装）
+`pipeline.py` に `apply_dta_adjustments()` を追加。検出条件：
+- `tax_expense < 0`（大規模税メリット）
+- `|tax_expense| > |net_income| * 0.5`（税メリットが NI の 50%超）
+- `pretax <= 0 かつ net > 0`（type-A: DTA で損失→黒字化）
+- または `pretax > 0 かつ net > pretax * 3`（type-B: DTA で利益膨張）
 
-#### 現状
-- CHECK-14 が NG 検知するため手動確認は可能
-- 誤った adj_eps が EPS Analyzer に残存（LYFT のみ）
-- 根本修正は実装工数大のため BACKLOG 管理
-- **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
-  DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
+補正: `adjusted_net = pretax - median_normal_tax`、`adjusted_eps` を更新（gaap_eps 維持）
+
+#### 検証
+- LYFT Q4 2025: gaap_eps=$6.5964 → **adj_eps=-$0.3469** [DTA] ✓
+- MRVL Q3 FY2026: tax_expense=+$314M（正値）→ DTA 非該当、正常処理 ✓
 
 ---
 
