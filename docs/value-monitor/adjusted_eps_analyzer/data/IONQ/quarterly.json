@@ -1,12 +1,12 @@
 {
   "ticker": "IONQ",
-  "last_updated": "2026-06-08T14:23:15.814361",
+  "last_updated": "2026-06-15T16:08:12.301448",
   "quarters": [
     {
-      "gaap_eps": 2.1694467538500017,
-      "adjusted_eps": -0.22838654345922282,
-      "gaap_net_income": 805360000.0,
-      "adjusted_net_income": -84783545.0738318,
+      "gaap_eps": 2.1674264336635165,
+      "adjusted_eps": -0.23038872277132977,
+      "gaap_net_income": 804610000.0,
+      "adjusted_net_income": -85526810.66812992,
       "diluted_shares_used": 371228286.0,
       "adjustments": [
         {
@@ -19,8 +19,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 127490444.20747505,
-          "tax_rate_applied": 0.007987704292233328
+          "net_amount": 127489479.67498009,
+          "tax_rate_applied": 0.007995209388796184
         },
         {
           "item_id": "amortization_intangibles",
@@ -32,8 +32,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 31545991.00350698,
-          "tax_rate_applied": 0.007987704292233328
+          "net_amount": 31545752.34143628,
+          "tax_rate_applied": 0.007995209388796184
         },
         {
           "item_id": "warrant_fv_change",
@@ -45,11 +45,11 @@
           "reason": "非現金・非経常のワラント時価評価変動",
           "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
           "category": "公正価値変動関連",
-          "net_amount": -1049179980.2848139,
-          "tax_rate_applied": 0.007987704292233328
+          "net_amount": -1049172042.6845462,
+          "tax_rate_applied": 0.007995209388796184
         }
       ],
-      "net_adjustment_total": -890143545.0738318,
+      "net_adjustment_total": -890136810.6681299,
       "filing_date": "2026-03-31",
       "form": "10-Q",
       "sector": "Technology",
@@ -65,6 +65,8 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": -6382000.0,
+      "pretax_income": 798228000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -77,7 +79,7 @@
               "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
               "xbrl_value": -1057628000,
               "adjustment_amount": -1057628000,
-              "net_amount": -1049179980.2848139
+              "net_amount": -1049172042.6845462
             }
           ],
           "condition1": "FV変動が純利益の131%占有（超高materiality → 条件1スキップ）",
@@ -96,31 +98,31 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPSが2.17（プラス）である一方、Adjusted EPSは-0.23（赤字）と大幅に悪化する主因は、ワラント公正価値変動による約10.5億ドルの非現金利益を調整で除去したためです。SBCと無形資産償却は恒常的な調整ですが、ワラント変動は非経常的一過性項目です。市場がGAAP EPSのみで判断する場合、IONQのコア事業の実力（継続的な赤字）を隠蔽し、企業実力を過大評価するリスクが高いです。過小評価ではなく過大評価の懸念が強く、投資家は調整後EPSとキャッシュバーン、量子コンピューティングの進捗を注視すべきです。",
+        "comment": "調整項目のうちSBCと無形資産償却は恒常的な非現金費用だが、ワラント公正価値変動(-10.5億USD規模)は非現金・非経常的な項目でGAAP EPSを大きく押し上げている。結果、GAAP EPS 2.17に対しAdjusted EPS -0.23と実態は赤字水準であり、市場がGAAPベースで判断する場合に企業の実力(コア事業の収益力)を過大評価するリスクが高い。過小評価の可能性は低く、むしろワラント変動益の反転リスクやSBCの継続的希薄化を考慮すると投資家はAdjustedベースの赤字体質とキャッシュフロー持続可能性に注目すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用。株式報酬関連の恒常的コストとして毎期発生。",
+            "snippet": "株式報酬費用はテック企業で継続的に発生する恒常的な非現金コストであり、毎期のオペレーションに不可欠",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却。恒常的な非現金費用。",
+            "snippet": "無形資産償却費は買収関連で発生する恒常的な非現金費用であり、事業継続に伴い定期的に計上される",
             "confidence": 0.2
           },
           {
             "item": "warrant_fv_change",
-            "snippet": "非現金・非経常のワラント時価評価変動。SPAC関連でボラティリティが高い一過性項目。",
-            "confidence": 0.8
+            "snippet": "ワラント公正価値変動損益は非現金かつ非経常的な会計項目で、株価変動により大きく変動しコア業績を歪める",
+            "confidence": 0.75
           }
         ]
       }
     },
     {
-      "gaap_eps": 2.688354978100808,
-      "adjusted_eps": -0.028266146324639894,
-      "gaap_net_income": 753667000.0,
-      "adjusted_net_income": -7924274.091623902,
+      "gaap_eps": 2.6931669054711955,
+      "adjusted_eps": -0.02380020873944627,
+      "gaap_net_income": 755016000.0,
+      "adjusted_net_income": -6672270.613869667,
       "diluted_shares_used": 280345046.0,
       "adjustments": [
         {
@@ -133,8 +135,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 99961232.72340095,
-          "tax_rate_applied": 0.06285758607802903
+          "net_amount": 99973963.81980845,
+          "tax_rate_applied": 0.06273823130324135
         },
         {
           "item_id": "amortization_intangibles",
@@ -146,8 +148,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 28395415.14183572,
-          "tax_rate_applied": 0.06285758607802903
+          "net_amount": 28399031.591511786,
+          "tax_rate_applied": 0.06273823130324135
         },
         {
           "item_id": "warrant_fv_change",
@@ -159,11 +161,11 @@
           "reason": "非現金・非経常のワラント時価評価変動",
           "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
           "category": "公正価値変動関連",
-          "net_amount": -889947921.9568605,
-          "tax_rate_applied": 0.06285758607802903
+          "net_amount": -890061266.0251899,
+          "tax_rate_applied": 0.06273823130324135
         }
       ],
-      "net_adjustment_total": -761591274.0916239,
+      "net_adjustment_total": -761688270.6138697,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -179,6 +181,8 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "tax_expense": -44572000.0,
+      "pretax_income": 710444000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -191,7 +195,7 @@
               "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
               "xbrl_value": -949640000,
               "adjustment_amount": -949640000,
-              "net_amount": -889947921.9568605
+              "net_amount": -890061266.0251899
             }
           ],
           "condition1": "FV変動が純利益の126%占有（超高materiality → 条件1スキップ）",
@@ -200,10 +204,10 @@
       }
     },
     {
-      "gaap_eps": -3.581888690346082,
-      "adjusted_eps": -0.3032859358262081,
-      "gaap_net_income": -1054955000.0,
-      "adjusted_net_income": -89325225.34602368,
+      "gaap_eps": -3.5841194024329077,
+      "adjusted_eps": -0.305508099584956,
+      "gaap_net_income": -1055612000.0,
+      "adjusted_net_income": -89979707.65152586,
       "diluted_shares_used": 294524786.0,
       "adjustments": [
         {
@@ -216,8 +220,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 72639419.43641311,
-          "tax_rate_applied": 0.004189191357692566
+          "net_amount": 72639608.82977217,
+          "tax_rate_applied": 0.004186594971935286
         },
         {
           "item_id": "amortization_intangibles",
@@ -229,8 +233,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 14837581.048770381,
-          "tax_rate_applied": 0.004189191357692566
+          "net_amount": 14837619.734918164,
+          "tax_rate_applied": 0.004186594971935286
         },
         {
           "item_id": "warrant_fv_change",
@@ -242,11 +246,11 @@
           "reason": "非現金・非経常のワラント時価評価変動",
           "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
           "category": "公正価値変動関連",
-          "net_amount": 878152774.1687928,
-          "tax_rate_applied": 0.004189191357692566
+          "net_amount": 878155063.7837838,
+          "tax_rate_applied": 0.004186594971935286
         }
       ],
-      "net_adjustment_total": 965629774.6539763,
+      "net_adjustment_total": 965632292.3484741,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": "Technology",
@@ -262,6 +266,8 @@
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
       "quarter": 3,
+      "tax_expense": -4438000.0,
+      "pretax_income": -1060050000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -274,7 +280,7 @@
               "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
               "xbrl_value": 881847000,
               "adjustment_amount": 881847000,
-              "net_amount": 878152774.1687928
+              "net_amount": 878155063.7837838
             }
           ],
           "condition1": "FV変動が純利益の84%占有（超高materiality → 条件1スキップ）",
@@ -283,10 +289,10 @@
       }
     },
     {
-      "gaap_eps": -0.7046252272032643,
-      "adjusted_eps": -0.32108245802675883,
-      "gaap_net_income": -176838000.0,
-      "adjusted_net_income": -80581247.33611998,
+      "gaap_eps": -0.7073825568339129,
+      "adjusted_eps": -0.3237209237185514,
+      "gaap_net_income": -177530000.0,
+      "adjusted_net_income": -81243416.35589397,
       "diluted_shares_used": 250967455.0,
       "adjustments": [
         {
@@ -299,8 +305,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 91285954.09849718,
-          "tax_rate_applied": 0.07948174715132712
+          "net_amount": 91314244.57595734,
+          "tax_rate_applied": 0.07919646886135301
         },
         {
           "item_id": "amortization_intangibles",
@@ -312,11 +318,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 4970798.565382834,
-          "tax_rate_applied": 0.07948174715132712
+          "net_amount": 4972339.068148694,
+          "tax_rate_applied": 0.07919646886135301
         }
       ],
-      "net_adjustment_total": 96256752.66388002,
+      "net_adjustment_total": 96286583.64410603,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "Technology",
@@ -331,7 +337,9 @@
       "diluted_shares": 250967455.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": -15269000.0,
+      "pretax_income": -192799000.0
     },
     {
       "gaap_eps": -0.1409866738960441,
@@ -396,6 +404,8 @@
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
       "quarter": 1,
+      "tax_expense": 12000.0,
+      "pretax_income": -32240000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -465,7 +475,9 @@
       "diluted_shares": 213029365.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 59000.0,
+      "pretax_income": -201939000.0
     },
     {
       "gaap_eps": -0.24495922641637385,
@@ -516,7 +528,9 @@
       "diluted_shares": 214305053.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 16000.0,
+      "pretax_income": -52480000.0
     },
     {
       "gaap_eps": -0.17747801654734321,
@@ -567,7 +581,9 @@
       "diluted_shares": 211637479.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 15000.0,
+      "pretax_income": -37546000.0
     },
     {
       "gaap_eps": -0.1902003588701063,
@@ -605,7 +621,9 @@
       "diluted_shares": 208159439.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 8000.0,
+      "pretax_income": -39584000.0
     },
     {
       "gaap_eps": -0.20685519620904483,
@@ -656,7 +674,9 @@
       "diluted_shares": 202576492.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 48000.0,
+      "pretax_income": -41856000.0
     },
     {
       "gaap_eps": -0.2203201515186684,
@@ -694,7 +714,9 @@
       "diluted_shares": 203390383.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 39000.0,
+      "pretax_income": -44772000.0
     },
     {
       "gaap_eps": -0.2170365672807848,
@@ -746,6 +768,8 @@
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
       "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": -43718000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -802,7 +826,9 @@
       "diluted_shares": 200112855.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 0,
+      "pretax_income": -27338000.0
     },
     {
       "gaap_eps": -0.09430649054116572,
@@ -853,7 +879,9 @@
       "diluted_shares": 197727642.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 0,
+      "pretax_income": -18647000.0
     },
     {
       "gaap_eps": -0.12094225936257383,
@@ -891,7 +919,9 @@
       "diluted_shares": 198301240.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 0,
+      "pretax_income": -23983000.0
     },
     {
       "gaap_eps": -0.008386827585718017,
@@ -943,6 +973,8 @@
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": -1654000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1013,6 +1045,8 @@
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1,
+      "tax_expense": 0,
+      "pretax_income": -4227000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1069,7 +1103,9 @@
       "diluted_shares": 120605457.0,
       "period_end": "2021-09-30",
       "fiscal_year": 2021,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 0,
+      "pretax_income": -14781000.0
     },
     {
       "gaap_eps": -0.06649897232268506,
@@ -1107,7 +1143,9 @@
       "diluted_shares": 119253873.0,
       "period_end": "2021-06-30",
       "fiscal_year": 2021,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": -7930260.0
     }
   ]
 }

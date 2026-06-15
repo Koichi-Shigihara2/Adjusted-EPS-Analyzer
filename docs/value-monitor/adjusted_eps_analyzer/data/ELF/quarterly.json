@@ -1,6 +1,6 @@
 {
   "ticker": "ELF",
-  "last_updated": "2026-06-08T14:22:59.826580",
+  "last_updated": "2026-06-15T16:07:47.748653",
   "quarters": [
     {
       "gaap_eps": -0.8317404348459968,
@@ -59,6 +59,8 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 4,
+      "tax_expense": 14141000.0,
+      "pretax_income": -35224000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -79,23 +81,23 @@
         }
       },
       "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目のうちSBCと無形資産償却は恒常的に発生するコストであり、偶発対価公正価値変動は一過性が高いものの全体として加算額が極めて大きく、GAAP EPSの大幅赤字(-0.83)をAdjusted EPS微黒字(0.04)に転換している。市場がGAAP EPSで判断する場合、企業の実力(特に非現金項目を除いた運営力)を過小評価するリスクが高い。ただしSBC等の恒常的項目の過大加算により、投資家が調整後数値のみを過信すると過大評価リスクも存在する。投資家はキャッシュフロー持続性と今後の偶発対価変動を注視すべき。",
+        "health": "調整大",
+        "comment": "GAAP EPSが-0.83の大幅赤字に対し、Adjusted EPSは+0.04とプラス転換しており、特に偶発対価公正価値変動（非現金・非経常）のadd_backが大きな要因。市場がGAAP EPSで判断する場合、企業の実力（特に買収後の事業基盤）を過小評価している可能性が高い。ただしSBCと無形資産償却は恒常的なコストであり、これらを全額加算しているため調整後EPSが実態を過大に示すリスクもある。投資家はコア事業のキャッシュ生成力と今後の偶発対価変動を注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用。毎期発生する株式報酬費用をadd_backしており恒常的コストの可能性が高い。",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコストである（category: 株式報酬関連）。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却。非現金だが継続的に発生する償却費をadd_back。",
+            "snippet": "無形資産償却費は買収関連の非現金償却で継続的に発生する（category: 買収・統合関連）。",
             "confidence": 0.2
           },
           {
             "item": "contingent_consideration_fv",
-            "snippet": "非現金・非経常の買収偶発対価時価変動。57MUSDと最大の調整で一過性の蓋然性が高い。",
-            "confidence": 0.7
+            "snippet": "偶発対価公正価値変動損益は非現金・非経常の買収関連項目（reason: 非現金・非経常の買収偶発対価時価変動）。",
+            "confidence": 0.75
           }
         ]
       }
@@ -143,13 +145,15 @@
       "diluted_shares": 60190799.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2026,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 14488000.0,
+      "pretax_income": 53864000.0
     },
     {
       "gaap_eps": 0.050273593392344954,
-      "adjusted_eps": 0.5590139999204616,
+      "adjusted_eps": -0.2612515272114214,
       "gaap_net_income": 2996000.0,
-      "adjusted_net_income": 33313830.0,
+      "adjusted_net_income": -15569000.0,
       "diluted_shares_used": 59593910.0,
       "adjustments": [
         {
@@ -177,9 +181,16 @@
           "category": "買収・統合関連",
           "net_amount": 7031000.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -18565000.0,
+          "net_amount": -18565000.0,
+          "note": "tax_expense=-6,985,000, median_normal_tax=11,580,000"
         }
       ],
-      "net_adjustment_total": 30317830.0,
+      "net_adjustment_total": -18565000.0,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": null,
@@ -188,7 +199,10 @@
       "diluted_shares": 59593910.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2026,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": -6985000.0,
+      "pretax_income": -3989000.0,
+      "dta_detected": true
     },
     {
       "gaap_eps": 0.5775635853536977,
@@ -233,7 +247,9 @@
       "diluted_shares": 57675035.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2026,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 17803000.0,
+      "pretax_income": 51114000.0
     },
     {
       "gaap_eps": 0.4842388506716939,
@@ -278,7 +294,9 @@
       "diluted_shares": 58345174.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 33406000.0,
+      "pretax_income": 61659000.0
     },
     {
       "gaap_eps": 0.2958020190797015,
@@ -323,7 +341,9 @@
       "diluted_shares": 58353219.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 9019000.0,
+      "pretax_income": 26280000.0
     },
     {
       "gaap_eps": 0.32522532797401205,
@@ -368,7 +388,9 @@
       "diluted_shares": 58482530.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 8928000.0,
+      "pretax_income": 27948000.0
     },
     {
       "gaap_eps": 0.8121920452727511,
@@ -413,7 +435,9 @@
       "diluted_shares": 58551423.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": -325000.0,
+      "pretax_income": 47230000.0
     },
     {
       "gaap_eps": 0.4633456266629835,
@@ -458,7 +482,9 @@
       "diluted_shares": 58030115.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 3528000.0,
+      "pretax_income": 30416000.0
     },
     {
       "gaap_eps": 0.5792491374026101,
@@ -503,7 +529,9 @@
       "diluted_shares": 57438152.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 6469000.0,
+      "pretax_income": 39740000.0
     }
   ]
 }

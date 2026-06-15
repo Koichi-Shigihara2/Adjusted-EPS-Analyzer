@@ -1,12 +1,12 @@
 {
   "ticker": "HON",
-  "last_updated": "2026-06-08T14:25:24.797730",
+  "last_updated": "2026-06-15T16:10:36.556650",
   "quarters": [
     {
-      "gaap_eps": 1.2860275689223057,
-      "adjusted_eps": 1.6526582355010333,
-      "gaap_net_income": 821000000.0,
-      "adjusted_net_income": 1055057017.5438597,
+      "gaap_eps": 1.2453007518796992,
+      "adjusted_eps": 1.6107388957721618,
+      "gaap_net_income": 795000000.0,
+      "adjusted_net_income": 1028295711.0609481,
       "diluted_shares_used": 638400000.0,
       "adjustments": [
         {
@@ -19,8 +19,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 51312500.0,
-          "tax_rate_applied": 0.09978070175438597
+          "net_amount": 51145598.19413093,
+          "tax_rate_applied": 0.10270880361173815
         },
         {
           "item_id": "amortization_intangibles",
@@ -32,8 +32,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 137733552.63157895,
-          "tax_rate_applied": 0.09978070175438597
+          "net_amount": 137285553.04740405,
+          "tax_rate_applied": 0.10270880361173815
         },
         {
           "item_id": "restructuring",
@@ -45,11 +45,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 45010964.9122807,
-          "tax_rate_applied": 0.09978070175438597
+          "net_amount": 44864559.81941309,
+          "tax_rate_applied": 0.10270880361173815
         }
       ],
-      "net_adjustment_total": 234057017.54385966,
+      "net_adjustment_total": 233295711.06094807,
       "filing_date": "2026-03-31",
       "form": "10-Q",
       "sector": null,
@@ -59,33 +59,35 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 91000000.0,
+      "pretax_income": 886000000.0,
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目の内、SBCと無形資産償却は恒常的に発生する非現金費用であり、リストラのみが一過性に近い。GAAP EPSを基準とする市場評価の場合、これら非現金項目により本業のキャッシュ生成力と実力が過小評価される可能性がある。ただし恒常的費用を大幅に加算しているためAdjusted EPSは持続可能な収益力を過大に見せているリスクもあり、投資家はFCFや調整後の品質に注目すべき。過小評価リスクはあるが、過大調整の側面も無視できない。",
+        "comment": "調整項目のうちリストラ費用は一過性だが、株式報酬費用と無形資産償却費は恒常的に発生する非現金項目であり、調整額全体がEPSを約29%押し上げている。市場がGAAP EPS（1.25）で評価する場合、非現金費用の影響でHoneywellの本業キャッシュ生成力や実態利益が見えにくくなり、株価が過小評価される可能性がある。ただしSBCは経済的コストとして実質的な希薄化効果があるため、調整依存が強すぎると過大評価リスクも伴う。投資家は調整後EPSに加え、フリーキャッシュフローとSBCの希薄化影響を総合的に検証すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストである。",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期発生する恒常的な報酬コストであり、企業の実質的な負担（希薄化含む）を反映する。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金項目で、過去のM&Aの経済的影響を反映する。",
-            "confidence": 0.25
+            "snippet": "無形資産償却費は買収関連の非現金償却としてadd_backされているが、M&A戦略に基づく継続的な費用であり、毎期計上される恒常的性格が強い。",
+            "confidence": 0.2
           },
           {
             "item": "restructuring",
-            "snippet": "リストラ費用は一過性の事業再編費用として、将来の業績に影響しない非経常項目。",
-            "confidence": 0.75
+            "snippet": "リストラ費用は一過性の事業再編費用としてadd_backされており、真に非経常的な項目と判断される。",
+            "confidence": 0.8
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.17890479153702551,
-      "adjusted_eps": 1.0759023024268823,
-      "gaap_net_income": -115000000.0,
-      "adjusted_net_income": 691590000.0,
+      "gaap_eps": -0.2582451773490977,
+      "adjusted_eps": 0.9965619166148102,
+      "gaap_net_income": -166000000.0,
+      "adjusted_net_income": 640590000.0,
       "diluted_shares_used": 642800000.0,
       "adjustments": [
         {
@@ -150,13 +152,15 @@
       "diluted_shares": 642800000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 1008000000.0,
+      "pretax_income": 842000000.0
     },
     {
-      "gaap_eps": 2.8569192235441454,
-      "adjusted_eps": 3.1637638385043254,
-      "gaap_net_income": 1825000000.0,
-      "adjusted_net_income": 2021012340.0365632,
+      "gaap_eps": 2.9101440200375706,
+      "adjusted_eps": 3.2179225280073407,
+      "gaap_net_income": 1859000000.0,
+      "adjusted_net_income": 2055608910.8910892,
       "diluted_shares_used": 638800000.0,
       "adjustments": [
         {
@@ -169,8 +173,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 30027422.30347349,
-          "tax_rate_applied": 0.16590493601462522
+          "net_amount": 30118811.881188117,
+          "tax_rate_applied": 0.16336633663366337
         },
         {
           "item_id": "amortization_intangibles",
@@ -182,8 +186,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 117607404.02193785,
-          "tax_rate_applied": 0.16590493601462522
+          "net_amount": 117965346.53465346,
+          "tax_rate_applied": 0.16336633663366337
         },
         {
           "item_id": "restructuring",
@@ -195,11 +199,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 48377513.71115174,
-          "tax_rate_applied": 0.16590493601462522
+          "net_amount": 48524752.475247525,
+          "tax_rate_applied": 0.16336633663366337
         }
       ],
-      "net_adjustment_total": 196012340.0365631,
+      "net_adjustment_total": 196608910.8910891,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": null,
@@ -208,13 +212,15 @@
       "diluted_shares": 638800000.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 363000000.0,
+      "pretax_income": 2222000000.0
     },
     {
-      "gaap_eps": 2.4496801373069124,
-      "adjusted_eps": 2.72840976831459,
-      "gaap_net_income": 1570000000.0,
-      "adjusted_net_income": 1748637820.5128205,
+      "gaap_eps": 2.4481198314869714,
+      "adjusted_eps": 2.7268208064237567,
+      "gaap_net_income": 1569000000.0,
+      "adjusted_net_income": 1747619454.8369856,
       "diluted_shares_used": 640900000.0,
       "adjustments": [
         {
@@ -227,8 +233,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 49481837.60683761,
-          "tax_rate_applied": 0.16132478632478633
+          "net_amount": 49476750.40085516,
+          "tax_rate_applied": 0.16141101015499731
         },
         {
           "item_id": "amortization_intangibles",
@@ -240,8 +246,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 111543803.41880342,
-          "tax_rate_applied": 0.16132478632478633
+          "net_amount": 111532335.64938536,
+          "tax_rate_applied": 0.16141101015499731
         },
         {
           "item_id": "restructuring",
@@ -253,11 +259,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 17612179.487179488,
-          "tax_rate_applied": 0.16132478632478633
+          "net_amount": 17610368.786745057,
+          "tax_rate_applied": 0.16141101015499731
         }
       ],
-      "net_adjustment_total": 178637820.5128205,
+      "net_adjustment_total": 178619454.8369856,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": null,
@@ -266,13 +272,15 @@
       "diluted_shares": 640900000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 302000000.0,
+      "pretax_income": 1871000000.0
     },
     {
-      "gaap_eps": 2.223415682062299,
-      "adjusted_eps": 2.50470589486446,
-      "gaap_net_income": 1449000000.0,
-      "adjusted_net_income": 1632316831.6831684,
+      "gaap_eps": 2.2510357526469233,
+      "adjusted_eps": 2.5330282488935425,
+      "gaap_net_income": 1467000000.0,
+      "adjusted_net_income": 1650774509.8039217,
       "diluted_shares_used": 651700000.0,
       "adjustments": [
         {
@@ -285,8 +293,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 47024752.475247525,
-          "tax_rate_applied": 0.20297029702970298
+          "net_amount": 47142156.8627451,
+          "tax_rate_applied": 0.20098039215686275
         },
         {
           "item_id": "amortization_intangibles",
@@ -298,8 +306,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 107599009.9009901,
-          "tax_rate_applied": 0.20297029702970298
+          "net_amount": 107867647.05882354,
+          "tax_rate_applied": 0.20098039215686275
         },
         {
           "item_id": "restructuring",
@@ -311,11 +319,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 28693069.306930695,
-          "tax_rate_applied": 0.20297029702970298
+          "net_amount": 28764705.882352944,
+          "tax_rate_applied": 0.20098039215686275
         }
       ],
-      "net_adjustment_total": 183316831.68316832,
+      "net_adjustment_total": 183774509.80392158,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": null,
@@ -324,13 +332,15 @@
       "diluted_shares": 651700000.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 369000000.0,
+      "pretax_income": 1836000000.0
     },
     {
-      "gaap_eps": 1.9609339233938654,
-      "adjusted_eps": 2.2779948115367006,
-      "gaap_net_income": 1285000000.0,
-      "adjusted_net_income": 1492770000.0,
+      "gaap_eps": 1.9151533648710515,
+      "adjusted_eps": 2.2322142530138867,
+      "gaap_net_income": 1255000000.0,
+      "adjusted_net_income": 1462770000.0,
       "diluted_shares_used": 655300000.0,
       "adjustments": [
         {
@@ -382,13 +392,15 @@
       "diluted_shares": 655300000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 1473000000.0,
+      "pretax_income": 2728000000.0
     },
     {
-      "gaap_eps": 2.1602201498241858,
-      "adjusted_eps": 2.4222446575690517,
-      "gaap_net_income": 1413000000.0,
-      "adjusted_net_income": 1584390230.5159166,
+      "gaap_eps": 2.1632777862712125,
+      "adjusted_eps": 2.4253854566472746,
+      "gaap_net_income": 1415000000.0,
+      "adjusted_net_income": 1586444627.1929824,
       "diluted_shares_used": 654100000.0,
       "adjustments": [
         {
@@ -401,8 +413,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 34898463.22722283,
-          "tax_rate_applied": 0.22447859495060374
+          "net_amount": 34909539.473684214,
+          "tax_rate_applied": 0.22423245614035087
         },
         {
           "item_id": "amortization_intangibles",
@@ -414,8 +426,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 93062568.60592756,
-          "tax_rate_applied": 0.22447859495060374
+          "net_amount": 93092105.2631579,
+          "tax_rate_applied": 0.22423245614035087
         },
         {
           "item_id": "restructuring",
@@ -427,11 +439,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 43429198.68276619,
-          "tax_rate_applied": 0.22447859495060374
+          "net_amount": 43442982.456140354,
+          "tax_rate_applied": 0.22423245614035087
         }
       ],
-      "net_adjustment_total": 171390230.5159166,
+      "net_adjustment_total": 171444627.1929825,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": null,
@@ -440,13 +452,15 @@
       "diluted_shares": 654100000.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 409000000.0,
+      "pretax_income": 1824000000.0
     },
     {
-      "gaap_eps": 2.3601345154387037,
-      "adjusted_eps": 2.5758975789032226,
-      "gaap_net_income": 1544000000.0,
-      "adjusted_net_income": 1685152196.1184883,
+      "gaap_eps": 2.3845918679302964,
+      "adjusted_eps": 2.600823855954371,
+      "gaap_net_income": 1560000000.0,
+      "adjusted_net_income": 1701458966.5653496,
       "diluted_shares_used": 654200000.0,
       "adjustments": [
         {
@@ -459,8 +473,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 43370786.51685393,
-          "tax_rate_applied": 0.21144024514811033
+          "net_amount": 43465045.59270517,
+          "tax_rate_applied": 0.20972644376899696
         },
         {
           "item_id": "amortization_intangibles",
@@ -472,8 +486,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 67027579.162410624,
-          "tax_rate_applied": 0.21144024514811033
+          "net_amount": 67173252.27963527,
+          "tax_rate_applied": 0.20972644376899696
         },
         {
           "item_id": "restructuring",
@@ -485,11 +499,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 30753830.439223696,
-          "tax_rate_applied": 0.21144024514811033
+          "net_amount": 30820668.69300912,
+          "tax_rate_applied": 0.20972644376899696
         }
       ],
-      "net_adjustment_total": 141152196.11848825,
+      "net_adjustment_total": 141458966.56534955,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": null,
@@ -498,13 +512,15 @@
       "diluted_shares": 654200000.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 414000000.0,
+      "pretax_income": 1974000000.0
     },
     {
-      "gaap_eps": 2.228144989339019,
-      "adjusted_eps": 2.434299340154679,
-      "gaap_net_income": 1463000000.0,
-      "adjusted_net_income": 1598360946.745562,
+      "gaap_eps": 2.2464209564422783,
+      "adjusted_eps": 2.452933198295871,
+      "gaap_net_income": 1475000000.0,
+      "adjusted_net_income": 1610595938.001069,
       "diluted_shares_used": 656600000.0,
       "adjustments": [
         {
@@ -517,8 +533,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 41710059.17159764,
-          "tax_rate_applied": 0.21301775147928995
+          "net_amount": 41782469.267771244,
+          "tax_rate_applied": 0.21165152324959915
         },
         {
           "item_id": "amortization_intangibles",
@@ -530,8 +546,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 55088757.39644971,
-          "tax_rate_applied": 0.21301775147928995
+          "net_amount": 55184393.37252806,
+          "tax_rate_applied": 0.21165152324959915
         },
         {
           "item_id": "restructuring",
@@ -543,11 +559,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 38562130.17751479,
-          "tax_rate_applied": 0.21301775147928995
+          "net_amount": 38629075.360769644,
+          "tax_rate_applied": 0.21165152324959915
         }
       ],
-      "net_adjustment_total": 135360946.74556214,
+      "net_adjustment_total": 135595938.00106895,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": null,
@@ -556,13 +572,15 @@
       "diluted_shares": 656600000.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 396000000.0,
+      "pretax_income": 1871000000.0
     },
     {
-      "gaap_eps": 1.8901526489075127,
-      "adjusted_eps": 2.1455252918287937,
-      "gaap_net_income": 1263000000.0,
-      "adjusted_net_income": 1433640000.0,
+      "gaap_eps": 1.8467524693205628,
+      "adjusted_eps": 2.102125112241844,
+      "gaap_net_income": 1234000000.0,
+      "adjusted_net_income": 1404640000.0,
       "diluted_shares_used": 668200000.0,
       "adjustments": [
         {
@@ -614,13 +632,15 @@
       "diluted_shares": 668200000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 1487000000.0,
+      "pretax_income": 2721000000.0
     },
     {
-      "gaap_eps": 2.269865067466267,
-      "adjusted_eps": 2.5157863591093568,
-      "gaap_net_income": 1514000000.0,
-      "adjusted_net_income": 1678029501.525941,
+      "gaap_eps": 2.2713643178410794,
+      "adjusted_eps": 2.5173229348721677,
+      "gaap_net_income": 1515000000.0,
+      "adjusted_net_income": 1679054397.5597358,
       "diluted_shares_used": 667000000.0,
       "adjustments": [
         {
@@ -633,8 +653,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 30033570.70193286,
-          "tax_rate_applied": 0.2299084435401831
+          "net_amount": 30038129.13065582,
+          "tax_rate_applied": 0.22979156075241486
         },
         {
           "item_id": "amortization_intangibles",
@@ -646,8 +666,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 66997965.41200407,
-          "tax_rate_applied": 0.2299084435401831
+          "net_amount": 67008134.214539915,
+          "tax_rate_applied": 0.22979156075241486
         },
         {
           "item_id": "restructuring",
@@ -659,11 +679,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 66997965.41200407,
-          "tax_rate_applied": 0.2299084435401831
+          "net_amount": 67008134.214539915,
+          "tax_rate_applied": 0.22979156075241486
         }
       ],
-      "net_adjustment_total": 164029501.525941,
+      "net_adjustment_total": 164054397.55973566,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": null,
@@ -672,13 +692,15 @@
       "diluted_shares": 667000000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 452000000.0,
+      "pretax_income": 1967000000.0
     },
     {
-      "gaap_eps": 2.2187406744255447,
-      "adjusted_eps": 2.4265274994907937,
-      "gaap_net_income": 1487000000.0,
-      "adjusted_net_income": 1626258730.15873,
+      "gaap_eps": 2.23962996120561,
+      "adjusted_eps": 2.447830855708443,
+      "gaap_net_income": 1501000000.0,
+      "adjusted_net_income": 1640536239.4957983,
       "diluted_shares_used": 670200000.0,
       "adjustments": [
         {
@@ -691,8 +713,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 39338624.338624336,
-          "tax_rate_applied": 0.21322751322751324
+          "net_amount": 39417016.806722686,
+          "tax_rate_applied": 0.21165966386554622
         },
         {
           "item_id": "amortization_intangibles",
@@ -704,8 +726,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 47993121.693121694,
-          "tax_rate_applied": 0.21322751322751324
+          "net_amount": 48088760.50420168,
+          "tax_rate_applied": 0.21165966386554622
         },
         {
           "item_id": "restructuring",
@@ -717,11 +739,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 51926984.12698413,
-          "tax_rate_applied": 0.21322751322751324
+          "net_amount": 52030462.184873946,
+          "tax_rate_applied": 0.21165966386554622
         }
       ],
-      "net_adjustment_total": 139258730.15873015,
+      "net_adjustment_total": 139536239.49579832,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": null,
@@ -730,13 +752,15 @@
       "diluted_shares": 670200000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 403000000.0,
+      "pretax_income": 1904000000.0
     },
     {
-      "gaap_eps": 2.071322436849926,
-      "adjusted_eps": 2.340781803634701,
-      "gaap_net_income": 1394000000.0,
-      "adjusted_net_income": 1575346153.8461537,
+      "gaap_eps": 2.0921248142644875,
+      "adjusted_eps": 2.3621521471942475,
+      "gaap_net_income": 1408000000.0,
+      "adjusted_net_income": 1589728395.0617285,
       "diluted_shares_used": 673000000.0,
       "adjustments": [
         {
@@ -749,8 +773,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 46519230.76923077,
-          "tax_rate_applied": 0.21153846153846154
+          "net_amount": 46617283.95061728,
+          "tax_rate_applied": 0.20987654320987653
         },
         {
           "item_id": "amortization_intangibles",
@@ -762,8 +786,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 53615384.615384616,
-          "tax_rate_applied": 0.21153846153846154
+          "net_amount": 53728395.061728396,
+          "tax_rate_applied": 0.20987654320987653
         },
         {
           "item_id": "restructuring",
@@ -775,11 +799,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 81211538.46153846,
-          "tax_rate_applied": 0.21153846153846154
+          "net_amount": 81382716.04938272,
+          "tax_rate_applied": 0.20987654320987653
         }
       ],
-      "net_adjustment_total": 181346153.84615386,
+      "net_adjustment_total": 181728395.0617284,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": null,
@@ -788,13 +812,15 @@
       "diluted_shares": 673000000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 374000000.0,
+      "pretax_income": 1782000000.0
     },
     {
-      "gaap_eps": 1.491728883033231,
-      "adjusted_eps": 2.4331137461572245,
-      "gaap_net_income": 1019000000.0,
-      "adjusted_net_income": 1662060000.0,
+      "gaap_eps": 1.4931927975406236,
+      "adjusted_eps": 2.4345776606646172,
+      "gaap_net_income": 1020000000.0,
+      "adjusted_net_income": 1663060000.0,
       "diluted_shares_used": 683100000.0,
       "adjustments": [
         {
@@ -859,13 +885,15 @@
       "diluted_shares": 683100000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 1412000000.0,
+      "pretax_income": 2432000000.0
     },
     {
-      "gaap_eps": 2.283696291936433,
-      "adjusted_eps": 2.4195209705899106,
-      "gaap_net_income": 1552000000.0,
-      "adjusted_net_income": 1644306451.612903,
+      "gaap_eps": 2.2792819305473806,
+      "adjusted_eps": 2.4150493549818033,
+      "gaap_net_income": 1549000000.0,
+      "adjusted_net_income": 1641267541.6456335,
       "diluted_shares_used": 679600000.0,
       "adjustments": [
         {
@@ -878,8 +906,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 39112903.22580645,
-          "tax_rate_applied": 0.21774193548387097
+          "net_amount": 39096415.95153963,
+          "tax_rate_applied": 0.21807168096920748
         },
         {
           "item_id": "restructuring",
@@ -891,11 +919,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 53193548.38709677,
-          "tax_rate_applied": 0.21774193548387097
+          "net_amount": 53171125.69409389,
+          "tax_rate_applied": 0.21807168096920748
         }
       ],
-      "net_adjustment_total": 92306451.61290322,
+      "net_adjustment_total": 92267541.64563352,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": null,
@@ -904,13 +932,15 @@
       "diluted_shares": 679600000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 432000000.0,
+      "pretax_income": 1981000000.0
     },
     {
-      "gaap_eps": 1.840875912408759,
-      "adjusted_eps": 1.996625695832297,
-      "gaap_net_income": 1261000000.0,
-      "adjusted_net_income": 1367688601.6451235,
+      "gaap_eps": 1.8437956204379562,
+      "adjusted_eps": 1.9996093348411637,
+      "gaap_net_income": 1263000000.0,
+      "adjusted_net_income": 1369732394.366197,
       "diluted_shares_used": 685000000.0,
       "adjustments": [
         {
@@ -923,8 +953,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 39267332.54994125,
-          "tax_rate_applied": 0.2591069330199765
+          "net_amount": 39283450.70422535,
+          "tax_rate_applied": 0.25880281690140844
         },
         {
           "item_id": "restructuring",
@@ -936,11 +966,11 @@
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": 67421269.09518215,
-          "tax_rate_applied": 0.2591069330199765
+          "net_amount": 67448943.66197182,
+          "tax_rate_applied": 0.25880281690140844
         }
       ],
-      "net_adjustment_total": 106688601.64512339,
+      "net_adjustment_total": 106732394.36619717,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": null,
@@ -949,7 +979,9 @@
       "diluted_shares": 685000000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 441000000.0,
+      "pretax_income": 1704000000.0
     },
     {
       "gaap_eps": 1.6403876753941848,
@@ -994,7 +1026,9 @@
       "diluted_shares": 691300000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 371000000.0,
+      "pretax_income": 1505000000.0
     }
   ]
 }

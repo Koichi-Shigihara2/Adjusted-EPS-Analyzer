@@ -1,12 +1,12 @@
 {
   "ticker": "ONDS",
-  "last_updated": "2026-06-14T21:12:00.011518",
+  "last_updated": "2026-06-15T16:09:03.532174",
   "quarters": [
     {
-      "gaap_eps": 0.7857727644864914,
-      "adjusted_eps": 0.11923838979783671,
-      "gaap_net_income": 362796000.0,
-      "adjusted_net_income": 55053080.0,
+      "gaap_eps": 0.7824243133076026,
+      "adjusted_eps": 0.11588993861894799,
+      "gaap_net_income": 361250000.0,
+      "adjusted_net_income": 53507080.0,
       "diluted_shares_used": 461706000.0,
       "adjustments": [
         {
@@ -36,6 +36,8 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 245000.0,
+      "pretax_income": 361495000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -51,7 +53,7 @@
               "net_amount": -307742920.0
             }
           ],
-          "condition1": "FV変動が純利益の107%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の108%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
         }
       },
@@ -67,21 +69,21 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目「warrant_fv_change」は非現金・非経常的なワラント公正価値変動であり、株式市況等に左右されるがコア事業とは無関係。GAAP EPS 0.79に対しAdjusted EPS 0.12と大幅に低下するのは、本項目による巨額の評価益がGAAPを押し上げていたためと推測され、市場がGAAP EPSのみで判断する場合に企業の実力（収益力）が過大に見えるリスクが高い。過小評価ではなく過大評価のリスクが顕著であり、投資家は調整後EPS、キャッシュフロー、ワラント残存期間を注視すべき。一過性に近いが変動が毎期あり得る性質から完全な一過性とは言えない。",
+        "comment": "調整項目はワラントの公正価値変動による大規模な非現金利益（GAAP EPSを押し上げている）を除外したもので、一過性の性質が強い。市場がGAAP EPS（0.78）で判断する場合、この非経常的利益により企業の実力（コア収益力）が過大に見え、実際の調整後EPS（0.12）に比べて実態が見えにくくなっている。結果として過大評価リスクが高く、過小評価の可能性は低い。投資家は今後のワラント負債変動リスクとキャッシュフロー実態に注目すべき。",
         "sources": [
           {
             "item": "warrant_fv_change",
             "snippet": "非現金・非経常のワラント時価評価変動",
-            "confidence": 0.65
+            "confidence": 0.75
           }
         ]
       }
     },
     {
-      "gaap_eps": -0.4503228314146702,
-      "adjusted_eps": -0.08101061915777227,
-      "gaap_net_income": -99867644.0,
-      "adjusted_net_income": -17965644.0,
+      "gaap_eps": -0.45032440963344744,
+      "adjusted_eps": -0.08101219737654947,
+      "gaap_net_income": -99867994.0,
+      "adjusted_net_income": -17965994.0,
       "diluted_shares_used": 221769000.0,
       "adjustments": [
         {
@@ -124,6 +126,8 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "tax_expense": 488000.0,
+      "pretax_income": -99379994.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -178,6 +182,8 @@
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
       "quarter": 3,
+      "tax_expense": 307456.0,
+      "pretax_income": -7173400.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -217,13 +223,15 @@
       "diluted_shares": 150652998.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
-      "gaap_eps": -0.1346254940240941,
-      "adjusted_eps": -0.1346254940240941,
-      "gaap_net_income": -14136350.0,
-      "adjusted_net_income": -14136350.0,
+      "gaap_eps": -0.13462216084948336,
+      "adjusted_eps": -0.13462216084948336,
+      "gaap_net_income": -14136000.0,
+      "adjusted_net_income": -14136000.0,
       "diluted_shares_used": 105005000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -238,7 +246,9 @@
       "diluted_shares": 105005000.0,
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.14782756460790644,
@@ -273,7 +283,9 @@
       "diluted_shares": 69917062.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.13466276774780891,
@@ -294,7 +306,9 @@
       "diluted_shares": 70741662.0,
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.12458642427129492,
@@ -315,7 +329,9 @@
       "diluted_shares": 66377505.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.15667589252861286,
@@ -336,7 +352,9 @@
       "diluted_shares": 63035122.0,
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.268083359159609,
@@ -357,7 +375,9 @@
       "diluted_shares": 52740215.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.13531407729649025,
@@ -378,7 +398,9 @@
       "diluted_shares": 53892848.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.17526310441076925,
@@ -399,7 +421,9 @@
       "diluted_shares": 51112218.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.3030655711828187,
@@ -420,7 +444,9 @@
       "diluted_shares": 47697767.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.31828011073281887,
@@ -441,7 +467,9 @@
       "diluted_shares": 42661607.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
       "gaap_eps": -0.2701467251546142,
@@ -462,7 +490,9 @@
       "diluted_shares": 42167548.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 0,
+      "pretax_income": 0
     }
   ]
 }

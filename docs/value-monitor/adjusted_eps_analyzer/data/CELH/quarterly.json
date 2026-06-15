@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-06-08T14:22:30.808653",
+  "last_updated": "2026-06-15T16:07:06.446620",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -75,6 +75,8 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 27437000.0,
+      "pretax_income": 137536000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -98,27 +100,27 @@
         }
       },
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目にはSBCや無形資産償却のような恒常的コストと、リストラ・異常貸倒引当金のような一過性項目が混在。市場がGAAP EPS(0.424)で判断する場合、非現金・一時的費用が含まれるため企業の実力(Adjusted EPS 0.489)が過小評価されやすい。ただしSBCは継続的な希薄化コスト、無形資産償却も買収後の継続費用であるため、調整により実力が見えにくくなっている可能性が高い。投資家は過小評価リスクを認識しつつ、恒常項目の調整が持続的利益を過大に見せていないか注意すべき。",
+        "health": "調整中",
+        "comment": "調整項目のうちSBCと無形資産償却は恒常的な非現金費用である一方、異常貸倒引当とリストラ費用は一過性が高い。GAAP EPS（0.42）にはこれら費用が含まれるため、市場がGAAPベースで判断する場合にCELHの本業実力（Adjusted EPS 0.49）が過小評価される可能性がある。投資家はSBCの継続性に注意しつつ、調整後利益をコア指標として見るべきだが、恒常的項目のadd-backが一定程度含まれるため過大評価リスクも併存する。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的な報酬コストである",
+            "snippet": "非現金費用だが株式報酬は事業継続に伴い毎期発生する恒常的コスト",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は継続的に発生する可能性が高い恒常的費用",
+            "snippet": "買収関連無形資産の償却は継続的に発生する非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として位置づけられる異常貸倒引当金",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響として異常変動分を調整",
+            "confidence": 0.8
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用であり、真に非経常的と判断されるリストラ費用",
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd back",
             "confidence": 0.8
           }
         ]
@@ -197,6 +199,8 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "tax_expense": 17034000.0,
+      "pretax_income": 41773000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -283,6 +287,8 @@
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
       "quarter": 3,
+      "tax_expense": -27017000.0,
+      "pretax_income": -88031000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -355,7 +361,9 @@
       "diluted_shares": 260211000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 29610000.0,
+      "pretax_income": 129465000.0
     },
     {
       "gaap_eps": 0.1872860202722075,
@@ -417,6 +425,8 @@
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
       "quarter": 1,
+      "tax_expense": 16574000.0,
+      "pretax_income": 60993000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -490,6 +500,8 @@
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
       "quarter": 4,
+      "tax_expense": 49976000.0,
+      "pretax_income": 31100000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -563,6 +575,8 @@
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
       "quarter": 3,
+      "tax_expense": 1819000.0,
+      "pretax_income": 8175000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -635,7 +649,9 @@
       "diluted_shares": 237595000.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 24848000.0,
+      "pretax_income": 104631000.0
     },
     {
       "gaap_eps": 0.3275935383099742,
@@ -697,6 +713,8 @@
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
       "quarter": 1,
+      "tax_expense": 14650000.0,
+      "pretax_income": 92461000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -770,6 +788,8 @@
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
       "quarter": 4,
+      "tax_expense": 64948000.0,
+      "pretax_income": 115064000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -842,7 +862,9 @@
       "diluted_shares": 237273000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 20796000.0,
+      "pretax_income": 104745000.0
     },
     {
       "gaap_eps": 0.21749172409133902,
@@ -904,6 +926,8 @@
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
       "quarter": 2,
+      "tax_expense": 17946000.0,
+      "pretax_income": 69455000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -977,6 +1001,8 @@
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
       "quarter": 1,
+      "tax_expense": 8537000.0,
+      "pretax_income": 49764000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1049,7 +1075,9 @@
       "diluted_shares": 75649000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 34618000.0,
+      "pretax_income": 13395000.0
     },
     {
       "gaap_eps": -2.3998100163597025,
@@ -1110,7 +1138,9 @@
       "diluted_shares": 75796000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 35492000.0,
+      "pretax_income": -146404000.0
     },
     {
       "gaap_eps": 0.11685295768897055,
@@ -1172,6 +1202,8 @@
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2,
+      "tax_expense": 2810000.0,
+      "pretax_income": 11968000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1245,6 +1277,8 @@
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1,
+      "tax_expense": 3351000.0,
+      "pretax_income": 10030000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],

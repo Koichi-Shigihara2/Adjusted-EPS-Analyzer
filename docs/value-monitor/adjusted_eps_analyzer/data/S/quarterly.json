@@ -1,6 +1,6 @@
 {
   "ticker": "S",
-  "last_updated": "2026-06-08T14:24:10.011431",
+  "last_updated": "2026-06-15T16:09:23.987405",
   "quarters": [
     {
       "gaap_eps": -0.22600573553797196,
@@ -65,6 +65,8 @@
       "period_end": "2026-04-30",
       "fiscal_year": 2027,
       "quarter": 1,
+      "tax_expense": 5763000.0,
+      "pretax_income": -70401000.0,
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 95.5%）",
         "sbc_contribution": 0.955,
@@ -77,21 +79,21 @@
       },
       "ai_analysis": {
         "health": "過大調整",
-        "comment": "主な調整項目であるsbc（株式報酬費用）は恒常的な運用コストであり、毎期発生する本質的な報酬費用です。amortization_intangiblesも買収後の継続的な償却であり一過性とは言い難く、restructuringのみが明確に一過性です。GAAP EPSが-0.226の赤字である一方、Adjusted EPSが僅かにプラスに転じるのはSBCの加戻しが大きく寄与しており、市場がGAAPベースで判断する場合に企業の実力（コア収益力）が過小評価される可能性があります。ただし、SBCの大幅加算は株式希薄化の実態を無視するため、過大評価リスクも伴います。投資家はSBCの絶対額推移と将来の現金流への影響を注視すべきです。",
+        "comment": "調整の大部分を占めるSBC（株式報酬費用）と無形資産償却は恒常的に発生する運用コストであり、リストラは極めて少額の一過性項目に過ぎない。GAAP EPSが-0.226の赤字である一方で調整後EPSが僅かにプラス転換しているが、これは実態を過度に美化しており、市場がGAAPベースで判断する場合でも企業の実力（特にSBCによる株主希薄化効果）はむしろ正確に反映されている可能性が高い。過小評価のリスクは低く、調整後EPSを過信した投資による過大評価リスクの方が大きい。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが恒常的に発生する株式報酬であり、従業員インセンティブの本質的なコスト",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業では人材獲得のために毎期発生する恒常的な運用コストであり、一過性とは言えない。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で、過去のM&Aに基づく継続的な非現金費用",
+            "snippet": "無形資産償却費は買収関連で発生する非現金費用としてadd_backされているが、過去のM&Aに基づく継続的な償却であり、恒常的な性質を持つ。",
             "confidence": 0.2
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用で、リストラ関連の非経常的項目",
+            "snippet": "リストラ費用は一過性の事業再編費用としてadd_backされており、ほぼ一過性と判断できるが、全体に占める割合が極めて小さい。",
             "confidence": 0.8
           }
         ]
@@ -159,7 +161,9 @@
       "diluted_shares": 330111148.0,
       "period_end": "2026-01-31",
       "fiscal_year": 2026,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 171024000.0,
+      "pretax_income": 60792000.0
     },
     {
       "gaap_eps": -0.1811994320452255,
@@ -223,7 +227,9 @@
       "diluted_shares": 332732831.0,
       "period_end": "2025-10-31",
       "fiscal_year": 2026,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": -3159000.0,
+      "pretax_income": -63450000.0
     },
     {
       "gaap_eps": -0.2176205463916201,
@@ -287,7 +293,9 @@
       "diluted_shares": 330938421.0,
       "period_end": "2025-07-31",
       "fiscal_year": 2026,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 3270000.0,
+      "pretax_income": -68749000.0
     },
     {
       "gaap_eps": -0.6347805280313064,
@@ -351,7 +359,9 @@
       "diluted_shares": 327976349.0,
       "period_end": "2025-04-30",
       "fiscal_year": 2026,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 133492000.0,
+      "pretax_income": -74701000.0
     },
     {
       "gaap_eps": -0.22485816548994927,
@@ -402,7 +412,9 @@
       "diluted_shares": 314811783.0,
       "period_end": "2025-01-31",
       "fiscal_year": 2025,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 6834000.0,
+      "pretax_income": -63954000.0
     },
     {
       "gaap_eps": -0.24721494917416298,
@@ -453,7 +465,9 @@
       "diluted_shares": 316987303.0,
       "period_end": "2024-10-31",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 1524000.0,
+      "pretax_income": -76840000.0
     },
     {
       "gaap_eps": -0.22130698298543586,
@@ -504,7 +518,9 @@
       "diluted_shares": 312615531.0,
       "period_end": "2024-07-31",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 2199000.0,
+      "pretax_income": -66985000.0
     },
     {
       "gaap_eps": -0.22647560161270527,
@@ -555,7 +571,9 @@
       "diluted_shares": 309547693.0,
       "period_end": "2024-04-30",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 1512000.0,
+      "pretax_income": -68593000.0
     },
     {
       "gaap_eps": -0.24407004261606302,
@@ -619,7 +637,9 @@
       "diluted_shares": 294923536.0,
       "period_end": "2024-01-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 5859000.0,
+      "pretax_income": -66123000.0
     },
     {
       "gaap_eps": -0.23699241203584895,
@@ -683,7 +703,9 @@
       "diluted_shares": 296650848.0,
       "period_end": "2023-10-31",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 1317000.0,
+      "pretax_income": -68987000.0
     },
     {
       "gaap_eps": -0.30541282371817613,
@@ -747,7 +769,9 @@
       "diluted_shares": 293170401.0,
       "period_end": "2023-07-31",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 1474000.0,
+      "pretax_income": -88064000.0
     },
     {
       "gaap_eps": -0.3706858781354697,
@@ -798,7 +822,9 @@
       "diluted_shares": 288300705.0,
       "period_end": "2023-04-30",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 1061000.0,
+      "pretax_income": -105808000.0
     },
     {
       "gaap_eps": -0.33721754939017706,
@@ -849,7 +875,9 @@
       "diluted_shares": 277802861.0,
       "period_end": "2023-01-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": -5613000.0,
+      "pretax_income": -99293000.0
     },
     {
       "gaap_eps": -0.35226537049962353,
@@ -900,7 +928,9 @@
       "diluted_shares": 280635022.0,
       "period_end": "2022-10-31",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 599000.0,
+      "pretax_income": -98259000.0
     },
     {
       "gaap_eps": -0.3471521975814429,
@@ -951,7 +981,9 @@
       "diluted_shares": 277417227.0,
       "period_end": "2022-07-31",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": -8844000.0,
+      "pretax_income": -105150000.0
     },
     {
       "gaap_eps": -0.33321888369670954,
@@ -1002,7 +1034,9 @@
       "diluted_shares": 269594565.0,
       "period_end": "2022-04-30",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 329000.0,
+      "pretax_income": -89505000.0
     },
     {
       "gaap_eps": -0.26081795163630234,
@@ -1053,7 +1087,9 @@
       "diluted_shares": 262999535.0,
       "period_end": "2021-10-31",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 262000.0,
+      "pretax_income": -68333000.0
     }
   ]
 }

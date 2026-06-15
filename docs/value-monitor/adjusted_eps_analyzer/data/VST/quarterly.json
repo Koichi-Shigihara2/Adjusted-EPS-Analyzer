@@ -1,6 +1,6 @@
 {
   "ticker": "VST",
-  "last_updated": "2026-06-08T14:26:07.291982",
+  "last_updated": "2026-06-15T16:11:28.286809",
   "quarters": [
     {
       "gaap_eps": 3.0100324997509045,
@@ -59,6 +59,8 @@
       "period_end": "2026-03-31",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 183000000.0,
+      "pretax_income": 1212000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -80,22 +82,22 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPS 3.01に対しAdjusted EPSが1.36と大幅に下方調整されており、主因はデリバティブ公正価値変動による一時的利益の排除である。市場がGAAP EPSで企業実力を判断する場合、持続しない非経常利益により実力が見えにくくなり、過大評価リスクが高い。一方、SBCは恒常的コストのため調整の妥当性に疑問が残り、過大調整の可能性もある。投資家はエネルギーセクター特有のヘッジ会計のボラティリティを考慮し、調整後EPSを主眼に置くべきで、過大評価リスクを警戒。",
+        "comment": "GAAP EPS 3.01に対しAdjusted EPS 1.36と大幅に低下する調整は、主にderivative_fv_changeによるもので、GAAPで一時的な公正価値利益が含まれ実力が見えにくくなっている。市場がGAAP EPSで判断する場合、持続可能性の低い利益により企業実力を過大評価するリスクが高い（過小評価の可能性は低い）。sbcは恒常的コストのため調整の妥当性に注意が必要。投資家はコア収益力の持続性を検証し、derivativeのボラティリティが繰り返す過大評価リスクを警戒すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが恒常的に発生する運用コストであり、毎期見込まれる性質",
+            "snippet": "非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として異常変動分を調整対象としており、貸倒引当金の異常部分は一過性",
-            "confidence": 0.65
+            "snippet": "マクロ変動による一時的影響",
+            "confidence": 0.75
           },
           {
             "item": "derivative_fv_change",
-            "snippet": "非現金・非経常のデリバティブ時価評価変動であり、エネルギー企業のヘッジ関連でボラティリティが高いが非経常扱い",
-            "confidence": 0.6
+            "snippet": "非現金・非経常のデリバティブ時価評価変動",
+            "confidence": 0.5
           }
         ]
       }
@@ -157,6 +159,8 @@
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
       "quarter": 4,
+      "tax_expense": 179000000.0,
+      "pretax_income": 412000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -220,7 +224,9 @@
       "diluted_shares": 345035160.0,
       "period_end": "2025-09-30",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 204000000.0,
+      "pretax_income": 856000000.0
     },
     {
       "gaap_eps": 0.9464402022235336,
@@ -265,7 +271,9 @@
       "diluted_shares": 345505188.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 76000000.0,
+      "pretax_income": 403000000.0
     },
     {
       "gaap_eps": -0.7886992603757853,
@@ -324,6 +332,8 @@
       "period_end": "2025-03-31",
       "fiscal_year": 2025,
       "quarter": 1,
+      "tax_expense": -176000000.0,
+      "pretax_income": -444000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -345,10 +355,10 @@
       }
     },
     {
-      "gaap_eps": 1.2508258712541098,
-      "adjusted_eps": -1.287896833016675,
-      "gaap_net_income": 441000000.0,
-      "adjusted_net_income": -454070000.0,
+      "gaap_eps": 0.9558465274662925,
+      "adjusted_eps": -1.582876176804492,
+      "gaap_net_income": 337000000.0,
+      "adjusted_net_income": -558070000.0,
       "diluted_shares_used": 352567060.0,
       "adjustments": [
         {
@@ -401,6 +411,8 @@
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
       "quarter": 4,
+      "tax_expense": 655000000.0,
+      "pretax_income": 992000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -416,16 +428,16 @@
               "net_amount": -954320000.0
             }
           ],
-          "condition1": "FV変動が純利益の274%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の358%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 5.391148189265806,
-      "adjusted_eps": 1.6661141559130919,
-      "gaap_net_income": 1888000000.0,
-      "adjusted_net_income": 583479328.6942284,
+      "gaap_eps": 5.245518656610851,
+      "adjusted_eps": 1.5438315778654013,
+      "gaap_net_income": 1837000000.0,
+      "adjusted_net_income": 540655518.394649,
       "diluted_shares_used": 350203692.0,
       "adjustments": [
         {
@@ -438,8 +450,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 17774866.966844045,
-          "tax_rate_applied": 0.2271796970937372
+          "net_amount": 17663461.538461536,
+          "tax_rate_applied": 0.23202341137123747
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -451,8 +463,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 46369218.174375765,
-          "tax_rate_applied": 0.2271796970937372
+          "net_amount": 46078595.31772575,
+          "tax_rate_applied": 0.23202341137123747
         },
         {
           "item_id": "derivative_fv_change",
@@ -464,11 +476,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": -1368664756.4469914,
-          "tax_rate_applied": 0.2271796970937372
+          "net_amount": -1360086538.4615383,
+          "tax_rate_applied": 0.23202341137123747
         }
       ],
-      "net_adjustment_total": -1304520671.3057716,
+      "net_adjustment_total": -1296344481.605351,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": null,
@@ -478,6 +490,8 @@
       "period_end": "2024-09-30",
       "fiscal_year": 2024,
       "quarter": 3,
+      "tax_expense": 555000000.0,
+      "pretax_income": 2392000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -490,19 +504,19 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": 1771000000,
               "adjustment_amount": -1771000000,
-              "net_amount": -1368664756.4469914
+              "net_amount": -1360086538.4615383
             }
           ],
-          "condition1": "FV変動が純利益の94%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の96%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 1.0301207505003713,
-      "adjusted_eps": 1.1638005425500377,
-      "gaap_net_income": 365000000.0,
-      "adjusted_net_income": 412366412.21374047,
+      "gaap_eps": 1.3179901109141736,
+      "adjusted_eps": 1.4611583657738603,
+      "gaap_net_income": 467000000.0,
+      "adjusted_net_income": 517728434.50479233,
       "diluted_shares_used": 354327393.0,
       "adjustments": [
         {
@@ -515,8 +529,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 22290076.33587786,
-          "tax_rate_applied": 0.30343511450381677
+          "net_amount": 23872204.47284345,
+          "tax_rate_applied": 0.2539936102236422
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -528,11 +542,11 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 25076335.877862595,
-          "tax_rate_applied": 0.30343511450381677
+          "net_amount": 26856230.03194888,
+          "tax_rate_applied": 0.2539936102236422
         }
       ],
-      "net_adjustment_total": 47366412.21374045,
+      "net_adjustment_total": 50728434.50479233,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": null,
@@ -541,13 +555,15 @@
       "diluted_shares": 354327393.0,
       "period_end": "2024-06-30",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 159000000.0,
+      "pretax_income": 626000000.0
     },
     {
-      "gaap_eps": -0.10029624731818938,
-      "adjusted_eps": 0.23888742543059657,
-      "gaap_net_income": -35000000.0,
-      "adjusted_net_income": 83363636.36363637,
+      "gaap_eps": 0.05158092719221168,
+      "adjusted_eps": -0.22664086286844567,
+      "gaap_net_income": 18000000.0,
+      "adjusted_net_income": -79090000.0,
       "diluted_shares_used": 348966197.0,
       "adjustments": [
         {
@@ -560,8 +576,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 13363636.363636363,
-          "tax_rate_applied": 0.36363636363636365
+          "net_amount": 16590000.0,
+          "tax_rate_applied": 0.21
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -573,8 +589,15 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 22909090.90909091,
-          "tax_rate_applied": 0.36363636363636365
+          "net_amount": 28440000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -199000000.0,
+          "net_amount": -199000000.0,
+          "note": "tax_expense=-20,000,000, median_normal_tax=179,000,000"
         },
         {
           "item_id": "derivative_fv_change",
@@ -586,11 +609,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": 82090909.0909091,
-          "tax_rate_applied": 0.36363636363636365
+          "net_amount": 101910000.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 118363636.36363637,
+      "net_adjustment_total": -97090000.0,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": null,
@@ -600,6 +623,9 @@
       "period_end": "2024-03-31",
       "fiscal_year": 2024,
       "quarter": 1,
+      "tax_expense": -20000000.0,
+      "pretax_income": -2000000.0,
+      "dta_detected": true,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -612,19 +638,19 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": -129000000,
               "adjustment_amount": 129000000,
-              "net_amount": 82090909.0909091
+              "net_amount": 101910000.0
             }
           ],
-          "condition1": "FV変動が純利益の369%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の717%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": -0.4904141230098815,
-      "adjusted_eps": -1.3473861500281814,
-      "gaap_net_income": -184000000.0,
-      "adjusted_net_income": -505530000.0,
+      "gaap_eps": -0.4877488288630887,
+      "adjusted_eps": -1.3447208558813886,
+      "gaap_net_income": -183000000.0,
+      "adjusted_net_income": -504530000.0,
       "diluted_shares_used": 375193110.0,
       "adjustments": [
         {
@@ -677,6 +703,8 @@
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
       "quarter": 4,
+      "tax_expense": 508000000.0,
+      "pretax_income": 325000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -692,7 +720,7 @@
               "net_amount": -358660000.0
             }
           ],
-          "condition1": "FV変動が純利益の247%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の248%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
@@ -754,6 +782,8 @@
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
       "quarter": 3,
+      "tax_expense": 169000000.0,
+      "pretax_income": 671000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -817,13 +847,15 @@
       "diluted_shares": 376794258.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 123000000.0,
+      "pretax_income": 599000000.0
     },
     {
-      "gaap_eps": 1.803622514667844,
-      "adjusted_eps": 1.2092702834945182,
-      "gaap_net_income": 699000000.0,
-      "adjusted_net_income": 468656784.4925884,
+      "gaap_eps": 1.801042224947289,
+      "adjusted_eps": 1.206862769456688,
+      "gaap_net_income": 698000000.0,
+      "adjusted_net_income": 467723744.2922374,
       "diluted_shares_used": 387553379.0,
       "adjustments": [
         {
@@ -836,8 +868,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 17534777.65108324,
-          "tax_rate_applied": 0.20296465222348917
+          "net_amount": 17529680.365296803,
+          "tax_rate_applied": 0.20319634703196346
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -849,8 +881,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 27896237.17217788,
-          "tax_rate_applied": 0.20296465222348917
+          "net_amount": 27888127.85388128,
+          "tax_rate_applied": 0.20319634703196346
         },
         {
           "item_id": "derivative_fv_change",
@@ -862,11 +894,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": -275774230.33067274,
-          "tax_rate_applied": 0.20296465222348917
+          "net_amount": -275694063.9269407,
+          "tax_rate_applied": 0.20319634703196346
         }
       ],
-      "net_adjustment_total": -230343215.50741163,
+      "net_adjustment_total": -230276255.7077626,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": null,
@@ -876,6 +908,8 @@
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
       "quarter": 1,
+      "tax_expense": 178000000.0,
+      "pretax_income": 876000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -888,19 +922,19 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": 346000000,
               "adjustment_amount": -346000000,
-              "net_amount": -275774230.33067274
+              "net_amount": -275694063.9269407
             }
           ],
-          "condition1": "純利益変動345% / 売上変動42% = 8.3倍（閾値5倍）",
+          "condition1": "純利益変動346% / 売上変動42% = 8.3倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": -0.5799543068914711,
-      "adjusted_eps": 3.75483722725465,
-      "gaap_net_income": -245000000.0,
-      "adjusted_net_income": 1586220000.0,
+      "gaap_eps": -0.6249303551810137,
+      "adjusted_eps": 3.7098611789651073,
+      "gaap_net_income": -264000000.0,
+      "adjusted_net_income": 1567220000.0,
       "diluted_shares_used": 422447074.0,
       "adjustments": [
         {
@@ -953,6 +987,8 @@
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
       "quarter": 4,
+      "tax_expense": -350000000.0,
+      "pretax_income": -614000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -968,16 +1004,16 @@
               "net_amount": 1785400000.0
             }
           ],
-          "condition1": "FV変動が純利益の922%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の856%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 1.6000670265203036,
-      "adjusted_eps": 2.5257695208456563,
-      "gaap_net_income": 668000000.0,
-      "adjusted_net_income": 1054464601.7699115,
+      "gaap_eps": 1.6240201257197096,
+      "adjusted_eps": 2.553300788467421,
+      "gaap_net_income": 678000000.0,
+      "adjusted_net_income": 1065958424.5076587,
       "diluted_shares_used": 417482511.0,
       "adjustments": [
         {
@@ -990,8 +1026,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 10345132.743362831,
-          "tax_rate_applied": 0.2610619469026549
+          "net_amount": 10385120.35010941,
+          "tax_rate_applied": 0.25820568927789933
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -1003,8 +1039,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 52464601.7699115,
-          "tax_rate_applied": 0.2610619469026549
+          "net_amount": 52667396.06126915,
+          "tax_rate_applied": 0.25820568927789933
         },
         {
           "item_id": "derivative_fv_change",
@@ -1016,11 +1052,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": 323654867.25663716,
-          "tax_rate_applied": 0.2610619469026549
+          "net_amount": 324905908.0962801,
+          "tax_rate_applied": 0.25820568927789933
         }
       ],
-      "net_adjustment_total": 386464601.76991147,
+      "net_adjustment_total": 387958424.50765866,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": null,
@@ -1030,6 +1066,8 @@
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
       "quarter": 3,
+      "tax_expense": 236000000.0,
+      "pretax_income": 914000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1042,19 +1080,19 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": -438000000,
               "adjustment_amount": 438000000,
-              "net_amount": 323654867.25663716
+              "net_amount": 324905908.0962801
             }
           ],
-          "condition1": "純利益変動9443% / 売上変動72% = 131.1倍（閾値5倍）",
+          "condition1": "純利益変動9586% / 売上変動72% = 133.0倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": -3.180387148457683,
-      "adjusted_eps": 0.3212693564186937,
-      "gaap_net_income": -1365000000.0,
-      "adjusted_net_income": 137886568.84875846,
+      "gaap_eps": -3.161747516818371,
+      "adjusted_eps": 0.33517391476475944,
+      "gaap_net_income": -1357000000.0,
+      "adjusted_net_income": 143854308.39002275,
       "diluted_shares_used": 429193031.0,
       "adjustments": [
         {
@@ -1067,8 +1105,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 15406320.541760722,
-          "tax_rate_applied": 0.22968397291196388
+          "net_amount": 15385487.528344672,
+          "tax_rate_applied": 0.23072562358276644
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -1080,8 +1118,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 26961060.948081266,
-          "tax_rate_applied": 0.22968397291196388
+          "net_amount": 26924603.174603175,
+          "tax_rate_applied": 0.23072562358276644
         },
         {
           "item_id": "derivative_fv_change",
@@ -1093,11 +1131,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": 1460519187.3589165,
-          "tax_rate_applied": 0.22968397291196388
+          "net_amount": 1458544217.687075,
+          "tax_rate_applied": 0.23072562358276644
         }
       ],
-      "net_adjustment_total": 1502886568.8487585,
+      "net_adjustment_total": 1500854308.3900228,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": null,
@@ -1107,6 +1145,8 @@
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2,
+      "tax_expense": -407000000.0,
+      "pretax_income": -1764000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1119,19 +1159,19 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": -1896000000,
               "adjustment_amount": 1896000000,
-              "net_amount": 1460519187.3589165
+              "net_amount": 1458544217.687075
             }
           ],
-          "condition1": "FV変動が純利益の139%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の140%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": -0.6310847726786369,
-      "adjusted_eps": 0.48506249814927144,
-      "gaap_net_income": -285000000.0,
-      "adjusted_net_income": 219055851.06382978,
+      "gaap_eps": -0.6288704401429224,
+      "adjusted_eps": 0.48632647371052673,
+      "gaap_net_income": -284000000.0,
+      "adjusted_net_income": 219626666.6666667,
       "diluted_shares_used": 451603354.0,
       "adjustments": [
         {
@@ -1144,8 +1184,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 10611702.127659574,
-          "tax_rate_applied": 0.24202127659574468
+          "net_amount": 10602666.666666666,
+          "tax_rate_applied": 0.24266666666666667
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -1157,8 +1197,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 22739361.702127658,
-          "tax_rate_applied": 0.24202127659574468
+          "net_amount": 22720000.0,
+          "tax_rate_applied": 0.24266666666666667
         },
         {
           "item_id": "derivative_fv_change",
@@ -1170,11 +1210,11 @@
           "reason": "非現金・非経常のデリバティブ時価評価変動",
           "extracted_from": "us-gaap:DerivativeGainLossOnDerivativeNet",
           "category": "公正価値変動関連",
-          "net_amount": 470704787.2340425,
-          "tax_rate_applied": 0.24202127659574468
+          "net_amount": 470304000.0,
+          "tax_rate_applied": 0.24266666666666667
         }
       ],
-      "net_adjustment_total": 504055851.0638298,
+      "net_adjustment_total": 503626666.6666667,
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "sector": null,
@@ -1184,6 +1224,8 @@
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1,
+      "tax_expense": -91000000.0,
+      "pretax_income": -375000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1196,10 +1238,10 @@
               "xbrl_tag": "us-gaap:DerivativeGainLossOnDerivativeNet",
               "xbrl_value": -621000000,
               "adjustment_amount": 621000000,
-              "net_amount": 470704787.2340425
+              "net_amount": 470304000.0
             }
           ],
-          "condition1": "FV変動が純利益の218%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の219%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
       }
@@ -1247,7 +1289,9 @@
       "diluted_shares": 482214544.0,
       "period_end": "2021-12-31",
       "fiscal_year": 2021,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": -458000000.0,
+      "pretax_income": 268000000.0
     },
     {
       "gaap_eps": 0.014448047058098358,
@@ -1306,6 +1350,8 @@
       "period_end": "2021-09-30",
       "fiscal_year": 2021,
       "quarter": 3,
+      "tax_expense": 31000000.0,
+      "pretax_income": 38000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1328,9 +1374,9 @@
     },
     {
       "gaap_eps": 0.07386642339881795,
-      "adjusted_eps": 0.300800490840742,
+      "adjusted_eps": -0.3170305855375378,
       "gaap_net_income": 36000000.0,
-      "adjusted_net_income": 146600000.0,
+      "adjusted_net_income": -154510000.0,
       "diluted_shares_used": 487366226.0,
       "adjustments": [
         {
@@ -1347,6 +1393,13 @@
           "tax_rate_applied": 0.21
         },
         {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -294000000.0,
+          "net_amount": -294000000.0,
+          "note": "tax_expense=-115,000,000, median_normal_tax=179,000,000"
+        },
+        {
           "item_id": "derivative_fv_change",
           "item_name": "デリバティブ公正価値変動損益",
           "amount": 131000000,
@@ -1360,7 +1413,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 110600000.0,
+      "net_adjustment_total": -190510000.0,
       "filing_date": "2021-06-30",
       "form": "10-Q",
       "sector": null,
@@ -1370,6 +1423,9 @@
       "period_end": "2021-06-30",
       "fiscal_year": 2021,
       "quarter": 2,
+      "tax_expense": -115000000.0,
+      "pretax_income": -79000000.0,
+      "dta_detected": true,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1420,7 +1476,9 @@
       "diluted_shares": 484699267.0,
       "period_end": "2021-03-31",
       "fiscal_year": 2021,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": -485000000.0,
+      "pretax_income": -2528000000.0
     }
   ]
 }

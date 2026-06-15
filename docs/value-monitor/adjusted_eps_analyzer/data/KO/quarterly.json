@@ -1,12 +1,12 @@
 {
   "ticker": "KO",
-  "last_updated": "2026-06-08T14:23:15.437312",
+  "last_updated": "2026-06-15T16:08:02.765303",
   "quarters": [
     {
-      "gaap_eps": 0.9095966620305981,
-      "adjusted_eps": 0.9213423838646548,
-      "gaap_net_income": 3924000000.0,
-      "adjusted_net_income": 3974671043.9921207,
+      "gaap_eps": 0.9193324061196105,
+      "adjusted_eps": 0.9310957138535202,
+      "gaap_net_income": 3966000000.0,
+      "adjusted_net_income": 4016746909.564086,
       "diluted_shares_used": 4314000000.0,
       "adjustments": [
         {
@@ -19,8 +19,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 48094550.22980959,
-          "tax_rate_applied": 0.14116874589625739
+          "net_amount": 48166558.2303188,
+          "tax_rate_applied": 0.1398828887443071
         },
         {
           "item_id": "litigation_settlement",
@@ -32,11 +32,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 2576493.7623112276,
-          "tax_rate_applied": 0.14116874589625739
+          "net_amount": 2580351.333767079,
+          "tax_rate_applied": 0.1398828887443071
         }
       ],
-      "net_adjustment_total": 50671043.99212082,
+      "net_adjustment_total": 50746909.56408588,
       "filing_date": "2026-04-03",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -49,9 +49,11 @@
       "period_end": "2026-04-03",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 645000000.0,
+      "pretax_income": 4611000000.0,
       "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 110.5%）",
-        "sbc_contribution": 1.105,
+        "alert": "SBC寄与率が40%超（現在 110.4%）",
+        "sbc_contribution": 1.104,
         "sbc_to_revenue": 0.004,
         "sbc_per_share": 0.013,
         "sector_threshold": {
@@ -61,26 +63,26 @@
       },
       "ai_analysis": {
         "health": "調整小",
-        "comment": "調整項目のうち訴訟和解金は明確に一過性だが、SBC（株式報酬費用）は毎期発生する恒常的コストであり加算戻しにより調整後EPSがやや inflated されている。GAAP EPSとAdjusted EPSの差は0.01程度と小さく、市場がGAAPベースで判断している場合でも企業の実力（持続可能な収益力）が大幅に見えにくくなっているとは言えない。投資家としてはSBCの継続性と株式希薄化効果に注意が必要であり、過大評価リスクがやや存在する一方で、過小評価の可能性は限定的。",
+        "comment": "SBCは恒常的に発生する非現金費用だが、訴訟和解は明確に一過性の項目。調整幅がEPSで約0.012と小さいため、市場がGAAP EPS中心に判断している場合でも企業の実力が見えにくくなる程度は限定的。投資家としてはSBCの継続性と株主希薄化効果に注目すべきであり、調整後EPSを過信すると持続的収益力を過大評価するリスクがある。全体として過小評価の可能性は低い。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は毎期発生する恒常的な非現金費用だが、従業員インセンティブとして実質的な経済的コストと希薄化効果を伴う",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期発生する恒常的コストであり株主希薄化を伴う",
             "confidence": 0.2
           },
           {
             "item": "litigation_settlement",
-            "snippet": "訴訟和解金・罰金は非経常的な一過性費用であり、コア事業の収益力とは無関係のため調整の根拠が強い",
-            "confidence": 1.0
+            "snippet": "訴訟和解金・罰金は非経常的な一過性費用としてadd_backされており、調整の妥当性が高い",
+            "confidence": 0.9
           }
         ]
       }
     },
     {
-      "gaap_eps": 0.5265476466496638,
-      "adjusted_eps": 0.5406515186645027,
-      "gaap_net_income": 2271000000.0,
-      "adjusted_net_income": 2331830000.0,
+      "gaap_eps": 0.5300255042893578,
+      "adjusted_eps": 0.5441293763041967,
+      "gaap_net_income": 2286000000.0,
+      "adjusted_net_income": 2346830000.0,
       "diluted_shares_used": 4313000000.0,
       "adjustments": [
         {
@@ -122,13 +124,15 @@
       "diluted_shares": 4313000000.0,
       "period_end": "2025-12-31",
       "fiscal_year": 2025,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 2861000000.0,
+      "pretax_income": 5147000000.0
     },
     {
-      "gaap_eps": 0.8569441224205889,
-      "adjusted_eps": 0.8726697414449895,
-      "gaap_net_income": 3696000000.0,
-      "adjusted_net_income": 3763824594.85224,
+      "gaap_eps": 0.8539299791328542,
+      "adjusted_eps": 0.8696489866378099,
+      "gaap_net_income": 3683000000.0,
+      "adjusted_net_income": 3750796079.368874,
       "diluted_shares_used": 4313000000.0,
       "adjustments": [
         {
@@ -141,8 +145,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 65182078.16968541,
-          "tax_rate_applied": 0.11916110581506197
+          "net_amount": 65154673.67917763,
+          "tax_rate_applied": 0.11953143676786995
         },
         {
           "item_id": "litigation_settlement",
@@ -154,11 +158,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 2642516.682554814,
-          "tax_rate_applied": 0.11916110581506197
+          "net_amount": 2641405.68969639,
+          "tax_rate_applied": 0.11953143676786995
         }
       ],
-      "net_adjustment_total": 67824594.85224022,
+      "net_adjustment_total": 67796079.36887401,
       "filing_date": "2025-09-26",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -170,13 +174,15 @@
       "diluted_shares": 4313000000.0,
       "period_end": "2025-09-26",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 500000000.0,
+      "pretax_income": 4183000000.0
     },
     {
-      "gaap_eps": 0.8829663962920047,
-      "adjusted_eps": 0.8956511102924519,
-      "gaap_net_income": 3810000000.0,
-      "adjusted_net_income": 3864734540.91193,
+      "gaap_eps": 0.8813441483198146,
+      "adjusted_eps": 0.8940240370258336,
+      "gaap_net_income": 3803000000.0,
+      "adjusted_net_income": 3857713719.766472,
       "diluted_shares_used": 4315000000.0,
       "adjustments": [
         {
@@ -189,8 +195,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 53148032.479700185,
-          "tax_rate_applied": 0.20674578388507184
+          "net_amount": 53127814.84570476,
+          "tax_rate_applied": 0.20704753961634695
         },
         {
           "item_id": "litigation_settlement",
@@ -202,11 +208,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 1586508.4322298565,
-          "tax_rate_applied": 0.20674578388507184
+          "net_amount": 1585904.9207673061,
+          "tax_rate_applied": 0.20704753961634695
         }
       ],
-      "net_adjustment_total": 54734540.91193004,
+      "net_adjustment_total": 54713719.766472064,
       "filing_date": "2025-06-27",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -218,13 +224,15 @@
       "diluted_shares": 4315000000.0,
       "period_end": "2025-06-27",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 993000000.0,
+      "pretax_income": 4796000000.0
     },
     {
-      "gaap_eps": 0.7720843960120566,
-      "adjusted_eps": 0.7846603017713842,
-      "gaap_net_income": 3330000000.0,
-      "adjusted_net_income": 3384239881.5399804,
+      "gaap_eps": 0.7732436818919546,
+      "adjusted_eps": 0.7858229480997112,
+      "gaap_net_income": 3335000000.0,
+      "adjusted_net_income": 3389254375.1540546,
       "diluted_shares_used": 4313000000.0,
       "adjustments": [
         {
@@ -237,8 +245,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 51774432.37907206,
-          "tax_rate_applied": 0.17818361303060218
+          "net_amount": 51788267.192506775,
+          "tax_rate_applied": 0.17796401281735272
         },
         {
           "item_id": "litigation_settlement",
@@ -250,11 +258,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 2465449.1609081933,
-          "tax_rate_applied": 0.17818361303060218
+          "net_amount": 2466107.961547942,
+          "tax_rate_applied": 0.17796401281735272
         }
       ],
-      "net_adjustment_total": 54239881.539980255,
+      "net_adjustment_total": 54254375.154054716,
       "filing_date": "2025-03-28",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -266,7 +274,9 @@
       "diluted_shares": 4313000000.0,
       "period_end": "2025-03-28",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 722000000.0,
+      "pretax_income": 4057000000.0
     },
     {
       "gaap_eps": 0.5081018518518519,
@@ -327,13 +337,15 @@
       "diluted_shares": 4320000000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 2437000000.0,
+      "pretax_income": 4632000000.0
     },
     {
-      "gaap_eps": 0.6588017580383992,
-      "adjusted_eps": 0.6714785236608078,
-      "gaap_net_income": 2848000000.0,
-      "adjusted_net_income": 2902801657.785672,
+      "gaap_eps": 0.659264399722415,
+      "adjusted_eps": 0.6719425612555384,
+      "gaap_net_income": 2850000000.0,
+      "adjusted_net_income": 2904807692.3076925,
       "diluted_shares_used": 4323000000.0,
       "adjustments": [
         {
@@ -346,8 +358,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 56487862.64061575,
-          "tax_rate_applied": 0.15689757252812314
+          "net_amount": 56494082.840236686,
+          "tax_rate_applied": 0.15680473372781065
         },
         {
           "item_id": "litigation_settlement",
@@ -359,11 +371,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": -1686204.8549437537,
-          "tax_rate_applied": 0.15689757252812314
+          "net_amount": -1686390.5325443787,
+          "tax_rate_applied": 0.15680473372781065
         }
       ],
-      "net_adjustment_total": 54801657.785671994,
+      "net_adjustment_total": 54807692.307692304,
       "filing_date": "2024-09-27",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -375,13 +387,15 @@
       "diluted_shares": 4323000000.0,
       "period_end": "2024-09-27",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 530000000.0,
+      "pretax_income": 3380000000.0
     },
     {
-      "gaap_eps": 0.5582310720074091,
-      "adjusted_eps": 0.571093539104354,
-      "gaap_net_income": 2411000000.0,
-      "adjusted_net_income": 2466552995.391705,
+      "gaap_eps": 0.5559157212317666,
+      "adjusted_eps": 0.5687671414716027,
+      "gaap_net_income": 2401000000.0,
+      "adjusted_net_income": 2456505284.015852,
       "diluted_shares_used": 4319000000.0,
       "adjustments": [
         {
@@ -394,8 +408,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 57140223.831468076,
-          "tax_rate_applied": 0.206385780118499
+          "net_amount": 57091149.27344782,
+          "tax_rate_applied": 0.2070673712021136
         },
         {
           "item_id": "litigation_settlement",
@@ -407,11 +421,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": -1587228.439763002,
-          "tax_rate_applied": 0.206385780118499
+          "net_amount": -1585865.2575957729,
+          "tax_rate_applied": 0.2070673712021136
         }
       ],
-      "net_adjustment_total": 55552995.39170507,
+      "net_adjustment_total": 55505284.01585205,
       "filing_date": "2024-06-28",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -423,13 +437,15 @@
       "diluted_shares": 4319000000.0,
       "period_end": "2024-06-28",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 627000000.0,
+      "pretax_income": 3028000000.0
     },
     {
-      "gaap_eps": 0.7350763535400278,
-      "adjusted_eps": 0.7482027169960997,
-      "gaap_net_income": 3177000000.0,
-      "adjusted_net_income": 3233732142.857143,
+      "gaap_eps": 0.7369273484497918,
+      "adjusted_eps": 0.750059576508427,
+      "gaap_net_income": 3185000000.0,
+      "adjusted_net_income": 3241757489.6694217,
       "diluted_shares_used": 4322000000.0,
       "adjustments": [
         {
@@ -442,8 +458,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 55909937.888198756,
-          "tax_rate_applied": 0.1777950310559006
+          "net_amount": 55934917.3553719,
+          "tax_rate_applied": 0.17742768595041322
         },
         {
           "item_id": "litigation_settlement",
@@ -455,11 +471,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 822204.9689440994,
-          "tax_rate_applied": 0.1777950310559006
+          "net_amount": 822572.3140495868,
+          "tax_rate_applied": 0.17742768595041322
         }
       ],
-      "net_adjustment_total": 56732142.85714286,
+      "net_adjustment_total": 56757489.66942149,
       "filing_date": "2024-03-29",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -471,13 +487,15 @@
       "diluted_shares": 4322000000.0,
       "period_end": "2024-03-29",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 687000000.0,
+      "pretax_income": 3872000000.0
     },
     {
-      "gaap_eps": 0.45471306752707996,
-      "adjusted_eps": 0.4860290389490666,
-      "gaap_net_income": 1973000000.0,
-      "adjusted_net_income": 2108880000.0,
+      "gaap_eps": 0.4602442959207191,
+      "adjusted_eps": 0.4915602673427057,
+      "gaap_net_income": 1997000000.0,
+      "adjusted_net_income": 2132880000.0,
       "diluted_shares_used": 4339000000.0,
       "adjustments": [
         {
@@ -532,13 +550,15 @@
       "diluted_shares": 4339000000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 2249000000.0,
+      "pretax_income": 4246000000.0
     },
     {
-      "gaap_eps": 0.7114542521318276,
-      "adjusted_eps": 0.7231075553296943,
-      "gaap_net_income": 3087000000.0,
-      "adjusted_net_income": 3137563682.5755434,
+      "gaap_eps": 0.7105323807328877,
+      "adjusted_eps": 0.722183745754801,
+      "gaap_net_income": 3083000000.0,
+      "adjusted_net_income": 3133555272.830082,
       "diluted_shares_used": 4339000000.0,
       "adjustments": [
         {
@@ -551,8 +571,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 49691894.944930814,
-          "tax_rate_applied": 0.12821236938717875
+          "net_amount": 49683630.19508058,
+          "tax_rate_applied": 0.12835736499858638
         },
         {
           "item_id": "litigation_settlement",
@@ -564,11 +584,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 871787.6306128213,
-          "tax_rate_applied": 0.12821236938717875
+          "net_amount": 871642.6350014136,
+          "tax_rate_applied": 0.12835736499858638
         }
       ],
-      "net_adjustment_total": 50563682.575543635,
+      "net_adjustment_total": 50555272.83008199,
       "filing_date": "2023-09-29",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -580,13 +600,15 @@
       "diluted_shares": 4339000000.0,
       "period_end": "2023-09-29",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 454000000.0,
+      "pretax_income": 3537000000.0
     },
     {
-      "gaap_eps": 0.5867311679336559,
-      "adjusted_eps": 0.6004605965019588,
-      "gaap_net_income": 2547000000.0,
-      "adjusted_net_income": 2606599449.4150033,
+      "gaap_eps": 0.5807417645703755,
+      "adjusted_eps": 0.5944537229005094,
+      "gaap_net_income": 2521000000.0,
+      "adjusted_net_income": 2580523611.111111,
       "diluted_shares_used": 4341000000.0,
       "adjustments": [
         {
@@ -599,8 +621,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 54340674.46662078,
-          "tax_rate_applied": 0.12353750860289058
+          "net_amount": 54271527.77777778,
+          "tax_rate_applied": 0.12465277777777778
         },
         {
           "item_id": "litigation_settlement",
@@ -612,11 +634,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 5258774.948382656,
-          "tax_rate_applied": 0.12353750860289058
+          "net_amount": 5252083.333333334,
+          "tax_rate_applied": 0.12465277777777778
         }
       ],
-      "net_adjustment_total": 59599449.415003434,
+      "net_adjustment_total": 59523611.11111112,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -628,13 +650,15 @@
       "diluted_shares": 4341000000.0,
       "period_end": "2023-06-30",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 359000000.0,
+      "pretax_income": 2880000000.0
     },
     {
-      "gaap_eps": 0.7150747986191024,
-      "adjusted_eps": 0.7253229672180418,
-      "gaap_net_income": 3107000000.0,
-      "adjusted_net_income": 3151528292.5623918,
+      "gaap_eps": 0.7164556962025317,
+      "adjusted_eps": 0.7267084547467574,
+      "gaap_net_income": 3113000000.0,
+      "adjusted_net_income": 3157548235.874661,
       "diluted_shares_used": 4345000000.0,
       "adjustments": [
         {
@@ -647,11 +671,11 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 44528292.56239189,
-          "tax_rate_applied": 0.23227081788979492
+          "net_amount": 44548235.874660745,
+          "tax_rate_applied": 0.231926967678263
         }
       ],
-      "net_adjustment_total": 44528292.56239189,
+      "net_adjustment_total": 44548235.874660745,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -663,13 +687,15 @@
       "diluted_shares": 4345000000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 940000000.0,
+      "pretax_income": 4053000000.0
     },
     {
-      "gaap_eps": 0.4668965517241379,
-      "adjusted_eps": 0.5106643678160919,
-      "gaap_net_income": 2031000000.0,
-      "adjusted_net_income": 2221390000.0,
+      "gaap_eps": 0.46597701149425286,
+      "adjusted_eps": 0.5097448275862069,
+      "gaap_net_income": 2027000000.0,
+      "adjusted_net_income": 2217390000.0,
       "diluted_shares_used": 4350000000.0,
       "adjustments": [
         {
@@ -724,13 +750,15 @@
       "diluted_shares": 4350000000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 2115000000.0,
+      "pretax_income": 4142000000.0
     },
     {
-      "gaap_eps": 0.6500230096640589,
-      "adjusted_eps": 0.6658634311354198,
-      "gaap_net_income": 2825000000.0,
-      "adjusted_net_income": 2893842471.7145343,
+      "gaap_eps": 0.6493327197422918,
+      "adjusted_eps": 0.6651701031506404,
+      "gaap_net_income": 2822000000.0,
+      "adjusted_net_income": 2890829268.292683,
       "diluted_shares_used": 4346000000.0,
       "adjustments": [
         {
@@ -743,11 +771,11 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 68842471.71453437,
-          "tax_rate_applied": 0.18044676530316217
+          "net_amount": 68829268.29268293,
+          "tax_rate_applied": 0.1806039488966318
         }
       ],
-      "net_adjustment_total": 68842471.71453437,
+      "net_adjustment_total": 68829268.29268293,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -759,13 +787,15 @@
       "diluted_shares": 4346000000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 622000000.0,
+      "pretax_income": 3444000000.0
     },
     {
-      "gaap_eps": 0.4376292212267402,
-      "adjusted_eps": 0.4571303922905792,
-      "gaap_net_income": 1905000000.0,
-      "adjusted_net_income": 1989888597.6408913,
+      "gaap_eps": 0.4364805881001608,
+      "adjusted_eps": 0.45597315376838166,
+      "gaap_net_income": 1900000000.0,
+      "adjusted_net_income": 1984851138.3537652,
       "diluted_shares_used": 4353000000.0,
       "adjustments": [
         {
@@ -778,11 +808,11 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 84888597.64089122,
-          "tax_rate_applied": 0.16775884665792923
+          "net_amount": 84851138.35376532,
+          "tax_rate_applied": 0.1681260945709282
         }
       ],
-      "net_adjustment_total": 84888597.64089122,
+      "net_adjustment_total": 84851138.35376532,
       "filing_date": "2022-07-01",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -794,13 +824,15 @@
       "diluted_shares": 4353000000.0,
       "period_end": "2022-07-01",
       "fiscal_year": 2022,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 384000000.0,
+      "pretax_income": 2284000000.0
     },
     {
-      "gaap_eps": 0.6382832224007344,
-      "adjusted_eps": 0.6543977436859533,
-      "gaap_net_income": 2781000000.0,
-      "adjusted_net_income": 2851210969.2396984,
+      "gaap_eps": 0.6410374110626578,
+      "adjusted_eps": 0.657165304284882,
+      "gaap_net_income": 2793000000.0,
+      "adjusted_net_income": 2863269230.769231,
       "diluted_shares_used": 4357000000.0,
       "adjustments": [
         {
@@ -813,11 +845,11 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 70210969.2396982,
-          "tax_rate_applied": 0.1929773650609402
+          "net_amount": 70269230.76923077,
+          "tax_rate_applied": 0.19230769230769232
         }
       ],
-      "net_adjustment_total": 70210969.2396982,
+      "net_adjustment_total": 70269230.76923077,
       "filing_date": "2022-04-01",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -829,13 +861,15 @@
       "diluted_shares": 4357000000.0,
       "period_end": "2022-04-01",
       "fiscal_year": 2022,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 665000000.0,
+      "pretax_income": 3458000000.0
     },
     {
-      "gaap_eps": 0.5688305709023941,
-      "adjusted_eps": 0.569015256152687,
-      "gaap_net_income": 2471000000.0,
-      "adjusted_net_income": 2471802272.7272725,
+      "gaap_eps": 0.5697513812154696,
+      "adjusted_eps": 0.5699361255025045,
+      "gaap_net_income": 2475000000.0,
+      "adjusted_net_income": 2475802529.1828794,
       "diluted_shares_used": 4344000000.0,
       "adjustments": [
         {
@@ -848,11 +882,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 802272.7272727273,
-          "tax_rate_applied": 0.19772727272727272
+          "net_amount": 802529.1828793775,
+          "tax_rate_applied": 0.19747081712062256
         }
       ],
-      "net_adjustment_total": 802272.7272727273,
+      "net_adjustment_total": 802529.1828793775,
       "filing_date": "2021-10-01",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -864,13 +898,15 @@
       "diluted_shares": 4344000000.0,
       "period_end": "2021-10-01",
       "fiscal_year": 2021,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 609000000.0,
+      "pretax_income": 3084000000.0
     },
     {
-      "gaap_eps": 0.6088059013370216,
-      "adjusted_eps": 0.6094758390551366,
-      "gaap_net_income": 2641000000.0,
-      "adjusted_net_income": 2643906189.8211827,
+      "gaap_eps": 0.6048870447210696,
+      "adjusted_eps": 0.6055557976726683,
+      "gaap_net_income": 2624000000.0,
+      "adjusted_net_income": 2626901050.304035,
       "diluted_shares_used": 4338000000.0,
       "adjustments": [
         {
@@ -883,11 +919,11 @@
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 2906189.8211829434,
-          "tax_rate_applied": 0.2734525447042641
+          "net_amount": 2901050.3040353786,
+          "tax_rate_applied": 0.27473742399115536
         }
       ],
-      "net_adjustment_total": 2906189.8211829434,
+      "net_adjustment_total": 2901050.3040353786,
       "filing_date": "2021-07-02",
       "form": "10-Q",
       "sector": "一般消費財 / 製造 / EV",
@@ -899,7 +935,9 @@
       "diluted_shares": 4338000000.0,
       "period_end": "2021-07-02",
       "fiscal_year": 2021,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 994000000.0,
+      "pretax_income": 3618000000.0
     }
   ]
 }

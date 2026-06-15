@@ -1,56 +1,386 @@
 {
   "ticker": "AVGO",
-  "last_updated": "2026-06-08T14:24:54.415029",
+  "last_updated": "2026-06-15T16:10:12.015833",
   "quarters": [
     {
-      "gaap_eps": 0.0,
-      "adjusted_eps": 0.0,
-      "gaap_net_income": 10382000000.0,
-      "adjusted_net_income": 9719980000.0,
-      "diluted_shares_used": 0.0,
+      "gaap_eps": 1.90935192780968,
+      "adjusted_eps": 2.6744120931581,
+      "gaap_net_income": 9310000000.0,
+      "adjusted_net_income": 13040433366.238895,
+      "diluted_shares_used": 4876000000.0,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 2092000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 1922657453.1095755,
+          "tax_rate_applied": 0.08094768015794669
+        },
         {
           "item_id": "amortization_intangibles",
           "item_name": "無形資産償却費",
-          "amount": -364000000,
+          "amount": 1967000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": -287560000.0,
-          "tax_rate_applied": 0.21
+          "net_amount": 1807775913.1293187,
+          "tax_rate_applied": 0.08094768015794669
+        }
+      ],
+      "net_adjustment_total": 3730433366.2388945,
+      "filing_date": "2026-05-03",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 22187000000.0,
+      "diluted_shares": 4876000000.0,
+      "period_end": "2026-05-03",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 820000000.0,
+      "pretax_income": 10130000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 56.1%）",
+        "sbc_contribution": 0.561,
+        "sbc_to_revenue": 0.094,
+        "sbc_per_share": 0.429,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する費用（SBCは継続的な報酬コスト、無形資産償却は連続買収企業であるAVGOの事業モデル上毎期発生）であり、一過性とは判断しにくい。市場がGAAP EPS（1.91）を基準に評価する場合、非現金費用による実力（キャッシュ生成力）の過小評価リスクがある一方、Adjusted EPS（2.67）への大幅加算は実態を過大に見せる可能性が高く、過大評価リスクを伴う。投資家はSBCの希薄化効果や買収依存の持続可能性を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、テック企業で毎期継続的に発生する恒常的コスト",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却はAVGOのM&A戦略上、恒常的に発生する費用",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
+    {
+      "gaap_eps": 1.5034779050736498,
+      "adjusted_eps": 2.2639313421121217,
+      "gaap_net_income": 7349000000.0,
+      "adjusted_net_income": 11066096400.244051,
+      "diluted_shares_used": 4888000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 2176000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1951363514.338011,
+          "tax_rate_applied": 0.10323367907260525
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 1969000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 1765732885.9060402,
+          "tax_rate_applied": 0.10323367907260525
+        }
+      ],
+      "net_adjustment_total": 3717096400.244051,
+      "filing_date": "2026-02-01",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 19311000000.0,
+      "diluted_shares": 4888000000.0,
+      "period_end": "2026-02-01",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "tax_expense": 846000000.0,
+      "pretax_income": 8195000000.0
+    },
+    {
+      "gaap_eps": 0.8518518518518519,
+      "adjusted_eps": 1.2491678054591961,
+      "gaap_net_income": 4140000000.0,
+      "adjusted_net_income": 6070955534.531693,
+      "diluted_shares_used": 4860000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 2322000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1818936613.0558183,
+          "tax_rate_applied": 0.21665089877010407
         },
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": -488000000,
+          "amount": 143000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の事業再編費用",
           "extracted_from": "us-gaap:RestructuringCharges",
           "category": "リストラ・事業再編関連",
-          "net_amount": -385520000.0,
+          "net_amount": 112018921.47587511,
+          "tax_rate_applied": 0.21665089877010407
+        }
+      ],
+      "net_adjustment_total": 1930955534.5316935,
+      "filing_date": "2025-08-03",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 15952000000.0,
+      "diluted_shares": 4860000000.0,
+      "period_end": "2025-08-03",
+      "fiscal_year": 2025,
+      "quarter": 3,
+      "tax_expense": 1145000000.0,
+      "pretax_income": 5285000000.0
+    },
+    {
+      "gaap_eps": 1.0288023207625363,
+      "adjusted_eps": 1.8125939020081736,
+      "gaap_net_income": 4965000000.0,
+      "adjusted_net_income": 8747578171.091446,
+      "diluted_shares_used": 4826000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1771000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1729206489.6755161,
+          "tax_rate_applied": 0.02359882005899705
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 1989000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 1942061946.902655,
+          "tax_rate_applied": 0.02359882005899705
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 114000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 111309734.51327434,
+          "tax_rate_applied": 0.02359882005899705
+        }
+      ],
+      "net_adjustment_total": 3782578171.091445,
+      "filing_date": "2025-05-04",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 15004000000.0,
+      "diluted_shares": 4826000000.0,
+      "period_end": "2025-05-04",
+      "fiscal_year": 2025,
+      "quarter": 2,
+      "tax_expense": 120000000.0,
+      "pretax_income": 5085000000.0
+    },
+    {
+      "gaap_eps": 1.1379239040529363,
+      "adjusted_eps": 1.8519033403089458,
+      "gaap_net_income": 5503000000.0,
+      "adjusted_net_income": 8955804553.734062,
+      "diluted_shares_used": 4836000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1280000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1276969034.608379,
+          "tax_rate_applied": 0.0023679417122040073
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 1995000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 1990275956.284153,
+          "tax_rate_applied": 0.0023679417122040073
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 186000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 185559562.84153005,
+          "tax_rate_applied": 0.0023679417122040073
+        }
+      ],
+      "net_adjustment_total": 3452804553.7340617,
+      "filing_date": "2025-02-02",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 14916000000.0,
+      "diluted_shares": 4836000000.0,
+      "period_end": "2025-02-02",
+      "fiscal_year": 2025,
+      "quarter": 1,
+      "tax_expense": -13000000.0,
+      "pretax_income": 5490000000.0
+    },
+    {
+      "gaap_eps": -1.8235663457513605,
+      "adjusted_eps": -0.560029300962746,
+      "gaap_net_income": -8713000000.0,
+      "adjusted_net_income": -2675820000.0,
+      "diluted_shares_used": 4778000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 368000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 290720000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 5283000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 4173570000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 1787000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringAndRelatedCostIncurredCost",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 1411730000.0,
           "tax_rate_applied": 0.21
         },
         {
           "item_id": "litigation_settlement",
           "item_name": "訴訟和解金・罰金",
-          "amount": 14000000.0,
+          "amount": 204000000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非経常的な訴訟関連費用",
           "extracted_from": "us-gaap:LitigationSettlementExpense",
           "category": "訴訟・罰金関連",
-          "net_amount": 11060000.0,
+          "net_amount": 161160000.0,
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": -662020000.0,
-      "filing_date": "2018-11-04",
+      "net_adjustment_total": 6037180000.0,
+      "filing_date": "2024-11-03",
       "form": "10-K",
       "sector": "Technology",
       "sector_exclusions": [
@@ -60,42 +390,424 @@
         "derivative_gains_losses",
         "tax_one_time"
       ],
-      "revenue": 20848000000.0,
-      "diluted_shares": 0.0,
-      "period_end": "2018-11-04",
-      "fiscal_year": 2019,
+      "revenue": 5702000000.0,
+      "diluted_shares": 4778000000.0,
+      "period_end": "2024-11-03",
+      "fiscal_year": 2025,
       "quarter": 4,
-      "maturity_monitor": {
-        "alert": null,
-        "sbc_contribution": 0,
-        "sbc_to_revenue": 0.0,
-        "sbc_per_share": 0,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
+      "tax_expense": 3748000000.0,
+      "pretax_income": -4965000000.0
+    },
+    {
+      "gaap_eps": -0.402101651297448,
+      "adjusted_eps": -0.105788119236543,
+      "gaap_net_income": -1875000000.0,
+      "adjusted_net_income": -493290000.0,
+      "diluted_shares_used": 4663000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1388000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1096520000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 361000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 285190000.0,
+          "tax_rate_applied": 0.21
         }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目のうち、無形資産償却（恒常的非現金費用）とリストラ費用（一過性）が大規模であり、GAAP EPSがこれらにより大幅に圧縮されている。市場がGAAP EPS中心に評価する場合、AVGOの買収戦略による非現金償却や一時的再編コストを過度に織り込み、実質的なキャッシュ稼得力・事業実力を過小評価するリスクが高い。投資家は調整EPSを参考にしつつ、無形資産償却の経済的実態を注視すべきで、過小評価の可能性はあるが調整依存による過大評価リスクも併存する。",
-        "sources": [
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は恒常的に発生する非現金費用であり、毎期の事業運営に紐づく",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用であり、リストラ関連の非経常的項目",
-            "confidence": 0.8
-          },
-          {
-            "item": "litigation_settlement",
-            "snippet": "非経常的な訴訟関連費用で、明確に一過性の和解金",
-            "confidence": 1.0
-          }
-        ]
-      }
+      ],
+      "net_adjustment_total": 1381710000.0,
+      "filing_date": "2024-08-04",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 13072000000.0,
+      "diluted_shares": 4663000000.0,
+      "period_end": "2024-08-04",
+      "fiscal_year": 2024,
+      "quarter": 3,
+      "tax_expense": 4238000000.0,
+      "pretax_income": 2363000000.0
+    },
+    {
+      "gaap_eps": 0.4419670764742655,
+      "adjusted_eps": 0.7957375783296499,
+      "gaap_net_income": 2121000000.0,
+      "adjusted_net_income": 3818744638.40399,
+      "diluted_shares_used": 4799000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1457000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1372704738.1546135,
+          "tax_rate_applied": 0.05785536159600998
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 345000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 325039900.24937654,
+          "tax_rate_applied": 0.05785536159600998
+        }
+      ],
+      "net_adjustment_total": 1697744638.40399,
+      "filing_date": "2024-05-05",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 12487000000.0,
+      "diluted_shares": 4799000000.0,
+      "period_end": "2024-05-05",
+      "fiscal_year": 2024,
+      "quarter": 2,
+      "tax_expense": -116000000.0,
+      "pretax_income": 2005000000.0
+    },
+    {
+      "gaap_eps": 0.28396913844834976,
+      "adjusted_eps": 0.7516110649383098,
+      "gaap_net_income": 1325000000.0,
+      "adjusted_net_income": 3507017229.0021534,
+      "diluted_shares_used": 4666000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1582000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1504773869.3467336,
+          "tax_rate_applied": 0.048815506101938265
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 712000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 677243359.65542,
+          "tax_rate_applied": 0.048815506101938265
+        }
+      ],
+      "net_adjustment_total": 2182017229.0021534,
+      "filing_date": "2024-02-04",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 11961000000.0,
+      "diluted_shares": 4666000000.0,
+      "period_end": "2024-02-04",
+      "fiscal_year": 2024,
+      "quarter": 1,
+      "tax_expense": 68000000.0,
+      "pretax_income": 1393000000.0
+    },
+    {
+      "gaap_eps": 8.252927400468383,
+      "adjusted_eps": 15.72947233783917,
+      "gaap_net_income": 3524000000.0,
+      "adjusted_net_income": 6716484688.257325,
+      "diluted_shares_used": 427000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 638000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 495332011.4562679,
+          "tax_rate_applied": 0.2236175369024014
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 3247000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 2520913857.6779027,
+          "tax_rate_applied": 0.2236175369024014
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 23000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 17856796.651244767,
+          "tax_rate_applied": 0.2236175369024014
+        },
+        {
+          "item_id": "litigation_settlement",
+          "item_name": "訴訟和解金・罰金",
+          "amount": 204000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非経常的な訴訟関連費用",
+          "extracted_from": "us-gaap:LitigationSettlementExpense",
+          "category": "訴訟・罰金関連",
+          "net_amount": 158382022.47191012,
+          "tax_rate_applied": 0.2236175369024014
+        }
+      ],
+      "net_adjustment_total": 3192484688.257325,
+      "filing_date": "2023-10-29",
+      "form": "10-K",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 9295000000.0,
+      "diluted_shares": 427000000.0,
+      "period_end": "2023-10-29",
+      "fiscal_year": 2023,
+      "quarter": 4,
+      "tax_expense": 1015000000.0,
+      "pretax_income": 4539000000.0
+    },
+    {
+      "gaap_eps": 0.7737174982431483,
+      "adjusted_eps": 0.9098865822932155,
+      "gaap_net_income": 3303000000.0,
+      "adjusted_net_income": 3884305819.809737,
+      "diluted_shares_used": 4269000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 629000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 581305819.809737,
+          "tax_rate_applied": 0.07582540570789031
+        }
+      ],
+      "net_adjustment_total": 581305819.809737,
+      "filing_date": "2023-07-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 8876000000.0,
+      "diluted_shares": 4269000000.0,
+      "period_end": "2023-07-30",
+      "fiscal_year": 2023,
+      "quarter": 3,
+      "tax_expense": 271000000.0,
+      "pretax_income": 3574000000.0
+    },
+    {
+      "gaap_eps": 8.152224824355972,
+      "adjusted_eps": 9.277653063025136,
+      "gaap_net_income": 3481000000.0,
+      "adjusted_net_income": 3961557857.911733,
+      "diluted_shares_used": 427000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 513000000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 480557857.9117331,
+          "tax_rate_applied": 0.0632400430570506
+        }
+      ],
+      "net_adjustment_total": 480557857.9117331,
+      "filing_date": "2023-04-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 8733000000.0,
+      "diluted_shares": 427000000.0,
+      "period_end": "2023-04-30",
+      "fiscal_year": 2023,
+      "quarter": 2,
+      "tax_expense": 235000000.0,
+      "pretax_income": 3716000000.0
+    },
+    {
+      "gaap_eps": 8.797202797202797,
+      "adjusted_eps": 9.706705273892775,
+      "gaap_net_income": 3774000000.0,
+      "adjusted_net_income": 4164176562.5,
+      "diluted_shares_used": 429000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 391000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 384279687.5,
+          "tax_rate_applied": 0.0171875
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 6000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 5896875.0,
+          "tax_rate_applied": 0.0171875
+        }
+      ],
+      "net_adjustment_total": 390176562.5,
+      "filing_date": "2023-01-29",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 8915000000.0,
+      "diluted_shares": 429000000.0,
+      "period_end": "2023-01-29",
+      "fiscal_year": 2023,
+      "quarter": 1,
+      "tax_expense": 66000000.0,
+      "pretax_income": 3840000000.0
+    },
+    {
+      "gaap_eps": 7.148837209302326,
+      "adjusted_eps": 7.947913109533002,
+      "gaap_net_income": 3074000000.0,
+      "adjusted_net_income": 3417602637.0991907,
+      "diluted_shares_used": 430000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 373000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 343602637.0991909,
+          "tax_rate_applied": 0.07881330536409949
+        }
+      ],
+      "net_adjustment_total": 343602637.0991909,
+      "filing_date": "2022-07-31",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 8464000000.0,
+      "diluted_shares": 430000000.0,
+      "period_end": "2022-07-31",
+      "fiscal_year": 2022,
+      "quarter": 3,
+      "tax_expense": 263000000.0,
+      "pretax_income": 3337000000.0
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "ticker": "AMD",
-  "last_updated": "2026-06-08T14:21:51.319248",
+  "last_updated": "2026-06-15T16:06:14.540033",
   "quarters": [
     {
       "gaap_eps": 0.8381818181818181,
@@ -52,6 +52,8 @@
       "period_end": "2026-03-28",
       "fiscal_year": 2026,
       "quarter": 1,
+      "tax_expense": 238000000.0,
+      "pretax_income": 1621000000.0,
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 55.0%）",
         "sbc_contribution": 0.55,
@@ -64,16 +66,16 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目のSBCと無形資産償却はともに恒常的な非現金費用であり、毎期継続的に発生する性質が強い。市場がGAAP EPS（0.84）で判断する場合、AMDの真のキャッシュ生成力や運用実績が見えにくくなり、実力を過小評価する可能性がある。ただしSBCは株主希薄化を伴う実質的なコストであるため、Adjusted EPS（1.37）を使用すると企業実力を過大評価するリスクもある。投資家は調整の持続性と経済的実態を慎重に検証する必要がある。",
+        "comment": "SBCと無形資産償却はともに毎期発生する恒常的なコスト（非現金ながら経済的実態を伴う）であるため、Adjusted EPSがGAAP EPSを大幅に上回る調整となっています。市場がGAAP EPSで企業実力を判断する場合、AMDの真の収益力・キャッシュ生成能力が見えにくくなり、実力を過小評価している可能性があります。投資家はSBCの継続性と株式希薄化リスク、無形資産償却の買収シナジー効果を注視すべきで、調整依存が高いため過大評価リスクも併存します。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが毎期発生する恒常的なコスト（従業員報酬として継続）",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコストである（調整項目のreason: 非現金費用、category: 株式報酬関連）。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連の償却で一定期間継続発生する恒常的費用",
+            "snippet": "無形資産償却費は買収関連無形資産の償却で定期的に発生する恒常的項目である（調整項目のreason: 買収関連無形資産の償却、category: 買収・統合関連）。",
             "confidence": 0.2
           }
         ]
@@ -142,6 +144,8 @@
       "period_end": "2025-12-27",
       "fiscal_year": 2025,
       "quarter": 4,
+      "tax_expense": -103000000.0,
+      "pretax_income": 1408000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -211,13 +215,15 @@
       "diluted_shares": 1641000000.0,
       "period_end": "2025-09-27",
       "fiscal_year": 2025,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 153000000.0,
+      "pretax_income": 1396000000.0
     },
     {
       "gaap_eps": 0.5349693251533743,
-      "adjusted_eps": 0.9890981595092024,
+      "adjusted_eps": -0.046012269938650305,
       "gaap_net_income": 872000000.0,
-      "adjusted_net_income": 1612230000.0,
+      "adjusted_net_income": -75000000.0,
       "diluted_shares_used": 1630000000.0,
       "adjustments": [
         {
@@ -245,9 +251,16 @@
           "category": "買収・統合関連",
           "net_amount": 448720000.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -947000000.0,
+          "net_amount": -947000000.0,
+          "note": "tax_expense=-834,000,000, median_normal_tax=113,000,000"
         }
       ],
-      "net_adjustment_total": 740230000.0,
+      "net_adjustment_total": -947000000.0,
       "filing_date": "2025-06-28",
       "form": "10-Q",
       "sector": "Technology",
@@ -262,7 +275,10 @@
       "diluted_shares": 1630000000.0,
       "period_end": "2025-06-28",
       "fiscal_year": 2025,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": -834000000.0,
+      "pretax_income": 38000000.0,
+      "dta_detected": true
     },
     {
       "gaap_eps": 0.4360393603936039,
@@ -326,7 +342,9 @@
       "diluted_shares": 1626000000.0,
       "period_end": "2025-03-29",
       "fiscal_year": 2025,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 123000000.0,
+      "pretax_income": 832000000.0
     },
     {
       "gaap_eps": 0.2944410507025046,
@@ -390,7 +408,9 @@
       "diluted_shares": 1637000000.0,
       "period_end": "2024-12-28",
       "fiscal_year": 2024,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 381000000.0,
+      "pretax_income": 863000000.0
     },
     {
       "gaap_eps": 0.4712713936430318,
@@ -441,7 +461,9 @@
       "diluted_shares": 1636000000.0,
       "period_end": "2024-09-28",
       "fiscal_year": 2024,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": -27000000.0,
+      "pretax_income": 744000000.0
     },
     {
       "gaap_eps": 0.16188149053145998,
@@ -492,7 +514,9 @@
       "diluted_shares": 1637000000.0,
       "period_end": "2024-06-29",
       "fiscal_year": 2024,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 41000000.0,
+      "pretax_income": 306000000.0
     },
     {
       "gaap_eps": 0.075045759609518,
@@ -543,7 +567,9 @@
       "diluted_shares": 1639000000.0,
       "period_end": "2024-03-30",
       "fiscal_year": 2024,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": -52000000.0,
+      "pretax_income": 71000000.0
     },
     {
       "gaap_eps": 0.4104615384615385,
@@ -594,7 +620,9 @@
       "diluted_shares": 1625000000.0,
       "period_end": "2023-12-30",
       "fiscal_year": 2023,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": -346000000.0,
+      "pretax_income": 321000000.0
     },
     {
       "gaap_eps": 0.18354818907305095,
@@ -645,13 +673,15 @@
       "diluted_shares": 1629000000.0,
       "period_end": "2023-09-30",
       "fiscal_year": 2023,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": -39000000.0,
+      "pretax_income": 260000000.0
     },
     {
       "gaap_eps": 0.016594960049170254,
-      "adjusted_eps": 0.522059004302397,
+      "adjusted_eps": -0.06699446834665028,
       "gaap_net_income": 27000000.0,
-      "adjusted_net_income": 849390000.0,
+      "adjusted_net_income": -109000000.0,
       "diluted_shares_used": 1627000000.0,
       "adjustments": [
         {
@@ -679,9 +709,16 @@
           "category": "買収・統合関連",
           "net_amount": 547470000.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -136000000.0,
+          "net_amount": -136000000.0,
+          "note": "tax_expense=-23,000,000, median_normal_tax=113,000,000"
         }
       ],
-      "net_adjustment_total": 822390000.0,
+      "net_adjustment_total": -136000000.0,
       "filing_date": "2023-07-01",
       "form": "10-Q",
       "sector": "Technology",
@@ -696,7 +733,10 @@
       "diluted_shares": 1627000000.0,
       "period_end": "2023-07-01",
       "fiscal_year": 2023,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": -23000000.0,
+      "pretax_income": 4000000.0,
+      "dta_detected": true
     },
     {
       "gaap_eps": -0.08628181253879579,
@@ -747,13 +787,15 @@
       "diluted_shares": 1611000000.0,
       "period_end": "2023-04-01",
       "fiscal_year": 2023,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 13000000.0,
+      "pretax_income": -126000000.0
     },
     {
       "gaap_eps": 0.01336728198599618,
-      "adjusted_eps": 0.17176957352005093,
+      "adjusted_eps": -0.13621896880967538,
       "gaap_net_income": 21000000.0,
-      "adjusted_net_income": 269850000.0,
+      "adjusted_net_income": -214000000.0,
       "diluted_shares_used": 1571000000.0,
       "adjustments": [
         {
@@ -768,9 +810,16 @@
           "category": "株式報酬関連",
           "net_amount": 248850000.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -235000000.0,
+          "net_amount": -235000000.0,
+          "note": "tax_expense=-122,000,000, median_normal_tax=113,000,000"
         }
       ],
-      "net_adjustment_total": 248850000.0,
+      "net_adjustment_total": -235000000.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "Technology",
@@ -785,13 +834,16 @@
       "diluted_shares": 1571000000.0,
       "period_end": "2022-12-31",
       "fiscal_year": 2022,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": -122000000.0,
+      "pretax_income": -101000000.0,
+      "dta_detected": true
     },
     {
       "gaap_eps": 0.040615384615384616,
-      "adjusted_eps": 0.6604615384615384,
+      "adjusted_eps": -0.112,
       "gaap_net_income": 66000000.0,
-      "adjusted_net_income": 1073250000.0,
+      "adjusted_net_income": -182000000.0,
       "diluted_shares_used": 1625000000.0,
       "adjustments": [
         {
@@ -819,9 +871,16 @@
           "category": "買収・統合関連",
           "net_amount": 790000000.0,
           "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "tax_one_time_dta",
+          "item_name": "DTA認識（繰延税金資産）除外",
+          "amount": -248000000.0,
+          "net_amount": -248000000.0,
+          "note": "tax_expense=-135,000,000, median_normal_tax=113,000,000"
         }
       ],
-      "net_adjustment_total": 1007250000.0,
+      "net_adjustment_total": -248000000.0,
       "filing_date": "2022-09-24",
       "form": "10-Q",
       "sector": "Technology",
@@ -836,7 +895,10 @@
       "diluted_shares": 1625000000.0,
       "period_end": "2022-09-24",
       "fiscal_year": 2022,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": -135000000.0,
+      "pretax_income": -69000000.0,
+      "dta_detected": true
     },
     {
       "gaap_eps": 0.27389705882352944,
@@ -887,7 +949,9 @@
       "diluted_shares": 1632000000.0,
       "period_end": "2022-06-25",
       "fiscal_year": 2022,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 54000000.0,
+      "pretax_income": 501000000.0
     },
     {
       "gaap_eps": 0.5574468085106383,
@@ -938,7 +1002,9 @@
       "diluted_shares": 1410000000.0,
       "period_end": "2022-03-26",
       "fiscal_year": 2022,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 113000000.0,
+      "pretax_income": 899000000.0
     },
     {
       "gaap_eps": 0.7925142392188771,
@@ -976,7 +1042,9 @@
       "diluted_shares": 1229000000.0,
       "period_end": "2021-12-25",
       "fiscal_year": 2021,
-      "quarter": 4
+      "quarter": 4,
+      "tax_expense": 513000000.0,
+      "pretax_income": 1487000000.0
     },
     {
       "gaap_eps": 0.7504065040650406,
@@ -1014,7 +1082,9 @@
       "diluted_shares": 1230000000.0,
       "period_end": "2021-09-25",
       "fiscal_year": 2021,
-      "quarter": 3
+      "quarter": 3,
+      "tax_expense": 82000000.0,
+      "pretax_income": 1005000000.0
     },
     {
       "gaap_eps": 0.5762987012987013,
@@ -1052,7 +1122,9 @@
       "diluted_shares": 1232000000.0,
       "period_end": "2021-06-26",
       "fiscal_year": 2021,
-      "quarter": 2
+      "quarter": 2,
+      "tax_expense": 113000000.0,
+      "pretax_income": 823000000.0
     },
     {
       "gaap_eps": 0.45085296506904954,
@@ -1090,7 +1162,9 @@
       "diluted_shares": 1231000000.0,
       "period_end": "2021-03-27",
       "fiscal_year": 2021,
-      "quarter": 1
+      "quarter": 1,
+      "tax_expense": 89000000.0,
+      "pretax_income": 644000000.0
     }
   ]
 }
