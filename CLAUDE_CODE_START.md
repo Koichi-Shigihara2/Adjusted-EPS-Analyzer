@@ -2,6 +2,19 @@
 
 ## 毎回の作業開始時に必ず実行すること
 
+### Step 0: ローカルリポジトリの最新化（最優先）
+GitHub Actions が前回セッション後にデータを自動更新している可能性があるため、
+作業開始前に必ずローカルを最新化する。
+
+```bash
+cd C:\Users\shigi\Documents\On-a-journey-git
+git pull --rebase origin kaihatsu
+```
+
+コンフリクトが発生した場合：
+- 自動生成データファイル（.gitattributes の merge=ours 対象）→ ローカル版が自動採用される
+- 手書きファイル（.py / .md / config/*.json 等）→ 内容を確認してから解決する
+
 ### Step 1: 現状確認
 以下のファイルを読んでください：
 - SYSTEM_MAP.md（システム間の依存関係・変更影響範囲を把握）
