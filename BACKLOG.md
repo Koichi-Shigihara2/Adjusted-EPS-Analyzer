@@ -38,15 +38,6 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
 - **MRVL も同類**: Q3 FY2026（2025-11-01）に GAAP NI $1,901.3M（売上 $2,075M = 利益率91%）。
   DTA 大規模認識と推定。現在の tax_one_time 除外では捕捉不可。LYFT と同時修正対象。
 
-### [BUG-SCCO-CIK-1] SCCO CIK誤登録＋ProfitLoss未対応によるEPS異常値 ✅ 修正完了（2026-06-15）
-- **発見日**: 2026-06-15
-- **根本原因（二重）**:
-  1. cik_lookup.csv に誤CIK 0000077360（=PENTAIR plc、全く別会社）が登録されていた → 0001001838（Southern Copper Corp）に修正
-  2. SCCO は 2012年以降 NetIncomeLoss を申告せず ProfitLoss タグに切り替えた。EPS Analyzerは ProfitLoss をフォールバックとして持っていなかった → extract_key_facts.py に ProfitLoss 追加（最新データ優先の選択ロジックも実装）
-- **修正内容**: config/cik_lookup.csv 変更 + src/value/adjusted_eps_analyzer/extract_key_facts.py 修正（ProfitLoss対応）
-- **検証済み**: Q1 2026 gaap_eps=$1.9252, diluted_shares=821,700,000, net_income=$1,581,900,000 — 正常値確認
-- **影響範囲**: EPS Analyzer（SCCO）。TANUKI VALUATIONは別CIK経路で影響なし。
-
 ---
 
 ## 優先度：中（こなれてきたら対応）

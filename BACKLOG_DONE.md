@@ -4,6 +4,13 @@
 
 ## 2026-06-15
 
+✅ [BUG-SCCO-CIK-1] SCCO CIK誤登録＋ProfitLoss未対応によるEPS異常値（2026-06-15 完了）
+- **根本原因（二重）**:
+  1. cik_lookup.csv に誤CIK 0000077360（=PENTAIR plc、全く別会社）が登録 → 0001001838（Southern Copper Corp）に修正
+  2. SCCO は 2012年以降 NetIncomeLoss を申告せず ProfitLoss タグに移行。EPS Analyzer にフォールバックなし → extract_key_facts.py に ProfitLoss 追加、タグ選択ロジックを「最初に見つかったタグ」→「最新データを持つタグ優先」に変更
+- **修正ファイル**: config/cik_lookup.csv + src/value/adjusted_eps_analyzer/extract_key_facts.py
+- **検証**: Q1 2026 gaap_eps=$1.9252, diluted_shares=821,700,000, net_income=$1,581,900,000 ✓
+
 ✅ [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新（2026-06-15 完了）
 - **LMT FY2025**: Aeronautics 40%/0.05, MFC 19%(+1%)/0.12(+0.02), RMS 23%(-1%)/0.03(-0.03), Space 18%/0.04(+0.01)
   - MFC: +13.9% YoY（ミサイル需要高）→ growth 0.10→0.12 に引き上げ
