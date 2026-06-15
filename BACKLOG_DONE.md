@@ -4,6 +4,16 @@
 
 ## 2026-06-15
 
+✅ [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新（2026-06-15 完了）
+- **LMT FY2025**: Aeronautics 40%/0.05, MFC 19%(+1%)/0.12(+0.02), RMS 23%(-1%)/0.03(-0.03), Space 18%/0.04(+0.01)
+  - MFC: +13.9% YoY（ミサイル需要高）→ growth 0.10→0.12 に引き上げ
+  - RMS: +0.3% YoY（ほぼ横ばい）→ growth 0.06→0.03 に引き下げ
+- **VRT FY2025**: Americas 62%(+6pt)/0.22, Asia Pacific 20%(-2pt)/0.15, EMEA 18%(-4pt)/0.13
+  - Americas: +41.9% YoY（AI データセンター需要急増）→ weight 0.56→0.62、growth 0.15→0.22
+  - APAC: +17.5% YoY → weight 0.22→0.20、growth 0.13→0.15
+  - EMEA: +1.7% YoY（欧州不振）→ weight 0.22→0.18、growth 0.13 維持
+- 出典: LMT Q4 2025 IR リリース（2026-01-29）、VRT Q4 2025 IR リリース（2026-02-11）
+
 ✅ [BUG-NOW-SPLIT-1] NOW 株式分割未対応修正（2026-06-15 完了）
 - ServiceNow 2025-12-18 5:1分割でQ2/Q3 FY2025の株数が分割前（~209M）のまま残存
 - `config/split_history.yaml`（新規）+ `pipeline.py` に `apply_split_adjustments()` を実装

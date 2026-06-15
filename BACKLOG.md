@@ -54,11 +54,9 @@ Q4 2025 に繰延税金資産（DTA）評価性引当金の解除（valuation al
      発生した銘柄は決算年度更新のタイミングでsegment_config.jsonを見直す
      現在のWARN-9対象: LMT（FY2024）/ VRT（FY2024）
 
-### [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新
+### [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新 ✅ 完了（2026-06-15）
 **優先度:** 低
-- LMT・VRTのsegment_configのfiscal_yearがFY2024（2年前）で鮮度切れ
-- registration_validator.py で P3-FY NG 判定中
-- 対応: 両銘柄の10-Kを確認しsegment_config.jsonをFY2025ベースに更新
+- ✅ 完了: 両銘柄とも FY2025 10-K データで更新済み（2026-06-15）
 
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
