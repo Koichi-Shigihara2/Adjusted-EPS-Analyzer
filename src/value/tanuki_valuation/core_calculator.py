@@ -124,7 +124,7 @@ class KoichiValuationCalculator:
         fcf_avg        = financials.get("fcf_5yr_avg", 0.0)
         fcf_2yr_avg    = financials.get("fcf_2yr_avg", 0.0)   # v6.2追加
         diluted_shares = financials.get("diluted_shares", 0)
-        roe_avg        = financials.get("roe_10yr_avg", 0.0)
+        roe_avg        = financials.get("roe_10yr_avg")
         roe_years_used = financials.get("roe_years_used", 0)
         roe_outlier_adj = financials.get("roe_outlier_adj", False)
         latest_revenue = financials.get("latest_revenue", 0.0)
@@ -428,24 +428,28 @@ class KoichiValuationCalculator:
         _rf = wacc_result.risk_free_rate  # Rf: 通常4.3%
         _rm = wacc_result.market_return   # Rm: 通常10.0%（βなし・メイン割引率）
 
-        # ④ αセクター別上限を決定
+        # ④ αセクター別・業種別上限を決定（業種 > セクター の優先順）
         _alpha_cap = self.alpha_cap
         try:
             import json as _json, pathlib as _pl
             _cfg_path = _pl.Path(__file__).parent.parent.parent.parent / "config" / "maturity_config.json"
             _cfg_all  = _json.loads(_cfg_path.read_text(encoding="utf-8"))
             _alpha_caps = _cfg_all.get("_alpha_caps", {})
+            _industry_alpha_caps = _cfg_all.get("_industry_alpha_caps", {})
             _mega = _cfg_all.get("_sector_caps", {}).get("_mega_tech_tickers", [])
             if ticker in _mega:
                 _alpha_cap = _alpha_caps.get("mega_tech", self.alpha_cap)
+            elif industry and industry in _industry_alpha_caps:
+                _alpha_cap = _industry_alpha_caps[industry]
             elif sector and sector in _alpha_caps:
                 _alpha_cap = _alpha_caps[sector]
         except Exception:
             pass
 
         # αはRM基準（βなし・市場期待リターン10%）で計算
+        # roe_avg=None は負債超過（負PBR）を意味し alpha=0 として扱う
         alpha_result = calculate_alpha(
-            roe=roe_avg, wacc=_rm,
+            roe=roe_avg if roe_avg is not None else 0.0, wacc=_rm,
             retention_rate=self.retention_rate, alpha_cap=_alpha_cap
         )
         alpha = alpha_result.alpha

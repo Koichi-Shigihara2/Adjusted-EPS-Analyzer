@@ -32,44 +32,6 @@ FCF が急改善トレンドにある銘柄（赤字→黒字転換後）では
 
 ---
 
-### [ROE-ZERO-1] ROE=0% 誤表示（PM/TSLA 等の純資産マイナス銘柄）
-**優先度:** 高
-**分類:** バグ / TANUKI VALUATION / ROE 計算・表示
-
-#### 症状
-PM・TSLA 等の純資産（Equity）がマイナスの銘柄で ROE=0% と表示される。
-正しくは N/A または「純資産マイナス（計算不可）」と表示すべき。
-
-#### 根本原因
-ROE 計算が `NI / Equity` で行われているが、Equity≦0 の場合に
-ゼロ除算回避で 0 を返す実装になっており、N/A として扱われていない。
-
-#### 修正方針（未着手）
-- Equity ≤ 0 の場合: ROE = None または "N/A (純資産マイナス)" と表示
-- report.txt の ROE 行: `N/A (負債超過)` に変更
-- 影響銘柄: PM（タバコ会社で意図的な高負債）、TSLA（過去期間）等
-
----
-
-### [ALPHA-SECTOR-1] VZ Alpha 過大評価（Telecom セクター上限 cap 未適用）
-**優先度:** 高
-**分類:** バグ / TANUKI VALUATION / Alpha 計算
-
-#### 症状
-VZ（Verizon）の Alpha が 1.0 と過大評価されている。
-Telecom セクターは成長余地が限られるため、Alpha 上限を低く設定すべき。
-
-#### 根本原因
-Alpha 計算に Telecom 向けのセクター上限 cap（例: 0.40）が未実装。
-VZ は低成長・高配当セクターであり、Alpha=1.0 は楽観的すぎる。
-
-#### 修正方針（未着手）
-- Telecom セクターの Alpha 上限を 0.40 に設定
-- `beta_config.json` または Alpha 計算ロジックにセクター別上限マップを追加
-- 影響銘柄: VZ、他 Telecom 銘柄（現在登録なし）
-
----
-
 ### [BUG-LYFT-EPS-1] LYFT Q4 2025 繰延税金資産（DTA）認識による adj_eps 異常高値
 **優先度:** 高
 **分類:** バグ / EPS Analyzer / 税務調整ロジック

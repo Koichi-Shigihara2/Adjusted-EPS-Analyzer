@@ -176,7 +176,7 @@ class SECReader:
                     outlier_adjusted = True
                 roe_list.append(roe)
 
-        avg = sum(roe_list) / len(roe_list) if roe_list else 0.0
+        avg = sum(roe_list) / len(roe_list) if roe_list else None
         return avg, len(roe_list), outlier_adjusted
     
     def get_diluted_shares(self, ticker: str) -> int:

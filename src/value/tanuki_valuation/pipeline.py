@@ -672,7 +672,12 @@ class TanukiValuationPipeline:
             _roe_n = comps.get("roe_years_used") or "?"
             _roe_outlier = comps.get("roe_outlier_adj", False)
             _roe_tag = " (outlier-adjusted)" if _roe_outlier else ""
-            key_metric_y = f"ROE_avg ({_roe_n}yr) = {roe_pct:.1f}%{_roe_tag}" if roe_pct is not None else "ROE = N/A"
+            if roe_pct is not None:
+                key_metric_y = f"ROE_avg ({_roe_n}yr) = {roe_pct:.1f}%{_roe_tag}"
+            elif comps.get("roe_years_used", 0) == 0:
+                key_metric_y = "ROE = N/A (負債超過)"
+            else:
+                key_metric_y = "ROE = N/A"
             qx = upside is not None and upside >= 0
             qy = roe_pct is not None and roe_pct >= 15
             yH, yL = "高ROE", "低ROE"

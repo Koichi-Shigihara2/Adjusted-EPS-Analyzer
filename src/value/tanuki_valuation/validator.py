@@ -88,7 +88,7 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     current_price = c.get("current_price", 0)
     fcf_base_used = c.get("fcf_base_used", c.get("fcf_5yr_avg", 0))
     fcf_base_method = c.get("fcf_base_method", "avg_5yr")
-    roe_avg = c.get("roe_10yr_avg", c.get("roe_used", 0))
+    roe_avg = c.get("roe_10yr_avg") or c.get("roe_used") or 0.0
 
     total_v0 = v0 + rpo_pv + growth_option_pv
     p_t = total_v0 * (1 + alpha)
@@ -301,7 +301,7 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
         }
 
     # ── 3. 算式検証（Rm基準でα再計算） ──
-    roe_avg = c.get("roe_10yr_avg", c.get("roe_used", 0))
+    roe_avg = c.get("roe_10yr_avg") or c.get("roe_used") or 0.0
     rm = p["rm"]   # RM基準（βなし・10%固定）でα検証
     retention = p["retention_rate"]
     discount_factor = p["discount_factor"]

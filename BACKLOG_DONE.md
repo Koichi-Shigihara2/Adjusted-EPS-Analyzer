@@ -32,6 +32,25 @@
 - **日付フィルタ**: 2022-01-01以降のみ対象（旧上場前・スピンオフ前データの偽陽性を除外）
 - **テスト結果**: 96銘柄 NG=0 / 警告=3件（既知: ELF PS乖離, LMT/VRT segment陳腐化）
 
+✅ [ROE-ZERO-1] ROE=0% 誤表示修正（PM 等の純資産マイナス銘柄） ✅ 2026-06-15
+- **根本原因**: `reader.py` の `get_roe_avg_detail` がすべての年で equity≤0 の場合に `(0.0, 0, False)` を返す → 0%として表示
+- **修正**: `roe_list` が空の場合は `(None, 0, False)` を返すよう変更
+- **修正**: `data_fetcher.py` の print 文で None を `N/A (負債超過)` と表示
+- **修正**: `core_calculator.py` で `roe_avg or 0.0` として alpha 計算に渡す
+- **修正**: `validator.py` の 2 箇所で `c.get("roe_10yr_avg") or c.get("roe_used") or 0.0` に変更
+- **修正**: `pipeline.py` で `roe_years_used == 0` の場合に `"ROE = N/A (負債超過)"` を表示
+- **PM**: 旧 `ROE_avg (?yr) = 0.0%` → 新 `ROE = N/A (負債超過)` ✅
+- テスト: 130/130 pass, consistency_check NG=0
+
+✅ [ALPHA-SECTOR-1] VZ Alpha=1.0 過大評価修正（Telecom セクター上限 cap 追加） ✅ 2026-06-15
+- **根本原因**: `maturity_config.json` に Communication Services alpha_cap=1.0 が設定されているが Telecom 向けの業種別上限が未設定
+  → VZ ROE=30.2% × 0.60 / 0.10 × 0.7 = 1.27 → cap(1.0) → alpha=1.0（過大）
+- **修正**: `maturity_config.json` に `_industry_alpha_caps: {"Telecom Services": 0.4}` を追加
+- **修正**: `core_calculator.py` の alpha_cap 決定ロジックに industry チェックを追加（業種 > セクターの優先順）
+- **VZ**: alpha 1.0 → 0.4（`α: 1.269 → cap(0.4) → 0.400`）
+- **VZ IV**: alpha 1.0 → 0.4 でより保守的な IV に変更
+- テスト: 130/130 pass, consistency_check NG=0
+
 ✅ [AUDIT-SHARES-1] audit.py に yfinance/SEC 株数乖離チェック(5x閾値)を追加 ✅ 2026-06-15
 - **実装**: `audit_ticker` に株数乖離チェックを追加（EPS quarterly.json latest vs latest.json components.diluted_shares）
 - **閾値**: 5倍以上の乖離で WARN 出力

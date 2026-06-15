@@ -219,7 +219,7 @@ class TanukiDataFetcher:
         fcf_list = []
         fcf_avg = 0.0
         sec_diluted = 0
-        roe_avg = 0.0
+        roe_avg = None
         roe_years_used = 0
         roe_outlier_adj = False
         revenue = 0.0
@@ -257,7 +257,8 @@ class TanukiDataFetcher:
                     print(f"   [{ticker}] SEC shares: {sec_diluted:,.0f}")
                 
                 roe_avg, roe_years_used, roe_outlier_adj = self.sec_reader.get_roe_avg_detail(ticker, years=10)
-                print(f"   [{ticker}] SEC ROE avg: {roe_avg:.1%} ({roe_years_used}yr)")
+                _roe_str = f"{roe_avg:.1%}" if roe_avg is not None else "N/A (負債超過)"
+                print(f"   [{ticker}] SEC ROE avg: {_roe_str} ({roe_years_used}yr)")
                 
                 revenue = self.sec_reader.get_latest_revenue(ticker)
                 print(f"   [{ticker}] SEC revenue: ${revenue:,.0f}")
@@ -437,7 +438,7 @@ class TanukiDataFetcher:
         print(f"       FCF 5yr Avg: ${fcf_avg:,.0f}")
         print(f"       FCF 2yr Avg: ${fcf_2yr_avg:,.0f}")
         print(f"       Diluted Shares: {final_shares:,.0f} ({shares_source})")
-        print(f"       ROE avg: {roe_avg:.1%}")
+        print(f"       ROE avg: {f'{roe_avg:.1%}' if roe_avg is not None else 'N/A (負債超過)'}")
         print(f"       Current Price: ${current_price:.2f}")
         print(f"       Revenue: ${revenue:,.0f}")
         print(f"       Beta: {final_beta:.2f} ({beta_source})")
