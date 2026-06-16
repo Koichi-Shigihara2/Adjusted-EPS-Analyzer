@@ -141,12 +141,6 @@
   - A) IFRSフォーマット対応を実装して有効化（工数大）
   - B) カナダ企業は永続除外として現状維持
 
-### [REPORT-2] アナリスト目標株価レンジの表示
-- 現状: Analyst_Consensusのラベルのみ（Buy/Hold/Sell）
-- 改善: アナリスト目標株価の中央値・レンジ（Min-Max）・件数を追加表示
-- ソース: yfinance analyst_price_targets または FMP
-- 独自性向上効果: TANUKIのDCF IVとアナリスト中央値の乖離を視覚化
-
 ### [HYPE-2] HypeCore ヒストリカルパーセンタイル表示
 - 現状: 現在のHypeScoreのみ
 - 改善: 過去52週のHypeCoreスコア分布に対する現在値のパーセンタイルを表示

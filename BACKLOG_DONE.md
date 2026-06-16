@@ -4,6 +4,11 @@
 
 ## 2026-06-16
 
+✅ [REPORT-2] アナリスト目標株価レンジ表示（2026-06-16 完了）
+- data_fetcher.py/core_calculator.py/pipeline.py にアナリスト目標株価6フィールド追加
+- stock.html に中央値・レンジ・推奨・vs IV乖離率の3列カード追加
+- report.txt Analyst_Consensus行を中央値/レンジ/件数/vs IV形式に拡充
+
 ✅ [TANUKI-ROE-1] デュポン分解ROE分析（TANUKI SCOREに追加）（2026-06-16 完了）
 - normalizer.py/quarterly.py/ttm_calculator.py に TotalAssets追加・全銘柄update.py再実行
 - pipeline.py にDuPont計算ブロック追加（88/96銘柄・負債超過8銘柄除外）
