@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-06-16
+
+✅ [SCORE-1] RICE × VALUATION MATRIX（2026-06-16 完了）
+- TANUKI SCORE に SVG 散布図セクション「② RICE × 乖離率マトリクス」を追加
+- X軸: 乖離率（+300%クランプ、超過銘柄は▶マーカー＋注記表示）/ Y軸: RICEスコア（上限10クランプ）
+- 負RICE銘柄除外・4象限色分け・ホバーtip・クリックで stock.html 遷移
+
+✅ [REVIEW-1 #4] LYFT・MRVL TANUKI VALUATION 再生成（2026-06-16 完了）
+- DTA補正（BUG-LYFT-EPS-1）適用後の再生成。LYFT IV=-$0.93 / MRVL IV=$138.75(-55.1%)
+
+---
+
 ## 2026-06-15
 
 ✅ [BUG-LYFT-EPS-1] DTA（繰延税金資産）認識による adj_eps 異常高値（2026-06-15 完了）
