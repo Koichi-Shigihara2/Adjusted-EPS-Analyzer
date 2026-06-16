@@ -861,6 +861,22 @@ function render(d) {
   const marketCap = currentPrice * dilutedSharesVal;
   const psr = (latestRevenue > 0 && marketCap > 0) ? marketCap / latestRevenue : null;
 
+  // アナリスト目標株価
+  const atMedian  = d.components?.analyst_target_median ?? null;
+  const atMean    = d.components?.analyst_target_mean   ?? null;
+  const atLow     = d.components?.analyst_target_low    ?? null;
+  const atHigh    = d.components?.analyst_target_high   ?? null;
+  const atCount   = d.components?.analyst_count         ?? null;
+  const atRecKey  = d.components?.analyst_rec_key       ?? '';
+  const atVsIv    = d.components?.analyst_vs_iv         ?? null;
+  const atRecMap  = { strong_buy:'Strong Buy', buy:'Buy', hold:'Hold', underperform:'Underperform', sell:'Sell' };
+  const atRecLabel = atRecMap[atRecKey] ?? (atRecKey ? atRecKey.replace(/_/g,' ') : 'N/A');
+  const atRecColor = atRecKey === 'strong_buy' || atRecKey === 'buy' ? 'var(--green)'
+                   : atRecKey === 'hold' ? 'var(--yellow)'
+                   : (atRecKey === 'sell' || atRecKey === 'underperform') ? 'var(--red)'
+                   : 'var(--mut)';
+  const atVsIvColor = atVsIv == null ? 'var(--mut)' : atVsIv >= 0 ? 'var(--green)' : 'var(--yellow)';
+
   // バッジ構成
   const dcfTag = dcfType === 'three_stage' ? '3段階DCF' : '2段階DCF';
   const fcfTag = fcfBaseMethod === 'recent_2yr' ? '直近2年平均' : '5年平均';
@@ -1030,6 +1046,34 @@ function render(d) {
           </div>
         </div>
       </div>
+
+      <!-- ── アナリスト目標株価 ── -->
+      ${atMedian != null ? `
+      <div style="margin-top:16px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:20px">
+        <div style="font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">アナリスト目標株価</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:start">
+          <div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:4px">中央値 / 件数</div>
+            <div style="font-family:var(--mono);font-size:24px;font-weight:700;color:var(--acc)">$${atMedian.toFixed(0)}</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:4px">${atCount != null ? atCount + '名のアナリスト' : ''}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:4px">レンジ</div>
+            <div style="font-family:var(--mono);font-size:14px;font-weight:600;color:var(--txt);margin-top:4px">
+              $${atLow != null ? atLow.toFixed(0) : '—'} 〜 $${atHigh != null ? atHigh.toFixed(0) : '—'}
+            </div>
+            <div style="font-size:12px;color:var(--mut);margin-top:4px">平均: $${atMean != null ? atMean.toFixed(0) : '—'}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--mut);margin-bottom:4px">推奨 / vs TANUKI IV</div>
+            <div style="font-size:14px;font-weight:700;color:${atRecColor};margin-top:4px">${atRecLabel}</div>
+            <div style="font-family:var(--mono);font-size:13px;font-weight:600;color:${atVsIvColor};margin-top:6px">
+              ${atVsIv != null ? (atVsIv >= 0 ? '▲' : '▼') + ' ' + Math.abs(atVsIv).toFixed(1) + '%' : '—'}
+              <span style="font-size:10px;color:var(--mut);font-weight:400;margin-left:4px">中央値 vs IV</span>
+            </div>
+          </div>
+        </div>
+      </div>` : ''}
 
       <div class="future-section">
         <h3 class="section-title">将来価値予測（シナリオ別）</h3>

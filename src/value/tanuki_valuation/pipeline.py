@@ -597,6 +597,14 @@ class TanukiValuationPipeline:
             latest_data["dilution_severity"] = _dil_sev
             latest_data["dilution_comment"] = _dil_badge
 
+        # analyst_vs_iv: アナリスト中央値とTANUKI IVの乖離率
+        _iv_ld = latest_data.get("intrinsic_value_per_share")
+        _at_median_ld = latest_data.get("components", {}).get("analyst_target_median")
+        if _iv_ld and _iv_ld != 0 and _at_median_ld is not None:
+            latest_data["components"]["analyst_vs_iv"] = round(
+                (_at_median_ld - _iv_ld) / abs(_iv_ld) * 100, 1
+            )
+
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
 
@@ -907,11 +915,39 @@ class TanukiValuationPipeline:
                 rec_label = f"{rec_mean:.2f} (Sell)"
             else:
                 rec_label = f"{rec_mean:.2f} (Strong Sell)"
+
+        # アナリスト目標株価（comps から取得）
+        _at_median = comps.get("analyst_target_median")
+        _at_mean   = comps.get("analyst_target_mean")
+        _at_low    = comps.get("analyst_target_low")
+        _at_high   = comps.get("analyst_target_high")
+        _at_count  = comps.get("analyst_count")
+        _at_rec    = comps.get("analyst_rec_key", "")
+        _at_vs_iv  = comps.get("analyst_vs_iv")
+
+        # recommendationKey → 短縮ラベル
+        _rec_key_map = {
+            "strong_buy": "Strong Buy", "buy": "Buy", "hold": "Hold",
+            "underperform": "Underperform", "sell": "Sell",
+        }
+        _at_rec_label = _rec_key_map.get(_at_rec, _at_rec.title() if _at_rec else "N/A")
+
+        # Analyst_Consensus の拡充形式
+        if _at_median is not None:
+            _at_range = f"${_at_low:.0f}-${_at_high:.0f}" if _at_low and _at_high else "N/A"
+            _at_vs_iv_str = f"{_at_vs_iv:+.1f}%" if _at_vs_iv is not None else "N/A"
+            _analyst_str = (
+                f"{_at_rec_label} | Target: ${_at_median:.0f} median ({_at_range})"
+                f" | {_at_count or '?'} analysts | vs IV: {_at_vs_iv_str}"
+            )
+        else:
+            _analyst_str = rec_label
+
         timing_lines = [
             f"  Deviation_Rate: {upside:+.1f}%" if upside is not None else "  Deviation_Rate: N/A",
             f"  MA200_Deviation: {ma200_dev:+.1f}%" if ma200_dev is not None else "  MA200_Deviation: N/A",
             f"  HypeCore_Phase: {hype_phase}",
-            f"  Analyst_Consensus: {rec_label}",
+            f"  Analyst_Consensus: {_analyst_str}",
         ]
 
         L.append("[1. TANUKI SCORE]")
@@ -1640,7 +1676,7 @@ class TanukiValuationPipeline:
         L.append(f"Short_Report_Target: {short_target}")
         L.append(f"Short_Interest: {short_int}%")
         L.append("Institutional_Ownership: N/A (not in data source)")
-        L.append(f"Analyst_Consensus: {rec_label}")
+        L.append(f"Analyst_Consensus: {_analyst_str}")
         L.append(f"Runway_Months: {runway_m}" if runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append(f"Next_Earnings_Date: {next_earnings}")

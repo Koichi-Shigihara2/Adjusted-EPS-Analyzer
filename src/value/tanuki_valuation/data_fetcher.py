@@ -311,7 +311,13 @@ class TanukiDataFetcher:
         ev_ebitda = None
         ma200 = None
         forward_eps = None
-        
+        analyst_target_median = None
+        analyst_target_mean = None
+        analyst_target_low = None
+        analyst_target_high = None
+        analyst_count = None
+        analyst_rec_key = ""
+
         if HAS_YFINANCE:
             try:
                 stock = yf.Ticker(ticker)
@@ -390,6 +396,22 @@ class TanukiDataFetcher:
                     forward_eps = float(forward_eps_raw)
                     print(f"   [{ticker}] yfinance forwardEps: ${forward_eps:.4f}")
 
+                # アナリスト目標株価
+                _at_median = info.get("targetMedianPrice")
+                _at_mean   = info.get("targetMeanPrice")
+                _at_low    = info.get("targetLowPrice")
+                _at_high   = info.get("targetHighPrice")
+                _at_count  = info.get("numberOfAnalystOpinions")
+                _at_rec    = info.get("recommendationKey") or ""
+                if _at_median is not None and isinstance(_at_median, (int, float)) and _at_median > 0:
+                    analyst_target_median = float(_at_median)
+                    analyst_target_mean   = float(_at_mean)   if isinstance(_at_mean,  (int, float)) and _at_mean  > 0 else None
+                    analyst_target_low    = float(_at_low)    if isinstance(_at_low,   (int, float)) and _at_low   > 0 else None
+                    analyst_target_high   = float(_at_high)   if isinstance(_at_high,  (int, float)) and _at_high  > 0 else None
+                    analyst_count         = int(_at_count)    if isinstance(_at_count, (int, float)) and _at_count > 0 else None
+                    analyst_rec_key       = _at_rec.lower()
+                    print(f"   [{ticker}] analyst target median: ${analyst_target_median:.2f} ({analyst_count} analysts)")
+
             except Exception as e:
                 print(f"   [{ticker}] yfinance取得エラー: {e}")
                 per = None
@@ -398,6 +420,12 @@ class TanukiDataFetcher:
                 ev_ebitda = None
                 ma200 = None
                 forward_eps = None
+                analyst_target_median = None
+                analyst_target_mean = None
+                analyst_target_low = None
+                analyst_target_high = None
+                analyst_count = None
+                analyst_rec_key = ""
         
         # ========================================
         # 3. β決定（beta_config.json > yfinance > セクターデフォルト）
@@ -468,6 +496,12 @@ class TanukiDataFetcher:
             "ev_ebitda": ev_ebitda,
             "ma200": ma200,
             "forward_eps": forward_eps,
+            "analyst_target_median": analyst_target_median,
+            "analyst_target_mean": analyst_target_mean,
+            "analyst_target_low": analyst_target_low,
+            "analyst_target_high": analyst_target_high,
+            "analyst_count": analyst_count,
+            "analyst_rec_key": analyst_rec_key,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,
             "_beta_source": beta_source,
