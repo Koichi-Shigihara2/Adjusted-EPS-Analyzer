@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-15
+最終更新: 2026-06-16
 
 ---
 
@@ -39,6 +39,7 @@ SEC EDGAR
 ↑ HypeCoreフェーズを参照
      ↓ latest.json（銘柄ごと）
 pipeline.py              # 全銘柄を統合・TANUKI SCORE算出
+├─ risk_fetcher.py   # Grok APIによる既知リスクイベント取得
 ├─ stock.html（個別銘柄ページ）
 └─ tanuki_score結果 → Discord通知（ACTION-10）
 【独立データ取得層（他システムへの依存なし）】

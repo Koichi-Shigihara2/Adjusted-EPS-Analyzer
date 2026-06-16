@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-15
+最終更新: 2026-06-16
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -11,21 +11,6 @@
 
 ## 優先度：中（こなれてきたら対応）
 
-### [SEGMENT-1] 主要銘柄のセグメント精緻設定 ✅ 全完了（2026-06-13）
-- 完了済み: VST/FCX/SCCO/CEG/KO（前半）+ LLY/LMT/MRVL/AMAT/VRT/COHR/LITE/CSGP/BSY/ALAB/ELF/AVAV（後半）
-- 残タスク: ゼロ（全17銘柄完了）
-- 新規銘柄追加時のルール:
-  ① 単一事業（SaaS・純粋プレイ）→ General 100%のままでよい
-  ② 複数事業セグメントが決算資料に明示されている → BACKLOG_DONE.md記録後 segment_config.json 更新
-  ③ 赤字初期段階 → 対象外（STONKS SILOで管理）
-  ④ 年次フォローアップルール:
-     report_consistency_check.py の WARN-9（segment陳腐化）が
-     発生した銘柄は決算年度更新のタイミングでsegment_config.jsonを見直す
-     現在のWARN-9対象: LMT（FY2024）/ VRT（FY2024）
-
-### [TANUKI-SEG-1] LMT・VRT segment_config FY2025更新 ✅ 完了（2026-06-15）
-**優先度:** 低
-- ✅ 完了: 両銘柄とも FY2025 10-K データで更新済み（2026-06-15）
 
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
@@ -54,7 +39,6 @@
 1. SCCO: 修正完了・検証済み（BUG-SCCO-CIK-1）✅
 2. LYFT/MRVL: DTA除外ロジック実装完了（BUG-LYFT-EPS-1）✅
 3. LMT: 調査完了・LIMITATION登録のみ（コード修正不要）✅
-4. LYFT・MRVL の TANUKI_VALUATION 再生成で IV への影響確認（次回セッション）
 
 ---
 
@@ -249,11 +233,6 @@
 - 問題: NVDA・PLTRのような長期陶酔期銘柄で過剰警告
 - 改善: 期間別フェーズ継続スコアを追加
 
-
-### [REPORT-4] 既知リスクイベントの表示 ✅ 2026-06-16 完了
-- 実装: risk_fetcher.py (Grok API)、pipeline.py 統合、stock.html 表示
-- grok-3 英語プロンプトで継続中リスクを最大3件取得（high/mid/low バッジ色分け）
-- --skip-risk フラグでオフライン実行可
 
 
 ### [ARCH-1] ボトルネック企業プレミアム

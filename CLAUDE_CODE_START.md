@@ -214,6 +214,14 @@ NVDA +18% / MSFT -12% / AVAV +93% / IOT applied=False→True 等、20銘柄のIV
 
 ## 重要ルール
 
+### pipeline.py 実行時のAPI費用管理
+
+- risk_fetcher.py（Grok API呼び出し）は全銘柄実行でAPIコストが発生する
+- 手動実行時は原則 --skip-risk を付けること
+  例: python src/value/tanuki_valuation/pipeline.py AAPL --skip-risk
+- 全銘柄の risk_events 更新は GitHub Actions 週次自動実行に任せる
+- 新規銘柄登録時の初回生成も --skip-risk 推奨（登録後に Actions が自動取得）
+
 ### AI APIキー管理ルール
 
 - システム全体のAI APIはxAI（XAI_API_KEY）に統一されている
