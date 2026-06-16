@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 109022253559.6125,
   "intrinsic_value_per_share": 420.6562968510884,
   "intrinsic_value_beta": 405.48,
-  "upside_percent_beta": -58.6,
+  "upside_percent_beta": -59.6,
   "intrinsic_value_rf": 2308.24,
-  "upside_percent_rf": 135.8,
+  "upside_percent_rf": 129.8,
   "v0": 64130737388.007355,
   "v0_adjusted": 64130737388.007355,
   "alpha": 0.7,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 451.31,
       "value_growth_pct": 7.3,
-      "expected_return_pct": -53.9
+      "expected_return_pct": -55.1
     },
     "2年後": {
       "future_value": 484.19,
       "value_growth_pct": 15.1,
-      "expected_return_pct": -50.5
+      "expected_return_pct": -51.8
     },
     "3年後": {
       "future_value": 519.47,
       "value_growth_pct": 23.5,
-      "expected_return_pct": -46.9
+      "expected_return_pct": -48.3
     },
     "4年後": {
       "future_value": 557.31,
       "value_growth_pct": 32.5,
-      "expected_return_pct": -43.1
+      "expected_return_pct": -44.5
     },
     "5年後": {
       "future_value": 597.92,
       "value_growth_pct": 42.1,
-      "expected_return_pct": -38.9
+      "expected_return_pct": -40.5
     }
   },
-  "upside_percent": -57.0,
-  "calculation_date": "2026-06-16T18:13:24+09:00",
+  "upside_percent": -58.1,
+  "calculation_date": "2026-06-17T03:51:13+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -303,19 +303,19 @@
     "bear": {
       "growth_rate": 0.051,
       "rice": 3.671,
-      "rice_per_ratio": 0.1285,
+      "rice_per_ratio": 0.1252,
       "rice_adj": 5.291
     },
     "base": {
       "growth_rate": 0.073,
       "rice": 5.254,
-      "rice_per_ratio": 0.1839,
+      "rice_per_ratio": 0.1793,
       "rice_adj": 7.574
     },
     "bull": {
       "growth_rate": 0.087,
       "rice": 6.262,
-      "rice_per_ratio": 0.2192,
+      "rice_per_ratio": 0.2137,
       "rice_adj": 9.026
     }
   },
@@ -339,7 +339,7 @@
     "roe_10yr_avg": 0.1801497934901185,
     "roe_years_used": 3,
     "roe_outlier_adj": false,
-    "current_price": 979.07,
+    "current_price": 1004.36,
     "latest_revenue": 38068000000.0,
     "rpo": 163276000000,
     "beta": 1.045,
@@ -364,17 +364,28 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.7566291326584976,
-    "per": 28.569302,
+    "per": 29.307264,
     "per_is_forward": false,
-    "per_adjusted": 26.84,
+    "per_adjusted": 27.53,
     "peg": 1.63,
-    "ps": 6.6817956,
+    "ps": 6.85439,
     "ev_ebitda": 75.614,
     "ma200": 766.0623,
-    "forward_eps": 24.51159
+    "forward_eps": 24.51159,
+    "analyst_target_median": 1250.0,
+    "analyst_target_mean": 1211.8888,
+    "analyst_target_low": 836.0,
+    "analyst_target_high": 1424.0,
+    "analyst_count": 33,
+    "analyst_rec_key": "buy",
+    "insider_buy_count": 0,
+    "insider_sell_count": 0,
+    "insider_net_direction": "中立",
+    "insider_latest_date": null,
+    "analyst_vs_iv": 197.2
   },
   "validation": {
-    "validated_at": "2026-06-16",
+    "validated_at": "2026-06-17",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -400,7 +411,7 @@
   "phase1_growth": 0.07285741042941345,
   "tanuki_score": "TRIM",
   "funda_score": 90,
-  "score_comment": "割高(-57%超)、FCF黒字、売上安定成長",
+  "score_comment": "割高(-58%超)、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2022,
@@ -477,8 +488,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.018,
-  "forward_earnings_yield": 0.025,
+  "erp": -0.0186,
+  "forward_earnings_yield": 0.0244,
   "dilution_severity": "low",
-  "dilution_comment": "許容範囲内 ✅"
+  "dilution_comment": "許容範囲内 ✅",
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit ongoing",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC regulatory investigation active",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning issued for 2025-2026 amid competition",
+      "impact": "mid"
+    }
+  ]
 }

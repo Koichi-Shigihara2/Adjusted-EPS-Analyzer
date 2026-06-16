@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 442834505864.9607,
   "intrinsic_value_per_share": 616.9155815788696,
   "intrinsic_value_beta": 568.41,
-  "upside_percent_beta": 225.5,
+  "upside_percent_beta": 222.5,
   "intrinsic_value_rf": 5494.19,
-  "upside_percent_rf": 3046.0,
+  "upside_percent_rf": 3017.6,
   "v0": 276771566165.6004,
   "v0_adjusted": 276771566165.6004,
   "alpha": 0.6,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 812.43,
       "value_growth_pct": 31.7,
-      "expected_return_pct": 365.2
+      "expected_return_pct": 361.0
     },
     "2年後": {
       "future_value": 1069.89,
       "value_growth_pct": 73.4,
-      "expected_return_pct": 512.6
+      "expected_return_pct": 507.1
     },
     "3年後": {
       "future_value": 1408.94,
       "value_growth_pct": 128.4,
-      "expected_return_pct": 706.8
+      "expected_return_pct": 699.5
     },
     "4年後": {
       "future_value": 1855.44,
       "value_growth_pct": 200.8,
-      "expected_return_pct": 962.4
+      "expected_return_pct": 952.9
     },
     "5年後": {
       "future_value": 2443.44,
       "value_growth_pct": 296.1,
-      "expected_return_pct": 1299.1
+      "expected_return_pct": 1286.5
     }
   },
-  "upside_percent": 253.2,
-  "calculation_date": "2026-06-16T18:13:12+09:00",
+  "upside_percent": 250.1,
+  "calculation_date": "2026-06-17T03:47:24+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -198,7 +198,7 @@
     "estimated_fcf": 6253000000.0,
     "raw_fcf": 6253000000.0,
     "sector": "",
-    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\BKNG\\annual.json)",
+    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/BKNG/annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -271,7 +271,7 @@
     "roe_10yr_avg": 0.38300077931287885,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 174.64,
+    "current_price": 176.23,
     "latest_revenue": 26917000000.0,
     "rpo": 0.0,
     "beta": 1.088,
@@ -296,17 +296,28 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.608603273114091,
-    "per": 23.039577,
+    "per": 23.24934,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": 0.71,
-    "ps": 4.887665,
+    "ps": 4.932164,
     "ev_ebitda": 13.343,
     "ma200": 191.46938,
-    "forward_eps": 12.3037
+    "forward_eps": 12.3037,
+    "analyst_target_median": 220.0,
+    "analyst_target_mean": 224.40572,
+    "analyst_target_low": 175.0,
+    "analyst_target_high": 298.0,
+    "analyst_count": 35,
+    "analyst_rec_key": "buy",
+    "insider_buy_count": 0,
+    "insider_sell_count": 0,
+    "insider_net_direction": "中立",
+    "insider_latest_date": null,
+    "analyst_vs_iv": -64.3
   },
   "validation": {
-    "validated_at": "2026-06-16",
+    "validated_at": "2026-06-17",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -332,7 +343,7 @@
   "phase1_growth": 0.3169056376027688,
   "tanuki_score": "BUY",
   "funda_score": 55,
-  "score_comment": "割安圏(253%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(250%)で買い余地大、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2021,
@@ -399,6 +410,23 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0275,
-  "forward_earnings_yield": 0.0705
+  "erp": 0.0268,
+  "forward_earnings_yield": 0.0698,
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition",
+      "impact": "mid"
+    }
+  ]
 }

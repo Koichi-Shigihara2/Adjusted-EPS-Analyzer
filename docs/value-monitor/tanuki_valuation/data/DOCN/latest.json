@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 3911796480.39097,
   "intrinsic_value_per_share": 54.84155999727533,
   "intrinsic_value_beta": 35.77,
-  "upside_percent_beta": -80.3,
+  "upside_percent_beta": -79.8,
   "intrinsic_value_rf": 321.49,
-  "upside_percent_rf": 77.3,
+  "upside_percent_rf": 81.8,
   "v0": 3911796480.39097,
   "v0_adjusted": 3911796480.39097,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 65.59,
       "value_growth_pct": 19.6,
-      "expected_return_pct": -63.8
+      "expected_return_pct": -62.9
     },
     "2年後": {
       "future_value": 78.46,
       "value_growth_pct": 43.1,
-      "expected_return_pct": -56.7
+      "expected_return_pct": -55.6
     },
     "3年後": {
       "future_value": 93.84,
       "value_growth_pct": 71.1,
-      "expected_return_pct": -48.2
+      "expected_return_pct": -46.9
     },
     "4年後": {
       "future_value": 112.24,
       "value_growth_pct": 104.7,
-      "expected_return_pct": -38.1
+      "expected_return_pct": -36.5
     },
     "5年後": {
       "future_value": 134.25,
       "value_growth_pct": 144.8,
-      "expected_return_pct": -25.9
+      "expected_return_pct": -24.1
     }
   },
-  "upside_percent": -69.7,
-  "calculation_date": "2026-06-16T18:13:20+09:00",
+  "upside_percent": -69.0,
+  "calculation_date": "2026-06-17T03:49:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -279,19 +279,19 @@
     "bear": {
       "growth_rate": 0.137,
       "rice": 0.703,
-      "rice_per_ratio": 0.0088,
+      "rice_per_ratio": 0.0091,
       "rice_adj": 1.607
     },
     "base": {
       "growth_rate": 0.196,
       "rice": 1.006,
-      "rice_per_ratio": 0.0126,
+      "rice_per_ratio": 0.013,
       "rice_adj": 2.3
     },
     "bull": {
       "growth_rate": 0.235,
       "rice": 1.206,
-      "rice_per_ratio": 0.0152,
+      "rice_per_ratio": 0.0155,
       "rice_adj": 2.757
     }
   },
@@ -316,7 +316,7 @@
     "roe_10yr_avg": -0.25451460546640076,
     "roe_years_used": 2,
     "roe_outlier_adj": false,
-    "current_price": 181.29,
+    "current_price": 176.865,
     "latest_revenue": 901427000.0,
     "rpo": 0.0,
     "beta": 1.57,
@@ -341,17 +341,28 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 79.51315,
+    "per": 77.57237,
     "per_is_forward": false,
-    "per_adjusted": 80.33,
+    "per_adjusted": 78.37,
     "peg": 1.54,
-    "ps": 19.944765,
+    "ps": 19.457947,
     "ev_ebitda": 66.016,
     "ma200": 71.31635,
-    "forward_eps": 1.75723
+    "forward_eps": 1.75723,
+    "analyst_target_median": 179.0,
+    "analyst_target_mean": 178.76923,
+    "analyst_target_low": 135.0,
+    "analyst_target_high": 200.0,
+    "analyst_count": 13,
+    "analyst_rec_key": "buy",
+    "insider_buy_count": 0,
+    "insider_sell_count": 0,
+    "insider_net_direction": "中立",
+    "insider_latest_date": null,
+    "analyst_vs_iv": 226.4
   },
   "validation": {
-    "validated_at": "2026-06-16",
+    "validated_at": "2026-06-17",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -377,7 +388,7 @@
   "phase1_growth": 0.19609384714159628,
   "tanuki_score": "TRIM",
   "funda_score": 55,
-  "score_comment": "割高(-70%超)、FCF黒字、売上安定成長",
+  "score_comment": "割高(-69%超)、FCF黒字、売上安定成長",
   "fcf_history": [
     {
       "year": 2021,
@@ -458,8 +469,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0333,
-  "forward_earnings_yield": 0.0097,
+  "erp": -0.0331,
+  "forward_earnings_yield": 0.0099,
   "dilution_severity": "medium",
-  "dilution_comment": "やや高い希薄化 ℹ️ 要注意"
+  "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against DigitalOcean",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }

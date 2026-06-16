@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 82482369179.20335,
   "intrinsic_value_per_share": 106.11501935140954,
   "intrinsic_value_beta": 97.18,
-  "upside_percent_beta": -49.7,
+  "upside_percent_beta": -50.2,
   "intrinsic_value_rf": 592.27,
-  "upside_percent_rf": 206.5,
+  "upside_percent_rf": 203.5,
   "v0": 51551480737.00209,
   "v0_adjusted": 51551480737.00209,
   "alpha": 0.6,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 115.09,
       "value_growth_pct": 8.5,
-      "expected_return_pct": -40.4
+      "expected_return_pct": -41.0
     },
     "2年後": {
       "future_value": 124.81,
       "value_growth_pct": 17.6,
-      "expected_return_pct": -35.4
+      "expected_return_pct": -36.0
     },
     "3年後": {
       "future_value": 135.36,
       "value_growth_pct": 27.6,
-      "expected_return_pct": -29.9
+      "expected_return_pct": -30.6
     },
     "4年後": {
       "future_value": 146.8,
       "value_growth_pct": 38.3,
-      "expected_return_pct": -24.0
+      "expected_return_pct": -24.8
     },
     "5年後": {
       "future_value": 159.2,
       "value_growth_pct": 50.0,
-      "expected_return_pct": -17.6
+      "expected_return_pct": -18.4
     }
   },
-  "upside_percent": -45.1,
-  "calculation_date": "2026-06-16T18:13:17+09:00",
+  "upside_percent": -45.6,
+  "calculation_date": "2026-06-17T03:48:50+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -254,19 +254,19 @@
     "bear": {
       "growth_rate": 0.059,
       "rice": 2.096,
-      "rice_per_ratio": 0.0641,
+      "rice_per_ratio": 0.0635,
       "rice_adj": 2.369
     },
     "base": {
       "growth_rate": 0.085,
       "rice": 3.02,
-      "rice_per_ratio": 0.0924,
+      "rice_per_ratio": 0.0915,
       "rice_adj": 3.413
     },
     "bull": {
       "growth_rate": 0.101,
       "rice": 3.588,
-      "rice_per_ratio": 0.1097,
+      "rice_per_ratio": 0.1087,
       "rice_adj": 4.055
     }
   },
@@ -291,7 +291,7 @@
     "roe_10yr_avg": 0.2764388090171604,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 193.22,
+    "current_price": 195.125,
     "latest_revenue": 13420000000.0,
     "rpo": 0.0,
     "beta": 1.108,
@@ -316,17 +316,28 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.1610429978720735,
-    "per": 32.69374,
+    "per": 33.016075,
     "per_is_forward": false,
-    "per_adjusted": 31.87,
+    "per_adjusted": 32.19,
     "peg": 5.41,
-    "ps": 11.079997,
+    "ps": 11.189237,
     "ev_ebitda": 18.456,
     "ma200": 157.58018,
-    "forward_eps": 6.84488
+    "forward_eps": 6.84488,
+    "analyst_target_median": 155.25742,
+    "analyst_target_mean": 164.53851,
+    "analyst_target_low": 125.74257,
+    "analyst_target_high": 250.0,
+    "analyst_count": 16,
+    "analyst_rec_key": "underperform",
+    "insider_buy_count": 0,
+    "insider_sell_count": 0,
+    "insider_net_direction": "中立",
+    "insider_latest_date": null,
+    "analyst_vs_iv": 46.3
   },
   "validation": {
-    "validated_at": "2026-06-16",
+    "validated_at": "2026-06-17",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -351,7 +362,7 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 100,
-  "score_comment": "割高(-45%超)、FCF黒字、売上成長加速",
+  "score_comment": "割高(-46%超)、FCF黒字、売上成長加速",
   "fcf_history": [
     {
       "year": 2021,
@@ -449,8 +460,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0076,
-  "forward_earnings_yield": 0.0354,
+  "erp": -0.0079,
+  "forward_earnings_yield": 0.0351,
   "dilution_severity": "low",
-  "dilution_comment": "許容範囲内 ✅"
+  "dilution_comment": "許容範囲内 ✅",
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Ongoing antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Active SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition",
+      "impact": "mid"
+    }
+  ]
 }
