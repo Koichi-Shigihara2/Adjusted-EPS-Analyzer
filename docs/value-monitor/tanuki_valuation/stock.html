@@ -641,12 +641,24 @@ async function loadAndRenderHypeSignal() {
   const isH = rv >= 2.0, isU = uv >= 0;
   const quadrant = isU && isH ? 1 : !isU && isH ? 2 : isU && !isH ? 3 : 4;
   let stage = null, stageLabel = '';
+  let expScoreCurrent = null, expPercentile = null, expScoreCount = 0;
   try {
     const pocRes = await fetch(`../../value-monitor/hypecore/data/${ticker}_poc.json`, { cache: 'no-cache' });
     if (pocRes.ok) {
       const poc = await pocRes.json();
-      const last = poc.monthly?.[poc.monthly.length - 1];
-      if (last) { stage = last.stage; stageLabel = last.stage_label || ''; }
+      const monthly = poc.monthly || [];
+      const last = monthly[monthly.length - 1];
+      if (last) {
+        stage = last.stage;
+        stageLabel = last.stage_label || '';
+        expScoreCurrent = last.expectation_score ?? null;
+      }
+      if (expScoreCurrent != null && monthly.length > 0) {
+        const allScores = monthly.map(m => m.expectation_score).filter(s => s != null);
+        expScoreCount = allScores.length;
+        const below = allScores.filter(s => s <= expScoreCurrent).length;
+        expPercentile = Math.round(below / allScores.length * 100);
+      }
     }
   } catch(e) {}
   let signalEmoji, signalText, signalColor;
@@ -657,11 +669,25 @@ async function loadAndRenderHypeSignal() {
   else if (quadrant === 3 && stage === 2) { signalEmoji = '🔵'; signalText = '割安成長（低効率×割安×成長期）';     signalColor = '#60a5fa'; }
   else                                    { signalEmoji = '⚪'; signalText = '様子見';                       signalColor = 'var(--mut)'; }
   const stageDisp = stage ? ` <span style="font-size:10px;color:var(--mut);font-family:var(--mono)">[Phase${stage}: ${stageLabel}]</span>` : '';
+  const expColor = expPercentile == null ? 'var(--mut)'
+    : expPercentile >= 80 ? 'var(--red)'
+    : expPercentile >= 50 ? '#fb923c'
+    : expPercentile >= 20 ? 'var(--mut)'
+    : 'var(--green)';
+  const expSign = (expScoreCurrent != null && expScoreCurrent >= 0) ? '+' : '';
+  const expLine = (expScoreCurrent != null && expPercentile != null)
+    ? '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;margin-top:4px;background:rgba(255,255,255,0.02);border:1px solid var(--bdr);border-radius:6px;">'
+    + '<span style="font-size:11px;color:var(--mut);font-family:var(--mono);letter-spacing:.04em">期待プレミアム</span>'
+    + '<span style="font-size:12px;color:var(--txt)">現在: <span style="font-family:var(--mono);color:' + expColor + '">' + expSign + expScoreCurrent.toFixed(3) + '</span>'
+    + '<span style="font-size:10px;color:var(--mut)"> | 過去' + expScoreCount + 'ヶ月中 </span>'
+    + '<span style="font-family:var(--mono);font-weight:700;color:' + expColor + '">' + expPercentile + '%ile</span>'
+    + '</span></div>'
+    : '';
   el.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:rgba(255,255,255,0.03);border:1px solid var(--bdr);border-radius:6px;">' +
     '<span style="font-size:11px;color:var(--mut);font-family:var(--mono);letter-spacing:.04em">MATRIX×HYPE</span>' +
     '<span style="font-size:12px;font-weight:700;color:' + signalColor + '">' + signalEmoji + '&nbsp;' + signalText + stageDisp + '</span>' +
-    '</div>';
+    '</div>' + expLine;
 }
 
 async function loadData() {
@@ -877,6 +903,13 @@ function render(d) {
                    : 'var(--mut)';
   const atVsIvColor = atVsIv == null ? 'var(--mut)' : atVsIv >= 0 ? 'var(--green)' : 'var(--yellow)';
 
+  // インサイダー取引
+  const insBuy  = d.components?.insider_buy_count   ?? null;
+  const insSell = d.components?.insider_sell_count  ?? null;
+  const insDir  = d.components?.insider_net_direction ?? null;
+  const insDate = d.components?.insider_latest_date  ?? null;
+  const insDirColor = insDir === 'Buy優勢' ? 'var(--green)' : insDir === 'Sell優勢' ? 'var(--red)' : 'var(--mut)';
+
   // バッジ構成
   const dcfTag = dcfType === 'three_stage' ? '3段階DCF' : '2段階DCF';
   const fcfTag = fcfBaseMethod === 'recent_2yr' ? '直近2年平均' : '5年平均';
@@ -1073,6 +1106,15 @@ function render(d) {
             </div>
           </div>
         </div>
+      </div>` : ''}
+
+      <!-- ── インサイダー取引 ── -->
+      ${insBuy != null ? `
+      <div style="margin-top:12px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--mut);white-space:nowrap;text-transform:uppercase;letter-spacing:.08em">インサイダー 直近90日</div>
+        <div style="font-size:13px;color:var(--txt)">買い <strong>${insBuy}</strong>件 / 売り <strong>${insSell}</strong>件</div>
+        <div style="font-size:14px;font-weight:700;color:${insDirColor}">→ ${insDir}</div>
+        ${insDate ? `<div style="font-size:11px;color:var(--mut);margin-left:auto">最終: ${insDate}</div>` : ''}
       </div>` : ''}
 
       <div class="future-section">
