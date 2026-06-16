@@ -1256,6 +1256,29 @@ function render(d) {
           + '</table></div></div>';
       })()}
 
+      ${(() => {
+        const evs = d.risk_events;
+        if (!evs || evs.length === 0) return '';
+        const impactNorm = i => { const s = (i||'').toLowerCase(); return s==='高'||s==='high' ? 'high' : s==='中'||s==='mid'||s==='medium' ? 'mid' : 'low'; };
+        const impactLabel = i => { const n=impactNorm(i); return n==='high'?'高':n==='mid'?'中':'低'; };
+        const impactColor = i => { const n=impactNorm(i); return n==='high'?'var(--red)':n==='mid'?'#fb923c':'var(--mut)'; };
+        const impactBg    = i => { const n=impactNorm(i); return n==='high'?'rgba(239,68,68,0.12)':n==='mid'?'rgba(251,146,60,0.12)':'rgba(148,163,184,0.1)'; };
+        const rows = evs.map(ev => {
+          const col = impactColor(ev.impact);
+          const bg  = impactBg(ev.impact);
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 12px;background:' + bg + ';border-radius:6px;margin-bottom:6px">'
+            + '<span style="font-size:10px;font-weight:700;color:' + col + ';white-space:nowrap;padding:2px 6px;border:1px solid ' + col + ';border-radius:4px;margin-top:1px">' + impactLabel(ev.impact) + '</span>'
+            + '<div><span style="font-size:11px;color:var(--mut);margin-right:6px">' + (ev.type || '') + '</span>'
+            + '<span style="font-size:12px;color:var(--txt)">' + (ev.summary || '') + '</span></div>'
+            + '</div>';
+        }).join('');
+        return '<div class="future-section" style="margin-top:16px">'
+          + '<h3 class="section-title">既知リスクイベント</h3>'
+          + rows
+          + '<div style="margin-top:8px;font-size:10px;color:var(--mut);text-align:right">Powered by Grok（既知・継続中リスク）</div>'
+          + '</div>';
+      })()}
+
       <div id="growth-sanity-container"></div>
 
       ${(() => {

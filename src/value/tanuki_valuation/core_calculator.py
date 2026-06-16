@@ -842,6 +842,10 @@ class KoichiValuationCalculator:
                 "analyst_target_high": financials.get("analyst_target_high"),
                 "analyst_count": financials.get("analyst_count"),
                 "analyst_rec_key": financials.get("analyst_rec_key", ""),
+                "insider_buy_count": financials.get("insider_buy_count"),
+                "insider_sell_count": financials.get("insider_sell_count"),
+                "insider_net_direction": financials.get("insider_net_direction"),
+                "insider_latest_date": financials.get("insider_latest_date"),
             }
         }
 

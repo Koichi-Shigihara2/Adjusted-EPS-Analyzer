@@ -27,6 +27,7 @@ from core_calculator import KoichiValuationCalculator
 from validator import validate_calculation
 from growth_sanity import check_growth_sanity, calc_fundamental_growth
 import segment_config as _seg_cfg
+from risk_fetcher import fetch_risk_events
 
 
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
@@ -50,9 +51,10 @@ def _dilution_severity_info(dil_pct: float | None) -> tuple:
 class TanukiValuationPipeline:
     """TANUKI VALUATION パイプライン"""
 
-    def __init__(self, output_dir: str = None, use_ai_validation: bool = True):
+    def __init__(self, output_dir: str = None, use_ai_validation: bool = True, skip_risk: bool = False):
         self.fetcher = TanukiDataFetcher()
         self.use_ai_validation = use_ai_validation
+        self.skip_risk = skip_risk
 
         if output_dir:
             self.output_dir = output_dir
@@ -604,6 +606,24 @@ class TanukiValuationPipeline:
             latest_data["components"]["analyst_vs_iv"] = round(
                 (_at_median_ld - _iv_ld) / abs(_iv_ld) * 100, 1
             )
+
+        # リスクイベント取得（Grok web search）
+        risk_events = []
+        if not self.skip_risk:
+            try:
+                _cik_csv = os.path.join(self.repo_root, "config", "cik_lookup.csv")
+                _company_name = ""
+                if os.path.exists(_cik_csv):
+                    with open(_cik_csv, encoding="utf-8", newline="") as _f:
+                        for _row in csv.DictReader(_f):
+                            if _row.get("ticker", "").upper() == ticker.upper():
+                                _company_name = _row.get("name", "")
+                                break
+                risk_events = fetch_risk_events(ticker, _company_name)
+            except Exception as _re:
+                print(f"   [{ticker}] risk_events fetch error: {_re}")
+        latest_data["risk_events"] = risk_events
+        extra["risk_events"] = risk_events
 
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
@@ -1677,6 +1697,13 @@ class TanukiValuationPipeline:
         L.append(f"Short_Interest: {short_int}%")
         L.append("Institutional_Ownership: N/A (not in data source)")
         L.append(f"Analyst_Consensus: {_analyst_str}")
+        _ins_buy = comps.get("insider_buy_count")
+        _ins_sell = comps.get("insider_sell_count")
+        _ins_dir = comps.get("insider_net_direction")
+        if _ins_buy is not None:
+            L.append(f"Insider_Activity: {_ins_dir} | 買い{_ins_buy}件 / 売り{_ins_sell}件 | 直近90日")
+        else:
+            L.append("Insider_Activity: N/A")
         L.append(f"Runway_Months: {runway_m}" if runway_m != "N/A" else "Runway_Months: N/A (profitable or not in STONKS)")
         L.append(f"Revenue_Growth_YoY: {rev_growth_str}%")
         L.append(f"Next_Earnings_Date: {next_earnings}")
@@ -1696,6 +1723,22 @@ class TanukiValuationPipeline:
         L.append("Primary growth metric for RICE-excluded tickers")
         L.append("Breakeven_Estimate: Projected year when adjusted EPS turns positive")
         L.append("based on recent 4Q linear trend. Rough estimate only.")
+        L.append("")
+        risk_events = extra.get("risk_events", [])
+        if risk_events:
+            L.append("")
+            L.append(f"[{n+4}. RISK EVENTS]")
+            L.append("Source: Grok web search (直近3ヶ月)")
+            for ev in risk_events:
+                ev_type   = ev.get("type", "不明")
+                ev_sum    = ev.get("summary", "")
+                ev_impact = ev.get("impact", "不明")
+                L.append(f"  [{ev_impact}] {ev_type}: {ev_sum}")
+        else:
+            L.append("")
+            L.append(f"[{n+4}. RISK EVENTS]")
+            L.append("  N/A (Grok検索なし または イベントなし)")
+
         L.append("")
         L.append("==============================================")
         L.append("DISCLAIMER: This report is generated automatically")
@@ -2317,10 +2360,14 @@ class TanukiValuationPipeline:
 
 
 def main():
-    tickers = sys.argv[1:] if len(sys.argv) > 1 else None
-    use_ai = False
-    pipeline = TanukiValuationPipeline(use_ai_validation=use_ai)
-    results = pipeline.run(tickers)
+    import argparse
+    parser = argparse.ArgumentParser(description="TANUKI VALUATION Pipeline")
+    parser.add_argument("tickers", nargs="*", default=None, help="処理する銘柄コード（省略時は全銘柄）")
+    parser.add_argument("--skip-risk", action="store_true", help="リスクイベント取得をスキップ（API節約用）")
+    args = parser.parse_args()
+
+    pipeline = TanukiValuationPipeline(use_ai_validation=False, skip_risk=args.skip_risk)
+    results = pipeline.run(args.tickers if args.tickers else None)
     sys.exit(0 if results else 1)
 
 

@@ -472,7 +472,34 @@ class TanukiDataFetcher:
         print(f"       Beta: {final_beta:.2f} ({beta_source})")
         if rpo > 0:
             print(f"       RPO: ${rpo:,.0f}")
-        
+
+        # ========================================
+        # インサイダー取引データ取得（SEC EDGAR Form 4）
+        # ========================================
+        insider_buy_count: Optional[int] = None
+        insider_sell_count: Optional[int] = None
+        insider_net_direction: Optional[str] = None
+        insider_latest_date: Optional[str] = None
+        try:
+            import csv as _csv
+            _cik_csv = os.path.join(repo_root, "config", "cik_lookup.csv") if repo_root else ""
+            if _cik_csv and os.path.exists(_cik_csv):
+                _cik = None
+                with open(_cik_csv, encoding="utf-8", newline="") as _f:
+                    for _row in _csv.DictReader(_f):
+                        if _row.get("ticker", "").upper() == ticker.upper():
+                            _cik = _row.get("cik", "")
+                            break
+                if _cik:
+                    _insider = self.fetch_insider_trades(ticker, _cik)
+                    if _insider is not None:
+                        insider_buy_count  = _insider.get("buy_count")
+                        insider_sell_count = _insider.get("sell_count")
+                        insider_net_direction = _insider.get("net_direction")
+                        insider_latest_date   = _insider.get("latest_date")
+        except Exception as _ie:
+            print(f"   [{ticker}] insider fetch error: {_ie}")
+
         return {
             "fcf_5yr_avg": fcf_avg,
             "fcf_2yr_avg": fcf_2yr_avg,
@@ -502,6 +529,10 @@ class TanukiDataFetcher:
             "analyst_target_high": analyst_target_high,
             "analyst_count": analyst_count,
             "analyst_rec_key": analyst_rec_key,
+            "insider_buy_count": insider_buy_count,
+            "insider_sell_count": insider_sell_count,
+            "insider_net_direction": insider_net_direction,
+            "insider_latest_date": insider_latest_date,
             "eps_data": {"ticker": ticker},
             "_shares_source": shares_source,
             "_beta_source": beta_source,
@@ -511,6 +542,87 @@ class TanukiDataFetcher:
             "rice_annual_data": rice_annual_data,
             "rice_data_source": rice_data_source,
             "rice_sector": self._get_rice_sector(ticker, sector),
+        }
+
+    def fetch_insider_trades(self, ticker: str, cik: str, days: int = 90) -> Optional[Dict[str, Any]]:
+        """SEC EDGAR Form 4 から直近N日のインサイダー取引(P=買い/S=売り)を集計"""
+        import time
+        import xml.etree.ElementTree as ET
+        from datetime import datetime, timedelta
+        try:
+            import requests as _req
+        except ImportError:
+            return None
+
+        headers = {'User-Agent': 'tanuki-valuation research@example.com'}
+        cutoff = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
+        cik_num = cik.lstrip('0') or '0'
+        cik_padded = cik_num.zfill(10)
+
+        try:
+            r = _req.get(
+                f'https://data.sec.gov/submissions/CIK{cik_padded}.json',
+                headers=headers, timeout=10
+            )
+            if r.status_code != 200:
+                return None
+            sub_data = r.json()
+        except Exception:
+            return None
+
+        filings = sub_data.get('filings', {}).get('recent', {})
+        forms = filings.get('form', [])
+        dates = filings.get('filingDate', [])
+        accns  = filings.get('accessionNumber', [])
+
+        form4_recent = [
+            (d, a) for f, d, a in zip(forms, dates, accns)
+            if f == '4' and d >= cutoff
+        ]
+
+        buy_count = 0
+        sell_count = 0
+        latest_date: Optional[str] = None
+
+        for filing_date, accn in form4_recent:
+            accn_nd = accn.replace('-', '')
+            xml_url = (
+                f'https://www.sec.gov/Archives/edgar/data/{cik_num}/{accn_nd}/form4.xml'
+            )
+            try:
+                time.sleep(0.1)
+                r = _req.get(xml_url, headers=headers, timeout=10)
+                if r.status_code != 200:
+                    continue
+                root = ET.fromstring(r.content)
+                for txn in root.findall('.//nonDerivativeTransaction'):
+                    code_el = txn.find('.//transactionCode')
+                    code = code_el.text.strip() if code_el is not None and code_el.text else ''
+                    if code == 'P':
+                        buy_count += 1
+                    elif code == 'S':
+                        sell_count += 1
+                if latest_date is None or filing_date > latest_date:
+                    latest_date = filing_date
+            except Exception:
+                continue
+
+        total = buy_count + sell_count
+        if total == 0:
+            net_direction = "中立"
+        elif buy_count > sell_count:
+            net_direction = "Buy優勢"
+        elif sell_count > buy_count:
+            net_direction = "Sell優勢"
+        else:
+            net_direction = "中立"
+
+        print(f"   [{ticker}] insider trades (90d): buy={buy_count}, sell={sell_count} → {net_direction}")
+        return {
+            "buy_count": buy_count,
+            "sell_count": sell_count,
+            "net_direction": net_direction,
+            "latest_date": latest_date,
         }
 
     def _get_rice_sector(self, ticker: str, yf_sector: str) -> str:
