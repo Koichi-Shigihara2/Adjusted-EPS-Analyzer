@@ -4,6 +4,11 @@
 
 ## 2026-06-16
 
+✅ [REPORT-3] インサイダー取引履歴表示（2026-06-16 完了）
+- SEC EDGAR Form4 XML解析で直近90日の買い/売り件数・純方向を取得
+- stock.htmlにインサイダー1行カード追加（Buy優勢=緑/Sell優勢=赤/中立=グレー）
+- report.txt Insider_Activity行追加
+
 ✅ [REPORT-2] アナリスト目標株価レンジ表示（2026-06-16 完了）
 - data_fetcher.py/core_calculator.py/pipeline.py にアナリスト目標株価6フィールド追加
 - stock.html に中央値・レンジ・推奨・vs IV乖離率の3列カード追加
