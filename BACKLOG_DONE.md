@@ -4,6 +4,10 @@
 
 ## 2026-06-16
 
+✅ [REPORT-5] データタイムスタンプ表示（2026-06-16 完了）
+- stock.html フッター直上に財務基準日・生成日・次回決算・インサイダー最終日を1行表示
+- バックエンド変更なし・既存フィールド（fcf_ttm_end/calculation_date等）を活用
+
 ✅ [HYPE-2] HypeCoreヒストリカルパーセンタイル表示（2026-06-16 完了）
 - poc.jsonの月次30件からexpectation_scoreのパーセンタイルをJS側で計算
 - stock.htmlのMATRIX×HYPEバッジ直下に「現在値 | 過去30ヶ月中XX%ile」を追加
