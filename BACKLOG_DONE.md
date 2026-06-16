@@ -4,6 +4,13 @@
 
 ## 2026-06-16
 
+✅ [TANUKI-ROE-1] DuPont分解パイプライン実装・TANUKI SCOREに表示（2026-06-16 完了）
+- quarterly.py に Assets フィールド追加 / ttm_calculator.py STOCK_FIELDS に Assets 追加
+- pipeline.py: TTMシリーズ(NI/Revenue)＋quarterlyBS(TotalAssets/Equity)からDuPont計算
+  ROE=純利益率×資産回転率×財務レバレッジ。純資産マイナス8銘柄は除外。88/96銘柄で生成
+- tanuki_score/index.html: DuPontパネル（折りたたみ式、ROE降順ソート）を追加
+- 残課題: 業種平均比較・潜在ROE試算は [TANUKI-ROE-2] に切り出し
+
 ✅ [SCORE-1] RICE × VALUATION MATRIX（2026-06-16 完了）
 - TANUKI SCORE に SVG 散布図セクション「② RICE × 乖離率マトリクス」を追加
 - X軸: 乖離率（+300%クランプ、超過銘柄は▶マーカー＋注記表示）/ Y軸: RICEスコア（上限10クランプ）
