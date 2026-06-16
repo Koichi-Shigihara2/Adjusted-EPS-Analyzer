@@ -238,6 +238,7 @@
   <div id="daily-pick"></div>
   <div id="cat-board"></div>
   <div id="rice-matrix"></div>
+  <div id="dupont-panel"></div>
   <div id="detail-tbl"></div>
 
   <!-- ④ 判定実績バックテスト -->
@@ -520,9 +521,11 @@ function renderDetailTable() {
     const peg = tk?.components?.peg ?? null;
     const ps  = tk?.components?.ps  ?? null;
 
+    const dupont = tk?.dupont ?? null;
+
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             riceAvailable, riceNote, riceVal, roe, fcfMgn, per, peg, ps };
+             riceAvailable, riceNote, riceVal, roe, fcfMgn, per, peg, ps, dupont };
   });
 
   // 5. Categorize
@@ -662,6 +665,9 @@ function renderDetailTable() {
 
   // ⑤ RICE × 乖離率マトリクス
   renderRiceMatrix();
+
+  // ⑥ DuPont分解パネル
+  renderDuPontPanel();
 
   // ④ 判定実績バックテスト
   const allEntries = await loadScoreHistory(tickers);
@@ -870,6 +876,67 @@ function renderScoreVerify(allEntries) {
       </div>
     </div>
     </div>`;
+}
+
+// ─── ⑥ DuPont分解パネル ────────────────────────────────────────
+function renderDuPontPanel() {
+  const el = document.getElementById('dupont-panel');
+  if (!el) return;
+
+  const rows = _stocks
+    .filter(s => s.dupont != null)
+    .sort((a, b) => (b.dupont.roe_decomposed ?? -Infinity) - (a.dupont.roe_decomposed ?? -Infinity));
+
+  if (rows.length === 0) { el.innerHTML = ''; return; }
+
+  const CAT_COLOR = {
+    BUY:'#4ade80', GROWTH_PREMIUM:'#14b8a6', WATCH:'#facc15',
+    HOLD:'#94a3b8', TRIM:'#fb923c', SELL:'#f87171', PASS:'#475569',
+  };
+
+  const pct = v => v == null ? '—' : (v * 100).toFixed(1) + '%';
+  const x2  = v => v == null ? '—' : v.toFixed(2) + 'x';
+
+  const trs = rows.map(s => {
+    const dp = s.dupont;
+    const roeColor = dp.roe_decomposed >= 0.15 ? '#4ade80'
+                   : dp.roe_decomposed >= 0     ? '#facc15'
+                   :                              '#f87171';
+    const catDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CAT_COLOR[s.cat]||'#475569'};margin-right:4px"></span>`;
+    return `<tr>
+      <td style="font-weight:600">${catDot}${s.ticker}</td>
+      <td class="num" style="color:${roeColor}">${pct(dp.roe_decomposed)}</td>
+      <td class="num">${pct(dp.net_margin)}</td>
+      <td class="num">${x2(dp.asset_turnover)}</td>
+      <td class="num">${x2(dp.financial_leverage)}</td>
+      <td class="num" style="color:var(--mut)">${pct(s.roe)}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+  <details style="margin:18px 0 10px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+    <summary style="padding:10px 14px;cursor:pointer;background:var(--surface);font-weight:600;font-size:13px;list-style:none">
+      ▶ DuPont分解 — ROE = 純利益率 × 資産回転率 × 財務レバレッジ（${rows.length}銘柄）
+    </summary>
+    <div style="padding:10px 14px;overflow-x:auto">
+      <p style="font-size:11px;color:var(--mut);margin:0 0 8px">
+        ※ 純資産マイナス銘柄（ABBV/BKNG/DELL等）は除外。ROE(実績)は10yr平均。
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="color:var(--mut);border-bottom:1px solid var(--border)">
+            <th style="text-align:left;padding:4px 8px">銘柄</th>
+            <th style="text-align:right;padding:4px 8px">ROE(DuPont)</th>
+            <th style="text-align:right;padding:4px 8px">純利益率</th>
+            <th style="text-align:right;padding:4px 8px">資産回転率</th>
+            <th style="text-align:right;padding:4px 8px">財務ﾚﾊﾞﾚｯｼﾞ</th>
+            <th style="text-align:right;padding:4px 8px">ROE(実績)</th>
+          </tr>
+        </thead>
+        <tbody>${trs}</tbody>
+      </table>
+    </div>
+  </details>`;
 }
 
 // ─── ⑤ RICE × 乖離率マトリクス ─────────────────────────────────

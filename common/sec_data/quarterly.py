@@ -72,6 +72,7 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "LTDebt":           ("LongTermDebt", "USD"),
     "DeferredRevenue":  ("DeferredRevenue", "USD"),
     "Equity":           ("StockholdersEquity", "USD"),
+    "Assets":           ("Assets", "USD"),
     "SharesBasic":      ("CommonStockSharesOutstanding", "shares"),
     "SharesDiluted":    ("WeightedAverageNumberOfDilutedSharesOutstanding", "shares"),
     # R&D / 販売・マーケティング費（RICE計算用）

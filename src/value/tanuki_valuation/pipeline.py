@@ -1890,6 +1890,60 @@ class TanukiValuationPipeline:
             except Exception:
                 pass
 
+        # --- DuPont分解（ROE = Net Margin × Asset Turnover × Financial Leverage）---
+        try:
+            _ttm_path_du = os.path.join(
+                self.repo_root, "common", "sec_data", "ttm",
+                f"{ticker}_ttm_series.json"
+            )
+            _sec_dir_du = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+            _q_files_du = sorted([
+                f for f in os.listdir(_sec_dir_du)
+                if f.startswith("quarterly_") and f.endswith(".json")
+            ]) if os.path.exists(_sec_dir_du) else []
+
+            _ni_ttm_du = None
+            _rev_ttm_du = None
+            _total_assets_du = None
+            _equity_du = None
+
+            if os.path.exists(_ttm_path_du):
+                with open(_ttm_path_du, encoding="utf-8") as _tf_du:
+                    _ttm_s_du = json.load(_tf_du)
+                _ttm_entry_du = (_ttm_s_du.get("series") or [None])[0]
+                if _ttm_entry_du:
+                    _flow_du = _ttm_entry_du.get("flow") or {}
+                    _ni_ttm_du = _flow_du.get("NetIncome", {}).get("val")
+                    _rev_ttm_du = _flow_du.get("Revenue", {}).get("val")
+
+            if _q_files_du:
+                with open(os.path.join(_sec_dir_du, _q_files_du[-1]), encoding="utf-8") as _qf_du:
+                    _du_bs = json.load(_qf_du).get("bs", {})
+                _total_assets_du = _du_bs.get("total_assets")
+                _equity_du = _du_bs.get("stockholders_equity")
+
+            if (
+                _ni_ttm_du is not None
+                and _rev_ttm_du and _rev_ttm_du > 0
+                and _total_assets_du and _total_assets_du > 0
+                and _equity_du and _equity_du > 0
+            ):
+                _net_margin_du = _ni_ttm_du / _rev_ttm_du
+                _asset_turn_du = _rev_ttm_du / _total_assets_du
+                _fin_lev_du = _total_assets_du / _equity_du
+                result["dupont"] = {
+                    "ni_ttm": _ni_ttm_du,
+                    "revenue_ttm": _rev_ttm_du,
+                    "total_assets": _total_assets_du,
+                    "equity": _equity_du,
+                    "net_margin": round(_net_margin_du, 4),
+                    "asset_turnover": round(_asset_turn_du, 4),
+                    "financial_leverage": round(_fin_lev_du, 4),
+                    "roe_decomposed": round(_net_margin_du * _asset_turn_du * _fin_lev_du, 4),
+                }
+        except Exception:
+            pass
+
         # --- next_earnings_date from yfinance calendar ---
         # 過去日の場合はリスト内の次の未来日を採用する（Phase3-1修正）
         try:

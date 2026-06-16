@@ -23,7 +23,7 @@ FLOW_FIELDS = frozenset([
 
 # ストック系フィールド（最新Q末の値）
 STOCK_FIELDS = frozenset([
-    "Cash", "STDebt", "LTDebt", "DeferredRevenue", "Equity",
+    "Cash", "STDebt", "LTDebt", "DeferredRevenue", "Equity", "Assets",
 ])
 
 # 株式数フィールド（最新Q末の値）
