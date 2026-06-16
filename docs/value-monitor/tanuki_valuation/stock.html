@@ -1943,6 +1943,7 @@ function render(d) {
 
     <footer>
       <p>計算日: ${calcDate} | ${formula}</p>
+      <p style="margin-top:6px;font-size:11px;color:var(--mut)">財務基準 ${d.fcf_ttm_end || '—'} ｜ 生成 ${calcDate !== '—' ? calcDate.slice(0,10) : '—'} ｜ 次回決算 ${d.next_earnings_date || '—'} ｜ インサイダー ${d.components?.insider_latest_date || '—'}</p>
       <p style="margin-top:8px"><a href="index.html" style="color:var(--acc);text-decoration:none">銘柄一覧に戻る</a></p>
     </footer>
   `;
