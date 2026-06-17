@@ -884,7 +884,7 @@ function renderDuPontPanel() {
   if (!el) return;
 
   const rows = _stocks
-    .filter(s => s.dupont != null)
+    .filter(s => s.dupont != null && !s.dupont.excluded)
     .sort((a, b) => (b.dupont.roe_decomposed ?? -Infinity) - (a.dupont.roe_decomposed ?? -Infinity));
 
   if (rows.length === 0) { el.innerHTML = ''; return; }
@@ -903,8 +903,18 @@ function renderDuPontPanel() {
                    : dp.roe_decomposed >= 0     ? '#facc15'
                    :                              '#f87171';
     const catDot = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CAT_COLOR[s.cat]||'#475569'};margin-right:4px"></span>`;
+    // ROE-DUPONT-3: |ROE|>100%（一過性要因/特殊資本構成の可能性）・reliability=LOW の視覚フラグ
+    const isExtreme = Math.abs(dp.roe_decomposed ?? 0) > 1.0;
+    const isLowReliability = dp.reliability === 'LOW';
+    const flagTitle = [
+      isLowReliability ? (dp.reliability_reason || '一過性要因の可能性あり') : null,
+      isExtreme ? '一過性要因または特殊資本構成の可能性あり（|ROE|>100%）' : null,
+    ].filter(Boolean).join(' / ');
+    const flagBadge = flagTitle
+      ? `<span title="${flagTitle}" style="margin-left:4px;cursor:help;color:#facc15">⚠</span>`
+      : '';
     return `<tr>
-      <td style="font-weight:600">${catDot}${s.ticker}</td>
+      <td style="font-weight:600">${catDot}${s.ticker}${flagBadge}</td>
       <td class="num" style="color:${roeColor}">${pct(dp.roe_decomposed)}</td>
       <td class="num">${pct(dp.net_margin)}</td>
       <td class="num">${x2(dp.asset_turnover)}</td>
@@ -920,7 +930,8 @@ function renderDuPontPanel() {
     </summary>
     <div style="padding:10px 14px;overflow-x:auto">
       <p style="font-size:11px;color:var(--mut);margin:0 0 8px">
-        ※ 純資産マイナス銘柄（ABBV/BKNG/DELL等）は除外。ROE(実績)は10yr平均。
+        ※ 純資産マイナス銘柄（ABBV/BKNG/DELL/FICO/MO/MSCI/PM/RBRK）は除外。ROE(実績)は10yr平均。
+        ⚠ は |ROE|>100% または単四半期NI集中（reliability=LOW）を示す。
       </p>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>

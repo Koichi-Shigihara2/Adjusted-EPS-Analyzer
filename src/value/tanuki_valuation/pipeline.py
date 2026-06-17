@@ -1985,6 +1985,7 @@ class TanukiValuationPipeline:
             _rev_ttm_du = None
             _total_assets_du = None
             _equity_du = None
+            _ttm_entry_du = None
 
             if os.path.exists(_ttm_path_du):
                 with open(_ttm_path_du, encoding="utf-8") as _tf_du:
@@ -1995,13 +1996,19 @@ class TanukiValuationPipeline:
                     _ni_ttm_du = _flow_du.get("NetIncome", {}).get("val")
                     _rev_ttm_du = _flow_du.get("Revenue", {}).get("val")
 
+            _du_period = None
             if _q_files_du:
                 with open(os.path.join(_sec_dir_du, _q_files_du[-1]), encoding="utf-8") as _qf_du:
-                    _du_bs = json.load(_qf_du).get("bs", {})
+                    _du_full = json.load(_qf_du)
+                _du_bs = _du_full.get("bs", {})
                 _total_assets_du = _du_bs.get("total_assets")
                 _equity_du = _du_bs.get("stockholders_equity")
+                _du_period = _du_full.get("period") or _q_files_du[-1]
 
-            if (
+            # ROE-DUPONT-4: TTM売上が極小（$10M未満）の銘柄は比率指標が無意味化するため除外
+            if _rev_ttm_du is not None and _rev_ttm_du < 10_000_000:
+                result["dupont"] = {"excluded": True, "reason": "revenue_too_small"}
+            elif (
                 _ni_ttm_du is not None
                 and _rev_ttm_du and _rev_ttm_du > 0
                 and _total_assets_du and _total_assets_du > 0
@@ -2019,7 +2026,43 @@ class TanukiValuationPipeline:
                     "asset_turnover": round(_asset_turn_du, 4),
                     "financial_leverage": round(_fin_lev_du, 4),
                     "roe_decomposed": round(_net_margin_du * _asset_turn_du * _fin_lev_du, 4),
+                    # ROE-DUPONT-2: Net Debt実装(net_debt_period)と同水準のトレーサビリティ
+                    "dupont_bs_period": _du_period,
                 }
+
+                # ROE-DUPONT-1: 単四半期NI集中チェック（一過性要因の検出・DCF_Reliability=LOWと同形式）
+                # TTM4四半期のうち最大1Qのnet_incomeがTTM合計の60%超を占める場合は信頼性LOWとする
+                # 分母は normalized JSON から再構成した直近4四半期合計を使う（ttm_calculator側の
+                # implied-Q4二重計上の影響を受けないよう、TTM seriesのni_ttmは分母に使わない）
+                try:
+                    _ni_q_count_du = _flow_du.get("NetIncome", {}).get("quarters_used")
+                    if _ni_q_count_du == 4 and _ttm_entry_du is not None:
+                        _norm_path_du = os.path.join(
+                            self.repo_root, "common", "sec_data", "normalized",
+                            f"{ticker.upper()}_quarterly_normalized.json"
+                        )
+                        if os.path.exists(_norm_path_du):
+                            with open(_norm_path_du, encoding="utf-8") as _nf_du:
+                                _norm_du = json.load(_nf_du)
+                            _ni_by_end_du: dict = {}
+                            for e in _norm_du.get("fields", {}).get("NetIncome", []):
+                                if (
+                                    not e.get("is_annual")
+                                    and e.get("val") is not None
+                                    and e.get("end", "") <= _ttm_entry_du.get("ttm_end", "")
+                                ):
+                                    _ni_by_end_du[e["end"]] = e["val"]  # end日付で重複排除
+                            _ni_entries_du = sorted(
+                                _ni_by_end_du.items(), key=lambda kv: kv[0], reverse=True
+                            )[:4]
+                            if len(_ni_entries_du) == 4:
+                                _ni_4q_sum_du = sum(v for _, v in _ni_entries_du)
+                                _max_abs_q_du = max((v for _, v in _ni_entries_du), key=abs)
+                                if _ni_4q_sum_du and abs(_max_abs_q_du) / abs(_ni_4q_sum_du) > 0.6:
+                                    result["dupont"]["reliability"] = "LOW"
+                                    result["dupont"]["reliability_reason"] = "単四半期NI集中（一過性要因の可能性）"
+                except Exception:
+                    pass
         except Exception:
             pass
 
