@@ -2156,3 +2156,190 @@ class TestAnnualFYConsistency:
                 f"NVDA annual.json year={yr} に異なる fiscal_year の四半期が混入: "
                 f"{[q['filing_date'] for q in mixed]}"
             )
+
+
+# ─────────────────────────────────────────────
+# 20. DuPont分解 (TANUKI-ROE-3): _load_extra_data の dupont ブロック検証
+#
+#   BUG-DUPONT-1 / TANUKI-ROE-3 で追加した以下の挙動を検証する:
+#   - 正常計算（NI/Revenue/Assets/Equity 全て正値）
+#   - Equity<=0 銘柄は dupont キー自体が付与されない（除外）
+#   - TTM Revenue < $15M 銘柄は dupont={"excluded": True, "reason": "revenue_too_small"}
+#   - 単四半期NI集中（最大1Q/4Q合計 > 0.6）で reliability="LOW"
+#   - |ROE|>100% となる極端値ケースでも roe_decomposed が正しく計算される
+#     （表示バッジ自体は index.html 側のJSロジックでありPythonテスト対象外）
+# ─────────────────────────────────────────────
+
+def _write_dupont_ttm(tmp_path, ticker: str, ni_ttm: float, revenue_ttm: float,
+                       quarters_used: int = 4, ttm_end: str = "2026-03-31") -> None:
+    """common/sec_data/ttm/{ticker}_ttm_series.json を作成する"""
+    ttm_dir = tmp_path / "common" / "sec_data" / "ttm"
+    ttm_dir.mkdir(parents=True, exist_ok=True)
+    data = {
+        "ticker": ticker,
+        "series": [{
+            "ttm_end": ttm_end,
+            "flow": {
+                "NetIncome": {"val": ni_ttm, "quarters_used": quarters_used, "missing": 0},
+                "Revenue": {"val": revenue_ttm, "quarters_used": quarters_used, "missing": 0},
+            },
+        }],
+    }
+    (ttm_dir / f"{ticker}_ttm_series.json").write_text(
+        json.dumps(data, ensure_ascii=False), encoding="utf-8"
+    )
+
+
+def _write_dupont_quarterly_bs(tmp_path, ticker: str, total_assets: float, equity: float,
+                                period: str = "2026Q1", filename: str = "quarterly_2026Q1.json") -> None:
+    """common/sec_data/data/{ticker}/{filename} を作成する（DuPontのBS取得元）"""
+    sec_dir = tmp_path / "common" / "sec_data" / "data" / ticker
+    sec_dir.mkdir(parents=True, exist_ok=True)
+    data = {
+        "ticker": ticker,
+        "period": period,
+        "bs": {"total_assets": total_assets, "stockholders_equity": equity},
+    }
+    (sec_dir / filename).write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+
+
+def _write_dupont_normalized_ni(tmp_path, ticker: str, quarterly_ni: list) -> None:
+    """common/sec_data/normalized/{ticker}_quarterly_normalized.json を作成する。
+    quarterly_ni: [(end_date, val), ...] 直近4四半期分（reliability判定の単四半期集中チェック用）"""
+    norm_dir = tmp_path / "common" / "sec_data" / "normalized"
+    norm_dir.mkdir(parents=True, exist_ok=True)
+    fields_ni = [
+        {"end": end, "start": "", "val": val, "is_annual": False}
+        for end, val in quarterly_ni
+    ]
+    data = {"ticker": ticker, "fields": {"NetIncome": fields_ni}}
+    (norm_dir / f"{ticker.upper()}_quarterly_normalized.json").write_text(
+        json.dumps(data, ensure_ascii=False), encoding="utf-8"
+    )
+
+
+class TestDuPontNormalCalculation:
+    """正常計算ケース: NI/Revenue/Assets/Equity が全て正常値のとき DuPont3要素を正しく算出する"""
+
+    def test_normal_case_computes_three_factors_correctly(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "NORMALCO", ni_ttm=100_000_000, revenue_ttm=1_000_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "NORMALCO", total_assets=2_000_000_000, equity=500_000_000)
+
+        result = pipe._load_extra_data("NORMALCO", {"components": {}})
+        dp = result.get("dupont")
+
+        assert dp is not None
+        assert dp["net_margin"] == 0.1          # 100M / 1000M
+        assert dp["asset_turnover"] == 0.5       # 1000M / 2000M
+        assert dp["financial_leverage"] == 4.0   # 2000M / 500M
+        assert dp["roe_decomposed"] == 0.2       # 0.1 * 0.5 * 4.0
+        assert dp["dupont_bs_period"] == "2026Q1"
+        assert "reliability" not in dp           # 単四半期集中データなし＝判定スキップ
+        assert "excluded" not in dp
+
+
+class TestDuPontEquityExclusion:
+    """Equity<=0（債務超過）の銘柄は dupont キー自体が付与されない"""
+
+    def test_negative_equity_excludes_dupont(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "DEFICITCO", ni_ttm=50_000_000, revenue_ttm=500_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "DEFICITCO", total_assets=1_000_000_000, equity=-100_000_000)
+
+        result = pipe._load_extra_data("DEFICITCO", {"components": {}})
+
+        assert result.get("dupont") is None, (
+            "Equity<=0 の銘柄で dupont が付与されている"
+            "（ABBV/BKNG/DELL等の純資産マイナス銘柄は除外される設計）"
+        )
+
+
+class TestDuPontRevenueThresholdExclusion:
+    """TANUKI-ROE-3: TTM Revenue < $15M の銘柄は excluded=True になる"""
+
+    def test_revenue_below_15m_is_excluded(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "TINYCO", ni_ttm=-10_000_000, revenue_ttm=12_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "TINYCO", total_assets=1_000_000_000, equity=900_000_000)
+
+        result = pipe._load_extra_data("TINYCO", {"components": {}})
+
+        assert result.get("dupont") == {"excluded": True, "reason": "revenue_too_small"}
+
+    def test_revenue_at_15m_is_not_excluded(self, tmp_path):
+        """境界値: $15M ちょうどは除外されない（< $15M のみが除外条件）"""
+        pipe = _make_pipe(tmp_path)
+        _write_dupont_ttm(tmp_path, "BOUNDARYCO", ni_ttm=1_000_000, revenue_ttm=15_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "BOUNDARYCO", total_assets=100_000_000, equity=50_000_000)
+
+        result = pipe._load_extra_data("BOUNDARYCO", {"components": {}})
+
+        dp = result.get("dupont")
+        assert dp is not None
+        assert dp.get("excluded") is not True
+
+
+class TestDuPontReliabilityLowFlag:
+    """単四半期NI集中（最大1Q ÷ 直近4Q合計 > 0.6）で reliability=LOW になる"""
+
+    def test_single_quarter_concentration_sets_reliability_low(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        # 直近4Q: 10M, 10M, 10M, 100M (合計130M) → 最大Q比率 100/130 ≈ 0.77 > 0.6
+        _write_dupont_ttm(tmp_path, "LYFTLIKE", ni_ttm=130_000_000, revenue_ttm=200_000_000,
+                           quarters_used=4, ttm_end="2026-03-31")
+        _write_dupont_quarterly_bs(tmp_path, "LYFTLIKE", total_assets=400_000_000, equity=100_000_000)
+        _write_dupont_normalized_ni(tmp_path, "LYFTLIKE", [
+            ("2026-03-31", 10_000_000),
+            ("2025-12-31", 100_000_000),  # 一過性要因（DTA等）を想定した単四半期集中
+            ("2025-09-30", 10_000_000),
+            ("2025-06-30", 10_000_000),
+        ])
+
+        result = pipe._load_extra_data("LYFTLIKE", {"components": {}})
+        dp = result.get("dupont")
+
+        assert dp is not None
+        assert dp.get("reliability") == "LOW"
+        assert dp.get("reliability_reason") == "単四半期NI集中（一過性要因の可能性）"
+
+    def test_evenly_distributed_quarters_no_reliability_flag(self, tmp_path):
+        """4Qが均等に分散していれば reliability フラグは付与されない"""
+        pipe = _make_pipe(tmp_path)
+        # 直近4Q: 25M ずつ均等(合計100M) → 最大Q比率 25/100 = 0.25 < 0.6
+        _write_dupont_ttm(tmp_path, "EVENCO", ni_ttm=100_000_000, revenue_ttm=200_000_000,
+                           quarters_used=4, ttm_end="2026-03-31")
+        _write_dupont_quarterly_bs(tmp_path, "EVENCO", total_assets=400_000_000, equity=100_000_000)
+        _write_dupont_normalized_ni(tmp_path, "EVENCO", [
+            ("2026-03-31", 25_000_000),
+            ("2025-12-31", 25_000_000),
+            ("2025-09-30", 25_000_000),
+            ("2025-06-30", 25_000_000),
+        ])
+
+        result = pipe._load_extra_data("EVENCO", {"components": {}})
+        dp = result.get("dupont")
+
+        assert dp is not None
+        assert "reliability" not in dp
+
+
+class TestDuPontExtremeRoeCalculation:
+    """|ROE|>100% となる極端値ケースで roe_decomposed が正しく算出される
+    （表示バッジ自体は index.html 側のJSロジックであり本テストはPython側の計算正当性のみ検証）"""
+
+    def test_high_margin_high_leverage_produces_roe_over_100_percent(self, tmp_path):
+        pipe = _make_pipe(tmp_path)
+        # net_margin=0.5, asset_turnover=1.0, financial_leverage=5.0 → roe=2.5 (250%)
+        _write_dupont_ttm(tmp_path, "EXTREMECO", ni_ttm=50_000_000, revenue_ttm=100_000_000)
+        _write_dupont_quarterly_bs(tmp_path, "EXTREMECO", total_assets=100_000_000, equity=20_000_000)
+
+        result = pipe._load_extra_data("EXTREMECO", {"components": {}})
+        dp = result.get("dupont")
+
+        assert dp is not None
+        assert dp["roe_decomposed"] == 2.5
+        assert abs(dp["roe_decomposed"]) > 1.0, (
+            "|ROE|>100% ケースで roe_decomposed が想定通り算出されていない"
+            "（index.html の isExtreme バッジ判定 Math.abs(roe_decomposed)>1.0 が依拠する値）"
+        )

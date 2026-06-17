@@ -2005,8 +2005,10 @@ class TanukiValuationPipeline:
                 _equity_du = _du_bs.get("stockholders_equity")
                 _du_period = _du_full.get("period") or _q_files_du[-1]
 
-            # ROE-DUPONT-4: TTM売上が極小（$10M未満）の銘柄は比率指標が無意味化するため除外
-            if _rev_ttm_du is not None and _rev_ttm_du < 10_000_000:
+            # ROE-DUPONT-4: TTM売上が極小（$15M未満）の銘柄は比率指標が無意味化するため除外
+            # TANUKI-ROE-3: $10M→$15Mに引き上げ（QBTS: TTM Revenue=$12.4Mが$10M閾値では
+            # 除外対象外のままnet_margin=-2008%等の極端値が表示され続けていた問題への対応）
+            if _rev_ttm_du is not None and _rev_ttm_du < 15_000_000:
                 result["dupont"] = {"excluded": True, "reason": "revenue_too_small"}
             elif (
                 _ni_ttm_du is not None
