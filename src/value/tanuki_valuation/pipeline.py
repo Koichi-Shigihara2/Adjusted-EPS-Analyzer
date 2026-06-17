@@ -532,6 +532,8 @@ class TanukiValuationPipeline:
             except Exception:
                 history_summary = []
 
+        # DESIGN: history.json はIV/株価等のチャート用データのみに絞る
+        # （判定ラベルはTANUKI VALUATION/TANUKI SCOREで別ロジックのため混乱を招く。score_history.json側に集約）
         entry = {
             "date": date_str,
             "intrinsic_value_per_share": valuation.get("intrinsic_value_per_share"),
@@ -542,9 +544,6 @@ class TanukiValuationPipeline:
             "growth_rate": valuation.get("growth_scenarios", {}).get("primary", {}).get("rate"),
             "scenario_bear": (valuation.get("scenario_valuations") or {}).get("bear", {}).get("intrinsic_value_per_share"),
             "scenario_bull": (valuation.get("scenario_valuations") or {}).get("bull", {}).get("intrinsic_value_per_share"),
-            "tanuki_score":  score_data.get("score"),
-            "funda_score":   score_data.get("funda_score"),
-            "score_comment": score_data.get("score_comment"),
         }
         # 同日エントリを上書き
         history_summary = [e for e in history_summary if e.get("date") != date_str]
@@ -577,6 +576,9 @@ class TanukiValuationPipeline:
         score_history.sort(key=lambda e: e.get("date", ""))
         with open(score_history_path, "w", encoding="utf-8") as f:
             json.dump(score_history, f, ensure_ascii=False, indent=2)
+
+        # DESIGN: HYPECOREフェーズ履歴（hypecore_history/{TICKER}.json）
+        self._save_hypecore_history(ticker, date_only)
 
         # 財務健全性・FCF履歴・次回決算日をlatest.jsonに追加保存（extraは上で取得済み）
         latest_data.update(extra)
@@ -2354,6 +2356,83 @@ class TanukiValuationPipeline:
         except Exception:
             pass
         return {}
+
+    @staticmethod
+    def _hypecore_recommendation(stage, prev_stage, ma200_dev, from_peak) -> str | None:
+        """hypecore.html の getRec() ロジックをPython移植（推奨タイトルのみ）"""
+        if stage is None:
+            return None
+        ma = ma200_dev or 0
+        fp = from_peak or 0
+        ps = prev_stage if prev_stage is not None else stage
+        if stage == 0 and ps == 4:
+            return "強い買い推奨"
+        if stage == 1:
+            return "買い推奨"
+        if stage == 2:
+            return "保有継続"
+        if stage == 3 and ma < 50:
+            return "保有・要注意"
+        if stage == 3 and ma >= 50:
+            return "売り準備"
+        if stage == 4 and ps == 3:
+            return "売り推奨"
+        if stage == 4:
+            return "売り推奨"
+        if stage == 0:
+            return "様子見"
+        return "保有継続"
+
+    def _save_hypecore_history(self, ticker: str, date_only: str) -> None:
+        """DESIGN: HYPECOREフェーズ履歴を hypecore_history/{TICKER}.json に日付単位で追記する。
+        データソースは poc.json の monthly 最新エントリ（hype_results相当）。"""
+        poc_path = os.path.join(
+            self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
+        )
+        if not os.path.exists(poc_path):
+            return
+        try:
+            with open(poc_path, encoding="utf-8") as f:
+                monthly = json.load(f).get("monthly") or []
+            if not monthly:
+                return
+            last = monthly[-1]
+            prev = monthly[-2] if len(monthly) >= 2 else None
+            stage = last.get("stage")
+            entry = {
+                "date": date_only,
+                "lifecycle": last.get("stage_label"),
+                "stage": stage,
+                "phase": last.get("substage_label"),
+                "recommendation": self._hypecore_recommendation(
+                    stage, prev.get("stage") if prev else None,
+                    last.get("ma200_dev"), last.get("from_peak"),
+                ),
+                "price": last.get("price"),
+                "price_iv_ratio": last.get("price_iv_ratio"),
+                "rev_yoy": last.get("rev_yoy"),
+                "rule40": last.get("rule40"),
+                "ma200_dev": last.get("ma200_dev"),
+                "from_peak": last.get("from_peak"),
+            }
+        except Exception:
+            return
+
+        hist_dir = os.path.join(self.output_dir, "hypecore_history")
+        os.makedirs(hist_dir, exist_ok=True)
+        hist_path = os.path.join(hist_dir, f"{ticker}.json")
+        history: list = []
+        if os.path.exists(hist_path):
+            try:
+                with open(hist_path, encoding="utf-8") as f:
+                    history = json.load(f)
+            except Exception:
+                history = []
+        history = [e for e in history if e.get("date") != date_only]
+        history.append(entry)
+        history.sort(key=lambda e: e.get("date", ""))
+        with open(hist_path, "w", encoding="utf-8") as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
 
     def _load_beta_sector(self, ticker: str) -> str | None:
         """beta_config.json の overrides[ticker].sector を返す（SECTOR_TO_DAMODARAN キー形式）"""
