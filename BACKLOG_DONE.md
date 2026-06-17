@@ -4,6 +4,13 @@
 
 ## 2026-06-17
 
+✅ [BUG-INSIDER-1] インサイダー取引データ取得バグ修正（2026-06-17 完了）
+- data_fetcher.py の Form4 XML取得が `form4.xml` 固定パスで提出者依存のファイル名
+  （wk-form4_xxx.xml等）に404、85/96銘柄が buy=0/sell=0 の誤表示になっていた
+- `filings.recent.primaryDocument` の実ファイル名（basename）を使う方式に修正。
+  PLTR sell=46 / NVDA sell=40 / TSLA sell=33 / AAPL sell=13(対照・変化なし) を実機検証
+- 修正後 0/0 表示は85→14銘柄に減少。report_consistency_check.py NG=0確認後コミット
+
 ✅ [BUG-TTM-Q4DUP-1] ttm_calculator.py implied-Q4 二重計上バグ修正（2026-06-17 完了）
 - `_build_q4_quarterly_entries()` に既存end日付チェックを追加（financial_trend_calculator.py
   の実証済み重複排除パターンを適用）。テスト4件追加（tests/test_ttm_calculator.py）
