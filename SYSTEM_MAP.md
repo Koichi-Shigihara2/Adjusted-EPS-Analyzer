@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-16
+最終更新: 2026-06-17
 
 ---
 
@@ -40,6 +40,9 @@ SEC EDGAR
      ↓ latest.json（銘柄ごと）
 pipeline.py              # 全銘柄を統合・TANUKI SCORE算出
 ├─ risk_fetcher.py   # Grok APIによる既知リスクイベント取得
+├─ hypecore_history/{TICKER}.json生成
+│   （docs/value-monitor/hypecore/data/{TICKER}_poc.json を参照 →
+│    docs/value-monitor/tanuki_valuation/data/hypecore_history/ に出力）
 ├─ stock.html（個別銘柄ページ）
 └─ tanuki_score結果 → Discord通知（ACTION-10）
 【独立データ取得層（他システムへの依存なし）】
@@ -63,6 +66,7 @@ PORTFOLIO     ← 手動入力 / 証券会社API
 | config/maturity_config.json | 影響銘柄のpipeline.py再実行（alpha上限・WACC・成熟度設定変更時）|
 | growth_sanity.py | HypeCoreデータ確認 → 影響銘柄のpipeline.py再実行 |
 | hypecore結果（hypecore_results.json） | growth_sanity経由でDCF成長率が変わるため影響銘柄のpipeline.py再実行 |
+| hypecore_results（poc.json）更新時 | 影響銘柄のpipeline.py再実行（hypecore_history/{TICKER}.jsonが更新される） |
 | pipeline.py | audit.py → 全銘柄pipeline.py再実行 |
 | Market Pulse / MACRO PULSE 各スクリプト | 独立しているため他システムへの影響なし |
 

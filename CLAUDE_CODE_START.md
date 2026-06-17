@@ -50,6 +50,11 @@ grep -rn "[機能キーワード]" docs/ src/ --include="*.html" --include="*.py
 
 例：ポートフォリオ管理機能 → TANUKI VALUATION画面ではなくPORTFOLIO画面へ
 
+誤配置の実例（2026-06-17修正済み）:
+  誤: TANUKI SCOREの売買判定履歴 → stock.html（TANUKI VALUATION）に実装
+  正: 売買判定 → TANUKI SCOREの責任範囲
+     HYPECOREフェーズ履歴 → TANUKI VALUATIONの文脈に合致
+
 ### Step 4: 作業前の宣言
 「〇〇（BACKLOG項目名）を実装します。
  変更するファイルは△△のみです。」
@@ -63,6 +68,11 @@ grep -rn "[機能キーワード]" docs/ src/ --include="*.html" --include="*.py
 - 指示されたファイルのみを変更する
 - 変更範囲を事前に明示する
 - 既存の動作を壊さない
+
+### 履歴JSONへの記録ルール
+- 記録キーは必ず日付ベース（YYYY-MM-DD）で重複排除する
+  （タイムスタンプ全体を記録する場合でも重複排除キーはdate[:10]を使う）
+- 実装参照: score_history.json（pipeline.py:566）・hypecore_history/（同パターン）
 
 ### 新規銘柄属性を追加した場合の必須対応
 
