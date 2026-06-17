@@ -16,6 +16,13 @@
   表示バッジ（|ROE|>100%等）・極小売上除外（$10M閾値、該当0件）
 - 残課題はTANUKI-ROE-3としてBACKLOG.mdに記録（テスト追加・閾値再検証）
 
+✅ [TANUKI-ROE-3] DuPont売上閾値引き上げ＋テスト追加（2026-06-17 完了）
+- 極小売上除外の閾値を $10M → $15M に引き上げ。QBTS（TTM Revenue=$12.4M）が除外対象に
+  （変更前: net_margin=-2957%等の極端値表示 → 変更後: excluded=true）
+- tests/test_pipeline_logic.py にDuPontユニットテスト7件追加
+  （正常計算・Equity除外・売上閾値境界値・reliability=LOW判定・極端ROE計算）
+- pytest 119件全パス、report_consistency_check.py NG=0確認後コミット
+
 ## 2026-06-16
 
 ✅ [REPORT-4] 既知リスクイベント表示（2026-06-16 完了）
