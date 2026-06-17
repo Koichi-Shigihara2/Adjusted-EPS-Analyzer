@@ -546,6 +546,7 @@ class TanukiDataFetcher:
 
     def fetch_insider_trades(self, ticker: str, cik: str, days: int = 90) -> Optional[Dict[str, Any]]:
         """SEC EDGAR Form 4 から直近N日のインサイダー取引(P=買い/S=売り)を集計"""
+        import os as _os
         import time
         import xml.etree.ElementTree as ET
         from datetime import datetime, timedelta
@@ -574,9 +575,10 @@ class TanukiDataFetcher:
         forms = filings.get('form', [])
         dates = filings.get('filingDate', [])
         accns  = filings.get('accessionNumber', [])
+        docs   = filings.get('primaryDocument', [])
 
         form4_recent = [
-            (d, a) for f, d, a in zip(forms, dates, accns)
+            (d, a, doc) for f, d, a, doc in zip(forms, dates, accns, docs)
             if f == '4' and d >= cutoff
         ]
 
@@ -584,10 +586,15 @@ class TanukiDataFetcher:
         sell_count = 0
         latest_date: Optional[str] = None
 
-        for filing_date, accn in form4_recent:
+        for filing_date, accn, primary_doc in form4_recent:
             accn_nd = accn.replace('-', '')
+            # BUG-INSIDER-1: ファイル名は filer ごとに異なる（form4.xml固定は誤り）。
+            # primaryDocument はXSLビューア用パス（xslF345X06/...）を指すことがあり、
+            # そのままGETするとHTML整形版が返るため、basenameのみアクセッション直下で取得する
+            # （実機検証済み: PLTR/NVDA/TSLA等で生XMLが正しく取得できることを確認）
+            fname = _os.path.basename(primary_doc)
             xml_url = (
-                f'https://www.sec.gov/Archives/edgar/data/{cik_num}/{accn_nd}/form4.xml'
+                f'https://www.sec.gov/Archives/edgar/data/{cik_num}/{accn_nd}/{fname}'
             )
             try:
                 time.sleep(0.1)
