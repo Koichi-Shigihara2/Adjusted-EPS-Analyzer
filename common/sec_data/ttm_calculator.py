@@ -147,8 +147,14 @@ def _build_q4_quarterly_entries(
 
     Q4 = FY年次値 - (Q1+Q2+Q3)
     10-K は Q4 単独を報告しないため必要。
+
+    BUG-TTM-Q4DUP-1: normalizer.py が既に同じ end日付のimplied Q4を
+    quarterly_entries に永続化済みの場合は再生成しない（financial_trend_calculator.py
+    _build_q4_implied と同じ重複排除パターン）。重複生成すると呼び出し元のマージ処理で
+    同一end日付のエントリが2件になり、TTM合算（直近4Q）が実態と乖離する。
     """
     result: list = []
+    existing_ends = {e["end"] for e in quarterly_entries if not e.get("is_annual")}
     for annual in annual_entries:
         fy_end = annual.get("end", "")
         fy_start = annual.get("start", "")
@@ -158,6 +164,10 @@ def _build_q4_quarterly_entries(
             continue
         # 未来のQ4は含めない（アナリスト予想にならないよう）
         if fy_end > _TODAY:
+            continue
+        # BUG-TTM-Q4DUP-1: 既に同一end日付の四半期データ（実データ or 永続化済みimplied）が
+        # 存在する場合はスキップ（二重計上防止）
+        if fy_end in existing_ends:
             continue
 
         # 同FY内の Q1/Q2/Q3

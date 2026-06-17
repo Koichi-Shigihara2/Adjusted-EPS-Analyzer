@@ -7,47 +7,6 @@
 
 ## 優先度：高（早急に対応）
 
-### [BUG-TTM-Q4DUP-1] ttm_calculator.py の implied-Q4 二重計上バグ（2026-06-17発見）
-**優先度:** 高
-**分類:** バグ / データ精度 / 全銘柄影響の可能性
-
-#### 背景
-DuPont分解の改善作業（一過性NI集中チェック）実装中に、LYFTのTTM NetIncomeが
-異常に高い（$5.57B、net_margin=85.4%）ことを調査した結果、`ttm_calculator.py`の
-`calc_ttm_series()`に implied Q4 エントリの二重計上バグを発見した。
-
-#### 再現手順・根拠
-1. `common/sec_data/normalized/LYFT_quarterly_normalized.json` の NetIncome フィールドには
-   既に `is_implied: True` の Q4 2025 エントリ（$2,755,053,000 = FY2025年次値 − Q1+Q2+Q3）が
-   永続化されている（normalizer.py側で生成済み）
-2. `ttm_calculator.py:442-453`（`calc_ttm_series`）は、この既存の `quarterly_by_field` に対し
-   `_build_q4_quarterly_entries()` で**同じQ4を再計算し**、重複排除せずに結合（`+`）している
-   ```python
-   merged = sorted(quarterly_by_field.get(field_name, []) + q4_list, ...)
-   quarterly_by_field[field_name] = merged
-   ```
-3. 結果、同一end日（2025-12-31）のQ4エントリが2件存在する状態でソートされ、
-   `last4 = q_entries[:4]` がこの重複ペアを両方含んでしまう
-4. 実測: LYFT TTM NetIncome 公式値=$5,570,430,000 だが、normalized JSONから
-   重複排除して再構成した正しい直近4Q合計は $2,855,691,000（公式値はほぼ2倍）
-
-#### 影響範囲
-- `FLOW_FIELDS`（Revenue/NetIncome/OCF/CapEx/RD/SM/SBC等）全てが対象の可能性
-- TTM内に「10-K直後でQ4が暗黙計算される銘柄」かつ「そのQ4が直近4Qウィンドウに含まれる」
-  条件を満たす**全銘柄**に影響する可能性が高い（非12月決算企業に限らない）
-- 波及範囲: TTM系列を参照する全箇所（FCF_Base, DCF, RICE, DuPont等）
-  → IV・理論株価の系統的な誤差につながる可能性
-
-#### 対処方針（要設計）
-- `_build_q4_quarterly_entries()` 呼び出し前に、`quarterly_by_field`から
-  既存の `is_implied=True` エントリを除外してから合成するか、
-  end日でユニーク化（重複時は新しい方を採用）する処理を追加する
-- ARCH-DATA-1の「年度判定の共通関数化」と同様、影響銘柄を全件スキャンしてから
-  before/after差分を確認する必要がある（PARSER-1の教訓に準拠）
-
-#### 着手条件
-- 全96銘柄でTTM系列の重複検出スキャンを実施し、影響銘柄数を確定してから着手する
-
 ---
 
 ## 優先度：中（こなれてきたら対応）

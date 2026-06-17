@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-06-17
+
+✅ [BUG-TTM-Q4DUP-1] ttm_calculator.py implied-Q4 二重計上バグ修正（2026-06-17 完了）
+- `_build_q4_quarterly_entries()` に既存end日付チェックを追加（financial_trend_calculator.py
+  の実証済み重複排除パターンを適用）。テスト4件追加（tests/test_ttm_calculator.py）
+- 全97銘柄でbefore/after差分確認: NetIncome/Revenue等87銘柄で重複混入を検出、
+  うち8件（IONQ 3.84倍等）が1.5倍以上の乖離・3件（IOT/SPIR/SITM）が符号反転
+- update.py→pipeline.py全銘柄再生成、report_consistency_check.py NG=0確認後コミット
+
+✅ [BUG-DUPONT-1] DuPont分解レビュー由来の4改善（2026-06-17 完了）
+- 一過性NI集中チェック（reliability=LOW・19銘柄該当）・dupont_bs_period追加・
+  表示バッジ（|ROE|>100%等）・極小売上除外（$10M閾値、該当0件）
+- 残課題はTANUKI-ROE-3としてBACKLOG.mdに記録（テスト追加・閾値再検証）
+
 ## 2026-06-16
 
 ✅ [REPORT-4] 既知リスクイベント表示（2026-06-16 完了）

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2384241056.305881,
   "intrinsic_value_per_share": 41.42157816850218,
   "intrinsic_value_beta": 40.02,
-  "upside_percent_beta": -45.8,
+  "upside_percent_beta": -45.4,
   "intrinsic_value_rf": 199.97,
-  "upside_percent_rf": 170.7,
+  "upside_percent_rf": 172.9,
   "v0": 1751188034.7502625,
   "v0_adjusted": 1751188034.7502625,
   "alpha": 0.36149917027379547,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 43.37,
       "value_growth_pct": 4.7,
-      "expected_return_pct": -41.3
+      "expected_return_pct": -40.8
     },
     "2年後": {
       "future_value": 45.4,
       "value_growth_pct": 9.6,
-      "expected_return_pct": -38.5
+      "expected_return_pct": -38.0
     },
     "3年後": {
       "future_value": 47.54,
       "value_growth_pct": 14.8,
-      "expected_return_pct": -35.6
+      "expected_return_pct": -35.1
     },
     "4年後": {
       "future_value": 49.77,
       "value_growth_pct": 20.2,
-      "expected_return_pct": -32.6
+      "expected_return_pct": -32.1
     },
     "5年後": {
       "future_value": 52.11,
       "value_growth_pct": 25.8,
-      "expected_return_pct": -29.4
+      "expected_return_pct": -28.9
     }
   },
-  "upside_percent": -43.9,
-  "calculation_date": "2026-06-17T03:40:06+09:00",
+  "upside_percent": -43.5,
+  "calculation_date": "2026-06-17T18:46:56+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -218,21 +218,21 @@
     "pv_phase2_rm": 336566823.413855
   },
   "fcf_base": {
-    "base_fcf": 188421000.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 117822400.0,
-    "fcf_2yr_avg": 188421000.0,
-    "cv": 0.559,
+    "base_fcf": 100537000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 100537000.0,
+    "fcf_2yr_avg": 143373500.0,
+    "cv": 0.439,
     "cv_threshold": 0.5,
-    "ratio": 0.559,
+    "ratio": 0.439,
     "threshold": 0.5
   },
   "fcf_outlier": {
     "detected": true,
     "rule": "deviation_large",
     "fiscal_year": 2025,
-    "fcf_value": 206777000,
-    "threshold_pct": 0.6,
+    "fcf_value": 172321000,
+    "threshold_pct": 0.2,
     "transient_evidence": {
       "found": false,
       "source": null,
@@ -240,7 +240,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($207M)が5年平均($118M)から75%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($172M)が5年平均($101M)から71%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -248,10 +248,10 @@
     "adj_net_income": 172152438.94378307,
     "conversion_rate": 0.7,
     "estimated_fcf": 120506707.26064815,
-    "raw_fcf": 188421000.0,
+    "raw_fcf": 100537000.0,
     "sector": "",
-    "note": "調整済み純利益$0.17B × 転換率70%[sector()] = 推定FCF$0.12B（従来$0.19Bの0.6倍）",
-    "divergence_ratio": 0.64,
+    "note": "調整済み純利益$0.17B × 転換率70%[sector()] = 推定FCF$0.12B（従来$0.10Bの1.2倍）",
+    "divergence_ratio": 1.2,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -307,23 +307,23 @@
   "fcf_ttm_periods": 5,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 117822400.0,
-    "fcf_2yr_avg": 188421000.0,
+    "fcf_5yr_avg": 100537000.0,
+    "fcf_2yr_avg": 143373500.0,
     "fcf_base_used": 120506707.26064815,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
-      206777000,
-      170065000,
-      73831000,
-      64018000,
+      172321000,
+      114426000,
+      69401000,
+      72116000,
       74421000
     ],
     "diluted_shares": 49685363,
     "roe_10yr_avg": 0.08607123101757037,
     "roe_years_used": 9,
     "roe_outlier_adj": true,
-    "current_price": 73.86,
+    "current_price": 73.27,
     "latest_revenue": 3751806000.0,
     "rpo": 0.0,
     "beta": 1.038,
@@ -348,25 +348,25 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.36149917027379547,
-    "per": 21.659824,
+    "per": 21.486801,
     "per_is_forward": false,
-    "per_adjusted": 19.01,
-    "peg": 1.55,
-    "ps": 0.96485263,
-    "ev_ebitda": 16.443,
-    "ma200": 57.02105,
+    "per_adjusted": 18.86,
+    "peg": 1.51,
+    "ps": 0.9571453,
+    "ev_ebitda": 16.373,
+    "ma200": 57.0772,
     "forward_eps": 4.44919,
-    "analyst_target_median": 68.0,
-    "analyst_target_mean": 66.76471,
+    "analyst_target_median": 67.0,
+    "analyst_target_mean": 66.1875,
     "analyst_target_low": 50.0,
     "analyst_target_high": 76.0,
-    "analyst_count": 17,
-    "analyst_rec_key": "none",
+    "analyst_count": 16,
+    "analyst_rec_key": "hold",
     "insider_buy_count": 0,
     "insider_sell_count": 0,
     "insider_net_direction": "中立",
     "insider_latest_date": null,
-    "analyst_vs_iv": 64.2
+    "analyst_vs_iv": 61.8
   },
   "validation": {
     "validated_at": "2026-06-17",
@@ -436,14 +436,15 @@
     "shares_yr_3ago_label": "2023"
   },
   "dupont": {
-    "ni_ttm": 138997000,
-    "revenue_ttm": 3809175000,
+    "ni_ttm": 165034000,
+    "revenue_ttm": 3803442000,
     "total_assets": 3297341000,
     "equity": 459226000,
-    "net_margin": 0.0365,
-    "asset_turnover": 1.1552,
+    "net_margin": 0.0434,
+    "asset_turnover": 1.1535,
     "financial_leverage": 7.1802,
-    "roe_decomposed": 0.3027
+    "roe_decomposed": 0.3594,
+    "dupont_bs_period": "2026Q1"
   },
   "next_earnings_date": "2026-07-29",
   "segments": [
@@ -491,25 +492,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0172,
-  "forward_earnings_yield": 0.0602,
+  "erp": 0.0177,
+  "forward_earnings_yield": 0.0607,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Cheesecake Factory",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition risks",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
