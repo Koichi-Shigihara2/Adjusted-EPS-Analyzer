@@ -7,6 +7,42 @@
 
 ## 優先度：高（早急に対応）
 
+### [BUG-SCORE-SYNC-1] TANUKI SCORE 売買判定 二重計算の食い違い
+**優先度:** 高
+**分類:** バグ / TANUKI SCORE
+
+#### 背景
+Python（pipeline.py）とJS（tanuki_score/index.html）が独立した判定ロジックを
+持っており、96銘柄中23銘柄（24%）で判定が食い違っている。
+2026-06-17調査で原因を特定済み。
+
+#### 食い違いパターンと原因
+
+**A) 危険（1件）: Python除外 vs JS買い推奨**
+| 銘柄 | Python | JS | 原因 |
+|------|--------|-----|------|
+| KULR | PASS | BUY | Runway3.3ヶ月でPython側ペナルティ発動・JS側未実装 |
+
+**B) 機会損失（4件）: Python BUY vs JS WATCH**
+| 銘柄 | 原因 |
+|------|------|
+| BSY/ELF/ESTC/FICO | JS側のBUY条件にtiming>=50ゲートあり・Python側にはなし |
+
+**C) その他（18件）**
+- DCF信頼性LOW丸め（14銘柄）: Python専用ロジック・JSに未実装
+- 希薄化/Runwayペナルティ（4銘柄）: Python専用・JSに未実装
+  （BBAI/QBTS/RDW/SPIR）
+- GROWTH_PREMIUM: 現時点0件該当・実害なし
+
+#### 修正方針
+1. **最優先**: JSにRunway/希薄化ペナルティを追加（KULR問題の解消）
+2. **次**: JSにDCF信頼性LOW丸めを追加（14銘柄解消）
+3. **設計判断**: timingゲート差はPython側にtimingを取り込むか別途議論
+
+#### 根本解決策（中長期）
+JSの独自再計算を廃止し、pipeline.pyの計算結果（latest.json）を
+JSが読んで表示するだけにする一本化。
+
 ---
 
 ## 優先度：中（こなれてきたら対応）
