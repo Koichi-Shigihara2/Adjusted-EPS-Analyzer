@@ -339,7 +339,6 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 ## BACKLOG優先順位の目安
 
 ### 今すぐ着手可能（優先度中・難易度低〜中）
-- TANUKI-ROE-1: デュポン分解ROE（TANUKI SCORE）
 - MP-BIZDAY-1: MARKET PULSE営業日ベース化
 - ARCH-DATA-1: SECデータ正規化レイヤー強化（PARSER-1/BUG-NETDEBT-6/ANNUAL-FY-1が第一〜三歩として完了。
   次の前倒し対象: 年度判定の共通関数化（parser.py/extract_key_facts.py/aggregate_annualの3箇所を統合））
