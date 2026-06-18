@@ -1,52 +1,38 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-17
+最終更新: 2026-06-18
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
 
-## 優先度：高（早急に対応）
+## 優先度：中（こなれてきたら対応）
 
-### [BUG-SCORE-SYNC-1] TANUKI SCORE 売買判定 二重計算の食い違い
-**優先度:** 高
-**分類:** バグ / TANUKI SCORE
+### [BUG-SCORE-SYNC-1] TANUKI SCORE 売買判定 二重計算の食い違い（残: timingゲート設計判断のみ）
+**優先度:** 中（残課題は設計判断であり緊急のデータ不整合ではないため降格）
+**分類:** 設計課題 / TANUKI SCORE
 
 #### 背景
 Python（pipeline.py）とJS（tanuki_score/index.html）が独立した判定ロジックを
-持っており、96銘柄中23銘柄（24%）で判定が食い違っている。
-2026-06-17調査で原因を特定済み。
+持っており、96銘柄中23銘柄（24%）で判定が食い違っていた（2026-06-17調査）。
 
-#### 食い違いパターンと原因
+#### 対応済み（2026-06-18）
+- JSにRunwayペナルティ（<12ヶ月で-30pt）を追加 → KULR問題（PASS vs BUY）解消
+- JSに希薄化ペナルティ（年率>40%で-25pt、>20%で-15pt）を追加
+- JSにDCF_Reliability=LOW丸め（revenue_floor適用時はSELL/PASS以外をWATCHに統一）を追加
+- 上記でA・C分類（19銘柄）が解消。検証スクリプトで mismatch 23→4 を確認済み
+- 変更ファイル: docs/value-monitor/tanuki_score/index.html のみ
+  （S_PATH追加によりstonks-silo/data/results.jsonを新規fetch）
 
-**A) 危険（1件）: Python除外 vs JS買い推奨**
-| 銘柄 | Python | JS | 原因 |
-|------|--------|-----|------|
-| KULR | PASS | BUY | Runway3.3ヶ月でPython側ペナルティ発動・JS側未実装 |
-
-**B) 機会損失（4件）: Python BUY vs JS WATCH**
-| 銘柄 | 原因 |
-|------|------|
-| BSY/ELF/ESTC/FICO | JS側のBUY条件にtiming>=50ゲートあり・Python側にはなし |
-
-**C) その他（18件）**
-- DCF信頼性LOW丸め（14銘柄）: Python専用ロジック・JSに未実装
-- 希薄化/Runwayペナルティ（4銘柄）: Python専用・JSに未実装
-  （BBAI/QBTS/RDW/SPIR）
-- GROWTH_PREMIUM: 現時点0件該当・実害なし
-
-#### 修正方針
-1. **最優先**: JSにRunway/希薄化ペナルティを追加（KULR問題の解消）
-2. **次**: JSにDCF信頼性LOW丸めを追加（14銘柄解消）
-3. **設計判断**: timingゲート差はPython側にtimingを取り込むか別途議論
+#### 残課題（B分類・4銘柄: BSY/ELF/ESTC/FICO）
+Python BUY vs JS WATCH。原因: JS側のBUY条件にtiming>=50ゲートあり・Python側にはなし。
+**設計判断が必要**: Python側にtimingゲートを取り込むか、JS側のゲートを撤廃するか。
+着手前に判断を仰ぐこと。
 
 #### 根本解決策（中長期）
 JSの独自再計算を廃止し、pipeline.pyの計算結果（latest.json）を
 JSが読んで表示するだけにする一本化。
 
 ---
-
-## 優先度：中（こなれてきたら対応）
-
 
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）

@@ -259,6 +259,7 @@ const T_BASE = '../tanuki_valuation/';
 const H_BASE = '../hypecore/data/';
 const E_PATH = '../adjusted_eps_analyzer/data/summary.json';
 const M_PATH = '../../market-monitor/market-pulse/data/market_data.json';
+const S_PATH = '../stonks-silo/data/results.json';
 
 // ─── Scoring ─────────────────────────────────────────────────
 function calcFunda(revYoy, rule40, epsYoyPct, fcfBase) {
@@ -443,7 +444,7 @@ function renderDetailTable() {
   } catch (_) {}
 
   // 3. Per-ticker data (parallel)
-  const [tanukiMap, hypeMap, epsMap] = await Promise.all([
+  const [tanukiMap, hypeMap, epsMap, stonksMap] = await Promise.all([
 
     Promise.allSettled(tickers.map(async tk => {
       try {
@@ -464,6 +465,11 @@ function renderDetailTable() {
     fetch(E_PATH + TS)
       .then(r => r.ok ? r.json() : {tickers:[]})
       .then(d => Object.fromEntries((d.tickers||[]).map(t=>[t.ticker,t])))
+      .catch(()=>({})),
+
+    fetch(S_PATH + TS)
+      .then(r => r.ok ? r.json() : {tickers:{}})
+      .then(d => d.tickers || {})
       .catch(()=>({}))
   ]);
 
@@ -489,14 +495,29 @@ function renderDetailTable() {
     const substage   = lastMo?.substage_label ?? '';
     const stageLabel = lastMo?.stage_label ?? '';
 
-    const funda  = calcFunda(revYoy, rule40, epsYoy, fcfBase);
+    // BUG-SCORE-SYNC-1: Python(_compute_tanuki_score)と同一のRunway/希薄化ペナルティを適用
+    const runwayMonths   = stonksMap[ticker]?.runway?.runway_months ?? tk?.computed_runway_months ?? null;
+    const dilutionPct    = tk?.financial_health?.dilution_3yr_annual_pct ?? null;
+    const fcfFloorApplied = tk?.components?.fcf_floor_applied ?? 0;
+
+    let funda = calcFunda(revYoy, rule40, epsYoy, fcfBase);
+    if (runwayMonths != null && runwayMonths < 12) funda = Math.max(0, funda - 30);
+    if (dilutionPct != null) {
+      if (dilutionPct > 40) funda = Math.max(0, funda - 25);
+      else if (dilutionPct > 20) funda = Math.max(0, funda - 15);
+    }
     const timing = calcTiming(rawUp, fg, stage);
 
     const stockObj = {
       upside: rawUp, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
       ma200, fcfBase, fcfEst,
     };
-    const cat = classify(funda, timing, stockObj);
+    let cat = classify(funda, timing, stockObj);
+
+    // BUG-SCORE-SYNC-1: DCF_Reliability=LOW（revenue_floor適用）はupside依存判定を抑制しWATCHに丸める
+    if (fcfFloorApplied > 0 && cat !== 'SELL' && cat !== 'PASS') {
+      cat = 'WATCH';
+    }
 
     let sellReason = '';
     if (cat === 'SELL') {
