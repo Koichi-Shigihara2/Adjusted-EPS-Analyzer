@@ -415,6 +415,58 @@ HIGH/MED/LOW で表示ゲート制御（LOWはグレーアウト）
 - ティッカー＋会社名を表示するのを全ページ共通原則とする
 - EPS ANALYZER個別銘柄ページを含む全個別明細画面に適用する
 
+### [HOME-FIX-1] 「Gemini API」誤記の修正（HOME画面）
+**優先度:** 高
+- FEATURESセクションの「AI POWERED」カードに `Gemini API` が残っている
+- GeminiはGrokに移行済みのため `Grok API` に修正する
+- 対象: docs/index.html
+
+### [HOME-FIX-2] バージョン表記の削除（HOME画面）
+**優先度:** 低
+- TANUKI VALUATIONカードの「Koichi式v5.1」のバージョン番号を削除する
+- 対象: docs/index.html
+
+### [HOME-FIX-3] HYPE COREカードの銘柄数表記の動的化（HOME画面）
+**優先度:** 低
+- `LIVE · 60銘柄` の銘柄数が陳腐化する
+- tickers.json から動的取得するか `LIVE` のみにする
+- 対象: docs/index.html
+
+### [HOME-FIX-4] FEATURESセクションの `//` 確認（HOME画面）
+**優先度:** 低
+- 各featureカードの先頭に `//` が表示されている
+- フォントアイコン未ロードのバグか意図的な装飾か確認し、バグであれば修正する
+- 対象: docs/index.html
+
+### [TSCORE-FIX-1] タイトル文字色をテーマカラーに設定（TANUKI SCORE画面）
+**優先度:** 中
+- 「● TANUKI SCORE」タイトル文字が白になっている
+- 他ページと同様にテーマカラーを設定する
+- 対象: docs/value-monitor/tanuki_score/index.html
+
+### [TSCORE-FIX-2] テーブルの余白・フォント改善（TANUKI SCORE画面）
+**優先度:** 中
+- 全銘柄詳細テーブルの行間が狭くフォントが小さい
+- 行の縦paddingを広げ、フォントサイズを他画面と統一する
+- 対象: docs/value-monitor/tanuki_score/index.html
+
+### [TSCORE-FIX-3] ページ用途説明の追加（TANUKI SCORE画面）
+**優先度:** 低
+- 初見でページの用途がわからない
+- タイトル直下にサブタイトルまたは説明文を追加する
+- 対象: docs/value-monitor/tanuki_score/index.html
+
+### [TSCORE-FIX-4] フッターのバージョン表記削除（TANUKI SCORE画面）
+**優先度:** 低
+- フッターの `Koichi式 v8.0` のバージョン番号を削除する
+- 対象: docs/value-monitor/tanuki_score/index.html
+
+### [TSCORE-FIX-5] RICE有効銘柄数の動的取得（TANUKI SCORE画面）
+**優先度:** 低
+- RICEマトリクスのキャプション「RICE有効 49銘柄」の銘柄数を動的に表示する
+- 描画時にプロットされた銘柄数をJSでカウントして表示する
+- 対象: docs/value-monitor/tanuki_score/index.html
+
 ---
 
 ## システム全体バックログ（TANUKI VALUATION以外）
