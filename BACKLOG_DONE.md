@@ -2,6 +2,24 @@
 
 ---
 
+## 2026-06-20
+
+✅ [RICE-THRESHOLD-1] RICE閾値・マトリクス表示改善（2026-06-20 完了）
+- 旧閾値2.0（理論的根拠なし）を理論値ベース（RICE<1.0=低効率/1.0〜3.0=中効率/
+  RICE>=3.0=高効率）に統一。対象: tanuki_score/index.html・stock.html・
+  pipeline.py（report.txt生成部）の計4箇所
+- 両マトリクス（tanuki_score「②RICE×乖離率」・stock.html「①投資効率系」）の
+  Y軸を対数軸化し、NVDA等の外れ値による中央値帯の圧縮（旧表示で下から
+  7.5〜15.7%に圧縮）を解消
+- RICE<=0（計算不能・マイナス）は対数軸でプロット不可なため下端に▼で別枠表示
+- 判定ロジック（_compute_tanuki_score）は変更せず表示のみ対応。pytest 110件
+  全パス、report_consistency_check.py NG=0、全96銘柄でBUY/TRIM/WATCH等判定が
+  変更前後で完全一致を確認済み（commit bc9c1dc71）
+- 検証過程で判明した別課題（TANUKI SCORE判定ロジックがRICEをほぼ参照して
+  いない）はARCH-SCORE-SYNC-1の関連事実としてBACKLOG.mdに残置・別タスク化
+
+---
+
 ## 2026-06-19
 
 ✅ [HOME-FIX-1] 「Gemini API」誤記の修正（2026-06-19 完了）
