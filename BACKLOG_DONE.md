@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-06-19
+
+✅ [HOME-FIX-1] 「Gemini API」誤記の修正（2026-06-19 完了）
+- HOME画面FEATURESセクション「AI POWERED」カードの説明文に
+  `Grok API / Gemini API` という併記が残存していた
+- GeminiはGrokに移行済みのため `Grok API` のみに修正
+- 対象: docs/index.html（229行目）
+
+---
+
 ## 2026-06-17
 
 ✅ [BUG-INSIDER-1] インサイダー取引データ取得バグ修正（2026-06-17 完了）

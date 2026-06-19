@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-18
+最終更新: 2026-06-19
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -414,12 +414,6 @@ HIGH/MED/LOW で表示ゲート制御（LOWはグレーアウト）
 - 個別明細画面のタイトルや見出しにティッカーのみ表示されており会社名がない
 - ティッカー＋会社名を表示するのを全ページ共通原則とする
 - EPS ANALYZER個別銘柄ページを含む全個別明細画面に適用する
-
-### [HOME-FIX-1] 「Gemini API」誤記の修正（HOME画面）
-**優先度:** 高
-- FEATURESセクションの「AI POWERED」カードに `Gemini API` が残っている
-- GeminiはGrokに移行済みのため `Grok API` に修正する
-- 対象: docs/index.html
 
 ### [HOME-FIX-2] バージョン表記の削除（HOME画面）
 **優先度:** 低
