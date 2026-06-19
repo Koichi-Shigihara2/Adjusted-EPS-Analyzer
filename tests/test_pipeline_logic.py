@@ -280,14 +280,14 @@ class TestRiceEfficiencyLabel:
         val["rice"]["base"] = {"rice": rice_val}
         return pipe._generate_report("TEST", val, _minimal_score_data(), _minimal_extra())
 
-    def test_rice_above_2_shows_high_efficiency(self, tmp_path):
-        """RICE >= 2.0 → Label に「高効率」が含まれる"""
-        report = self._make_report_with_rice(tmp_path, 3.0)
+    def test_rice_above_3_shows_high_efficiency(self, tmp_path):
+        """RICE >= 3.0 → Label に「高効率」が含まれる"""
+        report = self._make_report_with_rice(tmp_path, 4.0)
         assert "高効率" in report
 
-    def test_rice_between_1_and_2_shows_medium_efficiency(self, tmp_path):
-        """1.0 <= RICE < 2.0 → Label に「中効率」が含まれる"""
-        report = self._make_report_with_rice(tmp_path, 1.5)
+    def test_rice_between_1_and_3_shows_medium_efficiency(self, tmp_path):
+        """1.0 <= RICE < 3.0 → Label に「中効率」が含まれる"""
+        report = self._make_report_with_rice(tmp_path, 2.0)
         assert "中効率" in report
 
     def test_rice_below_1_shows_low_efficiency(self, tmp_path):
@@ -295,9 +295,9 @@ class TestRiceEfficiencyLabel:
         report = self._make_report_with_rice(tmp_path, 0.5)
         assert "低効率" in report
 
-    def test_rice_exactly_2_shows_high_efficiency(self, tmp_path):
-        """RICE = 2.0（境界値）→「高効率」"""
-        report = self._make_report_with_rice(tmp_path, 2.0)
+    def test_rice_exactly_3_shows_high_efficiency(self, tmp_path):
+        """RICE = 3.0（境界値）→「高効率」"""
+        report = self._make_report_with_rice(tmp_path, 3.0)
         assert "高効率" in report
 
     def test_rice_exactly_1_shows_medium_efficiency(self, tmp_path):

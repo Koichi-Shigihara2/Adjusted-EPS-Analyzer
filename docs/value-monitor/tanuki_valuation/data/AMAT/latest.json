@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 124066005954.01741,
-  "intrinsic_value_per_share": 252.99976928609263,
+  "intrinsic_value_pt": 124066005954.01727,
+  "intrinsic_value_per_share": 252.99976928609235,
   "intrinsic_value_beta": 158.51,
   "upside_percent_beta": -74.3,
   "intrinsic_value_rf": 2074.2,
   "upside_percent_rf": 236.1,
-  "v0": 68925558863.343,
-  "v0_adjusted": 68925558863.343,
+  "v0": 68925558863.34293,
+  "v0_adjusted": 68925558863.34293,
   "alpha": 0.8,
   "alpha_was_capped": true,
   "future_values": {
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -59.0,
-  "calculation_date": "2026-06-20T01:39:03+09:00",
+  "calculation_date": "2026-06-20T07:12:59+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -92,12 +92,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.07360000000000001,
+      "rate": 0.0736,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.07360000000000001,
+      "weighted_growth": 0.0736,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -124,46 +124,46 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 68925558863.343,
-    "pv_high_growth": 24825710422.608364,
-    "pv_terminal": 44099848440.734634,
+    "v0": 68925558863.34293,
+    "pv_high_growth": 24825710422.608345,
+    "pv_terminal": 44099848440.73459,
     "high_growth_detail": [
       {
         "year": 1,
-        "fcf": 6331916566.247371,
+        "fcf": 6331916566.24737,
         "discount_factor": 1.138304,
-        "pv": 5562588347.442661
+        "pv": 5562588347.44266
       },
       {
         "year": 2,
-        "fcf": 6797945625.523178,
+        "fcf": 6797945625.523175,
         "discount_factor": 1.295735996416,
-        "pv": 5246397139.79257
+        "pv": 5246397139.792567
       },
       {
         "year": 3,
-        "fcf": 7298274423.561685,
+        "fcf": 7298274423.56168,
         "discount_factor": 1.4749414676643184,
-        "pv": 4948179018.330168
+        "pv": 4948179018.330165
       },
       {
         "year": 4,
-        "fcf": 7835427421.135825,
+        "fcf": 7835427421.1358185,
         "discount_factor": 1.6789317724081643,
-        "pv": 4666912348.616247
+        "pv": 4666912348.616243
       },
       {
         "year": 5,
-        "fcf": 8412114879.331423,
+        "fcf": 8412114879.331414,
         "discount_factor": 1.911134752259303,
-        "pv": 4401633568.426716
+        "pv": 4401633568.426711
       }
     ],
-    "terminal_fcf": 8706538900.108023,
-    "terminal_value": 84280752924.45619,
-    "v0_rm": 110603084784.732,
-    "pv_fcf_rm": 27432690121.33087,
-    "pv_tv_rm": 83170394663.40112
+    "terminal_fcf": 8706538900.108013,
+    "terminal_value": 84280752924.4561,
+    "v0_rm": 110603084784.73189,
+    "pv_fcf_rm": 27432690121.330856,
+    "pv_tv_rm": 83170394663.40103
   },
   "fcf_base": {
     "base_fcf": 6101400000.0,
@@ -302,11 +302,11 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
-    "high_growth_rate_used": 0.07360000000000001,
+    "high_growth_rate_used": 0.0736,
     "high_growth_years": 5,
     "terminal_growth_used": 0.035,
-    "pv_high": 24825710422.608364,
-    "pv_terminal": 44099848440.734634,
+    "pv_high": 24825710422.608345,
+    "pv_terminal": 44099848440.73459,
     "roe_used": 0.3917494031323076,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -470,21 +470,5 @@
   "forward_earnings_yield": 0.0263,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

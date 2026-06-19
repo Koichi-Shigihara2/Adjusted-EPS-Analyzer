@@ -1364,7 +1364,7 @@ function render(d) {
         ${(() => {
           const rv = riceBase.rice, uv = upside;
           if (rv == null) return '';
-          const isH = rv > 2.0, isU = uv > 0;
+          const isH = rv >= 3.0, isU = uv > 0;
           let ql, qc, qd;
           if (isU && isH)  { ql='① 強い買い候補';   qc='#4ade80'; qd='割安 × 成長効率高：最も優位な状態'; }
           else if (!isU && isH) { ql='② 期待プレミアム有'; qc='#facc15'; qd='割高だが成長効率は高い：期待に一定の根拠あり'; }
@@ -1372,7 +1372,7 @@ function render(d) {
           else              { ql='④ 要注意';          qc='#f87171'; qd='割高 × 成長効率低：慎重に'; }
           const W=300,H=200,P=40,x0=-100,x1=200,y0=0,y1=10;
           const xZ = P+(0-x0)/(x1-x0)*(W-P*2);
-          const yT = P+(1-(2.0-y0)/(y1-y0))*(H-P*2);
+          const yT = P+(1-(3.0-y0)/(y1-y0))*(H-P*2);
           const cx = Math.max(P+2,Math.min(W-P-2, P+(uv-x0)/(x1-x0)*(W-P*2)));
           const cy = Math.max(P+2,Math.min(H-P-2, P+(1-(Math.min(rv,y1)-y0)/(y1-y0))*(H-P*2)));
           const s = (t) => String(t);
@@ -1393,7 +1393,7 @@ function render(d) {
             +'<text x="'+xZ+'" y="'+(H-P+12)+'" font-size="8" fill="#475569" text-anchor="middle" font-family="monospace">0%</text>'
             +'<text x="'+(W-P)+'" y="'+(H-P+12)+'" font-size="8" fill="#334155" text-anchor="middle" font-family="monospace">+200%</text>'
             +'<text x="'+(P-4)+'" y="'+P+'" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">10</text>'
-            +'<text x="'+(P-4)+'" y="'+yT+'" font-size="8" fill="#475569" text-anchor="end" font-family="monospace">2</text>'
+            +'<text x="'+(P-4)+'" y="'+yT+'" font-size="8" fill="#475569" text-anchor="end" font-family="monospace">3</text>'
             +'<text x="'+(P-4)+'" y="'+(H-P)+'" font-size="8" fill="#334155" text-anchor="end" font-family="monospace">0</text>'
             +'<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="'+qc+'" opacity="0.9"/>'
             +'<circle cx="'+cx+'" cy="'+cy+'" r="6" fill="none" stroke="'+qc+'" stroke-width="1" opacity="0.4"/>'
@@ -1408,7 +1408,7 @@ function render(d) {
             +'<div style="display:grid;gap:6px;">'
             +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">RICE (base)</span><span style="font-family:var(--mono);color:var(--txt)">'+rv.toFixed(2)+'</span></div>'
             +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">乖離率</span><span style="font-family:var(--mono);color:'+(uv>=0?'var(--green)':'var(--red)')+'">'+(uv>=0?'+':'')+uv.toFixed(1)+'%</span></div>'
-            +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">RICE閾値</span><span style="font-family:var(--mono);color:var(--mut)">2.0（基準）</span></div>'
+            +'<div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--mut)">RICE閾値</span><span style="font-family:var(--mono);color:var(--mut)">3.0（高効率基準・1.0未満は低効率）</span></div>'
             +'</div>'
             +'<div id="hype-signal-row" style="margin-top:10px"></div>'
             +'</div></div></div>';
@@ -2600,25 +2600,48 @@ function buildScatterSVG(points, opts) {
   const W = 400, H = opts.svgH || 300;
   const PL = 48, PR = 12, PT = 12, PB = 36;
   const IW = W - PL - PR, IH = H - PT - PB;
-  const { xMin, xMax, xThresh, yMin, yMax, yThresh, xLabel, yLabel, currentTicker } = opts;
+  // yScale='log' + yThresh2: RICE投資効率系パネル専用（外れ値による圧縮を解消する対数軸・3分類表示）
+  // 他パネル（ROE/成長性/FCF）は従来通り線形2分類のまま
+  const { xMin, xMax, xThresh, yMin, yMax, yThresh, yThresh2, yScale, yFloor, xLabel, yLabel, currentTicker } = opts;
 
   function sx(v) { return PL + (v - xMin) / (xMax - xMin) * IW; }
-  function sy(v) { return PT + (1 - (v - yMin) / (yMax - yMin)) * IH; }
+  function sy(v) {
+    if (yScale === 'log') {
+      const floor = yFloor || 0.1;
+      const vv = Math.max(v, floor);
+      const logMin = Math.log10(floor), logMax = Math.log10(yMax);
+      return PT + (1 - (Math.log10(vv) - logMin) / (logMax - logMin)) * IH;
+    }
+    return PT + (1 - (v - yMin) / (yMax - yMin)) * IH;
+  }
 
   const xZ = sx(xThresh);
   const yT = sy(yThresh);
+  const yT2 = yThresh2 != null ? sy(yThresh2) : null;
 
   let out = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" style="background:#0d1117;border:1px solid #1e2840;border-radius:6px;width:100%;max-width:500px;">';
 
-  // quadrant fills
-  out += '<rect x="' + xZ + '" y="' + PT + '" width="' + (PL + IW - xZ) + '" height="' + (yT - PT) + '" fill="rgba(74,222,128,0.05)"/>';
-  out += '<rect x="' + PL + '" y="' + PT + '" width="' + (xZ - PL) + '" height="' + (yT - PT) + '" fill="rgba(251,191,36,0.05)"/>';
-  out += '<rect x="' + xZ + '" y="' + yT + '" width="' + (PL + IW - xZ) + '" height="' + (PT + IH - yT) + '" fill="rgba(148,163,184,0.05)"/>';
-  out += '<rect x="' + PL + '" y="' + yT + '" width="' + (xZ - PL) + '" height="' + (PT + IH - yT) + '" fill="rgba(248,113,113,0.05)"/>';
+  if (yT2 != null) {
+    // 3バンド（高効率/中効率/低効率）× 割安/割高
+    out += '<rect x="' + xZ + '" y="' + PT + '" width="' + (PL + IW - xZ) + '" height="' + (yT2 - PT) + '" fill="rgba(74,222,128,0.05)"/>';
+    out += '<rect x="' + PL + '" y="' + PT + '" width="' + (xZ - PL) + '" height="' + (yT2 - PT) + '" fill="rgba(251,191,36,0.05)"/>';
+    out += '<rect x="' + PL + '" y="' + yT2 + '" width="' + IW + '" height="' + (yT - yT2) + '" fill="rgba(148,163,184,0.04)"/>';
+    out += '<rect x="' + xZ + '" y="' + yT + '" width="' + (PL + IW - xZ) + '" height="' + (PT + IH - yT) + '" fill="rgba(148,163,184,0.05)"/>';
+    out += '<rect x="' + PL + '" y="' + yT + '" width="' + (xZ - PL) + '" height="' + (PT + IH - yT) + '" fill="rgba(248,113,113,0.05)"/>';
+  } else {
+    // quadrant fills
+    out += '<rect x="' + xZ + '" y="' + PT + '" width="' + (PL + IW - xZ) + '" height="' + (yT - PT) + '" fill="rgba(74,222,128,0.05)"/>';
+    out += '<rect x="' + PL + '" y="' + PT + '" width="' + (xZ - PL) + '" height="' + (yT - PT) + '" fill="rgba(251,191,36,0.05)"/>';
+    out += '<rect x="' + xZ + '" y="' + yT + '" width="' + (PL + IW - xZ) + '" height="' + (PT + IH - yT) + '" fill="rgba(148,163,184,0.05)"/>';
+    out += '<rect x="' + PL + '" y="' + yT + '" width="' + (xZ - PL) + '" height="' + (PT + IH - yT) + '" fill="rgba(248,113,113,0.05)"/>';
+  }
 
   // axis threshold lines
   out += '<line x1="' + xZ + '" y1="' + PT + '" x2="' + xZ + '" y2="' + (PT + IH) + '" stroke="#1e2840" stroke-width="1"/>';
   out += '<line x1="' + PL + '" y1="' + yT + '" x2="' + (PL + IW) + '" y2="' + yT + '" stroke="#1e2840" stroke-width="1"/>';
+  if (yT2 != null) {
+    out += '<line x1="' + PL + '" y1="' + yT2 + '" x2="' + (PL + IW) + '" y2="' + yT2 + '" stroke="#1e2840" stroke-width="1"/>';
+  }
 
   // axis labels (white)
   out += '<text x="' + (W / 2) + '" y="' + (H - 4) + '" font-size="9" fill="#e8edf5" text-anchor="middle" font-family="monospace">' + xLabel + '</text>';
@@ -2632,16 +2655,30 @@ function buildScatterSVG(points, opts) {
   // y-axis tick labels
   out += '<text x="' + (PL - 4) + '" y="' + (PT + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + yMax + '</text>';
   out += '<text x="' + (PL - 4) + '" y="' + (yT + 4) + '" font-size="8" fill="#94a3b8" text-anchor="end" font-family="monospace">' + yThresh + '</text>';
-  out += '<text x="' + (PL - 4) + '" y="' + (PT + IH + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + yMin + '</text>';
+  if (yT2 != null) {
+    out += '<text x="' + (PL - 4) + '" y="' + (yT2 + 4) + '" font-size="8" fill="#94a3b8" text-anchor="end" font-family="monospace">' + yThresh2 + '</text>';
+  }
+  out += '<text x="' + (PL - 4) + '" y="' + (PT + IH + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + (yScale === 'log' ? (yFloor || 0.1) : yMin) + '</text>';
 
   // points — compute screen coords, preserve original values for tooltip/label logic
   const plotted = points.map(p => {
     const cx = Math.max(PL + 3, Math.min(PL + IW - 3, sx(p.x)));
     const cy = Math.max(PT + 3, Math.min(PT + IH - 3, sy(p.y)));
     const isCurrent = p.ticker === currentTicker;
-    const qx = p.x >= xThresh, qy = p.y >= yThresh;
-    const col = isCurrent ? '#c4d0ff' : (qx && qy ? '#4ade80' : (!qx && qy ? '#facc15' : (qx && !qy ? '#94a3b8' : '#f87171')));
-    return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, qy, col, type: p.type };
+    const qx = p.x >= xThresh;
+    let col;
+    if (isCurrent) {
+      col = '#c4d0ff';
+    } else if (yT2 != null) {
+      const qHigh = p.y >= yThresh2, qMid = p.y >= yThresh && p.y < yThresh2;
+      col = qx
+        ? (qHigh ? '#4ade80' : qMid ? '#94a3b8' : '#f87171')
+        : (qHigh ? '#facc15' : qMid ? '#64748b' : '#fb923c');
+    } else {
+      const qy = p.y >= yThresh;
+      col = qx && qy ? '#4ade80' : (!qx && qy ? '#facc15' : (qx && !qy ? '#94a3b8' : '#f87171'));
+    }
+    return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, col, type: p.type };
   }).sort((a, b) => a.cx - b.cx);
 
   // draw dots + labels together per ticker: non-current first so current renders on top
@@ -2703,7 +2740,8 @@ async function loadAndRenderMatrices() {
 
       if (upside === null) return;
 
-      if (rice.available && riceVal !== null) {
+      if (rice.available && riceVal !== null && riceVal >= 0) {
+        // RICE<0（計算不能・マイナス）は対数軸でプロット不可なため除外（RICE×乖離率マトリクスと同一基準）
         m1.push({ ticker: t, x: upside, y: riceVal });
       } else if (note.includes('セクター除外')) {
         const roe = d.components?.roe_10yr_avg ?? null;
@@ -2749,9 +2787,9 @@ async function loadAndRenderMatrices() {
     const panels = [
       {
         id: 1, title: '① 投資効率系（RICE算出可）',
-        note: 'Y軸: RICE (base) | X軸: 乖離率%\nYThresh=2.0（RICE基準） XThresh=0%',
+        note: 'Y軸: RICE (base, 対数軸) | X軸: 乖離率%\nYThresh=1.0/3.0（低効率<1.0 / 中効率1.0-3.0 / 高効率≥3.0） XThresh=0%',
         points: m1,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: 0, yMax: 13, yThresh: 2, xLabel: '乖離率 →', yLabel: 'RICE →', fontSize: 8 },
+        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: 0, yMax: 10, yThresh: 1, yThresh2: 3, yScale: 'log', yFloor: 0.1, xLabel: '乖離率 →', yLabel: 'RICE(log) →', fontSize: 8 },
       },
       {
         id: 2, title: '② 収益性系（セクター除外）',

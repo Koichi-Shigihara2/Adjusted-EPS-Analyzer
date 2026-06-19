@@ -571,7 +571,8 @@ function renderDetailTable() {
     if (up === null) return '';
     let prefix, qx, qy, yHigh, yLow;
     if (s.riceAvailable) {
-      prefix = '①'; qx = up >= 0; qy = s.riceVal !== null && s.riceVal >= 2;
+      // 高効率/低効率の境界は理論値3.0（中効率1.0〜3.0帯はRICEマトリクス参照）
+      prefix = '①'; qx = up >= 0; qy = s.riceVal !== null && s.riceVal >= 3;
       yHigh = '高効率'; yLow = '低効率';
     } else if (s.riceNote.includes('セクター除外')) {
       prefix = '②'; qx = up >= 0; qy = s.roe !== null && s.roe * 100 >= 15;
@@ -977,6 +978,9 @@ function renderRiceMatrix() {
   if (!el) return;
 
   const RICE_CAP = 10;
+  const RICE_FLOOR = 0.1;  // 対数軸の下限（外れ値補正の前提条件）
+  const RICE_LOW = 1.0;    // 低効率/中効率の境界（理論値）
+  const RICE_HIGH = 3.0;   // 中効率/高効率の境界（理論値）
   const X_MAX_CLIP = 300;
 
   // Fix1: 負RICE除外  Fix2: X>300は右端に折りたたむ
@@ -987,8 +991,12 @@ function renderRiceMatrix() {
       xOrig: s.upside,
       x: Math.min(s.upside, X_MAX_CLIP),
       xClamped: s.upside > X_MAX_CLIP,
-      y: Math.min(s.riceVal, RICE_CAP),
+      riceOrig: s.riceVal,
+      // 対数軸ではRICE=0をプロットできないため別枠（下端）扱いにする
+      yZero: s.riceVal <= 0,
+      y: Math.min(Math.max(s.riceVal, RICE_FLOOR), RICE_CAP),
       yCapped: s.riceVal > RICE_CAP,
+      yFloored: s.riceVal > 0 && s.riceVal < RICE_FLOOR,
       cat: s.cat,
     }));
 
@@ -997,8 +1005,9 @@ function renderRiceMatrix() {
     return;
   }
 
-  const inPoints   = allPoints.filter(p => !p.xClamped);
-  const overPoints = allPoints.filter(p =>  p.xClamped);
+  const zeroPoints = allPoints.filter(p => p.yZero);
+  const inPoints    = allPoints.filter(p => !p.xClamped && !p.yZero);
+  const overPoints  = allPoints.filter(p =>  p.xClamped && !p.yZero);
 
   const W = 680, H = 380;
   const ml = 46, mr = 16, mt = 22, mb = 46;
@@ -1009,13 +1018,15 @@ function renderRiceMatrix() {
   const xPad = 15;
   const xmin = Math.min(-60, xVals.length ? Math.min(...xVals) : 0) - xPad;
   const xmax = X_MAX_CLIP + xPad;
-  const ymin = 0, ymax = RICE_CAP;
 
+  // Y軸: 対数スケール（NVDA等の外れ値で中央値帯が圧縮される問題を解消）
+  const ylogMin = Math.log10(RICE_FLOOR), ylogMax = Math.log10(RICE_CAP);
   const tx = v => ml + (v - xmin) / (xmax - xmin) * pw;
-  const ty = v => mt + ph - (v - ymin) / (ymax - ymin) * ph;
+  const ty = v => mt + ph - (Math.log10(v) - ylogMin) / (ylogMax - ylogMin) * ph;
 
   const x0 = tx(0);
-  const y2 = ty(2);
+  const yHigh = ty(RICE_HIGH);
+  const yLow  = ty(RICE_LOW);
 
   const CAT_COLOR = {
     BUY: '#4ade80', GROWTH_PREMIUM: '#14b8a6',
@@ -1023,14 +1034,18 @@ function renderRiceMatrix() {
     TRIM: '#fb923c', SELL: '#f87171', PASS: '#475569',
   };
 
-  const q1 = `<rect x="${x0.toFixed(1)}" y="${mt}" width="${(ml+pw-x0).toFixed(1)}" height="${(y2-mt).toFixed(1)}" fill="rgba(20,83,45,0.22)"/>`;
-  const q2 = `<rect x="${ml}" y="${mt}" width="${(x0-ml).toFixed(1)}" height="${(y2-mt).toFixed(1)}" fill="rgba(113,63,18,0.10)"/>`;
-  const q3 = `<rect x="${ml}" y="${y2.toFixed(1)}" width="${(x0-ml).toFixed(1)}" height="${(mt+ph-y2).toFixed(1)}" fill="rgba(69,10,10,0.10)"/>`;
-  const q4 = `<rect x="${x0.toFixed(1)}" y="${y2.toFixed(1)}" width="${(ml+pw-x0).toFixed(1)}" height="${(mt+ph-y2).toFixed(1)}" fill="rgba(30,41,59,0.15)"/>`;
+  // 高効率帯(RICE>=3) / 中効率帯(1〜3) / 低効率帯(<1) の3バンド × 割安/割高
+  const q1  = `<rect x="${x0.toFixed(1)}" y="${mt}" width="${(ml+pw-x0).toFixed(1)}" height="${(yHigh-mt).toFixed(1)}" fill="rgba(20,83,45,0.22)"/>`;
+  const q2  = `<rect x="${ml}" y="${mt}" width="${(x0-ml).toFixed(1)}" height="${(yHigh-mt).toFixed(1)}" fill="rgba(113,63,18,0.10)"/>`;
+  const qm1 = `<rect x="${x0.toFixed(1)}" y="${yHigh.toFixed(1)}" width="${(ml+pw-x0).toFixed(1)}" height="${(yLow-yHigh).toFixed(1)}" fill="rgba(51,65,85,0.10)"/>`;
+  const qm2 = `<rect x="${ml}" y="${yHigh.toFixed(1)}" width="${(x0-ml).toFixed(1)}" height="${(yLow-yHigh).toFixed(1)}" fill="rgba(51,65,85,0.10)"/>`;
+  const q3  = `<rect x="${ml}" y="${yLow.toFixed(1)}" width="${(x0-ml).toFixed(1)}" height="${(mt+ph-yLow).toFixed(1)}" fill="rgba(69,10,10,0.10)"/>`;
+  const q4  = `<rect x="${x0.toFixed(1)}" y="${yLow.toFixed(1)}" width="${(ml+pw-x0).toFixed(1)}" height="${(mt+ph-yLow).toFixed(1)}" fill="rgba(30,41,59,0.15)"/>`;
 
-  const yTicks = [0, 2, 4, 6, 8, 10].map(v => {
+  const yTickVals = [0.1, 0.3, 1, 3, 10];
+  const yTicks = yTickVals.map(v => {
     const y = ty(v).toFixed(1);
-    const lbl = v === 10 ? '≥10' : String(v);
+    const lbl = v === 10 ? '≥10' : (v === 0.1 ? '≤0.1' : String(v));
     return `<line x1="${ml}" y1="${y}" x2="${ml+pw}" y2="${y}" stroke="#1e293b" stroke-width="0.5"/>
             <text x="${ml-4}" y="${(parseFloat(y)+4).toFixed(0)}" text-anchor="end" font-size="10" fill="#64748b">${lbl}</text>`;
   }).join('');
@@ -1047,19 +1062,21 @@ function renderRiceMatrix() {
 
   const centerLines = `
     <line x1="${x0.toFixed(1)}" y1="${mt}" x2="${x0.toFixed(1)}" y2="${mt+ph}" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,3"/>
-    <line x1="${ml}" y1="${y2.toFixed(1)}" x2="${ml+pw}" y2="${y2.toFixed(1)}" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="${ml}" y1="${yHigh.toFixed(1)}" x2="${ml+pw}" y2="${yHigh.toFixed(1)}" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,3"/>
+    <line x1="${ml}" y1="${yLow.toFixed(1)}" x2="${ml+pw}" y2="${yLow.toFixed(1)}" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,3"/>
   `;
 
   const qLabels = `
-    <text x="${((x0+ml+pw)/2).toFixed(0)}" y="${mt+13}" text-anchor="middle" font-size="9" fill="#4ade80" opacity="0.65">① 割安×高RICE</text>
-    <text x="${((ml+x0)/2).toFixed(0)}" y="${mt+13}" text-anchor="middle" font-size="9" fill="#facc15" opacity="0.55">割高×高RICE</text>
-    <text x="${((ml+x0)/2).toFixed(0)}" y="${mt+ph-5}" text-anchor="middle" font-size="9" fill="#f87171" opacity="0.55">割高×低RICE</text>
-    <text x="${((x0+ml+pw)/2).toFixed(0)}" y="${mt+ph-5}" text-anchor="middle" font-size="9" fill="#64748b" opacity="0.65">割安×低RICE</text>
+    <text x="${((x0+ml+pw)/2).toFixed(0)}" y="${mt+13}" text-anchor="middle" font-size="9" fill="#4ade80" opacity="0.65">① 割安×高効率(≥3)</text>
+    <text x="${((ml+x0)/2).toFixed(0)}" y="${mt+13}" text-anchor="middle" font-size="9" fill="#facc15" opacity="0.55">割高×高効率(≥3)</text>
+    <text x="${x0.toFixed(0)}" y="${((yHigh+yLow)/2+3).toFixed(0)}" text-anchor="middle" font-size="9" fill="#94a3b8" opacity="0.6">中効率(1〜3)</text>
+    <text x="${((ml+x0)/2).toFixed(0)}" y="${mt+ph-5}" text-anchor="middle" font-size="9" fill="#f87171" opacity="0.55">割高×低効率(&lt;1)</text>
+    <text x="${((x0+ml+pw)/2).toFixed(0)}" y="${mt+ph-5}" text-anchor="middle" font-size="9" fill="#64748b" opacity="0.65">割安×低効率(&lt;1)</text>
   `;
 
   const axisLabels = `
     <text x="${(ml+pw/2).toFixed(0)}" y="${H-2}" text-anchor="middle" font-size="10" fill="#94a3b8">← 割高（乖離率）割安 →</text>
-    <text x="11" y="${(mt+ph/2).toFixed(0)}" text-anchor="middle" font-size="10" fill="#94a3b8" transform="rotate(-90,11,${(mt+ph/2).toFixed(0)})">RICE スコア ↑</text>
+    <text x="11" y="${(mt+ph/2).toFixed(0)}" text-anchor="middle" font-size="10" fill="#94a3b8" transform="rotate(-90,11,${(mt+ph/2).toFixed(0)})">RICE スコア（対数軸） ↑</text>
   `;
 
   const borders = `<rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="none" stroke="#334155" stroke-width="1"/>`;
@@ -1069,9 +1086,9 @@ function renderRiceMatrix() {
     const cx = tx(p.x).toFixed(1);
     const cy = ty(p.y).toFixed(1);
     const col = CAT_COLOR[p.cat] || '#94a3b8';
-    const riceStr = p.yCapped ? `≥10` : p.y.toFixed(2);
+    const riceStr = p.yCapped ? `≥10` : (p.yFloored ? `<${RICE_FLOOR}` : p.riceOrig.toFixed(2));
     const upsideStr = p.xOrig >= 0 ? `+${p.xOrig.toFixed(1)}%` : `${p.xOrig.toFixed(1)}%`;
-    const ring = p.yCapped ? `<circle cx="${cx}" cy="${cy}" r="7.5" fill="none" stroke="${col}" stroke-width="1" opacity="0.5"/>` : '';
+    const ring = (p.yCapped || p.yFloored) ? `<circle cx="${cx}" cy="${cy}" r="7.5" fill="none" stroke="${col}" stroke-width="1" opacity="0.5"/>` : '';
     return `<g style="cursor:pointer" onclick="location.href='${T_BASE}stock.html?ticker=${p.ticker}'">
       ${ring}
       <circle cx="${cx}" cy="${cy}" r="5.5" fill="${col}" fill-opacity="0.82" stroke="#0f172a" stroke-width="1"/>
@@ -1090,11 +1107,24 @@ function renderRiceMatrix() {
     // 縦に重ならないよう i でオフセット
     const oy = cy + (i - (overPoints.length - 1) / 2) * 14;
     const col = CAT_COLOR[p.cat] || '#94a3b8';
-    const riceStr = p.yCapped ? `≥10` : p.y.toFixed(2);
+    const riceStr = p.yCapped ? `≥10` : (p.yFloored ? `<${RICE_FLOOR}` : p.riceOrig.toFixed(2));
     return `<g style="cursor:pointer" onclick="location.href='${T_BASE}stock.html?ticker=${p.ticker}'">
       <text x="${bx - 2}" y="${(oy + 4).toFixed(1)}" text-anchor="end" font-size="11" fill="${col}" opacity="0.9" pointer-events="none">▶</text>
       <text x="${bx - 14}" y="${(oy - 5).toFixed(1)}" text-anchor="end" font-family="monospace" font-size="8.5" fill="${col}" opacity="0.88" pointer-events="none">${p.ticker}</text>
       <title>${p.ticker}  乖離率: +${p.xOrig.toFixed(1)}%（+300%超）  RICE: ${riceStr}  ${p.cat}</title>
+    </g>`;
+  }).join('');
+
+  // RICE<=0（計算不能・マイナス）は対数軸でプロット不可なため下端に▼で別枠表示
+  const zeroDots = zeroPoints.map(p => {
+    const cx = tx(p.x).toFixed(1);
+    const by = mt + ph;
+    const col = CAT_COLOR[p.cat] || '#94a3b8';
+    const upsideStr = p.xOrig >= 0 ? `+${p.xOrig.toFixed(1)}%` : `${p.xOrig.toFixed(1)}%`;
+    return `<g style="cursor:pointer" onclick="location.href='${T_BASE}stock.html?ticker=${p.ticker}'">
+      <text x="${cx}" y="${(by-2).toFixed(1)}" text-anchor="middle" font-size="11" fill="${col}" opacity="0.9" pointer-events="none">▼</text>
+      <text x="${cx}" y="${(by-12).toFixed(1)}" text-anchor="middle" font-family="monospace" font-size="8.5" fill="${col}" opacity="0.88" pointer-events="none">${p.ticker}</text>
+      <title>${p.ticker}  乖離率: ${upsideStr}  RICE: ${p.riceOrig.toFixed(2)}（計算不能・対数軸プロット不可）  ${p.cat}</title>
     </g>`;
   }).join('');
 
@@ -1109,7 +1139,7 @@ function renderRiceMatrix() {
   ).join('');
 
   const svg = `<svg width="${W}" height="${H}" style="max-width:100%;display:block;margin:0 auto">
-    ${q1}${q2}${q3}${q4}
+    ${q1}${q2}${qm1}${qm2}${q3}${q4}
     ${yTicks}
     ${xTicks}
     ${borders}
@@ -1119,18 +1149,23 @@ function renderRiceMatrix() {
     ${axisLabels}
     ${dots}
     ${overDots}
+    ${zeroDots}
   </svg>`;
 
   const overNote = overPoints.length > 0
     ? `<div style="font-size:10px;color:var(--mut);padding:0 12px 4px">▶ 乖離率+${X_MAX_CLIP}%超（右端に折りたたみ表示）: ${overPoints.map(p => `${p.ticker}(+${p.xOrig.toFixed(0)}%)`).join(', ')}</div>`
     : '';
+  const zeroNote = zeroPoints.length > 0
+    ? `<div style="font-size:10px;color:var(--mut);padding:0 12px 4px">▼ RICE≤0（計算不能・マイナス、下端に別枠表示）: ${zeroPoints.map(p => p.ticker).join(', ')}</div>`
+    : '';
 
   el.innerHTML = `
     <div class="sec">② RICE × 乖離率マトリクス
-      <span style="font-size:10px;color:var(--mut);font-weight:400;margin-left:6px">RICE有効 ${allPoints.length}銘柄 ｜ 第1象限（右上）が割安×高効率</span>
+      <span style="font-size:10px;color:var(--mut);font-weight:400;margin-left:6px">RICE有効 ${allPoints.length}銘柄 ｜ Y軸対数 ｜ 第1象限（右上）が割安×高効率(RICE≥3)</span>
     </div>
     <div style="padding:8px 0;overflow-x:auto">${svg}</div>
     ${overNote}
+    ${zeroNote}
     <div style="padding:0 12px 12px;display:flex;flex-wrap:wrap">${legendHTML}</div>
   `;
 }
