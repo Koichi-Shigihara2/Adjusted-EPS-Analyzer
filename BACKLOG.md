@@ -170,6 +170,34 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：中（こなれてきたら対応）
 
+### [ARCH-MATRIX-DUP-1] RICE×乖離率マトリクスの重複・差異実装
+**優先度:** 中
+**分類:** 設計課題 / TANUKI SCORE・TANUKI VALUATION
+
+#### 経緯
+ユーザー認識：TANUKI SCORE「②RICE×乖離率マトリクス」とTANUKI VALUATION
+「①投資効率系」は同一画面として実装されるべきだった。
+調査結果：リポジトリ記録上は「同一画面」指示は見つからず、両者は
+別チケット・別時期に別画面として起票・実装されている
+（stock.html: 2026-05-15〜27／SCORE-1: 2026-06-14起票、06-16実装）。
+ただし口頭等、記録に残らない指示があった可能性は調査の範囲外。
+
+#### 確認された実装差異
+- 対象銘柄ゲート：tanuki_score側はrice.available未チェック（将来的に
+  潜在差異を生みうる）
+- 配色ロジック：tanuki_score=TANUKI SCORE7分類、stock.html=象限位置
+  ベースで別体系
+- X軸（乖離率）上限：tanuki_score=+300%（クリップ表示）、
+  stock.html=+100%固定クランプ
+- ラベル重なり：stock.html側で、X軸クランプにより複数銘柄が同一座標
+  付近に密集し発生（FOUR/TASK/ADBE/NVDA/INTU/CPRT/FRSH/GTLB/META/FLYW
+  等、upside>100%の10銘柄が影響）。tanuki_score側は軽微。
+
+#### 要設計判断
+A: 2画面を1つに統合する
+B: 別画面のまま、stock.html側をtanuki_score側のX軸仕様（+300%）に
+   揃えてラベル重なりを解消する
+
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
 - 銀行免許取得後（2022年以降）は標準LongTermDebtタグを使用しない可能性
