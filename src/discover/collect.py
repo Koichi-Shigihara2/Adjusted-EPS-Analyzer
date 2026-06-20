@@ -90,6 +90,20 @@ def call_grok(prompt: str, max_tokens: int = 800, temperature: float = 0.3, mode
     raise last_error
 
 
+def _dedupe_items(items: list) -> list:
+    """DISCOVER-BUG-1: タイトル正規化での完全一致を除外し、importance='なし'も除外する。
+    同一の出来事を異なる配信元から複数記事として取得した際、Grokが
+    別アイテムとして分類してしまうケースの最終防波堤。"""
+    seen_titles = set()
+    deduped = []
+    for i in items:
+        key = i.get("title", "").strip().lower()
+        if key and key not in seen_titles:
+            seen_titles.add(key)
+            deduped.append(i)
+    return [i for i in deduped if i.get("importance") != "なし"]
+
+
 def classify_news(ticker: str, articles: list, company: str = "") -> dict:
     if not articles or not XAI_API_KEY:
         return {"items": [], "summary": "データなし"}
@@ -124,6 +138,10 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
 記事のタイトルまたは本文の冒頭で{ticker}または{company}が
 主要な話題として取り上げられている場合のみ対象とする
 
+【重複統合】
+同一の出来事を報じる複数の見出し（異なる配信元による再掲・転載等）は
+1件にまとめてください。重複を除いた結果のみをitemsに含めること。
+
 ヘッドライン：
 {headlines}
 
@@ -136,7 +154,7 @@ def classify_news(ticker: str, articles: list, company: str = "") -> dict:
         m = re.search(r'\{.*\}', text, re.DOTALL)
         if m:
             data = json.loads(m.group())
-            data["items"] = [i for i in data.get("items", []) if i.get("importance") != "なし"]
+            data["items"] = _dedupe_items(data.get("items", []))
             return data
     except Exception as e:
         print(f"Grok分類エラー ({ticker}): {e}")
@@ -155,6 +173,8 @@ web検索で調べてください。
 - 株価に影響しうる経営陣コメント
 
 なければ items を空にしてください。
+同一の出来事を報じる複数の見出し（異なる配信元による再掲・転載等）は
+1件にまとめてください。重複を除いた結果のみをitemsに含めること。
 
 {{
   "items": [
@@ -175,7 +195,7 @@ web検索で調べてください。
         m = re.search(r'\{.*\}', result, re.DOTALL)
         if m:
             data = json.loads(m.group())
-            data["items"] = [i for i in data.get("items", []) if i.get("importance") != "なし"]
+            data["items"] = _dedupe_items(data.get("items", []))
             return data
     except Exception:
         pass

@@ -131,11 +131,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：高（早急に対応）
 
-### [DISCOVER-BUG-1] CELHで同一記事が重複表示される（DISCOVER画面）
-**優先度:** 高
-- 「Bernstein Assigns Outperform Rating to Celsius Holdings (CELH)」の同一記事が2回連続で表示されている
-- 重複排除ロジックの不具合の可能性。原因調査・修正が必要
-
 ### [PORT-LOGIC-1] HYPEMIX注記の誘導先が不適切（PORTFOLIO画面）
 **優先度:** 高
 - 「仕込みゾーンの銘柄が不足しています。Discoverで新規候補を探してください」という注記がある
@@ -889,7 +884,7 @@ EPIC化はしなかったが、どこかのタイミングで「空値表示規�
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度「高」の残個別バグ3件（DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
+1. 優先度「高」の残個別バグ2件（PORT-LOGIC-1, TAIL-SEC-1）
 2. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
 3. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
 
