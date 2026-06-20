@@ -176,6 +176,9 @@ function recClass(cat){
   return{buy:'rec-buy',hold:'rec-hold',sell:'rec-sell',watch:'rec-watch'}[cat]||'rec-watch';
 }
 
+// HYPE-BUG-3: 推奨列ソート用の投資判断優先順位（強い推奨が上位）
+const REC_ORDER={buy:0,hold:1,watch:2,sell:3};
+
 function fmt(v,dec=1,plus=false,unit='%'){
   if(v==null)return'—';
   return(plus&&v>0?'+':'')+v.toFixed(dec)+unit;
@@ -251,6 +254,9 @@ function renderTable(){
       let av=a[sortCol], bv=b[sortCol];
       if(av==null&&bv==null)return 0;
       if(av==null)return 1; if(bv==null)return -1;
+      // HYPE-BUG-3: recは{cat,text}オブジェクトのためav-bvがNaNになりソート不能だった。
+      // 投資判断の優先順位（強い推奨が上）でcatを比較する
+      if(sortCol==='rec') return (REC_ORDER[av.cat]-REC_ORDER[bv.cat])*sortDir;
       if(typeof av==='string') return av.localeCompare(bv)*sortDir;
       return(av-bv)*sortDir;
     });

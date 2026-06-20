@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-20
+最終更新: 2026-06-21
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -130,11 +130,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 ---
 
 ## 優先度：高（早急に対応）
-
-### [HYPE-BUG-3] 一覧テーブル「推奨」列のソートが機能していない（HYPE CORE画面）
-**優先度:** 高
-- 「推奨」列のヘッダークリックでソートが機能しない
-- バグ修正が必要
 
 ### [DISCOVER-BUG-1] CELHで同一記事が重複表示される（DISCOVER画面）
 **優先度:** 高
@@ -894,7 +889,7 @@ EPIC化はしなかったが、どこかのタイミングで「空値表示規�
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度「高」の残個別バグ4件（HYPE-BUG-3, DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
+1. 優先度「高」の残個別バグ3件（DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
 2. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
 3. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
 
