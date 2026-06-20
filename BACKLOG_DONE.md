@@ -4,6 +4,22 @@
 
 ## 2026-06-21
 
+✅ [ARCH-PORTFOLIO-DUP-1] portfolio/index.htmlに独自のfunda/timing/classify実装が存在（2026-06-21 完了）
+- ARCH-SCORE-SYNC-1の方針（判断ロジックをpipeline.pyに集約し、表示側は再計算しない）に
+  倣い、`docs/portfolio/index.html`の独自実装`calcFunda()`/`calcTiming()`/`classify()`を
+  削除。保有銘柄テーブルの分類は`latest.json`の`tanuki_score`/`funda_score`/`timing_score`を
+  直接参照する方式に変更（PORT-LOGIC-1のfindHypemixCandidates()と同一パターンに統一）
+- 副次的に、独自timing計算でのみ使われていたMarket Pulse fear&greedフェッチ（M_PATH/mkt/fg）
+  が完全に不要になったため、フェッチ呼び出し自体を削除（不要なネットワークリクエスト解消）
+- **実データでの差異検証**（保有中9銘柄: NVDA/PLTR/TSLA/CELH/APP/CRWV/SOFI/SOUN/ADBE）:
+  分類バッジが旧計算と一致しなかったのは4/9銘柄（TSLA: HOLD→TRIM、CRWV: BUY→WATCH、
+  SOFI: HOLD→WATCH、SOUN: HOLD→WATCH）。funda_scoreも6/9銘柄で乖離（旧JSの簡易3要素
+  計算 vs pipeline.pyのRICE等を含む本格計算のため）。timing_scoreは全銘柄で一致
+  （ARCH-SCORE-SYNC-1時点で既にtanuki_score/index.html側のtiming式とpipeline.pyが
+  揃っていたため）。この差異はバグではなく、より正確なpipeline.py側の判定に
+  統一されたことによる意図した変化
+- 検証: pytest 152件全パス、check_links.py リンク切れ0件、div開閉整合性確認
+
 ✅ [TAIL-SEC-1] GH TOKENの平文入力欄がセキュリティリスク（TANUKI TAIL画面・2026-06-21 完了・2段階対応）
 - 段階1（認証ゲート）: `docs/portfolio/tail/index.html`に`docs/portfolio/index.html`と同等の
   sessionStorageベース簡易パスワード保護（`checkPassword()`/SHA-256ハッシュ照合）を追加。

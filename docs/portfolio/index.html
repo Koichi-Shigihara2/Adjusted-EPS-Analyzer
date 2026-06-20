@@ -210,7 +210,6 @@ const BASE      = '/On-a-journey';
 const PF_PATH   = BASE + '/portfolio/data/portfolio.json';
 const T_BASE    = BASE + '/value-monitor/tanuki_valuation/data/';
 const H_BASE    = BASE + '/value-monitor/hypecore/data/';
-const M_PATH    = BASE + '/market-monitor/market-pulse/data/market_data.json';
 const DISC_PATH = BASE + '/portfolio/data/discover_config.json';
 const HIST_PATH = BASE + '/portfolio/data/history.json';
 const TS        = '?t=' + Date.now();
@@ -237,36 +236,8 @@ function fmtPct(v, dec=1) {
 }
 
 // ── Score logic ──
-function calcFunda(revYoy, rule40, fcfBase) {
-  let s = 0;
-  s += revYoy  == null ? 0 : revYoy  > 20 ? 25 : revYoy  >= 0 ? 15 : 0;
-  s += rule40  == null ? 0 : rule40  > 40 ? 25 : rule40  >= 20 ? 15 : 0;
-  s += 0; // epsYoy not available
-  s += fcfBase == null ? 0 : fcfBase > 0 ? 25 : 0;
-  return s;
-}
-function calcTiming(upside, fg, stage) {
-  let s = 0;
-  s += upside == null ? 0 : upside > 30 ? 40 : upside >= 10 ? 25 : upside >= 0 ? 10 : 0;
-  s += fg < 30 ? 40 : fg < 50 ? 25 : fg < 70 ? 10 : 0;
-  s += stage == null ? 0 : stage === 1 ? 20 : stage === 2 ? 15 : stage === 3 ? 5 : 0;
-  return s;
-}
-function classify(f, t, { upside, stage, revYoy, rule40, ma200, fcfBase, fcfEst }) {
-  if (f < 25) return 'PASS';
-  const sellFunda = revYoy < 0 && rule40 < 20 && (
-    fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
-  );
-  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10 && f < 50;
-  if (sellFunda || sellTech) return 'SELL';
-  if (f >= 50) {
-    if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
-    if (upside != null && upside > 20 && t >= 50)     return 'BUY';
-    if (upside != null && upside > 0)                  return 'WATCH';
-    return 'HOLD';
-  }
-  return 'HOLD';
-}
+// ARCH-PORTFOLIO-DUP-1: 分類は再計算せず、latest.jsonのtanuki_score/funda_score/
+// timing_scoreをそのまま参照する（ARCH-SCORE-SYNC-1の方針に統一）
 const CAT_META = {
   BUY:  { badge:'badge-BUY',   label:'BUY'  },
   WATCH:{ badge:'badge-WATCH', label:'WATCH' },
@@ -278,15 +249,13 @@ const CAT_META = {
 
 // ── Main data loader ──
 async function loadData() {
-  const [pfRes, mktRes, discRes, univRes] = await Promise.allSettled([
+  const [pfRes, discRes, univRes] = await Promise.allSettled([
     fetch(PF_PATH   + TS).then(r => r.ok ? r.json() : null),
-    fetch(M_PATH    + TS).then(r => r.ok ? r.json() : null),
     fetch(DISC_PATH + TS).then(r => r.ok ? r.json() : null),
     fetch(T_BASE + 'tickers.json' + TS).then(r => r.ok ? r.json() : null),
   ]);
 
   const pf     = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
-  const mktArr = mktRes.status === 'fulfilled' ? mktRes.value  : null;
   const disc   = discRes.status === 'fulfilled' ? discRes.value : null;
   // PORT-LOGIC-1: HYPEMIX仕込み候補抽出用にTANUKI VALUATION全銘柄ロスターを取得
   const universeTickers = univRes.status === 'fulfilled' ? (univRes.value?.tickers ?? []) : [];
@@ -299,9 +268,6 @@ async function loadData() {
 
   const lu = document.getElementById('last-updated');
   if (lu && pf.last_updated) lu.textContent = toJST(pf.last_updated + 'T00:00:00+09:00');
-
-  const mkt = Array.isArray(mktArr) ? mktArr[mktArr.length - 1] : null;
-  const fg  = mkt?.fear_greed?.score ?? 50;
 
   // 保有中 tickers from discover_config
   const discTickers = disc?.tickers ?? {};
@@ -389,14 +355,8 @@ async function loadData() {
     const ivps          = tk?.scenario_valuations?.base?.intrinsic_value_per_share
                         ?? tk?.intrinsic_value_per_share ?? null;
     const upside        = tk?.upside_percent ?? null;
-    const revYoy        = lastMo?.rev_yoy    ?? null;
-    const rule40        = lastMo?.rule40     ?? null;
-    const stage         = lastMo?.stage      ?? null;
     const stageLabel    = lastMo?.stage_label    ?? '—';
     const substageLabel = lastMo?.substage_label ?? '';
-    const fcfBase       = tk?.fcf_base?.base_fcf ?? null;
-    const fcfEst        = tk?.fcf_estimation?.estimated_fcf ?? null;
-    const ma200         = lastMo?.ma200_dev ?? 0;
 
     const posValue = currentPrice != null && totalShares > 0 ? totalShares * currentPrice : null;
     const posPnl   = posValue != null ? posValue - totalPosCost : null;
@@ -411,12 +371,10 @@ async function loadData() {
       phaseCount[stageLabel] = (phaseCount[stageLabel] || 0) + 1;
     }
 
-    const funda  = calcFunda(revYoy, rule40, fcfBase);
-    const timing = calcTiming(upside, fg, stage);
-    const cat    = classify(funda, timing, {
-      upside, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
-      ma200, fcfBase, fcfEst,
-    });
+    // ARCH-PORTFOLIO-DUP-1: pipeline.pyが計算済みの値をそのまま参照（再計算しない）
+    const cat    = tk?.tanuki_score ?? null;
+    const funda  = tk?.funda_score  ?? 0;
+    const timing = tk?.timing_score ?? 0;
 
     // Warn if in posAgg but not in discover 保有中
     const inDiscover   = discTickers[ticker];
