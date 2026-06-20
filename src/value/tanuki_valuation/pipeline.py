@@ -231,6 +231,51 @@ class TanukiValuationPipeline:
         self._eps_summary_cache = result
         return result
 
+    def _load_live_fg(self) -> float:
+        """market_data.json の fear_greed.score を読む（ARCH-SCORE-SYNC-1: JS側calcTimingと同一入力に揃える）"""
+        if hasattr(self, "_live_fg_cache"):
+            return self._live_fg_cache
+        fg = 50
+        mkt_path = os.path.join(
+            self.repo_root, "docs", "market-monitor", "market-pulse", "data", "market_data.json"
+        )
+        if os.path.exists(mkt_path):
+            try:
+                with open(mkt_path, encoding="utf-8") as f:
+                    data = json.load(f)
+                if data:
+                    fg = data[-1].get("fear_greed", {}).get("score", 50)
+            except Exception:
+                pass
+        self._live_fg_cache = fg
+        return fg
+
+    @staticmethod
+    def _calc_timing(upside, fg, stage) -> int:
+        """JS calcTiming(upside, fg, stage) のPython移植（ARCH-SCORE-SYNC-1）"""
+        s = 0
+        if upside is not None:
+            if upside > 30:
+                s += 40
+            elif upside >= 10:
+                s += 25
+            elif upside >= 0:
+                s += 10
+        if fg < 30:
+            s += 40
+        elif fg < 50:
+            s += 25
+        elif fg < 70:
+            s += 10
+        if stage is not None:
+            if stage == 1:
+                s += 20
+            elif stage == 2:
+                s += 15
+            elif stage == 3:
+                s += 5
+        return s
+
     @staticmethod
     def _calc_required_growth(valuation: dict, tv_g: float = 0.03) -> float | None:
         """
@@ -320,7 +365,7 @@ class TanukiValuationPipeline:
             elif dilution_pct > 20:
                 funda = max(0, funda - 15)
 
-        # classify (JS移植: FG=50固定でtiming省略し upside直接判定)
+        # classify (JS移植。BUY判定はJS同様 upside>20% かつ timing>=50 をゲートとする。ARCH-SCORE-SYNC-1）
         fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
         sell_funda = (
             rev_yoy is not None and rev_yoy < 0
@@ -350,7 +395,7 @@ class TanukiValuationPipeline:
                     score = "GROWTH_PREMIUM"
                 else:
                     score = "TRIM"
-            elif upside is not None and upside > 20:
+            elif upside is not None and upside > 20 and self._calc_timing(upside, self._load_live_fg(), stage) >= 50:
                 score = "BUY"
             elif upside is not None and upside > 0:
                 score = "WATCH"
