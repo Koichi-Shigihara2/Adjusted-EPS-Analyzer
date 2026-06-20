@@ -43,6 +43,18 @@
     .site-nav { display: flex; gap: 14px; flex-wrap: wrap; }
     .nav-sep { display: inline-block; width: 1px; height: 12px; background: var(--bdr); margin: auto 0; }
 
+    /* Auth */
+    #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: var(--bg); }
+    .auth-box { text-align: center; padding: 48px 40px; background: var(--sur); border: 1px solid var(--bdr); border-radius: 12px; width: 340px; }
+    .auth-title { font-family: var(--mono); font-size: 20px; font-weight: 700; color: var(--core); letter-spacing: .1em; margin-bottom: 8px; }
+    .auth-sub { font-family: var(--mono); font-size: 11px; color: var(--mut); margin-bottom: 28px; }
+    .auth-row { display: flex; gap: 8px; justify-content: center; }
+    .auth-input { font-family: var(--mono); font-size: 13px; padding: 10px 14px; background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt); width: 190px; border-radius: 4px; outline: none; }
+    .auth-input:focus { border-color: var(--acc); }
+    .auth-btn { padding: 10px 18px; background: var(--core); color: #fff; border: none; cursor: pointer; font-family: var(--mono); font-size: 13px; border-radius: 4px; transition: opacity .2s; }
+    .auth-btn:hover { opacity: .85; }
+    #pw-error { color: var(--red); font-size: 11px; font-family: var(--mono); margin-top: 12px; min-height: 16px; }
+
     .shell { max-width: 1100px; margin: 0 auto; padding: 20px 20px 60px; }
 
     .sec {
@@ -390,6 +402,21 @@
 </head>
 <body data-tool="tail">
 
+<!-- ── Auth screen ── -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">🦝 TANUKI TAIL</div>
+    <div class="auth-sub">このページはパスワードで保護されています</div>
+    <div class="auth-row">
+      <input type="password" id="pw-input" class="auth-input" placeholder="Password" autocomplete="current-password">
+      <button class="auth-btn" onclick="checkPassword()">Enter</button>
+    </div>
+    <div id="pw-error"></div>
+  </div>
+</div>
+
+<div id="main-content" style="display:none">
+
 <header>
   <a class="logo" href="/On-a-journey/">
     <span class="logo-dot"></span>TANUKI TAIL
@@ -704,8 +731,32 @@
   </div>
 </div>
 
+</div><!-- /main-content -->
+
 <script src="../../common/site-nav.js"></script>
 <script>
+/* ─── Auth ─── */
+var PW_HASH = "1ccaba2b5d2e782f70745dc02ee88f537d51f6938bd6c22982a3d4d685be483a";
+var SESSION_KEY = "tail_auth";
+
+async function sha256(text) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+}
+
+async function checkPassword() {
+  var pw = document.getElementById('pw-input').value;
+  var hash = await sha256(pw);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    initApp();
+  } else {
+    document.getElementById('pw-error').textContent = 'パスワードが違います';
+  }
+}
+
 /* ─── State ─── */
 var currentType      = 'core';
 var loadedPositions  = {};
@@ -727,13 +778,27 @@ var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシ�
 var TABS_SAT  = ['戦略'];
 
 /* ─── Init ─── */
-document.addEventListener('DOMContentLoaded', function () {
+function initApp() {
   setTodayDefaults();
   setupStrategyToggle();
   loadPositions();
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') closeModal();
   });
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var pwInput = document.getElementById('pw-input');
+  if (pwInput) {
+    pwInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') checkPassword();
+    });
+  }
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    initApp();
+  }
 });
 
 function setTodayDefaults() {
