@@ -131,11 +131,7 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：高（早急に対応）
 
-### [TAIL-SEC-1] GH TOKENの平文入力欄がセキュリティリスク（TANUKI TAIL画面）
-**優先度:** 高
-- 「NEW POSITION」フォームの「GH TOKEN」フィールドがGitHubトークンを平文で入力させる設計になっている
-- ブラウザに直接トークンを入力させる方式はセキュリティ上のリスクがある
-- より安全な認証方式（環境変数経由、ローカル限定実行等）への変更を検討する
+（高優先度の残課題なし。2026-06-21時点）
 
 ---
 
@@ -892,8 +888,7 @@ EPIC化はしなかったが、どこかのタイミングで「空値表示規�
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度「高」の残個別バグ1件（TAIL-SEC-1）
-2. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
-3. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
+1. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
+2. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
 
-（ARCH-SCORE-SYNC-1は2026-06-20に根本解決完了。BACKLOG_DONE.md参照）
+（ARCH-SCORE-SYNC-1は2026-06-20に根本解決完了。TAIL-SEC-1は2026-06-21に完了。BACKLOG_DONE.md参照）

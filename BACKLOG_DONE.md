@@ -4,6 +4,26 @@
 
 ## 2026-06-21
 
+✅ [TAIL-SEC-1] GH TOKENの平文入力欄がセキュリティリスク（TANUKI TAIL画面・2026-06-21 完了・2段階対応）
+- 段階1（認証ゲート）: `docs/portfolio/tail/index.html`に`docs/portfolio/index.html`と同等の
+  sessionStorageベース簡易パスワード保護（`checkPassword()`/SHA-256ハッシュ照合）を追加。
+  PW_HASHはportfolio/index.htmlと共通値を流用、SESSION_KEYは`tail_auth`としてページ別に分離
+- 段階2（トークン運用の根本対応）: ブラウザから直接実行していたGitHub Contents API
+  書き込み（`fetchFile()`/`commitFile()`、contents:write権限のPATが必要）を廃止し、
+  GitHub Actions `workflow_dispatch`経由の書き込みに移行。対象は「ポジション登録」
+  「ジャーナル記録」「KPI確定」の3処理すべて（ユーザー判断により全件移行）
+  - 新設: `.github/workflows/TANUKI_TAIL_Position_Write.yml`（workflow_dispatch、
+    `action`/`payload`入力、GITHUB_TOKEN・contents:writeで書き込み・コミット・push）
+  - 新設: `src/tail/workflow_write.py`（register_position/register_journal/confirm_kpis
+    のサーバーサイド実装。コミットメッセージは`/tmp/tail_commit_message.txt`経由で
+    `git commit -F`に渡し、シェルへの直接埋め込み（インジェクションリスク）を回避）
+  - `tail/index.html`側はGH TOKEN欄の用途をactions:write専用のFine-grained PATに変更
+    （placeholder/ヘルプ文言を更新）。書き込みが非同期になったため、登録系3関数は
+    完了確認メッセージを「反映まで数十秒〜数分」に変更し、楽観的なローカル即時更新を廃止
+  - テスト追加: `tests/test_tail_workflow_write.py`（11件、tmp_pathで実ファイルに触れず検証）
+- 検証: pytest 152件全パス、check_links.py リンク切れ0件、ローカルサーバーで認証ゲートの
+  表示・main-content非表示初期状態を確認
+
 ✅ [PORT-LOGIC-1] HYPEMIX注記の誘導先が不適切（PORTFOLIO画面・2026-06-21 完了）
 - 設計判断: 「仕込みゾーン不足」時のDISCOVER誘導文言を廃止し、登録済み・分析済み銘柄
   （TANUKI VALUATION全96銘柄ロスター）からTANUKI SCORE BUY判定×HypeCore早期フェーズ
