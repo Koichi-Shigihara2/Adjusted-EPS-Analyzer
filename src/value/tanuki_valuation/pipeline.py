@@ -311,7 +311,7 @@ class TanukiValuationPipeline:
         fcf_history = valuation.get("fcf_history", [])
         fcf_latest = fcf_history[-1].get("fcf") if fcf_history else None
 
-        rev_yoy = rule40 = stage = None
+        rev_yoy = rule40 = stage = ma200_dev = None
         poc_path = os.path.join(
             self.repo_root, "docs", "value-monitor", "hypecore", "data", f"{ticker}_poc.json"
         )
@@ -321,9 +321,10 @@ class TanukiValuationPipeline:
                     poc = json.load(f)
                 monthly = poc.get("monthly") or []
                 last = monthly[-1] if monthly else {}
-                rev_yoy = last.get("rev_yoy")
-                rule40  = last.get("rule40")
-                stage   = last.get("stage")
+                rev_yoy   = last.get("rev_yoy")
+                rule40    = last.get("rule40")
+                stage     = last.get("stage")
+                ma200_dev = last.get("ma200_dev")
             except Exception:
                 pass
 
@@ -366,6 +367,8 @@ class TanukiValuationPipeline:
                 funda = max(0, funda - 15)
 
         # classify (JS移植。BUY判定はJS同様 upside>20% かつ timing>=50 をゲートとする。ARCH-SCORE-SYNC-1）
+        timing = self._calc_timing(upside, self._load_live_fg(), stage)
+
         fcf_est = valuation.get("fcf_estimation", {}).get("estimated_fcf")
         sell_funda = (
             rev_yoy is not None and rev_yoy < 0
@@ -373,10 +376,19 @@ class TanukiValuationPipeline:
             and (fcf_base is not None and fcf_base < 0
                  or (fcf_est is not None and fcf_base is not None and fcf_est < fcf_base * 0.8))
         )
+        # sellTech（JS classify()移植。ARCH-SCORE-SYNC-1: Python側に未実装だった技術的SELL条件を追加）
+        sell_tech = (
+            stage is not None and stage >= 4
+            and upside is not None and upside < -20
+            and ma200_dev is not None and ma200_dev < -10
+            and funda < 50
+        )
+        sell_reason = None
         if funda < 25:
             score = "PASS"
-        elif sell_funda:
+        elif sell_funda or sell_tech:
             score = "SELL"
+            sell_reason = "funda" if sell_funda else "tech"
         elif funda >= 50:
             if upside is not None and upside < -30 and stage is not None and stage >= 3:
                 # DCF-2: 逆DCFの必要成長率が現在TTM成長率を下回る場合は GROWTH_PREMIUM
@@ -395,7 +407,7 @@ class TanukiValuationPipeline:
                     score = "GROWTH_PREMIUM"
                 else:
                     score = "TRIM"
-            elif upside is not None and upside > 20 and self._calc_timing(upside, self._load_live_fg(), stage) >= 50:
+            elif upside is not None and upside > 20 and timing >= 50:
                 score = "BUY"
             elif upside is not None and upside > 0:
                 score = "WATCH"
@@ -413,8 +425,12 @@ class TanukiValuationPipeline:
         if _floor_applied > 0 and score not in ("SELL", "PASS"):
             score = "WATCH"
             comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
+            sell_reason = None
 
-        return {"score": score, "funda_score": funda, "score_comment": comment}
+        return {
+            "score": score, "funda_score": funda, "score_comment": comment,
+            "timing": timing, "sell_reason": sell_reason,
+        }
 
     def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
         """スコアに基づくルールベースコメント（30字程度の日本語）"""
@@ -557,6 +573,11 @@ class TanukiValuationPipeline:
         latest_data["tanuki_score"]  = score_data.get("score")
         latest_data["funda_score"]   = score_data.get("funda_score")
         latest_data["score_comment"] = score_data.get("score_comment")
+        latest_data["timing_score"]  = score_data.get("timing")
+        latest_data["sell_reason"]   = score_data.get("sell_reason")
+        latest_data["matrix"] = self._compute_matrix_position(
+            ticker, valuation, extra.get("fcf_history", [])
+        )
         latest_path = os.path.join(ticker_dir, "latest.json")
         with open(latest_path, "w", encoding="utf-8") as f:
             json.dump(latest_data, f, ensure_ascii=False, indent=2)
@@ -681,44 +702,12 @@ class TanukiValuationPipeline:
 
         print(f"   💾 保存: {latest_path}")
 
-    def _generate_report(self, ticker: str, valuation: dict, score_data: dict, extra: dict = None, growth_sanity: dict = None) -> str:
-        """銘柄別統合レポートをプレーンテキストで生成"""
-        if extra is None:
-            extra = {}
-        fcf_history = extra.get("fcf_history", [])
-        fin_health = extra.get("financial_health", {})
-        segments = extra.get("segments", [])
-        next_earnings = extra.get("next_earnings_date", "N/A")
-        _seg_ttm_applied = extra.get("segment_ttm_applied", False)
-        _seg_configured = extra.get("segment_configured", True)
-        _phase1_auto_adjusted = extra.get("phase1_growth_auto_adjusted", False)
-        _phase1_growth_original = extra.get("phase1_growth_original")
-        _recommended_g = extra.get("recommended_g")
-        _bear_mult_applied = extra.get("fcf_margin_bear_mult_applied", False)
-        _fcf_margin_note   = extra.get("fcf_margin_note")
-
-        now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
+    def _compute_matrix_position(self, ticker: str, valuation: dict, fcf_history: list) -> dict:
+        """MATRIX象限（①②③④）を判定（ARCH-SCORE-SYNC-1: latest.jsonに出力しJS側matrixBadge()の独自再計算を廃止）"""
         comps = valuation.get("components", {})
         rice = valuation.get("rice", {})
-        scenarios = valuation.get("scenario_valuations") or {}
-        fcf_est = valuation.get("fcf_estimation", {})
-        wacc_data = valuation.get("wacc", {})
-
-        current_price = comps.get("current_price", 0) or 0
         upside = valuation.get("upside_percent")
-        base_iv_top = valuation.get("intrinsic_value_per_share")
-        wacc_val = wacc_data.get("value", 0) if isinstance(wacc_data, dict) else 0
-        beta = comps.get("beta", "N/A")
-        rpo_pv = comps.get("rpo_pv", 0) or 0
-        sector = comps.get("sector", "")
-        industry = comps.get("industry", "")
-        roe = comps.get("roe_10yr_avg")
 
-        score = score_data.get("score", "N/A")
-        funda_score = score_data.get("funda_score", "N/A")
-        score_comment = score_data.get("score_comment", "N/A")
-
-        # --- Matrix position ---
         rice_available = rice.get("available", False)
         rice_note = rice.get("note", "")
         rice_base_data = rice.get("base", {})
@@ -743,6 +732,7 @@ class TanukiValuationPipeline:
             yH, yL = rice_efficiency, rice_efficiency
         elif "セクター除外" in rice_note:
             matrix = "②収益性系"
+            roe = comps.get("roe_10yr_avg")
             roe_pct = roe * 100 if roe is not None else None
             _roe_n = comps.get("roe_years_used") or "?"
             _roe_outlier = comps.get("roe_outlier_adj", False)
@@ -809,6 +799,62 @@ class TanukiValuationPipeline:
         yL_label = yH if qy else yL
         quadrant = ("右上" if qy else "右下") if qx else ("左上" if qy else "左下")
         label = f"{xL}×{yL_label}"
+
+        return {
+            "matrix": matrix, "quadrant": quadrant, "label": label,
+            "key_metric_y": key_metric_y, "qx": qx, "qy": qy,
+        }
+
+    def _generate_report(self, ticker: str, valuation: dict, score_data: dict, extra: dict = None, growth_sanity: dict = None) -> str:
+        """銘柄別統合レポートをプレーンテキストで生成"""
+        if extra is None:
+            extra = {}
+        fcf_history = extra.get("fcf_history", [])
+        fin_health = extra.get("financial_health", {})
+        segments = extra.get("segments", [])
+        next_earnings = extra.get("next_earnings_date", "N/A")
+        _seg_ttm_applied = extra.get("segment_ttm_applied", False)
+        _seg_configured = extra.get("segment_configured", True)
+        _phase1_auto_adjusted = extra.get("phase1_growth_auto_adjusted", False)
+        _phase1_growth_original = extra.get("phase1_growth_original")
+        _recommended_g = extra.get("recommended_g")
+        _bear_mult_applied = extra.get("fcf_margin_bear_mult_applied", False)
+        _fcf_margin_note   = extra.get("fcf_margin_note")
+
+        now = valuation.get("calculation_date", datetime.now().strftime("%Y-%m-%d"))
+        comps = valuation.get("components", {})
+        rice = valuation.get("rice", {})
+        scenarios = valuation.get("scenario_valuations") or {}
+        fcf_est = valuation.get("fcf_estimation", {})
+        wacc_data = valuation.get("wacc", {})
+
+        current_price = comps.get("current_price", 0) or 0
+        upside = valuation.get("upside_percent")
+        base_iv_top = valuation.get("intrinsic_value_per_share")
+        wacc_val = wacc_data.get("value", 0) if isinstance(wacc_data, dict) else 0
+        beta = comps.get("beta", "N/A")
+        rpo_pv = comps.get("rpo_pv", 0) or 0
+        sector = comps.get("sector", "")
+        industry = comps.get("industry", "")
+        roe = comps.get("roe_10yr_avg")
+
+        score = score_data.get("score", "N/A")
+        funda_score = score_data.get("funda_score", "N/A")
+        score_comment = score_data.get("score_comment", "N/A")
+
+        # --- Matrix position ---
+        rice_available = rice.get("available", False)
+        rice_note = rice.get("note", "")
+        rice_base_data = rice.get("base", {})
+        rice_base_val = rice_base_data.get("rice")
+
+        _mp = self._compute_matrix_position(ticker, valuation, fcf_history)
+        matrix = _mp["matrix"]
+        quadrant = _mp["quadrant"]
+        label = _mp["label"]
+        key_metric_y = _mp["key_metric_y"]
+        qx = _mp["qx"]
+        qy = _mp["qy"]
 
         # --- Scenario valuations ---
         bear_sc = scenarios.get("bear", {})
