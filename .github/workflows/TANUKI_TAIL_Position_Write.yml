@@ -1,0 +1,55 @@
+name: TANUKI TAIL Position Write
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '実行するアクション'
+        required: true
+        type: choice
+        options:
+          - register_position
+          - register_journal
+          - confirm_kpis
+      payload:
+        description: 'アクション固有のデータ（JSON文字列）'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  write:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run write action
+        env:
+          ACTION: ${{ inputs.action }}
+          PAYLOAD: ${{ inputs.payload }}
+        run: python src/tail/workflow_write.py
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/portfolio/tail/data/positions/ \
+                  docs/portfolio/tail/data/positions_index.json \
+                  docs/portfolio/tail/data/journal.json
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -F /tmp/tail_commit_message.txt
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi

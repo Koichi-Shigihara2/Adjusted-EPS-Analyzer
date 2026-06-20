@@ -159,6 +159,7 @@
       border-radius: 3px; outline: none; transition: border-color .15s;
     }
     .token-row input:focus { border-color: var(--acc); }
+    .token-note { font-family: var(--mono); font-size: 10px; color: var(--mut); line-height: 1.6; margin: -14px 0 20px; }
     #save-status {
       display: none; border-radius: 4px; padding: 12px 16px; margin-top: 16px;
       font-family: var(--mono); font-size: 12px; letter-spacing: .04em; line-height: 1.7;
@@ -492,7 +493,11 @@
   <div class="form-card" id="form-card">
     <div class="token-row">
       <label>GH TOKEN</label>
-      <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx (contents:write)" autocomplete="off">
+      <input type="password" id="gh-token" placeholder="github_pat_xxxxxxxxxxxx (Fine-grained / actions:write)" autocomplete="off">
+    </div>
+    <div class="token-note">
+      Fine-grained PAT（対象リポジトリ限定・Actions: Read and write のみ）を使用してください。
+      書き込みはGitHub Actions経由で非同期に実行されます（反映まで数十秒〜数分）。
     </div>
     <div class="form-row" style="margin-bottom:20px">
       <div class="field" id="field-ticker">
@@ -1434,63 +1439,42 @@ async function registerJournal() {
 
   var btn = document.getElementById('jnl-submit-btn');
   btn.disabled = true;
-  _showJnlStatus('保存中...', '');
+  _showJnlStatus('送信中...', '');
 
   try {
-    // 既存journal.jsonを取得
-    var jnlPath = 'docs/portfolio/tail/data/journal.json';
-    var file = await fetchFile(jnlPath);
-    var jnl  = JSON.parse(file.content);
-
-    // ID生成
-    var existing = new Set((jnl.entries || []).map(function (e) { return e.id; }));
-    var seq = 1;
-    while (existing.has(dateV + '-' + ticker + '-' + String(seq).padStart(3, '0'))) seq++;
-    var id = dateV + '-' + ticker + '-' + String(seq).padStart(3, '0');
-
     // 自動付与項目
     var hs = null;
     var reviews = loadedReviews[ticker] || {};
     var latestQ = Object.keys(reviews).sort().pop();
     if (latestQ) hs = (reviews[latestQ].stage1 || {}).health_score || null;
 
-    var entry = {
-      id: id,
-      timestamp: dateV + 'T00:00:00+09:00',
+    var payload = {
       ticker: ticker,
       type: type,
-      action: type,
+      date: dateV,
       reason: reason,
-      thesis_version: null,
       health_score_at_action: hs,
-      macro_score_at_action: null,
       tags: document.getElementById('jnl-tags').value.split(',').map(function (t) { return t.trim(); }).filter(Boolean),
     };
 
     // trade fields
     var priceV  = parseFloat(document.getElementById('jnl-price').value);
     var sharesV = parseInt(document.getElementById('jnl-shares').value);
-    if (!isNaN(priceV))  entry.price  = priceV;
-    if (!isNaN(sharesV)) entry.shares = sharesV;
+    if (!isNaN(priceV))  payload.price  = priceV;
+    if (!isNaN(sharesV)) payload.shares = sharesV;
 
     // revision fields
     if (type === 'thesis_revision') {
       var ri = document.getElementById('jnl-revised-item').value.trim();
       var ot = document.getElementById('jnl-old-thesis').value.trim();
       var nt = document.getElementById('jnl-new-thesis').value.trim();
-      if (ri) entry.revised_item = ri;
-      if (ot) entry.old_thesis   = ot;
-      if (nt) entry.new_thesis   = nt;
+      if (ri) payload.revised_item = ri;
+      if (ot) payload.old_thesis   = ot;
+      if (nt) payload.new_thesis   = nt;
     }
 
-    jnl.entries.push(entry);
-    await commitFile(jnlPath, JSON.stringify(jnl, null, 2), 'journal: ' + ticker + ' ' + type + ' — ' + dateV, file.sha);
-
-    // ローカルを更新
-    journalData.unshift(entry);
-    _populateJournalTickerFilter();
-    renderJournal();
-    _showJnlStatus('✓ 保存完了: ' + id, 'ok');
+    await dispatchWorkflow('register_journal', payload);
+    _showJnlStatus('✓ 送信完了。GitHub Actionsでの反映まで数十秒〜数分かかります（リロードで確認してください）', 'ok');
     setTimeout(closeJournalModal, 1500);
   } catch (err) {
     _showJnlStatus('エラー: ' + err.message, 'err');
@@ -1905,21 +1889,16 @@ function token() { return document.getElementById('gh-token').value.trim(); }
 function apiHeaders() {
   return { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/vnd.github+json', 'Content-Type': 'application/json' };
 }
-async function fetchFile(path) {
-  var url = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path + '?ref=' + BRANCH;
-  var res = await fetch(url, { headers: apiHeaders() });
-  if (!res.ok) throw new Error('取得失敗: ' + path + ' (' + res.status + ')');
-  var data = await res.json();
-  var content = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
-  return { content: content, sha: data.sha };
-}
-async function commitFile(path, content, message, sha) {
-  var url  = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/contents/' + path;
-  var body = { message: message, content: btoa(unescape(encodeURIComponent(content))), branch: BRANCH };
-  if (sha) body.sha = sha;
-  var res = await fetch(url, { method: 'PUT', headers: apiHeaders(), body: JSON.stringify(body) });
-  if (!res.ok) { var err = await res.json(); throw new Error('コミット失敗: ' + err.message); }
-  return await res.json();
+var WORKFLOW_FILE = 'TANUKI_TAIL_Position_Write.yml';
+async function dispatchWorkflow(action, payload) {
+  var url  = 'https://api.github.com/repos/' + REPO_OWNER + '/' + REPO_NAME + '/actions/workflows/' + WORKFLOW_FILE + '/dispatches';
+  var body = { ref: BRANCH, inputs: { action: action, payload: JSON.stringify(payload) } };
+  var res  = await fetch(url, { method: 'POST', headers: apiHeaders(), body: JSON.stringify(body) });
+  if (!res.ok) {
+    var msg = 'workflow_dispatch失敗 (' + res.status + ')';
+    try { var err = await res.json(); if (err.message) msg += ': ' + err.message; } catch (e) {}
+    throw new Error(msg);
+  }
 }
 
 /* ─── Registration ─── */
@@ -1930,8 +1909,7 @@ async function registerPosition() {
   if (!ticker) { markError('field-ticker'); return; }
   if (!token()) { showStatus('GitHub PAT トークンを入力してください', 'err'); document.getElementById('gh-token').focus(); return; }
 
-  var now = new Date().toISOString().replace('Z', '+09:00');
-  var thesis;
+  var payload = { ticker: ticker, type: currentType };
 
   if (currentType === 'core') {
     var thesisText    = document.getElementById('inp-thesis').value.trim();
@@ -1944,9 +1922,11 @@ async function registerPosition() {
     if (!entryStory)  { markError('field-entry-story');  valid = false; }
     if (!exitGuide)   { markError('field-exit-guide');   valid = false; }
     if (!valid) return;
-    thesis = { ticker, type: 'core', status: 'active', version: 1, created_at: now, updated_at: now,
-               thesis: thesisText, entry_story: entryStory, exit_guide: exitGuide, kpis: [],
-               entry_price: entryPriceRaw ? parseFloat(entryPriceRaw) : null, entry_date: entryDate };
+    payload.thesis      = thesisText;
+    payload.entry_story = entryStory;
+    payload.exit_guide  = exitGuide;
+    payload.entry_price = entryPriceRaw ? parseFloat(entryPriceRaw) : null;
+    payload.entry_date  = entryDate;
   } else {
     var strategyName  = getStrategyName();
     var entryCond     = document.getElementById('inp-entry-cond').value.trim();
@@ -1960,33 +1940,23 @@ async function registerPosition() {
     if (!entryCond)     { markError('field-entry-cond');     valid = false; }
     if (!exitCond)      { markError('field-exit-cond');      valid = false; }
     if (!valid) return;
-    thesis = { ticker, type: 'satellite', status: 'active', version: 1, created_at: now, updated_at: now,
-               strategy_name: strategyName, entry_condition: entryCond, exit_condition: exitCond,
-               holding_period: holdingPeriod, entry_price: entryPriceRaw ? parseFloat(entryPriceRaw) : null, entry_date: entryDate };
+    payload.strategy_name   = strategyName;
+    payload.entry_condition = entryCond;
+    payload.exit_condition  = exitCond;
+    payload.holding_period  = holdingPeriod;
+    payload.entry_price     = entryPriceRaw ? parseFloat(entryPriceRaw) : null;
+    payload.entry_date      = entryDate;
   }
-
-  var fname      = ticker + '_thesis.json';
-  var thesisPath = 'docs/portfolio/tail/data/positions/' + fname;
-  var indexPath  = 'docs/portfolio/tail/data/positions_index.json';
-  var newIndex   = positionsIndex.filter(function (f) { return f !== fname; });
-  newIndex.push(fname);
 
   var btn = document.getElementById('btn-register');
   btn.disabled = true;
-  btn.textContent = '保存中…';
+  btn.textContent = '送信中…';
 
   try {
-    var thesisSha = null, indexSha = null;
-    try { thesisSha = (await fetchFile(thesisPath)).sha; } catch (e) {}
-    try { indexSha  = (await fetchFile(indexPath)).sha;  } catch (e) {}
-    await commitFile(thesisPath, JSON.stringify(thesis, null, 2), 'feat: TANUKI TAIL ' + ticker + ' テーゼ登録', thesisSha);
-    await commitFile(indexPath,  JSON.stringify({ positions: newIndex }, null, 2), 'feat: TANUKI TAIL positions_index 更新', indexSha);
-    loadedPositions[ticker] = thesis;
-    positionsIndex = newIndex;
-    renderOverview();
-    showStatus('✓ ' + fname + ' を GitHub (kaihatsu) に保存しました', 'ok');
+    await dispatchWorkflow('register_position', payload);
+    showStatus('✓ ' + ticker + ' の登録リクエストをGitHub Actionsに送信しました。反映まで数十秒〜数分かかります（リロードで確認してください）', 'ok');
   } catch (err) {
-    showStatus('保存失敗: ' + err.message, 'err');
+    showStatus('送信失敗: ' + err.message, 'err');
   } finally {
     btn.disabled = false;
     btn.textContent = '登録 → GitHub に保存';
@@ -2132,24 +2102,14 @@ async function confirmKpis() {
   if (!selected.length) { alert('KPIを1件以上選択してください'); return; }
 
   var btn = document.getElementById('kpi-confirm-btn');
-  btn.disabled = true; btn.textContent = '保存中…';
+  btn.disabled = true; btn.textContent = '送信中…';
 
   try {
-    var thesisPath = 'docs/portfolio/tail/data/positions/' + ticker + '_thesis.json';
-    var file = await fetchFile(thesisPath);
-    var thesis = JSON.parse(file.content);
-    thesis.kpis       = selected;
-    thesis.updated_at = new Date().toISOString().replace('Z', '+09:00');
-
-    await commitFile(thesisPath, JSON.stringify(thesis, null, 2),
-      'feat: TANUKI TAIL ' + ticker + ' KPI確定（' + selected.length + '件）', file.sha);
-
-    loadedPositions[ticker] = thesis;
-    renderOverview();
+    await dispatchWorkflow('confirm_kpis', { ticker: ticker, kpis: selected });
     closeKpiModal();
-    showStatus('✓ ' + ticker + ' の監視KPI（' + selected.length + '件）を保存しました', 'ok');
+    showStatus('✓ ' + ticker + ' のKPI確定リクエストを送信しました。反映まで数十秒〜数分かかります（リロードで確認してください）', 'ok');
   } catch (err) {
-    alert('保存失敗: ' + err.message);
+    alert('送信失敗: ' + err.message);
   } finally {
     btn.disabled = false; btn.textContent = '確定 → GitHub に保存';
   }
