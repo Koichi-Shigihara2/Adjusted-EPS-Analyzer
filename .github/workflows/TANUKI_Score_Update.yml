@@ -1,12 +1,20 @@
 name: TANUKI_Score_Update
 
+# ARCH-SCORE-SYNC-1: daily_pick.pyはpipeline.py(latest.json)の6分類に依存するため、
+# cron時刻の差ではなくworkflow_runイベントでTANUKI VALUATION完了後を確実に保証する。
+# pipeline.pyは平日のみ実行のため、土日は独立cronで現状通り実行する
+# （金曜時点のlatest.jsonを参照。pipeline.py自体が動かないのは従来からの制約で変更なし）。
 on:
+  workflow_run:
+    workflows: ["TANUKI VALUATION Daily Update"]
+    types: [completed]
   schedule:
-    - cron: "30 13 * * *"   # JST 22:30（UTC 13:30）
+    - cron: "30 13 * * 6,0"   # 土日のみ独立実行（JST 22:30）
   workflow_dispatch:
 
 jobs:
   update:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     permissions:
       contents: write
