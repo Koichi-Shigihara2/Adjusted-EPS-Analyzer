@@ -112,6 +112,12 @@
     .hypemix-dev{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
     .hypemix-dev-row{font-family:var(--mono);font-size:12px;display:flex;align-items:center;gap:8px}
     .hypemix-proposal{font-family:var(--mono);font-size:12px;line-height:1.9;background:var(--sur2);border:1px solid var(--bdr);border-radius:4px;padding:12px 16px;word-break:break-word}
+    .hypemix-cand-hdr{font-family:var(--mono);font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 8px}
+    .hypemix-cand-list{display:flex;flex-direction:column;gap:6px}
+    .hypemix-cand-chip{display:flex;align-items:center;gap:10px;background:var(--sur2);border:1px solid var(--bdr);border-radius:4px;padding:8px 12px;text-decoration:none;transition:border-color .15s}
+    .hypemix-cand-chip:hover{border-color:#22c55e}
+    .hcc-meta{font-family:var(--mono);font-size:11px;color:var(--mut)}
+    .hypemix-cand-empty{font-family:var(--mono);font-size:12px;color:var(--mut);background:var(--sur2);border:1px solid var(--bdr);border-radius:4px;padding:12px 16px}
 
     @media(max-width:700px){
       .summary-cards{grid-template-columns:repeat(2,1fr)}
@@ -272,15 +278,18 @@ const CAT_META = {
 
 // ── Main data loader ──
 async function loadData() {
-  const [pfRes, mktRes, discRes] = await Promise.allSettled([
+  const [pfRes, mktRes, discRes, univRes] = await Promise.allSettled([
     fetch(PF_PATH   + TS).then(r => r.ok ? r.json() : null),
     fetch(M_PATH    + TS).then(r => r.ok ? r.json() : null),
     fetch(DISC_PATH + TS).then(r => r.ok ? r.json() : null),
+    fetch(T_BASE + 'tickers.json' + TS).then(r => r.ok ? r.json() : null),
   ]);
 
   const pf     = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
   const mktArr = mktRes.status === 'fulfilled' ? mktRes.value  : null;
   const disc   = discRes.status === 'fulfilled' ? discRes.value : null;
+  // PORT-LOGIC-1: HYPEMIX仕込み候補抽出用にTANUKI VALUATION全銘柄ロスターを取得
+  const universeTickers = univRes.status === 'fulfilled' ? (univRes.value?.tickers ?? []) : [];
 
   if (!pf) {
     document.getElementById('summary-section').innerHTML =
@@ -340,7 +349,8 @@ async function loadData() {
   }
 
   // Fetch tanuki + hypecore data for all tickers in posAgg
-  const allTickers = [...new Set([...displayTickers, ...Object.keys(posAgg)])];
+  // PORT-LOGIC-1: HYPEMIX仕込み候補抽出のためuniverseTickers（全銘柄ロスター）も含める
+  const allTickers = [...new Set([...displayTickers, ...Object.keys(posAgg), ...universeTickers])];
 
   const [tanukiMap, hypeMap] = await Promise.all([
     Promise.allSettled(allTickers.map(async tk => {
@@ -545,7 +555,7 @@ async function loadData() {
     </div>`;
 
   // HYPEMIX
-  renderHypemix(posAgg, hypeMap);
+  renderHypemix(posAgg, hypeMap, tanukiMap, universeTickers);
 
   // ④ Phase distribution
   const distItems = Object.entries(phaseCount)
@@ -562,7 +572,37 @@ async function loadData() {
 }
 
 // ── HYPEMIX ──
-function renderHypemix(posAgg, hypeMap) {
+// PORT-LOGIC-1: HYPEMIXの「仕込みゾーン」と同一の早期フェーズ定義
+const EARLY_STAGE_LABELS = ['失望/蓄積期', '期待覚醒期', '期待拡大期'];
+
+// PORT-LOGIC-1: TANUKI SCORE BUY × 早期フェーズ × 未保有 の仕込み候補を抽出
+// 並び順はdaily_pick.pyのstocks.sort（-funda, -timing）に揃える
+function findHypemixCandidates(tanukiMap, hypeMap, posAgg, universeTickers) {
+  const heldTickers = new Set(
+    Object.keys(posAgg).filter(t => (posAgg[t]?.totalShares ?? 0) > 0)
+  );
+  const candidates = [];
+  for (const ticker of universeTickers) {
+    if (heldTickers.has(ticker)) continue;
+    const tk = tanukiMap[ticker];
+    if (!tk || tk.tanuki_score !== 'BUY') continue;
+    const hc = hypeMap[ticker];
+    const lastMo = hc?.monthly?.[hc.monthly.length - 1] ?? null;
+    const stageLabel = lastMo?.stage_label ?? null;
+    if (!EARLY_STAGE_LABELS.includes(stageLabel)) continue;
+    candidates.push({
+      ticker,
+      upside: tk.upside_percent ?? null,
+      funda:  tk.funda_score   ?? 0,
+      timing: tk.timing_score  ?? 0,
+      stageLabel,
+    });
+  }
+  candidates.sort((a, b) => (b.funda - a.funda) || (b.timing - a.timing));
+  return candidates.slice(0, 5);
+}
+
+function renderHypemix(posAgg, hypeMap, tanukiMap, universeTickers) {
   const PHASE_CFG = [
     { label: '失望/蓄積期', color: '#64748b', target: 10 },
     { label: '期待覚醒期',  color: '#10b981', target: 20 },
@@ -613,7 +653,7 @@ function renderHypemix(posAgg, hypeMap) {
 
   const s3pct    = phaseData.find(d => d.label === '陶酔期')?.pct ?? 0;
   const s4pct    = phaseData.find(d => d.label === '期待剥落期')?.pct ?? 0;
-  const earlyPct = ['失望/蓄積期', '期待覚醒期', '期待拡大期']
+  const earlyPct = EARLY_STAGE_LABELS
     .reduce((s, l) => s + (phaseData.find(d => d.label === l)?.pct ?? 0), 0);
 
   const proposals = [];
@@ -621,10 +661,26 @@ function renderHypemix(posAgg, hypeMap) {
     proposals.push(`陶酔期の銘柄（${phaseMap['陶酔期'].join(', ')}）が過多です。一部利確を検討してください。`);
   if (s4pct > 40)
     proposals.push(`期待剥落期の銘柄（${phaseMap['期待剥落期'].join(', ')}）が多い状態です。底打ちシグナルを確認してください。`);
-  if (earlyPct < 30)
-    proposals.push('仕込みゾーンの銘柄が不足しています。Discoverで新規候補を探してください。');
-  if (!proposals.length)
+
+  // PORT-LOGIC-1: 早期フェーズ不足時はDiscoverへの誘導ではなく、
+  // 登録済み・分析済み銘柄からTANUKI SCORE BUY×早期フェーズの候補を直接提案する
+  const showCandidates = earlyPct < 30;
+  const buyCandidates  = showCandidates
+    ? findHypemixCandidates(tanukiMap, hypeMap, posAgg, universeTickers)
+    : [];
+
+  if (!proposals.length && !showCandidates)
     proposals.push('フェーズ分布はバランス良好です。');
+
+  const candidatesHtml = !showCandidates ? '' : buyCandidates.length > 0 ? `
+    <div class="hypemix-cand-hdr">仕込みゾーン候補（TANUKI SCORE BUY判定 × 早期フェーズ・未保有）</div>
+    <div class="hypemix-cand-list">${buyCandidates.map(c => `
+      <a class="hypemix-cand-chip" href="../value-monitor/tanuki_valuation/stock.html?ticker=${c.ticker}">
+        <span class="cat-badge badge-BUY">${c.ticker}</span>
+        <span class="hcc-meta">乖離${c.upside!=null?(c.upside>=0?'+':'')+c.upside.toFixed(0)+'%':'—'} · F:${c.funda} T:${c.timing} · ${c.stageLabel}</span>
+      </a>`).join('')}</div>` : `
+    <div class="hypemix-cand-hdr">仕込みゾーン候補（TANUKI SCORE BUY判定 × 早期フェーズ・未保有）</div>
+    <div class="hypemix-cand-empty">BUY判定×仕込みゾーンの新規候補銘柄は現在ありません。</div>`;
 
   const sec = document.getElementById('hypemix-section');
   if (!sec) return;
@@ -646,7 +702,8 @@ function renderHypemix(posAgg, hypeMap) {
         </div>
       </div>
       <div class="hypemix-dev">${devHtml}</div>
-      <div class="hypemix-proposal">${proposals.join('<br>')}</div>
+      ${proposals.length ? `<div class="hypemix-proposal">${proposals.join('<br>')}</div>` : ''}
+      ${candidatesHtml}
     </div>`;
 
   const mkChart = (id, data, isActual) => {

@@ -4,6 +4,22 @@
 
 ## 2026-06-21
 
+✅ [PORT-LOGIC-1] HYPEMIX注記の誘導先が不適切（PORTFOLIO画面・2026-06-21 完了）
+- 設計判断: 「仕込みゾーン不足」時のDISCOVER誘導文言を廃止し、登録済み・分析済み銘柄
+  （TANUKI VALUATION全96銘柄ロスター）からTANUKI SCORE BUY判定×HypeCore早期フェーズ
+  （失望/蓄積期・期待覚醒期・期待拡大期）×未保有のAND条件で候補を直接抽出し、
+  HYPEMIXセクション内にリスト表示する方式に変更
+- 実装: `docs/portfolio/index.html`にtickers.json（全銘柄ロスター）取得を追加し、
+  既存のtanukiMap/hypeMapフェッチ対象を保有銘柄のみから全銘柄に拡張。
+  `findHypemixCandidates()`を新設し、latest.jsonの`tanuki_score`/`funda_score`/
+  `timing_score`を直接参照（ARCH-SCORE-SYNC-1の方針を踏襲、独自再計算は行わない）
+- 並び順: daily_pick.pyのstocks.sort（-funda, -timing）に揃え、上位5件まで表示
+- 0件時は「BUY判定×仕込みゾーンの新規候補銘柄は現在ありません。」と表示
+- 検証: 実データ（latest.json/poc.json）でのPythonシミュレーションにより、
+  現状3件（NVDA/MO/VZ）が正しい順序で抽出されることを確認。pytest 110件全パス、
+  check_links.py でリンク切れ0件を確認。既存のフェーズ分布表示・乖離判定ロジック
+  （devHtml/badgeCls等）は変更していないため影響なし
+
 ✅ [DISCOVER-BUG-1] CELHで同一記事が重複表示される（2026-06-21 完了）
 - 原因: `src/discover/collect.py`に重複排除ロジックが一切存在しなかった（不具合ではなく未実装）。
   NEWS_API/Grok web検索が同一の出来事（Bernsteinの格付け変更等）を複数配信元の別記事として
