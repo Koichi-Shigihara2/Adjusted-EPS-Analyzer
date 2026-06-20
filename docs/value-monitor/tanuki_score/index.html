@@ -150,32 +150,38 @@
 
     @media (max-width: 640px) {
       .cat-row.top3 { grid-template-columns: 1fr; }
+      .cat-row.top4 { grid-template-columns: 1fr; }
       .cat-row.bot2 { grid-template-columns: 1fr; }
       .mkt-stats { flex-wrap: wrap; }
     }
 
-    /* ── 6-cat cards & badges ── */
+    /* ── 7-cat cards & badges ── */
+    .cat-row.top4 { grid-template-columns: repeat(4, 1fr); }
     .cat-card.buy      { border-color: rgba(34,197,94,.35); }
     .cat-card.watch-cat{ border-color: rgba(234,179,8,.35); }
     .cat-card.hold     { border-color: rgba(59,130,246,.35); }
+    .cat-card.growth-premium { border-color: rgba(20,184,166,.35); }
     .cat-card.trim     { border-color: rgba(249,115,22,.35); }
     .cat-card.sell     { border-color: rgba(239,68,68,.35); }
     .cat-card.pass     { border-color: rgba(71,85,105,.25); }
     .buy       .cat-label { color: #22c55e; }
     .watch-cat .cat-label { color: #eab308; }
     .hold      .cat-label { color: #3b82f6; }
+    .growth-premium .cat-label { color: #14b8a6; }
     .trim      .cat-label { color: #f97316; }
     .sell      .cat-label { color: #ef4444; }
     .pass      .cat-label { color: #475569; }
     .buy       .cat-chip .ckr { color: #22c55e; }
     .watch-cat .cat-chip .ckr { color: #eab308; }
     .hold      .cat-chip .ckr { color: #3b82f6; }
+    .growth-premium .cat-chip .ckr { color: #14b8a6; }
     .trim      .cat-chip .ckr { color: #f97316; }
     .sell      .cat-chip .ckr { color: #ef4444; }
     .pass      .cat-chip .ckr { color: #475569; }
     .badge-BUY  { background: rgba(34,197,94,.12);  color: #22c55e; }
     .badge-WATCH{ background: rgba(234,179,8,.12);  color: #eab308; }
     .badge-HOLD { background: rgba(59,130,246,.12); color: #3b82f6; }
+    .badge-GROWTH_PREMIUM { background: rgba(20,184,166,.12); color: #14b8a6; }
     .badge-TRIM { background: rgba(249,115,22,.12); color: #f97316; }
     .badge-SELL { background: rgba(239,68,68,.10);  color: #ef4444; }
     .badge-PASS { background: rgba(71,85,105,.10);  color: #475569; }
@@ -261,52 +267,9 @@ const E_PATH = '../adjusted_eps_analyzer/data/summary.json';
 const M_PATH = '../../market-monitor/market-pulse/data/market_data.json';
 const S_PATH = '../stonks-silo/data/results.json';
 
-// ─── Scoring ─────────────────────────────────────────────────
-function calcFunda(revYoy, rule40, epsYoyPct, fcfBase) {
-  let s = 0;
-  s += revYoy    == null ? 0 : revYoy    > 20 ? 25 : revYoy    >= 0 ? 15 : 0;
-  s += rule40    == null ? 0 : rule40    > 40 ? 25 : rule40    >= 20 ? 15 : 0;
-  s += epsYoyPct == null ? 0 : epsYoyPct > 20 ? 25 : epsYoyPct >= 0 ? 15 : 0;
-  s += fcfBase   == null ? 0 : fcfBase   > 0  ? 25 : 0;
-  return s;
-}
-
-function calcTiming(upside, fg, stage) {
-  let s = 0;
-  s += upside == null ? 0 : upside > 30 ? 40 : upside >= 10 ? 25 : upside >= 0 ? 10 : 0;
-  s += fg < 30 ? 40 : fg < 50 ? 25 : fg < 70 ? 10 : 0;
-  s += stage == null ? 0 : stage === 1 ? 20 : stage === 2 ? 15 : stage === 3 ? 5 : 0;
-  return s;
-}
-
-function classify(f, t, stock) {
-  const upside  = stock.upside  ?? null;
-  const stage   = stock.stage   ?? 0;
-  const revYoy  = stock.revYoy  ?? 0;
-  const rule40  = stock.rule40  ?? 0;
-  const ma200   = stock.ma200   ?? 0;
-  const fcfBase = stock.fcfBase ?? null;
-  const fcfEst  = stock.fcfEst  ?? null;
-
-  if (f < 25) return 'PASS';
-
-  const sellFunda = revYoy < 0 && rule40 < 20 && (
-    fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
-  );
-  const sellTech = stage >= 4 && upside != null && upside < -20 && ma200 < -10 && f < 50;
-  if (f >= 25 && (sellFunda || sellTech)) return 'SELL';
-
-  if (f >= 50) {
-    if (upside != null && upside < -30 && stage >= 3) return 'TRIM';
-    if (upside != null && upside > 20 && t >= 50)     return 'BUY';
-    if (upside != null && upside > 0)                  return 'WATCH';
-    return 'HOLD';
-  }
-
-  return 'HOLD';
-}
-
 // ─── Display helpers ─────────────────────────────────────────
+// ARCH-SCORE-SYNC-1: funda/timing/分類はすべてpipeline.py(latest.json)が
+// 計算済みの値をそのまま表示する。JS側での独自再計算は行わない。
 function scClass(v) {
   return v >= 75 ? 'sc-hi' : v >= 50 ? 'sc-mid' : v >= 25 ? 'sc-lo' : 'sc-no';
 }
@@ -326,6 +289,7 @@ const CAT_META = {
   BUY:  { label:'BUY',  icon:'🟢', color:'#22c55e', cls:'buy',       badge:'badge-BUY',   desc:'ファンダ≥50 · 割安(>20%) · タイミング≥50 — 今仕込んでもよい' },
   WATCH:{ label:'WATCH',icon:'🟡', color:'#eab308', cls:'watch-cat', badge:'badge-WATCH',  desc:'ファンダ≥50 · 割安(0-20%) — 購入候補ウォッチリスト' },
   HOLD: { label:'HOLD', icon:'🔵', color:'#3b82f6', cls:'hold',      badge:'badge-HOLD',   desc:'ファンダ良好 · 許容範囲内 — 保有継続・新規不要' },
+  GROWTH_PREMIUM: { label:'GROWTH_PREMIUM', icon:'🟩', color:'#14b8a6', cls:'growth-premium', badge:'badge-GROWTH_PREMIUM', desc:'割高判定だが現在成長率が逆算必要成長率を上回る — TRIMの例外' },
   TRIM: { label:'TRIM', icon:'🟠', color:'#f97316', cls:'trim',      badge:'badge-TRIM',   desc:'ファンダ良好 · 割高(-30%超) · 陶酔期以降 — 一部利確検討' },
   SELL: { label:'SELL', icon:'🔴', color:'#ef4444', cls:'sell',      badge:'badge-SELL',   desc:'ファンダ劣化 または 長期下落トレンド — 保有再考' },
   PASS: { label:'PASS', icon:'⬛', color:'#475569', cls:'pass',      badge:'badge-PASS',   desc:'ファンダ<25 — 対象外' },
@@ -483,61 +447,25 @@ function renderDetailTable() {
     const revYoy  = lastMo?.rev_yoy    ?? null;
     const rule40  = lastMo?.rule40     ?? null;
     const stage   = lastMo?.stage      ?? null;
-    const stageL  = lastMo?.stage_label ?? null;
-    const upside  = tk?.upside_percent ?? null;
-    const fcfBase = tk?.fcf_base?.base_fcf ?? null;
     const rawUp   = tk?.upside_percent ?? null;
+    const fcfBase = tk?.fcf_base?.base_fcf ?? null;
     const epsYoyDec = ep?.yoy_growth ?? null;
     const epsYoy  = epsYoyDec != null ? epsYoyDec * 100 : null;
 
-    const ma200      = lastMo?.ma200_dev ?? 0;
-    const fcfEst     = tk?.fcf_estimation?.estimated_fcf ?? null;
     const substage   = lastMo?.substage_label ?? '';
     const stageLabel = lastMo?.stage_label ?? '';
 
-    // BUG-SCORE-SYNC-1: Python(_compute_tanuki_score)と同一のRunway/希薄化ペナルティを適用
-    const runwayMonths   = stonksMap[ticker]?.runway?.runway_months ?? tk?.computed_runway_months ?? null;
-    const dilutionPct    = tk?.financial_health?.dilution_3yr_annual_pct ?? null;
-    const fcfFloorApplied = tk?.components?.fcf_floor_applied ?? 0;
+    // ARCH-SCORE-SYNC-1: funda/timing/分類/sell理由/matrix位置はすべてpipeline.py(latest.json)が
+    // 計算済みの値をそのまま使う。JS側での再計算（Runway/希薄化ペナルティ・classify()・
+    // DCF_Reliability=LOW丸め・sellReason判定）は廃止。
+    const funda  = tk?.funda_score  ?? 0;
+    const timing = tk?.timing_score ?? 0;
+    const cat    = tk?.tanuki_score ?? 'PASS';
+    const sellReason = tk?.sell_reason ?? '';
+    const matrixInfo = tk?.matrix ?? null;
 
-    let funda = calcFunda(revYoy, rule40, epsYoy, fcfBase);
-    if (runwayMonths != null && runwayMonths < 12) funda = Math.max(0, funda - 30);
-    if (dilutionPct != null) {
-      if (dilutionPct > 40) funda = Math.max(0, funda - 25);
-      else if (dilutionPct > 20) funda = Math.max(0, funda - 15);
-    }
-    const timing = calcTiming(rawUp, fg, stage);
-
-    const stockObj = {
-      upside: rawUp, stage: stage ?? 0, revYoy: revYoy ?? 0, rule40: rule40 ?? 0,
-      ma200, fcfBase, fcfEst,
-    };
-    let cat = classify(funda, timing, stockObj);
-
-    // BUG-SCORE-SYNC-1: DCF_Reliability=LOW（revenue_floor適用）はupside依存判定を抑制しWATCHに丸める
-    if (fcfFloorApplied > 0 && cat !== 'SELL' && cat !== 'PASS') {
-      cat = 'WATCH';
-    }
-
-    let sellReason = '';
-    if (cat === 'SELL') {
-      const _sellFunda = (revYoy ?? 0) < 0 && (rule40 ?? 0) < 20 && (
-        fcfBase < 0 || (fcfEst != null && fcfBase != null && fcfEst < fcfBase * 0.8)
-      );
-      sellReason = _sellFunda ? 'funda' : 'tech';
-    }
-
-    const riceAvailable = tk?.rice?.available ?? false;
-    const riceNote      = tk?.rice?.note ?? '';
-    const riceVal       = tk?.rice?.base?.rice ?? null;
-    const roe           = tk?.components?.roe_10yr_avg ?? null;
-    let fcfMgn = tk?.fcf_estimation?.fcf_margin ?? null;
-    if (fcfMgn === null) {
-      const fcfBU  = tk?.components?.fcf_base_used ?? null;
-      const latRev = tk?.components?.latest_revenue ?? null;
-      if (fcfBU !== null && latRev !== null && latRev !== 0) fcfMgn = fcfBU / latRev * 100;
-    }
-
+    const riceVal = tk?.rice?.base?.rice ?? null;
+    const roe     = tk?.components?.roe_10yr_avg ?? null;
     const per = tk?.components?.per ?? null;
     const peg = tk?.components?.peg ?? null;
     const ps  = tk?.components?.ps  ?? null;
@@ -546,12 +474,12 @@ function renderDetailTable() {
 
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             riceAvailable, riceNote, riceVal, roe, fcfMgn, per, peg, ps, dupont };
+             matrixInfo, riceVal, roe, per, peg, ps, dupont };
   });
 
   // 5. Categorize
-  const cats = { BUY:[], WATCH:[], HOLD:[], TRIM:[], SELL:[], PASS:[] };
-  _stocks.forEach(s => (cats[s.cat] || []).push(s));
+  const cats = { BUY:[], WATCH:[], HOLD:[], GROWTH_PREMIUM:[], TRIM:[], SELL:[], PASS:[] };
+  _stocks.forEach(s => { (cats[s.cat] ??= []).push(s); });
 
   Object.keys(cats).forEach(k => {
     if (k === 'WATCH') {
@@ -566,29 +494,19 @@ function renderDetailTable() {
   });
 
   // ② Category board
+  // ARCH-SCORE-SYNC-1: MATRIX象限はpipeline.py(_compute_matrix_position)が
+  // 計算済みのs.matrixInfo（matrix/label/qx/qy）をそのまま使う。JS側での再計算は廃止。
+  const MATRIX_PREFIX = { '①投資効率系':'①', '②収益性系':'②', '③成長性系':'③', '④キャッシュ創出力系':'④' };
   function matrixBadge(s) {
-    const up = s.upside;
-    if (up === null) return '';
-    let prefix, qx, qy, yHigh, yLow;
-    if (s.riceAvailable) {
-      // 高効率/低効率の境界は理論値3.0（中効率1.0〜3.0帯はRICEマトリクス参照）
-      prefix = '①'; qx = up >= 0; qy = s.riceVal !== null && s.riceVal >= 3;
-      yHigh = '高効率'; yLow = '低効率';
-    } else if (s.riceNote.includes('セクター除外')) {
-      prefix = '②'; qx = up >= 0; qy = s.roe !== null && s.roe * 100 >= 15;
-      yHigh = '高ROE'; yLow = '低ROE';
-    } else {
-      prefix = '④'; qx = up >= 0; qy = s.fcfMgn !== null && s.fcfMgn >= 15;
-      yHigh = '高FCF'; yLow = '低FCF';
-    }
-    const xL = qx ? '割安' : '割高';
-    const yL = qy ? yHigh : yLow;
-    let bg, fg;
-    if      ( qx &&  qy) { bg = '#14532d'; fg = '#4ade80'; }
-    else if (!qx &&  qy) { bg = '#713f12'; fg = '#facc15'; }
-    else if ( qx && !qy) { bg = '#1e293b'; fg = '#94a3b8'; }
-    else                 { bg = '#450a0a'; fg = '#f87171'; }
-    return `<span style="background:${bg};color:${fg};font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:3px;line-height:1.4">${prefix} ${xL}×${yL}</span>`;
+    const m = s.matrixInfo;
+    if (!m) return '';
+    const prefix = MATRIX_PREFIX[m.matrix] || '';
+    let bg, col;
+    if      ( m.qx &&  m.qy) { bg = '#14532d'; col = '#4ade80'; }
+    else if (!m.qx &&  m.qy) { bg = '#713f12'; col = '#facc15'; }
+    else if ( m.qx && !m.qy) { bg = '#1e293b'; col = '#94a3b8'; }
+    else                     { bg = '#450a0a'; col = '#f87171'; }
+    return `<span style="background:${bg};color:${col};font-family:monospace;font-size:10px;padding:2px 6px;border-radius:3px;display:inline-block;margin-top:3px;line-height:1.4">${prefix} ${m.label}</span>`;
   }
 
   function multBadge(s) {
@@ -670,9 +588,10 @@ function renderDetailTable() {
     </div>
     <div id="cat-board-body" style="display:none">
       <div class="board-desc">ファンダメンタル評価（ファンダスコア）× 市場タイミング（乖離率・フェーズ）の2軸でアクションを分類。自分の銘柄がどのセルにいるかを確認する。</div>
-      <div class="cat-row top3">
+      <div class="cat-row top4">
         ${catCard('BUY',   cats.BUY)}
         ${catCard('WATCH', cats.WATCH)}
+        ${catCard('GROWTH_PREMIUM', cats.GROWTH_PREMIUM)}
         ${catCard('HOLD',  cats.HOLD)}
       </div>
       <div class="cat-row top3">
