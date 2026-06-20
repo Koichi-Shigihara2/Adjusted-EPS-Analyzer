@@ -131,59 +131,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：高（早急に対応）
 
-### [ARCH-SCORE-SYNC-1] TANUKI SCORE 判定ロジックの一本化（根本対応）
-**優先度:** 高（旧BUG-SCORE-SYNC-1を「個別バグ」から「アーキテクチャ課題」に再分類・格上げ）
-**分類:** アーキテクチャ / 根本対策
-
-#### 背景
-Python（pipeline.py）とJS（tanuki_score/index.html）が独立した判定ロジックを
-二重保持しているため、ロジック変更のたびに同期漏れが発生する構造的リスクが
-ある。直近でも96銘柄中23銘柄（24%）の食い違いが発生し、4銘柄分（BSY/ELF/
-ESTC/FICO）は応急処置（JS側にtimingゲート追加）で個別収束させたが、根本原因
-（二重実装そのもの）は未解消。**次に判定条件を変更するたびに同じ調査・修正
-コストが再発する。**
-
-#### 残課題（個別収束分）→ 解決済み
-B分類4銘柄（BSY/ELF/ESTC/FICO）: 2026-06-20、timingゲートをPython側に正式採用する
-方針で解決。pipeline.pyのBUY条件を `upside>20% かつ timing>=50` に統一し、
-timing計算式（calc_timing）もJS calcTimingのPython移植として追加した。
-
-入力データもJSと完全一致させるため、fg（Fear&Greedスコア）は固定値ではなく
-`market_data.json` の `fear_greed.score`（ライブ値）を都度読み込む実装とした
-（`_load_live_fg()`）。これによりPython/JS間でtiming計算のロジック・入力データが
-完全に一致し、構造的な食い違い要因は解消された。
-
-**検証結果（2026-06-20、live fg=37.3＝恐怖相場時点）**:
-当時の診断（B分類4銘柄がBUY/WATCHで食い違い）は別時点のFear&Greed水準・
-HypeCoreステージで観測されたものであり、本対応時点のlive fgでは恐怖圏
-（fg<50→timing+25点）がtiming得点を押し上げる方向に働くため、
-BSY/ELF/ESTC/FICOを含む既存BUY銘柄27件は新ロジックでも判定が変化しなかった
-（96銘柄中、変化0件）。「23→19への減少」は本対応時点では再現確認できていない。
-これは実装の不備ではなく、Python/JSが同一ロジック・同一データソースを参照する
-ようになった結果であり、市況（fg水準）が変われば両者は今後も連動して一致し続ける
-（根本原因＝ロジック相違は解消済み）。
-
-#### 関連事実（2026-06-20 検証で判明・要設計検討）
-RICEマトリクス表示改善（commit bc9c1dc71）の検証過程で、TANUKI SCORE判定
-ロジック自体がRICEをほぼ参照していないことが判明した。BUY群とTRIM群の
-RICE中央値がほぼ同一（0.871 vs 0.752）、RICE>=3.0（理論上の高効率帯）でも
-TRIM比率が最大という逆相関気味の分布だった。判定（BUY/TRIM/WATCH等）と
-RICEがほぼ無関係に動いているという症状は、本項目が指摘する「Python/JS
-二重実装」と表裏一体の可能性がある。RICEを判定にどう組み込むか（あるいは
-組み込まないか）は別途設計判断が必要な課題であり、本項目（実装の一本化）
-と合わせて検討するか、独立タスクとして切り出すかを次セッションで決める。
-
-#### 根本解決策（推奨）
-JSの独自再計算を廃止し、pipeline.pyの計算結果（latest.json）をJSが
-読んで表示するだけの構成に一本化する。これにより：
-- 新しい判定ロジックを追加してもPython側1箇所の変更で済む
-- 「二重計算の食い違い」というバグカテゴリ自体が将来発生しなくなる
-
-#### 着手条件
-B分類の設計判断は完了。一本化（JSの独自再計算廃止）の設計に着手可能。
-
----
-
 ### [MACRO-BUG-1] RECESSION RISK SCOREとAI Weekly Commentaryのスコア不一致（MACRO PULSE画面）
 **優先度:** 高
 - メイン画面のRECESSION RISK SCOREは27（拡張）。カスタム比較で6/13を選択しても27と表示される
@@ -914,7 +861,8 @@ EPIC化はしなかったが、どこかのタイミングで「空値表示規�
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
 ### 次セッションでの着手順序（提案）
-1. ARCH-SCORE-SYNC-1のB分類4銘柄、設計判断（timingゲート要否）
-2. 優先度「高」の個別バグ5件（MACRO-BUG-1, HYPE-BUG-1/3, DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
-3. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
-4. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
+1. 優先度「高」の個別バグ5件（MACRO-BUG-1, HYPE-BUG-1/3, DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
+2. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
+3. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
+
+（ARCH-SCORE-SYNC-1は2026-06-20に根本解決完了。BACKLOG_DONE.md参照）

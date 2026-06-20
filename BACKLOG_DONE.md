@@ -4,6 +4,25 @@
 
 ## 2026-06-20
 
+✅ [ARCH-SCORE-SYNC-1] TANUKI SCORE判定ロジックの一本化（根本解決・2026-06-20 完了）
+- Python（pipeline.py）/JS（tanuki_score/index.html）/daily_pick.pyの3箇所に
+  分散していた独自分類実装（calcFunda/calcTiming/classify相当）を全廃し、
+  pipeline.pyが計算する6分類（BUY/WATCH/HOLD/GROWTH_PREMIUM/TRIM/SELL/PASS）
+  をlatest.jsonに一本化。JS/daily_pick.pyはその値をそのまま表示・選定に使う
+  構成に変更（4段階でコミット: pipeline.py→index.html→daily_pick.py→workflow yml）
+- pipeline.pyに不足していたsellTech条件（技術的SELL判定）・timing_score・
+  matrix位置情報・sell_reason構造化フラグを新規追加。JS側にしかなかった
+  ロジックの欠落を解消し、Matrix④のFCFマージン定義も実績値に統一
+- daily_pick.pyのSELL/TRIM/PASS除外ロジックを追加し、SELL判定銘柄が
+  「特選銘柄」として強気寄りラベルで表示される問題を解消（ダミーデータで
+  SELL非選出を実証）
+- TANUKI_Score_Update.ymlをworkflow_runトリガーに変更し、daily_pick.pyが
+  pipeline.py完了前に古いデータを参照する実行順序逆転リスク（実測で
+  cron遅延2〜4時間を確認）を解消。土日は独立cronで現状の毎日実行を維持
+- pytest 110件全パス。残課題: Stage1コミット時点でNVDA以外の95銘柄は
+  新フィールド（timing_score等）未反映のため、次回平日pipeline実行
+  （月曜23:05 JST想定）またはマニュアル全銘柄再生成で解消する
+
 ✅ [RICE-THRESHOLD-1] RICE閾値・マトリクス表示改善（2026-06-20 完了）
 - 旧閾値2.0（理論的根拠なし）を理論値ベース（RICE<1.0=低効率/1.0〜3.0=中効率/
   RICE>=3.0=高効率）に統一。対象: tanuki_score/index.html・stock.html・
