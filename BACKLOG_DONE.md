@@ -4,6 +4,19 @@
 
 ## 2026-06-20
 
+✅ [HYPE-BUG-1] 「成長期」セクションの本文が黒文字で読めない（2026-06-20 完了）
+- 原因: `docs/value-monitor/hypecore/detail.html`の`.narrative-toggle`（button要素）に
+  `color`未指定。button要素は祖先のcolorを自動継承しないブラウザ仕様のため、
+  子要素`.narrative-toggle-headline`（同じく色指定漏れ）がUAデフォルトの黒系文字色になり、
+  暗色背景（`var(--sur2)`）とのコントラスト不足で読めなくなっていた
+- 修正: `.narrative-toggle`に`color:inherit`を追加し、ボタン内の子孫要素全体が
+  ページの文字色（`var(--txt)`）を継承するように変更
+- `.narrative-toggle-phase`/`.narrative-toggle-arrow`は個別`color`指定済みのため
+  本修正による影響なし（直接指定が継承より優先されるため）
+- 横展開確認: 同パターン（button自体にもcolor未指定）を他ページの主要button class
+  （`.cond-toggle`/`.low-toggle`/`.type-btn`/`.tab`/`.filter-btn`×2/`.chart-btn`）で
+  簡易grep確認したが該当なし。いずれもbutton自体にcolor明示済みで安全
+
 ✅ [MACRO-BUG-1] RECESSION RISK SCOREとAI Weekly Commentaryのスコア不一致（2026-06-20 完了）
 - 原因①（本質）: `index.html`の過去時点再構築（`computeScoreAsOf`/`latestDataDateBefore`）が
   `release_date`のみでフィルタしており、後日`05_events.csv`にバックフィルされたデータ
