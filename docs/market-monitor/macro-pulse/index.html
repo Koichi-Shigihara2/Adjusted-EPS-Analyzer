@@ -856,7 +856,8 @@ function applyForecasts(rows) {
 // ═══════════════════════════════════════════════════════
 // PERFORMANCE INDEX — O(log n) lookup for latestActualAsOf
 // ═══════════════════════════════════════════════════════
-// indicator → [{dateMs, actual}] sorted ascending by dateMs
+// indicator → [{dateMs, actual, updatedMs}] sorted ascending by dateMs
+// updatedMs: このデータがrepoに取り込まれた時刻（MACRO-BUG-1: 過去時点再構築のlook-ahead bias対策）
 let IND_INDEX = {};
 
 function buildIndex() {
@@ -867,13 +868,32 @@ function buildIndex() {
     const ind = r[COL.indicator];
     const dMs = new Date(r[COL.date]).getTime();
     if (isNaN(dMs)) continue;
+    const uMsRaw = new Date(r['updated_at']).getTime();
+    const uMs = isNaN(uMsRaw) ? dMs : uMsRaw;
     if (!IND_INDEX[ind]) IND_INDEX[ind] = [];
-    IND_INDEX[ind].push({dateMs: dMs, actual: v});
+    IND_INDEX[ind].push({dateMs: dMs, actual: v, updatedMs: uMs});
   }
   // sort ascending by date
   for (const ind in IND_INDEX) {
     IND_INDEX[ind].sort((a,b) => a.dateMs - b.dateMs);
   }
+}
+
+// MACRO-BUG-1: 過去時点の再構築用ルックアップ。dateMs<=targetMsに加え
+// updatedMs<=targetMsも要求し、後日バックフィル/改訂されたデータが
+// 過去時点の表示に先読み混入する（look-ahead bias）ことを防ぐ。
+// renderPhaseGauge()等の「現在時点」表示は引き続きidxLatestAsOf()を使う
+// （「今」は最新の改訂後データを見せるのが正しいため対象外）。
+function idxLatestKnownAsOf(ind, targetMs) {
+  const arr = IND_INDEX[ind];
+  if (!arr || !arr.length) return null;
+  let best = null;
+  for (const e of arr) {
+    if (e.dateMs <= targetMs && e.updatedMs <= targetMs) {
+      if (!best || e.dateMs > best.dateMs) best = e;
+    }
+  }
+  return best ? best.actual : null;
 }
 
 // binary search: find latest entry with dateMs <= targetMs
@@ -1930,9 +1950,11 @@ function phaseColor(score){
 }
 
 // asOfDate (Date) 時点での最新実績値を指標名から取得
+// MACRO-BUG-1: look-ahead bias対策のためidxLatestKnownAsOf()を使用
+// （release_dateだけでなくupdated_atも考慮し、当時実際に知り得た値のみ参照）
 function latestActualAsOf(ind, asOf) {
   const asOfMs = asOf instanceof Date ? asOf.getTime() : new Date(asOf).getTime();
-  return idxLatestAsOf(ind, asOfMs);
+  return idxLatestKnownAsOf(ind, asOfMs);
 }
 
 // asOfDate 時点でのスコアを計算（renderPhaseGaugeと同一ロジック）
@@ -2020,17 +2042,16 @@ function computeScoreAsOf(asOf) {
 }
 
 // 指定日以前に最もデータがある日付を文字列で返す
+// MACRO-BUG-1: updatedMs<=asOfMsも要求し、後日バックフィルされたデータの
+// release_dateだけで「参照日」が先読みされないようにする
 function latestDataDateBefore(asOf) {
   const asOfMs = new Date(asOf).getTime();
   let bestMs=0;
   for(const ind in IND_INDEX){
     const arr=IND_INDEX[ind];
-    if(!arr.length)continue;
-    // binary search for asOfMs
-    let lo=0,hi=arr.length-1;
-    if(arr[0].dateMs>asOfMs)continue;
-    while(lo<hi){const mid=(lo+hi+1)>>1;if(arr[mid].dateMs<=asOfMs)lo=mid;else hi=mid-1;}
-    if(arr[lo].dateMs>bestMs)bestMs=arr[lo].dateMs;
+    for(const e of arr){
+      if(e.dateMs<=asOfMs && e.updatedMs<=asOfMs && e.dateMs>bestMs) bestMs=e.dateMs;
+    }
   }
   return bestMs?new Date(bestMs).toISOString().slice(0,10):null;
 }

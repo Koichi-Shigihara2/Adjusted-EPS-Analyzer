@@ -131,13 +131,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：高（早急に対応）
 
-### [MACRO-BUG-1] RECESSION RISK SCOREとAI Weekly Commentaryのスコア不一致（MACRO PULSE画面）
-**優先度:** 高
-- メイン画面のRECESSION RISK SCOREは27（拡張）。カスタム比較で6/13を選択しても27と表示される
-- しかしAI Weekly Commentaryの2026/6/13付エントリでは「景気後退リスクスコアは37」と記載されている
-- 同一日付のはずのスコアが27と37で食い違っている。表示上のズレではなくスコア計算ロジックまたはデータ参照元の不整合の可能性がある
-- 原因調査・修正が必要
-
 ### [HYPE-BUG-1] 「成長期」セクションの本文が黒文字で読めない（HYPE CORE個別銘柄ページ）
 **優先度:** 高
 - 「成長期 期待の正体は『成長率の持続性への賭け』」セクションの本文テキストが黒文字になっており、紺色背景に対してコントラスト不足で読めない
@@ -889,7 +882,7 @@ EPIC化はしなかったが、どこかのタイミングで「空値表示規�
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度「高」の個別バグ5件（MACRO-BUG-1, HYPE-BUG-1/3, DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
+1. 優先度「高」の残個別バグ4件（HYPE-BUG-1/3, DISCOVER-BUG-1, PORT-LOGIC-1, TAIL-SEC-1）
 2. EPIC-LEGEND-1の試験実装（1〜2画面で先行）
 3. 上記が固まり次第、EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開
 

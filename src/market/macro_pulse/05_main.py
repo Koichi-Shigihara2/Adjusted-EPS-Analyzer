@@ -1406,7 +1406,8 @@ def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
         if val is None:
             continue
 
-        # スコア計算（renderPhaseGaugeと同一ロジック）
+        # スコア計算（renderPhaseGaugeと同一ロジック。MACRO-BUG-1: philly/claimsの
+        # トレンド補正±10ptが欠落していたため追加し、JSと完全一致させた）
         if key == 'yc':
             s = 90 if val < -0.5 else 70 if val < 0 else 40 if val < 0.5 else 15
         elif key == 'hy':
@@ -1414,11 +1415,11 @@ def _compute_current_score(events: pd.DataFrame, target_date: date) -> dict:
         elif key == 'cbcc2':
             s = 15 if val >= 1500 else 35 if val >= 1300 else 60 if val >= 1100 else 85
         elif key == 'philly':
-            s = 88 if val < -10 else 65 if val < 0 else 35 if val < 5 else 12
+            s = 88 if val < -10 else (65 + (10 if trend_dir < 0 else 0)) if val < 0 else 35 if val < 5 else 12
         elif key == 'cfnai':
             s = 82 if val < -0.7 else 50 if val < -0.35 else 18
         elif key == 'claims':
-            s = 85 if val > 300000 else 60 if val > 250000 else 35 if val > 215000 else 15
+            s = 85 if val > 300000 else (60 + (10 if trend_dir > 0 else 0)) if val > 250000 else 35 if val > 215000 else 15
         elif key == 'cbcc':
             s = 82 if val < 60 else 72 if val < 75 else 60 if val < 90 else 30
         elif key == 'sahm':

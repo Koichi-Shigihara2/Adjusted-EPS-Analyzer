@@ -4,6 +4,27 @@
 
 ## 2026-06-20
 
+✅ [MACRO-BUG-1] RECESSION RISK SCOREとAI Weekly Commentaryのスコア不一致（2026-06-20 完了）
+- 原因①（本質）: `index.html`の過去時点再構築（`computeScoreAsOf`/`latestDataDateBefore`）が
+  `release_date`のみでフィルタしており、後日`05_events.csv`にバックフィルされたデータ
+  （release_dateは過去日付だが実際の取込みは後日）が過去時点表示に先読み混入していた
+  （look-ahead bias）。6/13時点のPhilly Fed指数が好例：当時の実値は-0.4だったが、
+  6/19に取り込まれた最新値10.3が「6/13時点」の計算に紛れ込み、スコアが37→27に変動
+- 修正①: `IND_INDEX`に`updatedMs`（データの実取込み時刻）を追加し、新設の
+  `idxLatestKnownAsOf()`で`dateMs<=対象日 かつ updatedMs<=対象日`の両方を要求する
+  方式に変更。`latestActualAsOf()`/`latestDataDateBefore()`をこれに切替え。
+  現在時点表示（`renderPhaseGauge()`）は対象外（最新の改訂後データを見せるのが正しいため）
+- 原因②（副次）: `05_main.py` `_compute_current_score()`にPhilly Fed/Initial Claimsの
+  トレンド補正（±10pt）が欠落しており、「renderPhaseGaugeと同一ロジック」というコメントが
+  実態と乖離していた
+- 修正②: トレンド補正をPython側にも追加し、JS `renderPhaseGauge()`と完全一致させた
+- 検証: look-ahead bias単体修正後、6/13時点の再計算は凍結値37と完全一致を確認。
+  トレンド補正も同時適用すると38（Philly Fedの正しいトレンド加点+10が反映されるため、
+  1pt上振れは想定通り・バグではない）。現在時点のメイン画面スコアは27のまま不変を確認
+- 残課題: `computeScoreAsOf()`はlerp（連続補間）方式、Pythonはstep+trend（離散閾値）方式と
+  根本的に異なる計算式のため、別途ARCH-MATRIX-DUP-1的な一本化課題として残る可能性あり
+  （本対応のスコープ外、未着手）
+
 ✅ [ARCH-SCORE-SYNC-1] TANUKI SCORE判定ロジックの一本化（根本解決・2026-06-20 完了）
 - Python（pipeline.py）/JS（tanuki_score/index.html）/daily_pick.pyの3箇所に
   分散していた独自分類実装（calcFunda/calcTiming/classify相当）を全廃し、
