@@ -141,6 +141,21 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：中（こなれてきたら対応）
 
+### [ARCH-PORTFOLIO-DUP-1] portfolio/index.htmlに独自のfunda/timing/classify実装が存在
+**優先度:** 中
+**分類:** 設計課題 / PORTFOLIO
+
+#### 経緯
+PORT-LOGIC-1実装時に発見。ARCH-SCORE-SYNC-1で解消したのと同種の
+パターンで、docs/portfolio/index.html（234-271行目、保有銘柄テーブル
+表示用）が独自にcalcFunda()/calcTiming()/classify()を持っている。
+latest.jsonの値を直接参照していない。
+
+#### 内容
+ARCH-SCORE-SYNC-1の方針（判断ロジックをpipeline.pyに集約し、表示側は
+再計算しない）に倣い、portfolio/index.htmlの独自計算を廃止し、
+latest.jsonの値を直接参照する形に統一する必要がある。
+
 ### [MACRO-COMPUTE-DUP-1] カスタム比較機能のスコア計算が別ロジック（lerp方式）で第3の値を返す
 **優先度:** 中
 **分類:** 設計課題 / MACRO PULSE
