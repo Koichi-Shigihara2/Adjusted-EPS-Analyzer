@@ -619,7 +619,8 @@ function renderDetailTable() {
 (async function renderDailyPick() {
   const el = document.getElementById('daily-pick');
   const PICK_PATH = '../../integrated-dashboard/daily_pick.json' + TS;
-  const CAT_CLASS = { '仕込み時':'shikomi','仕込み待ち':'wait','利確検討':'profit','様子見':'watch','論外':'ronogai' };
+  // ARCH-SCORE-SYNC-1: 旧5分類(日本語)→CSSクラスのマッピングを廃止し、
+  // メインテーブルと同一のCAT_METAバッジ(badge-BUY等)を再利用する。
   const SECTION_LABELS = {
     fundamental: 'ファンダメンタル評価',
     expectation: '期待値評価',
@@ -645,7 +646,7 @@ function renderDetailTable() {
       return;
     }
 
-    const catCls  = CAT_CLASS[d.category] || 'watch';
+    const m       = CAT_META[d.category] || CAT_META.WATCH;
     const tsLabel = genAt.toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' }) + ' JST';
     const report  = d.report || {};
 
@@ -670,7 +671,7 @@ function renderDetailTable() {
         <div class="pick-reason">選出理由: ${d.selection_reason || '—'}</div>
         <div class="pick-scores">
           <span class="pick-sc">F:${d.funda_score} · T:${d.timing_score}</span>
-          <span class="pick-sc ${catCls}">${d.category}</span>
+          <span class="cat-badge ${m.badge}">${m.icon} ${m.label}</span>
         </div>
         <div class="pick-report">${sectionsHTML}</div>
       </div>`;

@@ -31,40 +31,6 @@ JST = timezone(timedelta(hours=9))
 XAI_API_KEY = os.environ.get("XAI_API_KEY", "")
 XAI_API_URL = "https://api.x.ai/v1/chat/completions"
 
-# ── Scoring（index.htmlのJS実装と同一ロジック） ───────────────
-def _pt(cond_hi, cond_mid, pts_hi, pts_mid, val):
-    if val is None:
-        return 0
-    if cond_hi(val):
-        return pts_hi
-    if cond_mid(val):
-        return pts_mid
-    return 0
-
-def calc_funda(rev_yoy, rule40, eps_yoy_pct, fcf_base):
-    s = 0
-    s += _pt(lambda v: v > 20,  lambda v: v >= 0,  25, 15, rev_yoy)
-    s += _pt(lambda v: v > 40,  lambda v: v >= 20, 25, 15, rule40)
-    s += _pt(lambda v: v > 20,  lambda v: v >= 0,  25, 15, eps_yoy_pct)
-    s += 25 if (fcf_base is not None and fcf_base > 0) else 0
-    return s
-
-def calc_timing(upside, fg, stage):
-    s = 0
-    if upside is not None:
-        s += 40 if upside > 30 else 25 if upside >= 10 else 10 if upside >= 0 else 0
-    s += 40 if fg < 30 else 25 if fg < 50 else 10 if fg < 70 else 0
-    if stage is not None:
-        s += 20 if stage == 1 else 15 if stage == 2 else 5 if stage == 3 else 0
-    return s
-
-def classify(f, t):
-    if f < 25:             return "論外"
-    if f >= 50 and t >= 50: return "仕込み時"
-    if f >= 50:             return "仕込み待ち"
-    if t >= 60:             return "利確検討"
-    return "様子見"
-
 # ── Data loaders ──────────────────────────────────────────────
 def load_json(path):
     try:
@@ -114,51 +80,46 @@ def save_history(history):
         json.dump(history, f, ensure_ascii=False, indent=2)
 
 # ── Score all stocks ──────────────────────────────────────────
-def score_all(tickers, mkt):
-    fg          = mkt.get("fear_greed", {}).get("score", 50)
+def score_all(tickers):
+    """pipeline.py(latest.json)が計算済みの6分類をそのまま使う（ARCH-SCORE-SYNC-1）"""
     eps_summary = load_eps_summary()
     results     = []
 
     for ticker in tickers:
-        tk = load_tanuki(ticker)
-        hc = load_hype(ticker)
-        ep = eps_summary.get(ticker, {})
+        tk  = load_tanuki(ticker)
+        ep  = eps_summary.get(ticker, {})
 
-        rev_yoy   = hc.get("rev_yoy")
-        rule40    = hc.get("rule40")
-        yoy_dec   = ep.get("yoy_growth")
-        eps_yoy   = yoy_dec * 100 if yoy_dec is not None else None
-        fcf_raw   = tk.get("fcf_base")
-        fcf_base  = (
-            fcf_raw.get("base_fcf") if isinstance(fcf_raw, dict)
-            else fcf_raw if isinstance(fcf_raw, (int, float))
-            else None
-        )
-        upside = tk.get("upside_percent")
-        stage  = hc.get("stage")
-
-        f   = calc_funda(rev_yoy, rule40, eps_yoy, fcf_base)
-        t   = calc_timing(upside, fg, stage)
-        cat = classify(f, t)
+        cat = tk.get("tanuki_score")
+        f   = tk.get("funda_score")
+        if cat is None or f is None:
+            continue  # latest.json未生成(pipeline.py未実行)のtickerはスキップ
 
         results.append({
-            "ticker":  ticker,
-            "company": ep.get("company_name", ticker),
-            "funda":   f,
-            "timing":  t,
+            "ticker":   ticker,
+            "company":  ep.get("company_name", ticker),
+            "funda":    f,
+            "timing":   tk.get("timing_score") or 0,
             "category": cat,
         })
 
     return results
 
 # ── Selection logic ───────────────────────────────────────────
+# ARCH-SCORE-SYNC-1: TRIM/SELL/PASSは「特選銘柄」の候補から除外する
+# （SELL判定銘柄が強気寄りの特選銘柄として表示される問題の解消）
+ELIGIBLE_CATEGORIES = ("BUY", "WATCH", "GROWTH_PREMIUM", "HOLD")
+CATEGORY_PRIORITY = {"BUY": 0, "WATCH": 1, "GROWTH_PREMIUM": 2, "HOLD": 3}
+
 def select_ticker(stocks, history, today_str):
     """
-    優先①: 前日から分類が変わった銘柄
+    優先①: 前日から分類が変わった銘柄（BUY/WATCH/GROWTH_PREMIUM/HOLDのみ対象）
     優先②: Grokニュース検索で重大ニュースのある銘柄
     優先③: ファンダ上位・最長未選出
     """
-    today_cats = {s["ticker"]: s["category"] for s in stocks}
+    eligible = [s for s in stocks if s["category"] in ELIGIBLE_CATEGORIES]
+    if not eligible:
+        print("[daily_pick] 警告: BUY/WATCH/GROWTH_PREMIUM/HOLDが0件のため全銘柄を候補にフォールバック")
+        eligible = stocks
 
     # 優先①: 前日の全分類と比較
     if history:
@@ -166,30 +127,29 @@ def select_ticker(stocks, history, today_str):
         prev_cats = yesterday.get("all_categories", {})
         if prev_cats:
             changed = [
-                s for s in stocks
+                s for s in eligible
                 if prev_cats.get(s["ticker"]) and prev_cats[s["ticker"]] != s["category"]
             ]
             if changed:
-                # カテゴリ重要度（仕込み時 → 仕込み待ち → 利確検討 の順で優先）
-                order = {"仕込み時": 0, "仕込み待ち": 1, "利確検討": 2, "様子見": 3, "論外": 4}
-                changed.sort(key=lambda s: (order.get(s["category"], 9), -s["funda"]))
+                # カテゴリ重要度（BUY → WATCH → GROWTH_PREMIUM → HOLD の順で優先）
+                changed.sort(key=lambda s: (CATEGORY_PRIORITY.get(s["category"], 9), -s["funda"]))
                 best = changed[0]
                 old_cat = prev_cats.get(best["ticker"], "不明")
                 return best, f"分類変化: {old_cat} → {best['category']}"
 
     # 優先②: Grokニュース検索（API設定済みかつ良質銘柄のみ対象）
     if XAI_API_KEY:
-        candidates = [s["ticker"] for s in stocks if s["category"] in ("仕込み時", "仕込み待ち")][:20]
+        candidates = [s["ticker"] for s in eligible if s["category"] in ("BUY", "WATCH")][:20]
         if candidates:
             pick, reason = grok_news_search(candidates, today_str)
             if pick:
-                s = next((x for x in stocks if x["ticker"] == pick), None)
+                s = next((x for x in eligible if x["ticker"] == pick), None)
                 if s:
                     return s, reason
 
     # 優先③: ファンダ上位・最長未選出（直近の選出銘柄は除外）
     last_pick = history[0]["ticker"] if history else None
-    candidates = [s for s in stocks if s["ticker"] != last_pick] or stocks
+    candidates = [s for s in eligible if s["ticker"] != last_pick] or eligible
 
     pick_idx = {h["ticker"]: i for i, h in enumerate(history)}
     candidates.sort(key=lambda s: (-pick_idx.get(s["ticker"], len(history) + 1), -s["funda"]))
@@ -417,12 +377,17 @@ def generate_report(stock, mkt):
 - risk_off_score: 0=RISK ON（株式に追い風）、67以上=RISK OFF（リスク回避）。
 - tech_pulse: NASDAQベースのセンチメント。fear_greed_scoreとの乖離が大きい場合NASDAQ固有の動き。
 
-【TANUKI SCORE分類】
-- 仕込み時: ファンダスコア≥50 かつ タイミングスコア≥50
-- 仕込み待ち: ファンダスコア≥50 かつ タイミングスコア<50
-- 利確検討: ファンダスコア25-49 かつ タイミングスコア≥60
-- 様子見: その他
-- 論外: ファンダスコア<25
+【TANUKI SCORE分類】（pipeline.py算出の6分類。判定は全銘柄共通ロジック）
+- BUY: ファンダ≥50 かつ 乖離率>20% かつ タイミング≥50 — 今仕込んでもよい
+- WATCH: ファンダ≥50 かつ 乖離率0〜20% — 購入候補としてウォッチ
+- GROWTH_PREMIUM: 乖離率<-30%・陶酔期以降(stage≥3)で本来はTRIM該当だが、
+  現在の実績成長率が逆算必要成長率を上回っており正当化される状態
+- HOLD: ファンダ良好だが上記いずれにも該当しない — 保有継続・新規不要
+- TRIM: ファンダ≥50 かつ 乖離率<-30% かつ 陶酔期以降(stage≥3)で、
+  成長率が必要水準に届かない — 一部利確検討
+- SELL: 売上鈍化×Rule40<20×FCF悪化（ファンダ要因）、または
+  崩壊期(stage≥4)×乖離率<-20%×MA200から-10%超下方乖離（技術的要因）
+- PASS: ファンダ<25 — 対象外
 
 === 記述ルール ===
 
@@ -434,7 +399,7 @@ def generate_report(stock, mkt):
    例：『理論株価481ドル（現在株価219ドル、乖離+122%）』
 
 3. HypeCoreフェーズとTANUKI SCOREカテゴリが一見矛盾する場合
-   （例：陶酔期なのに仕込み時）は必ずその理由を説明すること。
+   （例：陶酔期なのにBUY）は必ずその理由を説明すること。
 
 === 定量データ ===
 {json.dumps(data_pkg, ensure_ascii=False, indent=2)}
@@ -490,7 +455,7 @@ def main():
 
     # Score all
     print(f"[daily_pick] Scoring {len(tickers)} tickers...")
-    stocks = score_all(tickers, mkt)
+    stocks = score_all(tickers)
     stocks.sort(key=lambda s: (-s["funda"], -s["timing"]))
 
     # Select
