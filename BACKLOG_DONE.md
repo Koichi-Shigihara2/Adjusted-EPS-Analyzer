@@ -4,6 +4,40 @@
 
 ## 2026-06-21
 
+✅ [MP-RENDERALL-CRASH-1] Market Pulse表示崩れ（テックパルス未計算・スコア構成指標50%固定・Tech Pulseセクション「LOADING」停止）の一連の対応（2026-06-21 完了）
+- **経緯①（症状発覚〜応急処置）**: 本日朝の自動更新コミット`ccd763082`（github-actions[bot]）で
+  `market_data.json`に生の`NaN`トークンが24箇所混入 →`Response.json()`構文エラー→
+  `index.html`が無言で`makeSample()`（ダミーデータ）にフォールバック（症状: テックパルス
+  未計算、スコア構成指標6/7が50%固定）。`NaN`→`null`へのsurgical手動修正で復旧
+  （ロールバックではなく直接修正を採用。理由は当日分の正当なデータを失わないため）
+- **経緯②（恒久対応＝MP-DATA-NULL-1）**: `collect_and_send.py`の`Close`値抽出12箇所に
+  `math.isnan()`ガードを追加し、`NaN`の再混入自体を防止（詳細は[[MP-DATA-NULL-1]]参照）
+- **経緯③（新たな症状の発覚）**: ②の対応後、Tech Pulseセクションが「LOADING」のまま
+  停止し、CNN F&G/VXN/QQQ vs SPY/乖離Zスコアが表示されない別症状が判明
+- **根本原因**: `renderMetrics()`内`ind.value.toFixed(2)`（610行目）が、②によって
+  `null`化された値（`S&P500`/`NASDAQ`等。オブジェクト自体は存在し`value`フィールドのみ
+  `null`という形）に対して例外を投げていた。`renderAll()`が同期・try-catchなしで
+  各render関数を直列呼び出ししていたため、1関数の例外で後続6関数（`renderMetricBtns`
+  以降、Tech Pulse描画を含む）が一切実行されなくなる構造的問題だった。
+  `renderAssetFlow()`の`pct.toFixed(2)`（`asset_flow.ig_bond`等）にも同型の漏れがあり、
+  610行目の例外に隠れて潜在していた
+- **根本修正（コミット`1a03e1b42`）**:
+  `renderMetrics()`/`renderAssetFlow()`/`renderTimeline()`にnullガードを追加し、
+  既存の「データなし」表示（カード/タイルの`—`表示）にフォールバックするよう統一。
+  `renderAll()`を`RENDER_ALL_FNS`配列＋`forEach`+`try-catch`化し、1関数の例外が
+  後続の描画を連鎖停止させない構造に変更（例外発生時は`console.error`で関数名付き
+  ログを出力し無言で握りつぶさない）
+- **横展開確認**: ファイル内の`.toFixed()`/`.toLocaleString()`呼び出し全箇所を監査。
+  VIX9D比較（`vix9dRow`）はPython側でデータ無効時にオブジェクト全体が`null`になる
+  設計のため既存ガードで安全、`sub_scores`系はPython側で常にスコアが補完される
+  設計（無効時は中立値0.5＝50点を設定）のため安全と確認し、追加修正は不要と判断
+- **教訓**: `NaN`の直接JSON出力という収集側の欠陥（MP-DATA-NULL-1）が表面化した際、
+  その場しのぎでJSONを直すだけでは「オブジェクトは存在するが個別フィールドが
+  `null`」という新しい状態を生み、フロントエンド側に潜在していた別のnullガード
+  漏れを誘発した。データ修復とフロントエンドのエラー耐性（1箇所の例外が全体を
+  道連れにしない設計）は別レイヤーの課題であり、両方そろって初めて再発に強い
+  状態になる
+
 ✅ [MP-DATA-NULL-1] Market Pulse収集データのNaN混入防御（応急処置＋恒久対応、2026-06-21 完了）
 - **発端**: Market Pulse画面で「テックパルス未計算」「スコア構成指標の多くが50%固定」と
   ユーザー報告。調査の結果、本日朝の自動更新コミット`ccd763082`（github-actions[bot]、
