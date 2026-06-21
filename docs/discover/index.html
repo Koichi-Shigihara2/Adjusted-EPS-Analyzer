@@ -201,7 +201,7 @@ function buildNewsItem(item) {
     : '';
   return `<div class="news-item">
     <div class="news-item-head">
-      <span class="news-cat cat-${escHtml(c)}">${escHtml(c)}</span>
+      <span class="news-cat cat-${escHtml(c)}" data-info="discover_tag_color">${escHtml(c)}</span>
       <span class="news-imp imp-${escHtml(item.importance || '低')} sm">${escHtml(item.importance || '低')}</span>
       ${titleHtml}
       ${dateStr}
@@ -352,7 +352,7 @@ function renderTickerSection() {
       if (!alertZone.find(([t]) => t === item[0])) alertZone.push(item);
     }
   }
-  html += '<div class="zone-header zone-alert">🔴 要注目ゾーン</div>';
+  html += '<div class="zone-header zone-alert"><span data-info="discover_alert_zone">🔴 要注目ゾーン</span></div>';
   if (alertZone.length > 0) {
     html += '<div class="ticker-cards zone-alert-cards">';
     for (const [ticker, data] of alertZone) html += buildTickerCard(ticker, data, configTickers, themeMapById);
@@ -597,5 +597,6 @@ function toggleCond(btn, id) {
 loadData();
 </script>
   <script src="../common/site-nav.js"></script>
+  <script src="../common/info-tooltip.js"></script>
 </body>
 </html>
