@@ -647,7 +647,7 @@ function renderHypemix(posAgg, hypeMap, tanukiMap, universeTickers) {
     <div class="hypemix-wrap">
       <div class="hypemix-hdr">
         <span style="font-family:var(--mono);font-size:11px;color:var(--mut)">保有${total}銘柄のフェーズ分布</span>
-        <span class="hypemix-badge ${badgeCls}">${badgeTxt}</span>
+        <span class="hypemix-badge ${badgeCls}" data-info="port_hypemix_badge">${badgeTxt}</span>
       </div>
       <div class="hypemix-charts">
         <div class="hypemix-chart-card">
@@ -820,5 +820,6 @@ function renderHistoryChart() {
   <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
   <script src="../common/site-nav.js"></script>
+  <script src="../common/info-tooltip.js"></script>
 </body>
 </html>
