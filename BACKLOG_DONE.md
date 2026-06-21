@@ -4,6 +4,43 @@
 
 ## 2026-06-21
 
+✅ [MP-IRX-FRED-1] 短期国債データ取得をyfinance(^IRX)からFRED API(DGS3MO)へ切替（2026-06-21 完了）
+- **発端**: `asset_flow.short_bond`（^IRX）がGitHub Actions環境からの収集で
+  4日連続（6/18〜6/21）取得失敗（None）。Yahoo Finance公式サイトでは同期間の
+  ^IRXデータが実在することをユーザーが直接確認しており、「データ不在」では
+  なく「取得経路側の問題」と判明（推定原因: GitHub Actions環境のクラウドIPに
+  対するYahoo側レート制限。スクリプト内に約29回の逐次yfinance呼び出しに
+  対しsleep等の間隔調整が皆無で、かつ`^IRX`等の指数系シンボルはETF系シンボル
+  （SHV/GLD/TLT/LQD/HYG/SPY、同期間14日で実質ノーエラー）よりYahoo側の
+  配信が不安定という状況証拠あり。GitHub Actions実行ログ自体は本セッション
+  からは認証不足のため確認不可だった）
+- **対応**: `collect_asset_flow()`内の`short_bond`のみ、新設の
+  `fetch_fred_short_bond()`経由でFRED API（`DGS3MO`＝3ヶ月T-Bill流通市場
+  利回り系列）から取得するよう切替。`fredapi`は既存の`fetch_vxn_from_fred()`
+  （VXNCLS取得）と同じ`FRED_API_KEY`環境変数・呼び出しパターンを踏襲しており、
+  GitHub Secrets側の追加設定は不要（`Market_Pulse_Update.yml`に既に
+  `FRED_API_KEY`が渡されている）
+- **他6資産（yfinance経由）には一切手を加えていない**。ループ内で
+  `short_bond`のみ専用関数に分岐させる形で、既存の`result`辞書構造
+  （label/ticker/desc/value/change_pct/date）はそのまま維持
+- **change_pctの定義**: 他6資産（ETF価格ベース）との表示整合性を優先し、
+  ^IRX時代と同じ「利回り値そのものの変化率（%）」をそのまま踏襲（bp差分には
+  変更していない）。フロントエンド（`renderAssetFlow()`）側の表示ロジック・
+  色分け・ツールチップは無改修で動作する
+- **FREDの更新ラグ対応**: DGS3MOは1営業日程度遅れて公表されるため、
+  `date`フィールドはFRED側の実際の最終データ日付をそのまま採用（既存の
+  他資産が休場日に前回値の日付を据え置く挙動と同じ設計）
+- **副次対応**: `collect_asset_flow()`の残り6資産（yfinance経由）の
+  `hist is None`等の取得失敗分岐に、失敗理由（hist=None／行数不足／NaN混入）
+  を切り分けるログ出力を追加。次回同種の取得失敗が他銘柄で発生した場合に
+  GitHub Actionsログから直接原因を追えるようにした
+- **動作確認**: ローカル環境（FRED_API_KEY設定済み）で`fetch_fred_short_bond()`
+  単体・`collect_asset_flow()`全体を実行し、`short_bond`が`value=3.83,
+  date=2026-06-17`（FREDの最新公表日）で正常取得されることを確認。他6資産も
+  従来通りyfinance経由で正常値を返すことを確認。pytest 110件全パス維持
+- **SYSTEM_MAP.md**: 「Market Pulse ← yfinance / CNN F&G / FREDデータ」の
+  記載が既にFREDを情報源として含んでいたため、更新不要と判断（確認済み）
+
 ✅ [MP-RENDERALL-CRASH-1] Market Pulse表示崩れ（テックパルス未計算・スコア構成指標50%固定・Tech Pulseセクション「LOADING」停止）の一連の対応（2026-06-21 完了）
 - **経緯①（症状発覚〜応急処置）**: 本日朝の自動更新コミット`ccd763082`（github-actions[bot]）で
   `market_data.json`に生の`NaN`トークンが24箇所混入 →`Response.json()`構文エラー→

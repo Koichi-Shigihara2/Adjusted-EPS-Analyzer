@@ -948,26 +948,75 @@ def extract_judgment(report_text):
 
 
 
+def fetch_fred_short_bond(asset_def):
+    """
+    短期国債（3ヶ月T-Bill）データをFRED API（DGS3MO系列）から取得する。
+    ^IRX（yfinance）はGitHub Actions環境からの取得が直近4日連続で失敗しており
+    （Yahoo Finance公式サイトでは同期間のデータ存在を確認済み＝取得経路側の
+    問題と判断）、short_bondのみFRED APIに切替（MP-IRX-FRED-1）。
+    change_pctは他6資産（ETF価格ベース）との表示整合性のため、利回り値そのものの
+    変化率（%）として算出する（bp差分ではない。^IRX時代の定義をそのまま踏襲）。
+    FREDのDGS3MOは更新に1営業日程度のラグがあるため、dateフィールドは
+    FRED側の実際の最終データ日付をそのまま使う（当日分とは限らない）。
+    """
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        print("[WARN] asset_flow 短期国債(DGS3MO): FRED_API_KEY未設定。スキップ。")
+        return None
+    try:
+        from fredapi import Fred
+        fred = Fred(api_key=fred_api_key)
+        start = (datetime.now() - timedelta(days=30)).strftime('%Y-%m-%d')
+        series = fred.get_series("DGS3MO", observation_start=start).dropna()
+        if len(series) < 2:
+            print(f"[WARN] asset_flow 短期国債(DGS3MO): データ不足（{len(series)}件）。")
+            return None
+        latest = float(series.iloc[-1])
+        prev = float(series.iloc[-2])
+        chg_pct = (latest - prev) / prev * 100 if prev > 0 else 0
+        date_str = series.index[-1].strftime("%Y-%m-%d")
+        print(f"[INFO] asset_flow {asset_def['label']}(DGS3MO): {chg_pct:+.2f}% (latest={latest}, date={date_str})")
+        return {
+            "label":    asset_def["label"],
+            "ticker":   asset_def["ticker"],
+            "desc":     asset_def["desc"],
+            "value":    round(latest, 4),
+            "change_pct": round(chg_pct, 3),
+            "date":     date_str,
+        }
+    except Exception as e:
+        print(f"[WARN] asset_flow 短期国債(DGS3MO)取得失敗: {e}")
+        return None
+
+
 def collect_asset_flow():
     """
     資産クラス間資金フロービジュアライザー用データ収集
     並び順（安全→リスク）: 超短期国債→短期国債→金→長期国債→投資適格社債→HY社債→株式
+    short_bond（短期国債）のみFRED API経由（fetch_fred_short_bond参照、MP-IRX-FRED-1）。
+    他6資産はyfinance経由のまま。
     """
     ASSETS = [
-        {"key": "ultra_short", "label": "超短期国債", "ticker": "SHV",  "desc": "1-3ヶ月T-Bill ETF"},
-        {"key": "short_bond",  "label": "短期国債",   "ticker": "^IRX", "desc": "3ヶ月T-Bill利回り"},
-        {"key": "gold",        "label": "金",          "ticker": "GLD",  "desc": "金ETF"},
-        {"key": "long_bond",   "label": "長期国債",    "ticker": "TLT",  "desc": "20年超米国債ETF"},
-        {"key": "ig_bond",     "label": "投資適格社債","ticker": "LQD",  "desc": "投資適格社債ETF"},
-        {"key": "hy_bond",     "label": "HY社債",      "ticker": "HYG",  "desc": "ハイイールド社債ETF"},
-        {"key": "equity",      "label": "株式",         "ticker": "SPY",  "desc": "S&P500 ETF"},
+        {"key": "ultra_short", "label": "超短期国債", "ticker": "SHV",     "desc": "1-3ヶ月T-Bill ETF"},
+        {"key": "short_bond",  "label": "短期国債",   "ticker": "DGS3MO", "desc": "3ヶ月T-Bill利回り"},
+        {"key": "gold",        "label": "金",          "ticker": "GLD",     "desc": "金ETF"},
+        {"key": "long_bond",   "label": "長期国債",    "ticker": "TLT",     "desc": "20年超米国債ETF"},
+        {"key": "ig_bond",     "label": "投資適格社債","ticker": "LQD",     "desc": "投資適格社債ETF"},
+        {"key": "hy_bond",     "label": "HY社債",      "ticker": "HYG",     "desc": "ハイイールド社債ETF"},
+        {"key": "equity",      "label": "株式",         "ticker": "SPY",     "desc": "S&P500 ETF"},
     ]
     result = {}
     for a in ASSETS:
+        if a["key"] == "short_bond":
+            result[a["key"]] = fetch_fred_short_bond(a)
+            continue
         try:
             hist = fetch_hist(a["ticker"], period="5d")
             if (hist is None or len(hist) < 2
                     or _is_nan(hist["Close"].iloc[-1]) or _is_nan(hist["Close"].iloc[-2])):
+                reason = "hist取得失敗（空またはAPI例外）" if hist is None else (
+                    f"データ行数不足（{len(hist)}行）" if len(hist) < 2 else "Close値にNaN混入")
+                print(f"[WARN] asset_flow {a['label']}({a['ticker']}): 取得失敗 - {reason}")
                 result[a["key"]] = None
                 continue
             latest = float(hist["Close"].iloc[-1])
