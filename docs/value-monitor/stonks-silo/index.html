@@ -338,7 +338,7 @@
           </th>
           <th data-sort="runway">
             <span class="th-inner">
-              <span class="tip-wrap">生存期間<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞</span></span>
+              <span class="tip-wrap">生存期間<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">生存可能期間。現金(現金+短期投資)÷月次バーン((OCF+CapEx)÷12)。≥24ヶ月→SAFE(緑) / 12-24ヶ月→WATCH(橙) / &lt;12ヶ月→DANGER(赤)。OCFがプラスなら∞。「–」は計算に必要なデータ（現金・バーンレート等）が取得できず計算不可であることを示す</span></span>
               <span class="sort-arr" onclick="setSort('runway')" style="color:var(--mut)"> ⇅</span>
             </span>
           </th>
@@ -362,7 +362,7 @@
           </th>
           <th class="r" data-sort="be">
             <span class="th-inner" style="justify-content:flex-end">
-              <span class="tip-wrap">黒字化<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス</span></span>
+              <span class="tip-wrap">黒字化<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">OCF（営業CF）または純利益の黒字化予測年。過去トレンドの線形外挿。「達成済」はOCFがすでにプラス。「–」はトレンドが改善方向ではない等の理由で黒字化年を予測できないことを示す</span></span>
               <span class="sort-arr" onclick="setSort('be')" style="color:var(--mut)"> ⇅</span>
             </span>
           </th>
@@ -980,7 +980,7 @@ function buildDetail(ticker, d) {
   const reproDetailText = pp.incremental_margin != null
     ? `売上+${fmtB(pp.incremental_rev_delta)}増 → 粗利${(pp.incremental_gp_delta??0)>=0?'+':''}${fmtB(pp.incremental_gp_delta)}増（増分粗利率${pp.incremental_margin.toFixed(1)}%${reproTrendText}）`
     : '—';
-  const reproBar = reproLabel === 'データ不足' ? '' : `<div class="repro-bar"><div class="repro-left"><div class="repro-title">拡大再生産</div><div class="repro-dots" style="color:${reproColor}">${reproDots}</div><div class="repro-label" style="color:${reproColor}">${reproLabel}</div></div><div class="repro-detail">${reproDetailText}</div></div>`;
+  const reproBar = reproLabel === 'データ不足' ? '' : `<div class="repro-bar"><div class="repro-left"><div class="repro-title" data-info="silo_repro_dots">拡大再生産</div><div class="repro-dots" style="color:${reproColor}">${reproDots}</div><div class="repro-label" style="color:${reproColor}">${reproLabel}</div></div><div class="repro-detail">${reproDetailText}</div></div>`;
 
 
   return `
@@ -1507,5 +1507,6 @@ loadData();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="/On-a-journey/common/site-nav.js"></script>
+<script src="/On-a-journey/common/info-tooltip.js"></script>
 </body>
 </html>
