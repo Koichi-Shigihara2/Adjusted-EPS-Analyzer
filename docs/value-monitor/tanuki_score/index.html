@@ -823,6 +823,10 @@ function renderScoreVerify(allEntries) {
 }
 
 // ─── ⑥ DuPont分解パネル ────────────────────────────────────────
+function escAttr(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
 function renderDuPontPanel() {
   const el = document.getElementById('dupont-panel');
   if (!el) return;
@@ -855,7 +859,7 @@ function renderDuPontPanel() {
       isExtreme ? '一過性要因または特殊資本構成の可能性あり（|ROE|>100%）' : null,
     ].filter(Boolean).join(' / ');
     const flagBadge = flagTitle
-      ? `<span title="${flagTitle}" style="margin-left:4px;cursor:help;color:#facc15">⚠</span>`
+      ? `<span data-info-text="${escAttr(flagTitle)}" style="margin-left:4px;color:#facc15">⚠</span>`
       : '';
     return `<tr>
       <td style="font-weight:600">${catDot}${s.ticker}${flagBadge}</td>
@@ -881,7 +885,7 @@ function renderDuPontPanel() {
         <thead>
           <tr style="color:var(--mut);border-bottom:1px solid var(--border)">
             <th style="text-align:left;padding:4px 8px">銘柄</th>
-            <th style="text-align:right;padding:4px 8px">ROE(DuPont)</th>
+            <th style="text-align:right;padding:4px 8px" data-info="tscore_dupont_roe_color">ROE(DuPont)</th>
             <th style="text-align:right;padding:4px 8px">純利益率</th>
             <th style="text-align:right;padding:4px 8px">資産回転率</th>
             <th style="text-align:right;padding:4px 8px">財務ﾚﾊﾞﾚｯｼﾞ</th>
@@ -1094,5 +1098,6 @@ function renderRiceMatrix() {
 }
 </script>
   <script src="../../common/site-nav.js"></script>
+  <script src="../../common/info-tooltip.js"></script>
 </body>
 </html>
