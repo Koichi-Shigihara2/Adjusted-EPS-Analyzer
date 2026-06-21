@@ -1060,8 +1060,10 @@ function updateTicker() {
 // ═══════════════════════════════════════════════════════
 // ① PHASE GAUGE
 // ═══════════════════════════════════════════════════════
-function renderPhaseGauge() {
-  if(!DATA.length)return;
+// MACRO-COMPUTE-DUP-1: 「現在」のスコア計算をrenderPhaseGaugeから分離。
+// computeScoreAsOf()がasOf=現在を指すときに同一ロジックを再利用するための共通関数。
+function computeCurrentScore() {
+  if(!DATA.length)return null;
   const now=Date.now();
   const latestActual=(ind)=>idxLatestAsOf(ind,now);
   const trend3=(ind)=>{
@@ -1137,6 +1139,14 @@ signals.push({name:'Sahm Rule',val:sahmLabel,score:sahmScore,signal:sahmSignal,w
   const totalW=signals.reduce((s,sg)=>s+(sg.val!=='—'?sg.weight:0),0);
   const rawScore=totalW>0?signals.reduce((s,sg)=>s+(sg.val!=='—'?sg.score*sg.weight:0),0)/totalW:50;
   const score=Math.round(rawScore);
+
+  return { score, signals };
+}
+
+function renderPhaseGauge() {
+  const result=computeCurrentScore();
+  if(!result)return;
+  const { score, signals } = result;
 
   let phase,phaseClass,phaseSub,trackColor;
   if(score<30){phase='拡張';phaseClass='phase-expand';phaseSub='景気は拡大局面';trackColor='var(--grn)';}
@@ -1957,8 +1967,23 @@ function latestActualAsOf(ind, asOf) {
   return idxLatestKnownAsOf(ind, asOfMs);
 }
 
-// asOfDate 時点でのスコアを計算（renderPhaseGaugeと同一ロジック）
+// asOfが実質「現在」を指すかどうか（当日23:59:59等、現時点以降のタイムスタンプ）
+function isEffectivelyNow(asOf) {
+  const asOfMs = asOf instanceof Date ? asOf.getTime() : new Date(asOf).getTime();
+  return asOfMs >= Date.now();
+}
+
+// asOfDate 時点でのスコアを計算
+// MACRO-COMPUTE-DUP-1: asOfが実質「現在」を指す場合はrenderPhaseGaugeと完全に同一の
+// ロジック（trend3考慮のstep関数。computeCurrentScore()）を使う。
+// 過去日付は閾値付近の急変緩和のため引き続きlerp補間する
+// （c3eb81572 2026-05-22の意図的な修正＝スコア履歴チャート/L3スライダー用。維持する）
 function computeScoreAsOf(asOf) {
+  if (isEffectivelyNow(asOf)) {
+    const cur = computeCurrentScore();
+    return cur ? cur.score : null;
+  }
+
   const la = ind => latestActualAsOf(ind, asOf);
 
   const yc     = la('Yield Curve 10Y-2Y');

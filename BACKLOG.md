@@ -137,23 +137,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：中（こなれてきたら対応）
 
-### [MACRO-COMPUTE-DUP-1] カスタム比較機能のスコア計算が別ロジック（lerp方式）で第3の値を返す
-**優先度:** 中
-**分類:** 設計課題 / MACRO PULSE
-
-#### 経緯
-MACRO-BUG-1（27 vs 37不一致）の修正過程で発見。look-ahead bias解消・
-トレンド補正統一後、renderPhaseGauge()と_compute_current_score()は
-38で一致したが、computeScoreAsOf()（カスタム比較機能）は独自のlerp
-（連続補間）方式を使っており、同一時点・同一データに対して35という
-第3の値を返す。
-
-#### 内容
-ARCH-SCORE-SYNC-1・ARCH-MATRIX-DUP-1と同根の「同じ判定を複数箇所で
-別ロジック計算している」問題。computeScoreAsOf()のlerp方式を、
-renderPhaseGauge()/_compute_current_score()と統一するか、それらの
-結果を参照する方式に変更する必要がある。
-
 ### [ARCH-MATRIX-DUP-1] RICE×乖離率マトリクスの重複・差異実装
 **優先度:** 中
 **分類:** 設計課題 / TANUKI SCORE・TANUKI VALUATION

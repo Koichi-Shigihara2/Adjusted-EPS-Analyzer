@@ -4,6 +4,27 @@
 
 ## 2026-06-21
 
+✅ [MACRO-COMPUTE-DUP-1] カスタム比較機能のスコア計算が別ロジック（lerp方式）で第3の値を返す（2026-06-21 完了）
+- **調査結果（実装前にユーザー確認済み）**: `computeScoreAsOf()`のlerp方式は重複バグではなく、
+  コミット`c3eb81572`（2026-05-22「RECESSIONスコアをステップ関数→線形補間に変更（閾値付近の
+  急変を緩和）」）で意図的に導入されたもの。用途はスコア履歴チャート（1996年〜の長期推移、
+  `renderScoreHistory`）とL3レーダーの時間スライダー（`onL3SliderInput`）で、過去日付を
+  辿る際の急激な階段状ジャンプを緩和する目的。renderPhaseGauge()側はstep関数のまま据え置き
+  だったため、asOf=「現在」を渡した場合だけstep版（38）とlerp版（35）の3つ目の値が出ていた
+- **実装方針**: 全面統一（step化 or lerp化）ではなく、asOfが実質「現在」を指す場合のみ
+  renderPhaseGauge()と完全に同一のロジックを使い、過去日付は引き続きlerpで補間する方式を
+  採用（5/22の意図的な急変緩和修正を維持しつつ、「現在」の3値問題のみ解消）
+- `renderPhaseGauge()`の指標スコア計算部分（trend3考慮のstep関数、8指標分）を
+  `computeCurrentScore()`として分離・共通化。`renderPhaseGauge()`はこれを呼び出してDOM
+  描画のみ行う構成に変更。`computeScoreAsOf(asOf)`の冒頭に`isEffectivelyNow(asOf)`判定を
+  追加し、真の場合は`computeCurrentScore().score`をそのまま返す
+- 検証（Playwrightで実ページを起動し検証。pytestではカバーできないフロントエンドJSのため）:
+  `computeCurrentScore().score` / `renderPhaseGauge`のゲージ表示値 / `computeScoreAsOf(now)`
+  / `computeScoreAsOf(今日23:59:59)`の4値が完全一致（27）することを確認。60日前等の過去日付
+  では`isEffectivelyNow`=false・lerp値（30）を引き続き返すことを確認（lerp区分は維持）。
+  比較バー4セル（3ヶ月前/2ヶ月前/前月末/先週）も正常表示・JSエラーなしを確認
+- 検証: pytest 152件全パス、check_links.py リンク切れ0件
+
 ✅ [ARCH-PORTFOLIO-DUP-1] portfolio/index.htmlに独自のfunda/timing/classify実装が存在（2026-06-21 完了）
 - ARCH-SCORE-SYNC-1の方針（判断ロジックをpipeline.pyに集約し、表示側は再計算しない）に
   倣い、`docs/portfolio/index.html`の独自実装`calcFunda()`/`calcTiming()`/`classify()`を
