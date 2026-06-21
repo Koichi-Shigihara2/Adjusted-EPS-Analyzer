@@ -20,11 +20,6 @@
 
     /* Header */
     header{border-bottom:1px solid var(--bdr);padding:16px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:48px}
-    .logo{font-family:var(--mono);font-size:16px;font-weight:700;letter-spacing:.15em;display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;cursor:pointer}
-    a.logo:hover .logo-dot{box-shadow:0 0 0 4px rgba(59,130,246,.25)}
-    .logo-dot{width:8px;height:8px;background:var(--acc);border-radius:50%;animation:pdot 2s ease-in-out infinite}
-    @keyframes pdot{0%,100%{box-shadow:0 0 0 0 rgba(59,130,246,.4)}50%{box-shadow:0 0 0 6px rgba(59,130,246,0)}}
-
     /* Hero */
     .hero{text-align:center;padding:48px 0 56px;border-bottom:1px solid var(--bdr);margin-bottom:48px;position:relative}
     .hero::after{content:'';position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);width:120px;height:1px;background:var(--acc)}
@@ -94,12 +89,7 @@
 <div class="shell">
 
   <header>
-    <a href="/On-a-journey/" class="logo" aria-label="Go to home">
-      <img src="common/images/logo.png" alt="TANUKI" style="height:30px;width:auto;object-fit:contain">
-      <span class="logo-dot"></span>
-      ON A JOURNEY
-    </a>
-    <div style="font-family:var(--mono);font-size:10px;color:var(--mut);letter-spacing:.1em">PERSONAL INVESTMENT TOOLS</div>
+    <a class="logo"></a>
   </header>
 
   <!-- Hero -->
@@ -237,6 +227,7 @@
   </footer>
 
 </div>
+  <script src="common/site-header.js"></script>
   <script src="common/site-nav.js"></script>
 </body>
 </html>

@@ -25,35 +25,6 @@
 
 ## 優先度：最高（構造的負債・着手で多くの後続課題が消える）
 
-### [EPIC-HEADER-1] ページヘッダー・タイトル共通部品化
-**優先度:** 最高（TVAL-HEADER-4の方針を実行に格上げ）
-**統合元:** TVAL-HEADER-1/2/3/4, TSCORE-FIX-1/3/4, EPS-DISP-1, HOME-FIX-2,
-TSCORE-FIX-4（計9件）
-
-#### 問題の本質
-各ページのヘッダー（タイトル文字色・サイズ・ドット色・サブタイトル・
-バージョン表記・ナビ）が個別実装されており、ページが増えるたびに
-不統一が増殖している。TVAL-HEADER-4で「共通部品化」の方針は既に
-決まっていたが、個別バグ8件がそれと並列に積まれたまま放置されている。
-
-#### 対応方針
-`docs/common/site-header.js` を新設し、以下を一元管理：
-- タイトル文字色・フォント・サイズ（システムカラーをconfig的に指定するだけで統一）
-- タイトルドットの色（システムごとの差別化は維持しつつ規約化）
-- サブタイトル（用途説明）の表示有無・スタイル
-- バージョン表記の扱い（撤廃方針で統一: HOME-FIX-2/TSCORE-FIX-4）
-- 既存の site-nav.js との責務分担を明確化
-
-#### 対象一覧（共通化で自動解消、または機械的修正で対応）
-- TVAL-HEADER-1（紫ドット）, TVAL-HEADER-2（フォント色・サイズ不統一・全画面）,
-  TVAL-HEADER-3（タイトルエリア面積）
-- TSCORE-FIX-1（白文字タイトル）, TSCORE-FIX-3（用途説明なし）,
-  TSCORE-FIX-4（バージョン表記）
-- EPS-DISP-1（フォント不統一）
-- HOME-FIX-2（バージョン表記削除）
-
----
-
 ### [EPIC-LAYOUT-1] 27インチ半分画面・列幅・はみ出し対応
 **優先度:** 最高（GLOBAL-LAYOUT-1の対象を統合し実行可能な形に）
 **統合元:** GLOBAL-LAYOUT-1, MP-LAYOUT-1, PORT-LAYOUT-3, PORT-DISP-3,
@@ -91,33 +62,6 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 ---
 
 ## 優先度：中（こなれてきたら対応）
-
-### [MP-DATA-NULL-1] Market Pulse収集データのnull/NaN化（外部要因・防御コード未整備）
-**優先度:** 中
-**分類:** データ品質 / Market Pulse
-
-#### 経緯（2026-06-21 TSCORE-DAILYPICK-BUG-1調査時に発見）
-2026-06-21時点のmarket_data.json最新エントリで、10年債・VIX9D・S&P500・NASDAQ・
-S&P500グロース(IVW)/バリュー(IVE)・LQD・HYG対LQD比が`null`または`NaN`になっていた。
-
-#### 調査結果
-- **VIX9D（None化）**: yfinanceで`^VIX9D`を直接取得すると5日分要求しても1行しか返らず、
-  日付も2026-06-12で止まっていた（他の主要指数は06-18の最新データを正常返却）。
-  Yahoo Finance側のこのティッカー固有のデータ提供問題と判明（外部要因、対処不可）。
-  `collect_and_send.py`の`fetch_hist()`は`len(hist)>=2`チェックで正しく`None`に
-  フォールバックしており、収集スクリプト自体にバグはない
-- **S&P500/NASDAQ等（NaN化）**: 直接再現を試みたところ該当ティッカーは正常取得できた
-  （transient/断続的な事象の可能性が高い）。`collect_and_send.py`は`hist.empty`/
-  `len(hist)>=2`はチェックしているが、**個々のClose値がNaNである場合の検証がない**ため、
-  yfinanceが不完全なバー（NaN含む行）を返すとそのままNaNがJSONに書き込まれる
-  （`Close'].iloc[-1]`を使う箇所が12箇所以上に分散）
-
-#### 対応方針（未着手）
-NaN検知用の防御コード（`math.isnan()`チェック→Noneへフォールバック）を
-`collect_and_send.py`の値抽出箇所に追加する。yfinance側のデータ品質問題自体は
-解消できないため、症状再発を防ぐのではなく「NaNをNoneとして安全に扱う」ことが目標。
-TSCORE-DAILYPICK-BUG-1で修正したdaily_pick.py側の`_nested_get`はNone化には対応済みだが、
-NaN（Noneとは別の特殊値）はNoneチェックをすり抜けるため別途対応が必要な点に注意。
 
 ### [TAIL-SAT-CI-1] TANUKI TAIL Satellite Monitorの`Commit and push`ステップが継続的に失敗
 **優先度:** 低
@@ -382,9 +326,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 **優先度:** 低
 - LYFT(94.4% vs -41.8%)・PLTR(27.0% vs -12.8%)等、乖離が大きい銘柄に対して視覚的な警告がない
 - 乖離が一定以上の場合にハイライト等で注意を促すことを検討する
-
-### [TVAL-HEADER-1〜4 / TSCORE-FIX-1/3/4 / EPS-DISP-1] → EPIC-HEADER-1 に統合済み
-（上部「優先度：最高」セクション参照）
 
 ### [TVAL-FORMULA-1] 算式と実装の整合性未確認（TANUKI VALUATION画面）
 **優先度:** 中
@@ -869,7 +810,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開（EPIC-LEGEND-1で確立したパターンを踏襲）
+1. EPIC-LAYOUT-1 へ展開（EPIC-LEGEND-1/EPIC-HEADER-1で確立したパターンを踏襲）
 
-（ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1は2026-06-21、EPIC-LEGEND-1は2026-06-21に完了。
-BACKLOG_DONE.md参照）
+（ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
+EPIC-HEADER-1は2026-06-21に完了。BACKLOG_DONE.md参照）

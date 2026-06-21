@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-21
+最終更新: 2026-06-21（EPIC-HEADER-1: docs/common/site-header.js 新設を反映）
 
 ---
 
@@ -18,6 +18,17 @@
 | DISCOVER | 未発掘銘柄の発掘・ニュース収集 | docs/discover/ |
 | PORTFOLIO | 保有ポートフォリオ管理 | docs/management/portfolio/ |
 | AutoTrade | F&G×TQQQ自動売買 | C:\Users\shigi\AutoTrade\（リポジトリ外） |
+
+---
+
+## 共通フロントエンド部品（docs/common/）
+
+| ファイル | 役割 | 適用範囲 |
+|---|---|---|
+| site-nav.js | `.nav-links`/`[data-site-nav]`をナビゲーションリンク行に置換。`body[data-tool]`でアクティブリンクをハイライト | 全ページ |
+| site-header.js | `header a.logo`をロゴ画像・タイトルドット・タイトル・サブタイトルの統一DOMに置換。`body[data-tool]`からタイトル/サブタイトル/アクセント色を自動解決（EPIC-HEADER-1 2026-06-21新設） | TANUKI VALUATION・TANUKI SCORE・EPS ANALYZER・HOME（4画面、他ページは未移行） |
+| site-theme.css | 配色トークン（`--tool-*`）・タイポ・ナビ/ヘッダー共通CSSを`!important`で上書き | 全ページ |
+| glossary.json + info-tooltip.js | `<span data-info="key">`を自動検出しホバー/タップで用語説明をポップアップ表示（EPIC-LEGEND-1） | 該当箇所のみ |
 
 ---
 

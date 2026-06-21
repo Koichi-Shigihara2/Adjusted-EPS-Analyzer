@@ -21,13 +21,18 @@
   --pur:  #a78bfa;
   --cyn:  #22d3ee;
 
-  /* ツール別アクセント */
-  --tool-tanuki: #a78bfa;   /* 紫 */
-  --tool-stonks: #f43f5e;   /* レッド */
-  --tool-hype:   #ec4899;   /* ピンク */
-  --tool-eps:    #22d3ee;   /* シアン（旧 #3b82f6 と差別化） */
-  --tool-mp:     #10b981;   /* グリーン */
-  --tool-macro:  #f59e0b;   /* アンバー */
+  /* ツール別アクセント（HOME画面カード配色(.card-*)を正として統一） */
+  --tool-tanuki:       #8b5cf6;   /* 紫（旧 #a78bfa → HOME card-tanuki に統一） */
+  --tool-stonks:       #f43f5e;   /* レッド */
+  --tool-hype:         #ec4899;   /* ピンク */
+  --tool-eps:          #3b82f6;   /* 青（旧 #22d3ee シアン → HOME card-vm に統一） */
+  --tool-mp:           #10b981;   /* グリーン */
+  --tool-macro:        #f59e0b;   /* アンバー */
+  --tool-tanuki-score: #14b8a6;   /* ティール（HOME card-score。TANUKI SCORE内のDaily Pick等で既に使われている色と一致） */
+  --tool-discover:     #06b6d4;   /* シアン（HOME card-discover） */
+  --tool-portfolio:    #f97316;   /* オレンジ（HOME card-portfolio） */
+  --tool-tail:         var(--tool-portfolio); /* TANUKI TAILはportfolio配下のため同色を採用 */
+  --tool-home:         #3b82f6;   /* HOMEのデフォルト青 */
 
   /* デフォルト --acc は青（ランディング・ホーム） */
   --acc:  #3b82f6;
@@ -38,12 +43,17 @@
 }
 
 /* ページごとに body の data 属性で --acc を切り替える */
-body[data-tool="tanuki"] { --acc: var(--tool-tanuki); }
-body[data-tool="stonks"] { --acc: var(--tool-stonks); }
-body[data-tool="hype"]   { --acc: var(--tool-hype); }
-body[data-tool="eps"]    { --acc: var(--tool-eps); }
-body[data-tool="mp"]     { --acc: var(--tool-mp); }
-body[data-tool="macro"]  { --acc: var(--tool-macro); }
+body[data-tool="tanuki"]       { --acc: var(--tool-tanuki); }
+body[data-tool="stonks"]       { --acc: var(--tool-stonks); }
+body[data-tool="hype"]         { --acc: var(--tool-hype); }
+body[data-tool="eps"]          { --acc: var(--tool-eps); }
+body[data-tool="mp"]           { --acc: var(--tool-mp); }
+body[data-tool="macro"]        { --acc: var(--tool-macro); }
+body[data-tool="tanuki-score"] { --acc: var(--tool-tanuki-score); }
+body[data-tool="discover"]     { --acc: var(--tool-discover); }
+body[data-tool="portfolio"]    { --acc: var(--tool-portfolio); }
+body[data-tool="tail"]         { --acc: var(--tool-tail); }
+body[data-tool="home"]         { --acc: var(--tool-home); }
 
 /* === 基本タイポ === */
 body {
@@ -106,6 +116,53 @@ header .logo,
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* === 統一ヘッダー部品（site-header.js が生成するDOM。EPIC-HEADER-1） === */
+.site-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.site-header-inner .logo {
+  font-family: var(--mono) !important;
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  letter-spacing: .12em !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: var(--txt) !important;
+}
+.site-header-inner .logo-img {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+}
+.site-header-inner .logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--acc);
+  animation: site-header-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.site-header-inner .logo-title {
+  white-space: nowrap;
+}
+.site-header-inner .logo-subtitle {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  font-weight: 400 !important;
+  color: var(--mut) !important;
+  letter-spacing: .1em;
+  white-space: nowrap;
+}
+@keyframes site-header-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--acc) 40%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in oklab, var(--acc) 0%, transparent); }
 }
 
 /* スクロールバー */

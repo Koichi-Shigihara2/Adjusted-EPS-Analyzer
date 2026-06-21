@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <title>TANUKI SCORE — 統合投資判断</title>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Mono:ital,wght@0,400;0,500&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="icon" href="/On-a-journey/favicon.ico">
   <style>
     :root {
@@ -13,7 +13,6 @@
       --acc: #3b82f6; --grn: #10b981; --red: #f43f5e; --amb: #f59e0b;
       --cyn: #06b6d4; --pur: #8b5cf6;
       --txt: #e2e8f0; --sub: #7a92b0; --mut: #3d5070;
-      --mono: 'DM Mono', monospace;
       --sans: 'DM Sans', 'Noto Sans JP', sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,9 +26,6 @@
       margin-bottom: 22px; flex-wrap: wrap; gap: 10px;
       position: sticky; top: 0; background: var(--bg); z-index: 100;
     }
-    .logo { font-family: var(--mono); font-size: 15px; font-weight: 500; letter-spacing: .12em; display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
-    .logo-dot { width: 7px; height: 7px; background: var(--grn); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
-    @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.4);}50%{box-shadow:0 0 0 5px rgba(16,185,129,0);} }
     .nav-links { display: flex; flex-wrap: wrap; gap: 14px; }
     .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .06em; padding: 4px 0; border-bottom: 1px solid transparent; transition: all .2s; }
     .nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
@@ -231,11 +227,7 @@
 <body data-tool="tanuki-score">
 <div class="shell">
   <header>
-    <a href="../../" class="logo">
-      <img src="../../common/images/logo.png" alt="TANUKI" style="height:30px;width:auto;object-fit:contain">
-      <span class="logo-dot"></span>
-      TANUKI SCORE
-    </a>
+    <a class="logo"></a>
     <nav class="nav-links"></nav>
   </header>
   <div class="last-updated" id="last-updated"></div>
@@ -254,7 +246,7 @@
 
   <footer>
     <p>TANUKI SCORE | Part of <a href="/On-a-journey/">ON A JOURNEY</a> Investment Suite</p>
-    <p style="margin-top:8px">データソース: SEC EDGAR + yfinance + Market Pulse | 計算: Koichi式 v8.0</p>
+    <p style="margin-top:8px">データソース: SEC EDGAR + yfinance + Market Pulse</p>
   </footer>
 </div>
 
@@ -1097,6 +1089,7 @@ function renderRiceMatrix() {
   `;
 }
 </script>
+  <script src="../../common/site-header.js"></script>
   <script src="../../common/site-nav.js"></script>
   <script src="../../common/info-tooltip.js"></script>
 </body>

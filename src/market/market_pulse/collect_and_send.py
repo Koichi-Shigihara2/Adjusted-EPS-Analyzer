@@ -1,5 +1,6 @@
 import os
 import sys
+import math
 import urllib.request
 import feedparser
 import yfinance as yf
@@ -52,6 +53,17 @@ CSV_COLUMNS = [
 ]
 
 
+def _is_nan(x):
+    """値がNaN（非数）かどうかを判定する。math.isnan()のラッパーで、
+    None・文字列等の非数値はNaNではない（False）として扱う。
+    yfinance等が返す欠損足はNaNとして混入するが、`x is not None`では
+    検出できずすり抜けるため、抽出直後の検証に使う（MP-DATA-NULL-1）。"""
+    try:
+        return math.isnan(x)
+    except TypeError:
+        return False
+
+
 def fetch_hist(ticker, period="5d"):
     try:
         t = yf.Ticker(ticker)
@@ -66,9 +78,11 @@ def format_line(name, hist):
         return f"● {name}: 取得制限あり\n"
     try:
         latest = hist['Close'].iloc[-1]
+        if _is_nan(latest):
+            return f"● {name}: 取得制限あり\n"
         last_date = hist.index[-1].astimezone(JST).strftime('%m/%d')
         diff, pct, vol_msg = 0.0, 0.0, ""
-        if len(hist) >= 2:
+        if len(hist) >= 2 and not _is_nan(hist['Close'].iloc[-2]):
             prev = hist['Close'].iloc[-2]
             diff = latest - prev
             pct = (diff / prev) * 100
@@ -261,6 +275,8 @@ def _get_sp500_ma_deviation():
             return None
         latest = hist['Close'].iloc[-1]
         ma50 = hist['Close'].iloc[-50:].mean()
+        if _is_nan(latest) or _is_nan(ma50):
+            return None
         deviation = (latest - ma50) / ma50 * 100
         return deviation
     except Exception as e:
@@ -285,9 +301,14 @@ def fetch_qqq_tech_data():
             return None, None
         qqq_latest = hist_qqq['Close'].iloc[-1]
         ma125 = hist_qqq['Close'].iloc[-125:].mean()
+        if _is_nan(qqq_latest) or _is_nan(ma125):
+            print("[WARN] QQQ終値がNaN。Tech Pulseスキップ。")
+            return None, None
         qqq_vs_ma125 = round((qqq_latest / ma125 - 1) * 100, 2)
         qqq_vs_spy_20d = None
-        if hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21:
+        if (hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21
+                and not _is_nan(hist_qqq['Close'].iloc[-21]) and not _is_nan(hist_spy['Close'].iloc[-1])
+                and not _is_nan(hist_spy['Close'].iloc[-21])):
             qqq_ret = (hist_qqq['Close'].iloc[-1] / hist_qqq['Close'].iloc[-21] - 1) * 100
             spy_ret = (hist_spy['Close'].iloc[-1] / hist_spy['Close'].iloc[-21] - 1) * 100
             # 単純差分（%pt）: QQQ超過リターン。旧式の比率計算は spy_ret≈0 で発散するため廃止
@@ -500,7 +521,8 @@ def get_realtime_data():
     for name, ticker in main_tickers.items():
         hist = fetch_hist(ticker)
         summary += format_line(name, hist)
-        if hist is not None and len(hist) >= 2:
+        if (hist is not None and len(hist) >= 2
+                and not _is_nan(hist['Close'].iloc[-1]) and not _is_nan(hist['Close'].iloc[-2])):
             latest = hist['Close'].iloc[-1]
             prev = hist['Close'].iloc[-2]
             change = latest - prev
@@ -523,7 +545,8 @@ def get_realtime_data():
     nya_hist = fetch_hist("^NYA")
     sp_hist = fetch_hist("^GSPC")
     nya_data = None
-    if nya_hist is not None and len(nya_hist) >= 2:
+    if (nya_hist is not None and len(nya_hist) >= 2
+            and not _is_nan(nya_hist['Close'].iloc[-1]) and not _is_nan(nya_hist['Close'].iloc[-2])):
         nya_latest = nya_hist['Close'].iloc[-1]
         nya_prev = nya_hist['Close'].iloc[-2]
         nya_pct = (nya_latest - nya_prev) / nya_prev * 100
@@ -533,7 +556,9 @@ def get_realtime_data():
         vol_ratio_str = f"{vol_ratio:.2f}" if vol_ratio is not None else "N/A"
         last_date = nya_hist.index[-1].astimezone(JST).strftime('%m/%d')
         summary += f"● NYSE Composite(^NYA): {nya_latest:.2f} [{nya_pct:+.2f}%] | 前日比出来高比:{vol_ratio_str} ({last_date} 確定)\n"
-        if sp_hist is not None and len(sp_hist) >= 2:
+        sp_valid = (sp_hist is not None and len(sp_hist) >= 2
+                    and not _is_nan(sp_hist['Close'].iloc[-1]) and not _is_nan(sp_hist['Close'].iloc[-2]))
+        if sp_valid:
             sp_pct = (sp_hist['Close'].iloc[-1] - sp_hist['Close'].iloc[-2]) / sp_hist['Close'].iloc[-2] * 100
             divergence = nya_pct - sp_pct
             summary += f"● NYA対S&P500乖離（騰落代理）: {divergence:+.2f}%pt"
@@ -549,7 +574,7 @@ def get_realtime_data():
             "volume_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
             "date": nya_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
         }
-        if sp_hist is not None and len(sp_hist) >= 2:
+        if sp_valid:
             nya_data["divergence_vs_sp"] = round(divergence, 2)
     else:
         summary += "● NYSE騰落統計（代替）: 取得制限あり\n"
@@ -566,7 +591,8 @@ def get_realtime_data():
     for name, ticker in style_tickers.items():
         hist = fetch_hist(ticker)
         summary += format_line(name, hist)
-        if hist is not None and len(hist) >= 2:
+        if (hist is not None and len(hist) >= 2
+                and not _is_nan(hist['Close'].iloc[-1]) and not _is_nan(hist['Close'].iloc[-2])):
             latest = hist['Close'].iloc[-1]
             prev = hist['Close'].iloc[-2]
             pct = (latest - prev) / prev * 100
@@ -586,7 +612,8 @@ def get_realtime_data():
         data["グロース対バリュー比"] = {"diff_percent": round(gv_diff, 2)}
 
     sp500_hist = fetch_hist("^GSPC")
-    if sp500_hist is not None and "Russell2000小型(RUT)" in style_data and len(sp500_hist) >= 2:
+    if (sp500_hist is not None and "Russell2000小型(RUT)" in style_data and len(sp500_hist) >= 2
+            and not _is_nan(sp500_hist['Close'].iloc[-1]) and not _is_nan(sp500_hist['Close'].iloc[-2])):
         sp_pct = (sp500_hist['Close'].iloc[-1] - sp500_hist['Close'].iloc[-2]) / sp500_hist['Close'].iloc[-2] * 100
         lsv_diff = sp_pct - style_data["Russell2000小型(RUT)"]
         direction = "大型優勢（質への逃避）" if lsv_diff > 0 else "小型優勢（リスク選好）"
@@ -597,7 +624,9 @@ def get_realtime_data():
     summary += "\n--- VIX9D vs VIX（短期・中期リスク比較） ---\n"
     vix9d_hist = fetch_hist("^VIX9D")
     vix_hist2  = fetch_hist("^VIX")
-    if vix9d_hist is not None and vix_hist2 is not None and len(vix9d_hist) >= 2 and len(vix_hist2) >= 2:
+    if (vix9d_hist is not None and vix_hist2 is not None and len(vix9d_hist) >= 2 and len(vix_hist2) >= 2
+            and not _is_nan(vix9d_hist['Close'].iloc[-1]) and not _is_nan(vix9d_hist['Close'].iloc[-2])
+            and not _is_nan(vix_hist2['Close'].iloc[-1])):
         vix9d_now  = float(vix9d_hist['Close'].iloc[-1])
         vix9d_prev = float(vix9d_hist['Close'].iloc[-2])
         vix_now    = float(vix_hist2['Close'].iloc[-1])
@@ -635,6 +664,10 @@ def get_realtime_data():
 
     if hyg_hist is not None and lqd_hist is not None:
         for hist, name in [(hyg_hist, "HYG（ハイイールド債ETF）"), (lqd_hist, "LQD（投資適格債ETF）")]:
+            if (len(hist) < 2 or _is_nan(hist['Close'].iloc[-1])
+                    or _is_nan(hist['Close'].iloc[-2])):
+                data[name] = None
+                continue
             latest = hist['Close'].iloc[-1]
             prev = hist['Close'].iloc[-2]
             change = latest - prev
@@ -649,23 +682,30 @@ def get_realtime_data():
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
                 "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
             }
-        try:
-            ratio_now = hyg_hist['Close'].iloc[-1] / lqd_hist['Close'].iloc[-1]
-            ratio_prev = hyg_hist['Close'].iloc[-2] / lqd_hist['Close'].iloc[-2]
-            ratio_chg = ratio_now - ratio_prev
-            last_date = hyg_hist.index[-1].astimezone(JST).strftime('%m/%d')
-            direction = "HY優勢＝リスクオン" if ratio_chg > 0 else "スプレッド拡大示唆＝リスクオフ"
-            summary += f"● HYG対LQD比（クレジット代理）: {ratio_now:.4f} [{ratio_chg:+.6f}] ({last_date} 確定) → {direction}\n"
-            data["HYG対LQD比"] = {
-                "value": round(ratio_now, 4),
-                "change": round(ratio_chg, 6),
-                "date": hyg_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
-            }
-        except Exception as e:
-            summary += f"● HYG/LQD比率: 計算エラー ({e})\n"
+        if (len(hyg_hist) >= 2 and len(lqd_hist) >= 2
+                and not _is_nan(hyg_hist['Close'].iloc[-1]) and not _is_nan(hyg_hist['Close'].iloc[-2])
+                and not _is_nan(lqd_hist['Close'].iloc[-1]) and not _is_nan(lqd_hist['Close'].iloc[-2])):
+            try:
+                ratio_now = hyg_hist['Close'].iloc[-1] / lqd_hist['Close'].iloc[-1]
+                ratio_prev = hyg_hist['Close'].iloc[-2] / lqd_hist['Close'].iloc[-2]
+                ratio_chg = ratio_now - ratio_prev
+                last_date = hyg_hist.index[-1].astimezone(JST).strftime('%m/%d')
+                direction = "HY優勢＝リスクオン" if ratio_chg > 0 else "スプレッド拡大示唆＝リスクオフ"
+                summary += f"● HYG対LQD比（クレジット代理）: {ratio_now:.4f} [{ratio_chg:+.6f}] ({last_date} 確定) → {direction}\n"
+                data["HYG対LQD比"] = {
+                    "value": round(ratio_now, 4),
+                    "change": round(ratio_chg, 6),
+                    "date": hyg_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+                }
+            except Exception as e:
+                summary += f"● HYG/LQD比率: 計算エラー ({e})\n"
+                data["HYG対LQD比"] = None
+        else:
+            data["HYG対LQD比"] = None
     else:
         data["HYG（ハイイールド債ETF）"] = None
         data["LQD（投資適格債ETF）"] = None
+        data["HYG対LQD比"] = None
 
     return summary, data
 
@@ -926,7 +966,8 @@ def collect_asset_flow():
     for a in ASSETS:
         try:
             hist = fetch_hist(a["ticker"], period="5d")
-            if hist is None or len(hist) < 2:
+            if (hist is None or len(hist) < 2
+                    or _is_nan(hist["Close"].iloc[-1]) or _is_nan(hist["Close"].iloc[-2])):
                 result[a["key"]] = None
                 continue
             latest = float(hist["Close"].iloc[-1])

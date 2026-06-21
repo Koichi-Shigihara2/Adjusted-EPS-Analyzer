@@ -4,6 +4,66 @@
 
 ## 2026-06-21
 
+✅ [MP-DATA-NULL-1] Market Pulse収集データのNaN混入防御（応急処置＋恒久対応、2026-06-21 完了）
+- **発端**: Market Pulse画面で「テックパルス未計算」「スコア構成指標の多くが50%固定」と
+  ユーザー報告。調査の結果、本日朝の自動更新コミット`ccd763082`（github-actions[bot]、
+  cron 21:35 UTC実行）で`market_data.json`に生の（クォートされていない）`NaN`トークンが
+  24箇所混入し、ブラウザ側`Response.json()`が構文エラーで例外 →
+  `index.html`の`catch{allData=makeSample()}`が無言でダミーデータにフォールバックしていた
+  ことが直接原因と判明（前回コミット`cf566c2ad`は NaN 0件で正常）
+- **応急処置**: `market_data.json`の24箇所の生`NaN`トークンを`null`へ surgical 置換
+  （ロールバックではなく手動修正を採用。理由: 当該エントリ内の他フィールド
+  （tech_pulse score=78等）は正常値であり、ロールバックすると本日分の正当なデータが
+  失われるため。CLAUDE_CODE_START.mdの「自動生成データファイルをcheckout --theirs等で
+  古い版に巻き戻さない」原則とも整合）。修正後`json.load`で65件全件パース成功を確認
+- **恒久対応**: `collect_and_send.py`に`_is_nan()`ヘルパーを新設し、Close値抽出箇所
+  12箇所（main_tickers/NYSE Composite/IVW・IVE/大型対小型比/VIX9D vs VIX/HYG・LQD・
+  HYG対LQD比/collect_asset_flow/_get_sp500_ma_deviation/fetch_qqq_tech_data/
+  format_line）に`math.isnan()`ガードを追加し、NaN検出時は既存の`None`フォールバック
+  経路（`data[name]=None`等）に合流させた。`compute_sentiment()`等の下流ロジックは
+  元々`is not None`チェックで作られておりNaNだけがすり抜けていたため、下流の修正は不要
+  だった
+- **副次的に発見・修正したバグ**: NYSE Compositeブロックで`divergence_vs_sp`の算出に
+  同一条件の判定が2箇所に重複しており（`sp_hist`の検証を2回別々に実施）、NaNガードを
+  片方にだけ追加すると`UnboundLocalError`になることをモックテストで検出。`sp_valid`
+  フラグに一本化して解消（ARCH-DATA-1的な「同一判定の分散」パターンと同根）
+- **検証**: ①ライブ実行で`get_realtime_data()`がNaN 0件を返すことを確認、②`^GSPC`の
+  最新Closeを`NaN`にモックした再現テストでクラッシュなく`S&P500:null`に正しく
+  フォールバックすることを確認、③`json.dumps(data, allow_nan=False)`で厳密JSON妥当性を
+  確認、④pytest 130件全パス（market_data.csv側にも同根の小文字`nan`文字列混入が
+  残存することを発見したが、CSVは現状どこからも読み込まれておらず実害なしのため
+  今回は対象外として記録のみ）
+- **対応C（保留・報告のみ）**: `index.html`の「fetchエラー時に無言でダミーデータへ
+  フォールバック」設計は変更せず、挙動の説明のみユーザーに報告（設計判断はユーザー側）
+
+✅ [EPIC-HEADER-1] ページヘッダー・タイトル共通部品化（2026-06-21 完了）
+- **統合元9件全件対応**: TVAL-HEADER-1/2/3, TSCORE-FIX-1/3/4, EPS-DISP-1, HOME-FIX-2
+  （TVAL-HEADER-4はEPIC自体の実行で解消）。対象4画面（TANUKI VALUATION/TANUKI SCORE/
+  EPS ANALYZER/HOME）に適用。stock.html（個別銘柄詳細ページ）は動的バージョンタグの
+  実用性が異なるため対象外として現状維持
+- **新設**: `docs/common/site-header.js`（`header a.logo`を検出し、ロゴ画像・ドット・
+  タイトル・サブタイトルを統一DOMに置換。`body[data-tool]`からツール名/タイトル/
+  サブタイトルを自動解決。`data-title`/`data-subtitle`/`data-no-subtitle`属性で
+  ページごとに上書き可能。バージョン表記は撤廃方針のため生成しない）
+- **site-theme.css拡張**: `--tool-*`トークンをHOME画面の`.card-*`配色を正として統一
+  （tanuki: #a78bfa→#8b5cf6、eps: #22d3ee→#3b82f6 に補正。tanuki-score/discover/
+  portfolio/tailのbody[data-tool]マッピングを新規追加、tail はportfolio配下のため
+  同色を採用）。`.site-header-inner`コンポーネントCSSと専用keyframe
+  `site-header-pulse`（`color-mix(var(--acc))`でツール別アクセントに自動追従する
+  パルス発光）を追加
+- **発見した副次的効果**: TANUKI SCOREページは`.logo-dot`が`var(--grn)`固定で
+  ページ内の実際のアクセント色（Daily Pick等で既に使われていた#14b8a6ティール）と
+  不一致だった。新トークンへの統一でこの不一致が解消。HOME画面の`.card-vm`/`.card-tanuki`
+  も「枠線・タグ等の`--card-acc`」と「タイトル文字の直書きhex」が食い違っていたが
+  `--tool-eps`/`--tool-tanuki`補正により一致した
+- TANUKI SCOREは独自に`--mono: 'DM Mono'`を上書きしSpace Monoフォントを読み込んでいな
+  かったため、`--mono`上書きを削除しGoogle Fonts importにSpace Monoを追加（フォント
+  不統一の実体的な原因）
+- TANUKI SCOREフッターの「計算: Koichi式 v8.0」（TSCORE-FIX-4対象）を削除。
+  TANUKI VALUATION/HOMEのヘッダー内version-tagも削除
+- 検証: check_links.py リンク切れ0件、4画面とも HTTP 200 で配信されることを確認。
+  ブラウザでの実描画確認は環境制約上未実施（手動確認を推奨）
+
 ✅ [TSCORE-DAILYPICK-BUG-1] TANUKI SCORE「今日の特選銘柄」APIキー未設定エラー表示（2026-06-21 完了）
 - **直接原因①**: `daily_pick.json`が2026-06-20 17:16 JSTにXAI_API_KEY未設定のローカル検証実行
   （ARCH-SCORE-SYNC-1 Stage3のテスト目的）の出力のまま本番コミットされていた

@@ -26,10 +26,6 @@
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
     }
-    .logo { font-family: var(--mono); font-size: 16px; font-weight: 700; letter-spacing: .15em; display: flex; align-items: center; gap: 12px; text-decoration: none; color: inherit; cursor: pointer; }
-    a.logo:hover .logo-dot { box-shadow: 0 0 0 4px rgba(59,130,246,.25); }
-    .logo-dot { width: 8px; height: 8px; background: var(--acc); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
-    @keyframes pdot { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,.4); } 50% { box-shadow: 0 0 0 6px rgba(59,130,246,0); } }
     .hdr-r { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
     .nav-links { display: flex; gap: 16px; }
     .nav-links a { font-family: var(--mono); font-size: 12px; color: var(--mut); text-decoration: none; letter-spacing: .08em; padding: 5px 0; border-bottom: 1px solid transparent; }
@@ -156,11 +152,7 @@
 <div id="tip-box" style="display:none;position:fixed;z-index:9999;background:#0f172a;color:#e2e8f0;font-size:13px;line-height:1.6;padding:10px 14px;border:1px solid #334155;border-radius:4px;max-width:240px;box-shadow:0 4px 16px rgba(0,0,0,.6);pointer-events:none;font-family:'DM Sans',sans-serif;font-weight:400;white-space:normal;"></div>
 <div class="shell">
   <header>
-    <a href="/On-a-journey/" class="logo" aria-label="Go to home">
-      <img src="../../common/images/logo.png" alt="TANUKI" style="height:30px; width:auto; object-fit:contain">
-      <span class="logo-dot"></span>
-      Adjusted EPS Analyzer
-    </a>
+    <a class="logo"></a>
     <div class="hdr-r">
       <div class="nav-links">
         <a href="../../">HOME</a>
@@ -483,6 +475,7 @@ function toggleOppSection() {
   if (arrow) arrow.textContent = open ? '▶ 展開して見る' : '▲ 折りたたむ';
 }
 </script>
+  <script src="../../common/site-header.js"></script>
   <script src="../../common/site-nav.js"></script>
 </body>
 </html>
