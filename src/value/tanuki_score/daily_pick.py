@@ -229,6 +229,17 @@ def grok_news_search(ticker_list, date_str):
     return None, None
 
 # ── Report generation ─────────────────────────────────────────
+def _nested_get(d, *keys):
+    """ネストした辞書を安全に辿る。
+    キーが存在しても値がNoneの場合、dict.get(key, default)のdefaultは効かず
+    None.get(...)でAttributeErrorになるため、各段でdict判定してから辿る。"""
+    cur = d
+    for k in keys:
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(k)
+    return cur
+
 def build_data_package(stock, mkt):
     """Grokに渡す統合データパッケージを構築する"""
     ticker = stock["ticker"]
@@ -314,22 +325,22 @@ def build_data_package(stock, mkt):
         "market": {
             "judgment":                      mkt.get("judgment"),
             "fear_greed_score":              mkt.get("fear_greed", {}).get("score") if isinstance(mkt.get("fear_greed"), dict) else None,
-            "vix":                           mkt.get("indicators", {}).get("VIX指数", {}).get("value") if isinstance(mkt.get("indicators"), dict) else None,
-            "vix9d":                         mkt.get("indicators", {}).get("VIX9D（短期VIX）", {}).get("value") if isinstance(mkt.get("indicators"), dict) else None,
+            "vix":                           _nested_get(mkt, "indicators", "VIX指数", "value"),
+            "vix9d":                         _nested_get(mkt, "indicators", "VIX9D（短期VIX）", "value"),
             "tech_pulse_score":              mkt.get("tech_pulse", {}).get("score") if isinstance(mkt.get("tech_pulse"), dict) else None,
-            "tech_pulse_divergence":         mkt.get("tech_pulse", {}).get("divergence", {}).get("value") if isinstance(mkt.get("tech_pulse"), dict) else None,
-            "tech_pulse_divergence_zscore":  mkt.get("tech_pulse", {}).get("divergence", {}).get("zscore") if isinstance(mkt.get("tech_pulse"), dict) else None,
-            "qqq_vs_spy_20d":                mkt.get("tech_pulse", {}).get("components", {}).get("qqq_vs_spy_20d") if isinstance(mkt.get("tech_pulse"), dict) else None,
+            "tech_pulse_divergence":         _nested_get(mkt, "tech_pulse", "divergence", "value"),
+            "tech_pulse_divergence_zscore":  _nested_get(mkt, "tech_pulse", "divergence", "zscore"),
+            "qqq_vs_spy_20d":                _nested_get(mkt, "tech_pulse", "components", "qqq_vs_spy_20d"),
             "risk_off_score":                mkt.get("credit", {}).get("risk_off_score") if isinstance(mkt.get("credit"), dict) else None,
             "credit_stock":                  mkt.get("credit", {}).get("stock") if isinstance(mkt.get("credit"), dict) else None,
             "credit_bond":                   mkt.get("credit", {}).get("bond") if isinstance(mkt.get("credit"), dict) else None,
             "credit_credit":                 mkt.get("credit", {}).get("credit") if isinstance(mkt.get("credit"), dict) else None,
             "asset_flow": {
-                "equity":      mkt.get("asset_flow", {}).get("equity", {}).get("change_pct") if isinstance(mkt.get("asset_flow"), dict) else None,
-                "long_bond":   mkt.get("asset_flow", {}).get("long_bond", {}).get("change_pct") if isinstance(mkt.get("asset_flow"), dict) else None,
-                "gold":        mkt.get("asset_flow", {}).get("gold", {}).get("change_pct") if isinstance(mkt.get("asset_flow"), dict) else None,
-                "hy_bond":     mkt.get("asset_flow", {}).get("hy_bond", {}).get("change_pct") if isinstance(mkt.get("asset_flow"), dict) else None,
-                "ultra_short": mkt.get("asset_flow", {}).get("ultra_short_bond", {}).get("change_pct") if isinstance(mkt.get("asset_flow"), dict) else None,
+                "equity":      _nested_get(mkt, "asset_flow", "equity", "change_pct"),
+                "long_bond":   _nested_get(mkt, "asset_flow", "long_bond", "change_pct"),
+                "gold":        _nested_get(mkt, "asset_flow", "gold", "change_pct"),
+                "hy_bond":     _nested_get(mkt, "asset_flow", "hy_bond", "change_pct"),
+                "ultra_short": _nested_get(mkt, "asset_flow", "ultra_short_bond", "change_pct"),
             },
             "sub_scores": mkt.get("sub_scores"),
         },
