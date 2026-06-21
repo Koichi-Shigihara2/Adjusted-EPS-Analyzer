@@ -4,6 +4,42 @@
 
 ## 2026-06-21
 
+✅ [EPIC-LAYOUT-1-INVESTIGATION] 27インチ半分画面対応の現状調査（2026-06-21 完了・調査のみ）
+- **背景**: [[EPIC-LAYOUT-1]]（27インチ半分画面・列幅・はみ出し対応）の統合元9件
+  （MP-LAYOUT-1, PORT-LAYOUT-3, PORT-DISP-3, MACRO-DISP-1, SILO-DISP-3, TVAL-TS-1,
+  TVAL-TS-2, HYPE-DISP-1, HYPE-DISP-2）について、実装に先立ち現状調査を実施。
+  本セッションでは調査のみでファイル変更（実装）は行っていない
+- **調査方法**: 960px幅（27インチ半分画面相当）でのheadless Chrome検証＋
+  各画面の静的コード解析（行番号レベルで原因箇所を特定）
+- **既存共通CSS基盤の確認**: `docs/common/site-theme.css`にはメディアクエリ・
+  コンテナクエリが一切存在せず、960px境界の共通設計は皆無と判明。各画面が
+  個別のブレークポイント（480/640/700/768/900/1000px等バラバラ）で対応して
+  おり、`tanuki_valuation/index.html`・`hypecore/index.html`・
+  `hypecore/detail.html`はレスポンシブ対応が完全に皆無だった
+- **9件を症状別に4グループへ分類**:
+  - グループA（固定/自然幅テーブル＋横スクロール）: MP-LAYOUT-1の一部、
+    PORT-LAYOUT-3、PORT-DISP-3（`portfolio/index.html`の同一テーブル・
+    実質同一バグと判明）、HYPE-DISP-2
+  - グループB（フレックス行ラベル省略）: MACRO-DISP-1（`.pg-sig-name`の
+    ellipsis省略を960pxスクショで実視確認済み）、HYPE-DISP-1の一部
+  - グループC（`table-layout:fixed`、列幅が常時カツカツ）: SILO-DISP-3
+    （`stonks-silo/index.html`の`<colgroup>`固定px幅設計が原因。960px固有の
+    問題ではなく列幅設計自体の見直しが必要なため個別対応とする）
+  - グループD（純粋なバグ、レイアウト課題ではない）: TVAL-TS-1（ISO文字列
+    未整形表示）、TVAL-TS-2（`fmtDate()`の`slice(5)`がフルISO文字列に対して
+    破綻する実装バグ、Pythonで`"06/20T17:36:48+09:00"`という壊れた出力を
+    再現確認済み）。960px特有の問題ではなく解決策もJSロジック修正のため、
+    [[TVAL-TS-FIX-1]]として新規分離した（BACKLOG.md側で対応済み）
+- **実装方式の検討**: 3案（①data-priority属性＋`@media`段階的非表示、
+  ②横スクロールUIの統一強化のみ、③`@container`クエリ採用）を比較し、
+  「①をまず`@media`ベースで導入し、効果を見てから`@container`へ段階拡張する」
+  方針を採用（個人利用ツールのためブラウザ互換性の制約は実質なし。
+  EPIC-LEGEND-1/EPIC-HEADER-1と同じ共通CSS追加＋属性付与パターンを踏襲）
+- **次回着手順序**: グループA → グループB → グループC（SILO-DISP-3は個別対応）。
+  BACKLOG.mdのEPIC-LAYOUT-1セクションを対象7件に整理し、着手順序・実装方式を
+  注記。TVAL-TS-FIX-1を新規追加した
+- 本セッションはファイル変更なし（BACKLOG.md/BACKLOG_DONE.mdへの記録のみ別途実施）
+
 ✅ [MACRO-RISKSCORE-CHECK-1] RECESSION RISK SCORE急変動（35→27）の原因調査（2026-06-21 完了・調査のみ）
 - **発端**: ユーザーから「先週比35→現在27と短期間で8pt下落しているが原因は何か」との
   確認依頼。コード変更は行わず原因究明のみ実施

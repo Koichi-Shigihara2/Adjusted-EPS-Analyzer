@@ -28,13 +28,25 @@
 ### [EPIC-LAYOUT-1] 27インチ半分画面・列幅・はみ出し対応
 **優先度:** 最高（GLOBAL-LAYOUT-1の対象を統合し実行可能な形に）
 **統合元:** GLOBAL-LAYOUT-1, MP-LAYOUT-1, PORT-LAYOUT-3, PORT-DISP-3,
-MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
+MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
+2026-06-21調査により[[TVAL-TS-FIX-1]]へ分離・対象外）
 
 #### 問題の本質
 ユーザーは27インチモニタの画面半分幅でブラウザを使うことが多いが、
 各画面はそれを前提にレイアウト設計されていないため、テーブルの列が
 見切れる・横スクロールが必要・ラベルが省略される、という同種の症状が
 複数画面で同時多発している。
+
+#### 調査状況（2026-06-21 完了・調査のみ・詳細はBACKLOG_DONE.md参照）
+960px幅でのheadless Chrome検証＋静的コード解析を実施済み。対象7件を
+症状別に3グループへ分類した：
+- **グループA**（固定/自然幅テーブル＋横スクロール）: MP-LAYOUT-1の一部、
+  PORT-LAYOUT-3、PORT-DISP-3（実質同一バグ）、HYPE-DISP-2
+- **グループB**（フレックス行ラベル省略）: MACRO-DISP-1、HYPE-DISP-1の一部
+- **グループC**（table-layout:fixed、列幅が常時カツカツ）: SILO-DISP-3
+  （960px固有の問題ではなく列幅設計自体の見直しが必要なため個別対応）
+
+次回着手順序: **グループA → グループB → グループC（SILO-DISP-3は個別対応）**
 
 #### 対応方針
 - まず「半分画面幅（約960px想定）」を標準のブレークポイントとして
@@ -43,15 +55,19 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
   - 優先度の低い列を狭幅で自動省略 → ホバー/タップでツールチップ全文表示
   - 横スクロールが必要な場合は「スクロール可能であることを示すUI」を統一
 - ゲージ・チャート等の可変要素はコンテナクエリ or 既存ブレークポイントに対応させる
+- **実装方式（2026-06-21調査で決定）**: まず方式①（`data-priority`属性＋
+  `@media`段階的非表示、EPIC-LEGEND-1/EPIC-HEADER-1と同じ共通CSS追加＋
+  属性付与パターン）を`@media`ベースで導入し、効果を見てから`@container`
+  クエリへ段階拡張する（個人利用ツールのためブラウザ互換性の制約は実質なし）
 
 #### 対象一覧
-- MP-LAYOUT-1（Tech Pulseはみ出し）
-- PORT-LAYOUT-3（明細テーブル横スクロール）, PORT-DISP-3（乖離率列見切れ）
-- MACRO-DISP-1（ティッカー名省略）
-- SILO-DISP-3（バッジ省略表示）
-- TVAL-TS-1（ISO形式タイムスタンプがそのまま表示され読みにくい `2026-06-18T02:29:35+09:00` → `2026/06/18 02:29 JST` 形式へ）,
-  TVAL-TS-2（更新日時列切れ）
+- MP-LAYOUT-1（Tech Pulseはみ出し）— `market-pulse/index.html:340-400`
+- PORT-LAYOUT-3（明細テーブル横スクロール）, PORT-DISP-3（乖離率列見切れ、
+  PORT-LAYOUT-3と実質同一バグ）— `portfolio/index.html:64,492-505`
+- MACRO-DISP-1（ティッカー名省略）— `macro-pulse/index.html:96-101`
+- SILO-DISP-3（バッジ省略表示）— `stonks-silo/index.html:72,306-317`
 - HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）, HYPE-DISP-2（右端列見切れ）
+  — `hypecore/index.html:49,77,118-132`
 
 ---
 
@@ -62,6 +78,32 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [TVAL-TS-FIX-1] タイムスタンプ表示の未整形・フォーマット不具合（TANUKI VALUATION画面）
+**優先度:** 中
+**分類:** バグ修正 / TANUKI VALUATION
+
+#### 経緯（2026-06-21 EPIC-LAYOUT-1調査時に発見・分離）
+当初[[EPIC-LAYOUT-1]]にTVAL-TS-1/TVAL-TS-2として統合されていたが、960px幅
+特有の問題ではなく、解決策もCSS/レスポンシブ対応ではなく純粋なJSロジック
+修正のため独立項目として分離した。
+
+#### 内容
+- **TVAL-TS-1**: `stock.html`の2箇所（950行目`.version-tag`、2037行目
+  footer「計算日:」）で`calculation_date`（例: `2026-06-20T17:36:48+09:00`）が
+  未整形のまま表示されている。同ファイル内に既存の`toJST()`関数
+  （2588行目、`2026/06/20 17:36 JST`形式に変換）があるため、これを適用する
+  だけで解決可能
+- **TVAL-TS-2**: `index.html`の`fmtDate()`関数（388行目）
+  `(d)=>d.slice(5).replace('-','/')`が、フルISO文字列（時刻・タイムゾーン
+  オフセット付き）に対して`slice(5)`すると`"06/20T17:36:48+09:00"`という
+  壊れた文字列になる**実装バグ**（Pythonで再現確認済み）。これが「更新日列が
+  切れる」ように見える直接原因。「YYYY-MM-DD」のみを期待した実装が、実際の
+  `calculation_date`（フルタイムスタンプ）と噛み合っていない
+
+#### 対応方針（次回着手時）
+- `fmtDate()`を堅牢な実装（明示的に日付部分のみ抽出する等）に修正する
+- `stock.html`の2箇所は既存`toJST()`を呼び出すだけで解決
 
 ### [TAIL-SAT-CI-1] TANUKI TAIL Satellite Monitorの`Commit and push`ステップが継続的に失敗
 **優先度:** 低
