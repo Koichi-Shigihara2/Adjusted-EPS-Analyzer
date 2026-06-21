@@ -465,6 +465,8 @@ function renderDetailTable() {
     const matrixInfo = tk?.matrix ?? null;
 
     const riceVal = tk?.rice?.base?.rice ?? null;
+    // ARCH-MATRIX-DUP-1: stock.html側のRICE×乖離率マトリクスと同じavailableゲートに揃える
+    const riceAvailable = tk?.rice?.available ?? false;
     const roe     = tk?.components?.roe_10yr_avg ?? null;
     const per = tk?.components?.per ?? null;
     const peg = tk?.components?.peg ?? null;
@@ -474,7 +476,7 @@ function renderDetailTable() {
 
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             matrixInfo, riceVal, roe, per, peg, ps, dupont };
+             matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, dupont };
   });
 
   // 5. Categorize
@@ -904,8 +906,9 @@ function renderRiceMatrix() {
   const X_MAX_CLIP = 300;
 
   // Fix1: 負RICE除外  Fix2: X>300は右端に折りたたむ
+  // ARCH-MATRIX-DUP-1: stock.html側と同じrice.availableゲートを追加（将来の潜在差異を予防）
   const allPoints = _stocks
-    .filter(s => s.upside != null && s.riceVal != null && s.riceVal >= 0)
+    .filter(s => s.riceAvailable && s.upside != null && s.riceVal != null && s.riceVal >= 0)
     .map(s => ({
       ticker: s.ticker,
       xOrig: s.upside,

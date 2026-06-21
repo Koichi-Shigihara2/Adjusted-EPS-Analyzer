@@ -2602,7 +2602,9 @@ function buildScatterSVG(points, opts) {
   const IW = W - PL - PR, IH = H - PT - PB;
   // yScale='log' + yThresh2: RICE投資効率系パネル専用（外れ値による圧縮を解消する対数軸・3分類表示）
   // 他パネル（ROE/成長性/FCF）は従来通り線形2分類のまま
-  const { xMin, xMax, xThresh, yMin, yMax, yThresh, yThresh2, yScale, yFloor, xLabel, yLabel, currentTicker } = opts;
+  // xClip: ARCH-MATRIX-DUP-1。設定時のみ、上限超の点を右端に折りたたみ表示し、
+  // ラベル重なり回避ロジックを使う（①投資効率系のみ使用。他パネルは未設定のため従来通り動作）
+  const { xMin, xMax, xThresh, yMin, yMax, yThresh, yThresh2, yScale, yFloor, xLabel, yLabel, currentTicker, xClip } = opts;
 
   function sx(v) { return PL + (v - xMin) / (xMax - xMin) * IW; }
   function sy(v) {
@@ -2614,6 +2616,9 @@ function buildScatterSVG(points, opts) {
     }
     return PT + (1 - (v - yMin) / (yMax - yMin)) * IH;
   }
+
+  const inPoints   = xClip != null ? points.filter(p => p.x <= xClip) : points;
+  const overPoints = xClip != null ? points.filter(p => p.x > xClip)  : [];
 
   const xZ = sx(xThresh);
   const yT = sy(yThresh);
@@ -2650,7 +2655,7 @@ function buildScatterSVG(points, opts) {
   // x-axis tick labels
   out += '<text x="' + PL + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#64748b" text-anchor="middle" font-family="monospace">' + xMin + '</text>';
   out += '<text x="' + xZ + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#94a3b8" text-anchor="middle" font-family="monospace">' + xThresh + '</text>';
-  out += '<text x="' + (PL + IW) + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#64748b" text-anchor="middle" font-family="monospace">' + xMax + '</text>';
+  out += '<text x="' + (PL + IW) + '" y="' + (PT + IH + 12) + '" font-size="8" fill="#64748b" text-anchor="middle" font-family="monospace">' + (xClip != null ? '+' + xMax + '%' : xMax) + '</text>';
 
   // y-axis tick labels
   out += '<text x="' + (PL - 4) + '" y="' + (PT + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + yMax + '</text>';
@@ -2661,7 +2666,7 @@ function buildScatterSVG(points, opts) {
   out += '<text x="' + (PL - 4) + '" y="' + (PT + IH + 4) + '" font-size="8" fill="#64748b" text-anchor="end" font-family="monospace">' + (yScale === 'log' ? (yFloor || 0.1) : yMin) + '</text>';
 
   // points — compute screen coords, preserve original values for tooltip/label logic
-  const plotted = points.map(p => {
+  const plotted = inPoints.map(p => {
     const cx = Math.max(PL + 3, Math.min(PL + IW - 3, sx(p.x)));
     const cy = Math.max(PT + 3, Math.min(PT + IH - 3, sy(p.y)));
     const isCurrent = p.ticker === currentTicker;
@@ -2681,14 +2686,35 @@ function buildScatterSVG(points, opts) {
     return { ticker: p.ticker, x: p.x, y: p.y, cx, cy, isCurrent, qx, col, type: p.type };
   }).sort((a, b) => a.cx - b.cx);
 
-  // draw dots + labels together per ticker: non-current first so current renders on top
+  // ARCH-MATRIX-DUP-1: ラベル重なり回避（xClip指定時のみ）。tanuki_score側のドット直上
+  // 固定配置を基準に、近接するラベルは衝突しなくなるまで上方向にずらして重なりを解消する
   const fs = opts.fontSize || 8;
+  if (xClip != null) {
+    const charW = fs * 0.62;
+    const placedBoxes = [];
+    for (const p of plotted) {
+      const w = Math.max(p.ticker.length * charW, charW);
+      let ly = p.cy - 7.5;
+      let guard = 0;
+      while (guard < 10) {
+        const x0 = p.cx - w / 2, x1 = p.cx + w / 2;
+        const hit = placedBoxes.some(b => x0 < b.x1 && x1 > b.x0 && Math.abs(ly - b.y) < fs + 3);
+        if (!hit) break;
+        ly -= (fs + 3);
+        guard++;
+      }
+      placedBoxes.push({ x0: p.cx - w / 2, x1: p.cx + w / 2, y: ly });
+      p.lx = p.cx; p.ly = ly;
+    }
+  }
+
+  // draw dots + labels together per ticker: non-current first so current renders on top
   const sortedAll = [...plotted.filter(p => !p.isCurrent), ...plotted.filter(p => p.isCurrent)];
   for (const p of sortedAll) {
     const tip = p.ticker + '\n' + yLabel.replace(' →', '') + ': ' + p.y.toFixed(2) + '\n' + xLabel.replace(' →', '') + ': ' + p.x.toFixed(1);
-    const anchor = p.cx > W / 2 ? 'end' : 'start';
-    const lx = anchor === 'end' ? p.cx - 6 : p.cx + 6;
-    const ly = p.cy + 3;
+    const anchor = xClip != null ? 'middle' : (p.cx > W / 2 ? 'end' : 'start');
+    const lx = xClip != null ? p.lx : (anchor === 'end' ? p.cx - 6 : p.cx + 6);
+    const ly = xClip != null ? p.ly : (p.cy + 3);
     const r = p.isCurrent ? 6 : 4;
     // q_anomaly（Q>5の黒字株）は白ストロークで通常の赤字株と区別
     const strokeAttr = p.type === 'q_anomaly' ? ' stroke="white" stroke-width="1.5"' : '';
@@ -2699,15 +2725,43 @@ function buildScatterSVG(points, opts) {
     out += '</g>';
     if (p.isCurrent) {
       const tw = p.ticker.length * 5 + 4;
-      const rx = anchor === 'end' ? lx - tw : lx - 2;
+      const rx = anchor === 'end' ? lx - tw : (anchor === 'middle' ? lx - tw / 2 : lx - 2);
       out += '<rect x="' + rx + '" y="' + (ly - 10) + '" width="' + tw + '" height="13" fill="rgba(0,0,0,0.7)" rx="2"/>';
     }
     out += '<text x="' + lx + '" y="' + ly + '" font-size="' + fs + '" fill="' + p.col + '" text-anchor="' + anchor + '" font-family="monospace">' + p.ticker + '</text>';
     if (!p.isCurrent) out += '</a>';
   }
 
+  // ARCH-MATRIX-DUP-1: xClip超の点は右端に縦積みで折りたたみ表示（tanuki_score側のoverDotsと同方式）
+  let overflowNote = '';
+  if (xClip != null && overPoints.length) {
+    const bx = PL + IW;
+    out += '<line x1="' + bx + '" y1="' + PT + '" x2="' + bx + '" y2="' + (PT + IH) + '" stroke="#64748b" stroke-width="0.8" stroke-dasharray="2,2" opacity="0.4"/>';
+    const sortedOver = [...overPoints].sort((a, b) => a.y - b.y);
+    sortedOver.forEach((p, i) => {
+      const cy = Math.max(PT + 3, Math.min(PT + IH - 3, sy(p.y)));
+      const oy = cy + (i - (sortedOver.length - 1) / 2) * 12;
+      const isCurrent = p.ticker === currentTicker;
+      const col = isCurrent ? '#c4d0ff' : '#94a3b8';
+      const triFs = isCurrent ? 13 : 10;
+      const tip = p.ticker + '\n' + yLabel.replace(' →', '') + ': ' + p.y.toFixed(2) + '\n' + xLabel.replace(' →', '') + ': ' + p.x.toFixed(1) + '（+' + xClip + '%超）';
+      if (!isCurrent) out += '<a href="stock.html?ticker=' + p.ticker + '" style="cursor:pointer;">';
+      out += '<g><title>' + tip + '</title>';
+      out += '<text x="' + (bx - 2) + '" y="' + (oy + 3).toFixed(1) + '" text-anchor="end" font-size="' + triFs + '" fill="' + col + '" opacity="0.9">▶</text>';
+      if (isCurrent) {
+        const tw = p.ticker.length * 5 + 4;
+        out += '<rect x="' + (bx - 14 - tw) + '" y="' + (oy - 15) + '" width="' + tw + '" height="13" fill="rgba(0,0,0,0.7)" rx="2"/>';
+      }
+      out += '<text x="' + (bx - 12) + '" y="' + (oy - 5).toFixed(1) + '" text-anchor="end" font-size="' + fs + '" fill="' + col + '" font-family="monospace">' + p.ticker + '</text>';
+      out += '</g>';
+      if (!isCurrent) out += '</a>';
+    });
+    overflowNote = '<div style="font-size:9px;color:#64748b;padding:2px 4px 0">▶ ' + xLabel.replace(' →', '') + '+' + xClip + '%超（右端に折りたたみ表示）: '
+      + sortedOver.map(p => p.ticker + '(+' + p.x.toFixed(0) + '%)').join(', ') + '</div>';
+  }
+
   out += '</svg>';
-  return out;
+  return out + overflowNote;
 }
 
 async function loadAndRenderMatrices() {
@@ -2787,9 +2841,10 @@ async function loadAndRenderMatrices() {
     const panels = [
       {
         id: 1, title: '① 投資効率系（RICE算出可）',
-        note: 'Y軸: RICE (base, 対数軸) | X軸: 乖離率%\nYThresh=1.0/3.0（低効率<1.0 / 中効率1.0-3.0 / 高効率≥3.0） XThresh=0%',
+        note: 'Y軸: RICE (base, 対数軸) | X軸: 乖離率%（+300%超は右端に折りたたみ表示）\nYThresh=1.0/3.0（低効率<1.0 / 中効率1.0-3.0 / 高効率≥3.0） XThresh=0%',
         points: m1,
-        opts: { xMin: -80, xMax: 100, xThresh: 0, yMin: 0, yMax: 10, yThresh: 1, yThresh2: 3, yScale: 'log', yFloor: 0.1, xLabel: '乖離率 →', yLabel: 'RICE(log) →', fontSize: 8 },
+        // ARCH-MATRIX-DUP-1: tanuki_score側のRICE×乖離率マトリクスと同じX_MAX_CLIP=300方式に統一
+        opts: { xMin: -80, xMax: 300, xClip: 300, xThresh: 0, yMin: 0, yMax: 10, yThresh: 1, yThresh2: 3, yScale: 'log', yFloor: 0.1, xLabel: '乖離率 →', yLabel: 'RICE(log) →', fontSize: 8 },
       },
       {
         id: 2, title: '② 収益性系（セクター除外）',

@@ -4,6 +4,29 @@
 
 ## 2026-06-21
 
+✅ [ARCH-MATRIX-DUP-1] RICE×乖離率マトリクスの重複・差異実装（2026-06-21 完了）
+- **設計判断（ユーザー確定）**: TANUKI SCORE「②RICE×乖離率マトリクス」とTANUKI VALUATION
+  「①投資効率系」はそれぞれ異なる用途（前者=多銘柄の最終相対判断、後者=TANUKI VALUATION
+  自体・RICE指標の精度検証）を持つため統合せず、両画面とも維持。表示差異のみ解消する方針
+- `docs/value-monitor/tanuki_valuation/stock.html`のX軸（乖離率）上限を+100%固定クランプ
+  から、tanuki_score側と同じ+300%（X_MAX_CLIP方式）に変更。`buildScatterSVG()`に`xClip`
+  オプションを追加し、超過銘柄は右端に▶で縦積み折りたたみ表示（tanuki_score側のoverDotsと
+  同方式）。`xClip`は①投資効率系パネルのみ指定し、②③④パネルは未指定のため挙動不変
+- ラベル重なり回避ロジックを追加（`xClip`指定時のみ有効）。tanuki_score側の「ドット直上
+  固定配置」を基準に、ラベルのバウンディングボックスが衝突しなくなるまで上方向へ
+  ずらす貪欲アルゴリズムを実装。X軸+300%化と合わせて、FOUR/TASK/ADBE/NVDA/INTU/CPRT/
+  FRSH/GTLB/META/FLYW等の密集を解消
+- 対象銘柄ゲート（`rice.available`チェック）の差異を予防的に解消。tanuki_score側の
+  `_stocks`構築に`riceAvailable`フィールドを追加し、`renderRiceMatrix()`のフィルタに
+  `s.riceAvailable`を追加（stock.html側の`rice.available && riceVal>=0`と同条件に統一）
+- 配色ロジック（TANUKI SCORE7分類 vs 象限位置ベース4色）は意図的に維持・変更なし
+- **検証（Playwrightで実ページ起動・実データ照合）**:
+  - ラベル重なり: 修正前7件（IOT-GOOGL/IOT-NOW/IOT-HQY/CPRT-META/FLYW-INTU/FRSH-GTLB/
+    NVDA-FOUR）→ 修正後0件（バウンディングボックス衝突検出で確認）
+  - 座標一致: 両画面のRICE有効銘柄49件全件で、ticker集合・upside値・RICE値が完全一致
+    （差異0件）。SVGのtitle要素から実測値を抽出し _stocks の値と直接比較
+- 検証: pytest 152件全パス、check_links.py リンク切れ0件
+
 ✅ [MACRO-COMPUTE-DUP-1] カスタム比較機能のスコア計算が別ロジック（lerp方式）で第3の値を返す（2026-06-21 完了）
 - **調査結果（実装前にユーザー確認済み）**: `computeScoreAsOf()`のlerp方式は重複バグではなく、
   コミット`c3eb81572`（2026-05-22「RECESSIONスコアをステップ関数→線形補間に変更（閾値付近の
