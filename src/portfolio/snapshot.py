@@ -9,6 +9,17 @@ from pathlib import Path
 
 JST = timezone(timedelta(hours=9))
 
+def _nested_get(d, *keys):
+    """ネストした辞書を安全に辿る。
+    キーが存在しても値がNoneの場合、dict.get(key, default)のdefaultは効かず
+    None.get(...)でAttributeErrorになるため、各段でdict判定してから辿る。"""
+    cur = d
+    for k in keys:
+        if not isinstance(cur, dict):
+            return None
+        cur = cur.get(k)
+    return cur
+
 def main():
     # portfolio.jsonを読み込む
     pf_path = Path("docs/portfolio/data/portfolio.json")
@@ -25,8 +36,8 @@ def main():
         mp = json.load(f)
 
     last_mp = mp[-1]
-    usdjpy = last_mp.get("indicators", {}).get("ドル円", {}).get("value", 150.0)
-    sp500  = last_mp.get("indicators", {}).get("S&P500", {}).get("value")
+    usdjpy = _nested_get(last_mp, "indicators", "ドル円", "value") or 150.0
+    sp500  = _nested_get(last_mp, "indicators", "S&P500", "value")
     date_str = datetime.now(JST).strftime("%Y-%m-%d")
 
     # HypeCoreから現在株価を取得
