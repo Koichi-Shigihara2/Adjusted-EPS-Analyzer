@@ -594,7 +594,7 @@ function renderTimeline(){
         <div class="tl-sent-score" style="color:${sColor}">${sScore!=null?sScore.toFixed(0):"-"}</div>
         <div class="tl-sent-label" style="color:${sColor}">${sLbl}</div>
         ${fgS!=null?`<div class="tl-fg-row"><span class="tl-fg-badge" style="color:${fgC};border-color:${fgC}40">F&G ${fgS.toFixed(0)}</span></div>`:''}
-        <div class="tl-vix-val"><span data-info="mp_vix_judgment">VIX ${vix?vix.value.toFixed(1):"-"}</span></div>
+        <div class="tl-vix-val"><span data-info="mp_vix_judgment">VIX ${(vix&&vix.value!=null)?vix.value.toFixed(1):"-"}</span></div>
         <div class="tl-fg-row">${tpS!=null?`<span class="tl-fg-badge" style="color:${tpC};border-color:${tpC}40">TECH ${tpS}</span>`:'<span class="tl-fg-badge" style="color:var(--mut);border-color:var(--bdr)">TECH —</span>'}</div>
         <div class="tl-vix-val" style="color:${divC}"><span data-info="mp_divergence">乖離 ${divTxt}</span></div>
       </div>
@@ -605,7 +605,7 @@ function renderMetrics(){
   const d=filteredData[selectedIdx];
   document.getElementById("metricsRow").innerHTML=CARD_DEFS.map(cd=>{
     const ind=d?.indicators[cd.key];
-    if(!ind)return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value">—</div></div>`;
+    if(!ind||ind.value==null)return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value">—</div></div>`;
     const chg=fmtChg(ind.change_percent);
     const val=ind.value>=1000?ind.value.toLocaleString("ja-JP",{maximumFractionDigits:0}):ind.value.toFixed(2);
     return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value">${val}</div><div class="metric-chg ${chg.cls}">${chg.text}</div></div>`}).join("")}
@@ -886,7 +886,8 @@ function renderMiniGauges(){
 
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-function renderAll(){renderGauge();renderOscMetricBtns();renderOscPeriodBtns();renderOscChart();renderMiniGauges();renderPeriodGroup();renderPhasePills();renderTimeline();renderMetrics();renderMetricBtns();renderChart();renderLegend();renderDetail();renderTechPulse();renderAssetFlow()}
+const RENDER_ALL_FNS=[renderGauge,renderOscMetricBtns,renderOscPeriodBtns,renderOscChart,renderMiniGauges,renderPeriodGroup,renderPhasePills,renderTimeline,renderMetrics,renderMetricBtns,renderChart,renderLegend,renderDetail,renderTechPulse,renderAssetFlow];
+function renderAll(){RENDER_ALL_FNS.forEach(fn=>{try{fn()}catch(e){console.error(`[renderAll] ${fn.name} failed:`,e)}})}
 
 function renderAssetFlow(){
   const latest=allData[allData.length-1];
@@ -912,7 +913,7 @@ function renderAssetFlow(){
   const cornerCell=`<div class="af-u-corner"></div>`;
   const tiles=ASSETS.map(a=>{
     const d=af[a.key];
-    if(!d)return`<div class="af-u-tile" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
+    if(!d||d.change_pct==null)return`<div class="af-u-tile" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
     const pct=d.change_pct;
     const isPos=pct>=0;
     const intensity=Math.min(Math.abs(pct)/maxAbs,1);
