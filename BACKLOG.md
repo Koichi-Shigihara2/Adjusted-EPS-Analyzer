@@ -861,6 +861,13 @@ TSCORE-DISP-1/2、SILO-DISP-1/2、MP-DISP-4は同じ症状（空値の意味不�
 EPIC化はしなかったが、どこかのタイミングで「空値表示規約」を
 一度ドキュメント化し、site-nav.js的な共通JSに寄せることを推奨する。
 
+**4. 個別タスク中に発見した構造的問題はその場でBACKLOG化する**
+2026-06-21のセッションで、PORT-LOGIC-1実装中にARCH-PORTFOLIO-DUP-1を、
+MACRO-BUG-1修正中にMACRO-COMPUTE-DUP-1を、それぞれ作業の副産物として
+発見しBACKLOG登録した。個別タスクの調査・実装過程で見つかった「これは
+ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモに留めず、
+気づいた時点でBACKLOG.mdに登録することを標準動作とする。
+
 ### 次セッションでの着手順序（提案）
 1. EPIC-HEADER-1 / EPIC-LAYOUT-1 へ展開（EPIC-LEGEND-1で確立したパターンを踏襲）
 
