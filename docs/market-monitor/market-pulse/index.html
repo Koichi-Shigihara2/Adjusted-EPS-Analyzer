@@ -594,9 +594,9 @@ function renderTimeline(){
         <div class="tl-sent-score" style="color:${sColor}">${sScore!=null?sScore.toFixed(0):"-"}</div>
         <div class="tl-sent-label" style="color:${sColor}">${sLbl}</div>
         ${fgS!=null?`<div class="tl-fg-row"><span class="tl-fg-badge" style="color:${fgC};border-color:${fgC}40">F&G ${fgS.toFixed(0)}</span></div>`:''}
-        <div class="tl-vix-val">VIX ${vix?vix.value.toFixed(1):"-"}</div>
+        <div class="tl-vix-val"><span data-info="mp_vix_judgment">VIX ${vix?vix.value.toFixed(1):"-"}</span></div>
         <div class="tl-fg-row">${tpS!=null?`<span class="tl-fg-badge" style="color:${tpC};border-color:${tpC}40">TECH ${tpS}</span>`:'<span class="tl-fg-badge" style="color:var(--mut);border-color:var(--bdr)">TECH —</span>'}</div>
-        <div class="tl-vix-val" style="color:${divC}">乖離 ${divTxt}</div>
+        <div class="tl-vix-val" style="color:${divC}"><span data-info="mp_divergence">乖離 ${divTxt}</span></div>
       </div>
     </div>`}).join("")}
 
@@ -974,5 +974,6 @@ async function init(){
 init();
 </script>
   <script src="../../common/site-nav.js"></script>
+  <script src="../../common/info-tooltip.js"></script>
 </body>
 </html>

@@ -50,13 +50,15 @@ TSCORE-DUPONT-2/4, TVAL-FORMULA-1（計18件超）
   説明を追加する」を必須手順として追記する（再発防止）
 
 #### 対象一覧（実装後にこのコンポーネントへ機械的移行）
-- HYPE-DISP-3（PEG/EV-EBITDA欠損理由）, HYPE-DISP-4（ステージ背景色凡例）,
-  HYPE-DISP-5（X軸整列）
+- ✅ HYPE-DISP-3（PEG/EV-EBITDA欠損理由）, ✅ HYPE-DISP-4（ステージ背景色凡例）
+  — 2026-06-21 試験実装済み（下記参照）
+- HYPE-DISP-5（X軸整列）
 - DISCOVER-DISP-1（要注目ゾーン基準）, DISCOVER-DISP-2（タグ色凡例）
 - PORT-DISP-4（HYPEMIX危険バッジ基準）
 - TAIL-DISP-1（テーゼ健全度の基準）
-- MP-DISP-2（VIX判定文言）, MP-DISP-3（乖離基準）, MP-DISP-4（–表示の意味）,
-  MP-DISP-6（俳句フレーズの意図確認）, MP-DISP-7（スコア構成バー色凡例）
+- ✅ MP-DISP-2（VIX判定文言）, ✅ MP-DISP-3（乖離基準） — 2026-06-21 試験実装済み（下記参照）
+- MP-DISP-4（–表示の意味）, MP-DISP-6（俳句フレーズの意図確認）,
+  MP-DISP-7（スコア構成バー色凡例）
 - MACRO-DISP-2（REPO/TGA/RRP用語）, MACRO-DISP-3（EASING警告の対応アクション）,
   MACRO-DISP-4（FOMC声明日付）, MACRO-DISP-5（AI解説失敗理由）
 - SILO-DISP-1（生存期間–表示）, SILO-DISP-2（黒字化列凡例）,
@@ -64,9 +66,26 @@ TSCORE-DUPONT-2/4, TVAL-FORMULA-1（計18件超）
 - TSCORE-DUPONT-2（△マーク注釈）, TSCORE-DUPONT-4（正値カラー基準）
 - TVAL-FORMULA-1（算式と実装の整合性 — これのみ別途、実装監査も必要）
 
-#### 着手の起点
-まず1〜2画面（HYPE CORE・MARKET PULSEあたり）で試験実装し、
-パターンが固まってから全画面展開するのが手戻りが少ない。
+#### 進捗（2026-06-21 試験実装・継続中）
+- ✅ 共通コンポーネント作成済み: `docs/common/glossary.json`（用語キー→説明文）、
+  `docs/common/info-tooltip.js`（`<span data-info="key">`を自動検出し、ホバー/タップで
+  説明をポップアップ表示。動的に追加されるDOM要素もMutationObserverで自動検出）
+- ✅ HYPE CORE（index.html: ステージ列見出し / detail.html: PEG・EV/EBITDA）、
+  MARKET PULSE（index.html: タイムラインのVIX値・乖離値）の計5箇所で試験実装・動作確認済み
+  （Playwrightで実機検証。既存ロジック・他画面への影響なし、pytest全件パス）
+- ⏳ 残り16件超（DISCOVER/PORT/TAIL/MACRO/SILO/TSCORE/TVAL等）は機械的移行作業として展開待ち。
+  パターンが固まったため横展開は1件あたり「該当箇所に`data-info`属性を追加＋
+  glossary.jsonにエントリ追加」のみで完了する見込み
+- ⏳ CLAUDE_CODE_START.mdへの「新規指標追加時はglossary.jsonに説明を追加する」手順追記は
+  全画面展開時にまとめて実施（試験実装段階では未着手）
+
+#### 試験実装で得た知見
+- イベント処理: `<span data-info>`をクリックで開閉トグルする実装は、ホバーで開いた直後の
+  クリックで即座に閉じてしまう不具合があったため、クリックは「常に開く/再描画」のみとし、
+  閉じる動作はmouseleave・ドキュメントクリック・スクロールに委譲する設計に変更した
+- パス解決: `info-tooltip.js`は自身の`<script src>`から`glossary.json`の相対パスを
+  自動算出するため、ページ側が絶対パス（`/On-a-journey/...`）・相対パス
+  （`../../...`）のどちらの規約を使っていても追加設定なしで動作することを確認
 
 ---
 
