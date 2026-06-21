@@ -407,6 +407,73 @@ def _load_prev_tech_pulse_score(json_path):
     return None
 
 
+FALLBACK_LOOKBACK_ENTRIES = 5  # この件数遡っても本物の値が見つからなければnullのまま据え置く（無限に古いデータを引きずらないための上限）
+
+
+def _load_recent_entries(json_path=JSON_PATH, limit=FALLBACK_LOOKBACK_ENTRIES):
+    """market_data.jsonの直近エントリを新しい順に最大limit件返す（取得失敗時のフォールバック値探索用）"""
+    if not os.path.exists(json_path):
+        return []
+    try:
+        with open(json_path, "r", encoding="utf-8") as f:
+            all_data = json.load(f)
+        if not isinstance(all_data, list):
+            return []
+        return list(reversed(all_data[-limit:]))
+    except Exception as e:
+        print(f"[WARN] フォールバック探索用の既存データ読込失敗: {e}")
+        return []
+
+
+def _is_real_value(item):
+    """
+    item（indicators/asset_flowの1エントリ）が「本物の値」を持つか判定する。
+    is_fallbackタグ付きは除外する。また、value/change_pctフィールドを持つ場合に
+    そのフィールド自体がNoneなら本物とみなさない（コンテナのdict自体は存在するが
+    中の値だけNoneという、MP-DATA-NULL-1のNaN→null置換で生じた混入データを
+    誤って「正常値」と判定しないための防御。詳細はBACKLOG_DONE.md参照）。
+    """
+    if not item or item.get("is_fallback"):
+        return False
+    if "value" in item and item["value"] is None:
+        return False
+    if "change_pct" in item and item["change_pct"] is None:
+        return False
+    return True
+
+
+def _fill_fallbacks(current_dict, container_key, recent_entries):
+    """
+    取得失敗（値がNone、または値はあるがフィールド自体がNoneの混入データ）になっている
+    キーを、直近エントリ（新しい順）の中から最初に見つかった「本物の値」
+    （_is_real_value参照）で補完する（MP-FALLBACK-DISPLAY-1）。
+    フォールバックの連鎖（フォールバック値をさらにフォールバック元にする）を避けるため、
+    過去に is_fallback=true で補完されたエントリはスキップしてさらに遡る。
+    recent_entries は FALLBACK_LOOKBACK_ENTRIES 件に制限されているため、それでも
+    本物の値が見つからない場合はNoneのまま据え置く（「—」表示は変更しない）。
+    補完した値には is_fallback=true を付与する（元データはコピーして変更しない）。
+    """
+    filled = dict(current_dict)
+    for key, val in current_dict.items():
+        if _is_real_value(val):
+            continue
+        found = None
+        for entry in recent_entries:
+            container = entry.get(container_key) or {}
+            prev_val = container.get(key)
+            if _is_real_value(prev_val):
+                found = prev_val
+                break
+        if found:
+            copied = dict(found)
+            copied["is_fallback"] = True
+            filled[key] = copied
+            print(f"[WARN] {container_key}.{key}: 取得失敗のため前回値(date={copied.get('date')})で補完 [is_fallback=true]")
+        else:
+            print(f"[WARN] {container_key}.{key}: 直近{len(recent_entries)}件以内に本物の値が見つからずnullのまま")
+    return filled
+
+
 def _load_div_history(json_path, window=90):
     """過去window日分の乖離値（TP score − CNN F&G）リストを返す。
     保存済み divergence.value を優先使用し、ない場合は components.fg_score で代替計算。
@@ -1198,11 +1265,16 @@ if __name__ == "__main__":
 
     realtime_text, structured_data = get_realtime_data()
 
-    # センチメントスコア算出
+    # センチメントスコア算出（フォールバック補完前の今回実測データのみで算出。
+    # スコアリングロジックは変更しない＝MP-FALLBACK-DISPLAY-1のスコープ外）
     sentiment_data = compute_sentiment(structured_data)
     print(f"[INFO] センチメントスコア: {sentiment_data['score']} ({sentiment_data['label']})")
     for k, v in sentiment_data["sub_scores"].items():
         print(f"  {k}: {v['score']:.1f} (weight={v['weight']}, raw={v['raw']})")
+
+    # 取得失敗(None)になったindicatorsを前回値で補完（表示用、MP-FALLBACK-DISPLAY-1）
+    _recent_entries = _load_recent_entries()
+    structured_data = _fill_fallbacks(structured_data, "indicators", _recent_entries)
 
     # CNN Fear & Greed Index取得
     fear_greed_data = fetch_cnn_fear_greed()
@@ -1252,6 +1324,7 @@ if __name__ == "__main__":
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
     asset_flow_data = collect_asset_flow()
+    asset_flow_data = _fill_fallbacks(asset_flow_data, "asset_flow", _recent_entries)
     report = analyse_market(realtime_text, "\n".join(news), sentiment_data, tech_pulse_data, asset_flow_data)
     save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data, asset_flow_data)
     if GMAIL_USER and GMAIL_PASSWORD:

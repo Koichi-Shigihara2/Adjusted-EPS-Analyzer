@@ -140,6 +140,9 @@
     .metric-value{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--txt);line-height:1}
     .metric-chg{font-family:var(--mono);font-size:13px;margin-top:3px}
     .up{color:var(--red)}.down{color:var(--grn)}.flat{color:var(--mut)}
+    /* 取得失敗時の前回値フォールバック表示（MP-FALLBACK-DISPLAY-1）。「—」（データなし）とは別の見た目にする */
+    .is-stale-value{opacity:.7}
+    .stale-mark{color:var(--amb);font-size:11px;margin-left:2px;letter-spacing:0;cursor:help}
 
     /* CHART */
     .chart-card{background:var(--sur);border:1px solid var(--bdr);padding:14px}
@@ -608,7 +611,9 @@ function renderMetrics(){
     if(!ind||ind.value==null)return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value">—</div></div>`;
     const chg=fmtChg(ind.change_percent);
     const val=ind.value>=1000?ind.value.toLocaleString("ja-JP",{maximumFractionDigits:0}):ind.value.toFixed(2);
-    return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value">${val}</div><div class="metric-chg ${chg.cls}">${chg.text}</div></div>`}).join("")}
+    const isStale=!!ind.is_fallback;
+    const staleMark=isStale?`<span class="stale-mark" data-info-text="前回値を表示中（最新データ取得失敗。${ind.date||''}時点の値）">※</span>`:'';
+    return`<div class="metric-card"><div class="metric-label" style="color:${cd.color}">${cd.short}</div><div class="metric-value${isStale?' is-stale-value':''}">${val}${staleMark}</div><div class="metric-chg ${chg.cls}">${chg.text}</div></div>`}).join("")}
 
 // ── CHART BUTTONS ──
 function renderMetricBtns(){document.getElementById("metricBtns").innerHTML=METRIC_DEFS.map(m=>`<button class="metric-btn ${activeMetrics.has(m.key)?"active":""}" onclick="toggleMetric('${m.key}')" style="color:${activeMetrics.has(m.key)?m.color:'var(--mut)'};border-color:${activeMetrics.has(m.key)?m.color+'80':'var(--bdr)'}"><span class="mbdot" style="background:${m.color}"></span>${m.label}</button>`).join("")}
@@ -906,8 +911,8 @@ function renderAssetFlow(){
   ];
   const allPcts=ASSETS.map(a=>af[a.key]?.change_pct??0);
   const maxAbs=Math.max(...allPcts.map(v=>Math.abs(v)),0.01);
-  const hc=p=>{if(p==null)return"var(--sur2)";const c=Math.max(-2,Math.min(2,p));return c>=0?`rgba(16,185,129,${(0.07+c/2*0.43).toFixed(2)})`:`rgba(244,63,94,${(0.07+(-c)/2*0.43).toFixed(2)})`};
-  const fc=p=>p==null?`<span style="color:var(--mut)">—</span>`:`<span style="color:${p>=0?"var(--grn)":"var(--red)"}">${p>=0?"+":""}${p.toFixed(2)}%</span>`;
+  const hc=(p,isStale)=>{if(p==null)return"var(--sur2)";if(isStale)return"var(--sur2)";const c=Math.max(-2,Math.min(2,p));return c>=0?`rgba(16,185,129,${(0.07+c/2*0.43).toFixed(2)})`:`rgba(244,63,94,${(0.07+(-c)/2*0.43).toFixed(2)})`};
+  const fc=(p,isStale)=>{if(p==null)return`<span style="color:var(--mut)">—</span>`;const col=isStale?"var(--mut)":(p>=0?"var(--grn)":"var(--red)");const mark=isStale?'<span class="stale-mark">※</span>':'';return`<span style="color:${col}">${p>=0?"+":""}${p.toFixed(2)}%${mark}</span>`};
 
   // ── ヘッダー行: 今日のタイル ──
   const cornerCell=`<div class="af-u-corner"></div>`;
@@ -916,13 +921,15 @@ function renderAssetFlow(){
     if(!d||d.change_pct==null)return`<div class="af-u-tile" style="background:var(--sur2)"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker">${a.ticker}</div><div class="af-cell-pct" style="color:var(--mut)">—</div></div>`;
     const pct=d.change_pct;
     const isPos=pct>=0;
+    const isStale=!!d.is_fallback;
     const intensity=Math.min(Math.abs(pct)/maxAbs,1);
-    const bg=isPos?`rgba(16,185,129,${0.05+intensity*0.25})`:`rgba(244,63,94,${0.05+intensity*0.25})`;
-    const col=isPos?"var(--grn)":"var(--red)";
+    const bg=isStale?"var(--sur2)":(isPos?`rgba(16,185,129,${0.05+intensity*0.25})`:`rgba(244,63,94,${0.05+intensity*0.25})`);
+    const col=isStale?"var(--mut)":(isPos?"var(--grn)":"var(--red)");
     const arrow=isPos?"▲":"▼";
-    const barW=Math.round(intensity*100);
+    const barW=isStale?0:Math.round(intensity*100);
     const sign=isPos?"+":"";
-    return`<div class="af-u-tile" style="background:${bg}"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div><div class="af-cell-pct" style="color:${col}">${sign}${pct.toFixed(2)}%</div><div class="af-arrow" style="color:${col}">${arrow}</div><div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div></div>`;
+    const staleMark=isStale?`<span class="stale-mark" data-info-text="前回値を表示中（最新データ取得失敗。${d.date||''}時点の値）">※</span>`:'';
+    return`<div class="af-u-tile" style="background:${bg}"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div><div class="af-cell-pct${isStale?' is-stale-value':''}" style="color:${col}">${sign}${pct.toFixed(2)}%${staleMark}</div><div class="af-arrow" style="color:${col}">${arrow}</div><div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div></div>`;
   }).join("");
 
   // ── 日付行: 直近7日を降順（最新が上）──
@@ -934,7 +941,7 @@ function renderAssetFlow(){
     const lbl=`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;
     const isToday=d.date===todayDate;
     const dateLbl=`<div class="af-u-date${isToday?' af-u-today':''}">${lbl}${isToday?`<span style="font-size:8px;display:block">今日</span>`:''}</div>`;
-    const cells=ASSETS.map(a=>{const p=d.asset_flow?.[a.key]?.change_pct??null;return`<div class="af-u-cell" style="background:${hc(p)}">${fc(p)}</div>`}).join("");
+    const cells=ASSETS.map(a=>{const item=d.asset_flow?.[a.key];const p=item?.change_pct??null;const isStale=!!item?.is_fallback;return`<div class="af-u-cell" style="background:${hc(p,isStale)}">${fc(p,isStale)}</div>`}).join("");
     return dateLbl+cells;
   }).join("");
 
