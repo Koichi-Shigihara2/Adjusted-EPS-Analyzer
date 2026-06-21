@@ -92,6 +92,57 @@ MACRO-DISP-1, SILO-DISP-3, TVAL-TS-2, HYPE-DISP-1/2（計9件）
 
 ## 優先度：中（こなれてきたら対応）
 
+### [MP-DATA-NULL-1] Market Pulse収集データのnull/NaN化（外部要因・防御コード未整備）
+**優先度:** 中
+**分類:** データ品質 / Market Pulse
+
+#### 経緯（2026-06-21 TSCORE-DAILYPICK-BUG-1調査時に発見）
+2026-06-21時点のmarket_data.json最新エントリで、10年債・VIX9D・S&P500・NASDAQ・
+S&P500グロース(IVW)/バリュー(IVE)・LQD・HYG対LQD比が`null`または`NaN`になっていた。
+
+#### 調査結果
+- **VIX9D（None化）**: yfinanceで`^VIX9D`を直接取得すると5日分要求しても1行しか返らず、
+  日付も2026-06-12で止まっていた（他の主要指数は06-18の最新データを正常返却）。
+  Yahoo Finance側のこのティッカー固有のデータ提供問題と判明（外部要因、対処不可）。
+  `collect_and_send.py`の`fetch_hist()`は`len(hist)>=2`チェックで正しく`None`に
+  フォールバックしており、収集スクリプト自体にバグはない
+- **S&P500/NASDAQ等（NaN化）**: 直接再現を試みたところ該当ティッカーは正常取得できた
+  （transient/断続的な事象の可能性が高い）。`collect_and_send.py`は`hist.empty`/
+  `len(hist)>=2`はチェックしているが、**個々のClose値がNaNである場合の検証がない**ため、
+  yfinanceが不完全なバー（NaN含む行）を返すとそのままNaNがJSONに書き込まれる
+  （`Close'].iloc[-1]`を使う箇所が12箇所以上に分散）
+
+#### 対応方針（未着手）
+NaN検知用の防御コード（`math.isnan()`チェック→Noneへフォールバック）を
+`collect_and_send.py`の値抽出箇所に追加する。yfinance側のデータ品質問題自体は
+解消できないため、症状再発を防ぐのではなく「NaNをNoneとして安全に扱う」ことが目標。
+TSCORE-DAILYPICK-BUG-1で修正したdaily_pick.py側の`_nested_get`はNone化には対応済みだが、
+NaN（Noneとは別の特殊値）はNoneチェックをすり抜けるため別途対応が必要な点に注意。
+
+### [TAIL-SAT-CI-1] TANUKI TAIL Satellite Monitorの`Commit and push`ステップが継続的に失敗
+**優先度:** 低
+**分類:** CI/CD / TANUKI TAIL
+
+#### 経緯（2026-06-21 横断調査時に発見）
+`.github/workflows/TANUKI_TAIL_Satellite_Monitor.yml`の`satellite-monitor`ジョブで、
+`Run satellite monitor`ステップは毎回成功するが、後続の`Commit updated alert history`
+ステップが**少なくとも2026-06-10以降ほぼ毎回失敗**している（本日・前日の変更とは無関係、
+長期間放置されている既存問題）。
+
+#### 調査結果（原因特定には至らず）
+- 失敗ステップの所要時間は約1秒と極めて短く、`git add`/`git diff`等の早い段階で
+  失敗している可能性が高い
+- `docs/portfolio/tail/data/satellite_alerts.json`は存在し、内容は`{}`のまま
+  2026-06-07から更新されていない（スクリプトが新規アラートを生成していない可能性）
+- `.gitignore`/`.gitattributes`（`merge=ours`/`eol=lf`設定）に明らかな誤りなし
+- 他の同種ワークフロー（CRLF改行コードも含め）と比較したが差異を特定できず
+- **GitHub Actionsの実行ログ本文の取得には認証が必要で、このセッションの環境では
+  認証手段がなく、正確なエラーメッセージを確認できなかった**
+
+#### 次のアクション
+リポジトリ管理者がGitHub Web UI（ログイン状態）で該当ステップのログを直接確認し、
+正確なエラーメッセージを特定する必要がある。
+
 ### [SOFI-DATA-1] SOFI の LTDebt 正規化データ更新 (低優先)
 - 現状: normalized LTDebt の最新エントリが 2022-12-31（銀行免許取得前）
 - 銀行免許取得後（2022年以降）は標準LongTermDebtタグを使用しない可能性

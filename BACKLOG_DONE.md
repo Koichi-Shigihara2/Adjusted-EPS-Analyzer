@@ -4,6 +4,32 @@
 
 ## 2026-06-21
 
+✅ [TSCORE-DAILYPICK-BUG-1] TANUKI SCORE「今日の特選銘柄」APIキー未設定エラー表示（2026-06-21 完了）
+- **直接原因①**: `daily_pick.json`が2026-06-20 17:16 JSTにXAI_API_KEY未設定のローカル検証実行
+  （ARCH-SCORE-SYNC-1 Stage3のテスト目的）の出力のまま本番コミットされていた
+- **直接原因②（自動更新が直らなかった真因）**: `daily_pick.py`の`build_data_package()`が
+  `mkt.get("indicators", {}).get("VIX9D（短期VIX）", {}).get("value")`という3階層チェーンで
+  market_data.jsonを参照していたが、`indicators["VIX9D（短期VIX）"]`がキー自体は存在し値が
+  `None`の場合（2026-06-19以降発生）、`dict.get(key, default)`のdefaultはキー不在時のみ有効
+  なため`None.get("value")`でAttributeErrorが発生し、GitHub Actions側の自動実行
+  （XAI_API_KEY設定済み環境）が`Run daily_pick`ステップで2日連続クラッシュしていた
+  （このバグ自体は2026-05-23のコミットから存在する潜在バグで、本日・前日の変更とは無関係）
+- **修正**: `_nested_get(d, *keys)`ヘルパーを新設し、ネスト辞書アクセスを「途中の値がNone/非dict
+  ならその時点でNoneを返す」安全な実装に統一。3階層チェーン10箇所（vix/vix9d/tech_pulse系/
+  asset_flow系）を置換。2階層チェーン（isinstanceガード済みで元々安全）は変更なし
+- **データ復旧**: 修正後にXAI_API_KEYを使ってdaily_pick.pyをローカル実行し、正常な
+  AIレポート付きdaily_pick.json/history.jsonを生成・コミット（workflow_dispatchの
+  実行権限がローカル環境になかったため、同等の結果が得られるローカル実行で代替）
+- 「選出理由：分類変化：仕込み時 → BUY」表記は別件・コードバグではなく、ARCH-SCORE-SYNC-1
+  での分類体系統一直後に旧history.json内の旧ラベルと1回だけ比較されて生じた想定内の
+  過渡的表記と判明（history.jsonは新規実行ごとに新ラベルへ更新されるため自然に解消する）
+- 予防的に`src/portfolio/snapshot.py`の同型パターン（「ドル円」「S&P500」参照箇所、
+  daily_pick.pyと同じ`TANUKI_Score_Update.yml`内で連続実行されるため波及リスクがあった）
+  にも同じ`_nested_get`ヘルパーを適用
+- 検証: ローカル再現テストでクラッシュを確認 → 修正適用後に再実行しクラッシュ解消を確認、
+  Playwrightで実機ページの「APIキー未設定」表示が消え正常なAIレポートが表示されることを
+  確認。pytest 152件全パス、check_links.py リンク切れ0件
+
 ✅ [EPIC-LEGEND-1] 指標説明・凡例コンポーネントの共通化（2026-06-21 完了）
 - **統合元18件中15件を実装、3件は別種の問題と判明し除外**（詳細はBACKLOG.md該当項目の注記参照）:
   - 除外: HYPE-DISP-5（X軸整列＝レイアウトバグ）, MP-DISP-6（俳句フレーズ＝要否判断タスク）,
