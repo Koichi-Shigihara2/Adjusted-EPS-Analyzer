@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-17
+最終更新: 2026-06-21
 
 ---
 
@@ -50,6 +50,11 @@ Market Pulse  ← yfinance / CNN F&G / FREDデータ
 MACRO PULSE   ← FREDデータ / FRBステートメント
 DISCOVER      ← Grok Web検索
 PORTFOLIO     ← 手動入力 / 証券会社API
+TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
+　　書き込み系（ポジション登録・ジャーナル記録・KPI確定）は
+　　tail/index.html → GitHub Actions workflow_dispatch
+　　（.github/workflows/TANUKI_TAIL_Position_Write.yml → src/tail/workflow_write.py）
+　　経由でリポジトリにコミット（TAIL-SEC-1 2026-06-21、旧:ブラウザから直接GitHub API書き込み）
 
 ---
 
