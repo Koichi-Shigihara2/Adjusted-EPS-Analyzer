@@ -89,6 +89,16 @@ grep -rn "[機能キーワード]" docs/ src/ --include="*.html" --include="*.py
   新属性の設定ステップを追加する
 - 設定漏れ時の影響（フォールバック値・デフォルト動作）も明記する
 
+**③ ユーザー向け数値・バッジを追加した場合は glossary.json に説明を追加する**（EPIC-LEGEND-1）
+- 新しいスコア・バッジ・色分け・「–」表示等、ユーザーが意味を読み取れない可能性のある
+  表示を追加した場合は `docs/common/glossary.json` に用語キー→説明文のエントリを追加し、
+  該当箇所のHTMLに `<span data-info="key">` を付与する（`docs/common/info-tooltip.js` が
+  自動でホバー/タップ可能なツールチップに変換する）
+- 銘柄ごとに異なる動的な説明文（理由付きの警告等）には `data-info-text="説明文"` を使う
+  （glossary.jsonの静的辞書を経由しない。既存要素への後付け属性設定もJSから可能）
+- 既存の用語と意味が同じ場合は新規エントリを作らず既存キーを再利用する
+  （例: 「DCF_Reliability=LOW」の説明はTANUKI VALUATION/TANUKI SCORE両方で共通利用）
+
 例：
   discover_config.json への登録 → Step 6 として追加（2026-06-03）
   HypeCore 実行 → Step 5 として追加（2026-06-03）

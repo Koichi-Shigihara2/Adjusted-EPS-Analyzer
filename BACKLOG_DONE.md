@@ -4,6 +4,36 @@
 
 ## 2026-06-21
 
+✅ [EPIC-LEGEND-1] 指標説明・凡例コンポーネントの共通化（2026-06-21 完了）
+- **統合元18件中15件を実装、3件は別種の問題と判明し除外**（詳細はBACKLOG.md該当項目の注記参照）:
+  - 除外: HYPE-DISP-5（X軸整列＝レイアウトバグ）, MP-DISP-6（俳句フレーズ＝要否判断タスク）,
+    TVAL-FORMULA-1（算式整合性監査＝説明追加ではなく実装監査）
+- **共通コンポーネント新設**: `docs/common/glossary.json`（用語キー→説明文の静的辞書）、
+  `docs/common/info-tooltip.js`（`<span data-info="key">`を自動検出しホバー/タップでポップ
+  アップ表示。動的に追加されるDOM要素もMutationObserverで自動検出。後から動的な説明文を
+  付与したい場合は`data-info-text="..."`属性も後付けで使える ― 属性変更もMutationObserver
+  で監視）
+- **試験実装で発見・修正したバグ**: `<span data-info>`をクリックで開閉トグルする初期実装は、
+  ホバーで開いた直後のクリックで即座に閉じる不具合があった。クリックは「常に開く/再描画」
+  のみとし、閉じる動作はmouseleave・ドキュメントクリック・スクロールに委譲する設計に変更
+- **システム別実装内容**（計15箇所＋既存tip-box拡張2箇所）:
+  - HYPE CORE: index.htmlステージ列見出し、detail.html PEG・EV/EBITDA・株価チャート背景色凡例
+    （計4箇所。チャート背景色は当初index.htmlのみだったが原文確認でdetail.htmlが本来の対象と判明し追加）
+  - DISCOVER: 要注目ゾーン判定基準、ニュースタグ色凡例（2箇所）
+  - PORTFOLIO: HYPEMIX危険バッジ判定基準（1箇所）
+  - TANUKI TAIL: テーゼ健全度の基準（1箇所）
+  - MARKET PULSE: VIX判定文言、乖離基準、資金の動き「–」表示の意味、スコア構成バー色凡例（4箇所）
+  - MACRO PULSE: REPO/TGA/RRP用語、REGIMEの解釈、AI失敗時のmodel欄の意味、FOMC声明日付
+    （4箇所。FOMC声明日付は`data-info-text`による動的注入の実例）
+  - STONKS SILO: 生存期間「–」・黒字化「–」の意味、拡大再生産ドットの意味
+    （生存期間・黒字化は既存の`tip-box`カスタムツールチップに追記する形で対応。
+    新規コンポーネントとの二重実装を避けるための判断）
+  - TANUKI SCORE: DuPont⚠マーク（`data-info-text`化で可読性改善）、ROE色分け基準（2箇所）
+- **CLAUDE_CODE_START.md更新**: 「新規銘柄属性を追加した場合の必須対応」に③として
+  「ユーザー向け数値・バッジを追加した場合はglossary.jsonに説明を追加する」を追記（再発防止）
+- 検証: 全システムでPlaywrightによる実機ホバー/クリック確認、pytest152件全パス、
+  check_links.pyリンク切れ0件を確認してから各システム単位でコミット
+
 ✅ [ARCH-MATRIX-DUP-1] RICE×乖離率マトリクスの重複・差異実装（2026-06-21 完了）
 - **設計判断（ユーザー確定）**: TANUKI SCORE「②RICE×乖離率マトリクス」とTANUKI VALUATION
   「①投資効率系」はそれぞれ異なる用途（前者=多銘柄の最終相対判断、後者=TANUKI VALUATION
