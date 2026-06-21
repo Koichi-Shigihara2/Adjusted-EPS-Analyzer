@@ -7,6 +7,11 @@
  *
  * 新規指標を追加する場合は glossary.json にキーを追加するだけでよい
  * （個別ページ側にツールチップHTML/CSSを書く必要はない）。
+ *
+ * 動的な説明文（銘柄ごとに異なる理由等、glossary.jsonの静的辞書に
+ * 馴染まない内容）には data-info-text="説明文" を使う。JS側で
+ * el.setAttribute('data-info-text', text) のように後から付与してもよい
+ * （既存要素への属性付与もMutationObserverで自動検出される）。
  * ───────────────────────────────────────────────────────── */
 (function () {
   var SCRIPT_EL = document.currentScript || (function () {
@@ -69,6 +74,9 @@
   }
 
   function onTrigger(el) {
+    // data-info-text: 動的な説明文（銘柄ごとに異なる理由等）。glossary参照より優先。
+    var inlineText = el.getAttribute('data-info-text');
+    if (inlineText) { showPopup(el, inlineText); return; }
     var key = el.getAttribute('data-info');
     function render() {
       var text = (glossary && glossary[key]) || '（説明未登録: ' + key + '）';
@@ -99,7 +107,7 @@
   }
 
   function scan(root) {
-    (root || document).querySelectorAll('[data-info]').forEach(initTrigger);
+    (root || document).querySelectorAll('[data-info], [data-info-text]').forEach(initTrigger);
   }
 
   document.addEventListener('click', hidePopup);
@@ -109,19 +117,29 @@
     injectStyle();
     scan(document);
     // ページ側が非同期fetch後にinnerHTMLでテーブル/カードを描画するため、
-    // 後から追加される data-info 要素も自動検出する
+    // 後から追加される data-info 要素も自動検出する。
+    // 既存要素に後からJSで data-info-text 属性が付与されるケース（動的な
+    // 説明文）にも対応するため、属性変更も監視する。
     var mo = new MutationObserver(function (muts) {
       for (var i = 0; i < muts.length; i++) {
-        var added = muts[i].addedNodes;
+        var m = muts[i];
+        if (m.type === 'attributes') {
+          if (m.target.nodeType === 1) initTrigger(m.target);
+          continue;
+        }
+        var added = m.addedNodes;
         for (var j = 0; j < added.length; j++) {
           var n = added[j];
           if (n.nodeType !== 1) continue;
-          if (n.matches && n.matches('[data-info]')) initTrigger(n);
+          if (n.matches && n.matches('[data-info], [data-info-text]')) initTrigger(n);
           if (n.querySelectorAll) scan(n);
         }
       }
     });
-    mo.observe(document.documentElement, { childList: true, subtree: true });
+    mo.observe(document.documentElement, {
+      childList: true, subtree: true,
+      attributes: true, attributeFilter: ['data-info', 'data-info-text'],
+    });
   }
 
   if (document.readyState === 'loading') {

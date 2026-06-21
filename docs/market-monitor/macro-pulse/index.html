@@ -539,11 +539,11 @@
 
   <!-- FED Regime Bar -->
   <div class="regime-bar" id="regimeBar">
-    <div class="rb-cell"><span class="rb-label">REGIME</span><span class="rb-val" id="rb-regime">—</span><span class="rb-sub" id="rb-regime-src"></span></div>
+    <div class="rb-cell"><span class="rb-label" data-info="macro_regime_action">REGIME</span><span class="rb-val" id="rb-regime">—</span><span class="rb-sub" id="rb-regime-src"></span></div>
     <div class="rb-cell"><span class="rb-label">FF RATE</span><span class="rb-val" id="rb-ff">—</span><span class="rb-sub">誘導目標中心値</span></div>
     <div class="rb-cell"><span class="rb-label">1Y EXPECTED FF</span><span class="rb-val" id="rb-exp">—</span><span class="rb-sub" id="rb-src">FRED DGS1（1年国債利回り）</span></div>
     <div class="rb-cell"><span class="rb-label">IMPLIED CUTS</span><span class="rb-val" id="rb-cuts">—</span><span class="rb-sub">12M / 25bp each</span><span style="font-size:10px;color:var(--mut);display:block;margin-top:2px;">正値=利下げ織り込み / 負値=利上げ/高止まり織り込み</span></div>
-    <div class="rb-cell"><span class="rb-label">FRB 主眼</span><span class="rb-val" id="rb-concern">—</span><span class="rb-sub" id="rb-reason" style="font-size:9px;line-height:1.4;white-space:normal;max-width:240px">—</span></div>
+    <div class="rb-cell"><span class="rb-label" id="rb-concern-label">FRB 主眼</span><span class="rb-val" id="rb-concern">—</span><span class="rb-sub" id="rb-reason" style="font-size:9px;line-height:1.4;white-space:normal;max-width:240px">—</span></div>
   </div>
 
   <!-- Ticker -->
@@ -983,6 +983,7 @@ function renderRegimeBar(d) {
   const concern=d.dominant_label||d.dominant_concern||'—';
   const reason=d.ai_reason||'';
   const regimeSrc=d.regime_source||'';
+  const fomcDate=d.fomc_date||'';
   const cls=regime==='EASING'?'rg-easing':regime==='TIGHTENING'?'rg-tightening':'rg-balanced';
   el('rb-regime').innerHTML=`<span class="rb-regime ${cls}">${regime}</span>`;
   el('rb-regime-src').textContent=regimeSrc;
@@ -991,6 +992,9 @@ function renderRegimeBar(d) {
   el('rb-cuts').textContent=isNaN(cuts)?'—':(cuts>=0?'+':'')+cuts.toFixed(2)+'回';
   el('rb-concern').textContent=concern;
   el('rb-reason').textContent=reason;
+  // MACRO-DISP-4: どのFOMC会合の声明に基づく判定かを動的ツールチップで明示
+  const concernLabel=el('rb-concern-label');
+  if(concernLabel) concernLabel.setAttribute('data-info-text', fomcDate?`${fomcDate}のFOMC声明に基づく判定です。`:'FOMC声明日付が未取得です。');
   const bar=el('regimeBar');
   bar.style.borderColor=regime==='EASING'?'rgba(59,130,246,.4)':regime==='TIGHTENING'?'rgba(239,68,68,.4)':'var(--bdr)';
 }
@@ -2324,7 +2328,7 @@ function renderWeeklyAnalysis(rows) {
           ${indChipsHtml}
         </div>` : ''}
         <div style="font-family:var(--mono);font-size:8px;color:var(--mut);margin-top:8px;text-align:right">
-          model: ${r.model||'—'} | updated: ${r.updated_at||'—'}
+          <span data-info="macro_ai_model_fallback">model: ${r.model||'—'}</span> | updated: ${r.updated_at||'—'}
         </div>
       </div>
     </div>`;
@@ -2651,7 +2655,7 @@ function renderStealthCard(rows, latest) {
 
   return `<div class="stealth-card">
     <div class="stealth-header">
-      <span class="stealth-title">🕵️ ステルス流動性モニター（3層構造）</span>
+      <span class="stealth-title" data-info="macro_fed_liquidity_terms">🕵️ ステルス流動性モニター（3層構造）</span>
       <span class="stealth-badge ${badgeCls}">${badgeTxt}</span>
     </div>
     <!-- DESIGN-12 Layer 1/2/3 -->
@@ -2754,6 +2758,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
   <script src="../../common/site-nav.js"></script>
+  <script src="../../common/info-tooltip.js"></script>
 
 <script>
 (function () {
