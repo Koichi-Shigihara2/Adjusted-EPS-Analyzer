@@ -4,6 +4,31 @@
 
 ## 2026-06-22
 
+✅ [FOUR-DELETE-1] FOUR（Shift4 Payments）を全システムから削除（2026-06-22 完了）
+- **理由**: 投資対象として見送り。株式数XBRLバグ（2026-06-14のBUG修正、CIK誤報告74倍過小）により
+  EPSアナライザーが構造的に無効化されており、IV計算の信頼性も担保できないと判断
+- **削除範囲**:
+  - 設定: `config/cik_lookup.csv`・`beta_config.json`・`discover_config.json`（+`docs/portfolio/data/`同期）・
+    `monitor_tickers.yaml`・`docs/value-monitor/tanuki_valuation/data/tickers.json`（count 96→95）・
+    `docs/value-monitor/tanuki_valuation/data/.watcher_state.json`・
+    `src/value/tanuki_valuation/growth_sanity.py`（業種分類オーバーライドの不使用エントリ）
+  - 生成データ: `common/sec_data/{data,normalized,raw,ttm}/FOUR`関連・
+    `docs/value-monitor/tanuki_valuation/data/FOUR/`一式・`hypecore_history/FOUR.json`・
+    `docs/value-monitor/hypecore/data/FOUR_poc.json`・`src/value/hypecore/data/FOUR_poc.json`（実体側）・
+    `docs/value-monitor/adjusted_eps_analyzer/data/FOUR`（空ディレクトリ）。計104ファイル
+  - **意図的に残置**: `docs/discover/data/daily_report.json`・`docs/integrated-dashboard/history.json`・
+    `docs/value-monitor/tanuki_score/history.json`（日付キーの共有履歴ログのため遡及編集せず）、
+    `common/sec_data/data/_cik_cache.json`のFOURエントリ（単なる参照キャッシュで実害なし）
+- **削除手順書の見落とし発見**: 当初の削除依頼にはなかった`beta_config.json`・`growth_sanity.py`・
+  `src/value/hypecore/data/`（docsとは別の実体ファイル）・`.watcher_state.json`の4件を
+  grep横展開で追加発見・対応した。CLAUDE_CODE_START.mdの銘柄削除手順にも
+  `growth_sanity.py`等のコード内ハードコード参照は記載がなく、今後の削除作業でも
+  `grep -rln "TICKER" docs/ config/ common/ src/`のような全文横断検索を都度実施する必要がある
+- **コミット**: f3cd4a111
+- **確認**: `system_health.py` HEALTHY（95/95件存在、latest.json欠損0件）・pytest 110件パス・
+  `check_links.py` エラー0件
+- BKNG・FCXは（同種のEPSアナライザー無効銘柄だが）削除対象から明示的に除外
+
 ✅ [MP-LAYOUT-1] Tech Pulseゲージ3列が1行に収まらず縦積みになる問題の修正（2026-06-22 完了・EPIC-LAYOUT-1グループAへ追加対応）
 - **背景**: 当初の調査（同日早い時点）で「`.unified-gauge-row`は`flex-wrap:wrap`があるため
   オーバーフローしない＝対象外」と判断したが、その後の指摘で「オーバーフローしない＝

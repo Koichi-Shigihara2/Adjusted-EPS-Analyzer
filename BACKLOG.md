@@ -108,6 +108,31 @@ Playwrightで1400px幅（フルデスクトップ幅）でも全く同じ重な�
 
 ## 優先度：中（こなれてきたら対応）
 
+### [DCF-RELIABILITY-1] DCF_Reliability表示がFCF_Conversion_Rate方式銘柄（74銘柄）で欠落
+**優先度:** 中
+**分類:** 設計課題 / TANUKI VALUATION
+
+#### 発見経緯（2026-06-22 全銘柄健全性スキャン）
+全93銘柄（tanuki=true）をスキャンした結果、`DCF_Reliability`行がreport.txtに
+出力されているのはFCF_Base直接方式（実績FCFの直近2yr/5yr平均を使う方式）の
+19銘柄のみで、FCF_Conversion_Rate方式（調整後純利益から変換率でFCFを推定する方式）の
+74銘柄（全体の80%）では一切出力されていないことが判明した。
+
+#### 問題
+- 現行のReliability判定（Policy A: FCF実績マイナス＋revenue_floor適用時にLOW、
+  TANUKI SCORE分類はWATCHに丸める）は、FCF_Conversion_Rate方式銘柄には
+  そもそも適用されない設計になっている
+- ADBE（analyst_vs_iv -59.9%・fcf_outlier.detected=true・transient_evidence.found=false）
+  のような明らかに要注意な銘柄でも、信頼性表示が空欄のまま「参考情報なし」になる
+- 同スキャンで65/93銘柄（70%）が何らかの要注意フラグ（analyst_vs_iv乖離±50%以上・
+  fcf_outlier未確認・eps無効）に該当しており、信頼性表示の欠落は実害が大きい
+
+#### 対応方針（次回着手時に設計確認）
+- FCF_Conversion_Rate方式向けのReliability判定基準を新たに設計する
+  （例: `fcf_outlier.detected=true` かつ `transient_evidence.found=false` → MEDIUM等）
+- 74銘柄へのReliability表示拡張を実装し、report_consistency_check.pyにも
+  検出項目として追加して恒久化する
+
 ### [TVAL-TS-FIX-1] タイムスタンプ表示の未整形・フォーマット不具合（TANUKI VALUATION画面）
 **優先度:** 中
 **分類:** バグ修正 / TANUKI VALUATION
