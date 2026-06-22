@@ -454,35 +454,50 @@ async function loadData() {
         ${warn}${notInWarn}
       </td>
       <td class="mono">${sharesDisp}</td>
-      <td class="mono">${r.weightedAvgCost > 0 ? fmt$(r.weightedAvgCost) : '—'}</td>
-      <td class="mono">${r.totalPosCost > 0 ? fmt$(r.totalPosCost) : '—'}</td>
-      <td class="mono">${r.currentPrice != null ? fmt$(r.currentPrice) : '—'}</td>
+      <td class="mono" data-priority="low">${r.weightedAvgCost > 0 ? fmt$(r.weightedAvgCost) : '—'}</td>
+      <td class="mono" data-priority="low">${r.totalPosCost > 0 ? fmt$(r.totalPosCost) : '—'}</td>
+      <td class="mono" data-priority="low">${r.currentPrice != null ? fmt$(r.currentPrice) : '—'}</td>
       <td class="mono">${r.posValue != null ? fmt$(r.posValue) : '—'}</td>
       <td class="mono ${r.posPnl != null ? (r.posPnl>=0?'pos':'neg') : ''}">${r.posPnl != null ? fmt$(r.posPnl) : '—'}</td>
       <td>${fmtPct(r.pnlPct)}</td>
-      <td class="mono">${r.ivps != null ? fmt$(r.ivps) : '—'}</td>
+      <td class="mono" data-priority="low">${r.ivps != null ? fmt$(r.ivps) : '—'}</td>
       <td>${fmtPct(r.upside)}</td>
       <td style="font-size:12px">${r.stageLabel}${r.substageLabel?'<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>':''}</td>
       <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
-      <td style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo||''}</td>
+      <td data-priority="low" style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo||''}</td>
     </tr>`;
   }).join('');
 
   const totalRow = `<tr class="total-row">
-    <td class="mono" colspan="3">TOTAL</td>
-    <td class="mono">${fmt$(totalCost)}</td>
+    <td class="mono">TOTAL</td>
     <td></td>
+    <td class="mono" data-priority="low"></td>
+    <td class="mono" data-priority="low">${fmt$(totalCost)}</td>
+    <td data-priority="low"></td>
     <td class="mono">${fmt$(totalValue)}</td>
     <td class="mono ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</td>
     <td>${fmtPct(totalPnlPct)}</td>
-    <td colspan="5"></td>
+    <td data-priority="low"></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td data-priority="low"></td>
   </tr>`;
 
   const cashRow = `<tr class="cash-row">
     <td class="mono">CASH (全ブローカー合計)</td>
-    <td colspan="4">—</td>
+    <td>—</td>
+    <td data-priority="low">—</td>
+    <td data-priority="low">—</td>
+    <td data-priority="low">—</td>
     <td class="mono">${fmt$(totalCashAll)}</td>
-    <td colspan="7">—</td>
+    <td>—</td>
+    <td>—</td>
+    <td data-priority="low">—</td>
+    <td>—</td>
+    <td>—</td>
+    <td>—</td>
+    <td data-priority="low">—</td>
   </tr>`;
 
   document.getElementById('table-section').innerHTML = `
@@ -492,17 +507,17 @@ async function loadData() {
         <thead><tr>
           <th>銘柄</th>
           <th>合計株数</th>
-          <th>加重平均単価</th>
-          <th>取得総額</th>
-          <th>現在株価</th>
+          <th data-priority="low">加重平均単価</th>
+          <th data-priority="low">取得総額</th>
+          <th data-priority="low">現在株価</th>
           <th>時価残高</th>
           <th>評価損益額</th>
           <th>評価損益率</th>
-          <th>理論株価</th>
+          <th data-priority="low">理論株価</th>
           <th>乖離率</th>
           <th>フェーズ</th>
           <th>スコア</th>
-          <th>メモ</th>
+          <th data-priority="low">メモ</th>
         </tr></thead>
         <tbody>
           ${tableRows}

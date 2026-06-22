@@ -223,6 +223,16 @@ button:focus-visible, input:focus-visible, select:focus-visible {
   outline-offset: 1px;
 }
 
+/* === 半分画面幅対応：テーブル列の段階的非表示（EPIC-LAYOUT-1 グループA） ===
+ * 各画面のテーブルで、優先度の低い列の <th>/<td> に data-priority="low" を付与すると
+ * 960px以下（27インチ半分画面の想定幅）で自動的に非表示になる。
+ * table に min-width が個別指定されているページ（横スクロール前提の固定幅テーブル）でも
+ * 列を間引いた後は中身に合わせて縮められるよう、ここで min-width を解除する。 */
+@media (max-width: 1000px) {
+  [data-priority="low"] { display: none !important; }
+  table { min-width: 0 !important; }
+}
+
 /* === 最終更新日時バー === */
 .last-updated {
   font-family: var(--mono);

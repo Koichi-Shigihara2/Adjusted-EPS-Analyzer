@@ -2,6 +2,40 @@
 
 ---
 
+## 2026-06-22
+
+✅ [EPIC-LAYOUT-1 グループA] 固定/自然幅テーブル＋横スクロール対応（PORT-LAYOUT-3 / PORT-DISP-3 / HYPE-DISP-2、2026-06-22 完了）
+- **実装方式**: `docs/common/site-theme.css`に`@media (max-width:1000px)`で
+  `[data-priority="low"]`を`display:none`にする共通ルールを追加（EPIC-LEGEND-1/
+  EPIC-HEADER-1と同じ「共通CSS追加＋属性付与」パターンを踏襲）。あわせて同条件で
+  `table{min-width:0}`を上書きし、列を間引いた後にtableのmin-widthが横スクロールを
+  強制し続けないようにした
+- **PORT-LAYOUT-3/PORT-DISP-3**（`docs/portfolio/index.html`の明細テーブル、13列）:
+  加重平均単価・取得総額・現在株価・理論株価・メモの5列に`data-priority="low"`を付与。
+  TOTAL/CASH行は元々`colspan`でまとめていたが、列ごとの個別`<td>`に分解してから
+  対応する列に同じ`data-priority`を付与（colspanのまま非表示列を間引くと表組みの
+  グリッドモデルがズレるリスクがあったため）。960px幅でscrollWidth 1201→918pxとなり
+  横スクロール解消。PORT-DISP-3で問題視されていた乖離率列は常時表示列として残した
+- **HYPE-DISP-2**（`docs/value-monitor/hypecore/index.html`の銘柄一覧テーブル、11列）:
+  ライフサイクル・Rule of 40・高値比の3列に`data-priority="low"`を付与。
+  960px幅でscrollWidth 980→920pxとなり横スクロール解消
+- **MP-LAYOUT-1（Tech Pulseはみ出し）は対象外**: 2026-06-21調査時点でグループAに
+  分類されていたが、本セッションでPlaywrightによる実機検証（850px/900px/960px/1024px）
+  を実施したところ、いずれの幅でも`.unified-gauge-row`に横はみ出しは再現しなかった
+  （`.unified-gauge-row`はすでに`flex-wrap:wrap`が設定済みで、2つのゲージ＋乖離情報が
+  自然に縦積みされる）。調査時点から状態が変わったか、調査対象範囲の認識違いの
+  可能性がある。BACKLOG.mdの[[EPIC-LAYOUT-1]]側からはMP-LAYOUT-1のグループA該当分を
+  除外して記録した
+- **検証方法**: ローカルで`docs/`をGitHub Pagesのベースパス（`/On-a-journey/`）に
+  合わせて配信する必要があったため、`New-Item -ItemType Junction`で`docs`を
+  `On-a-journey`という名前にマウントしたディレクトリ経由でhttp.serverを起動し、
+  Playwrightで960px等の各幅でscrollWidth/clientWidthとスクリーンショットを確認した
+  （portfolio/index.htmlはクライアント側パスワード認証があるため、テスト時のみ
+  `auth-screen`を直接非表示にして`loadData()`を呼び出した。本番の認証ロジック自体は
+  変更していない）
+- pytest 110件全件パス（フロントエンドのみの変更のため回帰なし）。1400px幅では
+  両テーブルとも全列表示を維持することも確認済み
+
 ## 2026-06-21
 
 ✅ [EPIC-LAYOUT-1-INVESTIGATION] 27インチ半分画面対応の現状調査（2026-06-21 完了・調査のみ）

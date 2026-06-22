@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-21
+最終更新: 2026-06-22
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -42,11 +42,14 @@ MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
 症状別に3グループへ分類した：
 - **グループA**（固定/自然幅テーブル＋横スクロール）: MP-LAYOUT-1の一部、
   PORT-LAYOUT-3、PORT-DISP-3（実質同一バグ）、HYPE-DISP-2
+  → **2026-06-22 完了（PORT-LAYOUT-3/PORT-DISP-3/HYPE-DISP-2）。詳細は
+  BACKLOG_DONE.md参照。MP-LAYOUT-1のTech Pulseはみ出しは実機検証
+  （850〜1024px）で再現せず対象外とした**
 - **グループB**（フレックス行ラベル省略）: MACRO-DISP-1、HYPE-DISP-1の一部
 - **グループC**（table-layout:fixed、列幅が常時カツカツ）: SILO-DISP-3
   （960px固有の問題ではなく列幅設計自体の見直しが必要なため個別対応）
 
-次回着手順序: **グループA → グループB → グループC（SILO-DISP-3は個別対応）**
+次回着手順序: **グループB → グループC（SILO-DISP-3は個別対応）**
 
 #### 対応方針
 - まず「半分画面幅（約960px想定）」を標準のブレークポイントとして
@@ -61,12 +64,14 @@ MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
   クエリへ段階拡張する（個人利用ツールのためブラウザ互換性の制約は実質なし）
 
 #### 対象一覧
-- MP-LAYOUT-1（Tech Pulseはみ出し）— `market-pulse/index.html:340-400`
-- PORT-LAYOUT-3（明細テーブル横スクロール）, PORT-DISP-3（乖離率列見切れ、
-  PORT-LAYOUT-3と実質同一バグ）— `portfolio/index.html:64,492-505`
+- ~~PORT-LAYOUT-3（明細テーブル横スクロール）, PORT-DISP-3（乖離率列見切れ）~~
+  → 2026-06-22 完了（BACKLOG_DONE.md参照）
+- ~~HYPE-DISP-2（右端列見切れ）~~ → 2026-06-22 完了（BACKLOG_DONE.md参照）
+- ~~MP-LAYOUT-1（Tech Pulseはみ出し）~~ → 2026-06-22 実機検証で再現せず対象外
+  （BACKLOG_DONE.md参照）
 - MACRO-DISP-1（ティッカー名省略）— `macro-pulse/index.html:96-101`
 - SILO-DISP-3（バッジ省略表示）— `stonks-silo/index.html:72,306-317`
-- HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）, HYPE-DISP-2（右端列見切れ）
+- HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）
   — `hypecore/index.html:49,77,118-132`
 
 ---
@@ -852,7 +857,10 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. EPIC-LAYOUT-1 へ展開（EPIC-LEGEND-1/EPIC-HEADER-1で確立したパターンを踏襲）
+1. EPIC-LAYOUT-1 グループB（MACRO-DISP-1・HYPE-DISP-1の一部）へ展開
+   （グループAで確立した`data-priority`+`@media`パターンは横展開できないため、
+   フレックス行ラベル省略には別途方式を検討する）
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
-EPIC-HEADER-1は2026-06-21に完了。BACKLOG_DONE.md参照）
+EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループAは2026-06-22に完了。
+BACKLOG_DONE.md参照）
