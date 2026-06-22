@@ -226,11 +226,12 @@ button:focus-visible, input:focus-visible, select:focus-visible {
 /* === 半分画面幅対応：テーブル列の段階的非表示（EPIC-LAYOUT-1 グループA） ===
  * 各画面のテーブルで、優先度の低い列の <th>/<td> に data-priority="low" を付与すると
  * 960px以下（27インチ半分画面の想定幅）で自動的に非表示になる。
- * table に min-width が個別指定されているページ（横スクロール前提の固定幅テーブル）でも
- * 列を間引いた後は中身に合わせて縮められるよう、ここで min-width を解除する。 */
+ * table の min-width 解除はここに書かず、必要なページ自身の <style> でスコープして行うこと
+ * （ここでグローバルに table{min-width:0} を書くと、data-priority未適用の他ページの
+ *  テーブル（admin.html・tanuki_valuation/index.html・stock.htmlのmatrix-table等）まで
+ *  min-widthが0になり列が押し潰される regression を起こす。2026-06-22に実際に発生・修正済み）。 */
 @media (max-width: 1000px) {
   [data-priority="low"] { display: none !important; }
-  table { min-width: 0 !important; }
 }
 
 /* === 最終更新日時バー === */

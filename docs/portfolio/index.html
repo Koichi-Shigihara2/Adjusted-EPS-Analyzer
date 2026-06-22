@@ -62,6 +62,11 @@
     /* Portfolio table */
     .tbl-wrap{overflow-x:auto;background:var(--sur);border:1px solid var(--bdr)}
     table{width:100%;border-collapse:collapse;min-width:1100px}
+    /* EPIC-LAYOUT-1: data-priority="low"の列を960px以下で間引いた後はmin-widthを解除し、
+       残った列だけで自然に収まるようにする（このページの.tbl-wrap内tableに限定したスコープ） */
+    @media (max-width: 1000px) {
+      .tbl-wrap table { min-width: 0; }
+    }
     th{font-family:var(--mono);font-size:10px;color:var(--mut);text-align:left;padding:10px 12px;background:var(--sur2);border-bottom:1px solid var(--bdr);white-space:nowrap;text-transform:uppercase;letter-spacing:.06em}
     td{padding:9px 12px;border-bottom:1px solid rgba(30,40,64,.5);font-size:13px;white-space:nowrap;vertical-align:middle}
     tr:hover td{background:rgba(255,255,255,.015)}
