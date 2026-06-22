@@ -7,9 +7,17 @@
 ✅ [EPIC-LAYOUT-1 グループA] 固定/自然幅テーブル＋横スクロール対応（PORT-LAYOUT-3 / PORT-DISP-3 / HYPE-DISP-2、2026-06-22 完了）
 - **実装方式**: `docs/common/site-theme.css`に`@media (max-width:1000px)`で
   `[data-priority="low"]`を`display:none`にする共通ルールを追加（EPIC-LEGEND-1/
-  EPIC-HEADER-1と同じ「共通CSS追加＋属性付与」パターンを踏襲）。あわせて同条件で
-  `table{min-width:0}`を上書きし、列を間引いた後にtableのmin-widthが横スクロールを
-  強制し続けないようにした
+  EPIC-HEADER-1と同じ「共通CSS追加＋属性付与」パターンを踏襲）
+- **教訓（regression発生→即修正）**: 当初`table{min-width:0 !important}`も
+  site-theme.cssにグローバルで追加したが、これはdata-priority未適用の他ページの
+  tableにまで波及し、admin.html(min-width:600px)・tanuki_valuation/index.html
+  (820px)・stock.htmlの`.matrix-table`(400px)のmin-widthを960px以下で0に
+  潰すregressionを発生させた（pushしてから気づいた）。共通CSSに書くのは
+  `data-priority`の表示制御のみに留め、min-width解除は実際に必要な
+  `portfolio/index.html`自身の`<style>`内で`.tbl-wrap table`にスコープして
+  追記する形に修正した。**「共通CSSに書く」＝「個別ページの調整も全部共通化してよい」
+  ではない**。要素セレクタ（`table`等）を共通CSSの`@media`に書くと、その共通CSSを
+  読み込む全ページに無条件で波及する点に注意（クラス無しの裸セレクタは特に危険）
 - **PORT-LAYOUT-3/PORT-DISP-3**（`docs/portfolio/index.html`の明細テーブル、13列）:
   加重平均単価・取得総額・現在株価・理論株価・メモの5列に`data-priority="low"`を付与。
   TOTAL/CASH行は元々`colspan`でまとめていたが、列ごとの個別`<td>`に分解してから
