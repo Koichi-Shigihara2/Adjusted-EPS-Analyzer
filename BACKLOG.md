@@ -71,10 +71,11 @@ MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
 - ~~HYPE-DISP-2（右端列見切れ）~~ → 2026-06-22 完了（BACKLOG_DONE.md参照）
 - ~~MP-LAYOUT-1（Tech Pulseはみ出し）~~ → 2026-06-22 実機検証で再現せず対象外
   （BACKLOG_DONE.md参照）
-- MACRO-DISP-1（ティッカー名省略）— `macro-pulse/index.html:96-101`
+- ~~MACRO-DISP-1（ティッカー名省略）~~ → 2026-06-22 完了（BACKLOG_DONE.md参照。
+  850px/1200px幅の残存は[[MACRO-DISP-2]]として分離登録済み）
 - SILO-DISP-3（バッジ省略表示）— `stonks-silo/index.html:72,306-317`
-- HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）
-  — `hypecore/index.html:49,77,118-132`
+- ~~HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）~~ → 2026-06-22 完了
+  （BACKLOG_DONE.md参照）
 
 ---
 
