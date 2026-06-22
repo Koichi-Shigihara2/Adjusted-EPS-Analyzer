@@ -721,6 +721,8 @@ HIGH/MED/LOW で表示ゲート制御（LOWはグレーアウト）
 ### 【Moomoo API】
 - [ ] β自動計算（SPY日次リターンからbeta_config.jsonを自動更新）
 - [ ] advance/decline比率収集（MACRO PULSE向け）
+      ※ Market Pulse向けの二極化検知はRSP/SPY乖離・A-Dライン・マクラレンオシレーターで
+        2026-06-22に実装済み（[[MP-BREADTH-2]]、BACKLOG_DONE.md参照）。本項目はMACRO PULSE向けの残タスク。
 - [ ] CANSLIM候補スクリーニングリスト（US株対象）
 - [ ] 資金フロー（大口/小口）表示
 - [ ] 決算ウォッチ用プレ/アフターマーケットデータ
