@@ -46,10 +46,12 @@ MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
   BACKLOG_DONE.md参照。MP-LAYOUT-1のTech Pulseはみ出しは実機検証
   （850〜1024px）で再現せず対象外とした**
 - **グループB**（フレックス行ラベル省略）: MACRO-DISP-1、HYPE-DISP-1の一部
+  → **2026-06-22 完了。詳細はBACKLOG_DONE.md参照。MACRO-DISP-1は850px/1200px幅で
+  省略が残存し[[MACRO-DISP-2]]として分離・新規登録した**
 - **グループC**（table-layout:fixed、列幅が常時カツカツ）: SILO-DISP-3
   （960px固有の問題ではなく列幅設計自体の見直しが必要なため個別対応）
 
-次回着手順序: **グループB → グループC（SILO-DISP-3は個別対応）**
+次回着手順序: **グループC（SILO-DISP-3）**
 
 #### 対応方針
 - まず「半分画面幅（約960px想定）」を標準のブレークポイントとして
@@ -103,6 +105,25 @@ Playwrightで1400px幅（フルデスクトップ幅）でも全く同じ重な�
 - 針の描画レイヤーをラベルより下（z-index相当）にする、または針の長さ・始点を
   ラベル領域を避けるよう調整する
 - ラベル背景に半透明の縁取り/背景を付けて重なっても可読性を確保する
+
+### [MACRO-DISP-2] Michigan Sent.*指標名が850px/1200px幅で省略される（Macro Pulse画面）
+**優先度:** 低
+**分類:** 表示バグ / Macro Pulse
+
+#### 発生状況（2026-06-22 EPIC-LAYOUT-1グループB調査）
+`.phase-signals`のminmax値を260pxに設定した状態で、850px/1200px幅で
+「Michigan Sent.*」の省略が残存している（700/800/960/1024/1400px幅では解消済み）。
+
+#### 根本原因
+`.phase-signals`の親コンテナ`.v3-main`（2カラムレイアウト`.v3-dash`のメイン列）の
+幅がビューポート幅に比例せず非線形に変動するため、minmax値の調整だけでは
+「モグラ叩き」が続く構造的な問題（200→240pxで800px幅が発生、240→260pxで
+850px/1200px幅が発生、という経緯で判明）。
+
+#### 対応方針候補（いずれかを次回着手時に選択）
+1. メディアクエリで固定列数を指定（ビューポート幅ごとに列数を明示）
+2. セル内レイアウトを縦積みに変更（dot+nameを1行、val+badge+leadを別行）
+3. `.v3-main`列幅自体の見直し
 
 ---
 
@@ -908,10 +929,8 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. EPIC-LAYOUT-1 グループB（MACRO-DISP-1・HYPE-DISP-1の一部）へ展開
-   （グループAで確立した`data-priority`+`@media`パターンは横展開できないため、
-   フレックス行ラベル省略には別途方式を検討する）
+1. EPIC-LAYOUT-1 グループC（SILO-DISP-3、table-layout:fixedの列幅見直し）へ展開
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
-EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループAは2026-06-22に完了。
+EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22に完了。
 BACKLOG_DONE.md参照）

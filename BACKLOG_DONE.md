@@ -4,6 +4,29 @@
 
 ## 2026-06-22
 
+✅ [EPIC-LAYOUT-1 グループB] フレックス行ラベル省略・推奨列折り返し不揃いの修正（2026-06-22 完了）
+- **MACRO-DISP-1**: `docs/market-monitor/macro-pulse/index.html`の`.phase-signals`の
+  `minmax()`値を200px→260pxに拡張（200→240→260pxの2段階調整。240pxでは800px幅で
+  「Michigan Sent.*」が省略されたため260pxへ追加調整）
+  - 700/800/960/1024/1400px幅で省略解消を確認
+  - **850px/1200px幅で「Michigan Sent.*」の省略が残存**（モグラ叩き現象。
+    根本原因は親コンテナ`.v3-main`の幅がビューポート幅に比例せず非線形に
+    変動するため。下記[[MACRO-DISP-2]]として新規登録）
+  - コミット: ef52e10e6
+- **HYPE-DISP-1**: `docs/value-monitor/hypecore/index.html`の推奨クラス
+  （`.rec-buy`/`.rec-hold`/`.rec-sell`/`.rec-watch`）に`white-space:nowrap`追加、
+  推奨列`<td>`に`.rec-cell{min-width:120px}`付与（「様子見（底打ち）」実測幅89px+
+  td padding20pxが根拠）
+  - 700〜1400px全幅で行高さ33pxに統一、折り返し不揃いを完全解消
+  - 副作用として700/750/800/1024px幅でテーブル内（`.table-wrap`）横スクロールが
+    新規発生するが、bodyレベルのはみ出しはなし（HYPE-DISP-2と同じ許容範囲の挙動）
+  - コミット: e8857f6b2
+- **教訓**: グループAのMP-LAYOUT-1に続き、グループBの2件も「960px固有の問題」
+  という当初の前提が外れた（MACRO-DISP-1は700〜1400px全幅で発生する画面幅非依存の
+  問題、HYPE-DISP-1も960pxでは無症状で700px/1024pxで発生する非単調な問題だった）。
+  EPIC-LAYOUT-1全体を通じて「960px境界の問題」という分類自体を疑ってから
+  実装することが重要だと再確認した
+
 ✅ [MP-BREADTH-2] Market Pulse 市場の広がり強化・二極化警告実装（2026-06-22 完了）
 - **内容**: 市場の二極化（一部銘柄のみ上昇）を捉えるための5指標を新規実装
   1. RSP/SPY乖離指標（Equal Weight vs Cap Weight）: yfinanceで1d=-0.576pt /
