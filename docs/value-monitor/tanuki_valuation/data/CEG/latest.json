@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 35557071388.59028,
   "intrinsic_value_per_share": 47.55623763884581,
   "intrinsic_value_beta": 39.94,
-  "upside_percent_beta": -85.4,
+  "upside_percent_beta": -85.6,
   "intrinsic_value_rf": 533.68,
-  "upside_percent_rf": 94.7,
+  "upside_percent_rf": 93.0,
   "v0": 24178361889.56788,
   "v0_adjusted": 24178361889.56788,
   "alpha": 0.47061540194465834,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 52.15,
       "value_growth_pct": 9.7,
-      "expected_return_pct": -81.0
+      "expected_return_pct": -81.1
     },
     "2年後": {
       "future_value": 57.18,
       "value_growth_pct": 20.2,
-      "expected_return_pct": -79.1
+      "expected_return_pct": -79.3
     },
     "3年後": {
       "future_value": 62.7,
       "value_growth_pct": 31.8,
-      "expected_return_pct": -77.1
+      "expected_return_pct": -77.3
     },
     "4年後": {
       "future_value": 68.75,
       "value_growth_pct": 44.6,
-      "expected_return_pct": -74.9
+      "expected_return_pct": -75.1
     },
     "5年後": {
       "future_value": 75.39,
       "value_growth_pct": 58.5,
-      "expected_return_pct": -72.5
+      "expected_return_pct": -72.7
     }
   },
-  "upside_percent": -82.6,
-  "calculation_date": "2026-06-20T17:26:41+09:00",
+  "upside_percent": -82.8,
+  "calculation_date": "2026-06-23T03:18:17+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -296,7 +296,7 @@
     "roe_10yr_avg": 0.11205128617729962,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 274.06,
+    "current_price": 276.49,
     "latest_revenue": 25533000000.0,
     "rpo": 12034000000,
     "beta": 1.091,
@@ -321,14 +321,14 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.47061540194465834,
-    "per": 23.831305,
+    "per": 24.008688,
     "per_is_forward": false,
-    "per_adjusted": 26.3,
+    "per_adjusted": 26.54,
     "peg": 3.74,
-    "ps": 3.276773,
-    "ev_ebitda": 14.922,
+    "ps": 3.3058271,
+    "ev_ebitda": 15.198,
     "ma200": 319.2791,
-    "forward_eps": 13.54512,
+    "forward_eps": 13.54345,
     "analyst_target_median": 361.0,
     "analyst_target_mean": 360.0038,
     "analyst_target_low": 296.0,
@@ -342,7 +342,7 @@
     "analyst_vs_iv": 659.1
   },
   "validation": {
-    "validated_at": "2026-06-20",
+    "validated_at": "2026-06-23",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -484,7 +484,7 @@
     "growth_model_reason": "CAGR_max=9.7%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
-    "hype_substage_label": "実体維持・期待崩壊中",
+    "hype_substage_label": "実体維持・バリュエーション過熱",
     "signals": [
       "業界平均Power(9.1%)の1.1倍以内 ✅",
       "過去実績(3yr:1.5% / 5yr:7.7%)と整合 ✅",
@@ -494,9 +494,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0064,
-  "forward_earnings_yield": 0.0494,
+  "erp": 0.006,
+  "forward_earnings_yield": 0.049,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against Constellation Energy",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition risks",
+      "impact": "mid"
+    }
+  ]
 }
