@@ -64,10 +64,13 @@ tbody td{padding:5px 10px;vertical-align:middle}
 .badge-s2{background:rgba(59,130,246,.15);color:#93c5fd}
 .badge-s3{background:rgba(245,158,11,.15);color:#fcd34d}
 .badge-s4{background:rgba(168,85,247,.15);color:#d8b4fe}
-.rec-buy{color:#10b981;font-weight:700}
-.rec-hold{color:#f59e0b;font-weight:700}
-.rec-sell{color:#f43f5e;font-weight:700}
-.rec-watch{color:#94a3b8;font-weight:700}
+.rec-buy{color:#10b981;font-weight:700;white-space:nowrap}
+.rec-hold{color:#f59e0b;font-weight:700;white-space:nowrap}
+.rec-sell{color:#f43f5e;font-weight:700;white-space:nowrap}
+.rec-watch{color:#94a3b8;font-weight:700;white-space:nowrap}
+/* HYPE-DISP-1: 「様子見（底打ち）」（実測幅約89px）が折り返されないよう
+   td padding(左右計20px)を加味した最小幅を確保する */
+.rec-cell{min-width:120px}
 .ticker-link{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--acc);text-decoration:none}
 .ticker-link:hover{text-decoration:underline}
 .loading{text-align:center;padding:60px;color:var(--mut);font-family:var(--mono)}
@@ -277,7 +280,7 @@ function renderTable(){
       <td data-priority="low"><span class="badge badge-lc" style="font-size:10px">${r.lcLabel}</span></td>
       <td><span class="badge ${STAGE_CLASS[r.stage]}">${STAGE_LABEL[r.stage]}</span></td>
       <td><span class="phase-tag" title="${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}">${r.phase}${r.phaseLabel?' · '+r.phaseLabel:''}</span></td>
-      <td><span class="${recClass(r.rec.cat)}">${r.rec.text}</span></td>
+      <td class="rec-cell"><span class="${recClass(r.rec.cat)}">${r.rec.text}</span></td>
       <td class="num-neu" style="font-family:var(--mono)">${r.price!=null?'$'+r.price.toFixed(2):'—'}</td>
       <td class="num-neu ${pivColor}" style="font-family:var(--mono)">${r.piv!=null?r.piv.toFixed(2)+'x':'—'}</td>
       <td class="${numColor(r.revyoy)}" style="font-family:var(--mono)">${fmt(r.revyoy,1,true,'%')}</td>
