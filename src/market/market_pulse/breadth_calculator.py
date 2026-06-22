@@ -236,6 +236,109 @@ def compute_breadth(tickers):
     return result
 
 
+def fetch_rsp_spy_divergence():
+    """
+    RSP（Equal Weight S&P500 ETF）とSPY（Cap Weight S&P500 ETF）の
+    騰落率差分から「二極化スコア」を算出する（MP-BREADTH-2）。
+
+    Returns:
+        dict | None: {
+            "rsp_return_1d": 0.42,
+            "spy_return_1d": 0.31,
+            "rsp_spy_divergence_1d": 0.11,
+            "rsp_spy_divergence_20d_avg": -0.05
+        }
+        マイナス = SPY（時価総額加重）のみが上昇 = 二極化（メガキャップ集中）
+        プラス   = RSP（均等加重）が優勢 = 広範な上昇（健全な広がり）
+    """
+    try:
+        data = yf.download(["RSP", "SPY"], period="2mo", interval="1d",
+                            auto_adjust=True, progress=False, threads=True)
+    except Exception as e:
+        print(f"[WARN] RSP/SPYダウンロード失敗: {e}")
+        return None
+
+    if data.empty:
+        print("[WARN] RSP/SPYデータが空です")
+        return None
+
+    close = data["Close"][["RSP", "SPY"]].dropna()
+    if len(close) < 2:
+        print("[WARN] RSP/SPYの有効データが不足しています")
+        return None
+
+    returns = close.pct_change().dropna() * 100  # %
+    divergence_series = returns["RSP"] - returns["SPY"]
+
+    rsp_return_1d = round(float(returns["RSP"].iloc[-1]), 3)
+    spy_return_1d = round(float(returns["SPY"].iloc[-1]), 3)
+    divergence_1d = round(float(divergence_series.iloc[-1]), 3)
+
+    lookback = min(20, len(divergence_series))
+    divergence_20d_avg = round(float(divergence_series.iloc[-lookback:].mean()), 3)
+
+    print(f"[INFO] RSP/SPY乖離: 1d={divergence_1d:+.3f}pt 20d平均={divergence_20d_avg:+.3f}pt")
+
+    return {
+        "rsp_return_1d": rsp_return_1d,
+        "spy_return_1d": spy_return_1d,
+        "rsp_spy_divergence_1d": divergence_1d,
+        "rsp_spy_divergence_20d_avg": divergence_20d_avg,
+    }
+
+
+def _ema(values, span):
+    """単純なEMA計算（pandas非依存・Noneをスキップしない前提でNaN除外済みリストを渡す）"""
+    if not values:
+        return []
+    alpha = 2 / (span + 1)
+    result = [values[0]]
+    for v in values[1:]:
+        result.append(alpha * v + (1 - alpha) * result[-1])
+    return result
+
+
+def backfill_ad_line_and_mcclellan(all_data):
+    """
+    蓄積済みbreadth_data.json全件から累積A-DラインとS&P500ベース近似
+    マクラレンオシレーターを再計算し、各エントリにフィールドを追加する（MP-BREADTH-2）。
+
+    - ad_line: advances - declines の累積値（市場内部の累積勢い）
+    - mcclellan_oscillator: (advances-declines)の19日EMA − 39日EMA
+      ※本来のマクラレンオシレーターはNYSE全銘柄ベースだが、本システムは
+        S&P500構成銘柄ベースの近似値（画面上にもその旨を明記する）
+
+    全件を毎回再計算する設計（日付抜け・遡及修正があっても整合性が取れるよう、
+    差分更新ではなく毎回フルリビルドする）。
+    """
+    if not all_data:
+        return all_data
+
+    sorted_data = sorted(all_data, key=lambda x: x["date"])
+    net_advances = [
+        (d.get("advances") or 0) - (d.get("declines") or 0)
+        for d in sorted_data
+    ]
+
+    # 累積A-Dライン
+    cumulative = 0
+    ad_lines = []
+    for v in net_advances:
+        cumulative += v
+        ad_lines.append(cumulative)
+
+    # マクラレンオシレーター（19日EMA - 39日EMA）
+    ema19 = _ema(net_advances, 19)
+    ema39 = _ema(net_advances, 39)
+    mcclellan = [round(a - b, 1) for a, b in zip(ema19, ema39)]
+
+    for d, ad_line, mc in zip(sorted_data, ad_lines, mcclellan):
+        d["ad_line"] = ad_line
+        d["mcclellan_oscillator"] = mc
+
+    return sorted_data
+
+
 def save_breadth(data):
     """ブレッスデータをJSONに追記保存"""
     os.makedirs(DATA_DIR, exist_ok=True)
@@ -260,6 +363,9 @@ def save_breadth(data):
     if len(all_data) > 365:
         all_data = all_data[-365:]
 
+    # A-Dライン・マクラレンオシレーターを全件分バックフィル（MP-BREADTH-2）
+    all_data = backfill_ad_line_and_mcclellan(all_data)
+
     with open(BREADTH_JSON, 'w', encoding='utf-8') as f:
         json.dump(all_data, f, ensure_ascii=False, indent=2)
 
@@ -270,6 +376,9 @@ if __name__ == "__main__":
     tickers = get_sp500_tickers()
     breadth = compute_breadth(tickers)
     if breadth:
+        rsp_spy = fetch_rsp_spy_divergence()
+        if rsp_spy:
+            breadth.update(rsp_spy)
         save_breadth(breadth)
         print("[OK] ブレッスデータ処理完了")
     else:

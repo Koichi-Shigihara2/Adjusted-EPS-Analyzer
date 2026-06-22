@@ -105,24 +105,26 @@ def clamp01(v):
 
 def compute_sentiment(structured_data):
     """
-    structured_data + breadth_data.json から7指標でセンチメントスコア(0-100)を算出。
+    structured_data + breadth_data.json から8指標でセンチメントスコア(0-100)を算出。
     0=EXTREME FEAR, 50=NEUTRAL, 100=EXTREME GREED
 
-    サブ指標 (Phase 2 — 7指標版):
-      1. VIX水準             (Weight 25%) — 12→100, 35→0
-      2. S&P500 vs 50日MA乖離 (Weight 20%) — -8%→0, +8%→100
-      3. AD Ratio (5日)       (Weight 15%) — 0.5→0, 2.0→100
-      4. HYG/LQD比 変化方向   (Weight 12%) — 下落→0, 上昇→100
-      5. NH-NL差分            (Weight 10%) — -50→0, +50→100
-      6. グロース対バリュー比  (Weight 10%) — バリュー優勢→0, グロース優勢→100
-      7. 出来高比(Distribution)(Weight  8%) — 出来高比>1.1+下落→0, 通常→100
+    サブ指標 (Phase 3 — 8指標版、MP-BREADTH-2でrsp_spy_divergence追加。
+    既存7指標のweightは元の値×0.9に圧縮し、新指標に10%を配分):
+      1. VIX水準             (Weight 22.5%) — 12→100, 35→0
+      2. S&P500 vs 50日MA乖離 (Weight 18.0%) — -8%→0, +8%→100
+      3. AD Ratio (5日)       (Weight 13.5%) — 0.5→0, 2.0→100
+      4. HYG/LQD比 変化方向   (Weight 10.8%) — 下落→0, 上昇→100
+      5. NH-NL差分            (Weight  9.0%) — -50→0, +50→100
+      6. グロース対バリュー比  (Weight  9.0%) — バリュー優勢→0, グロース優勢→100
+      7. 出来高比(Distribution)(Weight  7.2%) — 出来高比>1.1+下落→0, 通常→100
+      8. RSP/SPY乖離(20日平均) (Weight 10.0%) — -1.0pt→0(集中), +1.0pt→100(広範)
     """
     sub_scores = {}
 
     # breadth_data.json を読み込み
     breadth = _load_latest_breadth()
 
-    # --- 1. VIX水準 (25%) --- ※VIX9D逆転（短期リスクオフ）で補正あり
+    # --- 1. VIX水準 (22.5%) --- ※VIX9D逆転（短期リスクオフ）で補正あり
     vix_data   = structured_data.get("VIX指数")
     vix9d_ratio = structured_data.get("VIX9D対VIX比")
     if vix_data and vix_data.get("value") is not None:
@@ -131,55 +133,55 @@ def compute_sentiment(structured_data):
         # VIX9D逆転（VIX9D > VIX）= 短期リスクオフ準備 → -0.05補正
         if vix9d_ratio and vix9d_ratio.get("contango") is False:
             score = clamp01(score - 0.05)
-        sub_scores["vix_level"] = {"score": score, "weight": 0.25, "raw": vix}
+        sub_scores["vix_level"] = {"score": score, "weight": 0.225, "raw": vix}
     else:
-        sub_scores["vix_level"] = {"score": 0.5, "weight": 0.25, "raw": None}
+        sub_scores["vix_level"] = {"score": 0.5, "weight": 0.225, "raw": None}
 
-    # --- 2. S&P500 vs 50日MA乖離率 (20%) ---
+    # --- 2. S&P500 vs 50日MA乖離率 (18.0%) ---
     sp500_ma_dev = _get_sp500_ma_deviation()
     if sp500_ma_dev is not None:
         score = clamp01((sp500_ma_dev + 8) / 16)
-        sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.20, "raw": round(sp500_ma_dev, 2)}
+        sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.18, "raw": round(sp500_ma_dev, 2)}
     else:
-        sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.20, "raw": None}
+        sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.18, "raw": None}
 
-    # --- 3. AD Ratio 5日 (15%) ---
+    # --- 3. AD Ratio 5日 (13.5%) ---
     if breadth and breadth.get("ad_ratio_5d") is not None:
         ad5 = breadth["ad_ratio_5d"]
         # 0.5→0(FEAR), 2.0→100(GREED) の線形補間
         score = clamp01((ad5 - 0.5) / (2.0 - 0.5))
-        sub_scores["ad_ratio"] = {"score": score, "weight": 0.15, "raw": ad5}
+        sub_scores["ad_ratio"] = {"score": score, "weight": 0.135, "raw": ad5}
     else:
-        sub_scores["ad_ratio"] = {"score": 0.5, "weight": 0.15, "raw": None}
+        sub_scores["ad_ratio"] = {"score": 0.5, "weight": 0.135, "raw": None}
 
-    # --- 4. HYG/LQD比 変化方向 (12%) ---
+    # --- 4. HYG/LQD比 変化方向 (10.8%) ---
     hyg_lqd = structured_data.get("HYG対LQD比")
     if hyg_lqd and hyg_lqd.get("change") is not None:
         chg = hyg_lqd["change"]
         score = clamp01((chg + 0.005) / 0.01)
-        sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.12, "raw": round(chg, 6)}
+        sub_scores["hyg_lqd_dir"] = {"score": score, "weight": 0.108, "raw": round(chg, 6)}
     else:
-        sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.12, "raw": None}
+        sub_scores["hyg_lqd_dir"] = {"score": 0.5, "weight": 0.108, "raw": None}
 
-    # --- 5. NH-NL差分 (10%) ---
+    # --- 5. NH-NL差分 (9.0%) ---
     if breadth and breadth.get("nh_nl_diff") is not None:
         nh_nl = breadth["nh_nl_diff"]
         # -50→0(FEAR), +50→100(GREED) の線形補間
         score = clamp01((nh_nl + 50) / 100)
-        sub_scores["nh_nl"] = {"score": score, "weight": 0.10, "raw": nh_nl}
+        sub_scores["nh_nl"] = {"score": score, "weight": 0.09, "raw": nh_nl}
     else:
-        sub_scores["nh_nl"] = {"score": 0.5, "weight": 0.10, "raw": None}
+        sub_scores["nh_nl"] = {"score": 0.5, "weight": 0.09, "raw": None}
 
-    # --- 6. グロース対バリュー比 (10%) ---
+    # --- 6. グロース対バリュー比 (9.0%) ---
     gv = structured_data.get("グロース対バリュー比")
     if gv and gv.get("diff_percent") is not None:
         diff = gv["diff_percent"]
         score = clamp01((diff + 3) / 6)
-        sub_scores["growth_value"] = {"score": score, "weight": 0.10, "raw": round(diff, 2)}
+        sub_scores["growth_value"] = {"score": score, "weight": 0.09, "raw": round(diff, 2)}
     else:
-        sub_scores["growth_value"] = {"score": 0.5, "weight": 0.10, "raw": None}
+        sub_scores["growth_value"] = {"score": 0.5, "weight": 0.09, "raw": None}
 
-    # --- 7. Distribution判定 (8%) ---
+    # --- 7. Distribution判定 (7.2%) ---
     sp_data = structured_data.get("S&P500")
     if sp_data and sp_data.get("volume_ratio") is not None and sp_data.get("change_percent") is not None:
         vol_ratio = sp_data["volume_ratio"]
@@ -190,9 +192,19 @@ def compute_sentiment(structured_data):
             score = 1.0  # Accumulation
         else:
             score = 0.5  # Neutral
-        sub_scores["distribution"] = {"score": score, "weight": 0.08, "raw": {"vol_ratio": vol_ratio, "chg_pct": chg_pct}}
+        sub_scores["distribution"] = {"score": score, "weight": 0.072, "raw": {"vol_ratio": vol_ratio, "chg_pct": chg_pct}}
     else:
-        sub_scores["distribution"] = {"score": 0.5, "weight": 0.08, "raw": None}
+        sub_scores["distribution"] = {"score": 0.5, "weight": 0.072, "raw": None}
+
+    # --- 8. RSP/SPY乖離 20日平均 (10.0%、MP-BREADTH-2) ---
+    # プラス=RSP(均等加重)優勢=広範な上昇　マイナス=SPY(時価総額加重)のみ上昇=二極化
+    if breadth and breadth.get("rsp_spy_divergence_20d_avg") is not None:
+        div20 = breadth["rsp_spy_divergence_20d_avg"]
+        # -1.0pt→0(集中/FEAR), +1.0pt→100(広範/GREED) の線形補間
+        score = clamp01((div20 + 1.0) / 2.0)
+        sub_scores["rsp_spy_divergence"] = {"score": score, "weight": 0.10, "raw": div20}
+    else:
+        sub_scores["rsp_spy_divergence"] = {"score": 0.5, "weight": 0.10, "raw": None}
 
     # --- 加重平均 ---
     total_score = sum(s["score"] * s["weight"] for s in sub_scores.values())
@@ -234,6 +246,10 @@ def compute_sentiment(structured_data):
             "nh_nl_diff": breadth.get("nh_nl_diff"),
             "pct_above_50ma": breadth.get("pct_above_50ma"),
             "pct_above_200ma": breadth.get("pct_above_200ma"),
+            "rsp_spy_divergence_1d": breadth.get("rsp_spy_divergence_1d"),
+            "rsp_spy_divergence_20d_avg": breadth.get("rsp_spy_divergence_20d_avg"),
+            "ad_line": breadth.get("ad_line"),
+            "mcclellan_oscillator": breadth.get("mcclellan_oscillator"),
             "date": breadth.get("date"),
         }
 

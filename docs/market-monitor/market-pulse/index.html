@@ -58,6 +58,10 @@
     .breadth-ad-bar{display:flex;height:3px;width:100%;margin:3px 0 1px;gap:1px}
     .breadth-ad-bar .adv-fill{background:var(--grn);height:100%}
     .breadth-ad-bar .dec-fill{background:var(--red);height:100%}
+    .breadth-warn-badge{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border:1px solid;text-transform:uppercase;display:inline-block;margin-top:3px;animation:signal-pulse 2s ease-in-out infinite}
+    .breadth-warn-mild{color:#f59e0b;border-color:rgba(245,158,11,.5);background:rgba(245,158,11,.1)}
+    .breadth-warn-strong{color:#f43f5e;border-color:rgba(244,63,94,.5);background:rgba(244,63,94,.1)}
+    .breadth-combo-badge{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.05em;padding:4px 10px;border:1px solid;text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;animation:signal-pulse 2s ease-in-out infinite}
 
     /* OSCILLATOR */
     .osc-card{background:var(--sur);border:1px solid var(--bdr);padding:12px 14px;display:flex;flex-direction:column}
@@ -535,8 +539,8 @@ const DEFAULT_DAYS=30;
 const METRIC_DEFS=[{key:"VIX指数",label:"VIX",color:"#f43f5e"},{key:"S&P500",label:"S&P500",color:"#3b82f6"},{key:"NASDAQ",label:"NASDAQ",color:"#22d3ee"},{key:"米10年債",label:"10Y",color:"#10b981"},{key:"ドル円",label:"JPY",color:"#f59e0b"},{key:"WTI原油",label:"OIL",color:"#a78bfa"}];
 const CARD_DEFS=[{key:"S&P500",short:"S&P500",color:"#3b82f6"},{key:"NASDAQ",short:"NASDAQ",color:"#22d3ee"},{key:"米10年債",short:"10Y利回",color:"#10b981"},{key:"ドル円",short:"USD/JPY",color:"#f59e0b"},{key:"WTI原油",short:"WTI原油",color:"#a78bfa"},{key:"金（GOLD）",short:"GOLD",color:"#f59e0b"}];
 const OSC_PERIODS=[{label:"2W",days:14},{label:"1M",days:30},{label:"3M",days:90},{label:"全期間",days:9999}];
-const OSC_METRICS=[{key:"score",label:"Score",color:"#3b82f6",extract:d=>d.sentiment?.score??null,zones:true},{key:"fg",label:"CNN F&G",color:"#f59e0b",extract:d=>d.fear_greed?.score??null,zones:false},{key:"vix",label:"VIX",color:"#f43f5e",extract:d=>d.indicators?.["VIX指数"]?.value??null,zones:false},{key:"ad_ratio",label:"AD Ratio",color:"#22d3ee",extract:d=>d.sentiment?.breadth?.ad_ratio_5d??null,zones:false},{key:"nh_nl",label:"NH-NL",color:"#a78bfa",extract:d=>d.sentiment?.breadth?.nh_nl_diff??null,zones:false}];
-const SUB_SCORE_NAMES={vix_level:"VIX水準",sp500_ma_dev:"S&P/50日MA",ad_ratio:"騰落比率",hyg_lqd_dir:"クレジット",nh_nl:"NH-NL差",growth_value:"グロース優勢",distribution:"出来高圧力"};
+const OSC_METRICS=[{key:"score",label:"Score",color:"#3b82f6",extract:d=>d.sentiment?.score??null,zones:true},{key:"fg",label:"CNN F&G",color:"#f59e0b",extract:d=>d.fear_greed?.score??null,zones:false},{key:"vix",label:"VIX",color:"#f43f5e",extract:d=>d.indicators?.["VIX指数"]?.value??null,zones:false},{key:"ad_ratio",label:"AD Ratio",color:"#22d3ee",extract:d=>d.sentiment?.breadth?.ad_ratio_5d??null,zones:false},{key:"nh_nl",label:"NH-NL",color:"#a78bfa",extract:d=>d.sentiment?.breadth?.nh_nl_diff??null,zones:false},{key:"sp500",label:"S&P500",color:"#3b82f6",extract:d=>d.indicators?.["S&P500"]?.value??null,zones:false},{key:"ad_line",label:"A-Dライン",color:"#10b981",extract:d=>d.sentiment?.breadth?.ad_line??null,zones:false},{key:"mcclellan",label:"McClellan",color:"#f97316",extract:d=>d.sentiment?.breadth?.mcclellan_oscillator??null,zones:false}];
+const SUB_SCORE_NAMES={vix_level:"VIX水準",sp500_ma_dev:"S&P/50日MA",ad_ratio:"騰落比率",hyg_lqd_dir:"クレジット",nh_nl:"NH-NL差",growth_value:"グロース優勢",distribution:"出来高圧力",rsp_spy_divergence:"Equal Weight乖離"};
 
 // ── STATE ──
 let allData=[],filteredData=[],selectedIdx=0,periodDays=DEFAULT_DAYS;
@@ -703,6 +707,7 @@ function renderGauge(){
     nh_nl:{desc:'52週新高値数 − 新安値数（市場内部強度）',detail:'プラスが大きいほど市場全体の上昇に広がりがある',rawFmt(r){return r!=null?`NH−NL = ${r>=0?'+':''}${r}`:null}},
     growth_value:{desc:'グロース(IVW) vs バリュー(IVE) 変化率差',detail:'プラス=グロース優位（リスク選好）　マイナス=バリュー優位（防衛的）',rawFmt(r){return r!=null?`IVW−IVE = ${r>=0?'+':''}${Number(r).toFixed(2)}%`:null}},
     distribution:{desc:'出来高÷20日平均出来高（分配日の検知）',detail:'出来高増×価格下落→機関投資家の売り圧力（ディストリビューション）',rawFmt(r){return r!=null&&typeof r==='object'?`出来高比 = ${(r.vol_ratio||0).toFixed(2)}倍　変化率 = ${r.chg_pct!=null?(r.chg_pct>=0?'+':'')+r.chg_pct.toFixed(2)+'%':'—'}`:r!=null?`実値 = ${r}`:null}},
+    rsp_spy_divergence:{desc:'RSP(均等加重)−SPY(時価総額加重)騰落率差の20日平均',detail:'プラス=広範な銘柄が上昇に参加（健全）　マイナス=一部の大型株のみが指数を押し上げ（二極化）',rawFmt(r){return r!=null?`RSP−SPY 20日平均 = ${r>=0?'+':''}${Number(r).toFixed(3)}pt`:null}},
   };
   document.getElementById("subScores").innerHTML='<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px"><span data-info="mp_subscore_bar_color">スコア構成指標</span> <span style="font-size:10px">（バーにカーソルで詳細表示）</span></div>'+Object.entries(subs).map(([k,v])=>{const sc=v.score,c=sentimentColor(sc),w=v.weight!=null?Math.round(v.weight*100):null;const fi=FTIPS[k];const rs=fi?fi.rawFmt(v.raw):null;const tip=fi?`<div class="sub-tip"><div style="color:var(--acc);font-weight:700;margin-bottom:5px">${SUB_SCORE_NAMES[k]||k}<span style="color:var(--mut);font-weight:400;margin-left:8px">重み${w}%　スコア${sc.toFixed(0)}</span></div><div style="color:var(--txt)">${fi.desc}</div><div style="color:var(--mut);font-size:10px;margin-top:2px">${fi.detail}</div>${rs?`<div style="color:var(--grn);font-size:10px;margin-top:6px;border-top:1px solid var(--bdr);padding-top:5px">${rs}</div>`:''}</div>`:'';return`<div class="sub-row"><div class="sub-name">${SUB_SCORE_NAMES[k]||k}</div><div class="sub-bar-bg"><div class="sub-bar-fill" style="width:${sc}%;background:${c}"></div></div><div class="sub-val">${sc.toFixed(0)}${w!=null?`<span style="font-size:10px;color:var(--mut);margin-left:2px">(${w}%)</span>`:''}</div>${tip}</div>`}).join("");
   // VIX9D表示
@@ -721,7 +726,32 @@ function renderGauge(){
   }else{document.getElementById("vix9dRow").innerHTML=""}
   const b=s.breadth;
   if(b&&b.advances!=null){const total=b.advances+b.declines;const aP=total>0?(b.advances/total*100):50;
-    document.getElementById("breadthSummary").innerHTML=`<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">市場の広がり</div><div class="breadth-row"><span class="breadth-label">S&P500</span></div><div class="breadth-ad-bar"><div class="adv-fill" style="width:${aP}%"></div><div class="dec-fill" style="width:${100-aP}%"></div></div><div class="breadth-row"><span class="breadth-label">\u25B2${b.advances}</span><span class="breadth-label">AD(5d) ${b.ad_ratio_5d||'-'}</span><span class="breadth-label">\u25BC${b.declines}</span></div><div class="breadth-row" style="margin-top:2px"><span class="breadth-val" style="color:var(--grn)">NH ${b.new_highs_52w||0}</span><span class="breadth-val" style="color:${(b.nh_nl_diff||0)>=0?'var(--grn)':'var(--red)'}">${(b.nh_nl_diff||0)>=0?'+':''}${b.nh_nl_diff||0}</span><span class="breadth-val" style="color:var(--red)">NL ${b.new_lows_52w||0}</span></div>${b.pct_above_50ma!=null?`<div class="breadth-row"><span class="breadth-label">&gt;50MA ${b.pct_above_50ma}%</span>${b.pct_above_200ma!=null?`<span class="breadth-label">&gt;200MA ${b.pct_above_200ma}%</span>`:''}</div>`:''}`}else{document.getElementById("breadthSummary").innerHTML=""}}
+
+    // MP-BREADTH-2: 個別シグナルバッジ
+    const adWeak=b.ad_ratio_5d!=null&&b.ad_ratio_5d<0.8;
+    const nhNlWeak=b.nh_nl_diff!=null&&b.nh_nl_diff<-50;
+    const rspSpyNeg=b.rsp_spy_divergence_20d_avg!=null&&b.rsp_spy_divergence_20d_avg<0;
+    const prevB=filteredData.length>=2?filteredData[filteredData.length-2]?.sentiment?.breadth:null;
+    const mc=b.mcclellan_oscillator,prevMc=prevB?.mcclellan_oscillator;
+    const mcFalling=mc!=null&&prevMc!=null&&mc<0&&mc<prevMc;
+    const maWeak=b.pct_above_50ma!=null&&b.pct_above_50ma<60;
+    const signals=[adWeak,nhNlWeak,rspSpyNeg,mcFalling,maWeak];
+    const signalCount=signals.filter(Boolean).length;
+
+    const adBadge=adWeak?`<span class="breadth-warn-badge breadth-warn-mild">⚠ 市場が薄い</span>`:'';
+    const nhNlBadge=nhNlWeak?`<span class="breadth-warn-badge breadth-warn-strong">⚠ 新安値優勢</span>`:'';
+    const rspSpyBadge=rspSpyNeg?`<span class="breadth-warn-badge breadth-warn-mild">⚠ 二極化</span>`:'';
+
+    let mcCross='';
+    if(mc!=null&&prevMc!=null){
+      if(prevMc<=0&&mc>0)mcCross=' <span style="color:var(--grn)">▲転換</span>';
+      else if(prevMc>=0&&mc<0)mcCross=' <span style="color:var(--red)">▼転換</span>';
+    }
+
+    const comboBadge=signalCount>=3?`<div class="breadth-combo-badge breadth-warn-strong"><span>⚠ 市場の二極化を検出</span><span>${signalCount}/5シグナル点灯</span></div>`:'';
+
+    document.getElementById("breadthSummary").innerHTML=`${comboBadge}<div style="font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--mut);margin-bottom:4px">市場の広がり <span style="font-size:10px">(S&amp;P500ベース)</span></div><div class="breadth-row"><span class="breadth-label">S&P500</span></div><div class="breadth-ad-bar"><div class="adv-fill" style="width:${aP}%"></div><div class="dec-fill" style="width:${100-aP}%"></div></div><div class="breadth-row"><span class="breadth-label">\u25B2${b.advances}</span><span class="breadth-label">AD(5d) ${b.ad_ratio_5d||'-'}</span><span class="breadth-label">\u25BC${b.declines}</span></div>${adBadge}<div class="breadth-row" style="margin-top:2px"><span class="breadth-val" style="color:var(--grn)">NH ${b.new_highs_52w||0}</span><span class="breadth-val" style="color:${(b.nh_nl_diff||0)>=0?'var(--grn)':'var(--red)'}">${(b.nh_nl_diff||0)>=0?'+':''}${b.nh_nl_diff||0}</span><span class="breadth-val" style="color:var(--red)">NL ${b.new_lows_52w||0}</span></div>${nhNlBadge}${b.pct_above_50ma!=null?`<div class="breadth-row"><span class="breadth-label">&gt;50MA ${b.pct_above_50ma}%</span>${b.pct_above_200ma!=null?`<span class="breadth-label">&gt;200MA ${b.pct_above_200ma}%</span>`:''}</div>`:''}${b.rsp_spy_divergence_20d_avg!=null?`<div class="breadth-row" style="margin-top:2px"><span class="breadth-label">Equal Weight乖離(20d)</span><span class="breadth-val" style="color:${b.rsp_spy_divergence_20d_avg>=0?'var(--grn)':'var(--red)'}">${b.rsp_spy_divergence_20d_avg>=0?'+':''}${b.rsp_spy_divergence_20d_avg.toFixed(2)}pt</span></div>${rspSpyBadge}`:''}${mc!=null?`<div class="breadth-row" style="margin-top:2px"><span class="breadth-label">McClellan<span style="font-size:9px">(近似)</span></span><span class="breadth-val" style="color:${mc>=0?'var(--grn)':'var(--red)'}">${mc>=0?'+':''}${mc.toFixed(1)}${mcCross}</span></div>`:''}`;
+  }else{document.getElementById("breadthSummary").innerHTML=""}}
 
 // ── OSC ──
 function renderOscPeriodBtns(){document.getElementById("oscPeriodBtns").innerHTML=OSC_PERIODS.map(p=>`<button class="osc-period-btn ${p.days===oscDays?"active":""}" onclick="switchOscPeriod(${p.days})">${p.label}</button>`).join("")}
