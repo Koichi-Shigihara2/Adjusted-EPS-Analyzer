@@ -1,6 +1,6 @@
 {
   "ticker": "VST",
-  "last_updated": "2026-06-15T16:11:28.286809",
+  "last_updated": "2026-06-22T15:36:18.990954",
   "quarters": [
     {
       "gaap_eps": 3.0100324997509045,
@@ -82,22 +82,22 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPS 3.01に対しAdjusted EPS 1.36と大幅に低下する調整は、主にderivative_fv_changeによるもので、GAAPで一時的な公正価値利益が含まれ実力が見えにくくなっている。市場がGAAP EPSで判断する場合、持続可能性の低い利益により企業実力を過大評価するリスクが高い（過小評価の可能性は低い）。sbcは恒常的コストのため調整の妥当性に注意が必要。投資家はコア収益力の持続性を検証し、derivativeのボラティリティが繰り返す過大評価リスクを警戒すべき。",
+        "comment": "GAAP EPS 3.01に対しAdjusted EPS 1.36と大きな差があり、主にderivative_fv_change(-7.39億ドル規模)の非経常的な公正価値利益がGAAPを大幅に押し上げているため、市場がGAAP EPSで判断する場合に企業の持続的な実力が見えにくく過大評価リスクが高い。SBCは恒常的なコストだが、loan_loss_provision_abnormalは一時的マクロ影響とされる。全体としてこの調整により市場が実力を過小評価している可能性は低く、むしろ過大評価のリスクを投資家は注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用",
+            "snippet": "非現金費用として恒常的に発生する株式報酬",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響の異常貸倒引当金",
+            "confidence": 0.8
           },
           {
             "item": "derivative_fv_change",
             "snippet": "非現金・非経常のデリバティブ時価評価変動",
-            "confidence": 0.5
+            "confidence": 0.85
           }
         ]
       }
