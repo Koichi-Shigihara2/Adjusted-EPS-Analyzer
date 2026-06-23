@@ -436,7 +436,7 @@
           <th data-info="tail_health_score">テーゼ健全度</th>
           <th title="TANUKI TAIL監視開始日">登録日</th>
           <th class="num">取得単価</th>
-          <th class="num">乖離率</th>
+          <th class="num" data-info="tail_deviation_rate">乖離率</th>
           <th>最終レビュー</th>
           <th>アクション</th>
         </tr>
@@ -856,11 +856,13 @@ function loadPositions() {
     });
 
   Promise.all([posP, loadReviewQueue(), loadPortfolio(), loadPredictionHistory(), loadJournal()]).then(function () {
-    var satTickers = Object.values(loadedPositions)
-      .filter(function (p) { return p.type === 'satellite' && p.status !== 'archived'; })
+    // TAIL-DISP-2: CORE一覧の乖離率表示にもTANUKI VALUATIONデータが必要なため
+    // satellite銘柄のみだった対象をcore銘柄も含む全銘柄に拡大
+    var valTickers = Object.values(loadedPositions)
+      .filter(function (p) { return p.status !== 'archived'; })
       .map(function (p) { return p.ticker; });
-    if (satTickers.length) {
-      loadValuations(satTickers).then(function () { renderOverview(); });
+    if (valTickers.length) {
+      loadValuations(valTickers).then(function () { renderOverview(); });
     } else {
       renderOverview();
     }
@@ -1004,13 +1006,21 @@ function renderCoreTable(items) {
     var latestRvQ   = getLatestReviewQuarter(p.ticker);
     var entryDate   = p.entry_date  || '—';
     var entryPrice  = getDisplayPrice(p.ticker, p.entry_price);
+    // TAIL-DISP-2: TANUKI VALUATIONのupside_percent（理論株価との乖離率）を表示
+    var val         = latestValCache[p.ticker];
+    var devHtml     = '<span style="color:var(--mut)">—</span>';
+    if (val && val.upside_percent != null) {
+      var dev      = Number(val.upside_percent);
+      var devColor = dev >= 0 ? 'var(--grn)' : 'var(--red)';
+      devHtml = '<span style="color:' + devColor + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>';
+    }
     return [
       '<tr>',
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
       '<td>' + healthHtml + kpiBadge + '</td>',
       '<td class="num">' + esc(entryDate) + '</td>',
       '<td class="num">' + entryPrice + '</td>',
-      '<td class="num" style="color:var(--mut)">—</td>',
+      '<td class="num">' + devHtml + '</td>',
       '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
       '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
         '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',

@@ -4,6 +4,29 @@
 
 ## 2026-06-23
 
+✅ [TAIL-DISP-2] CORE一覧「乖離率」列が全銘柄`–`表示の修正（2026-06-23 完了）
+- **対象**: `docs/portfolio/tail/index.html`・`docs/common/glossary.json`
+- **原因（2段階）**:
+  1. `renderCoreTable()`の乖離率セルが`'<td class="num" style="color:var(--mut)">—</td>'`と
+     ハードコードされており、そもそもどのデータフィールドも参照していなかった（未実装）
+  2. 仮にデータ参照に書き換えても、`loadValuations()`（TANUKI VALUATIONのlatest.jsonを
+     fetchして`latestValCache`に格納する関数）が`p.type === 'satellite'`銘柄のみを
+     対象にしており、CORE銘柄のTANUKI VALUATIONデータが一度も取得されていなかった
+     （SATELLITE一覧の「現在価格」列は同じキャッシュを参照しており正常表示されていたため
+     見落とされやすい構造だった）
+- **対応**:
+  - `loadValuations()`への対象ティッカー収集を`type==='satellite'`限定から
+    `status!=='archived'`（CORE含む全銘柄）に拡大
+  - `renderCoreTable()`で`latestValCache[p.ticker].upside_percent`
+    （TANUKI VALUATIONの理論株価IVと現在株価の乖離率、既存フィールドを流用・新規計算ロジックなし）
+    を参照し、プラス=緑/マイナス=赤で表示する分岐を追加（SATELLITE一覧のP/L%表示と同じ配色規約）
+  - `data-info="tail_deviation_rate"`をth要素に付与し、`glossary.json`に新規キーを追加
+    （CLAUDE_CODE_START.md記載の「ユーザー向け数値を追加した場合はglossary.json登録」ルールに準拠）
+- **検証**: Playwrightで実データ確認（パスワードゲートはsessionStorageバイパス）。
+  CORE銘柄（PLTR/SOFI/TSLA）で乖離率が実数値（-49.4%/-7.9%/-87.3%）かつ正しい色で表示、
+  ツールチップ文言も正しく表示されることを確認。SATELLITE一覧側への影響がないことも確認。
+  pytest 119件全件パス、check_links.py リンク切れ0件
+
 ✅ [PORT-DISP-2/PORT-LAYOUT-1/PORT-LAYOUT-2] ポートフォリオ画面の表示修正3件（2026-06-23 完了）
 - **対象**: `docs/portfolio/index.html`
 - **PORT-DISP-2（セクション番号②から始まる）**: `#summary-section`の資産サマリー
