@@ -4,6 +4,22 @@
 
 ## 2026-06-23
 
+✅ [PORT-DISP-1] 最終更新日が古いまま（PORTFOLIO画面）の調査完了・仕様通りと判明（2026-06-23 完了）
+- **対象**: `docs/portfolio/index.html`（`#last-updated`、`pf.last_updated`表示）・
+  `docs/portfolio/data/portfolio.json`
+- **調査結果**: `portfolio.json`の`last_updated`は実データも2026-06-03のまま停止しており
+  表示側のバグではないことを確認。`src/portfolio/snapshot.py`を含む全Pythonスクリプト・
+  全GitHub Actionsワークフローを検索したが、`portfolio.json`を書き込む自動化パイプラインは
+  存在しないと判明
+- **真の更新経路**: `docs/value-monitor/admin.html`の`savePortfolio()`関数（3500-3530行目）が
+  管理画面の「💾 ポートフォリオを保存」ボタン経由で`last_updated`をセットしGitHub API経由で
+  直接コミットする、**人間による手動更新が唯一の設計上の経路**。git履歴上の過去コミット
+  （`feat(portfolio): ポートフォリオ更新`、コミット者は人間でgithub-actions[bot]ではない）が
+  admin.htmlの生成パターンと完全一致することで裏付け
+- **結論**: 2026-06-03以降ユーザーが管理画面から保存操作を行っていないことが原因であり、
+  コード上の不具合ではないため**修正なし**。自動更新が必要な場合は新機能として別途
+  BACKLOG起票が必要（証券会社API連携等、既存の【Moomoo API】系BACKLOGと関連）
+
 ✅ [TAIL-SAT-CI-1] Satellite Monitor CIのgit pull --rebase失敗修正（2026-06-23 完了）
 - **対象**: `.github/workflows/TANUKI_TAIL_Satellite_Monitor.yml`（「Commit updated
   alert history」ステップ）
