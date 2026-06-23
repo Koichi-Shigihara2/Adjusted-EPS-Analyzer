@@ -4,6 +4,28 @@
 
 ## 2026-06-23
 
+✅ [PORT-DISP-2/PORT-LAYOUT-1/PORT-LAYOUT-2] ポートフォリオ画面の表示修正3件（2026-06-23 完了）
+- **対象**: `docs/portfolio/index.html`
+- **PORT-DISP-2（セクション番号②から始まる）**: `#summary-section`の資産サマリー
+  （総資産・時価残高合計・評価損益・キャッシュ比率の4カード）に`<div class="sec">`見出しが
+  一切存在しなかったことが原因。`① 資産サマリー`見出しを追加し②③④と連続させた
+- **PORT-LAYOUT-1（「その他」が2番目に表示）**: `brokerSummaries`の並び順は
+  `portfolio.json`の`brokers`オブジェクトのキー順（`Moomoo→その他→Moomoo(N)→MONEX→RAKUTEN`）
+  そのままで、ソート処理が一切なかったことが原因。カード描画前に
+  `bAssets===0`（残高$0）を末尾へ送る安定ソートを追加（他の並び順は維持）
+- **PORT-LAYOUT-2（RAKUTENカードのみ横長）**: `.broker-summary{display:flex;flex-wrap:wrap}`+
+  `.broker-card{flex:1}`構成で、5枚中4枚が1行目を埋め5枚目（RAKUTEN、配列末尾）が
+  2行目に単独で残り、`flex:1`によりその行の全幅まで伸長していたことが原因
+  （flexの`flex-basis:0%`は同一行内の兄弟数に応じて幅を再分配するため、単独行では
+  100%まで広がる）。`display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr))`に
+  変更し、行をまたいでも列トラック幅が固定されるようにした（`auto-fit`ではなく`auto-fill`を
+  採用: ブローカー数が少ない場合にカードが不必要に間延びするのを防ぐため）
+- **検証**: Playwrightで実データを使い確認（パスワードゲートは`sessionStorage`に
+  認証フラグを注入してバイパス）。① 資産サマリー〜⑤ 資産推移までセクション番号が連続、
+  5枚のブローカーカードが全て等幅（約183px）になったこと、「その他（$0.00）」が
+  5枚目（最後）に移動したことを確認。600px/960px幅でも崩れずグリッドが機能することを
+  スクリーンショットで確認。pytest 119件全件パス、check_links.py リンク切れ0件
+
 ✅ [PORT-DISP-1] 最終更新日が古いまま（PORTFOLIO画面）の調査完了・仕様通りと判明（2026-06-23 完了）
 - **対象**: `docs/portfolio/index.html`（`#last-updated`、`pf.last_updated`表示）・
   `docs/portfolio/data/portfolio.json`

@@ -50,8 +50,10 @@
     .pos{color:var(--grn)} .neg{color:var(--red)} .neu{color:var(--mut)}
 
     /* Broker summary */
-    .broker-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
-    .broker-card{background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px 16px;flex:1;min-width:180px}
+    /* PORT-LAYOUT-2: flex+flex:1だと最終行に1枚だけ残った場合に横長化するため
+       grid+auto-fillに変更し、行をまたいでも全カード幅を揃える */
+    .broker-summary{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+    .broker-card{background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px 16px}
     .broker-name{font-family:var(--mono);font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
     .broker-val{font-family:var(--mono);font-size:15px;font-weight:700}
 
@@ -399,6 +401,7 @@ async function loadData() {
 
   // ① Summary cards
   document.getElementById('summary-section').innerHTML = `
+    <div class="sec">① 資産サマリー</div>
     <div class="summary-cards">
       <div class="s-card">
         <div class="s-card-label">総資産</div>
@@ -423,23 +426,28 @@ async function loadData() {
     </div>`;
 
   // ② Broker summary
-  const brokerCards = brokerSummaries.map(b => {
-    const bTotalCost = Object.values(b.positions).reduce((s, p) => s + (p.shares||0)*(p.avg_cost||0), 0);
-    const bTotalValue = Object.entries(b.positions).reduce((s, [tk, p]) => {
-      const price = tanukiMap[tk]?.components?.current_price ?? null;
-      return s + (price != null ? (p.shares||0) * price : 0);
-    }, 0);
-    const bPnl = bTotalValue - bTotalCost;
-    const bAssets = bTotalValue + b.cash;
-    return `<div class="broker-card">
+  // PORT-LAYOUT-1: 残高$0のブローカー（「その他」等）は末尾に表示する（他は元の順序を維持）
+  const brokerCards = brokerSummaries
+    .map(b => {
+      const bTotalCost = Object.values(b.positions).reduce((s, p) => s + (p.shares||0)*(p.avg_cost||0), 0);
+      const bTotalValue = Object.entries(b.positions).reduce((s, [tk, p]) => {
+        const price = tanukiMap[tk]?.components?.current_price ?? null;
+        return s + (price != null ? (p.shares||0) * price : 0);
+      }, 0);
+      const bPnl = bTotalValue - bTotalCost;
+      const bAssets = bTotalValue + b.cash;
+      return { b, bTotalValue, bPnl, bAssets };
+    })
+    .sort((x, y) => (x.bAssets === 0 ? 1 : 0) - (y.bAssets === 0 ? 1 : 0))
+    .map(({ b, bTotalValue, bPnl, bAssets }) => `<div class="broker-card">
       <div class="broker-name">${b.name}</div>
       <div class="broker-val">${fmt$(bAssets)}</div>
       <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:4px">
         株式: ${fmt$(bTotalValue)} / CASH: ${fmt$(b.cash)}
       </div>
       <div style="font-family:var(--mono);font-size:11px;margin-top:4px;${bPnl>=0?'color:var(--grn)':'color:var(--red)'}">${bPnl>=0?'+':''}${fmt$(bPnl)}</div>
-    </div>`;
-  }).join('');
+    </div>`)
+    .join('');
 
   document.getElementById('broker-summary-section').innerHTML = `
     <div class="sec">② ブローカー別サマリー</div>
