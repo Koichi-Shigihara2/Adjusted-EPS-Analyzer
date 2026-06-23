@@ -69,7 +69,13 @@
 
     /* Table */
     .tbl-wrap{border:1px solid var(--bdr);overflow-x:auto}
-    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    table{width:100%;border-collapse:collapse;min-width:880px}
+    /* SILO-DISP-3（2026-06-23）: table-layout:fixed + colgroupのpx幅指定を廃止し自然幅テーブルに変更。
+       data-priority="low"列（CF改善・粗利率）を960px以下で間引いた後はmin-widthを解除し、
+       残った列だけで自然に収まるようにする（EPIC-LAYOUT-1標準パターン、portfolio/index.html準拠） */
+    @media (max-width:1000px) {
+      .tbl-wrap table { min-width:0; }
+    }
     thead tr{border-bottom:1px solid var(--bdr)}
     thead th{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;padding:8px 10px;text-align:left;white-space:nowrap;background:var(--sur2);overflow:hidden}
     thead th.r{text-align:right}
@@ -79,6 +85,7 @@
     tbody td{padding:10px 10px;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     tbody td.r{text-align:right;font-family:var(--mono);font-size:11px}
     .ticker-cell{font-family:var(--mono);font-weight:700;font-size:13px;letter-spacing:.08em}
+    .col-ticker{min-width:100px}
 
     /* Verdict badges */
     .badge{font-family:var(--mono);font-size:8px;letter-spacing:.12em;padding:3px 8px;border:1px solid;display:inline-block}
@@ -303,22 +310,10 @@
   <!-- Table -->
   <div class="tbl-wrap">
     <table>
-      <colgroup>
-        <col style="width:28px">
-        <col style="width:72px">
-        <col style="width:118px">
-        <col style="width:90px">
-        <col style="width:96px">
-        <col style="width:84px">
-        <col style="width:76px">
-        <col style="width:72px">
-        <col style="width:76px">
-        <col style="width:96px">
-      </colgroup>
       <thead>
         <tr>
           <th style="padding:8px 4px"></th>
-          <th data-sort="ticker">
+          <th data-sort="ticker" class="col-ticker">
             <span class="th-inner">
               <span class="th-label">TICKER</span>
               <span class="sort-arr" onclick="setSort('ticker')" style="color:var(--mut)"> ⇅</span>
@@ -342,7 +337,7 @@
               <span class="sort-arr" onclick="setSort('runway')" style="color:var(--mut)"> ⇅</span>
             </span>
           </th>
-          <th data-sort="trend">
+          <th data-sort="trend" data-priority="low">
             <span class="th-inner">
               <span class="tip-wrap">CF改善<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box">営業キャッシュフローの改善方向。直近2年のYoY変化と加速度で判定。加速中 / 改善中 / 横ばい / 悪化中</span></span>
               <span class="sort-arr" onclick="setSort('trend')" style="color:var(--mut)"> ⇅</span>
@@ -354,7 +349,7 @@
               <span class="sort-arr" onclick="setSort('price')" style="color:var(--mut)"> ⇅</span>
             </span>
           </th>
-          <th class="r" data-sort="gm">
+          <th class="r" data-sort="gm" data-priority="low">
             <span class="th-inner" style="justify-content:flex-end">
               <span class="tip-wrap">粗利率<span class="tip-icon" onclick="event.stopPropagation()">?</span><span class="tip-box" style="left:auto;right:0;transform:none">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等) / ≥50%=良好 / ≥30%=普通。SEC未申告の場合はCostOfRevenueから逆算</span></span>
               <span class="sort-arr" onclick="setSort('gm')" style="color:var(--mut)"> ⇅</span>
@@ -555,13 +550,13 @@ function render() {
       <td style="padding:10px 6px 10px 10px;width:28px">
         <span onclick="togglePin('${ticker}',event)" title="ピン留め" style="cursor:pointer;font-size:13px;color:${isPinned?'var(--stonks)':'var(--bdr)'};transition:color .15s">★</span>
       </td>
-      <td style="white-space:nowrap"><a class="ticker-cell" href="../tanuki_valuation/stock.html?ticker=${ticker}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:inherit;transition:color .15s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='inherit'">${ticker}</a><span id="tscore-${ticker}" style="margin-left:5px"></span></td>
+      <td class="col-ticker" style="white-space:nowrap"><a class="ticker-cell" href="../tanuki_valuation/stock.html?ticker=${ticker}" target="_blank" onclick="event.stopPropagation()" style="text-decoration:none;color:inherit;transition:color .15s" onmouseover="this.style.color='var(--acc)'" onmouseout="this.style.color='inherit'">${ticker}</a><span id="tscore-${ticker}" style="margin-left:5px"></span></td>
       <td>${verdictBadge(d.overall_verdict)}</td>
       <td>${deficitBadge(dq.verdict)}</td>
       <td class="r">${runwayHtml}</td>
-      <td>${trendCell(pp.ocf_trend)}</td>
+      <td data-priority="low">${trendCell(pp.ocf_trend)}</td>
       <td class="r" style="font-family:var(--mono);font-size:11px">${v.current_price != null ? '$'+v.current_price.toFixed(2) : '—'}</td>
-      <td class="r" style="font-family:var(--mono);font-size:11px">${dq.gross_margin != null ? dq.gross_margin.toFixed(1)+'%' : '—'}</td>
+      <td class="r" data-priority="low" style="font-family:var(--mono);font-size:11px">${dq.gross_margin != null ? dq.gross_margin.toFixed(1)+'%' : '—'}</td>
       <td class="r">${beCell}</td>
       <td class="r">
         <div class="score-bar">

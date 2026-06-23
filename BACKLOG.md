@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-22
+最終更新: 2026-06-23
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -25,57 +25,8 @@
 
 ## 優先度：最高（構造的負債・着手で多くの後続課題が消える）
 
-### [EPIC-LAYOUT-1] 27インチ半分画面・列幅・はみ出し対応
-**優先度:** 最高（GLOBAL-LAYOUT-1の対象を統合し実行可能な形に）
-**統合元:** GLOBAL-LAYOUT-1, MP-LAYOUT-1, PORT-LAYOUT-3, PORT-DISP-3,
-MACRO-DISP-1, SILO-DISP-3, HYPE-DISP-1/2（計7件。TVAL-TS-1/TVAL-TS-2は
-2026-06-21調査により[[TVAL-TS-FIX-1]]へ分離・対象外）
-
-#### 問題の本質
-ユーザーは27インチモニタの画面半分幅でブラウザを使うことが多いが、
-各画面はそれを前提にレイアウト設計されていないため、テーブルの列が
-見切れる・横スクロールが必要・ラベルが省略される、という同種の症状が
-複数画面で同時多発している。
-
-#### 調査状況（2026-06-21 完了・調査のみ・詳細はBACKLOG_DONE.md参照）
-960px幅でのheadless Chrome検証＋静的コード解析を実施済み。対象7件を
-症状別に3グループへ分類した：
-- **グループA**（固定/自然幅テーブル＋横スクロール）: MP-LAYOUT-1の一部、
-  PORT-LAYOUT-3、PORT-DISP-3（実質同一バグ）、HYPE-DISP-2
-  → **2026-06-22 完了（PORT-LAYOUT-3/PORT-DISP-3/HYPE-DISP-2）。詳細は
-  BACKLOG_DONE.md参照。MP-LAYOUT-1のTech Pulseはみ出しは実機検証
-  （850〜1024px）で再現せず対象外とした**
-- **グループB**（フレックス行ラベル省略）: MACRO-DISP-1、HYPE-DISP-1の一部
-  → **2026-06-22 完了。詳細はBACKLOG_DONE.md参照。MACRO-DISP-1は850px/1200px幅で
-  省略が残存し[[MACRO-DISP-2]]として分離・新規登録した**
-- **グループC**（table-layout:fixed、列幅が常時カツカツ）: SILO-DISP-3
-  （960px固有の問題ではなく列幅設計自体の見直しが必要なため個別対応）
-
-次回着手順序: **グループC（SILO-DISP-3）**
-
-#### 対応方針
-- まず「半分画面幅（約960px想定）」を標準のブレークポイントとして
-  共通CSS（`docs/common/`配下）に定義する
-- テーブル系コンポーネントの共通パターンを作る：
-  - 優先度の低い列を狭幅で自動省略 → ホバー/タップでツールチップ全文表示
-  - 横スクロールが必要な場合は「スクロール可能であることを示すUI」を統一
-- ゲージ・チャート等の可変要素はコンテナクエリ or 既存ブレークポイントに対応させる
-- **実装方式（2026-06-21調査で決定）**: まず方式①（`data-priority`属性＋
-  `@media`段階的非表示、EPIC-LEGEND-1/EPIC-HEADER-1と同じ共通CSS追加＋
-  属性付与パターン）を`@media`ベースで導入し、効果を見てから`@container`
-  クエリへ段階拡張する（個人利用ツールのためブラウザ互換性の制約は実質なし）
-
-#### 対象一覧
-- ~~PORT-LAYOUT-3（明細テーブル横スクロール）, PORT-DISP-3（乖離率列見切れ）~~
-  → 2026-06-22 完了（BACKLOG_DONE.md参照）
-- ~~HYPE-DISP-2（右端列見切れ）~~ → 2026-06-22 完了（BACKLOG_DONE.md参照）
-- ~~MP-LAYOUT-1（Tech Pulseはみ出し）~~ → 2026-06-22 実機検証で再現せず対象外
-  （BACKLOG_DONE.md参照）
-- ~~MACRO-DISP-1（ティッカー名省略）~~ → 2026-06-22 完了（BACKLOG_DONE.md参照。
-  850px/1200px幅の残存は[[MACRO-DISP-2]]として分離登録済み）
-- SILO-DISP-3（バッジ省略表示）— `stonks-silo/index.html:72,306-317`
-- ~~HYPE-DISP-1（フェーズ/推奨列の折り返し不揃い）~~ → 2026-06-22 完了
-  （BACKLOG_DONE.md参照）
+（最高優先度の残課題なし。2026-06-23時点。EPIC-LAYOUT-1はグループA/B/C全件完了し
+BACKLOG_DONE.mdへ移動。850px/1200px幅で残った[[MACRO-DISP-2]]のみ低優先度で継続）
 
 ---
 
@@ -930,8 +881,9 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. EPIC-LAYOUT-1 グループC（SILO-DISP-3、table-layout:fixedの列幅見直し）へ展開
+1. MACRO-DISP-2（Michigan Sent.*指標名の850px/1200px幅省略）への対応、
+   または優先度：中の項目（ARCH-DATA-1の年度判定共通関数化等）へ展開
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
-EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22に完了。
-BACKLOG_DONE.md参照）
+EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
+EPIC-LAYOUT-1グループC（SILO-DISP-3）は2026-06-23に完了。BACKLOG_DONE.md参照）

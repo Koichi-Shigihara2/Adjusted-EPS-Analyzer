@@ -2,6 +2,30 @@
 
 ---
 
+## 2026-06-23
+
+✅ [EPIC-LAYOUT-1 グループC] SILO-DISP-3: Stonks Siloテーブルのバッジ省略修正（2026-06-23 完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html`
+- **問題①（主因）**: TICKER列にTANUKI SCOREバッジ（BUY/WATCH/PASS等）が非同期注入
+  されるが、列幅（72px）がティッカー文字のみを想定したサイズでバッジ分の余白が
+  確保されておらず、1400px幅でもWATCH/PASS等5文字ラベルが省略されていた
+  → `.col-ticker{min-width:100px}`をth/tdに付与して解消
+- **問題②**: `table-layout:fixed`+colgroupのpx幅指定（全docs/配下でこのページのみ
+  使用）により、コンテナ幅が808px未満（半分画面幅相当）になると総合判定列（118px）の
+  サブラベル「成長・生存・黒字化が均衡」がはみ出していた
+  → `table-layout:fixed`とcolgroupを廃止して自然幅テーブルに変更し、
+  EPIC-LAYOUT-1標準パターン（`data-priority="low"`＋`docs/common/site-theme.css`の
+  既存`@media(max-width:1000px)`ルール）をCF改善列・粗利率列に適用。
+  `@media(max-width:1000px){.tbl-wrap table{min-width:0}}`をページ内で追加し
+  間引き後に残り列が自然に広がるようにした（portfolio/index.html準拠）
+- **検証**: Playwrightで600/850/960/1024/1400pxの5幅を実機確認。
+  全幅でTICKER列バッジ省略0件・総合判定列はみ出し0件、960px以下でCF改善・粗利率列が
+  非表示、1024px以上で再表示されることを確認。check_links.py でリンク切れ0件も確認
+- **これでEPIC-LAYOUT-1の統合元7件（グループA/B/C）が全件完了**。
+  詳細はBACKLOG.mdの[[MACRO-DISP-2]]（850px/1200px幅の残存課題）のみ低優先度で継続
+
+---
+
 ## 2026-06-22
 
 ✅ [EPIC-LAYOUT-1 グループB] フレックス行ラベル省略・推奨列折り返し不揃いの修正（2026-06-22 完了）
