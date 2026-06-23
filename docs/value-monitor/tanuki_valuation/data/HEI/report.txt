@@ -1,16 +1,16 @@
 HEI INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-23T03:24:43+09:00
-Price: $330.83
+Generated: 2026-06-23T20:27:14+09:00
+Price: $331.15
 
 [1. TANUKI SCORE]
-Classification: HOLD
+Classification: WATCH
 Funda_Score: 80/100
 Timing_Score (components):
   Deviation_Rate: -59.8%
-  MA200_Deviation: +5.5%
+  MA200_Deviation: +5.6%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Buy | Target: $395 median ($290-$471) | 20 analysts | vs IV: +196.7%
-Comment: 割高(-60%超)、FCF黒字、売上安定成長
+Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -56,7 +56,7 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $330.83
+Current_Price: $331.15
 Intrinsic_Value_BASE: $133.15
 Deviation_BASE: -59.8%
 Scenarios:
@@ -81,6 +81,10 @@ FCF_Conversion_Rate: 0.7 (Industry: Aerospace & Defense)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $563M (= Adj_NI $805M × FCF_Conv 0.7)
+DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
+   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
 DCF_FCF_PV: $2.82B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $8.29B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $11.10B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -250,7 +254,7 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 59.1x
-  Adjusted_EPS_PER: 51.0x (TTM調整後EPS: $6.4840)
+  Adjusted_EPS_PER: 51.1x (TTM調整後EPS: $6.4840)
   Delta: -8.1x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-26
@@ -280,7 +284,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 59.1x
   PEG: 3.08
   PS:  9.4x
-  EV_EBITDA: 36.5x
+  EV_EBITDA: 35.9x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
 Definition:
@@ -299,7 +303,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.07%  (ForwardEPS $6.85 / Price $330.83)
+  Forward_Earnings_Yield: 2.07%  (ForwardEPS $6.85 / Price $331.15)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -2.23%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
@@ -348,10 +352,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 
 [9. RISK EVENTS]
-Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit against HEICO
-  [high] regulatory: Active SEC regulatory investigation
-  [mid] earnings: Earnings warning impacting 2025-2026 outlook
+  N/A (Grok検索なし または イベントなし)
 
 ==============================================
 DISCLAIMER: This report is generated automatically

@@ -1,16 +1,16 @@
 ELF INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-23T03:19:38+09:00
-Price: $62.34
+Generated: 2026-06-23T20:20:28+09:00
+Price: $63.18
 
 [1. TANUKI SCORE]
-Classification: BUY
+Classification: WATCH
 Funda_Score: 50/100
 Timing_Score (components):
-  Deviation_Rate: +30.9%
-  MA200_Deviation: -27.9%
+  Deviation_Rate: +29.1%
+  MA200_Deviation: -26.6%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $71 median ($50-$90) | 16 analysts | vs IV: -13.0%
-Comment: 割安圏(31%)で買い余地大、FCF黒字、売上成長加速
+Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ②収益性系
 Quadrant: 右下
 Label: 割安×低ROE
 Key_Metric_Y: ROE_avg (10yr) = 9.6%
-Deviation_Rate: +30.9%
+Deviation_Rate: +29.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,9 +56,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $62.34
+Current_Price: $63.18
 Intrinsic_Value_BASE: $81.59
-Deviation_BASE: +30.9%
+Deviation_BASE: +29.1%
 Growth_Rate_Original: 24.6% (TTM実績)
 Growth_Rate_Adjusted: 40.1% (推奨値・中央値ベース)
 Scenarios:
@@ -75,6 +75,10 @@ FCF_Conversion_Rate: 0.7 (Industry: Household & Personal Products)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $69M (= Adj_NI $99M × FCF_Conv 0.7)
+DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
+   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
 DCF_FCF_PV: $0.76B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $3.16B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $3.92B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -239,9 +243,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 141.7x
-  Adjusted_EPS_PER: 37.4x (TTM調整後EPS: $1.6683)
-  Delta: -104.3x (cheaper on adjusted basis)
+  Market_PER_GAAP: 143.6x
+  Adjusted_EPS_PER: 37.9x (TTM調整後EPS: $1.6683)
+  Delta: -105.7x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -267,13 +271,13 @@ Phase_History (recent 6 months):
 2026-05: Phase4 (期待剥落期)
 2026-06: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 141.7x
+  PER: 143.6x
   PEG: 1.37
-  PS:  13.8x
-  EV_EBITDA: 60.0x
+  PS:  14.0x
+  EV_EBITDA: 59.2x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
-  PS_AnomalyWarn: yfinance PS(13.8x) 自社計算(2.3x) 乖離6.1倍 → ステール値の可能性
+  PS_AnomalyWarn: yfinance PS(14.0x) 自社計算(2.3x) 乖離6.1倍 → ステール値の可能性
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -290,9 +294,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.86%  (ForwardEPS $3.65 / Price $62.34)
+  Forward_Earnings_Yield: 5.78%  (ForwardEPS $3.65 / Price $63.18)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.56%
+  ERP: 1.48%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -339,10 +343,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 
 [9. RISK EVENTS]
-Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against e.l.f. Beauty
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning impacting 2025-2026 outlook
+  N/A (Grok検索なし または イベントなし)
 
 ==============================================
 DISCLAIMER: This report is generated automatically
