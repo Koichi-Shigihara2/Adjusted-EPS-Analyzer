@@ -1332,6 +1332,135 @@ class TestDcfReliabilityLowRounding:
         assert result["score"] == "SELL"
 
 
+class TestDcfReliabilityPolicyB:
+    """
+    DCF-RELIABILITY-1: FCF_Conversion_Rate方式向けDCF_Reliability判定（Policy B）
+
+    判定表:
+      eps_invalid=true                                          → LOW（最優先）
+      eps_invalid=false, detected=true,  transient_found=false  → LOW
+      eps_invalid=false, detected=true,  transient_found=true   → NORMAL
+      eps_invalid=false, detected=false                         → NORMAL
+    """
+
+    @staticmethod
+    def _valuation(detected: bool, transient_found: bool, divergence_warning: str = "") -> dict:
+        return {
+            "fcf_outlier": {
+                "detected": detected,
+                "transient_evidence": {"found": transient_found},
+            },
+            "fcf_estimation": {
+                "applied": True,
+                "divergence_warning": divergence_warning,
+            },
+        }
+
+    def test_detected_true_transient_false_is_low(self):
+        v = self._valuation(detected=True, transient_found=False)
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
+
+    def test_detected_true_transient_true_is_normal(self):
+        v = self._valuation(detected=True, transient_found=True)
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "NORMAL"
+
+    def test_detected_false_eps_valid_is_normal(self):
+        v = self._valuation(detected=False, transient_found=False)
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "NORMAL"
+
+    def test_detected_false_eps_invalid_is_low(self):
+        v = self._valuation(detected=False, transient_found=False, divergence_warning="乖離警告")
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
+
+    def test_eps_invalid_overrides_transient_found_true(self):
+        """eps_invalid=true は detected×transient_found=true（本来NORMAL）より優先してLOWにする"""
+        v = self._valuation(detected=True, transient_found=True, divergence_warning="乖離警告")
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
+
+    def test_compute_tanuki_score_rounds_to_watch_when_policy_b_low(self, tmp_path):
+        """fcf_estimation.applied=True & Policy B=LOW → WATCHに丸められる"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        valuation = {
+            "upside_percent": -5.0,  # HOLDになる条件
+            "components": {"diluted_shares": None},
+            "fcf_base": {"base_fcf": 500_000_000},
+            "financial_health": {},
+            "fcf_estimation": {"applied": True, "divergence_warning": ""},
+            "fcf_outlier": {
+                "detected": True,
+                "transient_evidence": {"found": False},
+            },
+        }
+        result = pipe._compute_tanuki_score("POLICYB_LOW", valuation)
+        assert result["score"] == "WATCH"
+        assert "LOW" in result["score_comment"]
+
+    def test_compute_tanuki_score_not_rounded_when_policy_b_normal(self, tmp_path):
+        """fcf_estimation.applied=True だが Policy B=NORMAL → 通常判定のまま（WATCHに強制されない）"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        valuation = {
+            "upside_percent": -5.0,  # HOLDになる条件（upside<=0 かつ <-30でないため）
+            "components": {"diluted_shares": None},
+            "fcf_base": {"base_fcf": 500_000_000},
+            "financial_health": {},
+            "fcf_estimation": {"applied": True, "divergence_warning": ""},
+            "fcf_outlier": {
+                "detected": False,
+                "transient_evidence": {"found": False},
+            },
+        }
+        result = pipe._compute_tanuki_score("POLICYB_NORMAL", valuation)
+        assert result["score"] == "HOLD"
+
+    def test_compute_tanuki_score_keeps_sell_when_policy_b_low(self, tmp_path):
+        """ファンダ劣化SELLはPolicy B=LOWでもSELLのまま維持される"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        poc_dir = tmp_path / "docs" / "value-monitor" / "hypecore" / "data"
+        poc_dir.mkdir(parents=True, exist_ok=True)
+        (poc_dir / "POLICYB_SELL_poc.json").write_text(json.dumps({
+            "monthly": [{"stage": 2, "rev_yoy": -5.0, "rule40": 15.0}]
+        }), encoding="utf-8")
+        valuation = {
+            "upside_percent": 30.0,
+            "components": {"diluted_shares": None},
+            "fcf_base": {"base_fcf": 1_000_000},
+            "financial_health": {},
+            "fcf_estimation": {
+                "applied": True,
+                "estimated_fcf": 600_000,  # fcf_est < fcf_base*0.8 → sell_funda
+                "divergence_warning": "",
+            },
+            "fcf_outlier": {
+                "detected": True,
+                "transient_evidence": {"found": False},
+            },
+        }
+        result = pipe._compute_tanuki_score("POLICYB_SELL", valuation)
+        assert result["score"] == "SELL"
+
+    def test_policy_a_and_b_mutually_exclusive(self, tmp_path):
+        """fcf_estimation.applied=False（Policy A対象）のときPolicy Bは発火しない"""
+        pipe = _make_pipe(tmp_path)
+        _write_stonks_json(tmp_path, {})
+        valuation = {
+            "upside_percent": -5.0,
+            "components": {"diluted_shares": None},  # fcf_floor_applied未設定 → Policy A発火なし
+            "fcf_base": {"base_fcf": 500_000_000},
+            "financial_health": {},
+            "fcf_estimation": {"applied": False, "divergence_warning": ""},
+            "fcf_outlier": {
+                "detected": True,
+                "transient_evidence": {"found": False},  # Policy Bなら本来LOW相当の条件
+            },
+        }
+        result = pipe._compute_tanuki_score("POLICYAB_EXCL", valuation)
+        # Policy Aもapplied=FalseでfloorはunsetなのでLOW判定されず、Policy Bもapplied=Falseで対象外
+        assert result["score"] == "HOLD"
+
+
 # ─────────────────────────────────────────────
 # 17. 汎用性検証: 新規銘柄自動適用 (回帰防止)
 #

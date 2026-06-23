@@ -4,6 +4,36 @@
 
 ## 2026-06-23
 
+✅ [DCF-RELIABILITY-1] FCF_Conversion_Rate方式銘柄へのDCF_Reliability判定拡張（2026-06-23 完了）
+- **実装箇所**: `src/value/tanuki_valuation/pipeline.py`
+  - `_calc_dcf_reliability_policy_b()`（静的メソッド新設）に判定ロジックを集約し、
+    スコアリング（`_compute_tanuki_score`）とreport.txt生成の両方から共通利用
+  - 判定表（仕様通り、eps_invalid優先で曖昧さを解消）:
+    `eps_invalid=true → LOW`（detected/transient_foundに関わらず最優先）、
+    `eps_invalid=false, detected=true, transient_found=false → LOW`、
+    `eps_invalid=false, detected=true, transient_found=true → NORMAL`、
+    `eps_invalid=false, detected=false → NORMAL`
+  - `eps_invalid`はEPSアナライザー自体にreliabilityフラグが存在しないため、
+    `FCFEstimationResult.divergence_warning`（推定FCFが生FCFの2倍以上乖離）を
+    代理指標として採用（設計判断・コード内コメントに明記）
+  - report.txt: FCF_Conversion_Rate方式の`else`分岐に`DCF_Reliability: LOW/NORMAL`を
+    常時出力するよう追加（Policy Aと同形式の`[Policy B: ...]`注記付き）
+  - TANUKI SCORE: `fcf_estimation.applied=True`（Policy B対象）かつPolicy B=LOW時に
+    BUY/TRIM/HOLD/WATCHをWATCHへ丸め（SELL/PASSは維持）。Policy A
+    （`fcf_floor_applied>0`）とは適用条件が排他的なため同時発火しない
+- **report_consistency_check.py**: CHECK-2（DCF_Reliability欠落検出）を拡張し、
+  `FCF_Conversion_Rate:`行ありでDCF_Reliability行なしのケースも検出するよう
+  `has_fcf_conversion_rate`判定を追加（既存のCHECK-3 LOW丸め未発動は
+  正規表現が両Policy共通のため無改修で適用される）
+- **テスト**: `tests/test_pipeline_logic.py`に`TestDcfReliabilityPolicyB`を新設
+  （9件: 判定表4パターン・eps_invalid優先順位の境界値・スコア丸め3パターン・
+  Policy A/B排他性）。pytest 110→119件、全件パス
+- **検証**: ADBE/NVDA/SITM/SPIR（LOW想定）、AAPL（detected=false→NORMAL）、
+  ADSK（transient_found=true→NORMAL）で実データ確認。ASTS/AMZN（Policy A
+  LOW/HIGH）を再生成し既存挙動が変化しないことを確認。全95銘柄を
+  `--skip-risk`で再生成（成功94/失敗0）、`report_consistency_check.py` NG=0
+  （WARN=1件、ELFのPS異常値はDCF-RELIABILITY-1と無関係の既存事項）
+
 ✅ [TVAL-TS-FIX-1] タイムスタンプ表示の未整形・フォーマット不具合修正（2026-06-23 完了）
 - **TVAL-TS-1**: `docs/value-monitor/tanuki_valuation/stock.html`の`.version-tag`
   （950行目）とfooter「計算日:」（2037行目）が`calculation_date`

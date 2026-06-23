@@ -304,6 +304,37 @@ class TanukiValuationPipeline:
             return None
         return (required_fcf5 / fcf_base) ** 0.2 - 1
 
+    @staticmethod
+    def _calc_dcf_reliability_policy_b(valuation: dict) -> str:
+        """
+        DCF_Reliability Policy B（FCF_Conversion_Rate方式向け、DCF-RELIABILITY-1）
+
+        Policy A（revenue_floor適用＝FCF_Base直接方式向け）とは別軸の判定基準。
+        fcf_outlier.detected / fcf_outlier.transient_evidence.found / eps_invalid の
+        組み合わせで LOW/NORMAL を判定する。
+
+        eps_invalid は EPSアナライザー自体にreliabilityフラグが存在しないため、
+        FCF_Conversion_Rate推定値が生FCFから大きく乖離している（divergence_ratio>=2.0、
+        FCFEstimationResult.divergence_warningが非空）ことを代理指標として採用する。
+
+        判定表（仕様: detected×eps_invalidの組み合わせはeps_invalid優先）:
+          eps_invalid=true                              → LOW（detected/transient_foundに関わらず）
+          eps_invalid=false, detected=true,  transient_found=false → LOW
+          eps_invalid=false, detected=true,  transient_found=true  → NORMAL
+          eps_invalid=false, detected=false                        → NORMAL
+        """
+        fcf_outlier = valuation.get("fcf_outlier", {}) or {}
+        detected = fcf_outlier.get("detected", False)
+        transient_found = (fcf_outlier.get("transient_evidence") or {}).get("found", False)
+        fcf_est = valuation.get("fcf_estimation", {}) or {}
+        eps_invalid = bool(fcf_est.get("divergence_warning"))
+
+        if eps_invalid:
+            return "LOW"
+        if detected and not transient_found:
+            return "LOW"
+        return "NORMAL"
+
     def _compute_tanuki_score(self, ticker: str, valuation: dict) -> dict:
         """TANUKI SCOREをパイプライン時に計算（JS classify/calcFundaのPython移植）"""
         upside   = valuation.get("upside_percent")
@@ -418,13 +449,23 @@ class TanukiValuationPipeline:
 
         comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
 
-        # DCF_Reliability=LOW 丸め
+        # DCF_Reliability=LOW 丸め（Policy A: revenue_floor適用＝FCF_Base直接方式向け）
         # revenue_floor適用（FCF実績マイナス）は理論株価の信頼性が低いため
         # upside依存の判定を抑制して WATCH に統一する。SELL/PASS（ファンダ劣化）は維持。
         _floor_applied = valuation.get("components", {}).get("fcf_floor_applied", 0) or 0
         if _floor_applied > 0 and score not in ("SELL", "PASS"):
             score = "WATCH"
             comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
+            sell_reason = None
+
+        # DCF_Reliability=LOW 丸め（Policy B: FCF_Conversion_Rate方式向け、DCF-RELIABILITY-1）
+        # fcf_estimationが適用された（=FCF_Conversion_Rate方式）銘柄のみが対象。
+        # Policy Aとはfcf_estimation.appliedの真偽で排他的なため同時発火しない。
+        _fcf_estimation = valuation.get("fcf_estimation", {}) or {}
+        if (_fcf_estimation.get("applied") and score not in ("SELL", "PASS")
+                and self._calc_dcf_reliability_policy_b(valuation) == "LOW"):
+            score = "WATCH"
+            comment = "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH"
             sell_reason = None
 
         return {
@@ -1241,6 +1282,15 @@ class TanukiValuationPipeline:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M (= Adj_NI ${_fcf_adj_ni/1e6:,.0f}M × FCF_Conv {fcf_conv})")
                 else:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M")
+            # DCF-RELIABILITY-1: Policy B（FCF_Conversion_Rate方式向けDCF_Reliability）
+            _reliability_b = self._calc_dcf_reliability_policy_b(valuation)
+            if _reliability_b == "LOW":
+                L.append("DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)")
+                L.append("  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。")
+                L.append("   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから")
+                L.append("   大幅乖離（eps_invalid）のため、IVは参考値扱い。]")
+            else:
+                L.append("DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)")
         # REPORT-6: DCF再現性ブロック（上から足すとIVになる完全構造）
         _dcf_comps_r6 = valuation.get("dcf_components", {})
         _dcf_type_r6  = valuation.get("dcf_type", "two_stage")

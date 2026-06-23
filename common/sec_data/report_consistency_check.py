@@ -5,7 +5,8 @@ report_consistency_check.py
 
 検出項目:
   NG  1. FCF符号矛盾          FCF_History最新年マイナス & Matrix④ Key_Metric_Y 正値
-  NG  2. DCF_Reliability欠落   FCF_Base行あり & DCF_Reliability行なし
+  NG  2. DCF_Reliability欠落   FCF_Base行 or FCF_Conversion_Rate行あり & DCF_Reliability行なし
+                              （Policy A: FCF_Base直接方式 / Policy B: FCF_Conversion_Rate方式、DCF-RELIABILITY-1）
   NG  3. LOW丸め未発動         DCF_Reliability=LOW & Classification が WATCH/SELL/PASS 以外
   NG  4. 割引率1段             Discount_Rate_Primary 行なし（旧WACC単独形式）
   NG  7. RPO条件違反           RPO_PV>0 & whitelist外 & RPO/Revenue<0.3
@@ -106,6 +107,7 @@ def _parse_report(text: str) -> dict:
         "key_metric_y": None,
         "label": None,
         "has_fcf_base": False,
+        "has_fcf_conversion_rate": False,
         "discount_rate_primary_data": None,  # data行のみ（定義行は除外）
         "has_wacc_old": False,               # 旧 WACC: 単独行
         "has_net_debt_report": False,
@@ -177,6 +179,11 @@ def _parse_report(text: str) -> dict:
         if not result["has_fcf_base"]:
             if re.match(r'^FCF_Base:', line):
                 result["has_fcf_base"] = True
+
+        # FCF_Conversion_Rate: 行の存在（DCF-RELIABILITY-1: Policy B対象銘柄の判定）
+        if not result["has_fcf_conversion_rate"]:
+            if re.match(r'^FCF_Conversion_Rate:', line):
+                result["has_fcf_conversion_rate"] = True
 
         # Discount_Rate_Primary データ行（"10.00% (DCF discount rate used)"）
         # 定義行は "Discount_Rate_Primary: Actual discount rate..." → 除外
@@ -257,6 +264,9 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
     # ── CHECK 2: DCF_Reliability欠落 ─────────────────────────
     if parsed["has_fcf_base"] and parsed["dcf_reliability"] is None:
         ng.append("  [NG-2 DCF_Reliability欠落] FCF_Base行あり & DCF_Reliability行なし")
+    # DCF-RELIABILITY-1: FCF_Conversion_Rate方式（Policy B対象）でも同様に欠落を検出
+    if parsed["has_fcf_conversion_rate"] and parsed["dcf_reliability"] is None:
+        ng.append("  [NG-2 DCF_Reliability欠落] FCF_Conversion_Rate行あり & DCF_Reliability行なし")
 
     # ── CHECK 3: LOW丸め未発動 ───────────────────────────────
     rel = parsed["dcf_reliability"]
