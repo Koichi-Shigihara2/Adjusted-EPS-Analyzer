@@ -947,7 +947,7 @@ function render(d) {
           <a href="../../market-monitor/market-pulse/">Market Pulse</a>
           <a href="../../market-monitor/macro-pulse/">MACRO PULSE</a>
         </nav>
-        <div class="version-tag">${(d.formula || '').match(/v[\d.]+/) ? (d.formula.match(/v[\d.]+/)[0]) : 'v6.2'} | ${calcDate}${d.next_earnings_date ? ` | 次回決算: ${d.next_earnings_date}` : ''}</div>
+        <div class="version-tag">${(d.formula || '').match(/v[\d.]+/) ? (d.formula.match(/v[\d.]+/)[0]) : 'v6.2'} | ${toJST(calcDate)}${d.next_earnings_date ? ` | 次回決算: ${d.next_earnings_date}` : ''}</div>
       </div>
     </header>
     <div class="last-updated">${toJST(calcDate)}</div>
@@ -2034,7 +2034,7 @@ function render(d) {
     </section>
 
     <footer>
-      <p>計算日: ${calcDate} | ${formula}</p>
+      <p>計算日: ${toJST(calcDate)} | ${formula}</p>
       <p style="margin-top:6px;font-size:11px;color:var(--mut)">財務基準 ${d.fcf_ttm_end || '—'} ｜ 生成 ${calcDate !== '—' ? calcDate.slice(0,10) : '—'} ｜ 次回決算 ${d.next_earnings_date || '—'} ｜ インサイダー ${d.components?.insider_latest_date || '—'}</p>
       <p style="margin-top:8px"><a href="index.html" style="color:var(--acc);text-decoration:none">銘柄一覧に戻る</a></p>
     </footer>

@@ -4,6 +4,23 @@
 
 ## 2026-06-23
 
+✅ [TVAL-TS-FIX-1] タイムスタンプ表示の未整形・フォーマット不具合修正（2026-06-23 完了）
+- **TVAL-TS-1**: `docs/value-monitor/tanuki_valuation/stock.html`の`.version-tag`
+  （950行目）とfooter「計算日:」（2037行目）が`calculation_date`
+  （フルISOタイムスタンプ）を未整形のまま表示していたのを、既存の`toJST()`関数
+  （2588行目、`2026/06/20 17:36 JST`形式に変換）を適用して解決
+- **TVAL-TS-2**: `docs/value-monitor/tanuki_valuation/index.html`の`fmtDate()`
+  （388行目）`(d)=>d.slice(5).replace('-','/')`が、フルISO文字列に対して
+  `slice(5)`すると`"06/20T17:36:48+09:00"`という壊れた文字列になる実装バグを修正。
+  `d.slice(0,10).slice(5).replace('-','/')`に変更し、まず日付部分のみ
+  （YYYY-MM-DD）を確定してから整形するようにした
+- **検証**: Playwrightで実機確認。stock.htmlのversion-tag/footerが
+  `2026/06/23 03:21 JST`形式で表示されること、index.htmlの更新日列が
+  フルISO（`2026-06-23T03:22:43+09:00`）でも日付のみ（`2026-06-20`）でも
+  `06/23`/`06/20`形式に正しく整形されること（壊れた文字列が出ないこと）を確認。
+  `fmtDate(null)`/`fmtDate('')`が`'—'`を返すことも確認。pytest 110件全件パス・
+  check_links.py リンク切れ0件
+
 ✅ [EPIC-LAYOUT-1 グループC] SILO-DISP-3: Stonks Siloテーブルのバッジ省略修正（2026-06-23 完了）
 - **対象**: `docs/value-monitor/stonks-silo/index.html`
 - **問題①（主因）**: TICKER列にTANUKI SCOREバッジ（BUY/WATCH/PASS等）が非同期注入

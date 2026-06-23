@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-23
+最終更新: 2026-06-23（TVAL-TS-FIX-1完了反映）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -105,32 +105,6 @@ Playwrightで1400px幅（フルデスクトップ幅）でも全く同じ重な�
   （例: `fcf_outlier.detected=true` かつ `transient_evidence.found=false` → MEDIUM等）
 - 74銘柄へのReliability表示拡張を実装し、report_consistency_check.pyにも
   検出項目として追加して恒久化する
-
-### [TVAL-TS-FIX-1] タイムスタンプ表示の未整形・フォーマット不具合（TANUKI VALUATION画面）
-**優先度:** 中
-**分類:** バグ修正 / TANUKI VALUATION
-
-#### 経緯（2026-06-21 EPIC-LAYOUT-1調査時に発見・分離）
-当初[[EPIC-LAYOUT-1]]にTVAL-TS-1/TVAL-TS-2として統合されていたが、960px幅
-特有の問題ではなく、解決策もCSS/レスポンシブ対応ではなく純粋なJSロジック
-修正のため独立項目として分離した。
-
-#### 内容
-- **TVAL-TS-1**: `stock.html`の2箇所（950行目`.version-tag`、2037行目
-  footer「計算日:」）で`calculation_date`（例: `2026-06-20T17:36:48+09:00`）が
-  未整形のまま表示されている。同ファイル内に既存の`toJST()`関数
-  （2588行目、`2026/06/20 17:36 JST`形式に変換）があるため、これを適用する
-  だけで解決可能
-- **TVAL-TS-2**: `index.html`の`fmtDate()`関数（388行目）
-  `(d)=>d.slice(5).replace('-','/')`が、フルISO文字列（時刻・タイムゾーン
-  オフセット付き）に対して`slice(5)`すると`"06/20T17:36:48+09:00"`という
-  壊れた文字列になる**実装バグ**（Pythonで再現確認済み）。これが「更新日列が
-  切れる」ように見える直接原因。「YYYY-MM-DD」のみを期待した実装が、実際の
-  `calculation_date`（フルタイムスタンプ）と噛み合っていない
-
-#### 対応方針（次回着手時）
-- `fmtDate()`を堅牢な実装（明示的に日付部分のみ抽出する等）に修正する
-- `stock.html`の2箇所は既存`toJST()`を呼び出すだけで解決
 
 ### [TAIL-SAT-CI-1] TANUKI TAIL Satellite Monitorの`Commit and push`ステップが継続的に失敗
 **優先度:** 低
