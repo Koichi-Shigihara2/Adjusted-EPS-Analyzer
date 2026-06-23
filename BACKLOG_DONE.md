@@ -4,6 +4,30 @@
 
 ## 2026-06-23
 
+✅ [MP-GAUGE-NEEDLE-1] センチメントゲージの針とラベルの重なり修正（2026-06-23 完了）
+- **対象**: `docs/market-monitor/market-pulse/index.html`（CNN Fear&Greed・Tech Pulse
+  両ゲージ、`#fgGaugeSvg`/`#tpGaugeSvg`共通の`.tp-gauge-center`クラス）
+- **構造調査**: 針（`<line>`要素、`#fgNeedle`/`#tpNeedle`）の回転軸は`(90,94)`固定で
+  `rotate(${score/100*180-90},90,94)`によりscore=0で-90°（左/FEAR方向）・score=50で
+  0°（真上）・score=100で+90°（右/GREED方向）に回転する。半径66の単一線分。
+  一方スコア数値・ラベル（`.tp-gauge-center`、HTML divをSVG上に絶対配置）は
+  `bottom:2px`で下端y=104に固定され、上端は内容次第でy=54付近まで達する。
+  **針の回転軸(90,94)自体がラベル領域(y=54〜104)の内側にある**ため、針をどれだけ
+  短縮してもラベル中央(x≈90)を回転軸付近で必ず通過することが判明（案A＝針短縮は
+  幾何学的に不採用、選択基準通り案Bへ）
+- **Playwright実測**: stroke-width考慮のbbox当たり判定で、score=0/25/50/75/100の
+  全パターンで針とラベルが重なることを確認（score=0/100でも回転軸近傍でラベル下端と
+  軽微に重なる）
+- **対応**: `.tp-gauge-center`に`background:var(--sur)`（カード背景色と同色の不透明
+  背景）・`padding:2px 8px`・`border-radius:6px`を追加（案B）。DOM順序上もともと
+  `.tp-gauge-center`は`<svg>`より後に配置されており、CSSデフォルトの重なり順で
+  針より上に描画されるため、背景を不透明にするだけで針が完全にマスクされる
+  （z-index等の追加調整は不要だった）
+- **検証**: Playwrightで0/25/50/75/100の5スコア × CNN Fear&Greed/Tech Pulse
+  両ゲージ × 600/960/1400px幅の全組み合わせで、針がラベル背景の外側でのみ視認でき
+  文字との重なりがないことをスクリーンショットで確認。pytest 119件全件パス
+  （CSS変更のみのためロジック影響なし）、check_links.py リンク切れ0件
+
 ✅ [DCF-RELIABILITY-1] FCF_Conversion_Rate方式銘柄へのDCF_Reliability判定拡張（2026-06-23 完了）
 - **実装箇所**: `src/value/tanuki_valuation/pipeline.py`
   - `_calc_dcf_reliability_policy_b()`（静的メソッド新設）に判定ロジックを集約し、

@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-23（DCF-RELIABILITY-1完了反映）
+最終更新: 2026-06-23（MP-GAUGE-NEEDLE-1完了反映）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -37,26 +37,6 @@ BACKLOG_DONE.mdへ移動。850px/1200px幅で残った[[MACRO-DISP-2]]のみ低�
 ---
 
 ## 優先度：低
-
-### [MP-GAUGE-NEEDLE-1] センチメントゲージの針がスコアラベルと重なる（Market Pulse画面）
-**優先度:** 低
-**分類:** バグ / Market Pulse
-
-#### 内容
-`market-monitor/market-pulse/index.html`のCNN Fear&Greed・Tech Pulse両ゲージ（SVG、
-`#fgGaugeSvg`/`#tpGaugeSvg`）で、スコア値によっては針（needle）が中央のスコア数値・
-ステータスラベル（GREED/CAUTION等）の真上を通過し、文字に重なって見づらくなる。
-
-#### 経緯（2026-06-22発見）
-当初「960px幅でGREEDラベルが見切れる」というMP-LAYOUT-1関連の報告として調査したが、
-Playwrightで1400px幅（フルデスクトップ幅）でも全く同じ重なりが再現することを確認した。
-画面幅に依存しない固定ジオメトリの問題（針の回転角度とラベル位置がスコア値によっては
-交差する）であり、EPIC-LAYOUT-1（半分画面幅対応）とは別種のバグのため分離・新規登録した。
-
-#### 対応方針（案・未検討）
-- 針の描画レイヤーをラベルより下（z-index相当）にする、または針の長さ・始点を
-  ラベル領域を避けるよう調整する
-- ラベル背景に半透明の縁取り/背景を付けて重なっても可読性を確保する
 
 ### [MACRO-DISP-2] Michigan Sent.*指標名が850px/1200px幅で省略される（Macro Pulse画面）
 **優先度:** 低
