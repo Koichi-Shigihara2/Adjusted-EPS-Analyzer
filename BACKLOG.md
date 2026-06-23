@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-23（MP-GAUGE-NEEDLE-1完了反映）
+最終更新: 2026-06-23（MACRO-DISP-2完了反映）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -26,7 +26,7 @@
 ## 優先度：最高（構造的負債・着手で多くの後続課題が消える）
 
 （最高優先度の残課題なし。2026-06-23時点。EPIC-LAYOUT-1はグループA/B/C全件完了し
-BACKLOG_DONE.mdへ移動。850px/1200px幅で残った[[MACRO-DISP-2]]のみ低優先度で継続）
+BACKLOG_DONE.mdへ移動。MACRO-DISP-2も2026-06-23完了）
 
 ---
 
@@ -37,25 +37,6 @@ BACKLOG_DONE.mdへ移動。850px/1200px幅で残った[[MACRO-DISP-2]]のみ低�
 ---
 
 ## 優先度：低
-
-### [MACRO-DISP-2] Michigan Sent.*指標名が850px/1200px幅で省略される（Macro Pulse画面）
-**優先度:** 低
-**分類:** 表示バグ / Macro Pulse
-
-#### 発生状況（2026-06-22 EPIC-LAYOUT-1グループB調査）
-`.phase-signals`のminmax値を260pxに設定した状態で、850px/1200px幅で
-「Michigan Sent.*」の省略が残存している（700/800/960/1024/1400px幅では解消済み）。
-
-#### 根本原因
-`.phase-signals`の親コンテナ`.v3-main`（2カラムレイアウト`.v3-dash`のメイン列）の
-幅がビューポート幅に比例せず非線形に変動するため、minmax値の調整だけでは
-「モグラ叩き」が続く構造的な問題（200→240pxで800px幅が発生、240→260pxで
-850px/1200px幅が発生、という経緯で判明）。
-
-#### 対応方針候補（いずれかを次回着手時に選択）
-1. メディアクエリで固定列数を指定（ビューポート幅ごとに列数を明示）
-2. セル内レイアウトを縦積みに変更（dot+nameを1行、val+badge+leadを別行）
-3. `.v3-main`列幅自体の見直し
 
 ---
 
@@ -810,9 +791,9 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. MACRO-DISP-2（Michigan Sent.*指標名の850px/1200px幅省略）への対応、
-   または優先度：中の項目（ARCH-DATA-1の年度判定共通関数化等）へ展開
+1. 優先度：中の項目（ARCH-DATA-1の年度判定共通関数化等）へ展開
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
-EPIC-LAYOUT-1グループC（SILO-DISP-3）は2026-06-23に完了。BACKLOG_DONE.md参照）
+EPIC-LAYOUT-1グループC（SILO-DISP-3）・MP-GAUGE-NEEDLE-1・MACRO-DISP-2は
+2026-06-23に完了。BACKLOG_DONE.md参照）

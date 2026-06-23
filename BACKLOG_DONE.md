@@ -4,6 +4,29 @@
 
 ## 2026-06-23
 
+✅ [MACRO-DISP-2] Michigan Sent.*指標名の850px/1200px幅省略修正（2026-06-23 完了）
+- **対象**: `docs/market-monitor/macro-pulse/index.html`（`.phase-signals`/`.pg-sig`、
+  EPIC-LAYOUT-1グループB対応の残課題）
+- **実測調査**: Playwrightで700/800/850/960/1024/1200/1400pxの`.v3-main`実幅・
+  `.phase-signals`の列数・列幅を計測。850px/1200pxはともに`.v3-main`が約800〜810px
+  まで縮み、`repeat(auto-fit,minmax(260px,1fr))`で3列になった結果、列幅が266〜269px
+  まで圧縮されることを確認（「Michigan Sent.*」の必要幅83pxに対し名前スパンの
+  `clientWidth`が77〜80pxしかなく数px不足→省略）。850px（`.v3-dash`が単一カラムに
+  切替わる1000px境界の直下）と1200px（2カラムでサイドバー340px+gap18pxを差し引いた
+  幅）がたまたま同程度の`.v3-main`幅に収束する非線形性が原因で、`minmax`調整だけでは
+  別の幅で再発する「モグラ叩き」と判明（対応方針候補1/3はこの非線形性に追従し続ける
+  ため不採用、候補2を選択）
+- **対応**: `.pg-sig`を1行レイアウトから2行レイアウトに変更（候補2）。
+  Row1=dot+name、Row2=val+badge+leadに分離し、`.pg-sig-name`がval/badge/leadと
+  横幅を奪い合わなくなるようにした。`minmax(260px,1fr)`は変更不要（2行化だけで
+  必要最小幅が大幅に下がり、260px floorに対して十分な余白が生まれた）
+- **検証**: Playwrightで700/800/850/960/1024/1200/1400pxの全7幅で
+  「Michigan Sent.*」を含む全8指標名の省略が0件であることを確認
+  （`scrollWidth>clientWidth`チェック）。スクリーンショットで視覚的にも確認。
+  ツールチップのホバー表示が引き続き機能することも確認（DOM構造変更後も
+  `.pg-sig{position:relative}`は維持）。pytest 119件全件パス、check_links.py
+  リンク切れ0件
+
 ✅ [MP-GAUGE-NEEDLE-1] センチメントゲージの針とラベルの重なり修正（2026-06-23 完了）
 - **対象**: `docs/market-monitor/market-pulse/index.html`（CNN Fear&Greed・Tech Pulse
   両ゲージ、`#fgGaugeSvg`/`#tpGaugeSvg`共通の`.tp-gauge-center`クラス）

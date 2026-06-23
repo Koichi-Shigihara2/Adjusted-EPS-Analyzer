@@ -93,13 +93,14 @@
     .badge-other{background:rgba(100,116,139,.25);color:#94a3b8}
     /* シグナルグリッド */
     .phase-signals{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1px;border-top:1px solid var(--bdr);background:var(--bdr)}
-    .pg-sig{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--sur2)}
+    .pg-sig{display:flex;flex-direction:column;gap:4px;padding:8px 14px;background:var(--sur2);position:relative;cursor:default}
+    .pg-sig-row1{display:flex;align-items:center;gap:6px}
+    .pg-sig-row2{display:flex;align-items:center;gap:8px}
     .pg-sig-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
     .pg-sig-name{font-family:var(--mono);font-size:9px;color:var(--mut);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .pg-sig-val{font-family:var(--mono);font-size:11px;font-weight:700}
     .pg-sig-badge{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:2px;white-space:nowrap}
     .pg-sig-lead{font-family:var(--mono);font-size:8px;color:var(--mut)}
-    .pg-sig{position:relative;cursor:default;}
     .pg-sig-tooltip{
       display:none;position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
       background:#0d1117;border:1px solid var(--bdr);border-radius:4px;
@@ -1193,11 +1194,15 @@ function renderPhaseGauge() {
     const btxt=badgeTxt[sg.signal]||'—';
     const valColor=sg.signal==='bear'?'var(--red)':sg.signal==='caution'?'var(--amb)':sg.signal==='bull'?'var(--grn)':'var(--txt)';
     return `<div class="pg-sig">
-      <span class="pg-sig-dot" style="background:${dot}"></span>
-      <span class="pg-sig-name">${sg.name}</span>
-      <span class="pg-sig-val" style="color:${valColor}">${sg.val}</span>
-      <span class="pg-sig-badge badge ${bcls}">${btxt}</span>
-      <span class="pg-sig-lead">${sg.lead}</span>
+      <div class="pg-sig-row1">
+        <span class="pg-sig-dot" style="background:${dot}"></span>
+        <span class="pg-sig-name">${sg.name}</span>
+      </div>
+      <div class="pg-sig-row2">
+        <span class="pg-sig-val" style="color:${valColor}">${sg.val}</span>
+        <span class="pg-sig-badge badge ${bcls}">${btxt}</span>
+        <span class="pg-sig-lead">${sg.lead}</span>
+      </div>
       <div class="pg-sig-tooltip">
         <div class="pg-sig-tooltip-name">${sg.name}</div>
         <div class="pg-sig-tooltip-desc">${sg.desc||''}</div>
