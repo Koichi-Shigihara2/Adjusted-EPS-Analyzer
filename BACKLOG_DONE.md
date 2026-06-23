@@ -4,6 +4,30 @@
 
 ## 2026-06-23
 
+✅ [TAIL-SAT-CI-1] Satellite Monitor CIのgit pull --rebase失敗修正（2026-06-23 完了）
+- **対象**: `.github/workflows/TANUKI_TAIL_Satellite_Monitor.yml`（「Commit updated
+  alert history」ステップ）
+- **原因特定**: `src/tail/satellite_monitor.py`が`satellite_alerts.json`
+  （`_save_alerts`）と`journal.json`（`_save_journal`、`_append_journal_watchlist`
+  経由でアラート発生時に毎回書き込み）の2ファイルを更新するが、ワークフローの
+  `git add`は`satellite_alerts.json`のみをステージしていた。いずれかのsatellite
+  銘柄でアラート条件（エントリー/エグジット/ニュース/決算接近）が1件でも発火すると
+  journal.jsonも更新され、`git commit`後に未ステージ変更が残ることで後続の
+  `git pull --rebase`が「cannot pull with rebase: You have unstaged changes」で
+  失敗していた。journal.json・satellite_alerts.json両方の最終更新日が2026-06-07で
+  一致しており、この日以降ローカルコミットは成立するもpushまで到達していなかった
+  ことと整合（コミットはランナーの使い捨てクローン内で完結し破棄されるため、
+  リモートのデータは更新されないまま停滞していた）
+- **比較**: 正常動作している`TANUKI_TAIL_RSS_Monitor.yml`は、スクリプトが更新する
+  全ファイルを`git add`に明示列挙する既存パターンを採用しており、これに倣った
+- **対応（案B採用）**: `git add`に`docs/portfolio/tail/data/journal.json`を追加。
+  スクリプト内の書き込み対象（`json.dump`呼び出し）を全件grepで洗い出し、
+  この2ファイル以外に書き込みがないことを確認済み
+- **検証**: このセッションには`gh` CLI等のGitHub Actions認証手段がなく
+  workflow_dispatchを直接トリガーできなかったため、修正pushの上でユーザーに
+  GitHub Web UIからの手動トリガー、または次回定期実行（平日JST 08:00/17:00）での
+  自然検証を依頼
+
 ✅ [MACRO-DISP-2] Michigan Sent.*指標名の850px/1200px幅省略修正（2026-06-23 完了）
 - **対象**: `docs/market-monitor/macro-pulse/index.html`（`.phase-signals`/`.pg-sig`、
   EPIC-LAYOUT-1グループB対応の残課題）
