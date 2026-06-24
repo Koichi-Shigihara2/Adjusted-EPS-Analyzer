@@ -298,6 +298,16 @@ function sortAndRender(col) {
   renderDetailTable();
 }
 
+// DuPont panel sort state
+let _dpSortCol = 'roe_decomposed';
+let _dpSortDir = -1;
+
+function sortDuPont(col) {
+  if (_dpSortCol === col) _dpSortDir = -_dpSortDir;
+  else { _dpSortCol = col; _dpSortDir = -1; }
+  renderDuPontPanel();
+}
+
 const COL_KEYS = ['ticker','cat','funda','timing','revYoy','rule40','epsYoy','fcf','upside','stage'];
 
 // ─── Render ③ Detail table ───────────────────────────────────
@@ -823,9 +833,20 @@ function renderDuPontPanel() {
   const el = document.getElementById('dupont-panel');
   if (!el) return;
 
+  const dpVal = (s, col) => {
+    if (col === 'ticker') return s.ticker;
+    if (col === 'roe')    return s.roe;
+    return s.dupont?.[col];
+  };
+
   const rows = _stocks
     .filter(s => s.dupont != null && !s.dupont.excluded)
-    .sort((a, b) => (b.dupont.roe_decomposed ?? -Infinity) - (a.dupont.roe_decomposed ?? -Infinity));
+    .sort((a, b) => {
+      const av = dpVal(a, _dpSortCol), bv = dpVal(b, _dpSortCol);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1; if (bv == null) return -1;
+      return _dpSortDir * (typeof av === 'string' ? av.localeCompare(bv) : av - bv);
+    });
 
   if (rows.length === 0) { el.innerHTML = ''; return; }
 
@@ -836,6 +857,16 @@ function renderDuPontPanel() {
 
   const pct = v => v == null ? '—' : (v * 100).toFixed(1) + '%';
   const x2  = v => v == null ? '—' : v.toFixed(2) + 'x';
+
+  const dpTh = (col, label, align = 'right', extra = '') => {
+    const isSorted = _dpSortCol === col;
+    const arr = isSorted ? (_dpSortDir === -1 ? '▼' : '▲') : '';
+    const color = isSorted ? 'var(--acc)' : 'var(--mut)';
+    return `<th onclick="sortDuPont('${col}')" ${extra}
+      style="text-align:${align};padding:4px 8px;cursor:pointer;color:${color};user-select:none;white-space:nowrap">
+      ${label}${arr ? `<span style="margin-left:3px;font-size:9px;opacity:.7">${arr}</span>` : ''}
+    </th>`;
+  };
 
   const trs = rows.map(s => {
     const dp = s.dupont;
@@ -875,13 +906,13 @@ function renderDuPontPanel() {
       </p>
       <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
-          <tr style="color:var(--mut);border-bottom:1px solid var(--border)">
-            <th style="text-align:left;padding:4px 8px">銘柄</th>
-            <th style="text-align:right;padding:4px 8px" data-info="tscore_dupont_roe_color">ROE(DuPont)</th>
-            <th style="text-align:right;padding:4px 8px">純利益率</th>
-            <th style="text-align:right;padding:4px 8px">資産回転率</th>
-            <th style="text-align:right;padding:4px 8px">財務ﾚﾊﾞﾚｯｼﾞ</th>
-            <th style="text-align:right;padding:4px 8px">ROE(実績)</th>
+          <tr style="border-bottom:1px solid var(--border)">
+            ${dpTh('ticker', '銘柄', 'left')}
+            ${dpTh('roe_decomposed', 'ROE(DuPont)', 'right', 'data-info="tscore_dupont_roe_color"')}
+            ${dpTh('net_margin', '純利益率')}
+            ${dpTh('asset_turnover', '資産回転率')}
+            ${dpTh('financial_leverage', '財務ﾚﾊﾞﾚｯｼﾞ')}
+            ${dpTh('roe', 'ROE(実績)')}
           </tr>
         </thead>
         <tbody>${trs}</tbody>
