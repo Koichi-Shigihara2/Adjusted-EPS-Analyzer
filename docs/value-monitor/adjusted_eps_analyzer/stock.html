@@ -529,6 +529,7 @@
     let tanukiData = null;
     let chart = null;
     let currentTab = 'quarterly';
+    let companyNames = {};
 
     const urlParams = new URLSearchParams(window.location.search);
     const tickerParam = urlParams.get('ticker');
@@ -567,7 +568,10 @@
           if (tkResp.ok) tanukiData = await tkResp.json();
         } catch (e) {}
 
-        document.getElementById('ticker-title').innerText = currentTicker;
+        const companyName = companyNames[currentTicker];
+        document.getElementById('ticker-title').innerText = companyName
+          ? `${currentTicker} — ${companyName}`
+          : currentTicker;
         document.getElementById('last-updated').innerText =
           `最終更新: ${new Date(quarterlyData.last_updated).toLocaleDateString('ja-JP')}`;
 
@@ -1090,7 +1094,13 @@
       }
     }
 
-    window.onload = () => loadTicker();
+    window.onload = async () => {
+      try {
+        const r = await fetch('../../common/company_names.json');
+        if (r.ok) companyNames = await r.json();
+      } catch (e) {}
+      loadTicker();
+    };
   </script>
   <script src="../../common/site-nav.js"></script>
 </body>

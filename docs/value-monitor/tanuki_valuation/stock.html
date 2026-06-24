@@ -376,6 +376,7 @@ const params = new URLSearchParams(window.location.search);
 const ticker = params.get('ticker') || 'NVDA';
 
 let globalData = null;
+let companyNames = {};
 
 const fmt = (n) => n?.toFixed(2) ?? '—';
 const fmtInt = (n) => n?.toLocaleString() ?? '—';
@@ -954,7 +955,7 @@ function render(d) {
 
     <div class="hero">
       <div class="ticker-header">
-        <span class="ticker-symbol">${ticker}</span>
+        <span class="ticker-symbol">${ticker}${companyNames[ticker] ? ` — ${companyNames[ticker]}` : ''}</span>
         <div class="ticker-tags">
           <span class="tag dcf">${dcfTag}</span>
           <span class="tag fcf">${fcfTag}</span>
@@ -2880,7 +2881,13 @@ async function loadAndRenderMatrices() {
   }
 }
 
-loadData();
+(async () => {
+  try {
+    const r = await fetch('../../common/company_names.json');
+    if (r.ok) companyNames = await r.json();
+  } catch (e) {}
+  loadData();
+})();
 
 async function openReportModal() {
   const ticker = new URLSearchParams(location.search).get('ticker') || '';

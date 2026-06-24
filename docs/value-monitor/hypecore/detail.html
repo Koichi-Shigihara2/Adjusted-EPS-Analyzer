@@ -611,6 +611,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // データを直接ロード
 (async () => {
+  let companyNames = {};
+  try {
+    const cn = await fetch('/On-a-journey/common/company_names.json');
+    if (cn.ok) companyNames = await cn.json();
+  } catch(e) {}
+  const companyName = companyNames[_ticker];
+  if (companyName) {
+    const sub = document.querySelector('.page-title-sub');
+    if (sub) sub.textContent = `${_ticker} — ${companyName}`;
+  }
   try {
     const r = await fetch(`data/${_ticker}_poc.json`);
     if (!r.ok) throw new Error(`${_ticker} のデータが見つかりません`);
