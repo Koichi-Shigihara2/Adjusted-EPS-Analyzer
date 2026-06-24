@@ -137,12 +137,13 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - ✅ サイクリカルピークトラップ（景気敏感業種×低PER×FCF急増）
 - ✅ ワンタイムゲイントラップ（dupont.reliability=LOW×FCF外れ値）
 
-#### Phase2残課題（pipeline追加が必要）
-| # | 名称 | 必要な追加データ |
-|---|------|----------------|
-| 2 | シガーバット | 流動資産・流動負債（純流動資産/時価総額比率） |
-| 4 | ディビデンドトラップ | dividend_yield, payout_ratio（yfinance未収録） |
-| 10 | キャッシュトラップ | 海外拘束現金・株主還元履歴（取得手段なし） |
+#### Phase2完了（2026-06-24）
+- ✅ アセットヘビートラップ #7（dupont.asset_turnover近似、pipeline変更なし）
+- ✅ ディビデンドトラップ #4（dividend_yield/payout_ratio yfinance追加、全銘柄再生成）
+- ✅ シガーバット #2（CurrentAssets/CurrentLiabilities → quarterly.py/parser.py/pipeline.py追加、net_current_assets_ratio）
+- ✅ キャッシュトラップ #10（Buyback TTM → quarterly.py/parser.py/ttm_calculator.py/pipeline.py追加）
+
+（Phase2全課題完了）
 
 ### [TANUKI-ROE-2] デュポン分解 業種平均比較・潜在ROE試算
 **優先度:** 低

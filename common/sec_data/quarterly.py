@@ -82,6 +82,11 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "RPO":              ("RevenueRemainingPerformanceObligation", "USD"),
     # GrossProfit逆算用（内部フィールド）
     "_COGS":            ("CostOfRevenue", "USD"),
+    # BS流動項目（シガーバット検出用）
+    "CurrentAssets":      ("AssetsCurrent", "USD"),
+    "CurrentLiabilities": ("LiabilitiesCurrent", "USD"),
+    # 自社株買い（キャッシュトラップ検出用）
+    "Buyback":            ("PaymentsForRepurchaseOfCommonStock", "USD"),
 }
 
 # _COGS フォールバック概念（CostOfRevenue未申告の場合）

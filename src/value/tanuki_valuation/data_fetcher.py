@@ -317,6 +317,8 @@ class TanukiDataFetcher:
         analyst_target_high = None
         analyst_count = None
         analyst_rec_key = ""
+        dividend_yield = 0.0
+        payout_ratio   = 0.0
 
         if HAS_YFINANCE:
             try:
@@ -396,6 +398,12 @@ class TanukiDataFetcher:
                     forward_eps = float(forward_eps_raw)
                     print(f"   [{ticker}] yfinance forwardEps: ${forward_eps:.4f}")
 
+                # 配当（ディビデンドトラップ判定用）
+                dividend_yield = info.get("trailingAnnualDividendYield") or 0.0
+                payout_ratio   = info.get("payoutRatio") or 0.0
+                if dividend_yield > 0:
+                    print(f"   [{ticker}] yfinance dividend yield: {dividend_yield:.1%}, payout ratio: {payout_ratio:.1%}")
+
                 # アナリスト目標株価
                 _at_median = info.get("targetMedianPrice")
                 _at_mean   = info.get("targetMeanPrice")
@@ -426,7 +434,9 @@ class TanukiDataFetcher:
                 analyst_target_high = None
                 analyst_count = None
                 analyst_rec_key = ""
-        
+                dividend_yield = 0.0
+                payout_ratio   = 0.0
+
         # ========================================
         # 3. β決定（beta_config.json > yfinance > セクターデフォルト）
         # ========================================
@@ -529,6 +539,8 @@ class TanukiDataFetcher:
             "analyst_target_high": analyst_target_high,
             "analyst_count": analyst_count,
             "analyst_rec_key": analyst_rec_key,
+            "dividend_yield": dividend_yield,
+            "payout_ratio": payout_ratio,
             "insider_buy_count": insider_buy_count,
             "insider_sell_count": insider_sell_count,
             "insider_net_direction": insider_net_direction,

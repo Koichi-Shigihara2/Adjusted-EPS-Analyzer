@@ -64,6 +64,13 @@ class SECParser:
             "DebtCurrent",
             "CommercialPaper",
         ],
+        # 流動項目（シガーバット検出用）
+        "current_assets": [
+            "AssetsCurrent",
+        ],
+        "current_liabilities": [
+            "LiabilitiesCurrent",
+        ],
 
         # RPO（残存履行義務）- SaaS企業向け
         "rpo": [
@@ -158,7 +165,11 @@ class SECParser:
         "stock_based_compensation": [
             "ShareBasedCompensation",
         ],
-        
+        # 自社株買い（キャッシュトラップ検出用）
+        "buyback": [
+            "PaymentsForRepurchaseOfCommonStock",
+        ],
+
         # 株式数
         "shares_diluted": [
             "WeightedAverageNumberOfDilutedSharesOutstanding",
@@ -421,7 +432,8 @@ class SECParser:
         # BS
         for field in ["total_assets", "stockholders_equity", "total_liabilities",
                       "cash_and_equivalents", "short_term_investments",
-                      "long_term_debt", "short_term_debt"]:
+                      "long_term_debt", "short_term_debt",
+                      "current_assets", "current_liabilities"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["bs"][field] = val
@@ -436,7 +448,7 @@ class SECParser:
         
         # CF
         for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments",
-                      "depreciation_and_amortization", "stock_based_compensation"]:
+                      "depreciation_and_amortization", "stock_based_compensation", "buyback"]:
             val = extracted.get(field, {}).get(period_type, {}).get(period)
             if val is not None:
                 data["cf"][field] = val

@@ -2138,6 +2138,10 @@ class TanukiValuationPipeline:
                     _flow_du = _ttm_entry_du.get("flow") or {}
                     _ni_ttm_du = _flow_du.get("NetIncome", {}).get("val")
                     _rev_ttm_du = _flow_du.get("Revenue", {}).get("val")
+                    _buyback_ttm_du = _flow_du.get("Buyback", {}).get("val")
+                    # buyback_ttmをfinancial_healthに追記（キャッシュトラップ検出用）
+                    if _buyback_ttm_du is not None and "financial_health" in result:
+                        result["financial_health"]["buyback_ttm"] = abs(_buyback_ttm_du)
 
             _du_period = None
             if _q_files_du:
@@ -2147,6 +2151,16 @@ class TanukiValuationPipeline:
                 _total_assets_du = _du_bs.get("total_assets")
                 _equity_du = _du_bs.get("stockholders_equity")
                 _du_period = _du_full.get("period") or _q_files_du[-1]
+                # シガーバット用: 純流動資産/時価総額 を計算
+                _cur_assets_du = _du_bs.get("current_assets")
+                _cur_liab_du   = _du_bs.get("current_liabilities")
+                if _cur_assets_du is not None and _cur_liab_du is not None:
+                    _nca = _cur_assets_du - _cur_liab_du
+                    _shares_du = comps.get("diluted_shares") or 0
+                    _price_du  = comps.get("current_price") or 0
+                    _mktcap_du = _shares_du * _price_du
+                    if _mktcap_du > 0:
+                        result["net_current_assets_ratio"] = round(_nca / _mktcap_du, 4)
 
             # ROE-DUPONT-4: TTM売上が極小（$15M未満）の銘柄は比率指標が無意味化するため除外
             # TANUKI-ROE-3: $10M→$15Mに引き上げ（QBTS: TTM Revenue=$12.4Mが$10M閾値では

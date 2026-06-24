@@ -4,12 +4,16 @@
 
 ## 2026-06-24（実装）
 
-✅ [TSCORE-TRAP-1] 投資トラップ検出パネル Phase1実装（2026-06-24完了）
+✅ [TSCORE-TRAP-1] 投資トラップ検出パネル Phase1+Phase2全件実装（2026-06-24完了）
 - `docs/value-monitor/tanuki_score/index.html` に `renderTrapPanel()` を追加（DuPontパネル直後・`<details>` 折りたたみ形式）
-- 6種のトラップをフロントエンドでリアルタイム計算: バリュー/グロース/バリューデスト/ナラティブ/サイクリカル/ワンタイム
+- 6種をフロントエンドでリアルタイム計算: バリュー/グロース/バリューデスト/ナラティブ/サイクリカル/ワンタイム
 - 🔴高/🟡中/🟢低/– で表示、ホバーで判定根拠ツールチップ、列ソート・0件非表示トグル実装
-- Phase2残課題（#2/#4/#7/#10）はpipeline追加データが必要のためBACKLOGに残存
-- #7アセットヘビートラップを追加実装（2026-06-24）: asset_turnover近似、low<0.5x / medium<0.5x×margin<10% / high<0.3x×margin<5%
+- Phase2実装（全4件）:
+  - #7 アセットヘビー: asset_turnover近似（pipeline変更なし）
+  - #4 ディビデンドトラップ: `data_fetcher.py`+`core_calculator.py` に dividend_yield/payout_ratio 追加
+  - #2 シガーバット: `quarterly.py`+`parser.py` に CurrentAssets/CurrentLiabilities 追加 → `pipeline.py` で net_current_assets_ratio 計算
+  - #10 キャッシュトラップ: `quarterly.py`+`parser.py` に Buyback 追加 → `ttm_calculator.py` FLOW_FIELDSに追加 → `pipeline.py` で buyback_ttm を financial_health に格納
+- 最終TRAP_KEYS: バリュー/グロース/バリデスト/ナラティブ/サイクリカル/ワンタイム/シガーバット/配当/キャッシュ/アセット重（10種）
 
 ✅ [DAILY-PICK-BUG-1] daily_pick.jsonのtanukiキー欠落修正（2026-06-24完了）
 - `main()` 内で `build_data_package()` を明示的に呼び出し、`output` 辞書に `"tanuki": data_pkg["tanuki"]` を追加

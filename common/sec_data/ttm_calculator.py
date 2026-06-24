@@ -18,7 +18,7 @@ TTM_DIR = os.path.join(BASE_DIR, "ttm")
 FLOW_FIELDS = frozenset([
     "OCF", "ICF", "CFF", "CapEx", "FinanceLeasePmts", "SBC", "DA",
     "Revenue", "GrossProfit", "OperatingIncome", "NetIncome",
-    "RD", "SM",
+    "RD", "SM", "Buyback",
 ])
 
 # ストック系フィールド（最新Q末の値）

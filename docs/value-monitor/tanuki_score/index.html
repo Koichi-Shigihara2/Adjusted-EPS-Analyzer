@@ -496,13 +496,19 @@ function renderDetailTable() {
     const dilutionPct = tk?.financial_health?.dilution_3yr_annual_pct ?? null;
     const roicWacc    = tk?.rice?.roic_wacc_ratio ?? null;
     const industry    = tk?.components?.industry ?? '';
-    const fcfHistory  = tk?.fcf_history ?? [];
-    const fcfOutlier  = tk?.fcf_outlier?.detected ?? false;
+    const fcfHistory    = tk?.fcf_history ?? [];
+    const fcfOutlier    = tk?.fcf_outlier?.detected ?? false;
+    const dividendYield       = tk?.components?.dividend_yield ?? 0.0;
+    const payoutRatio         = tk?.components?.payout_ratio   ?? 0.0;
+    const netCurrentAssetsRatio = tk?.net_current_assets_ratio ?? null;
+    const buybackTtm          = tk?.financial_health?.buyback_ttm ?? null;
+    const netDebt             = tk?.financial_health?.net_debt ?? null;
 
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
              matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, dupont,
-             growthRate, dilutionPct, roicWacc, industry, fcfHistory, fcfOutlier };
+             growthRate, dilutionPct, roicWacc, industry, fcfHistory, fcfOutlier,
+             dividendYield, payoutRatio, netCurrentAssetsRatio, buybackTtm, netDebt };
   });
 
   // 5. Categorize
@@ -1052,7 +1058,33 @@ function computeTraps(s) {
     ].filter(Boolean),
   };
 
-  // 7. アセットヘビートラップ: 資産回転率低×純利益率低（固定資産比率の近似）
+  // 7. シガーバット: 純流動資産 > 時価総額 × 低成長率
+  const cb_ratio = s.netCurrentAssetsRatio;
+  const cb_low_growth = s.growthRate != null && s.growthRate < 0.05;
+  const cigar_butt = {
+    level:   (cb_ratio != null && cb_ratio > 1.0 && cb_low_growth) ? 'high'
+           : (cb_ratio != null && cb_ratio > 0.7 && cb_low_growth) ? 'medium'
+           : (cb_ratio != null && cb_ratio > 0.5)                  ? 'low'
+           : 'none',
+    reasons: cb_ratio != null
+      ? [`純流動資産/時価総額=${cb_ratio.toFixed(2)}${cb_low_growth ? ' × 成長率' + ((s.growthRate||0)*100).toFixed(0) + '%' : ''}`]
+      : ['データなし'],
+  };
+
+  // 8. ディビデンドトラップ: 高配当利回り × 高配当性向
+  const dv_yield = s.dividendYield ?? 0.0;
+  const dv_payout = s.payoutRatio ?? 0.0;
+  const dividend_trap = {
+    level:   (dv_yield > 0.04 && dv_payout > 1.0) ? 'high'
+           : (dv_yield > 0.04 && dv_payout > 0.8) ? 'medium'
+           : (dv_yield > 0.04)                     ? 'low'
+           : 'none',
+    reasons: dv_yield > 0
+      ? [`配当利回り${(dv_yield * 100).toFixed(1)}%${dv_payout > 0 ? ' × 配当性向' + (dv_payout * 100).toFixed(0) + '%' : ''}`]
+      : ['無配当'],
+  };
+
+  // 9. アセットヘビートラップ: 資産回転率低×純利益率低（固定資産比率の近似）
   const at_turn = s.dupont?.asset_turnover ?? null;
   const at_marg = s.dupont?.net_margin ?? null;
   const asset_heavy = {
@@ -1065,7 +1097,27 @@ function computeTraps(s) {
       : ['データなし'],
   };
 
-  return { value_trap, growth_trap, value_destruction, narrative_trap, cyclical_peak, one_time_gain, asset_heavy };
+  // 10. キャッシュトラップ: ネットキャッシュ豊富 × 株主還元ほぼゼロ
+  const ct_net_debt = s.netDebt;
+  const ct_mktcap   = (() => {
+    const price = s.per != null && s.funda != null ? null : null; // market_cap直接保持なし
+    return null; // 近似: netDebt絶対値をmarket_capと比較不可のためratio用途限定
+  })();
+  // netDebt < 0 = ネットキャッシュ; financial_health.net_debtは負=現金超過
+  const ct_cash_rich   = ct_net_debt != null && ct_net_debt < 0;
+  const ct_no_dividend = s.dividendYield < 0.005;
+  const ct_no_buyback  = s.buybackTtm != null ? s.buybackTtm === 0 : null;
+  const ct_low_return  = ct_no_dividend && (ct_no_buyback === true || ct_no_buyback === null);
+  const cash_trap = {
+    level:   (ct_cash_rich && ct_low_return) ? 'high'
+           : ct_cash_rich                    ? 'medium'
+           : 'none',
+    reasons: ct_net_debt != null && ct_net_debt < 0
+      ? [`ネットキャッシュ$${(Math.abs(ct_net_debt)/1e9).toFixed(1)}B${ct_low_return ? ' × 還元実績ほぼゼロ' : ''}`]
+      : ['ネットキャッシュなし'],
+  };
+
+  return { value_trap, growth_trap, value_destruction, narrative_trap, cyclical_peak, one_time_gain, cigar_butt, dividend_trap, cash_trap, asset_heavy };
 }
 
 function renderTrapPanel() {
@@ -1074,12 +1126,13 @@ function renderTrapPanel() {
 
   const TRAP_KEYS = [
     'value_trap', 'growth_trap', 'value_destruction',
-    'narrative_trap', 'cyclical_peak', 'one_time_gain', 'asset_heavy',
+    'narrative_trap', 'cyclical_peak', 'one_time_gain',
+    'cigar_butt', 'dividend_trap', 'cash_trap', 'asset_heavy',
   ];
   const TRAP_LABELS = {
     value_trap: 'バリュー', growth_trap: 'グロース', value_destruction: 'バリデスト',
     narrative_trap: 'ナラティブ', cyclical_peak: 'サイクリカル', one_time_gain: 'ワンタイム',
-    asset_heavy: 'アセット重',
+    cigar_butt: 'シガーバット', dividend_trap: '配当', cash_trap: 'キャッシュ', asset_heavy: 'アセット重',
   };
   const LEVEL_SCORE = { high: 3, medium: 2, low: 1, none: 0 };
   const levelIcon   = lv =>
