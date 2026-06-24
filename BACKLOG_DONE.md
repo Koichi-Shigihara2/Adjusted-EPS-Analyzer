@@ -11,6 +11,24 @@
 - 既存の全銘柄詳細テーブルのソートロジック（`_sortCol`/`_sortDir`・`thArr`等）を流用
 - 初期状態はROE(DuPont)降順（従来の固定ソートと同一）
 
+✅ [TSCORE-DUPONT-3] ROE(DuPont)と実績ROEの乖離警告（2026-06-24完了）
+- **対象**: `docs/value-monitor/tanuki_score/index.html`
+- 閾値: |DuPont ROE − 実績ROE| ≥ 10%pt
+- 表示: アンバー背景（rgba(245,158,11,.06)）+ ROE(実績)セルに⚠バッジ
+- ツールチップ: 乖離幅・両値・要因説明（info-tooltip.js流用）
+- 既存の黄色⚠（信頼性・極端値）と色違いで共存
+- 現データで50銘柄/86銘柄が警告対象
+
+✅ [SILO-LAYOUT-2] 「総合スコア判定根拠」配置・コンパクト化（2026-06-24完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html`
+- 旧位置: detail-bottom後ろ（画面最下部）→ 新位置: pillar-row直下・valuation bar上
+- `<details>`タグでデフォルト折りたたみ（▶ 総合スコア 判定根拠）
+
+✅ [SILO-LAYOUT-3] 各詳細セクションを評点カード下にネスト配置（2026-06-24完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html`
+- 変更後構造: pillar-row内の各カード（①②③）直下に対応する詳細を折りたたみで配置
+- 総合スコア判定根拠はpillar-row直下に配置（SILO-LAYOUT-2と統合）
+
 ---
 
 ## 2026-06-24（調査）
