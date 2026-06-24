@@ -4,6 +4,12 @@
 
 ## 2026-06-24（実装）
 
+✅ [TSCORE-TRAP-1] 投資トラップ検出パネル Phase1実装（2026-06-24完了）
+- `docs/value-monitor/tanuki_score/index.html` に `renderTrapPanel()` を追加（DuPontパネル直後・`<details>` 折りたたみ形式）
+- 6種のトラップをフロントエンドでリアルタイム計算: バリュー/グロース/バリューデスト/ナラティブ/サイクリカル/ワンタイム
+- 🔴高/🟡中/🟢低/– で表示、ホバーで判定根拠ツールチップ、列ソート・0件非表示トグル実装
+- Phase2残課題（#2/#4/#7/#10）はpipeline追加データが必要のためBACKLOGに残存
+
 ✅ [DAILY-PICK-BUG-1] daily_pick.jsonのtanukiキー欠落修正（2026-06-24完了）
 - `main()` 内で `build_data_package()` を明示的に呼び出し、`output` 辞書に `"tanuki": data_pkg["tanuki"]` を追加
 - `daily_pick.json` に `tanuki`（`fcf_conversion_rate` 等16フィールド）が正常出力されることを確認

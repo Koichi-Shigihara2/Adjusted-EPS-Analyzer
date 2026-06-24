@@ -237,6 +237,7 @@
   <div id="cat-board"></div>
   <div id="rice-matrix"></div>
   <div id="dupont-panel"></div>
+  <div id="trap-panel"></div>
   <div id="detail-tbl"></div>
 
   <!-- ④ 判定実績バックテスト -->
@@ -306,6 +307,22 @@ function sortDuPont(col) {
   if (_dpSortCol === col) _dpSortDir = -_dpSortDir;
   else { _dpSortCol = col; _dpSortDir = -1; }
   renderDuPontPanel();
+}
+
+// Trap panel sort state
+let _trapSortCol = 'trapCount';
+let _trapSortDir = -1;
+let _trapShowAll = false;
+
+function sortTrap(col) {
+  if (_trapSortCol === col) _trapSortDir = -_trapSortDir;
+  else { _trapSortCol = col; _trapSortDir = -1; }
+  renderTrapPanel();
+}
+
+function toggleTrapAll() {
+  _trapShowAll = !_trapShowAll;
+  renderTrapPanel();
 }
 
 const COL_KEYS = ['ticker','cat','funda','timing','revYoy','rule40','epsYoy','fcf','upside','stage'];
@@ -474,11 +491,18 @@ function renderDetailTable() {
     const peg = tk?.components?.peg ?? null;
     const ps  = tk?.components?.ps  ?? null;
 
-    const dupont = tk?.dupont ?? null;
+    const dupont      = tk?.dupont ?? null;
+    const growthRate  = tk?.growth?.rate ?? null;
+    const dilutionPct = tk?.financial_health?.dilution_3yr_annual_pct ?? null;
+    const roicWacc    = tk?.rice?.roic_wacc_ratio ?? null;
+    const industry    = tk?.components?.industry ?? '';
+    const fcfHistory  = tk?.fcf_history ?? [];
+    const fcfOutlier  = tk?.fcf_outlier?.detected ?? false;
 
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, dupont };
+             matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, dupont,
+             growthRate, dilutionPct, roicWacc, industry, fcfHistory, fcfOutlier };
   });
 
   // 5. Categorize
@@ -613,6 +637,9 @@ function renderDetailTable() {
 
   // ⑥ DuPont分解パネル
   renderDuPontPanel();
+
+  // ⑦ 投資トラップ検出パネル
+  renderTrapPanel();
 
   // ④ 判定実績バックテスト
   const allEntries = await loadScoreHistory(tickers);
@@ -778,10 +805,11 @@ function renderScoreVerify(allEntries) {
     ? `<span style="color:${r>=0?'var(--grn)':'var(--red)'}">${r>=0?'+':''}${r.toFixed(1)}%</span>`
     : '<span style="color:var(--mut)">—</span>';
 
-  const recentRows = [...allEntries]
+  const recentArr = [...allEntries]
     .filter(e => e.date && e.tanuki_score)
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 20)
+    .slice(0, 20);
+  const recentRows = recentArr
     .map(e => `<tr>
       <td style="font-family:var(--mono);font-weight:700"><a href="${T_BASE}stock.html?ticker=${e.ticker}" style="color:var(--txt);text-decoration:none">${e.ticker}</a></td>
       <td style="font-family:var(--mono);font-size:11px;color:var(--mut)">${e.date}</td>
@@ -797,9 +825,9 @@ function renderScoreVerify(allEntries) {
   el.innerHTML = `
     <h2 class="section-title sv-section-toggle" onclick="toggleScoreVerify()">
       ④ 判定実績 — TANUKI SCORE バックテスト
-      <span class="sv-toggle-hint" id="sv-arrow">▶ 展開して見る</span>
+      <span class="sv-toggle-hint" id="sv-arrow">▲ 折りたたむ</span>
     </h2>
-    <div id="sv-body" style="display:none">
+    <div id="sv-body">
     <div class="sv-card">
       <div class="sv-subtitle">
         TANUKI SCOREが BUY / WATCH / HOLD 等と判定した銘柄を、判定日から30日後・60日後に保有した場合のリターン実績。母数が少ないため参考値として活用。
@@ -813,7 +841,7 @@ function renderScoreVerify(allEntries) {
         </table>
       </div>
       <div class="sv-note">※ n &lt; 10 の場合は統計的信頼性が低い。過去実績は将来を保証しない。</div>
-      <div class="sv-sec-lbl">直近20件</div>
+      <div class="sv-sec-lbl">直近${recentArr.length}件（全銘柄横断・判定日降順）</div>
       <div class="sv-table-wrap">
         <table class="sv-table">
           <thead><tr><th>銘柄</th><th>判定日</th><th>判定</th><th>判定時株価</th><th>30日後</th><th>60日後</th></tr></thead>
@@ -923,6 +951,205 @@ function renderDuPontPanel() {
         <tbody>${trs}</tbody>
       </table>
     </div>
+  </details>`;
+}
+
+// ─── ⑦ 投資トラップ検出パネル ────────────────────────────────────
+function computeTraps(s) {
+  const fcfSorted = [...s.fcfHistory].sort((a, b) => a.year - b.year);
+  const latestFcf = fcfSorted.length > 0 ? fcfSorted[fcfSorted.length - 1].fcf : null;
+
+  // 1. バリュートラップ: 低PER × FCF減少トレンド × 低成長率
+  const vt_low_per     = s.per != null && s.per > 0 && s.per < 15;
+  const vt_fcf_decline = fcfSorted.length >= 2 &&
+                         fcfSorted[fcfSorted.length - 1].fcf < fcfSorted[fcfSorted.length - 2].fcf &&
+                         fcfSorted[fcfSorted.length - 2].fcf > 0;
+  const vt_low_growth  = s.growthRate != null && s.growthRate < 0.05;
+  const vt_count       = [vt_low_per, vt_fcf_decline, vt_low_growth].filter(Boolean).length;
+  const value_trap = {
+    level:   vt_count >= 3 ? 'high' : vt_count >= 2 ? 'medium' : vt_count >= 1 ? 'low' : 'none',
+    reasons: [
+      vt_low_per     ? `低PER(${s.per.toFixed(1)}x)` : null,
+      vt_fcf_decline ? 'FCF減少トレンド' : null,
+      vt_low_growth  ? `低成長率(${((s.growthRate || 0) * 100).toFixed(0)}%)` : null,
+    ].filter(Boolean),
+  };
+
+  // 2. グローストラップ: 高成長 × FCFマイナス × 高希薄化
+  const gt_high_growth = s.growthRate != null && s.growthRate > 0.20;
+  const gt_fcf_neg     = latestFcf != null && latestFcf < 0;
+  const gt_dilution    = s.dilutionPct != null && s.dilutionPct > 5;
+  const gt_count       = [gt_high_growth, gt_fcf_neg, gt_dilution].filter(Boolean).length;
+  const growth_trap = {
+    level:   gt_count >= 3 ? 'high' : gt_count >= 2 ? 'medium' : gt_count >= 1 ? 'low' : 'none',
+    reasons: [
+      gt_high_growth ? `高成長率(${((s.growthRate || 0) * 100).toFixed(0)}%)` : null,
+      gt_fcf_neg     ? `FCFマイナス(${latestFcf != null ? (latestFcf / 1e6).toFixed(0) + 'M' : '?'})` : null,
+      gt_dilution    ? `高希薄化(${s.dilutionPct.toFixed(1)}%/yr)` : null,
+    ].filter(Boolean),
+  };
+
+  // 3. バリューデストラクション: ROIC/WACC < 1.0
+  const value_destruction = {
+    level:   s.roicWacc == null ? 'none'
+           : s.roicWacc < 0.8  ? 'high'
+           : s.roicWacc < 1.0  ? 'medium'
+           : s.roicWacc < 1.2  ? 'low'
+           : 'none',
+    reasons: s.roicWacc != null
+      ? [`ROIC/WACC=${s.roicWacc.toFixed(2)}${s.roicWacc < 1.0 ? '（資本コスト未達）' : ''}`]
+      : ['データなし'],
+  };
+
+  // 4. ナラティブトラップ: 高HypePhase × FCFマイナス × 大幅割高
+  const nt_high_phase = s.stage != null && s.stage >= 3;
+  const nt_fcf_neg    = latestFcf != null && latestFcf < 0;
+  const nt_high_prem  = s.upside != null && s.upside < -20;
+  const nt_count      = [nt_high_phase, nt_fcf_neg, nt_high_prem].filter(Boolean).length;
+  const narrative_trap = {
+    level:   nt_count >= 3 ? 'high' : nt_count >= 2 ? 'medium' : nt_count >= 1 ? 'low' : 'none',
+    reasons: [
+      nt_high_phase ? `HypePhase${s.stage}(${['', '蓄積期', '上昇期', '陶酔期', '崩壊期'][s.stage] || '?'})` : null,
+      nt_fcf_neg    ? 'FCFマイナス' : null,
+      nt_high_prem  ? `割高乖離${s.upside?.toFixed(0)}%` : null,
+    ].filter(Boolean),
+  };
+
+  // 5. サイクリカルピークトラップ: 景気敏感業種 × 低PER × FCF急増
+  const CYCLICAL_KEYWORDS = [
+    'Steel', 'Aluminum', 'Copper', 'Gold', 'Silver', 'Metals', 'Mining',
+    'Oil', 'Gas', 'Coal', 'Chemicals', 'Agricultural',
+    'Auto', 'Automobile', 'Airlines', 'Shipping', 'Marine',
+    'Semiconductor Equipment', 'Paper', 'Lumber', 'Timber',
+  ];
+  const cy_cyclical  = CYCLICAL_KEYWORDS.some(k => s.industry.includes(k));
+  const cy_low_per   = s.per != null && s.per > 0 && s.per < 12;
+  const cy_fcf_spike = (() => {
+    if (fcfSorted.length < 3) return false;
+    const latest = fcfSorted[fcfSorted.length - 1].fcf;
+    const avg    = fcfSorted.slice(0, -1).reduce((sum, e) => sum + e.fcf, 0) / (fcfSorted.length - 1);
+    return avg > 0 && latest > avg * 1.5;
+  })();
+  const cy_count = [cy_cyclical, cy_low_per, cy_fcf_spike].filter(Boolean).length;
+  const cyclical_peak = {
+    level:   cy_count >= 3 ? 'high' : cy_count >= 2 ? 'medium' : cy_count >= 1 ? 'low' : 'none',
+    reasons: [
+      cy_cyclical  ? `景気敏感(${s.industry})` : null,
+      cy_low_per   ? `低PER(${s.per.toFixed(1)}x)` : null,
+      cy_fcf_spike ? 'FCF急増(直近>過去平均×1.5)' : null,
+    ].filter(Boolean),
+  };
+
+  // 6. ワンタイムゲイントラップ: dupont.reliability=LOW × FCF外れ値
+  const ot_low_rel = s.dupont?.reliability === 'LOW';
+  const ot_fcf_out = s.fcfOutlier;
+  const ot_count   = [ot_low_rel, ot_fcf_out].filter(Boolean).length;
+  const one_time_gain = {
+    level:   ot_count >= 2 ? 'high' : ot_count >= 1 ? 'medium' : 'none',
+    reasons: [
+      ot_low_rel ? `DuPont信頼性LOW(${s.dupont?.reliability_reason || '単四半期NI集中'})` : null,
+      ot_fcf_out ? 'FCF外れ値フラグ' : null,
+    ].filter(Boolean),
+  };
+
+  return { value_trap, growth_trap, value_destruction, narrative_trap, cyclical_peak, one_time_gain };
+}
+
+function renderTrapPanel() {
+  const el = document.getElementById('trap-panel');
+  if (!el || !_stocks.length) return;
+
+  const TRAP_KEYS = [
+    'value_trap', 'growth_trap', 'value_destruction',
+    'narrative_trap', 'cyclical_peak', 'one_time_gain',
+  ];
+  const TRAP_LABELS = {
+    value_trap: 'バリュー', growth_trap: 'グロース', value_destruction: 'バリデスト',
+    narrative_trap: 'ナラティブ', cyclical_peak: 'サイクリカル', one_time_gain: 'ワンタイム',
+  };
+  const LEVEL_SCORE = { high: 3, medium: 2, low: 1, none: 0 };
+  const levelIcon   = lv =>
+    lv === 'high'   ? '🔴' :
+    lv === 'medium' ? '🟡' :
+    lv === 'low'    ? '🟢' :
+    '<span style="color:var(--mut)">–</span>';
+  const CAT_COLOR = {
+    BUY:'#4ade80', GROWTH_PREMIUM:'#14b8a6', WATCH:'#facc15',
+    HOLD:'#94a3b8', TRIM:'#fb923c', SELL:'#f87171', PASS:'#475569',
+  };
+
+  const computed = _stocks.map(s => {
+    const traps = computeTraps(s);
+    const trapCount = TRAP_KEYS.filter(k => traps[k].level !== 'none').length;
+    const sortKeys = {};
+    for (const k of TRAP_KEYS) sortKeys[k + '_s'] = LEVEL_SCORE[traps[k].level];
+    return { ...s, traps, trapCount, ...sortKeys };
+  });
+
+  computed.sort((a, b) => {
+    if (_trapSortCol === 'ticker') return _trapSortDir * a.ticker.localeCompare(b.ticker);
+    const av = a[_trapSortCol] ?? 0;
+    const bv = b[_trapSortCol] ?? 0;
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1; if (bv == null) return -1;
+    return _trapSortDir * (av - bv);
+  });
+
+  const withTraps = computed.filter(s => s.trapCount > 0);
+  const visible   = _trapShowAll ? computed : withTraps;
+  const hiddenCnt = computed.length - withTraps.length;
+
+  const trapTh = (col, label, align = 'center') => {
+    const isSorted = _trapSortCol === col;
+    const arr   = isSorted ? (_trapSortDir === -1 ? '▼' : '▲') : '';
+    const color = isSorted ? 'var(--acc)' : 'var(--mut)';
+    return `<th onclick="sortTrap('${col}')"
+      style="text-align:${align};padding:4px 8px;cursor:pointer;color:${color};user-select:none;white-space:nowrap">
+      ${label}${arr ? `<span style="margin-left:2px;font-size:9px;opacity:.7">${arr}</span>` : ''}
+    </th>`;
+  };
+
+  const rows = visible.map(s => {
+    const catDot   = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${CAT_COLOR[s.cat] || '#475569'};margin-right:4px"></span>`;
+    const cntColor = s.trapCount >= 3 ? 'var(--red)' : s.trapCount >= 2 ? 'var(--amb)' : s.trapCount >= 1 ? '#facc15' : 'var(--mut)';
+    const cells    = TRAP_KEYS.map(k => {
+      const t   = s.traps[k];
+      const tip = t.reasons.length ? t.reasons.join(' / ') : '検出なし';
+      return `<td style="text-align:center"><span data-info-text="${escAttr(tip)}" style="cursor:default">${levelIcon(t.level)}</span></td>`;
+    }).join('');
+    return `<tr>
+      <td style="white-space:nowrap;font-weight:600">${catDot}<a href="${T_BASE}stock.html?ticker=${s.ticker}" style="color:inherit;text-decoration:none">${s.ticker}</a></td>
+      <td style="text-align:center;font-family:var(--mono);font-weight:600;color:${cntColor}">${s.trapCount > 0 ? s.trapCount : '<span style="color:var(--mut)">0</span>'}</td>
+      ${cells}
+    </tr>`;
+  }).join('');
+
+  const toggleLabel = _trapShowAll
+    ? `▲ トラップ0件の${hiddenCnt}銘柄を折りたたむ`
+    : `▶ トラップ0件の${hiddenCnt}銘柄を表示`;
+
+  el.innerHTML = `
+  <details style="margin:10px 0 10px;border:1px solid var(--border);border-radius:6px;overflow:hidden">
+    <summary style="padding:10px 14px;cursor:pointer;background:var(--surface);font-weight:600;font-size:13px;list-style:none">
+      ▶ 投資トラップ検出 — Phase1: 6種（${withTraps.length}銘柄に検出）
+    </summary>
+    <div style="padding:8px 14px 4px;overflow-x:auto">
+      <p style="font-size:11px;color:var(--mut);margin:0 0 8px">
+        🔴高 / 🟡中 / 🟢低 / – でトラップ検出度を表示。セルにホバーで判定根拠を確認。
+        Phase1: バリュートラップ・グローストラップ・バリューデストラクション・ナラティブトラップ・サイクリカルピーク・ワンタイムゲイン
+      </p>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="border-bottom:1px solid var(--border)">
+            ${trapTh('ticker', '銘柄', 'left')}
+            ${trapTh('trapCount', 'トラップ数')}
+            ${TRAP_KEYS.map(k => trapTh(k + '_s', TRAP_LABELS[k])).join('')}
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+    ${hiddenCnt > 0 ? `<div style="padding:6px 14px 10px;font-size:11px;color:var(--mut);cursor:pointer;text-align:center" onclick="toggleTrapAll()">${toggleLabel}</div>` : ''}
   </details>`;
 }
 
