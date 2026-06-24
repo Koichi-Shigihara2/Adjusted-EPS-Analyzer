@@ -4,6 +4,10 @@
 
 ## 2026-06-24（実装）
 
+✅ [MP-BIZDAY-1] MARKET PULSE 営業日ベース化（2026-06-24完了）
+- `Market_Pulse_Update.yml` の cron を `* * *` → `* * 1-5` に変更（月〜金のみ実行）
+- 土日はワークフロー自体をスキップ。前日比計算・フロントエンドの変更は不要（yfinanceが営業日のみ返すため前日比はすでに正しい）
+
 ✅ [SEC-CTRL-1] 内部統制評価機能 TANUKI TAIL 実装（2026-06-24完了）
 - **`src/tail/sec_ctrl_fetcher.py`** 新規作成
   - EDGAR 10-Q「Controls and Procedures」(Part I Item 4) を取得・解析

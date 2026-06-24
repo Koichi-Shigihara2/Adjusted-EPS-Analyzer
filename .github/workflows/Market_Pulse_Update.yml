@@ -2,7 +2,7 @@ name: Market_Pulse_Update
 
 on:
   schedule:
-    - cron: "35 21 * * *"
+    - cron: "35 21 * * 1-5"  # 月〜金のみ（土日スキップ）
   workflow_dispatch:
     branches:
       - kaihatsu
