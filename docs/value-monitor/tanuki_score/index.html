@@ -884,13 +884,18 @@ function renderDuPontPanel() {
     const flagBadge = flagTitle
       ? `<span data-info-text="${escAttr(flagTitle)}" style="margin-left:4px;color:#facc15">⚠</span>`
       : '';
-    return `<tr>
+    // TSCORE-DUPONT-3: DuPont ROEと実績ROEの乖離警告（10%pt以上）
+    const divWarn = s.roe != null && dp.roe_decomposed != null && Math.abs(dp.roe_decomposed - s.roe) >= 0.10;
+    const divBadge = divWarn
+      ? `<span data-info-text="${escAttr('DuPont ROEと実績ROEの乖離が' + (Math.abs(dp.roe_decomposed - s.roe)*100).toFixed(1) + '%ptあります（DuPont: ' + pct(dp.roe_decomposed) + ' / 実績: ' + pct(s.roe) + '）。一過性損益・資本構造変化等が要因の可能性があります')}" style="margin-left:4px;color:#f59e0b;cursor:help">⚠</span>`
+      : '';
+    return `<tr${divWarn ? ' style="background:rgba(245,158,11,.06)"' : ''}>
       <td style="font-weight:600">${catDot}${s.ticker}${flagBadge}</td>
       <td class="num" style="color:${roeColor}">${pct(dp.roe_decomposed)}</td>
       <td class="num">${pct(dp.net_margin)}</td>
       <td class="num">${x2(dp.asset_turnover)}</td>
       <td class="num">${x2(dp.financial_leverage)}</td>
-      <td class="num" style="color:var(--mut)">${pct(s.roe)}</td>
+      <td class="num" style="color:var(--mut)">${pct(s.roe)}${divBadge}</td>
     </tr>`;
   }).join('');
 

@@ -1009,25 +1009,79 @@ function buildDetail(ticker, d) {
   <div class="detail-inner">
 
   <div class="pillar-row">
-    <div class="pillar">
-      <div class="pillar-title">① 赤字品質</div>
-      <div class="pillar-score" style="color:${pillarColor(s1)}">${s1}</div>
-      <div class="pillar-max">/100</div>
-      <div class="pillar-label">${deficitBadge(dq.verdict)}</div>
+    <div style="background:var(--sur2)">
+      <div class="pillar">
+        <div class="pillar-title">① 赤字品質</div>
+        <div class="pillar-score" style="color:${pillarColor(s1)}">${s1}</div>
+        <div class="pillar-max">/100</div>
+        <div class="pillar-label">${deficitBadge(dq.verdict)}</div>
+      </div>
+      <details style="border-top:1px solid var(--bdr)">
+        <summary style="padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--mut);user-select:none;list-style:none">▶ 詳細</summary>
+        <div class="detail-col" style="border-top:1px solid var(--bdr)">
+          <div class="detail-col-title">① 赤字品質 · 詳細</div>
+          <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">成長効率</div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">売上成長率（3年）<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>=20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率${dq.gross_margin_derived?'<span class="tip-wrap" style="margin-left:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--amb);border:1px solid var(--amb);border-radius:50%;width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;line-height:1">逆</span><span class="tip-box" style="width:220px">売上高 − 原価コスト（CostOfRevenue）から逆算した推定値。SEC が GrossProfit タグを未申告のため。</span></span>':''}<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">Rule of 40<span class="tip-icon">?</span><span class="tip-box">売上成長率(3年CAGR)+営業利益率の合計。40以上が優良SaaS基準</span></span></span><span class="detail-val ${dq.rule_of_40!=null&&dq.rule_of_40>=40?'pos':''}">${dq.rule_of_40!=null?dq.rule_of_40.toFixed(1):'—'}</span></div>
+          <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">投資性赤字分析</div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成長投資比率<span class="tip-icon">?</span><span class="tip-box">（研究開発費+販売管理費）÷売上高×100。高いほど将来への積極投資中</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio!=null||dq.sm_ratio!=null?(dq.rnd_ratio||0)+(dq.sm_ratio||0):null)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成熟想定利益<span class="tip-icon">?</span><span class="tip-box">純利益+R&D+販管費。先行投資を除いた「成熟後の利益」試算。プラスなら本業収益力あり</span></span></span><span class="detail-val ${dq.mature_profit!=null?(dq.mature_profit>=0?'pos':'neg'):''}">${fmtB(dq.mature_profit)}${dq.mature_profit_note?` <span style="font-size:9px;color:var(--mut)">※投資除外後も赤字</span>`:''}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC調整後FCF<span class="tip-icon">?</span><span class="tip-box">フリーキャッシュフロー − 株式報酬。SBCは非現金だが株主への希薄化コストとして控除</span></span></span><span class="detail-val ${dq.sbc_adjusted_fcf!=null?(dq.sbc_adjusted_fcf>=0?'pos':'neg'):''}">${fmtB(dq.sbc_adjusted_fcf)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC比率（売上比）<span class="tip-icon">?</span><span class="tip-box">株式報酬÷売上高×100。≥15%=HIGH希薄化 / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span><span class="detail-val">${fmtPct(dq.sbc_ratio)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBCトレンド（前年比）<span class="tip-icon">?</span><span class="tip-box">株式報酬の前年比変化率。増加=希薄化拡大(赤) / 減少=改善(緑)</span></span></span><span class="detail-val ${dq.sbc_yoy_change!=null?(dq.sbc_yoy_change>0?'neg':'pos'):''}">${fmtPct(dq.sbc_yoy_change)}</span></div>
+          <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">判定</div>
+          <div class="detail-row"><span class="detail-key">投資性赤字</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">赤字固定化リスク<span class="tip-icon">?</span><span class="tip-box">良い赤字×OCF改善中→LOW / 悪い赤字×悪化中→HIGH</span></span></span>${riskBadge(dq.deficit_fixed_risk)}</div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">希薄化リスク<span class="tip-icon">?</span><span class="tip-box">SBC比率による株主希薄化リスク。≥15%=HIGH / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span>${riskBadge(dq.dilution_risk)}</div>
+        </div>
+      </details>
     </div>
-    <div class="pillar">
-      <div class="pillar-title">② 生存能力</div>
-      <div class="pillar-score" style="color:${pillarColor(s2)}">${s2}</div>
-      <div class="pillar-max">/100</div>
-      <div class="pillar-label">${fmtRunway(ra.runway_months)}</div>
+    <div style="background:var(--sur2)">
+      <div class="pillar">
+        <div class="pillar-title">② 生存能力</div>
+        <div class="pillar-score" style="color:${pillarColor(s2)}">${s2}</div>
+        <div class="pillar-max">/100</div>
+        <div class="pillar-label">${fmtRunway(ra.runway_months)}</div>
+      </div>
+      <details style="border-top:1px solid var(--bdr)">
+        <summary style="padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--mut);user-select:none;list-style:none">▶ 詳細</summary>
+        <div class="detail-col" style="border-top:1px solid var(--bdr)">
+          <div class="detail-col-title">② 生存能力 · 詳細</div>
+          <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${{'SAFE':'安全','WATCH':'要注意','DANGER':'危険','UNKNOWN':'不明'}[ra.verdict]||ra.verdict||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${(ra.monthly_burn||0)>0?`+${fmtB(ra.monthly_burn)}/月 <span style="font-size:9px;color:var(--mut)">（OCF ${fmtB(ra.ocf_annual)} - CapEx ${fmtB(ra.capex_annual)} = CF黒字）</span>`:`${fmtB(ra.monthly_burn)}/月`}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
+          <div id="eps-be-${ticker}" style="display:none;padding:8px 0;border-top:1px solid var(--bdr);margin-top:6px"></div>
+        </div>
+      </details>
     </div>
-    <div class="pillar">
-      <div class="pillar-title">③ 黒字化パス</div>
-      <div class="pillar-score" style="color:${pillarColor(s3)}">${s3}</div>
-      <div class="pillar-max">/100</div>
-      <div class="pillar-label" style="color:${trendJaColor[pp.ocf_trend]||'var(--mut)'};font-size:12px">${trendJa[pp.ocf_trend]||'—'}</div>
+    <div style="background:var(--sur2)">
+      <div class="pillar">
+        <div class="pillar-title">③ 黒字化パス</div>
+        <div class="pillar-score" style="color:${pillarColor(s3)}">${s3}</div>
+        <div class="pillar-max">/100</div>
+        <div class="pillar-label" style="color:${trendJaColor[pp.ocf_trend]||'var(--mut)'};font-size:12px">${trendJa[pp.ocf_trend]||'—'}</div>
+      </div>
+      <details style="border-top:1px solid var(--bdr)">
+        <summary style="padding:6px 12px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:.12em;color:var(--mut);user-select:none;list-style:none">▶ 詳細</summary>
+        <div class="detail-col" style="border-top:1px solid var(--bdr)">
+          <div class="detail-col-title">③ 黒字化パス · 詳細</div>
+          <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
+          <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
+          ${pp.discontinuous_growth ? `<div style="font-size:10px;color:var(--amb);margin-top:4px;">⚠ 非連続成長の可能性あり<br><span style="color:var(--mut)">${pp.discontinuous_growth_note}</span></div>` : ''}
+        </div>
+      </details>
     </div>
   </div>
+  <details style="margin-bottom:16px;background:var(--sur2);border:1px solid var(--bdr)">
+    <summary style="padding:8px 14px;cursor:pointer;font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);text-transform:uppercase;user-select:none;list-style:none">▶ 総合スコア 判定根拠</summary>
+    <div style="padding:12px 14px;border-top:1px solid var(--bdr);font-size:12px;color:var(--mut);line-height:1.8">
+      ${formatSummary(d.summary)}${pp.discontinuous_growth ? '<div style="margin-top:8px;font-size:10px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:6px">※黒字化予測は過去トレンドの外挿であり、直近の急成長局面では実際の黒字化が予測より早まる可能性があります</div>' : ''}
+    </div>
+  </details>
 
   ${(()=>{const v=d.valuation||{};if(!v.market_cap&&!v.current_price)return '';return `<div class="val-bar"><div class="val-item"><div class="val-label">時価総額</div><div class="val-value">${fmtB(v.market_cap)}</div></div><div class="val-item"><div class="val-label">株価</div><div class="val-value">${v.current_price!=null?'$'+v.current_price.toFixed(2):'—'}</div></div><div class="val-item"><div class="val-label">PSR</div><div class="val-value">${v.psr!=null?v.psr+'倍':'—'}</div></div><div class="val-item"><div class="val-label">EV/Sales</div><div class="val-value">${v.ev_sales!=null?v.ev_sales+'倍':'—'}</div></div><div class="val-item"><div class="val-label">ネットキャッシュ</div><div class="val-value" style="color:${(v.net_cash??0)>=0?'var(--grn)':'var(--red)'}">${fmtB(v.net_cash)}</div></div></div>`;})()}
   <div class="chart-row">
@@ -1049,45 +1103,6 @@ function buildDetail(ticker, d) {
     </div>
   </div>
 
-  <div class="detail-bottom">
-    <div class="detail-col">
-      <div class="detail-col-title">① 赤字品質 · 詳細</div>
-      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">成長効率</div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">売上成長率（3年）<span class="tip-icon">?</span><span class="tip-box">直近3年の売上成長率(年率複利)。≥50%=超高成長/≥30%=高成長/≥20%=成長中/≥10%=緩成長</span></span></span><span class="detail-val ${(dq.cagr_3yr||0)>=20?'pos':''}">${fmtPct(dq.cagr_3yr)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">粗利率${dq.gross_margin_derived?'<span class="tip-wrap" style="margin-left:2px"><span style="font-family:var(--mono);font-size:9px;color:var(--amb);border:1px solid var(--amb);border-radius:50%;width:13px;height:13px;display:inline-flex;align-items:center;justify-content:center;line-height:1">逆</span><span class="tip-box" style="width:220px">売上高 − 原価コスト（CostOfRevenue）から逆算した推定値。SEC が GrossProfit タグを未申告のため。</span></span>':''}<span class="tip-icon">?</span><span class="tip-box">売上総利益÷売上高×100。≥70%=高収益構造(SaaS等)/≥50%=良好/≥30%=普通</span></span></span><span class="detail-val">${fmtPct(dq.gross_margin)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">Rule of 40<span class="tip-icon">?</span><span class="tip-box">売上成長率(3年CAGR)+営業利益率の合計。40以上が優良SaaS基準</span></span></span><span class="detail-val ${dq.rule_of_40!=null&&dq.rule_of_40>=40?'pos':''}">${dq.rule_of_40!=null?dq.rule_of_40.toFixed(1):'—'}</span></div>
-      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">投資性赤字分析</div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成長投資比率<span class="tip-icon">?</span><span class="tip-box">（研究開発費+販売管理費）÷売上高×100。高いほど将来への積極投資中</span></span></span><span class="detail-val">${fmtPct(dq.rnd_ratio!=null||dq.sm_ratio!=null?(dq.rnd_ratio||0)+(dq.sm_ratio||0):null)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">成熟想定利益<span class="tip-icon">?</span><span class="tip-box">純利益+R&D+販管費。先行投資を除いた「成熟後の利益」試算。プラスなら本業収益力あり</span></span></span><span class="detail-val ${dq.mature_profit!=null?(dq.mature_profit>=0?'pos':'neg'):''}">${fmtB(dq.mature_profit)}${dq.mature_profit_note?` <span style="font-size:9px;color:var(--mut)">※投資除外後も赤字</span>`:''}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC調整後FCF<span class="tip-icon">?</span><span class="tip-box">フリーキャッシュフロー − 株式報酬。SBCは非現金だが株主への希薄化コストとして控除</span></span></span><span class="detail-val ${dq.sbc_adjusted_fcf!=null?(dq.sbc_adjusted_fcf>=0?'pos':'neg'):''}">${fmtB(dq.sbc_adjusted_fcf)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBC比率（売上比）<span class="tip-icon">?</span><span class="tip-box">株式報酬÷売上高×100。≥15%=HIGH希薄化 / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span><span class="detail-val">${fmtPct(dq.sbc_ratio)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">SBCトレンド（前年比）<span class="tip-icon">?</span><span class="tip-box">株式報酬の前年比変化率。増加=希薄化拡大(赤) / 減少=改善(緑)</span></span></span><span class="detail-val ${dq.sbc_yoy_change!=null?(dq.sbc_yoy_change>0?'neg':'pos'):''}">${fmtPct(dq.sbc_yoy_change)}</span></div>
-      <div style="font-size:9px;color:var(--mut);margin-top:10px;letter-spacing:.1em;text-transform:uppercase">判定</div>
-      <div class="detail-row"><span class="detail-key">投資性赤字</span><span class="detail-val">${deficitBadge(dq.verdict)}</span></div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">赤字固定化リスク<span class="tip-icon">?</span><span class="tip-box">良い赤字×OCF改善中→LOW / 悪い赤字×悪化中→HIGH</span></span></span>${riskBadge(dq.deficit_fixed_risk)}</div>
-      <div class="detail-row"><span class="detail-key"><span class="tip-wrap">希薄化リスク<span class="tip-icon">?</span><span class="tip-box">SBC比率による株主希薄化リスク。≥15%=HIGH / ≥8%=MEDIUM / &lt;8%=LOW</span></span></span>${riskBadge(dq.dilution_risk)}</div>
-    </div>
-    <div class="detail-col" style="display:flex;flex-direction:column;gap:0">
-      <div>
-        <div class="detail-col-title">② 生存能力 · 詳細</div>
-        <div class="detail-row"><span class="detail-key">判定</span><span class="detail-val ${ra.verdict==='DANGER'?'neg':ra.verdict==='SAFE'?'pos':''}">${{'SAFE':'安全','WATCH':'要注意','DANGER':'危険','UNKNOWN':'不明'}[ra.verdict]||ra.verdict||'—'}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">現金<span class="tip-icon">?</span><span class="tip-box">現金及び現金同等物+短期投資の合計</span></span></span><span class="detail-val">${fmtB(ra.cash)}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">月次資金消費<span class="tip-icon">?</span><span class="tip-box">（営業CF+設備投資）÷12。マイナス=現金流出中 / プラス=現金増加中</span></span></span><span class="detail-val ${(ra.monthly_burn||0)<0?'neg':'pos'}">${(ra.monthly_burn||0)>0?`+${fmtB(ra.monthly_burn)}/月 <span style="font-size:9px;color:var(--mut)">（OCF ${fmtB(ra.ocf_annual)} - CapEx ${fmtB(ra.capex_annual)} = CF黒字）</span>`:`${fmtB(ra.monthly_burn)}/月`}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">生存可能期間<span class="tip-icon">?</span><span class="tip-box">現金÷月次バーンの絶対値。OCFがプラスの場合は∞</span></span></span><span class="detail-val ${ra.runway_months!==null&&ra.runway_months<12?'neg':''}">${ra.runway_months===null?'—':ra.runway_months===Infinity?'∞':fmtRunway(ra.runway_months)}</span></div>
-        <div id="eps-be-${ticker}" style="display:none;padding:8px 0;border-top:1px solid var(--bdr);margin-top:6px"></div>
-      </div>
-      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--bdr)">
-        <div class="detail-col-title">③ 黒字化パス · 詳細</div>
-        <div class="detail-row"><span class="detail-key">営業CFトレンド</span><span class="detail-val">${trendJa[pp.ocf_trend]||'—'}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字<span class="tip-icon">?</span><span class="tip-box">OCF(営業CF)がプラスかどうか。本業のキャッシュ創出力がプラスに転じている状態</span></span></span><span class="detail-val ${pp.hidden_profit_already?'pos':''}">${pp.hidden_profit_already?'✓ 達成済み':'未達'}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">営業CF黒字化予測<span class="tip-icon">?</span><span class="tip-box">OCF改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.ocf_breakeven_year, pp.ocf_breakeven_reason)}</span></div>
-        <div class="detail-row"><span class="detail-key"><span class="tip-wrap">純利益黒字化予測<span class="tip-icon">?</span><span class="tip-box">純利益改善トレンドを線形外挿してゼロを超える年を予測</span></span></span><span class="detail-val">${fmtBe(pp.gaap_breakeven_year, pp.gaap_breakeven_reason)}</span></div>
-        ${pp.discontinuous_growth ? `<div style="font-size:10px;color:var(--amb);margin-top:4px;">⚠ 非連続成長の可能性あり<br><span style="color:var(--mut)">${pp.discontinuous_growth_note}</span></div>` : ''}
-      </div>
-    </div>
-  </div>
-
-  <div class="detail-summary">${formatSummary(d.summary)}${pp.discontinuous_growth ? '<div style="margin-top:8px;font-size:10px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:6px">※黒字化予測は過去トレンドの外挿であり、直近の急成長局面では実際の黒字化が予測より早まる可能性があります</div>' : ''}</div>
 
   ${buildVectorPanel(d.financial_vectors)}
   ${buildProfitPath(ticker, d)}
