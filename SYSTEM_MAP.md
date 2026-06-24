@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-21（EPIC-HEADER-1: docs/common/site-header.js 新設を反映）
+最終更新: 2026-06-24（TAIL-LAYOUT-1: decision_log.html 新設・MP-LOGIC-1/2: TAKE PROFIT/BUY チェックリスト実装を反映）
 
 ---
 
@@ -58,10 +58,15 @@ pipeline.py              # 全銘柄を統合・TANUKI SCORE算出
 └─ tanuki_score結果 → Discord通知（ACTION-10）
 【独立データ取得層（他システムへの依存なし）】
 Market Pulse  ← yfinance / CNN F&G / FREDデータ
+　　TAKE PROFIT / BUY チェックリスト（F&G×200日MA×HYスプレッド×ヒンデンブルグ簡易版、
+　　MP-LOGIC-1/2 2026-06-24実装）を market_data.json に出力
 MACRO PULSE   ← FREDデータ / FRBステートメント
 DISCOVER      ← Grok Web検索
 PORTFOLIO     ← 手動入力 / 証券会社API
 TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
+　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json
+　　（SEC-CTRL-1 2026-06-24実装、週次自動更新）
+　　分離ページ: decision_log.html（TAIL-LAYOUT-1 2026-06-24新設）
 　　書き込み系（ポジション登録・ジャーナル記録・KPI確定）は
 　　tail/index.html → GitHub Actions workflow_dispatch
 　　（.github/workflows/TANUKI_TAIL_Position_Write.yml → src/tail/workflow_write.py）

@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-24（TSCORE-DUPONT-3・SILO-LAYOUT-1〜5・PORT-FEATURE-1・TAIL-LAYOUT-1・TAIL-UX-1・DISCOVER-LAYOUT-1・MP-FEATURE-1・DISCOVER-FEATURE-2・DISCOVER-FEATURE-3・MP-LOGIC-1・MP-LOGIC-2・SOFI-DATA-1・TSCORE-FIX-2・EPS-LAYOUT-1・TVAL-FORMULA-1・TSCORE-DUPONT-1・DCF-RELIABILITY-1・HOME-FIX-3・TSCORE-BT-1・EPS-DISP-2〜5・MP-DISP-1 完了、ARCH-DATA-1セクション修正）
+最終更新: 2026-06-24（TSCORE-DUPONT-3・SILO-LAYOUT-1〜5・PORT-FEATURE-1・TAIL-LAYOUT-1・TAIL-UX-1・DISCOVER-LAYOUT-1・MP-FEATURE-1・DISCOVER-FEATURE-2・DISCOVER-FEATURE-3・MP-LOGIC-1・MP-LOGIC-2・SOFI-DATA-1・TSCORE-FIX-2・EPS-LAYOUT-1・TVAL-FORMULA-1・TSCORE-DUPONT-1・DCF-RELIABILITY-1・HOME-FIX-3・TSCORE-BT-1・EPS-DISP-2〜5・MP-DISP-1・DAILY-PICK-BUG-1・TSCORE-TRAP-1（全10種）・SEC-CTRL-1・MP-BIZDAY-1 完了、ARCH-DATA-1セクション修正）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -80,9 +80,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 
 ---
 
-## 優先度：低
-
-
 ## 優先度：中（こなれてきたら対応）
 
 ### [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
@@ -103,34 +100,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 問題: 四半期サプライズ率が計算できない
 - 改善: 有料API検討 or yfinance の quarterly_earnings 活用
 
-### [SEC-CTRL-1] 内部統制評価機能（10-Q Item4 / 10-K Item9A）— **✅ 完了 2026-06-24**
-**実装:** TANUKI TAIL モーダル「内部統制」タブ (n=5)
-- `src/tail/sec_ctrl_fetcher.py` — EDGAR 10-Q Item4 取得・解析・保存
-- `docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json` — 出力データ
-- `docs/portfolio/tail/index.html` — 「内部統制」タブ追加
-- `.github/workflows/TANUKI_TAIL_SEC_Ctrl.yml` — 週次自動更新 (月曜 10:00 JST)
-- **残課題:** 10-K Item9A 対応（通期）は未実装
-
-### [TSCORE-TRAP-1] 投資トラップ検出機能（TANUKI SCORE）— Phase2残
-**優先度:** 低（Phase1完了、Phase2は追加pipeline作業が必要）
-**分類:** 設計課題 / TANUKI SCORE
-
-#### Phase1完了（2026-06-24）
-以下6種を `docs/value-monitor/tanuki_score/index.html` にフロントエンドのみで実装済み:
-- ✅ バリュートラップ（低PER×FCF減少×低成長率）
-- ✅ グローストラップ（高成長×FCFマイナス×高希薄化）
-- ✅ バリューデストラクション（ROIC/WACC < 1.0）
-- ✅ ナラティブトラップ（高HypePhase×FCFマイナス×大幅割高）
-- ✅ サイクリカルピークトラップ（景気敏感業種×低PER×FCF急増）
-- ✅ ワンタイムゲイントラップ（dupont.reliability=LOW×FCF外れ値）
-
-#### Phase2完了（2026-06-24）
-- ✅ アセットヘビートラップ #7（dupont.asset_turnover近似、pipeline変更なし）
-- ✅ ディビデンドトラップ #4（dividend_yield/payout_ratio yfinance追加、全銘柄再生成）
-- ✅ シガーバット #2（CurrentAssets/CurrentLiabilities → quarterly.py/parser.py/pipeline.py追加、net_current_assets_ratio）
-- ✅ キャッシュトラップ #10（Buyback TTM → quarterly.py/parser.py/ttm_calculator.py/pipeline.py追加）
-
-（Phase2全課題完了）
 
 ### [TANUKI-ROE-2] デュポン分解 業種平均比較・潜在ROE試算
 **優先度:** 低
