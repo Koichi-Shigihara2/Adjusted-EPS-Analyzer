@@ -9,6 +9,7 @@
 - 6種のトラップをフロントエンドでリアルタイム計算: バリュー/グロース/バリューデスト/ナラティブ/サイクリカル/ワンタイム
 - 🔴高/🟡中/🟢低/– で表示、ホバーで判定根拠ツールチップ、列ソート・0件非表示トグル実装
 - Phase2残課題（#2/#4/#7/#10）はpipeline追加データが必要のためBACKLOGに残存
+- #7アセットヘビートラップを追加実装（2026-06-24）: asset_turnover近似、low<0.5x / medium<0.5x×margin<10% / high<0.3x×margin<5%
 
 ✅ [DAILY-PICK-BUG-1] daily_pick.jsonのtanukiキー欠落修正（2026-06-24完了）
 - `main()` 内で `build_data_package()` を明示的に呼び出し、`output` 辞書に `"tanuki": data_pkg["tanuki"]` を追加

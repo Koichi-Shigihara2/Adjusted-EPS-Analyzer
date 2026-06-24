@@ -1052,7 +1052,20 @@ function computeTraps(s) {
     ].filter(Boolean),
   };
 
-  return { value_trap, growth_trap, value_destruction, narrative_trap, cyclical_peak, one_time_gain };
+  // 7. アセットヘビートラップ: 資産回転率低×純利益率低（固定資産比率の近似）
+  const at_turn = s.dupont?.asset_turnover ?? null;
+  const at_marg = s.dupont?.net_margin ?? null;
+  const asset_heavy = {
+    level:   (at_turn != null && at_turn < 0.3 && at_marg != null && at_marg < 0.05) ? 'high'
+           : (at_turn != null && at_turn < 0.5 && at_marg != null && at_marg < 0.10) ? 'medium'
+           : (at_turn != null && at_turn < 0.5)                                       ? 'low'
+           : 'none',
+    reasons: at_turn != null
+      ? [`資産回転率${at_turn.toFixed(2)}x${at_marg != null ? ' × 純利益率' + (at_marg * 100).toFixed(1) + '%' : ''}`]
+      : ['データなし'],
+  };
+
+  return { value_trap, growth_trap, value_destruction, narrative_trap, cyclical_peak, one_time_gain, asset_heavy };
 }
 
 function renderTrapPanel() {
@@ -1061,11 +1074,12 @@ function renderTrapPanel() {
 
   const TRAP_KEYS = [
     'value_trap', 'growth_trap', 'value_destruction',
-    'narrative_trap', 'cyclical_peak', 'one_time_gain',
+    'narrative_trap', 'cyclical_peak', 'one_time_gain', 'asset_heavy',
   ];
   const TRAP_LABELS = {
     value_trap: 'バリュー', growth_trap: 'グロース', value_destruction: 'バリデスト',
     narrative_trap: 'ナラティブ', cyclical_peak: 'サイクリカル', one_time_gain: 'ワンタイム',
+    asset_heavy: 'アセット重',
   };
   const LEVEL_SCORE = { high: 3, medium: 2, low: 1, none: 0 };
   const levelIcon   = lv =>
