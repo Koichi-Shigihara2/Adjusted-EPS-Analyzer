@@ -4,6 +4,124 @@
 
 ## 2026-06-24（実装）
 
+✅ [DAILY-PICK-BUG-1] daily_pick.jsonのtanukiキー欠落修正（2026-06-24完了）
+- `main()` 内で `build_data_package()` を明示的に呼び出し、`output` 辞書に `"tanuki": data_pkg["tanuki"]` を追加
+- `daily_pick.json` に `tanuki`（`fcf_conversion_rate` 等16フィールド）が正常出力されることを確認
+
+✅ [MP-DISP-1] ゲージ数値ラベル配置不揃い修正（2026-06-24完了）
+- **対象**: `docs/market-monitor/market-pulse/index.html`
+- 全3ゲージ（メインセンチメント・CNN F&G・Tech Pulse）の FEAR/GREED/50 ラベルを弧の端点・頂点基準で `text-anchor="middle"` に統一
+- メインゲージ: FEAR→(x=22,y=124)、GREED→(x=198,y=124)、50→(x=110,y=14) に修正
+- ミニゲージ(CNN/Tech): FEAR→(x=18,y=106)、GREED→(x=162,y=106)、50→(x=90,y=12) に修正
+- 左右が弧端点を中心とした鏡対称、「50」が弧頂点の外側に統一配置
+
+✅ [EPS-DISP-5] 「調整内訳（全期間）」ページ長大化対策（2026-06-24完了）
+- **対象**: `docs/value-monitor/adjusted_eps_analyzer/stock.html`
+- **方式A採用**: 直近8四半期のみ表示 + 「全N件を表示 ▼」展開ボタン
+- `buildAdjHtml()` を分離してHTML生成を共通化、`updateAllAdjustments()` で8件超の場合にボタンを追加
+- `expandAllAdj()` でボタンクリック時に全件展開
+
+✅ [EPS-DISP-4] グラフ軸ラベル・フォントサイズ統一（2026-06-24完了）
+- **対象**: `docs/value-monitor/adjusted_eps_analyzer/stock.html`
+- メインEPS推移チャート `scales.x/y ticks.font.size`: 10 → 11
+- ウォーターフォールチャート `scales.x/y ticks.font.size`: 9 → 11
+- 参照: market-pulse は12で統一。EPS は表示密度を考慮し11に統一
+
+✅ [TSCORE-DISP-4] バックテストのデフォルト展開（2026-06-24完了）
+- **対象**: `docs/value-monitor/tanuki_score/index.html`
+- `#sv-body` の `display:none` を除去、矢印テキストを「▶ 展開して見る」→「▲ 折りたたむ」に変更
+- データなし時は「データなし（pipeline.py 実行後に表示）」が自動表示されるため展開状態でも問題なし
+
+✅ [EPS-DISP-3] 「投資機会ランキング」デフォルト展開（2026-06-24完了）
+- **対象**: `docs/value-monitor/adjusted_eps_analyzer/index.html`
+- `#opp-body` の `display:none` を除去、矢印テキストを「▲ 折りたたむ」に変更
+
+✅ [EPS-DISP-2] BX会社名空欄補完（2026-06-24完了）
+- **原因**: `config/cik_lookup.csv` に BX エントリが存在せず → `ticker_to_name["BX"]` が未定義 → pipeline が SEC metadata 名にもフォールバックできず空文字で保存
+- `config/cik_lookup.csv` に BX 行を追記（CIK: 0001393818、name: Blackstone Inc.、eps: true）
+- `docs/value-monitor/adjusted_eps_analyzer/data/summary.json` の BX エントリを即時パッチ（`company_name: "Blackstone Inc."`）
+
+✅ [TSCORE-BT-1] バックテスト直近件数ラベル修正（2026-06-24完了）
+- **実態**: 全銘柄の `score_history.json` を横断し、`date` 降順で最大20件を表示（`allEntries` 全銘柄横断・`slice(0,20)`）
+- `recentRows` の前に `recentArr`（配列）を分離し、ラベルを `直近20件` → `直近${recentArr.length}件（全銘柄横断・判定日降順）` に修正
+- **対象**: `docs/value-monitor/tanuki_score/index.html`
+
+✅ [TSCORE-FIX-5] RICEマトリクス有効銘柄数の動的取得（2026-06-24確認・対応不要）
+- 調査結果: `docs/value-monitor/tanuki_score/index.html` line 1119 で既に `${allPoints.length}銘柄` として動的実装済み
+- コード変更なし
+
+✅ [HOME-FIX-3] HYPECOREカード銘柄数の動的化（2026-06-24完了）
+- `docs/value-monitor/hypecore/data/tickers.json` を新規作成（hypecore `ALL_TICKERS` と同一の60銘柄配列）
+- `docs/index.html`: カード説明文・ステータスバッジの銘柄数を `<span id>` に変更し、fetch 後に書き換え
+- 取得失敗時はステータスを空文字にフォールバック（`LIVE ·` のみ残る）
+
+✅ [SOFI-DATA-1] SOFI LTDebt 正規化データ更新（2026-06-24完了）
+- **対象**: `common/sec_data/normalized/SOFI_quarterly_normalized.json`・`docs/common/sec_data/normalized/SOFI_quarterly_normalized.json`
+- **調査結果**: SOFI は銀行免許取得後（2022年以降）、`LongTermDebt` XBRL タグを報告しなくなった。代替タグ `DebtLongtermAndShorttermCombinedAmount`（短期+長期の合計社債）が SEC EDGAR に存在。
+- **対応方針: B（カスタム概念使用）**:
+  - `DebtLongtermAndShorttermCombinedAmount` は SOFI の senior notes（社債）を代表する最適タグ
+  - 2023〜2026のデータを同概念から直接 normalized JSON に手動追記（`quarterly.py` フェッチスクリプトはフォールバック未対応のため手動パッチ）
+- **追記したエントリ（13件）**:
+  - 2023-03-31: $6.126B / 2023-06-30: $6.484B / 2023-09-30: $6.241B / 2023-12-31: $5.233B（倉庫ローン残存期）
+  - 2024-03-31: $2.891B / 2024-06-30: $3.107B / 2024-09-30: $3.180B / 2024-12-31: $3.093B
+  - 2025-03-31: $3.046B / 2025-06-30: $3.943B / 2025-09-30: $2.714B / 2025-12-31: $1.815B / 2026-03-31: $1.813B
+- **注意**: 2023年前半は倉庫ファシリティ残存により $6B超（旧 `LongTermDebt` の2022値と同等）。2024-Q1以降は senior notes のみとなり ~$1.8〜3.2B に収束。
+
+✅ [MP-LOGIC-2] BUY チェックリスト実装（2026-06-24完了）
+- **対象**: `src/market/market_pulse/collect_and_send.py`・`docs/common/glossary.json`・`docs/market-monitor/market-pulse/index.html`
+- `collect_and_send.py`:
+  - `calc_buy_checklist()` 追加: F&G ≤ 25 で `triggered=True`、F&G ≤ 10 で `extreme=True`。3チェック×1pt（S&P500 200日MAシグナル・HYスプレッド縮小・ヒンデンブルグ非活性）。0〜1pt→WATCH / 2pt以上→BUY
+  - `fetch_hy_spread_from_fred()` 拡張: `max_90d`（90日最高値）・`is_contracting`（`current < max_90d - 0.30`）を追加。`window = hy.iloc[-90:]` から `min()` / `max()` を同一ウィンドウで計算
+  - `save_data_to_json_and_csv()` に `buy_checklist=None` 引数を追加し `new_entry` に `buy_checklist` キーとして保存
+- `docs/common/glossary.json`: `buy_ma200`・`buy_hy_spread`・`buy_hindenburg` 追加
+- `docs/market-monitor/market-pulse/index.html`:
+  - `renderBuyChecklist()` 追加（TAKE PROFITカード直後・アセットフロー直前）
+  - F&G > 25: グレーアウトテキスト表示
+  - F&G ≤ 25 かつ `triggered=true` 時: action別カラーバナー（WATCH=アンバー/BUY=緑）＋3チェック項目（✅該当/❌非該当バッジ・pt・詳細行・glossaryツールチップ）＋買いポイント合計表示
+  - F&G ≤ 10（`extreme=true`）時: セクションヘッダーを `pulse-red` アニメーション強調＋「🚨 Extreme Fear — 絶好の買い場の可能性」バナーを追加表示
+  - `RENDER_ALL_FNS` に `renderBuyChecklist` を登録
+
+✅ [MP-LOGIC-1] TAKE PROFIT チェックリスト実装（2026-06-24完了）
+- **対象**: `src/market/market_pulse/collect_and_send.py`・`docs/common/glossary.json`・`docs/market-monitor/market-pulse/index.html`
+- `collect_and_send.py`:
+  - `_get_sp500_ma_deviation()`: `period="3mo"` → `"1y"` に変更。200日MA計算を追加し戻り値をdict化（`deviation_50`/`above_ma200`/`ma200_slope`）。傾き判定は MA200[today] vs MA200[10日前]（`close[-200:].mean()` vs `close[-210:-10].mean()`）。`compute_sentiment()` の呼び出し箇所を `deviation_50` を参照する形に更新
+  - `fetch_hy_spread_from_fred()` 追加: FRED `BAMLH0A0HYM2`（ICE BofA US High Yield Index OAS）を120日分取得。`is_expanding = current > min_90d + 0.30`（30bps閾値）
+  - ヒンデンブルグ簡易判定: `breadth_data.json` の `new_highs_52w` / `new_lows_52w` が各々 `500 × 2.2%`（11件）以上で `hindenburg_active = True`
+  - `calc_take_profit_checklist()` 追加: F&G ≥ 75 で `triggered=True`。3チェック×1pt（S&P500 200日MAシグナル・HYスプレッド拡大・ヒンデンブルグ）。0〜1pt→HOLD / 2pt→PARTIAL / 3pt→TAKE PROFIT
+  - `save_data_to_json_and_csv()` に `take_profit_checklist=None` 引数を追加し `new_entry` に `take_profit_checklist` キーとして保存
+- `docs/common/glossary.json`: `tp_ma200`・`tp_hy_spread`・`tp_hindenburg` 追加
+- `docs/market-monitor/market-pulse/index.html`:
+  - `renderTakeProfit()` 追加（Tech Pulse〜アセットフロー間の `.sec` + `.unified-card` として配置）
+  - F&G < 75 または `triggered=false` 時: グレーアウトテキスト表示
+  - F&G ≥ 75 かつ `triggered=true` 時: action別カラーバナー（HOLD=緑/PARTIAL=アンバー/TAKE PROFIT=赤）＋3チェック項目（✅/❌バッジ・pt・detail行・glossaryツールチップ）＋利確ポイント合計表示
+  - `escHtml()` ユーティリティを追加、`RENDER_ALL_FNS` に `renderTakeProfit` を登録
+
+✅ [DISCOVER-FEATURE-3] テーマ内銘柄の役割分類表示（2026-06-24完了）
+- **対象**: `src/discover/collect.py`・`docs/discover/index.html`
+- `src/discover/collect.py`: `related_tickers` を文字列配列→オブジェクト配列に変更（`ticker`/`role`/`note` フィールド）。role定義（主要・ボトルネック・注目）と各役割の説明をプロンプトに明示
+- `docs/discover/index.html`: `buildRelatedTickers()` ヘルパーを追加
+  - 旧形式（文字列配列）→ `typeof rt[0] === 'string'` 判定で従来のシアンバッジ表示（後方互換）
+  - 新形式（オブジェクト配列）→ role順（主要→ボトルネック→注目）にグループ化し色別バッジ表示（主要:シアン・ボトルネック:アンバー・注目:グリーン）。`note` がある場合は `data-info-text` 属性で `info-tooltip.js` にⓘツールチップを自動付与
+- 次の日曜（Grok再生成）まで旧表示が維持される（後方互換性により問題なし）
+
+✅ [DISCOVER-FEATURE-2] テーマ選定根拠・証跡の明示（2026-06-24完了）
+- **対象**: `src/discover/collect.py`・`.github/workflows/Discover_Update.yml`・`docs/common/glossary.json`・`docs/discover/index.html`
+- `src/discover/collect.py`: プロンプトに `sources` フィールド（1〜3件）を追加。日曜実行時に `docs/discover/data/macro_themes_history.json` へ週次追記（最大26件・新しい順）
+- `.github/workflows/Discover_Update.yml`: `macro_themes_history.json` を git add 対象に追加（ファイル未存在時はスキップ）
+- `docs/common/glossary.json`: `discover_conviction` キー追加（高/中/低の判定基準）
+- `docs/discover/index.html`: 確信度バッジにツールチップ追加（`data-info="discover_conviction"`）・`sources` をリンク付きリストとしてカード末尾に表示・streak ≥ 1 の場合に「🔥 N週連続」バッジをテーマ名横に表示・「過去のテーマを見る（N週分）」折りたたみセクションを追加（直近4週分）
+
+✅ [DISCOVER-LAYOUT-1] 一覧性の向上（DISCOVER画面）（2026-06-24 完了）
+- **対象**: `docs/discover/index.html`
+- `.ticker-cards` を `display:flex;flex-direction:column` → `display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr))` に変更し2カラム以上のグリッド表示を実現
+- `buildTickerCard()` に `data-collapsed=""` + `onclick="toggleCard()"` + `▶` トグルアイコン + リンクへの `event.stopPropagation()` + `ticker-card-body` に `style="display:none"` を追加し、デフォルト折りたたみに変更
+- 既存の `toggleCard()` 関数（`data-collapsed`属性トグル）をそのまま流用
+
+✅ [MP-FEATURE-1] AIコメントの過去履歴保持・表示機能（Market Pulse画面）（2026-06-24 完了）
+- **対象**: `src/market/market_pulse/collect_and_send.py`・`docs/market-monitor/market-pulse/index.html`
+- **データ側**: `save_data_to_json_and_csv()` に `comments_history` 配列を追加。同日エントリ重複除去後の `all_data` から直近11件の `{date, summary}` を逆順収集し、当日分と合わせて最大12件を `new_entry.comments_history` として保存
+- **表示側**: `renderDetail()` の末尾に `buildCommentsHistory(d)` を追加。`comments_history[1:]`（過去分）が1件以上ある場合、「▶ 過去の分析を見る（N件）」トグルボタンと折りたたみパネルを生成。`toggleCmtHist()` で開閉制御
+
 ✅ [TSCORE-DUPONT-1] DuPontパネルのソート機能追加（2026-06-24完了）
 - **対象**: `docs/value-monitor/tanuki_score/index.html`
 - 全6列（銘柄・ROE(DuPont)・純利益率・資産回転率・財務レバレッジ・ROE(実績)）にヘッダークリックソートを追加
@@ -28,6 +146,43 @@
 - **対象**: `docs/value-monitor/stonks-silo/index.html`
 - 変更後構造: pillar-row内の各カード（①②③）直下に対応する詳細を折りたたみで配置
 - 総合スコア判定根拠はpillar-row直下に配置（SILO-LAYOUT-2と統合）
+
+✅ [SILO-LAYOUT-1] 「黒字化への道のり」チャートの凡例・説明追加（2026-06-24完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html` — `buildProfitPath()` return
+- タイトル行に `?` ツールチップ（0ライン=黒字化基準、単位説明）を追加
+- 凡例3項目（緑=黒字達成済み / 紫=次の黒字化目標（ETA自動算出）/ グレー=ペンディング）をドット付きで追加
+
+✅ [SILO-LAYOUT-4] 時価総額等のサマリー情報をティッカー名近くに集約（2026-06-24完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html` — `buildDetail()` return
+- `valInlineHtml` 変数を追加し `conclusion-left` 内（conclusion-summary直下）にコンパクト表示
+- 表示形式: `MC $1.23B　$45.67　PSR 12x　EV/S 10x　NC $0.50B`
+- standalone val-bar IIFE（旧1行）を削除
+
+✅ [SILO-LAYOUT-5] 棒グラフと財務トレンドセクションの隣接配置（2026-06-24完了）
+- **対象**: `docs/value-monitor/stonks-silo/index.html` — CSS
+- `.chart-row{margin-bottom:16px}` → `margin-bottom:0`
+- `.fv-section{margin-top:14px;border:1px solid var(--bdr)}` → `margin-top:0;border-top:none` でシームレスに結合
+
+✅ [PORT-FEATURE-1] 主要金額表示への円貨表示切り替え追加（2026-06-24完了）
+- **対象**: `docs/portfolio/index.html`
+- `_usdJpy`（history.jsonのlatestスナップから取得）・`_currMode2`・`fmtC()`・`switchCurr()` を追加
+- `loadData()` に history.json の並行フェッチを追加（usdjpy抽出 + `loadHistoryChart()`の二重フェッチ排除）
+- 適用箇所: 総資産・時価残高合計・評価損益・キャッシュ/ブローカー別サマリー（全金額）/テーブル全金額列
+- サマリー左上に USD/JPY 切り替えボタン追加
+- `switchChart()` を scoped に修正（currency ボタンと競合しないよう）
+
+✅ [TAIL-LAYOUT-1] DECISION LOGの別ページ分離（2026-06-24完了）
+- **新規ファイル**: `docs/portfolio/tail/decision_log.html`
+- 元ページの journal section を「DECISION LOG を見る →」リンク + 最終ログサマリーに置き換え
+- 新ページ: 同auth・フィルターUI・全ログ表示（全件数バッジ付き）
+- site-nav.js への追加なし（サブページのため）
+
+✅ [TAIL-UX-1] TANUKI TAIL使い方ガイダンス充実（2026-06-24完了）
+- **対象**: `docs/portfolio/tail/index.html`・`docs/common/glossary.json`
+- ページ冒頭に利用フロー（①登録→②Grokレビュー→③ログ記録）バナーを追加
+- 「前回レビューからN日」を journal.json 最新エントリーから算出（30日以内=緑/90日以内=amber/超過=赤）
+- OVERVIEW CORE/SAT・NEW POSITION セクションに `data-info` ツールチップ追加
+- glossary.json に `tail_overview`/`tail_overview_sat`/`tail_new_position`/`tail_decision_log` を追加
 
 ---
 

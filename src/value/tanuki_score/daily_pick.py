@@ -474,6 +474,9 @@ def main():
     selected, reason = select_ticker(stocks, history, today_str)
     print(f"[daily_pick] Selected: {selected['ticker']} ({selected['category']}) — {reason}")
 
+    # Build data package (used for both report generation and JSON output)
+    data_pkg = build_data_package(selected, mkt)
+
     # Generate report
     if not XAI_API_KEY:
         print("[daily_pick] XAI_API_KEY not set — skipping report.")
@@ -498,6 +501,7 @@ def main():
         "timing_score":     selected["timing"],
         "category":         selected["category"],
         "report":           report,
+        "tanuki":           data_pkg["tanuki"],
     }
 
     # Save daily_pick.json
