@@ -427,7 +427,20 @@
 
 <div class="shell">
 
-  <div class="sec">OVERVIEW <span class="sec-badge core">CORE</span></div>
+  <!-- ── Usage flow guide ── -->
+  <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:14px 20px;margin-bottom:24px">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--core);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px">How to Use TANUKI TAIL</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;margin-bottom:10px">
+      <span style="background:rgba(240,165,0,.12);color:var(--core);border:1px solid rgba(240,165,0,.25);border-radius:3px;padding:3px 10px">① 投資仮説を登録</span>
+      <span style="color:var(--mut)">→</span>
+      <span style="background:rgba(74,158,255,.1);color:var(--sat,#4a9eff);border:1px solid rgba(74,158,255,.2);border-radius:3px;padding:3px 10px">② 決算ごとにGrokレビュー実行</span>
+      <span style="color:var(--mut)">→</span>
+      <span style="background:rgba(255,255,255,.06);color:var(--sub);border:1px solid var(--bdr);border-radius:3px;padding:3px 10px">③ DECISION LOGで判断記録</span>
+    </div>
+    <div id="review-staleness" style="font-family:var(--mono);font-size:11px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:8px"></div>
+  </div>
+
+  <div class="sec" data-info="tail_overview">OVERVIEW <span class="sec-badge core">CORE</span></div>
   <div class="tbl-wrap">
     <table id="core-table">
       <thead>
@@ -447,7 +460,7 @@
     </table>
   </div>
 
-  <div class="sec" style="margin-top:24px">OVERVIEW <span class="sec-badge sat">SATELLITE</span></div>
+  <div class="sec" style="margin-top:24px" data-info="tail_overview_sat">OVERVIEW <span class="sec-badge sat">SATELLITE</span></div>
   <div class="tbl-wrap">
     <table id="sat-table">
       <thead>
@@ -469,26 +482,14 @@
     </table>
   </div>
 
-  <!-- ── Journal section ── -->
-  <div class="sec" style="margin-top:40px">DECISION LOG</div>
-  <div style="margin-bottom:12px" class="journal-filter">
-    <span class="journal-filter-label">TICKER</span>
-    <select id="jnl-filter-ticker" onchange="renderJournal()">
-      <option value="">全銘柄</option>
-    </select>
-    <span class="journal-filter-label" style="margin-left:8px">TYPE</span>
-    <select id="jnl-filter-type" onchange="renderJournal()">
-      <option value="">全タイプ</option>
-      <option value="entry">🟢 entry</option>
-      <option value="exit">🔴 exit</option>
-      <option value="thesis_revision">🔵 thesis_revision</option>
-      <option value="watchlist">🟡 watchlist</option>
-      <option value="memo">⚪ memo</option>
-    </select>
+  <!-- ── Decision Log link ── -->
+  <div class="sec" style="margin-top:40px" data-info="tail_decision_log">DECISION LOG</div>
+  <div style="padding:10px 0 4px">
+    <a href="decision_log.html" style="font-family:var(--mono);font-size:13px;color:var(--acc);text-decoration:none">DECISION LOG を見る →</a>
+    <div id="dl-summary" style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px"></div>
   </div>
-  <div id="journal-list" style="min-height:60px"></div>
 
-  <div class="sec" style="margin-top:40px">NEW POSITION</div>
+  <div class="sec" style="margin-top:40px" data-info="tail_new_position">NEW POSITION</div>
 
   <div class="form-card" id="form-card">
     <div class="token-row">
@@ -779,8 +780,9 @@ var loadedProposals = {};        // { PLTR: proposalData }
 var loadedScenarios      = {};   // { PLTR: { bear: {}, base: {}, bull: {} } }
 var predictionHistory    = {};   // { PLTR: [...], SOFI: [...], TSLA: [...] }
 var journalData          = [];   // entries array
+var loadedCtrl           = {};   // { SOUN: ctrlData }
 
-var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点'];
+var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
 var TABS_SAT  = ['戦略'];
 
 /* ─── Init ─── */
@@ -886,7 +888,24 @@ function loadJournal() {
       journalData = (data.entries || []).slice().reverse(); // 新しい順
       renderJournal();
       _populateJournalTickerFilter();
+      _updateReviewStaleness();
+      var dlSummary = document.getElementById('dl-summary');
+      if (dlSummary && journalData.length > 0) {
+        var last = journalData[0];
+        var days = Math.floor((Date.now() - new Date(last.timestamp)) / 86400000);
+        dlSummary.textContent = '最終ログ: ' + days + '日前（' + (last.ticker || '—') + ' / ' + (last.type || '—') + '）';
+      }
     });
+}
+
+function _updateReviewStaleness() {
+  var el = document.getElementById('review-staleness');
+  if (!el) return;
+  if (!journalData.length) { el.textContent = 'ログ未登録'; return; }
+  var latestTs = journalData[0].timestamp;
+  var days = Math.floor((Date.now() - new Date(latestTs)) / 86400000);
+  var color = days <= 30 ? 'var(--grn)' : days <= 90 ? 'var(--amb)' : 'var(--red)';
+  el.innerHTML = '前回レビューから <span style="color:' + color + ';font-size:14px;font-weight:700">' + days + '日</span> 経過（最終ログ: ' + latestTs.slice(0, 10) + '）';
 }
 
 function loadReviewQueue() {
@@ -1154,6 +1173,16 @@ function openModal(ticker) {
       if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
     });
   }
+
+  if (isCore && !loadedCtrl[ticker]) {
+    fetch('data/ctrl/' + ticker + '_ctrl.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; })
+      .then(function (d) {
+        loadedCtrl[ticker] = d || null;
+        if (modalTicker === ticker && modalTabIdx === 5) renderModalBody(ticker, 5);
+      });
+  }
 }
 
 function closeModal() {
@@ -1182,6 +1211,7 @@ function renderModalBody(ticker, n) {
   else if (n === 2) body.innerHTML = buildTabKpi(ticker);
   else if (n === 3) body.innerHTML = buildTabDcf(ticker);
   else if (n === 4) body.innerHTML = buildTabCall2(ticker);
+  else if (n === 5) body.innerHTML = buildTabCtrl(ticker);
 }
 
 /* ─── Tab 0: テーゼ ─── */
@@ -1866,6 +1896,94 @@ function buildTabCall2(ticker) {
     macroHtml,
     tqHtml,
     nrfHtml,
+  ].join('');
+}
+
+/* ─── Tab 5: 内部統制 ─── */
+function buildTabCtrl(ticker) {
+  var d = loadedCtrl[ticker];
+  if (d === undefined) {
+    return '<div style="padding:20px;color:var(--mut);text-align:center">読み込み中…</div>';
+  }
+  if (d === null) {
+    return '<div style="padding:20px;color:var(--mut);text-align:center">データなし（未取得 or CIK未登録）</div>';
+  }
+
+  // 有効性バッジ
+  var effLabel, effColor;
+  if (d.effective === true) {
+    effLabel = '有効 (Effective)';  effColor = 'var(--green, #22c55e)';
+  } else if (d.effective === false) {
+    effLabel = '無効 (Not Effective)'; effColor = 'var(--red, #ef4444)';
+  } else {
+    effLabel = '判定不能'; effColor = 'var(--mut)';
+  }
+
+  var badgeHtml =
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">' +
+    '<span style="font-size:13px;font-weight:700;color:' + effColor + ';background:' +
+      effColor.replace(')', ',0.12)').replace('var(', 'rgba(').replace('var(--green, #22c55e)', 'rgba(34,197,94,0.12)').replace('var(--red, #ef4444)', 'rgba(239,68,68,0.12)').replace('var(--mut)', 'rgba(128,128,128,0.12)') +
+    ';padding:4px 10px;border-radius:4px;border:1px solid ' + effColor + '">' + esc(effLabel) + '</span>' +
+    '<span style="font-size:11px;color:var(--mut)">' + esc(d.quarter || '') + ' / 提出日: ' + esc(d.filing_date || '') + '</span>' +
+    '</div>';
+
+  // マテリアルウィークネス
+  var mwHtml = '';
+  if (d.material_weaknesses && d.material_weaknesses.length > 0) {
+    var mwItems = d.material_weaknesses.map(function (s) {
+      return '<li style="margin-bottom:6px;line-height:1.5;font-size:11px;color:var(--fg)">' +
+        esc(s.slice(0, 300)) + (s.length > 300 ? '…' : '') + '</li>';
+    }).join('');
+    mwHtml =
+      '<div class="dcf-sec" style="margin-bottom:10px">' +
+      '<div class="dcf-sec-title assum" style="color:var(--red,#ef4444)">マテリアルウィークネス (' + d.material_weaknesses.length + '件)</div>' +
+      '<ul style="margin:6px 0 0 0;padding-left:16px">' + mwItems + '</ul>' +
+      '</div>';
+  } else if (d.effective === true) {
+    mwHtml =
+      '<div class="dcf-sec" style="margin-bottom:10px">' +
+      '<div class="dcf-sec-title" style="color:var(--green,#22c55e)">マテリアルウィークネス: なし</div>' +
+      '</div>';
+  }
+
+  // 重要な欠陥
+  var sdHtml = '';
+  if (d.significant_deficiencies && d.significant_deficiencies.length > 0) {
+    var sdItems = d.significant_deficiencies.map(function (s) {
+      return '<li style="margin-bottom:6px;line-height:1.5;font-size:11px;color:var(--fg)">' +
+        esc(s.slice(0, 300)) + (s.length > 300 ? '…' : '') + '</li>';
+    }).join('');
+    sdHtml =
+      '<div class="dcf-sec" style="margin-bottom:10px">' +
+      '<div class="dcf-sec-title assum" style="color:#f59e0b">重要な欠陥 (' + d.significant_deficiencies.length + '件)</div>' +
+      '<ul style="margin:6px 0 0 0;padding-left:16px">' + sdItems + '</ul>' +
+      '</div>';
+  }
+
+  // Item4抜粋
+  var excerptHtml = '';
+  if (d.item4_excerpt) {
+    excerptHtml =
+      '<details style="margin-top:10px">' +
+      '<summary style="font-family:var(--mono);font-size:10px;color:var(--sub);cursor:pointer;' +
+        'padding:4px 0;list-style:none">▶ Item 4 原文抜粋を表示</summary>' +
+      '<div style="margin-top:8px;padding:10px;background:var(--panel-bg,#1a1a2e);border-radius:4px;' +
+        'font-size:10px;font-family:var(--mono);color:var(--sub);white-space:pre-wrap;max-height:300px;overflow-y:auto">' +
+      esc(d.item4_excerpt) + '</div></details>';
+  }
+
+  var fetchedHtml =
+    '<div style="margin-top:14px;font-size:10px;color:var(--mut)">取得日時: ' +
+    esc((d.fetched_at || '').slice(0, 19).replace('T', ' ')) + ' JST</div>';
+
+  return [
+    '<div class="rv-head"><span class="rv-quarter">' + esc(ticker) + '</span>' +
+      '<span class="rv-date">内部統制評価 (Item 4)</span></div>',
+    badgeHtml,
+    mwHtml,
+    sdHtml,
+    excerptHtml,
+    fetchedHtml,
   ].join('');
 }
 

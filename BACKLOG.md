@@ -103,26 +103,13 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 問題: 四半期サプライズ率が計算できない
 - 改善: 有料API検討 or yfinance の quarterly_earnings 活用
 
-### [SEC-CTRL-1] 内部統制評価機能（10-Q Item4 / 10-K Item9A）
-**優先度:** 中
-**分類:** 設計課題 / 実装先未定
-
-#### 目的
-- 四半期(10-Q): Item 4「Controls and Procedures」を取得・評価
-- 通期(10-K): Item 9A「Controls and Procedures」を取得・評価
-
-#### ユースケース
-1. **投資仮説の検証（SOUN）**: 3年連続で内部統制不備を指摘されており、株価上昇の足かせとなっている。「徐々に改善される」という仮説が正しいか決算ごとに確認する
-2. **全銘柄モニタリング**: 対象銘柄全体で新規の不備指摘が発生していないか定期チェック
-
-#### 評価軸（案）
-- Material Weakness / Significant Deficiency の有無
-- 前回からの改善・悪化の変化
-- 経営陣のコメントトーン（改善中 / 継続問題 / 解消）
-
-#### 実装先
-- TANUKI TAIL（投資仮説検証の一部として統合）が最有力候補
-- または STONKS SILO / TANUKI VALUATION の定性情報セクションに追加
+### [SEC-CTRL-1] 内部統制評価機能（10-Q Item4 / 10-K Item9A）— **✅ 完了 2026-06-24**
+**実装:** TANUKI TAIL モーダル「内部統制」タブ (n=5)
+- `src/tail/sec_ctrl_fetcher.py` — EDGAR 10-Q Item4 取得・解析・保存
+- `docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json` — 出力データ
+- `docs/portfolio/tail/index.html` — 「内部統制」タブ追加
+- `.github/workflows/TANUKI_TAIL_SEC_Ctrl.yml` — 週次自動更新 (月曜 10:00 JST)
+- **残課題:** 10-K Item9A 対応（通期）は未実装
 
 ### [TSCORE-TRAP-1] 投資トラップ検出機能（TANUKI SCORE）— Phase2残
 **優先度:** 低（Phase1完了、Phase2は追加pipeline作業が必要）

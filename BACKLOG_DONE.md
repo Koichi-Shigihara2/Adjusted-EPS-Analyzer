@@ -4,6 +4,20 @@
 
 ## 2026-06-24（実装）
 
+✅ [SEC-CTRL-1] 内部統制評価機能 TANUKI TAIL 実装（2026-06-24完了）
+- **`src/tail/sec_ctrl_fetcher.py`** 新規作成
+  - EDGAR 10-Q「Controls and Procedures」(Part I Item 4) を取得・解析
+  - Material Weakness / Significant Deficiency をregexで検出
+  - 有効性 (effective: true/false/null) を判定して `docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json` に保存
+  - CLI: `python src/tail/sec_ctrl_fetcher.py [TICKER ...]`（無引数で全tail銘柄）
+- **`docs/portfolio/tail/index.html`** 更新
+  - `TABS_CORE` に `'内部統制'` (n=5) 追加
+  - `openModal` に ctrl データのlazy load追加
+  - `renderModalBody` で n===5 を `buildTabCtrl` へディスパッチ
+  - `buildTabCtrl`: 有効性バッジ（緑/赤）、MW件数・スニペット、SD件数、Item4原文折りたたみ表示
+- **`.github/workflows/TANUKI_TAIL_SEC_Ctrl.yml`** 新規作成（週次月曜 10:00 JST 自動実行）
+- **SOUN検証**: MW=3種類（統制環境・複雑取引・職務分掌）を正常検出、effective=false確認
+
 ✅ [TSCORE-TRAP-1] 投資トラップ検出パネル Phase1+Phase2全件実装（2026-06-24完了）
 - `docs/value-monitor/tanuki_score/index.html` に `renderTrapPanel()` を追加（DuPontパネル直後・`<details>` 折りたたみ形式）
 - 6種をフロントエンドでリアルタイム計算: バリュー/グロース/バリューデスト/ナラティブ/サイクリカル/ワンタイム

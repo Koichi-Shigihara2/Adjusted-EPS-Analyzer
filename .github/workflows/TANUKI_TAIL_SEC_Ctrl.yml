@@ -1,0 +1,58 @@
+name: TANUKI TAIL SEC Ctrl Update
+
+on:
+  schedule:
+    - cron: '0 1 * * 1'  # 毎週月曜 01:00 UTC = 月曜 10:00 JST（10-Q 提出後を想定）
+  workflow_dispatch:
+    inputs:
+      ticker:
+        description: '対象ティッカー（スペース区切り、空白で全銘柄）'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  fetch-ctrl:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch SEC ctrl data
+        run: |
+          INPUT="${{ github.event.inputs.ticker }}"
+          if [ -z "$INPUT" ]; then
+            python src/tail/sec_ctrl_fetcher.py
+          else
+            python src/tail/sec_ctrl_fetcher.py $INPUT
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
+          git add docs/portfolio/tail/data/ctrl/
+          if git diff --staged --quiet; then
+            echo "変更なし"
+          else
+            git commit -m "chore: TANUKI TAIL 内部統制データ 自動更新 $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi
