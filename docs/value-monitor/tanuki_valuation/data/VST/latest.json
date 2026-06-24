@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 24519593429.446823,
   "intrinsic_value_per_share": 39.55730592391508,
   "intrinsic_value_beta": 17.77,
-  "upside_percent_beta": -89.1,
+  "upside_percent_beta": -89.2,
   "intrinsic_value_rf": 281.81,
-  "upside_percent_rf": 73.5,
+  "upside_percent_rf": 71.8,
   "v0": 17755373834.46895,
   "v0_adjusted": 17755373834.46895,
   "alpha": 0.38096745571452434,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 42.67,
       "value_growth_pct": 7.9,
-      "expected_return_pct": -73.7
+      "expected_return_pct": -74.0
     },
     "2年後": {
       "future_value": 46.01,
       "value_growth_pct": 16.3,
-      "expected_return_pct": -71.7
+      "expected_return_pct": -72.0
     },
     "3年後": {
       "future_value": 49.63,
       "value_growth_pct": 25.5,
-      "expected_return_pct": -69.4
+      "expected_return_pct": -69.8
     },
     "4年後": {
       "future_value": 53.52,
       "value_growth_pct": 35.3,
-      "expected_return_pct": -67.0
+      "expected_return_pct": -67.4
     },
     "5年後": {
       "future_value": 57.72,
       "value_growth_pct": 45.9,
-      "expected_return_pct": -64.5
+      "expected_return_pct": -64.8
     }
   },
-  "upside_percent": -75.6,
-  "calculation_date": "2026-06-24T21:09:39+09:00",
+  "upside_percent": -75.9,
+  "calculation_date": "2026-06-25T01:40:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -92,12 +92,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.07850000000000001,
+      "rate": 0.0785,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.07850000000000001,
+      "weighted_growth": 0.0785,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -268,10 +268,10 @@
       -1065000000
     ],
     "diluted_shares": 337182468,
-    "roe_10yr_avg": 0.09070653707488677,
+    "roe_10yr_avg": 0.09070653707488675,
     "roe_years_used": 8,
     "roe_outlier_adj": false,
-    "current_price": 162.39,
+    "current_price": 164.075,
     "latest_revenue": 17738000000.0,
     "rpo": 7474000000,
     "beta": 1.405,
@@ -282,12 +282,12 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
-    "high_growth_rate_used": 0.07850000000000001,
+    "high_growth_rate_used": 0.0785,
     "high_growth_years": 5,
     "terminal_growth_used": 0.02,
     "pv_high": 6291872696.806639,
     "pv_terminal": 11463501137.66231,
-    "roe_used": 0.09070653707488677,
+    "roe_used": 0.09070653707488675,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -296,11 +296,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.38096745571452434,
-    "per": 27.155518,
+    "per": 27.43729,
     "per_is_forward": false,
-    "per_adjusted": 23.83,
+    "per_adjusted": 24.08,
     "peg": 0.49,
-    "ps": 2.8158941,
+    "ps": 2.8451123,
     "ev_ebitda": 11.268,
     "ma200": 170.03505,
     "forward_eps": 10.98225,
@@ -310,7 +310,7 @@
     "analyst_target_high": 320.0,
     "analyst_count": 18,
     "analyst_rec_key": "strong_buy",
-    "dividend_yield": 0.005416717,
+    "dividend_yield": 0.0055791615,
     "payout_ratio": 0.1515,
     "insider_buy_count": 0,
     "insider_sell_count": 8,
@@ -319,7 +319,7 @@
     "analyst_vs_iv": 468.8
   },
   "validation": {
-    "validated_at": "2026-06-24",
+    "validated_at": "2026-06-25",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -396,7 +396,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 1063000000
   },
-  "net_current_assets_ratio": -0.019,
+  "net_current_assets_ratio": -0.0189,
   "dupont": {
     "ni_ttm": 2241000000,
     "revenue_ttm": 19445000000,
@@ -467,9 +467,25 @@
     "fcf_margin_bear_multiplier": 0.4684,
     "fcf_margin_note": "FCFマージン悪化(15.8%→7.4%) BEAR補正係数=0.468"
   },
-  "erp": 0.0246,
-  "forward_earnings_yield": 0.0676,
+  "erp": 0.0239,
+  "forward_earnings_yield": 0.0669,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against Vistra Energy Corp",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }

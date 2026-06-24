@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 305274397.6014604,
   "intrinsic_value_per_share": 3.1276708358838388,
   "intrinsic_value_beta": 2.32,
-  "upside_percent_beta": -90.7,
+  "upside_percent_beta": -90.0,
   "intrinsic_value_rf": 10.95,
-  "upside_percent_rf": -56.3,
+  "upside_percent_rf": -52.7,
   "v0": 305274397.6014604,
   "v0_adjusted": 305274397.6014604,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 3.89,
       "value_growth_pct": 24.3,
-      "expected_return_pct": -84.5
+      "expected_return_pct": -83.2
     },
     "2年後": {
       "future_value": 4.83,
       "value_growth_pct": 54.3,
-      "expected_return_pct": -80.7
+      "expected_return_pct": -79.2
     },
     "3年後": {
       "future_value": 6.01,
       "value_growth_pct": 92.0,
-      "expected_return_pct": -76.0
+      "expected_return_pct": -74.1
     },
     "4年後": {
       "future_value": 7.47,
       "value_growth_pct": 138.7,
-      "expected_return_pct": -70.2
+      "expected_return_pct": -67.8
     },
     "5年後": {
       "future_value": 9.28,
       "value_growth_pct": 196.5,
-      "expected_return_pct": -62.9
+      "expected_return_pct": -59.9
     }
   },
-  "upside_percent": -87.5,
-  "calculation_date": "2026-06-24T21:06:19+09:00",
+  "upside_percent": -86.5,
+  "calculation_date": "2026-06-25T01:37:16+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -290,7 +290,7 @@
     "roe_10yr_avg": -0.5806867304196929,
     "roe_years_used": 4,
     "roe_outlier_adj": true,
-    "current_price": 25.03,
+    "current_price": 23.17,
     "latest_revenue": 24587000.0,
     "rpo": 42400000,
     "beta": 2.055,
@@ -315,11 +315,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -65.06876,
+    "per": -60.233448,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 745.11755,
+    "ps": 689.74725,
     "ev_ebitda": null,
     "ma200": 23.9551,
     "forward_eps": -0.38467,
@@ -338,7 +338,7 @@
     "analyst_vs_iv": 1178.9
   },
   "validation": {
-    "validated_at": "2026-06-24",
+    "validated_at": "2026-06-25",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -364,7 +364,7 @@
   "phase1_growth": 0.2427192636959137,
   "tanuki_score": "PASS",
   "funda_score": 10,
-  "score_comment": "割高(-88%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
+  "score_comment": "割高(-86%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
   "timing_score": 40,
   "sell_reason": null,
   "matrix": {
@@ -416,7 +416,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "computed_runway_months": 53.50936132060546,
-  "net_current_assets_ratio": 0.0624,
+  "net_current_assets_ratio": 0.0674,
   "dupont": {
     "excluded": true,
     "reason": "revenue_too_small"
@@ -461,9 +461,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0584,
-  "forward_earnings_yield": -0.0154,
+  "erp": -0.0596,
+  "forward_earnings_yield": -0.0166,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit ongoing",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC regulatory investigation active",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning issued impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }
