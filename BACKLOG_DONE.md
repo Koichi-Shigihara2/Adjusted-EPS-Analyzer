@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-06-24（Task Group 2）
+
+✅ [TSCORE-FIX-2] TANUKIスコアテーブルの行間・フォント改善（2026-06-24 完了）
+- **対象**: `docs/value-monitor/tanuki_score/index.html`
+- **対応**: `.dtbl th` の padding を 9px/12px→10px/14px、font-size を 10px→11px に拡大。`.dtbl td` の padding を 8px/12px→10px/14px に拡大（HypeCore detail.html の基準に統一）
+
+✅ [TVAL-FORMULA-1] TANUKI VALUATION 算式と実装の整合性監査・修正（2026-06-24 完了）
+- **対象**: `docs/value-monitor/tanuki_valuation/index.html`（formula-preview・method-card・TABLE LEGEND）
+- **監査結果**（7式）:
+  - RICE: **不一致→修正** VC_Factorが表示から欠落。`(G×Q×CF)/WACC`→`(G×VC_Factor×Q×CF)/WACC`（3箇所修正）
+  - Q: **不一致→修正** SBC補正が表示から欠落。`OCF÷純利益`→`OCF÷(純利益+SBC)`（1箇所修正）
+  - IV(P_t): **不一致→修正** `GO_PV×(1+α)÷株式数`と表示していたが実装は`GO_PV÷株式数`（αはGO_PVに乗らない）
+  - α, WACC, 乖離率, CF: **一致**（修正なし）
+- **根拠**: `adjustments.py` L598: `intrinsic_value_pt = v0*(1+alpha) + rpo_pv + growth_option_pv`
+- **注記**: CLAUDE_CODE_START.md記載の「RICEのVC_Factor欠落は既知」の解消も含む
+
+✅ [EPS-LAYOUT-1] 個別明細画面にティッカー＋会社名表示（2026-06-24 完了）
+- **対象**: 3画面 + 共通データファイル新規生成
+  - `docs/common/company_names.json`（新規）: `config/cik_lookup.csv`から96銘柄の`{ticker: name}`マッピングを生成
+  - `docs/value-monitor/adjusted_eps_analyzer/stock.html`: `ticker-title`を`TICKER — Company Name`形式に
+  - `docs/value-monitor/tanuki_valuation/stock.html`: `.ticker-symbol`に会社名を付加
+  - `docs/value-monitor/hypecore/detail.html`: `page-title-sub`に選択銘柄の会社名を表示
+- **実装方式**: ページ初期化時に`company_names.json`をfetchし、会社名が存在する場合のみ付加（フォールバックはティッカーのみ）
+
+---
+
 ## 2026-06-24
 
 ✅ [HYPE-BUG-2] 開閉アイコンの向きが逆さま修正（2026-06-24 完了）
