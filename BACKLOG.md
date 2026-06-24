@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-24（TSCORE-FIX-2/TVAL-FORMULA-1/EPS-LAYOUT-1完了反映）
+最終更新: 2026-06-24（DAILY-PICK-BUG-1追加、DCF-RELIABILITY-1調査完了）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -37,6 +37,21 @@ BACKLOG_DONE.mdへ移動。MACRO-DISP-2も2026-06-23完了）
 ---
 
 ## 優先度：低
+
+### [DAILY-PICK-BUG-1] daily_pick.jsonのtanukiキー欠落（daily_pick.py）
+**優先度:** 低
+**分類:** バグ / パイプライン出力
+
+#### 症状
+- `daily_pick.py` の `build_data_package()`（L279）は `tanuki.fcf_conversion_rate` を生成しているが、
+  最終出力辞書（L492-500）に `tanuki` キーが含まれていない（`report` キーのみ出力）
+- `docs/integrated-dashboard/daily_pick.json` の `"tanuki": {}` が空のまま
+- フロントエンド未到達のため、`tanuki_score/index.html` 等で `fcf_conversion_rate` を
+  参照したい場合に使用不可
+
+#### 対処
+- `build_data_package()` の最終出力辞書に `tanuki` キーを追加する
+- 現時点でフロントエンドからの参照箇所はないため影響範囲は軽微
 
 ---
 

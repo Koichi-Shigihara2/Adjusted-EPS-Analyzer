@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-06-24（調査）
+
+✅ [DCF-RELIABILITY-1] FCF_Conversion_Rate表示欠け調査（2026-06-24完了・対応不要）
+- **調査結果**: rate=null の銘柄はゼロ。非表示19件はすべて設計上の正常動作
+  - 赤字（adj_net_income≤0）: 12件（ASTS, CRWV, IONQ, JOBY, ONDS, QBTS, RBRK, RCAT, RKLB, RXRX, S, SOUN）
+  - FCF外れ値除外（二重補正防止）: 5件（AMZN, BBAI, COHR, KULR, RDW）
+  - EPSデータ欠落: 2件（BKNG, FCX）
+- 「74銘柄表示欠け」は過去のClaude Code調査時点の記録であり現状と乖離していた
+- 別途 [DAILY-PICK-BUG-1] を新規登録（daily_pick.jsonのtanukiキー欠落）
+
+---
+
 ## 2026-06-24（Task Group 2）
 
 ✅ [TSCORE-FIX-2] TANUKIスコアテーブルの行間・フォント改善（2026-06-24 完了）
