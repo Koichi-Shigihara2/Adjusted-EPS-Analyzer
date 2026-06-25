@@ -4,6 +4,16 @@
 
 ## 2026-06-26（完了）
 
+### [EVAL-3] Moat Scoreスクリーニング画面への組み込み（2026-06-26完了）
+
+**完了日:** 2026-06-26
+**対応内容:**
+- tanuki_valuation/index.html にMoat Score列を追加（乖離率の隣、ソート対応）
+- α列を削除（ALPHA-REDESIGN-1で廃止済みの残骸）
+- stats barの「平均α」→「平均Moat」に変更
+- RKLBのlatest.jsonを再生成（moat_score欠落を解消）
+**結果:** 94銘柄中94銘柄にmoat_score表示。スコア範囲0.00〜0.95、平均0.33。
+
 ### [ALPHA-REDESIGN-1] alpha乗算廃止・Moat Score駆動Phase1期間自動算出（2026-06-26完了）
 
 **概要:** DCFの `v0*(1+alpha)` 乗算を廃止し、企業の競争優位性（Moat Score）から
