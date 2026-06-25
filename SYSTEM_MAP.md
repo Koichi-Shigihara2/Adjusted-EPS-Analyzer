@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-24（TAIL-LAYOUT-1: decision_log.html 新設・MP-LOGIC-1/2: TAKE PROFIT/BUY チェックリスト実装を反映）
+最終更新: 2026-06-26（ALPHA-REDESIGN-1・DISCOVER系新機能・ARCH-DATA-1-FY反映）
 
 ---
 
@@ -40,12 +40,16 @@ SEC EDGAR
 ├─ normalizer.py     # フィールド正規化
 ├─ ttm_calculator.py # TTM系列計算
 ├─ parser.py         # XBRL解析
-└─ extract_key_facts.py  # EPS逆算・株数3段フォールバック（quarterly.json生成）
+├─ extract_key_facts.py  # EPS逆算・株数3段フォールバック（quarterly.json生成）
+└─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
 ├─ core_calculator.py    # DCF・理論株価
 ├─ calculator/rice.py    # RICE投資効率
 ├─ calculator/dcf.py     # DCFエンジン
+├─ calculator/adjustments.py  # alpha計算（参考値保持）・Moat Score計算（ALPHA-REDESIGN-1 2026-06-25）
+│   注記: ALPHA-REDESIGN-1によりDCF_v0へのalpha乗算を廃止。
+│        競争優位はMoat Score（粗利率・ROIC超過幅・FCFマージン）によるPhase1期間自動計算で表現。
 └─ growth_sanity.py      # 成長率サニティチェック
 ↑ HypeCoreフェーズを参照
      ↓ latest.json（銘柄ごと）
@@ -61,7 +65,10 @@ Market Pulse  ← yfinance / CNN F&G / FREDデータ
 　　TAKE PROFIT / BUY チェックリスト（F&G×200日MA×HYスプレッド×ヒンデンブルグ簡易版、
 　　MP-LOGIC-1/2 2026-06-24実装）を market_data.json に出力
 MACRO PULSE   ← FREDデータ / FRBステートメント
-DISCOVER      ← Grok Web検索
+DISCOVER      ← Grok Web検索 / NewsAPI
+　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
+　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）
+　　カタリスト発掘: src/discover/catalyst.py → docs/discover/data/catalyst.json（週次）
 PORTFOLIO     ← 手動入力 / 証券会社API
 TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
 　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json

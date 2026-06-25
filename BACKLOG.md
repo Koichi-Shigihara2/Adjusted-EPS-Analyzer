@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-26（ALPHA-REDESIGN-1 Moat Score駆動Phase1自動算出・alpha乗算廃止 完了）
+最終更新: 2026-06-26（本日作業反映・BACKLOG整備）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -55,9 +55,8 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
   取得する規則を pipeline に導入済み。
 - **ANNUAL-FY-1（2026-06-13 完了）が第三歩**: aggregate_annual の filing_date[:4] →
   fiscal_year フィールドベースに変更。20銘柄のIV誤計算を是正。
-  **残課題**: 年度判定が parser.py（期末日年）/ extract_key_facts.py（会計年度）/
-  aggregate_annual（会計年度）の3箇所に分散している。次の前倒し対象として
-  共通関数化（単一定義）を検討する。
+  ~~**残課題**: 年度判定が parser.py / extract_key_facts.py / aggregate_annual の
+  3箇所に分散。~~ ✅ 2026-06-25完了（ARCH-DATA-1-FY）
 
 #### 残りの方針
 計算ロジックに渡す前に、SECの変種を統一フォーマットに均す
@@ -131,49 +130,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
   - A) IFRSフォーマット対応を実装して有効化（工数大）
   - B) カナダ企業は永続除外として現状維持
 
-### [GROWTH-3] 逓減モデルの CAGR_max クランプ上限(100%)の妥当性検証
-**優先度:** 中（全銘柄の成長率に影響するため慎重に。レビュー横断で要否判断）
-**検出契機:** IONQ修正後のレビュー（2026-06-12）
-
-#### 問題
-- 逓減モデルの start_g は `min(max(ttm_actual, cagr_best), 1.0)` でクランプ
-- IONQ: cagr_3yr ≈ 127% → クランプ後 start_g = 100%
-- recommended_g = (100% + 10%) / 2 = **55%**（10年逓減モデルが適用される）
-- 上場初期の極小売上（$2M→$130M）からの高CAGRは、小数点誤差の拡大に近く
-  「真の競争力55%」と誤認させる可能性
-
-#### 影響
-- 高成長初期銘柄の IV 過大評価 → Deviation が反転（割安→割高の誤判定）
-- IONQ: IV $35.2 → 実際 $58、現在価格 $58 でもGROWTH_PREMIUMと判定中
-
-#### 対処案（検討中）
-1. **上限引き下げ**: クランプを 100% → 80% or 70% に変更
-2. **売上規模フィルタ**: TTM Revenue < $Xm のとき start_g を追加割引
-3. **上場年数フィルタ**: 上場 N 年未満は CAGRを信頼度係数で割引
-4. **現状維持**: 過大評価は Deviation > 0 と HypePhase > 2 の組み合わせで
-   すでに TRIM/GROWTH_PREMIUM として表示されており、実害は軽微の可能性
-
-#### 着手条件
-- ✅ 2026-06-12 横断スキャン完了（growth_model_audit.py 実施・79銘柄）
-- スキャン結果: クランプ発動 4 件（IONQ/NVDA/ONDS/RCAT）
-  - NVDA ($216B): 実態のある100%成長 → 懸念なし
-  - IONQ ($0.13B): cagr=127% → rec_g=55% → Upside=+12.4% → 唯一の要注意ケース
-  - ONDS ($0.05B)/RCAT ($0.04B): クランプ高だがUpside<0で実害なし
-- 現状判断: IONQ は Score=WATCH で管理可能。対処案4（現状維持）を仮採用。
-  ただし IONQ が BUY/GROWTH_PREMIUM に昇格したら売上規模フィルタを検討。
-- **次アクション**: CEG/VSTレビュー完了済み（2026-06-12）。対処案1（80%クランプ）の試算に着手可
-
-#### 最終判断（2026-06-25）
-対処案4（現状維持）で確定クローズ。
-理由：
-- IONQはDCF信頼性LOWによりWATCH丸め済みのため、クランプ変更による判定への実害なし
-- NVDA/ONDS/RCATも実害なし（NVDAはLayer1適用でクランプ非適用、ONDS/RCATはUpside<0）
-- クランプ80%変更はWATCH丸め銘柄に対して判定変化をもたらさない
-本項目をBACKLOG_DONE.mdへ移動する。
-
-
-### ~~[DISCOVER-FEATURE-1] 銘柄ごとのニュース履歴保存・閲覧機能（DISCOVER画面）~~ ✅ 2026-06-25完了
-（`src/discover/collect.py` に月別履歴JSON保存・翌日騰落率付加を実装。`docs/discover/news_history.html` を新規作成。BACKLOG_DONE.md参照）
 
 ---
 
@@ -201,7 +157,9 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 ### [ARCH-1] ボトルネック企業プレミアム
 - 現状: 未実装
 - 内容: NVDA・ASML等の独占的ポジションを持つ企業への追加プレミアム
-- 設計: 手動フラグ（bottleneck: true）+ α加算の形
+- 設計: 手動フラグ（bottleneck: true）+ Moat Scoreへの上乗せ or Phase1延長の形
+- 注記: ALPHA-REDESIGN-1（2026-06-25）でalphaが廃止されたため、
+  α加算方式は使用不可。設計を再検討する必要あり。
 - 記録日: 2026-04-12
 
 ### [EVAL-2] 期待値エンジン（仮称）
@@ -293,8 +251,10 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 実装難易度: 高
 
 ### [DESIGN-4] 期待込みの価値計算
-- 概要: TANUKI（本源的価値）+ HypeCore α + マクロ補正
-  = 期待込みの価値（フロアまたは最高値の目安）
+- 概要: TANUKI（本源的価値）+ Moat Premium（競争優位・Moat Score連動Phase1で表現）
+  + マクロ補正 = 期待込みの価値（フロアまたは最高値の目安）
+- 注記: ALPHA-REDESIGN-1（2026-06-25）でHypeCore αは廃止。
+  Moat Scoreが競争優位の定量化を担う設計に変更済み。
 - 連携: DESIGN-2・DESIGN-5と連動
 - 実装難易度: 高
 
@@ -429,7 +389,8 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度：中の項目（ARCH-DATA-1の年度判定共通関数化等）へ展開
+1. 優先度：中の項目（TANUKI-FIN-1・EPS-1等）または設計相談メモ（DESIGN-2/5/6等）へ展開
+※ ARCH-DATA-1の年度判定共通関数化は2026-06-25完了済み
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
