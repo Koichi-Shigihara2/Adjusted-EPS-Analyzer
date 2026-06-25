@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
 
       - name: 依存ライブラリインストール
-        run: pip install requests
+        run: pip install requests yfinance
 
       - name: 情報収集実行
         env:
@@ -36,6 +36,7 @@ jobs:
           git config merge.ours.driver true
           git add docs/discover/data/daily_report.json
           git add docs/discover/data/macro_themes_history.json 2>/dev/null || true
+          git add "docs/discover/data/news_history_*.json" 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "変更なし"
           else

@@ -292,6 +292,77 @@ URLが不明な場合はurlをnullにして情報源名のみ記載してくだ�
     return []
 
 
+def get_price_change(ticker: str) -> "float | None":
+    """直近2営業日の終値比騰落率（%）を返す"""
+    try:
+        import yfinance as yf
+        hist = yf.Ticker(ticker).history(period="2d", interval="1d")
+        if len(hist) >= 2:
+            prev = float(hist["Close"].iloc[-2])
+            curr = float(hist["Close"].iloc[-1])
+            if prev > 0:
+                return round((curr - prev) / prev * 100, 2)
+    except Exception as e:
+        print(f"  price_change取得失敗 ({ticker}): {e}")
+    return None
+
+
+def add_price_changes_to_yesterday(now_jst: datetime) -> None:
+    """前日分の月別履歴JSONに翌日騰落率（当日分データ）を追記する"""
+    yesterday = (now_jst - timedelta(days=1)).strftime("%Y-%m-%d")
+    ym = yesterday[:7].replace("-", "_")
+    hist_path = Path(f"docs/discover/data/news_history_{ym}.json")
+    if not hist_path.exists():
+        return
+    try:
+        history = json.loads(hist_path.read_text(encoding="utf-8"))
+    except Exception as e:
+        print(f"月別履歴JSON読み込みエラー ({hist_path}): {e}")
+        return
+    if yesterday not in history:
+        return
+    yesterday_data = history[yesterday]
+    tickers_to_update = list(yesterday_data.keys())
+    print(f"前日({yesterday}) {len(tickers_to_update)}銘柄の騰落率を付加中...")
+    for ticker in tickers_to_update:
+        change = get_price_change(ticker)
+        for item in yesterday_data[ticker].get("items", []):
+            item["price_change_next_day"] = change
+        print(f"  {ticker}: {change}")
+    hist_path.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"騰落率追記完了: {hist_path}")
+
+
+def append_to_monthly_history(results: dict, now_jst: datetime) -> None:
+    """当日分のニュース分類結果を月別履歴JSONに追記（同日キーは上書き）する"""
+    today = now_jst.strftime("%Y-%m-%d")
+    ym = today[:7].replace("-", "_")
+    hist_path = Path(f"docs/discover/data/news_history_{ym}.json")
+    history: dict = {}
+    if hist_path.exists():
+        try:
+            history = json.loads(hist_path.read_text(encoding="utf-8"))
+        except Exception:
+            history = {}
+    today_data: dict = {}
+    for ticker, data in results.items():
+        cl = data.get("classified", {})
+        today_data[ticker] = {
+            "items": [
+                {k: v for k, v in item.items() if k != "price_change_next_day"}
+                for item in cl.get("items", [])
+            ],
+            "top_importance": cl.get("top_importance", "低"),
+            "summary":        cl.get("summary", ""),
+            "conditions_met": cl.get("conditions_met", []),
+            "risk_flags":     cl.get("risk_flags", []),
+        }
+    history[today] = today_data
+    hist_path.parent.mkdir(parents=True, exist_ok=True)
+    hist_path.write_text(json.dumps(history, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"月別履歴追記完了: {hist_path} ({len(history)}日分)")
+
+
 def main():
     now_jst = datetime.now(JST)
     config  = load_config()
@@ -349,6 +420,10 @@ def main():
             print(f"特大テーマ引継ぎ: {len(macro_themes)}件")
         except Exception:
             macro_themes = []
+
+    # 前日分に翌日騰落率を追記し、当日分を月別履歴に保存
+    add_price_changes_to_yesterday(now_jst)
+    append_to_monthly_history(results, now_jst)
 
     report = {
         "generated_at": now_jst.strftime("%Y-%m-%dT%H:%M:%S+09:00"),

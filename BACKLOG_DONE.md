@@ -4,6 +4,21 @@
 
 ## 2026-06-25（実装）
 
+✅ [DISCOVER-FEATURE-1] ニュース履歴保存・閲覧機能（2026-06-25完了）
+- **`src/discover/collect.py`** に3関数を追加
+  - `get_price_change(ticker)`: yfinance で直近2営業日の終値比騰落率（%）を取得
+  - `add_price_changes_to_yesterday(now_jst)`: 前日分の `news_history_YYYY_MM.json` を読み込み、各銘柄・各itemに `price_change_next_day` を追記して上書き保存
+  - `append_to_monthly_history(results, now_jst)`: 当日分の分類結果を `docs/discover/data/news_history_YYYY_MM.json` に追記（同日キーは上書き・冪等）
+  - `main()` で `daily_report.json` 書き込み前に上記2関数を呼び出す
+- **`docs/discover/news_history.html`** 新規作成
+  - 月選択・銘柄フィルター付きニュース履歴閲覧画面
+  - 日付降順・銘柄ごとに `price_change_next_day` を色付き表示（↑緑/↓赤/—グレー）
+  - importance・category バッジ、URL付きタイトルリンク、summary・source 表示
+  - `data-tool="news-history"` で site-theme.css のシアン accent を適用
+- **`docs/common/site-nav.js`**: DISCOVER の次に `{ key: 'news-history', label: 'ニュース履歴' }` を追加（全ページのナビに波及）
+- **`.gitattributes`**: `docs/discover/data/news_history_*.json text eol=lf merge=ours` を追加
+- **`.github/workflows/Discover_Update.yml`**: pip install に `yfinance` 追加、git add に `news_history_*.json` 追加
+
 ✅ [ARCH-DATA-1一部] 年度判定の共通関数化（2026-06-25完了）
 - `common/sec_data/utils.py` を新規作成し `determine_fiscal_year(end_date, fiscal_end_month)` を定義
 - `common/sec_data/parser.py`: `_detect_fiscal_end_month()` メソッドを追加し、`_extract_values()` 内の `end_date[:4]` を `determine_fiscal_year` 呼び出しに統一。INTUガード（exactフラグ）は保持

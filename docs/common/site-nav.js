@@ -18,6 +18,7 @@
     { key: 'macro',        label: 'MACRO PULSE',       href: BASE + '/market-monitor/macro-pulse/' },
     { key: 'hype',         label: 'HYPE CORE',         href: BASE + '/value-monitor/hypecore/' },
     { key: 'discover',     label: 'DISCOVER',          href: BASE + '/discover/' },
+    { key: 'news-history', label: 'ニュース履歴',         href: BASE + '/discover/news_history.html' },
     { key: 'portfolio',    label: 'PORTFOLIO',         href: BASE + '/portfolio/' },
     { key: 'tail',         label: 'TANUKI TAIL',       href: BASE + '/portfolio/tail/' }
   ];
