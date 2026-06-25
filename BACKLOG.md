@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-24（TSCORE-DUPONT-3・SILO-LAYOUT-1〜5・PORT-FEATURE-1・TAIL-LAYOUT-1・TAIL-UX-1・DISCOVER-LAYOUT-1・MP-FEATURE-1・DISCOVER-FEATURE-2・DISCOVER-FEATURE-3・MP-LOGIC-1・MP-LOGIC-2・SOFI-DATA-1・TSCORE-FIX-2・EPS-LAYOUT-1・TVAL-FORMULA-1・TSCORE-DUPONT-1・DCF-RELIABILITY-1・HOME-FIX-3・TSCORE-BT-1・EPS-DISP-2〜5・MP-DISP-1・DAILY-PICK-BUG-1・TSCORE-TRAP-1（全10種）・SEC-CTRL-1・MP-BIZDAY-1 完了、ARCH-DATA-1セクション修正）
+最終更新: 2026-06-25（ARCH-DATA-1 年度判定共通関数化 完了）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -68,7 +68,8 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 旧SECタグ・金融revenueタグ・非12月期等の吸収を正規化層に集約し、
   計算ロジックからデータ個性の処理を排除（PARSER-1で年度キー部分は対応済み）
 - normalized JSON に不足フィールド（ShortTermInvestments / 銀行移行後LTDebt 等）を補完
-- **年度判定の3箇所分散を単一関数に統合**（新規追加・最優先の残課題）
+- ~~**年度判定の3箇所分散を単一関数に統合**~~ ✅ 2026-06-25完了
+  （`common/sec_data/utils.py` に `determine_fiscal_year` を追加。parser.py・extract_key_facts.py・aggregate_annual の3箇所を統一）
 
 #### 着手条件
 個別バグの掃討が一段落してから、ではなく、**次にデータ形起因バグが

@@ -165,9 +165,9 @@
     <a href="value-monitor/hypecore/" class="card card-hypecore">
       <div class="card-tag">lifecycle analysis</div>
       <div class="card-title">HYPE<br>CORE</div>
-      <div class="card-desc">期待と実体の関係性からハイプサイクル上の現在位置を判定。S0〜S4ステージ・フェーズ・推奨を60銘柄に適用。</div>
+      <div class="card-desc">期待と実体の関係性からハイプサイクル上の現在位置を判定。S0〜S4ステージ・フェーズ・推奨を<span id="hypecore-ticker-count">60</span>銘柄に適用。</div>
       <div class="card-footer">
-        <div class="card-status"><span class="dot dot-live"></span>LIVE · 60銘柄</div>
+        <div class="card-status"><span class="dot dot-live"></span>LIVE · <span id="hypecore-status-count">60銘柄</span></div>
         <span class="card-arrow">→</span>
       </div>
     </a>
@@ -229,5 +229,21 @@
 </div>
   <script src="common/site-header.js"></script>
   <script src="common/site-nav.js"></script>
+  <script>
+    fetch('value-monitor/hypecore/data/tickers.json')
+      .then(r => r.ok ? r.json() : null)
+      .then(arr => {
+        if (!Array.isArray(arr)) return;
+        const n = arr.length;
+        const el1 = document.getElementById('hypecore-ticker-count');
+        const el2 = document.getElementById('hypecore-status-count');
+        if (el1) el1.textContent = n;
+        if (el2) el2.textContent = n + '銘柄';
+      })
+      .catch(() => {
+        const el2 = document.getElementById('hypecore-status-count');
+        if (el2) el2.textContent = '';
+      });
+  </script>
 </body>
 </html>

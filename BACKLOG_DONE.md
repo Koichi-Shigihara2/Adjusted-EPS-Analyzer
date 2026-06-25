@@ -2,6 +2,17 @@
 
 ---
 
+## 2026-06-25（実装）
+
+✅ [ARCH-DATA-1一部] 年度判定の共通関数化（2026-06-25完了）
+- `common/sec_data/utils.py` を新規作成し `determine_fiscal_year(end_date, fiscal_end_month)` を定義
+- `common/sec_data/parser.py`: `_detect_fiscal_end_month()` メソッドを追加し、`_extract_values()` 内の `end_date[:4]` を `determine_fiscal_year` 呼び出しに統一。INTUガード（exactフラグ）は保持
+- `src/value/adjusted_eps_analyzer/extract_key_facts.py`: 4か所のインライン `end.month > fiscal_end_month` 判定を `determine_fiscal_year` に置き換え
+- `src/value/adjusted_eps_analyzer/pipeline.py` `aggregate_annual()`: `fiscal_year=None` フォールバック時に警告ログを追加（動作は維持）
+- pytest 119件全通過確認済み
+
+---
+
 ## 2026-06-24（実装）
 
 ✅ [MP-BIZDAY-1] MARKET PULSE 営業日ベース化（2026-06-24完了）

@@ -18,6 +18,7 @@ SEC EDGARから企業の財務データを抽出するモジュール（会計�
 - ★ 実際のQ4データが存在する場合、計算で上書きしない
 """
 import os
+import sys
 import csv
 import json
 import requests
@@ -32,6 +33,11 @@ CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 # PROJECT_ROOT = リポジトリルート（3階層上）
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(CURRENT_DIR)))
 CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
+
+# common.sec_data.utils を importできるようにプロジェクトルートをパスに追加
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+from common.sec_data.utils import determine_fiscal_year
 CIK_FILE = os.path.join(CONFIG_DIR, "cik_lookup.csv")
 ADJUSTMENT_ITEMS_FILE = os.path.join(CONFIG_DIR, "adjustment_items.json")
 
@@ -504,13 +510,9 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         quarters_map = {}  # key: (fiscal_year, quarter) -> data
         
         for end_str, cand in best_quarterly.items():
-            # 会計年度を決定
-            # 終了日が fiscal_end_month より後なら翌年度、そうでなければ当年
-            if cand['end'].month > fiscal_end_month:
-                fiscal_year = cand['end'].year + 1
-            else:
-                fiscal_year = cand['end'].year
-            
+            # 会計年度を決定（共通関数で統一）
+            fiscal_year = determine_fiscal_year(cand['end'], fiscal_end_month)
+
             quarter_num = get_quarter_number(cand['end'], fiscal_end_month)
             key = (fiscal_year, quarter_num)
             
@@ -550,11 +552,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
                     continue
                 
-                if end.month > fiscal_end_month:
-                    fiscal_year = end.year + 1
-                else:
-                    fiscal_year = end.year
-                
+                fiscal_year = determine_fiscal_year(end, fiscal_end_month)
+
                 quarter_num = get_quarter_number(end, fiscal_end_month)
                 key = (fiscal_year, quarter_num)
                 if key in quarters_map:
@@ -572,11 +571,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
                 continue
             
-            if end.month > fiscal_end_month:
-                fiscal_year = end.year + 1
-            else:
-                fiscal_year = end.year
-            
+            fiscal_year = determine_fiscal_year(end, fiscal_end_month)
+
             quarter_num = get_quarter_number(end, fiscal_end_month)
             key = (fiscal_year, quarter_num)
             if key in quarters_map:
@@ -625,11 +621,8 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 target_k_item = None
                 for item in net_income_annual_items:
                     item_end = datetime.strptime(item['end'], '%Y-%m-%d')
-                    # 会計年度の決定: endの年が fiscal_end_month によって決まる
-                    if item_end.month > fiscal_end_month:
-                        item_fiscal_year = item_end.year + 1
-                    else:
-                        item_fiscal_year = item_end.year
+                    # 会計年度の決定（共通関数で統一）
+                    item_fiscal_year = determine_fiscal_year(item_end, fiscal_end_month)
                     if item_fiscal_year == fiscal_year:
                         target_k_item = item
                         break

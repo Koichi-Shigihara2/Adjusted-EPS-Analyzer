@@ -910,8 +910,8 @@
             datalabels: { display: true }
           },
           scales: {
-            y: { grid: { color: 'rgba(30,40,64,.8)' }, ticks: { color: '#64748b', font: { family: "'Space Mono'", size: 10 } }, beginAtZero: false },
-            x: { grid: { color: 'rgba(30,40,64,.8)' }, ticks: { color: '#64748b', font: { family: "'Space Mono'", size: 10 }, maxRotation: 45, autoSkip: true } }
+            y: { grid: { color: 'rgba(30,40,64,.8)' }, ticks: { color: '#64748b', font: { family: "'Space Mono'", size: 11 } }, beginAtZero: false },
+            x: { grid: { color: 'rgba(30,40,64,.8)' }, ticks: { color: '#64748b', font: { family: "'Space Mono'", size: 11 }, maxRotation: 45, autoSkip: true } }
           }
         }
       });
@@ -1010,12 +1010,12 @@
           scales: {
             x: {
               stacked: true,
-              ticks: { color: '#94a3b8', font: { family: "'Space Mono'", size: 9 }, maxRotation: 30 },
+              ticks: { color: '#94a3b8', font: { family: "'Space Mono'", size: 11 }, maxRotation: 30 },
               grid: { color: 'rgba(255,255,255,0.05)' }
             },
             y: {
               stacked: true,
-              ticks: { color: '#94a3b8', font: { family: "'Space Mono'", size: 9 },
+              ticks: { color: '#94a3b8', font: { family: "'Space Mono'", size: 11 },
                 callback: v => `$${v.toFixed(0)}M` },
               grid: { color: 'rgba(255,255,255,0.05)' }
             }
@@ -1024,9 +1024,7 @@
       });
     }
 
-    function updateAllAdjustments(quarters) {
-      const container = document.getElementById('adjustments-accordion');
-      const sorted = [...quarters].sort((a,b) => b.filing_date.localeCompare(a.filing_date));
+    function buildAdjHtml(sorted) {
       let html = '';
       sorted.forEach(q => {
         html += `<div class="q-block">`;
@@ -1062,7 +1060,31 @@
         }
         html += `</div>`;
       });
-      container.innerHTML = html;
+      return html;
+    }
+
+    function updateAllAdjustments(quarters) {
+      const container = document.getElementById('adjustments-accordion');
+      const sorted = [...quarters].sort((a,b) => b.filing_date.localeCompare(a.filing_date));
+      const INITIAL = 8;
+      if (sorted.length <= INITIAL) {
+        container.innerHTML = buildAdjHtml(sorted);
+        return;
+      }
+      container.innerHTML = buildAdjHtml(sorted.slice(0, INITIAL)) +
+        `<div id="adj-expand-wrap" style="text-align:center;padding:10px 0">
+           <button onclick="expandAllAdj()" style="background:none;border:1px solid var(--bdr);color:var(--acc);font-family:var(--mono);font-size:12px;padding:6px 18px;cursor:pointer;border-radius:3px">
+             全${sorted.length}件を表示 ▼
+           </button>
+         </div>`;
+      container._allSorted = sorted;
+    }
+
+    function expandAllAdj() {
+      const container = document.getElementById('adjustments-accordion');
+      const sorted = container._allSorted;
+      if (!sorted) return;
+      container.innerHTML = buildAdjHtml(sorted);
     }
 
     function switchTab(tab) {

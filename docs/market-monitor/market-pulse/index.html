@@ -298,9 +298,9 @@
             <path d="M 22 112 A 88 88 0 0 1 198 112" fill="none" stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round" opacity="0.35"/>
             <line id="gaugeNeedle" x1="110" y1="112" x2="110" y2="30" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90,110,112)" style="transition:transform 1s ease-out"/>
             <circle cx="110" cy="112" r="4" fill="#e2e8f0"/>
-            <text x="14" y="124" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11" letter-spacing=".06em">FEAR</text>
-            <text x="172" y="124" fill="#10b981" font-family="'Space Mono',monospace" font-size="11" letter-spacing=".06em">GREED</text>
-            <text x="110" y="26" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
+            <text x="22" y="124" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">FEAR</text>
+            <text x="198" y="124" fill="#10b981" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">GREED</text>
+            <text x="110" y="14" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
           </svg>
           <div class="gauge-center">
             <div class="gauge-score" id="gaugeScore">—</div>
@@ -353,9 +353,9 @@
             <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="url(#fgGrad)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
             <line id="fgNeedle" x1="90" y1="94" x2="90" y2="28" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90,90,94)" style="transition:transform 1s ease-out"/>
             <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
-            <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11">FEAR</text>
-            <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="11">GREED</text>
-            <text x="90" y="22" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
+            <text x="18" y="106" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">FEAR</text>
+            <text x="162" y="106" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">GREED</text>
+            <text x="90" y="12" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
           </svg>
           <div class="tp-gauge-center">
             <div class="tp-gauge-score" id="fgGaugeScore">—</div>
@@ -388,9 +388,9 @@
             <path d="M 18 94 A 72 72 0 0 1 162 94" fill="none" stroke="url(#tpGrad)" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
             <line id="tpNeedle" x1="90" y1="94" x2="90" y2="28" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round" transform="rotate(-90,90,94)" style="transition:transform 1s ease-out"/>
             <circle cx="90" cy="94" r="3.5" fill="#e2e8f0"/>
-            <text x="10" y="104" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11">FEAR</text>
-            <text x="138" y="104" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="11">GREED</text>
-            <text x="90" y="22" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
+            <text x="18" y="106" fill="#f43f5e" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">FEAR</text>
+            <text x="162" y="106" fill="#3b82f6" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">GREED</text>
+            <text x="90" y="12" fill="#64748b" font-family="'Space Mono',monospace" font-size="11" text-anchor="middle">50</text>
           </svg>
           <div class="tp-gauge-center">
             <div class="tp-gauge-score" id="tpGaugeScore">—</div>
@@ -425,6 +425,14 @@
       </div>
       <div class="tp-chart-wrap" style="height:200px"><canvas id="tpChart"></canvas></div>
     </div>
+  </div>
+  <div class="sec">📋 TAKE PROFIT チェックリスト — 極端な強欲（F&amp;G≥75）時に自動発動</div>
+  <div class="unified-card" id="tpChecklistCard" style="padding:18px 20px">
+    <div id="tpChecklistInner"><div style="text-align:center;color:var(--mut);font-size:13px;padding:16px">データなし（次回Actions実行後に表示）</div></div>
+  </div>
+  <div class="sec" id="buyChecklistSec">📋 BUY チェックリスト — 極端な恐怖（F&amp;G≤25）時に自動発動</div>
+  <div class="unified-card" id="buyChecklistCard" style="padding:18px 20px">
+    <div id="buyChecklistInner"><div style="text-align:center;color:var(--mut);font-size:13px;padding:16px">データなし（次回Actions実行後に表示）</div></div>
   </div>
   <div class="sec">資産クラス間 資金フロー — 安全資産（左）からリスク資産（右）への資金移動を可視化</div>
   <div class="af-card">
@@ -557,6 +565,7 @@ const fmtDateFull=iso=>{
 };
 const fmtChg=v=>{if(v==null)return{text:"-",cls:"flat"};const t=(v>=0?"+":"")+v.toFixed(2)+"%";return{text:t,cls:v>0.05?"up":v<-0.05?"down":"flat"}};
 const phaseLabel=j=>j==="晴れ"?"\u2600 晴れ":j==="嵐"?"\u26C8 嵐":"\u2601 曇り";
+function escHtml(s){return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function sentimentColor(s){if(s<=20)return"#f43f5e";if(s<=35)return"#fb7185";if(s<=50)return"#f59e0b";if(s<=65)return"#64748b";if(s<=80)return"#22d3ee";return"#10b981"}
 function fgColor(s){if(s<=25)return"#f43f5e";if(s<=45)return"#fb7185";if(s<=55)return"#f59e0b";if(s<=75)return"#22d3ee";return"#10b981"}
 function fgLabel(s){if(s<=25)return"X-Fear";if(s<=45)return"Fear";if(s<=55)return"Neutral";if(s<=75)return"Greed";return"X-Greed"}
@@ -662,7 +671,25 @@ function renderDetail(){
   } else if(d.credit){
     crHTML=`<div class="credit-row"><span class="credit-badge risk-neutral">株 —</span><span class="credit-badge risk-neutral">債券 —</span><span class="credit-badge risk-neutral">クレジット —</span><span style="font-family:var(--mono);margin-left:8px;font-size:12px;color:var(--mut)">Risk-Off Score: —</span></div>`;
   }
-  document.getElementById("detailInner").innerHTML=`<div class="detail-header"><span class="detail-phase-badge ${pc}">${phaseLabel(d.judgment)}</span><span class="detail-title-text">${fmtDateFull(d.date)}</span></div>${crHTML}<div class="detail-body">${d.summary??"詳細なし"}</div>${d.haiku?`<div class="haiku-box">${d.haiku}</div>`:""}`
+  document.getElementById("detailInner").innerHTML=`<div class="detail-header"><span class="detail-phase-badge ${pc}">${phaseLabel(d.judgment)}</span><span class="detail-title-text">${fmtDateFull(d.date)}</span></div>${crHTML}<div class="detail-body">${d.summary??"詳細なし"}</div>${d.haiku?`<div class="haiku-box">${d.haiku}</div>`:""}${buildCommentsHistory(d)}`
+}
+
+function buildCommentsHistory(d){
+  const hist=d.comments_history;
+  if(!hist||hist.length<=1)return'';
+  const prev=hist.slice(1).filter(e=>e.summary);
+  if(!prev.length)return'';
+  const togId='cmthist-'+(d.date||'x').slice(0,10);
+  const rows=prev.map(e=>{
+    const dl=e.date?e.date.slice(0,10):'—';
+    return`<div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--bdr)"><div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-bottom:6px">${dl}</div><div class="detail-body" style="font-size:12px;opacity:.85">${e.summary}</div></div>`;
+  }).join('');
+  return`<div style="margin-top:14px;border-top:1px solid var(--bdr);padding-top:10px"><button onclick="toggleCmtHist('${togId}')" style="background:none;border:none;color:var(--mut);font-family:var(--mono);font-size:11px;cursor:pointer;padding:0;letter-spacing:.04em;display:flex;align-items:center;gap:5px"><span id="${togId}-icon">▶</span> 過去の分析を見る（${prev.length}件）</button><div id="${togId}" style="display:none;margin-top:10px">${rows}</div></div>`;
+}
+function toggleCmtHist(id){
+  const el=document.getElementById(id);const icon=document.getElementById(id+'-icon');
+  if(!el)return;const hidden=el.style.display==='none';
+  el.style.display=hidden?'':'none';if(icon)icon.textContent=hidden?'▼':'▶';
 }
 
 // ── GAUGE ──
@@ -915,8 +942,161 @@ function renderMiniGauges(){
 
 // ── SELECT / RENDER ALL ──
 function selectItem(i){selectedIdx=i;renderTimeline();renderMetrics();renderDetail()}
-const RENDER_ALL_FNS=[renderGauge,renderOscMetricBtns,renderOscPeriodBtns,renderOscChart,renderMiniGauges,renderPeriodGroup,renderPhasePills,renderTimeline,renderMetrics,renderMetricBtns,renderChart,renderLegend,renderDetail,renderTechPulse,renderAssetFlow];
+const RENDER_ALL_FNS=[renderGauge,renderOscMetricBtns,renderOscPeriodBtns,renderOscChart,renderMiniGauges,renderPeriodGroup,renderPhasePills,renderTimeline,renderMetrics,renderMetricBtns,renderChart,renderLegend,renderDetail,renderTechPulse,renderTakeProfit,renderBuyChecklist,renderAssetFlow];
 function renderAll(){RENDER_ALL_FNS.forEach(fn=>{try{fn()}catch(e){console.error(`[renderAll] ${fn.name} failed:`,e)}})}
+
+function renderTakeProfit(){
+  const latest=allData[allData.length-1];
+  const el=document.getElementById("tpChecklistInner");
+  if(!el)return;
+  const tp=latest?.take_profit_checklist;
+  const fg=latest?.fear_greed?.score??latest?.tech_pulse?.components?.fg_score??null;
+  if(!tp){
+    const fgTxt=fg!=null?`現在F&G: ${Math.round(fg)}`:'';
+    if(fg!=null&&fg<75){
+      el.innerHTML=`<div style="color:var(--mut);font-size:13px;font-family:var(--mono);padding:4px 0">F&amp;G &lt; 75のため非発動${fgTxt?'（'+fgTxt+'）':''}。極端な強欲ゾーン到達時に利確シグナルを点検します。</div>`;
+    } else {
+      el.innerHTML=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:16px">データなし（次回Actions実行後に表示）</div>`;
+    }
+    return;
+  }
+  const {triggered,fg_score,points,action,checks}=tp;
+  const fgDisp=fg_score!=null?Math.round(fg_score):(fg!=null?Math.round(fg):null);
+  if(!triggered){
+    el.innerHTML=`<div style="color:var(--mut);font-size:13px;font-family:var(--mono);padding:4px 0">F&amp;G &lt; 75のため非発動${fgDisp!=null?'（現在: '+fgDisp+'）':''}。極端な強欲ゾーン到達時に利確シグナルを点検します。</div>`;
+    return;
+  }
+  // Active: F&G >= 75
+  const bannerColor=action==='TAKE PROFIT'?'var(--red)':action==='PARTIAL'?'var(--amb)':'var(--grn)';
+  const bannerBg=action==='TAKE PROFIT'?'rgba(244,63,94,.12)':action==='PARTIAL'?'rgba(245,158,11,.12)':'rgba(16,185,129,.12)';
+  const actionJa=action==='TAKE PROFIT'?'利確推奨':action==='PARTIAL'?'部分利確':action==='HOLD'?'ホールド継続':'';
+  let banner=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:${bannerBg};border:1px solid ${bannerColor};margin-bottom:14px;flex-wrap:wrap">`;
+  banner+=`<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:${bannerColor}">${action}</span>`;
+  banner+=`<span style="font-family:var(--mono);font-size:13px;color:${bannerColor}">${actionJa}</span>`;
+  banner+=`<span style="font-family:var(--mono);font-size:12px;color:var(--mut);margin-left:auto">利確ポイント: <strong style="color:${bannerColor};font-size:15px">${points}</strong> / 3</span>`;
+  banner+=`<span style="font-family:var(--mono);font-size:11px;color:var(--mut)">F&amp;G ${fgDisp!=null?fgDisp:'—'}</span>`;
+  banner+=`</div>`;
+  const CHECK_KEYS={'ma200':'tp_ma200','hy_spread':'tp_hy_spread','hindenburg':'tp_hindenburg'};
+  let rows='';
+  for(const c of (checks||[])){
+    const badge=c.passed
+      ?`<span style="font-size:13px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,.12);color:var(--grn);font-family:var(--mono)">✅ OK</span>`
+      :`<span style="font-size:13px;padding:2px 8px;border-radius:4px;background:rgba(244,63,94,.12);color:var(--red);font-family:var(--mono)">❌ 警戒</span>`;
+    const ptBadge=c.point>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--red);margin-left:4px">+${c.point}pt</span>`:'';
+    const glossKey=CHECK_KEYS[c.key]||'';
+    const infoAttr=glossKey?` data-info="${glossKey}"`:'';
+    rows+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)">`;
+    rows+=`<div style="flex:0 0 auto;margin-top:1px">${badge}${ptBadge}</div>`;
+    rows+=`<div><div style="font-family:var(--mono);font-size:13px;color:var(--txt)"${infoAttr}>${escHtml(c.label)}</div>`;
+    rows+=`<div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:2px">${escHtml(c.detail||'')}</div></div>`;
+    rows+=`</div>`;
+  }
+  el.innerHTML=banner+`<div style="display:flex;flex-direction:column">${rows}</div>`;
+}
+
+function renderBuyChecklist(){
+  const latest=allData[allData.length-1];
+  const el=document.getElementById("buyChecklistInner");
+  const secEl=document.getElementById("buyChecklistSec");
+  if(!el)return;
+  const bc=latest?.buy_checklist;
+  const fg=latest?.fear_greed?.score??latest?.tech_pulse?.components?.fg_score??null;
+  if(!bc){
+    if(fg!=null&&fg>25){
+      el.innerHTML=`<div style="color:var(--mut);font-size:13px;font-family:var(--mono);padding:4px 0">F&amp;G &gt; 25のため非発動（現在: ${Math.round(fg)}）。極端な恐怖ゾーン到達時に買いシグナルを点検します。</div>`;
+    } else {
+      el.innerHTML=`<div style="text-align:center;color:var(--mut);font-size:13px;padding:16px">データなし（次回Actions実行後に表示）</div>`;
+    }
+    return;
+  }
+  const {triggered,extreme,points,action,fg_score,checks}=bc;
+  const fgDisp=fg_score!=null?Math.round(fg_score):(fg!=null?Math.round(fg):null);
+
+  // Extreme Fear 強調
+  if(secEl){
+    if(extreme){
+      secEl.style.cssText='border:1px solid var(--red);border-radius:6px;padding:8px 14px;animation:pulse-red 1.5s ease-in-out infinite;color:var(--red)';
+    } else {
+      secEl.style.cssText='';
+    }
+  }
+
+  if(!triggered){
+    el.innerHTML=`<div style="color:var(--mut);font-size:13px;font-family:var(--mono);padding:4px 0">F&amp;G &gt; 25のため非発動${fgDisp!=null?'（現在: '+fgDisp+'）':''}。極端な恐怖ゾーン到達時に買いシグナルを点検します。</div>`;
+    return;
+  }
+
+  // Extreme Fear アラート
+  let extremeHtml='';
+  if(extreme){
+    extremeHtml=`<div style="padding:8px 14px;border-radius:6px;background:rgba(244,63,94,.1);border:1px solid var(--red);margin-bottom:12px;font-family:var(--mono);font-size:13px;color:var(--red);font-weight:700">🚨 Extreme Fear — 絶好の買い場の可能性（F&amp;G ${fgDisp??'—'}）</div>`;
+  }
+
+  // バナー
+  const isBuy=action.startsWith('BUY');
+  const bannerColor=isBuy?'var(--grn)':'var(--amb)';
+  const bannerBg=isBuy?'rgba(16,185,129,.12)':'rgba(245,158,11,.12)';
+  const bannerIcon=isBuy?'✅':'👀';
+  let banner=`<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:8px;background:${bannerBg};border:1px solid ${bannerColor};margin-bottom:14px;flex-wrap:wrap">`;
+  banner+=`<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:${bannerColor}">${bannerIcon} ${escHtml(action)}</span>`;
+  banner+=`<span style="font-family:var(--mono);font-size:12px;color:var(--mut);margin-left:auto">買いポイント: <strong style="color:${bannerColor};font-size:15px">${points}</strong> / 3</span>`;
+  banner+=`<span style="font-family:var(--mono);font-size:11px;color:var(--mut)">F&amp;G ${fgDisp??'—'}</span>`;
+  banner+=`</div>`;
+
+  // チェック項目
+  const ITEMS=[
+    {
+      key:'sp500_ma200',
+      gloss:'buy_ma200',
+      label:'S&P500が200日線の下方または200日線が下向き（売られすぎ環境）',
+      render(c){
+        if(c.above==null)return'データ取得不可';
+        const aboveTxt=c.above?'終値 ＞ MA200':'終値 ＜ MA200';
+        const slopeTxt=c.slope_up?'傾き: 上向き':'傾き: 下向き';
+        return`${aboveTxt} | ${slopeTxt}`;
+      },
+      matched(c){return c.above!=null&&(!c.above||!c.slope_up)}
+    },
+    {
+      key:'hy_spread',
+      gloss:'buy_hy_spread',
+      label:'HYスプレッドが縮小に転じているか',
+      render(c){
+        if(c.current==null)return'データ取得不可';
+        const diff=c.max_90d!=null?round2(c.current-c.max_90d):null;
+        return`現在: ${c.current}% | 90日最高値: ${c.max_90d??'—'}% | 差: ${diff!=null?(diff>=0?'+':'')+diff+'%':'—'}（閾値: -0.30%）`;
+      },
+      matched(c){return c.is_contracting===true}
+    },
+    {
+      key:'hindenburg',
+      gloss:'buy_hindenburg',
+      label:'ヒンデンブルグ・オーメンが非活性（市場の二極化が解消）',
+      render(c){
+        if(c.active==null)return'データ取得不可';
+        return c.active?'シグナル活性中（二極化あり）':'シグナルなし（二極化解消）';
+      },
+      matched(c){return c.active===false}
+    }
+  ];
+  function round2(v){return Math.round(v*100)/100}
+  let rows='';
+  for(const item of ITEMS){
+    const c=(checks||{})[item.key]||{};
+    const pt=c.point??0;
+    const hit=item.matched(c);
+    const badge=hit
+      ?`<span style="font-size:13px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,.12);color:var(--grn);font-family:var(--mono)">✅ 該当</span>`
+      :`<span style="font-size:13px;padding:2px 8px;border-radius:4px;background:rgba(244,63,94,.08);color:var(--mut);font-family:var(--mono)">❌ 非該当</span>`;
+    const ptBadge=pt>0?`<span style="font-family:var(--mono);font-size:11px;color:var(--grn);margin-left:4px">+${pt}pt</span>`:'';
+    rows+=`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--bdr)">`;
+    rows+=`<div style="flex:0 0 auto;margin-top:1px">${badge}${ptBadge}</div>`;
+    rows+=`<div><div style="font-family:var(--mono);font-size:13px;color:var(--txt)" data-info="${item.gloss}">${item.label}</div>`;
+    rows+=`<div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:2px">└ ${escHtml(item.render(c))}</div></div>`;
+    rows+=`</div>`;
+  }
+  el.innerHTML=extremeHtml+banner+`<div style="display:flex;flex-direction:column">${rows}</div>`;
+}
 
 function renderAssetFlow(){
   const latest=allData[allData.length-1];

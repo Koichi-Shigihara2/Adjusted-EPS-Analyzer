@@ -21,6 +21,7 @@ from .config import TICKERS, get_all, get_holdings, get_watchlist, get_ticker_in
 from .fetcher import SECFetcher
 from .parser import SECParser
 from .reader import SECReader, get_reader
+from .utils import determine_fiscal_year
 
 __all__ = [
     # Config
@@ -29,12 +30,15 @@ __all__ = [
     "get_holdings",
     "get_watchlist",
     "get_ticker_info",
-    
+
     # Classes
     "SECFetcher",
     "SECParser",
     "SECReader",
-    
+
     # Singleton
     "get_reader",
+
+    # Utils
+    "determine_fiscal_year",
 ]

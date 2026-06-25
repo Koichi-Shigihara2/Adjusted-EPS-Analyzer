@@ -40,7 +40,7 @@
     .alert-chip{font-family:var(--mono);font-size:12px;font-weight:700;background:rgba(244,63,94,.15);color:var(--red);padding:4px 10px;border:1px solid rgba(244,63,94,.3)}
 
     /* ── 銘柄カード ── */
-    .ticker-cards{display:flex;flex-direction:column;gap:12px}
+    .ticker-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px}
     .ticker-card{background:var(--sur);border:1px solid var(--bdr)}
     .ticker-card-head{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--bdr)}
     .tc-ticker{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--acc);text-decoration:none}
@@ -172,6 +172,7 @@ const CONFIG_PATH    = '/On-a-journey/portfolio/data/discover_config.json';
 const TANUKI_BASE    = '/On-a-journey/value-monitor/tanuki_valuation/';
 const HYPE_BASE      = '/On-a-journey/value-monitor/hypecore/data/';
 const THEME_CFG_PATH = '/On-a-journey/portfolio/data/theme_config.json';
+const HISTORY_PATH   = '/On-a-journey/discover/data/macro_themes_history.json';
 const TS             = '?t=' + Date.now();
 
 const CAT_ORDER = ['保有中', '監視中', '様子見'];
@@ -287,15 +288,16 @@ function buildTickerCard(ticker, data, configTickers, themeMapById) {
     const tm = themeMapById[id];
     return tm ? `<span class="theme-badge" style="background:${tm.color}22;color:${tm.color}">${escHtml(tm.label)}</span>` : '';
   }).join('');
-  let html = `<div class="ticker-card" id="${cardId}">
-    <div class="ticker-card-head">
-      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}">${ticker}</a>
+  let html = `<div class="ticker-card" id="${cardId}" data-collapsed="">
+    <div class="ticker-card-head" onclick="toggleCard('${cardId}')">
+      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}" onclick="event.stopPropagation()">${ticker}</a>
       <span class="tc-cat cat-${escHtml(cat)}">${escHtml(cat)}</span>
       ${themeBadges}
       <span class="tc-imp imp-${escHtml(imp)}">${escHtml(imp)}</span>
       <span class="tc-summary">${escHtml(summary)}</span>
+      <span class="card-toggle-icon">▶</span>
     </div>
-    <div class="ticker-card-body">`;
+    <div class="ticker-card-body" style="display:none">`;
   if (memo) html += `<div class="tc-memo">📝 ${escHtml(memo)}</div>`;
   html += buildConditionsPanel(classified);
   if (items.length > 0) {
@@ -423,21 +425,37 @@ function buildThemeSummarySection(themeConfig, configTickers, tickers, hypeMap) 
 async function loadData() {
   const app = document.getElementById('app');
   try {
-    const [reportRes, configRes, themeCfgRes] = await Promise.allSettled([
+    const [reportRes, configRes, themeCfgRes, histRes] = await Promise.allSettled([
       fetch(REPORT_PATH + TS).then(r => r.ok ? r.json() : null),
       fetch('/On-a-journey/portfolio/data/discover_config.json' + TS).then(r => r.ok ? r.json() : null),
       fetch(THEME_CFG_PATH + TS).then(r => r.ok ? r.json() : null),
+      fetch(HISTORY_PATH + TS).then(r => r.ok ? r.json() : null),
     ]);
 
     const report      = reportRes.status   === 'fulfilled' ? reportRes.value   : null;
     const config      = configRes.status   === 'fulfilled' ? configRes.value   : null;
     const themeConfig = themeCfgRes.status === 'fulfilled' ? themeCfgRes.value : null;
+    const themeHist   = histRes.status     === 'fulfilled' ? (histRes.value ?? []) : [];
 
     const tickers       = report?.tickers    || {};
     const candidates    = report?.candidates || [];
     const configTickers = config?.tickers    || {};
     const generatedAt   = report?.generated_at || '';
     const macroThemes   = report?.macro_themes ?? [];
+
+    // 直近4週の履歴からテーマの継続登場数をカウント（当週分は除外）
+    const currentGenDate = macroThemes[0]?.generated_at ?? '';
+    const prevHist = themeHist.filter(h => h.generated_at !== currentGenDate).slice(0, 4);
+    const themeStreakMap = {};
+    for (const t of macroThemes) {
+      const name = t.theme || '';
+      themeStreakMap[name] = prevHist.filter(entry =>
+        (entry.themes || []).some(ht => {
+          const hn = ht.theme || '';
+          return hn.includes(name) || name.includes(hn);
+        })
+      ).length;
+    }
 
     if (generatedAt) {
       const lu = document.getElementById('last-updated');
@@ -476,17 +494,55 @@ async function loadData() {
         ${genDate ? `<span style="color:var(--mut)">生成日: ${escHtml(genDate)}</span>` : ''}
       </div>`;
       for (const t of macroThemes) {
-        const tkBadges = Array.isArray(t.related_tickers) && t.related_tickers.length > 0
-          ? t.related_tickers.map(tk => `<span class="news-cat" style="color:var(--acc);background:rgba(6,182,212,.12)">${escHtml(tk)}</span>`).join('') : '';
+        const tkHtml = buildRelatedTickers(t.related_tickers);
+        const streak = themeStreakMap[t.theme || ''] || 0;
+        const streakBadge = streak >= 1
+          ? `<span style="font-family:var(--mono);font-size:10px;background:rgba(245,158,11,.15);color:var(--amb);padding:2px 7px;border-radius:2px;margin-left:8px;vertical-align:middle">🔥 ${streak + 1}週連続</span>`
+          : '';
+        const sourcesHtml = Array.isArray(t.sources) && t.sources.length
+          ? `<div style="margin-top:8px;font-size:11px;color:var(--mut)"><span style="font-family:var(--mono);font-size:10px;margin-right:4px">情報源：</span>${t.sources.map(s => {
+              const title = escHtml(s.title || s.url || '');
+              const url = s.url && s.url !== 'null' ? escHtml(s.url) : null;
+              return url
+                ? `<a href="${url}" target="_blank" rel="noopener" style="color:var(--acc);text-decoration:none;margin-right:8px">${title}</a>`
+                : `<span style="margin-right:8px">${title}</span>`;
+            }).join('')}</div>`
+          : '';
         html += `<div class="theme-card">
-          <div class="theme-name">${escHtml(t.theme || '')}</div>
+          <div class="theme-name">${escHtml(t.theme || '')}${streakBadge}</div>
           <div class="theme-meta">
             <span class="news-cat" style="color:var(--mut);background:var(--sur2)">時間軸: ${escHtml(t.horizon || '')}</span>
-            ${t.conviction ? `<span class="news-cat conv-${escHtml(t.conviction)}">確信度: ${escHtml(t.conviction)}</span>` : ''}
+            ${t.conviction ? `<span class="news-cat conv-${escHtml(t.conviction)}" data-info="discover_conviction">確信度: ${escHtml(t.conviction)}</span>` : ''}
           </div>
           <div style="font-size:13px;color:var(--txt);line-height:1.65;margin-bottom:10px">${escHtml(t.background || '')}</div>
-          ${tkBadges ? `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">関連銘柄:</span>${tkBadges}</div>` : ''}
+          ${tkHtml}
           ${t.catalyst ? `<div style="font-size:12px;color:var(--mut)">📍 ${escHtml(t.catalyst)}</div>` : ''}
+          ${sourcesHtml}
+        </div>`;
+      }
+
+      // 過去テーマ履歴（2-B: 直近4週を折りたたみ表示）
+      if (prevHist.length > 0) {
+        const histRows = prevHist.map(entry => {
+          const dateLabel = entry.generated_at || '—';
+          const rows = (entry.themes || []).map(t => {
+            const convClass = t.conviction ? `conv-${escHtml(t.conviction)}` : '';
+            return `<div style="display:flex;align-items:baseline;gap:8px;padding:5px 0;border-bottom:1px solid rgba(30,40,64,.35)">
+              <div style="flex:1;font-family:var(--mono);font-size:12px;color:var(--txt)">${escHtml(t.theme || '')}</div>
+              ${t.conviction ? `<span class="news-cat ${convClass}" style="flex-shrink:0;font-size:10px">確信度: ${escHtml(t.conviction)}</span>` : ''}
+            </div>
+            <div style="font-size:11px;color:var(--sub);padding:3px 0 5px;line-height:1.5">${escHtml(t.background || '')}</div>`;
+          }).join('');
+          return `<div style="margin-bottom:14px">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--mut);letter-spacing:.06em;margin-bottom:6px">${escHtml(dateLabel)}</div>
+            ${rows}
+          </div>`;
+        }).join('');
+        html += `<div style="margin-top:10px">
+          <button onclick="toggleThemeHist()" style="background:none;border:none;color:var(--mut);font-family:var(--mono);font-size:11px;cursor:pointer;padding:0;letter-spacing:.04em;display:flex;align-items:center;gap:5px">
+            <span id="theme-hist-icon">▶</span> 過去のテーマを見る（${prevHist.length}週分）
+          </button>
+          <div id="theme-hist-body" style="display:none;margin-top:10px;border-top:1px solid var(--bdr);padding-top:10px">${histRows}</div>
         </div>`;
       }
     }
@@ -533,6 +589,44 @@ async function loadData() {
 
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function buildRelatedTickers(rt) {
+  if (!Array.isArray(rt) || !rt.length) return '';
+  // 後方互換: 文字列配列形式
+  if (typeof rt[0] === 'string') {
+    const badges = rt.map(tk =>
+      `<span class="news-cat" style="color:var(--acc);background:rgba(6,182,212,.12)">${escHtml(tk)}</span>`
+    ).join('');
+    return `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:8px"><span style="font-family:var(--mono);font-size:11px;color:var(--mut)">関連銘柄：</span>${badges}</div>`;
+  }
+  // オブジェクト配列形式: role ごとにグループ化
+  const ROLE_ORDER = ['主要', 'ボトルネック', '注目'];
+  const ROLE_STYLE = {
+    '主要':       'color:var(--acc);background:rgba(6,182,212,.12)',
+    'ボトルネック': 'color:var(--amb);background:rgba(245,158,11,.12)',
+    '注目':       'color:var(--grn);background:rgba(16,185,129,.12)',
+  };
+  const groups = {};
+  for (const item of rt) {
+    const role = item.role || '主要';
+    if (!groups[role]) groups[role] = [];
+    groups[role].push(item);
+  }
+  const orderedRoles = ROLE_ORDER.filter(r => groups[r])
+    .concat(Object.keys(groups).filter(r => !ROLE_ORDER.includes(r)));
+  if (!orderedRoles.length) return '';
+  const rows = orderedRoles.map(role => {
+    const style = ROLE_STYLE[role] || 'color:var(--acc);background:rgba(6,182,212,.12)';
+    const badges = groups[role].map(item => {
+      const noteAttr = item.note ? ` data-info-text="${escHtml(item.note)}"` : '';
+      return `<span class="news-cat" style="${style}"${noteAttr}>${escHtml(item.ticker || '')}</span>`;
+    }).join('');
+    return `<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">`
+      + `<span style="font-family:var(--mono);font-size:11px;color:var(--mut);white-space:nowrap">${escHtml(role)}：</span>${badges}`
+      + `</div>`;
+  }).join('');
+  return `<div style="margin-bottom:8px;display:flex;flex-direction:column;gap:5px">${rows}</div>`;
 }
 
 function toJST(dateStr) {
@@ -592,6 +686,15 @@ function toggleCond(btn, id) {
   const hidden = body.style.display === 'none';
   body.style.display = hidden ? '' : 'none';
   btn.textContent = hidden ? '▲ 詳細を閉じる' : '▼ 詳細';
+}
+
+function toggleThemeHist() {
+  const el = document.getElementById('theme-hist-body');
+  const icon = document.getElementById('theme-hist-icon');
+  if (!el) return;
+  const hidden = el.style.display === 'none';
+  el.style.display = hidden ? '' : 'none';
+  if (icon) icon.textContent = hidden ? '▼' : '▶';
 }
 
 loadData();

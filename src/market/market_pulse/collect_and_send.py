@@ -138,11 +138,13 @@ def compute_sentiment(structured_data):
         sub_scores["vix_level"] = {"score": 0.5, "weight": 0.225, "raw": None}
 
     # --- 2. S&P500 vs 50日MA乖離率 (18.0%) ---
-    sp500_ma_dev = _get_sp500_ma_deviation()
-    if sp500_ma_dev is not None:
+    sp500_ma_data = _get_sp500_ma_deviation()
+    if sp500_ma_data is not None:
+        sp500_ma_dev = sp500_ma_data["deviation_50"]
         score = clamp01((sp500_ma_dev + 8) / 16)
         sub_scores["sp500_ma_dev"] = {"score": score, "weight": 0.18, "raw": round(sp500_ma_dev, 2)}
     else:
+        sp500_ma_dev = None
         sub_scores["sp500_ma_dev"] = {"score": 0.5, "weight": 0.18, "raw": None}
 
     # --- 3. AD Ratio 5日 (13.5%) ---
@@ -283,18 +285,34 @@ def _load_latest_breadth():
 
 
 def _get_sp500_ma_deviation():
-    """S&P500の現在値と50日移動平均の乖離率(%)を返す"""
+    """S&P500の現在値と50日/200日移動平均の情報を返す
+    Returns dict with keys: deviation_50, above_ma200, ma200_slope
+    """
     try:
         t = yf.Ticker("^GSPC")
-        hist = t.history(period="3mo")
-        if hist is None or len(hist) < 50:
+        hist = t.history(period="1y")
+        if hist is None or len(hist) < 200:
             return None
-        latest = hist['Close'].iloc[-1]
-        ma50 = hist['Close'].iloc[-50:].mean()
-        if _is_nan(latest) or _is_nan(ma50):
+        close = hist['Close']
+        latest = float(close.iloc[-1])
+        ma50 = float(close.iloc[-50:].mean())
+        ma200 = float(close.iloc[-200:].mean())
+        if _is_nan(latest) or _is_nan(ma50) or _is_nan(ma200):
             return None
-        deviation = (latest - ma50) / ma50 * 100
-        return deviation
+        deviation_50 = (latest - ma50) / ma50 * 100
+        above_ma200 = latest > ma200
+        # MA200傾き: 直近MA200 vs 10日前のMA200
+        if len(close) >= 210:
+            ma200_10d_ago = float(close.iloc[-210:-10].mean())
+            ma200_slope = bool(ma200 > ma200_10d_ago)
+        else:
+            ma200_slope = None
+        print(f"[INFO] S&P500: {latest:.2f}, MA50乖離={deviation_50:+.2f}%, above_MA200={above_ma200}, MA200傾き={'↑' if ma200_slope else '↓' if ma200_slope is not None else '—'}")
+        return {
+            "deviation_50": round(deviation_50, 2),
+            "above_ma200": above_ma200,
+            "ma200_slope": ma200_slope,
+        }
     except Exception as e:
         print(f"[WARN] S&P500 MA乖離率の取得失敗: {e}")
         return None
@@ -358,6 +376,41 @@ def fetch_vxn_from_fred():
     except Exception as e:
         print(f"[WARN] VXN取得失敗: {e}")
         return None, None
+
+
+def fetch_hy_spread_from_fred():
+    """FREDからHYスプレッド（BAMLH0A0HYM2: ICE BofA US High Yield Index OAS）を取得する
+    Returns: {"current", "min_90d", "max_90d", "is_expanding", "is_contracting"} or None
+    """
+    fred_api_key = os.getenv("FRED_API_KEY")
+    if not fred_api_key:
+        print("[WARN] FRED_API_KEY未設定。HYスプレッド取得スキップ。")
+        return None
+    try:
+        from fredapi import Fred
+        fred = Fred(api_key=fred_api_key)
+        start = (datetime.now() - timedelta(days=120)).strftime('%Y-%m-%d')
+        hy = fred.get_series("BAMLH0A0HYM2", observation_start=start).dropna()
+        if len(hy) < 10:
+            print("[WARN] HYスプレッドデータが不足しています。")
+            return None
+        window = hy.iloc[-90:] if len(hy) >= 90 else hy
+        current = float(hy.iloc[-1])
+        min_90d = float(window.min())
+        max_90d = float(window.max())
+        is_expanding = bool(current > min_90d + 0.30)    # 90日最小値から30bps以上拡大
+        is_contracting = bool(current < max_90d - 0.30)  # 90日最大値から30bps以上縮小
+        print(f"[INFO] HYスプレッド: {current:.2f}%, min_90d={min_90d:.2f}%, max_90d={max_90d:.2f}%, expanding={is_expanding}, contracting={is_contracting}")
+        return {
+            "current": round(current, 2),
+            "min_90d": round(min_90d, 2),
+            "max_90d": round(max_90d, 2),
+            "is_expanding": is_expanding,
+            "is_contracting": is_contracting,
+        }
+    except Exception as e:
+        print(f"[WARN] HYスプレッド取得失敗: {e}")
+        return None
 
 
 def fetch_fg_score_from_feargreedchart():
@@ -1120,7 +1173,125 @@ def collect_asset_flow():
             result[a["key"]] = None
     return result
 
-def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None, tech_pulse_data=None, asset_flow_data=None):
+def calc_take_profit_checklist(fg_score, above_ma200, ma200_slope, hy_is_expanding, hindenburg_active):
+    """TAKE PROFITチェックリスト（F&G>=75で発動）
+    3チェック項目、1点ずつ採点: 2点→PARTIAL、3点→TAKE PROFIT
+    """
+    triggered = fg_score is not None and fg_score >= 75
+
+    checks = []
+
+    # チェック1: S&P500 200日MAシグナル
+    # 終値 < MA200 または MA200が下向きで警戒
+    if above_ma200 is not None and ma200_slope is not None:
+        c1_warn = (not above_ma200) or (not ma200_slope)
+        checks.append({
+            "key": "ma200",
+            "label": "S&P500 200日MA",
+            "passed": not c1_warn,
+            "point": 1 if c1_warn else 0,
+            "detail": f"終値{'＞' if above_ma200 else '＜'}MA200 / MA200傾き{'↑上向き' if ma200_slope else '↓下向き'}",
+        })
+    else:
+        checks.append({"key": "ma200", "label": "S&P500 200日MA", "passed": True, "point": 0, "detail": "データ取得不可"})
+
+    # チェック2: HYスプレッド拡大（リスクオフシグナル）
+    if hy_is_expanding is not None:
+        checks.append({
+            "key": "hy_spread",
+            "label": "HYスプレッド",
+            "passed": not hy_is_expanding,
+            "point": 1 if hy_is_expanding else 0,
+            "detail": "スプレッド拡大中（90日最小値+30bps超）" if hy_is_expanding else "スプレッド安定",
+        })
+    else:
+        checks.append({"key": "hy_spread", "label": "HYスプレッド", "passed": True, "point": 0, "detail": "データ取得不可"})
+
+    # チェック3: ヒンデンブルグ・オーメン（天井シグナル）
+    if hindenburg_active is not None:
+        checks.append({
+            "key": "hindenburg",
+            "label": "ヒンデンブルグ・オーメン",
+            "passed": not hindenburg_active,
+            "point": 1 if hindenburg_active else 0,
+            "detail": "シグナル発生（52週高値・安値が同時出現）" if hindenburg_active else "シグナルなし",
+        })
+    else:
+        checks.append({"key": "hindenburg", "label": "ヒンデンブルグ・オーメン", "passed": True, "point": 0, "detail": "データ取得不可"})
+
+    points = sum(c["point"] for c in checks)
+
+    if points >= 3:
+        action = "TAKE PROFIT"
+    elif points >= 2:
+        action = "PARTIAL"
+    else:
+        action = "HOLD"
+
+    return {
+        "triggered": triggered,
+        "fg_score": fg_score,
+        "points": points,
+        "action": action,
+        "checks": checks,
+    }
+
+
+def calc_buy_checklist(fg_score, above_ma200, ma200_slope, hy_current, hy_max_90d, hindenburg_active):
+    """BUYチェックリスト（F&G<=25で発動）
+    3チェック項目、1点ずつ採点: 2点以上→BUY
+    """
+    triggered = fg_score is not None and fg_score <= 25
+    extreme = fg_score is not None and fg_score <= 10
+
+    checks = {}
+
+    # チェック①: S&P500が200日線下方または200日線下向き（売られすぎ環境）
+    if above_ma200 is not None and ma200_slope is not None:
+        c1_match = (not above_ma200) or (not ma200_slope)
+        checks["sp500_ma200"] = {
+            "above": above_ma200,
+            "slope_up": ma200_slope,
+            "point": 1 if c1_match else 0,
+        }
+    else:
+        checks["sp500_ma200"] = {"above": None, "slope_up": None, "point": 0}
+
+    # チェック②: HYスプレッドが90日最高値から30bps縮小（信用収縮が緩和）
+    if hy_current is not None and hy_max_90d is not None:
+        is_contracting = bool(hy_current < hy_max_90d - 0.30)
+        checks["hy_spread"] = {
+            "current": hy_current,
+            "max_90d": hy_max_90d,
+            "is_contracting": is_contracting,
+            "point": 1 if is_contracting else 0,
+        }
+    else:
+        checks["hy_spread"] = {"current": None, "max_90d": None, "is_contracting": None, "point": 0}
+
+    # チェック③: ヒンデンブルグ・オーメンが非活性（市場の二極化が解消）
+    if hindenburg_active is not None:
+        checks["hindenburg"] = {
+            "active": hindenburg_active,
+            "point": 1 if not hindenburg_active else 0,
+        }
+    else:
+        checks["hindenburg"] = {"active": None, "point": 0}
+
+    points = sum(c["point"] for c in checks.values())
+    action = "BUY（積極的に拾う）" if points >= 2 else "WATCH（準備段階・様子見）"
+
+    return {
+        "triggered": triggered,
+        "extreme": extreme,
+        "points": points,
+        "action": action,
+        "fg_score": fg_score,
+        "checks": checks,
+    }
+
+
+def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear_greed_data=None, tech_pulse_data=None, asset_flow_data=None, take_profit_checklist=None, buy_checklist=None):
     os.makedirs(DATA_DIR, exist_ok=True)
     jst_now = datetime.now(JST)
     date_str = jst_now.strftime('%Y-%m-%dT%H:%M:%S+09:00')
@@ -1185,6 +1356,18 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
             "collect_and_send.py の compute_sentiment 出力を確認してください。"
         )
 
+    # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
+    today = date_str[:10]
+    all_data = [d for d in all_data if d.get("date", "")[:10] != today]
+
+    # AIコメント履歴: 当日分 + 直近最大11件の過去分（新しい順、max12件）
+    hist_prev = [
+        {"date": prev.get("date", ""), "summary": prev.get("summary", "")}
+        for prev in reversed(all_data[-11:])
+        if prev.get("summary")
+    ]
+    comments_history = [{"date": date_str, "summary": report_text}] + hist_prev
+
     new_entry = {
         "date": date_str,
         "judgment": judgment,
@@ -1194,11 +1377,11 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
         "tech_pulse": tech_pulse_data,
         "asset_flow": asset_flow_data,
         "credit": credit_data,
-        "summary": report_text
+        "take_profit_checklist": take_profit_checklist,
+        "buy_checklist": buy_checklist,
+        "summary": report_text,
+        "comments_history": comments_history
     }
-    # 同日の既存エントリを削除して上書き（同日に複数回実行された場合の重複防止）
-    today = date_str[:10]
-    all_data = [d for d in all_data if d.get("date", "")[:10] != today]
     all_data.append(new_entry)
 
     with open(JSON_PATH, 'w', encoding='utf-8') as f:
@@ -1336,13 +1519,38 @@ if __name__ == "__main__":
     }
     print(f"[INFO] Tech Pulseスコア: {tp_score} ({tp_label}), 乖離={div_value}, Z={div_zscore}, シグナル={tp_signal or 'なし'}")
 
+    # TAKE PROFIT チェックリスト算出
+    sp500_ma_data = _get_sp500_ma_deviation()
+    above_ma200 = sp500_ma_data.get("above_ma200") if sp500_ma_data else None
+    ma200_slope = sp500_ma_data.get("ma200_slope") if sp500_ma_data else None
+    hy_spread_data = fetch_hy_spread_from_fred()
+    hy_is_expanding = (hy_spread_data or {}).get("is_expanding")
+    breadth_tp = _load_latest_breadth()
+    if breadth_tp:
+        nh = breadth_tp.get("new_highs_52w") or 0
+        nl = breadth_tp.get("new_lows_52w") or 0
+        hindenburg_active = bool(nh >= 500 * 0.022 and nl >= 500 * 0.022)
+    else:
+        hindenburg_active = None
+    tp_checklist = calc_take_profit_checklist(
+        fg_cnn_score, above_ma200, ma200_slope, hy_is_expanding, hindenburg_active
+    )
+    print(f"[INFO] TAKE PROFIT: triggered={tp_checklist['triggered']}, points={tp_checklist['points']}, action={tp_checklist['action']}")
+
+    hy_current = (hy_spread_data or {}).get("current")
+    hy_max_90d = (hy_spread_data or {}).get("max_90d")
+    buy_checklist = calc_buy_checklist(
+        fg_cnn_score, above_ma200, ma200_slope, hy_current, hy_max_90d, hindenburg_active
+    )
+    print(f"[INFO] BUY: triggered={buy_checklist['triggered']}, extreme={buy_checklist['extreme']}, points={buy_checklist['points']}, action={buy_checklist['action']}")
+
     news = get_market_news()
     if not news:
         print("[WARN] ニュースなしで分析を実行します。")
     asset_flow_data = collect_asset_flow()
     asset_flow_data = _fill_fallbacks(asset_flow_data, "asset_flow", _recent_entries)
     report = analyse_market(realtime_text, "\n".join(news), sentiment_data, tech_pulse_data, asset_flow_data)
-    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data, asset_flow_data)
+    save_data_to_json_and_csv(report, structured_data, sentiment_data, fear_greed_data, tech_pulse_data, asset_flow_data, tp_checklist, buy_checklist)
     if GMAIL_USER and GMAIL_PASSWORD:
         send_email(report, sentiment_data)
     else:

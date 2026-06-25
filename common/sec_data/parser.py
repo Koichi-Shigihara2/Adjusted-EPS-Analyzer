@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 
 from .config import get_ticker_info
 from .quarterly import TICKER_RESTRICTIONS
+from .utils import determine_fiscal_year
 
 
 class SECParser:
@@ -186,7 +187,23 @@ class SECParser:
             self.data_dir = data_dir
         else:
             self.data_dir = os.path.join(os.path.dirname(__file__), "data")
-    
+
+    def _detect_fiscal_end_month(self, us_gaap: dict) -> int:
+        """10-K FYエントリから会計年度末月を検出（最頻月を返す、デフォルト12）"""
+        month_counts: Dict[int, int] = {}
+        for xbrl_key in self.XBRL_MAPPING.get("net_income", []) + self.XBRL_MAPPING.get("revenue", []):
+            if xbrl_key not in us_gaap:
+                continue
+            for entry in us_gaap[xbrl_key].get("units", {}).get("USD", []):
+                if entry.get("form") == "10-K" and entry.get("fp") == "FY":
+                    end = entry.get("end", "")
+                    if len(end) >= 7:
+                        m = int(end[5:7])
+                        month_counts[m] = month_counts.get(m, 0) + 1
+            if month_counts:
+                break
+        return max(month_counts, key=month_counts.get) if month_counts else 12
+
     def parse_company_facts(self, ticker: str) -> Optional[Dict[str, Any]]:
         """
         Company Facts 生データを読み込んでパース
@@ -234,6 +251,9 @@ class SECParser:
         # 金融系銘柄（SOFI等）は MERGE_ALL_TAGS による先着タグ優先で狭義revenuタグが勝つ問題を回避
         _rev_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("revenue_concept")
 
+        # 会計年度末月を検出（非12月決算企業対応・determine_fiscal_year に渡す）
+        fiscal_end_month = self._detect_fiscal_end_month(us_gaap)
+
         # 全項目を抽出
         extracted = {}
         for field_name, xbrl_keys in self.XBRL_MAPPING.items():
@@ -247,7 +267,7 @@ class SECParser:
             if field_name == "revenue" and _rev_concept_override:
                 xbrl_keys = [_rev_concept_override]
                 merge_all = False
-            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all)
+            extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all, fiscal_end_month=fiscal_end_month)
         
         # 年次データを集約
         years = self._get_available_years(extracted)
@@ -265,7 +285,7 @@ class SECParser:
         
         return result
     
-    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False) -> Dict[str, Any]:
+    def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False, fiscal_end_month: int = 12) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
         
@@ -303,8 +323,9 @@ class SECParser:
                 for entry in units[unit_type]:
                     if entry.get("form") == "10-K" and entry.get("fp") == "FY":
                         end_date = entry.get("end", "")
-                        if entry.get("fy") is not None and end_date and len(end_date) >= 4:
-                            end_year = int(end_date[:4])
+                        if entry.get("fy") is not None and end_date and len(end_date) >= 10:
+                            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                            end_year = determine_fiscal_year(end_dt, fiscal_end_month)
                             if end_year > max_end_year_in_data:
                                 max_end_year_in_data = end_year
 
@@ -329,13 +350,16 @@ class SECParser:
                     if val is None or fy is None:
                         continue
 
-                    # 年次（10-K）- end_dateの年をキーとして使用
+                    # 年次（10-K）- determine_fiscal_year で会計年度キーを統一定義に従って決定
                     if form == "10-K" and fp == "FY":
-                        # end_dateの年が会計年度末を正確に示す（fyはSECの参照先fyと
-                        # 同じ値が付与される比較年度エントリが存在するため信頼性が低い）
-                        end_year = int(end_date[:4]) if end_date and len(end_date) >= 4 else fy
+                        # determine_fiscal_year(期末日, fiscal_end_month) が単一定義
                         # fy==end_yearはFY通年データとして信頼度が高い（exact match）
                         # fy!=end_yearは比較年度エントリ（FCX等）または中間期エントリ（INTU Q1等）
+                        if end_date and len(end_date) >= 10:
+                            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                            end_year = determine_fiscal_year(end_dt, fiscal_end_month)
+                        else:
+                            end_year = fy  # end_date 不明時は SEC の fy フィールドを使用
                         exact = (fy == end_year)
                         if use_max:
                             # 最大値を採用（株式数の異常値対策）

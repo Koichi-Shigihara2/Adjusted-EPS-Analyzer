@@ -251,7 +251,7 @@ def explore_macro_themes(existing_tickers: list) -> list:
 web検索を使い、今後6〜18ヶ月で市場を動かす可能性がある
 「特大テーマ候補」を3件分析してください。
 
-以下の登録銘柄リストを参考に、関連する銘柄があれば
+以下の登録銘柄リストを参考に、テーマに関連する銘柄があれば
 related_tickersに含めてください（リスト外の銘柄は含めない）：
 {existing_str}
 
@@ -263,11 +263,20 @@ related_tickersに含めてください（リスト外の銘柄は含めない�
       "horizon": "投資時間軸（例: 6〜12ヶ月）",
       "conviction": "高|中|低",
       "background": "根拠・背景（100字以内）",
-      "related_tickers": ["登録銘柄のtickerのみ"],
-      "catalyst": "具体的なトリガーイベント（50字以内）"
+      "related_tickers": [
+        {{"ticker": "登録銘柄のticker", "role": "主要|ボトルネック|注目", "note": "役割説明（30字以内）"}}
+      ],
+      "catalyst": "具体的なトリガーイベント（50字以内）",
+      "sources": [{{"title": "情報源名または記事タイトル", "url": "https://...またはnull"}}]
     }}
   ]
-}}"""
+}}
+related_tickersのroleは「主要」「ボトルネック」「注目」の3種類のみ使用してください。
+- 主要: テーマの恩恵を直接受ける中核銘柄
+- ボトルネック: テーマ実現の制約要因となる銘柄（供給・インフラ・規制等）
+- 注目: 特定の触媒やユニークなポジションで注目される銘柄
+sourcesは根拠となったニュース・レポート・データを1〜3件記載してください。
+URLが不明な場合はurlをnullにして情報源名のみ記載してください。"""
     try:
         text = call_grok(prompt, max_tokens=1200, model_override="grok-3")
         text = text.replace("```json", "").replace("```", "").strip()
@@ -320,6 +329,18 @@ def main():
     if now_jst.weekday() == 6:
         print("特大テーマ探索中（日曜日）...")
         macro_themes = explore_macro_themes(existing)
+        if macro_themes:
+            hist_path = Path("docs/discover/data/macro_themes_history.json")
+            hist = []
+            if hist_path.exists():
+                try:
+                    hist = json.loads(hist_path.read_text(encoding="utf-8"))
+                except Exception:
+                    hist = []
+            hist.insert(0, {"generated_at": now_jst.strftime("%Y-%m-%d"), "themes": macro_themes})
+            hist = hist[:26]
+            hist_path.write_text(json.dumps(hist, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"テーマ履歴追記: {hist_path} ({len(hist)}件)")
     else:
         try:
             with open(out, encoding="utf-8") as f:

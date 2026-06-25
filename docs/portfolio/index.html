@@ -242,6 +242,21 @@ function fmtPct(v, dec=1) {
   return `<span class="${v>=0?'pos':'neg'}">${s}</span>`;
 }
 
+let _usdJpy    = 150;
+let _currMode2 = 'usd';
+let _pfState   = null;
+
+function fmtC(v) {
+  if (v == null) return '—';
+  if (_currMode2 === 'jpy') return '¥' + Math.round(v * _usdJpy).toLocaleString('ja-JP');
+  return fmt$(v);
+}
+function switchCurr(mode) {
+  _currMode2 = mode;
+  document.querySelectorAll('.curr-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  if (_pfState) { _renderSummary(); _renderBrokers(); _renderTable(); }
+}
+
 // ── Score logic ──
 // ARCH-PORTFOLIO-DUP-1: 分類は再計算せず、latest.jsonのtanuki_score/funda_score/
 // timing_scoreをそのまま参照する（ARCH-SCORE-SYNC-1の方針に統一）
@@ -256,16 +271,21 @@ const CAT_META = {
 
 // ── Main data loader ──
 async function loadData() {
-  const [pfRes, discRes, univRes] = await Promise.allSettled([
+  const [pfRes, discRes, univRes, histPreRes] = await Promise.allSettled([
     fetch(PF_PATH   + TS).then(r => r.ok ? r.json() : null),
     fetch(DISC_PATH + TS).then(r => r.ok ? r.json() : null),
     fetch(T_BASE + 'tickers.json' + TS).then(r => r.ok ? r.json() : null),
+    fetch(HIST_PATH + TS).then(r => r.ok ? r.json() : null),
   ]);
 
   const pf     = pfRes.status  === 'fulfilled' ? pfRes.value   : null;
   const disc   = discRes.status === 'fulfilled' ? discRes.value : null;
   // PORT-LOGIC-1: HYPEMIX仕込み候補抽出用にTANUKI VALUATION全銘柄ロスターを取得
   const universeTickers = univRes.status === 'fulfilled' ? (univRes.value?.tickers ?? []) : [];
+  const _histPre = histPreRes.status === 'fulfilled' ? histPreRes.value : null;
+  _histData = _histPre ?? { snapshots: [] };
+  const _latestSnap = _histData.snapshots?.at?.(-1) ?? null;
+  if (_latestSnap?.usdjpy) _usdJpy = _latestSnap.usdjpy;
 
   if (!pf) {
     document.getElementById('summary-section').innerHTML =
@@ -399,35 +419,9 @@ async function loadData() {
   const totalPnlPct = totalCost > 0 ? (totalPnl / totalCost) * 100 : 0;
   const cashRatio   = totalAssets > 0 ? (totalCashAll / totalAssets) * 100 : 0;
 
-  // ① Summary cards
-  document.getElementById('summary-section').innerHTML = `
-    <div class="sec">① 資産サマリー</div>
-    <div class="summary-cards">
-      <div class="s-card">
-        <div class="s-card-label">総資産</div>
-        <div class="s-card-value">${fmt$(totalAssets)}</div>
-        <div class="s-card-sub">時価 + キャッシュ</div>
-      </div>
-      <div class="s-card">
-        <div class="s-card-label">時価残高合計</div>
-        <div class="s-card-value">${fmt$(totalValue)}</div>
-        <div class="s-card-sub">株式評価額</div>
-      </div>
-      <div class="s-card">
-        <div class="s-card-label">評価損益</div>
-        <div class="s-card-value ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</div>
-        <div class="s-card-sub ${totalPnlPct>=0?'pos':'neg'}">${(totalPnlPct>=0?'+':'')+totalPnlPct.toFixed(2)}%</div>
-      </div>
-      <div class="s-card">
-        <div class="s-card-label">キャッシュ比率</div>
-        <div class="s-card-value">${cashRatio.toFixed(1)}%</div>
-        <div class="s-card-sub">${fmt$(totalCashAll)}</div>
-      </div>
-    </div>`;
-
-  // ② Broker summary
+  // ①②③ Summary / Broker / Table — 通貨再描画対応のため関数に委譲
   // PORT-LAYOUT-1: 残高$0のブローカー（「その他」等）は末尾に表示する（他は元の順序を維持）
-  const brokerCards = brokerSummaries
+  const brokerData = brokerSummaries
     .map(b => {
       const bTotalCost = Object.values(b.positions).reduce((s, p) => s + (p.shares||0)*(p.avg_cost||0), 0);
       const bTotalValue = Object.entries(b.positions).reduce((s, [tk, p]) => {
@@ -436,109 +430,14 @@ async function loadData() {
       }, 0);
       const bPnl = bTotalValue - bTotalCost;
       const bAssets = bTotalValue + b.cash;
-      return { b, bTotalValue, bPnl, bAssets };
+      return { name: b.name, cash: b.cash, bTotalValue, bPnl, bAssets };
     })
-    .sort((x, y) => (x.bAssets === 0 ? 1 : 0) - (y.bAssets === 0 ? 1 : 0))
-    .map(({ b, bTotalValue, bPnl, bAssets }) => `<div class="broker-card">
-      <div class="broker-name">${b.name}</div>
-      <div class="broker-val">${fmt$(bAssets)}</div>
-      <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:4px">
-        株式: ${fmt$(bTotalValue)} / CASH: ${fmt$(b.cash)}
-      </div>
-      <div style="font-family:var(--mono);font-size:11px;margin-top:4px;${bPnl>=0?'color:var(--grn)':'color:var(--red)'}">${bPnl>=0?'+':''}${fmt$(bPnl)}</div>
-    </div>`)
-    .join('');
+    .sort((x, y) => (x.bAssets === 0 ? 1 : 0) - (y.bAssets === 0 ? 1 : 0));
 
-  document.getElementById('broker-summary-section').innerHTML = `
-    <div class="sec">② ブローカー別サマリー</div>
-    <div class="broker-summary">${brokerCards}</div>`;
-
-  // ③ Table
-  const tableRows = rows.map(r => {
-    const m = CAT_META[r.cat] ?? CAT_META['PASS'];
-    const warn = r.notHolding
-      ? `<span class="badge-warn" title="discover_configの区分が保有中ではありません">⚠️ 区分未反映</span>` : '';
-    const notInWarn = r.notInDisc
-      ? `<span class="badge-warn" title="discover_configに未登録">⚠️ 未登録</span>` : '';
-    const sharesDisp = r.totalShares > 0 ? r.totalShares.toLocaleString() : '<span class="neu">—</span>';
-    return `<tr>
-      <td>
-        <a class="tkr-a" href="../value-monitor/tanuki_valuation/stock.html?ticker=${r.ticker}">${r.ticker}</a>
-        ${warn}${notInWarn}
-      </td>
-      <td class="mono">${sharesDisp}</td>
-      <td class="mono" data-priority="low">${r.weightedAvgCost > 0 ? fmt$(r.weightedAvgCost) : '—'}</td>
-      <td class="mono" data-priority="low">${r.totalPosCost > 0 ? fmt$(r.totalPosCost) : '—'}</td>
-      <td class="mono" data-priority="low">${r.currentPrice != null ? fmt$(r.currentPrice) : '—'}</td>
-      <td class="mono">${r.posValue != null ? fmt$(r.posValue) : '—'}</td>
-      <td class="mono ${r.posPnl != null ? (r.posPnl>=0?'pos':'neg') : ''}">${r.posPnl != null ? fmt$(r.posPnl) : '—'}</td>
-      <td>${fmtPct(r.pnlPct)}</td>
-      <td class="mono" data-priority="low">${r.ivps != null ? fmt$(r.ivps) : '—'}</td>
-      <td>${fmtPct(r.upside)}</td>
-      <td style="font-size:12px">${r.stageLabel}${r.substageLabel?'<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>':''}</td>
-      <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
-      <td data-priority="low" style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo||''}</td>
-    </tr>`;
-  }).join('');
-
-  const totalRow = `<tr class="total-row">
-    <td class="mono">TOTAL</td>
-    <td></td>
-    <td class="mono" data-priority="low"></td>
-    <td class="mono" data-priority="low">${fmt$(totalCost)}</td>
-    <td data-priority="low"></td>
-    <td class="mono">${fmt$(totalValue)}</td>
-    <td class="mono ${totalPnl>=0?'pos':'neg'}">${fmt$(totalPnl)}</td>
-    <td>${fmtPct(totalPnlPct)}</td>
-    <td data-priority="low"></td>
-    <td></td>
-    <td></td>
-    <td></td>
-    <td data-priority="low"></td>
-  </tr>`;
-
-  const cashRow = `<tr class="cash-row">
-    <td class="mono">CASH (全ブローカー合計)</td>
-    <td>—</td>
-    <td data-priority="low">—</td>
-    <td data-priority="low">—</td>
-    <td data-priority="low">—</td>
-    <td class="mono">${fmt$(totalCashAll)}</td>
-    <td>—</td>
-    <td>—</td>
-    <td data-priority="low">—</td>
-    <td>—</td>
-    <td>—</td>
-    <td>—</td>
-    <td data-priority="low">—</td>
-  </tr>`;
-
-  document.getElementById('table-section').innerHTML = `
-    <div class="sec">③ ポートフォリオ明細（保有中銘柄・全ブローカー合算）</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead><tr>
-          <th>銘柄</th>
-          <th>合計株数</th>
-          <th data-priority="low">加重平均単価</th>
-          <th data-priority="low">取得総額</th>
-          <th data-priority="low">現在株価</th>
-          <th>時価残高</th>
-          <th>評価損益額</th>
-          <th>評価損益率</th>
-          <th data-priority="low">理論株価</th>
-          <th>乖離率</th>
-          <th>フェーズ</th>
-          <th>スコア</th>
-          <th data-priority="low">メモ</th>
-        </tr></thead>
-        <tbody>
-          ${tableRows}
-          ${totalRow}
-          ${cashRow}
-        </tbody>
-      </table>
-    </div>`;
+  _pfState = { totalAssets, totalValue, totalPnl, totalCashAll, totalCost, totalPnlPct, cashRatio, rows, brokerData };
+  _renderSummary();
+  _renderBrokers();
+  _renderTable();
 
   // HYPEMIX
   renderHypemix(posAgg, hypeMap, tanukiMap, universeTickers);
@@ -555,6 +454,117 @@ async function loadData() {
 
   // ⑤ History chart
   loadHistoryChart();
+}
+
+// ── Currency render functions ──
+function _renderSummary() {
+  const { totalAssets, totalValue, totalPnl, totalCashAll, cashRatio, totalPnlPct } = _pfState;
+  const currBtns = `<div style="display:flex;gap:5px;margin-left:auto">
+    <button class="chart-btn curr-btn${_currMode2==='usd'?' active':''}" data-mode="usd" onclick="switchCurr('usd')">USD</button>
+    <button class="chart-btn curr-btn${_currMode2==='jpy'?' active':''}" data-mode="jpy" onclick="switchCurr('jpy')">JPY</button>
+  </div>`;
+  document.getElementById('summary-section').innerHTML = `
+    <div class="sec" style="margin-top:24px">① 資産サマリー ${currBtns}</div>
+    <div class="summary-cards">
+      <div class="s-card">
+        <div class="s-card-label">総資産</div>
+        <div class="s-card-value">${fmtC(totalAssets)}</div>
+        <div class="s-card-sub">時価 + キャッシュ</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">時価残高合計</div>
+        <div class="s-card-value">${fmtC(totalValue)}</div>
+        <div class="s-card-sub">株式評価額</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">評価損益</div>
+        <div class="s-card-value ${totalPnl>=0?'pos':'neg'}">${fmtC(totalPnl)}</div>
+        <div class="s-card-sub ${totalPnlPct>=0?'pos':'neg'}">${(totalPnlPct>=0?'+':'')+totalPnlPct.toFixed(2)}%</div>
+      </div>
+      <div class="s-card">
+        <div class="s-card-label">キャッシュ比率</div>
+        <div class="s-card-value">${cashRatio.toFixed(1)}%</div>
+        <div class="s-card-sub">${fmtC(totalCashAll)}</div>
+      </div>
+    </div>`;
+}
+
+function _renderBrokers() {
+  const { brokerData } = _pfState;
+  const cards = brokerData.map(d => `<div class="broker-card">
+    <div class="broker-name">${d.name}</div>
+    <div class="broker-val">${fmtC(d.bAssets)}</div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:4px">
+      株式: ${fmtC(d.bTotalValue)} / CASH: ${fmtC(d.cash)}
+    </div>
+    <div style="font-family:var(--mono);font-size:11px;margin-top:4px;${d.bPnl>=0?'color:var(--grn)':'color:var(--red)'}">${d.bPnl>=0?'+':''}${fmtC(d.bPnl)}</div>
+  </div>`).join('');
+  document.getElementById('broker-summary-section').innerHTML = `
+    <div class="sec">② ブローカー別サマリー</div>
+    <div class="broker-summary">${cards}</div>`;
+}
+
+function _renderTable() {
+  const { rows, totalCost, totalValue, totalPnl, totalPnlPct, totalCashAll } = _pfState;
+  const tableRows = rows.map(r => {
+    const m = CAT_META[r.cat] ?? CAT_META['PASS'];
+    const warn = r.notHolding
+      ? `<span class="badge-warn" title="discover_configの区分が保有中ではありません">⚠️ 区分未反映</span>` : '';
+    const notInWarn = r.notInDisc
+      ? `<span class="badge-warn" title="discover_configに未登録">⚠️ 未登録</span>` : '';
+    const sharesDisp = r.totalShares > 0 ? r.totalShares.toLocaleString() : '<span class="neu">—</span>';
+    return `<tr>
+      <td>
+        <a class="tkr-a" href="../value-monitor/tanuki_valuation/stock.html?ticker=${r.ticker}">${r.ticker}</a>
+        ${warn}${notInWarn}
+      </td>
+      <td class="mono">${sharesDisp}</td>
+      <td class="mono" data-priority="low">${r.weightedAvgCost > 0 ? fmtC(r.weightedAvgCost) : '—'}</td>
+      <td class="mono" data-priority="low">${r.totalPosCost > 0 ? fmtC(r.totalPosCost) : '—'}</td>
+      <td class="mono" data-priority="low">${r.currentPrice != null ? fmtC(r.currentPrice) : '—'}</td>
+      <td class="mono">${r.posValue != null ? fmtC(r.posValue) : '—'}</td>
+      <td class="mono ${r.posPnl != null ? (r.posPnl>=0?'pos':'neg') : ''}">${r.posPnl != null ? fmtC(r.posPnl) : '—'}</td>
+      <td>${fmtPct(r.pnlPct)}</td>
+      <td class="mono" data-priority="low">${r.ivps != null ? fmtC(r.ivps) : '—'}</td>
+      <td>${fmtPct(r.upside)}</td>
+      <td style="font-size:12px">${r.stageLabel}${r.substageLabel?'<br><span style="font-size:10px;color:var(--mut)">'+r.substageLabel+'</span>':''}</td>
+      <td><span class="cat-badge ${m.badge}">${m.label}</span></td>
+      <td data-priority="low" style="font-size:12px;color:var(--mut);max-width:160px;white-space:normal">${r.memo||''}</td>
+    </tr>`;
+  }).join('');
+  const totalRow = `<tr class="total-row">
+    <td class="mono">TOTAL</td><td></td>
+    <td class="mono" data-priority="low"></td>
+    <td class="mono" data-priority="low">${fmtC(totalCost)}</td>
+    <td data-priority="low"></td>
+    <td class="mono">${fmtC(totalValue)}</td>
+    <td class="mono ${totalPnl>=0?'pos':'neg'}">${fmtC(totalPnl)}</td>
+    <td>${fmtPct(totalPnlPct)}</td>
+    <td data-priority="low"></td><td></td><td></td><td></td><td data-priority="low"></td>
+  </tr>`;
+  const cashRow = `<tr class="cash-row">
+    <td class="mono">CASH (全ブローカー合計)</td><td>—</td>
+    <td data-priority="low">—</td><td data-priority="low">—</td><td data-priority="low">—</td>
+    <td class="mono">${fmtC(totalCashAll)}</td>
+    <td>—</td><td>—</td><td data-priority="low">—</td><td>—</td><td>—</td><td>—</td><td data-priority="low">—</td>
+  </tr>`;
+  document.getElementById('table-section').innerHTML = `
+    <div class="sec">③ ポートフォリオ明細（保有中銘柄・全ブローカー合算）</div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr>
+          <th>銘柄</th><th>合計株数</th>
+          <th data-priority="low">加重平均単価</th>
+          <th data-priority="low">取得総額</th>
+          <th data-priority="low">現在株価</th>
+          <th>時価残高</th><th>評価損益額</th><th>評価損益率</th>
+          <th data-priority="low">理論株価</th>
+          <th>乖離率</th><th>フェーズ</th><th>スコア</th>
+          <th data-priority="low">メモ</th>
+        </tr></thead>
+        <tbody>${tableRows}${totalRow}${cashRow}</tbody>
+      </table>
+    </div>`;
 }
 
 // ── HYPEMIX ──
@@ -750,12 +760,13 @@ async function loadHistoryChart() {
   const sec = document.getElementById('chart-section');
   if (!sec) return;
 
-  try {
-    const r = await fetch(HIST_PATH + TS);
-    if (!r.ok) throw new Error('fetch failed');
-    _histData = await r.json();
-  } catch(_) {
-    _histData = { snapshots: [] };
+  if (!_histData) {
+    try {
+      const r = await fetch(HIST_PATH + TS);
+      _histData = r.ok ? await r.json() : { snapshots: [] };
+    } catch(_) {
+      _histData = { snapshots: [] };
+    }
   }
 
   sec.innerHTML = `
@@ -774,8 +785,10 @@ async function loadHistoryChart() {
 
 function switchChart(mode) {
   _chartMode = mode;
-  document.querySelectorAll('.chart-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('btn-' + mode).classList.add('active');
+  ['usd','jpy','both'].forEach(m => {
+    const b = document.getElementById('btn-' + m);
+    if (b) b.classList.toggle('active', m === mode);
+  });
   renderHistoryChart();
 }
 

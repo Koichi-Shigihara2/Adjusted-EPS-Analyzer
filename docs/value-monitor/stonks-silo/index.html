@@ -146,7 +146,7 @@
     .pillar-label{font-size:11px;color:var(--mut);margin-top:6px}
 
     /* 中段: グラフ3本 */
-    .chart-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:16px}
+    .chart-row{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--bdr);border:1px solid var(--bdr);margin-bottom:0}
     .chart-col{background:var(--sur2);padding:12px 14px}
     .chart-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:8px}
     .chart-latest{font-family:var(--mono);font-size:16px;font-weight:700;margin-bottom:8px}
@@ -165,7 +165,7 @@
     .detail-col-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut);margin-bottom:10px}
 
     /* 財務トレンドパネル */
-    .fv-section{margin-top:14px;border:1px solid var(--bdr)}
+    .fv-section{margin-top:0;border:1px solid var(--bdr);border-top:none}
     .fv-header{display:flex;align-items:center;padding:8px 14px;background:var(--sur2)}
     .fv-header-title{font-family:var(--mono);font-size:9px;letter-spacing:.15em;color:var(--mut)}
     .fv-body{display:block;padding:14px 14px 12px}
@@ -822,7 +822,15 @@ function buildProfitPath(ticker, d) {
   // targetKey: ラダーで 'target' 状態の指標キーを data 属性で保持（非同期AdjEPS注入が参照）
   const targetKey = metrics.find(m => m.state === 'target')?.key ?? '';
   return `<div class="profpath" data-left="${leftScale}" data-right="${rightScale}" data-target-key="${targetKey}">
-    <div class="profpath-title">黒字化への道のり</div>
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+      <div class="profpath-title" style="margin-bottom:0">黒字化への道のり</div>
+      <span class="tip-wrap"><span class="tip-icon">?</span><span class="tip-box">各指標が縦の赤ライン（0ライン）を右に越えると黒字化。単位: $B/$M（Adj.EPSのみ1株あたり$）。ラダー方式で指標が順番に黒字化する構造を可視化している。ドット色の意味は下の凡例参照。</span></span>
+    </div>
+    <div style="display:flex;gap:12px;margin-bottom:8px;flex-wrap:wrap">
+      <span style="font-size:9px;color:var(--mut);display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--grn);flex-shrink:0"></span>黒字達成済み</span>
+      <span style="font-size:9px;color:var(--mut);display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#a855f7;flex-shrink:0"></span>次の黒字化目標（ETA自動算出）</span>
+      <span style="font-size:9px;color:var(--mut);display:inline-flex;align-items:center;gap:4px"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mut);flex-shrink:0"></span>ペンディング</span>
+    </div>
     <div style="display:grid;grid-template-columns:64px 1fr;gap:0 8px;margin-bottom:3px">
       <span></span>
       <div style="position:relative;display:flex;justify-content:space-between">
@@ -977,6 +985,17 @@ function buildDetail(ticker, d) {
     : '—';
   const reproBar = reproLabel === 'データ不足' ? '' : `<div class="repro-bar"><div class="repro-left"><div class="repro-title" data-info="silo_repro_dots">拡大再生産</div><div class="repro-dots" style="color:${reproColor}">${reproDots}</div><div class="repro-label" style="color:${reproColor}">${reproLabel}</div></div><div class="repro-detail">${reproDetailText}</div></div>`;
 
+  const valInlineHtml = (() => {
+    const v = d.valuation || {};
+    if (!v.market_cap && !v.current_price) return '';
+    const parts = [];
+    if (v.market_cap) parts.push('MC ' + fmtB(v.market_cap));
+    if (v.current_price != null) parts.push('$' + v.current_price.toFixed(2));
+    if (v.psr != null) parts.push('PSR ' + v.psr + 'x');
+    if (v.ev_sales != null) parts.push('EV/S ' + v.ev_sales + 'x');
+    if (v.net_cash != null) parts.push('NC ' + fmtB(v.net_cash));
+    return parts.join('　');
+  })();
 
   return `
   <div class="conclusion-layer">
@@ -984,6 +1003,7 @@ function buildDetail(ticker, d) {
       <div class="conclusion-ticker">${ticker}</div>
       <div class="conclusion-verdict" style="color:${vc};border-color:${vbc};background:${vbg}">${verdictLabel}</div>
       <div class="conclusion-summary">${summaryOneLiner}</div>
+      ${valInlineHtml ? `<div style="flex-basis:100%;font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:2px">${valInlineHtml}</div>` : ''}
       <div id="ned-${ticker}" style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:4px">次回決算: —</div>
       <div style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:2px">機関保有: N/A</div>
     </div>
@@ -1083,7 +1103,6 @@ function buildDetail(ticker, d) {
     </div>
   </details>
 
-  ${(()=>{const v=d.valuation||{};if(!v.market_cap&&!v.current_price)return '';return `<div class="val-bar"><div class="val-item"><div class="val-label">時価総額</div><div class="val-value">${fmtB(v.market_cap)}</div></div><div class="val-item"><div class="val-label">株価</div><div class="val-value">${v.current_price!=null?'$'+v.current_price.toFixed(2):'—'}</div></div><div class="val-item"><div class="val-label">PSR</div><div class="val-value">${v.psr!=null?v.psr+'倍':'—'}</div></div><div class="val-item"><div class="val-label">EV/Sales</div><div class="val-value">${v.ev_sales!=null?v.ev_sales+'倍':'—'}</div></div><div class="val-item"><div class="val-label">ネットキャッシュ</div><div class="val-value" style="color:${(v.net_cash??0)>=0?'var(--grn)':'var(--red)'}">${fmtB(v.net_cash)}</div></div></div>`;})()}
   <div class="chart-row">
     ${hasRecords ? `
     <div class="chart-col">
