@@ -2,6 +2,15 @@
 
 ---
 
+## 2026-06-25（完了）
+
+### [HYPE-1] HypeCoreフェーズ判定の精緻化 — 完了（2026-06-25）
+- `run_poc()` に `s4_streak`（S4連続月数）を追加し `determine_stage()` に渡すよう変更
+- `determine_stage()` にS4脱出条件を追加: `s4_streak>=6 AND rev_yoy>20 AND ni_yoy>0` → S2へ脱出
+- `detect_substage()` にS4長期継続ラベルを追加: `stage_months>=6 AND real_strong` → "長期調整・実体強"
+- PLTR: 2026-04が"長期調整・実体強"（6ヶ月目）、2026-05でS2脱出に変更。NVDA: 影響なし
+- 変更ファイル: `src/value/hypecore/hypecore.py`
+
 ## 2026-06-25（廃止）
 
 ### [RICE-2] CF_adjのMatrix判定への組み込み — 廃止（2026-06-25）

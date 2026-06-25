@@ -494,12 +494,13 @@ def compute_scores(ticker: str) -> pd.DataFrame:
 
 # ── ステージ判定 ────────────────────────────────────────────
 
-def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0) -> int:
+def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0, s4_streak: int = 0) -> int:
     """
     Koichi定義に基づくステージ判定。
     「期待と実体の関係性」で判断する。
 
     s3_streak: 直前からS3が何ヶ月連続しているか（S4転落の文脈判定に使用）
+    s4_streak: 直前からS4が何ヶ月連続しているか（S4脱出条件に使用）
 
     判定優先順位:
       1. S4優先チェック（S3が一定期間続いた後の急落）
@@ -540,6 +541,13 @@ def determine_stage(row: pd.Series, prev_stage: int = 2, s3_streak: int = 0) -> 
     # S3が2ヶ月以上続いた後にピーク比-28%超かつRSI<47 → 期待崩壊
     if prev_stage in (3, 4) and s3_streak >= 2 and from_peak < -28 and rsi < 47:
         return 4
+    # S4脱出（長期S4かつ実体が強い → バリュエーション訂正完了とみなしてS2へ）
+    if prev_stage == 4 and s4_streak >= 6:
+        rev_yoy_val = row.get("rev_yoy")
+        ni_yoy_val  = row.get("ni_yoy")
+        if rev_yoy_val is not None and float(rev_yoy_val) > 20:
+            if ni_yoy_val is not None and float(ni_yoy_val) > 0:
+                return 2
     # S4慣性（直前S4で下落継続中 → 期待はまだ戻っていない）
     if prev_stage == 4 and from_peak < -8 and ma200_dev < 30:
         return 4
@@ -715,6 +723,15 @@ def detect_substage(row: pd.Series, stage: int, stage_months: int) -> dict:
             return dict(phase="出口", label="底打ち兆候",
                 watch="実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。",
                 next="打診買いの準備を始める。出来高増加を伴う株価反発で本格エントリー。")
+        # 長期調整（S4が6ヶ月超かつ実体強い）：バリュエーション訂正が長引いている状態
+        if stage_months >= 6 and real_strong:
+            ni_yoy_val = _v(row.get("ni_yoy"))
+            ni_str = f"・純利益{ni_yoy_val:+.1f}%" if ni_yoy_val is not None else ""
+            rev_str = f"売上{rev_yoy:+.1f}%" if rev_yoy is not None else "売上データなし"
+            return dict(phase="中盤B", label="長期調整・実体強",
+                watch=f"S4が{stage_months}ヶ月継続。{rev_str}{ni_str}と実体は強い。"
+                       "バリュエーション訂正が長引く典型的な長期調整局面。",
+                next="実体の強さが続けばS2への回帰が近い。出来高を伴う反発・MA200復帰に注目。")
         if real_strong:
             return dict(phase="中盤B", label="実体維持・期待崩壊中",
                 watch="売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。",
@@ -789,10 +806,12 @@ def run_poc(ticker: str = "PLTR") -> dict:
     stages = []
     prev = 2
     s3_streak = 0  # S3連続月数
+    s4_streak = 0  # S4連続月数
     for _, row in df.iterrows():
-        s = determine_stage(row, prev_stage=prev, s3_streak=s3_streak)
+        s = determine_stage(row, prev_stage=prev, s3_streak=s3_streak, s4_streak=s4_streak)
         stages.append(s)
         s3_streak = s3_streak + 1 if s == 3 else 0
+        s4_streak = s4_streak + 1 if s == 4 else 0
         prev = s
     df["stage"] = stages
     df["stage_label"] = df["stage"].map(STAGE_LABELS)
