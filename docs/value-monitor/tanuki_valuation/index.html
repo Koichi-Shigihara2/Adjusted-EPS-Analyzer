@@ -157,8 +157,8 @@
       <div class="stat-label">最終更新</div>
     </div>
     <div class="stat-item">
-      <div class="stat-value" id="avg-alpha">--</div>
-      <div class="stat-label">平均 α</div>
+      <div class="stat-value" id="avg-moat">--</div>
+      <div class="stat-label">平均 Moat</div>
     </div>
     <div class="stat-item">
       <div class="stat-value" id="avg-rice">--</div>
@@ -175,12 +175,12 @@
           <th data-col="ivps"    data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">BASE</span></th>
           <th data-col="ivps_beta" data-type="num">理論株価<br><span style="font-weight:400;opacity:.6">β込み</span></th>
           <th data-col="upside"  data-type="num">乖離率</th>
+          <th data-col="moat"    data-type="num">Moat</th>
           <th data-col="rice"    data-type="num" class="col-rice grp-border">RICE<br><span style="font-weight:400;opacity:.7">base</span></th>
           <th data-col="rice_per" data-type="num">RICE/PER</th>
           <th data-col="ma200"   data-type="num">200MA<br><span style="font-weight:400;opacity:.6">乖離</span></th>
           <th data-col="growth"  data-type="num">成長率<br><span style="font-weight:400;opacity:.6">BASE</span></th>
-          <th data-col="alpha"   data-type="num" class="grp-border no-transform">α</th>
-          <th data-col="wacc"    data-type="num">株主資本コスト(Ke)</th>
+          <th data-col="wacc"    data-type="num" class="grp-border">株主資本コスト(Ke)</th>
           <th data-col="q"       data-type="num">Q<br><span style="font-weight:400;opacity:.6">OCF/NI</span></th>
           <th data-col="cf"      data-type="num">CF<br><span style="font-weight:400;opacity:.6">投資効率</span></th>
           <th data-col="date"    data-type="str"  class="grp-border">更新日</th>
@@ -400,7 +400,7 @@ function buildRows(results) {
     const ivps_beta= d.intrinsic_value_beta || 0;
     const upside   = price > 0 && ivps > 0 ? (ivps - price) / price : null;
     const growth   = d.scenario_valuations?.base?.growth_rate ?? d.growth_scenarios?.primary?.rate ?? null;
-    const alpha    = d.alpha ?? null;
+    const moat     = d.components?.moat_score ?? null;
     const wacc     = d.wacc?.value ?? null;
     const rice     = d.rice?.base?.rice ?? null;
     const rice_per = d.rice?.base?.rice_per_ratio ?? null;
@@ -417,9 +417,9 @@ function buildRows(results) {
       ticker: r.ticker,
       _price: price, _ivps: ivps, _ivps_beta: ivps_beta,
       _upside: upside, _rice: rice, _rice_per: rice_per,
-      _ma200: ma200_dev, _growth: growth, _alpha: alpha,
+      _ma200: ma200_dev, _growth: growth, _moat: moat,
       _wacc: wacc, _q: q, _cf: cf, _date: date,
-      price, ivps, ivps_beta, upside, growth, alpha, wacc,
+      price, ivps, ivps_beta, upside, growth, moat, wacc,
       rice, rice_per, ma200_dev, ma200_raw, q, cf, date,
       fcfM, hasGO, hasSeg,
     };
@@ -431,7 +431,7 @@ function sortRows() {
     ticker: '_ticker_str', price: '_price', ivps: '_ivps',
     ivps_beta: '_ivps_beta', upside: '_upside',
     rice: '_rice', rice_per: '_rice_per', ma200: '_ma200',
-    growth: '_growth', alpha: '_alpha', wacc: '_wacc',
+    growth: '_growth', moat: '_moat', wacc: '_wacc',
     q: '_q', cf: '_cf', date: '_date',
   };
   tableRows.sort((a, b) => {
@@ -481,12 +481,12 @@ function renderTable() {
       <td>${fmtDlr(r.ivps)}</td>
       <td>${r.ivps_beta > 0 ? fmtDlr(r.ivps_beta) : '—'}</td>
       <td class="${upsideClass}">${upsideTxt}</td>
+      <td>${r.moat != null ? r.moat.toFixed(2) : '—'}</td>
       <td class="col-rice grp-border">${r.rice != null ? r.rice.toFixed(1) : '—'}</td>
       <td>${ricePERTxt}</td>
       <td class="${ma200Class}">${ma200Txt}</td>
       <td>${r.growth != null ? fmtPct2(r.growth) : '—'}</td>
-      <td class="grp-border">${r.alpha != null ? r.alpha.toFixed(3) : '—'}</td>
-      <td>${r.wacc != null ? fmtPct2(r.wacc) : '—'}</td>
+      <td class="grp-border">${r.wacc != null ? fmtPct2(r.wacc) : '—'}</td>
       <td>${r.q != null && Math.abs(r.q) < 100 ? r.q.toFixed(1) : '—'}</td>
       <td>${r.cf != null ? r.cf.toFixed(2) : '—'}</td>
       <td class="muted grp-border" title="${r.date}">${fmtDate(r.date)}</td>
@@ -564,9 +564,9 @@ async function loadTickers() {
   document.getElementById('last-update').textContent = dates.at(-1) || '--';
   document.getElementById('last-updated').textContent = toJST(dates.at(-1));
 
-  const alphas = valid.map(r => r.data.alpha).filter(v => v != null);
-  document.getElementById('avg-alpha').textContent =
-    alphas.length ? (alphas.reduce((a,b)=>a+b,0)/alphas.length).toFixed(3) : '--';
+  const moats = valid.map(r => r.data.components?.moat_score).filter(v => v != null);
+  document.getElementById('avg-moat').textContent =
+    moats.length ? (moats.reduce((a,b)=>a+b,0)/moats.length).toFixed(2) : '--';
 
   const rices = valid.map(r => r.data.rice?.base?.rice).filter(v => v != null);
   document.getElementById('avg-rice').textContent =
