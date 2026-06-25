@@ -267,7 +267,7 @@ function scClass(v) {
   return v >= 75 ? 'sc-hi' : v >= 50 ? 'sc-mid' : v >= 25 ? 'sc-lo' : 'sc-no';
 }
 function pct(v, dec = 1) {
-  if (v == null) return '<span class="neu">—</span>';
+  if (v == null || typeof v !== 'number' || !isFinite(v)) return '<span class="neu">—</span>';
   const s = (v >= 0 ? '+' : '') + v.toFixed(dec) + '%';
   return `<span class="${v >= 0 ? 'pos' : 'neg'}">${s}</span>`;
 }
@@ -337,9 +337,9 @@ function renderDetailTable() {
   });
 
   const stageLabel = (s, lbl) => {
-    if (s == null) return '<span class="neu">—</span>';
-    const cls = `s${s}`;
-    return `<span class="${cls}" style="font-family:var(--mono);font-size:12px">${lbl || ['','蓄積期','上昇期','陶酔期','崩壊期'][s] || '—'}</span>`;
+    if (s == null || s === 0 || s < 1 || s > 4) return '<span class="neu">—</span>';
+    const text = lbl || ['', '蓄積期', '上昇期', '陶酔期', '崩壊期'][s] || '—';
+    return `<span class="s${s}" style="font-family:var(--mono);font-size:12px">${text}</span>`;
   };
 
   const thArr = (col, label) => {
@@ -1325,7 +1325,8 @@ function renderRiceMatrix() {
 
   const axisLabels = `
     <text x="${(ml+pw/2).toFixed(0)}" y="${H-2}" text-anchor="middle" font-size="10" fill="#94a3b8">← 割高（乖離率）割安 →</text>
-    <text x="11" y="${(mt+ph/2).toFixed(0)}" text-anchor="middle" font-size="10" fill="#94a3b8" transform="rotate(-90,11,${(mt+ph/2).toFixed(0)})">RICE スコア（対数軸） ↑</text>
+    <text x="4" y="${mt-5}" text-anchor="start" font-size="10" fill="#94a3b8">↑ RICE</text>
+    <text x="4" y="${mt+6}" text-anchor="start" font-size="8" fill="#64748b">対数軸</text>
   `;
 
   const borders = `<rect x="${ml}" y="${mt}" width="${pw}" height="${ph}" fill="none" stroke="#334155" stroke-width="1"/>`;

@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-06-25（表示統一系 一括対応）
+
+### [HOME-COLOR-1] ツールカードのテーマカラー修正（2026-06-25完了）
+対応内容: `docs/index.html` の `.card-score` アクセントカラーを `#14b8a6`（シアン）→ `#84cc16`（ライム）に変更。
+色相環の最大空白（MACRO PULSE H=38° ～ MARKET PULSE H=160°、122°のギャップ）の中点 H=82° に配置し、
+隣接色との最小距離44°を確保。全9色が色相環上でより均等に分布するよう改善。
+
+### [TSCORE-DISP-1] `—` と `N/A` の表示統一（2026-06-25完了）
+対応内容: `docs/value-monitor/tanuki_score/index.html` を調査した結果、コード全体で `N/A` 表記は使用されておらず
+すべて `—` に統一済みであることを確認。`pct()` 関数に `typeof v !== 'number' || !isFinite(v)` の防衛チェックを追加し、
+数値以外の値（文字列・NaN等）が渡された場合も `—` を返すよう強化。
+
+### [TSCORE-DISP-2] JOBY・ASTSのフェーズ欄空欄修正（2026-06-25完了）
+対応内容: `docs/value-monitor/tanuki_score/index.html` の `stageLabel()` 関数を修正。
+`stage=0`（未フェーズ）・`stage=null`・範囲外（1〜4以外）の場合に明示的に `—` を返すよう変更。
+従来のコードは `stage=0` で空文字列が生成される可能性があったため、これを防ぐ。
+
+### [TSCORE-DISP-3] RICEマトリクスY軸ラベルの可読性改善（2026-06-25完了）
+対応内容: `docs/value-monitor/tanuki_score/index.html` のSVG Y軸ラベルを
+`transform="rotate(-90,...)"` の縦書きから横書きに変更。
+プロット左上に `↑ RICE`（font-size:10）と `対数軸`（font-size:8）の2行ラベルを配置。
+
+### [DISCOVER-DISP-3] 新規候補カードのタグ視認性改善（2026-06-25完了）
+対応内容: `docs/discover/index.html` のタグCSSを全面改善。
+- `.screen-pass`: alpha `.08` → `.15`、`border:1px solid` 追加、文字色 `#10b981` → `#34d399`
+- `.conv-低`: 文字色 `#64748b`（低コントラスト）→ `#94a3b8` に変更、border追加
+- `.cand-catalyst` / `.conv-高` / `.conv-中`: alpha `.12` → `.20`、border追加で視認性向上
+
+### [MP-DISP-5] 資産クラス並び順の視覚的勾配追加（2026-06-25完了）
+対応内容: `docs/market-monitor/market-pulse/index.html` の `renderAssetFlow()` に
+グラデーションバー（高さ3px、青→シアン→紫→緑→アンバー→オレンジ→赤）を追加。
+グリッド右側の7データ列に対応する幅で描画し、「安全資産→リスク資産」の方向を視覚的に表現。
+
+---
+
 ## 2026-06-25（実装）
 
 ### [TAIL-DISP-3] SATELLITE一覧「戦略名」の表記揺れ修正（2026-06-25完了）
