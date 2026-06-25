@@ -190,26 +190,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 （例: stock.htmlで個別検証→TANUKI SCOREで横断相対判断、等）を
 今後設計したい。
 
-### [TANUKI-MAXEPS-1] 最大EPS計算・TANUKI SCORE表示
-**優先度:** 低（ARCH-DATA-1完了後に着手）
-**分類:** 設計課題 / TANUKI SCORE
-
-#### 定義
-max_eps = (GAAP NI TTM + SBC TTM + 一過性損失) ÷ 希薄化後株式数
-※ 一過性利益（DTA還付等）は除外
-※ D&Aは含めない（GAAP的最大EPSとして定義）
-
-#### 用途
-- 最大EPS基準PER = 株価 ÷ max_eps（TANUKI SCOREの比較軸に追加）
-- GAAP PERと最大EPS PERの乖離幅 = SBC依存度・一過性項目の可視化
-
-#### 信頼性フラグ
-HIGH/MED/LOW で表示ゲート制御（LOWはグレーアウト）
-
-#### 着手条件
-- ARCH-DATA-1（SECデータ正規化レイヤー強化）完了後
-- 一過性損失の識別ロジック（Alpha Vantage流用 or 独自ルール）を
-  別途設計議論してから実装
 
 ### [MULTI-1] マルチバリュエーション表示
 - 現状: DCF一本槍

@@ -2,6 +2,27 @@
 
 ---
 
+## 2026-06-25（TANUKI-MAXEPS-1）
+
+### [TANUKI-MAXEPS-1] 最大EPS計算・TANUKI SCORE表示（2026-06-25完了）
+対応内容:
+- `src/value/tanuki_valuation/pipeline.py` に max_eps / max_eps_per / max_eps_reliability の計算・格納を追加
+  （max_eps = (GAAP NI TTM + SBC TTM) / 希薄化後株式数、一過性損失は将来拡張）
+  - GAAP NI TTM ソース: `dupont.ni_ttm`（quarterly TTM集計）
+  - SBC TTM ソース: `financial_health.sbc_ttm`（annual最新年SBC）
+  - 株式数ソース: `components.diluted_shares`
+  - HIGH: 3フィールド全取得 + max_eps > 0
+  - MED: ni_ttm か sbc_ttm の一方欠落、ゼロ代入で近似計算
+  - LOW: 2フィールド以上欠落 または max_eps <= 0
+- `docs/value-monitor/tanuki_score/index.html` の詳細テーブルに3列を追加
+  - GAAP PER: `components.per`（既存チップバッジの値をテーブルにも表示）
+  - 最大EPS PER: `components.max_eps_per`（信頼性LOW時 opacity:0.45 でグレーアウト）
+  - 乖離: GAAP PER − 最大EPS PER（正値=オレンジ表示、SBC依存度を可視化）
+- NVDA実行確認: max_eps=6.8535, max_eps_per=29.0x, reliability=HIGH
+  （GAAP PER 30.4x との乖離 +1.4x: SBCが純利益比4%と小さいためギャップ小）
+
+---
+
 ## 2026-06-25（小規模ロジック系 一括対応）
 
 ### [MP-WEEKEND-1] 休場日（土日）ラベル追加（2026-06-25完了）

@@ -716,6 +716,31 @@ class TanukiValuationPipeline:
                 (_at_median_ld - _iv_ld) / abs(_iv_ld) * 100, 1
             )
 
+        # max_eps / max_eps_per / max_eps_reliability: (GAAP NI TTM + SBC TTM) / 希薄化後株式数
+        _ni_ttm_me  = (latest_data.get("dupont") or {}).get("ni_ttm")
+        _sbc_ttm_me = (latest_data.get("financial_health") or {}).get("sbc_ttm")
+        _shares_me  = (latest_data.get("components") or {}).get("diluted_shares")
+        _price_me   = (latest_data.get("components") or {}).get("current_price") or 0
+        _max_eps_val     = None
+        _max_eps_per_val = None
+        _reliability_val = "LOW"
+        if _shares_me and _shares_me > 0:
+            if _ni_ttm_me is not None and _sbc_ttm_me is not None:
+                _max_earn = _ni_ttm_me + _sbc_ttm_me
+                if _max_earn > 0:
+                    _max_eps_val     = round(_max_earn / _shares_me, 4)
+                    _max_eps_per_val = round(_price_me / _max_eps_val, 1) if _price_me > 0 else None
+                    _reliability_val = "HIGH"
+            elif _ni_ttm_me is not None or _sbc_ttm_me is not None:
+                _max_earn = (_ni_ttm_me or 0) + (_sbc_ttm_me or 0)
+                if _max_earn > 0:
+                    _max_eps_val     = round(_max_earn / _shares_me, 4)
+                    _max_eps_per_val = round(_price_me / _max_eps_val, 1) if _price_me > 0 else None
+                    _reliability_val = "MED"
+        latest_data["components"]["max_eps"]             = _max_eps_val
+        latest_data["components"]["max_eps_per"]         = _max_eps_per_val
+        latest_data["components"]["max_eps_reliability"] = _reliability_val
+
         # リスクイベント取得（Grok web search）
         risk_events = []
         if not self.skip_risk:

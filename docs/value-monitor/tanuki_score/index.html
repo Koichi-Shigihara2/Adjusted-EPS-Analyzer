@@ -325,7 +325,7 @@ function toggleTrapAll() {
   renderTrapPanel();
 }
 
-const COL_KEYS = ['ticker','cat','funda','timing','revYoy','rule40','epsYoy','fcf','upside','stage'];
+const COL_KEYS = ['ticker','cat','funda','timing','revYoy','rule40','epsYoy','fcf','upside','per','maxEpsPer','perGap','stage'];
 
 // ─── Render ③ Detail table ───────────────────────────────────
 function renderDetailTable() {
@@ -363,6 +363,9 @@ function renderDetailTable() {
       <td class="num">${pct(s.epsYoy)}</td>
       <td style="text-align:center">${fcfDisp}</td>
       <td class="num">${pct(s.upside)}</td>
+      <td class="num" style="font-family:var(--mono)">${s.per != null ? s.per.toFixed(1) + 'x' : '<span class="neu">—</span>'}</td>
+      <td class="num" style="font-family:var(--mono);${s.maxEpsRel === 'LOW' ? 'opacity:.45' : ''}">${s.maxEpsPer != null ? s.maxEpsPer.toFixed(1) + 'x' : '<span class="neu">—</span>'}</td>
+      <td class="num" style="font-family:var(--mono);${s.perGap != null && s.perGap > 0 ? 'color:#f97316' : ''}">${s.perGap != null ? (s.perGap > 0 ? '+' : '') + s.perGap.toFixed(1) : '<span class="neu">—</span>'}</td>
       <td>${stageLabel(s.stage, s.stageL)}</td>
     </tr>`;
   }).join('');
@@ -381,6 +384,9 @@ function renderDetailTable() {
           ${thArr('epsYoy','EPS成長')}
           <th>FCF</th>
           ${thArr('upside','TANUKI乖離')}
+          ${thArr('per','GAAP PER')}
+          ${thArr('maxEpsPer','最大EPS PER')}
+          ${thArr('perGap','乖離')}
           ${thArr('stage','フェーズ')}
         </tr></thead>
         <tbody>${tbody}</tbody>
@@ -487,9 +493,12 @@ function renderDetailTable() {
     // ARCH-MATRIX-DUP-1: stock.html側のRICE×乖離率マトリクスと同じavailableゲートに揃える
     const riceAvailable = tk?.rice?.available ?? false;
     const roe     = tk?.components?.roe_10yr_avg ?? null;
-    const per = tk?.components?.per ?? null;
-    const peg = tk?.components?.peg ?? null;
-    const ps  = tk?.components?.ps  ?? null;
+    const per        = tk?.components?.per             ?? null;
+    const peg        = tk?.components?.peg             ?? null;
+    const ps         = tk?.components?.ps              ?? null;
+    const maxEpsPer  = tk?.components?.max_eps_per     ?? null;
+    const maxEpsRel  = tk?.components?.max_eps_reliability ?? 'LOW';
+    const perGap     = (per != null && maxEpsPer != null) ? parseFloat((per - maxEpsPer).toFixed(1)) : null;
 
     const dupont      = tk?.dupont ?? null;
     const growthRate  = tk?.growth?.rate ?? null;
@@ -506,7 +515,7 @@ function renderDetailTable() {
 
     return { ticker, cat, funda, timing, revYoy, rule40, epsYoy, fcf: fcfBase,
              upside: rawUp, stage, stageL: stageLabel, substage, stageLabel, sellReason,
-             matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, dupont,
+             matrixInfo, riceVal, riceAvailable, roe, per, peg, ps, maxEpsPer, maxEpsRel, perGap, dupont,
              growthRate, dilutionPct, roicWacc, industry, fcfHistory, fcfOutlier,
              dividendYield, payoutRatio, netCurrentAssetsRatio, buybackTtm, netDebt };
   });
