@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-25（TAIL-DISP-3 表記揺れ修正・HOME-ANIM-1 アニメーション統一確認 完了）
+最終更新: 2026-06-26（ALPHA-REDESIGN-1 Moat Score駆動Phase1自動算出・alpha乗算廃止 完了）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -209,8 +209,9 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 内容: 各サブポート戦略の期待値を統合管理するエンジン
 
 ### [EVAL-3] モート強度の相対スクリーニング軸化
-- 現状: 構想中
-- 内容: 競争優位性（モート）を定量化してスクリーニングに組み込む
+- 現状: Moat Score計算ロジック自体はALPHA-REDESIGN-1（2026-06-26）で実装済み
+  （`calculator/adjustments.py` の `calculate_moat_score()` + `latest.json` に `components.moat_score` 格納）
+- 残り: スクリーニング画面への表示・全銘柄横断比較軸としての組み込みは未着手
 
 
 

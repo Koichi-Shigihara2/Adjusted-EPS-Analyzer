@@ -2,6 +2,53 @@
 
 ---
 
+## 2026-06-26（完了）
+
+### [ALPHA-REDESIGN-1] alpha乗算廃止・Moat Score駆動Phase1期間自動算出（2026-06-26完了）
+
+**概要:** DCFの `v0*(1+alpha)` 乗算を廃止し、企業の競争優位性（Moat Score）から
+Phase1期間を自動算出する方式に切り替えた。alphaは参照値としてJSONに保持。
+
+**実装内容:**
+
+- `calculator/adjustments.py`
+  - `MoatScoreResult` dataclass を追加
+  - `calculate_moat_score()` を追加
+    - Moat Score = `gross_margin_norm×0.40 + roic_norm×0.40 + fcf_margin_norm×0.20`
+    - 正規化基準: GM=100%、ROIC超過=(roic-Rm)/30%、FCF=30%
+    - Phase1 years = `3 + round(moat_score × 7)`（範囲: 3〜10年）
+  - `calculator/__init__.py` に `calculate_moat_score, MoatScoreResult` をexport
+
+- `core_calculator.py`
+  - STEP 4e 追加: `financials` から `moat_gross_margin_3yr/moat_roic/moat_fcf_margin_3yr` を読んで `calculate_moat_score()` を呼び出し
+  - three_stage/two_stage DCF、WACC感度分析、シナリオ計算、将来価値計算の全 `phase1_years`/`high_growth_years` を `_moat_phase1_years` に統一
+  - `calculate_intrinsic_value(..., alpha=0.0)` に全箇所を変更
+  - 結果dictに `moat_score/moat_phase1_years/moat_gross_margin_norm/moat_roic_norm/moat_fcf_margin_norm` を追加
+
+- `pipeline.py`
+  - `_calc_moat_inputs()` を追加: normalized quarterly JSONからGM 3年平均、annual JSONからFCF margin 3年平均を算出
+  - `calculate_pt()` 呼び出し前に `financials.update(_moat_inputs)` でmoat入力を注入
+  - ROIC: `rice.roic_wacc_ratio × 0.10` を `moat_roic` として渡す
+
+**動作確認結果（2026-06-26実行）:**
+
+| 銘柄 | Moat Score | Phase1 | IV (変更後) | upside | 判定 | 旧alpha | 変化メモ |
+|------|-----------|--------|-------------|--------|------|---------|---------|
+| NVDA | 0.892 | 9yr | $648.50 | +231.4% | WATCH | 1.0 (cap) | alpha廃止で非乗算化。Phase1 5yr→9yr拡張で相殺 |
+| PLTR | 0.641 | 7yr | $89.40 | -16.9% | WATCH | 0.0 | Phase1 5yr→7yr延長によりIV増加 |
+| MSFT | 0.713 | 8yr | $381.76 | +7.3% | WATCH | 1.0 (cap) | alpha廃止（v0×2.0→v0）でIV大幅減 |
+| IONQ | 0.000 | 3yr | $41.84 | -18.2% | WATCH | 0.0 | GM/ROIC/FCF全0→最短Phase1。upside低下 |
+
+**pytest:** `tests/test_pipeline_logic.py` 119件 全パス（2026-06-26確認）
+
+**変更ファイル:**
+- `src/value/tanuki_valuation/calculator/adjustments.py`
+- `src/value/tanuki_valuation/calculator/__init__.py`
+- `src/value/tanuki_valuation/core_calculator.py`
+- `src/value/tanuki_valuation/pipeline.py`
+
+---
+
 ## 2026-06-25（完了）
 
 ### [HYPE-1] HypeCoreフェーズ判定の精緻化 — 完了（2026-06-25）

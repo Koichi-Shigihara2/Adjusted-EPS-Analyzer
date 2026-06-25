@@ -61,6 +61,7 @@ from calculator.dcf import calculate_three_stage_dcf, ThreeStageDCFResult
 from calculator.adjustments import (
     calculate_growth_option_pv, GrowthOptionResult,
     determine_fcf_base, FCFBaseResult,          # v6.2追加
+    calculate_moat_score, MoatScoreResult,      # ALPHA-REDESIGN-1
     DEFAULT_FCF_CV_THRESHOLD,
     calculate_bs_adjustment, BSAdjustmentResult,  # v7.0追加
     estimate_fcf_from_eps, FCFEstimationResult,   # v7.2追加
@@ -283,6 +284,19 @@ class KoichiValuationCalculator:
             except Exception as _rd_e:
                 print(f"   [{ticker}] R&D資本化エラー: {_rd_e}")
 
+        # ── STEP 4e: Moat Score → Phase1期間自動計算（ALPHA-REDESIGN-1）──
+        moat_result: MoatScoreResult = calculate_moat_score(
+            gross_margin_3yr_avg=financials.get("moat_gross_margin_3yr"),
+            roic=financials.get("moat_roic"),
+            fcf_margin_3yr_avg=financials.get("moat_fcf_margin_3yr"),
+        )
+        _moat_phase1_years: int = moat_result.phase1_years
+        print(f"   [{ticker}] Moat Score: {moat_result.moat_score:.3f}"
+              f"  (GM={moat_result.gross_margin_norm:.2f}"
+              f"  ROIC={moat_result.roic_norm:.2f}"
+              f"  FCF={moat_result.fcf_margin_norm:.2f})"
+              f"  → Phase1={_moat_phase1_years}yr")
+
         # ── STEP 5: DCF計算（2段階 or 3段階） ──
         dcf_type = "two_stage"
         dcf_result = None
@@ -300,7 +314,7 @@ class KoichiValuationCalculator:
 
             phase1_growth = p1["growth"] if p1["growth"] is not None else high_growth_rate
             phase2_growth = p2["growth"]
-            phase1_years  = p1["years"]
+            phase1_years  = _moat_phase1_years  # ALPHA-REDESIGN-1: Moat Score連動
             phase2_years  = p2["years"]
 
             # ③ Phase2成長率にセクター上限を適用
@@ -350,7 +364,7 @@ class KoichiValuationCalculator:
                     g_start=high_growth_rate,
                     g_end=tapering_g_end,
                     wacc=wacc,
-                    high_growth_years=self.high_growth_years,
+                    high_growth_years=_moat_phase1_years,
                     terminal_growth=terminal_growth,
                 )
                 dcf_result = DCFResult(
@@ -368,7 +382,7 @@ class KoichiValuationCalculator:
                     base_fcf=base_fcf,
                     high_growth_rate=high_growth_rate,
                     wacc=wacc,
-                    high_growth_years=self.high_growth_years,
+                    high_growth_years=_moat_phase1_years,
                     terminal_growth=terminal_growth
                 )
             v0 = dcf_result.v0
@@ -474,8 +488,9 @@ class KoichiValuationCalculator:
         # ── 割引率定数（STEP10bで使用）──
 
         # ── STEP 10: 本質的価値（P_t）算出 ──
+        # ALPHA-REDESIGN-1: alpha乗算廃止（alpha=0.0）。alphaは参考値として保持
         v0_adjusted, intrinsic_value_pt = calculate_intrinsic_value(
-            v0=v0, rpo_pv=rpo_pv, alpha=alpha,
+            v0=v0, rpo_pv=rpo_pv, alpha=0.0,
             growth_option_pv=growth_option_pv
         )
 
@@ -501,7 +516,7 @@ class KoichiValuationCalculator:
                     phase1_growth_rate=_p1["growth"] if _p1["growth"] is not None else high_growth_rate,
                     phase2_growth_rate=_p2["growth"],
                     wacc=discount_rate,
-                    phase1_years=_p1["years"],
+                    phase1_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
                     phase2_years=_p2["years"],
                     terminal_growth=terminal_growth,
                 )
@@ -512,7 +527,7 @@ class KoichiValuationCalculator:
                     g_start=high_growth_rate,
                     g_end=tapering_g_end,
                     wacc=discount_rate,
-                    high_growth_years=self.high_growth_years,
+                    high_growth_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
                     terminal_growth=terminal_growth,
                 )
                 _res = DCFResult(
@@ -528,11 +543,11 @@ class KoichiValuationCalculator:
                     base_fcf=base_fcf,
                     high_growth_rate=high_growth_rate,
                     wacc=discount_rate,
-                    high_growth_years=self.high_growth_years,
+                    high_growth_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
                     terminal_growth=terminal_growth,
                 )
             _, _ivpt = calculate_intrinsic_value(
-                v0=_res.v0, rpo_pv=rpo_pv, alpha=alpha,
+                v0=_res.v0, rpo_pv=rpo_pv, alpha=0.0,  # ALPHA-REDESIGN-1: alpha廃止
                 growth_option_pv=growth_option_pv
             )
             return (
@@ -554,20 +569,20 @@ class KoichiValuationCalculator:
                 base_fcf=base_fcf,
                 phase1_growth_rate=_p1["growth"] if _p1["growth"] is not None else high_growth_rate,
                 phase2_growth_rate=_p2["growth"], wacc=_rm,
-                phase1_years=_p1["years"], phase2_years=_p2["years"],
+                phase1_years=_moat_phase1_years, phase2_years=_p2["years"],  # ALPHA-REDESIGN-1
                 terminal_growth=terminal_growth,
             )
         elif dcf_type == "tapering" and tapering_g_end is not None:
             from calculator.dcf import calculate_tapering_dcf as _calc_tap_rm
             _res_rm = _calc_tap_rm(
                 base_fcf=base_fcf, g_start=high_growth_rate, g_end=tapering_g_end,
-                wacc=_rm, high_growth_years=self.high_growth_years,
+                wacc=_rm, high_growth_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
                 terminal_growth=terminal_growth,
             )
         else:
             _res_rm = calculate_two_stage_dcf(
                 base_fcf=base_fcf, high_growth_rate=high_growth_rate,
-                wacc=_rm, high_growth_years=self.high_growth_years,
+                wacc=_rm, high_growth_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
                 terminal_growth=terminal_growth,
             )
         _v0_rm = _res_rm.v0  # RM基準V0（UIのSTEP11に表示すべき値）
@@ -599,18 +614,14 @@ class KoichiValuationCalculator:
             high_growth_rate=high_growth_rate,
             diluted_shares=diluted_shares,
             rpo_pv=rpo_pv + growth_option_pv,
-            alpha=alpha,
+            alpha=0.0,  # ALPHA-REDESIGN-1: alpha廃止
             terminal_growth=terminal_growth,
             net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
             phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
             phase2_years=_phase2_years,                            # v7.1: 3段階対応
         )
-        # 感度分析のbase_yearsはPhase1の実際の年数（3段階DCFの場合）
-        # → 中央列が理論株価と一致する（選択肢C）
-        if dcf_type == "three_stage" and maturity_profile:
-            _sensitivity_base_years = maturity_profile.get("phase1", {}).get("years", self.high_growth_years)
-        else:
-            _sensitivity_base_years = self.high_growth_years
+        # 感度分析のbase_yearsはMoat Score連動Phase1年数（ALPHA-REDESIGN-1）
+        _sensitivity_base_years = _moat_phase1_years
 
         sensitivity_result: SensitivityResult = calculate_sensitivity_matrix(
             calc_func=sensitivity_calc_func,
@@ -628,7 +639,7 @@ class KoichiValuationCalculator:
             high_growth_years=_scenario_p1_years,
             diluted_shares=diluted_shares,
             rpo_pv=rpo_pv + growth_option_pv,
-            alpha=alpha,
+            alpha=0.0,  # ALPHA-REDESIGN-1: alpha廃止
             terminal_growth=terminal_growth,
             net_cash_per_share=bs_adjustment.net_cash_per_share,  # v7.1: BS補正
             phase2_growth=_phase2_growth,                          # v7.1: 3段階対応
@@ -651,7 +662,7 @@ class KoichiValuationCalculator:
         future_values = calculate_future_values(
             current_value=_future_base_val,
             high_growth_rate=high_growth_rate,
-            high_growth_years=self.high_growth_years,
+            high_growth_years=_moat_phase1_years,  # ALPHA-REDESIGN-1
             terminal_growth=terminal_growth,
             projection_years=5,
         )
@@ -741,7 +752,7 @@ class KoichiValuationCalculator:
             "growth": {
                 "rate": round(high_growth_rate, 4),
                 "source": growth_result.source,
-                "phase1_years": self.high_growth_years,
+                "phase1_years": _moat_phase1_years,  # ALPHA-REDESIGN-1: Moat Score連動
             },
 
             "wacc": wacc_result.to_dict(),
@@ -811,8 +822,13 @@ class KoichiValuationCalculator:
                 "_shares_source": financials.get("_shares_source"),
                 "_beta_source": financials.get("_beta_source"),
                 "high_growth_rate_used": high_growth_rate,
-                "high_growth_years": self.high_growth_years,
+                "high_growth_years": _moat_phase1_years,  # ALPHA-REDESIGN-1
                 "terminal_growth_used": terminal_growth,
+                "moat_score": moat_result.moat_score,
+                "moat_phase1_years": moat_result.phase1_years,
+                "moat_gross_margin_norm": moat_result.gross_margin_norm,
+                "moat_roic_norm": moat_result.roic_norm,
+                "moat_fcf_margin_norm": moat_result.fcf_margin_norm,
                 "pv_high": pv_high,
                 "pv_terminal": pv_terminal,
                 "roe_used": roe_avg,

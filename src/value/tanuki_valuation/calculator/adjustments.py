@@ -96,6 +96,16 @@ class AlphaResult:
 
 
 @dataclass
+class MoatScoreResult:
+    """Moat Score計算結果"""
+    moat_score: float
+    phase1_years: int
+    gross_margin_norm: float
+    roic_norm: float
+    fcf_margin_norm: float
+
+
+@dataclass
 class GrowthOptionResult:
     """成長オプション（仮説セグメント）PV計算結果"""
     total_pv: float
@@ -581,6 +591,46 @@ def calculate_alpha(
         retention_rate=retention_rate,
         wacc=wacc,
         g_individual=g_individual
+    )
+
+
+def calculate_moat_score(
+    gross_margin_3yr_avg: Optional[float],
+    roic: Optional[float],
+    fcf_margin_3yr_avg: Optional[float],
+    rm: float = 0.10,
+) -> MoatScoreResult:
+    """Moat Score計算（粗利率・ROIC超過幅・FCFマージンの加重平均）
+
+    各指標を絶対値基準で正規化し、Phase1成長期間（3〜10年）を自動決定する。
+    データが揃わない場合は moat_score=0.5（中央値）をデフォルトとして返す。
+    """
+    def _clamp(x: float, lo: float, hi: float) -> float:
+        return max(lo, min(hi, x))
+
+    if gross_margin_3yr_avg is None and roic is None and fcf_margin_3yr_avg is None:
+        moat_score = 0.5
+        return MoatScoreResult(
+            moat_score=round(moat_score, 4),
+            phase1_years=3 + round(moat_score * 7),
+            gross_margin_norm=0.5,
+            roic_norm=0.5,
+            fcf_margin_norm=0.5,
+        )
+
+    gm_norm   = _clamp((gross_margin_3yr_avg or 0.0) / 1.0,  0.0, 1.0)
+    roic_norm = _clamp(((roic or 0.0) - rm) / 0.30,          0.0, 1.0)
+    fcf_norm  = _clamp((fcf_margin_3yr_avg or 0.0) / 0.30,   0.0, 1.0)
+
+    moat_score  = gm_norm * 0.40 + roic_norm * 0.40 + fcf_norm * 0.20
+    phase1_years = 3 + round(moat_score * 7)
+
+    return MoatScoreResult(
+        moat_score=round(moat_score, 4),
+        phase1_years=phase1_years,
+        gross_margin_norm=round(gm_norm,   4),
+        roic_norm=round(roic_norm,         4),
+        fcf_margin_norm=round(fcf_norm,    4),
     )
 
 

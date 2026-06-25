@@ -117,6 +117,11 @@ class TanukiValuationPipeline:
                 if _roic_wacc is not None:
                     financials["roic_wacc_ratio"] = _roic_wacc
 
+                # ALPHA-REDESIGN-1: Moat Score計算インプットをDCF前に注入
+                _roic_val = (_roic_wacc * 0.10) if _roic_wacc is not None else None
+                _moat_inputs = self._calc_moat_inputs(ticker, roic=_roic_val)
+                financials.update(_moat_inputs)
+
                 valuation = self.calculator.calculate_pt(financials)
 
                 if "error" in valuation:
@@ -2510,6 +2515,63 @@ class TanukiValuationPipeline:
             return roic / wacc_rm
         except Exception:
             return None
+
+    def _calc_moat_inputs(self, ticker: str, roic: float | None = None) -> dict:
+        """Moat Score計算用インプット（gross_margin_3yr_avg, roic, fcf_margin_3yr_avg）を返す
+
+        gross_margin_3yr_avg: normalized JSON の GrossProfit / Revenue 3年平均
+        roic:                 呼び出し元から渡された ROIC値（ROIC = roic_wacc_ratio × Rm）
+        fcf_margin_3yr_avg:   annual SEC の free_cash_flow / revenue 3年平均
+        """
+        result: dict = {}
+
+        if roic is not None:
+            result["moat_roic"] = roic
+
+        # gross_margin_3yr_avg: normalized quarterly JSON から年次GrossProfit/Revenue
+        norm_path = os.path.join(
+            self.repo_root, "common", "sec_data", "normalized",
+            f"{ticker}_quarterly_normalized.json"
+        )
+        if os.path.exists(norm_path):
+            try:
+                with open(norm_path, encoding="utf-8") as f:
+                    norm_data = json.load(f)
+                fields = norm_data.get("fields", {})
+                gp_annual  = [x for x in fields.get("GrossProfit", []) if x.get("is_annual")]
+                rev_annual = [x for x in fields.get("Revenue", [])      if x.get("is_annual")]
+                pairs = [
+                    gp["val"] / rev["val"]
+                    for gp, rev in zip(gp_annual[-3:], rev_annual[-3:])
+                    if rev.get("val") and rev["val"] > 0
+                ]
+                if pairs:
+                    result["moat_gross_margin_3yr"] = sum(pairs) / len(pairs)
+            except Exception:
+                pass
+
+        # fcf_margin_3yr_avg: annual SEC data の free_cash_flow / revenue
+        sec_dir = os.path.join(self.repo_root, "common", "sec_data", "data", ticker)
+        if os.path.exists(sec_dir):
+            try:
+                years = sorted([
+                    int(fn[7:11]) for fn in os.listdir(sec_dir)
+                    if fn.startswith("annual_") and fn.endswith(".json") and fn[7:11].isdigit()
+                ])
+                fcf_margins = []
+                for y in years[-3:]:
+                    with open(os.path.join(sec_dir, f"annual_{y}.json"), encoding="utf-8") as f:
+                        ann = json.load(f)
+                    rev = ann.get("pl", {}).get("revenue") or 0
+                    fcf = ann.get("cf", {}).get("free_cash_flow")
+                    if fcf and rev and rev > 0:
+                        fcf_margins.append(fcf / rev)
+                if fcf_margins:
+                    result["moat_fcf_margin_3yr"] = sum(fcf_margins) / len(fcf_margins)
+            except Exception:
+                pass
+
+        return result
 
     def _load_hype_phase(self, ticker: str) -> int | None:
         """poc.json から最新の HypeCore フェーズ（1〜4）を返す（GROWTH-1）"""
