@@ -1136,17 +1136,23 @@ function renderAssetFlow(){
     return`<div class="af-u-tile" style="background:${bg}"><div class="af-cell-label">${a.label}</div><div class="af-cell-ticker" title="${d.desc}">${a.ticker}</div><div class="af-cell-pct${isStale?' is-stale-value':''}" style="color:${col}">${sign}${pct.toFixed(2)}%${staleMark}</div><div class="af-arrow" style="color:${col}">${arrow}</div><div class="af-cell-bar"><div class="af-cell-bar-fill" style="width:${barW}%;background:${col}"></div></div></div>`;
   }).join("");
 
-  // ── 日付行: 直近7日を降順（最新が上）──
+  // ── 日付行: 直近7日を降順（最新が上）+ 週末「休場」行 ──
   const withAf=allData.filter(d=>d.asset_flow!=null);
   const days=[...withAf.slice(-7)].reverse();
   const todayDate=latest?.date;
-  const dateRows=days.map(d=>{
+  const weekendsBetween=(hi,lo)=>{const res=[];for(let d=new Date(hi);;){d.setDate(d.getDate()-1);const iso=d.toISOString().slice(0,10);if(iso<=lo)break;const w=d.getDay();if(w===0||w===6)res.push(iso);}return res;};
+  const holidayRowHtml=iso=>{const dt=new Date(iso);const lbl=`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;return`<div class="af-u-date" style="color:var(--mut);opacity:.5">${lbl}<span style="font-size:8px;display:block">休場</span></div>`+ASSETS.map(()=>`<div class="af-u-cell" style="background:var(--sur2)"></div>`).join('');};
+  const nowDate=new Date();const nowDow=nowDate.getDay();
+  let preWeekendHtml='';
+  if(nowDow===0||nowDow===6){const tmr=new Date(nowDate);tmr.setDate(tmr.getDate()+1);const lastIso=days.length?days[0].date:nowDate.toISOString().slice(0,10);preWeekendHtml=weekendsBetween(tmr.toISOString().slice(0,10),lastIso).map(holidayRowHtml).join('');}
+  const dateRows=preWeekendHtml+days.map((d,i)=>{
     const dt=new Date(d.date);
     const lbl=`${dt.getMonth()+1}/${String(dt.getDate()).padStart(2,'0')}`;
     const isToday=d.date===todayDate;
     const dateLbl=`<div class="af-u-date${isToday?' af-u-today':''}">${lbl}${isToday?`<span style="font-size:8px;display:block">今日</span>`:''}</div>`;
     const cells=ASSETS.map(a=>{const item=d.asset_flow?.[a.key];const p=item?.change_pct??null;const isStale=!!item?.is_fallback;return`<div class="af-u-cell" style="background:${hc(p,isStale)}">${fc(p,isStale)}</div>`}).join("");
-    return dateLbl+cells;
+    const next=days[i+1];const gapHtml=next?weekendsBetween(d.date,next.date).map(holidayRowHtml).join(''):'';
+    return dateLbl+cells+gapHtml;
   }).join("");
 
   // ── 5日平均 フッター ──

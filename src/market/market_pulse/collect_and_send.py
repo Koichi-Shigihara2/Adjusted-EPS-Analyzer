@@ -1403,6 +1403,19 @@ def save_data_to_json_and_csv(report_text, structured_data, sentiment_data, fear
     row["sentiment_label"] = sentiment_data.get("label", "")
     row["summary"] = report_text
 
+    # CSVヘッダー整合チェック: CSV_COLUMNS変更時に既存ヘッダーを自動更新
+    if os.path.exists(CSV_PATH):
+        with open(CSV_PATH, 'r', newline='', encoding='utf-8') as f:
+            existing_header = next(csv.reader(f), None)
+        if existing_header is not None and list(existing_header) != CSV_COLUMNS:
+            with open(CSV_PATH, 'r', newline='', encoding='utf-8') as f:
+                old_rows = list(csv.DictReader(f))
+            with open(CSV_PATH, 'w', newline='', encoding='utf-8') as f:
+                writer_fix = csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction='ignore')
+                writer_fix.writeheader()
+                writer_fix.writerows(old_rows)
+            print(f"[INFO] CSVヘッダーを自動更新しました: {CSV_PATH}")
+
     file_exists = os.path.exists(CSV_PATH)
     with open(CSV_PATH, 'a', newline='', encoding='utf-8') as f:
         writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS, extrasaction='ignore')

@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-06-25（小規模ロジック系 一括対応）
+
+### [MP-WEEKEND-1] 休場日（土日）ラベル追加（2026-06-25完了）
+対応内容: `docs/market-monitor/market-pulse/index.html` の `renderAssetFlow()` を改修。
+ワークフローは既に `cron: "35 21 * * 1-5"` で月〜金のみ実行済みのため、フロントエンドで補完。
+- 取引日間に土日がある場合、「休場」行をグリッドに挿入
+- 今日が土日の場合、最新取引日より前に当日を含む休場行を先頭表示
+- 休場行は背景 `var(--sur2)` + 不透明度0.5で視覚的に区別
+
+### [MP-CSV-1] CSVヘッダー整合チェック（2026-06-25完了）
+対応内容: `src/market/market_pulse/collect_and_send.py` の `save_data_to_json_and_csv` 関数の
+CSV書込み前にヘッダー整合チェックを追加。
+- 既存CSVを読込み、先頭行のヘッダーを `CSV_COLUMNS` と比較
+- 不一致の場合、全データ行を読込んで新ヘッダーで全体再書込み
+- `extrasaction='ignore'` により旧カラム値は破棄、新カラムには空値が入る
+
+### [HYPE-DISP-5] HypeCore グラフX軸整列改善（2026-06-25完了）
+対応内容: `docs/value-monitor/hypecore/detail.html` の Chart.js 設定を修正。
+- `eChart`（期待の強度）の左Y軸に `afterFit: ax => { ax.width = 55; }` を追加
+- `eChart` の右Y軸（y2）に `afterFit: ax => { ax.width = 30; }` を追加
+- `fChart`（実体の強度）の左Y軸にも同様の `afterFit` を追加
+- `fChart` に不可視ダミー右Y軸（`ticks/grid/border: {display:false}`, `width=30`）を追加
+- 両グラフのプロット幅が統一され、X軸の時間目盛りが縦に揃う
+
+---
+
 ## 2026-06-25（表示統一系 一括対応）
 
 ### [HOME-COLOR-1] ツールカードのテーマカラー修正（2026-06-25完了）
