@@ -196,9 +196,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - 改善: DCF / PEG / EV/Sales / RICE / HypeCoreを並列スコアカード表示
 - GPT提案: 2026-05-30
 
-### [RICE-2] CF_adj のMatrix判定への組み込み
-- 現状: RICE_adj は表示のみ（Matrix判定はRICE生値を使用）
-- 改善: RICE_adjをMatrix判定のY軸に使うオプションを追加
 
 ### [HYPE-1] HypeCoreフェーズ判定の精緻化
 - 現状: MA200乖離・モメンタム中心
