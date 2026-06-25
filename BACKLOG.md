@@ -1,6 +1,6 @@
 # TANUKI VALUATION — 改善バックログ
 
-最終更新: 2026-06-25（DISCOVER-FEATURE-1 ニュース履歴保存・閲覧機能 完了）
+最終更新: 2026-06-25（Short report contrarian戦略 廃止・関連ファイル削除）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -347,10 +347,6 @@ HIGH/MED/LOW で表示ゲート制御（LOWはグレーアウト）
 
 ### 【TANUKI TAIL】
 - 残タスク: EWM楽観バイアス係数・データパス統一（優先度低）
-
-### 【Short report contrarian戦略】
-- [ ] GitHub Actions化（現在は手動実行）
-- 現状: バックテストv4完了。最優先サブポート戦略
 
 ### 【情報収集支援システム】
 - [ ] カタリスト×割安検知（価格下落+空売り比率+カタリスト接近）

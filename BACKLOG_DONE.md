@@ -2,6 +2,25 @@
 
 ---
 
+## 2026-06-25（廃止）
+
+🗑️ [Short report contrarian戦略] 廃止・関連ファイル一括削除（2026-06-25）
+- 戦略コンセプト: ショートセラーレポート（Hindenburg等）公開直後の逆張りロング
+- バックテストv4まで完了していたが、本番運用には至らず廃止
+- 削除ファイル（10件）:
+  - `.github/workflows/short_report_monitor.yml`（毎営業日 JST 7:18 定期実行ワークフロー）
+  - `src/subport/short_report/news_bot.py`
+  - `src/subport/short_report/notify.py`
+  - `src/subport/short_report/position_manager.py`
+  - `src/subport/short_report/screener.py`
+  - `src/subport/short_report/config.json`
+  - `src/subport/short_report/requirements.txt`
+  - `src/subport/short_report/state.json`
+  - `src/subport/short_report/processed_content.json`
+  - `src/subport/short_report/README.md`
+
+---
+
 ## 2026-06-25（実装）
 
 ✅ [DISCOVER-FEATURE-1] ニュース履歴保存・閲覧機能（2026-06-25完了）
