@@ -4,6 +4,17 @@
 
 ## 2026-06-25（実装）
 
+### [TAIL-DISP-3] SATELLITE一覧「戦略名」の表記揺れ修正（2026-06-25完了）
+対応内容: `docs/portfolio/tail/data/positions/CRWV_thesis.json` および
+`SOUN_thesis.json` の `strategy_name` フィールドを
+「グロース追及」→「グロース追求」に修正。HTML/JSファイルに該当箇所なし。
+
+### [HOME-ANIM-1] LIVEドットのパルスアニメーション統一確認（2026-06-25完了）
+対応内容: `docs/index.html` の全9カードを調査した結果、
+すべてのカードに `class="dot dot-live"` が一貫して適用されており、
+`@keyframes live` パルスアニメーションは混在なし・統一済みであることを確認。
+修正不要のため変更なし。
+
 ### [MP-DISP-6] AI分析末尾の俳句的フレーズ削除（2026-06-25完了）
 対応内容: `src/market/market_pulse/collect_and_send.py` のGrokプロンプトから
 「最後に俳句を一句（5-7-5）のみ添えること」の指示を削除し、
