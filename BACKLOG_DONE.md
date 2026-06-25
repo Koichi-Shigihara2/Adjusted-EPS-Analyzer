@@ -2,6 +2,28 @@
 
 ---
 
+## 2026-06-25（実装）
+
+### [CATALYST-1] カタリスト発掘・追跡機能
+完了日: 2026-06-25
+対応内容:
+- `src/discover/catalyst.py` 新規作成（Grok Web検索で銘柄ごとにカタリスト発掘・週次再評価）
+  - 対象: `get_hypecore_tickers()` 経由 cik_lookup.csv の hypecore=true 94銘柄
+  - 呼び出し①: 新規カタリスト発掘（grok-3 web検索）
+  - 呼び出し②: 既存「未達」カタリストの再評価（status: 未達/達成済み/消滅）
+  - ID採番: `{TICKER}-{YYYY}-{3桁連番}` 形式、冪等（再実行で積み上げ）
+  - `--ticker`/`--all`/`--dry-run` オプション対応
+- `docs/discover/catalyst.html` 新規作成
+  - 重要度・種別・ステータス・銘柄テキストフィルター
+  - 未達カタリストを上位表示、達成済み/消滅は折りたたみ
+  - ステータス色分け: 未達=青、達成済み=緑、消滅=グレー
+  - site-header.js + site-nav.js 使用
+- `docs/common/site-nav.js`: 「カタリスト」エントリをニュース履歴の直後に追加
+- `.github/workflows/Catalyst_Update.yml` 新規作成（毎週日曜 JST 23:30）
+- `.gitattributes`: `docs/discover/data/catalyst.json text eol=lf merge=ours` を追加
+
+---
+
 ## 2026-06-25（廃止）
 
 🗑️ [Short report contrarian戦略] 廃止・関連ファイル一括削除（2026-06-25）
