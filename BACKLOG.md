@@ -404,6 +404,39 @@ poc.jsonにInf/-Inf値が混入している。
 
 ---
 
+### [PICK-DUP-1] daily_pick.pyの同日重複エントリバグ
+**優先度:** 中
+**分類:** バグ / TANUKI SCORE
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+daily_pick.py L515でhistory.jsonへの書き込み時に同日チェックが存在しない。
+CIの再実行や手動実行のたびに無条件でinsertするため、
+同日に複数回実行すると同日エントリが重複蓄積する。
+
+現状の重複状況:
+- 2026-05-30: NVDA が7件重複
+- 2026-05-23: NVDAが3件・PLTRが別エントリ
+
+```python
+history.insert(0, {...})
+history = history[:30]  # 同日チェックなし
+```
+
+フロントエンド（tanuki_score/index.html）は重複除去をしないため
+同日の重複エントリが全て表示に反映される可能性がある。
+
+#### 対応方針
+history.jsonへの書き込み前に同日エントリを削除または上書きする処理を追加：
+```python
+history = [e for e in history if e.get('date') != today_str]
+history.insert(0, new_entry)
+history = history[:30]
+```
+修正後に既存の重複エントリをhistory.jsonから手動クリーンアップする。
+
+---
+
 ## 優先度：低（アイデア段階）
 
 
@@ -565,6 +598,28 @@ STONKS SILOは売上がある赤字企業が対象のため実害は低いが、
 - L222: r_start == 0 の場合はNoneまたはデフォルト値を返す
 - L314: rev == 0 の場合は0または計算スキップ
 - L625: avg_past == 0 の場合は比較をスキップ
+
+---
+
+### [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI TAIL
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+thesis.jsonの実際のフィールドが期待値と乖離している（全9銘柄共通）：
+
+- company: 未実装（フィールド自体なし）
+- position_size: 未実装（フィールド自体なし）
+- strategy → 実際は strategy_name（フィールド名相違）
+- thesis_version → 実際は version（フィールド名相違）
+- entry_price: NVDAでnull（既存ポジション登録時に取得価格未記録）
+
+機能的な問題はないが、スキーマ定義と実データの乖離が蓄積している。
+
+#### 対応方針
+- TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
+- NVDAのentry_priceを実際の取得価格で更新
 
 ---
 
