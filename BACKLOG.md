@@ -216,6 +216,62 @@ DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標�
 
 ---
 
+### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成
+**優先度:** 中
+**分類:** データ欠落 / TANUKI TAIL
+**発見:** 2026-06-26横断調査
+
+#### 問題
+SEC-CTRL-1（2026-06-24）実装後、sec_ctrl_fetcher.pyをSOUNにしか実行していない。
+tail登録9銘柄のうち8銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/TSLA）の
+ctrlデータが未取得。内部統制タブを開くと「データなし（未取得 or CIK未登録）」と表示される。
+UIクラッシュはないが機能として未稼働。
+
+#### 対応方針
+以下を実行して残8銘柄のctrlデータを生成する：
+python src/tail/sec_ctrl_fetcher.py ADBE APP CELH CRWV NVDA PLTR SOFI TSLA
+
+---
+
+### [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
+**優先度:** 中
+**分類:** データ品質 / EPS ANALYZER
+**発見:** 2026-06-26横断調査
+
+#### 問題
+LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
+- 2023Q4: adjusted_eps=106.37（diluted_shares=204,000）
+- 2023Q3: adjusted_eps=-20.995
+- 原因: IPO前の株式構造（20万4千株）がIPO後（約9,300万株）と根本的に別物
+- 計算自体はSECデータから正しく計算されているが、現在の株式数ベースでは意味をなさない
+
+#### 対応方針
+- EPS Analyzerの表示でIPO前データ（株式数が現在の1%未満等）を除外する処理を追加
+- または|EPS|>50等の閾値でグレーアウト・除外表示する
+- report_consistency_check.pyのCHECK-14/15（EPS>株価）との整合も確認
+
+---
+
+### [EXTREME-FEAR-1] extreme-fear/index.htmlの扱い方針決定
+**優先度:** 中
+**分類:** 設計判断 / 全体
+**発見:** 2026-06-26横断調査
+
+#### 問題
+docs/value-monitor/extreme-fear/index.htmlがサイト公式ナビ（site-nav.js・docs/index.html）
+に未接続で実質休眠状態。
+
+- コミット1件のみ（ACTION-6追加時）、以後更新なし
+- site-header.js / site-nav.js未使用・独自ナビを内包
+- URLを直接知らないとアクセス不可
+
+#### 対応方針（要設計判断）
+- A案: site-nav.jsに登録してMARKET PULSE配下のサブページとして復活
+- B案: 機能がMarket Pulseに統合済みであれば削除
+- いずれにせよ放置は避ける
+
+---
+
 ## 優先度：低（アイデア段階）
 
 
@@ -387,6 +443,41 @@ DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標�
 
 #### 実装難易度
 高
+
+---
+
+### [SILO-LEGEND-1] 黒字化チャート凡例にpillスタイルの説明追加
+**優先度:** 低
+**分類:** UX / STONKS SILO
+**発見:** 2026-06-26横断調査
+
+#### 問題
+SILO-LAYOUT-1（2026-06-24）で追加した凡例にはドット（緑丸）の説明のみ。
+SILO-UX-1（2026-06-26）で追加した「✅ 達成済」pillスタイルの説明が凡例に含まれていない。
+ドット凡例とpill説明が独立実装のため不整合。
+
+#### 対応方針
+buildProfitPath()の凡例部分に「✅ 達成済（pill）= 直近四半期で黒字」の説明を追加。
+
+---
+
+### [TAIL-EWM-1] EWM楽観バイアス係数の定義明確化
+**優先度:** 低
+**分類:** 設計確認 / TANUKI TAIL
+**発見:** 2026-06-26横断調査
+
+#### 問題
+BACKLOGの残タスクに「EWM楽観バイアス係数」と記載されているが、
+実装状況はAIプロンプトへの指示（「楽観バイアスを調整してください」）のみ。
+数値的なEWM係数補正は未実装。
+
+- prediction_tracker.py L220: プロンプト依存の定性的指示のみ
+- quarterly_review_generator.py L945: optimism_bias_warning=nullフィールドは定義済みだが値が入っていない
+
+#### 対応方針（要設計判断）
+- A案: 過去予測の的中率をEWM（指数加重移動平均）で計算し、次回予測の信頼度スコアに反映
+- B案: プロンプト依存の現状維持としてBACKLOGをクローズ
+Koichiさんの意図を確認してから方針決定する。
 
 ---
 
