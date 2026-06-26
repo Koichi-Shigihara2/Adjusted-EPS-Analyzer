@@ -248,24 +248,6 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 
 ---
 
-### [HYPE-FLAG-1] CSGP/ZSのhypecore=falseフラグ更新漏れ
-**優先度:** 中
-**分類:** 設定不整合 / HypeCore
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CSGP・ZSのpoc.jsonが現役データとして存在（2026-06-11生成・stage=4）しているが、
-cik_lookup.csvのtanuki/hypecore/eps/stonks_silo全フラグが空欄（falseですらなく未設定）。
-CIKとnameのみ登録されており、フラグ列が省略されたまま放置された状態。
-poc.jsonはhypecore.pyが独自の対象リストで実行した結果として生成された可能性がある。
-
-#### 確認事項
-- hypecore.pyのデフォルト対象リストがどこで定義されているか確認
-- CSGP/ZSの各システムへの登録方針を決定してフラグを適切に設定する
-  （hypecoreは原則全銘柄対象のためhypecore=trueは確定）
-  （tanuki/eps/stonks_siloは銘柄特性に応じて判断）
-
----
 
 ### [CATALYST-DATA-1] catalyst.json初回データ未投入
 **優先度:** 中
@@ -930,8 +912,8 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 5. CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入
 
 **機能・設定修正:**
-6. HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定
-7. HYPE-ENB-1: ENBのhypecore=false修正
+6. ~~HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定~~ ✅ 2026-06-27完了
+7. ~~HYPE-ENB-1: ENBのhypecore=false修正~~ ✅ 2026-06-27完了
 8. DISCOVER-THEMES-1: macro_themes_history.json初回生成
 
 ※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・

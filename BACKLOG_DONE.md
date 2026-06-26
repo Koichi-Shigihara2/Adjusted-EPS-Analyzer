@@ -4,6 +4,24 @@
 
 ## 2026-06-26（完了）
 
+### [HYPE-FLAG-1] CSGP/ZSのcik_lookupフラグ設定（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- CSGP（CoStar Group、Real Estate、黒字）: `hypecore=true, tanuki=true, eps=true, stonks_silo=false`
+  - beta_config.jsonにβ=0.72が既存 → pipeline.pyを実行してlatest.json生成（理論株価$9.87）
+- ZS（Zscaler、Technology/Software-Infrastructure、赤字）: `hypecore=true, tanuki=false, eps=false, stonks_silo=true`
+  - stonks-silo pipeline を実行してresults.jsonに追加（score=88.0、10x_CANDIDATE）
+
+### [HYPE-ENB-1] ENBのhypecore=false修正（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- ENBの `hypecore=true` → `false` に修正（カナダ企業・TANUKI-ENB-1で永続除外決定済み）
+- 他フラグ（tanuki/eps/stonks_silo=false）は現状維持
+
+---
+
 ### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成（2026-06-27完了）
 
 **完了日:** 2026-06-27
