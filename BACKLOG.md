@@ -319,30 +319,6 @@ pipeline.pyがtanuki=falseの銘柄をtickers.jsonから除外する処理が
 
 ---
 
-### [STAGE0-STOCK-1] stock.htmlでstage=0（S0失望期）が非表示になるバグ
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-stock.html L2086-2093でHypeCoreフェーズ表示ロジックにバグ。
-
-```js
-const STAGE_LABELS = {1:'黎明期', 2:'期待拡大期', 3:'陶酔期', 4:'期待剥落期'};
-// stage=0 が未定義
-
-const sl = hStage ? `Phase${hStage}・${STAGE_LABELS[hStage]||''}` : '';
-// hStage=0 はfalsyのため sl='' → フェーズ表示が消える
-```
-
-stage=0（S0 失望/蓄積期）を持つ銘柄でHypeCoreフェーズ補正欄が
-空白表示になる。hypecore/index.htmlとdetail.htmlは0を正しく定義済みで
-stock.htmlのみ未対応。
-
-#### 対応方針
-- STAGE_LABELSに0:'失望/蓄積期'を追加
-- falsyチェック（hStage ?）をnullチェック（hStage != null ?）に変更
-
 ---
 
 ### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ
@@ -986,7 +962,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
-2. STAGE0-STOCK-1: stock.htmlでstage=0が非表示
+2. ~~STAGE0-STOCK-1: stock.htmlでstage=0が非表示~~ ✅ 2026-06-26完了
 3. HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）
 
 **データ補完（コマンド実行のみ）:**
