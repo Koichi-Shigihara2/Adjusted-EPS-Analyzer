@@ -4,6 +4,16 @@
 
 ## 2026-06-26（完了）
 
+### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ修正（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `rev_ttm_prior` の 0 を `np.nan` に変換（0除算による `rev_yoy=inf` を防止）
+- `op_margin` の `rev=0` を `np.nan` に変換（`ni/0=-inf` を防止）
+- `safe()` 関数に `np.isinf(v)` チェックを追加（JSON出力前の Inf→None 変換）
+- `z_score_series()` 入力 Series の `inf/-inf` を `np.nan` に置換（スコアへの伝播防止）
+- ASTS/JOBY を再生成して Inf 値 0 件を確認（ASTS 9件・JOBY 3件が解消）
+
 ### [STAGE0-STOCK-1] stock.htmlでstage=0（S0失望期）が非表示になるバグ修正（2026-06-26完了）
 
 **完了日:** 2026-06-26

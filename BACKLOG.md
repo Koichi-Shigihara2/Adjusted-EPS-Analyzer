@@ -321,31 +321,6 @@ pipeline.pyがtanuki=falseの銘柄をtickers.jsonから除外する処理が
 
 ---
 
-### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ
-**優先度:** 中
-**分類:** バグ / HypeCore
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-hypecore.py L160でrev_ttm_prior=0（初期売上ゼロ期間）のとき
-rev_yoy = (rev_ttm / rev_ttm_prior - 1) * 100 がInfになる。
-
-z_score_series()にInfガードがないためfundamental_scoreにも伝播し、
-poc.jsonにInf/-Inf値が混入している。
-
-影響銘柄:
-- ASTS: 2025-01〜03 → rev_yoy=inf, rule40=inf, fundamental_score=inf（9件）
-- JOBY: 2025-04〜06 → rule40=-inf（3件）
-
-フロントエンドのdetail.htmlで"Infinity%"が表示される（クラッシュなし・不正表示）。
-
-#### 対応方針
-- hypecore.py L160でrev_ttm_prior=0の場合のガードを追加
-  （例: rev_yoy = None if rev_ttm_prior == 0 else (rev_ttm / rev_ttm_prior - 1) * 100）
-- z_score_series()でInf/-Infを除外する処理を追加
-- JSON保存前にInf/-Infをnullに変換する処理を追加
-- 修正後にASTS/JOBYのpoc.jsonを再生成
-
 ---
 
 ### [PICK-DUP-1] daily_pick.pyの同日重複エントリバグ
@@ -424,7 +399,7 @@ CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を
 
 #### 背景
 今回のバグ調査で発見した以下3件がpytestで検出できていなかった：
-- HYPE-INF-1：rev_ttm_prior=0でInf伝播
+- ~~HYPE-INF-1：rev_ttm_prior=0でInf伝播~~ ✅ 2026-06-27完了
 - TTM-NULL-1：val=NoneでTypeError
 - STONKS-DIV-1：r_start=0でZeroDivisionError
 
@@ -963,7 +938,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
 2. ~~STAGE0-STOCK-1: stock.htmlでstage=0が非表示~~ ✅ 2026-06-26完了
-3. HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）
+3. ~~HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）~~ ✅ 2026-06-27完了
 
 **データ補完（コマンド実行のみ）:**
 4. SEC-CTRL-2: tailの内部統制データ8銘柄一括生成

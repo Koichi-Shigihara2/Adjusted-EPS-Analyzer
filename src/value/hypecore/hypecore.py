@@ -54,6 +54,7 @@ PLTR_GROUND_TRUTH = {
 
 def z_score_series(s: pd.Series, window: int = 24) -> pd.Series:
     """ローリングZ-score（自分自身の過去window期間を基準）"""
+    s = s.replace([np.inf, -np.inf], np.nan)
     roll_mean = s.rolling(window, min_periods=6).mean()
     roll_std  = s.rolling(window, min_periods=6).std()
     return (s - roll_mean) / (roll_std + 1e-9)
@@ -156,10 +157,10 @@ def fetch_quarterly_fundamentals(ticker: str) -> pd.DataFrame:
         return pd.DataFrame()
 
     rev_ttm       = rev.rolling(4).sum()
-    rev_ttm_prior = rev_ttm.shift(4)
+    rev_ttm_prior = rev_ttm.shift(4).replace(0, np.nan)
     rev_yoy       = (rev_ttm / rev_ttm_prior - 1) * 100
     ni_yoy     = ni.pct_change(4) * 100 if not ni.empty else pd.Series(dtype=float)
-    op_margin  = (ni / rev * 100) if (not ni.empty) else pd.Series(dtype=float)
+    op_margin  = (ni / rev.replace(0, np.nan) * 100) if (not ni.empty) else pd.Series(dtype=float)
     rule40     = rev_yoy + op_margin if not op_margin.empty else pd.Series(dtype=float)
 
     result = pd.DataFrame({
@@ -863,7 +864,7 @@ def run_poc(ticker: str = "PLTR") -> dict:
     # JSON保存
     def safe(v):
         try:
-            return None if (v is None or (isinstance(v, float) and np.isnan(v))) else round(float(v), 3)
+            return None if (v is None or (isinstance(v, float) and (np.isnan(v) or np.isinf(v)))) else round(float(v), 3)
         except Exception:
             return None
 
