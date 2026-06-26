@@ -57,6 +57,14 @@ Phase1期間を自動算出する方式に切り替えた。alphaは参照値と
 - `src/value/tanuki_valuation/core_calculator.py`
 - `src/value/tanuki_valuation/pipeline.py`
 
+### [SILO-UX-1] 黒字化チャート達成済みラベル追加
+**完了日:** 2026-06-26
+**対応内容:**
+- buildProfitPath() で state === 'done' の指標ドット右に「✅ 達成済」ピルを追加
+- 表示対象: 粗利益・FCF等、直近Q値が黒字の指標
+- スタイル: 緑色背景・緑テキスト（var(--grn)）
+**背景:** 達成済み指標と未達指標が混在するチャートでどれが達成済みか不明瞭だったUX問題を解消
+
 ---
 
 ## 2026-06-25（完了）
