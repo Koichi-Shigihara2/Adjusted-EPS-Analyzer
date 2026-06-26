@@ -57,6 +57,15 @@ Phase1期間を自動算出する方式に切り替えた。alphaは参照値と
 - `src/value/tanuki_valuation/core_calculator.py`
 - `src/value/tanuki_valuation/pipeline.py`
 
+### [TANUKI-ROE-2-PARTIAL] DuPont分析パネルをstock.htmlに追加
+**完了日:** 2026-06-26
+**対応内容:**
+- FINANCIAL HEALTHセクション直後にDUPONT ANALYSISパネルを追加
+- 4カード構成：純利益率・資産回転率・財務レバレッジ・ROE（分解値）
+- ROEは値に応じて色分け（>15%緑・>0%白・負値赤）
+- dupont フィールドがない銘柄は非表示
+**残タスク:** 業種平均比較・潜在ROE試算はデータソース確保後に別途実装
+
 ### [MP-ASSETFLOW-UI-1] 資産クラス資金フロービジュアライザーUI調整
 **完了日:** 2026-06-26
 **対応内容:**
