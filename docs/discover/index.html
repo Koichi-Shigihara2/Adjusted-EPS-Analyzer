@@ -290,7 +290,7 @@ function buildTickerCard(ticker, data, configTickers, themeMapById) {
   }).join('');
   let html = `<div class="ticker-card" id="${cardId}" data-collapsed="">
     <div class="ticker-card-head" onclick="toggleCard('${cardId}')">
-      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}" onclick="event.stopPropagation()">${ticker}</a>
+      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}" onclick="event.stopPropagation()">${ticker}${ticker === 'ENB' ? ' 🇨🇦' : ''}</a>
       <span class="tc-cat cat-${escHtml(cat)}">${escHtml(cat)}</span>
       ${themeBadges}
       <span class="tc-imp imp-${escHtml(imp)}">${escHtml(imp)}</span>

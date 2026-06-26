@@ -412,6 +412,11 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 cik_lookup.csv に新規銘柄を追加した後、以下を必ず実行すること。
 
 ```bash
+# Step 0: カナダ企業チェック（登録前に必ず実行）
+python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('country', 'N/A'))"
+# 出力が "Canada" の場合は登録を中止する。
+# カナダ企業はIFRS/40-Fのため TANUKI VALUATION・EPS Analyzerに非対応。
+
 # Step 1: SEC データ取得
 python common/sec_data/update.py [TICKER]
 

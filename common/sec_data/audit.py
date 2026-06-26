@@ -40,6 +40,17 @@ def audit_ticker(ticker: str) -> dict:
     """1銘柄の監査。返り値: {ticker, critical: [], warning: []}"""
     result = {"ticker": ticker, "critical": [], "warning": []}
 
+    # カナダ企業チェック（IFRS/40-F）— 早期リターン前に必ず実行
+    try:
+        import yfinance as yf
+        _info = yf.Ticker(ticker).info
+        if _info.get("country") == "Canada":
+            result["warning"].append(
+                "カナダ企業（IFRS/40-F）: TANUKI VALUATION・EPS非対応。登録前に要確認"
+            )
+    except Exception:
+        pass
+
     ttm_path = os.path.join(TTM_DIR, f"{ticker}_ttm_series.json")
     if not os.path.exists(ttm_path):
         result["critical"].append("TTMファイルなし")
@@ -273,6 +284,8 @@ def main():
         for r in critical:
             for msg in r["critical"]:
                 print(f"   {r['ticker']:6s}: {msg}")
+            for msg in r["warning"]:  # criticalと同一銘柄のwarningも表示
+                print(f"   {r['ticker']:6s}: ⚠ {msg}")
 
     # ── β乖離チェック（--check-beta 指定時）──
     beta_drift = []
