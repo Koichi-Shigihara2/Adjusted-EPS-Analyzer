@@ -4,6 +4,16 @@
 
 ## 2026-06-26（完了）
 
+### [ALPHA-REDESIGN-2] stock.htmlのα乗算残存修正（2026-06-26完了）
+
+**完了日:** 2026-06-26
+**対応内容:**
+- `calcSensIV()` から `(1+alpha)` 乗算を除去（感度分析テーブルの2倍過大表示を修正）
+- `renderChart()` の `alphaPremium` 計算・「α プレミアム」バーを削除
+- CALCULATION BREAKDOWN Step 7 ヘッダーを `×(1+α)` 表示 → `Phase1: N年（Moat Score由来）` に変更
+- Step 7 説明文・P_t 計算式・P_t 企業価値表示から `(1+α)` を除去
+- `applyLayer2Toggle()` の pt 計算から `(1+alpha)` を除去
+
 ### [EVAL-3] Moat Scoreスクリーニング画面への組み込み（2026-06-26完了）
 
 **完了日:** 2026-06-26

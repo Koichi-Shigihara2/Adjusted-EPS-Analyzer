@@ -80,38 +80,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 
 ---
 
-### [ALPHA-REDESIGN-2] stock.htmlのα乗算残存修正
-**優先度:** 高
-**分類:** バグ / TANUKI VALUATION
-**発見:** 2026-06-26横断調査
-
-#### 問題
-ALPHA-REDESIGN-1（2026-06-25）はcore_calculator.pyのα乗算廃止のみ完了。
-stock.htmlへの反映が漏れており、以下の2箇所でα乗算が残存している。
-
-- **感度分析テーブル（calcSensIV関数 L1233）**:
-  `return (pv + tvPv) * (1 + alpha) / shs + bsps`
-  → フロントエンドがDCFを独自再計算して(1+alpha)を乗算。
-    NVDAではalpha=1.0のため×2.0となり、メイン表示($648.5)と大きく乖離した値を表示中。
-
-- **DCFウォーターフォールチャート（renderChart L2492/L2512）**:
-  `pt = v0*(1+alpha) + rpoPV + goPv*(1+alpha)`
-  `alphaPremium = (v0+goPv) * alpha`
-  → 廃止済みの「αプレミアム」バーが非ゼロで描画される。
-
-#### 影響
-- メイン理論株価（intrinsic_value_per_share）は正しい（バックエンド計算値を直読み）
-- 感度分析テーブルとDCFチャートが過大な値を表示するバグ
-
-#### 対応方針
-- calcSensIV()から(1+alpha)乗算を除去
-- renderChart()のalphaプレミアム計算・描画を除去またはゼロ固定
-- alphaフィールドはJSONに参照値として残るため、表示のみ削除（削除してはいけない）
-- CALCULATION BREAKDOWNのStep 7説明テキストを修正（L1826/L1832/L1940/L1941）
-  - L1826: ×(1+alpha)の表示を削除またはゼロ固定表示に変更
-  - L1832: α乗算式の説明文を「Phase1期間への反映」に書き換え
-  - L1940/L1941: P_t計算式とαの説明文をMoat Score方式の説明に更新
-
 ---
 
 ## 優先度：中（こなれてきたら対応）
@@ -1017,7 +985,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
 **バグ修正（優先）:**
-1. ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正
+1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
 2. STAGE0-STOCK-1: stock.htmlでstage=0が非表示
 3. HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）
 

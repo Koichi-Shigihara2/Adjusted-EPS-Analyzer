@@ -1230,7 +1230,7 @@ function render(d) {
             pv += fcfT / Math.pow(1 + r, t);
           }
           const tvPv = (fcfT * (1 + tg) / (r - tg)) / Math.pow(1 + r, yrs);
-          return (pv + tvPv) * (1 + alpha) / shs + bsps;
+          return (pv + tvPv) / shs + bsps;
         }
 
         const cellStyle = 'padding:5px 8px;text-align:right;border:1px solid var(--bdr)';
@@ -1823,14 +1823,14 @@ function render(d) {
               <span class="step-name">α（成長期待プレミアム）${alphaWasCapped ? ' <span style="color:var(--yellow);font-size:10px">CAPPED</span>' : ''}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result">×${(1 + alpha).toFixed(3)}</span>
+              <span class="step-result" style="color:var(--mut);font-size:11px">Phase1: ${d.components?.moat_phase1_years ?? '—'}年（Moat Score由来）</span>
               <span class="toggle-arrow">▼</span>
             </div>
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
               <code>α = min(cap, max(0, (ROE × 0.6 / Rm) × 0.7))</code>
-              <p class="formula-desc">ROE×内部留保率で個別成長率を算出し、Rm（市場期待リターン・βなし）との比で質的プレミアムを計算。セクター別上限（Technology:0.8、mega_tech/Communication Services:1.0、Healthcare:0.7等）。βWACCを使わないことでLayer1のβ独立性を維持。</p>
+              <p class="formula-desc">競争優位性（Moat Score）によりPhase1成長期間を自動算出。αは参照値として保持されるが、DCF計算への乗算は廃止済み（ALPHA-REDESIGN-1）。セクター別上限（Technology:0.8、mega_tech/Communication Services:1.0、Healthcare:0.7等）はMoat Score計算に使用。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">ROE（平均）</span><span class="input-value">${fmtPct(roeAvg)}</span></div>
@@ -1937,15 +1937,15 @@ function render(d) {
           </div>
           <div class="calc-step-body">
             <div class="formula-box">
-              <code>P_t = V₀ × (1 + α) / 株式数 + RPO_PV / 株式数 + GrowthOption_PV × (1 + α) / 株式数 + BS補正/株</code>
-              <p class="formula-desc">RPO_PVはαの外に加算（確定受注は成長プレミアムの対象外）。成長オプションにはαを適用。αはこの企業固有の価値創造能力の乗数として既存事業と未参入事業に適用される。</p>
+              <code>P_t = V₀ / 株式数 + RPO_PV / 株式数 + GrowthOption_PV / 株式数 + BS補正/株</code>
+              <p class="formula-desc">RPO_PVは確定受注として加算。競争優位性はMoat Score経由でPhase1成長期間（N年）に反映済み。α乗算は廃止（ALPHA-REDESIGN-1）。</p>
             </div>
             <div class="inputs-grid">
               <div class="input-item"><span class="input-label">V₀</span><span class="input-value">${fmtB(v0)}</span></div>
               <div class="input-item"><span class="input-label">RPO_PV</span><span class="input-value">${fmtB(rpoPV)}</span></div>
               <div class="input-item"><span class="input-label">GrowthOption_PV</span><span class="input-value">${fmtB(goPv)}</span></div>
               <div class="input-item"><span class="input-label">希薄化後株式数</span><span class="input-value">${fmtInt(dilutedShares)}</span></div>
-              <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB(v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha))}</span></div>
+              <div class="input-item"><span class="input-label">P_t（企業価値）</span><span class="input-value">${fmtB(v0 + rpoPV + goPv)}</span></div>
               <div class="input-item"><span class="input-label">BS補正/株</span><span class="input-value">${bsNetCashPerShare >= 0 ? '+' : ''}$${fmt(bsNetCashPerShare)}</span></div>
               <div class="input-item"><span class="input-label">1株当り</span><span class="input-value highlight">$${fmt(ivps)}</span></div>
             </div>
@@ -2489,7 +2489,7 @@ function applyLayer2Toggle() {
   const shares    = d.components?.diluted_shares || 1;
   const bs        = d.bs_adjustment?.net_cash_per_share || 0;
 
-  const pt = v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha);
+  const pt = v0 + rpoPV + goPv;
   const adjIvps = pt / shares + bs;
 
   const el = document.getElementById('layer2AdjustedIvps');
@@ -2509,7 +2509,6 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
   const hasGO = goPv > 0;
 
   const totalV0 = v0 + rpoPV + goPv;
-  const alphaPremium = (v0 + goPv) * alpha;
 
   // ラベル・値・measure を動的構築
   const x = [];
@@ -2550,15 +2549,10 @@ function renderChart(dcfType, pvP1, pvP2, pvHigh, pvTv, rpoPV, goPv, alpha, v0) 
     text.push(fmtB(goPv));
   }
 
-  x.push('α プレミアム');
-  y.push(alphaPremium);
-  measure.push('relative');
-  text.push(fmtB(alphaPremium));
-
   x.push('本質価値 P_t');
   y.push(0);
   measure.push('total');
-  text.push(fmtB(v0 * (1 + alpha) + rpoPV + goPv * (1 + alpha)));
+  text.push(fmtB(v0 + rpoPV + goPv));
 
   Plotly.newPlot('valuation-chart', [{
     type: 'waterfall',
