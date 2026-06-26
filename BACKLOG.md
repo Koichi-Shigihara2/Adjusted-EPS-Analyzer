@@ -311,6 +311,24 @@ HypeCoreのバッチ処理対象リストとcik_lookup.csvが乖離している�
 
 ---
 
+### [CATALYST-DATA-1] catalyst.json初回データ未投入
+**優先度:** 中
+**分類:** 運用漏れ / DISCOVER
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CATALYST-1（2026-06-25実装）後の初回データ投入が未完全。
+- 登録銘柄: 3銘柄（NVDA/IONQ/PLTR）のみ（hypecore=true 94銘柄が対象のはず）
+- 全銘柄のcatalysts配列が0件（データ未取得）
+- 原因: --allオプションなしの手動実行で3銘柄のみ処理されたと推測
+
+#### 対応方針
+以下を実行して全94銘柄のカタリストを初回投入する：
+python src/discover/catalyst.py --all
+（Grok APIコスト発生のため実行タイミングに注意）
+
+---
+
 ## 優先度：低（アイデア段階）
 
 
@@ -517,6 +535,43 @@ BACKLOGの残タスクに「EWM楽観バイアス係数」と記載されてい�
 - A案: 過去予測の的中率をEWM（指数加重移動平均）で計算し、次回予測の信頼度スコアに反映
 - B案: プロンプト依存の現状維持としてBACKLOGをクローズ
 Koichiさんの意図を確認してから方針決定する。
+
+---
+
+### [MP-TOOLTIP-1] BUY/TAKE PROFITチェックリストのglossaryツールチップ未付与
+**優先度:** 低
+**分類:** UX / Market Pulse
+**発見:** 2026-06-26横断調査
+
+#### 問題
+glossary.jsonにbuy_ma200・buy_hy_spread・buy_hindenburg・
+tp_ma200・tp_hy_spread・tp_hindenburgの6キーが登録済みだが、
+market-pulse/index.htmlのチェックリスト表示箇所にdata-info属性が
+付与されていないため、ツールチップが表示されない。
+glossaryキーが「登録済み・未使用」の状態。
+
+#### 対応方針
+renderBuyChecklist()・renderTakeProfit()の各チェック項目ラベルに
+data-info="buy_ma200"等のdata-info属性を付与する。
+
+---
+
+### [TOOLTIP-INDEX-1] tanuki_valuation/index.html・catalyst.html・news_history.htmlへのinfo-tooltip未適用
+**優先度:** 低
+**分類:** UX / 全体
+**発見:** 2026-06-26横断調査
+
+#### 問題
+以下の画面でinfo-tooltip.jsがimportされておらずglossaryツールチップが使えない：
+- docs/value-monitor/tanuki_valuation/index.html
+- docs/discover/catalyst.html
+- docs/discover/news_history.html
+
+（stock.htmlはSTOCK-GLOSSARY-1として既登録）
+
+#### 対応方針
+各ファイルにinfo-tooltip.jsのimportを追加し、
+説明が必要な要素にdata-info属性を付与する。
 
 ---
 
