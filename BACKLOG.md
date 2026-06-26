@@ -80,6 +80,36 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 
 ---
 
+### [ALPHA-REDESIGN-2] stock.htmlのα乗算残存修正
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION
+**発見:** 2026-06-26横断調査
+
+#### 問題
+ALPHA-REDESIGN-1（2026-06-25）はcore_calculator.pyのα乗算廃止のみ完了。
+stock.htmlへの反映が漏れており、以下の2箇所でα乗算が残存している。
+
+- **感度分析テーブル（calcSensIV関数 L1233）**:
+  `return (pv + tvPv) * (1 + alpha) / shs + bsps`
+  → フロントエンドがDCFを独自再計算して(1+alpha)を乗算。
+    NVDAではalpha=1.0のため×2.0となり、メイン表示($648.5)と大きく乖離した値を表示中。
+
+- **DCFウォーターフォールチャート（renderChart L2492/L2512）**:
+  `pt = v0*(1+alpha) + rpoPV + goPv*(1+alpha)`
+  `alphaPremium = (v0+goPv) * alpha`
+  → 廃止済みの「αプレミアム」バーが非ゼロで描画される。
+
+#### 影響
+- メイン理論株価（intrinsic_value_per_share）は正しい（バックエンド計算値を直読み）
+- 感度分析テーブルとDCFチャートが過大な値を表示するバグ
+
+#### 対応方針
+- calcSensIV()から(1+alpha)乗算を除去
+- renderChart()のalphaプレミアム計算・描画を除去またはゼロ固定
+- alphaフィールドはJSONに参照値として残るため、表示のみ削除（削除してはいけない）
+
+---
+
 ## 優先度：中（こなれてきたら対応）
 
 ### [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
@@ -121,6 +151,68 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - TANUKI VALUATIONと横並びで主要データ（PER/PBR/ROE/配当利回り等）を保持できる
   金融株専用セクションまたは別フレームワークの設計
 - 無理にFCFベースDCFに当てはめることを廃止
+
+---
+
+### [DISCOVER-THEMES-1] macro_themes_history.json未生成・.gitattributes未登録
+**優先度:** 中
+**分類:** 機能未稼働 / DISCOVER
+**発見:** 2026-06-26横断調査
+
+#### 問題
+DISCOVER-FEATURE-2（2026-06-24）でdiscover/index.htmlはmacro_themes_history.jsonを
+参照する実装が追加されたが、ファイル自体がリポジトリに存在しない。
+
+- `docs/discover/data/macro_themes_history.json` が未生成
+- `.gitattributes`にも未登録（merge=oursなし）
+- index.htmlに`??[]`フォールバックがあるためUI破綻はしないが、
+  「過去のテーマを見る」機能が完全に未稼働
+
+#### 対応方針
+- collect.pyを手動実行してmacro_themes_history.jsonを初回生成
+- .gitattributesに`docs/discover/data/macro_themes_history.json text eol=lf merge=ours`を追加
+
+---
+
+### [DUPONT-COLOR-1] DuPont ROE色分けの不統一
+**優先度:** 中
+**分類:** UX不統一 / TANUKI VALUATION・TANUKI SCORE
+**発見:** 2026-06-26横断調査
+
+#### 問題
+同一指標（DuPont ROE）の色分けが画面間で不一致。
+
+| ページ | 0〜15% ROE | <0% ROE |
+|--------|-----------|---------|
+| tanuki_score/index.html | 黄 #facc15 | 赤 #f87171 |
+| stock.html（DUPONT ANALYSISパネル）| 無色 var(--txt) | 赤 var(--red) |
+| glossary説明（tscore_dupont_roe_color）| "オレンジ" | "赤" |
+
+また glossary説明の「オレンジ」は実際の実装色「黄 #facc15」と表現が乖離。
+
+#### 対応方針（要設計判断）
+- stock.htmlをtanuki_scoreに合わせて黄を採用するか、現状の無色を維持するか
+- 統一する場合はglossary説明も合わせて修正
+
+---
+
+### [STOCK-GLOSSARY-1] stock.htmlにglossaryポップアップ機能がない
+**優先度:** 中
+**分類:** UX / TANUKI VALUATION
+**発見:** 2026-06-26横断調査
+
+#### 問題
+tanuki_score/index.htmlはinfo-tooltip.js経由でdata-info属性によるglossaryポップアップを
+実装済みだが、stock.htmlにはglossaryポップアップ機能自体が未実装（data-info属性0件）。
+
+DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標が多数あるが
+ツールチップが使えない。
+
+#### 対応方針
+- stock.htmlにinfo-tooltip.jsをimportし、glossaryポップアップを有効化
+- 有効化後、以下にdata-info属性を付与：
+  - DUPONT ANALYSISパネルのROEカード（色基準説明）
+  - その他説明が必要な指標（Moat Score由来のPhase1等）
 
 ---
 
