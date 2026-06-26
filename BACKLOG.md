@@ -302,12 +302,15 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 
 #### 問題
 CSGP・ZSのpoc.jsonが現役データとして存在（2026-06-11生成・stage=4）しているが、
-cik_lookup.csvのhypecoreフラグがfalseのまま更新されていない。
-HypeCoreのバッチ処理対象リストとcik_lookup.csvが乖離している状態。
+cik_lookup.csvのtanuki/hypecore/eps/stonks_silo全フラグが空欄（falseですらなく未設定）。
+CIKとnameのみ登録されており、フラグ列が省略されたまま放置された状態。
+poc.jsonはhypecore.pyが独自の対象リストで実行した結果として生成された可能性がある。
 
 #### 確認事項
 - hypecore.pyのデフォルト対象リストがどこで定義されているか確認
-- CSGP/ZSを意図的にhypecore対象にしたのであればcik_lookup.csvのhypecore=trueに更新。設定ミスであればpoc.jsonを削除。
+- CSGP/ZSの各システムへの登録方針を決定してフラグを適切に設定する
+  （hypecoreは原則全銘柄対象のためhypecore=trueは確定）
+  （tanuki/eps/stonks_siloは銘柄特性に応じて判断）
 
 ---
 
@@ -326,6 +329,25 @@ CATALYST-1（2026-06-25実装）後の初回データ投入が未完全。
 以下を実行して全94銘柄のカタリストを初回投入する：
 python src/discover/catalyst.py --all
 （Grok APIコスト発生のため実行タイミングに注意）
+
+---
+
+### [RKLB-CLEANUP-1] RKLBのtickers.json残存・eps_sector空欄
+**優先度:** 中
+**分類:** 設定不整合 / TANUKI VALUATION・EPS ANALYZER
+**発見:** 2026-06-26横断調査
+
+#### 問題
+RKLBはcik_lookup.csvでtanuki=falseに設定済みだが、
+docs/value-monitor/tanuki_valuation/data/tickers.jsonに登録が残存している。
+pipeline.pyがtanuki=falseの銘柄をtickers.jsonから除外する処理が
+実行されていない（または未実装）。
+
+また eps_sector フィールドが空欄のため、EPS Analyzerでセクター分類不可。
+
+#### 対応方針
+- tickers.jsonからRKLBエントリを削除（またはpipeline.py再実行で自動クリーン）
+- eps_sectorにRKLBの正しいセクター（Aerospace & Defense等）を設定
 
 ---
 
@@ -377,6 +399,72 @@ python src/discover/catalyst.py --all
   週次でDiscover候補セクションに表示
 - 実装難易度: 中
 - 状態: 実装保留（着手時期未定）
+
+---
+
+### [STALE-CHECK-1-IMPL] STALE-CHECK-1の未実装とドキュメント乖離
+**優先度:** 低
+**分類:** ドキュメント乖離 / 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CLAUDE_CODE_START.md（L689〜693）に「STALE-CHECK-1:決算後未更新」と記載されているが、
+common/sec_data/report_consistency_check.pyにこのチェックの実装が存在しない。
+ドキュメントの記述が実装より先行している状態。
+
+#### 対応方針
+- A案: STALE-CHECK-1を実装する
+  （直近決算発表日からN日以上経過しているのにlatest.jsonが更新されていない銘柄を検出）
+- B案: 実装予定なければCLAUDE_CODE_START.mdの記載を削除する
+
+---
+
+### [CHECK-FORMAT-1] report_consistency_check.pyのコメント形式不統一
+**優先度:** 低
+**分類:** 保守性 / 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CHECK-1〜11は「# ── CHECK N: 説明 ───」形式、
+CHECK-12〜19は「# CHECK-N:」形式で記述されており、
+grepやスクリプトによる自動検出で漏れが発生しやすい。
+
+#### 対応方針
+全CHECKを「# CHECK-N:」形式に統一する（CHECK-1〜11を修正）。
+
+---
+
+### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
+**優先度:** 低
+**分類:** 管理UI漏れ / admin.html
+**発見:** 2026-06-26横断調査
+
+#### 問題
+rpo_config.json（RPOプレミアムのホワイトリスト管理）は
+report_consistency_check.py L42で参照されているが、
+admin.htmlにUI編集機能が存在しない。
+RPOプレミアムを付与・変更する際は手動JSONファイル編集が必要。
+
+#### 対応方針
+admin.htmlにrpo_config.jsonの編集UIセクションを追加する。
+
+---
+
+### [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
+**優先度:** 低
+**分類:** 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+直近実装された以下の機能に対応するconsistency checkが未追加：
+- Moat Score（ALPHA-REDESIGN-1）: moat_scoreがNoneまたは範囲外（0〜1）の検出
+- DuPont分解（TANUKI-ROE-1）: dupont=nullの銘柄のうち負債超過でないものの検出
+- s4_streak（HYPE-1）: 内部変数のため対象外
+
+#### 対応方針
+report_consistency_check.pyに以下を追加：
+- CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
+- CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
 
 ---
 
