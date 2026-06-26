@@ -518,26 +518,6 @@ buildProfitPath()の凡例部分に「✅ 達成済（pill）= 直近四半期�
 
 ---
 
-### [TAIL-EWM-1] EWM楽観バイアス係数の定義明確化
-**優先度:** 低
-**分類:** 設計確認 / TANUKI TAIL
-**発見:** 2026-06-26横断調査
-
-#### 問題
-BACKLOGの残タスクに「EWM楽観バイアス係数」と記載されているが、
-実装状況はAIプロンプトへの指示（「楽観バイアスを調整してください」）のみ。
-数値的なEWM係数補正は未実装。
-
-- prediction_tracker.py L220: プロンプト依存の定性的指示のみ
-- quarterly_review_generator.py L945: optimism_bias_warning=nullフィールドは定義済みだが値が入っていない
-
-#### 対応方針（要設計判断）
-- A案: 過去予測の的中率をEWM（指数加重移動平均）で計算し、次回予測の信頼度スコアに反映
-- B案: プロンプト依存の現状維持としてBACKLOGをクローズ
-Koichiさんの意図を確認してから方針決定する。
-
----
-
 ### [MP-TOOLTIP-1] BUY/TAKE PROFITチェックリストのglossaryツールチップ未付与
 **優先度:** 低
 **分類:** UX / Market Pulse
