@@ -107,6 +107,10 @@ stock.htmlへの反映が漏れており、以下の2箇所でα乗算が残存�
 - calcSensIV()から(1+alpha)乗算を除去
 - renderChart()のalphaプレミアム計算・描画を除去またはゼロ固定
 - alphaフィールドはJSONに参照値として残るため、表示のみ削除（削除してはいけない）
+- CALCULATION BREAKDOWNのStep 7説明テキストを修正（L1826/L1832/L1940/L1941）
+  - L1826: ×(1+alpha)の表示を削除またはゼロ固定表示に変更
+  - L1832: α乗算式の説明文を「Phase1期間への反映」に書き換え
+  - L1940/L1941: P_t計算式とαの説明文をMoat Score方式の説明に更新
 
 ---
 
@@ -269,6 +273,41 @@ docs/value-monitor/extreme-fear/index.htmlがサイト公式ナビ（site-nav.js
 - A案: site-nav.jsに登録してMARKET PULSE配下のサブページとして復活
 - B案: 機能がMarket Pulseに統合済みであれば削除
 - いずれにせよ放置は避ける
+
+---
+
+### [EPS-BX-1] BXのEPS ANALYZERでfetch失敗リスク
+**優先度:** 中
+**分類:** データ欠落 / EPS ANALYZER
+**発見:** 2026-06-26横断調査
+
+#### 問題
+BX（Blackstone）はcik_lookup.csvでeps=trueだがtanuki=false。
+EPS ANALYZERのindex.htmlは銘柄表示時に
+../tanuki_valuation/data/BX/latest.jsonをfetchするが、
+BXはtanuki=falseのためlatest.jsonが存在せず404になる。
+IVが表示されない（エラーハンドリング次第でUIクラッシュの可能性あり）。
+
+#### 対応方針
+- A案: BXをtanuki=trueに変更してpipeline.pyを実行しlatest.jsonを生成
+- B案: EPS ANALYZERのfetchロジックでlatest.json不在時のフォールバックを追加
+- C案: BXをeps=falseに変更（BXは金融機関のためTANUKI-FIN-1対応まで保留）
+
+---
+
+### [HYPE-FLAG-1] CSGP/ZSのhypecore=falseフラグ更新漏れ
+**優先度:** 中
+**分類:** 設定不整合 / HypeCore
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CSGP・ZSのpoc.jsonが現役データとして存在（2026-06-11生成・stage=4）しているが、
+cik_lookup.csvのhypecoreフラグがfalseのまま更新されていない。
+HypeCoreのバッチ処理対象リストとcik_lookup.csvが乖離している状態。
+
+#### 確認事項
+- hypecore.pyのデフォルト対象リストがどこで定義されているか確認
+- CSGP/ZSを意図的にhypecore対象にしたのであればcik_lookup.csvのhypecore=trueに更新。設定ミスであればpoc.jsonを削除。
 
 ---
 
