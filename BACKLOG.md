@@ -405,8 +405,10 @@ poc.jsonにInf/-Inf値が混入している。
 ---
 
 ### [PICK-DUP-1] daily_pick.pyの同日重複エントリバグ
-**優先度:** 中
+**優先度:** 低（当初「中」→「低」に変更: 2026-06-26追調査にてフロントエンド影響なしと判明）
 **分類:** バグ / TANUKI SCORE
+**備考:** tanuki_score/index.htmlはdaily_pick.json（単一エントリ）を参照しており、
+history.jsonの重複エントリはUI表示に影響しないことが確認された。
 **発見:** 2026-06-26横断バグ調査
 
 #### 問題
@@ -620,6 +622,58 @@ thesis.jsonの実際のフィールドが期待値と乖離している（全9�
 #### 対応方針
 - TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
 - NVDAのentry_priceを実際の取得価格で更新
+
+---
+
+### [ADMIN-LOG-1] admin.html・stock.htmlにconsole.log残存
+**優先度:** 低
+**分類:** コード品質 / admin.html・TANUKI VALUATION
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+本番HTMLにconsole.logが32件残存している：
+- admin.html: 26件（ワークフロー実行ポーリングのデバッグトレース）
+- stock.html: 6件（matricesタブ読み込みデバッグログ）
+
+#### 対応方針
+不要なconsole.logを削除する。
+admin.htmlのポーリングログはワークフロー実行確認のデバッグとして
+有用な場合があるため、削除前に必要性を判断する。
+
+---
+
+### [CN-ENB-1] company_names.jsonにENBが残存
+**優先度:** 低
+**分類:** データ残骸 / 共通
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+docs/common/company_names.jsonにENBのエントリが残存しているが、
+docs/value-monitor/tanuki_valuation/data/tickers.jsonにENBは存在しない。
+TANUKI-ENB-1（2026-06-26）でENBをカナダ企業として永続除外したが、
+company_names.jsonのクリーンアップが漏れている。
+
+#### 対応方針
+company_names.jsonからENBエントリを削除する。
+
+---
+
+### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI SCORE
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+同一データが異なるキー名で保存されている：
+- daily_pick.json: selection_reason
+- history.json: reason
+
+daily_pick.pyが書き込む際にキー名が統一されていない。
+機能的な問題はないが保守上の混乱を招く。
+
+#### 対応方針
+どちらかに統一する（selection_reasonを推奨・より説明的なため）。
+history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
 
 ---
 
