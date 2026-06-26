@@ -4,6 +4,14 @@
 
 ## 2026-06-26（完了）
 
+### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `sec_ctrl_fetcher.py` を残8銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/TSLA）に実行
+- 全9銘柄の ctrl データが揃い TANUKI TAIL の内部統制タブが全銘柄で表示可能に
+- 注目: CRWV のみ `not_effective / MW=12`（重要な欠陥あり）、PLTR は `unknown`（判定不能）
+
 ### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ修正（2026-06-27完了）
 
 **完了日:** 2026-06-27

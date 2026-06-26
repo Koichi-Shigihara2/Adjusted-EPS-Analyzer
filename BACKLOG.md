@@ -188,21 +188,6 @@ DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標�
 
 ---
 
-### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成
-**優先度:** 中
-**分類:** データ欠落 / TANUKI TAIL
-**発見:** 2026-06-26横断調査
-
-#### 問題
-SEC-CTRL-1（2026-06-24）実装後、sec_ctrl_fetcher.pyをSOUNにしか実行していない。
-tail登録9銘柄のうち8銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/TSLA）の
-ctrlデータが未取得。内部統制タブを開くと「データなし（未取得 or CIK未登録）」と表示される。
-UIクラッシュはないが機能として未稼働。
-
-#### 対応方針
-以下を実行して残8銘柄のctrlデータを生成する：
-python src/tail/sec_ctrl_fetcher.py ADBE APP CELH CRWV NVDA PLTR SOFI TSLA
-
 ---
 
 ### [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
@@ -941,7 +926,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 3. ~~HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）~~ ✅ 2026-06-27完了
 
 **データ補完（コマンド実行のみ）:**
-4. SEC-CTRL-2: tailの内部統制データ8銘柄一括生成
+4. ~~SEC-CTRL-2: tailの内部統制データ8銘柄一括生成~~ ✅ 2026-06-27完了
 5. CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入
 
 **機能・設定修正:**
