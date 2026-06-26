@@ -57,6 +57,15 @@ Phase1期間を自動算出する方式に切り替えた。alphaは参照値と
 - `src/value/tanuki_valuation/core_calculator.py`
 - `src/value/tanuki_valuation/pipeline.py`
 
+### [SS-1] Stonks Silo 営業利益ETA四半期系列合成
+**完了日:** 2026-06-26
+**判断:** 現状維持でクローズ
+**理由:**
+- NET・IONQの営業利益はQ1 2026時点で全8四半期赤字かつ悪化傾向
+  （NET: -62M$、IONQ: -272M$）
+- 「改善トレンドなし」表示は正しい判定であり、無理にETAを出すと誤情報になるリスクがある
+- 機能上の欠落ではなく仕様通りの動作と確認
+
 ### [TANUKI-ROE-2-PARTIAL] DuPont分析パネルをstock.htmlに追加
 **完了日:** 2026-06-26
 **対応内容:**
