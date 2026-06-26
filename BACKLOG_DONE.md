@@ -57,6 +57,13 @@ Phase1期間を自動算出する方式に切り替えた。alphaは参照値と
 - `src/value/tanuki_valuation/core_calculator.py`
 - `src/value/tanuki_valuation/pipeline.py`
 
+### [MP-ASSETFLOW-UI-1] 資産クラス資金フロービジュアライザーUI調整
+**完了日:** 2026-06-26
+**対応内容:**
+- short_bond tickerを^IRXからDGS3MOに統一
+- スペクトルバーの高さを3px→8pxに変更
+- fallback ※マークは実装済みのため現状維持
+
 ### [SILO-UX-1] 黒字化チャート達成済みラベル追加
 **完了日:** 2026-06-26
 **対応内容:**

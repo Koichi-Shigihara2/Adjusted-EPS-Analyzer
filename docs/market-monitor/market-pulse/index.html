@@ -1106,7 +1106,7 @@ function renderAssetFlow(){
   if(!af){el.innerHTML='<div style="text-align:center;color:var(--mut);font-size:13px;padding:20px">データなし（次回Actions実行後に表示）</div>';return;}
   const ASSETS=[
     {key:"ultra_short",label:"超短期国債",ticker:"SHV",  desc:"1-3ヶ月"},
-    {key:"short_bond", label:"短期国債",  ticker:"^IRX",desc:"3ヶ月T-Bill"},
+    {key:"short_bond", label:"短期国債",  ticker:"DGS3MO",desc:"3ヶ月T-Bill"},
     {key:"gold",       label:"金",        ticker:"GLD",  desc:"インフレHDG"},
     {key:"long_bond",  label:"長期国債",  ticker:"TLT",  desc:"20年超"},
     {key:"ig_bond",    label:"投資適格社債",ticker:"LQD",desc:"社債"},
@@ -1166,7 +1166,7 @@ function renderAssetFlow(){
   else{jTxt="混在・方向感なし";jCol="var(--mut)"}
   const avgFmt=v=>v!=null?`${v>=0?"+":""}${v.toFixed(2)}%`:"—";
 
-  const spectrumBar=`<div style="display:flex;gap:1px;height:3px;margin:3px 0 4px"><div style="flex:0 0 60px"></div><div style="flex:1;background:linear-gradient(to right,#3b82f6,#22d3ee,#a78bfa,#10b981,#f59e0b,#f97316,#f43f5e);border-radius:1px;opacity:.75"></div></div>`;
+  const spectrumBar=`<div style="display:flex;gap:1px;height:8px;margin:3px 0 4px"><div style="flex:0 0 60px"></div><div style="flex:1;background:linear-gradient(to right,#3b82f6,#22d3ee,#a78bfa,#10b981,#f59e0b,#f97316,#f43f5e);border-radius:2px;opacity:.75"></div></div>`;
   el.innerHTML=`<div class="af-unified-grid">${cornerCell}${tiles}${dateRows}</div>${spectrumBar}<div class="af-axis"><span class="af-axis-label">← 安全資産</span><span class="af-axis-label">リスク資産 →</span></div><div class="af-flow-judge"><span style="font-size:10px;color:var(--mut)">直近${rec.length}日平均:</span><span style="color:${jCol};font-weight:700">${jTxt}</span><span style="font-size:10px;color:var(--mut)">リスク資産 ${avgFmt(riskAvg)} / 安全資産 ${avgFmt(safeAvg)}</span></div>`;
 }
 
