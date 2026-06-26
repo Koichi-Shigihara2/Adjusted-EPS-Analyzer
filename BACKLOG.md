@@ -1,4 +1,4 @@
-# TANUKI VALUATION — 改善バックログ
+# On-a-journey — 改善バックログ（全システム）
 
 最終更新: 2026-06-26（本日作業反映・BACKLOG整備）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
@@ -798,7 +798,8 @@ system_health.pyでカバーできない観点（表示ロジック・用語統�
 - 参考: https://www.moomoo.com/ja/community/feed/moomoo-api-skills-now-unlocked-ai-becomes-a-24-7-116413328916486
 
 ### 【TANUKI TAIL】
-- 残タスク: EWM楽観バイアス係数・データパス統一（優先度低）
+- 残タスク: データパス統一（優先度低）
+- ~~EWM楽観バイアス係数~~ → TAIL-EWM-1としてB案（現状維持）でクローズ済み（2026-06-26）
 
 ### 【情報収集支援システム】
 - ~~カタリスト×割安検知（価格下落+空売り比率+カタリスト接近）~~ → CATALYST-1として実装完了（2026-06-25）
@@ -1013,8 +1014,25 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度：中の残項目（TANUKI-FIN-1・EPS-1）または設計相談メモ（DESIGN-2/5/6等）へ展開
-※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・TANUKI-ROE-2（部分）・SS-1（クローズ）
+優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
+
+**バグ修正（優先）:**
+1. ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正
+2. STAGE0-STOCK-1: stock.htmlでstage=0が非表示
+3. HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）
+
+**データ補完（コマンド実行のみ）:**
+4. SEC-CTRL-2: tailの内部統制データ8銘柄一括生成
+5. CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入
+
+**機能・設定修正:**
+6. HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定
+7. HYPE-ENB-1: ENBのhypecore=false修正
+8. DISCOVER-THEMES-1: macro_themes_history.json初回生成
+
+※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・
+  TANUKI-ROE-2（部分）・SS-1（クローズ）
+※ 2026-06-26横断調査・バグ調査実施: PREVENT-1〜5・各バグ・設定不整合をBACKLOG登録済み
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、

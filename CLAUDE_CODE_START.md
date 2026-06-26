@@ -690,9 +690,14 @@ git push origin kaihatsu
     CHECK-5:NetDebt旧表示 / CHECK-6:負PER / CHECK-7:RPO条件 / CHECK-8:Matrix④高FCFラベル赤字 /
     CHECK-9:セグメント鮮度 / CHECK-10:PS異常値 / CHECK-11:Revenue孤立年 / CHECK-12:Cash-STI期ズレ /
     CHECK-13:RICE負値ラベル / CHECK-14:EPS>株価50% / CHECK-15:EPS>株価 / CHECK-16:TTM四半期不足 /
-    CHECK-17:EPS全値$0 / CHECK-18:G=15%未調整 / CHECK-19:SEC株数=0 / STALE-CHECK-1:決算後未更新
+    CHECK-17:EPS全値$0 / CHECK-18:G=15%未調整 / CHECK-19:SEC株数=0
+    ※ STALE-CHECK-1（決算後未更新）は未実装。BACKLOG [STALE-CHECK-1-IMPL] 参照。
   - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認
+- [ ] **新規計算フィールドを追加した場合**: report_consistency_check.pyに対応CHECKを追加（追加できない場合はBACKLOGにCHECK-COVERAGE-Nとして登録）
+- [ ] **新規フィールド・指標を追加した場合**: 同一指標を表示する全画面をgrepで確認し全画面への反映を確認してから完了宣言する
+- [ ] **機能を廃止した場合**: 全HTML・全Pythonで残骸をgrepで確認する
+- [ ] **複数銘柄への適用が必要な処理**: 全対象銘柄への実行完了を確認する
 - [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動
 - [ ] コミット・プッシュ完了
 
@@ -729,6 +734,14 @@ git push origin kaihatsu
 - 新規銘柄登録でパイプライン対象が増えた
 
 月次メンテナンス時にも全体を通読して陳腐化がないか確認する。
+
+**⑤ 横断整合性チェック（PREVENT-5）**
+以下を実行して不整合を検出する：
+- cik_lookup.csv vs 全config（segment/maturity/beta）の銘柄整合性確認
+- glossary.jsonのdata-info属性カバレッジ確認（HTML未使用キーがないか）
+- console.log残存チェック（本番コードに残っていないか）
+- system_health.py の実行（全チェックがHEALTHYか確認）
+整合性問題が見つかった場合はその場でBACKLOGに登録する。
 
 確認後、修正があればコミット：
 ```bash
