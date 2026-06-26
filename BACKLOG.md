@@ -439,6 +439,80 @@ history = history[:30]
 
 ---
 
+### [PREVENT-1] 新機能実装時のCHECK追加ルール明文化
+**優先度:** 中
+**分類:** 再発防止 / 品質管理
+
+#### 背景
+ALPHA-REDESIGN-1（moat_score）・TANUKI-ROE-1（DuPont）等、直近の新機能実装後に
+report_consistency_check.pyへの対応CHECKが追加されていないことが判明（CHECK-COVERAGE-1）。
+今後も同様の漏れが繰り返されるリスクがある。
+
+#### 対応内容
+CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を追加する：
+- 新しい計算フィールドを追加した場合、report_consistency_check.pyに
+  対応するCHECKを追加する（CHECK番号を採番して記録）
+- 追加できない場合はBACKLOGにCHECK-COVERAGE-N として登録する
+
+---
+
+### [PREVENT-2] 実装完了時の横展開確認ルール追加
+**優先度:** 中
+**分類:** 再発防止 / 品質管理
+
+#### 背景
+ALPHA-REDESIGN-1はcore_calculator.pyのみ対応でstock.htmlが漏れ、
+SEC-CTRL-1はSOUNのみ実行で他8銘柄が未実行など、
+「実装はしたが横展開が漏れた」パターンが多数発覚した。
+
+#### 対応内容
+CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を追加する：
+- 新規フィールド・指標を追加した場合、同一指標を表示する全画面を
+  grepで確認し、全画面への反映を確認してから完了宣言する
+- 廃止した機能がある場合、全HTML・全Pythonで残骸をgrepで確認する
+- 複数銘柄への適用が必要な処理は、全対象銘柄への実行完了を確認する
+
+---
+
+### [PREVENT-3] pytestの対象拡充（Inf/None/ゼロ除算）
+**優先度:** 中
+**分類:** 再発防止 / テスト品質
+
+#### 背景
+今回のバグ調査で発見した以下3件がpytestで検出できていなかった：
+- HYPE-INF-1：rev_ttm_prior=0でInf伝播
+- TTM-NULL-1：val=NoneでTypeError
+- STONKS-DIV-1：r_start=0でZeroDivisionError
+
+#### 対応内容
+tests/test_pipeline_logic.pyに以下のテストケースを追加する：
+- hypecore.pyのrev_ttm_prior=0時にInfが発生しないことを確認
+- ttm_calculator.pyのval=None時にTypeErrorが発生しないことを確認
+- analyzer.pyのr_start=0/rev=0/avg_past=0時にエラーが発生しないことを確認
+
+---
+
+### [PREVENT-4] system_health.pyの監視対象拡充
+**優先度:** 中
+**分類:** 再発防止 / 自動監視
+
+#### 背景
+system_health.pyは現在TANUKI VALUATION・STONKS SILO・SECデータの
+5項目のみカバーしており、以下が未カバー：
+- TANUKI TAILのctrl/kpiデータ鮮度
+- HypeCoreのInf値混入
+- cik_lookup.csvとconfig間の整合性
+- poc.jsonの更新鮮度
+
+#### 対応内容
+system_health.pyに以下のチェックを追加する：
+- [F] check_f_tail: tailのctrlデータが全thesis銘柄分存在するか
+- [G] check_g_hypecore: poc.jsonにInf/-Inf値が混入していないか・更新鮮度確認
+- [H] check_h_config: cik_lookup.csvとsegment/maturity/beta_configの整合性
+- [I] check_i_eps: EPS ANALYZERのsummary.jsonの鮮度・異常値確認
+
+---
+
 ## 優先度：低（アイデア段階）
 
 
@@ -674,6 +748,26 @@ daily_pick.pyが書き込む際にキー名が統一されていない。
 #### 対応方針
 どちらかに統一する（selection_reasonを推奨・より説明的なため）。
 history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
+
+---
+
+### [PREVENT-5] 定期横断調査スクリプトの整備
+**優先度:** 低
+**分類:** 再発防止 / 品質管理
+
+#### 背景
+今回のような横断調査を毎回手動で実施するのはコストが高い。
+system_health.pyでカバーできない観点（表示ロジック・用語統一・
+フィールド定義整合性等）については、定期的な手動調査が必要。
+
+#### 対応内容
+以下を整備する：
+- 横断調査用のチェックスクリプト（cross_check.py）を新規作成
+  - cik_lookup.csv vs 全configの整合性
+  - glossary.jsonのdata-info属性カバレッジ
+  - console.log残存チェック
+  - フィールド名の表記ゆれ検出
+- 月次メンテナンスタスクとしてCLAUDE_CODE_START.mdに追記
 
 ---
 
