@@ -268,9 +268,9 @@ NVDA +18% / MSFT -12% / AVAV +93% / IOT applied=False→True 等、20銘柄のIV
   adjusted_net_income が変わった銘柄を全件抽出する
 - IOT等の applied=False→True の変化（赤字→黒字化）は特に要注意:
   本物の黒字化なら許容、ゼロ近傍アーティファクトならゲート閾値を見直す
-- **年度判定の定義が3箇所に分散している点に注意**（ARCH-DATA-1参照）:
-  parser.py（期末日年）/ extract_key_facts.py（会計年度）/ aggregate_annual（会計年度）。
-  変更する際は3箇所の定義が矛盾しないか確認すること。
+- **年度判定は `common/sec_data/utils.py` の `determine_fiscal_year()` に統一済み**（ARCH-DATA-1-FY 2026-06-25完了）:
+  parser.py・extract_key_facts.py・aggregate_annual の3箇所が同関数を参照。
+  変更する際は `determine_fiscal_year()` のみを修正し、3箇所で矛盾が生じないか確認すること。
 
 ---
 

@@ -122,21 +122,10 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
   金融株専用セクションまたは別フレームワークの設計
 - 無理にFCFベースDCFに当てはめることを廃止
 
-### [TANUKI-ENB-1] ENB（Enbridge）IFRS対応方針決定
-**優先度:** 低
-- ENBはカナダ企業（40-F/IFRS）のためFCFデータ取得不可
-- 現状: tanuki=false, eps=false でTANUKI VALUATION・EPSアナライザーをスキップ中
-- HypeCoreおよびDISCOVER登録は済み
-- 対応方針を選択する:
-  - A) IFRSフォーマット対応を実装して有効化（工数大）
-  - B) カナダ企業は永続除外として現状維持
-
-
 ---
 
 ## 優先度：低（アイデア段階）
 
-  （HYPE-DISP-1/2と同種の問題）。ツールチップでは解決しない。
 
 ### [UX-FLOW-1] On a Journey標準利用フローの設計
 **優先度:** 低（思想設計タスク、実装ではなく方針検討から開始）
@@ -376,8 +365,8 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-1. 優先度：中の項目（TANUKI-FIN-1・EPS-1等）または設計相談メモ（DESIGN-2/5/6等）へ展開
-※ ARCH-DATA-1の年度判定共通関数化は2026-06-25完了済み
+1. 優先度：中の残項目（TANUKI-FIN-1・EPS-1）または設計相談メモ（DESIGN-2/5/6等）へ展開
+※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・TANUKI-ROE-2（部分）・SS-1（クローズ）
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
