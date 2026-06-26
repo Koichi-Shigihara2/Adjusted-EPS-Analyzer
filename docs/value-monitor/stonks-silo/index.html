@@ -780,6 +780,11 @@ function buildProfitPath(ticker, d) {
     return `<div class="profpath-pill" style="background:rgba(168,85,247,.12);color:#a855f7">約${median}ヶ月（楽観${e.opt}〜悲観${e.pes}）</div>`;
   };
 
+  const achievedLabelHtml = m => {
+    if (m.state !== 'done') return '';
+    return `<div class="profpath-pill" style="background:rgba(34,197,94,.1);color:var(--grn)">✅ 達成済</div>`;
+  };
+
   let firstRow = true;
   const rows = metrics.map(m => {
     const isTarget = m.state === 'target';
@@ -815,6 +820,7 @@ function buildProfitPath(ticker, d) {
         ${trackLine}
         ${dotHtml}
         ${etaPillHtml(m)}
+        ${achievedLabelHtml(m)}
       </div>
     </div>`;
   }).join('');
