@@ -399,6 +399,27 @@
     .kpi-loading { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 40px; }
     .kpi-error   { background: rgba(244,63,94,.08); border: 1px solid rgba(244,63,94,.3); border-radius: 4px;
       padding: 12px; color: var(--red); font-family: var(--mono); font-size: 12px; }
+
+    /* ── Dashboard tab ── */
+    .db-summary-bar { display:flex; gap:16px; align-items:center; padding:10px 0; border-bottom:1px solid var(--bdr); margin-bottom:12px; flex-wrap:wrap; }
+    .db-summary-item { display:flex; flex-direction:column; align-items:center; }
+    .db-summary-label { font-size:10px; color:var(--sub); text-transform:uppercase; font-family:var(--mono); letter-spacing:.05em; }
+    .db-summary-value { font-size:16px; font-weight:700; }
+    .db-two-col { display:grid; grid-template-columns:60% 40%; gap:12px; margin-bottom:12px; }
+    .db-two-col-half { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px; }
+    .db-col { background:var(--sur2); border-radius:8px; padding:12px; }
+    .db-col-title { font-size:10px; color:var(--sub); text-transform:uppercase; letter-spacing:.05em; font-family:var(--mono); margin-bottom:8px; }
+    .db-gauge-mini { height:6px; background:var(--bdr); border-radius:3px; margin:4px 0 8px; }
+    .db-gauge-mini-fill { height:100%; border-radius:3px; }
+    .db-kpi-mini-label { font-size:10px; color:var(--sub); display:flex; justify-content:space-between; margin-bottom:2px; }
+    .db-list-item { font-size:12px; padding:2px 0; color:var(--txt); line-height:1.5; }
+    .db-list-item::before { content:'› '; color:var(--sub); }
+    .db-fold { border:1px solid var(--bdr); border-radius:8px; margin-bottom:8px; }
+    .db-fold-head { padding:10px 14px; cursor:pointer; font-size:12px; color:var(--sub); display:flex; justify-content:space-between; align-items:center; user-select:none; }
+    .db-fold-body { padding:0 14px 12px; display:none; }
+    .db-fold.open .db-fold-body { display:block; }
+    .db-fold.open .db-fold-head span:last-child { transform:rotate(90deg); display:inline-block; }
+    @media (max-width:600px) { .db-two-col,.db-two-col-half { grid-template-columns:1fr; } }
   </style>
 </head>
 <body data-tool="tail">
@@ -450,12 +471,13 @@
           <th title="TANUKI TAIL監視開始日">登録日</th>
           <th class="num">取得単価</th>
           <th class="num" data-info="tail_deviation_rate">乖離率</th>
+          <th class="num">直近スコア</th>
           <th>最終レビュー</th>
           <th>アクション</th>
         </tr>
       </thead>
       <tbody id="core-tbody">
-        <tr class="empty-row"><td colspan="7">登録済みポジションなし。下のフォームから登録してください。</td></tr>
+        <tr class="empty-row"><td colspan="8">登録済みポジションなし。下のフォームから登録してください。</td></tr>
       </tbody>
     </table>
   </div>
@@ -783,8 +805,8 @@ var journalData          = [];   // entries array
 var loadedCtrl           = {};   // { SOUN: ctrlData }
 var ctrlIndex            = {};   // { SOUN: {quarters: [...]} }
 
-var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
-var TABS_SAT  = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
+var TABS_CORE = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
+var TABS_SAT  = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
 
 /* ─── Init ─── */
 function initApp() {
@@ -1034,6 +1056,16 @@ function renderCoreTable(items) {
       var devColor = dev >= 0 ? 'var(--grn)' : 'var(--red)';
       devHtml = '<span style="color:' + devColor + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>';
     }
+    var latestRv = (loadedReviews[p.ticker] && latestRvQ && loadedReviews[p.ticker][latestRvQ])
+      ? (loadedReviews[p.ticker][latestRvQ].stage1 || {}) : null;
+    var rvScore = latestRv ? (latestRv.health_score != null ? latestRv.health_score : '—') : '—';
+    var rvRec   = latestRv ? (latestRv.recommendation || '') : '';
+    var rvGc    = typeof rvScore === 'number' ? (rvScore >= 71 ? 'var(--grn)' : rvScore >= 50 ? 'var(--amb)' : 'var(--red)') : 'var(--mut)';
+    var rvRecCls = rvRec ? 'rec-' + rvRec.toLowerCase() : '';
+    var scoreColHtml = typeof rvScore === 'number'
+      ? '<span style="font-family:var(--mono);font-weight:700;color:' + rvGc + '">' + rvScore + '</span>' +
+        (rvRec ? '&nbsp;<span class="rec-badge ' + rvRecCls + '" style="font-size:9px">' + esc(rvRec) + '</span>' : '')
+      : '<span style="color:var(--mut)">—</span>';
     return [
       '<tr>',
       '<td><span class="tkr core">' + esc(p.ticker) + '</span></td>',
@@ -1041,6 +1073,7 @@ function renderCoreTable(items) {
       '<td class="num">' + esc(entryDate) + '</td>',
       '<td class="num">' + entryPrice + '</td>',
       '<td class="num">' + devHtml + '</td>',
+      '<td class="num">' + scoreColHtml + '</td>',
       '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
       '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
         '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',
@@ -1164,14 +1197,14 @@ function openModal(ticker) {
       .then(function (d) {
         if (d) {
           kpiCache[ticker] = d;
-          if (modalTicker === ticker && modalTabIdx === 2) renderModalBody(ticker, 2);
+          if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
         }
       });
   }
 
   if (!loadedScenarios[ticker]) {
     ensureScenariosLoaded(ticker).then(function () {
-      if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
+      if (modalTicker === ticker && modalTabIdx === 4) renderModalBody(ticker, 4);
     });
   }
 
@@ -1191,7 +1224,7 @@ function openModal(ticker) {
       })
       .then(function (d) {
         loadedCtrl[ticker] = d || null;
-        if (modalTicker === ticker && modalTabIdx === 5) renderModalBody(ticker, 5);
+        if (modalTicker === ticker && modalTabIdx === 6) renderModalBody(ticker, 6);
       });
   }
 }
@@ -1215,15 +1248,280 @@ function switchTab(n) {
 function renderModalBody(ticker, n) {
   var p    = loadedPositions[ticker];
   var body = document.getElementById('modal-body');
-  if (n === 0) body.innerHTML = buildTabThesis(p);
-  else if (n === 1) body.innerHTML = buildTabReview(ticker, null);
-  else if (n === 2) body.innerHTML = buildTabKpi(ticker);
-  else if (n === 3) body.innerHTML = buildTabDcf(ticker);
-  else if (n === 4) body.innerHTML = buildTabCall2(ticker);
-  else if (n === 5) body.innerHTML = buildTabCtrl(ticker);
+  if      (n === 0) body.innerHTML = buildDashboard(ticker);
+  else if (n === 1) body.innerHTML = buildTabThesis(p);
+  else if (n === 2) body.innerHTML = buildTabReview(ticker, null);
+  else if (n === 3) body.innerHTML = buildTabKpi(ticker);
+  else if (n === 4) body.innerHTML = buildTabDcf(ticker);
+  else if (n === 5) body.innerHTML = buildTabCall2(ticker);
+  else if (n === 6) body.innerHTML = buildTabCtrl(ticker);
 }
 
-/* ─── Tab 0: テーゼ ─── */
+/* ─── Tab 0: ダッシュボード ─── */
+function _dbFold(title, content) {
+  return '<div class="db-fold">' +
+    '<div class="db-fold-head" onclick="this.parentElement.classList.toggle(\'open\')">' +
+    '<span>' + esc(title) + '</span><span>▶</span></div>' +
+    '<div class="db-fold-body">' + content + '</div>' +
+    '</div>';
+}
+
+function buildDashboard(ticker) {
+  var p = loadedPositions[ticker];
+  if (!p) return '<div class="no-rv">ポジションデータなし</div>';
+
+  // ── ゾーンA: サマリーヘッダー ──
+  var val = latestValCache[ticker];
+  var dev = (val && val.upside_percent != null) ? Number(val.upside_percent) : null;
+  var iv  = (val && val.intrinsic_value  != null) ? Number(val.intrinsic_value)  : null;
+  var cp  = (val && val.current_price    != null) ? Number(val.current_price)    : null;
+  var devHtml = dev != null
+    ? '<span style="color:' + (dev >= 0 ? 'var(--grn)' : 'var(--red)') + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>'
+    : '<span style="color:var(--mut)">—</span>';
+  var ivHtml = iv != null ? '<span>$' + iv.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
+  var cpHtml = cp != null ? '<span>$' + cp.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
+
+  var reviews  = loadedReviews[ticker];
+  var qs       = reviews ? Object.keys(reviews).sort().reverse() : [];
+  var latestQ  = qs.length ? qs[0] : null;
+  var s1       = (latestQ && reviews[latestQ]) ? (reviews[latestQ].stage1 || {}) : null;
+  var score    = s1 ? (s1.health_score || 0) : null;
+  var rec      = s1 ? (s1.recommendation || '') : '';
+  var gc       = score != null ? (score >= 71 ? 'var(--grn)' : score >= 41 ? 'var(--amb)' : 'var(--red)') : 'var(--mut)';
+  var recCls   = rec ? 'rec-' + rec.toLowerCase() : '';
+  var scoreHtml = score != null
+    ? '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:18px;font-weight:700;color:' + gc + '">' + score + '</span>' +
+      (rec ? '<span class="rec-badge ' + recCls + '" style="font-size:10px">' + esc(rec) + '</span>' : '') + '</div>'
+    : '<span style="color:var(--mut)">—</span>';
+
+  var summaryBar =
+    '<div class="db-summary-bar">' +
+    '<div class="db-summary-item"><div class="db-summary-label">乖離率</div><div class="db-summary-value">' + devHtml + '</div></div>' +
+    '<div class="db-summary-item"><div class="db-summary-label">理論株価 IV</div><div class="db-summary-value">' + ivHtml + '</div></div>' +
+    '<div class="db-summary-item"><div class="db-summary-label">現在株価</div><div class="db-summary-value">' + cpHtml + '</div></div>' +
+    '<div class="db-summary-item"><div class="db-summary-label">直近スコア</div><div class="db-summary-value">' + scoreHtml + '</div></div>' +
+    '</div>';
+
+  // ── ゾーンB: レビュー概要 + スコア推移 ──
+  var reviewLeftHtml = '';
+  var sparkRightHtml = '';
+  if (!reviews) {
+    reviewLeftHtml = '<div style="color:var(--mut);font-size:12px">レビューデータ読込中...</div>';
+  } else if (!qs.length || !s1) {
+    reviewLeftHtml = '<div style="color:var(--mut);font-size:12px">レビューデータなし</div>';
+  } else {
+    var posItems = (s1.positives || []).slice(0, 3);
+    var conItems = (s1.concerns  || []).slice(0, 3);
+    var posMore  = (s1.positives || []).length - posItems.length;
+    var conMore  = (s1.concerns  || []).length - conItems.length;
+    var posHtml2 = posItems.map(function (t) {
+      return '<div class="db-list-item" style="color:var(--grn)">' + esc(t) + '</div>';
+    }).join('') + (posMore > 0 ? '<div style="font-size:11px;color:var(--mut)">他' + posMore + '件</div>' : '');
+    var conHtml2 = conItems.map(function (t) {
+      return '<div class="db-list-item" style="color:var(--red)">' + esc(t) + '</div>';
+    }).join('') + (conMore > 0 ? '<div style="font-size:11px;color:var(--mut)">他' + conMore + '件</div>' : '');
+    var nkItems = (s1.next_kpis || []).slice(0, 3);
+    var nkHtml2 = nkItems.map(function (k) {
+      return '<span style="font-size:11px;background:var(--sur);border:1px solid var(--bdr);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0;display:inline-block">' + esc(k) + '</span>';
+    }).join('');
+    var edCls2 = (s1.exit_distance || '').includes('遠') ? 'ed-far' : (s1.exit_distance || '').includes('近い') ? 'ed-close' : 'ed-watch';
+    var biasSmHtml = s1.optimism_bias_warning
+      ? '<div style="font-size:11px;color:var(--amb);background:rgba(245,158,11,.1);border-radius:4px;padding:4px 8px;margin:6px 0">⚠ ' + esc(s1.optimism_bias_warning.slice(0, 60)) + (s1.optimism_bias_warning.length > 60 ? '…' : '') + '</div>'
+      : '';
+    reviewLeftHtml =
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">' +
+      '<div class="db-gauge-mini" style="flex:1"><div class="db-gauge-mini-fill" style="width:' + score + '%;background:' + gc + '"></div></div>' +
+      '<span class="rec-badge ' + recCls + '" style="font-size:10px">' + esc(rec) + '</span></div>' +
+      '<div style="font-size:12px;color:var(--txt);line-height:1.6;max-height:4em;overflow:hidden;margin-bottom:6px">' + esc(s1.summary || '') + '</div>' +
+      biasSmHtml +
+      (posHtml2 ? '<div style="margin-bottom:4px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">ポジティブ</div>' + posHtml2 + '</div>' : '') +
+      (conHtml2 ? '<div style="margin-bottom:4px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">懸念点</div>' + conHtml2 + '</div>' : '') +
+      (s1.exit_distance ? '<div style="margin:4px 0"><span class="exit-dist-badge ' + edCls2 + '" style="font-size:11px">' + esc(s1.exit_distance) + '</span>' +
+        (s1.exit_distance_reason ? '<span style="font-size:11px;color:var(--sub);margin-left:6px">' + esc(s1.exit_distance_reason.slice(0, 40)) + (s1.exit_distance_reason.length > 40 ? '…' : '') + '</span>' : '') + '</div>' : '') +
+      (nkHtml2 ? '<div style="margin-top:6px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">確認KPI</div>' + nkHtml2 + '</div>' : '');
+
+    // スコア推移スパークライン
+    var hist = qs.slice().reverse().map(function (q) {
+      var r = reviews[q] && reviews[q].stage1;
+      return { q: q, v: r ? (r.health_score || 0) : null };
+    }).filter(function (d) { return d.v != null; });
+    if (hist.length >= 2) {
+      var W = 260, H = 80, PL = 16, PR = 8, PT = 8, PB = 24;
+      var cW = W - PL - PR, cH = H - PT - PB, n = hist.length;
+      var minV = Math.min.apply(null, hist.map(function (d) { return d.v; }));
+      var maxV = Math.max.apply(null, hist.map(function (d) { return d.v; }));
+      var rng = maxV === minV ? 1 : maxV - minV;
+      function xH(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
+      function yH(v) { return PT + cH - ((v - minV) / rng) * cH; }
+      var pts = hist.map(function (d, i) { return xH(i).toFixed(1) + ',' + yH(d.v).toFixed(1); });
+      var dots = hist.map(function (d, i) {
+        var isLast = i === n - 1;
+        var dc = d.v >= 71 ? '#10b981' : d.v >= 41 ? '#f59e0b' : '#f43f5e';
+        return '<circle cx="' + xH(i).toFixed(1) + '" cy="' + yH(d.v).toFixed(1) + '" r="' + (isLast ? 5 : 3) + '" fill="' + dc + '" stroke="var(--sur2)" stroke-width="1.5"><title>' + d.q + ': ' + d.v + '</title></circle>';
+      }).join('');
+      var xlbls = hist.map(function (d, i) {
+        if (i !== 0 && i !== n - 1) return '';
+        return '<text x="' + xH(i).toFixed(1) + '" y="' + (H - 3) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.q + '</text>';
+      }).join('');
+      sparkRightHtml = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
+        '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>' +
+        dots + xlbls + '</svg>';
+    } else {
+      sparkRightHtml = '<div style="color:var(--mut);font-size:11px;padding:16px 0;text-align:center">履歴' + hist.length + '件（2件以上でグラフ表示）</div>';
+    }
+  }
+
+  var zoneB =
+    '<div class="db-two-col">' +
+    '<div class="db-col"><div class="db-col-title">最新レビュー概要</div>' + reviewLeftHtml + '</div>' +
+    '<div class="db-col"><div class="db-col-title">スコア推移</div>' + sparkRightHtml + '</div>' +
+    '</div>';
+
+  // ── ゾーンC: KPI + DCF ──
+  var kpiLeftHtml = '';
+  var kd = kpiCache[ticker];
+  if (!kd) {
+    kpiLeftHtml = '<div style="color:var(--mut);font-size:12px">KPIデータ読込中...</div>';
+  } else {
+    var kpis = kd.kpis || {};
+    var knames = Object.keys(kpis);
+    if (!knames.length) {
+      kpiLeftHtml = '<div style="color:var(--mut);font-size:12px">KPIデータなし</div>';
+    } else {
+      kpiLeftHtml = knames.map(function (kname) {
+        var kinfo = kpis[kname];
+        var rawD = (kinfo.data || []).slice().sort(function (a, b) { return a.quarter.localeCompare(b.quarter); });
+        if (!rawD.length) return '<div style="margin-bottom:8px"><div class="db-kpi-mini-label"><span>' + esc(kname) + '</span><span>—</span></div></div>';
+        var lv = rawD[rawD.length - 1];
+        var unit = kinfo.unit || '';
+        function fvM(v) {
+          if (Math.abs(v) >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+          if (Math.abs(v) >= 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+          if (Math.abs(v) <= 2 && unit === 'USD') return (v * 100).toFixed(1) + '%';
+          return String(v);
+        }
+        var WM = 220, HM = 50, PLM = 0, PRM = 0, PTM = 4, PBM = 4;
+        var cWM = WM - PLM - PRM, cHM = HM - PTM - PBM, nM = rawD.length;
+        var valsM = rawD.map(function (d) { return d.value; });
+        var minM = Math.min.apply(null, valsM), maxM = Math.max.apply(null, valsM);
+        var rngM = maxM === minM ? 1 : maxM - minM;
+        function xM(i) { return PLM + (nM > 1 ? (i / (nM - 1)) * cWM : cWM / 2); }
+        function yM(v) { return PTM + cHM - ((v - minM) / rngM) * cHM; }
+        var ptsM = rawD.map(function (d, i) { return xM(i).toFixed(1) + ',' + yM(d.value).toFixed(1); });
+        var dotsM = rawD.map(function (d, i) {
+          return '<circle cx="' + xM(i).toFixed(1) + '" cy="' + yM(d.value).toFixed(1) + '" r="2" fill="var(--acc)"/>';
+        }).join('');
+        return '<div style="margin-bottom:10px">' +
+          '<div class="db-kpi-mini-label"><span>' + esc(kname) + '</span><span style="color:var(--txt)">' + esc(fvM(lv.value)) + '</span></div>' +
+          '<svg viewBox="0 0 ' + WM + ' ' + HM + '" style="width:100%;display:block;height:50px">' +
+          '<polyline points="' + ptsM.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>' +
+          dotsM + '</svg></div>';
+      }).join('');
+    }
+  }
+
+  var dcfRightHtml = '';
+  var scd = loadedScenarios[ticker];
+  if (!scd) {
+    dcfRightHtml = '<div style="color:var(--mut);font-size:12px">DCFデータ読込中...</div>';
+  } else if (!(scd.bear || scd.base || scd.bull)) {
+    dcfRightHtml = '<div style="color:var(--mut);font-size:12px">DCFデータなし</div>';
+  } else {
+    var anyS = scd.base || scd.bear || scd.bull || {};
+    var curPrD = anyS.current_price;
+    var perds = ['現在', '1年後', '3年後', '5年後'];
+    function fvD(v) { return (v != null && v !== 0) ? '$' + Number(v).toFixed(0) : '—'; }
+    function getVD(sd, per) {
+      if (!sd) return null;
+      if (per === '現在') return sd.base_intrinsic_value;
+      return (sd.future_values || {})[per] || null;
+    }
+    var dHead = '<tr><th style="font-size:9px;padding:3px 4px"></th>' + perds.map(function (p) {
+      return '<th style="text-align:center;font-size:9px;padding:3px 4px;font-family:var(--mono)">' + p + '</th>';
+    }).join('') + '</tr>';
+    var dRows = [
+      { key: 'bear', em: '🐻', cls: 'dcf-bear' },
+      { key: 'base', em: '📊', cls: 'dcf-base' },
+      { key: 'bull', em: '🐂', cls: 'dcf-bull' },
+    ];
+    var dBody = dRows.map(function (row) {
+      return '<tr>' +
+        '<td class="' + row.cls + '" style="font-size:9px;font-family:var(--mono);padding:3px 4px">' + row.em + ' ' + row.key.toUpperCase() + '</td>' +
+        perds.map(function (per) {
+          var v = getVD(scd[row.key], per);
+          var st = (v != null && curPrD && Number(v) >= Number(curPrD)) ? 'color:var(--grn);font-weight:600' : '';
+          return '<td style="text-align:right;font-size:10px;font-family:var(--mono);padding:3px 4px;' + st + '">' + fvD(v) + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+    var cpRowD = curPrD
+      ? '<tr style="border-top:1px solid var(--amb)"><td style="font-size:9px;color:var(--amb);font-family:var(--mono);padding:3px 4px">現在</td>' +
+        '<td style="text-align:right;font-size:10px;font-family:var(--mono);padding:3px 4px;color:var(--amb)">' + fvD(curPrD) + '</td>' +
+        '<td colspan="3" style="font-size:9px;color:var(--mut);padding:3px 4px">← 緑=超える時点</td></tr>'
+      : '';
+    dcfRightHtml = '<div class="tbl-wrap"><table class="dcf-tbl" style="min-width:0"><thead>' + dHead + '</thead><tbody>' + dBody + cpRowD + '</tbody></table></div>';
+  }
+
+  var zoneC =
+    '<div class="db-two-col-half">' +
+    '<div class="db-col"><div class="db-col-title">KPIトレンド</div>' + kpiLeftHtml + '</div>' +
+    '<div class="db-col"><div class="db-col-title">DCFシナリオ</div>' + dcfRightHtml + '</div>' +
+    '</div>';
+
+  // ── ゾーンD: 折りたたみ（AI視点 + 内部統制） ──
+  var c2Html = '';
+  if (!reviews) {
+    c2Html = '<div style="color:var(--mut);font-size:12px">データ読込中...</div>';
+  } else if (latestQ && reviews[latestQ] && reviews[latestQ].call2) {
+    var c2 = reviews[latestQ].call2;
+    var fp = c2.five_perspectives || {};
+    var fpLbls = [
+      { key: 'business_model', label: 'ビジネスモデル' },
+      { key: 'growth',         label: '成長性' },
+      { key: 'competitive_advantage', label: '競争優位' },
+      { key: 'management',     label: '経営' },
+      { key: 'market',         label: '市場環境' },
+    ];
+    c2Html = fpLbls.map(function (item) {
+      var txt = fp[item.key];
+      if (!txt) return '';
+      return '<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">' + esc(item.label) + '</div>' +
+        '<div style="font-size:12px;color:var(--txt);line-height:1.5">' + esc(txt) + '</div></div>';
+    }).join('');
+    if (c2.thesis_questions && c2.thesis_questions.length) {
+      c2Html += '<div style="margin-top:10px"><div style="font-size:10px;color:var(--sub);margin-bottom:4px">テーゼへの問いかけ</div>' +
+        c2.thesis_questions.map(function (q) {
+          return '<div class="db-list-item" style="color:var(--amb)">' + esc(q) + '</div>';
+        }).join('') + '</div>';
+    }
+  } else {
+    c2Html = '<div style="color:var(--mut);font-size:12px">AI定性分析データなし</div>';
+  }
+
+  var ctrlHtml = '';
+  var cd = loadedCtrl[ticker];
+  if (cd === undefined) {
+    ctrlHtml = '<div style="color:var(--mut);font-size:12px">読込中...</div>';
+  } else if (cd === null) {
+    ctrlHtml = '<div style="color:var(--mut);font-size:12px">データなし</div>';
+  } else {
+    var effL = cd.effective === true ? '有効' : cd.effective === false ? '無効' : '判定不能';
+    var effC = cd.effective === true ? 'var(--grn)' : cd.effective === false ? 'var(--red)' : 'var(--mut)';
+    var jaText = (cd.item4_excerpt_ja || '').slice(0, 200);
+    ctrlHtml =
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">' +
+      '<span style="font-size:12px;font-weight:700;color:' + effC + ';border:1px solid ' + effC + ';padding:2px 8px;border-radius:3px">' + esc(effL) + '</span>' +
+      '<span style="font-size:11px;color:var(--mut)">' + esc(cd.quarter || '') + ' / ' + esc(cd.filing_date || '') + '</span>' +
+      '</div>' +
+      (jaText ? '<div style="font-size:12px;color:var(--sub);line-height:1.6;white-space:pre-wrap">' + esc(jaText) + (cd.item4_excerpt_ja && cd.item4_excerpt_ja.length > 200 ? '…' : '') + '</div>' +
+        '<div style="font-size:11px;color:var(--acc);margin-top:6px;cursor:pointer" onclick="switchTab(6)">続きを読む → 内部統制タブへ</div>' : '');
+  }
+
+  var zoneD = _dbFold('AI視点', c2Html) + _dbFold('内部統制', ctrlHtml);
+
+  return summaryBar + zoneB + zoneC + zoneD;
+}
+
+/* ─── Tab 1: テーゼ ─── */
 function buildTabThesis(p) {
   var ep = getDisplayPrice(p.ticker, p.entry_price);
   return [
