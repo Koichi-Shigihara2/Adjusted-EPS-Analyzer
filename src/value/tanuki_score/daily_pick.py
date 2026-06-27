@@ -512,6 +512,7 @@ def main():
 
     # Update history (keep 30 days, store all_categories for priority① detection)
     all_cats = {s["ticker"]: s["category"] for s in stocks}
+    history = [e for e in history if e.get("date") != today_str]
     history.insert(0, {
         "date":           today_str,
         "ticker":         selected["ticker"],

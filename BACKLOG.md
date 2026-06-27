@@ -225,116 +225,7 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 
 ---
 
-### [RKLB-CLEANUP-1] RKLBのtickers.json残存・eps_sector空欄
-**優先度:** 中
-**分類:** 設定不整合 / TANUKI VALUATION・EPS ANALYZER
-**発見:** 2026-06-26横断調査
 
-#### 問題
-RKLBはcik_lookup.csvでtanuki=falseに設定済みだが、
-docs/value-monitor/tanuki_valuation/data/tickers.jsonに登録が残存している。
-pipeline.pyがtanuki=falseの銘柄をtickers.jsonから除外する処理が
-実行されていない（または未実装）。
-
-また eps_sector フィールドが空欄のため、EPS Analyzerでセクター分類不可。
-
-#### 対応方針
-- tickers.jsonからRKLBエントリを削除（またはpipeline.py再実行で自動クリーン）
-- eps_sectorにRKLBの正しいセクター（Aerospace & Defense等）を設定
-
----
-
----
-
----
-
-### [PICK-DUP-1] daily_pick.pyの同日重複エントリバグ
-**優先度:** 低（当初「中」→「低」に変更: 2026-06-26追調査にてフロントエンド影響なしと判明）
-**分類:** バグ / TANUKI SCORE
-**備考:** tanuki_score/index.htmlはdaily_pick.json（単一エントリ）を参照しており、
-history.jsonの重複エントリはUI表示に影響しないことが確認された。
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-daily_pick.py L515でhistory.jsonへの書き込み時に同日チェックが存在しない。
-CIの再実行や手動実行のたびに無条件でinsertするため、
-同日に複数回実行すると同日エントリが重複蓄積する。
-
-現状の重複状況:
-- 2026-05-30: NVDA が7件重複
-- 2026-05-23: NVDAが3件・PLTRが別エントリ
-
-```python
-history.insert(0, {...})
-history = history[:30]  # 同日チェックなし
-```
-
-フロントエンド（tanuki_score/index.html）は重複除去をしないため
-同日の重複エントリが全て表示に反映される可能性がある。
-
-#### 対応方針
-history.jsonへの書き込み前に同日エントリを削除または上書きする処理を追加：
-```python
-history = [e for e in history if e.get('date') != today_str]
-history.insert(0, new_entry)
-history = history[:30]
-```
-修正後に既存の重複エントリをhistory.jsonから手動クリーンアップする。
-
----
-
-### [PREVENT-1] 新機能実装時のCHECK追加ルール明文化
-**優先度:** 中
-**分類:** 再発防止 / 品質管理
-
-#### 背景
-ALPHA-REDESIGN-1（moat_score）・TANUKI-ROE-1（DuPont）等、直近の新機能実装後に
-report_consistency_check.pyへの対応CHECKが追加されていないことが判明（CHECK-COVERAGE-1）。
-今後も同様の漏れが繰り返されるリスクがある。
-
-#### 対応内容
-CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を追加する：
-- 新しい計算フィールドを追加した場合、report_consistency_check.pyに
-  対応するCHECKを追加する（CHECK番号を採番して記録）
-- 追加できない場合はBACKLOGにCHECK-COVERAGE-N として登録する
-
----
-
-### [PREVENT-2] 実装完了時の横展開確認ルール追加
-**優先度:** 中
-**分類:** 再発防止 / 品質管理
-
-#### 背景
-ALPHA-REDESIGN-1はcore_calculator.pyのみ対応でstock.htmlが漏れ、
-SEC-CTRL-1はSOUNのみ実行で他8銘柄が未実行など、
-「実装はしたが横展開が漏れた」パターンが多数発覚した。
-
-#### 対応内容
-CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を追加する：
-- 新規フィールド・指標を追加した場合、同一指標を表示する全画面を
-  grepで確認し、全画面への反映を確認してから完了宣言する
-- 廃止した機能がある場合、全HTML・全Pythonで残骸をgrepで確認する
-- 複数銘柄への適用が必要な処理は、全対象銘柄への実行完了を確認する
-
----
-
-### [PREVENT-3] pytestの対象拡充（Inf/None/ゼロ除算）
-**優先度:** 中
-**分類:** 再発防止 / テスト品質
-
-#### 背景
-今回のバグ調査で発見した以下3件がpytestで検出できていなかった：
-- ~~HYPE-INF-1：rev_ttm_prior=0でInf伝播~~ ✅ 2026-06-26完了
-- TTM-NULL-1：val=NoneでTypeError
-- STONKS-DIV-1：r_start=0でZeroDivisionError
-
-#### 対応内容
-tests/test_pipeline_logic.pyに以下のテストケースを追加する：
-- hypecore.pyのrev_ttm_prior=0時にInfが発生しないことを確認
-- ttm_calculator.pyのval=None時にTypeErrorが発生しないことを確認
-- analyzer.pyのr_start=0/rev=0/avg_past=0時にエラーが発生しないことを確認
-
----
 
 ### [PREVENT-4] system_health.pyの監視対象拡充
 **優先度:** 中
@@ -560,21 +451,6 @@ admin.htmlのポーリングログはワークフロー実行確認のデバッ�
 
 ---
 
-### [CN-ENB-1] company_names.jsonにENBが残存
-**優先度:** 低
-**分類:** データ残骸 / 共通
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-docs/common/company_names.jsonにENBのエントリが残存しているが、
-docs/value-monitor/tanuki_valuation/data/tickers.jsonにENBは存在しない。
-TANUKI-ENB-1（2026-06-26）でENBをカナダ企業として永続除外したが、
-company_names.jsonのクリーンアップが漏れている。
-
-#### 対応方針
-company_names.jsonからENBエントリを削除する。
-
----
 
 ### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
 **優先度:** 低
@@ -880,6 +756,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・
   TANUKI-ROE-2（部分）・SS-1（クローズ）
 ※ 2026-06-26横断調査・バグ調査実施: PREVENT-1〜5・各バグ・設定不整合をBACKLOG登録済み
+※ 2026-06-27完了: CN-ENB-1・RKLB-CLEANUP-1・PICK-DUP-1・TTM-NULL-1・STONKS-DIV-1（ガード確認+テスト追加）・PREVENT-1・PREVENT-2・PREVENT-3
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、

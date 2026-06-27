@@ -2,6 +2,71 @@
 
 ---
 
+## 2026-06-27（完了）
+
+### [CN-ENB-1] company_names.jsonのENB残存クリーンアップ（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `docs/common/company_names.json` から `"ENB": "ENBRIDGE INC"` エントリを削除
+- TANUKI-ENB-1（2026-06-26）でENBをカナダ企業として除外済み、company_names側の残骸を除去
+
+---
+
+### [RKLB-CLEANUP-1] RKLBのtickers.json残存・eps_sector空欄修正（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `docs/value-monitor/tanuki_valuation/data/tickers.json` から RKLB エントリを削除（tanuki=false銘柄）
+- `config/cik_lookup.csv` の RKLB の eps_sector に `宇宙・航空` を設定
+
+---
+
+### [PICK-DUP-1] daily_pick.pyの同日重複エントリバグ修正（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `daily_pick.py` の history 書き込み前に同日エントリ削除処理を追加（`[e for e in history if e.get("date") != today_str]`）
+- `docs/value-monitor/tanuki_score/history.json` の既存重複を除去（25→11件、同日は最新1件を保持）
+
+---
+
+### [TTM-NULL-1] ttm_calculator.pyのval=None TypeErrorガード追加（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `ttm_calculator.py` の2箇所（FLOW_FIELDS合算・Q4合成top3合算）で `sum(e["val"] for e in ...)` → `sum(e["val"] or 0 for e in ...)` に修正
+- pytest TestTTMNullValGuard（2テスト）を追加して回帰防止
+
+---
+
+### [STONKS-DIV-1] analyzer.pyのゼロ除算ガード確認・テスト追加（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- 調査の結果、3箇所（r_start/rev/avg_past）はすでにガード済みと判明（実装修正不要）
+- pytest TestStonksDivisionGuards（2テスト）を追加してガードの継続的動作を担保
+
+---
+
+### [PREVENT-1] CLAUDE_CODE_START.mdチェックリスト追記（2026-06-27クローズ）
+
+**完了日:** 2026-06-27（追記は前セッションで実施済み）
+**対応内容:**
+- 「新規計算フィールドを追加した場合、report_consistency_check.pyにCHECKを追加」項目が CLAUDE_CODE_START.md L697 に既実装
+- BACKLOG から削除
+
+---
+
+### [PREVENT-2] CLAUDE_CODE_START.mdチェックリスト追記（2026-06-27クローズ）
+
+**完了日:** 2026-06-27（追記は前セッションで実施済み）
+**対応内容:**
+- 「新規フィールド追加時の全画面grepで確認」「廃止機能の残骸grep確認」「複数銘柄への横展開確認」項目が CLAUDE_CODE_START.md L698-702 に既実装
+- BACKLOG から削除
+
+---
+
 ## 2026-06-26（完了）
 
 ### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-26完了）

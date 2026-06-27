@@ -91,7 +91,7 @@ def calc_ttm(ticker: str, normalized: dict) -> dict:
         last4 = q_entries[:4]
         if not last4:
             continue
-        total = sum(e["val"] for e in last4)
+        total = sum(e["val"] or 0 for e in last4)
         flow_result[field_name] = {
             "val": total,
             "quarters_used": len(last4),
@@ -182,7 +182,7 @@ def _build_q4_quarterly_entries(
             continue
 
         q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
-        q4_val = fy_val - sum(e["val"] for e in top3)
+        q4_val = fy_val - sum(e["val"] or 0 for e in top3)
 
         # period_days: FY_end - Q3_end
         try:
@@ -309,7 +309,7 @@ def _calc_q4_implied(
         if len(top3) < 3:
             continue
 
-        q4_val = fy_val - sum(e["val"] for e in top3)
+        q4_val = fy_val - sum(e["val"] or 0 for e in top3)
         fy_year = annual_entry.get("fy") or fy_end[:4]
 
         implied[field_name] = {

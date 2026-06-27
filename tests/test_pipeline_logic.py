@@ -2472,3 +2472,130 @@ class TestDuPontExtremeRoeCalculation:
             "|ROE|>100% ケースで roe_decomposed が想定通り算出されていない"
             "（index.html の isExtreme バッジ判定 Math.abs(roe_decomposed)>1.0 が依拠する値）"
         )
+
+
+# ─────────────────────────────────────────────
+# 21. TTM-NULL-1: ttm_calculator.py の val=None 防御テスト（PREVENT-3）
+#
+#     calc_ttm() に val=None のエントリを含む normalized dict を渡しても
+#     TypeError が発生せず、None を 0 として合算することを確認する。
+# ─────────────────────────────────────────────
+
+class TestTTMNullValGuard:
+    """TTM-NULL-1: e['val']=None 時に TypeError が起きないことを保証する"""
+
+    def test_flow_field_with_none_val_no_type_error(self):
+        """FLOW_FIELDS の entry に val=None が含まれても calc_ttm がクラッシュしない"""
+        import importlib.util, os, sys as _sys
+        ttm_path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "common", "sec_data", "ttm_calculator.py")
+        )
+        spec = importlib.util.spec_from_file_location("ttm_calculator", ttm_path)
+        ttm_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ttm_mod)
+
+        normalized = {
+            "fields": {
+                "OCF": [
+                    {"end": "2026-03-31", "start": "2026-01-01", "val": None, "is_annual": False},
+                    {"end": "2025-12-31", "start": "2025-10-01", "val": 100.0, "is_annual": False},
+                    {"end": "2025-09-30", "start": "2025-07-01", "val": 200.0, "is_annual": False},
+                    {"end": "2025-06-30", "start": "2025-04-01", "val": 150.0, "is_annual": False},
+                ]
+            }
+        }
+        result = ttm_mod.calc_ttm("TESTCO", normalized)
+        ocf = result.get("flow", {}).get("OCF", {}).get("val")
+        assert ocf == 450.0, f"None を 0 として合算した結果が 450.0 になるはず (got {ocf})"
+
+    def test_q4_synthetic_with_none_val_no_type_error(self):
+        """implied Q4 合成で top3 に val=None エントリが含まれても TypeError が起きない"""
+        import importlib.util, os
+        ttm_path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "common", "sec_data", "ttm_calculator.py")
+        )
+        spec = importlib.util.spec_from_file_location("ttm_calculator_q4", ttm_path)
+        ttm_mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(ttm_mod)
+
+        normalized = {
+            "fields": {
+                "Revenue": [
+                    {"end": "2025-09-30", "start": "2025-07-01", "val": None, "is_annual": False},
+                    {"end": "2025-06-30", "start": "2025-04-01", "val": None, "is_annual": False},
+                    {"end": "2025-03-31", "start": "2025-01-01", "val": None, "is_annual": False},
+                    {"end": "2025-12-31", "start": "2025-01-01", "val": 1000.0, "is_annual": True},
+                ]
+            }
+        }
+        try:
+            ttm_mod.calc_ttm("TESTCO2", normalized)
+        except TypeError as e:
+            pytest.fail(f"val=None 時に TypeError が発生した: {e}")
+
+
+# ─────────────────────────────────────────────
+# 22. STONKS-DIV-1: analyzer.py のゼロ除算防御テスト（PREVENT-3）
+#
+#     r_start=0 / rev=0 / avg_past=0 のエッジケースで
+#     ZeroDivisionError が発生しないことを確認する。
+#     （コード上はすでにガード済み; このテストでガードの継続的動作を担保する）
+# ─────────────────────────────────────────────
+
+class TestStonksDivisionGuards:
+    """STONKS-DIV-1: analyzer.py のゼロ除算ガードが有効であることを保証する"""
+
+    @staticmethod
+    def _load_analyzer():
+        import importlib.util, os, sys as _sys
+        path = os.path.normpath(
+            os.path.join(os.path.dirname(__file__), "..", "discover", "stonks-silo", "src", "analyzer.py")
+        )
+        mod_name = "stonks_analyzer_test"
+        spec = importlib.util.spec_from_file_location(mod_name, path)
+        mod = importlib.util.module_from_spec(spec)
+        _sys.modules[mod_name] = mod  # dataclass が cls.__module__ を解決できるよう登録
+        spec.loader.exec_module(mod)
+        return mod
+
+    @staticmethod
+    def _make_record(rev_san, net_income, assets=5_000_000, debt=2_000_000, equity=500_000, ocf=-100_000):
+        return {
+            "pl": {"revenue_sanitized": rev_san, "net_income": net_income,
+                   "research_and_development": None, "selling_and_marketing": None,
+                   "gross_profit": None},
+            "bs": {"total_assets": assets, "total_debt": debt, "stockholders_equity": equity},
+            "cf": {"ocf": ocf},
+        }
+
+    def test_lpr_rev_zero_returns_none(self):
+        """rev_sanitized=0 でも StonksAnalyzer.analyze() が ZeroDivisionError を起こさないこと"""
+        mod = self._load_analyzer()
+        data = {
+            "ticker": "ZEROREV",
+            "years": [2024],
+            "records": {2024: self._make_record(rev_san=0.0, net_income=-1_000_000,
+                                                equity=-500_000)},
+        }
+        try:
+            mod.StonksAnalyzer().analyze(data)
+        except ZeroDivisionError as e:
+            pytest.fail(f"rev=0 で ZeroDivisionError が発生した: {e}")
+
+    def test_cagr_r_start_zero_returns_none(self):
+        """4年前の rev_sanitized=0 でも 3年CAGR 計算が ZeroDivisionError を起こさないこと"""
+        mod = self._load_analyzer()
+        data = {
+            "ticker": "RSTART0",
+            "years": [2021, 2022, 2023, 2024],
+            "records": {
+                2021: self._make_record(rev_san=0.0,        net_income=-500_000),
+                2022: self._make_record(rev_san=1_000_000,  net_income=-400_000),
+                2023: self._make_record(rev_san=2_000_000,  net_income=-300_000),
+                2024: self._make_record(rev_san=3_000_000,  net_income=-200_000),
+            },
+        }
+        try:
+            mod.StonksAnalyzer().analyze(data)
+        except ZeroDivisionError as e:
+            pytest.fail(f"r_start=0 で ZeroDivisionError が発生した: {e}")
