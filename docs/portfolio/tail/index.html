@@ -783,7 +783,7 @@ var journalData          = [];   // entries array
 var loadedCtrl           = {};   // { SOUN: ctrlData }
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
-var TABS_SAT  = ['戦略'];
+var TABS_SAT  = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
 
 /* ─── Init ─── */
 function initApp() {
@@ -1156,7 +1156,7 @@ function openModal(ticker) {
   document.getElementById('modal-ov').classList.add('open');
   document.body.style.overflow = 'hidden';
 
-  if (isCore && !kpiCache[ticker]) {
+  if (!kpiCache[ticker]) {
     fetch('data/kpi/' + ticker + '_layer2.json?_=' + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
@@ -1168,13 +1168,13 @@ function openModal(ticker) {
       });
   }
 
-  if (isCore && !loadedScenarios[ticker]) {
+  if (!loadedScenarios[ticker]) {
     ensureScenariosLoaded(ticker).then(function () {
       if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
     });
   }
 
-  if (isCore && !loadedCtrl[ticker]) {
+  if (!loadedCtrl[ticker]) {
     fetch('data/ctrl/' + ticker + '_ctrl.json?_=' + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
@@ -1202,10 +1202,8 @@ function switchTab(n) {
 }
 
 function renderModalBody(ticker, n) {
-  var p      = loadedPositions[ticker];
-  var isCore = (p && p.type === 'core');
-  var body   = document.getElementById('modal-body');
-  if (!isCore) { body.innerHTML = buildTabSat(p); return; }
+  var p    = loadedPositions[ticker];
+  var body = document.getElementById('modal-body');
   if (n === 0) body.innerHTML = buildTabThesis(p);
   else if (n === 1) body.innerHTML = buildTabReview(ticker, null);
   else if (n === 2) body.innerHTML = buildTabKpi(ticker);

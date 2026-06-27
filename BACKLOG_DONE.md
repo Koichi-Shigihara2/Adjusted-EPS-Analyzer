@@ -4,6 +4,18 @@
 
 ## 2026-06-26（完了）
 
+### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `TABS_SAT = ['戦略']` → `['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制']` に変更
+- `openModal()` 内の KPI・DCFシナリオ・ctrl fetch から `isCore &&` 条件を除去
+- `renderModalBody()` の `!isCore` early return と `isCore` 変数を削除してタブ分岐を統一
+- CRWV（satellite）で内部統制タブが表示され、effective=False / MW=12件を確認可能に
+- PLTR/SOFI（core）の6タブが引き続き正常表示されることをPlaywrightで確認
+
+---
+
 ### [CATALYST-DATA-1] catalyst.json初回データ投入（2026-06-27完了）
 
 **完了日:** 2026-06-27
