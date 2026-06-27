@@ -91,6 +91,21 @@
 
 ---
 
+### [TAIL-CTRL-JA-1] TANUKI TAIL 内部統制タブ：日本語翻訳＋履歴表示
+**完了日:** 2026-06-27
+**分類:** 機能追加 / TANUKI TAIL
+
+#### 実施内容
+- sec_ctrl_fetcher.py: Grok翻訳フィールド（item4_excerpt_ja）追加、保存構造を {TICKER}/{QUARTER}.json + latest.json + index.json の3ファイル構成に変更
+- 既存9銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）のctrlデータを新構造に移行し、Grok翻訳を一括適用（18ファイル）
+- index.html buildTabCtrl: 日本語訳を上部に表示・英文原文を<details>折りたたみに移動、履歴セレクター追加（2期以上の場合のみ表示）
+- SYSTEM_MAP.md: ctrlデータパス記述を新構造に更新
+
+#### コミット
+0e7eb2518
+
+---
+
 ## 2026-06-26（完了）
 
 ### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-26完了）
