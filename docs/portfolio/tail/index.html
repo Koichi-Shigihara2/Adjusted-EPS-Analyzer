@@ -1202,7 +1202,7 @@ function openModal(ticker) {
         }
       });
   } else if (modalTabIdx === 0) {
-    setTimeout(function () { var elK = document.getElementById('db-kpi-zone'); if (elK) elK.innerHTML = _buildDashboardKpi(ticker); }, 0);
+    setTimeout(function () { var elK = document.getElementById('db-kpi-zone'); if (elK) elK.innerHTML = _buildDashboardKpi(ticker); }, 50);
   }
 
   if (!loadedScenarios[ticker]) {
@@ -1211,10 +1211,10 @@ function openModal(ticker) {
       if (modalTicker === ticker && modalTabIdx === 0) { var elD = document.getElementById('db-dcf-zone'); if (elD) elD.innerHTML = _buildDashboardDcf(ticker); }
     });
   } else if (modalTabIdx === 0) {
-    setTimeout(function () { var elD = document.getElementById('db-dcf-zone'); if (elD) elD.innerHTML = _buildDashboardDcf(ticker); }, 0);
+    setTimeout(function () { var elD = document.getElementById('db-dcf-zone'); if (elD) elD.innerHTML = _buildDashboardDcf(ticker); }, 50);
   }
 
-  if (!loadedCtrl[ticker]) {
+  if (loadedCtrl[ticker] === undefined) {
     fetch('data/ctrl/' + ticker + '/index.json?_=' + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
@@ -1234,7 +1234,7 @@ function openModal(ticker) {
         if (modalTicker === ticker && modalTabIdx === 0) { var elC = document.getElementById('db-ctrl-zone'); if (elC) elC.innerHTML = _buildDashboardCtrl(ticker); }
       });
   } else if (modalTabIdx === 0) {
-    setTimeout(function () { var elC = document.getElementById('db-ctrl-zone'); if (elC) elC.innerHTML = _buildDashboardCtrl(ticker); }, 0);
+    setTimeout(function () { var elC = document.getElementById('db-ctrl-zone'); if (elC) elC.innerHTML = _buildDashboardCtrl(ticker); }, 50);
   }
 }
 
@@ -1276,7 +1276,9 @@ function _buildDashboardKpi(ticker) {
   return knames.map(function (kname) {
     var kinfo = kpis[kname];
     var rawD = (kinfo.data || []).slice().sort(function (a, b) { return a.quarter.localeCompare(b.quarter); });
-    if (!rawD.length) return '<div style="margin-bottom:8px"><div class="db-kpi-mini-label"><span>' + esc(kname) + '</span><span>—</span></div></div>';
+    var validValues = rawD.filter(function (d) { return d.value !== null && d.value !== undefined; });
+    if (!validValues.length) return '';
+    rawD = validValues;
     var lv = rawD[rawD.length - 1];
     var unit = kinfo.unit || '';
     function fvM(v) {
@@ -1420,14 +1422,13 @@ function buildDashboard(ticker) {
     }).join('') + (conMore > 0 ? '<div style="font-size:11px;color:var(--mut)">他' + conMore + '件</div>' : '');
     var nkItems = (s1.next_kpis || []).slice(0, 2);
     var nkHtml2 = nkItems.map(function (k) {
-      return '<span style="font-size:11px;background:var(--sur);border:1px solid var(--bdr);border-radius:3px;padding:1px 6px;margin:2px 3px 2px 0;display:inline-block">' + esc(k) + '</span>';
+      return '<span style="font-size:10px;background:var(--sur);border:1px solid var(--bdr);border-radius:3px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:inline-block">' + esc(k) + '</span>';
     }).join('');
     var edCls2 = (s1.exit_distance || '').includes('遠') ? 'ed-far' : (s1.exit_distance || '').includes('近い') ? 'ed-close' : 'ed-watch';
     var biasSmHtml = s1.optimism_bias_warning
       ? '<div style="font-size:11px;color:var(--amb);background:rgba(245,158,11,.1);border-radius:4px;padding:2px 6px;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⚠ ' + esc(s1.optimism_bias_warning.slice(0, 60)) + (s1.optimism_bias_warning.length > 60 ? '…' : '') + '</div>'
       : '';
     reviewLeftHtml =
-      '<div style="max-height:280px;overflow:hidden">' +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
       '<div class="db-gauge-mini" style="flex:1"><div class="db-gauge-mini-fill" style="width:' + score + '%;background:' + gc + '"></div></div>' +
       '<span class="rec-badge ' + recCls + '" style="font-size:10px">' + esc(rec) + '</span></div>' +
@@ -1437,8 +1438,7 @@ function buildDashboard(ticker) {
       (conHtml2 ? '<div style="margin-bottom:3px"><div style="font-size:10px;color:var(--sub);margin-bottom:1px">懸念点</div>' + conHtml2 + '</div>' : '') +
       (s1.exit_distance ? '<div style="margin:3px 0"><span class="exit-dist-badge ' + edCls2 + '" style="font-size:11px">' + esc(s1.exit_distance) + '</span>' +
         (s1.exit_distance_reason ? '<span style="font-size:11px;color:var(--sub);margin-left:6px">' + esc(s1.exit_distance_reason.slice(0, 40)) + (s1.exit_distance_reason.length > 40 ? '...' : '') + '</span>' : '') + '</div>' : '') +
-      (nkHtml2 ? '<div style="margin-top:4px"><div style="font-size:10px;color:var(--sub);margin-bottom:1px">確認KPI</div>' + nkHtml2 + '</div>' : '') +
-      '</div>';
+      (nkHtml2 ? '<div style="margin-top:4px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">確認KPI</div><div style="display:flex;flex-wrap:wrap;gap:4px">' + nkHtml2 + '</div></div>' : '');
 
     // スコア推移スパークライン
     var hist = qs.slice().reverse().map(function (q) {
