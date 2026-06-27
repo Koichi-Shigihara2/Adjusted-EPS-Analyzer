@@ -104,11 +104,11 @@
     /* 候補カード拡張バッジ */
     .cand-meta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:10px}
     .cand-meta .cand-sector{margin-bottom:0}
-    .cand-catalyst{background:rgba(139,92,246,.2);color:#a78bfa;border:1px solid rgba(139,92,246,.35)}
-    .conv-高{background:rgba(16,185,129,.2);color:#34d399;border:1px solid rgba(16,185,129,.35)}
-    .conv-中{background:rgba(245,158,11,.2);color:#fbbf24;border:1px solid rgba(245,158,11,.35)}
-    .conv-低{background:rgba(100,116,139,.15);color:#94a3b8;border:1px solid rgba(100,116,139,.3)}
-    .screen-pass{background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.3)}
+    .cand-catalyst{background:rgba(139,92,246,.12);color:var(--pur)}
+    .conv-高{background:rgba(16,185,129,.12);color:#10b981}
+    .conv-中{background:rgba(245,158,11,.12);color:#f59e0b}
+    .conv-低{background:rgba(100,116,139,.1);color:#64748b}
+    .screen-pass{background:rgba(16,185,129,.08);color:#10b981}
 
     @media(max-width:640px){.ticker-card-head{flex-wrap:wrap}.tc-summary{margin-left:0;width:100%}}
 
@@ -290,7 +290,7 @@ function buildTickerCard(ticker, data, configTickers, themeMapById) {
   }).join('');
   let html = `<div class="ticker-card" id="${cardId}" data-collapsed="">
     <div class="ticker-card-head" onclick="toggleCard('${cardId}')">
-      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}" onclick="event.stopPropagation()">${ticker}${ticker === 'ENB' ? ' 🇨🇦' : ''}</a>
+      <a class="tc-ticker" href="${TANUKI_BASE}stock.html?ticker=${ticker}" onclick="event.stopPropagation()">${ticker}</a>
       <span class="tc-cat cat-${escHtml(cat)}">${escHtml(cat)}</span>
       ${themeBadges}
       <span class="tc-imp imp-${escHtml(imp)}">${escHtml(imp)}</span>
