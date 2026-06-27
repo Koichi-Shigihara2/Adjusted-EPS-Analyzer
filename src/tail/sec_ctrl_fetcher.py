@@ -387,11 +387,24 @@ def main():
             os.makedirs(ticker_dir, exist_ok=True)
             period_path = os.path.join(ticker_dir, f"{quarter}.json")
             latest_path = os.path.join(ticker_dir, "latest.json")
+            index_path  = os.path.join(ticker_dir, "index.json")
             for path in (period_path, latest_path):
                 with open(path, "w", encoding="utf-8") as f:
                     json.dump(result, f, ensure_ascii=False, indent=2)
+            # index.json: quarters リストをマージ・ソートして更新
+            existing_quarters: List[str] = []
+            if os.path.exists(index_path):
+                try:
+                    with open(index_path, encoding="utf-8") as f:
+                        existing_quarters = json.load(f).get("quarters", [])
+                except Exception:
+                    existing_quarters = []
+            merged = sorted(set(existing_quarters) | {quarter}, reverse=True)
+            with open(index_path, "w", encoding="utf-8") as f:
+                json.dump({"quarters": merged}, f, ensure_ascii=False, indent=2)
             print(f"  [{ticker}] 保存: {period_path}")
             print(f"  [{ticker}] 保存: {latest_path}")
+            print(f"  [{ticker}] index.json: {merged}")
             ok += 1
         except Exception as e:
             print(f"  [{ticker}] エラー: {e}")

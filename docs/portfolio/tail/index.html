@@ -781,6 +781,7 @@ var loadedScenarios      = {};   // { PLTR: { bear: {}, base: {}, bull: {} } }
 var predictionHistory    = {};   // { PLTR: [...], SOFI: [...], TSLA: [...] }
 var journalData          = [];   // entries array
 var loadedCtrl           = {};   // { SOUN: ctrlData }
+var ctrlIndex            = {};   // { SOUN: {quarters: [...]} }
 
 var TABS_CORE = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
 var TABS_SAT  = ['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
@@ -1175,9 +1176,19 @@ function openModal(ticker) {
   }
 
   if (!loadedCtrl[ticker]) {
-    fetch('data/ctrl/' + ticker + '/latest.json?_=' + Date.now())
+    fetch('data/ctrl/' + ticker + '/index.json?_=' + Date.now())
       .then(function (r) { return r.ok ? r.json() : null; })
       .catch(function () { return null; })
+      .then(function (idx) {
+        ctrlIndex[ticker] = idx || null;
+        var quarter = (idx && idx.quarters && idx.quarters.length > 0) ? idx.quarters[0] : null;
+        var url = quarter
+          ? ('data/ctrl/' + ticker + '/' + quarter + '.json?_=' + Date.now())
+          : ('data/ctrl/' + ticker + '/latest.json?_=' + Date.now());
+        return fetch(url)
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; });
+      })
       .then(function (d) {
         loadedCtrl[ticker] = d || null;
         if (modalTicker === ticker && modalTabIdx === 5) renderModalBody(ticker, 5);
@@ -1898,11 +1909,7 @@ function buildTabCall2(ticker) {
 }
 
 /* ─── Tab 5: 内部統制 ─── */
-function buildTabCtrl(ticker) {
-  var d = loadedCtrl[ticker];
-  if (d === undefined) {
-    return '<div style="padding:20px;color:var(--mut);text-align:center">読み込み中…</div>';
-  }
+function _buildCtrlBody(ticker, d) {
   if (d === null) {
     return '<div style="padding:20px;color:var(--mut);text-align:center">データなし（未取得 or CIK未登録）</div>';
   }
@@ -1982,15 +1989,47 @@ function buildTabCtrl(ticker) {
     '<div style="margin-top:14px;font-size:10px;color:var(--mut)">取得日時: ' +
     esc((d.fetched_at || '').slice(0, 19).replace('T', ' ')) + ' JST</div>';
 
-  return [
-    '<div class="rv-head"><span class="rv-quarter">' + esc(ticker) + '</span>' +
-      '<span class="rv-date">内部統制評価 (Item 4)</span></div>',
-    badgeHtml,
-    mwHtml,
-    sdHtml,
-    excerptHtml,
-    fetchedHtml,
-  ].join('');
+  return [badgeHtml, mwHtml, sdHtml, excerptHtml, fetchedHtml].join('');
+}
+
+function _onCtrlQuarterChange(ticker, quarter, containerId) {
+  var el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = '<div style="padding:16px;color:var(--mut);text-align:center">読み込み中…</div>';
+  fetch('data/ctrl/' + ticker + '/' + quarter + '.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (d) {
+      el.innerHTML = _buildCtrlBody(ticker, d);
+    });
+}
+
+function buildTabCtrl(ticker) {
+  var d = loadedCtrl[ticker];
+  if (d === undefined) {
+    return '<div style="padding:20px;color:var(--mut);text-align:center">読み込み中…</div>';
+  }
+
+  var quarters = (ctrlIndex[ticker] && ctrlIndex[ticker].quarters) || [];
+  var selectorHtml = '';
+  var bodyId = 'ctrl-body-' + ticker;
+  if (quarters.length >= 2) {
+    var opts = quarters.map(function (q) {
+      return '<option value="' + esc(q) + '"' + (q === (d && d.quarter) ? ' selected' : '') + '>' + esc(q) + '</option>';
+    }).join('');
+    selectorHtml =
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
+      '<span style="font-size:11px;color:var(--sub)">対象期:</span>' +
+      '<select onchange="_onCtrlQuarterChange(\'' + ticker + '\',this.value,\'' + bodyId + '\')" ' +
+        'style="background:var(--panel-bg,#1a1a2e);color:var(--fg);border:1px solid var(--bdr,#333);' +
+        'border-radius:4px;padding:3px 8px;font-size:12px;cursor:pointer">' +
+      opts + '</select></div>';
+  }
+
+  return '<div class="rv-head"><span class="rv-quarter">' + esc(ticker) + '</span>' +
+      '<span class="rv-date">内部統制評価 (Item 4)</span></div>' +
+    selectorHtml +
+    '<div id="' + bodyId + '">' + _buildCtrlBody(ticker, d) + '</div>';
 }
 
 /* ─── Tab Satellite ─── */
