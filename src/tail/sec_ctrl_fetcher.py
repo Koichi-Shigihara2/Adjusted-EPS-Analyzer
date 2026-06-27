@@ -5,7 +5,9 @@ TANUKI TAIL — sec_ctrl_fetcher.py  (SEC-CTRL-1)
 10-Q の Part I Item 4「Controls and Procedures」を取得し、
 内部統制の有効性・マテリアル・ウィークネス有無を評価して保存する。
 
-出力: docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json
+出力:
+    docs/portfolio/tail/data/ctrl/{TICKER}/{QUARTER}.json  (期別履歴)
+    docs/portfolio/tail/data/ctrl/{TICKER}/latest.json     (最新版エイリアス)
 使用方法:
     python src/tail/sec_ctrl_fetcher.py           # tail ポジション全銘柄
     python src/tail/sec_ctrl_fetcher.py SOUN PLTR  # 個別指定
@@ -41,6 +43,11 @@ EDGAR_HDR  = {
     "Accept-Encoding": "gzip, deflate",
 }
 
+# ── Grok API ──────────────────────────────────────────────────
+XAI_API_KEY = os.getenv("XAI_API_KEY", "")
+GROK_URL    = "https://api.x.ai/v1/chat/completions"
+GROK_MODELS = ["grok-3-mini", "grok-3", "grok-2-1212"]
+
 # ── シグナル検出パターン ──────────────────────────────────────
 _RE_NOT_EFFECTIVE = re.compile(
     r"(were\s+not\s+effective|was\s+not\s+effective|"
@@ -60,6 +67,41 @@ _RE_EFFECTIVE = re.compile(
     r"concluded\s+.{0,80}effective\s+as\s+of)",
     re.IGNORECASE,
 )
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# Grok 翻訳
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+def _translate_item4(text: str) -> Optional[str]:
+    """Item4 英文を Grok で日本語訳する。失敗時は None を返す。"""
+    if not XAI_API_KEY:
+        return None
+    prompt = (
+        "以下はSEC 10-Q の Item 4「Controls and Procedures」の英文です。"
+        "内部統制の有効性・マテリアルウィークネス・重要な欠陥の有無に関する部分を中心に、"
+        "正確かつ簡潔な日本語に翻訳してください。翻訳文のみを出力し、説明や前置きは不要です。\n\n"
+        f"{text}"
+    )
+    headers = {
+        "Authorization": f"Bearer {XAI_API_KEY}",
+        "Content-Type":  "application/json",
+    }
+    payload = {
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0,
+        "max_tokens": 1500,
+    }
+    for model in GROK_MODELS:
+        try:
+            payload["model"] = model
+            resp = requests.post(GROK_URL, headers=headers, json=payload, timeout=60)
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"].strip()
+        except Exception as e:
+            print(f"  [Grok/{model}] 翻訳失敗: {e}")
+    return None
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -254,6 +296,14 @@ def fetch_ctrl(ticker: str, cik: str) -> Optional[Dict[str, Any]]:
           f"MW={len(analysis['material_weaknesses'])}, "
           f"SD={len(analysis['significant_deficiencies'])}")
 
+    excerpt = item4_text[:2000]
+    print(f"  [{ticker}] Grok翻訳中...")
+    excerpt_ja = _translate_item4(excerpt)
+    if excerpt_ja:
+        print(f"  [{ticker}] 翻訳完了 ({len(excerpt_ja)}文字)")
+    else:
+        print(f"  [{ticker}] 翻訳スキップ（API未設定 or 失敗）")
+
     return {
         "ticker":                 ticker.upper(),
         "quarter":                quarter,
@@ -262,7 +312,8 @@ def fetch_ctrl(ticker: str, cik: str) -> Optional[Dict[str, Any]]:
         "effective":              analysis["effective"],
         "material_weaknesses":    analysis["material_weaknesses"],
         "significant_deficiencies": analysis["significant_deficiencies"],
-        "item4_excerpt":          item4_text[:2000],
+        "item4_excerpt":          excerpt,
+        "item4_excerpt_ja":       excerpt_ja,
         "fetched_at":             datetime.now(JST).isoformat(),
     }
 
@@ -331,10 +382,16 @@ def main():
             if result is None:
                 ng += 1
                 continue
-            path = os.path.join(CTRL_DIR, f"{ticker}_ctrl.json")
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(result, f, ensure_ascii=False, indent=2)
-            print(f"  [{ticker}] 保存: {path}")
+            quarter    = result["quarter"]
+            ticker_dir = os.path.join(CTRL_DIR, ticker)
+            os.makedirs(ticker_dir, exist_ok=True)
+            period_path = os.path.join(ticker_dir, f"{quarter}.json")
+            latest_path = os.path.join(ticker_dir, "latest.json")
+            for path in (period_path, latest_path):
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(result, f, ensure_ascii=False, indent=2)
+            print(f"  [{ticker}] 保存: {period_path}")
+            print(f"  [{ticker}] 保存: {latest_path}")
             ok += 1
         except Exception as e:
             print(f"  [{ticker}] エラー: {e}")

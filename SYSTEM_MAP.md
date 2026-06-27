@@ -71,7 +71,7 @@ DISCOVER      ← Grok Web検索 / NewsAPI
 　　カタリスト発掘: src/discover/catalyst.py → docs/discover/data/catalyst.json（週次）
 PORTFOLIO     ← 手動入力 / 証券会社API
 TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
-　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{ticker}_ctrl.json
+　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{TICKER}/{QUARTER}.json + latest.json
 　　（SEC-CTRL-1 2026-06-24実装、週次自動更新）
 　　モーダル構成: coreとsatelliteで同等の6タブ（テーゼ/最新レビュー/KPIトレンド/DCFシナリオ/AI視点/内部統制）
 　　（TAIL-SAT-CORE-1 2026-06-26、旧:satelliteは戦略タブのみ）
