@@ -95,6 +95,39 @@ catalyst.html・news_history.html のUIが使いづらく実用に耐えない�
 
 ---
 
+### [TAIL-UX-1] TANUKI TAIL詳細モーダルの一覧性向上
+**優先度:** 中
+**分類:** UX / TANUKI TAIL
+**登録日:** 2026-06-27
+
+#### 問題
+詳細モーダルの情報が散漫で総合的な判断がしづらい。
+一覧性を高めて投資判断に使えるレイアウトに改善する必要がある。
+
+#### 対応方針
+現状レイアウトの課題を洗い出してから設計する（次セッションで詳細ヒアリング）。
+
+---
+
+### [TAIL-SEC-ITEMS-1] TANUKI TAIL SEC項目の保存拡張（Item 1/1A/3/7）
+**優先度:** 中
+**分類:** 機能追加 / TANUKI TAIL
+**登録日:** 2026-06-27
+
+#### 問題
+現在はItem 4（内部統制）のみ保存・表示している。
+以下の項目もItem 4と同様にEDGARから取得・保存・表示したい：
+- Item 1: Business（事業概要）
+- Item 1A: Risk Factors（リスク要因）
+- Item 3: Legal Proceedings（法的手続き）
+- Item 7: Management's Discussion and Analysis（MD&A）
+
+#### 対応方針
+sec_ctrl_fetcher.pyを拡張するか別スクリプトを作成するか設計判断が必要。
+TAIL-CTRL-TRANS-1（2026-06-27完了）の構造を踏襲する。
+
+---
+
 ### [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
 **優先度:** 低〜中（調査してから判断）
 **分類:** データ品質 / 外部AIレビュー
