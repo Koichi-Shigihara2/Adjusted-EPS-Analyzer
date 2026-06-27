@@ -79,6 +79,18 @@
 
 ---
 
+### [SEC-CTRL-1] ctrl JSONパス変更・Grok翻訳追加・既存ファイルマイグレーション（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `src/tail/sec_ctrl_fetcher.py`: 保存先を `{TICKER}_ctrl.json` → `{TICKER}/{QUARTER}.json` + `{TICKER}/latest.json` に変更
+- `_translate_item4()` 関数を追加: Grok API（grok-3-mini→grok-3→grok-2-1212フォールバック）でitem4_excerptを日本語訳し `item4_excerpt_ja` フィールドとして保存
+- `docs/portfolio/tail/index.html`: fetchパスを `latest.json` に変更、`buildTabCtrl` で日本語訳を上部に表示し英文を `<details>` 折りたたみに変更
+- 既存9ファイル（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/SOUN/TSLA）を新ディレクトリ構造へマイグレーション
+- `SYSTEM_MAP.md`: パス記述を新構造に更新
+
+---
+
 ## 2026-06-26（完了）
 
 ### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-26完了）
