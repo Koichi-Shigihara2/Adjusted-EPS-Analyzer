@@ -420,6 +420,23 @@
     .db-fold.open .db-fold-body { display:block; }
     .db-fold.open .db-fold-head span:last-child { transform:rotate(90deg); display:inline-block; }
     @media (max-width:600px) { .db-two-col,.db-two-col-half { grid-template-columns:1fr; } }
+
+    /* ── Unified Overview Table ── */
+    .unified-table { width:100%; border-collapse:collapse; font-size:12px; min-width:700px; }
+    .unified-table th { font-size:10px; color:var(--sub); text-transform:uppercase; padding:6px 8px; border-bottom:1px solid var(--bdr); text-align:left; cursor:help; background:var(--sur2); font-family:var(--mono); letter-spacing:.06em; white-space:nowrap; }
+    .unified-table td { padding:6px 8px; border-bottom:1px solid rgba(30,40,64,.5); vertical-align:middle; }
+    .unified-table tr:hover td { background:var(--sur2); }
+    .ut-score { font-weight:700; margin-right:4px; }
+    .ut-bias-on { color:var(--red); font-weight:700; }
+    .ut-bias-off { color:var(--mut); }
+    .ut-ctrl-ok { color:var(--grn); font-weight:700; font-family:var(--mono); font-size:10px; }
+    .ut-ctrl-ng { color:var(--red); font-weight:700; font-family:var(--mono); font-size:10px; }
+    .ut-ctrl-un { color:var(--mut); font-family:var(--mono); font-size:10px; }
+    .ut-exit-far { color:var(--grn); font-weight:700; }
+    .ut-exit-mid { color:var(--amb); font-weight:700; }
+    .ut-exit-near { color:var(--red); font-weight:700; }
+    .ut-dcf { font-size:11px; font-weight:700; font-family:var(--mono); }
+    .ut-summary { color:var(--sub); font-size:11px; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   </style>
 </head>
 <body data-tool="tail">
@@ -448,58 +465,25 @@
 
 <div class="shell">
 
-  <!-- ── Usage flow guide ── -->
-  <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:14px 20px;margin-bottom:24px">
-    <div style="font-family:var(--mono);font-size:9px;color:var(--core);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px">How to Use TANUKI TAIL</div>
-    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;margin-bottom:10px">
-      <span style="background:rgba(240,165,0,.12);color:var(--core);border:1px solid rgba(240,165,0,.25);border-radius:3px;padding:3px 10px">① 投資仮説を登録</span>
-      <span style="color:var(--mut)">→</span>
-      <span style="background:rgba(74,158,255,.1);color:var(--sat,#4a9eff);border:1px solid rgba(74,158,255,.2);border-radius:3px;padding:3px 10px">② 決算ごとにGrokレビュー実行</span>
-      <span style="color:var(--mut)">→</span>
-      <span style="background:rgba(255,255,255,.06);color:var(--sub);border:1px solid var(--bdr);border-radius:3px;padding:3px 10px">③ DECISION LOGで判断記録</span>
-    </div>
-    <div id="review-staleness" style="font-family:var(--mono);font-size:11px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:8px"></div>
-  </div>
-
-  <div class="sec" data-info="tail_overview">OVERVIEW <span class="sec-badge core">CORE</span></div>
+  <div class="sec" data-info="tail_overview">OVERVIEW</div>
   <div class="tbl-wrap">
-    <table id="core-table">
+    <table class="unified-table">
       <thead>
         <tr>
           <th>TICKER</th>
-          <th data-info="tail_health_score">テーゼ健全度</th>
-          <th title="TANUKI TAIL監視開始日">登録日</th>
-          <th class="num">取得単価</th>
-          <th class="num" data-info="tail_deviation_rate">乖離率</th>
-          <th class="num">直近スコア</th>
-          <th>最終レビュー</th>
+          <th>TYPE</th>
+          <th>スコア</th>
+          <th>乖離/損益</th>
+          <th title="楽観バイアス: AIレビューが過度に楽観的な兆候を検出した場合●">BIAS</th>
+          <th title="内部統制: SEC 10-Q Item4の開示統制有効性評価">CTRL</th>
+          <th title="エグジット距離: エグジット条件までの距離（SATELLITEのみ）">EXIT</th>
+          <th title="DCF: BASEシナリオで現在株価を超える最短時期">DCF</th>
+          <th>サマリー</th>
           <th>アクション</th>
         </tr>
       </thead>
-      <tbody id="core-tbody">
-        <tr class="empty-row"><td colspan="8">登録済みポジションなし。下のフォームから登録してください。</td></tr>
-      </tbody>
-    </table>
-  </div>
-
-  <div class="sec" style="margin-top:24px" data-info="tail_overview_sat">OVERVIEW <span class="sec-badge sat">SATELLITE</span></div>
-  <div class="tbl-wrap">
-    <table id="sat-table">
-      <thead>
-        <tr>
-          <th>TICKER</th>
-          <th>戦略名</th>
-          <th>登録日</th>
-          <th class="num">取得単価</th>
-          <th class="num">現在価格</th>
-          <th class="num">損益率</th>
-          <th>エグジット条件</th>
-          <th class="num" title="TANUKI TAILへの登録日からの日数">監視日数</th>
-          <th>アクション</th>
-        </tr>
-      </thead>
-      <tbody id="sat-tbody">
-        <tr class="empty-row"><td colspan="9">登録済みポジションなし。下のフォームから登録してください。</td></tr>
+      <tbody id="unified-tbody">
+        <tr class="empty-row"><td colspan="10">登録済みポジションなし。下のフォームから登録してください。</td></tr>
       </tbody>
     </table>
   </div>
@@ -509,6 +493,19 @@
   <div style="padding:10px 0 4px">
     <a href="decision_log.html" style="font-family:var(--mono);font-size:13px;color:var(--acc);text-decoration:none">DECISION LOG を見る →</a>
     <div id="dl-summary" style="font-family:var(--mono);font-size:11px;color:var(--mut);margin-top:6px"></div>
+  </div>
+
+  <!-- ── Usage flow guide ── -->
+  <div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:14px 20px;margin-top:24px">
+    <div style="font-family:var(--mono);font-size:9px;color:var(--core);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px">How to Use TANUKI TAIL</div>
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;margin-bottom:10px">
+      <span style="background:rgba(240,165,0,.12);color:var(--core);border:1px solid rgba(240,165,0,.25);border-radius:3px;padding:3px 10px">① 投資仮説を登録</span>
+      <span style="color:var(--mut)">→</span>
+      <span style="background:rgba(74,158,255,.1);color:var(--sat,#4a9eff);border:1px solid rgba(74,158,255,.2);border-radius:3px;padding:3px 10px">② 決算ごとにGrokレビュー実行</span>
+      <span style="color:var(--mut)">→</span>
+      <span style="background:rgba(255,255,255,.06);color:var(--sub);border:1px solid var(--bdr);border-radius:3px;padding:3px 10px">③ DECISION LOGで判断記録</span>
+    </div>
+    <div id="review-staleness" style="font-family:var(--mono);font-size:11px;color:var(--mut);border-top:1px solid var(--bdr);padding-top:8px"></div>
   </div>
 
   <div class="sec" style="margin-top:40px" data-info="tail_new_position">NEW POSITION</div>
@@ -1026,11 +1023,155 @@ function renderOverview() {
     if (p.status === 'archived') { archItems.push(p); return; }
     if (p.type === 'core') coreItems.push(p); else satItems.push(p);
   });
-  renderCoreTable(coreItems);
-  renderSatTable(satItems);
+  renderUnifiedTable(coreItems.concat(satItems));
   renderArchiveTable(archItems);
   document.getElementById('archive-count').textContent = archItems.length ? '(' + archItems.length + ')' : '';
   renderJournal();
+}
+
+function renderUnifiedTable(items) {
+  var tbody = document.getElementById('unified-tbody');
+  var sorted = items.slice().sort(function (a, b) {
+    if (a.type === b.type) return 0;
+    return a.type === 'core' ? -1 : 1;
+  });
+  if (!sorted.length) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="10">登録済みポジションなし。下のフォームから登録してください。</td></tr>';
+    return;
+  }
+  tbody.innerHTML = sorted.map(function (p) {
+    var ticker = p.ticker;
+    var isSat  = p.type !== 'core';
+
+    // TYPE badge
+    var typeBadge = isSat
+      ? '<span class="tag sat">SAT</span>'
+      : '<span class="tag core">CORE</span>';
+
+    // Review data
+    var reviews = loadedReviews[ticker];
+    var qs      = reviews ? Object.keys(reviews).sort().reverse() : [];
+    var latestQ = qs.length ? qs[0] : null;
+    var s1      = (latestQ && reviews[latestQ]) ? (reviews[latestQ].stage1 || {}) : null;
+
+    // スコア
+    var score  = s1 ? s1.health_score : null;
+    var rec    = s1 ? (s1.recommendation || '') : '';
+    var sColor = score != null ? (score >= 70 ? 'var(--grn)' : score >= 50 ? 'var(--amb)' : 'var(--red)') : 'var(--mut)';
+    var recCls = rec ? 'rec-' + rec.toLowerCase() : '';
+    var scoreHtml = score != null
+      ? '<span class="ut-score" style="color:' + sColor + '">' + score + '</span>' +
+        (rec ? '<span class="rec-badge ' + recCls + '" style="font-size:9px">' + esc(rec) + '</span>' : '')
+      : '<span style="color:var(--mut)">－</span>';
+
+    // 乖離/損益
+    var val = latestValCache[ticker];
+    var devHtml;
+    if (isSat) {
+      var rawEntry = p.entry_price != null ? p.entry_price : portfolioAvgCost[ticker];
+      if (val && val.current_price != null && rawEntry != null && rawEntry > 0) {
+        var pl = (val.current_price - rawEntry) / rawEntry * 100;
+        devHtml = '<span style="color:' + (pl >= 0 ? 'var(--grn)' : 'var(--red)') + '">' + (pl >= 0 ? '+' : '') + pl.toFixed(1) + '%</span>';
+      } else {
+        devHtml = '<span style="color:var(--mut)">－</span>';
+      }
+    } else {
+      if (val && val.upside_percent != null) {
+        var dev = Number(val.upside_percent);
+        devHtml = '<span style="color:' + (dev >= 0 ? 'var(--grn)' : 'var(--red)') + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>';
+      } else {
+        devHtml = '<span style="color:var(--mut)">－</span>';
+      }
+    }
+
+    // BIAS
+    var hasBias  = !!(s1 && s1.optimism_bias_warning);
+    var biasHtml = hasBias
+      ? '<span class="ut-bias-on" title="楽観バイアス警告あり">●</span>'
+      : '<span class="ut-bias-off" title="楽観バイアス警告なし">－</span>';
+
+    // CTRL
+    var cd = loadedCtrl[ticker];
+    var ctrlHtml;
+    if (cd === undefined || cd === null) {
+      ctrlHtml = '<span class="ut-ctrl-un" title="内部統制: 判定不能">?</span>';
+    } else if (cd.effective === true) {
+      ctrlHtml = '<span class="ut-ctrl-ok" title="内部統制: 有効">OK</span>';
+    } else if (cd.effective === false) {
+      ctrlHtml = '<span class="ut-ctrl-ng" title="内部統制: 無効">NG</span>';
+    } else {
+      ctrlHtml = '<span class="ut-ctrl-un" title="内部統制: 判定不能">?</span>';
+    }
+
+    // EXIT（SAT のみ）
+    var exitHtml;
+    if (!isSat) {
+      exitHtml = '<span style="color:var(--mut)">－</span>';
+    } else {
+      var exitDist   = s1 ? (s1.exit_distance || '') : '';
+      var exitReason = s1 ? (s1.exit_distance_reason || '') : '';
+      if (!exitDist) {
+        exitHtml = '<span style="color:var(--mut)">－</span>';
+      } else if (exitDist.includes('遠')) {
+        exitHtml = '<span class="ut-exit-far" title="' + esc(exitReason) + '">遠</span>';
+      } else if (exitDist.includes('近')) {
+        exitHtml = '<span class="ut-exit-near" title="' + esc(exitReason) + '">近</span>';
+      } else {
+        exitHtml = '<span class="ut-exit-mid" title="' + esc(exitReason) + '">中</span>';
+      }
+    }
+
+    // DCF（BASE シナリオで最初に現在株価を超える時期）
+    var dcfHtml;
+    var scd   = loadedScenarios[ticker];
+    var curPr = val ? val.current_price : null;
+    if (!scd || !scd.base || curPr == null) {
+      dcfHtml = '<span class="ut-dcf" style="color:var(--mut)">－</span>';
+    } else {
+      var fv      = scd.base.future_values || {};
+      var periods = [['1年後', '1Y'], ['3年後', '3Y'], ['5年後', '5Y']];
+      var found   = null;
+      for (var pi = 0; pi < periods.length; pi++) {
+        var pv = fv[periods[pi][0]];
+        if (pv != null && Number(pv) > Number(curPr)) { found = periods[pi][1]; break; }
+      }
+      var mkFv = function (sc) { var f = sc ? (sc.future_values || {}) : {}; return ['1Y:' + (f['1年後'] != null ? '$' + Number(f['1年後']).toFixed(0) : '－'), '3Y:' + (f['3年後'] != null ? '$' + Number(f['3年後']).toFixed(0) : '－'), '5Y:' + (f['5年後'] != null ? '$' + Number(f['5年後']).toFixed(0) : '－')].join(' '); };
+      var dcfTip = 'BEAR: ' + mkFv(scd.bear) + '\nBASE: ' + mkFv(scd.base) + '\nBULL: ' + mkFv(scd.bull);
+      if (found) {
+        var dColor = found === '1Y' ? 'var(--grn)' : found === '3Y' ? 'var(--amb)' : 'var(--sub)';
+        dcfHtml = '<span class="ut-dcf" style="color:' + dColor + '" title="' + esc(dcfTip) + '">' + found + '</span>';
+      } else {
+        dcfHtml = '<span class="ut-dcf" style="color:var(--red)" title="' + esc(dcfTip) + '">超過</span>';
+      }
+    }
+
+    // サマリー
+    var summary    = s1 ? (s1.summary || '') : '';
+    var summaryHtml = summary
+      ? '<span title="' + esc(summary) + '">' + esc(summary.slice(0, 40)) + (summary.length > 40 ? '...' : '') + '</span>'
+      : '<span style="color:var(--mut)">－</span>';
+
+    // アクション
+    var actHtml = '<div style="display:flex;gap:4px">' +
+      '<button class="action-btn" onclick="openModal(\'' + esc(ticker) + '\')">詳細</button>' +
+      '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(ticker) + '\')">📝</button>' +
+      '</div>';
+
+    return [
+      '<tr>',
+      '<td><span class="tkr ' + (isSat ? 'sat' : 'core') + '">' + esc(ticker) + '</span></td>',
+      '<td>' + typeBadge + '</td>',
+      '<td>' + scoreHtml + '</td>',
+      '<td>' + devHtml + '</td>',
+      '<td>' + biasHtml + '</td>',
+      '<td>' + ctrlHtml + '</td>',
+      '<td>' + exitHtml + '</td>',
+      '<td>' + dcfHtml + '</td>',
+      '<td class="ut-summary">' + summaryHtml + '</td>',
+      '<td>' + actHtml + '</td>',
+      '</tr>'
+    ].join('');
+  }).join('');
 }
 
 function renderCoreTable(items) {
