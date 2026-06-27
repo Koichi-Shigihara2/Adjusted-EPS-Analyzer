@@ -4,6 +4,18 @@
 
 ## 2026-06-26（完了）
 
+### [DISCOVER-THEMES-1] macro_themes_history.json初回生成・.gitattributes登録（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `explore_macro_themes()` を直接呼び出して初回エントリを生成（Grok API使用）
+  - collect.py は日曜のみ生成する設計のため、バイパス用スクリプトで実行
+- 生成テーマ3件: 「AI電力需要爆発」[高]、「量子コンピューティング商用化」[中]、「LEO衛星通信拡大」[中]
+- `.gitattributes` に `merge=ours` を追加（discover/data/catalyst.jsonの直後）
+- 「過去のテーマを見る」機能が稼働状態に
+
+---
+
 ### [HYPE-FLAG-1] CSGP/ZSのcik_lookupフラグ設定（2026-06-27完了）
 
 **完了日:** 2026-06-27

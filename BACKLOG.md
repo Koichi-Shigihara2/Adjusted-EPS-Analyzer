@@ -126,25 +126,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 
 ---
 
-### [DISCOVER-THEMES-1] macro_themes_history.json未生成・.gitattributes未登録
-**優先度:** 中
-**分類:** 機能未稼働 / DISCOVER
-**発見:** 2026-06-26横断調査
-
-#### 問題
-DISCOVER-FEATURE-2（2026-06-24）でdiscover/index.htmlはmacro_themes_history.jsonを
-参照する実装が追加されたが、ファイル自体がリポジトリに存在しない。
-
-- `docs/discover/data/macro_themes_history.json` が未生成
-- `.gitattributes`にも未登録（merge=oursなし）
-- index.htmlに`??[]`フォールバックがあるためUI破綻はしないが、
-  「過去のテーマを見る」機能が完全に未稼働
-
-#### 対応方針
-- collect.pyを手動実行してmacro_themes_history.jsonを初回生成
-- .gitattributesに`docs/discover/data/macro_themes_history.json text eol=lf merge=ours`を追加
-
----
 
 ### [DUPONT-COLOR-1] DuPont ROE色分けの不統一
 **優先度:** 中
@@ -914,7 +895,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 **機能・設定修正:**
 6. ~~HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定~~ ✅ 2026-06-27完了
 7. ~~HYPE-ENB-1: ENBのhypecore=false修正~~ ✅ 2026-06-27完了
-8. DISCOVER-THEMES-1: macro_themes_history.json初回生成
+8. ~~DISCOVER-THEMES-1: macro_themes_history.json初回生成~~ ✅ 2026-06-27完了
 
 ※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・
   TANUKI-ROE-2（部分）・SS-1（クローズ）
