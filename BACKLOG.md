@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-06-26（本日作業反映・BACKLOG整備）
+最終更新: 2026-06-26（本日作業完了・最終整備）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -77,8 +77,6 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 **audit.py に追加すべき項目（SECデータ取得層・一部着手済み）:**
 - ✅ yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力（2026-06-15 実装）
 - 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示（未着手）
-
----
 
 ---
 
@@ -169,8 +167,6 @@ DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標�
 
 ---
 
----
-
 ### [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
 **優先度:** 中
 **分類:** データ品質 / EPS ANALYZER
@@ -228,8 +224,6 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 - C案: BXをeps=falseに変更（BXは金融機関のためTANUKI-FIN-1対応まで保留）
 
 ---
-
-
 
 ### [RKLB-CLEANUP-1] RKLBのtickers.json残存・eps_sector空欄
 **優先度:** 中
@@ -330,7 +324,7 @@ CLAUDE_CODE_START.mdの「作業完了時のチェックリスト」に以下を
 
 #### 背景
 今回のバグ調査で発見した以下3件がpytestで検出できていなかった：
-- ~~HYPE-INF-1：rev_ttm_prior=0でInf伝播~~ ✅ 2026-06-27完了
+- ~~HYPE-INF-1：rev_ttm_prior=0でInf伝播~~ ✅ 2026-06-26完了
 - TTM-NULL-1：val=NoneでTypeError
 - STONKS-DIV-1：r_start=0でZeroDivisionError
 
@@ -869,16 +863,19 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
 2. ~~STAGE0-STOCK-1: stock.htmlでstage=0が非表示~~ ✅ 2026-06-26完了
-3. ~~HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）~~ ✅ 2026-06-27完了
+3. ~~HYPE-INF-1: poc.jsonにInf値混入（ASTS/JOBY）~~ ✅ 2026-06-26完了
 
 **データ補完（コマンド実行のみ）:**
-4. ~~SEC-CTRL-2: tailの内部統制データ8銘柄一括生成~~ ✅ 2026-06-27完了
-5. ~~CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入~~ ✅ 2026-06-27完了
+4. ~~SEC-CTRL-2: tailの内部統制データ8銘柄一括生成~~ ✅ 2026-06-26完了
+5. ~~CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入~~ ✅ 2026-06-26完了
 
 **機能・設定修正:**
-6. ~~HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定~~ ✅ 2026-06-27完了
-7. ~~HYPE-ENB-1: ENBのhypecore=false修正~~ ✅ 2026-06-27完了
-8. ~~DISCOVER-THEMES-1: macro_themes_history.json初回生成~~ ✅ 2026-06-27完了
+6. ~~HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定~~ ✅ 2026-06-26完了
+7. ~~HYPE-ENB-1: ENBのhypecore=false修正~~ ✅ 2026-06-26完了
+8. ~~DISCOVER-THEMES-1: macro_themes_history.json初回生成~~ ✅ 2026-06-26完了
+
+**本日追加完了（未予定だったが実施）:**
+9. ~~TAIL-SAT-CORE-1: satelliteモーダルをcore同等6タブ構成に変更~~ ✅ 2026-06-26完了
 
 ※ 2026-06-26完了: EVAL-3・TANUKI-ENB-1・SILO-UX-1・MP-ASSETFLOW-UI-1・
   TANUKI-ROE-2（部分）・SS-1（クローズ）

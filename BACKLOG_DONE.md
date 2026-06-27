@@ -4,9 +4,9 @@
 
 ## 2026-06-26（完了）
 
-### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-27完了）
+### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - `TABS_SAT = ['戦略']` → `['テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制']` に変更
 - `openModal()` 内の KPI・DCFシナリオ・ctrl fetch から `isCore &&` 条件を除去
@@ -16,9 +16,9 @@
 
 ---
 
-### [CATALYST-DATA-1] catalyst.json初回データ投入（2026-06-27完了）
+### [CATALYST-DATA-1] catalyst.json初回データ投入（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - `catalyst.py --all` で全95銘柄（hypecore=true）のカタリストを一括生成（Grok API使用）
 - 登録銘柄数: 95銘柄 / カタリスト総数: 682件
@@ -26,9 +26,9 @@
 
 ---
 
-### [DISCOVER-THEMES-1] macro_themes_history.json初回生成・.gitattributes登録（2026-06-27完了）
+### [DISCOVER-THEMES-1] macro_themes_history.json初回生成・.gitattributes登録（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - `explore_macro_themes()` を直接呼び出して初回エントリを生成（Grok API使用）
   - collect.py は日曜のみ生成する設計のため、バイパス用スクリプトで実行
@@ -38,35 +38,35 @@
 
 ---
 
-### [HYPE-FLAG-1] CSGP/ZSのcik_lookupフラグ設定（2026-06-27完了）
+### [HYPE-FLAG-1] CSGP/ZSのcik_lookupフラグ設定（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - CSGP（CoStar Group、Real Estate、黒字）: `hypecore=true, tanuki=true, eps=true, stonks_silo=false`
   - beta_config.jsonにβ=0.72が既存 → pipeline.pyを実行してlatest.json生成（理論株価$9.87）
 - ZS（Zscaler、Technology/Software-Infrastructure、赤字）: `hypecore=true, tanuki=false, eps=false, stonks_silo=true`
   - stonks-silo pipeline を実行してresults.jsonに追加（score=88.0、10x_CANDIDATE）
 
-### [HYPE-ENB-1] ENBのhypecore=false修正（2026-06-27完了）
+### [HYPE-ENB-1] ENBのhypecore=false修正（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - ENBの `hypecore=true` → `false` に修正（カナダ企業・TANUKI-ENB-1で永続除外決定済み）
 - 他フラグ（tanuki/eps/stonks_silo=false）は現状維持
 
 ---
 
-### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成（2026-06-27完了）
+### [SEC-CTRL-2] TANUKI TAIL内部統制データ未取得銘柄の一括生成（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - `sec_ctrl_fetcher.py` を残8銘柄（ADBE/APP/CELH/CRWV/NVDA/PLTR/SOFI/TSLA）に実行
 - 全9銘柄の ctrl データが揃い TANUKI TAIL の内部統制タブが全銘柄で表示可能に
 - 注目: CRWV のみ `not_effective / MW=12`（重要な欠陥あり）、PLTR は `unknown`（判定不能）
 
-### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ修正（2026-06-27完了）
+### [HYPE-INF-1] HypeCoreのpoc.jsonにInf値が混入するバグ修正（2026-06-26完了）
 
-**完了日:** 2026-06-27
+**完了日:** 2026-06-26
 **対応内容:**
 - `rev_ttm_prior` の 0 を `np.nan` に変換（0除算による `rev_yoy=inf` を防止）
 - `op_margin` の `rev=0` を `np.nan` に変換（`ni/0=-inf` を防止）
