@@ -27,23 +27,19 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
 
-    /* ── Site header (site-header.js が生成) ── */
+    /* ── Site header ── */
     header {
       border-bottom: 1px solid var(--bdr); padding: 12px 20px;
       display: flex; align-items: center; justify-content: space-between;
       position: sticky; top: 0; background: var(--bg); z-index: 100; gap: 12px;
     }
-    .site-header-inner { display: flex; align-items: center; gap: 10px; }
-    .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--txt); }
-    .logo-img { width: 28px; height: 28px; border-radius: 50%; }
-    .logo-dot { width: 7px; height: 7px; background: var(--core); border-radius: 50%; animation: pdot 2s ease-in-out infinite; flex-shrink: 0; }
+    .logo { font-family: var(--mono); font-size: 14px; font-weight: 700; letter-spacing: .12em; display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--txt); }
+    .logo-dot { width: 8px; height: 8px; background: var(--core); border-radius: 50%; animation: pdot 2s ease-in-out infinite; }
     @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(240,165,0,.4)} 50%{box-shadow:0 0 0 6px rgba(240,165,0,0)} }
-    .logo-title    { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--txt); }
-    .logo-subtitle { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .06em; }
-    .nav-links { display: flex; gap: 14px; flex-wrap: wrap; }
-    .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .06em; padding: 4px 0; border-bottom: 1px solid transparent; transition: all .15s; }
-    .nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
-    .nav-links a.active { color: var(--core); border-bottom-color: var(--core); }
+    .nav-links a,.site-nav a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .06em; padding: 4px 0; border-bottom: 1px solid transparent; transition: all .2s; }
+    .nav-links a:hover,.site-nav a:hover { color: var(--acc); border-bottom-color: var(--acc); }
+    .nav-links a.active,.site-nav a.active { color: var(--core); border-bottom-color: var(--core); }
+    .site-nav { display: flex; gap: 14px; flex-wrap: wrap; }
 
     /* ── Auth ── */
     #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
@@ -233,8 +229,10 @@
 <!-- アプリシェル（認証後に表示） -->
 <div id="app-shell" style="display:none">
   <header>
-    <a class="logo"></a>
-    <nav class="nav-links"></nav>
+    <a class="logo" href="/On-a-journey/">
+      <span class="logo-dot"></span>TANUKI TAIL
+    </a>
+    <div class="nav-links"></div>
   </header>
 
   <div class="sub-hdr">
@@ -250,7 +248,6 @@
   </main>
 </div>
 
-<script src="../../common/site-header.js"></script>
 <script src="../../common/site-nav.js"></script>
 <script>
 /* ─── 認証 ─── */
@@ -288,6 +285,7 @@ var S = {
   reviews: {},     /* { quarter: reviewJson } */
   kpi:     null,   /* kpi/{ticker}_layer2.json */
   ctrlItems: {},   /* { item1, item1a, item3, item4, item7 } */
+  scenarios: {},   /* { bear, base, bull } — ../scenario/{ticker}/{sc}.json */
   val:     null,   /* value-monitor/tanuki_valuation/data/{ticker}/latest.json */
   allPos:  [],     /* ナビ用全ポジション（CORE→SAT順） */
 };
@@ -348,6 +346,18 @@ function loadAll() {
   });
   window._CTRL_ITEMS = CTRL_ITEMS; /* buildCtrl() から参照 */
 
+  /* DCFシナリオ（将来株価 bear/base/bull） */
+  var scenP = Promise.allSettled(['bear', 'base', 'bull'].map(function (sc) {
+    return fetch('../scenario/' + ticker + '/' + sc + '.json?_=' + Date.now())
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+  })).then(function (results) {
+    ['bear', 'base', 'bull'].forEach(function (sc, i) {
+      var r = results[i];
+      if (r.status === 'fulfilled' && r.value) S.scenarios[sc] = r.value;
+    });
+  });
+
   /* バリュエーション（任意） */
   var valP = fetch('../../value-monitor/tanuki_valuation/data/' + ticker + '/latest.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : null; })
@@ -381,7 +391,7 @@ function loadAll() {
       });
     });
 
-  Promise.all([thP, rvP, kpiP, ctrlP, valP, navP]).then(render);
+  Promise.all([thP, rvP, kpiP, ctrlP, scenP, valP, navP]).then(render);
 }
 
 /* ─── 一括描画 ─── */
@@ -592,39 +602,92 @@ function buildReview() {
 }
 
 /* ══════════════════════════════════
-   セクション4-右: DCFシナリオ
+   セクション4-右: DCFシナリオ（将来株価）
 ══════════════════════════════════ */
 function buildDcf() {
-  var qs  = Object.keys(S.reviews).sort().reverse();
   var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">DCFシナリオ</div>';
-  if (!qs.length) return out + '<div class="no-data">レビューデータなし</div></div>';
 
-  var s2   = S.reviews[qs[0]].stage2 || {};
-  var scd  = s2.scenarios || {};
+  /* シナリオファイルあり → 将来株価テーブル */
+  if (S.scenarios.bear || S.scenarios.base || S.scenarios.bull) {
+    return out + _buildFuturePriceTable(S.scenarios) + '</div>';
+  }
+
+  /* フォールバック: stage2.scenarios の成長率テーブル */
+  var qs = Object.keys(S.reviews).sort().reverse();
+  if (qs.length) {
+    var s2 = S.reviews[qs[0]].stage2 || {};
+    var sc = s2.scenarios || {};
+    if (sc.bear || sc.base || sc.bull) {
+      return out + _buildLegacyDcfTable(sc, s2) + '</div>';
+    }
+  }
+
+  return out + '<div class="no-data">DCFデータなし</div></div>';
+}
+
+function _buildFuturePriceTable(scd) {
+  var anyScen  = scd.base || scd.bear || scd.bull || {};
+  var curPrice = anyScen.current_price;
+  var periods  = ['現在', '1年後', '3年後', '5年後'];
+
+  function fv(v) { return (v != null && v !== 0) ? '$' + Number(v).toFixed(0) : '—'; }
+  function getVal(sd, period) {
+    if (!sd) return null;
+    if (period === '現在') return sd.base_intrinsic_value || null;
+    return (sd.future_values || {})[period] || null;
+  }
+  function cellStyle(val) {
+    if (val == null || !curPrice) return '';
+    return val >= curPrice ? 'color:var(--grn);font-weight:600' : '';
+  }
+
+  var thead = '<tr><th></th>' + periods.map(function (p) {
+    return '<th style="text-align:center">' + p + '</th>';
+  }).join('') + '</tr>';
+
+  var scRows = [
+    { key: 'bear', label: '🐻 BEAR', cls: 'dcf-bear' },
+    { key: 'base', label: '📊 BASE', cls: 'dcf-base' },
+    { key: 'bull', label: '🐂 BULL', cls: 'dcf-bull' },
+  ];
+  var tbody = scRows.map(function (row) {
+    var sd = scd[row.key];
+    return '<tr class="' + row.cls + '">' +
+      '<td>' + row.label + '</td>' +
+      periods.map(function (p) {
+        var v = getVal(sd, p);
+        return '<td style="text-align:center;' + cellStyle(v) + '">' + fv(v) + '</td>';
+      }).join('') + '</tr>';
+  }).join('');
+
+  var cpRow = curPrice
+    ? '<tr style="border-top:2px solid var(--acc)">' +
+      '<td style="color:var(--acc);font-family:var(--mono);font-size:11px">現在株価</td>' +
+      '<td style="text-align:center;color:var(--acc)">' + fv(curPrice) + '</td>' +
+      '<td colspan="3" style="text-align:center;color:var(--mut);font-size:10px;font-family:var(--mono)">← 緑字 = 現在株価超え</td></tr>'
+    : '';
+
+  return (curPrice ? '<div class="muted-meta">現在株価: $' + Number(curPrice).toFixed(2) + ' / 将来理論価格</div>' : '') +
+    '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + cpRow + '</tbody></table></div>';
+}
+
+function _buildLegacyDcfTable(sc, s2) {
   var rows = [
     { key: 'bear', label: '🐻 BEAR', cls: 'dcf-bear' },
     { key: 'base', label: '📊 BASE', cls: 'dcf-base' },
     { key: 'bull', label: '🐂 BULL', cls: 'dcf-bull' },
   ];
   var cols = ['Y1成長率', 'Y2成長率', 'Y3成長率', 'Terminal利益率'];
-
-  if (scd.bear || scd.base || scd.bull) {
-    var thead = '<tr><th></th>' + cols.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>';
-    var tbody = rows.map(function (row) {
-      var sc = scd[row.key] || {};
-      return '<tr class="' + row.cls + '"><td>' + row.label + '</td>' +
-        '<td>' + pct(sc.revenue_growth_y1) + '</td>' +
-        '<td>' + pct(sc.revenue_growth_y2) + '</td>' +
-        '<td>' + pct(sc.revenue_growth_y3) + '</td>' +
-        '<td>' + pct(sc.operating_margin_terminal) + '</td>' +
-        '</tr>';
-    }).join('');
-    out += '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>';
-  } else {
-    out += '<div class="no-data">シナリオデータなし</div>';
-  }
-
-  /* KEY ASSUMPTIONS / RISK FACTORS */
+  var thead = '<tr><th></th>' + cols.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>';
+  var tbody = rows.map(function (row) {
+    var s = sc[row.key] || {};
+    return '<tr class="' + row.cls + '"><td>' + row.label + '</td>' +
+      '<td>' + pct(s.revenue_growth_y1) + '</td>' +
+      '<td>' + pct(s.revenue_growth_y2) + '</td>' +
+      '<td>' + pct(s.revenue_growth_y3) + '</td>' +
+      '<td>' + pct(s.operating_margin_terminal) + '</td></tr>';
+  }).join('');
+  var out = '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>';
   var assH  = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
   var riskH = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
   if (assH || riskH) {
@@ -633,8 +696,7 @@ function buildDcf() {
     if (riskH) out += '<div class="list-box"><div class="list-title neg">RISK FACTORS</div><ul class="blist neg">' + riskH + '</ul></div>';
     out += '</div>';
   }
-
-  return out + '</div>';
+  return out;
 }
 function pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '–'; }
 
@@ -662,17 +724,6 @@ function buildAi() {
     out += '<div class="persp-block"><div class="persp-label">' + esc(d.label) + '</div>' +
       '<div class="persp-text">' + esc(txt) + '</div></div>';
   });
-
-  /* 歴史的類比 */
-  var ha = c2.historical_analogy || {};
-  if (ha.company) {
-    out += '<div class="sec-sub" style="margin-top:10px">過去の類似企業</div>' +
-      '<div class="analogy-box"><div class="analogy-co">' + esc(ha.company) + '</div>' +
-      (ha.similarity  ? '<div class="analogy-row"><strong>類似点:</strong> ' + esc(ha.similarity)  + '</div>' : '') +
-      (ha.outcome     ? '<div class="analogy-row"><strong>その後:</strong> ' + esc(ha.outcome)     + '</div>' : '') +
-      (ha.implication ? '<div class="analogy-row"><strong>示唆:</strong> '   + esc(ha.implication) + '</div>' : '') +
-      '</div>';
-  }
 
   /* テーゼへの問いかけ */
   var tqs = c2.thesis_questions || [];
