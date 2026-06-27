@@ -230,23 +230,6 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 ---
 
 
-### [CATALYST-DATA-1] catalyst.json初回データ未投入
-**優先度:** 中
-**分類:** 運用漏れ / DISCOVER
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CATALYST-1（2026-06-25実装）後の初回データ投入が未完全。
-- 登録銘柄: 3銘柄（NVDA/IONQ/PLTR）のみ（hypecore=true 94銘柄が対象のはず）
-- 全銘柄のcatalysts配列が0件（データ未取得）
-- 原因: --allオプションなしの手動実行で3銘柄のみ処理されたと推測
-
-#### 対応方針
-以下を実行して全94銘柄のカタリストを初回投入する：
-python src/discover/catalyst.py --all
-（Grok APIコスト発生のため実行タイミングに注意）
-
----
 
 ### [RKLB-CLEANUP-1] RKLBのtickers.json残存・eps_sector空欄
 **優先度:** 中
@@ -890,7 +873,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 **データ補完（コマンド実行のみ）:**
 4. ~~SEC-CTRL-2: tailの内部統制データ8銘柄一括生成~~ ✅ 2026-06-27完了
-5. CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入
+5. ~~CATALYST-DATA-1: catalyst.py --allで全94銘柄初回投入~~ ✅ 2026-06-27完了
 
 **機能・設定修正:**
 6. ~~HYPE-FLAG-1: CSGP/ZSのcik_lookupフラグ設定~~ ✅ 2026-06-27完了

@@ -4,6 +4,16 @@
 
 ## 2026-06-26（完了）
 
+### [CATALYST-DATA-1] catalyst.json初回データ投入（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- `catalyst.py --all` で全95銘柄（hypecore=true）のカタリストを一括生成（Grok API使用）
+- 登録銘柄数: 95銘柄 / カタリスト総数: 682件
+- 上位: TSLA(9件), FLYW(9件), NVDA(8件), AAPL(8件), ALAB(8件)
+
+---
+
 ### [DISCOVER-THEMES-1] macro_themes_history.json初回生成・.gitattributes登録（2026-06-27完了）
 
 **完了日:** 2026-06-27
