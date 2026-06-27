@@ -107,6 +107,10 @@ catalyst.html・news_history.html のUIが使いづらく実用に耐えない�
 #### 対応方針
 現状レイアウトの課題を洗い出してから設計する（次セッションで詳細ヒアリング）。
 
+#### 着手状況
+- ✅ Phase1完了（2026-06-27）: ダッシュボードタブ追加（TAIL-UX-1-P1としてBACKLOG_DONE.md記録）
+- [ ] Phase2: さらなる一覧性・視認性の向上（次セッションで詳細ヒアリング）
+
 ---
 
 ### [TAIL-SEC-ITEMS-1] TANUKI TAIL SEC項目の保存拡張（Item 1/1A/3/7）
