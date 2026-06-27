@@ -76,6 +76,9 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 　　モーダル構成: coreとsatelliteで同等の6タブ（テーゼ/最新レビュー/KPIトレンド/DCFシナリオ/AI視点/内部統制）
 　　（TAIL-SAT-CORE-1 2026-06-26、旧:satelliteは戦略タブのみ）
 　　分離ページ: decision_log.html（TAIL-LAYOUT-1 2026-06-24新設）
+　　詳細ページ: detail.html（TAIL-PAGE-1 2026-06-27新設、モーダル廃止・全情報1ページ表示）
+　　内部統制データ: data/ctrl/{TICKER}/{QUARTER}.json + latest.json + index.json
+　　（TAIL-CTRL-TRANS-1 2026-06-27、期別保存・Grok日本語翻訳・履歴セレクター対応）
 　　書き込み系（ポジション登録・ジャーナル記録・KPI確定）は
 　　tail/index.html → GitHub Actions workflow_dispatch
 　　（.github/workflows/TANUKI_TAIL_Position_Write.yml → src/tail/workflow_write.py）

@@ -4,6 +4,35 @@
 
 ## 2026-06-27（完了）
 
+### [TAIL-PAGE-1] TANUKI TAIL 詳細ページ別ページ化
+**完了日:** 2026-06-27
+**分類:** 機能追加 / TANUKI TAIL
+
+#### 実施内容
+- docs/portfolio/tail/detail.html を新規作成
+- タブ廃止・全情報を縦スクロール1ページに統合
+- 構成: サマリーバー / 投資テーゼ（折りたたみ）/ 最新レビュー+KPIトレンド（左右並列）/ AI視点+DCFシナリオ（左右並列）/ 内部統制 / 過去レビュー履歴
+- 銘柄切り替えナビ（prev/next）・SHA-256認証・site-nav.js統合
+- index.htmlの「詳細」ボタンをdetail.html?ticker=XXXへのリンクに変更
+- DCF将来株価テーブル・過去レビュー前期比デルタ表示・KPI赤枠ハイライト実装
+
+---
+
+### [BUG-CTRL-EFFECTIVE-1] sec_ctrl_fetcher.py effective判定ロジック修正
+**完了日:** 2026-06-27
+**分類:** バグ修正 / TANUKI TAIL
+
+#### 原因
+_RE_EFFECTIVEの正規表現が "were effective" の直接隣接のみを想定していたため、
+"were, in design and operation, effective" のように間に語句が入るPLTR等のケースで
+effective=Noneになっていた。
+
+#### 対応
+_RE_EFFECTIVEに "were\s+.{0,60}\beffective\b" パターンを追加。
+既存9銘柄のctrlデータを再判定・更新（PLTR: None→True）。
+
+---
+
 ### [TAIL-UX-1-P1] TANUKI TAIL詳細モーダル ダッシュボードタブ追加（Phase1）
 **完了日:** 2026-06-27
 **分類:** UX改善 / TANUKI TAIL
