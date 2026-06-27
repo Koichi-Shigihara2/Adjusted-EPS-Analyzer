@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DECISION LOG — TANUKI TAIL</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="icon" href="/On-a-journey/favicon.ico">
+  <style>
+    :root {
+      --bg:#0a0d14; --sur:#111520; --sur2:#161c2d; --bdr:#1e2840;
+      --acc:#3b82f6; --grn:#10b981; --red:#f43f5e; --amb:#f59e0b;
+      --txt:#e2e8f0; --sub:#7a92b0; --mut:#64748b; --core:#f0a500;
+      --mono:'Space Mono',monospace; --sans:'DM Sans','Noto Sans JP',sans-serif;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:var(--sans);font-size:14px;min-height:100vh}
+
+    header{border-bottom:1px solid var(--bdr);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--bg);gap:12px;flex-wrap:wrap}
+    .logo{font-family:var(--mono);font-size:14px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--txt)}
+    .logo-dot{width:8px;height:8px;background:var(--core);border-radius:50%}
+    .back-link{font-family:var(--mono);font-size:11px;color:var(--mut);text-decoration:none;letter-spacing:.06em;border-bottom:1px solid transparent;transition:all .2s}
+    .back-link:hover{color:var(--acc);border-bottom-color:var(--acc)}
+
+    #auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+    .auth-box{text-align:center;padding:48px 40px;background:var(--sur);border:1px solid var(--bdr);border-radius:12px;width:340px}
+    .auth-title{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--core);letter-spacing:.1em;margin-bottom:8px}
+    .auth-sub{font-family:var(--mono);font-size:11px;color:var(--mut);margin-bottom:28px}
+    .auth-row{display:flex;gap:8px;justify-content:center}
+    .auth-input{font-family:var(--mono);font-size:13px;padding:10px 14px;background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);width:190px;border-radius:4px;outline:none}
+    .auth-input:focus{border-color:var(--acc)}
+    .auth-btn{padding:10px 18px;background:var(--core);color:#fff;border:none;cursor:pointer;font-family:var(--mono);font-size:13px;border-radius:4px;transition:opacity .2s}
+    .auth-btn:hover{opacity:.85}
+    #pw-error{color:var(--red);font-size:11px;font-family:var(--mono);margin-top:12px;min-height:16px}
+
+    .shell{max-width:900px;margin:0 auto;padding:20px 20px 60px}
+    .sec{font-family:var(--mono);font-size:11px;color:var(--sub);letter-spacing:.1em;margin:28px 0 14px;display:flex;align-items:center;gap:10px}
+    .sec::after{content:'';flex:1;height:1px;background:var(--bdr)}
+
+    .journal-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+    .journal-filter select{background:var(--sur2);border:1px solid var(--bdr);color:var(--txt);padding:5px 8px;border-radius:4px;font-size:11px;font-family:var(--mono)}
+    .journal-filter-label{font-family:var(--mono);font-size:10px;color:var(--mut)}
+
+    .journal-entry{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid rgba(30,40,64,.4)}
+    .journal-entry:last-child{border-bottom:none}
+    .journal-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+    .journal-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px}
+    .journal-ticker{font-family:var(--mono);font-weight:600;font-size:12px}
+    .journal-type{font-family:var(--mono);font-size:10px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,.06);color:var(--sub)}
+    .journal-date{font-family:var(--mono);font-size:10px;color:var(--mut)}
+    .journal-reason{font-size:12px;color:var(--txt);line-height:1.5}
+    .journal-detail{font-family:var(--mono);font-size:10px;color:var(--mut);margin-top:4px}
+    .journal-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+    .journal-tag{font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(255,255,255,.05);color:var(--mut);border:1px solid rgba(255,255,255,.08)}
+
+    .empty-msg{font-family:var(--mono);font-size:12px;color:var(--mut);padding:32px 0;text-align:center}
+    .count-badge{font-family:var(--mono);font-size:10px;color:var(--mut);margin-left:4px}
+  </style>
+</head>
+<body>
+
+<div id="auth-screen">
+  <div class="auth-box">
+    <div class="auth-title">📋 DECISION LOG</div>
+    <div class="auth-sub">このページはパスワードで保護されています</div>
+    <div class="auth-row">
+      <input type="password" id="pw-input" class="auth-input" placeholder="Password" autocomplete="current-password">
+      <button class="auth-btn" onclick="checkPassword()">Enter</button>
+    </div>
+    <div id="pw-error"></div>
+  </div>
+</div>
+
+<div id="main-content" style="display:none">
+<header>
+  <a class="logo" href="/On-a-journey/">
+    <span class="logo-dot"></span>DECISION LOG
+  </a>
+  <a class="back-link" href="index.html">← TANUKI TAIL に戻る</a>
+</header>
+
+<div class="shell">
+  <div class="sec">DECISION LOG <span id="entry-count" class="count-badge"></span></div>
+
+  <div class="journal-filter">
+    <span class="journal-filter-label">TICKER</span>
+    <select id="jnl-filter-ticker" onchange="renderJournal()">
+      <option value="">全銘柄</option>
+    </select>
+    <span class="journal-filter-label" style="margin-left:8px">TYPE</span>
+    <select id="jnl-filter-type" onchange="renderJournal()">
+      <option value="">全タイプ</option>
+      <option value="entry">🟢 entry</option>
+      <option value="exit">🔴 exit</option>
+      <option value="thesis_revision">🔵 thesis_revision</option>
+      <option value="watchlist">🟡 watchlist</option>
+      <option value="memo">⚪ memo</option>
+    </select>
+  </div>
+
+  <div id="journal-list" style="min-height:80px"></div>
+</div>
+</div>
+
+<script>
+var PW_HASH   = "1ccaba2b5d2e782f70745dc02ee88f537d51f6938bd6c22982a3d4d685be483a";
+var SESSION_KEY = "tail_auth";
+
+async function sha256(text) {
+  var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(function(b){ return b.toString(16).padStart(2,'0'); }).join('');
+}
+async function checkPassword() {
+  var pw   = document.getElementById('pw-input').value;
+  var hash = await sha256(pw);
+  if (hash === PW_HASH) {
+    sessionStorage.setItem(SESSION_KEY, '1');
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    loadJournal();
+  } else {
+    document.getElementById('pw-error').textContent = 'パスワードが違います';
+  }
+}
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('pw-input');
+  if (inp) inp.addEventListener('keydown', function(e){ if(e.key==='Enter') checkPassword(); });
+  if (sessionStorage.getItem(SESSION_KEY) === '1') {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('main-content').style.display = 'block';
+    loadJournal();
+  }
+});
+
+var journalData = [];
+
+var JOURNAL_ICONS = {
+  entry: '🟢', exit: '🔴', thesis_revision: '🔵',
+  watchlist: '🟡', memo: '⚪'
+};
+
+function esc(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function loadJournal() {
+  fetch('data/journal.json?_=' + Date.now())
+    .then(function(r){ return r.ok ? r.json() : { entries: [] }; })
+    .catch(function(){ return { entries: [] }; })
+    .then(function(data) {
+      journalData = (data.entries || []).slice().reverse();
+      renderJournal();
+      populateTickerFilter();
+    });
+}
+
+function populateTickerFilter() {
+  var sel = document.getElementById('jnl-filter-ticker');
+  if (!sel) return;
+  var tickers = Array.from(new Set(journalData.map(function(e){ return e.ticker; }))).sort();
+  sel.innerHTML = '<option value="">全銘柄</option>' +
+    tickers.map(function(t){ return '<option value="' + t + '">' + t + '</option>'; }).join('');
+}
+
+function renderJournal() {
+  var list = document.getElementById('journal-list');
+  if (!list) return;
+  var fTicker = (document.getElementById('jnl-filter-ticker') || {}).value || '';
+  var fType   = (document.getElementById('jnl-filter-type')   || {}).value || '';
+  var entries = journalData.filter(function(e) {
+    if (fTicker && e.ticker !== fTicker) return false;
+    if (fType   && e.type   !== fType)   return false;
+    return true;
+  });
+
+  var cntEl = document.getElementById('entry-count');
+  if (cntEl) cntEl.textContent = entries.length + '件';
+
+  if (!entries.length) {
+    list.innerHTML = '<div class="empty-msg">該当するログなし</div>';
+    return;
+  }
+  list.innerHTML = entries.map(function(e) {
+    var icon   = JOURNAL_ICONS[e.type] || '⚪';
+    var date   = (e.timestamp || '').slice(0, 10);
+    var detail = '';
+    if (e.price)  detail += '$' + Number(e.price).toFixed(2);
+    if (e.shares) detail += (detail ? ' × ' : '') + e.shares + '株';
+    if (e.health_score_at_action != null) detail += (detail ? ' | ' : '') + 'HS:' + e.health_score_at_action;
+    var tags = (e.tags || []).map(function(t){
+      return '<span class="journal-tag">' + esc(t) + '</span>';
+    }).join('');
+    return '<div class="journal-entry">' +
+      '<span class="journal-icon">' + icon + '</span>' +
+      '<div style="flex:1;min-width:0">' +
+        '<div class="journal-meta">' +
+          '<span class="journal-ticker">' + esc(e.ticker) + '</span>' +
+          '<span class="journal-type">'  + esc(e.type)   + '</span>' +
+          '<span class="journal-date">'  + esc(date)     + '</span>' +
+        '</div>' +
+        '<div class="journal-reason">' + esc(e.reason || '') + '</div>' +
+        (detail ? '<div class="journal-detail">' + esc(detail) + '</div>' : '') +
+        (tags   ? '<div class="journal-tags">'   + tags        + '</div>' : '') +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+</script>
+</body>
+</html>
