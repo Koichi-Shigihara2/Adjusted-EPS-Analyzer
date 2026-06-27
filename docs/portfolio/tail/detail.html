@@ -27,6 +27,24 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--bg); color: var(--txt); font-family: var(--sans); font-size: 14px; line-height: 1.6; }
 
+    /* ── Site header (site-header.js が生成) ── */
+    header {
+      border-bottom: 1px solid var(--bdr); padding: 12px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; background: var(--bg); z-index: 100; gap: 12px;
+    }
+    .site-header-inner { display: flex; align-items: center; gap: 10px; }
+    .logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--txt); }
+    .logo-img { width: 28px; height: 28px; border-radius: 50%; }
+    .logo-dot { width: 7px; height: 7px; background: var(--core); border-radius: 50%; animation: pdot 2s ease-in-out infinite; flex-shrink: 0; }
+    @keyframes pdot { 0%,100%{box-shadow:0 0 0 0 rgba(240,165,0,.4)} 50%{box-shadow:0 0 0 6px rgba(240,165,0,0)} }
+    .logo-title    { font-family: var(--mono); font-size: 13px; font-weight: 700; letter-spacing: .12em; color: var(--txt); }
+    .logo-subtitle { font-family: var(--mono); font-size: 10px; color: var(--mut); letter-spacing: .06em; }
+    .nav-links { display: flex; gap: 14px; flex-wrap: wrap; }
+    .nav-links a { font-family: var(--mono); font-size: 11px; color: var(--mut); text-decoration: none; letter-spacing: .06em; padding: 4px 0; border-bottom: 1px solid transparent; transition: all .15s; }
+    .nav-links a:hover { color: var(--acc); border-bottom-color: var(--acc); }
+    .nav-links a.active { color: var(--core); border-bottom-color: var(--core); }
+
     /* ── Auth ── */
     #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
     .auth-box { background: var(--sur); border: 1px solid var(--bdr); border-radius: 12px; padding: 48px 40px; width: 340px; text-align: center; }
@@ -39,31 +57,37 @@
     .auth-btn:hover { opacity: .85; }
     #pw-error   { color: var(--red); font-size: 11px; font-family: var(--mono); margin-top: 12px; min-height: 16px; }
 
-    /* ── Fixed header ── */
-    #det-header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-      background: var(--bg); border-bottom: 1px solid var(--bdr);
-      height: 54px; display: flex; align-items: center; justify-content: space-between;
-      padding: 0 16px; gap: 12px;
+    /* ── Sub-header ── */
+    .sub-hdr {
+      border-bottom: 1px solid var(--bdr); padding: 10px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--sur); gap: 12px; flex-wrap: wrap;
     }
-    .hdr-back { font-family: var(--mono); font-size: 11px; color: var(--sub); text-decoration: none; border: 1px solid var(--bdr); padding: 4px 10px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
-    .hdr-back:hover { color: var(--core); border-color: var(--core); }
-    #hdr-center { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; flex: 1; justify-content: center; }
-    #hdr-nav    { display: flex; gap: 6px; flex-shrink: 0; }
-    .nav-btn    { font-family: var(--mono); font-size: 11px; color: var(--sub); text-decoration: none; border: 1px solid var(--bdr); padding: 4px 10px; border-radius: 4px; white-space: nowrap; }
+    .back-link { font-family: var(--mono); font-size: 11px; color: var(--sub); text-decoration: none; border: 1px solid var(--bdr); padding: 4px 10px; border-radius: 4px; white-space: nowrap; flex-shrink: 0; }
+    .back-link:hover { color: var(--core); border-color: var(--core); }
+    #ticker-info { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-wrap: wrap; }
+    #ticker-nav  { display: flex; gap: 6px; flex-shrink: 0; }
+    .nav-btn { font-family: var(--mono); font-size: 11px; color: var(--sub); text-decoration: none; border: 1px solid var(--bdr); padding: 4px 10px; border-radius: 4px; white-space: nowrap; }
     .nav-btn:hover { color: var(--core); border-color: var(--core); }
 
-    /* ── Main ── */
-    #det-main { max-width: 860px; margin: 0 auto; padding: 70px 16px 64px; }
+    /* ── Layout ── */
+    .shell { max-width: 940px; margin: 0 auto; padding: 24px 16px 64px; }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 660px) { .two-col { grid-template-columns: 1fr; } }
+    .col-card { background: var(--sur); border-radius: 8px; padding: 16px; min-width: 0; }
 
-    /* ── Sections ── */
-    .section { margin-bottom: 32px; }
-    .section-title    { font-size: 18px; font-weight: 700; color: var(--txt); margin-bottom: 4px; }
-    .section-subtitle { font-size: 12px; color: var(--sub); margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid var(--bdr); }
+    /* ── Section title ── */
+    .sec-hd {
+      font-family: var(--mono); font-size: 11px; text-transform: uppercase;
+      color: var(--sub); letter-spacing: .1em; margin: 28px 0 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec-hd::after { content: ''; flex: 1; height: 1px; background: var(--bdr); }
+    .sec-hd:first-child { margin-top: 0; }
 
     /* ── Badges ── */
     .tag { display: inline-block; font-family: var(--mono); font-size: 10px; padding: 2px 7px; border-radius: 2px; flex-shrink: 0; }
-    .tag.core { background: rgba(240,165,0,.1); color: var(--core); border: 1px solid rgba(240,165,0,.2); }
+    .tag.core { background: rgba(240,165,0,.1);  color: var(--core); border: 1px solid rgba(240,165,0,.2); }
     .tag.sat  { background: rgba(74,158,255,.1); color: var(--sat);  border: 1px solid rgba(74,158,255,.2); }
     .rec-badge { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 3px; letter-spacing: .04em; flex-shrink: 0; }
     .rec-continue { background: rgba(16,185,129,.15); color: var(--grn); border: 1px solid rgba(16,185,129,.3); }
@@ -72,120 +96,126 @@
     .rec-exit     { background: rgba(244,63,94,.22);   color: var(--red); border: 2px solid rgba(244,63,94,.5); }
 
     /* ── Section 1: サマリーバー ── */
-    .summary-bar { display: flex; border: 1px solid var(--bdr); border-radius: 8px; overflow: hidden; }
-    .sum-item { flex: 1; padding: 14px 16px; border-right: 1px solid var(--bdr); min-width: 0; }
+    .sum-bar { display: flex; border: 1px solid var(--bdr); border-radius: 8px; overflow: hidden; }
+    .sum-item { flex: 1; padding: 12px 14px; border-right: 1px solid var(--bdr); min-width: 0; }
     .sum-item:last-child { border-right: none; }
     .sum-label { font-family: var(--mono); font-size: 9px; color: var(--mut); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 4px; }
-    .sum-value { font-family: var(--mono); font-size: 18px; font-weight: 700; line-height: 1.2; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    @media (max-width: 560px) {
-      .summary-bar { flex-direction: column; }
+    .sum-value { font-family: var(--mono); font-size: 17px; font-weight: 700; line-height: 1.2; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    @media (max-width: 540px) {
+      .sum-bar { flex-direction: column; }
       .sum-item { border-right: none; border-bottom: 1px solid var(--bdr); }
       .sum-item:last-child { border-bottom: none; }
     }
 
-    /* ── Section 2: テーゼ ── */
-    .thesis-body { font-size: 14px; line-height: 1.8; color: var(--txt); white-space: pre-wrap; word-break: break-word; padding: 16px; background: var(--sur2); border-radius: 8px; border-left: 3px solid var(--core); }
-    .thesis-body.sat { border-left-color: var(--sat); }
-    .sub-label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin: 16px 0 6px; }
-    .sub-label:first-child { margin-top: 0; }
-    .sub-block { font-size: 13px; line-height: 1.7; color: var(--sub); white-space: pre-wrap; padding: 10px 14px; background: var(--sur2); border-radius: 6px; }
-    .meta-row  { display: flex; gap: 24px; font-family: var(--mono); font-size: 11px; color: var(--mut); margin-top: 14px; flex-wrap: wrap; }
+    /* ── Section 2: テーゼ（折りたたみ） ── */
+    .thesis-wrap details { background: var(--sur); border: 1px solid var(--bdr); border-radius: 8px; }
+    .thesis-wrap summary {
+      padding: 12px 16px; cursor: pointer; font-family: var(--mono); font-size: 12px;
+      color: var(--sub); letter-spacing: .06em; list-style: none; user-select: none;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .thesis-wrap summary::-webkit-details-marker { display: none; }
+    .thesis-wrap summary::before { content: '▶'; font-size: 10px; }
+    .thesis-wrap details[open] summary::before { content: '▼'; }
+    .thesis-wrap details[open] summary { border-bottom: 1px solid var(--bdr); }
+    .thesis-inner { padding: 16px; }
+    .thesis-text { font-size: 14px; line-height: 1.8; color: var(--txt); white-space: pre-wrap; word-break: break-word; }
+    .sub-label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin: 14px 0 6px; }
+    .sub-block { font-size: 13px; line-height: 1.7; color: var(--sub); white-space: pre-wrap; padding: 10px 14px; background: var(--sur2); border-radius: 6px; border-left: 2px solid var(--bdr); }
+    .meta-row  { display: flex; gap: 20px; font-family: var(--mono); font-size: 11px; color: var(--mut); margin-top: 12px; flex-wrap: wrap; }
 
-    /* ── Section 3: レビュー（60/40） ── */
-    .review-layout { display: grid; grid-template-columns: 60% 40%; gap: 20px; }
-    @media (max-width: 660px) { .review-layout { grid-template-columns: 1fr; } }
-    .gauge-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
-    .gauge-num { font-family: var(--mono); font-size: 32px; font-weight: 700; line-height: 1; }
-    .gauge-bar { flex: 1; height: 8px; background: var(--sur2); border-radius: 4px; overflow: hidden; }
-    .gauge-fill { height: 100%; border-radius: 4px; }
-    .rv-summary { font-size: 14px; line-height: 1.8; margin-bottom: 14px; }
-    .bias-box   { background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.3); border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; color: var(--red); line-height: 1.6; }
-    .bias-label { display: block; font-family: var(--mono); font-size: 10px; margin-bottom: 4px; }
-    .two-col    { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
-    @media (max-width: 540px) { .two-col { grid-template-columns: 1fr; } }
-    .list-box   { background: var(--sur2); border-radius: 6px; padding: 12px; }
-    .list-title { font-family: var(--mono); font-size: 10px; letter-spacing: .07em; margin-bottom: 8px; }
+    /* ── Section 3: KPIトレンド ── */
+    .kpi-block { margin-bottom: 16px; }
+    .kpi-name  { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-bottom: 4px; }
+
+    /* ── Section 3: 最新レビュー ── */
+    .gauge-row  { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .gauge-num  { font-family: var(--mono); font-size: 28px; font-weight: 700; line-height: 1; flex-shrink: 0; }
+    .gauge-bar  { flex: 1; height: 6px; background: var(--sur2); border-radius: 3px; overflow: hidden; }
+    .gauge-fill { height: 100%; border-radius: 3px; }
+    .rv-summary { font-size: 13px; line-height: 1.7; margin-bottom: 10px; }
+    .bias-box   { background: rgba(244,63,94,.07); border: 1px solid rgba(244,63,94,.3); border-radius: 4px; padding: 8px 12px; margin-bottom: 10px; font-size: 12px; color: var(--red); line-height: 1.6; }
+    .bias-lbl   { display: block; font-family: var(--mono); font-size: 9px; margin-bottom: 2px; letter-spacing: .06em; }
+    .inner-two  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+    @media (max-width: 480px) { .inner-two { grid-template-columns: 1fr; } }
+    .list-box   { background: var(--sur2); border-radius: 6px; padding: 10px; }
+    .list-title { font-family: var(--mono); font-size: 9px; letter-spacing: .07em; margin-bottom: 6px; }
     .list-title.pos { color: var(--grn); } .list-title.neg { color: var(--amb); }
     .blist      { list-style: none; }
-    .blist li   { font-size: 13px; line-height: 1.6; padding: 4px 0 4px 14px; position: relative; border-bottom: 1px solid rgba(30,40,64,.4); }
+    .blist li   { font-size: 12px; line-height: 1.6; padding: 3px 0 3px 12px; position: relative; border-bottom: 1px solid rgba(30,40,64,.4); }
     .blist li:last-child { border-bottom: none; }
     .blist li::before { content: '›'; position: absolute; left: 0; }
     .blist.pos li::before { color: var(--grn); } .blist.neg li::before { color: var(--amb); }
-    .exit-row   { display: flex; align-items: flex-start; gap: 10px; padding: 10px 14px; background: var(--sur2); border-radius: 6px; margin-bottom: 14px; }
-    .exit-dist  { font-family: var(--mono); font-size: 11px; padding: 3px 9px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+    .exit-row   { display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; background: var(--sur2); border-radius: 6px; margin-bottom: 10px; }
+    .exit-dist  { font-family: var(--mono); font-size: 10px; padding: 2px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
     .ed-far     { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.25); }
     .ed-close   { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.25); }
     .ed-watch   { background: rgba(245,158,11,.12); color: var(--amb); border: 1px solid rgba(245,158,11,.25); }
-    .nkpi-wrap  { display: flex; flex-wrap: wrap; gap: 6px; }
-    .nkpi-tag   { font-family: var(--mono); font-size: 11px; padding: 3px 9px; background: rgba(59,130,246,.1); color: var(--acc); border: 1px solid rgba(59,130,246,.25); border-radius: 2px; }
+    .nkpi-wrap  { display: flex; flex-wrap: wrap; gap: 5px; }
+    .nkpi-tag   { font-family: var(--mono); font-size: 10px; padding: 2px 8px; background: rgba(59,130,246,.1); color: var(--acc); border: 1px solid rgba(59,130,246,.25); border-radius: 2px; }
 
-    /* ── Section 4: KPIトレンド（2列グリッド） ── */
-    .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-    @media (max-width: 640px) { .kpi-grid { grid-template-columns: 1fr; } }
-    .kpi-block { margin-bottom: 4px; }
-    .kpi-highlighted { border: 2px solid var(--red); border-radius: 6px; padding: 4px; }
-    .kpi-name  { font-family: var(--mono); font-size: 12px; color: var(--sub); margin-bottom: 4px; }
-
-    /* ── Section 5: DCF ── */
-    .dcf-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-    .dcf-tbl th { background: var(--sur2); padding: 8px 12px; font-family: var(--mono); font-size: 10px; letter-spacing: .06em; border-bottom: 1px solid var(--bdr); text-align: center; color: var(--sub); }
+    /* ── Section 4: DCF ── */
+    .dcf-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .dcf-tbl th { background: var(--sur2); padding: 7px 10px; font-family: var(--mono); font-size: 9px; letter-spacing: .06em; border-bottom: 1px solid var(--bdr); text-align: center; color: var(--sub); white-space: nowrap; }
     .dcf-tbl th:first-child { text-align: left; }
-    .dcf-tbl td { padding: 8px 12px; border-bottom: 1px solid rgba(30,40,64,.4); }
+    .dcf-tbl td { padding: 7px 10px; border-bottom: 1px solid rgba(30,40,64,.4); }
     .dcf-tbl td:first-child { font-family: var(--mono); font-size: 11px; }
     .dcf-tbl td:not(:first-child) { text-align: center; font-family: var(--mono); }
     .dcf-tbl tr:last-child td { border-bottom: none; }
-    .dcf-cur td { color: var(--core) !important; font-weight: 700 !important; border-top: 2px solid rgba(240,165,0,.4) !important; }
-    .dcf-bear { color: var(--red); } .dcf-base { color: var(--acc); } .dcf-bull { color: var(--grn); }
-    .over-price { color: var(--grn) !important; font-weight: 700 !important; }
-    .tbl-wrap  { overflow-x: auto; }
-    .assm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
-    @media (max-width: 540px) { .assm-grid { grid-template-columns: 1fr; } }
+    .dcf-bear td { color: var(--red); }
+    .dcf-base td { color: var(--acc); }
+    .dcf-bull td { color: var(--grn); }
+    .tbl-wrap { overflow-x: auto; }
+    .dcf-rationale { font-size: 12px; line-height: 1.6; color: var(--sub); padding: 8px 10px; background: var(--sur2); border-radius: 4px; margin-top: 6px; }
 
-    /* ── Section 6: AI視点 ── */
-    .persp-block { padding: 12px 14px; background: var(--sur2); border-radius: 6px; margin-bottom: 10px; }
-    .persp-label { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 4px; }
-    .persp-text  { font-size: 13px; line-height: 1.7; }
-    .analogy-box { border: 1px solid rgba(59,130,246,.3); border-radius: 6px; padding: 14px; margin-bottom: 14px; background: rgba(59,130,246,.04); }
-    .analogy-co  { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--acc); margin-bottom: 8px; }
-    .analogy-row { font-size: 13px; line-height: 1.6; color: var(--sub); margin-bottom: 4px; }
+    /* ── Section 4: AI視点 ── */
+    .persp-block { padding: 10px 12px; background: var(--sur2); border-radius: 6px; margin-bottom: 8px; }
+    .persp-label { font-family: var(--mono); font-size: 9px; color: var(--sub); letter-spacing: .07em; margin-bottom: 3px; }
+    .persp-text  { font-size: 12px; line-height: 1.6; }
+    .analogy-box { border: 1px solid rgba(59,130,246,.3); border-radius: 6px; padding: 12px; margin-bottom: 10px; background: rgba(59,130,246,.04); }
+    .analogy-co  { font-family: var(--mono); font-size: 13px; font-weight: 700; color: var(--acc); margin-bottom: 6px; }
+    .analogy-row { font-size: 12px; line-height: 1.6; color: var(--sub); margin-bottom: 3px; }
     .analogy-row strong { color: var(--txt); }
     .tq-list     { list-style: none; }
-    .tq-list li  { font-size: 13px; line-height: 1.6; padding: 6px 0 6px 16px; position: relative; border-bottom: 1px solid rgba(30,40,64,.4); color: var(--amb); }
+    .tq-list li  { font-size: 12px; line-height: 1.6; padding: 5px 0 5px 14px; position: relative; border-bottom: 1px solid rgba(30,40,64,.4); color: var(--acc); }
     .tq-list li:last-child { border-bottom: none; }
-    .tq-list li::before { content: '?'; position: absolute; left: 0; font-family: var(--mono); color: var(--amb); }
-    .focus-wrap  { display: flex; flex-wrap: wrap; gap: 6px; }
-    .focus-tag   { font-family: var(--mono); font-size: 11px; padding: 3px 9px; background: rgba(240,165,0,.1); color: var(--core); border: 1px solid rgba(240,165,0,.2); border-radius: 2px; }
+    .tq-list li::before { content: '?'; position: absolute; left: 0; font-family: var(--mono); }
+    .focus-wrap  { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .focus-tag   { font-family: var(--mono); font-size: 10px; padding: 2px 8px; background: rgba(240,165,0,.1); color: var(--core); border: 1px solid rgba(240,165,0,.2); border-radius: 2px; }
 
-    /* ── Section 7: 内部統制 ── */
-    .ctrl-badge   { display: inline-block; font-size: 13px; font-weight: 700; padding: 5px 14px; border-radius: 4px; margin-bottom: 10px; font-family: var(--mono); }
-    .ctrl-ok      { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.3); }
-    .ctrl-ng      { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.3); }
-    .ctrl-unk     { background: rgba(100,116,139,.1); color: var(--mut); border: 1px solid var(--bdr); }
-    .ctrl-excerpt { font-size: 12px; line-height: 1.8; white-space: pre-wrap; padding: 14px; background: var(--sur2); border-radius: 6px; color: var(--txt); max-height: 420px; overflow-y: auto; }
-    .ctrl-en      { font-family: var(--mono); font-size: 11px; color: var(--sub); }
+    /* ── Section 5: 内部統制 ── */
+    .ctrl-badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 4px; margin-bottom: 8px; font-family: var(--mono); }
+    .ctrl-ok    { background: rgba(16,185,129,.12); color: var(--grn); border: 1px solid rgba(16,185,129,.3); }
+    .ctrl-ng    { background: rgba(244,63,94,.12);  color: var(--red); border: 1px solid rgba(244,63,94,.3); }
+    .ctrl-unk   { background: rgba(100,116,139,.1); color: var(--mut); border: 1px solid var(--bdr); }
+    .ctrl-excerpt { font-size: 12px; line-height: 1.8; white-space: pre-wrap; padding: 12px; background: var(--sur2); border-radius: 6px; color: var(--txt); max-height: 200px; overflow-y: auto; }
+    .ctrl-en    { font-family: var(--mono); font-size: 10px; color: var(--sub); }
     details > summary { cursor: pointer; font-family: var(--mono); font-size: 10px; color: var(--sub); padding: 6px 0; list-style: none; user-select: none; }
     details > summary::-webkit-details-marker { display: none; }
-    details > summary::before { content: '▶ '; }
+    details > summary::before { content: '▶ '; font-size: 9px; }
     details[open] > summary::before { content: '▼ '; }
+    .thesis-wrap details > summary::before { content: ''; } /* thesis uses its own style */
 
-    /* ── Section 8: 履歴 ── */
-    .hist-row { display: flex; gap: 12px; align-items: flex-start; padding: 12px 0; border-bottom: 1px solid rgba(30,40,64,.4); }
+    /* ── Section 6: 履歴 ── */
+    .hist-row  { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid rgba(30,40,64,.4); }
     .hist-row:last-child { border-bottom: none; }
-    .hist-q   { font-family: var(--mono); font-size: 12px; font-weight: 700; width: 76px; flex-shrink: 0; padding-top: 2px; }
-    .hist-sc  { font-family: var(--mono); font-size: 15px; font-weight: 700; flex-shrink: 0; }
-    .hist-sum { font-size: 12px; line-height: 1.5; color: var(--sub); flex: 1; min-width: 0; }
-    .hist-delta { display: inline-block; font-family: var(--mono); font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 3px; margin-left: 4px; vertical-align: middle; }
+    .hist-q    { font-family: var(--mono); font-size: 11px; font-weight: 700; width: 72px; flex-shrink: 0; padding-top: 2px; color: var(--txt); }
+    .hist-sc   { font-family: var(--mono); font-size: 14px; font-weight: 700; flex-shrink: 0; }
+    .hist-sum  { font-size: 12px; line-height: 1.5; color: var(--sub); flex: 1; min-width: 0; }
+    .hist-delta { display: inline-block; font-family: var(--mono); font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 3px; margin-left: 3px; vertical-align: middle; }
     .delta-up   { color: var(--grn); background: rgba(16,185,129,.1); }
     .delta-dn   { color: var(--red); background: rgba(244,63,94,.1); }
     .delta-zero { color: var(--mut); background: rgba(100,116,139,.1); }
 
     /* Misc */
-    .no-data  { font-family: var(--mono); font-size: 12px; color: var(--mut); padding: 24px; text-align: center; background: var(--sur2); border-radius: 6px; }
-    .muted-meta { font-family: var(--mono); font-size: 11px; color: var(--mut); margin-bottom: 14px; }
-    .sec-sub  { font-family: var(--mono); font-size: 10px; color: var(--sub); letter-spacing: .07em; margin-bottom: 8px; }
+    .no-data   { font-family: var(--mono); font-size: 12px; color: var(--mut); padding: 20px; text-align: center; background: var(--sur2); border-radius: 6px; }
+    .muted-meta { font-family: var(--mono); font-size: 10px; color: var(--mut); margin-bottom: 10px; }
+    .sec-sub   { font-family: var(--mono); font-size: 9px; color: var(--sub); letter-spacing: .07em; margin-bottom: 6px; text-transform: uppercase; }
+    .assm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+    @media (max-width: 480px) { .assm-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
-<body>
+<body data-tool="tail">
 
 <!-- 認証画面 -->
 <div id="auth-screen">
@@ -200,21 +230,31 @@
   </div>
 </div>
 
-<!-- 固定ヘッダー -->
-<div id="det-header" style="display:none">
-  <a href="index.html" class="hdr-back">← TAIL一覧</a>
-  <div id="hdr-center"></div>
-  <div id="hdr-nav"></div>
+<!-- アプリシェル（認証後に表示） -->
+<div id="app-shell" style="display:none">
+  <header>
+    <a class="logo"></a>
+    <nav class="nav-links"></nav>
+  </header>
+
+  <div class="sub-hdr">
+    <a href="index.html" class="back-link">← TAIL一覧</a>
+    <div id="ticker-info"></div>
+    <div id="ticker-nav"></div>
+  </div>
+
+  <main>
+    <div class="shell" id="det-main">
+      <div class="no-data">読込中...</div>
+    </div>
+  </main>
 </div>
 
-<!-- スクロールコンテンツ -->
-<div id="det-main" style="display:none">
-  <div class="no-data">読込中...</div>
-</div>
-
+<script src="../../common/site-header.js"></script>
+<script src="../../common/site-nav.js"></script>
 <script>
 /* ─── 認証 ─── */
-var PW_HASH    = '1ccaba2b5d2e782f70745dc02ee88f537d51f6938bd6c22982a3d4d685be483a';
+var PW_HASH     = '1ccaba2b5d2e782f70745dc02ee88f537d51f6938bd6c22982a3d4d685be483a';
 var SESSION_KEY = 'tail_auth';
 
 async function sha256(t) {
@@ -232,8 +272,7 @@ async function checkPassword() {
 }
 function boot() {
   document.getElementById('auth-screen').style.display = 'none';
-  document.getElementById('det-header').style.display  = 'flex';
-  document.getElementById('det-main').style.display    = 'block';
+  document.getElementById('app-shell').style.display   = 'block';
   loadAll();
 }
 document.addEventListener('DOMContentLoaded', function () {
@@ -245,74 +284,26 @@ document.addEventListener('DOMContentLoaded', function () {
 /* ─── State ─── */
 var ticker = new URLSearchParams(location.search).get('ticker') || '';
 var S = {
-  position:  null,
-  reviews:   {},
-  kpi:       null,
-  ctrl:      null,
-  scenarios: {},
-  val:       null,
-  allPos:    [],
+  thesis:  null,   /* positions/{ticker}_thesis.json */
+  reviews: {},     /* { quarter: reviewJson } */
+  kpi:     null,   /* kpi/{ticker}_layer2.json */
+  ctrl:    null,   /* ctrl/{ticker}/latest.json */
+  val:     null,   /* value-monitor/tanuki_valuation/data/{ticker}/latest.json */
+  allPos:  [],     /* ナビ用全ポジション（CORE→SAT順） */
 };
-var globalAllQs = [];
-
-/* ─── 四半期ユーティリティ ─── */
-function quarterToNum(q) {
-  var m = q.match(/(\d{4})Q(\d)/);
-  return m ? parseInt(m[1]) * 10 + parseInt(m[2]) : 0;
-}
-
-function computeGlobalQRange() {
-  var qSet = {};
-  if (S.kpi) {
-    var kpis = S.kpi.kpis || {};
-    Object.keys(kpis).forEach(function (k) {
-      (kpis[k].data || []).forEach(function (d) { if (d.quarter) qSet[d.quarter] = true; });
-    });
-  }
-  Object.keys(S.reviews).forEach(function (q) { qSet[q] = true; });
-  globalAllQs = Object.keys(qSet).sort(function (a, b) { return quarterToNum(a) - quarterToNum(b); });
-}
-
-function sectionHead(title, sub) {
-  return '<div class="section-title">' + esc(title) + '</div>' +
-    '<div class="section-subtitle">' + esc(sub || '') + '</div>';
-}
-
-function isConcernKpi(name, concerns) {
-  if (!concerns || !concerns.length) return false;
-  var nameWords = name.toLowerCase().split(/[\s_\-\/]+/).filter(function (w) { return w.length > 1; });
-  if (!nameWords.length) return false;
-  return concerns.some(function (c) {
-    var cl = c.toLowerCase();
-    return nameWords.some(function (nw) { return cl.indexOf(nw) !== -1; });
-  });
-}
 
 /* ─── 全データ一括取得 ─── */
 function loadAll() {
   if (!ticker) { render(); return; }
   document.title = 'TANUKI TAIL — ' + ticker;
 
-  var allPosP = fetch('data/positions_index.json?_=' + Date.now())
-    .then(function (r) { return r.ok ? r.json() : { positions: [] }; })
-    .catch(function () { return { positions: [] }; })
-    .then(function (idx) {
-      return Promise.all((idx.positions || []).map(function (fname) {
-        return fetch('data/positions/' + fname + '?_=' + Date.now())
-          .then(function (r) { return r.ok ? r.json() : null; })
-          .catch(function () { return null; });
-      }));
-    })
-    .then(function (items) {
-      var all    = items.filter(Boolean);
-      S.position = all.find(function (p) { return p.ticker === ticker; }) || null;
-      S.allPos   = all.filter(function (p) { return p.status !== 'archived'; });
-      S.allPos.sort(function (a, b) {
-        if (a.type !== b.type) return a.type === 'core' ? -1 : 1;
-        return (a.ticker || '').localeCompare(b.ticker || '');
-      });
-    });
+  /* テーゼ */
+  var thP = fetch('data/positions/' + ticker + '_thesis.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .catch(function () { return null; })
+    .then(function (d) { S.thesis = d; });
 
+  /* レビュー一覧 → 個別ファイル */
   var rvP = fetch('data/review_queue.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : { queue: [] }; })
     .catch(function () { return { queue: [] }; })
@@ -328,23 +319,19 @@ function loadAll() {
       }));
     });
 
+  /* KPI layer2 */
   var kpiP = fetch('data/kpi/' + ticker + '_layer2.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : null; })
     .catch(function () { return null; })
     .then(function (d) { S.kpi = d; });
 
+  /* 内部統制 */
   var ctrlP = fetch('data/ctrl/' + ticker + '/latest.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : null; })
     .catch(function () { return null; })
     .then(function (d) { S.ctrl = d; });
 
-  var scP = Promise.all(['bear', 'base', 'bull'].map(function (sc) {
-    return fetch('../scenario/' + ticker + '/' + sc + '.json?_=' + Date.now())
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .catch(function () { return null; })
-      .then(function (d) { if (d) S.scenarios[sc] = d; });
-  }));
-
+  /* バリュエーション（任意） */
   var valP = fetch('../../value-monitor/tanuki_valuation/data/' + ticker + '/latest.json?_=' + Date.now())
     .then(function (r) { return r.ok ? r.json() : null; })
     .catch(function () { return null; })
@@ -358,126 +345,176 @@ function loadAll() {
       };
     });
 
-  Promise.all([allPosP, rvP, kpiP, ctrlP, scP, valP]).then(render);
+  /* 銘柄ナビ */
+  var navP = fetch('data/positions_index.json?_=' + Date.now())
+    .then(function (r) { return r.ok ? r.json() : { positions: [] }; })
+    .catch(function () { return { positions: [] }; })
+    .then(function (idx) {
+      return Promise.all((idx.positions || []).map(function (fname) {
+        return fetch('data/positions/' + fname + '?_=' + Date.now())
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .catch(function () { return null; });
+      }));
+    })
+    .then(function (items) {
+      S.allPos = items.filter(Boolean).filter(function (p) { return p.status !== 'archived'; });
+      S.allPos.sort(function (a, b) {
+        if (a.type !== b.type) return a.type === 'core' ? -1 : 1;
+        return (a.ticker || '').localeCompare(b.ticker || '');
+      });
+    });
+
+  Promise.all([thP, rvP, kpiP, ctrlP, valP, navP]).then(render);
 }
 
 /* ─── 一括描画 ─── */
 function render() {
-  computeGlobalQRange();
-  renderHeader();
+  renderSubHeader();
   var parts = [
-    buildSummaryBar(),  /* 1: サマリーバー */
-    buildThesis(),      /* 2: 投資テーゼ */
-    buildReview(),      /* 3: 最新レビュー60% + スコア推移40% */
-    buildKpi(),         /* 4: KPIトレンド 2列グリッド */
-    buildDcf(),         /* 5: DCFシナリオ（横棒+テーブル） */
-    buildAi(),          /* 6: AI視点 */
-    buildCtrl(),        /* 7: 内部統制 */
-    buildHistory(),     /* 8: 過去レビュー履歴（デルタ付） */
+    buildSummaryBar(),    /* セクション1: サマリーバー */
+    buildThesis(),        /* セクション2: 投資テーゼ（折りたたみ） */
+    '<div class="two-col">' + buildKpi() + buildReview() + '</div>', /* セクション3 */
+    '<div class="two-col">' + buildDcf() + buildAi()    + '</div>', /* セクション4 */
+    buildCtrl(),          /* セクション5: 内部統制 */
+    buildHistory(),       /* セクション6: 過去レビュー履歴 */
   ];
   document.getElementById('det-main').innerHTML = parts.join('');
 }
 
-/* ─── 固定ヘッダー描画 ─── */
-function renderHeader() {
-  var p      = S.position;
+/* ─── サブヘッダー ─── */
+function renderSubHeader() {
+  var th     = S.thesis;
+  var isCore = th && th.type === 'core';
+  var tc     = isCore ? 'var(--core)' : 'var(--sat)';
   var qs     = Object.keys(S.reviews).sort().reverse();
   var s1     = qs.length ? (S.reviews[qs[0]].stage1 || {}) : {};
   var score  = s1.health_score;
   var rec    = s1.recommendation || '';
-  var isCore = p && p.type === 'core';
-  var tc     = isCore ? 'var(--core)' : 'var(--sat)';
 
   var scoreHtml = score != null
-    ? '<span style="font-family:var(--mono);font-size:15px;font-weight:700;color:' + scoreColor(score) + '">' + score + '</span>' +
+    ? '<span style="font-family:var(--mono);font-size:14px;font-weight:700;color:' + scoreColor(score) + '">' + score + '</span>' +
       (rec ? ' <span class="rec-badge rec-' + rec.toLowerCase() + '">' + esc(rec) + '</span>' : '')
     : '';
 
-  document.getElementById('hdr-center').innerHTML =
-    '<span style="font-family:var(--mono);font-size:18px;font-weight:700;color:' + tc + ';white-space:nowrap">' + esc(ticker || '?') + '</span>' +
-    (p ? ' <span class="tag ' + (isCore ? 'core' : 'sat') + '">' + (isCore ? 'CORE' : 'SAT') + '</span>' : '') +
+  document.getElementById('ticker-info').innerHTML =
+    '<span style="font-family:var(--mono);font-size:16px;font-weight:700;color:' + tc + '">' + esc(ticker || '?') + '</span>' +
+    (th ? ' <span class="tag ' + (isCore ? 'core' : 'sat') + '">' + (isCore ? 'CORE' : 'SAT') + '</span>' : '') +
     (scoreHtml ? ' ' + scoreHtml : '');
 
   var all  = S.allPos;
   var idx  = all.findIndex(function (x) { return x.ticker === ticker; });
   var prev = idx > 0 ? all[idx - 1] : null;
   var next = (idx >= 0 && idx < all.length - 1) ? all[idx + 1] : null;
-  document.getElementById('hdr-nav').innerHTML =
+  document.getElementById('ticker-nav').innerHTML =
     (prev ? '<a href="detail.html?ticker=' + prev.ticker + '" class="nav-btn">← ' + prev.ticker + '</a>' : '') +
     (next ? '<a href="detail.html?ticker=' + next.ticker + '" class="nav-btn">' + next.ticker + ' →</a>' : '');
 }
 
-/* ═══════════════════════════════════
+/* ══════════════════════════════════
    セクション1: サマリーバー
-═══════════════════════════════════ */
+══════════════════════════════════ */
 function buildSummaryBar() {
-  var v   = S.val;
-  var dev = v ? v.upside_percent  : null;
-  var iv  = v ? v.intrinsic_value : null;
-  var cp  = v ? v.current_price   : null;
-  var qs  = Object.keys(S.reviews).sort().reverse();
-  var s1  = qs.length ? (S.reviews[qs[0]].stage1 || {}) : {};
-  var score = s1.health_score;
-  var rec   = s1.recommendation || '';
-  var devC  = dev != null ? (dev >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--mut)';
+  var v    = S.val;
+  var dev  = v ? v.upside_percent  : null;
+  var iv   = v ? v.intrinsic_value : null;
+  var cp   = v ? v.current_price   : null;
+  var qs   = Object.keys(S.reviews).sort().reverse();
+  var s1   = qs.length ? (S.reviews[qs[0]].stage1 || {}) : {};
+  var sc   = s1.health_score;
+  var rec  = s1.recommendation || '';
+  var devC = dev != null ? (dev >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--mut)';
 
-  return '<div class="section">' +
-    '<div class="summary-bar">' +
-    si('乖離率',
+  return '<div class="sec-hd">サマリー</div>' +
+    '<div class="sum-bar">' +
+    sumItem('乖離率',
       dev != null ? '<span style="color:' + devC + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>'
                   : '<span style="color:var(--mut)">–</span>') +
-    si('理論株価 IV',
-      iv  != null ? '$' + iv.toFixed(2) : '<span style="color:var(--mut)">–</span>') +
-    si('現在株価',
-      cp  != null ? '$' + cp.toFixed(2) : '<span style="color:var(--mut)">–</span>') +
-    si('スコア / 判定',
-      score != null
-        ? '<span style="color:' + scoreColor(score) + '">' + score + '</span>' +
-          (rec ? ' <span class="rec-badge rec-' + rec.toLowerCase() + '" style="font-size:11px">' + esc(rec) + '</span>' : '')
-        : '<span style="color:var(--mut)">–</span>'
-    ) +
-    '</div></div>';
+    sumItem('理論株価 IV',
+      iv  != null ? '$' + iv.toFixed(2)  : '<span style="color:var(--mut)">–</span>') +
+    sumItem('現在株価',
+      cp  != null ? '$' + cp.toFixed(2)  : '<span style="color:var(--mut)">–</span>') +
+    sumItem('スコア / 判定',
+      sc != null
+        ? '<span style="color:' + scoreColor(sc) + '">' + sc + '</span>' +
+          (rec ? ' <span class="rec-badge rec-' + rec.toLowerCase() + '" style="font-size:10px">' + esc(rec) + '</span>' : '')
+        : '<span style="color:var(--mut)">–</span>') +
+    '</div>';
 }
-function si(label, valueHtml) {
-  return '<div class="sum-item"><div class="sum-label">' + esc(label) + '</div><div class="sum-value">' + valueHtml + '</div></div>';
+function sumItem(label, html) {
+  return '<div class="sum-item"><div class="sum-label">' + esc(label) + '</div><div class="sum-value">' + html + '</div></div>';
 }
 
-/* ═══════════════════════════════════
-   セクション2: 投資テーゼ
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション2: 投資テーゼ（デフォルト閉）
+══════════════════════════════════ */
 function buildThesis() {
-  var p = S.position;
-  if (!p) return '';
-  var isCore = p.type === 'core';
-  var ep     = p.entry_price != null ? '$' + Number(p.entry_price).toFixed(2) : '–';
-  var out    = '<div class="section">' + sectionHead('投資テーゼ', isCore ? 'CORE THESIS' : 'SAT STRATEGY');
+  var th = S.thesis;
+  var out = '<div class="sec-hd">投資テーゼ</div><div class="thesis-wrap">';
+  if (!th) return out + '<div class="no-data">テーゼデータなし</div></div>';
+
+  var isCore = th.type === 'core';
+  var ep     = th.entry_price != null ? '$' + Number(th.entry_price).toFixed(2) : '–';
+
+  out += '<details>'; /* デフォルト閉 */
+  out += '<summary>' + esc(ticker) + ' — ' + (isCore ? 'CORE THESIS' : 'SAT STRATEGY') +
+    '（クリックで展開）</summary>';
+  out += '<div class="thesis-inner">';
 
   if (isCore) {
-    out += '<div class="sub-label">テーゼ</div>' +
-      '<div class="thesis-body">' + esc(p.thesis || '–') + '</div>';
-    if (p.exit_guide)
-      out += '<div class="sub-label">EXIT GUIDE</div><div class="sub-block">' + esc(p.exit_guide) + '</div>';
-    if (p.entry_story)
-      out += '<div class="sub-label">ENTRY STORY</div><div class="sub-block">' + esc(p.entry_story) + '</div>';
+    out += '<div class="thesis-text">' + esc(th.thesis || '–') + '</div>';
+    if (th.exit_guide)
+      out += '<div class="sub-label">EXIT GUIDE</div><div class="sub-block">' + esc(th.exit_guide) + '</div>';
+    if (th.entry_story)
+      out += '<div class="sub-label">ENTRY STORY</div><div class="sub-block">' + esc(th.entry_story) + '</div>';
   } else {
-    out += '<div class="sub-label">STRATEGY</div>' +
-      '<div class="thesis-body sat">' + esc(p.strategy_name || '–') + '</div>';
-    if (p.exit_condition)
-      out += '<div class="sub-label">EXIT CONDITION</div><div class="sub-block">' + esc(p.exit_condition) + '</div>';
-    if (p.entry_condition)
-      out += '<div class="sub-label">ENTRY CONDITION</div><div class="sub-block">' + esc(p.entry_condition) + '</div>';
+    out += '<div class="thesis-text">' + esc(th.strategy_name || th.thesis || '–') + '</div>';
+    if (th.exit_condition)
+      out += '<div class="sub-label">EXIT CONDITION</div><div class="sub-block">' + esc(th.exit_condition) + '</div>';
+    if (th.entry_condition)
+      out += '<div class="sub-label">ENTRY CONDITION</div><div class="sub-block">' + esc(th.entry_condition) + '</div>';
   }
 
-  out += '<div class="meta-row"><span>登録日: ' + esc(p.entry_date || '–') + '</span><span>取得単価: ' + ep + '</span></div>';
+  out += '<div class="meta-row">' +
+    '<span>登録日: ' + esc(th.entry_date || '–') + '</span>' +
+    '<span>取得単価: ' + ep + '</span>' +
+    '<span>ステータス: ' + esc(th.status || '–') + '</span>' +
+    '</div>';
+
+  return out + '</div></details></div>';
+}
+
+/* ══════════════════════════════════
+   セクション3-左: KPIトレンド
+══════════════════════════════════ */
+function buildKpi() {
+  var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">KPIトレンド</div>';
+  if (!S.kpi) return out + '<div class="no-data">KPIデータなし</div></div>';
+
+  var kpis  = S.kpi.kpis || {};
+  var names = Object.keys(kpis).filter(function (k) {
+    return (kpis[k].data || []).some(function (d) { return d.value != null; });
+  });
+  if (!names.length) return out + '<div class="no-data">KPIデータなし</div></div>';
+
+  names.forEach(function (name) {
+    var ki   = kpis[name];
+    var data = (ki.data || [])
+      .filter(function (d) { return d.value != null; })
+      .sort(function (a, b) { return quarterToNum(a.quarter) - quarterToNum(b.quarter); });
+    if (!data.length) return;
+    out += '<div class="kpi-block"><div class="kpi-name">' + esc(name) + '</div>' +
+      buildSparkline(data, ki.unit, 160) + '</div>';
+  });
+
   return out + '</div>';
 }
 
-/* ═══════════════════════════════════
-   セクション3: 最新レビュー(60%) + スコア推移(40%)
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション3-右: 最新レビュー
+══════════════════════════════════ */
 function buildReview() {
   var qs  = Object.keys(S.reviews).sort().reverse();
-  var out = '<div class="section">' + sectionHead('最新レビュー', qs.length ? qs[0] + '  最新四半期' : 'レビューなし');
+  var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">最新レビュー</div>';
   if (!qs.length) return out + '<div class="no-data">レビューデータなし</div></div>';
 
   var q     = qs[0];
@@ -487,27 +524,25 @@ function buildReview() {
   var rec   = s1.recommendation || '';
   var gc    = scoreColor(score);
 
-  /* ─ 左カラム: レビュー詳細 ─ */
-  var left = '';
-  left += '<div class="muted-meta">' + esc(q) +
-    (rv.generated_at ? ' — 生成: ' + esc(rv.generated_at.slice(0, 10)) : '') + '</div>';
+  out += '<div class="muted-meta">' + esc(q) +
+    (rv.generated_at ? ' — ' + esc(rv.generated_at.slice(0, 10)) : '') + '</div>';
 
-  left += '<div class="gauge-row">' +
+  out += '<div class="gauge-row">' +
     '<span class="gauge-num" style="color:' + gc + '">' + score + '</span>' +
     '<div class="gauge-bar"><div class="gauge-fill" style="width:' + score + '%;background:' + gc + '"></div></div>' +
     (rec ? '<span class="rec-badge rec-' + rec.toLowerCase() + '">' + esc(rec) + '</span>' : '') +
     '</div>';
 
   if (s1.summary)
-    left += '<div class="rv-summary">' + esc(s1.summary) + '</div>';
+    out += '<div class="rv-summary">' + esc(s1.summary) + '</div>';
 
   if (s1.optimism_bias_warning)
-    left += '<div class="bias-box"><span class="bias-label">⚠ 楽観バイアス警告</span>' + esc(s1.optimism_bias_warning) + '</div>';
+    out += '<div class="bias-box"><span class="bias-lbl">⚠ 楽観バイアス警告</span>' + esc(s1.optimism_bias_warning) + '</div>';
 
   var posH = (s1.positives || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
   var conH = (s1.concerns  || []).map(function (t) { return '<li>' + esc(t) + '</li>'; }).join('');
   if (posH || conH) {
-    left += '<div class="two-col">' +
+    out += '<div class="inner-two">' +
       '<div class="list-box"><div class="list-title pos">ポジティブ</div><ul class="blist pos">' + posH + '</ul></div>' +
       '<div class="list-box"><div class="list-title neg">懸念点</div><ul class="blist neg">' + conH + '</ul></div>' +
       '</div>';
@@ -516,348 +551,87 @@ function buildReview() {
   var ed    = s1.exit_distance || '';
   var edCls = ed.indexOf('遠') !== -1 ? 'ed-far' : ed.indexOf('近い') !== -1 ? 'ed-close' : 'ed-watch';
   if (ed)
-    left += '<div class="exit-row"><span class="exit-dist ' + edCls + '">' + esc(ed) + '</span>' +
-      '<span style="font-size:13px;color:var(--sub)">' + esc(s1.exit_distance_reason || '') + '</span></div>';
+    out += '<div class="exit-row"><span class="exit-dist ' + edCls + '">' + esc(ed) + '</span>' +
+      '<span style="font-size:12px;color:var(--sub)">' + esc(s1.exit_distance_reason || '') + '</span></div>';
 
   var nkH = (s1.next_kpis || []).map(function (k) { return '<span class="nkpi-tag">' + esc(k) + '</span>'; }).join('');
   if (nkH)
-    left += '<div><div class="sec-sub">次四半期 確認KPI</div><div class="nkpi-wrap">' + nkH + '</div></div>';
+    out += '<div class="sec-sub" style="margin-top:8px">次四半期 確認KPI</div><div class="nkpi-wrap">' + nkH + '</div>';
 
-  /* ─ 右カラム: スコア推移チャート ─ */
-  var scoreData = Object.keys(S.reviews).sort(function (a, b) { return quarterToNum(a) - quarterToNum(b); })
+  /* スコア推移ミニグラフ */
+  var scoreData = Object.keys(S.reviews)
+    .sort(function (a, b) { return quarterToNum(a) - quarterToNum(b); })
     .map(function (sq) {
-      var sc = (S.reviews[sq].stage1 || {}).health_score;
-      return { quarter: sq, value: sc };
+      var sc2 = (S.reviews[sq].stage1 || {}).health_score;
+      return { quarter: sq, value: sc2 };
     }).filter(function (d) { return d.value != null; });
 
-  var right = '<div class="sec-sub" style="margin-bottom:8px">スコア推移</div>';
-  right += scoreData.length >= 2
-    ? buildScoreSparkline(scoreData, globalAllQs, 200)
-    : '<div class="no-data" style="font-size:11px;padding:16px">データ2件以上必要</div>';
-
-  out += '<div class="review-layout"><div>' + left + '</div><div>' + right + '</div></div>';
-  return out + '</div>';
-}
-
-/* ═══════════════════════════════════
-   セクション4: KPIトレンド（2列グリッド）
-═══════════════════════════════════ */
-function buildKpi() {
-  var out = '<div class="section">' + sectionHead('KPIトレンド', '全グラフ同一X軸 / 赤枠 = 懸念KPI');
-  if (!S.kpi) return out + '<div class="no-data">KPIデータなし</div></div>';
-  var kpis  = S.kpi.kpis || {};
-  var names = Object.keys(kpis).filter(function (k) {
-    return (kpis[k].data || []).some(function (d) { return d.value != null; });
-  });
-  if (!names.length) return out + '<div class="no-data">KPIデータなし</div></div>';
-
-  var qs       = Object.keys(S.reviews).sort().reverse();
-  var concerns = qs.length ? ((S.reviews[qs[0]].stage1 || {}).concerns || []) : [];
-
-  out += '<div class="kpi-grid">';
-  names.forEach(function (name) {
-    var ki   = kpis[name];
-    var data = (ki.data || [])
-      .filter(function (d) { return d.value != null; })
-      .sort(function (a, b) { return quarterToNum(a.quarter) - quarterToNum(b.quarter); });
-    if (!data.length) return;
-    var hl = isConcernKpi(name, concerns);
-    out += '<div class="kpi-block' + (hl ? ' kpi-highlighted' : '') + '">' +
-      '<div class="kpi-name">' + esc(name) + (hl ? ' ⚠' : '') + '</div>' +
-      buildSparkline(data, ki.unit, 150, globalAllQs) + '</div>';
-  });
-  out += '</div>';
+  if (scoreData.length >= 2) {
+    out += '<div class="sec-sub" style="margin-top:12px">スコア推移</div>' +
+      buildScoreSparkline(scoreData, 100);
+  }
 
   return out + '</div>';
 }
 
-/* ─── スパークライン（統一X軸対応） ─── */
-function buildSparkline(data, unit, height, allQs) {
-  var H  = height || 180;
-  var W  = 600, PL = 52, PR = 16, PT = 12, PB = 28;
-  var cW = W - PL - PR, cH = H - PT - PB;
-  var n  = data.length;
-  if (!n) return '';
-
-  var vals = data.map(function (d) { return d.value; });
-  var minV = Math.min.apply(null, vals);
-  var maxV = Math.max.apply(null, vals);
-  var rng  = maxV === minV ? (Math.abs(maxV) * 0.1 || 1) : maxV - minV;
-
-  var useGlobal = allQs && allQs.length > 1;
-  var qLen      = useGlobal ? allQs.length : n;
-
-  function xForQ(q) {
-    if (useGlobal) {
-      var i = allQs.indexOf(q);
-      return i < 0 ? null : PL + (i / (qLen - 1)) * cW;
-    }
-    return null;
-  }
-  function xForI(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
-  function yAt(v)   { return PT + cH - ((v - minV) / rng) * cH; }
-
-  /* ポリライン */
-  var pts = data.map(function (d, i) {
-    var x = useGlobal ? xForQ(d.quarter) : xForI(i);
-    return x !== null ? x.toFixed(1) + ',' + yAt(d.value).toFixed(1) : null;
-  }).filter(function (p) { return p !== null; });
-  var line = pts.length >= 2
-    ? '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>'
-    : '';
-
-  /* ドット */
-  var dots = data.map(function (d, i) {
-    var x = useGlobal ? xForQ(d.quarter) : xForI(i);
-    if (x === null) return '';
-    return '<circle cx="' + x.toFixed(1) + '" cy="' + yAt(d.value).toFixed(1) + '" r="' + (i === n - 1 ? 3.5 : 2) + '"' +
-      ' fill="var(--acc)" stroke="var(--bg)" stroke-width="1.5">' +
-      '<title>' + d.quarter + ': ' + formatVal(d.value, unit) + '</title></circle>';
-  }).join('');
-
-  /* X軸ラベル */
-  var showQs = {};
-  if (useGlobal) {
-    showQs[allQs[0]] = true;
-    showQs[allQs[allQs.length - 1]] = true;
-    var step = Math.max(1, Math.ceil(allQs.length / 4));
-    for (var j = 0; j < allQs.length; j += step) showQs[allQs[j]] = true;
-  } else {
-    var showIs = {};
-    showIs[0] = true; showIs[n - 1] = true;
-    var ds = Math.max(1, Math.ceil(n / 4));
-    for (var k = 0; k < n; k += ds) showIs[k] = true;
-  }
-  var xLbls = '';
-  data.forEach(function (d, i) {
-    var show = useGlobal ? showQs[d.quarter] : showIs[i];
-    if (!show) return;
-    var x = useGlobal ? xForQ(d.quarter) : xForI(i);
-    if (x === null) return;
-    xLbls += '<text x="' + x.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.quarter + '</text>';
-  });
-
-  /* Y軸ラベル + 最新値 */
-  var yLbls =
-    '<text x="' + (PL - 3) + '" y="' + (PT + 4)  + '" text-anchor="end" font-size="9" fill="var(--mut)">' + formatVal(maxV, unit) + '</text>' +
-    '<text x="' + (PL - 3) + '" y="' + (PT + cH) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + formatVal(minV, unit) + '</text>';
-
-  var lastD  = data[n - 1];
-  var lx     = useGlobal ? xForQ(lastD.quarter) : xForI(n - 1);
-  var ly     = lx !== null ? yAt(lastD.value) : PT;
-  var anc    = (lx || 0) > W * 0.72 ? 'end' : 'start';
-  var lxOff  = anc === 'end' ? -7 : 7;
-  var lyAdj  = ly < PT + 16 ? ly + 14 : ly - 5;
-  var lastLbl = lx !== null
-    ? '<text x="' + ((lx || 0) + lxOff).toFixed(1) + '" y="' + lyAdj.toFixed(1) + '" text-anchor="' + anc + '" font-size="10" fill="var(--acc)" font-weight="bold">' + formatVal(lastD.value, unit) + '</text>'
-    : '';
-
-  var midY = (PT + cH / 2).toFixed(1);
-  var grid = '<line x1="' + PL + '" y1="' + midY + '" x2="' + (W - PR) + '" y2="' + midY + '" stroke="var(--bdr)" stroke-dasharray="3,3"/>';
-
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
-    grid + yLbls + line + dots + lastLbl + xLbls + '</svg>';
-}
-
-/* ─── スコア推移チャート（ドットをscoreColorで色分け） ─── */
-function buildScoreSparkline(data, allQs, height) {
-  var H  = height || 140;
-  var W  = 600, PL = 34, PR = 12, PT = 10, PB = 24;
-  var cW = W - PL - PR, cH = H - PT - PB;
-  var n  = data.length;
-  if (!n) return '';
-
-  var scores = data.map(function (d) { return d.value; });
-  var minV = Math.max(0,   Math.min.apply(null, scores) - 5);
-  var maxV = Math.min(100, Math.max.apply(null, scores) + 5);
-  var rng  = maxV - minV || 1;
-
-  var useGlobal = allQs && allQs.length > 1;
-  var qLen      = useGlobal ? allQs.length : n;
-
-  function xAt(q, i) {
-    if (useGlobal) {
-      var idx = allQs.indexOf(q);
-      return idx < 0 ? null : PL + (idx / (qLen - 1)) * cW;
-    }
-    return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2);
-  }
-  function yAt(v) { return PT + cH - ((v - minV) / rng) * cH; }
-
-  var pts = data.map(function (d, i) {
-    var x = xAt(d.quarter, i);
-    return x !== null ? x.toFixed(1) + ',' + yAt(d.value).toFixed(1) : null;
-  }).filter(function (p) { return p !== null; });
-  var line = pts.length >= 2
-    ? '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--sub)" stroke-width="1.5" stroke-linejoin="round"/>'
-    : '';
-
-  var dots = data.map(function (d, i) {
-    var x = xAt(d.quarter, i);
-    if (x === null) return '';
-    return '<circle cx="' + x.toFixed(1) + '" cy="' + yAt(d.value).toFixed(1) + '" r="' + (i === n - 1 ? 4 : 2.5) + '"' +
-      ' fill="' + scoreColor(d.value) + '" stroke="var(--bg)" stroke-width="1.5">' +
-      '<title>' + d.quarter + ': ' + d.value + '</title></circle>';
-  }).join('');
-
-  var showQ = {};
-  if (useGlobal) {
-    showQ[allQs[0]] = true;
-    showQ[allQs[allQs.length - 1]] = true;
-  } else {
-    if (data[0])     showQ[data[0].quarter]     = true;
-    if (data[n - 1]) showQ[data[n - 1].quarter] = true;
-  }
-  var xLbls = data.map(function (d, i) {
-    if (!showQ[d.quarter]) return '';
-    var x = xAt(d.quarter, i);
-    if (x === null) return '';
-    return '<text x="' + x.toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.quarter + '</text>';
-  }).join('');
-
-  var yLbls =
-    '<text x="' + (PL - 3) + '" y="' + (PT + 4)  + '" text-anchor="end" font-size="9" fill="var(--mut)">' + maxV + '</text>' +
-    '<text x="' + (PL - 3) + '" y="' + (PT + cH) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + minV + '</text>';
-
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
-    yLbls + line + dots + xLbls + '</svg>';
-}
-
-/* ═══════════════════════════════════
-   セクション5: DCFシナリオ（横棒グラフ＋テーブル）
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション4-左: DCFシナリオ
+══════════════════════════════════ */
 function buildDcf() {
-  var scd = S.scenarios;
-  var out = '<div class="section">' + sectionHead('DCFシナリオ', '横棒: 5年後目標株価 vs 現在株価');
-  var any = scd.base || scd.bear || scd.bull;
-  if (!any) return out + '<div class="no-data">DCFデータなし</div></div>';
+  var qs  = Object.keys(S.reviews).sort().reverse();
+  var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">DCFシナリオ</div>';
+  if (!qs.length) return out + '<div class="no-data">レビューデータなし</div></div>';
 
-  out += buildDcfBarChart(scd);
-
-  var curP    = any.current_price;
-  var periods = ['1年後', '3年後', '5年後'];
-  var rows    = [
-    { key: 'bear', em: '🐻', cls: 'dcf-bear' },
-    { key: 'base', em: '📊', cls: 'dcf-base' },
-    { key: 'bull', em: '🐂', cls: 'dcf-bull' },
+  var s2   = S.reviews[qs[0]].stage2 || {};
+  var scd  = s2.scenarios || {};
+  var rows = [
+    { key: 'bear', label: '🐻 BEAR', cls: 'dcf-bear' },
+    { key: 'base', label: '📊 BASE', cls: 'dcf-base' },
+    { key: 'bull', label: '🐂 BULL', cls: 'dcf-bull' },
   ];
+  var cols = ['Y1成長率', 'Y2成長率', 'Y3成長率', 'Terminal利益率'];
 
-  var thead = '<tr><th></th>' + periods.map(function (p) { return '<th>' + p + '</th>'; }).join('') + '</tr>';
-  var tbody = rows.map(function (row) {
-    var sd = scd[row.key];
-    var fv = sd ? (sd.future_values || {}) : {};
-    return '<tr><td class="' + row.cls + '">' + row.em + ' ' + row.key.toUpperCase() + '</td>' +
-      periods.map(function (p) {
-        var v    = fv[p];
-        var over = v != null && curP != null && Number(v) >= Number(curP);
-        return '<td class="' + (over ? 'over-price' : row.cls) + '">' +
-          (v != null ? '$' + Number(v).toFixed(0) : '–') + '</td>';
-      }).join('') + '</tr>';
-  }).join('');
+  if (scd.bear || scd.base || scd.bull) {
+    var thead = '<tr><th></th>' + cols.map(function (c) { return '<th>' + c + '</th>'; }).join('') + '</tr>';
+    var tbody = rows.map(function (row) {
+      var sc = scd[row.key] || {};
+      return '<tr class="' + row.cls + '"><td>' + row.label + '</td>' +
+        '<td>' + pct(sc.revenue_growth_y1) + '</td>' +
+        '<td>' + pct(sc.revenue_growth_y2) + '</td>' +
+        '<td>' + pct(sc.revenue_growth_y3) + '</td>' +
+        '<td>' + pct(sc.operating_margin_terminal) + '</td>' +
+        '</tr>';
+    }).join('');
+    out += '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table></div>';
+  } else {
+    out += '<div class="no-data">シナリオデータなし</div>';
+  }
 
-  var cpRow = curP
-    ? '<tr class="dcf-cur"><td>現在株価</td>' +
-      periods.map(function () { return '<td>$' + Number(curP).toFixed(0) + '</td>'; }).join('') + '</tr>'
-    : '';
-
-  out += '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + tbody + cpRow + '</tbody></table></div>';
-
-  var qs = Object.keys(S.reviews).sort().reverse();
-  if (qs.length) {
-    var s2    = S.reviews[qs[0]].stage2 || {};
-    var assH  = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
-    var riskH = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
-    if (assH || riskH) {
-      out += '<div class="assm-grid">';
-      if (assH)  out += '<div class="list-box"><div class="list-title">KEY ASSUMPTIONS</div><ul class="blist">' + assH + '</ul></div>';
-      if (riskH) out += '<div class="list-box"><div class="list-title neg">RISK FACTORS</div><ul class="blist neg">' + riskH + '</ul></div>';
-      out += '</div>';
-    }
+  /* KEY ASSUMPTIONS / RISK FACTORS */
+  var assH  = (s2.key_assumptions || []).map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('');
+  var riskH = (s2.risk_factors    || []).map(function (r) { return '<li>' + esc(r) + '</li>'; }).join('');
+  if (assH || riskH) {
+    out += '<div class="assm-grid">';
+    if (assH)  out += '<div class="list-box"><div class="list-title">KEY ASSUMPTIONS</div><ul class="blist">' + assH + '</ul></div>';
+    if (riskH) out += '<div class="list-box"><div class="list-title neg">RISK FACTORS</div><ul class="blist neg">' + riskH + '</ul></div>';
+    out += '</div>';
   }
 
   return out + '</div>';
 }
+function pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '–'; }
 
-/* ─── DCF横棒グラフ（5年後価格 vs 現在株価） ─── */
-function buildDcfBarChart(scd) {
-  var W  = 600, H = 160, PL = 60, PR = 20, PT = 20, PB = 28;
-  var cW = W - PL - PR, cH = H - PT - PB;
-
-  var scenarios = [
-    { key: 'bear', label: 'BEAR', color: 'var(--red)' },
-    { key: 'base', label: 'BASE', color: 'var(--acc)' },
-    { key: 'bull', label: 'BULL', color: 'var(--grn)' },
-  ];
-
-  var any  = scd.base || scd.bear || scd.bull;
-  var curP = any ? Number(any.current_price) : null;
-
-  var vals = [];
-  scenarios.forEach(function (sc) {
-    var sd = scd[sc.key];
-    if (sd && sd.future_values) {
-      var v = Number(sd.future_values['5年後'] || 0);
-      if (v > 0) vals.push(v);
-    }
-  });
-  if (curP && curP > 0) vals.push(curP);
-  var maxVal = vals.length ? Math.max.apply(null, vals) * 1.12 : 0;
-  if (!maxVal) return '';
-
-  function xScale(v) { return PL + (v / maxVal) * cW; }
-
-  var barH = Math.floor((cH - (scenarios.length - 1) * 8) / scenarios.length);
-  var svg  = '';
-
-  /* グリッド縦線 */
-  for (var t = 0; t <= 4; t++) {
-    var tv = (maxVal / 4) * t;
-    var tx = xScale(tv).toFixed(1);
-    svg += '<line x1="' + tx + '" y1="' + PT + '" x2="' + tx + '" y2="' + (H - PB) + '" stroke="var(--bdr)" stroke-dasharray="2,3"/>';
-    svg += '<text x="' + tx + '" y="' + (H - 8) + '" text-anchor="middle" font-size="8" fill="var(--mut)">$' + Math.round(tv) + '</text>';
-  }
-
-  /* バー */
-  scenarios.forEach(function (sc, i) {
-    var sd  = scd[sc.key];
-    var v   = sd && sd.future_values ? Number(sd.future_values['5年後'] || 0) : 0;
-    var y   = PT + i * (barH + 8);
-    var bw  = Math.max(0, xScale(v) - PL);
-
-    svg += '<rect x="' + PL + '" y="' + y + '" width="' + bw.toFixed(1) + '" height="' + barH +
-      '" fill="' + sc.color + '" opacity="0.65" rx="2"/>';
-    svg += '<text x="' + (PL - 5) + '" y="' + (y + barH / 2 + 4).toFixed(1) + '" text-anchor="end"' +
-      ' font-size="10" fill="' + sc.color + '" font-family="var(--mono)" font-weight="bold">' + sc.label + '</text>';
-    if (v > 0) {
-      var lx  = xScale(v);
-      var anc = lx > W * 0.82 ? 'end' : 'start';
-      var off = anc === 'end' ? -4 : 4;
-      svg += '<text x="' + (lx + off).toFixed(1) + '" y="' + (y + barH / 2 + 4).toFixed(1) +
-        '" text-anchor="' + anc + '" font-size="10" fill="var(--txt)" font-family="var(--mono)" font-weight="bold">$' + Math.round(v) + '</text>';
-    }
-  });
-
-  /* 現在株価の縦破線 */
-  if (curP && curP > 0) {
-    var cx = xScale(curP).toFixed(1);
-    svg += '<line x1="' + cx + '" y1="' + PT + '" x2="' + cx + '" y2="' + (H - PB) +
-      '" stroke="var(--core)" stroke-width="2" stroke-dasharray="4,3"/>';
-    svg += '<text x="' + cx + '" y="' + (PT - 4) + '" text-anchor="middle" font-size="9" fill="var(--core)" font-family="var(--mono)">現在 $' + Number(curP).toFixed(0) + '</text>';
-  }
-
-  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block;margin-bottom:14px">' + svg + '</svg>';
-}
-
-/* ═══════════════════════════════════
-   セクション6: AI視点
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション4-右: AI視点
+══════════════════════════════════ */
 function buildAi() {
   var qs  = Object.keys(S.reviews).sort().reverse();
-  var out = '<div class="section">' + sectionHead('AI視点', '定性分析・歴史的類比・テーゼ問いかけ');
+  var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">AI視点</div>';
   if (!qs.length) return out + '<div class="no-data">レビューデータなし</div></div>';
-  var c2  = S.reviews[qs[0]].call2;
+  var c2 = S.reviews[qs[0]].call2;
   if (!c2) return out + '<div class="no-data">AI定性分析データなし</div></div>';
 
+  /* 5観点 */
   var fp    = c2.five_perspectives || {};
   var fpDef = [
     { key: 'business_model',        label: 'ビジネスモデル' },
@@ -866,58 +640,61 @@ function buildAi() {
     { key: 'management',            label: '経営' },
     { key: 'market',                label: '市場環境' },
   ];
-  out += fpDef.map(function (d) {
-    var txt = fp[d.key]; if (!txt) return '';
-    return '<div class="persp-block"><div class="persp-label">' + esc(d.label) + '</div>' +
+  fpDef.forEach(function (d) {
+    var txt = fp[d.key]; if (!txt) return;
+    out += '<div class="persp-block"><div class="persp-label">' + esc(d.label) + '</div>' +
       '<div class="persp-text">' + esc(txt) + '</div></div>';
-  }).join('');
+  });
 
+  /* 歴史的類比 */
   var ha = c2.historical_analogy || {};
   if (ha.company) {
-    out += '<div class="analogy-box"><div class="analogy-co">' + esc(ha.company) + '</div>' +
+    out += '<div class="sec-sub" style="margin-top:10px">過去の類似企業</div>' +
+      '<div class="analogy-box"><div class="analogy-co">' + esc(ha.company) + '</div>' +
       (ha.similarity  ? '<div class="analogy-row"><strong>類似点:</strong> ' + esc(ha.similarity)  + '</div>' : '') +
       (ha.outcome     ? '<div class="analogy-row"><strong>その後:</strong> ' + esc(ha.outcome)     + '</div>' : '') +
       (ha.implication ? '<div class="analogy-row"><strong>示唆:</strong> '   + esc(ha.implication) + '</div>' : '') +
       '</div>';
   }
 
+  /* テーゼへの問いかけ */
   var tqs = c2.thesis_questions || [];
   if (tqs.length) {
-    out += '<div style="margin-bottom:16px"><div class="sec-sub">テーゼへの問いかけ</div>' +
-      '<ul class="tq-list">' + tqs.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') + '</ul></div>';
+    out += '<div class="sec-sub" style="margin-top:10px">テーゼへの問いかけ</div>' +
+      '<ul class="tq-list">' + tqs.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') + '</ul>';
   }
 
+  /* 次回確認論点 */
   var nrf = c2.next_review_focus || [];
   if (nrf.length) {
-    out += '<div><div class="sec-sub">次回確認論点</div><div class="focus-wrap">' +
+    out += '<div class="sec-sub" style="margin-top:10px">次回確認論点</div><div class="focus-wrap">' +
       nrf.map(function (f, i) { return '<span class="focus-tag">' + (i + 1) + '. ' + esc(f) + '</span>'; }).join('') +
-      '</div></div>';
+      '</div>';
   }
 
   return out + '</div>';
 }
 
-/* ═══════════════════════════════════
-   セクション7: 内部統制
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション5: 内部統制
+══════════════════════════════════ */
 function buildCtrl() {
   var d   = S.ctrl;
-  var out = '<div class="section">' + sectionHead('内部統制', 'SEC Item 4 内部統制評価');
-  if (!d) return out + '<div class="no-data">データなし（未取得 or CIK未登録）</div></div>';
+  var out = '<div class="sec-hd">内部統制</div>';
+  if (!d) return out + '<div class="no-data">データなし（未取得 or CIK未登録）</div>';
 
   var effLabel, effCls;
   if (d.effective === true)       { effLabel = '有効 (Effective)';     effCls = 'ctrl-ok'; }
   else if (d.effective === false) { effLabel = '無効 (Not Effective)'; effCls = 'ctrl-ng'; }
   else                             { effLabel = '判定不能';              effCls = 'ctrl-unk'; }
 
-  out += '<span class="ctrl-badge ' + effCls + '">' + esc(effLabel) + '</span>' +
-    '<div class="muted-meta">' +
-    esc(d.quarter || '') + (d.filing_date ? ' / 提出日: ' + esc(d.filing_date) : '') +
-    '</div>';
+  out += '<span class="ctrl-badge ' + effCls + '">' + esc(effLabel) + '</span>';
+  out += '<div class="muted-meta">' +
+    esc(d.quarter || '') + (d.filing_date ? ' / 提出日: ' + esc(d.filing_date) : '') + '</div>';
 
   var mw = d.material_weaknesses || [];
   if (mw.length) {
-    out += '<div style="margin-bottom:12px"><div class="sec-sub" style="color:var(--red)">マテリアルウィークネス (' + mw.length + '件)</div>' +
+    out += '<div style="margin-bottom:10px"><div class="sec-sub" style="color:var(--red)">マテリアルウィークネス (' + mw.length + '件)</div>' +
       '<ul class="blist">' + mw.map(function (s) { return '<li style="color:var(--red)">' + esc(s) + '</li>'; }).join('') + '</ul></div>';
   }
 
@@ -927,24 +704,23 @@ function buildCtrl() {
   }
 
   if (d.item4_excerpt) {
-    out += '<details style="margin-top:12px"><summary>Item 4 原文（English）を表示</summary>' +
-      '<div class="ctrl-excerpt ctrl-en" style="margin-top:8px">' + esc(d.item4_excerpt) + '</div></details>';
+    out += '<details style="margin-top:10px"><summary>Item 4 原文（English）を表示</summary>' +
+      '<div class="ctrl-excerpt ctrl-en" style="margin-top:6px">' + esc(d.item4_excerpt) + '</div></details>';
   }
 
-  return out + '</div>';
+  return out;
 }
 
-/* ═══════════════════════════════════
-   セクション8: 過去レビュー履歴（前期比デルタ付）
-═══════════════════════════════════ */
+/* ══════════════════════════════════
+   セクション6: 過去レビュー履歴
+══════════════════════════════════ */
 function buildHistory() {
   var qs  = Object.keys(S.reviews).sort().reverse(); /* 降順: 新→旧 */
-  var out = '<div class="section">' + sectionHead('過去レビュー履歴', 'スコア前期比デルタ表示');
-  if (qs.length <= 1) return out + '<div class="no-data">過去レビューなし</div></div>';
+  var out = '<div class="sec-hd">過去レビュー履歴</div>';
+  if (qs.length <= 1) return out + '<div class="no-data">過去レビューなし</div>';
 
   out += '<div>';
   qs.slice(1).forEach(function (q, sliceIdx) {
-    /* qs全体でのインデックス = sliceIdx + 1 */
     var s1    = (S.reviews[q].stage1 || {});
     var score = s1.health_score;
     var rec   = s1.recommendation || '';
@@ -952,13 +728,13 @@ function buildHistory() {
     var summ  = (s1.summary || '').slice(0, 130);
     if (s1.summary && s1.summary.length > 130) summ += '…';
 
-    /* 前期比: 現在行(qs[sliceIdx+1]) vs 1期前(qs[sliceIdx+2]) */
-    var deltaHtml  = '';
-    var olderQ     = qs[sliceIdx + 2];
+    /* 前期比デルタ: 現在行 vs 1期前 */
+    var deltaHtml = '';
+    var olderQ    = qs[sliceIdx + 2];
     if (olderQ !== undefined && score != null) {
-      var olderScore = ((S.reviews[olderQ].stage1 || {}).health_score);
-      if (olderScore != null) {
-        var delta = score - olderScore;
+      var olderSc = ((S.reviews[olderQ].stage1 || {}).health_score);
+      if (olderSc != null) {
+        var delta = score - olderSc;
         var dCls  = delta > 0 ? 'delta-up' : delta < 0 ? 'delta-dn' : 'delta-zero';
         deltaHtml = '<span class="hist-delta ' + dCls + '">' + (delta > 0 ? '+' : '') + delta + '</span>';
       }
@@ -972,10 +748,106 @@ function buildHistory() {
       '</div>';
   });
 
-  return out + '</div></div>';
+  return out + '</div>';
+}
+
+/* ─── スパークライン（KPI用） ─── */
+function buildSparkline(data, unit, height) {
+  var H  = height || 160;
+  var W  = 560, PL = 50, PR = 14, PT = 10, PB = 24;
+  var cW = W - PL - PR, cH = H - PT - PB;
+  var n  = data.length;
+  if (!n) return '';
+
+  var vals = data.map(function (d) { return d.value; });
+  var minV = Math.min.apply(null, vals);
+  var maxV = Math.max.apply(null, vals);
+  var rng  = maxV === minV ? (Math.abs(maxV) * 0.1 || 1) : maxV - minV;
+
+  function xAt(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
+  function yAt(v) { return PT + cH - ((v - minV) / rng) * cH; }
+
+  var pts  = data.map(function (d, i) { return xAt(i).toFixed(1) + ',' + yAt(d.value).toFixed(1); });
+  var dots = data.map(function (d, i) {
+    return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(d.value).toFixed(1) +
+      '" r="' + (i === n - 1 ? 3.5 : 2) + '" fill="var(--acc)" stroke="var(--bg)" stroke-width="1.5">' +
+      '<title>' + d.quarter + ': ' + formatVal(d.value, unit) + '</title></circle>';
+  }).join('');
+
+  var showIs = {}; showIs[0] = true; showIs[n - 1] = true;
+  var step = Math.max(1, Math.ceil(n / 4));
+  for (var j = 0; j < n; j += step) showIs[j] = true;
+  var xLbls = data.map(function (d, i) {
+    return showIs[i]
+      ? '<text x="' + xAt(i).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.quarter + '</text>'
+      : '';
+  }).join('');
+
+  var yLbls =
+    '<text x="' + (PL - 3) + '" y="' + (PT + 4)  + '" text-anchor="end" font-size="9" fill="var(--mut)">' + formatVal(maxV, unit) + '</text>' +
+    '<text x="' + (PL - 3) + '" y="' + (PT + cH) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + formatVal(minV, unit) + '</text>';
+
+  var lx  = xAt(n - 1), ly = yAt(data[n - 1].value);
+  var anc = lx > W * 0.72 ? 'end' : 'start';
+  var lxO = anc === 'end' ? -6 : 6;
+  var lyA = ly < PT + 14 ? ly + 12 : ly - 4;
+  var lastLbl = '<text x="' + (lx + lxO).toFixed(1) + '" y="' + lyA.toFixed(1) + '" text-anchor="' + anc +
+    '" font-size="10" fill="var(--acc)" font-weight="bold">' + formatVal(data[n - 1].value, unit) + '</text>';
+
+  var midY = (PT + cH / 2).toFixed(1);
+  var grid = '<line x1="' + PL + '" y1="' + midY + '" x2="' + (W - PR) + '" y2="' + midY + '" stroke="var(--bdr)" stroke-dasharray="3,3"/>';
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
+    grid + yLbls +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>' +
+    dots + lastLbl + xLbls + '</svg>';
+}
+
+/* ─── スコア推移ミニグラフ ─── */
+function buildScoreSparkline(data, height) {
+  var H  = height || 100;
+  var W  = 560, PL = 30, PR = 10, PT = 8, PB = 20;
+  var cW = W - PL - PR, cH = H - PT - PB;
+  var n  = data.length;
+  if (!n) return '';
+
+  var scores = data.map(function (d) { return d.value; });
+  var minV = Math.max(0,   Math.min.apply(null, scores) - 5);
+  var maxV = Math.min(100, Math.max.apply(null, scores) + 5);
+  var rng  = maxV - minV || 1;
+
+  function xAt(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
+  function yAt(v) { return PT + cH - ((v - minV) / rng) * cH; }
+
+  var pts  = data.map(function (d, i) { return xAt(i).toFixed(1) + ',' + yAt(d.value).toFixed(1); });
+  var dots = data.map(function (d, i) {
+    return '<circle cx="' + xAt(i).toFixed(1) + '" cy="' + yAt(d.value).toFixed(1) +
+      '" r="' + (i === n - 1 ? 3.5 : 2) + '" fill="' + scoreColor(d.value) + '" stroke="var(--bg)" stroke-width="1.5">' +
+      '<title>' + d.quarter + ': ' + d.value + '</title></circle>';
+  }).join('');
+
+  var showIs = {}; showIs[0] = true; showIs[n - 1] = true;
+  var xLbls = data.map(function (d, i) {
+    return showIs[i]
+      ? '<text x="' + xAt(i).toFixed(1) + '" y="' + (H - 4) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.quarter + '</text>'
+      : '';
+  }).join('');
+
+  var yLbls =
+    '<text x="' + (PL - 3) + '" y="' + (PT + 4)  + '" text-anchor="end" font-size="9" fill="var(--mut)">' + maxV + '</text>' +
+    '<text x="' + (PL - 3) + '" y="' + (PT + cH) + '" text-anchor="end" font-size="9" fill="var(--mut)">' + minV + '</text>';
+
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
+    yLbls +
+    '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--sub)" stroke-width="1.5" stroke-linejoin="round"/>' +
+    dots + xLbls + '</svg>';
 }
 
 /* ─── ユーティリティ ─── */
+function quarterToNum(q) {
+  var m = q.match(/(\d{4})Q(\d)/);
+  return m ? parseInt(m[1]) * 10 + parseInt(m[2]) : 0;
+}
 function formatVal(v, unit) {
   if (v === null || v === undefined) return '–';
   if (unit === '%') return (v * 100).toFixed(1) + '%';
