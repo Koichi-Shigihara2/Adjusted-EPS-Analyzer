@@ -473,12 +473,12 @@
           <th>TICKER</th>
           <th>TYPE</th>
           <th>スコア</th>
-          <th>乖離/損益</th>
+          <th>サマリー</th>
           <th title="楽観バイアス: AIレビューが過度に楽観的な兆候を検出した場合●">BIAS</th>
+          <th>乖離/損益</th>
+          <th title="DCF: BASEシナリオで現在株価を超える最短時期">DCF</th>
           <th title="内部統制: SEC 10-Q Item4の開示統制有効性評価">CTRL</th>
           <th title="エグジット距離: エグジット条件までの距離（SATELLITEのみ）">EXIT</th>
-          <th title="DCF: BASEシナリオで現在株価を超える最短時期">DCF</th>
-          <th>サマリー</th>
           <th>アクション</th>
         </tr>
       </thead>
@@ -883,10 +883,31 @@ function loadPositions() {
     var valTickers = Object.values(loadedPositions)
       .filter(function (p) { return p.status !== 'archived'; })
       .map(function (p) { return p.ticker; });
+    function prefetchSecondaryData() {
+      var activeTickers = Object.values(loadedPositions)
+        .filter(function (p) { return p.status !== 'archived'; })
+        .map(function (p) { return p.ticker; });
+      if (!activeTickers.length) return;
+      var jobs = activeTickers.map(function (ticker) {
+        var ctrlJob = (loadedCtrl[ticker] === undefined)
+          ? fetch('data/ctrl/' + ticker + '/latest.json?_=' + Date.now())
+              .then(function (r) { return r.ok ? r.json() : null; })
+              .catch(function () { return null; })
+              .then(function (d) { loadedCtrl[ticker] = d || null; })
+          : Promise.resolve();
+        return Promise.all([ctrlJob, ensureScenariosLoaded(ticker)]);
+      });
+      Promise.all(jobs).then(function () { renderOverview(); });
+    }
+
     if (valTickers.length) {
-      loadValuations(valTickers).then(function () { renderOverview(); });
+      loadValuations(valTickers).then(function () {
+        renderOverview();
+        prefetchSecondaryData();
+      });
     } else {
       renderOverview();
+      prefetchSecondaryData();
     }
   });
 }
@@ -1162,12 +1183,12 @@ function renderUnifiedTable(items) {
       '<td><span class="tkr ' + (isSat ? 'sat' : 'core') + '">' + esc(ticker) + '</span></td>',
       '<td>' + typeBadge + '</td>',
       '<td>' + scoreHtml + '</td>',
-      '<td>' + devHtml + '</td>',
+      '<td class="ut-summary">' + summaryHtml + '</td>',
       '<td>' + biasHtml + '</td>',
+      '<td>' + devHtml + '</td>',
+      '<td>' + dcfHtml + '</td>',
       '<td>' + ctrlHtml + '</td>',
       '<td>' + exitHtml + '</td>',
-      '<td>' + dcfHtml + '</td>',
-      '<td class="ut-summary">' + summaryHtml + '</td>',
       '<td>' + actHtml + '</td>',
       '</tr>'
     ].join('');
@@ -1510,18 +1531,12 @@ function _dbFold(title, content) {
 function buildDashboard(ticker) {
   var p = loadedPositions[ticker];
   if (!p) return '<div class="no-rv">ポジションデータなし</div>';
+  var isSat = p.type !== 'core';
 
-  // ── ゾーンA: サマリーヘッダー ──
-  var val = latestValCache[ticker];
-  var dev = (val && val.upside_percent != null) ? Number(val.upside_percent) : null;
-  var iv  = (val && val.intrinsic_value  != null) ? Number(val.intrinsic_value)  : null;
-  var cp  = (val && val.current_price    != null) ? Number(val.current_price)    : null;
-  var devHtml = dev != null
-    ? '<span style="color:' + (dev >= 0 ? 'var(--grn)' : 'var(--red)') + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>'
-    : '<span style="color:var(--mut)">—</span>';
-  var ivHtml = iv != null ? '<span>$' + iv.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
-  var cpHtml = cp != null ? '<span>$' + cp.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
-
+  var val      = latestValCache[ticker];
+  var dev      = (val && val.upside_percent != null) ? Number(val.upside_percent) : null;
+  var iv       = (val && val.intrinsic_value != null) ? Number(val.intrinsic_value) : null;
+  var cp       = (val && val.current_price   != null) ? Number(val.current_price)   : null;
   var reviews  = loadedReviews[ticker];
   var qs       = reviews ? Object.keys(reviews).sort().reverse() : [];
   var latestQ  = qs.length ? qs[0] : null;
@@ -1530,11 +1545,16 @@ function buildDashboard(ticker) {
   var rec      = s1 ? (s1.recommendation || '') : '';
   var gc       = score != null ? (score >= 71 ? 'var(--grn)' : score >= 41 ? 'var(--amb)' : 'var(--red)') : 'var(--mut)';
   var recCls   = rec ? 'rec-' + rec.toLowerCase() : '';
+
+  var devHtml  = dev != null ? '<span style="color:' + (dev >= 0 ? 'var(--grn)' : 'var(--red)') + '">' + (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%</span>' : '<span style="color:var(--mut)">—</span>';
+  var ivHtml   = iv  != null ? '<span>$' + iv.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
+  var cpHtml   = cp  != null ? '<span>$' + cp.toFixed(2) + '</span>' : '<span style="color:var(--mut)">—</span>';
   var scoreHtml = score != null
     ? '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:18px;font-weight:700;color:' + gc + '">' + score + '</span>' +
       (rec ? '<span class="rec-badge ' + recCls + '" style="font-size:10px">' + esc(rec) + '</span>' : '') + '</div>'
     : '<span style="color:var(--mut)">—</span>';
 
+  // ── ゾーンA: サマリーヘッダー ──
   var summaryBar =
     '<div class="db-summary-bar">' +
     '<div class="db-summary-item"><div class="db-summary-label">乖離率</div><div class="db-summary-value">' + devHtml + '</div></div>' +
@@ -1543,16 +1563,58 @@ function buildDashboard(ticker) {
     '<div class="db-summary-item"><div class="db-summary-label">直近スコア</div><div class="db-summary-value">' + scoreHtml + '</div></div>' +
     '</div>';
 
-  // ── ゾーンB: レビュー概要 + スコア推移 ──
-  var reviewLeftHtml = '';
-  var sparkRightHtml = '';
+  // ── ゾーンB: テーゼ要約 ──
+  var thesisText = p.thesis || p.strategy_name || '';
+  var accentColor = isSat ? 'var(--sat)' : 'var(--core)';
+  var zoneB = thesisText
+    ? '<div style="background:var(--sur2);border-radius:8px;padding:8px 10px;margin-bottom:8px;border-left:3px solid ' + accentColor + '">' +
+      '<div class="db-col-title">投資テーゼ</div>' +
+      '<div style="font-size:12px;color:var(--txt);line-height:1.6">' + esc(thesisText.slice(0, 100)) + (thesisText.length > 100 ? '…' : '') + '</div>' +
+      '</div>'
+    : '';
+
+  // ── ゾーンC: KPIトレンド（左50%）+ レビュー概要+スパークライン（右50%） ──
+  var reviewRightHtml = '';
   if (!reviews) {
-    reviewLeftHtml = '<div style="color:var(--mut);font-size:12px">レビューデータ読込中...</div>';
+    reviewRightHtml = '<div style="color:var(--mut);font-size:12px">レビューデータ読込中...</div>';
   } else if (!qs.length || !s1) {
-    reviewLeftHtml = '<div style="color:var(--mut);font-size:12px">レビューデータなし</div>';
+    reviewRightHtml = '<div style="color:var(--mut);font-size:12px">レビューデータなし</div>';
   } else {
-    var posItems = (s1.positives || []).slice(0, 3);
-    var conItems = (s1.concerns  || []).slice(0, 3);
+    // スコア推移スパークライン（コンパクト）
+    var hist = qs.slice().reverse().map(function (q) {
+      var r = reviews[q] && reviews[q].stage1;
+      return { q: q, v: r ? (r.health_score || 0) : null };
+    }).filter(function (d) { return d.v != null; });
+    var sparkHtml = '';
+    if (hist.length >= 2) {
+      var WS = 220, HS = 70, PLS = 14, PRS = 6, PTS = 4, PBS = 18;
+      var cWS = WS - PLS - PRS, cHS = HS - PTS - PBS, nS = hist.length;
+      var minS = Math.min.apply(null, hist.map(function (d) { return d.v; }));
+      var maxS = Math.max.apply(null, hist.map(function (d) { return d.v; }));
+      var rngS = maxS === minS ? 1 : maxS - minS;
+      function xS(i) { return PLS + (nS > 1 ? (i / (nS - 1)) * cWS : cWS / 2); }
+      function yS(v) { return PTS + cHS - ((v - minS) / rngS) * cHS; }
+      var ptsS = hist.map(function (d, i) { return xS(i).toFixed(1) + ',' + yS(d.v).toFixed(1); });
+      var dotsS = hist.map(function (d, i) {
+        var isLast = i === nS - 1;
+        var dc = d.v >= 71 ? '#10b981' : d.v >= 41 ? '#f59e0b' : '#f43f5e';
+        return '<circle cx="' + xS(i).toFixed(1) + '" cy="' + yS(d.v).toFixed(1) + '" r="' + (isLast ? 3.5 : 2) + '" fill="' + dc + '" stroke="var(--sur2)" stroke-width="1"><title>' + d.q + ': ' + d.v + '</title></circle>';
+      }).join('');
+      var showSetS = (nS > 5)
+        ? { 0: true, [Math.floor((nS - 1) / 2)]: true, [nS - 1]: true }
+        : (function () { var s = {}; for (var i = 0; i < nS; i++) s[i] = true; return s; }());
+      var xlblsS = hist.map(function (d, i) {
+        if (!showSetS[i]) return '';
+        return '<text x="' + xS(i).toFixed(1) + '" y="' + (HS - 4) + '" text-anchor="middle" font-size="8" fill="var(--mut)">' + d.q + '</text>';
+      }).join('');
+      sparkHtml = '<div style="margin-bottom:5px"><div class="db-col-title">スコア推移</div>' +
+        '<svg viewBox="0 0 ' + WS + ' ' + HS + '" style="width:100%;display:block">' +
+        '<polyline points="' + ptsS.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>' +
+        dotsS + xlblsS + '</svg></div>';
+    }
+
+    var posItems = (s1.positives || []).slice(0, 2);
+    var conItems = (s1.concerns  || []).slice(0, 2);
     var posMore  = (s1.positives || []).length - posItems.length;
     var conMore  = (s1.concerns  || []).length - conItems.length;
     var posHtml2 = posItems.map(function (t) {
@@ -1565,70 +1627,44 @@ function buildDashboard(ticker) {
     var nkHtml2 = nkItems.map(function (k) {
       return '<span style="font-size:10px;background:var(--sur);border:1px solid var(--bdr);border-radius:3px;padding:2px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;display:inline-block">' + esc(k) + '</span>';
     }).join('');
-    var edCls2 = (s1.exit_distance || '').includes('遠') ? 'ed-far' : (s1.exit_distance || '').includes('近い') ? 'ed-close' : 'ed-watch';
     var biasSmHtml = s1.optimism_bias_warning
-      ? '<div style="font-size:11px;color:var(--amb);background:rgba(245,158,11,.1);border-radius:4px;padding:2px 6px;margin:3px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">⚠ ' + esc(s1.optimism_bias_warning.slice(0, 60)) + (s1.optimism_bias_warning.length > 60 ? '…' : '') + '</div>'
+      ? '<div style="font-size:11px;color:var(--amb);background:rgba(245,158,11,.1);border-radius:4px;padding:2px 6px;margin:3px 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">⚠ ' + esc(s1.optimism_bias_warning.slice(0, 60)) + (s1.optimism_bias_warning.length > 60 ? '…' : '') + '</div>'
       : '';
-    reviewLeftHtml =
+    reviewRightHtml = sparkHtml +
       '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">' +
       '<div class="db-gauge-mini" style="flex:1"><div class="db-gauge-mini-fill" style="width:' + score + '%;background:' + gc + '"></div></div>' +
       '<span class="rec-badge ' + recCls + '" style="font-size:10px">' + esc(rec) + '</span></div>' +
-      '<div style="font-size:12px;color:var(--txt);line-height:1.5;max-height:3.6em;overflow:hidden;margin-bottom:4px">' + esc(s1.summary || '') + '</div>' +
+      '<div style="font-size:12px;color:var(--txt);line-height:1.5;max-height:3em;overflow:hidden;margin-bottom:4px">' + esc(s1.summary || '') + '</div>' +
       biasSmHtml +
       (posHtml2 ? '<div style="margin-bottom:3px"><div style="font-size:10px;color:var(--sub);margin-bottom:1px">ポジティブ</div>' + posHtml2 + '</div>' : '') +
       (conHtml2 ? '<div style="margin-bottom:3px"><div style="font-size:10px;color:var(--sub);margin-bottom:1px">懸念点</div>' + conHtml2 + '</div>' : '') +
-      (s1.exit_distance ? '<div style="margin:3px 0"><span class="exit-dist-badge ' + edCls2 + '" style="font-size:11px">' + esc(s1.exit_distance) + '</span>' +
-        (s1.exit_distance_reason ? '<span style="font-size:11px;color:var(--sub);margin-left:6px">' + esc(s1.exit_distance_reason.slice(0, 40)) + (s1.exit_distance_reason.length > 40 ? '...' : '') + '</span>' : '') + '</div>' : '') +
       (nkHtml2 ? '<div style="margin-top:4px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">確認KPI</div><div style="display:flex;flex-wrap:wrap;gap:4px">' + nkHtml2 + '</div></div>' : '');
-
-    // スコア推移スパークライン
-    var hist = qs.slice().reverse().map(function (q) {
-      var r = reviews[q] && reviews[q].stage1;
-      return { q: q, v: r ? (r.health_score || 0) : null };
-    }).filter(function (d) { return d.v != null; });
-    if (hist.length >= 2) {
-      var W = 260, H = 100, PL = 16, PR = 8, PT = 8, PB = 24;
-      var cW = W - PL - PR, cH = H - PT - PB, n = hist.length;
-      var minV = Math.min.apply(null, hist.map(function (d) { return d.v; }));
-      var maxV = Math.max.apply(null, hist.map(function (d) { return d.v; }));
-      var rng = maxV === minV ? 1 : maxV - minV;
-      function xH(i) { return PL + (n > 1 ? (i / (n - 1)) * cW : cW / 2); }
-      function yH(v) { return PT + cH - ((v - minV) / rng) * cH; }
-      var pts = hist.map(function (d, i) { return xH(i).toFixed(1) + ',' + yH(d.v).toFixed(1); });
-      var dots = hist.map(function (d, i) {
-        var isLast = i === n - 1;
-        var dc = d.v >= 71 ? '#10b981' : d.v >= 41 ? '#f59e0b' : '#f43f5e';
-        return '<circle cx="' + xH(i).toFixed(1) + '" cy="' + yH(d.v).toFixed(1) + '" r="' + (isLast ? 5 : 3) + '" fill="' + dc + '" stroke="var(--sur2)" stroke-width="1.5"><title>' + d.q + ': ' + d.v + '</title></circle>';
-      }).join('');
-      var showSet = (n > 5)
-        ? { 0: true, [Math.floor((n - 1) / 2)]: true, [n - 1]: true }
-        : (function () { var s = {}; for (var i = 0; i < n; i++) s[i] = true; return s; }());
-      var xlbls = hist.map(function (d, i) {
-        if (!showSet[i]) return '';
-        return '<text x="' + xH(i).toFixed(1) + '" y="' + (H - 10) + '" text-anchor="middle" font-size="9" fill="var(--mut)">' + d.q + '</text>';
-      }).join('');
-      sparkRightHtml = '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;display:block">' +
-        '<polyline points="' + pts.join(' ') + '" fill="none" stroke="var(--acc)" stroke-width="1.5" stroke-linejoin="round"/>' +
-        dots + xlbls + '</svg>';
-    } else {
-      sparkRightHtml = '<div style="color:var(--mut);font-size:11px;padding:16px 0;text-align:center">履歴' + hist.length + '件（2件以上でグラフ表示）</div>';
-    }
   }
 
-  var zoneB =
-    '<div class="db-two-col">' +
-    '<div class="db-col"><div class="db-col-title">最新レビュー概要</div>' + reviewLeftHtml + '</div>' +
-    '<div class="db-col"><div class="db-col-title">スコア推移</div>' + sparkRightHtml + '</div>' +
-    '</div>';
-
-  // ── ゾーンC: KPI + DCF ──
   var zoneC =
     '<div class="db-two-col-half">' +
     '<div class="db-col"><div class="db-col-title">KPIトレンド</div><div id="db-kpi-zone">' + _buildDashboardKpi(ticker) + '</div></div>' +
+    '<div class="db-col">' + reviewRightHtml + '</div>' +
+    '</div>';
+
+  // ── ゾーンD: 乖離率文脈（左40%）+ DCFシナリオ（右60%） ──
+  var exitDist   = s1 ? (s1.exit_distance || '') : '';
+  var exitReason = s1 ? (s1.exit_distance_reason || '') : '';
+  var edCls2 = exitDist.includes('遠') ? 'ed-far' : exitDist.includes('近い') ? 'ed-close' : 'ed-watch';
+  var devContextHtml =
+    '<div class="db-col-title">乖離率</div>' +
+    '<div style="font-size:26px;font-weight:700;font-family:var(--mono);color:' + (dev != null ? (dev >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--mut)') + ';margin-bottom:6px">' +
+    (dev != null ? (dev >= 0 ? '+' : '') + dev.toFixed(1) + '%' : '—') + '</div>' +
+    (exitDist ? '<span class="exit-dist-badge ' + edCls2 + '" style="font-size:11px">' + esc(exitDist) + '</span>' +
+      (exitReason ? '<div style="font-size:11px;color:var(--sub);margin-top:4px;line-height:1.5">' + esc(exitReason) + '</div>' : '') : '');
+
+  var zoneD =
+    '<div style="display:grid;grid-template-columns:40% 60%;gap:8px;margin-bottom:8px">' +
+    '<div class="db-col">' + devContextHtml + '</div>' +
     '<div class="db-col"><div class="db-col-title">DCFシナリオ</div><div id="db-dcf-zone">' + _buildDashboardDcf(ticker) + '</div></div>' +
     '</div>';
 
-  // ── ゾーンD: 折りたたみ（AI視点 + 内部統制） ──
+  // ── ゾーンE: AI視点（折りたたみ） ──
   var c2Html = '';
   if (!reviews) {
     c2Html = '<div style="color:var(--mut);font-size:12px">データ読込中...</div>';
@@ -1636,11 +1672,11 @@ function buildDashboard(ticker) {
     var c2 = reviews[latestQ].call2;
     var fp = c2.five_perspectives || {};
     var fpLbls = [
-      { key: 'business_model', label: 'ビジネスモデル' },
-      { key: 'growth',         label: '成長性' },
       { key: 'competitive_advantage', label: '競争優位' },
-      { key: 'management',     label: '経営' },
-      { key: 'market',         label: '市場環境' },
+      { key: 'growth',                label: '成長性' },
+      { key: 'market',                label: '市場環境' },
+      { key: 'management',            label: '経営' },
+      { key: 'business_model',        label: 'ビジネスモデル' },
     ];
     c2Html = fpLbls.map(function (item) {
       var txt = fp[item.key];
@@ -1657,10 +1693,18 @@ function buildDashboard(ticker) {
   } else {
     c2Html = '<div style="color:var(--mut);font-size:12px">AI定性分析データなし</div>';
   }
+  var zoneE = _dbFold('AI視点', c2Html);
 
-  var zoneD = _dbFold('AI視点', c2Html) + _dbFold('内部統制', '<div id="db-ctrl-zone">' + _buildDashboardCtrl(ticker) + '</div>');
+  // ── ゾーンF: 内部統制 + EXIT条件（折りたたみ） ──
+  var exitCondText = isSat ? (p.exit_condition || '') : (p.exit_guide || '');
+  var ctrlFoldHtml = '<div id="db-ctrl-zone">' + _buildDashboardCtrl(ticker) + '</div>' +
+    (exitCondText
+      ? '<div style="margin-top:10px"><div style="font-size:10px;color:var(--sub);margin-bottom:4px">EXIT条件</div>' +
+        '<div style="font-size:12px;color:var(--txt);line-height:1.6;white-space:pre-wrap">' + esc(exitCondText.slice(0, 200)) + (exitCondText.length > 200 ? '…' : '') + '</div></div>'
+      : '');
+  var zoneF = _dbFold('内部統制・EXIT', ctrlFoldHtml);
 
-  return summaryBar + zoneB + zoneC + zoneD;
+  return summaryBar + zoneB + zoneC + zoneD + zoneE + zoneF;
 }
 
 /* ─── Tab 1: テーゼ ─── */
