@@ -67,6 +67,18 @@
 
 ---
 
+### [PREVENT-3] pytestの対象拡充（Inf/None/ゼロ除算）（2026-06-27完了）
+
+**完了日:** 2026-06-27
+**対応内容:**
+- TTM-NULL-1対応時に `tests/test_pipeline_logic.py` へ TestTTMNullValGuard（2テスト）を追加
+- STONKS-DIV-1対応時に TestStonksDivisionGuards（2テスト）を追加
+- HYPE-INF-1対応時に hypecore.py の rev_ttm_prior=0 時 Inf 非発生テストを追加
+- pytest 119 → 123 件、全件パス確認済み
+- 当初3件とも未カバーだったが、各バグ修正と同時にテスト追加することで対応完了
+
+---
+
 ## 2026-06-26（完了）
 
 ### [TAIL-SAT-CORE-1] satelliteモーダルをcore同等の6タブ構成に変更（2026-06-26完了）
