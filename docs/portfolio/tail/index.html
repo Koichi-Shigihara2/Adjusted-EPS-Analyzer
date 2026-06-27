@@ -1837,7 +1837,9 @@ function buildTabKpi(ticker) {
   var kd = kpiCache[ticker];
   if (!kd) return '<div style="text-align:center;color:var(--mut);padding:40px;font-family:var(--mono);font-size:12px">KPIデータ読み込み中...</div>';
   var kpis = kd.kpis || {};
-  var names = Object.keys(kpis);
+  var names = Object.keys(kpis).filter(function (kname) {
+    return (kpis[kname].data || []).some(function (d) { return d.value !== null && d.value !== undefined; });
+  });
   if (!names.length) return '<div style="text-align:center;color:var(--mut);padding:40px;font-family:var(--mono);font-size:12px">KPIデータなし</div>';
   return names.map(function (kname) {
     return '<div class="kpi-card"><div class="kpi-card-name">' + esc(kname) + '</div>' +
@@ -1846,7 +1848,9 @@ function buildTabKpi(ticker) {
 }
 
 function buildSparkline(kinfo) {
-  var rawData = (kinfo.data || []).slice().sort(function (a, b) { return a.quarter.localeCompare(b.quarter); });
+  var rawData = (kinfo.data || []).slice()
+    .filter(function (d) { return d.value !== null && d.value !== undefined; })
+    .sort(function (a, b) { return a.quarter.localeCompare(b.quarter); });
   var unit    = kinfo.unit || '';
   if (!rawData.length) return '<p style="color:var(--mut);font-size:12px;text-align:center">データなし</p>';
 
