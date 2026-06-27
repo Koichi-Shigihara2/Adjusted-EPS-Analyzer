@@ -287,7 +287,7 @@ var S = {
   thesis:  null,   /* positions/{ticker}_thesis.json */
   reviews: {},     /* { quarter: reviewJson } */
   kpi:     null,   /* kpi/{ticker}_layer2.json */
-  ctrl:    null,   /* ctrl/{ticker}/latest.json */
+  ctrlItems: {},   /* { item1, item1a, item3, item4, item7 } */
   val:     null,   /* value-monitor/tanuki_valuation/data/{ticker}/latest.json */
   allPos:  [],     /* ナビ用全ポジション（CORE→SAT順） */
 };
@@ -325,11 +325,28 @@ function loadAll() {
     .catch(function () { return null; })
     .then(function (d) { S.kpi = d; });
 
-  /* 内部統制 */
-  var ctrlP = fetch('data/ctrl/' + ticker + '/latest.json?_=' + Date.now())
-    .then(function (r) { return r.ok ? r.json() : null; })
-    .catch(function () { return null; })
-    .then(function (d) { S.ctrl = d; });
+  /* 内部統制（Item 1/1A/3/4/7 並列取得） */
+  var CTRL_ITEMS = [
+    { key: 'item1',  path: 'item1/latest.json',  label: 'ITEM 1 — 事業概要',                          badge: false },
+    { key: 'item1a', path: 'item1a/latest.json', label: 'ITEM 1A — リスク要因',                       badge: false },
+    { key: 'item3',  path: 'item3/latest.json',  label: 'ITEM 3 — 法的手続き',                        badge: false },
+    { key: 'item4',  path: 'latest.json',         label: 'ITEM 4 — 内部統制',                         badge: true  },
+    { key: 'item7',  path: 'item7/latest.json',  label: 'ITEM 7 — 経営者による財務状態の分析（MD&A）', badge: false },
+  ];
+  var ctrlBase = 'data/ctrl/' + ticker + '/';
+  var ctrlP = Promise.allSettled(
+    CTRL_ITEMS.map(function (item) {
+      return fetch(ctrlBase + item.path + '?_=' + Date.now())
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    })
+  ).then(function (results) {
+    CTRL_ITEMS.forEach(function (item, i) {
+      var r = results[i];
+      if (r.status === 'fulfilled' && r.value) S.ctrlItems[item.key] = r.value;
+    });
+  });
+  window._CTRL_ITEMS = CTRL_ITEMS; /* buildCtrl() から参照 */
 
   /* バリュエーション（任意） */
   var valP = fetch('../../value-monitor/tanuki_valuation/data/' + ticker + '/latest.json?_=' + Date.now())
@@ -373,9 +390,9 @@ function render() {
   var parts = [
     buildSummaryBar(),    /* セクション1: サマリーバー */
     buildThesis(),        /* セクション2: 投資テーゼ（折りたたみ） */
-    '<div class="two-col">' + buildKpi() + buildReview() + '</div>', /* セクション3 */
-    '<div class="two-col">' + buildDcf() + buildAi()    + '</div>', /* セクション4 */
-    buildCtrl(),          /* セクション5: 内部統制 */
+    '<div class="two-col">' + buildReview() + buildKpi() + '</div>', /* セクション3: 最新レビュー（左）| KPIトレンド（右） */
+    '<div class="two-col">' + buildAi()    + buildDcf() + '</div>', /* セクション4: AI視点（左）| DCFシナリオ（右） */
+    buildCtrl(),          /* セクション5: 内部統制（DCF直下） */
     buildHistory(),       /* セクション6: 過去レビュー履歴 */
   ];
   document.getElementById('det-main').innerHTML = parts.join('');
@@ -484,7 +501,7 @@ function buildThesis() {
 }
 
 /* ══════════════════════════════════
-   セクション3-左: KPIトレンド
+   セクション3-右: KPIトレンド
 ══════════════════════════════════ */
 function buildKpi() {
   var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">KPIトレンド</div>';
@@ -510,7 +527,7 @@ function buildKpi() {
 }
 
 /* ══════════════════════════════════
-   セクション3-右: 最新レビュー
+   セクション3-左: 最新レビュー
 ══════════════════════════════════ */
 function buildReview() {
   var qs  = Object.keys(S.reviews).sort().reverse();
@@ -575,7 +592,7 @@ function buildReview() {
 }
 
 /* ══════════════════════════════════
-   セクション4-左: DCFシナリオ
+   セクション4-右: DCFシナリオ
 ══════════════════════════════════ */
 function buildDcf() {
   var qs  = Object.keys(S.reviews).sort().reverse();
@@ -622,7 +639,7 @@ function buildDcf() {
 function pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '–'; }
 
 /* ══════════════════════════════════
-   セクション4-右: AI視点
+   セクション4-左: AI視点
 ══════════════════════════════════ */
 function buildAi() {
   var qs  = Object.keys(S.reviews).sort().reverse();
@@ -679,35 +696,59 @@ function buildAi() {
    セクション5: 内部統制
 ══════════════════════════════════ */
 function buildCtrl() {
-  var d   = S.ctrl;
-  var out = '<div class="sec-hd">内部統制</div>';
-  if (!d) return out + '<div class="no-data">データなし（未取得 or CIK未登録）</div>';
+  var items  = window._CTRL_ITEMS || [];
+  var out    = '<div class="sec-hd">内部統制 · SEC提出書類</div>';
+  var hasAny = false;
 
-  var effLabel, effCls;
-  if (d.effective === true)       { effLabel = '有効 (Effective)';     effCls = 'ctrl-ok'; }
-  else if (d.effective === false) { effLabel = '無効 (Not Effective)'; effCls = 'ctrl-ng'; }
-  else                             { effLabel = '判定不能';              effCls = 'ctrl-unk'; }
+  items.forEach(function (item) {
+    var d = S.ctrlItems[item.key];
+    if (!d) return;
+    hasAny = true;
 
-  out += '<span class="ctrl-badge ' + effCls + '">' + esc(effLabel) + '</span>';
-  out += '<div class="muted-meta">' +
-    esc(d.quarter || '') + (d.filing_date ? ' / 提出日: ' + esc(d.filing_date) : '') + '</div>';
+    out += '<div style="margin-bottom:24px">';
+    out += '<div class="sec-sub" style="margin-bottom:8px">' + esc(item.label) + '</div>';
 
-  var mw = d.material_weaknesses || [];
-  if (mw.length) {
-    out += '<div style="margin-bottom:10px"><div class="sec-sub" style="color:var(--red)">マテリアルウィークネス (' + mw.length + '件)</div>' +
-      '<ul class="blist">' + mw.map(function (s) { return '<li style="color:var(--red)">' + esc(s) + '</li>'; }).join('') + '</ul></div>';
-  }
+    /* 有効性バッジ（Item 4 のみ） */
+    if (item.badge) {
+      var effLabel, effCls;
+      if (d.effective === true)       { effLabel = '有効 (Effective)';     effCls = 'ctrl-ok'; }
+      else if (d.effective === false) { effLabel = '無効 (Not Effective)'; effCls = 'ctrl-ng'; }
+      else                             { effLabel = '判定不能';              effCls = 'ctrl-unk'; }
+      out += '<span class="ctrl-badge ' + effCls + '">' + esc(effLabel) + '</span>';
 
-  if (d.item4_excerpt_ja) {
-    out += '<div class="sec-sub">Item 4 要旨（日本語）</div>' +
-      '<div class="ctrl-excerpt">' + esc(d.item4_excerpt_ja) + '</div>';
-  }
+      var mw = d.material_weaknesses || [];
+      if (mw.length) {
+        out += '<div style="margin:8px 0"><div class="sec-sub" style="color:var(--red)">マテリアルウィークネス (' + mw.length + '件)</div>' +
+          '<ul class="blist">' + mw.map(function (s) { return '<li style="color:var(--red)">' + esc(s) + '</li>'; }).join('') + '</ul></div>';
+      }
+    }
 
-  if (d.item4_excerpt) {
-    out += '<details style="margin-top:10px"><summary>Item 4 原文（English）を表示</summary>' +
-      '<div class="ctrl-excerpt ctrl-en" style="margin-top:6px">' + esc(d.item4_excerpt) + '</div></details>';
-  }
+    /* 四半期 / 提出日 */
+    if (d.quarter || d.filing_date) {
+      out += '<div class="muted-meta">' +
+        esc(d.quarter || '') + (d.filing_date ? ' / 提出日: ' + esc(d.filing_date) : '') + '</div>';
+    }
 
+    /* 日本語訳（優先）→ 英文原文 */
+    var jaKey = item.key + '_excerpt_ja';
+    var enKey = item.key + '_excerpt';
+    var jaText = d[jaKey] || d.excerpt_ja || null;
+    var enText = d[enKey] || d.excerpt    || null;
+
+    if (jaText) {
+      out += '<div class="ctrl-excerpt">' + esc(jaText) + '</div>';
+      if (enText) {
+        out += '<details style="margin-top:8px"><summary>英文原文を表示</summary>' +
+          '<div class="ctrl-excerpt ctrl-en" style="margin-top:6px">' + esc(enText) + '</div></details>';
+      }
+    } else if (enText) {
+      out += '<div class="ctrl-excerpt ctrl-en">' + esc(enText) + '</div>';
+    }
+
+    out += '</div>';
+  });
+
+  if (!hasAny) out += '<div class="no-data">データなし（未取得 or CIK未登録）</div>';
   return out;
 }
 
