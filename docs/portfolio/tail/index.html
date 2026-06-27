@@ -102,6 +102,8 @@
       cursor: pointer; border-radius: 2px; transition: all .15s; margin-right: 4px;
     }
     .action-btn:hover { border-color: var(--acc); color: var(--acc); }
+    .btn-detail { display:inline-block; font-family:var(--mono); font-size:10px; padding:3px 9px; background:transparent; border:1px solid var(--bdr); color:var(--sub); border-radius:2px; text-decoration:none; transition:all .15s; margin-right:4px; }
+    .btn-detail:hover { border-color:var(--acc); color:var(--acc); }
     .empty-row td { text-align: center; color: var(--mut); font-family: var(--mono); font-size: 12px; padding: 24px; }
 
     .form-card { background: var(--sur); border: 1px solid var(--bdr); border-radius: 6px; padding: 24px; }
@@ -1174,7 +1176,7 @@ function renderUnifiedTable(items) {
 
     // アクション
     var actHtml = '<div style="display:flex;gap:4px">' +
-      '<button class="action-btn" onclick="openModal(\'' + esc(ticker) + '\')">詳細</button>' +
+      '<a href="detail.html?ticker=' + esc(ticker) + '" class="btn-detail">詳細</a>' +
       '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(ticker) + '\')">📝</button>' +
       '</div>';
 
@@ -1237,7 +1239,7 @@ function renderCoreTable(items) {
       '<td class="num">' + devHtml + '</td>',
       '<td class="num">' + scoreColHtml + '</td>',
       '<td class="num" style="font-family:var(--mono);font-size:11px">' + esc(latestRvQ) + '</td>',
-      '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
+      '<td style="display:flex;gap:4px"><a href="detail.html?ticker=' + esc(p.ticker) + '" class="btn-detail">詳細</a>' +
         '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',
       '</tr>'
     ].join('');
@@ -1279,7 +1281,7 @@ function renderSatTable(items) {
       '<td class="num">' + plHtml + '</td>',
       '<td style="font-size:12px;color:var(--sub)">' + exitCond + '</td>',
       '<td class="num"><span class="days-badge">' + esc(String(holdDays)) + '</span></td>',
-      '<td style="display:flex;gap:4px"><button class="action-btn" onclick="openModal(\'' + esc(p.ticker) + '\')">詳細</button>' +
+      '<td style="display:flex;gap:4px"><a href="detail.html?ticker=' + esc(p.ticker) + '" class="btn-detail">詳細</a>' +
         '<button class="jnl-btn" onclick="event.stopPropagation();openJournalModal(\'' + esc(p.ticker) + '\')">📝</button></td>',
       '</tr>'
     ].join('');
