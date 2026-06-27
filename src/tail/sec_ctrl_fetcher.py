@@ -63,9 +63,13 @@ _RE_SIG_DEFICIENCY = re.compile(
     re.IGNORECASE,
 )
 _RE_EFFECTIVE = re.compile(
-    r"(were\s+effective|was\s+effective|are\s+effective|"
-    r"concluded\s+.{0,80}effective\s+as\s+of)",
-    re.IGNORECASE,
+    r"(were\s+effective"
+    r"|was\s+effective"
+    r"|are\s+effective"
+    r"|were\b.{0,80}\beffective\b"
+    r"|concluded\s+.{0,120}effective\s+as\s+of"
+    r")",
+    re.I | re.S,
 )
 
 
