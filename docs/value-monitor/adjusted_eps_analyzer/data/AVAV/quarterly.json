@@ -1,6 +1,6 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-06-22T15:32:40.477898",
+  "last_updated": "2026-06-29T14:19:01.655320",
   "quarters": [
     {
       "gaap_eps": -4.901808132176951,
@@ -89,31 +89,31 @@
       "pretax_income": -265439000.0,
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPSが-4.90と大幅赤字なのは、主に240M超ののれん減損という非現金の一過性項目が原因であり、Adjusted EPSが+0.66と黒字転換している。この調整により市場がGAAPベースで判断する場合、企業の実力を大きく過小評価している可能性が高い。ただしSBCや無形資産償却は恒常的に発生するコストであり、これらを全額加算調整している点は過大評価リスクを伴う。投資家はのれん減損の背景（過去M&Aの成否）と、調整後でも持続可能なコア利益を確認する必要がある。",
+        "comment": "巨額ののれん減損（2.4億ドル超）がGAAP EPSを-4.90の大幅赤字にしている一方、Adjusted EPSは+0.66と黒字化しており、市場がGAAPベースで評価する場合に企業の実力（コア事業の収益力）が大きく過小評価されている可能性が高い。のれん減損や在庫評価損は一過性だが、SBCや無形資産償却は恒常的に発生する項目のため、調整後EPSの持続可能性に注意が必要。投資家はこれら非現金項目の実質影響を精査すべきで、過小評価リスクが大きい銘柄と言える。",
         "sources": [
           {
-            "item": "goodwill_impairment",
-            "snippet": "のれん減損は非現金の一過性費用であり、買収関連の非経常的項目として調整対象となる（240M規模がGAAP赤字の主因）。",
-            "confidence": 0.85
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用であり、恒常的な可能性が高い。",
-            "confidence": 0.25
-          },
-          {
             "item": "sbc",
-            "snippet": "株式報酬費用は毎期発生する恒常的な運用コストであり、調整による加算は実態を過大に見せるリスクがある。",
+            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬コスト",
             "confidence": 0.2
           },
           {
-            "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損として分類されており、調整として妥当性が高い。",
-            "confidence": 0.75
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で定期的に発生する非現金費用",
+            "confidence": 0.25
+          },
+          {
+            "item": "goodwill_impairment",
+            "snippet": "非現金減損であり買収後の一過性項目",
+            "confidence": 0.85
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "異常変動分に限定した貸倒引当金であり、マクロ要因による一時的項目。",
+            "snippet": "マクロ変動による異常変動分の一時的影響",
+            "confidence": 0.8
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損",
             "confidence": 0.7
           }
         ]

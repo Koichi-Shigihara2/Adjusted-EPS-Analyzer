@@ -1,6 +1,6 @@
 {
   "ticker": "CEG",
-  "last_updated": "2026-06-22T15:33:15.538026",
+  "last_updated": "2026-06-29T14:19:17.508176",
   "quarters": [
     {
       "gaap_eps": 4.528248587570621,
@@ -82,22 +82,22 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目のうちderivative_fv_changeが-10.4億ドルと極めて大規模で、GAAP EPS(4.53)をAdjusted EPS(2.37)へ大幅に下方修正している。これは主に非現金・非経常のデリバティブ評価益を除外した結果と解釈され、市場がGAAP EPSのみで判断する場合、企業の実力（経常収益力）を過大に見積もるリスクが高い。過小評価の可能性は低い。amortization_intangiblesは恒常的な非現金費用であり、loan_loss_provision_abnormalはマクロ要因による一時的項目だが、derivativeはエネルギー企業のヘッジ特性上、ボラティリティが継続する可能性もある。投資家はAdjustedベースの持続的収益力とデリバティブの将来的実現影響を注視すべき。",
+        "comment": "主にderivative_fv_changeの巨額な非現金利益を除外した結果、GAAP EPS 4.53に対しAdjusted EPS 2.37と大幅に低下。市場がGAAP EPSで判断する場合、一時的利益により持続的な企業実力が見えにくくなり過大評価リスクが高いが、調整により実力（ recurring earnings power）が正確に示されているため過小評価の可能性は低い。amortization_intangiblesは恒常的項目のため調整の妥当性に注意が必要。投資家はデリバティブのボラティリティと今後のヘッジ会計の影響を注視すべき。",
         "sources": [
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却",
+            "snippet": "買収関連無形資産の償却は恒常的に発生する非現金費用であり、毎期継続する可能性が高い。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響",
-            "confidence": 0.8
+            "snippet": "マクロ変動による一時的影響として異常変動分をadd_back。マクロ要因次第で一過性と判断。",
+            "confidence": 0.7
           },
           {
             "item": "derivative_fv_change",
-            "snippet": "非現金・非経常のデリバティブ時価評価変動",
-            "confidence": 0.6
+            "snippet": "非現金・非経常のデリバティブ時価評価変動であり、-1.04Bの巨額調整がEPS差の主因。公正価値変動は通常ボラティリティが高く一過性。",
+            "confidence": 0.75
           }
         ]
       }
