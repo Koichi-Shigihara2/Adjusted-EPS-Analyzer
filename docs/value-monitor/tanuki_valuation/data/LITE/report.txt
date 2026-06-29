@@ -1,16 +1,16 @@
 LITE INTEGRATED INVESTMENT REPORT
-Generated: 2026-06-27T01:34:47+09:00
-Price: $801.36
+Generated: 2026-06-30T02:16:31+09:00
+Price: $840.48
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -98.2%
-  MA200_Deviation: +52.1%
+  Deviation_Rate: -97.0%
+  MA200_Deviation: +58.6%
   HypeCore_Phase: Phase3 (陶酔期)
-  Analyst_Consensus: Buy | Target: $1100 median ($600-$1400) | 25 analysts | vs IV: +7373.9%
-Comment: 割高(-98%超)、FCFマイナス（投資フェーズ）、売上成長加速
+  Analyst_Consensus: Buy | Target: $1100 median ($600-$1400) | 25 analysts | vs IV: +4303.5%
+Comment: 割高(-97%超)、FCFマイナス（投資フェーズ）、売上成長加速
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.334
-Deviation_Rate: -98.2%
+Deviation_Rate: -97.0%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -43,7 +43,7 @@ Definition:
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
 RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
-Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
+Matrix②(収益性系): Y=ROE_8yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
 (Consumer/Financial/Utilities/RealEstate/Insurance)
 Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
@@ -56,13 +56,14 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $801.36
-Intrinsic_Value_BASE: $14.72
-Deviation_BASE: -98.2%
+Current_Price: $840.48
+Intrinsic_Value_BASE: $24.98
+Deviation_BASE: -97.0%
 Scenarios:
-BEAR: Growth=12.4%, IV=$12.16, Deviation=-98.5%
-BASE: Growth=17.8%, IV=$14.72, Deviation=-98.2%
-BULL: Growth=21.3%, IV=$16.62, Deviation=-97.9%
+BEAR: Growth=5.0%, IV=$15.83, Deviation=-98.1%
+BASE: Growth=17.8%, IV=$24.98, Deviation=-97.0%
+BULL: Growth=21.3%, IV=$28.09, Deviation=-96.7%
+FCF_Margin_Bear_Adj: FCFマージン悪化(2.4%→-6.4%) BEAR補正係数=0.400
 TTM_YoY_Growth: 21.0%
 (DCF Base vs TTM actual: -3.2pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -70,27 +71,27 @@ WACC_CAPM_Reference: 12.73%
 Terminal_Growth_Rate: 3.5%
 Beta: 1.479
 Valuation_Gap_Analysis:
-  DCF_IV:           $15 (保守的FCFベース・現在実力値)
-  Market_Price:     $801
-  Gap:              -98% (市場が将来成長を先取り)
-  Implied_FCF_2030: $3.92B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $0.05B
-  Required_Growth:  140%/yr (現在FCFから必要成長率を逆算)
+  DCF_IV:           $25 (保守的FCFベース・現在実力値)
+  Market_Price:     $840
+  Gap:              -97% (市場が将来成長を先取り)
+  Implied_FCF_2030: $4.11B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $0.08B
+  Required_Growth:  120%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Communication Equipment)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $22M (= Adj_NI $31M × FCF_Conv 0.7)
 DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
-DCF_FCF_PV: $0.23B (4yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $1.02B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $1.25B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $0.38B (4yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $1.67B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $2.05B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $1.25B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $2.05B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $1.15B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.11B)
+Equity_Value: $1.94B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.11B)
 Shares_Used: 77.8M (source: yf_implied)
-→ Intrinsic_Value: $14.72 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $24.98 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.11B (negative=net cash)
   Total_Debt: $3.28B  Cash: $2.62B  ST_Invest: $0.55B
@@ -101,9 +102,9 @@ Financial_Health:
   ⚠️ 期中に大規模な株式発行の可能性（+11.8%乖離: yf=78M vs SEC=70M）
   Next_Earnings_Date: 2026-08-13
 FCF_History:
-  2021: $0.65B (FCF_Margin: 37.5%)
-  2022: $0.37B (FCF_Margin: 21.5%)
-  2023: $0.05B (FCF_Margin: 2.9%)
+  2021: N/A
+  2022: $0.65B (FCF_Margin: 37.5%)
+  2023: $0.37B (FCF_Margin: 21.5%)
   2024: $-0.11B (FCF_Margin: -8.0%)
   2025: $-0.10B (FCF_Margin: -6.4%)
 Segment_Breakdown:
@@ -245,9 +246,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 140.8x
-  Adjusted_EPS_PER: 173.2x (TTM調整後EPS: $4.6278)
-  Delta: +32.3x (more expensive on adjusted basis)
+  Market_PER_GAAP: 146.9x
+  Adjusted_EPS_PER: 181.6x (TTM調整後EPS: $4.6278)
+  Delta: +34.7x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-13
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -273,10 +274,10 @@ Phase_History (recent 6 months):
 2026-05: Phase3 (陶酔期)
 2026-06: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 140.8x
+  PER: 146.9x
   PEG: 0.63
-  PS:  25.1x
-  EV_EBITDA: 121.7x
+  PS:  26.3x
+  EV_EBITDA: 115.4x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -295,9 +296,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.26%  (ForwardEPS $18.13 / Price $801.36)
+  Forward_Earnings_Yield: 2.16%  (ForwardEPS $18.13 / Price $840.48)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.04%
+  ERP: -2.14%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -319,9 +320,9 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: yes
-Short_Interest: 14.5%
+Short_Interest: 13.2%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $1100 median ($600-$1400) | 25 analysts | vs IV: +7373.9%
+Analyst_Consensus: Buy | Target: $1100 median ($600-$1400) | 25 analysts | vs IV: +4303.5%
 Insider_Activity: Sell優勢 | 買い0件 / 売り44件 | 直近90日
 Runway_Months: 100.5
 Revenue_Growth_YoY: 21.0%
@@ -345,9 +346,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: antitrust lawsuit
+  [high] litigation: Antitrust lawsuit
   [high] regulatory: SEC investigation
-  [mid] earnings: earnings warning for 2025 2026
+  [mid] earnings: Earnings warning
 
 ==============================================
 DISCLAIMER: This report is generated automatically
