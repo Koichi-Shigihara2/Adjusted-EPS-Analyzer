@@ -957,6 +957,28 @@ python -m http.server 8767 --directory docs
 
 ブラウザで新規ページを開いてナビの該当項目がハイライトされていることを目視確認すること。
 
+### ④ 共通デザイン適用（新規ページ作成時は必須）
+
+`docs/common/site-header.js` の `TOOL_META` に新ページのツール定義を追加：
+
+```js
+xxx: { title: 'PAGE TITLE', subtitle: 'サブタイトル' }
+```
+
+`docs/common/site-theme.css` に `body[data-tool="xxx"] { --acc: #xxxxxx; }` を追加。
+
+これを忘れると、ナビには登録されてもヘッダーが未適用のまま
+（ロゴ・タイトル・アクセントカラーが統一されない）になる。
+
+**確認コマンド：**
+
+```bash
+grep -n "xxx:" docs/common/site-header.js
+grep -n "data-tool=\"xxx\"" docs/common/site-theme.css
+```
+
+（2026-07-01 EXTREME-FEAR-1対応時の実施パターンより追記）
+
 ---
 
 ## ファイル削除・上書き前の必須確認（重要）
