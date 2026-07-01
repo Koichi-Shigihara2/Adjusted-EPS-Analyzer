@@ -175,27 +175,6 @@ TAIL-CTRL-TRANS-1（2026-06-27完了）の構造を踏襲する。
 ---
 
 
-### [DUPONT-COLOR-1] DuPont ROE色分けの不統一
-**優先度:** 中
-**分類:** UX不統一 / TANUKI VALUATION・TANUKI SCORE
-**発見:** 2026-06-26横断調査
-
-#### 問題
-同一指標（DuPont ROE）の色分けが画面間で不一致。
-
-| ページ | 0〜15% ROE | <0% ROE |
-|--------|-----------|---------|
-| tanuki_score/index.html | 黄 #facc15 | 赤 #f87171 |
-| stock.html（DUPONT ANALYSISパネル）| 無色 var(--txt) | 赤 var(--red) |
-| glossary説明（tscore_dupont_roe_color）| "オレンジ" | "赤" |
-
-また glossary説明の「オレンジ」は実際の実装色「黄 #facc15」と表現が乖離。
-
-#### 対応方針（要設計判断）
-- stock.htmlをtanuki_scoreに合わせて黄を採用するか、現状の無色を維持するか
-- 統一する場合はglossary説明も合わせて修正
-
----
 
 
 ### [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
@@ -230,6 +209,26 @@ docs/value-monitor/extreme-fear/index.htmlがサイト公式ナビ（site-nav.js
 - site-header.js / site-nav.js未使用・独自ナビを内包
 - URLを直接知らないとアクセス不可
 
+#### 調査結果（2026-07-01 EXTREME-FEAR-1調査）
+
+**site-nav.js / docs/index.html**: extreme-fear/index.html へのリンクなし（確認済み）
+
+**Market Pulseとの機能比較:**
+
+| 機能 | extreme-fear | Market Pulse |
+|------|-------------|-------------|
+| F&G スコア表示（ゲージ・数値） | ✅ | ✅（共有データソース同一） |
+| F&G 前日/週/月比デルタ | ✅ | ✅（タイムライン/オシレーター） |
+| 過去F&G履歴チャート | ✅（60日） | ✅（より充実） |
+
+**extreme-fear独自機能（Market Pulseに存在しない）:**
+1. **買い候補 TOP10テーブル** — TANUKI score+乖離率+funda+phaseでスコアリング
+2. **投入額シミュレーター** — USDをスコア比例で銘柄配分
+3. **過去Extreme FearイベントのグループID表示**（F&G≤20の連続日を3日以内でグループ化）
+4. **買い付け方針メモ**（localStorage）
+
+→ F&G表示はMarket Pulseと重複。株式購買判断支援機能（TOP10/シミュレーター）は独自で価値あり。
+
 #### 対応方針（要設計判断）
 - A案: site-nav.jsに登録してMARKET PULSE配下のサブページとして復活
 - B案: 機能がMarket Pulseに統合済みであれば削除
@@ -237,24 +236,6 @@ docs/value-monitor/extreme-fear/index.htmlがサイト公式ナビ（site-nav.js
 
 ---
 
-### [EPS-BX-1] BXのEPS ANALYZERでfetch失敗リスク
-**優先度:** 中
-**分類:** データ欠落 / EPS ANALYZER
-**発見:** 2026-06-26横断調査
-
-#### 問題
-BX（Blackstone）はcik_lookup.csvでeps=trueだがtanuki=false。
-EPS ANALYZERのindex.htmlは銘柄表示時に
-../tanuki_valuation/data/BX/latest.jsonをfetchするが、
-BXはtanuki=falseのためlatest.jsonが存在せず404になる。
-IVが表示されない（エラーハンドリング次第でUIクラッシュの可能性あり）。
-
-#### 対応方針
-- A案: BXをtanuki=trueに変更してpipeline.pyを実行しlatest.jsonを生成
-- B案: EPS ANALYZERのfetchロジックでlatest.json不在時のフォールバックを追加
-- C案: BXをeps=falseに変更（BXは金融機関のためTANUKI-FIN-1対応まで保留）
-
----
 
 
 

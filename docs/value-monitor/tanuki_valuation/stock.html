@@ -1536,7 +1536,7 @@ function render(d) {
       const dp = d.dupont;
       if (!dp) return '';
       const fmtX = v => v != null ? v.toFixed(2) + 'x' : '—';
-      const roeCol = dp.roe_decomposed != null ? (dp.roe_decomposed > 0.15 ? 'var(--green)' : dp.roe_decomposed > 0 ? 'var(--txt)' : 'var(--red)') : 'var(--txt)';
+      const roeCol = dp.roe_decomposed != null ? (dp.roe_decomposed >= 0.15 ? '#4ade80' : dp.roe_decomposed >= 0 ? '#facc15' : '#f87171') : 'var(--txt)';
       const card = (label, value, sub, col, infoKey) =>
         `<div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px">
           <div style="font-size:10px;color:var(--mut);margin-bottom:4px;letter-spacing:.06em"${infoKey ? ` data-info="${infoKey}"` : ''}>${label}</div>

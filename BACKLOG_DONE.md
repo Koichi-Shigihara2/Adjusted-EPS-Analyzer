@@ -13,6 +13,20 @@
 
 ---
 
+### ✅ [EPS-BX-1] BXのEPS ANALYZERでfetch失敗リスク解消（2026-07-01 完了）
+- `config/cik_lookup.csv`: BX の eps フラグ true → false（TANUKI-FIN-1で金融機関向けDDM実装まで保留）
+- `docs/value-monitor/adjusted_eps_analyzer/data/summary.json`: BXエントリを直接削除（generate_summaryがマージ方式のため手動削除が必要）
+- 結果: summary.json が95→94銘柄。EPS ANALYZER一覧からBXが除外された。
+
+---
+
+### ✅ [DUPONT-COLOR-1] DuPont ROE色分け統一（2026-07-01 完了）
+- `docs/value-monitor/tanuki_valuation/stock.html` L1539: `> 0.15 ? 'var(--green)' : > 0 ? 'var(--txt)'` → `>= 0.15 ? '#4ade80' : >= 0 ? '#facc15'` に変更。赤も `var(--red)` → `#f87171` に変更。
+- `docs/common/glossary.json`: `tscore_dupont_roe_color` キーの「オレンジ」表記を「黄」に修正（実装色 #facc15 と一致させる）
+- 統一後: tanuki_score/index.html と stock.html の両方で 0〜15%=黄、<0%=赤、15%以上=緑 に統一。
+
+---
+
 ### ✅ [STOCK-GLOSSARY-1] stock.htmlへのglossaryツールチップ導入（2026-07-01 完了）
 - stock.html末尾に `../../common/info-tooltip.js` をimport追加
 - DuPont card関数に第5引数 `infoKey` を追加し、ROEカードのラベルに `data-info="tscore_dupont_roe_color"` を付与
