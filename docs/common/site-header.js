@@ -38,7 +38,8 @@
     'macro':        { title: 'MACRO PULSE',       subtitle: 'マクロ環境・景気後退リスク' },
     'discover':     { title: 'DISCOVER',          subtitle: '未発掘銘柄の発掘・ニュース収集' },
     'portfolio':    { title: 'PORTFOLIO',         subtitle: '保有ポートフォリオ管理' },
-    'tail':         { title: 'TANUKI TAIL',       subtitle: '長期投資テーゼ管理' }
+    'tail':         { title: 'TANUKI TAIL',       subtitle: '長期投資テーゼ管理' },
+    'ef':           { title: 'EXTREME FEAR',      subtitle: '買付支援・Macro Buy Signal' }
   };
 
   function build(tool, opts) {

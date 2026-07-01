@@ -13,6 +13,17 @@
 
 ---
 
+### ✅ [EXTREME-FEAR-1] extreme-fear/index.html 正式登録（2026-07-01 完了）
+- **重複削除**: F&Gゲージカード（① F&G INDEX）・ステータスバナー・renderFG/renderBanner/fgLabel/gaugeSVG を削除
+- **独自機能4つを保持**: ① 買い候補 TOP10 / ② 投入額シミュレーター / ③ 過去EF一覧 / ④ 買い付け方針メモ
+- **共通化**: site-theme.css・site-header.js・site-nav.js を適用、`data-tool="ef"` 追加
+- **nav 登録**: site-nav.js に `key:'ef'` エントリを Market Pulse の直後に追加
+- **site-header.js**: `'ef'` ツール定義を TOOL_META に追加（タイトル: EXTREME FEAR / サブタイトル: 買付支援・Macro Buy Signal）
+- **site-theme.css**: `body[data-tool="ef"] { --acc: #f43f5e; }` を追加（恐怖赤アクセント）
+- **SYSTEM_MAP.md**: Extreme Fear をシステム一覧に追記、site-header.js 適用ページ一覧を更新
+
+---
+
 ### ✅ [EPS-BX-1] BXのEPS ANALYZERでfetch失敗リスク解消（2026-07-01 完了）
 - `config/cik_lookup.csv`: BX の eps フラグ true → false（TANUKI-FIN-1で金融機関向けDDM実装まで保留）
 - `docs/value-monitor/adjusted_eps_analyzer/data/summary.json`: BXエントリを直接削除（generate_summaryがマージ方式のため手動削除が必要）

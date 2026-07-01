@@ -196,45 +196,6 @@ LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
 
 ---
 
-### [EXTREME-FEAR-1] extreme-fear/index.htmlの扱い方針決定
-**優先度:** 中
-**分類:** 設計判断 / 全体
-**発見:** 2026-06-26横断調査
-
-#### 問題
-docs/value-monitor/extreme-fear/index.htmlがサイト公式ナビ（site-nav.js・docs/index.html）
-に未接続で実質休眠状態。
-
-- コミット1件のみ（ACTION-6追加時）、以後更新なし
-- site-header.js / site-nav.js未使用・独自ナビを内包
-- URLを直接知らないとアクセス不可
-
-#### 調査結果（2026-07-01 EXTREME-FEAR-1調査）
-
-**site-nav.js / docs/index.html**: extreme-fear/index.html へのリンクなし（確認済み）
-
-**Market Pulseとの機能比較:**
-
-| 機能 | extreme-fear | Market Pulse |
-|------|-------------|-------------|
-| F&G スコア表示（ゲージ・数値） | ✅ | ✅（共有データソース同一） |
-| F&G 前日/週/月比デルタ | ✅ | ✅（タイムライン/オシレーター） |
-| 過去F&G履歴チャート | ✅（60日） | ✅（より充実） |
-
-**extreme-fear独自機能（Market Pulseに存在しない）:**
-1. **買い候補 TOP10テーブル** — TANUKI score+乖離率+funda+phaseでスコアリング
-2. **投入額シミュレーター** — USDをスコア比例で銘柄配分
-3. **過去Extreme FearイベントのグループID表示**（F&G≤20の連続日を3日以内でグループ化）
-4. **買い付け方針メモ**（localStorage）
-
-→ F&G表示はMarket Pulseと重複。株式購買判断支援機能（TOP10/シミュレーター）は独自で価値あり。
-
-#### 対応方針（要設計判断）
-- A案: site-nav.jsに登録してMARKET PULSE配下のサブページとして復活
-- B案: 機能がMarket Pulseに統合済みであれば削除
-- いずれにせよ放置は避ける
-
----
 
 
 
