@@ -196,10 +196,6 @@ LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
 
 ---
 
-
-
-
-
 ## 優先度：低（アイデア段階）
 
 ### [TAIL-DETAIL-1] detail.htmlレイアウト微調整
@@ -226,6 +222,15 @@ LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
 （例: stock.htmlで個別検証→TANUKI SCOREで横断相対判断、等）を
 今後設計したい。
 
+#### 格上げ検討理由（2026-07-01）
+EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×funda×phaseベースの
+銘柄選定）のナビ登録先を検討した際、本来TANUKI SCOREの役割に近い機能をMarket Pulse
+配下に置く形で暫定決着した。これは各画面の役割定義はあるものの、画面間の回遊動線・
+機能配置の指針が未設計であることに起因する。今後複数システムの性質を跨ぐ機能が増える
+たびに同種の判断コストが発生するため、次セッション以降の設計着手候補として優先的に
+検討する。
+
+---
 
 ### [MULTI-1] マルチバリュエーション表示
 - 現状: DCF一本槍
@@ -723,6 +728,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   TANUKI-ROE-2（部分）・SS-1（クローズ）
 ※ 2026-06-26横断調査・バグ調査実施: PREVENT-1〜5・各バグ・設定不整合をBACKLOG登録済み
 ※ 2026-06-27完了: CN-ENB-1・RKLB-CLEANUP-1・PICK-DUP-1・TTM-NULL-1・STONKS-DIV-1（ガード確認+テスト追加）・PREVENT-1・PREVENT-2・PREVENT-3・SEC-CTRL-1（パス変更・Grok翻訳・マイグレーション）
+※ 2026-07-01完了: STOCK-GLOSSARY-1・PREVENT-4・QBITconfig孤立エントリ削除・DUPONT-COLOR-1・EPS-BX-1・EXTREME-FEAR-1
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、

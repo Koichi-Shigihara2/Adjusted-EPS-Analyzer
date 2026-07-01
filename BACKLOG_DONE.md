@@ -38,6 +38,13 @@
 
 ---
 
+### ✅ [QBIT孤立エントリ削除] QBIT残骸config3ファイル削除（2026-07-01 完了）
+- PREVENT-4のcheck_hが検出したQBIT孤立エントリ（QBTSの旧ティッカー残骸）を削除
+- 削除ファイル: `config/segment_config.json` / `config/maturity_config.json` / `src/value/tanuki_valuation/kpi_config.py`
+- 再実行結果: `[H] Config: ✅ 整合OK` に改善。repo全体でQBIT参照ゼロ確認済み
+
+---
+
 ### ✅ [STOCK-GLOSSARY-1] stock.htmlへのglossaryツールチップ導入（2026-07-01 完了）
 - stock.html末尾に `../../common/info-tooltip.js` をimport追加
 - DuPont card関数に第5引数 `infoKey` を追加し、ROEカードのラベルに `data-info="tscore_dupont_roe_color"` を付与
