@@ -258,27 +258,6 @@ IVが表示されない（エラーハンドリング次第でUIクラッシュ�
 
 
 
-### [PREVENT-4] system_health.pyの監視対象拡充
-**優先度:** 中
-**分類:** 再発防止 / 自動監視
-
-#### 背景
-system_health.pyは現在TANUKI VALUATION・STONKS SILO・SECデータの
-5項目のみカバーしており、以下が未カバー：
-- TANUKI TAILのctrl/kpiデータ鮮度
-- HypeCoreのInf値混入
-- cik_lookup.csvとconfig間の整合性
-- poc.jsonの更新鮮度
-
-#### 対応内容
-system_health.pyに以下のチェックを追加する：
-- [F] check_f_tail: tailのctrlデータが全thesis銘柄分存在するか
-- [G] check_g_hypecore: poc.jsonにInf/-Inf値が混入していないか・更新鮮度確認
-- [H] check_h_config: cik_lookup.csvとsegment/maturity/beta_configの整合性
-- [I] check_i_eps: EPS ANALYZERのsummary.jsonの鮮度・異常値確認
-
----
-
 ## 優先度：低（アイデア段階）
 
 ### [TAIL-DETAIL-1] detail.htmlレイアウト微調整

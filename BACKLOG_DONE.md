@@ -4,6 +4,15 @@
 
 ## 2026-07-01（完了）
 
+### ✅ [PREVENT-4] system_health.pyの監視対象拡充（2026-07-01 完了）
+- check_f_tail: 全thesis銘柄（9件）のctrl/latest.json存在確認
+- check_g_hypecore: poc.json全件のInf/NaN混入チェック＋generated_at鮮度確認（14日閾値）
+- check_h_config: tanuki=trueのbeta_config未登録・segment/maturityの孤立エントリ検出
+- check_i_eps: summary.jsonの鮮度（14日閾値）＋eps=trueカバレッジ確認
+- 実行結果: F/G/I=✅（正常）、H=⚠️（QBIT孤立エントリ検出: segment_config.json・maturity_config.json）
+
+---
+
 ### ✅ [STOCK-GLOSSARY-1] stock.htmlへのglossaryツールチップ導入（2026-07-01 完了）
 - stock.html末尾に `../../common/info-tooltip.js` をimport追加
 - DuPont card関数に第5引数 `infoKey` を追加し、ROEカードのラベルに `data-info="tscore_dupont_roe_color"` を付与

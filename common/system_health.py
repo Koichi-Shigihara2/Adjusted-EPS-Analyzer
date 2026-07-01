@@ -13,8 +13,10 @@ common/system_health.py
 """
 
 import argparse
+import csv
 import glob
 import json
+import math
 import os
 import subprocess
 import sys
@@ -170,13 +172,178 @@ def check_e_silo() -> tuple[str, bool, str]:
     return f"{icon} {detail}", ok, detail
 
 
+_HYPE_STALE_DAYS = 14  # HypeCore 鮮度閾値（日）
+_EPS_STALE_DAYS  = 14  # EPS ANALYZER 鮮度閾値（日）
+_TAIL_CTRL       = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "ctrl")
+_TAIL_POSITIONS  = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
+_HYPE_DATA       = os.path.join(_REPO_ROOT, "docs", "value-monitor", "hypecore", "data")
+_EPS_SUMMARY     = os.path.join(_REPO_ROOT, "docs", "value-monitor", "adjusted_eps_analyzer", "data", "summary.json")
+_CIK_LOOKUP      = os.path.join(_REPO_ROOT, "config", "cik_lookup.csv")
+_BETA_CONFIG     = os.path.join(_REPO_ROOT, "config", "beta_config.json")
+_SEGMENT_CONFIG  = os.path.join(_REPO_ROOT, "config", "segment_config.json")
+_MATURITY_CONFIG = os.path.join(_REPO_ROOT, "config", "maturity_config.json")
+
+
+# ── F. TANUKI TAIL ctrl データ存在確認 ──────────────────────────────
+def check_f_tail() -> tuple[str, bool, str]:
+    if not os.path.exists(_TAIL_POSITIONS):
+        return "⚠️  positions ディレクトリ未作成", False, "positions dir missing"
+
+    thesis_tickers = [
+        f.replace("_thesis.json", "")
+        for f in os.listdir(_TAIL_POSITIONS)
+        if f.endswith("_thesis.json")
+    ]
+
+    missing_ctrl = [
+        t for t in thesis_tickers
+        if not os.path.exists(os.path.join(_TAIL_CTRL, t, "latest.json"))
+    ]
+
+    total  = len(thesis_tickers)
+    n_miss = len(missing_ctrl)
+    ok     = n_miss == 0
+    icon   = "✅" if ok else "⚠️ "
+    detail = f"{total - n_miss}/{total}件 ctrl/latest.json 存在"
+    if missing_ctrl:
+        detail += f" (不足: {', '.join(missing_ctrl)})"
+    return f"{icon} {detail}", ok, detail
+
+
+# ── G. HypeCore poc.json 健全性・鮮度 ────────────────────────────────
+def check_g_hypecore() -> tuple[str, bool, str]:
+    poc_files = glob.glob(os.path.join(_HYPE_DATA, "*_poc.json"))
+    if not poc_files:
+        return "⚠️  poc.jsonなし", False, "poc.json not found"
+
+    inf_tickers: list[str] = []
+    newest_date: date | None = None
+    today = date.today()
+
+    for f in poc_files:
+        ticker = os.path.basename(f).replace("_poc.json", "")
+        try:
+            d = json.load(open(f, encoding="utf-8"))
+        except Exception:
+            continue
+
+        gen_at = (d.get("generated_at") or "")[:10]
+        if gen_at:
+            try:
+                gd = date.fromisoformat(gen_at)
+                if newest_date is None or gd > newest_date:
+                    newest_date = gd
+            except ValueError:
+                pass
+
+        for entry in d.get("monthly", []):
+            if ticker in inf_tickers:
+                break
+            for v in entry.values():
+                if isinstance(v, float) and (math.isinf(v) or math.isnan(v)):
+                    inf_tickers.append(ticker)
+                    break
+
+    stale_days = (today - newest_date).days if newest_date else None
+    stale = stale_days is not None and stale_days > _HYPE_STALE_DAYS
+    n_inf = len(inf_tickers)
+
+    ok   = n_inf == 0 and not stale
+    icon = "✅" if ok else "⚠️ "
+    parts = [f"最終更新: {newest_date or '不明'}({stale_days if stale_days is not None else '?'}日経過)"]
+    if n_inf:
+        parts.append(f"Inf混入: {', '.join(inf_tickers[:3])}{'…' if n_inf > 3 else ''}")
+    if stale:
+        parts.append(f"{stale_days}日更新なし(閾値{_HYPE_STALE_DAYS}日)")
+    detail = " / ".join(parts)
+    return f"{icon} {detail}", ok, detail
+
+
+# ── H. config 整合性チェック ──────────────────────────────────────────
+def check_h_config() -> tuple[str, bool, str]:
+    with open(_CIK_LOOKUP, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    all_tickers    = {r["ticker"] for r in rows}
+    tanuki_tickers = [r["ticker"] for r in rows if r.get("tanuki", "").strip().lower() == "true"]
+
+    beta_data      = json.load(open(_BETA_CONFIG, encoding="utf-8"))
+    beta_overrides = set(beta_data.get("overrides", {}).keys())
+
+    segment_data  = json.load(open(_SEGMENT_CONFIG, encoding="utf-8"))
+    segment_ticks = [k for k in segment_data if not k.startswith("_")]
+
+    maturity_data  = json.load(open(_MATURITY_CONFIG, encoding="utf-8"))
+    maturity_ticks = [k for k in maturity_data if not k.startswith("_")]
+
+    missing_beta  = [t for t in tanuki_tickers if t not in beta_overrides]
+    orphaned_seg  = [t for t in segment_ticks if t not in all_tickers]
+    orphaned_mat  = [t for t in maturity_ticks if t not in all_tickers]
+
+    ok   = not missing_beta and not orphaned_seg and not orphaned_mat
+    icon = "✅" if ok else "⚠️ "
+    parts: list[str] = []
+    if missing_beta:
+        parts.append(f"beta未登録({len(missing_beta)}件): {', '.join(missing_beta[:3])}{'…' if len(missing_beta) > 3 else ''}")
+    if orphaned_seg:
+        parts.append(f"segment孤立: {', '.join(orphaned_seg)}")
+    if orphaned_mat:
+        parts.append(f"maturity孤立: {', '.join(orphaned_mat)}")
+    detail = "整合OK" if ok else " / ".join(parts)
+    return f"{icon} {detail}", ok, detail
+
+
+# ── I. EPS ANALYZER summary.json 鮮度・カバレッジ ────────────────────
+def check_i_eps() -> tuple[str, bool, str]:
+    if not os.path.exists(_EPS_SUMMARY):
+        return "⚠️  summary.json未作成", False, "summary.json not found"
+
+    try:
+        data = json.load(open(_EPS_SUMMARY, encoding="utf-8"))
+    except Exception as e:
+        return f"🔴 読み込みエラー: {e}", False, str(e)
+
+    last_updated = (data.get("last_updated") or "")[:10]
+    tickers_list = data.get("tickers", [])
+    today = date.today()
+
+    stale_days: int | None = None
+    stale = False
+    if last_updated:
+        try:
+            upd_date = date.fromisoformat(last_updated)
+            stale_days = (today - upd_date).days
+            stale = stale_days > _EPS_STALE_DAYS
+        except ValueError:
+            pass
+
+    # eps=true のティッカーが summary.json に含まれているかカバレッジ確認
+    with open(_CIK_LOOKUP, encoding="utf-8") as f:
+        rows = list(csv.DictReader(f))
+    eps_tickers    = {r["ticker"] for r in rows if r.get("eps", "").strip().lower() == "true"}
+    summary_tickers= {e["ticker"] for e in tickers_list if isinstance(e, dict)}
+    missing_eps    = sorted(eps_tickers - summary_tickers)
+
+    ok   = not stale and not missing_eps
+    icon = "✅" if ok else "⚠️ "
+    parts = [f"更新{last_updated or '不明'}({stale_days if stale_days is not None else '?'}日経過)"]
+    if stale:
+        parts.append(f"{stale_days}日更新なし(閾値{_EPS_STALE_DAYS}日)")
+    if missing_eps:
+        parts.append(f"未収録({len(missing_eps)}件): {', '.join(missing_eps[:3])}{'…' if len(missing_eps) > 3 else ''}")
+    detail = " / ".join(parts)
+    return f"{icon} {detail}", ok, detail
+
+
 # ── Discord 1行サマリー ───────────────────────────────────────────────
 def build_one_line(run_date: str, results: dict) -> str:
     overall_ok = all(r["ok"] for r in results.values())
     globe      = "🟢" if overall_ok else "🔴"
     status     = "HEALTHY" if overall_ok else "WARNING"
     parts = []
-    labels = {"A": "SEC", "B": "Score", "C": "Latest", "D": "Actions", "E": "Silo"}
+    labels = {
+        "A": "SEC", "B": "Score", "C": "Latest", "D": "Actions", "E": "Silo",
+        "F": "Tail", "G": "Hype", "H": "Config", "I": "EPS",
+    }
     for key, label in labels.items():
         r = results.get(key, {})
         icon = "✅" if r.get("ok") else "⚠️"
@@ -204,6 +371,10 @@ def main() -> int:
     label_c, ok_c, det_c = check_c_latest(tickers)
     label_d, ok_d, det_d = check_d_actions()
     label_e, ok_e, det_e = check_e_silo()
+    label_f, ok_f, det_f = check_f_tail()
+    label_g, ok_g, det_g = check_g_hypecore()
+    label_h, ok_h, det_h = check_h_config()
+    label_i, ok_i, det_i = check_i_eps()
 
     results = {
         "A": {"ok": ok_a, "short": det_a.split("件")[0] + "件" if "件" in det_a else det_a[:10]},
@@ -211,6 +382,10 @@ def main() -> int:
         "C": {"ok": ok_c, "short": det_c.split("）")[0] + "）" if "）" in det_c else det_c[:10]},
         "D": {"ok": ok_d, "short": det_d[:20]},
         "E": {"ok": ok_e, "short": det_e[:20]},
+        "F": {"ok": ok_f, "short": det_f[:20]},
+        "G": {"ok": ok_g, "short": det_g[:20]},
+        "H": {"ok": ok_h, "short": det_h[:20]},
+        "I": {"ok": ok_i, "short": det_i[:20]},
     }
 
     overall_ok = all(r["ok"] for r in results.values())
@@ -222,6 +397,10 @@ def main() -> int:
         print(f"[C] Latest JSON:   {label_c}")
         print(f"[D] Actions:       {label_d}")
         print(f"[E] StonksSilo:    {label_e}")
+        print(f"[F] TailCtrl:      {label_f}")
+        print(f"[G] HypeCore:      {label_g}")
+        print(f"[H] Config:        {label_h}")
+        print(f"[I] EPS Analyzer:  {label_i}")
         status_str = "✅ HEALTHY" if overall_ok else f"⚠️  WARNING（問題{n_warn}件）"
         print(f"Overall: {status_str}\n")
 
