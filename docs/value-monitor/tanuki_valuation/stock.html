@@ -1537,9 +1537,9 @@ function render(d) {
       if (!dp) return '';
       const fmtX = v => v != null ? v.toFixed(2) + 'x' : '—';
       const roeCol = dp.roe_decomposed != null ? (dp.roe_decomposed > 0.15 ? 'var(--green)' : dp.roe_decomposed > 0 ? 'var(--txt)' : 'var(--red)') : 'var(--txt)';
-      const card = (label, value, sub, col) =>
+      const card = (label, value, sub, col, infoKey) =>
         `<div style="background:var(--sur);border:1px solid var(--bdr);border-radius:6px;padding:12px">
-          <div style="font-size:10px;color:var(--mut);margin-bottom:4px;letter-spacing:.06em">${label}</div>
+          <div style="font-size:10px;color:var(--mut);margin-bottom:4px;letter-spacing:.06em"${infoKey ? ` data-info="${infoKey}"` : ''}>${label}</div>
           <div style="font-size:15px;font-weight:700;font-family:var(--mono)${col ? ';color:'+col : ''}">${value}</div>
           <div style="font-size:10px;color:var(--mut);margin-top:4px">${sub}</div>
         </div>`;
@@ -1549,7 +1549,7 @@ function render(d) {
           ${card('純利益率（Net Margin）',          fmtPct(dp.net_margin),          'Net Income / Revenue')}
           ${card('資産回転率（Asset Turnover）',     fmtX(dp.asset_turnover),        'Revenue / Total Assets')}
           ${card('財務レバレッジ（Financial Leverage）', fmtX(dp.financial_leverage), 'Total Assets / Equity')}
-          ${card('ROE（分解値）',                   fmtPct(dp.roe_decomposed),      '純利益率 × 回転率 × レバレッジ', roeCol)}
+          ${card('ROE（分解値）',                   fmtPct(dp.roe_decomposed),      '純利益率 × 回転率 × レバレッジ', roeCol, 'tscore_dupont_roe_color')}
         </div>
       </div>`;
     })()}
@@ -1823,7 +1823,7 @@ function render(d) {
               <span class="step-name">α（成長期待プレミアム）${alphaWasCapped ? ' <span style="color:var(--yellow);font-size:10px">CAPPED</span>' : ''}</span>
             </div>
             <div style="display:flex;align-items:center;gap:16px">
-              <span class="step-result" style="color:var(--mut);font-size:11px">Phase1: ${d.components?.moat_phase1_years ?? '—'}年（Moat Score由来）</span>
+              <span class="step-result" style="color:var(--mut);font-size:11px" data-info="stock_moat_phase1">Phase1: ${d.components?.moat_phase1_years ?? '—'}年（Moat Score由来）</span>
               <span class="toggle-arrow">▼</span>
             </div>
           </div>
@@ -2947,6 +2947,7 @@ document.addEventListener('keydown', e => {
   </div>
 </div>
 
+  <script src="../../common/info-tooltip.js"></script>
   <script src="../../common/site-nav.js"></script>
 </body>
 </html>

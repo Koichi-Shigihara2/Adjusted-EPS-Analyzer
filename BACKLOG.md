@@ -197,25 +197,6 @@ TAIL-CTRL-TRANS-1（2026-06-27完了）の構造を踏襲する。
 
 ---
 
-### [STOCK-GLOSSARY-1] stock.htmlにglossaryポップアップ機能がない
-**優先度:** 中
-**分類:** UX / TANUKI VALUATION
-**発見:** 2026-06-26横断調査
-
-#### 問題
-tanuki_score/index.htmlはinfo-tooltip.js経由でdata-info属性によるglossaryポップアップを
-実装済みだが、stock.htmlにはglossaryポップアップ機能自体が未実装（data-info属性0件）。
-
-DUPONTパネル・FINANCIAL HEALTHパネル等、説明を必要とする指標が多数あるが
-ツールチップが使えない。
-
-#### 対応方針
-- stock.htmlにinfo-tooltip.jsをimportし、glossaryポップアップを有効化
-- 有効化後、以下にdata-info属性を付与：
-  - DUPONT ANALYSISパネルのROEカード（色基準説明）
-  - その他説明が必要な指標（Moat Score由来のPhase1等）
-
----
 
 ### [EPS-LOAR-1] LOAR IPO前EPS異常値の表示対象外処理
 **優先度:** 中

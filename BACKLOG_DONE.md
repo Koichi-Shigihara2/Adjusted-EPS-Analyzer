@@ -2,6 +2,16 @@
 
 ---
 
+## 2026-07-01（完了）
+
+### ✅ [STOCK-GLOSSARY-1] stock.htmlへのglossaryツールチップ導入（2026-07-01 完了）
+- stock.html末尾に `../../common/info-tooltip.js` をimport追加
+- DuPont card関数に第5引数 `infoKey` を追加し、ROEカードのラベルに `data-info="tscore_dupont_roe_color"` を付与
+- αステップ内Phase1スパンに `data-info="stock_moat_phase1"` を付与
+- glossary.json に `stock_moat_phase1` キーを新規追加（Moat Score由来のPhase1期間算出ロジックの説明）
+
+---
+
 ## 2026-06-27（完了）
 
 ### [TAIL-PAGE-1] TANUKI TAIL 詳細ページ別ページ化
