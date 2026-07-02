@@ -2,6 +2,65 @@
 
 ---
 
+## 2026-07-02（完了）
+
+### ✅ [TICKER-META-1] cik_lookup.csv登録メタデータ機能追加（2026-07-02 完了）
+- commit: 337bf3d29
+- cik_lookup.csvにstatus/registered_date/registration_source/registration_note列を新設
+- 既存97銘柄をstatus=active/registration_source=unknownでバックフィル
+- CLAUDE_CODE_START.mdの新規銘柄登録手順にStep 0.5として組み込み（登録理由が不明な場合はユーザーに確認を求める仕様）
+
+---
+
+### ✅ [新規銘柄登録] WST・CON（ミネルヴィニ・スーパーストック条件）（2026-07-02 完了）
+- commit: 3d45e6794
+- registration_source=technical_screening を新設カテゴリとして追加
+- WST: Step0〜8完了。セグメント設定（Proprietary Products 81.07%/West Vantage 18.93%）。理論株価$96.85、現在株価比乖離-73.5%
+- CON: Step0〜8完了。単一セグメント（設定不要）。β=0.511（yfinance未提供のため2年週次データから手動算出）。理論株価$40.47、乖離+31.5%
+
+---
+
+### ✅ [新規銘柄登録] APGE（TANUKI TAIL satellite登録）（2026-07-02 完了）
+- commit: 3d45e6794
+- 収益系XBRLタグが皆無（臨床段階バイオで売上ゼロ）と判定。TANUKI VALUATION（DCF）・STONKS SILO（黒字化パス追跡）とも設計上不適合
+- cik_lookup.csv: tanuki=false, stonks_silo=false
+- TANUKI TAIL satelliteとして `APGE_thesis.json` を作成（テーゼ: カタリスト追跡・治験マイルストーン主導）
+
+---
+
+### ✅ [新規銘柄登録] SN（一時的にTANUKI VALUATION保留）（2026-07-02 完了）
+- commit: 3d45e6794
+- 2025年まで20-F提出企業（外国民間発行体）のため四半期データが2026年Q1分のみ存在し、TTM/トレンド系列が構築不能
+- Discover/HypeCore/EPS Analyzerは完了。cik_lookup.csv: tanuki=false（一時的措置とregistration_noteに明記）
+- BACKLOG.mdに [SN-TANUKI-DELAY-1] を登録（2026年8月Q2 10-Q提出後にtanuki=true復帰予定）
+
+---
+
+### ✅ [BUG-CON-YTD-1/2] SECデータ正規化: SA/YTD重複判定バグ根本修正（2026-07-02 完了）
+- commit: 3d45e6794
+- 発端: CON（2024年IPO）のFY2023 Revenue 48.8%乖離調査
+- `common/sec_data/quarterly.py::_process_entries()`: グルーピングキーを `end` → `(start, end)` に変更。同一end・異なるstart（例: Q3単独 vs Q1-Q3累計）を誤って重複扱いしYTDを破棄していた不具合を修正
+- `common/sec_data/normalizer.py`: 3段階修正
+  - `_ytd_to_quarterly`: チェーン先頭がYTD（起点Q1未申告）の場合、その値自体は未解決として分離しつつ差分計算の起点には使用
+  - `_build_missing_quarter_implied_entries` 新設: 複数累計候補（6ヶ月YTD・9ヶ月YTD等）から欠落四半期を逆算、重複導出も排除
+  - passthrough（生SA）優先の重複排除、未解決YTD残骸の最終除去
+- 検証: pytest全123件パス。CON FY2023はQ1〜Q4復元、年次値との乖離0%に解消
+- 影響範囲確認（既存96銘柄の raw/normalized データは未再生成）: 101銘柄中87銘柄に差分。うち2023年以降の直近データに影響する14銘柄
+  （AMD, AMZN, APGE, AVAV, CIX, CON, ESTC, GEV, HEI, HWM, PM, RCAT, SOUN, ZS）を特定。
+  CON・HEI・ZSをスポット検証し、いずれも旧コードの誤り（疑似四半期・二重計上）を修正したことを確認
+  （例: HEI CapEx旧Q3=$23.33M〈Q2+Q3混入〉→新Q3=$12.26M、Q1〜Q4合計が年次と完全一致）
+- 残タスク: BACKLOG.mdに [ARCH-DATA-1-YTD] として、全銘柄再生成前のスポットチェック・before/after全件差分の手順を記録済み
+
+---
+
+### ✅ [MINERVINI-NOTE-1] ミネルヴィニ4銘柄のregistration_note詳細化（2026-07-02 完了）
+- commit hash要確認（本タスクの最終コミットに含まれる）
+- WST/APGE/CON/SNのregistration_noteに、moomoo AIスクリーニングが簡易版（株価・出来高ベースのテクニカル条件のみ）であり、
+  本来の条件であるRS Rating・EPS/売上成長率の加速が未評価である旨を明記
+- SNは既存の「tanuki=false一時的措置」注記を保持したまま追記
+
+---
+
 ## 2026-07-01（完了）
 
 ### ✅ [PREVENT-4] system_health.pyの監視対象拡充（2026-07-01 完了）
