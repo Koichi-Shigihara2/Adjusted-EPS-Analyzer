@@ -462,6 +462,35 @@ system_health.pyでカバーできない観点（表示ロジック・用語統�
 
 ---
 
+### [TICKER-AUDIT-1] 銘柄棚卸しスクリプト
+**優先度:** 中
+**分類:** 再発防止 / 品質管理
+**登録日:** 2026-07-02
+
+#### 背景
+テスト目的等での銘柄追加が本番パイプラインに紛れ込み、野放図に増加する問題への対処。
+cik_lookup.csvへのstatus/registration_source/registration_note列追加を前提に、
+定期的な棚卸しを自動化する。
+
+#### 前提条件
+cik_lookup.csvのstatus/registered_date/registration_source/registration_note列追加が
+完了していること。
+**2026-07-02時点で未着手と確認済み**（現行列: ticker,cik,name,eps_sector,stonks_silo,
+tanuki,eps,hypecore。該当列追加のコミットはgit log上に見当たらない）。着手前に
+このカラム追加を先に実施すること。
+
+#### 想定機能
+① status=test かつ registered_date が一定期間（閾値は要検討、例：30日）より古い銘柄を
+   「見直し候補」として一覧化
+② registration_source=moomoo_screening等の検証由来かつポジションなしの銘柄を抽出
+③ system_health.pyの拡張として実装するか、独立スクリプトにするか要検討
+④ 判断（retired化等）は自動化せず、候補出しまでに留める。最終判断はKoichi自身が行う。
+
+#### 着手条件
+当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
