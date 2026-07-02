@@ -47,6 +47,22 @@ def normalize(ticker: str, raw: dict) -> dict:
         "NetIncome", "OperatingIncome",
         "GrossProfit",
     )
+
+    # 欠落四半期逆算（中間YTD累計から。例: 上場直後で起点Q1が未申告のケース）
+    # Q4逆算より先に行うことで、これにより復元されたQ1等を使って
+    # 後続のQ4逆算（Q1+Q2+Q3が揃って初めて動作）も正しく機能するようにする。
+    for field_name in Q4_IMPLIED_FIELDS:
+        src = fields_norm.get(field_name, [])
+        if not src:
+            continue
+        missing_list = _build_missing_quarter_implied_entries(src)
+        if missing_list:
+            existing_ends = {e["end"] for e in src if not e.get("is_annual")}
+            added = [e for e in missing_list if e["end"] not in existing_ends]
+            if added:
+                fields_norm[field_name] = sorted(src + added, key=lambda x: x["end"])
+                logger.debug("[%s] %s 欠落四半期逆算: %d件", ticker, field_name, len(added))
+
     for field_name in Q4_IMPLIED_FIELDS:
         src = fields_norm.get(field_name, [])
         if not src:
@@ -64,6 +80,20 @@ def normalize(ticker: str, raw: dict) -> dict:
 
     # 内部フィールドは出力から除外
     fields_norm.pop("_COGS", None)
+
+    # 逐次差分・欠落四半期逆算のいずれでも解決できなかった未解決YTD累計は、
+    # 単独四半期として扱うと二重計上・誤ラベルの原因になるため出力から除外する
+    # （BUG-CON-YTD-1: ttm_calculator等の下流はis_annualのみで四半期判定するため
+    #  is_ytd=Trueの残骸を残すと誤って1四半期分として計上されてしまう）
+    for field_name, field_entries in fields_norm.items():
+        cleaned = [
+            e for e in field_entries
+            if e.get("is_annual") or not e.get("is_ytd")
+        ]
+        if len(cleaned) != len(field_entries):
+            dropped = len(field_entries) - len(cleaned)
+            logger.debug("[%s] %s 未解決YTD %d件を除外", ticker, field_name, dropped)
+            fields_norm[field_name] = cleaned
 
     logger.info("[%s] normalization done", ticker)
     return {
@@ -100,23 +130,55 @@ def _normalize_field(entries: list) -> list:
         by_fy_start[e["start"]].append(e)
 
     converted: list = []
+    unresolved: list = []
     for fy_start, fy_entries in by_fy_start.items():
         sorted_entries = sorted(fy_entries, key=lambda x: x["end"])
-        converted.extend(_ytd_to_quarterly(sorted_entries))
+        c, u = _ytd_to_quarterly(sorted_entries)
+        converted.extend(c)
+        unresolved.extend(u)
 
-    all_quarterly = sorted(passthrough_entries + converted, key=lambda x: x["end"])
+    # 同一end日付に複数候補（生SA=passthrough / YTD逐次差分=converted）が
+    # 存在する場合、passthrough を優先して1件に絞る。
+    # 多くの企業は同一四半期を「単独3ヶ月」と「累計6/9ヶ月」の両方でXBRLタグ付け
+    # するため（例: AAPL）、両方を素通しすると同一四半期が2件生成され
+    # 二重計上になる（BUG-DUP-QUARTER-1）。生SAタグの方が変換を経ない
+    # 一次情報のため優先する。
+    by_end: dict[str, list] = defaultdict(list)
+    for e in passthrough_entries:
+        by_end[e["end"]].append(("passthrough", e))
+    for e in converted:
+        by_end[e["end"]].append(("converted", e))
+
+    all_quarterly: list = []
+    for end_date, candidates in by_end.items():
+        raw_sa = [e for kind, e in candidates if kind == "passthrough"]
+        pool = raw_sa if raw_sa else [e for kind, e in candidates if kind == "converted"]
+        all_quarterly.append(max(pool, key=lambda x: x.get("filed", "")))
+    all_quarterly.extend(unresolved)
+
+    all_quarterly.sort(key=lambda x: x["end"])
     return sorted(annual + all_quarterly, key=lambda x: x["end"])
 
 
-def _ytd_to_quarterly(fy_entries: list) -> list:
+def _ytd_to_quarterly(fy_entries: list) -> tuple[list, list]:
     """
     YTDエントリのリストを受け取り、差分変換した単一四半期エントリを返す。
 
-    fy_entries: 同一FY内のエントリ（SA Q1 + YTD Q2/Q3）をend_date昇順でソート済み。
-    Q1（年度最初・SA）は差分なしでそのまま使用。
+    fy_entries: 同一FY内のエントリをend_date昇順でソート済み。
+    Q1（年度最初）がSAの場合は差分なしでそのまま使用し、以降を逐次差分変換する。
+    Q1がSAとして存在せず、チェーン先頭が複数四半期分のYTD（例: 起点Q1が
+    未申告で最初に現れるのが9ヶ月累計等）の場合、その値自体は「1四半期分」
+    としては信頼できない（BUG-CON-YTD-1）ため unresolved に分離するが、
+    後続エントリとの差分計算の起点（prev_ytd）としてはそのまま使用する
+    （2つの累計値の差分はどちらも同じ起点からの累計である限り、起点の
+    絶対値が未確定でも常に正しい単独四半期値になるため）。
+
+    戻り値: (converted, unresolved)
     """
-    result: list = []
+    converted: list = []
+    unresolved: list = []
     prev_ytd: float = 0
+    prev_ytd_known = False
 
     for entry in fy_entries:
         new_entry = dict(entry)
@@ -125,24 +187,35 @@ def _ytd_to_quarterly(fy_entries: list) -> list:
             # SA entry（Q1など）: そのまま使用し、累積YTDに加算
             standalone = entry["val"]
             prev_ytd += standalone
-        else:
-            # YTD entry: 前回YTDとの差分
-            standalone = entry["val"] - prev_ytd
-            # 異常フラグ: 前QのYTDが正値だったのに累積が減少した場合（決算期変更等）
-            # prev_ytd=0（Q1未発見）や負値累積（ICF/CFF）では判定しない。
-            if prev_ytd > 0 and entry["val"] < prev_ytd:
-                new_entry["anomaly"] = True
-                logger.warning(
-                    "YTD reversal for end=%s fp=%s val=%s prev_ytd=%s",
-                    entry.get("end"), entry.get("fp"), entry["val"], prev_ytd,
-                )
-            prev_ytd = entry["val"]  # YTDは全Q累積なのでprevを上書き
-            new_entry["is_ytd"] = False
+            prev_ytd_known = True
+            new_entry["val"] = standalone
+            converted.append(new_entry)
+            continue
 
+        if not prev_ytd_known:
+            # チェーン先頭が既にYTD＝起点(Q1相当)が未申告。
+            # この値自体は単独四半期としては使えないため unresolved に回すが、
+            # 以降の差分計算の起点としては採用する。
+            unresolved.append(new_entry)
+            prev_ytd = entry["val"]
+            prev_ytd_known = True
+            continue
+
+        # YTD entry: 前回YTDとの差分
+        standalone = entry["val"] - prev_ytd
+        # 異常フラグ: 前QのYTDが正値だったのに累積が減少した場合（決算期変更等）
+        if prev_ytd > 0 and entry["val"] < prev_ytd:
+            new_entry["anomaly"] = True
+            logger.warning(
+                "YTD reversal for end=%s fp=%s val=%s prev_ytd=%s",
+                entry.get("end"), entry.get("fp"), entry["val"], prev_ytd,
+            )
+        prev_ytd = entry["val"]  # YTDは全Q累積なのでprevを上書き
+        new_entry["is_ytd"] = False
         new_entry["val"] = standalone
-        result.append(new_entry)
+        converted.append(new_entry)
 
-    return result
+    return converted, unresolved
 
 
 def _build_q4_implied_entries(entries: list) -> list:
@@ -201,6 +274,117 @@ def _build_q4_implied_entries(entries: list) -> list:
         })
 
     return result
+
+
+def _build_missing_quarter_implied_entries(entries: list) -> list:
+    """
+    複数四半期分のYTD累計（is_ytd=True のまま未解決で残っているエントリ、
+    または年次実績）から、既知の単独四半期を差し引いて、残る1四半期分の
+    値を逆算する。_build_q4_implied_entries（FY - Q1〜Q3 = Q4）を一般化し、
+    9ヶ月累計等の中間累計からも欠落四半期（例: 上場直後のQ1）を
+    復元できるようにする（BUG-CON-YTD-1対応）。
+
+    対象スパン内にちょうど1四半期分の欠落がある場合のみ逆算する
+    （複数四半期欠落・重複計上の疑いがある場合は対象外とし何もしない）。
+    """
+    from datetime import date as _date
+
+    cumulative_candidates = [
+        e for e in entries
+        if (e.get("is_annual") or e.get("is_ytd")) and e.get("val") is not None
+        and e.get("start") and e.get("end")
+    ]
+    known_quarters = [
+        e for e in entries
+        if not e.get("is_annual") and not e.get("is_ytd") and e.get("val") is not None
+    ]
+
+    result: list = []
+    for cand in cumulative_candidates:
+        c_start, c_end, c_val = cand["start"], cand["end"], cand["val"]
+        try:
+            span_days = (_date.fromisoformat(c_end) - _date.fromisoformat(c_start)).days
+        except (ValueError, TypeError):
+            continue
+
+        # 単一四半期未満のスパンは対象外（2四半期分=約150日以上のみ）
+        if span_days < 150:
+            continue
+        n_quarters = round(span_days / 91)
+        if n_quarters < 2:
+            continue
+
+        contained = [
+            q for q in known_quarters
+            if q.get("start", "") >= c_start and q.get("end", "") <= c_end
+        ]
+        if len(contained) != n_quarters - 1:
+            continue  # ちょうど1四半期分の欠落でなければ対象外（安全側に倒す）
+
+        contained_sorted = sorted(contained, key=lambda x: x["start"])
+        try:
+            covered_span = sum(
+                (_date.fromisoformat(q["end"]) - _date.fromisoformat(q["start"])).days
+                for q in contained_sorted
+            )
+        except (ValueError, TypeError):
+            continue
+        # 既知四半期の合計期間 + 欠落想定1四半期(約91日) がスパン全体と
+        # ほぼ一致することを確認（重複・飛び地の混入を防ぐ簡易チェック）
+        if abs(covered_span + 91 - span_days) > 20:
+            continue
+
+        first_known_start = contained_sorted[0]["start"]
+        last_known_end = contained_sorted[-1]["end"]
+        if first_known_start > c_start:
+            missing_start, missing_end = c_start, first_known_start
+        elif last_known_end < c_end:
+            missing_start, missing_end = last_known_end, c_end
+        else:
+            continue  # 欠落位置が中間（飛び地）等で特定できないため対象外
+
+        missing_val = c_val - sum(q["val"] for q in contained_sorted)
+
+        try:
+            period_days = (_date.fromisoformat(missing_end) - _date.fromisoformat(missing_start)).days
+        except (ValueError, TypeError):
+            period_days = 90
+
+        result.append({
+            "end":         missing_end,
+            "start":       missing_start,
+            "val":         missing_val,
+            "fp":          "implied",
+            "fy":          cand.get("fy"),
+            "form":        cand.get("form", ""),
+            "filed":       cand.get("filed", ""),
+            "accn":        cand.get("accn", ""),
+            "period_days": period_days,
+            "is_ytd":      False,
+            "is_annual":   False,
+            "is_implied":  True,
+        })
+
+    # 複数の累計候補（例: 6ヶ月YTDと9ヶ月YTDの両方）が同一の欠落四半期を
+    # 独立に逆算することがあるため、(start, end) 単位で重複排除する
+    # （BUG-CON-YTD-2: 重複したまま返すとcheck_revenue_quality等の四半期合計で
+    #  二重計上になる）。値が食い違う場合は不整合として両方除外する。
+    by_period: dict[tuple, list] = defaultdict(list)
+    for e in result:
+        by_period[(e["start"], e["end"])].append(e)
+
+    deduped: list = []
+    for period, candidates in by_period.items():
+        vals = {round(c["val"], 2) for c in candidates}
+        if len(vals) == 1:
+            deduped.append(candidates[0])
+        else:
+            logger.warning(
+                "missing quarter implied value mismatch for %s: %s",
+                period, [c["val"] for c in candidates],
+            )
+
+    return deduped
 
 
 def _calc_gross_profit(fields: dict) -> dict:

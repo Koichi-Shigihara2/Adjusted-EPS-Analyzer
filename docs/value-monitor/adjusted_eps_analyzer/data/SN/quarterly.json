@@ -1,0 +1,178 @@
+{
+  "ticker": "SN",
+  "last_updated": "2026-07-02T21:25:49.496713",
+  "quarters": [
+    {
+      "gaap_eps": 0.8532108723575054,
+      "adjusted_eps": 1.0444609493889772,
+      "gaap_net_income": 121462000.0,
+      "adjusted_net_income": 148688114.444851,
+      "diluted_shares_used": 142358711.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 30309000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 24944720.616335325,
+          "tax_rate_applied": 0.17698635334932444
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 6389000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 5258234.188451166,
+          "tax_rate_applied": 0.17698635334932444
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 300000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 246904.09399520265,
+          "tax_rate_applied": 0.17698635334932444
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": -3917000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": -3223744.453930696,
+          "tax_rate_applied": 0.17698635334932444
+        }
+      ],
+      "net_adjustment_total": 27226114.444851,
+      "filing_date": "2026-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 1412806000.0,
+      "diluted_shares": 142358711.0,
+      "period_end": "2026-03-31",
+      "fiscal_year": 2026,
+      "quarter": 1,
+      "tax_expense": 26120000.0,
+      "pretax_income": 147582000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "SBCと無形資産償却は恒常的なコストであり調整によりEPSを大幅に押し上げているため、Adjusted EPSは実力をやや過大に表現している可能性が高い。一方、異常貸倒引当と一過性在庫評価損は妥当な調整。市場がGAAP EPSで判断する場合、非現金・非コア項目の影響で企業の実力が過小評価されやすく、株価に下方圧力がかかるリスクがある。ただしSBCの継続発生を考慮すると過大評価リスクも同等に存在し、投資家は希薄化効果と真のキャッシュ創出力に注目すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、毎期発生する恒常的なコストであるため調整の正当性は中程度。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する恒常的項目であり、調整により実力が見えにくくなる典型例。",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響のため異常変動分は一過性と判断され、調整は妥当。",
+            "confidence": 0.8
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損であり、調整により一時的損失の影響を除去する根拠がある。",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
+    {
+      "gaap_eps": 0.8287533927124983,
+      "adjusted_eps": 0.94952464014536,
+      "gaap_net_income": 117835000.0,
+      "adjusted_net_income": 135006670.20538297,
+      "diluted_shares_used": 142183430.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 11550000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 9351791.346292593,
+          "tax_rate_applied": 0.19032109555908283
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 6093000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 4933373.5647585085,
+          "tax_rate_applied": 0.19032109555908283
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 3178000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 2573159.5583132347,
+          "tax_rate_applied": 0.19032109555908283
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 387000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 313345.7360186349,
+          "tax_rate_applied": 0.19032109555908283
+        }
+      ],
+      "net_adjustment_total": 17171670.205382973,
+      "filing_date": "2025-03-31",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 1222638000.0,
+      "diluted_shares": 142183430.0,
+      "period_end": "2025-03-31",
+      "fiscal_year": 2025,
+      "quarter": 1,
+      "tax_expense": 27698000.0,
+      "pretax_income": 145533000.0
+    }
+  ]
+}

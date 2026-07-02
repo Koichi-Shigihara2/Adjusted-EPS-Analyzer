@@ -320,15 +320,19 @@ def _process_entries(raw_entries: list) -> list:
     """
     生エントリをフィルタ・分類・重複排除・ソートして返す。
 
-    同一end_date内: SA（期間短い）優先 > YTD、最新filed優先。
-    四半期: 直近5年, 年次: 直近6年。
+    四半期: (start, end) の期間単位でグルーピングし、同一期間内は最新filed優先。
+    ※ end日付だけでグルーピングすると、同一end・異なるstart（例: Q3単独 vs
+      Q1-Q3累計）の別期間エントリを誤って「重複」扱いし、一方（主にYTD）を
+      完全に破棄してしまう（BUG-CON-YTD-1）。YTDは欠落四半期の逆算に使える
+      有用な情報のため、start違いは別期間として保持する。
+    年次: 直近6年、四半期: 直近5年。
     """
     today = date.today()
     cutoff_q = (today - timedelta(days=_QUARTERLY_YEARS * 365)).isoformat()
     cutoff_a = (today - timedelta(days=_ANNUAL_YEARS * 365)).isoformat()
 
-    # end_date → 候補リスト（quarterly / annual 別）
-    quarterly_by_end: dict[str, list] = defaultdict(list)
+    # (start, end) → 候補リスト（quarterly）、end → 候補リスト（annual）
+    quarterly_by_period: dict[tuple, list] = defaultdict(list)
     annual_by_end: dict[str, list] = defaultdict(list)
 
     for entry in raw_entries:
@@ -365,16 +369,13 @@ def _process_entries(raw_entries: list) -> list:
                 annual_by_end[end].append(enriched)
         else:
             if end >= cutoff_q:
-                quarterly_by_end[end].append(enriched)
+                quarterly_by_period[(start, end)].append(enriched)
 
     result: list = []
 
-    # 四半期: SA優先、最新filed
-    for end_date, candidates in quarterly_by_end.items():
-        sa = [c for c in candidates if not c["is_ytd"]]
-        ytd = [c for c in candidates if c["is_ytd"]]
-        pool = sa if sa else ytd
-        best = max(pool, key=lambda x: x["filed"])
+    # 四半期: 同一(start, end)内は最新filed優先。異なるstartは別期間として全保持。
+    for period, candidates in quarterly_by_period.items():
+        best = max(candidates, key=lambda x: x["filed"])
         result.append(best)
 
     # 年次: 最新filed

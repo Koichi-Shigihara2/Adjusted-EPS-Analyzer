@@ -426,7 +426,7 @@ python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('c
 #   registration_source: 指示書内で明示されていればその値を使用。
 #     不明な場合は manual_thesis をデフォルトとする。
 #     （定型カテゴリ例: moomoo_screening / manual_thesis / catalyst_discovery /
-#      satellite_watch / initial_setup / unknown）
+#      satellite_watch / initial_setup / technical_screening / unknown）
 #   registration_note: 指示書内の登録理由・経緯を1〜2文で要約して記録。
 #     指示書に理由が書かれていない場合は、Claude Codeから
 #     「登録理由が指示書に見当たりません。記録すべき経緯を教えてください」と
