@@ -417,6 +417,21 @@ python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('c
 # 出力が "Canada" の場合は登録を中止する。
 # カナダ企業はIFRS/40-Fのため TANUKI VALUATION・EPS Analyzerに非対応。
 
+# Step 0.5: 登録メタデータの記録（必須・Step 1の前に実施）
+# cik_lookup.csv の新規行に以下4項目を記録してからStep 1に進むこと：
+#   status: 指示書内で明示されていればその値を使用。
+#     明示がなければ status=candidate をデフォルトとし、
+#     「明示的にactiveへ変更する指示がない限りcandidateのまま」と報告に明記する。
+#   registered_date: 作業実行日（本日の日付、YYYY-MM-DD）
+#   registration_source: 指示書内で明示されていればその値を使用。
+#     不明な場合は manual_thesis をデフォルトとする。
+#     （定型カテゴリ例: moomoo_screening / manual_thesis / catalyst_discovery /
+#      satellite_watch / initial_setup / unknown）
+#   registration_note: 指示書内の登録理由・経緯を1〜2文で要約して記録。
+#     指示書に理由が書かれていない場合は、Claude Codeから
+#     「登録理由が指示書に見当たりません。記録すべき経緯を教えてください」と
+#     確認を求め、回答を得てから記録する。
+
 # Step 1: SEC データ取得
 python common/sec_data/update.py [TICKER]
 
