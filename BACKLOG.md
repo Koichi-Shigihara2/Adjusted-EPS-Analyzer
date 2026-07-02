@@ -473,11 +473,9 @@ cik_lookup.csvへのstatus/registration_source/registration_note列追加を前�
 定期的な棚卸しを自動化する。
 
 #### 前提条件
-cik_lookup.csvのstatus/registered_date/registration_source/registration_note列追加が
-完了していること。
-**2026-07-02時点で未着手と確認済み**（現行列: ticker,cik,name,eps_sector,stonks_silo,
-tanuki,eps,hypecore。該当列追加のコミットはgit log上に見当たらない）。着手前に
-このカラム追加を先に実施すること。
+cik_lookup.csvへのstatus/registered_date/registration_source/registration_note列追加、
+完了済み（commit 337bf3d29。既存97銘柄はstatus=active/registration_source=unknownで
+バックフィル済み。CLAUDE_CODE_START.mdのStep 0.5として新規登録手順にも組み込み済み）
 
 #### 想定機能
 ① status=test かつ registered_date が一定期間（閾値は要検討、例：30日）より古い銘柄を
