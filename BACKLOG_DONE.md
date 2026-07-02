@@ -54,7 +54,7 @@
 ---
 
 ### ✅ [MINERVINI-NOTE-1] ミネルヴィニ4銘柄のregistration_note詳細化（2026-07-02 完了）
-- commit hash要確認（本タスクの最終コミットに含まれる）
+- commit: 0b67a6a62
 - WST/APGE/CON/SNのregistration_noteに、moomoo AIスクリーニングが簡易版（株価・出来高ベースのテクニカル条件のみ）であり、
   本来の条件であるRS Rating・EPS/売上成長率の加速が未評価である旨を明記
 - SNは既存の「tanuki=false一時的措置」注記を保持したまま追記
