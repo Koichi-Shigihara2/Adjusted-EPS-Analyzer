@@ -585,62 +585,6 @@ Step1（SECデータ取得）本実行前に以下を自動検知する：
 
 ---
 
-### [ARCH-DATA-1-YTD] SEC四半期正規化: 複数累計候補からの欠落四半期逆算ロジック横展開監査
-**優先度:** 高
-**分類:** アーキテクチャ / データ品質 / SECデータ処理
-**登録日:** 2026-07-02
-
-#### 背景
-CON（2024年IPO）のFY2023 Revenue 48.8%乖離を調査した結果、
-`common/sec_data/quarterly.py::_process_entries()` に根本バグを発見・修正した
-（BUG-CON-YTD-1/2）。同一end日付にSA（単独四半期）とYTD（累計）が両方存在する
-場合、start日付が異なる（＝対象期間が異なる）別物にもかかわらず「同じend＝重複」
-とみなしYTDを完全に破棄していた。この結果、上場直後などQ1のSAタグが欠落している
-銘柄では、Q1を復元する材料となるYTD累計値が失われ、Q1・Q4が丸ごと欠落するか、
-場合によっては複数四半期分のYTD値がprev_ytd=0からの単純差分で「1四半期分」に
-誤ラベルされる疑似四半期（二重計上バグ）が生じていた。
-
-`common/sec_data/quarterly.py`（`_process_entries`のグルーピングキーを
-`end`→`(start, end)`に変更）と `common/sec_data/normalizer.py`
-（`_ytd_to_quarterly`のorphanチェーン処理・`_build_missing_quarter_implied_entries`
-新設・passthrough優先の重複排除・未解決YTD残骸の除去）を修正済み。
-pytest全123件パス、CON個別検証でFY2023乖離0%を確認済み。
-
-#### 影響範囲確認の結果（2026-07-02実施・再生成はまだ行っていない）
-既存96銘柄のうち、company_factsキャッシュがある101銘柄（新規4銘柄含む）で
-修正前後をコード変更のみ分離した比較（同日実行、保存済みnormalizedファイルとの
-比較ではなく修正前後のコードを両方同時に実行して純粋な差分を抽出）を実施：
-- 差分が出た銘柄: 87/101
-- うち大半（73銘柄）は2021年5月〜2022年1月付近（5年ロールウィンドウ境界）の
-  データのみに影響。TTM/DCFは直近4〜5四半期を使うため現行の理論株価計算への
-  影響は限定的と推定されるが未検証。CAGR等5年トレンド表示には影響しうる。
-- 2023年以降の直近データに影響がある銘柄: 14銘柄
-  （AMD, AMZN, APGE, AVAV, CIX, CON, ESTC, GEV, HEI, HWM, PM, RCAT, SOUN, ZS）
-- サンプル検証（CON・HEI・ZSを手計算で検証）では、いずれも旧コードの値が
-  誤り（疑似四半期・二重計上等）で新コードが正しい値に修正されているか、
-  もしくは復元不能な誤データを安全に除去していることを確認した
-  （HEI CapEx: 旧Q3=23,330,000〈Q2+Q3混入〉→新Q3=12,255,000、
-  Q1〜Q4合計が年次と完全一致することを確認）。
-
-#### 対応方針
-コード修正は完了・pytest通過済みだが、**既存96銘柄のraw/normalizedデータは
-まだ再生成していない**。PARSER-1/ANNUAL-FY-1の教訓（「テスト全通過」は
-年度・四半期割り当ての正しさを保証しない）に倣い、以下を実施してから
-全銘柄再生成を行う：
-1. 上記14銘柄（2023年以降に影響がある銘柄）を優先して10-K/10-Q実績との
-   突き合わせを3銘柄以上スポットチェックする
-2. 全96銘柄で `python common/sec_data/update.py` 再実行 →
-   IV/FCF_Base/CAGRが変化した銘柄を一覧化する
-3. `report_consistency_check.py` で NG=0 を確認してからコミット・push する
-4. GitHub Actionsの次回自動再生成タイミングに注意
-   （このコード修正をpushすると、次回スケジュール実行時に86銘柄超の
-   データが未レビューのまま自動更新される可能性がある）
-
-#### 優先度
-高（データ正確性に関わる根本修正だが、ロールアウトは慎重に行う必要がある）
-
----
-
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
@@ -924,6 +868,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ※ 2026-06-26横断調査・バグ調査実施: PREVENT-1〜5・各バグ・設定不整合をBACKLOG登録済み
 ※ 2026-06-27完了: CN-ENB-1・RKLB-CLEANUP-1・PICK-DUP-1・TTM-NULL-1・STONKS-DIV-1（ガード確認+テスト追加）・PREVENT-1・PREVENT-2・PREVENT-3・SEC-CTRL-1（パス変更・Grok翻訳・マイグレーション）
 ※ 2026-07-01完了: STOCK-GLOSSARY-1・PREVENT-4・QBITconfig孤立エントリ削除・DUPONT-COLOR-1・EPS-BX-1・EXTREME-FEAR-1
+※ 2026-07-03完了: ARCH-DATA-1-YTD（AMZN固有の追加回帰バグA・B発見・修正含め全101銘柄ロールアウト完了。副産物としてTEST-STALE-IV-1を登録）
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、

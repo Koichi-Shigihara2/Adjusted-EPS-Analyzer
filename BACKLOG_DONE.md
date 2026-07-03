@@ -2,6 +2,32 @@
 
 ---
 
+## 2026-07-03（完了）
+
+### ✅ [ARCH-DATA-1-YTD] SEC四半期正規化ロジック 全101銘柄ロールアウト完了（2026-07-03 完了）
+- commit: c00c3abc5（バグA・B修正）, 1c0920ec4（全銘柄データ再生成）
+- [[BUG-CON-YTD-1/2]]（2026-07-02完了）で特定した14銘柄のうちAMD/AMZN/HWMをスポットチェックした際、
+  AMZN固有の新規回帰バグ2件を追加発見・修正した：
+  - バグA: `_calc_gross_profit()`がend日付のみでRevenue/COGSを引き当て、単独四半期値と
+    未解決の累積値（is_ytd=True）が同一endで共存すると累積値を誤採用（GrossProfitが実際の
+    数倍に膨張）。`_index_quarterly_by_end()`新設で単独四半期値を優先するよう修正
+  - バグB: `_build_missing_quarter_implied_entries()`が算出する欠落四半期のend/start日付が
+    暦四半期境界と1日ずれ、`_build_q4_implied_entries()`の結果と重複排除できず、
+    FY2022/2023/2024のOCF/ICF/CFF/CapEx/SBC/DA/NetIncomeが12/31と1/1の2エントリに
+    二重計上。日付演算のオフバイワンを修正（AMZN TTM NetIncome 2023〜2025年3月末時点で
+    最大+53.7%誤って膨張していたものを是正）
+- 検証: pytest129件パス（既存123+新規test_normalizer.py 6件）。AMD/HWMはデグレなし
+  （TTM系列バイト単位で完全一致）。APGE/AVAV/CIX/CON/ESTC/GEV/HEI/PM/RCAT/SOUN/ZSの
+  11銘柄を横断スキャンし同パターン0件を確認
+- 全101銘柄で`update.py`・`pipeline.py --skip-risk`を再実行し、
+  `report_consistency_check.py`でNG=0（WARN=1件、ELF PSステール値・既存事象で無関係）を確認
+- IV変化: AMZN+3.5%, AVAV+12.3%, BKNG-6.6%, FCX-23.2%, SITM-11.9%, XOM-2.2%
+  FCF_Base変化（IV不変含む）: 40銘柄（5年ロールウィンドウ境界四半期の重複計上是正・
+  誤除外復元による想定通りの補正）
+- 副産物: [[TEST-STALE-IV-1]]（test_iv_formula.pyのALPHA-REDESIGN-1未追従）を発見しBACKLOG登録
+
+---
+
 ## 2026-07-02（完了）
 
 ### ✅ [TICKER-META-1] cik_lookup.csv登録メタデータ機能追加（2026-07-02 完了）
