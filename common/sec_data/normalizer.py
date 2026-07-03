@@ -287,7 +287,7 @@ def _build_missing_quarter_implied_entries(entries: list) -> list:
     対象スパン内にちょうど1四半期分の欠落がある場合のみ逆算する
     （複数四半期欠落・重複計上の疑いがある場合は対象外とし何もしない）。
     """
-    from datetime import date as _date
+    from datetime import date as _date, timedelta as _timedelta
 
     cumulative_candidates = [
         e for e in entries
@@ -337,9 +337,28 @@ def _build_missing_quarter_implied_entries(entries: list) -> list:
         first_known_start = contained_sorted[0]["start"]
         last_known_end = contained_sorted[-1]["end"]
         if first_known_start > c_start:
-            missing_start, missing_end = c_start, first_known_start
+            # 欠落四半期は先頭（既知四半期群より前）。期間の非重複を保つため、
+            # 終了日は次の既知四半期の開始日の前日とする（BUG-CON-YTD-3対応）。
+            # ここを first_known_start のまま（1日ずれ）にすると、
+            # _build_q4_implied_entries が同じ四半期を end=12/31 として
+            # 別途算出した際に end 不一致で重複排除できず、二重計上を生む。
+            try:
+                missing_end = (
+                    _date.fromisoformat(first_known_start) - _timedelta(days=1)
+                ).isoformat()
+            except (ValueError, TypeError):
+                continue
+            missing_start = c_start
         elif last_known_end < c_end:
-            missing_start, missing_end = last_known_end, c_end
+            # 欠落四半期は末尾（既知四半期群より後）。開始日は直前の既知四半期の
+            # 終了日の翌日とする（同様に非重複を保つ）。
+            try:
+                missing_start = (
+                    _date.fromisoformat(last_known_end) + _timedelta(days=1)
+                ).isoformat()
+            except (ValueError, TypeError):
+                continue
+            missing_end = c_end
         else:
             continue  # 欠落位置が中間（飛び地）等で特定できないため対象外
 
@@ -387,6 +406,30 @@ def _build_missing_quarter_implied_entries(entries: list) -> list:
     return deduped
 
 
+def _index_quarterly_by_end(entries: list) -> dict:
+    """
+    非annualの四半期エントリをend日付でインデックス化する（value ではなく
+    エントリ全体を保持）。
+
+    同一end日付に複数候補が存在する場合（単独四半期値=is_ytd Falseと、
+    まだ最終クリーンアップ前で残っている未解決の累積値=is_ytd Trueが
+    共存するケース）、単独四半期値を優先する。単独四半期値がない場合のみ
+    累積値にフォールバックし、同種同士では最新filed優先とする。
+    """
+    by_end: dict[str, list] = defaultdict(list)
+    for e in entries:
+        if e.get("is_annual"):
+            continue
+        by_end[e["end"]].append(e)
+
+    result: dict[str, dict] = {}
+    for end_date, candidates in by_end.items():
+        sa = [c for c in candidates if not c.get("is_ytd")]
+        pool = sa if sa else candidates
+        result[end_date] = max(pool, key=lambda x: x.get("filed", ""))
+    return result
+
+
 def _calc_gross_profit(fields: dict) -> dict:
     """
     GrossProfit が欠損している四半期を Revenue - _COGS で逆算する。
@@ -404,22 +447,22 @@ def _calc_gross_profit(fields: dict) -> dict:
     gp_ends = {e["end"] for e in gp_entries if not e.get("is_annual")}
 
     # Revenue と COGS を end_date でインデックス化
-    rev_by_end = {e["end"]: e["val"] for e in rev_entries if not e.get("is_annual")}
-    cogs_by_end = {e["end"]: e["val"] for e in cogs_entries if not e.get("is_annual")}
+    # （BUG-CON-YTD-3対応: 最終クリーンアップ前は同一end日付に単独四半期値と
+    #  未解決の累積値〈is_ytd=True〉が共存し得るため、単独四半期値を優先する。
+    #  end日付のみで無条件に上書きすると累積値が誤って採用され、GrossProfitが
+    #  実際の四半期値の数倍に膨らむ）
+    rev_by_end = _index_quarterly_by_end(rev_entries)
+    cogs_by_end = _index_quarterly_by_end(cogs_entries)
 
     backfilled: list = []
-    for end_date, rev_val in rev_by_end.items():
+    for end_date, rev_entry in rev_by_end.items():
         if end_date in gp_ends:
             continue
-        cogs_val = cogs_by_end.get(end_date)
-        if cogs_val is None or rev_val is None:
+        cogs_entry = cogs_by_end.get(end_date)
+        if cogs_entry is None or rev_entry.get("val") is None or cogs_entry.get("val") is None:
             continue
         # Revenue と COGS は符号が正なので単純差分
-        gp_val = rev_val - abs(cogs_val)
-        # 逆算エントリを対応するRevenueエントリから構築（annualを除外）
-        rev_entry = next((e for e in rev_entries if e["end"] == end_date and not e.get("is_annual")), None)
-        if rev_entry is None:
-            continue
+        gp_val = rev_entry["val"] - abs(cogs_entry["val"])
         backfilled.append({
             **{k: rev_entry[k] for k in ("end", "start", "fp", "fy", "form", "filed",
                                           "period_days", "is_ytd", "is_annual")

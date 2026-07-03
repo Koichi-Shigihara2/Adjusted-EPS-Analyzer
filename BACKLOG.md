@@ -311,6 +311,23 @@ grepやスクリプトによる自動検出で漏れが発生しやすい。
 
 ---
 
+### [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従
+**優先度:** 低
+**分類:** テスト保守 / 品質管理
+**発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）
+
+#### 問題
+tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計算式
+（iv_pt = v0_rm × (1+alpha) + rpo_pv + go_pv）をハードコードしたまま。
+現行core_calculator.pyはalpha=0.0固定（alpha廃止済み）だが、latest.jsonには
+旧フィールドalphaが残存しているため、テストの再計算値と保存値が乖離し
+NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テストコードのみ陳腐化）。
+
+#### 対応方針
+test_iv_formula.pyの期待値算出ロジックをALPHA-REDESIGN-1後の計算式に更新する。
+
+---
+
 ### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
 **優先度:** 低
 **分類:** 管理UI漏れ / admin.html
