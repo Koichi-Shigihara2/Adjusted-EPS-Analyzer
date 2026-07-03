@@ -7,7 +7,7 @@
   "upside_percent_rf": 47.3,
   "v0": 1934500994.4562507,
   "v0_adjusted": 1934500994.4562507,
-  "alpha": 0.015558891379696928,
+  "alpha": 0.015558891379696932,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 56.19,
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -74.7,
-  "calculation_date": "2026-07-03T21:55:07+09:00",
+  "calculation_date": "2026-07-04T01:00:45+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -280,7 +280,7 @@
       -31907000
     ],
     "diluted_shares": 50608030,
-    "roe_10yr_avg": 0.0037044979475468883,
+    "roe_10yr_avg": 0.003704497947546889,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
     "current_price": 190.89,
@@ -304,7 +304,7 @@
     "moat_fcf_margin_norm": 0.0,
     "pv_high": 491809637.45711744,
     "pv_terminal": 1442691356.9991333,
-    "roe_used": 0.0037044979475468883,
+    "roe_used": 0.003704497947546889,
     "fcf_floor_applied": 199123400.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -312,7 +312,7 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.015558891379696928,
+    "alpha_uncapped": 0.015558891379696932,
     "per": 41.292976,
     "per_is_forward": true,
     "per_adjusted": 66.82,
@@ -339,7 +339,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-03",
+    "validated_at": "2026-07-04",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -485,5 +485,21 @@
   "forward_earnings_yield": 0.0242,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against AeroVironment",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning with competitive threats through 2026",
+      "impact": "mid"
+    }
+  ]
 }

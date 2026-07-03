@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -93.0,
-  "calculation_date": "2026-07-03T22:06:07+09:00",
+  "calculation_date": "2026-07-04T01:08:26+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -92,12 +92,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.07850000000000001,
+      "rate": 0.0785,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.07850000000000001,
+      "weighted_growth": 0.0785,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -262,7 +262,7 @@
       218000000
     ],
     "diluted_shares": 337182468,
-    "roe_10yr_avg": 0.09070653707488677,
+    "roe_10yr_avg": 0.09070653707488675,
     "roe_years_used": 8,
     "roe_outlier_adj": false,
     "current_price": 151.05,
@@ -276,7 +276,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
-    "high_growth_rate_used": 0.07850000000000001,
+    "high_growth_rate_used": 0.0785,
     "high_growth_years": 4,
     "terminal_growth_used": 0.02,
     "moat_score": 0.1054,
@@ -286,7 +286,7 @@
     "moat_fcf_margin_norm": 0.5268,
     "pv_high": 5133328564.673385,
     "pv_terminal": 11937400255.161314,
-    "roe_used": 0.09070653707488677,
+    "roe_used": 0.09070653707488675,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -321,7 +321,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-03",
+    "validated_at": "2026-07-04",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -473,5 +473,21 @@
   "forward_earnings_yield": 0.0715,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit ongoing against Vistra",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Active SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning issued amid 2025-2026 competition risks",
+      "impact": "mid"
+    }
+  ]
 }
