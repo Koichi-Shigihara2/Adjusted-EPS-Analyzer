@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 21.89,
   "upside_percent_beta": -32.1,
   "intrinsic_value_rf": 213.61,
-  "upside_percent_rf": 562.8,
+  "upside_percent_rf": 562.1,
   "v0": 7660843931.599936,
   "v0_adjusted": 7660843931.599936,
   "alpha": 0.8,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 24.24,
       "value_growth_pct": 12.2,
-      "expected_return_pct": -24.8
+      "expected_return_pct": -24.9
     },
     "2年後": {
       "future_value": 27.19,
       "value_growth_pct": 25.8,
-      "expected_return_pct": -15.6
+      "expected_return_pct": -15.7
     },
     "3年後": {
       "future_value": 30.5,
       "value_growth_pct": 41.1,
-      "expected_return_pct": -5.4
+      "expected_return_pct": -5.5
     },
     "4年後": {
       "future_value": 34.21,
       "value_growth_pct": 58.3,
-      "expected_return_pct": 6.1
+      "expected_return_pct": 6.0
     },
     "5年後": {
       "future_value": 38.38,
       "value_growth_pct": 77.6,
-      "expected_return_pct": 19.1
+      "expected_return_pct": 19.0
     }
   },
   "upside_percent": -33.0,
-  "calculation_date": "2026-07-03T01:15:15+09:00",
+  "calculation_date": "2026-07-03T21:55:24+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -178,13 +178,13 @@
     "pv_tv_rm": 5353596710.061198
   },
   "fcf_base": {
-    "base_fcf": 394609800.0,
+    "base_fcf": 355356800.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 394609800.0,
+    "fcf_5yr_avg": 355356800.0,
     "fcf_2yr_avg": 463971000.0,
-    "cv": 0.205,
+    "cv": 0.437,
     "cv_threshold": 0.5,
-    "ratio": 0.205,
+    "ratio": 0.437,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -207,7 +207,7 @@
       "total_transient_amount": 6537000.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($492M)が5年平均($395M)から25%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($492M)が5年平均($355M)から38%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -215,10 +215,10 @@
     "adj_net_income": 366930823.81958526,
     "conversion_rate": 0.7,
     "estimated_fcf": 256851576.67370966,
-    "raw_fcf": 394609800.0,
+    "raw_fcf": 355356800.0,
     "sector": "",
-    "note": "調整済み純利益$0.37B × 転換率70%[sector()] = 推定FCF$0.26B（従来$0.39Bの0.7倍）",
-    "divergence_ratio": 0.65,
+    "note": "調整済み純利益$0.37B × 転換率70%[sector()] = 推定FCF$0.26B（従来$0.36Bの0.7倍）",
+    "divergence_ratio": 0.72,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -294,7 +294,7 @@
   "fcf_ttm_periods": 5,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 394609800.0,
+    "fcf_5yr_avg": 355356800.0,
     "fcf_2yr_avg": 463971000.0,
     "fcf_base_used": 293186910.007043,
     "fcf_base_method": "avg_5yr",
@@ -304,13 +304,13 @@
       436247000,
       421125000,
       330162000,
-      293820000
+      97555000
     ],
     "diluted_shares": 303796674,
     "roe_10yr_avg": 0.36219047847831815,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 32.23,
+    "current_price": 32.26,
     "latest_revenue": 1501779000.0,
     "rpo": 284419000,
     "beta": 0.988,
@@ -340,13 +340,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.521200009608936,
-    "per": 37.045975,
+    "per": 37.080456,
     "per_is_forward": false,
-    "per_adjusted": 28.46,
+    "per_adjusted": 28.49,
     "peg": 1.32,
-    "ps": 6.2950063,
-    "ev_ebitda": 23.615,
-    "ma200": 39.1751,
+    "ps": 6.3008657,
+    "ev_ebitda": 24.283,
+    "ma200": 39.0731,
     "forward_eps": 1.58205,
     "analyst_target_median": 44.0,
     "analyst_target_mean": 45.06667,
@@ -495,25 +495,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0061,
-  "forward_earnings_yield": 0.0491,
+  "erp": 0.006,
+  "forward_earnings_yield": 0.049,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Bentley Systems",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning issued impacting 2025-2026 outlook",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

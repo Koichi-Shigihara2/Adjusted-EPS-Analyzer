@@ -1,16 +1,16 @@
 CON INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-03T01:26:45+09:00
-Price: $31.79
+Generated: 2026-07-03T22:11:22+09:00
+Price: $31.91
 
 [1. TANUKI SCORE]
-Classification: GROWTH_PREMIUM
+Classification: WATCH
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -44.1%
-  MA200_Deviation: +42.5%
+  Deviation_Rate: -44.3%
+  MA200_Deviation: +42.7%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $31 median ($28-$36) | 8 analysts | vs IV: +74.4%
-Comment: 成長率が市場要求を上回る、割高(-44%超)、FCF黒字
+Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,9 +30,9 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.976
-Deviation_Rate: -44.1%
+Label: 割高×中効率
+Key_Metric_Y: RICE = 1.048
+Deviation_Rate: -44.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,9 +56,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $31.79
+Current_Price: $31.91
 Intrinsic_Value_BASE: $17.78
-Deviation_BASE: -44.1%
+Deviation_BASE: -44.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 5.0% (推奨値・中央値ベース)
 Scenarios:
@@ -75,7 +75,10 @@ FCF_Conversion_Rate: 0.7 (Industry: Medical Care Facilities)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $136M (= Adj_NI $195M × FCF_Conv 0.7)
-DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
+DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
+   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
 DCF_FCF_PV: $0.70B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $1.52B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $2.21B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -179,15 +182,15 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.683
-BASE: RICE=0.976
-BULL: RICE=1.171
+BEAR: RICE=0.734
+BASE: RICE=1.048
+BULL: RICE=1.258
 Components (BASE scenario):
 G  = 5.0%  [TANUKI forward growth rate]
-Q  = 1.0877   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.8975  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 4.8150  [R&D除外・CapExのみ投資強度]
-RICE_adj = 5.237  [参考：R&D資本化想定]
+Q  = 1.1946   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.8773  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 3.6629  [R&D除外・CapExのみ投資強度]
+RICE_adj = 4.376  [参考：R&D資本化想定]
 WACC = 10.0%
 VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
 ROIC_WACC_Ratio = 8.42  [NOPAT/InvestedCapital / 0.10]
@@ -242,8 +245,8 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 22.9x
-  Adjusted_EPS_PER: 19.6x (TTM調整後EPS: $1.6211)
+  Market_PER_GAAP: 23.0x
+  Adjusted_EPS_PER: 19.7x (TTM調整後EPS: $1.6211)
   Delta: -3.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-07
@@ -270,10 +273,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 22.9x
+  PER: 23.0x
   PEG: N/A
   PS:  1.8x
-  EV_EBITDA: 13.8x
+  EV_EBITDA: 14.1x
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
 
@@ -291,9 +294,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.32%  (ForwardEPS $1.69 / Price $31.79)
+  Forward_Earnings_Yield: 5.30%  (ForwardEPS $1.69 / Price $31.91)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.02%
+  ERP: 1.00%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -340,10 +343,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 
 [9. RISK EVENTS]
-Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing
-  [high] regulatory: SEC investigation active
-  [mid] earnings: Earnings warning issued for 2025-2026
+  N/A (Grok検索なし または イベントなし)
 
 ==============================================
 DISCLAIMER: This report is generated automatically

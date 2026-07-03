@@ -20,7 +20,7 @@
     "1年後": {
       "future_value": 84.97,
       "value_growth_pct": 3.7,
-      "expected_return_pct": -78.4
+      "expected_return_pct": -78.5
     },
     "2年後": {
       "future_value": 88.08,
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -79.2,
-  "calculation_date": "2026-07-03T01:24:44+09:00",
+  "calculation_date": "2026-07-03T22:08:37+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -174,11 +174,11 @@
   "fcf_base": {
     "base_fcf": 6546000000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 5035800000.0,
+    "fcf_5yr_avg": 4494600000.0,
     "fcf_2yr_avg": 6546000000.0,
-    "cv": 0.526,
+    "cv": 0.69,
     "cv_threshold": 0.5,
-    "ratio": 0.526,
+    "ratio": 0.69,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -194,7 +194,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2026 FCF($9442M)が5年平均($5036M)から87%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2026 FCF($9442M)が5年平均($4495M)から110%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -281,7 +281,7 @@
   "fcf_ttm_periods": 5,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 5035800000.0,
+    "fcf_5yr_avg": 4494600000.0,
     "fcf_2yr_avg": 6546000000.0,
     "fcf_base_used": 4769329422.685888,
     "fcf_base_method": "recent_2yr",
@@ -291,13 +291,13 @@
       3650000000,
       5291000000,
       2597000000,
-      4199000000
+      1493000000
     ],
     "diluted_shares": 646142428,
     "roe_10yr_avg": 0.10983432808748284,
     "roe_years_used": 3,
     "roe_outlier_adj": true,
-    "current_price": 394.225,
+    "current_price": 394.32,
     "latest_revenue": 113538000000.0,
     "rpo": 97000000000,
     "beta": 1.378,
@@ -327,13 +327,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.4613041779674278,
-    "per": 31.4374,
+    "per": 31.444977,
     "per_is_forward": false,
-    "per_adjusted": 28.55,
+    "per_adjusted": 28.56,
     "peg": 0.71,
-    "ps": 1.9009081,
-    "ev_ebitda": 21.042,
-    "ma200": 185.4421,
+    "ps": 1.9013662,
+    "ev_ebitda": 19.616,
+    "ma200": 186.7797,
     "forward_eps": 21.40284,
     "analyst_target_median": 500.0,
     "analyst_target_mean": 485.08698,
@@ -349,7 +349,7 @@
     "insider_latest_date": "2026-06-30",
     "analyst_vs_iv": 510.0,
     "max_eps": 1.1189,
-    "max_eps_per": 352.3,
+    "max_eps_per": 352.4,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -466,21 +466,5 @@
   "forward_earnings_yield": 0.0543,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

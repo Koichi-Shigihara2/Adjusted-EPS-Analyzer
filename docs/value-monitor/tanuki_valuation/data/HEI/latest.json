@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 10785433338.622295,
   "intrinsic_value_per_share": 80.9826086453573,
   "intrinsic_value_beta": 78.71,
-  "upside_percent_beta": -78.2,
+  "upside_percent_beta": -78.3,
   "intrinsic_value_rf": 442.1,
-  "upside_percent_rf": 22.2,
+  "upside_percent_rf": 22.1,
   "v0": 10785433338.622295,
   "v0_adjusted": 10785433338.622295,
   "alpha": 0.6562081288107785,
@@ -35,16 +35,16 @@
     "4年後": {
       "future_value": 118.56,
       "value_growth_pct": 46.4,
-      "expected_return_pct": -67.2
+      "expected_return_pct": -67.3
     },
     "5年後": {
       "future_value": 130.42,
       "value_growth_pct": 61.1,
-      "expected_return_pct": -63.9
+      "expected_return_pct": -64.0
     }
   },
   "upside_percent": -77.6,
-  "calculation_date": "2026-07-03T01:22:16+09:00",
+  "calculation_date": "2026-07-03T22:05:23+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -166,13 +166,13 @@
     "pv_tv_rm": 8287018434.908759
   },
   "fcf_base": {
-    "base_fcf": 615121000.0,
-    "method": "avg_5yr",
-    "fcf_5yr_avg": 615121000.0,
+    "base_fcf": 844023000.0,
+    "method": "recent_2yr",
+    "fcf_5yr_avg": 548300400.0,
     "fcf_2yr_avg": 844023000.0,
-    "cv": 0.356,
+    "cv": 0.554,
     "cv_threshold": 0.5,
-    "ratio": 0.356,
+    "ratio": 0.554,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -180,7 +180,7 @@
     "rule": "deviation_large",
     "fiscal_year": 2025,
     "fcf_value": 925974000,
-    "threshold_pct": 0.2,
+    "threshold_pct": 0.6,
     "transient_evidence": {
       "found": false,
       "source": null,
@@ -188,7 +188,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($926M)が5年平均($615M)から51%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($926M)が5年平均($548M)から69%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -196,10 +196,10 @@
     "adj_net_income": 804564896.5930834,
     "conversion_rate": 0.7,
     "estimated_fcf": 563195427.6151583,
-    "raw_fcf": 615121000.0,
+    "raw_fcf": 844023000.0,
     "sector": "",
-    "note": "調整済み純利益$0.80B × 転換率70%[sector()] = 推定FCF$0.56B（従来$0.62Bの0.9倍）",
-    "divergence_ratio": 0.92,
+    "note": "調整済み純利益$0.80B × 転換率70%[sector()] = 推定FCF$0.56B（従来$0.84Bの0.7倍）",
+    "divergence_ratio": 0.67,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -275,23 +275,23 @@
   "fcf_ttm_periods": 5,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 615121000.0,
+    "fcf_5yr_avg": 548300400.0,
     "fcf_2yr_avg": 844023000.0,
     "fcf_base_used": 563195427.6151583,
-    "fcf_base_method": "avg_5yr",
+    "fcf_base_method": "recent_2yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       925974000,
       762072000,
       493253000,
       409847000,
-      484459000
+      150356000
     ],
     "diluted_shares": 139659277,
     "roe_10yr_avg": 0.15624003066923298,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 361.76,
+    "current_price": 362.09,
     "latest_revenue": 4485044000.0,
     "rpo": 71122000,
     "beta": 1.035,
@@ -321,13 +321,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.6562081288107785,
-    "per": 64.48485,
+    "per": 64.54367,
     "per_is_forward": false,
-    "per_adjusted": 55.79,
+    "per_adjusted": 55.84,
     "peg": 3.26,
-    "ps": 10.287128,
-    "ev_ebitda": 38.752,
-    "ma200": 314.60724,
+    "ps": 10.296512,
+    "ev_ebitda": 38.995,
+    "ma200": 314.8005,
     "forward_eps": 6.88574,
     "analyst_target_median": 395.0,
     "analyst_target_mean": 386.05,
@@ -485,21 +485,5 @@
   "forward_earnings_yield": 0.019,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against HEICO Corporation",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
