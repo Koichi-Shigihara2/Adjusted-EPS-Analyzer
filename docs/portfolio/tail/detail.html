@@ -702,15 +702,51 @@ function pct(v) { return v != null ? (v * 100).toFixed(1) + '%' : '–'; }
 
 /* ══════════════════════════════════
    セクション4-左: AI視点
+   表示優先順位（TAIL-UX-1 Phase2）:
+   1. 業績見通し（KPI予想）— 最重視
+   2. テーゼへの問いかけ・次回確認論点
+   3. 歴史的類比・エントリーストーリー進捗・世の中の注目・マクロ環境の示唆
+   4. 5観点（折りたたみ・デフォルト閉）
 ══════════════════════════════════ */
 function buildAi() {
   var qs  = Object.keys(S.reviews).sort().reverse();
   var out = '<div class="col-card"><div class="sec-hd" style="margin-top:0">AI視点</div>';
   if (!qs.length) return out + '<div class="no-data">レビューデータなし</div></div>';
-  var c2 = S.reviews[qs[0]].call2;
+  var rv = S.reviews[qs[0]];
+  var c2 = rv.call2;
   if (!c2) return out + '<div class="no-data">AI定性分析データなし</div></div>';
 
-  /* 5観点 */
+  /* 1. 業績見通し（KPI予想）*/
+  out += buildAiKpiForecast(rv);
+
+  /* 2. テーゼへの問いかけ・次回確認論点 */
+  var tqs = c2.thesis_questions || [];
+  if (tqs.length) {
+    out += '<div class="sec-sub" style="margin-top:14px">テーゼへの問いかけ</div>' +
+      '<ul class="tq-list">' + tqs.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') + '</ul>';
+  }
+  var nrf = c2.next_review_focus || [];
+  if (nrf.length) {
+    out += '<div class="sec-sub" style="margin-top:10px">次回確認論点</div><div class="focus-wrap">' +
+      nrf.map(function (f, i) { return '<span class="focus-tag">' + (i + 1) + '. ' + esc(f) + '</span>'; }).join('') +
+      '</div>';
+  }
+
+  /* 3. 歴史的類比・エントリーストーリー進捗・世の中の注目・マクロ環境の示唆 */
+  var ha = c2.historical_analogy || {};
+  if (ha.company) {
+    out += '<div class="analogy-box" style="margin-top:14px">' +
+      '<div class="analogy-co">歴史的類比: ' + esc(ha.company) + '</div>' +
+      '<div class="analogy-row"><strong>類似点:</strong> ' + esc(ha.similarity || '—') + '</div>' +
+      '<div class="analogy-row"><strong>その後:</strong> ' + esc(ha.outcome || '—') + '</div>' +
+      '<div class="analogy-row"><strong>示唆:</strong> ' + esc(ha.implication || '—') + '</div>' +
+      '</div>';
+  }
+  if (c2.entry_story_progress) out += aiSubBlock('エントリーストーリー進捗', c2.entry_story_progress);
+  if (c2.market_attention)     out += aiSubBlock('世の中の注目ポイント', c2.market_attention);
+  if (c2.macro_implications)   out += aiSubBlock('マクロ環境の示唆', c2.macro_implications);
+
+  /* 4. 5観点（折りたたみ・デフォルト閉） */
   var fp    = c2.five_perspectives || {};
   var fpDef = [
     { key: 'business_model',        label: 'ビジネスモデル' },
@@ -719,28 +755,102 @@ function buildAi() {
     { key: 'management',            label: '経営' },
     { key: 'market',                label: '市場環境' },
   ];
-  fpDef.forEach(function (d) {
-    var txt = fp[d.key]; if (!txt) return;
-    out += '<div class="persp-block"><div class="persp-label">' + esc(d.label) + '</div>' +
+  var fpHtml = fpDef.map(function (d) {
+    var txt = fp[d.key]; if (!txt) return '';
+    return '<div class="persp-block"><div class="persp-label">' + esc(d.label) + '</div>' +
       '<div class="persp-text">' + esc(txt) + '</div></div>';
-  });
-
-  /* テーゼへの問いかけ */
-  var tqs = c2.thesis_questions || [];
-  if (tqs.length) {
-    out += '<div class="sec-sub" style="margin-top:10px">テーゼへの問いかけ</div>' +
-      '<ul class="tq-list">' + tqs.map(function (q) { return '<li>' + esc(q) + '</li>'; }).join('') + '</ul>';
-  }
-
-  /* 次回確認論点 */
-  var nrf = c2.next_review_focus || [];
-  if (nrf.length) {
-    out += '<div class="sec-sub" style="margin-top:10px">次回確認論点</div><div class="focus-wrap">' +
-      nrf.map(function (f, i) { return '<span class="focus-tag">' + (i + 1) + '. ' + esc(f) + '</span>'; }).join('') +
-      '</div>';
+  }).join('');
+  if (fpHtml) {
+    out += '<details style="margin-top:14px"><summary>5観点での気になる点を表示</summary>' +
+      '<div style="margin-top:8px">' + fpHtml + '</div></details>';
   }
 
   return out + '</div>';
+}
+
+function aiSubBlock(label, text) {
+  return '<div class="sub-label" style="margin:14px 0 6px">' + esc(label) + '</div>' +
+    '<div class="sub-block">' + esc(text) + '</div>';
+}
+
+/* AI視点1段目: 業績見通し（KPI予想）テーブル
+   優先: S.scenarios（../scenario/{ticker}/{bear,base,bull}.json、kpi_current/kpi_format付き）
+   フォールバック: レビューJSON stage2.scenarios（生値のみ、書式は既定ヒューリスティック） */
+function buildAiKpiForecast(rv) {
+  var head = '<div class="sec-sub" style="margin-top:0">業績見通し（KPI予想）</div>';
+  var scd  = S.scenarios || {};
+  var hasScenarioFile = !!(scd.bear || scd.base || scd.bull);
+
+  var kfcSource, kpiCurrent, kpiL1Keys, kpiFmt;
+  if (hasScenarioFile) {
+    kfcSource  = scd;
+    kpiCurrent = (scd.base || {}).kpi_current    || {};
+    kpiL1Keys  = (scd.base || {}).kpi_layer1_keys || [];
+    kpiFmt     = (scd.base || {}).kpi_format      || {};
+  } else {
+    var sc = ((rv.stage2 || {}).scenarios) || {};
+    kfcSource  = sc;
+    kpiCurrent = {};
+    kpiL1Keys  = [];
+    kpiFmt     = {};
+  }
+
+  var baseKfc = (kfcSource.base || kfcSource.bear || kfcSource.bull || {}).kpi_forecasts || {};
+  var allKeys = Object.keys(kpiCurrent).length
+    ? Object.keys(kpiCurrent)
+    : Object.keys(baseKfc['1年後'] || baseKfc['3年後'] || {});
+
+  if (!allKeys.length || !(baseKfc['1年後'] || baseKfc['3年後'])) {
+    return head + '<div class="no-data" style="padding:10px">KPI予想データなし</div>';
+  }
+
+  function fmtKv(v, fmt) {
+    if (v == null) return '—';
+    var n = Number(v);
+    if (isNaN(n)) return String(v);
+    fmt = fmt || (Math.abs(n) >= 1e6 ? 'usd' : Math.abs(n) <= 2 ? 'pct' : 'usd_small');
+    if (fmt === 'usd') {
+      if (Math.abs(n) >= 1e9) return '$' + (n / 1e9).toFixed(2) + 'B';
+      if (Math.abs(n) >= 1e6) return '$' + (n / 1e6).toFixed(0) + 'M';
+      return '$' + n.toFixed(0);
+    }
+    if (fmt === 'pct')       return (n * 100).toFixed(1) + '%';
+    if (fmt === 'usd_small') return '$' + n.toFixed(2);
+    return n.toFixed(2);
+  }
+
+  var l2Keys = allKeys.filter(function (k) { return kpiL1Keys.indexOf(k) === -1; });
+  var l1Keys = allKeys.filter(function (k) { return kpiL1Keys.indexOf(k) !== -1; });
+
+  var thead = '<tr><th>KPI</th><th>現在</th>' +
+    ['bear', 'base', 'bull'].map(function (s) {
+      return '<th class="dcf-' + s + '">' + s.toUpperCase() + '<br><span style="font-size:9px">1年後</span></th>' +
+             '<th class="dcf-' + s + '">' + s.toUpperCase() + '<br><span style="font-size:9px">3年後</span></th>';
+    }).join('') + '</tr>';
+
+  function buildRow(kpiName, isL1) {
+    var fmt      = kpiFmt[kpiName];
+    var curVal   = kpiCurrent[kpiName];
+    var nameHtml = isL1
+      ? '<span style="color:var(--mut)">' + esc(kpiName) + '</span> <span style="font-size:9px;color:var(--mut)">(財務推計)</span>'
+      : esc(kpiName);
+    return '<tr><td>' + nameHtml + '</td>' +
+      '<td style="text-align:center;color:var(--sub)">' + fmtKv(curVal, fmt) + '</td>' +
+      ['bear', 'base', 'bull'].map(function (s) {
+        var fc1 = ((kfcSource[s] || {}).kpi_forecasts || {})['1年後'] || {};
+        var fc3 = ((kfcSource[s] || {}).kpi_forecasts || {})['3年後'] || {};
+        return '<td class="dcf-' + s + '">' + fmtKv(fc1[kpiName], fmt) + '</td>' +
+               '<td class="dcf-' + s + '">' + fmtKv(fc3[kpiName], fmt) + '</td>';
+      }).join('') + '</tr>';
+  }
+
+  var body = l2Keys.map(function (k) { return buildRow(k, false); }).join('');
+  if (l1Keys.length) {
+    body += '<tr><td colspan="8" style="padding:2px 0"></td></tr>' +
+      l1Keys.map(function (k) { return buildRow(k, true); }).join('');
+  }
+
+  return head + '<div class="tbl-wrap"><table class="dcf-tbl"><thead>' + thead + '</thead><tbody>' + body + '</tbody></table></div>';
 }
 
 /* ══════════════════════════════════

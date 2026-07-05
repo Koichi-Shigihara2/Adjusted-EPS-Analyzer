@@ -804,8 +804,9 @@ var journalData          = [];   // entries array
 var loadedCtrl           = {};   // { SOUN: ctrlData }
 var ctrlIndex            = {};   // { SOUN: {quarters: [...]} }
 
-var TABS_CORE = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
-var TABS_SAT  = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', 'AI視点', '内部統制'];
+var TABS_CORE = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', '内部統制'];
+var TABS_SAT  = ['ダッシュボード', 'テーゼ', '最新レビュー', 'KPIトレンド', 'DCFシナリオ', '内部統制'];
+/* AI視点タブはTAIL-UX-1 Phase2でdetail.htmlに統合・廃止（2026-07-05）。詳細はdetail.htmlを参照。 */
 
 /* ─── Init ─── */
 function initApp() {
@@ -1394,7 +1395,7 @@ function openModal(ticker) {
       })
       .then(function (d) {
         loadedCtrl[ticker] = d || null;
-        if (modalTicker === ticker && modalTabIdx === 6) renderModalBody(ticker, 6);
+        if (modalTicker === ticker && modalTabIdx === 5) renderModalBody(ticker, 5);
         if (modalTicker === ticker && modalTabIdx === 0) { var elC = document.getElementById('db-ctrl-zone'); if (elC) elC.innerHTML = _buildDashboardCtrl(ticker); }
       });
   } else if (modalTabIdx === 0) {
@@ -1426,8 +1427,7 @@ function renderModalBody(ticker, n) {
   else if (n === 2) body.innerHTML = buildTabReview(ticker, null);
   else if (n === 3) body.innerHTML = buildTabKpi(ticker);
   else if (n === 4) body.innerHTML = buildTabDcf(ticker);
-  else if (n === 5) body.innerHTML = buildTabCall2(ticker);
-  else if (n === 6) body.innerHTML = buildTabCtrl(ticker);
+  else if (n === 5) body.innerHTML = buildTabCtrl(ticker);
 }
 
 /* ─── Tab 0: ダッシュボード ─── */
@@ -1519,7 +1519,7 @@ function _buildDashboardCtrl(ticker) {
     '<span style="font-size:11px;color:var(--mut)">' + esc(cd.quarter || '') + ' / ' + esc(cd.filing_date || '') + '</span>' +
     '</div>' +
     (jaText ? '<div style="font-size:12px;color:var(--sub);line-height:1.6;white-space:pre-wrap">' + esc(jaText) + (cd.item4_excerpt_ja && cd.item4_excerpt_ja.length > 200 ? '…' : '') + '</div>' +
-      '<div style="font-size:11px;color:var(--acc);margin-top:6px;cursor:pointer" onclick="switchTab(6)">続きを読む → 内部統制タブへ</div>' : '');
+      '<div style="font-size:11px;color:var(--acc);margin-top:6px;cursor:pointer" onclick="switchTab(5)">続きを読む → 内部統制タブへ</div>' : '');
 }
 
 function _dbFold(title, content) {
@@ -1666,36 +1666,13 @@ function buildDashboard(ticker) {
     '<div class="db-col"><div class="db-col-title">DCFシナリオ</div><div id="db-dcf-zone">' + _buildDashboardDcf(ticker) + '</div></div>' +
     '</div>';
 
-  // ── ゾーンE: AI視点（折りたたみ） ──
-  var c2Html = '';
-  if (!reviews) {
-    c2Html = '<div style="color:var(--mut);font-size:12px">データ読込中...</div>';
-  } else if (latestQ && reviews[latestQ] && reviews[latestQ].call2) {
-    var c2 = reviews[latestQ].call2;
-    var fp = c2.five_perspectives || {};
-    var fpLbls = [
-      { key: 'competitive_advantage', label: '競争優位' },
-      { key: 'growth',                label: '成長性' },
-      { key: 'market',                label: '市場環境' },
-      { key: 'management',            label: '経営' },
-      { key: 'business_model',        label: 'ビジネスモデル' },
-    ];
-    c2Html = fpLbls.map(function (item) {
-      var txt = fp[item.key];
-      if (!txt) return '';
-      return '<div style="margin-bottom:8px"><div style="font-size:10px;color:var(--sub);margin-bottom:2px">' + esc(item.label) + '</div>' +
-        '<div style="font-size:12px;color:var(--txt);line-height:1.5">' + esc(txt) + '</div></div>';
-    }).join('');
-    if (c2.thesis_questions && c2.thesis_questions.length) {
-      c2Html += '<div style="margin-top:10px"><div style="font-size:10px;color:var(--sub);margin-bottom:4px">テーゼへの問いかけ</div>' +
-        c2.thesis_questions.map(function (q) {
-          return '<div class="db-list-item" style="color:var(--amb)">' + esc(q) + '</div>';
-        }).join('') + '</div>';
-    }
-  } else {
-    c2Html = '<div style="color:var(--mut);font-size:12px">AI定性分析データなし</div>';
-  }
-  var zoneE = _dbFold('AI視点', c2Html);
+  // ── ゾーンE: AI視点（detail.htmlへ誘導・TAIL-UX-1 Phase2でdetail.html本体に統合） ──
+  var hasReview = !!(latestQ && reviews && reviews[latestQ] && reviews[latestQ].call2);
+  var zoneELink = hasReview
+    ? '<div style="font-size:12px;color:var(--sub);margin-bottom:8px">業績見通し(KPI予想)・5観点・テーゼへの問いかけ等の詳細分析はdetail.htmlに統合されました。</div>' +
+      '<a href="detail.html?ticker=' + esc(ticker) + '" class="btn-detail">AI視点を見る →</a>'
+    : '<div style="color:var(--mut);font-size:12px">AI定性分析データなし</div>';
+  var zoneE = _dbFold('AI視点', zoneELink);
 
   // ── ゾーンF: 内部統制 + EXIT条件（折りたたみ） ──
   var exitCondText = isSat ? (p.exit_condition || '') : (p.exit_guide || '');
@@ -2329,74 +2306,7 @@ function _buildLegacyDcfTable(quarter, sc, s2) {
   ].join('');
 }
 
-/* ─── Tab 4: AI視点 ─── */
-function buildTabCall2(ticker) {
-  var reviews = loadedReviews[ticker];
-  if (!reviews) return '<div class="no-rv">レビューデータなし</div>';
-  var qs = Object.keys(reviews).sort().reverse();
-  if (!qs.length) return '<div class="no-rv">レビューデータなし</div>';
-  var rv = reviews[qs[0]];
-  var c2 = rv && rv.call2;
-  if (!c2) return '<div class="no-rv">AI定性分析データがありません。<br>次回のレビュー生成で自動追加されます。</div>';
-
-  var fp = c2.five_perspectives || {};
-  var fpLabels = [
-    { key: 'business_model',        label: 'ビジネスモデル' },
-    { key: 'growth',                label: '成長性' },
-    { key: 'competitive_advantage', label: '競争優位' },
-    { key: 'management',            label: '経営' },
-    { key: 'market',                label: '市場環境' },
-  ];
-  var fpHtml = fpLabels.map(function (item) {
-    var txt = fp[item.key] || '—';
-    return '<div class="kpi-card" style="margin-bottom:6px">' +
-      '<div class="kpi-card-name">' + esc(item.label) + '</div>' +
-      '<div style="font-size:12px;color:var(--sub);line-height:1.6">' + esc(txt) + '</div></div>';
-  }).join('');
-
-  var ha = c2.historical_analogy || {};
-  var haHtml = ha.company ? [
-    '<div class="kpi-card" style="background:var(--row-hover);border-left:3px solid var(--acc);margin-bottom:8px">',
-    '<div class="kpi-card-name">歴史的類比: ' + esc(ha.company) + '</div>',
-    '<div style="font-size:12px;line-height:1.6;color:var(--sub)">',
-    '<strong>類似点:</strong> ' + esc(ha.similarity || '—') + '<br>',
-    '<strong>その後:</strong> ' + esc(ha.outcome || '—') + '<br>',
-    '<strong>示唆:</strong> ' + esc(ha.implication || '—'),
-    '</div></div>',
-  ].join('') : '';
-
-  var espHtml   = c2.entry_story_progress ? tBlock('エントリーストーリー進捗', c2.entry_story_progress) : '';
-  var maHtml    = c2.market_attention     ? tBlock('世の中の注目ポイント',       c2.market_attention)    : '';
-  var macroHtml = c2.macro_implications   ? tBlock('マクロ環境の示唆',           c2.macro_implications)  : '';
-
-  var tqHtml = '';
-  if (c2.thesis_questions && c2.thesis_questions.length) {
-    var qItems = c2.thesis_questions.map(function (q) {
-      return '<li style="margin-bottom:6px">' + esc(q) + '</li>';
-    }).join('');
-    tqHtml = '<div class="bias-box" style="border-color:var(--red);margin-bottom:8px">' +
-      '<strong>テーゼへの問いかけ</strong><ul style="margin:6px 0 0 16px;padding:0">' + qItems + '</ul></div>';
-  }
-
-  var nrfHtml = '';
-  if (c2.next_review_focus && c2.next_review_focus.length) {
-    var badges = c2.next_review_focus.map(function (f, i) {
-      return '<span class="tag core" style="margin:2px 4px 2px 0;display:inline-block">' + (i + 1) + '. ' + esc(f) + '</span>';
-    }).join('');
-    nrfHtml = '<div class="dcf-sec"><div class="dcf-sec-title assum">次回確認論点</div><div style="padding:6px 0">' + badges + '</div></div>';
-  }
-
-  return [
-    '<div class="rv-head"><span class="rv-quarter">' + esc(qs[0]) + '</span><span class="rv-date">AI定性分析</span></div>',
-    '<div style="margin-bottom:12px"><div class="nkpi-title">5観点での気になる点</div>' + fpHtml + '</div>',
-    haHtml,
-    espHtml,
-    maHtml,
-    macroHtml,
-    tqHtml,
-    nrfHtml,
-  ].join('');
-}
+/* AI視点タブ（buildTabCall2）はTAIL-UX-1 Phase2でdetail.html本体に統合・廃止（2026-07-05） */
 
 /* ─── Tab 5: 内部統制 ─── */
 function _buildCtrlBody(ticker, d) {

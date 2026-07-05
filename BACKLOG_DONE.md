@@ -2,6 +2,20 @@
 
 ---
 
+## 2026-07-05（完了）
+
+### ✅ [TAIL-UX-1] TANUKI TAIL詳細モーダルの一覧性向上（Phase1+2 完了・2026-07-05）
+- Phase2: AI視点セクションを3実装（detail.html/index.htmlタブ/index.htmlダッシュボードZoneE）から
+  detail.html一本化。表示順を「業績見通し（KPI予想・新規）→テーゼへの問いかけ・次回確認論点→
+  歴史的類比等→5観点（折りたたみ・デフォルト閉）」に再構成し、優先度のない均等表示を解消
+- index.htmlのAI視点タブ（buildTabCall2）・ダッシュボードZoneEを削除し、detail.htmlへの
+  リンク導線に置き換え。内部統制タブがindex 6→5にシフトするため関連参照4箇所を同期修正
+- Playwrightでdetail.html（PLTR/SOFI/TSLA=KPI予想テーブル正常描画、ADBE=データなし表示）と
+  index.htmlモーダル（タブ構成6個・内部統制タブ動作・ZoneEリンク遷移）を検証、新規コンソール
+  エラーなしを確認。副産物として[[TAIL-DCF-TABIDX-1]]（既存のtab index不一致バグ）を発見しBACKLOG登録
+
+---
+
 ## 2026-07-03（完了）
 
 ### ✅ [ARCH-DATA-1-YTD] SEC四半期正規化ロジック 全101銘柄ロールアウト完了（2026-07-03 完了）

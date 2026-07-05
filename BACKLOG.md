@@ -104,24 +104,6 @@ catalyst.html・news_history.html のUIが使いづらく実用に耐えない�
 
 ---
 
-### [TAIL-UX-1] TANUKI TAIL詳細モーダルの一覧性向上
-**優先度:** 中
-**分類:** UX / TANUKI TAIL
-**登録日:** 2026-06-27
-
-#### 問題
-詳細モーダルの情報が散漫で総合的な判断がしづらい。
-一覧性を高めて投資判断に使えるレイアウトに改善する必要がある。
-
-#### 対応方針
-現状レイアウトの課題を洗い出してから設計する（次セッションで詳細ヒアリング）。
-
-#### 着手状況
-- ✅ Phase1完了（2026-06-27）: ダッシュボードタブ追加（TAIL-UX-1-P1としてBACKLOG_DONE.md記録）
-- [ ] Phase2: さらなる一覧性・視認性の向上（次セッションで詳細ヒアリング）
-
----
-
 ### [TAIL-SEC-ITEMS-1] TANUKI TAIL SEC項目の保存拡張（Item 1/1A/3/7）
 **優先度:** 中
 **分類:** 機能追加 / TANUKI TAIL
@@ -384,6 +366,29 @@ sum()内でNoneを0として扱うガードを追加：
 ```python
 total = sum(e["val"] or 0 for e in last4)
 ```
+
+---
+
+### [TAIL-DCF-TABIDX-1] index.htmlのDCFタブ非同期再描画がtab index不一致
+**優先度:** 低
+**分類:** バグ / TANUKI TAIL
+**発見:** 2026-07-05（TAIL-UX-1 Phase2実装時）
+
+#### 問題
+`docs/portfolio/tail/index.html` の `buildTabDcf()`（Tab 4: DCFシナリオ）内、
+シナリオファイル未ロード時の非同期コールバックが `modalTabIdx === 3` を
+チェックしてから `renderModalBody(ticker, 3)` を呼んでいる（該当箇所コメントは
+「Tab 3: DCFシナリオ」だが実際のタブindexは4=KPIトレンドの次）。
+現在index=3はKPIトレンドタブのため、DCFタブを開いたまま
+シナリオデータが非同期ロードされた場合、KPIトレンドタブが誤って
+再描画されようとする（KPIトレンドタブを見ていなければ実害は表示されない）。
+TAIL-UX-1 Phase2（AI視点タブ削除・内部統制のindex 6→5化）実装時の
+tab index全数確認で発見。AI視点削除による影響は受けない箇所のため
+今回は修正対象外。
+
+#### 対応方針
+`modalTabIdx === 3` / `renderModalBody(ticker, 3)` を
+`modalTabIdx === 4` / `renderModalBody(ticker, 4)` に修正する。
 
 ---
 
