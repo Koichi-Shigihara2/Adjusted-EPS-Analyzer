@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-06-26（ALPHA-REDESIGN-1・DISCOVER系新機能・ARCH-DATA-1-FY反映）
+最終更新: 2026-07-05（TAIL-UX-1 AI視点統合・UI-DISCOVER-1影響予測機能反映）
 
 ---
 
@@ -70,12 +70,16 @@ DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）
 　　カタリスト発掘: src/discover/catalyst.py → docs/discover/data/catalyst.json（週次）
+　　影響予測: src/discover/impact_predictor.py → docs/discover/data/impact_predictions_YYYY_MM.json
+　　（news_history/catalyst.jsonとは独立パイプライン。collect.py/catalyst.py実行後にそれぞれ
+　　呼び出し、news_history.html/catalyst.htmlがフロントエンドで結合表示。UI-DISCOVER-1 2026-07-05）
 PORTFOLIO     ← 手動入力 / 証券会社API
 TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半期レビュー生成）
 　　内部統制評価: src/tail/sec_ctrl_fetcher.py → docs/portfolio/tail/data/ctrl/{TICKER}/{QUARTER}.json + latest.json
 　　（SEC-CTRL-1 2026-06-24実装、週次自動更新）
-　　モーダル構成: coreとsatelliteで同等の6タブ（テーゼ/最新レビュー/KPIトレンド/DCFシナリオ/AI視点/内部統制）
-　　（TAIL-SAT-CORE-1 2026-06-26、旧:satelliteは戦略タブのみ）
+　　モーダル構成: coreとsatelliteで同等の5タブ（テーゼ/最新レビュー/KPIトレンド/DCFシナリオ/内部統制）
+　　（TAIL-SAT-CORE-1 2026-06-26でcore同等化。AI視点タブはTAIL-UX-1 2026-07-05でdetail.htmlに
+　　一本化・モーダルから削除）
 　　分離ページ: decision_log.html（TAIL-LAYOUT-1 2026-06-24新設）
 　　詳細ページ: detail.html（TAIL-PAGE-1 2026-06-27新設、モーダル廃止・全情報1ページ表示）
 　　内部統制データ: data/ctrl/{TICKER}/{QUARTER}.json + latest.json + index.json
