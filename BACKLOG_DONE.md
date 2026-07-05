@@ -4,6 +4,26 @@
 
 ## 2026-07-05（完了）
 
+### ✅ [UI-DISCOVER-1] 「連想・考察→影響予測」機能追加（方式C: 独立パイプライン・2026-07-05）
+- 新規独立スクリプト `src/discover/impact_predictor.py` を追加（collect.py/catalyst.py本体は変更なし）。
+  collect.py実行後(`--source news`)・catalyst.py実行後(`--source catalyst`)にそれぞれ呼び出し、
+  銘柄単位でその日/週の新規項目をまとめてGrokに1回渡し、各項目のdirection(positive/negative/neutral)・
+  magnitude(高/中/低)・thesis_effect(補強/弱化/中立)・1行summaryを生成
+- 前提整備: `collect.py` `append_to_monthly_history()` にnews item安定id(ticker×日付内の連番)を付与
+  （catalyst.jsonは既存の`id`フィールドをそのまま利用）
+- 出力先は新規ファイル `docs/discover/data/impact_predictions_YYYY_MM.json`（news_history/catalyst.json
+  は無改変・案2）。catalyst.htmlは各カタリストの`first_detected`から必要な月ファイルを逆引きしてマージ
+- GitHub Actions（Discover_Update.yml・Catalyst_Update.yml）に実行ステップとgit add対象を追加、
+  `.gitattributes`にmerge=ours設定を追加
+- catalyst.pyは既存の累積分を再処理せずfirst_detected==当日実行分のみを対象とし、
+  [[CATALYST-DEDUP-1]]の無制限増加問題を新機能側では悪化させない設計とした
+- 検証: モックGrok応答による単体ロジックテスト（news/catalyst両モード、新規分のみが対象になることを確認）、
+  Playwrightでnews_history.html・catalyst.htmlの実描画（1行サマリ表示・予測未生成月の404を握りつぶすフォール
+  バック動作）を確認。pytest 123件は無影響（データ層のみの変更のため）
+- 副産物: [[CATALYST-DEDUP-1]]・[[GROK-MODEL-PRICE-1]]をBACKLOG登録（優先度未定・別タスク）
+
+---
+
 ### ✅ [TAIL-UX-1] TANUKI TAIL詳細モーダルの一覧性向上（Phase1+2 完了・2026-07-05）
 - Phase2: AI視点セクションを3実装（detail.html/index.htmlタブ/index.htmlダッシュボードZoneE）から
   detail.html一本化。表示順を「業績見通し（KPI予想・新規）→テーゼへの問いかけ・次回確認論点→

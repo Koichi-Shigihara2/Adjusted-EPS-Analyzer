@@ -43,12 +43,18 @@ jobs:
             python src/discover/catalyst.py --all
           fi
 
+      - name: Run Impact Predictor（catalyst）
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: python src/discover/impact_predictor.py --source catalyst
+
       - name: Commit and push changes
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config merge.ours.driver true
           git add docs/discover/data/catalyst.json
+          git add "docs/discover/data/impact_predictions_*.json" 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "変更なし"
           else

@@ -67,6 +67,12 @@
     .news-title-link:hover{color:var(--acc);text-decoration:underline}
     .news-sum{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.55}
     .news-source{font-size:10px;color:var(--mut);margin-top:3px}
+    .impact-row{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap}
+    .impact-dir,.impact-eff{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;white-space:nowrap}
+    .impact-pos{background:rgba(16,185,129,.12);color:var(--grn)}
+    .impact-neg{background:rgba(244,63,94,.12);color:var(--red)}
+    .impact-nil{background:rgba(100,116,139,.1);color:var(--mut)}
+    .impact-sum{font-size:11px;color:var(--txt)}
 
     /* loading / empty */
     .loading,.empty{font-family:var(--mono);font-size:12px;color:var(--mut);padding:48px 0;text-align:center}
@@ -124,21 +130,48 @@
   }
 
   var currentData = null;
+  var currentImpact = null; /* impact_predictions_{ym}.json の news部分 */
 
   function loadMonth(ym) {
     contentEl.innerHTML = '<div class="loading">読み込み中...</div>';
-    fetch(BASE_DATA + 'news_history_' + ym + '.json')
-      .then(function (r) {
-        if (!r.ok) throw new Error(r.status);
-        return r.json();
-      })
-      .then(function (data) {
-        currentData = data;
+    currentImpact = null;
+    var newsP = fetch(BASE_DATA + 'news_history_' + ym + '.json')
+      .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); });
+    var impactP = fetch(BASE_DATA + 'impact_predictions_' + ym + '.json')
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .catch(function () { return null; });
+
+    Promise.all([newsP, impactP])
+      .then(function (results) {
+        currentData = results[0];
+        currentImpact = (results[1] && results[1].news) || {};
         render();
       })
       .catch(function () {
         contentEl.innerHTML = '<div class="empty">データがありません</div>';
       });
+  }
+
+  /* 影響予測を1行取得: currentImpact[date][ticker][item.id] */
+  function getImpact(dateStr, ticker, itemId) {
+    if (!currentImpact || !itemId) return null;
+    var d = currentImpact[dateStr];
+    if (!d) return null;
+    var t = d[ticker];
+    if (!t) return null;
+    return t[itemId] || null;
+  }
+
+  function renderImpact(pred) {
+    if (!pred) return '';
+    var dirIcon  = pred.direction === 'positive' ? '↑' : pred.direction === 'negative' ? '↓' : '→';
+    var dirClass = pred.direction === 'positive' ? 'impact-pos' : pred.direction === 'negative' ? 'impact-neg' : 'impact-nil';
+    var effClass = pred.thesis_effect === '補強' ? 'impact-pos' : pred.thesis_effect === '弱化' ? 'impact-neg' : 'impact-nil';
+    return '<div class="impact-row">' +
+      '<span class="impact-dir ' + dirClass + '">' + dirIcon + ' ' + esc(pred.magnitude || '') + '</span>' +
+      (pred.thesis_effect ? '<span class="impact-eff ' + effClass + '">テーゼ:' + esc(pred.thesis_effect) + '</span>' : '') +
+      (pred.summary ? '<span class="impact-sum">' + esc(pred.summary) + '</span>' : '') +
+      '</div>';
   }
 
   function render() {
@@ -205,6 +238,7 @@
             var src = [item.source, item.published_at].filter(Boolean).join(' · ');
             html += '<div class="news-source">' + esc(src) + '</div>';
           }
+          html += renderImpact(getImpact(dateStr, ticker, item.id));
           html += '</div>'; // .news-item
         });
         html += '</div>'; // .news-list

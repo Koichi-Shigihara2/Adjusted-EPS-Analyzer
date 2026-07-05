@@ -349,8 +349,8 @@ def append_to_monthly_history(results: dict, now_jst: datetime) -> None:
         cl = data.get("classified", {})
         today_data[ticker] = {
             "items": [
-                {k: v for k, v in item.items() if k != "price_change_next_day"}
-                for item in cl.get("items", [])
+                {"id": str(idx + 1), **{k: v for k, v in item.items() if k != "price_change_next_day"}}
+                for idx, item in enumerate(cl.get("items", []))
             ],
             "top_importance": cl.get("top_importance", "低"),
             "summary":        cl.get("summary", ""),

@@ -29,6 +29,11 @@ jobs:
           NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
         run: python src/discover/collect.py
 
+      - name: 影響予測実行（news）
+        env:
+          XAI_API_KEY: ${{ secrets.XAI_API_KEY }}
+        run: python src/discover/impact_predictor.py --source news
+
       - name: データファイルをコミット
         run: |
           git config user.name  "github-actions[bot]"
@@ -37,6 +42,7 @@ jobs:
           git add docs/discover/data/daily_report.json
           git add docs/discover/data/macro_themes_history.json 2>/dev/null || true
           git add "docs/discover/data/news_history_*.json" 2>/dev/null || true
+          git add "docs/discover/data/impact_predictions_*.json" 2>/dev/null || true
           if git diff --staged --quiet; then
             echo "変更なし"
           else

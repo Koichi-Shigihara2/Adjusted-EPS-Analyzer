@@ -74,6 +74,12 @@
     .ci-meta{display:flex;gap:12px;margin-top:4px;flex-wrap:wrap}
     .ci-timing{font-family:var(--mono);font-size:10px;color:var(--sub)}
     .ci-detected{font-family:var(--mono);font-size:10px;color:var(--mut)}
+    .impact-row{display:flex;align-items:center;gap:6px;margin-top:5px;flex-wrap:wrap}
+    .impact-dir,.impact-eff{font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:2px;white-space:nowrap}
+    .impact-pos{background:rgba(16,185,129,.12);color:var(--grn)}
+    .impact-neg{background:rgba(244,63,94,.12);color:var(--red)}
+    .impact-nil{background:rgba(100,116,139,.1);color:var(--mut)}
+    .impact-sum{font-size:11px;color:var(--txt)}
 
     /* ── 達成済み/消滅折りたたみ ── */
     .archived-section{border-top:1px solid var(--bdr)}
@@ -159,7 +165,8 @@
 <script src="../common/site-nav.js"></script>
 <script>
 (function () {
-  var BASE_DATA = '/On-a-journey/discover/data/catalyst.json';
+  var BASE_DIR  = '/On-a-journey/discover/data/';
+  var BASE_DATA = BASE_DIR + 'catalyst.json';
 
   var fImp    = document.getElementById('f-imp');
   var fType   = document.getElementById('f-type');
@@ -169,7 +176,8 @@
   var countEl = document.getElementById('filter-count');
   var genEl   = document.getElementById('generated-at');
 
-  var allData = null;
+  var allData   = null;
+  var impactMap = {}; /* { ticker: { catalystId: prediction } } */
 
   function loadData() {
     fetch(BASE_DATA + '?t=' + Date.now())
@@ -183,10 +191,52 @@
           genEl.textContent = '生成: ' + data.generated_at.replace('T', ' ').slice(0, 16);
         }
         render();
+        loadImpactPredictions(data);
       })
       .catch(function (e) {
         content.innerHTML = '<div class="empty">データがありません (' + e.message + ')</div>';
       });
+  }
+
+  /* first_detectedの年月ごとにimpact_predictions_{ym}.jsonを取得しマージする
+     （catalystは累積型のためcatalyst.json自体は月別に分かれていない。
+      各catalystのfirst_detectedから、予測が保存されているはずの月ファイルを逆引きする） */
+  function loadImpactPredictions(data) {
+    var months = {};
+    Object.keys(data.tickers || {}).forEach(function (ticker) {
+      (data.tickers[ticker].catalysts || []).forEach(function (c) {
+        var fd = c.first_detected || '';
+        if (/^\d{4}-\d{2}/.test(fd)) months[fd.slice(0, 7).replace('-', '_')] = true;
+      });
+    });
+    var ymList = Object.keys(months);
+    if (!ymList.length) return;
+
+    Promise.all(ymList.map(function (ym) {
+      return fetch(BASE_DIR + 'impact_predictions_' + ym + '.json?t=' + Date.now())
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .catch(function () { return null; });
+    })).then(function (results) {
+      results.forEach(function (d) {
+        if (!d || !d.catalyst) return;
+        Object.keys(d.catalyst).forEach(function (ticker) {
+          impactMap[ticker] = Object.assign(impactMap[ticker] || {}, d.catalyst[ticker]);
+        });
+      });
+      render();
+    });
+  }
+
+  function renderImpact(pred) {
+    if (!pred) return '';
+    var dirIcon  = pred.direction === 'positive' ? '↑' : pred.direction === 'negative' ? '↓' : '→';
+    var dirClass = pred.direction === 'positive' ? 'impact-pos' : pred.direction === 'negative' ? 'impact-neg' : 'impact-nil';
+    var effClass = pred.thesis_effect === '補強' ? 'impact-pos' : pred.thesis_effect === '弱化' ? 'impact-neg' : 'impact-nil';
+    return '<div class="impact-row">' +
+      '<span class="impact-dir ' + dirClass + '">' + dirIcon + ' ' + esc(pred.magnitude || '') + '</span>' +
+      (pred.thesis_effect ? '<span class="impact-eff ' + effClass + '">テーゼ:' + esc(pred.thesis_effect) + '</span>' : '') +
+      (pred.summary ? '<span class="impact-sum">' + esc(pred.summary) + '</span>' : '') +
+      '</div>';
   }
 
   function render() {
@@ -245,7 +295,7 @@
 
       // active catalysts
       html += '<div class="catalyst-list">';
-      active.forEach(function (c) { html += renderItem(c); });
+      active.forEach(function (c) { html += renderItem(c, ticker); });
       html += '</div>';
 
       // archived（折りたたみ）
@@ -255,7 +305,7 @@
         html += '</button>';
         html += '<div class="archived-body">';
         html += '<div class="catalyst-list">';
-        archived.forEach(function (c) { html += renderItem(c); });
+        archived.forEach(function (c) { html += renderItem(c, ticker); });
         html += '</div></div>';
       }
 
@@ -266,7 +316,7 @@
     countEl.textContent = totalCards + '銘柄';
   }
 
-  function renderItem(c) {
+  function renderItem(c, ticker) {
     var typeClass = (c.type === '確定イベント') ? 'type-確定' : 'type-不確定';
     var typeLabel = (c.type === '確定イベント') ? '確定' : '不確定';
     var h = '<div class="catalyst-item">';
@@ -285,6 +335,7 @@
     if (c.timing) h += '<span class="ci-timing">⏱ ' + esc(c.timing) + '</span>';
     if (c.first_detected) h += '<span class="ci-detected">初回: ' + esc(c.first_detected) + '</span>';
     h += '</div>';
+    h += renderImpact((impactMap[ticker] || {})[c.id]);
     h += '</div>';
     return h;
   }
