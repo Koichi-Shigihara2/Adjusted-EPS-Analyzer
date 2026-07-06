@@ -380,8 +380,11 @@ function getRec(d,prev){
 function calcTrans(m,cur){
   const cnt={0:{},1:{},2:{},3:{},4:{}};
   for(let i=0;i<m.length-1;i++){const f=m[i].stage,t=m[i+1].stage;cnt[f][t]=(cnt[f][t]||0)+1;}
-  const tot=Object.values(cnt[cur]||{}).reduce((a,b)=>a+b,0)||1;
-  return[0,1,2,3,4].map(k=>({stage:k,prob:Math.round((cnt[cur]?.[k]||0)/tot*100)})).sort((a,b)=>b.prob-a.prob);
+  const tot=Object.values(cnt[cur]||{}).reduce((a,b)=>a+b,0);
+  if(tot===0){
+    return {insufficient:true, data:[0,1,2,3,4].map(k=>({stage:k,prob:null}))};
+  }
+  return {insufficient:false, data:[0,1,2,3,4].map(k=>({stage:k,prob:Math.round((cnt[cur]?.[k]||0)/tot*100)})).sort((a,b)=>b.prob-a.prob)};
 }
 
 let pChart=null,eChart=null,fChart=null;
@@ -498,11 +501,12 @@ function render(data,ticker,tanukiLatest){
         y2:{position:'right',ticks:{display:false},grid:{display:false},border:{display:false},afterFit:ax=>{ax.width=30;}}}}});
 
   // 遷移確率
-  document.getElementById('transListLeft').innerHTML=calcTrans(m,stage).map(t=>`
+  const trans=calcTrans(m,stage);
+  document.getElementById('transListLeft').innerHTML=trans.data.map(t=>`
     <div class="trans-row">
       <div class="trans-name" style="color:${sh(t.stage)}">S${t.stage} ${STAGES[t.stage].n}${t.stage===stage?' <span style="font-size:11px;color:var(--mut)">[現在]</span>':''}</div>
-      <div class="trans-bar"><div class="trans-fill" style="width:${t.prob}%;background:${sh(t.stage)}80"></div></div>
-      <div class="trans-pct" style="color:${sh(t.stage)}">${t.prob}%</div>
+      <div class="trans-bar"><div class="trans-fill" style="width:${trans.insufficient?0:t.prob}%;background:${sh(t.stage)}80"></div></div>
+      <div class="trans-pct" style="color:${sh(t.stage)}">${trans.insufficient?'データ不足':t.prob+'%'}</div>
     </div>`).join('');
 
   // テーブル
