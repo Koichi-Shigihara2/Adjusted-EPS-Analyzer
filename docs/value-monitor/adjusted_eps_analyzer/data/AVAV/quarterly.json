@@ -1,7 +1,124 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-06-29T14:19:01.655320",
+  "last_updated": "2026-07-06T14:00:57.504016",
   "quarters": [
+    {
+      "gaap_eps": 1.2869711880532306,
+      "adjusted_eps": 3.778639407394321,
+      "gaap_net_income": 63174000.0,
+      "adjusted_net_income": 185483380.0,
+      "diluted_shares_used": 49087346.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 10269000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 8112510.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 51697000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 40840630.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "goodwill_impairment",
+          "item_name": "のれん減損",
+          "amount": 89402000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金減損",
+          "extracted_from": "us-gaap:GoodwillImpairmentLoss",
+          "category": "買収・統合関連",
+          "net_amount": 70627580.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 119000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 94010.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 3335000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 2634650.0,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": 122309380.0,
+      "filing_date": "2026-04-30",
+      "form": "10-K",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 641616000.0,
+      "diluted_shares": 49087346.0,
+      "period_end": "2026-04-30",
+      "fiscal_year": 2026,
+      "quarter": 4,
+      "tax_expense": -23059000.0,
+      "pretax_income": 40115000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整総額が大きくGAAP EPS 1.29に対しAdjusted EPS 3.78と約3倍に膨張。のれん減損89Mや無形資産償却52Mが主因だが、SBCと償却は恒常的コストの可能性が高く、減損・在庫評価損は一過性。市場がGAAP EPSのみで判断する場合、非現金・一時的項目を除いた企業の実力（収益力）を大幅に過小評価している可能性がある。投資家は調整の持続可能性を検証すべきで、過大調整による過大評価リスクも存在する。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが株式報酬は毎期発生する恒常的コスト",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で、買収後複数期にわたり継続的に発生",
+            "confidence": 0.25
+          },
+          {
+            "item": "goodwill_impairment",
+            "snippet": "非現金減損で一過性の大規模損失、通常は調整対象",
+            "confidence": 0.85
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的影響の異常変動分",
+            "confidence": 0.8
+          },
+          {
+            "item": "inventory_writeoff",
+            "snippet": "一過性の在庫評価損・減損",
+            "confidence": 0.7
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -4.901808132176951,
       "adjusted_eps": 0.6562730322270071,
@@ -86,38 +203,7 @@
       "fiscal_year": 2026,
       "quarter": 3,
       "tax_expense": -21616000.0,
-      "pretax_income": -265439000.0,
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "巨額ののれん減損（2.4億ドル超）がGAAP EPSを-4.90の大幅赤字にしている一方、Adjusted EPSは+0.66と黒字化しており、市場がGAAPベースで評価する場合に企業の実力（コア事業の収益力）が大きく過小評価されている可能性が高い。のれん減損や在庫評価損は一過性だが、SBCや無形資産償却は恒常的に発生する項目のため、調整後EPSの持続可能性に注意が必要。投資家はこれら非現金項目の実質影響を精査すべきで、過小評価リスクが大きい銘柄と言える。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬コスト",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却で定期的に発生する非現金費用",
-            "confidence": 0.25
-          },
-          {
-            "item": "goodwill_impairment",
-            "snippet": "非現金減損であり買収後の一過性項目",
-            "confidence": 0.85
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による異常変動分の一時的影響",
-            "confidence": 0.8
-          },
-          {
-            "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損",
-            "confidence": 0.7
-          }
-        ]
-      }
+      "pretax_income": -265439000.0
     },
     {
       "gaap_eps": -0.34396363232674915,
@@ -680,7 +766,7 @@
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
-      "revenue": 196979000.0,
+      "revenue": 716720000.0,
       "diluted_shares": 27327993.0,
       "period_end": "2024-04-30",
       "fiscal_year": 2024,
@@ -1246,9 +1332,9 @@
     },
     {
       "gaap_eps": 0.2920333827900988,
-      "adjusted_eps": -0.18012573679791574,
+      "adjusted_eps": -0.1812397495634488,
       "gaap_net_income": 7209000.0,
-      "adjusted_net_income": -4446500.0,
+      "adjusted_net_income": -4474000.0,
       "diluted_shares_used": 24685534.0,
       "adjustments": [
         {
@@ -1306,12 +1392,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -11655500.0,
-          "net_amount": -11655500.0,
-          "note": "tax_expense=-10,369,000, median_normal_tax=1,286,500"
+          "amount": -11683000.0,
+          "net_amount": -11683000.0,
+          "note": "tax_expense=-10,369,000, median_normal_tax=1,314,000"
         }
       ],
-      "net_adjustment_total": -11655500.0,
+      "net_adjustment_total": -11683000.0,
       "filing_date": "2022-04-30",
       "form": "10-K",
       "sector": null,
@@ -1387,9 +1473,9 @@
     },
     {
       "gaap_eps": 0.10270888660914808,
-      "adjusted_eps": -0.33117186580175817,
+      "adjusted_eps": -0.3322769105520522,
       "gaap_net_income": 2556000.0,
-      "adjusted_net_income": -8241500.0,
+      "adjusted_net_income": -8269000.0,
       "diluted_shares_used": 24885870.0,
       "adjustments": [
         {
@@ -1434,12 +1520,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -10797500.0,
-          "net_amount": -10797500.0,
-          "note": "tax_expense=-9,511,000, median_normal_tax=1,286,500"
+          "amount": -10825000.0,
+          "net_amount": -10825000.0,
+          "note": "tax_expense=-9,511,000, median_normal_tax=1,314,000"
         }
       ],
-      "net_adjustment_total": -10797500.0,
+      "net_adjustment_total": -10825000.0,
       "filing_date": "2021-10-30",
       "form": "10-Q",
       "sector": null,
@@ -1514,11 +1600,11 @@
       "pretax_income": -14875000.0
     },
     {
-      "gaap_eps": 0.44929419846506063,
-      "adjusted_eps": 0.8348617753106538,
+      "gaap_eps": 0.21628978642322177,
+      "adjusted_eps": 0.26916143544808996,
       "gaap_net_income": 10946000.0,
-      "adjusted_net_income": 20339450.23944275,
-      "diluted_shares_used": 24362656.0,
+      "adjusted_net_income": 13621730.0,
+      "diluted_shares_used": 50608030.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1530,21 +1616,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 2075784.7627340008,
-          "tax_rate_applied": 0.046930779277318244
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 6469000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 6165404.788855028,
-          "tax_rate_applied": 0.046930779277318244
+          "net_amount": 1720620.0,
+          "tax_rate_applied": 0.21
         },
         {
           "item_id": "loan_loss_provision_abnormal",
@@ -1556,8 +1629,8 @@
           "reason": "マクロ変動による一時的影響",
           "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
           "category": "金融関連",
-          "net_amount": 29545.145842403133,
-          "tax_rate_applied": 0.046930779277318244
+          "net_amount": 24490.0,
+          "tax_rate_applied": 0.21
         },
         {
           "item_id": "inventory_writeoff",
@@ -1569,29 +1642,29 @@
           "reason": "一過性の在庫評価損",
           "extracted_from": "us-gaap:InventoryWriteDown",
           "category": "在庫・サプライチェーン関連",
-          "net_amount": 1122715.5420113192,
-          "tax_rate_applied": 0.046930779277318244
+          "net_amount": 930620.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 9393450.23944275,
+      "net_adjustment_total": 2675730.0,
       "filing_date": "2021-04-30",
       "form": "10-K",
       "sector": null,
       "sector_exclusions": [],
       "revenue": 136015000.0,
-      "diluted_shares": 24362656.0,
+      "diluted_shares": 50608030.0,
       "period_end": "2021-04-30",
       "fiscal_year": 2021,
       "quarter": 4,
-      "tax_expense": 539000.0,
-      "pretax_income": 11485000.0
+      "tax_expense": 0,
+      "pretax_income": 0
     },
     {
-      "gaap_eps": 0.00416954261362463,
-      "adjusted_eps": 0.023777063765012797,
+      "gaap_eps": 0.004169298824712205,
+      "adjusted_eps": 0.02377567354429722,
       "gaap_net_income": 211000.0,
       "adjusted_net_income": 1203240.0,
-      "diluted_shares_used": 50605071.0,
+      "diluted_shares_used": 50608030.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1626,7 +1699,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 78782000.0,
-      "diluted_shares": 50605071.0,
+      "diluted_shares": 50608030.0,
       "period_end": "2021-01-30",
       "fiscal_year": 2021,
       "quarter": 3,
@@ -1634,11 +1707,11 @@
       "pretax_income": 0
     },
     {
-      "gaap_eps": 0.04137925228876766,
-      "adjusted_eps": 0.0709466448530425,
+      "gaap_eps": 0.04137683288600643,
+      "adjusted_eps": 0.07094249667493478,
       "gaap_net_income": 2094000.0,
       "adjusted_net_income": 3590260.0,
-      "diluted_shares_used": 50605071.0,
+      "diluted_shares_used": 50608030.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1673,7 +1746,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 92665000.0,
-      "diluted_shares": 50605071.0,
+      "diluted_shares": 50608030.0,
       "period_end": "2020-10-31",
       "fiscal_year": 2021,
       "quarter": 2,
@@ -1681,11 +1754,11 @@
       "pretax_income": 0
     },
     {
-      "gaap_eps": 0.19918952391154635,
-      "adjusted_eps": 0.2219660950579439,
+      "gaap_eps": 0.19917787750283897,
+      "adjusted_eps": 0.22195311692630595,
       "gaap_net_income": 10080000.0,
       "adjusted_net_income": 11232610.0,
-      "diluted_shares_used": 50605071.0,
+      "diluted_shares_used": 50608030.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1720,7 +1793,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 87450000.0,
-      "diluted_shares": 50605071.0,
+      "diluted_shares": 50608030.0,
       "period_end": "2020-08-01",
       "fiscal_year": 2021,
       "quarter": 1,
