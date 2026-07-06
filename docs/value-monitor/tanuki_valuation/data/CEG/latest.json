@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 21873703070.10177,
+  "intrinsic_value_pt": 21381990587.269344,
   "intrinsic_value_per_share": 6.206452338222924,
-  "intrinsic_value_beta": 1.62,
-  "upside_percent_beta": -99.3,
+  "intrinsic_value_beta": 0.24,
+  "upside_percent_beta": -99.9,
   "intrinsic_value_rf": 298.08,
-  "upside_percent_rf": 24.6,
-  "v0": 21873703070.10177,
-  "v0_adjusted": 21873703070.10177,
+  "upside_percent_rf": 22.2,
+  "v0": 21381990587.269344,
+  "v0_adjusted": 21381990587.269344,
   "alpha": 0.47061540194465834,
   "alpha_was_capped": false,
   "future_values": {
@@ -43,8 +43,8 @@
       "expected_return_pct": -96.4
     }
   },
-  "upside_percent": -97.4,
-  "calculation_date": "2026-07-04T01:01:24+09:00",
+  "upside_percent": -97.5,
+  "calculation_date": "2026-07-07T02:14:49+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -53,8 +53,8 @@
     "phase1_years": 3
   },
   "wacc": {
-    "value": 0.105187,
-    "beta": 1.091,
+    "value": 0.106897,
+    "beta": 1.121,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -124,31 +124,31 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 21873703070.10177,
-    "pv_high_growth": 3955171721.4213524,
-    "pv_terminal": 17918531348.680416,
+    "v0": 21381990587.269344,
+    "pv_high_growth": 3942996005.604602,
+    "pv_terminal": 17438994581.66474,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 1468581233.0612311,
-        "discount_factor": 1.105187,
-        "pv": 1328807914.9150608
+        "discount_factor": 1.106897,
+        "pv": 1326755093.7993608
       },
       {
         "year": 2,
         "fcf": 1610299322.05164,
-        "discount_factor": 1.2214383049689999,
-        "pv": 1318363207.9497535
+        "discount_factor": 1.225220968609,
+        "pv": 1314292983.313713
       },
       {
         "year": 3,
         "fcf": 1765693206.6296234,
-        "discount_factor": 1.349917735953774,
-        "pv": 1308000598.5565383
+        "discount_factor": 1.3561934144903964,
+        "pv": 1301947928.4915278
       }
     ],
     "terminal_fcf": 1818664002.8285122,
-    "terminal_value": 24188543269.827393,
+    "terminal_value": 23650649606.987427,
     "v0_rm": 23512336648.393772,
     "pv_fcf_rm": 3992491174.2227774,
     "pv_tv_rm": 19519845474.170994
@@ -284,10 +284,10 @@
     "roe_10yr_avg": 0.11205128617729962,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 239.25,
+    "current_price": 243.855,
     "latest_revenue": 25533000000.0,
     "rpo": 12034000000,
-    "beta": 1.091,
+    "beta": 1.121,
     "sector": "Utilities",
     "industry": "Utilities - Independent Power Producers",
     "eps_data": {
@@ -303,8 +303,8 @@
     "moat_gross_margin_norm": 0.0,
     "moat_roic_norm": 0.0776,
     "moat_fcf_margin_norm": 0.0,
-    "pv_high": 3955171721.4213524,
-    "pv_terminal": 17918531348.680416,
+    "pv_high": 3942996005.604602,
+    "pv_terminal": 17438994581.66474,
     "roe_used": 0.11205128617729962,
     "fcf_floor_applied": 5313840000.0,
     "fcf_growth_floor": 0.15,
@@ -314,11 +314,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.47061540194465834,
-    "per": 20.786272,
+    "per": 21.18636,
     "per_is_forward": false,
-    "per_adjusted": 22.96,
+    "per_adjusted": 23.41,
     "peg": 3.74,
-    "ps": 2.8605704,
+    "ps": 2.9156296,
     "ev_ebitda": 13.617,
     "ma200": 316.87537,
     "forward_eps": 13.58303,
@@ -328,7 +328,7 @@
     "analyst_target_high": 441.0,
     "analyst_count": 21,
     "analyst_rec_key": "buy",
-    "dividend_yield": 0.0067230444,
+    "dividend_yield": 0.006645768,
     "payout_ratio": 0.1381,
     "insider_buy_count": 0,
     "insider_sell_count": 0,
@@ -336,11 +336,11 @@
     "insider_latest_date": "2026-07-01",
     "analyst_vs_iv": 5764.9,
     "max_eps": 10.616,
-    "max_eps_per": 22.5,
+    "max_eps_per": 23.0,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-04",
+    "validated_at": "2026-07-07",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -349,7 +349,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $3.96B + pv_terminal $17.92B = $21.87B (差異0.00%)"
+        "detail": "2段階: pv_high $3.94B + pv_terminal $17.44B = $21.38B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -366,7 +366,7 @@
   "tanuki_score": "WATCH",
   "funda_score": 90,
   "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
-  "timing_score": 25,
+  "timing_score": 40,
   "sell_reason": null,
   "matrix": {
     "matrix": "②収益性系",
@@ -417,7 +417,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 400000000
   },
-  "net_current_assets_ratio": 0.0561,
+  "net_current_assets_ratio": 0.0551,
   "dupont": {
     "ni_ttm": 3791000000,
     "revenue_ttm": 29867000000,
@@ -482,9 +482,9 @@
     "recommended_g": 0.08393044193041138,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=9.7%のため中央値モデル適用",
-    "hype_phase_used": 4,
-    "hype_phase_label": "期待剥落期",
-    "hype_substage_label": "実体維持・バリュエーション過熱",
+    "hype_phase_used": 2,
+    "hype_phase_label": "期待拡大期",
+    "hype_substage_label": "期待拡大開始",
     "signals": [
       "業界平均Power(9.1%)の1.1倍以内 ✅",
       "過去実績(3yr:1.5% / 5yr:7.7%)と整合 ✅",
@@ -494,24 +494,24 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0138,
-  "forward_earnings_yield": 0.0568,
+  "erp": 0.0127,
+  "forward_earnings_yield": 0.0557,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit ongoing",
+      "summary": "Antitrust lawsuit facing Constellation Energy",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation active",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning issued amid 2025-2026 competition",
+      "summary": "Earnings warning amid rising competition 2025-2026",
       "impact": "mid"
     }
   ]
