@@ -698,6 +698,32 @@ def fred_latest(fred, series_id: str, target_date: date, lookback: int = 60):
         logger.warning(f"FRED [{series_id}]: {e}")
         return None, None
 
+def fred_latest_with_prev(fred, series_id: str, target_date: date, lookback: int = 100):
+    """
+    MACRO-NFP-1: fred_latest()に加え、直前の観測値も取得する。
+    PAYEMS（雇用者数の水準）から前月比を算出する用途で使用する。
+    戻り値: (最新値, 最新観測日, 直前値, 直前観測日)。
+    直前値が取得できない場合は (val, date, None, None)。
+    """
+    try:
+        end   = target_date.strftime("%Y-%m-%d")
+        start = (target_date - timedelta(days=lookback)).strftime("%Y-%m-%d")
+        s = fred.get_series(series_id, observation_start=start, observation_end=end)
+        if s is None or s.empty:
+            return None, None, None, None
+        s = s.dropna()
+        if s.empty:
+            return None, None, None, None
+        val_now, date_now = float(s.iloc[-1]), s.index[-1].date()
+        if len(s) >= 2:
+            val_prev, date_prev = float(s.iloc[-2]), s.index[-2].date()
+        else:
+            val_prev, date_prev = None, None
+        return val_now, date_now, val_prev, date_prev
+    except Exception as e:
+        logger.warning(f"FRED [{series_id}]: {e}")
+        return None, None, None, None
+
 def get_ff_current(fred):
     if fred is None:
         return None
@@ -895,12 +921,22 @@ def fetch_event_row(indicator: str, target_date: date, fred,
     if fred and fred_id and actual_val is None:
         for attempt in range(3):
             try:
-                a, d = fred_latest(fred, fred_id, target_date)
-                if a is not None:
-                    actual_val = a
-                    if d:
-                        row["release_date"] = d.strftime("%Y-%m-%d")
-                        row["event_id"]     = make_event_id(indicator, d)
+                if indicator == "NFP":
+                    # MACRO-NFP-1: PAYEMSは雇用者数の「水準」のため、
+                    # 前月からの増減（人）に変換してから格納する
+                    level_now, d, level_prev, _ = fred_latest_with_prev(fred, fred_id, target_date)
+                    if level_now is not None and level_prev is not None:
+                        actual_val = round((level_now - level_prev) * 1000)
+                        if d:
+                            row["release_date"] = d.strftime("%Y-%m-%d")
+                            row["event_id"]     = make_event_id(indicator, d)
+                else:
+                    a, d = fred_latest(fred, fred_id, target_date)
+                    if a is not None:
+                        actual_val = a
+                        if d:
+                            row["release_date"] = d.strftime("%Y-%m-%d")
+                            row["event_id"]     = make_event_id(indicator, d)
                 break
             except Exception as e:
                 logger.warning(f"[{indicator}] FRED attempt {attempt+1}: {e}")
@@ -1827,6 +1863,65 @@ def refresh_monthly_indicators(target_date: date, fred, fin_ctx: dict,
     return new_rows
 
 # ─────────────────────────────────────────────────────────────────
+#  MACRO-NFP-1: 同一FRED観測値の重複書き込み防止（防御的ガード）
+# ─────────────────────────────────────────────────────────────────
+def dedupe_new_rows(new_rows: list, events: pd.DataFrame) -> list:
+    """
+    run()内で今回新規に追加しようとしている行(new_rows)のうち、
+    「同一indicator×同一actual値×release_dateが指標のobs_to_release_lag以内」
+    の行を重複とみなして後発分を除外する。
+
+    scheduledループとrefresh_monthly_indicators()が同一実行内で
+    同一FRED観測値を別々のevent_idスロットに書き込んでしまうケース
+    （events_snapshot反映後も理論上残りうる取りこぼし）への
+    最終防御ライン。既存events（保存済み）とも比較し、実行をまたいだ
+    重複も検出する。
+    """
+    if not new_rows:
+        return new_rows
+
+    seen: list[tuple[str, float, date]] = []
+    if events is not None and not events.empty:
+        for _, r in events.iterrows():
+            try:
+                d = datetime.strptime(str(r["release_date"]), "%Y-%m-%d").date()
+                v = float(r["actual"])
+            except (ValueError, TypeError, KeyError):
+                continue
+            seen.append((r["indicator"], v, d))
+
+    kept = []
+    for row in new_rows:
+        ind = row.get("indicator", "")
+        try:
+            av = float(row.get("actual", ""))
+            rd = datetime.strptime(str(row["release_date"]), "%Y-%m-%d").date()
+        except (ValueError, TypeError, KeyError):
+            kept.append(row)
+            continue
+
+        # refresh_monthly_indicators()のスケジュール窓判定は obs_date±(lag±14日) で
+        # スロットを探すため、同一観測値の重複候補はraw obs_date基準の行（差0日）から
+        # 窓上限（lag+14日）まで離れうる。窓の下限（lag-14日）ではなく上限側で
+        # 比較しないと、このケース（MACRO-NFP-1で実際に発生）を取りこぼす。
+        lag = INDICATOR_CONFIG.get(ind, {}).get("obs_to_release_lag", 35) + 14
+        is_dup = any(
+            s_ind == ind and abs(s_av - av) < 1e-6 and abs((s_rd - rd).days) <= lag
+            for s_ind, s_av, s_rd in seen
+        )
+        if is_dup:
+            logger.warning(
+                f"[dedupe] {ind} {row.get('event_id')}: 同一観測値(actual={av})の"
+                f"重複行を除外しました"
+            )
+            continue
+
+        kept.append(row)
+        seen.append((ind, av, rd))
+
+    return kept
+
+# ─────────────────────────────────────────────────────────────────
 #  流動性モニター CSV 更新
 #  【単位統一】全カラムを Millions USD で保存
 #    WALCL (FED)  : FRED→Millions USD   そのまま
@@ -2128,12 +2223,26 @@ def run(target_date: date, test_mode: bool = False, do_recalc: bool = False,
             logger.error(f"[{ind_name}]: {e}")
 
     # 月次FRED指標の自動補完（スケジュール未登録・空actual の再試行）
+    # MACRO-NFP-1: 上のscheduledループで追加済みの行を反映したスナップショットを渡す。
+    # 素の events のまま渡すと、同一実行内で追加された行が見えず、
+    # 同一FRED観測値が別のevent_idスロットに二重書き込みされる（BUG再発防止）。
+    events_snapshot = (
+        pd.concat([events, pd.DataFrame(new_rows, columns=EVENTS_COLUMNS)], ignore_index=True)
+        if new_rows else events
+    )
     new_rows.extend(
-        refresh_monthly_indicators(target_date, fred, fin_ctx, schedule, events, sp500_t0)
+        refresh_monthly_indicators(target_date, fred, fin_ctx, schedule, events_snapshot, sp500_t0)
     )
 
     if not new_rows:
         logger.info("No rows to add.")
+        return
+
+    # MACRO-NFP-1: 同一indicator×同一actual値×近接release_dateの重複行を除外する
+    new_rows = dedupe_new_rows(new_rows, events)
+
+    if not new_rows:
+        logger.info("No rows to add after dedup.")
         return
 
     new_df = pd.DataFrame(new_rows, columns=EVENTS_COLUMNS)

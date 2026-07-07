@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-07-05（TAIL-UX-1 AI視点統合・UI-DISCOVER-1影響予測機能反映）
+最終更新: 2026-07-07（MACRO-NFP-1: 05_audit.py新設反映）
 
 ---
 
@@ -66,6 +66,8 @@ Market Pulse  ← yfinance / CNN F&G / FREDデータ
 　　TAKE PROFIT / BUY チェックリスト（F&G×200日MA×HYスプレッド×ヒンデンブルグ簡易版、
 　　MP-LOGIC-1/2 2026-06-24実装）を market_data.json に出力
 MACRO PULSE   ← FREDデータ / FRBステートメント
+　　整合性チェック: src/market/macro_pulse/05_audit.py（05_events.csvの重複行検出・
+　　NFP水準残存兆候の検出、report_consistency_check.py相当の軽量版。MACRO-NFP-1 2026-07-07新設）
 DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）

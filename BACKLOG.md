@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-06（TANUKI-FIN-2登録・HYPE-TRANS-1修正完了）
+最終更新: 2026-07-07（MACRO-NFP-1完了・MACRO-NFP-HIST-1登録）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -150,6 +150,27 @@ cost_in_usd_ticks=15227500（tick単位がnano-USDなら約$0.0152/回）
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [MACRO-NFP-HIST-1] NFP過去履歴の水準→前月比一括再計算
+**優先度:** 中
+**分類:** データ品質 / MACRO PULSE
+**登録日:** 2026-07-07
+**着手条件:** なし・随時着手可
+
+#### 背景
+[[MACRO-NFP-1]]（2026-07-07完了）でNFPの新規fetchロジックを「雇用者数の水準」から
+「前月比（人）」に修正したが、`05_events.csv`内の既存NFP行（全期間）は
+水準値のまま据え置いている（本タスクの対象外として意図的に除外）。
+`python src/market/macro_pulse/05_audit.py` のCHECK-2は、この既存履歴に対して
+NG（水準残存）を検出し続ける（想定通りの挙動）。
+
+#### 対応方針
+既存の`05_events.csv`内NFP行を対象に、FRED PAYEMSの水準系列を再取得し、
+`(level_now - level_prev) * 1000` で前月比に変換して一括書き換えるスクリプトを作成する
+（`05_import_history.py`の`import_from_fred()`に実装済みの変換ロジックと同一方式）。
+書き換え後は`05_audit.py`のCHECK-2でNG=0になることを確認する。
+
+---
 
 ### [UI-DISCOVER-1] カタリスト・ニュース履歴のUI改善
 **優先度:** 中

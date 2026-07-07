@@ -176,6 +176,11 @@ def import_from_fred(from_date: str, to_date: str, overwrite: bool = False,
                 continue
             s = s.dropna()
 
+            if ind_name == "NFP":
+                # MACRO-NFP-1: PAYEMSは雇用者数の「水準」のため、
+                # 前月からの増減（人）に変換してから格納する（05_main.pyのfetch_event_rowと揃える）
+                s = (s.diff() * 1000).dropna()
+
             for obs_date, val in s.items():
                 rd     = obs_date.date() if hasattr(obs_date, 'date') else obs_date
                 rd_str = rd.strftime("%Y-%m-%d")

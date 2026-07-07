@@ -2,6 +2,41 @@
 
 ---
 
+## 2026-07-07（完了）
+
+### ✅ [MACRO-NFP-1] MACRO PULSE NFP表示ロジック修正（2026-07-07完了）
+- 発覚経緯: ユーザー報告（RECENT SIGNALSパネルのNFP行が5/8・6/1・6/5・7/2の4回連続で
+  ACTUAL=PREV=159.0K・CHANGE=±0と表示、stale疑い）→ 調査の結果、fetch失敗ではなく
+  ロジック誤り2件の複合と判明（詳細調査ログは会話履歴参照）
+- 原因①: `05_main.py`の`fetch_event_row()`がPAYEMS（雇用者数の**水準**、約15.9億人規模）を
+  そのまま`actual`に格納しており、本来の「NFP＝前月比新規雇用者数」になっていなかった。
+  フロントエンドの`fmtK()`が水準値を`/1000`表示するため、月次のわずかな水準変動が
+  小数第1位に丸め込まれ同一表示に見えていた
+- 原因②: `run()`内でscheduledループが追加した行を`refresh_monthly_indicators()`に渡す
+  `events`スナップショットが反映されておらず、同一FRED観測値が別々のevent_idスロット
+  （例: nfp_2026-06-01とnfp_2026-07-02、共に158984.0）に二重書き込みされていた
+  （Building Permits・Michigan Consumer Sentimentでも同型の重複を実データで確認）
+- 対応①: `fred_latest_with_prev()`を新設し、`fetch_event_row()`のNFP分岐で
+  `actual = round((level_now - level_prev) * 1000)`（千人→人単位の前月比）に変更。
+  `05_import_history.py`の`import_from_fred()`も同様にNFPのみ`s.diff()*1000`で変換
+  （既存05_events.csvの過去NFP行は本タスクでは書き換えず、[[MACRO-NFP-HIST-1]]に切り出し）
+- 対応②: `run()`が`refresh_monthly_indicators()`に渡す`events`をscheduledループの
+  新規行を反映したスナップショットに更新。加えて`dedupe_new_rows()`を新設し、
+  「同一indicator×同一actual値×release_date差が窓（obs_to_release_lag+14日）以内」の
+  行を最終マージ前に除外する防御的ガードを追加
+- 対応③: 再発防止用の軽量監査スクリプト`src/market/macro_pulse/05_audit.py`を新設
+  （CHECK-1: 重複行検出=WARN、CHECK-2: NFP水準残存兆候=NG）。CHECK-1はIC4WSA等の
+  移動平均系指標が正常運用でも同値継続することがあるためWARN、CHECK-2は前月比なら
+  大きく振れるはずの値が狭いレンジに収束していることを検出するためNGとした
+- テスト: `tests/test_macro_pulse_logic.py`新設（18件、fred_latest_with_prev・
+  NFP前月比変換・dedupe_new_rows・監査スクリプトの2チェックを網羅、実際に発生した
+  Building Permits/Michigan Consumer Sentimentの重複を再現する回帰テストを含む）。
+  既存pytest（tests/全体、165件）は無影響（test_iv_formula.py MSFT/NVDAの2件失敗は
+  [[TEST-STALE-IV-1]]起因の既知の無関係な失敗）
+- 副産物: 過去NFP履歴の水準→前月比一括再計算を[[MACRO-NFP-HIST-1]]としてBACKLOG登録
+
+---
+
 ## 2026-07-06（完了）
 
 ### ✅ [HYPE-TRANS-1] HYPECOREステージ遷移確率が「現ステージへの過去滞在履歴なし」で0%誤表示（2026-07-06完了）
