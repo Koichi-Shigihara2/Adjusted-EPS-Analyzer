@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-08（STONKS-DIV-1完了）
+最終更新: 2026-07-08（一日の作業終了ブラッシュアップ・次セッション着手順序に本日完了4件を追記）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -913,6 +913,10 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ※ 2026-06-27完了: CN-ENB-1・RKLB-CLEANUP-1・PICK-DUP-1・TTM-NULL-1・STONKS-DIV-1（ガード確認+テスト追加）・PREVENT-1・PREVENT-2・PREVENT-3・SEC-CTRL-1（パス変更・Grok翻訳・マイグレーション）
 ※ 2026-07-01完了: STOCK-GLOSSARY-1・PREVENT-4・QBITconfig孤立エントリ削除・DUPONT-COLOR-1・EPS-BX-1・EXTREME-FEAR-1
 ※ 2026-07-03完了: ARCH-DATA-1-YTD（AMZN固有の追加回帰バグA・B発見・修正含め全101銘柄ロールアウト完了。副産物としてTEST-STALE-IV-1を登録）
+※ 2026-07-08完了: MACRO-NFP-HIST-1（NFP過去履歴370件を水準→前月比に一括変換）・
+  TTM-NULL-1（calc_ttm_series()内の見落とし箇所を追加修正、2026-06-27対応時の残存分）・
+  STONKS-DIV-1（再調査の結果ガード済みと再確認、L625の回帰テスト追加）・
+  BACKLOG-DEDUP-CHECK-1（BACKLOG.md/BACKLOG_DONE.md間ID重複の全数チェック、削除対象なしと判定）
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
