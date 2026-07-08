@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-07-07（MACRO-NFP-1: 05_audit.py新設反映）
+最終更新: 2026-07-08（MACRO-NFP-HIST-1: 05_backfill_nfp_mom.py新設反映）
 
 ---
 
@@ -68,6 +68,9 @@ Market Pulse  ← yfinance / CNN F&G / FREDデータ
 MACRO PULSE   ← FREDデータ / FRBステートメント
 　　整合性チェック: src/market/macro_pulse/05_audit.py（05_events.csvの重複行検出・
 　　NFP水準残存兆候の検出、report_consistency_check.py相当の軽量版。MACRO-NFP-1 2026-07-07新設）
+　　過去データ補正: src/market/macro_pulse/05_backfill_nfp_mom.py（05_events.csv内の
+　　既存NFP行を水準→前月比に一括変換する一回限りのバックフィルスクリプト。
+　　MACRO-NFP-HIST-1 2026-07-08新設、実行済み）
 DISCOVER      ← Grok Web検索 / NewsAPI
 　　ニュース収集・分類: src/discover/collect.py → docs/discover/data/daily_report.json（日次）
 　　ニュース履歴: docs/discover/data/news_history_YYYY_MM.json（月別蓄積・翌日騰落率付き）

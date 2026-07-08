@@ -2,6 +2,31 @@
 
 ---
 
+## 2026-07-08（完了）
+
+### ✅ [MACRO-NFP-HIST-1] NFP過去履歴の水準→前月比一括再計算（2026-07-08完了）
+- 背景: [[MACRO-NFP-1]]（2026-07-07完了）でNFPの新規fetchロジックは前月比に修正済みだったが、
+  `05_events.csv`内の既存NFP行370件（1996-01〜2026-07）は水準値のまま据え置かれており、
+  `05_audit.py`のCHECK-2がNG（水準残存）を検出し続けていた
+- 新設: `src/market/macro_pulse/05_backfill_nfp_mom.py`（一括変換スクリプト、`--dry-run`対応）
+  - FRED PAYEMS全期間水準系列を再取得し、`(level_now - level_prev) * 1000`で前月比に変換
+    （`05_import_history.py`の`import_from_fred()`と同一方式）
+  - 対象月判定: release_dateの日が「01」→release_date月そのものが観測月（旧FRED一括投入 /
+    スケジュール未一致のrefresh由来）。日が「01」以外→release_date月の1ヶ月前が観測月
+    （BLS実発表日でスケジュール一致したrefresh由来。NFPの実発表日が月初1日になることはなく
+    両者は曖昧なく判別可能なことを`05_indicator_schedule.csv`の実データで確認済み）
+  - `forecast_source="actual_as_forecast"`の8行（consensus=actualのコピー）はconsensus/
+    surprise/surprise_pctも新actualに合わせて更新。それ以外362行（consensus空欄）はactualのみ更新
+  - 書き換え前に`05_events.csv.bak_{timestamp}`へバックアップを自動作成
+- 実行結果: NFP全370行を変換（1996-01-01〜2026-07-02、スキップ0件）
+- 検証: `python src/market/macro_pulse/05_audit.py` → CHECK-2 NG=0を確認
+  （WARN 49→48件。うち1件はNFP水準の偶然一致によるものが解消され、MoM値の偶然一致
+  （nfp_2017-04-01/05-01が共に205000）が新たにWARN対象になったが人間確認要の範囲内で許容）
+- テスト: `tests/test_macro_pulse_logic.py`（18件）・`tests/`全体（165件）継続パスを確認
+  （test_iv_formula.py MSFT/NVDAの2件失敗は[[TEST-STALE-IV-1]]起因の既知の無関係な失敗）
+
+---
+
 ## 2026-07-07（完了）
 
 ### ✅ [MACRO-NFP-1] MACRO PULSE NFP表示ロジック修正（2026-07-07完了）
