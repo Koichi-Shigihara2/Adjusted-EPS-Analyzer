@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-08（TTM-NULL-1完了）
+最終更新: 2026-07-08（STONKS-DIV-1完了）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -450,28 +450,6 @@ tab index全数確認で発見。AI視点削除による影響は受けない箇
 #### 対応方針
 `modalTabIdx === 3` / `renderModalBody(ticker, 3)` を
 `modalTabIdx === 4` / `renderModalBody(ticker, 4)` に修正する。
-
----
-
-### [STONKS-DIV-1] analyzer.pyの複数箇所でゼロ除算ガードなし
-**優先度:** 低
-**分類:** バグ / STONKS SILO
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-discover/stonks-silo/src/analyzer.pyの以下の箇所でゼロ除算ガードなし：
-- L222: (r_end / r_start) ** (1/3) — r_start=0でZeroDivisionError
-- L314: abs(min(ni, 0.0)) / rev * 100 — rev=0でZeroDivisionError
-- L625: latest_yoy / avg_past > 3 — avg_past=0でZeroDivisionError
-
-STONKS SILOは売上がある赤字企業が対象のため実害は低いが、
-エッジケースでのクラッシュリスクがある。
-
-#### 対応方針
-各箇所にゼロガードを追加：
-- L222: r_start == 0 の場合はNoneまたはデフォルト値を返す
-- L314: rev == 0 の場合は0または計算スキップ
-- L625: avg_past == 0 の場合は比較をスキップ
 
 ---
 

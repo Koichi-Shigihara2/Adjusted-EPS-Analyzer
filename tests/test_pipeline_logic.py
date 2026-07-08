@@ -2599,3 +2599,30 @@ class TestStonksDivisionGuards:
             mod.StonksAnalyzer().analyze(data)
         except ZeroDivisionError as e:
             pytest.fail(f"r_start=0 で ZeroDivisionError が発生した: {e}")
+
+    def test_discontinuous_growth_avg_past_zero_skips_comparison(self):
+        """
+        過去YoYの平均が0（avg_past=0）でも _analyze_profitability_path が
+        ZeroDivisionError を起こさず、非連続成長判定をスキップすること。
+
+        直近YoYが200%以上（急拡大）かつ過去YoY平均がちょうど0%になるデータを構成し、
+        analyzer.py L625 の `avg_past > 0` ガードが機能していることを確認する。
+        """
+        mod = self._load_analyzer()
+        data = {
+            "ticker": "AVGPAST0",
+            "years": [2021, 2022, 2023],
+            "records": {
+                # 2021→2022: 売上横ばい(0%) → 過去YoY平均が0になる
+                2021: self._make_record(rev_san=100_000, net_income=-50_000),
+                2022: self._make_record(rev_san=100_000, net_income=-60_000),
+                # 2022→2023: 売上4倍(+300%) → 直近YoYが200%以上の急拡大条件を満たす
+                2023: self._make_record(rev_san=400_000, net_income=-70_000),
+            },
+        }
+        try:
+            result = mod.StonksAnalyzer().analyze(data)
+        except ZeroDivisionError as e:
+            pytest.fail(f"avg_past=0 で ZeroDivisionError が発生した: {e}")
+        # avg_past=0 は「比較不可」としてスキップされ、非連続成長フラグは立たない
+        assert result.profitability_path.discontinuous_growth is False

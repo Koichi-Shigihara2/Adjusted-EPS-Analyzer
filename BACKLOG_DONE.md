@@ -4,6 +4,24 @@
 
 ## 2026-07-08（完了）
 
+### ✅ [STONKS-DIV-1] analyzer.pyのゼロ除算ガード再確認・回帰テスト追加（2026-07-08完了）
+- 経緯: BACKLOG.mdに残っていた本項目も2026-06-27に一度「調査の結果、3箇所（r_start/rev/
+  avg_past）はすでにガード済みと判明（実装修正不要）」として対応済みだったが、
+  BACKLOG.mdからの削除漏れで再度アクティブ項目として残存していた（[[TTM-NULL-1]]と同型の
+  記録漏れパターン）
+- 再調査: 指摘された3箇所（L222の`r_start > 0`・L314の`_lpr()`内`rev <= 0`・L625の
+  `avg_past > 0`）は現在も全てガード済みと再確認。TTM-NULL-1の前例（同種パターンの
+  見落とし発見）を踏まえ、`analyzer.py`全体（1267行）の除算演算子を全数grepし直したが、
+  今回は追加の未ガード箇所は発見されなかった（実装修正なし）
+- テスト: 既存の`TestStonksDivisionGuards`（L222/L314相当の2件）に加えて、
+  L625（avg_past=0）を検証する回帰テストが未整備だったため
+  `test_discontinuous_growth_avg_past_zero_skips_comparison`を追加。
+  過去YoY平均がちょうど0%・直近YoYが+300%（急拡大条件）になるデータを構成し、
+  ガードを外すと実際にZeroDivisionErrorが再現することを事前確認した上で採用
+- pytest: 167 passed（新規1件込み）+ 既知の無関係な2件失敗（[[TEST-STALE-IV-1]]、NVDA/MSFT）
+
+---
+
 ### ✅ [TTM-NULL-1] ttm_calculator.py calc_ttm_series()のval=None TypeErrorガード追加（2026-07-08完了）
 - 経緯: BACKLOG.mdに残っていた本項目は2026-06-27に一度対応済み（L94のcalc_ttm/L185の
   _build_q4_quarterly_entries を`sum(e["val"] or 0 for e in ...)`にガード済み、
