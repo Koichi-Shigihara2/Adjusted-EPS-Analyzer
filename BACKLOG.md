@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-08（MACRO-NFP-HIST-1完了）
+最終更新: 2026-07-08（TTM-NULL-1完了）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -427,31 +427,6 @@ admin.htmlにrpo_config.jsonの編集UIセクションを追加する。
 report_consistency_check.pyに以下を追加：
 - CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
 - CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
-
----
-
-### [TTM-NULL-1] ttm_calculator.pyでval=None時のTypeError未ガード
-**優先度:** 低
-**分類:** バグ / SECデータ処理
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-ttm_calculator.py L94・L185でe["val"]がNoneの場合にTypeErrorが発生しうる。
-
-```python
-# L94
-total = sum(e["val"] for e in last4)  # val=NoneでTypeError
-# L185
-q4_val = fy_val - sum(e["val"] for e in top3)  # 同上
-```
-
-SECデータは通常数値のため実害は低いが防御的ガードがない。
-
-#### 対応方針
-sum()内でNoneを0として扱うガードを追加：
-```python
-total = sum(e["val"] or 0 for e in last4)
-```
 
 ---
 

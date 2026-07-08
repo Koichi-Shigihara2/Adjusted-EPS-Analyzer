@@ -486,7 +486,7 @@ def calc_ttm_series(
             last4 = q_entries[:4]
             if not last4:
                 continue
-            total = sum(e["val"] for e in last4)
+            total = sum(e["val"] or 0 for e in last4)
             flow[field_name] = {
                 "val": total,
                 "quarters_used": len(last4),

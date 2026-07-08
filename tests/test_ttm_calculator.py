@@ -92,3 +92,22 @@ class TestBuildQ4QuarterlyEntriesDedup:
         # 重複排除後の正しい4Q合計: 50 + 940 + 30 + 20 = 1040
         assert series[0]["flow"]["NetIncome"]["val"] == 50 + 940 + 30 + 20
         assert series[0]["flow"]["NetIncome"]["quarters_used"] == 4
+
+
+class TestCalcTtmSeriesNullValGuard:
+    """TTM-NULL-1: calc_ttm_series() の4Q合算で val=None がTypeErrorを起こさないことを保証する"""
+
+    def test_none_val_in_series_window_treated_as_zero(self):
+        normalized = {
+            "fields": {
+                "OCF": [
+                    _q("2025-03-31", "2025-01-01", None),
+                    _q("2024-12-31", "2024-10-01", 100.0),
+                    _q("2024-09-30", "2024-07-01", 200.0),
+                    _q("2024-06-30", "2024-04-01", 150.0),
+                ],
+            }
+        }
+        series = calc_ttm_series("TESTCO3", normalized, n_periods=1)
+        assert len(series) == 1
+        assert series[0]["flow"]["OCF"]["val"] == 450.0

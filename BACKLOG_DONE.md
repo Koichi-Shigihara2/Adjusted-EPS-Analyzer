@@ -4,6 +4,20 @@
 
 ## 2026-07-08（完了）
 
+### ✅ [TTM-NULL-1] ttm_calculator.py calc_ttm_series()のval=None TypeErrorガード追加（2026-07-08完了）
+- 経緯: BACKLOG.mdに残っていた本項目は2026-06-27に一度対応済み（L94のcalc_ttm/L185の
+  _build_q4_quarterly_entries を`sum(e["val"] or 0 for e in ...)`にガード済み、
+  BACKLOG_DONE.md参照）だったが、BACKLOG.mdからの削除漏れで再度アクティブ項目として残存していた
+- 再調査の結果、同一ファイル内`calc_ttm_series()`（L489、rolling TTM系列生成。update.py経由で
+  本番パイプラインが実際に使用）に同型の未ガード`sum(e["val"] for e in last4)`が別途存在すると判明
+  （2026-06-27修正時のgrep漏れ。`_calc_q4_implied`のL312は既にガード済みだったため見落とされた）
+- 対応: `common/sec_data/ttm_calculator.py` L489を`sum(e["val"] or 0 for e in last4)`に修正
+- テスト: `tests/test_ttm_calculator.py`に`TestCalcTtmSeriesNullValGuard`を追加（1件）。
+  修正前コードで実際にTypeErrorが再現することを確認した上で回帰テストとして採用
+- pytest: 166 passed（新規1件込み）+ 既知の無関係な2件失敗（[[TEST-STALE-IV-1]]、NVDA/MSFT）
+
+---
+
 ### ✅ [MACRO-NFP-HIST-1] NFP過去履歴の水準→前月比一括再計算（2026-07-08完了）
 - 背景: [[MACRO-NFP-1]]（2026-07-07完了）でNFPの新規fetchロジックは前月比に修正済みだったが、
   `05_events.csv`内の既存NFP行370件（1996-01〜2026-07）は水準値のまま据え置かれており、
