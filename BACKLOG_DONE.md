@@ -73,6 +73,32 @@
 - 副産物: KLACの当初報告値「$82.06」がstdout表示バグ（[[STDOUT-JSON-MISMATCH-1]]）
   による誤報告と判明し、記録を$70.33に訂正
 
+### ✅ [STDOUT-JSON-MISMATCH-1] pipeline.py stdout表示とJSON保存値の不一致（2026-07-09完了）
+- 原因: `_save_result()`内、`recommended_g`によるDCF再計算ロジック
+  （`segment_configured=False`の銘柄が対象）がローカル変数`valuation`を
+  再代入するだけで、呼び出し元（`process_ticker`ループ）の`valuation`
+  オブジェクトを更新していなかった。stdoutの完了メッセージ・
+  `results[ticker]`は再計算前の古い`valuation`を参照し続け、実際に
+  JSON保存される値（再計算後）と食い違っていた
+- 対応: `_save_result()`の戻り値を`None`→`dict`に変更し、最終的な
+  `valuation`を返すよう修正。呼び出し元も`valuation = self._save_result(...)`
+  と戻り値を受け取る形に変更
+- 影響範囲: `segment_configured=False`は102銘柄中65銘柄。ただし実際に
+  発火するのは`recommended_g`が算出され再計算が成功した場合のみのため、
+  65銘柄全てが被害を受けているとは限らない
+- 本日確認済みの被害銘柄（BACKLOG_DONE.md記載の理論株価とJSON実値の突合により確認）:
+  RMBS（$83.54→実際$87.50）・ENTG（$48.79→実際$28.11）・TER（$108.49→実際$53.64）・
+  LRCX（$110.06→実際$58.51）・CON（$40.47→実際$17.78、記録は[[新規銘柄登録]] WST・CONエントリで訂正済み）。
+  KLACは[[XBRL-TAG-KLAC-1]]対応時（2026-07-09）に$70.33へ訂正済み
+- 検証: RMBS/ENTG/TER/KLAC/LRCXでpipeline.py再実行し、修正後はstdout表示が
+  JSON保存値と完全一致することを確認。JSON値自体は修正前後で不変
+  （表示のみのバグで計算結果には影響しなかったことを確認）
+- **未検証の既知リスク**: BACKLOG_DONE.md内の過去記録（JNJ・VST/FCX/SCCO/CEG/KO・
+  ALAB等、`segment_configured`変更やG変更・逓減DCF適用を伴う記録）は同種の
+  発火条件（`segment_configured=False`時点での再計算）に該当しうるが、
+  当時のコード・データ状態を遡って検証する工数が大きいため今回は棚卸し
+  一覧化のみに留め、個別の正誤判定は未実施
+
 ### ✅ [新規銘柄登録] RMBS・ENTG・TER・KLAC・LRCX（2026-07-09完了）
 - CIK確認・cik_lookup.csv登録（status=active, registration_source=manual,
   registration_note="半導体関連・手動一括登録"）
@@ -322,7 +348,8 @@
 - commit: 3d45e6794
 - registration_source=technical_screening を新設カテゴリとして追加
 - WST: Step0〜8完了。セグメント設定（Proprietary Products 81.07%/West Vantage 18.93%）。理論株価$96.85、現在株価比乖離-73.5%
-- CON: Step0〜8完了。単一セグメント（設定不要）。β=0.511（yfinance未提供のため2年週次データから手動算出）。理論株価$40.47、乖離+31.5%
+- CON: Step0〜8完了。単一セグメント（設定不要）。β=0.511（yfinance未提供のため2年週次データから手動算出）。理論株価$17.78、乖離-43.4%
+  （当初「$40.47、乖離+31.5%」と記録したのは[[STDOUT-JSON-MISMATCH-1]]による誤報告。2026-07-09にJSON実値へ訂正）
 
 ---
 
@@ -2193,6 +2220,15 @@ CSV書込み前にヘッダー整合チェックを追加。
 - **修正**: `pipeline.py` Section 4 表示: `Phase1成長率` を DCF 適用値（推奨成長率）に変更、元成長率を別行表示
 - **JNJ**: IV $363.76 → $202.12（G=15%→1.47% で upside +51% → -16.1%）
 - **VZ**: G=15%→0.9% で IV 大幅変動
+
+**注記（2026-07-09・STDOUT-JSON-MISMATCH-1発見時）**: 本記録を含む
+2026-06-11（BUG-SCAN-FULLSCAN-1 Fix2）以降・recommended_g再計算を
+伴うDCF関連の完了記録（SEGMENT-1後半バッチ・BUG-NETDEBT-6・
+BUG-IV-DISP-1等）は、STDOUT-JSON-MISMATCH-1（2026-07-09根本修正済み）
+と同種のstdout/JSON不一致が起きていた可能性があり、記載された数値が
+当時のJSON実値と一致しない場合がある。現在の計算結果（最新JSON値）は
+本バグ修正後のものであり正確。過去記録の数値は参考情報として扱い、
+正確な現在値が必要な場合は都度JSON実値を確認すること。
 
 ✅ [FCF-OUTLIER-1] FCF外れ値誤除外修正（DOCN/LITE/VST） ✅ 2026-06-15
 - **根本原因**: `analyze_fcf_outlier` が "deviation_large" ルールで `latest_fcf > fcf_5yr_avg`（上方乖離）のケースを一過性コストで「除外」していた。

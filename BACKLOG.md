@@ -103,26 +103,6 @@ PARSER-ENTG-COMPYEAR-1・CHECK-QREV-FYE-1・XBRL-TAG-KLAC-1の
 
 ## 優先度：未定（要判断）
 
-### [STDOUT-JSON-MISMATCH-1] pipeline.py stdout表示とJSON保存値の不一致
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION
-**登録日:** 2026-07-09
-**発見:** XBRL-TAG-KLAC-1-FOLLOWUP検証時
-
-#### 問題
-`_save_result()`内、`recommended_g`によるDCF再計算ロジック（L560-571、
-`segment_configured=False`の銘柄が対象）がローカル変数`valuation`を
-再代入するだけで呼び出し元の`valuation`オブジェクトを更新しないため、
-stdoutの完了メッセージと実際に保存されるJSON値が食い違う
-（KLACで実測：stdout$82.06 vs 実保存$70.33）。
-
-#### 対応方針
-呼び出し元の`valuation`オブジェクトを正しく更新するよう修正する。
-`segment_configured=False`の対象銘柄が他にどれだけ影響を受けているか
-（過去の報告値に誤りがないか）の棚卸しも合わせて必要。
-
----
-
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定
 **分類:** アーキテクチャ / Discover
