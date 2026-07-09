@@ -159,7 +159,7 @@ class TanukiValuationPipeline:
                     }
                     validation_stats["error"] += 1
 
-                self._save_result(ticker, valuation, financials)
+                valuation = self._save_result(ticker, valuation, financials)
                 results[ticker] = valuation
                 success_count += 1
                 
@@ -502,7 +502,7 @@ class TanukiValuationPipeline:
             else:              parts.append("売上成長停滞")
         return "、".join(parts[:3]) if parts else f"{score}（データ不足）"
 
-    def _save_result(self, ticker: str, valuation: dict, financials: dict = None) -> None:
+    def _save_result(self, ticker: str, valuation: dict, financials: dict = None) -> dict:
         ticker_dir = os.path.join(self.output_dir, ticker)
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
@@ -772,6 +772,13 @@ class TanukiValuationPipeline:
         self._save_report(ticker, report_text)
 
         print(f"   💾 保存: {latest_path}")
+
+        # STDOUT-JSON-MISMATCH-1: recommended_gによる再計算（segment_configured=False
+        # の銘柄が対象）でvaluationが差し替わることがあるため、呼び出し元へ最終的な
+        # valuationを返す。呼び出し元は戻り値を使って理論株価等を表示・保持すること
+        # （呼び出し元自身のvaluation変数は再代入されないため、そのまま使うと
+        #  stdout表示と実際に保存されたJSON値が食い違う）
+        return valuation
 
     def _compute_matrix_position(self, ticker: str, valuation: dict, fcf_history: list) -> dict:
         """MATRIX象限（①②③④）を判定（ARCH-SCORE-SYNC-1: latest.jsonに出力しJS側matrixBadge()の独自再計算を廃止）"""
