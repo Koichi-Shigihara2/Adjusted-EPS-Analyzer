@@ -69,8 +69,20 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 - normalized JSON に不足フィールド（ShortTermInvestments / 銀行移行後LTDebt 等）を補完
 - ~~**年度判定の3箇所分散を単一関数に統合**~~ ✅ 2026-06-25完了
   （`common/sec_data/utils.py` に `determine_fiscal_year` を追加。parser.py・extract_key_facts.py・aggregate_annual の3箇所を統一）
+- **新規スコープ候補（2026-07-09追加）**: 上記3件と同時に発見された
+  バグA・B（_estimate_ttm_operating_income()等のフォールバック実装が、
+  GrossProfit/RD/SM等複数フィールドの期末日整合性を検証せず暗黙に
+  0円扱いしていた）は、SECデータ形の不均一性とは別種の技術的負債
+  （フォールバック実装時の防御的プログラミング不足）。ARCH-DATA-1の
+  正規化レイヤー強化と合わせて「フィールド間の期末日整合性を保証する
+  共通ユーティリティ」の新設を着手スコープに含めるか、次回設計時に判断する。
 
-#### 着手条件
+#### 着手条件（成立・2026-07-09）
+2026-07-09の新規5銘柄登録（RMBS/ENTG/TER/KLAC/LRCX）で
+PARSER-ENTG-COMPYEAR-1・CHECK-QREV-FYE-1・XBRL-TAG-KLAC-1の
+3件のデータ形起因バグが同一セッション内で同時発生し、着手条件
+「次にデータ形起因バグが発生した時点で着手する」が満たされた。
+
 個別バグの掃討が一段落してから、ではなく、**次にデータ形起因バグが
 発生した時点で着手する**（先送りを重ねるほど一本化コストが増えるため）。
 
