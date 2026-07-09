@@ -91,23 +91,23 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 
 ## 優先度：未定（要判断）
 
-### [XBRL-TAG-KLAC-1-FOLLOWUP] operating_income欠落6銘柄への新設フォールバック適用確認
+### [STDOUT-JSON-MISMATCH-1] pipeline.py stdout表示とJSON保存値の不一致
 **優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
+**分類:** バグ / TANUKI VALUATION
 **登録日:** 2026-07-09
+**発見:** XBRL-TAG-KLAC-1-FOLLOWUP検証時
 
-#### 背景
-[[XBRL-TAG-KLAC-1]]でKLAC向けにpipeline.pyへ`_estimate_ttm_operating_income()`
-（GrossProfit-RD-SM合算によるTTM営業利益フォールバック）を実装したが、これは
-全銘柄共通適用のロジック。横断監査の結果、直近3年operating_incomeが全欠落している
-銘柄が他に6件見つかった: ASTS / BX / JNJ / LLY / SOFI / XOM。
+#### 問題
+`_save_result()`内、`recommended_g`によるDCF再計算ロジック（L560-571、
+`segment_configured=False`の銘柄が対象）がローカル変数`valuation`を
+再代入するだけで呼び出し元の`valuation`オブジェクトを更新しないため、
+stdoutの完了メッセージと実際に保存されるJSON値が食い違う
+（KLACで実測：stdout$82.06 vs 実保存$70.33）。
 
 #### 対応方針
-上記6銘柄でpipeline.py --skip-riskを再実行し、Moat Score/ROIC/IVがKLACと同様に
-是正されるか（またはフォールバックが機能しないケースがないか）before/after比較する。
-BX/SOFI（金融）・JNJ/LLY（ヘルスケア）・XOM（エネルギー）は業種特性上GrossProfit自体を
-報告しない場合があるため、`_calc_moat_inputs`のGrossProfitフォールバックも合わせて
-機能するか確認すること。
+呼び出し元の`valuation`オブジェクトを正しく更新するよう修正する。
+`segment_configured=False`の対象銘柄が他にどれだけ影響を受けているか
+（過去の報告値に誤りがないか）の棚卸しも合わせて必要。
 
 ---
 

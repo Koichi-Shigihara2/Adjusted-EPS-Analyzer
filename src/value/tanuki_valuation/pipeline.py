@@ -2526,7 +2526,14 @@ class TanukiValuationPipeline:
         """OperatingIncomeLossタグが欠落している銘柄向けTTM営業利益フォールバック
 
         normalized quarterly JSON の直近4四半期分 GrossProfit - RD - SM を合算する
-        （XBRL-TAG-KLAC-1）。GrossProfit自体が欠落している場合はNoneを返す。
+        （XBRL-TAG-KLAC-1）。GrossProfit/RD/SMの3フィールドを独立に「直近4件」
+        取得すると、いずれかのフィールドのタグ報告が停止・欠落している場合に
+        期末日が食い違い、存在しないデータをdict.get(end, 0)で暗黙的に0円
+        扱いしてしまう（LLY: RDが2022-2023年で停止したままGP/SMは2025-2026年
+        分が取れてしまいR&D控除漏れでTTM営業利益を過大算出、ASTS: GPが2023年
+        で停止しRD/SMは2025-2026年分のためGPが実質0扱いになる、という2種類の
+        不具合が確認された）。3フィールド共通の期末日（intersection）でのみ
+        合算し、共通期末日が4件未満の場合はフォールバック不可としてNoneを返す。
         """
         norm_path = os.path.join(
             self.repo_root, "common", "sec_data", "normalized",
@@ -2539,23 +2546,17 @@ class TanukiValuationPipeline:
                 norm_data = json.load(f)
             fields = norm_data.get("fields", {})
 
-            def _last4_sum(field_name: str) -> dict:
-                q = sorted(
-                    (x for x in fields.get(field_name, []) if not x.get("is_annual")),
-                    key=lambda x: x["end"],
-                )[-4:]
+            def _by_end(field_name: str) -> dict:
+                q = (x for x in fields.get(field_name, []) if not x.get("is_annual"))
                 return {x["end"]: x["val"] for x in q}
 
-            gp = _last4_sum("GrossProfit")
-            if len(gp) < 4:
+            gp = _by_end("GrossProfit")
+            rd = _by_end("RD")
+            sm = _by_end("SM")
+            common_ends = sorted(set(gp) & set(rd) & set(sm))[-4:]
+            if len(common_ends) < 4:
                 return None
-            rd = _last4_sum("RD")
-            sm = _last4_sum("SM")
-            total = sum(
-                val - rd.get(end, 0) - sm.get(end, 0)
-                for end, val in gp.items()
-            )
-            return total
+            return sum(gp[end] - rd[end] - sm[end] for end in common_ends)
         except Exception:
             return None
 
@@ -2592,11 +2593,15 @@ class TanukiValuationPipeline:
                 ]
                 if pairs:
                     result["moat_gross_margin_3yr"] = sum(pairs) / len(pairs)
-                elif not gp_annual:
-                    # 年次GrossProfitタグが存在しない銘柄向けフォールバック
+                else:
+                    # 年次GrossProfitタグが存在しない、または直近年とマッチしない
+                    # （staleで古い年度のみ残っている）銘柄向けフォールバック
                     # （XBRL-TAG-KLAC-1: KLACはFY2022 10-K以降GrossProfitタグ自体を
                     #  廃止しており、四半期はRevenue-COGS逆算で補完済みだが年次は
-                    #  未補完のまま。直近12四半期（≒3年）を合算した粗利率で代替する）
+                    #  未補完のまま。ASTS向け追加修正: gp_annualが存在していても
+                    #  直近年とend日が一致せずpairsが0件になるケース（GrossProfit
+                    #  タグの報告が途中で停止した銘柄）も同様にフォールバックする。
+                    #  直近12四半期（≒3年）を合算した粗利率で代替する）
                     gp_q  = sorted(
                         (x for x in fields.get("GrossProfit", []) if not x.get("is_annual")),
                         key=lambda x: x["end"],

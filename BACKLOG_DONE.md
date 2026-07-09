@@ -32,11 +32,11 @@
   `_estimate_ttm_operating_income()`（直近4四半期のGrossProfit-RD-SM合算）フォールバックを
   新設。この2フォールバックは汎用実装のため他銘柄にも自動適用される
 - 効果: KLAC Moat Score 0.240→0.843（GM=10%→61%、ROIC=0%→100%capped）、
-  Phase1=5yr→9yr、理論株価$58.59→$82.06に是正
+  Phase1=5yr→9yr、理論株価$58.59→$70.33（乖離-68.2%）に是正
+  （当初「$82.06」と報告したのはstdout表示バグによる誤報告。実際に保存された
+  JSON値は$70.33。詳細は[[STDOUT-JSON-MISMATCH-1]]参照）
 - 横断監査（軽め）: 直近3年operating_income全欠落銘柄が他に6件（ASTS/BX/JNJ/LLY/SOFI/XOM）
-  存在することを確認。新設フォールバックは全銘柄共通適用のため次回pipeline.py実行時に
-  自動反映されるが、Moat Score/IVへの影響確認は未実施（次回セッションで各銘柄
-  pipeline.py再実行＋before/after比較を推奨）
+  存在することを確認。→ [[XBRL-TAG-KLAC-1-FOLLOWUP]]で検証・対応完了
 
 ### ✅ [CHECK-QREV-FYE-1] check_revenue_quality()の暦年グルーピング誤検知（2026-07-09完了）
 - 原因: `check_revenue_quality()`のチェック4（四半期合計vsFY年次整合性）が年次end日の
@@ -49,6 +49,30 @@
   実売上急増+87.5%、AI関連需要とみられる）によるWARNのみに変化。report_consistency_check.py
   はNG=0を維持
 
+### ✅ [XBRL-TAG-KLAC-1-FOLLOWUP] operating_income欠落6銘柄への新設フォールバック適用確認（2026-07-09完了）
+- 対象6銘柄中BXはtanuki=false（TANUKI VALUATION対象外）のため除外、残り5銘柄
+  （ASTS/JNJ/LLY/SOFI/XOM）で検証
+- 検証の過程でバグA・バグBの2件を新規発見・根本修正（詳細は下記参照）：
+  - バグA: `_calc_moat_inputs()`のGrossProfit年次フォールバック条件が
+    `elif not gp_annual:`（完全に空の場合のみ発動）になっており、年次データが
+    存在するが直近年とマッチしない（stale）場合にフォールバックが発動しない
+    欠陥があった。`else:`（pairs 0件なら常に発動）に修正
+  - バグB: `_estimate_ttm_operating_income()`がGrossProfit/RD/SMを独立に
+    「直近4四半期」取得しており、いずれかのタグ報告が停止しているとR&D控除
+    漏れ等でTTM営業利益を過大・無意味に算出していた（LLY: RDが2022-2023年で
+    停止、JNJ: RDタグ自体が空）。3フィールド共通の期末日（intersection）が
+    4件未満ならNoneを返す方式に修正
+- 効果（バグA・B修正後の最終結果）:
+  - ASTS: Moat Score 0.000→0.183、GM算出可能化（0.00→0.46）。ROICは元々の
+    無意味な誤算出値から「算出不可（0扱い）」の安全側挙動に是正
+  - LLY: ROIC過大評価（1.00 capped）を是正し0.00（算出不可）に。
+    乖離率+23.0%→-25.2%へ逆転（修正後の方が実態に近いと判断）
+  - JNJ: 同様にROIC過大評価（0.64）を是正し0.00に。既存のR&Dタグ抽出漏れ
+    （システム全体の既知ギャップ、今回の修正対象外）に起因
+  - SOFI/XOM/KLAC: 回帰なしを確認
+- 副産物: KLACの当初報告値「$82.06」がstdout表示バグ（[[STDOUT-JSON-MISMATCH-1]]）
+  による誤報告と判明し、記録を$70.33に訂正
+
 ### ✅ [新規銘柄登録] RMBS・ENTG・TER・KLAC・LRCX（2026-07-09完了）
 - CIK確認・cik_lookup.csv登録（status=active, registration_source=manual,
   registration_note="半導体関連・手動一括登録"）
@@ -58,7 +82,7 @@
 - ENTG: Step1でFY2022年次Revenue誤抽出を検知、PARSER-ENTG-COMPYEAR-1として
   根本修正後Step1〜3完了（理論株価$48.79/乖離-64.8%）
 - KLAC: Step3完了後operating_income/gross_profit欠落を検知、XBRL-TAG-KLAC-1
-  として根本修正後再計算完了（Moat Score 0.240→0.843、理論株価$58.59→$82.06）
+  として根本修正後再計算完了（Moat Score 0.240→0.843、理論株価$58.59→$70.33）
 - 副産物: CHECK-QREV-FYE-1（非12月決算企業の誤検知修正）、
   XBRL-TAG-KLAC-1-FOLLOWUP（他6銘柄への横展開確認）をBACKLOG登録
 
