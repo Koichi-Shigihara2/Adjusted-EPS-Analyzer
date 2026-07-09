@@ -1,56 +1,56 @@
 {
-  "intrinsic_value_pt": -558706884.9215529,
-  "intrinsic_value_per_share": -0.6836307060301847,
-  "intrinsic_value_beta": 0.31,
-  "upside_percent_beta": -97.9,
-  "intrinsic_value_rf": -11.77,
-  "upside_percent_rf": -178.5,
-  "v0": -558706884.9215529,
-  "v0_adjusted": -558706884.9215529,
+  "intrinsic_value_pt": -688789692.5586127,
+  "intrinsic_value_per_share": -1.338405494354282,
+  "intrinsic_value_beta": -0.03,
+  "upside_percent_beta": -100.2,
+  "intrinsic_value_rf": -16.02,
+  "upside_percent_rf": -203.0,
+  "v0": -688789692.5586127,
+  "v0_adjusted": -688789692.5586127,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": -0.81,
-    "2年後": -0.96,
-    "3年後": -1.14,
-    "4年後": -1.17,
-    "5年後": -1.2
+    "1年後": -1.59,
+    "2年後": -1.89,
+    "3年後": -2.24,
+    "4年後": -2.65,
+    "5年後": -3.15
   },
   "return_metrics": {
     "1年後": {
-      "future_value": -0.81,
-      "value_growth_pct": 19.1,
-      "expected_return_pct": -105.4
+      "future_value": -1.59,
+      "value_growth_pct": 18.7,
+      "expected_return_pct": -110.2
     },
     "2年後": {
-      "future_value": -0.96,
-      "value_growth_pct": 41.2,
-      "expected_return_pct": -106.4
+      "future_value": -1.89,
+      "value_growth_pct": 41.0,
+      "expected_return_pct": -112.2
     },
     "3年後": {
-      "future_value": -1.14,
-      "value_growth_pct": 67.6,
-      "expected_return_pct": -107.6
+      "future_value": -2.24,
+      "value_growth_pct": 67.2,
+      "expected_return_pct": -114.4
     },
     "4年後": {
-      "future_value": -1.17,
-      "value_growth_pct": 72.1,
-      "expected_return_pct": -107.8
+      "future_value": -2.65,
+      "value_growth_pct": 97.8,
+      "expected_return_pct": -117.0
     },
     "5年後": {
-      "future_value": -1.2,
-      "value_growth_pct": 76.5,
-      "expected_return_pct": -108.0
+      "future_value": -3.15,
+      "value_growth_pct": 135.1,
+      "expected_return_pct": -120.3
     }
   },
-  "upside_percent": -104.6,
-  "calculation_date": "2026-07-09T01:24:31+09:00",
+  "upside_percent": -108.6,
+  "calculation_date": "2026-07-10T01:51:45+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
     "rate": 0.1863,
     "source": "segment_weighted",
-    "phase1_years": 3
+    "phase1_years": 5
   },
   "wacc": {
     "value": 0.14588500000000001,
@@ -62,19 +62,19 @@
   "sensitivity": {
     "matrix": [
       [
-        -0.76,
         -1.1,
-        -1.48
+        -1.89,
+        -2.83
       ],
       [
-        -0.39,
         -0.68,
-        -1.0
+        -1.34,
+        -2.1
       ],
       [
-        -0.12,
         -0.37,
-        -0.64
+        -0.92,
+        -1.56
       ]
     ],
     "wacc_values": [
@@ -83,12 +83,12 @@
       0.11
     ],
     "growth_years": [
-      2,
       3,
-      4
+      5,
+      7
     ],
     "base_wacc": 0.1,
-    "base_years": 3
+    "base_years": 5
   },
   "growth_scenarios": {
     "primary": {
@@ -105,15 +105,15 @@
   "scenario_valuations": {
     "bear": {
       "growth_rate": 0.13,
-      "intrinsic_value_per_share": -0.37
+      "intrinsic_value_per_share": -0.72
     },
     "base": {
       "growth_rate": 0.186,
-      "intrinsic_value_per_share": -0.68
+      "intrinsic_value_per_share": -1.34
     },
     "bull": {
       "growth_rate": 0.224,
-      "intrinsic_value_per_share": -0.91
+      "intrinsic_value_per_share": -1.82
     }
   },
   "growth_options": {
@@ -124,9 +124,9 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": -558706884.9215529,
-    "pv_high_growth": -137413497.54827374,
-    "pv_terminal": -421293387.3732792,
+    "v0": -688789692.5586127,
+    "pv_high_growth": -237282313.27075994,
+    "pv_terminal": -451507379.28785276,
     "high_growth_detail": [
       {
         "year": 1,
@@ -145,13 +145,25 @@
         "fcf": -71317768.54492447,
         "discount_factor": 1.5046070874460293,
         "pv": -47399596.306555785
+      },
+      {
+        "year": 4,
+        "fcf": -84601660.20372501,
+        "discount_factor": 1.7241066923980934,
+        "pv": -49069851.98581354
+      },
+      {
+        "year": 5,
+        "fcf": -100359854.98786232,
+        "discount_factor": 1.9756279972185893,
+        "pv": -50798963.73667264
       }
     ],
-    "terminal_fcf": -73457301.60127221,
-    "terminal_value": -633881016.5359814,
-    "v0_rm": -937762637.4184883,
-    "pv_fcf_rm": -149340381.31381732,
-    "pv_tv_rm": -788422256.1046709
+    "terminal_fcf": -103370650.63749819,
+    "terminal_value": -892010619.4718745,
+    "v0_rm": -1186369186.9391456,
+    "pv_fcf_rm": -269440027.5202735,
+    "pv_tv_rm": -916929159.4188721
   },
   "fcf_base": {
     "base_fcf": 1009087500.0,
@@ -259,7 +271,7 @@
     "roe_10yr_avg": -0.41754653784201184,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 15.0,
+    "current_price": 15.555,
     "latest_revenue": 6316261000.0,
     "rpo": 0.0,
     "beta": 1.805,
@@ -271,15 +283,15 @@
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.18626342256394002,
-    "high_growth_years": 3,
+    "high_growth_years": 5,
     "terminal_growth_used": 0.03,
-    "moat_score": 0.0688,
-    "moat_phase1_years": 3,
-    "moat_gross_margin_norm": 0.0,
+    "moat_score": 0.2381,
+    "moat_phase1_years": 5,
+    "moat_gross_margin_norm": 0.4233,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.3439,
-    "pv_high": -137413497.54827374,
-    "pv_terminal": -421293387.3732792,
+    "pv_high": -237282313.27075994,
+    "pv_terminal": -451507379.28785276,
     "roe_used": -0.41754653784201184,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -289,13 +301,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 2.1929824,
+    "per": 2.2741227,
     "per_is_forward": false,
-    "per_adjusted": 39.31,
+    "per_adjusted": 40.76,
     "peg": 0.15,
-    "ps": 0.8739615,
+    "ps": 0.9062981,
     "ev_ebitda": null,
-    "ma200": 17.012775,
+    "ma200": 16.978825,
     "forward_eps": 2.09259,
     "analyst_target_median": 18.0,
     "analyst_target_mean": 19.04167,
@@ -309,22 +321,22 @@
     "insider_sell_count": 6,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-06-16",
-    "analyst_vs_iv": 2733.0,
+    "analyst_vs_iv": 1444.9,
     "max_eps": 8.37,
-    "max_eps_per": 1.8,
+    "max_eps_per": 1.9,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-09",
+    "validated_at": "2026-07-10",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $-0.86B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.380B + BS $+1.79/株 = $-0.47 (差異0.00%)"
+        "detail": "(V₀ $-1.03B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.380B + BS $+1.79/株 = $-0.93 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $-0.13B + pv_terminal $-0.38B = $-0.51B (差異0.00%)"
+        "detail": "2段階: pv_high $-0.22B + pv_terminal $-0.39B = $-0.60B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -332,7 +344,7 @@
       },
       "anomaly_detection": {
         "pass": false,
-        "detail": "理論株価$-0.47がゼロ以下（FCF恒久マイナス銘柄）"
+        "detail": "理論株価$-0.93がゼロ以下（FCF恒久マイナス銘柄）"
       }
     },
     "overall": "FAIL",
@@ -393,7 +405,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 799992000
   },
-  "net_current_assets_ratio": -0.3412,
+  "net_current_assets_ratio": -0.3291,
   "dupont": {
     "ni_ttm": 2855691000,
     "revenue_ttm": 6516578000,
@@ -437,14 +449,14 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0965,
-  "forward_earnings_yield": 0.1395,
+  "erp": 0.0915,
+  "forward_earnings_yield": 0.1345,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
