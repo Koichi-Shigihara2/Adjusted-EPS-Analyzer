@@ -49,6 +49,19 @@
   実売上急増+87.5%、AI関連需要とみられる）によるWARNのみに変化。report_consistency_check.py
   はNG=0を維持
 
+### ✅ [新規銘柄登録] RMBS・ENTG・TER・KLAC・LRCX（2026-07-09完了）
+- CIK確認・cik_lookup.csv登録（status=active, registration_source=manual,
+  registration_note="半導体関連・手動一括登録"）
+- RMBS/TER/LRCX: Step1〜3完了、異常なし
+  （RMBS理論株価$83.54/乖離-23.8%、TER理論株価$108.49/乖離-69.1%、
+  LRCX理論株価$110.06/乖離-67.0%）
+- ENTG: Step1でFY2022年次Revenue誤抽出を検知、PARSER-ENTG-COMPYEAR-1として
+  根本修正後Step1〜3完了（理論株価$48.79/乖離-64.8%）
+- KLAC: Step3完了後operating_income/gross_profit欠落を検知、XBRL-TAG-KLAC-1
+  として根本修正後再計算完了（Moat Score 0.240→0.843、理論株価$58.59→$82.06）
+- 副産物: CHECK-QREV-FYE-1（非12月決算企業の誤検知修正）、
+  XBRL-TAG-KLAC-1-FOLLOWUP（他6銘柄への横展開確認）をBACKLOG登録
+
 ### ✅ [TAIL-DCF-TABIDX-1] index.htmlのDCFタブ非同期再描画がtab index不一致（2026-07-09完了）
 - `docs/portfolio/tail/index.html` の `buildTabDcf()`（Tab 4: DCFシナリオ）内、シナリオファイル
   未ロード時の非同期コールバックが誤って `modalTabIdx === 3` / `renderModalBody(ticker, 3)`

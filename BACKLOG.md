@@ -914,6 +914,10 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   TTM-NULL-1（calc_ttm_series()内の見落とし箇所を追加修正、2026-06-27対応時の残存分）・
   STONKS-DIV-1（再調査の結果ガード済みと再確認、L625の回帰テスト追加）・
   BACKLOG-DEDUP-CHECK-1（BACKLOG.md/BACKLOG_DONE.md間ID重複の全数チェック、削除対象なしと判定）
+※ 2026-07-09完了: TAIL-DCF-TABIDX-1（DCFタブindex不一致修正）・
+  新規銘柄5件登録（RMBS/ENTG/TER/KLAC/LRCX）・PARSER-ENTG-COMPYEAR-1・
+  XBRL-TAG-KLAC-1・CHECK-QREV-FYE-1（パーサーバグ3件根本修正、
+  副産物としてXBRL-TAG-KLAC-1-FOLLOWUPを登録）
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
