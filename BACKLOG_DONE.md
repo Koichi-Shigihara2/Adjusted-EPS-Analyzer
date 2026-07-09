@@ -4,6 +4,29 @@
 
 ## 2026-07-09（完了）
 
+### ✅ [HYPECORE-TICKERS-INDEX-1] HypeCore画面に新規登録5銘柄が表示されない問題（2026-07-09完了）
+- 原因: `docs/value-monitor/hypecore/index.html` の一覧表示が
+  `const ALL_TICKERS=[...]` というHTML内に直接ハードコードされた配列を
+  参照しており、cik_lookup.csvのhypecore=trueフラグとは完全に独立していた。
+  `docs/value-monitor/hypecore/data/tickers.json` という一覧ファイルは
+  既に存在していたが、index.htmlはこれをfetchしておらず、`hypecore.py`側も
+  このファイルを書き込む処理を持っていなかった（2つとも同一の古い
+  ハードコード内容の孤立コピーで、6/26以降どちらも更新されていなかった）
+- 対応: (1) `hypecore.py`に`_save_tickers_index()`を新設し、実行のたびに
+  `docs/value-monitor/hypecore/data/*_poc.json`の実在ファイルを走査して
+  `tickers.json`を再生成するよう変更（TANUKI VALUATIONの
+  `_save_tickers_index`と同一パターン）。(2) `index.html`のハードコード配列を
+  削除し、`loadAll()`冒頭で`data/tickers.json`をfetchする方式に変更
+- 効果: RMBS/ENTG/TER/KLAC/LRCXを含む実在103銘柄（cik_lookup.csv
+  hypecore=true 104銘柄中、データ不足で失敗した1銘柄を除く）が
+  tickers.jsonに反映され、index.htmlに正しく表示されるようになった。
+  以後の新規銘柄登録時もhypecore.py実行のたびに自動反映される
+  （手動でのtickers.json更新は不要）
+- 検証: ローカルHTTPサーバーでindex.html→tickers.json→各poc.jsonの
+  fetchチェーンが正しく機能することを確認（この環境にはブラウザ自動化
+  ツールがなく実ブラウザでの目視確認は未実施）。pytest 124件パス・
+  report_consistency_check NG=0・check_links.py エラー0件を確認
+
 ### ✅ [PARSER-ENTG-COMPYEAR-1] ENTGのFY2022年次Revenue誤抽出（2026-07-09完了）
 - 原因: `common/sec_data/quarterly.py` の `_classify_period()` が `is_annual` 判定にform制限を
   課しておらず、10-Q内に混入する比較用contextRef（ENTGのFY2023 Q3 10-Q内にあった

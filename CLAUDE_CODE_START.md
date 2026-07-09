@@ -470,7 +470,11 @@ python common/sec_data/audit.py [TICKER] --check-beta
 
 # Step 5: HypeCore 実行
 python src/value/hypecore/hypecore.py --batch [TICKER]
+# --batch はスペース区切りで複数銘柄指定可（カンマ区切り不可）。
 # 失敗した場合はログを確認。データ不足銘柄（上場直後等）は失敗することがある。
+# docs/value-monitor/hypecore/data/tickers.json（index.html一覧表示の参照元）は
+# 実行のたびに実在するpoc.jsonから自動再生成される（HYPECORE-TICKERS-INDEX-1
+# 2026-07-09対応、手動更新不要）。
 
 # Step 5b: EPS Analyzer 実行（cik_lookup.csv の eps=true 銘柄のみ）
 python -m src.value.adjusted_eps_analyzer.pipeline --ticker [TICKER]
