@@ -183,6 +183,24 @@ cost_in_usd_ticks=15227500（tick単位がnano-USDなら約$0.0152/回）
 
 ## 優先度：中（こなれてきたら対応）
 
+### [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-09
+**発見:** 5銘柄登録の横断整合性確認時
+
+#### 問題
+ENTG（Materials Solutions 43.9% / Advanced Purity Solutions 56.1%）・
+TER（Semiconductor Test 79.1% / Product Test 11.2% / Robotics 9.7%）
+は共にASC 280 formal segment数2つ以上のLMT型に該当するが、
+segment_config.json未登録のまま_default設定でDCF計算されている。
+
+#### 対応方針
+各セグメントのgrowth rate設定に過去YoY実績・ガイダンスを踏まえた
+判断が必要なため、Step 3.5として別途セッションで着手する。
+
+---
+
 ### [UI-DISCOVER-1] カタリスト・ニュース履歴のUI改善
 **優先度:** 中
 **分類:** UX / Discover

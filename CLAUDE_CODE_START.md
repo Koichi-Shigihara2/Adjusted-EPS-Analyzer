@@ -515,6 +515,25 @@ python common/sec_data/registration_validator.py [TICKER]
 # WARN は内容を確認して対処が必要なもののみ対応する（上場直後の SEC 件数不足は許容）。
 ```
 
+**Step 8.5: 対象システム横断チェック（必須・XBRL-TAG-KLAC-1-FOLLOWUP 2026-07-09新設）**
+
+Step 1〜8はシステム個別の登録手順だが、「意図した通りに対象/対象外が
+振り分けられているか」を横断で確認する項目がなかったため、Step 5
+（HypeCore）の実行漏れが後から発覚する事例が発生した。以下を確認する：
+
+- [ ] TANUKI VALUATION（tanuki）/ HypeCore（hypecore）/
+      EPS Analyzer（eps）/ STONKS SILO（stonks_silo）—
+      cik_lookup.csvの4フラグが業態と整合しているか
+      （例: 黒字大型株なのにstonks_silo=trueになっていないか、
+      hypecore=trueなのに実データ`docs/value-monitor/hypecore/data/{TICKER}_poc.json`
+      が生成されていないか）
+- [ ] segment_config.json — ASC 280 formal segment数を確認し
+      LMT型（2segment以上）なら登録済みか（Step 3.5参照）
+- [ ] rpo_config.json — SaaS/クラウド業態ならwhitelist登録済みか
+- [ ] TANUKI TAIL — 保有ポジションでない限り登録しない
+      （誤操作防止の注意書き。thesis.json等を新規登録手順の
+      一環として作成しないこと）
+
 **注意事項：**
 - Step 2 を忘れると β=未設定のまま yfinance の raw 値が使われる
 - 異常値が疑われる場合は `--dry-run` で差分確認してから適用
