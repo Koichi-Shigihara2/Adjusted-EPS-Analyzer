@@ -1,0 +1,343 @@
+LRCX INTEGRATED INVESTMENT REPORT
+Generated: 2026-07-09T18:38:44+09:00
+Price: $333.15
+
+[1. TANUKI SCORE]
+Classification: PASS
+Funda_Score: 0/100
+Timing_Score (components):
+  Deviation_Rate: -82.4%
+  MA200_Deviation: +47.4%
+  HypeCore_Phase: N/A
+  Analyst_Consensus: Buy | Target: $335 median ($220-$500) | 31 analysts | vs IV: +472.6%
+Comment: 割高(-82%超)、FCF黒字
+Definition:
+
+Funda_Score: Composite score of financial health,
+growth, and profitability (0-100)
+Timing_Score: Reference indicators — deviation from IV,
+MA200 momentum, hype phase, analyst consensus
+(composite score requires FG index, shown as components)
+BUY: Funda>=50 AND upside>10% AND Timing>=50
+WATCH: Funda>=50 AND upside 0-20%
+HOLD: Funda good, within tolerance range
+TRIM: Funda good, overvalued(>-30%), post-euphoria, required growth exceeds TTM_YoY
+GROWTH_PREMIUM: Would-be-TRIM, but TTM_YoY growth already exceeds required growth
+SELL: Funda deteriorating or long-term downtrend
+PASS: Funda<25, excluded from consideration
+
+
+[2. MATRIX POSITION]
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.240
+Deviation_Rate: -82.4%
+Thresholds:
+  RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
+  ROE_Threshold: 15% (above=high profitability)
+  FCFMargin_Threshold: 15% (above=high cash generation)
+  Deviation_Threshold: 0% (positive=undervalued)
+Definition:
+
+Matrix①(投資効率系): Y=RICE, X=Deviation Rate
+RICE = (G × VC_Factor × Q × CF) / WACC
+Applied to: RICE-calculable tickers
+Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
+Applied to: Sector-excluded tickers
+(Consumer/Financial/Utilities/RealEstate/Insurance)
+Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
+Applied to: Q-anomaly tickers (deep deficit)
+Matrix④(キャッシュ創出力系): Y=FCF_Margin%, X=Deviation Rate
+Applied to: All tickers with FCF data
+Deviation_Rate = (Intrinsic_Value - Current_Price)
+/ Current_Price x 100
+Positive deviation = undervalued (intrinsic > current)
+
+
+[3. TANUKI VALUATION]
+Current_Price: $333.15
+Intrinsic_Value_BASE: $58.51
+Deviation_BASE: -82.4%
+Growth_Rate_Original: 15.0% (TTM実績)
+Growth_Rate_Adjusted: 4.7% (推奨値・中央値ベース)
+Scenarios:
+BEAR: Growth=3.3%, IV=$53.61 （推奨値ベース）
+BASE: Growth=4.7%, IV=$58.51 （推奨値ベース）
+BULL: Growth=5.6%, IV=$62.02 （推奨値ベース）
+Discount_Rate_Primary: 10.00% (DCF discount rate used)
+WACC_CAPM_Reference: 14.59%
+Terminal_Growth_Rate: 3.0%
+Beta: 1.805
+Valuation_Gap_Analysis:
+  DCF_IV:           $59 (保守的FCFベース・現在実力値)
+  Market_Price:     $333
+  Gap:              -82% (市場が将来成長を先取り)
+  Implied_FCF_2030: $28.30B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $4.46B
+  Required_Growth:  45%/yr (現在FCFから必要成長率を逆算)
+FCF_Base: $4,456.47M (5yr平均 + R&D補正)
+DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
+DCF_FCF_PV: $28.73B (8yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $44.16B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $72.89B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
+DCF_v0_x_alpha: $131.20B (= v0 × (1+alpha))
+RPO_PV: $0
+Growth_Option_PV: $0
+Equity_Value: $131.48B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.28B)
+Shares_Used: 1250.6M (source: yf_implied)
+→ Intrinsic_Value: $58.51 (= Equity_Value ÷ Shares_Used)
+Financial_Health:
+  Net_Debt: $-0.28B (negative=net cash)
+  Total_Debt: $4.47B  Cash: $4.75B
+  Net_Debt_Period: Cash=2026Q3/Debt=FY2025
+  SBC_TTM: $343M
+  Dilution_3yr_Annual: +109.34%/yr  極度の希薄化 🚨 IPO直後か継続増資か要確認
+  Dilution_Comment: IPO後の株式発行が主因の可能性。継続なら1株価値を年率109.3%毀損。
+  Next_Earnings_Date: 2026-07-30
+FCF_History:
+  2021: $3.25B (FCF_Margin: 22.2%)
+  2022: $2.57B (FCF_Margin: 14.9%)
+  2023: $4.69B (FCF_Margin: 26.9%)
+  2024: $4.51B (FCF_Margin: 30.3%)
+  2025: $5.42B (FCF_Margin: 29.4%)
+  FCF_CAGR_3yr: +28.3%
+Segment_Breakdown:
+  N/A (segment data not configured)
+Definition:
+
+IV Formula (full chain):
+  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
+  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
+  IV/share = Equity ÷ Shares_Used
+Discount rate: Rm=10% (market return, Beta=0 benchmark).
+This intentionally excludes market-risk beta to derive
+fundamental value independent of market sentiment.
+高β銘柄では市場WACC比でIVが高めに出る。これは市場リスクを
+意図的に除外した本源価値の設計。市場リスク調整後は
+WACC_CAPM_ReferenceでのIVを参照（割高/割安の絶対判断には両者を併用）
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only).
+DCF_FCF_PV / DCF_TV_PV above use Rm=10% (sum = DCF_v0).
+Alpha: HypeCore expectation premium (ROE × retention / Rm).
+Capped per sector; MSFT-class: 1.0, SaaS: 0.8, etc.
+RPO: Remaining Performance Obligation. Added outside alpha
+to avoid double-counting (v9.0 fix). Applied only to
+profitable SaaS with RPO/Revenue > 0.3.
+Growth_Option_PV: Optional segment-level growth premium.
+Equity bridge: adds Net_Cash (= -Net_Debt) per share.
+Net_Debt: Total Debt - Cash - ST_Investments. Negative = net cash.
+Lease liabilities excluded (ASC842/IFRS16 operating leases are not
+interest-bearing debt; excluded by design. Adjusted EV approach
+must be stated explicitly if leases are included.)
+Dilution_3yr_Annual: Share count CAGR over 3 years
+Share count source: SEC EDGAR XBRL diluted shares (split-adjusted)
+3%/yr = meaningful shareholder dilution risk
+FCF_CAGR_3yr: FCF compound growth rate (3yr)
+Positive = improving cash generation trend
+Segment_Weighted_Growth: Weighted avg of segment growth rates
+For manually configured segments: used directly as DCF growth rate G
+For unconfigured segments: TTM Revenue Growth is auto-applied,
+then adjusted via recommended_g (median of historical CAGR,
+industry benchmark, RR×ROIC)
+GROWTH-1: Decay model weight adjusted by HypeCore phase:
+  Phase1-2 (early): TTM×65% + Industry×35% (growth has room)
+  Phase3 (euphoria): TTM×50% + Industry×50% (balanced)
+  Phase4 (deflation): TTM×35% + Industry×65% (normalization accelerated)
+Next_Earnings_Date: Next quarterly earnings release
+Valuation_Gap_Analysis: Reverse DCF calculation showing
+what FCF growth rate the current market price implies.
+Useful for growth stocks where DCF underestimates
+market-priced future potential.
+
+
+[4. 成長率根拠]
+Phase1成長率 : 4.7% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
+成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）
+推奨成長率内訳:
+  中央値ベース:          4.7%
+  最終推奨値:            4.7%
+判定         : PLAUSIBLE
+業界ベンチマーク: N/A
+signals:
+  - 過去実績(3yr:2.3% / 5yr:12.9%)と整合 ✅
+  - RR×ROIC(4.7%)：再投資より還元重視型、または期待値先行 ℹ️
+Definition:
+
+Growth Rate Methodology:
+Layer 1 (Segment configured): Manual segment weighted average
+Layer 2 (Segment unconfigured): recommended_g auto-applied to DCF
+  If max(rev_cagr_3yr, rev_cagr_5yr, phase1_g) > 50%: decay model
+    recommended_g = (min(max_growth,100%) + industry_benchmark) / 2
+  Else: median of [rev_cagr_3yr, rev_cagr_5yr,
+        industry_benchmark, g_fundamental] (≥2 required)
+  (Note: CAGR_max in [4] = max of rev_cagr_3yr/5yr; distinct from TTM_YoY_Growth in [3])
+Layer 3: TTM_YoY Revenue Growth (if recommended_g unavailable)
+Layer 4: Default 15% (final fallback)
+Industry benchmark: Damodaran 2025 fundgrEB.xls
+
+
+[5. RICE METRICS]
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.168
+BASE: RICE=0.24
+BULL: RICE=0.286
+Components (BASE scenario):
+G  = 4.7%  [TANUKI forward growth rate]
+Q  = 1.0475   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.2435  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 1.9749  [R&D除外・CapExのみ投資強度]
+RICE_adj = 1.944  [参考：R&D資本化想定]
+WACC = 10.0%
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 5.87  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
+Definition:
+
+RICE measures reinvestment efficiency and compounding power
+G: Scenario-specific forward revenue growth rate
+Q: Cash conversion quality
+Q = OCF / (NetIncome + SBC), 3-year average (赤字年・利益ほぼゼロ年は除外)
+SBC added back to denominator to normalize
+for stock-based compensation distortion
+CF: Capital efficiency of growth investment
+CF = RevGrowthRate / InvestmentIntensity (1yr lag)
+InvestmentIntensity = (R&D + CapEx) / Revenue, 3yr avg
+VC_Factor (RICE-1): Value Creation Factor = clamp(ROIC/WACC, 0.3, 2.0)
+ROIC > WACC: reinvestment creates value -> G amplified (up to 2x)
+ROIC < WACC: reinvestment destroys value -> G penalized (down to 0.3x)
+ROIC unavailable (pre-profit): VC_Factor=1.0 (backward compatible)
+Discount_Rate_Primary: Actual discount rate applied in DCF (Rm=10%, Beta=0 benchmark)
+WACC_CAPM_Reference: Beta-adjusted CAPM estimate (reference only, not used in DCF)
+Interpretation: RICE>=3.0=high / 1.0-3.0=medium / 0-1.0=low / <0=undefined (OCF negative)
+Note: RICE uses Rm=10% (Beta=0) as a universal benchmark
+for cross-ticker comparability. DCF uses ticker-specific WACC.
+RICE is a proprietary screening metric inspired by
+Damodaran's reinvestment efficiency framework.
+Use as relative ranking tool, not absolute valuation.
+G used in RICE reflects the auto-adjusted recommended_g
+for unconfigured segments.
+
+
+[6. EPS ANALYZER]
+Latest_Adjusted_EPS: N/A
+Latest_GAAP_EPS: N/A
+Adjustment_Delta: N/A
+YoY_Growth: N/A%
+Recent Surprises (Adjusted EPS):
+  N/A
+Definition:
+
+EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
+press release figures if restatements or segment changes occurred.
+Adjusted EPS: GAAP EPS excluding SBC, one-time charges,
+M&A costs, and other non-recurring items
+Adjustment items classified as:
+SBC / Restructuring / Amortization / LegalSettlement /
+AcquisitionCost / Other
+Surprise Rate = (Actual - Estimate) / |Estimate| x 100
+Positive surprise historically correlates with
+short-term price appreciation (PEAD effect)
+PER_Comparison:
+  Market_PER_GAAP: 61.7x
+  Adjusted_EPS_PER: N/A
+Forward_Estimates:
+  Next_Earnings_Date: 2026-07-30
+  Next_Quarter_EPS: N/A (no analyst estimates in data)
+  Next_FY_EPS: $8.04 (yfinance forward EPS)
+Definition:
+
+Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
+Adjusted_EPS_PER: Price / Adjusted EPS TTM (self-calculated, same trailing 12M period)
+Gap between the two reveals SBC and one-time impact
+Forward_Estimates: Analyst consensus (external data)
+Compare with TANUKI G scenario for cross-validation
+
+
+[7. HYPECORE]
+Current_Phase: N/A
+Alpha_Premium: 0.8
+HYPE_Signal: N/A
+Phase_History (recent 6 months):
+N/A
+Valuation_Multiples (market-provided, yfinance):
+  PER: 61.7x
+  PEG: 2.02
+  PS:  19.2x
+  EV_EBITDA: 53.0x
+  PEG_Signal: 割高水準（成長率対比でPEG>2.0）
+  PS_Signal: 適正水準
+Definition:
+
+HypeCore measures market sentiment and hype lifecycle stage
+Phase1 (黎明期/Dawn): Early awareness, pre-euphoria,
+price below MA200, low momentum
+Phase2 (期待拡大期/Expansion): Rising expectations,
+price approaching or above MA200, momentum building
+Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
+MA200, high RSI, strong volume surge
+Phase4 (期待剥落期/Deflation): Sentiment reversal,
+price falling from peak, expectation reset
+Alpha: Growth expectation premium added to IV
+Higher alpha in Phase1-2, lower in Phase3-4
+HYPE_Signal: Combined judgment of Matrix quadrant
+and HypeCore phase
+ERP (Equity Risk Premium, 参考表示):
+  Forward_Earnings_Yield: 2.41%  (ForwardEPS $8.04 / Price $333.15)
+  Risk_Free_Rate (10Y):  4.30%
+  ERP: -1.89%
+  ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
+Valuation_Multiples: Market-provided values (yfinance),
+NOT self-calculated. Distinct from TANUKI IV.
+PER: Price / GAAP EPS (trailing)
+PEG: PER / Forward EPS Growth Rate
+PEG<1.0 = growth not fully priced in
+PEG>2.0 = high growth expectation embedded
+PS: Price / Revenue (TTM)
+High PS = market expects significant margin expansion
+EV/EBITDA: Debt-adjusted valuation multiple
+ERP: Forward Earnings Yield - Risk Free Rate (10Y Treasury)
+ERP reflects market EXPECTATION level, not price cheapness.
+ERP<0%  = 期待過熱圏: market prices in aggressive future growth
+ERP0-2% = 期待やや過熱: growth expectations building in price
+ERP2-4% = 期待中立: moderate growth expectations
+ERP≥4%  = 期待冷却圏: little growth expectation in price
+Note: Uses ForwardEPS from yfinance (analyst consensus).
+
+
+[8. STONKS SILO]
+Short_Report_Target: no
+Short_Interest: N/A%
+Institutional_Ownership: N/A (not in data source)
+Analyst_Consensus: Buy | Target: $335 median ($220-$500) | 31 analysts | vs IV: +472.6%
+Insider_Activity: Sell優勢 | 買い0件 / 売り47件 | 直近90日
+Runway_Months: N/A (profitable or not in STONKS)
+Revenue_Growth_YoY: N/A%
+Next_Earnings_Date: 2026-07-30
+Breakeven_Estimate: N/A (profitable or insufficient data)
+Definition:
+
+Short_Interest: % of float sold short
+High short interest -> squeeze risk if positive catalyst
+Institutional_Ownership: % held by institutions
+High ownership -> stable shareholder base
+Runway: Cash / Annual_FCF_Burn_Rate (years)
+Critical for pre-profit companies; <1yr = distress risk
+Revenue_Growth_YoY: TTM vs prior TTM
+Note: TTM may reflect restated (continuing operations) figures for
+companies that divested business units (e.g., APP Apps segment 2024).
+Primary growth metric for RICE-excluded tickers
+Breakeven_Estimate: Projected year when adjusted EPS turns positive
+based on recent 4Q linear trend. Rough estimate only.
+
+
+[9. RISK EVENTS]
+  N/A (Grok検索なし または イベントなし)
+
+==============================================
+DISCLAIMER: This report is generated automatically
+from financial data for reference purposes only.
+Not investment advice.
