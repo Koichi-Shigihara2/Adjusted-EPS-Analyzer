@@ -430,29 +430,6 @@ report_consistency_check.pyに以下を追加：
 
 ---
 
-### [TAIL-DCF-TABIDX-1] index.htmlのDCFタブ非同期再描画がtab index不一致
-**優先度:** 低
-**分類:** バグ / TANUKI TAIL
-**発見:** 2026-07-05（TAIL-UX-1 Phase2実装時）
-
-#### 問題
-`docs/portfolio/tail/index.html` の `buildTabDcf()`（Tab 4: DCFシナリオ）内、
-シナリオファイル未ロード時の非同期コールバックが `modalTabIdx === 3` を
-チェックしてから `renderModalBody(ticker, 3)` を呼んでいる（該当箇所コメントは
-「Tab 3: DCFシナリオ」だが実際のタブindexは4=KPIトレンドの次）。
-現在index=3はKPIトレンドタブのため、DCFタブを開いたまま
-シナリオデータが非同期ロードされた場合、KPIトレンドタブが誤って
-再描画されようとする（KPIトレンドタブを見ていなければ実害は表示されない）。
-TAIL-UX-1 Phase2（AI視点タブ削除・内部統制のindex 6→5化）実装時の
-tab index全数確認で発見。AI視点削除による影響は受けない箇所のため
-今回は修正対象外。
-
-#### 対応方針
-`modalTabIdx === 3` / `renderModalBody(ticker, 3)` を
-`modalTabIdx === 4` / `renderModalBody(ticker, 4)` に修正する。
-
----
-
 ### [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
 **優先度:** 低
 **分類:** データ定義不整合 / TANUKI TAIL

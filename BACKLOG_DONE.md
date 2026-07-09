@@ -2,6 +2,17 @@
 
 ---
 
+## 2026-07-09（完了）
+
+### ✅ [TAIL-DCF-TABIDX-1] index.htmlのDCFタブ非同期再描画がtab index不一致（2026-07-09完了）
+- `docs/portfolio/tail/index.html` の `buildTabDcf()`（Tab 4: DCFシナリオ）内、シナリオファイル
+  未ロード時の非同期コールバックが誤って `modalTabIdx === 3` / `renderModalBody(ticker, 3)`
+  （KPIトレンドタブのindex）を参照していたのを `modalTabIdx === 4` / `renderModalBody(ticker, 4)` に修正
+- コメント「Tab 3: DCFシナリオ」も実態（TABS_CORE/TABS_SATのindex=4）に合わせ「Tab 4」に修正
+- KPIトレンド側（L1365、modalTabIdx===3）は正しい実装のため変更対象外と確認済み
+
+---
+
 ## 2026-07-08（完了）
 
 ### ✅ [BACKLOG-DEDUP-CHECK-1] BACKLOG.md・BACKLOG_DONE.md間の項目ID重複チェック（2026-07-08完了）

@@ -2073,7 +2073,7 @@ function buildSparkline(kinfo) {
     circles + lastLbl + xLbls + '</svg>';
 }
 
-/* ─── Tab 3: DCFシナリオ ─── */
+/* ─── Tab 4: DCFシナリオ ─── */
 function buildTabDcf(ticker) {
   var reviews = loadedReviews[ticker];
   if (!reviews) return '<div class="no-rv">レビューデータなし</div>';
@@ -2089,7 +2089,7 @@ function buildTabDcf(ticker) {
   if (!hasScenario) {
     if (!scd) {  // まだフェッチ開始していない
       ensureScenariosLoaded(ticker).then(function () {
-        if (modalTicker === ticker && modalTabIdx === 3) renderModalBody(ticker, 3);
+        if (modalTicker === ticker && modalTabIdx === 4) renderModalBody(ticker, 4);
       });
     }
     if (!Object.keys(sc).length) return '<div class="no-rv">DCFデータなし</div>';
