@@ -292,7 +292,7 @@ def _select_best_filing(filings: list, end_date: str) -> dict | None:
     return max(candidates, key=lambda x: x.get("filed", ""))
 
 
-def _classify_period(start: str, end: str, fp: str) -> dict:
+def _classify_period(start: str, end: str, fp: str, form: str = "") -> dict:
     """
     期間を分類する。
 
@@ -305,7 +305,20 @@ def _classify_period(start: str, end: str, fp: str) -> dict:
     except (ValueError, TypeError):
         days = 0
 
-    is_annual = fp == "FY" or days > 300
+    # is_annualはform=10-K/10-K-A限定（PARSER-ENTG-COMPYEAR-1の教訓）:
+    # 10-Qには比較用に365日近いdurationのcontextRefが混入することがあり、
+    # form制限なしだとそれが「最新filed優先」ロジックで正規の10-K年次値を
+    # 上書きしてしまう（ENTG FY2022でQ4合成値が$0になる不具合が発生した）
+    #
+    # fp=='FY'のみでの判定は不十分（XBRL-TAG-KLAC-1の教訓）:
+    # SEC XBRL APIのfpは「filing自体の期間種別」を指すため、10-K内に
+    # 埋め込まれた四半期duration（例: period_days=91の比較用開示）にも
+    # 一律fp='FY'が付与される。fp=='FY'単独で年次判定すると、KLACの
+    # FY2021 10-K内の四半期GrossProfit開示（period_days=89〜91）が
+    # 誤って年次データとして扱われ、その後の年度に本来の年次値が
+    # 一度も上書きされず4四半期分の古いデータが残存し続けた。
+    # fp=='FY'採用時もdays>130（4半期の最短妥当日数）を必須とする。
+    is_annual = form in ("10-K", "10-K/A") and ((fp == "FY" and days > 130) or days > 300)
     # 131-300日 かつ 10-Q → YTD
     is_ytd = (not is_annual) and (days > 130)
 
@@ -348,7 +361,14 @@ def _process_entries(raw_entries: list) -> list:
         if val is None or not end:
             continue
 
-        period_info = _classify_period(start, end, fp)
+        period_info = _classify_period(start, end, fp, form)
+
+        # 10-Q/10-Q-A由来でduration>300日のエントリは比較用contextRefの混入
+        # （PARSER-ENTG-COMPYEAR-1）とみなし、YTD四半期扱いにもせず除外する
+        # （実際の10-Q YTDは最大9ヶ月≒270日程度のため、300日超は正規の
+        #   四半期・YTD概念に該当しない）
+        if form in ("10-Q", "10-Q/A") and period_info["period_days"] > 300:
+            continue
 
         enriched = {
             "end": end,
@@ -525,15 +545,25 @@ def check_revenue_quality(ticker: str, normalized: dict) -> dict:
                 )
 
     # --- チェック4: 四半期合計 vs FY年次 整合性 ---
+    # 暦年ラベル(a_end[:4])での四半期グルーピングは非12月決算企業（KLAC/LRCX等）で
+    # 誤検知する（CHECK-QREV-FYE-1）。年次end日を起点にtrailing 12ヶ月窓で
+    # 該当4四半期を抽出する会計年度ベースのグルーピングに変更した。
     for a_end, a_val in a_only[-3:]:
-        year = a_end[:4]
-        q_in_year = [v for e, v in q_only if e[:4] == year]
-        if q_in_year:
-            q_total = sum(q_in_year)
-            gap_pct = abs(q_total - a_val) / abs(a_val) * 100
+        try:
+            a_end_dt = date.fromisoformat(a_end)
+        except ValueError:
+            continue
+        window_start = a_end_dt - timedelta(days=370)
+        q_in_fy = [
+            v for e, v in q_only
+            if window_start < date.fromisoformat(e) <= a_end_dt
+        ]
+        if len(q_in_fy) == 4:
+            q_total = sum(q_in_fy)
+            gap_pct = abs(q_total - a_val) / abs(a_val) * 100 if a_val else 0
             if gap_pct > 5:
                 issues.append(
-                    f"FY{year} 年次vs四半期合計 乖離{gap_pct:.1f}%: "
+                    f"FY(期末{a_end}) 年次vs四半期合計 乖離{gap_pct:.1f}%: "
                     f"annual={a_val/1e6:.0f}M, Q合計={q_total/1e6:.0f}M"
                 )
 

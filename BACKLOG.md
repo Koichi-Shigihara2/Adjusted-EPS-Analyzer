@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-08（一日の作業終了ブラッシュアップ・次セッション着手順序に本日完了4件を追記）
+最終更新: 2026-07-09（新規銘柄5件登録+パーサーバグ3件修正・XBRL-TAG-KLAC-1-FOLLOWUP追加）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -90,6 +90,26 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
 ---
 
 ## 優先度：未定（要判断）
+
+### [XBRL-TAG-KLAC-1-FOLLOWUP] operating_income欠落6銘柄への新設フォールバック適用確認
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-09
+
+#### 背景
+[[XBRL-TAG-KLAC-1]]でKLAC向けにpipeline.pyへ`_estimate_ttm_operating_income()`
+（GrossProfit-RD-SM合算によるTTM営業利益フォールバック）を実装したが、これは
+全銘柄共通適用のロジック。横断監査の結果、直近3年operating_incomeが全欠落している
+銘柄が他に6件見つかった: ASTS / BX / JNJ / LLY / SOFI / XOM。
+
+#### 対応方針
+上記6銘柄でpipeline.py --skip-riskを再実行し、Moat Score/ROIC/IVがKLACと同様に
+是正されるか（またはフォールバックが機能しないケースがないか）before/after比較する。
+BX/SOFI（金融）・JNJ/LLY（ヘルスケア）・XOM（エネルギー）は業種特性上GrossProfit自体を
+報告しない場合があるため、`_calc_moat_inputs`のGrossProfitフォールバックも合わせて
+機能するか確認すること。
+
+---
 
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定

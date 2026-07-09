@@ -4,6 +4,51 @@
 
 ## 2026-07-09（完了）
 
+### ✅ [PARSER-ENTG-COMPYEAR-1] ENTGのFY2022年次Revenue誤抽出（2026-07-09完了）
+- 原因: `common/sec_data/quarterly.py` の `_classify_period()` が `is_annual` 判定にform制限を
+  課しておらず、10-Q内に混入する比較用contextRef（ENTGのFY2023 Q3 10-Q内にあった
+  `start=2022-01-01/end=2022-12-31`のQ1-Q3累計値、form=10-Q）が「最新filed優先」で
+  正規のFY2022 10-K年次値（$3,282,033,000）を上書きし、$2,335,963,000（実質Q1+Q2+Q3合計）
+  に化けていた。結果としてQ4 2022合成値が$0になりZeroDivisionErrorでrevenue品質チェックが
+  クラッシュしていた
+- 対応: `is_annual` 判定にform=10-K/10-K-A限定の条件を追加。10-Q由来でduration>300日の
+  エントリは比較用ノイズとみなし除外する処理も追加
+- 影響確認: 同パターンの混入がAMZN/BSY/DELL/ESTCのOCF/ICF等でも見つかったため
+  合わせて再生成（実annual値は別途Dec-31形式で存在しており実害なしと確認済み）
+- ENTG Step1〜3再実行完了。理論株価$48.79（乖離-64.8%）で正常完了
+
+### ✅ [XBRL-TAG-KLAC-1] KLACのoperating_income/gross_profit抽出失敗（2026-07-09完了）
+- 原因1（GrossProfit）: KLA Corpは自社のFY2021 10-K内に「四半期duration（91日）だが
+  fp='FY'」という比較開示データを含めており、`_classify_period()`が`fp=='FY'`のみで
+  年次判定していたため誤って年次GrossProfitとして取り込まれ、FY2022以降は本来の
+  年次GrossProfitタグ自体をKLAが報告していないため4件の古い四半期データのまま
+  更新が止まっていた（Moat Score計算でGM=10%表示、実態は約60%）
+- 原因2（OperatingIncome）: KLA CorpはFY2015 10-K以降、年次OperatingIncomeLossタグを
+  一度も報告しておらず、ROIC計算が恒常的にNoneになりMoat ScoreのROIC項が0floor
+  になっていた
+- 対応: (1) `_classify_period()`のis_annual判定に`fp=='FY' and days>130`の下限を追加し、
+  四半期durationの誤タグ混入を排除。(2) `pipeline.py`の`_calc_moat_inputs()`にGrossProfit
+  annual欠落時の四半期12件合算フォールバックを追加。(3) `_calc_roic_wacc_ratio()`に
+  `_estimate_ttm_operating_income()`（直近4四半期のGrossProfit-RD-SM合算）フォールバックを
+  新設。この2フォールバックは汎用実装のため他銘柄にも自動適用される
+- 効果: KLAC Moat Score 0.240→0.843（GM=10%→61%、ROIC=0%→100%capped）、
+  Phase1=5yr→9yr、理論株価$58.59→$82.06に是正
+- 横断監査（軽め）: 直近3年operating_income全欠落銘柄が他に6件（ASTS/BX/JNJ/LLY/SOFI/XOM）
+  存在することを確認。新設フォールバックは全銘柄共通適用のため次回pipeline.py実行時に
+  自動反映されるが、Moat Score/IVへの影響確認は未実施（次回セッションで各銘柄
+  pipeline.py再実行＋before/after比較を推奨）
+
+### ✅ [CHECK-QREV-FYE-1] check_revenue_quality()の暦年グルーピング誤検知（2026-07-09完了）
+- 原因: `check_revenue_quality()`のチェック4（四半期合計vsFY年次整合性）が年次end日の
+  暦年ラベル（`a_end[:4]`）で四半期をグルーピングしており、非12月決算企業
+  （KLAC=6月期・LRCX=6月期・DELL=1月期・ESTC=4月期等）で本来同一会計年度に属する
+  四半期が正しく合算されず、false positiveの❌ISSUEを出していた
+- 対応: 年次end日を起点にtrailing 12ヶ月窓（370日以内）で4四半期を抽出する
+  会計年度ベースのグルーピングに変更
+- 検証: KLAC/LRCX/ESTCはISSUE解消。DELLはISSUE解消の上で別要因（直近四半期の
+  実売上急増+87.5%、AI関連需要とみられる）によるWARNのみに変化。report_consistency_check.py
+  はNG=0を維持
+
 ### ✅ [TAIL-DCF-TABIDX-1] index.htmlのDCFタブ非同期再描画がtab index不一致（2026-07-09完了）
 - `docs/portfolio/tail/index.html` の `buildTabDcf()`（Tab 4: DCFシナリオ）内、シナリオファイル
   未ロード時の非同期コールバックが誤って `modalTabIdx === 3` / `renderModalBody(ticker, 3)`

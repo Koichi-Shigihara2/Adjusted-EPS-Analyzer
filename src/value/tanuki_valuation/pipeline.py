@@ -2499,7 +2499,13 @@ class TanukiValuationPipeline:
             pl = ann.get("pl", {})
             bs = ann.get("bs", {})
             oi = pl.get("operating_income") or 0
-            nopat = oi * (1 - 0.21)
+            if not oi:
+                # OperatingIncomeLossタグを近年報告していない銘柄向けフォールバック
+                # （XBRL-TAG-KLAC-1: KLACはFY2015 10-K以降、年次OperatingIncomeLossの
+                #  タグ付けを行っておらず、pl.operating_incomeが恒常的にNoneになる。
+                #  直近4四半期のGrossProfit-RD-SMからTTM営業利益を代替算出する）
+                oi = self._estimate_ttm_operating_income(ticker)
+            nopat = (oi or 0) * (1 - 0.21)
             if nopat <= 0:
                 return None
             equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0
@@ -2513,6 +2519,43 @@ class TanukiValuationPipeline:
             if not (0 < roic < 10.0):  # 合理的な範囲外はスキップ
                 return None
             return roic / wacc_rm
+        except Exception:
+            return None
+
+    def _estimate_ttm_operating_income(self, ticker: str) -> float | None:
+        """OperatingIncomeLossタグが欠落している銘柄向けTTM営業利益フォールバック
+
+        normalized quarterly JSON の直近4四半期分 GrossProfit - RD - SM を合算する
+        （XBRL-TAG-KLAC-1）。GrossProfit自体が欠落している場合はNoneを返す。
+        """
+        norm_path = os.path.join(
+            self.repo_root, "common", "sec_data", "normalized",
+            f"{ticker}_quarterly_normalized.json"
+        )
+        if not os.path.exists(norm_path):
+            return None
+        try:
+            with open(norm_path, encoding="utf-8") as f:
+                norm_data = json.load(f)
+            fields = norm_data.get("fields", {})
+
+            def _last4_sum(field_name: str) -> dict:
+                q = sorted(
+                    (x for x in fields.get(field_name, []) if not x.get("is_annual")),
+                    key=lambda x: x["end"],
+                )[-4:]
+                return {x["end"]: x["val"] for x in q}
+
+            gp = _last4_sum("GrossProfit")
+            if len(gp) < 4:
+                return None
+            rd = _last4_sum("RD")
+            sm = _last4_sum("SM")
+            total = sum(
+                val - rd.get(end, 0) - sm.get(end, 0)
+                for end, val in gp.items()
+            )
+            return total
         except Exception:
             return None
 
@@ -2540,13 +2583,33 @@ class TanukiValuationPipeline:
                 fields = norm_data.get("fields", {})
                 gp_annual  = [x for x in fields.get("GrossProfit", []) if x.get("is_annual")]
                 rev_annual = [x for x in fields.get("Revenue", [])      if x.get("is_annual")]
+                # end日付でマッチング（位置zipは年ズレを起こす。XBRL-TAG-KLAC-1で発見）
+                gp_by_end = {x["end"]: x["val"] for x in gp_annual}
                 pairs = [
-                    gp["val"] / rev["val"]
-                    for gp, rev in zip(gp_annual[-3:], rev_annual[-3:])
-                    if rev.get("val") and rev["val"] > 0
+                    gp_by_end[rev["end"]] / rev["val"]
+                    for rev in rev_annual[-3:]
+                    if rev.get("val") and rev["val"] > 0 and rev["end"] in gp_by_end
                 ]
                 if pairs:
                     result["moat_gross_margin_3yr"] = sum(pairs) / len(pairs)
+                elif not gp_annual:
+                    # 年次GrossProfitタグが存在しない銘柄向けフォールバック
+                    # （XBRL-TAG-KLAC-1: KLACはFY2022 10-K以降GrossProfitタグ自体を
+                    #  廃止しており、四半期はRevenue-COGS逆算で補完済みだが年次は
+                    #  未補完のまま。直近12四半期（≒3年）を合算した粗利率で代替する）
+                    gp_q  = sorted(
+                        (x for x in fields.get("GrossProfit", []) if not x.get("is_annual")),
+                        key=lambda x: x["end"],
+                    )[-12:]
+                    rev_by_end_q = {
+                        x["end"]: x["val"]
+                        for x in fields.get("Revenue", [])
+                        if not x.get("is_annual")
+                    }
+                    gp_sum = sum(x["val"] for x in gp_q if x["end"] in rev_by_end_q)
+                    rev_sum = sum(rev_by_end_q[x["end"]] for x in gp_q if x["end"] in rev_by_end_q)
+                    if gp_q and rev_sum > 0:
+                        result["moat_gross_margin_3yr"] = gp_sum / rev_sum
             except Exception:
                 pass
 
