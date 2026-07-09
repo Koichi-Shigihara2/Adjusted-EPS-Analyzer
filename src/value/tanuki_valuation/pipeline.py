@@ -18,7 +18,7 @@ import csv
 import json
 import os
 import sys
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import List, Optional
 
 # 同一ディレクトリからのインポート
@@ -2093,15 +2093,23 @@ class TanukiValuationPipeline:
                     yr_3ago = s_3ago_entry.get("end", "")[:4]
 
                     # 株式分割による不連続を検出・補正（最新基準に統一）
-                    # 判定: FY値の前年比が2.5倍超 かつ 同年の四半期中央値と2.5倍超乖離
+                    # 判定: FY値の前年比が2.5倍超 かつ 同一会計年度の四半期中央値と2.5倍超乖離
                     #   → 遡及的分割調整（stock split retroactive restatement）として補正
                     # 判定: FY値の前年比が2.5倍超 だが 四半期中央値と近い
                     #   → IPO等の実際の希薄化として補正なし
-                    q_vals_by_year = {}
-                    for e in shares_series:
-                        if not e.get("is_annual") and e.get("val"):
-                            yr = e.get("end", "")[:4]
-                            q_vals_by_year.setdefault(yr, []).append(e["val"])
+                    #
+                    # 四半期グルーピングは年次end日を起点にtrailing 12ヶ月窓で行う
+                    # （LRCX-SPLIT-1の教訓・CHECK-QREV-FYE-1と同型バグ）:
+                    # 暦年ラベル（end[:4]）でグルーピングすると非12月決算企業
+                    # （LRCX=6月期等）で誤判定する。LRCXの10:1分割（2024-10実施）は
+                    # SECの比較開示ウィンドウの都合で、一部四半期のみが後続filingで
+                    # 分割後ベースに遡及修正され、別四半期は未修正のまま残っていた。
+                    # 暦年グルーピングだと同一暦年内に「修正済み・未修正」の四半期が
+                    # 混在し、中央値が偶然「分割後基準」に一致して分割を見逃していた。
+                    q_entries_all = [
+                        e for e in shares_series
+                        if not e.get("is_annual") and e.get("val") and e.get("end")
+                    ]
 
                     raw_vals = [e["val"] for e in annual_shares]
                     adj_vals = list(raw_vals)
@@ -2110,8 +2118,15 @@ class TanukiValuationPipeline:
                         ratio = raw_vals[i] / raw_vals[i - 1] if raw_vals[i - 1] > 0 else 1.0
                         if ratio > 2.5 or ratio < 0.4:
                             # 四半期値との比較で遡及的分割調整か実際の希薄化かを判別
-                            yr_i = annual_shares[i].get("end", "")[:4]
-                            q_list = q_vals_by_year.get(yr_i, [])
+                            try:
+                                a_end_dt = date.fromisoformat(annual_shares[i]["end"])
+                                window_start = a_end_dt - timedelta(days=370)
+                                q_list = [
+                                    e["val"] for e in q_entries_all
+                                    if window_start < date.fromisoformat(e["end"]) <= a_end_dt
+                                ]
+                            except (ValueError, KeyError):
+                                q_list = []
                             if q_list:
                                 q_median = sorted(q_list)[len(q_list) // 2]
                                 fy_q_ratio = raw_vals[i] / q_median if q_median > 0 else 1.0
