@@ -1,6 +1,9 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-07-10（report.txt統合レポートの存在・構成・パース注意点を追記、common/screening/配下2スクリプト新設反映）
+最終更新: 2026-07-10（銘柄振り分けの正本（cik_lookup.csv）セクション新設、
+システム一覧テーブルの出力先パス誤記5件を修正、STONKS SILOの解像度向上、
+AutoTrade運用実体・OpenD前提を追記、report.txt統合レポートの存在・構成・
+パース注意点を追記、common/screening/配下2スクリプト新設反映）
 
 ---
 
@@ -10,15 +13,66 @@
 |---|---|---|
 | TANUKI VALUATION | DCF理論株価・RICE投資効率 | docs/value-monitor/tanuki_valuation/ |
 | HypeCore | 期待プレミアム・フェーズ判定 | docs/value-monitor/hypecore/ |
-| TANUKI SCORE | 多銘柄比較・最終投資判断 | docs/value-monitor/tanuki_score/ |
-| STONKS SILO | 赤字企業の投資適合性評価 | docs/value-monitor/stonks_silo/ |
-| EPS ANALYZER | GAAP/Non-GAAP乖離・割安発掘 | docs/value-monitor/eps_analyzer/ |
-| MACRO PULSE | マクロ環境・景気後退リスク | docs/market/macro_pulse/ |
-| Market Pulse | 市場センチメント・資金フロー | docs/market/market_pulse/ |
+| TANUKI SCORE | 多銘柄比較・最終投資判断 | docs/value-monitor/tanuki_score/（daily pick機能の出力は docs/integrated-dashboard/、下記参照） |
+| STONKS SILO | 赤字企業の投資適合性評価（詳細は下記セクション参照） | docs/value-monitor/stonks-silo/ |
+| EPS ANALYZER | GAAP/Non-GAAP乖離・割安発掘 | docs/value-monitor/adjusted_eps_analyzer/ |
+| MACRO PULSE | マクロ環境・景気後退リスク | docs/market-monitor/macro-pulse/ |
+| Market Pulse | 市場センチメント・資金フロー | docs/market-monitor/market-pulse/ |
 | Extreme Fear | 買付支援・TANUKI TOP10・投入額シミュレーター（Market Pulse配下） | docs/value-monitor/extreme-fear/ |
 | DISCOVER | 未発掘銘柄の発掘・ニュース収集 | docs/discover/ |
-| PORTFOLIO | 保有ポートフォリオ管理 | docs/management/portfolio/ |
-| AutoTrade | F&G×TQQQ自動売買 | C:\Users\shigi\AutoTrade\（リポジトリ外） |
+| PORTFOLIO | 保有ポートフォリオ管理 | docs/portfolio/ |
+| AutoTrade | F&G×TQQQ自動売買 | C:\Users\shigi\AutoTrade\fg_level2\（リポジトリ外、運用中の実体。下記「AutoTrade/OpenD運用前提」参照） |
+
+（2026-07-10全件棚卸しで、上記5システムの出力先パス記載がリポジトリ実態と
+乖離していたことが判明したため修正: STONKS SILO/EPS ANALYZER/MACRO PULSE/
+Market Pulse/PORTFOLIO。特にPORTFOLIOの旧記載`docs/management/portfolio/`は
+該当ディレクトリ自体が存在しなかった）
+
+---
+
+## 銘柄振り分けの正本（cik_lookup.csv）（2026-07-10追記）
+
+`config/cik_lookup.csv`（106銘柄）が、どの銘柄をどのシステムで評価するかを
+決める**入力側の正本**。カラム構成:
+
+| カラム | 役割 |
+|---|---|
+| ticker / cik / name | 銘柄コード・CIK・会社名 |
+| eps_sector | EPS ANALYZERのセクター分類上書き（`sector_classifier_v2.py`が参照。多くの銘柄で空欄） |
+| stonks_silo / tanuki / eps / hypecore | 各システムの対象可否フラグ（後述） |
+| status | active / candidate / retired。新規登録手順Step 0.5で記録（詳細はCLAUDE_CODE_START.md参照） |
+| registered_date / registration_source / registration_note | 登録日・登録経緯（moomoo_screening/manual_thesis等）・登録理由の要約 |
+
+**フラグと各システムの対象銘柄取得経路（実装確認済み）:**
+- `tanuki=true` → `src/value/tanuki_valuation/pipeline.py`が直接読み取り、対象銘柄を決定
+- `stonks_silo=true` → `discover/stonks-silo/src/pipeline.py`が直接読み取り、対象銘柄を決定
+- `hypecore=true` → `src/value/hypecore/hypecore.py --batch`が直接読み取り、対象銘柄を決定
+- `eps=true` → **バッチ実行の対象銘柄には直接使われない**（下記参照）。`registration_validator.py`でEPS未対応銘柄のWARN抑制にのみ使用
+- フラグに依らない共通upstream: `common/sec_data/config.py::get_all()`がcik_lookup.csv**全106銘柄**を返し、`common/sec_data/update.py`（SEC生データ取得）はこれを既定の対象とする。個別システムのフラグはこのSECデータ取得より下流の各パイプラインで参照される
+
+**`config/monitor_tickers.yaml`（99銘柄）との関係:**
+cik_lookup.csvとは独立した別ファイルで、以下の実際の用途を持つ:
+- `src/value/adjusted_eps_analyzer/pipeline.py`の`run()`（引数なし＝通常のバッチ実行）が
+  対象銘柄リストとして**直接読み取る**。cik_lookup.csvの`eps`フラグはここでは参照されない
+- `common/sec_data/registration_validator.py`の既定スキャン範囲（`target_tickers`未指定時）
+- `docs/value-monitor/adjusted_eps_analyzer/admin/`のUIから直接編集可能（EPS ANALYZER運用者向けの手動キュレーションリスト）
+
+cik_lookup.csvとの同期は自動化されておらず、新規銘柄登録手順Step 7
+（CLAUDE_CODE_START.md）で手動追加する運用。`registration_validator.py`の
+P4-CIKOrphanチェックが乖離をWARN（NGではない）として検出するが、
+WARNはコミットをブロックしないため見落とされやすい。
+
+**2026-07-10棚卸しで判明した実際の差分（cik_lookup.csv 106件 − monitor_tickers.yaml 99件 = 7件）:**
+- `RMBS`/`ENTG`/`TER`/`KLAC`/`LRCX`（5件・2026-07-09に「半導体関連・手動一括登録」で登録、
+  いずれも`tanuki=true`/`eps=true`/`hypecore=true`）: Step 7が未実施のまま残っている
+  同期漏れと判定（本来monitor_tickers.yamlに存在すべき）
+- `APGE`（1件・2026-07-02登録、`eps=true`/`hypecore=true`、status=candidate）: 他のcandidate銘柄
+  （WST/CON/SN）はmonitor_tickers.yamlに存在するため、status=candidateであること自体は
+  除外理由にならない。こちらも同期漏れの可能性が高い
+- `BX`（1件）: `stonks_silo`/`tanuki`/`eps`/`hypecore`が全てfalseのため、monitor_tickers.yaml
+  非掲載は正当（[[CIK-ORPHAN-FLAGS-1]]参照）
+- 対応要否（monitor_tickers.yamlへの6件追加）は本調査のスコープ外のため、
+  別途BACKLOG化を検討する
 
 ---
 
@@ -63,6 +117,77 @@ tanuki=false化前の旧データである可能性を疑い、参考値扱い�
 **DCF前提・ROIC妥当性の機械チェック:** `common/screening/dcf_validity_checker.py`
 （成長率floor値張り付き・SECデータ異常ジャンプ・投下資本の妥当性・
 HypeCore遷移確率サンプル数の4観点を機械判定。詳細はスクリプト内docstring参照）
+
+---
+
+## STONKS SILO（詳細・2026-07-10追記）
+
+赤字企業（cik_lookup.csv `stonks_silo=true`、2026-07-10時点25銘柄）を対象に、
+黒字化までの投資適合性を評価する。
+
+**パイプライン:** `discover/stonks-silo/src/pipeline.py`（analyzer.py/fetcher.py/
+financial_trend_calculator.py/valuation_fetcher.pyで構成）→
+`docs/value-monitor/stonks-silo/data/results.json`
+
+**主要フィールド構成（`results.json.tickers.{TICKER}`）:**
+- `deficit_quality`: revenue_growth_pct・cagr_3yr・rnd_ratio・sm_ratio・gross_margin・
+  verdict（BUY/WATCH等）・score・sbc_adjusted_fcf・sbc_ratio・dilution_risk
+- `runway`: cash・monthly_burn・**runway_months**・verdict（SAFE等）・score
+- `profitability_path`: core_profit/ocf_annualの年次推移・ocf_yoy_change・ocf_acceleration
+- `overall_score` / `overall_verdict` / `summary` / `records` / `valuation` / `financial_vectors`
+
+**TANUKI VALUATIONとの依存関係（重要・従来SYSTEM_MAPに未記載）:**
+`src/value/tanuki_valuation/pipeline.py`は`docs/value-monitor/stonks-silo/data/results.json`を
+**直接読み取り**、以下2箇所で使用する:
+1. Matrix③（成長性系）のX軸「Runway(years)」表示（`stonks_data.get("runway", {}).get("runway_months")`）
+2. Runway 12ヶ月未満のペナルティ判定（資金枯渇リスクをDCF評価に反映）
+
+STONKS SILO非対象銘柄（stonks_silo=false）でRunway相当の情報が必要な場合は、
+pipeline.py内で`computed_runway_months`（Cash / 月次FCF Burn）を独自にフォールバック計算する。
+→ 変更時の影響範囲チェックリストに関わる: `discover/stonks-silo/src/pipeline.py`の
+runway計算ロジックを変更する場合、TANUKI VALUATION側のMatrix③・Runwayペナルティへの
+影響も確認すること。
+
+---
+
+## TANUKI SCORE daily pick（docs/integrated-dashboard/）（2026-07-10追記）
+
+`src/value/tanuki_score/daily_pick.py`の出力先は`docs/value-monitor/tanuki_score/`配下ではなく
+リポジトリ直下の`docs/integrated-dashboard/`（`daily_pick.json`・`history.json`）。
+`docs/value-monitor/tanuki_score/index.html`がfetchして表示する（CHAT_RULES.mdの
+「銘柄スクリーニング着手前の確認事項」で言及される「Extreme Fear TOP10」の実体データ）。
+
+---
+
+## ワークフロー依存関係定義（config/workflow_dependencies.json）（2026-07-10追記）
+
+GitHub Actions各ワークフロー（SEC_Data_Update → HypeCore_Update / Adjusted_EPS_Update等）の
+依存関係グラフを定義するJSON。`docs/value-monitor/admin.html`の「実行」タブが読み取り、
+一括更新ボタンの実行順序制御に使用する。ワークフローを新設・依存関係変更した場合は
+このファイルへの追記が必要（admin.html側の実行UIに反映されないと手動個別実行が必要になる）。
+
+---
+
+## AutoTrade/OpenD運用前提（2026-07-10追記）
+
+**運用中の実体はリポジトリ外:** `C:\Users\shigi\AutoTrade\fg_level2\`が実際に稼働している
+F&G Level2×TQQQ自動売買システム（Windowsタスクスケジューラから`trader.py --entry`/
+`--monitor`を日次実行、moomoo OpenD経由で発注）。signal.json/state.json/trade_log.jsonlが
+日次で更新される。
+
+**リポジトリ内に陳腐化した初期複製が残存（要注意）:** `src/subport/fg_level2/`は
+2026-05-03の開発初期に作成された同名モジュール一式（trader.py/signal.py/config.json等）だが、
+2026-05-03以降git上で更新がなく、`register_tasks.ps1`が`$RepoRoot`をこのリポジトリパスに
+設定しているにも関わらず実際には使われていない（運用中のsignal.json更新は
+`C:\Users\shigi\AutoTrade\fg_level2\`側でのみ発生）。両者は既に内容が乖離しており、
+このモジュールを参照・変更する際は誤って更新対象外の複製を編集しないよう注意すること。
+削除要否は本調査のスコープ外のため対応保留（別途判断が必要）。
+
+**OpenD常時起動という運用前提:** AutoTrade運用のため、moomoo OpenD（ローカルゲートウェイ）は
+既に常時起動している（2026-07-10 DESIGN-16調査時に確認）。この前提により、Moomoo API Skillや
+Moomoo Skills Hub等、OpenD経由のローカル連携機能が「導入すれば追加のローカル常駐プロセスなしで
+利用可能」という状態にある。ただしPC自体の停止・再起動時はOpenD接続も途切れるため、
+GitHub Actions（クラウド・端末状態非依存）と同等の可用性は持たない。
 
 ---
 
@@ -155,6 +280,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | hypecore結果（hypecore_results.json） | growth_sanity経由でDCF成長率が変わるため影響銘柄のpipeline.py再実行 |
 | hypecore_results（poc.json）更新時 | 影響銘柄のpipeline.py再実行（hypecore_history/{TICKER}.jsonが更新される） |
 | pipeline.py | audit.py → 全銘柄pipeline.py再実行 |
+| discover/stonks-silo/src/pipeline.py（runway計算ロジック） | TANUKI VALUATION側のMatrix③・Runwayペナルティも影響を受けるため、影響銘柄のtanuki pipeline.py再実行を確認 |
 | Market Pulse / MACRO PULSE 各スクリプト | 独立しているため他システムへの影響なし |
 
 ---
@@ -165,3 +291,9 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 - 新しいシステムを追加したとき
 - システム間に新しいデータの依存関係が生まれたとき
 - 主要ファイルの役割・配置が変わったとき
+
+**2026-07-10の教訓:** 上記は「変化が生じたとき」の更新基準だが、今回のように
+既存の構造（銘柄振り分けの正本・STONKS SILOとTANUKI VALUATIONの依存関係・
+出力先パスの誤記等）が長期間未記載/誤記のまま気づかれないケースもある。
+CHAT_RULES.mdの「一日の作業終了時のブラッシュアップ」にSYSTEM_MAP.md点検を
+定例項目として追加した（詳細はCHAT_RULES.md参照）。
