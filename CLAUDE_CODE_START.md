@@ -739,7 +739,9 @@ git push origin kaihatsu
     CHECK-5:NetDebt旧表示 / CHECK-6:負PER / CHECK-7:RPO条件 / CHECK-8:Matrix④高FCFラベル赤字 /
     CHECK-9:セグメント鮮度 / CHECK-10:PS異常値 / CHECK-11:Revenue孤立年 / CHECK-12:Cash-STI期ズレ /
     CHECK-13:RICE負値ラベル / CHECK-14:EPS>株価50% / CHECK-15:EPS>株価 / CHECK-16:TTM四半期不足 /
-    CHECK-17:EPS全値$0 / CHECK-18:G=15%未調整 / CHECK-19:SEC株数=0
+    CHECK-17:EPS全値$0 / CHECK-18:G=15%未調整（recommended_g算出不可でfcf_cagr floor
+    に落ちるMO型ケースは検知対象外。詳細はBACKLOG [GROWTH-FLOOR-VERDICT-1] 参照）/
+    CHECK-19:SEC株数=0
     ※ STALE-CHECK-1（決算後未更新）は未実装。BACKLOG [STALE-CHECK-1-IMPL] 参照。
   - **新種バグを修正したら同スクリプトに検出項目を追加して恒久化する**
 - [ ] HTMLファイルを新規作成・移設・削除した場合は `python ~/check_links.py` でリンク切れ0件を確認

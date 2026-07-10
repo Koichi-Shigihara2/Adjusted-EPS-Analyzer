@@ -24,6 +24,22 @@
 
 ---
 
+### ✅ [SCREENING-INFRA-1] スクリーニングスクリプト2本をcommon/screening/へ正式格納（2026-07-10完了）
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 内容
+サテライト投資候補スクリーニングで使用したアドホックスクリプト2本を
+再利用可能な形に整理し、`common/screening/`へ正式格納した（commit e8838df30）：
+- `dcf_validity_checker.py`: DCF成長率前提・ROIC投下資本の妥当性を機械チェック
+  （growth_source=fcf_cagr floor値張り付き検知・segment_detail.source実態確認等）
+- `report_txt_parser.py`: report.txt（統合レポート）を読み取り専用でJSON構造化する
+  パーサー（フォーマット差異3件に対応済み）
+
+いずれも既存パイプライン成果物（latest.json/annual_{year}.json/report.txt等）を
+読み取るのみで本番ファイルは変更しない。SYSTEM_MAP.mdにも追記済み。
+
+---
+
 ## 2026-07-09（完了）
 
 ### ✅ [DILUTION-FYE-1] LRCX希薄化率異常値（10:1株式分割誤検知）（2026-07-09完了）

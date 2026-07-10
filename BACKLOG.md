@@ -1,6 +1,7 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（GROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1を高へ格上げ、ARCH-DATA-1-CONSOLIDATE-1完了移動、RICE-INTEGRATE-1/MULTI-1相互参照追記）
+最終更新: 2026-07-10（GROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1を高へ格上げ、ARCH-DATA-1-CONSOLIDATE-1完了移動、RICE-INTEGRATE-1/MULTI-1相互参照追記。
+セッション終了時ブラッシュアップ: CIK-ORPHAN-FLAGS-1の見出し重複統合、冗長な空白行除去、次セッション着手順序に本日サマリ追記）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -463,13 +464,8 @@ stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
 
 #### 対応方針
 [[TICKER-AUDIT-1]]着手時に「全フラグfalseかつstatus=active」を棚卸し対象条件の
-一つとして組み込む。BX・ENBについてはretired化するか、少なくとも
-registration_noteに経緯不明である旨だけでなく除外理由（ENBはカナダ企業でIFRS/40-F
-非対応等）を明記するかを判断する。
-
-#### 対応方針（2026-07-10 チャット側検討）
-BX・ENBはいずれも4フラグ全てfalseで、現状どのシステムからも実質的に
-評価されていない。以下2案を検討：
+一つとして組み込む。BX・ENBの具体的な扱いについては以下2案を検討した
+（2026-07-10 チャット側検討）：
 
 - **A案：登録抹消**
   評価不能な状態が続くなら、cik_lookup.csvから除外し追跡対象から外す。
@@ -538,7 +534,6 @@ TAIL-CTRL-TRANS-1（2026-06-27完了）の構造を踏襲する。
 - 現状: Next_Quarter_EPSはN/A（Alpha Vantage無料枠の制約）
 - 問題: 四半期サプライズ率が計算できない
 - 改善: 有料API検討 or yfinance の quarterly_earnings 活用
-
 
 ### [TANUKI-ROE-2] デュポン分解 業種平均比較・潜在ROE試算
 **優先度:** 低
@@ -730,8 +725,6 @@ EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×fun
   スクリーニング判定への組み込みが主眼という役割分担。どちらかの着手時に
   統合要否を判断する。
 
-
-
 ### [ARCH-1] ボトルネック企業プレミアム
 - 現状: 未実装
 - 内容: NVDA・ASML等の独占的ポジションを持つ企業への追加プレミアム
@@ -743,8 +736,6 @@ EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×fun
 ### [EVAL-2] 期待値エンジン（仮称）
 - 現状: 構想中
 - 内容: 各サブポート戦略の期待値を統合管理するエンジン
-
-
 
 ### [DESIGN-8] 8-3 ワンクリック銘柄登録〜更新
 - 概要: Discover画面から「➕ 登録」ボタンで
@@ -884,7 +875,6 @@ admin.htmlのポーリングログはワークフロー実行確認のデバッ�
 有用な場合があるため、削除前に必要性を判断する。
 
 ---
-
 
 ### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
 **優先度:** 低
@@ -1394,6 +1384,17 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   新規銘柄5件登録（RMBS/ENTG/TER/KLAC/LRCX）・PARSER-ENTG-COMPYEAR-1・
   XBRL-TAG-KLAC-1・CHECK-QREV-FYE-1（パーサーバグ3件根本修正、
   副産物としてXBRL-TAG-KLAC-1-FOLLOWUPを登録）
+※ 2026-07-10: サテライト投資候補91銘柄への前提妥当性チェック展開に伴い、
+  新規バグ・課題16件超を登録（GROWTH-SOURCE-LABEL-1・SEC-TAG-FICO-CPRT-1・
+  STALE-REPORT-CLEANUP-1・CIK-ORPHAN-FLAGS-1・DESIGN-16等）。精査の結果
+  GROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1を「中」→「高」へ格上げ、
+  ARCH-DATA-1-CONSOLIDATE-1を完了クローズ、RICE-INTEGRATE-1/MULTI-1に
+  相互参照を追記。common/screening/にdcf_validity_checker.py・
+  report_txt_parser.pyを正式格納。CHAT_RULES.mdに確認プロセス適用範囲・
+  銘柄スクリーニング標準フローを追記。この結果、次に着手可能な
+  優先度：高の項目はGROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1・ARCH-DATA-1
+  （着手条件成立済み・ただし難易度高）の3件（BACKTEST-SCORE-1は
+  着手条件未達のため2026年10月以降まで対象外）。
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
