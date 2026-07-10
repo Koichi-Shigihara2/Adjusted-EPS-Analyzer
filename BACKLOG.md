@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（DCF-REL-SYNC-1・GROWTH-FLOOR-VERDICT-1・REPORT-CATALYST-1追加）
+最終更新: 2026-07-10（SEC-TAG-FICO-CPRT-1・STALE-REPORT-CLEANUP-1・CIK-ORPHAN-FLAGS-1追加）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -279,6 +279,72 @@ report.txtの `[9] RISK EVENTS` はGrok web検索由来のリスクイベント�
 catalyst.json記載の直近カタリスト（重要度・確度付き）を表示する。
 catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDUP-1参照）を
 踏まえた表示件数の絞り込み設計を含め、実装は別タスクとして着手する。
+
+---
+
+### [SEC-TAG-FICO-CPRT-1] FICO・CPRTのSECタグ誤取得疑い
+**優先度:** 中
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補の妥当性チェック時
+
+#### 問題
+FICO・CPRTともに2020年→2021年の年次売上高に不自然なジャンプが確認された
+（FICO: 3.5倍、CPRT: 5.1倍）。FICOについては実際の2020年売上（$1.2億台後半と
+推定）とSECデータ（$3.74億）が乖離しており、XBRL-TAG-KLAC-1と同種の
+タグ取得ミスの疑いが濃厚。この異常値が成長率CAGR算出の基準年に使われており、
+DCF理論株価・ROIC双方を歪めている。
+
+#### 対応方針
+XBRL-TAG-KLAC-1の対応方法を参考に、両銘柄の2020-2021年SECタグを一次情報
+（EDGAR）で確認し、正規化層での修正を検討する。
+
+---
+
+### [STALE-REPORT-CLEANUP-1] tanuki=false化後もreport.txtが残存する
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** report.txt一括取得時（RKLB/ZS）
+
+#### 問題
+cik_lookup.csvでtanuki=falseに変更された銘柄でも、変更前に生成された
+report.txtが物理的に削除されずフォルダに残存する（RKLB: 2026-06-26生成、
+ZS: 2026-06-27生成のまま）。この状態でreport.txtを参照すると、
+既にTANUKI対象外の銘柄が有効なBUY/WATCH等の判定を持っているように
+誤読されるリスクがある。
+
+#### 対応方針
+tanuki=false切り替え時にreport.txtを削除するか、ファイル冒頭に
+「STALE: tanuki対象外に変更済み」等の明示的な注記を自動挿入する処理を追加する。
+
+---
+
+### [CIK-ORPHAN-FLAGS-1] BX・ENBが全システムフラグfalseの孤立エントリ
+**優先度:** 低〜中
+**分類:** データ品質 / 銘柄登録
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック自己点検時
+
+#### 問題
+cik_lookup.csvのBX（Blackstone）・ENBの2銘柄は、status=activeでありながら
+stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
+どのシステムからも実質的に参照されない状態で「active」登録が残っている。
+いずれも `registration_note` に「列追加時点(2026-07-02)での遡及登録のため経緯不明」
+と記載されており、2026-07-02のカラム追加時に経緯不明のまま機械的にactive化
+されたものと推測される。
+
+なおENBについては本タスクの自己点検でyfinance `country` フィールドを直接確認した
+結果 `Canada` であることを確認した。CLAUDE_CODE_START.mdのStep 0
+（カナダ企業は登録中止）に本来抵触するはずの銘柄であり、tanuki=falseの状態は
+結果的に正しいが、システム非対応銘柄がactive登録のまま残ること自体は
+[[TICKER-AUDIT-1]]（銘柄棚卸しスクリプト）の対象パターンと重なる。
+
+#### 対応方針
+[[TICKER-AUDIT-1]]着手時に「全フラグfalseかつstatus=active」を棚卸し対象条件の
+一つとして組み込む。BX・ENBについてはretired化するか、少なくとも
+registration_noteに経緯不明である旨だけでなく除外理由（ENBはカナダ企業でIFRS/40-F
+非対応等）を明記するかを判断する。
 
 ---
 
