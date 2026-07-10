@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（SEC-TAG-FICO-CPRT-1・STALE-REPORT-CLEANUP-1・CIK-ORPHAN-FLAGS-1追加）
+最終更新: 2026-07-10（DESIGN-16追加・Moomoo Skills Hub DISCOVER組み込み設計相談）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -1018,6 +1018,62 @@ data-info="buy_ma200"等のdata-info属性を付与する。
 #### 対応方針
 各ファイルにinfo-tooltip.jsのimportを追加し、
 説明が必要な要素にdata-info属性を付与する。
+
+---
+
+### [DESIGN-16] Moomoo Skills Hub（情報検索・個別株ダイジェスト）のDISCOVER機能への組み込み検討
+**優先度:** 低（設計相談は完了・実装未着手）
+**分類:** 設計課題 / DISCOVER
+**登録日:** 2026-07-10
+**ステータス:** 保留（Koichiさん側の環境整備完了後に着手判断）
+
+#### 背景
+moomoo証券が2026年5月にリリースした「Moomoo Skills Hub」には、Moomoo API Skill
+（既存BACKLOG「Moomoo API Skill 移行」参照）に加え、投資分析系の6Skillが追加された。
+うち以下2つがDISCOVER機能と関連しうるため調査した：
+- **情報検索Skill**: moomoo上のニュース・適時開示・レポートを横断検索
+- **個別株ダイジェストSkill**: 銘柄別に最新ニュース・市況を要約
+
+#### 調査結果①：現行DISCOVERの実行環境
+`src/discover/collect.py`（日次）・`catalyst.py`（週次）・`impact_predictor.py`は
+いずれもGitHub Actions（`.github/workflows/Discover_Update.yml` /
+`Catalyst_Update.yml`、`runs-on: ubuntu-latest`）上で完全自動実行されており、
+ローカルPC・OpenD等のローカル依存は一切ない。
+一方、Moomoo Skills Hubは（Moomoo API Skillと同様）ローカルゲートウェイ
+OpenDを介したセキュリティ設計（ローカルゲートウェイ＋パスワード＋監査ログの
+三層構成）を前提としており、AutoTradeと同種の「ローカルPC起動が必要
+（PC停止で機能も停止）」という制約を受ける可能性が高い。
+**現行DISCOVERが持つ完全クラウド自動化を維持したままの置き換えはできない。**
+
+#### 調査結果②：データ範囲の比較
+| 観点 | 現行DISCOVER（Grok/NewsAPI） | Moomoo Skills Hub（情報検索・個別株ダイジェスト） |
+|---|---|---|
+| 対応市場 | 制約なし（Web検索ベース） | 日本語版は香港・米国・日本・シンガポール・マレーシアが対象 |
+| 保有・候補銘柄の対応可否 | ○ | ○（cik_lookup.csv登録銘柄はyfinance country確認済みの範囲で全て米国上場のため対応市場内） |
+| 実行形態 | 完全自動（スケジュール実行・GitHub Actions） | オンデマンド（都度Claude Code経由で呼び出す想定、ローカルOpenD起動が前提） |
+| 機能の性質 | 発掘・分類・方向性予測（catalyst.py=上振れ事象発掘、impact_predictor.py=direction/magnitude予測） | 横断検索・要約（プル型の深掘り調査ツール） |
+| 重複/補完 | — | **補完関係**。継続的なバッチ発掘の代替にはならないが、特定銘柄のオンデマンド深掘り（moomoo一次情報での裏取り）には現行DISCOVERにない価値がある |
+
+#### 調査結果③：Koichiさん側の前提条件（Claude Codeが代行できない範囲）
+- moomoo証券口座の保有・開設
+- OpenDのローカル起動（AutoTradeと同様、PC起動中のみ利用可能という運用制約を受け入れる）
+- Moomoo API利用規約への同意
+
+#### チャット側の推奨方針
+現行DISCOVERの完全自動化を置き換える用途では時期尚早（OpenD常時起動が
+前提のため、GitHub Actions同等の無人運用ができない）。一方、chat側での
+個別銘柄の深掘り検討時（本日実施したサテライト投資候補スクリーニングの
+ような場面）に、Claude Code経由でmoomoo一次情報を都度参照する
+**補完ツールとしての追加は筋が良い**。着手判断は以下の順で行う：
+1. Koichiさんの環境整備（口座・OpenD・規約同意）完了を待つ
+2. 既存BACKLOG「Moomoo API Skill 移行」（signal.jsonバックテスト後に判断）の
+   結論と合わせて、Moomoo Skills Hub全体の導入要否を判断する
+3. 導入する場合も、DISCOVER自動パイプラインの置き換えではなく
+   chat側オンデマンド利用（銘柄スクリーニング標準フローの補助）として
+   位置づける
+
+#### 実装難易度
+低（Skillのインストール自体は容易だが、着手条件（環境整備）が未整備）
 
 ---
 
