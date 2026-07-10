@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（OpenD常時起動前提を踏まえDESIGN-16・Moomoo API Skill移行の懸念事項を見直し）
+最終更新: 2026-07-10（精度向上策5件追加: BACKTEST-SCORE-1/EPS-ANALYZER-INTEGRATE-1/RICE-INTEGRATE-1/ANALYST-VS-IV-INTEGRATE-1/ARCH-DATA-1-CONSOLIDATE-1）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -97,6 +97,13 @@ report_consistency_check.py・pipeline.py双方の別々の箇所で同種の
 - ✅ yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力（2026-06-15 実装）
 - 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示（未着手）
 
+**着手条件に該当する新規事例（2026-07-10追記）:** [[SEC-TAG-FICO-CPRT-1]]
+（FICO・CPRTの2020→2021年次売上高の不自然なジャンプ、XBRL-TAG-KLAC-1と同型の
+タグ取得ミス疑い）を検出。「次にデータ形起因バグが発生した時点で着手する」
+という本タスクの着手条件に該当する事例として記録する。SEC-TAG-FICO-CPRT-1
+エントリ自体は個別事例の記録として残すが、実際の一次情報確認・修正は
+ARCH-DATA-1着手時にまとめて行う（詳細は[[ARCH-DATA-1-CONSOLIDATE-1]]参照）。
+
 #### 設計メモ（2026-07-02・検討中）
 - PREFLIGHT-CHECK-1とパターン判定ロジックを共有する設計が望ましい。
   「このティッカーはこの変種パターンに該当する」という判定を
@@ -105,6 +112,57 @@ report_consistency_check.py・pipeline.py双方の別々の箇所で同種の
 - 未知パターン（カタログにない初見の異常）への対応として、
   異常検知→AIが仮説生成→一次情報で検証→カタログに追加、という
   学習ループが構想として挙がっている。詳細はPREFLIGHT-CHECK-1参照。
+
+---
+
+### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
+**優先度:** 高
+**分類:** アーキテクチャ / 検証基盤
+**登録日:** 2026-07-10
+
+#### 背景
+TANUKI乖離率・HypeCoreステージ・ROICトレンド・TANUKI SCORE分類
+（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）のいずれも、
+過去に同じ状態だった銘柄がその後どう動いたかを検証したことがない。
+Market Pulseの「予測バックテスト表示」（未実装）とは別に、
+TANUKI SCORE自体の的中率検証が必要。
+
+#### Step 0 確認結果（2026-07-10・着手条件の妥当性確認）
+- `history.json`（latest.json相当のスナップショット履歴）の蓄積開始日は
+  銘柄により異なるが、確認した範囲では最古で2026-05-14（AAPL/NVDA/PLTR）、
+  MOは2026-06-14、FICOは2026-06-03からで、**いずれも2ヶ月未満**。
+- **重要な発見**: `score_history.json` に、本タスクが新規実装しようとしている
+  ものとほぼ同等の仕組み（`date`・`tanuki_score`・`price_at_judgment`・
+  `upside_pct`・`hype_phase`に加えて `return_30d`/`return_60d`/`return_90d`
+  フィールド）が**既に存在**している。ただし記録開始日が2026-06-03のため、
+  2026-07-10時点で `return_30d` は一部の初期日付でようやく値が入り始めた段階、
+  `return_60d`/`return_90d` は**全銘柄で依然nullのまま**（まだ60日・90日が
+  経過していないため計算不可）。
+- **着手条件の見直し**: 依頼文にある「1年未満のデータしかない場合は暫定結果」
+  という粒度の注意では不十分で、実態は「3ヶ月（90日）リターンすら
+  1件も算出できていない」段階。3ヶ月後・6ヶ月後・1年後比較を求める本タスクの
+  実装方針Step 2は、**現時点では実行不可能**（サンプルサイズ0件）。
+
+#### 実装方針
+1. 新規スクリプトを作成する前に、既存の `score_history.json` の
+   `return_30d`/`return_60d`/`return_90d` フィールドが「誰が・いつ・どのロジックで」
+   埋めているか（pipeline.py内の該当箇所）を確認し、可能な限りこの既存の
+   仕組みを再利用する（重複実装を避ける）
+2. history.json から、過去の各時点でのTANUKI SCORE Classificationと
+   その時点のCurrent_Priceを時系列抽出するスクリプトを作成
+3. 各時点から3ヶ月後・6ヶ月後・1年後の株価（yfinance historical取得）と
+   比較し、Classification別（BUY/WATCH/TRIM等）の平均リターン・勝率を集計
+4. 全銘柄・全時点を対象にした場合のサンプルサイズを事前見積もりし、
+   統計的に意味のある結果が出せるか（銘柄数×観測時点数）を確認してから着手
+5. 出力：Classification別リターン分布を可視化するレポート
+   （docs配下、Market Pulse or TANUKI SCORE画面への追加を想定）
+
+#### 着手条件
+90日リターンの蓄積が進み、統計的に意味のあるサンプル数
+（銘柄数×観測時点数の事前見積もりで確認）が確保できてから着手する。
+2026-07-10時点では30日リターンの記録が始まったばかりのため、
+最短でも90日リターンが一定数蓄積される2026年10月以降に再確認する。
+それまでは着手せず、`score_history.json`への蓄積を継続する。
 
 ---
 
@@ -483,6 +541,97 @@ LOAR（2024年4月IPO）の2023年以前のEPSが異常値を示している。
 - EPS Analyzerの表示でIPO前データ（株式数が現在の1%未満等）を除外する処理を追加
 - または|EPS|>50等の閾値でグレーアウト・除外表示する
 - report_consistency_check.pyのCHECK-14/15（EPS>株価）との整合も確認
+
+---
+
+### [EPS-ANALYZER-INTEGRATE-1] スクリーニング判断へのEPS Analyzer統合
+**優先度:** 中
+**分類:** 機能統合 / EPS ANALYZER
+**登録日:** 2026-07-10
+
+#### 背景
+EPS Analyzer（GAAP/Non-GAAP乖離・割安発掘）は独立したシステムとして
+存在するが、TANUKI SCOREベースのスクリーニング判断に統合されていない。
+report.txt [6]セクションにAdjustment_Delta・PER_Comparison
+（Market_PER_GAAP vs Adjusted_EPS_PER）が既に出力されているが、
+これを比較・除外判定に使う仕組みがない。
+
+#### 実装方針
+1. `common/screening/dcf_validity_checker.py`（2026-07-10格納済み）に、
+   EPS Analyzerの PER_Comparison（Delta: GAAP PERとAdjusted EPS PERの差）を
+   追加チェック項目として組み込む
+2. Deltaが一定閾値以上（要検討：例えば±10x以上）の銘柄をフラグし、
+   「SBCや一時費用の影響で見かけの割安度が歪んでいる可能性」として
+   出力に含める
+3. 既存のTANUKI乖離率と、Adjusted EPSベースのPERから逆算した
+   簡易的な参考株価を並記できるか検討する
+
+---
+
+### [RICE-INTEGRATE-1] スクリーニング判断へのRICE指標統合
+**優先度:** 中
+**分類:** 機能統合 / TANUKI VALUATION
+**登録日:** 2026-07-10
+
+#### 背景
+RICE（投資効率指標、Matrix①投資効率系の軸）が計算可能な銘柄
+（今回確認では55銘柄）について、スクリーニング時にRICE値を
+参照していない。RICE>=3.0（高効率）/1.0-3.0（中効率）/<1.0（低効率）
+という既存の閾値定義があるにもかかわらず未活用。
+
+#### 実装方針
+1. `common/screening/dcf_validity_checker.py`または
+   `common/screening/report_txt_parser.py`の出力に、
+   RICE値とその閾値区分（高/中/低効率）を追加フィールドとして含める
+2. TANUKI SCORE=BUY かつ RICE<1.0（低効率）の銘柄を「割安だが
+   再投資効率が低い」候補として別途フラグする運用を検討する
+3. RICE Available=falseの銘柄（Revenue/CapExデータ不足）は
+   従来通りMatrix②〜④で評価する
+
+---
+
+### [ANALYST-VS-IV-INTEGRATE-1] アナリストコンセンサスとの突合せ
+**優先度:** 中
+**分類:** 機能統合 / TANUKI VALUATION
+**登録日:** 2026-07-10
+
+#### 背景
+report.txtに「Analyst_Consensus ... vs IV: +151.4%」のような、
+アナリスト目標株価とTANUKI理論株価の乖離が既に出力されているが、
+スクリーニング判断に系統的に組み込まれていない。TANUKIは
+「市場心理から独立した本源的価値」を意図的に狙っているため、
+アナリストコンセンサス（市場心理側の代表値）との大幅な乖離は、
+どちらの前提がズレているかを問い直す材料になる。
+
+#### 実装方針
+1. `common/screening/dcf_validity_checker.py`に、TANUKI IVとアナリスト
+   目標株価中央値の乖離幅を計算するチェックを追加する（vs IVの値を
+   そのまま利用可）
+2. 乖離が大きい銘柄（例：50pt以上）を「TANUKIとアナリストの意見が
+   大きく割れている銘柄」としてフラグし、どちらの前提に無理があるか
+   個別確認を促す出力にする
+3. 乖離の方向性（TANUKIが強気/弱気どちらに倒れているか）も記録する
+
+---
+
+### [ARCH-DATA-1-CONSOLIDATE-1] SEC-TAG-FICO-CPRT-1のARCH-DATA-1への統合検討
+**優先度:** 中
+**分類:** アーキテクチャ / 品質管理
+**登録日:** 2026-07-10
+
+#### 背景
+本日登録した[[SEC-TAG-FICO-CPRT-1]]（FICO・CPRTのSECタグ誤取得疑い）は、
+[[ARCH-DATA-1]]（SECデータ正規化レイヤー強化、優先度：高）が対処すべき
+「データ形起因バグ」の一事例であり、独立タスクとして扱うと管理が
+重複する可能性がある。
+
+#### 対応方針
+ARCH-DATA-1の「着手条件」（次にデータ形起因バグが発生した時点で着手）に
+照らして、SEC-TAG-FICO-CPRT-1がこの着手条件に該当する事例であることを
+ARCH-DATA-1側に追記した（2026-07-10、ARCH-DATA-1エントリ内「着手条件に
+該当する新規事例」参照）。SEC-TAG-FICO-CPRT-1エントリ自体は個別事例の
+記録として残すが、実際の着手はARCH-DATA-1着手時にまとめて行う旨を
+両エントリに相互参照として明記する。
 
 ---
 
