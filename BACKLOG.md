@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（精度向上策5件追加: BACKTEST-SCORE-1/EPS-ANALYZER-INTEGRATE-1/RICE-INTEGRATE-1/ANALYST-VS-IV-INTEGRATE-1/ARCH-DATA-1-CONSOLIDATE-1）
+最終更新: 2026-07-10（GROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1を高へ格上げ、ARCH-DATA-1-CONSOLIDATE-1完了移動、RICE-INTEGRATE-1/MULTI-1相互参照追記）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -166,6 +166,110 @@ TANUKI SCORE自体の的中率検証が必要。
 
 ---
 
+### [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足
+**優先度:** 高（2026-07-10・中から格上げ）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+`growth_source=fcf_cagr` で `calculate_fcf_cagr()` の `growth_floor`（15%）に
+成長率が完全一致した場合、実態（実績成長率）との乖離があっても
+`growth_sanity` の `Verdict` が機械的に `PLAUSIBLE` になる。
+2026-07-10の調査ではMO（実績FCF CAGR約2.4%・売上マイナス成長にも関わらず
+15%floor採用でPLAUSIBLE判定）に加え、LOAR・XOMでも同型のfloor張り付きを検出した
+（fcf_cagrソースを使う3銘柄が全てfloor値に一致するという100%的中率だった）。
+
+#### 格上げ理由（2026-07-10）
+以下2点が判明したため、単なる検知不足ではなく既存の恒久対策の穴と判断し格上げする：
+
+a) **修正済みバグ（DCF-DEFAULT-G-1）の回帰・再発の疑い**：
+   MOは[[DCF-DEFAULT-G-1]]（2026-06-15完了、BACKLOG_DONE.md参照）で
+   「G=15%デフォルト問題」を名指しで修正されたはずの銘柄（JNJ/MO/PEP/PM/
+   WMT/VZ等）だが、2026-07-10時点でfcf_cagr経路のfloor値15%を再び採用している。
+   MOのhistory.json（2026-06-14以降）を確認したところ、`growth_rate`は
+   記録が残る全期間（2026-06-14〜2026-07-11）を通じて一貫して0.15のままで、
+   DCF-DEFAULT-G-1修正日（2026-06-15）の前後で変化していない。
+   コードを読む限り、DCF-DEFAULT-G-1は「segment未設定銘柄でも
+   `_GROWTH_OVERRIDES`を有効にする」修正（`get_segment_growth`が
+   `_GROWTH_OVERRIDES`を優先参照するよう変更）だが、この`_GROWTH_OVERRIDES`
+   自体は`recommended_g`が算出できた場合にのみ`pipeline.py`側でセットされる
+   （`if _is_seg_unconfigured and _recommended_g is not None:`の条件下でのみ
+   `set_growth_override`が呼ばれる）。MOはrev_cagr_3yr/5yrが共にマイナスで
+   `recommended_g`の中央値候補から除外されるため`recommended_g`自体がNoneになり、
+   overrideが一度もセットされないまま`determine_growth_rate()`が
+   segment/override経路を素通りしてfcf_cagr経路（独自のfloor=15%を持つ、
+   DCF-DEFAULT-G-1の修正対象外の別経路）に落ちていると推測される。
+   これは「同じ症状が戻った」のではなく「DCF-DEFAULT-G-1の修正範囲が
+   カバーしていなかった隣接経路が表面化した」可能性が高いが、
+   確定にはgit log・当時のhistory.json等でのより詳しい経緯調査が必要
+   （実装着手時に本調査から着手する）。
+
+b) **CHECK-18の構造的な穴**：
+   `report_consistency_check.py`のCHECK-18（DCF-DEFAULT-G-1回帰検知）は
+   「recommended_gあり & phase1_growth_auto_adjusted=False & source≠segment_weighted
+   & rate≈15%」が発火条件のため、**recommended_g自体がNoneになるMO型のケースを
+   構造的に検知できない**。上記a)の推測が正しければ、CHECK-18は
+   「recommended_gが算出できる場合の回帰」しかカバーしておらず、
+   「recommended_gが算出できずfcf_cagr floorに落ちる場合」は検知対象外という
+   構造的な穴が存在する。
+
+#### 対応方針
+1. floor値との完全一致を検知した場合、専用の警告Verdict（例: `FLOOR_HIT_REVIEW`）を
+   出すよう `growth_sanity.py` を修正する
+2. `report_consistency_check.py`に**CHECK-20**（fcf_cagr floor値張り付き検知：
+   `growth_source=fcf_cagr` かつ `rate≈growth_floor(15%)`を機械検知）を追加して
+   恒久化する（CLAUDE_CODE_START.mdの規約「新種バグを修正したら同スクリプトに
+   検出項目を追加して恒久化する」に準拠）
+3. 実装着手時、まずMOのgrowth_source切り替わりの経緯（git log・history.json）を
+   確認し、a)の推測が正しいかを検証してから修正範囲を確定する
+4. 実装は別タスクとして着手する
+
+---
+
+### [DCF-REL-SYNC-1] report.txtのDCF_Reliability判定にFCF乖離%が未反映
+**優先度:** 高（2026-07-10・中から格上げ）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+`latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
+例: FLYWで乖離215%）と、`report.txt` の `DCF_Reliability`（NORMAL/LOW表示ロジック）
+が独立して存在し、相互参照されていない。この結果、FCF実績が5年平均から
+大きく乖離している銘柄でもDCF_Reliability=NORMALのまま表示され、
+乖離の大きさが伝わらないまま見過ごされるリスクがある。
+
+#### 格上げ理由（2026-07-10）
+本タスクと[[GROWTH-FLOOR-VERDICT-1]]はいずれも「信頼できない前提のBUYが
+スクリーニングを素通りする」直接原因であり、スクリーニング運用の信頼性に
+直結するため優先度を高へ格上げする。
+
+#### Policy Aとの相互作用（重要な影響範囲・実装時必須確認事項）
+CLAUDE_CODE_START.md記載のPolicy A（DCF_Reliability=LOWの銘柄はTANUKI SCORE
+分類をBUY/TRIM/HOLD→**WATCHに丸める**、SELL/PASSは維持）により、本タスクの
+実装でFCF乖離の大きい銘柄（例: FLYW 215%乖離）がLOWに格下げされると、
+**表示変更にとどまらずBUY分類自体がWATCHに丸められる**。これはスクリーニング
+精度向上の観点では望ましい効果（乖離の大きいBUYの自動除外）だが、
+分類挙動が変わる銘柄の事前リストアップと影響確認を実装時の必須手順とする
+（Policy A明文化時に影響確認対象とされたCRWV/SOUN/RKLB/JOBY/CEG等、
+既存の該当銘柄への影響も併せて再確認すること）。
+
+#### common/screening/dcf_validity_checker.pyとの関係
+Check C（SEC売上ジャンプ検知）はSEC売上高のみが対象でFCF異常ジャンプは
+対象外という制約があるが、本タスクの実装によりlatest.json側の`fcf_outlier`
+判定がDCF_Reliabilityに反映されるようになれば、report.txt経由でFCF異常も
+実質的に可視化されるため、この制約は実質的に解消される。
+
+#### 対応方針
+report.txt生成時に `fcf_outlier` の乖離%を閾値判定に組み込み、
+一定以上の乖離があればDCF_Reliabilityを自動的にLOWへ格下げする。
+既存のDCF_Reliability判定条件（FCF_Conversion_Rate方式・revenue_floor適用等）
+との優先順位・閾値設計、およびPolicy A発動によるTANUKI SCORE分類変更の
+影響確認を含め、実装は別タスクとして着手する。
+
+---
+
 ## 優先度：未定（要判断）
 
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
@@ -275,47 +379,6 @@ provenance情報（根拠のラベル）のみ。ただし、この情報は「�
 `get_segment_growth()` 内で `segment_detail["source"]` に固定文字列を
 代入している箇所を、実際の `config.get("source")` の値を転記するよう修正する。
 影響範囲（全銘柄への波及有無）の確認とテスト追加を含め、修正は別タスクとして着手する。
-
----
-
-### [DCF-REL-SYNC-1] report.txtのDCF_Reliability判定にFCF乖離%が未反映
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
-
-#### 問題
-`latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
-例: FLYWで乖離215%）と、`report.txt` の `DCF_Reliability`（NORMAL/LOW表示ロジック）
-が独立して存在し、相互参照されていない。この結果、FCF実績が5年平均から
-大きく乖離している銘柄でもDCF_Reliability=NORMALのまま表示され、
-乖離の大きさが伝わらないまま見過ごされるリスクがある。
-
-#### 対応方針
-report.txt生成時に `fcf_outlier` の乖離%を閾値判定に組み込み、
-一定以上の乖離があればDCF_Reliabilityを自動的にLOWへ格下げする。
-既存のDCF_Reliability判定条件（FCF_Conversion_Rate方式・revenue_floor適用等）
-との優先順位・閾値設計を含め、実装は別タスクとして着手する。
-
----
-
-### [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
-
-#### 問題
-`growth_source=fcf_cagr` で `calculate_fcf_cagr()` の `growth_floor`（15%）に
-成長率が完全一致した場合、実態（実績成長率）との乖離があっても
-`growth_sanity` の `Verdict` が機械的に `PLAUSIBLE` になる。
-2026-07-10の調査ではMO（実績FCF CAGR約2.4%・売上マイナス成長にも関わらず
-15%floor採用でPLAUSIBLE判定）に加え、LOAR・XOMでも同型のfloor張り付きを検出した
-（fcf_cagrソースを使う3銘柄が全てfloor値に一致するという100%的中率だった）。
-
-#### 対応方針
-floor値との完全一致を検知した場合、専用の警告Verdict（例: `FLOOR_HIT_REVIEW`）を
-出すよう `growth_sanity.py` を修正する。実装は別タスクとして着手する。
 
 ---
 
@@ -588,6 +651,14 @@ RICE（投資効率指標、Matrix①投資効率系の軸）が計算可能な�
 3. RICE Available=falseの銘柄（Revenue/CapExデータ不足）は
    従来通りMatrix②〜④で評価する
 
+#### 関連（2026-07-10追記）
+[[MULTI-1]]（マルチバリュエーション表示）とRICE指標の活用目的が部分重複する。
+役割分担としては、本タスク（RICE-INTEGRATE-1）は**スクリーニング判定への
+組み込み**（機械的なフラグ付け・除外候補の抽出）が主眼、MULTI-1は
+**画面表示**（DCF/PEG/EV/Sales/RICE/HypeCoreの並列スコアカード表示）が
+主眼という違いがある。将来的にどちらかへ統合するか、双方独立で進めるかは
+どちらかの着手時に判断する。
+
 ---
 
 ### [ANALYST-VS-IV-INTEGRATE-1] アナリストコンセンサスとの突合せ
@@ -611,27 +682,6 @@ report.txtに「Analyst_Consensus ... vs IV: +151.4%」のような、
    大きく割れている銘柄」としてフラグし、どちらの前提に無理があるか
    個別確認を促す出力にする
 3. 乖離の方向性（TANUKIが強気/弱気どちらに倒れているか）も記録する
-
----
-
-### [ARCH-DATA-1-CONSOLIDATE-1] SEC-TAG-FICO-CPRT-1のARCH-DATA-1への統合検討
-**優先度:** 中
-**分類:** アーキテクチャ / 品質管理
-**登録日:** 2026-07-10
-
-#### 背景
-本日登録した[[SEC-TAG-FICO-CPRT-1]]（FICO・CPRTのSECタグ誤取得疑い）は、
-[[ARCH-DATA-1]]（SECデータ正規化レイヤー強化、優先度：高）が対処すべき
-「データ形起因バグ」の一事例であり、独立タスクとして扱うと管理が
-重複する可能性がある。
-
-#### 対応方針
-ARCH-DATA-1の「着手条件」（次にデータ形起因バグが発生した時点で着手）に
-照らして、SEC-TAG-FICO-CPRT-1がこの着手条件に該当する事例であることを
-ARCH-DATA-1側に追記した（2026-07-10、ARCH-DATA-1エントリ内「着手条件に
-該当する新規事例」参照）。SEC-TAG-FICO-CPRT-1エントリ自体は個別事例の
-記録として残すが、実際の着手はARCH-DATA-1着手時にまとめて行う旨を
-両エントリに相互参照として明記する。
 
 ---
 
@@ -675,6 +725,10 @@ EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×fun
 - 現状: DCF一本槍
 - 改善: DCF / PEG / EV/Sales / RICE / HypeCoreを並列スコアカード表示
 - GPT提案: 2026-05-30
+- 関連（2026-07-10追記）: [[RICE-INTEGRATE-1]]とRICE指標の活用目的が部分重複。
+  本タスク（MULTI-1）は画面表示（並列スコアカード）が主眼、RICE-INTEGRATE-1は
+  スクリーニング判定への組み込みが主眼という役割分担。どちらかの着手時に
+  統合要否を判断する。
 
 
 
