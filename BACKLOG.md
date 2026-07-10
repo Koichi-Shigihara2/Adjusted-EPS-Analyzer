@@ -1,7 +1,8 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（GROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1を高へ格上げ、ARCH-DATA-1-CONSOLIDATE-1完了移動、RICE-INTEGRATE-1/MULTI-1相互参照追記。
-セッション終了時ブラッシュアップ: CIK-ORPHAN-FLAGS-1の見出し重複統合、冗長な空白行除去、次セッション着手順序に本日サマリ追記）
+最終更新: 2026-07-11（monitor_tickers.yaml同期漏れ6件を修正、TICKER-AUDIT-1に
+P4-CIKOrphan WARN見落とし・monitor_tickers同期漏れの教訓を追記、
+STALE-SUBPORT-CLEANUP-1を新規登録）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -481,6 +482,38 @@ stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
 
 ---
 
+### [STALE-SUBPORT-CLEANUP-1] src/subport/fg_level2/ 陳腐化複製の整理
+**優先度:** 低〜中
+**分類:** 保守性 / リポジトリ整理
+**登録日:** 2026-07-11
+**発見:** SYSTEM_MAP.md実態調査（2026-07-10）でAutoTrade運用実体を確認した際
+
+#### 問題
+AutoTrade（F&G Level2×TQQQ自動売買）の運用実体はリポジトリ外
+`C:\Users\shigi\AutoTrade\fg_level2\`にあり、Windowsタスクスケジューラから
+`trader.py --entry`/`--monitor`を日次実行している（signal.json/state.json/
+trade_log.jsonlが実際に日次更新される）。一方、リポジトリ内
+`src/subport/fg_level2/`は2026-05-03の開発初期に作成された同名モジュール一式
+（trader.py/signal.py/config.json等）だが、2026-05-03以降git上で更新がなく、
+内容が本番運用側と既に乖離している。`register_tasks.ps1`が`$RepoRoot`をこの
+リポジトリパスに設定しているにも関わらず、実際には使われていない（詳細は
+SYSTEM_MAP.md「AutoTrade/OpenD運用前提」参照）。
+
+#### 対応方針
+即削除はリスクがあるため、以下いずれかを判断する：
+- A案: `src/subport/fg_level2/`が本番運用（リポジトリ外）から一切参照されて
+  いないことを確認した上で削除する。削除の場合、他モジュールからの
+  import参照がないことを`grep -rn "subport.fg_level2\|subport/fg_level2"`等で
+  確認してから行うこと
+- B案: 削除せず、README等を追加して「これは非稼働の旧複製であり、
+  正は`C:\Users\shigi\AutoTrade\fg_level2\`である」と明示する
+
+#### 影響
+実害は薄い（本番運用に影響しない陳腐化コードの残存）が、将来このモジュールを
+誤って参照・変更するリスクがあるため記録する。
+
+---
+
 ### [UI-DISCOVER-1] カタリスト・ニュース履歴のUI改善
 **優先度:** 中
 **分類:** UX / Discover
@@ -946,6 +979,26 @@ cik_lookup.csvへのstatus/registered_date/registration_source/registration_note
 ② registration_source=moomoo_screening等の検証由来かつポジションなしの銘柄を抽出
 ③ system_health.pyの拡張として実装するか、独立スクリプトにするか要検討
 ④ 判断（retired化等）は自動化せず、候補出しまでに留める。最終判断はKoichi自身が行う。
+⑤ `registration_validator.py`のP4-CIKOrphanチェック相当（全フラグfalseかつ
+   status=activeの孤立エントリ検出）を定期棚卸しレポートに明示的に集約する
+   （下記「P4-CIKOrphan WARN見落とし問題」参照）
+⑥ monitor_tickers.yamlとcik_lookup.csvの件数差・銘柄差分の検出も棚卸し対象条件に含める
+   （下記「monitor_tickers.yaml同期漏れ」参照）
+
+#### P4-CIKOrphan WARN見落とし問題（2026-07-10発見・2026-07-11追記）
+`registration_validator.py`のP4-CIKOrphanチェックは、全フラグfalseかつactiveな
+孤立エントリ（BX・ENB）を以前から検出していたが、WARNは非ブロッキングのため
+運用上見落とされていた。[[CIK-ORPHAN-FLAGS-1]]（2026-07-10登録）は実質この
+見落としの再発見だった。TICKER-AUDIT-1実装時は、WARNレベルの検出結果であっても
+定期的に人の目に触れる仕組み（棚卸しレポートへの明示的な集約等）にすること。
+
+#### monitor_tickers.yaml同期漏れ（2026-07-10発見・2026-07-11修正済み）
+SYSTEM_MAP.md実態調査（2026-07-10）で、cik_lookup.csv（正本・106件）に対し
+monitor_tickers.yaml（99件）が6件未反映（RMBS/ENTG/TER/KLAC/LRCX/APGE、
+いずれもStep 7の同期漏れ）だったことが判明し、2026-07-11に手動追加で修正済み
+（BXのみ全フラグfalseで除外が正当なため対象外のまま）。cik_lookup.csvと
+monitor_tickers.yamlの同期は自動化されておらず、新規登録手順Step 7の手動実施のみに
+依存しているため、TICKER-AUDIT-1実装時は両ファイルの差分検出も棚卸し対象に含めること。
 
 #### 着手条件
 当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
