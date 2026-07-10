@@ -1,6 +1,6 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-10（GROWTH-SOURCE-LABEL-1追加・segment_detail.source誤表示バグ）
+最終更新: 2026-07-10（DCF-REL-SYNC-1・GROWTH-FLOOR-VERDICT-1・REPORT-CATALYST-1追加）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -217,6 +217,68 @@ provenance情報（根拠のラベル）のみ。ただし、この情報は「�
 `get_segment_growth()` 内で `segment_detail["source"]` に固定文字列を
 代入している箇所を、実際の `config.get("source")` の値を転記するよう修正する。
 影響範囲（全銘柄への波及有無）の確認とテスト追加を含め、修正は別タスクとして着手する。
+
+---
+
+### [DCF-REL-SYNC-1] report.txtのDCF_Reliability判定にFCF乖離%が未反映
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+`latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
+例: FLYWで乖離215%）と、`report.txt` の `DCF_Reliability`（NORMAL/LOW表示ロジック）
+が独立して存在し、相互参照されていない。この結果、FCF実績が5年平均から
+大きく乖離している銘柄でもDCF_Reliability=NORMALのまま表示され、
+乖離の大きさが伝わらないまま見過ごされるリスクがある。
+
+#### 対応方針
+report.txt生成時に `fcf_outlier` の乖離%を閾値判定に組み込み、
+一定以上の乖離があればDCF_Reliabilityを自動的にLOWへ格下げする。
+既存のDCF_Reliability判定条件（FCF_Conversion_Rate方式・revenue_floor適用等）
+との優先順位・閾値設計を含め、実装は別タスクとして着手する。
+
+---
+
+### [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+`growth_source=fcf_cagr` で `calculate_fcf_cagr()` の `growth_floor`（15%）に
+成長率が完全一致した場合、実態（実績成長率）との乖離があっても
+`growth_sanity` の `Verdict` が機械的に `PLAUSIBLE` になる。
+2026-07-10の調査ではMO（実績FCF CAGR約2.4%・売上マイナス成長にも関わらず
+15%floor採用でPLAUSIBLE判定）に加え、LOAR・XOMでも同型のfloor張り付きを検出した
+（fcf_cagrソースを使う3銘柄が全てfloor値に一致するという100%的中率だった）。
+
+#### 対応方針
+floor値との完全一致を検知した場合、専用の警告Verdict（例: `FLOOR_HIT_REVIEW`）を
+出すよう `growth_sanity.py` を修正する。実装は別タスクとして着手する。
+
+---
+
+### [REPORT-CATALYST-1] カタリスト（Discoverのアップサイド事象）がreport.txtに未統合
+**優先度:** 中
+**分類:** 機能追加 / TANUKI VALUATION・Discover
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+report.txtの `[9] RISK EVENTS` はGrok web検索由来のリスクイベント（ダウンサイド）
+のみを表示しており、`docs/discover/data/catalyst.json` 由来のカタリスト
+（アップサイド事象）が含まれない。銘柄の投資判断材料としてリスク・カタリストの
+双方を並列参照したい場面で、report.txt単体では片面（リスクのみ）の情報しか
+得られない。
+
+#### 対応方針
+`[9] RISK EVENTS` と並列で `[10] CATALYSTS` セクションを新設し、
+catalyst.json記載の直近カタリスト（重要度・確度付き）を表示する。
+catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDUP-1参照）を
+踏まえた表示件数の絞り込み設計を含め、実装は別タスクとして着手する。
 
 ---
 

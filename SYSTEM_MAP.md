@@ -1,6 +1,6 @@
 # SYSTEM MAP — On-a-journey
 
-最終更新: 2026-07-08（MACRO-NFP-HIST-1: 05_backfill_nfp_mom.py新設反映）
+最終更新: 2026-07-10（report.txt統合レポートの存在・構成・パース注意点を追記、common/screening/配下2スクリプト新設反映）
 
 ---
 
@@ -19,6 +19,50 @@
 | DISCOVER | 未発掘銘柄の発掘・ニュース収集 | docs/discover/ |
 | PORTFOLIO | 保有ポートフォリオ管理 | docs/management/portfolio/ |
 | AutoTrade | F&G×TQQQ自動売買 | C:\Users\shigi\AutoTrade\（リポジトリ外） |
+
+---
+
+## 統合レポート（report.txt）— 銘柄ごとのAI向け横断出力（2026-07-10追記）
+
+各TICKERフォルダ `docs/value-monitor/tanuki_valuation/data/{TICKER}/` には、
+`latest.json`/`history.json`/`score_history.json` と並んで `report.txt`
+（統合レポート・AIプロンプト用プレーンテキスト）が生成されている。
+TANUKI VALUATION・HypeCore・STONKS SILO・RISK EVENTS等、複数システムの
+出力を1ファイルに集約した横断ビューであり、**複数銘柄のスクリーニング・
+比較作業に着手する前に、個別JSONを組み合わせる前段としてまずこのファイルの
+有無を確認すること**（2026-07-10のサテライト投資候補スクリーニングで
+この存在に気づかず大きく遠回りした教訓）。
+
+**主要セクション構成:**
+- `[1] TANUKI SCORE`: Classification（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）・Funda_Score・Timing_Score構成要素
+- `[2] MATRIX POSITION`: Matrix種別（①投資効率系〜④キャッシュ創出力系）・Quadrant・Key_Metric_Y
+- `[3] TANUKI VALUATION`: Current_Price・Intrinsic_Value_BASE・BEAR/BASE/BULLシナリオ・DCF_Reliability・**Growth_Rate_Rec（乖離⚠️警告付き。この項目は[3]内にあり[4]ではない）**
+- `[4] 成長率根拠`: Phase1成長率（DCF適用値）・推奨成長率/元成長率/最終推奨値・判定（PLAUSIBLE/REVIEW/AGGRESSIVE）
+- `[5] RICE METRICS` / `[6] EPS ANALYZER`
+- `[7] HYPECORE`: Current_Phase・Phase_History（直近6ヶ月）
+- `[8] STONKS SILO`: Short_Interest・Runway_Months・Breakeven_Estimate等（TANUKI VALUATION対象銘柄でもセクション自体は常に出力され、非該当項目はN/A表示になるだけ）
+- `[9] RISK EVENTS`: Grok web検索由来のリスクイベント（高/中/低の重要度付き。カタリスト等アップサイド事象は含まれない、[[REPORT-CATALYST-1]]参照）
+
+**パース時の注意点（2026-07-10のスクリーニング作業で発生した3件のバグより）:**
+- `Growth_Rate_Rec`（乖離⚠️付き）はセクション`[3]`内にあり、セクション`[4]`の
+  「推奨成長率」「元成長率」「最終推奨値」とは別の場所にある。`[4]`のみを
+  見て「見つからない」と誤判定しないこと
+- `Intrinsic_Value_BASE`・シナリオIVはマイナス値（例: `$-1.34`）を取り得る
+  （LYFT等、DCF評価がマイナスになる赤字銘柄で発生）
+- シナリオ行 `"IV=$X, Deviation=Y%"` のIV捕捉を貪欲マッチにすると
+  末尾のカンマまで飲み込みDeviationが取得できなくなる（非貪欲マッチが必要）
+- 上記3件の教訓を反映済みの正式パーサー: `common/screening/report_txt_parser.py`
+
+**report.txt生成対象外の銘柄（cik_lookup.csvでtanuki=false）の注意点:**
+tanuki=falseに変更された後も、変更前に生成された`report.txt`/`latest.json`が
+自動削除されずファイルシステム上に残存することがある（例: RKLB/ZSは
+2026-07-02にtanuki=falseへ変更されたが、2026-06-26/27生成のreport.txtが
+現存する）。`generated_at`/`calculation_date`が他銘柄より古い場合は
+tanuki=false化前の旧データである可能性を疑い、参考値扱いとすること。
+
+**DCF前提・ROIC妥当性の機械チェック:** `common/screening/dcf_validity_checker.py`
+（成長率floor値張り付き・SECデータ異常ジャンプ・投下資本の妥当性・
+HypeCore遷移確率サンプル数の4観点を機械判定。詳細はスクリプト内docstring参照）
 
 ---
 
