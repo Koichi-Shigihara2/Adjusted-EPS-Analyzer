@@ -247,6 +247,156 @@ TANUKI SCORE自体の的中率検証が必要。
 
 ---
 
+### [GROWTH-CAGR-SIGN-1] calculate_fcf_cagr()のCAGR計算式が符号反転していた
+**優先度:** 高
+**分類:** バグ修正 / TANUKI VALUATION
+**登録日:** 2026-07-11
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]実装前調査時
+**状態:** コード修正・単体テスト・MO/LOAR/XOM 3銘柄検証データともコミット済み。
+**全銘柄再生成は[[TTM-QUARTERS-CHECK-1]]対応後まで保留**（下記参照）
+
+#### 問題
+`calculator/growth.py::calculate_fcf_cagr()`（95-146行目）のCAGR計算式で、
+`start_value`/`end_value`の割り当てが本コードベース全体の`fcf_list`規約
+（新しい順、`fcf_list[0]`が直近。`adjustments.py:897`のdocstring・
+`adjustments.py:268-272`の別のCAGR計算で明示・実装されている規約）と逆向きになっており、
+実際には成長している銘柄でも負のCAGRが算出される致命的なバグだった。
+加えて`fcf_list[-5:]`という末尾スライスも、5年超のデータがある場合に
+最古側5年を誤って対象にする副次的なバグだった（実データでは該当銘柄なし、
+潜在バグとして合わせて修正）。
+
+**実データ検証結果（バグ修正前後の比較）:**
+| 銘柄 | 直近FCF | 最古FCF | 修正前（バグ） | 修正後（正しい向き） |
+|---|---|---|---|---|
+| NVDA（動作確認用） | $119,076M | $3,028M | -60.1% | **+150.4%**（cap 50%） |
+| MO | $8,623M | $3,030M | -23.0%→floor 15% | **+29.9%**（クリップなし） |
+| LOAR | $112M | $13M | -66.2%→floor 15% | **+196.0%**（cap 50%） |
+| XOM | $18,792M | $10,877M | -12.8%→floor 15% | +14.6%→floor 15%（実質不変） |
+
+`growth_source=="fcf_cagr"`となる銘柄は現行データでMO/LOAR/XOMの3件のみ
+（全銘柄横断で確認、他に該当なし。segment_weighted等の他経路は本バグの影響を受けない）。
+
+#### 修正内容
+- `start_value`（chronological start＝最古）に`recent_fcfs[-1]`、
+  `end_value`（chronological end＝直近）に`recent_fcfs[0]`を割り当てるよう修正
+  （`raw_cagr = (end_value/start_value)**(1/periods)-1`という式自体は変更せず、
+  どちらの変数がどちらの向きかを規約に合わせて訂正）
+- `fcf_list[-5:]` → `fcf_list[:5]`（新しい順の先頭5年＝直近5年を対象にするよう修正）
+- `calculate_fcf_cagr()`の単体テストを新規追加（5件、既存カバレッジ0件だった）:
+  急成長（NVDA型）・floor/cap内に収まる中成長（MO型）・cap張り付き（LOAR型）・
+  減少トレンドで正しく負のCAGRになること・5年超データで直近5年が正しく使われること
+- pytest 136件全件パス（131→136、新規テスト5件純増）
+
+#### 3銘柄個別確認結果（`pipeline.py MO LOAR XOM --skip-risk`実行）
+- **MO**: 成長率15.0%→**29.9%**、`growth_sanity.verdict`が`FLOOR_HIT_REVIEW`→
+  `PLAUSIBLE`に解消。Classification=BUY不変だが、**Intrinsic_Value_BASEが
+  $96.87→$277.29、乖離率+34.9%→+286.3%へ大幅変動**
+- **LOAR**: 成長率15.0%→**50.0%**（cap）、verdict`FLOOR_HIT_REVIEW`→`PLAUSIBLE`に解消。
+  Classification=WATCH不変（既存のfcf_outlier flagged起因、本修正とは別要因）。
+  IV $9.98→$56.95、乖離率-86.3%→-22.1%
+- **XOM**: 成長率15.0%のまま実質不変（修正後の生値14.6%が floorにわずかに満たない
+  ため）。verdict=FLOOR_HIT_REVIEW・Classification=HOLDともに不変
+
+#### ⚠️ MOのIV急変動の根本原因を特定 → [[TTM-QUARTERS-CHECK-1]]として分離
+MOのIV乖離率が+34.9%→+286.3%へ変動した要因を一次データで追跡した結果、
+「2点間CAGRが外れ値に敏感」という設計論点にとどまらず、**最古年FCF（$3,030M）
+自体がTTM系列構築時のデータ不足（本来4四半期必要なところ1四半期分しか
+揃っていない：`quarters_used=1, missing=3`）による欠陥値である**ことが
+判明した（一過性の訴訟和解金・減損等の事業要因ではないことも確認済み）。
+
+この問題はMO固有ではなく、**全105銘柄中94銘柄で`fcf_list_raw`に同型の
+不完全TTM値が混入**しているシステム全体の根本課題と判明したため、
+[[TTM-QUARTERS-CHECK-1]]として分離・新規登録した（詳細は同エントリ参照）。
+
+**本タスク（GROWTH-CAGR-SIGN-1）の符号修正自体は独立して正しく、そのまま
+維持する。ただし全銘柄再生成は[[TTM-QUARTERS-CHECK-1]]の対応方針が
+確定するまで保留する**（不完全な最古年データが混入したまま成長率を
+再計算しても、MOのように歪んだ値が量産される可能性があるため）。
+
+#### [[GROWTH-FLOOR-VERDICT-1]]・[[GROWTH-SANITY-CLASS-SYNC-1]]との関係
+本バグ修正により、[[GROWTH-SANITY-CLASS-SYNC-1]]が問題視していた
+「MO（BUY）がfloor張り付きのままBUY判定が変わらない」という最も緊急性の高い
+実例が解消された（MO/LOARのfloor_hitが解消、残るXOMはHOLDのため実害限定的）。
+詳細は[[GROWTH-SANITY-CLASS-SYNC-1]]エントリの状況更新を参照。
+
+#### 進捗
+コード修正（`growth.py`）・単体テスト5件・MO/LOAR/XOM 3銘柄検証データはコミット済み。
+**全銘柄再生成は[[TTM-QUARTERS-CHECK-1]]対応後まで保留**。
+
+---
+
+### [TTM-QUARTERS-CHECK-1] TTM系列構築時の四半期完全性チェック不足
+**優先度:** 高
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-11
+**発見:** [[GROWTH-CAGR-SIGN-1]]のMO/XOM IV急変動を一次データで追跡した過程
+
+#### 問題
+`TTMReader.get_fcf_series()`・`build_rice_annual_shape()`（いずれも
+`data_fetcher.py`）が、TTM値採用時に各期間の`flow.OCF.quarters_used`/
+`missing`フィールドを一切参照せず、`flow.FCF.val is not None`のみを
+判定条件としている。この結果、本来4四半期分の集計が必要なTTM値のうち、
+実際には1〜3四半期分しか揃っていない**不完全なTTM値**が、正常な
+4四半期集計値と区別なく`fcf_list_raw`（および`fcf_5yr_avg`）に
+混入している。
+
+#### 影響範囲（全銘柄横断調査、2026-07-11実施）
+- 全105銘柄中**101銘柄**で`quarters_used<4`のTTM期間が存在
+- そのうち**94銘柄で実際に`fcf_list_raw`へ混入**していることを確認
+  （`RKLB`のみFCF値自体がNoneのため偶然除外）
+- 大半が**2022-03-31期前後**（新規上場銘柄はその上場時期に応じて後ろ倒し）
+  の1期に集中。原因は共通で、**四半期粒度のSECデータ取得が2022年Q1前後
+  から開始されており、それ以前は年次10-Kの通期集計値しか存在しない**ため、
+  TTM系列の最古境界期で必要な4四半期のうち1〜2四半期分しか揃わない
+
+#### 波及先（fcf_5yr_avg・fcf_list_raw経由で横断的に影響）
+- `calculate_fcf_cagr()`（[[GROWTH-CAGR-SIGN-1]]）: 2点間CAGRの一端点として直接使用
+- `adjust_fcf()`（Policy A revenue_floor判定）: `fcf_5yr_avg`が入力
+- `determine_fcf_base()`（CV・FCFベース方式選択）: `fcf_5yr_avg`が候補値、CV計算にも同系列を使用
+- `analyze_fcf_outlier()`（Policy A/B外れ値検知の分母）: `fcf_5yr_avg`の過小評価により
+  乖離%が本来より大きく表示され、**誤検知（false positive）方向のバイアス**
+- `build_rice_annual_shape()` → RICE計算にも同型の汚染が波及
+
+#### 試算結果（4銘柄、汚染込み5yr平均 vs 除外後4yr平均）
+| 銘柄 | 差分 | 実際のFCFベース方式 | fcf_outlier表示への影響 |
+|---|---|---|---|
+| MO | **-12.9%** | avg_5yr（直接使用） | 検知なし（変化なし） |
+| XOM | **-13.7%** | recent_2yr（汚染値不使用、実害小） | 検知なし（変化なし） |
+| NVDA | **-19.0%** | recent_2yr（実害小） | 検知あり（乖離148%表示、正しくは約101%） |
+| AAPL | **-6.9%** | avg_5yr（直接使用） | 検知あり（乖離30%表示、正しくは約21%。
+成熟企業閾値20%に対し**境界線上**） |
+
+AAPLの例が示す通り、94銘柄全体では「補正すると外れ値検知の判定自体が
+反転する」境界線上のケースが他にも存在しうる。個別精査なしに軽微と
+断定はできない。
+
+#### 対応方針の選択肢
+- **案1（推奨）**: `TTMReader.get_fcf_series()`・`build_rice_annual_shape()`に
+  `quarters_used>=4`（または一定閾値以上）フィルタを追加し不完全期間を除外。
+  低コスト（関数2箇所の修正のみ）。対象銘柄の実効ルックバックが5年→4年に
+  短縮するが、`calculate_fcf_cagr`のmin_periods=2・`determine_fcf_base`の
+  最低3年要件は満たすため実害小
+- 案2: 不完全四半期を按分補完（非推奨。四半期の季節性を考慮すると単純な
+  按分はかえって不正確な値を生むリスクが高い）
+- 案3: 該当期間のSECデータを遡って再取得し真の4四半期分を揃える
+  （高コスト。2021年以前の四半期粒度データがEDGARから取得可能か次第）
+
+#### [[GROWTH-CAGR-SIGN-1]]・[[DCF-REL-SYNC-1]]・[[ARCH-DATA-1]]との関係
+[[GROWTH-CAGR-SIGN-1]]の全銘柄再生成は本タスクの対応方針確定まで保留中。
+[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）が扱っていたfcf_outlier
+系の信頼性問題とも間接的に関連する（分母の汚染が誤検知バイアスを生む）。
+
+[[ARCH-DATA-1]]は「XBRLタグの型・非12月決算・SPAC等のSECデータ形の
+不均一性」を主眼とするが、本件は「データの型ではなく、四半期充足数という
+完全性チェックの欠如」という異なる性質の問題。案1はTTMReader周辺への
+小さな修正で完結するため、**ARCH-DATA-1の大規模刷新を待たず独立タスクとして
+先行対応することを推奨**する。
+
+#### 着手条件
+なし（次回セッションで対応方針確定の上、着手判断）
+
+---
+
 ### [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動
 **優先度:** 高
 **分類:** データ品質 / TANUKI VALUATION
@@ -287,8 +437,23 @@ fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ�
 - Policy A/Bとの優先順位・同時発火時の扱い（floor_hit=Trueとfcf_outlier flaggedが
   同一銘柄で重複する場合の丸めメッセージの一貫性）を設計時に検討する
 
+#### 状況更新（2026-07-11）: [[GROWTH-CAGR-SIGN-1]]によりMO/LOARのfloor_hitが解消
+本タスクの発見過程（growth_sanity調査）で、`calculate_fcf_cagr()`のCAGR計算式
+自体に符号反転バグがあることが判明し、[[GROWTH-CAGR-SIGN-1]]として分離・修正した
+（詳細はBACKLOG_DONE.md参照）。修正の結果、**MO・LOARは`floor_hit=False`
+（verdict=PLAUSIBLE）に変わり、本タスクが問題視していた「MO（BUY）がfloor張り付き
+のままBUY判定が変わらない」という最も緊急性の高い実例は解消済み**。
+`verdict=FLOOR_HIT_REVIEW`のまま残るのはXOM（Classification: HOLD）のみとなり、
+既に非BUYのため実害は限定的。
+
+ただし[[GROWTH-CAGR-SIGN-1]]の修正確認時、MOの成長率が15.0%→29.9%に変わったことで
+IV乖離率が+34.9%→+286.3%へ大きく変動する事象が判明している（直近5年中の最古年が
+1年だけ突出して低い一過性値である可能性があり、2点のみで計算するCAGRが外れ値に
+敏感という別の課題を示唆）。この点も踏まえ、**本タスク（growth_sanity.verdictの
+Classification連動）は緊急性が下がったため、着手要否を次回セッションで改めて判断する**。
+
 #### 着手条件
-なし（設計判断が必要なため、次回セッションで方針確定してから着手）
+なし（[[GROWTH-CAGR-SIGN-1]]対応後の状況を踏まえ、次回セッションで方針確定してから着手）
 
 ---
 

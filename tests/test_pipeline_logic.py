@@ -1527,6 +1527,77 @@ class TestDcfReliabilityPolicyB:
         assert "実績FCF赤字" not in result["score_comment"]
 
 
+class TestCalculateFcfCagrDirection:
+    """GROWTH-CAGR-SIGN-1: calculate_fcf_cagr()のCAGR計算方向の回帰テスト
+
+    fcf_listは本コードベース全体の規約（新しい順、fcf_list[0]が直近）に
+    従う。修正前は start_value/end_value の割り当てが逆向きで、実際には
+    成長している銘柄でも負のraw_cagrが算出されていた（NVDA実データで
+    -60.1%という不合理な値が出ていたことを実測で確認済み）。
+    """
+
+    @staticmethod
+    def _import():
+        from calculator.growth import calculate_fcf_cagr
+        return calculate_fcf_cagr
+
+    def test_high_growth_produces_large_positive_raw_cagr(self):
+        """NVDA型: 直近が最古より大幅に大きい（急成長）場合、raw_cagrは大幅プラスになる"""
+        calculate_fcf_cagr = self._import()
+        # 新しい順: 直近$119,076M → ... → 5年前$3,028M（NVDA実データ）
+        fcf_list = [119_076_000_000, 72_064_000_000, 39_334_000_000, 6_351_000_000, 3_028_000_000]
+        result = calculate_fcf_cagr(fcf_list)
+        assert result is not None
+        assert result.cagr_detail["raw_cagr"] > 1.0  # 実測+150.4%
+        assert result.rate == 0.50  # growth_cap(50%)でクリップ
+
+    def test_moderate_growth_within_floor_cap_not_clipped(self):
+        """MO型: floor(15%)〜cap(50%)の範囲内に収まる場合はクリップされない"""
+        calculate_fcf_cagr = self._import()
+        # 新しい順: 直近$8,623M → ... → 5年前$3,030M（MO実データ）
+        fcf_list = [8_623_000_000, 8_451_000_000, 9_004_000_000, 7_950_000_000, 3_030_000_000]
+        result = calculate_fcf_cagr(fcf_list)
+        assert result is not None
+        raw = result.cagr_detail["raw_cagr"]
+        assert 0.25 < raw < 0.35  # 実測+29.9%
+        assert result.rate == raw  # floor/capにかからないため生の値がそのまま採用される
+
+    def test_extreme_growth_capped_at_ceiling(self):
+        """LOAR型: 極端な急成長はgrowth_cap(50%)側でクリップされる（floor側ではない）"""
+        calculate_fcf_cagr = self._import()
+        # 新しい順: 直近$112.28M → 1年前$54.971M → 2年前$12.813M（LOAR実データ）
+        fcf_list = [112_280_000, 54_971_000, 12_813_000]
+        result = calculate_fcf_cagr(fcf_list)
+        assert result is not None
+        assert result.cagr_detail["raw_cagr"] > 1.0  # 実測+196.0%
+        assert result.rate == 0.50
+
+    def test_declining_fcf_produces_negative_raw_cagr(self):
+        """減少トレンド（直近が最古より小さい）の場合、raw_cagrは正しく負になり、floor(15%)でクリップされる"""
+        calculate_fcf_cagr = self._import()
+        # 新しい順: 直近50 → ... → 5年前100（一貫した減少トレンド）
+        fcf_list = [50_000_000, 65_000_000, 75_000_000, 85_000_000, 100_000_000]
+        result = calculate_fcf_cagr(fcf_list)
+        assert result is not None
+        assert result.cagr_detail["raw_cagr"] < 0  # 減少トレンドは負のCAGRが正しい
+        assert result.rate == 0.15  # growth_floor(15%)でクリップ
+
+    def test_uses_most_recent_five_years_when_list_longer(self):
+        """fcf_listが5年超の場合、末尾（最古側）ではなく先頭（直近側）5年分を対象にする"""
+        calculate_fcf_cagr = self._import()
+        # 新しい順で7年分: 直近5年は緩やかな成長、末尾2年（最古側）に極端な値を混ぜる
+        fcf_list = [
+            120_000_000, 110_000_000, 105_000_000, 100_000_000, 95_000_000,
+            1_000_000, 500_000,  # 最古側2年（対象外になるべき極端な値）
+        ]
+        result = calculate_fcf_cagr(fcf_list)
+        assert result is not None
+        # 直近5年（120M→95M）のCAGRになっているはず。末尾の極端な値(1M/0.5M)を
+        # 使うと桁違いに大きいCAGRになるため、それが使われていないことで確認する
+        assert result.cagr_detail["periods"] == 4
+        assert 0 < result.cagr_detail["raw_cagr"] < 0.10
+
+
 class TestAnalyzeFcfOutlierDeviationPct:
     """DCF-REL-SYNC-1: analyze_fcf_outlier()のdeviation_pctフィールドのテスト"""
 

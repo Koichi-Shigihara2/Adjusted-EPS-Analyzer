@@ -100,34 +100,44 @@ def calculate_fcf_cagr(
 ) -> Optional[GrowthResult]:
     """
     FCF CAGRを計算
-    
+
     Args:
-        fcf_list: FCFリスト（時系列順）
+        fcf_list: FCFリスト（新しい順、fcf_list[0]が直近。adjustments.py等
+            本コードベース全体の規約に合わせる）
         min_periods: 最低期間
         growth_floor: 成長率下限
         growth_cap: 成長率上限
-    
+
     Returns:
         GrowthResult or None (計算不可の場合)
     """
     if len(fcf_list) < 3:
         return None
-    
-    # 正のFCFのみを対象
-    recent_fcfs = [f for f in fcf_list[-5:] if f > 0]
+
+    # 正のFCFのみを対象（直近5年分。fcf_listは新しい順のため先頭からスライス）
+    # GROWTH-CAGR-SIGN-1（2026-07-11修正前）: 旧実装は fcf_list[-5:] と
+    #末尾からスライスしており、5年超のデータがある場合に最古側を
+    # 誤って対象にしていた。
+    recent_fcfs = [f for f in fcf_list[:5] if f > 0]
     if len(recent_fcfs) < min_periods:
         return None
-    
-    # CAGR計算
-    start_value = recent_fcfs[0]
-    end_value = recent_fcfs[-1]
+
+    # CAGR計算（fcf_list[0]=直近・fcf_list[-1]=最古の規約に合わせ、
+    # start_value=最古・end_value=直近とする）
+    # GROWTH-CAGR-SIGN-1（2026-07-11修正前）: 旧実装は
+    # start_value=recent_fcfs[0]（直近）・end_value=recent_fcfs[-1]（最古）
+    # と割り当てており、raw_cagr = (最古/直近)**(1/n)-1 という逆向きの
+    # 計算になっていた（adjustments.py:268-272の正しい実装
+    # `(fcf_list[0] / fcf_list[-1])` と方向が食い違っていた）。
+    start_value = recent_fcfs[-1]
+    end_value = recent_fcfs[0]
     periods = len(recent_fcfs) - 1
-    
+
     if start_value <= 0:
         return None
-    
+
     raw_cagr = (end_value / start_value) ** (1 / periods) - 1
-    
+
     # 範囲クリッピング
     clipped_cagr = max(growth_floor, min(growth_cap, raw_cagr))
     
