@@ -366,6 +366,52 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 
 ## 優先度：中（こなれてきたら対応）
 
+### [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化
+**優先度:** 中（要判断・緊急ではないが影響範囲は広い）
+**分類:** バグ / TANUKI VALUATION / データ品質
+**登録日:** 2026-07-11
+**発見:** [[DCF-REL-SYNC-1]]関連調査時
+
+#### 背景
+`adjustments.py`（`estimate_fcf_from_eps`内）のFCF転換率セクター別レート判定・
+Financial Services向け`ni_direct`判定が、以下3つの重なったバグにより
+実質的に無効化されている：
+
+- **バグ①**: `core_calculator.py:227-233`の`beta_config.json`読み込みパスが誤り
+  （存在しない`src/value/beta_config.json`を参照、実際は`config/beta_config.json`）
+- **バグ②**: 仮にパスを直しても`config/beta_config.json`の`overrides`に`sector`キーが
+  ほぼ存在しない（全106エントリ中1件のみ、スキーマ移行の残骸）
+- **バグ③**: `fcf_conversion_config.json`の`sector_conversion_rates`はDamodaran業種
+  カテゴリをキーとするが、`beta_config.json`側はGICS分類であり、
+  パス・入力を直してもタクソノミーが一致しない
+
+#### 影響範囲
+Policy B対象76銘柄中71銘柄（93%）が業種を問わず一律`conversion_rate=0.70`
+（default値）で計算されている。yfinance実測`sector`が"Financial Services"の
+SOFI/V/MSCIは、本来`use_ni_direct`（転換率1.0）が適用される設計意図と推測されるが
+未適用（試算では該当銘柄のFCFが1.43倍程度過小評価されている可能性）。
+ただしV・MSCIは[[TANUKI-FIN-2]]の議論で「通常のFCFF DCFが適合する」と既に整理
+されており、機械的に1.0倍を適用することが正しいとは限らない点に注意。
+WACC・alpha上限・RPO適用率・保険業判定等、他のsector依存ロジックは
+別の正常な変数（`financials.get("sector")`）を使っており本問題の影響を受けない。
+
+#### 対応方針（未確定・着手時に設計判断）
+- 案①（部分対応・低コスト）: `core_calculator.py:244`のsector変数を、
+  既に正しく取得されている変数に差し替える。バグ①②は解消するが、
+  バグ③（タクソノミー不一致）は残るため効果は限定的
+  （Financial Services判定のみ改善見込み、他業種別レート差別化は未解決）
+- 案②（本格対応）: `growth_sanity.py`の`damodaran_industry`判定ロジックを
+  `estimate_fcf_from_eps()`からも参照するよう設計変更する。バグ③まで解消するが
+  作業規模が大きい
+- Financial Services業種の対象範囲判定（V/MSCI等、GICS分類は該当するが
+  `ni_direct`適用が不適切な可能性がある銘柄の扱い）は案①②のいずれでも
+  別途設計判断が必要
+
+#### 着手条件
+なし（優先度含め次回以降のセッションで判断）
+
+---
+
 ### [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION
