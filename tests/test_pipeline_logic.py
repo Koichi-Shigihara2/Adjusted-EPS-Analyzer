@@ -29,8 +29,12 @@ sys.path.insert(0, _PIPELINE_DIR)
 sys.modules.setdefault("xlrd", MagicMock())
 import growth_sanity as _gs  # 本物のモジュール参照を保存（後でも参照できるよう変数に束縛）
 
+# TTM-QUARTERS-CHECK-1: TTMReader/build_rice_annual_shapeの実ロジックを検証するため
+# growth_sanity と同様に、スタブ化前に本物のモジュール参照を保存する
+import data_fetcher as _df
+
 # pipeline の依存モジュールをスタブ化してから pipeline をインポート
-# growth_sanity は _gs に保持済みだが pipeline 側ではスタブで十分
+# growth_sanity/data_fetcher は _gs/_df に保持済みだが pipeline 側ではスタブで十分
 for _mod_name in ("data_fetcher", "core_calculator", "validator", "growth_sanity"):
     sys.modules[_mod_name] = MagicMock()
 
@@ -2817,3 +2821,133 @@ class TestStonksDivisionGuards:
             pytest.fail(f"avg_past=0 で ZeroDivisionError が発生した: {e}")
         # avg_past=0 は「比較不可」としてスキップされ、非連続成長フラグは立たない
         assert result.profitability_path.discontinuous_growth is False
+
+
+# ─────────────────────────────────────────────
+# TTM-QUARTERS-CHECK-1: TTM系列構築時の四半期完全性チェック
+# ─────────────────────────────────────────────
+
+def _make_flow_entry(val, quarters_used=4, missing=0):
+    return {"val": val, "quarters_used": quarters_used, "missing": missing}
+
+
+def _make_ttm_entry(ttm_end, ocf_q=4, capex_q=4, revenue_q=4, ni_q=4, fcf_val=100.0):
+    """完全性フィルタのテスト用にOCF/CapEx/Revenue/NetIncomeのquarters_usedを
+    個別に指定できるTTM seriesエントリを構築する（MO実データ同様、FCF自体には
+    quarters_usedフィールドが存在しない）"""
+    return {
+        "ttm_end": ttm_end,
+        "flow": {
+            "OCF": _make_flow_entry(500.0, ocf_q),
+            "CapEx": _make_flow_entry(400.0, capex_q),
+            "Revenue": _make_flow_entry(1000.0, revenue_q),
+            "NetIncome": _make_flow_entry(300.0, ni_q),
+            "FCF": {"val": fcf_val},
+        },
+    }
+
+
+class TestTTMReaderQuartersCompleteness:
+    """TTMReader.get_fcf_series()/get_periods()がquarters_used<4の期間を除外すること"""
+
+    def _make_reader(self, series):
+        reader = _df.TTMReader(ticker="TEST", repo_root_path=None)
+        reader._series = series
+        return reader
+
+    def test_all_complete_periods_all_included(self):
+        series = [
+            _make_ttm_entry("2026-03-31", fcf_val=100.0),
+            _make_ttm_entry("2025-03-31", fcf_val=90.0),
+            _make_ttm_entry("2024-03-31", fcf_val=80.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [100.0, 90.0, 80.0]
+        assert reader.get_periods() == 3
+
+    def test_incomplete_ocf_period_excluded(self):
+        """OCF.quarters_used<4の期間はFCF.valが存在してもfcf_list_rawから除外される
+        （MO実データ2022-03-31: OCF.quarters_used=1で$3,030Mが混入していた事例）"""
+        series = [
+            _make_ttm_entry("2026-03-31", fcf_val=100.0),
+            _make_ttm_entry("2025-03-31", fcf_val=90.0),
+            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, fcf_val=30.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [100.0, 90.0]
+        assert reader.get_periods() == 2
+
+    def test_incomplete_capex_only_period_excluded(self):
+        """OCFは完全でもCapExが不完全なら除外される（OCF/CapExのquarters_usedが
+        食い違うケース。実データ横断調査でLLY/NVDA/FCX等11件で確認済み）"""
+        series = [
+            _make_ttm_entry("2026-03-31", fcf_val=100.0),
+            _make_ttm_entry("2025-03-31", fcf_val=90.0),
+            _make_ttm_entry("2024-03-31", ocf_q=4, capex_q=3, fcf_val=70.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [100.0, 90.0]
+        assert reader.get_periods() == 2
+
+    def test_fewer_than_two_complete_periods_returns_none(self):
+        """フィルタ後1点以下ならNone（既存の「2点未満はNone」規約を維持）"""
+        series = [
+            _make_ttm_entry("2026-03-31", fcf_val=100.0),
+            _make_ttm_entry("2025-03-31", ocf_q=2, capex_q=2, fcf_val=90.0),
+            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, fcf_val=30.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() is None
+        assert reader.get_periods() == 1
+
+    def test_missing_field_key_treated_as_incomplete(self):
+        """OCF/CapExキー自体が存在しない場合もquarters_used=0扱いで除外される"""
+        entry = _make_ttm_entry("2026-03-31", fcf_val=100.0)
+        del entry["flow"]["CapEx"]
+        series = [
+            _make_ttm_entry("2025-03-31", fcf_val=90.0),
+            _make_ttm_entry("2024-03-31", fcf_val=80.0),
+            entry,
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [90.0, 80.0]
+
+
+class TestBuildRiceAnnualShapeQuartersCompleteness:
+    """build_rice_annual_shape()がOCF/CapEx/Revenue/NetIncome不完全な期間を除外すること"""
+
+    def test_all_complete_periods_all_included(self):
+        series = [
+            _make_ttm_entry("2026-03-31"),
+            _make_ttm_entry("2025-03-31"),
+        ]
+        result = _df.build_rice_annual_shape(series)
+        assert len(result) == 2
+
+    def test_incomplete_period_excluded_from_rice_shape(self):
+        series = [
+            _make_ttm_entry("2026-03-31"),
+            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, revenue_q=2, ni_q=2),
+        ]
+        result = _df.build_rice_annual_shape(series)
+        assert len(result) == 1
+        assert result[0]["period"] == "TTM@2026-03-31"
+
+    def test_incomplete_revenue_or_netincome_also_excludes_period(self):
+        """OCF/CapExが完全でもRevenue/NetIncomeが不完全なら除外される
+        （rice.py側でrev/niはNone不許容のロジックのため）"""
+        series = [
+            _make_ttm_entry("2026-03-31"),
+            _make_ttm_entry("2024-03-31", revenue_q=3, ni_q=4),
+        ]
+        result = _df.build_rice_annual_shape(series)
+        assert len(result) == 1
+        assert result[0]["period"] == "TTM@2026-03-31"
+
+    def test_rd_and_sm_incompleteness_does_not_exclude_period(self):
+        """RD/SMはrice.py側で既にNone許容のためチェック対象外
+        （フィールド自体が存在しなくても期間は除外されない）"""
+        entry = _make_ttm_entry("2026-03-31")
+        # RD/SMキーは元々存在しないダミーデータだが、期間自体は残ることを確認
+        result = _df.build_rice_annual_shape([entry])
+        assert len(result) == 1

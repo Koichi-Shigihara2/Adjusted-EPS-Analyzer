@@ -69,6 +69,21 @@ SECTOR_DEFAULT_BETA = {
 }
 
 
+def _quarters_complete(flow: dict, *field_names: str, min_quarters: int = 4) -> bool:
+    """
+    指定フィールドすべてがquarters_used>=min_quartersを満たすか判定する。
+
+    TTM-QUARTERS-CHECK-1対応: 四半期粒度のSECデータ取得が始まる前の境界期間
+    （2022年Q1前後が大半）では、本来4四半期必要な集計が1〜3四半期分しか
+    揃っていない不完全なTTM値がflow内に存在する。field_nameが未取得（キー自体が
+    存在しない）場合もquarters_used=0扱いとして不完全と判定する。
+    """
+    return all(
+        flow.get(name, {}).get("quarters_used", 0) >= min_quarters
+        for name in field_names
+    )
+
+
 class TTMReader:
     """TTM系列ファイル（{ticker}_ttm_series.json）の読み込み"""
 
@@ -97,13 +112,20 @@ class TTMReader:
             logging.warning("[%s] TTM series file not found: %s", self.ticker, self._path)
 
     def get_fcf_series(self) -> list[float] | None:
-        """FCF系列をfloatリストで返す（降順・最新が先頭）。2点未満はNone"""
+        """
+        FCF系列をfloatリストで返す（降順・最新が先頭）。2点未満はNone
+
+        OCF・CapExいずれかがquarters_used<4（四半期集計が不完全）の期間は
+        除外する（TTM-QUARTERS-CHECK-1）。FCF=OCF-CapExのため、片方でも
+        不完全ならFCF自体の値も欠陥値になる。
+        """
         if not self._series:
             return None
         vals = [
             s["flow"]["FCF"]["val"]
             for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
+            and _quarters_complete(s.get("flow", {}), "OCF", "CapEx")
         ]
         return vals if len(vals) >= 2 else None
 
@@ -113,11 +135,14 @@ class TTMReader:
         return None
 
     def get_periods(self) -> int:
+        """get_fcf_series()が実際に採用する点数と一致させる（表示用の点数が
+        実データと乖離しないよう、同一の完全性フィルタを適用する）"""
         if not self._series:
             return 0
         return sum(
             1 for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
+            and _quarters_complete(s.get("flow", {}), "OCF", "CapEx")
         )
 
     def get_series(self) -> list[dict] | None:
@@ -138,10 +163,16 @@ def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
       pl.research_and_development ← RD（Noneの場合はNoneのまま渡す）
       pl.selling_and_marketing    ← SM（Noneの場合はNoneのまま渡す、rice側で or 0.0）
       data_quality                ← sga_gap_warning用（TTMパスでは空dict）
+
+    OCF/CapEx/Revenue/NetIncomeのいずれかがquarters_used<4（四半期集計が
+    不完全）の期間はresultから除外する（TTM-QUARTERS-CHECK-1）。RD/SMは
+    rice.py側で既にNone許容（0扱い・警告ログのみ）のためチェック対象外。
     """
     result = []
     for s in ttm_series:
         flow = s.get("flow", {})
+        if not _quarters_complete(flow, "OCF", "CapEx", "Revenue", "NetIncome"):
+            continue
         result.append({
             "period": f"TTM@{s.get('ttm_end', '?')}",
             "cf": {
