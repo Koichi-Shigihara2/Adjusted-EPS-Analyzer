@@ -321,7 +321,7 @@ class TanukiValuationPipeline:
         FCF_Conversion_Rate推定値が生FCFから大きく乖離している（divergence_ratio>=2.0、
         FCFEstimationResult.divergence_warningが非空）ことを代理指標として採用する。
 
-        DCF-REL-SYNC-1（2026-07-11修正）: 従来は
+        TANUKI-POLICYB-FIX-1（2026-07-11修正）: 従来は
         `transient_evidence.found`（一過性費用の証拠が"存在するか"）を見ていたが、
         これは乖離の"金額を十分説明できるか"（`analyze_fcf_outlier`の
         `transient_explains`判定・`action`フィールドに反映済み）とは別物。
@@ -329,6 +329,14 @@ class TanukiValuationPipeline:
         215%乖離に対し一過性費用$11M<必要説明額の20%）でも`found=True`となり
         誤ってNORMAL判定されていた。`action=="excluded"`（乖離が一過性費用で
         説明済みと判定された）を正しい代理指標として使う。
+
+        DCF-REL-SYNC-1（2026-07-11）: `deviation_pct`（5年平均からの乖離%、
+        `analyze_fcf_outlier`が算出）をreport.txt表示用に`fcf_outlier`へ追加した。
+        判定ロジックへの数値閾値としての組み込みは検討したが（`action=="excluded"`
+        でも乖離%が極端なら再度LOWに戻す案）、実データ上`action=="excluded"`と
+        なる銘柄は全て`rule="latest_negative"`型（`deviation_pct`自体がNone）で
+        対象母集団が存在しないため一旦見送り、判定はシンプルな
+        `action=="excluded"`→NORMAL基準のまま維持する。
 
         判定表（仕様: detected×eps_invalidの組み合わせはeps_invalid優先）:
           eps_invalid=true                           → LOW（detected/actionに関わらず）
@@ -1336,6 +1344,9 @@ class TanukiValuationPipeline:
                 L.append("  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。")
                 L.append("   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから")
                 L.append("   大幅乖離（eps_invalid）のため、IVは参考値扱い。]")
+                _dev_pct_polb = (valuation.get("fcf_outlier") or {}).get("deviation_pct")
+                if _dev_pct_polb is not None:
+                    L.append(f"   [DCF-REL-SYNC-1: FCF実績が5年平均から{_dev_pct_polb:.0f}%乖離]")
             else:
                 L.append("DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)")
         # REPORT-6: DCF再現性ブロック（上から足すとIVになる完全構造）

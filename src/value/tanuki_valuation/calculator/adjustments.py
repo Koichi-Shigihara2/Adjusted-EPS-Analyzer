@@ -792,6 +792,9 @@ class FCFOutlierResult:
     fiscal_year  : 対象会計年度（fcf_list[0]の年度）
     fcf_value    : 問題のFCF値
     threshold_pct: 適用した閾値（%）
+    deviation_pct: 5年平均からの乖離%（DCF-REL-SYNC-1）。
+                   rule="latest_negative"（FCFマイナス型）は乖離%の概念が
+                   成立しないためNone。note文字列に埋め込む値と同一の計算式。
     transient_found   : EPSアナライザーで一過性費用が確認されたか
     transient_items   : 一過性費用の詳細リスト
     transient_total   : 一過性費用の合計（税前）
@@ -808,6 +811,7 @@ class FCFOutlierResult:
     transient_total: float       # 一過性費用の合計（税前）
     action: str                  # "excluded" | "flagged" | "none"
     note: str
+    deviation_pct: Optional[float] = None  # DCF-REL-SYNC-1: 5年平均からの乖離%（latest_negative型はNone）
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -816,6 +820,7 @@ class FCFOutlierResult:
             "fiscal_year": self.fiscal_year,
             "fcf_value": self.fcf_value,
             "threshold_pct": self.threshold_pct,
+            "deviation_pct": self.deviation_pct,
             "transient_evidence": {
                 "found": self.transient_found,
                 "source": "adjusted_eps_analyzer" if self.transient_found else None,
@@ -917,6 +922,7 @@ def analyze_fcf_outlier(
     if latest_fcf < 0:
         rule = "latest_negative"
         threshold_pct = 0.0
+        deviation_pct = None  # DCF-REL-SYNC-1: マイナスFCF型は乖離%の概念が成立しないためNone
     else:
         # ── ルール2: 5年平均からの乖離が閾値超 ──
         is_mature = cv <= cv_threshold
@@ -924,6 +930,7 @@ def analyze_fcf_outlier(
         deviation = abs(latest_fcf - fcf_5yr_avg) / abs(fcf_5yr_avg)
         if deviation > threshold_pct:
             rule = "deviation_large"
+            deviation_pct = deviation * 100  # DCF-REL-SYNC-1: note文字列と同一の計算式を数値として保持
         else:
             return NO_OUTLIER  # 外れ値なし
 
@@ -1022,6 +1029,7 @@ def analyze_fcf_outlier(
         transient_total=transient_total,
         action=action,
         note=note,
+        deviation_pct=deviation_pct,
     )
 
 

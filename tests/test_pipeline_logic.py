@@ -1475,6 +1475,60 @@ class TestDcfReliabilityPolicyB:
         assert result["score"] == "HOLD"
 
 
+class TestAnalyzeFcfOutlierDeviationPct:
+    """DCF-REL-SYNC-1: analyze_fcf_outlier()のdeviation_pctフィールドのテスト"""
+
+    @staticmethod
+    def _import_analyze_fcf_outlier():
+        from calculator.adjustments import analyze_fcf_outlier
+        return analyze_fcf_outlier
+
+    def test_deviation_large_populates_deviation_pct(self):
+        """rule=deviation_large型はnote文字列と同一の乖離%を数値で保持する（FLYW型: 215%乖離）"""
+        analyze_fcf_outlier = self._import_analyze_fcf_outlier()
+        fcf_list = [163_819_000] + [52_000_000] * 4
+        result = analyze_fcf_outlier(
+            ticker="FLYW_TEST", fcf_list=fcf_list, fcf_5yr_avg=52_000_000,
+            cv=0.3, fiscal_year_of_latest=2025, eps_data_dir="",
+        )
+        assert result.rule == "deviation_large"
+        assert result.deviation_pct == pytest.approx(215.0, abs=1.0)
+
+    def test_latest_negative_deviation_pct_is_none(self):
+        """rule=latest_negative型（FCFマイナス）は乖離%の概念が成立しないためNone"""
+        analyze_fcf_outlier = self._import_analyze_fcf_outlier()
+        fcf_list = [-100_000_000] + [50_000_000] * 4
+        result = analyze_fcf_outlier(
+            ticker="NEG_TEST", fcf_list=fcf_list, fcf_5yr_avg=50_000_000,
+            cv=0.3, fiscal_year_of_latest=2025, eps_data_dir="",
+        )
+        assert result.rule == "latest_negative"
+        assert result.deviation_pct is None
+
+    def test_no_outlier_deviation_pct_is_none(self):
+        """外れ値なし（detected=False）の場合もdeviation_pctはNone"""
+        analyze_fcf_outlier = self._import_analyze_fcf_outlier()
+        fcf_list = [50_000_000] * 5
+        result = analyze_fcf_outlier(
+            ticker="FLAT_TEST", fcf_list=fcf_list, fcf_5yr_avg=50_000_000,
+            cv=0.3, fiscal_year_of_latest=2025, eps_data_dir="",
+        )
+        assert result.detected is False
+        assert result.deviation_pct is None
+
+    def test_to_dict_includes_deviation_pct(self):
+        """to_dict()の出力にdeviation_pctが含まれる"""
+        analyze_fcf_outlier = self._import_analyze_fcf_outlier()
+        fcf_list = [163_819_000] + [52_000_000] * 4
+        result = analyze_fcf_outlier(
+            ticker="FLYW_TEST2", fcf_list=fcf_list, fcf_5yr_avg=52_000_000,
+            cv=0.3, fiscal_year_of_latest=2025, eps_data_dir="",
+        )
+        d = result.to_dict()
+        assert "deviation_pct" in d
+        assert d["deviation_pct"] == pytest.approx(215.0, abs=1.0)
+
+
 # ─────────────────────────────────────────────
 # 17. 汎用性検証: 新規銘柄自動適用 (回帰防止)
 #
