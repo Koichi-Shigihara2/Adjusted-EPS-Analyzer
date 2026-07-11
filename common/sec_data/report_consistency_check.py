@@ -26,6 +26,11 @@ report_consistency_check.py
   NG  19. SEC株数=0            quarterly.json に diluted_shares=0 の四半期（株数取得失敗）
   WARN 20. fcf_cagr floor張り付き growth.source=fcf_cagr かつ growth.rateがgrowth_floor(15%)に
                               完全一致（recommended_gの有無を問わず検知、GROWTH-FLOOR-VERDICT-1）
+
+WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
+  config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
+  「確認済み」として通常表示される。未登録のWARNは実行時に [🆕未確認 WARN-N ...] と
+  強調表示される（非ブロッキング動作は維持、NG化はしない）。
 """
 
 import argparse
@@ -43,6 +48,7 @@ SEC_DATA_DIR = os.path.join(REPO_ROOT, "common/sec_data/data")
 EPS_DATA_DIR = os.path.join(REPO_ROOT, "docs/value-monitor/adjusted_eps_analyzer/data")
 RPO_CONFIG   = os.path.join(REPO_ROOT, "config/rpo_config.json")
 SEG_CONFIG   = os.path.join(REPO_ROOT, "config/segment_config.json")
+WARN_LEDGER  = os.path.join(REPO_ROOT, "config/warn_acknowledged.json")
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -66,6 +72,47 @@ def _load_rpo_whitelist() -> set:
         return set(cfg.get("whitelist", {}).keys())
     except Exception:
         return set()
+
+
+_WARN_CHECK_RE = re.compile(r'\[WARN-(\d+)')
+
+
+def load_warn_ledger(path: str = WARN_LEDGER) -> set[tuple[str, str]]:
+    """
+    確認済みWARN台帳（QUALITY-GATES-EPIC-1 Phase 1）を読み込む。
+
+    台帳ファイルが存在しない場合は空集合を返す（全WARNが「未確認」扱いになる）。
+    キーは (CHECK番号, ticker) のタプル。exact な message文字列ではなく
+    check番号単位で確認済みとするため、同じ銘柄・同じCHECKのWARNが
+    数値だけ変わって再発しても「確認済み」のまま扱われる（意図的な粗さ）。
+    """
+    if not os.path.exists(path):
+        return set()
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+        return {
+            (entry["check"], entry["ticker"])
+            for entry in data.get("acknowledged", [])
+        }
+    except Exception:
+        return set()
+
+
+def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
+    """
+    WARNメッセージに台帳照合結果を反映する。
+
+    Returns:
+        (表示用メッセージ, is_new) — is_new=Trueは台帳未登録（未確認）WARN
+    """
+    m = _WARN_CHECK_RE.search(message)
+    if not m:
+        return message, True
+    check_id = f"WARN-{m.group(1)}"
+    if (check_id, ticker) in ledger:
+        return message, False
+    return message.replace("[WARN-", "[\U0001f195未確認 WARN-", 1), True
 
 
 def _read_report(ticker: str):
@@ -604,6 +651,7 @@ def parse_args():
 def run_checks(args=None) -> tuple[int, int]:
     """整合性チェックを実行し (ng_count, warn_count) を返す。"""
     whitelist = _load_rpo_whitelist()
+    warn_ledger = load_warn_ledger()
     quiet = getattr(args, "quiet", False)
     ticker_filter = None
     if args and args.ticker:
@@ -623,16 +671,23 @@ def run_checks(args=None) -> tuple[int, int]:
     if not quiet:
         print(f"=== TANUKI VALUATION report.txt 整合性チェック ({len(tickers)} 銘柄) ===\n")
 
-    total_ng   = 0
-    total_warn = 0
+    total_ng        = 0
+    total_warn      = 0
+    total_warn_new  = 0
     flagged: list[tuple[str, list, list]] = []
 
     for ticker in tickers:
         ng, warn = check_ticker(ticker, whitelist)
-        if ng or warn:
-            flagged.append((ticker, ng, warn))
+        annotated_warn = []
+        for w in warn:
+            msg, is_new = annotate_warn(ticker, w, warn_ledger)
+            annotated_warn.append(msg)
+            if is_new:
+                total_warn_new += 1
+        if ng or annotated_warn:
+            flagged.append((ticker, ng, annotated_warn))
             total_ng   += len(ng)
-            total_warn += len(warn)
+            total_warn += len(annotated_warn)
 
     if not flagged:
         if not quiet:
@@ -649,9 +704,16 @@ def run_checks(args=None) -> tuple[int, int]:
 
     if not quiet:
         print("─" * 50)
-        print(f"合計: NG={total_ng} 件 / 警告={total_warn} 件  (対象 {len(tickers)} 銘柄)")
+        total_warn_ack = total_warn - total_warn_new
+        print(
+            f"合計: NG={total_ng} 件 / 警告={total_warn} 件"
+            f"（確認済み{total_warn_ack} / \U0001f195未確認{total_warn_new}）"
+            f"  (対象 {len(tickers)} 銘柄)"
+        )
         if total_ng == 0:
             print("✅ NG=0 全銘柄整合")
+        if total_warn_new > 0:
+            print(f"⚠️  未確認WARNが{total_warn_new}件あります。台帳（{WARN_LEDGER}）で確認要否を判断してください。")
 
     return total_ng, total_warn
 

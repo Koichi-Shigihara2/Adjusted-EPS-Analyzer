@@ -1,0 +1,23 @@
+{
+  "_comment": "report_consistency_check.py WARN確認済み台帳（QUALITY-GATES-EPIC-1 Phase 1 2026-07-12新設）。CHECK番号・対象銘柄の組み合わせ単位で確認済み扱いにする。数値が変わっても再確認は不要（意図的な粗さ）。未登録の(check, ticker)組み合わせは実行時に「未確認」として強調表示される。",
+  "acknowledged": [
+    {
+      "check": "WARN-10",
+      "ticker": "ELF",
+      "acknowledged_date": "2026-07-12",
+      "comment": "yfinance PSがステール値の可能性。既知の許容WARN、実害なしと確認済み。"
+    },
+    {
+      "check": "WARN-20",
+      "ticker": "MO",
+      "acknowledged_date": "2026-07-12",
+      "comment": "fcf_cagr floor張り付き。GROWTH-SANITY-CLASS-SYNC-1で経緯を追跡中、Classification未連動の既知課題。"
+    },
+    {
+      "check": "WARN-20",
+      "ticker": "XOM",
+      "acknowledged_date": "2026-07-12",
+      "comment": "fcf_cagr floor張り付き。Classification=HOLD/WATCHのため実害限定的、既知の許容WARN。"
+    }
+  ]
+}

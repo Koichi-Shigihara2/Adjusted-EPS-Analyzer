@@ -23,9 +23,15 @@ git pull --rebase origin kaihatsu
 
 ### Step 2: テスト実行
 cd C:\Users\shigi\Documents\On-a-journey-git
-python -m pytest tests/test_pipeline_logic.py -v
+python -m pytest tests/ -v
 全件パスを確認してから作業を開始する。
 失敗があれば先に修正する。
+既知の例外: tests/test_iv_formula.py の MSFT/NVDA 2件は既存バグ
+（[[TEST-STALE-IV-1]]、ALPHA-REDESIGN-1後にテスト式が未更新）として
+認識済み。この2件以外の失敗が出た場合のみ先に修正する
+（QUALITY-GATES-EPIC-1 Phase 1で2026-07-12にtest_pipeline_logic.py単体実行
+からtests/全体実行へ変更。ALPHA-REDESIGN-1後の回帰がtest_pipeline_logic.py
+実行のみでは2週間見逃されていた教訓による）。
 
 ### Step 3: 作業内容の確認
 BACKLOGから以下の優先順位で作業項目を選定：
@@ -649,7 +655,7 @@ python src/value/tanuki_valuation/pipeline.py NVDA
 python src/value/tanuki_valuation/pipeline.py
 
 ### pytest実行
-python -m pytest tests/test_pipeline_logic.py -v
+python -m pytest tests/ -v
 
 ### GitHub Actions 確認
 admin.html の「実行」タブ → 一括更新ボタンを使用
