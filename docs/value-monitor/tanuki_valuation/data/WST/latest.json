@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 81.67,
   "upside_percent_beta": -76.9,
   "intrinsic_value_rf": 481.88,
-  "upside_percent_rf": 36.1,
+  "upside_percent_rf": 36.2,
   "v0": 5451443437.249203,
   "v0_adjusted": 5451443437.249203,
   "alpha": 0.7,
@@ -40,11 +40,11 @@
     "5年後": {
       "future_value": 125.44,
       "value_growth_pct": 36.6,
-      "expected_return_pct": -64.6
+      "expected_return_pct": -64.5
     }
   },
-  "upside_percent": -74.1,
-  "calculation_date": "2026-07-11T01:47:12+09:00",
+  "upside_percent": -74.0,
+  "calculation_date": "2026-07-11T19:03:31+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -291,7 +291,7 @@
     "bull": {
       "growth_rate": 0.077,
       "rice": 0.269,
-      "rice_per_ratio": 0.0057,
+      "rice_per_ratio": 0.0056,
       "rice_adj": 0.58
     }
   },
@@ -316,7 +316,7 @@
     "roe_10yr_avg": 0.18367218736919738,
     "roe_years_used": 9,
     "roe_outlier_adj": false,
-    "current_price": 353.9782,
+    "current_price": 353.71,
     "latest_revenue": 3074100000.0,
     "rpo": 53700000.0,
     "beta": 1.159,
@@ -346,12 +346,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.7714231869506288,
-    "per": 47.32329,
+    "per": 47.863327,
     "per_is_forward": false,
-    "per_adjusted": 43.98,
+    "per_adjusted": 43.95,
     "peg": 3.4,
-    "ps": 7.763958,
-    "ev_ebitda": 28.816,
+    "ps": 7.758075,
+    "ev_ebitda": 28.496,
     "ma200": 277.98184,
     "forward_eps": 9.57231,
     "analyst_target_median": 365.0,
@@ -395,9 +395,9 @@
     "overall": "WARN",
     "ai_comment": null
   },
-  "tanuki_score": "TRIM",
+  "tanuki_score": "WATCH",
   "funda_score": 80,
-  "score_comment": "割高(-74%超)、FCF黒字、売上安定成長",
+  "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 30,
   "sell_reason": null,
   "matrix": {
@@ -485,6 +485,7 @@
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
+    "floor_hit": false,
     "phase1_growth": 0.0643,
     "industry_benchmark": null,
     "damodaran_industry": null,
@@ -507,25 +508,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.016,
-  "forward_earnings_yield": 0.027,
+  "erp": -0.0159,
+  "forward_earnings_yield": 0.0271,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against West Pharmaceutical Services",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning issued impacting 2025-2026 outlook",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

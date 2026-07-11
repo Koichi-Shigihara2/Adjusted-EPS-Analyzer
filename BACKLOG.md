@@ -226,6 +226,19 @@ TANUKI SCORE自体の的中率検証が必要。
 スクリーニングを素通りする」問題のうち、floor値張り付き検知の部分は解消済み。
 本タスク（FCF乖離%の未反映）は引き続き未着手。
 
+**状況更新（2026-07-11 同日2回目）:** 本タスクの実装前調査中に、既存の
+Policy B判定ロジック自体のバグ（`transient_evidence.found`と`action=="excluded"`の
+取り違え）を発見・分離して[[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）
+として先行修正した。この修正により下記「Policy Aとの相互作用」節の例示銘柄
+FLYW（215%乖離）は既にDCF_Reliability=LOW・Classification=WATCHへ是正済みであり、
+影響を受けた30銘柄中27銘柄でTANUKI SCORE分類が変化している。ただし本タスク
+本来の要求（`fcf_outlier`の乖離%を新たな閾値としてDCF_Reliability判定に
+組み込む設計。既存のdetected/actionの真偽判定とは別軸）は引き続き未着手。
+また`fcf_outlier`には乖離%を格納する専用の数値フィールドが存在せず、
+`note`の日本語文字列内にのみ埋め込まれている（正規表現パースが必要）ことが
+調査で判明しており、実装時は`FCFOutlierResult`への`deviation_pct`フィールド
+追加も合わせて検討する。
+
 #### 問題
 `latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
 例: FLYWで乖離215%）と、`report.txt` の `DCF_Reliability`（NORMAL/LOW表示ロジック）

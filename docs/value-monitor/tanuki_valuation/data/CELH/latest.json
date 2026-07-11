@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 7280395538.872924,
   "intrinsic_value_per_share": 26.212440488615016,
   "intrinsic_value_beta": 27.98,
-  "upside_percent_beta": -8.9,
+  "upside_percent_beta": -8.6,
   "intrinsic_value_rf": 120.27,
-  "upside_percent_rf": 291.4,
+  "upside_percent_rf": 293.0,
   "v0": 7280395538.872924,
   "v0_adjusted": 7280395538.872924,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 30.67,
       "value_growth_pct": 17.0,
-      "expected_return_pct": -0.2
+      "expected_return_pct": 0.2
     },
     "2年後": {
       "future_value": 35.88,
       "value_growth_pct": 36.9,
-      "expected_return_pct": 16.8
+      "expected_return_pct": 17.3
     },
     "3年後": {
       "future_value": 41.98,
       "value_growth_pct": 60.2,
-      "expected_return_pct": 36.6
+      "expected_return_pct": 37.2
     },
     "4年後": {
       "future_value": 49.11,
       "value_growth_pct": 87.4,
-      "expected_return_pct": 59.8
+      "expected_return_pct": 60.5
     },
     "5年後": {
       "future_value": 57.46,
       "value_growth_pct": 119.2,
-      "expected_return_pct": 87.0
+      "expected_return_pct": 87.8
     }
   },
-  "upside_percent": -14.7,
-  "calculation_date": "2026-07-11T01:34:38+09:00",
+  "upside_percent": -14.3,
+  "calculation_date": "2026-07-11T19:00:04+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -376,7 +376,7 @@
     "roe_10yr_avg": -0.08510160736586729,
     "roe_years_used": 10,
     "roe_outlier_adj": true,
-    "current_price": 30.73,
+    "current_price": 30.6,
     "latest_revenue": 2515269000.0,
     "rpo": 395279000,
     "beta": 0.925,
@@ -406,12 +406,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 71.46511,
+    "per": 71.16279,
     "per_is_forward": false,
-    "per_adjusted": 17.95,
+    "per_adjusted": 17.88,
     "peg": 0.31,
-    "ps": 2.6463003,
-    "ev_ebitda": 14.263,
+    "ps": 2.6351054,
+    "ev_ebitda": 14.293,
     "ma200": 43.18175,
     "forward_eps": 1.99826,
     "analyst_target_median": 55.0,
@@ -428,7 +428,7 @@
     "insider_latest_date": "2026-07-09",
     "analyst_vs_iv": 109.8,
     "max_eps": 0.7891,
-    "max_eps_per": 38.9,
+    "max_eps_per": 38.8,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -455,9 +455,9 @@
     "overall": "PASS",
     "ai_comment": null
   },
-  "tanuki_score": "HOLD",
+  "tanuki_score": "WATCH",
   "funda_score": 100,
-  "score_comment": "フェアバリュー近辺、FCF黒字、売上成長加速",
+  "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {
@@ -511,7 +511,7 @@
     "split_factor": 3.1308,
     "buyback_ttm": 12600000
   },
-  "net_current_assets_ratio": 0.1035,
+  "net_current_assets_ratio": 0.1039,
   "dupont": {
     "ni_ttm": 173679000,
     "revenue_ttm": 2968608000,
@@ -549,6 +549,7 @@
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "REVIEW",
+    "floor_hit": false,
     "phase1_growth": 0.17,
     "industry_benchmark": 0.06,
     "damodaran_industry": "CELH_custom",
@@ -573,25 +574,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.022,
-  "forward_earnings_yield": 0.065,
+  "erp": 0.0223,
+  "forward_earnings_yield": 0.0653,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Celsius Holdings",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition risks",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

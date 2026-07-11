@@ -314,28 +314,37 @@ class TanukiValuationPipeline:
         DCF_Reliability Policy B（FCF_Conversion_Rate方式向け、DCF-RELIABILITY-1）
 
         Policy A（revenue_floor適用＝FCF_Base直接方式向け）とは別軸の判定基準。
-        fcf_outlier.detected / fcf_outlier.transient_evidence.found / eps_invalid の
+        fcf_outlier.detected / fcf_outlier.action / eps_invalid の
         組み合わせで LOW/NORMAL を判定する。
 
         eps_invalid は EPSアナライザー自体にreliabilityフラグが存在しないため、
         FCF_Conversion_Rate推定値が生FCFから大きく乖離している（divergence_ratio>=2.0、
         FCFEstimationResult.divergence_warningが非空）ことを代理指標として採用する。
 
+        DCF-REL-SYNC-1（2026-07-11修正）: 従来は
+        `transient_evidence.found`（一過性費用の証拠が"存在するか"）を見ていたが、
+        これは乖離の"金額を十分説明できるか"（`analyze_fcf_outlier`の
+        `transient_explains`判定・`action`フィールドに反映済み）とは別物。
+        証拠が少額のみ存在し乖離を説明しきれない場合（例: FLYW FY2025、
+        215%乖離に対し一過性費用$11M<必要説明額の20%）でも`found=True`となり
+        誤ってNORMAL判定されていた。`action=="excluded"`（乖離が一過性費用で
+        説明済みと判定された）を正しい代理指標として使う。
+
         判定表（仕様: detected×eps_invalidの組み合わせはeps_invalid優先）:
-          eps_invalid=true                              → LOW（detected/transient_foundに関わらず）
-          eps_invalid=false, detected=true,  transient_found=false → LOW
-          eps_invalid=false, detected=true,  transient_found=true  → NORMAL
-          eps_invalid=false, detected=false                        → NORMAL
+          eps_invalid=true                           → LOW（detected/actionに関わらず）
+          eps_invalid=false, detected=true,  action!="excluded" → LOW
+          eps_invalid=false, detected=true,  action=="excluded" → NORMAL
+          eps_invalid=false, detected=false                     → NORMAL
         """
         fcf_outlier = valuation.get("fcf_outlier", {}) or {}
         detected = fcf_outlier.get("detected", False)
-        transient_found = (fcf_outlier.get("transient_evidence") or {}).get("found", False)
+        explained = fcf_outlier.get("action") == "excluded"
         fcf_est = valuation.get("fcf_estimation", {}) or {}
         eps_invalid = bool(fcf_est.get("divergence_warning"))
 
         if eps_invalid:
             return "LOW"
-        if detected and not transient_found:
+        if detected and not explained:
             return "LOW"
         return "NORMAL"
 

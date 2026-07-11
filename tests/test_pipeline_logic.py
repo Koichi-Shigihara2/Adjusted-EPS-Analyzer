@@ -1336,19 +1336,20 @@ class TestDcfReliabilityPolicyB:
     """
     DCF-RELIABILITY-1: FCF_Conversion_Rate方式向けDCF_Reliability判定（Policy B）
 
-    判定表:
-      eps_invalid=true                                          → LOW（最優先）
-      eps_invalid=false, detected=true,  transient_found=false  → LOW
-      eps_invalid=false, detected=true,  transient_found=true   → NORMAL
-      eps_invalid=false, detected=false                         → NORMAL
+    判定表（DCF-REL-SYNC-1 2026-07-11修正: transient_found→action=="excluded"に変更。
+    証拠が"存在するか"ではなく乖離を"金額として説明しきれているか"で判定する）:
+      eps_invalid=true                                       → LOW（最優先）
+      eps_invalid=false, detected=true,  action!="excluded"  → LOW
+      eps_invalid=false, detected=true,  action=="excluded"  → NORMAL
+      eps_invalid=false, detected=false                      → NORMAL
     """
 
     @staticmethod
-    def _valuation(detected: bool, transient_found: bool, divergence_warning: str = "") -> dict:
+    def _valuation(detected: bool, explained: bool, divergence_warning: str = "") -> dict:
         return {
             "fcf_outlier": {
                 "detected": detected,
-                "transient_evidence": {"found": transient_found},
+                "action": "excluded" if explained else "flagged",
             },
             "fcf_estimation": {
                 "applied": True,
@@ -1356,25 +1357,38 @@ class TestDcfReliabilityPolicyB:
             },
         }
 
-    def test_detected_true_transient_false_is_low(self):
-        v = self._valuation(detected=True, transient_found=False)
+    def test_detected_true_not_explained_is_low(self):
+        v = self._valuation(detected=True, explained=False)
         assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
 
-    def test_detected_true_transient_true_is_normal(self):
-        v = self._valuation(detected=True, transient_found=True)
+    def test_detected_true_explained_is_normal(self):
+        v = self._valuation(detected=True, explained=True)
         assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "NORMAL"
 
+    def test_detected_true_flagged_with_partial_evidence_is_low(self):
+        """一過性費用の証拠(transient_evidence.found)はあるが乖離を説明しきれない(action=flagged)場合はLOW
+        （DCF-REL-SYNC-1: FLYW型の回帰防止。旧ロジックはfoundのみを見てNORMAL誤判定していた）"""
+        v = {
+            "fcf_outlier": {
+                "detected": True,
+                "action": "flagged",
+                "transient_evidence": {"found": True},
+            },
+            "fcf_estimation": {"applied": True, "divergence_warning": ""},
+        }
+        assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
+
     def test_detected_false_eps_valid_is_normal(self):
-        v = self._valuation(detected=False, transient_found=False)
+        v = self._valuation(detected=False, explained=False)
         assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "NORMAL"
 
     def test_detected_false_eps_invalid_is_low(self):
-        v = self._valuation(detected=False, transient_found=False, divergence_warning="乖離警告")
+        v = self._valuation(detected=False, explained=False, divergence_warning="乖離警告")
         assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
 
-    def test_eps_invalid_overrides_transient_found_true(self):
-        """eps_invalid=true は detected×transient_found=true（本来NORMAL）より優先してLOWにする"""
-        v = self._valuation(detected=True, transient_found=True, divergence_warning="乖離警告")
+    def test_eps_invalid_overrides_explained_true(self):
+        """eps_invalid=true は detected×explained=true（本来NORMAL）より優先してLOWにする"""
+        v = self._valuation(detected=True, explained=True, divergence_warning="乖離警告")
         assert TanukiValuationPipeline._calc_dcf_reliability_policy_b(v) == "LOW"
 
     def test_compute_tanuki_score_rounds_to_watch_when_policy_b_low(self, tmp_path):

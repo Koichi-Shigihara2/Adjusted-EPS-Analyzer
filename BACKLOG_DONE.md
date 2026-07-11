@@ -4,6 +4,53 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [TANUKI-POLICYB-FIX-1] Policy B DCF_Reliability判定のtransient_found/action取り違え修正（2026-07-11完了）
+**分類:** バグ修正 / TANUKI VALUATION
+**発見:** [[DCF-REL-SYNC-1]]の実装前調査中（事前BACKLOG登録なし・発見即修正のケース）
+
+#### 問題
+`pipeline.py::_calc_dcf_reliability_policy_b()`（DCF_Reliability Policy B、
+FCF_Conversion_Rate方式向け）が、`fcf_outlier.transient_evidence.found`
+（一過性費用の証拠項目が1件でも"存在するか"の真偽値）を判定に使っていたが、
+本来使うべきは`fcf_outlier.action == "excluded"`（`analyze_fcf_outlier()`が
+その証拠の金額が乖離を"説明しきれているか"まで判定した結果）だった。
+証拠は少額存在するが金額不足（`action="flagged"`）のケースでも`found=True`
+となるため誤ってNORMAL判定され、DCF信頼性が低いにも関わらずTANUKI SCORE
+のWATCH丸めが発火しなかった。
+（例: FLYW FY2025、5年平均から215%乖離、一過性費用$11M<必要説明額の20%）
+
+#### 修正内容
+- `transient_found`判定を`fcf_outlier.get("action") == "excluded"`に置換
+- `tests/test_pipeline_logic.py`のテストケースを新仕様に更新、回帰防止用に
+  `test_detected_true_flagged_with_partial_evidence_is_low`（FLYW型ケース）を追加
+- 影響を受けた30銘柄（ADSK/AMD/APP/BSY/CDNS/CEG/CELH/CPRT/CRM/CWAN/DDOG/DOCN/
+  ESTC/FICO/FLYW/FRSH/GEV/HQY/INTU/IOT/LITE/MRVL/MSCI/NET/SNPS/SOFI/VRT/WST/
+  ZETA/ZS）のlatest.json/report.txt/history.json/score_history.jsonを再生成
+
+#### 影響（TANUKI SCORE分類変化）
+30銘柄中27銘柄で分類変化（BUY→WATCH 10件、TRIM→WATCH 10件、HOLD→WATCH 7件、
+変化なし3件）。SELL/PASSは維持ルールのため対象外。
+
+#### 副作用確認結果
+- **LOW→NORMALへの逆転ケース: なし。** `analyze_fcf_outlier()`の実装上
+  `action=="excluded"`は常に`transient_evidence.found==True`を要求するため
+  （数学的に旧LOW判定銘柄が新ロジックでNORMALに変わることはない）、
+  tanuki=true全100銘柄の実データでも該当0件を確認。
+- `action`フィールドの取り得る値は`{"excluded","flagged","none"}`の3値のみ、
+  `detected=True`かつ`action=="none"`という分岐漏れ懸念ケースも全銘柄で0件。
+- 再生成後のWARN 18件は全て`pt_shares_consistency`チェック起因で、
+  [[TEST-STALE-IV-1]]（ALPHA-REDESIGN-1後に旧α乗算式のまま陳腐化した既知問題）
+  に該当し、修正前から存在した無関係の既存事象と確認済み（ADSK/AMD/CEGで
+  HEAD時点=修正前でも同一WARNを確認）。
+
+#### DCF-REL-SYNC-1との関係
+本タスクはPolicy Bの既存判定ロジックの取り違えバグであり、
+[[DCF-REL-SYNC-1]]本来の要求（`fcf_outlier`の乖離%を新たな閾値として
+DCF_Reliability判定に組み込む設計）とは別物。DCF-REL-SYNC-1は引き続き
+未着手のままBACKLOG.mdに残置する。
+
+---
+
 ### ✅ [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足（2026-07-11完了・コミット`8df1f1172`）
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-10
