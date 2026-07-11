@@ -19,6 +19,15 @@ monitor_tickers.yaml誤参照2件）をコミット`ba2cfef42`で修正・完了
 エントリはBACKLOG.mdに残置。REGISTER-FLOW-REDESIGN-1の対応方針1も
 同一修正のため完了注記を追記、CIK-ORPHAN-FLAGS-1に本修正で新規検出
 されるようになったBXの追記を反映。
+
+追記（2026-07-11 同日3回目）: TICKER-SOURCE-UNIFY-1の対応方針3
+（tanuki_valuation/pipeline.py・stonks-silo/pipeline.py・
+common/screening配下2スクリプトの計4ファイル）をコミット`b41b447d6`で
+完了。横断調査でhypecore.pyが既に移行済みと判明したため訂正を反映
+（「1箇所のみ採用」の記述を「2箇所」に修正）。対応方針1・2・3すべて完了・
+残作業なしとなったが、エントリの完全クローズはKoichiさんの判断待ちのため
+保留。新規発見のcommon/sec_data/config.py重複ユーティリティ問題を
+TICKER-SOURCE-CONFIG-DUP-1として新規登録。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -829,13 +838,17 @@ TICKER-AUDIT-1は「症状の棚卸し」、TICKER-SOURCE-UNIFY-1は「原因の
 ---
 
 ### [TICKER-SOURCE-UNIFY-1] 銘柄リスト正本参照の一元化（根本課題）
-**優先度:** 中 → 対応方針1・2は完了、残るは対応方針3のみ（低・任意対応）
+**優先度:** 低 → 対応方針1・2・3すべて完了、残作業なし（完全クローズはKoichiさん判断待ちのため保留）
 **分類:** アーキテクチャ / 銘柄リスト参照
 **登録日:** 2026-07-11
 **進捗:** 対応方針1・2は2026-07-11 コミット`ba2cfef42`で完了。対応方針3
-（tanuki pipeline.py・stonks-silo pipeline.py・hypecore.py等、他の呼び出し
-箇所も余力があればtickers.py経由へ統一）は任意の追加対応として残置。
-対応方針3も完了した時点でBACKLOG_DONE.mdへ全文移動する。
+（tanuki_valuation/pipeline.py・stonks-silo/pipeline.py・common/screening配下
+2スクリプトの計4ファイル）も同日 コミット`b41b447d6`で完了。
+hypecore.pyは元の対応方針3で「未実施」を想定していたが、横断調査の結果
+既に`get_hypecore_tickers()`を使用済み（未完了ではなく流儀不統一のみ）と判明。
+残るは`common/system_health.py`（check_h_config、比較専用のため移行候補基準に
+該当せず、低リスクな参考事項）のみ。エントリ自体の完全クローズ
+（BACKLOG_DONE.mdへの全文移動）はKoichiさんの判断を仰ぐため一旦保留する。
 **発見:** [[REGISTER-FLOW-REDESIGN-1]]で判明したregistration_validator.pyの
 盲点（monitor_tickers.yamlを全銘柄と取り違え）を起点に、同型バグの横断調査を実施
 
@@ -872,6 +885,12 @@ TICKER-AUDIT-1は「症状の棚卸し」、TICKER-SOURCE-UNIFY-1は「原因の
 それを使わず車輪の再発明・別ソース参照を繰り返した」ことが根本原因**であり、
 新規に共通関数を作る必要はなく、既存呼び出し箇所の移行が本質的な対応となる。
 
+**訂正（2026-07-11・対応方針3着手時の追加調査）:** 上記「1箇所のみ」との記述は
+不正確だった。`hypecore.py`も既に`get_hypecore_tickers()`を使用済み
+（`from tickers import get_hypecore_tickers`という素のモジュール名importで、
+`from common.sec_data.tickers import ...`とは異なるimport方式のため見落とされていた）。
+正しくは「2箇所」。hypecore.py自体への追加修正は不要（import方式の流儀統一は任意）。
+
 #### 参考: 一元化されていなくても問題ない箇所（正しい設計）
 以下は`cik_lookup.csv`を直接読むが、対象が単一ティッカーのCIK参照のみ
 （バッチ選定ロジックではない）ため問題なし: TANUKI TAIL系
@@ -899,10 +918,16 @@ extract_key_facts.py・tanuki_valuation/data_fetcher.py（インサイダー取�
    `tickers.py`の`get_all_tickers()`（cik_lookup.csv全銘柄）に変更
    （確定バグ2の解消、[[REGISTER-FLOW-REDESIGN-1]]対応方針1と同一の修正）
    → **2026-07-11 コミット`ba2cfef42`で完了**
-3. 上記2件の移行を機に、他の呼び出し箇所（tanuki pipeline.py・
-   stonks-silo pipeline.py・hypecore.py等）も余力があれば`tickers.py`経由へ
+3. ✅ 上記2件の移行を機に、他の呼び出し箇所（tanuki_valuation/pipeline.py・
+   stonks-silo/pipeline.py・common/screening/dcf_validity_checker.py・
+   common/screening/report_txt_parser.pyの計4ファイル）も`tickers.py`経由へ
    統一し、以後の新規コードが「各サブシステムの--allオプションはこのモジュールを
-   使う」という原設計意図に自然に従うようにする（未着手）
+   使う」という原設計意図に自然に従うようにする
+   → **2026-07-11 コミット`b41b447d6`で完了**。`hypecore.py`は横断調査の結果
+   既に移行済みと判明したため対応不要（上記「訂正」参照）。残る
+   `common/system_health.py`（check_h_config）は比較専用のため移行候補基準に
+   非該当、低リスクな参考事項として残置（[[TICKER-SOURCE-CONFIG-DUP-1]]と
+   あわせて任意対応）
 4. WARN/非ブロッキングアラートが運用上見落とされる問題自体は
    [[REGISTER-FLOW-REDESIGN-1]]側の対応方針（P4のNG格上げ等）で扱う
 
@@ -916,12 +941,40 @@ extract_key_facts.py・tanuki_valuation/data_fetcher.py（インサイダー取�
   不可視だったが、確定バグ2の修正によりP1系NGとして初めて検出されるように
   なった）
 
+#### 検証結果（2026-07-11・対応方針3完了時）
+- pytest 124件全通過
+- TANUKI対象銘柄リスト新旧完全一致（旧ロジック vs get_tanuki_tickers()経由、
+  共に100件・差分0件・順序も一致、skippedリストも`APGE/BX/ENB/RKLB/SN/ZS`で一致）
+- STONKS SILO対象銘柄リスト新旧完全一致（旧ロジック vs
+  get_stonks_silo_tickers()経由、共に25件・差分0件）
+- `common/screening/dcf_validity_checker.py`・`report_txt_parser.py`は
+  単一ティッカー・引数なし（全銘柄バッチ）の両モードで実行しエラーなしを確認
+
 #### 優先度・着手順についての所感
 確定した2件のバグはいずれも「既存関数を呼ぶだけ」で直せる低コスト・低リスクな
 修正であり、[[REGISTER-FLOW-REDESIGN-1]]が提案する対応方針の中で
 最も費用対効果が高い。着手する場合は、根本課題である本タスクの1・2を
 先に解消してから、REGISTER-FLOW-REDESIGN-1の残り（原子性・status列拡張等、
 コストの高い対応）に進むことを推奨する。
+
+---
+
+### [TICKER-SOURCE-CONFIG-DUP-1] common/sec_data/config.pyがtickers.pyと機能重複
+**優先度:** 低
+**分類:** アーキテクチャ / 銘柄リスト参照
+**登録日:** 2026-07-11
+**発見:** [[TICKER-SOURCE-UNIFY-1]]対応方針3実施時の横断調査
+
+#### 背景
+`common/sec_data/config.py`は`tickers.py`とは別の独立した重複ユーティリティで、
+`_load_from_csv()`が独自にcik_lookup.csvを読み、`get_all()`（全銘柄）・
+`get_holdings()`・`get_watchlist()`・`get_ticker_info()`を提供している。
+`common/sec_data/update.py`（SEC生データ取得）が現在も正規にこれを使用しており
+「バグ」ではないが、`tickers.py`の`get_all_tickers()`と機能重複している。
+
+#### 対応方針
+統合要否・移行方針は本タスクのスコープ外として別途検討する。
+[[TICKER-SOURCE-UNIFY-1]]の関連課題として記録する。
 
 ---
 

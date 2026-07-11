@@ -4,6 +4,43 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [TICKER-SOURCE-UNIFY-1（対応方針3）] 残る呼び出し箇所4件をtickers.py経由へ統一（2026-07-11完了）
+**発見:** [[TICKER-SOURCE-UNIFY-1]]対応方針1・2完了後の横断調査（対応方針3の対象洗い出し）
+**コミット:** `b41b447d6`
+
+#### 内容
+対応方針1・2（`ba2cfef42`）に続き、独自にcik_lookup.csvを読んでいた残り4ファイルを
+`common/sec_data/tickers.py`経由に移行：
+- `src/value/tanuki_valuation/pipeline.py::_load_tickers_from_csv()`:
+  `get_tanuki_tickers()`経由に変更（列欠損時のデフォルト挙動差異をコメントで明記）
+- `discover/stonks-silo/src/pipeline.py::stonks_tickers()`:
+  `get_stonks_silo_tickers()`へ委譲する1行に簡素化（不要になった定数`_CIK_LOOKUP`・
+  `import csv`を削除）
+- `common/screening/dcf_validity_checker.py::_all_tanuki_tickers()`:
+  `get_tanuki_tickers()`に置換
+- `common/screening/report_txt_parser.py::_all_tickers_with_report()`:
+  `get_all_tickers()`に置換（report.txt存在フィルタは維持）
+
+横断調査の過程で、対応方針3が当初想定していた`hypecore.py`は**既に
+`get_hypecore_tickers()`使用済み**（素のモジュール名importのため見落とされていた）
+と判明し、BACKLOG.mdの誤記述（「採用1箇所のみ」）を訂正した。
+
+対応方針1・2・3が完了し、TICKER-SOURCE-UNIFY-1の残作業はなくなったが、
+エントリの完全クローズ（本ファイルへの全文移動）はKoichiさんの判断待ちのため
+BACKLOG.mdに残置している。新規発見の`common/sec_data/config.py`重複ユーティリティ
+問題は[[TICKER-SOURCE-CONFIG-DUP-1]]として別途登録した。
+
+#### 検証結果
+- pytest 124件全通過
+- TANUKI対象銘柄リスト新旧完全一致（旧ロジック vs get_tanuki_tickers()経由、
+  共に100件・差分0件・順序も一致）
+- STONKS SILO対象銘柄リスト新旧完全一致（旧ロジック vs
+  get_stonks_silo_tickers()経由、共に25件・差分0件）
+- `dcf_validity_checker.py`・`report_txt_parser.py`は単一ティッカー・
+  引数なし（全銘柄バッチ）の両モードで実行しエラーなしを確認
+
+---
+
 ### ✅ [TICKER-SOURCE-UNIFY-1（対応方針1・2）] 銘柄リスト取得元をcik_lookup.csvへ統一（2026-07-11完了）
 **発見:** [[REGISTER-FLOW-REDESIGN-1]]診断を起点にした銘柄リスト参照の横断調査
 **コミット:** `ba2cfef42`
