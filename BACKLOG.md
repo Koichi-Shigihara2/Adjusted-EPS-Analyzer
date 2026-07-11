@@ -1,6 +1,9 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-11（monitor_tickers.yaml同期漏れ6件を修正、TICKER-AUDIT-1に
+最終更新: 2026-07-11（新規銘柄登録プロセスの構造診断を実施し
+REGISTER-FLOW-REDESIGN-1を新規登録（原子性欠如・registration_validator.pyの
+スキャン範囲の穴・データソース起因/プロセス起因の混同リスクを整理）。
+monitor_tickers.yaml同期漏れ6件を修正、TICKER-AUDIT-1に
 P4-CIKOrphan WARN見落とし・monitor_tickers同期漏れの教訓を追記、
 STALE-SUBPORT-CLEANUP-1を新規登録）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
@@ -1002,6 +1005,114 @@ monitor_tickers.yamlの同期は自動化されておらず、新規登録手順
 
 #### 着手条件
 当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
+
+---
+
+### [REGISTER-FLOW-REDESIGN-1] 新規銘柄登録プロセスの原子性・検証強制力の欠如
+**優先度:** 中
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-11
+**発見:** 2026-07-10の半導体5銘柄monitor_tickers.yaml同期漏れ・BX/ENB孤立エントリの
+構造診断（[[TICKER-AUDIT-1]]・[[CIK-ORPHAN-FLAGS-1]]と関連）
+
+#### 診断結果サマリ
+2026-07-10のインシデント（RMBS/ENTG/TER/KLAC/LRCXのStep 7/5b未実施、
+BX/ENBの孤立エントリ）は単発ミスではなく、登録プロセス自体に以下3つの
+構造的欠陥があることに起因する。
+
+#### 1. 原子性の欠如
+`cik_lookup.csv`に行を追加した瞬間（Step 0.5）から、その銘柄は
+`status=active`かつ各フラグ（tanuki/stonks_silo/eps/hypecore）がtrueであれば
+即座に各パイプライン（SEC定期更新・tanuki pipeline.py・stonks-silo pipeline.py・
+hypecore.py --batch等）から「対象銘柄」として扱われる。Step 1〜8は独立した
+逐次コマンドの羅列であり、オーケストレーション層が存在しないため：
+- Step 0.5だけ実施してStep 1〜8が未完了の状態でも、cik_lookup.csv上は
+  「完了済み銘柄」と見分けがつかない（status列にはactive/candidate/retiredの
+  3値しかなく「登録進行中」を表す状態がない）
+- セッション中断（コンテキスト制限・作業者都合等）が発生すると、
+  そのまま「中途半端な登録」が本番データに混入する
+- 「手動一括登録」（今回の半導体5銘柄のようにStep-by-stepを経ない一括操作）は
+  特にこの構造の影響を受けやすく、複数銘柄をまとめて処理する過程で
+  個別ステップ（特にStep 7/5b）が抜け落ちやすい
+
+#### 2. 検証の強制力不足（registration_validator.pyの構造的盲点）
+`registration_validator.py`のP1系チェック（7ステップ登録完全性）は
+**デフォルト実行時（引数なし）のスキャン対象がmonitor_tickers.yamlの
+既存銘柄のみ**（`tickers_to_check = target_tickers if target_tickers else monitor_tickers`）。
+つまり、monitor_tickers.yamlに未登録の銘柄はP1チェックのループに
+そもそも入らず、「monitor_tickers.yaml未登録」自体を検出できるのは
+明示的に対象ティッカーを指定した場合（Step 8を個別実行した場合）のみ。
+デフォルト実行でこの種の抜けを検出できるのは、cik_lookup.csv全体を
+無条件スキャンするP4-CIKOrphanチェックだけだが、これはWARN止まりで
+非ブロッキングのため運用上見落とされやすい（[[CIK-ORPHAN-FLAGS-1]]・
+今回の6件漏れは共にこの穴の顕在化）。
+
+またNG/WARNの重大度分類にも一貫性の欠如がある：
+| チェック | 重大度 | 実質的な影響 |
+|---|---|---|
+| P1-Step1-SEC（SECデータ未取得） | NG | ブロッキング |
+| P1-Step2-Beta（Beta未設定） | WARN | raw yfinance値で代替されるため実害は小さい |
+| P1-Step3-Valuation（latest.json未生成） | NG | ブロッキング |
+| P1-Step5-HypeCore（poc.json未生成） | WARN | 非ブロッキングだが実質Step5未完了と同義 |
+| P1-Step5b-EPS（EPS Analyzerなし） | WARN | 同上（今回6件のうち5件がこれに該当） |
+| P1-Step6-Discover | NG | ブロッキング |
+| P1-Step7-Monitor | NG | ブロッキングだが上記スキャン範囲の穴で発火しないケースがある |
+| P4-CIKOrphan | WARN | cik_lookup全体を見る唯一のセーフティネットだが非ブロッキング |
+
+Step 3.5（segment_config設定）は、既存エントリの内容検証（P3）はあるが
+「本来設定すべきなのに未設定」自体を検出する仕組みが存在しない
+（[[ENTG-TER-SEGMENT-1]]も同型の見落とし）。Step 4（audit.py --check-beta）は
+コード中に明示的に「runtimeチェックのためskip（別途audit.pyで実行）」と
+コメントされており、registration_validator.py自体はStep 4の実施有無を
+一切検証しない。
+
+#### 3. データソース起因とプロセス起因の混同リスク
+今回の調査対象銘柄を分類すると：
+- **プロセス起因**（本来フルパイプライン完走すべきだったが手順が飛んだ）:
+  RMBS/ENTG/TER/KLAC/LRCX（全件tanuki=true/eps=true/hypecore=true、
+  SECデータ取得は正常。2026-07-11に修正済み）
+- **データソース起因・真の取得失敗**: ENB（IFRS/40-F企業のためSEC annual data
+  0件、`update.py`はエラーを出さず「完了」表示のまま空データを返す。
+  P1-Step1-SEC NGで検出可能だが、Step 0（カナダ企業チェック）が本来
+  弾くべきケース。列追加時点の遡及登録のため経緯不明のまま残存）
+- **データソース起因・評価枠組み非適合（意図的除外）**: APGE（売上ゼロの
+  臨床段階バイオ、SEC取得自体は正常）・BX（資産運用会社でPL項目が薄い）・
+  SN（20-F提出企業で四半期系列不足、[[SN-TANUKI-DELAY-1]]参照）。
+  いずれも全フラグor一部フラグfalseは意図的な設計判断であり「失敗」ではない
+
+この3分類が明示的にラベル化されていないため、「フラグfalseの銘柄」を見ても
+「意図的除外」なのか「取得失敗の放置」なのか「登録途中」なのかが
+cik_lookup.csvの記載だけでは判別できない。
+
+#### 対応方針（診断のみ・実装は別タスク）
+優先順位付きで以下を提案する（実装順は着手時に判断）：
+1. **P4-CIKOrphan相当のチェックをNG（ブロッキング）へ格上げ、または
+   デフォルト実行のスキャン範囲をcik_lookup.csv全体に拡張**する
+   （最も低コストで効果が大きい。P1のスキャン範囲を`monitor_tickers`から
+   `cik_lookup.csv全銘柄`に変更すれば、monitor_tickers未登録自体もP1が
+   直接検出できるようになる）
+2. **cik_lookup.csvのstatus列に「登録進行中」を表す値を追加する**
+   （例: `status=provisioning`。Step 8のNG=0確認後に`active`へ昇格する運用にすれば、
+   各パイプラインは`status=active`のみを対象とすることで中途半端な登録の
+   本番混入を防げる。ただし既存パイプラインの対象銘柄取得ロジック
+   （フラグベース）に`status`条件を追加する変更が必要）
+3. **Step 1〜8を1つのオーケストレーションスクリプトにまとめ、
+   全ステップ成功後にのみcik_lookup.csvへコミット可能にする**（原子化。
+   実装コストは最も高いが、根本解決になる）
+4. **cik_lookup.csvに「意図的除外」を示す列・値を追加する**
+   （例: `exclusion_reason`列。APGE/BX/SN等の"評価枠組み非適合"ケースを
+   明示すれば、フラグfalse＝異常ではないことがCSV自体から読み取れる）
+5. **「手動一括登録」という抜け道を塞ぎ、単一エントリポイント経由の
+   登録に集約する**（複数銘柄を一括処理する場合でも、内部的には
+   1銘柄ずつ完全なStep 1〜8を実行する設計にする）
+
+#### 優先度についての所感
+現時点では実際のIV計算等を歪める実害はなく（今回の漏れはデータ欠損であり
+誤計算ではない）、ARCH-DATA-1のような「優先度：高」の即時実害はない。
+一方で同型の見落とし（BX/ENB→今回の6件）が既に2回発生しており、
+銘柄数が増えるほど再発確率が上がる構造的問題のため「優先度：中」を提案する。
+[[TICKER-AUDIT-1]]・[[PREFLIGHT-CHECK-1]]と統合的に設計すべき
+（別々に実装しない）。
 
 ---
 
