@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 1627040944456.6836,
   "intrinsic_value_per_share": 797.0550231745376,
   "intrinsic_value_beta": 649.8,
-  "upside_percent_beta": -2.6,
+  "upside_percent_beta": -2.9,
   "intrinsic_value_rf": 4760.34,
-  "upside_percent_rf": 613.2,
+  "upside_percent_rf": 611.3,
   "v0": 1627040944456.6836,
   "v0_adjusted": 1627040944456.6836,
   "alpha": 1.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 916.62,
       "value_growth_pct": 15.0,
-      "expected_return_pct": 37.3
+      "expected_return_pct": 37.0
     },
     "2年後": {
       "future_value": 1054.11,
       "value_growth_pct": 32.2,
-      "expected_return_pct": 57.9
+      "expected_return_pct": 57.5
     },
     "3年後": {
       "future_value": 1212.23,
       "value_growth_pct": 52.1,
-      "expected_return_pct": 81.6
+      "expected_return_pct": 81.1
     },
     "4年後": {
       "future_value": 1394.06,
       "value_growth_pct": 74.9,
-      "expected_return_pct": 108.9
+      "expected_return_pct": 108.3
     },
     "5年後": {
       "future_value": 1603.17,
       "value_growth_pct": 101.1,
-      "expected_return_pct": 140.2
+      "expected_return_pct": 139.6
     }
   },
-  "upside_percent": 19.4,
-  "calculation_date": "2026-07-11T01:37:44+09:00",
+  "upside_percent": 19.1,
+  "calculation_date": "2026-07-11T20:39:58+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -199,6 +199,7 @@
     "fiscal_year": 2025,
     "fcf_value": 50869000000,
     "threshold_pct": 0.0,
+    "deviation_pct": null,
     "transient_evidence": {
       "found": false,
       "source": null,
@@ -272,19 +273,19 @@
     "bear": {
       "growth_rate": 0.105,
       "rice": 0.959,
-      "rice_per_ratio": 0.0395,
+      "rice_per_ratio": 0.0394,
       "rice_adj": 2.479
     },
     "base": {
       "growth_rate": 0.15,
       "rice": 1.369,
-      "rice_per_ratio": 0.0564,
+      "rice_per_ratio": 0.0563,
       "rice_adj": 3.542
     },
     "bull": {
       "growth_rate": 0.18,
       "rice": 1.643,
-      "rice_per_ratio": 0.0676,
+      "rice_per_ratio": 0.0675,
       "rice_adj": 4.25
     }
   },
@@ -306,10 +307,10 @@
       8868000000
     ],
     "diluted_shares": 2538423304,
-    "roe_10yr_avg": 0.24346860847168234,
+    "roe_10yr_avg": 0.2434686084716823,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 667.47,
+    "current_price": 669.21,
     "latest_revenue": 200966000000.0,
     "rpo": 1080000000.0,
     "beta": 1.246,
@@ -330,7 +331,7 @@
     "moat_fcf_margin_norm": 1.0,
     "pv_high": 600801797348.803,
     "pv_terminal": 1026239147107.8806,
-    "roe_used": 0.24346860847168234,
+    "roe_used": 0.2434686084716823,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -339,14 +340,14 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.0225681555810657,
-    "per": 24.294943,
+    "per": 24.33491,
     "per_is_forward": false,
-    "per_adjusted": 19.27,
+    "per_adjusted": 19.32,
     "peg": 0.87,
-    "ps": 7.881921,
-    "ev_ebitda": 14.716,
+    "ps": 7.9024687,
+    "ev_ebitda": 15.592,
     "ma200": 643.19775,
-    "forward_eps": 36.94904,
+    "forward_eps": 36.32896,
     "analyst_target_median": 825.0,
     "analyst_target_mean": 827.91,
     "analyst_target_low": 664.46,
@@ -361,7 +362,7 @@
     "insider_latest_date": "2026-07-08",
     "analyst_vs_iv": 3.5,
     "max_eps": 35.8545,
-    "max_eps_per": 18.6,
+    "max_eps_per": 18.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -442,7 +443,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 13494000000
   },
-  "net_current_assets_ratio": 0.0372,
+  "net_current_assets_ratio": 0.0371,
   "dupont": {
     "ni_ttm": 70587000000,
     "revenue_ttm": 214963000000,
@@ -472,6 +473,7 @@
   "fcf_margin_note": "FCFマージン悪化(30.5%→24.2%) BEAR補正係数=0.793",
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
+    "floor_hit": false,
     "phase1_growth": 0.15,
     "industry_benchmark": -0.05683728818408143,
     "damodaran_industry": "Advertising",
@@ -495,25 +497,9 @@
     "fcf_margin_bear_multiplier": 0.7926,
     "fcf_margin_note": "FCFマージン悪化(30.5%→24.2%) BEAR補正係数=0.793"
   },
-  "erp": 0.0124,
-  "forward_earnings_yield": 0.0554,
+  "erp": 0.0113,
+  "forward_earnings_yield": 0.0543,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit regarding monopoly practices in social media and advertising",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Active SEC investigation into data privacy and financial disclosures",
-      "impact": "high"
-    },
-    {
-      "type": "competitive",
-      "summary": "Intense competition from TikTok and other platforms threatening ad revenue through 2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

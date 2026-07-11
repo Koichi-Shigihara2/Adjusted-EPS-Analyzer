@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 298608267.4012857,
   "intrinsic_value_per_share": 3.1276708358838388,
   "intrinsic_value_beta": 2.3,
-  "upside_percent_beta": -88.7,
+  "upside_percent_beta": -88.6,
   "intrinsic_value_rf": 10.95,
-  "upside_percent_rf": -46.0,
+  "upside_percent_rf": -45.5,
   "v0": 298608267.4012857,
   "v0_adjusted": 298608267.4012857,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 3.89,
       "value_growth_pct": 24.3,
-      "expected_return_pct": -80.8
+      "expected_return_pct": -80.6
     },
     "2年後": {
       "future_value": 4.83,
       "value_growth_pct": 54.3,
-      "expected_return_pct": -76.2
+      "expected_return_pct": -76.0
     },
     "3年後": {
       "future_value": 6.01,
       "value_growth_pct": 92.0,
-      "expected_return_pct": -70.4
+      "expected_return_pct": -70.1
     },
     "4年後": {
       "future_value": 7.47,
       "value_growth_pct": 138.7,
-      "expected_return_pct": -63.2
+      "expected_return_pct": -62.8
     },
     "5年後": {
       "future_value": 9.28,
       "value_growth_pct": 196.5,
-      "expected_return_pct": -54.3
+      "expected_return_pct": -53.8
     }
   },
-  "upside_percent": -84.6,
-  "calculation_date": "2026-07-11T01:38:56+09:00",
+  "upside_percent": -84.4,
+  "calculation_date": "2026-07-11T20:41:22+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -181,6 +181,7 @@
     "fiscal_year": 2025,
     "fcf_value": -102168000,
     "threshold_pct": 0.0,
+    "deviation_pct": null,
     "transient_evidence": {
       "found": true,
       "source": "adjusted_eps_analyzer",
@@ -290,7 +291,7 @@
     "roe_10yr_avg": -0.5806867304196929,
     "roe_years_used": 4,
     "roe_outlier_adj": true,
-    "current_price": 20.285,
+    "current_price": 20.09,
     "latest_revenue": 24587000.0,
     "rpo": 42400000,
     "beta": 2.1,
@@ -320,13 +321,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -52.01282,
+    "per": -51.51282,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 603.8638,
+    "ps": 598.0588,
     "ev_ebitda": null,
-    "ma200": 24.1497,
+    "ma200": 24.1218,
     "forward_eps": -0.39,
     "analyst_target_median": 40.0,
     "analyst_target_mean": 37.38533,
@@ -342,7 +343,7 @@
     "insider_latest_date": "2026-06-16",
     "analyst_vs_iv": 1178.9,
     "max_eps": 0.0612,
-    "max_eps_per": 331.5,
+    "max_eps_per": 328.3,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -372,7 +373,7 @@
   "phase1_growth": 0.2427192636959137,
   "tanuki_score": "PASS",
   "funda_score": 10,
-  "score_comment": "割高(-85%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
+  "score_comment": "割高(-84%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {
@@ -424,7 +425,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "computed_runway_months": 53.50936132060546,
-  "net_current_assets_ratio": 0.077,
+  "net_current_assets_ratio": 0.0778,
   "dupont": {
     "excluded": true,
     "reason": "revenue_too_small"
@@ -448,6 +449,7 @@
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
+    "floor_hit": false,
     "phase1_growth": -0.4175,
     "industry_benchmark": null,
     "damodaran_industry": null,
@@ -469,25 +471,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0622,
-  "forward_earnings_yield": -0.0192,
+  "erp": -0.0624,
+  "forward_earnings_yield": -0.0194,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against D-Wave Quantum Inc.",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning with competitive threats for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
