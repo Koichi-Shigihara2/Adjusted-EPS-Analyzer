@@ -1,5 +1,12 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日4回目: QUALITY-GATES-EPIC-1のPhase 1
+（全テスト実行化・WARN確認済み台帳導入）が完了。CLAUDE_CODE_START.mdのStep 2を
+test_pipeline_logic.py単体からtests/全体実行に変更、config/warn_acknowledged.json
+新設・report_consistency_check.pyにannotate_warn()/load_warn_ledger()追加。
+次はPhase 2（ゲート1: 取得時データ検証）。詳細は本セクション末尾の
+「追記（2026-07-12 同日4回目）」参照）
+
 最終更新: 2026-07-12（同日3回目: QUALITY-GATES-EPIC-1（バグ根絶に向けた
 5段階品質ゲート導入）を優先度：最高で新規登録し、既存タスク（ARCH-DATA-1・
 REGISTER-FLOW-REDESIGN-1・PREFLIGHT-CHECK-1・PREVENT-5・TICKER-AUDIT-1・
@@ -137,6 +144,17 @@ MSFT/NVDA既存2件失敗）を優先度：中で新規登録。
 先行するTEST-STALE-IV-1を正式エントリとして残し優先度を低→中に格上げ、
 TEST-IV-FORMULA-ALPHA-1は削除した。
 
+追記（2026-07-12 同日4回目）: [[QUALITY-GATES-EPIC-1]]のPhase 1
+（即時・低コスト施策）が完了した。CLAUDE_CODE_START.mdのStep 2・
+「よく使うコマンド」内pytest実行の2箇所をtest_pipeline_logic.py単体から
+tests/全体実行に変更（既知例外[[TEST-STALE-IV-1]]のMSFT/NVDAを明記、
+全体実行で新規失敗なしを確認：204 passed/2 known failed）。
+report_consistency_check.pyにWARN確認済み台帳機能を追加し、
+`config/warn_acknowledged.json`に既知WARN3件（ELF WARN-10、MO/XOM WARN-20）を
+事前登録。未登録WARNは`[🆕未確認 WARN-N ...]`と強調表示されるようになった
+（既存の非ブロッキング動作は維持）。単体テスト10件追加、全件パス。
+次はPhase 2（ゲート1: 取得時データ検証）に進む。
+
 ---
 
 ## 📌 このバックログの読み方（2026-06-19 統合で追加）
@@ -226,6 +244,21 @@ docstringではなく型（dataclass等）でコード化し、構造的に間�
 4. **Phase 4（ゲート3）**: 全計算式のゴールデンテスト・性質テスト整備
 5. **Phase 5**: [[TRUST-SUMMARY-EPIC-1]]（可視化）を、上記ゲートで拾いきれない
    構造的限界に対象を絞って再評価
+
+**Phase 1完了（2026-07-12）**:
+- CLAUDE_CODE_START.mdのStep 2・「よく使うコマンド」内pytest実行の2箇所を
+  test_pipeline_logic.py単体からtests/全体実行に変更。既知例外
+  （[[TEST-STALE-IV-1]]のMSFT/NVDA）を明記。
+- 全テスト実行結果: 204 passed / 2 known failed（新規失敗なし）
+- `config/warn_acknowledged.json`を新設し、report_consistency_check.pyに
+  `load_warn_ledger()`/`annotate_warn()`を追加。未登録WARNは
+  `[🆕未確認 WARN-N ...]`と強調表示、既存の非ブロッキング動作は維持。
+  既知3件（ELF WARN-10、MO/XOM WARN-20）を確認済みとして事前登録。
+- 単体テスト10件追加（tests/test_report_consistency_check.py）、全件パス
+- 検証: pytest 204 passed/2 known failed、report_consistency_check.py NG=0/
+  警告3件（確認済み3・未確認0）
+
+次はPhase 2（ゲート1: 取得時データ検証）に進む。
 
 #### 着手条件
 なし。Phase 1は次回セッション即着手可能。Phase 2以降は各Phase完了後に
