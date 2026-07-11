@@ -73,6 +73,15 @@ sector取得経路破損・優先度中）を新規登録。DCF-REL-SYNC-1本体
 report_consistency_check NG=0を確認済み。横断調査で新たに
 [[GROWTH-SANITY-CLASS-SYNC-1]]（growth_sanity.verdictとClassification未連動、
 MO/LOAR/XOMのFLOOR_HIT_REVIEW）を優先度：高で新規登録。
+
+追記（2026-07-11 同日9回目）: DCF-REL-SYNC-1の未決着点①（Policy Bの`excluded`分岐の
+扱い）を再調査した結果、POLICYB-GATE-FIX-1でPolicy Bの呼び出しゲートが変わったことで
+`excluded`分岐が副次的に到達可能になっていたと判明（AMZN/COHRの2銘柄で実際に機能）。
+当初確定していた「デッドコードとして簡略化」の方針は撤回し現状維持に訂正した上で、
+DCF-REL-SYNC-1本体を**完全クローズ**しBACKLOG.mdからBACKLOG_DONE.mdへ全文移動した
+（未決着点①②とも解消済みのため）。移動に伴い、BACKLOG.md内で本エントリを参照していた
+他エントリ（GROWTH-SANITY-CLASS-SYNC-1・FCF-OUTLIER-QUAL-1・SECTOR-FCF-RATE-BROKEN-1）
+のリンク表記を「[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）」に更新した。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -238,124 +247,6 @@ TANUKI SCORE自体の的中率検証が必要。
 
 ---
 
-### [DCF-REL-SYNC-1] report.txtのDCF_Reliability判定にFCF乖離%が未反映
-**優先度:** 高（2026-07-10・中から格上げ）
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
-**状況更新（2026-07-11）:** 関連課題[[GROWTH-FLOOR-VERDICT-1]]は2026-07-11
-コミット`8df1f1172`で完了（BACKLOG_DONE.md参照）。「信頼できない前提のBUYが
-スクリーニングを素通りする」問題のうち、floor値張り付き検知の部分は解消済み。
-本タスク（FCF乖離%の未反映）は引き続き未着手。
-
-**状況更新（2026-07-11 同日2回目）:** 本タスクの実装前調査中に、既存の
-Policy B判定ロジック自体のバグ（`transient_evidence.found`と`action=="excluded"`の
-取り違え）を発見・分離して[[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）
-として先行修正した。この修正により下記「Policy Aとの相互作用」節の例示銘柄
-FLYW（215%乖離）は既にDCF_Reliability=LOW・Classification=WATCHへ是正済みであり、
-影響を受けた30銘柄中27銘柄でTANUKI SCORE分類が変化している。ただし本タスク
-本来の要求（`fcf_outlier`の乖離%を新たな閾値としてDCF_Reliability判定に
-組み込む設計。既存のdetected/actionの真偽判定とは別軸）は引き続き未着手。
-また`fcf_outlier`には乖離%を格納する専用の数値フィールドが存在せず、
-`note`の日本語文字列内にのみ埋め込まれている（正規表現パースが必要）ことが
-調査で判明しており、実装時は`FCFOutlierResult`への`deviation_pct`フィールド
-追加も合わせて検討する。
-
-**状況更新（2026-07-11 同日3回目・セッション最終）:**
-
-**実装済み・コミット済み:**
-- `FCFOutlierResult`に`deviation_pct`フィールドを追加（`note`文字列のパースではなく
-  `analyze_fcf_outlier()`内の計算済み数値をそのまま格納。`rule="latest_negative"`型は
-  概念が成立しないためNone）。report.txt生成時、Policy BでLOW判定の場合に
-  `[DCF-REL-SYNC-1: FCF実績が5年平均から○○%乖離]`として表示に反映済み
-- 当初`action=="excluded"`でも`deviation_pct>=200%`ならLOWに戻す安全弁を追加したが、
-  実データ調査で対象母集団が0件（`action=="excluded"`となる銘柄は全て
-  `fcf_estimation.applied=False`＝Policy A対象でPolicy B自体が発火しないと判明）
-  だったため安全弁は削除し、`action=="excluded"`→NORMAL / `action=="flagged"`→LOWの
-  シンプルな判定に確定（コミット`b5c91180d`）
-
-**未決着（次回以降に判断、指示待ち）:**
-1. ~~Policy Bの`excluded`分岐の扱い：現状データでは構造的に発火し得ないと判明済み
-   （`estimate_fcf_from_eps`のガードAが`action=="excluded"`を`fcf_estimation.applied=False`
-   に強制するため）。①将来`skip_guard_a`が機能した場合に備えたセーフティネットとして
-   残置する ②実質デッドコードとして簡略化を検討する、の2択で保留中~~
-   ✅ 2026-07-11 再調査によりクローズ（詳細は下記「状況更新（同日5回目）」参照）。
-2. ~~Policy A未カバー範囲（ENTG/RMBS等、FCF_Base方式・floor未適用）への対応~~
-   ✅ 2026-07-11 [[POLICYB-GATE-FIX-1]]（完了・BACKLOG_DONE.md参照）で解消。
-
-**状況更新（2026-07-11 同日4回目）:** 上記「未決着」項目2（Policy A未カバー範囲）を
-調査した結果、ENTG/RMBSは実際にはEPS Analyzerデータ未生成による一時的なstale状態
-（applied=False）であり再生成のみで自動解消することが判明。一方で真に構造的に
-Policy A/Bどちらからも判定されないケース（BKNG: FCF実績プラス・乖離36%未説明・
-BUY分類のまま素通り、RBRK: 同241%乖離）を新規発見し、[[POLICYB-GATE-FIX-1]]として
-分離・修正・全銘柄再生成まで完了した（詳細はBACKLOG_DONE.md参照）。
-上記「未決着」項目1（Policy Bのexcluded分岐の扱い）は引き続き未着手。
-
-**状況更新（2026-07-11 同日5回目）:** 上記「未決着」項目1（Policy Bの`excluded`分岐の
-扱い）を[[POLICYB-GATE-FIX-1]]完了後の状態で再調査した結果、**前提が崩れていたことが
-判明した**。当初（POLICYB-GATE-FIX-1着手前）はPolicy Bの呼び出しゲートが
-`fcf_estimation.applied==True`のみだったため、Guard A（`action=="excluded"`なら
-`applied=False`を強制）により`excluded`分岐は構造的に到達不可能と判明し、
-「②デッドコードとして簡略化」の方針を確定していた。しかし[[POLICYB-GATE-FIX-1]]で
-Policy Bの呼び出しゲートが`not _policy_a_fires`（`floor_applied>0 and not applied`の否定）
-に変更された結果、`applied=False`かつ`floor_applied<=0`の場合もPolicy Bが評価される
-ようになり、`excluded`分岐が副次的に到達可能になった。実データ確認では
-**AMZN・COHRの2銘柄が実際にこの分岐に到達し、正しくNORMAL判定を返している**ことを
-確認済み（`test_detected_true_explained_is_normal`・`test_eps_invalid_overrides_explained_true`の
-2テストも、デッドコードのテストではなくこの実挙動を保証する現役テストと判明）。
-そのため「②デッドコードとして簡略化」の方針は撤回し、**現状維持（コード変更なし）**に
-訂正する。`excluded`分岐は「デッドコード」ではなく「AMZN/COHR型の実挙動を保証する
-現役ロジック」として位置づける。
-
-以上により、DCF-REL-SYNC-1の未決着点は**実質的に解消（残る未決着点なし）**となった。
-
-**派生タスク（本日の調査過程で発見・分離登録）:**
-- [[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
-  `transient_found`/`action`取り違えバグ修正
-- [[POLICYB-GATE-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
-  `fcf_estimation.applied`ゲート漏れ修正（BKNG/RBRK型のFCF_Base方式未カバー範囲を解消）
-- [[FCF-OUTLIER-QUAL-1]]（優先度未定・新規登録）: 一過性費用の説明妥当性の定性評価導入
-- [[SECTOR-FCF-RATE-BROKEN-1]]（優先度中・新規登録）: FCF実力推定のsector取得経路破損
-- [[GROWTH-SANITY-CLASS-SYNC-1]]（優先度高・新規登録）: growth_sanity.verdict
-  （AGGRESSIVE/FLOOR_HIT_REVIEW）がDCF_Reliability/Classificationと未連動
-
-#### 問題
-`latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
-例: FLYWで乖離215%）と、`report.txt` の `DCF_Reliability`（NORMAL/LOW表示ロジック）
-が独立して存在し、相互参照されていない。この結果、FCF実績が5年平均から
-大きく乖離している銘柄でもDCF_Reliability=NORMALのまま表示され、
-乖離の大きさが伝わらないまま見過ごされるリスクがある。
-
-#### 格上げ理由（2026-07-10）
-本タスクと[[GROWTH-FLOOR-VERDICT-1]]（完了・BACKLOG_DONE.md参照）はいずれも
-「信頼できない前提のBUYがスクリーニングを素通りする」直接原因であり、
-スクリーニング運用の信頼性に直結するため優先度を高へ格上げする。
-
-#### Policy Aとの相互作用（重要な影響範囲・実装時必須確認事項）
-CLAUDE_CODE_START.md記載のPolicy A（DCF_Reliability=LOWの銘柄はTANUKI SCORE
-分類をBUY/TRIM/HOLD→**WATCHに丸める**、SELL/PASSは維持）により、本タスクの
-実装でFCF乖離の大きい銘柄（例: FLYW 215%乖離）がLOWに格下げされると、
-**表示変更にとどまらずBUY分類自体がWATCHに丸められる**。これはスクリーニング
-精度向上の観点では望ましい効果（乖離の大きいBUYの自動除外）だが、
-分類挙動が変わる銘柄の事前リストアップと影響確認を実装時の必須手順とする
-（Policy A明文化時に影響確認対象とされたCRWV/SOUN/RKLB/JOBY/CEG等、
-既存の該当銘柄への影響も併せて再確認すること）。
-
-#### common/screening/dcf_validity_checker.pyとの関係
-Check C（SEC売上ジャンプ検知）はSEC売上高のみが対象でFCF異常ジャンプは
-対象外という制約があるが、本タスクの実装によりlatest.json側の`fcf_outlier`
-判定がDCF_Reliabilityに反映されるようになれば、report.txt経由でFCF異常も
-実質的に可視化されるため、この制約は実質的に解消される。
-
-#### 対応方針
-report.txt生成時に `fcf_outlier` の乖離%を閾値判定に組み込み、
-一定以上の乖離があればDCF_Reliabilityを自動的にLOWへ格下げする。
-既存のDCF_Reliability判定条件（FCF_Conversion_Rate方式・revenue_floor適用等）
-との優先順位・閾値設計、およびPolicy A発動によるTANUKI SCORE分類変更の
-影響確認を含め、実装は別タスクとして着手する。
-
----
-
 ### [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動
 **優先度:** 高
 **分類:** データ品質 / TANUKI VALUATION
@@ -376,14 +267,14 @@ AGGRESSIVE/FLOOR_HIT_REVIEW）は、report.txtの`[4] 成長率根拠`セクシ�
 実害は限定的。`report_consistency_check.py`のCHECK-20（WARN-20）でも検知されるが、
 WARNは非ブロッキングのため見落とされやすい。
 
-#### [[GROWTH-FLOOR-VERDICT-1]]・[[DCF-REL-SYNC-1]]との関係
+#### [[GROWTH-FLOOR-VERDICT-1]]・[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）との関係
 [[GROWTH-FLOOR-VERDICT-1]]（2026-07-11完了）は、fcf_cagr経路の成長率がfloor値に
 機械的に張り付くケース（MO/LOAR/XOM）の**検知**（`verdict=FLOOR_HIT_REVIEW`・
 `floor_hit`フィールド新設・CHECK-20）を意図的なスコープとして実装しており、
 Classificationへの反映は最初から対象外だった（BACKLOG_DONE.md参照）。
 
-[[DCF-REL-SYNC-1]]が当初から問題意識としていた「信頼できない前提のBUYが
-スクリーニングを素通りする」という同じ課題の、fcf_outlier系列とは別の
+[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）が当初から問題意識としていた
+「信頼できない前提のBUYがスクリーニングを素通りする」という同じ課題の、fcf_outlier系列とは別の
 バリエーション（成長率前提の信頼性）にあたる。[[POLICYB-GATE-FIX-1]]で
 fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ未着手。
 
@@ -465,7 +356,7 @@ cost_in_usd_ticks=15227500（tick単位がnano-USDなら約$0.0152/回）
 **優先度:** 未定（要判断）
 **分類:** データ品質 / TANUKI VALUATION / AI活用
 **登録日:** 2026-07-11
-**発見:** [[DCF-REL-SYNC-1]]実装検討時
+**発見:** [[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）実装検討時
 
 #### 背景
 `fcf_outlier.action`（`excluded`/`flagged`）は、一過性費用の金額が
@@ -482,7 +373,7 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 - 案B: 定性評価は別フィールド（例: `transient_evidence.ai_assessment`）として
   追加し、report.txtに参考情報として表示するのみでaction判定は変えない
   （既存の機械的判定はそのまま維持し、人間の最終判断材料を増やす方向）
-- 案Bの方がリスクが低く、[[DCF-REL-SYNC-1]]のスコープとも独立して着手しやすい
+- 案Bの方がリスクが低く、[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）のスコープとも独立して着手しやすい
 
 #### 着手条件
 なし（設計判断が必要なため、次回セッションで方針確定してから着手）
@@ -495,7 +386,7 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 **優先度:** 中（要判断・緊急ではないが影響範囲は広い）
 **分類:** バグ / TANUKI VALUATION / データ品質
 **登録日:** 2026-07-11
-**発見:** [[DCF-REL-SYNC-1]]関連調査時
+**発見:** [[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）関連調査時
 
 #### 背景
 `adjustments.py`（`estimate_fcf_from_eps`内）のFCF転換率セクター別レート判定・
