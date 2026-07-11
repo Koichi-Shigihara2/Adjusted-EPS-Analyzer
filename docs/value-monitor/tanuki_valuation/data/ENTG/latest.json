@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -82.4,
-  "calculation_date": "2026-07-11T20:48:45+09:00",
+  "calculation_date": "2026-07-12T01:37:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -168,11 +168,11 @@
   "fcf_base": {
     "base_fcf": 386600000.0,
     "method": "recent_2yr",
-    "fcf_5yr_avg": 187687400.0,
+    "fcf_5yr_avg": 239763500.0,
     "fcf_2yr_avg": 386600000.0,
-    "cv": 1.245,
+    "cv": 0.975,
     "cv_threshold": 0.5,
-    "ratio": 1.245,
+    "ratio": 0.975,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -181,7 +181,7 @@
     "fiscal_year": 2025,
     "fcf_value": 505300000,
     "threshold_pct": 0.6,
-    "deviation_pct": 169.2242526669345,
+    "deviation_pct": 110.74934258133536,
     "transient_evidence": {
       "found": true,
       "source": "adjusted_eps_analyzer",
@@ -238,7 +238,7 @@
       "total_transient_amount": 68300000.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($505M)が5年平均($188M)から169%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($505M)が5年平均($240M)から111%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -322,10 +322,10 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-28",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 187687400.0,
+    "fcf_5yr_avg": 239763500.0,
     "fcf_2yr_avg": 386600000.0,
     "fcf_base_used": 418414958.4132829,
     "fcf_base_method": "recent_2yr",
@@ -334,8 +334,7 @@
       505300000,
       267900000,
       250421000,
-      -64567000,
-      -20617000
+      -64567000
     ],
     "diluted_shares": 152300000,
     "roe_10yr_avg": 0.13595760154356237,
@@ -371,7 +370,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.5710219264829619,
-    "per": 84.01734,
+    "per": 84.50581,
     "per_is_forward": false,
     "per_adjusted": 39.33,
     "peg": 1.7,
@@ -397,16 +396,16 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
-        "detail": "(V₀ $10.08B + RPO $0.00B + GO $0.00B) × (1+0.571) / 0.152B + BS $-21.07/株 = $82.96 (差異83.75%)"
+        "detail": "(V₀ $26.91B + RPO $0.00B + GO $0.00B) × (1+0.571) / 0.152B + BS $-21.07/株 = $256.57 (差異64.83%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $2.28B + pv_terminal $5.67B = $7.96B (差異0.00%)"
+        "detail": "2段階: pv_high $4.55B + pv_terminal $16.32B = $20.86B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -489,15 +488,15 @@
   },
   "next_earnings_date": "2026-07-30",
   "segment_configured": false,
-  "phase1_growth_original": 0.15,
+  "phase1_growth_original": 0.4205,
   "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.06367322805922902,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
-    "verdict": "PLAUSIBLE",
+    "verdict": "REVIEW",
     "floor_hit": false,
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.4205,
     "industry_benchmark": null,
     "damodaran_industry": null,
     "damodaran_year": 2025,
@@ -507,15 +506,16 @@
     "recommended_g_median": 0.06367322805922902,
     "recommended_g": 0.06367322805922902,
     "growth_model": "median",
-    "growth_model_reason": "CAGR_max=15.0%のため中央値モデル適用",
+    "growth_model_reason": "CAGR_max=42.0%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "期待剥落開始",
     "signals": [
-      "過去実績(3yr:-0.9% / 5yr:11.4%)より高め（減速想定あり） ℹ️",
       "RR×ROIC(1.3%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
-    "warnings": [],
+    "warnings": [
+      "過去実績(3yr:-0.9% / 5yr:11.4%)の3.7倍超 ⚠️"
+    ],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },

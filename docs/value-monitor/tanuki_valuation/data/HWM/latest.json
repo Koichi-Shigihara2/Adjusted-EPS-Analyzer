@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -82.7,
-  "calculation_date": "2026-07-11T20:43:52+09:00",
+  "calculation_date": "2026-07-12T01:32:57+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -166,13 +166,13 @@
     "pv_tv_rm": 15327934867.641342
   },
   "fcf_base": {
-    "base_fcf": 1336000000.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 788400000.0,
+    "base_fcf": 999000000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 999000000.0,
     "fcf_2yr_avg": 1336000000.0,
-    "cv": 0.801,
+    "cv": 0.486,
     "cv_threshold": 0.5,
-    "ratio": 0.801,
+    "ratio": 0.486,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -180,8 +180,8 @@
     "rule": "deviation_large",
     "fiscal_year": 2025,
     "fcf_value": 1656000000,
-    "threshold_pct": 0.6,
-    "deviation_pct": 110.04566210045664,
+    "threshold_pct": 0.2,
+    "deviation_pct": 65.76576576576578,
     "transient_evidence": {
       "found": false,
       "source": null,
@@ -196,7 +196,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($1656M)が5年平均($788M)から110%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($1656M)が5年平均($999M)から66%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -204,10 +204,10 @@
     "adj_net_income": 1477914798.206278,
     "conversion_rate": 0.7,
     "estimated_fcf": 1034540358.7443945,
-    "raw_fcf": 1336000000.0,
+    "raw_fcf": 999000000.0,
     "sector": "",
-    "note": "調整済み純利益$1.48B × 転換率70%[sector()] = 推定FCF$1.03B（従来$1.34Bの0.8倍）",
-    "divergence_ratio": 0.77,
+    "note": "調整済み純利益$1.48B × 転換率70%[sector()] = 推定FCF$1.03B（従来$1.00Bの1.0倍）",
+    "divergence_ratio": 1.04,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -280,20 +280,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 788400000.0,
+    "fcf_5yr_avg": 999000000.0,
     "fcf_2yr_avg": 1336000000.0,
     "fcf_base_used": 1034540358.7443945,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       1656000000,
       1016000000,
       818000000,
-      506000000,
-      -54000000
+      506000000
     ],
     "diluted_shares": 400107483,
     "roe_10yr_avg": 0.10197624243346434,
@@ -355,16 +354,16 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
-        "detail": "(V₀ $24.93B + RPO $0.00B + GO $0.00B) × (1+0.428) / 0.400B + BS $-4.50/株 = $84.51 (差異46.16%)"
+        "detail": "(V₀ $82.08B + RPO $0.00B + GO $0.00B) × (1+0.428) / 0.400B + BS $-4.50/株 = $288.51 (差異43.79%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $5.75B + pv_terminal $15.66B = $21.41B (差異0.00%)"
+        "detail": "2段階: pv_high $13.41B + pv_terminal $56.17B = $69.59B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -447,15 +446,15 @@
   },
   "next_earnings_date": "2026-08-06",
   "segment_configured": false,
-  "phase1_growth_original": 0.15,
+  "phase1_growth_original": 0.4847,
   "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.10151924673928364,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
-    "verdict": "PLAUSIBLE",
+    "verdict": "AGGRESSIVE",
     "floor_hit": false,
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.4847,
     "industry_benchmark": 0.10875156954339793,
     "damodaran_industry": "Aerospace/Defense",
     "damodaran_year": 2025,
@@ -465,16 +464,17 @@
     "recommended_g_median": 0.10151924673928364,
     "recommended_g": 0.10151924673928364,
     "growth_model": "median",
-    "growth_model_reason": "CAGR_max=15.0%のため中央値モデル適用",
+    "growth_model_reason": "CAGR_max=48.5%のため中央値モデル適用",
     "hype_phase_used": 3,
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "陶酔期入り",
     "signals": [
-      "業界平均Aerospace/Defense(10.9%)の1.4倍以内 ✅",
-      "過去実績(3yr:13.4% / 5yr:9.4%)と整合 ✅",
       "RR×ROIC(2.2%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
-    "warnings": [],
+    "warnings": [
+      "業界平均Aerospace/Defense(10.9%)の4.5倍超 ⚠️",
+      "過去実績(3yr:13.4% / 5yr:9.4%)の3.6倍超 ⚠️"
+    ],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },

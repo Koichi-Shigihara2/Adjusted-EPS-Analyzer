@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -74.0,
-  "calculation_date": "2026-07-11T20:48:32+09:00",
+  "calculation_date": "2026-07-12T01:37:05+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -166,55 +166,30 @@
     "pv_tv_rm": 4525798558.773503
   },
   "fcf_base": {
-    "base_fcf": 334220000.0,
+    "base_fcf": 396425000.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 334220000.0,
+    "fcf_5yr_avg": 396425000.0,
     "fcf_2yr_avg": 394750000.0,
-    "cv": 0.439,
+    "cv": 0.135,
     "cv_threshold": 0.5,
-    "ratio": 0.439,
+    "ratio": 0.135,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": true,
-    "rule": "deviation_large",
+    "detected": false,
+    "rule": "none",
     "fiscal_year": 2025,
     "fcf_value": 459200000,
-    "threshold_pct": 0.2,
-    "deviation_pct": 37.39453054874035,
+    "threshold_pct": 0.0,
+    "deviation_pct": null,
     "transient_evidence": {
-      "found": true,
-      "source": "adjusted_eps_analyzer",
-      "items": [
-        {
-          "category": "リストラ・事業再編関連",
-          "item_name": "リストラ費用",
-          "amount": 7100000,
-          "reason": "一過性の事業再編費用"
-        },
-        {
-          "category": "リストラ・事業再編関連",
-          "item_name": "リストラ費用",
-          "amount": 900000,
-          "reason": "一過性の事業再編費用"
-        },
-        {
-          "category": "リストラ・事業再編関連",
-          "item_name": "リストラ費用",
-          "amount": 800000.0,
-          "reason": "一過性の事業再編費用"
-        },
-        {
-          "category": "リストラ・事業再編関連",
-          "item_name": "リストラ費用",
-          "amount": 800000,
-          "reason": "一過性の事業再編費用"
-        }
-      ],
-      "total_transient_amount": 9600000.0
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0.0
     },
-    "action": "flagged",
-    "note": "FY2025 FCF($459M)が5年平均($334M)から37%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "action": "none",
+    "note": ""
   },
   "fcf_estimation": {
     "applied": true,
@@ -222,10 +197,10 @@
     "adj_net_income": 518153295.4712775,
     "conversion_rate": 0.7,
     "estimated_fcf": 362707306.8298942,
-    "raw_fcf": 334220000.0,
+    "raw_fcf": 396425000.0,
     "sector": "",
-    "note": "調整済み純利益$0.52B × 転換率70%[sector()] = 推定FCF$0.36B（従来$0.33Bの1.1倍）",
-    "divergence_ratio": 1.09,
+    "note": "調整済み純利益$0.52B × 転換率70%[sector()] = 推定FCF$0.36B（従来$0.40Bの0.9倍）",
+    "divergence_ratio": 0.91,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -292,16 +267,16 @@
     "bull": {
       "growth_rate": 0.077,
       "rice": 0.269,
-      "rice_per_ratio": 0.0056,
+      "rice_per_ratio": 0.0057,
       "rice_adj": 0.58
     }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 334220000.0,
+    "fcf_5yr_avg": 396425000.0,
     "fcf_2yr_avg": 394750000.0,
     "fcf_base_used": 362707306.8298942,
     "fcf_base_method": "avg_5yr",
@@ -310,8 +285,7 @@
       459200000,
       330300000,
       386200000,
-      410000000,
-      85400000
+      410000000
     ],
     "diluted_shares": 70647595,
     "roe_10yr_avg": 0.18367218736919738,
@@ -347,7 +321,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.7714231869506288,
-    "per": 47.863327,
+    "per": 47.414207,
     "per_is_forward": false,
     "per_adjusted": 43.95,
     "peg": 3.4,
@@ -373,7 +347,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -396,9 +370,9 @@
     "overall": "WARN",
     "ai_comment": null
   },
-  "tanuki_score": "WATCH",
+  "tanuki_score": "TRIM",
   "funda_score": 80,
-  "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
+  "score_comment": "割高(-74%超)、FCF黒字、売上安定成長",
   "timing_score": 30,
   "sell_reason": null,
   "matrix": {

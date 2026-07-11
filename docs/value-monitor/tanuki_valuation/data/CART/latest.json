@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 42.2,
-  "calculation_date": "2026-07-11T20:35:51+09:00",
+  "calculation_date": "2026-07-12T01:25:51+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -178,13 +178,13 @@
     "pv_tv_rm": 10915697982.518948
   },
   "fcf_base": {
-    "base_fcf": 847000000.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 579250000.0,
+    "base_fcf": 752000000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 752000000.0,
     "fcf_2yr_avg": 847000000.0,
-    "cv": 0.642,
+    "cv": 0.224,
     "cv_threshold": 0.5,
-    "ratio": 0.642,
+    "ratio": 0.224,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -209,10 +209,10 @@
     "adj_net_income": 744923495.2972155,
     "conversion_rate": 0.7,
     "estimated_fcf": 521446446.7080508,
-    "raw_fcf": 847000000.0,
+    "raw_fcf": 752000000.0,
     "sector": "",
-    "note": "調整済み純利益$0.74B × 転換率70%[sector()] = 推定FCF$0.52B（従来$0.85Bの0.6倍）",
-    "divergence_ratio": 0.62,
+    "note": "調整済み純利益$0.74B × 転換率70%[sector()] = 推定FCF$0.52B（従来$0.75Bの0.7倍）",
+    "divergence_ratio": 0.69,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -265,19 +265,18 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 4,
+  "fcf_ttm_periods": 3,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 579250000.0,
+    "fcf_5yr_avg": 752000000.0,
     "fcf_2yr_avg": 847000000.0,
     "fcf_base_used": 610446446.7080507,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       882000000,
       812000000,
-      562000000,
-      61000000
+      562000000
     ],
     "diluted_shares": 235029814,
     "roe_10yr_avg": -0.03575283332567214,
@@ -313,13 +312,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 26.734808,
+    "per": 26.883333,
     "per_is_forward": false,
     "per_adjusted": 16.83,
     "peg": 2.63,
     "ps": 2.9433467,
     "ev_ebitda": 18.071,
-    "ma200": 40.474,
+    "ma200": 40.50475,
     "forward_eps": 4.74414,
     "analyst_target_median": 50.0,
     "analyst_target_mean": 50.38462,
@@ -339,7 +338,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {

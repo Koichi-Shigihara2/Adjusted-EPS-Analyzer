@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -44.4,
-  "calculation_date": "2026-07-11T20:48:39+09:00",
+  "calculation_date": "2026-07-12T01:37:12+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -178,13 +178,13 @@
     "pv_tv_rm": 4687021068.5944805
   },
   "fcf_base": {
-    "base_fcf": 284271000.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 198022800.0,
+    "base_fcf": 237295750.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 237295750.0,
     "fcf_2yr_avg": 284271000.0,
-    "cv": 0.537,
+    "cv": 0.291,
     "cv_threshold": 0.5,
-    "ratio": 0.537,
+    "ratio": 0.291,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -192,8 +192,8 @@
     "rule": "deviation_large",
     "fiscal_year": 2025,
     "fcf_value": 335209000,
-    "threshold_pct": 0.6,
-    "deviation_pct": 69.27798213135054,
+    "threshold_pct": 0.2,
+    "deviation_pct": 41.26211699956699,
     "transient_evidence": {
       "found": false,
       "source": null,
@@ -201,7 +201,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($335M)が5年平均($198M)から69%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($335M)が5年平均($237M)から41%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -209,10 +209,10 @@
     "adj_net_income": 275793042.37485445,
     "conversion_rate": 0.7,
     "estimated_fcf": 193055129.6623981,
-    "raw_fcf": 284271000.0,
+    "raw_fcf": 237295750.0,
     "sector": "",
-    "note": "調整済み純利益$0.28B × 転換率70%[sector()] = 推定FCF$0.19B（従来$0.28Bの0.7倍）",
-    "divergence_ratio": 0.68,
+    "note": "調整済み純利益$0.28B × 転換率70%[sector()] = 推定FCF$0.19B（従来$0.24Bの0.8倍）",
+    "divergence_ratio": 0.81,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -267,38 +267,37 @@
     "bear": {
       "growth_rate": 0.111,
       "rice": 0.529,
-      "rice_per_ratio": 0.0097,
+      "rice_per_ratio": 0.0099,
       "rice_adj": 6.463
     },
     "base": {
       "growth_rate": 0.159,
       "rice": 0.757,
-      "rice_per_ratio": 0.0139,
+      "rice_per_ratio": 0.0142,
       "rice_adj": 9.258
     },
     "bull": {
       "growth_rate": 0.191,
       "rice": 0.91,
-      "rice_per_ratio": 0.0167,
+      "rice_per_ratio": 0.017,
       "rice_adj": 11.121
     }
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 198022800.0,
+    "fcf_5yr_avg": 237295750.0,
     "fcf_2yr_avg": 284271000.0,
     "fcf_base_used": 221270796.32906476,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       335209000,
       233333000,
       177489000,
-      203152000,
-      40931000
+      203152000
     ],
     "diluted_shares": 108136967,
     "roe_10yr_avg": 0.03288687055338853,
@@ -334,7 +333,7 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.1381248563242318,
-    "per": 54.417477,
+    "per": 53.380955,
     "per_is_forward": false,
     "per_adjusted": 44.49,
     "peg": 3.8,
@@ -360,16 +359,16 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": false,
-        "detail": "(V₀ $6.30B + RPO $0.00B + GO $0.00B) × (1+0.138) / 0.108B + BS $+1.24/株 = $67.57 (差異13.52%)"
+        "detail": "(V₀ $7.46B + RPO $0.00B + GO $0.00B) × (1+0.138) / 0.108B + BS $+1.24/株 = $79.75 (差異13.57%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.56B + pv_terminal $1.96B = $3.52B (差異0.00%)"
+        "detail": "2段階: pv_high $1.74B + pv_terminal $2.37B = $4.11B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -452,7 +451,7 @@
   },
   "next_earnings_date": "2026-07-28",
   "segment_configured": false,
-  "phase1_growth_original": 0.15,
+  "phase1_growth_original": 0.1817,
   "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.15877065457466877,
   "fcf_margin_bear_mult_applied": false,
@@ -460,7 +459,7 @@
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.1817,
     "industry_benchmark": null,
     "damodaran_industry": null,
     "damodaran_year": 2025,

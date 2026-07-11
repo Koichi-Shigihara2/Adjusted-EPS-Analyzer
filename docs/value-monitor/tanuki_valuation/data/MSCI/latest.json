@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -46.4,
-  "calculation_date": "2026-07-11T20:44:52+09:00",
+  "calculation_date": "2026-07-12T01:33:48+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -196,55 +196,30 @@
     "pv_tv_rm": 18039581332.416756
   },
   "fcf_base": {
-    "base_fcf": 1123203200.0,
+    "base_fcf": 1343271500.0,
     "method": "avg_5yr",
-    "fcf_5yr_avg": 1123203200.0,
+    "fcf_5yr_avg": 1343271500.0,
     "fcf_2yr_avg": 1512563000.0,
-    "cv": 0.467,
+    "cv": 0.156,
     "cv_threshold": 0.5,
-    "ratio": 0.467,
+    "ratio": 0.156,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": true,
-    "rule": "deviation_large",
+    "detected": false,
+    "rule": "none",
     "fiscal_year": 2025,
     "fcf_value": 1563027000,
-    "threshold_pct": 0.2,
-    "deviation_pct": 39.15799029062595,
+    "threshold_pct": 0.0,
+    "deviation_pct": null,
     "transient_evidence": {
-      "found": true,
-      "source": "adjusted_eps_analyzer",
-      "items": [
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 2000000,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 710000,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 573000.0,
-          "reason": "マクロ変動による一時的影響"
-        },
-        {
-          "category": "金融関連",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 734000,
-          "reason": "マクロ変動による一時的影響"
-        }
-      ],
-      "total_transient_amount": 4017000.0
+      "found": false,
+      "source": null,
+      "items": [],
+      "total_transient_amount": 0.0
     },
-    "action": "flagged",
-    "note": "FY2025 FCF($1563M)が5年平均($1123M)から39%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "action": "none",
+    "note": ""
   },
   "fcf_estimation": {
     "applied": true,
@@ -252,10 +227,10 @@
     "adj_net_income": 1437149089.1080613,
     "conversion_rate": 0.7,
     "estimated_fcf": 1006004362.3756429,
-    "raw_fcf": 1123203200.0,
+    "raw_fcf": 1343271500.0,
     "sector": "",
-    "note": "調整済み純利益$1.44B × 転換率70%[sector()] = 推定FCF$1.01B（従来$1.12Bの0.9倍）",
-    "divergence_ratio": 0.9,
+    "note": "調整済み純利益$1.44B × 転換率70%[sector()] = 推定FCF$1.01B（従来$1.34Bの0.7倍）",
+    "divergence_ratio": 0.75,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -308,10 +283,10 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 1123203200.0,
+    "fcf_5yr_avg": 1343271500.0,
     "fcf_2yr_avg": 1512563000.0,
     "fcf_base_used": 1050940695.7089763,
     "fcf_base_method": "avg_5yr",
@@ -320,8 +295,7 @@
       1563027000,
       1462099000,
       1251222000,
-      1096738000,
-      242930000
+      1096738000
     ],
     "diluted_shares": 72727592,
     "roe_10yr_avg": 0.7790061145302385,
@@ -383,7 +357,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -407,9 +381,9 @@
     "ai_comment": null
   },
   "phase1_growth": 0.11707823751600754,
-  "tanuki_score": "WATCH",
+  "tanuki_score": "HOLD",
   "funda_score": 90,
-  "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
+  "score_comment": "割高(-46%超)、FCF黒字、売上安定成長",
   "timing_score": 40,
   "sell_reason": null,
   "matrix": {

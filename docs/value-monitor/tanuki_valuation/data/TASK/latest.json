@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 177.8,
-  "calculation_date": "2026-07-11T20:45:19+09:00",
+  "calculation_date": "2026-07-12T01:34:13+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -160,13 +160,13 @@
     "pv_tv_rm": 1340771659.9093716
   },
   "fcf_base": {
-    "base_fcf": 80996500.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 85122000.0,
+    "base_fcf": 88018000,
+    "method": "recent_1yr",
+    "fcf_5yr_avg": 101622500.0,
     "fcf_2yr_avg": 80996500.0,
-    "cv": 0.5,
+    "cv": 0.241,
     "cv_threshold": 0.5,
-    "ratio": 0.5,
+    "ratio": 0.241,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -191,10 +191,10 @@
     "adj_net_income": 140085542.27140176,
     "conversion_rate": 0.7,
     "estimated_fcf": 98059879.58998123,
-    "raw_fcf": 80996500.0,
+    "raw_fcf": 88018000,
     "sector": "",
-    "note": "調整済み純利益$0.14B × 転換率70%[sector()] = 推定FCF$0.10B（従来$0.08Bの1.2倍）",
-    "divergence_ratio": 1.21,
+    "note": "調整済み純利益$0.14B × 転換率70%[sector()] = 推定FCF$0.10B（従来$0.09Bの1.1倍）",
+    "divergence_ratio": 1.11,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -267,20 +267,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 85122000.0,
+    "fcf_5yr_avg": 101622500.0,
     "fcf_2yr_avg": 80996500.0,
     "fcf_base_used": 98059879.58998123,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "recent_1yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       88018000,
       73975000,
       121841000,
-      122656000,
-      19120000
+      122656000
     ],
     "diluted_shares": 91578205,
     "roe_10yr_avg": 0.07392398651757683,
@@ -342,7 +341,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {

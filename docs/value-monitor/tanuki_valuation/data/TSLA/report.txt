@@ -1,16 +1,16 @@
 TSLA INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-11T20:42:40+09:00
+Generated: 2026-07-12T01:31:45+09:00
 Price: $407.76
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: WATCH
 Funda_Score: 65/100
 Timing_Score (components):
   Deviation_Rate: -87.4%
   MA200_Deviation: -2.5%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $455 median ($125-$600) | 40 analysts | vs IV: +782.3%
-Comment: 割高(-87%超)、FCF黒字、売上安定成長
+Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -81,7 +81,11 @@ FCF_Conversion_Rate: 0.7 (Industry: Auto Manufacturers)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $4,342M (= Adj_NI $6,203M × FCF_Conv 0.7)
-DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
+DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
+   大幅乖離（eps_invalid）のため、IVは参考値扱い。]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から27%乖離]
 DCF_FCF_PV: $56.54B (Ph1=$29.37B + Ph2=$27.17B, 4yr, pre-alpha, Rm=10%)
 DCF_TV_PV:  $100.74B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $157.28B (= FCF_PV + TV_PV, Rm=10% enterprise value)

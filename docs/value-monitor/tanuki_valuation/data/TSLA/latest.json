@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -87.4,
-  "calculation_date": "2026-07-11T20:42:40+09:00",
+  "calculation_date": "2026-07-12T01:31:45+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -241,30 +241,43 @@
     "pv_phase2_rm": 27172843650.37589
   },
   "fcf_base": {
-    "base_fcf": 7088500000.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 4927400000.0,
+    "base_fcf": 5571500000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 5571500000.0,
     "fcf_2yr_avg": 7088500000.0,
-    "cv": 0.53,
+    "cv": 0.451,
     "cv_threshold": 0.5,
-    "ratio": 0.53,
+    "ratio": 0.451,
     "threshold": 0.5
   },
   "fcf_outlier": {
-    "detected": false,
-    "rule": "none",
+    "detected": true,
+    "rule": "deviation_large",
     "fiscal_year": 2025,
     "fcf_value": 7074000000,
-    "threshold_pct": 0.0,
-    "deviation_pct": null,
+    "threshold_pct": 0.2,
+    "deviation_pct": 26.96760297944898,
     "transient_evidence": {
-      "found": false,
-      "source": null,
-      "items": [],
-      "total_transient_amount": 0.0
+      "found": true,
+      "source": "adjusted_eps_analyzer",
+      "items": [
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 152000000.0,
+          "reason": "一過性の事業再編費用"
+        },
+        {
+          "category": "リストラ・事業再編関連",
+          "item_name": "リストラ費用",
+          "amount": 238000000,
+          "reason": "一過性の事業再編費用"
+        }
+      ],
+      "total_transient_amount": 390000000.0
     },
-    "action": "none",
-    "note": ""
+    "action": "flagged",
+    "note": "FY2025 FCF($7074M)が5年平均($5572M)から27%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -272,10 +285,10 @@
     "adj_net_income": 6203002425.605883,
     "conversion_rate": 0.7,
     "estimated_fcf": 4342101697.924118,
-    "raw_fcf": 7088500000.0,
+    "raw_fcf": 5571500000.0,
     "sector": "",
-    "note": "調整済み純利益$6.20B × 転換率70%[sector()] = 推定FCF$4.34B（従来$7.09Bの0.6倍）",
-    "divergence_ratio": 0.61,
+    "note": "調整済み純利益$6.20B × 転換率70%[sector()] = 推定FCF$4.34B（従来$5.57Bの0.8倍）",
+    "divergence_ratio": 0.78,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -328,20 +341,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 4927400000.0,
+    "fcf_5yr_avg": 5571500000.0,
     "fcf_2yr_avg": 7088500000.0,
     "fcf_base_used": 6891768364.590784,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       7074000000,
       7103000000,
       1845000000,
-      6264000000,
-      2351000000
+      6264000000
     ],
     "diluted_shares": 3755723871,
     "roe_10yr_avg": -0.005439994944558565,
@@ -403,7 +415,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -426,9 +438,9 @@
     "overall": "PASS",
     "ai_comment": null
   },
-  "tanuki_score": "TRIM",
+  "tanuki_score": "WATCH",
   "funda_score": 65,
-  "score_comment": "割高(-87%超)、FCF黒字、売上安定成長",
+  "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {

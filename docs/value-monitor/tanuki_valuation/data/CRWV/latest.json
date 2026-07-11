@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 195.3,
-  "calculation_date": "2026-07-11T20:37:20+09:00",
+  "calculation_date": "2026-07-12T01:27:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -229,7 +229,7 @@
     "base_fcf": 410480000.0,
     "method": "avg_5yr",
     "fcf_5yr_avg": 410480000.0,
-    "fcf_2yr_avg": -9084551500.0,
+    "fcf_2yr_avg": -6546000000.0,
     "cv": 999.0,
     "cv_threshold": 0.5,
     "ratio": 999.0,
@@ -239,7 +239,7 @@
     "detected": true,
     "rule": "latest_negative",
     "fiscal_year": 2025,
-    "fcf_value": -10587000000,
+    "fcf_value": -7193000000,
     "threshold_pct": 0.0,
     "deviation_pct": null,
     "transient_evidence": {
@@ -249,7 +249,7 @@
       "total_transient_amount": 0.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($-10587.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($-7193.0M)がマイナス。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": false,
@@ -311,20 +311,20 @@
     "warnings": true,
     "note": "Q計算不可（OCF/純利益データなし）"
   },
-  "fcf_source": "ttm_series",
-  "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 3,
+  "fcf_source": "annual_fallback",
+  "fcf_ttm_end": null,
+  "fcf_ttm_periods": 0,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": -5957333333.333333,
-    "fcf_2yr_avg": -9084551500.0,
+    "fcf_5yr_avg": -4731333333.333333,
+    "fcf_2yr_avg": -6546000000.0,
     "fcf_base_used": 723980000.0,
     "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
-      -10587000000,
-      -7582103000,
-      297103000
+      -7193000000,
+      -5899000000,
+      -1102000000
     ],
     "diluted_shares": 545570346,
     "roe_10yr_avg": -0.34992503748125936,
@@ -352,7 +352,7 @@
     "pv_high": 34875112929.1515,
     "pv_terminal": 68065479949.2949,
     "roe_used": -0.34992503748125936,
-    "fcf_floor_applied": 6367813333.333333,
+    "fcf_floor_applied": 5141813333.333333,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
     "bear_multiplier": 0.7,
@@ -386,7 +386,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {

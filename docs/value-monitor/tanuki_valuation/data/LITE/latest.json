@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -96.9,
-  "calculation_date": "2026-07-11T20:39:27+09:00",
+  "calculation_date": "2026-07-12T01:28:51+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -160,13 +160,13 @@
     "pv_tv_rm": 1672521566.7741828
   },
   "fcf_base": {
-    "base_fcf": 62060000.0,
-    "method": "avg_5yr",
-    "fcf_5yr_avg": 62060000.0,
+    "base_fcf": 5050000.0,
+    "method": "recent_2yr",
+    "fcf_5yr_avg": 6975000.0,
     "fcf_2yr_avg": 5050000.0,
-    "cv": 999.0,
+    "cv": 18.564,
     "cv_threshold": 0.5,
-    "ratio": 999.0,
+    "ratio": 18.564,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -175,7 +175,7 @@
     "fiscal_year": 2025,
     "fcf_value": 114000000,
     "threshold_pct": 0.6,
-    "deviation_pct": 83.6932001289075,
+    "deviation_pct": 1534.4086021505377,
     "transient_evidence": {
       "found": true,
       "source": "adjusted_eps_analyzer",
@@ -214,7 +214,7 @@
       "total_transient_amount": 26200000
     },
     "action": "flagged",
-    "note": "FY2025 FCF($114M)が5年平均($62M)から84%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($114M)が5年平均($7M)から1534%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -222,11 +222,11 @@
     "adj_net_income": 31242117.98839459,
     "conversion_rate": 0.7,
     "estimated_fcf": 21869482.59187621,
-    "raw_fcf": 62060000.0,
+    "raw_fcf": 5050000.0,
     "sector": "",
-    "note": "調整済み純利益$0.03B × 転換率70%[sector()] = 推定FCF$0.02B（従来$0.06Bの0.4倍）",
-    "divergence_ratio": 0.35,
-    "divergence_warning": ""
+    "note": "調整済み純利益$0.03B × 転換率70%[sector()] = 推定FCF$0.02B（従来$0.01Bの4.3倍）",
+    "divergence_ratio": 4.33,
+    "divergence_warning": "FCF推定値が生FCFの4.3倍。推定FCF$0.0Bを採用。生FCF（$0.0B）との乖離を確認してください。"
   },
   "rd_capitalization": {
     "applied": true,
@@ -296,20 +296,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-28",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 62060000.0,
+    "fcf_5yr_avg": 6975000.0,
     "fcf_2yr_avg": 5050000.0,
     "fcf_base_used": 79969482.59187621,
-    "fcf_base_method": "avg_5yr",
+    "fcf_base_method": "recent_2yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       114000000,
       -103900000,
       -106300000,
-      124100000,
-      282400000
+      124100000
     ],
     "diluted_shares": 77800000,
     "roe_10yr_avg": -0.004014952075889654,
@@ -351,7 +350,7 @@
     "peg": 0.63,
     "ps": 25.0749,
     "ev_ebitda": 113.297,
-    "ma200": 554.1675,
+    "ma200": 557.354,
     "forward_eps": 18.17606,
     "analyst_target_median": 1100.0,
     "analyst_target_mean": 1111.2906,
@@ -371,7 +370,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {

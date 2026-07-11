@@ -1,16 +1,16 @@
 FCX INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-11T20:44:39+09:00
+Generated: 2026-07-12T01:33:36+09:00
 Price: $61.52
 
 [1. TANUKI SCORE]
-Classification: TRIM
+Classification: WATCH
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -73.5%
-  MA200_Deviation: +11.0%
+  Deviation_Rate: -81.3%
+  MA200_Deviation: +10.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $74 median ($31-$82) | 22 analysts | vs IV: +356.7%
-Comment: 割高(-74%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Buy | Target: $74 median ($31-$82) | 22 analysts | vs IV: +548.5%
+Comment: DCF信頼性LOW(FCF_Base方式・外れ値未説明)のためupside依存判定を抑制→WATCH
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.619
-Deviation_Rate: -73.5%
+Deviation_Rate: -81.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,12 +57,12 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $61.52
-Intrinsic_Value_BASE: $16.31
-Deviation_BASE: -73.5%
+Intrinsic_Value_BASE: $11.49
+Deviation_BASE: -81.3%
 Scenarios:
-BEAR: Growth=4.5%, IV=$14.75, Deviation=-76.0%
-BASE: Growth=6.4%, IV=$16.31, Deviation=-73.5%
-BULL: Growth=7.6%, IV=$17.42, Deviation=-71.7%
+BEAR: Growth=4.5%, IV=$10.30, Deviation=-83.3%
+BASE: Growth=6.4%, IV=$11.49, Deviation=-81.3%
+BULL: Growth=7.6%, IV=$12.33, Deviation=-80.0%
 Growth_Rate_Rec: 9.0% (recommended)
 TTM_YoY_Growth: 6.3%
 (DCF Base vs TTM actual: +0.1pt premium)
@@ -71,24 +71,27 @@ WACC_CAPM_Reference: 12.05%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.359
 Valuation_Gap_Analysis:
-  DCF_IV:           $16 (保守的FCFベース・現在実力値)
+  DCF_IV:           $11 (保守的FCFベース・現在実力値)
   Market_Price:     $62
-  Gap:              -74% (市場が将来成長を先取り)
+  Gap:              -81% (市場が将来成長を先取り)
   Implied_FCF_2030: $6.40B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $1.72B
-  Required_Growth:  30%/yr (現在FCFから必要成長率を逆算)
-FCF_Base: $1,717.50M (直近2yr平均)
-DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $7.77B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $21.36B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $29.13B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+  Current_FCF:      $1.31B
+  Required_Growth:  37%/yr (現在FCFから必要成長率を逆算)
+FCF_Base: $1,308.50M (4yr平均)
+DCF_Reliability: LOW ⚠️ (FCF_Base方式: 要注意フラグ検出, IV参考値)
+  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
+   fcf_outlier未解消（一過性費用で説明不可）のため、IVは参考値扱い。]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から37%乖離]
+DCF_FCF_PV: $5.92B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $16.27B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $22.19B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.5560 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $45.33B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $34.53B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $39.65B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-5.68B)
+Equity_Value: $28.86B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-5.68B)
 Shares_Used: 1437.6M (source: yf_implied)
-→ Intrinsic_Value: $16.31 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $11.49 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+5.68B (negative=net cash)
   Total_Debt: $9.41B  Cash: $3.74B
@@ -321,7 +324,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 2.2%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $74 median ($31-$82) | 22 analysts | vs IV: +356.7%
+Analyst_Consensus: Buy | Target: $74 median ($31-$82) | 22 analysts | vs IV: +548.5%
 Insider_Activity: 中立 | 買い0件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 6.3%

@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -79.6,
-  "calculation_date": "2026-07-11T20:45:25+09:00",
+  "calculation_date": "2026-07-12T01:34:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -172,13 +172,13 @@
     "pv_tv_rm": 98001456175.85504
   },
   "fcf_base": {
-    "base_fcf": 17104400000.0,
-    "method": "avg_5yr",
-    "fcf_5yr_avg": 17104400000.0,
+    "base_fcf": 20194000000.0,
+    "method": "avg_5yr_recovery",
+    "fcf_5yr_avg": 20194000000.0,
     "fcf_2yr_avg": 17682500000.0,
-    "cv": 0.441,
+    "cv": 0.174,
     "cv_threshold": 0.5,
-    "ratio": 0.441,
+    "ratio": 0.174,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -203,10 +203,10 @@
     "adj_net_income": 15038735108.759745,
     "conversion_rate": 0.7,
     "estimated_fcf": 10527114576.13182,
-    "raw_fcf": 17104400000.0,
+    "raw_fcf": 20194000000.0,
     "sector": "",
-    "note": "調整済み純利益$15.04B × 転換率70%[sector()] = 推定FCF$10.53B（従来$17.10Bの0.6倍）",
-    "divergence_ratio": 0.62,
+    "note": "調整済み純利益$15.04B × 転換率70%[sector()] = 推定FCF$10.53B（従来$20.19Bの0.5倍）",
+    "divergence_ratio": 0.52,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -279,20 +279,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 17104400000.0,
+    "fcf_5yr_avg": 20194000000.0,
     "fcf_2yr_avg": 17682500000.0,
     "fcf_base_used": 10631114576.13182,
-    "fcf_base_method": "avg_5yr",
+    "fcf_base_method": "avg_5yr_recovery",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       19980000000,
       15385000000,
       21891000000,
-      23520000000,
-      4746000000
+      23520000000
     ],
     "diluted_shares": 1766792821,
     "roe_10yr_avg": 0.6653559911033776,
@@ -354,7 +353,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {

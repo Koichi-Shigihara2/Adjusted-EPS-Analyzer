@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -46.7,
-  "calculation_date": "2026-07-11T20:45:10+09:00",
+  "calculation_date": "2026-07-12T01:34:05+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -178,13 +178,13 @@
     "pv_tv_rm": 5411771401.182311
   },
   "fcf_base": {
-    "base_fcf": 145635500.0,
-    "method": "recent_2yr",
-    "fcf_5yr_avg": 104464800.0,
+    "base_fcf": 128742000.0,
+    "method": "avg_5yr",
+    "fcf_5yr_avg": 128742000.0,
     "fcf_2yr_avg": 145635500.0,
-    "cv": 0.676,
+    "cv": 0.405,
     "cv_threshold": 0.5,
-    "ratio": 0.676,
+    "ratio": 0.405,
     "threshold": 0.5
   },
   "fcf_outlier": {
@@ -192,8 +192,8 @@
     "rule": "deviation_large",
     "fiscal_year": 2025,
     "fcf_value": 202148000,
-    "threshold_pct": 0.6,
-    "deviation_pct": 93.50824392522648,
+    "threshold_pct": 0.2,
+    "deviation_pct": 57.0179117925774,
     "transient_evidence": {
       "found": true,
       "source": "adjusted_eps_analyzer",
@@ -226,7 +226,7 @@
       "total_transient_amount": 17985000.0
     },
     "action": "flagged",
-    "note": "FY2025 FCF($202M)が5年平均($104M)から94%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
+    "note": "FY2025 FCF($202M)が5年平均($129M)から57%乖離。一過性費用の証拠はEPSアナライザーで確認されず。要確認。"
   },
   "fcf_estimation": {
     "applied": true,
@@ -234,10 +234,10 @@
     "adj_net_income": 264670690.5687284,
     "conversion_rate": 0.7,
     "estimated_fcf": 185269483.39810985,
-    "raw_fcf": 145635500.0,
+    "raw_fcf": 128742000.0,
     "sector": "",
-    "note": "調整済み純利益$0.26B × 転換率70%[sector()] = 推定FCF$0.19B（従来$0.15Bの1.3倍）",
-    "divergence_ratio": 1.27,
+    "note": "調整済み純利益$0.26B × 転換率70%[sector()] = 推定FCF$0.19B（従来$0.13Bの1.4倍）",
+    "divergence_ratio": 1.44,
     "divergence_warning": ""
   },
   "rd_capitalization": {
@@ -310,20 +310,19 @@
   },
   "fcf_source": "ttm_series",
   "fcf_ttm_end": "2026-03-31",
-  "fcf_ttm_periods": 5,
+  "fcf_ttm_periods": 4,
   "rice_data_source": "ttm_series",
   "components": {
-    "fcf_5yr_avg": 104464800.0,
+    "fcf_5yr_avg": 128742000.0,
     "fcf_2yr_avg": 145635500.0,
     "fcf_base_used": 204640816.7314432,
-    "fcf_base_method": "recent_2yr",
+    "fcf_base_method": "avg_5yr",
     "fcf_outlier_excl_avg": null,
     "fcf_list_raw": [
       202148000,
       89123000,
       129389000,
-      94308000,
-      7356000
+      94308000
     ],
     "diluted_shares": 104364181,
     "roe_10yr_avg": -0.25451460546640076,
@@ -385,16 +384,16 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-11",
+    "validated_at": "2026-07-12",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $5.83B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.104B + BS $-1.71/株 = $54.14 (差異0.00%)"
+        "detail": "(V₀ $12.00B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.104B + BS $-1.71/株 = $113.24 (差異0.00%)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.52B + pv_terminal $2.29B = $3.81B (差異0.00%)"
+        "detail": "2段階: pv_high $2.49B + pv_terminal $5.10B = $7.59B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -479,7 +478,7 @@
   },
   "next_earnings_date": "2026-08-04",
   "segment_configured": false,
-  "phase1_growth_original": 0.15,
+  "phase1_growth_original": 0.2894,
   "phase1_growth_auto_adjusted": true,
   "recommended_g": 0.19609384714159628,
   "fcf_margin_bear_mult_applied": false,
@@ -487,7 +486,7 @@
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.2894,
     "industry_benchmark": null,
     "damodaran_industry": null,
     "damodaran_year": 2025,
@@ -497,7 +496,7 @@
     "recommended_g_median": 0.19609384714159628,
     "recommended_g": 0.19609384714159628,
     "growth_model": "median",
-    "growth_model_reason": "CAGR_max=23.1%のため中央値モデル適用",
+    "growth_model_reason": "CAGR_max=28.9%のため中央値モデル適用",
     "hype_phase_used": 3,
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "ピークアウト兆候",
