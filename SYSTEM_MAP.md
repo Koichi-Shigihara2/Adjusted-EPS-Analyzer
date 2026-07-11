@@ -1,5 +1,11 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-07-12（TTM-QUARTERS-CHECK-1完了に伴いdata_fetcher.py::TTMReader
+の説明を更新（_select_fcf_source()導入・quarters_used>=4フィルタ反映）、
+report_consistency_check.pyのWARN確認済み台帳（config/warn_acknowledged.json・
+QUALITY-GATES-EPIC-1 Phase 1）を追記、変更時の影響範囲チェックリストに
+data_fetcher.py行を追加）
+
 最終更新: 2026-07-10（銘柄振り分けの正本（cik_lookup.csv）セクション新設、
 システム一覧テーブルの出力先パス誤記5件を修正、STONKS SILOの解像度向上、
 AutoTrade運用実体・OpenD前提を追記、report.txt統合レポートの存在・構成・
@@ -118,6 +124,13 @@ tanuki=false化前の旧データである可能性を疑い、参考値扱い�
 （成長率floor値張り付き・SECデータ異常ジャンプ・投下資本の妥当性・
 HypeCore遷移確率サンプル数の4観点を機械判定。詳細はスクリプト内docstring参照）
 
+**report_consistency_check.pyのWARN確認済み台帳（QUALITY-GATES-EPIC-1 Phase 1・
+2026-07-12新設）:** `config/warn_acknowledged.json`に`(CHECK番号, ticker)`の
+組み合わせを事前登録すると「確認済み」として通常表示される。未登録のWARNは
+実行時に`[🆕未確認 WARN-N ...]`と強調表示される（既存の非ブロッキング動作は
+維持、NG化はしない）。台帳読み込み・照合ロジックは`load_warn_ledger()`/
+`annotate_warn()`（同スクリプト内）、単体テストは`tests/test_report_consistency_check.py`。
+
 ---
 
 ## STONKS SILO（詳細・2026-07-10追記）
@@ -215,9 +228,11 @@ SEC EDGAR
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
-│    読み込み、存在すればSEC 10-Kベースのfcf_5yr_avg/fcf_listを無条件で
-│    上書きする（TTM-QUARTERS-CHECK-1 2026-07-11: quarters_used/missingを
-│    未チェックのため不完全なTTM値が混入する既知の問題あり、対応検討中）
+│    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
+│    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:
+│    OCF・CapEx双方のquarters_used>=4フィルタを追加し不完全TTM値を除外。
+│    TTM点数が年次実績より少ない場合は年次を優先する_select_fcf_source()
+│    ヘルパーも新設。詳細はBACKLOG_DONE.md参照）
 ├─ core_calculator.py    # DCF・理論株価
 ├─ calculator/rice.py    # RICE投資効率
 ├─ calculator/dcf.py     # DCFエンジン
@@ -275,6 +290,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 |---|---|
 | quarterly.py / normalizer.py / ttm_calculator.py | 全銘柄TTM再生成（update.py）→ audit.py |
 | parser.py | 影響銘柄のupdate.py → audit.py |
+| data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）|

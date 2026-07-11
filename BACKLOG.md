@@ -1549,9 +1549,10 @@ NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テ�
 いた。優先度格上げはこの見逃し期間の長さを踏まえた判断。
 
 #### 対応方針
-test_iv_formula.pyの期待値算出ロジックをALPHA-REDESIGN-1後の計算式に更新する。
-CLAUDE_CODE_START.mdのStep 2実行対象にtest_iv_formula.pyを含めるかも
-合わせて検討する（同種見逃しの再発防止、[[QUALITY-GATES-EPIC-1]]Phase 1と連動）。
+test_iv_formula.pyの期待値算出ロジック自体の修正が本タスクの残作業。
+CLAUDE_CODE_START.mdのStep 2実行対象への追加は[[QUALITY-GATES-EPIC-1]]
+Phase 1（2026-07-12完了）でtests/全体実行への変更により対応済み
+（同種見逃しの再発防止は解消、本エントリの残スコープは計算式修正のみ）。
 
 ---
 
