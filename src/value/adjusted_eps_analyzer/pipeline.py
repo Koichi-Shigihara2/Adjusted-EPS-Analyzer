@@ -4,6 +4,7 @@
 import yaml
 import json
 import os
+import sys
 import csv
 import threading
 import requests
@@ -24,6 +25,11 @@ from .fair_value_detector import apply_fair_value_detection
 # プロジェクトルートを取得（pipeline.py の場所から3階層上）
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 print("DEBUG: PROJECT_ROOT =", PROJECT_ROOT)
+
+# common.sec_data.tickers を importできるようにプロジェクトルートをパスに追加
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+from common.sec_data.tickers import get_eps_tickers
 
 # ============================================
 # Alpha Vantage API 差分検知機能
@@ -647,13 +653,14 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
 
 def run(ticker_filter: str = None):
     config_base = os.path.join(PROJECT_ROOT, "config")
-    with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
-        tickers = yaml.safe_load(f)["tickers"]
+    tickers = get_eps_tickers()
 
     if ticker_filter:
+        with open(os.path.join(config_base, "monitor_tickers.yaml"), 'r', encoding='utf-8') as f:
+            monitor_tickers = yaml.safe_load(f)["tickers"]
         requested = [t.strip().upper() for t in ticker_filter.split(',') if t.strip()]
         for t in requested:
-            if t not in tickers:
+            if t not in monitor_tickers:
                 print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
         tickers = requested
 
@@ -668,14 +675,6 @@ def run(ticker_filter: str = None):
 
     cik_data = load_cik_data()
     ticker_to_name = {row['ticker']: row.get('name', '') for row in cik_data}
-
-    # eps 列が "false" の銘柄をスキップ（ticker_filter 未指定時のみ適用）
-    if not ticker_filter:
-        eps_skipped = [row['ticker'] for row in cik_data
-                       if row.get('eps', 'true').strip().lower() == 'false']
-        if eps_skipped:
-            print(f"   ℹ️  EPSスキップ銘柄: {', '.join(eps_skipped)}")
-            tickers = [t for t in tickers if t not in eps_skipped]
 
     maturity_config = adjustment_config.get('maturity_defaults', {})
     split_history = load_split_history()

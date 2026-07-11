@@ -25,6 +25,9 @@ from typing import Optional
 # ── パス解決 ──────────────────────────────────────────────────────────
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT   = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", ".."))
+sys.path.insert(0, _REPO_ROOT)
+
+from common.sec_data import tickers
 
 SEC_DATA_DIR = os.path.join(_REPO_ROOT, "common", "sec_data", "data")
 TTM_DIR      = os.path.join(_REPO_ROOT, "common", "sec_data", "ttm")
@@ -387,7 +390,7 @@ def run(target_tickers: Optional[list] = None, summary_only: bool = False) -> Is
     disc = _load_json(DISCOVER_CFG) or {}
     discover_tickers = set(disc.get("tickers", {}).keys())
 
-    tickers_to_check = target_tickers if target_tickers else monitor_tickers
+    tickers_to_check = target_tickers if target_tickers else tickers.get_all_tickers()
 
     # cik_lookup.csv の eps=false 銘柄を収集（EPS analyzer 非対応銘柄の WARN 抑制用）
     eps_disabled: set = set()
