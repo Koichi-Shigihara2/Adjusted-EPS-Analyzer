@@ -45,6 +45,12 @@ REGISTER-FLOW-REDESIGN-1の分類記載のBXを取り消し線で解消済み表
 BACKLOG_DONE.md内のEPS-BX-1に対象消滅の追記、BX完全削除自体を新規
 BACKLOG_DONE.mdエントリとして記録。TANUKI-FIN-2（JPM・GS対象）にBXの
 記載はなく対応不要と確認済み。
+
+追記（2026-07-11 同日6回目）: GROWTH-FLOOR-VERDICT-1（コミット`8df1f1172`）が
+完了したため、エントリ全文（実装着手前調査・実装完了・検証結果を含む）を
+BACKLOG.mdからBACKLOG_DONE.mdへ完全移動した。同じ2026-07-10格上げ組の
+[[DCF-REL-SYNC-1]]に状況更新（GROWTH-FLOOR-VERDICT-1完了・本タスクは未着手のまま
+残置）を追記。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -210,72 +216,15 @@ TANUKI SCORE自体の的中率検証が必要。
 
 ---
 
-### [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足
-**優先度:** 高（2026-07-10・中から格上げ）
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
-
-#### 問題
-`growth_source=fcf_cagr` で `calculate_fcf_cagr()` の `growth_floor`（15%）に
-成長率が完全一致した場合、実態（実績成長率）との乖離があっても
-`growth_sanity` の `Verdict` が機械的に `PLAUSIBLE` になる。
-2026-07-10の調査ではMO（実績FCF CAGR約2.4%・売上マイナス成長にも関わらず
-15%floor採用でPLAUSIBLE判定）に加え、LOAR・XOMでも同型のfloor張り付きを検出した
-（fcf_cagrソースを使う3銘柄が全てfloor値に一致するという100%的中率だった）。
-
-#### 格上げ理由（2026-07-10）
-以下2点が判明したため、単なる検知不足ではなく既存の恒久対策の穴と判断し格上げする：
-
-a) **修正済みバグ（DCF-DEFAULT-G-1）の回帰・再発の疑い**：
-   MOは[[DCF-DEFAULT-G-1]]（2026-06-15完了、BACKLOG_DONE.md参照）で
-   「G=15%デフォルト問題」を名指しで修正されたはずの銘柄（JNJ/MO/PEP/PM/
-   WMT/VZ等）だが、2026-07-10時点でfcf_cagr経路のfloor値15%を再び採用している。
-   MOのhistory.json（2026-06-14以降）を確認したところ、`growth_rate`は
-   記録が残る全期間（2026-06-14〜2026-07-11）を通じて一貫して0.15のままで、
-   DCF-DEFAULT-G-1修正日（2026-06-15）の前後で変化していない。
-   コードを読む限り、DCF-DEFAULT-G-1は「segment未設定銘柄でも
-   `_GROWTH_OVERRIDES`を有効にする」修正（`get_segment_growth`が
-   `_GROWTH_OVERRIDES`を優先参照するよう変更）だが、この`_GROWTH_OVERRIDES`
-   自体は`recommended_g`が算出できた場合にのみ`pipeline.py`側でセットされる
-   （`if _is_seg_unconfigured and _recommended_g is not None:`の条件下でのみ
-   `set_growth_override`が呼ばれる）。MOはrev_cagr_3yr/5yrが共にマイナスで
-   `recommended_g`の中央値候補から除外されるため`recommended_g`自体がNoneになり、
-   overrideが一度もセットされないまま`determine_growth_rate()`が
-   segment/override経路を素通りしてfcf_cagr経路（独自のfloor=15%を持つ、
-   DCF-DEFAULT-G-1の修正対象外の別経路）に落ちていると推測される。
-   これは「同じ症状が戻った」のではなく「DCF-DEFAULT-G-1の修正範囲が
-   カバーしていなかった隣接経路が表面化した」可能性が高いが、
-   確定にはgit log・当時のhistory.json等でのより詳しい経緯調査が必要
-   （実装着手時に本調査から着手する）。
-
-b) **CHECK-18の構造的な穴**：
-   `report_consistency_check.py`のCHECK-18（DCF-DEFAULT-G-1回帰検知）は
-   「recommended_gあり & phase1_growth_auto_adjusted=False & source≠segment_weighted
-   & rate≈15%」が発火条件のため、**recommended_g自体がNoneになるMO型のケースを
-   構造的に検知できない**。上記a)の推測が正しければ、CHECK-18は
-   「recommended_gが算出できる場合の回帰」しかカバーしておらず、
-   「recommended_gが算出できずfcf_cagr floorに落ちる場合」は検知対象外という
-   構造的な穴が存在する。
-
-#### 対応方針
-1. floor値との完全一致を検知した場合、専用の警告Verdict（例: `FLOOR_HIT_REVIEW`）を
-   出すよう `growth_sanity.py` を修正する
-2. `report_consistency_check.py`に**CHECK-20**（fcf_cagr floor値張り付き検知：
-   `growth_source=fcf_cagr` かつ `rate≈growth_floor(15%)`を機械検知）を追加して
-   恒久化する（CLAUDE_CODE_START.mdの規約「新種バグを修正したら同スクリプトに
-   検出項目を追加して恒久化する」に準拠）
-3. 実装着手時、まずMOのgrowth_source切り替わりの経緯（git log・history.json）を
-   確認し、a)の推測が正しいかを検証してから修正範囲を確定する
-4. 実装は別タスクとして着手する
-
----
-
 ### [DCF-REL-SYNC-1] report.txtのDCF_Reliability判定にFCF乖離%が未反映
 **優先度:** 高（2026-07-10・中から格上げ）
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-10
 **発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+**状況更新（2026-07-11）:** 関連課題[[GROWTH-FLOOR-VERDICT-1]]は2026-07-11
+コミット`8df1f1172`で完了（BACKLOG_DONE.md参照）。「信頼できない前提のBUYが
+スクリーニングを素通りする」問題のうち、floor値張り付き検知の部分は解消済み。
+本タスク（FCF乖離%の未反映）は引き続き未着手。
 
 #### 問題
 `latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
@@ -285,9 +234,9 @@ b) **CHECK-18の構造的な穴**：
 乖離の大きさが伝わらないまま見過ごされるリスクがある。
 
 #### 格上げ理由（2026-07-10）
-本タスクと[[GROWTH-FLOOR-VERDICT-1]]はいずれも「信頼できない前提のBUYが
-スクリーニングを素通りする」直接原因であり、スクリーニング運用の信頼性に
-直結するため優先度を高へ格上げする。
+本タスクと[[GROWTH-FLOOR-VERDICT-1]]（完了・BACKLOG_DONE.md参照）はいずれも
+「信頼できない前提のBUYがスクリーニングを素通りする」直接原因であり、
+スクリーニング運用の信頼性に直結するため優先度を高へ格上げする。
 
 #### Policy Aとの相互作用（重要な影響範囲・実装時必須確認事項）
 CLAUDE_CODE_START.md記載のPolicy A（DCF_Reliability=LOWの銘柄はTANUKI SCORE

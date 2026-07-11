@@ -4,6 +4,86 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [GROWTH-FLOOR-VERDICT-1] 成長率floor値張り付きの検知不足（2026-07-11完了・コミット`8df1f1172`）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**発見:** サテライト投資候補91銘柄への前提妥当性チェック展開時
+
+#### 問題
+`growth_source=fcf_cagr` で `calculate_fcf_cagr()` の `growth_floor`（15%）に
+成長率が完全一致した場合、実態（実績成長率）との乖離があっても
+`growth_sanity` の `Verdict` が機械的に `PLAUSIBLE` になる。
+2026-07-10の調査ではMO（実績FCF CAGR約2.4%・売上マイナス成長にも関わらず
+15%floor採用でPLAUSIBLE判定）に加え、LOAR・XOMでも同型のfloor張り付きを検出した
+（fcf_cagrソースを使う3銘柄が全てfloor値に一致するという100%的中率だった）。
+
+#### 格上げ理由（2026-07-10）
+以下2点が判明したため、単なる検知不足ではなく既存の恒久対策の穴と判断し格上げした：
+
+a) **修正済みバグ（DCF-DEFAULT-G-1）の回帰・再発の疑い**：
+   MOは[[DCF-DEFAULT-G-1]]（2026-06-15完了、BACKLOG_DONE.md参照）で
+   「G=15%デフォルト問題」を名指しで修正されたはずの銘柄（JNJ/MO/PEP/PM/
+   WMT/VZ等）だが、2026-07-10時点でfcf_cagr経路のfloor値15%を再び採用している。
+   MOのhistory.json（2026-06-14以降）を確認したところ、`growth_rate`は
+   記録が残る全期間（2026-06-14〜2026-07-11）を通じて一貫して0.15のままで、
+   DCF-DEFAULT-G-1修正日（2026-06-15）の前後で変化していない。
+   コードを読む限り、DCF-DEFAULT-G-1は「segment未設定銘柄でも
+   `_GROWTH_OVERRIDES`を有効にする」修正（`get_segment_growth`が
+   `_GROWTH_OVERRIDES`を優先参照するよう変更）だが、この`_GROWTH_OVERRIDES`
+   自体は`recommended_g`が算出できた場合にのみ`pipeline.py`側でセットされる
+   （`if _is_seg_unconfigured and _recommended_g is not None:`の条件下でのみ
+   `set_growth_override`が呼ばれる）。MOはrev_cagr_3yr/5yrが共にマイナスで
+   `recommended_g`の中央値候補から除外されるため`recommended_g`自体がNoneになり、
+   overrideが一度もセットされないまま`determine_growth_rate()`が
+   segment/override経路を素通りしてfcf_cagr経路（独自のfloor=15%を持つ、
+   DCF-DEFAULT-G-1の修正対象外の別経路）に落ちていると推測されていた。
+
+b) **CHECK-18の構造的な穴**：
+   `report_consistency_check.py`のCHECK-18（DCF-DEFAULT-G-1回帰検知）は
+   「recommended_gあり & phase1_growth_auto_adjusted=False & source≠segment_weighted
+   & rate≈15%」が発火条件のため、**recommended_g自体がNoneになるMO型のケースを
+   構造的に検知できない**という構造的な穴が指摘されていた。
+
+#### 実装着手前調査（2026-07-11）
+上記a)・b)の推測をコード読解・実データ両面で検証し、**いずれも正しいことを確定**した：
+- `growth_sanity.py`の`recommended_g`算出ロジック（候補>0のみ採用・中央値に2件必要）を
+  読解し、rev_cagr_3yr/5yr両方マイナスのMO、CAGRデータ欠落のLOAR、3yrのみマイナスで
+  候補1件のXOMがいずれも`recommended_g=None`になることを実データで確認
+- git log調査でDCF-DEFAULT-G-1（コミット`3fdca1c6f`、2026-06-15）のdiffを確認した結果、
+  同コミットは`segment_config.py::get_segment_growth()`の**下流消費ゲート**
+  （overrideをsegment_config.json未設定銘柄にも適用する変更）のみを修正しており、
+  `pipeline.py`の`if _is_seg_unconfigured and _recommended_g is not None:`という
+  **上流生成ゲート**（`recommended_g`がそもそも算出できるか）は2026-05-30の
+  コミット`4849f14331`（recommended_g機能の初回実装）から一度も変更されていないことを確認。
+  → **「同じバグの再発（regression）」ではなく「隣接する別経路が最初から未カバーだった」**
+  というa)の推測が確定
+- CHECK-18（`latest.get("recommended_g") is not None`が発火条件）が`recommended_g=None`の
+  ケースを構造的に検知できないことをコード上で確認、b)の推測も確定
+
+#### 実装内容（コミット`8df1f1172`）
+1. `growth_sanity.py`: `growth_source=fcf_cagr` かつ `recommended_g=None`
+   （override発火せず）かつ `rate≈floor(15%)`の場合、`verdict=FLOOR_HIT_REVIEW`・
+   新規フィールド`floor_hit=True`を出力するよう修正。
+   `recommended_g=None`を条件に含めた理由: 本関数はoverride適用**前**に呼ばれるため、
+   JNJ/PEP/PM/WMT/VZ等のoverride成功銘柄も適用前は軒並みfcf_cagr floor(15%)だったことが
+   実測で判明しており、単純に`growth_source==fcf_cagr`のみで判定すると誤検知するため
+2. `report_consistency_check.py`: **CHECK-20**新設。`growth_source=fcf_cagr` かつ
+   `rate≈floor(15%)`を`recommended_g`の有無を問わず機械検知（`latest.json`の
+   最終確定値を見るため、override成功銘柄はsourceが`segment_weighted`に
+   変わっており誤検知しない）。CHECK-18のロジックは無変更
+3. 実装着手前にMOのgrowth_source切り替わりの経緯をgit logで確認済み（上記参照）
+
+#### 検証結果
+- MO/LOAR/XOMの3銘柄で`verdict=FLOOR_HIT_REVIEW`・`floor_hit=True`・CHECK-20発火を実測確認
+- JNJ/PEP/PM/WMT/VZの5銘柄で誤検知なし（`floor_hit=False`、CHECK-20非発火）を実測確認
+- pytest 124件全通過（`test_iv_formula.py`のNVDA/MSFT失敗は[[TEST-STALE-IV-1]]起因の
+  既知・無関係の失敗、本修正前から存在）
+- 全106銘柄調査の結果、`growth_source=fcf_cagr`の銘柄は現状LOAR/MO/XOMの3件のみで、
+  いずれも今回のデータ再生成に含まれるため、追加の再生成が必要な残銘柄は現時点でゼロ。
+  今後の決算更新で新たにfcf_cagr経路に落ちる銘柄が出た場合はCHECK-20が継続的に検知する設計
+
+---
+
 ### ✅ [CIK-ORPHAN-FLAGS-1（BX分）] BX(Blackstone Inc.)登録抹消（2026-07-11完了）
 **発見:** [[CIK-ORPHAN-FLAGS-1]]で報告された全フラグfalseの孤立エントリ（BX・ENBの2件）のうちBX分
 **コミット:** `8dde36fdc`
