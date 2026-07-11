@@ -24,6 +24,8 @@ report_consistency_check.py
   NG  17. EPS全値$0.0          quarterly.json の全四半期 adj_eps=0.0（BUG-EPS-ZERO-1 回帰検知）
   WARN 18. G=15%デフォルト未調整 recommended_g あり & phase1_growth_auto_adjusted=False（DCF-DEFAULT-G-1 回帰）
   NG  19. SEC株数=0            quarterly.json に diluted_shares=0 の四半期（株数取得失敗）
+  WARN 20. fcf_cagr floor張り付き growth.source=fcf_cagr かつ growth.rateがgrowth_floor(15%)に
+                              完全一致（recommended_gの有無を問わず検知、GROWTH-FLOOR-VERDICT-1）
 """
 
 import argparse
@@ -548,6 +550,25 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
             f"  [NG-19 SEC株数=0] {len(_zero_shares_c19)}四半期でdiluted_shares=0"
             f" (例: {', '.join(_dates_c19)})"
             f" → 株式数取得失敗(BUG-EPS-ZERO-1 回帰)"
+        )
+
+    # CHECK-20: fcf_cagr floor値張り付き（GROWTH-FLOOR-VERDICT-1）
+    # growth.source=fcf_cagrのままgrowth.rateがgrowth_floor(15%)に完全一致している場合に検知。
+    # CHECK-18はrecommended_gがNoneの場合に構造的に発火できないため、
+    # recommended_gの有無を問わずgrowth_source/rateのみで判定するのが本チェックの目的
+    # （MO/LOAR/XOM等、recommended_g算出不可でfloorに落ちるケースを補完的に捕捉する）
+    _g_c20 = latest.get("growth") or {}
+    _rate_c20 = _g_c20.get("rate")
+    _source_c20 = _g_c20.get("source", "")
+    if (
+        _source_c20 == "fcf_cagr"
+        and _rate_c20 is not None
+        and abs(_rate_c20 - 0.15) < 0.002
+    ):
+        warn.append(
+            f"  [WARN-20 fcf_cagr floor張り付き] growth.rate={_rate_c20:.1%}"
+            f" (source=fcf_cagr) がgrowth_floor(15%)に完全一致"
+            f" → 実績と無関係な下駄履き値の可能性(GROWTH-FLOOR-VERDICT-1)"
         )
 
     return ng, warn

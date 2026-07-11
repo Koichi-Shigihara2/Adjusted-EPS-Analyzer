@@ -515,6 +515,7 @@ class TanukiValuationPipeline:
             or valuation.get("growth_scenarios", {}).get("primary", {}).get("rate")
             or 0
         )
+        _phase1_growth_source = valuation.get("growth", {}).get("source")  # GROWTH-FLOOR-VERDICT-1
         _annual_revs = self._load_annual_revenues(ticker)
         _g_fund = self._calc_g_fundamental(ticker)
         _sector = self._load_beta_sector(ticker)
@@ -536,6 +537,7 @@ class TanukiValuationPipeline:
                 hype_phase_label=_hype_info.get("stage_label"),
                 hype_substage_label=_hype_info.get("substage_label"),
                 fcf_margins=_fcf_margins or None,                  # TANUKI-DCF-1③
+                growth_source=_phase1_growth_source,               # GROWTH-FLOOR-VERDICT-1
             )
         except Exception as _e:
             import logging as _logging

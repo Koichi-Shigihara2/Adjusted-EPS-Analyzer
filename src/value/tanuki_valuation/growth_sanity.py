@@ -380,13 +380,14 @@ def check_growth_sanity(
     hype_phase_label: str | None = None,   # poc.json の stage_label
     hype_substage_label: str | None = None, # poc.json の substage_label
     fcf_margins: list[float] | None = None,  # TANUKI-DCF-1③: FCFマージン時系列（古い順）
+    growth_source: str | None = None,  # GROWTH-FLOOR-VERDICT-1: phase1_growthの採用経路("fcf_cagr"等)
 ) -> dict:
     """
     成長率サニティチェックを実行し、結果 dict を返す。
 
     戻り値例:
     {
-        "verdict": "PLAUSIBLE",          # PLAUSIBLE / REVIEW / AGGRESSIVE
+        "verdict": "PLAUSIBLE",          # PLAUSIBLE / REVIEW / AGGRESSIVE / FLOOR_HIT_REVIEW
         "phase1_growth": 0.20,
         "industry_benchmark": 0.096,
         "damodaran_industry": "Semiconductor",
@@ -396,6 +397,7 @@ def check_growth_sanity(
         "g_fundamental": 0.312,
         "signals": [...],
         "warnings": [...],
+        "floor_hit": False,              # GROWTH-FLOOR-VERDICT-1
     }
     """
     signals = []
@@ -564,8 +566,28 @@ def check_growth_sanity(
                 f"BEAR補正係数={fcf_margin_bear_multiplier:.3f}"
             )
 
+    # ── GROWTH-FLOOR-VERDICT-1: fcf_cagr floor値張り付き検知 ──
+    # calculator/growth.py:calculate_fcf_cagr() の growth_floor（0.15）と同値。
+    # 本関数はpipeline.py内でrecommended_gによるDCF再計算（override）の"前"に
+    # 呼ばれるため、growth_source/phase1_growthは常にoverride適用前の値になる
+    # （JNJ等、override成功後にsegment_weightedへ差し替わる銘柄は事前状態では
+    # fcf_cagr floorのことが多く、それだけで判定するとoverride成功銘柄まで
+    # 誤検知してしまう）。recommended_gがこの時点で算出できている＝pipeline.py側で
+    # override適用が見込める銘柄は対象から除外し、recommended_g=Noneのため
+    # override自体が発火しない銘柄（MO/LOAR/XOM型）のみを検知する。
+    _FCF_CAGR_FLOOR = 0.15
+    floor_hit = (
+        growth_source == "fcf_cagr"
+        and phase1_growth is not None
+        and abs(phase1_growth - _FCF_CAGR_FLOOR) < 0.002
+        and recommended_g is None
+    )
+    if floor_hit:
+        verdict = "FLOOR_HIT_REVIEW"
+
     return {
         "verdict": verdict,
+        "floor_hit": floor_hit,
         "phase1_growth": phase1_growth,
         "industry_benchmark": industry_g,
         "damodaran_industry": benchmark["industry"] if benchmark else None,
