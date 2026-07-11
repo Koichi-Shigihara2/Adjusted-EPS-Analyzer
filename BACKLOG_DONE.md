@@ -4,6 +4,81 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [POLICYB-GATE-FIX-1] Policy Bのfcf_estimation.appliedゲート漏れ修正（2026-07-11完了）
+**分類:** バグ修正 / TANUKI VALUATION
+**発見:** [[DCF-REL-SYNC-1]]「Policy A未カバー範囲」調査中（事前BACKLOG登録なし・発見即修正のケース）
+
+#### 背景・ゲート条件の経緯
+`pipeline.py::_compute_tanuki_score()`のPolicy B丸め（DCF-RELIABILITY-1、
+コミット`5b0ee587c`、2026-06-23導入）は当初から`fcf_estimation.applied`を
+ゲート条件としており、これは「Policy A（revenue_floor適用＝FCF_Base直接方式向け）
+とfcf_estimation.appliedの真偽で排他的」という意図的な設計だった。
+ただしこの設計は「applied=FalseならPolicy Aのfloorチェックだけで十分」という
+前提に依っており、FCF実績プラス・floor未発火のまま外れ値が未説明で残る
+ケースを想定していなかった。
+
+#### 問題
+[[DCF-REL-SYNC-1]]の残課題「Policy A未カバー範囲（ENTG/RMBS等）」の調査で、
+ENTG/RMBSは実際にはEPS Analyzerデータ未生成による一時的なstale状態
+（`fcf_estimation.applied=False`、再生成のみで解消）と判明する一方、
+真に構造的な未カバー範囲として以下2銘柄を新規発見した：
+- **BKNG**（Classification: BUY、FCF実績$9033M・5年平均$6655Mから**36%乖離**・
+  `fcf_outlier.action="flagged"`＝一過性費用で未説明）
+- **RBRK**（Classification: WATCH、同**241%乖離**・未説明）
+
+いずれも`fcf_estimation.applied=False`（BKNG: EPSデータなし、RBRK: 調整済み
+純利益マイナス）かつ`fcf_floor_applied=0`（FCF実績自体はプラス）のため、
+Policy A（floor>0が発火条件）・Policy B（applied=Trueが発火条件）の
+どちらのゲートにも該当せず、DCF_Reliability=HIGH誤表示のままスクリーニングを
+素通りしていた。`_calc_dcf_reliability_policy_b()`自体は`applied`を参照しない
+（`fcf_outlier`のみで判定）ため、呼び出し側のゲート条件のみが問題だった。
+
+#### 追加発見（回帰）: floor_applied>0とapplied=Trueの共存ケース
+初回修正案（ゲートを`fcf_floor_applied<=0`に置換）を全銘柄でシミュレーション
+検証したところ、**BROS/CEG/SOFI/SPIRの4銘柄で新たな回帰**を発見した。
+`core_calculator.py:249-250`の確認により、`fcf_floor_applied`は
+`fcf_estimation.applied`の真偽に関わらず計算される値（raw fcfに対して先に
+floor判定→その後applied=Trueならconversion-rate推定値に差し替え、floor値は
+使われない）と判明。単純に`floor_applied<=0`でゲートすると、この4銘柄で
+「実際のDCFに使われていないrevenue_floorのメッセージ」がPolicy Bの正しい
+判定を上書きしてしまうところだった。
+
+#### 修正内容
+`pipeline.py`のPolicy A/Bゲートを以下に修正:
+- Policy A発火条件: `_floor_applied > 0 and not _fcf_estimation.get("applied")`
+  （floor値が実際にDCFで使われるケースに限定）
+- Policy B発火条件: `not _policy_a_fires`（Policy A発火時はメッセージを
+  上書きしない。Policy A非発火なら`_calc_dcf_reliability_policy_b()`で判定）
+- Policy B発火時のコメント文言を`fcf_estimation.applied`の真偽で分岐
+  （applied=True: 「FCF_Conversion_Rate方式」/ applied=False: 「FCF_Base方式」、
+  raw_fcf方式の銘柄に誤ったコメントが付かないようにする）
+- report.txt生成側（`_generate_report`内、`applied=False`かつfloor未発火の分岐）
+  にも同型のPolicy B評価を追加（スコア側だけ修正すると
+  「Classification=WATCHなのにreport.txtはHIGH」という表示矛盾が生じるため）
+- `tests/test_pipeline_logic.py`に回帰テスト3件追加（BKNG/RBRK型が正しくWATCH化
+  すること、floor既発火11銘柄でコメントが上書きされないこと、
+  BROS/CEG/SOFI/SPIR型でPolicy Bが正しく評価されること）
+
+#### 検証結果
+- 全銘柄（tanuki=true 100銘柄、RKLB/ZSはtanuki=false化済みのため対象外）で
+  pipeline.py再生成を実施。実質的な分類変化はBKNG（BUY→WATCH）・
+  RBRK（DCF_Reliability表示のみHIGH→LOW、Classification=WATCH自体は不変）の
+  2銘柄のみ。floor既発火11銘柄（ASTS/CRWV/IONQ/JOBY/ONDS/QBTS/RCAT/RKLB/
+  RXRX/SOUN/S）・BROS/CEG/SOFI/SPIR（floor+applied=True共存型）とも
+  想定外の副作用なしを実データで確認済み
+- pytest 131件全件パス（128→131、回帰テスト3件純増）
+- `report_consistency_check.py`: NG=0（WARN 4件はELF PS異常値・
+  LOAR/MO/XOM FLOOR_HIT_REVIEWのみで、いずれも既知・無関係）
+
+#### 関連
+- [[DCF-REL-SYNC-1]]の「Policy A未カバー範囲」課題を実質的に解消（詳細は
+  BACKLOG.md該当エントリの状況更新参照）
+- 横断調査で新たに[[GROWTH-SANITY-CLASS-SYNC-1]]（`growth_sanity.verdict`が
+  DCF_Reliability/Classificationと未連動、MO/LOAR/XOMのFLOOR_HIT_REVIEW）を
+  優先度：高でBACKLOG.mdに新規登録
+
+---
+
 ### ✅ [TANUKI-POLICYB-FIX-1] Policy B DCF_Reliability判定のtransient_found/action取り違え修正（2026-07-11完了）
 **分類:** バグ修正 / TANUKI VALUATION
 **発見:** [[DCF-REL-SYNC-1]]の実装前調査中（事前BACKLOG登録なし・発見即修正のケース）

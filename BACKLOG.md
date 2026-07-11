@@ -62,6 +62,17 @@ BACKLOG.mdからBACKLOG_DONE.mdへ完全移動した。同じ2026-07-10格上げ
 sector取得経路破損・優先度中）を新規登録。DCF-REL-SYNC-1本体は
 「Policy Bのexcluded分岐の扱い」「Policy A未カバー範囲（ENTG/RMBS等）への対応」
 の2点が未決着のまま次回セッション持ち越し。
+
+追記（2026-07-11 同日8回目）: DCF-REL-SYNC-1「Policy A未カバー範囲」の調査を
+進め、ENTG/RMBSはEPS Analyzerデータ未生成によるstale状態（再生成のみで解消）と
+判明する一方、真に構造的な未カバー範囲（BKNG: BUY・乖離36%未説明、RBRK: 241%
+乖離）を新規発見し[[POLICYB-GATE-FIX-1]]として分離・修正・完了（コミット未反映の
+場合はBACKLOG_DONE.md参照）。修正過程で「floor_applied>0でもfcf_estimation.applied
+=Trueなら実際のDCFはconversion-rate推定値を使う」という別の回帰リスク
+（BROS/CEG/SOFI/SPIR型）も発見し同時に修正済み。全銘柄再生成・pytest 131件・
+report_consistency_check NG=0を確認済み。横断調査で新たに
+[[GROWTH-SANITY-CLASS-SYNC-1]]（growth_sanity.verdictとClassification未連動、
+MO/LOAR/XOMのFLOOR_HIT_REVIEW）を優先度：高で新規登録。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -268,15 +279,26 @@ FLYW（215%乖離）は既にDCF_Reliability=LOW・Classification=WATCHへ是正
    （`estimate_fcf_from_eps`のガードAが`action=="excluded"`を`fcf_estimation.applied=False`
    に強制するため）。①将来`skip_guard_a`が機能した場合に備えたセーフティネットとして
    残置する ②実質デッドコードとして簡略化を検討する、の2択で保留中
-2. Policy A未カバー範囲（ENTG/RMBS等、FCF_Base方式・floor未適用）への対応：
-   案1（Policy Bと同型の閾値判定を追加）／案2（Policy C新設）／案3（対象外のまま
-   据え置く）を提示済みだが未実装
+2. ~~Policy A未カバー範囲（ENTG/RMBS等、FCF_Base方式・floor未適用）への対応~~
+   ✅ 2026-07-11 [[POLICYB-GATE-FIX-1]]（完了・BACKLOG_DONE.md参照）で解消。
+
+**状況更新（2026-07-11 同日4回目）:** 上記「未決着」項目2（Policy A未カバー範囲）を
+調査した結果、ENTG/RMBSは実際にはEPS Analyzerデータ未生成による一時的なstale状態
+（applied=False）であり再生成のみで自動解消することが判明。一方で真に構造的に
+Policy A/Bどちらからも判定されないケース（BKNG: FCF実績プラス・乖離36%未説明・
+BUY分類のまま素通り、RBRK: 同241%乖離）を新規発見し、[[POLICYB-GATE-FIX-1]]として
+分離・修正・全銘柄再生成まで完了した（詳細はBACKLOG_DONE.md参照）。
+上記「未決着」項目1（Policy Bのexcluded分岐の扱い）は引き続き未着手。
 
 **派生タスク（本日の調査過程で発見・分離登録）:**
 - [[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
   `transient_found`/`action`取り違えバグ修正
+- [[POLICYB-GATE-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
+  `fcf_estimation.applied`ゲート漏れ修正（BKNG/RBRK型のFCF_Base方式未カバー範囲を解消）
 - [[FCF-OUTLIER-QUAL-1]]（優先度未定・新規登録）: 一過性費用の説明妥当性の定性評価導入
 - [[SECTOR-FCF-RATE-BROKEN-1]]（優先度中・新規登録）: FCF実力推定のsector取得経路破損
+- [[GROWTH-SANITY-CLASS-SYNC-1]]（優先度高・新規登録）: growth_sanity.verdict
+  （AGGRESSIVE/FLOOR_HIT_REVIEW）がDCF_Reliability/Classificationと未連動
 
 #### 問題
 `latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
@@ -312,6 +334,51 @@ report.txt生成時に `fcf_outlier` の乖離%を閾値判定に組み込み、
 既存のDCF_Reliability判定条件（FCF_Conversion_Rate方式・revenue_floor適用等）
 との優先順位・閾値設計、およびPolicy A発動によるTANUKI SCORE分類変更の
 影響確認を含め、実装は別タスクとして着手する。
+
+---
+
+### [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動
+**優先度:** 高
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-11
+**発見:** [[POLICYB-GATE-FIX-1]]横断調査時（DCF_Reliability関連ゲートの棚卸し）
+
+#### 問題
+`growth_sanity.py`の`check_growth_sanity()`が返す`verdict`（PLAUSIBLE/REVIEW/
+AGGRESSIVE/FLOOR_HIT_REVIEW）は、report.txtの`[4] 成長率根拠`セクションに
+表示されるのみで、TANUKI SCORE Classification・DCF_Reliability判定には
+一切反映されない（pipeline.py内でverdictを参照するのは`GROWTH_PREMIUM`判定用の
+`phase1_growth`取得箇所のみで、verdict自体を条件分岐に使う箇所は存在しない）。
+
+2026-07-11時点の実データ確認では、**MO（Classification: BUY）が
+`verdict=FLOOR_HIT_REVIEW`・`floor_hit=True`のまま**である（成長率算出ロジックが
+破綻し、実績と無関係な機械的floor値15%を採用しているにも関わらず、BUY判定が
+変わらない）。LOAR（WATCH）・XOM（HOLD）も同verdictだが、既に低い分類のため
+実害は限定的。`report_consistency_check.py`のCHECK-20（WARN-20）でも検知されるが、
+WARNは非ブロッキングのため見落とされやすい。
+
+#### [[GROWTH-FLOOR-VERDICT-1]]・[[DCF-REL-SYNC-1]]との関係
+[[GROWTH-FLOOR-VERDICT-1]]（2026-07-11完了）は、fcf_cagr経路の成長率がfloor値に
+機械的に張り付くケース（MO/LOAR/XOM）の**検知**（`verdict=FLOOR_HIT_REVIEW`・
+`floor_hit`フィールド新設・CHECK-20）を意図的なスコープとして実装しており、
+Classificationへの反映は最初から対象外だった（BACKLOG_DONE.md参照）。
+
+[[DCF-REL-SYNC-1]]が当初から問題意識としていた「信頼できない前提のBUYが
+スクリーニングを素通りする」という同じ課題の、fcf_outlier系列とは別の
+バリエーション（成長率前提の信頼性）にあたる。[[POLICYB-GATE-FIX-1]]で
+fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ未着手。
+
+#### 対応方針（未確定・次回セッションで設計判断）
+- Policy A/B同様の「WATCHへの丸め」を追加するか、別Policy（Policy C等）として
+  新設するかは未確定
+- MO/LOAR/XOMの3銘柄はいずれもfcf_cagr経路のみで発生する既知パターンだが、
+  今後segment_weighted等の他経路でも同種の「算出不可・機械的floor採用」が
+  起きうるか確認が必要
+- Policy A/Bとの優先順位・同時発火時の扱い（floor_hit=Trueとfcf_outlier flaggedが
+  同一銘柄で重複する場合の丸めメッセージの一貫性）を設計時に検討する
+
+#### 着手条件
+なし（設計判断が必要なため、次回セッションで方針確定してから着手）
 
 ---
 

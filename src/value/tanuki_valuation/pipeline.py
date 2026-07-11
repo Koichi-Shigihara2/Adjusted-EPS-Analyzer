@@ -473,20 +473,40 @@ class TanukiValuationPipeline:
         # DCF_Reliability=LOW 丸め（Policy A: revenue_floor適用＝FCF_Base直接方式向け）
         # revenue_floor適用（FCF実績マイナス）は理論株価の信頼性が低いため
         # upside依存の判定を抑制して WATCH に統一する。SELL/PASS（ファンダ劣化）は維持。
+        #
+        # POLICYB-GATE-FIX-1（2026-07-11）横断調査で判明: fcf_floor_applied は
+        # fcf_estimation.applied の真偽に関わらず計算される（core_calculator.py:
+        # adjust_fcf()はraw fcfに対して先に floor 判定を行い、その後
+        # fcf_estimation.applied=True ならDCFの実際の base_fcf は
+        # conversion-rate推定値に差し替えられる＝floor値は使われない）。
+        # そのためPolicy Aは「floor値が実際にDCFで使われるケース」
+        # （= applied=False）に限定する。BROS/CEG/SOFI/SPIR等はfloor_applied>0だが
+        # applied=TrueでDCFはconversion-rate推定値を使うため、Policy Aは対象外とし
+        # Policy Bのみで判定する。
         _floor_applied = valuation.get("components", {}).get("fcf_floor_applied", 0) or 0
-        if _floor_applied > 0 and score not in ("SELL", "PASS"):
+        _fcf_estimation = valuation.get("fcf_estimation", {}) or {}
+        _policy_a_fires = _floor_applied > 0 and not _fcf_estimation.get("applied")
+        if _policy_a_fires and score not in ("SELL", "PASS"):
             score = "WATCH"
             comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
             sell_reason = None
 
-        # DCF_Reliability=LOW 丸め（Policy B: FCF_Conversion_Rate方式向け、DCF-RELIABILITY-1）
-        # fcf_estimationが適用された（=FCF_Conversion_Rate方式）銘柄のみが対象。
-        # Policy Aとはfcf_estimation.appliedの真偽で排他的なため同時発火しない。
-        _fcf_estimation = valuation.get("fcf_estimation", {}) or {}
-        if (_fcf_estimation.get("applied") and score not in ("SELL", "PASS")
+        # DCF_Reliability=LOW 丸め（Policy B: fcf_outlier未解消向け、DCF-RELIABILITY-1）
+        # POLICYB-GATE-FIX-1（2026-07-11）: 従来はfcf_estimation.appliedをゲート条件にしており、
+        # applied=False（raw_fcfフォールバック方式）の銘柄でPolicy Bが評価されず、
+        # FCF実績プラス・fcf_outlier未説明フラグ（BKNG/RBRK等）が見逃されていた。
+        # _calc_dcf_reliability_policy_b()自体はappliedを参照しないため、ゲートは
+        # 「Policy Aが既に発火済みか（_policy_a_fires）」に置き換える。Policy A発火済みの
+        # 場合はPolicy Aのメッセージ（実績FCF赤字）を優先し、Policy Bで上書きしない
+        # （両者ともWATCH自体は同じだが、raw_fcf方式の銘柄に「FCF_Conversion_Rate方式」
+        # という誤ったコメントが付くのを防ぐため）。
+        if (not _policy_a_fires and score not in ("SELL", "PASS")
                 and self._calc_dcf_reliability_policy_b(valuation) == "LOW"):
             score = "WATCH"
-            comment = "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH"
+            if _fcf_estimation.get("applied"):
+                comment = "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH"
+            else:
+                comment = "DCF信頼性LOW(FCF_Base方式・外れ値未説明)のためupside依存判定を抑制→WATCH"
             sell_reason = None
 
         return {
@@ -1325,7 +1345,18 @@ class TanukiValuationPipeline:
                 L.append("   FCF実績がマイナスのためIVはrevenue_floorベース推定値。IV絶対値より方向感参考用。]")
             else:
                 L.append(f"FCF_Base: ${_fcf_base_used/1e6:,.2f}M ({' + '.join(_desc_parts)})")
-                L.append(f"DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)")
+                # POLICYB-GATE-FIX-1（2026-07-11）: floor未発火（FCF実績プラス）でも
+                # fcf_outlierが未説明のまま残るケース（BKNG/RBRK等）をPolicy Bで捕捉する。
+                _reliability_b_raw = self._calc_dcf_reliability_policy_b(valuation)
+                if _reliability_b_raw == "LOW":
+                    L.append("DCF_Reliability: LOW ⚠️ (FCF_Base方式: 要注意フラグ検出, IV参考値)")
+                    L.append("  [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。")
+                    L.append("   fcf_outlier未解消（一過性費用で説明不可）のため、IVは参考値扱い。]")
+                    _dev_pct_polb_raw = (valuation.get("fcf_outlier") or {}).get("deviation_pct")
+                    if _dev_pct_polb_raw is not None:
+                        L.append(f"   [DCF-REL-SYNC-1: FCF実績が5年平均から{_dev_pct_polb_raw:.0f}%乖離]")
+                else:
+                    L.append("DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
             L.append("  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from")
