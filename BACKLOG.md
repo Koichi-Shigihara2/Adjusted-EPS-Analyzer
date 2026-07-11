@@ -51,6 +51,17 @@ BACKLOG_DONE.mdエントリとして記録。TANUKI-FIN-2（JPM・GS対象）に
 BACKLOG.mdからBACKLOG_DONE.mdへ完全移動した。同じ2026-07-10格上げ組の
 [[DCF-REL-SYNC-1]]に状況更新（GROWTH-FLOOR-VERDICT-1完了・本タスクは未着手のまま
 残置）を追記。
+
+追記（2026-07-11 同日7回目・セッション最終ブラッシュアップ）: [[DCF-REL-SYNC-1]]
+実装検討を進め、以下を実施：①Policy Bの`transient_found`/`action`取り違えバグを
+発見・分離し[[TANUKI-POLICYB-FIX-1]]として先行修正・完了（コミット`327982770`）、
+②`FCFOutlierResult`に`deviation_pct`フィールドを追加しreport.txt表示に反映
+（コミット`b5c91180d`。当初追加した200%安全弁は対象母集団0件と判明し削除・
+シンプル化）、③調査過程で新規発見した[[FCF-OUTLIER-QUAL-1]]（一過性費用の
+説明妥当性の定性評価・優先度未定）・[[SECTOR-FCF-RATE-BROKEN-1]]（FCF実力推定の
+sector取得経路破損・優先度中）を新規登録。DCF-REL-SYNC-1本体は
+「Policy Bのexcluded分岐の扱い」「Policy A未カバー範囲（ENTG/RMBS等）への対応」
+の2点が未決着のまま次回セッション持ち越し。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -238,6 +249,34 @@ FLYW（215%乖離）は既にDCF_Reliability=LOW・Classification=WATCHへ是正
 `note`の日本語文字列内にのみ埋め込まれている（正規表現パースが必要）ことが
 調査で判明しており、実装時は`FCFOutlierResult`への`deviation_pct`フィールド
 追加も合わせて検討する。
+
+**状況更新（2026-07-11 同日3回目・セッション最終）:**
+
+**実装済み・コミット済み:**
+- `FCFOutlierResult`に`deviation_pct`フィールドを追加（`note`文字列のパースではなく
+  `analyze_fcf_outlier()`内の計算済み数値をそのまま格納。`rule="latest_negative"`型は
+  概念が成立しないためNone）。report.txt生成時、Policy BでLOW判定の場合に
+  `[DCF-REL-SYNC-1: FCF実績が5年平均から○○%乖離]`として表示に反映済み
+- 当初`action=="excluded"`でも`deviation_pct>=200%`ならLOWに戻す安全弁を追加したが、
+  実データ調査で対象母集団が0件（`action=="excluded"`となる銘柄は全て
+  `fcf_estimation.applied=False`＝Policy A対象でPolicy B自体が発火しないと判明）
+  だったため安全弁は削除し、`action=="excluded"`→NORMAL / `action=="flagged"`→LOWの
+  シンプルな判定に確定（コミット`b5c91180d`）
+
+**未決着（次回以降に判断、指示待ち）:**
+1. Policy Bの`excluded`分岐の扱い：現状データでは構造的に発火し得ないと判明済み
+   （`estimate_fcf_from_eps`のガードAが`action=="excluded"`を`fcf_estimation.applied=False`
+   に強制するため）。①将来`skip_guard_a`が機能した場合に備えたセーフティネットとして
+   残置する ②実質デッドコードとして簡略化を検討する、の2択で保留中
+2. Policy A未カバー範囲（ENTG/RMBS等、FCF_Base方式・floor未適用）への対応：
+   案1（Policy Bと同型の閾値判定を追加）／案2（Policy C新設）／案3（対象外のまま
+   据え置く）を提示済みだが未実装
+
+**派生タスク（本日の調査過程で発見・分離登録）:**
+- [[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
+  `transient_found`/`action`取り違えバグ修正
+- [[FCF-OUTLIER-QUAL-1]]（優先度未定・新規登録）: 一過性費用の説明妥当性の定性評価導入
+- [[SECTOR-FCF-RATE-BROKEN-1]]（優先度中・新規登録）: FCF実力推定のsector取得経路破損
 
 #### 問題
 `latest.json` の `fcf_outlier.note`（実績FCFの5年平均からの乖離%を含む注記、
