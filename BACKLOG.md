@@ -275,10 +275,11 @@ FLYW（215%乖離）は既にDCF_Reliability=LOW・Classification=WATCHへ是正
   シンプルな判定に確定（コミット`b5c91180d`）
 
 **未決着（次回以降に判断、指示待ち）:**
-1. Policy Bの`excluded`分岐の扱い：現状データでは構造的に発火し得ないと判明済み
+1. ~~Policy Bの`excluded`分岐の扱い：現状データでは構造的に発火し得ないと判明済み
    （`estimate_fcf_from_eps`のガードAが`action=="excluded"`を`fcf_estimation.applied=False`
    に強制するため）。①将来`skip_guard_a`が機能した場合に備えたセーフティネットとして
-   残置する ②実質デッドコードとして簡略化を検討する、の2択で保留中
+   残置する ②実質デッドコードとして簡略化を検討する、の2択で保留中~~
+   ✅ 2026-07-11 再調査によりクローズ（詳細は下記「状況更新（同日5回目）」参照）。
 2. ~~Policy A未カバー範囲（ENTG/RMBS等、FCF_Base方式・floor未適用）への対応~~
    ✅ 2026-07-11 [[POLICYB-GATE-FIX-1]]（完了・BACKLOG_DONE.md参照）で解消。
 
@@ -289,6 +290,24 @@ Policy A/Bどちらからも判定されないケース（BKNG: FCF実績プラ�
 BUY分類のまま素通り、RBRK: 同241%乖離）を新規発見し、[[POLICYB-GATE-FIX-1]]として
 分離・修正・全銘柄再生成まで完了した（詳細はBACKLOG_DONE.md参照）。
 上記「未決着」項目1（Policy Bのexcluded分岐の扱い）は引き続き未着手。
+
+**状況更新（2026-07-11 同日5回目）:** 上記「未決着」項目1（Policy Bの`excluded`分岐の
+扱い）を[[POLICYB-GATE-FIX-1]]完了後の状態で再調査した結果、**前提が崩れていたことが
+判明した**。当初（POLICYB-GATE-FIX-1着手前）はPolicy Bの呼び出しゲートが
+`fcf_estimation.applied==True`のみだったため、Guard A（`action=="excluded"`なら
+`applied=False`を強制）により`excluded`分岐は構造的に到達不可能と判明し、
+「②デッドコードとして簡略化」の方針を確定していた。しかし[[POLICYB-GATE-FIX-1]]で
+Policy Bの呼び出しゲートが`not _policy_a_fires`（`floor_applied>0 and not applied`の否定）
+に変更された結果、`applied=False`かつ`floor_applied<=0`の場合もPolicy Bが評価される
+ようになり、`excluded`分岐が副次的に到達可能になった。実データ確認では
+**AMZN・COHRの2銘柄が実際にこの分岐に到達し、正しくNORMAL判定を返している**ことを
+確認済み（`test_detected_true_explained_is_normal`・`test_eps_invalid_overrides_explained_true`の
+2テストも、デッドコードのテストではなくこの実挙動を保証する現役テストと判明）。
+そのため「②デッドコードとして簡略化」の方針は撤回し、**現状維持（コード変更なし）**に
+訂正する。`excluded`分岐は「デッドコード」ではなく「AMZN/COHR型の実挙動を保証する
+現役ロジック」として位置づける。
+
+以上により、DCF-REL-SYNC-1の未決着点は**実質的に解消（残る未決着点なし）**となった。
 
 **派生タスク（本日の調査過程で発見・分離登録）:**
 - [[TANUKI-POLICYB-FIX-1]]（完了・BACKLOG_DONE.md参照）: Policy Bの
