@@ -2847,6 +2847,61 @@ def _make_ttm_entry(ttm_end, ocf_q=4, capex_q=4, revenue_q=4, ni_q=4, fcf_val=10
     }
 
 
+class TestSelectFcfSource:
+    """_select_fcf_source()がTTM点数<min_years(3)のケースに限り、年次の方が
+    多ければ年次を優先すること（CRWV/CON実データ事例: TTM完全性フィルタ適用後に
+    TTM系列が2点まで減り、min_fcf_years=3未満で計算全体が失敗していた問題の修正）。
+
+    TTM点数>=min_years（3）であれば、年次点数の方が多くても常にTTMを優先する
+    （AAPL実データ事例: annual=5年・TTM完全性フィルタ後=4点でもTTM優先が正しい。
+    「TTM点数<年次点数なら常に年次優先」という単純な実装では、AAPL含む大多数の
+    銘柄がTTMより鮮度の劣る年次データへ意図せず後退する回帰を起こしていた）"""
+
+    def test_ttm_at_least_min_years_uses_ttm_even_if_fewer_than_annual(self):
+        """AAPL実データ相当: annual=5年、TTM=4点（>=min_years=3） → TTM優先"""
+        annual = [10.0, 9.0, 8.0, 7.0, 6.0]
+        ttm = [12.0, 11.0, 10.0, 9.0]
+        result, used_ttm = _df._select_fcf_source(annual, ttm)
+        assert used_ttm is True
+        assert result == ttm
+
+    def test_ttm_more_than_annual_uses_ttm(self):
+        annual = [10.0, 9.0, 8.0]
+        ttm = [12.0, 11.0, 10.0, 9.0]
+        result, used_ttm = _df._select_fcf_source(annual, ttm)
+        assert used_ttm is True
+        assert result == ttm
+
+    def test_ttm_below_min_years_and_fewer_than_annual_uses_annual(self):
+        """CRWV実データ相当: annual=3年、TTM完全性フィルタ後=2点(<min_years=3) → 年次優先"""
+        annual = [-7193000000, -5899000000, -1102000000]
+        ttm = [-10587000000, -7582103000]
+        result, used_ttm = _df._select_fcf_source(annual, ttm)
+        assert used_ttm is False
+        assert result == annual
+        assert len(result) == 3
+
+    def test_ttm_below_min_years_but_annual_not_more_uses_ttm(self):
+        """TTM点数がmin_years未満でも、年次がそれ以下ならTTM（最良の選択肢）を使う"""
+        annual = [10.0, 9.0]
+        ttm = [12.0, 11.0]
+        result, used_ttm = _df._select_fcf_source(annual, ttm)
+        assert used_ttm is True
+        assert result == ttm
+
+    def test_ttm_none_uses_annual(self):
+        annual = [10.0, 9.0, 8.0]
+        result, used_ttm = _df._select_fcf_source(annual, None)
+        assert used_ttm is False
+        assert result == annual
+
+    def test_ttm_empty_list_uses_annual(self):
+        annual = [10.0, 9.0, 8.0]
+        result, used_ttm = _df._select_fcf_source(annual, [])
+        assert used_ttm is False
+        assert result == annual
+
+
 class TestTTMReaderQuartersCompleteness:
     """TTMReader.get_fcf_series()/get_periods()がquarters_used<4の期間を除外すること"""
 

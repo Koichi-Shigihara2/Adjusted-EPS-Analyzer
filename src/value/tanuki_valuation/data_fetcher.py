@@ -69,6 +69,33 @@ SECTOR_DEFAULT_BETA = {
 }
 
 
+def _select_fcf_source(
+    annual_fcf_list: list, ttm_fcf_series: list | None, min_years: int = 3
+) -> tuple[list, bool]:
+    """
+    年次FCFリストとTTM FCF系列のどちらを採用するか決定する。
+
+    TTM系列（四半期粒度・鮮度が高い）を常に優先する。ただし
+    TTM-QUARTERS-CHECK-1の完全性フィルタ適用後にTTM系列の点数が
+    min_years（core_calculator.min_fcf_yearsと同期。デフォルト3）未満に
+    落ち込み、かつ年次実績の方が多い場合（CRWV/CON等、四半期粒度データの
+    蓄積が浅い銘柄）に限り、より充実した年次実績を優先する。
+    「TTM点数<年次点数なら常に年次優先」にすると、TTM点数が3〜4点で
+    十分な大多数の銘柄（annual_fcf_list=5年がデフォルトのため）まで
+    年次へ後退してしまうため、min_years判定を必須とする。
+
+    Returns:
+        (採用するFCFリスト, TTM系列を採用したか)
+    """
+    if not ttm_fcf_series:
+        return annual_fcf_list, False
+    if len(ttm_fcf_series) >= min_years:
+        return ttm_fcf_series, True
+    if len(annual_fcf_list) > len(ttm_fcf_series):
+        return annual_fcf_list, False
+    return ttm_fcf_series, True
+
+
 def _quarters_complete(flow: dict, *field_names: str, min_quarters: int = 4) -> bool:
     """
     指定フィールドすべてがquarters_used>=min_quartersを満たすか判定する。
@@ -308,14 +335,20 @@ class TanukiDataFetcher:
         # ========================================
         ttm_reader = TTMReader(ticker, repo_root)
         fcf_series = ttm_reader.get_fcf_series()
+        fcf_list, _use_ttm_fcf = _select_fcf_source(fcf_list, fcf_series)
 
-        if fcf_series:
-            fcf_list = fcf_series
-            fcf_avg = float(mean(fcf_series))
+        if _use_ttm_fcf:
+            fcf_avg = float(mean(fcf_list))
             fcf_source = "ttm_series"
             fcf_ttm_end = ttm_reader.get_ttm_end()
             fcf_ttm_periods = ttm_reader.get_periods()
-            print(f"   [{ticker}] TTM FCF series: {len(fcf_series)}点 end={fcf_ttm_end}")
+            print(f"   [{ticker}] TTM FCF series: {len(fcf_list)}点 end={fcf_ttm_end}")
+        elif fcf_series:
+            logging.warning(
+                "[%s] TTM series has fewer complete points (%d) than annual FCF (%d); "
+                "keeping annual FCF list", ticker, len(fcf_series), len(fcf_list)
+            )
+            print(f"   [{ticker}] TTM系列点数不足({len(fcf_series)}点<年次{len(fcf_list)}点) → 年次SEC実績を優先")
         else:
             logging.warning("[%s] TTM series unavailable, fallback to annual FCF", ticker)
 
