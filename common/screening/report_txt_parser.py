@@ -32,10 +32,10 @@ STONKS SILO / RISK EVENTS(高重要度のみ) をJSON構造化する。読み取
     result = parse_ticker_report(repo_root, "AAPL")
 """
 import argparse
-import csv
 import json
 import os
 import re
+import sys
 from datetime import datetime
 
 SECTION_HEADER_RE = re.compile(r"^\[(\d+)\.\s*(.+?)\]\s*$", re.MULTILINE)
@@ -262,10 +262,10 @@ def parse_ticker_report(repo_root, ticker):
 
 
 def _all_tickers_with_report(repo_root):
-    cik_path = os.path.join(repo_root, "config", "cik_lookup.csv")
-    with open(cik_path, encoding="utf-8") as f:
-        tickers = [r["ticker"] for r in csv.DictReader(f)]
-    return [t for t in tickers
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from common.sec_data import tickers
+    return [t for t in tickers.get_all_tickers()
             if os.path.exists(os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data", t, "report.txt"))]
 
 

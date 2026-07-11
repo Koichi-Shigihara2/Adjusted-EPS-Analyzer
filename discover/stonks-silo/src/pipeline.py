@@ -10,7 +10,6 @@ config/cik_lookup.csv の stonks_silo=true 銘柄を一括処理して results.j
   python discover/stonks-silo/src/pipeline.py SOUN BBAI  # 指定ティッカーのみ
 """
 
-import csv
 import dataclasses
 import json
 import sys
@@ -20,14 +19,15 @@ from pathlib import Path
 _SRC_DIR = Path(__file__).resolve().parent
 _REPO_ROOT = _SRC_DIR.parents[2]
 sys.path.insert(0, str(_SRC_DIR))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from fetcher import load_annual_data
 from analyzer import StonksAnalyzer
 from valuation_fetcher import fetch_valuation
 from financial_trend_calculator import compute_vectors, load_all_normalized
+from common.sec_data import tickers
 
 
-_CIK_LOOKUP = _REPO_ROOT / "config" / "cik_lookup.csv"
 _OUTPUT_DIR = _REPO_ROOT / "docs" / "value-monitor" / "stonks-silo" / "data"
 _OUTPUT_FILE = _OUTPUT_DIR / "results.json"
 _YEARS = 5
@@ -39,15 +39,7 @@ _YEARS = 5
 
 def stonks_tickers() -> list[str]:
     """cik_lookup.csv から stonks_silo=true の銘柄を返す"""
-    if not _CIK_LOOKUP.exists():
-        raise FileNotFoundError(f"cik_lookup.csv not found: {_CIK_LOOKUP}")
-
-    tickers = []
-    with open(_CIK_LOOKUP, encoding="utf-8") as f:
-        for row in csv.DictReader(f):
-            if row.get("stonks_silo", "").strip().lower() == "true":
-                tickers.append(row["ticker"].strip().upper())
-    return sorted(tickers)
+    return tickers.get_stonks_silo_tickers()
 
 
 # ---------------------------------------------------------------------------

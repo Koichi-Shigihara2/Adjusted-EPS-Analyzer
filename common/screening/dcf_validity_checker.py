@@ -40,9 +40,9 @@ TANUKI VALUATIONのDCF成長率前提・ROIC計算根拠が実績データと整
     result = check_ticker(repo_root, "FICO")
 """
 import argparse
-import csv
 import json
 import os
+import sys
 from datetime import datetime
 
 FCF_CAGR_FLOOR = 0.15
@@ -234,10 +234,10 @@ def check_ticker(repo_root, ticker):
 
 
 def _all_tanuki_tickers(repo_root):
-    cik_path = os.path.join(repo_root, "config", "cik_lookup.csv")
-    with open(cik_path, encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    return [r["ticker"] for r in rows if r.get("tanuki") == "true"]
+    if repo_root not in sys.path:
+        sys.path.insert(0, repo_root)
+    from common.sec_data import tickers
+    return tickers.get_tanuki_tickers()
 
 
 def main():

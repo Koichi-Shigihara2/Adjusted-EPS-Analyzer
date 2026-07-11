@@ -194,25 +194,24 @@ class TanukiValuationPipeline:
         """
         cik_lookup.csv から TANUKI 対象銘柄を取得
 
-        tanuki 列が "false" の銘柄はスキップ（列が存在しない場合は全件対象・後方互換）
+        tickers.get_tanuki_tickers()はtanuki列欠損時に対象外扱いとなる点に注意。
+        現状cik_lookup.csv全行に値が設定されているため実害なし。
         """
         csv_path = os.path.join(self.repo_root, "config", "cik_lookup.csv")
         if not os.path.exists(csv_path):
             print(f"❌ エラー: {csv_path} が見つかりません")
             sys.exit(1)
-        tickers = []
-        skipped = []
-        with open(csv_path, encoding="utf-8", newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                tanuki = row.get("tanuki", "true").strip().lower()
-                if tanuki == "false":
-                    skipped.append(row["ticker"])
-                else:
-                    tickers.append(row["ticker"])
+
+        if self.repo_root not in sys.path:
+            sys.path.insert(0, self.repo_root)
+        from common.sec_data import tickers as _tickers
+
+        all_tickers = _tickers.get_all_tickers()
+        tanuki_set = set(_tickers.get_tanuki_tickers())
+        skipped = [t for t in all_tickers if t not in tanuki_set]
         if skipped:
             print(f"   ℹ️  TANUKIスキップ銘柄: {', '.join(skipped)}")
-        return tickers
+        return [t for t in all_tickers if t in tanuki_set]
 
     def _get_warn_details(self, validation: dict) -> str:
         checks = validation.get("checks", {})
