@@ -37,6 +37,14 @@ TICKER-SOURCE-CONFIG-DUP-1として新規登録。
 PREFLIGHT-CHECK-1・TICKER-SOURCE-CONFIG-DUP-1）のリンク表記を
 「[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）」に更新し、
 リンク切れの体裁を解消した。
+
+追記（2026-07-11 同日5回目）: BX（Blackstone Inc.）の登録抹消（コミット
+`8dde36fdc`、cik_lookup.csv 1行＋関連SECデータ73件削除）をBACKLOGに反映。
+[[CIK-ORPHAN-FLAGS-1]]のBX該当箇所を解消済みに更新（ENBは未解消のまま残置）、
+REGISTER-FLOW-REDESIGN-1の分類記載のBXを取り消し線で解消済み表示に更新、
+BACKLOG_DONE.md内のEPS-BX-1に対象消滅の追記、BX完全削除自体を新規
+BACKLOG_DONE.mdエントリとして記録。TANUKI-FIN-2（JPM・GS対象）にBXの
+記載はなく対応不要と確認済み。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -478,10 +486,14 @@ tanuki=false切り替え時にreport.txtを削除するか、ファイル冒頭�
 ---
 
 ### [CIK-ORPHAN-FLAGS-1] BX・ENBが全システムフラグfalseの孤立エントリ
-**優先度:** 低〜中
+**優先度:** 低〜中（BX分は解消済み・残るはENBのみ）
 **分類:** データ品質 / 銘柄登録
 **登録日:** 2026-07-10
 **発見:** サテライト投資候補91銘柄への前提妥当性チェック自己点検時
+**進捗（2026-07-11追記）:** BXは2026-07-11 コミット`8dde36fdc`でcik_lookup.csv行・
+関連SECデータを完全削除し、登録抹消（下記A案）により解消済み。
+以下の問題・対応方針の記載はBXについては過去の記録として残すが、
+現状はENBのみが未解消。
 
 #### 問題
 cik_lookup.csvのBX（Blackstone）・ENBの2銘柄は、status=activeでありながら
@@ -514,6 +526,10 @@ stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
 考えるが、最終判断はTANUKI-FIN-1着手時に行う。それまでは現状（4フラグfalse・
 孤立状態）を維持し、除外は行わない。
 
+**BXについてはKoichiさんの判断によりA案（登録抹消）を採用（2026-07-11・
+コミット`8dde36fdc`）。** ENBについては上記の通り現状維持中で、B案の検討は
+TANUKI-FIN-1着手時に持ち越し。
+
 #### 根本原因との関係（2026-07-11追記）
 本件はregistration_validator.pyのP4-CIKOrphanチェック（cik_lookup.csv全体を
 無条件スキャンする唯一のセーフティネット、WARN扱い）で検出可能だったが
@@ -525,7 +541,10 @@ monitor_tickers.yaml同期漏れ）が再発したことを確認済み。詳細
 2026-07-11の[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）修正（コミット`ba2cfef42`）により、
 registration_validator.pyのデフォルト実行でBXがP1系NGとして新規検出される
 ようになった（従来はmonitor_tickers.yaml未登録のため走査対象外で不可視だった）。
-BX自体への対応方針（A案:登録抹消／B案:評価軸振り分け）は変更なし。
+
+**同日中にBX自体が登録抹消されたため対象消滅（コミット`8dde36fdc`）。**
+削除後にregistration_validator.pyを再実行し、BX関連のNG/WARNが0件に
+なったことを確認済み（対象銘柄数106→105）。
 
 ---
 
@@ -949,8 +968,9 @@ Step 3.5（segment_config設定）は、既存エントリの内容検証（P3�
   P1-Step1-SEC NGで検出可能だが、Step 0（カナダ企業チェック）が本来
   弾くべきケース。列追加時点の遡及登録のため経緯不明のまま残存）
 - **データソース起因・評価枠組み非適合（意図的除外）**: APGE（売上ゼロの
-  臨床段階バイオ、SEC取得自体は正常）・BX（資産運用会社でPL項目が薄い）・
-  SN（20-F提出企業で四半期系列不足、[[SN-TANUKI-DELAY-1]]参照）。
+  臨床段階バイオ、SEC取得自体は正常）・~~BX（資産運用会社でPL項目が薄い）~~
+  2026-07-11 登録抹消（コミット`8dde36fdc`）により解消・SN（20-F提出企業で
+  四半期系列不足、[[SN-TANUKI-DELAY-1]]参照）。
   いずれも全フラグor一部フラグfalseは意図的な設計判断であり「失敗」ではない
 
 この3分類が明示的にラベル化されていないため、「フラグfalseの銘柄」を見ても

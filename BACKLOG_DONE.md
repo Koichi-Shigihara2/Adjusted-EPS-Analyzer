@@ -4,6 +4,38 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [CIK-ORPHAN-FLAGS-1（BX分）] BX(Blackstone Inc.)登録抹消（2026-07-11完了）
+**発見:** [[CIK-ORPHAN-FLAGS-1]]で報告された全フラグfalseの孤立エントリ（BX・ENBの2件）のうちBX分
+**コミット:** `8dde36fdc`
+
+#### 内容
+BXは`registration_note`に「列追加時点(2026-07-02)での遡及登録のため経緯不明」と
+記載されたまま、status=active・stonks_silo/tanuki/eps/hypecoreの4フラグ全てfalseで
+放置されていた孤立エントリ。[[CIK-ORPHAN-FLAGS-1]]で検討したA案（登録抹消）/B案
+（適切な評価軸への振り分け、TANUKI-FIN-1着手時に判断）のうち、登録経緯不明のまま
+放置され続けていたためKoichiさんの判断でA案（登録抹消）を採用し完全削除した。
+
+削除範囲（cik_lookup.csv 1行＋関連データ73件）:
+- `config/cik_lookup.csv` からBX行を削除
+- `common/sec_data/data/BX/`（annual 19年分・quarterly約51四半期分・company_facts.json）
+- `common/sec_data/normalized/BX_quarterly_normalized.json`
+- `common/sec_data/raw/BX_quarterly_raw.json`
+- `common/sec_data/ttm/BX_ttm_series.json`
+- `docs/value-monitor/adjusted_eps_analyzer/data/BX/`（[[EPS-BX-1]]でeps=false化後も
+  未削除のまま残存していたデータ）
+
+事前調査でmonitor_tickers.yaml・discover_config.json等の銘柄リスト系ファイルには
+BX参照が元々なかったことを確認済み（削除前に孤立状態だったため）。
+`docs/market-monitor/market-pulse/data/sp500_tickers.json`のBX記載はMarket Pulse
+独立システムの実際のS&P500構成銘柄スナップショットのため対象外（削除不要）と判断。
+
+#### 検証結果
+- `registration_validator.py`実行: BX関連のNG/WARN 0件、対象銘柄数106→105
+- pytest 124件全通過
+- `git status`: cik_lookup.csv 1行削除＋BX関連ファイル73件削除のみで意図した範囲と一致
+
+---
+
 ### ✅ [TICKER-SOURCE-UNIFY-1] 銘柄リスト正本参照の一元化（根本課題）（2026-07-11 対応方針1・2・3すべて完了・BACKLOG.mdから完全移動）
 **分類:** アーキテクチャ / 銘柄リスト参照
 **登録日:** 2026-07-11
@@ -728,6 +760,9 @@ LOARはデータ不足でスキップ（誤検知なし）。
 - `config/cik_lookup.csv`: BX の eps フラグ true → false（TANUKI-FIN-1で金融機関向けDDM実装まで保留）
 - `docs/value-monitor/adjusted_eps_analyzer/data/summary.json`: BXエントリを直接削除（generate_summaryがマージ方式のため手動削除が必要）
 - 結果: summary.json が95→94銘柄。EPS ANALYZER一覧からBXが除外された。
+
+**追記（2026-07-11）:** BX自体がcik_lookup.csvから登録抹消された（コミット`8dde36fdc`）ため、
+本エントリの「TANUKI-FIN-1で金融機関向けDDM実装まで保留」という判断自体が対象消滅した。
 
 ---
 
