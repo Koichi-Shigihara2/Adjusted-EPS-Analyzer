@@ -241,6 +241,11 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `common/sec_data/parser.py`
 - `src/value/tanuki_valuation/calculator/rice.py`
 - `src/value/tanuki_valuation/core_calculator.py`
+- `src/value/tanuki_valuation/calculator/growth.py`（GROWTH-CAGR-SIGN-1で発見:
+  成長率計算式の符号を誤ると全銘柄のIVに波及する）
+- `src/value/tanuki_valuation/data_fetcher.py`（TTM-QUARTERS-CHECK-1で発見:
+  TTMReaderのfcf_list_raw/fcf_5yr_avg構築ロジックは大半の銘柄の
+  DCF計算に影響する）
 
 **手順：**
 

@@ -82,6 +82,15 @@ DCF-REL-SYNC-1本体を**完全クローズ**しBACKLOG.mdからBACKLOG_DONE.md�
 （未決着点①②とも解消済みのため）。移動に伴い、BACKLOG.md内で本エントリを参照していた
 他エントリ（GROWTH-SANITY-CLASS-SYNC-1・FCF-OUTLIER-QUAL-1・SECTOR-FCF-RATE-BROKEN-1）
 のリンク表記を「[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）」に更新した。
+
+追記（2026-07-11 同日10回目・セッション最終）: POLICYB-GATE-FIX-1の3コミットを
+push（コンフリクトなし）。[[GROWTH-SANITY-CLASS-SYNC-1]]実装前調査中に
+`calculate_fcf_cagr()`のCAGR計算式符号反転バグを発見し[[GROWTH-CAGR-SIGN-1]]
+として分離・修正・コミット（`b09757ee5`/`41c95bf3d`）。MO/XOMのIV急変動を
+一次データで追跡した結果、TTM系列構築時の四半期完全性チェック不足
+（全105銘柄中94銘柄でfcf_list_rawへ不完全TTM値が混入）を発見し
+[[TTM-QUARTERS-CHECK-1]]として優先度：高で新規登録。GROWTH-CAGR-SIGN-1の
+全銘柄再生成は同タスクの対応方針確定まで保留。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -363,8 +372,7 @@ MOのIV乖離率が+34.9%→+286.3%へ変動した要因を一次データで追
 | MO | **-12.9%** | avg_5yr（直接使用） | 検知なし（変化なし） |
 | XOM | **-13.7%** | recent_2yr（汚染値不使用、実害小） | 検知なし（変化なし） |
 | NVDA | **-19.0%** | recent_2yr（実害小） | 検知あり（乖離148%表示、正しくは約101%） |
-| AAPL | **-6.9%** | avg_5yr（直接使用） | 検知あり（乖離30%表示、正しくは約21%。
-成熟企業閾値20%に対し**境界線上**） |
+| AAPL | **-6.9%** | avg_5yr（直接使用） | 検知あり（乖離30%表示、正しくは約21%、成熟企業閾値20%に対し**境界線上**） |
 
 AAPLの例が示す通り、94銘柄全体では「補正すると外れ値検知の判定自体が
 反転する」境界線上のケースが他にも存在しうる。個別精査なしに軽微と
@@ -440,16 +448,17 @@ fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ�
 #### 状況更新（2026-07-11）: [[GROWTH-CAGR-SIGN-1]]によりMO/LOARのfloor_hitが解消
 本タスクの発見過程（growth_sanity調査）で、`calculate_fcf_cagr()`のCAGR計算式
 自体に符号反転バグがあることが判明し、[[GROWTH-CAGR-SIGN-1]]として分離・修正した
-（詳細はBACKLOG_DONE.md参照）。修正の結果、**MO・LOARは`floor_hit=False`
+（詳細はBACKLOG.md該当エントリ参照。全銘柄再生成保留中のため未アーカイブ）。
+修正の結果、**MO・LOARは`floor_hit=False`
 （verdict=PLAUSIBLE）に変わり、本タスクが問題視していた「MO（BUY）がfloor張り付き
 のままBUY判定が変わらない」という最も緊急性の高い実例は解消済み**。
 `verdict=FLOOR_HIT_REVIEW`のまま残るのはXOM（Classification: HOLD）のみとなり、
 既に非BUYのため実害は限定的。
 
 ただし[[GROWTH-CAGR-SIGN-1]]の修正確認時、MOの成長率が15.0%→29.9%に変わったことで
-IV乖離率が+34.9%→+286.3%へ大きく変動する事象が判明している（直近5年中の最古年が
-1年だけ突出して低い一過性値である可能性があり、2点のみで計算するCAGRが外れ値に
-敏感という別の課題を示唆）。この点も踏まえ、**本タスク（growth_sanity.verdictの
+IV乖離率が+34.9%→+286.3%へ大きく変動する事象が判明し、根本原因は
+[[TTM-QUARTERS-CHECK-1]]（TTM系列構築時の四半期完全性チェック不足）と
+確定した（一過性の事業要因ではない）。この点も踏まえ、**本タスク（growth_sanity.verdictの
 Classification連動）は緊急性が下がったため、着手要否を次回セッションで改めて判断する**。
 
 #### 着手条件

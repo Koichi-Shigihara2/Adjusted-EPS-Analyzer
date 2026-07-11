@@ -214,6 +214,10 @@ SEC EDGAR
 └─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
+├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
+│    読み込み、存在すればSEC 10-Kベースのfcf_5yr_avg/fcf_listを無条件で
+│    上書きする（TTM-QUARTERS-CHECK-1 2026-07-11: quarters_used/missingを
+│    未チェックのため不完全なTTM値が混入する既知の問題あり、対応検討中）
 ├─ core_calculator.py    # DCF・理論株価
 ├─ calculator/rice.py    # RICE投資効率
 ├─ calculator/dcf.py     # DCFエンジン
