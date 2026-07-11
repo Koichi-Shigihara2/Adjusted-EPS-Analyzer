@@ -1,11 +1,11 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-11（新規銘柄登録プロセスの構造診断を実施し
-REGISTER-FLOW-REDESIGN-1を新規登録（原子性欠如・registration_validator.pyの
-スキャン範囲の穴・データソース起因/プロセス起因の混同リスクを整理）。
-monitor_tickers.yaml同期漏れ6件を修正、TICKER-AUDIT-1に
-P4-CIKOrphan WARN見落とし・monitor_tickers同期漏れの教訓を追記、
-STALE-SUBPORT-CLEANUP-1を新規登録）
+最終更新: 2026-07-11（銘柄リスト参照の一元化調査を実施しTICKER-SOURCE-UNIFY-1を
+新規登録。registration_validator.py・adjusted_eps_analyzer/pipeline.pyの
+monitor_tickers.yaml誤参照2件を確定、common/sec_data/tickers.pyが既存の
+未活用統一ユーティリティであることを特定。REGISTER-FLOW-REDESIGN-1にP1/P4の
+同時導入経緯（git履歴確認）・system_health.py日次アラート見落としを追記、
+TICKER-AUDIT-1・CIK-ORPHAN-FLAGS-1・PREFLIGHT-CHECK-1に相互参照追記）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -482,6 +482,13 @@ stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
 チャット側の所感としてはB案（適切な評価軸への正式な振り分け）が筋が良いと
 考えるが、最終判断はTANUKI-FIN-1着手時に行う。それまでは現状（4フラグfalse・
 孤立状態）を維持し、除外は行わない。
+
+#### 根本原因との関係（2026-07-11追記）
+本件はregistration_validator.pyのP4-CIKOrphanチェック（cik_lookup.csv全体を
+無条件スキャンする唯一のセーフティネット、WARN扱い）で検出可能だったが
+運用上見落とされていた。[[TICKER-SOURCE-UNIFY-1]]・[[REGISTER-FLOW-REDESIGN-1]]の
+診断で、同種の見落とし（2026-07-10の半導体6銘柄monitor_tickers.yaml同期漏れ）が
+再発したことを確認済み。詳細はそちらを参照。
 
 ---
 
@@ -1003,8 +1010,98 @@ monitor_tickers.yaml（99件）が6件未反映（RMBS/ENTG/TER/KLAC/LRCX/APGE�
 monitor_tickers.yamlの同期は自動化されておらず、新規登録手順Step 7の手動実施のみに
 依存しているため、TICKER-AUDIT-1実装時は両ファイルの差分検出も棚卸し対象に含めること。
 
+#### 銘柄リスト正本参照の一元化との関係（2026-07-11追記）
+本タスクが検出すべき「同期漏れ」の根本原因は、[[TICKER-SOURCE-UNIFY-1]]で
+確定した「本来cik_lookup.csvを参照すべき箇所がmonitor_tickers.yamlを参照している」
+同型バグ（registration_validator.py・adjusted_eps_analyzer/pipeline.py）にある。
+TICKER-AUDIT-1は「症状の棚卸し」、TICKER-SOURCE-UNIFY-1は「原因の是正」という
+役割分担であり、TICKER-SOURCE-UNIFY-1が解消されれば本タスクが検出すべき
+同期漏れ自体の新規発生が構造的に減る。実装順としてはTICKER-SOURCE-UNIFY-1を
+先行させることが望ましい。
+
 #### 着手条件
 当面は運用でカバー可能。銘柄数がさらに増えた場合に着手。
+
+---
+
+### [TICKER-SOURCE-UNIFY-1] 銘柄リスト正本参照の一元化（根本課題）
+**優先度:** 中（着手する場合は関連症状の中で最初に着手すべき・下記参照）
+**分類:** アーキテクチャ / 銘柄リスト参照
+**登録日:** 2026-07-11
+**発見:** [[REGISTER-FLOW-REDESIGN-1]]で判明したregistration_validator.pyの
+盲点（monitor_tickers.yamlを全銘柄と取り違え）を起点に、同型バグの横断調査を実施
+
+#### 背景
+`config/cik_lookup.csv`（106件・正本）と`config/monitor_tickers.yaml`
+（105件・サブセット、手動同期）を、リポジトリ内の各処理がどちらから
+対象銘柄を取得しているかを全件横断調査した結果、**確定した同型バグが2件**、
+および**既に統一ユーティリティが存在するが未活用**という根本原因が判明した。
+
+#### 確定した同型バグ（2件・「全銘柄が対象のはずがサブセットを参照」）
+1. **`src/value/adjusted_eps_analyzer/pipeline.py::run()`**
+   （ticker_filter未指定時のデフォルトバッチ実行）が`monitor_tickers.yaml`を
+   直接読み取り、cik_lookup.csvの`eps=true`フラグを参照していない
+2. **`common/sec_data/registration_validator.py::run()`**のP1系チェック
+   （7ステップ登録完全性）が、デフォルト実行（引数なし）時の走査対象を
+   `monitor_tickers.yaml`から取得している（`tickers_to_check = target_tickers
+   if target_tickers else monitor_tickers`）。[[REGISTER-FLOW-REDESIGN-1]]の
+   根本原因
+
+#### 根本原因: 統一ユーティリティは存在するが不採用
+`common/sec_data/tickers.py`（2026-05-20 HypeCore全銘柄展開時に新設）は、
+モジュールdocstringに明記された責務が「config/cik_lookup.csv から銘柄リストを
+取得する共通ユーティリティ。**各サブシステムの--allオプションはこのモジュールを
+使う**」であり、`get_tanuki_tickers()`/`get_eps_tickers()`/`get_stonks_silo_tickers()`/
+`get_hypecore_tickers()`という各フラグ専用の取得関数まで用意されている。
+
+しかし実際に採用しているのは`src/discover/catalyst.py`（`get_hypecore_tickers()`
+経由）**1箇所のみ**。上記2件のバグを含め、他の全ての呼び出し箇所
+（`tanuki_valuation/pipeline.py`・`discover/stonks-silo/src/pipeline.py`・
+`hypecore.py`・`adjusted_eps_analyzer/pipeline.py`・`registration_validator.py`等）は
+各々が独自に`csv.DictReader`でcik_lookup.csvを読み直すか、無関係な
+`monitor_tickers.yaml`を参照しており、既存の統一ユーティリティへ収束していない。
+**「正本一元化のためのインフラは既に存在するが、後から書かれたコードが
+それを使わず車輪の再発明・別ソース参照を繰り返した」ことが根本原因**であり、
+新規に共通関数を作る必要はなく、既存呼び出し箇所の移行が本質的な対応となる。
+
+#### 参考: 一元化されていなくても問題ない箇所（正しい設計）
+以下は`cik_lookup.csv`を直接読むが、対象が単一ティッカーのCIK参照のみ
+（バッチ選定ロジックではない）ため問題なし: TANUKI TAIL系
+（kpi_proposer.py/sec_ctrl_fetcher.py/text_kpi_extractor.py、`--ticker`必須）・
+extract_key_facts.py・tanuki_valuation/data_fetcher.py（インサイダー取引CIK参照）。
+`common/system_health.py`の`check_i_eps()`はcik_lookup.csvの`eps=true`と
+`summary.json`収録銘柄を直接比較しており、この一元化問題とは無関係に
+正しい設計（後述の検証強制力の評価も参照）。
+
+#### 検出済みだが見落とされていた点（REGISTER-FLOW-REDESIGN-1の補足）
+`common/system_health.py`の`check_i_eps()`は`.github/workflows/System_Health.yml`
+により**毎日JST 8:30に自動実行されDiscordへ投稿**されており、2026-07-09の
+半導体5銘柄登録以降、EPS Analyzerデータ欠損（今回の6件同期漏れの一部）を
+検出したWARNが日次で投稿され続けていたはずである。つまり検出手段は
+`registration_validator.py`のP4-CIKOrphan（WARN）に加えてもう1つ、既に
+自動化された日次アラートとして存在していたが、いずれも実際のアクションに
+つながらなかった。「検出の欠如」ではなく「WARN/非ブロッキングアラートが
+運用上アクションされない」という、より根深い問題であることを示している。
+
+#### 対応方針（診断のみ・実装は別タスク）
+1. `adjusted_eps_analyzer/pipeline.py::run()`を`tickers.py`の
+   `get_eps_tickers()`を使うよう修正（確定バグ1の解消）
+2. `registration_validator.py`のデフォルト実行時の走査対象を
+   `tickers.py`の`get_all_tickers()`（cik_lookup.csv全銘柄）に変更
+   （確定バグ2の解消、[[REGISTER-FLOW-REDESIGN-1]]対応方針1と同一の修正）
+3. 上記2件の移行を機に、他の呼び出し箇所（tanuki pipeline.py・
+   stonks-silo pipeline.py・hypecore.py等）も余力があれば`tickers.py`経由へ
+   統一し、以後の新規コードが「各サブシステムの--allオプションはこのモジュールを
+   使う」という原設計意図に自然に従うようにする
+4. WARN/非ブロッキングアラートが運用上見落とされる問題自体は
+   [[REGISTER-FLOW-REDESIGN-1]]側の対応方針（P4のNG格上げ等）で扱う
+
+#### 優先度・着手順についての所感
+確定した2件のバグはいずれも「既存関数を呼ぶだけ」で直せる低コスト・低リスクな
+修正であり、[[REGISTER-FLOW-REDESIGN-1]]が提案する対応方針の中で
+最も費用対効果が高い。着手する場合は、根本課題である本タスクの1・2を
+先に解消してから、REGISTER-FLOW-REDESIGN-1の残り（原子性・status列拡張等、
+コストの高い対応）に進むことを推奨する。
 
 ---
 
@@ -1046,6 +1143,21 @@ hypecore.py --batch等）から「対象銘柄」として扱われる。Step 1�
 無条件スキャンするP4-CIKOrphanチェックだけだが、これはWARN止まりで
 非ブロッキングのため運用上見落とされやすい（[[CIK-ORPHAN-FLAGS-1]]・
 今回の6件漏れは共にこの穴の顕在化）。
+
+**原因確定（2026-07-11 git履歴調査）:** P1（monitor_tickers.yamlスキャン）と
+P4-CIKOrphan（cik_lookup.csv全体スキャン）は、後から片方が追加されて
+想定がズレたのではなく、**同一の初回コミット**（`0d718e2d4`、2026-06-11）で
+同時に実装されていた。当時の設計はP1を「monitor_tickers.yamlに登録済みの
+運用中銘柄の日次健全性チェック」、P4を「cik_lookup.csv全体を対象にした
+孤立エントリの定期監査」と役割分担する意図だったと見られ、後続コミット
+（`e902ee037`、同日）ではP4-CIKOrphanが実際に検出したCRWD/FIG/MDB/PUBM/WEAV
+5件を「monitor_tickers.yamlへ追加」ではなく「登録抹消（削除）」で解消していた。
+つまりP4-CIKOrphanの想定是正手段は当初から「追加」と「削除」の両方があり得る
+ため機械的にNG化しづらく、これがWARN据え置きの設計理由だったと推測される。
+根本原因は「2つのチェックの役割分担自体」ではなく、**新規登録時にP1相当の
+完全性チェックをcik_lookup.csv全体に対しても実行する仕組みが存在しない**こと
+（=デフォルト実行モードが「運用中銘柄の日次チェック」用途しか想定しておらず、
+「登録直後の完全性監査」用途を兼ねられていない）。詳細は[[TICKER-SOURCE-UNIFY-1]]参照。
 
 またNG/WARNの重大度分類にも一貫性の欠如がある：
 | チェック | 重大度 | 実質的な影響 |
@@ -1090,7 +1202,8 @@ cik_lookup.csvの記載だけでは判別できない。
    デフォルト実行のスキャン範囲をcik_lookup.csv全体に拡張**する
    （最も低コストで効果が大きい。P1のスキャン範囲を`monitor_tickers`から
    `cik_lookup.csv全銘柄`に変更すれば、monitor_tickers未登録自体もP1が
-   直接検出できるようになる）
+   直接検出できるようになる。**この修正自体は[[TICKER-SOURCE-UNIFY-1]]の
+   確定バグ2と同一であり、着手時はそちらの対応方針2をそのまま適用すればよい**）
 2. **cik_lookup.csvのstatus列に「登録進行中」を表す値を追加する**
    （例: `status=provisioning`。Step 8のNG=0確認後に`active`へ昇格する運用にすれば、
    各パイプラインは`status=active`のみを対象とすることで中途半端な登録の
@@ -1113,6 +1226,12 @@ cik_lookup.csvの記載だけでは判別できない。
 銘柄数が増えるほど再発確率が上がる構造的問題のため「優先度：中」を提案する。
 [[TICKER-AUDIT-1]]・[[PREFLIGHT-CHECK-1]]と統合的に設計すべき
 （別々に実装しない）。
+
+**着手順の推奨（2026-07-11追記）:** 対応方針1（P4のNG格上げ/スキャン範囲拡張）は
+[[TICKER-SOURCE-UNIFY-1]]で確定した同型バグの修正と同一であり、既存関数を
+呼ぶだけで直せる低コスト対応。着手する場合は先にTICKER-SOURCE-UNIFY-1を
+解消し、そのうえで本タスクの対応方針2〜5（status列拡張・オーケストレーション化等、
+コストの高い対応）に進むことを推奨する。
 
 ---
 
@@ -1161,6 +1280,15 @@ Step1（SECデータ取得）本実行前に以下を自動検知する：
 
 #### 優先度
 中（次回以降の新規登録が発生する前に着手が望ましい）
+
+#### [[REGISTER-FLOW-REDESIGN-1]]・[[TICKER-SOURCE-UNIFY-1]]との関係（2026-07-11追記）
+本タスクは「データソース起因（真の取得失敗）」を登録**前**に検知する仕組みであり、
+ENB（IFRS/40-F企業、SEC annual data 0件のまま遡及登録され孤立）は本タスクが
+実装されていれば①のフラグで登録前に弾けたはずの事例。一方
+REGISTER-FLOW-REDESIGN-1・TICKER-SOURCE-UNIFY-1は「プロセス起因（手順の
+飛ばし・銘柄リスト参照の取り違え）」を扱っており、対象とする失敗モードが異なる
+（データソース起因 vs プロセス起因の分類は[[REGISTER-FLOW-REDESIGN-1]]参照）。
+両者は補完関係にあり、どちらかで代替できるものではない。
 
 #### 設計メモ（2026-07-02・検討中）
 - ARCH-DATA-1のパターン判定ロジックを共有する統合設計とする
