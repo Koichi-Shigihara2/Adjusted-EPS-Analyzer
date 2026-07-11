@@ -1,10 +1,12 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-12（同日2回目: TTM-QUARTERS-CHECK-1・GROWTH-CAGR-SIGN-1完了、
-LLY-CAPEX-STALE-1・TEST-IV-FORMULA-ALPHA-1新規登録に続き、
-GROWTH-SANITY-CLASS-SYNC-1のスコープを段階0〜2を貫通する信頼性可視化の
-設計課題として再定義し、TRUST-SUMMARY-EPIC-1を優先度：高で新規登録。
-詳細は本セクション末尾の「追記（2026-07-12）」参照）
+最終更新: 2026-07-12（同日3回目: QUALITY-GATES-EPIC-1（バグ根絶に向けた
+5段階品質ゲート導入）を優先度：最高で新規登録し、既存タスク（ARCH-DATA-1・
+REGISTER-FLOW-REDESIGN-1・PREFLIGHT-CHECK-1・PREVENT-5・TICKER-AUDIT-1・
+LLY-CAPEX-STALE-1等）をゲート0〜4配下の統合マッピングとして整理。
+TEST-IV-FORMULA-ALPHA-1とTEST-STALE-IV-1の重複登録を発見しTEST-STALE-IV-1に
+統合（優先度は低→中に格上げ）、TEST-IV-FORMULA-ALPHA-1は削除。
+詳細は本セクション末尾の「追記（2026-07-12 同日3回目）」参照）
 
 最終更新: 2026-07-11（セッション最終ブラッシュアップ: PREVENT-5・TICKER-AUDIT-1・
 TICKER-SOURCE-UNIFY-1・REGISTER-FLOW-REDESIGN-1・PREFLIGHT-CHECK-1
@@ -120,6 +122,21 @@ MSFT/NVDA既存2件失敗）を優先度：中で新規登録。
 （実装は未着手、次回セッションで設計方針を固めてから着手）。
 [[GROWTH-SANITY-CLASS-SYNC-1]]は本EPICの段階1担当として位置づけを更新。
 
+追記（2026-07-12 同日3回目）: セッション振り返り議論で、過去1ヶ月の主要バグが
+共通して「発見手段が別作業中の偶然」に依存し機械的ゲートが存在しないことが
+根本原因と判明したため、[[QUALITY-GATES-EPIC-1]]（バグ根絶に向けた5段階品質
+ゲート：ゲート0登録適格性・ゲート1取得時データ検証・ゲート2正規化契約・
+ゲート3計算式検証・ゲート4出力整合＋回帰）を優先度：最高で新規登録した。
+[[ARCH-DATA-1]]・[[REGISTER-FLOW-REDESIGN-1]]・[[PREFLIGHT-CHECK-1]]・
+[[PREVENT-5]]・[[TICKER-AUDIT-1]]・[[LLY-CAPEX-STALE-1]]等の既存タスクを
+ゲート0〜4配下の統合マッピングとして整理し、[[TRUST-SUMMARY-EPIC-1]]は
+本EPIC完了後の再評価対象（Phase 5）と位置づけた。
+
+同日中に[[TEST-IV-FORMULA-ALPHA-1]]（本日新規登録）と[[TEST-STALE-IV-1]]
+（2026-07-02発見・先行登録済み）が同一バグの重複登録であることが判明したため、
+先行するTEST-STALE-IV-1を正式エントリとして残し優先度を低→中に格上げ、
+TEST-IV-FORMULA-ALPHA-1は削除した。
+
 ---
 
 ## 📌 このバックログの読み方（2026-06-19 統合で追加）
@@ -142,8 +159,77 @@ MSFT/NVDA既存2件失敗）を優先度：中で新規登録。
 
 ## 優先度：最高（構造的負債・着手で多くの後続課題が消える）
 
-（最高優先度の残課題なし。2026-06-23時点。EPIC-LAYOUT-1はグループA/B/C全件完了し
-BACKLOG_DONE.mdへ移動。MACRO-DISP-2も2026-06-23完了）
+### [QUALITY-GATES-EPIC-1] バグ根絶に向けた5段階品質ゲートの導入
+**優先度:** 最高
+**分類:** アーキテクチャ / 品質管理 / マスタープランEPIC
+**登録日:** 2026-07-12
+**発見:** セッション振り返り議論（バックログ増加原因の分析）
+
+#### 背景
+過去1ヶ月の主要バグ（KLAC/FICO/CPRT/LLY/NOW/TTM系・CAGR符号反転等）を
+横断すると、共通して「発見手段が別作業中の偶然」に依存しており、
+機械的に検知・ブロックするゲートが存在しないことが根本原因と判明した。
+1件の修正が新たな発見を誘発する連鎖（TTM-QUARTERS-CHECK-1で3件誘発、
+DCF-REL-SYNC-1で複数件誘発等）もこの構造に起因する。
+
+対症療法（発見された個別バグを都度直す）を続ける限りバグ発見ペースは
+落ちないため、データの上流（取得）→中流（正規化）→計算（式の正しさ）→
+下流（出力整合）の各段階に機械的なゲートを設け、多くのバグをそもそも
+本番に到達させない構造に転換する。
+
+#### ゲート構成
+**ゲート0（登録適格性）**: 米国上場・10-K/10-Q提出企業のみを機械判定で
+通す。submissions APIで提出フォーム種別（20-F/40-F即NG）・国・上場年数・
+収益タグ存在を確認。除外時は`exclusion_reason`をcik_lookup.csvに必須記録し
+「フラグfalse＝経緯不明」を根絶する。
+
+**ゲート1（取得時データ検証）**: filing取得のたびに以下を実施：
+- 株式数の前期比ジャンプ検知（yfinance splits履歴と突合し分割由来か判定）
+- 期待タグセットとの照合（必須タグ欠落を即NG）
+- 主要数値の前年比急変時、理由確認までその銘柄の下流計算をブロック
+- 決算期末日の同一as-of日整合チェック
+- 10-K/A・10-Q/A（訂正）の存在確認と優先取得
+- 四半期充足数チェック（TTM-QUARTERS-CHECK-1の考え方をFCF以外の全系列に一般化）
+
+**ゲート2（正規化契約）**: 全計算ロジックは正規化済みJSONのみを読む。
+各フィールドに出所・充足度メタデータを必須付与。規約（fcf_listの並び順等）は
+docstringではなく型（dataclass等）でコード化し、構造的に間違えられなくする。
+
+**ゲート3（計算式検証）**: 全計算式に「ゴールデンテスト（教科書的定義との
+手計算突合）」と「性質テスト（単調性等の性質検証）」を1式1件以上必須にする。
+同一概念の計算が2箇所以上に重複実装される状態自体をNG検知する。
+
+**ゲート4（出力整合＋回帰）**: report_consistency_checkのWARN放置を廃止し
+「確認済み」台帳管理に変更（未確認WARNは次回実行でNG化）。CI相当の実行対象を
+全テストファイルにする。フルバッチ再生成時のClassification差分レポートを
+標準出力にする。
+
+#### 既存タスクの位置づけ（統合マッピング）
+以下は個別タスクとして独立進行させず、本EPIC配下のPhase実装時に吸収する：
+- ゲート0: [[REGISTER-FLOW-REDESIGN-1]]の対応方針2〜4、[[PREFLIGHT-CHECK-1]]
+- ゲート1: [[ARCH-DATA-1]]のaudit.py拡張項目、[[PREVENT-5]]、
+  [[LLY-CAPEX-STALE-1]]（個別事例から一般化）
+- ゲート2: [[ARCH-DATA-1]]本体（正規化レイヤー強化）
+- ゲート3: 新規（計算式ゴールデンテスト整備は現状ほぼ手つかず）
+- ゲート4: [[TICKER-AUDIT-1]]のWARN集約構想
+- 上記いずれでも解消しない構造的限界の可視化は[[TRUST-SUMMARY-EPIC-1]]に
+  引き続き委ねる（本EPIC完了後に再評価）
+
+#### 着手順序（Phase）
+1. **Phase 1（即時・低コスト）**: BACKLOG重複統合
+   （[[TEST-IV-FORMULA-ALPHA-1]]・[[TEST-STALE-IV-1]]の統合）、
+   CLAUDE_CODE_START.md Step 2を全テストファイル実行に変更、
+   WARN台帳方式の導入
+2. **Phase 2（ゲート1）**: 取得時検証6項目の実装。投資対効果最大と判断
+   （過去1ヶ月の主要バグの大半がここで止まっていたはず）
+3. **Phase 3（ゲート0＋2）**: 登録適格性の機械化・正規化契約の整備
+4. **Phase 4（ゲート3）**: 全計算式のゴールデンテスト・性質テスト整備
+5. **Phase 5**: [[TRUST-SUMMARY-EPIC-1]]（可視化）を、上記ゲートで拾いきれない
+   構造的限界に対象を絞って再評価
+
+#### 着手条件
+なし。Phase 1は次回セッション即着手可能。Phase 2以降は各Phase完了後に
+次Phaseの詳細設計を行う。
 
 ---
 
@@ -551,31 +637,6 @@ LLYのCapEx四半期データが2022-09-30以降SECから取得できておら�
 #### 対応方針
 LLYのCapEx四半期取得ロジック自体のバグ原因は未調査。一次情報（EDGAR）で
 2022-09-30以降のCapExタグの実際の取得状況を確認し、正規化層での修正を検討する。
-
----
-
-### [TEST-IV-FORMULA-ALPHA-1] test_iv_formula.pyがALPHA-REDESIGN-1後に未更新でMSFT/NVDA失敗
-**優先度:** 中
-**分類:** テスト基盤 / TANUKI VALUATION
-**登録日:** 2026-07-12
-**発見:** [[TTM-QUARTERS-CHECK-1]] Step4実施時
-
-#### 問題
-pytest tests/test_iv_formula.pyでMSFT・NVDA 2件が失敗する。
-ALPHA-REDESIGN-1（2026-06-25、DCF_v0へのalpha乗算廃止）後、テスト式が
-`iv_pt = v0_rm×(1+alpha)+...`というalpha乗算方式のまま更新されておらず、
-alpha≈0の銘柄では誤差が閾値内に収まり偶然パスしていたと推測される。
-TTM-QUARTERS-CHECK-1修正前のデータで検証し、既存の別問題であることを確認済み。
-
-#### 影響
-`CLAUDE_CODE_START.md`のStep 2はtest_pipeline_logic.pyのみ実行する運用のため、
-この回帰は約2週間見逃されていた可能性がある。test_pipeline_logic.py自体は
-全件パス、report_consistency_check.pyもNG=0のため実データへの影響は別途確認要。
-
-#### 対応方針
-現行のDCF_v0計算式（alpha乗算なし）に合わせてテスト式を修正する。
-CLAUDE_CODE_START.mdのStep 2実行対象にtest_iv_formula.pyを含めるかも
-合わせて検討する（同種の回帰見逃しの再発防止）。
 
 ---
 
@@ -1436,9 +1497,11 @@ grepやスクリプトによる自動検出で漏れが発生しやすい。
 ---
 
 ### [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従
-**優先度:** 低
+**優先度:** 中（2026-07-12・低から格上げ）
 **分類:** テスト保守 / 品質管理
-**発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）
+**発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）。
+2026-07-12: [[TTM-QUARTERS-CHECK-1]]Step4実施時にも独立発見
+（[[TEST-IV-FORMULA-ALPHA-1]]として重複登録されていたが本エントリに統合）
 
 #### 問題
 tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計算式
@@ -1447,8 +1510,15 @@ tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計
 旧フィールドalphaが残存しているため、テストの再計算値と保存値が乖離し
 NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テストコードのみ陳腐化）。
 
+#### 影響
+`CLAUDE_CODE_START.md`のStep 2はtest_pipeline_logic.pyのみ実行する運用のため、
+この回帰は登録（2026-07-02発見）から2026-07-12の再発見まで約2週間見逃されて
+いた。優先度格上げはこの見逃し期間の長さを踏まえた判断。
+
 #### 対応方針
 test_iv_formula.pyの期待値算出ロジックをALPHA-REDESIGN-1後の計算式に更新する。
+CLAUDE_CODE_START.mdのStep 2実行対象にtest_iv_formula.pyを含めるかも
+合わせて検討する（同種見逃しの再発防止、[[QUALITY-GATES-EPIC-1]]Phase 1と連動）。
 
 ---
 
