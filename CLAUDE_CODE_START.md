@@ -526,12 +526,15 @@ else:
 
 # Step 8: 登録パイプライン健全性チェック（必須）
 python common/sec_data/registration_validator.py [TICKER]
+# [TICKER] を必ず指定すること（引数なしで実行すると走査対象が
+# monitor_tickers.yaml登録済み銘柄のみになり、新規登録した当該ティッカーが
+# チェック対象から漏れて何も検出されない。2026-07-11の教訓）。
 # NG=0 を確認してからコミットする。
 # WARN は内容を確認して対処が必要なもののみ対応する（上場直後の SEC 件数不足は許容）。
-# ただし以下2種のWARNは「許容してよいWARN」ではなく実施漏れのサインのため必ず確認する
-# （2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓）：
-#   - P4-CIKOrphan: monitor_tickers.yaml未登録 → Step 7の実施漏れ
-#   - P1-Step5b-EPS: EPS analyzer データなし → Step 5bの実施漏れ（eps=trueの銘柄のみ対象）
+# なお[TICKER]を指定していればmonitor_tickers.yaml未登録はP1-Step7-Monitorで
+# NG（ブロッキング）として検出されるが、P1-Step5b-EPS（EPS analyzerデータなし）は
+# 「許容してよいWARN」ではなく実施漏れのサインのため必ず確認する
+# （2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓。eps=trueの銘柄のみ対象）。
 ```
 
 **Step 8.5: 対象システム横断チェック（必須・XBRL-TAG-KLAC-1-FOLLOWUP 2026-07-09新設）**
@@ -553,10 +556,14 @@ Step 1〜8はシステム個別の登録手順だが、「意図した通りに�
       （誤操作防止の注意書き。thesis.json等を新規登録手順の
       一環として作成しないこと）
 - [ ] monitor_tickers.yaml — cik_lookup.csvとの件数・銘柄突合を明示的に行う
-      （特に「複数銘柄の手動一括登録」を行った場合はStep 7がすり抜けやすい。
-      `registration_validator.py`のP4-CIKOrphan WARNで検出可能だが、
-      WARNは非ブロッキングのため見落としやすい点に注意。
-      2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓・[[TICKER-AUDIT-1]]参照）
+      （特に「複数銘柄の手動一括登録」ではStep 7・Step 8（[TICKER]指定での
+      個別実行）の両方が省略されやすい。Step 8を[TICKER]指定で実行していれば
+      P1-Step7-MonitorでNG検出されるはずだが、Step 8自体が未実施・または
+      引数なし実行だった場合はP1チェックの走査対象からも漏れる。この場合の
+      唯一のセーフティネットは`registration_validator.py`のP4-CIKOrphan
+      （cik_lookup.csv全体を無条件スキャン）だが、WARN止まりで非ブロッキングの
+      ため見落としやすい。2026-07-11 monitor_tickers.yaml同期漏れ6件の教訓・
+      [[TICKER-AUDIT-1]]・[[TICKER-SOURCE-UNIFY-1]]参照）
 - [ ] EPS Analyzerデータ — eps=trueの銘柄でStep 5bの実施漏れがないか、
       `registration_validator.py`のP1-Step5b-EPS WARN「EPS Analyzer なし」が
       残っていないかを確認する（monitor_tickers.yamlへの登録だけでは

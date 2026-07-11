@@ -2,6 +2,52 @@
 
 ---
 
+## 2026-07-11（完了）
+
+### ✅ [MONITOR-SYNC-FIX-1] monitor_tickers.yaml同期漏れ6件の修正（2026-07-11完了）
+**発見:** SYSTEM_MAP.md実態調査（2026-07-10）でcik_lookup.csv（106件）と
+monitor_tickers.yaml（99件）の6件差分が判明
+
+#### 内容
+APGE/RMBS/ENTG/TER/KLAC/LRCXの6銘柄（いずれもeps=true、登録手順Step 7の
+実施漏れ）をconfig/monitor_tickers.yamlへ追加。registration_validator.pyで
+P1-Step7-Monitor NGが6件とも解消したことを確認（BXのみ全フラグfalseで
+除外が正当なため対象外のまま）。pytest 124件パス確認済み。
+根本原因の診断・再発防止策は[[TICKER-AUDIT-1]]・[[REGISTER-FLOW-REDESIGN-1]]・
+[[TICKER-SOURCE-UNIFY-1]]としてBACKLOG登録済み（本エントリは実データ修正の
+完了記録のみ）。
+
+---
+
+### ✅ [EPS-BACKFILL-SEMI-1] 半導体6銘柄のEPS Analyzerデータ生成（2026-07-11完了）
+**発見:** MONITOR-SYNC-FIX-1修正時、6銘柄が登録手順Step 5b未実施
+（EPS Analyzerデータなし）であることが判明
+
+#### 内容
+APGE/RMBS/ENTG/TER/KLAC/LRCXに対し`adjusted_eps_analyzer/pipeline.py --ticker`を
+実行しEPS Analyzerデータを生成。registration_validator.pyでP1-Step5b-EPS
+WARNが6件とも解消したことを確認。RMBS/ENTG/TER/KLAC/LRCXは黒字半導体企業として
+妥当なadjusted_eps（$2.5〜$38）、APGEは売上ゼロの臨床段階バイオのため
+TTM全期間赤字（データ自体は正常生成だがEPS評価の実用性は限定的）。
+report_consistency_check.py NG=0、pytest 124件パス確認済み。
+
+---
+
+### ✅ [SYSTEM-MAP-PATH-FIX-1] SYSTEM_MAP.md出力先パス誤記5件の修正（2026-07-11完了）
+**発見:** SYSTEM_MAP.md全体像の実態調査時、システム一覧テーブルの記載パスと
+リポジトリ実態の突合で判明
+
+#### 内容
+「システム一覧と責任範囲」テーブルのうちSTONKS SILO・EPS ANALYZER・
+MACRO PULSE・Market Pulse・PORTFOLIOの5件で、記載パスが実在しない
+ディレクトリ構成になっていたことを修正（例: PORTFOLIOの旧記載
+`docs/management/portfolio/`は該当ディレクトリ自体が存在せず、
+正しくは`docs/portfolio/`）。併せて「銘柄振り分けの正本（cik_lookup.csv）」
+セクション新設・STONKS SILOの解像度向上・AutoTrade運用実体/OpenD前提の
+追記等、SYSTEM_MAP.md全体の実態調査結果を反映。
+
+---
+
 ## 2026-07-10（完了）
 
 ### ✅ [ARCH-DATA-1-CONSOLIDATE-1] SEC-TAG-FICO-CPRT-1のARCH-DATA-1への統合検討（2026-07-10完了）

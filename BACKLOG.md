@@ -1,11 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
-最終更新: 2026-07-11（銘柄リスト参照の一元化調査を実施しTICKER-SOURCE-UNIFY-1を
-新規登録。registration_validator.py・adjusted_eps_analyzer/pipeline.pyの
-monitor_tickers.yaml誤参照2件を確定、common/sec_data/tickers.pyが既存の
-未活用統一ユーティリティであることを特定。REGISTER-FLOW-REDESIGN-1にP1/P4の
-同時導入経緯（git履歴確認）・system_health.py日次アラート見落としを追記、
-TICKER-AUDIT-1・CIK-ORPHAN-FLAGS-1・PREFLIGHT-CHECK-1に相互参照追記）
+最終更新: 2026-07-11（セッション最終ブラッシュアップ: PREVENT-5・TICKER-AUDIT-1・
+TICKER-SOURCE-UNIFY-1・REGISTER-FLOW-REDESIGN-1・PREFLIGHT-CHECK-1
+（いずれも優先度：中）が「## 優先度：低」セクション配下に誤配置されていた
+構造的不整合を修正し「## 優先度：中」セクション末尾へ移動。全55項目のID・
+本文を保持したまま再配置したことを検証済み。銘柄リスト参照の一元化調査を
+実施しTICKER-SOURCE-UNIFY-1を新規登録。registration_validator.py・
+adjusted_eps_analyzer/pipeline.pyのmonitor_tickers.yaml誤参照2件を確定、
+common/sec_data/tickers.pyが既存の未活用統一ユーティリティであることを特定。
+REGISTER-FLOW-REDESIGN-1にP1/P4の同時導入経緯（git履歴確認）・
+system_health.py日次アラート見落としを追記、TICKER-AUDIT-1・
+CIK-ORPHAN-FLAGS-1・PREFLIGHT-CHECK-1に相互参照追記）
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -723,221 +728,6 @@ report.txtに「Analyst_Consensus ... vs IV: +151.4%」のような、
 
 ---
 
-## 優先度：低（アイデア段階）
-
-### [TAIL-DETAIL-1] detail.htmlレイアウト微調整
-**優先度:** 低
-**分類:** UX / TANUKI TAIL
-**登録日:** 2026-06-27
-
-#### 問題
-- DCF右カラムの下半分が空白（AI視点左カラムの方が縦に長いため）
-- 内部統制がAI視点左カラムの下に食い込んでいる（並列ブロックの外に出ていない）
-
-#### 対応方針
-- AI視点・DCF並列ブロックのmin-height調整またはgrid align設定
-- 内部統制セクションを並列ブロックの完全な下に配置する
-
----
-
-### [UX-FLOW-1] On a Journey標準利用フローの設計
-**優先度:** 低（思想設計タスク、実装ではなく方針検討から開始）
-**分類:** 設計課題 / 全画面横断
-
-#### 内容
-画面間を行き来する非線形な利用が前提だが、緩やかな標準利用フロー
-（例: stock.htmlで個別検証→TANUKI SCOREで横断相対判断、等）を
-今後設計したい。
-
-#### 格上げ検討理由（2026-07-01）
-EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×funda×phaseベースの
-銘柄選定）のナビ登録先を検討した際、本来TANUKI SCOREの役割に近い機能をMarket Pulse
-配下に置く形で暫定決着した。これは各画面の役割定義はあるものの、画面間の回遊動線・
-機能配置の指針が未設計であることに起因する。今後複数システムの性質を跨ぐ機能が増える
-たびに同種の判断コストが発生するため、次セッション以降の設計着手候補として優先的に
-検討する。
-
----
-
-### [MULTI-1] マルチバリュエーション表示
-- 現状: DCF一本槍
-- 改善: DCF / PEG / EV/Sales / RICE / HypeCoreを並列スコアカード表示
-- GPT提案: 2026-05-30
-- 関連（2026-07-10追記）: [[RICE-INTEGRATE-1]]とRICE指標の活用目的が部分重複。
-  本タスク（MULTI-1）は画面表示（並列スコアカード）が主眼、RICE-INTEGRATE-1は
-  スクリーニング判定への組み込みが主眼という役割分担。どちらかの着手時に
-  統合要否を判断する。
-
-### [ARCH-1] ボトルネック企業プレミアム
-- 現状: 未実装
-- 内容: NVDA・ASML等の独占的ポジションを持つ企業への追加プレミアム
-- 設計: 手動フラグ（bottleneck: true）+ Moat Scoreへの上乗せ or Phase1延長の形
-- 注記: ALPHA-REDESIGN-1（2026-06-25）でalphaが廃止されたため、
-  α加算方式は使用不可。設計を再検討する必要あり。
-- 記録日: 2026-04-12
-
-### [EVAL-2] 期待値エンジン（仮称）
-- 現状: 構想中
-- 内容: 各サブポート戦略の期待値を統合管理するエンジン
-
-### [DESIGN-8] 8-3 ワンクリック銘柄登録〜更新
-- 概要: Discover画面から「➕ 登録」ボタンで
-  CIK取得→β/セグメント/Damodaran業種AI提案→承認→一括更新
-  を一気通貫で実行
-- 実装難易度: 高
-
-### [DESIGN-8] 8-4 指数採用候補銘柄の発掘（設計見直し済み・実装保留）
-- 概要: S&P MidCap 400 → S&P 500 昇格候補を定期サーチ
-  GS・バンカメ等が発表する昇格候補レポートをGrok Web検索で収集
-  機械的条件判定（yfinance）ではなくアナリストレポートベースの設計
-- 実装方針: Grokのweb検索で「S&P 500 addition candidates」を定期検索
-  週次でDiscover候補セクションに表示
-- 実装難易度: 中
-- 状態: 実装保留（着手時期未定）
-
----
-
-### [STALE-CHECK-1-IMPL] STALE-CHECK-1の未実装とドキュメント乖離
-**優先度:** 低
-**分類:** ドキュメント乖離 / 品質管理
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CLAUDE_CODE_START.md（L689〜693）に「STALE-CHECK-1:決算後未更新」と記載されているが、
-common/sec_data/report_consistency_check.pyにこのチェックの実装が存在しない。
-ドキュメントの記述が実装より先行している状態。
-
-#### 対応方針
-- A案: STALE-CHECK-1を実装する
-  （直近決算発表日からN日以上経過しているのにlatest.jsonが更新されていない銘柄を検出）
-- B案: 実装予定なければCLAUDE_CODE_START.mdの記載を削除する
-
----
-
-### [CHECK-FORMAT-1] report_consistency_check.pyのコメント形式不統一
-**優先度:** 低
-**分類:** 保守性 / 品質管理
-**発見:** 2026-06-26横断調査
-
-#### 問題
-CHECK-1〜11は「# ── CHECK N: 説明 ───」形式、
-CHECK-12〜19は「# CHECK-N:」形式で記述されており、
-grepやスクリプトによる自動検出で漏れが発生しやすい。
-
-#### 対応方針
-全CHECKを「# CHECK-N:」形式に統一する（CHECK-1〜11を修正）。
-
----
-
-### [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従
-**優先度:** 低
-**分類:** テスト保守 / 品質管理
-**発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）
-
-#### 問題
-tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計算式
-（iv_pt = v0_rm × (1+alpha) + rpo_pv + go_pv）をハードコードしたまま。
-現行core_calculator.pyはalpha=0.0固定（alpha廃止済み）だが、latest.jsonには
-旧フィールドalphaが残存しているため、テストの再計算値と保存値が乖離し
-NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テストコードのみ陳腐化）。
-
-#### 対応方針
-test_iv_formula.pyの期待値算出ロジックをALPHA-REDESIGN-1後の計算式に更新する。
-
----
-
-### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
-**優先度:** 低
-**分類:** 管理UI漏れ / admin.html
-**発見:** 2026-06-26横断調査
-
-#### 問題
-rpo_config.json（RPOプレミアムのホワイトリスト管理）は
-report_consistency_check.py L42で参照されているが、
-admin.htmlにUI編集機能が存在しない。
-RPOプレミアムを付与・変更する際は手動JSONファイル編集が必要。
-
-#### 対応方針
-admin.htmlにrpo_config.jsonの編集UIセクションを追加する。
-
----
-
-### [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
-**優先度:** 低
-**分類:** 品質管理
-**発見:** 2026-06-26横断調査
-
-#### 問題
-直近実装された以下の機能に対応するconsistency checkが未追加：
-- Moat Score（ALPHA-REDESIGN-1）: moat_scoreがNoneまたは範囲外（0〜1）の検出
-- DuPont分解（TANUKI-ROE-1）: dupont=nullの銘柄のうち負債超過でないものの検出
-- s4_streak（HYPE-1）: 内部変数のため対象外
-
-#### 対応方針
-report_consistency_check.pyに以下を追加：
-- CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
-- CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
-
----
-
-### [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
-**優先度:** 低
-**分類:** データ定義不整合 / TANUKI TAIL
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-thesis.jsonの実際のフィールドが期待値と乖離している（全9銘柄共通）：
-
-- company: 未実装（フィールド自体なし）
-- position_size: 未実装（フィールド自体なし）
-- strategy → 実際は strategy_name（フィールド名相違）
-- thesis_version → 実際は version（フィールド名相違）
-- entry_price: NVDAでnull（既存ポジション登録時に取得価格未記録）
-
-機能的な問題はないが、スキーマ定義と実データの乖離が蓄積している。
-
-#### 対応方針
-- TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
-- NVDAのentry_priceを実際の取得価格で更新
-
----
-
-### [ADMIN-LOG-1] admin.html・stock.htmlにconsole.log残存
-**優先度:** 低
-**分類:** コード品質 / admin.html・TANUKI VALUATION
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-本番HTMLにconsole.logが32件残存している：
-- admin.html: 26件（ワークフロー実行ポーリングのデバッグトレース）
-- stock.html: 6件（matricesタブ読み込みデバッグログ）
-
-#### 対応方針
-不要なconsole.logを削除する。
-admin.htmlのポーリングログはワークフロー実行確認のデバッグとして
-有用な場合があるため、削除前に必要性を判断する。
-
----
-
-### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
-**優先度:** 低
-**分類:** データ定義不整合 / TANUKI SCORE
-**発見:** 2026-06-26横断バグ調査
-
-#### 問題
-同一データが異なるキー名で保存されている：
-- daily_pick.json: selection_reason
-- history.json: reason
-
-daily_pick.pyが書き込む際にキー名が統一されていない。
-機能的な問題はないが保守上の混乱を招く。
-
-#### 対応方針
-どちらかに統一する（selection_reasonを推奨・より説明的なため）。
-history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
-
----
-
 ### [PREVENT-5] 定期横断調査スクリプトの整備
 **優先度:** 中
 **分類:** 再発防止 / 品質管理
@@ -1235,25 +1025,6 @@ cik_lookup.csvの記載だけでは判別できない。
 
 ---
 
-### [SN-TANUKI-DELAY-1] SN TANUKI VALUATION再検討
-**優先度:** 低
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-02
-
-#### 背景
-SNは2025年まで20-F提出企業（外国民間発行体）のため四半期報告義務がなく、
-四半期データが2026年Q1分（初回10-Q、2026-05-06提出）のみ存在する。
-四半期トレンド・TTM系列が構築不能なため、当面 tanuki=false で保留中。
-
-#### 対応
-2026年8月頃のQ2 10-Q提出後、四半期系列が蓄積された時点で tanuki=true に戻し
-TANUKI VALUATION Step3（pipeline.py）を実行する。
-
-#### 優先度
-低（時期依存、8月まで着手不可）
-
----
-
 ### [PREFLIGHT-CHECK-1] 新規登録時のデータ品質プリフライトチェック
 **優先度:** 中
 **分類:** 品質管理 / 銘柄登録フロー
@@ -1311,6 +1082,240 @@ REGISTER-FLOW-REDESIGN-1・TICKER-SOURCE-UNIFY-1は「プロセス起因（手�
   （`/agents`）を使い、検証役（Read/Grep/Glob/WebFetch等のみ、
   Edit権限なし）と実装役（検証役の報告を受けてから対応・修正を行う）
   を分離する案がある。ただし未着手・要検討（2026-07-02時点）。
+
+---
+
+## 優先度：低（アイデア段階）
+
+### [TAIL-DETAIL-1] detail.htmlレイアウト微調整
+**優先度:** 低
+**分類:** UX / TANUKI TAIL
+**登録日:** 2026-06-27
+
+#### 問題
+- DCF右カラムの下半分が空白（AI視点左カラムの方が縦に長いため）
+- 内部統制がAI視点左カラムの下に食い込んでいる（並列ブロックの外に出ていない）
+
+#### 対応方針
+- AI視点・DCF並列ブロックのmin-height調整またはgrid align設定
+- 内部統制セクションを並列ブロックの完全な下に配置する
+
+---
+
+### [UX-FLOW-1] On a Journey標準利用フローの設計
+**優先度:** 低（思想設計タスク、実装ではなく方針検討から開始）
+**分類:** 設計課題 / 全画面横断
+
+#### 内容
+画面間を行き来する非線形な利用が前提だが、緩やかな標準利用フロー
+（例: stock.htmlで個別検証→TANUKI SCOREで横断相対判断、等）を
+今後設計したい。
+
+#### 格上げ検討理由（2026-07-01）
+EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×funda×phaseベースの
+銘柄選定）のナビ登録先を検討した際、本来TANUKI SCOREの役割に近い機能をMarket Pulse
+配下に置く形で暫定決着した。これは各画面の役割定義はあるものの、画面間の回遊動線・
+機能配置の指針が未設計であることに起因する。今後複数システムの性質を跨ぐ機能が増える
+たびに同種の判断コストが発生するため、次セッション以降の設計着手候補として優先的に
+検討する。
+
+---
+
+### [MULTI-1] マルチバリュエーション表示
+- 現状: DCF一本槍
+- 改善: DCF / PEG / EV/Sales / RICE / HypeCoreを並列スコアカード表示
+- GPT提案: 2026-05-30
+- 関連（2026-07-10追記）: [[RICE-INTEGRATE-1]]とRICE指標の活用目的が部分重複。
+  本タスク（MULTI-1）は画面表示（並列スコアカード）が主眼、RICE-INTEGRATE-1は
+  スクリーニング判定への組み込みが主眼という役割分担。どちらかの着手時に
+  統合要否を判断する。
+
+### [ARCH-1] ボトルネック企業プレミアム
+- 現状: 未実装
+- 内容: NVDA・ASML等の独占的ポジションを持つ企業への追加プレミアム
+- 設計: 手動フラグ（bottleneck: true）+ Moat Scoreへの上乗せ or Phase1延長の形
+- 注記: ALPHA-REDESIGN-1（2026-06-25）でalphaが廃止されたため、
+  α加算方式は使用不可。設計を再検討する必要あり。
+- 記録日: 2026-04-12
+
+### [EVAL-2] 期待値エンジン（仮称）
+- 現状: 構想中
+- 内容: 各サブポート戦略の期待値を統合管理するエンジン
+
+### [DESIGN-8] 8-3 ワンクリック銘柄登録〜更新
+- 概要: Discover画面から「➕ 登録」ボタンで
+  CIK取得→β/セグメント/Damodaran業種AI提案→承認→一括更新
+  を一気通貫で実行
+- 実装難易度: 高
+
+### [DESIGN-8] 8-4 指数採用候補銘柄の発掘（設計見直し済み・実装保留）
+- 概要: S&P MidCap 400 → S&P 500 昇格候補を定期サーチ
+  GS・バンカメ等が発表する昇格候補レポートをGrok Web検索で収集
+  機械的条件判定（yfinance）ではなくアナリストレポートベースの設計
+- 実装方針: Grokのweb検索で「S&P 500 addition candidates」を定期検索
+  週次でDiscover候補セクションに表示
+- 実装難易度: 中
+- 状態: 実装保留（着手時期未定）
+
+---
+
+### [STALE-CHECK-1-IMPL] STALE-CHECK-1の未実装とドキュメント乖離
+**優先度:** 低
+**分類:** ドキュメント乖離 / 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CLAUDE_CODE_START.md（L689〜693）に「STALE-CHECK-1:決算後未更新」と記載されているが、
+common/sec_data/report_consistency_check.pyにこのチェックの実装が存在しない。
+ドキュメントの記述が実装より先行している状態。
+
+#### 対応方針
+- A案: STALE-CHECK-1を実装する
+  （直近決算発表日からN日以上経過しているのにlatest.jsonが更新されていない銘柄を検出）
+- B案: 実装予定なければCLAUDE_CODE_START.mdの記載を削除する
+
+---
+
+### [CHECK-FORMAT-1] report_consistency_check.pyのコメント形式不統一
+**優先度:** 低
+**分類:** 保守性 / 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+CHECK-1〜11は「# ── CHECK N: 説明 ───」形式、
+CHECK-12〜19は「# CHECK-N:」形式で記述されており、
+grepやスクリプトによる自動検出で漏れが発生しやすい。
+
+#### 対応方針
+全CHECKを「# CHECK-N:」形式に統一する（CHECK-1〜11を修正）。
+
+---
+
+### [TEST-STALE-IV-1] test_iv_formula.pyがALPHA-REDESIGN-1に未追従
+**優先度:** 低
+**分類:** テスト保守 / 品質管理
+**発見:** 2026-07-02（ARCH-DATA-1-YTDスポットチェック時）
+
+#### 問題
+tests/test_iv_formula.pyがALPHA-REDESIGN-1（2026-06-25完了）以前の旧計算式
+（iv_pt = v0_rm × (1+alpha) + rpo_pv + go_pv）をハードコードしたまま。
+現行core_calculator.pyはalpha=0.0固定（alpha廃止済み）だが、latest.jsonには
+旧フィールドalphaが残存しているため、テストの再計算値と保存値が乖離し
+NVDA/MSFTで恒常的にpytest失敗する（機能的な実害はなし、テストコードのみ陳腐化）。
+
+#### 対応方針
+test_iv_formula.pyの期待値算出ロジックをALPHA-REDESIGN-1後の計算式に更新する。
+
+---
+
+### [RPO-ADMIN-1] rpo_config.jsonがadmin.htmlで編集できない
+**優先度:** 低
+**分類:** 管理UI漏れ / admin.html
+**発見:** 2026-06-26横断調査
+
+#### 問題
+rpo_config.json（RPOプレミアムのホワイトリスト管理）は
+report_consistency_check.py L42で参照されているが、
+admin.htmlにUI編集機能が存在しない。
+RPOプレミアムを付与・変更する際は手動JSONファイル編集が必要。
+
+#### 対応方針
+admin.htmlにrpo_config.jsonの編集UIセクションを追加する。
+
+---
+
+### [CHECK-COVERAGE-1] 新機能に対応するconsistency checkが未追加
+**優先度:** 低
+**分類:** 品質管理
+**発見:** 2026-06-26横断調査
+
+#### 問題
+直近実装された以下の機能に対応するconsistency checkが未追加：
+- Moat Score（ALPHA-REDESIGN-1）: moat_scoreがNoneまたは範囲外（0〜1）の検出
+- DuPont分解（TANUKI-ROE-1）: dupont=nullの銘柄のうち負債超過でないものの検出
+- s4_streak（HYPE-1）: 内部変数のため対象外
+
+#### 対応方針
+report_consistency_check.pyに以下を追加：
+- CHECK-20: moat_scoreが存在しない、または0〜1範囲外の銘柄を検出
+- CHECK-21: dupont=nullかつstockholders_equity>0の銘柄を検出（除外ロジックの検証）
+
+---
+
+### [THESIS-FIELD-1] thesis.jsonのフィールド定義不整合
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI TAIL
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+thesis.jsonの実際のフィールドが期待値と乖離している（全9銘柄共通）：
+
+- company: 未実装（フィールド自体なし）
+- position_size: 未実装（フィールド自体なし）
+- strategy → 実際は strategy_name（フィールド名相違）
+- thesis_version → 実際は version（フィールド名相違）
+- entry_price: NVDAでnull（既存ポジション登録時に取得価格未記録）
+
+機能的な問題はないが、スキーマ定義と実データの乖離が蓄積している。
+
+#### 対応方針
+- TAIL-LAYOUT系の実装時にthesis.jsonのスキーマを正式定義して統一
+- NVDAのentry_priceを実際の取得価格で更新
+
+---
+
+### [ADMIN-LOG-1] admin.html・stock.htmlにconsole.log残存
+**優先度:** 低
+**分類:** コード品質 / admin.html・TANUKI VALUATION
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+本番HTMLにconsole.logが32件残存している：
+- admin.html: 26件（ワークフロー実行ポーリングのデバッグトレース）
+- stock.html: 6件（matricesタブ読み込みデバッグログ）
+
+#### 対応方針
+不要なconsole.logを削除する。
+admin.htmlのポーリングログはワークフロー実行確認のデバッグとして
+有用な場合があるため、削除前に必要性を判断する。
+
+---
+
+### [PICK-FIELD-1] daily_pick.jsonとhistory.jsonのフィールド名乖離
+**優先度:** 低
+**分類:** データ定義不整合 / TANUKI SCORE
+**発見:** 2026-06-26横断バグ調査
+
+#### 問題
+同一データが異なるキー名で保存されている：
+- daily_pick.json: selection_reason
+- history.json: reason
+
+daily_pick.pyが書き込む際にキー名が統一されていない。
+機能的な問題はないが保守上の混乱を招く。
+
+#### 対応方針
+どちらかに統一する（selection_reasonを推奨・より説明的なため）。
+history.jsonの既存エントリは移行不要（読み取り時に両キーを参照するフォールバックを追加）。
+
+---
+
+### [SN-TANUKI-DELAY-1] SN TANUKI VALUATION再検討
+**優先度:** 低
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-02
+
+#### 背景
+SNは2025年まで20-F提出企業（外国民間発行体）のため四半期報告義務がなく、
+四半期データが2026年Q1分（初回10-Q、2026-05-06提出）のみ存在する。
+四半期トレンド・TTM系列が構築不能なため、当面 tanuki=false で保留中。
+
+#### 対応
+2026年8月頃のQ2 10-Q提出後、四半期系列が蓄積された時点で tanuki=true に戻し
+TANUKI VALUATION Step3（pipeline.py）を実行する。
+
+#### 優先度
+低（時期依存、8月まで着手不可）
 
 ---
 
@@ -1687,6 +1692,21 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   優先度：高の項目はGROWTH-FLOOR-VERDICT-1・DCF-REL-SYNC-1・ARCH-DATA-1
   （着手条件成立済み・ただし難易度高）の3件（BACKTEST-SCORE-1は
   着手条件未達のため2026年10月以降まで対象外）。
+※ 2026-07-11: SYSTEM_MAP.md全体像の実態調査を実施し出力先パス誤記5件を修正、
+  銘柄振り分けの正本（cik_lookup.csv）セクションを新設。monitor_tickers.yaml
+  同期漏れ6件（APGE/RMBS/ENTG/TER/KLAC/LRCX）を修正し、同6銘柄のEPS Analyzer
+  データ生成（Step 5b）も実施。新規銘柄登録プロセスの構造診断を行い
+  REGISTER-FLOW-REDESIGN-1を登録、続く銘柄リスト参照の横断調査で
+  TICKER-SOURCE-UNIFY-1（根本課題）を登録。セッション終了時ブラッシュアップで
+  PREVENT-5・TICKER-AUDIT-1・TICKER-SOURCE-UNIFY-1・REGISTER-FLOW-REDESIGN-1・
+  PREFLIGHT-CHECK-1（いずれも優先度：中）の「## 優先度：低」への誤配置を
+  「## 優先度：中」へ修正。
+  **次セッションの筆頭候補は[[TICKER-SOURCE-UNIFY-1]]**（既存関数
+  `common/sec_data/tickers.py`を呼ぶだけで直せる低コスト・低リスク対応。
+  確定済みバグ2件: `registration_validator.py`のP1デフォルトスキャン・
+  `adjusted_eps_analyzer/pipeline.py::run()`）。着手後、余力があれば
+  [[REGISTER-FLOW-REDESIGN-1]]の残り対応方針（status列拡張・
+  オーケストレーション化等、コスト高）に進む。
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
