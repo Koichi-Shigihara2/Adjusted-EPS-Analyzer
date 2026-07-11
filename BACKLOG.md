@@ -11,6 +11,14 @@ common/sec_data/tickers.pyが既存の未活用統一ユーティリティであ
 REGISTER-FLOW-REDESIGN-1にP1/P4の同時導入経緯（git履歴確認）・
 system_health.py日次アラート見落としを追記、TICKER-AUDIT-1・
 CIK-ORPHAN-FLAGS-1・PREFLIGHT-CHECK-1に相互参照追記）
+
+追記（2026-07-11 同日中）: TICKER-SOURCE-UNIFY-1の対応方針1・2
+（adjusted_eps_analyzer/pipeline.py・registration_validator.pyの
+monitor_tickers.yaml誤参照2件）をコミット`ba2cfef42`で修正・完了。
+対応方針3（他呼び出し箇所のtickers.py経由統一）は未着手のため
+エントリはBACKLOG.mdに残置。REGISTER-FLOW-REDESIGN-1の対応方針1も
+同一修正のため完了注記を追記、CIK-ORPHAN-FLAGS-1に本修正で新規検出
+されるようになったBXの追記を反映。
 完了済み項目は BACKLOG_DONE.md にアーカイブ
 
 ---
@@ -495,6 +503,12 @@ stonks_silo/tanuki/eps/hypecoreの4フラグが全てfalseになっており、
 診断で、同種の見落とし（2026-07-10の半導体6銘柄monitor_tickers.yaml同期漏れ）が
 再発したことを確認済み。詳細はそちらを参照。
 
+#### 修正の波及（2026-07-11追記）
+2026-07-11の[[TICKER-SOURCE-UNIFY-1]]修正（コミット`ba2cfef42`）により、
+registration_validator.pyのデフォルト実行でBXがP1系NGとして新規検出される
+ようになった（従来はmonitor_tickers.yaml未登録のため走査対象外で不可視だった）。
+BX自体への対応方針（A案:登録抹消／B案:評価軸振り分け）は変更なし。
+
 ---
 
 ### [STALE-SUBPORT-CLEANUP-1] src/subport/fg_level2/ 陳腐化複製の整理
@@ -815,9 +829,13 @@ TICKER-AUDIT-1は「症状の棚卸し」、TICKER-SOURCE-UNIFY-1は「原因の
 ---
 
 ### [TICKER-SOURCE-UNIFY-1] 銘柄リスト正本参照の一元化（根本課題）
-**優先度:** 中（着手する場合は関連症状の中で最初に着手すべき・下記参照）
+**優先度:** 中 → 対応方針1・2は完了、残るは対応方針3のみ（低・任意対応）
 **分類:** アーキテクチャ / 銘柄リスト参照
 **登録日:** 2026-07-11
+**進捗:** 対応方針1・2は2026-07-11 コミット`ba2cfef42`で完了。対応方針3
+（tanuki pipeline.py・stonks-silo pipeline.py・hypecore.py等、他の呼び出し
+箇所も余力があればtickers.py経由へ統一）は任意の追加対応として残置。
+対応方針3も完了した時点でBACKLOG_DONE.mdへ全文移動する。
 **発見:** [[REGISTER-FLOW-REDESIGN-1]]で判明したregistration_validator.pyの
 盲点（monitor_tickers.yamlを全銘柄と取り違え）を起点に、同型バグの横断調査を実施
 
@@ -874,17 +892,29 @@ extract_key_facts.py・tanuki_valuation/data_fetcher.py（インサイダー取�
 運用上アクションされない」という、より根深い問題であることを示している。
 
 #### 対応方針（診断のみ・実装は別タスク）
-1. `adjusted_eps_analyzer/pipeline.py::run()`を`tickers.py`の
+1. ✅ `adjusted_eps_analyzer/pipeline.py::run()`を`tickers.py`の
    `get_eps_tickers()`を使うよう修正（確定バグ1の解消）
-2. `registration_validator.py`のデフォルト実行時の走査対象を
+   → **2026-07-11 コミット`ba2cfef42`で完了**
+2. ✅ `registration_validator.py`のデフォルト実行時の走査対象を
    `tickers.py`の`get_all_tickers()`（cik_lookup.csv全銘柄）に変更
    （確定バグ2の解消、[[REGISTER-FLOW-REDESIGN-1]]対応方針1と同一の修正）
+   → **2026-07-11 コミット`ba2cfef42`で完了**
 3. 上記2件の移行を機に、他の呼び出し箇所（tanuki pipeline.py・
    stonks-silo pipeline.py・hypecore.py等）も余力があれば`tickers.py`経由へ
    統一し、以後の新規コードが「各サブシステムの--allオプションはこのモジュールを
-   使う」という原設計意図に自然に従うようにする
+   使う」という原設計意図に自然に従うようにする（未着手）
 4. WARN/非ブロッキングアラートが運用上見落とされる問題自体は
    [[REGISTER-FLOW-REDESIGN-1]]側の対応方針（P4のNG格上げ等）で扱う
+
+#### 検証結果（2026-07-11・対応方針1・2完了時）
+- pytest 124件全通過
+- eps対象銘柄リスト新旧完全一致（monitor_tickers.yaml経由 vs
+  get_eps_tickers()経由、共に101件・差分0件）
+- `registration_validator.py`実行比較（修正前後）: 新規発火は`BX`1件のみ
+  （全フラグfalseの孤立エントリ、[[CIK-ORPHAN-FLAGS-1]]の既知対象で
+  本修正のスコープ外。従来`monitor_tickers.yaml`未登録のため走査対象外で
+  不可視だったが、確定バグ2の修正によりP1系NGとして初めて検出されるように
+  なった）
 
 #### 優先度・着手順についての所感
 確定した2件のバグはいずれも「既存関数を呼ぶだけ」で直せる低コスト・低リスクな
@@ -988,12 +1018,14 @@ cik_lookup.csvの記載だけでは判別できない。
 
 #### 対応方針（診断のみ・実装は別タスク）
 優先順位付きで以下を提案する（実装順は着手時に判断）：
-1. **P4-CIKOrphan相当のチェックをNG（ブロッキング）へ格上げ、または
+1. ✅ **P4-CIKOrphan相当のチェックをNG（ブロッキング）へ格上げ、または
    デフォルト実行のスキャン範囲をcik_lookup.csv全体に拡張**する
    （最も低コストで効果が大きい。P1のスキャン範囲を`monitor_tickers`から
    `cik_lookup.csv全銘柄`に変更すれば、monitor_tickers未登録自体もP1が
    直接検出できるようになる。**この修正自体は[[TICKER-SOURCE-UNIFY-1]]の
    確定バグ2と同一であり、着手時はそちらの対応方針2をそのまま適用すればよい**）
+   → **2026-07-11 コミット`ba2cfef42`で完了**（`tickers_to_check`のデフォルト値を
+   cik_lookup.csv全銘柄に変更）。対応方針2〜5は引き続き未着手。
 2. **cik_lookup.csvのstatus列に「登録進行中」を表す値を追加する**
    （例: `status=provisioning`。Step 8のNG=0確認後に`active`へ昇格する運用にすれば、
    各パイプラインは`status=active`のみを対象とすることで中途半端な登録の

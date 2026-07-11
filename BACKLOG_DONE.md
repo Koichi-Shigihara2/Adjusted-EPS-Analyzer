@@ -4,6 +4,37 @@
 
 ## 2026-07-11（完了）
 
+### ✅ [TICKER-SOURCE-UNIFY-1（対応方針1・2）] 銘柄リスト取得元をcik_lookup.csvへ統一（2026-07-11完了）
+**発見:** [[REGISTER-FLOW-REDESIGN-1]]診断を起点にした銘柄リスト参照の横断調査
+**コミット:** `ba2cfef42`
+
+#### 内容
+確定した同型バグ2件を、既存の統一ユーティリティ`common/sec_data/tickers.py`を
+呼ぶだけの修正で解消：
+- `adjusted_eps_analyzer/pipeline.py::run()`: `ticker_filter`未指定時の
+  デフォルト対象銘柄を`monitor_tickers.yaml`直読みから`tickers.get_eps_tickers()`に変更
+- `registration_validator.py::run()`: `tickers_to_check`のデフォルト値を
+  `monitor_tickers`から`tickers.get_all_tickers()`（cik_lookup.csv全銘柄）に変更
+  （[[REGISTER-FLOW-REDESIGN-1]]対応方針1と同一の修正）
+
+新規ロジックの追加は行わず、既存関数の呼び出し先を切り替えたのみ。
+対応方針3（tanuki pipeline.py・stonks-silo pipeline.py・hypecore.py等、
+他の呼び出し箇所のtickers.py経由統一）は任意の追加対応として
+[[TICKER-SOURCE-UNIFY-1]]にBACKLOG.md残置（完全クローズは対応方針3
+完了後）。
+
+#### 検証結果
+- pytest 124件全通過
+- eps対象銘柄リスト新旧完全一致（monitor_tickers.yaml経由 vs
+  get_eps_tickers()経由、共に101件・差分0件）
+- `registration_validator.py`実行比較（git stashで修正前後を切り替えて実測）:
+  新規発火は`BX`1件のみ（全フラグfalseの孤立エントリ、[[CIK-ORPHAN-FLAGS-1]]の
+  既知対象で本修正のスコープ外。従来`monitor_tickers.yaml`未登録のため
+  走査対象外で不可視だったが、確定バグ2の修正によりP1系NGとして
+  初めて検出されるようになった）
+
+---
+
 ### ✅ [MONITOR-SYNC-FIX-1] monitor_tickers.yaml同期漏れ6件の修正（2026-07-11完了）
 **発見:** SYSTEM_MAP.md実態調査（2026-07-10）でcik_lookup.csv（106件）と
 monitor_tickers.yaml（99件）の6件差分が判明
