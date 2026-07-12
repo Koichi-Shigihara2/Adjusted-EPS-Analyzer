@@ -950,6 +950,33 @@ def _filter_hypecore_tickers(target, hypecore_tickers):
     return [t for t in target if t.upper() in hypecore_set]
 
 
+def _save_tickers_index(docs_dir) -> None:
+    """docs/value-monitor/hypecore/data/tickers.json を実データ基準で再生成する
+
+    index.html はハードコードされたticker配列を持たず、このファイルを
+    fetch して一覧表示するため、poc.json生成後は必ず本関数で最新化する
+    （HYPECORE-TICKERS-INDEX-1: 新規銘柄登録時にindex.htmlへの反映漏れが
+    発生していたため導入）。実際に *_poc.json が存在する銘柄のみを対象と
+    し、cik_lookup.csvから除外された銘柄が一覧に残り続けることも防ぐ。
+    """
+    import json as _json
+    from datetime import datetime as _datetime
+
+    index_path = docs_dir / "tickers.json"
+    tickers = sorted(p.stem[:-4] for p in docs_dir.glob("*_poc.json"))
+
+    index_data = {
+        "tickers": tickers,
+        "updated_at": _datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "count": len(tickers),
+    }
+
+    with open(index_path, "w", encoding="utf-8") as f:
+        _json.dump(index_data, f, ensure_ascii=False, indent=2)
+
+    print(f"   📋 tickers.json 更新: {len(tickers)}銘柄")
+
+
 if __name__ == "__main__":
     import sys
     import shutil
@@ -1007,30 +1034,3 @@ if __name__ == "__main__":
         print(f"成功銘柄: {', '.join(success)}")
 
     _save_tickers_index(_DOCS_DIR)
-
-
-def _save_tickers_index(docs_dir) -> None:
-    """docs/value-monitor/hypecore/data/tickers.json を実データ基準で再生成する
-
-    index.html はハードコードされたticker配列を持たず、このファイルを
-    fetch して一覧表示するため、poc.json生成後は必ず本関数で最新化する
-    （HYPECORE-TICKERS-INDEX-1: 新規銘柄登録時にindex.htmlへの反映漏れが
-    発生していたため導入）。実際に *_poc.json が存在する銘柄のみを対象と
-    し、cik_lookup.csvから除外された銘柄が一覧に残り続けることも防ぐ。
-    """
-    import json as _json
-    from datetime import datetime as _datetime
-
-    index_path = docs_dir / "tickers.json"
-    tickers = sorted(p.stem[:-4] for p in docs_dir.glob("*_poc.json"))
-
-    index_data = {
-        "tickers": tickers,
-        "updated_at": _datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "count": len(tickers),
-    }
-
-    with open(index_path, "w", encoding="utf-8") as f:
-        _json.dump(index_data, f, ensure_ascii=False, indent=2)
-
-    print(f"   📋 tickers.json 更新: {len(tickers)}銘柄")

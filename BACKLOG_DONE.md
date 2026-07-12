@@ -4,6 +4,48 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [HYPECORE-SAVE-INDEX-NAMEERROR-1] hypecore.pyのNameError緊急修正（本番障害・2026-07-12完了）
+**分類:** バグ / HypeCore（優先度：高・実害確認済みの本番障害）
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 実害確認調査（別途実施済み）で判明した内容:
+  - `_save_tickers_index()`の呼び出し（旧1009行目）が関数定義（旧1012行目）
+    より前にあり、`if __name__ == "__main__":`実行時に必ず`NameError`が
+    発生（`--all`/`--batch`/単体指定/無引数いずれのモードでも無条件・
+    try/exceptなしでクラッシュ）。個別ticker処理自体は影響を受けないが、
+    末尾のインデックス再生成ステップが常に失敗する。
+  - バグ混入はコミット`5f754eda4`（2026-07-09 21:54:13）。同一コミットで
+    呼び出しと定義を同時新設し、実機検証なしでコミットされたと推定
+    （`tickers.json`の`updated_at`が混入コミットの3分前`21:51:17`で
+    停止していたことから裏付け）。
+  - `.github/workflows/HypeCore_Update.yml`の"Run HypeCore Pipeline"
+    ステップに`continue-on-error`/`if: always()`の設定がなく、
+    GitHub Actionsのデフォルト動作（fail-fast）により
+    **NameError発生時は後続の"Commit and push changes"ステップが
+    スキップされる**。2026-07-09 21:54以降、週次自動更新
+    （毎週日曜13:08 UTC=22:08 JST）が3日間沈黙的に空振りし続けていた
+    本番障害と判断。
+- 対応: `src/value/hypecore/hypecore.py`の`_save_tickers_index()`の
+  関数定義を、`_filter_hypecore_tickers()`の直後・
+  `if __name__ == "__main__":`ブロックより前へ移動（ロジック自体は無変更）。
+- 検証: 前回の混入がまさに「実機検証なしのコミット」で発生したため、
+  pytestだけでなく`python hypecore.py PLTR`を実機で直接実行し、
+  NameErrorが発生せず終了コード0で完走することを確認。実行後
+  `tickers.json`の`updated_at`が最新化（2026-07-09 21:51:17→
+  2026-07-12 22:21:34）され、`tickers.json`記載103銘柄と実在する
+  `*_poc.json`103件の一致状態が維持されていることを確認。
+  pytest 265 passed/2 known failed（既存回帰なし、今回新規テスト追加なし。
+  検証対象がロジック変更ではなく定義位置の移動のため、既存の
+  `tests/test_flag_consumer_audit_3.py`の`TestHypecoreFilterTickers`が
+  引き続き通ることで間接的にモジュールロード健全性を確認済み）。
+- 副次発見（今回のスコープ外・BACKLOG登録のみ、修正せず）:
+  `docs/index.html`が`tickers.json`を`Array.isArray(arr)`で判定しているが、
+  実際の形式は`{tickers, updated_at, count}`というオブジェクトのため
+  判定が常にfalseになる、独立した別の形式不一致バグを発見。
+  [[HYPECORE-DASHBOARD-COUNT-BUG-1]]として新規登録。
+
 ### ✅ [HYPECORE-ZS-EPS-STALE-1] ZSのEPS Analyzer残存データ削除（2026-07-12完了・RKLB分は登録内容を訂正の上対応不要と判断）
 **分類:** データ品質 / 銘柄登録フロー
 **登録日:** 2026-07-12

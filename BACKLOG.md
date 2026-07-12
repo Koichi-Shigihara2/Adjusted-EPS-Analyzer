@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日12回目: HYPECORE-SAVE-INDEX-NAMEERROR-1を緊急対応
+（優先度：高）で完了。`src/value/hypecore/hypecore.py::_save_tickers_index()`
+の関数定義位置を`if __name__ == "__main__":`ブロックより前へ移動し、
+2026-07-09 21:54以降3日間続いていたNameErrorを解消。GitHub Actionsの
+"Run HypeCore Pipeline"失敗により"Commit and push"ステップがスキップされ、
+週次自動更新が沈黙的に空振りしていた本番障害を解消。実機実行
+（`python hypecore.py PLTR`）でNameErrorが発生せず終了コード0・
+tickers.json自己再生成（updated_at最新化・103銘柄一致維持）を確認。
+副次発見のdocs/index.html側の形式不一致バグを
+[[HYPECORE-DASHBOARD-COUNT-BUG-1]]として新規登録。詳細はBACKLOG_DONE.md参照）
+
 最終更新: 2026-07-12（同日11回目: HYPECORE-ZS-EPS-STALE-1完了。
 実装前提の再確認で、RKLBはhypecore=true（前回セッションでの調査ミスにより
 hypecore=falseと誤登録していた）と判明したためRKLB分は対応不要と判断・
@@ -1126,28 +1137,25 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [HYPECORE-SAVE-INDEX-NAMEERROR-1] hypecore.pyの_save_tickers_index()がNameErrorで未実行
-**優先度:** 中
-**分類:** バグ / HypeCore
+### [HYPECORE-DASHBOARD-COUNT-BUG-1] docs/index.htmlのhypecore ticker数表示がtickers.json実形式と不整合
+**優先度:** 低
+**分類:** バグ / フロントエンド表示
 **登録日:** 2026-07-12
-**発見:** [[HYPECORE-ZS-EPS-STALE-1]]（完了・BACKLOG_DONE.md参照）実装時の実機検証
+**発見:** [[HYPECORE-SAVE-INDEX-NAMEERROR-1]]（完了・BACKLOG_DONE.md参照）実装時の副次発見
 
 #### 問題
-`src/value/hypecore/hypecore.py`を直接実行すると、`if __name__ == "__main__":`
-ブロック内（1009行目）で`_save_tickers_index(_DOCS_DIR)`を呼び出しているが、
-その関数定義自体（1012行目）はブロックより**後**にファイル上で配置されている。
-Pythonはモジュール読み込み時に上から順に実行するため、呼び出し時点では
-`_save_tickers_index`が未定義で`NameError`が発生し、poc.json保存後の
-tickers.jsonインデックス再生成が常に失敗している（コミット5f754eda4時点
-から存在する既存バグ、FLAG-CONSUMER-AUDIT-3の変更とは無関係）。
-
-実害: HypeCore実行のたびに"完了"ログの直後でクラッシュし、
-`docs/value-monitor/hypecore/data/tickers.json`が最新のpoc.json構成を
-反映しないまま放置される（新規銘柄登録時の一覧表示漏れ等につながりうる）。
+`docs/index.html`（233-236行目）は`data/tickers.json`をfetchした後
+`if (!Array.isArray(arr)) return;`という判定を行うが、実際の
+`tickers.json`の形式は`{tickers: [...], updated_at: ..., count: ...}`という
+**オブジェクト**であり、`Array.isArray()`は常にfalseを返す。結果として
+トップダッシュボードの「hypecore-ticker-count」「hypecore-status-count」
+表示ウィジェットが常時機能していない可能性が高い
+（HYPECORE-SAVE-INDEX-NAMEERROR-1のNameErrorバグとは独立した、
+別の形式不一致バグ）。
 
 #### 対応方針
-`_save_tickers_index`の関数定義を`if __name__ == "__main__":`ブロックより
-前に移動する（1行の並び替えで解消可能）。
+`docs/index.html`側の判定を`arr && Array.isArray(arr.tickers)`等、
+実際のオブジェクト形式に合わせて修正する。
 
 #### 着手条件
 なし（次回セッションで着手可能・低リスク）
