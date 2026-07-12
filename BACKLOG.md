@@ -889,6 +889,60 @@ tie-break追加。SM/DAにも同一ロジックが適用され、今回の調査
 
 ---
 
+### [SPLIT-AUTO-CHECK-1] split_history.yaml未登録の株式分割が多数存在（yfinance実測で確認）
+**優先度:** 中
+**分類:** データ品質 / EPS ANALYZER
+**登録日:** 2026-07-12
+**発見:** QUALITY-GATES-EPIC-1 Phase 2b着手前調査時
+
+#### 問題
+`config/split_history.yaml`（EPS Analyzerの`apply_split_adjustments()`が唯一の
+消費者）には現在NOWの1件しか登録されていない。しかしyfinance `Ticker.splits`を
+`config/cik_lookup.csv`のeps=true全101銘柄（2015年以降）と機械突合したところ、
+**21件の分割履歴を検出**した（登録済みはNOWのみ）。
+
+明確な分割と判断できるもの（比率2倍以上、または明確な逆分割）:
+AAPL(2020, 4:1)・AMZN(2022, 20:1)・AVGO(2024, 10:1)・CELH(2023, 3:1)・
+CPRT(2017/2022/2023, 2:1×3)・CSGP(2021, 10:1)・GOOGL(2022, 20:1)・
+KLAC(2026-06-12, 10:1)・LRCX(2024-10-03, 10:1)・NVDA(2021/2024, 4:1・10:1)・
+TSLA(2020/2022, 5:1・3:1)・V(2015, 4:1)・WMT(2024, 3:1)・
+KULR(2025, 1:8逆分割)・RCAT(2016/2019, 逆分割複数回)・SPIR(2023, 1:8逆分割)
+
+特にLRCXは`src/value/tanuki_valuation/pipeline.py:2156`のコメント内で
+「LRCX-SPLIT-1」として既知の分割として言及されている（TANUKI VALUATION側の
+独立した自動検知ロジックでは捕捉済み、詳細は本文中「関連する既存実装」参照）
+にもかかわらず、EPS Analyzer側の`split_history.yaml`には未登録だった。
+
+DELL・HEI・SCCO・HONについては1.0x台の端数比率（例: SCCO 1.005〜1.01倍が
+半年おきに複数回）が検出されたが、これは実際の株式分割ではなく、yfinanceが
+端数配当（stock dividend）を"split"として計上している可能性が高い。実際に
+分割かどうかの切り分けが必要。
+
+#### 関連する既存実装（要考慮）
+`src/value/tanuki_valuation/pipeline.py:2147-2215`に、split_history.yamlとは
+**独立した別の自動分割検知ロジック**が既に存在する。SEC正規化データの
+年次希薄化株数比率（前年比2.5倍超/0.4倍未満）と同一会計年度の四半期中央値を
+突き合わせて分割を自動検知するが、`financial_health.dilution_3yr_annual_pct`
+計算にのみ遡及補正を適用する狭いスコープで、EPS Analyzerのadj_eps計算や
+DCFの希薄化株数自体（yfinance implied優先のため無関係）には波及しない。
+対応方針を検討する際は、この既存ロジックとの統合・重複排除も含めて設計すること
+（yfinance splits自動照合を導入する場合、SEC比率ベースの独立検知と
+併存させるか一本化するかの判断が必要）。
+
+#### 対応方針（未確定・次回セッションで設計）
+- 上記の明確な分割16件（DELL/HEI/SCCO/HON除く）について、実際に該当銘柄の
+  adj_eps計算に歪みが出ているか（分割前四半期のdiluted_sharesが分割後基準に
+  補正されず過小評価されていないか）を個別に確認してから対応要否を判断する
+- DELL/HEI/SCCO/HONの端数比率は、SEC 10-K/10-Qの実際の株式分割開示の有無を
+  一次情報で確認し、真の分割でなければ除外する
+- yfinance splits自動照合を`split_history.yaml`の代替とするか、既存の手動登録と
+  併用するか（自動照合の信頼性確認期間を設けるか）を設計判断する
+
+#### 着手条件
+なし（次回セッションで実害確認・対応方針確定の上で着手判断）
+
+---
+
 ### [STALE-REPORT-CLEANUP-1] tanuki=false化後もreport.txtが残存する
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION
