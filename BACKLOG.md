@@ -1,5 +1,14 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日11回目: HYPECORE-ZS-EPS-STALE-1完了。
+実装前提の再確認で、RKLBはhypecore=true（前回セッションでの調査ミスにより
+hypecore=falseと誤登録していた）と判明したためRKLB分は対応不要と判断・
+訂正。ZSはeps=falseを確認済みのため`docs/value-monitor/adjusted_eps_analyzer/data/ZS/`
+のみ削除。実機検証で発見した`hypecore.py::_save_tickers_index()`の既存
+NameErrorバグ（`__main__`ブロック内の呼び出しが関数定義より前にあるため
+常に失敗）を[[HYPECORE-SAVE-INDEX-NAMEERROR-1]]として新規登録。詳細は
+BACKLOG_DONE.md参照）
+
 最終更新: 2026-07-12（同日10回目: FLAG-CONSUMER-AUDIT-3・STALE-REPORT-CLEANUP-1
 完了。hypecore.py --batch/単体指定・catalyst.py --ticker・
 adjusted_eps_analyzer/pipeline.py --ticker の3箇所で、FLAG-CONSUMER-AUDIT-2と
@@ -1117,22 +1126,50 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [HYPECORE-ZS-EPS-STALE-1] ZS（hypecore=true/eps=false）のhypecore・EPS Analyzerデータ残存
-**優先度:** 低
-**分類:** データ品質 / 銘柄登録フロー
+### [HYPECORE-SAVE-INDEX-NAMEERROR-1] hypecore.pyの_save_tickers_index()がNameErrorで未実行
+**優先度:** 中
+**分類:** バグ / HypeCore
 **登録日:** 2026-07-12
-**発見:** [[FLAG-CONSUMER-AUDIT-3]]（完了・BACKLOG_DONE.md参照）実装時
+**発見:** [[HYPECORE-ZS-EPS-STALE-1]]（完了・BACKLOG_DONE.md参照）実装時の実機検証
 
 #### 問題
-`docs/value-monitor/hypecore/data/RKLB_poc.json`（RKLBはhypecore=false）、
-`docs/value-monitor/adjusted_eps_analyzer/data/ZS/`（ZSはeps=false）が、
-現行フラグに反して残存している。今回はTANUKI VALUATION側（RKLB・ZS）の
-残存ファイル削除のみがスコープのため未対応。
+`src/value/hypecore/hypecore.py`を直接実行すると、`if __name__ == "__main__":`
+ブロック内（1009行目）で`_save_tickers_index(_DOCS_DIR)`を呼び出しているが、
+その関数定義自体（1012行目）はブロックより**後**にファイル上で配置されている。
+Pythonはモジュール読み込み時に上から順に実行するため、呼び出し時点では
+`_save_tickers_index`が未定義で`NameError`が発生し、poc.json保存後の
+tickers.jsonインデックス再生成が常に失敗している（コミット5f754eda4時点
+から存在する既存バグ、FLAG-CONSUMER-AUDIT-3の変更とは無関係）。
+
+実害: HypeCore実行のたびに"完了"ログの直後でクラッシュし、
+`docs/value-monitor/hypecore/data/tickers.json`が最新のpoc.json構成を
+反映しないまま放置される（新規銘柄登録時の一覧表示漏れ等につながりうる）。
 
 #### 対応方針
-STALE-REPORT-CLEANUP-1で採用した「score_history.json等の履歴系ファイルは
-保持、現行状態を表すファイルのみ削除」の方針をhypecore・EPS Analyzer側にも
-適用するか、削除範囲を判断した上で着手する。
+`_save_tickers_index`の関数定義を`if __name__ == "__main__":`ブロックより
+前に移動する（1行の並び替えで解消可能）。
+
+#### 着手条件
+なし（次回セッションで着手可能・低リスク）
+
+---
+
+### [WARN12-COHR-ONDS-1] SEC自動更新後にCOHR・ONDSでCash-STI期ズレの新規WARN検出
+**優先度:** 低
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-12
+**発見:** [[HYPECORE-ZS-EPS-STALE-1]]完了検証時（`report_consistency_check.py`実行）
+
+#### 問題
+GitHub Actionsの自動SEC更新（コミット`b6abc0a2a`）後、COHR
+（Cash=1593M(2026Q3) vs ST_Invest=0M(年次2025)、正=825M）・ONDS
+（Cash=1026M(2026Q1) vs ST_Invest=0M(年次2025)、正=448M）で
+`WARN-12 Cash-STI期ズレ`が新規発生（未確認扱い）。今回のタスクとは無関係の
+発見のため未対応。
+
+#### 対応方針
+一次情報（10-Q）でCash・ST_Investの正しい組み合わせを確認し、
+`config/warn_acknowledged.json`への登録要否を判断する。
 
 #### 着手条件
 なし（次回セッションで判断）

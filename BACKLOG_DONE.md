@@ -4,6 +4,41 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [HYPECORE-ZS-EPS-STALE-1] ZSのEPS Analyzer残存データ削除（2026-07-12完了・RKLB分は登録内容を訂正の上対応不要と判断）
+**分類:** データ品質 / 銘柄登録フロー
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 実装着手前にcik_lookup.csvを直接再確認したところ、**RKLBは実際は
+  hypecore=true**（tanuki=false・stonks_silo=true・eps=true・hypecore=true）
+  であり、前回セッション（FLAG-CONSUMER-AUDIT-3実装時）での私自身の調査ミスで
+  「RKLBはhypecore=false」と誤った前提のままBACKLOG登録していたことが判明。
+  `docs/value-monitor/hypecore/data/RKLB_poc.json`は残存データではなく
+  hypecore=true銘柄として正当に必要なデータであり、**削除対象外**と訂正。
+  検証中に一度誤って削除してしまったが、コミット前に`git checkout`で
+  復元済み（本番には反映されていない）。
+- ZSは`eps=false`（tanuki=false・stonks_silo=true・eps=false・hypecore=true）
+  を直接確認済みで、こちらの前提は正しかったため、
+  `docs/value-monitor/adjusted_eps_analyzer/data/ZS/`
+  （annual.json・quarterly.json・ttm.json）を削除。ZSのhypecore用データ
+  （`ZS_poc.json`、hypecore=trueのため正当）・stonks-silo側データ
+  （stonks_silo=trueのため正当）は削除対象外として維持。
+- 検証: `adjusted_eps_analyzer/pipeline.py --ticker ZS`実行でeps=false検出の
+  警告が出て正しく除外され、ディレクトリが再生成されないことを確認。
+  hypecore.py・stonks-silo側のRKLB・ZSデータが無影響であることを確認。
+  `report_consistency_check.py --fail-on-ng`でNG=0を確認（WARN数はGitHub
+  Actions自動SEC更新による無関係な新規WARN2件を含むため37→39に変化、
+  詳細は[[WARN12-COHR-ONDS-1]]参照）。pytest 265 passed/2 known failed
+  （既存回帰なし、今回新規テスト追加なし）。
+- 副次発見（今回のスコープ外・BACKLOG登録のみ、修正せず）:
+  1. hypecore.pyの実機検証中、`_save_tickers_index()`の呼び出しが関数定義
+     より前の行にあるため常にNameErrorでクラッシュする既存バグを発見
+     （FLAG-CONSUMER-AUDIT-3の変更とは無関係、5f754eda4時点から存在）。
+     [[HYPECORE-SAVE-INDEX-NAMEERROR-1]]として新規登録。
+  2. GitHub Actions自動SEC更新後にCOHR・ONDSで新規WARN-12（Cash-STI期ズレ）
+     を検出。[[WARN12-COHR-ONDS-1]]として新規登録。
+
 ### ✅ [FLAG-CONSUMER-AUDIT-3] 他パイプラインへのCLI引数フラグ検証横展開（2026-07-12完了）
 **分類:** アーキテクチャ / 銘柄登録フロー
 **登録日:** 2026-07-12
