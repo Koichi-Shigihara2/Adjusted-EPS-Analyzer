@@ -343,10 +343,40 @@ LLY型（タグ切替見逃し）とKLAC型（期間分類ミスによるノイ�
   pytest 214 passed/2 known failed（新規8件追加、既存2件のみ既知失敗）。
 - 単体テスト`tests/test_tag_fallback_selection.py`を新規追加（8件、全件パス）。
 
-次はPhase 2b（段差型の前年比急変検知・株式分割自動照合）。
+**Phase 2b-1完了（2026-07-12 同日7回目）**: ゲート1「同一値使い回し」パターンの
+一般化として、TTM鮮度チェックを新設した（段差型検知の統合・株式分割自動照合は
+別依頼、Phase 2b-2以降）。
+- `src/value/tanuki_valuation/data_fetcher.py`に`_quarters_fresh()`・
+  `_freshest_end()`を新設。`_quarters_complete()`（quarters_used>=4の件数チェック）
+  とは別の姉妹関数とし、既存関数自体は変更していない。
+- 閾値根拠: 105銘柄のTTM系列でttm_end(最新)と実行日の差を実測した結果、
+  正常銘柄は44〜113日に収まっていた（四半期決算の通常の報告ラグ）ため、
+  その3倍弱にあたる270日を閾値に設定（詳細はコード内コメント参照）。
+- **実装前の分布確認で重大な設計変更が必要と判明**: TTM系列は各エントリが
+  約1年間隔で過去5年分の実データとして保存される設計のため、依頼文通り
+  「件数チェックと並列に各エントリごとに鮮度を適用」すると、series[0]
+  （最新）以外の全エントリが構造的に365日超で陳腐化扱いされ、全105銘柄で
+  `get_fcf_series()`が1点以下（=None、年次フォールバックに全件落ちる）になる
+  ことが判明した。ユーザー確認の上、**鮮度チェックはシリーズ中の最新エントリ
+  （`_freshest_end()`でソート順に依存せず判定）のみに適用し、最新エントリが
+  陳腐化していればシリーズ全体を不採用とする**方式に設計変更した（過去年度の
+  正規の履歴エントリは引き続き信頼する）。
+- `TanukiDataFetcher.get_financials()`内の3呼び出し元
+  （`TTMReader.get_fcf_series()`・`get_periods()`・`build_rice_annual_shape()`）
+  すべてに同一の判定を適用。
+- 影響範囲確認: 同日生成データで新旧を直接比較した結果、**105銘柄中0銘柄が
+  影響**（現時点で全銘柄のfreshest_endが270日以内に収まっているため）。
+  データ再生成（update.py/pipeline.py）は不要と判断し実施していない。
+  LLY CapEx（Phase 2a修正後）が引き続き正しく採用されることも個別確認済み。
+- 検証: `report_consistency_check.py`（NG=0、既存WARN3件のみ）→
+  pytest 223 passed/2 known failed（新規5件`tests/test_pipeline_logic.py`に
+  追加、既存の`TestTTMReaderQuartersCompleteness`等8件はdate.today()依存の
+  陳腐化を防ぐため絶対日付から相対日付ベースに書き換え）。
+
+次はPhase 2b-2（段差型の前年比急変検知・株式分割自動照合）。
 
 #### 着手条件
-なし。Phase 1・Phase 2aは完了。Phase 2b以降は次回セッションで詳細設計を行う。
+なし。Phase 1・Phase 2a・Phase 2b-1は完了。Phase 2b-2以降は次回セッションで詳細設計を行う。
 
 ---
 

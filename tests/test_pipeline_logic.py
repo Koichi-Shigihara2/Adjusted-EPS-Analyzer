@@ -2825,7 +2825,17 @@ class TestStonksDivisionGuards:
 
 # ─────────────────────────────────────────────
 # TTM-QUARTERS-CHECK-1: TTM系列構築時の四半期完全性チェック
+# TTM-FRESHNESS-CHECK-1: TTM鮮度チェック（data_fetcher.py::_quarters_fresh()が
+# date.today()を直接参照するため、以下のTTMReader/build_rice_annual_shape系
+# テストの日付フィクスチャはすべてdate.today()基準の相対日付で構築する
+# （絶対日付だと将来date.today()が閾値を超えテストが陳腐化するため）
 # ─────────────────────────────────────────────
+
+def _rel_date(days_ago: int) -> str:
+    """date.today()を基準にdays_ago日前のISO日付文字列を返す"""
+    from datetime import date, timedelta
+    return (date.today() - timedelta(days=days_ago)).isoformat()
+
 
 def _make_flow_entry(val, quarters_used=4, missing=0):
     return {"val": val, "quarters_used": quarters_used, "missing": missing}
@@ -2912,9 +2922,9 @@ class TestTTMReaderQuartersCompleteness:
 
     def test_all_complete_periods_all_included(self):
         series = [
-            _make_ttm_entry("2026-03-31", fcf_val=100.0),
-            _make_ttm_entry("2025-03-31", fcf_val=90.0),
-            _make_ttm_entry("2024-03-31", fcf_val=80.0),
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(820), fcf_val=80.0),
         ]
         reader = self._make_reader(series)
         assert reader.get_fcf_series() == [100.0, 90.0, 80.0]
@@ -2924,9 +2934,9 @@ class TestTTMReaderQuartersCompleteness:
         """OCF.quarters_used<4の期間はFCF.valが存在してもfcf_list_rawから除外される
         （MO実データ2022-03-31: OCF.quarters_used=1で$3,030Mが混入していた事例）"""
         series = [
-            _make_ttm_entry("2026-03-31", fcf_val=100.0),
-            _make_ttm_entry("2025-03-31", fcf_val=90.0),
-            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, fcf_val=30.0),
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(1550), ocf_q=1, capex_q=1, fcf_val=30.0),
         ]
         reader = self._make_reader(series)
         assert reader.get_fcf_series() == [100.0, 90.0]
@@ -2936,9 +2946,9 @@ class TestTTMReaderQuartersCompleteness:
         """OCFは完全でもCapExが不完全なら除外される（OCF/CapExのquarters_usedが
         食い違うケース。実データ横断調査でLLY/NVDA/FCX等11件で確認済み）"""
         series = [
-            _make_ttm_entry("2026-03-31", fcf_val=100.0),
-            _make_ttm_entry("2025-03-31", fcf_val=90.0),
-            _make_ttm_entry("2024-03-31", ocf_q=4, capex_q=3, fcf_val=70.0),
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(820), ocf_q=4, capex_q=3, fcf_val=70.0),
         ]
         reader = self._make_reader(series)
         assert reader.get_fcf_series() == [100.0, 90.0]
@@ -2947,9 +2957,9 @@ class TestTTMReaderQuartersCompleteness:
     def test_fewer_than_two_complete_periods_returns_none(self):
         """フィルタ後1点以下ならNone（既存の「2点未満はNone」規約を維持）"""
         series = [
-            _make_ttm_entry("2026-03-31", fcf_val=100.0),
-            _make_ttm_entry("2025-03-31", ocf_q=2, capex_q=2, fcf_val=90.0),
-            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, fcf_val=30.0),
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(455), ocf_q=2, capex_q=2, fcf_val=90.0),
+            _make_ttm_entry(_rel_date(1550), ocf_q=1, capex_q=1, fcf_val=30.0),
         ]
         reader = self._make_reader(series)
         assert reader.get_fcf_series() is None
@@ -2957,15 +2967,47 @@ class TestTTMReaderQuartersCompleteness:
 
     def test_missing_field_key_treated_as_incomplete(self):
         """OCF/CapExキー自体が存在しない場合もquarters_used=0扱いで除外される"""
-        entry = _make_ttm_entry("2026-03-31", fcf_val=100.0)
+        entry = _make_ttm_entry(_rel_date(90), fcf_val=100.0)
         del entry["flow"]["CapEx"]
         series = [
-            _make_ttm_entry("2025-03-31", fcf_val=90.0),
-            _make_ttm_entry("2024-03-31", fcf_val=80.0),
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(820), fcf_val=80.0),
             entry,
         ]
         reader = self._make_reader(series)
         assert reader.get_fcf_series() == [90.0, 80.0]
+
+    def test_stale_head_makes_whole_series_unusable(self):
+        """TTM-FRESHNESS-CHECK-1: 最新end日が陳腐化していれば件数が揃っていても
+        シリーズ全体を不採用とする（LLY-CAPEX-STALE-1型の再発対策）"""
+        series = [
+            _make_ttm_entry(_rel_date(400), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(765), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(1130), fcf_val=80.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() is None
+        assert reader.get_periods() == 0
+
+    def test_fresh_head_keeps_older_complete_entries(self):
+        """最新end日さえ新しければ、1年以上前の正規の過去実績エントリは
+        鮮度チェックで除外されない（正常な複数年TTM系列を陳腐化扱いしない）"""
+        series = [
+            _make_ttm_entry(_rel_date(90)),
+            _make_ttm_entry(_rel_date(1200)),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_periods() == 2
+
+    def test_freshness_check_is_order_independent(self):
+        """最新エントリがseries[0]でなくても（順序が保証されなくても）
+        鮮度判定は正しく機能する（_freshest_end()がmax()で判定するため）"""
+        series = [
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [90.0, 100.0]
 
 
 class TestBuildRiceAnnualShapeQuartersCompleteness:
@@ -2973,36 +3015,47 @@ class TestBuildRiceAnnualShapeQuartersCompleteness:
 
     def test_all_complete_periods_all_included(self):
         series = [
-            _make_ttm_entry("2026-03-31"),
-            _make_ttm_entry("2025-03-31"),
+            _make_ttm_entry(_rel_date(90)),
+            _make_ttm_entry(_rel_date(455)),
         ]
         result = _df.build_rice_annual_shape(series)
         assert len(result) == 2
 
     def test_incomplete_period_excluded_from_rice_shape(self):
+        fresh_end = _rel_date(90)
         series = [
-            _make_ttm_entry("2026-03-31"),
-            _make_ttm_entry("2022-03-31", ocf_q=1, capex_q=1, revenue_q=2, ni_q=2),
+            _make_ttm_entry(fresh_end),
+            _make_ttm_entry(_rel_date(1550), ocf_q=1, capex_q=1, revenue_q=2, ni_q=2),
         ]
         result = _df.build_rice_annual_shape(series)
         assert len(result) == 1
-        assert result[0]["period"] == "TTM@2026-03-31"
+        assert result[0]["period"] == f"TTM@{fresh_end}"
 
     def test_incomplete_revenue_or_netincome_also_excludes_period(self):
         """OCF/CapExが完全でもRevenue/NetIncomeが不完全なら除外される
         （rice.py側でrev/niはNone不許容のロジックのため）"""
+        fresh_end = _rel_date(90)
         series = [
-            _make_ttm_entry("2026-03-31"),
-            _make_ttm_entry("2024-03-31", revenue_q=3, ni_q=4),
+            _make_ttm_entry(fresh_end),
+            _make_ttm_entry(_rel_date(820), revenue_q=3, ni_q=4),
         ]
         result = _df.build_rice_annual_shape(series)
         assert len(result) == 1
-        assert result[0]["period"] == "TTM@2026-03-31"
+        assert result[0]["period"] == f"TTM@{fresh_end}"
+
+    def test_stale_head_returns_empty(self):
+        """TTM-FRESHNESS-CHECK-1: 最新end日が陳腐化していればresult全体が空になる"""
+        series = [
+            _make_ttm_entry(_rel_date(400)),
+            _make_ttm_entry(_rel_date(765)),
+        ]
+        result = _df.build_rice_annual_shape(series)
+        assert result == []
 
     def test_rd_and_sm_incompleteness_does_not_exclude_period(self):
         """RD/SMはrice.py側で既にNone許容のためチェック対象外
         （フィールド自体が存在しなくても期間は除外されない）"""
-        entry = _make_ttm_entry("2026-03-31")
+        entry = _make_ttm_entry(_rel_date(90))
         # RD/SMキーは元々存在しないダミーデータだが、期間自体は残ることを確認
         result = _df.build_rice_annual_shape([entry])
         assert len(result) == 1

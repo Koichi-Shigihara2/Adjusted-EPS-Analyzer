@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 import json
+from datetime import date
 from statistics import mean
 from typing import Dict, Any, Optional, Tuple
 
@@ -111,6 +112,49 @@ def _quarters_complete(flow: dict, *field_names: str, min_quarters: int = 4) -> 
     )
 
 
+# TTM鮮度チェックの閾値（日数）。件数（quarters_used）が揃っていても、
+# 最新end日がこれより古い期間は「同一値の使い回し」（LLY型・タグ切替見逃し等の
+# 再発）を疑い除外する。
+#
+# 閾値根拠（2026-07-12実測）: 105銘柄のTTM系列でttm_end(最新)と実行日の差を
+# 集計した結果、正常銘柄は44〜113日に収まっていた（四半期決算の通常の報告
+# ラグ。10-Q提出期限は決算期末から最大45〜90日、大型株中心のためほぼ全銘柄が
+# 45日区分）。この範囲の3倍弱（四半期3回分＝約270日）を閾値とすることで、
+# 通常の報告ラグは正常範囲として許容しつつ、四半期を2回以上連続で取りこぼす
+# ような真の陳腐化（LLY CapExの旧タグは発見時点で3年以上=1000日超陳腐化していた）
+# のみを検知する。
+_TTM_FRESHNESS_MAX_DAYS = 270
+
+
+def _quarters_fresh(ttm_end: str | None, max_age_days: int = _TTM_FRESHNESS_MAX_DAYS) -> bool:
+    """
+    ttm_end（TTM期間の最新end日）が現在日からmax_age_days以内かを判定する。
+
+    件数（quarters_used）だけを見る_quarters_complete()では、候補タグが
+    サイレントに申告停止し古い値のまま四半期件数だけ満たしているケース
+    （LLY型）を検知できない。ttm_endが不明・不正な日付の場合は判定不能として
+    Falseを返す（保守的に「新鮮でない」扱いとし、完全性フィルタと同様に
+    除外側に倒す）。
+    """
+    if not ttm_end:
+        return False
+    try:
+        end_dt = date.fromisoformat(ttm_end)
+    except ValueError:
+        return False
+    return (date.today() - end_dt).days <= max_age_days
+
+
+def _freshest_end(series: list[dict]) -> str | None:
+    """seriesの中で最もend日が新しいttm_endを返す（並び順に依存しない）。
+
+    TTMReaderは通常降順（最新が先頭）でJSONを読み込むが、呼び出し側の
+    順序を前提にせず安全側に倒すため、明示的にmax()で最新を求める。
+    """
+    ends = [s.get("ttm_end") for s in series if s.get("ttm_end")]
+    return max(ends) if ends else None
+
+
 class TTMReader:
     """TTM系列ファイル（{ticker}_ttm_series.json）の読み込み"""
 
@@ -145,8 +189,18 @@ class TTMReader:
         OCF・CapExいずれかがquarters_used<4（四半期集計が不完全）の期間は
         除外する（TTM-QUARTERS-CHECK-1）。FCF=OCF-CapExのため、片方でも
         不完全ならFCF自体の値も欠陥値になる。
+
+        鮮度チェック（LLY-CAPEX-STALE-1型のタグ切替見逃し再発対策）は
+        系列先頭（最新期間）のみに適用する。TTM系列は各エントリが約1年間隔で
+        過去5年分の実データとして保存される設計のため、series[0]以外は
+        正常な銘柄でも構造的に365日以上古い（過去年度の正規のTTMスナップショット）。
+        全エントリに鮮度フィルタを適用すると正常な過去実績まで陳腐化扱いされ
+        全銘柄でシリーズが1点以下に縮退してしまうため、「最新のはずのデータが
+        実際には新しくない」ことだけを検知する目的でseries[0]限定とする。
         """
         if not self._series:
+            return None
+        if not _quarters_fresh(_freshest_end(self._series)):
             return None
         vals = [
             s["flow"]["FCF"]["val"]
@@ -163,8 +217,11 @@ class TTMReader:
 
     def get_periods(self) -> int:
         """get_fcf_series()が実際に採用する点数と一致させる（表示用の点数が
-        実データと乖離しないよう、同一の完全性フィルタを適用する）"""
+        実データと乖離しないよう、同一の完全性・鮮度フィルタを適用する。
+        鮮度チェックはget_fcf_series()と同様series[0]限定）"""
         if not self._series:
+            return 0
+        if not _quarters_fresh(_freshest_end(self._series)):
             return 0
         return sum(
             1 for s in self._series
@@ -194,7 +251,14 @@ def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
     OCF/CapEx/Revenue/NetIncomeのいずれかがquarters_used<4（四半期集計が
     不完全）の期間はresultから除外する（TTM-QUARTERS-CHECK-1）。RD/SMは
     rice.py側で既にNone許容（0扱い・警告ログのみ）のためチェック対象外。
+
+    鮮度チェック（LLY-CAPEX-STALE-1型対策）はttm_series[0]（最新、降順ソート
+    前提）のみに適用する。TTM系列は各エントリが約1年間隔で保存される設計の
+    ため、series[0]以外は正常な銘柄でも構造的に365日以上古く、全エントリに
+    適用すると正常な過去実績まで除外されてしまう（get_fcf_series()と同じ理由）。
     """
+    if ttm_series and not _quarters_fresh(_freshest_end(ttm_series)):
+        return []
     result = []
     for s in ttm_series:
         flow = s.get("flow", {})
