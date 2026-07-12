@@ -651,6 +651,23 @@ def process_one_ticker(ticker, adjustment_config, classifier, ticker_to_name,
         return (ticker, None)
 
 
+def _filter_eps_tickers(target, eps_tickers):
+    """CLI引数等でticker明示指定時にeps=trueのみへ絞り込む。
+
+    FLAG-CONSUMER-AUDIT-3: --ticker明示指定時にeps=trueフラグの検証を
+    一切行っていなかった（tanuki_valuation/pipeline.pyのCLI引数パスと
+    同型のギャップ）。範囲外のticker指定は警告し無条件実行しない。
+    """
+    eps_set = set(eps_tickers)
+    excluded = [t for t in target if t not in eps_set]
+    if excluded:
+        print(
+            f"警告: eps=false のため除外: {', '.join(excluded)}"
+            f"（cik_lookup.csvでeps=trueに変更しない限り処理されません）"
+        )
+    return [t for t in target if t in eps_set]
+
+
 def run(ticker_filter: str = None):
     config_base = os.path.join(PROJECT_ROOT, "config")
     tickers = get_eps_tickers()
@@ -662,7 +679,7 @@ def run(ticker_filter: str = None):
         for t in requested:
             if t not in monitor_tickers:
                 print(f"Warning: {t} は monitor_tickers.yaml に未登録ですが処理を続行します")
-        tickers = requested
+        tickers = _filter_eps_tickers(requested, tickers)
 
     with open(os.path.join(config_base, "adjustment_items.json"), 'r', encoding='utf-8') as f:
         adjustment_config = json.load(f)

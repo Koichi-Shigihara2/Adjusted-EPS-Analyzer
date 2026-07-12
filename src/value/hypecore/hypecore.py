@@ -931,6 +931,25 @@ def run_poc(ticker: str = "PLTR") -> dict:
     return result
 
 
+def _filter_hypecore_tickers(target, hypecore_tickers):
+    """CLI引数等でticker明示指定時にhypecore=trueのみへ絞り込む。
+
+    FLAG-CONSUMER-AUDIT-3: --allはget_hypecore_tickers()経由で正しく
+    フィルタされる一方、--batch/単体指定はCLI引数をそのまま処理しており
+    hypecore=trueフラグの検証を一切行っていなかった
+    （tanuki_valuation/pipeline.pyのCLI引数パスと同型のギャップ）。
+    範囲外のticker指定は警告し無条件実行しない。
+    """
+    hypecore_set = set(hypecore_tickers)
+    excluded = [t for t in target if t.upper() not in hypecore_set]
+    if excluded:
+        print(
+            f"警告: hypecore=false のため除外: {', '.join(excluded)}"
+            f"（cik_lookup.csvでhypecore=trueに変更しない限り処理されません）"
+        )
+    return [t for t in target if t.upper() in hypecore_set]
+
+
 if __name__ == "__main__":
     import sys
     import shutil
@@ -962,9 +981,9 @@ if __name__ == "__main__":
     elif args[0] == "--all":
         tickers = ALL_TICKERS
     elif args[0] == "--batch":
-        tickers = args[1:] if len(args) > 1 else ["PLTR"]
+        tickers = _filter_hypecore_tickers(args[1:], ALL_TICKERS) if len(args) > 1 else ["PLTR"]
     else:
-        tickers = [args[0]]
+        tickers = _filter_hypecore_tickers([args[0]], ALL_TICKERS)
 
     success, failed = [], []
     for t in tickers:

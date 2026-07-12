@@ -215,6 +215,23 @@ def process_ticker(ticker: str, existing: dict, today: str, dry_run: bool) -> di
 
 # ── メイン ──────────────────────────────────────────────────
 
+def _filter_hypecore_tickers(target, hypecore_tickers):
+    """CLI引数等でticker明示指定時にhypecore=trueのみへ絞り込む。
+
+    FLAG-CONSUMER-AUDIT-3: --ticker明示指定時にhypecore=trueフラグの検証を
+    一切行っていなかった（tanuki_valuation/pipeline.pyのCLI引数パスと同型の
+    ギャップ）。範囲外のticker指定は警告し無条件実行しない。
+    """
+    hypecore_set = set(hypecore_tickers)
+    excluded = [t for t in target if t not in hypecore_set]
+    if excluded:
+        print(
+            f"警告: hypecore=false のため除外: {', '.join(excluded)}"
+            f"（cik_lookup.csvでhypecore=trueに変更しない限り処理されません）"
+        )
+    return [t for t in target if t in hypecore_set]
+
+
 def main():
     parser = argparse.ArgumentParser(description="HypeCore銘柄のカタリスト発掘・追跡")
     parser.add_argument("--ticker",  help="カンマ区切りで銘柄指定 (例: NVDA,IONQ)")
@@ -226,7 +243,8 @@ def main():
 
     # 対象銘柄を決定
     if args.ticker:
-        tickers = [t.strip().upper() for t in args.ticker.split(",") if t.strip()]
+        requested = [t.strip().upper() for t in args.ticker.split(",") if t.strip()]
+        tickers = _filter_hypecore_tickers(requested, get_hypecore_tickers())
         print(f"[INFO] 指定銘柄: {len(tickers)}件 {tickers}")
     else:
         try:
