@@ -157,3 +157,67 @@ class TestCheckCDataJumpIntegration:
         ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
         warn_21_entries = [w for w in warn if "WARN-21" in w]
         assert len(warn_21_entries) == 2
+
+
+class TestRunChecksTickerScan:
+    """FLAG-CONSUMER-AUDIT-2: run_checks()のスキャン対象決定が
+    os.listdir(DATA_DIR)からtickers.get_tanuki_tickers()との積集合に
+    変わったことの回帰テスト。tanuki=false銘柄はreport.txtが残存していても
+    スキャン対象から除外されること"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def test_tanuki_false_ticker_excluded_from_scan(self, tmp_path, monkeypatch):
+        """ZS相当（report.txt残存だがtanuki=false）はスキャン対象に含まれない"""
+        self._make_ticker_dir(tmp_path, "AAPL")
+        self._make_ticker_dir(tmp_path, "ZS")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc._tickers_mod, "get_tanuki_tickers", lambda csv_path=None: ["AAPL"])
+        monkeypatch.setattr(rcc, "_load_rpo_whitelist", lambda: set())
+        monkeypatch.setattr(rcc, "load_warn_ledger", lambda: set())
+
+        checked = []
+
+        def _fake_check_ticker(ticker, whitelist):
+            checked.append(ticker)
+            return [], []
+
+        monkeypatch.setattr(rcc, "check_ticker", _fake_check_ticker)
+
+        class Args:
+            ticker = None
+            quiet = True
+
+        rcc.run_checks(Args())
+
+        assert "AAPL" in checked
+        assert "ZS" not in checked
+
+    def test_report_txt_missing_excludes_tanuki_true_ticker(self, tmp_path, monkeypatch):
+        """tanuki=trueでもreport.txtが存在しない銘柄はスキャン対象に含まれない
+        （両条件必須。report_txt_parser.pyと同型のパターン）"""
+        self._make_ticker_dir(tmp_path, "AAPL")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc._tickers_mod, "get_tanuki_tickers", lambda csv_path=None: ["AAPL", "MSFT"])
+        monkeypatch.setattr(rcc, "_load_rpo_whitelist", lambda: set())
+        monkeypatch.setattr(rcc, "load_warn_ledger", lambda: set())
+
+        checked = []
+
+        def _fake_check_ticker(ticker, whitelist):
+            checked.append(ticker)
+            return [], []
+
+        monkeypatch.setattr(rcc, "check_ticker", _fake_check_ticker)
+
+        class Args:
+            ticker = None
+            quiet = True
+
+        rcc.run_checks(Args())
+
+        assert checked == ["AAPL"]

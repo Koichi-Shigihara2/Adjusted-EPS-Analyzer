@@ -58,6 +58,7 @@ WARN_LEDGER  = os.path.join(REPO_ROOT, "config/warn_acknowledged.json")
 # sys.pathに追加する（registration_validator.pyと同一パターン）
 sys.path.insert(0, REPO_ROOT)
 from common.screening.dcf_validity_checker import check_c_data_jump  # noqa: E402
+from common.sec_data import tickers as _tickers_mod  # noqa: E402
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -694,10 +695,14 @@ def run_checks(args=None) -> tuple[int, int]:
     if args and args.ticker:
         ticker_filter = {t.strip().upper() for t in args.ticker.split(",")}
 
+    # FLAG-CONSUMER-AUDIT-2: 以前はos.listdir(DATA_DIR)でtanukiフラグを見ず
+    # ディレクトリ実在＋report.txt存在だけでスキャン対象を決めており、
+    # tanuki=false化済みだがreport.txtが残存する銘柄（ZS・RKLB等）が
+    # スキャン対象に混入していた（ZS-TICKERS-LEAK-1参照）。
+    # tickers.get_tanuki_tickers()との積集合に限定する。
     all_tickers = sorted([
-        d for d in os.listdir(DATA_DIR)
-        if os.path.isdir(os.path.join(DATA_DIR, d))
-        and os.path.exists(os.path.join(DATA_DIR, d, "report.txt"))
+        t for t in _tickers_mod.get_tanuki_tickers()
+        if os.path.exists(os.path.join(DATA_DIR, t, "report.txt"))
     ])
 
     if ticker_filter:

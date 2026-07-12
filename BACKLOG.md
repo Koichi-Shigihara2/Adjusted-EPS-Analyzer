@@ -1,5 +1,12 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日6回目: FLAG-CONSUMER-AUDIT-2完了。
+report_consistency_check.py::run_checks()・stonks-silo/pipeline.py::run()・
+score_verifier.pyの残る3消費者に統一アクセサ（tickers.get_tanuki_tickers()/
+get_stonks_silo_tickers()）ベースのフラグ検証を適用し、ZS-TICKERS-LEAK-1で
+発見した構造的ギャップを解消。横展開未確認事項をFLAG-CONSUMER-AUDIT-3として
+新規登録。詳細はBACKLOG_DONE.md参照）
+
 最終更新: 2026-07-12（同日5回目: QUALITY-GATES-EPIC-1のゲート1を
 「取得時データ検証（検知のみ）」から「複数ソース自動照合・自動補正」に
 設計修正。単一ソース依存の思考停止だったと認識し、検知止まりではなく
@@ -1068,41 +1075,22 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [FLAG-CONSUMER-AUDIT-2] 銘柄リスト構築の未統一箇所（第三の経路・stonks-silo CLI引数）
-**優先度:** 中
+### [FLAG-CONSUMER-AUDIT-3] hypecore.py --batch等、他パイプラインのCLI引数フラグ検証横展開確認
+**優先度:** 低〜中
 **分類:** アーキテクチャ / 銘柄登録フロー
 **登録日:** 2026-07-12
-**発見:** [[ZS-TICKERS-LEAK-1]]（完了・本ファイル上部参照）実装検証時
+**発見:** [[FLAG-CONSUMER-AUDIT-2]]（完了・BACKLOG_DONE.md参照）実装時の未確認事項
 
 #### 問題
-[[ZS-TICKERS-LEAK-1]]で`common/sec_data/tickers.py::get_active_tickers()`への
-統一を行ったが、検証中に**同型の構造的ギャップが他に2箇所残っている**ことを
-発見した（今回のスコープ外のため未対応）：
+FLAG-CONSUMER-AUDIT-2で`report_consistency_check.py`・`stonks-silo/pipeline.py`・
+`score_verifier.py`の3消費者は統一アクセサ経由のフラグ検証に対応したが、
+`hypecore.py --batch`等、他のパイプラインにも同型（CLI引数でticker明示指定時に
+フラグ検証をバイパスする）の構造的ギャップが残っていないか、横展開での確認は
+未実施のまま。
 
-1. **`common/sec_data/report_consistency_check.py::run_checks()`**:
-   `all_tickers = sorted([d for d in os.listdir(DATA_DIR) if ...
-   os.path.exists(...report.txt)])`という、tickers.pyもcik_lookup.csvも
-   経由しない**第三の独立した経路**でスキャン対象を決定している。
-   実際にZS・RKLBとも引き続きスキャン対象に含まれることを確認済み
-   （`os.listdir(DATA_DIR)`ベースのため、report.txtが物理的に存在する限り
-   tanukiフラグに関わらず対象になる）。実害は限定的（WARN-21等の誤検知源には
-   なりうるがNG化はしていない）だが、STALE-REPORT-CLEANUP-1未対応銘柄が
-   増えるほど誤検知リスクも増える。
-2. **`discover/stonks-silo/src/pipeline.py::run()`**: `stonks_tickers()`
-   （デフォルト実行時の対象取得）は既に`tickers.get_stonks_silo_tickers()`
-   経由だが、`run(tickers=...)`でCLI引数等により明示的にティッカーを
-   指定した場合はstonks_silo=trueフラグの検証を一切行わない
-   （`tanuki_valuation/pipeline.py`のCLI引数パスと同型のギャップ。
-   ZS-TICKERS-LEAK-1で確認したtanuki_valuation側は修正済みだが、
-   stonks-silo側は未対応のまま）。
-
-#### 対応方針（未確定・次回セッションで着手判断）
-- report_consistency_check.pyのスキャン対象決定を`tickers.get_tanuki_tickers()`
-  ベースに変更する（`os.listdir(DATA_DIR)`直接参照を廃止）
-- stonks-silo pipeline.pyの`run()`に、tanuki_valuation側と同様の
-  CLI引数フラグ検証（`_filter_*_tickers()`相当）を追加する
-- 他のパイプライン（hypecore.py --batch等）にも同型のCLI引数フラグ検証欠如が
-  ないか、横展開で確認する必要がある（今回は上記2箇所の発見に留めた）
+#### 対応方針（未確定）
+hypecore.py・eps関連パイプライン等のCLI引数パスを棚卸しし、同型ギャップの有無を
+確認した上で、必要なら`_filter_*_tickers()`相当のガードを追加する。
 
 #### 着手条件
 なし（優先度含め次回以降のセッションで判断）

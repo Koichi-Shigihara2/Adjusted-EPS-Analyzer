@@ -42,6 +42,24 @@ def stonks_tickers() -> list[str]:
     return tickers.get_stonks_silo_tickers()
 
 
+def _filter_stonks_silo_tickers(target: list[str]) -> list[str]:
+    """CLI引数等でticker明示指定時にstonks_silo=trueのみへ絞り込む。
+
+    FLAG-CONSUMER-AUDIT-2: tanuki_valuation/pipeline.pyのCLI引数パスと
+    同型の構造的ギャップ（stonks_tickers()はデフォルト実行時のみ使われ、
+    ticker明示指定時はstonks_silo=trueフラグの検証を一切行わずそのまま
+    処理していた）への対応。範囲外のticker指定は警告し無条件実行しない。
+    """
+    stonks_set = set(stonks_tickers())
+    excluded = [t for t in target if t not in stonks_set]
+    if excluded:
+        print(
+            f"警告: stonks_silo=false のため除外: {', '.join(excluded)}"
+            f"（cik_lookup.csvでstonks_silo=trueに変更しない限り処理されません）"
+        )
+    return [t for t in target if t in stonks_set]
+
+
 # ---------------------------------------------------------------------------
 # シリアライズ
 # ---------------------------------------------------------------------------
@@ -70,7 +88,10 @@ def run(tickers: list[str] | None = None) -> dict:
     特定ティッカー指定時は既存 results.json とマージする。
     """
     partial = tickers is not None
-    target = [t.upper() for t in tickers] if partial else stonks_tickers()
+    if partial:
+        target = _filter_stonks_silo_tickers([t.upper() for t in tickers])
+    else:
+        target = stonks_tickers()
 
     if not target:
         print("対象ティッカーが見つかりません。cik_lookup.csv の stonks_silo 列を確認してください。")

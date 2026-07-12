@@ -34,6 +34,8 @@ try:
 except ImportError:
     _USE_SAFE_YF = False
 
+from common.sec_data import tickers as _tickers_mod  # noqa: E402
+
 
 def fetch_price_after(ticker: str, base_date: str, days: int) -> float | None:
     """base_date から days 日後の終値を返す。未経過 or 取得失敗なら None。"""
@@ -108,9 +110,15 @@ def main() -> None:
     if args.ticker:
         tickers = [args.ticker.upper()]
     else:
+        # FLAG-CONSUMER-AUDIT-2: 以前はos.listdir(data_dir)で
+        # tanukiフラグを見ずディレクトリ実在だけでスキャン対象を決めており、
+        # tanuki=false化済み銘柄（ZS・RKLB等）のscore_history.jsonも
+        # 更新対象に混入していた。tanuki=true銘柄に限定する。
+        # 既存のscore_history.json自体は削除しない（過去実績データのため）。
+        tanuki_set = set(_tickers_mod.get_tanuki_tickers())
         tickers = sorted(
             d for d in os.listdir(data_dir)
-            if os.path.isdir(os.path.join(data_dir, d))
+            if os.path.isdir(os.path.join(data_dir, d)) and d in tanuki_set
         )
 
     print(f"Verifying {len(tickers)} ticker(s)...")

@@ -4,6 +4,45 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [FLAG-CONSUMER-AUDIT-2] 銘柄リスト構築の未統一箇所（残る3消費者への統一アクセサ適用）（2026-07-12完了）
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 発端: [[ZS-TICKERS-LEAK-1]]完了時の検証で、`common/sec_data/tickers.py`
+  への統一アクセサ移行が及んでいない同型の構造的ギャップが3箇所
+  （report_consistency_check.py・stonks-silo/pipeline.py・score_verifier.py）
+  残っていることを発見し、本タスクとして登録・着手。
+- 対応:
+  1. `common/sec_data/report_consistency_check.py::run_checks()`:
+     スキャン対象の`all_tickers`構築を`os.listdir(DATA_DIR)`
+     （tickers.pyもcik_lookup.csvも経由しない第三の独立経路）から、
+     `tickers.get_tanuki_tickers()`とreport.txt存在確認の積集合
+     （report_txt_parser.pyで採用済みのパターンを踏襲）に置換。
+  2. `discover/stonks-silo/src/pipeline.py::run()`: `tanuki_valuation/pipeline.py`
+     のCLI引数パス修正と同型の`_filter_stonks_silo_tickers()`を新設し、
+     CLI引数でticker明示指定時（`partial=True`）もstonks_silo=trueの範囲内かを
+     検証。範囲外指定時は警告を出し、無条件実行はしない。
+  3. `src/value/tanuki_valuation/score_verifier.py`: `--ticker`省略時の
+     全銘柄スキャン（`os.listdir(data_dir)`）を`tickers.get_tanuki_tickers()`
+     との積集合に限定。tanuki=false銘柄（ZS・RKLB等）の既存
+     `score_history.json`は削除せず、以後の自動更新対象からのみ除外。
+     `--ticker`明示指定時の挙動は変更していない。
+- 検証: report_consistency_check.pyはgit stash差分で新旧スキャン結果を比較し、
+  102→100銘柄・38→37 WARNで、変化はRKLBのWARN-21消失とticker数のみ
+  （他銘柄のNG/WARN結果に変化なし）であることを確認。stonks-silo/pipeline.py・
+  score_verifier.pyはフィルタ関数を直接呼び出し、本番cik_lookup.csvに対して
+  stonks_silo=false銘柄（AAPL等）・tanuki=false銘柄（ZS・RKLB）が正しく除外
+  されることと、明示ticker指定パスが変更されていないことを確認。
+  `report_consistency_check.py --fail-on-ng`（NG=0/WARN=37/exit 0）で回帰なし
+  確認。pytest 254 passed/2 known failed（新規10件: `tests/test_report_consistency_check.py`
+  `TestRunChecksTickerScan` 2件・新規`tests/test_stonks_silo_pipeline.py` 4件・
+  新規`tests/test_score_verifier.py` 3件、既存ファイルへの追加1件）。
+- 追加発見（今回のスコープ外・BACKLOG登録のみ、修正せず）:
+  `hypecore.py --batch`等、他のパイプラインにも同型のCLI引数フラグ検証欠如が
+  ないかの横展開確認は未実施。[[FLAG-CONSUMER-AUDIT-3]]として新規登録。
+
 ### ✅ [ZS-TICKERS-LEAK-1] 銘柄リスト統一アクセサ導入＋tanuki=false銘柄(ZS)混入除去（2026-07-12完了・TICKER-SOURCE-UNIFY-1の延長）
 **分類:** アーキテクチャ / 銘柄登録フロー
 **登録日:** 2026-07-12
