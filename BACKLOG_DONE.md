@@ -4,6 +4,48 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [SPLIT-AUTO-CHECK-1] EPS Analyzerのfact選定ロジック不整合による分割株数汚染（2026-07-12完了・QUALITY-GATES-EPIC-1 Phase 2b-3）
+**分類:** データ品質 / EPS ANALYZER
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 当初の登録内容（split_history.yaml未登録の株式分割が16銘柄分ある）は、
+  実害確認調査で**根本原因の理解が誤っていたと判明**。真因はsplit_history.yaml
+  登録漏れではなく、EPS Analyzer独自の抽出パイプライン
+  `src/value/adjusted_eps_analyzer/extract_key_facts.py::extract_quarterly_facts()`
+  のfact選定ロジック不整合だった（common/sec_data配下とは完全に独立した経路で、
+  Phase 2aのtag_definitions.py統一の対象外）。
+- SEC company facts APIを直接調査し、NVDA 2024-01-28四半期で同一期間
+  `(2023-01-30〜2024-01-28)`に3件のfactが競合していることを確認
+  （原初filed値=分割前株数、翌年・翌々年10-Kの比較年度再掲値=分割後株数）。
+  これはSEC-TAG-FICO-CPRT-1と同型のfact競合パターンだった。
+- 抽出ロジックはQ1〜Q3用ループ（マッチする全factを無条件上書き＝実質
+  リスト末尾勝ち）とQ4専用ロジック（先頭一致で`break`＝先頭勝ち）で
+  **異なる選定規則**を使っており、偶然結果が揃うこともあれば
+  （Q1〜Q3）、ズレることもあった（Q4）。
+- 対応: `extract_key_facts.py`のみを対象に、Q1〜Q3・Q4両方の選定ロジックを
+  「同一期間に複数factが競合した場合、filed日が最新のものを優先する」という
+  単一規則に統一（Q1〜Q3: 無条件上書き→filed日比較付き上書き、Q4: 先頭一致
+  break→全candidate走査でfiled日最新を採用）。split_history.yamlへの個別登録
+  （対症療法）は行わず、根本修正のみで対応。
+- 検証: 全105銘柄（eps=true対象）でEPS Analyzerパイプラインを再実行し、
+  修正前データ（バックアップ済み）と新旧比較。**NVDA・AVGO・TSLA・LRCX・CPRT・
+  CELH・KULR・RCAT・SPIR・WMT**の株数系列異常是正を確認。加えて新規発見として
+  **SCCO**（periodic stock dividendの累積再掲による約2.9%の妥当な補正）が
+  影響銘柄に含まれることを確認。`apply_split_adjustments()`はsplit_history.yaml
+  にNOW以外未登録のため全銘柄で無介入（誤動作なし）。pytest 258 passed/2 known
+  failed（新規`tests/test_extract_key_facts_split.py`4件追加）。
+- 残存する構造的限界: SEC自体にfactが1件も存在しない期間（分割直後〜翌年10-Kでの
+  比較年度再掲まで、10-Qは前年同四半期のみ比較掲載のため恒久的に空白となる四半期
+  がある）は本修正でも是正不能。NVDA 2023-04-30四半期がこれに該当し、
+  [[SPLIT-REALTIME-GAP-1]]として切り出した。
+- 副次発見（今回のスコープ外・BACKLOG登録のみ、修正せず）: ASTSのdiluted_shares_used
+  が往復変動する異常パターンを検出。分割由来のfact競合とは別種の可能性があり
+  [[ASTS-SHARES-OSCILLATION-1]]として新規登録。DELL/HEI/SCCO/HONの当初の
+  端数比率懸念はyfinance実測でperiodic stock dividend/スピンオフ調整と確認済みで
+  対応不要と判断（SCCOのみ上記の通り抽出ロジック修正の副次的な恩恵を受けた）。
+
 ### ✅ [FLAG-CONSUMER-AUDIT-2] 銘柄リスト構築の未統一箇所（残る3消費者への統一アクセサ適用）（2026-07-12完了）
 **分類:** アーキテクチャ / 銘柄登録フロー
 **登録日:** 2026-07-12

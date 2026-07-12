@@ -1,6 +1,6 @@
 {
   "ticker": "NVDA",
-  "last_updated": "2026-07-06T14:03:15.415778",
+  "last_updated": "2026-07-12T21:12:23.725443",
   "quarters": [
     {
       "gaap_eps": 2.3910868763068347,
@@ -65,17 +65,17 @@
         }
       },
       "ai_analysis": {
-        "health": "調整中",
-        "comment": "SBCと無形資産償却はともに恒常的に発生する非現金費用であり、特にSBCはNVDAのようなテック企業で毎期大きな規模で発生するコアコストです。市場がGAAP EPSを中心に判断する場合、これらを加算した調整後実力（キャッシュ生成力）が十分に見えにくくなり、企業の実力を過小評価するリスクがあります。ただしSBCは株式希薄化を伴う実質コストであるため、調整後EPSを過大に評価するリスクもあり、投資家はFCFや希薄化後シェア数を合わせて注視すべきです。",
+        "health": "調整小",
+        "comment": "SBCと無形資産償却費は非現金費用として調整されAdjusted EPSを押し上げているが、両者ともNVDAのようなテック企業では恒常的に発生する項目である。市場がGAAP EPS中心に判断する場合、非現金コストの影響で真のキャッシュ生成力や事業実力が過小評価される可能性はあるものの、調整幅は約3%と小さく市場は非GAAPを広く参考にしているため過小評価リスクは限定的。投資家はSBCの継続性と株式希薄化効果を注視すべきであり、無視すると将来的な過大評価リスクが生じる。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、テック企業では毎期発生する恒常的な報酬コストであり、株式希薄化効果も伴う",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期発生する恒常的な運用コストである(テック企業では標準的)。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連の非現金償却で、償却期間中は毎期発生する恒常的項目である",
+            "snippet": "無形資産償却費は買収関連の非現金償却で一定期間継続発生するため、完全に一過性とは言えない。",
             "confidence": 0.2
           }
         ]
@@ -506,11 +506,11 @@
       "pretax_income": 17279000000.0
     },
     {
-      "gaap_eps": 4.926222935044106,
-      "adjusted_eps": 5.268924567272761,
+      "gaap_eps": 0.49262229350441056,
+      "adjusted_eps": 0.5268924567272761,
       "gaap_net_income": 12286000000.0,
       "adjusted_net_income": 13140697870.778267,
-      "diluted_shares_used": 2494000000.0,
+      "diluted_shares_used": 24940000000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -551,7 +551,7 @@
         "tax_one_time"
       ],
       "revenue": 22103000000.0,
-      "diluted_shares": 2494000000.0,
+      "diluted_shares": 24940000000.0,
       "period_end": "2024-01-28",
       "fiscal_year": 2024,
       "quarter": 4,
@@ -718,11 +718,11 @@
       "pretax_income": 2209000000.0
     },
     {
-      "gaap_eps": 0.5640207419226166,
-      "adjusted_eps": 1.00151133468505,
+      "gaap_eps": 0.05640207419226167,
+      "adjusted_eps": 0.10015113346850499,
       "gaap_net_income": 1414000000.0,
       "adjusted_net_income": 2510788916.05542,
-      "diluted_shares_used": 2507000000.0,
+      "diluted_shares_used": 25070000000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -763,7 +763,7 @@
         "tax_one_time"
       ],
       "revenue": 6051000000.0,
-      "diluted_shares": 2507000000.0,
+      "diluted_shares": 25070000000.0,
       "period_end": "2023-01-29",
       "fiscal_year": 2023,
       "quarter": 4,
