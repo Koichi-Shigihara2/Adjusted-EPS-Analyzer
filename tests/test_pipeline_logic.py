@@ -3059,3 +3059,42 @@ class TestBuildRiceAnnualShapeQuartersCompleteness:
         # RD/SMキーは元々存在しないダミーデータだが、期間自体は残ることを確認
         result = _df.build_rice_annual_shape([entry])
         assert len(result) == 1
+
+
+# ─────────────────────────────────────────────
+# ZS-TICKERS-LEAK-1: pipeline.run()のCLI引数パスがtanuki=falseを検証しない
+# 構造的ギャップの回帰テスト（銘柄リスト統一アクセサ導入）
+# ─────────────────────────────────────────────
+
+class TestFilterTanukiTickers:
+    """TanukiValuationPipeline._filter_tanuki_tickers()が
+    tanuki=false銘柄を除外することを検証する（本番cik_lookup.csv使用）"""
+
+    def _make_pipeline_stub(self):
+        """__init__のファイルI/O・計算機初期化を避け、repo_rootのみ持つ
+        最小限のインスタンス相当を作る"""
+        pipe = object.__new__(TanukiValuationPipeline)
+        pipe.repo_root = _REPO_ROOT_DIR
+        return pipe
+
+    def test_tanuki_false_ticker_excluded(self):
+        """ZSはtanuki=falseのため、明示指定してもフィルタで除外される"""
+        pipe = self._make_pipeline_stub()
+        result = pipe._filter_tanuki_tickers(["ZS"])
+        assert result == []
+
+    def test_tanuki_true_ticker_kept(self):
+        pipe = self._make_pipeline_stub()
+        result = pipe._filter_tanuki_tickers(["AAPL"])
+        assert result == ["AAPL"]
+
+    def test_mixed_tickers_only_tanuki_true_kept(self):
+        """tanuki=true/false混在指定時、trueのみ残り順序は維持される"""
+        pipe = self._make_pipeline_stub()
+        result = pipe._filter_tanuki_tickers(["AAPL", "ZS", "RKLB", "NVDA"])
+        assert result == ["AAPL", "NVDA"]
+
+    def test_lowercase_input_still_matched(self):
+        pipe = self._make_pipeline_stub()
+        result = pipe._filter_tanuki_tickers(["aapl"])
+        assert result == ["aapl"]

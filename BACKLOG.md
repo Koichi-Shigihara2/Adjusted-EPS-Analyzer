@@ -1034,6 +1034,81 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
+### [FLAG-THRESHOLD-DESIGN-1] tanuki/stonks_silo等4フラグの判定基準ロジック導入（第二段階）
+**優先度:** 未定
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-12
+**発見:** [[ZS-TICKERS-LEAK-1]]（完了・本ファイル上部参照）の消費者統一（第一段階）に伴う調査時
+
+#### 背景
+一連の調査（フラグ判定ロジック確認・基準設計材料収集）の結果、`cik_lookup.csv`の
+4フラグ（tanuki/stonks_silo/eps/hypecore）は**完全手動設定**であり、財務指標等に
+基づく自動判定は一切存在しないことが確認された。暗黙の基準（赤字→stonks_silo=true）は
+概ね成立するが、以下の逸脱事例が判明している：
+
+- **ESTC・LITE**: 黒字転換後もstonks_silo=trueのまま残留（直近1年基準では不一致）
+- **GTLB**: 直近5年間**一度も黒字化していない**にもかかわらずstonks_silo=false
+  （既知8件の逸脱事例には含まれていなかった新規発見。明示的な除外理由の記録もなし）
+- **APGE**: 売上ゼロのプレレベニュー企業。「赤字」という1軸だけでは判定基準として
+  不十分であることを示す事例（「売上の有無」も判定軸に含める必要）
+
+#### 対応方針（未確定・基準案をKoichiさんに複数提示して確認後に実装）
+- 直近5年中N年以上赤字継続→stonks_silo=true、といった機械判定可能な基準の導入
+  （Nの値・判定ウィンドウは要確認）
+- プレレベニュー企業・金融機関・IFRS企業・特殊株式構造企業等、「赤字」以外の
+  軸での評価枠組み非適合パターンの明文化
+- GTLB・ESTC・LITEの現行フラグ設定の是正（基準確定後に個別対応）
+- フラグ再判定のトリガー（新規登録時のみか、定期棚卸しか）の設計
+- tanuki=trueとstonks_silo=trueの併用は意図的な設計（SYSTEM_MAP.mdに明記の
+  TANUKI VALUATION↔STONKS SILO runway参照依存）であり、「赤字企業は両方trueに
+  する」という運用を基準に組み込む余地がある
+
+#### 着手条件
+なし（基準案の確認・確定後に着手）
+
+---
+
+### [FLAG-CONSUMER-AUDIT-2] 銘柄リスト構築の未統一箇所（第三の経路・stonks-silo CLI引数）
+**優先度:** 中
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-12
+**発見:** [[ZS-TICKERS-LEAK-1]]（完了・本ファイル上部参照）実装検証時
+
+#### 問題
+[[ZS-TICKERS-LEAK-1]]で`common/sec_data/tickers.py::get_active_tickers()`への
+統一を行ったが、検証中に**同型の構造的ギャップが他に2箇所残っている**ことを
+発見した（今回のスコープ外のため未対応）：
+
+1. **`common/sec_data/report_consistency_check.py::run_checks()`**:
+   `all_tickers = sorted([d for d in os.listdir(DATA_DIR) if ...
+   os.path.exists(...report.txt)])`という、tickers.pyもcik_lookup.csvも
+   経由しない**第三の独立した経路**でスキャン対象を決定している。
+   実際にZS・RKLBとも引き続きスキャン対象に含まれることを確認済み
+   （`os.listdir(DATA_DIR)`ベースのため、report.txtが物理的に存在する限り
+   tanukiフラグに関わらず対象になる）。実害は限定的（WARN-21等の誤検知源には
+   なりうるがNG化はしていない）だが、STALE-REPORT-CLEANUP-1未対応銘柄が
+   増えるほど誤検知リスクも増える。
+2. **`discover/stonks-silo/src/pipeline.py::run()`**: `stonks_tickers()`
+   （デフォルト実行時の対象取得）は既に`tickers.get_stonks_silo_tickers()`
+   経由だが、`run(tickers=...)`でCLI引数等により明示的にティッカーを
+   指定した場合はstonks_silo=trueフラグの検証を一切行わない
+   （`tanuki_valuation/pipeline.py`のCLI引数パスと同型のギャップ。
+   ZS-TICKERS-LEAK-1で確認したtanuki_valuation側は修正済みだが、
+   stonks-silo側は未対応のまま）。
+
+#### 対応方針（未確定・次回セッションで着手判断）
+- report_consistency_check.pyのスキャン対象決定を`tickers.get_tanuki_tickers()`
+  ベースに変更する（`os.listdir(DATA_DIR)`直接参照を廃止）
+- stonks-silo pipeline.pyの`run()`に、tanuki_valuation側と同様の
+  CLI引数フラグ検証（`_filter_*_tickers()`相当）を追加する
+- 他のパイプライン（hypecore.py --batch等）にも同型のCLI引数フラグ検証欠如が
+  ないか、横展開で確認する必要がある（今回は上記2箇所の発見に留めた）
+
+#### 着手条件
+なし（優先度含め次回以降のセッションで判断）
+
+---
+
 ### [STALE-REPORT-CLEANUP-1] tanuki=false化後もreport.txtが残存する
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION

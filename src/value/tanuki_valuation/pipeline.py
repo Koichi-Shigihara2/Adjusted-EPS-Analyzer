@@ -86,6 +86,8 @@ class TanukiValuationPipeline:
         
         if tickers is None:
             tickers = self._load_tickers_from_csv()
+        else:
+            tickers = self._filter_tanuki_tickers(tickers)
 
         results = {}
         success_count = 0
@@ -212,6 +214,28 @@ class TanukiValuationPipeline:
         if skipped:
             print(f"   ℹ️  TANUKIスキップ銘柄: {', '.join(skipped)}")
         return [t for t in all_tickers if t in tanuki_set]
+
+    def _filter_tanuki_tickers(self, tickers: List[str]) -> List[str]:
+        """CLI引数等でticker明示指定時にtanuki=trueのみへ絞り込む。
+
+        ZS-TICKERS-LEAK-1: run(tickers=None)の全銘柄バッチ経路のみ
+        tanuki=trueへフィルタしており、tickers引数を明示指定した経路
+        （CLI引数・latest.json再スキャン等での対象選定）はフィルタを
+        一切通らず、tanuki=falseへ変更済みの銘柄（ZS等）でも無条件に
+        処理・再生成してしまっていた（tickers.json混入の実害を確認済み）。
+        """
+        if self.repo_root not in sys.path:
+            sys.path.insert(0, self.repo_root)
+        from common.sec_data import tickers as _tickers
+
+        tanuki_set = set(_tickers.get_tanuki_tickers())
+        excluded = [t for t in tickers if t.upper() not in tanuki_set]
+        if excluded:
+            print(
+                f"   ⚠️  tanuki=false のため除外: {', '.join(excluded)}"
+                f"（cik_lookup.csvでtanuki=trueに変更しない限り処理されません）"
+            )
+        return [t for t in tickers if t.upper() in tanuki_set]
 
     def _get_warn_details(self, validation: dict) -> str:
         checks = validation.get("checks", {})
@@ -2836,6 +2860,14 @@ class TanukiValuationPipeline:
         print(f"   📄 レポート: {report_path}")
 
     def _save_tickers_index(self, success_tickers: List[str]) -> None:
+        """tickers.json（TANUKI SCORE daily_pick.py等が読む対象銘柄一覧）を更新する。
+
+        ZS-TICKERS-LEAK-1: 既存index_dataとのマージのみ（和集合）で、
+        一度でも書き込まれた銘柄はtanuki=falseへ変更されても除去されない
+        構造だった（latest.json存在確認のみでフラグを見ていなかったため）。
+        merged集合をtanuki=true（tickers.py経由）でも絞り込み、
+        バッチ実行のたびに現在のフラグ状態へ自己修復するようにする。
+        """
         index_path = os.path.join(self.output_dir, "tickers.json")
 
         existing_tickers = []
@@ -2846,10 +2878,16 @@ class TanukiValuationPipeline:
             except Exception:
                 pass
 
+        if self.repo_root not in sys.path:
+            sys.path.insert(0, self.repo_root)
+        from common.sec_data import tickers as _tickers
+        tanuki_set = set(_tickers.get_tanuki_tickers())
+
         merged = sorted(set(existing_tickers) | set(success_tickers))
         valid = [
             t for t in merged
-            if os.path.exists(os.path.join(self.output_dir, t, "latest.json"))
+            if t in tanuki_set
+            and os.path.exists(os.path.join(self.output_dir, t, "latest.json"))
         ]
 
         index_data = {

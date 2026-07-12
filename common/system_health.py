@@ -34,6 +34,7 @@ from common.sec_data.audit import (
     post_discord,
     run_audit,
 )
+from common.sec_data import tickers as _tickers_mod
 
 _TANUKI_DATA = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuation", "data")
 _DOCS_ROOT   = os.path.join(_REPO_ROOT, "docs")
@@ -263,8 +264,11 @@ def check_g_hypecore() -> tuple[str, bool, str]:
 def check_h_config() -> tuple[str, bool, str]:
     with open(_CIK_LOOKUP, encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
+    # all_tickersはsegment/maturity configの孤立エントリ検出のため意図的に
+    # フラグ無視の全登録銘柄（監査目的）。tanuki_tickersはtickers.py経由に統一
+    # （ZS-TICKERS-LEAK-1: 独自にCSVを読んでフラグ判定する重複実装を解消）。
     all_tickers    = {r["ticker"] for r in rows}
-    tanuki_tickers = [r["ticker"] for r in rows if r.get("tanuki", "").strip().lower() == "true"]
+    tanuki_tickers = _tickers_mod.get_tanuki_tickers()
 
     beta_data      = json.load(open(_BETA_CONFIG, encoding="utf-8"))
     beta_overrides = set(beta_data.get("overrides", {}).keys())
@@ -317,9 +321,8 @@ def check_i_eps() -> tuple[str, bool, str]:
             pass
 
     # eps=true のティッカーが summary.json に含まれているかカバレッジ確認
-    with open(_CIK_LOOKUP, encoding="utf-8") as f:
-        rows = list(csv.DictReader(f))
-    eps_tickers    = {r["ticker"] for r in rows if r.get("eps", "").strip().lower() == "true"}
+    # （ZS-TICKERS-LEAK-1: tickers.py経由に統一）
+    eps_tickers    = set(_tickers_mod.get_eps_tickers())
     summary_tickers= {e["ticker"] for e in tickers_list if isinstance(e, dict)}
     missing_eps    = sorted(eps_tickers - summary_tickers)
 

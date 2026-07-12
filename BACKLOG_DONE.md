@@ -4,6 +4,54 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [ZS-TICKERS-LEAK-1] 銘柄リスト統一アクセサ導入＋tanuki=false銘柄(ZS)混入除去（2026-07-12完了・TICKER-SOURCE-UNIFY-1の延長）
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 発端: tanuki=falseへ変更済み（2026-06-27、意図的な業態分類判断
+  「Zscaler=不採算SaaS企業、DCFベースのTANUKI VALUATIONではなくSTONKS SILOの
+  評価軸で扱う」）のZSが、`docs/value-monitor/tanuki_valuation/data/tickers.json`
+  （TANUKI SCORE daily_pick.pyの対象銘柄リストの実体）に混入し続けていることが
+  一連の調査タスクで判明。除外決定直後の時点で既に混入しており、少なくとも
+  2026-07-11（前回セッション）から繰り返し発生していた既存の問題だった。
+- 根本原因を3箇所特定:
+  1. `pipeline.py::run()`はtickers引数が`None`（全銘柄バッチ）の場合のみ
+     tanuki=trueへフィルタしており、CLI引数で明示的にティッカーを指定した
+     経路はフィルタを一切通らなかった
+  2. `pipeline.py::_save_tickers_index()`が既存tickers.jsonとの**和集合**
+     マージのみで、一度書き込まれた銘柄はtanuki=falseへ変更されても
+     除去されない構造だった（latest.json存在確認のみでフラグを見ていなかった）
+  3. `common/screening/report_txt_parser.py::_all_tickers_with_report()`が
+     `tickers.get_all_tickers()`（cik_lookup.csv全銘柄、tanukiフラグ無視）から
+     report.txtの存在有無だけで対象銘柄を選んでいた
+- 対応: `common/sec_data/tickers.py`に`get_active_tickers(flag)`を新設し
+  （フラグ='true'かつstatusが'retired'でない銘柄を返す。'candidate'は
+  既存運用＜WST/CON等＞を壊さないため対象に含める）、既存の
+  `get_tanuki_tickers()`等4つの便利関数を内部的にこれ経由へ統一。
+  上記1〜3を全て修正（1: `_filter_tanuki_tickers()`新設・CLI引数パスに適用、
+  2: `_save_tickers_index()`のmerged集合をtanuki=trueへも絞り込み自己修復化、
+  3: `tickers.get_tanuki_tickers()`使用へ変更）。
+  `common/system_health.py`の重複CSV読み込みロジック（tanuki_tickers・
+  eps_tickers）もtickers.py経由に統一（all_tickersは孤立エントリ監査目的の
+  ため意図的に維持）。
+- tickers.jsonから直接ZSを除去（101件→100件）。
+- 検証: `pipeline.py --skip-risk ZS`実行でZSが正しく除外されることを確認
+  （tickers.json更新自体スキップ）。RKLB（tanuki=false・report.txt残存のみで
+  tickers.json未混入）が本修正の影響を受けないことを確認。
+  `system_health.py`・`report_consistency_check.py --fail-on-ng`（NG=0/exit 0）
+  で回帰なしを確認。pytest 245 passed/2 known failed（新規19件:
+  `tests/test_tickers.py` 12件・`tests/test_pipeline_logic.py`
+  `TestFilterTanukiTickers` 4件・新規`tests/test_report_txt_parser.py` 3件）。
+- 追加発見（今回のスコープ外・BACKLOG登録のみ、修正せず）:
+  `report_consistency_check.py::run_checks()`は`os.listdir(DATA_DIR)`という
+  **第三の独立した経路**でスキャン対象を決めており、tickers.pyもcik_lookup.csvも
+  経由しないため、ZS・RKLBとも引き続きスキャン対象に含まれている
+  （実害は限定的、WARN-21等の誤検知源にはなるがNG化はしていない）。
+  `discover/stonks-silo/src/pipeline.py::run()`にも同型のCLI引数フラグ検証
+  欠如が存在する。詳細は[[FLAG-CONSUMER-AUDIT-2]]参照。
+
 ### ✅ [SEC-TAG-FICO-CPRT-1] FICO・CPRTのSECタグ誤取得疑い（2026-07-12完了・対象銘柄がLITEを含む3件に拡大）
 **分類:** データ品質 / SECデータ取得層
 **登録日:** 2026-07-10

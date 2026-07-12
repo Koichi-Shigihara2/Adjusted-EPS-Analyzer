@@ -262,10 +262,17 @@ def parse_ticker_report(repo_root, ticker):
 
 
 def _all_tickers_with_report(repo_root):
+    """report.txtが存在するtanuki=true銘柄を返す。
+
+    ZS-TICKERS-LEAK-1: 以前はtickers.get_all_tickers()（cik_lookup.csv全銘柄、
+    tanukiフラグ無視）からreport.txtの存在有無だけで対象を選んでいたため、
+    tanuki=falseへ変更済みだがreport.txtが残存する銘柄（ZS等）がスクリーニング
+    対象に混入しうる構造だった。tanuki=true銘柄に限定する。
+    """
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
     from common.sec_data import tickers
-    return [t for t in tickers.get_all_tickers()
+    return [t for t in tickers.get_tanuki_tickers()
             if os.path.exists(os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data", t, "report.txt"))]
 
 
