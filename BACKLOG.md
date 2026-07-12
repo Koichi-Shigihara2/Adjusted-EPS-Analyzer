@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日10回目: FLAG-CONSUMER-AUDIT-3・STALE-REPORT-CLEANUP-1
+完了。hypecore.py --batch/単体指定・catalyst.py --ticker・
+adjusted_eps_analyzer/pipeline.py --ticker の3箇所で、FLAG-CONSUMER-AUDIT-2と
+同型（CLI引数明示指定時のフラグ検証バイパス）の構造的ギャップを発見・修正
+（_filter_hypecore_tickers()・_filter_eps_tickers()を新設）。
+dcf_validity_checker.pyの同型ギャップは読み取り専用診断ツールのため意図的に
+未修正と判断。RKLB・ZS双方のTANUKI VALUATION残存ファイル（report.txt・
+latest.json・history.json・history/）を削除（score_history.jsonは過去実績
+データとして保持）。副次発見をHYPECORE-ZS-EPS-STALE-1として新規登録。
+詳細はBACKLOG_DONE.md参照）
+
 最終更新: 2026-07-12（同日9回目: QUALITY-GATES-EPIC-1 Phase 2b-3完了。
 [[SPLIT-AUTO-CHECK-1]]の実害確認調査で根本原因がsplit_history.yaml未登録では
 なくEPS Analyzer独自パイプライン`extract_key_facts.py`のfact選定ロジック不整合
@@ -1106,44 +1117,25 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [FLAG-CONSUMER-AUDIT-3] hypecore.py --batch等、他パイプラインのCLI引数フラグ検証横展開確認
-**優先度:** 低〜中
-**分類:** アーキテクチャ / 銘柄登録フロー
+### [HYPECORE-ZS-EPS-STALE-1] ZS（hypecore=true/eps=false）のhypecore・EPS Analyzerデータ残存
+**優先度:** 低
+**分類:** データ品質 / 銘柄登録フロー
 **登録日:** 2026-07-12
-**発見:** [[FLAG-CONSUMER-AUDIT-2]]（完了・BACKLOG_DONE.md参照）実装時の未確認事項
+**発見:** [[FLAG-CONSUMER-AUDIT-3]]（完了・BACKLOG_DONE.md参照）実装時
 
 #### 問題
-FLAG-CONSUMER-AUDIT-2で`report_consistency_check.py`・`stonks-silo/pipeline.py`・
-`score_verifier.py`の3消費者は統一アクセサ経由のフラグ検証に対応したが、
-`hypecore.py --batch`等、他のパイプラインにも同型（CLI引数でticker明示指定時に
-フラグ検証をバイパスする）の構造的ギャップが残っていないか、横展開での確認は
-未実施のまま。
-
-#### 対応方針（未確定）
-hypecore.py・eps関連パイプライン等のCLI引数パスを棚卸しし、同型ギャップの有無を
-確認した上で、必要なら`_filter_*_tickers()`相当のガードを追加する。
-
-#### 着手条件
-なし（優先度含め次回以降のセッションで判断）
-
----
-
-### [STALE-REPORT-CLEANUP-1] tanuki=false化後もreport.txtが残存する
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** report.txt一括取得時（RKLB/ZS）
-
-#### 問題
-cik_lookup.csvでtanuki=falseに変更された銘柄でも、変更前に生成された
-report.txtが物理的に削除されずフォルダに残存する（RKLB: 2026-06-26生成、
-ZS: 2026-06-27生成のまま）。この状態でreport.txtを参照すると、
-既にTANUKI対象外の銘柄が有効なBUY/WATCH等の判定を持っているように
-誤読されるリスクがある。
+`docs/value-monitor/hypecore/data/RKLB_poc.json`（RKLBはhypecore=false）、
+`docs/value-monitor/adjusted_eps_analyzer/data/ZS/`（ZSはeps=false）が、
+現行フラグに反して残存している。今回はTANUKI VALUATION側（RKLB・ZS）の
+残存ファイル削除のみがスコープのため未対応。
 
 #### 対応方針
-tanuki=false切り替え時にreport.txtを削除するか、ファイル冒頭に
-「STALE: tanuki対象外に変更済み」等の明示的な注記を自動挿入する処理を追加する。
+STALE-REPORT-CLEANUP-1で採用した「score_history.json等の履歴系ファイルは
+保持、現行状態を表すファイルのみ削除」の方針をhypecore・EPS Analyzer側にも
+適用するか、削除範囲を判断した上で着手する。
+
+#### 着手条件
+なし（次回セッションで判断）
 
 ---
 

@@ -4,6 +4,72 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [FLAG-CONSUMER-AUDIT-3] 他パイプラインへのCLI引数フラグ検証横展開（2026-07-12完了）
+**分類:** アーキテクチャ / 銘柄登録フロー
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- Part 1調査で、FLAG-CONSUMER-AUDIT-2と同型（`--all`はcik_lookup.csvの
+  フラグで正しくフィルタされるが、CLI引数でticker明示指定時はフラグ検証を
+  一切行わない）の構造的ギャップを3箇所で確認:
+  1. `src/value/hypecore/hypecore.py`: `--batch TICKER...`・単体指定
+     （`python hypecore.py TICKER`）がhypecore=trueを検証せず処理
+  2. `src/discover/catalyst.py`: `--ticker NVDA,IONQ`指定時にhypecore=trueを
+     検証せず処理
+  3. `src/value/adjusted_eps_analyzer/pipeline.py`: `--ticker`指定時、
+     monitor_tickers.yaml突合（非ブロッキング警告のみ）はあったが、
+     eps=trueフラグの検証は一切なし
+- 対応: 上記3ファイルに`_filter_hypecore_tickers()`（hypecore.py・
+  catalyst.pyそれぞれに新設。関数シグネチャ統一のため対象ticker集合を引数化）・
+  `_filter_eps_tickers()`（adjusted_eps_analyzer/pipeline.py）を追加し、
+  範囲外ticker指定時は警告・除外するガードを実装。hypecore.pyは元々
+  `_filter_hypecore_tickers`が`if __name__ == "__main__":`ブロック内の
+  ローカル関数として書かれていたため、テスト可能にするためモジュールレベルへ
+  リファクタし、`ALL_TICKERS`への暗黙依存を引数化した。
+- **`common/screening/dcf_validity_checker.py`は意図的に未修正**（Koichiさん
+  確認済み）: 同型のギャップ（`tickers = args.tickers or _all_tanuki_tickers(...)`
+  でpositional引数指定時にtanuki=true検証なし）を発見したが、これは
+  `--output`未指定時は標準出力のみで本番データを書き換えない読み取り専用の
+  診断ツールであり、tanuki=false/candidate銘柄の事前診断用途を意図的に
+  許容している設計と判断。他3件（pipeline書き込み系）とはリスクレベルが
+  異なるため対象外とした。
+- 検証: `_filter_hypecore_tickers()`・`_filter_eps_tickers()`を直接呼び出し、
+  本番cik_lookup.csvのhypecore=false銘柄（ENB）・eps=false銘柄（ZS）が
+  正しく除外されることを確認。回帰テスト`tests/test_flag_consumer_audit_3.py`
+  7件追加、pytest 265 passed/2 known failed。
+- 副次発見（今回のスコープ外・BACKLOG登録のみ、修正せず）: `hypecore.py --batch`
+  等の対象外化に伴い実データ側（`docs/value-monitor/hypecore/data/RKLB_poc.json`
+  ＜hypecore=false＞・`docs/value-monitor/adjusted_eps_analyzer/data/ZS/`
+  ＜eps=false＞）にも同種の残存ファイル問題があることを発見。
+  [[HYPECORE-ZS-EPS-STALE-1]]として新規登録。
+
+### ✅ [STALE-REPORT-CLEANUP-1] tanuki=false化後のRKLB・ZS残存ファイル削除（2026-07-12完了）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 当初はRKLB・ZSの`report.txt`残存のみが問題として登録されていたが、
+  実際の調査では`report.txt`・`latest.json`・`history.json`・`history/`
+  （日次IV履歴、いずれもTANUKI VALUATION固有アーティファクト）の4種が
+  両銘柄とも残存していることを確認。
+- `score_history.json`（TANUKI SCORE判定実績追跡ファイル）は
+  [[FLAG-CONSUMER-AUDIT-2]]で確立した方針（tanuki=false銘柄の過去実績
+  データとして削除しない）を踏襲し、削除対象から明示的に除外した。
+- 依頼文の当初スコープはRKLBのみだったが、ZSも同一の残存パターンだったため
+  Koichiさんに確認の上、両銘柄を同様に削除。
+- `docs/value-monitor/tanuki_valuation/data/RKLB/`・
+  `docs/value-monitor/tanuki_valuation/data/ZS/`から`report.txt`・
+  `latest.json`・`history.json`・`history/`を削除、`score_history.json`
+  のみ残置。EPS Analyzer・STONKS SILO側の両銘柄データ（RKLB: eps=true・
+  stonks_silo=true、ZS: stonks_silo=true）は別ディレクトリのため無影響を確認。
+- 検証: 削除後`report_txt_parser.py::_all_tickers_with_report()`で
+  RKLBが対象外であることを確認（元々tanuki=falseフィルタで除外済みのため
+  スキャン結果自体に変化なし、ファイル削除によるクラッシュ等がないことの
+  確認）。`report_consistency_check.py --fail-on-ng`でNG=0/WARN=37の
+  維持を確認。pytest 265 passed/2 known failed。
+
 ### ✅ [SPLIT-AUTO-CHECK-1] EPS Analyzerのfact選定ロジック不整合による分割株数汚染（2026-07-12完了・QUALITY-GATES-EPIC-1 Phase 2b-3）
 **分類:** データ品質 / EPS ANALYZER
 **登録日:** 2026-07-12
