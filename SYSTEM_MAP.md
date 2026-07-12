@@ -49,17 +49,39 @@ Market Pulse/PORTFOLIO。特にPORTFOLIOの旧記載`docs/management/portfolio/`
 | status | active / candidate / retired。新規登録手順Step 0.5で記録（詳細はCLAUDE_CODE_START.md参照） |
 | registered_date / registration_source / registration_note | 登録日・登録経緯（moomoo_screening/manual_thesis等）・登録理由の要約 |
 
-**フラグと各システムの対象銘柄取得経路（実装確認済み）:**
-- `tanuki=true` → `src/value/tanuki_valuation/pipeline.py`が直接読み取り、対象銘柄を決定
-- `stonks_silo=true` → `discover/stonks-silo/src/pipeline.py`が直接読み取り、対象銘柄を決定
-- `hypecore=true` → `src/value/hypecore/hypecore.py --batch`が直接読み取り、対象銘柄を決定
-- `eps=true` → **バッチ実行の対象銘柄には直接使われない**（下記参照）。`registration_validator.py`でEPS未対応銘柄のWARN抑制にのみ使用
+**銘柄リスト統一アクセサ（`common/sec_data/tickers.py`、2026-07-12 ZS-TICKERS-LEAK-1で新設・
+FLAG-CONSUMER-AUDIT-2/3で全面適用完了）:**
+`get_active_tickers(flag)`（フラグ='true'かつstatus≠'retired'の銘柄を返す。'candidate'は
+含める）を核に、`get_tanuki_tickers()`/`get_stonks_silo_tickers()`/`get_eps_tickers()`/
+`get_hypecore_tickers()`の4便利関数を提供する。以下の全システムがこれ経由で
+「フラグ='true'銘柄の一括取得」を行う——**cik_lookup.csvの独自読み込み・
+`os.listdir()`直接スキャン等の独立経路は原則存在しない**：
+
+**フラグと各システムの対象銘柄取得経路（実装確認済み・2026-07-12時点）:**
+- `tanuki=true` → `src/value/tanuki_valuation/pipeline.py`（`_load_tickers_from_csv()`が
+  `get_tanuki_tickers()`経由で取得）。CLI引数でticker明示指定時も`_filter_tanuki_tickers()`で
+  同フラグを検証し範囲外を除外
+- `stonks_silo=true` → `discover/stonks-silo/src/pipeline.py`（`stonks_tickers()`が
+  `get_stonks_silo_tickers()`経由）。CLI引数明示指定時も`_filter_stonks_silo_tickers()`で検証
+- `hypecore=true` → `src/value/hypecore/hypecore.py --all`（`get_hypecore_tickers()`直接）。
+  `--batch`/単体指定時も`_filter_hypecore_tickers()`で検証（2026-07-12まではノーガードだった、
+  FLAG-CONSUMER-AUDIT-3参照）。`src/discover/catalyst.py --ticker`も同型のガードを持つ
+- `eps=true` → `src/value/adjusted_eps_analyzer/pipeline.py`の`run()`（引数なし＝通常の
+  バッチ実行）が`get_eps_tickers()`を**直接使用**（旧SYSTEM_MAP記載の「使われない」は
+  誤りだったため訂正）。`--ticker`明示指定時も`_filter_eps_tickers()`で検証（2026-07-12まで
+  はmonitor_tickers.yaml突合＜非ブロッキング警告のみ＞しかなく、フラグ検証自体がなかった）。
+  `registration_validator.py`でもEPS未対応銘柄のWARN抑制に使用
+- `common/sec_data/report_consistency_check.py`のスキャン対象も`get_tanuki_tickers()`と
+  report.txt存在確認の積集合（旧`os.listdir(DATA_DIR)`直接スキャンから2026-07-12に変更）
+- `src/value/tanuki_valuation/score_verifier.py`の`--ticker`省略時の全銘柄スキャンも
+  `get_tanuki_tickers()`に限定（2026-07-12まではディレクトリ実在のみで判定していた）
 - フラグに依らない共通upstream: `common/sec_data/config.py::get_all()`がcik_lookup.csv**全106銘柄**を返し、`common/sec_data/update.py`（SEC生データ取得）はこれを既定の対象とする。個別システムのフラグはこのSECデータ取得より下流の各パイプラインで参照される
 
 **`config/monitor_tickers.yaml`（99銘柄）との関係:**
 cik_lookup.csvとは独立した別ファイルで、以下の実際の用途を持つ:
-- `src/value/adjusted_eps_analyzer/pipeline.py`の`run()`（引数なし＝通常のバッチ実行）が
-  対象銘柄リストとして**直接読み取る**。cik_lookup.csvの`eps`フラグはここでは参照されない
+- `src/value/adjusted_eps_analyzer/pipeline.py`の`run()`は`--ticker`明示指定時のみ、
+  指定銘柄がmonitor_tickers.yamlに存在するかを**非ブロッキング警告**としてチェックする
+  （未登録でも処理は続行。eps=trueフラグの検証＝ブロッキングとは別軸）
 - `common/sec_data/registration_validator.py`の既定スキャン範囲（`target_tickers`未指定時）
 - `docs/value-monitor/adjusted_eps_analyzer/admin/`のUIから直接編集可能（EPS ANALYZER運用者向けの手動キュレーションリスト）
 
@@ -226,8 +248,23 @@ SEC EDGAR
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
-├─ extract_key_facts.py  # EPS逆算・株数3段フォールバック（quarterly.json生成）
 └─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）
+
+【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
+`src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを
+都度ライブ取得する**独自の抽出パイプライン**であり、上記`common/sec_data/`配下の
+quarterly.py・parser.py・tag_definitions.pyは一切importしていない（importは
+`common.sec_data.utils.determine_fiscal_year`のみ）。ローカルraw JSONキャッシュも
+持たない。Phase 2a（タグフォールバック選定ロジック統一）の対象範囲外であり、
+恩恵を受けていない点に注意（旧SYSTEM_MAP記載が`common/sec_data/`ツリーの一部
+であるかのような誤解を招く配置だったため2026-07-12訂正）。
+- `extract_quarterly_facts()`: EPS逆算・株数3段フォールバック（quarterly.json生成）
+- 同一期間に複数fact（原初filed値と後年10-Kの比較年度再掲値）が競合する場合、
+  「filed日が最新のものを優先」に統一済み（SPLIT-AUTO-CHECK-1 2026-07-12完了。
+  以前はQ1〜Q3が末尾勝ち・Q4が先頭勝ちで不整合、NVDA等の分割前後で分割前株数が
+  残存する実害があった。SEC自体にfactが1件も存在しない期間＜分割直後〜翌年
+  10-K再掲まで＞は原理的に是正不能な残存ギャップあり、詳細はSPLIT-REALTIME-GAP-1
+  参照）
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを

@@ -132,6 +132,22 @@ TANUKI-POLICYB-FIX-1として正式分離・再コミットした事例）。
   discover_config.json への登録 → Step 6 として追加（2026-06-03）
   HypeCore 実行 → Step 5 として追加（2026-06-03）
 
+### 銘柄フラグ（tanuki/stonks_silo/eps/hypecore）を参照するスクリプトの必須パターン（FLAG-CONSUMER-AUDIT-2/3の教訓）
+cik_lookup.csvの4フラグのいずれかで対象銘柄を絞り込むスクリプトを新規作成・変更する場合：
+- 全銘柄バッチ処理は必ず `common/sec_data/tickers.py` の `get_active_tickers(flag)` 系関数
+  （`get_tanuki_tickers()` / `get_stonks_silo_tickers()` / `get_eps_tickers()` /
+  `get_hypecore_tickers()`）経由で取得する。cik_lookup.csvを独自に読み込む・
+  `os.listdir()` でディレクトリを直接スキャンする等の独立した経路を新たに作らない
+- **CLI引数でticker明示指定を受け付ける場合、その引数も同じフラグで検証し、
+  範囲外のtickerは警告した上で除外する（無条件実行しない）**: 「全銘柄バッチ
+  実行パスだけ正しくフィルタされ、CLI引数で個別ticker指定した場合はフラグ検証
+  が一切ない」という構造的ギャップが、`tanuki_valuation/pipeline.py`・
+  `stonks-silo/pipeline.py`・`report_consistency_check.py`・`score_verifier.py`・
+  `hypecore.py`・`catalyst.py`・`adjusted_eps_analyzer/pipeline.py`の計7箇所で
+  独立に発生していた（FLAG-CONSUMER-AUDIT-2/3、2026-07-12）。新規スクリプトは
+  最初から`_filter_<flag>_tickers(target, allowed_tickers)`パターン
+  （範囲外を警告・除外して返す）を実装すること。
+
 ### コミットルール
 git add [変更ファイル]
 git commit -m "feat/fix/docs: 変更内容の説明"
@@ -152,6 +168,16 @@ git push origin kaihatsu
 - 実装後に必ず pytest を実行する
 - 新機能には必ずテストを追加する
 - テスト失敗のままコミットしない
+- **`if __name__ == "__main__":` ブロックを持つスクリプトを変更した場合は
+  pytestだけでなく実機で直接実行して確認する（HYPECORE-SAVE-INDEX-NAMEERROR-1
+  の教訓）**: pytestはモジュールをimportするだけで`__main__`ブロック自体は
+  実行しないため、このブロック内の関数呼び出し順・NameError等はpytestでは
+  検出できない。実例: `_save_tickers_index()`の呼び出しが関数定義より前の
+  行にあるバグが、pytest 124件パス・report_consistency_check NG=0の確認を
+  経てコミットされたが、実際に`python hypecore.py`を実行すると毎回NameError
+  でクラッシュしており、GitHub Actionsの自動実行が3日間沈黙的に失敗し続けた
+  （後続の commit/push ステップが `continue-on-error` なしでスキップされる
+  ため気づかれなかった）。
 
 ### フロントエンドのエラー耐性ルール（MP-RENDERALL-CRASH-1の教訓・必須）
 

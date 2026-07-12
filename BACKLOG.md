@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-12（同日13回目: セッション終了時ブラッシュアップ。
+BACKLOG.md内QUALITY-GATES-EPIC-1エントリの陳腐化した中間ポインタ
+（「次はPhase 2」、Phase 2a〜2b-3完了後も残置）を削除。
+CLAUDE_CODE_START.mdに2件追記——①`if __name__ == "__main__":`ブロックを
+持つスクリプト変更時はpytestに加え実機直接実行を必須化
+（HYPECORE-SAVE-INDEX-NAMEERROR-1の教訓）、②cik_lookup.csvの4フラグを
+参照するスクリプトの必須パターン（全銘柄一括取得は統一アクセサ経由、
+CLI引数明示指定時も同フラグで検証、FLAG-CONSUMER-AUDIT-2/3の教訓）。
+SYSTEM_MAP.mdの「銘柄振り分けの正本」セクションが本日の統一アクセサ導入・
+CLI引数フラグ検証追加前の記述のまま陳腐化していたため全面更新
+（`eps=true`が「バッチ実行に使われない」という誤記述を含む）。加えて
+`extract_key_facts.py`が`common/sec_data/`ツリーの一部であるかのような
+誤解を招く配置を訂正し、独立パイプラインである旨とfact選定ロジック統一
+（SPLIT-AUTO-CHECK-1）を明記。他の確認項目（BACKLOG_DONE.md記録の正確性・
+git statusのクリーン状態）はいずれも問題なし）
+
 最終更新: 2026-07-12（同日12回目: HYPECORE-SAVE-INDEX-NAMEERROR-1を緊急対応
 （優先度：高）で完了。`src/value/hypecore/hypecore.py::_save_tickers_index()`
 の関数定義位置を`if __name__ == "__main__":`ブロックより前へ移動し、
@@ -352,8 +368,6 @@ docstringではなく型（dataclass等）でコード化し、構造的に間�
 - 単体テスト10件追加（tests/test_report_consistency_check.py）、全件パス
 - 検証: pytest 204 passed/2 known failed、report_consistency_check.py NG=0/
   警告3件（確認済み3・未確認0）
-
-次はPhase 2（ゲート1）に進む。
 
 **ゲート1設計修正（2026-07-12 同日5回目）**: 「取得時データ検証（検知のみ）」
 から「複数ソース自動照合・自動補正」に設計を修正した。詳細は上記
