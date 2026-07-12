@@ -26,6 +26,10 @@ report_consistency_check.py
   NG  19. SEC株数=0            quarterly.json に diluted_shares=0 の四半期（株数取得失敗）
   WARN 20. fcf_cagr floor張り付き growth.source=fcf_cagr かつ growth.rateがgrowth_floor(15%)に
                               完全一致（recommended_gの有無を問わず検知、GROWTH-FLOOR-VERDICT-1）
+  WARN 21. Revenue段差型急変    直近6年の隣接年Revenue比が2.0倍以上/0.5倍以下（QUALITY-GATES-EPIC-1
+                              Phase 2b-2、common.screening.dcf_validity_checker::check_c_data_jump()を
+                              統合。NG-11との役割分担・NGではなくWARNとした理由は下記CHECK-21
+                              実装箇所のコメント参照）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -49,6 +53,11 @@ EPS_DATA_DIR = os.path.join(REPO_ROOT, "docs/value-monitor/adjusted_eps_analyzer
 RPO_CONFIG   = os.path.join(REPO_ROOT, "config/rpo_config.json")
 SEG_CONFIG   = os.path.join(REPO_ROOT, "config/segment_config.json")
 WARN_LEDGER  = os.path.join(REPO_ROOT, "config/warn_acknowledged.json")
+
+# common.screening.dcf_validity_checker（CHECK-21用）をimportするためrepo_rootを
+# sys.pathに追加する（registration_validator.pyと同一パターン）
+sys.path.insert(0, REPO_ROOT)
+from common.screening.dcf_validity_checker import check_c_data_jump  # noqa: E402
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -454,6 +463,34 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                     f" 翌年{_yrs[_i+1]}=${_next/1e6:.1f}M: {_ratio_next:.0f}x)"
                     f" → XBRLタグ誤り疑い(TICKER_RESTRICTIONSで修正)"
                 )
+
+    # CHECK-21: Revenue段差型急変（QUALITY-GATES-EPIC-1 Phase 2b-2）
+    # common.screening.dcf_validity_checker::check_c_data_jump()を統合。
+    #
+    # NG-11との役割分担（重複ではなく併存）:
+    #   NG-11（孤立年検知）は「前後両年とも当該年の5%未満」の**スパイク型**
+    #   （その年だけ突出し、前後は元の水準に戻る）のみを検知する。
+    #   WARN-21（本チェック、段差型検知）は前後判定を要さず、隣接年比が
+    #   2.0倍以上/0.5倍以下であれば検知するため、**ジャンプ後も高い水準が
+    #   継続するステップ型**（FICO/CPRT/LITE型、SEC-TAG-FICO-CPRT-1参照）も
+    #   捕捉できる。NG-11はこのステップ型を構造的に検知できなかった
+    #   （次年が「当該年の5%未満」に該当せず孤立年条件が成立しないため）。
+    #
+    # 重要度はNGではなくWARNとする（2026-07-12・実装検証時の判断変更）:
+    # 全105銘柄で試験実行した結果、19銘柄が新規に該当したが、うち複数
+    # （NVDA: AI GPU需要による実際の売上急成長$26.9B→$130.5B、JOBY: プレ
+    # コマーシャル航空機企業のほぼゼロからの売上立ち上がり等）は一次情報
+    # （annual_YYYY.json）で確認した結果、タグ取得ミスではなく実際の事業
+    # 成長・売上立ち上がりだった。dcf_validity_checker.pyの2.0倍/0.5倍閾値は
+    # 元々「人間が目視で選別する前提のフラグ付けツール」として設計されており、
+    # NG（ブロッキング）にするには誤検知率が高すぎると判断しWARNへ変更した。
+    c_flag, c_jumps, _c_revs = check_c_data_jump(REPO_ROOT, ticker)
+    if c_flag:
+        for _jump in c_jumps:
+            warn.append(
+                f"  [WARN-21 Revenue段差型急変] {_jump}"
+                f" → XBRLタグ誤り、または実際の急成長/急減の可能性（要確認）"
+            )
 
     # CHECK-12: Cash-ST_Invest 期整合チェック（BUG-NETDEBT-5回帰検知）
     # Cashが最新四半期値に更新されているのにST_Investが年次のままなら期ズレ

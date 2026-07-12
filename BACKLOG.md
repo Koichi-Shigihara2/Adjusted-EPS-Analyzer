@@ -373,10 +373,37 @@ LLY型（タグ切替見逃し）とKLAC型（期間分類ミスによるノイ�
   追加、既存の`TestTTMReaderQuartersCompleteness`等8件はdate.today()依存の
   陳腐化を防ぐため絶対日付から相対日付ベースに書き換え）。
 
-次はPhase 2b-2（段差型の前年比急変検知・株式分割自動照合）。
+**Phase 2b-2完了（2026-07-12 同日8回目）**: 段差型の前年比急変検知として、
+既存の`common/screening/dcf_validity_checker.py::check_c_data_jump()`
+（手動実行専用スクリプト内、Revenue専用・直近6年の隣接年比2.0倍以上/0.5倍以下）を
+`report_consistency_check.py`へ統合した（関数自体は改変せず、呼び出し元を
+追加するのみ）。株式分割自動照合は引き続き未着手（[[SPLIT-AUTO-CHECK-1]]参照）。
+- `common/sec_data/report_consistency_check.py`が`common.screening.dcf_validity_checker`を
+  importするため、`registration_validator.py`と同一の`sys.path.insert(0, REPO_ROOT)`
+  パターンを追加。
+- NG-11（孤立年検知：前後両年とも閾値未満のスパイク型）との役割分担を明記:
+  新設チェックは前後判定を要さず、ジャンプ後も高い水準が継続する**段差型**
+  （FICO/CPRT/LITE型）を検知する。両者は検知パターンが異なるため併存させた。
+- **重要度をNGからWARNへ変更（依頼書の想定から判断変更）**: 全105銘柄で試験実行した
+  結果、19銘柄（ALAB・ASTS・AVAV・BBAI・CELH・CRWV・IONQ・JOBY・KULR・LITE・NVDA・
+  ONDS・QBTS・RCAT・RDW・RKLB・RXRX・S・TDY）が新規該当。うちNVDA（AI GPU需要による
+  実際の売上急成長$26.9B→$130.5B）・JOBY（プレコマーシャル航空機企業のほぼゼロからの
+  売上立ち上がり）等を一次情報（annual_YYYY.json）で確認した結果、いずれもタグ取得
+  ミスではなく実際の事業成長だった。check_c_data_jump()の2.0倍/0.5倍閾値は元々
+  「人間が目視で選別する前提のフラグ付けツール」向けの設計でNG（ブロッキング）には
+  誤検知率が高すぎると判断し、ユーザー確認の上でWARN-21として実装した。
+- 19銘柄全件を一次情報で個別確認し（IPO直後の急成長・AI需要急増・M&A〈TDY=FLIR
+  Systems買収・AVAV=BlueHalo買収〉・プレコマーシャル企業の立ち上がり・LITE=既知の
+  会計年度末変更、いずれもタグ誤りなし）、`config/warn_acknowledged.json`に
+  確認済みとして登録済み。
+- 検証: `report_consistency_check.py --fail-on-ng`でNG=0・exit 0（警告38件、
+  確認済み38・未確認0）を確認。pytest 226 passed/2 known failed
+  （新規`tests/test_report_consistency_check.py`に3件追加）。
+
+次はPhase 2b-3（株式分割自動照合、[[SPLIT-AUTO-CHECK-1]]の実害確認が前提）。
 
 #### 着手条件
-なし。Phase 1・Phase 2a・Phase 2b-1は完了。Phase 2b-2以降は次回セッションで詳細設計を行う。
+なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2は完了。Phase 2b-3以降は次回セッションで詳細設計を行う。
 
 ---
 
@@ -970,6 +997,40 @@ DCFの希薄化株数自体（yfinance implied優先のため無関係）には�
 
 #### 着手条件
 なし（次回セッションで実害確認・対応方針確定の上で着手判断）
+
+---
+
+### [DATA-JUMP-CHECK-GENERALIZE-1] Revenue以外のフィールドへの段差型検知の展開要否
+**優先度:** 未定
+**分類:** アーキテクチャ / 品質管理
+**登録日:** 2026-07-12
+**発見:** QUALITY-GATES-EPIC-1 Phase 2b-2（WARN-21 Revenue段差型急変統合）実装時
+
+#### 背景
+Phase 2b-2で`check_c_data_jump()`をreport_consistency_check.pyへ統合したが、
+このスコープはRevenueのみに限定した（`check_c_data_jump()`は現状Revenue専用の
+ハードコードであり、対象フィールドをパス引数化する改修が必要なため、実質的な
+新規設計として意図的に対象外とした）。
+
+CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについても、
+段差型の前年比急変（タグ切替・タグ取得ミスによる不連続）が理論上起こりうるが
+（LLYのCapExはTTM-QUARTERS-CHECK-1の副産物として偶然発見されたに過ぎない）、
+現状これらのフィールドを対象にした前年比急変チェックは存在しない。
+
+#### 対応方針（未確定・次回セッション以降で判断）
+- `check_c_data_jump()`をフィールドパス引数化する改修（例:
+  `check_c_data_jump(repo_root, ticker, section="pl", field="revenue", ...)`）の
+  設計要否を判断する
+- Revenue以外のフィールドに展開する場合、Phase 2b-2で判明した「2.0倍/0.5倍という
+  閾値はNG（ブロッキング）には誤検知率が高すぎる」教訓を踏まえ、フィールドごとに
+  適切な閾値・重要度（NG/WARN）を再検討する必要がある（成長率の高いフィールドほど
+  正当な急変が起きやすいため、一律の閾値では機能しない可能性がある）
+- 展開する場合の対象フィールド候補: CapEx・NetIncome・GrossProfit・SBC等
+  （TAG-DEFS-UNIFY-1で統合済みの9概念、LTDebt・RPOは時点データのため対象外
+  ＜TAG-DEFS-UNIFY-1参照＞）
+
+#### 着手条件
+なし（優先度含め次回以降のセッションで判断）
 
 ---
 
