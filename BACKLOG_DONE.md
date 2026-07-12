@@ -4,6 +4,49 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [SEC-TAG-FICO-CPRT-1] FICO・CPRTのSECタグ誤取得疑い（2026-07-12完了・対象銘柄がLITEを含む3件に拡大）
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-10
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 当初の仮説（XBRL-TAG-KLAC-1の`_classify_period()`修正で解消済みのはず）は
+  誤りと判明。`_classify_period()`はquarterly.py（四半期/TTM側）専用のロジックで、
+  parser.py（年次側、revenueは`MERGE_ALL_TAGS_FIELDS`対象）の年次抽出
+  （`_extract_values_merged()`）はこれを一切使用していなかった。
+- 真因: 同一end_dateに複数タグ（例: FICO FY2020なら91日間の四半期比較開示を
+  含む`Revenues`タグと、365日間の正規年次値を持つ
+  `RevenueFromContractWithCustomerExcludingAssessedTax`タグ）が競合した場合、
+  `_extract_values_merged()`が`XBRL_MAPPING`の列挙順（先に処理されたタグ）で
+  実質的に早い者勝ちになっており、91日間の誤値が年次値として採用されていた。
+- company_facts.jsonベースの機械調査（`start`日からduration＝期間日数を算出し
+  「短期間データがform='10-K'・fp='FY'で年次候補に混入」パターンのみに絞り込み）
+  により、FICO・CPRTに加え**LITE（FY2019）を新規発見**。対象は3銘柄に拡大。
+  一方selling_and_marketing・depreciation_and_amortizationは同一ロジックだが
+  実害0件、long_term_debt・rpoは貸借対照表の時点データ（point-in-time）で
+  duration概念自体を持たないため構造的に対象外と確認（詳細は[[TAG-DEFS-UNIFY-1]]）。
+- 修正: `_extract_values_merged()`に、同一end_date・同一exact_matchレベルで
+  複数候補が競合した場合、期間日数（end-start）が365日に近い方を優先する
+  tie-breakを追加（`annual_durations`辞書を新設）。end_dateが異なる場合の
+  既存ロジック（最新end_date優先）は変更していない。
+- 検証: 同日生成company_facts.jsonでの新旧比較（git stash）により、
+  105銘柄中FICO/CPRT/LITEの3銘柄・revenueフィールドのみが変化し、
+  selling_and_marketing/depreciation_and_amortizationは全銘柄で無変化
+  （回帰なし）を確認。`update.py FICO CPRT LITE`→`audit.py`（3銘柄正常）→
+  `pipeline.py --skip-risk FICO CPRT LITE`（3/3成功）→
+  `report_consistency_check.py`（NG=0）→pytest 219 passed/2 known failed
+  （新規5件`tests/test_parser_merge_duration.py`追加）で検証済み。
+- 修正後の値: FICO FY2019=$1,160.1M/FY2020=$1,294.6M、
+  CPRT FY2019=$2,042.0M/FY2020=$2,205.6M、LITE FY2019=$1,565.3M
+  （いずれも正規の365日間年次値）。
+- 副次的な影響: FICO・CPRTのTANUKI SCORE乖離率が是正された
+  （FICO: +27.9%→-61.3%、CPRT: +58.0%→-14.2%。分類はいずれもWATCHで維持）。
+  quarterly.py側（TTM系列）は現在の5年カットオフ窓に問題のFY2019/2020
+  エントリが含まれないため実害なしと確認、修正不要と判断。
+- 発見したLITE FY2021の低い revenue値（$419.5M、98日間の期間）は本バグとは
+  無関係（LITEの会計年度末変更に伴う移行期間の正規の10-K提出とみられる、
+  修正前から存在していた別要因）と確認、本タスクでは対応していない。
+
 ### ✅ [LLY-CAPEX-STALE-1] LLYのCapEx四半期データが2022年以降取得できず古い値を使い回し（2026-07-12完了・QUALITY-GATES-EPIC-1 Phase 2a）
 **分類:** データ品質 / SECデータ取得層
 **登録日:** 2026-07-12

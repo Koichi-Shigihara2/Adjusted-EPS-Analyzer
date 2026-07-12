@@ -288,7 +288,7 @@ class SECParser:
         return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month)
 
     def _extract_values_merged(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool, fiscal_end_month: int) -> Dict[str, Any]:
-        """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合、従来ロジックのまま）"""
+        """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合）"""
         result = {"annual": {}, "quarterly": {}}
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
         annual_end_dates = {}
@@ -296,6 +296,12 @@ class SECParser:
         # fy==end_yearの完全一致フラグ: 非December FY企業でQ1等中間期エントリが
         # 同一end_yearを持ち全年データを上書きするのを防ぐ（INTU等の対策）
         annual_exact_match = {}
+        # 期間日数（end-start）を記録。同一end_date・同一exact_matchレベルで
+        # 複数タグが競合した場合に365日（正規の年次期間）に近い方を優先するために使う
+        # （SEC-TAG-FICO-CPRT-1: 91日間の四半期比較開示がform='10-K'・fp='FY'で
+        #  年次候補に混入し、XBRL_MAPPINGの列挙順（先に処理されたタグ）が
+        #  実質的に勝ってしまう早い者勝ちバグへの対応。FICO/CPRT/LITEで確認）
+        annual_durations = {}
 
         for key in xbrl_keys:
             if key not in us_gaap:
@@ -329,6 +335,13 @@ class SECParser:
                         else:
                             end_year = fy  # end_date 不明時は SEC の fy フィールドを使用
                         exact = (fy == end_year)
+                        start_date = entry.get("start", "")
+                        days = None
+                        if start_date and end_date and len(start_date) >= 10 and len(end_date) >= 10:
+                            try:
+                                days = (end_dt - datetime.strptime(start_date, '%Y-%m-%d')).days
+                            except ValueError:
+                                days = None
                         if use_max:
                             # 最大値を採用（株式数の異常値対策）
                             if end_year not in result["annual"] or val > result["annual"][end_year]:
@@ -339,17 +352,28 @@ class SECParser:
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
                                 annual_exact_match[end_year] = exact
+                                annual_durations[end_year] = days
                             elif exact and not annual_exact_match.get(end_year, True):
                                 # exact matchで上書き: 非December FY企業のQ1等中間期エントリ
                                 # (fy=N+1, end_year=N) が全年データ(fy=N, end_year=N)を上書きするのを防ぐ
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
                                 annual_exact_match[end_year] = True
+                                annual_durations[end_year] = days
                             elif exact == annual_exact_match.get(end_year, False):
-                                # 同じexact_matchレベル: 最新のend_dateを優先
-                                if end_date > annual_end_dates.get(end_year, ""):
+                                stored_end = annual_end_dates.get(end_year, "")
+                                if end_date > stored_end:
+                                    # 同じexact_matchレベル: 最新のend_dateを優先
                                     result["annual"][end_year] = val
                                     annual_end_dates[end_year] = end_date
+                                    annual_durations[end_year] = days
+                                elif end_date == stored_end and days is not None:
+                                    # SEC-TAG-FICO-CPRT-1: end_dateも同一の場合、
+                                    # 期間日数が365日（正規の年次期間）に近い方を優先する
+                                    stored_days = annual_durations.get(end_year)
+                                    if stored_days is None or abs(days - 365) < abs(stored_days - 365):
+                                        result["annual"][end_year] = val
+                                        annual_durations[end_year] = days
 
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:

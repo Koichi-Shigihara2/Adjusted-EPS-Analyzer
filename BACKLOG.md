@@ -418,11 +418,11 @@ report_consistency_check.py・pipeline.py双方の別々の箇所で同種の
 - 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示（未着手）
 
 **着手条件に該当する新規事例（2026-07-10追記）:** [[SEC-TAG-FICO-CPRT-1]]
-（FICO・CPRTの2020→2021年次売上高の不自然なジャンプ、XBRL-TAG-KLAC-1と同型の
-タグ取得ミス疑い）を検出。「次にデータ形起因バグが発生した時点で着手する」
-という本タスクの着手条件に該当する事例として記録する。SEC-TAG-FICO-CPRT-1
-エントリ自体は個別事例の記録として残すが、実際の一次情報確認・修正は
-ARCH-DATA-1着手時にまとめて行う（詳細は[[ARCH-DATA-1-CONSOLIDATE-1]]参照）。
+（完了・BACKLOG_DONE.md参照。FICO・CPRTの2020→2021年次売上高の不自然な
+ジャンプ、当初はXBRL-TAG-KLAC-1と同型のタグ取得ミス疑いとして検出したが、
+実際の根本原因は`_extract_values_merged()`の早い者勝ちマージだった）を検出。
+「次にデータ形起因バグが発生した時点で着手する」という本タスクの着手条件に
+該当する事例として記録する。
 
 #### 設計メモ（2026-07-02・検討中）
 - PREFLIGHT-CHECK-1とパターン判定ロジックを共有する設計が望ましい。
@@ -824,78 +824,6 @@ catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDU
 
 ---
 
-### [SEC-TAG-FICO-CPRT-1] FICO・CPRTのSECタグ誤取得疑い
-**優先度:** 中
-**分類:** データ品質 / SECデータ取得層
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補の妥当性チェック時
-
-#### 問題
-FICO・CPRTともに2020年→2021年の年次売上高に不自然なジャンプが確認された
-（FICO: 3.5倍、CPRT: 5.1倍）。FICOについては実際の2020年売上（$1.2億台後半と
-推定）とSECデータ（$3.74億）が乖離しており、XBRL-TAG-KLAC-1と同種の
-タグ取得ミスの疑いが濃厚。この異常値が成長率CAGR算出の基準年に使われており、
-DCF理論株価・ROIC双方を歪めている。
-
-#### 対応方針
-XBRL-TAG-KLAC-1の対応方法を参考に、両銘柄の2020-2021年SECタグを一次情報
-（EDGAR）で確認し、正規化層での修正を検討する。
-
-#### 状況更新（2026-07-12・QUALITY-GATES-EPIC-1 Phase 2a着手前調査時）
-company_facts.jsonの一次データを確認した結果、FICO FY2020異常値$374,356,000は
-「2020-07-01〜2020-09-30」の91日間duration（`form='10-K', fp='FY'`）と一致し、
-XBRL-TAG-KLAC-1で発見・修正済みの`_classify_period()`バグ（91日間の四半期
-比較開示がfp='FY'のみで年次誤判定される）と同一パターンであることを確認した
-（CPRTのFY2020異常値$525,659,000も同様の疑い）。`_classify_period()`は
-2026-07-09時点で既にdays>130の下限チェックが追加され修正済みのため、
-**両銘柄とも`update.py FICO CPRT`の再実行のみで解消する可能性が高い**
-（未実行・未検証。実行はスコープ外のため本調査では行っていない）。
-
-#### 解消確認結果（2026-07-12・軽量タスクとして実施）: 未解消・原因の訂正
-`update.py FICO CPRT`を実行して確認したところ、**異常値は解消しなかった**
-（FICO FY2020は引き続き$374,356,000のまま、FY2019にも同型の異常値$305,344,000
-が新たに確認された。CPRT FY2020も引き続き$525,659,000のまま）。
-
-一次データを再確認した結果、上記の「`_classify_period()`バグと同一パターン」
-という仮説は誤りだったと判明した。**`_classify_period()`はquarterly.py
-（四半期/TTM側のraw table生成）専用のロジックであり、parser.py（年次側の
-annual_YYYY.json生成）の年次抽出（`_extract_values_merged()`、revenueは
-`MERGE_ALL_TAGS_FIELDS`対象）は`_classify_period()`を一切使用していない**。
-parser.pyの年次判定は`form=='10-K' and fp=='FY'`のみで、durationの妥当性
-（days>130等）を検証する仕組みがそもそも存在しない。
-
-実際の原因: FICOの場合、同一end_date（2020-09-30）に対して以下2つの
-`form='10-K', fp='FY'`エントリが存在する：
-- `Revenues`タグ: `start=2020-07-01`（91日間の四半期比較開示、$374,356,000、誤り）
-- `RevenueFromContractWithCustomerExcludingAssessedTax`タグ:
-  `start=2019-10-01`（365日間の正規の年次値、$1,294,562,000、正しい）
-
-`XBRL_MAPPING["revenue"]`は`Revenues`を先頭（最優先）に列挙しており、
-`_extract_values_merged()`のマージロジックは同一end_dateのentry同士では
-`end_date > annual_end_dates.get(...)`という**厳密な大小比較**でしか上書きしない
-ため、同一end_dateでは「先に処理されたタグが勝つ」実質的な早い者勝ちになる。
-CPRTも同型（`Revenues`タグに同一10-K内で3四半期分の比較開示がfp='FY'付きで
-混入しており、期末日が一致する最後の四半期$525,659,000が、正規の年次値
-$2,205,583,000（`RevenueFromContractWithCustomerIncludingAssessedTax`タグ）
-より先に処理されて勝っている）。
-
-#### 対応方針（訂正・未着手）
-`_classify_period()`はrevenue以外のquarterly.py側フィールドにのみ有効であり、
-本問題には無関係。真の対応方針は以下のいずれか（本タスクでは判断・実装せず）：
-- 案A: parser.pyの年次抽出にも`_classify_period()`相当のduration検証
-  （days>130等）を導入し、91日間のFY誤タグエントリを候補から除外する
-- 案B: `_extract_values_merged()`のマージ優先順位を「タグリスト順」ではなく
-  「durationが長い（より年次らしい）ものを優先」に変更する
-- 案A/Bいずれも[[TAG-DEFS-UNIFY-1]]のrevenueフィールド統合対象外化の
-  理由（ティッカー別revenue_conceptオーバーライドとmerge_all_tagsの複雑な
-  相互作用）と関連するため、着手時はTAG-DEFS-UNIFY-1の調査結果も参照すること
-
-診断目的のみで実行した`update.py`によるデータ再生成分（quarterly_*.json等の
-軽微な差分）は、異常値が解消しなかったためコミット前に復元済み
-（`git checkout`で反映前の状態に戻した）。
-
----
-
 ### [TAG-DEFS-UNIFY-1] quarterly.py/parser.pyのタグ候補リスト未統合フィールドの整理
 **優先度:** 中
 **分類:** アーキテクチャ / SECデータ取得層
@@ -933,8 +861,31 @@ SBC・GrossProfit・NetIncome・Cash・RD・Buyback・OCF）を統合した。
 個別に精査した上で、統合可否・統合する場合の優先順位を判断する。LTDebt・SMは
 既存の修正済みバグ（BUG-NETDEBT-2・SGA/SM分離）の経緯を熟読してから着手すること。
 
+#### 状況更新（2026-07-12・SEC-TAG-FICO-CPRT-1実装依頼前の網羅調査時）
+Revenueで発見された「同一end_dateに複数タグが競合した際の早い者勝ち」バグ
+（[[SEC-TAG-FICO-CPRT-1]]、完了・BACKLOG_DONE.md参照）を踏まえ、LTDebt・RPOに
+同型の問題が潜んでいないかcompany_facts.jsonベースで機械調査した。
+
+結論: **LTDebt・RPOは構造的にこの種のバグの対象外**と確認した。revenue/SM/DAは
+「期間（duration）」を持つフロー概念のため、91日間の四半期データが365日間の
+年次データを装って混入しうるが、LTDebt・RPOはいずれも貸借対照表の**時点データ
+（point-in-time）**であり、そもそも「期間の長さ」という混入経路が存在しない。
+実際に検出された多数の「衝突」（LTDebt 20件・RPO 132件）は全て、意図的に
+スコープが異なる別概念の比較だった（例: LTDebtの`LongTermDebtNoncurrent`
+（非流動部分のみ）vs `LongTermDebt`（流動+非流動合計）は、まさにBUG-NETDEBT-2
+で意図的に設計された優先順位そのもの）。
+
+**LTDebt・RPOについては本タスクのスコープから除外し、対応不要としてクローズする
+方向が妥当と考えられるが、最終判断は次回セッションで行う（今回は判断・変更しない）。**
+残るSM・DAは、SEC-TAG-FICO-CPRT-1実装時に同様の機械調査を行い、実害0件
+（同一end_date競合による誤混入は1件も確認されず）と確認済み。revenue自体は
+SEC-TAG-FICO-CPRT-1で対応完了（`_extract_values_merged()`にduration優先の
+tie-break追加。SM/DAにも同一ロジックが適用され、今回の調査で回帰なしを確認済み）。
+残る論点は「Revenue/revenueのティッカー別オーバーライドとmerge_all_tagsの相互作用」
+のみとなり、範囲は当初の5フィールドから大幅に縮小している。
+
 #### 着手条件
-なし（優先度含め次回以降のセッションで判断）
+なし（LTDebt・RPOのクローズ判断とrevenueの残論点の扱いは次回以降のセッションで判断）
 
 ---
 
