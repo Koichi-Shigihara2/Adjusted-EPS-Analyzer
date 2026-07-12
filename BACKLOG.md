@@ -851,6 +851,49 @@ XBRL-TAG-KLAC-1で発見・修正済みの`_classify_period()`バグ（91日間�
 **両銘柄とも`update.py FICO CPRT`の再実行のみで解消する可能性が高い**
 （未実行・未検証。実行はスコープ外のため本調査では行っていない）。
 
+#### 解消確認結果（2026-07-12・軽量タスクとして実施）: 未解消・原因の訂正
+`update.py FICO CPRT`を実行して確認したところ、**異常値は解消しなかった**
+（FICO FY2020は引き続き$374,356,000のまま、FY2019にも同型の異常値$305,344,000
+が新たに確認された。CPRT FY2020も引き続き$525,659,000のまま）。
+
+一次データを再確認した結果、上記の「`_classify_period()`バグと同一パターン」
+という仮説は誤りだったと判明した。**`_classify_period()`はquarterly.py
+（四半期/TTM側のraw table生成）専用のロジックであり、parser.py（年次側の
+annual_YYYY.json生成）の年次抽出（`_extract_values_merged()`、revenueは
+`MERGE_ALL_TAGS_FIELDS`対象）は`_classify_period()`を一切使用していない**。
+parser.pyの年次判定は`form=='10-K' and fp=='FY'`のみで、durationの妥当性
+（days>130等）を検証する仕組みがそもそも存在しない。
+
+実際の原因: FICOの場合、同一end_date（2020-09-30）に対して以下2つの
+`form='10-K', fp='FY'`エントリが存在する：
+- `Revenues`タグ: `start=2020-07-01`（91日間の四半期比較開示、$374,356,000、誤り）
+- `RevenueFromContractWithCustomerExcludingAssessedTax`タグ:
+  `start=2019-10-01`（365日間の正規の年次値、$1,294,562,000、正しい）
+
+`XBRL_MAPPING["revenue"]`は`Revenues`を先頭（最優先）に列挙しており、
+`_extract_values_merged()`のマージロジックは同一end_dateのentry同士では
+`end_date > annual_end_dates.get(...)`という**厳密な大小比較**でしか上書きしない
+ため、同一end_dateでは「先に処理されたタグが勝つ」実質的な早い者勝ちになる。
+CPRTも同型（`Revenues`タグに同一10-K内で3四半期分の比較開示がfp='FY'付きで
+混入しており、期末日が一致する最後の四半期$525,659,000が、正規の年次値
+$2,205,583,000（`RevenueFromContractWithCustomerIncludingAssessedTax`タグ）
+より先に処理されて勝っている）。
+
+#### 対応方針（訂正・未着手）
+`_classify_period()`はrevenue以外のquarterly.py側フィールドにのみ有効であり、
+本問題には無関係。真の対応方針は以下のいずれか（本タスクでは判断・実装せず）：
+- 案A: parser.pyの年次抽出にも`_classify_period()`相当のduration検証
+  （days>130等）を導入し、91日間のFY誤タグエントリを候補から除外する
+- 案B: `_extract_values_merged()`のマージ優先順位を「タグリスト順」ではなく
+  「durationが長い（より年次らしい）ものを優先」に変更する
+- 案A/Bいずれも[[TAG-DEFS-UNIFY-1]]のrevenueフィールド統合対象外化の
+  理由（ティッカー別revenue_conceptオーバーライドとmerge_all_tagsの複雑な
+  相互作用）と関連するため、着手時はTAG-DEFS-UNIFY-1の調査結果も参照すること
+
+診断目的のみで実行した`update.py`によるデータ再生成分（quarterly_*.json等の
+軽微な差分）は、異常値が解消しなかったためコミット前に復元済み
+（`git checkout`で反映前の状態に戻した）。
+
 ---
 
 ### [TAG-DEFS-UNIFY-1] quarterly.py/parser.pyのタグ候補リスト未統合フィールドの整理
