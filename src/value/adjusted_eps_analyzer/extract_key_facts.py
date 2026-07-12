@@ -560,6 +560,10 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                     quarters_map[key][tag] = {'value': item['val'], 'unit': item['unit']}
         
         # 希薄化後株式数を追加（四半期）
+        # SPLIT-AUTO-CHECK-1: 同一期間に複数のfactが競合する場合（株式分割による
+        # 比較年度再掲等、SEC-TAG-FICO-CPRT-1と同型のfact競合パターン）、
+        # filed日が最新のものを優先する。以前は無条件上書き（リスト末尾勝ち）だった。
+        _diluted_shares_filed: Dict[Tuple[int, int], str] = {}
         for item in diluted_shares_all:
             if not item.get('form', '').startswith('10-Q'):
                 continue
@@ -570,13 +574,17 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             days_diff = (end - start).days
             if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
                 continue
-            
+
             fiscal_year = determine_fiscal_year(end, fiscal_end_month)
 
             quarter_num = get_quarter_number(end, fiscal_end_month)
             key = (fiscal_year, quarter_num)
-            if key in quarters_map:
+            if key not in quarters_map:
+                continue
+            item_filed = item.get('filed', '')
+            if key not in _diluted_shares_filed or item_filed > _diluted_shares_filed[key]:
                 quarters_map[key]['diluted_shares'] = {'value': item['val'], 'unit': item['unit']}
+                _diluted_shares_filed[key] = item_filed
         
         # ---------- 当期純利益を優先順位付きタグから選択 ----------
         net_income_priority = [
@@ -637,12 +645,16 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                     q4_net = annual_net - q1q3_sum
                     
                     # 希薄化後株式数（年次）を取得
+                    # SPLIT-AUTO-CHECK-1: 先頭一致でbreakする方式（=最古filed優先）を廃し、
+                    # Q1〜Q3と同じ「filed日が最新のfactを優先」ルールに統一する
                     diluted_val = 0
-                    # 年次希薄化後株式数を探す
+                    _diluted_val_filed = None
                     for d_item in diluted_shares_all:
                         if d_item.get('form', '').startswith('10-K') and d_item.get('end') == target_k_item['end']:
-                            diluted_val = d_item['val']
-                            break
+                            d_filed = d_item.get('filed', '')
+                            if _diluted_val_filed is None or d_filed > _diluted_val_filed:
+                                diluted_val = d_item['val']
+                                _diluted_val_filed = d_filed
                     if diluted_val == 0 and q3_key in quarters_map:
                         diluted_val = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value':0}))
 
