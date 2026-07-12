@@ -73,10 +73,10 @@ def get_segment_growth(ticker: str) -> Optional[GrowthResult]:
                 "enabled": True,
                 "weighted_growth": weighted_growth,
                 "fiscal_year": config.get("fiscal_year"),
-                "source": "segment_config"
+                "source": config.get("source", "segment_config")
             }
         )
-    
+
     # segment_config.pyがfloatを返す場合の処理
     if isinstance(config, (int, float)):
         return GrowthResult(

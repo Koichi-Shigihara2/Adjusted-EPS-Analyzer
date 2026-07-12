@@ -788,38 +788,6 @@ segment_config.json未登録のまま_default設定でDCF計算されている�
 
 ---
 
-### [GROWTH-SOURCE-LABEL-1] segment_detail.sourceの誤表示バグ
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-10
-**発見:** サテライト投資候補10銘柄のDCF前提妥当性チェック時
-
-#### 問題
-`calculator/growth.py` の `get_segment_growth()` が返す `segment_detail.source`
-が、実際の成長率算出経路（segment_config由来／recommended_g自動注入／
-TTM実績成長率注入）によらず、常に固定文字列 `"segment_config"` として
-ハードコードされている（`config.get("source")` の実際の値を転記していない）。
-
-この結果、latest.json上は「セグメント設定に基づく成長率」に見える銘柄でも、
-実際は10-Kセグメント内訳が未設定（segment_configured=False）で、
-TTM実績成長率の直接注入や中央値フォールバックが使われているケースが
-区別できない。2026-07-10の10銘柄サンプル調査ではCART/MSCI/CDNS/FICO/LRCXの
-5銘柄（半数）でこの誤表示が発生していた。
-
-#### 影響
-成長率自体の計算ロジックは正しく動作しており、誤っているのは
-provenance情報（根拠のラベル）のみ。ただし、この情報は「この銘柄の
-成長率前提はどの程度セグメント別実績に基づく手堅いものか」を
-判断する材料として使われるため、誤表示により前提の信頼度評価を
-誤らせるリスクがある。
-
-#### 対応方針
-`get_segment_growth()` 内で `segment_detail["source"]` に固定文字列を
-代入している箇所を、実際の `config.get("source")` の値を転記するよう修正する。
-影響範囲（全銘柄への波及有無）の確認とテスト追加を含め、修正は別タスクとして着手する。
-
----
-
 ### [REPORT-CATALYST-1] カタリスト（Discoverのアップサイド事象）がreport.txtに未統合
 **優先度:** 中
 **分類:** 機能追加 / TANUKI VALUATION・Discover

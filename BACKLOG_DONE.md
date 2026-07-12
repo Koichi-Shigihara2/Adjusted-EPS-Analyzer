@@ -4,6 +4,28 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [GROWTH-SOURCE-LABEL-1] segment_detail.sourceの誤表示バグ（2026-07-12完了）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-10
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- `calculator/growth.py::get_segment_growth()`が`segment_detail["source"]`に
+  固定文字列`"segment_config"`をハードコードしていた箇所を、
+  `config.get("source", "segment_config")`に修正（実際の出所を転記）。
+  `segment_config.py::get_segment_growth()`側は既に`"growth_override"`
+  （recommended_g自動注入時）/`"segment_config"`を正しく返していたが、
+  呼び出し側でこの値を無視していたのが原因。
+- 影響銘柄（`phase1_growth_auto_adjusted=True`、全て`segment_config`と
+  誤表示されていた）58銘柄を特定し`pipeline.py --skip-risk`で再生成。
+  再生成後は全58銘柄で`source=growth_override`に修正されたことを確認。
+- 検証: pytest 204 passed/2 known failed（既知）、
+  `report_consistency_check.py` NG=0/警告3件（全て確認済み）。
+  再生成に伴うFCF系列等の微小な変動は本修正とは無関係な
+  TTM系列の通常の日次データ更新によるもの（`growth.py`はFCF計算に関与しない）。
+
+---
+
 ### ✅ [TTM-QUARTERS-CHECK-1] TTM系列構築時の四半期完全性チェック不足（2026-07-12完了）
 **分類:** データ品質 / SECデータ取得層
 **登録日:** 2026-07-11
