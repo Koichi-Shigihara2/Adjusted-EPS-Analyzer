@@ -270,8 +270,9 @@ docstringではなく型（dataclass等）でコード化し、構造的に間�
 #### 既存タスクの位置づけ（統合マッピング）
 以下は個別タスクとして独立進行させず、本EPIC配下のPhase実装時に吸収する：
 - ゲート0: [[REGISTER-FLOW-REDESIGN-1]]の対応方針2〜4、[[PREFLIGHT-CHECK-1]]
-- ゲート1: [[ARCH-DATA-1]]のaudit.py拡張項目、[[PREVENT-5]]、
-  [[LLY-CAPEX-STALE-1]]（個別事例から一般化）
+- ゲート1: [[ARCH-DATA-1]]のaudit.py拡張項目、[[PREVENT-5]]。
+  [[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）はPhase 2aで
+  「フォールバック選定ロジックの最新end日優先化」として一般化実装済み
 - ゲート2: [[ARCH-DATA-1]]本体（正規化レイヤー強化）
 - ゲート3: 新規（計算式ゴールデンテスト整備は現状ほぼ手つかず）
 - ゲート4: [[TICKER-AUDIT-1]]のWARN集約構想
@@ -311,9 +312,41 @@ docstringではなく型（dataclass等）でコード化し、構造的に間�
 から「複数ソース自動照合・自動補正」に設計を修正した。詳細は上記
 「ゲート構成」の該当箇所を参照。
 
+**Phase 2a完了（2026-07-12 同日6回目）**: Step 0調査（同日中）で、
+LLY型（タグ切替見逃し）とKLAC型（期間分類ミスによるノイズタグ混入）が
+「候補タグ群の中で最初に条件を満たしたものを採用して打ち切る」という
+同一のフォールバック選定ロジックに起因すると判明したため、選定ロジックを
+「最小件数を満たす候補の中から最新end日が最も新しいものを採用する」方式へ
+転換した（[[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）として着手）。
+- `common/sec_data/tag_definitions.py`を新設し、quarterly.py（四半期/TTM側）と
+  parser.py（年次側）で独立管理されていたタグ候補リストのうち、優先順位・
+  候補集合が完全一致または一方が他方の厳密な上位集合になっている9概念
+  （CapEx・FinanceLeasePmts・SBC・GrossProfit・NetIncome・Cash・RD・Buyback・OCF）
+  を統合。LTDebt・SM・DA・RPO・Revenueは優先順位・候補集合が構造的に異なり
+  （既存の修正済みバグ・設計判断と衝突するリスクがあるため）意図的に統合対象外とし、
+  [[TAG-DEFS-UNIFY-1]]として別タスクに切り出した。
+- `quarterly.py::_select_best_candidate()`・`parser.py::_extract_values_best_candidate()`
+  を新設し、候補タグを全て評価した上で最小件数を満たすものの中から最新end日優先で
+  採用する方式に変更（parser.py側はuse_max/merge_all_tags使用フィールド
+  ＜Revenue・selling_and_marketing・depreciation_and_amortization・SharesBasic/Diluted等＞
+  は従来ロジックを完全に維持し、変更対象外とした）。
+- 影響範囲確認: 同日生成のcompany_facts.jsonを用いて新旧ロジックを直接比較した結果
+  （raw/*.jsonの生成日時差による見かけ上の差分を排除するため、旧コードをgit stash
+  で一時退避し同一日に再生成して比較）、105銘柄中**LLY（CapEx: 4件→19件、
+  最新end日2022-09-30→2026-03-31）とWMT（SBC: 0件→6件、副次的に発見。WMTは
+  ShareBasedCompensationタグを一度も申告せずAllocatedShareBasedCompensationExpense
+  のみで申告しており、旧ロジックの厳密な四半期件数改善要求により従来フォールバックが
+  発動しなかった）の2銘柄のみ**に影響が限定されることを確認済み。他103銘柄は無変化。
+- 検証: `update.py LLY WMT`→`audit.py`（LLY正常、WMT既存の軽微なWARN「OCF一部None」
+  のみ・私の変更とは無関係）→`pipeline.py --skip-risk LLY WMT`（2/2成功）→
+  `report_consistency_check.py`（NG=0、既存WARN3件のみ・LLY/WMTともにWARN対象外）→
+  pytest 214 passed/2 known failed（新規8件追加、既存2件のみ既知失敗）。
+- 単体テスト`tests/test_tag_fallback_selection.py`を新規追加（8件、全件パス）。
+
+次はPhase 2b（段差型の前年比急変検知・株式分割自動照合）。
+
 #### 着手条件
-なし。Phase 1は次回セッション即着手可能。Phase 2以降は各Phase完了後に
-次Phaseの詳細設計を行う。
+なし。Phase 1・Phase 2aは完了。Phase 2b以降は次回セッションで詳細設計を行う。
 
 ---
 
@@ -540,9 +573,10 @@ Classification未連動の実害範囲がむしろ拡大した。次回セッシ
 **取得・算出ロジックの不備で本来解消可能なもの＝バグ**が混在しており、
 これを区別せずに一律で可視化対象にすると、直せるはずのバグが「これは
 限界です」という顔をして放置され続けるリスクがある（実例：
-[[LLY-CAPEX-STALE-1]]は「データが存在しないから信頼度を下げて表示する」話ではなく、
-本来取得できるはずのCapEx四半期データが取得ロジックの不備で取れていない、
-解消可能な事例）。
+[[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）は「データが存在しないから
+信頼度を下げて表示する」話ではなく、本来取得できるはずのCapEx四半期データが
+取得ロジックの不備で取れていない、解消可能な事例だった。実際にPhase 2aで
+根本原因（タグ切替の見逃し）を解消済み）。
 
 方針は「Classificationを書き換える」のではなく「**各数値がそのまま信じて
 良い状態か、信じてはいけない状態かを一目で分かるようにする**」ことが目的だが、
@@ -575,7 +609,8 @@ Classification未連動の実害範囲がむしろ拡大した。次回セッシ
 「信頼できない」と判定された事象は、可視化する前に**まず取得・算出
 ロジックの不備で解消可能かを個別に切り分ける**。切り分けの結果：
 - **解消可能（バグ）**なものは、可視化の対象にせず個別のバグ修正タスクとして
-  即時扱う（例: [[LLY-CAPEX-STALE-1]]のようなデータ取得ロジックの不備）
+  即時扱う（例: [[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）のような
+  データ取得ロジックの不備）
 - **構造的に解消不能**なもの（例: SECデータが特定期間存在しない、
   企業側が開示していない等）のみ、可視化の対象とする
 
@@ -596,7 +631,8 @@ Koichiさんの判断に委ね、判断材料としての透明性を上げる�
   「解消可能な不備」の実例（バグ①②③として既に構造分析済み）
 - [[ARCH-DATA-1]]（段階0寄り）: SECデータ正規化レイヤーの強化。着手条件
   成立済みだが難易度高
-- [[LLY-CAPEX-STALE-1]]（段階0）: 解消可能なバグの実例として先行登録済み
+- [[LLY-CAPEX-STALE-1]]（段階0・完了・BACKLOG_DONE.md参照）: 解消可能な
+  バグの実例として先行登録され、Phase 2aで根本原因を解消済み
 
 #### 対応方針（未確定・次回セッションで設計）
 1. 段階0〜2それぞれの既存「信頼できない」事象を棚卸しし、
@@ -703,27 +739,6 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 
 ## 優先度：中（こなれてきたら対応）
 
-### [LLY-CAPEX-STALE-1] LLYのCapEx四半期データが2022年以降取得できず古い値を使い回し
-**優先度:** 中
-**分類:** データ品質 / SECデータ取得層
-**登録日:** 2026-07-12
-**発見:** [[TTM-QUARTERS-CHECK-1]]実装検証時
-
-#### 問題
-LLYのCapEx四半期データが2022-09-30以降SECから取得できておらず、
-2023〜2026年の全TTM期間で同一の古い値（$1,353.6M）を使い回している。
-
-#### 現状の実害
-[[TTM-QUARTERS-CHECK-1]]のquarters_used>=4フィルタにより該当TTM期間は
-全て除外され年次フォールバックに切り替わるため、現時点では実害なし
-（既存の安全弁が機能）。
-
-#### 対応方針
-LLYのCapEx四半期取得ロジック自体のバグ原因は未調査。一次情報（EDGAR）で
-2022-09-30以降のCapExタグの実際の取得状況を確認し、正規化層での修正を検討する。
-
----
-
 ### [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化
 **優先度:** 中（要判断・緊急ではないが影響範囲は広い）
 **分類:** バグ / TANUKI VALUATION / データ品質
@@ -825,6 +840,58 @@ DCF理論株価・ROIC双方を歪めている。
 #### 対応方針
 XBRL-TAG-KLAC-1の対応方法を参考に、両銘柄の2020-2021年SECタグを一次情報
 （EDGAR）で確認し、正規化層での修正を検討する。
+
+#### 状況更新（2026-07-12・QUALITY-GATES-EPIC-1 Phase 2a着手前調査時）
+company_facts.jsonの一次データを確認した結果、FICO FY2020異常値$374,356,000は
+「2020-07-01〜2020-09-30」の91日間duration（`form='10-K', fp='FY'`）と一致し、
+XBRL-TAG-KLAC-1で発見・修正済みの`_classify_period()`バグ（91日間の四半期
+比較開示がfp='FY'のみで年次誤判定される）と同一パターンであることを確認した
+（CPRTのFY2020異常値$525,659,000も同様の疑い）。`_classify_period()`は
+2026-07-09時点で既にdays>130の下限チェックが追加され修正済みのため、
+**両銘柄とも`update.py FICO CPRT`の再実行のみで解消する可能性が高い**
+（未実行・未検証。実行はスコープ外のため本調査では行っていない）。
+
+---
+
+### [TAG-DEFS-UNIFY-1] quarterly.py/parser.pyのタグ候補リスト未統合フィールドの整理
+**優先度:** 中
+**分類:** アーキテクチャ / SECデータ取得層
+**登録日:** 2026-07-12
+**発見:** [[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）Phase 2a実装時
+
+#### 背景
+Phase 2aで`common/sec_data/tag_definitions.py`を新設し、quarterly.py（四半期/TTM側）と
+parser.py（年次側）で独立管理されていたタグ候補リストのうち、優先順位・候補集合が
+完全一致または一方が他方の厳密な上位集合になっている9概念（CapEx・FinanceLeasePmts・
+SBC・GrossProfit・NetIncome・Cash・RD・Buyback・OCF）を統合した。
+
+一方、以下5フィールドは優先順位・候補集合が構造的に異なり、無条件でのマージは
+既存の修正済みバグ・設計判断を壊すリスクがあるため意図的に統合対象外とした：
+
+- **LTDebt/long_term_debt**: 優先タグの順序がquarterly.pyとparser.pyで逆
+  （parser.pyはBUG-NETDEBT-2対策でLongTermDebtNoncurrentを意図的に最優先。
+  quarterly.pyはLongTermDebtが優先）
+- **SM/selling_and_marketing**: quarterly.pyはSGA全体（SellingGeneralAndAdministrativeExpense等）
+  への最終フォールバックを持つが、parser.pyはSGAを`sga_gap_warning`専用に意図的に分離している
+- **DA/depreciation_and_amortization**: primaryタグの優先順序が逆
+  （quarterly.pyはDepreciationDepletionAndAmortization優先・単一タグのみ、
+  parser.pyはDepreciationAndAmortization優先・4タグ＋merge_all_tags=True）で
+  挙動が根本的に異なる
+- **RPO/rpo**: quarterly.pyはContractWithCustomerLiabilityNoncurrent/
+  DeferredRevenueNoncurrent（noncurrent限定）、parser.pyはContractWithCustomerLiability/
+  DeferredRevenue（current/noncurrent区分なし）と、単純な合算が概念的に不正確になりうる
+- **Revenue/revenue**: ティッカー別revenue_conceptオーバーライド（SOFI/IONQ等）と
+  merge_all_tagsの相互作用が複雑。parser.py側に quarterly.py の`_REVENUE_FALLBACKS`
+  にない候補タグ`RevenueFromContractWithCustomer`（Excluding/IncludingAssessedTax
+  接尾辞なし）が1件存在することを確認済み（低リスクな拡張余地だが未着手）
+
+#### 対応方針
+各フィールドごとに、優先順位・候補集合の相違が意図的な設計判断か歴史的な放置かを
+個別に精査した上で、統合可否・統合する場合の優先順位を判断する。LTDebt・SMは
+既存の修正済みバグ（BUG-NETDEBT-2・SGA/SM分離）の経緯を熟読してから着手すること。
+
+#### 着手条件
+なし（優先度含め次回以降のセッションで判断）
 
 ---
 

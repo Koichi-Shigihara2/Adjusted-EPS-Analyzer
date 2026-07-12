@@ -10,6 +10,8 @@ import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
+from .tag_definitions import TAG_CANDIDATES
+
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
@@ -55,19 +57,22 @@ FISCAL_YEAR_TYPE: dict[str, str] = {
 }
 
 # XBRL概念マッピング（field_name → (concept, unit)）
+# CapEx・FinanceLeasePmts・SBC・GrossProfit・NetIncome・Cash・RD・Buyback・OCFの
+# primaryタグはtag_definitions.pyのTAG_CANDIDATES（各タプルの先頭）から取得する
+# （LLY-CAPEX-STALE-1 Phase 2a・quarterly.py/parser.pyのタグリスト統合）。
 FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
-    "OCF":              ("NetCashProvidedByUsedInOperatingActivities", "USD"),
+    "OCF":              (TAG_CANDIDATES["OPERATING_CASH_FLOW"][0], "USD"),
     "ICF":              ("NetCashProvidedByUsedInInvestingActivities", "USD"),
     "CFF":              ("NetCashProvidedByUsedInFinancingActivities", "USD"),
-    "CapEx":            ("PaymentsToAcquirePropertyPlantAndEquipment", "USD"),
-    "FinanceLeasePmts": ("FinanceLeasePrincipalPayments", "USD"),
-    "SBC":              ("ShareBasedCompensation", "USD"),
+    "CapEx":            (TAG_CANDIDATES["CAPITAL_EXPENDITURE"][0], "USD"),
+    "FinanceLeasePmts": (TAG_CANDIDATES["FINANCE_LEASE_PAYMENTS"][0], "USD"),
+    "SBC":              (TAG_CANDIDATES["STOCK_BASED_COMPENSATION"][0], "USD"),
     "DA":               ("DepreciationDepletionAndAmortization", "USD"),
     "Revenue":          ("Revenues", "USD"),
-    "GrossProfit":      ("GrossProfit", "USD"),
+    "GrossProfit":      (TAG_CANDIDATES["GROSS_PROFIT"][0], "USD"),
     "OperatingIncome":  ("OperatingIncomeLoss", "USD"),
-    "NetIncome":        ("NetIncomeLoss", "USD"),
-    "Cash":             ("CashAndCashEquivalentsAtCarryingValue", "USD"),
+    "NetIncome":        (TAG_CANDIDATES["NET_INCOME"][0], "USD"),
+    "Cash":             (TAG_CANDIDATES["CASH_AND_EQUIVALENTS"][0], "USD"),
     "STDebt":           ("ShortTermBorrowings", "USD"),
     "LTDebt":           ("LongTermDebt", "USD"),
     "DeferredRevenue":  ("DeferredRevenue", "USD"),
@@ -76,7 +81,7 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "SharesBasic":      ("CommonStockSharesOutstanding", "shares"),
     "SharesDiluted":    ("WeightedAverageNumberOfDilutedSharesOutstanding", "shares"),
     # R&D / 販売・マーケティング費（RICE計算用）
-    "RD":               ("ResearchAndDevelopmentExpense", "USD"),
+    "RD":               (TAG_CANDIDATES["RESEARCH_AND_DEVELOPMENT"][0], "USD"),
     "SM":               ("SellingAndMarketingExpense", "USD"),
     # RPO: 残存履行義務（SaaS/クラウド企業向けストック値）
     "RPO":              ("RevenueRemainingPerformanceObligation", "USD"),
@@ -86,7 +91,7 @@ FIELD_CONCEPTS: dict[str, tuple[str, str]] = {
     "CurrentAssets":      ("AssetsCurrent", "USD"),
     "CurrentLiabilities": ("LiabilitiesCurrent", "USD"),
     # 自社株買い（キャッシュトラップ検出用）
-    "Buyback":            ("PaymentsForRepurchaseOfCommonStock", "USD"),
+    "Buyback":            (TAG_CANDIDATES["BUYBACK"][0], "USD"),
 }
 
 # _COGS フォールバック概念（CostOfRevenue未申告の場合）
@@ -107,21 +112,16 @@ _REVENUE_FALLBACKS = (
 )
 
 # RD・SM・CapEx・SBC フォールバック概念（primaryと重複しない候補のみ）
+# CapEx・SBC・GrossProfit・NetIncome・Cash・RDはtag_definitions.pyのTAG_CANDIDATES
+# （primary除く残り）から取得する（LLY-CAPEX-STALE-1 Phase 2a）。
+# LTDebt・SM・RPOはparser.py側と優先順位・候補集合が構造的に異なるため
+# 統合対象外（tag_definitions.pyのdocstring・BACKLOG [TAG-DEFS-UNIFY-1] 参照）。
 _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
-    "NetIncome": (
-        # AVGO: NetIncomeLossの四半期データが2019以前で途絶えているため ProfitLoss を使用
-        # BKNG/AVAV: NetIncomeLoss自体が未申告のため以下をフォールバック
-        "ProfitLoss",
-        "NetIncomeLossAvailableToCommonStockholdersBasic",
-    ),
-    "CapEx": (
-        # NVDAなど: PP&E以外の生産的資産支出も含む広義CapEx
-        "PaymentsToAcquireProductiveAssets",
-        "PaymentsForCapitalImprovements",
-    ),
-    "RD": (
-        "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
-    ),
+    # AVGO: NetIncomeLossの四半期データが2019以前で途絶えているため ProfitLoss を使用
+    # BKNG/AVAV: NetIncomeLoss自体が未申告のため以下をフォールバック
+    "NetIncome": TAG_CANDIDATES["NET_INCOME"][1:],
+    "CapEx": TAG_CANDIDATES["CAPITAL_EXPENDITURE"][1:],
+    "RD": TAG_CANDIDATES["RESEARCH_AND_DEVELOPMENT"][1:],
     "SM": (
         "MarketingAndAdvertisingExpense",
         "MarketingExpense",
@@ -130,19 +130,12 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
         "SellingGeneralAndAdministrativeExpense",
         "GeneralAndAdministrativeExpense",
     ),
-    "Cash": (
-        # RCAT等: CashAndCashEquivalentsAtCarryingValue が少ない場合
-        "CashCashEquivalentsAndShortTermInvestments",
-        "Cash",
-    ),
-    "SBC": (
-        # CEG等: ShareBasedCompensation未申告の場合
-        "AllocatedShareBasedCompensationExpense",
-    ),
-    "GrossProfit": (
-        # AMZN等: GrossProfitタグがある場合（normalizer._calc_gross_profitで逆算済みの場合は不要）
-        "GrossProfitLoss",
-    ),
+    # RCAT等: CashAndCashEquivalentsAtCarryingValue が少ない場合
+    "Cash": TAG_CANDIDATES["CASH_AND_EQUIVALENTS"][1:],
+    # CEG等: ShareBasedCompensation未申告の場合
+    "SBC": TAG_CANDIDATES["STOCK_BASED_COMPENSATION"][1:],
+    # AMZN等: GrossProfitタグがある場合（normalizer._calc_gross_profitで逆算済みの場合は不要）
+    "GrossProfit": TAG_CANDIDATES["GROSS_PROFIT"][1:],
     "LTDebt": (
         # CEG等: 10-QがLongTermDebt(total)を申告せずLongTermDebtNoncurrentのみ申告する場合
         # LongTermDebt(quarterly)が0件でもLongTermDebtNoncurrentで四半期値を取得できる
@@ -154,6 +147,10 @@ _FIELD_FALLBACKS: dict[str, tuple[str, ...]] = {
         "DeferredRevenueNoncurrent",
     ),
 }
+
+# FinanceLeasePmts・Buyback・OCFはprimaryのみ（fallbackなし）だったが、
+# parser.py側にFinanceLeasePmtsの追加候補があったため統合する（Phase 2a）。
+_FIELD_FALLBACKS["FinanceLeasePmts"] = TAG_CANDIDATES["FINANCE_LEASE_PAYMENTS"][1:]
 
 # 取得期間
 _QUARTERLY_YEARS = 5
@@ -255,16 +252,11 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
             q_count = sum(1 for e in processed if not e.get("is_annual"))
             use_min = field_name in _FALLBACK_MIN_FIELDS and q_count < _FALLBACK_MIN
             if not processed or use_min:
-                for fallback_concept in _FIELD_FALLBACKS[field_name]:
-                    fb_entries = _get_field_units(company_facts, fallback_concept, unit)
-                    if fb_entries:
-                        fb_processed = _process_entries(fb_entries)
-                        fb_q_count = sum(1 for e in fb_processed if not e.get("is_annual"))
-                        if fb_q_count > q_count:
-                            processed = fb_processed
-                            logger.debug("[%s] %s fallback(better): %s (%d Q entries)",
-                                         ticker, field_name, fallback_concept, fb_q_count)
-                            break
+                processed = _select_best_candidate(
+                    company_facts, unit, concept, processed,
+                    _FIELD_FALLBACKS[field_name], _FALLBACK_MIN,
+                )
+                logger.debug("[%s] %s fallback evaluated (best candidate selected)", ticker, field_name)
 
         fields[field_name] = processed
 
@@ -282,6 +274,53 @@ def _get_field_units(company_facts: dict, concept: str, unit: str = "USD") -> li
         return company_facts["facts"]["us-gaap"][concept]["units"][unit]
     except (KeyError, TypeError):
         return []
+
+
+def _select_best_candidate(
+    company_facts: dict,
+    unit: str,
+    primary_concept: str,
+    primary_processed: list,
+    fallback_concepts: tuple[str, ...],
+    min_count: int,
+) -> list:
+    """primary概念＋フォールバック候補群の中から採用する候補を選ぶ。
+
+    LLY-CAPEX-STALE-1 Phase 2a: 「候補タグ群の中で最初に条件（最小件数）を
+    満たしたものを採用して打ち切る」方式は、タグがサイレントに切り替わった
+    銘柄（旧タグは件数を満たすが更新が止まっている）を検知できない
+    （LLYのCapEx: 旧タグPaymentsToAcquireProductiveAssetsは4四半期分あるが
+    2022-09-30で申告停止しており、新タグへの切替後データを一切拾えなかった）。
+
+    最小件数(min_count)を満たす候補が複数ある場合、「最初に見つかったもの」
+    ではなく「四半期の最新end日が最も新しいもの」を採用する。最小件数を
+    満たす候補が皆無の場合のみ、従来どおり最多件数の候補を採用する。
+    同着（end日・件数が同一）の場合は優先順位（primary→fallback_concepts順）を維持する。
+    """
+    def _stats(processed: list) -> tuple[int, str]:
+        q_count = sum(1 for e in processed if not e.get("is_annual"))
+        latest_end = max((e["end"] for e in processed), default="")
+        return q_count, latest_end
+
+    candidates: list[tuple[list, int, str]] = []
+    q0, end0 = _stats(primary_processed)
+    candidates.append((primary_processed, q0, end0))
+    for concept in fallback_concepts:
+        fb_entries = _get_field_units(company_facts, concept, unit)
+        if not fb_entries:
+            continue
+        fb_processed = _process_entries(fb_entries)
+        q, end = _stats(fb_processed)
+        candidates.append((fb_processed, q, end))
+
+    qualified = [c for c in candidates if c[1] >= min_count]
+    if qualified:
+        # 最小件数を満たす候補の中から最新end日優先（同着は優先順位＝リスト順で先勝ち）
+        best = max(qualified, key=lambda c: (c[2], -candidates.index(c)))
+    else:
+        # 最小件数を満たす候補が皆無 → 従来どおり最多件数優先（同点はend日→優先順位）
+        best = max(candidates, key=lambda c: (c[1], c[2], -candidates.index(c)))
+    return best[0]
 
 
 def _select_best_filing(filings: list, end_date: str) -> dict | None:

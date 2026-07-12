@@ -4,6 +4,37 @@
 
 ## 2026-07-12（完了）
 
+### ✅ [LLY-CAPEX-STALE-1] LLYのCapEx四半期データが2022年以降取得できず古い値を使い回し（2026-07-12完了・QUALITY-GATES-EPIC-1 Phase 2a）
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-12
+**完了日:** 2026-07-12
+
+#### 完了に至った経緯（要約）
+- 根本原因確定: LLYはCapEx主要タグ`PaymentsToAcquirePropertyPlantAndEquipment`を
+  一度も申告しておらず、旧フォールバックタグ`PaymentsToAcquireProductiveAssets`も
+  2022-09-30を最後に申告停止していた。2023年以降は新タグ
+  `PaymentsToAcquireOtherPropertyPlantAndEquipment`に切替済みだったが、
+  quarterly.py/parser.pyいずれの候補リストにも未登録だったため一切参照されていなかった。
+- KLAC型（`_classify_period()`の期間分類ミス）とLLY型（タグ切替見逃し）が
+  「候補タグ群の中で最初に条件を満たしたものを採用して打ち切る」という
+  同一のフォールバック選定ロジックに起因すると判明したため、個別のタグ追加ではなく
+  選定ロジック自体を「最小件数を満たす候補の中から最新end日が最も新しいものを
+  採用する」方式へ転換（`quarterly.py::_select_best_candidate()`・
+  `parser.py::_extract_values_best_candidate()`新設）。
+- `common/sec_data/tag_definitions.py`を新設し、quarterly.py/parser.pyで独立管理
+  されていたタグ候補リストのうち9概念（CapEx・FinanceLeasePmts・SBC・GrossProfit・
+  NetIncome・Cash・RD・Buyback・OCF）を統合。LTDebt・SM・DA・RPO・Revenueは
+  優先順位・候補集合が構造的に異なるため意図的に統合対象外とし
+  [[TAG-DEFS-UNIFY-1]]として分離登録。
+- 影響範囲確認（同日生成のcompany_facts.jsonで新旧ロジックを比較、raw/*.json生成日時差
+  による見かけ上の差分を排除）: 105銘柄中LLY（CapEx: 4件→19件、最新end日
+  2022-09-30→2026-03-31）とWMT（SBC: 0件→6件、副次的に発見）の2銘柄のみに影響が
+  限定されることを確認。他103銘柄は無変化。
+- 検証: `update.py LLY WMT`→`audit.py`→`pipeline.py --skip-risk LLY WMT`（2/2成功）→
+  `report_consistency_check.py`（NG=0、既存WARN3件のみ）→pytest 214 passed/2 known failed
+  （新規8件`tests/test_tag_fallback_selection.py`追加、既存2件のみ既知失敗）。
+- LLY FY2025 CapEx: $7.84B（新タグ反映後）。WMT FY2026 SBC: $3.60B。
+
 ### ✅ [GROWTH-SOURCE-LABEL-1] segment_detail.sourceの誤表示バグ（2026-07-12完了）
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-10

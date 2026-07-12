@@ -10,6 +10,7 @@ from typing import Optional, Dict, Any, List
 
 from .config import get_ticker_info
 from .quarterly import TICKER_RESTRICTIONS
+from .tag_definitions import TAG_CANDIDATES
 from .utils import determine_fiscal_year
 
 
@@ -38,11 +39,8 @@ class SECParser:
         ],
 
         # BS詳細（ネットキャッシュ計算用）
-        "cash_and_equivalents": [
-            "CashAndCashEquivalentsAtCarryingValue",
-            "CashCashEquivalentsAndShortTermInvestments",
-            "Cash",
-        ],
+        # tag_definitions.pyのTAG_CANDIDATESから取得する（LLY-CAPEX-STALE-1 Phase 2a）
+        "cash_and_equivalents": list(TAG_CANDIDATES["CASH_AND_EQUIVALENTS"]),
         "short_term_investments": [
             "ShortTermInvestments",
             "MarketableSecuritiesCurrent",
@@ -91,14 +89,10 @@ class SECParser:
             "TotalRevenue",
             "RevenuesNetOfInterestExpense",  # 銀行向け（SOFI等）
         ],
-        "net_income": [
-            "NetIncomeLoss",
-            "ProfitLoss",
-            "NetIncomeLossAvailableToCommonStockholdersBasic",
-        ],
-        "gross_profit": [
-            "GrossProfit",
-        ],
+        # net_income・gross_profitはtag_definitions.pyのTAG_CANDIDATESから取得する
+        # （LLY-CAPEX-STALE-1 Phase 2a・quarterly.py/parser.pyのタグリスト統合）
+        "net_income": list(TAG_CANDIDATES["NET_INCOME"]),
+        "gross_profit": list(TAG_CANDIDATES["GROSS_PROFIT"]),
         "cost_of_revenue": [
             "CostOfRevenue",
             "CostOfGoodsAndServicesSold",
@@ -108,12 +102,7 @@ class SECParser:
         # CapitalizedComputerSoftwareDevelopmentCosts:
         #   費用化されずBSに資産計上されるソフトウェア開発費。
         #   PLに現れないR&D投資を捕捉するためのフォールバック。
-        "research_and_development": [
-            "ResearchAndDevelopmentExpense",
-            "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
-            "CapitalizedComputerSoftwareDevelopmentCosts",
-            "CapitalizedComputerSoftwareAmortization1",  # UNH等: ソフトウェア投資の償却費
-        ],
+        "research_and_development": list(TAG_CANDIDATES["RESEARCH_AND_DEVELOPMENT"]),
         "eps_diluted": [
             "EarningsPerShareDiluted",
         ],
@@ -138,20 +127,15 @@ class SECParser:
         ],
 
         # CF（キャッシュフロー計算書）
-        "operating_cash_flow": [
-            "NetCashProvidedByUsedInOperatingActivities",
-        ],
-        "capital_expenditure": [
-            "PaymentsToAcquirePropertyPlantAndEquipment",
-            "PaymentsToAcquireProductiveAssets",
-            "PaymentsForCapitalImprovements",
-        ],
+        # operating_cash_flow・capital_expenditure・finance_lease_paymentsは
+        # tag_definitions.pyのTAG_CANDIDATESから取得する（LLY-CAPEX-STALE-1 Phase 2a）。
+        # capital_expenditureにはLLYが2023年以降申告する新タグ
+        # PaymentsToAcquireOtherPropertyPlantAndEquipmentが含まれる
+        # （旧タグPaymentsToAcquireProductiveAssetsは2022-09-30で申告停止）。
+        "operating_cash_flow": list(TAG_CANDIDATES["OPERATING_CASH_FLOW"]),
+        "capital_expenditure": list(TAG_CANDIDATES["CAPITAL_EXPENDITURE"]),
         # ファイナンスリース返済（AMZN等）: FCF計算から除外するために別取得
-        "finance_lease_payments": [
-            "FinanceLeasePrincipalPayments",
-            "PaymentsForFinanceLeases",
-            "RepaymentsOfLongTermCapitalLeaseObligations",
-        ],
+        "finance_lease_payments": list(TAG_CANDIDATES["FINANCE_LEASE_PAYMENTS"]),
         # 減価償却費（R&D資本化・維持CapEx分離に使用）
         # DepreciationAndAmortization: 最も汎用的なタグ（多くの企業）
         # DepreciationDepletionAndAmortization: 資源系企業等で使用
@@ -163,13 +147,10 @@ class SECParser:
             "Depreciation",
             "AmortizationOfIntangibleAssets",
         ],
-        "stock_based_compensation": [
-            "ShareBasedCompensation",
-        ],
+        # stock_based_compensation・buybackはtag_definitions.pyのTAG_CANDIDATESから取得する
+        "stock_based_compensation": list(TAG_CANDIDATES["STOCK_BASED_COMPENSATION"]),
         # 自社株買い（キャッシュトラップ検出用）
-        "buyback": [
-            "PaymentsForRepurchaseOfCommonStock",
-        ],
+        "buyback": list(TAG_CANDIDATES["BUYBACK"]),
 
         # 株式数
         "shares_diluted": [
@@ -288,19 +269,26 @@ class SECParser:
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False, fiscal_end_month: int = 12) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
-        
+
         Args:
             us_gaap: SEC XBRL データ
             xbrl_keys: 優先順位順のXBRLキーリスト
             use_max: 同一期間に複数値がある場合、最大値を使用（株式数向け）
                      Trueの場合、全XBRLキーを検索して最大値を採用
-        
+            merge_all_tags: 年代ごとにXBRLタグが切り替わる銘柄向け。全キーの値を統合する
+
         Returns:
             dict: {
                 "annual": {2024: value, 2023: value, ...},
                 "quarterly": {"2024Q1": value, ...}
             }
         """
+        if use_max or merge_all_tags:
+            return self._extract_values_merged(us_gaap, xbrl_keys, use_max, fiscal_end_month)
+        return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month)
+
+    def _extract_values_merged(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool, fiscal_end_month: int) -> Dict[str, Any]:
+        """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合、従来ロジックのまま）"""
         result = {"annual": {}, "quarterly": {}}
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
         annual_end_dates = {}
@@ -308,26 +296,6 @@ class SECParser:
         # fy==end_yearの完全一致フラグ: 非December FY企業でQ1等中間期エントリが
         # 同一end_yearを持ち全年データを上書きするのを防ぐ（INTU等の対策）
         annual_exact_match = {}
-
-        # 最新期末年を特定するため、全キーの最大 end_date 年を事前に調べる
-        # ※ fyではなくend_dateの年を使う: SEC XBRLのfyは比較年度の参照先fyと同じ値が
-        #   付与される場合があり(FCX等)、end_dateの年がデータの実際の会計年度末年に対応する
-        max_end_year_in_data = 0
-        for key in xbrl_keys:
-            if key not in us_gaap:
-                continue
-            units = us_gaap[key].get("units", {})
-            for unit_type in ["USD", "shares", "USD/shares"]:
-                if unit_type not in units:
-                    continue
-                for entry in units[unit_type]:
-                    if entry.get("form") == "10-K" and entry.get("fp") == "FY":
-                        end_date = entry.get("end", "")
-                        if entry.get("fy") is not None and end_date and len(end_date) >= 10:
-                            end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                            end_year = determine_fiscal_year(end_dt, fiscal_end_month)
-                            if end_year > max_end_year_in_data:
-                                max_end_year_in_data = end_year
 
         for key in xbrl_keys:
             if key not in us_gaap:
@@ -382,7 +350,7 @@ class SECParser:
                                 if end_date > annual_end_dates.get(end_year, ""):
                                     result["annual"][end_year] = val
                                     annual_end_dates[end_year] = end_date
-                    
+
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
                         quarter_key = f"{fy}{fp}"
@@ -398,32 +366,104 @@ class SECParser:
                             elif end_date > quarterly_end_dates.get(quarter_key, ""):
                                 result["quarterly"][quarter_key] = val
                                 quarterly_end_dates[quarter_key] = end_date
-                
+
                 # 最初に見つかったunit_typeのデータを使用
                 if result["annual"] or result["quarterly"]:
                     break
-            
-            # use_max=True または merge_all_tags=True の場合は全キーを検索（早期終了しない）
-            # merge_all_tags: 年代ごとにXBRLタグが切り替わる銘柄でデータ欠落を防ぐ
-            if use_max or merge_all_tags:
-                continue  # 全キーを検索
-            
-            if result["annual"]:
-                # 最新期末年のデータがあるか確認
-                if max_end_year_in_data in result["annual"]:
-                    break  # 最新期末年が取れたので終了
-                # 最新FYがない場合は次のキーを試す → resultをクリア
-                result = {"annual": {}, "quarterly": {}}
-                annual_end_dates = {}
-                quarterly_end_dates = {}
-                annual_exact_match = {}
-            elif result["quarterly"] and not result["annual"]:
-                # quarterlyのみでannualがない場合も次のキーを試す → resultをクリア
-                result = {"annual": {}, "quarterly": {}}
-                annual_end_dates = {}
-                quarterly_end_dates = {}
-                annual_exact_match = {}
-        
+
+            # 全キーを検索（早期終了しない。merge_all_tagsは年代ごとのタグ切替を横断統合するため）
+
+        return result
+
+    def _extract_values_best_candidate(self, us_gaap: dict, xbrl_keys: List[str], fiscal_end_month: int) -> Dict[str, Any]:
+        """use_max/merge_all_tagsいずれもFalseの場合の抽出（1つの候補タグを選んで採用する）
+
+        LLY-CAPEX-STALE-1 Phase 2a: 候補キーを優先順位順に「最新期末年が
+        取れた最初のキーで打ち切る」方式は、真に最新のデータを持つタグが
+        候補リストに含まれていない場合に検知できない（LLYのcapital_expenditure:
+        旧候補3タグはいずれも年次(10-K FY)エントリを一度も持たず常に空扱い
+        だった）。候補キーをすべて独立に抽出し、annualデータを持つ候補の
+        中から最新end_yearが最も新しいものを採用する（quarterly.pyの
+        _select_best_candidate と同じ考え方）。annualデータを持つ候補が
+        皆無の場合のみ、quarterlyの最新度で採用する。
+        """
+        candidates: list[tuple[str, Dict[str, Any]]] = []
+        for key in xbrl_keys:
+            if key not in us_gaap:
+                continue
+            key_result = self._extract_single_key(us_gaap, key, fiscal_end_month)
+            if not key_result["annual"] and not key_result["quarterly"]:
+                continue
+            candidates.append((key, key_result))
+
+        if not candidates:
+            return {"annual": {}, "quarterly": {}}
+
+        def _freshness(idx: int) -> tuple[int, str, int]:
+            _, key_result = candidates[idx]
+            latest_annual = max(key_result["annual"].keys(), default=0)
+            latest_quarter = max(key_result["quarterly"].keys(), default="")
+            return latest_annual, latest_quarter, -idx
+
+        qualified = [i for i in range(len(candidates)) if candidates[i][1]["annual"]]
+        pool = qualified if qualified else list(range(len(candidates)))
+        best_idx = max(pool, key=_freshness)
+        return candidates[best_idx][1]
+
+    def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int) -> Dict[str, Any]:
+        """1つのXBRLキーからannual/quarterly値を抽出する（候補選定の評価単位）"""
+        result: Dict[str, Any] = {"annual": {}, "quarterly": {}}
+        annual_end_dates: Dict[int, str] = {}
+        quarterly_end_dates: Dict[str, str] = {}
+        annual_exact_match: Dict[int, bool] = {}
+
+        units = us_gaap.get(key, {}).get("units", {})
+        for unit_type in ["USD", "shares", "USD/shares"]:
+            if unit_type not in units:
+                continue
+
+            for entry in units[unit_type]:
+                form = entry.get("form", "")
+                fy = entry.get("fy")
+                fp = entry.get("fp", "")
+                val = entry.get("val")
+                end_date = entry.get("end", "")
+
+                if val is None or fy is None:
+                    continue
+
+                if form == "10-K" and fp == "FY":
+                    if end_date and len(end_date) >= 10:
+                        end_dt = datetime.strptime(end_date, '%Y-%m-%d')
+                        end_year = determine_fiscal_year(end_dt, fiscal_end_month)
+                    else:
+                        end_year = fy
+                    exact = (fy == end_year)
+                    if end_year not in result["annual"]:
+                        result["annual"][end_year] = val
+                        annual_end_dates[end_year] = end_date
+                        annual_exact_match[end_year] = exact
+                    elif exact and not annual_exact_match.get(end_year, True):
+                        result["annual"][end_year] = val
+                        annual_end_dates[end_year] = end_date
+                        annual_exact_match[end_year] = True
+                    elif exact == annual_exact_match.get(end_year, False):
+                        if end_date > annual_end_dates.get(end_year, ""):
+                            result["annual"][end_year] = val
+                            annual_end_dates[end_year] = end_date
+
+                elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
+                    quarter_key = f"{fy}{fp}"
+                    if quarter_key not in result["quarterly"]:
+                        result["quarterly"][quarter_key] = val
+                        quarterly_end_dates[quarter_key] = end_date
+                    elif end_date > quarterly_end_dates.get(quarter_key, ""):
+                        result["quarterly"][quarter_key] = val
+                        quarterly_end_dates[quarter_key] = end_date
+
+            if result["annual"] or result["quarterly"]:
+                break
+
         return result
     
     def _get_available_years(self, extracted: dict) -> List[int]:
