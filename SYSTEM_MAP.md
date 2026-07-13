@@ -269,7 +269,13 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 持たない。Phase 2a（タグフォールバック選定ロジック統一）の対象範囲外であり、
 恩恵を受けていない点に注意（旧SYSTEM_MAP記載が`common/sec_data/`ツリーの一部
 であるかのような誤解を招く配置だったため2026-07-12訂正）。
-- `extract_quarterly_facts()`: EPS逆算・株数3段フォールバック（quarterly.json生成）
+- `extract_quarterly_facts()`: 株数4段フォールバック（quarterly.json生成。
+  ①EarningsPerShareDilutedからのEPS逆算 ②Basic株数代用 ③隣接する実四半期
+  からの引き継ぎ〈`_neighbor_quarter_diluted_shares()`、ASTS-SHARES-
+  OSCILLATION-1 2026-07-13新設〉④yfinance現在株数代入〈全期間タグ欠落
+  銘柄・Visa等限定〉。③新設前は②で埋まらない四半期に無条件で④が適用され、
+  スクリプト実行時点の現在株数が過去の四半期に逆行伝播していた
+  〈ASTS/AVAV/RCAT/CART/CEG/BROS/GEV/XOM/CONの9銘柄で実害確認〉）
 - 同一期間に複数fact（原初filed値と後年10-Kの比較年度再掲値）が競合する場合、
   「filed日が最新のものを優先」に統一済み（SPLIT-AUTO-CHECK-1 2026-07-12完了。
   以前はQ1〜Q3が末尾勝ち・Q4が先頭勝ちで不整合、NVDA等の分割前後で分割前株数が

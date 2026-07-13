@@ -1,5 +1,22 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-13（同日2回目: セッション終了時ブラッシュアップ。
+Phase 3a完了後に追加で完了した4件——TICKER-DIRECT-ACCESS-GUARD-1
+（FLAG-CONSUMER-AUDIT-2/3再発防止CIガード新設・全リポジトリスキャンで
+発見したtail_dcf_bridge.pyのtanukiフラグ検証漏れを同日中に修正）・
+ASTS-SHARES-OSCILLATION-1（diluted_shares_used往復変動の恒久修正。
+影響範囲が調査時点推定の3銘柄から新旧比較でCART/CEG/BROS/GEV/XOM/CONを
+加えた9銘柄に拡大、副次発見のBROS Up-C組織再編前四半期をEPS-UPC-
+PREREORG-1として分離登録）・WARN12-COHR-ONDS-1（根本原因がfact競合型
+バグではなくSEC自動更新とTANUKI VALUATION再生成の生成順序のズレ〈約20
+時間の陳腐化窓〉と判明、構造的ギャップをWORKFLOW-SEC-TANUKI-GAP-1として
+新規登録）・HYPECORE-DASHBOARD-COUNT-BUG-1（index.htmlのticker数表示
+修正、他8箇所の横展開確認で同型バグなしと確認）——を反映。前回
+ブラッシュアップの教訓（「次セッションでの着手順序」欄の陳腐化）を踏まえ、
+同日中の完了分もその場で同欄に反映し、次回候補をFLAG-THRESHOLD-DESIGN-1
+筆頭に更新した。他の確認項目（BACKLOG_DONE.md記録の正確性・git status
+のクリーン状態）はいずれも問題なし）
+
 最終更新: 2026-07-13（セッション終了時ブラッシュアップ。ARCH-DATA-1の棚卸し
 調査でQUALITY-GATES-EPIC-1のゲート1/ゲート2への統合マッピングを確認し、
 Phase 3前提整理として[[ARCH-DATA-1-PREP-1]]（TAG-DEFS-UNIFY-1クローズ・
@@ -2651,20 +2668,51 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   quarterly.py/normalizer.py/data_fetcher.pyに検証を配線）を完了。
   全105銘柄で新旧比較し値の差分0件を確認済み。詳細はBACKLOG_DONE.md
   「2026-07-13（完了）」セクション参照。
-  **次セッションの候補（優先順位の所感）**:
-  ① [[ASTS-SHARES-OSCILLATION-1]]（優先度：低・調査のみ、四半期ごとの
-  往復変動の原因特定）を軽い足慣らしとして先に済ませる。
-  ② [[WARN12-COHR-ONDS-1]]・[[HYPECORE-DASHBOARD-COUNT-BUG-1]]
-  （いずれも優先度：低・単発の軽微な修正）を続けて片付ける。
-  ③ [[FLAG-THRESHOLD-DESIGN-1]]（優先度：未定・4フラグの機械判定基準を
-  Koichiさんに複数案提示して確定させる設計セッション）に進む。
-  ④ 余力があれば[[GATE2-PHASE3B-1]]（優先度：中・独立実装4ファイルの
-  reader.py統合＋規約C/Dの型化、規模見積もりから）に着手する。
-  [[SPLIT-REALTIME-GAP-1]]（優先度：低〜中）・
-  [[DATA-JUMP-CHECK-GENERALIZE-1]]（優先度：未定）・
-  [[GATE2-READER-FCFLIST-1]]（優先度：中）は上記より後回しでよい
-  （いずれも「次に関連バグが発生したら」「規模見積もり後」等の
-  待機的な着手条件のため）。
+  ~~次セッションの候補: ①ASTS-SHARES-OSCILLATION-1 ②WARN12-COHR-ONDS-1・
+  HYPECORE-DASHBOARD-COUNT-BUG-1 ③FLAG-THRESHOLD-DESIGN-1
+  ④GATE2-PHASE3B-1~~ → ①②は同日中に完了（下記追記参照）。
+
+追記（2026-07-13 同日2回目・セッション終了時ブラッシュアップ）:
+上記候補のうち①[[ASTS-SHARES-OSCILLATION-1]]・②[[WARN12-COHR-ONDS-1]]・
+[[HYPECORE-DASHBOARD-COUNT-BUG-1]]を全て完了。加えて予定外だった
+[[TICKER-DIRECT-ACCESS-GUARD-1]]（FLAG-CONSUMER-AUDIT-2/3の再発防止CI
+ガード新設、`tests/test_no_direct_ticker_access.py`）も完了し、同ガードで
+発見した`tail_dcf_bridge.py`のtanukiフラグ検証漏れを修正した。
+
+- ASTS-SHARES-OSCILLATION-1: 調査時点の推定（ASTS/AVAV/RCATの3銘柄）から
+  恒久修正の全105銘柄新旧比較で影響範囲がCART/CEG/BROS/GEV/XOM/CONを
+  加えた**9銘柄に拡大**。副次発見のBROS 2021-03-31（Up-C組織再編前
+  四半期）の妥当性を一次情報で確認し[[EPS-UPC-PREREORG-1]]として分離登録
+- WARN12-COHR-ONDS-1: 根本原因はfact競合型バグではなく、**SEC自動更新
+  （日曜21:00 JST）とTANUKI VALUATION再生成（平日23:05 JST）の生成順序の
+  ズレ**（約20時間の陳腐化窓）と判明。pipeline.py再実行のみで解消し、
+  この構造的ギャップ自体を[[WORKFLOW-SEC-TANUKI-GAP-1]]として新規登録
+- TICKER-DIRECT-ACCESS-GUARD-1: 全リポジトリスキャンでcik_lookup.csv直接
+  パース12ファイル・ルートディレクトリlistdir直接スキャン5ファイルを検出・
+  許可リスト化。うち3件の既存直し漏れ（`phase1_scan.py`・
+  `backfill_history.py`は一回限りスクリプトの疑い、`tail_dcf_bridge.py`は
+  同日中に修正）を発見し、後者2件は[[PHASE1-SCAN-CLEANUP-1]]・
+  [[BACKFILL-HISTORY-CLEANUP-1]]として登録。副次発見の軽微な重複実装2件
+  （[[SYSHEALTH-CIK-DEDUP-1]]・[[TAIL-CIK-LOOKUP-DEDUP-1]]）も登録
+
+**次セッションの候補（優先順位の所感）**:
+① [[FLAG-THRESHOLD-DESIGN-1]]（優先度：未定・4フラグの機械判定基準を
+Koichiさんに複数案提示して確定させる設計セッション。他タスクの前提に
+なりうるため筆頭候補）に進む。
+② 余力があれば[[GATE2-PHASE3B-1]]（優先度：中・独立実装4ファイルの
+reader.py統合＋規約C/Dの型化、規模見積もりから）・
+[[GATE2-READER-FCFLIST-1]]（優先度：中・reader.py::get_fcf_list()の
+順序規約未検証）・[[EPS-UPC-PREREORG-1]]（優先度：中・Up-C組織再編前
+四半期のAdjusted EPS算入方針）・[[WORKFLOW-SEC-TANUKI-GAP-1]]
+（優先度：中・SEC更新とTANUKI VALUATION更新のworkflow連携）のいずれかに
+着手する。
+③ 優先度：低の軽量クリーンアップ4件（[[PHASE1-SCAN-CLEANUP-1]]・
+[[BACKFILL-HISTORY-CLEANUP-1]]・[[SYSHEALTH-CIK-DEDUP-1]]・
+[[TAIL-CIK-LOOKUP-DEDUP-1]]、いずれも陳腐化確認・重複実装解消の軽微作業）
+は手が空いた時に片付ける。
+[[SPLIT-REALTIME-GAP-1]]（優先度：低〜中）・
+[[DATA-JUMP-CHECK-GENERALIZE-1]]（優先度：未定）は引き続き待機的な
+着手条件（「次に関連バグが発生したら」等）のため後回しでよい。
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、

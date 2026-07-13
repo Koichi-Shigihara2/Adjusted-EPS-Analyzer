@@ -490,6 +490,25 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 実装すること。「今回だけ手で直す」対応は次回の自動再生成で必ず巻き戻る
 前提で臨む。
 
+### SEC自動更新とTANUKI VALUATION自動更新の生成順序ズレ（WARN12-COHR-ONDS-1の教訓・2026-07-13追加）
+
+`SEC_Data_Update.yml`（毎週**日曜**12:00 UTC=JST21:00）と
+`TANUKI_VALUATION_Update.yml`（**平日**月〜金のみJST23:05）は独立した
+cronスケジュールで動作しており、`config/workflow_dependencies.json`が
+定義する論理的依存関係（TANUKI_VALUATION_UpdateはSEC_Data_Updateに依存）は
+実際のGitHub Actionsトリガーとしては実装されていない
+（[[WORKFLOW-SEC-TANUKI-GAP-1]]参照、対応未実装）。
+
+このため**日曜のSEC自動更新後〜月曜23:05の次回TANUKI VALUATION自動更新
+までの約26時間、SECデータは最新だがlatest.json/report.txtは陳腐化した
+まま**という状態が毎週構造的に発生しうる。`report_consistency_check.py`の
+`WARN-12`（Cash-STI期ズレ）等がこの時間帯に新規発生した場合、まず
+fact競合等のコードバグを疑う前に、`latest.json`の`calculation_date`と
+対象銘柄の`common/sec_data/data/{TICKER}/quarterly_*.json`のコミット日時を
+比較し、**単なる生成順序のズレでないか**を確認すること（該当すれば
+`pipeline.py [TICKER] --skip-risk`の再実行のみで解消する。実例:
+2026-07-12にCOHR/ONDSで発生、コード修正不要だった）。
+
 ### 表示期間フィルタのルール
 
 - HTMLの日付フィルタ（`getDate()-N`）は指標の更新頻度に合わせて設定すること
