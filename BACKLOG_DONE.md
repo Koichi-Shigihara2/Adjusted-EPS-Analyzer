@@ -2,6 +2,96 @@
 
 ---
 
+## 2026-07-13（完了）
+
+### ✅ [ARCH-DATA-1-PREP-1] QUALITY-GATES-EPIC-1 Phase 3前提整理・小粒4項目（2026-07-13完了）
+**分類:** アーキテクチャ / SECデータ取得層 / 品質管理
+**登録日:** 2026-07-13
+**完了日:** 2026-07-13
+**発見:** ARCH-DATA-1棚卸し調査（Gate2設計セッション前の前提整理）
+
+#### 背景
+ARCH-DATA-1の棚卸し調査で、Gate2本体（正規化契約の構造化）着手前に
+片付けるべき小粒4項目（TAG-DEFS-UNIFY-1のクローズ判断・normalized JSON
+不足フィールド補完・audit.py UP-C検知・バグA/Bのスコープ判断）が
+残っていることが判明したため、まとめて対応した。
+
+#### ①TAG-DEFS-UNIFY-1のクローズ判断 → 完了クローズ（BACKLOG.mdから本ファイルへ全文移動）
+- LTDebt・RPOはpoint-in-time概念のためduration競合バグの対象外（2026-07-12の
+  機械調査で既に確定済み）。今回のSOFI-DATA-1調査でも改めて確認し、判断を追認。
+- revenueの残論点（parser.pyのみが持つ候補タグ`RevenueFromContractWithCustomer`
+  〈接尾辞なし〉がquarterly.pyの`_REVENUE_FALLBACKS`に未統合）を機械調査した結果、
+  現行105銘柄中このタグを申告している銘柄は**0件**。理論上の拡張余地はあるが
+  実害ゼロと確認。新規登録銘柄がこのタグに依存するケースが出た場合はStep 1
+  （SECデータ取得）後のaudit.py/report_consistency_checkで検知される設計のため、
+  個別対応で十分と判断しクローズ。
+
+#### ②normalized JSON不足フィールド補完 → 実装完了
+- **ShortTermInvestments**: 調査の結果、**既に解消済み**と判明（当初のARCH-DATA-1
+  記載が陳腐化していた）。parser.py（年次・per-quarter snapshot側）は
+  XBRL_MAPPINGに`short_term_investments`を既に保有しており、pipeline.py/
+  reader.pyのget_net_cash()がBUG-NETDEBT-4/5（同一時点原則）経由で正しく
+  消費している。quarterly.py（TTM/normalized側）には存在しないが、
+  ShortTermInvestmentsを必要とする下流消費者（net_debt計算）はTTM経路を
+  使っていないため実害なし。追加実装は不要と判断。
+- **銀行移行後LTDebt（SOFI-DATA-1）**: SOFIは銀行免許取得後（2022年以降）
+  `LongTermDebt`/`LongTermDebtNoncurrent`タグの申告を停止し、`DebtLongtermAnd
+  ShorttermCombinedAmount`（短期+長期合算）タグに移行していたが、2026-06-24の
+  過去修正はnormalized JSONへの**手動一回限りパッチ**（quarterly.pyフェッチ
+  スクリプトが対応していないため）であり、その後の自動再生成（`update.py`実行）で
+  静かに巻き戻り、本セッション開始時点でLTDebtが2022-12-31のまま3年以上
+  stale化していた実害を発見（Net_Debt +$2.08B〈実際は誤り〉として表示）。
+  - 恒久修正: `quarterly.py`のグローバルなLTDebtフォールバック候補リストに
+    このタグを追加する案は、AVGO（annual最新年2021→2025に変化）・VZ
+    （annual最新年2013→2025、quarterly 0件→19件に変化）等、無関係な既存銘柄
+    18件に予期せぬ副作用を及ぼすことを検証で確認したため**不採用**。
+  - 代わりに、既存の`revenue_concept`オーバーライド（`TICKER_RESTRICTIONS`）と
+    同一パターンで`ltdebt_concept`を新設し、SOFI限定のticker-scopedオーバーライド
+    として実装（`quarterly.py`・`parser.py`双方に同一ロジックを追加）。
+    他17銘柄への影響ゼロを個別確認済み。
+  - 検証: `update.py SOFI`→`audit.py SOFI`（正常）→`pipeline.py --skip-risk SOFI`
+    →`report_consistency_check.py`（NG=0、SOFI該当WARNなし）→pytest 265 passed/
+    2 known failed（新規回帰なし）。
+  - 影響: SOFI Net_Debt +$2.08B（誤・stale）→ -$1.59B（正・net cash、
+    net_debt_period="Cash=2026Q1/Debt=FY2025"の期ズレも解消し"2026Q1"に統一）。
+    Intrinsic_Value $15.76→$21.17。Classification は WATCH のまま変化なし
+    （DCF_Reliability=LOW・Policy B丸めが引き続き適用されるため）。
+
+#### ③audit.py: UP-C構造株式数タグ一覧化 → 実装完了
+- `common/sec_data/audit.py`の`audit_ticker()`に、raw quarterly table
+  （`common/sec_data/raw/{ticker}_quarterly_raw.json`）のSharesBasic/
+  SharesDiluted双方が四半期エントリ0件の銘柄を検知するチェックを追加。
+- 全100銘柄でテスト実行し、**V（Visa）**を新規検知（複数株式クラス構造のため
+  `CommonStockSharesOutstanding`/`WeightedAverageNumberOfDilutedSharesOutstanding`
+  等の標準us-gaapタグを一切申告しておらず、`dei:EntityCommonStockSharesOutstanding`
+  のみ保有）。他99銘柄は誤検知なし。
+- 検証: pytest 265 passed/2 known failed（新規回帰なし）。
+
+#### ④バグA・Bのスコープ判断 → 既に解消済みと判明（記録訂正のみ）
+- `_estimate_ttm_operating_income()`のGrossProfit/RD/SM期末日不整合
+  （`dict.get(end, 0)`による暗黙0円フォールバック）は、ARCH-DATA-1に
+  「新規スコープ候補」として記載された**同日**（2026-07-09）の
+  コミット`1a8f5253d`「Moat Scoreフォールバックの2件のバグを修正
+  （バグA・B）」で、3フィールド共通end日のset intersection方式
+  （4件未満ならNone）に**既に修正済み**だったことが判明。
+  BACKLOG.mdへの記載（同日20:32、修正コミットの38分後）が、直前の
+  修正を反映せず「未着手の新規スコープ候補」のまま残置されていた
+  記録上の陳腐化だった。grep確認により同種パターン（`.get(end, 0)`式の
+  暗黙0円フォールバック）の他箇所残存もなし。追加実装不要。
+
+#### 影響ファイル
+`common/sec_data/quarterly.py`・`common/sec_data/parser.py`
+（SOFI限定`ltdebt_concept`オーバーライド追加）・`common/sec_data/audit.py`
+（UP-C検知追加）・`BACKLOG.md`（ARCH-DATA-1記載の陳腐化3箇所訂正・
+TAG-DEFS-UNIFY-1クローズ）
+
+#### QUALITY-GATES-EPIC-1への反映
+Phase 3（ゲート0＋2）着手前提として本タスクを実施。Gate2本体
+（正規化契約の構造化・型によるフィールド規約のコード化）は未着手のまま、
+次回セッションでの設計セッション対象として残る。
+
+---
+
 ## 2026-07-12（完了）
 
 ### ✅ [HYPECORE-SAVE-INDEX-NAMEERROR-1] hypecore.pyのNameError緊急修正（本番障害・2026-07-12完了）

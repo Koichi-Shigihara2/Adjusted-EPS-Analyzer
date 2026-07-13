@@ -475,8 +475,18 @@ NVDA・AVGO・TSLA・LRCX・CPRT・CELH・KULR・RCAT・SPIR・WMT・SCCO（新�
 
 次はPhase 3（ゲート0＋2: 登録適格性の機械化・正規化契約の整備）。
 
+**Phase 3前提整理完了（2026-07-13）**: Gate2本体（正規化契約の構造化）着手前の
+小粒4項目（[[ARCH-DATA-1]]棚卸しで発見・[[ARCH-DATA-1-PREP-1]]として実施、
+完了・BACKLOG_DONE.md参照）を完了した。TAG-DEFS-UNIFY-1のクローズ判断・
+normalized JSON不足フィールド補完（SOFI-DATA-1のLTDebt恒久修正）・
+audit.py UP-C検知・バグA/Bのスコープ判断（既に解消済みと判明）のいずれも
+Gate2の設計自体を左右する新規発見はなく、Phase 3設計セッションの着手条件が
+整った。Gate2本体（型によるフィールド規約のコード化・出所/充足度メタデータ
+付与）は未着手のまま。
+
 #### 着手条件
-なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2は完了。Phase 2b-3以降は次回セッションで詳細設計を行う。
+なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 3前提整理は完了。
+Gate2本体の設計は次回セッションで行う。
 
 ---
 
@@ -516,16 +526,21 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
    フィールド網羅性向上）
 - 旧SECタグ・金融revenueタグ・非12月期等の吸収を正規化層に集約し、
   計算ロジックからデータ個性の処理を排除（PARSER-1で年度キー部分は対応済み）
-- normalized JSON に不足フィールド（ShortTermInvestments / 銀行移行後LTDebt 等）を補完
+- ~~normalized JSON に不足フィールド（ShortTermInvestments / 銀行移行後LTDebt 等）を補完~~
+  ✅ 2026-07-13再調査で判明・完了。詳細はBACKLOG_DONE.md
+  [ARCH-DATA-1-PREP-1] 参照（ShortTermInvestmentsは既に解消済みと確認、
+  銀行移行後LTDebtはSOFI-DATA-1として恒久修正）
 - ~~**年度判定の3箇所分散を単一関数に統合**~~ ✅ 2026-06-25完了
   （`common/sec_data/utils.py` に `determine_fiscal_year` を追加。parser.py・extract_key_facts.py・aggregate_annual の3箇所を統一）
-- **新規スコープ候補（2026-07-09追加）**: 上記3件と同時に発見された
-  バグA・B（_estimate_ttm_operating_income()等のフォールバック実装が、
-  GrossProfit/RD/SM等複数フィールドの期末日整合性を検証せず暗黙に
-  0円扱いしていた）は、SECデータ形の不均一性とは別種の技術的負債
-  （フォールバック実装時の防御的プログラミング不足）。ARCH-DATA-1の
-  正規化レイヤー強化と合わせて「フィールド間の期末日整合性を保証する
-  共通ユーティリティ」の新設を着手スコープに含めるか、ARCH-DATA-1着手時に判断する。
+- ~~**新規スコープ候補（2026-07-09追加）**: バグA・B（_estimate_ttm_operating_income()等の
+  フォールバック実装がGrossProfit/RD/SM等複数フィールドの期末日整合性を検証せず
+  暗黙に0円扱いしていた）~~ ✅ **既に解消済みと2026-07-13判明**。本追記の33分前、
+  同日2026-07-09 19:54のコミット`1a8f5253d`「Moat Scoreフォールバックの2件のバグを
+  修正（バグA・B）」で`_estimate_ttm_operating_income()`が`dict.get(end, 0)`の
+  暗黙0円フォールバックから、GrossProfit/RD/SM3フィールドの共通end日
+  （set intersection・4件未満ならNone）方式に修正済みだった。本追記時点で
+  未反映のまま「新規スコープ候補」として残置されていた記録上の陳腐化。
+  同種パターンの他箇所残存なし（grep確認済み）。
 
 #### 着手条件（成立・2026-07-09）
 2026-07-09の新規5銘柄登録（RMBS/ENTG/TER/KLAC/LRCX）で
@@ -543,9 +558,14 @@ report_consistency_check.py・pipeline.py双方の別々の箇所で同種の
 個別バグの掃討が一段落してから、ではなく、**次にデータ形起因バグが
 発生した時点で着手する**（先送りを重ねるほど一本化コストが増えるため）。
 
-**audit.py に追加すべき項目（SECデータ取得層・一部着手済み）:**
-- ✅ yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力（2026-06-15 実装）
-- 10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示（未着手）
+**audit.py に追加すべき項目（SECデータ取得層）:**
+- ~~yfinance株式数とSEC株式数の乖離が5倍以上の銘柄を WARNING 出力（2026-06-15 実装）~~
+  **記録訂正（2026-07-13）**: audit.pyに実装されているのはAUDIT-SHARES-1
+  （EPS Analyzer quarterly.json vs latest.json/DCFの希薄化株数比較、5倍閾値）で
+  あり、「yfinance株式数 vs SEC株式数」の比較ではなかった。該当する
+  yfinance-vs-SEC比較の実装は現状存在しない（本項目は元々の記述が誤りだった）。
+- ~~10-Qに株式数タグが存在しない銘柄（UP-C構造等）を一覧表示~~ ✅ 2026-07-13完了。
+  詳細はBACKLOG_DONE.md [ARCH-DATA-1-PREP-1] 参照
 
 **着手条件に該当する新規事例（2026-07-10追記）:** [[SEC-TAG-FICO-CPRT-1]]
 （完了・BACKLOG_DONE.md参照。FICO・CPRTの2020→2021年次売上高の不自然な
@@ -954,71 +974,6 @@ catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDU
 
 ---
 
-### [TAG-DEFS-UNIFY-1] quarterly.py/parser.pyのタグ候補リスト未統合フィールドの整理
-**優先度:** 中
-**分類:** アーキテクチャ / SECデータ取得層
-**登録日:** 2026-07-12
-**発見:** [[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）Phase 2a実装時
-
-#### 背景
-Phase 2aで`common/sec_data/tag_definitions.py`を新設し、quarterly.py（四半期/TTM側）と
-parser.py（年次側）で独立管理されていたタグ候補リストのうち、優先順位・候補集合が
-完全一致または一方が他方の厳密な上位集合になっている9概念（CapEx・FinanceLeasePmts・
-SBC・GrossProfit・NetIncome・Cash・RD・Buyback・OCF）を統合した。
-
-一方、以下5フィールドは優先順位・候補集合が構造的に異なり、無条件でのマージは
-既存の修正済みバグ・設計判断を壊すリスクがあるため意図的に統合対象外とした：
-
-- **LTDebt/long_term_debt**: 優先タグの順序がquarterly.pyとparser.pyで逆
-  （parser.pyはBUG-NETDEBT-2対策でLongTermDebtNoncurrentを意図的に最優先。
-  quarterly.pyはLongTermDebtが優先）
-- **SM/selling_and_marketing**: quarterly.pyはSGA全体（SellingGeneralAndAdministrativeExpense等）
-  への最終フォールバックを持つが、parser.pyはSGAを`sga_gap_warning`専用に意図的に分離している
-- **DA/depreciation_and_amortization**: primaryタグの優先順序が逆
-  （quarterly.pyはDepreciationDepletionAndAmortization優先・単一タグのみ、
-  parser.pyはDepreciationAndAmortization優先・4タグ＋merge_all_tags=True）で
-  挙動が根本的に異なる
-- **RPO/rpo**: quarterly.pyはContractWithCustomerLiabilityNoncurrent/
-  DeferredRevenueNoncurrent（noncurrent限定）、parser.pyはContractWithCustomerLiability/
-  DeferredRevenue（current/noncurrent区分なし）と、単純な合算が概念的に不正確になりうる
-- **Revenue/revenue**: ティッカー別revenue_conceptオーバーライド（SOFI/IONQ等）と
-  merge_all_tagsの相互作用が複雑。parser.py側に quarterly.py の`_REVENUE_FALLBACKS`
-  にない候補タグ`RevenueFromContractWithCustomer`（Excluding/IncludingAssessedTax
-  接尾辞なし）が1件存在することを確認済み（低リスクな拡張余地だが未着手）
-
-#### 対応方針
-各フィールドごとに、優先順位・候補集合の相違が意図的な設計判断か歴史的な放置かを
-個別に精査した上で、統合可否・統合する場合の優先順位を判断する。LTDebt・SMは
-既存の修正済みバグ（BUG-NETDEBT-2・SGA/SM分離）の経緯を熟読してから着手すること。
-
-#### 状況更新（2026-07-12・SEC-TAG-FICO-CPRT-1実装依頼前の網羅調査時）
-Revenueで発見された「同一end_dateに複数タグが競合した際の早い者勝ち」バグ
-（[[SEC-TAG-FICO-CPRT-1]]、完了・BACKLOG_DONE.md参照）を踏まえ、LTDebt・RPOに
-同型の問題が潜んでいないかcompany_facts.jsonベースで機械調査した。
-
-結論: **LTDebt・RPOは構造的にこの種のバグの対象外**と確認した。revenue/SM/DAは
-「期間（duration）」を持つフロー概念のため、91日間の四半期データが365日間の
-年次データを装って混入しうるが、LTDebt・RPOはいずれも貸借対照表の**時点データ
-（point-in-time）**であり、そもそも「期間の長さ」という混入経路が存在しない。
-実際に検出された多数の「衝突」（LTDebt 20件・RPO 132件）は全て、意図的に
-スコープが異なる別概念の比較だった（例: LTDebtの`LongTermDebtNoncurrent`
-（非流動部分のみ）vs `LongTermDebt`（流動+非流動合計）は、まさにBUG-NETDEBT-2
-で意図的に設計された優先順位そのもの）。
-
-**LTDebt・RPOについては本タスクのスコープから除外し、対応不要としてクローズする
-方向が妥当と考えられるが、最終判断は次回セッションで行う（今回は判断・変更しない）。**
-残るSM・DAは、SEC-TAG-FICO-CPRT-1実装時に同様の機械調査を行い、実害0件
-（同一end_date競合による誤混入は1件も確認されず）と確認済み。revenue自体は
-SEC-TAG-FICO-CPRT-1で対応完了（`_extract_values_merged()`にduration優先の
-tie-break追加。SM/DAにも同一ロジックが適用され、今回の調査で回帰なしを確認済み）。
-残る論点は「Revenue/revenueのティッカー別オーバーライドとmerge_all_tagsの相互作用」
-のみとなり、範囲は当初の5フィールドから大幅に縮小している。
-
-#### 着手条件
-なし（LTDebt・RPOのクローズ判断とrevenueの残論点の扱いは次回以降のセッションで判断）
-
----
-
 ### [SPLIT-REALTIME-GAP-1] 分割直後〜翌年10-K再掲までの期間はfact競合ロジックでも是正できない
 **優先度:** 低〜中
 **分類:** データ品質 / EPS ANALYZER
@@ -1109,8 +1064,8 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
   適切な閾値・重要度（NG/WARN）を再検討する必要がある（成長率の高いフィールドほど
   正当な急変が起きやすいため、一律の閾値では機能しない可能性がある）
 - 展開する場合の対象フィールド候補: CapEx・NetIncome・GrossProfit・SBC等
-  （TAG-DEFS-UNIFY-1で統合済みの9概念、LTDebt・RPOは時点データのため対象外
-  ＜TAG-DEFS-UNIFY-1参照＞）
+  （[[TAG-DEFS-UNIFY-1]]（完了・BACKLOG_DONE.md参照）で統合済みの9概念、
+  LTDebt・RPOは時点データのため対象外）
 
 #### 着手条件
 なし（優先度含め次回以降のセッションで判断）
