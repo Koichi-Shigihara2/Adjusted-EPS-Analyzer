@@ -4,6 +4,52 @@
 
 ## 2026-07-13（完了）
 
+### ✅ [WARN12-COHR-ONDS-1] COHR・ONDSのCash-STI期ズレWARN解消（2026-07-13完了・原因はコードバグではなく生成順序のズレ）
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-12
+**完了日:** 2026-07-13
+**発見:** [[HYPECORE-ZS-EPS-STALE-1]]完了検証時（`report_consistency_check.py`実行）
+
+#### 根本原因（実態調査で判明）
+fact競合型のバグ（SEC-TAG-FICO-CPRT-1・Phase 2a等）ではなく、**SEC自動更新と
+TANUKI VALUATION再生成の生成順序のズレ**だった。
+
+| コミット | 内容 | JST時刻 |
+|---|---|---|
+| `54bacca72` | TANUKI VALUATION全銘柄再生成（latest.json生成） | 2026-07-12 01:52:42 |
+| `b6abc0a2a` | SEC Data自動更新（COHR/ONDSのSTIが825M/448Mに更新） | 2026-07-12 21:45:35 |
+
+latest.jsonはSEC自動更新の約20時間前に生成されており、その時点の
+quarterly_*.jsonにはまだ現在の短期投資額が反映されていなかった。
+pipeline.py側の`_q_st_invest_override`ロジック自体は正しく動作しており、
+コード修正は不要と判断。COHR・ONDSともannual_2025.jsonに
+`short_term_investments`キーが存在しないことから、両銘柄とも直近の四半期
+（COHR 2026Q3・ONDS 2026Q1）で初めて短期投資を保有し始めたとみられる
+（実際の事業変化、タグ誤りではない）。
+
+#### 対応
+`pipeline.py COHR ONDS --skip-risk`を再実行。
+- COHR: `short_term_investments` 0.0 → 825,000,000（net_debt 1,601,051,000 →
+  776,051,000、intrinsic_value_per_share $32.38 → $36.59）
+- ONDS: `short_term_investments` 0.0 → 447,842,000（net_debt -1,024,203,000 →
+  -1,472,045,000、intrinsic_value_per_share $2.23 → $3.01）
+- Classificationはいずれも変化なし
+
+#### 検証
+- `report_consistency_check.py`: WARN-12がCOHR/ONDS双方で解消、
+  未確認WARN 2件→0件（総WARN数39→37件）、NG=0維持
+- pytest 309 passed / 2 known failed（既知のみ、新規回帰なし）
+
+#### 副次発見: 構造的ギャップ
+根本原因調査の過程で、SEC_Data_Update.yml（日曜21:00 JST）と
+TANUKI_VALUATION_Update.yml（平日23:05 JST）の間に自動連携がなく、
+`config/workflow_dependencies.json`が定義する論理的依存関係が実際の
+GitHub Actionsトリガーとして実装されていないことが判明。日曜〜月曜の
+約26時間、同種のズレが構造的・恒常的に発生しうる。[[WORKFLOW-SEC-TANUKI-GAP-1]]
+として優先度：中で新規登録（実装は次回セッション判断）。
+
+---
+
 ### ✅ [ASTS-SHARES-OSCILLATION-1] diluted_shares_used往復変動の恒久修正（2026-07-13完了・影響範囲がASTS/AVAV/RCATの3銘柄に拡大確認）
 **分類:** バグ修正 / EPS ANALYZER
 **登録日:** 2026-07-12

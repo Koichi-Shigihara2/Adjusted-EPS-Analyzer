@@ -957,6 +957,45 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 
 ## 優先度：中（こなれてきたら対応）
 
+### [WORKFLOW-SEC-TANUKI-GAP-1] SEC_Data_UpdateとTANUKI_VALUATION_Updateの自動連携欠如
+**優先度:** 中
+**分類:** アーキテクチャ / GitHub Actions / 品質管理
+**登録日:** 2026-07-13
+**発見:** [[WARN12-COHR-ONDS-1]]実態調査時
+
+#### 背景
+`config/workflow_dependencies.json`は`TANUKI_VALUATION_Update`が
+`SEC_Data_Update`に（HypeCore_Update/Adjusted_EPS_Update/Stonks_Silo_Update
+経由で）依存すると論理的に定義しているが、これは実際のGitHub Actions
+ワークフロートリガーとしては実装されていない（`workflow_run`等の連携なし。
+admin.htmlの手動一括更新ボタン用のメタデータに留まる）。
+
+実際のcronスケジュールは完全に独立している：
+- `SEC_Data_Update.yml`: 毎週**日曜12:00 UTC**（=JST21:00）
+- `TANUKI_VALUATION_Update.yml`: **平日**（月〜金）JST23:05のみ
+
+このため、日曜のSEC自動更新完了から次のTANUKI VALUATION自動更新
+（月曜23:05）までの**約26時間、SECデータは最新だがTANUKI VALUATIONの
+latest.json/report.txtは陳腐化したまま**という状態が構造的・恒常的に
+毎週発生しうる。[[WARN12-COHR-ONDS-1]]（COHR/ONDSのCash-STI期ズレ）は
+この構造的ギャップが2026-07-12に顕在化した実例（コード修正ではなく
+pipeline.py再実行のみで解消した）。
+
+#### 対応方針（未確定・次回セッションで判断）
+- 案①: `SEC_Data_Update`完了後に`TANUKI_VALUATION_Update`（および
+  HypeCore_Update/Adjusted_EPS_Update/Stonks_Silo_Update）を`workflow_run`
+  トリガーで自動連鎖させ、`config/workflow_dependencies.json`が定義する
+  論理的依存関係を実際のCI構成に反映する
+- 案②: 許容運用として現状維持する（日曜〜月曜のズレは
+  report_consistency_check.pyのWARN検知で拾えており、実害は小さいため）
+- 案①を採用する場合、既存の個別cronスケジュール（HypeCore週次・
+  EPS Analyzer等）との統合方法・実行時間帯の見直しが必要になる可能性がある
+
+#### 着手条件
+なし（次回セッションで方針判断してから着手）
+
+---
+
 ### [EPS-UPC-PREREORG-1] Up-C構造・組織再編前四半期のAdjusted EPS計算への算入方針
 **優先度:** 中
 **分類:** データ品質 / EPS ANALYZER / 設計方針
@@ -1297,27 +1336,6 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [WARN12-COHR-ONDS-1] SEC自動更新後にCOHR・ONDSでCash-STI期ズレの新規WARN検出
-**優先度:** 低
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-12
-**発見:** [[HYPECORE-ZS-EPS-STALE-1]]完了検証時（`report_consistency_check.py`実行）
-
-#### 問題
-GitHub Actionsの自動SEC更新（コミット`b6abc0a2a`）後、COHR
-（Cash=1593M(2026Q3) vs ST_Invest=0M(年次2025)、正=825M）・ONDS
-（Cash=1026M(2026Q1) vs ST_Invest=0M(年次2025)、正=448M）で
-`WARN-12 Cash-STI期ズレ`が新規発生（未確認扱い）。今回のタスクとは無関係の
-発見のため未対応。
-
-#### 対応方針
-一次情報（10-Q）でCash・ST_Investの正しい組み合わせを確認し、
-`config/warn_acknowledged.json`への登録要否を判断する。
-
-#### 着手条件
-なし（次回セッションで判断）
-
----
 
 ### [CIK-ORPHAN-FLAGS-1] BX・ENBが全システムフラグfalseの孤立エントリ
 **優先度:** 低〜中（BX分は解消済み・残るはENBのみ）
