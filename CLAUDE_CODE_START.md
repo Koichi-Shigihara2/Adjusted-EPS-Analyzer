@@ -148,6 +148,24 @@ cik_lookup.csvの4フラグのいずれかで対象銘柄を絞り込むスク�
   最初から`_filter_<flag>_tickers(target, allowed_tickers)`パターン
   （範囲外を警告・除外して返す）を実装すること。
 
+**CIによる機械的検知（TICKER-DIRECT-ACCESS-GUARD-1、2026-07-13新設）:**
+上記の「cik_lookup.csvを独自に読み込む・`os.listdir()`でディレクトリを
+直接スキャンする」の禁止事項は、`tests/test_no_direct_ticker_access.py`が
+AST解析で機械的に検知する（pytest実行時に自動でチェックされる）。
+新規スクリプトがcik_lookup.csvを`csv.DictReader`で直接パースする、または
+SEC/TANUKI VALUATION/HypeCore/EPS ANALYZERのルートデータディレクトリを
+`os.listdir()`で直接スキャンすると、このテストが失敗する。
+- 銘柄フラグに基づくバッチ処理対象リストの構築が目的ならテスト失敗を
+  「直せ」のサインとして受け取り、`tickers.py`経由に修正する
+- 単一ティッカーのCIK参照等、正当な理由がある場合のみ、同ファイル内の
+  許可リスト（`_CIK_LOOKUP_DIRECT_PARSE_ALLOWED` /
+  `_ROOT_DIR_LISTDIR_ALLOWED`）に追加する（機械的検知を逃れる目的での
+  安易な追加は禁止。追加時は必ずコメントで用途を明記する）
+- 本ガードは「CLI引数のフラグ検証漏れ」（上記`_filter_<flag>_tickers`
+  パターンの欠如）そのものは検知できない（あくまでアクセス経路の独立実装を
+  検知するもの）。CLI引数フラグ検証の実装は引き続き上記の手動チェックリストに
+  従うこと
+
 ### コミットルール
 git add [変更ファイル]
 git commit -m "feat/fix/docs: 変更内容の説明"

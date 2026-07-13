@@ -31,8 +31,11 @@ _REPO_ROOT = os.path.dirname(_SRC_DIR)                     # repo root
 _CALC_DIR  = os.path.join(_SRC_DIR, "value", "tanuki_valuation", "calculator")
 if _CALC_DIR not in sys.path:
     sys.path.insert(0, _CALC_DIR)
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 from future_values import calculate_future_values          # noqa: E402
+from common.sec_data import tickers as _tickers_mod         # noqa: E402
 
 # ── パス定数 ──────────────────────────────────────────────────────
 REVIEWS_DIR   = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "reviews")
@@ -289,11 +292,18 @@ def main() -> None:
     if args.ticker:
         tickers = args.ticker
     else:
-        # VALUATION_DIR 配下のディレクトリをすべて対象とする
+        # VALUATION_DIR 配下のディレクトリのうち、tanuki=true の銘柄のみを対象とする
+        # （TICKER-DIRECT-ACCESS-GUARD-1で発見: 以前はos.listdir(VALUATION_DIR)で
+        #  tanukiフラグを見ずディレクトリ実在だけでスキャン対象を決めており、
+        #  tanuki=false化済み銘柄もVALUATION_DIRにディレクトリが残存していれば
+        #  無条件に処理してしまう構造だった。tickers.get_tanuki_tickers()との
+        #  積集合に限定する。GitHub Actionsワークフローは常に--ticker明示指定の
+        #  ため実害はなかったが、手動での引数なし実行時の潜在リスクを解消する）
         if os.path.exists(VALUATION_DIR):
+            tanuki_set = set(_tickers_mod.get_tanuki_tickers())
             tickers = sorted(
                 d for d in os.listdir(VALUATION_DIR)
-                if os.path.isdir(os.path.join(VALUATION_DIR, d))
+                if os.path.isdir(os.path.join(VALUATION_DIR, d)) and d in tanuki_set
             )
         else:
             print(f"[WARN] VALUATION_DIR 未発見: {VALUATION_DIR}")
