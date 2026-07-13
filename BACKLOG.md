@@ -484,9 +484,57 @@ Gate2の設計自体を左右する新規発見はなく、Phase 3設計セッ�
 整った。Gate2本体（型によるフィールド規約のコード化・出所/充足度メタデータ
 付与）は未着手のまま。
 
+**Phase 3a完了（2026-07-13）**: Gate2本体の第一段階として、JSON on-disk形式を
+変えずに読み込み直後・書き込み直前でバリデーションする薄い型層
+`common/sec_data/contracts.py` を新設した。対象は規約A（fcf_listの新しい順規約）・
+規約B（quarterly.py標準エントリ形状）・規約③（出所・充足度メタデータ）の3点。
+規約C（フィールド分類の二重管理）・規約D（enum風文字列の型化）と、4ファイル
+（financial_trend_calculator.py・quarterly_review_generator.py・tail_dcf_bridge.py・
+hypecore.py）のreader.py経由統合はPhase 3bとして分離登録（[[GATE2-PHASE3B-1]]参照）。
+
+- `FinancialEntry`/`EntryProvenance`: quarterly.py::save_raw_table()・
+  normalizer.py::save_normalized()のjson.dump()直前に検証を追加（検証のみ、
+  保存対象データ自体は変更しないためJSON on-disk形式は不変）。あわせて
+  `_select_best_candidate()`のフォールバック採用時・SOFI等のticker_restrictions
+  オーバーライド採用時に`_provenance.source_tag`を付与するよう配線し、
+  「なぜこの値が採用されたか」を出力JSONから追跡可能にした（全105銘柄で
+  114件のフィールド×銘柄組み合わせに付与されることを確認）。SOFI-DATA-1の
+  ような手動パッチが自動再生成で静かに巻き戻る事態の再発防止に直結する。
+- `FCFSeries`: data_fetcher.py::TTMReader.get_fcf_series()内でのみ使用し、
+  新しい順（降順）規約をconstruction時に検証する。JSONシリアライズ不可能な
+  ため呼び出し境界で`.as_list()`により素のlist[float]へ変換して返す（戻り値の
+  型・下流5+消費者への影響は変えない設計判断）。
+- 検証: 全105銘柄の既存company_facts.jsonを用い、新旧コード（git stash）で
+  build_raw_table()/normalize()の出力を`_provenance`除外で直接比較した結果、
+  **値の差分は0件**（純粋な追加的変更であることを確認）。pytest 302 passed/
+  2 known failed（既存4テストファイルのうち、正規表現importの都合で
+  test_normalizer.pyのimport文をパッケージ経由に変更、_select_best_candidate()の
+  戻り値がタプル化したことに伴いtest_tag_fallback_selection.pyの3箇所を
+  タプルアンパックに変更、test_pipeline_logic.pyの1テストを新しい順序規約に
+  合わせて仕様変更〈混在順序のTTM seriesを与えた場合、旧実装は誤った順序の
+  まま`get_fcf_series()`が返していたが、新実装は安全側でNoneを返すよう変更〉）。
+  新規`tests/test_contracts.py`を追加（26件、GROWTH-CAGR-SIGN-1相当の順序違反を
+  意図的に発生させ`ContractViolation`が送出されることを確認するテストを含む）。
+  `report_consistency_check.py` NG=0。
+
+**規約A（fcf_list順序）の限界（次回セッションへの申し送り）**: `FCFSeries`は
+「construction時に渡されたデータの順序」を検証するものであり、GROWTH-CAGR-SIGN-1の
+実際のバグ（`calculate_fcf_cagr()`内部で`start_value`/`end_value`という変数への
+割り当てを取り違えた、渡されたデータ自体は正しい順序だった）を直接再現・検知する
+ものではない。`.newest`/`.oldest`という named accessor の提供によって「正しい
+使い方を選びやすくする」ことが主眼であり、growth.py側がこれらのaccessorを実際に
+採用するかはGate3（計算式検証）の範疇として別途判断が必要（今回は未着手）。
+
+**規約A（reader.py::get_fcf_list()）の未カバー範囲**: 年次ベースのfcf_list
+（`reader.py::get_fcf_list()`が生成、TTM系列が使えない銘柄のフォールバック経路）は
+生成時点で既に日付情報が失われているため、`FCFSeries`の順序検証を今回は
+適用できていない。reader.pyはPhase 3aの対象ファイル外（当初スコープの
+normalizer.py/quarterly.py/data_fetcher.pyに含まれない）のため、対応要否は
+次回セッションで判断する（[[GATE2-READER-FCFLIST-1]]として新規登録）。
+
 #### 着手条件
-なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 3前提整理は完了。
-Gate2本体の設計は次回セッションで行う。
+なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 3前提整理・Phase 3aは完了。
+Phase 3b（4ファイル統合・規約C/D）は次回セッションで設計・着手する。
 
 ---
 
@@ -888,6 +936,84 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [GATE2-PHASE3B-1] Gate2 Phase 3b: 独立実装4ファイルのreader.py統合・規約C/Dの型化
+**優先度:** 中
+**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
+**登録日:** 2026-07-13
+**発見:** Gate2設計材料収集調査（①〜④）・Phase 3a実装時
+
+#### 背景
+Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型導入・完了）の
+スコープ外として意図的に見送られた。
+
+**① 独立実装4ファイルのreader.py統合**: `financial_trend_calculator.py`
+（STONKS SILO）・`quarterly_review_generator.py`（TAIL）・`tail_dcf_bridge.py`
+（TAIL）・`hypecore.py`が、共有アクセサ（reader.py/TTMReader）を経由せず
+「is_annual=False かつ is_ytd=False の最新エントリを取る」ロジックをそれぞれ
+独立に再実装している（`_latest_q()`・`_lq()`等、名前も実装も微妙に異なる）。
+型を導入しても、この4ファイルが辞書アクセス前提のままでは規約C/Dの効果が
+及ばない。
+
+**② 規約C（フィールド分類の二重管理）**: `ttm_calculator.py`の
+`FLOW_FIELDS`/`STOCK_FIELDS`/`SHARES_FIELDS`が`quarterly.py::FIELD_CONCEPTS`とは
+別ファイルで独立管理されており、新フィールド追加時にいずれかへの追加を
+忘れてもエラーにならず黙って出力から消える。実例として`CurrentAssets`/
+`CurrentLiabilities`（quarterly.pyでは「シガーバット検出用」とコメントされて
+いる）が、現在これを消費するコードが皆無であることを確認済み（抽出されて
+いるがTTM層で分類漏れのまま出力対象外になっている状態）。
+
+**③ 規約D（enum風文字列の型化）**: `growth_sanity.py`の`verdict`
+（PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）・`pipeline.py`の`Classification`
+（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）はいずれも生文字列の代入
+（例: `verdict = "PLAUSIBLE"`）。タイプミスがあっても実行時エラーにならず、
+静かに「未知の分類」として扱われる。
+
+#### 対応方針（未確定・次回セッションで判断）
+- ①はttm_calculator.py（Phase 3aでは対象外だったファイル）を巻き込む改修に
+  なるため、規模を見積もった上で着手要否を判断する
+- ②③はPhase 3aで新設した`common/sec_data/contracts.py`に型を追加する形で
+  実装できる見込みだが、`growth_sanity.py`/`pipeline.py`側の代入箇所を
+  型に置き換える改修が伴うため影響範囲の洗い出しが必要
+
+#### 着手条件
+なし（次回セッションで規模見積もり・優先順位判断してから着手）
+
+---
+
+### [GATE2-READER-FCFLIST-1] reader.py::get_fcf_list()のfcf_list順序規約が未検証のまま残存
+**優先度:** 中
+**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
+**登録日:** 2026-07-13
+**発見:** Gate2 Phase 3a実装時
+
+#### 背景
+Phase 3aで新設した`FCFSeries`（fcf_listの新しい順規約をconstruction時に検証する
+ラッパー）は、`data_fetcher.py::TTMReader.get_fcf_series()`（TTM系列ベースの
+fcf_list生成箇所）にのみ適用した。もう一方のfcf_list生成経路である
+`common/sec_data/reader.py::get_fcf_list()`（年次実績ベース、TTM系列が使えない
+銘柄・TTM点数不足銘柄のフォールバックとして`_select_fcf_source()`経由で
+採用されうる）は、`get_annual_range()`が返す年次データから`free_cash_flow`の
+値だけを抽出して素の`List[float]`として返しており、抽出した時点で各値の
+年度・end日情報が失われるため、Phase 3aのスコープ（normalizer.py/
+quarterly.py/data_fetcher.py）のままでは順序検証を後付けできない。
+
+現状、`get_annual_range()`はファイル名の降順ソート（`annual_2025.json`→
+`annual_2024.json`→...）に依存して新しい順を実現しており、この規約自体も
+型で保証されていない。
+
+#### 対応方針（未確定・次回セッションで判断）
+- `get_fcf_list()`自体を対象ファイルに含め、`get_annual_range()`が返す
+  年次データの`period`（年度）情報を保持したまま`FCFSeries`を構築するよう
+  改修する
+- reader.pyはPhase 3aの当初スコープに含まれていなかったため、他の
+  reader.pyメソッド（get_roe_avg_detail等）への影響有無も含めて次回
+  セッションで規模を見積もる
+
+#### 着手条件
+なし（次回セッションで規模見積もり・優先順位判断してから着手）
+
+---
 
 ### [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化
 **優先度:** 中（要判断・緊急ではないが影響範囲は広い）
