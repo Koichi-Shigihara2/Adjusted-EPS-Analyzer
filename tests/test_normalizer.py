@@ -14,15 +14,11 @@ BUG-CON-YTD-3: AMZN等で発生した2つの回帰バグの再発防止テスト
     python -m pytest tests/test_normalizer.py -v
 """
 
-import sys
-import os
-
-_SEC_DATA_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "common", "sec_data")
-)
-sys.path.insert(0, _SEC_DATA_DIR)
-
-from normalizer import (  # noqa: E402
+# QUALITY-GATES-EPIC-1 Phase 3a: normalizer.pyがcontracts.pyを相対importする
+# ようになったため、sys.pathハックによる単独モジュールimportは使えなくなった
+# （相対importはパッケージ経由でロードされた場合のみ機能する）。
+# パッケージ経由のimportに変更。
+from common.sec_data.normalizer import (
     _calc_gross_profit,
     _build_missing_quarter_implied_entries,
     _build_q4_implied_entries,

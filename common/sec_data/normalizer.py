@@ -10,6 +10,8 @@ import os
 from collections import defaultdict
 from datetime import datetime
 
+from .contracts import validate_fields
+
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
@@ -485,7 +487,14 @@ def _calc_gross_profit(fields: dict) -> dict:
 
 
 def save_normalized(ticker: str, normalized: dict) -> str:
-    """normalized dataをJSONファイルに保存し、パスを返す"""
+    """normalized dataをJSONファイルに保存し、パスを返す
+
+    QUALITY-GATES-EPIC-1 Phase 3a: json.dump()直前に規約B（標準エントリ形状）を
+    検証する。検証結果のオブジェクトは破棄し、保存対象データ自体は変更しない。
+    違反時はContractViolation（ValueErrorのサブクラス）を送出し、呼び出し元
+    （update.py）の既存のper-ticker try/except Exceptionで捕捉・スキップされる。
+    """
+    validate_fields(normalized.get("fields", {}))
     os.makedirs(NORMALIZED_DIR, exist_ok=True)
     path = os.path.join(NORMALIZED_DIR, f"{ticker.upper()}_quarterly_normalized.json")
     with open(path, "w", encoding="utf-8") as f:

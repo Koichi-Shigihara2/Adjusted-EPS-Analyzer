@@ -57,12 +57,13 @@ def test_select_best_candidate_prefers_freshest_end_over_first_match():
             ]}},
         }}
     }
-    result = _select_best_candidate(
+    result, source_tag = _select_best_candidate(
         company_facts, "USD", "PRIMARY_MISSING", [],
         ("STALE_TAG", "FRESH_TAG"), min_count=4,
     )
     ends = sorted(e["end"] for e in result)
     assert ends[-1] == "2026-03-31", f"最新end日が新しい候補(FRESH_TAG)を採用すべき: {ends}"
+    assert source_tag == "FRESH_TAG", "採用概念名(source_tag)がFRESH_TAGであるべき"
 
 
 def test_select_best_candidate_falls_back_to_most_count_when_none_qualify():
@@ -78,11 +79,12 @@ def test_select_best_candidate_falls_back_to_most_count_when_none_qualify():
             ]}},
         }}
     }
-    result = _select_best_candidate(
+    result, source_tag = _select_best_candidate(
         company_facts, "USD", "PRIMARY_MISSING", [],
         ("SPARSE_A", "SPARSE_B"), min_count=4,
     )
     assert len(result) == 2, "件数がより多い候補(SPARSE_B)を採用すべき"
+    assert source_tag == "SPARSE_B"
 
 
 def test_select_best_candidate_ties_prefer_priority_order():
@@ -103,11 +105,12 @@ def test_select_best_candidate_ties_prefer_priority_order():
         {"end": "2025-09-30", "val": 102, "is_annual": False},
         {"end": "2025-12-31", "val": 103, "is_annual": False},
     ]
-    result = _select_best_candidate(
+    result, source_tag = _select_best_candidate(
         company_facts, "USD", "PRIMARY_TAG", primary_processed,
         ("SECOND_TAG",), min_count=4,
     )
     assert result is primary_processed, "同着の場合はprimaryを維持すべき"
+    assert source_tag is None, "primary採用時はsource_tagがNoneであるべき（provenance不要）"
 
 
 def test_build_raw_table_lly_capex_uses_new_tag():

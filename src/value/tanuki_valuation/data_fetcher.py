@@ -28,14 +28,20 @@ HAS_SEC = False
 SECReader = None
 repo_root: str | None = None
 
+# QUALITY-GATES-EPIC-1 Phase 3a: common/sec_data/contracts.py（正規化契約の型）。
+# reader.pyと同じsys.path解決に依存するためHAS_SECと同じtry/exceptブロックに同居させる。
+FCFSeries = None
+ContractViolation = None
+
 try:
     current_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.dirname(os.path.dirname(os.path.dirname(current_dir)))
-    
+
     if repo_root not in sys.path:
         sys.path.insert(0, repo_root)
-    
+
     from common.sec_data.reader import SECReader
+    from common.sec_data.contracts import FCFSeries, ContractViolation
     HAS_SEC = True
 except Exception:
     pass
@@ -48,6 +54,7 @@ if not HAS_SEC:
         if github_workspace and github_workspace not in sys.path:
             sys.path.insert(0, github_workspace)
         from common.sec_data.reader import SECReader
+        from common.sec_data.contracts import FCFSeries, ContractViolation
         HAS_SEC = True
     except Exception:
         pass
@@ -197,18 +204,36 @@ class TTMReader:
         全エントリに鮮度フィルタを適用すると正常な過去実績まで陳腐化扱いされ
         全銘柄でシリーズが1点以下に縮退してしまうため、「最新のはずのデータが
         実際には新しくない」ことだけを検知する目的でseries[0]限定とする。
+
+        QUALITY-GATES-EPIC-1 Phase 3a: 戻り値を組み立てる際、common.sec_data.contracts
+        の FCFSeries を経由させ、「新しい順（ttm_end降順）」規約を construction 時に
+        検証する（GROWTH-CAGR-SIGN-1のような順序取り違えバグの再発防止）。
+        FCFSeries自体はJSONシリアライズ不可能なため、検証のみに使い
+        .as_list() で素の list[float] に変換してから返す（戻り値の型・呼び出し元
+        への影響は変えない）。
         """
         if not self._series:
             return None
         if not _quarters_fresh(_freshest_end(self._series)):
             return None
-        vals = [
-            s["flow"]["FCF"]["val"]
-            for s in self._series
+        filtered = [
+            s for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
             and _quarters_complete(s.get("flow", {}), "OCF", "CapEx")
         ]
-        return vals if len(vals) >= 2 else None
+        if len(filtered) < 2:
+            return None
+        vals = [s["flow"]["FCF"]["val"] for s in filtered]
+        if FCFSeries is None:
+            # contracts.py未import環境（HAS_SEC=False）向けフォールバック。
+            # 通常の実行環境では発生しない。
+            return vals
+        try:
+            dates = [s["ttm_end"] for s in filtered]
+            return FCFSeries(vals, dates).as_list()
+        except ContractViolation as e:
+            logging.error("[%s] FCFSeries順序規約違反: %s", self.ticker, e)
+            return None
 
     def get_ttm_end(self) -> str | None:
         if self._series:

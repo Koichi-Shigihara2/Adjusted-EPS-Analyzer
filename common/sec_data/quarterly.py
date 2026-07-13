@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from .tag_definitions import TAG_CANDIDATES
+from .contracts import validate_fields
 
 logger = logging.getLogger(__name__)
 
@@ -215,6 +216,12 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
                 override_entries = _get_field_units(company_facts, ticker_revenue_concept, unit)
                 if override_entries:
                     entries = _process_entries(override_entries)
+                    # 規約③（出所メタデータ）: ticker_restrictionsによる明示オーバーライドは
+                    # 「なぜこの値か」が自明でないため_provenanceに記録する
+                    entries = [
+                        {**e, "_provenance": {"source_tag": ticker_revenue_concept}}
+                        for e in entries
+                    ]
                     logger.debug("[%s] Revenue override: %s (%d entries)",
                                  ticker, ticker_revenue_concept, len(entries))
                     fields[field_name] = entries
@@ -248,6 +255,12 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
                 override_entries = _get_field_units(company_facts, ticker_ltdebt_concept, unit)
                 if override_entries:
                     entries = _process_entries(override_entries)
+                    # 規約③（出所メタデータ）: SOFI-DATA-1のような明示オーバーライドは
+                    # 「なぜこの値か」が自明でないため_provenanceに記録する
+                    entries = [
+                        {**e, "_provenance": {"source_tag": ticker_ltdebt_concept}}
+                        for e in entries
+                    ]
                     logger.debug("[%s] LTDebt override: %s (%d entries)",
                                  ticker, ticker_ltdebt_concept, len(entries))
                     fields[field_name] = entries
@@ -277,10 +290,17 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
             q_count = sum(1 for e in processed if not e.get("is_annual"))
             use_min = field_name in _FALLBACK_MIN_FIELDS and q_count < _FALLBACK_MIN
             if not processed or use_min:
-                processed = _select_best_candidate(
+                processed, _source_tag = _select_best_candidate(
                     company_facts, unit, concept, processed,
                     _FIELD_FALLBACKS[field_name], _FALLBACK_MIN,
                 )
+                if _source_tag:
+                    # 規約③（出所メタデータ）: フォールバック候補が採用された場合のみ
+                    # 記録する（primary採用時は想定通りのためnoise回避で付与しない）
+                    processed = [
+                        {**e, "_provenance": {"source_tag": _source_tag}}
+                        for e in processed
+                    ]
                 logger.debug("[%s] %s fallback evaluated (best candidate selected)", ticker, field_name)
 
         fields[field_name] = processed
@@ -308,7 +328,7 @@ def _select_best_candidate(
     primary_processed: list,
     fallback_concepts: tuple[str, ...],
     min_count: int,
-) -> list:
+) -> tuple[list, str | None]:
     """primary概念＋フォールバック候補群の中から採用する候補を選ぶ。
 
     LLY-CAPEX-STALE-1 Phase 2a: 「候補タグ群の中で最初に条件（最小件数）を
@@ -321,22 +341,27 @@ def _select_best_candidate(
     ではなく「四半期の最新end日が最も新しいもの」を採用する。最小件数を
     満たす候補が皆無の場合のみ、従来どおり最多件数の候補を採用する。
     同着（end日・件数が同一）の場合は優先順位（primary→fallback_concepts順）を維持する。
+
+    戻り値: (選定されたエントリリスト, 採用概念名)。採用概念名はprimary_conceptが
+    選ばれた場合はNone（想定通りの経路のためprovenance記録不要）、フォールバック
+    概念が選ばれた場合はその概念名（QUALITY-GATES-EPIC-1 Phase 3a: 呼び出し元で
+    EntryProvenance.source_tagとして記録するため）。
     """
     def _stats(processed: list) -> tuple[int, str]:
         q_count = sum(1 for e in processed if not e.get("is_annual"))
         latest_end = max((e["end"] for e in processed), default="")
         return q_count, latest_end
 
-    candidates: list[tuple[list, int, str]] = []
+    candidates: list[tuple[list, int, str, str]] = []
     q0, end0 = _stats(primary_processed)
-    candidates.append((primary_processed, q0, end0))
+    candidates.append((primary_processed, q0, end0, primary_concept))
     for concept in fallback_concepts:
         fb_entries = _get_field_units(company_facts, concept, unit)
         if not fb_entries:
             continue
         fb_processed = _process_entries(fb_entries)
         q, end = _stats(fb_processed)
-        candidates.append((fb_processed, q, end))
+        candidates.append((fb_processed, q, end, concept))
 
     qualified = [c for c in candidates if c[1] >= min_count]
     if qualified:
@@ -345,7 +370,9 @@ def _select_best_candidate(
     else:
         # 最小件数を満たす候補が皆無 → 従来どおり最多件数優先（同点はend日→優先順位）
         best = max(candidates, key=lambda c: (c[1], c[2], -candidates.index(c)))
-    return best[0]
+    winning_concept = best[3]
+    source_tag = winning_concept if winning_concept != primary_concept else None
+    return best[0], source_tag
 
 
 def _select_best_filing(filings: list, end_date: str) -> dict | None:
@@ -472,7 +499,15 @@ def _process_entries(raw_entries: list) -> list:
 
 
 def save_raw_table(ticker: str, raw: dict) -> str:
-    """raw tableをJSONファイルに保存し、パスを返す"""
+    """raw tableをJSONファイルに保存し、パスを返す
+
+    QUALITY-GATES-EPIC-1 Phase 3a: json.dump()直前に規約B（標準エントリ形状）を
+    検証する。検証結果のオブジェクトは破棄し、保存対象データ自体は変更しない
+    （既存のJSON on-disk形式を一切変えないため）。違反時はContractViolation
+    （ValueErrorのサブクラス）を送出し、呼び出し元（update.py）の既存の
+    per-ticker try/except Exceptionで捕捉・スキップされる。
+    """
+    validate_fields(raw.get("fields", {}))
     os.makedirs(RAW_DIR, exist_ok=True)
     path = os.path.join(RAW_DIR, f"{ticker.upper()}_quarterly_raw.json")
     with open(path, "w", encoding="utf-8") as f:

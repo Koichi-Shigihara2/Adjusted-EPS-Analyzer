@@ -2999,15 +2999,31 @@ class TestTTMReaderQuartersCompleteness:
         reader = self._make_reader(series)
         assert reader.get_periods() == 2
 
-    def test_freshness_check_is_order_independent(self):
-        """最新エントリがseries[0]でなくても（順序が保証されなくても）
-        鮮度判定は正しく機能する（_freshest_end()がmax()で判定するため）"""
+    def test_freshness_gate_uses_max_not_position_zero(self):
+        """鮮度判定自体（_freshest_end()）はmax()で決まるためseries[0]の位置に
+        依存しない。ただしQUALITY-GATES-EPIC-1 Phase 3a導入前は、鮮度判定を
+        通過しさえすれば混在順序（descendingでない）のseriesもget_fcf_series()が
+        そのまま返していた（このテストの旧版は[90.0, 100.0]を期待していた）。
+        FCFSeries導入後は、fcf_listの「新しい順」規約自体をconstruction時に
+        検証するため、混在順序のseriesはget_fcf_series()の時点でNone（安全側）
+        を返すよう仕様変更した（GROWTH-CAGR-SIGN-1のような順序取り違えバグが
+        下流〈growth.py等〉に伝播する前に、生成源で弾く）。"""
         series = [
             _make_ttm_entry(_rel_date(455), fcf_val=90.0),
             _make_ttm_entry(_rel_date(90), fcf_val=100.0),
         ]
         reader = self._make_reader(series)
-        assert reader.get_fcf_series() == [90.0, 100.0]
+        assert reader.get_fcf_series() is None
+
+    def test_properly_ordered_series_with_freshest_not_needing_reorder(self):
+        """正しく新しい順（descending）に並んだseriesは従来通り採用される
+        （鮮度判定・順序検証のいずれも通過する通常ケース）"""
+        series = [
+            _make_ttm_entry(_rel_date(90), fcf_val=100.0),
+            _make_ttm_entry(_rel_date(455), fcf_val=90.0),
+        ]
+        reader = self._make_reader(series)
+        assert reader.get_fcf_series() == [100.0, 90.0]
 
 
 class TestBuildRiceAnnualShapeQuartersCompleteness:
