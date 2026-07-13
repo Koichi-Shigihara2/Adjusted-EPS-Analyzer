@@ -4,6 +4,118 @@
 
 ## 2026-07-13（完了）
 
+### ✅ [TICKER-DIRECT-ACCESS-GUARD-1] 銘柄フラグ・SECデータ直接参照の機械的検知（CIガード新設）（2026-07-13完了）
+**分類:** アーキテクチャ / 予防的品質ゲート（QUALITY-GATES-EPIC-1関連）
+**登録日:** 2026-07-13
+**完了日:** 2026-07-13
+**発見:** FLAG-CONSUMER-AUDIT-2/3で発見した7箇所の独立実装の根本原因分析
+
+#### 背景
+FLAG-CONSUMER-AUDIT-2/3で発見した7箇所の独立実装（「共有アクセサ経由で
+銘柄リストを取得する」規約の違反）は、規約がCLAUDE_CODE_START.mdという
+ドキュメントのみに存在し、CIによる機械的強制がなかったことが根本原因。
+新規スクリプト追加のたびに同種の問題が再発するリスクが高いため、
+pytestレベルでの検知ガードを新設した。
+
+#### 実装内容
+`tests/test_no_direct_ticker_access.py`を新設。2パターンを検知する：
+- **①cik_lookup.csv直接パース**: `csv.DictReader`で直接パースしている
+  箇所をAST解析で検出
+- **②ルートデータディレクトリの`os.listdir()`直接スキャン**: SEC/
+  TANUKI VALUATION/HypeCore/EPS ANALYZERの「全ティッカーのサブ
+  ディレクトリを含むルートディレクトリ」への`os.listdir()`を、
+  `os.path.join(...)`の末尾引数がリテラル`"data"`（それ以降に
+  追加の位置引数がない＝ティッカー名等が続かない）というパターンで
+  AST解析により検出
+
+いずれも許可リスト方式（ファイル単位）。単一ティッカーのCIK参照・
+既知ティッカーのサブディレクトリ内ファイル列挙等の正当な用途を機械的に
+区別することは（変数の間接参照解決の複雑性から）割に合わないと判断し、
+「検出されたファイルは全て許可リストに載せ、用途をコメントで明記する」
+設計とした。新規ファイルがいずれかのパターンに一致すると、許可リストに
+追加するかtickers.py経由に直すかの判断を強制するレビューフィルターとして
+機能する。
+
+既知の限界（意図的な設計上の簡略化、テストファイルのdocstringに明記）：
+関数呼び出しを介した間接参照（例: `score_verifier.py`の
+`data_dir = _data_dir()`）は解決しない、文字列結合・f-stringは認識しない。
+
+#### 全リポジトリスキャン結果（許可リストの内容）
+①cik_lookup.csv直接パース検出: 12ファイル（全て許可リスト入り）
+- 共有アクセサ本体: `tickers.py`・`config.py`
+- 監査ツール（設計上無条件スキャンが必要）: `registration_validator.py`・
+  `system_health.py`
+- 単一ティッカーのCIK/会社名参照（バッチリスト構築ではない）:
+  `data_fetcher.py`・`pipeline.py`（tanuki_valuation）・
+  `kpi_proposer.py`・`sec_ctrl_fetcher.py`・`text_kpi_extractor.py`（TAIL）
+- EPS ANALYZER独自パイプライン（`common/sec_data/`とは完全独立と
+  SYSTEM_MAP.mdに明記済み）: `extract_key_facts.py`・
+  `adjusted_eps_analyzer/pipeline.py`・`sector_classifier_v2.py`
+
+②ルートディレクトリlistdir直接スキャン検出: 5ファイル（全て許可リスト入り）
+- `registration_validator.py`（P4-SecDataOrphan/P5監査、設計上無条件
+  スキャンが必要）
+- `reader.py::get_available_tickers()`（未使用・`__main__`専用の
+  デバッグ関数、本番呼び出し元なし）
+- **`phase1_scan.py`・`tail_dcf_bridge.py`・`backfill_history.py`
+  （下記「本タスクのスコープ外の発見」参照）**
+
+#### 本タスクのスコープ外の発見（内訳: 1件対応・4件BACKLOG登録）
+遵守事項に従い、検出時点では既存の違反箇所をその場で修正せず報告のみに
+留めた。その後、追加依頼を受けて1件（tail_dcf_bridge.py）のみ同日中に
+対応し、残り4件はBACKLOG登録した。
+
+**対応済み（同日中）:**
+1. **`src/tail/tail_dcf_bridge.py`**（`main()`の`--ticker`未指定時
+   フォールバックパス）: `os.listdir(VALUATION_DIR)`で
+   `docs/value-monitor/tanuki_valuation/data/`を無条件スキャンし、
+   tanukiフラグを見ない構造だった。`.github/workflows/
+   TANUKI_TAIL_RSS_Monitor.yml`から呼ばれているが、ワークフロー側は常に
+   `--ticker $TICKERS`を明示指定しており自動実行での実害はなかったが、
+   手動での引数なし実行時の潜在リスクを解消するため`tickers.
+   get_tanuki_tickers()`との積集合でフィルタを追加。副次的に、
+   VALUATION_DIR直下に残存していた非ティッカーディレクトリ
+   （`hypecore_history`）が誤ってティッカー扱いされる潜在バグも解消。
+   検証: フィルタ適用後の実データで`RKLB`・`ZS`（tanuki=false）・
+   `hypecore_history`が対象から正しく除外され、103ディレクトリ中
+   100件（tanuki=true）のみが残ることを確認。pytest 305 passed/
+   2 known failed（新規回帰なし）。
+
+**BACKLOG登録のみ（未対応）:**
+2. **[[PHASE1-SCAN-CLEANUP-1]]**: `common/sec_data/phase1_scan.py`が
+   `os.listdir(DATA)`で無条件スキャン。ハードコードされた
+   `TODAY = date(2026, 6, 11)`から一回限りの診断スクリプトと推測。
+3. **[[BACKFILL-HISTORY-CLEANUP-1]]**: `src/value/tanuki_valuation/
+   backfill_history.py`が`os.listdir(DATA_ROOT)`で無条件スキャン。
+   コメント「May 14-16 History Backfill (v8.2)」から一回限りの
+   バックフィルスクリプトと推測。
+4. **[[SYSHEALTH-CIK-DEDUP-1]]**: `system_health.py`が`tickers.
+   get_all_tickers()`で代替可能な独自CSVパースをしている（バグではなく
+   コード重複）。
+5. **[[TAIL-CIK-LOOKUP-DEDUP-1]]**: TANUKI TAILの3スクリプト
+   （`kpi_proposer.py`・`sec_ctrl_fetcher.py`・`text_kpi_extractor.py`）が
+   `load_cik(ticker)`を3箇所独立に重複実装している（FLAG-CONSUMER-
+   AUDIT-2/3型のバイパスバグではなく単純なDRY違反）。
+
+いずれも優先度：低でBACKLOG.mdに登録済み。
+
+#### 検証
+- 新設テストが意図的な違反コード（`common/sec_data/_tmp_violation_check.py`
+  を一時追加、①②双方のパターンを含む）に対して正しく失敗することを確認
+  後、一時ファイルを削除
+- 現状のリポジトリに対して3件のテストが全てパスすることを確認
+- tail_dcf_bridge.py修正後も引き続き3件のテストがパスすることを確認
+  （許可リストのコメントを「未確認」→「フィルタ済み」に更新）
+- pytest 305 passed / 2 known failed（新規3件追加、既存回帰なし）
+
+#### CLAUDE_CODE_START.md更新
+「新規スクリプト追加時、このCIガード（`tests/test_no_direct_ticker_access.py`）
+が自動的に規約違反を検知する」旨を追記。既存の手動チェックリスト記述
+（銘柄フラグを参照するスクリプトの必須パターン）と重複しないよう、
+「手動での実施事項」と「CIが機械的に検知する事項」を書き分けた。
+
+---
+
 ### ✅ [ARCH-DATA-1-PREP-1] QUALITY-GATES-EPIC-1 Phase 3前提整理・小粒4項目（2026-07-13完了）
 **分類:** アーキテクチャ / SECデータ取得層 / 品質管理
 **登録日:** 2026-07-13

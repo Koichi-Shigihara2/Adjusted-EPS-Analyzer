@@ -1896,6 +1896,96 @@ REGISTER-FLOW-REDESIGN-1・TICKER-SOURCE-UNIFY-1（完了・BACKLOG_DONE.md参�
 
 ## 優先度：低（アイデア段階）
 
+### [PHASE1-SCAN-CLEANUP-1] phase1_scan.pyの陳腐化確認・削除要否判断
+**優先度:** 低
+**分類:** 保守 / SECデータ取得層
+**登録日:** 2026-07-13
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
+
+#### 問題
+`common/sec_data/phase1_scan.py`が`os.listdir(DATA)`で
+`docs/value-monitor/tanuki_valuation/data/`を無条件スキャンし、tanukiフラグを
+見ずに全ディレクトリを対象銘柄として扱う。ハードコードされた
+`TODAY = date(2026, 6, 11)`から、2026-06-11頃に使われた一回限りの診断
+スクリプトと推測される。CIワークフロー・他スクリプトからの参照なし
+（grep全数確認済み）。
+
+#### 対応方針（未確定）
+- 一回限りの診断スクリプトであることを確認できれば削除する
+- 継続利用の可能性がある場合は`tickers.get_tanuki_tickers()`経由に修正する
+
+#### 着手条件
+なし
+
+---
+
+### [BACKFILL-HISTORY-CLEANUP-1] backfill_history.pyの陳腐化確認・削除要否判断
+**優先度:** 低
+**分類:** 保守 / TANUKI VALUATION
+**登録日:** 2026-07-13
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
+
+#### 問題
+`src/value/tanuki_valuation/backfill_history.py`が`os.listdir(DATA_ROOT)`で
+無条件スキャンし、tanukiフラグを見ない。ファイル内コメント
+「May 14-16 History Backfill (v8.2)」から特定日付向けの一回限りの
+バックフィルスクリプトと推測される。
+
+#### 対応方針（未確定）
+- 一回限りのバックフィルスクリプトであることを確認できれば削除する
+- 継続利用の可能性がある場合は`tickers.get_tanuki_tickers()`経由に修正する
+
+#### 着手条件
+なし
+
+---
+
+### [SYSHEALTH-CIK-DEDUP-1] system_health.pyの独自CSVパースをtickers.get_all_tickers()に統一
+**優先度:** 低
+**分類:** 保守 / 品質管理
+**登録日:** 2026-07-13
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
+
+#### 問題
+`common/system_health.py::check_h_config()`が、segment/maturity configの
+孤立エントリ検出のため`all_tickers`（フラグ無視の全登録銘柄）を
+`csv.DictReader`で独自にパースしている。同一の全銘柄取得は
+`tickers.get_all_tickers()`が既に提供しており、置換可能（バグではなく
+コード重複の解消のみ）。
+
+#### 対応方針
+`all_tickers = {r["ticker"] for r in rows}`を
+`tickers.get_all_tickers()`ベースに置換する。挙動が完全に同一であることを
+確認してから着手する。
+
+#### 着手条件
+なし
+
+---
+
+### [TAIL-CIK-LOOKUP-DEDUP-1] TANUKI TAIL 3スクリプトのload_cik(ticker)重複実装の統合
+**優先度:** 低
+**分類:** 保守 / TANUKI TAIL
+**登録日:** 2026-07-13
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
+
+#### 問題
+`src/tail/kpi_proposer.py`・`src/tail/sec_ctrl_fetcher.py`・
+`src/tail/text_kpi_extractor.py`の3ファイルが、`load_cik(ticker)`
+（cik_lookup.csvから指定ティッカーのCIKを検索して返す関数）を
+それぞれ独立に実装している（関数名・実装内容ともほぼ同一）。
+FLAG-CONSUMER-AUDIT-2/3のようなフラグバイパスバグ型ではなく、単純な
+DRY違反（3箇所の重複実装）。
+
+#### 対応方針
+共有ヘルパー（例: `common/sec_data/tickers.py`または`config.py`への
+`get_cik(ticker)`追加）に統合し、3ファイルから呼び出す形に変更する。
+
+#### 着手条件
+なし
+
+---
+
 ### [TAIL-DETAIL-1] detail.htmlレイアウト微調整
 **優先度:** 低
 **分類:** UX / TANUKI TAIL
