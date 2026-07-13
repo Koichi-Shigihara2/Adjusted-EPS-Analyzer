@@ -1,7 +1,65 @@
 {
   "ticker": "PEP",
-  "last_updated": "2026-07-06T14:06:21.427430",
+  "last_updated": "2026-07-13T12:46:35.474370",
   "quarters": [
+    {
+      "gaap_eps": 2.1943024105186266,
+      "adjusted_eps": 2.233608450582434,
+      "gaap_net_income": 3004000000.0,
+      "adjusted_net_income": 3057809968.847352,
+      "diluted_shares_used": 1369000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 69000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 53809968.84735203,
+          "tax_rate_applied": 0.2201453790238837
+        }
+      ],
+      "net_adjustment_total": 53809968.84735203,
+      "filing_date": "2026-06-13",
+      "form": "10-Q",
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
+      "revenue": 24181000000.0,
+      "diluted_shares": 1369000000.0,
+      "period_end": "2026-06-13",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 848000000.0,
+      "pretax_income": 3852000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 128.2%）",
+        "sbc_contribution": 1.282,
+        "sbc_to_revenue": 0.003,
+        "sbc_per_share": 0.0504,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整小",
+        "comment": "調整項目は株式報酬費用(SBC)で、恒常的に発生する非現金コストであり一過性ではない。GAAP EPSで市場が判断する場合、Adjusted EPSより実績が低く出るため企業の実力が見えにくくなる可能性はあるが、SBCは実質的な株主希薄化コストを伴うため過大評価リスクも存在する。調整幅は約1.8%と小さいため、市場がPEPの実力を大きく過小評価しているとは考えにくく、投資家はSBCの継続性と将来の希薄化影響を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてSBCをadd_backしているが、毎期発生する恒常的な従業員報酬コストであり一過性ではない(カテゴリ:株式報酬関連)",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.7053245805981037,
       "adjusted_eps": 1.7587236331218825,
@@ -37,28 +95,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 632000000.0,
-      "pretax_income": 2970000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 127.0%）",
-        "sbc_contribution": 1.27,
-        "sbc_to_revenue": 0.005,
-        "sbc_per_share": 0.0678,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "株式報酬費用（SBC）は恒常的に毎期発生する非現金コストであり、一過性調整とは言えません。GAAP EPSはこれを控除した実態を反映していますが、市場がGAAPベースで判断する場合、企業のキャッシュ創出力や調整後収益力が過小評価されるリスクがあります。ただしSBCは経済的コストおよび株式希薄化を伴うため、無条件に加算する調整は過大評価の可能性も孕みます。投資家はSBCの規模推移と希薄化影響を注視し、持続可能性を評価すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期継続的に発生する恒常的な従業員報酬コストであり、一過性とはみなせない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 2970000000.0
     },
     {
       "gaap_eps": 1.820830298616169,
@@ -844,43 +881,6 @@
       "quarter": 3,
       "tax_expense": 802000000.0,
       "pretax_income": 3045000000.0
-    },
-    {
-      "gaap_eps": 1.7089337175792507,
-      "adjusted_eps": 1.745788625224457,
-      "gaap_net_income": 2372000000.0,
-      "adjusted_net_income": 2423154611.8115463,
-      "diluted_shares_used": 1388000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 65000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 51154611.811546125,
-          "tax_rate_applied": 0.21300597213005973
-        }
-      ],
-      "net_adjustment_total": 51154611.811546125,
-      "filing_date": "2021-06-12",
-      "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing"
-      ],
-      "revenue": 19217000000.0,
-      "diluted_shares": 1388000000.0,
-      "period_end": "2021-06-12",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 642000000.0,
-      "pretax_income": 3014000000.0
     }
   ]
 }

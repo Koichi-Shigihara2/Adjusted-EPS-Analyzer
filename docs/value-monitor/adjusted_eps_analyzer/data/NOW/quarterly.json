@@ -1,6 +1,6 @@
 {
   "ticker": "NOW",
-  "last_updated": "2026-07-06T14:03:01.780042",
+  "last_updated": "2026-07-13T12:43:35.483764",
   "quarters": [
     {
       "gaap_eps": 0.45101184362871244,
@@ -65,17 +65,17 @@
         }
       },
       "ai_analysis": {
-        "health": "調整大",
-        "comment": "主な調整はSBC（恒常的・非現金）と無形資産償却（買収由来の定期償却）です。両者とも毎期発生する性質が強く、一過性とは言えません。GAAP EPS 0.45に対しAdjusted EPS 0.87とほぼ2倍に跳ね上がるため、市場がGAAPベースで評価する場合に企業の実力（キャッシュ生成力）が過小評価されている可能性があります。ただしSBCは実質的な希薄化コストであるため、調整を過度に信用すると過大評価リスクも存在します。投資家は非GAAPに加え、株式希薄化影響やFCFを総合的に検証すべきです。",
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却はともに恒常的に発生する非現金費用であり、特にSBCはNOWのようなテック企業で毎期多額に計上される本質的なコスト（従業員報酬と株式希薄化）です。GAAP EPS 0.45に対しAdjusted EPS 0.87とほぼ2倍に上方修正されていますが、これらは一過性ではなく継続的な項目のため調整の妥当性は低く、市場がGAAP EPSで判断している場合に企業の実力を過小評価している可能性はあるものの、Adjustedベースでは実力を過大評価するリスクが大きいです。投資家はSBCによる希薄化効果と真のキャッシュ創出力に注目すべきであり、過大調整によるバリュエーション inflatedの警戒が必要です。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金だが恒常的に発生する報酬コストであり、毎期の事業運営に不可欠な経費である",
+            "snippet": "株式報酬費用は非現金費用だが、テック企業では恒常的に発生する報酬コストであり、一過性ではない（毎期発生するSBC）。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は過去の買収に伴う定期的な非現金償却であり、恒常的な調整項目に該当する",
+            "snippet": "無形資産償却費は買収関連の非現金償却で、償却期間中は毎期発生する恒常的な項目であり一過性とは言えない。",
             "confidence": 0.2
           }
         ]
@@ -296,11 +296,11 @@
       "pretax_income": 555000000.0
     },
     {
-      "gaap_eps": 0.36848140560302844,
-      "adjusted_eps": 0.620655911302662,
+      "gaap_eps": 0.3684821127843142,
+      "adjusted_eps": 0.6206571024516281,
       "gaap_net_income": 384000000.0,
       "adjusted_net_income": 646794835.0071735,
-      "diluted_shares_used": 1042115000.0,
+      "diluted_shares_used": 1042113000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -341,13 +341,12 @@
         "tax_one_time"
       ],
       "revenue": 2957000000.0,
-      "diluted_shares": 1042115000.0,
+      "diluted_shares": 1042113000.0,
       "period_end": "2024-12-31",
       "fiscal_year": 2024,
       "quarter": 4,
       "tax_expense": 313000000.0,
-      "pretax_income": 697000000.0,
-      "split_adjusted": true
+      "pretax_income": 697000000.0
     },
     {
       "gaap_eps": 0.41428516628946255,
@@ -512,11 +511,11 @@
       "split_adjusted": true
     },
     {
-      "gaap_eps": 0.2869775427912701,
-      "adjusted_eps": -0.49029383581966135,
+      "gaap_eps": 0.2869781011388653,
+      "adjusted_eps": -0.4902947897423326,
       "gaap_net_income": 295000000.0,
       "adjusted_net_income": -504000000.0,
-      "diluted_shares_used": 1027955000.0,
+      "diluted_shares_used": 1027953000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -564,13 +563,12 @@
         "tax_one_time"
       ],
       "revenue": 2437000000.0,
-      "diluted_shares": 1027955000.0,
+      "diluted_shares": 1027953000.0,
       "period_end": "2023-12-31",
       "fiscal_year": 2023,
       "quarter": 4,
       "tax_expense": -723000000.0,
       "pretax_income": -428000000.0,
-      "split_adjusted": true,
       "dta_detected": true
     },
     {

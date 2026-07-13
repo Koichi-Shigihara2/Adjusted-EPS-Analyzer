@@ -1,6 +1,6 @@
 {
   "ticker": "MRVL",
-  "last_updated": "2026-07-06T14:02:50.101769",
+  "last_updated": "2026-07-13T12:43:24.552620",
   "quarters": [
     {
       "gaap_eps": 0.038620844061345576,
@@ -111,27 +111,27 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPSが0.0386と極めて低い一方、Adjusted EPSは0.72と18倍近く跳ね上がる大規模調整。SBCと無形資産償却は恒常的に発生する項目であるため、市場がGAAP EPSのみで評価する場合に企業の実力（キャッシュ生成力）を大幅に過小評価している可能性が高い。ただしSBCによる株式希薄化や買収関連償却の経済的実態を無視した過大調整のリスクもあり、投資家は非GAAP依存を避け、調整後利益の持続可能性と偶発対価変動の再発リスクを注視すべき。",
+        "comment": "調整総額は約7.7億ドルと極めて大きく、GAAP EPSが0.0386とほぼゼロ近辺なのに対しAdjusted EPSは0.72と18倍以上に跳ね上がっている。SBCと無形資産償却は恒常的な非現金コストである一方、restructuringとcontingent_consideration_fvは一過性が高いため、市場がGAAP EPSのみで判断する場合、買収統合後の真の収益力・キャッシュ生成能力を大幅に過小評価するリスクがある。投資家は調整後数値の持続可能性とFCFを注視すべきで、SBCの恒常性から過大調整の可能性も否定できない。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが技術企業で毎期発生する恒常的な運用コスト",
+            "snippet": "非現金費用だが技術企業において毎期発生する恒常的な運用コスト",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は過去のM&Aから生じる定期的な非現金費用",
-            "confidence": 0.2
+            "snippet": "買収関連無形資産の償却は過去のM&Aに基づく継続的な非現金費用",
+            "confidence": 0.25
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用として非経常的",
+            "snippet": "一過性の事業再編費用",
             "confidence": 0.8
           },
           {
             "item": "contingent_consideration_fv",
-            "snippet": "非現金・非経常の買収偶発対価時価変動（公正価値変動は変動性が高い）",
-            "confidence": 0.65
+            "snippet": "非現金・非経常の買収偶発対価時価変動",
+            "confidence": 0.75
           }
         ]
       }

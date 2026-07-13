@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-07-12T21:12:20.886304",
+  "last_updated": "2026-07-13T12:42:12.730073",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -77,6 +77,18 @@
       "quarter": 1,
       "tax_expense": 27437000.0,
       "pretax_income": 137536000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.42384241080365254,
+          "official_eps": 0.33,
+          "eps_diff_pct": 28.4,
+          "note": "XBRLと公式発表のGAAP EPSに28%の差異があります。公式EPS: $0.33, XBRL計算EPS: $0.42。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      },
       "maturity_monitor": {
         "alert": "SBC寄与率が40%超（現在 45.4%）",
         "sbc_contribution": 0.454,
@@ -89,26 +101,26 @@
       },
       "ai_analysis": {
         "health": "調整中",
-        "comment": "調整項目にSBCや無形資産償却といった恒常的コスト（毎期発生しやすい）が含まれる一方で、リストラ費用や異常貸倒引当金は一過性が高い。市場がGAAP EPS中心に判断する場合、非現金・一時的費用が利益を圧迫して企業の実力（調整後収益力）が分かりにくくなり、過小評価の可能性がある。ただしSBCは実質的な希薄化コストのため、調整依存が高まると過大評価リスクも伴う。投資家は調整項目の持続可能性と真のキャッシュフローへの影響を注視すべき。",
+        "comment": "調整項目にはSBCや無形資産償却といった恒常的・ recurringなコスト（非現金だが実質的な経済コスト）が含まれており、これらをadd_backすることでAdjusted EPSがGAAP比で約15%押し上げられている。リストラと異常貸倒引当は一過性が高い一方、SBC・償却は毎期発生が見込まれるため、市場がGAAP EPSのみで判断する場合に企業の実力（調整後収益力）が過小評価されやすい。ただしSBC加回は投資家から批判されやすく、過大調整リスクもある。投資家はSBCの希薄化影響と調整項目の持続可能性を注視すべきで、過小評価の可能性はあるが調整依存による過大評価リスクにより慎重な判断が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが恒常的に発生する運用コストであり、調整により実力が見えにくくなる可能性",
+            "snippet": "非現金費用だが成長企業では恒常的に発生する株式報酬コスト",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金項目で、恒常的な調整要因",
+            "snippet": "買収関連無形資産の償却で、過去のM&Aに基づく recurring な非現金費用",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響の異常貸倒引当金繰入であり、真に一過性の調整項目",
+            "snippet": "マクロ変動による一時的な異常貸倒引当金繰入",
             "confidence": 0.75
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用であり、リストラ関連の非経常的コストとして調整が妥当",
+            "snippet": "一過性の事業再編・リストラ費用",
             "confidence": 0.8
           }
         ]
@@ -188,7 +200,19 @@
       "fiscal_year": 2025,
       "quarter": 4,
       "tax_expense": 17034000.0,
-      "pretax_income": 41773000.0
+      "pretax_income": 41773000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.09704955847334952,
+          "official_eps": 0.26,
+          "eps_diff_pct": 62.7,
+          "note": "XBRLと公式発表のGAAP EPSに63%の差異があります。公式EPS: $0.26, XBRL計算EPS: $0.10。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.23669203733445057,
@@ -264,7 +288,19 @@
       "fiscal_year": 2025,
       "quarter": 3,
       "tax_expense": -27017000.0,
-      "pretax_income": -88031000.0
+      "pretax_income": -88031000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.23669203733445057,
+          "official_eps": -0.3,
+          "eps_diff_pct": 21.1,
+          "note": "XBRLと公式発表のGAAP EPSに21%の差異があります。公式EPS: $-0.30, XBRL計算EPS: $-0.24。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.38374626745218304,
@@ -390,7 +426,19 @@
       "fiscal_year": 2025,
       "quarter": 1,
       "tax_expense": 16574000.0,
-      "pretax_income": 60993000.0
+      "pretax_income": 60993000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.1872860202722075,
+          "official_eps": 0.15,
+          "eps_diff_pct": 24.9,
+          "note": "XBRLと公式発表のGAAP EPSに25%の差異があります。公式EPS: $0.15, XBRL計算EPS: $0.19。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.07951003352934238,
@@ -453,7 +501,19 @@
       "fiscal_year": 2024,
       "quarter": 4,
       "tax_expense": 49976000.0,
-      "pretax_income": 31100000.0
+      "pretax_income": 31100000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.07951003352934238,
+          "official_eps": -0.13,
+          "eps_diff_pct": 38.8,
+          "note": "XBRLと公式発表のGAAP EPSに39%の差異があります。公式EPS: $-0.13, XBRL計算EPS: $-0.08。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.027197726961522662,
@@ -516,7 +576,19 @@
       "fiscal_year": 2024,
       "quarter": 3,
       "tax_expense": 1819000.0,
-      "pretax_income": 8175000.0
+      "pretax_income": 8175000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.027197726961522662,
+          "official_eps": -0.0024,
+          "eps_diff_pct": 1233.2,
+          "note": "XBRLと公式発表のGAAP EPSに1233%の差異があります。公式EPS: $-0.00, XBRL計算EPS: $0.03。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.3357941034112671,
@@ -642,7 +714,19 @@
       "fiscal_year": 2024,
       "quarter": 1,
       "tax_expense": 14650000.0,
-      "pretax_income": 92461000.0
+      "pretax_income": 92461000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.3275935383099742,
+          "official_eps": 0.27,
+          "eps_diff_pct": 21.3,
+          "note": "XBRLと公式発表のGAAP EPSに21%の差異があります。公式EPS: $0.27, XBRL計算EPS: $0.33。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.21149204098512855,
@@ -705,7 +789,19 @@
       "fiscal_year": 2023,
       "quarter": 4,
       "tax_expense": 64948000.0,
-      "pretax_income": 115064000.0
+      "pretax_income": 115064000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.21149204098512855,
+          "official_eps": 0.17,
+          "eps_diff_pct": 24.4,
+          "note": "XBRLと公式発表のGAAP EPSに24%の差異があります。公式EPS: $0.17, XBRL計算EPS: $0.21。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.353807639301564,
@@ -831,7 +927,19 @@
       "fiscal_year": 2023,
       "quarter": 2,
       "tax_expense": 17946000.0,
-      "pretax_income": 69455000.0
+      "pretax_income": 69455000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.21749172409133902,
+          "official_eps": 0.17,
+          "eps_diff_pct": 27.9,
+          "note": "XBRLと公式発表のGAAP EPSに28%の差異があります。公式EPS: $0.17, XBRL計算EPS: $0.22。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.17448587886252154,
@@ -894,7 +1002,19 @@
       "fiscal_year": 2023,
       "quarter": 1,
       "tax_expense": 8537000.0,
-      "pretax_income": 49764000.0
+      "pretax_income": 49764000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.17448587886252154,
+          "official_eps": -0.0916,
+          "eps_diff_pct": 290.5,
+          "note": "XBRLと公式発表のGAAP EPSに290%の差異があります。公式EPS: $-0.09, XBRL計算EPS: $0.17。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -0.09351522602193464,
@@ -957,7 +1077,19 @@
       "fiscal_year": 2022,
       "quarter": 4,
       "tax_expense": 34618000.0,
-      "pretax_income": 13395000.0
+      "pretax_income": 13395000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": -0.09351522602193464,
+          "official_eps": -0.28,
+          "eps_diff_pct": 66.6,
+          "note": "XBRLと公式発表のGAAP EPSに67%の差異があります。公式EPS: $-0.28, XBRL計算EPS: $-0.09。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": -2.3998100163597025,
@@ -1083,7 +1215,19 @@
       "fiscal_year": 2022,
       "quarter": 2,
       "tax_expense": 2810000.0,
-      "pretax_income": 11968000.0
+      "pretax_income": 11968000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.11685295768897055,
+          "official_eps": 0.04,
+          "eps_diff_pct": 192.1,
+          "note": "XBRLと公式発表のGAAP EPSに192%の差異があります。公式EPS: $0.04, XBRL計算EPS: $0.12。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     },
     {
       "gaap_eps": 0.0853121128127834,
@@ -1146,7 +1290,19 @@
       "fiscal_year": 2022,
       "quarter": 1,
       "tax_expense": 3351000.0,
-      "pretax_income": 10030000.0
+      "pretax_income": 10030000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "eps_discrepancy": {
+          "flag": "EPS_DISCREPANCY",
+          "xbrl_eps": 0.0853121128127834,
+          "official_eps": 0.03,
+          "eps_diff_pct": 184.4,
+          "note": "XBRLと公式発表のGAAP EPSに184%の差異があります。公式EPS: $0.03, XBRL計算EPS: $0.09。買収関連負債の公正価値変動など、特殊な会計処理が影響している可能性があります。当ツールのAdj EPSはこれらの一過性項目を除外した実力ベースの値です。"
+        }
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
   "ticker": "CART",
-  "last_updated": "2026-07-06T14:01:13.743834",
+  "last_updated": "2026-07-13T12:42:03.126564",
   "quarters": [
     {
       "gaap_eps": 0.5678300610811642,
@@ -50,17 +50,17 @@
       "pretax_income": 188000000.0,
       "ai_analysis": {
         "health": "過大調整",
-        "comment": "SBC（株式報酬費用）が調整額の大部分を占めており、恒常的に発生する非現金コストであるため、この調整によりAdjusted EPSがGAAP EPSを約44%上回る形となっている。市場がGAAP EPSで判断する場合、企業の実力（特にキャッシュフロー生成力）が過小評価されている可能性はあるが、SBCの恒常性と株式希薄化効果を考慮すると実態を過大評価するリスクの方が大きい。貸倒引当金の異常変動分は一過性が高いが影響額は小さいため、投資家は調整の質を慎重に見極め、過大評価リスクに留意すべき。",
+        "comment": "主調整であるsbcは恒常的な報酬コストであり、毎期発生する性質からadd_backによる調整は過大調整のリスクが高い。一方、loan_loss_provision_abnormalはマクロ要因による一時的項目と見なせるが金額が小さい。市場がGAAP EPSで判断する場合、SBCの経済的コスト（希薄化含む）が適切に反映されており企業実力が見えにくくなっているとは言えないが、調整後EPSをそのまま信じると持続可能性を過大評価し株価バブルリスクが生じる可能性がある。投資家はSBCの希薄化効果と異常貸倒の反復性を注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期発生する恒常的な報酬コストであり、コア事業に関わるため一過性は低い。",
+            "snippet": "株式報酬費用は非現金費用だが恒常的に発生するコストであり、従業員報酬としての実質的な経済的コストを伴う（毎期発生するSBCの例）。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "貸倒引当金繰入（異常変動分）はマクロ変動による一時的影響としてadd_backされており、一過性の性質が強い。",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響として位置づけられる異常変動分の貸倒引当金繰入であり、一過性の調整として妥当。",
+            "confidence": 0.7
           }
         ]
       }
@@ -753,11 +753,11 @@
       "pretax_income": 33000000.0
     },
     {
-      "gaap_eps": 0.03403823482581661,
-      "adjusted_eps": 0.03403823482581661,
+      "gaap_eps": 0.11109568115539509,
+      "adjusted_eps": 0.11109568115539509,
       "gaap_net_income": 8000000.0,
       "adjusted_net_income": 8000000.0,
-      "diluted_shares_used": 235029814.0,
+      "diluted_shares_used": 72010000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
       "filing_date": "2022-06-30",
@@ -765,7 +765,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 0.0,
-      "diluted_shares": 235029814.0,
+      "diluted_shares": 72010000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2,
@@ -773,11 +773,11 @@
       "pretax_income": 0
     },
     {
-      "gaap_eps": -0.34889190696462025,
-      "adjusted_eps": -0.34889190696462025,
+      "gaap_eps": -1.1387307318427997,
+      "adjusted_eps": -1.1387307318427997,
       "gaap_net_income": -82000000.0,
       "adjusted_net_income": -82000000.0,
-      "diluted_shares_used": 235029814.0,
+      "diluted_shares_used": 72010000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
       "filing_date": "2022-03-31",
@@ -785,7 +785,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 0.0,
-      "diluted_shares": 235029814.0,
+      "diluted_shares": 72010000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1,

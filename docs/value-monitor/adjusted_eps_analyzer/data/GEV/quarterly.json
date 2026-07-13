@@ -1,6 +1,6 @@
 {
   "ticker": "GEV",
-  "last_updated": "2026-07-06T14:06:02.256128",
+  "last_updated": "2026-07-13T12:46:15.893894",
   "quarters": [
     {
       "gaap_eps": 17.46323529411765,
@@ -62,22 +62,22 @@
       "tax_expense": 354000000.0,
       "pretax_income": 5104000000.0,
       "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目の主力である無形資産償却費は買収に伴う恒常的な非現金費用であり、リストラ費用・異常貸倒引当は一過性と判断される。市場がGAAP EPSで判断する場合、これらの費用により企業の実力（特に買収効果を除いたコア収益力）が過小評価されやすく、投資家はAdjusted EPSを参考に実態を正しく見極める必要がある。ただし、無形資産償却の大部分を加算しているため調整後EPSが過大に表示されるリスクもあり、過小評価ではなく過大評価に繋がる可能性を注視すべき。",
+        "health": "調整中",
+        "comment": "主な調整であるamortization_intangibles（176M）は買収関連無形資産償却で恒常的非現金費用と見なされ（confidence低）、restructuringとloan_loss_provision_abnormalは一過性項目。GAAP EPSで市場が判断する場合、これら調整により企業の実力（特にキャッシュ生成力）が過小評価されている可能性がある。ただし最大項目が恒常的であるため調整後EPSは過大に見えるリスクもあり、持続可能利益は両者の中間的と推測。投資家は償却の繰り返し性と異常貸倒のマクロ要因を検証し、過小評価の機会を探る一方で過大調整リスクに留意すべき。",
         "sources": [
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却。これは過去の買収による恒常的な非現金費用であり、毎期発生する可能性が高い。",
+            "snippet": "買収関連無形資産の償却であり、恒常的に発生する非現金費用（毎期見込まれる場合が多い）",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響の貸倒引当金繰入（異常変動分）。一過性の異常項目として調整が妥当。",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響として異常変動分をadd_back",
+            "confidence": 0.8
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用。リストラ費用は典型的かつほぼ一過性の調整項目。",
+            "snippet": "一過性の事業再編費用としてリストラ費用をadd_back",
             "confidence": 0.8
           }
         ]
@@ -796,11 +796,11 @@
       "pretax_income": -27000000.0
     },
     {
-      "gaap_eps": -1.287585614907443,
-      "adjusted_eps": -0.9928371006515223,
+      "gaap_eps": -1.2627737226277371,
+      "adjusted_eps": -0.9737050391346408,
       "gaap_net_income": -346000000.0,
       "adjusted_net_income": -266795180.72289157,
-      "diluted_shares_used": 268719995.0,
+      "diluted_shares_used": 274000000.0,
       "adjustments": [
         {
           "item_id": "amortization_intangibles",
@@ -848,7 +848,7 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 6822000000.0,
-      "diluted_shares": 268719995.0,
+      "diluted_shares": 274000000.0,
       "period_end": "2023-03-31",
       "fiscal_year": 2023,
       "quarter": 1,

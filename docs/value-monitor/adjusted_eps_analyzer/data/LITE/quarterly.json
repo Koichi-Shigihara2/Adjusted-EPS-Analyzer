@@ -1,6 +1,6 @@
 {
   "ticker": "LITE",
-  "last_updated": "2026-07-06T14:02:29.290922",
+  "last_updated": "2026-07-13T12:43:15.421353",
   "quarters": [
     {
       "gaap_eps": 1.498960498960499,
@@ -62,9 +62,25 @@
       "tax_expense": 39600000.0,
       "pretax_income": 183800000.0,
       "ai_analysis": {
-        "health": "Error",
-        "comment": "AI分析のレスポンスがJSON形式ではありません: JSON decode error: Expecting value: line 1 column 1 (char 0)",
-        "sources": []
+        "health": "調整大",
+        "comment": "SBCと無形資産償却は恒常的に発生する非現金費用であり、調整の大半を占めるため、調整幅は大きい。リストラ費用のみ一過性。市場がGAAP EPS（1.50）で判断する場合、非現金項目により企業の実力（Adjusted EPS 2.12）が過小評価される可能性が高い。ただしSBCは人材獲得のための実質コストであるため、調整を過信すると過大評価リスクもある。投資家はキャッシュフローと希薄化効果を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが恒常的な運用コストであり、毎期発生する可能性が高い",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の非現金項目だが、継続的に計上される恒常的性格が強い",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用であり、真に非経常的とみなせる",
+            "confidence": 0.8
+          }
+        ]
       }
     },
     {
