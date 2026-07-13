@@ -364,6 +364,41 @@ def get_quarter_number(end_date: datetime, fiscal_end_month: int) -> int:
     else:
         return 1
 
+def _neighbor_quarter_diluted_shares(
+    quarters_map: Dict[Tuple[int, int], Dict[str, Any]],
+    target_key: Tuple[int, int],
+) -> float:
+    """target_key（(fiscal_year, quarter)）に時間的に最も近い他の四半期の
+    実株数（diluted_shares、0より大きい値）を返す。直前優先・見つからなければ直後。
+    どちらにも実データがない場合は0.0を返す（呼び出し元でyfinance等の
+    最終フォールバックへ委ねる）。
+
+    ASTS-SHARES-OSCILLATION-1: 株式数フォールバック④（yfinance現在株数の
+    無条件代入）が「全期間タグ欠落」銘柄（Visa等）向けの設計だったにも
+    関わらず、部分的な欠落四半期（ASTS/AVAV/RCAT）にも適用され、現在時点の
+    株数が過去の四半期に逆行伝播していた問題への対応。Q4ブロック（10-Kから
+    Q4を計算する際の「Q3の実株数を引き継ぐ」既存パターン）を一般化し、
+    Q1〜Q3の欠落にも同じ考え方を適用する（本関数はフォールバック③として
+    Q1〜Q3欠落にも使われる）。
+    """
+    other_keys = sorted(k for k in quarters_map.keys() if k != target_key)
+    if not other_keys:
+        return 0.0
+
+    prior_keys = [k for k in other_keys if k < target_key]
+    next_keys = [k for k in other_keys if k > target_key]
+
+    for k in reversed(prior_keys):  # target_keyに最も近い直前から確認
+        val = normalize_value(quarters_map[k].get('diluted_shares', {'value': 0}))
+        if val > 0:
+            return val
+    for k in next_keys:  # target_keyに最も近い直後から確認
+        val = normalize_value(quarters_map[k].get('diluted_shares', {'value': 0}))
+        if val > 0:
+            return val
+    return 0.0
+
+
 # ============================================
 # メイン抽出関数（改善版）
 # ============================================
@@ -655,8 +690,11 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                             if _diluted_val_filed is None or d_filed > _diluted_val_filed:
                                 diluted_val = d_item['val']
                                 _diluted_val_filed = d_filed
-                    if diluted_val == 0 and q3_key in quarters_map:
-                        diluted_val = normalize_value(quarters_map[q3_key].get('diluted_shares', {'value':0}))
+                    if diluted_val == 0:
+                        # ASTS-SHARES-OSCILLATION-1: Q3限定の引き継ぎから、Q3も欠落している
+                        # 場合に備えて最も近い他の実四半期を探す一般化版に変更
+                        # （通常ケースではQ3がそのまま最近傍のため挙動は変わらない）
+                        diluted_val = _neighbor_quarter_diluted_shares(quarters_map, q4_key)
 
                     # 単位サニティチェック: 10-KのshareがQ3の1%未満なら千株単位と判断して×1000
                     if diluted_val > 0 and q3_key in quarters_map:
@@ -934,8 +972,24 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 _data['diluted_shares'] = {'value': _basic, 'unit': 'shares'}
                 print(f"  [Basic株数代用] {_data['filing_date']}: {_basic/1e6:.1f}M株")
 
-        # ---------- 株式数フォールバック③ yfinance 現在株式数を代用（V 等 SEC に株数未提供） ----------
-        # 全四半期で diluted_shares がない（または0）かつ net_income がある場合に発動
+        # ---------- 株式数フォールバック③ 隣接する実四半期からの引き継ぎ ----------
+        # ASTS-SHARES-OSCILLATION-1: フォールバック④（yfinance現在株数の無条件代入）が
+        # 「全期間タグ欠落」銘柄（Visa等）向けの設計だったにも関わらず、一部四半期のみ
+        # 欠落している銘柄（ASTS/AVAV/RCAT）にも適用され、現在時点の株数が過去の
+        # 四半期に逆行伝播していた。Q4ブロック（10-KからQ4を計算する際の
+        # 「直近の実四半期を引き継ぐ」既存パターン）を一般化し、Q1〜Q3の欠落にも適用する。
+        print("\n=== Share count fallback: nearest quarter carry-over ===")
+        for _key, _data in quarters_map.items():
+            if normalize_value(_data.get('diluted_shares', {'value': 0})) != 0:
+                continue
+            _neighbor_val = _neighbor_quarter_diluted_shares(quarters_map, _key)
+            if _neighbor_val > 0:
+                _data['diluted_shares'] = {'value': _neighbor_val, 'unit': 'shares'}
+                print(f"  [隣接四半期引き継ぎ] {_data['filing_date']}: {_neighbor_val/1e6:.1f}M株")
+
+        # ---------- 株式数フォールバック④ yfinance 現在株式数を代用（V 等 SEC に株数未提供） ----------
+        # 隣接する実四半期も存在しない（＝全期間で欠落している）かつ net_income がある
+        # 場合のみ発動する（本来の設計意図「全期間欠落銘柄向け」を維持）
         _missing_shares_quarters = [
             _d for _d in quarters_map.values()
             if normalize_value(_d.get('diluted_shares', {'value': 0})) == 0
