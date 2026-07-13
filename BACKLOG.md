@@ -1311,31 +1311,6 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
 
 ---
 
-### [HYPECORE-DASHBOARD-COUNT-BUG-1] docs/index.htmlのhypecore ticker数表示がtickers.json実形式と不整合
-**優先度:** 低
-**分類:** バグ / フロントエンド表示
-**登録日:** 2026-07-12
-**発見:** [[HYPECORE-SAVE-INDEX-NAMEERROR-1]]（完了・BACKLOG_DONE.md参照）実装時の副次発見
-
-#### 問題
-`docs/index.html`（233-236行目）は`data/tickers.json`をfetchした後
-`if (!Array.isArray(arr)) return;`という判定を行うが、実際の
-`tickers.json`の形式は`{tickers: [...], updated_at: ..., count: ...}`という
-**オブジェクト**であり、`Array.isArray()`は常にfalseを返す。結果として
-トップダッシュボードの「hypecore-ticker-count」「hypecore-status-count」
-表示ウィジェットが常時機能していない可能性が高い
-（HYPECORE-SAVE-INDEX-NAMEERROR-1のNameErrorバグとは独立した、
-別の形式不一致バグ）。
-
-#### 対応方針
-`docs/index.html`側の判定を`arr && Array.isArray(arr.tickers)`等、
-実際のオブジェクト形式に合わせて修正する。
-
-#### 着手条件
-なし（次回セッションで着手可能・低リスク）
-
----
-
 
 ### [CIK-ORPHAN-FLAGS-1] BX・ENBが全システムフラグfalseの孤立エントリ
 **優先度:** 低〜中（BX分は解消済み・残るはENBのみ）

@@ -4,6 +4,44 @@
 
 ## 2026-07-13（完了）
 
+### ✅ [HYPECORE-DASHBOARD-COUNT-BUG-1] docs/index.htmlのhypecore ticker数表示修正（2026-07-13完了）
+**分類:** バグ / フロントエンド表示
+**登録日:** 2026-07-12
+**完了日:** 2026-07-13
+**発見:** [[HYPECORE-SAVE-INDEX-NAMEERROR-1]]（完了・BACKLOG_DONE.md参照）実装時の副次発見
+
+#### 対応内容
+`docs/index.html`（233-236行目）が`value-monitor/hypecore/data/tickers.json`
+（実形式`{tickers: [...], updated_at, count}`のオブジェクト）に対して
+`Array.isArray(arr)`という配列判定を行っており常にfalseとなるため、
+トップダッシュボードの「hypecore-ticker-count」「hypecore-status-count」
+表示が機能していなかった。判定を`data && Array.isArray(data.tickers)`に、
+カウント元を`data.tickers.length`に修正した。
+
+hypecore.py側で`count`フィールドは常に`len(tickers)`から生成されており
+（`_save_tickers_index()`）`tickers.length`と`count`は完全に一致するため、
+どちらを使っても結果は同じだが、元コードの意図（`arr.length`で配列長を
+数える）に近い`tickers.length`を採用した。
+
+#### 検証
+- 修正後のJSロジックを実データ（tickers.json、103銘柄）に対して
+  Pythonでシミュレーションし、`hypecore-ticker-count`/
+  `hypecore-status-count`が正しく「103」を表示することを確認
+- ローカルHTTPサーバーでページ・JSONの200応答を確認
+- **横展開確認**: tickers.jsonを参照する他8箇所
+  （`docs/portfolio/index.html`・`docs/value-monitor/admin.html`・
+  `docs/value-monitor/extreme-fear/index.html`・
+  `docs/value-monitor/hypecore/index.html`・
+  `docs/value-monitor/tanuki_score/index.html`・
+  `docs/value-monitor/tanuki_valuation/index.html`・
+  `docs/value-monitor/tanuki_valuation/stock.html`）を全て確認した結果、
+  いずれも`.tickers || []`等で正しくオブジェクト形式を処理しており、
+  同型バグは`docs/index.html`のみだった
+- pytest 309 passed / 2 known failed（既知のみ、フロントエンド変更のため
+  Python側への影響なし）
+
+---
+
 ### ✅ [WARN12-COHR-ONDS-1] COHR・ONDSのCash-STI期ズレWARN解消（2026-07-13完了・原因はコードバグではなく生成順序のズレ）
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-12
