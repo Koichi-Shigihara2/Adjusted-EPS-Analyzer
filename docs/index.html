@@ -232,9 +232,9 @@
   <script>
     fetch('value-monitor/hypecore/data/tickers.json')
       .then(r => r.ok ? r.json() : null)
-      .then(arr => {
-        if (!Array.isArray(arr)) return;
-        const n = arr.length;
+      .then(data => {
+        if (!data || !Array.isArray(data.tickers)) return;
+        const n = data.tickers.length;
         const el1 = document.getElementById('hypecore-ticker-count');
         const el2 = document.getElementById('hypecore-status-count');
         if (el1) el1.textContent = n;
