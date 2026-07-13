@@ -2418,6 +2418,12 @@ CSV書込み前にヘッダー整合チェックを追加。
 - 取得失敗時はステータスを空文字にフォールバック（`LIVE ·` のみ残る）
 
 ✅ [SOFI-DATA-1] SOFI LTDebt 正規化データ更新（2026-06-24完了）
+- **⚠️ 2026-07-13追記**: 本エントリの手動パッチは、その後の`update.py`自動再生成
+  （手動編集を経由しない標準パイプライン）で静かに巻き戻り、2026-07-13時点で
+  LTDebtが2022-12-31のまま3年近くstale化していたことが判明した（Net_Debtが
+  実際はnet cashであるにも関わらず+$2.08Bのnet debtとして表示され続けていた）。
+  `ltdebt_concept`によるticker_restrictionsオーバーライドとして恒久修正済み。
+  詳細は[[ARCH-DATA-1-PREP-1]]（本ファイル内、2026-07-13完了）参照。
 - **対象**: `common/sec_data/normalized/SOFI_quarterly_normalized.json`・`docs/common/sec_data/normalized/SOFI_quarterly_normalized.json`
 - **調査結果**: SOFI は銀行免許取得後（2022年以降）、`LongTermDebt` XBRL タグを報告しなくなった。代替タグ `DebtLongtermAndShorttermCombinedAmount`（短期+長期の合計社債）が SEC EDGAR に存在。
 - **対応方針: B（カスタム概念使用）**:

@@ -248,6 +248,17 @@ SEC EDGAR
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
+├─ contracts.py  # 正規化契約の型（QUALITY-GATES-EPIC-1 Gate2 Phase 3a 2026-07-13新設）
+│    FinancialEntry/EntryProvenance/FCFSeries。quarterly.py::save_raw_table()・
+│    normalizer.py::save_normalized()がjson.dump()直前にFinancialEntryで
+│    エントリ形状を検証（違反時ContractViolation、既存try/exceptで捕捉）。
+│    quarterly.py::_select_best_candidate()のフォールバック採用時・
+│    ticker_restrictionsオーバーライド採用時に_provenance.source_tagを付与。
+│    FCFSeriesはdata_fetcher.py::TTMReader.get_fcf_series()内でのみ使用し
+│    （JSONシリアライズ不可のため.as_list()で境界越えさせる）、fcf_listの
+│    新しい順規約をconstruction時に検証する。parser.py・ttm_calculator.py・
+│    reader.py::get_fcf_list()は未対応（Phase 3bで判断、[[GATE2-PHASE3B-1]]・
+│    [[GATE2-READER-FCFLIST-1]]参照）
 └─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）
 
 【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
@@ -331,6 +342,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | quarterly.py / normalizer.py / ttm_calculator.py | 全銘柄TTM再生成（update.py）→ audit.py |
 | parser.py | 影響銘柄のupdate.py → audit.py |
 | tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。raw/*.jsonの生成日時差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可）→ 影響銘柄のみupdate.py → audit.py |
+| contracts.py（FinancialEntry必須キー変更等） | quarterly.py::save_raw_table()・normalizer.py::save_normalized()の検証が全銘柄で走るため、変更後は全105銘柄のupdate.pyを実行しContractViolationが新規発生しないか確認 → report_consistency_check.py |
 | data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |

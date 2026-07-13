@@ -1,5 +1,25 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-13（セッション終了時ブラッシュアップ。ARCH-DATA-1の棚卸し
+調査でQUALITY-GATES-EPIC-1のゲート1/ゲート2への統合マッピングを確認し、
+Phase 3前提整理として[[ARCH-DATA-1-PREP-1]]（TAG-DEFS-UNIFY-1クローズ・
+SOFI-DATA-1のLTDebt恒久修正〈2026-06-24の手動パッチが自動再生成で巻き戻って
+いたことを発見・ticker_restrictionsによる恒久修正に切替〉・audit.py UP-C
+検知・バグA/Bスコープ判断〈同日中に既に別コミットで解消済みと判明〉）を完了。
+続けてPhase 3a（Gate2本体第一段階: `common/sec_data/contracts.py`新設。
+FinancialEntry/EntryProvenance/FCFSeriesで規約A・B・③を型化し、
+quarterly.py/normalizer.py/data_fetcher.pyのjson.dump()直前・fcf_list生成
+箇所に検証を配線）を完了。全105銘柄で新旧比較（git stash、ネットワーク
+未使用）し値の差分0件・TTMReader系メソッドの新旧比較も差分0件を確認。
+pytest 302 passed/2 known failed。Phase 3b（独立実装4ファイルのreader.py
+統合・規約C/Dの型化）・GATE2-READER-FCFLIST-1（reader.py::get_fcf_list()の
+順序規約が未検証のまま残存）を新規登録。セッション終了時ブラッシュアップで
+「次セッションでの着手順序」欄が2026-07-11以降更新されていなかった陳腐化を
+発見し2026-07-12・07-13分を追記、SYSTEM_MAP.mdにcontracts.pyの記載漏れを
+発見し追記、SOFI-DATA-1の旧完了エントリに巻き戻り発見の相互参照を追記。
+他の確認項目（BACKLOG_DONE.md記録の正確性・git statusのクリーン状態）は
+いずれも問題なし）
+
 最終更新: 2026-07-12（同日13回目: セッション終了時ブラッシュアップ。
 BACKLOG.md内QUALITY-GATES-EPIC-1エントリの陳腐化した中間ポインタ
 （「次はPhase 2」、Phase 2a〜2b-3完了後も残置）を削除。
@@ -2506,6 +2526,42 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
   `adjusted_eps_analyzer/pipeline.py::run()`）。着手後、余力があれば
   [[REGISTER-FLOW-REDESIGN-1]]の残り対応方針（status列拡張・
   オーケストレーション化等、コスト高）に進む。
+
+※ 2026-07-12: TICKER-SOURCE-UNIFY-1対応方針1〜3を完了しBACKLOG_DONE.mdへ
+  全文移動。QUALITY-GATES-EPIC-1（バグ根絶に向けた5段階品質ゲート）を
+  優先度：最高で新規登録し、Phase 1（BACKLOG重複統合・pytest全体実行化・
+  WARN台帳導入）・Phase 2a（タグフォールバック選定ロジック統一、
+  common/sec_data/tag_definitions.py新設）・Phase 2b-1（TTM鮮度チェック）・
+  Phase 2b-2（段差型急変検知統合）・Phase 2b-3（EPS Analyzer fact選定ロジック
+  統一）を同日中に完了。副産物としてSEC-TAG-FICO-CPRT-1・LLY-CAPEX-STALE-1・
+  GROWTH-CAGR-SIGN-1（CAGR計算式符号反転バグ）・TTM-QUARTERS-CHECK-1・
+  SPLIT-AUTO-CHECK-1等の個別バグを多数発見・修正。HYPECORE-SAVE-INDEX-
+  NAMEERROR-1（3日間沈黙していた本番障害）を緊急対応で完了。詳細は
+  BACKLOG_DONE.md「2026-07-12（完了）」セクション参照。
+※ 2026-07-13: ARCH-DATA-1の棚卸し調査を実施し、QUALITY-GATES-EPIC-1の
+  ゲート1/ゲート2への統合マッピングを確認。Phase 3前提整理として
+  [[ARCH-DATA-1-PREP-1]]（TAG-DEFS-UNIFY-1クローズ・SOFI-DATA-1のLTDebt
+  恒久修正〈2026-06-24の手動パッチが自動再生成で巻き戻っていたことを発見〉・
+  audit.py UP-C検知・バグA/Bスコープ判断〈既に解消済みと判明〉）を完了。
+  続けてPhase 3a（Gate2本体第一段階: `common/sec_data/contracts.py`新設。
+  FinancialEntry/EntryProvenance/FCFSeriesで規約A・B・③を型化し、
+  quarterly.py/normalizer.py/data_fetcher.pyに検証を配線）を完了。
+  全105銘柄で新旧比較し値の差分0件を確認済み。詳細はBACKLOG_DONE.md
+  「2026-07-13（完了）」セクション参照。
+  **次セッションの候補（優先順位の所感）**:
+  ① [[ASTS-SHARES-OSCILLATION-1]]（優先度：低・調査のみ、四半期ごとの
+  往復変動の原因特定）を軽い足慣らしとして先に済ませる。
+  ② [[WARN12-COHR-ONDS-1]]・[[HYPECORE-DASHBOARD-COUNT-BUG-1]]
+  （いずれも優先度：低・単発の軽微な修正）を続けて片付ける。
+  ③ [[FLAG-THRESHOLD-DESIGN-1]]（優先度：未定・4フラグの機械判定基準を
+  Koichiさんに複数案提示して確定させる設計セッション）に進む。
+  ④ 余力があれば[[GATE2-PHASE3B-1]]（優先度：中・独立実装4ファイルの
+  reader.py統合＋規約C/Dの型化、規模見積もりから）に着手する。
+  [[SPLIT-REALTIME-GAP-1]]（優先度：低〜中）・
+  [[DATA-JUMP-CHECK-GENERALIZE-1]]（優先度：未定）・
+  [[GATE2-READER-FCFLIST-1]]（優先度：中）は上記より後回しでよい
+  （いずれも「次に関連バグが発生したら」「規模見積もり後」等の
+  待機的な着手条件のため）。
 
 （ARCH-SCORE-SYNC-1は2026-06-20、TAIL-SEC-1/EPIC-LEGEND-1は2026-06-21、
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
