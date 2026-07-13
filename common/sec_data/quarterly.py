@@ -32,11 +32,19 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
     # RevenuesNetOfInterestExpense(~1100M, 全社収益)が同一end/start/filedでマージされ、
     # max(filed)が不定になるため採用タグがランダムになる。
     # → revenue_concept で RevenuesNetOfInterestExpense に固定することが必須。
+    # SOFI-DATA-1（2026-06-24発見・2026-07-13パイプライン恒久化）:
+    # 銀行免許取得後（2022年以降）LongTermDebt/LongTermDebtNoncurrentタグの
+    # 申告を停止し、短期+長期合算タグDebtLongtermAndShorttermCombinedAmountに
+    # 移行。standard fallbackへの追加はAVGO/VZ等の無関係な既存LTDebtデータにも
+    # 波及することを検証で確認したため、SOFI限定のticker_restrictionsとした。
     "SOFI": {
         "revenue_concept": "RevenuesNetOfInterestExpense",
+        "ltdebt_concept": "DebtLongtermAndShorttermCombinedAmount",
         "note": "フィンテック銀行。Revenuesタグなし。フォールバックが"
                 "RevenueFromContract(130M=手数料のみ)とRevenuesNetOfInterest(1100M=全社収益)を"
-                "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。",
+                "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。"
+                "LTDebtも2022年以降LongTermDebt系タグの申告を停止しており"
+                "ltdebt_conceptで単一タグに固定が必須。",
     },
     # BUG-REV-SPAC-1 (2026-06-12 修正)
     # IONQの2022年10-KにおいてRevenuesタグが$1,235M (SPAC関連資金調達額) を誤タグして報告している。
@@ -227,6 +235,23 @@ def build_raw_table(ticker: str, company_facts: dict) -> dict:
             entries = all_entries
             if entries:
                 logger.debug("[%s] Revenue merged: %d entries", ticker, len(entries))
+
+        if field_name == "LTDebt":
+            # 銘柄固有のLTDebt概念が指定されている場合はそれを優先使用
+            # SOFI-DATA-1: 銀行免許取得後（2022年以降）LongTermDebt/
+            # LongTermDebtNoncurrentの申告自体を停止し、短期+長期合算タグに
+            # 移行したケース向け。standard候補群への一般フォールバック追加は
+            # AVGO/VZ等の無関係な既存データにも波及するため見送り、
+            # ticker_restrictionsによる明示的な銘柄限定オーバーライドとする。
+            ticker_ltdebt_concept = restrictions.get("ltdebt_concept")
+            if ticker_ltdebt_concept:
+                override_entries = _get_field_units(company_facts, ticker_ltdebt_concept, unit)
+                if override_entries:
+                    entries = _process_entries(override_entries)
+                    logger.debug("[%s] LTDebt override: %s (%d entries)",
+                                 ticker, ticker_ltdebt_concept, len(entries))
+                    fields[field_name] = entries
+                    continue
 
         if field_name == "_COGS" and not entries:
             # CostOfRevenue未申告の場合、代替COGSタグを試みる

@@ -231,6 +231,10 @@ class SECParser:
         # 銘柄別 revenue_concept オーバーライド（quarterly.py の TICKER_RESTRICTIONS から参照）
         # 金融系銘柄（SOFI等）は MERGE_ALL_TAGS による先着タグ優先で狭義revenuタグが勝つ問題を回避
         _rev_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("revenue_concept")
+        # 銘柄別 ltdebt_concept オーバーライド（SOFI-DATA-1: 銀行免許取得後にLongTermDebt系
+        # タグの申告を停止し代替タグへ移行したケース向け。quarterly.pyと同一の
+        # ticker_restrictionsを参照する）
+        _ltdebt_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("ltdebt_concept")
 
         # 会計年度末月を検出（非12月決算企業対応・determine_fiscal_year に渡す）
         fiscal_end_month = self._detect_fiscal_end_month(us_gaap)
@@ -248,6 +252,9 @@ class SECParser:
             if field_name == "revenue" and _rev_concept_override:
                 xbrl_keys = [_rev_concept_override]
                 merge_all = False
+            # ltdebt_concept が指定されている場合はそのタグのみ使用
+            if field_name == "long_term_debt" and _ltdebt_concept_override:
+                xbrl_keys = [_ltdebt_concept_override]
             extracted[field_name] = self._extract_values(us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all, fiscal_end_month=fiscal_end_month)
         
         # 年次データを集約
