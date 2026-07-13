@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 18876923675.191116,
   "intrinsic_value_per_share": 101.40822143118673,
   "intrinsic_value_beta": 92.23,
-  "upside_percent_beta": 9.3,
+  "upside_percent_beta": 10.1,
   "intrinsic_value_rf": 916.57,
-  "upside_percent_rf": 986.2,
+  "upside_percent_rf": 994.1,
   "v0": 18876923675.191116,
   "v0_adjusted": 18876923675.191116,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 147.78,
       "value_growth_pct": 45.7,
-      "expected_return_pct": 75.1
+      "expected_return_pct": 76.4
     },
     "2年後": {
       "future_value": 215.35,
       "value_growth_pct": 112.4,
-      "expected_return_pct": 155.2
+      "expected_return_pct": 157.1
     },
     "3年後": {
       "future_value": 313.83,
       "value_growth_pct": 209.5,
-      "expected_return_pct": 271.9
+      "expected_return_pct": 274.6
     },
     "4年後": {
       "future_value": 457.33,
       "value_growth_pct": 351.0,
-      "expected_return_pct": 442.0
+      "expected_return_pct": 445.9
     },
     "5年後": {
       "future_value": 666.45,
       "value_growth_pct": 557.2,
-      "expected_return_pct": 689.8
+      "expected_return_pct": 695.6
     }
   },
-  "upside_percent": 20.2,
-  "calculation_date": "2026-07-12T01:30:41+09:00",
+  "upside_percent": 21.1,
+  "calculation_date": "2026-07-14T01:51:02+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -99,7 +99,7 @@
       "enabled": true,
       "weighted_growth": 0.45726,
       "fiscal_year": null,
-      "source": "segment_config"
+      "source": "growth_override"
     }
   },
   "scenario_valuations": {
@@ -223,7 +223,7 @@
     "applied": false,
     "application_rate": 1.0,
     "sector_category": "SaaS",
-    "rpo_incremental": 164925168.40371895,
+    "rpo_incremental": 0.0,
     "op_margin": -0.21403966091559526,
     "exclusion_reason": ""
   },
@@ -270,7 +270,7 @@
     "roe_10yr_avg": null,
     "roe_years_used": 0,
     "roe_outlier_adj": false,
-    "current_price": 84.38,
+    "current_price": 83.77,
     "latest_revenue": 1316191000.0,
     "rpo": 2440000000,
     "beta": 1.101,
@@ -300,16 +300,16 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 129.67972,
+    "per": 128.74223,
     "per_is_forward": true,
     "per_adjusted": null,
     "peg": null,
-    "ps": 12.189839,
+    "ps": 12.101715,
     "ev_ebitda": null,
     "ma200": 66.9867,
     "forward_eps": 0.65068,
-    "analyst_target_median": 90.5,
-    "analyst_target_mean": 94.34615,
+    "analyst_target_median": 91.0,
+    "analyst_target_mean": 94.76923,
     "analyst_target_low": 85.0,
     "analyst_target_high": 115.0,
     "analyst_count": 26,
@@ -320,13 +320,13 @@
     "insider_sell_count": 59,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-07-08",
-    "analyst_vs_iv": -10.8,
+    "analyst_vs_iv": -10.3,
     "max_eps": 1.6002,
-    "max_eps_per": 52.7,
+    "max_eps_per": 52.3,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-12",
+    "validated_at": "2026-07-14",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -402,7 +402,7 @@
     "shares_yr_now_label": "2026",
     "shares_yr_3ago_label": "2023"
   },
-  "net_current_assets_ratio": 0.0543,
+  "net_current_assets_ratio": 0.0547,
   "next_earnings_date": "2026-06-05",
   "segments": [
     {
@@ -443,9 +443,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0353,
-  "forward_earnings_yield": 0.0077,
+  "erp": -0.0352,
+  "forward_earnings_yield": 0.0078,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning for 2025-2026",
+      "impact": "mid"
+    }
+  ]
 }

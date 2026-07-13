@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 456364133.17857486,
   "intrinsic_value_per_share": 4.621236276313002,
   "intrinsic_value_beta": 2.15,
-  "upside_percent_beta": -78.9,
+  "upside_percent_beta": -77.7,
   "intrinsic_value_rf": 24.45,
-  "upside_percent_rf": 140.2,
+  "upside_percent_rf": 154.0,
   "v0": 456364133.17857486,
   "v0_adjusted": 456364133.17857486,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 5.77,
       "value_growth_pct": 24.9,
-      "expected_return_pct": -43.3
+      "expected_return_pct": -40.1
     },
     "2年後": {
       "future_value": 7.2,
       "value_growth_pct": 55.8,
-      "expected_return_pct": -29.3
+      "expected_return_pct": -25.2
     },
     "3年後": {
       "future_value": 8.99,
       "value_growth_pct": 94.6,
-      "expected_return_pct": -11.7
+      "expected_return_pct": -6.6
     },
     "4年後": {
       "future_value": 9.26,
       "value_growth_pct": 100.4,
-      "expected_return_pct": -9.0
+      "expected_return_pct": -3.8
     },
     "5年後": {
       "future_value": 9.54,
       "value_growth_pct": 106.5,
-      "expected_return_pct": -6.3
+      "expected_return_pct": -0.9
     }
   },
-  "upside_percent": -54.6,
-  "calculation_date": "2026-07-12T09:53:45+09:00",
+  "upside_percent": -52.0,
+  "calculation_date": "2026-07-14T01:51:22+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -266,7 +266,7 @@
     "roe_10yr_avg": -0.26447588893166696,
     "roe_years_used": 3,
     "roe_outlier_adj": false,
-    "current_price": 10.18,
+    "current_price": 9.625,
     "latest_revenue": 335381000.0,
     "rpo": 393400000,
     "beta": 2.5,
@@ -296,11 +296,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -24.82927,
+    "per": -23.47561,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 6.5539546,
+    "ps": 6.1966414,
     "ev_ebitda": null,
     "ma200": 10.07925,
     "forward_eps": -0.41,
@@ -313,7 +313,7 @@
     "dividend_yield": 0.0,
     "payout_ratio": 0.0,
     "insider_buy_count": 0,
-    "insider_sell_count": 12,
+    "insider_sell_count": 10,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-07-07",
     "analyst_vs_iv": 224.6,
@@ -322,7 +322,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-12",
+    "validated_at": "2026-07-14",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -348,7 +348,7 @@
   "phase1_growth": 0.24842779576423857,
   "tanuki_score": "PASS",
   "funda_score": 5,
-  "score_comment": "割高(-55%超)、FCFマイナス（投資フェーズ）、売上成長加速",
+  "score_comment": "割高(-52%超)、FCFマイナス（投資フェーズ）、売上成長加速",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {
@@ -400,7 +400,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "computed_runway_months": 9.120934146854617,
-  "net_current_assets_ratio": 0.0566,
+  "net_current_assets_ratio": 0.0599,
   "dupont": {
     "ni_ttm": -300106000,
     "revenue_ttm": 370958000,
@@ -453,9 +453,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0833,
-  "forward_earnings_yield": -0.0403,
+  "erp": -0.0856,
+  "forward_earnings_yield": -0.0426,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning for 2025-2026",
+      "impact": "mid"
+    }
+  ]
 }
