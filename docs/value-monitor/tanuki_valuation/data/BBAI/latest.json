@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 268867166.28435177,
   "intrinsic_value_per_share": 1.5104653799738799,
   "intrinsic_value_beta": 0.74,
-  "upside_percent_beta": -76.3,
+  "upside_percent_beta": -76.1,
   "intrinsic_value_rf": 7.76,
-  "upside_percent_rf": 149.0,
+  "upside_percent_rf": 151.0,
   "v0": 268867166.28435177,
   "v0_adjusted": 268867166.28435177,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 1.95,
       "value_growth_pct": 29.1,
-      "expected_return_pct": -37.4
+      "expected_return_pct": -36.9
     },
     "2年後": {
       "future_value": 2.51,
       "value_growth_pct": 66.2,
-      "expected_return_pct": -19.4
+      "expected_return_pct": -18.8
     },
     "3年後": {
       "future_value": 3.24,
       "value_growth_pct": 114.6,
-      "expected_return_pct": 4.0
+      "expected_return_pct": 4.9
     },
     "4年後": {
       "future_value": 4.18,
       "value_growth_pct": 176.8,
-      "expected_return_pct": 34.2
+      "expected_return_pct": 35.3
     },
     "5年後": {
       "future_value": 4.31,
       "value_growth_pct": 185.4,
-      "expected_return_pct": 38.4
+      "expected_return_pct": 39.5
     }
   },
-  "upside_percent": -51.5,
-  "calculation_date": "2026-07-14T01:44:16+09:00",
+  "upside_percent": -51.1,
+  "calculation_date": "2026-07-14T21:36:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -229,7 +229,7 @@
     "conversion_rate": 0,
     "estimated_fcf": 10213760.0,
     "raw_fcf": 10213760.0,
-    "sector": "",
+    "sector": "Computer_Services",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
     "divergence_warning": ""
@@ -302,7 +302,7 @@
     "roe_10yr_avg": -0.2484547921784387,
     "roe_years_used": 3,
     "roe_outlier_adj": true,
-    "current_price": 3.115,
+    "current_price": 3.09,
     "latest_revenue": 127672000.0,
     "rpo": 7843000,
     "beta": 2.5,
@@ -312,7 +312,7 @@
       "ticker": "BBAI"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Computer_Services)",
     "high_growth_rate_used": 0.29,
     "high_growth_years": 4,
     "terminal_growth_used": 0.03,
@@ -332,13 +332,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -15.575,
+    "per": -15.45,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 11.715175,
+    "ps": 11.621153,
     "ev_ebitda": null,
-    "ma200": 5.07925,
+    "ma200": 5.05475,
     "forward_eps": -0.2,
     "analyst_target_median": 5.0,
     "analyst_target_mean": 5.33333,
@@ -383,7 +383,7 @@
   },
   "tanuki_score": "PASS",
   "funda_score": 15,
-  "score_comment": "割高(-52%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
+  "score_comment": "割高(-51%超)、FCFマイナス（投資フェーズ）、売上成長停滞",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {
@@ -436,7 +436,7 @@
     "buyback_ttm": 0
   },
   "computed_runway_months": 28.450136547697525,
-  "net_current_assets_ratio": 0.2207,
+  "net_current_assets_ratio": 0.2225,
   "dupont": {
     "ni_ttm": -288691000,
     "revenue_ttm": 127350000,
@@ -469,52 +469,37 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.29,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": null,
+  "recommended_g": 0.2197815796250988,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
     "phase1_growth": 0.29,
-    "industry_benchmark": null,
-    "damodaran_industry": null,
+    "industry_benchmark": 0.11700812281636438,
+    "damodaran_industry": "Computer Services",
     "damodaran_year": 2025,
     "rev_cagr_3yr": -0.06263000462065882,
     "rev_cagr_5yr": 0.3225550364338332,
     "g_fundamental": null,
-    "recommended_g_median": null,
-    "recommended_g": null,
+    "recommended_g_median": 0.2197815796250988,
+    "recommended_g": 0.2197815796250988,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=32.3%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体も崩壊中",
     "signals": [
+      "業界平均Computer Services(11.7%)の2.5倍 ℹ️",
       "過去実績(3yr:-6.3% / 5yr:32.3%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.1072,
-  "forward_earnings_yield": -0.0642,
+  "erp": -0.1077,
+  "forward_earnings_yield": -0.0647,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning for 2025 2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

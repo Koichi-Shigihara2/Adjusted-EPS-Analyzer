@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 330822771216.1288,
   "intrinsic_value_per_share": 49.932875542402854,
   "intrinsic_value_beta": 154.65,
-  "upside_percent_beta": -37.3,
+  "upside_percent_beta": -37.6,
   "intrinsic_value_rf": 406.58,
-  "upside_percent_rf": 64.9,
+  "upside_percent_rf": 63.9,
   "v0": 330822771216.1288,
   "v0_adjusted": 330822771216.1288,
   "alpha": 0.7,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 50.81,
       "value_growth_pct": 1.8,
-      "expected_return_pct": -79.4
+      "expected_return_pct": -79.5
     },
     "2年後": {
       "future_value": 51.7,
       "value_growth_pct": 3.5,
-      "expected_return_pct": -79.0
+      "expected_return_pct": -79.2
     },
     "3年後": {
       "future_value": 52.6,
       "value_growth_pct": 5.3,
-      "expected_return_pct": -78.7
+      "expected_return_pct": -78.8
     },
     "4年後": {
       "future_value": 53.52,
       "value_growth_pct": 7.2,
-      "expected_return_pct": -78.3
+      "expected_return_pct": -78.4
     },
     "5年後": {
       "future_value": 54.46,
       "value_growth_pct": 9.1,
-      "expected_return_pct": -77.9
+      "expected_return_pct": -78.0
     }
   },
-  "upside_percent": -79.7,
-  "calculation_date": "2026-07-14T01:57:31+09:00",
+  "upside_percent": -79.9,
+  "calculation_date": "2026-07-14T21:44:52+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -210,8 +210,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 10527114576.13182,
     "raw_fcf": 20194000000.0,
-    "sector": "",
-    "note": "調整済み純利益$15.04B × 転換率70%[sector()] = 推定FCF$10.53B（従来$20.19Bの0.5倍）",
+    "sector": "Drugs_Biotech",
+    "note": "調整済み純利益$15.04B × 転換率70%[sector(Drugs_Biotech)] = 推定FCF$10.53B（従来$20.19Bの0.5倍）",
     "divergence_ratio": 0.52,
     "divergence_warning": ""
   },
@@ -303,7 +303,7 @@
     "roe_10yr_avg": 0.6653559911033776,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 246.55,
+    "current_price": 248.0,
     "latest_revenue": 61160000000.0,
     "rpo": 0.0,
     "beta": 0.309,
@@ -313,7 +313,7 @@
       "ticker": "ABBV"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Drugs_Biotech)",
     "high_growth_rate_used": 0.017525049181538188,
     "high_growth_years": 7,
     "terminal_growth_used": 0.03,
@@ -333,16 +333,16 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 2.7944951626341856,
-    "per": 121.45321,
+    "per": 122.16749,
     "per_is_forward": false,
-    "per_adjusted": 29.97,
+    "per_adjusted": 30.15,
     "peg": 0.4,
-    "ps": 6.9342523,
-    "ev_ebitda": 16.777,
-    "ma200": 222.7915,
-    "forward_eps": 16.28649,
-    "analyst_target_median": 269.0,
-    "analyst_target_mean": 262.92856,
+    "ps": 6.9750333,
+    "ev_ebitda": 16.772,
+    "ma200": 222.91846,
+    "forward_eps": 16.25044,
+    "analyst_target_median": 274.0,
+    "analyst_target_mean": 265.5,
     "analyst_target_low": 200.0,
     "analyst_target_high": 328.0,
     "analyst_count": 28,
@@ -353,9 +353,9 @@
     "insider_sell_count": 0,
     "insider_net_direction": "中立",
     "insider_latest_date": "2026-07-02",
-    "analyst_vs_iv": 438.7,
+    "analyst_vs_iv": 448.7,
     "max_eps": 0.5405,
-    "max_eps_per": 456.2,
+    "max_eps_per": 458.8,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -437,7 +437,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 1508000000
   },
-  "net_current_assets_ratio": -0.0197,
+  "net_current_assets_ratio": -0.0196,
   "next_earnings_date": "2026-07-31",
   "segment_configured": false,
   "phase1_growth_original": 0.15,
@@ -449,8 +449,8 @@
     "verdict": "REVIEW",
     "floor_hit": false,
     "phase1_growth": 0.15,
-    "industry_benchmark": null,
-    "damodaran_industry": null,
+    "industry_benchmark": -0.01587141304421743,
+    "damodaran_industry": "Drugs (Biotechnology)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.017525049181538188,
     "rev_cagr_5yr": 0.05952891709050534,
@@ -463,6 +463,7 @@
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "陶酔期入り",
     "signals": [
+      "業界平均(Drugs (Biotechnology))はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "RR×ROIC(0.8%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
     "warnings": [
@@ -471,25 +472,9 @@
     "fcf_margin_bear_multiplier": 0.8609,
     "fcf_margin_note": "FCFマージン悪化(33.8%→29.1%) BEAR補正係数=0.861"
   },
-  "erp": 0.0231,
-  "forward_earnings_yield": 0.0661,
+  "erp": 0.0225,
+  "forward_earnings_yield": 0.0655,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Active SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

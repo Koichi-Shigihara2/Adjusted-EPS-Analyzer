@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 12037648680.750278,
   "intrinsic_value_per_share": 21.166836386633474,
   "intrinsic_value_beta": 10.62,
-  "upside_percent_beta": -41.7,
+  "upside_percent_beta": -41.4,
   "intrinsic_value_rf": 119.19,
-  "upside_percent_rf": 554.7,
+  "upside_percent_rf": 557.4,
   "v0": 12037648680.750278,
   "v0_adjusted": 12037648680.750278,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 25.89,
       "value_growth_pct": 22.3,
-      "expected_return_pct": 42.2
+      "expected_return_pct": 42.8
     },
     "2年後": {
       "future_value": 31.66,
       "value_growth_pct": 49.6,
-      "expected_return_pct": 73.9
+      "expected_return_pct": 74.6
     },
     "3年後": {
       "future_value": 38.73,
       "value_growth_pct": 82.9,
-      "expected_return_pct": 112.7
+      "expected_return_pct": 113.6
     },
     "4年後": {
       "future_value": 47.36,
       "value_growth_pct": 123.7,
-      "expected_return_pct": 160.1
+      "expected_return_pct": 161.2
     },
     "5年後": {
       "future_value": 57.92,
       "value_growth_pct": 173.6,
-      "expected_return_pct": 218.2
+      "expected_return_pct": 219.5
     }
   },
-  "upside_percent": 16.3,
-  "calculation_date": "2026-07-14T01:52:08+09:00",
+  "upside_percent": 16.8,
+  "calculation_date": "2026-07-14T21:42:01+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -211,8 +211,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 539025021.2969825,
     "raw_fcf": 289068320.0,
-    "sector": "",
-    "note": "調整済み純利益$0.77B × 転換率70%[sector()] = 推定FCF$0.54B（従来$0.29Bの1.9倍）",
+    "sector": "Financial_NonBank",
+    "note": "調整済み純利益$0.77B × 転換率70%[sector(Financial_NonBank)] = 推定FCF$0.54B（従来$0.29Bの1.9倍）",
     "divergence_ratio": 1.86,
     "divergence_warning": ""
   },
@@ -284,7 +284,7 @@
     "roe_10yr_avg": -0.03941651356554138,
     "roe_years_used": 6,
     "roe_outlier_adj": false,
-    "current_price": 18.205,
+    "current_price": 18.13,
     "latest_revenue": 3613354000.0,
     "rpo": 8535000.0,
     "beta": 2.152,
@@ -294,7 +294,7 @@
       "ticker": "SOFI"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Financial_NonBank)",
     "high_growth_rate_used": 0.22300000000000003,
     "high_growth_years": 6,
     "terminal_growth_used": 0.03,
@@ -314,13 +314,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 40.455555,
+    "per": 40.288887,
     "per_is_forward": false,
-    "per_adjusted": 26.78,
-    "peg": 0.88,
-    "ps": 5.9748597,
+    "per_adjusted": 26.67,
+    "peg": 0.85,
+    "ps": 5.9502444,
     "ev_ebitda": null,
-    "ma200": 22.077175,
+    "ma200": 22.022375,
     "forward_eps": 0.81021,
     "analyst_target_median": 18.0,
     "analyst_target_mean": 20.57895,
@@ -336,7 +336,7 @@
     "insider_latest_date": "2026-06-29",
     "analyst_vs_iv": -15.0,
     "max_eps": 0.6541,
-    "max_eps_per": 27.8,
+    "max_eps_per": 27.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -462,7 +462,7 @@
     "floor_hit": false,
     "phase1_growth": 0.223,
     "industry_benchmark": null,
-    "damodaran_industry": null,
+    "damodaran_industry": "Financial Svcs. (Non-bank & Insurance)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.31930345986002884,
     "rev_cagr_5yr": 0.4490743379621287,
@@ -481,25 +481,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0015,
-  "forward_earnings_yield": 0.0445,
+  "erp": 0.0017,
+  "forward_earnings_yield": 0.0447,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

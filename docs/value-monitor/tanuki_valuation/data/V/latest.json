@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 418559456592.301,
   "intrinsic_value_per_share": 168.26909552090228,
   "intrinsic_value_beta": 214.83,
-  "upside_percent_beta": -39.8,
+  "upside_percent_beta": -40.0,
   "intrinsic_value_rf": 989.58,
-  "upside_percent_rf": 177.3,
+  "upside_percent_rf": 176.6,
   "v0": 418559456592.301,
   "v0_adjusted": 418559456592.301,
   "alpha": 0.5,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 186.65,
       "value_growth_pct": 10.9,
-      "expected_return_pct": -47.7
+      "expected_return_pct": -47.8
     },
     "2年後": {
       "future_value": 207.03,
       "value_growth_pct": 23.0,
-      "expected_return_pct": -42.0
+      "expected_return_pct": -42.1
     },
     "3年後": {
       "future_value": 229.64,
       "value_growth_pct": 36.5,
-      "expected_return_pct": -35.7
+      "expected_return_pct": -35.8
     },
     "4年後": {
       "future_value": 254.72,
       "value_growth_pct": 51.4,
-      "expected_return_pct": -28.6
+      "expected_return_pct": -28.8
     },
     "5年後": {
       "future_value": 282.54,
       "value_growth_pct": 67.9,
-      "expected_return_pct": -20.8
+      "expected_return_pct": -21.0
     }
   },
-  "upside_percent": -52.9,
-  "calculation_date": "2026-07-14T01:56:11+09:00",
+  "upside_percent": -53.0,
+  "calculation_date": "2026-07-14T21:44:11+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -210,8 +210,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 14450789081.760029,
     "raw_fcf": 19897750000.0,
-    "sector": "",
-    "note": "調整済み純利益$20.64B × 転換率70%[sector()] = 推定FCF$14.45B（従来$19.90Bの0.7倍）",
+    "sector": "Financial_NonBank",
+    "note": "調整済み純利益$20.64B × 転換率70%[sector(Financial_NonBank)] = 推定FCF$14.45B（従来$19.90Bの0.7倍）",
     "divergence_ratio": 0.73,
     "divergence_warning": ""
   },
@@ -283,7 +283,7 @@
     "roe_10yr_avg": 0.35652046172190843,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 356.925,
+    "current_price": 357.75,
     "latest_revenue": 40000000000.0,
     "rpo": 4900000000,
     "beta": 0.754,
@@ -293,7 +293,7 @@
       "ticker": "V"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Financial_NonBank)",
     "high_growth_rate_used": 0.10921242130254294,
     "high_growth_years": 7,
     "terminal_growth_used": 0.03,
@@ -313,13 +313,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.4973859392320152,
-    "per": 31.091028,
+    "per": 31.162893,
     "per_is_forward": false,
-    "per_adjusted": 26.19,
+    "per_adjusted": 26.25,
     "peg": 1.53,
-    "ps": 15.775673,
-    "ev_ebitda": 22.168,
-    "ma200": 329.11395,
+    "ps": 15.812137,
+    "ev_ebitda": 22.717,
+    "ma200": 329.2092,
     "forward_eps": 14.86715,
     "analyst_target_median": 404.0,
     "analyst_target_mean": 401.15817,
@@ -335,7 +335,7 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": 140.1,
     "max_eps": 12.1641,
-    "max_eps_per": 29.3,
+    "max_eps_per": 29.4,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -412,7 +412,7 @@
     "net_debt_period": "2026Q2",
     "buyback_ttm": 21334000000
   },
-  "net_current_assets_ratio": 0.0038,
+  "net_current_assets_ratio": 0.0037,
   "dupont": {
     "ni_ttm": 22236000000,
     "revenue_ttm": 43027000000,
@@ -436,7 +436,7 @@
     "floor_hit": false,
     "phase1_growth": 0.15,
     "industry_benchmark": null,
-    "damodaran_industry": null,
+    "damodaran_industry": "Financial Svcs. (Non-bank & Insurance)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.10921242130254294,
     "rev_cagr_5yr": 0.12859367600424232,
@@ -456,23 +456,7 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0013,
-  "forward_earnings_yield": 0.0417,
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "competitive",
-      "summary": "Competition threats 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "erp": -0.0014,
+  "forward_earnings_yield": 0.0416,
+  "risk_events": []
 }

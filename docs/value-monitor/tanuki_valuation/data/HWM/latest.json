@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 39.66,
   "upside_percent_beta": -85.4,
   "intrinsic_value_rf": 279.93,
-  "upside_percent_rf": 2.9,
+  "upside_percent_rf": 3.2,
   "v0": 17670792551.24829,
   "v0_adjusted": 17670792551.24829,
   "alpha": 0.4283002182205502,
@@ -30,21 +30,21 @@
     "3年後": {
       "future_value": 62.54,
       "value_growth_pct": 33.7,
-      "expected_return_pct": -77.0
+      "expected_return_pct": -76.9
     },
     "4年後": {
       "future_value": 68.88,
       "value_growth_pct": 47.2,
-      "expected_return_pct": -74.7
+      "expected_return_pct": -74.6
     },
     "5年後": {
       "future_value": 75.88,
       "value_growth_pct": 62.2,
-      "expected_return_pct": -72.1
+      "expected_return_pct": -72.0
     }
   },
   "upside_percent": -82.8,
-  "calculation_date": "2026-07-14T01:54:43+09:00",
+  "calculation_date": "2026-07-14T21:43:25+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -205,8 +205,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 1034540358.7443945,
     "raw_fcf": 999000000.0,
-    "sector": "",
-    "note": "調整済み純利益$1.48B × 転換率70%[sector()] = 推定FCF$1.03B（従来$1.00Bの1.0倍）",
+    "sector": "Aerospace_Defense",
+    "note": "調整済み純利益$1.48B × 転換率70%[sector(Aerospace_Defense)] = 推定FCF$1.03B（従来$1.00Bの1.0倍）",
     "divergence_ratio": 1.04,
     "divergence_warning": ""
   },
@@ -262,19 +262,19 @@
     "bear": {
       "growth_rate": 0.071,
       "rice": 2.349,
-      "rice_per_ratio": 0.0372,
+      "rice_per_ratio": 0.0373,
       "rice_adj": 5.756
     },
     "base": {
       "growth_rate": 0.102,
       "rice": 3.375,
-      "rice_per_ratio": 0.0535,
+      "rice_per_ratio": 0.0536,
       "rice_adj": 8.269
     },
     "bull": {
       "growth_rate": 0.122,
       "rice": 4.036,
-      "rice_per_ratio": 0.064,
+      "rice_per_ratio": 0.0641,
       "rice_adj": 9.891
     }
   },
@@ -298,7 +298,7 @@
     "roe_10yr_avg": 0.10197624243346434,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 271.945,
+    "current_price": 271.28,
     "latest_revenue": 8252000000.0,
     "rpo": 106000000,
     "beta": 1.191,
@@ -308,7 +308,7 @@
       "ticker": "HWM"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Aerospace_Defense)",
     "high_growth_rate_used": 0.10151924673928364,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
@@ -328,16 +328,16 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.4283002182205502,
-    "per": 63.09629,
+    "per": 62.941998,
     "per_is_forward": false,
-    "per_adjusted": 65.25,
+    "per_adjusted": 65.09,
     "peg": 0.8,
-    "ps": 12.618258,
-    "ev_ebitda": 43.257,
-    "ma200": 229.69955,
-    "forward_eps": 6.04232,
-    "analyst_target_median": 306.5,
-    "analyst_target_mean": 307.878,
+    "ps": 12.587401,
+    "ev_ebitda": 43.325,
+    "ma200": 230.08804,
+    "forward_eps": 6.04362,
+    "analyst_target_median": 310.0,
+    "analyst_target_mean": 308.878,
     "analyst_target_low": 256.56,
     "analyst_target_high": 340.0,
     "analyst_count": 20,
@@ -348,9 +348,9 @@
     "insider_sell_count": 1,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-07-06",
-    "analyst_vs_iv": 555.1,
+    "analyst_vs_iv": 562.5,
     "max_eps": 4.5413,
-    "max_eps_per": 59.9,
+    "max_eps_per": 59.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -432,7 +432,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 875000000
   },
-  "net_current_assets_ratio": 0.0307,
+  "net_current_assets_ratio": 0.0308,
   "dupont": {
     "ni_ttm": 1744000000,
     "revenue_ttm": 8623000000,
@@ -478,25 +478,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0208,
-  "forward_earnings_yield": 0.0222,
+  "erp": -0.0207,
+  "forward_earnings_yield": 0.0223,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

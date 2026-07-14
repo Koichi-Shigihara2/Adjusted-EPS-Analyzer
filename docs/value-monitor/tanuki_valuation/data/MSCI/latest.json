@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 24174456999.109848,
   "intrinsic_value_per_share": 323.4959948237339,
   "intrinsic_value_beta": 249.64,
-  "upside_percent_beta": -59.6,
+  "upside_percent_beta": -59.7,
   "intrinsic_value_rf": 2406.76,
-  "upside_percent_rf": 289.9,
+  "upside_percent_rf": 288.0,
   "v0": 24118396574.685165,
   "v0_adjusted": 24118396574.685165,
   "alpha": 0.5,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 361.37,
       "value_growth_pct": 11.7,
-      "expected_return_pct": -41.5
+      "expected_return_pct": -41.7
     },
     "2年後": {
       "future_value": 403.68,
       "value_growth_pct": 24.8,
-      "expected_return_pct": -34.6
+      "expected_return_pct": -34.9
     },
     "3年後": {
       "future_value": 450.95,
       "value_growth_pct": 39.4,
-      "expected_return_pct": -26.9
+      "expected_return_pct": -27.3
     },
     "4年後": {
       "future_value": 503.74,
       "value_growth_pct": 55.7,
-      "expected_return_pct": -18.4
+      "expected_return_pct": -18.8
     },
     "5年後": {
       "future_value": 562.72,
       "value_growth_pct": 73.9,
-      "expected_return_pct": -8.8
+      "expected_return_pct": -9.3
     }
   },
-  "upside_percent": -47.6,
-  "calculation_date": "2026-07-14T01:56:28+09:00",
+  "upside_percent": -47.8,
+  "calculation_date": "2026-07-14T21:44:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -228,8 +228,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 1006004362.3756429,
     "raw_fcf": 1343271500.0,
-    "sector": "",
-    "note": "調整済み純利益$1.44B × 転換率70%[sector()] = 推定FCF$1.01B（従来$1.34Bの0.7倍）",
+    "sector": "Financial_NonBank",
+    "note": "調整済み純利益$1.44B × 転換率70%[sector(Financial_NonBank)] = 推定FCF$1.01B（従来$1.34Bの0.7倍）",
     "divergence_ratio": 0.75,
     "divergence_warning": ""
   },
@@ -301,7 +301,7 @@
     "roe_10yr_avg": 0.7790061145302385,
     "roe_years_used": 2,
     "roe_outlier_adj": true,
-    "current_price": 617.21,
+    "current_price": 620.23,
     "latest_revenue": 3134459000.0,
     "rpo": 2483000000,
     "beta": 1.235,
@@ -311,7 +311,7 @@
       "ticker": "MSCI"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Financial_NonBank)",
     "high_growth_rate_used": 0.11707823751600754,
     "high_growth_years": 10,
     "terminal_growth_used": 0.03,
@@ -331,16 +331,16 @@
     "rpo_pv": 56060424.42468095,
     "growth_option_pv": 0,
     "alpha_uncapped": 3.2718256810270017,
-    "per": 35.18871,
+    "per": 35.360886,
     "per_is_forward": false,
-    "per_adjusted": 29.84,
+    "per_adjusted": 29.98,
     "peg": 1.95,
-    "ps": 13.856696,
-    "ev_ebitda": 26.442,
-    "ma200": 570.4445,
-    "forward_eps": 22.8017,
-    "analyst_target_median": 702.0,
-    "analyst_target_mean": 695.4375,
+    "ps": 13.924496,
+    "ev_ebitda": 27.037,
+    "ma200": 570.7009,
+    "forward_eps": 22.80641,
+    "analyst_target_median": 704.0,
+    "analyst_target_mean": 695.875,
     "analyst_target_low": 550.0,
     "analyst_target_high": 760.0,
     "analyst_count": 16,
@@ -351,9 +351,9 @@
     "insider_sell_count": 3,
     "insider_net_direction": "Buy優勢",
     "insider_latest_date": "2026-06-12",
-    "analyst_vs_iv": 117.0,
+    "analyst_vs_iv": 117.6,
     "max_eps": 1.531,
-    "max_eps_per": 403.1,
+    "max_eps_per": 405.1,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -448,7 +448,7 @@
     "floor_hit": false,
     "phase1_growth": 0.15,
     "industry_benchmark": null,
-    "damodaran_industry": null,
+    "damodaran_industry": "Financial Svcs. (Non-bank & Insurance)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.11707823751600754,
     "rev_cagr_5yr": 0.13078124117012369,
@@ -468,25 +468,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0061,
-  "forward_earnings_yield": 0.0369,
+  "erp": -0.0062,
+  "forward_earnings_yield": 0.0368,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against MSCI Inc.",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

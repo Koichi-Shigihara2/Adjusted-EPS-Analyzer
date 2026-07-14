@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 29.2,
   "upside_percent_beta": -64.4,
   "intrinsic_value_rf": 150.81,
-  "upside_percent_rf": 83.8,
+  "upside_percent_rf": 84.0,
   "v0": 1846718108.1602201,
   "v0_adjusted": 1846718108.1602201,
   "alpha": 0.36149917027379547,
@@ -20,7 +20,7 @@
     "1年後": {
       "future_value": 30.78,
       "value_growth_pct": 4.7,
-      "expected_return_pct": -62.5
+      "expected_return_pct": -62.4
     },
     "2年後": {
       "future_value": 32.23,
@@ -30,7 +30,7 @@
     "3年後": {
       "future_value": 33.74,
       "value_growth_pct": 14.8,
-      "expected_return_pct": -58.9
+      "expected_return_pct": -58.8
     },
     "4年後": {
       "future_value": 35.33,
@@ -43,8 +43,8 @@
       "expected_return_pct": -54.9
     }
   },
-  "upside_percent": -64.2,
-  "calculation_date": "2026-07-14T01:44:40+09:00",
+  "upside_percent": -64.1,
+  "calculation_date": "2026-07-14T21:36:13+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -266,8 +266,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 120506707.26064815,
     "raw_fcf": 107066000.0,
-    "sector": "",
-    "note": "調整済み純利益$0.17B × 転換率70%[sector()] = 推定FCF$0.12B（従来$0.11Bの1.1倍）",
+    "sector": "Restaurant_Dining",
+    "note": "調整済み純利益$0.17B × 転換率70%[sector(Restaurant_Dining)] = 推定FCF$0.12B（従来$0.11Bの1.1倍）",
     "divergence_ratio": 1.13,
     "divergence_warning": ""
   },
@@ -339,7 +339,7 @@
     "roe_10yr_avg": 0.08607123101757037,
     "roe_years_used": 9,
     "roe_outlier_adj": true,
-    "current_price": 82.05,
+    "current_price": 81.95,
     "latest_revenue": 3751806000.0,
     "rpo": 0.0,
     "beta": 1.007,
@@ -349,7 +349,7 @@
       "ticker": "CAKE"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Restaurant_Dining)",
     "high_growth_rate_used": 0.047,
     "high_growth_years": 6,
     "terminal_growth_used": 0.025,
@@ -369,13 +369,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.36149917027379547,
-    "per": 24.061584,
+    "per": 24.032257,
     "per_is_forward": false,
-    "per_adjusted": 21.11,
+    "per_adjusted": 21.09,
     "peg": 1.71,
-    "ps": 1.0718408,
-    "ev_ebitda": 17.765,
-    "ma200": 58.7117,
+    "ps": 1.0705343,
+    "ev_ebitda": 17.646,
+    "ma200": 58.84925,
     "forward_eps": 4.45415,
     "analyst_target_median": 68.0,
     "analyst_target_mean": 68.4,
@@ -472,7 +472,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 30939000
   },
-  "net_current_assets_ratio": -0.0776,
+  "net_current_assets_ratio": -0.0777,
   "dupont": {
     "ni_ttm": 165034000,
     "revenue_ttm": 3803442000,
@@ -503,27 +503,28 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.047,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.08608422498880985,
+  "recommended_g": 0.07757185304465225,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
     "phase1_growth": 0.047,
-    "industry_benchmark": null,
-    "damodaran_industry": null,
+    "industry_benchmark": 0.06905948110049463,
+    "damodaran_industry": "Restaurant/Dining",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.08620678669388293,
     "rev_cagr_5yr": 0.08608422498880985,
     "g_fundamental": 0.043693257417968624,
-    "recommended_g_median": 0.08608422498880985,
-    "recommended_g": 0.08608422498880985,
+    "recommended_g_median": 0.07757185304465225,
+    "recommended_g": 0.07757185304465225,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=8.6%のため中央値モデル適用",
     "hype_phase_used": 3,
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "陶酔期入り",
     "signals": [
+      "業界平均Restaurant/Dining(6.9%)の0.7倍以内 ✅",
       "過去実績(3yr:8.6% / 5yr:8.6%)と整合 ✅",
       "RR×ROIC上限(4.4%)以内 ✅"
     ],
@@ -531,25 +532,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0113,
-  "forward_earnings_yield": 0.0543,
+  "erp": 0.0114,
+  "forward_earnings_yield": 0.0544,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Cheesecake Factory",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid rising competition in 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

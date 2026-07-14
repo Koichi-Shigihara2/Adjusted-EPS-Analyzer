@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 33.81,
   "upside_percent_beta": -91.4,
   "intrinsic_value_rf": 362.45,
-  "upside_percent_rf": -7.8,
+  "upside_percent_rf": -8.2,
   "v0": 90587652978.8466,
   "v0_adjusted": 90587652978.8466,
   "alpha": 0.0,
@@ -20,12 +20,12 @@
     "1年後": {
       "future_value": 58.17,
       "value_growth_pct": 12.8,
-      "expected_return_pct": -85.2
+      "expected_return_pct": -85.3
     },
     "2年後": {
       "future_value": 65.62,
       "value_growth_pct": 27.2,
-      "expected_return_pct": -83.3
+      "expected_return_pct": -83.4
     },
     "3年後": {
       "future_value": 74.02,
@@ -35,16 +35,16 @@
     "4年後": {
       "future_value": 83.49,
       "value_growth_pct": 61.9,
-      "expected_return_pct": -78.8
+      "expected_return_pct": -78.9
     },
     "5年後": {
       "future_value": 86.41,
       "value_growth_pct": 67.6,
-      "expected_return_pct": -78.0
+      "expected_return_pct": -78.1
     }
   },
   "upside_percent": -86.9,
-  "calculation_date": "2026-07-14T01:52:34+09:00",
+  "calculation_date": "2026-07-14T21:42:13+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -286,8 +286,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 4342101697.924118,
     "raw_fcf": 5571500000.0,
-    "sector": "",
-    "note": "調整済み純利益$6.20B × 転換率70%[sector()] = 推定FCF$4.34B（従来$5.57Bの0.8倍）",
+    "sector": "Auto_Truck",
+    "note": "調整済み純利益$6.20B × 転換率70%[sector(Auto_Truck)] = 推定FCF$4.34B（従来$5.57Bの0.8倍）",
     "divergence_ratio": 0.78,
     "divergence_warning": ""
   },
@@ -356,10 +356,10 @@
       6264000000
     ],
     "diluted_shares": 3755723871,
-    "roe_10yr_avg": -0.005439994944558571,
+    "roe_10yr_avg": -0.005439994944558565,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 393.31,
+    "current_price": 394.76,
     "latest_revenue": 94827000000.0,
     "rpo": 10150000000,
     "beta": 1.793,
@@ -369,7 +369,7 @@
       "ticker": "TSLA"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Auto_Truck)",
     "high_growth_rate_used": 0.128,
     "high_growth_years": 4,
     "terminal_growth_used": 0.035,
@@ -380,7 +380,7 @@
     "moat_fcf_margin_norm": 0.1746,
     "pv_high": 47532480559.66333,
     "pv_terminal": 43055172419.18327,
-    "roe_used": -0.005439994944558571,
+    "roe_used": -0.005439994944558565,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -389,16 +389,16 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 680915963.5607014,
     "alpha_uncapped": 0.0,
-    "per": 357.5909,
+    "per": 355.63965,
     "per_is_forward": false,
-    "per_adjusted": 212.05,
+    "per_adjusted": 212.83,
     "peg": 5.11,
-    "ps": 15.091733,
-    "ev_ebitda": 135.503,
-    "ma200": 418.1399,
+    "ps": 15.147371,
+    "ev_ebitda": 131.102,
+    "ma200": 417.98444,
     "forward_eps": 2.57985,
     "analyst_target_median": 455.0,
-    "analyst_target_mean": 424.56,
+    "analyst_target_mean": 425.235,
     "analyst_target_low": 125.0,
     "analyst_target_high": 600.0,
     "analyst_count": 40,
@@ -411,7 +411,7 @@
     "insider_latest_date": "2026-06-17",
     "analyst_vs_iv": 782.3,
     "max_eps": 1.7805,
-    "max_eps_per": 220.9,
+    "max_eps_per": 221.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -491,7 +491,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.0241,
+  "net_current_assets_ratio": 0.024,
   "dupont": {
     "ni_ttm": 3862000000,
     "revenue_ttm": 97879000000,
@@ -535,8 +535,8 @@
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
     "phase1_growth": 0.128,
-    "industry_benchmark": null,
-    "damodaran_industry": null,
+    "industry_benchmark": -0.008665302719898493,
+    "damodaran_industry": "Auto & Truck",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.051943257367141005,
     "rev_cagr_5yr": 0.24630713363610557,
@@ -549,6 +549,7 @@
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体維持・バリュエーション過熱",
     "signals": [
+      "業界平均(Auto & Truck)はマイナス成長。個別銘柄の独自評価が必要 ℹ️",
       "過去実績(3yr:5.2% / 5yr:24.6%)と整合 ✅",
       "RR×ROIC(4.7%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
@@ -556,25 +557,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0364,
-  "forward_earnings_yield": 0.0066,
+  "erp": -0.0365,
+  "forward_earnings_yield": 0.0065,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning",
-      "impact": "high"
-    }
-  ]
+  "risk_events": []
 }

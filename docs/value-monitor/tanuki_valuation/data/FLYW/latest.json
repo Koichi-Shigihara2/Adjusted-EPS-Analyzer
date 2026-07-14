@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 2356598281.042546,
   "intrinsic_value_per_share": 26.983017301712085,
   "intrinsic_value_beta": 21.61,
-  "upside_percent_beta": 20.3,
+  "upside_percent_beta": 21.5,
   "intrinsic_value_rf": 142.2,
-  "upside_percent_rf": 691.8,
+  "upside_percent_rf": 699.8,
   "v0": 2356598281.042546,
   "v0_adjusted": 2356598281.042546,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 35.82,
       "value_growth_pct": 32.8,
-      "expected_return_pct": 99.4
+      "expected_return_pct": 101.5
     },
     "2年後": {
       "future_value": 47.57,
       "value_growth_pct": 76.3,
-      "expected_return_pct": 164.9
+      "expected_return_pct": 167.5
     },
     "3年後": {
       "future_value": 63.16,
       "value_growth_pct": 134.1,
-      "expected_return_pct": 251.7
+      "expected_return_pct": 255.2
     },
     "4年後": {
       "future_value": 83.87,
       "value_growth_pct": 210.9,
-      "expected_return_pct": 367.0
+      "expected_return_pct": 371.7
     },
     "5年後": {
       "future_value": 86.38,
       "value_growth_pct": 220.2,
-      "expected_return_pct": 381.0
+      "expected_return_pct": 385.8
     }
   },
-  "upside_percent": 50.2,
-  "calculation_date": "2026-07-14T01:58:45+09:00",
+  "upside_percent": 51.8,
+  "calculation_date": "2026-07-14T21:46:05+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -229,8 +229,8 @@
     "conversion_rate": 0.7,
     "estimated_fcf": 69358888.15239088,
     "raw_fcf": 109465500.0,
-    "sector": "",
-    "note": "調整済み純利益$0.10B × 転換率70%[sector()] = 推定FCF$0.07B（従来$0.11Bの0.6倍）",
+    "sector": "Financial_NonBank",
+    "note": "調整済み純利益$0.10B × 転換率70%[sector(Financial_NonBank)] = 推定FCF$0.07B（従来$0.11Bの0.6倍）",
     "divergence_ratio": 0.63,
     "divergence_warning": ""
   },
@@ -286,19 +286,19 @@
     "bear": {
       "growth_rate": 0.229,
       "rice": 0.562,
-      "rice_per_ratio": 0.0075,
+      "rice_per_ratio": 0.0076,
       "rice_adj": 8.225
     },
     "base": {
       "growth_rate": 0.328,
       "rice": 0.805,
-      "rice_per_ratio": 0.0108,
+      "rice_per_ratio": 0.0109,
       "rice_adj": 11.78
     },
     "bull": {
       "growth_rate": 0.393,
       "rice": 0.964,
-      "rice_per_ratio": 0.0129,
+      "rice_per_ratio": 0.013,
       "rice_adj": 14.115
     }
   },
@@ -322,7 +322,7 @@
     "roe_10yr_avg": -0.02621381859445087,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 17.96,
+    "current_price": 17.78,
     "latest_revenue": 623025000.0,
     "rpo": 16500000,
     "beta": 1.319,
@@ -332,7 +332,7 @@
       "ticker": "FLYW"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config()",
+    "_beta_source": "beta_config(Financial_NonBank)",
     "high_growth_rate_used": 0.32781204538864295,
     "high_growth_years": 4,
     "terminal_growth_used": 0.03,
@@ -352,13 +352,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 74.83333,
+    "per": 74.083336,
     "per_is_forward": false,
-    "per_adjusted": 20.48,
+    "per_adjusted": 20.27,
     "peg": null,
-    "ps": 3.270819,
-    "ev_ebitda": 32.44,
-    "ma200": 13.83555,
+    "ps": 3.2380385,
+    "ev_ebitda": 32.786,
+    "ma200": 13.8592,
     "forward_eps": 1.25399,
     "analyst_target_median": 20.0,
     "analyst_target_mean": 19.23077,
@@ -374,7 +374,7 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": -25.9,
     "max_eps": 0.8261,
-    "max_eps_per": 21.7,
+    "max_eps_per": 21.5,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -456,7 +456,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 74350000
   },
-  "net_current_assets_ratio": 0.0987,
+  "net_current_assets_ratio": 0.0997,
   "dupont": {
     "ni_ttm": 30175000,
     "revenue_ttm": 677685000,
@@ -482,7 +482,7 @@
     "floor_hit": false,
     "phase1_growth": 0.5,
     "industry_benchmark": null,
-    "damodaran_industry": null,
+    "damodaran_industry": "Financial Svcs. (Non-bank & Insurance)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.2912633417793986,
     "rev_cagr_5yr": 0.3643607489978873,
@@ -501,25 +501,9 @@
     "fcf_margin_bear_multiplier": 0.8817,
     "fcf_margin_note": "FCFマージン悪化(18.0%→15.9%) BEAR補正係数=0.882"
   },
-  "erp": 0.0268,
-  "forward_earnings_yield": 0.0698,
+  "erp": 0.0275,
+  "forward_earnings_yield": 0.0705,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Flywire Corp",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition risks for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

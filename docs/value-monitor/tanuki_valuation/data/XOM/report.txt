@@ -1,15 +1,15 @@
 XOM INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-14T02:01:15+09:00
-Price: $144.18
+Generated: 2026-07-14T21:47:42+09:00
+Price: $144.51
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Funda_Score: 25/100
 Timing_Score (components):
-  Deviation_Rate: -32.3%
-  MA200_Deviation: +5.8%
+  Deviation_Rate: -45.2%
+  MA200_Deviation: +5.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $168 median ($130-$185) | 21 analysts | vs IV: +72.0%
+  Analyst_Consensus: Buy | Target: $168 median ($130-$185) | 21 analysts | vs IV: +112.3%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×N/A (OCF赤字)
-Key_Metric_Y: RICE = -2.101
-Deviation_Rate: -32.3%
+Key_Metric_Y: RICE = -0.952
+Deviation_Rate: -45.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,20 +56,22 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $144.18
-Intrinsic_Value_BASE: $97.68
-Deviation_BASE: -32.3%
+Current_Price: $144.51
+Intrinsic_Value_BASE: $79.13
+Deviation_BASE: -45.2%
+Growth_Rate_Original: 15.0% (TTM実績)
+Growth_Rate_Adjusted: 6.8% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=10.5%, IV=$87.20, Deviation=-39.5%
-BASE: Growth=15.0%, IV=$97.68, Deviation=-32.3%
-BULL: Growth=18.0%, IV=$105.12, Deviation=-27.1%
+BEAR: Growth=4.7%, IV=$74.94 （推奨値ベース）
+BASE: Growth=6.8%, IV=$79.13 （推奨値ベース）
+BULL: Growth=8.1%, IV=$82.01 （推奨値ベース）
 TTM_YoY_Growth: -4.4%
-(DCF Base vs TTM actual: +19.4pt premium)
+(DCF Base vs TTM actual: +11.2pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 6.01%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.3
-FCF_Conversion_Rate: 0.7 (Industry: Oil & Gas Integrated)
+FCF_Conversion_Rate: 0.7 (Industry: Oil_Gas_Integrated)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $20,191M (= Adj_NI $28,844M × FCF_Conv 0.7)
@@ -78,16 +80,16 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から45%乖離]
-DCF_FCF_PV: $66.25B (3yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $339.48B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $405.72B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $57.10B (3yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $271.77B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $328.86B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.4325 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $581.20B (= v0 × (1+alpha))
+DCF_v0_x_alpha: $471.10B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $580.34B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.86B)
+Equity_Value: $470.24B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-0.86B)
 Shares_Used: 4144.9M (source: yf_implied)
-→ Intrinsic_Value: $97.68 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $79.13 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.86B (negative=net cash)
   Total_Debt: $9.30B  Cash: $8.44B
@@ -152,12 +154,17 @@ market-priced future potential.
 
 
 [4. 成長率根拠]
-Phase1成長率 : 15.0%
+Phase1成長率 : 6.8% (DCF適用値・推奨成長率)
+元成長率      : 15.0% (推奨適用前)
 成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=4
-判定         : FLOOR_HIT_REVIEW
-業界ベンチマーク: N/A
+推奨成長率内訳:
+  中央値ベース:          6.8%
+  最終推奨値:            6.8%
+判定         : REVIEW
+業界ベンチマーク: Oil/Gas (Integrated) / 0.7% (Damodaran 2025)
 signals:
   - 過去実績(3yr:-7.0% / 5yr:12.9%)と整合 ✅
+  - 業界平均Oil/Gas (Integrated)(0.7%)の21.1倍超 ⚠️
 Definition:
 
 Growth Rate Methodology:
@@ -176,11 +183,11 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=-1.47
-BASE: RICE=-2.101
-BULL: RICE=-2.521
+BEAR: RICE=-0.658
+BASE: RICE=-0.952
+BULL: RICE=-1.134
 Components (BASE scenario):
-G  = 15.0%  [TANUKI forward growth rate]
+G  = 6.8%  [TANUKI forward growth rate]
 Q  = 1.7097   [OCF / (NetIncome + SBC), 3yr avg]
 CF = -0.819  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
@@ -236,12 +243,12 @@ Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 24.3x
-  Adjusted_EPS_PER: 25.3x (TTM調整後EPS: $5.6890)
+  Adjusted_EPS_PER: 25.4x (TTM調整後EPS: $5.6890)
   Delta: +1.1x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-31
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $10.67 (yfinance forward EPS)
+  Next_FY_EPS: $10.64 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -266,7 +273,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 24.3x
   PEG: 1.15
   PS:  1.8x
-  EV_EBITDA: 11.1x
+  EV_EBITDA: 11.5x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -285,9 +292,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 7.40%  (ForwardEPS $10.67 / Price $144.18)
+  Forward_Earnings_Yield: 7.36%  (ForwardEPS $10.64 / Price $144.51)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 3.10%
+  ERP: 3.06%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -311,7 +318,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.0%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $168 median ($130-$185) | 21 analysts | vs IV: +72.0%
+Analyst_Consensus: Buy | Target: $168 median ($130-$185) | 21 analysts | vs IV: +112.3%
 Insider_Activity: Sell優勢 | 買い0件 / 売り1件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: -4.4%
@@ -334,10 +341,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 
 [9. RISK EVENTS]
-Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning and competition risks 2025-2026
+  N/A (Grok検索なし または イベントなし)
 
 ==============================================
 DISCLAIMER: This report is generated automatically
