@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 169.53,
   "upside_percent_beta": -67.6,
   "intrinsic_value_rf": 993.84,
-  "upside_percent_rf": 89.8,
+  "upside_percent_rf": 90.1,
   "v0": 57890849313.80939,
   "v0_adjusted": 57890849313.80939,
   "alpha": 0.7,
@@ -30,7 +30,7 @@
     "3年後": {
       "future_value": 136.72,
       "value_growth_pct": 18.1,
-      "expected_return_pct": -73.9
+      "expected_return_pct": -73.8
     },
     "4年後": {
       "future_value": 144.5,
@@ -43,8 +43,8 @@
       "expected_return_pct": -70.8
     }
   },
-  "upside_percent": -77.9,
-  "calculation_date": "2026-07-14T22:59:47+09:00",
+  "upside_percent": -77.8,
+  "calculation_date": "2026-07-15T00:46:26+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -203,6 +203,20 @@
     "divergence_ratio": 0.48,
     "divergence_warning": ""
   },
+  "software_system_reclassification": {
+    "applicable": false,
+    "current_subgroup": "Aerospace_Defense",
+    "recommended_subgroup": null,
+    "realized_ratio": null,
+    "years_used": 0,
+    "deviation_from_current": null,
+    "reclassify_recommended": false,
+    "note": "対象外"
+  },
+  "software_system_provisional": {
+    "is_provisional": false,
+    "note": ""
+  },
   "rd_capitalization": {
     "applied": false,
     "rd_current": 0.0,
@@ -255,19 +269,19 @@
     "bear": {
       "growth_rate": 0.04,
       "rice": 1.714,
-      "rice_per_ratio": 0.0677,
+      "rice_per_ratio": 0.0678,
       "rice_adj": 1.714
     },
     "base": {
       "growth_rate": 0.057,
       "rice": 2.442,
-      "rice_per_ratio": 0.0964,
+      "rice_per_ratio": 0.0966,
       "rice_adj": 2.442
     },
     "bull": {
       "growth_rate": 0.068,
       "rice": 2.914,
-      "rice_per_ratio": 0.115,
+      "rice_per_ratio": 0.1152,
       "rice_adj": 2.914
     }
   },
@@ -288,10 +302,10 @@
       6260000000
     ],
     "diluted_shares": 230563608,
-    "roe_10yr_avg": 0.7490345180724661,
+    "roe_10yr_avg": 0.7490345180724659,
     "roe_years_used": 9,
     "roe_outlier_adj": true,
-    "current_price": 523.575,
+    "current_price": 522.75,
     "latest_revenue": 75048000000.0,
     "rpo": 186400000000,
     "beta": 0.74,
@@ -312,7 +326,7 @@
     "moat_fcf_margin_norm": 0.2874,
     "pv_high": 12754866518.032711,
     "pv_terminal": 45135982795.77668,
-    "roe_used": 0.7490345180724661,
+    "roe_used": 0.7490345180724659,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -320,12 +334,12 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 3.1459449759043574,
-    "per": 25.330189,
+    "alpha_uncapped": 3.145944975904356,
+    "per": 25.290276,
     "per_is_forward": false,
-    "per_adjusted": 25.41,
+    "per_adjusted": 25.37,
     "peg": 1.11,
-    "ps": 1.6072929,
+    "ps": 1.6047603,
     "ev_ebitda": 17.367,
     "ma200": 542.0214,
     "forward_eps": 32.07868,
@@ -335,7 +349,7 @@
     "analyst_target_high": 756.0,
     "analyst_count": 19,
     "analyst_rec_key": "hold",
-    "dividend_yield": 0.02591121,
+    "dividend_yield": 0.025927633,
     "payout_ratio": 0.65379995,
     "insider_buy_count": 0,
     "insider_sell_count": 0,
@@ -343,11 +357,11 @@
     "insider_latest_date": "2026-07-02",
     "analyst_vs_iv": 418.1,
     "max_eps": 22.1067,
-    "max_eps_per": 23.7,
+    "max_eps_per": 23.6,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-14",
+    "validated_at": "2026-07-15",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -495,9 +509,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0183,
-  "forward_earnings_yield": 0.0613,
+  "erp": 0.0184,
+  "forward_earnings_yield": 0.0614,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning for 2025-2026 amid competition",
+      "impact": "mid"
+    }
+  ]
 }

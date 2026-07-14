@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 103208327.2739851,
   "intrinsic_value_per_share": 3.014781774329957,
   "intrinsic_value_beta": 2.76,
-  "upside_percent_beta": -60.3,
+  "upside_percent_beta": -61.6,
   "intrinsic_value_rf": 5.04,
-  "upside_percent_rf": -27.6,
+  "upside_percent_rf": -30.0,
   "v0": 103208327.2739851,
   "v0_adjusted": 103208327.2739851,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 3.91,
       "value_growth_pct": 29.9,
-      "expected_return_pct": -43.8
+      "expected_return_pct": -45.7
     },
     "2年後": {
       "future_value": 5.09,
       "value_growth_pct": 69.1,
-      "expected_return_pct": -26.9
+      "expected_return_pct": -29.3
     },
     "3年後": {
       "future_value": 6.61,
       "value_growth_pct": 119.6,
-      "expected_return_pct": -5.0
+      "expected_return_pct": -8.1
     },
     "4年後": {
       "future_value": 8.6,
       "value_growth_pct": 185.7,
-      "expected_return_pct": 23.6
+      "expected_return_pct": 19.5
     },
     "5年後": {
       "future_value": 8.85,
       "value_growth_pct": 194.0,
-      "expected_return_pct": 27.2
+      "expected_return_pct": 23.0
     }
   },
-  "upside_percent": -56.7,
-  "calculation_date": "2026-07-14T21:40:47+09:00",
+  "upside_percent": -58.1,
+  "calculation_date": "2026-07-15T00:47:55+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -197,6 +197,20 @@
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
+  "software_system_reclassification": {
+    "applicable": false,
+    "current_subgroup": "Telecom_Equipment",
+    "recommended_subgroup": null,
+    "realized_ratio": null,
+    "years_used": 0,
+    "deviation_from_current": null,
+    "reclassify_recommended": false,
+    "note": "対象外"
+  },
+  "software_system_provisional": {
+    "is_provisional": false,
+    "note": ""
+  },
   "rd_capitalization": {
     "applied": true,
     "rd_current": 20879000.0,
@@ -247,19 +261,19 @@
     "bear": {
       "growth_rate": 0.21,
       "rice": -0.953,
-      "rice_per_ratio": -0.0123,
+      "rice_per_ratio": -0.0119,
       "rice_adj": -2.959
     },
     "base": {
       "growth_rate": 0.3,
       "rice": -1.362,
-      "rice_per_ratio": -0.0176,
+      "rice_per_ratio": -0.017,
       "rice_adj": -4.227
     },
     "bull": {
       "growth_rate": 0.36,
       "rice": -1.634,
-      "rice_per_ratio": -0.0211,
+      "rice_per_ratio": -0.0204,
       "rice_adj": -5.073
     }
   },
@@ -283,7 +297,7 @@
     "roe_10yr_avg": -0.6059836595491378,
     "roe_years_used": 6,
     "roe_outlier_adj": true,
-    "current_price": 6.96,
+    "current_price": 7.195,
     "latest_revenue": 50731000.0,
     "rpo": 205000,
     "beta": 2.5,
@@ -313,11 +327,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 77.33333,
+    "per": 79.94444,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 41.05457,
+    "ps": 42.44075,
     "ev_ebitda": null,
     "ma200": 9.437225,
     "forward_eps": -0.03,
@@ -335,11 +349,11 @@
     "insider_latest_date": "2026-06-02",
     "analyst_vs_iv": 530.2,
     "max_eps": 0.4575,
-    "max_eps_per": 15.2,
+    "max_eps_per": 15.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-14",
+    "validated_at": "2026-07-15",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -411,7 +425,7 @@
     "net_debt_period": "Cash=2026Q1/Debt=FY2025"
   },
   "computed_runway_months": 301.91358509073075,
-  "net_current_assets_ratio": 0.3731,
+  "net_current_assets_ratio": 0.3609,
   "dupont": {
     "ni_ttm": 244697000,
     "revenue_ttm": 96605000,
@@ -467,7 +481,23 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0473,
-  "forward_earnings_yield": -0.0043,
-  "risk_events": []
+  "erp": -0.0472,
+  "forward_earnings_yield": -0.0042,
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning",
+      "impact": "mid"
+    }
+  ]
 }
