@@ -223,14 +223,14 @@ class KoichiValuationCalculator:
                 )
 
         # ── STEP 4c: FCF実力推定（調整済みEPS × FCF転換率）v7.2 ──
+        # SECTOR-FCF-RATE-BROKEN-1: 独自のbeta_config.json読み込み（パス誤り）を廃止し、
+        # data_fetcher._load_beta_config()（pipeline.py::_load_beta_sector()と同じ
+        # 正しいパスを参照する既存の読み込み関数）に統一する。
         _sector = ""
         try:
-            import json as _json
-            _bcfg_path = os.path.join(os.path.dirname(__file__), '..', 'beta_config.json')
-            if os.path.exists(_bcfg_path):
-                with open(_bcfg_path) as _f:
-                    _bcfg = _json.load(_f)
-                _sector = _bcfg.get('overrides', {}).get(ticker, {}).get('sector', '')
+            from data_fetcher import _load_beta_config
+            _bcfg = _load_beta_config()
+            _sector = _bcfg.get('overrides', {}).get(ticker, {}).get('sector', '') or ''
         except Exception:
             pass
 

@@ -2,6 +2,127 @@
 
 ---
 
+## 2026-07-14（完了）
+
+### ✅ [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化（2026-07-14完了）
+**分類:** バグ / TANUKI VALUATION / データ品質
+**登録日:** 2026-07-11
+**完了日:** 2026-07-14
+**発見:** [[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）関連調査時
+
+#### 背景・原因（登録時点）
+`adjustments.py`（`estimate_fcf_from_eps`内）のFCF転換率セクター別レート判定・
+Financial Services向け`ni_direct`判定が、以下3つの重なったバグにより
+実質的に無効化されていた：
+- **バグ①**: `core_calculator.py:227-233`の`beta_config.json`読み込みパスが誤り
+  （存在しない`src/value/beta_config.json`を参照、実際は`config/beta_config.json`）
+- **バグ②**: `config/beta_config.json`の`overrides`に`sector`キーがほぼ存在しない
+  （全103エントリ中1件のみ）
+- **バグ③**: `fcf_conversion_config.json`の`sector_conversion_rates`とbeta_config.json側の
+  タクソノミーが一致しない（後の調査で「タクソノミー自体は同一系統〈Damodaran業種〉だが
+  fcf_conversion_config.json側のカバレッジが8/114分類と極端に少ないだけ」と判明）
+
+#### 対応内容
+1. **バグ①修正**: `core_calculator.py:226-235`の独自実装（パス誤り）を削除し、
+   `data_fetcher.py::_load_beta_config()`（正しいパスを参照する既存の共通ローダー）を
+   呼び出す形に統一。`pipeline.py::_load_beta_sector()`と同じ正しいパスを参照する。
+2. **バグ②解消**: Damodaran公式データセット`indname.xls`（企業別48,157社の実分類データ、
+   docs/value-monitor/tanuki_valuation/common/damodaran_cache/配下に既存キャッシュ）に対し、
+   tanuki=true全100銘柄のtickerを主要取引所（NasdaqGS/NasdaqGM/NasdaqCM/NYSE/NYSEAM）
+   限定で直接照合し、97銘柄で対応するIndustry Group文字列を取得。
+   `growth_sanity.py::SECTOR_TO_DAMODARAN`の逆引き（値→キー、beta_config.json形式ブロックのみ
+   対象）で対応する省略キーへ変換し、`config/beta_config.json`の該当ticker `overrides.sector`に
+   書き込んだ（`beta`/`source`等の既存フィールドは変更なし）。
+   - 照合不能: 3銘柄（CIX/MO/PM）— 該当するDamodaran分類（Office Equipment & Services /
+     Tobacco）に対応する省略キーがSECTOR_TO_DAMODARANに存在しないため。CIXは
+     TICKER_INDUSTRY_OVERRIDESの直接値修正で対応済み（後述）。MO/PMは対応するキーが
+     存在せずbeta_config.json側は未設定のまま据え置き（従来通りdefault 0.70・
+     growth_sanity industry_benchmarkもNoneのまま。回帰ではなく既存の未解消状態を維持）。
+3. **TICKER_INDUSTRY_OVERRIDES 8件の修正（Koichiさん確認済み: これらはテストデータであり
+   意図的な業務判断ではなかった）**: `growth_sanity.py::TICKER_INDUSTRY_OVERRIDES`の
+   HON/TDY/KULR/META/AMZN/NET/CIX/BKNGを、indname.xls実態分類の値に置き換え
+   （例: HON "Machinery"→"Diversified"、META "Advertising"→"Software (Entertainment)"）。
+   併せてCRWVの既存sector値（"Information_Services"）もindname.xls実態（"Software (Internet)"）
+   と不一致だったため`beta_config.json`側を修正（TICKER_INDUSTRY_OVERRIDES未登録のため
+   sector経由の修正のみ）。
+4. **バグ③は範囲外のまま維持**: fcf_conversion_config.jsonのカテゴリ拡張は
+   [[FCF-CONVRATE-DESIGN-LIMIT-1]]で別途対応。
+
+#### 検証
+- 全105銘柄（tanuki=true 100銘柄）でpipeline.py再実行（`--skip-risk`）、成功100/失敗0
+- 新旧比較の結果、`fcf_estimation.conversion_rate`が変化したのは9銘柄
+  （ALAB/AMD/AVGO/NVDA/RMBS/SITM→Semiconductor 0.85、CRWV/DOCN/NET→Software_Internet 0.9）
+  のみで、意図した銘柄以外への波及なしを確認
+- `growth_sanity.damodaran_industry`が変化したのは80銘柄（大半はNone→実値。
+  HON/TDY/KULR/META/AMZN/NET/CIX/BKNG/CRWVの9件はテストデータ値→indname.xls実態値）
+- `report_consistency_check.py`: NG=0（警告36件は全て既存確認済み、新規警告0件）
+- pytest: 309 passed / 2 known failed（MSFT/NVDA、[[TEST-STALE-IV-1]]の既知バグ、
+  本修正とは無関係）
+
+#### 実装判断の経緯
+実装依頼時、TICKER_INDUSTRY_OVERRIDES 8件が「意図的な業務判断ではなくテストデータ」と
+記載されていたが、各エントリに具体的な業務理由コメントが付いていたこと、および
+全105銘柄の成長率サニティチェックに使われる本番辞書であることから、実装前にKoichiさんに
+直接確認を行った。Koichiさんより「直接確認済み」との回答を得た上で着手。あわせて
+`beta_config.json`のsectorより優先順位が高い`TICKER_INDUSTRY_OVERRIDES`との不整合を
+防ぐため、8件（+CRWV）を同時に修正する方針とした。
+
+---
+
+### ✅ [FCF-EPS-CONVRATE-SECTOR-1] LITE/SITM等でEPS推定FCFの一律conversion_rate=0.7が業種特性に不適合の疑い（2026-07-14完了・既存バグの実害具体例と判明）
+**分類:** DCF信頼性判定ロジック / データ推定
+**登録日:** 2026-07-14
+**完了日:** 2026-07-14
+**発見:** [[POLICY-AB-TREND-BLIND-1]]と同一調査
+
+#### 内容
+LITE・SITM共にPolicy B（eps_invalid型、divergence_ratio 4.33倍・2.55倍）で
+LOW判定。`calculator/adjustments.py::estimate_fcf_from_eps()`が使う業種一律
+conversion_rate=0.7が、両銘柄（光デバイス・ファブレス半導体、循環的CapEx/
+在庫サイクル変動大）の実態に合っていない疑い。個別XBRLタグ自体（OCF/CapEx/
+NetIncome）に重複値・欠損は確認されず、タグ由来ではなく推定手法の
+アサンプション由来の疑い。
+
+#### 調査結果・クローズ理由
+LITE・SITMのconversion_rate異常（乖離3.65倍/2.55倍）を調査した結果、
+独立バグではなく既存[[SECTOR-FCF-RATE-BROKEN-1]]（beta_config.jsonの
+パス誤り`src/value/beta_config.json`→正しくは`config/beta_config.json`で
+sectorが空文字列になる）が実際に引き起こしている実害の具体例と判明した
+ためクローズ。同じバグ経路を通るLRCX・ENTGでは乖離がほぼ無い
+（0.86〜0.94）ことから、バグ自体は業種横断だが実害の大きさは
+LITE/SITM固有の事業特性（在庫・キャップサイクルの振れ幅）に依存する
+ことを確認。副次発見の2課題は[[FCF-CONVRATE-DESIGN-LIMIT-1]]として
+分離登録。
+
+---
+
+### ✅ [TRANSIENT-EXPENSE-COVERAGE-1] AVAV/RDWで一過性費用検出モジュールがFCF悪化幅を説明しきれない（2026-07-14完了・悪化の主因は構造的要因と確認）
+**分類:** データ品質 / 一過性費用検出
+**登録日:** 2026-07-14
+**完了日:** 2026-07-14
+**発見:** [[POLICY-AB-TREND-BLIND-1]]と同一調査
+
+#### 内容
+AVAV: 検出された一過性費用$11M（在庫評価損・貸倒引当金）に対し実際の
+悪化幅$100M超で説明力不足。M&A統合費用カテゴリは分類器に存在するが
+今回検出されず、検出網羅性に疑問。
+RDW: 検出された一過性費用$14M（在庫評価損）に対し実際の悪化幅$150M超で
+同様に説明力不足。
+
+関連: [[FCF-OUTLIER-QUAL-1]]（一過性費用の説明妥当性の定性評価導入。
+本件はaction=excluded判定が量的閾値だけで下りている実例の一つ）
+
+#### 調査結果・クローズ理由
+AVAV・RDWとも一過性費用の検出漏れ（M&A取引費用タグ不足）は実在するが、
+10-K原文（MD&A）で悪化の主因を確認した結果、AVAVは在庫・売掛金増加に
+伴う運転資本投資（$236.6M）、RDWは契約マイルストーン請求タイミングに
+よる運転資本変動（$74.0M）＋純損失拡大（$112.2M）であり、いずれも
+構造的要因が主因と判明。両銘柄の現状のFCF数値・DCF計算は正しいと判断し
+クローズ。検出モジュール自体の穴は[[MA-INTEGRATION-TAG-GAP-1]]として
+分離登録（全銘柄への影響は未調査）。
+
+---
+
 ## 2026-07-13（完了）
 
 ### ✅ [HYPECORE-DASHBOARD-COUNT-BUG-1] docs/index.htmlのhypecore ticker数表示修正（2026-07-13完了）

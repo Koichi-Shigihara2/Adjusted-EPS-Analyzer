@@ -353,6 +353,8 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）|
+| src/value/tanuki_valuation/fcf_conversion_config.json（`estimate_fcf_from_eps()`が参照。ticker_overrides / sector_conversion_rates） | 影響銘柄のpipeline.py再実行（EPS推定FCFのconversion_rate変更時）。sector_conversion_ratesはDamodaran業種カテゴリキーで、beta_config.jsonのGICS分類とはタクソノミーが異なる点に注意（[[SECTOR-FCF-RATE-BROKEN-1]]参照）|
+| config/adjustment_items.json（一過性費用・調整項目のXBRLタグ定義。EPS Analyzerとcalculator/adjustments.pyのFCF外れ値判定`TRANSIENT_CATEGORIES`が共に参照） | EPS Analyzer全銘柄再実行 → 影響銘柄のtanuki pipeline.py再実行（fcf_outlier判定への波及）|
 | calculator/rice.py | 影響銘柄のpipeline.py再実行 |
 | config/maturity_config.json | 影響銘柄のpipeline.py再実行（alpha上限・WACC・成熟度設定変更時）|
 | growth_sanity.py | HypeCoreデータ確認 → 影響銘柄のpipeline.py再実行 |

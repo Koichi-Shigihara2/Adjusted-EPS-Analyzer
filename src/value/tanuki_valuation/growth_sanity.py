@@ -180,18 +180,18 @@ TICKER_INDUSTRY_OVERRIDES = {
     "OKTA":  "Software (Internet)",               # SIC→Services-Prepackaged を上書き
     "SHOP":  "Software (Internet)",               # SIC→Retail(General) を上書き
     "SQ":    "Financial Svcs. (Non-bank & Insurance)",  # SIC→Services-Computers を上書き
-    "META":  "Advertising",                       # SIC→Services-Computer を上書き。収益99%が広告
-    "AMZN":  "Software (System & Application)",   # SIC→Retail(General)、クラウド主軸
-    "NET":   "Software (System & Application)",   # SIC→Telecom を上書き
+    "META":  "Software (Entertainment)",           # indname.xls実態分類（旧"Advertising"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
+    "AMZN":  "Retail (General)",                   # indname.xls実態分類（旧"Software (System & Application)"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
+    "NET":   "Software (Internet)",                # indname.xls実態分類（旧"Software (System & Application)"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
     "ZS":    "Software (System & Application)",   # SIC→Steel を上書き
     "ANET":  "Telecom. Equipment",                # SIC→Telecom.Services を上書き
     "ARM":   "Semiconductor",                     # SIC→Transportation を上書き
     "S":     "Software (System & Application)",   # SIC→Utility(Water) を上書き
     "DIS":   "Entertainment",                     # SIC→Real Estate を上書き
-    "CIX":   "Electrical Equipment",              # SIC→Machinery を上書き
+    "CIX":   "Office Equipment & Services",       # indname.xls実態分類（旧"Electrical Equipment"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
     "AAPL":  "Computers/Peripherals",             # SIC→Software_Internet デフォルトを上書き。indname.xls実態分類
     "ADBE":  "Software (System & Application)",   # Creative/Document Cloud SaaS
-    "BKNG":  "Software (Internet)",               # OTA予約プラットフォーム
+    "BKNG":  "Hotel/Gaming",                       # indname.xls実態分類（旧"Software (Internet)"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
     "AVGO":  "Semiconductor",                     # AI ASIC+ネットワーク半導体
     "ADSK":  "Software (System & Application)",   # AEC/製造業向けSaaS
     "CDNS":  "Software (System & Application)",   # EDA半導体設計ツール
@@ -199,9 +199,9 @@ TICKER_INDUSTRY_OVERRIDES = {
     "INTU":  "Software (System & Application)",   # 税務・会計SaaS
     "HEI":   "Aerospace/Defense",                 # 航空MRO部品・防衛電子機器
     "HWM":   "Aerospace/Defense",                 # 航空エンジン精密部品
-    "HON":   "Machinery",                         # 産業コングロマリット（Machinery分類）
-    "TDY":   "Aerospace/Defense",                 # 防衛センサー・計測機器
-    "KULR":  "Aerospace/Defense",                 # 熱管理テック・宇宙防衛向け
+    "HON":   "Diversified",                        # indname.xls実態分類（旧"Machinery"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
+    "TDY":   "Electronics (General)",              # indname.xls実態分類（旧"Aerospace/Defense"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
+    "KULR":  "Electrical Equipment",               # indname.xls実態分類（旧"Aerospace/Defense"はテストデータ。SECTOR-FCF-RATE-BROKEN-1）
     "CEG":   "Power",                             # 原子力主体の規制電力会社
     "VST":   "Power",                             # 原子力+ガス火力のハイブリッド電力会社
     "SCCO":  "Metals & Mining",                   # ペルー・メキシコ中心の銅鉱山

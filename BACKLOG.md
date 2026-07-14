@@ -862,8 +862,8 @@ Koichiさんの判断に委ね、判断材料としての透明性を上げる�
 
 #### 関連タスク（本EPICに整理・統合される可能性がある既存項目）
 - [[GROWTH-SANITY-CLASS-SYNC-1]]（段階1）: 状況追記済み
-- [[SECTOR-FCF-RATE-BROKEN-1]]（段階2寄り）: sector取得経路破損。これ自体が
-  「解消可能な不備」の実例（バグ①②③として既に構造分析済み）
+- [[SECTOR-FCF-RATE-BROKEN-1]]（完了・BACKLOG_DONE.md参照）（段階2寄り）: sector取得経路破損。
+  「解消可能な不備」の実例（バグ①②③として構造分析→2026-07-14完了）
 - [[ARCH-DATA-1]]（段階0寄り）: SECデータ正規化レイヤーの強化。着手条件
   成立済みだが難易度高
 - [[LLY-CAPEX-STALE-1]]（段階0・完了・BACKLOG_DONE.md参照）: 解消可能な
@@ -969,6 +969,77 @@ FCF乖離の一定割合（20%等）を占めるかという**金額比率のみ
 
 #### 着手条件
 なし（設計判断が必要なため、次回セッションで方針確定してから着手）
+
+---
+
+### [MA-INTEGRATION-TAG-GAP-1] adjustment_items.jsonのma_integration項目がXBRLタグ不足、TRANSIENT_CATEGORIESからも除外され実キャッシュM&A費用を検出漏れ
+**優先度:** 未定（全銘柄への影響範囲を網羅調査した上で確定）
+**分類:** データ品質 / 一過性費用検出
+**登録日:** 2026-07-14
+**発見:** [[TRANSIENT-EXPENSE-COVERAGE-1]]（完了・BACKLOG_DONE.md参照）（AVAV/RDW調査）の副次発見
+
+#### 内容
+AVAV・RDWの一過性費用検出漏れを10-K原文で調査した結果、両社とも
+`config/adjustment_items.json`のma_integration項目（買収・統合関連
+カテゴリ）が実際に両社が使用するXBRLタグを拾えていないことが判明した：
+
+1. **タグ不足**: ma_integration項目のxbrl_tagsが
+   `us-gaap:BusinessCombinationIntegrationCosts`のみで、以下が未登録：
+   - `us-gaap:BusinessCombinationAcquisitionRelatedCosts`
+     （AVAV FY2026: $48.17M、RDW FY2025: $21.24M で実際に使用）
+   - `us-gaap:BusinessCombinationIntegrationRelatedCosts`
+     （RDW FY2025: $1.14M、登録タグと"Related"の有無のみ相違）
+
+2. **カテゴリ設計の問題**: `calculator/adjustments.py:772-776`の
+   `TRANSIENT_CATEGORIES = {"リストラ・事業再編関連", "在庫・サプライチェーン
+   関連", "金融関連"}`から「買収・統合関連」カテゴリ自体が丸ごと除外されて
+   いる。これはのれん減損・無形資産償却等の非現金項目を除外する意図の
+   設計だが、ma_integration（実キャッシュ支出項目）も同一カテゴリに
+   含まれているため巻き込まれて除外されている
+
+AVAV・RDW自体は悪化の主因が別（運転資本変動）だったため実害は軽微
+だったが、M&A取引費用そのものが悪化の主因になる別の銘柄では実害が
+大きくなる可能性がある。
+
+#### 調査要望（着手時）
+全105銘柄でM&A関連XBRLタグ（`BusinessCombinationAcquisitionRelatedCosts`等、
+未登録タグ候補を含む）の申告有無・金額を洗い出し、上記2つの穴
+（タグ不足・カテゴリ除外設計）の影響を受けている銘柄が他にないか
+網羅的に確認すること。
+
+#### 着手条件
+なし
+
+---
+
+### [FCF-CONVRATE-DESIGN-LIMIT-1] SECTOR-FCF-RATE-BROKEN-1修正後もLITEの業種カテゴリ欠落・固定比率設計の限界が残存
+**優先度:** 未定（SECTOR-FCF-RATE-BROKEN-1着手後に再評価）
+**分類:** DCF信頼性判定ロジック / データ推定
+**登録日:** 2026-07-14
+**発見:** [[FCF-EPS-CONVRATE-SECTOR-1]]（完了・BACKLOG_DONE.md参照）（LITE/SITM）調査時
+
+#### 内容
+SECTOR-FCF-RATE-BROKEN-1（sector取得経路のバグ）を修正しても、
+以下2点はLITE/SITMのconversion_rate精度改善には不十分であることが判明：
+
+1. **LITEに対応するfcf_conversion_config.jsonの業種カテゴリが存在しない**
+   （Software_Internet/AdTech_Internet/Semiconductor/Cloud_Services/
+   EV_Automotive/Fintech/Consumer_Beverage/Space_Defenseの8分類中、
+   光学部品・通信機器ハードウェア製造業に該当するものがなく、
+   sector修正後もdefaultに留まる可能性が高い）
+
+2. **固定比率という設計自体がサイクル変動の大きい銘柄を表現できない**
+   （SITMの実質転換率は年により0.065倍〜3.65倍と振れており、
+   どの固定値を設定しても大幅乖離は解消しない構造的限界）
+
+代替経路として`growth_sanity.py`のdamodaran_industry判定
+（Damodaranデータ＋銘柄別手動マッピング辞書）も確認したが、
+LITE・SITMともに未登録（damodaran_industry=None）でこちらも
+追加整備が必要。
+
+#### 着手条件
+[[SECTOR-FCF-RATE-BROKEN-1]]の修正完了後（sector取得経路が正常化して
+初めて、本課題が「解消済み」か「なお残存」かを再評価できるため）
 
 ---
 
@@ -1136,52 +1207,6 @@ quarterly.py/data_fetcher.py）のままでは順序検証を後付けできな�
 
 ---
 
-### [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化
-**優先度:** 中（要判断・緊急ではないが影響範囲は広い）
-**分類:** バグ / TANUKI VALUATION / データ品質
-**登録日:** 2026-07-11
-**発見:** [[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）関連調査時
-
-#### 背景
-`adjustments.py`（`estimate_fcf_from_eps`内）のFCF転換率セクター別レート判定・
-Financial Services向け`ni_direct`判定が、以下3つの重なったバグにより
-実質的に無効化されている：
-
-- **バグ①**: `core_calculator.py:227-233`の`beta_config.json`読み込みパスが誤り
-  （存在しない`src/value/beta_config.json`を参照、実際は`config/beta_config.json`）
-- **バグ②**: 仮にパスを直しても`config/beta_config.json`の`overrides`に`sector`キーが
-  ほぼ存在しない（全106エントリ中1件のみ、スキーマ移行の残骸）
-- **バグ③**: `fcf_conversion_config.json`の`sector_conversion_rates`はDamodaran業種
-  カテゴリをキーとするが、`beta_config.json`側はGICS分類であり、
-  パス・入力を直してもタクソノミーが一致しない
-
-#### 影響範囲
-Policy B対象76銘柄中71銘柄（93%）が業種を問わず一律`conversion_rate=0.70`
-（default値）で計算されている。yfinance実測`sector`が"Financial Services"の
-SOFI/V/MSCIは、本来`use_ni_direct`（転換率1.0）が適用される設計意図と推測されるが
-未適用（試算では該当銘柄のFCFが1.43倍程度過小評価されている可能性）。
-ただしV・MSCIは[[TANUKI-FIN-2]]の議論で「通常のFCFF DCFが適合する」と既に整理
-されており、機械的に1.0倍を適用することが正しいとは限らない点に注意。
-WACC・alpha上限・RPO適用率・保険業判定等、他のsector依存ロジックは
-別の正常な変数（`financials.get("sector")`）を使っており本問題の影響を受けない。
-
-#### 対応方針（未確定・着手時に設計判断）
-- 案①（部分対応・低コスト）: `core_calculator.py:244`のsector変数を、
-  既に正しく取得されている変数に差し替える。バグ①②は解消するが、
-  バグ③（タクソノミー不一致）は残るため効果は限定的
-  （Financial Services判定のみ改善見込み、他業種別レート差別化は未解決）
-- 案②（本格対応）: `growth_sanity.py`の`damodaran_industry`判定ロジックを
-  `estimate_fcf_from_eps()`からも参照するよう設計変更する。バグ③まで解消するが
-  作業規模が大きい
-- Financial Services業種の対象範囲判定（V/MSCI等、GICS分類は該当するが
-  `ni_direct`適用が不適切な可能性がある銘柄の扱い）は案①②のいずれでも
-  別途設計判断が必要
-
-#### 着手条件
-なし（優先度含め次回以降のセッションで判断）
-
----
-
 ### [ENTG-TER-SEGMENT-1] ENTG・TERのsegment_config.json未設定
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION
@@ -1323,11 +1348,33 @@ CapEx・NetIncome・GrossProfit・SBC等の他の主要フィールドについ�
   TANUKI VALUATION↔STONKS SILO runway参照依存）であり、「赤字企業は両方trueに
   する」という運用を基準に組み込む余地がある
 
+#### 議論の要旨（2026-07-14追記・タスクの本質的なゴールの整理）
+本日の一連の調査（DCF計算可否ロジック確認・Policy A/B判定ロジックの網羅調査・
+AVAV/RDW/LITE/SITM個別調査）を経て、本タスクの本質的なゴールは
+「stonks_silo判定基準を確定させること」単体ではなく、**「TANUKI VALUATION・
+STONKS SILOのどちらの評価軸でも適切に評価しにくい銘柄をどう判定・振り分ける
+か」**という、より広い問いであると整理された。
+
+根拠：
+- GTLB/ESTC/LITEの逸脱事例は、既存のDCF_Reliability判定（Policy A/B）を
+  そのまま機械基準に転用しても再現できないことが判明した（[[POLICY-AB-
+  TREND-BLIND-1]]で確認したPolicy Bの設計限界が一因）
+- APGE（プレレベニュー）のような「赤字」以外の軸で評価不適合になる
+  パターンが存在し、stonks_silo単独の基準では収まらない
+- LITE/SITMの調査で判明したFCF推定ロジックの限界（[[SECTOR-FCF-RATE-
+  BROKEN-1]]・[[FCF-CONVRATE-DESIGN-LIMIT-1]]）も、根本的には「TANUKI
+  VALUATIONのDCFフレームワークが不得意とする事業特性の銘柄をどう扱うか」
+  という同根の問題
+
+**注意：上記は議論の要旨・方向性の整理であり、基準案の具体的な数値
+（N年赤字継続のN等）やフラグ再判定の実装方針は本日時点でも未確定のまま。**
+上記「対応方針（未確定）」の内容と矛盾するものではなく、着手時に
+判断材料として踏まえるべき文脈を追記したもの。
+
 #### 着手条件
 なし（基準案の確認・確定後に着手）
 
 ---
-
 
 ### [CIK-ORPHAN-FLAGS-1] BX・ENBが全システムフラグfalseの孤立エントリ
 **優先度:** 低〜中（BX分は解消済み・残るはENBのみ）
@@ -2258,6 +2305,59 @@ TANUKI VALUATION Step3（pipeline.py）を実行する。
 
 ---
 
+### [POLICY-AB-TREND-BLIND-1] Policy A/B判定ロジックが直近トレンド好転を検知できず、健全企業を恒常的にLOW判定
+**優先度:** 低（2026-07-14 高→低に変更。理由は下記参照）
+**分類:** DCF信頼性判定ロジック / バグ
+**登録日:** 2026-07-14
+**発見:** [[FLAG-THRESHOLD-DESIGN-1]]検討過程の調査（tanuki=true・DCF_Reliability=LOW
+23銘柄の原因分類調査）
+
+#### 優先度変更の理由（2026-07-14）
+WATCH等のラベルはDCF数値自体には影響せず、他AI/外部評価者への見え方を
+緩和する程度の実利用価値のため、優先度を高→低に変更した。ただし対応自体は
+取り下げない。修正方針〈直近2年連続黒字を主基準に上方乖離をLOW対象から
+除外〉は既に確定済みのため、後日着手時にそのまま使用可能。
+
+#### 内容
+tanuki=true・DCF_Reliability=LOW判定の23銘柄を精査した結果、うち8銘柄
+（CWAN, ESTC, FROG, IOT, NET, RBRK, ZETA, S）はFCF実績がいずれも黒字化・
+拡大という健全な業績改善を示しているにもかかわらず、恒常的にLOW判定に
+なっていることが判明した。データ・事業実態には問題がなく、判定ロジック
+自体の設計特性に起因する：
+- Policy A（`_calc_dcf_reliability_policy_a`等）が5年平均FCFを基準にする
+  ため、過去の大幅赤字が牽引して現在の黒字転換を反映できない
+  （例: S＝SentinelOneは直近2年連続黒字転換にもかかわらずPolicy A発火）
+- Policy B（`_calc_dcf_reliability_policy_b`、pipeline.py:335-381）は
+  FCF-OUTLIER-1ルール（CLAUDE_CODE_START.md記載: 上方乖離時は一過性費用が
+  検出されてもaction=excludedにしない設計）により、黒字転換・好転による
+  乖離も恒久的に「未解決の外れ値」としてLOW判定し続ける
+
+続く網羅調査（2026-07-14 同日2回目）で、tanuki=true全100銘柄中70銘柄
+（70%）がDCF_Reliability=LOWであり、うち50銘柄（AAPL/TSLA/PLTR/CRM/ADBE/
+AVGO/INTU/KO/LLY/PEP/NOW等の主力銘柄含む）がPolicy Bの上方乖離
+（latest_fcf>fcf_5yr_avg）起因と判明。修正方針は「直近2年連続黒字
+（`fcf_2yr_avg>0`）を主基準に上方乖離をLOW対象から除外」で確定済み
+（実データ検証で50銘柄中48銘柄を安全に救済できることを確認）。
+
+関連: [[TRUST-SUMMARY-EPIC-1]]（段階2＝FCF/DCF計算の「解消可能バグ vs
+構造的限界」切り分けを扱うEPIC。本件はその棚卸し対象の具体事例）
+
+#### 影響範囲
+tanuki=true全100銘柄中70銘柄（DCF_Reliability=LOW）。うちPolicy A起因14
+銘柄（trend-blindはS 1銘柄のみ）、Policy B eps_invalid起因4銘柄（AMZN,
+LITE, SITM, SPIR）、Policy B上方乖離起因50銘柄（AAPL, ADBE, ADSK, ALAB,
+AMD, APP, AVGO, BROS, CAKE, CEG, CELH, CPRT, CRM, CWAN, DDOG, DELL, DOCN,
+ELF, ENTG, ESTC, FCX, FICO, FLYW, FROG, FRSH, GEV, GTLB, HEI, HQY, HWM,
+INTU, IOT, KO, LLY, LOAR, LRCX, LYFT, MRVL, NET, NOW, PAYS, PEP, PLTR,
+RBRK, RMBS, SCCO, SNPS, TSLA, VRT, ZETA）、Policy B下方乖離/継続赤字
+（正当な懸念）2銘柄（SOFI, XOM）。ただし影響はClassification表示の
+WATCH丸めに限られ、IV・upside等のDCF計算値自体は変更されない。
+
+#### 着手条件
+なし（修正方針の設計から着手可能。優先度：低のため次回以降の余力時対応）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
@@ -2718,3 +2818,76 @@ reader.py統合＋規約C/Dの型化、規模見積もりから）・
 EPIC-HEADER-1は2026-06-21、EPIC-LAYOUT-1グループA/グループBは2026-06-22、
 EPIC-LAYOUT-1グループC（SILO-DISP-3）・MP-GAUGE-NEEDLE-1・MACRO-DISP-2は
 2026-06-23に完了。BACKLOG_DONE.md参照）
+
+追記（2026-07-14）: FLAG-THRESHOLD-DESIGN-1の検討過程で
+[[POLICY-AB-TREND-BLIND-1]]（優先度：高、8銘柄影響）を新規発見。
+フラグ判定基準の設計はPolicy A/Bの結果を前提にできないため、
+本バグの修正をFLAG-THRESHOLD-DESIGN-1より先行して対応する方針とした。
+副次発見として[[FCF-EPS-CONVRATE-SECTOR-1]]・[[TRANSIENT-EXPENSE-COVERAGE-1]]
+（いずれも優先度：未定）も新規登録。
+
+追記（2026-07-14 同日2回目）: POLICY-AB-TREND-BLIND-1の網羅調査完了後、
+ラベル（DCF_Reliability表示）の実利用価値は限定的（DCF数値自体には
+影響せず、外部AI評価時の見え方緩和が主目的）と整理されたため、
+優先度を高→低に変更。修正方針〈直近2年連続黒字を主基準に上方乖離を
+LOW対象から除外〉は確定済みのまま保留し、後日必ず着手する。
+代わりにFCF数値自体に影響しうる[[FCF-EPS-CONVRATE-SECTOR-1]]・
+[[TRANSIENT-EXPENSE-COVERAGE-1]]を優先度：高に格上げし、次の着手対象とする。
+
+追記（2026-07-14 同日3回目）: TRANSIENT-EXPENSE-COVERAGE-1のAVAV/RDW調査
+完了。両銘柄とも一過性費用の検出漏れ（M&A取引費用タグ不足）は実在するが、
+悪化の主因は別（運転資本変動）と10-K原文で確認したため、この2銘柄に
+関しては現状のFCF数値・DCF計算は正しいと判断しクローズ・BACKLOG_DONE.mdへ
+移動。副次発見のタグ・カテゴリ設計の穴を[[MA-INTEGRATION-TAG-GAP-1]]として
+新規登録（優先度は全銘柄への影響範囲調査後に確定）。
+
+追記（2026-07-14 同日4回目）: FCF-EPS-CONVRATE-SECTOR-1（LITE/SITM）の
+調査完了。独立バグではなく既存[[SECTOR-FCF-RATE-BROKEN-1]]の実害具体例と
+判明したためクローズ・BACKLOG_DONE.mdへ移動。同バグの優先度を中→高に
+格上げ（LITE/SITMでの実害確認による）。副次発見の2課題（LITEの業種
+カテゴリ欠落・固定比率設計の限界）を[[FCF-CONVRATE-DESIGN-LIMIT-1]]として
+分離登録（着手条件: SECTOR-FCF-RATE-BROKEN-1完了後）。
+
+追記（2026-07-14 セッション終了時ブラッシュアップ）: 本日1〜4回目の
+変更を踏まえ、次セッションの筆頭候補を更新する。
+
+**次セッションの筆頭候補は[[SECTOR-FCF-RATE-BROKEN-1]]**（本日 中→高に
+格上げ・LITE/SITMでの実害を実データで確認済み・対応方針①②が既に整理
+済みで着手条件もなし）。案①（`core_calculator.py:244`のsector変数差し替え、
+低コスト）から着手し、効果範囲（Financial Services判定改善のみか）を
+確認した上で案②（`damodaran_industry`連携、本格対応）の要否を判断する
+のが妥当。
+
+[[POLICY-AB-TREND-BLIND-1]]は優先度：高→低に変更済みだが、修正方針
+〈直近2年連続黒字を主基準に上方乖離をLOW対象から除外〉は確定済みのまま
+のため、余力があれば並行着手も可能（他タスクをブロックしない独立作業）。
+
+[[FLAG-THRESHOLD-DESIGN-1]]は本日の議論でゴールを再整理した
+（エントリ本文の「議論の要旨」追記参照）ものの、基準案の具体的な数値は
+未確定のまま。[[POLICY-AB-TREND-BLIND-1]]の実装（優先度は下がったが
+未着手）がstonks_silo判定基準の材料に影響するため、着手順序としては
+SECTOR-FCF-RATE-BROKEN-1・POLICY-AB-TREND-BLIND-1の後が妥当。
+
+新規登録の[[MA-INTEGRATION-TAG-GAP-1]]・[[FCF-CONVRATE-DESIGN-LIMIT-1]]
+はいずれも優先度：未定（前者は全銘柄影響調査後、後者はSECTOR-FCF-RATE-
+BROKEN-1完了後に再評価）のため、今回の筆頭候補には含めない。
+
+追記（2026-07-14 実装完了）: [[SECTOR-FCF-RATE-BROKEN-1]]を実装・完了し
+BACKLOG_DONE.mdへ全文移動した。①`core_calculator.py`のbeta_config.json
+読み込みパス誤りを`data_fetcher.py::_load_beta_config()`呼び出しに統一、
+②Damodaran公式データセット`indname.xls`への直接照合でtanuki=true97銘柄
+（100銘柄中、CIX/MO/PMの3銘柄は対応キー不存在のため対応する省略キーが
+なく据え置き）に`beta_config.json`の`sector`を新規付与、③既存
+`TICKER_INDUSTRY_OVERRIDES`のうちテストデータと判明した8件
+（HON/TDY/KULR/META/AMZN/NET/CIX/BKNG）+ CRWV（既存値がindname.xlsと
+不一致と判明）をindname.xls実態値に修正。全105銘柄再生成・
+report_consistency_check NG=0・pytest 309 passed（既知の2件除く）を確認済み。
+副次課題[[FCF-CONVRATE-DESIGN-LIMIT-1]]の着手条件（本タスク完了）が
+成立したため、次回セッションで再評価可能な状態になった。
+これでSECTOR-FCF-RATE-BROKEN-1発の一連の調査・実装
+（FCF-EPS-CONVRATE-SECTOR-1・MA-INTEGRATION-TAG-GAP-1・
+FCF-CONVRATE-DESIGN-LIMIT-1・POLICY-AB-TREND-BLIND-1を含む）が一区切り。
+次セッションの筆頭候補は[[FCF-CONVRATE-DESIGN-LIMIT-1]]（着手条件成立・
+残存する8/114カバレッジ不足への対応方針検討）または
+[[POLICY-AB-TREND-BLIND-1]]（修正方針確定済みで着手可能・優先度は低だが
+軽量な独立作業）のいずれか。
