@@ -353,11 +353,13 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|
 | core_calculator.py / calculator/dcf.py | 影響銘柄のpipeline.py再実行 |
 | calculator/adjustments.py | 影響銘柄のpipeline.py再実行（FCF外れ値・estimate_fcf等）|
-| src/value/tanuki_valuation/fcf_conversion_config.json（`estimate_fcf_from_eps()`が参照。ticker_overrides / sector_conversion_rates） | 影響銘柄のpipeline.py再実行（EPS推定FCFのconversion_rate変更時）。sector_conversion_ratesはDamodaran業種カテゴリキーで、beta_config.jsonのGICS分類とはタクソノミーが異なる点に注意（[[SECTOR-FCF-RATE-BROKEN-1]]参照）|
+| src/value/tanuki_valuation/fcf_conversion_config.json（`estimate_fcf_from_eps()`が参照。ticker_overrides / sector_conversion_rates） | 影響銘柄のpipeline.py再実行（EPS推定FCFのconversion_rate変更時）。sector_conversion_ratesのキーはDamodaran業種カテゴリの省略形（下記beta_config.json/SECTOR_TO_DAMODARANと同一タクソノミー）だが、114分類中8分類しかカバーしておらず、該当なしの銘柄は一律default(0.70)になる点に注意（[[FCF-CONVRATE-DESIGN-LIMIT-1]]参照。SECTOR-FCF-RATE-BROKEN-1で2026-07-14完了） |
+| config/beta_config.json（`overrides[ticker].sector`。`data_fetcher.py::_load_beta_config()`が正しいパスで読み込む共通ローダーで、`core_calculator.py::estimate_fcf_from_eps()`〈FCF転換率〉と`pipeline.py::_load_beta_sector()`〈growth_sanity向け〉の両方から参照される） | 影響銘柄のpipeline.py再実行。`sector`値は`growth_sanity.py::SECTOR_TO_DAMODARAN`の「beta_config.json形式」ブロック（例: `Semiconductor`/`Software_Internet`/`Aerospace_Defense`）のキー形式で統一すること |
+| growth_sanity.py::TICKER_INDUSTRY_OVERRIDES / SECTOR_TO_DAMODARAN（ticker→Damodaran業種名の直接上書き辞書・sector省略キー→正式業種名の変換表。`beta_config.json`の`sector`より優先順位が高い） | 影響銘柄のpipeline.py再実行。妥当性検証はDamodaran公式データセット`docs/value-monitor/tanuki_valuation/common/damodaran_cache/indname.xls`（企業別48,157社の実分類データ、`Exchange:Ticker`列を主要取引所限定でticker照合すると該当企業の実際のIndustry Groupが直接引ける）と突き合わせて行う |
 | config/adjustment_items.json（一過性費用・調整項目のXBRLタグ定義。EPS Analyzerとcalculator/adjustments.pyのFCF外れ値判定`TRANSIENT_CATEGORIES`が共に参照） | EPS Analyzer全銘柄再実行 → 影響銘柄のtanuki pipeline.py再実行（fcf_outlier判定への波及）|
 | calculator/rice.py | 影響銘柄のpipeline.py再実行 |
 | config/maturity_config.json | 影響銘柄のpipeline.py再実行（alpha上限・WACC・成熟度設定変更時）|
-| growth_sanity.py | HypeCoreデータ確認 → 影響銘柄のpipeline.py再実行 |
+| growth_sanity.py（Damodaran業種別成長率ベンチマーク。fundgrEB.xls〈ROC/再投資率/期待EBIT成長率〉を`docs/value-monitor/tanuki_valuation/common/damodaran_cache/`から読み込み） | HypeCoreデータ確認 → 影響銘柄のpipeline.py再実行 |
 | hypecore結果（hypecore_results.json） | growth_sanity経由でDCF成長率が変わるため影響銘柄のpipeline.py再実行 |
 | hypecore_results（poc.json）更新時 | 影響銘柄のpipeline.py再実行（hypecore_history/{TICKER}.jsonが更新される） |
 | pipeline.py | audit.py → 全銘柄pipeline.py再実行 |

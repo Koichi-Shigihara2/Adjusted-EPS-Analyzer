@@ -1013,7 +1013,9 @@ AVAV・RDW自体は悪化の主因が別（運転資本変動）だったため�
 ---
 
 ### [FCF-CONVRATE-DESIGN-LIMIT-1] SECTOR-FCF-RATE-BROKEN-1修正後もLITEの業種カテゴリ欠落・固定比率設計の限界が残存
-**優先度:** 未定（SECTOR-FCF-RATE-BROKEN-1着手後に再評価）
+**優先度:** 未定（2026-07-14 6/8カテゴリのキー名不一致は修正完了。残る
+LITEカテゴリ欠落・固定比率設計の限界・EBIT(1-t)→純利益変換ロジックの
+3課題は再評価待ち）
 **分類:** DCF信頼性判定ロジック / データ推定
 **登録日:** 2026-07-14
 **発見:** [[FCF-EPS-CONVRATE-SECTOR-1]]（完了・BACKLOG_DONE.md参照）（LITE/SITM）調査時
@@ -1037,9 +1039,81 @@ SECTOR-FCF-RATE-BROKEN-1（sector取得経路のバグ）を修正しても、
 LITE・SITMともに未登録（damodaran_industry=None）でこちらも
 追加整備が必要。
 
+#### 追加調査で判明した問題（2026-07-14 調査・キー名不一致）
+上記1の再評価のため`estimate_fcf_from_eps()`の基準（純利益ベースか
+EBIT(1-t)ベースか）を確認する調査を実施した際、当初想定と異なる
+より根の深い問題が判明した：**現行8カテゴリのキー名
+（EV_Automotive/Fintech/Consumer_Beverage/Space_Defense/
+AdTech_Internet/Cloud_Services）が、実際に`config/beta_config.json`
+の`overrides.<TICKER>.sector`へ書き込まれるDamodaran taxonomy準拠の
+表記（Auto_Truck/Financial_NonBank/Beverage_Soft/Aerospace_Defense等）
+と文字列不一致だったため、Software_Internet（3銘柄）・Semiconductor
+（7銘柄）を除く6カテゴリは該当銘柄0件＝事実上デッドコードだった**
+（tanuki=true全100銘柄で実測。TSLA/LMT/KO/PEP/SOFI/V/MSCI等、本来
+非defaultレートが適用されるべきだった銘柄が軒並みdefault(0.70)に
+落ちていた）。ダモドラン公式データセット（oifcff.xls、94業種）との
+突合では、現行8カテゴリは全て単一のダモドラン業種への1:1対応で
+あり、複数業種の平均・統合ではないことも確認した。
+
+#### 対応内容（2026-07-14 実装完了・キー名リネームのみ）
+`fcf_conversion_config.json`の`sector_conversion_rates`・
+`_sector_rationale`のキー名を、`growth_sanity.py::SECTOR_TO_DAMODARAN`
+（既存の正式なDamodaran業種マッピング辞書）を用いて実際の
+beta_config.json sector表記に一致させてリネームした（**転換率の数値は
+一切変更していない**）：
+- `EV_Automotive` → `Auto_Truck`（0.65のまま）
+- `Space_Defense` → `Aerospace_Defense`（0.55のまま）
+- `Consumer_Beverage` → `Beverage_Soft`（0.75のまま）
+- `Fintech` → `Financial_NonBank`（0.50のまま）
+- `AdTech_Internet` → `Advertising`（0.88のまま。該当銘柄0件のため
+  SECTOR_TO_DAMODARANの逆引きで本来の表記に合わせた）
+- `Cloud_Services` → `Software_System`（0.80のまま。同様に逆引き。
+  結果としてADBE/CRM/NOW/PLTR/INTU/DDOG等23銘柄の広範な
+  エンタープライズソフトウェア群が対象になった。この23銘柄は
+  Azure型クラウドインフラ企業を想定した`Software_System`の
+  _sector_rationale説明文とは事業特性が幅広く異なる可能性があり、
+  レート0.80の妥当性自体は未検証のまま——次項の残課題参照）
+- `Software_Internet`・`Semiconductor`は元々一致していたため変更なし
+
+全105銘柄（tanuki=true 100銘柄）で新旧比較を実施し、38銘柄で
+新たにdefault以外のconversion_rateが適用されるようになったことを
+確認（TSLA→0.65、LMT/AVAV/HEI/HWM/LOAR/RDW→0.55、KO/PEP/CELH→0.75、
+SOFI/V/MSCI/FLYW/PAYS→0.50、ADBE/ADSK/APP/BSY/CDNS/CRM/CWAN/DDOG/
+ESTC/FICO/FROG/FRSH/GTLB/INTU/IOT/NOW/PLTR/QBTS/RBRK/S/SNPS/SOUN/
+ZETA→0.80の23銘柄）。Software_Internet・Semiconductor該当銘柄
+（10銘柄）およびticker_overrides銘柄（AMZN/GOOGL/MSFT/META/MRVL/CEG）
+の計15銘柄と、元々どの分類にも該当しない残り47銘柄には差分が
+発生していないことを確認した。pytest: 309 passed / 2 failed
+（MSFT/NVDA、[[TEST-STALE-IV-1]]の既知バグで本修正とは無関係）。
+
+**注意**: 今回の修正は`fcf_conversion_config.json`のキー名変更のみ。
+影響を受ける38銘柄の`latest.json`/`report.txt`（conversion_rateが
+反映されたIV）は未再生成であり、次回`pipeline.py`実行まで
+生成済みデータとコードの間に不整合が残る（コミット・本番反映方針は
+別途判断が必要）。
+
+#### 残課題（クローズしない）
+1. **LITE/SITMのような光学部品・ハードウェア製造業に対応する
+   カテゴリが依然として存在しない**（8分類はDamodaranの94業種中
+   8業種のみをカバーしており、Telecom. Equipment等は未収録のため
+   default(0.70)のまま）
+2. **固定比率という設計自体がサイクル変動の大きい銘柄を表現できない**
+   （SITMの実質転換率は年により大きく振れる構造的限界。FY2023〜2025は
+   3年連続で営業利益ベース（EBIT）がマイナスの一方、システムが使う
+   EPSアナライザー調整後純利益は常にプラスという乖離も確認）
+3. **EBIT(1-t)ベース→純利益ベースの変換ロジックが存在しない**
+   （ダモドランのFCFF/EBIT(1-t)比率は純利益ベースのconversion_rateへ
+   直接流用できないことをLITE/SITM実データで確認済み——同一銘柄・
+   同一年度でも基準を変えると符号が反転するケースがある。詳細は
+   2026-07-14の調査報告（本エントリ内、または該当セッションログ）参照）
+4. `Software_System`にリネームしたことで新たに対象となった23銘柄
+   （エンタープライズソフトウェア全般）に対し、レート0.80が
+   Azure型インフラ企業を想定した元の設計意図に合致するかは未検証
+
 #### 着手条件
-[[SECTOR-FCF-RATE-BROKEN-1]]の修正完了後（sector取得経路が正常化して
-初めて、本課題が「解消済み」か「なお残存」かを再評価できるため）
+**キー名不一致修正は完了済み（2026-07-14）**。上記残課題1〜4は
+いずれも着手条件なし（次回セッションで優先度・方針を判断してから
+着手）。
 
 ---
 
@@ -2891,3 +2965,50 @@ FCF-CONVRATE-DESIGN-LIMIT-1・POLICY-AB-TREND-BLIND-1を含む）が一区切り
 残存する8/114カバレッジ不足への対応方針検討）または
 [[POLICY-AB-TREND-BLIND-1]]（修正方針確定済みで着手可能・優先度は低だが
 軽量な独立作業）のいずれか。
+
+追記（2026-07-14 セッション終了時ブラッシュアップ・2回目）:
+[[SECTOR-FCF-RATE-BROKEN-1]]をコミット`3df6f4da2`（core_calculator.pyの
+beta_config.json読み込みパス誤り修正＋indname.xls直接照合による
+全銘柄sector一括付与＋TICKER_INDUSTRY_OVERRIDESテストデータ8件修正）・
+`9e03134ad`（全105銘柄再生成）で完了・push済みであることを最終確認。
+CIX/MO/PMの3銘柄は対応するDamodaran分類（Office Equipment & Services /
+Tobacco）に対応する省略キーがSECTOR_TO_DAMODARANに存在しないため
+sector未設定のまま残存するが、いずれも`fcf_conversion_config.json`の
+8分類に該当しないため実害はない（default 0.70のまま、回帰でもない）。
+
+次セッションの筆頭候補：
+① [[FCF-CONVRATE-DESIGN-LIMIT-1]]（着手条件〈SECTOR-FCF-RATE-BROKEN-1完了〉
+成立済み。LITEの`fcf_estimation.sector`が`Telecom_Equipment`に正しく設定
+されたが該当カテゴリがないため`conversion_rate`はdefault(0.70)のまま
+残存することを実データで確認済み。fcf_conversion_config.jsonのカテゴリ
+拡張方針を検討）
+② [[POLICY-AB-TREND-BLIND-1]]（優先度：低・修正方針〈直近2年連続黒字を
+主基準に上方乖離をLOW対象から除外〉確定済みのまま。他タスクをブロック
+しない軽量な独立作業のため余力があれば並行着手も可）
+
+追記（2026-07-14 [[FCF-CONVRATE-DESIGN-LIMIT-1]] キー名不一致修正）:
+上記①の着手として、まず`estimate_fcf_from_eps()`のconversion_rate基準
+（純利益ベースであることを実装確認・確定）とダモドラン公式データ
+（oifcff.xls、94業種）との整合性を調査したところ、想定していた
+「LITEに対応するカテゴリが1つ足りない」以上に根が深い問題を発見した：
+`fcf_conversion_config.json`の8カテゴリキー名が`config/beta_config.json`
+のsector表記（Damodaran taxonomy準拠の略称）と文字列不一致で、
+Software_Internet・Semiconductor以外の6カテゴリが該当銘柄0件＝
+事実上デッドコード化していた。この6カテゴリのキー名リネーム
+（数値は無変更）を実装し、38銘柄（TSLA/LMT他Aerospace_Defense6銘柄/
+KO・PEP・CELH/SOFI・V・MSCI・FLYW・PAYS/ADBE・CRM・NOW・PLTR等
+Software_System 23銘柄）で新たに非defaultレートが適用されるように
+なったことを新旧比較で確認、pytest回帰なし（既知のMSFT/NVDA 2件除く）。
+**ただし本修正はconfig側のキー名変更のみで、影響を受ける38銘柄の
+`latest.json`/`report.txt`（本番データ）は未再生成のまま**——次回
+再生成の要否・タイミングをKoichiさんと要確認。
+
+次セッションの筆頭候補：
+① 上記38銘柄の`pipeline.py`再実行・`report_consistency_check.py`
+   NG=0確認・本番データコミットの要否判断（未実施のまま残っている）
+② [[FCF-CONVRATE-DESIGN-LIMIT-1]]の残課題3点（LITE/SITM型のカテゴリ
+   自体の欠如、固定比率設計の限界、EBIT(1-t)→純利益変換ロジック不在）
+   ——優先度・対応方針は未定のまま
+③ `Software_System`にリネームしたことで新規に対象となった23銘柄への
+   レート0.80の妥当性検証（Azure型インフラ企業を想定した設計だが
+   対象は汎用エンタープライズソフトウェア全般に拡大したため）
