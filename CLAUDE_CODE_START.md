@@ -421,6 +421,17 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
   VC_Factor を式本体から省くと外部AIが「定義と計算値が2倍ずれる」と誤指摘する（注記バグ）。
 - **FCF_Conversion_Rate は Adj_NI への変換率であり OCF→FCF 変換率ではない**: 高FCFマージン企業
   （ADBE/PLTR等）では実績FCFを下回るが、これは正常化前提による保守設計。定義文に明記する。
+- **実績データに基づく分類・レートの自己補正は「config書き換えなしの純関数」パターンを踏襲する**
+  （determine_fcf_base()のCV方式が原型。FCF-CONVRATE-DESIGN-LIMIT-1の
+  `check_software_system_reclassification()`で2026-07-14に踏襲）。
+  分類・パラメータが実績データの蓄積によって変わりうる場合、config/beta_config.json等の
+  永続化ファイルをpipeline.py実行中に書き換えるのではなく、実行のたびに直近実績から
+  純関数として再判定し、その実行内のみでレート等を差し替えてreport.txtに注記する設計とする。
+  理由: ①pipeline.py実行ごとにconfigへのgit diffが発生しない、②config書き換えは
+  beta_fetcher.py等の明示的な手動スクリプト経由のみという既存アーキテクチャ規約と整合する、
+  ③バッチ実行時の並行書き込み・巻き戻りリスクを避けられる。
+  永続的な分類変更が必要と判断した場合は、この自己補正結果を参考に人間が別途
+  beta_fetcher.py等の登録スクリプトを実行して確定させる（自動では確定しない）。
 - **IV割引率（Rm=10%/β=0）は市場リスクを意図的に除外した本源価値**: 高β銘柄では市場WACC比で
   IVが高めに出るが設計通り。市場リスク調整後の参照は WACC_CAPM_Reference でのIVを併用する旨を
   定義文に記載（外部AIは「高β銘柄でIV過大」を頻繁に誤指摘するため）。
