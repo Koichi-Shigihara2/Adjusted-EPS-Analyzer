@@ -1277,6 +1277,181 @@ class FCFEstimationResult:
         }
 
 
+# ── Software_System サブグループ自己補正 v9.3（FCF-CONVRATE-DESIGN-LIMIT-1）──
+
+SOFTWARE_SYSTEM_SUBGROUP_RATES: Dict[str, float] = {
+    "Software_System_Mature": 1.00,
+    "Software_System_SaaS": 1.61,
+}
+
+
+@dataclass
+class SoftwareSystemReclassificationResult:
+    """
+    Software_System_Mature/SaaS サブグループの自己補正チェック結果
+
+    determine_fcf_base()と同じ設計思想: config/beta_config.jsonへの書き込みは
+    一切行わず、pipeline.py実行のたびに直近実績（SEC生FCF × EPSアナライザー
+    調整済み純利益）から実測比率を再計算する純粋関数。
+    reclassify_recommended=True の場合、呼び出し側（core_calculator.py）は
+    その実行に限り recommended_subgroup のレートで conversion_rate を
+    差し替えて使用する。beta_config.json 自体の永続的な書き換えは行わない
+    （2026-07-14 実装判断: 判定が変わるたびにconfigを書き換えるとpipeline.py
+    実行ごとにgit diffが発生し、config書き換えは手動スクリプト経由のみという
+    既存アーキテクチャ規約とも整合しないため）。
+    """
+    applicable: bool
+    current_subgroup: str
+    recommended_subgroup: Optional[str]
+    realized_ratio: Optional[float]
+    years_used: int
+    deviation_from_current: Optional[float]
+    reclassify_recommended: bool
+    note: str
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "applicable": self.applicable,
+            "current_subgroup": self.current_subgroup,
+            "recommended_subgroup": self.recommended_subgroup,
+            "realized_ratio": round(self.realized_ratio, 3) if self.realized_ratio is not None else None,
+            "years_used": self.years_used,
+            "deviation_from_current": round(self.deviation_from_current, 3) if self.deviation_from_current is not None else None,
+            "reclassify_recommended": self.reclassify_recommended,
+            "note": self.note,
+        }
+
+
+def _load_sec_annual_fcf_series(ticker: str, sec_data_dir: str, max_years: int = 5) -> Dict[int, float]:
+    """common/sec_data/data/{ticker}/annual_*.json から 年度→free_cash_flow を取得（直近max_years件）"""
+    import glob
+    ticker_dir = os.path.join(sec_data_dir, ticker.upper())
+    out: Dict[int, float] = {}
+    if not os.path.isdir(ticker_dir):
+        return out
+    for path in sorted(glob.glob(os.path.join(ticker_dir, "annual_*.json")), reverse=True)[:max_years]:
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                d = json.load(f)
+        except Exception:
+            continue
+        yr = d.get("period")
+        fcf = d.get("cf", {}).get("free_cash_flow")
+        if yr is not None and fcf is not None:
+            try:
+                out[int(yr)] = float(fcf)
+            except (TypeError, ValueError):
+                continue
+    return out
+
+
+def check_software_system_reclassification(
+    ticker: str,
+    current_subgroup: str,
+    sec_data_dir: str,
+    eps_data_dir: str,
+    deviation_threshold: float = 0.30,
+    min_years: int = 1,
+) -> SoftwareSystemReclassificationResult:
+    """
+    Software_System_Mature/SaaS の実績データに基づく自己補正チェック（FCF-CONVRATE-DESIGN-LIMIT-1）
+
+    実測比率 = mean(生FCF / 調整済み純利益)（調整済み純利益がプラスの年度のみ、直近5年）
+    現在のサブグループのレートから deviation_threshold（デフォルト30%）以上乖離していれば、
+    もう一方のサブグループへの見直しを推奨する。
+
+    Args:
+        ticker: 銘柄コード
+        current_subgroup: "Software_System_Mature" または "Software_System_SaaS"
+        sec_data_dir: common/sec_data/data/ ディレクトリパス
+        eps_data_dir: EPSアナライザーの data/ ディレクトリパス
+        deviation_threshold: 乖離判定閾値（デフォルト0.30 = 30%）
+        min_years: 判定に必要な最低黒字年数（デフォルト1）
+
+    Returns:
+        SoftwareSystemReclassificationResult
+    """
+    if current_subgroup not in SOFTWARE_SYSTEM_SUBGROUP_RATES:
+        return SoftwareSystemReclassificationResult(
+            applicable=False, current_subgroup=current_subgroup,
+            recommended_subgroup=None, realized_ratio=None, years_used=0,
+            deviation_from_current=None, reclassify_recommended=False,
+            note=f"'{current_subgroup}'はSoftware_System_Mature/SaaSのいずれでもないため対象外",
+        )
+
+    eps_annual = _load_eps_annual(ticker, eps_data_dir)
+    if eps_annual is None:
+        return SoftwareSystemReclassificationResult(
+            applicable=False, current_subgroup=current_subgroup,
+            recommended_subgroup=None, realized_ratio=None, years_used=0,
+            deviation_from_current=None, reclassify_recommended=False,
+            note="EPSアナライザーデータなし（判定不可）",
+        )
+
+    fcf_series = _load_sec_annual_fcf_series(ticker, sec_data_dir)
+    ratios = []
+    for y in eps_annual.get("years", []):
+        try:
+            yr_int = int(y.get("year", 0))
+        except (ValueError, TypeError):
+            continue
+        adj_ni = y.get("adjusted_net_income")
+        if adj_ni is None or adj_ni <= 0:
+            continue
+        fcf = fcf_series.get(yr_int)
+        if fcf is None:
+            continue
+        ratios.append(fcf / adj_ni)
+
+    years_used = len(ratios)
+    if years_used < min_years:
+        return SoftwareSystemReclassificationResult(
+            applicable=False, current_subgroup=current_subgroup,
+            recommended_subgroup=None, realized_ratio=None, years_used=years_used,
+            deviation_from_current=None, reclassify_recommended=False,
+            note=f"黒字年データ{years_used}年のみ（最低{min_years}年必要）のため判定不可",
+        )
+
+    realized_ratio = sum(ratios) / years_used
+    current_rate = SOFTWARE_SYSTEM_SUBGROUP_RATES[current_subgroup]
+    deviation = (realized_ratio - current_rate) / current_rate if current_rate != 0 else 0.0
+
+    other_subgroup = next(k for k in SOFTWARE_SYSTEM_SUBGROUP_RATES if k != current_subgroup)
+    other_rate = SOFTWARE_SYSTEM_SUBGROUP_RATES[other_subgroup]
+
+    # 乖離が閾値以上 かつ もう一方のレートの方が実測値に近い場合のみ見直しを推奨する。
+    # 単純に「現在との乖離が大きい」だけで判定すると、両グループのレートより
+    # さらに外側に振れた実測値（例: SaaS想定1.61に対し実測2.21）で
+    # 「より遠いはずのMature(1.00)へ切り替え」という誤判定が起きるため、
+    # 距離比較を必須条件とする。
+    dist_current = abs(realized_ratio - current_rate)
+    dist_other = abs(realized_ratio - other_rate)
+
+    if abs(deviation) >= deviation_threshold and dist_other < dist_current:
+        recommended = other_subgroup
+        reclassify = True
+        note = (
+            f"実測比率{realized_ratio:.2f}（黒字{years_used}年平均）が現在の分類"
+            f"{current_subgroup}（{current_rate:.2f}）から{deviation*100:+.0f}%乖離し、"
+            f"{other_subgroup}（{other_rate:.2f}）の方が近い。見直しを推奨"
+        )
+    else:
+        recommended = current_subgroup
+        reclassify = False
+        note = (
+            f"実測比率{realized_ratio:.2f}（黒字{years_used}年平均）は現在の分類"
+            f"{current_subgroup}（{current_rate:.2f}）から{deviation*100:+.0f}%"
+            f"（{'許容範囲内' if abs(deviation) < deviation_threshold else 'もう一方より現分類の方が近いため据え置き'}）"
+        )
+
+    return SoftwareSystemReclassificationResult(
+        applicable=True, current_subgroup=current_subgroup,
+        recommended_subgroup=recommended, realized_ratio=realized_ratio,
+        years_used=years_used, deviation_from_current=deviation,
+        reclassify_recommended=reclassify, note=note,
+    )
+
+
 def estimate_fcf_from_eps(
     ticker: str,
     raw_fcf: float,

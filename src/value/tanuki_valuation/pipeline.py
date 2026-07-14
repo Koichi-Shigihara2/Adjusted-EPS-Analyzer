@@ -1392,6 +1392,16 @@ class TanukiValuationPipeline:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M (= Adj_NI ${_fcf_adj_ni/1e6:,.0f}M × FCF_Conv {fcf_conv})")
                 else:
                     L.append(f"DCF_FCF_Base: ${_fcf_est_val/1e6:,.0f}M")
+            # FCF-CONVRATE-DESIGN-LIMIT-1: Software_System_Mature/SaaS 自己補正チェック結果
+            _sw_reclass = valuation.get("software_system_reclassification", {}) or {}
+            if _sw_reclass.get("reclassify_recommended"):
+                L.append(f"⚠️ Software_System分類見直し推奨: 現在={_sw_reclass.get('current_subgroup')} "
+                         f"→ 推奨={_sw_reclass.get('recommended_subgroup')}")
+                L.append(f"   [{_sw_reclass.get('note', '')}]")
+            # FCF-CONVRATE-DESIGN-LIMIT-1: 新規銘柄の前受収益比率ベース暫定分類（境界近傍のみ表示）
+            _sw_provisional = valuation.get("software_system_provisional", {}) or {}
+            if _sw_provisional.get("is_provisional") and _sw_provisional.get("note"):
+                L.append(f"⚠️ 要確認: Software_System分類は暫定（{_sw_provisional.get('note')}）")
             # DCF-RELIABILITY-1: Policy B（FCF_Conversion_Rate方式向けDCF_Reliability）
             _reliability_b = self._calc_dcf_reliability_policy_b(valuation)
             if _reliability_b == "LOW":

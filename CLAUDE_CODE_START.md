@@ -566,6 +566,18 @@ python common/sec_data/update.py [TICKER]
 # Step 2: β を yfinance から自動取得して beta_config.json に登録
 python src/value/tanuki_valuation/beta_fetcher.py [TICKER]
 
+# Step 2.5: sectorが"Software_System"（未分類の広義エンタープライズソフトウェア）の
+# 新規銘柄は、前受収益比率でMature/SaaSサブグループを暫定判定する
+# （FCF-CONVRATE-DESIGN-LIMIT-1、2026-07-14追加）。
+# sectorをSoftware_Systemに設定した後（indname.xls照合等、手動 or 別ロジック）に実行:
+python src/value/tanuki_valuation/beta_fetcher.py [TICKER] --classify-software-system
+# DR/Rev（前受収益/売上高比率）0.40以上→Software_System_SaaS、未満→Software_System_Mature。
+# 0.30〜0.50の境界近傍は暫定判定として report.txt に要確認フラグが表示される
+# （実測FCF/調整済み純利益データが蓄積されると、calculator/adjustments.py::
+# check_software_system_reclassification() がpipeline.py実行のたびに自動で
+# 見直し推奨をチェックする。config自体の書き換えは行わない設計）。
+# common/sec_data/data/{TICKER}/company_facts.json（Step 1で取得済み）が必要。
+
 # Step 3: TANUKI VALUATION パイプライン実行
 python src/value/tanuki_valuation/pipeline.py [TICKER]
 

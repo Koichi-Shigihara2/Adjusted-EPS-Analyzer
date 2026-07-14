@@ -1092,6 +1092,75 @@ ZETA→0.80の23銘柄）。Software_Internet・Semiconductor該当銘柄
 生成済みデータとコードの間に不整合が残る（コミット・本番反映方針は
 別途判断が必要）。
 
+#### Software_Systemグループ分割 実装完了（2026-07-14）
+残課題4（旧: `Software_System`統合カテゴリのAzure型想定レート0.80が
+エンタープライズソフトウェア全般23銘柄に妥当か未検証）に対応するため、
+23銘柄の実績データ（生FCF/調整済み純利益比率、直近5年）を検証した結果、
+成熟ライセンス/プラットフォーム型（グループA、平均比率≈1.00）と
+サブスクリプション型SaaS（グループB、平均比率≈1.61、NOWの一時的DTA
+歪み除外後）の二極化を確認（相関検証・前受収益比率での分離可能性も
+調査済み。分離精度は約78%）。
+
+**実装内容:**
+1. `fcf_conversion_config.json`に`Software_System_Mature`(1.00)・
+   `Software_System_SaaS`(1.61)を新設。`Software_System`(0.80)キー自体は
+   判定保留銘柄向けに残置（削除していない）
+2. `config/beta_config.json`の18銘柄のsectorを更新:
+   - グループA→`Software_System_Mature`: SNPS/ZETA/FICO/CDNS/APP/ADSK/
+     PLTR/ADBE/INTU
+   - グループB→`Software_System_SaaS`: BSY/DDOG/CWAN/CRM/FRSH/GTLB/
+     FROG/NOW/ESTC
+   - IOT（サンプル1件のみ）・QBTS/RBRK/S/SOUN（常時赤字で判定不能）・
+     MSFT（ticker_override適用のため無関係）は`Software_System`のまま
+     据え置き
+3. `growth_sanity.py::SECTOR_TO_DAMODARAN`に新sector値2件を追加
+   （両方とも既存と同じ"Software (System & Application)"を指す）。
+   sectorリネームがgrowth_sanity側の成長率ベンチマーク参照
+   （damodaran_industry）を壊さないための必須の付随対応
+4. `calculator/adjustments.py::check_software_system_reclassification()`
+   を新設。determine_fcf_base()と同じ設計思想（config書き換えなし、
+   pipeline.py実行のたびに実績から純関数として再判定）で、実測FCF/
+   調整済み純利益比率が現在のサブグループのレートから30%以上乖離、
+   かつもう一方のレートの方が近い場合にこの実行に限り推奨レートへ
+   差し替え、report.txtに見直し推奨を表示する
+5. `beta_fetcher.py::classify_software_system_subgroup()`を新設
+   （`--classify-software-system`オプション）。新規銘柄でsectorが
+   `Software_System`（未分類）の場合、前受収益（Deferred Revenue/
+   Contract Liability）/売上高比率（company_facts.jsonから算出）で
+   0.40を閾値にMature/SaaSを暫定分類する。0.30〜0.50の境界近傍は
+   report.txtに要確認フラグを表示
+6. `CLAUDE_CODE_START.md`の新規銘柄登録手順にStep 2.5として追記
+
+**検証:**
+- 全105銘柄（tanuki=true 100銘柄）で新旧比較を実施し、意図した18銘柄
+  （グループA9銘柄→1.00、グループB9銘柄→1.61）のみが変化し、
+  IOT/QBTS/RBRK/S/SOUN/MSFTを含む残り82銘柄には差分がないことを確認
+- pytest: 309 passed / 2 failed（MSFT/NVDA、[[TEST-STALE-IV-1]]の
+  既知バグで本修正とは無関係）
+- 影響18銘柄の`pipeline.py`再実行（`--skip-risk`）: 成功18/失敗0
+- `report_consistency_check.py`: NG=0、警告36件は全て既存確認済み
+  （新規0件）
+- 自己補正チェック（`check_software_system_reclassification`）を
+  18銘柄全件で検証し、いずれも見直し推奨が発火しないことを確認
+  （実績データから直接分類した銘柄なので当然の結果。初期実装では
+  現分類との乖離幅のみで判定しもう一方のレートとの近さを見ていなかった
+  ため、ESTC（実測比率2.21、SaaS想定1.61からの乖離+37%）で
+  「より遠いはずのMature(1.00)へ切替」という誤判定を検出・修正済み）
+
+#### 発見した別問題（未対応・要別途調査）
+本タスクの影響18銘柄再生成時、`FRSH`の内部検証（`validation.overall`）が
+FAILになった。原因調査の結果、**本修正とは無関係の既存バグ**と判明:
+`validator.py::run_basic_checks`の`pt_shares_consistency`チェックが
+再計算する理論株価（例: FRSH $127.83、ADBE $1153.85）と、最終的に
+`latest.json`へ保存される`intrinsic_value_per_share`（FRSH $41.47、
+ADBE $639.89）が大きく乖離しており（ADBEは本修正前のHEAD時点データでも
+乖離80.40%で再現、pass=False・overall=WARN）、pipeline.py内で検証時点の
+IVスナップショットと最終保存IVの間に何らかの後段調整（alphaテーパリング等の
+候補）が挟まっていると推測される。乖離幅が閾値（±1000%）を超えたのは
+FRSHが初めてで、`report_consistency_check.py`のNG判定には含まれず
+実害はNG=0のまま維持されているが、`validation.overall`の信頼性に
+関わる別バグとして新規登録が必要（本タスクでは未調査・未修正）。
+
 #### 残課題（クローズしない）
 1. **LITE/SITMのような光学部品・ハードウェア製造業に対応する
    カテゴリが依然として存在しない**（8分類はDamodaranの94業種中
@@ -1104,16 +1173,72 @@ ZETA→0.80の23銘柄）。Software_Internet・Semiconductor該当銘柄
 3. **EBIT(1-t)ベース→純利益ベースの変換ロジックが存在しない**
    （ダモドランのFCFF/EBIT(1-t)比率は純利益ベースのconversion_rateへ
    直接流用できないことをLITE/SITM実データで確認済み——同一銘柄・
-   同一年度でも基準を変えると符号が反転するケースがある。詳細は
-   2026-07-14の調査報告（本エントリ内、または該当セッションログ）参照）
-4. `Software_System`にリネームしたことで新たに対象となった23銘柄
-   （エンタープライズソフトウェア全般）に対し、レート0.80が
-   Azure型インフラ企業を想定した元の設計意図に合致するかは未検証
+   同一年度でも基準を変えると符号が反転するケースがある）
+4. **IOT・QBTS/RBRK/S/SOUNの判定保留**: IOTはDR/Rev比率0.50で境界上
+   （サンプル不足）、QBTS/RBRK/S/SOUNは観測期間中一貫して調整済み
+   純利益が赤字のためMature/SaaS判定の前提が成立しない。いずれも
+   `Software_System`(0.80)のまま据え置き
+5. 前受収益比率による新規銘柄暫定判定の分離精度は約78%（実績検証済み
+   18銘柄ベース）。ADSK/BSY/CWAN型（DR/Rev比率と実際のFCF転換挙動が
+   逆相関する例外）が一定数存在するため、暫定判定はあくまで初期値
+   であり、`check_software_system_reclassification()`による実績ベース
+   の自動見直しに委ねる設計
 
 #### 着手条件
-**キー名不一致修正は完了済み（2026-07-14）**。上記残課題1〜4は
-いずれも着手条件なし（次回セッションで優先度・方針を判断してから
-着手）。
+**キー名不一致修正・Software_Systemグループ分割は完了済み（2026-07-14）**。
+上記残課題1〜5はいずれも着手条件なし（次回セッションで優先度・方針を
+判断してから着手）。
+
+---
+
+### [VALIDATOR-IVPS-MISMATCH-1] validator.pyのpt_shares_consistencyが検証時と最終保存時で異なるIVを比較している疑い
+**優先度:** 未定（実害は現状report_consistency_check.pyのNG判定に含まれず
+未検知だが、DCF_Reliability表示の信頼性に関わるため要判断）
+**分類:** DCF信頼性判定ロジック / データ品質
+**登録日:** 2026-07-14
+**発見:** [[FCF-CONVRATE-DESIGN-LIMIT-1]] Software_Systemグループ分割の
+影響18銘柄再生成時、FRSHの`validation.overall`がFAILになったことへの
+原因調査中
+
+#### 内容
+`validator.py::run_basic_checks`の`pt_shares_consistency`チェックが
+DCF構成要素（V₀・RPO・GO・α・shares・BS補正）から再計算する理論株価と、
+`latest.json`に最終保存される`intrinsic_value_per_share`が一致しない
+ケースを確認した:
+
+- FRSH: 検証時再計算$127.83 vs 最終保存$41.47（乖離約3倍、pass判定は
+  `diff_pct<1.0`基準では通っているように見えるが、これは検証時点の
+  `data["intrinsic_value_per_share"]`自体が既に$127.83相当になっていた
+  ためで、最終保存値とは無関係に整合しているだけ）
+- ADBE: 検証時再計算$1153.85 vs 最終保存$639.89（乖離80.32%、
+  `pass=False`として記録されており`overall=WARN`の一因になっている）
+  ——**本タスクのconversion_rate変更前のHEAD時点データでも同一乖離
+  （80.40%）を確認済みのため、既存の別バグであり今回の変更由来ではない**
+
+FRSHの乖離がたまたま`anomaly_detection`の閾値（±1000%）を超えたため
+`overall=FAIL`として初めて顕在化したが、ADBEのように閾値未満でも
+同種の乖離（pass=False・overall=WARN扱い）は既存データに広く
+存在する可能性がある。
+
+#### 推定原因（未検証）
+`pipeline.py`は`calculate_pt()`を1銘柄につき複数回呼び出している
+（メイン評価・シナリオ/テーパリング調整用の`tapering_g_end`付き呼び出し・
+bear評価用など計3箇所: pipeline.py:127/625/649）。ログ上、同一銘柄で
+成長率が異なる複数回の再計算ブロックが出力されることを確認した
+（例: ZETA 成長率33.6%→28.8%の2回計算）。`validate_calculation()`が
+どの時点の`valuation`スナップショットを検証し、どの時点の値が
+最終的に`intrinsic_value_per_share`として保存されるかの対応関係が
+ずれている可能性がある（alphaテーパリング等の後段調整が検証後に
+IVを書き換えているのではないかという仮説だが未確認）。
+
+#### 範囲外（本タスクでは未実施）
+原因の特定・修正は行っていない。FCF-CONVRATE-DESIGN-LIMIT-1の
+Software_Systemグループ分割自体はこのバグと無関係に正しく機能して
+いることを確認済み（`report_consistency_check.py` NG=0維持）。
+
+#### 着手条件
+なし（次回セッションで優先度判断のうえ着手。まず影響範囲——WARN/FAIL
+になっている銘柄数の全件洗い出しから着手するのが妥当と思われる）
 
 ---
 
@@ -3012,3 +3137,30 @@ Software_System 23銘柄）で新たに非defaultレートが適用されるよ�
 ③ `Software_System`にリネームしたことで新規に対象となった23銘柄への
    レート0.80の妥当性検証（Azure型インフラ企業を想定した設計だが
    対象は汎用エンタープライズソフトウェア全般に拡大したため）
+
+追記（2026-07-14 [[FCF-CONVRATE-DESIGN-LIMIT-1]] Software_Systemグループ分割実装完了）:
+上記③の検証として23銘柄（IOT・QBTS/RBRK/S/SOUN除く18銘柄）の直近5年
+実績（生FCF/調整済み純利益比率）を検証し、成熟ライセンス型（グループA、
+平均≈1.00）とSaaS型（グループB、平均≈1.61）の二極化を確認。
+`Software_System_Mature`/`Software_System_SaaS`の2カテゴリへ分割し、
+18銘柄のsectorを実績ベースで確定した。新規銘柄向けには前受収益比率
+（DR/Rev、閾値0.40）による暫定判定ロジック（`beta_fetcher.py
+--classify-software-system`）と、実績蓄積後にpipeline.py実行のたびに
+純関数として再判定する自己補正ロジック（`check_software_system_
+reclassification()`、config書き換えなし・determine_fcf_base()と同設計
+思想）を実装。全105銘柄で新旧比較・pytest・report_consistency_check
+（NG=0）を確認済み。
+
+このタスクの過程で[[VALIDATOR-IVPS-MISMATCH-1]]（validator.pyの
+pt_shares_consistencyチェックが検証時と最終保存時で異なるIVを比較して
+いる疑い、本タスクとは無関係の既存バグ）を新規発見・登録した。
+
+次セッションの筆頭候補：
+① [[VALIDATOR-IVPS-MISMATCH-1]]の影響範囲調査（WARN/FAILになっている
+   銘柄の全件洗い出し）——DCF_Reliability表示の信頼性に関わるため
+② [[FCF-CONVRATE-DESIGN-LIMIT-1]]残課題1〜3（LITE/SITM型のカテゴリ
+   自体の欠如、固定比率設計の限界、EBIT(1-t)→純利益変換ロジック不在）
+   ——優先度・対応方針は依然未定
+③ 前受収益比率による暫定判定ロジックの分離精度（約78%）を踏まえ、
+   新規銘柄登録が発生した際に実際にIOT型（境界近傍）のケースが
+   出た場合の運用確認（テストケースがまだ実データで発生していない）

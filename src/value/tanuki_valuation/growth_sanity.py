@@ -60,6 +60,8 @@ SECTOR_TO_DAMODARAN = {
     "Semiconductor":          "Semiconductor",
     "Semiconductor_Equip":    "Semiconductor Equip",
     "Software_System":        "Software (System & Application)",
+    "Software_System_Mature": "Software (System & Application)",  # FCF-CONVRATE-DESIGN-LIMIT-1: Software_Systemのサブ分類。Damodaran業種は同一
+    "Software_System_SaaS":   "Software (System & Application)",  # 同上
     "Software_Internet":      "Software (Internet)",
     "Software_Entertainment": "Software (Entertainment)",
     "Cloud_Services":         "Software (System & Application)",

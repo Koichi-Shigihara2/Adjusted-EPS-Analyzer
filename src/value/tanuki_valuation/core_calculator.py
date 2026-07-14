@@ -67,6 +67,9 @@ from calculator.adjustments import (
     estimate_fcf_from_eps, FCFEstimationResult,   # v7.2追加
     analyze_fcf_outlier, FCFOutlierResult,        # v7.1追加
     capitalize_rd, RDCapitalizationResult,        # v8.2追加
+    check_software_system_reclassification,       # FCF-CONVRATE-DESIGN-LIMIT-1
+    SoftwareSystemReclassificationResult,          # FCF-CONVRATE-DESIGN-LIMIT-1
+    SOFTWARE_SYSTEM_SUBGROUP_RATES,                # FCF-CONVRATE-DESIGN-LIMIT-1
 )
 
 try:
@@ -227,10 +230,17 @@ class KoichiValuationCalculator:
         # data_fetcher._load_beta_config()（pipeline.py::_load_beta_sector()と同じ
         # 正しいパスを参照する既存の読み込み関数）に統一する。
         _sector = ""
+        _sw_provisional = False
+        _sw_provisional_note = ""
         try:
             from data_fetcher import _load_beta_config
             _bcfg = _load_beta_config()
-            _sector = _bcfg.get('overrides', {}).get(ticker, {}).get('sector', '') or ''
+            _ticker_bcfg = _bcfg.get('overrides', {}).get(ticker, {})
+            _sector = _ticker_bcfg.get('sector', '') or ''
+            # FCF-CONVRATE-DESIGN-LIMIT-1: beta_fetcher.py::classify_software_system_subgroup()が
+            # 新規銘柄に暫定分類を付与した際のフラグ（境界近傍で要確認の場合はreport.txtに表示）
+            _sw_provisional = bool(_ticker_bcfg.get('software_system_provisional', False))
+            _sw_provisional_note = _ticker_bcfg.get('software_system_provisional_note', '') or ''
         except Exception:
             pass
 
@@ -257,6 +267,46 @@ class KoichiValuationCalculator:
                       f"{fcf_estimation.divergence_warning}")
         else:
             print(f"   [{ticker}] FCF実力推定: フォールバック → {fcf_estimation.note}")
+
+        # ── STEP 4c-2: Software_System_Mature/SaaS 自己補正チェック（FCF-CONVRATE-DESIGN-LIMIT-1）──
+        # determine_fcf_base()と同じ設計思想: config書き換えなし、実行のたびに実績から再判定する。
+        # 乖離30%以上の場合、この実行に限り推奨サブグループのレートでconversion_rate/estimated_fcfを
+        # 差し替えて使用する（beta_config.jsonの永続的な書き換えは行わない）。
+        sw_sys_reclass = SoftwareSystemReclassificationResult(
+            applicable=False, current_subgroup=_sector,
+            recommended_subgroup=None, realized_ratio=None, years_used=0,
+            deviation_from_current=None, reclassify_recommended=False, note="対象外"
+        )
+        if fcf_estimation.applied and _sector in SOFTWARE_SYSTEM_SUBGROUP_RATES and self.sec_data_dir:
+            try:
+                sw_sys_reclass = check_software_system_reclassification(
+                    ticker=ticker,
+                    current_subgroup=_sector,
+                    sec_data_dir=self.sec_data_dir,
+                    eps_data_dir=self.eps_data_dir,
+                )
+            except Exception as _swsys_e:
+                print(f"   [{ticker}] Software_System自己補正チェック失敗: {_swsys_e}")
+
+            if sw_sys_reclass.reclassify_recommended and sw_sys_reclass.recommended_subgroup:
+                _new_rate = SOFTWARE_SYSTEM_SUBGROUP_RATES[sw_sys_reclass.recommended_subgroup]
+                _new_estimated_fcf = fcf_estimation.adj_net_income * _new_rate
+                print(f"   [{ticker}] ⚠ Software_System分類見直し推奨"
+                      f"（現在:{sw_sys_reclass.current_subgroup}→推奨:{sw_sys_reclass.recommended_subgroup}）: "
+                      f"{sw_sys_reclass.note}")
+                base_fcf = _new_estimated_fcf
+                fcf_estimation = FCFEstimationResult(
+                    applied=True, method=fcf_estimation.method,
+                    adj_net_income=fcf_estimation.adj_net_income,
+                    conversion_rate=_new_rate,
+                    estimated_fcf=_new_estimated_fcf,
+                    raw_fcf=fcf_estimation.raw_fcf,
+                    sector=sw_sys_reclass.recommended_subgroup,
+                    note=fcf_estimation.note + f"｜自己補正により{sw_sys_reclass.recommended_subgroup}"
+                         f"（{_new_rate:.2f}）へこの実行のみ差し替え",
+                    divergence_ratio=round(_new_estimated_fcf / fcf_estimation.raw_fcf, 2) if fcf_estimation.raw_fcf else 0.0,
+                    divergence_warning=fcf_estimation.divergence_warning,
+                )
 
         # ── STEP 4d: R&D資本化補正（v8.2追加）──
         # R&Dを費用ではなく投資として扱い、FCFの過小評価を補正する
@@ -782,6 +832,11 @@ class KoichiValuationCalculator:
             # FCF外れ値分析結果（v7.1追加）
             "fcf_outlier": fcf_outlier_result.to_dict(),
             "fcf_estimation": fcf_estimation.to_dict(),
+            "software_system_reclassification": sw_sys_reclass.to_dict(),
+            "software_system_provisional": {
+                "is_provisional": _sw_provisional,
+                "note": _sw_provisional_note,
+            },
 
             # R&D資本化補正結果（v8.2追加）
             "rd_capitalization": rd_capitalization.to_dict(),
