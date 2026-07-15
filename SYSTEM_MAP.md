@@ -259,7 +259,20 @@ SEC EDGAR
 │    新しい順規約をconstruction時に検証する。parser.py・ttm_calculator.py・
 │    reader.py::get_fcf_list()は未対応（Phase 3bで判断、[[GATE2-PHASE3B-1]]・
 │    [[GATE2-READER-FCFLIST-1]]参照）
-└─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）
+├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
+│    quarters_in_trailing_window()も同ファイルに追加（ARCH-DATA-1残課題① 2026-07-15新設）
+│    ——会計年度end日起点のtrailing 370日窓で四半期エントリを抽出する共有関数。
+│    quarterly.py::check_revenue_quality()・src/value/tanuki_valuation/pipeline.py
+│    （DILUTION-FYE-1、希薄化率の分割検知）双方が参照し、暦年グルーピングの
+│    重複実装（CHECK-QREV-FYE-1型バグの再発）を解消した
+└─ revenue_tag_conflict_check.py  # revenue系タグ競合検知（ARCH-DATA-1残課題③
+     2026-07-15新設）。company_facts.jsonを再読込し、MERGE_ALL_TAGS_FIELDS対象
+     （revenue/selling_and_marketing/depreciation_and_amortization）の候補タグ間で
+     同一年度の値が閾値以上乖離していないかWARN検知する。parser.py本体は無変更、
+     SECParserの既存メソッドを再利用（新規の候補タグ一覧は作らない）。
+     update.py Step1完了直後（check_revenue_quality()の直後、4c.相当）に配線。
+     自動修正は行わない（人間がTICKER_RESTRICTIONS登録可否を判断する既存フロー
+     に委ねる）。詳細はBACKLOG.md [[REVENUE-TAG-CONFLICT-SCAN-1]]参照
 
 【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
 `src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを
@@ -284,6 +297,11 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
   参照）
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
+├─ common/sec_data/reader.py::SECReader.get_net_cash()  # BS項目（Cash/ST_Invest/
+│    LTDebt/STDebt）の同一時点原則統合＋Insurance/Fintechセクターガード適用。
+│    data_fetcher.pyから呼ばれ、calculator/adjustments.py::calculate_bs_adjustment()
+│    経由でvaluation["bs_adjustment"]として保存される（ARCH-DATA-1残課題①
+│    2026-07-15でnet_debt_periodフィールドを追加、pipeline.py側の重複実装を解消）
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:
@@ -293,13 +311,19 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 ├─ core_calculator.py    # DCF・理論株価
 ├─ calculator/rice.py    # RICE投資効率
 ├─ calculator/dcf.py     # DCFエンジン
-├─ calculator/adjustments.py  # alpha計算（参考値保持）・Moat Score計算（ALPHA-REDESIGN-1 2026-06-25）
+├─ calculator/adjustments.py  # alpha計算（参考値保持）・Moat Score計算（ALPHA-REDESIGN-1 2026-06-25）・
+│   calculate_bs_adjustment()（reader.py::get_net_cash()の戻り値をBSAdjustmentResultへ変換）
 │   注記: ALPHA-REDESIGN-1によりDCF_v0へのalpha乗算を廃止。
 │        競争優位はMoat Score（粗利率・ROIC超過幅・FCFマージン）によるPhase1期間自動計算で表現。
 └─ growth_sanity.py      # 成長率サニティチェック
 ↑ HypeCoreフェーズを参照
      ↓ latest.json（銘柄ごと）
 pipeline.py              # 全銘柄を統合・TANUKI SCORE算出
+├─ _load_extra_data()内のfinancial_health（report.txt表示＋TANUKI SCORE判定用）は
+│    valuation["bs_adjustment"]を再利用する形に統一（ARCH-DATA-1残課題① 2026-07-15。
+│    従来はpipeline.py独自にcommon/sec_data配下の生JSONを再読込しBS同一時点原則を
+│    別実装していたため、reader.py::get_net_cash()側のみが適用するセクターガードが
+│    反映されずV〈Visa〉で表示乖離が生じていた。二重読み込み自体も解消）
 ├─ risk_fetcher.py   # Grok APIによる既知リスクイベント取得
 ├─ hypecore_history/{TICKER}.json生成
 │   （docs/value-monitor/hypecore/data/{TICKER}_poc.json を参照 →

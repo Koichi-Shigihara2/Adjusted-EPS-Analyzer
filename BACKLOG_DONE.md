@@ -68,6 +68,102 @@ alpha固定のため問題化しない）。`validator.py`は`VALIDATOR-IVPS-MIS
 - `581a93d28`: コード修正（`pipeline.py`）
 - `59ae5b6c6`: 全100銘柄report.txt/latest.json/history.json/score_history.json再生成
 
+### ✅ [ARCH-DATA-1] 残課題① 計算層への重複実装一本化（2026-07-15完了）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-15
+**完了日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]着手前棚卸し調査
+
+#### 背景
+ARCH-DATA-1着手前の棚卸しで、正規化層（`tag_definitions.py`等）への
+集約は部分的に進行済みだが、計算層（`pipeline.py`・`reader.py`）への
+重複実装が①暦年グルーピング（trailing 370日窓）②BS項目「同一時点原則」
+の2件残存していることを確認した。
+
+#### 対応内容
+- ①`common/sec_data/utils.py::quarters_in_trailing_window()`に窓計算
+  部分を共有化し、`quarterly.py::check_revenue_quality()`・
+  `pipeline.py`（DILUTION-FYE-1）双方から参照する形に統一。窓の中身の
+  使い方（4件のみ合計 vs 何件でも中央値）は目的が異なるため各呼び出し
+  元に残置
+- ②`reader.py::get_net_cash()`を正としてBS項目取得ロジックを一本化。
+  単なるコード重複ではなくreader.py側だけがInsurance/Fintechセクター
+  ガードを適用しており、V（Visa）で実際に約$1.56Bの表示乖離
+  （report.txt・TANUKI SCORE判定に使う値がDCF計算に使う値とズレていた）
+  が発生していたことを実データで確認・是正した。`BSAdjustmentResult`に
+  `net_debt_period`を追加し、`pipeline.py`は`valuation["bs_adjustment"]`
+  を再利用する形に変更（二重のファイル読み込み自体を解消）
+
+#### 検証結果
+- 副次的にSOUN（LTDebt=0のFY2024 10-K値が旧pipeline.py独自フィルタで
+  誤除外されていたバグ）も是正された。いずれもIntrinsic_Value自体・
+  TANUKI SCORE分類には影響なし
+- 全100銘柄再生成: 成功100/失敗0、`report_consistency_check.py` NG=0、
+  pytest 309 passed / 2 known failed（MSFT/NVDA、TEST-STALE-IV-1既知
+  バグ、無関係）
+- 意味のある差分はV・SOUNの2銘柄のみ（他98銘柄は`financial_health`/
+  `bs_adjustment`/`intrinsic_value_per_share`等の主要フィールドに変化なし）
+
+#### コミット
+- `4e4629a3b`: コード修正（`utils.py`/`quarterly.py`/`reader.py`/
+  `adjustments.py`/`pipeline.py`）
+- `60d44b2d8`: 全100銘柄report.txt/latest.json/history.json再生成
+
+残課題②（EPS Analyzer経路のスコープ判断）は[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+として分離登録。残課題③は下記参照。
+
+### ✅ [ARCH-DATA-1] 残課題③ revenue系タグ競合検知の実装（2026-07-15完了・スコープ縮小）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-15
+**完了日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]残課題①完了後の着手前調査
+
+#### 背景
+当初想定していた「PREFLIGHT-CHECK-1と共有する汎用パターン判定カタログ」
+構想を着手前調査した結果、①`_extract_values_merged()`に候補タグ比較・
+競合検知の仕組みが一切なく、既存の「検知トリガー」もSEC-REV-FINTECH-1/
+BUG-REV-SPAC-1型については人間が一次情報で正誤判断した一回限りの手動
+オーバーライドにすぎなかった、②PREFLIGHT-CHECK-1が想定する新規登録
+時点の情報だけでは大半が「リスクフラグ立て」止まりで精度未検証、と
+判明したため、汎用カタログ構想は見送り、revenue系タグ競合の実データ
+検知に最小スコープを絞って実装した。
+
+#### 対応内容
+- `common/sec_data/revenue_tag_conflict_check.py`新設。`parser.py`本体は
+  無変更、`SECParser`の既存メソッド（`_detect_fiscal_end_month`/
+  `_extract_single_key`/`_extract_values_merged`）を再利用し候補タグ
+  一覧・年度判定ロジックを重複させない設計
+- `update.py`のStep1完了直後（`check_revenue_quality()`の直後、4c.相当）
+  に配線。新規のStep番号追加は不要だった
+- 自動修正は一切行わず、WARN出力（候補タグ名・各値・採用値の明示）のみ
+
+#### 検証結果
+- SOFI（$619.4M vs $3,613.4M、乖離5.8倍）・IONQ（$1,235.0M vs $11.1M、
+  乖離111.0倍）の既知ケースを正しく再現することを確認
+- 全100銘柄実行の結果、revenue系で14銘柄を検知。詳細・判定結果の内訳は
+  [[REVENUE-TAG-CONFLICT-SCAN-1]]参照（LITE・TERは実害なし、PMは正当な
+  業種差と判定済み。AVGO/DELL/CAKE/ELF＋RCATは[[FY52WEEK-BUCKET-MISPLACE-1]]、
+  TDY/ASTSは[[REVENUE-TAG-PRIORITY-FRAGILE-1]]へ分離登録）
+- pytest 309 passed / 2 known failed（既知のみ、無関係）。既存の
+  `check_revenue_quality()`の出力・挙動には影響なし（並行動作の独立
+  チェックであり既存ロジックは無変更）
+
+#### コミット
+- `f05cae0ba`: コード修正（`revenue_tag_conflict_check.py`新設・
+  `update.py`配線）。データ再生成は不要（report.txt/latest.jsonに影響
+  しないコンソール診断のみのため）
+
+#### 副次的な設計上の発見（重要）
+`selling_and_marketing`・`depreciation_and_amortization`フィールドも
+同時に検知対象としたが、候補タグ同士が親子/包含関係にあるため
+（例: `DepreciationAndAmortization` ⊇ `AmortizationOfIntangibleAssets`）、
+revenue系のような「本来同一概念であるべき候補の食い違い」ではなく
+大半が構造的なfalse positiveと判明した（詳細は[[REVENUE-TAG-CONFLICT-SCAN-1]]参照）。
+
+また、この調査の過程で未使用の`quality_checker.py`（独自のQ01〜Q13
+チェックカタログを持つが全リポジトリからimportされていない死蔵コード）
+を発見し、[[QUALITY-CHECKER-CLEANUP-1]]として新規登録した。
+
 ### ✅ [VALIDATOR-IVPS-MISMATCH-1] validator.pyのpt_shares_consistency不整合の根本修正（2026-07-15完了）
 **分類:** DCF信頼性判定ロジック / データ品質
 **登録日:** 2026-07-14
