@@ -4,6 +4,108 @@
 
 ## 2026-07-15（完了）
 
+### ✅ [FY52WEEK-BUCKET-MISPLACE-1] 52/53週会計年度企業の年次revenue値がdetermine_fiscal_year()の月判定により隣接年度バケツへ誤って混入する問題の根本修正（2026-07-15完了）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-15
+**完了日:** 2026-07-15
+**発見:** REVENUE-TAG-CONFLICT-SCAN-1（revenueタグ競合検知）の全銘柄実行時、
+AVGO/DELL採用値が公表売上高と大きく乖離している疑いから調査
+
+#### 問題（登録時点の内容）
+AVGO・DELL・CAKE・ELF（52/53週会計年度企業。決算日が年によって
+10月末〜11月初旬／1月末〜2月初旬等の範囲で微妙に変動）で、
+`determine_fiscal_year()`の「月で判定」ロジックにより、真の年次値
+（365日間の正規エントリ）が誤って隣接年度バケツに押し出され、
+空いたバケツに90日間の四半期スタブがduration filterなしで
+「年次データ」として無審査で採用される。1年限りの孤立事象ではなく、
+決算日が月境界をまたぐたびに毎年系統的に発生する。
+
+具体例：
+- AVGO FY2019: 真の年次値$22,597M（3つの独立10-K申告で一貫）が
+  end_year=2020バケツに誤登録され、end_year=2019バケツには90日間の
+  四半期スタブ$5,515Mのみが残り採用される
+- DELL FY2019: 真の年次値$90,621M（2つの独立10-K申告で一貫）が
+  同様にend_year=2020バケツに押し出され、end_year=2019には
+  90日間スタブ$22,482Mのみが残る
+
+#### 調査過程で確定した根本原因（事前調査完了時点のまとめ）
+1. **判定ロジックの欠陥**: `determine_fiscal_year()`
+   （`common/sec_data/utils.py`）は`end_date.month > fiscal_end_month`の
+   月比較のみで日を見ない設計。52/53週対応は皆無。12月決算企業では
+   `month > 12`が常に偽となるため年またぎ補正が原理的に発生しない
+   副次的欠陥もあり（CAKE/CDNS/JNJ/TDY等に影響）。
+2. **対象銘柄の拡大確定（当初4銘柄→10銘柄）**: 全106銘柄スキャンにより
+   DELL/JNJ/ADBE/CDNS/AVGO/CAKE/TDY/MRVL/LITE/IOTの10銘柄が対象と確定。
+   ELF/MSCI/RCATはFYE一回限りの変更（移行期スタブ由来）で別種と判明し除外。
+3. **tie-breakカスケード側の欠陥**: バケツ分類ロジックだけでなく
+   `_extract_values_merged`/`_extract_single_key`の「同一exactness→
+   end_date新しい方優先」規則にも複合欠陥があり、DELL FY2019等の
+   真の値が完全消失するケースが判明。
+4. **ARCH-DATA-1-FYコミット（2026-06-25, ab792d38b）による回帰と判明**:
+   旧ロジック（`end_year = int(end_date[:4])`）から新ロジック
+   （`determine_fiscal_year()`月比較）への切替が、mid-year四半期
+   誤ラベル（INTU等）は修正した一方、52/53週バケツ誤配置を新たに
+   持ち込んだ。IOT/AVGO/MRVLでは空いたバケツを埋める代替値が存在しない
+   ため「化石ファイル」（`save_parsed_data()`に古い年度ファイルの
+   削除ロジックがなく、旧ロジック下での最後の正しい状態が凍結される
+   現象）として現れ、DELL/ADBE/LITEでは四半期スタブによる継続的な
+   「誤配置」として現れる、という表面上の違いがあるのみで根本原因は同一。
+5. **本人データ判定の設計**: SEC `submissions` API（`reportDate`）を
+   突き合わせることで`reportDate == end_date`が「本人データ（比較年度の
+   再掲ではない）」の100%信頼できる判定シグナルであることを、
+   830件超の年次・859件の四半期エントリで例外ゼロで検証。
+
+#### 対応内容（実装、2026-07-15）
+上記調査結果に基づき、`determine_fiscal_year()`自体は変更せず、
+SEC submissionsの`reportDate`による「本人データ」判定を新設して
+既存のfallbackロジックの上に安全に上書きする方式で実装：
+1. `common/sec_data/fetcher.py`: `SECFetcher.fetch_submissions()`/
+   `load_submissions()`を新設。`data.sec.gov/submissions/CIK{cik}.json`
+   （+ archives）から`{accn: reportDate}`を取得・キャッシュ。
+   `update.py`にStep 1bとして非blocking組み込み。
+2. `common/sec_data/parser.py`: `_collect_own_data_annual()`
+   （form=10-K・fp=FY/Q4・duration 340-380日・`reportDate==end_date`の
+   エントリのみを収集し、fyタグ衝突時はdetermine_fiscal_year()フォール
+   バックが自然に分離できるかで解決方式を切替）と
+   `_own_override_is_safe()`（対象キーの既存値が「月またぎ補正なしで
+   到達した自己無矛盾な年次データ」の場合は上書きを拒否する安全弁）を
+   新設し、`_extract_values_best_candidate()`内で全xbrl_keys横断で
+   本人データをマージしてから安全確認付きで上書きする方式に統合。
+   反復検証で5件の回帰（JNJ 2011の四半期スタブ誤採用、WMT/CRM/FCXの
+   タグ優先度・衝突解決ロジック欠陥、IOT安全弁の過剰ブロック）を発見・修正。
+3. `common/sec_data/report_consistency_check.py`: CHECK-22として
+   fyタグ衝突ログ（`fy_collision_log.json`）を検知しWARN表示する
+   仕組みを追加。
+4. 全106銘柄のSEC生データ再取得・再パース、TANUKI VALUATION・
+   EPS Analyzerの再生成を実施。
+
+対象は当初の10銘柄に加え、全106銘柄スキャンで新規発見した
+fyタグ衝突8銘柄（CRM/FCX/WMT等）も含めて解消。
+
+#### 検証結果
+- `pytest tests/`: 既知の2件（MSFT/NVDA、ALPHA-REDESIGN-1関連の
+  別課題）を除き全件パス。
+- `report_consistency_check.py --fail-on-ng`: NG=0。WARN-22
+  （fyタグ衝突）が想定通り8銘柄でのみ発火。
+- `dcf_validity_checker.py`: 対象18銘柄で新規の誤検知なし。
+- TANUKI VALUATION: 44/44銘柄成功で再生成完了。
+- EPS Analyzer: 43/43銘柄成功で再生成完了。
+- git stashによるOLD/NEWパーサーのA/Bテストで、DELL 2019・JNJ 2011・
+  IOT 2024/2025・CRM 2025/2026・FCX 2023/2024・WMT 2009/2013の
+  全対象銘柄・年度で修正を個別に再確認済み。
+
+#### 実装過程で新規発見しスコープ外として登録した既知の残課題
+- `[[FY52WEEK-BS-INSTANT-FACT-1]]`: BS項目（instant fact、start日を
+  持たないため340-380日duration filterの対象外）は本修正のカバー
+  範囲外のまま。
+- `[[FY52WEEK-BS-NULL-SILENT-1]]`: BS項目のNone値が`reader.py`等の
+  `or 0`パターンにより無警告でゼロ扱いされる、既存の別課題。
+
+#### 着手条件
+なし（完了）
+
+---
+
 ### ✅ [REPORT-ALPHA-STALE-1] report.txt（REPORT-6ブロック）がALPHA-REDESIGN-1廃止済みのalpha乗算式のまま表示されている問題の修正（2026-07-15完了）
 **分類:** レポート表示 / データ品質
 **登録日:** 2026-07-15
