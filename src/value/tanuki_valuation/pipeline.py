@@ -624,10 +624,24 @@ class TanukiValuationPipeline:
                 _seg_cfg.set_growth_override(ticker, _recommended_g)
                 _valuation_adj = self.calculator.calculate_pt(financials, tapering_g_end=_tapering_g_end)
                 if "error" not in _valuation_adj:
-                    _orig_validation = valuation.get("validation")
+                    # VALIDATOR-IVPS-MISMATCH-1: valuationを新スナップショットに差し替える
+                    # 場合、旧スナップショット（line 127由来）に対するvalidate_calculation()の
+                    # 結果を使い回さず、新スナップショットに対して再実行する。使い回すと
+                    # validation.checks（pt_shares_consistency等）が最終保存される
+                    # intrinsic_value_per_share等と対応しないスナップショットを検証した
+                    # 結果のまま残ってしまう。
+                    try:
+                        _new_validation = validate_calculation(
+                            ticker, _valuation_adj, use_ai=self.use_ai_validation
+                        )
+                    except Exception as _ve:
+                        import logging as _logging
+                        _logging.getLogger(__name__).warning(
+                            f"[{ticker}] re-validation after recommended_g re-run failed: {_ve}"
+                        )
+                        _new_validation = valuation.get("validation")
                     valuation = _valuation_adj
-                    if _orig_validation:
-                        valuation["validation"] = _orig_validation
+                    valuation["validation"] = _new_validation
                     extra = self._load_extra_data(ticker, valuation)
                     _phase1_auto_adjusted = True
                     valuation["phase1_growth"] = _recommended_g

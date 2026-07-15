@@ -90,8 +90,10 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
     fcf_base_method = c.get("fcf_base_method", "avg_5yr")
     roe_avg = c.get("roe_10yr_avg") or c.get("roe_used") or 0.0
 
+    # ALPHA-REDESIGN-1: core_calculator.pyはP_t算出にalphaを乗算しない
+    # （calculate_intrinsic_value(..., alpha=0.0, ...)固定）。alphaは参考値。
     total_v0 = v0 + rpo_pv + growth_option_pv
-    p_t = total_v0 * (1 + alpha)
+    p_t = total_v0
     divergence = ((ivps - current_price) / current_price * 100) if current_price > 0 else 0
 
     if p["dcf_type"] == "three_stage":
@@ -109,11 +111,11 @@ def build_validation_prompt(ticker: str, data: Dict[str, Any]) -> str:
 1. FCFベース: {fcf_base_method}（直近1yr/2yr平均 or 5yr平均の自動判定）
 2. WACC: CAPM動的計算（銘柄別β反映）
 3. DCF: {dcf_desc}
-4. α（成長期待プレミアム）:
+4. α（成長期待プレミアム、参考値。ALPHA-REDESIGN-1によりP_t算出には使用しない）:
    α = min(alpha_cap, max(0, (ROE × retention × discount_factor / Rm)))  ※Rm=市場期待リターン（βなし）
 5. 本質的価値:
-   P_t = (V₀ + RPO_PV + GrowthOption_PV) × (1 + α)
-   1株当り = P_t / 希薄化後株式数
+   P_t = V₀ + RPO_PV + GrowthOption_PV
+   1株当り = P_t / 希薄化後株式数 + ネットキャッシュ/株
 ```
 
 ## 入力数値（動的）
@@ -263,15 +265,17 @@ def run_basic_checks(ticker: str, data: Dict[str, Any]) -> Dict[str, Any]:
     net_cash_per_share = bs_adj.get("net_cash_per_share", 0.0) if bs_adj.get("applied", False) else 0.0
 
     if diluted_shares > 0:
+        # ALPHA-REDESIGN-1: core_calculator.pyはP_t算出にalphaを乗算しない
+        # （calculate_intrinsic_value(..., alpha=0.0, ...)固定）。alphaは参考値としてdetailに残す。
         total_v0 = v0 + rpo_pv + growth_option_pv
-        p_t = total_v0 * (1 + alpha)
+        p_t = total_v0
         calculated_ivps = p_t / diluted_shares + net_cash_per_share
         diff_pct = abs(calculated_ivps - ivps) / abs(ivps) * 100 if ivps != 0 else 0
 
         bs_note = f" + BS ${net_cash_per_share:+.2f}/株" if net_cash_per_share != 0 else ""
         checks["pt_shares_consistency"] = {
             "pass": diff_pct < 1.0,
-            "detail": f"(V₀ ${v0/1e9:.2f}B + RPO ${rpo_pv/1e9:.2f}B + GO ${growth_option_pv/1e9:.2f}B) × (1+{alpha:.3f}) / {diluted_shares/1e9:.3f}B{bs_note} = ${calculated_ivps:.2f} (差異{diff_pct:.2f}%)"
+            "detail": f"(V₀ ${v0/1e9:.2f}B + RPO ${rpo_pv/1e9:.2f}B + GO ${growth_option_pv/1e9:.2f}B) / {diluted_shares/1e9:.3f}B{bs_note} = ${calculated_ivps:.2f} (差異{diff_pct:.2f}%、α={alpha:.3f}は参考値・P_t未乗算)"
         }
     else:
         checks["pt_shares_consistency"] = {"pass": False, "detail": "株式数が0"}
