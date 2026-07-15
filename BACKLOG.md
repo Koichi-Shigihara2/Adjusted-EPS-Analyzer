@@ -884,32 +884,6 @@ Koichiさんの判断に委ね、判断材料としての透明性を上げる�
 
 ---
 
-### [REPORT-ALPHA-STALE-1] report.txt（REPORT-6ブロック）がALPHA-REDESIGN-1廃止済みのalpha乗算式のまま表示されている
-**優先度:** 中〜高
-**分類:** レポート表示 / データ品質
-**登録日:** 2026-07-15
-**発見:** [[ALPHA-CAP-HARDCODE-1]]影響範囲調査時の横展開確認
-
-#### 内容
-`pipeline.py:1478-1510`（report.txt生成のREPORT-6ブロック）が、
-`_v0_x_alpha_r6 = _v0_rm * (1 + _alpha_r6)` という廃止済み
-（ALPHA-REDESIGN-1でalpha乗算廃止済み）のalpha乗算式を使って
-`DCF_v0_x_alpha`・`Equity_Value`をreport.txtに表示している。一方
-実際に表示される`Intrinsic_Value`は`valuation.get("intrinsic_value_per_share")`
-（正しい値・alpha非乗算）をそのまま出力しているため、report.txt上で
-「Equity_Value ÷ Shares_Used = Intrinsic_Value」という自己記載の式が
-成立しない状態になっている（ADBE実例: Equity_Value $458.58B ÷
-Shares_Used 397.5M = $1153.65のはずがIntrinsic_Value表示は$639.89）。
-
-`CLAUDE_CODE_START.md`の「DCF構成要素は上から足すと必ずIVになる構造で
-表示する」ルール（外部AIレビュー誤指摘の予防策として設けられたもの）に
-反する状態であり、人間・外部AIレビュー双方に誤解を招く実害がある。
-
-#### 着手条件
-なし
-
----
-
 ## 優先度：未定（要判断）
 
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
@@ -3204,3 +3178,26 @@ pt_shares_consistency pass 36→100/100、overall PASS 34→69・WARN
 ② [[FCF-CONVRATE-DESIGN-LIMIT-1]] 残課題1〜3（持ち越し中）
 ③ [[POLICY-AB-TREND-BLIND-1]]（優先度低・軽量な独立作業）
 ④ [[ALPHA-CAP-HARDCODE-1]]（優先度低・手が空いた時に）
+
+追記（2026-07-15 [[REPORT-ALPHA-STALE-1]]完了）: 事前調査（読み取り専用）で
+`pipeline.py:1478-1510`（REPORT-6ブロック）に加え、同ファイル内の
+Definition固定テキスト2箇所（`[3.TANUKI VALUATION]`セクションの
+`P_t = DCF_v0 × (1+Alpha) + ...`説明文、`[7.HYPECORE]`セクションの
+`Alpha: ... added to IV`説明文）にも同型の陳腐化を追加発見したため、
+これら3箇所を一括してスコープに含めて実装・完了した（コミット
+`581a93d28`コード修正・`59ae5b6c6`全100銘柄再生成）。ADBE/NVDAで
+Equity_Value ÷ Shares_Used = Intrinsic_Valueの式が成立することを手計算で
+確認済み。report_consistency_check NG=0・pytest 309 passed（既知2件除く）。
+横展開調査でscenarios.py/sensitivity.py/adjustments.py/validator.py/
+stock.htmlはいずれも実害なしと確認済み（詳細はBACKLOG_DONE.md
+「2026-07-15（完了）」セクション参照）。
+
+これにより次セッションの筆頭候補を更新する：
+① [[FCF-CONVRATE-DESIGN-LIMIT-1]] 残課題1〜3（LITE/SITM型のカテゴリ
+   自体の欠如、固定比率設計の限界、EBIT(1-t)→純利益変換ロジック不在。
+   着手条件成立済み・持ち越し中）
+② [[POLICY-AB-TREND-BLIND-1]]（優先度：低・修正方針〈直近2年連続黒字を
+   主基準に上方乖離をLOW対象から除外〉確定済み。他タスクをブロック
+   しない軽量な独立作業）
+③ [[ALPHA-CAP-HARDCODE-1]]（優先度：低・実害なしと確認済み・
+   validator.pyのformula_verification誤警告のみ・手が空いた時に）

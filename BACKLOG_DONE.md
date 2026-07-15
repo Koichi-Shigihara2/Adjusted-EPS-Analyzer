@@ -4,6 +4,70 @@
 
 ## 2026-07-15（完了）
 
+### ✅ [REPORT-ALPHA-STALE-1] report.txt（REPORT-6ブロック）がALPHA-REDESIGN-1廃止済みのalpha乗算式のまま表示されている問題の修正（2026-07-15完了）
+**分類:** レポート表示 / データ品質
+**登録日:** 2026-07-15
+**完了日:** 2026-07-15
+**発見:** [[ALPHA-CAP-HARDCODE-1]]影響範囲調査時の横展開確認
+
+#### 背景（登録時点の内容）
+`pipeline.py:1478-1510`（report.txt生成のREPORT-6ブロック）が、
+`_v0_x_alpha_r6 = _v0_rm * (1 + _alpha_r6)` という廃止済み
+（ALPHA-REDESIGN-1でalpha乗算廃止済み）のalpha乗算式を使って
+`DCF_v0_x_alpha`・`Equity_Value`をreport.txtに表示している一方、
+実際に表示される`Intrinsic_Value`は`valuation.get("intrinsic_value_per_share")`
+（正しい値・alpha非乗算）をそのまま出力していたため、report.txt上で
+「Equity_Value ÷ Shares_Used = Intrinsic_Value」という自己記載の式が
+成立しない状態だった（ADBE実例: Equity_Value $458.58B ÷ Shares_Used
+397.5M = $1153.65のはずがIntrinsic_Value表示は$639.89）。
+
+#### 事前調査で追加発見した2箇所（実装着手前、読み取り専用調査で確認）
+`pipeline.py`内の「Definition」固定テキストブロックにも同型の陳腐化を発見し、
+本タスクのスコープに含めて対応した：
+- `pipeline.py:1612`付近（`[3.TANUKI VALUATION]`セクション）:
+  `"P_t = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV"`という
+  alpha乗算前提の説明文
+- `pipeline.py:1927`付近（`[7.HYPECORE]`セクション）:
+  `"Alpha: Growth expectation premium added to IV"`という
+  IVに加算される前提の説明文
+
+なお横展開調査（scenarios.py・sensitivity.py・calculator/adjustments.py・
+validator.py・stock.html）では、いずれも呼び出し元が`alpha=0.0`を
+明示的に渡す設計のため実害なしと確認済み（`calculate_intrinsic_value()`
+本体の汎用式自体は`v0*(1+alpha)+...`のままだが、全呼び出し元で
+alpha固定のため問題化しない）。`validator.py`は`VALIDATOR-IVPS-MISMATCH-1`で
+既に同種の修正が完了済みだったことも確認した。
+
+#### 対応内容
+`src/value/tanuki_valuation/pipeline.py`の3箇所を修正:
+1. `DCF_v0_x_alpha`のtrace/append行を削除（alpha乗算後V0は実計算経路に
+   存在しないため式チェーンから除外）
+2. `_pt_r6`の算出を`_v0_x_alpha_r6`ではなく`_v0_rm`（既存のDCF_v0行と同一値）
+   を使うよう変更。`Equity_Value`の表示文言も「= v0 + RPO_PV + GO_PV + ...」に
+   修正し`v0_x_alpha`という語を除去
+3. `[3.TANUKI VALUATION]`・`[7.HYPECORE]`の各Definitionブロックの説明文を
+   alpha非乗算の実態（参考値表示のみ・計算には未使用）に即した文言へ修正
+4. `Alpha_Premium`の表示行自体は変更せず維持（参考値表示として引き続き有効）
+
+#### 検証結果
+全100銘柄（tanuki=true・report.txt存在銘柄）を`pipeline.py --skip-risk`で
+再生成し確認:
+- 成功100/失敗0
+- `report_consistency_check.py`: NG=0（WARN=36件、全て本タスクと無関係な
+  既存の確認済み警告）
+- `pytest tests/`: 309 passed / 2 failed（既存の[[TEST-STALE-IV-1]]、
+  MSFT/NVDA、ALPHA-REDESIGN-1後にテスト式が未更新の既知バグ。本タスクの
+  変更前後で件数・対象銘柄とも同一）
+- ADBE手計算検証: Equity_Value $254.36B ÷ Shares_Used 397.5M = $639.90
+  ≈ Intrinsic_Value表示$639.89（式が成立することを確認）。NVDA
+  （$18763.83B ÷ 24221.0M = $774.69）でも同様に成立を確認
+- 全report.txt・pipeline.pyから`DCF_v0_x_alpha`/`v0_x_alpha`の文字列が
+  消滅したことをgrepで確認
+
+#### コミット
+- `581a93d28`: コード修正（`pipeline.py`）
+- `59ae5b6c6`: 全100銘柄report.txt/latest.json/history.json/score_history.json再生成
+
 ### ✅ [VALIDATOR-IVPS-MISMATCH-1] validator.pyのpt_shares_consistency不整合の根本修正（2026-07-15完了）
 **分類:** DCF信頼性判定ロジック / データ品質
 **登録日:** 2026-07-14
