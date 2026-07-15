@@ -1,6 +1,6 @@
 {
   "ticker": "ESTC",
-  "last_updated": "2026-07-13T12:42:51.819172",
+  "last_updated": "2026-07-15T22:30:27.796831",
   "quarters": [
     {
       "gaap_eps": 4.065443739406903,
@@ -87,26 +87,26 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "主に一過性のDTA認識（-3.8億USD規模の税務利益）を除外した結果、GAAP EPS 4.07に対しAdjusted EPS 0.52と大幅に低下。SBCや無形資産償却は恒常的コストである一方、税金項目と異常貸倒引当は一過性。市場がGAAP EPSで判断する場合、企業の実力（収益力）を過大評価しやすく、過小評価ではなく過大評価のリスクが高い。投資家は調整後の持続的EPSとSBCの継続性を注視すべき。",
+        "comment": "大きな一過性税金利益（DTA認識による税金費用-370M）を除外した結果、GAAP EPS 4.06に対しAdjusted EPS 0.52と大幅に低下。市場がGAAP EPSのみで判断する場合、企業の継続的収益力を過大評価するリスクが高く、調整により真の実力が見えやすくなる。SBCや無形資産償却は恒常的コストのため調整の信頼性に注意が必要。過小評価の可能性は低く、むしろGAAP依存時の過大評価リスクと、SBCの実質的希薄化効果を投資家は注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが恒常的に発生する運用コスト（毎期のSBCはコア事業に関わる）",
+            "snippet": "株式報酬費用は毎期発生する恒常的な非現金コストであり、調整で加算されている（0.2: 恒常的な可能性が高い）",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は継続的に発生する非現金費用であり恒常的",
+            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用（0.2: 恒常的な可能性が高い）",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として異常変動分の貸倒引当をadd_back（ProvisionForDoubtfulAccounts）",
-            "confidence": 0.75
+            "snippet": "マクロ変動による一時的影響として異常変動分を調整（0.8: ほぼ一過性）",
+            "confidence": 0.7
           },
           {
             "item": "tax_one_time_dta",
-            "snippet": "DTA認識（繰延税金資産）による一時的な巨額税務利益を除外。note: tax_expense=-370,067,000, median_normal_tax=10,149,000",
+            "snippet": "DTA認識による一時的な大型税金利益（tax_expense=-370,067,000）を除外し正常税額に調整（1.0: 完全に一過性）",
             "confidence": 0.95
           }
         ]

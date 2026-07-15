@@ -1,54 +1,54 @@
 {
-  "intrinsic_value_pt": 24412932577.66134,
-  "intrinsic_value_per_share": 450.31927608622294,
-  "intrinsic_value_beta": 484.75,
-  "upside_percent_beta": -22.2,
-  "intrinsic_value_rf": 2751.79,
-  "upside_percent_rf": 341.6,
-  "v0": 24412932577.66134,
-  "v0_adjusted": 24412932577.66134,
-  "alpha": 0.4214503274936595,
+  "intrinsic_value_pt": 18617045439.65587,
+  "intrinsic_value_per_share": 333.66696288980177,
+  "intrinsic_value_beta": 359.65,
+  "upside_percent_beta": -42.3,
+  "intrinsic_value_rf": 2068.81,
+  "upside_percent_rf": 232.0,
+  "v0": 18617045439.65587,
+  "v0_adjusted": 18617045439.65587,
+  "alpha": 0.46967590594764363,
   "alpha_was_capped": false,
   "future_values": {
-    "1年後": 573.04,
-    "2年後": 729.21,
-    "3年後": 927.93,
-    "4年後": 1180.82,
-    "5年後": 1502.61
+    "1年後": 379.8,
+    "2年後": 432.3,
+    "3年後": 492.06,
+    "4年後": 560.08,
+    "5年後": 637.5
   },
   "return_metrics": {
     "1年後": {
-      "future_value": 573.04,
-      "value_growth_pct": 27.3,
-      "expected_return_pct": -8.0
+      "future_value": 379.8,
+      "value_growth_pct": 13.8,
+      "expected_return_pct": -39.0
     },
     "2年後": {
-      "future_value": 729.21,
-      "value_growth_pct": 61.9,
-      "expected_return_pct": 17.0
+      "future_value": 432.3,
+      "value_growth_pct": 29.6,
+      "expected_return_pct": -30.6
     },
     "3年後": {
-      "future_value": 927.93,
-      "value_growth_pct": 106.1,
-      "expected_return_pct": 48.9
+      "future_value": 492.06,
+      "value_growth_pct": 47.5,
+      "expected_return_pct": -21.0
     },
     "4年後": {
-      "future_value": 1180.82,
-      "value_growth_pct": 162.2,
-      "expected_return_pct": 89.5
+      "future_value": 560.08,
+      "value_growth_pct": 67.9,
+      "expected_return_pct": -10.1
     },
     "5年後": {
-      "future_value": 1502.61,
-      "value_growth_pct": 233.7,
-      "expected_return_pct": 141.2
+      "future_value": 637.5,
+      "value_growth_pct": 91.1,
+      "expected_return_pct": 2.3
     }
   },
-  "upside_percent": -27.7,
-  "calculation_date": "2026-07-15T13:08:32+09:00",
-  "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
-  "dcf_type": "tapering",
+  "upside_percent": -46.5,
+  "calculation_date": "2026-07-15T22:30:03+09:00",
+  "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
+  "dcf_type": "two_stage",
   "growth": {
-    "rate": 0.2725,
+    "rate": 0.1382,
     "source": "segment_weighted",
     "phase1_years": 5
   },
@@ -62,19 +62,19 @@
   "sensitivity": {
     "matrix": [
       [
-        471.49,
-        699.28,
-        1009.74
+        330.72,
+        399.34,
+        474.16
       ],
       [
-        396.11,
-        585.15,
-        838.14
+        276.71,
+        333.67,
+        394.66
       ],
       [
-        339.62,
-        499.82,
-        710.37
+        236.21,
+        284.5,
+        335.27
       ]
     ],
     "wacc_values": [
@@ -92,28 +92,28 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.2725217306764121,
+      "rate": 0.13823641959190958,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.2725217306764121,
+      "weighted_growth": 0.13823641959190958,
       "fiscal_year": null,
       "source": "growth_override"
     }
   },
   "scenario_valuations": {
     "bear": {
-      "growth_rate": 0.191,
-      "intrinsic_value_per_share": 376.67
+      "growth_rate": 0.097,
+      "intrinsic_value_per_share": 275.71
     },
     "base": {
-      "growth_rate": 0.273,
-      "intrinsic_value_per_share": 450.32
+      "growth_rate": 0.138,
+      "intrinsic_value_per_share": 333.67
     },
     "bull": {
-      "growth_rate": 0.327,
-      "intrinsic_value_per_share": 504.22
+      "growth_rate": 0.166,
+      "intrinsic_value_per_share": 377.01
     }
   },
   "growth_options": {
@@ -124,51 +124,46 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 24412932577.66134,
-    "pv_high_growth": 5352215234.175254,
-    "pv_terminal": 19060717343.486084,
+    "v0": 18617045439.65587,
+    "pv_high_growth": 4249915851.9362984,
+    "pv_terminal": 14367129587.719568,
     "high_growth_detail": [
       {
         "year": 1,
-        "growth_rate": 0.2725,
-        "fcf": 963350403.3750829,
+        "fcf": 861690993.1803035,
         "discount_factor": 1.095668,
-        "pv": 879235683.9618231
+        "pv": 786452641.8406885
       },
       {
         "year": 2,
-        "growth_rate": 0.239,
-        "fcf": 1193543370.4005291,
-        "discount_factor": 1.200488,
-        "pv": 994214857.870455
+        "fcf": 980808070.8721453,
+        "discount_factor": 1.2004883662240002,
+        "pv": 817007559.9792488
       },
       {
         "year": 3,
-        "growth_rate": 0.2054,
-        "fcf": 1438672203.945899,
-        "discount_factor": 1.315337,
-        "pv": 1093767259.6667333
+        "fcf": 1116391466.8963587,
+        "discount_factor": 1.3153366872439178,
+        "pv": 848749584.5915941
       },
       {
         "year": 4,
-        "growth_rate": 0.1718,
-        "fcf": 1685847234.4996572,
-        "discount_factor": 1.441172,
-        "pv": 1169774921.4995003
+        "fcf": 1270717426.1430714,
+        "discount_factor": 1.4411723174391693,
+        "pv": 881724836.6253797
       },
       {
         "year": 5,
-        "growth_rate": 0.1382,
-        "fcf": 1918892720.1758122,
-        "discount_factor": 1.579046,
-        "pv": 1215222511.1767418
+        "fcf": 1446376853.4461365,
+        "discount_factor": 1.5790463907039398,
+        "pv": 915981228.8993871
       }
     ],
-    "terminal_fcf": 1976459501.7810867,
-    "terminal_value": 30097756925.459686,
-    "v0_rm": 22817803885.858723,
-    "pv_fcf_rm": 5286006045.590858,
-    "pv_tv_rm": 17531797840.267864
+    "terminal_fcf": 1489768159.0495205,
+    "terminal_value": 22686364120.264366,
+    "v0_rm": 17413402769.762505,
+    "pv_fcf_rm": 4198705393.070651,
+    "pv_tv_rm": 13214697376.691854
   },
   "fcf_base": {
     "base_fcf": 934900000.0,
@@ -273,22 +268,22 @@
     "vc_factor": 0.719,
     "roic_wacc_ratio": 0.719,
     "bear": {
-      "growth_rate": 0.191,
-      "rice": 0.335,
-      "rice_per_ratio": 0.0106,
-      "rice_adj": 4.198
+      "growth_rate": 0.097,
+      "rice": 0.17,
+      "rice_per_ratio": 0.0054,
+      "rice_adj": 2.132
     },
     "base": {
-      "growth_rate": 0.273,
-      "rice": 0.479,
-      "rice_per_ratio": 0.0152,
-      "rice_adj": 6.0
+      "growth_rate": 0.138,
+      "rice": 0.242,
+      "rice_per_ratio": 0.0077,
+      "rice_adj": 3.033
     },
     "bull": {
-      "growth_rate": 0.327,
-      "rice": 0.574,
-      "rice_per_ratio": 0.0182,
-      "rice_adj": 7.187
+      "growth_rate": 0.166,
+      "rice": 0.291,
+      "rice_per_ratio": 0.0092,
+      "rice_adj": 3.648
     }
   },
   "fcf_source": "ttm_series",
@@ -308,7 +303,7 @@
       810500000
     ],
     "diluted_shares": 46329138,
-    "roe_10yr_avg": 0.10034531606991895,
+    "roe_10yr_avg": 0.11182759665420089,
     "roe_years_used": 9,
     "roe_outlier_adj": false,
     "current_price": 623.1,
@@ -322,7 +317,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Electronics_General)",
-    "high_growth_rate_used": 0.2725217306764121,
+    "high_growth_rate_used": 0.13823641959190958,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "moat_score": 0.283,
@@ -330,9 +325,9 @@
     "moat_gross_margin_norm": 0.4302,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.5545,
-    "pv_high": 5352215234.175254,
-    "pv_terminal": 19060717343.486084,
-    "roe_used": 0.10034531606991895,
+    "pv_high": 4249915851.9362984,
+    "pv_terminal": 14367129587.719568,
+    "roe_used": 0.11182759665420089,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -340,14 +335,14 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.4214503274936595,
-    "per": 31.613394,
+    "alpha_uncapped": 0.46967590594764363,
+    "per": 31.549366,
     "per_is_forward": false,
     "per_adjusted": 26.0,
     "peg": 1.4,
     "ps": 4.636932,
     "ev_ebitda": 20.037,
-    "ma200": 594.3436,
+    "ma200": 594.6395,
     "forward_eps": 25.96567,
     "analyst_target_median": 750.0,
     "analyst_target_mean": 741.3077,
@@ -361,7 +356,7 @@
     "insider_sell_count": 0,
     "insider_net_direction": "中立",
     "insider_latest_date": "2026-04-24",
-    "analyst_vs_iv": 66.5,
+    "analyst_vs_iv": 124.8,
     "max_eps": 20.1385,
     "max_eps_per": 30.9,
     "max_eps_reliability": "MED"
@@ -372,15 +367,15 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $22.82B + RPO $0.00B + GO $0.00B) / 0.046B + BS $-42.20/株 = $450.32 (差異0.00%、α=0.421は参考値・P_t未乗算)"
+        "detail": "(V₀ $17.41B + RPO $0.00B + GO $0.00B) / 0.046B + BS $-42.20/株 = $333.67 (差異0.00%、α=0.470は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $5.35B + pv_terminal $19.06B = $24.41B (差異0.00%)"
+        "detail": "2段階: pv_high $4.25B + pv_terminal $14.37B = $18.62B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE 10.0% × 60% / Rm 10.00% × 0.7 = 0.4215 (実際0.4215)"
+        "detail": "α計算: ROE 11.2% × 60% / Rm 10.00% × 0.7 = 0.4697 (実際0.4697)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -390,17 +385,17 @@
     "overall": "PASS",
     "ai_comment": null
   },
-  "phase1_growth": 0.2725217306764121,
-  "tanuki_score": "HOLD",
+  "phase1_growth": 0.13823641959190958,
+  "tanuki_score": "TRIM",
   "funda_score": 70,
-  "score_comment": "割高(-28%超)、FCF黒字、売上安定成長",
+  "score_comment": "割高(-46%超)、FCF黒字、売上安定成長",
   "timing_score": 25,
   "sell_reason": null,
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左下",
     "label": "割高×低効率",
-    "key_metric_y": "RICE = 0.479",
+    "key_metric_y": "RICE = 0.242",
     "qx": false,
     "qy": false
   },
@@ -461,7 +456,7 @@
   "segment_configured": false,
   "phase1_growth_original": 0.15,
   "phase1_growth_auto_adjusted": true,
-  "recommended_g": 0.2725217306764121,
+  "recommended_g": 0.13823641959190958,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
@@ -472,18 +467,18 @@
     "damodaran_industry": "Electronics (General)",
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.09843158910559469,
-    "rev_cagr_5yr": 0.5219087369762025,
+    "rev_cagr_5yr": 0.1465689073362828,
     "g_fundamental": -0.01733019965339601,
     "recommended_g_median": 0.13823641959190958,
-    "recommended_g": 0.2725217306764121,
-    "growth_model": "decay",
-    "growth_model_reason": "Phase4(剥落)に基づきCAGR_max=52.2%×35%＋業界平均13.8%×65%＝27.3%を採用",
+    "recommended_g": 0.13823641959190958,
+    "growth_model": "median",
+    "growth_model_reason": "CAGR_max=15.0%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体維持・期待崩壊中",
     "signals": [
       "業界平均Electronics (General)(13.8%)の1.1倍以内 ✅",
-      "過去実績(3yr:9.8% / 5yr:52.2%)と整合 ✅"
+      "過去実績(3yr:9.8% / 5yr:14.7%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,
