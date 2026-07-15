@@ -711,6 +711,7 @@ class BSAdjustmentResult:
     fiscal_year: int               # 取得会計年度
     applied: bool                  # 補正適用フラグ
     sector_guard: str = "none"     # v8.1: 適用したセクターガード名
+    net_debt_period: str = ""      # ARCH-DATA-1残課題①: 実際にBS項目を取得した時点のラベル
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -723,6 +724,7 @@ class BSAdjustmentResult:
             "fiscal_year":            self.fiscal_year,
             "applied":                self.applied,
             "sector_guard":           self.sector_guard,
+            "net_debt_period":        self.net_debt_period,
         }
 
 
@@ -760,6 +762,7 @@ def calculate_bs_adjustment(
         fiscal_year=net_cash_data.get("fiscal_year", 0),
         applied=available and net_cash != 0.0,
         sector_guard=net_cash_data.get("sector_guard", "none"),  # v8.1
+        net_debt_period=net_cash_data.get("net_debt_period", ""),  # ARCH-DATA-1残課題①
     )
 
 

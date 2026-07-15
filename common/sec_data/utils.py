@@ -1,7 +1,38 @@
 """
 共通ユーティリティ関数
 """
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from typing import Any, Sequence, Tuple
+
+
+def quarters_in_trailing_window(
+    quarters: Sequence[Tuple[str, Any]],
+    fy_end: str,
+    window_days: int = 370,
+) -> list:
+    """
+    会計年度end日を起点に、trailing window_days日以内の四半期エントリの値を抽出する。
+
+    暦年ラベル（end[:4]）での四半期グルーピングは非12月決算企業（KLAC/LRCX等）で
+    誤判定を起こす（CHECK-QREV-FYE-1・DILUTION-FYE-1で同型バグとして独立に
+    発見・修正されていた。ARCH-DATA-1残課題①として本関数へ一本化）。
+
+    Args:
+        quarters: (end日文字列, 値) のタプルのリスト（四半期エントリのみ・is_annual除外済み前提）
+        fy_end: 年次end日文字列（ISO形式 "YYYY-MM-DD"）
+        window_days: 窓の日数（デフォルト370日）
+
+    Returns:
+        list: window_start(=fy_end - window_days) < end <= fy_end を満たすエントリの値
+              （入力の並び順を保持。ちょうど4件揃っているかの判定・合計/中央値等の
+              集計方法は呼び出し元の責務とする——用途によって要件が異なるため）
+    """
+    fy_end_dt = date.fromisoformat(fy_end)
+    window_start = fy_end_dt - timedelta(days=window_days)
+    return [
+        v for e, v in quarters
+        if window_start < date.fromisoformat(e) <= fy_end_dt
+    ]
 
 
 def determine_fiscal_year(end_date, fiscal_end_month: int) -> int:

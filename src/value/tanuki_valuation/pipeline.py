@@ -2070,67 +2070,19 @@ class TanukiValuationPipeline:
         # net_debt / SBC from latest available year
         if debt_cash_by_year:
             latest_yr = max(debt_cash_by_year.keys())
-            dc = debt_cash_by_year[latest_yr]
-            total_debt = dc["lt_debt"] + dc["st_debt"]
-            cash = dc["cash"]
 
-            # BUG-NETDEBT-4: 同一時点原則による統合上書き（BUG-NETDEBT-1/5を統合）
-            # 最新quarterly_*.jsonからCash/LTDebt/STDebt/STIを一括取得し、
-            # 全項目を同一filing日時から参照する（時点混在の解消）。
-            _net_debt_period = f"FY{latest_yr}"  # デフォルト: 年次
-            _q_st_invest_override: "float | None" = None
-            _q_full_override = False  # 四半期から全BS項目を取得できたか
-            try:
-                _q_files_nd = sorted([
-                    f for f in os.listdir(sec_dir)
-                    if f.startswith("quarterly_") and f.endswith(".json")
-                ])
-                if _q_files_nd:
-                    with open(os.path.join(sec_dir, _q_files_nd[-1]), encoding="utf-8") as _qf_nd:
-                        _latest_q_nd = json.load(_qf_nd)
-                    _qbs_nd   = _latest_q_nd.get("bs", {})
-                    _q_cash   = _qbs_nd.get("cash_and_equivalents")
-                    _q_lt     = _qbs_nd.get("long_term_debt")
-                    _q_st     = _qbs_nd.get("short_term_debt")
-                    _q_sti    = _qbs_nd.get("short_term_investments") or 0
-                    _q_period = _latest_q_nd.get("period", "")
-                    if _q_cash is not None and _q_lt is not None:
-                        # LTDebtが明示的に取得できる → 全項目を同一時点で統一
-                        # LTDebtがNone（パース失敗・未申告）の場合は負債は年次で維持
-                        cash       = float(_q_cash)
-                        lt_debt    = float(_q_lt)
-                        st_debt    = float(_q_st or 0)
-                        total_debt = lt_debt + st_debt
-                        _net_debt_period = _q_period
-                        _q_full_override = True
-                    elif _q_cash is not None:
-                        # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
-                        cash = float(_q_cash)
-                        _net_debt_period = f"Cash={_q_period}/Debt=FY{latest_yr}"
-                    if _q_sti > 0:
-                        _q_st_invest_override = float(_q_sti)
-            except Exception:
-                pass
-
-            # BUG-NETDEBT-2補完: 年次JSONのlt_debt=0かつ四半期から全項目取得できなかった場合
-            # → normalized LTDebtで補完（reader.get_net_cash()のBUG-NETDEBT-3と同等処理）
-            if not _q_full_override and dc["lt_debt"] == 0:
-                _norm_path = os.path.join(
-                    self.repo_root, "common", "sec_data", "normalized",
-                    f"{ticker.upper()}_quarterly_normalized.json"
-                )
-                try:
-                    with open(_norm_path, encoding="utf-8") as _nf:
-                        _norm_data = json.load(_nf)
-                    _lt_entries = [
-                        e for e in _norm_data.get("fields", {}).get("LTDebt", [])
-                        if e.get("val") is not None and e.get("val", 0) > 0
-                    ]
-                    if _lt_entries:
-                        _norm_lt = max(_lt_entries, key=lambda e: e.get("end", ""))["val"]
-                        total_debt = _norm_lt + dc["st_debt"]
-                except Exception:
-                    pass
+            # BUG-NETDEBT-4（同一時点原則）・BUG-NETDEBT-2/3（LTDebt正規化補完）・
+            # セクターガード（保険/fintech）は reader.py::get_net_cash() に一本化済み
+            # （ARCH-DATA-1残課題①）。calculate_pt() 内で既に計算済みの bs_adjustment
+            # （get_net_cash() の戻り値をそのまま格納したもの）を再利用することで、
+            # report.txt表示・TANUKI SCORE判定に使うBS値と、実際のDCF計算
+            # （bs_adjustment.net_cash_per_share）に使うBS値を単一の計算経路に統一する。
+            bs_adj = valuation.get("bs_adjustment", {})
+            cash = bs_adj.get("cash", 0.0)
+            st_invest = bs_adj.get("short_term_investments", 0.0)
+            total_debt = bs_adj.get("long_term_debt", 0.0) + bs_adj.get("short_term_debt", 0.0)
+            net_debt = -bs_adj.get("net_cash", 0.0)
+            _net_debt_period = bs_adj.get("net_debt_period") or f"FY{latest_yr}"
 
             # total_debt=0 かつ total_liabilities が大きい場合は警告（金融機関等）
             _ann_total_liab = 0
@@ -2142,16 +2094,11 @@ class TanukiValuationPipeline:
             if total_debt == 0 and _ann_total_liab > 1_000_000_000:
                 print(f"[WARN] [{ticker}] total_debt=0 だが total_liabilities=${_ann_total_liab/1e9:.1f}B（金融機関等の可能性）")
 
-            # NET-1: 短期投資（short_term_investments）を現金同等物として net_debt に加算
-            # bs_adjustment がすでに短期投資を含んでいるため、financial_health と整合を取る
-            st_invest = valuation.get("bs_adjustment", {}).get("short_term_investments", 0.0) or 0.0
-            if _q_st_invest_override is not None:
-                st_invest = _q_st_invest_override  # BUG-NETDEBT-5: 最新四半期値で上書き
             result["financial_health"] = {
                 "total_debt": total_debt,
                 "cash_and_equivalents": cash,
                 "short_term_investments": st_invest,
-                "net_debt": total_debt - cash - st_invest,
+                "net_debt": net_debt,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
                 "net_debt_period": _net_debt_period,
             }
@@ -2214,13 +2161,12 @@ class TanukiValuationPipeline:
                         ratio = raw_vals[i] / raw_vals[i - 1] if raw_vals[i - 1] > 0 else 1.0
                         if ratio > 2.5 or ratio < 0.4:
                             # 四半期値との比較で遡及的分割調整か実際の希薄化かを判別
+                            # （ARCH-DATA-1残課題①: quarters_in_trailing_window()に一本化。
+                            #  quarterly.py::check_revenue_quality()と同一の窓計算を使用）
                             try:
-                                a_end_dt = date.fromisoformat(annual_shares[i]["end"])
-                                window_start = a_end_dt - timedelta(days=370)
-                                q_list = [
-                                    e["val"] for e in q_entries_all
-                                    if window_start < date.fromisoformat(e["end"]) <= a_end_dt
-                                ]
+                                from common.sec_data.utils import quarters_in_trailing_window
+                                q_pairs = [(e["end"], e["val"]) for e in q_entries_all]
+                                q_list = quarters_in_trailing_window(q_pairs, annual_shares[i]["end"])
                             except (ValueError, KeyError):
                                 q_list = []
                             if q_list:

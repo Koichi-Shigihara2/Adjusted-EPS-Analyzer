@@ -12,6 +12,7 @@ from datetime import date, datetime, timedelta
 
 from .tag_definitions import TAG_CANDIDATES
 from .contracts import validate_fields
+from .utils import quarters_in_trailing_window
 
 logger = logging.getLogger(__name__)
 
@@ -646,17 +647,13 @@ def check_revenue_quality(ticker: str, normalized: dict) -> dict:
     # --- チェック4: 四半期合計 vs FY年次 整合性 ---
     # 暦年ラベル(a_end[:4])での四半期グルーピングは非12月決算企業（KLAC/LRCX等）で
     # 誤検知する（CHECK-QREV-FYE-1）。年次end日を起点にtrailing 12ヶ月窓で
-    # 該当4四半期を抽出する会計年度ベースのグルーピングに変更した。
+    # 該当4四半期を抽出する会計年度ベースのグルーピングに変更した
+    # （ARCH-DATA-1残課題①でquarters_in_trailing_window()に一本化）。
     for a_end, a_val in a_only[-3:]:
         try:
-            a_end_dt = date.fromisoformat(a_end)
+            q_in_fy = quarters_in_trailing_window(q_only, a_end)
         except ValueError:
             continue
-        window_start = a_end_dt - timedelta(days=370)
-        q_in_fy = [
-            v for e, v in q_only
-            if window_start < date.fromisoformat(e) <= a_end_dt
-        ]
         if len(q_in_fy) == 4:
             q_total = sum(q_in_fy)
             gap_pct = abs(q_total - a_val) / abs(a_val) * 100 if a_val else 0

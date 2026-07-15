@@ -355,6 +355,11 @@ class SECReader:
                 "fiscal_year":            int    取得会計年度
                 "available":              bool   データ取得成功フラグ
                 "sector_guard":           str    適用したセクターガード名（v8.1）
+                "net_debt_period":        str    実際にBS項目を取得した時点のラベル
+                                                  （"FYnnnn" | 四半期のperiod文字列 |
+                                                  "Cash={四半期}/Debt=FYnnnn"）
+                                                  ARCH-DATA-1残課題①でreport.txt表示
+                                                  （pipeline.py）向けに追加
             }
         """
         annual_data = self.get_annual_range(ticker, years=1)
@@ -363,7 +368,7 @@ class SECReader:
                 "cash": 0.0, "short_term_investments": 0.0,
                 "long_term_debt": 0.0, "short_term_debt": 0.0,
                 "net_cash": 0.0, "fiscal_year": 0, "available": False,
-                "sector_guard": "none",
+                "sector_guard": "none", "net_debt_period": "",
             }
 
         latest = annual_data[0]
@@ -378,6 +383,7 @@ class SECReader:
         st_inv  = bs.get("short_term_investments", 0) or 0
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
+        net_debt_period = f"FY{fy}"
 
         # BUG-NETDEBT-3: annual JSONでlong_term_debtが欠落した場合にnormalized quarterlyで補完
         if lt_debt == 0:
@@ -396,10 +402,11 @@ class SECReader:
                 with open(os.path.join(ticker_dir, _q_files[-1]), encoding="utf-8") as _qf:
                     _latest_q = json.load(_qf)
                 _qbs = _latest_q.get("bs", {})
-                _q_cash = _qbs.get("cash_and_equivalents")
-                _q_lt   = _qbs.get("long_term_debt")
-                _q_st   = _qbs.get("short_term_debt")
-                _q_sti  = _qbs.get("short_term_investments") or 0
+                _q_cash   = _qbs.get("cash_and_equivalents")
+                _q_lt     = _qbs.get("long_term_debt")
+                _q_st     = _qbs.get("short_term_debt")
+                _q_sti    = _qbs.get("short_term_investments") or 0
+                _q_period = _latest_q.get("period", "")
                 if _q_cash is not None and _q_lt is not None:
                     # LTDebtが明示的に取得できる → 全項目を同一時点で統一（最優先）
                     # LTDebtがNone（パース失敗）の場合はフォールバック（負債は年次維持）
@@ -407,11 +414,13 @@ class SECReader:
                     lt_debt = float(_q_lt)
                     st_debt = float(_q_st or 0)
                     st_inv  = float(_q_sti)
+                    net_debt_period = _q_period
                 elif _q_cash is not None:
                     # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
                     cash   = float(_q_cash)
                     if _q_sti > 0:
                         st_inv = float(_q_sti)
+                    net_debt_period = f"Cash={_q_period}/Debt=FY{fy}"
         except Exception:
             pass
 
@@ -453,6 +462,7 @@ class SECReader:
             "fiscal_year":            fy,
             "available":              available,
             "sector_guard":           sector_guard,
+            "net_debt_period":        net_debt_period,
         }
 
     # =========================================
