@@ -2,12 +2,12 @@
   "intrinsic_value_pt": 63127564138.61409,
   "intrinsic_value_per_share": 281.6654622190332,
   "intrinsic_value_beta": 178.54,
-  "upside_percent_beta": -32.9,
+  "upside_percent_beta": -34.1,
   "intrinsic_value_rf": 2631.88,
-  "upside_percent_rf": 889.8,
+  "upside_percent_rf": 872.1,
   "v0": 63127564138.61409,
   "v0_adjusted": 63127564138.61409,
-  "alpha": 0.010835243544233488,
+  "alpha": 0.010835243544233486,
   "alpha_was_capped": false,
   "future_values": {
     "1年後": 357.58,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 357.58,
       "value_growth_pct": 26.9,
-      "expected_return_pct": 34.5
+      "expected_return_pct": 32.1
     },
     "2年後": {
       "future_value": 453.94,
       "value_growth_pct": 61.2,
-      "expected_return_pct": 70.7
+      "expected_return_pct": 67.7
     },
     "3年後": {
       "future_value": 576.28,
       "value_growth_pct": 104.6,
-      "expected_return_pct": 116.7
+      "expected_return_pct": 112.9
     },
     "4年後": {
       "future_value": 731.59,
       "value_growth_pct": 159.7,
-      "expected_return_pct": 175.1
+      "expected_return_pct": 170.2
     },
     "5年後": {
       "future_value": 928.74,
       "value_growth_pct": 229.7,
-      "expected_return_pct": 249.3
+      "expected_return_pct": 243.1
     }
   },
-  "upside_percent": 5.9,
-  "calculation_date": "2026-07-15T00:44:32+09:00",
+  "upside_percent": 4.0,
+  "calculation_date": "2026-07-15T09:21:36+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -310,7 +310,7 @@
     "base": {
       "growth_rate": 0.269,
       "rice": 1.197,
-      "rice_per_ratio": 0.0018,
+      "rice_per_ratio": 0.0017,
       "rice_adj": 33.138
     },
     "bull": {
@@ -337,10 +337,10 @@
       370320000
     ],
     "diluted_shares": 355960189,
-    "roe_10yr_avg": 0.002579819891484164,
+    "roe_10yr_avg": 0.0025798198914841635,
     "roe_years_used": 7,
     "roe_outlier_adj": false,
-    "current_price": 265.89,
+    "current_price": 270.73,
     "latest_revenue": 3427158000.0,
     "rpo": 3484400000,
     "beta": 1.543,
@@ -361,7 +361,7 @@
     "moat_fcf_margin_norm": 1.0,
     "pv_high": 20217891337.45349,
     "pv_terminal": 42909672801.1606,
-    "roe_used": 0.002579819891484164,
+    "roe_used": 0.0025798198914841635,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -369,13 +369,13 @@
     "bull_multiplier": 1.2,
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
-    "alpha_uncapped": 0.010835243544233488,
-    "per": 681.7693,
+    "alpha_uncapped": 0.010835243544233486,
+    "per": 694.17957,
     "per_is_forward": false,
-    "per_adjusted": 119.01,
+    "per_adjusted": 121.17,
     "peg": 1.6,
-    "ps": 25.774908,
-    "ev_ebitda": 2574.021,
+    "ps": 26.24409,
+    "ev_ebitda": 2681.819,
     "ma200": 159.7822,
     "forward_eps": 2.88128,
     "analyst_target_median": 250.0,
@@ -392,7 +392,7 @@
     "insider_latest_date": "2026-07-13",
     "analyst_vs_iv": -11.2,
     "max_eps": 2.49,
-    "max_eps_per": 106.8,
+    "max_eps_per": 108.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -400,12 +400,12 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $113.77B + RPO $0.00B + GO $0.00B) × (1+0.011) / 0.356B + BS $+1.20/株 = $324.29 (差異1.08%)"
+        "pass": true,
+        "detail": "(V₀ $99.84B + RPO $0.00B + GO $0.00B) / 0.356B + BS $+1.20/株 = $281.67 (差異0.00%、α=0.011は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $22.14B + pv_terminal $49.44B = $71.58B (差異0.00%)"
+        "detail": "2段階: pv_high $20.22B + pv_terminal $42.91B = $63.13B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -416,7 +416,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   },
   "phase1_growth": 0.2694953937625746,
@@ -473,7 +473,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.0419,
+  "net_current_assets_ratio": 0.0412,
   "dupont": {
     "ni_ttm": 135673000,
     "revenue_ttm": 3672031000,
@@ -526,25 +526,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0322,
-  "forward_earnings_yield": 0.0108,
+  "erp": -0.0324,
+  "forward_earnings_yield": 0.0106,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Datadog",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning impacting 2025-2026 outlook",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

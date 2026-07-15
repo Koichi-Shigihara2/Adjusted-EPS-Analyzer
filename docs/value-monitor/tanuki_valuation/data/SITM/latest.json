@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 41.03,
   "upside_percent_beta": -93.4,
   "intrinsic_value_rf": 860.38,
-  "upside_percent_rf": 38.1,
+  "upside_percent_rf": 37.9,
   "v0": 1229003722.5752559,
   "v0_adjusted": 1229003722.5752559,
   "alpha": 0.0,
@@ -25,7 +25,7 @@
     "2年後": {
       "future_value": 190.52,
       "value_growth_pct": 88.8,
-      "expected_return_pct": -69.4
+      "expected_return_pct": -69.5
     },
     "3年後": {
       "future_value": 261.77,
@@ -40,11 +40,11 @@
     "5年後": {
       "future_value": 494.18,
       "value_growth_pct": 389.7,
-      "expected_return_pct": -20.7
+      "expected_return_pct": -20.8
     }
   },
   "upside_percent": -83.8,
-  "calculation_date": "2026-07-15T00:49:27+09:00",
+  "calculation_date": "2026-07-15T09:26:25+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -290,7 +290,7 @@
     "roe_10yr_avg": -0.14904782026757502,
     "roe_years_used": 8,
     "roe_outlier_adj": true,
-    "current_price": 623.23,
+    "current_price": 623.83,
     "latest_revenue": 326660000.0,
     "rpo": 0.0,
     "beta": 2.5,
@@ -320,12 +320,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 50.554432,
+    "per": 50.603104,
     "per_is_forward": true,
-    "per_adjusted": 156.88,
+    "per_adjusted": 157.03,
     "peg": 3.82,
-    "ps": 49.14067,
-    "ev_ebitda": 4789.262,
+    "ps": 49.187977,
+    "ev_ebitda": 4967.192,
     "ma200": 440.2255,
     "forward_eps": 12.3279,
     "analyst_target_median": 837.5,
@@ -342,7 +342,7 @@
     "insider_latest_date": "2026-06-15",
     "analyst_vs_iv": 729.8,
     "max_eps": 2.6472,
-    "max_eps_per": 235.4,
+    "max_eps_per": 235.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -351,11 +351,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $11.92B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.030B = $398.02 (差異0.00%)"
+        "detail": "(V₀ $3.02B + RPO $0.00B + GO $0.00B) / 0.030B = $100.92 (差異0.00%、α=0.000は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.27B + pv_terminal $3.04B = $4.31B (差異0.00%)"
+        "detail": "2段階: pv_high $0.53B + pv_terminal $0.70B = $1.23B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -423,7 +423,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.0468,
+  "net_current_assets_ratio": 0.0467,
   "dupont": {
     "ni_ttm": -24243000,
     "revenue_ttm": 379913000,
@@ -482,21 +482,5 @@
   "forward_earnings_yield": 0.0198,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

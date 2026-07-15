@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 108.23,
   "upside_percent_beta": -88.4,
   "intrinsic_value_rf": 1385.59,
-  "upside_percent_rf": 48.6,
+  "upside_percent_rf": 48.5,
   "v0": 81988459782.11147,
   "v0_adjusted": 81988459782.11147,
   "alpha": 0.7,
@@ -20,12 +20,12 @@
     "1年後": {
       "future_value": 207.45,
       "value_growth_pct": 7.2,
-      "expected_return_pct": -77.7
+      "expected_return_pct": -77.8
     },
     "2年後": {
       "future_value": 222.49,
       "value_growth_pct": 15.0,
-      "expected_return_pct": -76.1
+      "expected_return_pct": -76.2
     },
     "3年後": {
       "future_value": 238.62,
@@ -35,7 +35,7 @@
     "4年後": {
       "future_value": 255.92,
       "value_growth_pct": 32.3,
-      "expected_return_pct": -72.5
+      "expected_return_pct": -72.6
     },
     "5年後": {
       "future_value": 274.47,
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -79.3,
-  "calculation_date": "2026-07-15T00:54:11+09:00",
+  "calculation_date": "2026-07-15T09:30:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -308,10 +308,10 @@
       7654000000
     ],
     "diluted_shares": 460591983,
-    "roe_10yr_avg": 0.34139839247382436,
+    "roe_10yr_avg": 0.3413983924738244,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 932.28,
+    "current_price": 933.34,
     "latest_revenue": 67589000000.0,
     "rpo": 37100000000,
     "beta": 1.565,
@@ -332,7 +332,7 @@
     "moat_fcf_margin_norm": 0.5059,
     "pv_high": 33320577242.339516,
     "pv_terminal": 48667882539.77195,
-    "roe_used": 0.34139839247382436,
+    "roe_used": 0.3413983924738244,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -341,12 +341,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.4338732483900622,
-    "per": 46.335983,
+    "per": 46.388668,
     "per_is_forward": false,
-    "per_adjusted": 43.36,
+    "per_adjusted": 43.41,
     "peg": 2.24,
-    "ps": 6.0688386,
-    "ev_ebitda": 32.206,
+    "ps": 6.0757394,
+    "ev_ebitda": 32.265,
     "ma200": 711.3447,
     "forward_eps": 30.37586,
     "analyst_target_median": 973.0,
@@ -363,7 +363,7 @@
     "insider_latest_date": "2026-07-01",
     "analyst_vs_iv": 403.0,
     "max_eps": 20.9925,
-    "max_eps_per": 44.4,
+    "max_eps_per": 44.5,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -371,12 +371,12 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $175.41B + RPO $0.00B + GO $0.00B) × (1+0.700) / 0.461B + BS $-69.78/株 = $577.65 (差異85.70%)"
+        "pass": true,
+        "detail": "(V₀ $121.23B + RPO $0.00B + GO $0.00B) / 0.461B + BS $-69.78/株 = $193.43 (差異0.00%、α=0.700は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $42.37B + pv_terminal $73.97B = $116.34B (差異0.00%)"
+        "detail": "2段階: pv_high $33.32B + pv_terminal $48.67B = $81.99B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -490,25 +490,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0104,
-  "forward_earnings_yield": 0.0326,
+  "erp": -0.0105,
+  "forward_earnings_yield": 0.0325,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Caterpillar",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning with competition risks 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

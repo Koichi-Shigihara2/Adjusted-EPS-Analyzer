@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 2.38,
   "upside_percent_beta": -87.4,
   "intrinsic_value_rf": 11.91,
-  "upside_percent_rf": -37.1,
+  "upside_percent_rf": -37.2,
   "v0": 329071038.9458768,
   "v0_adjusted": 329071038.9458768,
   "alpha": 0.0,
@@ -40,11 +40,11 @@
     "5年後": {
       "future_value": 13.1,
       "value_growth_pct": 298.2,
-      "expected_return_pct": -30.8
+      "expected_return_pct": -30.9
     }
   },
   "upside_percent": -82.6,
-  "calculation_date": "2026-07-15T00:48:17+09:00",
+  "calculation_date": "2026-07-15T09:25:20+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -309,7 +309,7 @@
     "roe_10yr_avg": -0.5806867304196929,
     "roe_years_used": 4,
     "roe_outlier_adj": true,
-    "current_price": 18.9399,
+    "current_price": 18.95,
     "latest_revenue": 24587000.0,
     "rpo": 42400000,
     "beta": 2.1,
@@ -339,11 +339,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -48.563847,
+    "per": -48.58975,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 563.8215,
+    "ps": 564.1222,
     "ev_ebitda": null,
     "ma200": 24.0775,
     "forward_eps": -0.39,
@@ -361,7 +361,7 @@
     "insider_latest_date": "2026-06-16",
     "analyst_vs_iv": 1114.4,
     "max_eps": 0.0612,
-    "max_eps_per": 309.5,
+    "max_eps_per": 309.6,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -370,11 +370,11 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $0.03B + RPO $0.00B + GO $0.00B) × (1+0.000) / 0.370B + BS $+1.49/株 = $1.57 (差異0.00%)"
+        "detail": "(V₀ $0.67B + RPO $0.00B + GO $0.00B) / 0.370B + BS $+1.49/株 = $3.29 (差異0.00%、α=0.000は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.02B + pv_terminal $0.00B = $0.02B (差異0.00%)"
+        "detail": "2段階: pv_high $0.12B + pv_terminal $0.21B = $0.33B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -443,7 +443,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "computed_runway_months": 53.50936132060546,
-  "net_current_assets_ratio": 0.0825,
+  "net_current_assets_ratio": 0.0824,
   "dupont": {
     "excluded": true,
     "reason": "revenue_too_small"
@@ -494,21 +494,5 @@
   "forward_earnings_yield": -0.0206,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against D-Wave Quantum Inc.",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning with competitive threats through 2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

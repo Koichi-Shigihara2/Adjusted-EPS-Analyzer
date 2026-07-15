@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 767561246188.3967,
   "intrinsic_value_per_share": 79.133369861168,
   "intrinsic_value_beta": 184.97,
-  "upside_percent_beta": 27.6,
+  "upside_percent_beta": 27.5,
   "intrinsic_value_rf": 429.26,
-  "upside_percent_rf": 196.2,
+  "upside_percent_rf": 195.9,
   "v0": 767561246188.3967,
   "v0_adjusted": 767561246188.3967,
   "alpha": 0.4324966627201253,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 84.5,
       "value_growth_pct": 6.8,
-      "expected_return_pct": -41.7
+      "expected_return_pct": -41.8
     },
     "2年後": {
       "future_value": 90.23,
       "value_growth_pct": 14.0,
-      "expected_return_pct": -37.7
+      "expected_return_pct": -37.8
     },
     "3年後": {
       "future_value": 96.34,
       "value_growth_pct": 21.7,
-      "expected_return_pct": -33.5
+      "expected_return_pct": -33.6
     },
     "4年後": {
       "future_value": 99.23,
       "value_growth_pct": 25.4,
-      "expected_return_pct": -31.5
+      "expected_return_pct": -31.6
     },
     "5年後": {
       "future_value": 102.21,
       "value_growth_pct": 29.2,
-      "expected_return_pct": -29.5
+      "expected_return_pct": -29.6
     }
   },
-  "upside_percent": -45.4,
-  "calculation_date": "2026-07-15T00:56:59+09:00",
+  "upside_percent": -45.5,
+  "calculation_date": "2026-07-15T09:32:54+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -255,7 +255,7 @@
     "bear": {
       "growth_rate": 0.047,
       "rice": -0.658,
-      "rice_per_ratio": -0.027,
+      "rice_per_ratio": -0.0269,
       "rice_adj": 0.0
     },
     "base": {
@@ -267,7 +267,7 @@
     "bull": {
       "growth_rate": 0.081,
       "rice": -1.134,
-      "rice_per_ratio": -0.0465,
+      "rice_per_ratio": -0.0464,
       "rice_adj": 0.0
     }
   },
@@ -291,7 +291,7 @@
     "roe_10yr_avg": 0.10297539588574414,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 144.94,
+    "current_price": 145.09,
     "latest_revenue": 332238000000.0,
     "rpo": 0.0,
     "beta": 0.3,
@@ -321,12 +321,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.4324966627201253,
-    "per": 24.400673,
+    "per": 24.425924,
     "per_is_forward": false,
-    "per_adjusted": 25.48,
+    "per_adjusted": 25.5,
     "peg": 1.15,
-    "ps": 1.8428034,
-    "ev_ebitda": 11.513,
+    "ps": 1.8447105,
+    "ev_ebitda": 11.556,
     "ma200": 136.4604,
     "forward_eps": 10.6425,
     "analyst_target_median": 168.0,
@@ -343,7 +343,7 @@
     "insider_latest_date": "2026-07-01",
     "analyst_vs_iv": 112.3,
     "max_eps": 6.1072,
-    "max_eps_per": 23.7,
+    "max_eps_per": 23.8,
     "max_eps_reliability": "MED"
   },
   "validation": {
@@ -351,12 +351,12 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $405.72B + RPO $0.00B + GO $0.00B) × (1+0.432) / 4.145B + BS $-0.21/株 = $140.01 (差異43.34%)"
+        "pass": true,
+        "detail": "(V₀ $328.86B + RPO $0.00B + GO $0.00B) / 4.145B + BS $-0.21/株 = $79.13 (差異0.00%、α=0.432は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $71.44B + pv_terminal $882.02B = $953.46B (差異0.00%)"
+        "detail": "2段階: pv_high $61.46B + pv_terminal $706.10B = $767.56B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -367,7 +367,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   },
   "phase1_growth": 0.06781205719630738,
@@ -467,21 +467,5 @@
   },
   "erp": 0.0304,
   "forward_earnings_yield": 0.0734,
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Exxon Mobil",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

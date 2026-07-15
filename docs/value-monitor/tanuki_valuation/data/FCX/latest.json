@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 17094000348.588974,
   "intrinsic_value_per_share": 11.488891952685204,
   "intrinsic_value_beta": 7.94,
-  "upside_percent_beta": -87.1,
+  "upside_percent_beta": -87.2,
   "intrinsic_value_rf": 80.41,
-  "upside_percent_rf": 30.7,
+  "upside_percent_rf": 29.8,
   "v0": 17094000348.588974,
   "v0_adjusted": 17094000348.588974,
   "alpha": 0.5560093503768334,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 12.22,
       "value_growth_pct": 6.4,
-      "expected_return_pct": -80.1
+      "expected_return_pct": -80.3
     },
     "2年後": {
       "future_value": 13.0,
       "value_growth_pct": 13.1,
-      "expected_return_pct": -78.9
+      "expected_return_pct": -79.0
     },
     "3年後": {
       "future_value": 13.82,
       "value_growth_pct": 20.3,
-      "expected_return_pct": -77.5
+      "expected_return_pct": -77.7
     },
     "4年後": {
       "future_value": 14.7,
       "value_growth_pct": 27.9,
-      "expected_return_pct": -76.1
+      "expected_return_pct": -76.3
     },
     "5年後": {
       "future_value": 15.64,
       "value_growth_pct": 36.1,
-      "expected_return_pct": -74.6
+      "expected_return_pct": -74.8
     }
   },
-  "upside_percent": -81.3,
-  "calculation_date": "2026-07-15T00:52:30+09:00",
+  "upside_percent": -81.5,
+  "calculation_date": "2026-07-15T09:28:56+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -92,12 +92,12 @@
   },
   "growth_scenarios": {
     "primary": {
-      "rate": 0.0636,
+      "rate": 0.06359999999999999,
       "source": "segment_weighted"
     },
     "segment": {
       "enabled": true,
-      "weighted_growth": 0.0636,
+      "weighted_growth": 0.06359999999999999,
       "fiscal_year": "FY2025",
       "source": "segment_config"
     }
@@ -199,7 +199,7 @@
     "estimated_fcf": 1308500000.0,
     "raw_fcf": 1308500000.0,
     "sector": "Metals_Mining",
-    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/FCX/annual.json)",
+    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\FCX\\annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -269,19 +269,19 @@
     "bear": {
       "growth_rate": 0.045,
       "rice": 0.435,
-      "rice_per_ratio": 0.013,
+      "rice_per_ratio": 0.0137,
       "rice_adj": 0.483
     },
     "base": {
       "growth_rate": 0.064,
       "rice": 0.619,
-      "rice_per_ratio": 0.0185,
+      "rice_per_ratio": 0.0195,
       "rice_adj": 0.687
     },
     "bull": {
       "growth_rate": 0.076,
       "rice": 0.735,
-      "rice_per_ratio": 0.022,
+      "rice_per_ratio": 0.0231,
       "rice_adj": 0.816
     }
   },
@@ -305,7 +305,7 @@
     "roe_10yr_avg": 0.13238317866115085,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 61.52,
+    "current_price": 61.95,
     "latest_revenue": 25915000000.0,
     "rpo": 106000000.0,
     "beta": 1.359,
@@ -316,7 +316,7 @@
     },
     "_shares_source": "yf_implied",
     "_beta_source": "beta_config(Metals_Mining)",
-    "high_growth_rate_used": 0.0636,
+    "high_growth_rate_used": 0.06359999999999999,
     "high_growth_years": 5,
     "terminal_growth_used": 0.03,
     "moat_score": 0.2996,
@@ -335,11 +335,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.5560093503768334,
-    "per": 33.434784,
+    "per": 31.76923,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": 4.14,
-    "ps": 3.3472872,
+    "ps": 3.3706834,
     "ev_ebitda": 10.721,
     "ma200": 55.55545,
     "forward_eps": 4.00971,
@@ -357,7 +357,7 @@
     "insider_latest_date": "2026-07-01",
     "analyst_vs_iv": 548.5,
     "max_eps": 3.3856,
-    "max_eps_per": 18.2,
+    "max_eps_per": 18.3,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -365,8 +365,8 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $22.19B + RPO $0.00B + GO $0.00B) × (1+0.556) / 1.438B + BS $-3.95/株 = $20.07 (差異74.71%)"
+        "pass": true,
+        "detail": "(V₀ $22.19B + RPO $0.00B + GO $0.00B) / 1.438B + BS $-3.95/株 = $11.49 (差異0.00%、α=0.556は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
@@ -381,7 +381,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   },
   "tanuki_score": "WATCH",
@@ -438,7 +438,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 145000000
   },
-  "net_current_assets_ratio": 0.0925,
+  "net_current_assets_ratio": 0.0919,
   "dupont": {
     "ni_ttm": 4746000000,
     "revenue_ttm": 26421000000,
@@ -504,25 +504,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0222,
-  "forward_earnings_yield": 0.0652,
+  "erp": 0.0217,
+  "forward_earnings_yield": 0.0647,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

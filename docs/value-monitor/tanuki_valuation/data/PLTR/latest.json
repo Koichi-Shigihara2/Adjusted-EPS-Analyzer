@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 168227409588.90894,
   "intrinsic_value_per_share": 123.06009831722334,
   "intrinsic_value_beta": 73.52,
-  "upside_percent_beta": -44.1,
+  "upside_percent_beta": -45.0,
   "intrinsic_value_rf": 1286.06,
-  "upside_percent_rf": 877.9,
+  "upside_percent_rf": 861.8,
   "v0": 166402767055.89508,
   "v0_adjusted": 166402767055.89508,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 164.65,
       "value_growth_pct": 33.8,
-      "expected_return_pct": 25.2
+      "expected_return_pct": 23.1
     },
     "2年後": {
       "future_value": 220.31,
       "value_growth_pct": 79.0,
-      "expected_return_pct": 67.5
+      "expected_return_pct": 64.8
     },
     "3年後": {
       "future_value": 294.77,
       "value_growth_pct": 139.5,
-      "expected_return_pct": 124.1
+      "expected_return_pct": 120.4
     },
     "4年後": {
       "future_value": 394.4,
       "value_growth_pct": 220.5,
-      "expected_return_pct": 199.9
+      "expected_return_pct": 194.9
     },
     "5年後": {
       "future_value": 527.71,
       "value_growth_pct": 328.8,
-      "expected_return_pct": 301.3
+      "expected_return_pct": 294.6
     }
   },
-  "upside_percent": -6.4,
-  "calculation_date": "2026-07-15T00:48:04+09:00",
+  "upside_percent": -8.0,
+  "calculation_date": "2026-07-15T09:25:11+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -376,19 +376,19 @@
     "bear": {
       "growth_rate": 0.237,
       "rice": 3.272,
-      "rice_per_ratio": 0.0219,
+      "rice_per_ratio": 0.0223,
       "rice_adj": 40.996
     },
     "base": {
       "growth_rate": 0.338,
       "rice": 4.666,
-      "rice_per_ratio": 0.0312,
+      "rice_per_ratio": 0.0318,
       "rice_adj": 58.467
     },
     "bull": {
       "growth_rate": 0.406,
       "rice": 5.605,
-      "rice_per_ratio": 0.0375,
+      "rice_per_ratio": 0.0381,
       "rice_adj": 70.23
     }
   },
@@ -412,7 +412,7 @@
     "roe_10yr_avg": -0.127693957817362,
     "roe_years_used": 6,
     "roe_outlier_adj": false,
-    "current_price": 131.51,
+    "current_price": 133.72,
     "latest_revenue": 4475446000.0,
     "rpo": 4500000000,
     "beta": 1.562,
@@ -442,12 +442,12 @@
     "rpo_pv": 406122730.69755083,
     "growth_option_pv": 1418519802.3163157,
     "alpha_uncapped": 0.0,
-    "per": 149.44318,
+    "per": 146.94505,
     "per_is_forward": false,
-    "per_adjusted": 112.54,
+    "per_adjusted": 114.43,
     "peg": 1.82,
-    "ps": 60.34839,
-    "ev_ebitda": 150.644,
+    "ps": 61.362534,
+    "ev_ebitda": 155.016,
     "ma200": 156.5406,
     "forward_eps": 2.09448,
     "analyst_target_median": 200.0,
@@ -464,7 +464,7 @@
     "insider_latest_date": "2026-07-07",
     "analyst_vs_iv": 62.5,
     "max_eps": 1.237,
-    "max_eps_per": 106.3,
+    "max_eps_per": 108.1,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -473,7 +473,7 @@
     "checks": {
       "pt_shares_consistency": {
         "pass": true,
-        "detail": "(V₀ $285.16B + RPO $0.41B + GO $1.42B) × (1+0.000) / 2.397B + BS $+3.35/株 = $123.06 (差異0.00%)"
+        "detail": "(V₀ $285.16B + RPO $0.41B + GO $1.42B) / 2.397B + BS $+3.35/株 = $123.06 (差異0.00%、α=0.000は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
@@ -545,7 +545,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 74985000
   },
-  "net_current_assets_ratio": 0.0259,
+  "net_current_assets_ratio": 0.0255,
   "dupont": {
     "ni_ttm": 2281529000,
     "revenue_ttm": 5224174000,
@@ -605,25 +605,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0271,
-  "forward_earnings_yield": 0.0159,
+  "erp": -0.0273,
+  "forward_earnings_yield": 0.0157,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Palantir",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

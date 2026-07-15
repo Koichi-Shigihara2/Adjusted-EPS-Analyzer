@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 266.49,
   "upside_percent_beta": 5.0,
   "intrinsic_value_rf": 633.12,
-  "upside_percent_rf": 149.5,
+  "upside_percent_rf": 149.4,
   "v0": 674438927822.8904,
   "v0_adjusted": 674438927822.8904,
   "alpha": 0.7,
@@ -30,7 +30,7 @@
     "3年後": {
       "future_value": 113.08,
       "value_growth_pct": 5.2,
-      "expected_return_pct": -55.4
+      "expected_return_pct": -55.5
     },
     "4年後": {
       "future_value": 115.0,
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -57.6,
-  "calculation_date": "2026-07-15T00:55:27+09:00",
+  "calculation_date": "2026-07-15T09:31:37+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -309,7 +309,7 @@
     "roe_10yr_avg": 0.23811775141468727,
     "roe_years_used": 9,
     "roe_outlier_adj": false,
-    "current_price": 253.71,
+    "current_price": 253.85,
     "latest_revenue": 94193000000.0,
     "rpo": 0.0,
     "beta": 0.3,
@@ -339,12 +339,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.0000945559416865,
-    "per": 29.296768,
+    "per": 29.380787,
     "per_is_forward": false,
-    "per_adjusted": 23.61,
+    "per_adjusted": 23.62,
     "peg": 4.94,
-    "ps": 6.337924,
-    "ev_ebitda": 19.037,
+    "ps": 6.341421,
+    "ev_ebitda": 18.762,
     "ma200": 221.4803,
     "forward_eps": 12.75538,
     "analyst_target_median": 264.0,
@@ -369,12 +369,12 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $555.38B + RPO $0.00B + GO $0.00B) × (1+0.700) / 2.407B + BS $-13.68/株 = $378.53 (差異74.41%)"
+        "pass": true,
+        "detail": "(V₀ $291.77B + RPO $0.00B + GO $0.00B) / 2.407B + BS $-13.68/株 = $107.52 (差異0.00%、α=0.700は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $170.47B + pv_terminal $1180.23B = $1350.70B (差異0.00%)"
+        "detail": "2段階: pv_high $110.07B + pv_terminal $564.37B = $674.44B (差異0.00%)"
       },
       "formula_verification": {
         "pass": false,
@@ -487,25 +487,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0073,
-  "forward_earnings_yield": 0.0503,
+  "erp": 0.0072,
+  "forward_earnings_yield": 0.0502,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Active SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning impacting 2025-2026 outlook",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

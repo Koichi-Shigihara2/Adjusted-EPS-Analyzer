@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 4051232401.887624,
   "intrinsic_value_per_share": 36.59294599298991,
   "intrinsic_value_beta": 16.74,
-  "upside_percent_beta": -94.7,
+  "upside_percent_beta": -94.6,
   "intrinsic_value_rf": 335.13,
-  "upside_percent_rf": 6.7,
+  "upside_percent_rf": 7.8,
   "v0": 4051232401.887624,
   "v0_adjusted": 4051232401.887624,
   "alpha": 0.17515660075391104,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 42.17,
       "value_growth_pct": 15.3,
-      "expected_return_pct": -86.6
+      "expected_return_pct": -86.4
     },
     "2年後": {
       "future_value": 48.61,
       "value_growth_pct": 32.9,
-      "expected_return_pct": -84.5
+      "expected_return_pct": -84.4
     },
     "3年後": {
       "future_value": 56.03,
       "value_growth_pct": 53.1,
-      "expected_return_pct": -82.2
+      "expected_return_pct": -82.0
     },
     "4年後": {
       "future_value": 64.58,
       "value_growth_pct": 76.5,
-      "expected_return_pct": -79.4
+      "expected_return_pct": -79.2
     },
     "5年後": {
       "future_value": 66.84,
       "value_growth_pct": 82.7,
-      "expected_return_pct": -78.7
+      "expected_return_pct": -78.5
     }
   },
-  "upside_percent": -88.3,
-  "calculation_date": "2026-07-15T00:43:14+09:00",
+  "upside_percent": -88.2,
+  "calculation_date": "2026-07-15T09:20:06+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -288,19 +288,19 @@
     "bear": {
       "growth_rate": 0.107,
       "rice": 0.366,
-      "rice_per_ratio": 0.0023,
+      "rice_per_ratio": 0.0025,
       "rice_adj": 1.795
     },
     "base": {
       "growth_rate": 0.153,
       "rice": 0.524,
-      "rice_per_ratio": 0.0033,
+      "rice_per_ratio": 0.0036,
       "rice_adj": 2.567
     },
     "bull": {
       "growth_rate": 0.183,
       "rice": 0.626,
-      "rice_per_ratio": 0.004,
+      "rice_per_ratio": 0.0043,
       "rice_adj": 3.07
     }
   },
@@ -324,7 +324,7 @@
     "roe_10yr_avg": 0.04170395256045502,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 313.97,
+    "current_price": 310.77,
     "latest_revenue": 5810115000.0,
     "rpo": 11000000,
     "beta": 2.037,
@@ -354,12 +354,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.17515660075391104,
-    "per": 156.985,
+    "per": 147.28436,
     "per_is_forward": false,
-    "per_adjusted": 60.72,
+    "per_adjusted": 60.1,
     "peg": 0.92,
-    "ps": 9.303863,
-    "ev_ebitda": 46.796,
+    "ps": 9.209037,
+    "ev_ebitda": 47.3,
     "ma200": 243.17986,
     "forward_eps": 8.22315,
     "analyst_target_median": 397.5,
@@ -376,7 +376,7 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": 986.3,
     "max_eps": 3.2155,
-    "max_eps_per": 97.6,
+    "max_eps_per": 96.6,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -384,8 +384,8 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $7.94B + RPO $0.00B + GO $0.00B) × (1+0.175) / 0.196B + BS $-3.97/株 = $43.70 (差異19.41%)"
+        "pass": true,
+        "detail": "(V₀ $7.94B + RPO $0.00B + GO $0.00B) / 0.196B + BS $-3.97/株 = $36.59 (差異0.00%、α=0.175は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
@@ -400,7 +400,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   },
   "tanuki_score": "TRIM",
@@ -456,7 +456,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.0705,
+  "net_current_assets_ratio": 0.0712,
   "dupont": {
     "ni_ttm": 468849000,
     "revenue_ttm": 6602084000,
@@ -521,25 +521,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0168,
-  "forward_earnings_yield": 0.0262,
+  "erp": -0.0165,
+  "forward_earnings_yield": 0.0265,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit ongoing",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation active",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning issued for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

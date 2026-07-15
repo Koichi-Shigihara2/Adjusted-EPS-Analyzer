@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 81.67,
   "upside_percent_beta": -77.2,
   "intrinsic_value_rf": 481.88,
-  "upside_percent_rf": 34.8,
+  "upside_percent_rf": 34.7,
   "v0": 5451443437.249203,
   "v0_adjusted": 5451443437.249203,
   "alpha": 0.7,
@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -74.3,
-  "calculation_date": "2026-07-15T00:57:09+09:00",
+  "calculation_date": "2026-07-15T09:33:01+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -305,7 +305,7 @@
     "roe_10yr_avg": 0.18367218736919738,
     "roe_years_used": 9,
     "roe_outlier_adj": false,
-    "current_price": 357.6,
+    "current_price": 357.65,
     "latest_revenue": 3074100000.0,
     "rpo": 53700000.0,
     "beta": 1.159,
@@ -335,12 +335,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.7714231869506288,
-    "per": 47.807487,
+    "per": 47.81417,
     "per_is_forward": false,
-    "per_adjusted": 44.43,
+    "per_adjusted": 44.44,
     "peg": 3.4,
-    "ps": 7.843396,
-    "ev_ebitda": 28.982,
+    "ps": 7.8444924,
+    "ev_ebitda": 28.816,
     "ma200": 279.0338,
     "forward_eps": 9.58977,
     "analyst_target_median": 375.0,
@@ -365,8 +365,8 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $6.17B + RPO $0.00B + GO $0.00B) × (1+0.700) / 0.071B + BS $+4.51/株 = $152.99 (差異66.56%)"
+        "pass": true,
+        "detail": "(V₀ $6.17B + RPO $0.00B + GO $0.00B) / 0.071B + BS $+4.51/株 = $91.85 (差異0.00%、α=0.700は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
@@ -503,21 +503,5 @@
   "forward_earnings_yield": 0.0268,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "earnings warning for 2025 2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

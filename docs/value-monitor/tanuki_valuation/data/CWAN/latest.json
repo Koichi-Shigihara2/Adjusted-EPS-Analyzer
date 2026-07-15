@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 184.6,
-  "calculation_date": "2026-07-15T00:44:16+09:00",
+  "calculation_date": "2026-07-15T09:21:17+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -382,12 +382,12 @@
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
-        "pass": false,
-        "detail": "(V₀ $78.40B + RPO $0.00B + GO $0.00B) × (1+0.477) / 0.298B + BS $-2.43/株 = $385.50 (差異48.14%)"
+        "pass": true,
+        "detail": "(V₀ $21.59B + RPO $0.00B + GO $0.00B) / 0.298B + BS $-2.43/株 = $69.90 (差異0.00%、α=0.477は参考値・P_t未乗算)"
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $11.95B + pv_terminal $117.21B = $129.16B (差異0.00%)"
+        "detail": "2段階: pv_high $4.87B + pv_terminal $29.69B = $34.56B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -398,7 +398,7 @@
         "detail": "異常値なし"
       }
     },
-    "overall": "WARN",
+    "overall": "PASS",
     "ai_comment": null
   },
   "phase1_growth": 0.5533926923932628,
@@ -512,21 +512,5 @@
   "forward_earnings_yield": 0.0357,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Clearwater Analytics",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning and competitive threats for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
