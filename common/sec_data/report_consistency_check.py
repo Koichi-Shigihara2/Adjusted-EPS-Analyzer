@@ -30,6 +30,10 @@ report_consistency_check.py
                               Phase 2b-2、common.screening.dcf_validity_checker::check_c_data_jump()を
                               統合。NG-11との役割分担・NGではなくWARNとした理由は下記CHECK-21
                               実装箇所のコメント参照）
+  WARN 22. fyキー競合          本人データ(reportDate==end_date)同士で同一fyタグに複数の異なる
+                              真の期間が対応する矛盾（FY52WEEK-BUCKET-MISPLACE-1根本修正で新設。
+                              CRM/FCX/CAKE/HON/COHR/AVAV/FICO/NVDAで実在確認済み。parser.pyの
+                              tie-breakで自動解決済みのため非ブロッキング）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -139,6 +143,23 @@ def _read_latest(ticker: str) -> dict:
         return {}
     with open(path, encoding="utf-8") as f:
         return json.load(f)
+
+
+def _read_fy_collision_log(ticker: str) -> list:
+    """
+    parser.py が本人データ(reportDate==end_date)同士のfyキー衝突を検知した
+    際に書き出す common/sec_data/data/{ticker}/fy_collision_log.json を読む。
+    CRM/FCX/CAKE/HON/COHR/AVAV/FICO/NVDA等で実在確認済み（filing代行者側の
+    タグ付け起因と推測。原因追及は対象外、tie-break結果の継続監視が目的）。
+    """
+    path = os.path.join(SEC_DATA_DIR, ticker, "fy_collision_log.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("collisions", [])
+    except Exception:
+        return []
 
 
 def _read_eps_quarterly(ticker: str) -> list:
@@ -654,6 +675,20 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
             f"  [WARN-20 fcf_cagr floor張り付き] growth.rate={_rate_c20:.1%}"
             f" (source=fcf_cagr) がgrowth_floor(15%)に完全一致"
             f" → 実績と無関係な下駄履き値の可能性(GROWTH-FLOOR-VERDICT-1)"
+        )
+
+    # CHECK-22: fyキー競合（FY52WEEK-BUCKET-MISPLACE-1根本修正で新設）
+    # parser.pyが本人データ同士のfyタグ衝突を検知した場合に記録するログを監視する。
+    # tie-breakで自動解決済みのため非ブロッキングWARNとする。CRM/FCX/CAKE/HON/COHR/
+    # AVAV/FICO/NVDAで実在確認済み。新規銘柄で発生した場合は本チェックで検知される。
+    _collisions_c22 = _read_fy_collision_log(ticker)
+    if _collisions_c22:
+        _fields_c22 = sorted({c.get("field", "?") for c in _collisions_c22})
+        warn.append(
+            f"  [WARN-22 fyキー競合] 本人データ同士で{len(_collisions_c22)}件"
+            f" (対象フィールド: {', '.join(_fields_c22[:5])}{'...' if len(_fields_c22) > 5 else ''})"
+            f" → tie-breakで自動解決済み。filing代行者側のタグ付け起因と推測"
+            f"（原因追及は対象外）"
         )
 
     return ng, warn
