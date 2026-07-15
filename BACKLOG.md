@@ -652,6 +652,80 @@ duration（期間長）とは無関係な別種のtie-break欠陥、の2点が�
 determine_fiscal_year()という基幹共有関数のため優先度は高で維持。
 次回セッションで根本修正の要否・タイミングを判断する）
 
+#### 追記（根本修正設計のための事前調査完了・2026-07-15）
+
+**1. 根本原因の所在確定**
+`determine_fiscal_year()`は`common/sec_data/utils.py:38-58`に実装。
+`end_date.month > fiscal_end_month`の月比較のみで日を見ない設計と確認。
+52/53週対応は皆無。加えて12月決算企業（`fiscal_end_month=12`）では
+`month > 12`が常に偽となるため年またぎ補正が原理的に発生しない副次的欠陥も
+新規発見（CAKE/CDNS/JNJ/TDY等の1月頭FYE企業に影響）。
+
+**2. 呼び出し箇所の訂正**
+CLAUDE_CODE_START.mdの「parser.py/extract_key_facts.py/aggregate_annualの
+3箇所が参照」という記述は不正確。実際は`parser.py`（2箇所: 341行目・469行目、
+年次10-Kエントリの分類）と`extract_key_facts.py`（4箇所: 549・590・613・668行目、
+四半期エントリの(fiscal_year, quarter)分類およびQ4逆算時の年次エントリ
+マッチング）の2ファイル6箇所。`aggregate_annual`（adjusted_eps_analyzer/
+pipeline.py:306）は本関数を呼ばず、extract_key_facts.pyが設定済みの
+fiscal_yearで単純グループ化するのみの間接消費箇所。
+→ CLAUDE_CODE_START.mdの当該記述の修正が別途必要（[[CLAUDE-CODE-START-FY-DESC-FIX-1]]として分離登録）。
+
+また、`fiscal_end_month`自体の検出ロジックがparser.py（`_detect_fiscal_end_month()`、
+生タグ走査）とextract_key_facts.py（`determine_fiscal_year_end()`、抽出済み
+annual_data走査）で非共通・2重実装であることも新規発見。同一銘柄で両経路が
+異なるfiscal_end_monthを検出する可能性は理論上ゼロではなく未検証。
+
+**3. 対象銘柄の拡大確定（当初4銘柄→10銘柄）**
+全106銘柄の機械的スキャン（バケツ衝突検出）により対象拡大を確認：
+
+| 銘柄 | fiscal_end_month | 衝突年度 | 検証状況 |
+|---|---|---|---|
+| DELL | 1月 | 2020, 2025 | 個別実証済み（FY2019消失） |
+| JNJ | 12月 | 2012, 2017, 2023 | 個別実証済み（FY2011消失、新規発見） |
+| ADBE | 11月 | 2012, 2018, 2024 | 個別実証済み（FY2011消失） |
+| CDNS | 12月 | 2011, 2016, 2022 | 個別実証済み（FY2015消失） |
+| AVGO | 10月 | 2021 | 前回未検証年度を含め要件確認 |
+| CAKE | 12月 | 2013, 2019, 2024 | 前回調査と方向性一致 |
+| TDY | 12月 | 2012, 2017, 2023 | 同一メカニズムでの高確度候補・未実証 |
+| MRVL | 1月 | 2021, 2026 | 同上 |
+| LITE | 6月 | 2018, 2024 | 同上 |
+| IOT | 1月 | 2026 | 同上 |
+
+ELF・MSCI・RCATは本調査で除外。これらはFYE自体の一回限りの変更
+（移行期スタブ由来）であり、AVGO/DELL等の「毎年恒常的に発生する
+52/53週ブレ」とは性質が異なると判明。別扱いを推奨。
+ENBは年次データ不足のため判定不能（対象外）。
+
+**4. DELL FY2019値消失（および同型のJNJ/ADBE/CDNS消失）の原因確定**
+根本原因はバケツ分類ロジックだけでなく、**tie-breakカスケード側の欠陥**
+（`_extract_values_merged`/`_extract_single_key`共通、parser.py:370-376
+「同一exactness→end_date新しい方優先」規則）にもまたがる複合欠陥と判明：
+①原本エントリがfp≠"FY"のため候補プールから最初に除外される、
+②翌期10-Kの比較年度再掲によりSECのfyタグが提出書類全体のFYで
+書き換わりexact match同士が衝突、③end_date新旧のtie-breakで
+真の値（古いend_date）が完全消失。
+SEC-TAG-FICO-CPRT-1（duration優先のtie-break）とは別種であり、
+その修正では救えないことを確認済み。
+
+**5. 影響範囲の確定**
+月固定企業（89銘柄）への影響はゼロと確認済み（全銘柄スキャンで衝突0件）。
+波及範囲はrevenue等の年次値だけでなく、extract_key_facts.pyの四半期
+(fiscal_year, quarter)分類・Q4逆算ロジック（annual_net - Q1 - Q2 - Q3）にも
+及ぶ可能性があり未検証（要個別確認事項として次回設計時に持ち越し）。
+
+**更新後の対応方針（未確定・要設計）**
+根本修正のスコープは以下の**両方**を含める必要があると判断（分類ロジックの
+みの修正では消失問題が直らないため）：
+① `determine_fiscal_year()`本体の日付ベース判定への改修
+   （`quarters_in_trailing_window()`のトレーリングウィンドウ方式が参考パターン）
+② tie-breakカスケード（exact match優先→end_date新旧優先→duration優先）
+   自体の見直し
+
+いずれも基幹共有関数・共通ロジックへの変更のため回帰リスクが高く、
+着手前にTDY/MRVL/LITE/IOTの個別実証（現時点は高確度候補のみ）を
+推奨。
+
 ---
 
 ### [ARCH-DATA-1] SECデータ正規化レイヤーの強化
@@ -2435,6 +2509,36 @@ WARN表示される。したがって本タスク（PREFLIGHT-CHECK-1、Step1**�
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [CLAUDE-CODE-START-FY-DESC-FIX-1] CLAUDE_CODE_START.mdのdetermine_fiscal_year()呼び出し箇所記述の修正
+**優先度:** 低
+**分類:** 保守 / ドキュメント
+**登録日:** 2026-07-15
+**発見:** [[FY52WEEK-BUCKET-MISPLACE-1]]根本修正設計のための事前調査時
+
+#### 問題
+CLAUDE_CODE_START.mdの「年度判定は`common/sec_data/utils.py`の
+`determine_fiscal_year()`に統一済み（ARCH-DATA-1-FY 2026-06-25完了）:
+parser.py・extract_key_facts.py・aggregate_annualの3箇所が同関数を参照」
+という記述が不正確と判明した。
+
+実際に`determine_fiscal_year()`を直接呼び出しているのは`parser.py`
+（2箇所: 341行目・469行目、年次10-Kエントリの分類）と
+`extract_key_facts.py`（4箇所: 549・590・613・668行目、四半期エントリの
+(fiscal_year, quarter)分類およびQ4逆算時の年次エントリマッチング）の
+2ファイル6箇所のみ。`aggregate_annual`（adjusted_eps_analyzer/pipeline.py:306）
+は本関数を呼ばず、extract_key_facts.pyが設定済みのfiscal_yearフィールドで
+単純にグループ化するのみの間接消費箇所であり、独立した呼び出し箇所ではない。
+
+#### 対応方針
+CLAUDE_CODE_START.mdの当該記述を「parser.py（2箇所）とextract_key_facts.py
+（4箇所）が直接呼び出し、aggregate_annualはextract_key_facts.pyが設定した
+fiscal_yearフィールドを間接的に消費する」旨に修正する。
+
+#### 着手条件
+なし（軽微な文書修正のため優先度低）
+
+---
 
 ### [QUALITY-CHECKER-CLEANUP-1] 未使用のquality_checker.py削除要否判断
 **優先度:** 低
