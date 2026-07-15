@@ -884,6 +884,32 @@ Koichiさんの判断に委ね、判断材料としての透明性を上げる�
 
 ---
 
+### [REPORT-ALPHA-STALE-1] report.txt（REPORT-6ブロック）がALPHA-REDESIGN-1廃止済みのalpha乗算式のまま表示されている
+**優先度:** 中〜高
+**分類:** レポート表示 / データ品質
+**登録日:** 2026-07-15
+**発見:** [[ALPHA-CAP-HARDCODE-1]]影響範囲調査時の横展開確認
+
+#### 内容
+`pipeline.py:1478-1510`（report.txt生成のREPORT-6ブロック）が、
+`_v0_x_alpha_r6 = _v0_rm * (1 + _alpha_r6)` という廃止済み
+（ALPHA-REDESIGN-1でalpha乗算廃止済み）のalpha乗算式を使って
+`DCF_v0_x_alpha`・`Equity_Value`をreport.txtに表示している。一方
+実際に表示される`Intrinsic_Value`は`valuation.get("intrinsic_value_per_share")`
+（正しい値・alpha非乗算）をそのまま出力しているため、report.txt上で
+「Equity_Value ÷ Shares_Used = Intrinsic_Value」という自己記載の式が
+成立しない状態になっている（ADBE実例: Equity_Value $458.58B ÷
+Shares_Used 397.5M = $1153.65のはずがIntrinsic_Value表示は$639.89）。
+
+`CLAUDE_CODE_START.md`の「DCF構成要素は上から足すと必ずIVになる構造で
+表示する」ルール（外部AIレビュー誤指摘の予防策として設けられたもの）に
+反する状態であり、人間・外部AIレビュー双方に誤解を招く実害がある。
+
+#### 着手条件
+なし
+
+---
+
 ## 優先度：未定（要判断）
 
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
@@ -1189,25 +1215,6 @@ FRSHが初めてで、`report_consistency_check.py`のNG判定には含まれず
 **キー名不一致修正・Software_Systemグループ分割は完了済み（2026-07-14）**。
 上記残課題1〜5はいずれも着手条件なし（次回セッションで優先度・方針を
 判断してから着手）。
-
----
-
-### [ALPHA-CAP-HARDCODE-1] validator.pyのalpha_capハードコードとcore_calculator.pyの動的alpha上限の不一致
-**優先度:** 未定
-**分類:** DCF信頼性判定ロジック / データ品質
-**登録日:** 2026-07-15
-**発見:** [[VALIDATOR-IVPS-MISMATCH-1]]対応時のスポットライト銘柄検証（ADBE等）で発見
-
-#### 内容
-`validator.py::_extract_params`が`alpha_cap = 1.0`を全銘柄一律ハードコード
-しているが、`core_calculator.py`は業種別に動的なalpha上限（例: 0.8等）を
-適用しており不一致。この不整合が`formula_verification`チェックの誤FAILの
-原因になっており、VALIDATOR-IVPS-MISMATCH-1修正後も残るWARN 30件全ての
-原因であることを確認済み（ADBEで実装変更前から同一事象を確認、既存バグ）。
-
-#### 着手条件
-なし。まず影響範囲（対象30銘柄の一覧・alpha_cap不一致による理論株価への
-実際の影響度）の洗い出しから着手するのが妥当。
 
 ---
 
@@ -2791,6 +2798,43 @@ OpenD常時起動という前提条件が既に満たされているため、「
 #### 実装難易度
 低〜中（Skillのインストール自体は容易。ローカル定期実行を選ぶ場合は
 タスクスケジューラ設定・PC停止時のフォールバック設計が別途必要）
+
+---
+
+### [ALPHA-CAP-HARDCODE-1] validator.pyのalpha_capハードコードとcore_calculator.pyの動的alpha上限の不一致
+**優先度:** 低（2026-07-15調査完了・未定から確定）
+**分類:** DCF信頼性判定ロジック / データ品質
+**登録日:** 2026-07-15
+**発見:** [[VALIDATOR-IVPS-MISMATCH-1]]対応時のスポットライト銘柄検証（ADBE等）で発見
+
+#### 内容
+`validator.py::_extract_params`が`alpha_cap = 1.0`を全銘柄一律ハードコード
+しているが、`core_calculator.py`は業種別に動的なalpha上限（例: 0.8等）を
+適用しており不一致。この不整合が`formula_verification`チェックの誤FAILの
+原因になっており、VALIDATOR-IVPS-MISMATCH-1修正後も残るWARN 30件全ての
+原因であることを確認済み（ADBEで実装変更前から同一事象を確認、既存バグ）。
+
+#### 影響範囲調査の結果（2026-07-15完了）
+- **実害はなし**。formula_verificationがWARNになっている30銘柄全件を確認し、
+  実際に保存されている`alpha`値はcore_calculator.pyの業種別/セクター別
+  上限と全銘柄で完全一致することを確認済み（core_calculator.py側の計算
+  自体は正しい）。IV計算そのものには影響せず、`validator.py`の
+  `formula_verification`チェックの誤警告表示（実害のない表示バグ）に
+  限定される。ALPHA-REDESIGN-1によりP_t/intrinsic_value_per_shareの実計算は
+  常にalpha非乗算のため、仮にvalidator.py側の誤ったcap(1.0)を実計算に
+  適用したとしても理論株価への影響はゼロ。
+- **原因**: core_calculator.pyの動的alpha_cap判定（優先順位: mega_tech
+  ticker → 業種（`_industry_alpha_caps`） → セクター（`_alpha_caps`） →
+  デフォルト1.0、`config/maturity_config.json`参照）に対応する統一
+  アクセサが`maturity_config.py`（同JSONを専用にラップする既存モジュール、
+  `get_terminal_growth()`等を提供）に存在しない（`get_alpha_cap()`相当が
+  未実装）ことが構造的な一因。core_calculator.py自身もこのモジュールを
+  経由せず、`calculate_pt()`呼び出しの都度JSONを生読み込みしている。
+
+#### 着手条件
+なし（実害なしのため優先度は低。着手する場合は`maturity_config.py`への
+`get_alpha_cap()`相当の統一アクセサ追加とvalidator.py側の参照切り替えが
+対応の骨子になると見込まれる）
 
 ---
 
