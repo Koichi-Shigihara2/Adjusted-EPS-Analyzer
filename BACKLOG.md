@@ -577,6 +577,84 @@ Phase 3b（4ファイル統合・規約C/D）は次回セッションで設計�
 
 ## 優先度：高（早急に対応）
 
+### [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
+**優先度:** 高
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-15
+**発見:** FY52WEEK-BUCKET-MISPLACE-1の実装過程（reportDate==end_date本人データ判定の導入）
+
+#### 問題
+FY52WEEK-BUCKET-MISPLACE-1の修正はduration（期間）を持つPL/CF項目
+（revenue/net_income等）にのみ対応しており、durationを持たない
+instant fact（total_assets/stockholders_equity/cash_and_equivalents
+等のBS項目）は対象外だった。そのため52/53週企業のBS項目で値がNoneに
+変化する事象が新規に確認された（DELL 2023・AVGO 2024・ADBE 2021・
+CDNS 2014/2020ほか、全53件）。
+
+原因は同一の52/53週バグだが、instant factは期間検証（340〜380日）を
+経由しないため、PL/CF項目向けの本人データ判定ロジックをそのまま
+流用できず、instant fact専用の設計（duration検証なし版の本人データ
+判定）が別途必要。
+
+#### 実害範囲（実測確認済み・2026-07-15）
+確認済みの53件はいずれも各銘柄の「最新年度」ではないため、現在の
+Net Debt・DCF・TANUKI SCOREの数値を直接汚染していないと確認済み。
+ただし次回以降のupdate.py実行で「最新年度」自体が被弾するタイミング
+が来れば、[[FY52WEEK-BS-NULL-SILENT-1]]の欠陥と組み合わさり、警告
+なしに誤った数値が本番表示されるリスクが構造的に残る。
+
+#### 対応方針
+PL/CF項目と同型の「reportDate==end_date本人データ判定」を、instant
+fact向けにduration検証を除いた形で再設計・実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [FY52WEEK-BS-NULL-SILENT-1] BS項目がNoneの場合`or 0`パターンで静かに$0として計算に組み込まれる
+**優先度:** 高
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-15
+**発見:** FY52WEEK-BUCKET-MISPLACE-1の実装過程
+
+#### 問題
+BS項目（total_assets/stockholders_equity/cash_and_equivalents等）が
+Noneになった場合、コードベース全体で一貫して`or 0`パターンにより
+静かに$0として計算に組み込まれることが判明した。None自体を検知して
+警告する仕組みは存在しない。確認済みの該当箇所（最低3件、他に類似
+パターンが存在する可能性あり）：
+
+- `common/sec_data/reader.py:382`（Net Debt計算）
+  `cash = bs.get("cash_and_equivalents", 0) or 0`
+- `common/screening/dcf_validity_checker.py:173-176`（投下資本計算）
+  `equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0`
+- `common/sec_data/report_consistency_check.py:532-539`（WARN-12
+  Cash-STI期ズレ）
+  `_ann_cash12 = _ann_bs12.get("cash_and_equivalents") or 0`
+
+複数年度を横断参照する箇所（`reader.py:172` `get_roe_avg_detail()`の
+ROE平均計算等）では、該当年度がif文により静かにサンプルから除外
+される（クラッシュはしないが、利用者からは「その年のデータが
+減った」ことが一切分からない）。
+
+これは「各データポイントは正しいか、明確に信頼できないとフラグ
+付けされているか」という本プラットフォームの根本方針に反する、
+TRUST-SUMMARY-EPIC-1が対象とする領域の具体的な一事例。
+[[FY52WEEK-BS-INSTANT-FACT-1]]の修正が入るまでの間、及び今後同種の
+None化が他の原因で発生した場合全般に関わる、より広い構造的リスク。
+
+#### 対応方針
+`or 0`パターンをNone検知＋明示的警告（report_consistency_check.py
+のWARN体系への追加、または該当データを「信頼できない」フラグ付きで
+返す設計）に置き換える。対象箇所の網羅的な洗い出しが必要（今回発見
+した3箇所は氷山の一角の可能性）。
+
+#### 着手条件
+なし
+
+---
+
 ### [FY52WEEK-BUCKET-MISPLACE-1] 52/53週会計年度企業の年次revenue値がdetermine_fiscal_year()の月判定により隣接年度バケツへ誤って混入
 **優先度:** 高
 **分類:** アーキテクチャ / SECデータ正規化
