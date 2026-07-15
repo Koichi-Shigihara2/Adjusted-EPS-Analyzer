@@ -1,5 +1,5 @@
 CEG INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-15T09:19:50+09:00
+Generated: 2026-07-15T11:26:35+09:00
 Price: $256.43
 
 [1. TANUKI SCORE]
@@ -90,10 +90,9 @@ DCF_FCF_PV: $3.99B (3yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $19.52B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $23.51B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.4706 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $34.58B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $13.28B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-21.30B)
+Equity_Value: $2.22B (= v0 + RPO_PV + GO_PV + Net_Cash $-21.30B)
 Shares_Used: 357.1M (source: yf_implied)
 → Intrinsic_Value: $6.21 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
@@ -123,7 +122,7 @@ Definition:
 
 IV Formula (full chain):
   DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
-  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  P_t     = DCF_v0 + RPO_PV + Growth_Option_PV  (Alphaは参考値表示のみで計算には使用されません)
   Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
   IV/share = Equity ÷ Shares_Used
 Discount rate: Rm=10% (market return, Beta=0 benchmark).
@@ -254,9 +253,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 22.3x
+  Market_PER_GAAP: 22.4x
   Adjusted_EPS_PER: 24.6x (TTM調整後EPS: $10.4187)
-  Delta: +2.3x (more expensive on adjusted basis)
+  Delta: +2.2x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -282,7 +281,7 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 22.3x
+  PER: 22.4x
   PEG: 3.74
   PS:  3.1x
   EV_EBITDA: 14.4x
@@ -299,7 +298,8 @@ Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
 MA200, high RSI, strong volume surge
 Phase4 (期待剥落期/Deflation): Sentiment reversal,
 price falling from peak, expectation reset
-Alpha: Growth expectation premium added to IV
+Alpha: Growth expectation premium (reference value only,
+not applied to IV calculation; see [3] Alpha_Premium)
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase

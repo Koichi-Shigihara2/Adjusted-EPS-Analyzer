@@ -1,5 +1,5 @@
 WMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-15T09:32:52+09:00
+Generated: 2026-07-15T11:36:29+09:00
 Price: $113.70
 
 [1. TANUKI SCORE]
@@ -87,10 +87,9 @@ DCF_FCF_PV: $77.26B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $223.32B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $300.58B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6000 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $480.92B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $444.09B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $-36.83B)
+Equity_Value: $263.75B (= v0 + RPO_PV + GO_PV + Net_Cash $-36.83B)
 Shares_Used: 7958.1M (source: yf_implied)
 → Intrinsic_Value: $33.14 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
@@ -114,7 +113,7 @@ Definition:
 
 IV Formula (full chain):
   DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
-  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  P_t     = DCF_v0 + RPO_PV + Growth_Option_PV  (Alphaは参考値表示のみで計算には使用されません)
   Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
   IV/share = Equity ÷ Shares_Used
 Discount rate: Rm=10% (market return, Beta=0 benchmark).
@@ -292,7 +291,8 @@ Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
 MA200, high RSI, strong volume surge
 Phase4 (期待剥落期/Deflation): Sentiment reversal,
 price falling from peak, expectation reset
-Alpha: Growth expectation premium added to IV
+Alpha: Growth expectation premium (reference value only,
+not applied to IV calculation; see [3] Alpha_Premium)
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase

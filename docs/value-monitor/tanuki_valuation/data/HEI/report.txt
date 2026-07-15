@@ -1,5 +1,5 @@
 HEI INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-15T09:28:03+09:00
+Generated: 2026-07-15T11:30:26+09:00
 Price: $345.61
 
 [1. TANUKI SCORE]
@@ -9,7 +9,7 @@ Timing_Score (components):
   Deviation_Rate: -80.6%
   MA200_Deviation: +9.4%
   HypeCore_Phase: Phase3 (陶酔期)
-  Analyst_Consensus: Buy | Target: $393 median ($290-$472) | 19 analysts | vs IV: +485.6%
+  Analyst_Consensus: Buy | Target: $393 median ($290-$472) | 19 analysts | vs IV: +485.9%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -57,12 +57,12 @@ Positive deviation = undervalued (intrinsic > current)
 
 [3. TANUKI VALUATION]
 Current_Price: $345.61
-Intrinsic_Value_BASE: $67.12
+Intrinsic_Value_BASE: $67.08
 Deviation_BASE: -80.6%
 Scenarios:
-BEAR: Growth=7.0%, IV=$58.25, Deviation=-83.1%
-BASE: Growth=10.0%, IV=$67.12, Deviation=-80.6%
-BULL: Growth=12.0%, IV=$73.69, Deviation=-78.7%
+BEAR: Growth=7.0%, IV=$58.22, Deviation=-83.2%
+BASE: Growth=10.0%, IV=$67.08, Deviation=-80.6%
+BULL: Growth=12.0%, IV=$73.64, Deviation=-78.7%
 Growth_Rate_Rec: 20.2% (recommended)
 TTM_YoY_Growth: 18.8%
 (DCF Base vs TTM actual: -8.8pt discount)
@@ -90,12 +90,11 @@ DCF_FCF_PV: $2.66B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $6.51B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $9.17B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.6562 (HypeCore expectation premium; Rm basis)
-DCF_v0_x_alpha: $15.18B (= v0 × (1+alpha))
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $15.39B (= v0_x_alpha + RPO_PV + GO_PV + Net_Cash $0.21B)
+Equity_Value: $9.37B (= v0 + RPO_PV + GO_PV + Net_Cash $0.21B)
 Shares_Used: 139.7M (source: yf_implied)
-→ Intrinsic_Value: $67.12 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $67.08 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.21B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.21B
@@ -120,7 +119,7 @@ Definition:
 
 IV Formula (full chain):
   DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]
-  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV
+  P_t     = DCF_v0 + RPO_PV + Growth_Option_PV  (Alphaは参考値表示のみで計算には使用されません)
   Equity  = P_t + Net_Cash  (= P_t - Net_Debt)
   IV/share = Equity ÷ Shares_Used
 Discount rate: Rm=10% (market return, Beta=0 benchmark).
@@ -299,7 +298,8 @@ Phase3 (陶酔期/Euphoria): Peak sentiment, price well above
 MA200, high RSI, strong volume surge
 Phase4 (期待剥落期/Deflation): Sentiment reversal,
 price falling from peak, expectation reset
-Alpha: Growth expectation premium added to IV
+Alpha: Growth expectation premium (reference value only,
+not applied to IV calculation; see [3] Alpha_Premium)
 Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
@@ -330,7 +330,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.5%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $393 median ($290-$472) | 19 analysts | vs IV: +485.6%
+Analyst_Consensus: Buy | Target: $393 median ($290-$472) | 19 analysts | vs IV: +485.9%
 Insider_Activity: Sell優勢 | 買い0件 / 売り2件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 18.8%
