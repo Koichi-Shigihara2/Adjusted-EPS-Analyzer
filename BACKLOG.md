@@ -696,6 +696,41 @@ BUG-FOUR-1・SPLIT-AUTO-CHECK-1等20件超）を棚卸しし、正規化層（`t
 ロジックの実装、PREFLIGHT-CHECK-1と共有設計）は依然未着手（設計メモの
 段階のまま）。
 
+#### 残課題③ 対応内容（2026-07-15完了・スコープ縮小）
+着手前調査（2026-07-15）で、当初想定していた「PREFLIGHT-CHECK-1と共有する
+汎用パターン判定カタログ」構想には2つの問題があると判明した:
+1. `_extract_values_merged()`には候補タグ比較・競合検知の仕組みが一切なく、
+   カタログの初期エントリとして使えそうな既存の「検知トリガー」も、
+   SEC-REV-FINTECH-1/BUG-REV-SPAC-1型（revenue系タグ競合）については
+   人間が10-K相当の文脈情報で正誤判断した一回限りの手動オーバーライド
+   （`TICKER_RESTRICTIONS`）にすぎず、自動トリガーが存在しなかった
+2. PREFLIGHT-CHECK-1が想定する新規登録時点（SEC EDGAR submissions API
+   取得直後）の情報だけでは、revenue系タグ競合等の大半は「正誤確定」
+   まではできず「リスクフラグ立て」止まりであり、精度未検証のまま
+   共有カタログ化するのはリスクが高いと判断した
+
+これを踏まえ、汎用カタログ構想は見送り、**revenue系タグ競合の実データ
+検知**（`_extract_values_merged()`が静かに一本化してしまう競合を、
+company_facts.json再読込により機械的に可視化する）に最小スコープを
+絞って実装した（コミット`f05cae0ba`）:
+- `common/sec_data/revenue_tag_conflict_check.py`新設。parser.py本体は
+  無変更、`SECParser`の既存メソッド（`_detect_fiscal_end_month`/
+  `_extract_single_key`/`_extract_values_merged`）を再利用し候補タグ
+  一覧・年度判定ロジックを重複させない設計
+- `update.py`のStep1完了直後（`check_revenue_quality()`の直後、4c.相当）
+  に配線。新規のStep番号追加は不要だった（既存の4b.と同じ場所に
+  差し込むだけで「Step1.5」相当のタイミングを実現できた）
+- SOFI（$619.4M vs $3,613.4M、乖離5.8倍）・IONQ（$1,235.0M vs $11.1M、
+  乖離111.0倍）の既知ケースを正しく再現することを確認
+- 全100銘柄実行の結果、revenue系で14銘柄を検知（詳細は
+  [[REVENUE-TAG-CONFLICT-SCAN-1]]参照。新規発見分の対応要否は別途判断）
+- 自動修正は一切行わず、WARN出力（候補タグ名・各値・採用値の明示）のみ
+
+残課題③はrevenue系タグ競合検知の実装をもって一区切りとする。パターン
+判定ロジックの汎用カタログ化自体は、今回の知見（自動トリガーがほぼ
+存在しない・登録時点情報では確定判定できないケースが多い）を踏まえ、
+優先度を下げて次回以降に再検討する。
+
 ---
 
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
@@ -933,6 +968,58 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 ---
 
 ## 優先度：未定（要判断）
+
+### [REVENUE-TAG-CONFLICT-SCAN-1] revenue_tag_conflict_check.py全銘柄実行で新規発見した候補タグ競合
+**優先度:** 未定
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]残課題③ `revenue_tag_conflict_check.py`実装時の全100銘柄検証
+
+#### 内容
+新設した`revenue_tag_conflict_check.py`（乖離2.0倍以上を検知）を全100銘柄
+（tanuki=true）で実行した結果、revenue系フィールドで**14銘柄**が該当した。
+
+- **既知・対応済み**: SOFI（乖離5.8倍、SEC-REV-FINTECH-1で対応済み）・
+  IONQ（乖離111.0倍、BUG-REV-SPAC-1で対応済み）
+- **既知・SEC-TAG-FICO-CPRT-1で既に修正済みと再確認できた**: CPRT
+  （FY2019-2020）・FICO（FY2019-2020）。現在の採用値が同タスクの
+  修正記録と一致することを確認
+- **新規発見（未対応・要確認）**:
+  - **PM**（Philip Morris、FY2016-2022）: `RevenueFromContractWithCustomer
+    ExcludingAssessedTax`（$26-31B）vs `IncludingAssessedTax`/
+    `SalesRevenueNet`（$74-82B）。たばこ消費税の内外差の可能性があるが未確認
+  - **AVGO**（FY2019）: 採用値`RevenueFromContractWithCustomerExcludingAssessedTax`
+    =$5,515M vs `Revenues`=$20,848M。AVGOの公表FY2019売上高（約$22.6B）との
+    整合性が疑わしく優先確認が望ましい
+  - **DELL**（FY2019）: 採用値`Revenues`=$22,482M vs `SalesRevenueNet`=$78,660M。
+    DELLの公表FY2019売上高（約$90B）との整合性が疑わしく優先確認が望ましい
+  - **TDY**（FY2012-2014）: 年度により採用タグが不安定（`Revenues`/
+    `SalesRevenueNet`が交互に採用）
+  - **CAKE・ELF・LITE・RCAT・ASTS・TER**: いずれも2018-2020年前後の
+    古い年度のみで検知。一過性の可能性
+
+#### 対応方針（未定・次回セッションで判断）
+AVGO・DELLのFY2019採用値は公表売上高から大きく乖離している疑いがあり
+優先確認が望ましい。ただしFY2019はFCF_Hist直近5年窓・TTM計算に含まれない
+可能性が高く、現状のIntrinsic_Value計算への実害有無を先に確認すること
+（実害なしであれば優先度は低くなる）。
+
+#### 副次的な設計上の発見（重要・将来の横展開時に必読）
+`selling_and_marketing`（35銘柄該当）・`depreciation_and_amortization`
+（83銘柄該当）フィールドも同時に検知対象としたが、これらは候補タグ同士が
+実際には親子/包含関係にある（例: `DepreciationAndAmortization` ⊇
+`AmortizationOfIntangibleAssets`、`SellingAndMarketingExpense` ⊇
+`AdvertisingExpense`）ため、revenue系のような「本来同一概念であるべき
+候補の食い違い」ではなく、大半が構造的なfalse positiveと判明した。将来
+この2フィールドの精度を上げる場合、単純な倍率閾値ではなく候補タグ間の
+包含関係を考慮した判定ロジックが必要（現状は`revenue_tag_conflict_check.py`
+の出力上は3フィールドまとめて表示されるため、運用時はrevenue系の結果を
+中心に見ること）。
+
+#### 着手条件
+なし
+
+---
 
 ### [EPS-ANALYZER-NORMALIZE-SCOPE-1] EPS Analyzer独自SECデータ抽出パイプラインの正規化統合対象化の要否判断
 **優先度:** 未定
@@ -2193,9 +2280,57 @@ REGISTER-FLOW-REDESIGN-1・TICKER-SOURCE-UNIFY-1（完了・BACKLOG_DONE.md参�
   Edit権限なし）と実装役（検証役の報告を受けてから対応・修正を行う）
   を分離する案がある。ただし未着手・要検討（2026-07-02時点）。
 
+#### 設計メモ追記（2026-07-15・ARCH-DATA-1残課題③調査結果を反映）
+「ARCH-DATA-1のパターン判定ロジックを共有する」方針を見直した。調査の
+結果、SIC/formerNamesベースの事前推測（新規登録時点の情報のみでの
+判定）は精度未検証のリスクが高いと判明した：submissions APIの
+`sic`/`formerNames`は「リスクフラグ立て」までは可能でも、実際に
+どのXBRLタグが正しいかの確定判定にはXBRL取得後の実データ比較が必須
+であり（SOFI/IONQの過去の対応も、人間が10-K相当の文脈情報で正誤判断
+した一回限りの手動オーバーライドだった）、登録前段階の統計的推測だけで
+共有カタログを構築するのは時期尚早と判断した。
+
+revenue系タグ競合（SEC-REV-FINTECH-1/BUG-REV-SPAC-1型）については、
+登録時点（本タスクが想定するタイミング）ではなく**Step1（SECデータ
+取得）完了後の実データ検知**に統合する方針とした。実装は
+`common/sec_data/revenue_tag_conflict_check.py`（ARCH-DATA-1残課題③で
+新設、`update.py`の4c.相当に配線済み）で、`update.py`実行時に自動的に
+WARN表示される。したがって本タスク（PREFLIGHT-CHECK-1、Step1**前**の
+事前警告）のスコープからはrevenue系タグ競合を除外し、当初の3項目
+（①上場後3年未満 ②直近フォームが20-F等 ③revenueタグ不存在、いずれも
+登録時点の情報のみで判定可能）に限定する。本タスク自体は依然未着手。
+
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [QUALITY-CHECKER-CLEANUP-1] 未使用のquality_checker.py削除要否判断
+**優先度:** 低
+**分類:** 保守 / SECデータ取得層
+**登録日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]残課題③調査時
+
+#### 問題
+`common/sec_data/quality_checker.py`（独自のQ01〜Q13チェックカタログ、
+独自の`TICKER_RESTRICTIONS`定義を保持）が、全リポジトリを検索した結果
+どこからもimportされていない未使用コードと判明した。同ファイル内の
+`TICKER_RESTRICTIONS`はコメント上「quarterly.pyと同期」とあるが実態は
+非同期で、SOFI・IONQのエントリ（quarterly.py側には存在）を欠いている。
+
+`report_consistency_check.py`（CHECK-N命名）・`quality_checker.py`
+（Q0N命名）・`registration_validator.py`（P1-xxx命名）と、既に3種類の
+独立したチェックカタログ・命名規則が併存しており、本ファイルは実質的に
+その一つが死蔵された状態。
+
+#### 対応方針（未確定）
+- 一度も呼ばれていないことを再確認できれば削除する
+- 何らかの理由で将来利用予定がある場合は、`TICKER_RESTRICTIONS`を
+  quarterly.py側と同期させるか、共有カタログへの統合を検討する
+
+#### 着手条件
+なし
+
+---
 
 ### [PHASE1-SCAN-CLEANUP-1] phase1_scan.pyの陳腐化確認・削除要否判断
 **優先度:** 低
@@ -3327,3 +3462,22 @@ TANUKI SCORE分類には影響なし）。残課題②（EPS Analyzer経路の�
 ③ [[TRUST-SUMMARY-EPIC-1]]（段階0の可視化検討はARCH-DATA-1①③の進捗を
    踏まえて再開）
 ④ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・軽量な独立作業）
+
+追記（2026-07-15 [[ARCH-DATA-1]]残課題③完了・revenue系タグ競合検知）:
+当初想定していたPREFLIGHT-CHECK-1と共有する汎用パターン判定カタログ構想は
+精度未検証のリスクが高いと判明したため見送り、revenue系タグ競合の実データ
+検知（`common/sec_data/revenue_tag_conflict_check.py`新設、`update.py`の
+Step1完了直後に配線）に最小スコープを絞って実装した（コミット
+`f05cae0ba`）。SOFI・IONQの既知ケースを正しく再現することを確認し、全100
+銘柄実行でPM・AVGO・DELL等の新規候補タグ競合を発見（詳細・対応要否は
+[[REVENUE-TAG-CONFLICT-SCAN-1]]に分離登録）。副次的に未使用の
+`quality_checker.py`を発見し[[QUALITY-CHECKER-CLEANUP-1]]として登録。
+PREFLIGHT-CHECK-1エントリにも見送りの経緯を追記済み。
+
+これにより次セッションの筆頭候補を更新する：
+① [[TRUST-SUMMARY-EPIC-1]]（段階0の可視化検討を再開。ARCH-DATA-1残課題
+   ①③が完了しFCF/DCF信頼性層〈段階2〉統合も済んだため、段階0側の
+   前提が揃った状態）
+② [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]（優先度未定・スコープ判断待ち）
+③ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・軽量な独立作業）
+④ [[QUALITY-CHECKER-CLEANUP-1]]（優先度：低・未使用コードの削除要否判断）
