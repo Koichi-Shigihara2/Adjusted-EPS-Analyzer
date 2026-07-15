@@ -3183,3 +3183,24 @@ pt_shares_consistencyチェックが検証時と最終保存時で異なるIVを
 ③ 前受収益比率による暫定判定ロジックの分離精度（約78%）を踏まえ、
    新規銘柄登録が発生した際に実際にIOT型（境界近傍）のケースが
    出た場合の運用確認（テストケースがまだ実データで発生していない）
+
+追記（本日セッション終了時ブラッシュアップ）: VALIDATOR-IVPS-MISMATCH-1
+（主因: validator.pyがALPHA-REDESIGN-1のalpha非乗算式に未追随、
+副因: _save_resultでのvalidation再実行漏れ）を対応①②で修正・完了
+（コミット03b855b54・3d0f1de43・26328aab5）。全100銘柄で新旧比較し
+pt_shares_consistency pass 36→100/100、overall PASS 34→69・WARN
+64→30・FAIL 2→1を確認。report_consistency_check NG=0・pytest
+309 passed（既知2件除く）。
+
+派生課題2件を登録・優先度確定（コミットa6555e3b0）:
+- [[REPORT-ALPHA-STALE-1]]（優先度：中〜高・pipeline.py:1478-1510の
+  report.txt REPORT-6ブロックが廃止済みalpha乗算式のまま、DCF構成要素の
+  自己完結性が崩れている実害あり・未着手）
+- [[ALPHA-CAP-HARDCODE-1]]（優先度：低・実害なしと確認済み・
+  validator.pyのformula_verification誤警告のみ）
+
+次セッションの筆頭候補：
+① [[REPORT-ALPHA-STALE-1]]（実害あり・優先度中〜高・未着手）
+② [[FCF-CONVRATE-DESIGN-LIMIT-1]] 残課題1〜3（持ち越し中）
+③ [[POLICY-AB-TREND-BLIND-1]]（優先度低・軽量な独立作業）
+④ [[ALPHA-CAP-HARDCODE-1]]（優先度低・手が空いた時に）

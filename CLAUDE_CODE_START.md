@@ -404,14 +404,23 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
   利付き借入（金融負債）ではなく将来リース支払義務。IONQ の $30M 等は意図的に除外。
   EV 計算にリースを含める「アジャステッド EV」方式を採用する場合は設計変更として明示すること。
 - **DCF構成要素は「上から足すと必ずIVになる」構造で表示する（REPORT-6拡張の教訓・必須）**:
-  外部AIは report.txt のDCF項目を順に足してIVを逆算する。途中の段（特に α 乗算）が
-  非表示だと「IV再現不能」と誤指摘される（2026-06-13: α≒0の小型株では偶然近似でき、
-  α=1.0のメガキャップで一斉に破綻が顕在化）。DCFブロックは必ず次の順序で全段を表示する:
+  外部AIは report.txt のDCF項目を順に足してIVを逆算する。途中の段が非表示・不整合だと
+  「IV再現不能」と誤指摘される。
+  **注意（2026-07-15追記・[[REPORT-ALPHA-STALE-1]]）**: 下記の表示順序は2026-06-13
+  当時（αがP_tに乗算されていた頃）の仕様であり、ALPHA-REDESIGN-1（2026-06-25、
+  P_t算出からalpha乗算を廃止）後は**古いまま追随できていない**（`pipeline.py:1478-1510`
+  が今も`DCF_v0_x_alpha = v0×(1+alpha)`を計算・表示しており、実際のIntrinsic_Valueとの
+  自己矛盾が生じている。詳細はBACKLOG [[REPORT-ALPHA-STALE-1]]参照・未修正）。
+  このルールを参照して新規表示ブロックを実装する際は、まず現在のcore_calculator.pyの
+  実装（P_t = V₀ + RPO_PV + GrowthOption_PV、alpha非乗算）を確認してから合わせること。
+  以下は2026-06-13時点の（現在は古い）記述:
   `DCF_FCF_PV → DCF_TV_PV → DCF_v0(=PV合計) → Alpha_Premium → DCF_v0_x_alpha(=v0×(1+α))
    → RPO_PV → Growth_Option_PV → Equity_Value(=上記−Net_Debt、優先株があれば控除行追加)
    → Shares_Used(source明記) → Intrinsic_Value`。
   DCF構成要素を追加・変更する際は test_iv_formula.py で「表示項目を積み上げてIVに一致」を
-  必ず回帰テストすること。
+  必ず回帰テストすること（同テスト自体も[[TEST-STALE-IV-1]]によりALPHA-REDESIGN-1に
+  未追随のまま、MSFT/NVDAで既知失敗している。「テスト失敗＝既知の無関係な問題」と
+  安易に片付けず、テストが検出しようとしている対象が実際に直っているかを都度疑うこと）。
 - **DCF_Reliability=LOW の判定仕様（Policy A・明文化済み）**:
   FCF実績マイナスで revenue_floor 適用時は DCF_Reliability=LOW とし、IVは参考値扱い。
   TANUKI SCORE 分類は BUY/TRIM/HOLD/WATCH → **WATCH に丸める**（SELL/PASS は維持）。
@@ -908,6 +917,17 @@ git push origin kaihatsu
 - [ ] **新規計算フィールドを追加した場合**: report_consistency_check.pyに対応CHECKを追加（追加できない場合はBACKLOGにCHECK-COVERAGE-Nとして登録）
 - [ ] **新規フィールド・指標を追加した場合**: 同一指標を表示する全画面をgrepで確認し全画面への反映を確認してから完了宣言する
 - [ ] **機能を廃止した場合**: 全HTML・全Pythonで残骸をgrepで確認する
+- [ ] **既存の計算式・アルゴリズムを変更した場合（乗算項の廃止・係数変更等）**:
+  その式を「本体（core_calculator.py等）とは独立に再実装・再表示・再検証している」
+  箇所が他にないかgrepで横断確認する（変更後の式そのものではなく、変更前の
+  定数・変数名でgrepすると見つけやすい）。対象になりやすいのは検証ロジック
+  （validator.py等）・レポート生成のテキスト組み立て（pipeline.pyのreport.txt
+  生成部等）・回帰テスト（tests/）の3種。ALPHA-REDESIGN-1（P_t算出からalpha
+  乗算を廃止）はcore_calculator.py本体こそ正しく修正されたが、上記3種のうち
+  検証ロジック（[[VALIDATOR-IVPS-MISMATCH-1]]）・レポート表示
+  （[[REPORT-ALPHA-STALE-1]]）・回帰テスト（[[TEST-STALE-IV-1]]）の
+  いずれにも追随できておらず、3週間近く個別のバグとして気づかれずに
+  残っていた（2026-07-15判明）。
 - [ ] **複数銘柄への適用が必要な処理**: 全対象銘柄への実行完了を確認する
 - [ ] BACKLOG.mdから該当項目を削除し、BACKLOG_DONE.mdに完了記録を移動
 - [ ] コミット・プッシュ完了
