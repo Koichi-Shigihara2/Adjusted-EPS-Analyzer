@@ -3694,3 +3694,32 @@ revenueタグ競合について、根本原因（52/53週会計年度企業で
 ④ [[REVENUE-TAG-PRIORITY-FRAGILE-1]]
 ⑤ [[POLICY-AB-TREND-BLIND-1]]
 ⑥ [[QUALITY-CHECKER-CLEANUP-1]]
+
+追記（2026-07-15 [[FY52WEEK-BUCKET-MISPLACE-1]]実装完了）:
+submissions API（`reportDate==end_date`本人データ判定）による根本修正を
+実装・全106銘柄のデータ再生成・検証まで完了し、BACKLOG_DONE.mdへ全文
+移動した（コミット`b93daff80`〜`cd43b03cf`の5件、push済み）。当初10銘柄
+に加え、実装過程で新規発見したfyタグ衝突8銘柄（CRM/FCX/WMT等）も解消。
+
+実装過程で新規に2件（[[FY52WEEK-BS-INSTANT-FACT-1]]・
+[[FY52WEEK-BS-NULL-SILENT-1]]、いずれも優先度：高・着手条件なし）と、
+別原因のデータ欠損1件（[[MRVL-2019-2020-NULL-1]]、優先度：中〜低・
+原因調査は別途依頼要）を新規登録した。
+
+これにより次セッションの筆頭候補を更新する：
+① [[FY52WEEK-BS-INSTANT-FACT-1]]（優先度：高・着手条件なし・instant
+   fact〈BS項目〉向けの本人データ判定を今回のPL/CF項目向け実装と
+   同型で再設計。対応方針は本文に明記済みで着手しやすい）
+② [[FY52WEEK-BS-NULL-SILENT-1]]（優先度：高・着手条件なし・①と対になる
+   構造的リスク。`or 0`パターンのNone検知＋明示的警告化。①の修正後も
+   別原因のNone化全般に効くため、①と独立に着手可能）
+③ [[TRUST-SUMMARY-EPIC-1]]（優先度：高・要設計・実装未着手の大規模EPIC。
+   ①②はこのEPICが対象とする構造的リスクの具体事例のため、①②を先に
+   片付けてから再開するのが妥当）
+④ [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]（優先度：未定だがスコープ判断のみの
+   軽量タスク・着手条件は「次回セッションで方針判断してから」）
+⑤ [[REVENUE-TAG-PRIORITY-FRAGILE-1]]（優先度：中〜低）
+⑥ [[MRVL-2019-2020-NULL-1]]（優先度：中〜低・原因調査は別途依頼要）
+⑦ [[QUALITY-CHECKER-CLEANUP-1]]（優先度：低）
+⑧ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・修正方針確定済みの軽量独立
+   作業・他タスクをブロックしないため手が空いた時でも可）
