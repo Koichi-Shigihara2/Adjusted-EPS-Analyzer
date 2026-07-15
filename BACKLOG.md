@@ -1014,8 +1014,11 @@ Koichiさんの判断に委ね、判断材料としての透明性を上げる�
 - [[GROWTH-SANITY-CLASS-SYNC-1]]（段階1）: 状況追記済み
 - [[SECTOR-FCF-RATE-BROKEN-1]]（完了・BACKLOG_DONE.md参照）（段階2寄り）: sector取得経路破損。
   「解消可能な不備」の実例（バグ①②③として構造分析→2026-07-14完了）
-- [[ARCH-DATA-1]]（段階0寄り）: SECデータ正規化レイヤーの強化。着手条件
-  成立済みだが難易度高
+- [[ARCH-DATA-1]]（段階0寄り）: SECデータ正規化レイヤーの強化。
+  2026-07-15に残課題①（計算層重複実装の一本化: 暦年グルーピング・
+  BS項目同一時点原則）・残課題③（revenue系タグ競合検知の実装）が
+  完了済み。残課題②（EPS Analyzer経路のスコープ判断、
+  [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]へ分離）は未着手のまま
 - [[LLY-CAPEX-STALE-1]]（段階0・完了・BACKLOG_DONE.md参照）: 解消可能な
   バグの実例として先行登録され、Phase 2aで根本原因を解消済み
 - [[FCF-CONVRATE-DESIGN-LIMIT-1]]（段階2寄り）: 残課題2・3を2026-07-15
