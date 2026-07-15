@@ -668,6 +668,34 @@ report_consistency_check.py・pipeline.py双方の別々の箇所で同種の
   異常検知→AIが仮説生成→一次情報で検証→カタログに追加、という
   学習ループが構想として挙がっている。詳細はPREFLIGHT-CHECK-1参照。
 
+#### 着手前棚卸し・残課題①完了（2026-07-15）
+着手前調査で、`contracts.py`（QUALITY-GATES-EPIC-1 Phase 3a）はARCH-DATA-1が
+目指す「SEC変種吸収の正規化層への一本化」とは別レイヤー（型による構造検証の
+み、変種吸収ロジックは含まない）と確認し、二重実装リスクなしと判断した。
+既知SECデータ形バグ（PARSER-1・BUG-NETDEBT-1〜6・XBRL-TAG-KLAC-1系・
+CHECK-QREV-FYE-1・DILUTION-FYE-1・LLY-CAPEX-STALE-1・BUG-EPS-ZERO-1/UNIT-1・
+BUG-FOUR-1・SPLIT-AUTO-CHECK-1等20件超）を棚卸しし、正規化層（`tag_definitions.py`
+等）への集約は部分的に進行済みだが、計算層（`pipeline.py`・`reader.py`）への
+重複実装が①暦年グルーピング（trailing 370日窓）②BS項目「同一時点原則」の
+2件残存していることを確認した。
+
+上記①②を残課題①として一本化完了（コミット`4e4629a3b`・`60d44b2d8`）:
+- ①`common/sec_data/utils.py::quarters_in_trailing_window()`に窓計算部分を
+  共有化し、`quarterly.py::check_revenue_quality()`・`pipeline.py`
+  （DILUTION-FYE-1）双方から参照する形に統一
+- ②`reader.py::get_net_cash()`を正としてBS項目取得ロジックを一本化。
+  調査の結果、単なるコード重複ではなくreader.py側だけがInsurance/Fintech
+  セクターガードを適用しており、V（Visa）で実際に約$1.56Bの表示乖離
+  （report.txt・TANUKI SCORE判定に使う値がDCF計算に使う値とズレていた）が
+  発生していたことを実データで確認・是正した。副次的にSOUN（LTDebt=0の
+  FY2024 10-K値が旧pipeline.py独自フィルタで誤除外されていたバグ）も是正。
+  いずれもIntrinsic_Value自体・TANUKI SCORE分類には影響なし
+
+残課題②（EPS Analyzer経路を正規化統合対象に含めるかのスコープ判断）は
+[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]として分離登録。残課題③（パターン判定
+ロジックの実装、PREFLIGHT-CHECK-1と共有設計）は依然未着手（設計メモの
+段階のまま）。
+
 ---
 
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
@@ -905,6 +933,29 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 ---
 
 ## 優先度：未定（要判断）
+
+### [EPS-ANALYZER-NORMALIZE-SCOPE-1] EPS Analyzer独自SECデータ抽出パイプラインの正規化統合対象化の要否判断
+**優先度:** 未定
+**分類:** アーキテクチャ / SECデータ取得層
+**登録日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]着手前棚卸し調査
+
+#### 内容
+EPS Analyzer（`src/value/adjusted_eps_analyzer/extract_key_facts.py`）は
+ARCH-DATA-1が現在スコープとする`parser.py`/`normalizer.py`/`data_fetcher.py`/
+`common/sec_data/`配下とは別の独立SECデータ抽出パイプラインであり、同種の
+タグフォールバック・fact選定ロジックを独自実装している（`SPLIT-AUTO-CHECK-1`
+完了記録で対象外と明記済み。SEC Company Facts APIを都度ライブ取得し、
+ローカルraw JSONキャッシュも持たない。importしているのは
+`common.sec_data.utils.determine_fiscal_year`のみ）。
+
+これをARCH-DATA-1の正規化統合対象に含めるか、独立パイプラインとして維持
+するかを次回セッションで判断する。
+
+#### 着手条件
+なし（次回セッションで方針判断してから着手）
+
+---
 
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定
@@ -3260,3 +3311,19 @@ FCF-CONVRATE-DESIGN-LIMIT-1エントリからは残課題①を削除し移設�
 ③ [[ALPHA-CAP-HARDCODE-1]]（優先度：低）
 ④ [[FCF-CONVRATE-DESIGN-LIMIT-1]]（残課題4・5のみ残置・優先度未定
    のまま待機）
+
+追記（2026-07-15 [[ARCH-DATA-1]]残課題①完了）: 計算層への重複実装
+一本化（暦年グルーピング・BS項目同一時点原則）を完了（コミット
+`4e4629a3b`・`60d44b2d8`）。調査の過程でV（Visa）の表示乖離（約$1.56B）・
+SOUN（LTDebt誤除外）の2件の実害を発見・是正した（いずれもIntrinsic_Value・
+TANUKI SCORE分類には影響なし）。残課題②（EPS Analyzer経路のスコープ判断）を
+[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]として分離登録。残課題③（パターン判定
+ロジックの実装）は依然未着手。
+
+これにより次セッションの筆頭候補を更新する：
+① [[ARCH-DATA-1]]残課題③（パターン判定ロジックの実装、PREFLIGHT-CHECK-1と
+   共有設計・今回洗い出したパターン一覧を材料に設計）
+② [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]（優先度未定・スコープ判断待ち）
+③ [[TRUST-SUMMARY-EPIC-1]]（段階0の可視化検討はARCH-DATA-1①③の進捗を
+   踏まえて再開）
+④ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・軽量な独立作業）
