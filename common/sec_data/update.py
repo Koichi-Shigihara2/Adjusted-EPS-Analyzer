@@ -49,6 +49,13 @@ def main():
             failed.append(ticker)
             continue
 
+        # 1b. submissions取得（本人データ判定用のreportDate。取得失敗しても
+        #     determine_fiscal_year()フォールバックで継続できるためnon-blocking）
+        try:
+            fetcher.fetch_submissions(ticker)
+        except Exception as e:
+            print(f"   [WARN] submissions取得エラー: {e} → フォールバック判定のみで継続")
+
         # 2. 従来パース＆保存（annual等）
         parsed = parser.parse_and_save(ticker)
         if parsed:

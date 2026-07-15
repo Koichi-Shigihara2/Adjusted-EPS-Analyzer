@@ -134,6 +134,93 @@ class SECFetcher:
             print(f"   [{ticker}] SEC API 例外: {e}")
             return None
     
+    def fetch_submissions(self, ticker: str, force_refresh: bool = False) -> Optional[Dict[str, str]]:
+        """
+        submissions API（recent + 必要な過去分アーカイブ）から
+        10-K/10-K/A/10-Q/10-Q/A の accession Number -> reportDate マッピングを取得・保存する。
+
+        FY52WEEK-BUCKET-MISPLACE-1調査で判明した「fyタグはfiling単位の粗いラベルで
+        比較年度再掲時に書き換わる」問題への対応。reportDate==end_dateが成立する
+        factのみが「本人の当期データ」であることが全106銘柄・年次830件超・四半期859件で
+        例外なく確認できている（parser.pyの本人データ判定ロジックが参照する）。
+
+        Returns:
+            dict: {accn: reportDate} のマッピング（取得失敗時はNone）
+        """
+        ticker = ticker.upper()
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+
+        out_path = os.path.join(ticker_dir, "submissions.json")
+
+        # キャッシュ確認（24時間有効。10-K/10-Q提出時のみ更新されれば十分なため
+        # company_facts.jsonと同じ頻度でよい）
+        if not force_refresh and os.path.exists(out_path):
+            age = (datetime.now() - datetime.fromtimestamp(os.path.getmtime(out_path))).total_seconds()
+            if age < 86400:
+                try:
+                    with open(out_path, "r", encoding="utf-8") as f:
+                        return json.load(f).get("accn_to_reportdate", {})
+                except Exception:
+                    pass
+
+        cik = self.get_cik(ticker)
+        if not cik:
+            print(f"   [{ticker}] submissions: CIK取得失敗")
+            return None
+
+        relevant_forms = {"10-K", "10-K/A", "10-Q", "10-Q/A"}
+        accn_to_reportdate: Dict[str, str] = {}
+
+        def _extract(recent_or_archive: dict) -> None:
+            forms = recent_or_archive.get("form", [])
+            accns = recent_or_archive.get("accessionNumber", [])
+            report_dates = recent_or_archive.get("reportDate", [])
+            for form, accn, rd in zip(forms, accns, report_dates):
+                if form in relevant_forms and rd:
+                    accn_to_reportdate[accn] = rd
+
+        url = f"https://data.sec.gov/submissions/CIK{cik}.json"
+        try:
+            time.sleep(self.RATE_LIMIT_DELAY)
+            resp = requests.get(url, headers=self.headers, timeout=30)
+        except Exception as e:
+            print(f"   [{ticker}] submissions API 例外: {e}")
+            return None
+
+        if resp.status_code != 200:
+            print(f"   [{ticker}] submissions API エラー: {resp.status_code}")
+            return None
+
+        data = resp.json()
+        _extract(data.get("filings", {}).get("recent", {}))
+
+        # 過去分アーカイブ（filings.recentは直近分のみのため、古いfilingは別JSONに分割）
+        for finfo in data.get("filings", {}).get("files", []):
+            fname = finfo.get("name")
+            if not fname:
+                continue
+            archive_url = f"https://data.sec.gov/submissions/{fname}"
+            try:
+                time.sleep(self.RATE_LIMIT_DELAY)
+                aresp = requests.get(archive_url, headers=self.headers, timeout=30)
+            except Exception as e:
+                print(f"   [{ticker}] submissions archive({fname}) 例外: {e}")
+                continue
+            if aresp.status_code != 200:
+                print(f"   [{ticker}] submissions archive({fname}) エラー: {aresp.status_code}")
+                continue
+            _extract(aresp.json())
+
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {"ticker": ticker, "cik": cik, "accn_to_reportdate": accn_to_reportdate},
+                f, ensure_ascii=False, indent=2,
+            )
+
+        print(f"   [{ticker}] submissions取得完了 ({len(accn_to_reportdate)}件)")
+        return accn_to_reportdate
+
     def fetch_all(self, tickers: list = None, force_refresh: bool = False) -> Dict[str, bool]:
         """
         複数ティッカーの一括取得
@@ -186,6 +273,26 @@ def load_company_facts(ticker: str, data_dir: str = None) -> Optional[Dict[str, 
     except Exception as e:
         print(f"   [{ticker}] company_facts.json 読み込みエラー: {e}")
         return None
+
+
+def load_submissions(ticker: str, data_dir: str = None) -> Dict[str, str]:
+    """
+    {data_dir}/{ticker}/submissions.json を読み込んで accn_to_reportdate を返す。
+
+    ファイルが存在しない場合は空dictを返す（ネットワーク取得は行わない）。
+    取得が必要な場合は SECFetcher.fetch_submissions() を使うこと。
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.path.dirname(__file__), "data")
+    path = os.path.join(data_dir, ticker.upper(), "submissions.json")
+    if not os.path.exists(path):
+        return {}
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("accn_to_reportdate", {})
+    except Exception as e:
+        print(f"   [{ticker}] submissions.json 読み込みエラー: {e}")
+        return {}
 
 
 def _get_latest_accn(company_facts: dict) -> Optional[str]:
