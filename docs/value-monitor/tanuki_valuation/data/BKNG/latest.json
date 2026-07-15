@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 182029642496.85535,
   "intrinsic_value_per_share": 247.81497219864917,
   "intrinsic_value_beta": 231.83,
-  "upside_percent_beta": 32.6,
+  "upside_percent_beta": 28.7,
   "intrinsic_value_rf": 2099.21,
-  "upside_percent_rf": 1100.6,
+  "upside_percent_rf": 1065.5,
   "v0": 182029642496.85535,
   "v0_adjusted": 182029642496.85535,
   "alpha": 0.6,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 288.32,
       "value_growth_pct": 16.3,
-      "expected_return_pct": 64.9
+      "expected_return_pct": 60.1
     },
     "2年後": {
       "future_value": 335.46,
       "value_growth_pct": 35.4,
-      "expected_return_pct": 91.9
+      "expected_return_pct": 86.2
     },
     "3年後": {
       "future_value": 390.3,
       "value_growth_pct": 57.5,
-      "expected_return_pct": 123.2
+      "expected_return_pct": 116.7
     },
     "4年後": {
       "future_value": 454.11,
       "value_growth_pct": 83.2,
-      "expected_return_pct": 159.7
+      "expected_return_pct": 152.1
     },
     "5年後": {
       "future_value": 470.01,
       "value_growth_pct": 89.7,
-      "expected_return_pct": 168.8
+      "expected_return_pct": 160.9
     }
   },
-  "upside_percent": 41.7,
-  "calculation_date": "2026-07-15T22:24:59+09:00",
+  "upside_percent": 37.6,
+  "calculation_date": "2026-07-16T00:54:14+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -193,7 +193,7 @@
     "estimated_fcf": 7922000000.0,
     "raw_fcf": 7922000000.0,
     "sector": "Hotel_Gaming",
-    "note": "EPSデータなし(C:\\Users\\shigi\\Documents\\On-a-journey-git\\docs\\value-monitor\\adjusted_eps_analyzer\\data\\BKNG\\annual.json)",
+    "note": "EPSデータなし(/home/runner/work/On-a-journey/On-a-journey/docs/value-monitor/adjusted_eps_analyzer/data/BKNG/annual.json)",
     "divergence_ratio": 0.0,
     "divergence_warning": ""
   },
@@ -280,7 +280,7 @@
     "roe_10yr_avg": 0.38300077931287885,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 174.85,
+    "current_price": 180.12,
     "latest_revenue": 26917000000.0,
     "rpo": 0.0,
     "beta": 1.075,
@@ -310,11 +310,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.608603273114091,
-    "per": 23.036892,
+    "per": 23.731224,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": 0.77,
-    "ps": 4.8935423,
+    "ps": 5.0410337,
     "ev_ebitda": 13.359,
     "ma200": 187.30148,
     "forward_eps": 12.29608,
@@ -324,19 +324,19 @@
     "analyst_target_high": 298.0,
     "analyst_count": 35,
     "analyst_rec_key": "buy",
-    "dividend_yield": 0.008964732,
+    "dividend_yield": 0.0090134395,
     "payout_ratio": 0.20729999,
     "insider_buy_count": 0,
-    "insider_sell_count": 9,
+    "insider_sell_count": 5,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-06-02",
     "analyst_vs_iv": -11.2,
     "max_eps": 0.7911,
-    "max_eps_per": 221.0,
+    "max_eps_per": 227.7,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-15",
+    "validated_at": "2026-07-16",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -362,7 +362,7 @@
   "phase1_growth": 0.1634869878187224,
   "tanuki_score": "BUY",
   "funda_score": 55,
-  "score_comment": "割安圏(42%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(38%)で買い余地大、FCF黒字、売上安定成長",
   "timing_score": 65,
   "sell_reason": null,
   "matrix": {
@@ -409,7 +409,7 @@
     "net_debt_period": "2026Q1",
     "buyback_ttm": 8040000000
   },
-  "net_current_assets_ratio": 0.0083,
+  "net_current_assets_ratio": 0.008,
   "next_earnings_date": "2026-08-05",
   "segment_configured": false,
   "phase1_growth_original": 0.15,
@@ -443,7 +443,23 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0273,
-  "forward_earnings_yield": 0.0703,
-  "risk_events": []
+  "erp": 0.0253,
+  "forward_earnings_yield": 0.0683,
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against Booking Holdings",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning with competitive pressures 2025-2026",
+      "impact": "mid"
+    }
+  ]
 }

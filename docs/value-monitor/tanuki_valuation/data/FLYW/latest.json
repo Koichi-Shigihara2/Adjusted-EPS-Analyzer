@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 1772300852.3201685,
   "intrinsic_value_per_share": 20.915762905365334,
   "intrinsic_value_beta": 16.87,
-  "upside_percent_beta": -4.1,
+  "upside_percent_beta": -10.0,
   "intrinsic_value_rf": 107.57,
-  "upside_percent_rf": 511.5,
+  "upside_percent_rf": 474.0,
   "v0": 1772300852.3201685,
   "v0_adjusted": 1772300852.3201685,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 27.78,
       "value_growth_pct": 32.8,
-      "expected_return_pct": 57.9
+      "expected_return_pct": 48.2
     },
     "2年後": {
       "future_value": 36.88,
       "value_growth_pct": 76.3,
-      "expected_return_pct": 109.7
+      "expected_return_pct": 96.8
     },
     "3年後": {
       "future_value": 48.97,
       "value_growth_pct": 134.1,
-      "expected_return_pct": 178.4
+      "expected_return_pct": 161.3
     },
     "4年後": {
       "future_value": 65.03,
       "value_growth_pct": 210.9,
-      "expected_return_pct": 269.7
+      "expected_return_pct": 247.0
     },
     "5年後": {
       "future_value": 66.98,
       "value_growth_pct": 220.2,
-      "expected_return_pct": 280.8
+      "expected_return_pct": 257.4
     }
   },
-  "upside_percent": 18.9,
-  "calculation_date": "2026-07-15T13:02:32+09:00",
+  "upside_percent": 11.6,
+  "calculation_date": "2026-07-16T00:58:29+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -301,19 +301,19 @@
     "bear": {
       "growth_rate": 0.229,
       "rice": 0.562,
-      "rice_per_ratio": 0.0077,
+      "rice_per_ratio": 0.0072,
       "rice_adj": 8.225
     },
     "base": {
       "growth_rate": 0.328,
       "rice": 0.805,
-      "rice_per_ratio": 0.011,
+      "rice_per_ratio": 0.0103,
       "rice_adj": 11.78
     },
     "bull": {
       "growth_rate": 0.393,
       "rice": 0.964,
-      "rice_per_ratio": 0.0132,
+      "rice_per_ratio": 0.0124,
       "rice_adj": 14.115
     }
   },
@@ -337,7 +337,7 @@
     "roe_10yr_avg": -0.02621381859445087,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 17.59,
+    "current_price": 18.74,
     "latest_revenue": 623025000.0,
     "rpo": 16500000,
     "beta": 1.319,
@@ -367,13 +367,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 73.29167,
+    "per": 78.083336,
     "per_is_forward": false,
-    "per_adjusted": 20.05,
+    "per_adjusted": 21.37,
     "peg": null,
-    "ps": 3.203436,
+    "ps": 3.4128702,
     "ev_ebitda": 32.375,
-    "ma200": 13.8592,
+    "ma200": 13.88125,
     "forward_eps": 1.25399,
     "analyst_target_median": 20.0,
     "analyst_target_mean": 19.23077,
@@ -389,11 +389,11 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": -4.4,
     "max_eps": 0.8261,
-    "max_eps_per": 21.3,
+    "max_eps_per": 22.7,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-15",
+    "validated_at": "2026-07-16",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -471,7 +471,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 74350000
   },
-  "net_current_assets_ratio": 0.1008,
+  "net_current_assets_ratio": 0.0946,
   "dupont": {
     "ni_ttm": 30175000,
     "revenue_ttm": 677685000,
@@ -516,9 +516,25 @@
     "fcf_margin_bear_multiplier": 0.8817,
     "fcf_margin_note": "FCFマージン悪化(18.0%→15.9%) BEAR補正係数=0.882"
   },
-  "erp": 0.0283,
-  "forward_earnings_yield": 0.0713,
+  "erp": 0.0239,
+  "forward_earnings_yield": 0.0669,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit ongoing against Flywire",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Active SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning issued for 2025-2026 period",
+      "impact": "mid"
+    }
+  ]
 }
