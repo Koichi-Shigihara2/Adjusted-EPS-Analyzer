@@ -2,6 +2,125 @@
 
 ---
 
+## 2026-07-15（完了）
+
+### ✅ [VALIDATOR-IVPS-MISMATCH-1] validator.pyのpt_shares_consistency不整合の根本修正（2026-07-15完了）
+**分類:** DCF信頼性判定ロジック / データ品質
+**登録日:** 2026-07-14
+**完了日:** 2026-07-15
+**発見:** [[FCF-CONVRATE-DESIGN-LIMIT-1]] Software_Systemグループ分割の
+影響18銘柄再生成時、FRSHの`validation.overall`がFAILになったことへの
+原因調査中に新規発見・登録（事前BACKLOG登録なし）
+
+#### 背景（登録時点の内容）
+`validator.py::run_basic_checks`の`pt_shares_consistency`チェックが
+DCF構成要素から再計算する理論株価と、`latest.json`に最終保存される
+`intrinsic_value_per_share`が一致しないケースを確認していた
+（FRSH: 検証時$127.83 vs 最終保存$41.47、ADBE: 検証時$1153.85 vs
+最終保存$639.89 等）。原因は未検証のまま「`pipeline.py`が
+`calculate_pt()`を1銘柄につき複数回呼んでいる（pipeline.py:127/625/649）
+ことによるスナップショットのズレではないか」という仮説のみを登録していた。
+
+#### 影響範囲調査の結果（実装前調査、2026-07-15）
+tanuki=true 100銘柄で検証時再計算IVと最終保存`intrinsic_value_per_share`を
+突き合わせたところ、100銘柄中88銘柄で乖離1%以上、うち64銘柄が
+`pt_shares_consistency`のfail（diff_pct≥1.0）を通じて`overall`を
+WARN/FAILに引き上げていた（残り2銘柄=FRSH/LYFTは`anomaly_detection`
+経由でFAIL）。
+
+#### 根本原因（2件、独立して併発）
+1. **主因（仮説にはなかった、影響がより大きい原因）**: `core_calculator.py:541-545`
+   等（ALPHA-REDESIGN-1）で`intrinsic_value_per_share`の実計算は
+   `calculate_intrinsic_value(v0, rpo_pv, alpha=0.0, growth_option_pv)`と
+   常にalpha非乗算になっていた（alphaは参考値として`data["alpha"]`に
+   保持されるのみ）。ところが`validator.py`の`run_basic_checks`
+   （272行目付近）と`build_validation_prompt`（93-94行目）は
+   `p_t = total_v0 * (1 + alpha)`という廃止済みの式のまま再計算しており、
+   alpha>0の銘柄ほぼ全てで検証時再計算IVが実際の`intrinsic_value_per_share`
+   より`(1+alpha)`倍に近い比率で過大に出ていた（ADBEで実証: alpha=0.8、
+   alpha乗算ありの式で$1153.85、実際の式（alpha非乗算）で$639.89、
+   最終保存値と完全一致を確認）。auto_adjusted=False（下記②の対象外）の
+   銘柄でも29銘柄が乖離1%以上あり、これが②とは独立したバグであることを
+   確認した。
+2. **副因（登録時点の仮説どおり）**: `pipeline.py:622-640`（`_save_result`内）で
+   `segment_configured=False`かつ`recommended_g`再計算が発火する60銘柄
+   （`phase1_growth_auto_adjusted=True`）で、`calculate_pt(tapering_g_end=...)`
+   （line 625）により`valuation`全体を新スナップショットに差し替える際、
+   旧スナップショット（pipeline.py:127由来）に対する`validate_calculation()`
+   の結果（`_orig_validation`）をそのまま新スナップショットに貼り付けて
+   いた。`validate_calculation()`は新スナップショットに対して再実行
+   されないため、`validation`一式（4チェックとも）が最終保存データと
+   対応しないスナップショットを検証した結果のまま残っていた。
+   3回目の呼び出し（bear評価、line 649）は`scenario_valuations.bear`
+   のみを更新するため本問題とは無関係と確認済み。
+
+#### 対応内容
+① `src/value/tanuki_valuation/validator.py`:
+   - `run_basic_checks`の`pt_shares_consistency`（P_t算出式からalpha乗算を除去、
+     `total_v0`をそのまま使用。alphaはdetail文言に参考値として残す）
+   - `build_validation_prompt`（AI検証プロンプト、現状`XAI_API_KEY`未設定時は
+     未使用だが同一の廃止済み式を含んでいたため同様に修正。算式説明文も
+     ALPHA-REDESIGN-1後の実装に合わせて更新）
+② `src/value/tanuki_valuation/pipeline.py`（`_save_result`内）:
+   - `valuation`を`_valuation_adj`（新スナップショット）に差し替える際、
+     旧スナップショットの検証結果を使い回さず、`validate_calculation()`を
+     `_valuation_adj`に対して再実行し、その結果を`valuation["validation"]`に
+     設定するよう変更。再実行が例外発生した場合のみ旧検証結果へフォール
+     バックしログに警告を出す。
+
+#### 検証結果
+全100銘柄（tanuki=true）を`pipeline.py --skip-risk`で再生成し新旧比較:
+- `pt_shares_consistency` pass件数: 36/100 → **100/100**（全銘柄で差異0.00%に統一）
+- `dcf_components` も同時に全銘柄passへ改善（同じスナップショット差し替え問題の対象だったため）
+- `validation.overall`分布: PASS 34→**69** / WARN 64→**30** / FAIL 2→**1**
+- スポットライト銘柄（依頼書指定）:
+  - ADBE: pt_shares_consistency False→**True**（乖離80.32%→0.00%）。
+    overallは依然WARN——ただし原因は`formula_verification`
+    （後述の別バグ、本タスクのスコープ外）に切り替わっており、
+    pt_shares_consistency起因ではなくなったことを確認
+  - FRSH: overall **FAIL→PASS**（`anomaly_detection`の乖離率判定も含め
+    全4チェックがPASS）
+  - LYFT: overall FAIL維持（正当な理由=FCF恒久マイナスによる
+    `anomaly_detection`）だが、detail文言の理論株価が旧スナップショットの
+    $-4.42から実際の最終保存値$-0.98に修正され、表示内容が最終保存データと
+    整合するようになった
+  - DELL: pt_shares_consistency False→**True**（乖離1362.87%→0.00%）、overall WARN→**PASS**
+  - GEV: pt_shares_consistency False→**True**（乖離474.05%→0.00%）、overall WARNのまま
+    （formula_verificationへ原因変化、後述）
+  - CWAN: pt_shares_consistency False→**True**（乖離451.54%→0.00%）、overall WARN→**PASS**
+  - ENTG: pt_shares_consistency False→**True**（乖離803.31%→0.00%）、overall WARN→**PASS**
+- `report_consistency_check.py`: NG=0（WARN=36件、全て本タスクと無関係な既存の
+  警告——Revenue段差型急変・PS異常値・growth_floor張り付き等）
+- `pytest tests/`: 309 passed / 2 failed（既存の[[TEST-STALE-IV-1]]、
+  MSFT/NVDA、ALPHA-REDESIGN-1後にテスト式が未更新の既知バグ。本タスクの
+  変更ファイル（validator.py/pipeline.py）とは無関係で、変更前後で
+  件数・対象銘柄とも同一）
+
+#### 範囲外として報告のみ・未実装（次セッション以降の判断材料）
+本タスク実施中に以下2件を新規発見したが、依頼スコープ外のためその場では
+未実装（BACKLOGへの新規登録は次回セッションで判断）:
+
+1. **`formula_verification`のalpha_cap不整合**: `validator.py::_extract_params`
+   が`alpha_cap = 1.0`を全銘柄一律ハードコードしているが、
+   `core_calculator.py`は業種別（`_industry_alpha_caps`）・セクター別
+   （`_alpha_caps`）・メガテック（`_mega_tech_tickers`）に応じて
+   0.8等の動的なalpha capを適用している（[[industry_alpha_caps 方針]]
+   参照）。このため実際にキャップされたalpha値と、validatorが
+   `alpha_cap=1.0`を前提に再計算した理論alpha値が一致せず、
+   `formula_verification`が誤ってFAILする。本タスクの再生成後、
+   overall=WARNの30銘柄は全てこれが原因（残るFAIL 1件=LYFTは
+   `anomaly_detection`起因で正当）。ADBEで実証確認済み
+   （HEAD時点から`formula_verification: False`は変化なし＝本タスクの
+   変更由来ではなく既存バグ）。
+2. **`tests/test_iv_formula.py`（[[TEST-STALE-IV-1]]）が今回修正した
+   validator.pyと全く同じ廃止済み式（`v0_rm * (1.0 + alpha)`）を
+   使用している**ことを確認した。CLAUDE_CODE_START.mdに既知の失敗として
+   記載済みのため今回は対象外としたが、根本原因は本タスクで特定した
+   ALPHA-REDESIGN-1追随漏れと同一であり、validator.py同様の修正
+   （alpha非乗算化）で解消できる可能性が高い。
+
+---
+
 ## 2026-07-14（完了）
 
 ### ✅ [SECTOR-FCF-RATE-BROKEN-1] FCF実力推定のsector取得経路破損によるセクター別転換率の無効化（2026-07-14完了）

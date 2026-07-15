@@ -1192,54 +1192,22 @@ FRSHが初めてで、`report_consistency_check.py`のNG判定には含まれず
 
 ---
 
-### [VALIDATOR-IVPS-MISMATCH-1] validator.pyのpt_shares_consistencyが検証時と最終保存時で異なるIVを比較している疑い
-**優先度:** 未定（実害は現状report_consistency_check.pyのNG判定に含まれず
-未検知だが、DCF_Reliability表示の信頼性に関わるため要判断）
+### [ALPHA-CAP-HARDCODE-1] validator.pyのalpha_capハードコードとcore_calculator.pyの動的alpha上限の不一致
+**優先度:** 未定
 **分類:** DCF信頼性判定ロジック / データ品質
-**登録日:** 2026-07-14
-**発見:** [[FCF-CONVRATE-DESIGN-LIMIT-1]] Software_Systemグループ分割の
-影響18銘柄再生成時、FRSHの`validation.overall`がFAILになったことへの
-原因調査中
+**登録日:** 2026-07-15
+**発見:** [[VALIDATOR-IVPS-MISMATCH-1]]対応時のスポットライト銘柄検証（ADBE等）で発見
 
 #### 内容
-`validator.py::run_basic_checks`の`pt_shares_consistency`チェックが
-DCF構成要素（V₀・RPO・GO・α・shares・BS補正）から再計算する理論株価と、
-`latest.json`に最終保存される`intrinsic_value_per_share`が一致しない
-ケースを確認した:
-
-- FRSH: 検証時再計算$127.83 vs 最終保存$41.47（乖離約3倍、pass判定は
-  `diff_pct<1.0`基準では通っているように見えるが、これは検証時点の
-  `data["intrinsic_value_per_share"]`自体が既に$127.83相当になっていた
-  ためで、最終保存値とは無関係に整合しているだけ）
-- ADBE: 検証時再計算$1153.85 vs 最終保存$639.89（乖離80.32%、
-  `pass=False`として記録されており`overall=WARN`の一因になっている）
-  ——**本タスクのconversion_rate変更前のHEAD時点データでも同一乖離
-  （80.40%）を確認済みのため、既存の別バグであり今回の変更由来ではない**
-
-FRSHの乖離がたまたま`anomaly_detection`の閾値（±1000%）を超えたため
-`overall=FAIL`として初めて顕在化したが、ADBEのように閾値未満でも
-同種の乖離（pass=False・overall=WARN扱い）は既存データに広く
-存在する可能性がある。
-
-#### 推定原因（未検証）
-`pipeline.py`は`calculate_pt()`を1銘柄につき複数回呼び出している
-（メイン評価・シナリオ/テーパリング調整用の`tapering_g_end`付き呼び出し・
-bear評価用など計3箇所: pipeline.py:127/625/649）。ログ上、同一銘柄で
-成長率が異なる複数回の再計算ブロックが出力されることを確認した
-（例: ZETA 成長率33.6%→28.8%の2回計算）。`validate_calculation()`が
-どの時点の`valuation`スナップショットを検証し、どの時点の値が
-最終的に`intrinsic_value_per_share`として保存されるかの対応関係が
-ずれている可能性がある（alphaテーパリング等の後段調整が検証後に
-IVを書き換えているのではないかという仮説だが未確認）。
-
-#### 範囲外（本タスクでは未実施）
-原因の特定・修正は行っていない。FCF-CONVRATE-DESIGN-LIMIT-1の
-Software_Systemグループ分割自体はこのバグと無関係に正しく機能して
-いることを確認済み（`report_consistency_check.py` NG=0維持）。
+`validator.py::_extract_params`が`alpha_cap = 1.0`を全銘柄一律ハードコード
+しているが、`core_calculator.py`は業種別に動的なalpha上限（例: 0.8等）を
+適用しており不一致。この不整合が`formula_verification`チェックの誤FAILの
+原因になっており、VALIDATOR-IVPS-MISMATCH-1修正後も残るWARN 30件全ての
+原因であることを確認済み（ADBEで実装変更前から同一事象を確認、既存バグ）。
 
 #### 着手条件
-なし（次回セッションで優先度判断のうえ着手。まず影響範囲——WARN/FAIL
-になっている銘柄数の全件洗い出しから着手するのが妥当と思われる）
+なし。まず影響範囲（対象30銘柄の一覧・alpha_cap不一致による理論株価への
+実際の影響度）の洗い出しから着手するのが妥当。
 
 ---
 
@@ -2391,6 +2359,12 @@ test_iv_formula.pyの期待値算出ロジック自体の修正が本タスク�
 CLAUDE_CODE_START.mdのStep 2実行対象への追加は[[QUALITY-GATES-EPIC-1]]
 Phase 1（2026-07-12完了）でtests/全体実行への変更により対応済み
 （同種見逃しの再発防止は解消、本エントリの残スコープは計算式修正のみ）。
+
+#### 追記（[[VALIDATOR-IVPS-MISMATCH-1]]対応時の発見、2026-07-15）
+本テストの失敗原因は、VALIDATOR-IVPS-MISMATCH-1で修正したvalidator.pyと
+同じ、ALPHA-REDESIGN-1（alpha乗算廃止）に追随していない廃止済みP_t式
+（× (1+alpha)）を使用していることが根本原因と判明。validator.py本体は
+既に修正済みだが、本テストファイル自体の式は未修正のまま残っている。
 
 ---
 
