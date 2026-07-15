@@ -1475,11 +1475,6 @@ class TanukiValuationPipeline:
         # Alpha
         L.append(f"Alpha_Premium: {_alpha_r6:.4f} (HypeCore expectation premium; Rm basis)")
 
-        # V0 × (1+alpha) ← これが従来欠落していたキー項目
-        _v0_x_alpha_r6 = (_v0_rm * (1 + _alpha_r6)) if _v0_rm is not None else None
-        if _v0_x_alpha_r6 is not None:
-            L.append(f"DCF_v0_x_alpha: ${_v0_x_alpha_r6/1e9:.2f}B (= v0 × (1+alpha))")
-
         # RPO_PV
         _rpo_excl = (valuation.get("rpo_adjustment") or {}).get("exclusion_reason", "")
         if _rpo_excl:
@@ -1496,12 +1491,12 @@ class TanukiValuationPipeline:
         else:
             L.append("Growth_Option_PV: $0")
 
-        # Equity bridge
-        _pt_r6 = (_v0_x_alpha_r6 or 0) + rpo_pv + _go_pv_r6
+        # Equity bridge（ALPHA-REDESIGN-1: alpha非乗算のDCF_v0をそのまま使用）
+        _pt_r6 = (_v0_rm or 0) + rpo_pv + _go_pv_r6
         _eq_val_r6 = _pt_r6 + _nc_total_r6
-        if _v0_x_alpha_r6 is not None:
+        if _v0_rm is not None:
             L.append(f"Equity_Value: ${_eq_val_r6/1e9:.2f}B"
-                      f" (= v0_x_alpha + RPO_PV + GO_PV"
+                      f" (= v0 + RPO_PV + GO_PV"
                       + (f" + Net_Cash ${_nc_total_r6/1e9:.2f}B)" if _nc_total_r6 != 0 else ")"))
         if _shares_r6 > 0:
             L.append(f"Shares_Used: {_shares_r6/1e6:.1f}M (source: {_shares_src_r6})")
@@ -1609,7 +1604,7 @@ class TanukiValuationPipeline:
         L.append("")
         L.append("IV Formula (full chain):")
         L.append("  DCF_v0  = sum(FCF_t / (1+Rm)^t) + TV / (1+Rm)^n  [Rm=10%]")
-        L.append("  P_t     = DCF_v0 × (1 + Alpha) + RPO_PV + Growth_Option_PV")
+        L.append("  P_t     = DCF_v0 + RPO_PV + Growth_Option_PV  (Alphaは参考値表示のみで計算には使用されません)")
         L.append("  Equity  = P_t + Net_Cash  (= P_t - Net_Debt)")
         L.append("  IV/share = Equity ÷ Shares_Used")
         L.append("Discount rate: Rm=10% (market return, Beta=0 benchmark).")
@@ -1924,7 +1919,8 @@ class TanukiValuationPipeline:
         L.append("MA200, high RSI, strong volume surge")
         L.append("Phase4 (期待剥落期/Deflation): Sentiment reversal,")
         L.append("price falling from peak, expectation reset")
-        L.append("Alpha: Growth expectation premium added to IV")
+        L.append("Alpha: Growth expectation premium (reference value only,")
+        L.append("not applied to IV calculation; see [3] Alpha_Premium)")
         L.append("Higher alpha in Phase1-2, lower in Phase3-4")
         L.append("HYPE_Signal: Combined judgment of Matrix quadrant")
         L.append("and HypeCore phase")
