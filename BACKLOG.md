@@ -1052,25 +1052,34 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 - **既知・SEC-TAG-FICO-CPRT-1で既に修正済みと再確認できた**: CPRT
   （FY2019-2020）・FICO（FY2019-2020）。現在の採用値が同タスクの
   修正記録と一致することを確認
-- **新規発見（未対応・要確認）**:
-  - **PM**（Philip Morris、FY2016-2022）: `RevenueFromContractWithCustomer
-    ExcludingAssessedTax`（$26-31B）vs `IncludingAssessedTax`/
-    `SalesRevenueNet`（$74-82B）。たばこ消費税の内外差の可能性があるが未確認
-  - **AVGO**（FY2019）: 採用値`RevenueFromContractWithCustomerExcludingAssessedTax`
-    =$5,515M vs `Revenues`=$20,848M。AVGOの公表FY2019売上高（約$22.6B）との
-    整合性が疑わしく優先確認が望ましい
-  - **DELL**（FY2019）: 採用値`Revenues`=$22,482M vs `SalesRevenueNet`=$78,660M。
-    DELLの公表FY2019売上高（約$90B）との整合性が疑わしく優先確認が望ましい
-  - **TDY**（FY2012-2014）: 年度により採用タグが不安定（`Revenues`/
-    `SalesRevenueNet`が交互に採用）
-  - **CAKE・ELF・LITE・RCAT・ASTS・TER**: いずれも2018-2020年前後の
-    古い年度のみで検知。一過性の可能性
+- **判定完了・実害なし（2026-07-15確認）**: **LITE・TER**。採用された値
+  （マージ後の値）は実際には正しい年次値であり、「競合」として検知
+  されたのは比較対象タグが当該年度の年次データを持たず四半期の残骸
+  しかない場合だった（false positiveに近い）
+- **判定完了・正当な業種差でバグではない（2026-07-15確認）**: **PM**
+  （Philip Morris、FY2016-2022）。すべての候補タグ
+  （`RevenueFromContractWithCustomerExcludingAssessedTax`＝$26-31B、
+  `IncludingAssessedTax`/`SalesRevenueNet`＝$74-82B）が正規の365日間
+  年次エントリであり、税抜/税込という実在する会計上の区分（SOFIと
+  同種の「業種知識が必要な正当な差異」）
+- **要対応・[[FY52WEEK-BUCKET-MISPLACE-1]]へ統合済み**: **AVGO・DELL・
+  CAKE・ELF**（+**RCAT**要確認）。52/53週会計年度企業で
+  `determine_fiscal_year()`の月判定により真の年次値が隣接年度バケツへ
+  誤って混入する問題。詳細・対応方針・duration filter試行結果は
+  同エントリ参照
+- **要対応・[[REVENUE-TAG-PRIORITY-FRAGILE-1]]へ統合済み**: **TDY・ASTS**。
+  `XBRL_MAPPING["revenue"]`の候補優先順位設計に起因する別種の欠陥
+  （TDYはセグメント限定タグの誤優先、ASTSは提出元XBRL入力ミスだが
+  現状の採用値は処理順で偶然正しく救われているのみ）。詳細は同エントリ参照
 
-#### 対応方針（未定・次回セッションで判断）
-AVGO・DELLのFY2019採用値は公表売上高から大きく乖離している疑いがあり
-優先確認が望ましい。ただしFY2019はFCF_Hist直近5年窓・TTM計算に含まれない
-可能性が高く、現状のIntrinsic_Value計算への実害有無を先に確認すること
-（実害なしであれば優先度は低くなる）。
+#### 対応方針（絞り込み済み・2026-07-15）
+14銘柄の内訳を精査した結果、**残る要対応銘柄はAVGO/DELL/CAKE/ELF
+（+RCAT要確認）に絞り込まれた**（TDY/ASTSは別種の欠陥として分離、
+LITE/TER/PMは実害なし・正当な差異と判定済みでクローズ）。
+AVGO/DELL/CAKE/ELF＋RCATの対応は[[FY52WEEK-BUCKET-MISPLACE-1]]、
+TDY/ASTSの対応は[[REVENUE-TAG-PRIORITY-FRAGILE-1]]にそれぞれ統合した
+ため、本エントリは調査記録として維持しつつ、今後の作業は上記2エントリ
+側で追跡する。
 
 #### 副次的な設計上の発見（重要・将来の横展開時に必読）
 `selling_and_marketing`（35銘柄該当）・`depreciation_and_amortization`
