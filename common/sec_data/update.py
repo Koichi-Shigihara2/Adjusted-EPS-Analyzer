@@ -20,6 +20,7 @@ from common.sec_data.parser import SECParser
 from common.sec_data.quarterly import build_raw_table, save_raw_table, check_revenue_quality
 from common.sec_data.normalizer import normalize, save_normalized
 from common.sec_data.ttm_calculator import calc_ttm_series, save_ttm_series
+from common.sec_data.revenue_tag_conflict_check import check_revenue_tag_conflict, _format_conflict
 
 
 def main():
@@ -107,6 +108,18 @@ def main():
                              f"{'; '.join(rq['issues'] + rq['warnings'])[:120]} |\n")
         except Exception as e:
             print(f"   [WARN] Revenue品質チェックエラー: {e}")
+
+        # 4c. Revenue系タグ競合チェック（ARCH-DATA-1残課題③）
+        # SEC-REV-FINTECH-1/BUG-REV-SPAC-1型の「複数候補タグが同一年度で
+        # 大きく食い違う」ケースを検知する。自動修正は行わずWARN表示のみ。
+        try:
+            tc = check_revenue_tag_conflict(ticker, data_dir=data_dir)
+            if tc["status"] == "WARN":
+                print(f"   [TagConflict ⚠️  WARN] {len(tc['conflicts'])}件")
+                for c in tc["conflicts"]:
+                    print(f"    {_format_conflict(c)}")
+        except Exception as e:
+            print(f"   [WARN] タグ競合チェックエラー: {e}")
 
         # 5. TTMシリーズ生成
         try:
