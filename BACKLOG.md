@@ -572,91 +572,13 @@ normalizer.py/quarterly.py/data_fetcher.pyに含まれない）のため、対�
 #### 着手条件
 なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 3前提整理・Phase 3aは完了。
 Phase 3b（4ファイル統合・規約C/D）は次回セッションで設計・着手する。
-
----
-
-## 優先度：高（早急に対応）
-
-### [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
-**優先度:** 高
-**分類:** アーキテクチャ / SECデータ正規化
-**登録日:** 2026-07-15
-**発見:** FY52WEEK-BUCKET-MISPLACE-1の実装過程（reportDate==end_date本人データ判定の導入）
-
-#### 問題
-FY52WEEK-BUCKET-MISPLACE-1の修正はduration（期間）を持つPL/CF項目
-（revenue/net_income等）にのみ対応しており、durationを持たない
-instant fact（total_assets/stockholders_equity/cash_and_equivalents
-等のBS項目）は対象外だった。そのため52/53週企業のBS項目で値がNoneに
-変化する事象が新規に確認された（DELL 2023・AVGO 2024・ADBE 2021・
-CDNS 2014/2020ほか、全53件）。
-
-原因は同一の52/53週バグだが、instant factは期間検証（340〜380日）を
-経由しないため、PL/CF項目向けの本人データ判定ロジックをそのまま
-流用できず、instant fact専用の設計（duration検証なし版の本人データ
-判定）が別途必要。
-
-#### 実害範囲（実測確認済み・2026-07-15）
-確認済みの53件はいずれも各銘柄の「最新年度」ではないため、現在の
-Net Debt・DCF・TANUKI SCOREの数値を直接汚染していないと確認済み。
-ただし次回以降のupdate.py実行で「最新年度」自体が被弾するタイミング
-が来れば、[[FY52WEEK-BS-NULL-SILENT-1]]の欠陥と組み合わさり、警告
-なしに誤った数値が本番表示されるリスクが構造的に残る。
-
-#### 対応方針
-PL/CF項目と同型の「reportDate==end_date本人データ判定」を、instant
-fact向けにduration検証を除いた形で再設計・実装する。
-
-#### 着手条件
-なし
-
----
-
-### [FY52WEEK-BS-NULL-SILENT-1] BS項目がNoneの場合`or 0`パターンで静かに$0として計算に組み込まれる
-**優先度:** 高
-**分類:** アーキテクチャ / データ品質ゲート
-**登録日:** 2026-07-15
-**発見:** FY52WEEK-BUCKET-MISPLACE-1の実装過程
-
-#### 問題
-BS項目（total_assets/stockholders_equity/cash_and_equivalents等）が
-Noneになった場合、コードベース全体で一貫して`or 0`パターンにより
-静かに$0として計算に組み込まれることが判明した。None自体を検知して
-警告する仕組みは存在しない。確認済みの該当箇所（最低3件、他に類似
-パターンが存在する可能性あり）：
-
-- `common/sec_data/reader.py:382`（Net Debt計算）
-  `cash = bs.get("cash_and_equivalents", 0) or 0`
-- `common/screening/dcf_validity_checker.py:173-176`（投下資本計算）
-  `equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0`
-- `common/sec_data/report_consistency_check.py:532-539`（WARN-12
-  Cash-STI期ズレ）
-  `_ann_cash12 = _ann_bs12.get("cash_and_equivalents") or 0`
-
-複数年度を横断参照する箇所（`reader.py:172` `get_roe_avg_detail()`の
-ROE平均計算等）では、該当年度がif文により静かにサンプルから除外
-される（クラッシュはしないが、利用者からは「その年のデータが
-減った」ことが一切分からない）。
-
-これは「各データポイントは正しいか、明確に信頼できないとフラグ
-付けされているか」という本プラットフォームの根本方針に反する、
-TRUST-SUMMARY-EPIC-1が対象とする領域の具体的な一事例。
-[[FY52WEEK-BS-INSTANT-FACT-1]]の修正が入るまでの間、及び今後同種の
-None化が他の原因で発生した場合全般に関わる、より広い構造的リスク。
-
-#### 対応方針
-`or 0`パターンをNone検知＋明示的警告（report_consistency_check.py
-のWARN体系への追加、または該当データを「信頼できない」フラグ付きで
-返す設計）に置き換える。対象箇所の網羅的な洗い出しが必要（今回発見
-した3箇所は氷山の一角の可能性）。
-
-#### 着手条件
-なし
+ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階設計）
+とは対象領域が重複しないため、並行して進めて支障ない。
 
 ---
 
 ### [ARCH-DATA-1] SECデータ正規化レイヤーの強化
-**優先度:** 高（旧「中」から格上げ — 下記理由参照）
+**優先度:** 最高（2026-07-16、旧「高」からさらに格上げ — 「残課題④」参照）
 **分類:** アーキテクチャ / 根本対策
 
 #### 格上げ理由（2026-06-19）
@@ -704,6 +626,22 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
   （set intersection・4件未満ならNone）方式に修正済みだった。本追記時点で
   未反映のまま「新規スコープ候補」として残置されていた記録上の陳腐化。
   同種パターンの他箇所残存なし（grep確認済み）。
+
+**年次データ正規化の3段階設計（2026-07-16確定）:**
+今回（2026-07-16）のセッションで固まった年次データ正規化の設計方針。
+[[FY52WEEK-BS-INSTANT-FACT-1]]事前調査で判明した未解決課題（残課題④
+参照）を含め、以下の3段階でARCH-DATA-1本体として実装する。
+1. **値の確定**: タグ＋日付をキーに正規化。同一キーで金額が食い違う
+   場合は新しい報告書（filed日）を優先する
+2. **年度ラベルの計算**: `determine_fiscal_year()`の月比較方式
+   （month <= fiscal_end_monthによる片方向の年またぎ補正のみ）を廃し、
+   企業ごとの決算アンカー日（月＋日）からの前後日数ウィンドウ判定に
+   置き換える。12月決算企業でmonth<=12が恒常的にTrueになり判定が
+   無効化する欠陥、および52/53週企業で決算日が前後にずれる際の
+   片方向補正の限界を、両方とも解消する設計。
+3. **裏取り**: 上記2で計算した年度と、XBRLの`fy`タグ・
+   `reportDate`との突き合わせを検証用の副次チェックとして残す
+   （WMT型：企業側のfyタグ自体が誤っているケースの検知用）
 
 #### 着手条件（成立・2026-07-09）
 2026-07-09の新規5銘柄登録（RMBS/ENTG/TER/KLAC/LRCX）で
@@ -818,6 +756,123 @@ company_facts.json再読込により機械的に可視化する）に最小ス�
 判定ロジックの汎用カタログ化自体は、今回の知見（自動トリガーがほぼ
 存在しない・登録時点情報では確定判定できないケースが多い）を踏まえ、
 優先度を下げて次回以降に再検討する。
+
+#### 残課題④（2026-07-16新規）
+当初[[FY52WEEK-BS-INSTANT-FACT-1]]として個別調査した「BS項目
+（instant fact）が52/53週バグの本人データ判定から対象外」問題は、
+上記3段階設計で根本解決されるためARCH-DATA-1へ統合する
+（[[FY52WEEK-BS-INSTANT-FACT-1]]エントリは削除し本項目への統合注記に置換）。
+
+調査過程で、`_own_override_is_safe`の安全弁条件2
+（`existing_end_dt.month <= fiscal_end_month`）が12月決算企業で
+恒常的にTrueとなり機能しない欠陥を実データで確認した。実例:
+CDNS FY2015のtotal_assets/revenueが、実際にはFY2014の値のまま
+誤って保持されている（total_assets: 現状$3,209,556,000〈FY2014値〉、
+正しくは$2,351,015,000。revenue: 現状$1,580,932,000〈FY2014値〉、
+正しくは$1,702,091,000）。revenueは「完了済み」のFY52WEEK-
+BUCKET-MISPLACE-1のスコープ内項目であったにもかかわらず、この
+安全弁の欠陥により回帰が未解決のまま本番データに残っていた。
+report_consistency_check.pyのCHECK-22（fyタグ衝突検知）はこの
+ケースを検知しない（fy_collision_log.jsonにCDNSの記録なし）。
+
+緊急の個別パッチ（安全弁条件2のみの差し替え）は見送り、根本解決
+である上記3段階設計の実装をもって解消する方針とする（Koichiさん
+判断・2026-07-16）。
+
+また、「bsが空」のみを条件とした従来の対象件数カウント方法
+（23件・53件）は、CDNS型（値は存在するが別年度の値が誤って
+居座るケース）を検出できないことが判明した。3段階設計の実装後、
+「フォールバック値と本人データ値の食い違い」チェックによる
+全量再カウントが別途必要になる。
+
+#### ステージ1（値の確定）完了（2026-07-16）
+10-K/A候補プール化・filed日タイブレーク・出所メタデータサイドカー
+（{bs,pl,cf,shares,other}_provenance）を実装（コミット`4587ee09e`）。
+全105銘柄再生成（コミット`ba9927676`）し、事前検証の185件・18銘柄
+（AAPL/ASTS/CELH/CPRT/DOCN/IONQ/JOBY/LITE/LYFT/QBTS/RDW/RKLB/RMBS/
+SOFI/SPIR/TSLA/VRT/WST）と完全一致することを確認した。全件が実際に
+公表されているSEC訂正事象（SPACワラント会計是正・QBTSのSR&ED税額
+控除誤り・LYFTの再保険会計問題・AAPLのサブスクリプション会計早期
+適用等）と整合することを一次情報で確認済み。pytest 309 passed
+（既知2件除く）・report_consistency_check NG=0、いずれも変更前と同一。
+
+5年トレーリング指標への影響が見込まれたDOCN/LYFT/QBTS/SPIRを個別
+確認した結果、DOCN/LYFT/QBTSはROE平均が変化したもののalpha=0.0000
+床打ちにより吸収されIntrinsic_Value・TANUKI SCORE分類とも完全不変。
+SPIRのみR&D資本化経路の変化によりIntrinsic_Value_BASEが+7.6%
+（$29.44→$31.68）変化したが、分類（PASS）は維持された。
+
+ステージ2（年度ラベル計算のアンカー日ウィンドウ化・RCAT型決算期変更
+検知）・ステージ3（fyタグ裏取り強化）は未着手。CDNS FY2015の
+total_assets/revenue誤りはステージ1の対象外のため未解消のまま
+（想定通り、ステージ2待ち）。
+
+---
+
+## 優先度：高（早急に対応）
+
+### [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
+**状態:** [[ARCH-DATA-1]]へ統合済み（2026-07-16）
+
+2026-07-16の事前調査で、本問題（duration検証を経由しないBS項目が
+reportDate==end_date本人データ判定の対象外になり値がNoneに変化する
+事象。DELL 2023・AVGO 2024・ADBE 2021・CDNS 2014/2020ほか）は、
+[[ARCH-DATA-1]]が計画する年次データ正規化の3段階設計（値の確定→
+決算アンカー日ベースの年度ラベル計算→XBRLタグ・reportDateとの
+突き合わせ検証）で根本解決される対象と判断し、個別タスクとしては
+クローズして[[ARCH-DATA-1]]へ統合した。調査過程で発見した
+`_own_override_is_safe`安全弁の未解決の欠陥（CDNSでの実害確認含む）・
+「bsが空」のみでは対象を網羅できない問題等の詳細は[[ARCH-DATA-1]]の
+「残課題④」参照。
+
+---
+
+### [FY52WEEK-BS-NULL-SILENT-1] BS項目がNoneの場合`or 0`パターンで静かに$0として計算に組み込まれる
+**優先度:** 高
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-15
+**発見:** FY52WEEK-BUCKET-MISPLACE-1の実装過程
+
+#### 問題
+BS項目（total_assets/stockholders_equity/cash_and_equivalents等）が
+Noneになった場合、コードベース全体で一貫して`or 0`パターンにより
+静かに$0として計算に組み込まれることが判明した。None自体を検知して
+警告する仕組みは存在しない。確認済みの該当箇所（最低3件、他に類似
+パターンが存在する可能性あり）：
+
+- `common/sec_data/reader.py:382`（Net Debt計算）
+  `cash = bs.get("cash_and_equivalents", 0) or 0`
+- `common/screening/dcf_validity_checker.py:173-176`（投下資本計算）
+  `equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0`
+- `common/sec_data/report_consistency_check.py:532-539`（WARN-12
+  Cash-STI期ズレ）
+  `_ann_cash12 = _ann_bs12.get("cash_and_equivalents") or 0`
+
+複数年度を横断参照する箇所（`reader.py:172` `get_roe_avg_detail()`の
+ROE平均計算等）では、該当年度がif文により静かにサンプルから除外
+される（クラッシュはしないが、利用者からは「その年のデータが
+減った」ことが一切分からない）。
+
+これは「各データポイントは正しいか、明確に信頼できないとフラグ
+付けされているか」という本プラットフォームの根本方針に反する、
+TRUST-SUMMARY-EPIC-1が対象とする領域の具体的な一事例。
+[[ARCH-DATA-1]]（旧[[FY52WEEK-BS-INSTANT-FACT-1]]、2026-07-16に
+ARCH-DATA-1へ統合済み）の修正が入るまでの間、及び今後同種の
+None化が他の原因で発生した場合全般に関わる、より広い構造的リスク。
+
+#### 対応方針
+`or 0`パターンをNone検知＋明示的警告（report_consistency_check.py
+のWARN体系への追加、または該当データを「信頼できない」フラグ付きで
+返す設計）に置き換える。対象箇所の網羅的な洗い出しが必要（今回発見
+した3箇所は氷山の一角の可能性）。
+
+#### 着手条件
+なし
+
+ARCH-DATA-1の3段階設計とは独立に着手可能。ただしARCH-DATA-1の
+実装後に新たに生まれるNoneパターン（値の確定・年度ラベル計算の
+途中で生じうる欠落等）も本タスクの対象に含めて拾えるよう、
+ARCH-DATA-1の設計・実装状況を横目に見ながら進めることが望ましい。
 
 ---
 
@@ -1455,6 +1510,40 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [CASH-TAG-MISSING-1] tag_definitions.pyのCASH_AND_EQUIVALENTS候補リストにASU 2016-18対応タグが未登録で複数銘柄のcash_and_equivalentsが欠落
+**優先度:** 中
+**分類:** データ取得 / タグ定義
+**登録日:** 2026-07-16
+**発見:** FY52WEEK-BS-INSTANT-FACT-1調査時の副次発見
+
+#### 問題
+`tag_definitions.py`のTAG_CANDIDATES["CASH_AND_EQUIVALENTS"]に、
+ASU 2016-18（制限付き現金を含むキャッシュフロー期首・期末残高調整表示
+義務化）対応後に多くの企業が移行した
+`CashCashEquivalentsRestrictedCashAndRestrictedCashEquivalents`タグが
+一度も追加されておらず、以下でcash_and_equivalentsが欠落している
+（52/53週バグとは無関係と確認済み）:
+- CAT: 2010-2019年（優先順位1位タグが同期間データを持たないため
+  他候補にフォールバックせず欠落。`_extract_values_best_candidate`の
+  単一勝者タグ設計の限界、LLY-CAPEX-STALE-1と同型）
+- CPRT: 2020-2025年（候補リストに一切なし）
+- ELF: 2014-2021年（候補リストに一切なし、2014-2015分は他候補にも
+  該当なし）
+- GEV: 全期間（候補リストに一切なし、CashAndCashEquivalentsAt
+  CarryingValue自体が存在しない）
+- HEI: 2023-2025年（候補リストに一切なし）
+
+#### 対応方針
+該当タグを候補リストに追加する。ただしこのタグは「制限付き現金」を
+含む定義のため、単純追加すると純粋な現金同等物より過大計上になる
+リスクがある点に注意。追加時は定義上の影響範囲（Net Debt計算等への
+影響）を確認すること。
+
+#### 着手条件
+なし
+
+---
 
 ### [MRVL-2019-2020-NULL-1] MRVLのannual_2019.json/annual_2020.jsonが両方ともrevenue/net_income=None
 **優先度:** 中〜低
@@ -3723,3 +3812,38 @@ submissions API（`reportDate==end_date`本人データ判定）による根本�
 ⑦ [[QUALITY-CHECKER-CLEANUP-1]]（優先度：低）
 ⑧ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・修正方針確定済みの軽量独立
    作業・他タスクをブロックしないため手が空いた時でも可）
+
+追記（2026-07-16 [[FY52WEEK-BS-INSTANT-FACT-1]]事前調査②完了・ARCH-DATA-1へ統合）:
+[[FY52WEEK-BS-INSTANT-FACT-1]]の安全弁ロジック設計調査（2回目）で、
+`_own_override_is_safe`の安全弁条件2が12月決算企業で機能しない欠陥を
+実データ（CDNS FY2015のtotal_assets/revenueがFY2014の値のまま誤って
+保持されている実例）で確認した。個別パッチではなく、年次データ正規化を
+「値の確定→決算アンカー日ベースの年度ラベル計算→XBRLタグとの突き合わせ
+検証」の3段階で再設計する方針が固まったため、[[FY52WEEK-BS-INSTANT-FACT-1]]
+は個別タスクとしてはクローズし[[ARCH-DATA-1]]へ統合、同時に[[ARCH-DATA-1]]
+の優先度を「高」→「最高」に格上げした。副次発見として
+[[CASH-TAG-MISSING-1]]（優先度：中、CAT/CPRT/ELF/GEV/HEIのcash_and_equivalents
+欠落、52/53週バグとは無関係なタグ定義漏れ）を新規登録した。
+
+これにより次セッションの筆頭候補を更新する：
+①~~[[ARCH-DATA-1]]（3段階設計の実装着手・優先度：最高）~~
+   ✅ ステージ1（値の確定）のみ2026-07-16完了。ステージ2・3は未着手
+   （下記追記参照）
+② [[QUALITY-GATES-EPIC-1]] Phase 3b（①と並行可）
+③ [[FY52WEEK-BS-NULL-SILENT-1]]（①と独立着手可）
+④ [[TRUST-SUMMARY-EPIC-1]]（①進捗待ちで据え置き）
+⑤ [[POLICY-AB-TREND-BLIND-1]]（優先度：低・軽量な独立作業）
+⑥ [[CASH-TAG-MISSING-1]]（優先度：中・新規）
+
+追記（2026-07-16 [[ARCH-DATA-1]]ステージ1「値の確定」完了）:
+10-K/A候補プール化・filed日タイブレーク・出所メタデータサイドカーを
+実装・全105銘柄再生成完了（コミット`4587ee09e`・`ba9927676`）。事前
+検証の185件・18銘柄と完全一致、pytest・report_consistency_check.py
+とも変更前と同一水準を確認。DOCN/LYFT/QBTS/SPIRの個別確認では
+TANUKI SCORE分類はいずれも不変（SPIRのみIntrinsic_Value_BASEが
++7.6%変化）。詳細は[[ARCH-DATA-1]]「残課題④」参照。
+
+これにより次セッションの筆頭候補を更新する：
+① [[ARCH-DATA-1]]ステージ2（年度ラベル計算のアンカー日ウィンドウ化）
+② [[QUALITY-GATES-EPIC-1]] Phase 3b
+③ [[FY52WEEK-BS-NULL-SILENT-1]]

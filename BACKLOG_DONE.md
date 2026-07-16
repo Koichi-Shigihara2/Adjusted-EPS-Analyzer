@@ -2,6 +2,62 @@
 
 ---
 
+## 2026-07-16（完了）
+
+### ✅ [ARCH-DATA-1] ステージ1「値の確定」10-K/A候補プール化・filed日タイブレーク・出所メタデータ（2026-07-16完了）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-16
+**完了日:** 2026-07-16
+**発見:** [[FY52WEEK-BS-INSTANT-FACT-1]]事前調査②（`_own_override_is_safe`安全弁欠陥調査）から、
+年次データ正規化を「①値の確定 ②年度ラベル計算 ③fyタグ裏取り」の3段階で
+再設計する方針を確定し、[[ARCH-DATA-1]]へ統合。今回はそのうちステージ1のみを実装
+
+#### 背景
+`common/sec_data/parser.py`の`form == "10-K"`完全一致フィルタにより、10-K/A（訂正申告）が
+全105銘柄中30銘柄で候補プールから完全除外されていた。また同一(tag, end_date)が複数エントリで
+競合する場合、filed日を一切参照せず「配列内で先に処理された方が勝つ」（実質的に古い方が
+残りやすい）ロジックになっていた。
+
+#### 対応内容
+- `_collect_own_data_annual`・`_extract_values_merged`・`_extract_single_key`のform判定を
+  `"10-K"`→`("10-K","10-K/A")`に拡張（`_detect_fiscal_end_month`は対象外。10-K/Aを含めると
+  最頻会計年度末月の検出結果が変わりRCATで年度バケツ計算全体に波及する回帰を発見したため、
+  ステージ2の領域と判断し据え置き）
+- filed日タイブレークは「競合エントリの少なくとも一方がform=="10-K/A"」の場合に限定。
+  10-K/A非関与の通常の比較年度再掲同士（discontinued operations区分変更等で数字の意味が
+  変わりうる）は変更しない設計とした（AAPL/HON等の実データ検証で無条件適用の危険性を発見・
+  対処。実装過程で一度は無条件適用を試み509件の誤った差分を検出→設計を修正し185件に収束させた）
+- `{bs,pl,cf,shares,other}_provenance`サイドカーを新設。各値の採用accn・filed日・
+  reportDate一致有無(is_own_data)を記録する追加キーのみで、既存スキーマは変更しない
+
+#### 検証結果
+- 全105銘柄ネットワーク未使用新旧比較で185件・18銘柄
+  （AAPL/ASTS/CELH/CPRT/DOCN/IONQ/JOBY/LITE/LYFT/QBTS/RDW/RKLB/RMBS/SOFI/SPIR/TSLA/VRT/WST）
+  の差分を確認し、Apple 2010年サブスクリプション会計変更・2021年SPACワラント会計是正
+  （IONQ/JOBY/RDW/RKLB/SOFI/SPIR/ASTS/VRT）・Lyft再保険契約誤り・Rambus収益認識誤り・
+  D-Wave(QBTS) SR&ED未収税額控除誤り等、実際に公表されている訂正事象と整合することを
+  一次情報（SEC EDGAR・WebSearch）で確認
+- 全105銘柄再生成後の値差分: 185件・18銘柄で事前検証と完全一致（差分0件）
+- pytest 309 passed / 2 known failed（MSFT/NVDA、TEST-STALE-IV-1、無関係）
+- report_consistency_check.py: NG=0 / WARN=41（再生成前と同一）
+- 5年トレーリング指標への影響が見込まれたDOCN/LYFT/QBTS/SPIRを個別確認。DOCN/LYFT/QBTSは
+  ROE平均が変化した（QBTSはroe_years_used 4→3、FY2021 stockholders_equity黒字→債務超過転換
+  により該当年度がROE平均から除外）が、いずれもalpha=0.0000床打ちによりIntrinsic_Value・
+  TANUKI SCORE分類とも完全不変。SPIRのみR&D資本化経路（FY2023研究開発費訂正）の影響で
+  Intrinsic_Value_BASEが$29.44→$31.68（+7.6%）に変化したが、分類（PASS）は維持
+
+#### コミット
+- `4587ee09e`: コード修正（`parser.py`）
+- `ba9927676`: 全105銘柄SECデータ再生成・17銘柄TANUKI VALUATION再生成
+
+#### 残課題
+ステージ2（年度ラベル計算のアンカー日ウィンドウ化・RCAT型決算期変更検知）・
+ステージ3（fyタグ裏取り強化）は未着手。CDNS FY2015のtotal_assets/revenue誤りは
+ステージ1の対象外のため未解消のまま（想定通り、ステージ2待ち）。詳細は
+BACKLOG.md [[ARCH-DATA-1]]「残課題④」参照（ARCH-DATA-1本体は継続中のためBACKLOG.mdに残置）。
+
+---
+
 ## 2026-07-15（完了）
 
 ### ✅ [FY52WEEK-BUCKET-MISPLACE-1] 52/53週会計年度企業の年次revenue値がdetermine_fiscal_year()の月判定により隣接年度バケツへ誤って混入する問題の根本修正（2026-07-15完了）

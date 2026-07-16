@@ -259,6 +259,15 @@ SEC EDGAR
 │    新しい順規約をconstruction時に検証する。parser.py・ttm_calculator.py・
 │    reader.py::get_fcf_list()は未対応（Phase 3bで判断、[[GATE2-PHASE3B-1]]・
 │    [[GATE2-READER-FCFLIST-1]]参照）
+│
+│    **注意（2026-07-16）**: parser.py側にも別設計の独自provenance機構が
+│    追加された（ARCH-DATA-1ステージ1、`{bs,pl,cf,shares,other}_provenance`）。
+│    これはannual_{YEAR}.jsonの各フィールド単位でaccn/filed/is_own_data
+│    （reportDate==end_date本人データ判定の結果）を記録するもので、
+│    上記contracts.py（EntryProvenance.source_tag/duration_days、
+│    quarterly.py/normalizer.py向け・エントリ単位）とは設計思想・
+│    対象データ・粒度が異なる別の仕組みである。同じ「_provenance」という
+│    語で2つの異なる機構を指すため、混同しないよう注意すること。
 ├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
 │    quarters_in_trailing_window()も同ファイルに追加（ARCH-DATA-1残課題① 2026-07-15新設）
 │    ——会計年度end日起点のtrailing 370日窓で四半期エントリを抽出する共有関数。
