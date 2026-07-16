@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9381157260.132189,
   "intrinsic_value_per_share": 16.76881742205316,
   "intrinsic_value_beta": 8.55,
-  "upside_percent_beta": -52.9,
+  "upside_percent_beta": -52.1,
   "intrinsic_value_rf": 93.16,
-  "upside_percent_rf": 413.4,
+  "upside_percent_rf": 421.3,
   "v0": 9381157260.132189,
   "v0_adjusted": 9381157260.132189,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 20.51,
       "value_growth_pct": 22.3,
-      "expected_return_pct": 13.0
+      "expected_return_pct": 14.8
     },
     "2年後": {
       "future_value": 25.08,
       "value_growth_pct": 49.6,
-      "expected_return_pct": 38.2
+      "expected_return_pct": 40.3
     },
     "3年後": {
       "future_value": 30.68,
       "value_growth_pct": 82.9,
-      "expected_return_pct": 69.1
+      "expected_return_pct": 71.7
     },
     "4年後": {
       "future_value": 37.52,
       "value_growth_pct": 123.7,
-      "expected_return_pct": 106.8
+      "expected_return_pct": 110.0
     },
     "5年後": {
       "future_value": 45.88,
       "value_growth_pct": 173.6,
-      "expected_return_pct": 152.8
+      "expected_return_pct": 156.7
     }
   },
-  "upside_percent": -7.6,
-  "calculation_date": "2026-07-16T00:53:19+09:00",
+  "upside_percent": -6.2,
+  "calculation_date": "2026-07-16T21:46:55+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -296,10 +296,10 @@
       -8548708000
     ],
     "diluted_shares": 1282741200,
-    "roe_10yr_avg": -0.03941651356554138,
+    "roe_10yr_avg": -0.15120344803977956,
     "roe_years_used": 6,
-    "roe_outlier_adj": false,
-    "current_price": 18.1471,
+    "roe_outlier_adj": true,
+    "current_price": 17.87,
     "latest_revenue": 3613354000.0,
     "rpo": 8535000.0,
     "beta": 2.152,
@@ -320,7 +320,7 @@
     "moat_fcf_margin_norm": 0.0,
     "pv_high": 3873334906.598785,
     "pv_terminal": 5507822353.533404,
-    "roe_used": -0.03941651356554138,
+    "roe_used": -0.15120344803977956,
     "fcf_floor_applied": 5611671570.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -329,13 +329,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 40.326893,
+    "per": 41.55814,
     "per_is_forward": false,
-    "per_adjusted": 26.7,
+    "per_adjusted": 26.29,
     "peg": 0.85,
-    "ps": 5.9558578,
+    "ps": 5.864914,
     "ev_ebitda": null,
-    "ma200": 21.972925,
+    "ma200": 21.921675,
     "forward_eps": 0.81021,
     "analyst_target_median": 18.0,
     "analyst_target_mean": 20.57895,
@@ -351,7 +351,7 @@
     "insider_latest_date": "2026-06-29",
     "analyst_vs_iv": 7.3,
     "max_eps": 0.6541,
-    "max_eps_per": 27.7,
+    "max_eps_per": 27.3,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
@@ -368,7 +368,7 @@
       },
       "formula_verification": {
         "pass": true,
-        "detail": "α計算: ROE -3.9% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
+        "detail": "α計算: ROE -15.1% × 60% / Rm 10.00% × 0.7 = 0.0000 (実際0.0000)"
       },
       "anomaly_detection": {
         "pass": true,
@@ -387,7 +387,7 @@
     "matrix": "②収益性系",
     "quadrant": "左下",
     "label": "割高×低ROE",
-    "key_metric_y": "ROE_avg (6yr) = -3.9%",
+    "key_metric_y": "ROE_avg (6yr) = -15.1% (outlier-adjusted)",
     "qx": false,
     "qy": false
   },
@@ -496,25 +496,9 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0016,
-  "forward_earnings_yield": 0.0446,
+  "erp": 0.0023,
+  "forward_earnings_yield": 0.0453,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against SoFi Technologies",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid competition risks 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
