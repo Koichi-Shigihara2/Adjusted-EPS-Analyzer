@@ -171,7 +171,15 @@ class SECParser:
             self.data_dir = os.path.join(os.path.dirname(__file__), "data")
 
     def _detect_fiscal_end_month(self, us_gaap: dict) -> int:
-        """10-K FYエントリから会計年度末月を検出（最頻月を返す、デフォルト12）"""
+        """10-K FYエントリから会計年度末月を検出（最頻月を返す、デフォルト12）
+
+        ARCH-DATA-1ステージ1実装時の検証で判明: ここに10-K/Aを含めると
+        （10-K/Aの月分布次第で）最頻値が変わり、determine_fiscal_year()の
+        年度バケツ計算全体に波及する（RCAT実例で12月→4月に反転し全年度の
+        バケツ割り当てが変化することを確認）。これはステージ2（年度ラベル
+        計算）の領域であり、ステージ1（値の確定）のスコープ外のため、
+        10-K/Aは含めず元の10-K限定のまま維持する。
+        """
         month_counts: Dict[int, int] = {}
         for xbrl_key in self.XBRL_MAPPING.get("net_income", []) + self.XBRL_MAPPING.get("revenue", []):
             if xbrl_key not in us_gaap:
@@ -337,6 +345,11 @@ class SECParser:
         fp=="Q4"も候補に含める: DELLの真のFY2019 10-K原本はfp="Q4"でタグ付けされており
         fp=="FY"限定では原本自体が候補から除外されてしまう（本調査で確認済み）。
 
+        form=="10-K/A"（訂正申告）も候補に含める（ARCH-DATA-1ステージ1）:
+        10-K/Aで再提出された期間もreportDate==end_dateが成立すれば本人データ
+        として扱う。ただし同一タグ内で元の10-Kとその10-K/Aが同一(fy, end_date)を
+        報告する場合は下記のfiled日タイブレークで新しい方（通常は10-K/A）を採用する。
+
         同一fyキーに複数の本人end_dateが競合した場合（CRM/FCX/CAKE/HON/COHR/AVAV/
         FICO/NVDA等で実在確認済みの、filing代行者側のタグ付け起因と推測される矛盾）は
         まずdetermine_fiscal_year()フォールバックで両end_dateが自然に別の年度へ
@@ -350,10 +363,11 @@ class SECParser:
         新しい方を優先するtie-breakを適用する。
 
         Returns:
-            dict: {fy: (val, end_date)}
+            dict: {fy: (val, end_date, accn, filed)}
         """
-        # fy -> {end_date: val}
-        by_fy: Dict[int, Dict[str, Any]] = {}
+        # fy -> {end_date: {"val":..., "accn":..., "filed":..., "key":...}}
+        # "key"は採用元のXBRLタグ名（xbrl_keysの優先順位を尊重するために保持する）
+        by_fy: Dict[int, Dict[str, Dict[str, Any]]] = {}
         for key in xbrl_keys:
             if key not in us_gaap:
                 continue
@@ -362,13 +376,14 @@ class SECParser:
                 if unit_type not in units:
                     continue
                 for entry in units[unit_type]:
-                    if entry.get("form") != "10-K" or entry.get("fp") not in ("FY", "Q4"):
+                    if entry.get("form") not in ("10-K", "10-K/A") or entry.get("fp") not in ("FY", "Q4"):
                         continue
                     fy = entry.get("fy")
                     val = entry.get("val")
                     end_date = entry.get("end", "")
                     start_date = entry.get("start", "")
                     accn = entry.get("accn")
+                    filed = entry.get("filed", "")
                     if val is None or fy is None or not end_date or len(end_date) < 10:
                         continue
                     if not start_date or len(start_date) < 10:
@@ -393,14 +408,22 @@ class SECParser:
                     # （WMT: Revenues $485,651M が優先されるべきところSalesRevenueNet
                     # $482,229M に上書きされる回帰を検出・修正）
                     fy_bucket = by_fy.setdefault(fy, {})
-                    if end_date not in fy_bucket:
-                        fy_bucket[end_date] = val
+                    existing = fy_bucket.get(end_date)
+                    if existing is None:
+                        fy_bucket[end_date] = {"val": val, "accn": accn, "filed": filed, "key": key}
+                    elif existing["key"] == key:
+                        # 同一タグ内で同一(fy, end_date)が複数filingに登場する場合
+                        # （元の10-Kとその10-K/A訂正申告等）はfiled日が新しい方を採用する
+                        # （ARCH-DATA-1ステージ1: 値の確定）。異なるタグ間の優先順位
+                        # （上記WMT対応）はここでは変更しない（先勝ちのまま）。
+                        if filed and filed > existing.get("filed", ""):
+                            fy_bucket[end_date] = {"val": val, "accn": accn, "filed": filed, "key": key}
 
-        winners: Dict[int, tuple] = {}  # fy -> (val, end_date)
+        winners: Dict[int, tuple] = {}  # fy -> (val, end_date, accn, filed)
         for fy, end_date_vals in by_fy.items():
             if len(end_date_vals) == 1:
-                (end_date, val), = end_date_vals.items()
-                winners[fy] = (val, end_date)
+                (end_date, info), = end_date_vals.items()
+                winners[fy] = (info["val"], end_date, info["accn"], info["filed"])
                 continue
 
             # 同一fyキーに複数の異なる本人end_dateが競合
@@ -411,8 +434,8 @@ class SECParser:
             if len(set(fallback_years.values())) == len(end_date_vals):
                 # フォールバックが自然に分離できる → 誤ったfyタグではなく
                 # 各end_date自身のフォールバック年度をキーにする（CRM/FCX型）
-                for end_date, val in end_date_vals.items():
-                    winners[fallback_years[end_date]] = (val, end_date)
+                for end_date, info in end_date_vals.items():
+                    winners[fallback_years[end_date]] = (info["val"], end_date, info["accn"], info["filed"])
                 if collisions_out is not None:
                     collisions_out.append({
                         "field": field_name, "fy": fy,
@@ -423,7 +446,8 @@ class SECParser:
                 # フォールバックも同一年度に衝突する（CAKE型・52/53週またぎと
                 # fyタグ誤りが同一年度で重複）→ end_dateが新しい方を優先
                 newest_end = max(end_date_vals.keys())
-                winners[fy] = (end_date_vals[newest_end], newest_end)
+                newest_info = end_date_vals[newest_end]
+                winners[fy] = (newest_info["val"], newest_end, newest_info["accn"], newest_info["filed"])
                 if collisions_out is not None:
                     collisions_out.append({
                         "field": field_name, "fy": fy,
@@ -504,6 +528,11 @@ class SECParser:
         annual_durations = {}
         # 採用accnを記録（本人データ上書き判定用。FY52WEEK-BUCKET-MISPLACE-1根本修正）
         annual_accn: Dict[int, str] = {}
+        # 採用filed日・formを記録（ARCH-DATA-1ステージ1: 真に同一期間〈end_date一致〉の
+        # 複数バージョンが競合し、かつ一方が10-K/A〈訂正申告〉である場合のみ、
+        # filed日が新しい方を優先するタイブレークに使う）
+        annual_filed: Dict[int, str] = {}
+        annual_form: Dict[int, str] = {}
 
         for key in xbrl_keys:
             if key not in us_gaap:
@@ -523,12 +552,14 @@ class SECParser:
                     val = entry.get("val")
                     end_date = entry.get("end", "")
                     accn = entry.get("accn")
+                    filed = entry.get("filed", "")
 
                     if val is None or fy is None:
                         continue
 
-                    # 年次（10-K）- determine_fiscal_year で会計年度キーを統一定義に従って決定
-                    if form == "10-K" and fp == "FY":
+                    # 年次（10-K・10-K/A）- determine_fiscal_year で会計年度キーを統一定義に従って決定
+                    # 10-K/A（訂正申告）も候補に含める（ARCH-DATA-1ステージ1）
+                    if form in ("10-K", "10-K/A") and fp == "FY":
                         # determine_fiscal_year(期末日, fiscal_end_month) が単一定義
                         # fy==end_yearはFY通年データとして信頼度が高い（exact match）
                         # fy!=end_yearは比較年度エントリ（FCX等）または中間期エントリ（INTU Q1等）
@@ -551,6 +582,8 @@ class SECParser:
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
                                 annual_accn[end_year] = accn
+                                annual_filed[end_year] = filed
+                                annual_form[end_year] = form
                         else:
                             if end_year not in result["annual"]:
                                 result["annual"][end_year] = val
@@ -558,6 +591,8 @@ class SECParser:
                                 annual_exact_match[end_year] = exact
                                 annual_durations[end_year] = days
                                 annual_accn[end_year] = accn
+                                annual_filed[end_year] = filed
+                                annual_form[end_year] = form
                             elif exact and not annual_exact_match.get(end_year, True):
                                 # exact matchで上書き: 非December FY企業のQ1等中間期エントリ
                                 # (fy=N+1, end_year=N) が全年データ(fy=N, end_year=N)を上書きするのを防ぐ
@@ -566,6 +601,8 @@ class SECParser:
                                 annual_exact_match[end_year] = True
                                 annual_durations[end_year] = days
                                 annual_accn[end_year] = accn
+                                annual_filed[end_year] = filed
+                                annual_form[end_year] = form
                             elif exact == annual_exact_match.get(end_year, False):
                                 stored_end = annual_end_dates.get(end_year, "")
                                 if end_date > stored_end:
@@ -574,9 +611,32 @@ class SECParser:
                                     annual_end_dates[end_year] = end_date
                                     annual_durations[end_year] = days
                                     annual_accn[end_year] = accn
+                                    annual_filed[end_year] = filed
+                                    annual_form[end_year] = form
+                                elif end_date == stored_end and (form == "10-K/A" or annual_form.get(end_year) == "10-K/A"):
+                                    # ARCH-DATA-1ステージ1: end_dateも同一＝真に同一期間の
+                                    # 複数バージョンが競合。一方が10-K/A（訂正申告）の場合に
+                                    # 限り、filed日が新しい方を優先する（「値の確定」の主軸）。
+                                    # 10-K/Aが関与しない場合（通常の比較年度再掲同士の食い違い。
+                                    # discontinued operations区分変更等で数字の意味自体が
+                                    # 変わりうるため）は下記のSEC-TAG-FICO-CPRT-1タイブレーク
+                                    # （期間日数365日近似）のみで判定する従来動作を変更しない。
+                                    stored_filed = annual_filed.get(end_year, "")
+                                    if filed and filed > stored_filed:
+                                        result["annual"][end_year] = val
+                                        annual_durations[end_year] = days
+                                        annual_accn[end_year] = accn
+                                        annual_filed[end_year] = filed
+                                        annual_form[end_year] = form
+                                    elif filed == stored_filed and days is not None:
+                                        stored_days = annual_durations.get(end_year)
+                                        if stored_days is None or abs(days - 365) < abs(stored_days - 365):
+                                            result["annual"][end_year] = val
+                                            annual_durations[end_year] = days
+                                            annual_accn[end_year] = accn
                                 elif end_date == stored_end and days is not None:
-                                    # SEC-TAG-FICO-CPRT-1: end_dateも同一の場合、
-                                    # 期間日数が365日（正規の年次期間）に近い方を優先する
+                                    # SEC-TAG-FICO-CPRT-1: end_dateも同一（10-K/A非関与）の
+                                    # 場合、期間日数が365日（正規の年次期間）に近い方を優先する
                                     stored_days = annual_durations.get(end_year)
                                     if stored_days is None or abs(days - 365) < abs(stored_days - 365):
                                         result["annual"][end_year] = val
@@ -605,6 +665,20 @@ class SECParser:
 
             # 全キーを検索（早期終了しない。merge_all_tagsは年代ごとのタグ切替を横断統合するため）
 
+        # 出所メタデータのサイドカー（ARCH-DATA-1ステージ1: 「値の確定」）。
+        # フォールバック採用分をまず記録し、本人データ上書きが適用された年度は
+        # 後段で上書きする。annual_provenance は _build_period_data が
+        # {field}_provenance として消費し、既存の bs/pl/cf 等のスキーマは変更しない。
+        annual_provenance: Dict[int, Dict[str, Any]] = {}
+        for year, accn in annual_accn.items():
+            if accn is None:
+                continue
+            annual_provenance[year] = {
+                "accn": accn,
+                "filed": annual_filed.get(year, ""),
+                "is_own_data": accn_reportdate.get(accn) == annual_end_dates.get(year) if accn_reportdate else False,
+            }
+
         # FY52WEEK-BUCKET-MISPLACE-1根本修正: フォールバック(上記のdetermine_fiscal_year()
         # ベースのtie-break)が「本人データではない」候補を採用してしまった年度キーのみを
         # 本人データで上書きする。フォールバックが既に本人データを採用済みの年度キーは
@@ -613,11 +687,15 @@ class SECParser:
         # 判断を上書きの副作用で覆してしまう回帰を防ぐため）。
         if accn_reportdate:
             own_data = self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name, collisions_out)
-            for year, (val, own_end) in own_data.items():
+            for year, (val, own_end, own_accn, own_filed) in own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
                                                annual_durations, annual_accn, accn_reportdate):
                     result["annual"][year] = val
+                    annual_provenance[year] = {
+                        "accn": own_accn, "filed": own_filed, "is_own_data": True,
+                    }
 
+        result["_annual_provenance"] = annual_provenance
         return result
 
     def _extract_values_best_candidate(self, us_gaap: dict, xbrl_keys: List[str], fiscal_end_month: int,
@@ -659,10 +737,25 @@ class SECParser:
         winning_end_dates = result.pop("_annual_end_dates", {})
         winning_accns = result.pop("_annual_accn", {})
         winning_durations = result.pop("_annual_durations", {})
+        winning_filed = result.pop("_annual_filed", {})
         for _, key_result in candidates:
             key_result.pop("_annual_end_dates", None)
             key_result.pop("_annual_accn", None)
             key_result.pop("_annual_durations", None)
+            key_result.pop("_annual_filed", None)
+
+        # 出所メタデータのサイドカー（ARCH-DATA-1ステージ1: 「値の確定」）。
+        # 勝者タグのフォールバック採用分をまず記録し、本人データ上書きが
+        # 適用された年度は後段で上書きする。
+        annual_provenance: Dict[int, Dict[str, Any]] = {}
+        for year, accn in winning_accns.items():
+            if accn is None:
+                continue
+            annual_provenance[year] = {
+                "accn": accn,
+                "filed": winning_filed.get(year, ""),
+                "is_own_data": accn_reportdate.get(accn) == winning_end_dates.get(year) if accn_reportdate else False,
+            }
 
         # FY52WEEK-BUCKET-MISPLACE-1根本修正: フォールバックが「本人データではない」
         # 候補を採用してしまった年度キーのみを、本人データで上書きする
@@ -679,14 +772,18 @@ class SECParser:
                 if key not in us_gaap:
                     continue
                 key_own_data = self._collect_own_data_annual(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name, collisions_out)
-                for fy, (val, end_date) in key_own_data.items():
+                for fy, (val, end_date, own_accn, own_filed) in key_own_data.items():
                     if fy not in combined_own_data:
-                        combined_own_data[fy] = (val, end_date)
-            for year, (val, own_end) in combined_own_data.items():
+                        combined_own_data[fy] = (val, end_date, own_accn, own_filed)
+            for year, (val, own_end, own_accn, own_filed) in combined_own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
                                                winning_durations, winning_accns, accn_reportdate):
                     result["annual"][year] = val
+                    annual_provenance[year] = {
+                        "accn": own_accn, "filed": own_filed, "is_own_data": True,
+                    }
 
+        result["_annual_provenance"] = annual_provenance
         return result
 
     def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int) -> Dict[str, Any]:
@@ -697,6 +794,11 @@ class SECParser:
         annual_exact_match: Dict[int, bool] = {}
         annual_accn: Dict[int, str] = {}
         annual_durations: Dict[int, Any] = {}
+        # 採用filed日・formを記録（ARCH-DATA-1ステージ1: 真に同一期間の複数バージョンが
+        # 競合し、かつ一方が10-K/A〈訂正申告〉である場合のみ、filed日が新しい方を
+        # 優先するタイブレークに使う）
+        annual_filed: Dict[int, str] = {}
+        annual_form: Dict[int, str] = {}
 
         units = us_gaap.get(key, {}).get("units", {})
         for unit_type in ["USD", "shares", "USD/shares"]:
@@ -710,11 +812,13 @@ class SECParser:
                 val = entry.get("val")
                 end_date = entry.get("end", "")
                 accn = entry.get("accn")
+                filed = entry.get("filed", "")
 
                 if val is None or fy is None:
                     continue
 
-                if form == "10-K" and fp == "FY":
+                # 10-K/A（訂正申告）も候補に含める（ARCH-DATA-1ステージ1）
+                if form in ("10-K", "10-K/A") and fp == "FY":
                     if end_date and len(end_date) >= 10:
                         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
                         end_year = determine_fiscal_year(end_dt, fiscal_end_month)
@@ -734,18 +838,45 @@ class SECParser:
                         annual_exact_match[end_year] = exact
                         annual_accn[end_year] = accn
                         annual_durations[end_year] = days
+                        annual_filed[end_year] = filed
+                        annual_form[end_year] = form
                     elif exact and not annual_exact_match.get(end_year, True):
                         result["annual"][end_year] = val
                         annual_end_dates[end_year] = end_date
                         annual_exact_match[end_year] = True
                         annual_accn[end_year] = accn
                         annual_durations[end_year] = days
+                        annual_filed[end_year] = filed
+                        annual_form[end_year] = form
                     elif exact == annual_exact_match.get(end_year, False):
-                        if end_date > annual_end_dates.get(end_year, ""):
+                        stored_end = annual_end_dates.get(end_year, "")
+                        if end_date > stored_end:
                             result["annual"][end_year] = val
                             annual_end_dates[end_year] = end_date
                             annual_accn[end_year] = accn
                             annual_durations[end_year] = days
+                            annual_filed[end_year] = filed
+                            annual_form[end_year] = form
+                        elif end_date == stored_end and (form == "10-K/A" or annual_form.get(end_year) == "10-K/A"):
+                            # ARCH-DATA-1ステージ1: end_dateも同一＝真に同一期間の
+                            # 複数バージョンが競合。一方が10-K/A（訂正申告）の場合に限り、
+                            # filed日が新しい方を優先する（「値の確定」の主軸）。
+                            # 10-K/Aが関与しない場合（通常の比較年度再掲同士の食い違い。
+                            # discontinued operations区分変更等で数字の意味自体が変わり
+                            # うるため）は従来通り先勝ちのまま変更しない。
+                            stored_filed = annual_filed.get(end_year, "")
+                            if filed and filed > stored_filed:
+                                result["annual"][end_year] = val
+                                annual_accn[end_year] = accn
+                                annual_durations[end_year] = days
+                                annual_filed[end_year] = filed
+                                annual_form[end_year] = form
+                            elif filed == stored_filed and days is not None:
+                                stored_days = annual_durations.get(end_year)
+                                if stored_days is None or abs(days - 365) < abs(stored_days - 365):
+                                    result["annual"][end_year] = val
+                                    annual_accn[end_year] = accn
+                                    annual_durations[end_year] = days
 
                 elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
                     quarter_key = f"{fy}{fp}"
@@ -765,10 +896,11 @@ class SECParser:
         # JNJのnet_income: NetIncomeLossタグには2011年の本人365日データが
         # 存在しないが、ProfitLossタグには存在する、という実例で確認済み）。
         # フォールバックが既に本人データを採用済みかどうかの判定用に、
-        # 採用end_date/accn/durationを"_"接頭辞のメタ情報として同梱する
+        # 採用end_date/accn/duration/filedを"_"接頭辞のメタ情報として同梱する
         result["_annual_end_dates"] = annual_end_dates
         result["_annual_accn"] = annual_accn
         result["_annual_durations"] = annual_durations
+        result["_annual_filed"] = annual_filed
         return result
 
     def _get_available_years(self, extracted: dict) -> List[int]:
@@ -788,7 +920,7 @@ class SECParser:
     def _build_period_data(self, extracted: dict, period: Any, is_annual: bool) -> Optional[Dict[str, Any]]:
         """特定期間のデータを構築"""
         period_type = "annual" if is_annual else "quarterly"
-        
+
         data = {
             "period": str(period),
             "bs": {},
@@ -797,30 +929,44 @@ class SECParser:
             "shares": {},
             "other": {},
         }
-        
+
+        # 出所メタデータのサイドカー（ARCH-DATA-1ステージ1: 「値の確定」）。
+        # 既存の bs/pl/cf/shares/other スキーマ（フラットな{フィールド名: 値}）は
+        # 変更せず、{セクション}_provenance という追加キーとしてのみ付与する
+        # （既存消費者は未知キーを無視するため無改修で動作する）。
+        # 年次データのみ対象（quarterly側は_annual_provenanceに該当エントリが
+        # 存在しないため自然に空のまま）。
+        provenance_sections: Dict[str, Dict[str, Any]] = {
+            "bs": {}, "pl": {}, "cf": {}, "shares": {}, "other": {},
+        }
+
+        def _record(section: str, field: str, val: Any) -> None:
+            if val is None:
+                return
+            data[section][field] = val
+            if not is_annual:
+                return
+            prov = extracted.get(field, {}).get("_annual_provenance", {}).get(period)
+            if prov:
+                provenance_sections[section][field] = prov
+
         # BS
         for field in ["total_assets", "stockholders_equity", "total_liabilities",
                       "cash_and_equivalents", "short_term_investments",
                       "long_term_debt", "short_term_debt",
                       "current_assets", "current_liabilities"]:
-            val = extracted.get(field, {}).get(period_type, {}).get(period)
-            if val is not None:
-                data["bs"][field] = val
-        
+            _record("bs", field, extracted.get(field, {}).get(period_type, {}).get(period))
+
         # PL
         for field in ["revenue", "gross_profit", "cost_of_revenue", "net_income", "eps_diluted", "eps_basic",
                       "research_and_development", "selling_and_marketing",
                       "selling_general_and_administrative", "operating_income"]:
-            val = extracted.get(field, {}).get(period_type, {}).get(period)
-            if val is not None:
-                data["pl"][field] = val
-        
+            _record("pl", field, extracted.get(field, {}).get(period_type, {}).get(period))
+
         # CF
         for field in ["operating_cash_flow", "capital_expenditure", "finance_lease_payments",
                       "depreciation_and_amortization", "stock_based_compensation", "buyback"]:
-            val = extracted.get(field, {}).get(period_type, {}).get(period)
-            if val is not None:
-                data["cf"][field] = val
+            _record("cf", field, extracted.get(field, {}).get(period_type, {}).get(period))
         
         # FCF計算（ファイナンスリース除外）
         #
@@ -842,15 +988,17 @@ class SECParser:
         
         # Shares
         for field in ["shares_diluted", "shares_basic"]:
-            val = extracted.get(field, {}).get(period_type, {}).get(period)
-            if val is not None:
-                data["shares"][field] = val
-        
+            _record("shares", field, extracted.get(field, {}).get(period_type, {}).get(period))
+
         # Other (RPO等)
         for field in ["rpo"]:
-            val = extracted.get(field, {}).get(period_type, {}).get(period)
-            if val is not None:
-                data["other"][field] = val
+            _record("other", field, extracted.get(field, {}).get(period_type, {}).get(period))
+
+        # 出所メタデータのサイドカーを空でないセクションのみ付与する
+        # （既存スキーマへの無用なサイズ増加・省略時の互換性維持のため）
+        for section, prov in provenance_sections.items():
+            if prov:
+                data[f"{section}_provenance"] = prov
 
         # SGA整合性チェック:
         # selling_and_marketing が完全に未取得（None）かつ
