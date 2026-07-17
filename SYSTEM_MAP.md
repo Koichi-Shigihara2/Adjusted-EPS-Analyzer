@@ -243,7 +243,20 @@ SEC EDGAR
 └─ common/sec_data/update.py
 ├─ quarterly.py      # 四半期データ取得・正規化
 ├─ normalizer.py     # フィールド正規化
-├─ ttm_calculator.py # TTM系列計算
+├─ ttm_calculator.py # TTM系列計算。本番経路は calc_ttm_series()/save_ttm_series()
+│    のみ（update.pyが呼ぶ）。FLOW_FIELDS（4Q合算）のみを処理し、STOCK_FIELDS/
+│    SHARES_FIELDS（Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/
+│    SharesBasic/SharesDiluted）は処理しない。
+│    **注意（GATE2-PHASE3B-1② 2026-07-17）**: STOCK_FIELDS/SHARES_FIELDSを
+│    実際に処理するcalc_ttm()/save_ttm()（{ticker}_ttm.json生成）は
+│    2026-05-07のcalc_ttm_series()追加以降に用途を失った到達不能コード
+│    （本番からは一切呼ばれない）。GATE2-PHASE3B-1②でCurrentAssets/
+│    CurrentLiabilitiesをSTOCK_FIELDSに追加したが、この到達不能性のため
+│    本番の_ttm_series.jsonには反映されない（[[TTM-STOCK-FIELDS-DEAD-1]]
+│    として構造的問題を分離登録・対応未定）。
+│    EXCLUDED_FIELDS（_COGS・RPO）新設・FIELD_CONCEPTS全キーの分類網羅性を
+│    モジュールロード時に検証する契約チェック（contracts.py::
+│    validate_field_classification()）も同時に追加済み。
 ├─ parser.py         # XBRL解析
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
@@ -252,6 +265,12 @@ SEC EDGAR
 │    FinancialEntry/EntryProvenance/FCFSeries。quarterly.py::save_raw_table()・
 │    normalizer.py::save_normalized()がjson.dump()直前にFinancialEntryで
 │    エントリ形状を検証（違反時ContractViolation、既存try/exceptで捕捉）。
+│    **追記（GATE2-PHASE3B-1② 2026-07-17）**: validate_field_classification()
+│    新設（規約C）。field_concepts辞書と分類セット（frozenset）を引数で
+│    受け取る汎用設計とし、quarterly.py/ttm_calculator.pyのどちらも
+│    importしない（contracts.pyは既にquarterly.pyからimportされているため、
+│    逆方向の依存を追加すると循環importになる。呼び出し元のttm_calculator.py
+│    側でFIELD_CONCEPTS・FLOW_FIELDS等の具体的な値を渡す設計で回避）。
 │    quarterly.py::_select_best_candidate()のフォールバック採用時・
 │    ticker_restrictionsオーバーライド採用時に_provenance.source_tagを付与。
 │    FCFSeriesはdata_fetcher.py::TTMReader.get_fcf_series()内でのみ使用し

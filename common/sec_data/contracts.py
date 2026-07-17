@@ -180,6 +180,45 @@ def validate_fields(fields: dict) -> None:
 
 
 # ---------------------------------------------------------------------------
+# 規約C: フィールド分類の網羅性（GATE2-PHASE3B-1）
+# ---------------------------------------------------------------------------
+
+def validate_field_classification(field_concepts: dict, *classification_sets: frozenset) -> None:
+    """field_concepts（例: quarterly.py::FIELD_CONCEPTS）の全キーが、
+    classification_setsのいずれかに必ず属することを検証する。
+
+    ttm_calculator.pyのFLOW_FIELDS/STOCK_FIELDS/SHARES_FIELDSがFIELD_CONCEPTSとは
+    別ファイルで独立管理されており、新フィールド追加時にいずれかへの追加を
+    忘れてもエラーにならず黙って出力から消える問題（実例: CurrentAssets/
+    CurrentLiabilitiesが抽出されているがTTM層で分類漏れのまま出力対象外に
+    なっていた）の再発防止用（GATE2-PHASE3B-1②）。
+
+    本関数自体はfield_concepts/classification_setsの具体的な中身をimportせず
+    引数として受け取る設計とし、呼び出し元（ttm_calculator.py側、
+    quarterly.py::FIELD_CONCEPTSとttm_calculator.py自身のFLOW/STOCK/SHARES/
+    EXCLUDED_FIELDSの両方をimportする必要がある）で具体的な値を渡す。
+    これにより本モジュール（contracts.py）はquarterly.py/ttm_calculator.pyの
+    どちらにも依存しないままでいられ、循環importを避けられる
+    （quarterly.pyは既にcontracts.pyをimportしているため、逆方向の依存を
+    contracts.py側に追加すると循環importになる）。
+
+    未分類のキーが1件でもあれば ContractViolation を送出する（呼び出し元が
+    モジュールロード時に呼び出せば、新フィールド追加時の分類漏れをimport
+    時点で即座に検知できる）。
+    """
+    classified: set = set()
+    for s in classification_sets:
+        classified |= set(s)
+    unclassified = sorted(set(field_concepts.keys()) - classified)
+    if unclassified:
+        raise ContractViolation(
+            f"未分類のフィールドがあります: {unclassified}. "
+            f"FLOW_FIELDS/STOCK_FIELDS/SHARES_FIELDS/EXCLUDED_FIELDSの"
+            f"いずれかに追加してください。"
+        )
+
+
+# ---------------------------------------------------------------------------
 # 規約A: fcf_listの順序規約（新しい順、[0]が直近）
 # ---------------------------------------------------------------------------
 

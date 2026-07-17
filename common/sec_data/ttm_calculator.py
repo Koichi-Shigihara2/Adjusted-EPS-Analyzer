@@ -9,6 +9,9 @@ import logging
 import os
 from datetime import date, datetime
 
+from .contracts import validate_field_classification
+from .quarterly import FIELD_CONCEPTS
+
 logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(__file__)
@@ -22,14 +25,38 @@ FLOW_FIELDS = frozenset([
 ])
 
 # ストック系フィールド（最新Q末の値）
+# CurrentAssets/CurrentLiabilities: GATE2-PHASE3B-1②で追加（貸借対照表項目の
+# ためフロー〈4Q合算〉ではなくストック〈最新Q末の値〉分類が妥当。抽出はされて
+# いたがFLOW/STOCK/SHARESいずれにも属さず消費者ゼロのままTTM出力から漏れて
+# いた既知バグの是正）
 STOCK_FIELDS = frozenset([
     "Cash", "STDebt", "LTDebt", "DeferredRevenue", "Equity", "Assets",
+    "CurrentAssets", "CurrentLiabilities",
 ])
 
 # 株式数フィールド（最新Q末の値）
 SHARES_FIELDS = frozenset([
     "SharesBasic", "SharesDiluted",
 ])
+
+# 意図的にTTM出力対象外とするフィールド（GATE2-PHASE3B-1②で新設）。
+# FLOW_FIELDS/STOCK_FIELDS/SHARES_FIELDSのいずれにも入れず、かつ
+# 「分類漏れ」として検知されないようにするための明示的な除外リスト。
+EXCLUDED_FIELDS = frozenset([
+    # GrossProfit逆算用の内部計算専用フィールド（quarterly.py::FIELD_CONCEPTS
+    # コメント参照）。単独でTTM出力する意味がないため対象外は意図的。
+    "_COGS",
+    # reader.py::get_rpo_series()/get_rpo_context()がnormalized JSONを
+    # 直接読む別経路で消費されるため、TTM層での分類は不要（GATE2-PHASE3B-1
+    # 事前調査で確認済み。ttm.jsonを経由しないだけで実際には正常に消費されている）。
+    "RPO",
+])
+
+# GATE2-PHASE3B-1②規約C: FIELD_CONCEPTSの全キーが上記4分類のいずれかに
+# 属することをモジュールロード時に検証する。新フィールド追加時に分類を
+# 忘れると黙って出力から消える問題（CurrentAssets/CurrentLiabilitiesの
+# 実例）を、import時点で即座に検知するため。
+validate_field_classification(FIELD_CONCEPTS, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS)
 
 # TTMに含める当日以前の implied Q4 のみ
 _TODAY = date.today().isoformat()

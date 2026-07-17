@@ -2681,13 +2681,11 @@ class TestTTMNullValGuard:
 
     def test_flow_field_with_none_val_no_type_error(self):
         """FLOW_FIELDS の entry に val=None が含まれても calc_ttm がクラッシュしない"""
-        import importlib.util, os, sys as _sys
-        ttm_path = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "common", "sec_data", "ttm_calculator.py")
-        )
-        spec = importlib.util.spec_from_file_location("ttm_calculator", ttm_path)
-        ttm_mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ttm_mod)
+        # GATE2-PHASE3B-1②: ttm_calculator.pyがquarterly.py/contracts.pyを
+        # importするようになったため、importlib.util.spec_from_file_location
+        # によるファイルパス直接ロード（パッケージコンテキストなし）は相対import
+        # エラーで失敗する。パッケージ経由のimportに変更した。
+        from common.sec_data.ttm_calculator import calc_ttm
 
         normalized = {
             "fields": {
@@ -2699,19 +2697,14 @@ class TestTTMNullValGuard:
                 ]
             }
         }
-        result = ttm_mod.calc_ttm("TESTCO", normalized)
+        result = calc_ttm("TESTCO", normalized)
         ocf = result.get("flow", {}).get("OCF", {}).get("val")
         assert ocf == 450.0, f"None を 0 として合算した結果が 450.0 になるはず (got {ocf})"
 
     def test_q4_synthetic_with_none_val_no_type_error(self):
         """implied Q4 合成で top3 に val=None エントリが含まれても TypeError が起きない"""
-        import importlib.util, os
-        ttm_path = os.path.normpath(
-            os.path.join(os.path.dirname(__file__), "..", "common", "sec_data", "ttm_calculator.py")
-        )
-        spec = importlib.util.spec_from_file_location("ttm_calculator_q4", ttm_path)
-        ttm_mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(ttm_mod)
+        # GATE2-PHASE3B-1②: 上記と同じ理由でパッケージ経由のimportに変更した。
+        from common.sec_data.ttm_calculator import calc_ttm
 
         normalized = {
             "fields": {
@@ -2724,7 +2717,7 @@ class TestTTMNullValGuard:
             }
         }
         try:
-            ttm_mod.calc_ttm("TESTCO2", normalized)
+            calc_ttm("TESTCO2", normalized)
         except TypeError as e:
             pytest.fail(f"val=None 時に TypeError が発生した: {e}")
 

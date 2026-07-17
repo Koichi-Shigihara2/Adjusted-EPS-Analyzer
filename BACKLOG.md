@@ -1345,6 +1345,55 @@ ARCH-DATA-1が現在スコープとする`parser.py`/`normalizer.py`/`data_fetch
 
 ---
 
+### [TTM-STOCK-FIELDS-DEAD-1] ttm_calculator.pyのSTOCK_FIELDS/SHARES_FIELDS分類が構造的に本番未到達
+**優先度:** 未定
+**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1（GATE2-PHASE3B-1関連）
+**登録日:** 2026-07-17
+**発見:** GATE2-PHASE3B-1②実装時の検証で発見
+
+#### 内容
+GATE2-PHASE3B-1②（規約C: フィールド分類の二重管理是正）の実装・検証過程で、
+`ttm_calculator.py::STOCK_FIELDS`にCurrentAssets/CurrentLiabilitiesを追加しても
+本番の`{ticker}_ttm_series.json`（update.pyが実際に呼ぶ`calc_ttm_series()`の
+出力）には一切反映されないことが判明した。追加調査の結果、これは
+CurrentAssets/CurrentLiabilities固有の問題ではなく、**STOCK_FIELDS/
+SHARES_FIELDS分類全体が構造的に本番未到達**という、より広い構造的問題と
+判明した。
+
+**根本原因**: `calc_ttm()`/`save_ttm()`（`{ticker}_ttm.json`生成、STOCK_FIELDS/
+SHARES_FIELDSを実際に処理する唯一の関数）は、2026-05-07の`c3880e737`
+（"switch FCF/RICE source to rolling TTM series"）で`calc_ttm_series()`が
+追加されて以降、用途を失った。2026-05-11に一瞬（2分間）update.pyから
+誤って呼ばれた形跡があるが（`38ae3f75a`→`210cdb01e`で即座に
+`calc_ttm_series()`へ修正）、それ以降は**本番から一切呼ばれていない
+到達不能コード**である。
+
+**8メンバーの内訳**（全て`calc_ttm_series()`＝本番経路を経由しない）:
+- 完全にデッド（他経路の消費者もゼロ）: Cash・STDebt・DeferredRevenue・
+  Equity・Assets（5件）
+- 別実装で個別生存（ttm_calculator.pyの分類・calc_ttm_series()を経由せず、
+  reader.py・audit.py・quarterly_review_generator.py・tail_dcf_bridge.py・
+  pipeline.pyがそれぞれ独立にnormalized JSONを直接読む）: LTDebt・
+  SharesBasic・SharesDiluted（3件）
+
+残り3件の「別実装で個別生存」構造は、[[GATE2-PHASE3B-1]]①（独立実装4ファイルの
+reader.py統合）が対象とする問題と一部重複する。
+
+#### 対応方針候補（未確定、次回セッションで判断）
+(a) `calc_ttm()`/`save_ttm()`を削除し、STOCK_FIELDS/SHARES_FIELDS分類自体も
+    「現状使われていない予約分類」として整理する（最小対応）
+(b) `calc_ttm_series()`にSTOCK_FIELDS/SHARES_FIELDS相当の処理を追加し、
+    本番の`_ttm_series.json`に`stock`/`shares`キーを持たせるよう拡張する
+    （LTDebt/SharesBasic/SharesDilutedの既存個別実装をこちらに統合する
+    将来性を含む、[[GATE2-PHASE3B-1]]①との連携も視野に入れた対応）
+(c) 現状維持（デッドコードの存在自体は実害なしのため、着手条件が
+    整うまで先送り）
+
+#### 着手条件
+なし（次回セッションで規模見積もり・対応方針・優先順位を判断してから着手）
+
+---
+
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定
 **分類:** アーキテクチャ / Discover
@@ -1853,7 +1902,8 @@ Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型
 型を導入しても、この4ファイルが辞書アクセス前提のままでは規約C/Dの効果が
 及ばない。
 
-**② 規約C（フィールド分類の二重管理）**: `ttm_calculator.py`の
+**② 規約C（フィールド分類の二重管理）**: ✅ **2026-07-17完了**（詳細は下記
+「②規約C完了」参照）。`ttm_calculator.py`の
 `FLOW_FIELDS`/`STOCK_FIELDS`/`SHARES_FIELDS`が`quarterly.py::FIELD_CONCEPTS`とは
 別ファイルで独立管理されており、新フィールド追加時にいずれかへの追加を
 忘れてもエラーにならず黙って出力から消える。実例として`CurrentAssets`/
@@ -1875,7 +1925,55 @@ Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型
   型に置き換える改修が伴うため影響範囲の洗い出しが必要
 
 #### 着手条件
-なし（次回セッションで規模見積もり・優先順位判断してから着手）
+なし（次回セッションで規模見積もり・優先順位判断してから着手）。
+**①③は引き続き未着手のまま残っている**（②のみ2026-07-17完了）。
+
+#### ②規約C完了（2026-07-17）
+
+`ttm_calculator.py::STOCK_FIELDS`に`CurrentAssets`/`CurrentLiabilities`を追加し、
+`_COGS`/`RPO`用の`EXCLUDED_FIELDS`を新設。`contracts.py::validate_field_classification()`
+を新設し、`quarterly.py::FIELD_CONCEPTS`の全キーがFLOW/STOCK/SHARES/EXCLUDEDの
+いずれかに属することをモジュールロード時に検証する契約チェックを追加した
+（新フィールド追加時の分類漏れをimport時点で即座に検知）。
+
+**循環import対応**: `contracts.py`は既に`quarterly.py`からimportされているため、
+`contracts.py`側が`quarterly.py`/`ttm_calculator.py`を逆にimportすると循環import
+になることを確認。汎用チェック関数`validate_field_classification()`は
+`contracts.py`に置きつつ、具体的なフィールド集合（`FIELD_CONCEPTS`・
+`FLOW_FIELDS`等）の受け渡しは呼び出し元（`ttm_calculator.py`）が担う設計
+にして回避した（`contracts.py`はどちらもimportしない）。
+
+**既存テストへの副次修正**: `ttm_calculator.py`がモジュールとして
+`quarterly.py`/`contracts.py`をimportするようになった結果、パッケージ構造を
+経由しない「ファイルパス直接ロード」（`tests/test_ttm_calculator.py`の
+`sys.path.insert`方式・`tests/test_pipeline_logic.py`の
+`importlib.util.spec_from_file_location`方式）が相対importエラーで壊れることが
+判明し、他8ファイルと同じ`from common.sec_data.xxx import ...`のパッケージ
+形式に統一して解消した。
+
+**検証結果の読み替え（重要）**: 実装過程の検証で、①のSTOCK_FIELDS追加が
+本番の`_ttm_series.json`（update.pyが実際に呼ぶ`calc_ttm_series()`の出力）
+には一切反映されないことが判明した。追加調査の結果、これは
+CurrentAssets/CurrentLiabilities固有の問題ではなく、**STOCK_FIELDS/
+SHARES_FIELDS分類全体が構造的に本番未到達**（8メンバー中5件は完全に
+デッド、残り3件は分類を経由しない別実装で個別に生存）という、より広い
+構造的問題であり、根本原因は`calc_ttm()`（2026-05-07〜05-11の
+`calc_ttm_series()`移行期の廃止漏れコード、本番からは到達不能）と判明した。
+この構造的問題は②のスコープでは解消せず、[[TTM-STOCK-FIELDS-DEAD-1]]として
+新規分離登録した（詳細は同エントリ参照）。
+
+②の検証手順は「本番の`_ttm_series.json`への反映」ではなく「`ttm_calculator.py`
+内の分類（STOCK_FIELDS）に正しく追加され、契約チェックがFIELD_CONCEPTS
+全キーの分類網羅性を検証できる状態になったこと」に読み替えて完了とした
+（全105銘柄でのデータ再生成は本番出力に変化がないため実施していない）。
+
+**検証結果:**
+- pytest 345 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規17件
+  〈`tests/test_contracts.py`5件・`tests/test_ttm_calculator.py`3件、他は
+  既存テストの相対import修正〉を含む）
+- report_consistency_check.py: NG=0/WARN=51（本セッションでは本番データ・
+  latest.json/report.txtへの変更を一切行っていないため、ステージ3完了時点
+  から不変）
 
 ---
 

@@ -17,6 +17,7 @@ from common.sec_data.contracts import (
     FinancialEntry,
     validate_entries,
     validate_fields,
+    validate_field_classification,
 )
 
 
@@ -201,3 +202,68 @@ class TestFCFSeries:
     def test_equality_with_plain_list(self):
         series = FCFSeries([300.0, 200.0], ["2026-03-31", "2025-03-31"])
         assert series == [300.0, 200.0]
+
+
+# ─────────────────────────────────────────────
+# 規約C: フィールド分類の網羅性（GATE2-PHASE3B-1②）
+# ─────────────────────────────────────────────
+
+class TestValidateFieldClassification:
+    """validate_field_classification()が、field_concepts辞書の全キーが
+    分類セットのいずれかに属することを検証すること。ttm_calculator.pyの
+    FLOW_FIELDS/STOCK_FIELDS/SHARES_FIELDS/EXCLUDED_FIELDSとquarterly.pyの
+    FIELD_CONCEPTSが別ファイルで独立管理されており、新フィールド追加時に
+    分類を忘れても黙って出力から消える問題（CurrentAssets/
+    CurrentLiabilitiesの実例）の再発防止用契約チェックの単体テスト"""
+
+    def test_no_violation_when_all_keys_classified(self):
+        """全キーがいずれかの分類セットに属する場合は例外を送出しない"""
+        field_concepts = {"A": 1, "B": 2, "C": 3}
+        # 例外が送出されないことのみを確認（戻り値はNone）
+        validate_field_classification(
+            field_concepts,
+            frozenset(["A"]), frozenset(["B"]), frozenset(["C"]),
+        )
+
+    def test_raises_when_a_field_is_unclassified(self):
+        """いずれの分類セットにも属さないキーが1件でもあればContractViolationを
+        送出する（意図的に分類漏れフィールドを追加した場合にテストが失敗する
+        ことの裏付け）"""
+        field_concepts = {"A": 1, "B": 2, "Unclassified": 3}
+        with pytest.raises(ContractViolation) as exc_info:
+            validate_field_classification(
+                field_concepts,
+                frozenset(["A"]), frozenset(["B"]),
+            )
+        assert "Unclassified" in str(exc_info.value)
+
+    def test_raises_lists_all_unclassified_fields(self):
+        """未分類キーが複数ある場合、全て列挙されること"""
+        field_concepts = {"A": 1, "X": 2, "Y": 3}
+        with pytest.raises(ContractViolation) as exc_info:
+            validate_field_classification(field_concepts, frozenset(["A"]))
+        message = str(exc_info.value)
+        assert "X" in message
+        assert "Y" in message
+
+    def test_excluded_fields_set_is_a_valid_classification(self):
+        """EXCLUDED_FIELDS相当の除外リストも正当な分類セットの1つとして
+        扱われること（除外リストに入っているだけで違反にならない）"""
+        field_concepts = {"Flow1": 1, "Stock1": 2, "InternalOnly": 3}
+        validate_field_classification(
+            field_concepts,
+            frozenset(["Flow1"]), frozenset(["Stock1"]), frozenset(["InternalOnly"]),
+        )
+
+    def test_real_field_concepts_fully_classified(self):
+        """quarterly.py::FIELD_CONCEPTSとttm_calculator.pyの実際の分類セットが
+        現時点で矛盾なく全件分類されていることの統合確認（ttm_calculator.py
+        モジュールロード時に同じチェックが既に走っているが、import副作用に
+        依存しない明示的な回帰テストとしてここでも確認する）"""
+        from common.sec_data.quarterly import FIELD_CONCEPTS
+        from common.sec_data.ttm_calculator import (
+            FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
+        )
+        validate_field_classification(
+            FIELD_CONCEPTS, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
+        )

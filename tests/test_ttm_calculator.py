@@ -8,15 +8,13 @@ BUG-TTM-Q4DUP-1: implied Q4 の二重計上防止ロジックを検証する。
     venv/Scripts/python.exe -m pytest tests/test_ttm_calculator.py -v
 """
 
-import sys
-import os
-
-_SEC_DATA_DIR = os.path.normpath(
-    os.path.join(os.path.dirname(__file__), "..", "common", "sec_data")
+from common.sec_data.ttm_calculator import (
+    _build_q4_quarterly_entries,
+    calc_ttm,
+    calc_ttm_series,
+    STOCK_FIELDS,
+    EXCLUDED_FIELDS,
 )
-sys.path.insert(0, _SEC_DATA_DIR)
-
-from ttm_calculator import _build_q4_quarterly_entries, calc_ttm_series  # noqa: E402
 
 
 def _annual(end, start, val):
@@ -111,3 +109,41 @@ class TestCalcTtmSeriesNullValGuard:
         series = calc_ttm_series("TESTCO3", normalized, n_periods=1)
         assert len(series) == 1
         assert series[0]["flow"]["OCF"]["val"] == 450.0
+
+
+class TestCurrentAssetsLiabilitiesStockFieldsClassification:
+    """GATE2-PHASE3B-1②: CurrentAssets/CurrentLiabilitiesがSTOCK_FIELDSに
+    追加され、calc_ttm()の出力（stock辞書）に含まれるようになったことの回帰テスト。
+    追加前は抽出されていてもFLOW/STOCK/SHARESいずれにも属さず、TTM出力から
+    消えていた（消費者ゼロのまま放置されていた既知バグ）"""
+
+    def test_current_assets_and_liabilities_are_in_stock_fields(self):
+        assert "CurrentAssets" in STOCK_FIELDS
+        assert "CurrentLiabilities" in STOCK_FIELDS
+
+    def test_current_assets_and_liabilities_not_in_excluded_fields(self):
+        """STOCK_FIELDSとEXCLUDED_FIELDSは排他的であるべき
+        （両方に入っていると分類は通るが二重計上・意味の混乱を招く）"""
+        assert "CurrentAssets" not in EXCLUDED_FIELDS
+        assert "CurrentLiabilities" not in EXCLUDED_FIELDS
+
+    def test_calc_ttm_outputs_current_assets_and_liabilities_as_latest_quarter_value(self):
+        """calc_ttm()がCurrentAssets/CurrentLiabilitiesをストック系
+        （最新Q末の値）として正しくstock辞書に出力すること"""
+        normalized = {
+            "fields": {
+                "CurrentAssets": [
+                    _q("2025-03-31", "2025-01-01", 500.0),
+                    _q("2024-12-31", "2024-10-01", 480.0),
+                ],
+                "CurrentLiabilities": [
+                    _q("2025-03-31", "2025-01-01", 300.0),
+                    _q("2024-12-31", "2024-10-01", 290.0),
+                ],
+            }
+        }
+        result = calc_ttm("TESTCO4", normalized)
+        assert result["stock"]["CurrentAssets"]["val"] == 500.0
+        assert result["stock"]["CurrentAssets"]["as_of"] == "2025-03-31"
+        assert result["stock"]["CurrentLiabilities"]["val"] == 300.0
+        assert result["stock"]["CurrentLiabilities"]["as_of"] == "2025-03-31"
