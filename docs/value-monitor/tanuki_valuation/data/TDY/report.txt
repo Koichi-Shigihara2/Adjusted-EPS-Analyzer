@@ -1,16 +1,16 @@
 TDY INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-17T00:54:14+09:00
-Price: $630.00
+Generated: 2026-07-17T20:12:38+09:00
+Price: $630.86
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -47.0%
-  MA200_Deviation: +5.9%
+  Deviation_Rate: -47.8%
+  MA200_Deviation: +6.0%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $750 median ($614-$858) | 13 analysts | vs IV: +124.8%
-Comment: 割高(-47%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Buy | Target: $750 median ($614-$858) | 13 analysts | vs IV: +127.9%
+Comment: 割高(-48%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
 Key_Metric_Y: RICE = 0.242
-Deviation_Rate: -47.0%
+Deviation_Rate: -47.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -43,7 +43,7 @@ Definition:
 Matrix①(投資効率系): Y=RICE, X=Deviation Rate
 RICE = (G × VC_Factor × Q × CF) / WACC
 Applied to: RICE-calculable tickers
-Matrix②(収益性系): Y=ROE_9yr_avg, X=Deviation Rate
+Matrix②(収益性系): Y=ROE_10yr_avg, X=Deviation Rate
 Applied to: Sector-excluded tickers
 (Consumer/Financial/Utilities/RealEstate/Insurance)
 Matrix③(成長性系): Y=Revenue_Growth%, X=Runway(years)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $630.00
-Intrinsic_Value_BASE: $333.67
-Deviation_BASE: -47.0%
+Current_Price: $630.86
+Intrinsic_Value_BASE: $329.07
+Deviation_BASE: -47.8%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 13.8% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=9.7%, IV=$275.71 （推奨値ベース）
-BASE: Growth=13.8%, IV=$333.67 （推奨値ベース）
-BULL: Growth=16.6%, IV=$377.01 （推奨値ベース）
+BEAR: Growth=9.7%, IV=$271.83 （推奨値ベース）
+BASE: Growth=13.8%, IV=$329.07 （推奨値ベース）
+BULL: Growth=16.6%, IV=$371.89 （推奨値ベース）
 TTM_YoY_Growth: 7.9%
 (DCF Base vs TTM actual: +5.9pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -76,15 +76,15 @@ FCF_Conversion_Rate: 0.7 (Industry: Electronics_General)
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $764M (= Adj_NI $1,092M × FCF_Conv 0.7)
 DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
-DCF_FCF_PV: $4.20B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $13.21B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $17.41B (= FCF_PV + TV_PV, Rm=10% enterprise value)
-Alpha_Premium: 0.4697 (HypeCore expectation premium; Rm basis)
+DCF_FCF_PV: $4.15B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $13.05B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $17.20B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+Alpha_Premium: 0.4552 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $15.46B (= v0 + RPO_PV + GO_PV + Net_Cash $-1.95B)
+Equity_Value: $15.25B (= v0 + RPO_PV + GO_PV + Net_Cash $-1.95B)
 Shares_Used: 46.3M (source: yf_implied)
-→ Intrinsic_Value: $333.67 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $329.07 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+1.95B (negative=net cash)
   Total_Debt: $2.48B  Cash: $0.52B
@@ -94,12 +94,12 @@ Financial_Health:
   Dilution_Comment: 株式数が減少し1株あたり価値が向上している。
   Next_Earnings_Date: 2026-07-22
 FCF_History:
-  2021: $0.55B (FCF_Margin: 17.7%)
-  2022: $0.72B (FCF_Margin: 15.7%)
+  2021: $0.72B (FCF_Margin: 15.7%)
+  2022: $0.39B (FCF_Margin: 7.2%)
   2023: $0.72B (FCF_Margin: 12.8%)
   2024: $1.11B (FCF_Margin: 19.5%)
   2025: $1.07B (FCF_Margin: 17.6%)
-  FCF_CAGR_3yr: +14.1%
+  FCF_CAGR_3yr: +39.7%
 Segment_Breakdown:
   N/A (segment data not configured)
 Definition:
@@ -160,7 +160,7 @@ Phase1成長率 : 13.8% (DCF適用値・推奨成長率)
 業界ベンチマーク: Electronics (General) / 13.8% (Damodaran 2025)
 signals:
   - 業界平均Electronics (General)(13.8%)の1.1倍以内 ✅
-  - 過去実績(3yr:9.8% / 5yr:14.7%)と整合 ✅
+  - 過去実績(3yr:3.9% / 5yr:14.7%)と整合 ✅
 Definition:
 
 Growth Rate Methodology:
@@ -244,7 +244,7 @@ short-term price appreciation (PEAD effect)
 PER_Comparison:
   Market_PER_GAAP: 31.9x
   Adjusted_EPS_PER: 26.3x (TTM調整後EPS: $23.9661)
-  Delta: -5.7x (cheaper on adjusted basis)
+  Delta: -5.6x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-22
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -260,7 +260,7 @@ Compare with TANUKI G scenario for cross-validation
 
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
-Alpha_Premium: 0.47
+Alpha_Premium: 0.46
 HYPE_Signal: 実体維持・期待崩壊中 — 売上・EPSは強い。期待の過熱訂正が続いているが、実体が下支え。
 Phase_History (recent 6 months):
 2026-02: Phase3 (陶酔期)
@@ -273,7 +273,7 @@ Valuation_Multiples (market-provided, yfinance):
   PER: 31.9x
   PEG: 1.40
   PS:  4.7x
-  EV_EBITDA: 20.1x
+  EV_EBITDA: 20.3x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -293,7 +293,7 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.13%  (ForwardEPS $26.03 / Price $630.00)
+  Forward_Earnings_Yield: 4.13%  (ForwardEPS $26.03 / Price $630.86)
   Risk_Free_Rate (10Y):  4.30%
   ERP: -0.17%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
@@ -319,7 +319,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 4.0%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $750 median ($614-$858) | 13 analysts | vs IV: +124.8%
+Analyst_Consensus: Buy | Target: $750 median ($614-$858) | 13 analysts | vs IV: +127.9%
 Insider_Activity: 中立 | 買い0件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 7.9%
@@ -342,10 +342,7 @@ based on recent 4Q linear trend. Rough estimate only.
 
 
 [9. RISK EVENTS]
-Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
-  [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026
+  N/A (Grok検索なし または イベントなし)
 
 ==============================================
 DISCLAIMER: This report is generated automatically
