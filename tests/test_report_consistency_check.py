@@ -21,6 +21,8 @@ sys.path.insert(0, _SEC_DATA_DIR)
 import report_consistency_check as rcc  # noqa: E402
 from report_consistency_check import annotate_warn, load_warn_ledger  # noqa: E402
 
+from common.sec_data.contracts import Classification  # noqa: E402
+
 
 class TestAnnotateWarn:
     """annotate_warn()が台帳照合結果に応じてWARNメッセージを正しく分岐すること"""
@@ -308,3 +310,90 @@ class TestRunChecksTickerScan:
         rcc.run_checks(Args())
 
         assert checked == ["AAPL"]
+
+
+class TestClassificationStrOverride:
+    """GATE2-PHASE3B-1③-b: Classification(str, Enum)のf-string補間が
+    ③-a（GrowthVerdict）と同様に__str__override後、常に素の値
+    （"Classification.WATCH"ではなく"WATCH"）になることを確認する。
+    NG-3（DCF_Reliability=LOW & Classification が WATCH/SELL/PASS 以外）は
+    report.txtをregexで再パースした文字列と比較するため、この挙動が
+    崩れるとNG-3が全銘柄で誤発火する（事前調査で発見した最重要リスク）"""
+
+    def test_fstring_interpolation_matches_plain_string(self):
+        for member in Classification:
+            assert f"{member}" == member.value
+            assert str(member) == member.value
+            assert f"Classification: {member}" == f"Classification: {member.value}"
+
+    def test_all_members_equal_their_plain_string_value(self):
+        assert Classification.BUY == "BUY"
+        assert Classification.WATCH == "WATCH"
+        assert Classification.HOLD == "HOLD"
+        assert Classification.TRIM == "TRIM"
+        assert Classification.GROWTH_PREMIUM == "GROWTH_PREMIUM"
+        assert Classification.SELL == "SELL"
+        assert Classification.PASS == "PASS"
+
+
+class TestCheck3LowRoundingWithEnumClassification:
+    """CHECK-3（NG-3 LOW丸め未発動）が、pipeline.py側でClassification
+    Enum化された後もreport.txt生成・regexパース・比較の一連の流れで
+    正しく動作することを確認する回帰テスト（事前調査で発見した
+    テスト空白地帯を埋める。従来この観点の専用テストは存在しなかった）"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str, classification: str, dcf_reliability: str = "LOW") -> None:
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        report_text = (
+            f"Classification: {classification}\n"
+            f"DCF_Reliability: {dcf_reliability} ⚠️\n"
+            "FCF_Base: $100,000,000\n"
+        )
+        (ticker_dir / "report.txt").write_text(report_text, encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def test_ng3_does_not_fire_when_classification_is_watch(self, tmp_path, monkeypatch):
+        """DCF_Reliability=LOW & Classification=WATCH（正しく丸められた状態）→ NG-3は発火しない"""
+        # Classification.WATCHのf-string表現（__str__override後の実際の出力）を使う
+        classification_text = f"{Classification.WATCH}"
+        assert classification_text == "WATCH"
+        self._make_ticker_dir(tmp_path, "TESTCO", classification_text)
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("NG-3" in n for n in ng)
+
+    def test_ng3_does_not_fire_when_classification_is_sell(self, tmp_path, monkeypatch):
+        classification_text = f"{Classification.SELL}"
+        self._make_ticker_dir(tmp_path, "TESTCO", classification_text)
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("NG-3" in n for n in ng)
+
+    def test_ng3_does_not_fire_when_classification_is_pass(self, tmp_path, monkeypatch):
+        classification_text = f"{Classification.PASS}"
+        self._make_ticker_dir(tmp_path, "TESTCO", classification_text)
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("NG-3" in n for n in ng)
+
+    def test_ng3_fires_when_classification_is_buy_and_reliability_low(self, tmp_path, monkeypatch):
+        """DCF_Reliability=LOWなのにClassification=BUY（丸め未発動）→ NG-3が正しく発火することのサニティ確認"""
+        classification_text = f"{Classification.BUY}"
+        self._make_ticker_dir(tmp_path, "TESTCO", classification_text)
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("NG-3" in n and "Classification=BUY" in n for n in ng)
+
+    def test_ng3_would_falsely_fire_if_str_override_were_missing(self, tmp_path, monkeypatch):
+        """__str__override欠落時にNG-3が誤発火することを再現し、overrideの必要性を裏付ける回帰テスト
+        （Classification.WATCHのクラス名付き表記"Classification.WATCH"を直接report.txtに
+        書き込むことで、override漏れが起きた場合と同じ状態をシミュレートする）"""
+        broken_classification_text = "Classification.WATCH"  # __str__override漏れ時の実際の出力
+        self._make_ticker_dir(tmp_path, "TESTCO", broken_classification_text)
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("NG-3" in n for n in ng), (
+            "__str__override漏れ時の表記だとNG-3が誤発火することを確認 "
+            "（= 現在のClassificationは__str__overrideがあるため実際には発生しない）"
+        )

@@ -283,6 +283,19 @@ SEC EDGAR
 │    行いcommon.sec_data.contractsをimportする（growth_sanity.pyは
 │    src/value/tanuki_valuation/配下でパッケージ化されておらず
 │    bareモジュールとしてimportされるため）。
+│    **追記（GATE2-PHASE3B-1③-b 2026-07-18）**: Classification(str, Enum)
+│    新設（規約D）。pipeline.py::classify()のscore（BUY/WATCH/HOLD/TRIM/
+│    GROWTH_PREMIUM/SELL/PASS）を型で表現する。GrowthVerdict同様
+│    __str__をoverride。json.dumps()はstr継承のisinstance高速パスにより
+│    __str__override前でも素の文字列でシリアライズされることを確認済み
+│    （f-string/str()のプロトコルとは別経路のため無関係）。影響が及ぶのは
+│    pipeline.py内でf-string補間される箇所のみで、特にreport.txt生成の
+│    f"Classification: {score}"（1221行目）はreport_consistency_check.py
+│    のNG-3（LOW丸め未発動）がこの行をregexで再パースして比較するため
+│    最重要（__str__override漏れがあるとNG-3が全銘柄で誤発火する）。
+│    daily_pick.py（ELIGIBLE_CATEGORIES/CATEGORY_PRIORITY）・フロントエンド
+│    （tanuki_score/index.htmlのCAT_META/CAT_COLOR辞書等）はJSON経由で
+│    文字列を受け取るのみのため無改修で動作。
 │    quarterly.py::_select_best_candidate()のフォールバック採用時・
 │    ticker_restrictionsオーバーライド採用時に_provenance.source_tagを付与。
 │    FCFSeriesはdata_fetcher.py::TTMReader.get_fcf_series()内でのみ使用し

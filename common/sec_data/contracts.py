@@ -345,3 +345,31 @@ class GrowthVerdict(str, Enum):
 
     def __str__(self) -> str:
         return self.value
+
+
+class Classification(str, Enum):
+    """src/value/tanuki_valuation/pipeline.py::classify()の
+    score戻り値（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）を
+    型で表現する（GATE2-PHASE3B-1③-b）。
+
+    GrowthVerdict同様、__str__をoverrideしてself.valueを返す
+    （Python 3.11+のEnum __str__/__format__仕様変更対応。詳細は
+    GrowthVerdictのdocstring参照）。json.dump()はstr継承の
+    isinstance高速パスにより__str__overrideの有無に関わらず
+    素の文字列でシリアライズされるため、latest.json/score_history.json
+    への永続化・フロントエンド側の消費は無改修で動作する。影響が
+    あるのはpipeline.py内でf-string補間される箇所（特にreport.txt
+    生成のf"Classification: {score}"。report_consistency_check.py
+    のNG-3がこの行をregexで再パースして比較するため、__str__override
+    漏れがあるとNG-3が全銘柄で誤発火する）。
+    """
+    BUY = "BUY"
+    WATCH = "WATCH"
+    HOLD = "HOLD"
+    TRIM = "TRIM"
+    GROWTH_PREMIUM = "GROWTH_PREMIUM"
+    SELL = "SELL"
+    PASS = "PASS"
+
+    def __str__(self) -> str:
+        return self.value

@@ -1884,189 +1884,6 @@ Adjusted EPSが新たに算出される**ようになった。株数の引き継
 
 ---
 
-### [GATE2-PHASE3B-1] Gate2 Phase 3b: 独立実装4ファイルのreader.py統合・規約C/Dの型化
-**優先度:** 中
-**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
-**登録日:** 2026-07-13
-**発見:** Gate2設計材料収集調査（①〜④）・Phase 3a実装時
-
-#### 背景
-Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型導入・完了）の
-スコープ外として意図的に見送られた。
-
-**① 独立実装4ファイルのreader.py統合**: ✅ **2026-07-17完了**（詳細は下記
-「①4ファイル統合完了」参照）。`financial_trend_calculator.py`
-（STONKS SILO）・`quarterly_review_generator.py`（TAIL）・`tail_dcf_bridge.py`
-（TAIL）・`hypecore.py`が、共有アクセサ（reader.py/TTMReader）を経由せず
-「is_annual=False かつ is_ytd=False の最新エントリを取る」ロジックをそれぞれ
-独立に再実装していた（`_latest_q()`・`_lq()`等、名前も実装も微妙に異なる）。
-型を導入しても、この4ファイルが辞書アクセス前提のままでは規約C/Dの効果が
-及ばない。
-
-**② 規約C（フィールド分類の二重管理）**: ✅ **2026-07-17完了**（詳細は下記
-「②規約C完了」参照）。`ttm_calculator.py`の
-`FLOW_FIELDS`/`STOCK_FIELDS`/`SHARES_FIELDS`が`quarterly.py::FIELD_CONCEPTS`とは
-別ファイルで独立管理されており、新フィールド追加時にいずれかへの追加を
-忘れてもエラーにならず黙って出力から消える。実例として`CurrentAssets`/
-`CurrentLiabilities`（quarterly.pyでは「シガーバット検出用」とコメントされて
-いる）が、現在これを消費するコードが皆無であることを確認済み（抽出されて
-いるがTTM層で分類漏れのまま出力対象外になっている状態）。
-
-**③ 規約D（enum風文字列の型化）**: `growth_sanity.py`の`verdict`
-（PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）・`pipeline.py`の`Classification`
-（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）はいずれも生文字列の代入
-（例: `verdict = "PLAUSIBLE"`）。タイプミスがあっても実行時エラーにならず、
-静かに「未知の分類」として扱われる。**③-a（verdict）は✅2026-07-17完了**
-（詳細は下記「③-a規約D完了」参照）。**③-b（Classification）は引き続き未着手**
-（pipeline.py内14箇所・分岐条件としての比較を含み、③-aより影響範囲が大きい）。
-
-#### 対応方針（未確定・次回セッションで判断）
-- ①はttm_calculator.py（Phase 3aでは対象外だったファイル）を巻き込む改修に
-  なるため、規模を見積もった上で着手要否を判断する
-- ②③はPhase 3aで新設した`common/sec_data/contracts.py`に型を追加する形で
-  実装できる見込みだが、`growth_sanity.py`/`pipeline.py`側の代入箇所を
-  型に置き換える改修が伴うため影響範囲の洗い出しが必要
-
-#### 着手条件
-なし（次回セッションで規模見積もり・優先順位判断してから着手）。
-**③-b（Classification型化）は引き続き未着手のまま残っている**
-（①4ファイル統合・②規約C・③-a規約D〈verdict〉は2026-07-17完了）。
-
-#### ②規約C完了（2026-07-17）
-
-`ttm_calculator.py::STOCK_FIELDS`に`CurrentAssets`/`CurrentLiabilities`を追加し、
-`_COGS`/`RPO`用の`EXCLUDED_FIELDS`を新設。`contracts.py::validate_field_classification()`
-を新設し、`quarterly.py::FIELD_CONCEPTS`の全キーがFLOW/STOCK/SHARES/EXCLUDEDの
-いずれかに属することをモジュールロード時に検証する契約チェックを追加した
-（新フィールド追加時の分類漏れをimport時点で即座に検知）。
-
-**循環import対応**: `contracts.py`は既に`quarterly.py`からimportされているため、
-`contracts.py`側が`quarterly.py`/`ttm_calculator.py`を逆にimportすると循環import
-になることを確認。汎用チェック関数`validate_field_classification()`は
-`contracts.py`に置きつつ、具体的なフィールド集合（`FIELD_CONCEPTS`・
-`FLOW_FIELDS`等）の受け渡しは呼び出し元（`ttm_calculator.py`）が担う設計
-にして回避した（`contracts.py`はどちらもimportしない）。
-
-**既存テストへの副次修正**: `ttm_calculator.py`がモジュールとして
-`quarterly.py`/`contracts.py`をimportするようになった結果、パッケージ構造を
-経由しない「ファイルパス直接ロード」（`tests/test_ttm_calculator.py`の
-`sys.path.insert`方式・`tests/test_pipeline_logic.py`の
-`importlib.util.spec_from_file_location`方式）が相対importエラーで壊れることが
-判明し、他8ファイルと同じ`from common.sec_data.xxx import ...`のパッケージ
-形式に統一して解消した。
-
-**検証結果の読み替え（重要）**: 実装過程の検証で、①のSTOCK_FIELDS追加が
-本番の`_ttm_series.json`（update.pyが実際に呼ぶ`calc_ttm_series()`の出力）
-には一切反映されないことが判明した。追加調査の結果、これは
-CurrentAssets/CurrentLiabilities固有の問題ではなく、**STOCK_FIELDS/
-SHARES_FIELDS分類全体が構造的に本番未到達**（8メンバー中5件は完全に
-デッド、残り3件は分類を経由しない別実装で個別に生存）という、より広い
-構造的問題であり、根本原因は`calc_ttm()`（2026-05-07〜05-11の
-`calc_ttm_series()`移行期の廃止漏れコード、本番からは到達不能）と判明した。
-この構造的問題は②のスコープでは解消せず、[[TTM-STOCK-FIELDS-DEAD-1]]として
-新規分離登録した（詳細は同エントリ参照）。
-
-②の検証手順は「本番の`_ttm_series.json`への反映」ではなく「`ttm_calculator.py`
-内の分類（STOCK_FIELDS）に正しく追加され、契約チェックがFIELD_CONCEPTS
-全キーの分類網羅性を検証できる状態になったこと」に読み替えて完了とした
-（全105銘柄でのデータ再生成は本番出力に変化がないため実施していない）。
-
-**検証結果:**
-- pytest 345 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規17件
-  〈`tests/test_contracts.py`5件・`tests/test_ttm_calculator.py`3件、他は
-  既存テストの相対import修正〉を含む）
-- report_consistency_check.py: NG=0/WARN=51（本セッションでは本番データ・
-  latest.json/report.txtへの変更を一切行っていないため、ステージ3完了時点
-  から不変）
-
-#### ③-a規約D完了（2026-07-17・verdictのEnum化）
-
-`common/sec_data/contracts.py`に`GrowthVerdict(str, Enum)`
-（PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）を新設し、
-`growth_sanity.py::check_growth_sanity()`の`verdict`代入6箇所
-（デフォルト値・4箇所の代入・戻り値dict格納）を生文字列から
-`GrowthVerdict.XXX`（Enumメンバー参照）に置き換えた。
-
-**実装時に発覚した罠（重要）**: Python 3.11以降、`Enum`の`__str__`/
-`__format__`は「`str, Enum`を継承していても」デフォルトで
-`GrowthVerdict.PLAUSIBLE`というクラス名付き表記を返す仕様に変わっている
-（3.10以前は素の文字列を返していたが3.11で仕様変更）。そのため
-f-string補間（`f"{verdict}"`）やstr()は、`__str__`をオーバーライドしない
-限り事前の想定（str継承なので.value不要で動作する）通りには動かない
-ことが実装検証で判明した（`==`比較・JSON出力〈json.dump〉はstr継承のため
-元々問題なし）。`GrowthVerdict`に`__str__`をoverrideして`self.value`を
-返すようにし、f-string補間を含めた全ての既存コード（`growth_sanity.py`の
-戻り値dict格納・`pipeline.py`のreport.txt生成`f"判定 : {gs_verdict}"`）が
-`.value`付与なしに意図通り動作するようにした（`enum.StrEnum`は
-Python 3.11+限定でpyproject.tomlの`requires-python=">=3.10"`と整合しない
-ため不採用、`__str__`override方式で3.10以降のどのバージョンでも同じ
-挙動になるようにした）。
-
-**検証結果:**
-- pytest 351 passed（既知2件除く、新規6件〈`tests/test_contracts.py`の
-  `TestGrowthVerdict`〉を含む。既存の`tests/test_pipeline_logic.py`の
-  verdict `==`比較テスト2件は無改修でpass）
-- report_consistency_check.py: NG=0/WARN=51（不変）
-- 実データでの目視確認: growth_sanity判定がREVIEW（ABBV）・
-  AGGRESSIVE（CWAN）・FLOOR_HIT_REVIEW（MO）の3銘柄でpipeline.pyを
-  再実行し、report.txtの「判定」行・latest.jsonの`verdict`フィールドが
-  Enum化前後で完全に同一（`GrowthVerdict.XXX`ではなく素の文字列のまま）
-  であることを確認。stock.htmlはJSON経由で文字列を受け取るのみのため
-  無改修で動作（latest.jsonの値が不変のため表示も不変と判断）。
-  検証用に再生成した3銘柄のデータは本番反映せず元に戻した
-  （市場データの日次変動のみが差分となり、verdict関連の差分はゼロだったため）
-
-#### ①4ファイル統合完了（2026-07-17）
-
-`common/sec_data/reader.py`にモジュールレベルの汎用アクセサ
-`get_quarterly_series(normalized, field_name)`（is_annual・is_ytd両方を
-除外した四半期エントリをend日昇順で返す）と`get_latest_quarterly(normalized,
-field_name)`（その最新1件、空ならNone）を新設。戻り値は素の辞書のまま
-（dataclass化は今回スコープ外・見送り）。
-
-`get_rpo_context()`内の既存`_q_sorted()`（is_annualのみ除外・is_ytdは
-除外していなかった）を`get_quarterly_series()`呼び出しに置き換え。
-これは意図した挙動変化（is_ytdエントリの除外を追加）だが、現在のRPO関連
-データにはis_ytd=Trueの実データがほとんど存在しないため無害であることを
-実データ5銘柄（CRM/NOW/GTLB/RPD/DDOG）でのネットワーク未使用の新旧比較で
-確認した（差分0件）。
-
-4ファイルそれぞれの独自実装を新規アクセサに置き換えた:
-- **quarterly_review_generator.py**: `_latest_q()`を削除しget_latest_quarterlyに、
-  インライン重複2箇所（rev_qs・oi_map）をget_quarterly_seriesに置き換え
-- **tail_dcf_bridge.py**: `_lq()`を削除しget_latest_quarterlyに置き換え
-  （quarterly_review_generator.pyとのコピペ重複を解消）
-- **financial_trend_calculator.py**: `_get_quarterly_entries()`の内部実装を
-  get_quarterly_series呼び出し＋既存の`_build_q4_implied()`（このファイル
-  固有のQ4逆算ロジックのためreader.py側へは移動せずローカルに残置）の
-  組み合わせに変更。呼び出し箇所2箇所は関数シグネチャ不変のため無改修
-- **hypecore.py**: `extract()`の内部実装をget_quarterly_series呼び出し結果
-  をpandas Seriesに変換する形に変更（pandas変換ロジックはhypecore.py側に
-  残置、reader.py側にpandas依存を持ち込まない設計を維持）。呼び出し箇所
-  3箇所は関数シグネチャ不変のため無改修
-
-**検証結果:**
-- `tests/test_gate2_phase3b1_reader_integration.py`新設（14件）:
-  get_quarterly_series/get_latest_quarterlyの単体テスト（is_annual・
-  is_ytd除外、空リスト時のNone返却、end日ソート順）、get_rpo_context移行後
-  の挙動確認、4ファイルそれぞれの移行前後の回帰テスト（is_ytd除外・
-  Q4 implied構築・最新四半期選択が合成フィクスチャで期待通りに動作する
-  ことを確認）
-- pytest 387 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規14件を含む）
-- report_consistency_check.py: NG=0/WARN=51（本タスクでは本番データへの
-  変更を一切行っていないため③-a完了時点から不変）
-- ネットワーク未使用の新旧比較（実データ）: get_rpo_context（5銘柄）・
-  financial_trend_calculator.\_get_quarterly_entries（3銘柄×5フィールド、
-  Revenue/GrossProfit/OperatingIncome/NetIncome/OCFの全時系列）・
-  tail_dcf_bridge.\_load_layer1_financials（3銘柄）・
-  quarterly_review_generator.load_layer1_financials（3銘柄）・
-  hypecore.fetch_quarterly_fundamentals（3銘柄、DataFrame全体を
-  `.equals()`で比較、YoY/QoQ/TTM rollingを含む時系列全体が対象）で
-  移行前後の出力が完全一致することを確認。検証用に生成した一時ファイルは
-  すべて削除済み（本番データへの反映なし）
-
----
-
 ### [GATE2-READER-FCFLIST-1] reader.py::get_fcf_list()のfcf_list順序規約が未検証のまま残存
 **優先度:** 中
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
@@ -2914,6 +2731,66 @@ fiscal_yearフィールドを間接的に消費する」旨に修正する。
 
 #### 着手条件
 なし（軽微な文書修正のため優先度低）
+
+---
+
+### [REPORT-TXT-PARSER-CLEANUP-1] report_txt_parser.pyが本番未配線の孤立モジュール
+**優先度:** 低
+**分類:** 保守 / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
+**登録日:** 2026-07-18
+**発見:** [[GATE2-PHASE3B-1]]③-b事前調査時
+
+#### 問題
+`common/screening/report_txt_parser.py`は report.txt を regex でパースして
+`Classification`/`Matrix`/`FCF_History`等を抽出する公開API
+（`parse_report_text()`/`parse_ticker_report()`）を持つが、
+`common/sec_data/report_consistency_check.py`・
+`common/screening/dcf_validity_checker.py`のどちらからも`import`されて
+おらず、`tests/test_report_txt_parser.py`からのみ使用される孤立モジュール
+であることが判明した。
+
+一方`report_consistency_check.py`は同じ「report.txtのClassification行を
+regexでパースする」ロジックを255-259行目に**独自に**実装しており
+（`report_txt_parser.py::_parse_tanuki_score()`とは別の正規表現・別の
+実装）、実質的な重複が存在する。
+
+#### 対応方針候補（未確定）
+a. `report_txt_parser.py`を削除する（未使用コードの整理）
+b. `report_consistency_check.py`側の独自パース実装を`report_txt_parser.py`
+   に統合し、重複を解消する
+c. 現状維持（実害なし、テストのみで担保されている状態を許容）
+
+#### 着手条件
+なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
+
+---
+
+### [HISTORY-JSON-LEGACY-TANUKI-SCORE-1] history.jsonにレガシーtanuki_scoreフィールドが残存
+**優先度:** 低
+**分類:** データ整合性 / TANUKI VALUATION
+**登録日:** 2026-07-18
+**発見:** [[GATE2-PHASE3B-1]]③-b事前調査時
+
+#### 問題
+`src/value/tanuki_valuation/pipeline.py`723行目のDESIGNコメントは
+「history.jsonはIV/株価等のチャート用データのみに絞る（判定ラベルは
+TANUKI VALUATION/TANUKI SCOREで別ロジックのため混乱を招く。
+score_history.json側に集約）」と明記しており、現行コードは実際に
+`tanuki_score`を書き込んでいない。
+
+しかし`docs/value-monitor/tanuki_valuation/data/SITM/history.json`・
+`ALAB/history.json`等、複数銘柄の実データに`"tanuki_score": "GROWTH_PREMIUM"`
+のようなエントリが実在することを確認した。過去（DESIGNコメントの方針が
+確定する前）に書き込まれたレガシーエントリが削除されずに残存していると
+推測される。ドキュメント（コメント）と実データの乖離状態。
+
+#### 対応方針候補（未確定）
+a. レガシーエントリの`tanuki_score`フィールドを一括削除するスクリプトを作成
+b. 実害がないため現状維持（history.jsonの当該フィールドを読む消費者は
+   現状確認されていない）
+
+#### 着手条件
+なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
 
 ---
 

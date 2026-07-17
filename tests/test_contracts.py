@@ -13,6 +13,7 @@ import pytest
 import json
 
 from common.sec_data.contracts import (
+    Classification,
     ContractViolation,
     EntryProvenance,
     FCFSeries,
@@ -323,4 +324,75 @@ class TestGrowthVerdict:
         全て定義されていること"""
         assert {m.value for m in GrowthVerdict} == {
             "PLAUSIBLE", "REVIEW", "AGGRESSIVE", "FLOOR_HIT_REVIEW",
+        }
+
+
+class TestClassification:
+    """Classificationがstr型として振る舞う（f-string補間・JSON serialize・
+    タプルメンバーシップ・辞書キーとしての利用のいずれも既存文字列と
+    同じ結果になる）ことを検証する（GATE2-PHASE3B-1③-b）。
+
+    GrowthVerdict同様、__str__のoverrideなしではPython 3.11+で
+    f-string補間がクラス名付き表記になる罠があるため、その回帰テストも含む。"""
+
+    def test_equality_with_plain_string(self):
+        assert Classification.BUY == "BUY"
+        assert Classification.WATCH == "WATCH"
+        assert Classification.HOLD == "HOLD"
+        assert Classification.TRIM == "TRIM"
+        assert Classification.GROWTH_PREMIUM == "GROWTH_PREMIUM"
+        assert Classification.SELL == "SELL"
+        assert Classification.PASS == "PASS"
+
+    def test_fstring_interpolation_matches_plain_string(self):
+        """__str__overrideにより、f-string補間がクラス名付き表記
+        （Classification.WATCH）ではなく素の文字列を返すこと"""
+        assert f"{Classification.WATCH}" == "WATCH"
+        assert str(Classification.GROWTH_PREMIUM) == "GROWTH_PREMIUM"
+
+    def test_json_serialization_matches_plain_string(self):
+        """str継承のため、json.dumpsが素の文字列としてシリアライズすること
+        （.value付与不要。pipeline.pyのlatest.json/score_history.json
+        永続化箇所が無改修で動作することの裏付け）"""
+        payload = {"score": Classification.GROWTH_PREMIUM}
+        assert json.dumps(payload) == '{"score": "GROWTH_PREMIUM"}'
+
+    def test_used_directly_in_report_txt_template_string(self):
+        """pipeline.pyのreport.txt生成（f"Classification: {score}"）を模した
+        テンプレート文字列生成で期待通りの出力になること。
+        report_consistency_check.pyのNG-3がこの行をregexで再パースするため
+        重要な回帰テスト"""
+        score = Classification.WATCH
+        line = f"Classification: {score}"
+        assert line == "Classification: WATCH"
+
+    def test_tuple_membership_matches_plain_string_comparison(self):
+        """pipeline.py 519/533行目のscore not in (Classification.SELL,
+        Classification.PASS)相当のタプルメンバーシップ判定が、
+        素の文字列同士の場合と同じ結果になること"""
+        assert Classification.WATCH not in (Classification.SELL, Classification.PASS)
+        assert Classification.SELL in (Classification.SELL, Classification.PASS)
+        # 素の文字列との混在比較（JSON経由で読み込んだ値との比較を想定）
+        assert "WATCH" not in (Classification.SELL, Classification.PASS)
+        assert Classification.SELL in ("SELL", "PASS")
+
+    def test_usable_as_dict_key_interchangeably_with_plain_string(self):
+        """daily_pick.py::CATEGORY_PRIORITYのような辞書キー利用パターンで、
+        Enumメンバーと素の文字列キーが同一キーとして扱われること
+        （hashがstr継承のため一致する）"""
+        priority = {Classification.BUY: 0, Classification.WATCH: 1}
+        assert priority["BUY"] == 0
+        assert priority[Classification.WATCH] == 1
+
+    def test_unknown_member_raises_attribute_error(self):
+        """存在しないメンバー参照（タイプミス）はAttributeErrorとして
+        即座に検知される（規約Dの目的であるタイプミス防止の裏付け）"""
+        with pytest.raises(AttributeError):
+            Classification.TYPO_NOT_A_REAL_MEMBER
+
+    def test_all_seven_expected_members_exist(self):
+        """既存の7値（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）が
+        全て定義されていること"""
+        assert {m.value for m in Classification} == {
+            "BUY", "WATCH", "HOLD", "TRIM", "GROWTH_PREMIUM", "SELL", "PASS",
         }

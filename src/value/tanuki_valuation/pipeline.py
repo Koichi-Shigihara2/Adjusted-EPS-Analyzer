@@ -29,6 +29,12 @@ from growth_sanity import check_growth_sanity, calc_fundamental_growth
 import segment_config as _seg_cfg
 from risk_fetcher import fetch_risk_events
 
+_SCRIPT_DIR_FOR_IMPORT = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT_FOR_IMPORT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR_FOR_IMPORT)))
+if _REPO_ROOT_FOR_IMPORT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT_FOR_IMPORT)
+from common.sec_data.contracts import Classification  # GATE2-PHASE3B-1③-b
+
 
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
     """希薄化率から (severity, badge, report_comment) を返す"""
@@ -461,9 +467,9 @@ class TanukiValuationPipeline:
         )
         sell_reason = None
         if funda < 25:
-            score = "PASS"
+            score = Classification.PASS
         elif sell_funda or sell_tech:
-            score = "SELL"
+            score = Classification.SELL
             sell_reason = "funda" if sell_funda else "tech"
         elif funda >= 50:
             if upside is not None and upside < -30 and stage is not None and stage >= 3:
@@ -480,17 +486,17 @@ class TanukiValuationPipeline:
                 if (_req_g is not None and _ttm_g is not None
                         and _req_g > 0.05       # 意味のある Required Growth（TV超え）
                         and _req_g < _ttm_g):   # 現在成長率がすでに Required Growth を超過
-                    score = "GROWTH_PREMIUM"
+                    score = Classification.GROWTH_PREMIUM
                 else:
-                    score = "TRIM"
+                    score = Classification.TRIM
             elif upside is not None and upside > 20 and timing >= 50:
-                score = "BUY"
+                score = Classification.BUY
             elif upside is not None and upside > 0:
-                score = "WATCH"
+                score = Classification.WATCH
             else:
-                score = "HOLD"
+                score = Classification.HOLD
         else:
-            score = "HOLD"
+            score = Classification.HOLD
 
         comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
 
@@ -510,8 +516,8 @@ class TanukiValuationPipeline:
         _floor_applied = valuation.get("components", {}).get("fcf_floor_applied", 0) or 0
         _fcf_estimation = valuation.get("fcf_estimation", {}) or {}
         _policy_a_fires = _floor_applied > 0 and not _fcf_estimation.get("applied")
-        if _policy_a_fires and score not in ("SELL", "PASS"):
-            score = "WATCH"
+        if _policy_a_fires and score not in (Classification.SELL, Classification.PASS):
+            score = Classification.WATCH
             comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
             sell_reason = None
 
@@ -524,9 +530,9 @@ class TanukiValuationPipeline:
         # 場合はPolicy Aのメッセージ（実績FCF赤字）を優先し、Policy Bで上書きしない
         # （両者ともWATCH自体は同じだが、raw_fcf方式の銘柄に「FCF_Conversion_Rate方式」
         # という誤ったコメントが付くのを防ぐため）。
-        if (not _policy_a_fires and score not in ("SELL", "PASS")
+        if (not _policy_a_fires and score not in (Classification.SELL, Classification.PASS)
                 and self._calc_dcf_reliability_policy_b(valuation) == "LOW"):
-            score = "WATCH"
+            score = Classification.WATCH
             if _fcf_estimation.get("applied"):
                 comment = "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH"
             else:
@@ -541,7 +547,7 @@ class TanukiValuationPipeline:
     def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
         """スコアに基づくルールベースコメント（30字程度の日本語）"""
         parts = []
-        if score == "GROWTH_PREMIUM":
+        if score == Classification.GROWTH_PREMIUM:
             parts.append("成長率が市場要求を上回る")
         if upside is not None:
             if   upside >  30: parts.append(f"割安圏({upside:.0f}%)で買い余地大")
