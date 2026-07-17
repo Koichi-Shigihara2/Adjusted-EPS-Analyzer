@@ -132,6 +132,18 @@
       "ticker": "TDY",
       "acknowledged_date": "2026-07-12",
       "comment": "Revenue段差型急変。2021年FLIR Systems買収による実際の連結売上増（$749M→$3086M、タグ誤りなし）。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "NVDA",
+      "acknowledged_date": "2026-07-17",
+      "comment": "fyタグ裏取り不一致。ARCH-DATA-1ステージ3事前調査で一次情報検証済み: end=2013-01-27の売上$4.28BはNVIDIA自身が「fiscal 2013」と公表（globenewswire等）しておりcomputed_year=2013が正しい。XBRL fyタグ側が2012と誤っている真陽性だが、_own_override_is_safe()の安全弁によりcomputed_year経由の正しい値が本番データで既に採用されており実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "CAKE",
+      "acknowledged_date": "2026-07-17",
+      "comment": "fyタグ裏取り不一致。ARCH-DATA-1ステージ3事前調査で一次情報検証済み: end=2023-01-03の期間はCheesecake Factory自身が「Fourth Quarter of Fiscal 2022」と公表しておりcomputed_year=2022が正しい。XBRL fyタグ側が2023と誤っている真陽性。"
     }
   ]
 }

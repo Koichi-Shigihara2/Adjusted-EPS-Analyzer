@@ -4,6 +4,92 @@
 
 ## 2026-07-17（完了）
 
+### ✅ [ARCH-DATA-1] ステージ3「fyタグ裏取り」+ 3段階設計全完了（2026-07-17完了）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-17
+**完了日:** 2026-07-17
+**発見:** ステージ2完了時の事前調査（読み取り専用）を経て実装依頼
+
+#### 背景
+ステージ2で計算した年度ラベル（`determine_fiscal_year()`のアンカー日
+ウィンドウ方式による計算結果）を、企業が申告したXBRLの`fy`タグと
+突き合わせて食い違いを検出する副次チェックを新設する。既存のCHECK-22
+（`fy_collision_log.json`、同一fyタグへの複数本人end_date競合）は
+「fyタグは単一だが値の年度バケツ配置自体がfyタグと異なる」CDNS型
+（WMT型）を構造的に検知できないことが事前調査で判明していた。
+
+#### 対応内容
+- `parser.py`: `{bs,pl,cf,shares,other}_provenance`サイドカーに
+  生XBRL `fy`タグ値を`fy_tag`フィールドとして追加（既存の
+  accn/filed/is_own_dataへの追加のみ、破壊的変更なし）。
+  `_collect_own_data_annual`の戻り値を`(val, end_date, accn, filed,
+  raw_fy_tag)`の5要素に拡張し、fyタグ衝突の自然分離ケースでも
+  本来の生タグを追跡できるようにした
+- `_extract_values_merged`/`_extract_values_best_candidate`に
+  `fy_mismatches_out`引数を追加し、`fy_tag != 年度バケツキー`の
+  エントリを検出して`_save_fy_tag_mismatch_log()`（`fy_collision_log`と
+  同パターン）で`fy_tag_mismatch_log.json`に記録
+- `report_consistency_check.py`にCHECK-23/WARN-23を新設（CHECK-22とは
+  独立した別軸）
+- `config/warn_acknowledged.json`にWARN-23のNVDA・CAKEを一次情報
+  検証済みとして事前登録
+- テスト12件新設（`tests/test_fy_tag_provenance.py`: fy_tagサイドカー
+  記録2件・不一致検知4件・CHECK-22非干渉1件、`tests/
+  test_report_consistency_check.py`にWARN-23検知4件・独立性確認1件）
+
+#### 設計変更の経緯（is_own_data=False側の除外）
+初版実装ではfyタグ不一致を`is_own_data`の真偽に関わらず全件記録し、
+`is_own_data=True`を「要確認」・`False`を「info」とする2段階設計
+だったが、全105銘柄検証で**4,434件・105/105銘柄**という実用に耐えない
+ノイズになることが判明した。`is_own_data=False`側の大半は比較年度
+再掲エントリ（例: XOMの2008年値が2011年10-Kに比較年度として再掲載）
+由来であり、XBRLの`fy`タグは「その数値がどの10-Kに載っていたか」という
+filing側の属性でしかなく、比較年度再掲エントリでは載っていた10-Kの年と
+数値が表す期間が一致しないのが正常仕様（企業の申告ミスとは無関係）と
+判明した。CHAT_RULESの一時停止ルールに従い一度報告・設計変更の承認を
+得た上で、`is_own_data=True`（本人データ自身のfyタグが実際に採用されて
+しまっているケース）のみに検知対象を限定し、severity区分（要確認/info）
+を撤去して単一区分に簡素化した。
+
+#### 検証結果
+- 全105銘柄ネットワーク未使用検証（値の新旧比較）: **差分0件**
+  （fy_tagサイドカー追加のみで既存の値・TANUKI SCORE分類には無影響）
+- `is_own_data=True`限定後のWARN-23検知: **281件・10銘柄**
+  （ADSK/AVAV/CAKE/COHR/CRM/FCX/FICO/HON/NVDA/WMT）。
+  (ticker, end_date, fy_tag, computed_year)で重複排除すると
+  **16件のdistinctイベント**まで縮小（1イベントあたり平均12〜26
+  フィールドに重複計上。同一10-Kから抽出される複数フィールドが
+  同じ期間ズレを共有するため）
+- NVDA・CAKEの2件を一次情報で検証済み: NVDA（end=2013-01-27の売上
+  $4.28BはNVIDIA自身が「fiscal 2013」と公表、XBRL fyタグは2012と誤り）・
+  CAKE（end=2023-01-03はCheesecake Factory自身が「Fourth Quarter of
+  Fiscal 2022」と公表、XBRL fyタグは2023と誤り）。両者ともXBRL fyタグ
+  側の誤り（真陽性）と確認したが、`_own_override_is_safe()`の安全弁に
+  よりcomputed_year経由の正しい値が本番データで既に採用されており実害なし
+- pytest 337 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く）
+- report_consistency_check.py: NG=0/WARN=51（ステージ2完了時点の41件
+  から+10、影響10銘柄にWARN-23が1件ずつ追加。NVDA/CAKEは事前登録済みで
+  確認済み表示、残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）は
+  🆕未確認として表示される）
+
+#### 3段階設計（値の確定→年度ラベル計算→裏取り）が全完了
+
+ARCH-DATA-1本体が計画した年次データ正規化の3段階設計を全て実装完了。
+
+#### 残課題
+- RCAT型決算期変更検知（企業の実際の決算期変更と52/53週の測定誤差の
+  区別）は引き続き未着手
+- 残課題④のBS項目（instant fact）本人データ判定除外は未解消のまま
+  （BS項目はstart日を持たないため`_collect_own_data_annual`の対象外。
+  ステージ3の裏取りチェック自体はBS項目にも及ぶが、本人データ判定の
+  拡張は別途必要）
+- WARN-23の281件→16件イベントという重複計上は(ticker, end_date)単位の
+  集約表示に改善する余地があるが、今回のスコープ外として報告のみに留めた
+- 残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）のWARN-23一次情報検証は
+  未実施（今回のスコープは検知基盤の実装であり、全銘柄の一次情報確認までは
+  含めない）
+
+
 ### ✅ [ARCH-DATA-1] ステージ2「年度ラベルの計算」アンカー日ウィンドウ方式（2026-07-17完了）
 **分類:** アーキテクチャ / SECデータ正規化
 **登録日:** 2026-07-17

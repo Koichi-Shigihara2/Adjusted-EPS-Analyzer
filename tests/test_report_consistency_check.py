@@ -159,6 +159,93 @@ class TestCheckCDataJumpIntegration:
         assert len(warn_21_entries) == 2
 
 
+class TestCheck23FyTagMismatch:
+    """CHECK-23（fyタグ裏取り不一致、ARCH-DATA-1ステージ3で新設）が
+    fy_tag_mismatch_log.jsonを読んでWARN-23を正しく追加すること。
+    CHECK-22（fy_collision_log.json）とは独立した別軸のチェックであることの
+    回帰も併せて確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        """check_ticker()がreport.txtの存在で早期returnしないよう最小のfixtureを作る"""
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def _make_sec_data_dir(self, sec_data_path, ticker: str) -> "Path":
+        ticker_dir = sec_data_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        return ticker_dir
+
+    def test_no_warn_23_when_no_mismatch_log(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-23" in w for w in warn)
+
+    def test_warn_23_added_when_mismatch_log_present(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fy_tag_mismatch_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "mismatches": [
+                {"field": "revenue", "end_date": "2015-01-03", "fy_tag": 2015,
+                 "computed_year": 2014},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-23" in w for w in warn)
+        assert not any("WARN-23" in n for n in ng)  # 非ブロッキング（NGにはならない）
+
+    def test_warn_23_reports_count_and_fields_for_multiple_mismatches(self, tmp_path, monkeypatch):
+        """複数フィールドにまたがる不一致の件数・対象フィールドがメッセージに
+        反映されること（2026-07-17設計変更: is_own_data=Falseは検知対象外と
+        なったため、fy_tag_mismatch_log.jsonにはis_own_data=Trueの不一致のみが
+        記録される前提。スキーマもfield/end_date/fy_tag/computed_yearのみに簡素化）"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fy_tag_mismatch_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "mismatches": [
+                {"field": "total_assets", "end_date": "2015-01-03", "fy_tag": 2015,
+                 "computed_year": 2014},
+                {"field": "revenue", "end_date": "2015-01-03", "fy_tag": 2015,
+                 "computed_year": 2014},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        warn_23 = next(w for w in warn if "WARN-23" in w)
+        assert "2件" in warn_23
+        assert "revenue" in warn_23 and "total_assets" in warn_23
+
+    def test_check_22_and_23_are_independent(self, tmp_path, monkeypatch):
+        """fy_collision_log.json（CHECK-22）とfy_tag_mismatch_log.json（CHECK-23）は
+        独立して検知され、片方のみ存在する場合にもう片方が誤検知されないこと"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fy_collision_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "collisions": [
+                {"field": "revenue", "fy": 2020, "end_dates": ["2019-12-31", "2020-12-31"],
+                 "resolution": "fyタグ衝突だがフォールバック年度で自然分離"},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-22" in w for w in warn)
+        assert not any("WARN-23" in w for w in warn)
+
+
 class TestRunChecksTickerScan:
     """FLAG-CONSUMER-AUDIT-2: run_checks()のスキャン対象決定が
     os.listdir(DATA_DIR)からtickers.get_tanuki_tickers()との積集合に

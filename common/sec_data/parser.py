@@ -261,6 +261,7 @@ class SECParser:
         # accn_reportdateが空（submissions.json未取得）の場合は全件フォールバックのみで動作する。
         _accn_reportdate = accn_reportdate or {}
         _fy_collisions: List[Dict[str, Any]] = []
+        _fy_tag_mismatches: List[Dict[str, Any]] = []
 
         # 全項目を抽出
         extracted = {}
@@ -283,7 +284,12 @@ class SECParser:
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,
                 field_name=field_name, collisions_out=_fy_collisions,
                 anchor_month=anchor_month, anchor_day=anchor_day,
+                fy_mismatches_out=_fy_tag_mismatches,
             )
+
+        # ARCH-DATA-1ステージ3: fyタグ裏取り不一致を記録（0件でも毎回書き込む。
+        # fy_collision_logと同じ化石ファイル対策）
+        self._save_fy_tag_mismatch_log(ticker, _fy_tag_mismatches)
 
         # 衝突0件でも毎回書き込む（IOT/AVGO/MRVLの化石ファイル問題の再発防止。
         # 一度検知された衝突が後日解消された場合に古いログが残り続けることを防ぐ）
@@ -308,7 +314,8 @@ class SECParser:
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
                          field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None,
-                         anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
+                         anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                         fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
 
@@ -324,6 +331,8 @@ class SECParser:
             collisions_out: 本人データ同士のfyキー衝突を記録するリスト（呼び出し元で集約）
             anchor_month/anchor_day: 決算アンカー日（ARCH-DATA-1ステージ2）。
                               determine_fiscal_year()にそのまま渡す
+            fy_mismatches_out: 採用エントリのfyタグと年度バケツキーの不一致を記録する
+                              リスト（ARCH-DATA-1ステージ3: fyタグ裏取り、呼び出し元で集約）
 
         Returns:
             dict: {
@@ -335,11 +344,13 @@ class SECParser:
             return self._extract_values_merged(us_gaap, xbrl_keys, use_max, fiscal_end_month,
                                                 accn_reportdate=accn_reportdate, field_name=field_name,
                                                 collisions_out=collisions_out,
-                                                anchor_month=anchor_month, anchor_day=anchor_day)
+                                                anchor_month=anchor_month, anchor_day=anchor_day,
+                                                fy_mismatches_out=fy_mismatches_out)
         return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month,
                                                     accn_reportdate=accn_reportdate, field_name=field_name,
                                                     collisions_out=collisions_out,
-                                                    anchor_month=anchor_month, anchor_day=anchor_day)
+                                                    anchor_month=anchor_month, anchor_day=anchor_day,
+                                                    fy_mismatches_out=fy_mismatches_out)
 
     def _collect_own_data_annual(self, us_gaap: dict, xbrl_keys: List[str],
                                   accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
@@ -372,7 +383,7 @@ class SECParser:
         新しい方を優先するtie-breakを適用する。
 
         Returns:
-            dict: {fy: (val, end_date, accn, filed)}
+            dict: {fy: (val, end_date, accn, filed, raw_fy_tag)}
         """
         # fy -> {end_date: {"val":..., "accn":..., "filed":..., "key":...}}
         # "key"は採用元のXBRLタグ名（xbrl_keysの優先順位を尊重するために保持する）
@@ -428,11 +439,15 @@ class SECParser:
                         if filed and filed > existing.get("filed", ""):
                             fy_bucket[end_date] = {"val": val, "accn": accn, "filed": filed, "key": key}
 
-        winners: Dict[int, tuple] = {}  # fy -> (val, end_date, accn, filed)
+        winners: Dict[int, tuple] = {}  # fy -> (val, end_date, accn, filed, raw_fy_tag)
+        # raw_fy_tag はこのエントリ群が実際にXBRLで申告していたfyタグ（=外側ループのfy）を
+        # そのまま保持する。placementキー（winnersの辞書キー）はフォールバック分離・
+        # tie-breakの結果fyと異なる場合があるため、両者を区別してARCH-DATA-1ステージ3
+        # （fyタグ裏取り）用に保持する。
         for fy, end_date_vals in by_fy.items():
             if len(end_date_vals) == 1:
                 (end_date, info), = end_date_vals.items()
-                winners[fy] = (info["val"], end_date, info["accn"], info["filed"])
+                winners[fy] = (info["val"], end_date, info["accn"], info["filed"], fy)
                 continue
 
             # 同一fyキーに複数の異なる本人end_dateが競合
@@ -445,7 +460,7 @@ class SECParser:
                 # フォールバックが自然に分離できる → 誤ったfyタグではなく
                 # 各end_date自身のフォールバック年度をキーにする（CRM/FCX型）
                 for end_date, info in end_date_vals.items():
-                    winners[fallback_years[end_date]] = (info["val"], end_date, info["accn"], info["filed"])
+                    winners[fallback_years[end_date]] = (info["val"], end_date, info["accn"], info["filed"], fy)
                 if collisions_out is not None:
                     collisions_out.append({
                         "field": field_name, "fy": fy,
@@ -457,7 +472,7 @@ class SECParser:
                 # fyタグ誤りが同一年度で重複）→ end_dateが新しい方を優先
                 newest_end = max(end_date_vals.keys())
                 newest_info = end_date_vals[newest_end]
-                winners[fy] = (newest_info["val"], newest_end, newest_info["accn"], newest_info["filed"])
+                winners[fy] = (newest_info["val"], newest_end, newest_info["accn"], newest_info["filed"], fy)
                 if collisions_out is not None:
                     collisions_out.append({
                         "field": field_name, "fy": fy,
@@ -528,7 +543,8 @@ class SECParser:
     def _extract_values_merged(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool, fiscal_end_month: int,
                                 accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                 collisions_out: Optional[List[Dict[str, Any]]] = None,
-                                anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
+                                anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合）"""
         result = {"annual": {}, "quarterly": {}}
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
@@ -550,6 +566,9 @@ class SECParser:
         # filed日が新しい方を優先するタイブレークに使う）
         annual_filed: Dict[int, str] = {}
         annual_form: Dict[int, str] = {}
+        # 採用エントリの生XBRL fyタグを記録（ARCH-DATA-1ステージ3: fyタグ裏取り用。
+        # end_yearキー〈determine_fiscal_year()の計算結果〉と一致しない場合がある）
+        annual_fy_tag: Dict[int, int] = {}
 
         for key in xbrl_keys:
             if key not in us_gaap:
@@ -601,6 +620,7 @@ class SECParser:
                                 annual_accn[end_year] = accn
                                 annual_filed[end_year] = filed
                                 annual_form[end_year] = form
+                                annual_fy_tag[end_year] = fy
                         else:
                             if end_year not in result["annual"]:
                                 result["annual"][end_year] = val
@@ -610,6 +630,7 @@ class SECParser:
                                 annual_accn[end_year] = accn
                                 annual_filed[end_year] = filed
                                 annual_form[end_year] = form
+                                annual_fy_tag[end_year] = fy
                             elif exact and not annual_exact_match.get(end_year, True):
                                 # exact matchで上書き: 非December FY企業のQ1等中間期エントリ
                                 # (fy=N+1, end_year=N) が全年データ(fy=N, end_year=N)を上書きするのを防ぐ
@@ -620,6 +641,7 @@ class SECParser:
                                 annual_accn[end_year] = accn
                                 annual_filed[end_year] = filed
                                 annual_form[end_year] = form
+                                annual_fy_tag[end_year] = fy
                             elif exact == annual_exact_match.get(end_year, False):
                                 stored_end = annual_end_dates.get(end_year, "")
                                 if end_date > stored_end:
@@ -630,6 +652,7 @@ class SECParser:
                                     annual_accn[end_year] = accn
                                     annual_filed[end_year] = filed
                                     annual_form[end_year] = form
+                                    annual_fy_tag[end_year] = fy
                                 elif end_date == stored_end and (form == "10-K/A" or annual_form.get(end_year) == "10-K/A"):
                                     # ARCH-DATA-1ステージ1: end_dateも同一＝真に同一期間の
                                     # 複数バージョンが競合。一方が10-K/A（訂正申告）の場合に
@@ -645,12 +668,14 @@ class SECParser:
                                         annual_accn[end_year] = accn
                                         annual_filed[end_year] = filed
                                         annual_form[end_year] = form
+                                        annual_fy_tag[end_year] = fy
                                     elif filed == stored_filed and days is not None:
                                         stored_days = annual_durations.get(end_year)
                                         if stored_days is None or abs(days - 365) < abs(stored_days - 365):
                                             result["annual"][end_year] = val
                                             annual_durations[end_year] = days
                                             annual_accn[end_year] = accn
+                                            annual_fy_tag[end_year] = fy
                                 elif end_date == stored_end and days is not None:
                                     # SEC-TAG-FICO-CPRT-1: end_dateも同一（10-K/A非関与）の
                                     # 場合、期間日数が365日（正規の年次期間）に近い方を優先する
@@ -659,6 +684,7 @@ class SECParser:
                                         result["annual"][end_year] = val
                                         annual_durations[end_year] = days
                                         annual_accn[end_year] = accn
+                                        annual_fy_tag[end_year] = fy
 
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
@@ -694,6 +720,7 @@ class SECParser:
                 "accn": accn,
                 "filed": annual_filed.get(year, ""),
                 "is_own_data": accn_reportdate.get(accn) == annual_end_dates.get(year) if accn_reportdate else False,
+                "fy_tag": annual_fy_tag.get(year),
             }
 
         # FY52WEEK-BUCKET-MISPLACE-1根本修正: フォールバック(上記のdetermine_fiscal_year()
@@ -705,14 +732,39 @@ class SECParser:
         if accn_reportdate:
             own_data = self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
                                                        collisions_out, anchor_month, anchor_day)
-            for year, (val, own_end, own_accn, own_filed) in own_data.items():
+            for year, (val, own_end, own_accn, own_filed, own_fy_tag) in own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
                                                annual_durations, annual_accn, accn_reportdate,
                                                anchor_month, anchor_day):
                     result["annual"][year] = val
+                    annual_end_dates[year] = own_end
                     annual_provenance[year] = {
                         "accn": own_accn, "filed": own_filed, "is_own_data": True,
+                        "fy_tag": own_fy_tag,
                     }
+
+        # ARCH-DATA-1ステージ3: fyタグ裏取り。年度バケツキー（determine_fiscal_year()の
+        # 計算結果）と採用エントリの生fyタグが食い違う場合を記録する（呼び出し元
+        # _parse_raw_data が全フィールド横断で集約し fy_tag_mismatch_log.json に保存）。
+        # is_own_data=False（比較年度再掲エントリ等）は対象外とする: fyタグは
+        #「その数値がどの10-Kに載っていたか」というfiling側の属性であり、比較年度
+        # 再掲エントリでは「載っていた10-Kの年」と「数値が表す期間」が一致しないのが
+        # 正常仕様（企業のfyタグ誤りとは無関係）。全105銘柄検証で4,434件・105銘柄
+        # というノイズになることが判明したため、is_own_data=True（本人データ自身の
+        # fyタグが実際に採用されてしまっているケース）のみを対象にする
+        # （2026-07-17設計変更）。
+        if fy_mismatches_out is not None:
+            for year, prov in annual_provenance.items():
+                if not prov.get("is_own_data"):
+                    continue
+                fy_tag = prov.get("fy_tag")
+                if fy_tag is not None and fy_tag != year:
+                    fy_mismatches_out.append({
+                        "field": field_name,
+                        "end_date": annual_end_dates.get(year, ""),
+                        "fy_tag": fy_tag,
+                        "computed_year": year,
+                    })
 
         result["_annual_provenance"] = annual_provenance
         return result
@@ -720,7 +772,8 @@ class SECParser:
     def _extract_values_best_candidate(self, us_gaap: dict, xbrl_keys: List[str], fiscal_end_month: int,
                                         accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                         collisions_out: Optional[List[Dict[str, Any]]] = None,
-                                        anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
+                                        anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                        fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max/merge_all_tagsいずれもFalseの場合の抽出（1つの候補タグを選んで採用する）
 
         LLY-CAPEX-STALE-1 Phase 2a: 候補キーを優先順位順に「最新期末年が
@@ -758,11 +811,13 @@ class SECParser:
         winning_accns = result.pop("_annual_accn", {})
         winning_durations = result.pop("_annual_durations", {})
         winning_filed = result.pop("_annual_filed", {})
+        winning_fy_tags = result.pop("_annual_fy_tag", {})
         for _, key_result in candidates:
             key_result.pop("_annual_end_dates", None)
             key_result.pop("_annual_accn", None)
             key_result.pop("_annual_durations", None)
             key_result.pop("_annual_filed", None)
+            key_result.pop("_annual_fy_tag", None)
 
         # 出所メタデータのサイドカー（ARCH-DATA-1ステージ1: 「値の確定」）。
         # 勝者タグのフォールバック採用分をまず記録し、本人データ上書きが
@@ -775,6 +830,7 @@ class SECParser:
                 "accn": accn,
                 "filed": winning_filed.get(year, ""),
                 "is_own_data": accn_reportdate.get(accn) == winning_end_dates.get(year) if accn_reportdate else False,
+                "fy_tag": winning_fy_tags.get(year),
             }
 
         # FY52WEEK-BUCKET-MISPLACE-1根本修正: フォールバックが「本人データではない」
@@ -793,17 +849,35 @@ class SECParser:
                     continue
                 key_own_data = self._collect_own_data_annual(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name,
                                                               collisions_out, anchor_month, anchor_day)
-                for fy, (val, end_date, own_accn, own_filed) in key_own_data.items():
+                for fy, (val, end_date, own_accn, own_filed, own_fy_tag) in key_own_data.items():
                     if fy not in combined_own_data:
-                        combined_own_data[fy] = (val, end_date, own_accn, own_filed)
-            for year, (val, own_end, own_accn, own_filed) in combined_own_data.items():
+                        combined_own_data[fy] = (val, end_date, own_accn, own_filed, own_fy_tag)
+            for year, (val, own_end, own_accn, own_filed, own_fy_tag) in combined_own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
                                                winning_durations, winning_accns, accn_reportdate,
                                                anchor_month, anchor_day):
                     result["annual"][year] = val
+                    winning_end_dates[year] = own_end
                     annual_provenance[year] = {
                         "accn": own_accn, "filed": own_filed, "is_own_data": True,
+                        "fy_tag": own_fy_tag,
                     }
+
+        # ARCH-DATA-1ステージ3: fyタグ裏取り（_extract_values_mergedと同じロジック。
+        # is_own_data=Falseの比較年度再掲エントリは対象外。詳細は_extract_values_merged
+        # 側のコメント参照）
+        if fy_mismatches_out is not None:
+            for year, prov in annual_provenance.items():
+                if not prov.get("is_own_data"):
+                    continue
+                fy_tag = prov.get("fy_tag")
+                if fy_tag is not None and fy_tag != year:
+                    fy_mismatches_out.append({
+                        "field": field_name,
+                        "end_date": winning_end_dates.get(year, ""),
+                        "fy_tag": fy_tag,
+                        "computed_year": year,
+                    })
 
         result["_annual_provenance"] = annual_provenance
         return result
@@ -822,6 +896,8 @@ class SECParser:
         # 優先するタイブレークに使う）
         annual_filed: Dict[int, str] = {}
         annual_form: Dict[int, str] = {}
+        # 採用エントリの生XBRL fyタグを記録（ARCH-DATA-1ステージ3: fyタグ裏取り用）
+        annual_fy_tag: Dict[int, int] = {}
 
         units = us_gaap.get(key, {}).get("units", {})
         for unit_type in ["USD", "shares", "USD/shares"]:
@@ -863,6 +939,7 @@ class SECParser:
                         annual_durations[end_year] = days
                         annual_filed[end_year] = filed
                         annual_form[end_year] = form
+                        annual_fy_tag[end_year] = fy
                     elif exact and not annual_exact_match.get(end_year, True):
                         result["annual"][end_year] = val
                         annual_end_dates[end_year] = end_date
@@ -871,6 +948,7 @@ class SECParser:
                         annual_durations[end_year] = days
                         annual_filed[end_year] = filed
                         annual_form[end_year] = form
+                        annual_fy_tag[end_year] = fy
                     elif exact == annual_exact_match.get(end_year, False):
                         stored_end = annual_end_dates.get(end_year, "")
                         if end_date > stored_end:
@@ -880,6 +958,7 @@ class SECParser:
                             annual_durations[end_year] = days
                             annual_filed[end_year] = filed
                             annual_form[end_year] = form
+                            annual_fy_tag[end_year] = fy
                         elif end_date == stored_end and (form == "10-K/A" or annual_form.get(end_year) == "10-K/A"):
                             # ARCH-DATA-1ステージ1: end_dateも同一＝真に同一期間の
                             # 複数バージョンが競合。一方が10-K/A（訂正申告）の場合に限り、
@@ -894,11 +973,13 @@ class SECParser:
                                 annual_durations[end_year] = days
                                 annual_filed[end_year] = filed
                                 annual_form[end_year] = form
+                                annual_fy_tag[end_year] = fy
                             elif filed == stored_filed and days is not None:
                                 stored_days = annual_durations.get(end_year)
                                 if stored_days is None or abs(days - 365) < abs(stored_days - 365):
                                     result["annual"][end_year] = val
                                     annual_accn[end_year] = accn
+                                    annual_fy_tag[end_year] = fy
                                     annual_durations[end_year] = days
 
                 elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
@@ -924,6 +1005,7 @@ class SECParser:
         result["_annual_accn"] = annual_accn
         result["_annual_durations"] = annual_durations
         result["_annual_filed"] = annual_filed
+        result["_annual_fy_tag"] = annual_fy_tag
         return result
 
     def _get_available_years(self, extracted: dict) -> List[int]:
@@ -1066,6 +1148,24 @@ class SECParser:
             json.dump({"ticker": ticker, "collisions": collisions}, f, ensure_ascii=False, indent=2)
         if collisions:
             print(f"   [{ticker}] fyキー競合を検知・記録: {len(collisions)}件 ({path})")
+
+    def _save_fy_tag_mismatch_log(self, ticker: str, mismatches: List[Dict[str, Any]]) -> None:
+        """
+        ARCH-DATA-1ステージ3（fyタグ裏取り）: 年度バケツキー（determine_fiscal_year()の
+        計算結果）と採用エントリの生XBRL fyタグが食い違うケースを
+        report_consistency_check.pyから参照できる形で記録する。
+        CHECK-22（fy_collision_log.json、同一fyタグへの複数本人end_date競合を検知）
+        とは独立した別軸のチェックであり、こちらは「fyタグは単一だが値の年度
+        バケツ配置自体がfyタグと異なる」ケース（CDNS型）を対象とする。
+        自動修正は行わない（WARN出力のみ）。
+        """
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        path = os.path.join(ticker_dir, "fy_tag_mismatch_log.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"ticker": ticker, "mismatches": mismatches}, f, ensure_ascii=False, indent=2)
+        if mismatches:
+            print(f"   [{ticker}] fyタグ裏取り不一致を検知・記録: {len(mismatches)}件 ({path})")
 
     def save_parsed_data(self, ticker: str, parsed: dict) -> None:
         """パース済みデータを個別ファイルに保存"""

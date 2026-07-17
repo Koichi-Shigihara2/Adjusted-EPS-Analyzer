@@ -640,9 +640,11 @@ BUG-EPS-UNIT-1/BUG-FOUR-1等、直近1ヶ月の主要バグの大半が「ロジ
    無効化する欠陥、および52/53週企業で決算日が前後にずれる際の
    片方向補正の限界を、両方とも解消する設計。（2026-07-17完了。
    詳細は下記「ステージ2完了」参照）
-3. **裏取り**: 上記2で計算した年度と、XBRLの`fy`タグ・
-   `reportDate`との突き合わせを検証用の副次チェックとして残す
-   （WMT型：企業側のfyタグ自体が誤っているケースの検知用）未着手
+3. ✅ **裏取り**: 上記2で計算した年度と、XBRLの`fy`タグとの突き合わせを
+   検証用の副次チェックとして実装（WMT型：企業側のfyタグ自体が誤って
+   いるケースの検知用）。2026-07-17完了。詳細は下記「ステージ3完了」参照
+
+**3段階設計は全て完了（2026-07-17）。**
 
 #### 着手条件（成立・2026-07-09）
 2026-07-09の新規5銘柄登録（RMBS/ENTG/TER/KLAC/LRCX）で
@@ -876,6 +878,80 @@ CHAT_RULESの「検証結果が依頼の前提と乖離した場合の一時停�
   52/53週の測定誤差との区別）は本ステージのスコープ外で未着手
 - 残課題④のBS項目（instant fact）本人データ判定除外は未解消のまま
   （ステージ3のfyタグ裏取り強化、または別途の安全網設計が必要）
+
+#### ステージ3（fyタグ裏取り）完了（2026-07-17）
+
+ステージ2で計算した年度ラベル（`determine_fiscal_year()`の結果）と、
+XBRLの`fy`タグとの突き合わせを検証用の副次チェックとして実装した
+（WMT型：企業側のfyタグ自体が誤っているケースの検知用）。
+
+**実装内容:**
+- `parser.py`: `{bs,pl,cf,shares,other}_provenance`サイドカーに
+  生XBRL `fy`タグ値を`fy_tag`フィールドとして追加（既存の
+  accn/filed/is_own_dataに追加するのみ、破壊的変更なし）。
+  `_own_override_is_safe`内で`_collect_own_data_annual`の戻り値も
+  `(val, end_date, accn, filed, raw_fy_tag)`の5要素に拡張し、
+  fyタグ衝突・自然分離ケースでも本来の生タグを正しく追跡できるようにした
+- `_extract_values_merged`/`_extract_values_best_candidate`の両方に
+  `fy_mismatches_out`引数を追加し、`annual_provenance`構築後に
+  `fy_tag != 年度バケツキー`のエントリを検出して集約する仕組みを新設
+- `_save_fy_tag_mismatch_log()`（`_save_fy_collision_log`と同パターン）で
+  `common/sec_data/data/{ticker}/fy_tag_mismatch_log.json`に記録
+- `report_consistency_check.py`にCHECK-23/WARN-23を新設。CHECK-22
+  （同一fyタグへの複数本人end_date競合）とは独立した別軸で、
+  「fyタグは単一だが値の年度バケツ配置自体がfyタグと異なる」CDNS型を検知する
+- `config/warn_acknowledged.json`にWARN-23のNVDA・CAKEを一次情報検証済みとして事前登録
+
+**設計変更の経緯（is_own_data=False側の除外、2026-07-17）:**
+初版実装では`is_own_data`の値に関わらず全ての不一致を記録し、
+`is_own_data=True`を「要確認」・`is_own_data=False`を「info」として
+記録する2段階設計だったが、全105銘柄検証で**4,434件・105/105銘柄**
+という実用に耐えないノイズになることが判明した。原因は、
+`is_own_data=False`側の大半が比較年度再掲エントリ（例: 2008年の数値が
+2011年の10-Kに比較年度として再掲載）由来であり、XBRLの`fy`タグは
+「その数値がどの10-Kに載っていたか」というfiling側の属性でしかなく、
+比較年度再掲エントリでは載っていた10-Kの年と数値が表す期間が
+一致しないのが正常仕様（企業の申告ミスとは無関係）と判明したため。
+CHAT_RULESの一時停止ルールに従い報告・設計変更の承認を得た上で、
+`is_own_data=True`（本人データ自身のfyタグが実際に採用されてしまって
+いるケース）のみを検知対象に限定し、severity区分（要確認/info）自体を
+撤去して単一区分に簡素化した。
+
+**検証結果:**
+- 全105銘柄ネットワーク未使用検証: `is_own_data=True`限定後は
+  **281件・10銘柄**（ADSK/AVAV/CAKE/COHR/CRM/FCX/FICO/HON/NVDA/WMT）
+  に集約。281件を(ticker, end_date, fy_tag, computed_year)で重複排除
+  すると**16件の distinct イベント**まで縮小し、1イベントあたり平均
+  12〜26フィールドに重複計上されていたことを確認（同一10-Kから
+  抽出される複数フィールドが同じ期間ズレを共有するため。フィールド
+  単位ではなく期間単位で見れば実態はさらに小さい）
+- NVDA・CAKEの2件は一次情報（NVIDIA自身の決算発表・Cheesecake Factory
+  自身の決算発表）で検証済み: いずれもXBRL `fy`タグ側の誤りで
+  computed_year側が正しいことを確認（NVDA: end=2013-01-27の売上$4.28Bは
+  NVIDIA自身が「fiscal 2013」と公表・fyタグは2012と誤り。CAKE:
+  end=2023-01-03はCheesecake Factory自身が「Fourth Quarter of Fiscal
+  2022」と公表・fyタグは2023と誤り）。両者とも`_own_override_is_safe()`
+  の安全弁によりcomputed_year経由の正しい値が本番データで既に採用されて
+  おり実害なし
+- 全105銘柄で新旧比較（annual_*.jsonの値そのもの）: **差分0件**を確認
+  （fy_tagサイドカー追加のみで既存の値・TANUKI SCORE分類には一切影響しない）
+- pytest 337 passed（既知2件除く、新規12件のfy_tag裏取りテストを含む）
+- report_consistency_check.py: NG=0/WARN=51（stage2完了時点の41件から
+  +10、影響10銘柄それぞれにWARN-23が1件ずつ追加。NVDA/CAKEは事前登録済み
+  のため確認済み表示、残り8銘柄は🆕未確認として表示される）
+
+**3段階設計（値の確定→年度ラベル計算→裏取り）が全完了。**
+
+**未解決のまま残る点:**
+- RCAT型決算期変更検知は引き続き未着手
+- 残課題④のBS項目（instant fact）本人データ判定除外は未解消のまま
+  （BS項目はstart日を持たないため`_collect_own_data_annual`の対象外
+  であり、fy_tagサイドカーはフォールバック経路でのみ記録される。
+  ステージ3の裏取りチェック自体はBS項目にも及ぶが、本人データ判定
+  自体の拡張は別途必要）
+- WARN-23の281件→16件イベントという重複計上は、(ticker, end_date)
+  単位での集約表示に改善する余地があるが、今回のスコープ外として
+  reportのみに留めた
 
 ---
 

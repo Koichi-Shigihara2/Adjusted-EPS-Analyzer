@@ -34,6 +34,13 @@ report_consistency_check.py
                               真の期間が対応する矛盾（FY52WEEK-BUCKET-MISPLACE-1根本修正で新設。
                               CRM/FCX/CAKE/HON/COHR/AVAV/FICO/NVDAで実在確認済み。parser.pyの
                               tie-breakで自動解決済みのため非ブロッキング）
+  WARN 23. fyタグ裏取り不一致  本人データ(is_own_data=True)自身の年度バケツキー
+                              （determine_fiscal_year()の計算結果）と採用エントリの
+                              生XBRL fyタグが食い違う（ARCH-DATA-1ステージ3で新設。
+                              CHECK-22とは独立した別軸で「fyタグは単一だが値の年度バケツ配置
+                              自体がfyタグと異なる」CDNS型を検知する。比較年度再掲エントリ
+                              〈is_own_data=False〉はfyタグがfiling側の属性でしかなく
+                              正常仕様のため対象外。自動修正なし）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -158,6 +165,26 @@ def _read_fy_collision_log(ticker: str) -> list:
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f).get("collisions", [])
+    except Exception:
+        return []
+
+
+def _read_fy_tag_mismatch_log(ticker: str) -> list:
+    """
+    ARCH-DATA-1ステージ3（fyタグ裏取り）: parser.pyが年度バケツキー
+    （determine_fiscal_year()の計算結果）と採用エントリの生XBRL fyタグの
+    食い違いを検知した際に書き出す
+    common/sec_data/data/{ticker}/fy_tag_mismatch_log.json を読む。
+    CHECK-22（同一fyタグへの複数本人end_date競合）とは独立した別軸のチェックで、
+    「fyタグは単一だが値の年度バケツ配置自体がfyタグと異なる」ケース
+    （CDNS型）を対象とする。
+    """
+    path = os.path.join(SEC_DATA_DIR, ticker, "fy_tag_mismatch_log.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("mismatches", [])
     except Exception:
         return []
 
@@ -689,6 +716,24 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
             f" (対象フィールド: {', '.join(_fields_c22[:5])}{'...' if len(_fields_c22) > 5 else ''})"
             f" → tie-breakで自動解決済み。filing代行者側のタグ付け起因と推測"
             f"（原因追及は対象外）"
+        )
+
+    # CHECK-23: fyタグ裏取り不一致（ARCH-DATA-1ステージ3で新設）
+    # parser.pyが年度バケツキーと採用エントリの生fyタグの食い違いを検知した場合に
+    # 記録するログを監視する。CHECK-22（同一fyタグへの複数本人end_date競合）とは
+    # 独立した別軸のチェック。fy_tag_mismatch_log.json自体がis_own_data=True
+    # （本人データ自身のfyタグが実際に採用されてしまっているケース）のみを対象に
+    # 絞り込み済み（is_own_data=Falseの比較年度再掲エントリは、fyタグが「その数値が
+    # どの10-Kに載っていたか」というfiling側の属性でしかなく企業の申告ミスとは
+    # 無関係な正常仕様のため、2026-07-17に検知対象から除外した。全105銘柄検証で
+    # 除外前は4,434件・105銘柄というノイズになっていた）。自動修正は行わない。
+    _mismatches_c23 = _read_fy_tag_mismatch_log(ticker)
+    if _mismatches_c23:
+        _fields_c23 = sorted({m.get("field", "?") for m in _mismatches_c23})
+        warn.append(
+            f"  [WARN-23 fyタグ裏取り不一致] {len(_mismatches_c23)}件"
+            f" (対象フィールド: {', '.join(_fields_c23[:5])}{'...' if len(_fields_c23) > 5 else ''})"
+            f" → 本人データ自身のfyタグが年度バケツと食い違う（裏取り検知、自動修正なし）"
         )
 
     return ng, warn

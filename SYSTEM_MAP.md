@@ -268,6 +268,16 @@ SEC EDGAR
 │    quarterly.py/normalizer.py向け・エントリ単位）とは設計思想・
 │    対象データ・粒度が異なる別の仕組みである。同じ「_provenance」という
 │    語で2つの異なる機構を指すため、混同しないよう注意すること。
+│    **追記（2026-07-17・ARCH-DATA-1ステージ3）**: 同provenanceに`fy_tag`
+│    （採用エントリの生XBRL fyタグ値）を追加。年度バケツキー（determine_
+│    fiscal_year()計算結果）と食い違う場合、`_extract_values_merged`/
+│    `_extract_values_best_candidate`が`common/sec_data/data/{ticker}/
+│    fy_tag_mismatch_log.json`に記録する（`is_own_data=True`限定。
+│    比較年度再掲エントリ〈is_own_data=False〉のfyタグ不一致は正常仕様
+│    のため対象外——全105銘柄検証で対象外にする前は4,434件・105銘柄という
+│    ノイズになることが判明したための設計）。report_consistency_check.py
+│    のCHECK-23/WARN-23が読み取り、既存のCHECK-22（fy_collision_log.json、
+│    同一fyタグへの複数本人end_date競合）とは独立した別軸のチェックとして動作する。
 ├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
 │    ARCH-DATA-1ステージ2（2026-07-17）でアンカー日ウィンドウ方式に刷新:
 │    end_date.month > fiscal_end_monthの片方向月比較を廃し、
