@@ -2,7 +2,7 @@
 共通ユーティリティ関数
 """
 from datetime import date, datetime, timedelta
-from typing import Any, Sequence, Tuple
+from typing import Any, Dict, Optional, Sequence, Tuple
 
 
 def quarters_in_trailing_window(
@@ -35,13 +35,212 @@ def quarters_in_trailing_window(
     ]
 
 
-def determine_fiscal_year(end_date, fiscal_end_month: int) -> int:
+def detect_fiscal_end_month(us_gaap: dict, candidate_keys: Sequence[str]) -> int:
+    """
+    10-K（form完全一致・fp=="FY"）エントリのend月から、会計年度末月を検出する
+    （最頻値を返す、デフォルト12）。
+
+    ARCH-DATA-1ステージ2: parser.py::_detect_fiscal_end_month（10-K完全一致・
+    10-K/A除外）とextract_key_facts.py::determine_fiscal_year_end（10-K/A含む
+    startswith判定）の2系統に分かれていた検出ロジックをここに統一する。
+    10-K/Aを含めると最頻値が変わり年度バケツ計算全体に波及する回帰が
+    RCATで確認されているため（ARCH-DATA-1ステージ1実装時の検証）、
+    10-K完全一致（10-K/A除外）をより保守的な基準として正本にする。
+
+    candidate_keysは'us-gaap:'プレフィックス付き・なしのいずれでも受け付ける
+    （呼び出し元ごとにタグ名の記法が異なるため）。
+
+    Args:
+        us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
+        candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
+
+    Returns:
+        int: 会計年度末の月（1-12、検出不可の場合はデフォルト12）
+    """
+    month_counts: Dict[int, int] = {}
+    for raw_key in candidate_keys:
+        xbrl_key = raw_key[8:] if raw_key.startswith("us-gaap:") else raw_key
+        if xbrl_key not in us_gaap:
+            continue
+        for entry in us_gaap[xbrl_key].get("units", {}).get("USD", []):
+            if entry.get("form") == "10-K" and entry.get("fp") == "FY":
+                end = entry.get("end", "")
+                if len(end) >= 7:
+                    m = int(end[5:7])
+                    month_counts[m] = month_counts.get(m, 0) + 1
+        if month_counts:
+            break
+    return max(month_counts, key=month_counts.get) if month_counts else 12
+
+
+def _day_of_year(month: int, day: int) -> int:
+    """(月,日)を基準うるう年(2000年)上の年内通算日(1-366)に変換する。
+    2/29も基準年が閏年のため有効な日付として扱える"""
+    return date(2000, month, day).timetuple().tm_yday
+
+
+def _cluster_fiscal_anchor_candidates(
+    day_counts: Dict[Tuple[int, int], int],
+    merge_threshold_days: int = 7,
+) -> list:
+    """
+    (月,日)の出現回数辞書を、年境界（12/31→1/1）をまたぐ循環距離で
+    クラスタリングする（ARCH-DATA-1ステージ2: JNJ/TDY型対応）。
+
+    52/53週企業は決算日が年によって12月末〜1月頭を往復するため、
+    完全一致の(月,日)最頻値だけを見ると「12/28,12/29,12/30,12/31」
+    （Dec側）と「1/1,1/2,1/3」（Jan側）に票が分散し、たまたま
+    Jan側の特定の1日（例: 1/1固定）が単独最多になることがある。
+    これをdetermine_fiscal_year()のアンカーに使うと、年境界を挟む
+    候補年度の距離計算が「Dec31基準」と「Jan1基準」で逆転し、
+    企業自身のfyタグと矛盾する年度判定になる（JNJ/TDYで実データ確認）。
+
+    通算日(1-366)でソートし、隣接する点同士の循環距離が
+    merge_threshold_days以内なら同一クラスタとして併合する
+    （貪欲法。年境界をまたぐ併合も許可する）。
+
+    Returns:
+        list[list[tuple[int,int,int,int]]]: クラスタのリスト。
+        各クラスタは (day_of_year, month, day, count) のリスト。
+        入力が空の場合は空リストを返す。
+    """
+    points = []
+    for (m, d), cnt in day_counts.items():
+        points.append((_day_of_year(m, d), m, d, cnt))
+    if not points:
+        return []
+    points.sort()
+    n = len(points)
+    if n == 1:
+        return [points]
+
+    gaps = []
+    for i in range(n):
+        cur = points[i][0]
+        nxt = points[(i + 1) % n][0]
+        gap = (nxt - cur) if i < n - 1 else (nxt + 366 - cur)
+        gaps.append(gap)
+
+    cut_positions = {i for i in range(n) if gaps[i] > merge_threshold_days}
+    if not cut_positions:
+        return [points]  # 全点が1つの循環クラスタにまとまる
+
+    start = (min(cut_positions) + 1) % n
+    rotated = points[start:] + points[:start]
+    clusters = []
+    current = [rotated[0]]
+    for k in range(1, n):
+        prev_original_index = (start + k - 1) % n
+        if prev_original_index in cut_positions:
+            clusters.append(current)
+            current = []
+        current.append(rotated[k])
+    clusters.append(current)
+    return clusters
+
+
+def detect_fiscal_anchor_date(us_gaap: dict, candidate_keys: Sequence[str]) -> Optional[Tuple[int, int]]:
+    """
+    本人10-K annualエントリ（form in ("10-K","10-K/A")・fp=="FY"・
+    340〜380日の真の年次期間）のend日から、決算アンカー日（月+日）を
+    検出する（ARCH-DATA-1ステージ2: アンカー日ウィンドウ方式の入力）。
+
+    detect_fiscal_end_month()と同じcandidate_keys・us_gaapの走査パターンを
+    共有する（片方のタグでエントリが見つかった時点で走査を打ち切る）。
+
+    JNJ/TDY型対応（2026-07-17検証で発見・循環クラスタリング方式に変更）:
+    単純な(月,日)完全一致の最頻値では、年境界をまたぐ企業のend日が
+    Dec側とJan側に分散し、企業のfyタグと矛盾する年度判定を引き起こす。
+    _cluster_fiscal_anchor_candidates()で年境界を考慮した循環クラスタに
+    まとめた上で、最大クラスタ（合計出現数が最多）を採用し、その中央値
+    （中央値がクラスタ内に実在しない場合はクラスタ内最頻値）をアンカー日とする。
+
+    Args:
+        us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
+        candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
+
+    Returns:
+        (anchor_month, anchor_day): 検出したアンカー日。
+        該当エントリが1件もない場合はNone（呼び出し元は
+        determine_fiscal_year()に anchor_month/anchor_day=None を渡し、
+        従来の月のみ比較にフォールバックさせる）
+    """
+    day_counts: Dict[Tuple[int, int], int] = {}
+    for raw_key in candidate_keys:
+        xbrl_key = raw_key[8:] if raw_key.startswith("us-gaap:") else raw_key
+        if xbrl_key not in us_gaap:
+            continue
+        for unit_type in ("USD", "shares", "USD/shares"):
+            for entry in us_gaap[xbrl_key].get("units", {}).get(unit_type, []):
+                if entry.get("form") not in ("10-K", "10-K/A") or entry.get("fp") != "FY":
+                    continue
+                start = entry.get("start", "")
+                end = entry.get("end", "")
+                if not start or not end or len(start) < 10 or len(end) < 10:
+                    continue
+                try:
+                    start_dt = datetime.strptime(start, "%Y-%m-%d")
+                    end_dt = datetime.strptime(end, "%Y-%m-%d")
+                except ValueError:
+                    continue
+                days = (end_dt - start_dt).days
+                if not (340 <= days <= 380):
+                    continue
+                key = (end_dt.month, end_dt.day)
+                day_counts[key] = day_counts.get(key, 0) + 1
+        if day_counts:
+            break
+
+    clusters = _cluster_fiscal_anchor_candidates(day_counts)
+    if not clusters:
+        return None
+
+    best_cluster = max(clusters, key=lambda c: sum(p[3] for p in c))
+
+    weighted_points = []
+    for doy, m, d, cnt in best_cluster:
+        weighted_points.extend([(doy, m, d)] * cnt)
+    weighted_points.sort()
+    n = len(weighted_points)
+    mid = n // 2
+    if n % 2 == 1:
+        _, month, day = weighted_points[mid]
+    else:
+        lower = weighted_points[mid - 1]
+        upper = weighted_points[mid]
+        if lower == upper:
+            _, month, day = lower
+        else:
+            # 中央値がクラスタ内に実在しない(月,日)になる → クラスタ内最頻値を採用
+            best_point = max(best_cluster, key=lambda p: p[3])
+            month, day = best_point[1], best_point[2]
+    return (month, day)
+
+
+def determine_fiscal_year(end_date, fiscal_end_month: int,
+                           anchor_month: Optional[int] = None,
+                           anchor_day: Optional[int] = None) -> int:
     """
     期末日と会計年度末月から、その期間が属する会計年度を返す。
+
+    ARCH-DATA-1ステージ2: anchor_month/anchor_day（detect_fiscal_anchor_date()
+    で検出した決算アンカー日）が指定された場合、end_date.yearを中心に
+    [year-1, year, year+1] の3候補年度それぞれでアンカー日を組み立て、
+    end_dateとの日数差が最小の候補年度を採用する「アンカー日ウィンドウ方式」
+    で判定する。旧来の「month > fiscal_end_month」片方向月比較は、
+    12月決算企業でmonth>12が恒常的にFalseとなり年またぎ補正が原理的に
+    機能しない欠陥と、52/53週企業の決算日前後変動・月境界またぎを
+    扱えない欠陥の両方を持っていた（FY52WEEK-BUCKET-MISPLACE-1で判明）。
+
+    anchor_month/anchor_day省略時、または最小日数差が60日を超える場合
+    （未知の異常パターンへの安全弁）は、従来の月のみ比較にフォールバックし
+    WARNログを出力する（silent failさせない）。
 
     Args:
         end_date: datetime.date または datetime.datetime
         fiscal_end_month: 会計年度末の月（1-12）
+        anchor_month: 決算アンカー日の月（省略時は月のみ比較にフォールバック）
+        anchor_day: 決算アンカー日の日（省略時は月のみ比較にフォールバック）
 
     Returns:
         int: 会計年度（西暦4桁）
@@ -51,8 +250,38 @@ def determine_fiscal_year(end_date, fiscal_end_month: int) -> int:
         MSFT (fiscal_end_month=6):  end_date=2024-09-30 → 2025
         NVDA (fiscal_end_month=1):  end_date=2025-04-27 → 2026
         Dec  (fiscal_end_month=12): end_date=2025-03-31 → 2025
+        CDNS (fiscal_end_month=12, anchor=(12,31)): end_date=2015-01-03 → 2014
     """
-    if end_date.month > fiscal_end_month:
-        return end_date.year + 1
-    else:
+    def _month_only_fallback() -> int:
+        if end_date.month > fiscal_end_month:
+            return end_date.year + 1
         return end_date.year
+
+    if anchor_month is None or anchor_day is None:
+        return _month_only_fallback()
+
+    end_date_only = end_date.date() if isinstance(end_date, datetime) else end_date
+
+    best_year = None
+    best_diff = None
+    for candidate_year in (end_date_only.year - 1, end_date_only.year, end_date_only.year + 1):
+        try:
+            candidate = date(candidate_year, anchor_month, anchor_day)
+        except ValueError:
+            if (anchor_month, anchor_day) == (2, 29):
+                candidate = date(candidate_year, 2, 28)  # 非うるう年フォールバック
+            else:
+                continue
+        diff = abs((end_date_only - candidate).days)
+        if best_diff is None or diff < best_diff:
+            best_diff = diff
+            best_year = candidate_year
+
+    if best_year is not None and best_diff <= 60:
+        return best_year
+
+    print(f"[WARN] determine_fiscal_year: アンカー日ウィンドウ判定の最小日数差が"
+          f"60日を超えたため月のみ比較にフォールバックします "
+          f"(end_date={end_date_only}, fiscal_end_month={fiscal_end_month}, "
+          f"anchor=({anchor_month},{anchor_day}), best_diff={best_diff})")
+    return _month_only_fallback()

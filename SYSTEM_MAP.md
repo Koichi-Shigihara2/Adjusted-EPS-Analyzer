@@ -269,6 +269,21 @@ SEC EDGAR
 │    対象データ・粒度が異なる別の仕組みである。同じ「_provenance」という
 │    語で2つの異なる機構を指すため、混同しないよう注意すること。
 ├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
+│    ARCH-DATA-1ステージ2（2026-07-17）でアンカー日ウィンドウ方式に刷新:
+│    end_date.month > fiscal_end_monthの片方向月比較を廃し、
+│    detect_fiscal_end_month()（会計年度末月検出。parser.py・
+│    extract_key_facts.py双方が参照する統一関数）・detect_fiscal_anchor_date()
+│    （決算アンカー日〈月+日〉検出。年境界〈Dec31/Jan1〉をまたぐ(月,日)分布を
+│    _cluster_fiscal_anchor_candidates()で循環クラスタリングしてから中央値/
+│    最頻値を採用——JNJ/TDY型の52/53週企業で完全一致最頻値だと企業自身の
+│    fyタグと矛盾する誤判定が起きることが実データ検証で判明したための設計）
+│    を新設し、determine_fiscal_year()はend_date.yearを中心とした
+│    [year-1,year,year+1]の3候補年度とアンカー日との日数差で判定する方式に
+│    変更。最小日数差60日超はWARN+月のみ比較にフォールバック（安全弁）。
+│    呼び出し元8箇所（parser.py 4箇所・extract_key_facts.py 4箇所）に
+│    anchor_month/anchor_day引数を追加。parser.py::_own_override_is_safe()の
+│    条件2（12月決算企業で機能しない欠陥があった月のみ比較の事前フィルタ）も
+│    同時に統一版determine_fiscal_year()呼び出しへ置き換えた
 │    quarters_in_trailing_window()も同ファイルに追加（ARCH-DATA-1残課題① 2026-07-15新設）
 │    ——会計年度end日起点のtrailing 370日窓で四半期エントリを抽出する共有関数。
 │    quarterly.py::check_revenue_quality()・src/value/tanuki_valuation/pipeline.py
@@ -287,7 +302,11 @@ SEC EDGAR
 `src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを
 都度ライブ取得する**独自の抽出パイプライン**であり、上記`common/sec_data/`配下の
 quarterly.py・parser.py・tag_definitions.pyは一切importしていない（importは
-`common.sec_data.utils.determine_fiscal_year`のみ）。ローカルraw JSONキャッシュも
+`common.sec_data.utils`の`determine_fiscal_year`・`detect_fiscal_end_month`・
+`detect_fiscal_anchor_date`の3関数のみ、ARCH-DATA-1ステージ2 2026-07-17時点）。
+自前で持っていた会計年度末月検出ロジック（旧`determine_fiscal_year_end()`、
+10-K/Aを含むstartswith判定でparser.py側とは基準が異なっていた）は削除し、
+統一関数を参照するよう変更済み。ローカルraw JSONキャッシュも
 持たない。Phase 2a（タグフォールバック選定ロジック統一）の対象範囲外であり、
 恩恵を受けていない点に注意（旧SYSTEM_MAP記載が`common/sec_data/`ツリーの一部
 であるかのような誤解を招く配置だったため2026-07-12訂正）。

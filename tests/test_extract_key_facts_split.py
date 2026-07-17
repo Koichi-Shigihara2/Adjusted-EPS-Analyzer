@@ -24,9 +24,16 @@ if _REPO_ROOT not in sys.path:
 import src.value.adjusted_eps_analyzer.extract_key_facts as ekf  # noqa: E402
 
 
-def _units(*items):
-    """company_facts.json形式のunitsブロックを組み立てるヘルパー"""
-    return {"shares": list(items)}
+def _units(*items, unit="shares"):
+    """company_facts.json形式のunitsブロックを組み立てるヘルパー
+
+    実際のSEC company_facts.jsonではNetIncomeLossは"USD"単位、
+    WeightedAverageNumberOfDilutedSharesOutstandingは"shares"単位で
+    格納されている（ARCH-DATA-1ステージ2: detect_fiscal_end_monthは
+    parser.py::_detect_fiscal_end_month由来で"USD"単位のみを走査するため、
+    NetIncomeLoss側はunit="USD"を明示する必要がある）
+    """
+    return {unit: list(items)}
 
 
 def _fact(start, end, val, filed, form="10-Q"):
@@ -44,12 +51,15 @@ def _build_facts(diluted_items, net_income_q, net_income_annual):
         for s, e, v, f in net_income_q
     ]
     s, e, v, f = net_income_annual
-    ni_items.append({"start": s, "end": e, "val": v, "filed": f, "form": "10-K"})
+    # fp="FY"は実際のSEC company_facts.jsonでは10-K annualエントリに常に付与されている
+    # フィールド（ARCH-DATA-1ステージ2: common/sec_data/utils.py::detect_fiscal_end_month/
+    # detect_fiscal_anchor_dateがform=="10-K"完全一致・fp=="FY"で判定するため必須）
+    ni_items.append({"start": s, "end": e, "val": v, "filed": f, "form": "10-K", "fp": "FY"})
 
     return {
         "facts": {
             "us-gaap": {
-                "NetIncomeLoss": {"units": _units(*ni_items)},
+                "NetIncomeLoss": {"units": _units(*ni_items, unit="USD")},
                 "WeightedAverageNumberOfDilutedSharesOutstanding": {
                     "units": _units(*diluted_items)
                 },

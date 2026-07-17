@@ -37,7 +37,7 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 # common.sec_data.utils を importできるようにプロジェクトルートをパスに追加
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-from common.sec_data.utils import determine_fiscal_year
+from common.sec_data.utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date
 CIK_FILE = os.path.join(CONFIG_DIR, "cik_lookup.csv")
 ADJUSTMENT_ITEMS_FILE = os.path.join(CONFIG_DIR, "adjustment_items.json")
 
@@ -318,24 +318,10 @@ def get_diluted_shares_from_facts(facts_data: Dict, form_type: Optional[str] = N
 # ============================================
 # 会計年度判定と四半期分類
 # ============================================
-def determine_fiscal_year_end(annual_data: List[Dict]) -> int:
-    """
-    10-Kのデータから、会計年度終了月を特定する
-    最も頻出する月を返す（デフォルト12）
-    """
-    month_counts = {}
-    for item in annual_data:
-        if 'end' in item:
-            end_date = datetime.strptime(item['end'], '%Y-%m-%d')
-            month = end_date.month
-            month_counts[month] = month_counts.get(month, 0) + 1
-    
-    if not month_counts:
-        return 12
-    
-    # 最も多い月を返す
-    fiscal_end_month = max(month_counts.items(), key=lambda x: x[1])[0]
-    return fiscal_end_month
+# ARCH-DATA-1ステージ2: 会計年度末月の検出ロジックはcommon/sec_data/utils.py::
+# detect_fiscal_end_month()に統一済み（旧determine_fiscal_year_end()はここに
+# あったローカル実装。form.startswith('10-K')で10-K/Aを含めてしまう基準だったが、
+# parser.py側の「form=='10-K'完全一致」というより保守的な基準に統一した）。
 
 def get_quarter_number(end_date: datetime, fiscal_end_month: int) -> int:
     """
@@ -469,9 +455,24 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 key=lambda t: (_annual_latest(_annual_tag_map[t]), -NET_INCOME_ANNUAL_TAGS.index(t))
             )
             net_income_annual = _annual_tag_map[_annual_tag_used]
-        fiscal_end_month = determine_fiscal_year_end(net_income_annual)
-        print(f"Detected fiscal year end month: {fiscal_end_month} (from {_annual_tag_used or 'default'})")
-        
+
+        # 会計年度末月・決算アンカー日の検出はcommon/sec_data/utils.pyに統一
+        # （ARCH-DATA-1ステージ2）。parser.py::_detect_fiscal_end_monthと同じ
+        # 「form=='10-K'完全一致・fp=='FY'」基準で生のus-gaapデータを直接走査する
+        # ため、net_income_annual（form.startswith('10-K')で10-K/Aを含む・
+        # ANNUAL_DAYS_MIN=300の緩い基準でQ4計算用に別途フィルタ済みのリスト）
+        # とは独立して判定する。
+        _us_gaap = facts.get('facts', {}).get('us-gaap', {})
+        fiscal_end_month = detect_fiscal_end_month(_us_gaap, NET_INCOME_ANNUAL_TAGS)
+        print(f"Detected fiscal year end month: {fiscal_end_month}")
+
+        # 決算アンカー日（月+日）を検出（ARCH-DATA-1ステージ2: アンカー日ウィンドウ方式）。
+        # 検出不可の場合はNone,Noneとなり、determine_fiscal_year()側で従来の
+        # 月のみ比較にフォールバックする
+        _anchor = detect_fiscal_anchor_date(_us_gaap, NET_INCOME_ANNUAL_TAGS)
+        anchor_month, anchor_day = _anchor if _anchor else (None, None)
+        print(f"Detected fiscal anchor date: {anchor_month}/{anchor_day}")
+
         # 希薄化後株式数のマップ（end, start -> value）を作成（Q4計算用に年次も必要）
         diluted_shares_all = tag_data_map.get('us-gaap:WeightedAverageNumberOfDilutedSharesOutstanding', [])
         diluted_map = {}  # key: (end, start) -> value
@@ -546,7 +547,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         
         for end_str, cand in best_quarterly.items():
             # 会計年度を決定（共通関数で統一）
-            fiscal_year = determine_fiscal_year(cand['end'], fiscal_end_month)
+            fiscal_year = determine_fiscal_year(cand['end'], fiscal_end_month, anchor_month, anchor_day)
 
             quarter_num = get_quarter_number(cand['end'], fiscal_end_month)
             key = (fiscal_year, quarter_num)
@@ -587,7 +588,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
                     continue
                 
-                fiscal_year = determine_fiscal_year(end, fiscal_end_month)
+                fiscal_year = determine_fiscal_year(end, fiscal_end_month, anchor_month, anchor_day)
 
                 quarter_num = get_quarter_number(end, fiscal_end_month)
                 key = (fiscal_year, quarter_num)
@@ -610,7 +611,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             if not (QUARTER_DAYS_MIN <= days_diff <= QUARTER_DAYS_MAX):
                 continue
 
-            fiscal_year = determine_fiscal_year(end, fiscal_end_month)
+            fiscal_year = determine_fiscal_year(end, fiscal_end_month, anchor_month, anchor_day)
 
             quarter_num = get_quarter_number(end, fiscal_end_month)
             key = (fiscal_year, quarter_num)
@@ -665,7 +666,7 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
                 for item in net_income_annual_items:
                     item_end = datetime.strptime(item['end'], '%Y-%m-%d')
                     # 会計年度の決定（共通関数で統一）
-                    item_fiscal_year = determine_fiscal_year(item_end, fiscal_end_month)
+                    item_fiscal_year = determine_fiscal_year(item_end, fiscal_end_month, anchor_month, anchor_day)
                     if item_fiscal_year == fiscal_year:
                         target_k_item = item
                         break

@@ -2,6 +2,94 @@
 
 ---
 
+## 2026-07-17（完了）
+
+### ✅ [ARCH-DATA-1] ステージ2「年度ラベルの計算」アンカー日ウィンドウ方式（2026-07-17完了）
+**分類:** アーキテクチャ / SECデータ正規化
+**登録日:** 2026-07-17
+**完了日:** 2026-07-17
+**発見:** ステージ1完了時の残課題（`determine_fiscal_year()`の月比較方式の欠陥）
+に対する事前調査（読み取り専用）を経て実装依頼
+
+#### 背景
+`common/sec_data/utils.py::determine_fiscal_year()`は「end_date.month >
+fiscal_end_month」の片方向月比較のみで年度を判定しており、①12月決算企業
+（fiscal_end_month=12）ではmonth>12が恒常的にFalseとなり年またぎ補正が
+原理的に機能しない、②52/53週企業の決算日前後変動・月境界またぎを日単位で
+扱えない、という2つの欠陥を持っていた（FY52WEEK-BUCKET-MISPLACE-1で判明）。
+
+#### 対応内容
+- `common/sec_data/utils.py`に`detect_fiscal_end_month()`
+  （parser.py・extract_key_facts.pyに分散していた会計年度末月検出ロジックを
+  統一。parser.py側の「10-K完全一致・10-K/A除外」を正本採用）と
+  `detect_fiscal_anchor_date()`（本人10-K annualエントリの決算アンカー日
+  〈月+日〉を検出）を新設
+- `determine_fiscal_year()`をアンカー日ウィンドウ方式に書き換え。
+  end_date.yearを中心に[year-1,year,year+1]の3候補年度でアンカー日との
+  日数差を比較し最小の年度を採用。2/29アンカーの非うるう年フォールバック、
+  最小日数差60日超のWARN+月のみ比較フォールバックの安全弁を実装
+- `parser.py::_own_override_is_safe()`の条件2（`no_crossing_needed`事前
+  フィルタ、12月決算企業で恒常的にTrueとなり機能しない欠陥があった）を
+  廃止し、統一版`determine_fiscal_year()`の1条件に統一
+- `extract_key_facts.py`の独自会計年度末月検出実装（旧
+  `determine_fiscal_year_end()`、10-K/Aを含むstartswith判定で
+  parser.py側とは別基準だった）を削除し、統一関数を参照するよう変更
+- 呼び出し元8箇所（parser.py 4箇所・extract_key_facts.py 4箇所）に
+  anchor_month/anchor_dayを追加
+
+#### JNJ/TDY型の追加発見（実装中の検証で判明・CHAT_RULES一時停止ルール適用）
+`detect_fiscal_anchor_date()`初版（(月,日)完全一致の最頻値方式）で
+105銘柄ネットワーク未使用比較を実施した際、JNJ・TDY（決算日が12月末〜
+1月頭を往復する52/53週企業）で企業自身のfyタグと矛盾する誤判定を新たに
+発見した（JNJのend=2013-12-29は自社fy=2013申告だが、アンカーが(1,1)と
+検出されたため2014と誤判定）。BS項目（instant fact）は本人データ上書きの
+安全網対象外（残課題④/FY52WEEK-BS-INSTANT-FACT-1系統、未解消）のため、
+この誤判定がそのまま年度ラベルに反映されてしまうことを確認した。
+
+原因はDec側とJan側に得票が分散し、たまたまJan側の1点が単独最多になった
+こと。年境界をまたぐ循環距離（±7日）でクラスタリングし、最大クラスタの
+中央値（実在しない場合はクラスタ内最頻値）を採用する方式
+（`_cluster_fiscal_anchor_candidates()`新設）に変更して解消した。
+この経緯（依頼時に想定していなかった設計変更が必要と判明）を受け、
+一度実装を停止してチャット側Claudeに報告し、修正方針の承認を得てから
+再開した。
+
+#### 検証結果
+- 全105銘柄ネットワーク未使用新旧比較: 830件・16銘柄
+  （ADBE/AVGO/CAKE/CDNS/CEG/DELL/ELF/IOT/JNJ/KLAC/LITE/MRVL/MSCI/
+  RDW/TDY/WST）に差分。CDNS FY2015のtotal_assets $3,209,556,000→
+  **$2,351,015,000**・revenue $1,580,932,000→**$1,702,091,000**が
+  正しく是正されたことを一次情報（company_facts.json内own data・
+  reportDate照合）で確認
+- AVGOの真のFY2025値がbucket 2026（存在しない年度）に誤配置されていた
+  問題も是正。是正に伴い`common/sec_data/data/AVGO/annual_2026.json`が
+  化石ファイル化したため手動削除（`save_parsed_data()`に古い年度ファイルの
+  自動削除ロジックがない既知の構造的問題〈IOT/AVGO/MRVLの化石ファイル
+  問題と同型〉に起因）
+- JNJ/TDYはクラスタリング方式変更後、企業自身のfyタグと一致する年度に
+  是正されることを確認。修正前の(1,1)アンカー版で発生していた
+  「ほぼ全年度が1年ずつシフトする」広範な誤判定は解消され、52/53週の
+  年境界越えが実際に発生する年度のみに是正範囲が限定された
+- 影響16銘柄でTANUKI VALUATIONを再生成（`--skip-risk`）。TANUKI SCORE
+  分類（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）は全銘柄で不変。
+  Intrinsic_Value_Per_ShareはAVGO +10.6%・JNJ +2.8%・TDY -1.4%変化
+  （他13銘柄は不変）
+- pytest 325 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規
+  `tests/test_fiscal_year_anchor_window.py`16件のアンカー日ウィンドウ
+  境界テストを含む）
+- report_consistency_check.py: NG=0/WARN=41（変更前と同一。新規WARN
+  発生なし）
+
+#### 残課題
+ステージ3（fyタグ裏取り強化）は未着手。RCAT型決算期変更検知（企業が
+実際に決算期を変更したケースと52/53週の測定誤差の区別）はステージ2の
+スコープ外で未着手。残課題④のBS項目（instant fact）本人データ判定除外は
+未解消のまま（ステージ3または別途の安全網設計が必要）。詳細はBACKLOG.md
+[[ARCH-DATA-1]]「ステージ2完了」参照（ARCH-DATA-1本体は継続中のため
+BACKLOG.mdに残置）。
+
+---
+
 ## 2026-07-16（完了）
 
 ### ✅ [ARCH-DATA-1] ステージ1「値の確定」10-K/A候補プール化・filed日タイブレーク・出所メタデータ（2026-07-16完了）

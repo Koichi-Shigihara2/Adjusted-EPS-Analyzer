@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any, List
 from .config import get_ticker_info
 from .quarterly import TICKER_RESTRICTIONS
 from .tag_definitions import TAG_CANDIDATES
-from .utils import determine_fiscal_year
+from .utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date
 from .fetcher import load_submissions
 
 
@@ -170,29 +170,26 @@ class SECParser:
         else:
             self.data_dir = os.path.join(os.path.dirname(__file__), "data")
 
+    def _fiscal_detection_keys(self) -> List[str]:
+        """会計年度末月・決算アンカー日検出に使うXBRLタグ候補（net_income+revenue）"""
+        return self.XBRL_MAPPING.get("net_income", []) + self.XBRL_MAPPING.get("revenue", [])
+
     def _detect_fiscal_end_month(self, us_gaap: dict) -> int:
         """10-K FYエントリから会計年度末月を検出（最頻月を返す、デフォルト12）
 
-        ARCH-DATA-1ステージ1実装時の検証で判明: ここに10-K/Aを含めると
-        （10-K/Aの月分布次第で）最頻値が変わり、determine_fiscal_year()の
-        年度バケツ計算全体に波及する（RCAT実例で12月→4月に反転し全年度の
-        バケツ割り当てが変化することを確認）。これはステージ2（年度ラベル
-        計算）の領域であり、ステージ1（値の確定）のスコープ外のため、
-        10-K/Aは含めず元の10-K限定のまま維持する。
+        ARCH-DATA-1ステージ2: 実体はcommon/sec_data/utils.py::detect_fiscal_end_month()
+        に統一済み（extract_key_facts.py側の独自実装も同関数を参照する）。
+        ここでは本クラスのXBRL_MAPPING候補タグを渡す薄いラッパーとして残す。
         """
-        month_counts: Dict[int, int] = {}
-        for xbrl_key in self.XBRL_MAPPING.get("net_income", []) + self.XBRL_MAPPING.get("revenue", []):
-            if xbrl_key not in us_gaap:
-                continue
-            for entry in us_gaap[xbrl_key].get("units", {}).get("USD", []):
-                if entry.get("form") == "10-K" and entry.get("fp") == "FY":
-                    end = entry.get("end", "")
-                    if len(end) >= 7:
-                        m = int(end[5:7])
-                        month_counts[m] = month_counts.get(m, 0) + 1
-            if month_counts:
-                break
-        return max(month_counts, key=month_counts.get) if month_counts else 12
+        return detect_fiscal_end_month(us_gaap, self._fiscal_detection_keys())
+
+    def _detect_fiscal_anchor_date(self, us_gaap: dict) -> Optional[tuple]:
+        """本人10-K annualエントリから決算アンカー日（月+日）を検出する
+
+        ARCH-DATA-1ステージ2: common/sec_data/utils.py::detect_fiscal_anchor_date()
+        の薄いラッパー。_detect_fiscal_end_monthと同じ候補タグを使う。
+        """
+        return detect_fiscal_anchor_date(us_gaap, self._fiscal_detection_keys())
 
     def parse_company_facts(self, ticker: str) -> Optional[Dict[str, Any]]:
         """
@@ -253,6 +250,11 @@ class SECParser:
         # 会計年度末月を検出（非12月決算企業対応・determine_fiscal_year に渡す。
         # 本人データが存在しない年度のフォールバック判定にのみ使用する）
         fiscal_end_month = self._detect_fiscal_end_month(us_gaap)
+        # 決算アンカー日（月+日）を検出（ARCH-DATA-1ステージ2: アンカー日
+        # ウィンドウ方式）。検出不可の場合はNone,Noneとなり、determine_fiscal_year()
+        # 側で従来の月のみ比較にフォールバックする
+        _anchor = self._detect_fiscal_anchor_date(us_gaap)
+        anchor_month, anchor_day = _anchor if _anchor else (None, None)
 
         # FY52WEEK-BUCKET-MISPLACE-1 根本修正: reportDate==end_dateが成立する
         # 「本人の当期データ」のfyタグを年度キーとしてそのまま採用する。
@@ -280,6 +282,7 @@ class SECParser:
                 us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all,
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,
                 field_name=field_name, collisions_out=_fy_collisions,
+                anchor_month=anchor_month, anchor_day=anchor_day,
             )
 
         # 衝突0件でも毎回書き込む（IOT/AVGO/MRVLの化石ファイル問題の再発防止。
@@ -304,7 +307,8 @@ class SECParser:
     
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
-                         field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                         field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None,
+                         anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
 
@@ -318,6 +322,8 @@ class SECParser:
                               FY52WEEK-BUCKET-MISPLACE-1根本修正）
             field_name: ログ記録用のフィールド名（"revenue"等）
             collisions_out: 本人データ同士のfyキー衝突を記録するリスト（呼び出し元で集約）
+            anchor_month/anchor_day: 決算アンカー日（ARCH-DATA-1ステージ2）。
+                              determine_fiscal_year()にそのまま渡す
 
         Returns:
             dict: {
@@ -328,14 +334,17 @@ class SECParser:
         if use_max or merge_all_tags:
             return self._extract_values_merged(us_gaap, xbrl_keys, use_max, fiscal_end_month,
                                                 accn_reportdate=accn_reportdate, field_name=field_name,
-                                                collisions_out=collisions_out)
+                                                collisions_out=collisions_out,
+                                                anchor_month=anchor_month, anchor_day=anchor_day)
         return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month,
                                                     accn_reportdate=accn_reportdate, field_name=field_name,
-                                                    collisions_out=collisions_out)
+                                                    collisions_out=collisions_out,
+                                                    anchor_month=anchor_month, anchor_day=anchor_day)
 
     def _collect_own_data_annual(self, us_gaap: dict, xbrl_keys: List[str],
                                   accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
-                                  collisions_out: Optional[List[Dict[str, Any]]]) -> Dict[int, Any]:
+                                  collisions_out: Optional[List[Dict[str, Any]]],
+                                  anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
         """
         reportDate==end_dateが成立する「本人の当期データ」のみを対象に、
         fyタグを年度キーとして採用した値マップを構築する
@@ -428,7 +437,8 @@ class SECParser:
 
             # 同一fyキーに複数の異なる本人end_dateが競合
             fallback_years = {
-                end_date: determine_fiscal_year(datetime.strptime(end_date, '%Y-%m-%d'), fiscal_end_month)
+                end_date: determine_fiscal_year(datetime.strptime(end_date, '%Y-%m-%d'), fiscal_end_month,
+                                                 anchor_month, anchor_day)
                 for end_date in end_date_vals
             }
             if len(set(fallback_years.values())) == len(end_date_vals):
@@ -459,7 +469,8 @@ class SECParser:
 
     def _own_override_is_safe(self, year: int, own_end_date: str, fiscal_end_month: int,
                                annual_end_dates: Dict[int, str], annual_durations: Dict[int, Any],
-                               annual_accn: Dict[int, str], accn_reportdate: Dict[str, str]) -> bool:
+                               annual_accn: Dict[int, str], accn_reportdate: Dict[str, str],
+                               anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> bool:
         """
         本人データによる上書きが安全か判定する。
 
@@ -478,14 +489,20 @@ class SECParser:
         （determine_fiscal_year()の計算結果がキーと一致しない）であり本チェックには
         引っかからず、正しく上書きされる。
 
-        重要な追加条件（IOTで発覚した誤検知の修正）: 既存エントリが「月またぎ補正
-        (end_date.month > fiscal_end_month による+1)」を経てこのキーに到達している
-        場合は、自己整合していても信頼しない。IOTの真のFY2024（end=2024-02-03）は
-        fallback計算で月またぎ補正により自己整合的にbucket 2025へ到達するが、これは
-        まさに本修正が正そうとしている52/53週バグそのものであり、WMT型の
-        「月またぎ無しで自己整合するデータ」とは区別する必要がある。月またぎ補正
-        なし（end_date.month <= fiscal_end_month）で自己整合する場合のみ、
-        52/53週の影響を受けない安定した配置とみなして上書きをブロックする。
+        ARCH-DATA-1ステージ2（設計変更）: 旧実装は「月またぎ補正
+        (end_date.month > fiscal_end_month による+1)なしで自己整合する場合のみ
+        安全とみなす」事前フィルタ（no_crossing_needed = existing_end_dt.month
+        <= fiscal_end_month）を持っていたが、これはdetermine_fiscal_year()本体
+        と同じ「月のみ比較」欠陥を共有しており、12月決算企業では
+        month<=12が恒常的にTrueとなり事前フィルタが機能しない欠陥があった
+        （CDNS FY2015のtotal_assets/revenueがFY2014値のまま誤って保持され続ける
+        実害を確認済み）。determine_fiscal_year()自体がアンカー日ウィンドウ方式
+        に置き換わり、月境界をまたぐか否かに関わらず「end_dateに最も近いアンカー日
+        候補年度」を正しく計算できるようになったため、事前フィルタ自体を廃止し、
+        統一版determine_fiscal_year()の計算結果とyearの一致判定のみで安全性を
+        判定する（IOT型の52/53週誤配置とWMT型の自己整合データの区別は
+        アンカー日ウィンドウ方式が両方とも正しく解決するため、月またぎの有無で
+        場合分けする必要がなくなった）。
         """
         existing_end = annual_end_dates.get(year)
         if existing_end is None:
@@ -503,15 +520,15 @@ class SECParser:
                 existing_end_dt = datetime.strptime(existing_end, '%Y-%m-%d')
             except ValueError:
                 return True
-            no_crossing_needed = existing_end_dt.month <= fiscal_end_month
-            if no_crossing_needed and determine_fiscal_year(existing_end_dt, fiscal_end_month) == year:
+            if determine_fiscal_year(existing_end_dt, fiscal_end_month, anchor_month, anchor_day) == year:
                 return False  # 既存エントリは別の真の年次データとして自己無矛盾に存在する
 
         return True
 
     def _extract_values_merged(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool, fiscal_end_month: int,
                                 accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
-                                collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                                collisions_out: Optional[List[Dict[str, Any]]] = None,
+                                anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
         """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合）"""
         result = {"annual": {}, "quarterly": {}}
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
@@ -565,7 +582,7 @@ class SECParser:
                         # fy!=end_yearは比較年度エントリ（FCX等）または中間期エントリ（INTU Q1等）
                         if end_date and len(end_date) >= 10:
                             end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                            end_year = determine_fiscal_year(end_dt, fiscal_end_month)
+                            end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day)
                         else:
                             end_year = fy  # end_date 不明時は SEC の fy フィールドを使用
                         exact = (fy == end_year)
@@ -686,10 +703,12 @@ class SECParser:
         # 本人データとして存在するケースで、xbrl_keysの優先順位に基づく既存のtie-break
         # 判断を上書きの副作用で覆してしまう回帰を防ぐため）。
         if accn_reportdate:
-            own_data = self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name, collisions_out)
+            own_data = self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
+                                                       collisions_out, anchor_month, anchor_day)
             for year, (val, own_end, own_accn, own_filed) in own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
-                                               annual_durations, annual_accn, accn_reportdate):
+                                               annual_durations, annual_accn, accn_reportdate,
+                                               anchor_month, anchor_day):
                     result["annual"][year] = val
                     annual_provenance[year] = {
                         "accn": own_accn, "filed": own_filed, "is_own_data": True,
@@ -700,7 +719,8 @@ class SECParser:
 
     def _extract_values_best_candidate(self, us_gaap: dict, xbrl_keys: List[str], fiscal_end_month: int,
                                         accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
-                                        collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                                        collisions_out: Optional[List[Dict[str, Any]]] = None,
+                                        anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
         """use_max/merge_all_tagsいずれもFalseの場合の抽出（1つの候補タグを選んで採用する）
 
         LLY-CAPEX-STALE-1 Phase 2a: 候補キーを優先順位順に「最新期末年が
@@ -716,7 +736,7 @@ class SECParser:
         for key in xbrl_keys:
             if key not in us_gaap:
                 continue
-            key_result = self._extract_single_key(us_gaap, key, fiscal_end_month)
+            key_result = self._extract_single_key(us_gaap, key, fiscal_end_month, anchor_month, anchor_day)
             if not key_result["annual"] and not key_result["quarterly"]:
                 continue
             candidates.append((key, key_result))
@@ -771,13 +791,15 @@ class SECParser:
             for key in xbrl_keys:
                 if key not in us_gaap:
                     continue
-                key_own_data = self._collect_own_data_annual(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name, collisions_out)
+                key_own_data = self._collect_own_data_annual(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name,
+                                                              collisions_out, anchor_month, anchor_day)
                 for fy, (val, end_date, own_accn, own_filed) in key_own_data.items():
                     if fy not in combined_own_data:
                         combined_own_data[fy] = (val, end_date, own_accn, own_filed)
             for year, (val, own_end, own_accn, own_filed) in combined_own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
-                                               winning_durations, winning_accns, accn_reportdate):
+                                               winning_durations, winning_accns, accn_reportdate,
+                                               anchor_month, anchor_day):
                     result["annual"][year] = val
                     annual_provenance[year] = {
                         "accn": own_accn, "filed": own_filed, "is_own_data": True,
@@ -786,7 +808,8 @@ class SECParser:
         result["_annual_provenance"] = annual_provenance
         return result
 
-    def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int) -> Dict[str, Any]:
+    def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int,
+                             anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
         """1つのXBRLキーからannual/quarterly値を抽出する（候補選定の評価単位）"""
         result: Dict[str, Any] = {"annual": {}, "quarterly": {}}
         annual_end_dates: Dict[int, str] = {}
@@ -821,7 +844,7 @@ class SECParser:
                 if form in ("10-K", "10-K/A") and fp == "FY":
                     if end_date and len(end_date) >= 10:
                         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                        end_year = determine_fiscal_year(end_dt, fiscal_end_month)
+                        end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day)
                     else:
                         end_year = fy
                     exact = (fy == end_year)
