@@ -36,6 +36,7 @@ if _REPO_ROOT not in sys.path:
 
 from future_values import calculate_future_values          # noqa: E402
 from common.sec_data import tickers as _tickers_mod         # noqa: E402
+from common.sec_data.reader import get_latest_quarterly     # noqa: E402
 
 # ── パス定数 ──────────────────────────────────────────────────────
 REVIEWS_DIR   = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "reviews")
@@ -114,18 +115,11 @@ def _load_layer1_financials(ticker: str) -> Dict[str, Any]:
     if os.path.exists(norm_path):
         with open(norm_path, encoding="utf-8") as f:
             data = json.load(f)
-        fields = data.get("fields", {})
-
-        def _lq(fd: list) -> Optional[Dict[str, Any]]:
-            qs = [x for x in fd if not x.get("is_annual") and not x.get("is_ytd", False)]
-            qs.sort(key=lambda x: x.get("end", ""), reverse=True)
-            return qs[0] if qs else None
-
-        rev = _lq(fields.get("Revenue", []))
-        oi  = _lq(fields.get("OperatingIncome", []))
-        sbc = _lq(fields.get("SBC", []))
-        ni  = _lq(fields.get("NetIncome", []))
-        sd  = _lq(fields.get("SharesDiluted", []))
+        rev = get_latest_quarterly(data, "Revenue")
+        oi  = get_latest_quarterly(data, "OperatingIncome")
+        sbc = get_latest_quarterly(data, "SBC")
+        ni  = get_latest_quarterly(data, "NetIncome")
+        sd  = get_latest_quarterly(data, "SharesDiluted")
 
         if rev and oi and rev.get("val"):
             result["operating_margin"] = round(oi["val"] / rev["val"], 4)

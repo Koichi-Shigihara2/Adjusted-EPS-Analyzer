@@ -10,6 +10,7 @@ HypeCore PoC v2 - src/value/hypecore/poc.py
 """
 
 import json
+import sys
 import warnings
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -27,6 +28,10 @@ _TANUKI_DIR = _REPO_ROOT / "docs" / "value-monitor" / "tanuki_valuation" / "data
 _NORM_DIR   = _REPO_ROOT / "common" / "sec_data" / "normalized"
 _OUT_DIR    = _HERE / "data"
 _OUT_DIR.mkdir(exist_ok=True, parents=True)
+
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from common.sec_data.reader import get_quarterly_series  # noqa: E402
 
 # ── ステージ定義 ──────────────────────────────────────────
 STAGE_LABELS = {
@@ -136,12 +141,10 @@ def fetch_quarterly_fundamentals(ticker: str) -> pd.DataFrame:
     with open(norm_path, encoding="utf-8") as f:
         norm = json.load(f)
 
-    fields = norm.get("fields", {})
-
     def extract(fname: str) -> pd.Series:
         entries = [
-            e for e in fields.get(fname, [])
-            if not e.get("is_annual") and not e.get("is_ytd") and e.get("val") is not None
+            e for e in get_quarterly_series(norm, fname)
+            if e.get("val") is not None
         ]
         if not entries:
             return pd.Series(dtype=float)

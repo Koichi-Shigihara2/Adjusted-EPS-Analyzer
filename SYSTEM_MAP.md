@@ -371,6 +371,21 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    data_fetcher.pyから呼ばれ、calculator/adjustments.py::calculate_bs_adjustment()
 │    経由でvaluation["bs_adjustment"]として保存される（ARCH-DATA-1残課題①
 │    2026-07-15でnet_debt_periodフィールドを追加、pipeline.py側の重複実装を解消）
+│    **追記（GATE2-PHASE3B-1① 2026-07-17）**: モジュールレベル汎用アクセサ
+│    get_quarterly_series(normalized, field_name)（is_annual・is_ytd両方を
+│    除外した四半期エントリをend日昇順で返す）・get_latest_quarterly(normalized,
+│    field_name)（その最新1件、空ならNone）を新設。戻り値は素の辞書のまま
+│    （dataclass化は見送り）。get_rpo_context()内の既存_q_sorted()
+│    （is_annualのみ除外・is_ytdは除外していなかった）をget_quarterly_series()
+│    に置き換え（is_ytd除外を追加する意図的な挙動修正、現行データでは無害と
+│    実データ検証済み）。従来は`financial_trend_calculator.py`（STONKS SILO）・
+│    `quarterly_review_generator.py`/`tail_dcf_bridge.py`（TAIL）・
+│    `hypecore.py`（HypeCore）が同種ロジック（`_latest_q()`・`_lq()`等）を
+│    それぞれ独立再実装していたが、本アクセサ経由に統一した（呼び出し箇所計
+│    15箇所は関数シグネチャ不変のため無改修。financial_trend_calculator.py
+│    固有のQ4逆算ロジック`_build_q4_implied()`・hypecore.py固有のpandas変換
+│    ロジックはそれぞれのファイル側にローカル残置し、reader.py側にはpandas
+│    依存を持ち込まない設計を維持）。詳細は[[GATE2-PHASE3B-1]]参照
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:

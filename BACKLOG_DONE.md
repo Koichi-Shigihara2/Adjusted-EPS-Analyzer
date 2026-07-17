@@ -4,10 +4,73 @@
 
 ## 2026-07-17（完了）
 
+### ✅ [GATE2-PHASE3B-1] ①独立実装4ファイルのreader.py統合（2026-07-17完了）
+**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
+**登録日:** 2026-07-13
+**完了日:** 2026-07-17（①のみ。③-b Classification型化は引き続き未着手。
+②規約C・③-a規約D〈verdict〉は同日中に別途完了済み）
+**発見:** Gate2設計材料収集調査・GATE2-PHASE3B-1事前調査（規模見積もり）
+
+#### 背景
+`financial_trend_calculator.py`（STONKS SILO）・`quarterly_review_generator.py`
+（TAIL）・`tail_dcf_bridge.py`（TAIL）・`hypecore.py`が、共有アクセサ
+（reader.py）を経由せず「is_annual=False かつ is_ytd=False の最新エントリを
+取る」ロジックをそれぞれ独立に再実装していた（`_latest_q()`・`_lq()`等、
+名前も実装も微妙に異なる。呼び出し箇所は計15箇所〈2+5+5+3〉）。
+事前調査で、既存の`reader.py::get_rpo_context`内`_q_sorted`はis_ytdを
+除外していない点で4ファイルの実装と異なる（現状データでは無害だが
+将来リスクあり）ことも判明していた。
+
+#### 対応内容
+- `common/sec_data/reader.py`にモジュールレベル汎用アクセサ2つを新設:
+  `get_quarterly_series(normalized, field_name)`（is_annual・is_ytd両方を
+  除外した四半期エントリをend日昇順で返す）・`get_latest_quarterly(normalized,
+  field_name)`（その最新1件、空ならNone）。戻り値は素の辞書のまま
+  （dataclass化は今回スコープ外・見送り）
+- `get_rpo_context()`内の既存`_q_sorted()`（is_annualのみ除外）を
+  `get_quarterly_series()`呼び出しに置き換え（is_ytd除外を追加する意図的な
+  挙動修正）
+- 4ファイルの独自実装を削除し新規アクセサに置き換え:
+  - `quarterly_review_generator.py`: `_latest_q()`削除＋インライン重複2箇所
+    （rev_qs・oi_map）も置き換え
+  - `tail_dcf_bridge.py`: `_lq()`削除（quarterly_review_generator.pyとの
+    コピペ重複を解消）
+  - `financial_trend_calculator.py`: `_get_quarterly_entries()`の内部実装を
+    get_quarterly_series＋既存`_build_q4_implied()`（このファイル固有の
+    Q4逆算ロジックのためreader.py側へは移動せずローカルに残置）の組み合わせに変更
+  - `hypecore.py`: `extract()`の内部実装をget_quarterly_series呼び出し結果を
+    pandas Seriesに変換する形に変更（pandas依存はhypecore.py側に残置）
+  - いずれも呼び出し側の関数シグネチャは不変のため呼び出し箇所自体は無改修
+
+#### 検証結果
+- `tests/test_gate2_phase3b1_reader_integration.py`新設（14件）:
+  get_quarterly_series/get_latest_quarterlyの単体テスト（is_annual・is_ytd
+  除外・空リスト時None・end日ソート順）、get_rpo_context移行後の挙動確認、
+  4ファイルそれぞれの移行前後の回帰テスト（合成フィクスチャでis_ytd除外・
+  Q4 implied構築・最新四半期選択が期待通り動作することを確認）
+- pytest 387 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規14件を含む）
+- report_consistency_check.py: NG=0/WARN=51（本タスクでは本番データへの
+  変更を一切行っていないため③-a完了時点から不変）
+- ネットワーク未使用の新旧比較（実データ、移行前後で完全一致を確認）:
+  get_rpo_context（CRM/NOW/GTLB/RPD/DDOGの5銘柄）・
+  financial_trend_calculator.\_get_quarterly_entries（CRM/NOW/DDOGの3銘柄×
+  Revenue/GrossProfit/OperatingIncome/NetIncome/OCFの5フィールド、全時系列）・
+  tail_dcf_bridge.\_load_layer1_financials（同3銘柄）・
+  quarterly_review_generator.load_layer1_financials（同3銘柄）・
+  hypecore.fetch_quarterly_fundamentals（同3銘柄、DataFrame全体を`.equals()`
+  で比較、YoY/QoQ/TTM rolling等の時系列全体が対象）。検証用の一時ファイルは
+  すべて削除済み（本番データへの反映なし）
+
+#### 残課題
+- [[GATE2-PHASE3B-1]]③-b（pipeline.py::Classificationの型化、pipeline.py内
+  14箇所の分岐比較を含み③-aより影響範囲が大きい）は引き続き未着手
+
+
 ### ✅ [GATE2-PHASE3B-1] ③-a規約D: growth_sanity.py::verdictのEnum化（2026-07-17完了）
 **分類:** アーキテクチャ / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13
-**完了日:** 2026-07-17（③-aのみ。①4ファイル統合・③-b Classification型化は未着手）
+**完了日:** 2026-07-17（③-aのみ。①4ファイル統合は同日中に別途完了済み。
+③-b Classification型化は引き続き未着手）
 **発見:** Gate2設計材料収集調査・GATE2-PHASE3B-1事前調査
 
 #### 背景
@@ -45,15 +108,16 @@ f-string補間（`f"判定 : {gs_verdict}"`）を含めた全既存コードが�
   無改修で動作（検証用に再生成した3銘柄のデータは本番反映せず復元済み）
 
 #### 残課題
-- [[GATE2-PHASE3B-1]]①（独立実装4ファイルのreader.py統合）・③-b
-  （pipeline.py::Classificationの型化、pipeline.py内14箇所の分岐比較を
-  含み③-aより影響範囲が大きい）は引き続き未着手
+- [[GATE2-PHASE3B-1]]③-b（pipeline.py::Classificationの型化、pipeline.py内
+  14箇所の分岐比較を含み③-aより影響範囲が大きい）は引き続き未着手
+  （①独立実装4ファイルのreader.py統合は同日2026-07-17に別途完了済み）
 
 
 ### ✅ [GATE2-PHASE3B-1] ②規約C: フィールド分類の二重管理是正（2026-07-17完了）
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13
-**完了日:** 2026-07-17（②のみ。①4ファイル統合・③規約D型化は引き続き未着手）
+**完了日:** 2026-07-17（②のみ。③規約D型化は引き続き未着手。①4ファイル統合は
+同日中に別途完了済み）
 **発見:** Gate2設計材料収集調査・Phase 3a実装時
 
 #### 背景
@@ -110,8 +174,8 @@ update.pyから呼ばれた形跡はあるものの、それ以降は本番か�
   report.txtへの変更は本タスクでは一切行っていないため不変）
 
 #### 残課題
-- [[GATE2-PHASE3B-1]]①（独立実装4ファイルのreader.py統合）・③（規約D:
-  enum風文字列の型化）は引き続き未着手
+- [[GATE2-PHASE3B-1]]③（規約D: enum風文字列の型化）は引き続き未着手
+  （①独立実装4ファイルのreader.py統合は同日2026-07-17に別途完了済み）
 - [[TTM-STOCK-FIELDS-DEAD-1]]（本項目で発見・新規分離登録、優先度未定）
 
 

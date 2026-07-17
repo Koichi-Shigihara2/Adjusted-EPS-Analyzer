@@ -10,6 +10,29 @@ from typing import Optional, Dict, Any, List
 from .config import TICKERS, get_ticker_info
 
 
+# =========================================
+# normalized quarterly データ用汎用アクセサ
+# GATE2-PHASE3B-1①: 4ファイル（financial_trend_calculator.py・
+# quarterly_review_generator.py・tail_dcf_bridge.py・hypecore.py）が
+# 独自実装していた四半期抽出ロジックの共通化窓口
+# =========================================
+
+def get_quarterly_series(normalized: dict, field_name: str) -> list:
+    """is_annual・is_ytd両方を除外した四半期エントリをend日昇順で返す"""
+    entries = normalized.get("fields", {}).get(field_name, [])
+    quarterly = [
+        e for e in entries
+        if not e.get("is_annual") and not e.get("is_ytd")
+    ]
+    return sorted(quarterly, key=lambda x: x["end"])
+
+
+def get_latest_quarterly(normalized: dict, field_name: str) -> Optional[dict]:
+    """get_quarterly_seriesの最新1件（末尾）を返す。空ならNone"""
+    series = get_quarterly_series(normalized, field_name)
+    return series[-1] if series else None
+
+
 class SECReader:
     """SECデータ読み取りインターフェース"""
     
@@ -281,16 +304,8 @@ class SECReader:
         if not normalized:
             return {"rev_yoy": None, "rev_ttm": None, "op_margin": None, "rpo_series": []}
 
-        fields = normalized.get("fields", {})
-
-        def _q_sorted(field_name: str) -> list:
-            return sorted(
-                [e for e in fields.get(field_name, []) if not e.get("is_annual")],
-                key=lambda x: x["end"],
-            )
-
         # TTM Revenue（直近4四半期合計）
-        rev_all = _q_sorted("Revenue")
+        rev_all = get_quarterly_series(normalized, "Revenue")
         rev_ttm: Optional[float] = None
         rev_yoy: Optional[float] = None
         if len(rev_all) >= 4:
@@ -301,7 +316,7 @@ class SECReader:
                     rev_yoy = (rev_ttm - rev_yago_ttm) / rev_yago_ttm
 
         # TTM OperatingIncome → op_margin
-        oi_all = _q_sorted("OperatingIncome")
+        oi_all = get_quarterly_series(normalized, "OperatingIncome")
         op_margin: Optional[float] = None
         if len(oi_all) >= 4 and rev_ttm and rev_ttm > 0:
             oi_ttm = sum(e["val"] for e in oi_all[-4:])

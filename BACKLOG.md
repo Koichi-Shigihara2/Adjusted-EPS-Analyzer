@@ -1894,11 +1894,12 @@ Adjusted EPSが新たに算出される**ようになった。株数の引き継
 Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型導入・完了）の
 スコープ外として意図的に見送られた。
 
-**① 独立実装4ファイルのreader.py統合**: `financial_trend_calculator.py`
+**① 独立実装4ファイルのreader.py統合**: ✅ **2026-07-17完了**（詳細は下記
+「①4ファイル統合完了」参照）。`financial_trend_calculator.py`
 （STONKS SILO）・`quarterly_review_generator.py`（TAIL）・`tail_dcf_bridge.py`
 （TAIL）・`hypecore.py`が、共有アクセサ（reader.py/TTMReader）を経由せず
 「is_annual=False かつ is_ytd=False の最新エントリを取る」ロジックをそれぞれ
-独立に再実装している（`_latest_q()`・`_lq()`等、名前も実装も微妙に異なる）。
+独立に再実装していた（`_latest_q()`・`_lq()`等、名前も実装も微妙に異なる）。
 型を導入しても、この4ファイルが辞書アクセス前提のままでは規約C/Dの効果が
 及ばない。
 
@@ -1928,8 +1929,8 @@ Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型
 
 #### 着手条件
 なし（次回セッションで規模見積もり・優先順位判断してから着手）。
-**①（4ファイル統合）・③-b（Classification型化）は引き続き未着手のまま
-残っている**（②規約C・③-a規約D〈verdict〉は2026-07-17完了）。
+**③-b（Classification型化）は引き続き未着手のまま残っている**
+（①4ファイル統合・②規約C・③-a規約D〈verdict〉は2026-07-17完了）。
 
 #### ②規約C完了（2026-07-17）
 
@@ -2014,6 +2015,55 @@ Python 3.11+限定でpyproject.tomlの`requires-python=">=3.10"`と整合しな�
   無改修で動作（latest.jsonの値が不変のため表示も不変と判断）。
   検証用に再生成した3銘柄のデータは本番反映せず元に戻した
   （市場データの日次変動のみが差分となり、verdict関連の差分はゼロだったため）
+
+#### ①4ファイル統合完了（2026-07-17）
+
+`common/sec_data/reader.py`にモジュールレベルの汎用アクセサ
+`get_quarterly_series(normalized, field_name)`（is_annual・is_ytd両方を
+除外した四半期エントリをend日昇順で返す）と`get_latest_quarterly(normalized,
+field_name)`（その最新1件、空ならNone）を新設。戻り値は素の辞書のまま
+（dataclass化は今回スコープ外・見送り）。
+
+`get_rpo_context()`内の既存`_q_sorted()`（is_annualのみ除外・is_ytdは
+除外していなかった）を`get_quarterly_series()`呼び出しに置き換え。
+これは意図した挙動変化（is_ytdエントリの除外を追加）だが、現在のRPO関連
+データにはis_ytd=Trueの実データがほとんど存在しないため無害であることを
+実データ5銘柄（CRM/NOW/GTLB/RPD/DDOG）でのネットワーク未使用の新旧比較で
+確認した（差分0件）。
+
+4ファイルそれぞれの独自実装を新規アクセサに置き換えた:
+- **quarterly_review_generator.py**: `_latest_q()`を削除しget_latest_quarterlyに、
+  インライン重複2箇所（rev_qs・oi_map）をget_quarterly_seriesに置き換え
+- **tail_dcf_bridge.py**: `_lq()`を削除しget_latest_quarterlyに置き換え
+  （quarterly_review_generator.pyとのコピペ重複を解消）
+- **financial_trend_calculator.py**: `_get_quarterly_entries()`の内部実装を
+  get_quarterly_series呼び出し＋既存の`_build_q4_implied()`（このファイル
+  固有のQ4逆算ロジックのためreader.py側へは移動せずローカルに残置）の
+  組み合わせに変更。呼び出し箇所2箇所は関数シグネチャ不変のため無改修
+- **hypecore.py**: `extract()`の内部実装をget_quarterly_series呼び出し結果
+  をpandas Seriesに変換する形に変更（pandas変換ロジックはhypecore.py側に
+  残置、reader.py側にpandas依存を持ち込まない設計を維持）。呼び出し箇所
+  3箇所は関数シグネチャ不変のため無改修
+
+**検証結果:**
+- `tests/test_gate2_phase3b1_reader_integration.py`新設（14件）:
+  get_quarterly_series/get_latest_quarterlyの単体テスト（is_annual・
+  is_ytd除外、空リスト時のNone返却、end日ソート順）、get_rpo_context移行後
+  の挙動確認、4ファイルそれぞれの移行前後の回帰テスト（is_ytd除外・
+  Q4 implied構築・最新四半期選択が合成フィクスチャで期待通りに動作する
+  ことを確認）
+- pytest 387 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規14件を含む）
+- report_consistency_check.py: NG=0/WARN=51（本タスクでは本番データへの
+  変更を一切行っていないため③-a完了時点から不変）
+- ネットワーク未使用の新旧比較（実データ）: get_rpo_context（5銘柄）・
+  financial_trend_calculator.\_get_quarterly_entries（3銘柄×5フィールド、
+  Revenue/GrossProfit/OperatingIncome/NetIncome/OCFの全時系列）・
+  tail_dcf_bridge.\_load_layer1_financials（3銘柄）・
+  quarterly_review_generator.load_layer1_financials（3銘柄）・
+  hypecore.fetch_quarterly_fundamentals（3銘柄、DataFrame全体を
+  `.equals()`で比較、YoY/QoQ/TTM rollingを含む時系列全体が対象）で
+  移行前後の出力が完全一致することを確認。検証用に生成した一時ファイルは
+  すべて削除済み（本番データへの反映なし）
 
 ---
 

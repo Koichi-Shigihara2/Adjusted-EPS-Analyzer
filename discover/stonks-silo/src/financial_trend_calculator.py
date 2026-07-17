@@ -38,6 +38,7 @@ from __future__ import annotations
 import json
 import logging
 import math
+import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Optional
@@ -52,6 +53,10 @@ try:
 except IndexError:
     _REPO_ROOT = Path.cwd()
 _NORM_DIR = _REPO_ROOT / "common" / "sec_data" / "normalized"
+
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+from common.sec_data.reader import get_quarterly_series  # noqa: E402
 
 # 計算対象フィールド
 # invert=True: 値が下がる方が改善（原価率）
@@ -126,11 +131,8 @@ def _build_q4_implied(annual_entries: list, quarterly_entries: list) -> list:
 
 def _get_quarterly_entries(normalized: dict, field_name: str) -> list:
     """standalone Q エントリ + Q4 implied を返す（年次・YTD除外）"""
+    quarterly = get_quarterly_series(normalized, field_name)
     entries = normalized.get("fields", {}).get(field_name, [])
-    quarterly = [
-        e for e in entries
-        if not e.get("is_annual") and not e.get("is_ytd")
-    ]
     annual = [e for e in entries if e.get("is_annual")]
 
     # Q4 impliedを追加

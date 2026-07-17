@@ -33,6 +33,10 @@ from typing import Optional, Dict, Any, List, Tuple
 script_dir = os.path.dirname(os.path.abspath(__file__))
 repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+from common.sec_data.reader import get_quarterly_series, get_latest_quarterly  # noqa: E402
+
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
 KPI_DIR           = os.path.join(DATA_DIR, "kpi")
@@ -167,23 +171,16 @@ def load_layer1_financials(ticker: str) -> Dict[str, Any]:
     if os.path.exists(norm_path):
         with open(norm_path, encoding="utf-8") as f:
             data = json.load(f)
-        fields = data.get("fields", {})
-
-        def _latest_q(field_data: list) -> Optional[Dict[str, Any]]:
-            qs = [x for x in field_data
-                  if not x.get("is_annual") and not x.get("is_ytd", False)]
-            qs.sort(key=lambda x: x.get("end", ""), reverse=True)
-            return qs[0] if qs else None
 
         def _end_to_quarter(end: str) -> str:
             yr, mo, _ = end.split("-")
             return f"{yr}Q{(int(mo) - 1) // 3 + 1}"
 
-        rev = _latest_q(fields.get("Revenue", []))
-        oi  = _latest_q(fields.get("OperatingIncome", []))
-        sbc = _latest_q(fields.get("SBC", []))
-        ni  = _latest_q(fields.get("NetIncome", []))
-        sd  = _latest_q(fields.get("SharesDiluted", []))
+        rev = get_latest_quarterly(data, "Revenue")
+        oi  = get_latest_quarterly(data, "OperatingIncome")
+        sbc = get_latest_quarterly(data, "SBC")
+        ni  = get_latest_quarterly(data, "NetIncome")
+        sd  = get_latest_quarterly(data, "SharesDiluted")
 
         if rev and oi and rev.get("val"):
             result["operating_margin"] = round(oi["val"] / rev["val"], 4)
@@ -194,14 +191,12 @@ def load_layer1_financials(ticker: str) -> Dict[str, Any]:
 
         # 直近4四半期の営業利益率推移
         rev_qs = sorted(
-            [x for x in fields.get("Revenue", [])
-             if not x.get("is_annual") and not x.get("is_ytd", False)],
+            get_quarterly_series(data, "Revenue"),
             key=lambda x: x.get("end", ""), reverse=True,
         )[:4]
         oi_map = {
             x["end"]: x["val"]
-            for x in fields.get("OperatingIncome", [])
-            if not x.get("is_annual") and not x.get("is_ytd", False)
+            for x in get_quarterly_series(data, "OperatingIncome")
         }
         opm_history = []
         for r in reversed(rev_qs):
