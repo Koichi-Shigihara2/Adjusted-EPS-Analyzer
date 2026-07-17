@@ -4058,3 +4058,41 @@ TANUKI SCORE分類はいずれも不変（SPIRのみIntrinsic_Value_BASEが
 ① [[ARCH-DATA-1]]ステージ2（年度ラベル計算のアンカー日ウィンドウ化）
 ② [[QUALITY-GATES-EPIC-1]] Phase 3b
 ③ [[FY52WEEK-BS-NULL-SILENT-1]]
+
+追記（2026-07-17〜18 [[ARCH-DATA-1]]ステージ2・3完了／[[GATE2-PHASE3B-1]]
+①②③-a③-b全完了）: 上記①②の両方が完了した。
+
+[[ARCH-DATA-1]]はステージ2（アンカー日ウィンドウ方式。実装中にJNJ/TDY型
+〈決算日が年境界12/31〜1/1を往復する52/53週企業〉で企業自身のfyタグと
+矛盾する誤判定を新規発見し、循環クラスタリング方式（`_cluster_fiscal_
+anchor_candidates()`）へ設計変更して解消）・ステージ3（fyタグ裏取り、
+WARN-23新設。初版は`is_own_data`不問で4,434件・105銘柄という実用不能な
+ノイズになったため`is_own_data=True`限定に設計変更）を完了し、
+「値の確定→年度ラベル計算→裏取り」の3段階設計が全完了した（詳細は
+[[ARCH-DATA-1]]「ステージ2完了」「ステージ3完了」参照）。
+
+[[GATE2-PHASE3B-1]]（=[[QUALITY-GATES-EPIC-1]] Phase 3b）は①（4ファイル
+のreader.py統合）・②（規約C、STOCK_FIELDS分類の網羅性契約）・③-a（規約D、
+`GrowthVerdict`のEnum化）・③-b（規約D、`Classification`のEnum化）の
+全項目を完了し、BACKLOG_DONE.mdへ全文移動した。②の実装検証で
+STOCK_FIELDS/SHARES_FIELDS分類が構造的に本番未到達（`calc_ttm()`が
+2026-05-07以降到達不能）という構造的問題を新規発見し[[TTM-STOCK-FIELDS-
+DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの孤立モジュール
+化・history.jsonのレガシーフィールド残存も新規発見し、それぞれ
+[[REPORT-TXT-PARSER-CLEANUP-1]]・[[HISTORY-JSON-LEGACY-TANUKI-SCORE-1]]
+として登録した（いずれも優先度：低）。
+
+これにより次セッションの筆頭候補を更新する：
+① [[ARCH-DATA-1]]残課題④（BS項目〈instant fact〉が本人データ判定の
+   対象外のまま。CDNS型の実害〈修正済み〉と同根の未解消リスク）
+② RCAT型決算期変更検知（企業が実際に決算期を変更したケースと単なる
+   52/53週の測定誤差との区別。ARCH-DATA-1ステージ2のスコープ外として
+   引き続き未着手）
+③ [[FY52WEEK-BS-NULL-SILENT-1]]（優先度：高・着手条件なし。
+   ①と独立に着手可能）
+④ [[TRUST-SUMMARY-EPIC-1]]（優先度：高・要設計・実装未着手の大規模EPIC）
+⑤ WARN-23残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）の一次情報検証
+   （NVDA/CAKEの2銘柄は検証済み。残り8銘柄はXBRL fyタグ側の誤りか
+   computed_year側の誤りかの一次情報確認が未実施）
+⑥ [[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク。a:デッドコード
+   削除 b:calc_ttm_series()拡張 c:現状維持の3案から選択）
