@@ -9,7 +9,14 @@ growth_sanity.py
 import os
 import json
 import logging
+import sys
 import xlrd
+
+_SCRIPT_DIR_FOR_IMPORT = os.path.dirname(os.path.abspath(__file__))
+_REPO_ROOT_FOR_IMPORT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_DIR_FOR_IMPORT)))
+if _REPO_ROOT_FOR_IMPORT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT_FOR_IMPORT)
+from common.sec_data.contracts import GrowthVerdict  # GATE2-PHASE3B-1③-a
 
 logger = logging.getLogger(__name__)
 
@@ -389,7 +396,8 @@ def check_growth_sanity(
 
     戻り値例:
     {
-        "verdict": "PLAUSIBLE",          # PLAUSIBLE / REVIEW / AGGRESSIVE / FLOOR_HIT_REVIEW
+        "verdict": GrowthVerdict.PLAUSIBLE,  # GrowthVerdict型（GATE2-PHASE3B-1③-a）。
+                                          # str継承のためJSON出力・比較は生文字列と同様に動作
         "phase1_growth": 0.20,
         "industry_benchmark": 0.096,
         "damodaran_industry": "Semiconductor",
@@ -454,11 +462,11 @@ def check_growth_sanity(
 
     # --- 総合判定 ---
     if len(warnings) == 0:
-        verdict = "PLAUSIBLE"
+        verdict = GrowthVerdict.PLAUSIBLE
     elif len(warnings) == 1:
-        verdict = "REVIEW"
+        verdict = GrowthVerdict.REVIEW
     else:
-        verdict = "AGGRESSIVE"
+        verdict = GrowthVerdict.AGGRESSIVE
 
     # Damodaran キャッシュ年を取得
     damodaran_year = None
@@ -585,7 +593,7 @@ def check_growth_sanity(
         and recommended_g is None
     )
     if floor_hit:
-        verdict = "FLOOR_HIT_REVIEW"
+        verdict = GrowthVerdict.FLOOR_HIT_REVIEW
 
     return {
         "verdict": verdict,

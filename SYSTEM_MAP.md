@@ -271,6 +271,18 @@ SEC EDGAR
 │    importしない（contracts.pyは既にquarterly.pyからimportされているため、
 │    逆方向の依存を追加すると循環importになる。呼び出し元のttm_calculator.py
 │    側でFIELD_CONCEPTS・FLOW_FIELDS等の具体的な値を渡す設計で回避）。
+│    **追記（GATE2-PHASE3B-1③-a 2026-07-17）**: GrowthVerdict(str, Enum)
+│    新設（規約D）。src/value/tanuki_valuation/growth_sanity.py::
+│    check_growth_sanity()のverdict（PLAUSIBLE/REVIEW/AGGRESSIVE/
+│    FLOOR_HIT_REVIEW）を型で表現する。Python 3.11+のEnum仕様変更
+│    （str,Enum継承でも__str__がデフォルトでクラス名付き表記
+│    "GrowthVerdict.PLAUSIBLE"を返す）に対応するため__str__をoverrideし
+│    self.valueを返すようにしている。enum.StrEnum（3.11+限定）は
+│    pyproject.tomlのrequires-python=">=3.10"と不整合のため不採用。
+│    data_fetcher.py同様、growth_sanity.py側もsys.path解決を自前で
+│    行いcommon.sec_data.contractsをimportする（growth_sanity.pyは
+│    src/value/tanuki_valuation/配下でパッケージ化されておらず
+│    bareモジュールとしてimportされるため）。
 │    quarterly.py::_select_best_candidate()のフォールバック採用時・
 │    ticker_restrictionsオーバーライド採用時に_provenance.source_tagを付与。
 │    FCFSeriesはdata_fetcher.py::TTMReader.get_fcf_series()内でのみ使用し

@@ -10,11 +10,14 @@ QUALITY-GATES-EPIC-1 Phase 3a（Gate2第一段階: 正規化契約の型導入�
 
 import pytest
 
+import json
+
 from common.sec_data.contracts import (
     ContractViolation,
     EntryProvenance,
     FCFSeries,
     FinancialEntry,
+    GrowthVerdict,
     validate_entries,
     validate_fields,
     validate_field_classification,
@@ -267,3 +270,57 @@ class TestValidateFieldClassification:
         validate_field_classification(
             FIELD_CONCEPTS, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
         )
+
+
+# ─────────────────────────────────────────────
+# 規約D: enum風文字列の型化（GATE2-PHASE3B-1③-a）
+# ─────────────────────────────────────────────
+
+class TestGrowthVerdict:
+    """GrowthVerdictがstr型として振る舞う（f-string補間・JSON serialize・
+    ==比較のいずれも既存の生文字列と同じ結果になる）ことを検証する。
+
+    Python 3.11以降、Enumの__str__/__format__はstr,Enumを継承していても
+    デフォルトで`GrowthVerdict.PLAUSIBLE`というクラス名付き表記を返す仕様に
+    変わっており、__str__のoverrideなしではf-string補間が期待通りに
+    動作しない（実装時に発覚した罠）。__str__override後の挙動を固定する
+    回帰テストとして重要。"""
+
+    def test_equality_with_plain_string(self):
+        assert GrowthVerdict.PLAUSIBLE == "PLAUSIBLE"
+        assert GrowthVerdict.REVIEW == "REVIEW"
+        assert GrowthVerdict.AGGRESSIVE == "AGGRESSIVE"
+        assert GrowthVerdict.FLOOR_HIT_REVIEW == "FLOOR_HIT_REVIEW"
+
+    def test_fstring_interpolation_matches_plain_string(self):
+        """__str__overrideにより、f-string補間がクラス名付き表記
+        （GrowthVerdict.PLAUSIBLE）ではなく素の文字列を返すこと"""
+        assert f"{GrowthVerdict.PLAUSIBLE}" == "PLAUSIBLE"
+        assert str(GrowthVerdict.REVIEW) == "REVIEW"
+
+    def test_json_serialization_matches_plain_string(self):
+        """str継承のため、json.dumpsが素の文字列としてシリアライズすること
+        （.value付与不要）"""
+        payload = {"verdict": GrowthVerdict.AGGRESSIVE}
+        assert json.dumps(payload) == '{"verdict": "AGGRESSIVE"}'
+
+    def test_used_directly_as_dict_value_in_template_string(self):
+        """growth_sanity.py/pipeline.pyの実際の使い方（f"判定: {verdict}"の
+        ようなreport.txt生成箇所）を模したテンプレート文字列生成で
+        期待通りの出力になること"""
+        verdict = GrowthVerdict.FLOOR_HIT_REVIEW
+        line = f"判定         : {verdict}"
+        assert line == "判定         : FLOOR_HIT_REVIEW"
+
+    def test_unknown_member_raises_attribute_error(self):
+        """存在しないメンバー参照（タイプミス）はAttributeErrorとして
+        即座に検知される（規約Dの目的であるタイプミス防止の裏付け）"""
+        with pytest.raises(AttributeError):
+            GrowthVerdict.TYPO_NOT_A_REAL_MEMBER
+
+    def test_all_four_expected_members_exist(self):
+        """既存の4値（PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）が
+        全て定義されていること"""
+        assert {m.value for m in GrowthVerdict} == {
+            "PLAUSIBLE", "REVIEW", "AGGRESSIVE", "FLOOR_HIT_REVIEW",
+        }

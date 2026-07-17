@@ -1915,7 +1915,9 @@ Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型
 （PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）・`pipeline.py`の`Classification`
 （BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）はいずれも生文字列の代入
 （例: `verdict = "PLAUSIBLE"`）。タイプミスがあっても実行時エラーにならず、
-静かに「未知の分類」として扱われる。
+静かに「未知の分類」として扱われる。**③-a（verdict）は✅2026-07-17完了**
+（詳細は下記「③-a規約D完了」参照）。**③-b（Classification）は引き続き未着手**
+（pipeline.py内14箇所・分岐条件としての比較を含み、③-aより影響範囲が大きい）。
 
 #### 対応方針（未確定・次回セッションで判断）
 - ①はttm_calculator.py（Phase 3aでは対象外だったファイル）を巻き込む改修に
@@ -1926,7 +1928,8 @@ Gate2設計材料収集調査で、以下2点がPhase 3a（正規化契約の型
 
 #### 着手条件
 なし（次回セッションで規模見積もり・優先順位判断してから着手）。
-**①③は引き続き未着手のまま残っている**（②のみ2026-07-17完了）。
+**①（4ファイル統合）・③-b（Classification型化）は引き続き未着手のまま
+残っている**（②規約C・③-a規約D〈verdict〉は2026-07-17完了）。
 
 #### ②規約C完了（2026-07-17）
 
@@ -1974,6 +1977,43 @@ SHARES_FIELDS分類全体が構造的に本番未到達**（8メンバー中5件
 - report_consistency_check.py: NG=0/WARN=51（本セッションでは本番データ・
   latest.json/report.txtへの変更を一切行っていないため、ステージ3完了時点
   から不変）
+
+#### ③-a規約D完了（2026-07-17・verdictのEnum化）
+
+`common/sec_data/contracts.py`に`GrowthVerdict(str, Enum)`
+（PLAUSIBLE/REVIEW/AGGRESSIVE/FLOOR_HIT_REVIEW）を新設し、
+`growth_sanity.py::check_growth_sanity()`の`verdict`代入6箇所
+（デフォルト値・4箇所の代入・戻り値dict格納）を生文字列から
+`GrowthVerdict.XXX`（Enumメンバー参照）に置き換えた。
+
+**実装時に発覚した罠（重要）**: Python 3.11以降、`Enum`の`__str__`/
+`__format__`は「`str, Enum`を継承していても」デフォルトで
+`GrowthVerdict.PLAUSIBLE`というクラス名付き表記を返す仕様に変わっている
+（3.10以前は素の文字列を返していたが3.11で仕様変更）。そのため
+f-string補間（`f"{verdict}"`）やstr()は、`__str__`をオーバーライドしない
+限り事前の想定（str継承なので.value不要で動作する）通りには動かない
+ことが実装検証で判明した（`==`比較・JSON出力〈json.dump〉はstr継承のため
+元々問題なし）。`GrowthVerdict`に`__str__`をoverrideして`self.value`を
+返すようにし、f-string補間を含めた全ての既存コード（`growth_sanity.py`の
+戻り値dict格納・`pipeline.py`のreport.txt生成`f"判定 : {gs_verdict}"`）が
+`.value`付与なしに意図通り動作するようにした（`enum.StrEnum`は
+Python 3.11+限定でpyproject.tomlの`requires-python=">=3.10"`と整合しない
+ため不採用、`__str__`override方式で3.10以降のどのバージョンでも同じ
+挙動になるようにした）。
+
+**検証結果:**
+- pytest 351 passed（既知2件除く、新規6件〈`tests/test_contracts.py`の
+  `TestGrowthVerdict`〉を含む。既存の`tests/test_pipeline_logic.py`の
+  verdict `==`比較テスト2件は無改修でpass）
+- report_consistency_check.py: NG=0/WARN=51（不変）
+- 実データでの目視確認: growth_sanity判定がREVIEW（ABBV）・
+  AGGRESSIVE（CWAN）・FLOOR_HIT_REVIEW（MO）の3銘柄でpipeline.pyを
+  再実行し、report.txtの「判定」行・latest.jsonの`verdict`フィールドが
+  Enum化前後で完全に同一（`GrowthVerdict.XXX`ではなく素の文字列のまま）
+  であることを確認。stock.htmlはJSON経由で文字列を受け取るのみのため
+  無改修で動作（latest.jsonの値が不変のため表示も不変と判断）。
+  検証用に再生成した3銘柄のデータは本番反映せず元に戻した
+  （市場データの日次変動のみが差分となり、verdict関連の差分はゼロだったため）
 
 ---
 

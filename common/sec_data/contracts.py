@@ -19,6 +19,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
+from enum import Enum
 from typing import Any, Iterator, Optional
 
 
@@ -305,3 +306,42 @@ class FCFSeries(Sequence):
     def as_list(self) -> list:
         """素の list[float] に変換する（JSONシリアライズ・既存API互換用）。"""
         return list(self._values)
+
+
+# ---------------------------------------------------------------------------
+# 規約D: enum風文字列の型化（GATE2-PHASE3B-1③-a）
+# ---------------------------------------------------------------------------
+
+class GrowthVerdict(str, Enum):
+    """src/value/tanuki_valuation/growth_sanity.py::check_growth_sanity()の
+    verdict戻り値を型で表現する。
+
+    従来は生文字列（例: verdict = "PLAUSIBLE"）の代入・比較のみで、
+    タイプミスがあっても実行時エラーにならず静かに「未知の分類」として
+    扱われる問題があった（GATE2-PHASE3B-1事前調査）。存在しないメンバー
+    （例: GrowthVerdict.TYPO）を参照するとPython自体がAttributeErrorを
+    即座に送出するため、タイプミスが構造的に防止される。
+
+    str を継承しているため、等価比較（== "PLAUSIBLE"）・JSON出力
+    （json.dump、str継承のため素の文字列としてシリアライズされる）は
+    .value を明示的に付与しなくても既存コードのまま動作する。
+
+    【重要・実装時に発覚した罠】Python 3.11以降、Enumの__str__/__format__は
+    「str, Enumを継承していても」デフォルトで`GrowthVerdict.PLAUSIBLE`という
+    クラス名付き表記を返すよう変更されている（3.10以前は素の文字列を返して
+    いたが、3.11で仕様が変わった）。そのためf-string補間（f"{verdict}"）や
+    str()は、__str__をオーバーライドしない限り`.value`を明示的に付与しても
+    しなくても意図通りに動かない。既存コード（growth_sanity.py・pipeline.py
+    のreport.txt生成箇所）がf-string経由で`.value`なしに素の文字列を期待して
+    いるため、__str__を明示的にoverrideしてstr(self.value)相当を返すように
+    している（enum.StrEnumはPython 3.11+限定でありpyproject.tomlの
+    requires-python=">=3.10"と整合しないため採用せず、__str__override方式で
+    3.10以降のどのバージョンでも同じ挙動になるようにした）。
+    """
+    PLAUSIBLE = "PLAUSIBLE"
+    REVIEW = "REVIEW"
+    AGGRESSIVE = "AGGRESSIVE"
+    FLOOR_HIT_REVIEW = "FLOOR_HIT_REVIEW"
+
+    def __str__(self) -> str:
+        return self.value

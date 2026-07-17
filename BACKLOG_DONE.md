@@ -4,6 +4,52 @@
 
 ## 2026-07-17（完了）
 
+### ✅ [GATE2-PHASE3B-1] ③-a規約D: growth_sanity.py::verdictのEnum化（2026-07-17完了）
+**分類:** アーキテクチャ / QUALITY-GATES-EPIC-1関連
+**登録日:** 2026-07-13
+**完了日:** 2026-07-17（③-aのみ。①4ファイル統合・③-b Classification型化は未着手）
+**発見:** Gate2設計材料収集調査・GATE2-PHASE3B-1事前調査
+
+#### 背景
+`growth_sanity.py::check_growth_sanity()`の`verdict`（PLAUSIBLE/REVIEW/
+AGGRESSIVE/FLOOR_HIT_REVIEW）が生文字列の代入・比較のみで、タイプミスが
+あっても実行時エラーにならず静かに「未知の分類」として扱われる問題への対応。
+
+#### 対応内容
+- `common/sec_data/contracts.py`に`GrowthVerdict(str, Enum)`を新設
+- `growth_sanity.py`のverdict代入6箇所（デフォルト値・4箇所の代入・
+  戻り値dict格納）をEnumメンバー参照に置き換え
+
+#### 実装時に発覚した罠（重要な技術的発見）
+Python 3.11以降、`Enum`の`__str__`/`__format__`は`str, Enum`を継承していても
+デフォルトで`GrowthVerdict.PLAUSIBLE`というクラス名付き表記を返す仕様に
+変わっている（3.10以前は素の文字列を返していたが3.11で変更）。そのため
+f-string補間・str()は`__str__`をオーバーライドしない限り、当初想定していた
+「str継承だから.value不要でそのまま動く」が成立しないことが実装検証で判明した
+（`==`比較・json.dumpは元々str継承のため無関係に正常動作）。`GrowthVerdict`に
+`__str__`をoverrideして`self.value`を返すよう修正し、report.txt生成の
+f-string補間（`f"判定 : {gs_verdict}"`）を含めた全既存コードが無改修で
+動作するようにした。`enum.StrEnum`（Python 3.11+限定）は
+`requires-python=">=3.10"`と不整合のため不採用とし、`__str__`override方式を
+採用した。
+
+#### 検証結果
+- pytest 351 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規6件
+  〈`tests/test_contracts.py::TestGrowthVerdict`〉。既存の
+  `tests/test_pipeline_logic.py`のverdict `==`比較テスト2件は無改修でpass）
+- report_consistency_check.py: NG=0/WARN=51（不変）
+- 実データ検証: growth_sanity判定がREVIEW（ABBV）・AGGRESSIVE（CWAN）・
+  FLOOR_HIT_REVIEW（MO）の3銘柄でpipeline.pyを再実行し、report.txtの
+  「判定」行・latest.jsonの`verdict`フィールドがEnum化前後で完全に
+  同一であることを確認。stock.htmlはJSON経由で文字列を受け取るのみのため
+  無改修で動作（検証用に再生成した3銘柄のデータは本番反映せず復元済み）
+
+#### 残課題
+- [[GATE2-PHASE3B-1]]①（独立実装4ファイルのreader.py統合）・③-b
+  （pipeline.py::Classificationの型化、pipeline.py内14箇所の分岐比較を
+  含み③-aより影響範囲が大きい）は引き続き未着手
+
+
 ### ✅ [GATE2-PHASE3B-1] ②規約C: フィールド分類の二重管理是正（2026-07-17完了）
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13
