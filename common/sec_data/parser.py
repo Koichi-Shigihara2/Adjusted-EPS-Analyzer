@@ -24,6 +24,18 @@ class SECParser:
     #         FY2025に Revenues を使用しており、早期終了するとFY2022-2024が欠落する
     MERGE_ALL_TAGS_FIELDS = {"revenue", "selling_and_marketing", "depreciation_and_amortization"}
 
+    # instant fact（単一時点end_dateのみを持ち、start_dateを持たないXBRL概念）
+    # のフィールド。BS9項目 + RPO残高。本人データ判定は_collect_own_data_instant()
+    # （start_date不要版）を使う（ARCH-DATA-1残課題④: _collect_own_data_annual()は
+    # start_date必須フィルタを持つためinstant factを常に除外していた）
+    INSTANT_FACT_FIELDS = {
+        "total_assets", "stockholders_equity", "total_liabilities",
+        "cash_and_equivalents", "short_term_investments",
+        "long_term_debt", "short_term_debt",
+        "current_assets", "current_liabilities",
+        "rpo",
+    }
+
     # XBRL項目マッピング（優先順位順）
     XBRL_MAPPING = {
         # BS（貸借対照表）
@@ -482,10 +494,113 @@ class SECParser:
 
         return winners
 
+    def _collect_own_data_instant(self, us_gaap: dict, xbrl_keys: List[str],
+                                   accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
+                                   collisions_out: Optional[List[Dict[str, Any]]],
+                                   anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
+        """
+        instant fact（BS項目・RPO残高等、単一時点のend_dateのみを持ちstart_dateを
+        持たないXBRL概念）向けに、reportDate==end_dateが成立する「本人の当期データ」
+        を判定する（ARCH-DATA-1残課題④）。
+
+        _collect_own_data_annual()との違いはstart_date・期間長（340-380日）フィルタを
+        持たない点のみ。instant factのXBRL instant contextには元々start属性が存在せず、
+        _collect_own_data_annual()のstart_date必須フィルタ（duration fact向けに、
+        10-K内に混入する90日間の四半期内訳等を除外する目的）はinstant factには
+        意味を持たない（そもそも比較対象となる「期間長」自体が存在しない）ため、
+        同フィルタを持たない別実装として複製する。
+
+        fyタグ衝突時のフォールバック分離・end_date新しい方優先のtie-breakロジックは
+        _collect_own_data_annual()と同一（詳細は同メソッドのdocstring参照）。
+
+        Returns:
+            dict: {fy: (val, end_date, accn, filed, raw_fy_tag)}
+        """
+        by_fy: Dict[int, Dict[str, Dict[str, Any]]] = {}
+        for key in xbrl_keys:
+            if key not in us_gaap:
+                continue
+            units = us_gaap[key].get("units", {})
+            for unit_type in ["USD", "shares", "USD/shares"]:
+                if unit_type not in units:
+                    continue
+                for entry in units[unit_type]:
+                    if entry.get("form") not in ("10-K", "10-K/A") or entry.get("fp") not in ("FY", "Q4"):
+                        continue
+                    fy = entry.get("fy")
+                    val = entry.get("val")
+                    end_date = entry.get("end", "")
+                    accn = entry.get("accn")
+                    filed = entry.get("filed", "")
+                    if val is None or fy is None or not end_date or len(end_date) < 10:
+                        continue
+                    if accn_reportdate.get(accn) != end_date:
+                        continue  # 本人データではない（比較年度再掲・IPO前データ等）
+
+                    # 同一(fy, end_date)に複数タグが該当する場合、xbrl_keysの優先順位
+                    # （先勝ち）を尊重する（_collect_own_data_annual()と同じ方針）
+                    fy_bucket = by_fy.setdefault(fy, {})
+                    existing = fy_bucket.get(end_date)
+                    if existing is None:
+                        fy_bucket[end_date] = {"val": val, "accn": accn, "filed": filed, "key": key}
+                    elif existing["key"] == key:
+                        if filed and filed > existing.get("filed", ""):
+                            fy_bucket[end_date] = {"val": val, "accn": accn, "filed": filed, "key": key}
+
+        winners: Dict[int, tuple] = {}
+        for fy, end_date_vals in by_fy.items():
+            if len(end_date_vals) == 1:
+                (end_date, info), = end_date_vals.items()
+                winners[fy] = (info["val"], end_date, info["accn"], info["filed"], fy)
+                continue
+
+            # 同一fyキーに複数の異なる本人end_dateが競合
+            fallback_years = {
+                end_date: determine_fiscal_year(datetime.strptime(end_date, '%Y-%m-%d'), fiscal_end_month,
+                                                 anchor_month, anchor_day)
+                for end_date in end_date_vals
+            }
+            if len(set(fallback_years.values())) == len(end_date_vals):
+                for end_date, info in end_date_vals.items():
+                    winners[fallback_years[end_date]] = (info["val"], end_date, info["accn"], info["filed"], fy)
+                if collisions_out is not None:
+                    collisions_out.append({
+                        "field": field_name, "fy": fy,
+                        "end_dates": sorted(end_date_vals.keys()),
+                        "resolution": "fyタグ衝突だがフォールバック年度で自然分離",
+                    })
+            else:
+                newest_end = max(end_date_vals.keys())
+                newest_info = end_date_vals[newest_end]
+                winners[fy] = (newest_info["val"], newest_end, newest_info["accn"], newest_info["filed"], fy)
+                if collisions_out is not None:
+                    collisions_out.append({
+                        "field": field_name, "fy": fy,
+                        "end_dates": sorted(end_date_vals.keys()),
+                        "resolution": "end_date新しい方を採用(フォールバックも衝突)",
+                    })
+
+        return winners
+
+    def _collect_own_data(self, us_gaap: dict, xbrl_keys: List[str],
+                           accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
+                           collisions_out: Optional[List[Dict[str, Any]]],
+                           anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
+        """duration fact / instant factに応じて_collect_own_data_annual/_instantへ振り分ける
+        （ARCH-DATA-1残課題④）。呼び出し元（_extract_values_merged/_extract_values_best_candidate）
+        は本メソッド経由で呼び出すことで、フィールド種別を意識せず本人データ判定を利用できる。
+        """
+        if field_name in self.INSTANT_FACT_FIELDS:
+            return self._collect_own_data_instant(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
+                                                    collisions_out, anchor_month, anchor_day)
+        return self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
+                                              collisions_out, anchor_month, anchor_day)
+
     def _own_override_is_safe(self, year: int, own_end_date: str, fiscal_end_month: int,
                                annual_end_dates: Dict[int, str], annual_durations: Dict[int, Any],
                                annual_accn: Dict[int, str], accn_reportdate: Dict[str, str],
-                               anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> bool:
+                               anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                               is_instant: bool = False) -> bool:
         """
         本人データによる上書きが安全か判定する。
 
@@ -518,12 +633,27 @@ class SECParser:
         判定する（IOT型の52/53週誤配置とWMT型の自己整合データの区別は
         アンカー日ウィンドウ方式が両方とも正しく解決するため、月またぎの有無で
         場合分けする必要がなくなった）。
+
+        ARCH-DATA-1残課題④（instant fact対応、VZ型の発覚）: 「existing_end ==
+        own_end_date → 同一期間なので上書き安全」という最初のショートカットは
+        duration factでは「同一期間を指す2つの候補タグは同じ概念の別名表記
+        （WMT Revenues/SalesRevenueNet等）である可能性が高い」という前提の下で
+        成立するが、instant fact（BS項目）ではこの前提が成立しない。BS項目は
+        同一会計年度内であれば異なるタグ（例: ShortTermBorrowings＝短期借入金と
+        LongTermDebtCurrent＝長期債務の流動化部分）でもend_dateが機械的に一致
+        するため、このショートカットが「別概念の値」を安全と誤判定してしまう
+        （VZの実例: xbrl_keys優先順位1位のShortTermBorrowings本人データ$441M
+        が、freshness選定で勝っていたLongTermDebtCurrent本人データ$18,618M
+        〈同一end_date〉を誤って上書きし、Net Debtが約$18.6B過小評価される
+        回帰を検出）。instant fact向け呼び出し（is_instant=True）ではこの
+        ショートカットをスキップし、後続のaccnベースの判定（既に別の本人データ
+        が採用済みか）のみで安全性を判定する。
         """
         existing_end = annual_end_dates.get(year)
         if existing_end is None:
             return True  # フォールバックに何もない → 上書きして問題ない
-        if existing_end == own_end_date:
-            return True  # 同一期間 → 実質的に同じ値のはず
+        if not is_instant and existing_end == own_end_date:
+            return True  # 同一期間 → 実質的に同じ値のはず（duration factのみ。上記docstring参照）
 
         existing_accn = annual_accn.get(year)
         if existing_accn is not None and accn_reportdate.get(existing_accn) == existing_end:
@@ -730,12 +860,13 @@ class SECParser:
         # 本人データとして存在するケースで、xbrl_keysの優先順位に基づく既存のtie-break
         # 判断を上書きの副作用で覆してしまう回帰を防ぐため）。
         if accn_reportdate:
-            own_data = self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
-                                                       collisions_out, anchor_month, anchor_day)
+            own_data = self._collect_own_data(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
+                                               collisions_out, anchor_month, anchor_day)
             for year, (val, own_end, own_accn, own_filed, own_fy_tag) in own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
                                                annual_durations, annual_accn, accn_reportdate,
-                                               anchor_month, anchor_day):
+                                               anchor_month, anchor_day,
+                                               is_instant=field_name in self.INSTANT_FACT_FIELDS):
                     result["annual"][year] = val
                     annual_end_dates[year] = own_end
                     annual_provenance[year] = {
@@ -847,15 +978,16 @@ class SECParser:
             for key in xbrl_keys:
                 if key not in us_gaap:
                     continue
-                key_own_data = self._collect_own_data_annual(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name,
-                                                              collisions_out, anchor_month, anchor_day)
+                key_own_data = self._collect_own_data(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name,
+                                                       collisions_out, anchor_month, anchor_day)
                 for fy, (val, end_date, own_accn, own_filed, own_fy_tag) in key_own_data.items():
                     if fy not in combined_own_data:
                         combined_own_data[fy] = (val, end_date, own_accn, own_filed, own_fy_tag)
             for year, (val, own_end, own_accn, own_filed, own_fy_tag) in combined_own_data.items():
                 if self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
                                                winning_durations, winning_accns, accn_reportdate,
-                                               anchor_month, anchor_day):
+                                               anchor_month, anchor_day,
+                                               is_instant=field_name in self.INSTANT_FACT_FIELDS):
                     result["annual"][year] = val
                     winning_end_dates[year] = own_end
                     annual_provenance[year] = {

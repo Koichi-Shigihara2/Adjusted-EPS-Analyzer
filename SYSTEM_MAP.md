@@ -322,6 +322,17 @@ SEC EDGAR
 │    ノイズになることが判明したための設計）。report_consistency_check.py
 │    のCHECK-23/WARN-23が読み取り、既存のCHECK-22（fy_collision_log.json、
 │    同一fyタグへの複数本人end_date競合）とは独立した別軸のチェックとして動作する。
+│    **追記（2026-07-18・ARCH-DATA-1残課題④）**: `_collect_own_data_annual()`は
+│    start_date必須フィルタを持つためBS項目（instant fact）を常に除外していた
+│    （本人データ判定の対象外）。`_collect_own_data_instant()`を新設し
+│    （start_date/期間長フィルタなし版）、`INSTANT_FACT_FIELDS`（BS9項目+rpo）を
+│    `_collect_own_data()`ディスパッチャで振り分け。`_own_override_is_safe()`に
+│    `is_instant`引数を追加し、「同一end_date→上書き安全」ショートカットを
+│    instant factでは無効化（duration factでは同一end_dateの2候補タグが
+│    同一概念の別名表記である前提が成立するが、instant factのBS項目は
+│    同一年度なら別概念のタグでもend_dateが機械的に一致するため。VZの
+│    short_term_debtがShortTermBorrowings＝短期借入金でLongTermDebtCurrent
+│    ＝長期債務流動化分を誤って上書きする回帰を実装中に検出・修正）。
 ├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
 │    ARCH-DATA-1ステージ2（2026-07-17）でアンカー日ウィンドウ方式に刷新:
 │    end_date.month > fiscal_end_monthの片方向月比較を廃し、

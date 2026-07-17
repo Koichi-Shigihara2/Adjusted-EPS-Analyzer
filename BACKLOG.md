@@ -953,6 +953,67 @@ CHAT_RULESの一時停止ルールに従い報告・設計変更の承認を得�
   単位での集約表示に改善する余地があるが、今回のスコープ外として
   reportのみに留めた
 
+#### 残課題④ 対応完了（2026-07-18）
+
+BS項目（instant fact）向けの本人データ判定を新設した（コミット後の
+`common/sec_data/parser.py`）。
+
+**実装内容:**
+- `_collect_own_data_instant()`新設: `_collect_own_data_annual()`から
+  start_date必須フィルタ・期間長（340-380日）フィルタを除いた版。
+  instant factのXBRL instant contextには元々start属性が存在しないため
+- `INSTANT_FACT_FIELDS`（BS9項目: total_assets/stockholders_equity/
+  total_liabilities/cash_and_equivalents/short_term_investments/
+  long_term_debt/short_term_debt/current_assets/current_liabilities +
+  rpo）を新設し、`_collect_own_data()`ディスパッチャで
+  duration/instantを振り分け
+- `_own_override_is_safe()`に`is_instant`引数を追加
+
+**実装中に発見・修正した設計欠陥（VZ型）:**
+`_own_override_is_safe()`の最初のショートカット
+（`existing_end == own_end_date: return True`＝同一end_dateなら上書き
+安全）は、duration factでは「同一期間を指す2候補タグは同じ概念の別名
+表記（WMT Revenues/SalesRevenueNet等）」という前提が成立するが、
+instant factではBS項目は同一会計年度内であれば異なる概念のタグ
+（ShortTermBorrowings＝短期借入金とLongTermDebtCurrent＝長期債務の
+流動化部分等）でもend_dateが機械的に一致するため、この前提が崩れる。
+検証で全105銘柄再生成後の影響候補9銘柄をTANUKI VALUATION再生成した際、
+VZのshort_term_debtがxbrl_keys優先順位1位のShortTermBorrowings本人データ
+$441M（真の値は$18,618M＝LongTermDebtCurrent側）に誤って上書きされ、
+Net Debtが約$18.6B過小評価されHOLD→WATCHへ分類が変化する回帰を検出。
+`is_instant=True`時は同ショートカットをスキップしaccnベースの判定
+（既に別の本人データが採用済みか）のみで安全性判定する修正を実施し解消。
+LRCX・XOMでも同型の誤上書き（false positive）を検出・解消した。
+
+**検証結果:**
+- 全105銘柄ネットワーク未使用再パース: 修正確定後は
+  value_to_value（既存の非NULL値が別の非NULL値に置換）**184件**・
+  none_to_value（欠損補完）**262件**・value_to_none（データ消失）**0件**
+  （VZ型バグ修正前は273件/89件が誤上書きによる偽陽性だった）
+- CDNS FY2015のtotal_assets/revenueは変更前と同一値を維持
+- NVDAのtotal_assets等、FY2011-2013が1年ズレた値のまま保持されていた
+  同型の未検知事例を新たに発見・是正（生XBRLのaccn/reportDate照合で
+  正当性を確認）。WMT/CRM/ADSK/ELF等30銘柄超で同型の是正あり
+- pytest 380 passed（既知2件除く、変更前と同一）
+- report_consistency_check.py: NG=0/WARN=51（変更前と同一。WARN-22/23
+  の内訳件数はBS/rpo項目が衝突・裏取りログに新規参加し増加したが
+  ティッカー単位のフラグ集合は完全一致）
+- 実際のTANUKI VALUATION計算窓（`stockholders_equity`はROE 10年平均、
+  `cash_and_equivalents`等/`rpo`は最新年のみ）と照合し、604件中
+  影響候補は9銘柄・18件（ASTS/AVAV/BSY/ELF/KLAC/LRCX/VST/VZ/WST/XOM。
+  うちKLAC/rpo系2件はrpo_config.json未登録のため実質対象外）に絞り込み、
+  該当9銘柄（ASTS/AVAV/BSY/ELF/LRCX/VST/VZ/WST/XOM）を`pipeline.py
+  --skip-risk`で再生成。**Intrinsic_Value_Per_Share・TANUKI SCORE分類
+  ともに全9銘柄で完全不変（0.00%）**を確認（VZ型バグ修正前の中間状態では
+  LRCX+2.26%・VZ+9.38%〈HOLD→WATCH〉・XOM+0.94%の変化が出ていたが、
+  いずれも偽陽性でありバグ修正後は完全に解消）
+
+**残課題④は解消。** ステージ1〜3（値の確定→年度ラベル計算→裏取り）に
+続く4段階目としてBS/rpo項目の本人データ判定を実装完了。
+
+**未解決のまま残る点:**
+- RCAT型決算期変更検知は引き続き未着手
+
 ---
 
 ## 優先度：高（早急に対応）
