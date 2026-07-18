@@ -2670,59 +2670,6 @@ class TestDuPontExtremeRoeCalculation:
 
 
 # ─────────────────────────────────────────────
-# 21. TTM-NULL-1: ttm_calculator.py の val=None 防御テスト（PREVENT-3）
-#
-#     calc_ttm() に val=None のエントリを含む normalized dict を渡しても
-#     TypeError が発生せず、None を 0 として合算することを確認する。
-# ─────────────────────────────────────────────
-
-class TestTTMNullValGuard:
-    """TTM-NULL-1: e['val']=None 時に TypeError が起きないことを保証する"""
-
-    def test_flow_field_with_none_val_no_type_error(self):
-        """FLOW_FIELDS の entry に val=None が含まれても calc_ttm がクラッシュしない"""
-        # GATE2-PHASE3B-1②: ttm_calculator.pyがquarterly.py/contracts.pyを
-        # importするようになったため、importlib.util.spec_from_file_location
-        # によるファイルパス直接ロード（パッケージコンテキストなし）は相対import
-        # エラーで失敗する。パッケージ経由のimportに変更した。
-        from common.sec_data.ttm_calculator import calc_ttm
-
-        normalized = {
-            "fields": {
-                "OCF": [
-                    {"end": "2026-03-31", "start": "2026-01-01", "val": None, "is_annual": False},
-                    {"end": "2025-12-31", "start": "2025-10-01", "val": 100.0, "is_annual": False},
-                    {"end": "2025-09-30", "start": "2025-07-01", "val": 200.0, "is_annual": False},
-                    {"end": "2025-06-30", "start": "2025-04-01", "val": 150.0, "is_annual": False},
-                ]
-            }
-        }
-        result = calc_ttm("TESTCO", normalized)
-        ocf = result.get("flow", {}).get("OCF", {}).get("val")
-        assert ocf == 450.0, f"None を 0 として合算した結果が 450.0 になるはず (got {ocf})"
-
-    def test_q4_synthetic_with_none_val_no_type_error(self):
-        """implied Q4 合成で top3 に val=None エントリが含まれても TypeError が起きない"""
-        # GATE2-PHASE3B-1②: 上記と同じ理由でパッケージ経由のimportに変更した。
-        from common.sec_data.ttm_calculator import calc_ttm
-
-        normalized = {
-            "fields": {
-                "Revenue": [
-                    {"end": "2025-09-30", "start": "2025-07-01", "val": None, "is_annual": False},
-                    {"end": "2025-06-30", "start": "2025-04-01", "val": None, "is_annual": False},
-                    {"end": "2025-03-31", "start": "2025-01-01", "val": None, "is_annual": False},
-                    {"end": "2025-12-31", "start": "2025-01-01", "val": 1000.0, "is_annual": True},
-                ]
-            }
-        }
-        try:
-            calc_ttm("TESTCO2", normalized)
-        except TypeError as e:
-            pytest.fail(f"val=None 時に TypeError が発生した: {e}")
-
-
-# ─────────────────────────────────────────────
 # 22. STONKS-DIV-1: analyzer.py のゼロ除算防御テスト（PREVENT-3）
 #
 #     r_start=0 / rev=0 / avg_past=0 のエッジケースで

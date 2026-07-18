@@ -247,13 +247,20 @@ SEC EDGAR
 │    のみ（update.pyが呼ぶ）。FLOW_FIELDS（4Q合算）のみを処理し、STOCK_FIELDS/
 │    SHARES_FIELDS（Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/
 │    SharesBasic/SharesDiluted）は処理しない。
-│    **注意（GATE2-PHASE3B-1② 2026-07-17）**: STOCK_FIELDS/SHARES_FIELDSを
-│    実際に処理するcalc_ttm()/save_ttm()（{ticker}_ttm.json生成）は
-│    2026-05-07のcalc_ttm_series()追加以降に用途を失った到達不能コード
-│    （本番からは一切呼ばれない）。GATE2-PHASE3B-1②でCurrentAssets/
-│    CurrentLiabilitiesをSTOCK_FIELDSに追加したが、この到達不能性のため
-│    本番の_ttm_series.jsonには反映されない（[[TTM-STOCK-FIELDS-DEAD-1]]
-│    として構造的問題を分離登録・対応未定）。
+│    **追記（TTM-STOCK-FIELDS-DEAD-1 2026-07-18・対応方針a完了）**:
+│    STOCK_FIELDS/SHARES_FIELDSを実際に処理していたcalc_ttm()/save_ttm()
+│    （{ticker}_ttm.json生成）は2026-05-07のcalc_ttm_series()追加以降
+│    用途を失った到達不能コードだったため削除した（calc_ttm()専用の補助関数
+│    `_make_q4_implied_output()`・`_latest_end()`・`_calc_burn_rate()`、
+│    および呼び出し元ゼロの孤立関数`_calc_q4_implied()`も連動して削除。
+│    `_build_q4_quarterly_entries()`はcalc_ttm_series()が使うため維持）。
+│    STOCK_FIELDS/SHARES_FIELDS定数自体は、下記のvalidate_field_classification()
+│    契約チェックを維持するため削除せず残置（EXCLUDED_FIELDSへ統合すると
+│    「意図的除外」の意味が変質するため）。CurrentAssets/CurrentLiabilities
+│    を含む8メンバー全て、本番のcalc_ttm_series()経由の_ttm_series.jsonには
+│    引き続き反映されない（LTDebt/SharesBasic/SharesDilutedのみ別実装で
+│    個別生存）。孤立データファイルcommon/sec_data/ttm/NVDA_ttm.json
+│    （2026-05-11の2分間の誤呼び出しの残存物）も削除済み。
 │    EXCLUDED_FIELDS（_COGS・RPO）新設・FIELD_CONCEPTS全キーの分類網羅性を
 │    モジュールロード時に検証する契約チェック（contracts.py::
 │    validate_field_classification()）も同時に追加済み。

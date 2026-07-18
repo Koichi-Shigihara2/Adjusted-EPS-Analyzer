@@ -1504,55 +1504,6 @@ ARCH-DATA-1が現在スコープとする`parser.py`/`normalizer.py`/`data_fetch
 
 ---
 
-### [TTM-STOCK-FIELDS-DEAD-1] ttm_calculator.pyのSTOCK_FIELDS/SHARES_FIELDS分類が構造的に本番未到達
-**優先度:** 未定
-**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1（GATE2-PHASE3B-1関連）
-**登録日:** 2026-07-17
-**発見:** GATE2-PHASE3B-1②実装時の検証で発見
-
-#### 内容
-GATE2-PHASE3B-1②（規約C: フィールド分類の二重管理是正）の実装・検証過程で、
-`ttm_calculator.py::STOCK_FIELDS`にCurrentAssets/CurrentLiabilitiesを追加しても
-本番の`{ticker}_ttm_series.json`（update.pyが実際に呼ぶ`calc_ttm_series()`の
-出力）には一切反映されないことが判明した。追加調査の結果、これは
-CurrentAssets/CurrentLiabilities固有の問題ではなく、**STOCK_FIELDS/
-SHARES_FIELDS分類全体が構造的に本番未到達**という、より広い構造的問題と
-判明した。
-
-**根本原因**: `calc_ttm()`/`save_ttm()`（`{ticker}_ttm.json`生成、STOCK_FIELDS/
-SHARES_FIELDSを実際に処理する唯一の関数）は、2026-05-07の`c3880e737`
-（"switch FCF/RICE source to rolling TTM series"）で`calc_ttm_series()`が
-追加されて以降、用途を失った。2026-05-11に一瞬（2分間）update.pyから
-誤って呼ばれた形跡があるが（`38ae3f75a`→`210cdb01e`で即座に
-`calc_ttm_series()`へ修正）、それ以降は**本番から一切呼ばれていない
-到達不能コード**である。
-
-**8メンバーの内訳**（全て`calc_ttm_series()`＝本番経路を経由しない）:
-- 完全にデッド（他経路の消費者もゼロ）: Cash・STDebt・DeferredRevenue・
-  Equity・Assets（5件）
-- 別実装で個別生存（ttm_calculator.pyの分類・calc_ttm_series()を経由せず、
-  reader.py・audit.py・quarterly_review_generator.py・tail_dcf_bridge.py・
-  pipeline.pyがそれぞれ独立にnormalized JSONを直接読む）: LTDebt・
-  SharesBasic・SharesDiluted（3件）
-
-残り3件の「別実装で個別生存」構造は、[[GATE2-PHASE3B-1]]①（独立実装4ファイルの
-reader.py統合）が対象とする問題と一部重複する。
-
-#### 対応方針候補（未確定、次回セッションで判断）
-(a) `calc_ttm()`/`save_ttm()`を削除し、STOCK_FIELDS/SHARES_FIELDS分類自体も
-    「現状使われていない予約分類」として整理する（最小対応）
-(b) `calc_ttm_series()`にSTOCK_FIELDS/SHARES_FIELDS相当の処理を追加し、
-    本番の`_ttm_series.json`に`stock`/`shares`キーを持たせるよう拡張する
-    （LTDebt/SharesBasic/SharesDilutedの既存個別実装をこちらに統合する
-    将来性を含む、[[GATE2-PHASE3B-1]]①との連携も視野に入れた対応）
-(c) 現状維持（デッドコードの存在自体は実害なしのため、着手条件が
-    整うまで先送り）
-
-#### 着手条件
-なし（次回セッションで規模見積もり・対応方針・優先順位を判断してから着手）
-
----
-
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定
 **分類:** アーキテクチャ / Discover
@@ -4299,5 +4250,6 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 ⑤ ~~WARN-23残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）の一次情報検証~~
    ✅ 2026-07-18完了。全10銘柄・12件でXBRL fyタグ側の誤りと確認、
    実害なし。詳細はARCH-DATA-1「WARN-23残り8銘柄の一次情報検証完了」参照
-⑥ [[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク。a:デッドコード
-   削除 b:calc_ttm_series()拡張 c:現状維持の3案から選択）
+⑥ ~~[[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク）~~
+   ✅ 2026-07-18完了。対応方針(a)デッドコード削除を実施、
+   BACKLOG_DONE.mdへ全文移動

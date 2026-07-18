@@ -4,6 +4,89 @@
 
 ## 2026-07-18（完了）
 
+### ✅ [TTM-STOCK-FIELDS-DEAD-1] ttm_calculator.pyのSTOCK_FIELDS/SHARES_FIELDS分類が構造的に本番未到達（対応方針a: デッドコード削除で完了）
+**分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1（GATE2-PHASE3B-1関連）
+**登録日:** 2026-07-17
+**完了日:** 2026-07-18
+**発見:** GATE2-PHASE3B-1②実装時の検証で発見
+
+#### 内容
+GATE2-PHASE3B-1②（規約C: フィールド分類の二重管理是正）の実装・検証過程で、
+`ttm_calculator.py::STOCK_FIELDS`にCurrentAssets/CurrentLiabilitiesを追加しても
+本番の`{ticker}_ttm_series.json`（update.pyが実際に呼ぶ`calc_ttm_series()`の
+出力）には一切反映されないことが判明した。追加調査の結果、これは
+CurrentAssets/CurrentLiabilities固有の問題ではなく、STOCK_FIELDS/
+SHARES_FIELDS分類全体が構造的に本番未到達という、より広い構造的問題と
+判明した。
+
+**根本原因**: `calc_ttm()`/`save_ttm()`（`{ticker}_ttm.json`生成、STOCK_FIELDS/
+SHARES_FIELDSを実際に処理する唯一の関数）は、2026-05-07の`c3880e737`
+（"switch FCF/RICE source to rolling TTM series"）で`calc_ttm_series()`が
+追加されて以降、用途を失った。2026-05-11に一瞬（2分間）update.pyから
+誤って呼ばれた形跡があるが、それ以降は本番から一切呼ばれていない
+到達不能コードだった。
+
+**8メンバーの内訳**（全て`calc_ttm_series()`＝本番経路を経由しない）:
+- 完全にデッド（他経路の消費者もゼロ）: Cash・STDebt・DeferredRevenue・
+  Equity・Assets（5件）
+- 別実装で個別生存（ttm_calculator.pyの分類・calc_ttm_series()を経由せず、
+  reader.py・audit.py・quarterly_review_generator.py・tail_dcf_bridge.py・
+  pipeline.pyがそれぞれ独立にnormalized JSONを直接読む）: LTDebt・
+  SharesBasic・SharesDiluted（3件）
+
+#### 対応方針(a)の実装（2026-07-18完了）
+
+**実装前の再確認**: `calc_ttm()`/`save_ttm()`への呼び出し箇所を全リポジトリで
+再grepし、本番コードからの呼び出しが引き続きゼロであることを再確認した
+（テストコードからの直接呼び出しのみ存在: `tests/test_ttm_calculator.py`・
+`tests/test_pipeline_logic.py`）。8メンバーの完全デッド5件/個別生存3件の
+切り分けもBACKLOG記載と現状で変わっていないことを確認した。
+
+**削除内容:**
+- `calc_ttm()`/`save_ttm()`本体を削除
+- `calc_ttm()`からのみ呼ばれていた補助関数`_make_q4_implied_output()`・
+  `_latest_end()`・`_calc_burn_rate()`も連動して削除（`calc_ttm_series()`は
+  これらを使わない）
+- 調査中に新たに発見した完全に呼び出し元ゼロの孤立関数`_calc_q4_implied()`
+  （`_build_q4_quarterly_entries()`の重複排除機能を持たない旧版と推測される、
+  `calc_ttm()`からも呼ばれていなかった）も削除
+- `_build_q4_quarterly_entries()`は`calc_ttm_series()`（本番経路）が使用する
+  ため削除せず維持
+- STOCK_FIELDS/SHARES_FIELDS定数自体は**削除せず維持**（判断理由: モジュール
+  ロード時の契約チェック`validate_field_classification(FIELD_CONCEPTS,
+  FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS)`が、
+  `quarterly.py::FIELD_CONCEPTS`の全キーがFLOW/STOCK/SHARES/EXCLUDEDの
+  いずれかに分類されることをimport時に保証する安全網として機能しており、
+  これを維持したまま8メンバーを削除するとEXCLUDED_FIELDSへ統合するしかなく
+  「意図的除外」の意味が変質してしまうため。両定数に「実際の値処理経路は
+  もう存在せず、契約チェックのためだけに残置している」ことを明記するコメントを
+  追記した）
+- テストコード: `tests/test_ttm_calculator.py`の`calc_ttm`import・
+  `test_calc_ttm_outputs_current_assets_and_liabilities_as_latest_quarter_value`
+  （calc_ttm()を直接呼ぶテスト）を削除。STOCK_FIELDSメンバーシップ検証の
+  2テストは分類定義自体が残るため維持。`tests/test_pipeline_logic.py`の
+  `TestTTMNullValGuard`（calc_ttm()のNone値ガードをテスト、2テスト）を削除
+  （同等のNone値ガードは本番経路`calc_ttm_series()`向けに
+  `TestCalcTtmSeriesNullValGuard`ですでに別途カバー済みのため、テスト
+  カバレッジの実質的な喪失はない）
+- 孤立データファイル`common/sec_data/ttm/NVDA_ttm.json`（2026-05-11の
+  2分間の誤呼び出しで生成された唯一の残存ファイル、以後どこからも
+  参照されない）を削除
+
+**検証結果:**
+- pytest: 377 passed（既知2件除く、削除した3テスト分を除き変更前と同一。
+  380→377は意図した3テスト削除分）
+- report_consistency_check.py: NG=0/WARN=56（変更前と同一）
+- `calc_ttm_series()`を既存の`normalized`入力データで再計算し、AAPL/MSFT/
+  NVDA/RCAT/WMTの5銘柄で既存の`{ticker}_ttm_series.json`と値レベルで
+  完全一致することを確認（本番出力への影響ゼロを実証）
+- `update.py WMT`を実際に実行しimport error等が発生しないことを確認
+  （実行に伴うWMTデータの再生成は診断目的のみのため、値が実質的に
+  同一〈生成時刻とfrozenset由来のキー順序のみの差〉であることを確認した
+  上で復元し、意図しない本番データ変更として残さなかった）
+
+---
+
 ### ✅ [GATE2-PHASE3B-1] Gate2 Phase 3b: 独立実装4ファイルのreader.py統合・規約C/Dの型化（全項目完了）
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13

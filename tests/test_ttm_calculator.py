@@ -10,7 +10,6 @@ BUG-TTM-Q4DUP-1: implied Q4 の二重計上防止ロジックを検証する。
 
 from common.sec_data.ttm_calculator import (
     _build_q4_quarterly_entries,
-    calc_ttm,
     calc_ttm_series,
     STOCK_FIELDS,
     EXCLUDED_FIELDS,
@@ -113,9 +112,12 @@ class TestCalcTtmSeriesNullValGuard:
 
 class TestCurrentAssetsLiabilitiesStockFieldsClassification:
     """GATE2-PHASE3B-1②: CurrentAssets/CurrentLiabilitiesがSTOCK_FIELDSに
-    追加され、calc_ttm()の出力（stock辞書）に含まれるようになったことの回帰テスト。
-    追加前は抽出されていてもFLOW/STOCK/SHARESいずれにも属さず、TTM出力から
-    消えていた（消費者ゼロのまま放置されていた既知バグ）"""
+    追加されたことの回帰テスト。追加前は抽出されていてもFLOW/STOCK/SHARES
+    いずれにも属さず、TTM出力から消えていた（消費者ゼロのまま放置されていた
+    既知バグ）。TTM-STOCK-FIELDS-DEAD-1 2026-07-18: STOCK_FIELDSを実際に
+    処理していたcalc_ttm()は本番未到達コードのため削除した。STOCK_FIELDSの
+    分類自体はvalidate_field_classification()契約チェックのため残置して
+    いるため、分類メンバーシップの検証（本クラス）は引き続き意味を持つ。"""
 
     def test_current_assets_and_liabilities_are_in_stock_fields(self):
         assert "CurrentAssets" in STOCK_FIELDS
@@ -126,24 +128,3 @@ class TestCurrentAssetsLiabilitiesStockFieldsClassification:
         （両方に入っていると分類は通るが二重計上・意味の混乱を招く）"""
         assert "CurrentAssets" not in EXCLUDED_FIELDS
         assert "CurrentLiabilities" not in EXCLUDED_FIELDS
-
-    def test_calc_ttm_outputs_current_assets_and_liabilities_as_latest_quarter_value(self):
-        """calc_ttm()がCurrentAssets/CurrentLiabilitiesをストック系
-        （最新Q末の値）として正しくstock辞書に出力すること"""
-        normalized = {
-            "fields": {
-                "CurrentAssets": [
-                    _q("2025-03-31", "2025-01-01", 500.0),
-                    _q("2024-12-31", "2024-10-01", 480.0),
-                ],
-                "CurrentLiabilities": [
-                    _q("2025-03-31", "2025-01-01", 300.0),
-                    _q("2024-12-31", "2024-10-01", 290.0),
-                ],
-            }
-        }
-        result = calc_ttm("TESTCO4", normalized)
-        assert result["stock"]["CurrentAssets"]["val"] == 500.0
-        assert result["stock"]["CurrentAssets"]["as_of"] == "2025-03-31"
-        assert result["stock"]["CurrentLiabilities"]["val"] == 300.0
-        assert result["stock"]["CurrentLiabilities"]["as_of"] == "2025-03-31"
