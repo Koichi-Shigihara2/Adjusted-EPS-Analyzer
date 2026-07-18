@@ -501,7 +501,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 | 変更ファイル | 必要な追加作業 |
 |---|---|
 | quarterly.py / normalizer.py / ttm_calculator.py | 全銘柄TTM再生成（update.py）→ audit.py |
-| parser.py | 影響銘柄のupdate.py → audit.py |
+| parser.py | 影響銘柄のupdate.py → audit.py。`XBRL_MAPPING`の`short_term_investments`/`long_term_debt`/`short_term_debt`/`rpo`候補タグリストは[[FY52WEEK-BS-NULL-SILENT-1]] Phase B Stage1（2026-07-19）で拡充済み（各フィールドの追加タグはコード内コメント参照）。**候補タグを追加する際は`quarterly.py`の`TICKER_RESTRICTIONS`（`ltdebt_concept`等の銘柄別override、SOFI-DATA-1）と衝突しないか個別確認すること**（SOFIは流動/非流動を分けず合算タグ`DebtLongtermAndShorttermCombinedAmount`を`long_term_debt`に固定済みのため、`short_term_debt`側に同種の合算タグを追加すると二重計上になる） |
 | tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。raw/*.jsonの生成日時差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可）→ 影響銘柄のみupdate.py → audit.py |
 | contracts.py（FinancialEntry必須キー変更等） | quarterly.py::save_raw_table()・normalizer.py::save_normalized()の検証が全銘柄で走るため、変更後は全105銘柄のupdate.pyを実行しContractViolationが新規発生しないか確認 → report_consistency_check.py |
 | data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |

@@ -59,6 +59,19 @@ class SECParser:
             "MarketableSecuritiesCurrent",
             "AvailableForSaleSecuritiesCurrent",
             "AvailableForSaleSecurities",
+            # FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1（2026-07-19追加）:
+            # CASH-TAG-MISSING-1と同型のタグ網羅漏れ。CECL(ASU 2016-13)taxonomy
+            # 対応後に多くの企業が移行した"Current"明示タグを追加。10-K原本で
+            # BS本体の「Marketable securities/Short-term investments」流動資産行
+            # と一致することを個別確認済み（ALAB/BBAI/CRM/DDOG/GTLB/INTU/IOT/KO/
+            # NET/NOW/RBRK/RMBS/SITM/VRT/ZS）。KLAC/NVDA/SOFI/TER/Vは合算タグでは
+            # 過大/過小評価となるため対象外（[[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]
+            # で銘柄別override設計を別途検討）。CAT/LLYはBS本体に科目行自体が
+            # 存在しない（footnote専用）ため対象外。
+            "AvailableForSaleSecuritiesDebtSecuritiesCurrent",
+            "DebtSecuritiesAvailableForSaleExcludingAccruedInterestCurrent",
+            "DebtSecuritiesHeldToMaturityAmortizedCostAfterAllowanceForCreditLossCurrent",
+            "OtherShortTermInvestments",
         ],
         "long_term_debt": [
             # LongTermDebtNoncurrent を優先する。
@@ -68,6 +81,20 @@ class SECParser:
             "LongTermDebt",
             "LongTermNotesPayable",
             "SeniorNotes",
+            # FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1（2026-07-19追加）:
+            # AVGO型（VMware買収後にLongTermDebtNoncurrentの申告を停止し
+            # LongTermDebtAndCapitalLeaseObligationsへ移行）と同種のタグ切替
+            # 欠損。10-K原本で連結BS本体の「Long-term debt」行と一致することを
+            # 個別確認済み（AVGO/CDNS/CON/DDOG/HEI/KO/NET/NOW/ONDS/PM/RBRK/
+            # RXRX/VZ/XOM/ZS）。SOFIは既存のticker_restrictions
+            # （ltdebt_concept=DebtLongtermAndShorttermCombinedAmount、
+            # SOFI-DATA-1）で個別対応済みのため、本リストには追加しない
+            # （追加するとSOFIのcurrent/noncurrent二重計上リスクがあるため注意）。
+            "LongTermDebtAndCapitalLeaseObligations",
+            "UnsecuredLongTermDebt",
+            "ConvertibleLongTermNotesPayable",
+            "ConvertibleDebtNoncurrent",
+            "OtherLongTermDebt",
         ],
         "short_term_debt": [
             "ShortTermBorrowings",
@@ -75,6 +102,18 @@ class SECParser:
             "LongTermDebtCurrent",
             "DebtCurrent",
             "CommercialPaper",
+            # FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1（2026-07-19追加）:
+            # long_term_debtのAndCapitalLeaseObligations系タグのCurrent版・
+            # 転換社債Current版。10-K原本で連結BS本体の流動負債区分と一致する
+            # ことを個別確認済み（CON/DDOG/ELF/NET/QBTS/RXRX/ZS）。
+            # AVAV/ESTC/ZETA/SOFIは該当額が既にlong_term_debt側に正しく
+            # 計上済みのため対象外（二重計上防止）。SCCOは最新年度の
+            # Current portion of long-term debtが明示的に$0（生涯フェード
+            # アウト相当）のため対象外。
+            "LongTermDebtAndCapitalLeaseObligationsCurrent",
+            "ConvertibleNotesPayableCurrent",
+            "ConvertibleDebtCurrent",
+            "OtherLongTermDebtCurrent",
         ],
         # 流動項目（シガーバット検出用）
         "current_assets": [
@@ -90,6 +129,16 @@ class SECParser:
             "RemainingPerformanceObligation",
             "ContractWithCustomerLiability",
             "DeferredRevenue",
+            # FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1（2026-07-19追加）:
+            # 親タグ（流動+非流動合算のContractWithCustomerLiability/
+            # DeferredRevenue）を申告せず、Current変種のみ申告する企業向け。
+            # 10-K原本でBS本体の該当科目と一致することを個別確認済み
+            # （ADSK/ALAB/APP/BBAI/CAKE/CART/CELH/CIX/CPRT/DOCN/ENTG/FLYW/
+            # INTU/JOBY/KULR/MRVL/RXRX/TASK/VRT/ZETA）。非SaaS業態の
+            # 真のゼロ銘柄（ABBV/JNJ/KO/PEP/PM/XOM/SCCO等）は該当タグが
+            # 一切存在しないため引き続きNoneのまま。
+            "ContractWithCustomerLiabilityCurrent",
+            "DeferredRevenueCurrent",
         ],
         
         # PL（損益計算書）

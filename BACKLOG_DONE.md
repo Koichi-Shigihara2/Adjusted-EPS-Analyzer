@@ -2,7 +2,94 @@
 
 ---
 
-## 2026-07-18（完了）
+## 2026-07-19（完了）
+
+### ✅ [FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1] BS4フィールド標準タグ追加（57件・41銘柄、2026-07-19完了）
+**分類:** バグ修正 / データ品質ゲート / SECデータ正規化
+**登録日:** 2026-07-15（本体）/ 2026-07-19（Stage1着手）
+**完了日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C absent銘柄全179件の一次情報（SEC EDGAR 10-K原本）個別確認
+
+#### 背景
+Phase A完了時点で保留されていたPhase B/C対象4フィールド
+（short_term_investments/long_term_debt/short_term_debt/rpo）の
+absent銘柄179件（105銘柄中）について、複数セッションにわたる
+一次情報調査（SEC EDGAR 10-K原本の直接取得・照合）を実施し、
+以下3類型に分解した：
+
+- **①候補タグ欠落（CASH-TAG-MISSING-1と同型）**: タグリスト拡充で
+  安全に解消可能
+- **②生涯フェードアウト**: 過去に明示的$0申告実績があるが最新年度で
+  タグ自体が申告されない
+- **③真の構造的ゼロ**: 候補タグのいずれにも申告実績が一切ない
+
+①のうち、10-K原本で単一の標準候補タグ追加により安全に解消でき、
+かつ既存のticker override機構（SOFI-DATA-1の`ltdebt_concept`等）と
+衝突しないことを個別確認した57件（41銘柄）をStage1として実装した。
+
+#### 実装内容
+`common/sec_data/parser.py`の`XBRL_MAPPING`に以下の候補タグを、
+既存タグの後段（フォールバック）として追加：
+
+- **short_term_investments**（15銘柄: ALAB/BBAI/CRM/DDOG/GTLB/INTU/IOT/
+  KO/NET/NOW/RBRK/RMBS/SITM/VRT/ZS）: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`・
+  `DebtSecuritiesAvailableForSaleExcludingAccruedInterestCurrent`・
+  `DebtSecuritiesHeldToMaturityAmortizedCostAfterAllowanceForCreditLossCurrent`・
+  `OtherShortTermInvestments`
+- **long_term_debt**（15銘柄: AVGO/CDNS/CON/DDOG/HEI/KO/NET/NOW/ONDS/PM/
+  RBRK/RXRX/VZ/XOM/ZS）: `LongTermDebtAndCapitalLeaseObligations`・
+  `UnsecuredLongTermDebt`・`ConvertibleLongTermNotesPayable`・
+  `ConvertibleDebtNoncurrent`・`OtherLongTermDebt`
+- **short_term_debt**（7銘柄: CON/DDOG/ELF/NET/QBTS/RXRX/ZS）:
+  `LongTermDebtAndCapitalLeaseObligationsCurrent`・
+  `ConvertibleNotesPayableCurrent`・`ConvertibleDebtCurrent`・
+  `OtherLongTermDebtCurrent`
+- **rpo**（20銘柄: ADSK/ALAB/APP/BBAI/CAKE/CART/CELH/CIX/CPRT/DOCN/ENTG/
+  FLYW/INTU/JOBY/KULR/MRVL/RXRX/TASK/VRT/ZETA）:
+  `ContractWithCustomerLiabilityCurrent`・`DeferredRevenueCurrent`
+
+**明示的に対象外**（Stage2/3・二重計上リスク等として個別に除外確認済み）:
+- short_term_investments: CAT・LLY（BS本体に科目行なし、footnote専用）、
+  KLAC/NVDA/SOFI/TER/V（[[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]へ分離）
+- long_term_debt/short_term_debt: SOFI（既存`ltdebt_concept`
+  ticker_restrictionsと衝突、追加すると二重計上）、
+  AVAV/ESTC/ZETA（該当額は既にlong_term_debtに正しく計上済み）、
+  SCCO（最新年度のCurrent portion of long-term debtが明示的$0）
+
+#### 検証結果
+- `common/sec_data/update.py`（41銘柄）実行 → 41/41成功
+- 対象57件全件がNone→実値に解消したことを機械確認
+- 全41銘柄のannual_YYYY.jsonをHEAD比較 → 対象4フィールド以外への
+  意図しない変化ゼロを確認
+- SOFIのSECデータ層（company_facts/annual等）が一切未変更であることを
+  `git status`で確認（update.py対象に含めていないため）
+- `src/value/tanuki_valuation/pipeline.py --skip-risk`で全100銘柄再生成
+  → 成功100/100、検証FAIL=2（FRSH/LYFT、anomaly_detection。growth
+  rate前提由来の既知パターンで本タスクと無関係、対象41銘柄外）
+- Intrinsic_Value変化23銘柄（長期債務捕捉によるIV低下: HEI -28.9%・
+  VZ -29.1%・PM -17.9%・XOM -11.7%・CON -48.0%・CDNS -13.8%等、
+  流動資産捕捉によるIV上昇: BBAI +29.7%・GTLB +6.5%・RMBS +9.6%等。
+  いずれも実際のBS実態を正しく反映する方向の変化であり想定通り）
+- Classification変化1銘柄（CON: HOLD→GROWTH_PREMIUM。long_term_debt
+  がNone〈実質$0扱い〉→$1.51Bの実債務に修正されNet Debtが正しく
+  反映、IV $29.47→$15.32〈乖離率-51.5%〉となりTRIM/GROWTH_PREMIUM
+  判定の閾値を跨いだ正当な変化と個別確認済み）
+- SOFIのtanuki_score・intrinsic_value_per_shareともに完全不変を確認
+  （最重要リスク項目）
+- `--skip-risk`使用により68銘柄でrisk_eventsが空配列に上書きされる
+  既知の副作用（[[SKIP-RISK-EVENTS-WIPE-1]]）を確認、latest.json/
+  report.txt双方でHEAD時点の値へ復元済み
+- `report_consistency_check.py --fail-on-ng`: NG=0（WARN 56件は既知/
+  無関係、SITM/SOFIのWARN-25はPhase A起因の既知未確認WARN）
+- `pytest tests/ -v`: 377 passed / 2 known failures（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]、本タスクと無関係）
+
+#### 残タスク
+- [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（Stage2・優先度：中〜高）
+- [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（Stage3・優先度：中）
+- [[FY52WEEK-BS-NULL-SILENT-1]]本体はStage2/3が残るため引き続き
+  完了扱いにしない
+
 
 ### ✅ [FCF-CONVRATE②] FCF実力推定の固定比率設計限界の可視化（SITM・LITE限定、2026-07-18完了）
 **分類:** 可視化 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1

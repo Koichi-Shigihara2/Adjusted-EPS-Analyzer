@@ -1179,6 +1179,23 @@ annual_YYYY.jsonを直接参照して対象6フィールドのNoneを検知す�
 **Phase B/C（short_term_investments/long_term_debt/short_term_debt/rpo）
 は未着手のまま残る。** 本タスクは完了扱いにしない。
 
+#### Phase B Stage1完了（2026-07-19）
+
+全179件のabsent銘柄（4フィールド×約45銘柄平均）をSEC EDGAR 10-K原本で
+個別確認した結果、①候補タグ欠落・②生涯フェードアウト・③真の構造的
+ゼロの3類型に分解できることが判明。うち①のうち銘柄別override不要で
+安全に解消できる57件（41銘柄）について、`parser.py`のXBRL_MAPPINGへ
+標準候補タグを追加し解消した。詳細・検証結果はBACKLOG_DONE.md
+「[FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1]」参照。
+
+残る2グループを新規BACKLOG登録した：
+- [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（Stage2・5銘柄・銘柄別override設計要）
+- [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（Stage3・25銘柄・履歴フォールバック設計要）
+
+Phase C（rpoの非SaaS銘柄True-negative群の扱い）はStage1のrpo分の
+タグ追加で実質解消済みと確認。本タスク自体はStage2/3が残るため
+引き続き完了扱いにしない。
+
 ---
 
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
@@ -2034,6 +2051,77 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [FY52WEEK-BS-STI-OVERRIDE-DESIGN-1] short_term_investmentsのKLAC/NVDA/SOFI/TER/V 5銘柄は銘柄別override設計が必要
+**優先度:** 中〜高
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B「合算/準タグ」12件の個別確定調査
+
+#### 背景
+short_term_investments absent銘柄の一次情報確認で、KLAC・NVDA・SOFI・
+TER・Vの5銘柄はBS本体に「Marketable securities」「Investment
+securities」等の実在する流動資産行を持つことを10-K原本で確認済み
+（①候補タグ欠落は確定）。ただし候補となるXBRL値は銘柄ごとに異なる
+挙動を示し、単一の汎用候補タグをXBRL_MAPPINGへ追加する方式
+（Phase B Stage1で採用した方式）では対応できない：
+
+- **KLAC**: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`系タグは
+  債券部分のみで、株式性有価証券（差額約$24M）を除外し実額をわずかに
+  過小評価
+- **NVDA**: 同タグはBS計上額$51,951Mを約24%（$12.4B）過小評価。
+  差額の対応タグをXBRL全項目照合したが特定できず
+- **TER/V**: 同タグは非流動分も含む合算値のため、真の流動値を過大評価
+  （TER: タグ$97.1M vs 真の流動値$28.2M）。正確な値は
+  `AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue`
+  （TER）・`Investments`（V、汎用的すぎる名前で他銘柄への誤爆リスク大）
+  という、いずれも汎用候補リストに不向きなタグで個別確認済み
+- **SOFI**: 非分類BS（流動/非流動を区分しない銀行持株会社）のため
+  「Current」概念自体が適用されにくい。MD&A「Investment securities」
+  $2,575.6Mとタグ値の差は約5%（償却原価ベースの違いと推測）
+
+#### 対応方針（未確定・要設計）
+SOFI-DATA-1の`ltdebt_concept`ticker_restrictions方式を参考に、
+5銘柄それぞれに専用のXBRL概念（またはタグの組み合わせ・按分ロジック）
+を個別指定する仕組みが必要。単純な候補タグ追加では対応不可のため、
+設計コストは高い。
+
+#### 着手条件
+なし
+
+---
+
+### [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト25件への履歴フォールバックロジック設計
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C 全179件の一次情報確認
+
+#### 背景
+short_term_investments/long_term_debt/short_term_debtのabsent銘柄
+179件の全件確認で、25件（PLTR/CPRT/SCCO等）は過去のいずれかの年度で
+対象フィールドに明示的`val=0`が申告された実績があるが、最新年度では
+その候補タグ自体が申告されていない（例: PLTRの`LongTermDebtNoncurrent`
+はFY2021に明示的$0を報告した後、FY2022以降タグ自体の申告を停止）。
+一次情報（10-K原本）で確認した限り、これらは真に無借金・無投資の
+まま継続している可能性が高いが、最新データだけでは確認できない
+（企業が明示的$0申告をやめた後は「本当にゼロが継続しているか」の
+判別材料がない）。
+
+#### 対応方針（未確定・要設計）
+「最新年度に本人データがなくても、過去に明示的$0の実績があれば
+真のゼロと判定する」履歴フォールバックロジックを検討する。設計上の
+論点：
+- 何年前までの明示的$0実績を有効とみなすか（信頼度低下の年数閾値）
+- 対象期間内に企業のM&A・資金調達等の重大イベントがあった場合の
+  扱い（フォールバック適用を無効化すべきか）
+- report.txt/latest.jsonでの表示方法（「推定ゼロ（最終確認: FY20XX）」
+  等、通常の実測値と区別できる表示が必要）
+
+#### 着手条件
+なし
+
+---
 
 ### [SKIP-RISK-EVENTS-WIPE-1] pipeline.py --skip-risk実行時、既存のrisk_eventsが空配列で上書きされる
 **優先度:** 中
