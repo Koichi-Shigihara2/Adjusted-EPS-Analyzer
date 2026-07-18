@@ -861,6 +861,16 @@ function render(d) {
       return '公益事業は設備投資が巨大でFCFが慢性的にマイナスになりやすく、DCFの前提が成立しにくい場合があります。';
     return '';
   })() : '';
+
+  // FCF-CONVRATE②（TRUST-SUMMARY-EPIC-1）: 業種平均比率による固定比率設計は
+  // サイクル変動銘柄（年度ごとにFCF実力推定と生FCFの乖離倍率が大きく振れる銘柄）を
+  // 表現できない構造的限界がある。閾値（cv・divergence_ratio）による自動判定は、
+  // 事前調査でLLYがDOCNを両軸で上回るなど数学的に分離不可能と判明したため、
+  // 個別ティッカーの手動リストとする（自動化しない）。将来3件目以降を追加する場合も、
+  // 業界サイクル起因かどうかの個別原因分析を経てから手動追加すること。
+  const FCF_CYCLICAL_VOLATILITY_TICKERS = new Set(['SITM', 'LITE']);
+  const fcfCyclicalVolatility = FCF_CYCLICAL_VOLATILITY_TICKERS.has(ticker);
+  const fcfCyclicalDivergenceRatio = fcfEstimation.divergence_ratio;
   const rpo = d.components?.rpo || 0;
   const rpoPV = d.components?.rpo_pv || 0;
 
@@ -968,6 +978,11 @@ function render(d) {
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
         ⚠️ <strong>FCF信頼性注意（${industryName || sectorName}）</strong><br>
         <span style="font-size:12px">${fcfLowReliabilityMsg}</span>
+      </div>` : ''}
+      ${fcfCyclicalVolatility ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
+        ⚠️ <strong>FCF実力推定に注意（業績サイクル変動）</strong><br>
+        <span style="font-size:12px">この銘柄は業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率による推定値と実際の乖離が大きくなっています${fcfCyclicalDivergenceRatio ? `（直近乖離: ${fcfCyclicalDivergenceRatio}倍）` : ''}。</span>
       </div>` : ''}
       ${validationOverall === 'FAIL' ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red)">

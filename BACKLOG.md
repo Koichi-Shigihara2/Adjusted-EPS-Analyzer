@@ -1535,6 +1535,16 @@ SEC XBRL実データ（`common/sec_data/data/{TICKER}/annual_YYYY.json`、6-7年
 **FCF-CONVRATE②の可視化設計スコープは、SITM・LITEの2銘柄に確定し、次回
 セッションで着手する。**
 
+**追記（2026-07-18・FCF-CONVRATE②可視化実装完了）**: 上記スコープ確定を
+受け、SITM・LITE限定の個別ティッカーリスト方式（`FCF_CYCLICAL_VOLATILITY_TICKERS`）
+によるstock.htmlバナー・report.txt表示を実装完了。詳細は
+BACKLOG_DONE.md「[FCF-CONVRATE②] ...」を参照。本EPIC自体は、方針の骨子②
+（構造的限界の可視化）の実装対象がFCF-CONVRATE②の1件のみだったため
+これで実質完了だが、判断保留のまま残る5件（FY52WEEK-BS-NULL-SILENT-1
+Phase B/C・MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1・
+GROWTH-SANITY-CLASS-SYNC-1・FCF-CONVRATE③）があるため、EPICエントリ自体は
+BACKLOG.mdに残置する。
+
 ---
 
 ## 優先度：未定（要判断）

@@ -4,6 +4,72 @@
 
 ## 2026-07-18（完了）
 
+### ✅ [FCF-CONVRATE②] FCF実力推定の固定比率設計限界の可視化（SITM・LITE限定、2026-07-18完了）
+**分類:** 可視化 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1
+**登録日:** 2026-07-12（TRUST-SUMMARY-EPIC-1の一部として）
+**完了日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]棚卸し・原因ベース分析
+
+#### 背景
+TRUST-SUMMARY-EPIC-1の方針の骨子②（Classification〈BUY/WATCH等〉は
+書き換えず、分類とは独立に信頼性情報を並記する）に基づき、`estimate_
+fcf_from_eps()`が用いる業種平均の固定転換率（`fcf_conversion_config.json`
+の`sector_conversion_rates`）が、業界サイクルにより年度ごとのFCFが
+大きく変動する銘柄を表現できない構造的限界の可視化を実装した。
+
+#### 閾値調査での数学的限界の発見
+当初想定7銘柄（SITM/LITE/SPIR/AMZN/SOFI/CWAN/DOCN）についてcv・
+divergence_ratioの閾値による機械的切り分けを試みたが、LLY
+（cv=0.989, dr=1.92）がDOCN（cv=0.405, dr=1.85）を両軸で完全に上回るため
+「どのように閾値を調整してもDOCNを含めればLLYも必ず含まれる」ことが判明し、
+閾値方式での自動分離は数学的に不可能と確定した。
+
+#### 原因分析による2銘柄への収束
+閾値方式を断念し、境界域のGTLB/LLY/KO/FRSH/SNPSを加えた計12銘柄について
+SEC XBRL実データ（`common/sec_data/data/{TICKER}/annual_YYYY.json`、
+6-7年分）を用いた個別の原因分析を実施。結果、真に「業界サイクル起因で
+解消不能な構造的限界」と呼べるのはSITM・LITEの2銘柄のみと確定した。
+残り10銘柄は以下に分解され対象外となった：
+- **一時的な成長投資フェーズ（対応不要）**: AMZN・LLY・DOCN・FRSH
+- **一過性要因・M&A（[[CWAN-SNPS-MA-DISTORTION-1]]へ分離）**: CWAN・SNPS
+- **一次情報不足で未確定（[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]へ分離）**: KO・SPIR
+- **既存機構で対応済み（新規対応不要）**: SOFI（`stock.html`の
+  `FCF_LOW_RELIABILITY_SECTORS`〈Financial Services〉バナーが既に発火済み）
+- **成長ステージ＋推定手法混在（記録のみ）**: GTLB
+
+#### 実装内容
+- `src/value/tanuki_valuation/pipeline.py`にモジュール定数
+  `FCF_CYCLICAL_VOLATILITY_TICKERS = {"SITM", "LITE"}`を新設。
+  閾値による自動判定は数学的に不可能と判明済みのため、個別ティッカーの
+  手動リスト方式を採用（コメントで理由・将来追加時の手順を明記）
+- `docs/value-monitor/tanuki_valuation/stock.html`に同名の`Set`を新設し、
+  既存の`FCF_LOW_RELIABILITY_SECTORS`バナー（業種ベース、850-863行）と
+  同じUIコンポーネントを流用した別バナーを追加。条件は
+  `ticker in FCF_CYCLICAL_VOLATILITY_TICKERS`、文言は「⚠️ FCF実力推定に
+  注意（業績サイクル変動）」＋`fcf_estimation.divergence_ratio`を表示。
+  両バナーは独立条件のため同時発火可能な設計（現状は該当銘柄が重複しないため
+  実際に同時発火するケースはない）
+- `pipeline.py`のreport.txt生成箇所（`_generate_report`のFCF_Conversion_Rate
+  表示ブロック）に、同条件でdivergence_ratioを追記表示する行を追加
+  （既存ではdivergence_ratio自体がreport.txtに非表示だったため新規追加）
+- Classification（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）の
+  判定ロジックには一切触れない、表示専用の追加であることをコードレビューで
+  確認済み（新規コードはいずれも`L.append()`／JSXテンプレートへの追記のみで、
+  `valuation`・`score_data`等の判定に使われる変数を変更しない）
+
+#### 検証結果
+- SITM・LITEの2銘柄を個別再生成し、stock.htmlバナー・report.txt双方に
+  新規表示（divergence_ratio: SITM 3.09倍・LITE 4.33倍）を確認
+- 全100銘柄（tanuki=true）を`pipeline.py --skip-risk`で再生成し、新規バナー
+  文言がSITM・LITE以外のreport.txtに一切出現しないことを確認
+  （`grep -rl "FCF実力推定に注意（業績サイクル変動）"`で2件のみヒット）
+- `report_consistency_check.py --fail-on-ng`: NG=0（既存WARN 56件は
+  今回の変更と無関係な既知/新規WARNで、SITM側WARN-25はFY52WEEK-BS-NULL-
+  SILENT-1 Phase A起因の既知未確認WARN）
+- `pytest tests/ -v`: 377 passed / 2 known failures（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]、本タスクと無関係）
+
+
 ### ✅ [FCF-ESTIMATE-SKIP-STABLE-1] estimate_fcf_from_eps()に生FCF安定時のスキップ条件を追加（2026-07-18完了）
 **分類:** バグ修正 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1
 **登録日:** 2026-07-18

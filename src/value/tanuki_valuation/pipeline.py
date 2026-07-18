@@ -35,6 +35,15 @@ if _REPO_ROOT_FOR_IMPORT not in sys.path:
     sys.path.insert(0, _REPO_ROOT_FOR_IMPORT)
 from common.sec_data.contracts import Classification  # GATE2-PHASE3B-1③-b
 
+# FCF-CONVRATE②（TRUST-SUMMARY-EPIC-1）: FCF実力推定の業種平均固定転換率
+# （fcf_conversion_config.json の sector_conversion_rates）が、業界サイクルにより
+# 年度ごとのFCFが大きく変動する銘柄を表現できない構造的限界があると原因分析で
+# 確定した銘柄の個別リスト。cv・divergence_ratio 等の閾値による自動判定は、
+# LLYがDOCNを両軸で完全に上回るなど数学的に分離不可能と判明したため採用しない。
+# 将来3件目以降を追加する場合も、業界サイクル起因かどうかの個別原因分析を経てから
+# 手動追加すること（閾値による自動追加は行わない）。
+FCF_CYCLICAL_VOLATILITY_TICKERS = {"SITM", "LITE"}
+
 
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
     """希薄化率から (severity, badge, report_comment) を返す"""
@@ -1422,6 +1431,16 @@ class TanukiValuationPipeline:
             _sw_provisional = valuation.get("software_system_provisional", {}) or {}
             if _sw_provisional.get("is_provisional") and _sw_provisional.get("note"):
                 L.append(f"⚠️ 要確認: Software_System分類は暫定（{_sw_provisional.get('note')}）")
+            # FCF-CONVRATE②（TRUST-SUMMARY-EPIC-1）: 業種平均の固定転換率では
+            # 業界サイクル変動を表現できない構造的限界が原因分析で確定した銘柄のみの
+            # 個別ティッカーリスト。閾値による自動判定は数学的に不可能と判明したため
+            # 手動リストとする（自動化しない）。将来追加時も個別の原因分析を経ること。
+            if ticker in FCF_CYCLICAL_VOLATILITY_TICKERS:
+                _cyclical_dr = fcf_est.get("divergence_ratio")
+                if _cyclical_dr is not None:
+                    L.append(f"⚠️ FCF実力推定に注意（業績サイクル変動）: 直近乖離 {_cyclical_dr}倍")
+                    L.append("   [業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率")
+                    L.append("    による推定値と実際の乖離が大きくなっています。分類判定には使用しません。]")
             # DCF-RELIABILITY-1: Policy B（FCF_Conversion_Rate方式向けDCF_Reliability）
             _reliability_b = self._calc_dcf_reliability_policy_b(valuation)
             if _reliability_b == "LOW":
