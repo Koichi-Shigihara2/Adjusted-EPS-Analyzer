@@ -147,6 +147,11 @@ Classification未連動の実害範囲がむしろ拡大した。次回セッシ
 - [[JOBY-STATIC-GROWTH-HARDCODE-1]]（副次発見）
 - [[JNJ-XOM-PM-FLOOR-RISK-1]]（潜在リスク監視）
 
+#### コミット
+- `46b5e911d`: fix: GROWTH-SANITY-CLASS-SYNC-1 MOのfloor(15%)問題を解消
+  （growth_sanity.py・BACKLOG.md・BACKLOG_DONE.md）
+- `1691e3622`: data: TANUKI VALUATION 全100銘柄再生成（MOのfloor問題解消を反映）
+
 ---
 
 ### ✅ [FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1] BS4フィールド標準タグ追加（57件・41銘柄、2026-07-19完了）
@@ -235,6 +240,12 @@ absent銘柄179件（105銘柄中）について、複数セッションにわ�
 - [[FY52WEEK-BS-NULL-SILENT-1]]本体はStage2/3が残るため引き続き
   完了扱いにしない
 
+#### コミット
+- `a29e0322d`: fix: FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1 BS4フィールド
+  標準タグ追加（parser.py・BACKLOG.md・BACKLOG_DONE.md・SYSTEM_MAP.md）
+- `3bf3262ac`: data: SECデータ層41銘柄再生成・TANUKI VALUATION全100銘柄再生成
+
+---
 
 ### ✅ [FCF-CONVRATE②] FCF実力推定の固定比率設計限界の可視化（SITM・LITE限定、2026-07-18完了）
 **分類:** 可視化 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1

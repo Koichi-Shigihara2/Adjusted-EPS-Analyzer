@@ -4736,49 +4736,60 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 
 ---
 
-## セッション終了時ブラッシュアップ（2026-07-18）
+## セッション終了時ブラッシュアップ（2026-07-19）
 
-本日完了: [[ARCH-DATA-1]]残課題④（BS項目instant fact本人データ判定・
-実装中にVZ型設計欠陥を発見・修正）・[[FYE-CHANGE-BOUNDARY-COLLISION-
-BLIND-1]]新規登録・[[FY52WEEK-BS-NULL-SILENT-1]]Phase A完了（Phase B/C
-は未着手のまま）・WARN-23全10銘柄の一次情報検証完了・
-[[TTM-STOCK-FIELDS-DEAD-1]]完了（BACKLOG_DONE.mdへ移動）・
-[[TRUST-SUMMARY-EPIC-1]]棚卸し結果の一からの再検証完了（15項目全件、
-一次情報で確定。SPLIT-REALTIME-GAP-1を「構造的限界」→「解消可能」に
-再分類、fcf_outlier丸めによる理由喪失を[[FCF-OUTLIER-PREROUNDING-LOSS-1]]
-として新規登録、sector未収録44→36の食い違いはカウント条件の混同と原因
-特定済み。詳細は同エントリ「棚卸し結果（2026-07-18確定）」参照）に加え、
-同日後半で以下を完了:
-- [[FCF-ESTIMATE-SKIP-STABLE-1]]完了（生FCF安定・外れ値未検出22銘柄の
-  スキップ条件追加、Classification変化5件、BACKLOG_DONE.mdへ移動・
-  コミット`05924a0c0`）
-- TRUST-SUMMARY-EPIC-1の原因ベース分析（境界域含む12銘柄個別調査）で
-  FCF-CONVRATE②可視化対象をSITM・LITEの2銘柄に確定。分解された残り
-  10銘柄のうちCWAN・SNPSを[[CWAN-SNPS-MA-DISTORTION-1]]、KO・SPIRを
-  [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]としてそれぞれ新規登録（優先度：未定）
-- FCF-CONVRATE②可視化を実装完了（`FCF_CYCLICAL_VOLATILITY_TICKERS`個別
-  ティッカーリスト方式、stock.htmlバナー・report.txt表示、Classification
-  非連動を確認、全100銘柄再生成で差分限定を確認。BACKLOG_DONE.mdへ移動・
-  コミット`4966d3f31`→`e39e7c495`）。これにより本EPICの方針の骨子②
-  （構造的限界の可視化）対象は解消し、残るは判断保留5件のみ
-- 検証手順中に`pipeline.py --skip-risk`が既存risk_eventsを無条件で
-  空配列に上書きする副作用を発見（68銘柄で実害確認、コミット前に復元）。
-  再発防止のため[[SKIP-RISK-EVENTS-WIPE-1]]として新規登録（優先度：中）
+**2026-07-18の完了内容**: [[ARCH-DATA-1]]残課題④・[[FYE-CHANGE-BOUNDARY-
+COLLISION-BLIND-1]]新規登録・[[FY52WEEK-BS-NULL-SILENT-1]]Phase A完了・
+WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
+[[TRUST-SUMMARY-EPIC-1]]棚卸し再検証・[[FCF-ESTIMATE-SKIP-STABLE-1]]完了・
+[[FCF-CONVRATE②]]可視化実装完了・[[SKIP-RISK-EVENTS-WIPE-1]]新規登録
+（詳細はBACKLOG_DONE.md該当エントリ参照）。
+
+**2026-07-19の完了内容**:
+- [[FY52WEEK-BS-NULL-SILENT-1]] Phase B Stage1完了（BS4フィールド
+  〈short_term_investments/long_term_debt/short_term_debt/rpo〉の
+  absent銘柄179件を一次情報〈SEC EDGAR 10-K原本〉で個別確認し、①候補
+  タグ欠落・②生涯フェードアウト・③真の構造的ゼロの3類型に分解。
+  安全に解消できる57件（41銘柄）を`parser.py`のXBRL_MAPPINGへ標準タグ
+  追加。BACKLOG_DONE.mdへ記録済み〈本体エントリはStage2/3が残るため
+  BACKLOG.mdに残置〉。残るStage2/3を[[FY52WEEK-BS-STI-OVERRIDE-
+  DESIGN-1]]・[[FY52WEEK-BS-FADEOUT-FALLBACK-1]]として新規登録
+- [[GROWTH-SANITY-CLASS-SYNC-1]]完了（MOのfloor〈15%〉問題を解消。
+  `growth_sanity.py::TICKER_INDUSTRY_OVERRIDES`にMO: "Tobacco"追加＋
+  floor到達中かつindustry_g単独1件候補の場合のみ閾値を2件→1件へ緩和
+  する限定的な条件緩和〈案B'〉を実装。事前に全37銘柄でシミュレーション
+  し、LOARへの副作用がないことを確認してから実装〈この手法をCHAT_RULES.md
+  「候補修正の全母集団シミュレーション」として明文化〉。MO以外への影響
+  ゼロを全100銘柄比較で確認。BACKLOG_DONE.mdへ全文移動済み）。残る論点
+  5件を新規登録: [[GROWTH-VERDICT-SEQUENCING-BUG-1]]・
+  [[WST-SECTOR-MISCLASSIFICATION-1]]・[[JNJ-XOM-PM-FLOOR-RISK-1]]・
+  [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
+  [[JOBY-STATIC-GROWTH-HARDCODE-1]]
 
 次セッションの筆頭候補（優先順・各項目の優先度欄を確認の上で確定）：
-① [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C（short_term_investments/
-   long_term_debt/short_term_debt/rpoの「真のゼロ」判別、優先度：高・
-   着手条件なし。Phase Aが同日完了済みで文脈の継続性あり）
-② [[GROWTH-SANITY-CLASS-SYNC-1]]（growth_sanity.verdictとDCF_Reliability/
-   Classification判定の未連動、優先度：高・着手条件なし。
-   TRUST-SUMMARY-EPIC-1の判断保留5件のうちの1つ）
+① [[GROWTH-VERDICT-SEQUENCING-BUG-1]]（優先度：高・着手条件なし・
+   growth_sanityが1回目パス〈override前〉の値を検証し続けるシーケンシング
+   バグ。24銘柄に影響、うちVZはBUY判定の実害あり。対応方針の骨子は
+   登録時点で提示済み）
+② [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（優先度：中〜高・着手条件なし・
+   KLAC/NVDA/SOFI/TER/V 5銘柄の銘柄別override設計。
+   SOFI-DATA-1の`ltdebt_concept`方式を参考にできる見込み）
 ③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
    着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
 ④ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
    `--skip-risk`使用の都度再発しうるため早めの対応が望ましい）
-⑤ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
+⑤ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
+   `beta_config.json`のsector値修正のみで実装単純）
+⑥ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（優先度：中・着手条件なし・
+   生涯フェードアウト25件への履歴フォールバック設計、年数閾値の設計要）
+⑦ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
    個別登録方式で実装コスト低、優先度：低〜中）
-⑥ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]・
-   [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・[[MRVL-2019-2020-NULL-1]]・
-   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]（いずれも優先度：未定〜中〜低。
-   個別に方針判断してから着手）
+⑧ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
+   [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
+   [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
+   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+   （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
+
+**着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
+（優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
+現時点では監視対象として登録のみ、着手不可）
