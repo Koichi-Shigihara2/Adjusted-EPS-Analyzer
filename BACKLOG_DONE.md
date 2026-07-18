@@ -4,6 +4,98 @@
 
 ## 2026-07-18（完了）
 
+### ✅ [FCF-ESTIMATE-SKIP-STABLE-1] estimate_fcf_from_eps()に生FCF安定時のスキップ条件を追加（2026-07-18完了）
+**分類:** バグ修正 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1
+**登録日:** 2026-07-18
+**完了日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]棚卸し確定後のFCF-CONVRATE②可視化設計の事前調査（FCF代用推定82銘柄の個別検証）
+
+#### 背景
+TANUKI VALUATION対象100銘柄中82銘柄が`calculator/adjustments.py::
+estimate_fcf_from_eps()`によるEPSベースのFCF代用推定に依存していたが、
+`estimate_fcf_from_eps()`のdocstring（導入時原文）に「EPSアナライザーの
+annual.jsonが存在する場合に常時適用」とある通り、生FCF（`base_fcf`）が
+`determine_fcf_base()`のCV方式で多年度安定と判定され、かつ
+`analyze_fcf_outlier()`の外れ値検知でも異常なしと判定された銘柄まで、
+判定条件なしに無条件で推定値へ置換されていることが判明した。
+
+導入経緯の一次調査（`git log --follow`）により、この「無条件置換」は
+意図的な設計判断ではなく、2026-04-19の導入コミット
+（`745a68c556680a6b61a071954dc025c2e457ba21`・`00f3a15797c320499f500f443e497435e7e6f582`、
+いずれも"Add files via upload"で説明文なし）時点で対象銘柄がわずか13銘柄
+しかなく、その後100銘柄まで拡大する過程で前提が一度も再検証されないまま
+持ち越されたものと判明した（BACKLOG.md/BACKLOG_DONE.mdの全履歴を検索したが
+「生FCFが安定している銘柄は推定に置き換えない」という設計議論の形跡は
+一度も見つからなかった）。
+
+#### 事前調査結果
+- 全105銘柄機械集計で該当24銘柄を特定（CV<0.3 AND `outlier_detected`==False）。
+  0.2〜0.5の閾値感度シミュレーションでも該当数はほぼ安定（20〜25件）
+- `fcf_conversion_config.json`の`_sector_rationale`に業種固有理由が明記済みの
+  9銘柄（AVGO/CRM/CWAN/DDOG/DOCN/HEI/NOW/SNPS/TSLA）との重複はゼロ
+  （全9銘柄が`outlier_detected=True`のため自動的に除外される）
+- **実装直前に新規発見**: `ticker_overrides`（AI CapEx急増等の個別配慮、
+  AMZN/CEG/GOOGL/META/MRVL/MSFTの6銘柄）のうちGOOGL・MSFTの2銘柄が
+  該当24銘柄に含まれることが判明。両銘柄はCV/外れ値検知データ上は
+  「安定・異常なし」だが、ticker_overrides自体がAI CapEx急増による
+  実態FCF過大評価を補正する個別設定であり、CV/外れ値データにはまだ
+  その影響が反映されていないため、Koichiさんに確認の上
+  **ticker_overrides該当銘柄はスキップ条件の対象外とする方針を決定**
+  （対象は24→22銘柄に縮小）
+- 下流の全消費箇所（`_calc_dcf_reliability_policy_b()`・SELL判定・
+  report.txt生成・stock.html）は既存の`applied=False`契約
+  （`estimated_fcf=raw_fcf`へのフォールバック）で問題なく動作することを
+  コード・実データ・既存テストケースで確認済み
+
+#### 実装内容
+- `calculator/adjustments.py::estimate_fcf_from_eps()`に`fcf_cv`・
+  `outlier_detected`引数を追加。既存の5フォールバック条件
+  （config存在／非excluded／EPSデータあり／年度あり／純利益プラス）の
+  最後（調整済み純利益マイナス判定の直後）に、
+  `ticker not in ticker_overrides and fcf_cv < 0.3 and not outlier_detected`
+  のスキップ条件を新設。該当時は`applied=False`・`estimated_fcf=raw_fcf`・
+  note欄に理由（例:「生FCF安定(CV=0.14<0.3)かつ外れ値未検出のため推定を
+  適用せず生FCFを採用」）を明記
+- `core_calculator.py`の呼び出し元に`fcf_cv=fcf_base_result.cv`・
+  `outlier_detected=fcf_outlier_result.detected`を追加
+
+#### 検証結果
+- 影響22銘柄（ABBV/AMAT/BSY/CART/CAT/CDNS/CIX/CON/HON/JNJ/KLAC/LMT/MO/
+  MSCI/PM/TASK/TDY/TER/V/VZ/WMT/WST）を`pipeline.py --skip-risk`で再生成。
+  成功22/失敗0。全銘柄で`applied`がTrue→False、`estimated_fcf`が
+  生FCF（`raw_fcf`と同値）に切り替わったことを確認
+- GOOGL/MSFTは意図的に対象外のまま未再生成、ticker_override由来の
+  conversion_rateが従来通り適用されていることを確認
+- Classification（TANUKI SCORE）変化5銘柄: BSY(BUY→WATCH)・
+  CIX(HOLD→BUY)・CON(GROWTH_PREMIUM→HOLD)・JNJ(GROWTH_PREMIUM→TRIM)・
+  VZ(HOLD→BUY)。残り17銘柄はIV変化のみでClassification不変
+- Policy A/B発火状況（DCF_Reliability=LOWのscore_comment）は22銘柄
+  いずれも変化なし（元々`outlier_detected=False`かつ乖離率2.0倍未満の
+  ため、変更前からPolicy A/Bは未発火だった）
+- pytest: 377 passed（既知2件MSFT/NVDA・[[TEST-STALE-IV-1]]のみ、無関係）
+- `report_consistency_check.py`: NG=0/WARN=56（新規WARN増加なし）
+- report.txt表示: 既存の`applied=False`銘柄（BKNG等）と同一形式
+  （`FCF_Base: $X M (Nyr平均)`・`DCF_Reliability: HIGH`）で表示されることを
+  目視確認
+
+#### 依存関係・関連エントリ
+- **[[POLICY-AB-TREND-BLIND-1]]（未着手・優先度：低）との関係**: 同エントリは
+  `outlier_detected=True`の上方乖離側（`latest_fcf>fcf_5yr_avg`）に高い
+  false positive率があることを既に診断済み（70銘柄中50銘柄が該当）。
+  本タスクのスキップ条件は`outlier_detected==False`を要求する保守的な
+  設計であり、この既知のノイズを持つ`detected=True`側を意図的に対象外
+  としている。**将来この条件を緩和する（`detected=True`側にも拡張する）
+  場合は、POLICY-AB-TREND-BLIND-1の解消（上方乖離の健全ケース切り分け）が
+  前提となる**
+- **[[FCF-CONVRATE-DESIGN-LIMIT-1]]（完了）・[[TRUST-SUMMARY-EPIC-1]]
+  （FCF-CONVRATE②）との関係**: 本タスクにより、機械的置換だった54銘柄
+  （前回調査の類型(e)相当）のうち22銘柄が解消した。TRUST-SUMMARY-EPIC-1の
+  可視化スコープは、残る構造的限界（真にボラティリティが大きい銘柄群
+  ＝SITM/LITE/SPIR等のFCF-CONVRATE②）に絞られる。詳細は
+  TRUST-SUMMARY-EPIC-1エントリの状況更新を参照
+
+---
+
 ### ✅ [TTM-STOCK-FIELDS-DEAD-1] ttm_calculator.pyのSTOCK_FIELDS/SHARES_FIELDS分類が構造的に本番未到達（対応方針a: デッドコード削除で完了）
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1（GATE2-PHASE3B-1関連）
 **登録日:** 2026-07-17
