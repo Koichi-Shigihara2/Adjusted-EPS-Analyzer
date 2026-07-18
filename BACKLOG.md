@@ -1081,6 +1081,82 @@ ARCH-DATA-1の3段階設計とは独立に着手可能。ただしARCH-DATA-1の
 途中で生じうる欠落等）も本タスクの対象に含めて拾えるよう、
 ARCH-DATA-1の設計・実装状況を横目に見ながら進めることが望ましい。
 
+#### 網羅調査完了（2026-07-18）
+
+対象箇所の網羅grepを実施した結果、BS9項目+rpoの参照は9ファイルに
+限定されることを確認した。`or 0`パターン14件（うち`get_net_cash()`
+起点が最重要、`_calc_g_fundamental()`・invested_capital計算〈RICEの
+VC_Factor〉が高重要度）・複数年度横断除外パターン4件を一覧化。
+全105銘柄の機械集計でNone率を実測し、total_assets/total_liabilities
+が0%、stockholders_equity/current_assets/current_liabilitiesが1%、
+cash_and_equivalentsが4%、long_term_debt/short_term_debtが36-37%、
+short_term_investmentsが65%、rpoが35%（非SaaS銘柄は正常）と判明した。
+None率がほぼ0-4%の6フィールド（total_assets/total_liabilities/
+stockholders_equity/current_assets/current_liabilities/
+cash_and_equivalents）はNoneがほぼ確実にデータ異常のシグナルである
+一方、short_term_investments/long_term_debt/short_term_debtは
+「真のゼロ」との判別が本質的に困難と判明したため、Phase A（前者6項目）
+とPhase B/C（後者+rpo）に分離する方針とした。
+
+#### Phase A完了（2026-07-18）
+
+None率がほぼ0-4%の6フィールドについて、以下3経路の`or 0`パターンを
+DuPont分解（`pipeline.py`）と同じ「除外」方針の明示的None検知に置換した:
+
+- `reader.py::get_net_cash()`: `cash_and_equivalents`のNoneを`or 0`で
+  ゼロ化せず保持。annual/四半期のいずれからも取得できなかった場合
+  `available=False`・新規`cash_missing`フラグをTrueにし、
+  `calculate_bs_adjustment()`側の既存フォールバック
+  （`available=False`→`net_cash_per_share=0.0`）でBS補正自体を
+  安全にスキップする設計とした（`financial_health`辞書にも
+  `cash_missing`を伝播）
+- `pipeline.py::_calc_g_fundamental()`: `stockholders_equity`/
+  `total_equity`がいずれもNone、または`cash_and_equivalents`がNoneの
+  場合、関数の既存パターンに倣いNoneを返す（除外）
+- `pipeline.py::_calc_roic_wacc_ratio()`（RICEのVC_Factor）: 同様に
+  Noneを返す。既存の`invested_capital<=0`→None→`VC_Factor=1.0`
+  フォールバック安全弁は維持
+
+`long_term_debt`/`short_term_debt`/`short_term_investments`（Phase B/C
+対象）は今回変更していない。副次的伝播箇所（`adjustments.py`::
+`calculate_bs_adjustment()`・`pipeline.py`の`financial_health`辞書
+構築）は`get_net_cash()`側のavailable/cash_missingが正しく機能すれば
+自動的に安全になることを確認済み（`calculate_bs_adjustment()`は
+`available`を既に正しく参照していたため無改修）。`pipeline.py:2065-2069`
+の`debt_cash_by_year`（死コード、構築後どこからも参照されない）は
+今回のスコープ外として変更していない（削除要否は別途DEAD-CODE系で判断）。
+
+`report_consistency_check.py`にCHECK-25/WARN-25を新設し、最新
+annual_YYYY.jsonを直接参照して対象6フィールドのNoneを検知するように
+した（WARN-24は[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]向けに予約済み
+のため欠番）。
+
+**検証結果:**
+- 全105銘柄のSECデータ層（annual_YYYY.json）は無変更（parser.py自体は
+  今回改修していないため）
+- WARN-25が新規に発生した銘柄: CPRT・GEV・HEI・SITM（いずれも
+  cash_and_equivalents欠損、CASH-TAG-MISSING-1の既知欠落銘柄
+  CAT/CPRT/ELF/GEV/HEIと符合）・SOFI（current_assets/
+  current_liabilities欠損、total_assets/total_liabilities系は
+  想定通り0件）・APGE（stockholders_equity欠損だがtanuki=falseで
+  pipeline.py対象外のため実害なし）
+- 計算経路（`get_net_cash()`・`_calc_g_fundamental()`・
+  `_calc_roic_wacc_ratio()`）に実際に影響するのはAPGE除く4銘柄
+  （CPRT/GEV/HEI/SITM）のみと機械的に特定し、`pipeline.py --skip-risk`
+  で再生成して確認: Intrinsic_Value_Per_Shareは CPRT +2.37%・
+  GEV +0.36%・HEI -4.72%・SITM 0.00%変化（TANUKI SCORE分類は
+  4銘柄ともWATCHで不変）。HEIは以前`_calc_g_fundamental()`が
+  annual cash_and_equivalents=Noneを$0として誤って投下資本計算に
+  混入させていた（実際は四半期データで$210M保有）ことが根本原因と
+  一次データで確認済み。無関係な制御群（AAPL）で再生成しIV完全不変
+  （current_price等の市場変動ノイズのみ）を確認
+- pytest 380 passed（既知2件除く、変更前と同一）
+- report_consistency_check.py: NG=0/WARN=56（51→+5、上記5銘柄分の
+  WARN-25新規発生。既存WARN種別への影響なし）
+
+**Phase B/C（short_term_investments/long_term_debt/short_term_debt/rpo）
+は未着手のまま残る。** 本タスクは完了扱いにしない。
+
 ---
 
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証

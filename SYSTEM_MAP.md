@@ -410,6 +410,22 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    固有のQ4逆算ロジック`_build_q4_implied()`・hypecore.py固有のpandas変換
 │    ロジックはそれぞれのファイル側にローカル残置し、reader.py側にはpandas
 │    依存を持ち込まない設計を維持）。詳細は[[GATE2-PHASE3B-1]]参照
+│    **追記（FY52WEEK-BS-NULL-SILENT-1 Phase A 2026-07-18）**:
+│    `cash_and_equivalents`が全105銘柄実測でNone率0-4%（ほぼ確実にデータ
+│    異常のシグナル）と判明したため、`or 0`による暗黙のゼロ化を廃止。
+│    annual・四半期のいずれからも取得できなかった場合`available=False`・
+│    新規`cash_missing`フラグをTrueにし、`calculate_bs_adjustment()`側の
+│    既存フォールバック（`available=False`→`net_cash_per_share=0.0`）で
+│    BS補正自体を安全にスキップする設計とした。`short_term_investments`/
+│    `long_term_debt`/`short_term_debt`は「真のゼロ」との判別困難のため
+│    対象外（Phase B/C、従来通り`or 0`を維持）。`pipeline.py::
+│    _calc_g_fundamental()`（成長率g候補）・`_calc_roic_wacc_ratio()`
+│    （RICEのVC_Factor）でも同フィールドに同種の除外パターンを追加。
+│    `report_consistency_check.py`にCHECK-25/WARN-25を新設し、最新
+│    annual_YYYY.jsonの対象6フィールド（total_assets/total_liabilities/
+│    stockholders_equity/current_assets/current_liabilities/
+│    cash_and_equivalents）のNoneを独立検知する。詳細はBACKLOG.md
+│    [[FY52WEEK-BS-NULL-SILENT-1]]参照
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:

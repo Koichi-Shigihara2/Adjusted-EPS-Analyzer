@@ -375,6 +375,14 @@ class SECReader:
                                                   "Cash={四半期}/Debt=FYnnnn"）
                                                   ARCH-DATA-1残課題①でreport.txt表示
                                                   （pipeline.py）向けに追加
+                "cash_missing":           bool   annual・四半期のいずれからも
+                                                  cash_and_equivalentsを取得できな
+                                                  かった場合True（FY52WEEK-BS-
+                                                  NULL-SILENT-1 Phase A）。この場合
+                                                  available=Falseも同時にFalseに
+                                                  なり、net_cash自体は0円扱いのまま
+                                                  算出されるが呼び出し元は
+                                                  availableで信頼性を判定する前提
             }
         """
         annual_data = self.get_annual_range(ticker, years=1)
@@ -384,6 +392,7 @@ class SECReader:
                 "long_term_debt": 0.0, "short_term_debt": 0.0,
                 "net_cash": 0.0, "fiscal_year": 0, "available": False,
                 "sector_guard": "none", "net_debt_period": "",
+                "cash_missing": False,
             }
 
         latest = annual_data[0]
@@ -394,7 +403,13 @@ class SECReader:
         except (ValueError, TypeError):
             fy = 0
 
-        cash    = bs.get("cash_and_equivalents", 0) or 0
+        # FY52WEEK-BS-NULL-SILENT-1 Phase A: cash_and_equivalentsはNone率が
+        # 全105銘柄実測でほぼ0-4%（CASH-TAG-MISSING-1系の既知欠落を除けば
+        # ほぼ確実にデータ異常のシグナル）のため、`or 0`で暗黙にゼロ化せず
+        # Noneを保持する（後段の四半期上書き・欠損判定で扱う）。
+        # short_term_investments/long_term_debt/short_term_debtは「真のゼロ」
+        # との判別が困難なため対象外（Phase B/C、従来通り`or 0`を維持）。
+        cash    = bs.get("cash_and_equivalents")
         st_inv  = bs.get("short_term_investments", 0) or 0
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
@@ -439,6 +454,17 @@ class SECReader:
         except Exception:
             pass
 
+        # FY52WEEK-BS-NULL-SILENT-1 Phase A: annual・四半期のいずれからも
+        # cash_and_equivalentsを取得できなかった場合、DuPont分解（pipeline.py）
+        # と同じ「ゼロ継続ではなく除外」方針に倣い、available=Falseを明示する。
+        # calculate_bs_adjustment()がavailable=Falseの場合net_cash_per_share=0.0
+        # にフォールバックする既存ロジックにより、BS補正自体が安全にスキップされる
+        # （net_cash自体は0円扱いのまま算出するが、availableで信頼性を明示するため
+        # 呼び出し元が誤って使うことはない）。
+        cash_missing = cash is None
+        if cash_missing:
+            cash = 0.0
+
         # ── セクターガード（v8.1: industry優先判定）──
         # _is_insurance()と同じロジックをここで直接適用
         # （adjustments.pyのimportを避けるため複製）
@@ -466,7 +492,7 @@ class SECReader:
             sector_guard = "fintech_st_debt_excluded"
 
         net_cash = (cash + st_inv) - (lt_debt + st_debt)
-        available = any([cash, st_inv, lt_debt, st_debt])
+        available = (not cash_missing) and any([cash, st_inv, lt_debt, st_debt])
 
         return {
             "cash":                   float(cash),
@@ -478,6 +504,7 @@ class SECReader:
             "available":              available,
             "sector_guard":           sector_guard,
             "net_debt_period":        net_debt_period,
+            "cash_missing":           cash_missing,
         }
 
     # =========================================

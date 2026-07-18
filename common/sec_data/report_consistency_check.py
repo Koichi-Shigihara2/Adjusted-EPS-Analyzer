@@ -41,6 +41,17 @@ report_consistency_check.py
                               自体がfyタグと異なる」CDNS型を検知する。比較年度再掲エントリ
                               〈is_own_data=False〉はfyタグがfiling側の属性でしかなく
                               正常仕様のため対象外。自動修正なし）
+  WARN 25. BS項目None         最新annual_YYYY.jsonのtotal_assets/total_liabilities/
+                              stockholders_equity/current_assets/current_liabilities/
+                              cash_and_equivalentsのいずれかがNone
+                              （FY52WEEK-BS-NULL-SILENT-1 Phase A新設。全105銘柄実測で
+                              None率がほぼ0-4%のフィールドに限定——ほぼ確実にデータ異常の
+                              シグナル。従来はreader.py::get_net_cash()等で`or 0`により
+                              静かに$0化され検知不能だった。short_term_investments/
+                              long_term_debt/short_term_debt〈真のゼロとの判別困難〉・
+                              rpo〈非SaaS銘柄はNoneが正常〉はPhase B/Cとして対象外。
+                              WARN-24はFYE-CHANGE-BOUNDARY-COLLISION-BLIND-1向けに
+                              予約済みのため欠番）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -187,6 +198,30 @@ def _read_fy_tag_mismatch_log(ticker: str) -> list:
             return json.load(f).get("mismatches", [])
     except Exception:
         return []
+
+
+# FY52WEEK-BS-NULL-SILENT-1 Phase A対象フィールド。全105銘柄実測でNone率が
+# ほぼ0-4%（CASH-TAG-MISSING-1系の既知欠落を除けばほぼ確実にデータ異常の
+# シグナル）のBS項目に限定する。short_term_investments/long_term_debt/
+# short_term_debt（真のゼロとの判別困難）・rpo（非SaaS銘柄はNoneが正常）は
+# Phase B/Cとして対象外。
+_BS_NULL_CHECK_FIELDS = [
+    "total_assets", "stockholders_equity", "total_liabilities",
+    "cash_and_equivalents", "current_assets", "current_liabilities",
+]
+
+
+def _read_latest_annual_bs(ticker: str) -> tuple[dict, str]:
+    """最新のannual_YYYY.jsonのbs辞書とperiod文字列を返す。存在しなければ({}, "")"""
+    files = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "annual_*.json")))
+    if not files:
+        return {}, ""
+    try:
+        with open(files[-1], encoding="utf-8") as f:
+            d = json.load(f)
+        return d.get("bs", {}) or {}, str(d.get("period", ""))
+    except Exception:
+        return {}, ""
 
 
 def _read_eps_quarterly(ticker: str) -> list:
@@ -735,6 +770,26 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
             f" (対象フィールド: {', '.join(_fields_c23[:5])}{'...' if len(_fields_c23) > 5 else ''})"
             f" → 本人データ自身のfyタグが年度バケツと食い違う（裏取り検知、自動修正なし）"
         )
+
+    # CHECK-25: BS項目None検知（FY52WEEK-BS-NULL-SILENT-1 Phase A）
+    # total_assets/total_liabilities/stockholders_equity/current_assets/
+    # current_liabilities/cash_and_equivalentsは全105銘柄実測でNone率が
+    # ほぼ0-4%（ほぼ確実にデータ異常のシグナル）。従来はreader.py::
+    # get_net_cash()等の計算経路で`or 0`により静かに$0化され検知不能
+    # だった。最新年度annual_YYYY.jsonを直接参照し、対象フィールドの
+    # 欠損を明示的に検知する（report.txt/latest.jsonの生成有無に依存
+    # しない独立チェック）。short_term_investments/long_term_debt/
+    # short_term_debt（真のゼロとの判別困難）・rpo（非SaaS銘柄はNoneが
+    # 正常）はPhase B/Cとして対象外。
+    _bs_c25, _period_c25 = _read_latest_annual_bs(ticker)
+    if _bs_c25:
+        _none_fields_c25 = [f for f in _BS_NULL_CHECK_FIELDS if _bs_c25.get(f) is None]
+        if _none_fields_c25:
+            warn.append(
+                f"  [WARN-25 BS項目None] FY{_period_c25}: {', '.join(_none_fields_c25)}"
+                f" が欠損 → 計算経路でNoneが暗黙に0化されている可能性"
+                f"（FY52WEEK-BS-NULL-SILENT-1 Phase A、要確認）"
+            )
 
     return ng, warn
 

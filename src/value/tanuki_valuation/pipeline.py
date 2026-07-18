@@ -2107,6 +2107,11 @@ class TanukiValuationPipeline:
                 "net_debt": net_debt,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
                 "net_debt_period": _net_debt_period,
+                # FY52WEEK-BS-NULL-SILENT-1 Phase A: get_net_cash()由来のcash_missing
+                # をそのまま伝播する。get_net_cash()がavailable=Falseにフォールバック
+                # 済みのためnet_debt自体は誤って使われないが、report.txt/latest.json
+                # を直接参照する側にも「cashがNoneだった」ことを可視化する。
+                "cash_missing": bs_adj.get("cash_missing", False),
             }
             # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
             # 条件: 直近四半期EPS<0, 直近年FCF<0, またはcash<$100M のいずれか
@@ -2486,12 +2491,26 @@ class TanukiValuationPipeline:
             pl = ann.get("pl", {})
             cf = ann.get("cf", {})
             bs = ann.get("bs", {})
+            # FY52WEEK-BS-NULL-SILENT-1 Phase A: stockholders_equity/
+            # cash_and_equivalentsはNone率がほぼ0-4%（全105銘柄実測）で、
+            # Noneはほぼ確実にデータ異常のシグナル。従来は`or 0`で暗黙に
+            # ゼロ化して成長率計算を続行していたが、DuPont分解
+            # （_du_bs関連コード）と同じ「除外」方針に倣いNoneを返す。
+            # long_term_debt/short_term_debtは真のゼロとの判別困難のため
+            # 対象外（Phase B/C、従来通り`or 0`を維持）。
+            _equity_se = bs.get("stockholders_equity")
+            _equity_te = bs.get("total_equity")
+            _cash_raw = bs.get("cash_and_equivalents")
+            if _equity_se is None and _equity_te is None:
+                return None
+            if _cash_raw is None:
+                return None
             return calc_fundamental_growth(
                 operating_income=pl.get("operating_income") or 0,
                 tax_rate=0.21,
-                total_equity=bs.get("stockholders_equity") or bs.get("total_equity") or 0,
+                total_equity=_equity_se or _equity_te or 0,
                 total_debt=(bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)) + (bs.get("short_term_debt") or 0),
-                cash=bs.get("cash_and_equivalents") or 0,
+                cash=_cash_raw,
                 capex=abs(cf.get("capital_expenditure") or cf.get("capital_expenditures") or 0),
                 depreciation=cf.get("depreciation_and_amortization") or cf.get("depreciation_amortization") or 0,
                 delta_working_capital=0,
@@ -2578,10 +2597,25 @@ class TanukiValuationPipeline:
             nopat = (oi or 0) * (1 - 0.21)
             if nopat <= 0:
                 return None
-            equity = bs.get("stockholders_equity") or bs.get("total_equity") or 0
+            # FY52WEEK-BS-NULL-SILENT-1 Phase A: stockholders_equity/
+            # cash_and_equivalentsはNone率がほぼ0-4%（全105銘柄実測）で、
+            # Noneはほぼ確実にデータ異常のシグナル。従来は`or 0`で暗黙に
+            # ゼロ化してinvested_capitalを算出し続けていたが、DuPont分解
+            # と同じ「除外」方針に倣いNoneを返す（既存のinvested_capital<=0
+            # →None→VC_Factor=1.0フォールバック安全弁はそのまま維持）。
+            # long_term_debt/short_term_debtは真のゼロとの判別困難のため
+            # 対象外（Phase B/C、従来通り`or 0`を維持）。
+            _equity_se = bs.get("stockholders_equity")
+            _equity_te = bs.get("total_equity")
+            _cash_raw = bs.get("cash_and_equivalents")
+            if _equity_se is None and _equity_te is None:
+                return None
+            if _cash_raw is None:
+                return None
+            equity = _equity_se or _equity_te or 0
             lt_debt = bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)
             st_debt = bs.get("short_term_debt") or 0
-            cash = bs.get("cash_and_equivalents") or 0
+            cash = _cash_raw
             invested_capital = equity + lt_debt + st_debt - cash
             if invested_capital <= 0:
                 return None
