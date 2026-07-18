@@ -69,6 +69,13 @@ SEC XBRL実データ（`common/sec_data/data/{TICKER}/annual_YYYY.json`、
 - `pytest tests/ -v`: 377 passed / 2 known failures（MSFT/NVDA、
   [[TEST-STALE-IV-1]]、本タスクと無関係）
 
+#### コミット
+- `4966d3f31`: feat: FCF-CONVRATE② SITM・LITE限定のFCFサイクル変動可視化バナー実装
+  （pipeline.py/stock.html/BACKLOG.md/BACKLOG_DONE.md）
+- `e39e7c495`: data: TANUKI VALUATION 全100銘柄再生成（FCF-CONVRATE②検証・日次データ更新、
+  risk_events意図しない上書きの復元含む）
+
+---
 
 ### ✅ [FCF-ESTIMATE-SKIP-STABLE-1] estimate_fcf_from_eps()に生FCF安定時のスキップ条件を追加（2026-07-18完了）
 **分類:** バグ修正 / TANUKI VALUATION / TRUST-SUMMARY-EPIC-1
@@ -159,6 +166,10 @@ annual.jsonが存在する場合に常時適用」とある通り、生FCF（`ba
   可視化スコープは、残る構造的限界（真にボラティリティが大きい銘柄群
   ＝SITM/LITE/SPIR等のFCF-CONVRATE②）に絞られる。詳細は
   TRUST-SUMMARY-EPIC-1エントリの状況更新を参照
+
+#### コミット
+- `05924a0c0`: fix: estimate_fcf_from_eps()に生FCF安定時のスキップ条件を追加
+  （calculator/adjustments.py・core_calculator.py・影響22銘柄データ）
 
 ---
 

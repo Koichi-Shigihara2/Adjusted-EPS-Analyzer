@@ -2035,6 +2035,38 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
+### [SKIP-RISK-EVENTS-WIPE-1] pipeline.py --skip-risk実行時、既存のrisk_eventsが空配列で上書きされる
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION / データ保全
+**登録日:** 2026-07-18
+**発見:** [[FCF-CONVRATE②]]（BACKLOG_DONE.md参照）検証手順で全100銘柄を
+`pipeline.py --skip-risk`で再生成した際に発見
+
+#### 問題
+`pipeline.py`の`risk_events`（Grok web検索による週次リスクイベント取得、
+GitHub Actions週次自動実行が本来の更新経路）が、`--skip-risk`実行時に
+既存値を保持せず無条件で空配列`[]`に上書きされる（`pipeline.py:841-842`
+`risk_events = []` / `if not self.skip_risk: ... risk_events = fetch_risk_events(...)`。
+`self.skip_risk`がTrueの場合は分岐に入らず`risk_events`が空のまま
+`latest_data["risk_events"] = risk_events`で確定・書き込みされる）。
+
+CLAUDE_CODE_START.mdは「手動実行時は原則--skip-riskを付けること」と
+明記しており、複数銘柄・全銘柄を対象にした手動再生成のたびにこの
+問題が再現しうる。2026-07-18のFCF-CONVRATE②検証作業（全100銘柄を
+`--skip-risk`で再生成）で68銘柄のrisk_eventsが空配列に上書きされる
+実害を確認し、コミット前にHEAD時点の値へ手動復元した
+（詳細はBACKLOG_DONE.md「[FCF-CONVRATE②]」のコミット参照）。
+
+#### 対応方針（未確定）
+`--skip-risk`時は`risk_events`を空配列で確定させるのではなく、書き込み前に
+既存の`latest.json`があればその`risk_events`をそのまま引き継ぐ（未取得の
+新規銘柄は従来通り空配列）設計に変更する。
+
+#### 着手条件
+なし
+
+---
+
 ### [FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1] 決算期変更の境界年でのバケツ衝突が検知網から漏れる
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質ゲート
@@ -4536,16 +4568,38 @@ BLIND-1]]新規登録・[[FY52WEEK-BS-NULL-SILENT-1]]Phase A完了（Phase B/C
 一次情報で確定。SPLIT-REALTIME-GAP-1を「構造的限界」→「解消可能」に
 再分類、fcf_outlier丸めによる理由喪失を[[FCF-OUTLIER-PREROUNDING-LOSS-1]]
 として新規登録、sector未収録44→36の食い違いはカウント条件の混同と原因
-特定済み。詳細は同エントリ「棚卸し結果（2026-07-18確定）」参照）。
+特定済み。詳細は同エントリ「棚卸し結果（2026-07-18確定）」参照）に加え、
+同日後半で以下を完了:
+- [[FCF-ESTIMATE-SKIP-STABLE-1]]完了（生FCF安定・外れ値未検出22銘柄の
+  スキップ条件追加、Classification変化5件、BACKLOG_DONE.mdへ移動・
+  コミット`05924a0c0`）
+- TRUST-SUMMARY-EPIC-1の原因ベース分析（境界域含む12銘柄個別調査）で
+  FCF-CONVRATE②可視化対象をSITM・LITEの2銘柄に確定。分解された残り
+  10銘柄のうちCWAN・SNPSを[[CWAN-SNPS-MA-DISTORTION-1]]、KO・SPIRを
+  [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]としてそれぞれ新規登録（優先度：未定）
+- FCF-CONVRATE②可視化を実装完了（`FCF_CYCLICAL_VOLATILITY_TICKERS`個別
+  ティッカーリスト方式、stock.htmlバナー・report.txt表示、Classification
+  非連動を確認、全100銘柄再生成で差分限定を確認。BACKLOG_DONE.mdへ移動・
+  コミット`4966d3f31`→`e39e7c495`）。これにより本EPICの方針の骨子②
+  （構造的限界の可視化）対象は解消し、残るは判断保留5件のみ
+- 検証手順中に`pipeline.py --skip-risk`が既存risk_eventsを無条件で
+  空配列に上書きする副作用を発見（68銘柄で実害確認、コミット前に復元）。
+  再発防止のため[[SKIP-RISK-EVENTS-WIPE-1]]として新規登録（優先度：中）
 
-次セッションの筆頭候補（優先順）：
-① [[TRUST-SUMMARY-EPIC-1]]の可視化設計（構造的限界に残るFCF-CONVRATE②
-   単独が対象。フィールド構成・表示箇所を検討）
-② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
-   着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
-③ [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C（short_term_investments/
+次セッションの筆頭候補（優先順・各項目の優先度欄を確認の上で確定）：
+① [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C（short_term_investments/
    long_term_debt/short_term_debt/rpoの「真のゼロ」判別、優先度：高・
-   着手条件なし）
-④ [[SPLIT-REALTIME-GAP-1]]（解消可能・split_history.yaml個別登録方式・
-   優先度：低〜中）・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]（解消可能・
-   優先度：未定）はそれぞれ独立タスクとして個別に着手判断する
+   着手条件なし。Phase Aが同日完了済みで文脈の継続性あり）
+② [[GROWTH-SANITY-CLASS-SYNC-1]]（growth_sanity.verdictとDCF_Reliability/
+   Classification判定の未連動、優先度：高・着手条件なし。
+   TRUST-SUMMARY-EPIC-1の判断保留5件のうちの1つ）
+③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
+   着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
+④ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
+   `--skip-risk`使用の都度再発しうるため早めの対応が望ましい）
+⑤ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
+   個別登録方式で実装コスト低、優先度：低〜中）
+⑥ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]・
+   [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・[[MRVL-2019-2020-NULL-1]]・
+   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]（いずれも優先度：未定〜中〜低。
+   個別に方針判断してから着手）
