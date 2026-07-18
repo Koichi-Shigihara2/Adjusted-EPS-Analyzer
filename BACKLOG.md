@@ -1945,6 +1945,14 @@ ASU 2016-18（制限付き現金を含むキャッシュフロー期首・期末
 リスクがある点に注意。追加時は定義上の影響範囲（Net Debt計算等への
 影響）を確認すること。
 
+#### 追記（2026-07-18・FY52WEEK-BS-NULL-SILENT-1 Phase A実装時の副次発見）
+新設したWARN-25（BS項目None検知）で**SITMのcash_and_equivalents
+（FY2025）欠落**を新規検知した。上記5銘柄（CAT/CPRT/ELF/GEV/HEI）の
+リストにSITMは含まれていなかったが、同一のタグ未登録が原因の未
+カタログ化インスタンスと推測される（`tag_definitions.py`は本追記時点
+で未更新のため）。対応方針自体に変更はなく、着手時に対象銘柄の再洗い出し
+（全105銘柄への機械スキャン）を行うことを推奨する。
+
 #### 着手条件
 なし
 
@@ -2913,6 +2921,32 @@ WARN表示される。したがって本タスク（PREFLIGHT-CHECK-1、Step1**�
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [TTM-SBC-QUARTERS-GAP-1] build_rice_annual_shape()のSBCがquarters完全性チェック対象外
+**優先度:** 低〜未定
+**分類:** データ品質 / SECデータ取得層
+**登録日:** 2026-07-18
+**発見:** TRUST-SUMMARY-EPIC-1ステップ1棚卸し調査時の副次発見
+
+#### 内容
+`data_fetcher.py::build_rice_annual_shape()`は、OCF/CapEx/Revenue/
+NetIncomeの4フィールドについて`_quarters_complete()`（quarters_used≥4）で
+完全性を判定してから出力対象に含めるが、同じ辞書内に含まれる`SBC`
+（stock_based_compensation）はこの完全性チェックの対象外のまま無条件で
+出力される（298行目付近、`_quarters_complete()`呼び出し引数にSBCが
+含まれていない）。RD/SMがrice.py側で意図的にNone許容（0扱い・警告ログ
+のみ）とされているのとは異なり、SBCについては「意図的な許容」なのか
+「チェック漏れ」なのか、現時点では未確認。
+
+#### 対応方針（未定）
+`build_rice_annual_shape()`のSBC出力が実際にquarters_used<4の不完全な
+値を含むケースがあるか実データで確認し、意図的な設計か単純な漏れかを
+切り分けてから対応要否を判断する。
+
+#### 着手条件
+なし
+
+---
 
 ### [CLAUDE-CODE-START-FY-DESC-FIX-1] CLAUDE_CODE_START.mdのdetermine_fiscal_year()呼び出し箇所記述の修正
 **優先度:** 低
@@ -4307,3 +4341,26 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 ⑥ ~~[[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク）~~
    ✅ 2026-07-18完了。対応方針(a)デッドコード削除を実施、
    BACKLOG_DONE.mdへ全文移動
+
+---
+
+## セッション終了時ブラッシュアップ（2026-07-18）
+
+本日完了: [[ARCH-DATA-1]]残課題④（BS項目instant fact本人データ判定・
+実装中にVZ型設計欠陥を発見・修正）・[[FYE-CHANGE-BOUNDARY-COLLISION-
+BLIND-1]]新規登録・[[FY52WEEK-BS-NULL-SILENT-1]]Phase A完了（Phase B/C
+は未着手のまま）・WARN-23全10銘柄の一次情報検証完了・
+[[TTM-STOCK-FIELDS-DEAD-1]]完了（BACKLOG_DONE.mdへ移動）・
+[[TRUST-SUMMARY-EPIC-1]]棚卸しレビュー中間記録追記（結論未確定）。
+
+次セッションの筆頭候補（優先順）：
+① [[TRUST-SUMMARY-EPIC-1]]棚卸し結果の一からの再検証。要再確認4点:
+   SPLIT-REALTIME-GAP-1の分類訂正（「構造的限界」→「解消可能」の
+   可能性）・FCF-CONVRATE①のsector未収録件数の食い違い（44→36、
+   原因未特定）・fcf_outlier丸めによる理由喪失の分類根拠検証（一次情報
+   未確認）・その他棚卸し結果全体をゼロベースで洗い直す
+② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
+   着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
+③ [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C（short_term_investments/
+   long_term_debt/short_term_debt/rpoの「真のゼロ」判別、優先度：高・
+   着手条件なし）

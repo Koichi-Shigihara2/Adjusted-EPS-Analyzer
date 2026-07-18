@@ -502,6 +502,37 @@ ST_Invest が年次のまま取り残される（→ BUG-NETDEBT-5 で修正済�
 - 成熟・ディフェンシブセクター（通信: VZ/T、公益: CEG/VST、タバコ: PM/MO等）を含めると
   ROE=N/A（負債超過）/ alpha上限抵触 / FCF外れ値 等の設計端ケースを検出しやすい。
 
+### SEC EDGAR一次情報検証の標準手順（WARN-23等のfyタグ裏取り確認・2026-07-18追加）
+
+「企業自身がその期間を何と自称しているか」を一次情報で確認する必要がある場合
+（WARN-23のfyタグ裏取り不一致確認、RCAT型決算期変更の実在確認等）、以下の手順が
+実データで検証済み：
+
+1. **WebFetchはSEC EDGARに対して403で失敗する**（`data.sec.gov`・
+   `www.sec.gov/cgi-bin/browse-edgar`とも、User-Agent要件のため）。
+   代わりにBashツールで`curl`を直接使う：
+   ```bash
+   curl -s -A "Koichi Personal Investment Tools koichi@example.com" \
+     "https://data.sec.gov/submissions/CIK{10桁ゼロ埋めCIK}.json" -o out.json
+   ```
+2. 提出履歴（`filings.recent`、直近1000件超は`filings.files`に別ファイル分割）
+   から対象accession numberの`form`/`primaryDocument`を特定する
+3. 実際の10-K本文を取得: `https://www.sec.gov/Archives/edgar/data/{CIKの先頭ゼロなし}/
+   {accessionのハイフンなし}/{primaryDocument}`
+4. カバーページの"For the fiscal year ended [date]"表記、および本文中の
+   "fiscal 20XX"自己言及（企業自身の用語定義文があれば最優先）で判定する。
+   `dei:DocumentFiscalYearFocus`タグも参考になるが、**このタグ自体が
+   filer側のテンプレート更新漏れで誤っている実例を複数確認済み**
+   （FCX/HON: カバーページ本文と同一文書内で直接矛盾）。カバーページ本文の
+   方が信頼度が高いため、両者が食い違う場合は本文を優先する
+
+**Bashツールのパス変換に関する既知の注意点**: Git Bash（MSYS）は
+コマンドライン**引数**として渡されたPOSIX形式パス（`/c/Users/...`）を
+Windows形式に自動変換するが、Pythonスクリプト内の文字列リテラルに
+埋め込まれたパスは変換されない。`python3 -c "open('/c/Users/...')"`は
+`FileNotFoundError`になるため、スクリプト内で直接パスを扱う場合は
+Windows形式（`r"C:\Users\..."`)を使うこと。
+
 ### 自動生成データファイルのgit管理ルール
 
 - `docs/` 以下の自動生成JSON/CSVは `.gitattributes` で `merge=ours` 設定済み
