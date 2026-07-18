@@ -1416,63 +1416,106 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 #### 着手条件
 なし（次回セッションで設計方針を固めてから着手判断）
 
-#### 棚卸しレビューの中間記録（2026-07-18・未確定・要再確認）
+#### 棚卸し結果（2026-07-18確定）
 
-ステップ1（段階0〜2の棚卸し）を実施し、その後レビューを行った結果を
-中間記録として残す。**結論は確定していない**。次回セッションで
-全項目をゼロベースで再検証すること。
+2026-07-18の中間記録（分類の一部が未検証のまま確定していた）を受け、
+15項目全件をゼロベースで再検証した（一次情報: BACKLOG.md本文各エントリ・
+実装コード・BACKLOG_DONE.md記録）。
 
-**棚卸し結果（2026-07-18実施）の分類サマリー:**
-- 解消可能（バグ）6件: FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1・
+**確定した分類サマリー:**
+- **解消可能（バグ）に分類（8件）**: FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1・
   CASH-TAG-MISSING-1・REVENUE-TAG-PRIORITY-FRAGILE-1・
-  WORKFLOW-SEC-TANUKI-GAP-1・FCF-CONVRATE①（44/36銘柄sector未収録、
-  件数要再確認）・MA-INTEGRATION-TAG-GAP-1
-- 構造的限界（可視化対象）候補3件: SPLIT-REALTIME-GAP-1・
-  fcf_outlier丸めによる理由喪失（Policy A/B設計）・
-  FCF-CONVRATE②（固定比率のサイクル限界）
-- 判断保留5件: FY52WEEK-BS-NULL-SILENT-1 Phase B/C・
+  WORKFLOW-SEC-TANUKI-GAP-1（要設計判断のニュアンスあり）・FCF-CONVRATE①・
+  MA-INTEGRATION-TAG-GAP-1・**SPLIT-REALTIME-GAP-1（今回再分類。詳細は
+  同エントリの状況更新参照）**・**fcf_outlier丸めによる理由喪失＝
+  [[FCF-OUTLIER-PREROUNDING-LOSS-1]]（今回再分類・新規登録）**
+- **構造的限界（可視化対象）に分類（1件のみに縮小）**: FCF-CONVRATE②
+  （固定比率設計がサイクル変動銘柄を表現できない構造的限界。LITE/SPIR/LLYの
+  乖離倍率〈4.33倍/8.65倍/1.92倍〉を本番経路で再確認済み、本EPICの可視化
+  対象として維持）
+- **判断保留（5件、変更なし）**: FY52WEEK-BS-NULL-SILENT-1 Phase B/C・
   MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1・
-  GROWTH-SANITY-CLASS-SYNC-1・FCF-CONVRATE③（EBIT変換）
+  GROWTH-SANITY-CLASS-SYNC-1・FCF-CONVRATE③
 
-**レビューで判明した訂正・保留事項（要再検討、未確定）:**
+**再分類・新規登録の詳細:**
 
-1. **SPLIT-REALTIME-GAP-1の分類は要訂正**: 当初「構造的限界（是正
-   不能）」と分類したが、BACKLOG本文を精読した結果誤りと判明。
-   タイトルは「fact競合ロジックでも是正できない」という限定的な
-   主張であり、「原理的に是正不能」ではない。対応方針欄に
-   yfinance Ticker.splits参照・split_history.yaml個別登録という
-   2つの解決策が既に提示されている。**「解消可能（別アプローチ
-   での実装待ち）」への再分類が必要**。
+1. **SPLIT-REALTIME-GAP-1**: 「構造的限界（是正不能）」は誤りと判明。
+   タイトルは「fact競合ロジックでも是正できない」という限定的な主張で
+   あり、「原理的に是正不能」ではない。`apply_split_adjustments()`・
+   `split_history.yaml`が既に実装・稼働中（NOW銘柄で実績あり）であり、
+   個別登録という既存の仕組みの流用のみで対応可能と判明。
+   「解消可能（別アプローチでの実装待ち）」に再分類済み（詳細・根拠は
+   同エントリの状況更新を参照）。
 
-2. **FCF-CONVRATE②は現在も本番経路で生存確認済み**（2026-07-18
-   再検証）: `estimate_fcf_from_eps()`（core_calculator.py経由、
-   全銘柄で無条件実行）が現在も`fcf_conversion_config.json`の
-   `sector_conversion_rates`を使用中。SITMの実データで
-   conversion_rate=0.85（Semiconductor）・生FCF比3.09倍の乖離が
-   現在のスナップショットでも再現することを確認。今セッションの
-   他変更（BS項目None検知等）との干渉なし。分類は「構造的限界」の
-   まま維持で問題ない。
+2. **fcf_outlier丸めによる理由喪失**: `pipeline.py::_compute_tanuki_score()`
+   のPolicy A/B発火時、丸め前に計算済みの`score`/`comment`ローカル変数を
+   単純に上書きしており、丸め前のClassificationを保持するフィールドが
+   存在しないことをコードで確認した。report.txt側は乖離率・発火理由自体は
+   明示表示しており「理由」そのものは喪失していないが、「丸め前は元々
+   BUY/TRIM/HOLDのどれだったか」という情報のみが失われている。これは
+   上書き前に新フィールドとして保持し表示に使うだけで解消できる可能性が
+   高いため、「解消可能（設計変更）」と判定し
+   [[FCF-OUTLIER-PREROUNDING-LOSS-1]]として新規登録した（「優先度：未定
+   （要判断）」セクション参照）。POLICYB-GATE-FIX-1（BACKLOG_DONE.md）は
+   発火条件（ゲート）の修正が本題で、「理由喪失」自体は同タスクの
+   スコープ外だったことも確認済み。
 
-3. **未解決の食い違い（原因未特定）**: 「sector未収録銘柄数」が
-   2026-07-15記載の44銘柄に対し、2026-07-18の機械集計では36銘柄
-   だった。LITE/SPIR/LLYの個別乖離倍率は完全一致しているため計算
-   ロジック自体の変化ではないと推定されるが、母集団変化か
-   カウント方法の違いかは未特定のまま。次回確認時に原因を
-   切り分けること。
+3. **FCF-CONVRATE②**: 現在も本番経路で生存確認済み。
+   `estimate_fcf_from_eps()`（core_calculator.py経由、全銘柄で無条件実行）
+   が現在も`fcf_conversion_config.json`の`sector_conversion_rates`を
+   使用中。LITE/SPIR/LLYの乖離倍率（4.33倍/8.65倍/1.92倍）が現在の
+   スナップショットでも完全一致することを確認済み。分類は「構造的限界」の
+   まま維持。
 
-4. **fcf_outlier丸めによる理由喪失（Policy A/B設計）は未検証**:
-   これは既存の別BACKLOG項目からの引用ではなく、EPIC本文の背景
-   説明を根拠にした分類判断。POLICYB-GATE-FIX-1の実装意図を
-   一次情報（コード・BACKLOG_DONE.md記録）で確認する検証が
-   未実施のまま。
+4. **sector未収録44→36の食い違いは解決済み**: 全105銘柄の`latest.json`を
+   機械集計した結果、母集団（ticker_overrides・ガードA早期returnを除いた
+   sector未収録数）は44銘柄で両時点とも安定していることを確認した。
+   「44」は全体母集団、「36」はそのうち`fcf_estimation.applied=True`の
+   サブセット件数であり、比較時にこの2つを取り違えていたことが真因と
+   判明（母集団の実変化ではない、単なるカウント条件の混同）。実質的な
+   変化はapplied=Trueサブセットが33銘柄（2026-07-15時点）→36銘柄
+   （2026-07-18時点）に増えたことのみ（EPS Analyzerデータ反映等で
+   3銘柄が新たに条件を満たした）。
 
-**次回の進め方（申し送り）**: 上記1〜4を含め、棚卸し結果全体を
-「一から確認し直す」ことでKoichiさんと合意済み。次回セッションでは
-今回の分類を鵜呑みにせず、全項目を再度ゼロベースで検証すること。
+**次回の進め方（申し送り）**: 本棚卸しは2026-07-18に確定した。可視化対象
+となる構造的限界はFCF-CONVRATE②の1件に縮小されたため、次回セッションでは
+以下を検討する：①FCF-CONVRATE②単独の可視化設計（フィールド構成・表示
+箇所）、②SPLIT-REALTIME-GAP-1（解消可能・分離済み）と
+FCF-OUTLIER-PREROUNDING-LOSS-1（解消可能・新規登録）はそれぞれ独立
+タスクとして個別に着手判断する。
 
 ---
 
 ## 優先度：未定（要判断）
+
+### [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
+**優先度:** 未定
+**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]棚卸し再検証（fcf_outlier丸めによる理由喪失の一次確認）
+
+#### 背景
+`pipeline.py::_compute_tanuki_score()`にて、Policy A/B（DCF_Reliability=LOW
+丸め）発火時、それまでに計算済みの`score`/`comment`ローカル変数を単純に
+上書きしており、丸め前の分類（元々BUY/TRIM/HOLDのどれだったか）を保持する
+フィールドが存在しない。report.txt側は乖離率（`deviation_pct`）や発火理由
+自体は明示表示しているため「理由」そのものは喪失していないが、**「丸め前の
+Classification」情報のみが失われている**。
+
+TRUST-SUMMARY-EPIC-1の棚卸し再検証（2026-07-18）で一次情報（コード・
+BACKLOG_DONE.md記録）を確認した結果判明した。[[POLICYB-GATE-FIX-1]]
+（完了・BACKLOG_DONE.md参照）は発火条件（ゲート）そのものの修正が本題で
+あり、「丸め前情報の喪失」自体は同タスクのスコープ外だったことを確認済み。
+
+#### 対応方針（未確定）
+丸め処理直前に`pre_rounding_score`・`pre_rounding_classification`等の
+新フィールドとしてローカル変数を保持し、report.txt表示・Classification
+一覧の参考列として使う設計案。
+
+#### 着手条件
+なし（次回セッションで設計方針を判断してから着手）
+
+---
 
 ### [REVENUE-TAG-CONFLICT-SCAN-1] revenue_tag_conflict_check.py全銘柄実行で新規発見した候補タグ競合
 **優先度:** 未定
@@ -2208,6 +2251,22 @@ RCAT（2023年に複数回の変動: 2023-04-30↓、2023-07-31↑、2024-03-31�
 - あるいは`split_history.yaml`への個別登録＋既存`apply_split_adjustments()`の
   併用に戻すか（対症療法だが実装コストは低い）
 - RCATの2023年変動が本ギャップと同種か別要因かを一次情報（10-Q本文）で確認する
+
+#### 状況更新（2026-07-18・TRUST-SUMMARY-EPIC-1棚卸し再検証）
+**分類を「構造的限界」から「解消可能（別アプローチでの実装待ち）」に変更した。**
+再分類日: 2026-07-18（TRUST-SUMMARY-EPIC-1棚卸し再検証にて）。
+
+見出し（「fact競合ロジックでも是正できない」）は「特定の是正手段では直せない」
+という限定的な主張であり、「原理的に是正不能」ではないと判明した。
+`src/value/adjusted_eps_analyzer/pipeline.py:140-179`で`load_split_history()`・
+`apply_split_adjustments()`が既に実装・稼働中（NOW銘柄で実績あり）であり、
+`split_history.yaml`への個別登録という既存の仕組みの流用のみで対応可能。
+yfinance `Ticker.splits`自動照合案は「ギャップ期間の自動検出」という新規ロジック
+設計が必要でコストが高いため見送り、**split_history.yaml個別登録方式を採用方針
+とする**。
+
+優先度欄（低〜中）は変更せず維持する。優先度自体の見直しはKoichiさんの
+次回判断待ちとする。
 
 #### 着手条件
 なし（次回セッションで判断）
@@ -4351,16 +4410,20 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 BLIND-1]]新規登録・[[FY52WEEK-BS-NULL-SILENT-1]]Phase A完了（Phase B/C
 は未着手のまま）・WARN-23全10銘柄の一次情報検証完了・
 [[TTM-STOCK-FIELDS-DEAD-1]]完了（BACKLOG_DONE.mdへ移動）・
-[[TRUST-SUMMARY-EPIC-1]]棚卸しレビュー中間記録追記（結論未確定）。
+[[TRUST-SUMMARY-EPIC-1]]棚卸し結果の一からの再検証完了（15項目全件、
+一次情報で確定。SPLIT-REALTIME-GAP-1を「構造的限界」→「解消可能」に
+再分類、fcf_outlier丸めによる理由喪失を[[FCF-OUTLIER-PREROUNDING-LOSS-1]]
+として新規登録、sector未収録44→36の食い違いはカウント条件の混同と原因
+特定済み。詳細は同エントリ「棚卸し結果（2026-07-18確定）」参照）。
 
 次セッションの筆頭候補（優先順）：
-① [[TRUST-SUMMARY-EPIC-1]]棚卸し結果の一からの再検証。要再確認4点:
-   SPLIT-REALTIME-GAP-1の分類訂正（「構造的限界」→「解消可能」の
-   可能性）・FCF-CONVRATE①のsector未収録件数の食い違い（44→36、
-   原因未特定）・fcf_outlier丸めによる理由喪失の分類根拠検証（一次情報
-   未確認）・その他棚卸し結果全体をゼロベースで洗い直す
+① [[TRUST-SUMMARY-EPIC-1]]の可視化設計（構造的限界に残るFCF-CONVRATE②
+   単独が対象。フィールド構成・表示箇所を検討）
 ② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
    着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
 ③ [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C（short_term_investments/
    long_term_debt/short_term_debt/rpoの「真のゼロ」判別、優先度：高・
    着手条件なし）
+④ [[SPLIT-REALTIME-GAP-1]]（解消可能・split_history.yaml個別登録方式・
+   優先度：低〜中）・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]（解消可能・
+   優先度：未定）はそれぞれ独立タスクとして個別に着手判断する
