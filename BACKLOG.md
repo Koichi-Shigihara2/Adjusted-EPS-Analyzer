@@ -1479,10 +1479,10 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 
 **次回の進め方（申し送り）**: 本棚卸しは2026-07-18に確定した。可視化対象
 となる構造的限界はFCF-CONVRATE②の1件に縮小されたため、次回セッションでは
-以下を検討する：①FCF-CONVRATE②単独の可視化設計（フィールド構成・表示
-箇所）、②SPLIT-REALTIME-GAP-1（解消可能・分離済み）と
-FCF-OUTLIER-PREROUNDING-LOSS-1（解消可能・新規登録）はそれぞれ独立
-タスクとして個別に着手判断する。
+以下を検討する：①FCF-CONVRATE②単独の可視化設計（**SITM・LITE限定**の
+スコープ、フィールド構成・表示箇所。詳細は下記追記参照）、②
+SPLIT-REALTIME-GAP-1（解消可能・分離済み）とFCF-OUTLIER-PREROUNDING-LOSS-1
+（解消可能・新規登録）はそれぞれ独立タスクとして個別に着手判断する。
 
 **追記（2026-07-18・[[FCF-ESTIMATE-SKIP-STABLE-1]]完了により可視化スコープ縮小）**:
 FCF-CONVRATE②の可視化設計に先立つ事前調査で、82銘柄中「機械的置換」に
@@ -1495,9 +1495,110 @@ FCF-CONVRATE②の可視化設計に先立つ事前調査で、82銘柄中「機
 （乖離が小さく実害の乏しい銘柄群）は今回のスキップ条件の対象外のまま
 残っており、これらへの対応要否は別途判断が必要。
 
+**追記（2026-07-18・原因ベース分析によるFCF-CONVRATE②最終スコープ確定）**:
+当初想定7銘柄（SITM/LITE/SPIR/AMZN/SOFI/CWAN/DOCN）について、cv・
+divergence_ratioの閾値による機械的切り分けを試みたが、**LLY（cv=0.989,
+dr=1.92）がDOCN（cv=0.405, dr=1.85）を両軸で完全に上回るため、閾値だけ
+での分離は数学的に不可能**と判明した（どのように閾値を調整してもDOCNを
+含めればLLYも必ず含まれる）。
+
+そこで閾値ではなく、境界域のGTLB/LLY/KO/FRSH/SNPSを加えた計12銘柄について
+SEC XBRL実データ（`common/sec_data/data/{TICKER}/annual_YYYY.json`、6-7年分）
+を用いた個別の原因分析を実施した。結果、**真に「業界サイクル起因で解消
+不能な構造的限界」と呼べるのはSITM・LITEの2銘柄のみと確定**した。残り
+10銘柄は以下の通り性質の異なる複数グループに分解された：
+
+- **一時的な成長投資フェーズ（可視化対象外・対応不要）**: AMZN
+  （AI/クラウドCapEx急増、OCF自体は健全）・LLY（GLP-1製品向け製造能力
+  増強、[[LLY-CAPEX-STALE-1]]完了時の実測値$7.84Bと一致確認済み）・
+  DOCN（黒字化途上、NI/OCFとも単調改善トレンド）・FRSH（SaaS成熟化、
+  2025年初黒字化）。いずれも設備投資が一巡・事業が成熟すればFCFが
+  正常化する見込みのため、可視化対象からも個別バグ修正対象からも除外する
+- **一過性要因・M&A（個別タスクへ分離）**: CWAN（Enfusion買収）・SNPS
+  （Ansys買収、D&A急増$295M→$660Mで確認）。詳細は
+  [[CWAN-SNPS-MA-DISTORTION-1]]へ分離登録
+- **一次情報不足で未確定（個別調査タスクへ分離）**: KO（2024年OCF急落の
+  原因がSEC XBRL構造化データからは特定不能）・SPIR（2025年NI黒字転換と
+  OCF最悪化の不整合、一次情報未確認）。詳細は
+  [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]へ分離登録
+- **conversion_rate設計限界（既存機構で対応済み・新規対応不要）**: SOFI。
+  貸付金組成額がOCFを支配する会計構造上のFCF概念不適合であり、
+  `stock.html:850-863`の既存`FCF_LOW_RELIABILITY_SECTORS`
+  （Financial Services）バナーが既にSOFIに対して発火済みのため、
+  FCF-CONVRATE②としての新規対応は不要と判定
+- **成長ステージ＋推定手法混在（対応不要・記録のみ）**: GTLB。SaaS請求
+  サイクルの未成熟（年間契約の請求・回収タイミングによるOCF符号反転）と
+  `estimate_fcf_from_eps()`の単年度NI依存という推定手法自体の限界が
+  混在。5年間黒字化なしという既知の事実（BACKLOG.md:2334参照）と整合する
+  が、新規の個別対応タスクとしては切り出さず本記録に留める
+
+**FCF-CONVRATE②の可視化設計スコープは、SITM・LITEの2銘柄に確定し、次回
+セッションで着手する。**
+
 ---
 
 ## 優先度：未定（要判断）
+
+### [CWAN-SNPS-MA-DISTORTION-1] CWAN・SNPSのFCF乖離は大型M&Aに伴う一過性歪みと判明
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
+
+#### 内容
+CWAN（Clearwater Analytics）・SNPS（Synopsys）のFCF乖離
+（divergence_ratio 2.19倍・1.47倍）は、いずれも大型M&A
+（CWAN: Enfusion買収、SNPS: Ansys買収）に伴う無形資産償却（D&A）の
+段階的増加・一過性の税務関連項目が原因と判明した（SEC XBRL実データ
+`common/sec_data/data/{CWAN,SNPS}/annual_YYYY.json`で確認済み）。
+
+- CWAN: D&Aが2024年$12.2M→2025年$85.5Mに急増（買収による無形資産
+  償却ステップアップと整合）。2024年NIが$424.4Mの巨額プラスとなって
+  いるのはUp-C構造特有の税務関連負債（tax receivable agreement）
+  再評価等の一過性項目の可能性が高い
+- SNPS: D&Aが2024年$295.1M→2025年$660.4Mに急増（Ansys買収の無形資産
+  償却ステップアップと整合）。SNPSはsector_rationale適用済み9銘柄の
+  1つのためconversion_rate自体は業種特性に基づき設定済みであり、
+  実害は限定的
+
+#### 対応方針（未確定）
+M&A起因の一過性歪みを認識した上で、生FCFの複数年平均に統合初年度を
+含めるべきか除外すべきかの設計判断が必要。
+
+#### 着手条件
+なし（次回セッションで方針判断してから着手）
+
+---
+
+### [KO-SPIR-CF-CAUSE-UNCONFIRMED-1] KO・SPIRのFCF乖離原因が一次情報不足で未確定
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
+
+#### 内容
+KO（Coca-Cola）・SPIR（Spire Global）のFCF乖離原因は、SEC XBRLの
+構造化データ（`common/sec_data/data/{KO,SPIR}/annual_YYYY.json`）
+からは特定できず、一次情報不足のまま未確定で残っている。
+
+- **KO**: NIが安定成長する一方（$10.7B→$10.6B→$13.1B）、OCFが2024年に
+  -41%急落（$11.6B→$6.8B、2025年も$7.4Bと低水準継続）。SEC XBRLの
+  `cf`セクションに税金支払・運転資本の内訳フィールドがなく（`other`
+  フィールドも空）、原因を確定できなかった。10-K MD&A本文の直接確認が
+  必要
+- **SPIR**: 2025年NIが初めて黒字転換（+$51.3M）した一方、OCFは過去最悪
+  （-$59.8M）という不整合が見られる。非現金・非経常項目（負債消滅益・
+  ワラント再評価等）の可能性があるが、10-K注記での内訳確認が必要。
+  同年Revenueも前年比-35%（$110.5M→$71.6M）と大幅減収しており、
+  健全な事業サイクルとは言い難い
+
+#### 対応方針
+10-K MD&A本文・注記の個別確認（読み取り専用調査）。
+
+#### 着手条件
+なし
+
+---
 
 ### [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
 **優先度:** 未定
