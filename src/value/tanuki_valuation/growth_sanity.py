@@ -215,6 +215,9 @@ TICKER_INDUSTRY_OVERRIDES = {
     "VST":   "Power",                             # 原子力+ガス火力のハイブリッド電力会社
     "SCCO":  "Metals & Mining",                   # ペルー・メキシコ中心の銅鉱山
     "FCX":   "Metals & Mining",                   # グラスバーグ鉱山主力の銅生産会社
+    "MO":    "Tobacco",                           # beta_config.jsonにsector未設定のため業種ベンチマークがNoneだった
+                                                   # （GROWTH-SANITY-CLASS-SYNC-1調査で発見）。fundgrEB.xlsに
+                                                   # Tobacco業種が実在（g_ebit≈1.5%）することを確認済み
 }
 
 
@@ -413,6 +416,10 @@ def check_growth_sanity(
     signals = []
     warnings = []
 
+    # calculator/growth.py:calculate_fcf_cagr() の growth_floor と同値。
+    # Stage 1（候補閾値緩和の判定）・floor_hit算出の両方で参照する
+    _FCF_CAGR_FLOOR = 0.15
+
     # --- Damodaran ベンチマーク取得 ---
     benchmark = get_industry_benchmark(ticker, sector)
     industry_g = benchmark["g_ebit"] if benchmark else None
@@ -488,8 +495,31 @@ def check_growth_sanity(
     if g_fundamental is not None and g_fundamental > 0:
         _rec_candidates.append(g_fundamental)
 
+    # GROWTH-SANITY-CLASS-SYNC-1（MO型iv）: 通常は中央値に候補2件以上が必要だが、
+    # 「fcf_cagr経路でfloor(15%)に到達している」かつ「業界ベンチマークのみ1件」の
+    # 銘柄に限り、industry_g単独をrecommended_gとして採用する（案B'）。
+    # 一般的な閾値緩和（候補1件で常に許容）はLOARのような真の高成長銘柄で
+    # 成熟業界平均を誤って押し付ける副作用が事前検証で確認されたため、
+    # floor到達中の銘柄のみへ厳密に限定する。
+    # 注: floor_hit変数自体はrecommended_g確定後（本ブロックの後段）でしか
+    # 算出できないため、同じ判定条件をここで独立に再現する
+    # （_FCF_CAGR_FLOORは関数末尾のfloor_hit算出と共用）。
+    _is_fcf_cagr_floor_candidate = (
+        growth_source == "fcf_cagr"
+        and phase1_growth is not None
+        and abs(phase1_growth - _FCF_CAGR_FLOOR) < 0.002
+    )
+    _min_rec_candidates = 2
+    if (
+        _is_fcf_cagr_floor_candidate
+        and len(_rec_candidates) == 1
+        and industry_g is not None
+        and industry_g > 0
+    ):
+        _min_rec_candidates = 1
+
     recommended_g_median = None
-    if len(_rec_candidates) >= 2:
+    if len(_rec_candidates) >= _min_rec_candidates:
         _rec_candidates.sort()
         _n = len(_rec_candidates)
         if _n % 2 == 1:
@@ -585,7 +615,7 @@ def check_growth_sanity(
     # 誤検知してしまう）。recommended_gがこの時点で算出できている＝pipeline.py側で
     # override適用が見込める銘柄は対象から除外し、recommended_g=Noneのため
     # override自体が発火しない銘柄（MO/LOAR/XOM型）のみを検知する。
-    _FCF_CAGR_FLOOR = 0.15
+    # （_FCF_CAGR_FLOOR自体はStage 1の候補閾値緩和判定でも使うため関数冒頭で定義済み）
     floor_hit = (
         growth_source == "fcf_cagr"
         and phase1_growth is not None

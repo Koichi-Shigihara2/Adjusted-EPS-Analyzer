@@ -1040,6 +1040,61 @@ LRCX・XOMでも同型の誤上書き（false positive）を検出・解消し�
 
 ## 優先度：高（早急に対応）
 
+### [GROWTH-VERDICT-SEQUENCING-BUG-1] growth_sanity.verdictがDCF再計算前の1回目パス値を検証し続けるシーケンシングバグ
+**優先度:** 高
+**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）のMO型iv対応時、
+verdict≠PLAUSIBLE全32銘柄の原因分析
+
+#### 問題
+`pipeline.py::_save_result()`は`check_growth_sanity()`を、`segment_configured=False`
+かつ`recommended_g`算出可能な銘柄向けの2回目DCF再計算（`recommended_g`による
+`calculate_pt()`再実行、`pipeline.py:637-669`）の**前**に1回だけ呼び出す。
+`growth_sanity`（`verdict`・`warnings`・`phase1_growth`）はこの1回目パスの値
+（`fcf_cagr`floor等、しばしば非現実的な値）を検証したまま2回目パスでは
+再実行されず、`latest_data`にはそのまま保存される。一方`growth.rate`
+（実際にDCF・IVに使われる値）は2回目パスの`recommended_g`（segment_weighted
+ラベルで保存）に置き換わる。結果、**`growth_sanity`が検証している成長率と
+実際にDCFへ採用されている成長率が別物になる**。
+
+#### 実データでの確認（2026-07-19時点、verdict≠PLAUSIBLE 32銘柄の内訳）
+`phase1_growth_auto_adjusted=True`（2回目パスが発火した）銘柄24件
+（ABBV/ASTS/BKNG/BROS/CWAN/DELL/ELF/ENTG/FICO/GEV/HQY/HWM/JNJ/KULR/LLY/
+LYFT/MRVL/PEP/RDW/SITM/TER/**VZ**/WMT/XOM）について、実際に採用されている
+`recommended_g`で判定ロジックを再計算したところ、**16銘柄がPLAUSIBLE
+（またはより軽い区分）へ改善**した：
+- PLAUSIBLEへ改善（14件）: ABBV・DELL・ENTG・FICO・GEV・HQY・HWM・JNJ・
+  LYFT・MRVL・PEP・RDW・**VZ**・WMT
+- AGGRESSIVE→REVIEWへ改善（2件）: CWAN・SITM
+- 残り8件（ASTS/BKNG/BROS/ELF/KULR/LLY/TER）は実際のレートでも警告が残る
+  （型iii相当、別途[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]等で個別判断）
+
+**VZ（Classification: BUY、乖離率+97.7%）が本バグの典型的な実害例**。
+verdict算出時のphase1_growth=15.0%（fcf_cagr floor）は業界平均比10.4倍・
+過去実績比10.0倍でAGGRESSIVE判定だが、実際にDCFで使われている
+`recommended_g=1.44%`（業界平均とほぼ同値）で再評価すれば0警告＝
+PLAUSIBLEになる。**VZのAGGRESSIVE判定は完全なバグ由来の誤検知**。
+
+ENTG/GEV/HQYが2026-07-12以降REVIEW→AGGRESSIVEへ悪化していた事象も
+本バグが原因（1回目パスの中間値が変化したため）と判明した。
+
+#### 対応方針（未確定・次回セッションで設計判断）
+- 案: 2回目パス（recommended_g auto-adjustment）発火後に`growth_sanity`を
+  再実行し、実際に採用された`growth.rate`で`verdict`・`warnings`を
+  再評価する
+- 別案: `growth_sanity`に「1回目パスの検証結果」と「採用値ベースの
+  検証結果」を両方保持し、report.txt/latest.jsonで区別して表示する
+  （情報を失わない設計、[[TRUST-SUMMARY-EPIC-1]]の方針の骨子②と整合）
+- 8銘柄（ASTS/BKNG/BROS/ELF/KULR/LLY/TER）は再評価後も警告が残るため、
+  型iii（ハイパーグロースと成熟業種平均のミスマッチ）としての扱いを
+  別途検討する必要がある（[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]参照）
+
+#### 着手条件
+なし
+
+---
+
 ### [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
 **状態:** [[ARCH-DATA-1]]へ統合済み（2026-07-16）
 
@@ -1246,105 +1301,6 @@ TANUKI SCORE自体の的中率検証が必要。
 2026-07-10時点では30日リターンの記録が始まったばかりのため、
 最短でも90日リターンが一定数蓄積される2026年10月以降に再確認する。
 それまでは着手せず、`score_history.json`への蓄積を継続する。
-
----
-
-### [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動
-**優先度:** 高
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-11
-**発見:** [[POLICYB-GATE-FIX-1]]横断調査時（DCF_Reliability関連ゲートの棚卸し）
-
-#### 問題
-`growth_sanity.py`の`check_growth_sanity()`が返す`verdict`（PLAUSIBLE/REVIEW/
-AGGRESSIVE/FLOOR_HIT_REVIEW）は、report.txtの`[4] 成長率根拠`セクションに
-表示されるのみで、TANUKI SCORE Classification・DCF_Reliability判定には
-一切反映されない（pipeline.py内でverdictを参照するのは`GROWTH_PREMIUM`判定用の
-`phase1_growth`取得箇所のみで、verdict自体を条件分岐に使う箇所は存在しない）。
-
-2026-07-11時点の実データ確認では、**MO（Classification: BUY）が
-`verdict=FLOOR_HIT_REVIEW`・`floor_hit=True`のまま**である（成長率算出ロジックが
-破綻し、実績と無関係な機械的floor値15%を採用しているにも関わらず、BUY判定が
-変わらない）。LOAR（WATCH）・XOM（HOLD）も同verdictだが、既に低い分類のため
-実害は限定的。`report_consistency_check.py`のCHECK-20（WARN-20）でも検知されるが、
-WARNは非ブロッキングのため見落とされやすい。
-
-#### [[GROWTH-FLOOR-VERDICT-1]]・[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）との関係
-[[GROWTH-FLOOR-VERDICT-1]]（2026-07-11完了）は、fcf_cagr経路の成長率がfloor値に
-機械的に張り付くケース（MO/LOAR/XOM）の**検知**（`verdict=FLOOR_HIT_REVIEW`・
-`floor_hit`フィールド新設・CHECK-20）を意図的なスコープとして実装しており、
-Classificationへの反映は最初から対象外だった（BACKLOG_DONE.md参照）。
-
-[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）が当初から問題意識としていた
-「信頼できない前提のBUYがスクリーニングを素通りする」という同じ課題の、fcf_outlier系列とは別の
-バリエーション（成長率前提の信頼性）にあたる。[[POLICYB-GATE-FIX-1]]で
-fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ未着手。
-
-#### 対応方針（未確定・次回セッションで設計判断）
-- Policy A/B同様の「WATCHへの丸め」を追加するか、別Policy（Policy C等）として
-  新設するかは未確定
-- MO/LOAR/XOMの3銘柄はいずれもfcf_cagr経路のみで発生する既知パターンだが、
-  今後segment_weighted等の他経路でも同種の「算出不可・機械的floor採用」が
-  起きうるか確認が必要
-- Policy A/Bとの優先順位・同時発火時の扱い（floor_hit=Trueとfcf_outlier flaggedが
-  同一銘柄で重複する場合の丸めメッセージの一貫性）を設計時に検討する
-
-#### 状況更新（2026-07-11）: [[GROWTH-CAGR-SIGN-1]]によりMO/LOARのfloor_hitが解消
-本タスクの発見過程（growth_sanity調査）で、`calculate_fcf_cagr()`のCAGR計算式
-自体に符号反転バグがあることが判明し、[[GROWTH-CAGR-SIGN-1]]として分離・修正した
-（詳細はBACKLOG.md該当エントリ参照。全銘柄再生成保留中のため未アーカイブ）。
-修正の結果、**MO・LOARは`floor_hit=False`
-（verdict=PLAUSIBLE）に変わり、本タスクが問題視していた「MO（BUY）がfloor張り付き
-のままBUY判定が変わらない」という最も緊急性の高い実例は解消済み**。
-`verdict=FLOOR_HIT_REVIEW`のまま残るのはXOM（Classification: HOLD）のみとなり、
-既に非BUYのため実害は限定的。
-
-ただし[[GROWTH-CAGR-SIGN-1]]の修正確認時、MOの成長率が15.0%→29.9%に変わったことで
-IV乖離率が+34.9%→+286.3%へ大きく変動する事象が判明し、根本原因は
-[[TTM-QUARTERS-CHECK-1]]（TTM系列構築時の四半期完全性チェック不足）と
-確定した（一過性の事業要因ではない）。この点も踏まえ、**本タスク（growth_sanity.verdictの
-Classification連動）は緊急性が下がったため、着手要否を次回セッションで改めて判断する**。
-
-#### 着手条件
-なし（[[GROWTH-CAGR-SIGN-1]]対応後の状況を踏まえ、次回セッションで方針確定してから着手）
-
-#### 状況更新（2026-07-12）
-[[TTM-QUARTERS-CHECK-1]]・[[GROWTH-CAGR-SIGN-1]]完了に伴い全銘柄再生成した結果、
-MOのverdictは再び`FLOOR_HIT_REVIEW`・`floor_hit=True`に戻った
-（Classification: BUY）。本タスクが問題視していた「MO（BUY）がfloor張り付きの
-ままBUY判定が変わらない」という実例は未解消のまま残っている。ENTG/GEV/HQY
-（PLAUSIBLE→REVIEW）、HWM（PLAUSIBLE→AGGRESSIVE）の新規verdict変化も発生しており、
-Classification未連動の実害範囲がむしろ拡大した。次回セッションでの着手優先度を
-改めて検討する必要がある。
-
-#### 設計再検討（2026-07-12・セッション議論）
-本タスクを「growth_sanity.verdictをClassificationに丸めて反映する」という
-単発対応として進める方針（Policy A/B型のWATCH丸め）は不採用と判断した。
-理由は、Classification自体を丸めても「なぜ信頼できないのか」という情報が
-握りつぶされ、数値をそのまま受け取って良いかの判断材料としてはむしろ後退
-するため。
-
-代わりに、信頼性が崩れうる段階を洗い出したところ、以下の3段階が直列に
-連鎖していることが判明した：
-- **段階0（データ完全性）**: TTM系列・年次実績等の入力データ自体が完全か
-- **段階1（成長率算出）**: `growth_sanity.verdict`。report.txtのみに表示
-- **段階2（FCF/DCF計算）**: `fcf_outlier.detected`。Policy A/B経由で
-  Classificationに反映済み
-
-さらに議論の中で重要な軸が1つ抜けていたことが判明した：「信頼できない」と
-判定された事象には、**構造的に解消不能なもの**（可視化するしかないもの）と、
-**取得・算出ロジックの不備で本来解消可能なもの＝バグ**が混在しており、
-これを区別せずに一律で可視化対象にすると、直せるはずのバグが「これは
-限界です」という顔をして放置され続けるリスクがある（実例：
-[[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）は「データが存在しないから
-信頼度を下げて表示する」話ではなく、本来取得できるはずのCapEx四半期データが
-取得ロジックの不備で取れていない、解消可能な事例だった。実際にPhase 2aで
-根本原因（タグ切替の見逃し）を解消済み）。
-
-方針は「Classificationを書き換える」のではなく「**各数値がそのまま信じて
-良い状態か、信じてはいけない状態かを一目で分かるようにする**」ことが目的だが、
-可視化に着手する前に、まず個々の「信頼できない」事象が解消可能（バグ）か
-構造的限界かを切り分ける工程を挟む。詳細は[[TRUST-SUMMARY-EPIC-1]]参照。
 
 ---
 
@@ -1565,6 +1521,75 @@ BACKLOG.mdに残置する。
 ---
 
 ## 優先度：未定（要判断）
+
+### [GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1] ハイパーグロース銘柄と成熟業種平均のミスマッチによるgrowth_sanity警告
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / [[TRUST-SUMMARY-EPIC-1]]可視化候補
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）verdict≠PLAUSIBLE
+全32銘柄の原因分析
+
+#### 内容
+`segment_configured=True`（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]の対象外、
+実際に採用されているレートを正しく検証済み）の銘柄のうち、AMD・NVDA・
+ONDS・HON・ASTS（LOARも同型だがsegment_configured=False）で、実際の
+セグメント設定成長率がDamodaran業種平均を大きく上回りgrowth_sanityが
+警告を発する構造的パターンを確認した：
+
+- AMD（24.6% vs Semiconductor 9.6%）・NVDA（32.5% vs 9.6%）・
+  ONDS（30% vs Telecom Equipment 11.9%）: AI需要等の急成長事業が
+  業種平均を上回るための警告。事業実態を反映した妥当な差異
+- HON（8.5% vs Diversified 2.7%）: セグメント設定の成長率が実績売上
+  CAGR（1.8-2.8%）を大きく上回る。`segment_config.json`側の設定値の
+  妥当性を要確認（バグではなく人間の設定判断の問題）
+- ASTS（衛星通信、Telecom Services比19.8倍）: 業種フィット不良の側面が強い
+- LOAR（2024年IPO航空部品）: `recommended_g=None`（年次実績不足のため）で
+  fcf_cagr cap（50%）のまま。上場直後で年次実績が蓄積されていないための
+  一時的な制約
+
+#### 対応方針（未確定）
+[[TRUST-SUMMARY-EPIC-1]]の方針の骨子②（構造的限界の可視化）の対象候補として
+検討する。FCF-CONVRATE②と同様、Classificationは書き換えず「この銘柄の
+成長率はハイパーグロース×成熟業種平均比較という構造的事情でgrowth_sanityが
+警告を出しているが、事業実態としては妥当」という注記を並記する設計が
+考えられる。HONのみは設定値見直しの余地があり性質が異なるため別途判断。
+
+#### 着手条件
+なし（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]の対応方針確定後に統合検討）
+
+---
+
+### [JOBY-STATIC-GROWTH-HARDCODE-1] JOBYのsegment_config.jsonにgrowth=0.15の静的値、FLOOR_HIT_REVIEW検知の対象外
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）
+案B安全性検証の副次発見
+
+#### 内容
+`segment_config.json`を確認したところ、CART・JOBYは「General」100%
+セグメントの`growth`値として直接`0.15`が静的に格納されていた
+（`{"General": {"weight": 1, "growth": 0.15}}`）。これは
+`calculator/growth.py::calculate_fcf_cagr()`のfloorパラメータとは
+別の場所に埋め込まれた同一数値。
+
+JOBYは`rev_cagr_3yr`/`5yr`/`g_fundamental`がいずれもNone（算出不能）だが、
+`growth_source=="segment_weighted"`のため[[GROWTH-FLOOR-VERDICT-1]]の
+FLOOR_HIT_REVIEW検知（`growth_source=="fcf_cagr"`限定）の対象外になっている。
+CARTは`rev_cagr_3yr=13.6%`と15%に近い実績値があるため偶然の一致の
+可能性があるが、JOBYは実績データが一切ないため、この0.15が実態を
+反映した値なのか、過去のfloor/TTM override由来の残存値なのか不明。
+
+#### 対応方針（未確定）
+segment_config.jsonの`growth`値がどのように初期設定されたか
+（登録時のデフォルト値か、手動設定か、過去のoverride結果の固定化か）を
+一次情報（git blame等）で確認する必要がある。JOBYの実態成長率を
+別途調査した上で、0.15が妥当な値か見直しが必要か判断する。
+
+#### 着手条件
+なし
+
+---
 
 ### [CWAN-SNPS-MA-DISTORTION-1] CWAN・SNPSのFCF乖離は大型M&Aに伴う一過性歪みと判明
 **優先度:** 未定
@@ -2051,6 +2076,72 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [WST-SECTOR-MISCLASSIFICATION-1] WSTの業種がHealthcare_ITに誤分類、Damodaranベンチマーク比較が不適切
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）verdict≠PLAUSIBLE
+全32銘柄の原因分析
+
+#### 内容
+West Pharmaceutical Services（WST、医薬品送達デバイス・パッケージング
+製造業）が`config/beta_config.json`で`sector: "Healthcare_IT"`に
+分類されているが、これはヘルスケアIT/ソフトウェア企業向けの業種であり、
+製造業のWSTには不適合。yfinance実際のindustryは"Medical Instruments
+& Supplies"。Damodaran「Healthcare Information and Technology」
+（g_ebit=1.7%、低成長ソフトウェア業種の平均）と比較され、WSTの
+実際の成長率6.4%が「3.9倍」と警告される誤検知の原因になっている。
+
+#### 対応方針（未確定）
+`beta_config.json`のWSTエントリの`sector`値を、実態に近いDamodaran業種
+（例: "Healthcare Products"やDrugs関連の製造業カテゴリ）へ修正する。
+修正時はWACC/β計算等、`sector`値を参照する他の計算経路（growth_sanity
+以外）への影響も確認すること。
+
+#### 着手条件
+なし
+
+---
+
+### [JNJ-XOM-PM-FLOOR-RISK-1] JNJ・XOM・PM・CONはrecommended_g候補が最低ラインでMO型floor転落の潜在リスクあり
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION / 監視対象
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）floor適用対象
+範囲確認調査
+
+#### 内容
+`segment_config.json`未登録37銘柄のうち、`recommended_g`算出候補
+（rev_cagr_3yr/5yr・g_fundamental・industry_benchmark）が**ちょうど
+2件**（1件失えば`recommended_g`算出不能＝MO型のfloor転落リスク）の
+銘柄が6件存在する: JNJ・PM・XOM・GEV・FLYW・PAYS。うちJNJ・PM・XOMは
+成熟ディフェンシブ株（GEV/FLYW/PAYSは高成長株で候補不足が偶発的、
+リスクの性質が異なる）。CONも`rev_cagr_5yr`算出不能（2024年スピンオフで
+データ不足）な近接リスク銘柄。
+
+実際のFCF生成長率（`calculate_fcf_cagr()`のraw_cagr、floor適用前）を
+実データで確認したところ、**JNJ（+3.1%）・XOM（-31.5%）はMO
+（+2.7%）と同等またはそれ以上にfloor(15%)との乖離が大きい**
+（JNJ: floor gap +11.9pt、XOM: floor gap +46.5pt、MOの+12.3ptと同等〜
+それ以上）。特にXOMはFCFが実際に大きく減少している局面（raw=-31.5%）で、
+もしfloorが発動すれば「FCFが3割減っている最中の企業に年15%成長を
+仮定する」という最も危険なミスマッチになる。
+
+#### 対応方針（未確定）
+即座の対応は不要（現時点でrecommended_g算出候補2件を維持できており
+floorには落ちていない）。ただし次回以降の決算更新でJNJ/PM/XOM/CONの
+`rev_cagr_3yr`/`5yr`のいずれかがマイナスへ転じ候補が1件以下になった
+場合、MOと同型の`TICKER_INDUSTRY_OVERRIDES`追加＋
+[[GROWTH-SANITY-CLASS-SYNC-1]]で実装した案B'（floor到達中かつ
+industry_g単独1件の場合のみ候補数閾値を緩和）が既存の実装パターンとして
+そのまま適用できる見込み。
+
+#### 着手条件
+候補件数が実際に2件を下回った場合（`report_consistency_check.py`等での
+継続監視、またはgrowth_sanity再確認時に検知）
+
+---
 
 ### [FY52WEEK-BS-STI-OVERRIDE-DESIGN-1] short_term_investmentsのKLAC/NVDA/SOFI/TER/V 5銘柄は銘柄別override設計が必要
 **優先度:** 中〜高

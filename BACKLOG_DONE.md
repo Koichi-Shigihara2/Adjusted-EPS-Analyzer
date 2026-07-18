@@ -4,6 +4,151 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動（MO型iv実装で解消、2026-07-19完了）
+**優先度:** 高
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-11
+**完了日:** 2026-07-19
+**発見:** [[POLICYB-GATE-FIX-1]]横断調査時（DCF_Reliability関連ゲートの棚卸し）
+
+#### 問題
+`growth_sanity.py`の`check_growth_sanity()`が返す`verdict`（PLAUSIBLE/REVIEW/
+AGGRESSIVE/FLOOR_HIT_REVIEW）は、report.txtの`[4] 成長率根拠`セクションに
+表示されるのみで、TANUKI SCORE Classification・DCF_Reliability判定には
+一切反映されない（pipeline.py内でverdictを参照するのは`GROWTH_PREMIUM`判定用の
+`phase1_growth`取得箇所のみで、verdict自体を条件分岐に使う箇所は存在しない）。
+
+2026-07-11時点の実データ確認では、**MO（Classification: BUY）が
+`verdict=FLOOR_HIT_REVIEW`・`floor_hit=True`のまま**である（成長率算出ロジックが
+破綻し、実績と無関係な機械的floor値15%を採用しているにも関わらず、BUY判定が
+変わらない）。LOAR（WATCH）・XOM（HOLD）も同verdictだが、既に低い分類のため
+実害は限定的。`report_consistency_check.py`のCHECK-20（WARN-20）でも検知されるが、
+WARNは非ブロッキングのため見落とされやすい。
+
+#### [[GROWTH-FLOOR-VERDICT-1]]・[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）との関係
+[[GROWTH-FLOOR-VERDICT-1]]（2026-07-11完了）は、fcf_cagr経路の成長率がfloor値に
+機械的に張り付くケース（MO/LOAR/XOM）の**検知**（`verdict=FLOOR_HIT_REVIEW`・
+`floor_hit`フィールド新設・CHECK-20）を意図的なスコープとして実装しており、
+Classificationへの反映は最初から対象外だった（BACKLOG_DONE.md参照）。
+
+[[DCF-REL-SYNC-1]]（完了・BACKLOG_DONE.md参照）が当初から問題意識としていた
+「信頼できない前提のBUYがスクリーニングを素通りする」という同じ課題の、fcf_outlier系列とは別の
+バリエーション（成長率前提の信頼性）にあたる。[[POLICYB-GATE-FIX-1]]で
+fcf_outlier系（Policy A/B）側は解消したが、growth_sanity系はまだ未着手。
+
+#### 対応方針（未確定・次回セッションで設計判断）
+- Policy A/B同様の「WATCHへの丸め」を追加するか、別Policy（Policy C等）として
+  新設するかは未確定
+- MO/LOAR/XOMの3銘柄はいずれもfcf_cagr経路のみで発生する既知パターンだが、
+  今後segment_weighted等の他経路でも同種の「算出不可・機械的floor採用」が
+  起きうるか確認が必要
+- Policy A/Bとの優先順位・同時発火時の扱い（floor_hit=Trueとfcf_outlier flaggedが
+  同一銘柄で重複する場合の丸めメッセージの一貫性）を設計時に検討する
+
+#### 状況更新（2026-07-11）: [[GROWTH-CAGR-SIGN-1]]によりMO/LOARのfloor_hitが解消
+本タスクの発見過程（growth_sanity調査）で、`calculate_fcf_cagr()`のCAGR計算式
+自体に符号反転バグがあることが判明し、[[GROWTH-CAGR-SIGN-1]]として分離・修正した
+（詳細はBACKLOG.md該当エントリ参照。全銘柄再生成保留中のため未アーカイブ）。
+修正の結果、**MO・LOARは`floor_hit=False`
+（verdict=PLAUSIBLE）に変わり、本タスクが問題視していた「MO（BUY）がfloor張り付き
+のままBUY判定が変わらない」という最も緊急性の高い実例は解消済み**。
+`verdict=FLOOR_HIT_REVIEW`のまま残るのはXOM（Classification: HOLD）のみとなり、
+既に非BUYのため実害は限定的。
+
+ただし[[GROWTH-CAGR-SIGN-1]]の修正確認時、MOの成長率が15.0%→29.9%に変わったことで
+IV乖離率が+34.9%→+286.3%へ大きく変動する事象が判明し、根本原因は
+[[TTM-QUARTERS-CHECK-1]]（TTM系列構築時の四半期完全性チェック不足）と
+確定した（一過性の事業要因ではない）。この点も踏まえ、**本タスク（growth_sanity.verdictの
+Classification連動）は緊急性が下がったため、着手要否を次回セッションで改めて判断する**。
+
+#### 状況更新（2026-07-12）
+[[TTM-QUARTERS-CHECK-1]]・[[GROWTH-CAGR-SIGN-1]]完了に伴い全銘柄再生成した結果、
+MOのverdictは再び`FLOOR_HIT_REVIEW`・`floor_hit=True`に戻った
+（Classification: BUY）。本タスクが問題視していた「MO（BUY）がfloor張り付きの
+ままBUY判定が変わらない」という実例は未解消のまま残っている。ENTG/GEV/HQY
+（PLAUSIBLE→REVIEW）、HWM（PLAUSIBLE→AGGRESSIVE）の新規verdict変化も発生しており、
+Classification未連動の実害範囲がむしろ拡大した。次回セッションでの着手優先度を
+改めて検討する必要がある。
+
+#### 設計再検討（2026-07-12・セッション議論）
+本タスクを「growth_sanity.verdictをClassificationに丸めて反映する」という
+単発対応として進める方針（Policy A/B型のWATCH丸め）は不採用と判断した。
+理由は、Classification自体を丸めても「なぜ信頼できないのか」という情報が
+握りつぶされ、数値をそのまま受け取って良いかの判断材料としてはむしろ後退
+するため。
+
+代わりに、信頼性が崩れうる段階を洗い出したところ、以下の3段階が直列に
+連鎖していることが判明した：
+- **段階0（データ完全性）**: TTM系列・年次実績等の入力データ自体が完全か
+- **段階1（成長率算出）**: `growth_sanity.verdict`。report.txtのみに表示
+- **段階2（FCF/DCF計算）**: `fcf_outlier.detected`。Policy A/B経由で
+  Classificationに反映済み
+
+さらに議論の中で重要な軸が1つ抜けていたことが判明した：「信頼できない」と
+判定された事象には、**構造的に解消不能なもの**（可視化するしかないもの）と、
+**取得・算出ロジックの不備で本来解消可能なもの＝バグ**が混在しており、
+これを区別せずに一律で可視化対象にすると、直せるはずのバグが「これは
+限界です」という顔をして放置され続けるリスクがある（実例：
+[[LLY-CAPEX-STALE-1]]（完了・BACKLOG_DONE.md参照）は「データが存在しないから
+信頼度を下げて表示する」話ではなく、本来取得できるはずのCapEx四半期データが
+取得ロジックの不備で取れていない、解消可能な事例だった。実際にPhase 2aで
+根本原因（タグ切替の見逃し）を解消済み）。
+
+方針は「Classificationを書き換える」のではなく「**各数値がそのまま信じて
+良い状態か、信じてはいけない状態かを一目で分かるようにする**」ことが目的だが、
+可視化に着手する前に、まず個々の「信頼できない」事象が解消可能（バグ）か
+構造的限界かを切り分ける工程を挟む。詳細は[[TRUST-SUMMARY-EPIC-1]]参照。
+
+#### 状況更新（2026-07-19）: MO型iv（floor到達）を解消、残る論点は分離登録
+
+[[TRUST-SUMMARY-EPIC-1]]完了後の段階1（成長率算出）棚卸しで、本タスクが
+当初問題視していた「MO（BUY）がfloor張り付きのままBUY判定が変わらない」を
+含むverdict≠PLAUSIBLE全32銘柄を(i)候補タグ欠落等のシーケンシングバグ・
+(ii)入力データ不完全性・(iii)構造的ミスマッチ・(iv)floor設計の妥当性、
+の4類型に分解した（詳細な調査記録は同日の複数セッション参照）。
+
+**MO単体（型iv）は本日解消済み**:
+- 原因: ①`beta_config.json`にMOの`sector`未設定でDamodaran業種
+  ベンチマークがNone、②`recommended_g`算出候補（rev_cagr_3yr/5yr・
+  g_fundamental・industry_benchmark）が全てNone/マイナスで候補0件のため
+  `recommended_g`が機能せず、`calculate_fcf_cagr()`の生floor=15%が
+  そのままDCFに採用されていた
+- 対応: `growth_sanity.py::TICKER_INDUSTRY_OVERRIDES`に`"MO": "Tobacco"`を
+  追加（Damodaranデータセットに実在するTobacco業種g_ebit≈1.5%を取得可能に）。
+  加えて、`fcf_cagr`経路でfloor(15%)に到達しておりindustry_g単独1件のみが
+  候補となる銘柄に限り、中央値の候補数閾値を2件から1件へ緩和する分岐を追加
+  （事前検証でLOARのような真の高成長銘柄への一般適用は成長率過小評価の
+  副作用があると確認済みのため、floor到達中の銘柄のみへ厳密に限定）
+- 結果: MOの`growth.source`が`fcf_cagr`→`segment_weighted`（rate 15.0%→1.5%）、
+  `floor_hit`が`True`→`False`、Classification`BUY`→`HOLD`、
+  乖離率+111.8%→-25.4%に変化。LOARを含む他99銘柄は完全に無変化を確認済み
+
+**検証結果:**
+- MO単体再生成: `growth.source`が`fcf_cagr`→`segment_weighted`、
+  `growth_sanity.recommended_g`がTobacco g_ebit（1.5015%）と一致、
+  `floor_hit`が`False`に変化することを確認
+- 全100銘柄再生成による新旧比較: Classification変化はMOのみ（BUY→HOLD）、
+  `growth.source`変化もMOのみ、`floor_hit`変化もMOのみ、
+  MO以外のIntrinsic_Value変化はゼロ件（LOAR含む）
+- `report_consistency_check.py --fail-on-ng`: NG=0（WARN 56→55、MOの
+  WARN-20〈fcf_cagr floor張り付き〉が解消したことによる想定通りの減少）
+- `pytest tests/ -v`: 377 passed / 2 known failures（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]、本タスクと無関係）
+- MOの`formula_verification`検証WARN（alpha cap起因）は本修正と無関係の
+  既存WARNであることをHEAD比較で確認済み
+
+**残る論点は今回のスコープ外として個別分離登録した**（詳細は各エントリ参照）:
+- [[GROWTH-VERDICT-SEQUENCING-BUG-1]]（型i・24銘柄・優先度：高相当）:
+  本タスクが本来最も広く扱うべきだった「verdictが1回目パス〈override前〉の
+  値を検証し続ける」根本バグ。VZ（BUY）を含む実害あり
+- [[WST-SECTOR-MISCLASSIFICATION-1]]（型ii）
+- [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]（型iii・[[TRUST-SUMMARY-EPIC-1]]
+  可視化候補）
+- [[JOBY-STATIC-GROWTH-HARDCODE-1]]（副次発見）
+- [[JNJ-XOM-PM-FLOOR-RISK-1]]（潜在リスク監視）
+
+---
+
 ### ✅ [FY52WEEK-BS-NULL-SILENT-1 Phase B Stage1] BS4フィールド標準タグ追加（57件・41銘柄、2026-07-19完了）
 **分類:** バグ修正 / データ品質ゲート / SECデータ正規化
 **登録日:** 2026-07-15（本体）/ 2026-07-19（Stage1着手）
