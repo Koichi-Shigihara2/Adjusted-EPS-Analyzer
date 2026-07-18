@@ -144,6 +144,54 @@
       "ticker": "CAKE",
       "acknowledged_date": "2026-07-17",
       "comment": "fyタグ裏取り不一致。ARCH-DATA-1ステージ3事前調査で一次情報検証済み: end=2023-01-03の期間はCheesecake Factory自身が「Fourth Quarter of Fiscal 2022」と公表しておりcomputed_year=2022が正しい。XBRL fyタグ側が2023と誤っている真陽性。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "ADSK",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2014-01-31)・capital_expenditure(end=2011-01-31)いずれもADSK自身が本文で「fiscal 2014」「fiscal 2011」と自称しておりcomputed_year側が正しい。固定1/31決算のfilerタグ誤り（52/53週要因ではない）。is_own_data=True・accn一致で本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "AVAV",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2021-04-30)・rpo(end=2020-04-30)いずれもcomputed_year側が正しい（本文「In fiscal year 2020, HAPSMobile...」等でAVAV自身が当該期間をその年度末年で自称）。固定4/30決算。dei:DocumentFiscalYearFocusもfy_tagと同じ誤り値でfiler側XBRL全体が1年ズレていた事例。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "COHR",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2021-06-30)。COHR自身の定義文「Reference to fiscal, fiscal year, or 'FY' means our fiscal year ended June 30 for the year referenced」によりcomputed_year=2021が正しい。固定6/30決算のfilerタグ誤り。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "CRM",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2014-01-31/2026-01-31)・stockholders_equity(end=2011-01-31)いずれもcomputed_year側が正しい。CRM自身の定義文「References to fiscal 2014...refer to the fiscal year ending January 31, 2014」で明確に確認。固定1/31決算のfilerタグ誤り。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "FCX",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2024-12-31)。カバーページ「For the fiscal year ended December 31, 2024」・本文「in 2024」多数使用でcomputed_year=2024が正しい。dei:DocumentFiscalYearFocusが2023のままで同一文書内でカバーページ本文と矛盾するfilerのコピペ更新漏れと確認。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "FICO",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2020-09-30)。本文「During fiscal 2020, we continued to...」「in each of fiscal 2020, 2019 and 2018」でcomputed_year=2020が正しい。固定9/30決算のfilerタグ誤り。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "HON",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2021-12-31)。カバーページ「For the fiscal year ended December 31, 2021」・本文「In 2021, we delivered sales growth...」多数使用でcomputed_year=2021が正しい。FCXと同型のdei:DocumentFiscalYearFocus矛盾（2020のまま）を確認、filerのコピペ更新漏れ。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-23",
+      "ticker": "WMT",
+      "acknowledged_date": "2026-07-18",
+      "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2014-01-31)。WMT自身「the fiscal years ended January 31, 2014 ('fiscal 2014')」と明記でcomputed_year=2014が正しい。固定1/31決算のfilerタグ誤り。本番データは正しい値を採用済み、実害なし。"
     }
   ]
 }

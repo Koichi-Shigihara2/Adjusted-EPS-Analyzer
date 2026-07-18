@@ -953,6 +953,28 @@ CHAT_RULESの一時停止ルールに従い報告・設計変更の承認を得�
   単位での集約表示に改善する余地があるが、今回のスコープ外として
   reportのみに留めた
 
+#### WARN-23残り8銘柄の一次情報検証完了（2026-07-18）
+
+NVDA・CAKE以外の未検証8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）
+・計12件を、SEC EDGAR一次情報（10-K本文のカバーページ・自己言及文、
+一部銘柄は`dei:DocumentFiscalYearFocus`タグ）で検証した。
+
+**結果:** 12件全てでXBRL `fy`タグ側の誤りでcomputed_year側が正しい
+ことを確認（NVDA/CAKEと同型の真陽性）。8銘柄すべて固定暦日決算
+（1/31・4/30・6/30・9/30・12/31のいずれか）であり、52/53週型
+（JNJ/TDY型の年境界往復）には該当しない別要因と判明。FCX/HONは
+同一文書内でカバーページ本文と`dei:DocumentFiscalYearFocus`タグが
+直接矛盾しており、filerの更新漏れ（コピペミス）と断定できる明確な
+事例。AVAV/COHR/FICOは`dei:DocumentFiscalYearFocus`タグ自体も
+fyタグと同じ誤り値で、filer側のXBRL全体が1年ズレていたケース。
+全12件で`is_own_data=True`かつaccnが一次情報で特定した正しい10-Kの
+accession numberと一致しており、本番データ（annual_*.json）は既に
+正しい値を採用済み・実害なしを確認した。
+
+`config/warn_acknowledged.json`に8銘柄分を追加登録し、WARN-23は
+**全10銘柄の一次情報検証が完了**した。今後新規に発生するWARN-23
+（未登録の新規ティッカー・新規end_date）は都度個別確認が必要。
+
 #### 残課題④ 対応完了（2026-07-18）
 
 BS項目（instant fact）向けの本人データ判定を新設した（コミット後の
@@ -4274,8 +4296,8 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 ③ [[FY52WEEK-BS-NULL-SILENT-1]]（優先度：高・着手条件なし。
    ①と独立に着手可能）
 ④ [[TRUST-SUMMARY-EPIC-1]]（優先度：高・要設計・実装未着手の大規模EPIC）
-⑤ WARN-23残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）の一次情報検証
-   （NVDA/CAKEの2銘柄は検証済み。残り8銘柄はXBRL fyタグ側の誤りか
-   computed_year側の誤りかの一次情報確認が未実施）
+⑤ ~~WARN-23残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）の一次情報検証~~
+   ✅ 2026-07-18完了。全10銘柄・12件でXBRL fyタグ側の誤りと確認、
+   実害なし。詳細はARCH-DATA-1「WARN-23残り8銘柄の一次情報検証完了」参照
 ⑥ [[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク。a:デッドコード
    削除 b:calc_ttm_series()拡張 c:現状維持の3案から選択）
