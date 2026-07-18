@@ -1416,6 +1416,60 @@ sector未収録＝conversion_rate未検証という状態そのものを信頼�
 #### 着手条件
 なし（次回セッションで設計方針を固めてから着手判断）
 
+#### 棚卸しレビューの中間記録（2026-07-18・未確定・要再確認）
+
+ステップ1（段階0〜2の棚卸し）を実施し、その後レビューを行った結果を
+中間記録として残す。**結論は確定していない**。次回セッションで
+全項目をゼロベースで再検証すること。
+
+**棚卸し結果（2026-07-18実施）の分類サマリー:**
+- 解消可能（バグ）6件: FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1・
+  CASH-TAG-MISSING-1・REVENUE-TAG-PRIORITY-FRAGILE-1・
+  WORKFLOW-SEC-TANUKI-GAP-1・FCF-CONVRATE①（44/36銘柄sector未収録、
+  件数要再確認）・MA-INTEGRATION-TAG-GAP-1
+- 構造的限界（可視化対象）候補3件: SPLIT-REALTIME-GAP-1・
+  fcf_outlier丸めによる理由喪失（Policy A/B設計）・
+  FCF-CONVRATE②（固定比率のサイクル限界）
+- 判断保留5件: FY52WEEK-BS-NULL-SILENT-1 Phase B/C・
+  MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1・
+  GROWTH-SANITY-CLASS-SYNC-1・FCF-CONVRATE③（EBIT変換）
+
+**レビューで判明した訂正・保留事項（要再検討、未確定）:**
+
+1. **SPLIT-REALTIME-GAP-1の分類は要訂正**: 当初「構造的限界（是正
+   不能）」と分類したが、BACKLOG本文を精読した結果誤りと判明。
+   タイトルは「fact競合ロジックでも是正できない」という限定的な
+   主張であり、「原理的に是正不能」ではない。対応方針欄に
+   yfinance Ticker.splits参照・split_history.yaml個別登録という
+   2つの解決策が既に提示されている。**「解消可能（別アプローチ
+   での実装待ち）」への再分類が必要**。
+
+2. **FCF-CONVRATE②は現在も本番経路で生存確認済み**（2026-07-18
+   再検証）: `estimate_fcf_from_eps()`（core_calculator.py経由、
+   全銘柄で無条件実行）が現在も`fcf_conversion_config.json`の
+   `sector_conversion_rates`を使用中。SITMの実データで
+   conversion_rate=0.85（Semiconductor）・生FCF比3.09倍の乖離が
+   現在のスナップショットでも再現することを確認。今セッションの
+   他変更（BS項目None検知等）との干渉なし。分類は「構造的限界」の
+   まま維持で問題ない。
+
+3. **未解決の食い違い（原因未特定）**: 「sector未収録銘柄数」が
+   2026-07-15記載の44銘柄に対し、2026-07-18の機械集計では36銘柄
+   だった。LITE/SPIR/LLYの個別乖離倍率は完全一致しているため計算
+   ロジック自体の変化ではないと推定されるが、母集団変化か
+   カウント方法の違いかは未特定のまま。次回確認時に原因を
+   切り分けること。
+
+4. **fcf_outlier丸めによる理由喪失（Policy A/B設計）は未検証**:
+   これは既存の別BACKLOG項目からの引用ではなく、EPIC本文の背景
+   説明を根拠にした分類判断。POLICYB-GATE-FIX-1の実装意図を
+   一次情報（コード・BACKLOG_DONE.md記録）で確認する検証が
+   未実施のまま。
+
+**次回の進め方（申し送り）**: 上記1〜4を含め、棚卸し結果全体を
+「一から確認し直す」ことでKoichiさんと合意済み。次回セッションでは
+今回の分類を鵜呑みにせず、全項目を再度ゼロベースで検証すること。
+
 ---
 
 ## 優先度：未定（要判断）
