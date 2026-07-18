@@ -1464,14 +1464,20 @@ def estimate_fcf_from_eps(
     config_path: str = None,
     fcf_outlier_action: str = "none",
     industry: str = "",
+    fcf_cv: float = 999.0,
+    outlier_detected: bool = True,
 ) -> FCFEstimationResult:
     """
     調整済みEPS × FCF転換率 によるFCF実力推定（v7.2）
 
-    EPSアナライザーのannual.jsonが存在する場合に常時適用。
+    EPSアナライザーのannual.jsonが存在する場合に適用。
     調整済みEPSがマイナスの場合は従来FCFにフォールバック。
     保険（Healthcare Plans）・金融（Financial Services）は
     OCFが実態と乖離するため調整後純利益を強制採用（転換率1.0）。
+
+    生FCFが多年度で安定（CV<0.3）かつ外れ値未検出の場合は、推定へ
+    置換せず生FCFをそのまま採用する（ticker_overrides該当銘柄は
+    個別配慮を優先し本条件の対象外）。
 
     Args:
         ticker: 銘柄コード
@@ -1482,6 +1488,8 @@ def estimate_fcf_from_eps(
         config_path: fcf_conversion_config.jsonのパス（Noneで自動探索）
         fcf_outlier_action: FCF外れ値の処置（"excluded"の場合はフォールバック）
         industry: yfinance industry文字列（業種別FCF定義切り替え用）
+        fcf_cv: determine_fcf_base()が算出したFCF変動係数（安定性判定用）
+        outlier_detected: analyze_fcf_outlier()の外れ値検出フラグ
 
     Returns:
         FCFEstimationResult
@@ -1588,6 +1596,21 @@ def estimate_fcf_from_eps(
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector,
             note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M) → 従来FCFを使用"
+        )
+
+    # ── スキップ条件: 生FCFが多年度で安定・外れ値未検出の場合は推定を適用しない ──
+    # ticker_overrides（AI CapEx急増等の個別配慮、6銘柄）は本条件の対象外とする。
+    # 汎用ヒューリスティックが意図的な個別レート設定を無条件で上書きしないため
+    # （2026-07-18確認: GOOGL/MSFTがCV<0.3・detected=Falseに該当するが、
+    #  ticker_overrides側の理由〈AI CapEx急増〉はCV/外れ値検知にまだ反映
+    #  されていないため、個別設定を優先する）。
+    if ticker not in ticker_overrides and fcf_cv < 0.3 and not outlier_detected:
+        return FCFEstimationResult(
+            applied=False, method="raw_fcf",
+            adj_net_income=adj_net_income, conversion_rate=conversion_rate,
+            estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
+            sector=sector,
+            note=f"生FCF安定(CV={fcf_cv:.2f}<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用"
         )
 
     # ── FCF推定 ──
