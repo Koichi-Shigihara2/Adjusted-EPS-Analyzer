@@ -433,6 +433,33 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    stockholders_equity/current_assets/current_liabilities/
 │    cash_and_equivalents）のNoneを独立検知する。詳細はBACKLOG.md
 │    [[FY52WEEK-BS-NULL-SILENT-1]]参照
+│    **追記（NVDA-STI-TAG-UNIDENTIFIED-1 2026-07-19）**: `common/sec_data/
+│    quarterly.py::TICKER_RESTRICTIONS`のticker別オーバーライドに、
+│    `sti_concept`/`ltdebt_concept`/`revenue_concept`（単一タグへの差替え、
+│    同一filing内・fy/fpタグベースの標準抽出の延長）と並ぶ新エントリ種別
+│    `cross_filing_tags`を追加（KLAC/TER/V/SOFIは前者、NVDAは後者。
+│    [[ANOMALY-PATTERN-CATALOG-1]]型C「資産クラス変化・当年度未タグ化型」
+│    向け）。`sti_concept`等が「1フィールド=1タグの差替え」なのに対し、
+│    `cross_filing_tags`は「指定end_date・指定form制限で複数XBRLタグを
+│    直接検索し合算する」ため、`parser.py::_find_entry_by_end_date()`/
+│    `_apply_cross_filing_tags()`という別関数群で実装されている。既存の
+│    `_collect_own_data_annual/_instant`が持つ`form in (10-K, 10-K/A)`
+│    フィルタ・accn_reportdate自己一致チェック（他銘柄の「比較年度再掲」
+│    誤混入を防ぐ主要な防波堤）はグローバルには一切変更せず、
+│    `cross_filing_tags`に明示登録されたticker×period×fieldの組み合わせ
+│    にのみ迂回を適用する設計（`_parse_raw_data()`の標準抽出ループ後に
+│    後付け上書きする形で配線、既存抽出ロジック自体は無改修）。合算値が
+│    近似値の場合（NVDAのannual FY2026: +0.88%残差）は`bs_provenance
+│    [field].is_approximated`/`residual_pct`に記録し、reader.py::
+│    get_net_cash()→adjustments.py::BSAdjustmentResult→pipeline.py::
+│    financial_health（`sti_approximated`/`sti_residual_pct`）を経由して
+│    report.txtのST_Invest行に残差率を注記する。ただしBUG-NETDEBT-4
+│    「同一時点原則」により、最新四半期にCash/LTDebtが揃っている場合は
+│    四半期側の値が優先されるため、annual側の近似値フラグが実際に
+│    report.txtへ表示されるのは四半期データが annual より古い/欠落して
+│    いる期間に限られる（NVDA自身は現在2027Q1四半期側の正規合算値が
+│    優先され、近似値表示は発生していない）。詳細はBACKLOG_DONE.md
+│    [[NVDA-STI-TAG-UNIDENTIFIED-1]]参照
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:

@@ -4,6 +4,109 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [NVDA-STI-TAG-UNIDENTIFIED-1] short_term_investmentsのNVDAは対応タグ未特定（対応方針①採用・cross_filing_tags機構で実装完了）
+**優先度:** 中〜高
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（完了）実装時、KLAC/TER/V/SOFIの
+4銘柄は解決したがNVDAのみ対応タグ未特定のため分離。個別調査の結果、
+[[ANOMALY-PATTERN-CATALOG-1]]型C（資産クラス変化・当年度未タグ化型）と判明。
+
+#### 問題（調査結果の要約）
+FY2026（会計年度末2026-01-25）第1四半期に、非上場だった投資先1社が上場した
+ことで保有株式が非上場株式からmarketable securities区分へ再分類され、単一
+XBRLタグでの捕捉が不可能になった。債券部分`AvailableForSaleSecuritiesDebtSecurities`
+（$39,520M、当該10-K本体に申告あり）＋株式部分`EquitySecuritiesFvNi`
+（$12,886M）を合算すると近似値$52,406M（実額$51,951M比+0.88%）となるが、
+`EquitySecuritiesFvNi`は当該10-K本体には一切申告されておらず、後続10-Q
+（2026-05-20提出、Q1 FY2027）の比較年度遡及開示にのみ登場するため、単一
+filing内では解決できず既存の`sti_concept`方式（KLAC/TER/V/SOFI）は適用不可。
+
+#### 実装内容（対応方針①: 複数タグ合算近似値＋残差明示、採用）
+- **quarterly.py**: `TICKER_RESTRICTIONS["NVDA"]`に新エントリ種別
+  `cross_filing_tags`を追加。ticker×period×fieldを明示指定した場合のみ、
+  指定end_date・指定form制限で複数XBRLタグを直接検索し合算する。
+  - annual FY2026（end 2026-01-25）: 主タグ`AvailableForSaleSecuritiesDebtSecurities`
+    （form限定10-K/10-K/A）＋補助タグ`EquitySecuritiesFvNi`（form限定10-Q、
+    真のクロスfiling参照）を合算。`approx_residual_pct=0.0088`を明示登録。
+  - quarterly 2027Q1（end 2026-04-26）: 両タグとも当該10-Q自身のown data
+    （form=10-Q）だが、既存の`_extract_values_best_candidate()`が複数タグ
+    同時合算に対応しないため同一機構を転用。近似ではなく正規合算値。
+- **parser.py**: `_find_entry_by_end_date()`（指定タグ・end_date・form群への
+  ピンポイント検索。既存の`_collect_own_data_annual/_instant`が持つ
+  `form in (10-K, 10-K/A)`フィルタ・accn_reportdate自己一致チェックを
+  意図的に迂回する唯一の経路）と`_apply_cross_filing_tags()`
+  （`TICKER_RESTRICTIONS`の`cross_filing_tags`に明示登録された組み合わせに
+  のみ発火し、複数タグ合算値でextracted辞書の該当バケツを上書き）を新設。
+  `_parse_raw_data()`の標準抽出ループ後に適用し、既存の抽出ロジック自体は
+  一切変更しない（他の全銘柄・全フィールドの既存挙動に影響なし）。
+- **reader.py**: `get_net_cash()`にannual側`bs_provenance.short_term_investments.
+  is_approximated`/`residual_pct`を読み取り、返却dictに`sti_approximated`/
+  `sti_residual_pct`として追加。四半期側の値に上書きされた場合はFalse/None
+  にリセット（四半期側は同一filing内合算のため近似ではない）。
+- **adjustments.py**: `BSAdjustmentResult`に`sti_approximated`/`sti_residual_pct`
+  フィールドを追加し`to_dict()`で伝播。
+- **pipeline.py**: `financial_health`辞書に同フィールドを追加。report.txtの
+  ST_Invest行に、近似値採用時のみ残差率注記
+  （例: `ST_Invest: $52.41B (近似値、実額比+0.88%)`）を追加する表示分岐を実装。
+- **report_consistency_check.py**: CHECK-27（WARN-27 近似値残差過大）を新設。
+  `bs_provenance[field].is_approximated=True`のエントリで`residual_pct`が
+  閾値5%を超過した場合のみ発火する安全網（NVDA自身は+0.88%のため非発火。
+  cross_filing_tags機構の将来の再利用先向け）。
+- **tests/test_pipeline_logic.py**: `TestNvdaCrossFilingSTI`クラスを新設し、
+  annual FY2026の合算近似値$52,406M・残差フラグ、quarterly 2027Q1の正規
+  合算値$69,470M、latest.jsonが四半期の非近似値を採用すること（BUG-NETDEBT-4
+  との整合）の3件を回帰テスト化。
+
+#### 実装中に発覚した設計上の分岐点（ユーザー判断済み）
+`reader.py::get_net_cash()`のBUG-NETDEBT-4「同一時点原則」により、annual FY2026
+のみにcross_filing_tagsを実装しても、最新四半期（2027Q1）にCash/LTDebtが揃って
+いる限りreport.txt/latest.jsonの表示には反映されない（四半期側が優先される）
+ことが実装中に判明。ユーザー判断により、四半期(2027Q1)側にも同一の複数タグ
+合算機構を適用し、両方の期で正しい値が得られるようにした（reader.pyの
+同一時点優先ロジック自体を迂回する案は、BUG-NETDEBT-5由来の期ズレ防止という
+別の設計目的と衝突するリスクがあるため不採用）。
+
+#### 検証結果
+- **annual FY2026**（`common/sec_data/data/NVDA/annual_2026.json`）:
+  `bs.short_term_investments=52,406,000,000`（合算近似値）・
+  `bs_provenance.short_term_investments={is_approximated: true, residual_pct: 0.0088,
+  combined_tags: [AvailableForSaleSecuritiesDebtSecurities, EquitySecuritiesFvNi]}`
+- **quarterly 2027Q1**（`quarterly_2027Q1.json`）:
+  `bs.short_term_investments=69,470,000,000`（$39,233M+$30,237Mの正規合算値）
+- **latest.json/report.txt**（`docs/value-monitor/tanuki_valuation/data/NVDA/`）:
+  修正前 `short_term_investments=0.0, net_debt=-4,767,000,000`（STI欠損によりNet Debt
+  過小評価）→ 修正後 `short_term_investments=69,470,000,000, net_debt=-74,237,000,000,
+  sti_approximated=false, sti_residual_pct=null`（net_debt_period="2027Q1"のため
+  四半期の正規値を採用、近似値フラグは伝播しない）。Intrinsic_Value: $774.69→$777.56
+- **他104銘柄への影響確認**: `TICKER_RESTRICTIONS`に`cross_filing_tags`を持つのは
+  NVDAのみであることをコードレベルで確認（`if _cross_filing_tags:`ガードにより
+  他銘柄では新規コードパス自体が実行されない）。KLAC/TER/V/SOFI/AAPL/MSFTを
+  対象にparser.py単体実行でshort_term_investments抽出値が既知の値と完全一致する
+  ことをスポットチェックで確認（全銘柄一括再生成は、無関係な既存データ staleness
+  との切り分けコストが高いため実施せず、コードレベルのガード確認に留めた）
+- **pytest**: 382件中380 passed・2 failed（`test_iv_formula.py`のMSFT/NVDA、
+  [[TEST-STALE-IV-1]]として既知・登録済みの事前確認済み失敗のみ。新規failなし）
+- **report_consistency_check.py**: 全100銘柄でNG=0（実行前後で変化なし）。
+  WARN合計55件（確認済み42・未確認13、いずれもNVDAのSTI以外の既存WARN
+  〈WARN-21/22/23〉およびSITM/SOFI/WMTの既存WARNで、本対応による新規WARNは
+  ゼロ）。新設WARN-27は全銘柄で非発火（NVDAの残差+0.88%は閾値5%未満）
+
+#### 実装中に発見した別課題（未修正・スコープ外）
+NVDAデータ再生成時、`annual_2010/2011/2012/2013/2015/2016/2017/2018.json`の
+`other.rpo`フィールドおよび`raw/normalized/NVDA_quarterly_*.json`・
+`common/sec_data/ttm/NVDA_ttm_series.json`に、本対応（short_term_investments/
+cross_filing_tags）と無関係なドリフトが検出された。既存コード（本セッションで
+一切変更していないベースラインのparser.py/quarterly.py）でも同一ドリフトが
+再現することを確認済みで、NVDAのコミット済みデータが現在のコードに対して
+単純に陳腐化していた（過去のいずれかのタイミングで再生成漏れが発生した）
+ことによるものと判断。本対応のスコープ外のため、当該ファイルはコミット前に
+ベースラインへ復元し、この発見のみ記録に残す（要すれば別途調査・再生成の
+判断を仰ぐ）。
+
+---
+
 ### ✅ [GROWTH-SANITY-CLASS-SYNC-1] growth_sanity.verdictがDCF_Reliability/Classification判定と未連動（MO型iv実装で解消、2026-07-19完了）
 **優先度:** 高
 **分類:** データ品質 / TANUKI VALUATION
