@@ -39,14 +39,24 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
     # 申告を停止し、短期+長期合算タグDebtLongtermAndShorttermCombinedAmountに
     # 移行。standard fallbackへの追加はAVGO/VZ等の無関係な既存LTDebtデータにも
     # 波及することを検証で確認したため、SOFI限定のticker_restrictionsとした。
+    # FY52WEEK-BS-STI-OVERRIDE-DESIGN-1（2026-07-19）: short_term_investments
+    # もBS本体「Investment securities」全体を表すOtherInvestmentsタグに固定。
+    # 当初想定していたAvailableForSaleSecuritiesDebtSecuritiesはAFS分類分の
+    # サブセット（FY2025時点で95.3%のみ）しか捕捉できず、残差はNote 15
+    # （公正価値ヒエラルキー）に含まれる非AFS分類の資産担保証券・残余持分
+    # （証券化VIE由来）であることを一次情報で確認済み。OtherInvestmentsは
+    # BS「Investment securities」合計と全期間で完全一致する。
     "SOFI": {
         "revenue_concept": "RevenuesNetOfInterestExpense",
         "ltdebt_concept": "DebtLongtermAndShorttermCombinedAmount",
+        "sti_concept": "OtherInvestments",
         "note": "フィンテック銀行。Revenuesタグなし。フォールバックが"
                 "RevenueFromContract(130M=手数料のみ)とRevenuesNetOfInterest(1100M=全社収益)を"
                 "混在させ採用タグが不定になる。revenue_conceptで単一タグに固定が必須。"
                 "LTDebtも2022年以降LongTermDebt系タグの申告を停止しており"
-                "ltdebt_conceptで単一タグに固定が必須。",
+                "ltdebt_conceptで単一タグに固定が必須。short_term_investmentsは"
+                "非分類BS（流動/非流動を区分しない銀行持株会社）のため"
+                "sti_conceptで単一タグ（OtherInvestments、BS合計と完全一致）に固定。",
     },
     # BUG-REV-SPAC-1 (2026-06-12 修正)
     # IONQの2022年10-KにおいてRevenuesタグが$1,235M (SPAC関連資金調達額) を誤タグして報告している。
@@ -58,6 +68,34 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
         "note": "量子コンピューティング企業。2022年10-KのRevenuesタグが"
                 "SPAC調達金($1,235M)を誤タグ。正しい営業収益は"
                 "RevenueFromContractWithCustomerExcludingAssessedTax($11.1M)。",
+    },
+    # FY52WEEK-BS-STI-OVERRIDE-DESIGN-1（2026-07-19）:
+    # short_term_investmentsのXBRL_MAPPING標準候補群（Current接尾辞系タグ）は
+    # KLAC/TER/Vいずれも数年前に申告停止済みで機能しない。かつ正しいタグが
+    # 汎用的な名称（他銘柄でも別の意味で広く使われる）のためグローバル候補
+    # リストへは追加せず、ticker限定のsti_conceptで固定する。
+    "KLAC": {
+        "sti_concept": "AvailableForSaleSecuritiesDebtSecurities",
+        "note": "BACKLOG当初想定のAvailableForSaleSecuritiesDebtSecuritiesCurrent"
+                "は2021-03-31を最後に申告停止済みの死んだタグ。'Current'接尾辞なしの"
+                "AvailableForSaleSecuritiesDebtSecuritiesが現在も継続申告されており、"
+                "BS「Marketable securities」の99.0%（FY2025）に一致（残差は"
+                "EquitySecuritiesFvNiCost約$22.9Mの株式性有価証券、本タグの対象外）。",
+    },
+    "TER": {
+        "sti_concept": "AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue",
+        "note": "標準候補群（AvailableForSaleSecuritiesCurrent等）は2021年以降"
+                "申告停止済み。満期別内訳の「1年以内」タグがBS「Marketable "
+                "securities」（FY2025: $28,247K）と完全一致（誤差ゼロ）。",
+    },
+    "V": {
+        "sti_concept": "Investments",
+        "note": "標準候補群は2020年以降申告停止済み。'Investments'タグ（'Current'"
+                "接尾辞なしの汎用名）がBS流動資産側「Investment securities」"
+                "（FY2025: $1,833,000,000）と完全一致。他9銘柄（ADSK/BSY/CEG/"
+                "CRWV/DELL/LRCX/LYFT/MO/ONDS）も同タグを別の意味で申告している"
+                "ため、V限定オーバーライドとして厳格運用し、グローバル候補"
+                "リストには絶対に追加しないこと。",
     },
 }
 

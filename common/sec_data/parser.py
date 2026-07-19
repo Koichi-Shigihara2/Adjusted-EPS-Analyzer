@@ -307,6 +307,11 @@ class SECParser:
         # タグの申告を停止し代替タグへ移行したケース向け。quarterly.pyと同一の
         # ticker_restrictionsを参照する）
         _ltdebt_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("ltdebt_concept")
+        # 銘柄別 sti_concept オーバーライド（FY52WEEK-BS-STI-OVERRIDE-DESIGN-1:
+        # KLAC/TER/V/SOFIはshort_term_investmentsの標準候補群（XBRL_MAPPING）が
+        # 申告停止済み・非分類BS・正しいタグが汎用的すぎるため、ltdebt_conceptと
+        # 同型のticker限定オーバーライドとする）
+        _sti_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("sti_concept")
 
         # 会計年度末月を検出（非12月決算企業対応・determine_fiscal_year に渡す。
         # 本人データが存在しない年度のフォールバック判定にのみ使用する）
@@ -340,6 +345,9 @@ class SECParser:
             # ltdebt_concept が指定されている場合はそのタグのみ使用
             if field_name == "long_term_debt" and _ltdebt_concept_override:
                 xbrl_keys = [_ltdebt_concept_override]
+            # sti_concept が指定されている場合はそのタグのみ使用
+            if field_name == "short_term_investments" and _sti_concept_override:
+                xbrl_keys = [_sti_concept_override]
             extracted[field_name] = self._extract_values(
                 us_gaap, xbrl_keys, use_max=use_max, merge_all_tags=merge_all,
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,
