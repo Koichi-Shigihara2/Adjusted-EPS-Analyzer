@@ -421,6 +421,20 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
   残存する実害があった。SEC自体にfactが1件も存在しない期間＜分割直後〜翌年
   10-K再掲まで＞は原理的に是正不能な残存ギャップあり、詳細はSPLIT-REALTIME-GAP-1
   参照）
+  **追記（SPLIT-REALTIME-GAP-1 2026-07-20完了）**: 上記の「再掲機会が一度も
+  ない先頭ブロックが恒久固着する」ギャップに対し、`pipeline.py:140-205`の
+  `load_split_history()`/`apply_split_adjustments()`（`config/split_history.yaml`
+  への個別登録＋post-split四半期平均の1.5倍を閾値とした遡及補正、NOWで
+  既に実績あり）を流用して対応。NVDA単独の想定から、全101銘柄の横断スキャン
+  でAVGO/CPRT/WMT/LRCX/CELHの5銘柄にも同型ギャップを確認し登録を拡大。
+  KLAC（2026-06-12分割済みだがpost-split四半期データ未到達）は事前登録のみ
+  （`post_split_shares`空リストで安全にno-op）。RCATは分割自体が存在せず
+  （2019年以降無分割、SEC XBRL確認済み）、往復変動の正体は
+  `_neighbor_quarter_diluted_shares()`（[[ASTS-SHARES-OSCILLATION-1]]）が
+  RCAT自身の四半期単位XBRL開示欠落を埋めていただけと判明したため対象外。
+  KULR/SPIRのリバース分割（1-for-8）は同型ギャップの有無が未検証のまま
+  [[SPLIT-REALTIME-GAP-REVERSE-1]]として分離登録。詳細はBACKLOG_DONE.md
+  [[SPLIT-REALTIME-GAP-1]]参照
      ↓ TTMデータ（JSON）
 【バリュエーション計算層】
 ├─ common/sec_data/reader.py::SECReader.get_net_cash()  # BS項目（Cash/ST_Invest/

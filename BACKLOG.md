@@ -2504,55 +2504,45 @@ catalyst.jsonのデータ鮮度・カタリスト件数の多さ（CATALYST-DEDU
 
 ---
 
-### [SPLIT-REALTIME-GAP-1] 分割直後〜翌年10-K再掲までの期間はfact競合ロジックでも是正できない
-**優先度:** 低〜中
+### [SPLIT-REALTIME-GAP-REVERSE-1] KULR/SPIRのリバース分割で同型の恒久固着ギャップ有無が未確認
+**優先度:** 低
 **分類:** データ品質 / EPS ANALYZER
-**登録日:** 2026-07-12
-**発見:** [[SPLIT-AUTO-CHECK-1]]（完了・BACKLOG_DONE.md参照）実装検証時
+**登録日:** 2026-07-20
+**発見:** [[SPLIT-REALTIME-GAP-1]]（完了・BACKLOG_DONE.md参照）実装時
 
-#### 問題
-SPLIT-AUTO-CHECK-1で`extract_key_facts.py`のfact選定ロジックを「filed日が
-最新のfactを優先」に統一し、同一期間に複数factが競合するケース（分割による
-比較年度再掲）は是正できるようになったが、**そもそも競合factが1件も存在しない
-期間は原理的に是正できない**。
+#### 背景
+SPLIT-REALTIME-GAP-1の実装前調査で行った全101銘柄横断スキャンは、フォワード
+分割（`diluted_shares_used`が数倍に「ジャンプ」するパターン、比率>1のみ）を
+検知対象としていたため、リバース分割（比率<1、株数が「減る」パターン）を
+見落としていた。
 
-具体例（NVDA 2023-04-30、FY2024 Q1）: SEC company facts APIには当該四半期の
-`WeightedAverageNumberOfDilutedSharesOutstanding`が2件しかなく、いずれも
-分割前株数（2,490,000,000）。2件目は翌年同時期の10-Q（2024-05-29提出）が
-比較年度として再掲したものだが、この提出日は実際の分割効力発生日
-（2024-06-07）より**前**のため、再掲値も分割前のまま。10-Qは前年同四半期のみを
-比較掲載するため、この四半期はその後二度と別の提出書類で再掲される機会がなく、
-恒久的に分割前株数が残存する。annual.json側もこの1四半期分だけ歪んだ値を
-引きずるため、FY2024通期のdiluted_shares_used平均値も完全には是正されない。
+BACKLOG_DONE.md「Phase 2b-3完了（2026-07-12）」の記述で、KULR・SPIRの2銘柄が
+当時から`extract_key_facts.py`のfact選定ロジック修正の対象銘柄として言及
+されていたことを再確認し、yfinanceでKULR（2025-06-23、1-for-8）・SPIR
+（2023-08-31、1-for-8）のリバース分割が実在することを確認した。
 
-RCAT（2023年に複数回の変動: 2023-04-30↓、2023-07-31↑、2024-03-31↓）も
-同種の構造的ギャップか、別要因（実際の自己株買い等）かが未切り分けのまま
-残っている。
+ローカルキャッシュ（`docs/value-monitor/adjusted_eps_analyzer/data/{KULR,SPIR}/
+quarterly.json`）を見ると、いずれも「高い値が数四半期続いた後、低い値へ
+ジャンプし、以後低い値が続く」というNVDA型と鏡写しのパターンが見られる
+（KULR: 2022-06-30〜2024-03-31が約104M〜142M→2024-06-30以降は約22.7M〜46.2M。
+SPIR: 2022-03-31〜2022-06-30が約139M→2022-09-30以降は約17.5M〜33.3M）。
+いずれも実際のリバース分割日より1年程度早いタイミングでジャンプしており、
+SPLIT-REALTIME-GAP-1のNVDA等と同型の「翌年以降の10-Q再掲で先に是正された
+四半期」＋「再掲機会がなく古い側の値が残存」という構造が疑われるが、
+一次情報（SEC 10-Q/8-K）での確認・`apply_split_adjustments()`が
+リバース比率（ratio<1）を正しく扱えるかのコード確認はいずれも未実施。
 
-#### 対応方針（未確定・次回セッションで判断）
-- yfinance `Ticker.splits`を独立ソースとして参照し、この「re-統計上の空白期間」
-  に該当する四半期のみ機械的に按分補正する設計を検討する（SPLIT-AUTO-CHECK-1の
-  当初案だった「yfinance splits自動照合」を、全銘柄一律ではなくこのギャップ
-  埋め用途に限定して採用するか判断）
-- あるいは`split_history.yaml`への個別登録＋既存`apply_split_adjustments()`の
-  併用に戻すか（対症療法だが実装コストは低い）
-- RCATの2023年変動が本ギャップと同種か別要因かを一次情報（10-Q本文）で確認する
+SCCO（yfinanceに2024年以降ほぼ毎四半期`~1.005-1.01`という極小の「分割様」
+記録があるが、ローカルキャッシュのdiluted_shares_used系列はほぼ横ばい
+〜緩やかな増加のみで明確なジャンプ/ドロップなし）は、特別配当等に伴う
+yfinance側のデータ仕様上のノイズであり実分割ではないと判断、対象外。
 
-#### 状況更新（2026-07-18・TRUST-SUMMARY-EPIC-1棚卸し再検証）
-**分類を「構造的限界」から「解消可能（別アプローチでの実装待ち）」に変更した。**
-再分類日: 2026-07-18（TRUST-SUMMARY-EPIC-1棚卸し再検証にて）。
-
-見出し（「fact競合ロジックでも是正できない」）は「特定の是正手段では直せない」
-という限定的な主張であり、「原理的に是正不能」ではないと判明した。
-`src/value/adjusted_eps_analyzer/pipeline.py:140-179`で`load_split_history()`・
-`apply_split_adjustments()`が既に実装・稼働中（NOW銘柄で実績あり）であり、
-`split_history.yaml`への個別登録という既存の仕組みの流用のみで対応可能。
-yfinance `Ticker.splits`自動照合案は「ギャップ期間の自動検出」という新規ロジック
-設計が必要でコストが高いため見送り、**split_history.yaml個別登録方式を採用方針
-とする**。
-
-優先度欄（低〜中）は変更せず維持する。優先度自体の見直しはKoichiさんの
-次回判断待ちとする。
+#### 対応方針（未確定）
+- KULR/SPIRそれぞれのSEC 10-Q/8-K一次情報でリバース分割日・比率を確認する
+- `apply_split_adjustments()`の閾値計算（`pre_split_threshold = post_split_avg
+  / ratio × 1.5`）がratio<1（リバース分割）でも意図通り機能するか
+  （現状の実装はratio>1のフォワード分割のみで検証されている）をコードで確認する
+- 実装するか否か・優先度はKoichiさんの次回判断待ち
 
 #### 着手条件
 なし（次回セッションで判断）
@@ -4401,7 +4391,8 @@ reader.py統合＋規約C/Dの型化、規模見積もりから）・
 [[BACKFILL-HISTORY-CLEANUP-1]]・[[SYSHEALTH-CIK-DEDUP-1]]・
 [[TAIL-CIK-LOOKUP-DEDUP-1]]、いずれも陳腐化確認・重複実装解消の軽微作業）
 は手が空いた時に片付ける。
-[[SPLIT-REALTIME-GAP-1]]（優先度：低〜中）・
+~~[[SPLIT-REALTIME-GAP-1]]~~ ✅ 2026-07-20完了（NVDA+新規発見AVGO/CPRT/
+WMT/LRCX/CELH・KLAC事前登録、RCAT除外。詳細はBACKLOG_DONE.md参照）。
 [[DATA-JUMP-CHECK-GENERALIZE-1]]（優先度：未定）は引き続き待機的な
 着手条件（「次に関連バグが発生したら」等）のため後回しでよい。
 
@@ -4896,8 +4887,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~⑦ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]~~ ✅ 2026-07-19完了（22銘柄）。
    除外3件（CSGP/KULR/RCAT）は[[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]
    として分離継続。詳細はBACKLOG_DONE.md参照
-⑧ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
-   個別登録方式で実装コスト低、優先度：低〜中）
+~~⑧ [[SPLIT-REALTIME-GAP-1]]~~ ✅ 2026-07-20完了（NVDA+新規発見AVGO/CPRT/
+   WMT/LRCX/CELH・KLAC事前登録、RCAT除外）。詳細はBACKLOG_DONE.md参照
 ⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
    [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
