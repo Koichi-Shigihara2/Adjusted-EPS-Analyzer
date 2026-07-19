@@ -4320,7 +4320,7 @@ reader.py統合＋規約C/Dの型化、規模見積もりから）・
 [[TAIL-CIK-LOOKUP-DEDUP-1]]、いずれも陳腐化確認・重複実装解消の軽微作業）
 は手が空いた時に片付ける。
 ~~[[SPLIT-REALTIME-GAP-1]]~~ ✅ 2026-07-20完了（NVDA+新規発見AVGO/CPRT/
-WMT/LRCX/CELH・KLAC事前登録、RCAT除外。詳細はBACKLOG_DONE.md参照）。
+WMT/LRCX/CELH/TSLA〈8銘柄〉・KLAC事前登録、RCAT除外。詳細はBACKLOG_DONE.md参照）。
 [[DATA-JUMP-CHECK-GENERALIZE-1]]（優先度：未定）は引き続き待機的な
 着手条件（「次に関連バグが発生したら」等）のため後回しでよい。
 
@@ -4792,31 +4792,29 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~① [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]~~ ✅ 2026-07-19完了
    （KLAC/TER/V/SOFIの4銘柄）。NVDAのみ[[NVDA-STI-TAG-UNIDENTIFIED-1]]
    として分離継続。詳細はBACKLOG_DONE.md参照
-① [[NVDA-STI-TAG-UNIDENTIFIED-1]]（優先度：中〜高・着手条件なし・
-   型C「資産クラス変化・当年度未タグ化型」と判明済み〈個別調査完了、
-   BACKLOG.md本体エントリに調査結果を追記済み〉。対応方針は①候補タグ
-   合算の近似値許容〈実額比+0.9%〉②FY2027 10-K提出〈2027年2月頃〉を
-   待ちfiler側のタグ整備状況を再確認③当面short_term_investments=None
-   を許容、のいずれかをKoichiさんに判断いただく段階）
-② [[BS-FIELD-NONE-TRANSITION-DETECT-1]]（優先度：中〜高・着手条件
-   なし・実装未着手。`report_consistency_check.py`へWARN-26として
-   「前年有値→当年None」遷移検知を新設する案。実装コストは低〜中
-   と見積もり済み）
-③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
-   着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
-④ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
-   `--skip-risk`使用の都度再発しうるため早めの対応が望ましい）
-⑤ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
-   `beta_config.json`のsector値修正のみで実装単純。
-   [[RCAT-SECTOR-MISCLASSIFICATION-1]]との統合要否も含めて次回判断）
-⑥ [[RCAT-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
-   `beta_config.json`のsector値修正のみで実装単純。分類修正しても
-   growth_sanityのwarning自体は解消しない旨に留意）
+~~① [[NVDA-STI-TAG-UNIDENTIFIED-1]]~~ ✅ 2026-07-19完了（`cross_filing_tags`
+   機構を新設し実装。$12.4B差額の正体〈FY2026新規上場投資先の株式評価額〉
+   を、候補タグ合算の近似値〈実額比残差+0.9%〉で解消）。詳細は
+   BACKLOG_DONE.md参照
+~~② [[BS-FIELD-NONE-TRANSITION-DETECT-1]]~~ ✅ 2026-07-19完了
+   （`report_consistency_check.py`へWARN-26新設、既知8件を
+   `warn_acknowledged.json`へ事前登録。新規3件〈LLY/SCCO/SPIR〉は
+   [[BS-FIELD-NEWLY-MISSING-2026-1]]として分離登録）。詳細は
+   BACKLOG_DONE.md参照
+~~③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]~~ ✅ 2026-07-19完了
+   （WARN-24新設・`fye_change_candidate_scan.py`クラスタリングツール化。
+   新規2件〈LITE/WST〉は[[FYE-BOUNDARY-COLLISION-UNCONFIRMED-1]]として
+   分離登録）。詳細はBACKLOG_DONE.md参照
+~~④ [[SKIP-RISK-EVENTS-WIPE-1]]~~ ✅ 2026-07-19完了（`_pre_existing_risk_events`
+   スナップショットパターンで解消、単一コミット）。詳細はBACKLOG_DONE.md参照
+~~⑤ [[WST-SECTOR-MISCLASSIFICATION-1]]~~・~~⑥ [[RCAT-SECTOR-MISCLASSIFICATION-1]]~~
+   ✅ 2026-07-19完了（2件一括対応、`beta_config.json`のsector値修正のみ）。
+   詳細はBACKLOG_DONE.md参照
 ~~⑦ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]~~ ✅ 2026-07-19完了（22銘柄）。
    除外3件（CSGP/KULR/RCAT）は[[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]
    として分離継続。詳細はBACKLOG_DONE.md参照
 ~~⑧ [[SPLIT-REALTIME-GAP-1]]~~ ✅ 2026-07-20完了（NVDA+新規発見AVGO/CPRT/
-   WMT/LRCX/CELH・KLAC事前登録、RCAT除外）。詳細はBACKLOG_DONE.md参照
+   WMT/LRCX/CELH/TSLA〈8銘柄〉・KLAC事前登録、RCAT除外）。詳細はBACKLOG_DONE.md参照
 ~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照

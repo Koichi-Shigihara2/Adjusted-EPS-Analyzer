@@ -129,7 +129,7 @@ resolution)をキーに重複排除してから書き込むよう変更（既存
 
 ---
 
-### ✅ [SPLIT-REALTIME-GAP-1] 分割直後〜翌年10-K再掲までの恒久固着ギャップ解消（NVDA+新規発見AVGO/CPRT/WMT/LRCX/CELH・KLAC事前登録、RCAT除外）
+### ✅ [SPLIT-REALTIME-GAP-1] 分割直後〜翌年10-K再掲までの恒久固着ギャップ解消（NVDA+新規発見AVGO/CPRT/WMT/LRCX/CELH/TSLA・KLAC事前登録、RCAT除外）
 **優先度:** 低〜中
 **分類:** データ品質 / EPS ANALYZER
 **登録日:** 2026-07-12
