@@ -4,6 +4,112 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1] 決算期変更境界のバケツ競合検知（WARN-24新設・クラスタリングスキャン補助ツール化）
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-18
+**完了日:** 2026-07-19
+**発見:** RCAT型決算期変更検知 事前調査（ARCH-DATA-1派生）
+
+#### 問題（再掲）
+決算期を実際に変更した企業で、変更の境界年に「真の本人データ」と
+「翌年の10-Kが比較年度として再掲した非本人データ」が同一computed_year
+に衝突するケースが、既存の検知網（CHECK-22/CHECK-23）のいずれにも
+引っかからず記録されない。RCAT（決算期を2回変更）で実在確認済み。
+
+#### 設計調査での結論（実装前に確定・実装方針の根拠）
+- 105銘柄クラスタリングスキャン（support≧2・循環距離30日超）は独立
+  スクリプトとして残っておらず一時的なアドホック分析だったことを確認。
+  `common/sec_data/utils.py::_cluster_fiscal_anchor_candidates()`は
+  再利用可能な純関数（入力: day_counts、出力: クラスタのリスト）として
+  現存することを確認し、これを再利用する形で候補抽出ツールとして
+  常設化した（後述）。
+- **クラスタリングはWARN-24本体の発火条件には採用しない**（設計判断の
+  根拠）: クラスタリングは「決算日の分布が過去2箇所に分かれている」と
+  いう統計的シグナルに過ぎず、実際の年度バケツ競合を保証しない。事前
+  調査時点で4候補（RCAT/ELF/MSCI/NOW）中、実際に競合していたのは
+  RCATのみで、ELF/MSCIは決算期変更はあったが競合なし、NOWは単発の
+  参考開示によるノイズだった。誤検知率が高いため、常設WARNの発火条件
+  としては不適切と判断した。
+- WARN-24本体は`parser.py`側での精密な検知（既存側・本人データ候補側の
+  実際のバケツ競合発生時のaccn・fyタグ・end_date単位での記録）を採用。
+  CHECK-22（同一fyタグ前提）・CHECK-23（勝者自身のfyタグとバケツの
+  不一致、敗者側は対象外）のいずれとも異なる軸で、「fyタグが元々異なる
+  2エントリが同一バケツで競合する」ケースを対象とする。
+
+#### 実装内容
+- **parser.py**: `_own_override_is_safe()`自体は変更せず（既存テスト済み
+  の安定関数のため）、`_extract_values_best_candidate`・
+  `_extract_values_merged`の2箇所で、既存側と本人データ候補側の情報を
+  比較する新規メソッド`_is_boundary_collision()`（純関数、テスト容易性
+  のため独立実装）と`_fiscal_anchors_far_apart()`（(月,日)の循環距離が
+  30日超かを判定）を新設。
+  - **実装中の重要な発見・設計修正**: 当初「生fyタグが異なる・end_dateが
+    異なる」のみを条件にしたところ、ADSK/AVAV/CAKE/CRM等**7銘柄**で
+    誤って発火した。原因は、固定決算日企業で「同一の(月,日)・隣接する
+    暦年」の組み合わせ（filer側のfyタグが実際の期間より1年ずれる
+    WARN-23既知パターン、例: end=2011-01-31/fy=2010とend=2012-01-31/
+    fy=2011）が、単なる年ズレであるにも関わらず境界衝突と誤認識されて
+    いたため。`_fiscal_anchors_far_apart()`（(月,日)循環距離>30日）を
+    追加の必須条件とすることで、この7銘柄を正しく除外した（詳細は
+    下記検証結果参照）。
+  - 新規`_save_fye_boundary_collision_log(ticker, records)`メソッドを
+    `_save_fy_collision_log`/`_save_fy_tag_mismatch_log`と同一パターンで
+    新設。0件でも毎回書き込む。出力先:
+    `common/sec_data/data/{TICKER}/fye_boundary_collision_log.json`
+- **report_consistency_check.py**: `_read_fye_boundary_collision_log()`・
+  CHECK-24（WARN-24、非ブロッキング）を既存2チェックと同一パターンで新設。
+- **common/sec_data/fye_change_candidate_scan.py**（新規ファイル）:
+  `_cluster_fiscal_anchor_candidates()`を再利用した候補抽出補助ツール。
+  WARN-24の発火条件には使わず、新規銘柄登録時・定期監査時の手動実行を
+  想定。「誤検知を含みうる統計的シグナルである」旨を冒頭コメントに明記。
+- **tests**: `tests/test_fiscal_year_anchor_window.py`に
+  `_fiscal_anchors_far_apart()`・`_is_boundary_collision()`の単体テスト
+  9件（RCAT型で発火・fy_tag一致で非発火・同一end_dateで非発火・
+  ADSK型〈同一(月,日)・隣接暦年〉で非発火・既存側なしで非発火 等）、
+  `tests/test_report_consistency_check.py`にCHECK-24読み取り側のテスト
+  4件（既存のCHECK-23テストと同一パターン）を追加。
+
+#### 検証結果
+- **全100銘柄再生成**（`parser.parse_company_facts()`を全銘柄に対しメモリ内
+  実行、`fye_boundary_collision_log.json`のみを新規生成する安全な方式で
+  実施。既存のannual/quarterly/raw/normalized等は一切変更しない）:
+  `fye_boundary_collision_log.json`が非空になったのは**RCAT（2件）・
+  LITE（1件）・WST（1件）の3銘柄**（当初想定「RCATのみ」とは異なる結果。
+  下記「想定外の発見」参照）。ELF/MSCI/NOWは想定通り空のまま。
+- **想定外の発見（LITE・WST）**: いずれも`_fiscal_anchors_far_apart()`
+  フィルタ通過後も残った、単発の孤立した比較年度エントリ（LITE:
+  net_income、end=2015-08-01がfy=2018の10-Qで参考開示。WST: rpo、
+  end=2013-06-30がfy=2022の10-Kで参考開示）。両者とも`override_applied:
+  true`（現在のパイプラインは既に正しい本人データ側の値を採用済み）で
+  あり、RCATのような継続的な決算期変更パターンとは異なる、NOW型と同種の
+  「単発の参考開示ノイズ」の可能性が高いと判断。ただし個別の一次情報
+  確認は未実施のため、WARN-24は非ブロッキング・未確認のまま残し、新規
+  BACKLOGタスクとしての登録は見送った（override_applied=trueで現在の
+  データに実害がなく、WARN-24自体が「非ブロッキングな可視化」を目的と
+  する設計のため、[[BS-FIELD-NEWLY-MISSING-2026-1]]のような実害のある
+  データ欠損とは性質が異なると判断）。
+- **クラスタリングスキャンツール再実行**: RCAT/ELF/MSCI/NOWの4銘柄のみ
+  該当（事前調査結果と完全一致、新規候補の増加なし）。
+- **pytest**: 403件中401 passed・2 failed（`test_iv_formula.py`のMSFT/NVDA、
+  [[TEST-STALE-IV-1]]として既知・登録済みの事前確認済み失敗のみ）。
+- **report_consistency_check.py --fail-on-ng**: NG=0。WARN合計69件
+  （確認済み50・未確認19、内訳: WARN-24由来の新規未確認3件〈RCAT/LITE/
+  WST〉＋既存の未確認16件）。
+- **既存チェックへの影響**: WARN-22/23はADSK/CAKE/COHR/CRM/FCX/FICO/HON/
+  WMT等で従来通り発火し、WARN-24とは独立して動作することを確認
+  （`_fiscal_anchors_far_apart()`フィルタにより、これら8銘柄で
+  WARN-24が誤って発火することはない）。SECデータ層は
+  `fye_boundary_collision_log.json`の新規追加以外に変更なし
+  （実行中に無関係な既存データdrift〈AVAV/COHR/FICO/HONのfy_collision_
+  log.json、以前のNVDA/WARN-26タスクで確認済みの再生成漏れと同種〉が
+  発生したがコミット前に復元済み、本タスクのスコープ外）。
+
+#### 着手条件（消滅・完了）
+なし（実装完了）
+
+---
+
 ### ✅ [BS-FIELD-NONE-TRANSITION-DETECT-1] BS項目「前年有値→当年None」遷移検知（WARN-26新設・既知8件事前登録）
 **優先度:** 中〜高
 **分類:** データ品質ゲート / 検知体制

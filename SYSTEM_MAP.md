@@ -329,6 +329,32 @@ SEC EDGAR
 │    ノイズになることが判明したための設計）。report_consistency_check.py
 │    のCHECK-23/WARN-23が読み取り、既存のCHECK-22（fy_collision_log.json、
 │    同一fyタグへの複数本人end_date競合）とは独立した別軸のチェックとして動作する。
+│    **追記（FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1 2026-07-19）**: CHECK-22
+│    （同一fyタグ前提）・CHECK-23（勝者自身のfyタグとバケツの不一致、敗者側は
+│    対象外）のいずれにも該当しない第3の軸として、CHECK-24/WARN-24を新設。
+│    決算期変更の境界年で、生fyタグ・end_dateの両方が異なる2エントリ（本人
+│    データ側と非本人データ側）が同一年度バケツ（computed_year）で競合する
+│    ケース（RCAT型、決算期を2回変更）を検知する。`_own_override_is_safe()`
+│    自体は変更せず、`_extract_values_best_candidate`/`_extract_values_merged`
+│    内の呼び出し前後で新設した`_is_boundary_collision()`（純関数）が判定する。
+│    「生fyタグ・end_dateが異なる」だけでは不十分（ADSK/AVAV/CRM/CAKE等の
+│    固定決算日企業で「同一(月,日)・隣接暦年」の組み合わせ＝fyタグが実際の
+│    期間より1年ずれるWARN-23既知パターンが頻出し、実装中に7銘柄で誤発火する
+│    ことが判明した）ため、`_fiscal_anchors_far_apart()`（(月,日)の循環距離が
+│    30日超かを判定。`fye_change_candidate_scan.py`のMIN_CLUSTER_DISTANCE_DAYS
+│    と同じ閾値）を追加の必須条件とし、決算日そのものが動いたケースのみに
+│    限定した。検知結果は`common/sec_data/data/{ticker}/fye_boundary_
+│    collision_log.json`に記録（fy_collision_log.json等と同一パターン、
+│    0件でも毎回書き込み）。全100銘柄再生成でRCAT/LITE/WSTの3銘柄が該当
+│    （事前調査時点の想定はRCATのみだったが、LITE/WSTは単発の孤立した
+│    比較年度エントリで`override_applied=true`＝実害なしと確認済み。詳細は
+│    BACKLOG_DONE.md [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]参照）。
+│    併せて、候補抽出用の統計的シグナル（`_cluster_fiscal_anchor_candidates()`
+│    再利用、support≧2クラスタ・循環距離30日超）を`common/sec_data/
+│    fye_change_candidate_scan.py`として独立ツール化した。WARN-24本体の
+│    常設発火条件としては採用していない（誤検知率が高く、過去4候補中
+│    RCAT以外は実害なしと判明したため）。新規銘柄登録時・定期監査時の
+│    手動実行による候補洗い出し補助という位置づけに限定する。
 │    **追記（2026-07-18・ARCH-DATA-1残課題④）**: `_collect_own_data_annual()`は
 │    start_date必須フィルタを持つためBS項目（instant fact）を常に除外していた
 │    （本人データ判定の対象外）。`_collect_own_data_instant()`を新設し
