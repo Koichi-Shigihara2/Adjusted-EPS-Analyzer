@@ -44,6 +44,18 @@ from common.sec_data.contracts import Classification  # GATE2-PHASE3B-1③-b
 # 手動追加すること（閾値による自動追加は行わない）。
 FCF_CYCLICAL_VOLATILITY_TICKERS = {"SITM", "LITE"}
 
+# GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1（TRUST-SUMMARY-EPIC-1骨子②）:
+# growth_sanityが警告を出す銘柄のうち、ハイパーグロース事業と成熟業種平均
+# （Damodaran業種分類）との構造的なミスマッチが原因分析で確定した銘柄の
+# 個別リスト。FCF_CYCLICAL_VOLATILITY_TICKERSと同型の手動リスト方式
+# （閾値による自動判定は行わない）。TERのみ業界平均比ではなく自社実績比
+# での警告のため、注記文言はTER専用に分岐させる（他13件と機械的に共通化
+# しない）。Classification（BUY/WATCH等）には一切影響しない、注記表示のみ。
+GROWTH_STRUCTURAL_MISMATCH_TICKERS = {
+    "AMD", "NVDA", "ONDS", "ASTS", "BKNG", "BROS", "ELF", "KULR",
+    "LLY", "TER", "XOM", "ALAB", "IONQ", "RCAT",
+}
+
 
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
     """希薄化率から (severity, badge, report_comment) を返す"""
@@ -1812,6 +1824,17 @@ class TanukiValuationPipeline:
             L.append("signals:")
             for sig in gs_signals + gs_warnings:
                 L.append(f"  - {sig}")
+            # GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1（TRUST-SUMMARY-EPIC-1骨子②）:
+            # ハイパーグロース事業と成熟業種平均のミスマッチが原因分析で確定した
+            # 銘柄のみへの注記。Classification（BUY/WATCH等）には影響しない。
+            if ticker in GROWTH_STRUCTURAL_MISMATCH_TICKERS:
+                if ticker == "TER":
+                    L.append("  ⚠️ 成長率警告は業界平均比ではなく自社の直近実績成長率比によるもの"
+                              "（半導体設備業界のサイクル的な低迷が実績CAGRを一時的に押し下げている"
+                              "可能性。Classificationには影響なし）")
+                else:
+                    L.append("  ⚠️ ハイパーグロース事業と成熟業種平均（Damodaran業種分類）との"
+                              "構造的ミスマッチ（Classificationには影響なし）")
             L.append("Definition:")
             L.append("")
             L.append("Growth Rate Methodology:")

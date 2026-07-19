@@ -871,6 +871,20 @@ function render(d) {
   const FCF_CYCLICAL_VOLATILITY_TICKERS = new Set(['SITM', 'LITE']);
   const fcfCyclicalVolatility = FCF_CYCLICAL_VOLATILITY_TICKERS.has(ticker);
   const fcfCyclicalDivergenceRatio = fcfEstimation.divergence_ratio;
+
+  // GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1（TRUST-SUMMARY-EPIC-1骨子②）:
+  // ハイパーグロース事業と成熟業種平均（Damodaran業種分類）との構造的
+  // ミスマッチが原因分析で確定した銘柄の個別リスト。FCF_CYCLICAL_
+  // VOLATILITY_TICKERSと同型の手動リスト方式（自動化しない）。
+  // pipeline.py::GROWTH_STRUCTURAL_MISMATCH_TICKERSと同一内容を維持すること
+  // （共有configファイル化は今回のスコープ外）。TERのみ業界平均比ではなく
+  // 自社実績比での警告のため文言を分岐させる。Classificationには影響しない。
+  const GROWTH_STRUCTURAL_MISMATCH_TICKERS = new Set([
+    'AMD', 'NVDA', 'ONDS', 'ASTS', 'BKNG', 'BROS', 'ELF', 'KULR',
+    'LLY', 'TER', 'XOM', 'ALAB', 'IONQ', 'RCAT',
+  ]);
+  const growthStructuralMismatch = GROWTH_STRUCTURAL_MISMATCH_TICKERS.has(ticker);
+
   const rpo = d.components?.rpo || 0;
   const rpoPV = d.components?.rpo_pv || 0;
 
@@ -2115,6 +2129,12 @@ function render(d) {
       recBlock = `<div style="margin-top:8px;padding:8px 10px;background:#0a0f1a;border:1px solid #1e2a3a;border-radius:4px"><div style="font-size:10px;color:#475569;letter-spacing:.06em;text-transform:uppercase;margin-bottom:4px">推奨成長率内訳</div>${rows}${adjBanner}</div>`;
     }
 
+    const growthMismatchNote = growthStructuralMismatch
+      ? (ticker === 'TER'
+          ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:4px;font-size:12px;color:var(--yellow);line-height:1.5">⚠️ 成長率警告は業界平均比ではなく自社の直近実績成長率比によるもの（半導体設備業界のサイクル的な低迷が実績CAGRを一時的に押し下げている可能性。Classificationには影響なし）</div>`
+          : `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:4px;font-size:12px;color:var(--yellow);line-height:1.5">⚠️ ハイパーグロース事業と成熟業種平均（Damodaran業種分類）との構造的ミスマッチ（Classificationには影響なし）</div>`)
+      : '';
+
     const sanityHTML = `
       <div style="margin-top:12px;padding:10px 14px;background:#0f1623;border:1px solid #1e2a3a;border-radius:6px;">
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
@@ -2129,6 +2149,7 @@ function render(d) {
           ${signalItems}${warnItems}
         </ul>
         ${recBlock}
+        ${growthMismatchNote}
       </div>`;
     const el = document.getElementById('growth-sanity-container');
     if (el) el.innerHTML = sanityHTML;

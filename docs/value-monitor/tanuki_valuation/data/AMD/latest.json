@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -59.0,
-  "calculation_date": "2026-07-19T02:27:24+09:00",
+  "calculation_date": "2026-07-20T01:31:38+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -330,7 +330,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": true,
@@ -441,7 +449,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -508,10 +516,20 @@
     "total_debt": 3224000000.0,
     "cash_and_equivalents": 5585000000.0,
     "short_term_investments": 6762000000.0,
+    "long_term_debt": 2350000000.0,
+    "short_term_debt": 874000000.0,
     "net_debt": -9123000000.0,
     "sbc_ttm": 1638000000,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": 1.36,
     "shares_yr_now": 1636000000,
     "shares_yr_3ago": 1571000000,
@@ -593,7 +611,7 @@
     "growth_model_reason": "CAGR_max=28.8%のため中央値モデル適用",
     "hype_phase_used": 3,
     "hype_phase_label": "陶酔期",
-    "hype_substage_label": "過熱継続",
+    "hype_substage_label": "陶酔継続",
     "signals": [
       "過去実績(3yr:13.6% / 5yr:28.8%)と整合 ✅",
       "RR×ROIC(0.7%)：再投資より還元重視型、または期待値先行 ℹ️"
