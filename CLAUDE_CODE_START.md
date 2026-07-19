@@ -296,6 +296,13 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `src/value/tanuki_valuation/data_fetcher.py`（TTM-QUARTERS-CHECK-1で発見:
   TTMReaderのfcf_list_raw/fcf_5yr_avg構築ロジックは大半の銘柄の
   DCF計算に影響する）
+- `src/value/tanuki_valuation/pipeline.py`の`_save_result()`（growth_sanity
+  検証ロジック）・`_compute_tanuki_score()`（TANUKI SCORE分類ロジック）
+  部分（GROWTH-VERDICT-SEQUENCING-BUG-1で発見: DCF計算式そのものを
+  変更しなくても、growth_sanityのverdict/warnings・TANUKI SCOREの
+  Classification〈GROWTH_PREMIUM等〉が対象となる場合、rice.py/
+  core_calculator.py同様に影響銘柄のpipeline.py再実行が必須。
+  対象は「Step 3: TTMデータ変更なし・影響銘柄のみ再実行」に分類）
 
 **手順：**
 

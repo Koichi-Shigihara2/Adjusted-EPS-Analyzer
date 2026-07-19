@@ -4756,24 +4756,41 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
   [[WST-SECTOR-MISCLASSIFICATION-1]]・[[JNJ-XOM-PM-FLOOR-RISK-1]]・
   [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
   [[JOBY-STATIC-GROWTH-HARDCODE-1]]
+- [[GROWTH-VERDICT-SEQUENCING-BUG-1]]完了（growth_sanityのverdict/
+  warnings・TANUKI SCOREのGROWTH_PREMIUM判定が、DCF再計算前の初期計算値
+  を検証し続けるシーケンシングバグを根本修正。再計算〈条件付き発火〉
+  成功後に`check_growth_sanity()`を採用値`recommended_g`で再実行し
+  `verdict`/`warnings`/`signals`/`phase1_growth`/`floor_hit`を更新する
+  方式で実装。全母集団シミュレーションで事前確認してから61銘柄を実データ
+  再生成し、改善17件〈VZ: AGGRESSIVE→PLAUSIBLE含む〉・悪化3件
+  〈ALAB/IONQ/RCAT、PLAUSIBLE→REVIEW。ハイパーグロース×成熟業種平均の
+  構造的ミスマッチの正しい表面化と個別調査で確認済み・想定内〉・
+  変化なし8件〈ASTS/BKNG/BROS/ELF/KULR/LLY/TER/XOM〉という結果を得た。
+  TANUKI SCOREはCONのみGROWTH_PREMIUM→TRIMへ是正。
+  `report_consistency_check.py` NG=0・pytest 377 passed（既知の
+  MSFT/NVDA 2件除く）を確認。悪化3銘柄の個別調査で判明した副次発見
+  〈RCATのsector誤分類、Electronics_General設定だがyfinance実態は
+  Aerospace & Defense〉を[[RCAT-SECTOR-MISCLASSIFICATION-1]]として
+  新規登録。BACKLOG_DONE.mdへ全文移動済み）
 
 次セッションの筆頭候補（優先順・各項目の優先度欄を確認の上で確定）：
-① [[GROWTH-VERDICT-SEQUENCING-BUG-1]]（優先度：高・着手条件なし・
-   growth_sanityが1回目パス〈override前〉の値を検証し続けるシーケンシング
-   バグ。24銘柄に影響、うちVZはBUY判定の実害あり。対応方針の骨子は
-   登録時点で提示済み）**【2026-07-19完了・BACKLOG_DONE.md参照。
-   「1回目パス」は正式名称「初期計算」、「2回目パス」は「再計算
-   （条件付き発火）」。「24銘柄」は登録時点の暫定集計で、実装時点の
-   正確な内訳は完了後エントリの通り改善17件・悪化3件・変化なし8件】**
-② [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（優先度：中〜高・着手条件なし・
+~~① [[GROWTH-VERDICT-SEQUENCING-BUG-1]]~~ ✅ 2026-07-19完了。
+   growth_sanityのverdict/warnings・TANUKI SCORE判定を採用値ベースに
+   根本修正、61銘柄再生成（改善17件・悪化3件・変化なし8件）。
+   詳細はBACKLOG_DONE.md参照
+① [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（優先度：中〜高・着手条件なし・
    KLAC/NVDA/SOFI/TER/V 5銘柄の銘柄別override設計。
    SOFI-DATA-1の`ltdebt_concept`方式を参考にできる見込み）
-③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
+② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
    着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
-④ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
+③ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
    `--skip-risk`使用の都度再発しうるため早めの対応が望ましい）
-⑤ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
-   `beta_config.json`のsector値修正のみで実装単純）
+④ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
+   `beta_config.json`のsector値修正のみで実装単純。
+   [[RCAT-SECTOR-MISCLASSIFICATION-1]]との統合要否も含めて次回判断）
+⑤ [[RCAT-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
+   `beta_config.json`のsector値修正のみで実装単純。分類修正しても
+   growth_sanityのwarning自体は解消しない旨に留意）
 ⑥ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（優先度：中・着手条件なし・
    生涯フェードアウト25件への履歴フォールバック設計、年数閾値の設計要）
 ⑦ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
