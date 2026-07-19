@@ -4,6 +4,73 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [SKIP-RISK-EVENTS-WIPE-1] pipeline.py --skip-risk実行時のrisk_events保全
+**優先度:** 中
+**分類:** バグ修正 / TANUKI VALUATION / データ保全
+**登録日:** 2026-07-18
+**完了日:** 2026-07-19
+**発見:** [[FCF-CONVRATE②]]（BACKLOG_DONE.md参照）検証手順で全100銘柄を
+`pipeline.py --skip-risk`で再生成した際に発見
+
+#### 問題（再掲）
+`pipeline.py`の`risk_events`（Grok web検索による週次リスクイベント取得、
+GitHub Actions週次自動実行が本来の更新経路）が、`--skip-risk`実行時に
+既存値を保持せず無条件で空配列`[]`に上書きされていた。CLAUDE_CODE_START.md
+は「手動実行時は原則--skip-riskを付けること」と明記しており、複数銘柄・
+全銘柄を対象にした手動再生成のたびに再発しうる構造的リスクだった。
+
+#### 実装内容
+`pipeline.py::_save_result()`に以下を実装：
+- メソッド冒頭（`os.makedirs(history_dir, exist_ok=True)`直後、他の処理が
+  始まる前）で、`self.skip_risk`がTrueの場合のみ既存`latest.json`の
+  `risk_events`を`_pre_existing_risk_events`として退避する。
+- **実装中の重要な発見**: 当初、risk_events確定箇所（メソッド末尾付近）で
+  直接`latest_path`を読み直す実装にしたところ、**risk_eventsが常に空配列に
+  なる**という新たな不具合が発生した。原因は、`_save_result()`内で
+  risk_events確定より前に一度`latest_data`が中間保存される処理（`with
+  open(latest_path, "w")`、matrix計算直後）が既に存在しており、この中間
+  保存時点ではrisk_eventsキー自体がまだ設定されていないため、後から
+  同じ`latest_path`を読み直すと「自分自身が書いた、risk_events未設定の
+  状態」を読んでしまうため。この中間保存より前（メソッド冒頭）で退避する
+  設計に修正して解消した。
+- `self.skip_risk`がFalse時の既存の取得ロジック（`fetch_risk_events`）は
+  一切変更していない。
+- `tests/test_pipeline_logic.py`に`TestSkipRiskEventsPreserved`（3件:
+  既存risk_events保持・新規銘柄相当で空配列・risk_eventsキー欠落時に
+  空配列）を追加。このテストファイル冒頭で`growth_sanity`モジュール
+  全体がMagicMockに差し替えられているため（本物のロジックはテスト6での
+  み`_gs`経由で検証）、`_save_result()`を直接呼ぶ本テストでは
+  `pipeline.check_growth_sanity`を空dictを返すようmonkeypatchし、
+  無関係な`growth_sanity`関連コードパスでのTypeError
+  （MagicMockとfloatの比較エラー）を回避した。
+
+#### 検証結果
+- **既存risk_events保持確認**（AAPL、risk_events 3件保有）:
+  `pipeline.py AAPL --skip-risk`実行前後でrisk_events完全一致（git diffで
+  risk_eventsセクションに差分なしを確認）。
+- **全100銘柄再生成**: `pipeline.py --skip-risk`（引数なし、全銘柄）実行、
+  成功100/100。実行前後でrisk_eventsを全銘柄比較した結果、
+  **不一致0件・空配列への意図しない後退0件**（うち29銘柄が非空の
+  risk_eventsを保有しており、全て完全一致で保持されたことを確認）。
+  なお、この検証用の全銘柄再生成データ（calculation_date更新・IV変動等、
+  本修正とは無関係な通常の再計算結果）はコミットに含めず、検証後に
+  ベースラインへ復元した（本タスクは risk_events の保全ロジックのみが
+  スコープであり、無関係なデータ再生成をコミットに含めないため）。
+- **通常実行（--skip-riskなし）の回帰確認**: `if not self.skip_risk:`
+  分岐（`fetch_risk_events`呼び出し）は本修正で一切変更していないため、
+  コードレベルで回帰なしを確認済み（Grok API実費が発生するため実行での
+  再確認は行わず、CLAUDE_CODE_START.mdの「手動実行時は--skip-risk推奨」
+  方針に従った）。
+- **pytest**: 406件中404 passed・2 failed（`test_iv_formula.py`のMSFT/NVDA、
+  [[TEST-STALE-IV-1]]として既知・登録済みの事前確認済み失敗のみ）。
+- **report_consistency_check.py --fail-on-ng**: NG=0（WARN=69件、既存分
+  から変化なし）。
+
+#### 着手条件（消滅・完了）
+なし（実装完了）
+
+---
+
 ### ✅ [FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1] 決算期変更境界のバケツ競合検知（WARN-24新設・クラスタリングスキャン補助ツール化）
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質ゲート

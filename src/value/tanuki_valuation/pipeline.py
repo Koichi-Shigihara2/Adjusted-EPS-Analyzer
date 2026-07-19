@@ -585,6 +585,21 @@ class TanukiValuationPipeline:
         history_dir = os.path.join(ticker_dir, "history")
         os.makedirs(history_dir, exist_ok=True)
 
+        # SKIP-RISK-EVENTS-WIPE-1: --skip-risk実行時に既存risk_eventsを引き継ぐため、
+        # 本メソッド内で後にlatest.jsonが中間保存される（risk_events確定前に一度
+        # 書き込まれる）前に、真に「前回実行時点」のrisk_eventsを退避しておく。
+        # 中間保存後に読み直すと、自分自身が書いたrisk_events未設定の状態を
+        # 読んでしまい、常に空配列に見えてしまうため。
+        _pre_existing_risk_events: list = []
+        if self.skip_risk:
+            _existing_latest_path = os.path.join(ticker_dir, "latest.json")
+            try:
+                if os.path.exists(_existing_latest_path):
+                    with open(_existing_latest_path, encoding="utf-8") as _f:
+                        _pre_existing_risk_events = json.load(_f).get("risk_events", [])
+            except Exception:
+                pass
+
         # fcf_history等をスコア計算前に読み込み（fcf_latest判定のため）
         extra = self._load_extra_data(ticker, valuation)
 
@@ -885,6 +900,15 @@ class TanukiValuationPipeline:
                 risk_events = fetch_risk_events(ticker, _company_name)
             except Exception as _re:
                 print(f"   [{ticker}] risk_events fetch error: {_re}")
+        else:
+            # SKIP-RISK-EVENTS-WIPE-1: --skip-risk実行時は既存risk_eventsを
+            # そのまま引き継ぐ（無条件で空配列に上書きしない）。本メソッド冒頭で
+            # 中間保存前に退避した_pre_existing_risk_eventsを使う（ここで
+            # latest_pathを読み直すと、line ~751-753の中間保存で既に自分自身が
+            # 書き込んだrisk_events未設定の状態を読んでしまい常に空になる）。
+            # 既存latest.jsonが存在しない（新規銘柄）・risk_eventsキーが
+            # 存在しない場合は従来通り空配列のまま。
+            risk_events = _pre_existing_risk_events
         latest_data["risk_events"] = risk_events
         extra["risk_events"] = risk_events
 

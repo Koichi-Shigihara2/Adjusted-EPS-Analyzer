@@ -2205,38 +2205,6 @@ short_term_investments/long_term_debt/short_term_debtのabsent銘柄
 
 ---
 
-### [SKIP-RISK-EVENTS-WIPE-1] pipeline.py --skip-risk実行時、既存のrisk_eventsが空配列で上書きされる
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION / データ保全
-**登録日:** 2026-07-18
-**発見:** [[FCF-CONVRATE②]]（BACKLOG_DONE.md参照）検証手順で全100銘柄を
-`pipeline.py --skip-risk`で再生成した際に発見
-
-#### 問題
-`pipeline.py`の`risk_events`（Grok web検索による週次リスクイベント取得、
-GitHub Actions週次自動実行が本来の更新経路）が、`--skip-risk`実行時に
-既存値を保持せず無条件で空配列`[]`に上書きされる（`pipeline.py:841-842`
-`risk_events = []` / `if not self.skip_risk: ... risk_events = fetch_risk_events(...)`。
-`self.skip_risk`がTrueの場合は分岐に入らず`risk_events`が空のまま
-`latest_data["risk_events"] = risk_events`で確定・書き込みされる）。
-
-CLAUDE_CODE_START.mdは「手動実行時は原則--skip-riskを付けること」と
-明記しており、複数銘柄・全銘柄を対象にした手動再生成のたびにこの
-問題が再現しうる。2026-07-18のFCF-CONVRATE②検証作業（全100銘柄を
-`--skip-risk`で再生成）で68銘柄のrisk_eventsが空配列に上書きされる
-実害を確認し、コミット前にHEAD時点の値へ手動復元した
-（詳細はBACKLOG_DONE.md「[FCF-CONVRATE②]」のコミット参照）。
-
-#### 対応方針（未確定）
-`--skip-risk`時は`risk_events`を空配列で確定させるのではなく、書き込み前に
-既存の`latest.json`があればその`risk_events`をそのまま引き継ぐ（未取得の
-新規銘柄は従来通り空配列）設計に変更する。
-
-#### 着手条件
-なし
-
----
-
 ### [CASH-TAG-MISSING-1] tag_definitions.pyのCASH_AND_EQUIVALENTS候補リストにASU 2016-18対応タグが未登録で複数銘柄のcash_and_equivalentsが欠落
 **優先度:** 中
 **分類:** データ取得 / タグ定義
