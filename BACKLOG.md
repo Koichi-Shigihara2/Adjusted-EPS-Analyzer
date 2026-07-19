@@ -1467,57 +1467,22 @@ Phase B/C・MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1・
 GROWTH-SANITY-CLASS-SYNC-1・FCF-CONVRATE③）があるため、EPICエントリ自体は
 BACKLOG.mdに残置する。
 
+**追記（2026-07-20・GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1完了、段階1可視化を追加実装）**:
+[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]について、骨子①（可視化前の
+バグ切り分け）でHONのsegment_config.json成長率（8.5%）が2026-05-30の
+12銘柄一括登録時にAIが機械生成した裏付けなしの値と判明したため実績CAGR
+水準（2.6%）へ修正（verdict: AGGRESSIVE→PLAUSIBLE）。骨子②（構造的限界の
+可視化）として、残る14銘柄（AMD/NVDA/ONDS/ASTS/BKNG/BROS/ELF/KULR/LLY/
+TER/XOM/ALAB/IONQ/RCAT）に対し、FCF-CONVRATE②と同型の個別ティッカー
+リスト方式（`GROWTH_STRUCTURAL_MISMATCH_TICKERS`）でstock.htmlバナー・
+report.txt表示を追加実装した。これにより段階1（成長率算出）についても
+骨子①②の適用が完了し、段階2（FCF-CONVRATE②）と合わせて両段階で
+可視化パターンが確立された。詳細はBACKLOG_DONE.md
+「[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]」参照。
+
 ---
 
 ## 優先度：未定（要判断）
-
-### [GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1] ハイパーグロース銘柄と成熟業種平均のミスマッチによるgrowth_sanity警告
-**優先度:** 未定
-**分類:** データ品質 / TANUKI VALUATION / [[TRUST-SUMMARY-EPIC-1]]可視化候補
-**登録日:** 2026-07-19
-**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）verdict≠PLAUSIBLE
-全32銘柄の原因分析
-
-#### 内容
-`segment_configured=True`（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]の対象外、
-実際に採用されているレートを正しく検証済み）の銘柄のうち、AMD・NVDA・
-ONDS・HON・ASTS（LOARも同型だがsegment_configured=False）で、実際の
-セグメント設定成長率がDamodaran業種平均を大きく上回りgrowth_sanityが
-警告を発する構造的パターンを確認した：
-
-- AMD（24.6% vs Semiconductor 9.6%）・NVDA（32.5% vs 9.6%）・
-  ONDS（30% vs Telecom Equipment 11.9%）: AI需要等の急成長事業が
-  業種平均を上回るための警告。事業実態を反映した妥当な差異
-- HON（8.5% vs Diversified 2.7%）: セグメント設定の成長率が実績売上
-  CAGR（1.8-2.8%）を大きく上回る。`segment_config.json`側の設定値の
-  妥当性を要確認（バグではなく人間の設定判断の問題）
-- ASTS（衛星通信、Telecom Services比19.8倍）: 業種フィット不良の側面が強い
-- LOAR（2024年IPO航空部品）: `recommended_g=None`（年次実績不足のため）で
-  fcf_cagr cap（50%）のまま。上場直後で年次実績が蓄積されていないための
-  一時的な制約
-
-**追記（2026-07-19、[[GROWTH-VERDICT-SEQUENCING-BUG-1]]完了時点）**:
-`segment_configured=False`側（本バグの修正で採用値ベースの正しい検証に
-是正された）でも同型の構造的ミスマッチが8銘柄で確認されている：
-ASTS・BKNG・BROS・ELF・KULR・LLY・TER・XOM（再判定後も業界平均比の
-乖離でwarningが残る）。加えてALAB・IONQ・RCATの3銘柄も、実際に採用
-されているrecommended_g（decayモデルのCAGR_max>100%クランプ経由）が
-業界平均の4〜5倍という同型パターンに該当することが判明（詳細は
-BACKLOG_DONE.md「[GROWTH-VERDICT-SEQUENCING-BUG-1]」参照）。統合検討の
-際はこれらsegment_configured=False側の候補も対象に含めること。
-
-#### 対応方針（未確定）
-[[TRUST-SUMMARY-EPIC-1]]の方針の骨子②（構造的限界の可視化）の対象候補として
-検討する。FCF-CONVRATE②と同様、Classificationは書き換えず「この銘柄の
-成長率はハイパーグロース×成熟業種平均比較という構造的事情でgrowth_sanityが
-警告を出しているが、事業実態としては妥当」という注記を並記する設計が
-考えられる。HONのみは設定値見直しの余地があり性質が異なるため別途判断。
-
-#### 着手条件
-なし（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]は2026-07-19完了済み。
-統合検討に着手可能）
-
----
 
 ### [JOBY-STATIC-GROWTH-HARDCODE-1] JOBYのsegment_config.jsonにgrowth=0.15の静的値、FLOOR_HIT_REVIEW検知の対象外
 **優先度:** 未定
@@ -4852,8 +4817,10 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    として分離継続。詳細はBACKLOG_DONE.md参照
 ~~⑧ [[SPLIT-REALTIME-GAP-1]]~~ ✅ 2026-07-20完了（NVDA+新規発見AVGO/CPRT/
    WMT/LRCX/CELH・KLAC事前登録、RCAT除外）。詳細はBACKLOG_DONE.md参照
-⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
-   [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
+~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
+   （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
+   FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
+⑨ [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
    [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）

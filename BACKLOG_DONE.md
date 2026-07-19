@@ -4,6 +4,74 @@
 
 ## 2026-07-20（完了）
 
+### ✅ [GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1] HON成長率修正＋14銘柄のgrowth_sanity構造的ミスマッチ可視化
+**優先度:** 未定→完了（HON修正は明確なバグ修正、14銘柄可視化はTRUST-SUMMARY-EPIC-1骨子②）
+**分類:** データ品質 / TANUKI VALUATION / [[TRUST-SUMMARY-EPIC-1]]骨子①②適用
+**登録日:** 2026-07-19
+**完了日:** 2026-07-20
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・本ファイル参照）verdict≠PLAUSIBLE
+全32銘柄の原因分析
+
+#### 骨子①: HONのバグ切り分け・修正
+`segment_config.json`のHONエントリの成長率（加重平均8.5%）は、
+2026-05-30の12銘柄一括登録コミット（`352630edce9d`、
+`Co-Authored-By: Claude Sonnet 4.6`）でAIが機械生成した値で、以降
+一度も見直されていなかった。各セグメント成長率（12%/6%/6%/8%）は
+具体的な裏付け（決算資料・アナリスト予想の引用等）がなく、実績Revenue
+CAGR（3yr=1.82%/5yr=2.79%）との乖離が業界平均比3.2倍・自社実績比3.1倍
+に達していた。裏付けなしのAI生成値と判断し、実績CAGR水準（加重平均
+2.6%）へ修正した（Aerospace Technologies 12%→3.5%・Industrial
+Automation 6%→2%・Building Automation 6%→2%・Energy & Sustainability
+8%→2.5%）。修正根拠をHONエントリの`note`フィールドに記載。
+
+#### 骨子②: 14銘柄の可視化（構造的限界、FCF-CONVRATE②と同型パターン）
+残る14銘柄（AMD/NVDA/ONDS/ASTS/BKNG/BROS/ELF/KULR/LLY/TER/XOM/ALAB/
+IONQ/RCAT）は、いずれも登録時点からverdict=REVIEWのまま変化なし
+（業界平均比2.5〜19.8倍）で、ハイパーグロース事業と成熟業種平均との
+構造的ミスマッチと判断した。TERのみ業界平均比ではなく自社の直近実績
+成長率比（4.6倍）での警告という別軸のパターンだったため、注記文言を
+専用に分岐させた。
+
+`src/value/tanuki_valuation/pipeline.py`にFCF_CYCLICAL_VOLATILITY_TICKERS
+と同型の個別ティッカーリスト`GROWTH_STRUCTURAL_MISMATCH_TICKERS`を新設し、
+report.txtの[4. 成長率根拠]セクション（signals/warnings表示直後）に
+該当ticker限定の注記行を追加。`docs/value-monitor/tanuki_valuation/stock.html`
+にも同一内容のJS側`GROWTH_STRUCTURAL_MISMATCH_TICKERS`セットを追加し、
+`#growth-sanity-container`のsanityHTML内に条件付きバナーを追加（FCF-CONVRATE②
+と同じPython/JS二重定義パターンを踏襲、共有configファイル化は今回のスコープ外）。
+Classification（BUY/WATCH等）は一切変更していない。
+
+#### 検証結果
+1. HON修正後、growth_sanity.verdictがAGGRESSIVE→**PLAUSIBLE**に改善
+   （想定通り）。signals: 「業界平均Diversified(2.7%)の1.0倍以内 ✅」
+   「過去実績(3yr:1.8% / 5yr:2.8%)と整合 ✅」、warnings: 0件
+2. 14銘柄すべてでreport.txt・stock.htmlに新規注記が正しく表示されることを
+   確認（grep実測）。TERのみ「成長率警告は業界平均比ではなく自社の直近
+   実績成長率比によるもの」の専用文言、他13件は共通文言
+3. 対象外の全銘柄で変化ゼロ件: HON+14銘柄以外はファイル変更なし
+   （`git status`で確認）。控えとして再生成したAAPL/MSFT/GOOGLは
+   コード変更前後で完全に同一の結果（GOOGLの`tanuki_score`が
+   HOLD→TRIMに見えたのは、git stashで本タスクのコード変更を一時的に
+   除去した状態で再生成しても同じ結果になることを確認し、本タスクとは
+   無関係な既存データ陳腐化〈他タスクでも複数回確認済みの既知パターン〉
+   と判明したため実データの反映は行わず、コミット対象からも除外した）
+4. Classificationは前後で完全一致（HON: HOLD→HOLD、14銘柄:
+   ALAB=WATCH・AMD=WATCH・ASTS=WATCH・BKNG=BUY・BROS=WATCH・ELF=WATCH・
+   IONQ=WATCH・KULR=PASS・LLY=WATCH・NVDA=BUY・ONDS=WATCH・RCAT=WATCH・
+   TER=TRIM・XOM=WATCHのいずれも変化なし）。growth_sanity.verdictも
+   14銘柄全てREVIEWのまま変化なし（純粋な注記追加のみで判定ロジック自体
+   には一切影響しないことを確認）
+5. pytest 426 passed（既知2件失敗のみ、新規失敗なし）
+6. `report_consistency_check.py --fail-on-ng`: NG=0/WARN=69（変更前と不変）
+
+#### TRUST-SUMMARY-EPIC-1への反映
+段階1（成長率算出）についても骨子①（バグ切り分け）・骨子②（構造的限界の
+可視化）の適用が完了し、段階2（FCF-CONVRATE②）と合わせて両段階で可視化
+パターンが確立された。詳細はBACKLOG.md「[TRUST-SUMMARY-EPIC-1]」の
+2026-07-20追記を参照。
+
+---
+
 ### ✅ [FY-COLLISION-LOG-NONDETERMINISTIC-1] fy_collision_log.jsonの重複エントリを排除（対症療法・対象7銘柄）
 **優先度:** 未定→低（対症療法のため実装コスト小・実害は診断ログの信頼性のみ）
 **分類:** データ品質 / SECデータ基盤
