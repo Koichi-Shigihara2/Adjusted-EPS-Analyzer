@@ -51,8 +51,25 @@ report_consistency_check.py
                               long_term_debt/short_term_debt〈真のゼロとの判別困難〉・
                               rpo〈非SaaS銘柄はNoneが正常〉はPhase B/Cとして対象外。
                               WARN-24はFYE-CHANGE-BOUNDARY-COLLISION-BLIND-1向けに
-                              予約済みのため欠番。WARN-26はBS-FIELD-NONE-
-                              TRANSITION-DETECT-1向けに予約済み・未実装のため欠番）
+                              予約済みのため欠番）
+  WARN 26. BS項目遷移(有値→None) short_term_investments/long_term_debt/
+                              short_term_debt/rpo（WARN-25対象外の4フィールド）を
+                              対象に、直近2年度分のannual_*.jsonを比較し、前年に
+                              値があったフィールドが当年でNoneに遷移した場合に発火
+                              （BS-FIELD-NONE-TRANSITION-DETECT-1新設）。period
+                              （fyラベル）の年度差が厳密に1でない場合（決算期変更
+                              等でfiles[-2]が真の「1年前」を表さない可能性がある
+                              場合、FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1参照）・
+                              annual_*.jsonが1年分のみ（新規登録銘柄）の場合は
+                              判定不能として発火させない。事前調査（[[NVDA-STI-
+                              TAG-UNIDENTIFIED-1]]調査時の体制確認）でFY52WEEK-
+                              BS-NULL-SILENT-1「生涯フェードアウト」既確認済み
+                              8件（APP/short_term_debt・BKNG/short_term_
+                              investments・CPRT/long_term_debt・DOCN/short_term_
+                              investments・ENTG/short_term_debt・KULR/short_term_
+                              debt・MSCI/short_term_debt・SOUN/long_term_debt）が
+                              実装直後に発火することが判明済みのため、
+                              warn_acknowledged.jsonへ事前登録済み
   WARN 27. 近似値残差過大      parser.py::_apply_cross_filing_tags()が付与する
                               bs_provenance[field].is_approximated=Trueのエントリで
                               residual_pctが5%を超過（NVDA-STI-TAG-UNIDENTIFIED-1・
@@ -798,6 +815,62 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 f" が欠損 → 計算経路でNoneが暗黙に0化されている可能性"
                 f"（FY52WEEK-BS-NULL-SILENT-1 Phase A、要確認）"
             )
+
+    # CHECK-26: BS項目「前年値あり→当年None」遷移検知
+    # （BS-FIELD-NONE-TRANSITION-DETECT-1）
+    # WARN-25（ブランケット型、total_assets等6フィールド対象）とは独立した
+    # 別軸のチェック。short_term_investments/long_term_debt/short_term_debt/
+    # rpo（WARN-25がNone率過多〈35〜65%〉を理由に対象外とした4フィールド）は
+    # 「Noneであること自体」の検知には向かないが、「前年は値があったのに
+    # 当年からNoneになる」という**遷移**は正常な企業では発生しないため、
+    # WARN-25とは別のブランケット型不採用理由（ノイズの多さ）が当てはまらない。
+    #
+    # 会計年度の連続性に関する注意（FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1関連）:
+    # files[-2]/files[-1]の2ファイルを機械的に「1年前・当年」とみなさず、
+    # 双方のperiod（fyラベル）の年度差が厳密に1であることを確認したうえで
+    # のみ判定する。決算期変更の境界年（例: RCATは2019年・2024-2025年に
+    # 決算期を変更済み、FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1参照）では
+    # periodラベルが連続していても、files[-2]が真の「1年前」の期間を
+    # 表さない場合があり得る（スタブ期間の混入等）。年度差が1でない場合は
+    # 判定不能として発火させない（誤判定より見逃しを優先する設計）。
+    # 新規登録銘柄（annual_*.jsonが1年分のみ）も同様に対象外。
+    #
+    # 事前調査（NVDA-STI-TAG-UNIDENTIFIED-1調査時の体制確認、BS-FIELD-NONE-
+    # TRANSITION-DETECT-1）で、FY52WEEK-BS-NULL-SILENT-1「生涯フェードアウト」
+    # 25件のうち8件（APP/BKNG/CPRT/DOCN/ENTG/KULR/MSCI/SOUN）が実装直後の
+    # 直近2年度比較で発火することが判明済み。いずれも一次情報（10-K原本）で
+    # 真の無借金/無投資継続と確認済みのため、warn_acknowledged.jsonへ事前
+    # 登録し初回実行時のアラート疲れを回避する。
+    _TRANSITION_CHECK_FIELDS = ["short_term_investments", "long_term_debt", "short_term_debt", "rpo"]
+    _ann_files_c26 = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "annual_*.json")))
+    if len(_ann_files_c26) >= 2:
+        try:
+            with open(_ann_files_c26[-1], encoding="utf-8") as _f26_latest:
+                _ann_latest26 = json.load(_f26_latest)
+            with open(_ann_files_c26[-2], encoding="utf-8") as _f26_prior:
+                _ann_prior26 = json.load(_f26_prior)
+            _latest_period26 = _ann_latest26.get("period")
+            _prior_period26 = _ann_prior26.get("period")
+            try:
+                _year_diff26 = int(_latest_period26) - int(_prior_period26)
+            except (TypeError, ValueError):
+                _year_diff26 = None
+            if _year_diff26 == 1:
+                _latest_bs26 = _ann_latest26.get("bs", {}) or {}
+                _prior_bs26 = _ann_prior26.get("bs", {}) or {}
+                _transitioned26 = [
+                    f for f in _TRANSITION_CHECK_FIELDS
+                    if _prior_bs26.get(f) is not None and _latest_bs26.get(f) is None
+                ]
+                if _transitioned26:
+                    warn.append(
+                        f"  [WARN-26 BS項目遷移(有値→None)] FY{_prior_period26}→FY{_latest_period26}: "
+                        f"{', '.join(_transitioned26)} が前年値あり→当年Noneに遷移"
+                        f"（タグ申告停止の可能性。生涯フェードアウト〈真のゼロ継続〉の"
+                        f"場合はwarn_acknowledged.jsonへ登録すること）"
+                    )
+        except Exception:
+            pass
 
     # CHECK-27: cross_filing_tags近似値の残差率閾値超過検知
     # （NVDA-STI-TAG-UNIDENTIFIED-1・ANOMALY-PATTERN-CATALOG-1型C対応）

@@ -248,6 +248,121 @@ class TestCheck23FyTagMismatch:
         assert not any("WARN-23" in w for w in warn)
 
 
+class TestCheck26BsFieldNoneTransition:
+    """CHECK-26（BS-FIELD-NONE-TRANSITION-DETECT-1で新設）が「前年値あり→当年
+    None」遷移を正しく検知し、決算期変更の可能性がある年度差≠1のケース・
+    新規登録銘柄（annual_*.jsonが1年分のみ）では発火しないことを確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        """check_ticker()がreport.txtの存在で早期returnしないよう最小のfixtureを作る"""
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def _write_annual(self, sec_data_path, ticker: str, period: int, bs: dict) -> None:
+        ticker_dir = sec_data_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / f"annual_{period}.json").write_text(
+            json.dumps({"period": period, "bs": bs}), encoding="utf-8"
+        )
+
+    def test_warn_26_fires_on_value_to_none_transition(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2024, {"short_term_investments": 100})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"short_term_investments": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-26" in w and "short_term_investments" in w for w in warn)
+        assert not any("WARN-26" in n for n in ng)  # 非ブロッキング（NGにはならない）
+
+    def test_warn_26_not_fired_when_both_years_none(self, tmp_path, monkeypatch):
+        """既にフェードアウト済み（前年も当年もNone）の場合は「遷移」ではないため発火しない"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2024, {"short_term_investments": None})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"short_term_investments": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-26" in w for w in warn)
+
+    def test_warn_26_not_fired_when_current_value_present(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2024, {"short_term_investments": 100})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"short_term_investments": 80})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-26" in w for w in warn)
+
+    def test_warn_26_skipped_when_year_diff_not_one(self, tmp_path, monkeypatch):
+        """決算期変更等でperiod（fyラベル）の年度差が1でない場合は、files[-2]が
+        真の「1年前」を表す保証がないため判定不能として発火させない
+        （FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1のRCAT型を想定）"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2022, {"short_term_investments": 100})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"short_term_investments": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-26" in w for w in warn)
+
+    def test_warn_26_skipped_for_single_year_new_registration(self, tmp_path, monkeypatch):
+        """annual_*.jsonが1年分のみ（新規登録銘柄）は比較対象がないため発火しない"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"short_term_investments": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-26" in w for w in warn)
+
+    def test_warn_26_lists_multiple_transitioned_fields(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2024, {"long_term_debt": 50, "short_term_debt": 10})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"long_term_debt": None, "short_term_debt": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        w26 = next(w for w in warn if "WARN-26" in w)
+        assert "long_term_debt" in w26 and "short_term_debt" in w26
+
+    def test_warn_26_ignores_fields_outside_target_set(self, tmp_path, monkeypatch):
+        """rpo等の対象4フィールド以外（例: total_assets）は対象外のため無視される"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._write_annual(sec_data_path, "TESTCO", 2024, {"total_assets": 1000})
+        self._write_annual(sec_data_path, "TESTCO", 2025, {"total_assets": None})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-26" in w for w in warn)
+
+
+class TestWarn26KnownFadeoutAcknowledged:
+    """BS-FIELD-NONE-TRANSITION-DETECT-1事前調査で判明した、実装直後に発火する
+    既知8件の「生涯フェードアウト」（FY52WEEK-BS-NULL-SILENT-1一次情報調査で
+    真のゼロ継続と確認済み）が、本番のconfig/warn_acknowledged.jsonに
+    事前登録されており、annotate_warn()経由で確認済み（is_new=False）扱いに
+    なることを確認する（初回実行時のアラート疲れ回避の回帰テスト）"""
+
+    KNOWN_FADEOUT_TICKERS = ["APP", "BKNG", "CPRT", "DOCN", "ENTG", "KULR", "MSCI", "SOUN"]
+
+    def test_known_fadeout_tickers_are_acknowledged_for_warn_26(self):
+        ledger = load_warn_ledger()
+        for ticker in self.KNOWN_FADEOUT_TICKERS:
+            _msg, is_new = annotate_warn(
+                ticker, "  [WARN-26 BS項目遷移(有値→None)] ダミーメッセージ", ledger
+            )
+            assert not is_new, f"{ticker} のWARN-26がconfig/warn_acknowledged.jsonに未登録"
+
+
 class TestRunChecksTickerScan:
     """FLAG-CONSUMER-AUDIT-2: run_checks()のスキャン対象決定が
     os.listdir(DATA_DIR)からtickers.get_tanuki_tickers()との積集合に

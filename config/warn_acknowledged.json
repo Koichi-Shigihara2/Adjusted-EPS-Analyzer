@@ -192,6 +192,54 @@
       "ticker": "WMT",
       "acknowledged_date": "2026-07-18",
       "comment": "fyタグ裏取り不一致。一次情報検証済み: total_assets(end=2014-01-31)。WMT自身「the fiscal years ended January 31, 2014 ('fiscal 2014')」と明記でcomputed_year=2014が正しい。固定1/31決算のfilerタグ誤り。本番データは正しい値を採用済み、実害なし。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "APP",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "BKNG",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_investments（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無投資継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "CPRT",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: long_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "DOCN",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_investments（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無投資継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "ENTG",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "KULR",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "MSCI",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: short_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。MSCIはARCH-DATA-1系調査でFYE一回限りの変更履歴（2009-2010年頃）が確認済みだが、当該変更は今回の遷移境界（FY2024→FY2025）とは無関係な過去の事象。"
+    },
+    {
+      "check": "WARN-26",
+      "ticker": "SOUN",
+      "acknowledged_date": "2026-07-19",
+      "comment": "BS項目遷移(有値→None)。対象フィールド: long_term_debt（FY2024→FY2025でNoneに遷移）。FY52WEEK-BS-NULL-SILENT-1一次情報調査で「生涯フェードアウト」（真の無借金継続、タグ申告停止による欠損ではない）と確認済み。"
     }
   ]
 }
