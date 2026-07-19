@@ -716,6 +716,16 @@ class BSAdjustmentResult:
     # のcross_filing_tags経由の複数タグ合算近似値である場合True・その残差率
     sti_approximated: bool = False
     sti_residual_pct: Optional[float] = None
+    # FY52WEEK-BS-FADEOUT-FALLBACK-1: 最新年度が完全欠損（None）かつ過去の
+    # 直近既知値が明示的0だった場合に真のゼロと推定した場合True・その最終
+    # 確認年度。年数閾値なし。直近既知値が非ゼロの場合は適用されない
+    # （[[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]参照）
+    sti_estimated_zero: bool = False
+    sti_last_confirmed_zero_year: Optional[int] = None
+    ltdebt_estimated_zero: bool = False
+    ltdebt_last_confirmed_zero_year: Optional[int] = None
+    stdebt_estimated_zero: bool = False
+    stdebt_last_confirmed_zero_year: Optional[int] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -731,6 +741,12 @@ class BSAdjustmentResult:
             "net_debt_period":        self.net_debt_period,
             "sti_approximated":       self.sti_approximated,
             "sti_residual_pct":       self.sti_residual_pct,
+            "sti_estimated_zero":     self.sti_estimated_zero,
+            "sti_last_confirmed_zero_year": self.sti_last_confirmed_zero_year,
+            "ltdebt_estimated_zero":  self.ltdebt_estimated_zero,
+            "ltdebt_last_confirmed_zero_year": self.ltdebt_last_confirmed_zero_year,
+            "stdebt_estimated_zero":  self.stdebt_estimated_zero,
+            "stdebt_last_confirmed_zero_year": self.stdebt_last_confirmed_zero_year,
         }
 
 
@@ -771,6 +787,13 @@ def calculate_bs_adjustment(
         net_debt_period=net_cash_data.get("net_debt_period", ""),  # ARCH-DATA-1残課題①
         sti_approximated=net_cash_data.get("sti_approximated", False),  # NVDA-STI-TAG-UNIDENTIFIED-1
         sti_residual_pct=net_cash_data.get("sti_residual_pct"),
+        # FY52WEEK-BS-FADEOUT-FALLBACK-1
+        sti_estimated_zero=net_cash_data.get("sti_estimated_zero", False),
+        sti_last_confirmed_zero_year=net_cash_data.get("sti_last_confirmed_zero_year"),
+        ltdebt_estimated_zero=net_cash_data.get("ltdebt_estimated_zero", False),
+        ltdebt_last_confirmed_zero_year=net_cash_data.get("ltdebt_last_confirmed_zero_year"),
+        stdebt_estimated_zero=net_cash_data.get("stdebt_estimated_zero", False),
+        stdebt_last_confirmed_zero_year=net_cash_data.get("stdebt_last_confirmed_zero_year"),
     )
 
 

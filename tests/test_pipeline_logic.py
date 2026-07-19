@@ -1767,6 +1767,156 @@ class TestNewTickerIntegration:
 
 
 # ─────────────────────────────────────────────
+# 17.5. FY52WEEK-BS-FADEOUT-FALLBACK-1 回帰テスト
+#
+#     short_term_investments/long_term_debt/short_term_debtが最新年度で
+#     完全欠損（None）だが過去に明示的$0申告実績がある場合、真のゼロと
+#     推定してis_estimated_zero/last_confirmed_zero_yearを付与すること。
+#     直近の既知値が非ゼロの複雑パターン（CSGP/KULR/RCAT型）では
+#     誤って推定ゼロにならないことも確認する。
+# ─────────────────────────────────────────────
+
+class TestFadeoutZeroFallback:
+    """FY52WEEK-BS-FADEOUT-FALLBACK-1: reader.py::get_net_cash()の
+    履歴フォールバックロジック（年数閾値なし・条件判定による汎用ロジック）"""
+
+    def _write_annual(self, tmp_path, ticker: str, period_to_bs: dict) -> None:
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        for period, bs in period_to_bs.items():
+            (ticker_dir / f"annual_{period}.json").write_text(
+                json.dumps({"period": period, "bs": bs}), encoding="utf-8"
+            )
+
+    def test_pltr_type_clean_fadeout_gets_estimated_zero(self, tmp_path):
+        """PLTR/long_term_debt型（代表例）: 過去年度に明示的0があり最新年度が
+        Noneの場合、is_estimated_zero=True・last_confirmed_zero_yearが
+        正しく設定される"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2019: {"long_term_debt": 500_000_000},
+            2020: {"long_term_debt": 500_000_000},
+            2021: {"long_term_debt": 0},
+            2022: {"long_term_debt": None},
+            2023: {"long_term_debt": None},
+            2024: {"long_term_debt": None},
+            2025: {"long_term_debt": None},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["ltdebt_estimated_zero"] is True
+        assert result["ltdebt_last_confirmed_zero_year"] == 2021
+        assert result["long_term_debt"] == 0.0
+
+    def test_gap_of_many_years_still_applies_no_threshold(self, tmp_path):
+        """年数閾値なしの確認: 12年前の$0実績でも推定ゼロが適用される
+        （CSGP/short_term_investments型の年数ギャップに相当）"""
+        period_to_bs = {2013: {"short_term_investments": 0}}
+        for yr in range(2014, 2026):
+            period_to_bs[yr] = {"short_term_investments": None}
+        self._write_annual(tmp_path, "TESTCO", period_to_bs)
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["sti_estimated_zero"] is True
+        assert result["sti_last_confirmed_zero_year"] == 2013
+
+    def test_csgp_type_nonzero_last_known_value_not_flagged(self, tmp_path):
+        """CSGP/short_term_investments型: 2013年$0の後、2015-2018年に実額
+        （非ゼロ）が再登場してから2019年以降消失するケース。直近の既知値
+        （2018年、非ゼロ）が優先され、誤って推定ゼロにならないこと"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2011: {"short_term_investments": 3_515_000},
+            2012: {"short_term_investments": 37_000},
+            2013: {"short_term_investments": 0},
+            2014: {"short_term_investments": None},
+            2015: {"short_term_investments": 15_507_000},
+            2016: {"short_term_investments": 9_952_000},
+            2017: {"short_term_investments": 10_070_000},
+            2018: {"short_term_investments": 10_070_000},
+            2019: {"short_term_investments": None},
+            2020: {"short_term_investments": None},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["sti_estimated_zero"] is False, (
+            "CSGP型回帰: 直近の既知値(2018年, $10.07M)が非ゼロにも関わらず"
+            "誤って推定ゼロと判定された"
+        )
+        assert result["sti_last_confirmed_zero_year"] is None
+
+    def test_kulr_type_nonzero_reappears_after_zero_not_flagged(self, tmp_path):
+        """KULR/short_term_debt型: 2021-2022年$0の後、2024年に実額が
+        再登場してから2025年に消失するケース。誤って推定ゼロにならないこと"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2020: {"short_term_debt": 2_321_802},
+            2021: {"short_term_debt": 0},
+            2022: {"short_term_debt": 0},
+            2023: {"short_term_debt": None},
+            2024: {"short_term_debt": 516_547},
+            2025: {"short_term_debt": None},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["stdebt_estimated_zero"] is False, (
+            "KULR型回帰: 直近の既知値(2024年, $516,547)が非ゼロにも関わらず"
+            "誤って推定ゼロと判定された"
+        )
+        assert result["stdebt_last_confirmed_zero_year"] is None
+
+    def test_rcat_type_intermittent_nonzero_values_not_flagged(self, tmp_path):
+        """RCAT/long_term_debt型: $0期間の後に複数回、断続的に実額が出現する
+        より複雑なケースでも誤って推定ゼロにならないこと"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2012: {"long_term_debt": 0},
+            2013: {"long_term_debt": 0},
+            2014: {"long_term_debt": 0},
+            2015: {"long_term_debt": 0},
+            2016: {"long_term_debt": None},
+            2017: {"long_term_debt": None},
+            2018: {"long_term_debt": 1_982_829},
+            2019: {"long_term_debt": None},
+            2020: {"long_term_debt": 450_000},
+            2021: {"long_term_debt": None},
+            2022: {"long_term_debt": 973_707},
+            2023: {"long_term_debt": 401_569},
+            2024: {"long_term_debt": None},
+            2025: {"long_term_debt": None},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["ltdebt_estimated_zero"] is False, (
+            "RCAT型回帰: 直近の既知値(2023年, $401,569)が非ゼロにも関わらず"
+            "誤って推定ゼロと判定された"
+        )
+        assert result["ltdebt_last_confirmed_zero_year"] is None
+
+    def test_no_historical_zero_at_all_not_flagged(self, tmp_path):
+        """過去に一度も明示的0の申告実績がない場合（真の構造的不明）は
+        推定ゼロを適用しない"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2023: {"short_term_debt": None},
+            2024: {"short_term_debt": None},
+            2025: {"short_term_debt": None},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["stdebt_estimated_zero"] is False
+        assert result["stdebt_last_confirmed_zero_year"] is None
+
+    def test_latest_year_has_real_value_not_flagged(self, tmp_path):
+        """最新年度に本人データがある場合（完全欠損ではない）は
+        推定ゼロロジック自体が発火しない"""
+        self._write_annual(tmp_path, "TESTCO", {
+            2023: {"long_term_debt": 0},
+            2024: {"long_term_debt": None},
+            2025: {"long_term_debt": 100_000_000},
+        })
+        reader = SECReader(data_dir=str(tmp_path))
+        result = reader.get_net_cash("TESTCO")
+        assert result["ltdebt_estimated_zero"] is False
+        assert result["long_term_debt"] == 100_000_000.0
+
+
+# ─────────────────────────────────────────────
 # 18. BUG-MATRIX4-1追補: fcf_history末尾None銘柄のMatrix④回帰防止
 #
 #     上場後まもない / SEC年次未取得年が末尾にある銘柄（RCATパターン）で

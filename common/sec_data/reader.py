@@ -346,6 +346,36 @@ class SECReader:
             pass
         return 0.0
 
+    def _lookup_last_confirmed_zero_year(self, ticker: str, field: str) -> Optional[int]:
+        """
+        FY52WEEK-BS-FADEOUT-FALLBACK-1: 最新年度でfieldが完全欠損（None）の
+        場合に、直近の過去年度から新しい順に走査し、最初に見つかった非None値
+        が明示的に0であればその年度を返す（真のゼロとして推定してよい根拠）。
+
+        最初に見つかった非None値が0でない場合（CSGP/short_term_investments・
+        KULR/short_term_debt・RCAT/long_term_debt型: 直近の既知値が非ゼロの
+        複雑パターン、[[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]参照）は
+        Noneを返し、フォールバックを適用しない（誤って真のゼロと推定しない
+        安全側の設計）。年数閾値は設けない（過去何年前の$0実績でも対象）。
+
+        本メソッドは呼び出し元（get_net_cash）で「最新年度がNoneの場合のみ」
+        呼ばれる前提。most_recent（annual_data[0]）自体はここでは除外せず、
+        呼び出し元がget_annual_range()の2件目以降を渡す設計ではなく、本メソッド
+        内でget_annual_range()を独自に取得し直し先頭（最新）をスキップする。
+        """
+        all_annual = self.get_annual_range(ticker, years=100)
+        for entry in all_annual[1:]:
+            val = entry.get("bs", {}).get(field)
+            if val is None:
+                continue
+            if val == 0:
+                try:
+                    return int(entry.get("period"))
+                except (TypeError, ValueError):
+                    return None
+            return None
+        return None
+
     def get_net_cash(self, ticker: str, sector: Optional[str] = None, industry: str = "") -> dict:
         """
         ネットキャッシュ関連BSデータを取得 v8.1
@@ -392,6 +422,19 @@ class SECReader:
                 "sti_residual_pct":       float  近似値採用時の実額比残差率
                                                   （例: 0.0088 = +0.88%）。
                                                   sti_approximated=Falseの場合None
+                "sti_estimated_zero":     bool   short_term_investmentsが最新年度
+                                                  完全欠損かつ過去の直近既知値が
+                                                  明示的0だったため、真のゼロと
+                                                  推定した場合True（FY52WEEK-BS-
+                                                  FADEOUT-FALLBACK-1）。四半期側の
+                                                  値に切り替わった場合はFalseに戻る
+                "sti_last_confirmed_zero_year": int  推定ゼロ採用時、最後に明示的
+                                                  0が確認された年度。
+                                                  sti_estimated_zero=Falseの場合None
+                "ltdebt_estimated_zero":  bool   long_term_debt版（同上）
+                "ltdebt_last_confirmed_zero_year": int  同上
+                "stdebt_estimated_zero":  bool   short_term_debt版（同上）
+                "stdebt_last_confirmed_zero_year": int  同上
             }
         """
         annual_data = self.get_annual_range(ticker, years=1)
@@ -403,6 +446,9 @@ class SECReader:
                 "sector_guard": "none", "net_debt_period": "",
                 "cash_missing": False,
                 "sti_approximated": False, "sti_residual_pct": None,
+                "sti_estimated_zero": False, "sti_last_confirmed_zero_year": None,
+                "ltdebt_estimated_zero": False, "ltdebt_last_confirmed_zero_year": None,
+                "stdebt_estimated_zero": False, "stdebt_last_confirmed_zero_year": None,
             }
 
         latest = annual_data[0]
@@ -420,9 +466,12 @@ class SECReader:
         # short_term_investments/long_term_debt/short_term_debtは「真のゼロ」
         # との判別が困難なため対象外（Phase B/C、従来通り`or 0`を維持）。
         cash    = bs.get("cash_and_equivalents")
-        st_inv  = bs.get("short_term_investments", 0) or 0
-        lt_debt = bs.get("long_term_debt", 0) or 0
-        st_debt = bs.get("short_term_debt", 0) or 0
+        _sti_raw    = bs.get("short_term_investments")
+        _ltdebt_raw = bs.get("long_term_debt")
+        _stdebt_raw = bs.get("short_term_debt")
+        st_inv  = _sti_raw or 0
+        lt_debt = _ltdebt_raw or 0
+        st_debt = _stdebt_raw or 0
         net_debt_period = f"FY{fy}"
 
         # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tags由来の近似値
@@ -433,9 +482,42 @@ class SECReader:
         sti_approximated = bool(_sti_prov.get("is_approximated"))
         sti_residual_pct = _sti_prov.get("residual_pct")
 
+        # FY52WEEK-BS-FADEOUT-FALLBACK-1: 最新年度が完全欠損（None）の場合、
+        # 過去の直近既知値が明示的0であればそれを真のゼロとして採用する
+        # （年数閾値なし）。直近既知値が非ゼロの場合（CSGP/short_term_
+        # investments・KULR/short_term_debt・RCAT/long_term_debt型）は
+        # 適用しない（[[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]参照）。
+        sti_estimated_zero = False
+        sti_last_confirmed_zero_year: Optional[int] = None
+        ltdebt_estimated_zero = False
+        ltdebt_last_confirmed_zero_year: Optional[int] = None
+        stdebt_estimated_zero = False
+        stdebt_last_confirmed_zero_year: Optional[int] = None
+        if _sti_raw is None:
+            _yr = self._lookup_last_confirmed_zero_year(ticker, "short_term_investments")
+            if _yr is not None:
+                sti_estimated_zero = True
+                sti_last_confirmed_zero_year = _yr
+        if _ltdebt_raw is None:
+            _yr = self._lookup_last_confirmed_zero_year(ticker, "long_term_debt")
+            if _yr is not None:
+                ltdebt_estimated_zero = True
+                ltdebt_last_confirmed_zero_year = _yr
+        if _stdebt_raw is None:
+            _yr = self._lookup_last_confirmed_zero_year(ticker, "short_term_debt")
+            if _yr is not None:
+                stdebt_estimated_zero = True
+                stdebt_last_confirmed_zero_year = _yr
+
         # BUG-NETDEBT-3: annual JSONでlong_term_debtが欠落した場合にnormalized quarterlyで補完
         if lt_debt == 0:
-            lt_debt = self.get_lt_debt_from_normalized(ticker)
+            _lt_debt_normalized = self.get_lt_debt_from_normalized(ticker)
+            if _lt_debt_normalized != 0:
+                # 正規化四半期データから真の値が見つかった場合、推定ゼロの
+                # 前提が崩れるためフラグを解除する
+                lt_debt = _lt_debt_normalized
+                ltdebt_estimated_zero = False
+                ltdebt_last_confirmed_zero_year = None
 
         # BUG-NETDEBT-4: 同一時点原則（最新quarterly_*.jsonから全項目一括取得）
         # BUG-NETDEBT-1はCashのみ四半期上書きしていたが、負債が年次に留まる非対称性を解消。
@@ -450,11 +532,12 @@ class SECReader:
                 with open(os.path.join(ticker_dir, _q_files[-1]), encoding="utf-8") as _qf:
                     _latest_q = json.load(_qf)
                 _qbs = _latest_q.get("bs", {})
-                _q_cash   = _qbs.get("cash_and_equivalents")
-                _q_lt     = _qbs.get("long_term_debt")
-                _q_st     = _qbs.get("short_term_debt")
-                _q_sti    = _qbs.get("short_term_investments") or 0
-                _q_period = _latest_q.get("period", "")
+                _q_cash    = _qbs.get("cash_and_equivalents")
+                _q_lt      = _qbs.get("long_term_debt")
+                _q_st      = _qbs.get("short_term_debt")
+                _q_sti_raw = _qbs.get("short_term_investments")
+                _q_sti     = _q_sti_raw or 0
+                _q_period  = _latest_q.get("period", "")
                 if _q_cash is not None and _q_lt is not None:
                     # LTDebtが明示的に取得できる → 全項目を同一時点で統一（最優先）
                     # LTDebtがNone（パース失敗）の場合はフォールバック（負債は年次維持）
@@ -468,6 +551,21 @@ class SECReader:
                     # quarterly側エントリは近似ではない正規の合算値のため）
                     sti_approximated = False
                     sti_residual_pct = None
+                    # FY52WEEK-BS-FADEOUT-FALLBACK-1: ltdebtはこの分岐に入る
+                    # 前提（_q_ltがNoneでない）が既に「四半期側の実データ」を
+                    # 意味するため無条件で解除する。stdebt/stiは、四半期
+                    # 自身が当該フィールドを持っている場合のみ解除する
+                    # （四半期側もannual側と同じタグ欠損を抱えている場合
+                    # 〈_q_st/_q_sti_rawがNone〉、annual側の推定ゼロ注記を
+                    # 四半期側のor 0変換で誤って消さないため）。
+                    ltdebt_estimated_zero = False
+                    ltdebt_last_confirmed_zero_year = None
+                    if _q_st is not None:
+                        stdebt_estimated_zero = False
+                        stdebt_last_confirmed_zero_year = None
+                    if _q_sti_raw is not None:
+                        sti_estimated_zero = False
+                        sti_last_confirmed_zero_year = None
                 elif _q_cash is not None:
                     # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
                     cash   = float(_q_cash)
@@ -475,6 +573,8 @@ class SECReader:
                         st_inv = float(_q_sti)
                         sti_approximated = False
                         sti_residual_pct = None
+                        sti_estimated_zero = False
+                        sti_last_confirmed_zero_year = None
                     net_debt_period = f"Cash={_q_period}/Debt=FY{fy}"
         except Exception:
             pass
@@ -532,6 +632,12 @@ class SECReader:
             "cash_missing":           cash_missing,
             "sti_approximated":       sti_approximated,
             "sti_residual_pct":       sti_residual_pct,
+            "sti_estimated_zero":     sti_estimated_zero,
+            "sti_last_confirmed_zero_year": sti_last_confirmed_zero_year,
+            "ltdebt_estimated_zero":  ltdebt_estimated_zero,
+            "ltdebt_last_confirmed_zero_year": ltdebt_last_confirmed_zero_year,
+            "stdebt_estimated_zero":  stdebt_estimated_zero,
+            "stdebt_last_confirmed_zero_year": stdebt_last_confirmed_zero_year,
         }
 
     # =========================================

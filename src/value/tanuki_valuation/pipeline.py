@@ -1605,23 +1605,41 @@ class TanukiValuationPipeline:
         _dil_sev, _dil_badge, _dil_rpt = _dilution_severity_info(dilution_3yr)
         L.append(f"  Net_Debt: ${net_debt/1e9:+.2f}B (negative=net cash)" if net_debt is not None else "  Net_Debt: N/A")
         _st_invest = fin_health.get("short_term_investments") or 0
+        _sti_estimated_zero = fin_health.get("sti_estimated_zero", False)
+        _sti_last_zero_year = fin_health.get("sti_last_confirmed_zero_year")
         if total_debt is not None:
-            if _st_invest > 0:
+            if _st_invest > 0 or _sti_estimated_zero:
                 # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tags経由の複数タグ
                 # 合算近似値の場合、実額比残差率を注記する（get_net_cash()の
                 # None→0扱いとは別扱い。この銘柄は0.9%程度の乖離のある近似値
                 # であることを明示する）
                 _sti_approx = fin_health.get("sti_approximated", False)
                 _sti_residual = fin_health.get("sti_residual_pct")
-                _sti_note = (
-                    f" (近似値、実額比+{_sti_residual*100:.2f}%)"
-                    if _sti_approx and _sti_residual is not None else ""
-                )
+                if _sti_approx and _sti_residual is not None:
+                    _sti_note = f" (近似値、実額比+{_sti_residual*100:.2f}%)"
+                elif _sti_estimated_zero:
+                    # FY52WEEK-BS-FADEOUT-FALLBACK-1: 最新年度は完全欠損だが
+                    # 過去の直近既知値が明示的0だったため真のゼロと推定した旨を注記
+                    _sti_note = f" (推定ゼロ、最終確認: FY{_sti_last_zero_year})"
+                else:
+                    _sti_note = ""
                 L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B  ST_Invest: ${_st_invest/1e9:.2f}B{_sti_note}")
             else:
                 L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B")
         else:
             L.append("  Total_Debt: N/A")
+        # FY52WEEK-BS-FADEOUT-FALLBACK-1: LTDebt/STDebtの個別内訳表示
+        # （いずれかが推定ゼロの場合のみ表示。通常時はTotal_Debtの合算表示で足りる）
+        _ltdebt_estimated_zero = fin_health.get("ltdebt_estimated_zero", False)
+        _stdebt_estimated_zero = fin_health.get("stdebt_estimated_zero", False)
+        if _ltdebt_estimated_zero or _stdebt_estimated_zero:
+            _ltdebt_val = fin_health.get("long_term_debt") or 0
+            _stdebt_val = fin_health.get("short_term_debt") or 0
+            _ltdebt_last_zero_year = fin_health.get("ltdebt_last_confirmed_zero_year")
+            _stdebt_last_zero_year = fin_health.get("stdebt_last_confirmed_zero_year")
+            _lt_note = f" (推定ゼロ、最終確認: FY{_ltdebt_last_zero_year})" if _ltdebt_estimated_zero else ""
+            _st_note = f" (推定ゼロ、最終確認: FY{_stdebt_last_zero_year})" if _stdebt_estimated_zero else ""
+            L.append(f"  Debt内訳: LTDebt=${_ltdebt_val/1e9:.2f}B{_lt_note}  STDebt=${_stdebt_val/1e9:.2f}B{_st_note}")
         _nd_period = fin_health.get("net_debt_period")
         if _nd_period:
             L.append(f"  Net_Debt_Period: {_nd_period}")
@@ -2193,6 +2211,11 @@ class TanukiValuationPipeline:
                 "total_debt": total_debt,
                 "cash_and_equivalents": cash,
                 "short_term_investments": st_invest,
+                # FY52WEEK-BS-FADEOUT-FALLBACK-1: long_term_debt/short_term_debtの
+                # 個別値を露出する（従来はtotal_debtへの合算のみでreport.txt側で
+                # 個別表示できなかった）。
+                "long_term_debt": bs_adj.get("long_term_debt", 0.0),
+                "short_term_debt": bs_adj.get("short_term_debt", 0.0),
                 "net_debt": net_debt,
                 "sbc_ttm": sbc_by_year.get(latest_yr),
                 "net_debt_period": _net_debt_period,
@@ -2206,6 +2229,15 @@ class TanukiValuationPipeline:
                 # True・その残差率。report.txtのST_Invest行注記に使用する。
                 "sti_approximated": bs_adj.get("sti_approximated", False),
                 "sti_residual_pct": bs_adj.get("sti_residual_pct"),
+                # FY52WEEK-BS-FADEOUT-FALLBACK-1: 過去の直近既知値が明示的0
+                # だったため真のゼロと推定した場合True・その最終確認年度。
+                # report.txtの該当行に「推定ゼロ（最終確認: FY20XX）」を注記する。
+                "sti_estimated_zero": bs_adj.get("sti_estimated_zero", False),
+                "sti_last_confirmed_zero_year": bs_adj.get("sti_last_confirmed_zero_year"),
+                "ltdebt_estimated_zero": bs_adj.get("ltdebt_estimated_zero", False),
+                "ltdebt_last_confirmed_zero_year": bs_adj.get("ltdebt_last_confirmed_zero_year"),
+                "stdebt_estimated_zero": bs_adj.get("stdebt_estimated_zero", False),
+                "stdebt_last_confirmed_zero_year": bs_adj.get("stdebt_last_confirmed_zero_year"),
             }
             # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
             # 条件: 直近四半期EPS<0, 直近年FCF<0, またはcash<$100M のいずれか
