@@ -1017,6 +1017,78 @@ KO（Coca-Cola）・SPIR（Spire Global）のFCF乖離原因は、SEC XBRLの
 
 ---
 
+### ✅ [JOBY-STATIC-GROWTH-HARDCODE-1] JOBYのsegment_config.jsonにgrowth=0.15の静的値、FLOOR_HIT_REVIEW検知の対象外
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）
+案B安全性検証の副次発見
+**完了日:** 2026-07-20（原因確定・FLOOR_HIT_REVIEW検知拡張まで実装完了）
+
+#### 内容（登録時）
+`segment_config.json`を確認したところ、CART・JOBYは「General」100%
+セグメントの`growth`値として直接`0.15`が静的に格納されていた
+（`{"General": {"weight": 1, "growth": 0.15}}`）。これは
+`calculator/growth.py::calculate_fcf_cagr()`のfloorパラメータとは
+別の場所に埋め込まれた同一数値。
+
+JOBYは`rev_cagr_3yr`/`5yr`/`g_fundamental`がいずれもNone（算出不能）だが、
+`growth_source=="segment_weighted"`のため[[GROWTH-FLOOR-VERDICT-1]]の
+FLOOR_HIT_REVIEW検知（`growth_source=="fcf_cagr"`限定）の対象外になっている。
+CARTは`rev_cagr_3yr=13.6%`と15%に近い実績値があるため偶然の一致の
+可能性があるが、JOBYは実績データが一切ないため、この0.15が実態を
+反映した値なのか、過去のfloor/TTM override由来の残存値なのか不明だった。
+
+#### 原因調査結果（2026-07-20完了、確度：高）
+`segment_config.json`のgrowth=0.15は、`admin.html::fetchSegmentsForTicker()`
+が新規銘柄登録時に機械的に書き込むテンプレートのデフォルト値であり、
+JOBY固有の分析結果ではない。同時期に登録された他11銘柄（MRVL/RXRX/ARQQ/
+SNDL/CIX/RDW/XNDU/AUR/VWAV/RCAT・CART）も登録コミットで一字一句同一の
+値を取得していた（git log -pで確認）。admin.htmlの登録ツールは3箇所すべて
+（CIK未設定時・セグメント自動抽出成功時・fetch失敗時）で一律0.15を
+ハードコードしている。
+
+JOBYは量産前段階の低ベース効果（revenue: 2023年$1.03M→2024年$0.136M→
+2025年$53.4M、rev_yoy=69,873%）によりTTM注入の安全弁
+（`_inject_ttm_for_general_segment`の`-50%〜100%`範囲チェック）で
+実測値が棄却され、`growth_source=="segment_weighted"`のため既存の
+FLOOR_HIT_REVIEW検知（`growth_source=="fcf_cagr"`限定）の対象外となり、
+未検証のテンプレート値0.15がそのままDCF成長率として使われ続けていた
+（`latest.json`の`components.high_growth_rate_used: 0.15`で確認済み）。
+同一0.15テンプレートを保持する27銘柄中、全指標Noneで実効値が素通り
+しているのはJOBYのみと横展開確認済み。
+
+#### 対応（実装完了）
+FLOOR_HIT_REVIEW検知を「`growth_source=="segment_weighted"`かつ
+`rev_cagr_3yr`/`rev_cagr_5yr`/`g_fundamental`が全てNoneかつ
+`recommended_g is None`」の条件にも拡張（コミット`ea21545d4`）。
+0.15自体の妥当性判断（修正・上書き）は行わず、検知・可視化のみ実装。
+
+全100銘柄シミュレーションで想定外候補CRWVを検出したが（同じく実測系
+3指標None・segment_weightedだが、TTM実測値ベースのdecayモデルで
+recommended_g=54.3%と正しく上書き成功済み）、`recommended_g is None`を
+必須条件に追加して正しく除外し、最終的にJOBYのみが該当することを
+確認した。
+
+#### 検証
+- JOBY: `verdict PLAUSIBLE→FLOOR_HIT_REVIEW`・`floor_hit false→true`、
+  report.txt・stock.htmlに「実測データ不足のためテンプレートのデフォルト
+  成長率（15%）が未検証のまま使用中 ⚠️」を表示確認
+- CRWV: verdict/warnings/IVとも無変化を確認（除外条件が実データでも
+  正しく機能）
+- IV等数値項目への影響なし（git diffで確認、変化はgrowth_sanity関連
+  フィールドのみ）
+- `report_consistency_check.py`（全100銘柄）: NG=0件
+- `pytest tests/`: 426 passed / 2 known failed（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]既知の無関係な失敗のみ、regressionなし）
+
+#### 副次観察（実装対象外・記録のみ）
+`report_consistency_check.py`のWARN 69件中19件が本タスク無関係の
+未確認既存事象として残っている。個別の内容確認・要否判断は別途必要
+（新規タスク化するかは次回検討）。
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）

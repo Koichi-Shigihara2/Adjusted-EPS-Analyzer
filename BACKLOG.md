@@ -876,38 +876,6 @@ report.txt表示を追加実装した。これにより段階1（成長率算出
 
 ## 優先度：未定（要判断）
 
-### [JOBY-STATIC-GROWTH-HARDCODE-1] JOBYのsegment_config.jsonにgrowth=0.15の静的値、FLOOR_HIT_REVIEW検知の対象外
-**優先度:** 未定
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-19
-**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）
-案B安全性検証の副次発見
-
-#### 内容
-`segment_config.json`を確認したところ、CART・JOBYは「General」100%
-セグメントの`growth`値として直接`0.15`が静的に格納されていた
-（`{"General": {"weight": 1, "growth": 0.15}}`）。これは
-`calculator/growth.py::calculate_fcf_cagr()`のfloorパラメータとは
-別の場所に埋め込まれた同一数値。
-
-JOBYは`rev_cagr_3yr`/`5yr`/`g_fundamental`がいずれもNone（算出不能）だが、
-`growth_source=="segment_weighted"`のため[[GROWTH-FLOOR-VERDICT-1]]の
-FLOOR_HIT_REVIEW検知（`growth_source=="fcf_cagr"`限定）の対象外になっている。
-CARTは`rev_cagr_3yr=13.6%`と15%に近い実績値があるため偶然の一致の
-可能性があるが、JOBYは実績データが一切ないため、この0.15が実態を
-反映した値なのか、過去のfloor/TTM override由来の残存値なのか不明。
-
-#### 対応方針（未確定）
-segment_config.jsonの`growth`値がどのように初期設定されたか
-（登録時のデフォルト値か、手動設定か、過去のoverride結果の固定化か）を
-一次情報（git blame等）で確認する必要がある。JOBYの実態成長率を
-別途調査した上で、0.15が妥当な値か見直しが必要か判断する。
-
-#### 着手条件
-なし
-
----
-
 ### [CWAN-SNPS-MA-DISTORTION-1] CWAN・SNPSのFCF乖離は大型M&Aに伴う一過性歪みと判明
 **優先度:** 未定
 **分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
@@ -4211,8 +4179,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
-⑨ [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
-   [[CWAN-SNPS-MA-DISTORTION-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]・
+   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
@@ -4220,6 +4188,7 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    判明。詳細はBACKLOG_DONE.md参照。副次発見はCIK-DISCONTINUITY-OLDEST-YEAR-GAP-1
    として分離登録）
    ~~[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
+   ~~[[JOBY-STATIC-GROWTH-HARDCODE-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
