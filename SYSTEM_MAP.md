@@ -460,6 +460,24 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    いる期間に限られる（NVDA自身は現在2027Q1四半期側の正規合算値が
 │    優先され、近似値表示は発生していない）。詳細はBACKLOG_DONE.md
 │    [[NVDA-STI-TAG-UNIDENTIFIED-1]]参照
+│    **追記（BS-FIELD-NONE-TRANSITION-DETECT-1 2026-07-19）**:
+│    `report_consistency_check.py`にCHECK-26/WARN-26を新設。WARN-25が
+│    「None率が高すぎる（35〜65%）」ことを理由に対象外とした
+│    `short_term_investments`/`long_term_debt`/`short_term_debt`/`rpo`の
+│    4フィールドについて、「Noneであること自体」ではなく「前年は値が
+│    あったのに当年からNoneになる**遷移**」を検知する（正常な企業では
+│    発生しないため、WARN-25のブランケット型不採用理由〈ノイズの多さ〉が
+│    当てはまらない）。直近2年度分のannual_*.jsonのperiod（fyラベル）の
+│    年度差が厳密に1であることを確認したうえでのみ判定し（決算期変更で
+│    files[-2]が真の「1年前」を表さない可能性がある場合、RCATの
+│    long_term_debt遷移年〈2024〉が[[FYE-CHANGE-BOUNDARY-COLLISION-
+│    BLIND-1]]の決算期変更境界〈2024-2025年〉と一致する実例あり、判定不能
+│    として発火させない）、annual_*.jsonが1年分のみの新規登録銘柄も対象外
+│    とする。実装直後にFY52WEEK-BS-NULL-SILENT-1で確認済みの「生涯
+│    フェードアウト」8件（APP/BKNG/CPRT/DOCN/ENTG/KULR/MSCI/SOUN）が
+│    発火することが事前調査済みのため、`config/warn_acknowledged.json`へ
+│    事前登録済み。詳細はBACKLOG_DONE.md
+│    [[BS-FIELD-NONE-TRANSITION-DETECT-1]]参照
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:

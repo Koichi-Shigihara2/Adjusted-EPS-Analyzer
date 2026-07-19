@@ -1200,52 +1200,6 @@ Phase C（rpoの非SaaS銘柄True-negative群の扱い）はStage1のrpo分の
 
 ---
 
-### [BS-FIELD-NONE-TRANSITION-DETECT-1] BS項目の「前年有値→当年None」遷移を自動検知する仕組みがなく、6件中6件が偶然発見のまま放置
-**優先度:** 中〜高
-**分類:** データ品質ゲート / 検知体制
-**登録日:** 2026-07-19
-**発見:** [[NVDA-STI-TAG-UNIDENTIFIED-1]]調査中の体制確認
-
-#### 背景
-XBRLタグの申告停止による完全欠損（前年は値があったのに当年から
-Noneになる事象）を検知する仕組みが、BS項目に関して一切存在しない。
-実例6件（SOFI-DATA-1・AVGO型14銘柄・LLY-CAPEX-STALE-1・
-CASH-TAG-MISSING-1〈未解決〉・KLAC/TER/V・NVDA）はいずれも
-「別の調査中の偶然発見」であり、系統的な自動検知で発見された
-実例は一件もない。CASH-TAG-MISSING-1（CAT/CPRT/ELF/GEV/HEI/SITM）
-は未解決のまま放置が続いている。
-
-WARN-25（`_BS_NULL_CHECK_FIELDS`、ブランケット型None検知）は
-short_term_investments等4フィールドを、None率が高すぎる
-（真のゼロと判別困難、35〜65%）ことを理由に対象外としているが、
-「前年有値→当年None」という**遷移**自体は正常な企業では発生しない
-ため、ブランケット型不採用の理由（ノイズの多さ）は遷移型検知には
-当てはまらない。
-
-#### 対応方針（設計・未着手）
-- `report_consistency_check.py`に新規WARN-26として実装
-- 直近2年度分のannual_*.jsonを比較し、
-  `prior_bs.get(field) is not None and latest_bs.get(field) is None`
-  でWARN発火
-- 対象フィールド: short_term_investments/long_term_debt/
-  short_term_debt/rpo（WARN-25対象外の4フィールド）を優先。
-  他フィールドへの拡張要否は着手時に判断
-- 実装時の考慮点：
-  - 会計年度の連続性（決算期変更等で`files[-2]`が単純に「1年前」
-    とは限らない。period年度差での判定が必要）
-  - 新規登録銘柄（annual_*.jsonが1年分のみ）はスキップ
-  - 一過性の欠損の誤検知防止のため、[[FY52WEEK-BS-FADEOUT-
-    FALLBACK-1]]・`config/warn_acknowledged.json`との連携を検討
-- [[ANOMALY-PATTERN-CATALOG-1]]（型A、発生後の個別調査）の
-  予防側（発生した瞬間の自動検知）として補完関係にある
-- [[FY52WEEK-BS-NULL-SILENT-1]]のPhase B/C（未着手のまま
-  残っている領域）とも関連
-
-#### 着手条件
-なし
-
----
-
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
 **優先度:** 高
 **分類:** アーキテクチャ / 検証基盤

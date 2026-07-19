@@ -4,6 +4,97 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [BS-FIELD-NONE-TRANSITION-DETECT-1] BS項目「前年有値→当年None」遷移検知（WARN-26新設・既知8件事前登録）
+**優先度:** 中〜高
+**分類:** データ品質ゲート / 検知体制
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19
+**発見:** [[NVDA-STI-TAG-UNIDENTIFIED-1]]調査中の体制確認（XBRLタグ申告停止による
+完全欠損の検知が、BS項目に関して一切存在せず、実例6件がいずれも偶然発見だった
+ことが判明）
+
+#### 事前確認（実装前調査、着手条件の事前クリア）
+WARN-26実装前に、[[FY52WEEK-BS-NULL-SILENT-1]] Phase B/Cで確認済みの「生涯
+フェードアウト」25件（short_term_investments/long_term_debt/short_term_debt/
+rpoのいずれかで過去に明示的`val=0`の申告実績があるが最新年度でタグ自体が
+欠損している組み合わせ）が、実際にWARN-26の発火条件（直近2年度分の
+annual_*.json比較）に該当するか個別確認した。結果:
+- 25件中8件（APP/short_term_debt・BKNG/short_term_investments・CPRT/
+  long_term_debt・DOCN/short_term_investments・ENTG/short_term_debt・
+  KULR/short_term_debt・MSCI/short_term_debt・SOUN/long_term_debt）は
+  遷移年が最新年度と一致し、実装直後に発火することを確認
+- 残り17件は遷移が2年より前に既に発生済みで、直近2年度は両方ともNoneのため
+  発火しない（PLTR long_term_debt等）
+- RCAT（long_term_debt）は遷移年2024が[[FYE-CHANGE-BOUNDARY-COLLISION-
+  BLIND-1]]で確定済みの決算期変更境界（2024-2025年）と一致する実例だが、
+  現時点では発火対象外（将来別ケースで境界がずれ込んだ場合の潜在リスクとして
+  コード内コメントに記録）
+- 新規登録銘柄（annual_*.jsonが1年分のみ）の混入はゼロ件
+
+#### 実装内容
+- **report_consistency_check.py**: CHECK-26（WARN-26）を新設。short_term_
+  investments/long_term_debt/short_term_debt/rpoを対象に、直近2年度分の
+  annual_*.jsonを比較し`prior_bs.get(field) is not None and latest_bs.get(field)
+  is None`でWARN発火。period（fyラベル）の年度差が厳密に1でない場合（決算期
+  変更等でfiles[-2]が真の「1年前」を表さない可能性がある場合）・
+  annual_*.jsonが1年分のみ（新規登録銘柄）の場合は判定不能として発火させない
+  設計とした（誤判定より見逃しを優先）。
+- **config/warn_acknowledged.json**: 事前確認済みの8件を(WARN-26, ticker)単位で
+  登録（既存スキーマに準拠。フィールド名はcommentに明記）。
+- **tests/test_report_consistency_check.py**: `TestCheck26BsFieldNoneTransition`
+  （遷移検知・年度差≠1でのスキップ・新規登録銘柄でのスキップ・複数フィールド
+  列挙・対象外フィールドの無視、計7件）と`TestWarn26KnownFadeoutAcknowledged`
+  （既知8件が本番のwarn_acknowledged.jsonで確認済み扱いになることの回帰、1件）
+  を新設。既存の`TestCheck23FyTagMismatch`と同一パターン（monkeypatchで
+  `rcc.DATA_DIR`/`rcc.SEC_DATA_DIR`をtmp_pathへ差し替え）で実装。
+  **注記**: 依頼書はtests/test_pipeline_logic.pyへの追加を指定していたが、
+  report_consistency_check.py::check_ticker()の単体テストに必要な
+  monkeypatch基盤（DATA_DIR/SEC_DATA_DIR差し替え）が既にtests/
+  test_report_consistency_check.pyに整備済み（WARN-21/23が同パターンで
+  実装済み）だったため、モジュール境界に合わせてそちらに実装した。
+
+#### 検証結果
+- **全100銘柄再実行**: WARN-26が新規に11件発火（想定8件＋想定外3件）。
+  想定8件はすべてwarn_acknowledged.json登録により「確認済み」表示（🆕マーク
+  なし）。総計 NG=0 / WARN=66件（確認済み50・未確認16、内訳: WARN-26由来の
+  未確認3件＋既存の未確認13件）。`--fail-on-ng`ゲート通過。
+- **想定外3件（LLY/short_term_investments・SCCO/short_term_debt・
+  SPIR/long_term_debt）の調査**: 実装ミスではなく、いずれも直近年度
+  （FY2025）で**実際に非ゼロの値**（LLY $154.8M・SCCO $499.8M・SPIR $4.618M）
+  が申告されていたのに、最新年度でタグ自体が欠損する**本物の新規遷移**。
+  事前調査時点（[[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C確認）の「生涯
+  フェードアウト25件」は「過去に明示的$0の申告実績がある」ケースに限定して
+  抽出しており、この3件（過去は非ゼロの実額）は元々その25件の定義に該当
+  しない別カテゴリだった。GitHub Actionsによる自動データ更新でFY2025分の
+  annual_*.jsonが事前調査時点より新しくなったことで新たに顕在化したとみられる。
+  一次情報（10-K原本）での確認は未実施のため、warn_acknowledged.jsonへの
+  登録は行わず「🆕未確認」のまま残し、CASH-TAG-MISSING-1と同様に別途
+  調査が必要な事項としてBACKLOG.mdへの新規登録要否を次回判断する
+  （本タスクのスコープ外のため、本コミットでは対応しない）。
+- **pytest**: 390件中388 passed・2 failed（`test_iv_formula.py`のMSFT/NVDA、
+  [[TEST-STALE-IV-1]]として既知・登録済みの事前確認済み失敗のみ。新規failなし）
+- **既存チェックへの影響**: WARN-25はCPRT/GEV/HEI/SITM/SOFIの5件（本タスクと
+  無関係、CASH-TAG-MISSING-1由来。前回セッション時点の2件〈SITM/SOFI〉から
+  増えているのは、GitHub Actions自動更新でCPRT/GEV/HEIのannual_2025.jsonが
+  新たに追加されデータが進んだためで、CHECK-25コード自体は本タスクで一切
+  変更していない）。WARN-21/22/23等の既存チェックの発火内容にも変化なし。
+
+#### 対応方針として先送りした事項
+[[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（生涯フェードアウト25件への履歴フォール
+バックロジック本体、「過去に明示的$0実績があれば真のゼロと推定表示する」設計）
+は、本タスクのスコープ外として引き続き別タスクのまま残す。理由: WARN-26は
+「検知」のみを目的とし、`warn_acknowledged.json`による事前登録で当面の
+アラート疲れは回避できているため、フォールバック表示ロジック自体の実装
+（残高推定・report.txt表示形式・信頼度低下の年数閾値等の設計論点）を今回
+同時に着手する必然性がない。将来的にwarn_acknowledged.json台帳が肥大化する
+場合や、フェードアウト銘柄の推定残高をreport.txtに明示したいという別の
+ニーズが生じた場合に、独立したタスクとして着手する。
+
+#### 着手条件（消滅・完了）
+なし（実装完了）
+
+---
+
 ### ✅ [NVDA-STI-TAG-UNIDENTIFIED-1] short_term_investmentsのNVDAは対応タグ未特定（対応方針①採用・cross_filing_tags機構で実装完了）
 **優先度:** 中〜高
 **分類:** アーキテクチャ / データ品質ゲート
