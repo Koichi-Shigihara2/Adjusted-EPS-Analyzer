@@ -638,6 +638,13 @@ python -c "import yfinance as yf; t = yf.Ticker('[TICKER]'); print(t.info.get('c
 #     指示書に理由が書かれていない場合は、Claude Codeから
 #     「登録理由が指示書に見当たりません。記録すべき経緯を教えてください」と
 #     確認を求め、回答を得てから記録する。
+#
+# 【暫定注意（[[ANOMALY-PATTERN-CATALOG-1]]実装までの措置・2026-07-19追加）】
+# 新規銘柄登録時は、BACKLOG.md [[ANOMALY-PATTERN-CATALOG-1]]記載の
+# 既知パターン（型A：候補タグのfreshness収束問題等）に該当しないか
+# 手動確認すること。特にBS項目（short_term_investments等）でNoneや
+# 既存値との齟齬が疑われる場合は、TICKER_RESTRICTIONSの適用要否を
+# 個別に検討すること。
 
 # Step 1: SEC データ取得
 python common/sec_data/update.py [TICKER]
