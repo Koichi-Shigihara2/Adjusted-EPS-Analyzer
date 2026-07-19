@@ -37,9 +37,9 @@ def _q(period_end, diluted_shares_used, form="10-Q"):
 
 class TestLoadSplitHistory:
     def test_yaml_contains_all_registered_tickers(self):
-        """config/split_history.yaml に本タスクで登録した7銘柄が存在すること"""
+        """config/split_history.yaml に本タスクで登録した8銘柄が存在すること"""
         history = pl.load_split_history()
-        for ticker in ("NVDA", "AVGO", "CPRT", "WMT", "LRCX", "CELH", "KLAC"):
+        for ticker in ("NVDA", "AVGO", "CPRT", "WMT", "LRCX", "CELH", "KLAC", "TSLA"):
             assert ticker in history, f"{ticker} not registered in split_history.yaml"
 
 
@@ -135,6 +135,22 @@ class TestApplySplitAdjustmentsRealData:
         result = pl.apply_split_adjustments("CELH", quarters, self.history)
         by_end = {r["period_end"]: r for r in result}
         assert by_end["2022-03-31"]["diluted_shares_used"] == 234_867_000
+
+    def test_tsla_single_stuck_quarter_corrected(self):
+        """TSLAは2021-06-30の1四半期のみが恒久固着（追加登録、Koichiさん
+        承認済みの対象6銘柄の1つだが当初の登録依頼で記載漏れだったため
+        追加登録した）"""
+        quarters = [
+            _q("2021-06-30", 1_119_000_000),
+            _q("2021-09-30", 3_369_000_000),
+            _q("2022-03-31", 3_472_000_000),
+            _q("2022-06-30", 3_464_000_000),
+            _q("2022-09-30", 3_468_000_000, form="10-K"),
+        ]
+        result = pl.apply_split_adjustments("TSLA", quarters, self.history)
+        by_end = {r["period_end"]: r for r in result}
+        assert by_end["2021-06-30"]["diluted_shares_used"] == 3_357_000_000
+        assert by_end["2021-09-30"]["diluted_shares_used"] == 3_369_000_000  # unchanged
 
     def test_klac_no_post_split_data_is_safe_noop(self):
         """KLACは事前登録（2026-06-12）だが、post-split四半期データが

@@ -98,6 +98,25 @@
 [[SPLIT-REALTIME-GAP-REVERSE-1]]として新規登録）。本タスクのスコープ外のため
 実装は行っていない。
 
+#### 追記（2026-07-20・TSLA追加登録）
+初回の登録依頼書作成時、TSLAがKoichiさん承認済みの対象6銘柄（AVGO/CPRT/WMT/
+LRCX/CELH/TSLA）の1つであったにもかかわらず記載漏れとなっていたため、
+追加登録した。
+
+`config/split_history.yaml`にTSLA（date="2022-08-25", ratio=3, TSLA 3-for-1
+株式分割）を追加。2021-06-30の1四半期（1,119,000,000→3,357,000,000）のみが
+恒久固着していたため、この1四半期を遡及補正。
+
+検証結果:
+1. TSLAで新旧比較し、2021-06-30の1四半期が正しく補正されることを実データ
+   （`apply_split_adjustments()`）およびSEC実データでの`pipeline.run()`実行
+   後の永続化ファイルの両方で確認
+2. 他の登録済み7銘柄（NVDA/AVGO/CPRT/WMT/LRCX/CELH/KLAC）・対象外銘柄には
+   一切影響がないことを確認（`git status`でTSLA関連ファイルとsummary.json
+   以外に変更なし）
+3. pytest 422 passed（既知2件失敗のみ、新規失敗なし。
+   `tests/test_split_history_adjustments.py`にTSLA用テスト1件追加）
+
 ---
 
 ## 2026-07-19（完了）
