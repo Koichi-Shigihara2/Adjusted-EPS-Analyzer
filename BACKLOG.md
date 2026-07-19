@@ -2234,16 +2234,61 @@ KLAC/TER/V/SOFIは[[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]でSOFI-DATA-1の
 系タグはBS計上額$51,951Mを約24%（$12.4B）過小評価しており、差額に対応
 するタグをXBRL全項目照合したが登録時点調査では特定できなかった。
 
-#### 対応方針（未確定）
+#### 個別調査結果の追記（2026-07-19、同日別セッション）
+- **前提訂正**: $51,951Mは登録時点の記載では「FY2025」としていたが、
+  正しくは**FY2026（会計年度末2026-01-25）**。NVDAの会計年度末は1月末。
+  FY2025（2025-01-26期）の`short_term_investments`は現状$34,621,000,000
+  でBS「Marketable securities」欄と完全一致しており過小評価は発生して
+  いない。**過小評価が発生しているのはFY2026（直近年度）のみで、現状値は
+  `None`（完全欠損）**というのが正確な症状（登録時点の「タグはあるが
+  過小評価」という記載は不正確だった）
+- **原因**: FY2026第1四半期に、非上場だった投資先1社が上場したことで
+  保有株式が非上場株式からmarketable securities区分へ再分類された
+  （10-K Note 7脚注(1)に明記）。この結果、従来（FY2023〜2025）は
+  債券のみで構成されていた「Marketable securities」$51,951Mの内訳に、
+  新たに上場株式の公正価値$17,726M（うちロックアップなしの$12,886M
+  分がMarketable Securities区分、ロックアップ残存の$4,840M分は
+  Other Assets区分〈非流動〉）が混入した
+- **候補タグ**: 債券部分`AvailableForSaleSecuritiesDebtSecurities`
+  （$39,520M、KLACの正解タグと同一名）＋株式部分`EquitySecuritiesFvNi`
+  （$12,886M）を合算すると$52,406Mとなり、実額$51,951Mとは**0.9%
+  （$455M）乖離**する。かつ`EquitySecuritiesFvNi`はNVDAの当該10-K
+  本体では一切申告されておらず、**後続の10-Q（2026-05-20提出、
+  Q1 FY2027）が比較年度の期末値として遡及開示した際に初めて登場する**
+  （10-K本体で申告されているのは`EquitySecuritiesFVNINoncurrent`＝
+  $22,251Mのみだが、これは本件の残差とは別の集計値で一致しない）
+- FY2023〜2025は`MarketableSecuritiesCurrent`単一タグで安定して完全
+  一致していた（同タグは2025年10-Q・Q3 FY2026〈2025-10-26〉までは
+  申告されていたが、FY2026 10-K〈2026-02-25提出〉から申告が停止した）
+- **型分類の所見**: [[ANOMALY-PATTERN-CATALOG-1]]の型A（候補集合＋
+  freshness収束型）にも型B（非分類BS・近似値許容型）にも該当しない
+  新パターンと判断。**型C（仮称）: 資産クラス変化・当年度未タグ化型**
+  ─ 症状: 単発の企業イベント（投資先のIPO等）でBS計上額の構成が質的
+  に変化し、同時に従来タグの申告も停止する。新たに混入した資産クラスは
+  変化が発生した当該10-K自体では明確なXBRL概念タグを持たず、後続の
+  四半期報告で比較年度開示として遡及的に登場する（それも完全一致は
+  しない）。根本原因は一時的・単発的な企業イベントとfilerのタグ付け
+  未整備が重なったものであり、型A/Bのような恒常的な申告慣行・BS構造の
+  制約ではない可能性が高い。他に同型が疑われる銘柄は現時点で未確認
+  （[[BS-FIELD-NONE-TRANSITION-DETECT-1]]参照：本件の発見経緯自体、
+  系統的検知ではなく偶然の個別調査によるものだった）
+
+#### 対応方針（未確定・要判断）
 KLAC/TER/V/SOFIで確立したticker_restrictions（`sti_concept`）方式を
-そのまま適用できる見込み。NVDAの10-K原本（Note等の内訳開示）・
-company_facts.jsonの全タグ照合で正しいタグを特定してから、
-`quarterly.py`の`TICKER_RESTRICTIONS["NVDA"]`へ`sti_concept`キーを
-追加し、`parser.py`側の実装済みロジック（`field_name ==
-"short_term_investments" and _sti_concept_override`）をそのまま適用する。
+そのまま適用できる見込み、としていた登録時点の想定は上記調査結果に
+より覆った。単一タグでの完全解消は不可能なため、以下いずれかを選択する
+必要がある：
+① 債券タグ＋株式タグの合算による近似値（実額比+0.9%）を採用し、
+   [[ANOMALY-PATTERN-CATALOG-1]]の型Bと同様にreport.txt等で残差を
+   明示する
+② FY2027 10-K（2027年2月頃提出見込み）でfilerのタグ付けが整備され
+   単一/合算タグで正確に捕捉できるようになるかを再確認してから対応する
+   （型Aへ収束する可能性がある）
+③ 当面`short_term_investments=None`のまま許容し、Net Debt計算等への
+   影響を個別確認する
 
 #### 着手条件
-なし
+なし（上記3択の方針判断待ち）
 
 ---
 
@@ -4931,6 +4976,26 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
   〈RCATのsector誤分類、Electronics_General設定だがyfinance実態は
   Aerospace & Defense〉を[[RCAT-SECTOR-MISCLASSIFICATION-1]]として
   新規登録。BACKLOG_DONE.mdへ全文移動済み）
+- [[ANOMALY-PATTERN-CATALOG-1]]新規登録（型A「候補集合＋freshness
+  収束型」を確定〈実例: KLAC/TER/V/SOFI〉、型B「非分類BS・近似値
+  許容型」は予約のみで実例なし。REGISTER-FLOW-REDESIGN-1・
+  PREFLIGHT-CHECK-1と統合的に設計する方針。CLAUDE_CODE_START.md
+  Step 0.5付近に実装までの暫定注意書きも追加）
+- [[NVDA-STI-TAG-UNIDENTIFIED-1]]個別調査完了（$12.4B差額の正体は
+  FY2026〈2026-01-25期〉に新規上場した投資先の株式評価額。従来型A
+  〈ticker_restrictions単一タグ適用〉で解決できると見込んでいたが、
+  債券タグ＋株式タグを合算しても実額と0.9%乖離し、かつ株式タグは
+  当該10-K本体では未申告〈後続10-Qの比較開示でのみ登場〉と判明。
+  型Aにも型Bにも該当しない新パターン「型C: 資産クラス変化・
+  当年度未タグ化型」として整理したが、対応方針〈①近似値許容
+  ②翌年度10-K待ち③当面None許容〉は未確定のまま次回持ち越し）
+- [[BS-FIELD-NONE-TRANSITION-DETECT-1]]新規登録（NVDA調査の過程で、
+  XBRLタグ申告停止による完全欠損を検知する仕組みがBS項目に一切
+  存在せず、実例6件〈SOFI-DATA-1・AVGO型14銘柄・LLY-CAPEX-STALE-1・
+  CASH-TAG-MISSING-1〈未解決〉・KLAC/TER/V・NVDA〉すべてが偶然発見
+  だったと判明。「前年有値→当年None」遷移を検知するWARN-26案として
+  登録。[[ANOMALY-PATTERN-CATALOG-1]]の予防側・[[FY52WEEK-BS-NULL-
+  SILENT-1]] Phase B/Cと補完関係）
 
 次セッションの筆頭候補（優先順・各項目の優先度欄を確認の上で確定）：
 ~~① [[GROWTH-VERDICT-SEQUENCING-BUG-1]]~~ ✅ 2026-07-19完了。
@@ -4941,23 +5006,30 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    （KLAC/TER/V/SOFIの4銘柄）。NVDAのみ[[NVDA-STI-TAG-UNIDENTIFIED-1]]
    として分離継続。詳細はBACKLOG_DONE.md参照
 ① [[NVDA-STI-TAG-UNIDENTIFIED-1]]（優先度：中〜高・着手条件なし・
-   short_term_investments $12.4B差額の対応タグ未特定。KLAC/TER/V/SOFIで
-   確立したticker_restrictions方式をそのまま適用できる見込み）
-② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
+   型C「資産クラス変化・当年度未タグ化型」と判明済み〈個別調査完了、
+   BACKLOG.md本体エントリに調査結果を追記済み〉。対応方針は①候補タグ
+   合算の近似値許容〈実額比+0.9%〉②FY2027 10-K提出〈2027年2月頃〉を
+   待ちfiler側のタグ整備状況を再確認③当面short_term_investments=None
+   を許容、のいずれかをKoichiさんに判断いただく段階）
+② [[BS-FIELD-NONE-TRANSITION-DETECT-1]]（優先度：中〜高・着手条件
+   なし・実装未着手。`report_consistency_check.py`へWARN-26として
+   「前年有値→当年None」遷移検知を新設する案。実装コストは低〜中
+   と見積もり済み）
+③ [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
    着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
-③ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
+④ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
    `--skip-risk`使用の都度再発しうるため早めの対応が望ましい）
-④ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
+⑤ [[WST-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
    `beta_config.json`のsector値修正のみで実装単純。
    [[RCAT-SECTOR-MISCLASSIFICATION-1]]との統合要否も含めて次回判断）
-⑤ [[RCAT-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
+⑥ [[RCAT-SECTOR-MISCLASSIFICATION-1]]（優先度：中・着手条件なし・
    `beta_config.json`のsector値修正のみで実装単純。分類修正しても
    growth_sanityのwarning自体は解消しない旨に留意）
-⑥ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（優先度：中・着手条件なし・
+⑦ [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（優先度：中・着手条件なし・
    生涯フェードアウト25件への履歴フォールバック設計、年数閾値の設計要）
-⑦ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
+⑧ [[SPLIT-REALTIME-GAP-1]]（解消可能・再分類済み・split_history.yaml
    個別登録方式で実装コスト低、優先度：低〜中）
-⑧ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
+⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
    [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
    [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]・
