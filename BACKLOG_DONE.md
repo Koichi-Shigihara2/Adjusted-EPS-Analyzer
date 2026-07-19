@@ -6404,4 +6404,115 @@ UP-C構造（上場会社がLLC管理会社になる形態）ではXBRL株式数
 - optimism_bias_warningのUIコードはtail/index.html L1252-1253に実装済み
 - predictions/データが生成されれば自動表示される設計になっている
 - 数値的EWM係数補正は過剰設計と判断
+
+---
+
+### [GROWTH-VERDICT-SEQUENCING-BUG-1] growth_sanity.verdictがDCF再計算前の初期計算値を検証し続けるシーケンシングバグ
+**優先度:** 高
+**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19
+**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・本ファイル参照）のMO型iv対応時、
+verdict≠PLAUSIBLE全32銘柄の原因分析
+
+#### 問題
+`pipeline.py::_save_result()`は`check_growth_sanity()`を、`segment_configured=False`
+かつ`recommended_g`算出可能な銘柄向けの再計算（条件付き発火、`recommended_g`による
+`calculate_pt()`再実行、`pipeline.py:637-669`）の**前**に1回だけ呼び出す。
+`growth_sanity`（`verdict`・`warnings`・`phase1_growth`）はこの初期計算の値
+（`fcf_cagr`floor等、しばしば非現実的な値）を検証したまま再計算では
+再実行されず、`latest_data`にはそのまま保存される。一方`growth.rate`
+（実際にDCF・IVに使われる値）は再計算の`recommended_g`（segment_weighted
+ラベルで保存）に置き換わる。結果、**`growth_sanity`が検証している成長率と
+実際にDCFへ採用されている成長率が別物になる**。TANUKI SCOREのGROWTH_PREMIUM
+判定（`pipeline.py:487`、`_ttm_g = growth_sanity.phase1_growth`参照）も
+同じ`_growth_sanity`辞書を参照するため、同一バグの影響を受けていた。
+
+#### 実データでの確認（2026-07-19時点、verdict≠PLAUSIBLE 32銘柄の原因分析時点）
+`phase1_growth_auto_adjusted=True`（再計算が発火した）銘柄24件
+（ABBV/ASTS/BKNG/BROS/CWAN/DELL/ELF/ENTG/FICO/GEV/HQY/HWM/JNJ/KULR/LLY/
+LYFT/MRVL/PEP/RDW/SITM/TER/**VZ**/WMT/XOM）について、実際に採用されている
+`recommended_g`で判定ロジックを再計算したところ、**16銘柄がPLAUSIBLE
+（またはより軽い区分）へ改善**した：
+- PLAUSIBLEへ改善（14件）: ABBV・DELL・ENTG・FICO・GEV・HQY・HWM・JNJ・
+  LYFT・MRVL・PEP・RDW・**VZ**・WMT
+- AGGRESSIVE→REVIEWへ改善（2件）: CWAN・SITM
+- 残り（型iii相当、別途[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]等で個別判断）:
+  ASTS/BKNG/BROS/ELF/KULR/LLY/TERの7件は実際のレートでも警告が残ることを
+  当時確認していたが、後日実装時点での61銘柄全数シミュレーション（下記）で
+  XOMも同一パターンに該当することが判明し、**8件**（ASTS/BKNG/BROS/ELF/
+  KULR/LLY/TER/XOM）が正しい件数と確定した（登録時点の記載漏れ）。
+
+**VZ（Classification: BUY、乖離率+97.7%）が本バグの典型的な実害例**。
+verdict算出時のphase1_growth=15.0%（fcf_cagr floor）は業界平均比10.4倍・
+過去実績比10.0倍でAGGRESSIVE判定だが、実際にDCFで使われている
+`recommended_g=1.44%`（業界平均とほぼ同値）で再評価すれば0警告＝
+PLAUSIBLEになる。**VZのAGGRESSIVE判定は完全なバグ由来の誤検知**。
+
+ENTG/GEV/HQYが2026-07-12以降REVIEW→AGGRESSIVEへ悪化していた事象も
+本バグが原因（初期計算の中間値が変化したため）と判明した。
+
+#### 対応内容（2026-07-19実装）
+再計算（`pipeline.py:637-669`）が成功した直後に、実際にDCF・IVへ採用された
+`recommended_g`を基準に`check_growth_sanity()`を再実行し、`verdict`・
+`warnings`・`signals`・`phase1_growth`・`floor_hit`のみを更新する方式
+（対応方針の「案」を採用）。`recommended_g`・`growth_model`・
+`growth_model_reason`等の「どう導出されたか」を示すフィールドは初期計算
+パスの値のまま維持し、report.txtの「推奨成長率内訳」表示との不整合が
+生じないようにした。
+
+- `pipeline.py:487`（TANUKI SCORE GROWTH_PREMIUM判定の`_ttm_g`）は、
+  `_growth_sanity`辞書を共有参照しているため追加コード不要で同時に是正
+  （コメントのみ追記）
+- report.txt「元成長率」表示は、修正後`growth_sanity.phase1_growth`が
+  採用値と同値になるため、`extra["phase1_growth_original"]`（初期計算値、
+  修正の影響を受けない）を参照するよう分離
+- floor_hit判定は再計算後`growth.source`が`"segment_weighted"`になるため、
+  `growth_source=="fcf_cagr"`条件が自動的に不成立となり整合を確認
+
+#### 実装前の安全確認（全母集団シミュレーション、CHAT_RULES.md記載手法）
+`phase1_growth_auto_adjusted=True`61銘柄全件について、既存latest.jsonの
+データとPipelineの読み取り専用ヘルパーメソッドのみを使い、実際にpipeline.py
+を再実行せずオフラインで新旧verdictを比較。結果は以下の通りで、実データ
+再生成後の結果と完全一致した：
+
+| 区分 | 件数 | 銘柄 |
+|---|---|---|
+| verdict改善 | 17件 | ABBV・CWAN・DELL・ENTG・FICO・GEV・HQY・HWM・JNJ・LYFT・MO・MRVL・PEP・RDW・SITM・**VZ**・WMT |
+| verdict悪化 | 3件 | ALAB・IONQ・RCAT（PLAUSIBLE→REVIEW） |
+| 変化なし（非PLAUSIBLEのまま） | 8件 | ASTS・BKNG・BROS・ELF・KULR・LLY・TER・XOM |
+| TANUKI SCORE変化 | 1件 | CON（GROWTH_PREMIUM→TRIM） |
+
+**verdict悪化3件（ALAB/IONQ/RCAT）の個別調査結果**: 3銘柄とも
+`growth_model_audit.py`が既に把握している「CAGR_max>100%クランプ」対象
+銘柄（NVDA/ONDSと同型）で、初期計算値がたまたま15%floorに張り付いていた
+ため見かけ上PLAUSIBLEだったが、実際に採用されているrecommended_g（41〜
+55%）は業界平均の4〜5倍あり、本来warningが出るべきケース。業種分類は
+ALAB（Semiconductor、SEC SIC 3674と完全一致）・IONQ（Computers_Peripherals、
+Damodaranに量子コンピューティング相当の業種が存在しないための構造的限界）
+は概ね妥当。RCATのみbeta_config.json内部バケット（Electronics_General）が
+yfinance実態（Aerospace & Defense）と食い違っており、これは別途
+[[RCAT-SECTOR-MISCLASSIFICATION-1]]として新規登録した（ただし業種を
+Aerospace/Defenseに修正してもDamodaran g_ebitはより低くなり乖離は
+さらに拡大するため、本バグの悪化3件という結論自体には影響しない）。
+3銘柄とも修正前からTANUKI SCORE=WATCHで、verdict変化によるスコアへの
+実害はない。「誤ってマスクされていた警告の正しい表面化」と判断し実装を
+承認。
+
+#### 検証結果（2026-07-19、実データ再生成）
+61銘柄を`pipeline.py <tickers...> --skip-risk`で再生成し、シミュレーション
+結果と完全一致することを確認（改善17件・悪化3件・変化なし8件・
+TANUKI SCORE変化1件）。git diffで対象61銘柄（+tickers.json）以外に
+一切副作用がないことを確認。VZがPLAUSIBLEへ改善・CONがTRIMへ是正された
+ことを個別確認。`report_consistency_check.py` NG=0（既存の無関係な
+WARN55件のみ）。`pytest tests/` 377 passed（既知の
+[[TEST-STALE-IV-1]] MSFT/NVDA 2件を除き新規失敗なし）。
+
+#### 未着手として残した項目
+- 8銘柄（ASTS/BKNG/BROS/ELF/KULR/LLY/TER/XOM）の型iii（ハイパーグロースと
+  成熟業種平均のミスマッチ）としての扱いは[[GROWTH-STRUCTURAL-MISMATCH-
+  CANDIDATES-1]]に委ねる
+- growth_sanityのprovenance構造による表示再設計（「初期計算の検証結果」
+  と「採用値ベースの検証結果」を両方保持しreport.txt/latest.jsonで区別
+  表示する別案）は別途改めて依頼予定
 - AIプロンプト経由の定性的楽観バイアス警告（quarterly_review_generator.py）で十分

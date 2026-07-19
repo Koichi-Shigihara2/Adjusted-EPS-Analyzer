@@ -1040,61 +1040,6 @@ LRCX・XOMでも同型の誤上書き（false positive）を検出・解消し�
 
 ## 優先度：高（早急に対応）
 
-### [GROWTH-VERDICT-SEQUENCING-BUG-1] growth_sanity.verdictがDCF再計算前の1回目パス値を検証し続けるシーケンシングバグ
-**優先度:** 高
-**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
-**登録日:** 2026-07-19
-**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）のMO型iv対応時、
-verdict≠PLAUSIBLE全32銘柄の原因分析
-
-#### 問題
-`pipeline.py::_save_result()`は`check_growth_sanity()`を、`segment_configured=False`
-かつ`recommended_g`算出可能な銘柄向けの2回目DCF再計算（`recommended_g`による
-`calculate_pt()`再実行、`pipeline.py:637-669`）の**前**に1回だけ呼び出す。
-`growth_sanity`（`verdict`・`warnings`・`phase1_growth`）はこの1回目パスの値
-（`fcf_cagr`floor等、しばしば非現実的な値）を検証したまま2回目パスでは
-再実行されず、`latest_data`にはそのまま保存される。一方`growth.rate`
-（実際にDCF・IVに使われる値）は2回目パスの`recommended_g`（segment_weighted
-ラベルで保存）に置き換わる。結果、**`growth_sanity`が検証している成長率と
-実際にDCFへ採用されている成長率が別物になる**。
-
-#### 実データでの確認（2026-07-19時点、verdict≠PLAUSIBLE 32銘柄の内訳）
-`phase1_growth_auto_adjusted=True`（2回目パスが発火した）銘柄24件
-（ABBV/ASTS/BKNG/BROS/CWAN/DELL/ELF/ENTG/FICO/GEV/HQY/HWM/JNJ/KULR/LLY/
-LYFT/MRVL/PEP/RDW/SITM/TER/**VZ**/WMT/XOM）について、実際に採用されている
-`recommended_g`で判定ロジックを再計算したところ、**16銘柄がPLAUSIBLE
-（またはより軽い区分）へ改善**した：
-- PLAUSIBLEへ改善（14件）: ABBV・DELL・ENTG・FICO・GEV・HQY・HWM・JNJ・
-  LYFT・MRVL・PEP・RDW・**VZ**・WMT
-- AGGRESSIVE→REVIEWへ改善（2件）: CWAN・SITM
-- 残り8件（ASTS/BKNG/BROS/ELF/KULR/LLY/TER）は実際のレートでも警告が残る
-  （型iii相当、別途[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]等で個別判断）
-
-**VZ（Classification: BUY、乖離率+97.7%）が本バグの典型的な実害例**。
-verdict算出時のphase1_growth=15.0%（fcf_cagr floor）は業界平均比10.4倍・
-過去実績比10.0倍でAGGRESSIVE判定だが、実際にDCFで使われている
-`recommended_g=1.44%`（業界平均とほぼ同値）で再評価すれば0警告＝
-PLAUSIBLEになる。**VZのAGGRESSIVE判定は完全なバグ由来の誤検知**。
-
-ENTG/GEV/HQYが2026-07-12以降REVIEW→AGGRESSIVEへ悪化していた事象も
-本バグが原因（1回目パスの中間値が変化したため）と判明した。
-
-#### 対応方針（未確定・次回セッションで設計判断）
-- 案: 2回目パス（recommended_g auto-adjustment）発火後に`growth_sanity`を
-  再実行し、実際に採用された`growth.rate`で`verdict`・`warnings`を
-  再評価する
-- 別案: `growth_sanity`に「1回目パスの検証結果」と「採用値ベースの
-  検証結果」を両方保持し、report.txt/latest.jsonで区別して表示する
-  （情報を失わない設計、[[TRUST-SUMMARY-EPIC-1]]の方針の骨子②と整合）
-- 8銘柄（ASTS/BKNG/BROS/ELF/KULR/LLY/TER）は再評価後も警告が残るため、
-  型iii（ハイパーグロースと成熟業種平均のミスマッチ）としての扱いを
-  別途検討する必要がある（[[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]参照）
-
-#### 着手条件
-なし
-
----
-
 ### [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
 **状態:** [[ARCH-DATA-1]]へ統合済み（2026-07-16）
 
@@ -1547,6 +1492,16 @@ ONDS・HON・ASTS（LOARも同型だがsegment_configured=False）で、実際�
   fcf_cagr cap（50%）のまま。上場直後で年次実績が蓄積されていないための
   一時的な制約
 
+**追記（2026-07-19、[[GROWTH-VERDICT-SEQUENCING-BUG-1]]完了時点）**:
+`segment_configured=False`側（本バグの修正で採用値ベースの正しい検証に
+是正された）でも同型の構造的ミスマッチが8銘柄で確認されている：
+ASTS・BKNG・BROS・ELF・KULR・LLY・TER・XOM（再判定後も業界平均比の
+乖離でwarningが残る）。加えてALAB・IONQ・RCATの3銘柄も、実際に採用
+されているrecommended_g（decayモデルのCAGR_max>100%クランプ経由）が
+業界平均の4〜5倍という同型パターンに該当することが判明（詳細は
+BACKLOG_DONE.md「[GROWTH-VERDICT-SEQUENCING-BUG-1]」参照）。統合検討の
+際はこれらsegment_configured=False側の候補も対象に含めること。
+
 #### 対応方針（未確定）
 [[TRUST-SUMMARY-EPIC-1]]の方針の骨子②（構造的限界の可視化）の対象候補として
 検討する。FCF-CONVRATE②と同様、Classificationは書き換えず「この銘柄の
@@ -1555,7 +1510,8 @@ ONDS・HON・ASTS（LOARも同型だがsegment_configured=False）で、実際�
 考えられる。HONのみは設定値見直しの余地があり性質が異なるため別途判断。
 
 #### 着手条件
-なし（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]の対応方針確定後に統合検討）
+なし（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]は2026-07-19完了済み。
+統合検討に着手可能）
 
 ---
 
@@ -2098,6 +2054,41 @@ West Pharmaceutical Services（WST、医薬品送達デバイス・パッケー�
 （例: "Healthcare Products"やDrugs関連の製造業カテゴリ）へ修正する。
 修正時はWACC/β計算等、`sector`値を参照する他の計算経路（growth_sanity
 以外）への影響も確認すること。
+
+#### 着手条件
+なし
+
+---
+
+### [RCAT-SECTOR-MISCLASSIFICATION-1] RCATの業種がElectronics_Generalに設定、yfinance実態（Aerospace & Defense）と不一致
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-19
+**発見:** [[GROWTH-VERDICT-SEQUENCING-BUG-1]]対応中、verdict悪化3銘柄
+（ALAB/IONQ/RCAT）の個別調査
+
+#### 内容
+Red Cat Holdings（RCAT、軍用小型ドローン製造・DoD Blue sUAS認定
+サプライヤー）が`config/beta_config.json`で`sector: "Electronics_General"`
+に分類され、Damodaran「Electronics (General)」（g_ebit=13.8%）と比較
+されているが、`latest.json`の`components.industry`（yfinance由来）は
+明確に"Aerospace & Defense"を示している。[[WST-SECTOR-MISCLASSIFICATION-1]]
+と同型の、内部sectorバケットとyfinance実態の不一致。
+
+なおSEC EDGAR公式SIC（7372「Services-Prepackaged Software」）は旧社名
+（TimefireVR）時代の残存タグで現業態と無関係なため、SIC情報は参考にならない。
+
+**業種分類を"Aerospace_Defense"（Damodaran「Aerospace/Defense」
+g_ebit=10.9%）へ修正しても、現在Electronics (General)の13.8%より
+むしろ低いため、recommended_g（44.0%）との乖離比率は3.2倍→4.0倍へ拡大し、
+growth_sanityのREVIEW警告は解消しない**（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]
+完了時の個別調査で確認済み。BACKLOG_DONE.md参照）。分類修正はデータ品質
+としては妥当だが、RCATのverdict自体を改善する対応ではない。
+
+#### 対応方針（未確定）
+`beta_config.json`のRCATエントリの`sector`値を"Aerospace_Defense"または
+"Space_Defense"へ修正する。修正時はWACC/β計算等、`sector`値を参照する
+他の計算経路（growth_sanity以外）への影響も確認すること。
 
 #### 着手条件
 なし
@@ -4770,7 +4761,10 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ① [[GROWTH-VERDICT-SEQUENCING-BUG-1]]（優先度：高・着手条件なし・
    growth_sanityが1回目パス〈override前〉の値を検証し続けるシーケンシング
    バグ。24銘柄に影響、うちVZはBUY判定の実害あり。対応方針の骨子は
-   登録時点で提示済み）
+   登録時点で提示済み）**【2026-07-19完了・BACKLOG_DONE.md参照。
+   「1回目パス」は正式名称「初期計算」、「2回目パス」は「再計算
+   （条件付き発火）」。「24銘柄」は登録時点の暫定集計で、実装時点の
+   正確な内訳は完了後エントリの通り改善17件・悪化3件・変化なし8件】**
 ② [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（優先度：中〜高・着手条件なし・
    KLAC/NVDA/SOFI/TER/V 5銘柄の銘柄別override設計。
    SOFI-DATA-1の`ltdebt_concept`方式を参考にできる見込み）
