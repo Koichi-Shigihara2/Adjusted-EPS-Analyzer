@@ -11,7 +11,7 @@ from typing import Optional, Dict, Any, List
 from .config import get_ticker_info
 from .quarterly import TICKER_RESTRICTIONS
 from .tag_definitions import TAG_CANDIDATES
-from .utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date
+from .utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date, _day_of_year
 from .fetcher import load_submissions
 
 
@@ -335,6 +335,9 @@ class SECParser:
         _accn_reportdate = accn_reportdate or {}
         _fy_collisions: List[Dict[str, Any]] = []
         _fy_tag_mismatches: List[Dict[str, Any]] = []
+        # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 本人データ側と既存（フォールバック）
+        # 側の生fyタグが異なるまま同一年度バケツで競合したケースを記録する
+        _fye_boundary_collisions: List[Dict[str, Any]] = []
 
         # 全項目を抽出
         extracted = {}
@@ -361,6 +364,7 @@ class SECParser:
                 field_name=field_name, collisions_out=_fy_collisions,
                 anchor_month=anchor_month, anchor_day=anchor_day,
                 fy_mismatches_out=_fy_tag_mismatches,
+                boundary_collisions_out=_fye_boundary_collisions,
             )
 
         # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tagsに明示登録された
@@ -378,6 +382,10 @@ class SECParser:
         # 衝突0件でも毎回書き込む（IOT/AVGO/MRVLの化石ファイル問題の再発防止。
         # 一度検知された衝突が後日解消された場合に古いログが残り続けることを防ぐ）
         self._save_fy_collision_log(ticker, _fy_collisions)
+
+        # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 0件でも毎回書き込む（同上の化石
+        # ファイル対策と同じ理由）
+        self._save_fye_boundary_collision_log(ticker, _fye_boundary_collisions)
 
         # 年次データを集約
         years = self._get_available_years(extracted)
@@ -399,7 +407,8 @@ class SECParser:
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
                          field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None,
                          anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
-                         fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                         fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
+                         boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
         指定されたXBRLキーから値を抽出
 
@@ -417,6 +426,9 @@ class SECParser:
                               determine_fiscal_year()にそのまま渡す
             fy_mismatches_out: 採用エントリのfyタグと年度バケツキーの不一致を記録する
                               リスト（ARCH-DATA-1ステージ3: fyタグ裏取り、呼び出し元で集約）
+            boundary_collisions_out: 本人データ側と既存（フォールバック）側の生fyタグが
+                              異なるまま同一年度バケツで競合したケースを記録するリスト
+                              （FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1、呼び出し元で集約）
 
         Returns:
             dict: {
@@ -429,12 +441,14 @@ class SECParser:
                                                 accn_reportdate=accn_reportdate, field_name=field_name,
                                                 collisions_out=collisions_out,
                                                 anchor_month=anchor_month, anchor_day=anchor_day,
-                                                fy_mismatches_out=fy_mismatches_out)
+                                                fy_mismatches_out=fy_mismatches_out,
+                                                boundary_collisions_out=boundary_collisions_out)
         return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month,
                                                     accn_reportdate=accn_reportdate, field_name=field_name,
                                                     collisions_out=collisions_out,
                                                     anchor_month=anchor_month, anchor_day=anchor_day,
-                                                    fy_mismatches_out=fy_mismatches_out)
+                                                    fy_mismatches_out=fy_mismatches_out,
+                                                    boundary_collisions_out=boundary_collisions_out)
 
     def _find_entry_by_end_date(self, us_gaap: dict, tag: str, end_date: str,
                                  forms: tuple) -> Optional[Dict[str, Any]]:
@@ -750,6 +764,62 @@ class SECParser:
         return self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
                                               collisions_out, anchor_month, anchor_day)
 
+    # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 真の境界衝突（決算期変更）とみなす
+    # 最小の(月,日)循環距離。common/sec_data/fye_change_candidate_scan.py の
+    # MIN_CLUSTER_DISTANCE_DAYSと同じ値を使い、判定基準を一致させる。
+    _BOUNDARY_COLLISION_MIN_ANCHOR_DISTANCE_DAYS = 30
+
+    @staticmethod
+    def _fiscal_anchors_far_apart(end_date_a: str, end_date_b: str) -> bool:
+        """
+        2つのend_dateの(月,日)のみを比較し、暦年をまたぐ循環距離が
+        _BOUNDARY_COLLISION_MIN_ANCHOR_DISTANCE_DAYSを超えるか判定する。
+
+        「生fyタグが異なる・end_dateも異なる」だけでは不十分で、ADSK/AVAV/CRM/
+        CAKE等の固定決算日企業では「同一の(月,日)・隣接する暦年」の組み合わせが
+        頻出する（filer側のfyタグが実際の期間より1年ずれるWARN-23既知パターン。
+        例: end=2011-01-31/fy=2010とend=2012-01-31/fy=2011が同一年度バケツで
+        競合するが、これは決算期変更ではなく単なるfyタグの年ズレ）。
+        本関数は(月,日)のみを見て「そもそも決算日そのものが動いたか」を判定し、
+        同一の(月,日)（52/53週の前後変動込み）は除外する。
+        """
+        try:
+            dt_a = datetime.strptime(end_date_a, "%Y-%m-%d")
+            dt_b = datetime.strptime(end_date_b, "%Y-%m-%d")
+        except ValueError:
+            return False
+        doy_a = _day_of_year(dt_a.month, dt_a.day)
+        doy_b = _day_of_year(dt_b.month, dt_b.day)
+        diff = abs(doy_a - doy_b)
+        circular_dist = min(diff, 366 - diff)
+        return circular_dist > SECParser._BOUNDARY_COLLISION_MIN_ANCHOR_DISTANCE_DAYS
+
+    @classmethod
+    def _is_boundary_collision(cls, existing_end: Optional[str], existing_fy_tag: Optional[int],
+                                own_end: str, own_fy_tag: Optional[int]) -> bool:
+        """
+        FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 既存（フォールバック採用済み）側と
+        本人データ候補側が「真の境界衝突」（決算期変更、RCAT型）とみなせるかを
+        判定する純関数。`_own_override_is_safe()`自体は変更せず、その呼び出し
+        前後で退避した既存側の情報と組み合わせて使う（_extract_values_merged/
+        _extract_values_best_candidate内の2箇所から呼び出される）。
+
+        判定条件（すべて満たす場合のみTrue）:
+        1. 既存側end_dateが存在する（フォールバックが実際に何かを採用済み）
+        2. 既存側fyタグが存在し、本人データ側fyタグと異なる
+        3. 既存側end_dateと本人データ側end_dateが異なる
+        4. 2つのend_dateの(月,日)が_fiscal_anchors_far_apart()で「十分離れている」
+           （ADSK/AVAV/CRM/CAKE等の「同一(月,日)・隣接暦年」パターン＝fyタグの
+           年ズレ〈WARN-23既知〉を除外するため）
+        """
+        if existing_end is None or existing_fy_tag is None:
+            return False
+        if existing_fy_tag == own_fy_tag:
+            return False
+        if existing_end == own_end:
+            return False
+        return cls._fiscal_anchors_far_apart(existing_end, own_end)
+
     def _own_override_is_safe(self, year: int, own_end_date: str, fiscal_end_month: int,
                                annual_end_dates: Dict[int, str], annual_durations: Dict[int, Any],
                                annual_accn: Dict[int, str], accn_reportdate: Dict[str, str],
@@ -828,7 +898,8 @@ class SECParser:
                                 accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                 collisions_out: Optional[List[Dict[str, Any]]] = None,
                                 anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
-                                fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                                fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
+                                boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合）"""
         result = {"annual": {}, "quarterly": {}}
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
@@ -1017,10 +1088,29 @@ class SECParser:
             own_data = self._collect_own_data(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
                                                collisions_out, anchor_month, anchor_day)
             for year, (val, own_end, own_accn, own_filed, own_fy_tag) in own_data.items():
-                if self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
-                                               annual_durations, annual_accn, accn_reportdate,
-                                               anchor_month, anchor_day,
-                                               is_instant=field_name in self.INSTANT_FACT_FIELDS):
+                # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 上書き判定の前に既存
+                # （フォールバック採用済み）側のend_date/fyタグを退避しておく。
+                # _own_override_is_safe自体はannual_end_dates[year]を書き換えない
+                # ため、判定結果に関わらずここで取得した値が「上書き前の既存側」を表す。
+                _existing_end = annual_end_dates.get(year)
+                _existing_fy_tag = annual_fy_tag.get(year)
+                _existing_accn = annual_accn.get(year)
+                _override_ok = self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
+                                                            annual_durations, annual_accn, accn_reportdate,
+                                                            anchor_month, anchor_day,
+                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS)
+                if (boundary_collisions_out is not None
+                        and self._is_boundary_collision(_existing_end, _existing_fy_tag, own_end, own_fy_tag)):
+                    boundary_collisions_out.append({
+                        "field": field_name, "year": year,
+                        "own_data_side": {"fy_tag": own_fy_tag, "accn": own_accn, "end_date": own_end},
+                        "other_side": {
+                            "fy_tag": _existing_fy_tag, "accn": _existing_accn, "end_date": _existing_end,
+                            "is_own_data": bool(_existing_accn and accn_reportdate.get(_existing_accn) == _existing_end),
+                        },
+                        "override_applied": _override_ok,
+                    })
+                if _override_ok:
                     result["annual"][year] = val
                     annual_end_dates[year] = own_end
                     annual_provenance[year] = {
@@ -1058,7 +1148,8 @@ class SECParser:
                                         accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                         collisions_out: Optional[List[Dict[str, Any]]] = None,
                                         anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
-                                        fy_mismatches_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
+                                        fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
+                                        boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max/merge_all_tagsいずれもFalseの場合の抽出（1つの候補タグを選んで採用する）
 
         LLY-CAPEX-STALE-1 Phase 2a: 候補キーを優先順位順に「最新期末年が
@@ -1138,10 +1229,26 @@ class SECParser:
                     if fy not in combined_own_data:
                         combined_own_data[fy] = (val, end_date, own_accn, own_filed, own_fy_tag)
             for year, (val, own_end, own_accn, own_filed, own_fy_tag) in combined_own_data.items():
-                if self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
-                                               winning_durations, winning_accns, accn_reportdate,
-                                               anchor_month, anchor_day,
-                                               is_instant=field_name in self.INSTANT_FACT_FIELDS):
+                # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: _extract_values_mergedと同一パターン
+                _existing_end = winning_end_dates.get(year)
+                _existing_fy_tag = winning_fy_tags.get(year)
+                _existing_accn = winning_accns.get(year)
+                _override_ok = self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
+                                                            winning_durations, winning_accns, accn_reportdate,
+                                                            anchor_month, anchor_day,
+                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS)
+                if (boundary_collisions_out is not None
+                        and self._is_boundary_collision(_existing_end, _existing_fy_tag, own_end, own_fy_tag)):
+                    boundary_collisions_out.append({
+                        "field": field_name, "year": year,
+                        "own_data_side": {"fy_tag": own_fy_tag, "accn": own_accn, "end_date": own_end},
+                        "other_side": {
+                            "fy_tag": _existing_fy_tag, "accn": _existing_accn, "end_date": _existing_end,
+                            "is_own_data": bool(_existing_accn and accn_reportdate.get(_existing_accn) == _existing_end),
+                        },
+                        "override_applied": _override_ok,
+                    })
+                if _override_ok:
                     result["annual"][year] = val
                     winning_end_dates[year] = own_end
                     annual_provenance[year] = {
@@ -1452,6 +1559,33 @@ class SECParser:
             json.dump({"ticker": ticker, "mismatches": mismatches}, f, ensure_ascii=False, indent=2)
         if mismatches:
             print(f"   [{ticker}] fyタグ裏取り不一致を検知・記録: {len(mismatches)}件 ({path})")
+
+    def _save_fye_boundary_collision_log(self, ticker: str, collisions: List[Dict[str, Any]]) -> None:
+        """
+        FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 決算期変更の境界年で「本人データ」
+        （is_own_data判定を通過したエントリ）と、翌年10-Kの比較年度再掲データ等
+        「生fyタグが異なる別のエントリ」が同一年度バケツ（computed_year）で競合した
+        ケースを記録する。CHECK-22（fy_collision_log.json、同一fyタグへの複数
+        本人end_date競合）・CHECK-23（fy_tag_mismatch_log.json、勝者自身の
+        fyタグと年度バケツの不一致）のいずれとも異なる軸: 本件は競合する2エントリの
+        生fyタグが元々異なるため（例: RCAT、本人データ側fy=2024・非本人データ側
+        fy=2025）、CHECK-22（同一fyタグ前提）・CHECK-23（勝者自身のfyタグと
+        バケツの不一致が対象、敗者側は対象外）のいずれの検知条件にも該当しない。
+
+        `_own_override_is_safe()`自体は変更せず、その呼び出し前後で既存
+        （フォールバック採用済み）側と本人データ候補側の生fyタグを比較する形で
+        検知する（詳細は_extract_values_merged/_extract_values_best_candidate
+        内のboundary_collisions_out追記箇所参照）。自動修正は行わない
+        （WARN出力のみ）。0件でも毎回書き込む（fy_collision_log/
+        fy_tag_mismatch_logと同じ化石ファイル対策）。
+        """
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        path = os.path.join(ticker_dir, "fye_boundary_collision_log.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"ticker": ticker, "collisions": collisions}, f, ensure_ascii=False, indent=2)
+        if collisions:
+            print(f"   [{ticker}] 決算期変更境界の年度バケツ競合を検知・記録: {len(collisions)}件 ({path})")
 
     def save_parsed_data(self, ticker: str, parsed: dict) -> None:
         """パース済みデータを個別ファイルに保存"""

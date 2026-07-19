@@ -258,3 +258,72 @@ def test_own_override_is_safe_cdns_type_regression():
         anchor_month=12, anchor_day=31,
     )
     assert is_safe_with_anchor is True
+
+
+# ============================================
+# _is_boundary_collision() / _fiscal_anchors_far_apart():
+# FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1（WARN-24）
+# ============================================
+
+def test_fiscal_anchors_far_apart_true_for_rcat_type_gap():
+    """RCAT型: 決算日そのものが大きく動いた場合（4/30→12/31）はTrue"""
+    assert SECParser._fiscal_anchors_far_apart("2024-04-30", "2024-12-31") is True
+
+
+def test_fiscal_anchors_far_apart_false_for_same_anchor_adjacent_years():
+    """ADSK/CRM型: 同一(月,日)・隣接暦年（fyタグの年ズレのみ）はFalse"""
+    assert SECParser._fiscal_anchors_far_apart("2011-01-31", "2012-01-31") is False
+
+
+def test_fiscal_anchors_far_apart_false_for_52_53_week_wobble():
+    """CAKE/WST型: 52/53週企業の1日程度の前後変動はFalse"""
+    assert SECParser._fiscal_anchors_far_apart("2017-12-31", "2018-01-01") is False
+
+
+def test_fiscal_anchors_far_apart_handles_year_boundary_circular_distance():
+    """年境界をまたぐ循環距離（12/31 vs 1/2、実質2日）はFalse"""
+    assert SECParser._fiscal_anchors_far_apart("2020-12-31", "2021-01-02") is False
+
+
+def test_is_boundary_collision_true_for_rcat_type():
+    """RCAT型（本人データ側fy_tag≠既存側fy_tag・end_date異なる・決算日が大きく
+    離れている）でTrue（WARN-24の発火条件）"""
+    assert SECParser._is_boundary_collision(
+        existing_end="2024-12-31", existing_fy_tag=2025,
+        own_end="2024-04-30", own_fy_tag=2024,
+    ) is True
+
+
+def test_is_boundary_collision_false_when_fy_tag_matches():
+    """通常ケース（fy_tag一致）ではFalse（そもそも競合ではない）"""
+    assert SECParser._is_boundary_collision(
+        existing_end="2024-04-30", existing_fy_tag=2024,
+        own_end="2024-04-30", own_fy_tag=2024,
+    ) is False
+
+
+def test_is_boundary_collision_false_when_end_date_matches():
+    """同一end_dateの比較年度再掲（fyタグだけが違う）はFalse
+    （is_own_data=Falseのfyタグ違いとして常態的に発生する正常仕様、ARCH-DATA-1参照）"""
+    assert SECParser._is_boundary_collision(
+        existing_end="2019-12-31", existing_fy_tag=2021,
+        own_end="2019-12-31", own_fy_tag=2019,
+    ) is False
+
+
+def test_is_boundary_collision_false_for_adsk_type_off_by_one_fy_tag():
+    """ADSK/AVAV/CRM/CAKE型: 同一(月,日)・隣接暦年（fyタグが実際の期間より
+    1年ずれるWARN-23既知パターン）はFalse（決算期変更ではなく単なるfyタグ誤り）"""
+    assert SECParser._is_boundary_collision(
+        existing_end="2011-01-31", existing_fy_tag=2010,
+        own_end="2012-01-31", own_fy_tag=2011,
+    ) is False
+
+
+def test_is_boundary_collision_false_when_existing_end_is_none():
+    """フォールバックが何も採用していない（既存end_dateなし）場合はFalse
+    （比較対象がないため競合しようがない）"""
+    assert SECParser._is_boundary_collision(
+        existing_end=None, existing_fy_tag=None,
+        own_end="2024-04-30", own_fy_tag=2024,
+    ) is False

@@ -248,6 +248,99 @@ class TestCheck23FyTagMismatch:
         assert not any("WARN-23" in w for w in warn)
 
 
+class TestCheck24FyeBoundaryCollision:
+    """CHECK-24（FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1で新設）が
+    parser.py::_is_boundary_collision()が検知した決算期変更境界の年度バケツ
+    競合を読み取ってWARN-24を正しく追加すること。CHECK-22/23とは独立した
+    別軸のチェックであることも確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        """check_ticker()がreport.txtの存在で早期returnしないよう最小のfixtureを作る"""
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def _make_sec_data_dir(self, sec_data_path, ticker: str) -> "Path":
+        ticker_dir = sec_data_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        return ticker_dir
+
+    def test_no_warn_24_when_no_collision_log(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-24" in w for w in warn)
+
+    def test_warn_24_added_when_collision_log_present(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fye_boundary_collision_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "collisions": [
+                {"field": "total_liabilities", "year": 2024,
+                 "own_data_side": {"fy_tag": 2024, "accn": "AccnA", "end_date": "2024-04-30"},
+                 "other_side": {"fy_tag": 2025, "accn": "AccnB", "end_date": "2024-12-31", "is_own_data": False},
+                 "override_applied": True},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-24" in w and "total_liabilities" in w for w in warn)
+        assert not any("WARN-24" in n for n in ng)  # 非ブロッキング（NGにはならない）
+
+    def test_warn_24_reports_count_and_fields_for_multiple_collisions(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fye_boundary_collision_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "collisions": [
+                {"field": "total_liabilities", "year": 2024,
+                 "own_data_side": {"fy_tag": 2024, "accn": "AccnA", "end_date": "2024-04-30"},
+                 "other_side": {"fy_tag": 2025, "accn": "AccnB", "end_date": "2024-12-31", "is_own_data": False},
+                 "override_applied": True},
+                {"field": "rpo", "year": 2024,
+                 "own_data_side": {"fy_tag": 2024, "accn": "AccnA", "end_date": "2024-04-30"},
+                 "other_side": {"fy_tag": 2025, "accn": "AccnB", "end_date": "2024-12-31", "is_own_data": False},
+                 "override_applied": True},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        warn_24 = next(w for w in warn if "WARN-24" in w)
+        assert "2件" in warn_24
+        assert "rpo" in warn_24 and "total_liabilities" in warn_24
+
+    def test_check_22_23_24_are_independent(self, tmp_path, monkeypatch):
+        """fy_collision_log.json（CHECK-22）・fy_tag_mismatch_log.json（CHECK-23）・
+        fye_boundary_collision_log.json（CHECK-24）は独立して検知され、
+        いずれか1つのみ存在する場合に他が誤検知されないこと"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        (ticker_dir / "fye_boundary_collision_log.json").write_text(
+            json.dumps({"ticker": "TESTCO", "collisions": [
+                {"field": "total_liabilities", "year": 2024,
+                 "own_data_side": {"fy_tag": 2024, "accn": "AccnA", "end_date": "2024-04-30"},
+                 "other_side": {"fy_tag": 2025, "accn": "AccnB", "end_date": "2024-12-31", "is_own_data": False},
+                 "override_applied": True},
+            ]}),
+            encoding="utf-8",
+        )
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-24" in w for w in warn)
+        assert not any("WARN-22" in w for w in warn)
+        assert not any("WARN-23" in w for w in warn)
+
+
 class TestCheck26BsFieldNoneTransition:
     """CHECK-26（BS-FIELD-NONE-TRANSITION-DETECT-1で新設）が「前年値あり→当年
     None」遷移を正しく検知し、決算期変更の可能性がある年度差≠1のケース・

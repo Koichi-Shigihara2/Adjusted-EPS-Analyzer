@@ -41,6 +41,17 @@ report_consistency_check.py
                               自体がfyタグと異なる」CDNS型を検知する。比較年度再掲エントリ
                               〈is_own_data=False〉はfyタグがfiling側の属性でしかなく
                               正常仕様のため対象外。自動修正なし）
+  WARN 24. 決算期変更境界バケツ競合 決算期変更の境界年で、生fyタグ・end_dateの両方が
+                              異なる2エントリ（本人データ側と非本人データ側）が同一年度
+                              バケツ（computed_year）で競合する（FYE-CHANGE-BOUNDARY-
+                              COLLISION-BLIND-1で新設。CHECK-22〈同一fyタグ前提〉・
+                              CHECK-23〈勝者自身のfyタグとバケツの不一致、敗者側は対象外〉
+                              のいずれとも異なる軸。RCAT（決算期を2回変更）で実在確認済み、
+                              ELF/MSCI/NOWはクラスタリング候補ではあるが実際の競合なしと
+                              確認済み。現状は_own_override_is_safe()の汎用accnベース判定
+                              の副次効果で正しい値が採用されているため実害はなく、将来の
+                              実装変更等で崩れうる潜在リスクの予防的可視化が目的。
+                              自動修正なし）
   WARN 25. BS項目None         最新annual_YYYY.jsonのtotal_assets/total_liabilities/
                               stockholders_equity/current_assets/current_liabilities/
                               cash_and_equivalentsのいずれかがNone
@@ -49,9 +60,7 @@ report_consistency_check.py
                               シグナル。従来はreader.py::get_net_cash()等で`or 0`により
                               静かに$0化され検知不能だった。short_term_investments/
                               long_term_debt/short_term_debt〈真のゼロとの判別困難〉・
-                              rpo〈非SaaS銘柄はNoneが正常〉はPhase B/Cとして対象外。
-                              WARN-24はFYE-CHANGE-BOUNDARY-COLLISION-BLIND-1向けに
-                              予約済みのため欠番）
+                              rpo〈非SaaS銘柄はNoneが正常〉はPhase B/Cとして対象外）
   WARN 26. BS項目遷移(有値→None) short_term_investments/long_term_debt/
                               short_term_debt/rpo（WARN-25対象外の4フィールド）を
                               対象に、直近2年度分のannual_*.jsonを比較し、前年に
@@ -221,6 +230,26 @@ def _read_fy_tag_mismatch_log(ticker: str) -> list:
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f).get("mismatches", [])
+    except Exception:
+        return []
+
+
+def _read_fye_boundary_collision_log(ticker: str) -> list:
+    """
+    FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: parser.pyが決算期変更の境界年で
+    「本人データ」と生fyタグが異なる別エントリ（end_dateも異なる）が同一年度
+    バケツで競合したケースを検知した際に書き出す
+    common/sec_data/data/{ticker}/fye_boundary_collision_log.json を読む。
+    CHECK-22（同一fyタグへの複数本人end_date競合）・CHECK-23（勝者自身の
+    fyタグとバケツの不一致）のいずれとも異なる軸で、競合する2エントリの
+    生fyタグ・end_dateが両方とも異なるケース（RCAT型）を対象とする。
+    """
+    path = os.path.join(SEC_DATA_DIR, ticker, "fye_boundary_collision_log.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("collisions", [])
     except Exception:
         return []
 
@@ -794,6 +823,25 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
             f"  [WARN-23 fyタグ裏取り不一致] {len(_mismatches_c23)}件"
             f" (対象フィールド: {', '.join(_fields_c23[:5])}{'...' if len(_fields_c23) > 5 else ''})"
             f" → 本人データ自身のfyタグが年度バケツと食い違う（裏取り検知、自動修正なし）"
+        )
+
+    # CHECK-24: 決算期変更境界の年度バケツ競合（FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1）
+    # parser.pyが「本人データ」と生fyタグ・end_dateの両方が異なる別エントリが
+    # 同一年度バケツ（computed_year）で競合したケースを検知した場合に記録する
+    # ログを監視する。CHECK-22（同一fyタグ前提）・CHECK-23（勝者自身のfyタグと
+    # バケツの不一致、敗者側は対象外）のいずれとも異なる軸で、「fyタグが元々
+    # 異なる2エントリが同一バケツで競合する」ケース（RCAT型、決算期変更の
+    # 境界年）を対象とする。現状は_own_override_is_safe()の汎用accnベース判定
+    # の副次効果で正しい値が採用されているため実害はなく、将来の実装変更等で
+    # 崩れうる潜在リスクの予防的可視化が目的。自動修正は行わない。
+    _collisions_c24 = _read_fye_boundary_collision_log(ticker)
+    if _collisions_c24:
+        _fields_c24 = sorted({c.get("field", "?") for c in _collisions_c24})
+        warn.append(
+            f"  [WARN-24 決算期変更境界バケツ競合] {len(_collisions_c24)}件"
+            f" (対象フィールド: {', '.join(_fields_c24[:5])}{'...' if len(_fields_c24) > 5 else ''})"
+            f" → 決算期変更の境界年で生fyタグ・end_dateが異なる2エントリが同一"
+            f"年度バケツで競合（現状は本人データ側が正しく採用済み、自動修正なし）"
         )
 
     # CHECK-25: BS項目None検知（FY52WEEK-BS-NULL-SILENT-1 Phase A）
