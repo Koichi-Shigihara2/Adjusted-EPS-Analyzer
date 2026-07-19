@@ -312,6 +312,13 @@ class SECParser:
         # 申告停止済み・非分類BS・正しいタグが汎用的すぎるため、ltdebt_conceptと
         # 同型のticker限定オーバーライドとする）
         _sti_concept_override = TICKER_RESTRICTIONS.get(ticker, {}).get("sti_concept")
+        # 銘柄別 cross_filing_tags オーバーライド（NVDA-STI-TAG-UNIDENTIFIED-1:
+        # ANOMALY-PATTERN-CATALOG-1型C。単一タグでは捕捉できず、複数XBRL概念を
+        # 指定end_date・指定form制限で直接検索し合算する必要があるケース向け。
+        # sti_concept等と異なり、ticker×period×fieldを明示指定した組み合わせ
+        # にのみ適用され、他の全銘柄・全フィールドの既存抽出ロジックには
+        # 一切影響しない。_apply_cross_filing_tags()参照）
+        _cross_filing_tags = TICKER_RESTRICTIONS.get(ticker, {}).get("cross_filing_tags")
 
         # 会計年度末月を検出（非12月決算企業対応・determine_fiscal_year に渡す。
         # 本人データが存在しない年度のフォールバック判定にのみ使用する）
@@ -355,6 +362,14 @@ class SECParser:
                 anchor_month=anchor_month, anchor_day=anchor_day,
                 fy_mismatches_out=_fy_tag_mismatches,
             )
+
+        # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tagsに明示登録された
+        # ticker×period×fieldの組み合わせについてのみ、複数タグ合算値で
+        # extracted[field]の該当バケツを上書きする（型C対応・①案）。
+        # 標準抽出ループの後に適用することで、通常経路の結果を出発点として
+        # 上書きし、既存の抽出ロジック自体には一切手を加えない。
+        if _cross_filing_tags:
+            self._apply_cross_filing_tags(us_gaap, extracted, _cross_filing_tags)
 
         # ARCH-DATA-1ステージ3: fyタグ裏取り不一致を記録（0件でも毎回書き込む。
         # fy_collision_logと同じ化石ファイル対策）
@@ -420,6 +435,88 @@ class SECParser:
                                                     collisions_out=collisions_out,
                                                     anchor_month=anchor_month, anchor_day=anchor_day,
                                                     fy_mismatches_out=fy_mismatches_out)
+
+    def _find_entry_by_end_date(self, us_gaap: dict, tag: str, end_date: str,
+                                 forms: tuple) -> Optional[Dict[str, Any]]:
+        """指定タグ・指定end_date・指定form群に一致するエントリを1件返す
+        （NVDA-STI-TAG-UNIDENTIFIED-1: _apply_cross_filing_tags()専用の
+        ピンポイント検索。既存の_collect_own_data_annual/_instantが持つ
+        accn_reportdate自己一致チェックを意図的に迂回する唯一の経路のため、
+        TICKER_RESTRICTIONSのcross_filing_tagsに明示登録された呼び出し元
+        からのみ使用すること）。
+
+        複数ヒットした場合（同一end_dateへの10-K/A訂正申告等）はfiled日が
+        最新のものを採用する。
+
+        Returns:
+            該当エントリのdict（"val"/"form"/"accn"/"filed"等）、なければNone
+        """
+        candidates = []
+        units = us_gaap.get(tag, {}).get("units", {})
+        for entry in units.get("USD", []):
+            if entry.get("form") not in forms:
+                continue
+            if entry.get("end") != end_date:
+                continue
+            if entry.get("val") is None:
+                continue
+            candidates.append(entry)
+        if not candidates:
+            return None
+        candidates.sort(key=lambda e: e.get("filed", ""))
+        return candidates[-1]
+
+    def _apply_cross_filing_tags(self, us_gaap: dict, extracted: Dict[str, Any],
+                                  cross_filing_config: Dict[str, tuple]) -> None:
+        """NVDA-STI-TAG-UNIDENTIFIED-1（ANOMALY-PATTERN-CATALOG-1型C: 資産クラス
+        変化・当年度未タグ化型）向け。TICKER_RESTRICTIONSのcross_filing_tagsに
+        明示登録されたticker×period×fieldの組み合わせについてのみ、複数XBRL
+        タグを指定end_date・指定form制限で直接検索し合算した値で
+        extracted[field]の該当バケツ（annual/quarterly）を上書きする。
+
+        既存の_collect_own_data_annual/_instantが持つ`form in (10-K, 10-K/A)`
+        フィルタ・accn_reportdate自己一致チェックはここでは一切参照しない
+        （_find_entry_by_end_date経由の意図的な迂回）。本関数はcross_filing_tags
+        に明示登録された組み合わせにのみ発火するため、他の全銘柄・全フィールド・
+        当該ticker自身の他フィールドの既存抽出結果には一切影響しない。
+
+        periodがint（年度）の場合はannualバケツ、str（例:"2027Q1"、parser.pyの
+        quarter_key形式 f"{fy}{fp}"）の場合はquarterlyバケツを上書きする。
+        合算対象タグの一部が指定end_date・form条件で見つからない場合、その
+        periodの上書きはスキップする（中途半端な部分合算値を書き込まない）。
+        """
+        for field_name, period_specs in cross_filing_config.items():
+            field_result = extracted.setdefault(field_name, {"annual": {}, "quarterly": {}})
+            for spec in period_specs:
+                period = spec["period"]
+                end_date = spec["end_date"]
+                components = spec["components"]
+
+                total = 0.0
+                source_tags = []
+                found_all = True
+                for comp in components:
+                    entry = self._find_entry_by_end_date(us_gaap, comp["tag"], end_date, comp["forms"])
+                    if entry is None:
+                        found_all = False
+                        break
+                    total += entry["val"]
+                    source_tags.append(comp["tag"])
+                if not found_all:
+                    continue
+
+                bucket = "annual" if isinstance(period, int) else "quarterly"
+                field_result[bucket][period] = total
+
+                residual_pct = spec.get("approx_residual_pct")
+                if bucket == "annual":
+                    prov = field_result.setdefault("_annual_provenance", {})
+                    prov[period] = {
+                        "is_own_data": True,
+                        "is_approximated": residual_pct is not None,
+                        "residual_pct": residual_pct,
+                        "combined_tags": source_tags,
+                    }
 
     def _collect_own_data_annual(self, us_gaap: dict, xbrl_keys: List[str],
                                   accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,

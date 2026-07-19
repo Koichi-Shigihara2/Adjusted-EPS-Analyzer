@@ -712,6 +712,10 @@ class BSAdjustmentResult:
     applied: bool                  # 補正適用フラグ
     sector_guard: str = "none"     # v8.1: 適用したセクターガード名
     net_debt_period: str = ""      # ARCH-DATA-1残課題①: 実際にBS項目を取得した時点のラベル
+    # NVDA-STI-TAG-UNIDENTIFIED-1: short_term_investmentsがticker_restrictions
+    # のcross_filing_tags経由の複数タグ合算近似値である場合True・その残差率
+    sti_approximated: bool = False
+    sti_residual_pct: Optional[float] = None
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -725,6 +729,8 @@ class BSAdjustmentResult:
             "applied":                self.applied,
             "sector_guard":           self.sector_guard,
             "net_debt_period":        self.net_debt_period,
+            "sti_approximated":       self.sti_approximated,
+            "sti_residual_pct":       self.sti_residual_pct,
         }
 
 
@@ -763,6 +769,8 @@ def calculate_bs_adjustment(
         applied=available and net_cash != 0.0,
         sector_guard=net_cash_data.get("sector_guard", "none"),  # v8.1
         net_debt_period=net_cash_data.get("net_debt_period", ""),  # ARCH-DATA-1残課題①
+        sti_approximated=net_cash_data.get("sti_approximated", False),  # NVDA-STI-TAG-UNIDENTIFIED-1
+        sti_residual_pct=net_cash_data.get("sti_residual_pct"),
     )
 
 

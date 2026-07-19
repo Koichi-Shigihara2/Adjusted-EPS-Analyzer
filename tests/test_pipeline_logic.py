@@ -2297,6 +2297,89 @@ class TestSTInvestQuarterlyOverride:
         )
 
 
+# =====================================================================
+# Section 24: NVDA-STI-TAG-UNIDENTIFIED-1 回帰テスト
+# ANOMALY-PATTERN-CATALOG-1型C（資産クラス変化・当年度未タグ化型）対応方針①。
+# annual FY2026(FYE 2026-01-25)はAvailableForSaleSecuritiesDebtSecurities
+# ($39,520M、10-K本体)＋EquitySecuritiesFvNi($12,886M、後続10-Q〈2026-05-20
+# 提出、Q1 FY2027〉の比較年度遡及開示にのみ登場)を合算した近似値$52,406M
+# （実額$51,951M比+0.88%）。quarterly 2027Q1(end 2026-04-26)は同一10-Q内の
+# 両タグ合算($39,233M+$30,237M=$69,470M、近似ではない正規合算値）。
+# =====================================================================
+
+class TestNvdaCrossFilingSTI:
+    """parser.py::_apply_cross_filing_tags()がNVDAのshort_term_investmentsを
+    正しく合算していること・近似値フラグが期待通り伝播することを確認する"""
+
+    def test_nvda_annual_2026_sti_is_cross_filing_sum(self):
+        """NVDA annual_2026.json: bs.short_term_investments が合算近似値$52,406Mであること"""
+        import json, os
+        ann_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "common", "sec_data", "data", "NVDA", "annual_2026.json"
+        )
+        if not os.path.exists(ann_path):
+            return
+        with open(ann_path, encoding="utf-8") as f:
+            ann = json.load(f)
+        sti = ann.get("bs", {}).get("short_term_investments")
+        assert sti == 52_406_000_000, (
+            f"NVDA annual_2026 short_term_investments={sti} != $52,406M "
+            "(AvailableForSaleSecuritiesDebtSecurities $39,520M + EquitySecuritiesFvNi $12,886M)"
+        )
+        prov = ann.get("bs_provenance", {}).get("short_term_investments", {})
+        assert prov.get("is_approximated") is True, (
+            "NVDA annual_2026 short_term_investmentsはcross_filing_tags近似値のため"
+            "bs_provenance.is_approximated=Trueが必須"
+        )
+        assert prov.get("residual_pct") == pytest.approx(0.0088, abs=1e-4), (
+            f"NVDA annual_2026 residual_pct={prov.get('residual_pct')} != 0.0088(+0.88%)"
+        )
+        assert set(prov.get("combined_tags", [])) == {
+            "AvailableForSaleSecuritiesDebtSecurities", "EquitySecuritiesFvNi",
+        }
+
+    def test_nvda_quarterly_2027q1_sti_is_exact_sum(self):
+        """NVDA quarterly_2027Q1.json: bs.short_term_investments が同一10-Q内
+        合算の正規値$69,470M（近似ではない）であること"""
+        import json, os
+        q_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "common", "sec_data", "data", "NVDA", "quarterly_2027Q1.json"
+        )
+        if not os.path.exists(q_path):
+            return
+        with open(q_path, encoding="utf-8") as f:
+            q = json.load(f)
+        sti = q.get("bs", {}).get("short_term_investments")
+        assert sti == 69_470_000_000, (
+            f"NVDA quarterly_2027Q1 short_term_investments={sti} != $69,470M "
+            "(AvailableForSaleSecuritiesDebtSecurities $39,233M + EquitySecuritiesFvNi $30,237M)"
+        )
+
+    def test_nvda_latest_json_reports_quarterly_sti_not_approximated(self):
+        """NVDA latest.json: BUG-NETDEBT-4の同一時点優先ロジックにより
+        financial_healthは四半期の正規合算値を採用し、sti_approximatedはFalseになること
+        （annual側の近似値フラグが誤って伝播しないことの確認）"""
+        import json, os
+        latest_path = os.path.join(
+            os.path.dirname(__file__), "..",
+            "docs", "value-monitor", "tanuki_valuation", "data", "NVDA", "latest.json"
+        )
+        if not os.path.exists(latest_path):
+            return
+        with open(latest_path, encoding="utf-8") as f:
+            latest = json.load(f)
+        fh = latest.get("financial_health", {})
+        if fh.get("net_debt_period") != "2027Q1":
+            # BUG-NETDEBT-4の対象四半期は将来のデータ更新で変わりうるため、
+            # 現行の2027Q1採用時のみ厳密チェックする
+            return
+        assert fh.get("short_term_investments") == 69_470_000_000
+        assert fh.get("sti_approximated") is False
+        assert fh.get("sti_residual_pct") is None
+
+
 class TestRiceNegativeLabel:
     """RICE-3 回帰防止: OCF赤字で RICE < 0 のとき Matrix Label が 'N/A (OCF赤字)' になること"""
 

@@ -97,6 +97,68 @@ TICKER_RESTRICTIONS: dict[str, dict] = {
                 "ため、V限定オーバーライドとして厳格運用し、グローバル候補"
                 "リストには絶対に追加しないこと。",
     },
+    # NVDA-STI-TAG-UNIDENTIFIED-1（2026-07-19実装・対応方針①採用）:
+    # ANOMALY-PATTERN-CATALOG-1 型C（資産クラス変化・当年度未タグ化型）。
+    # FY2026第1四半期に非上場投資先1社が上場したことで、BS「Marketable
+    # securities」の内訳に上場株式の公正価値が混入し、単一タグでの捕捉が
+    # 不可能になった（KLAC/TER/V/SOFIのsti_conceptのような単一タグ差替えでは
+    # 解決しない）。
+    #
+    # cross_filing_tags: ticker × period × field を明示指定した場合のみ、
+    # 指定されたXBRL概念タグ群を「指定end_date・指定form」で直接検索し合算する
+    # （parser.py::_apply_cross_filing_tags/_find_entry_by_end_date参照）。
+    # 通常の_collect_own_data_annual/_instantが持つ`form in (10-K, 10-K/A)`
+    # フィルタ・accn_reportdate自己一致チェックはグローバルには一切変更せず、
+    # 本テーブルに明示登録された組み合わせにのみ迂回を適用する。
+    #
+    # periodがint（例: 2026）の場合はannualバケツ、str（例: "2027Q1"、
+    # parser.pyのquarter_key形式 f"{fy}{fp}"）の場合はquarterlyバケツを上書きする。
+    "NVDA": {
+        "cross_filing_tags": {
+            "short_term_investments": (
+                {
+                    # FY2026（FYE 2026-01-25）annual: 債券部分
+                    # AvailableForSaleSecuritiesDebtSecurities（$39,520M、当該
+                    # 10-K本体〈form=10-K, filed 2026-02-25〉に申告あり）＋
+                    # 株式部分EquitySecuritiesFvNi（$12,886M）を合算する。
+                    # EquitySecuritiesFvNiは当該10-K本体には一切申告されておらず、
+                    # 後続10-Q（2026-05-20提出、Q1 FY2027、form=10-Q）が比較年度の
+                    # 期末値として遡及開示した際に初めて登場する（=真のクロス
+                    # filing参照が必要なケース）。合算値$52,406Mは一次情報で確認
+                    # 済みの実額$51,951M比+0.88%（$455M）の近似値。詳細は
+                    # BACKLOG.md [[NVDA-STI-TAG-UNIDENTIFIED-1]]参照。
+                    "period": 2026,
+                    "end_date": "2026-01-25",
+                    "components": (
+                        {"tag": "AvailableForSaleSecuritiesDebtSecurities", "forms": ("10-K", "10-K/A")},
+                        {"tag": "EquitySecuritiesFvNi", "forms": ("10-Q",)},
+                    ),
+                    "approx_residual_pct": 0.0088,
+                },
+                {
+                    # 2027Q1（Q1 FY2027、end 2026-04-26）: 両タグとも当該10-Q
+                    # 自身（form=10-Q, fy=2027, fp=Q1）のown dataであり、annualの
+                    # ようなクロスfiling参照は不要。ただし既存の_extract_values_
+                    # best_candidate()は複数タグを同時に合算する機構を持たない
+                    # （freshness最良の1タグのみを採用する設計）ため、本テーブルの
+                    # 同一の合算ロジックを転用する。近似値ではなく厳密な合算値
+                    # （residual表示は不要）。
+                    "period": "2027Q1",
+                    "end_date": "2026-04-26",
+                    "components": (
+                        {"tag": "AvailableForSaleSecuritiesDebtSecurities", "forms": ("10-Q",)},
+                        {"tag": "EquitySecuritiesFvNi", "forms": ("10-Q",)},
+                    ),
+                },
+            ),
+        },
+        "note": "FY2026(FYE 2026-01-25)以降、非上場投資先の上場に伴う資産再分類で"
+                "short_term_investmentsが単一タグで捕捉不可（型C）。cross_filing_tags"
+                "で2タグを合算する。annual FY2026は他filing参照を要する近似値"
+                "（+0.88%残差、report.txtに明記）、quarterly 2027Q1は同一filing内"
+                "合算のため近似ではない。詳細はBACKLOG.md "
+                "[[NVDA-STI-TAG-UNIDENTIFIED-1]]参照。",
+    },
 }
 
 # 会計年度タイプ（将来対応用）

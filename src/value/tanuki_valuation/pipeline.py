@@ -1583,7 +1583,17 @@ class TanukiValuationPipeline:
         _st_invest = fin_health.get("short_term_investments") or 0
         if total_debt is not None:
             if _st_invest > 0:
-                L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B  ST_Invest: ${_st_invest/1e9:.2f}B")
+                # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tags経由の複数タグ
+                # 合算近似値の場合、実額比残差率を注記する（get_net_cash()の
+                # None→0扱いとは別扱い。この銘柄は0.9%程度の乖離のある近似値
+                # であることを明示する）
+                _sti_approx = fin_health.get("sti_approximated", False)
+                _sti_residual = fin_health.get("sti_residual_pct")
+                _sti_note = (
+                    f" (近似値、実額比+{_sti_residual*100:.2f}%)"
+                    if _sti_approx and _sti_residual is not None else ""
+                )
+                L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B  ST_Invest: ${_st_invest/1e9:.2f}B{_sti_note}")
             else:
                 L.append(f"  Total_Debt: ${total_debt/1e9:.2f}B  Cash: ${cash/1e9:.2f}B")
         else:
@@ -2167,6 +2177,11 @@ class TanukiValuationPipeline:
                 # 済みのためnet_debt自体は誤って使われないが、report.txt/latest.json
                 # を直接参照する側にも「cashがNoneだった」ことを可視化する。
                 "cash_missing": bs_adj.get("cash_missing", False),
+                # NVDA-STI-TAG-UNIDENTIFIED-1: short_term_investmentsがticker_
+                # restrictionsのcross_filing_tags経由の複数タグ合算近似値の場合
+                # True・その残差率。report.txtのST_Invest行注記に使用する。
+                "sti_approximated": bs_adj.get("sti_approximated", False),
+                "sti_residual_pct": bs_adj.get("sti_residual_pct"),
             }
             # フォールバックRunway: stonks-siloにない銘柄でも資金枯渇リスクを検出
             # 条件: 直近四半期EPS<0, 直近年FCF<0, またはcash<$100M のいずれか

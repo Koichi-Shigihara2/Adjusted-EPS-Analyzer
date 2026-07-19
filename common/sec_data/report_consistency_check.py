@@ -51,7 +51,15 @@ report_consistency_check.py
                               long_term_debt/short_term_debt〈真のゼロとの判別困難〉・
                               rpo〈非SaaS銘柄はNoneが正常〉はPhase B/Cとして対象外。
                               WARN-24はFYE-CHANGE-BOUNDARY-COLLISION-BLIND-1向けに
-                              予約済みのため欠番）
+                              予約済みのため欠番。WARN-26はBS-FIELD-NONE-
+                              TRANSITION-DETECT-1向けに予約済み・未実装のため欠番）
+  WARN 27. 近似値残差過大      parser.py::_apply_cross_filing_tags()が付与する
+                              bs_provenance[field].is_approximated=Trueのエントリで
+                              residual_pctが5%を超過（NVDA-STI-TAG-UNIDENTIFIED-1・
+                              ANOMALY-PATTERN-CATALOG-1型C対応。cross_filing_tags
+                              機構の将来の再利用先で、想定外に大きな乖離が
+                              生じていないかの安全網。NVDA自身は+0.88%のため
+                              通常は発火しない）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -790,6 +798,35 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                 f" が欠損 → 計算経路でNoneが暗黙に0化されている可能性"
                 f"（FY52WEEK-BS-NULL-SILENT-1 Phase A、要確認）"
             )
+
+    # CHECK-27: cross_filing_tags近似値の残差率閾値超過検知
+    # （NVDA-STI-TAG-UNIDENTIFIED-1・ANOMALY-PATTERN-CATALOG-1型C対応）
+    # parser.py::_apply_cross_filing_tags()が付与するbs_provenance[field].
+    # is_approximated=Trueのエントリを対象に、residual_pctが閾値（5%）を
+    # 超える場合のみ発火する。NVDA（+0.88%）等の既知の合算近似値は許容範囲内
+    # のため通常は発火しない。将来同型（型C）を別銘柄に適用した際、想定外に
+    # 大きな乖離が生じていないかの安全網。
+    _RESIDUAL_PCT_THRESHOLD = 0.05
+    _ann_files_c27 = sorted(glob.glob(os.path.join(SEC_DATA_DIR, ticker, "annual_*.json")))
+    if _ann_files_c27:
+        try:
+            with open(_ann_files_c27[-1], encoding="utf-8") as _f27:
+                _ann27 = json.load(_f27)
+            _prov27 = _ann27.get("bs_provenance", {}) or {}
+            _period27 = _ann27.get("period", "")
+            for _field27, _fp27 in _prov27.items():
+                if not isinstance(_fp27, dict) or not _fp27.get("is_approximated"):
+                    continue
+                _residual27 = _fp27.get("residual_pct")
+                if _residual27 is not None and abs(_residual27) > _RESIDUAL_PCT_THRESHOLD:
+                    warn.append(
+                        f"  [WARN-27 近似値残差過大] FY{_period27} {_field27}: "
+                        f"cross_filing_tags合算値の残差{_residual27*100:+.1f}%が"
+                        f"閾値({_RESIDUAL_PCT_THRESHOLD*100:.0f}%)を超過 → 合算元タグ"
+                        f"（{', '.join(_fp27.get('combined_tags', []))}）の妥当性を要確認"
+                    )
+        except Exception:
+            pass
 
     return ng, warn
 

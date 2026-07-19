@@ -383,6 +383,15 @@ class SECReader:
                                                   なり、net_cash自体は0円扱いのまま
                                                   算出されるが呼び出し元は
                                                   availableで信頼性を判定する前提
+                "sti_approximated":       bool   short_term_investmentsがticker_
+                                                  restrictionsのcross_filing_tags
+                                                  経由の複数タグ合算近似値である
+                                                  場合True（NVDA-STI-TAG-
+                                                  UNIDENTIFIED-1）。四半期側の値に
+                                                  切り替わった場合はFalseに戻る
+                "sti_residual_pct":       float  近似値採用時の実額比残差率
+                                                  （例: 0.0088 = +0.88%）。
+                                                  sti_approximated=Falseの場合None
             }
         """
         annual_data = self.get_annual_range(ticker, years=1)
@@ -393,6 +402,7 @@ class SECReader:
                 "net_cash": 0.0, "fiscal_year": 0, "available": False,
                 "sector_guard": "none", "net_debt_period": "",
                 "cash_missing": False,
+                "sti_approximated": False, "sti_residual_pct": None,
             }
 
         latest = annual_data[0]
@@ -414,6 +424,14 @@ class SECReader:
         lt_debt = bs.get("long_term_debt", 0) or 0
         st_debt = bs.get("short_term_debt", 0) or 0
         net_debt_period = f"FY{fy}"
+
+        # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tags由来の近似値
+        # （複数XBRLタグ合算・残差あり）かどうかをannual側のbs_provenanceから
+        # 引き継ぐ。四半期側で上書きされた場合はFalse/Noneにリセットする
+        # （四半期側は同一filing内合算のため近似ではない。下記参照）。
+        _sti_prov = (latest.get("bs_provenance") or {}).get("short_term_investments") or {}
+        sti_approximated = bool(_sti_prov.get("is_approximated"))
+        sti_residual_pct = _sti_prov.get("residual_pct")
 
         # BUG-NETDEBT-3: annual JSONでlong_term_debtが欠落した場合にnormalized quarterlyで補完
         if lt_debt == 0:
@@ -445,11 +463,18 @@ class SECReader:
                     st_debt = float(_q_st or 0)
                     st_inv  = float(_q_sti)
                     net_debt_period = _q_period
+                    # 四半期側のSTIに切り替わったため、annual側の近似値フラグは
+                    # 引き継がない（同一filing内合算・cross_filing_tagsの
+                    # quarterly側エントリは近似ではない正規の合算値のため）
+                    sti_approximated = False
+                    sti_residual_pct = None
                 elif _q_cash is not None:
                     # CashはあるがLTDebt未取得 → Cashのみ上書き（後方互換）
                     cash   = float(_q_cash)
                     if _q_sti > 0:
                         st_inv = float(_q_sti)
+                        sti_approximated = False
+                        sti_residual_pct = None
                     net_debt_period = f"Cash={_q_period}/Debt=FY{fy}"
         except Exception:
             pass
@@ -505,6 +530,8 @@ class SECReader:
             "sector_guard":           sector_guard,
             "net_debt_period":        net_debt_period,
             "cash_missing":           cash_missing,
+            "sti_approximated":       sti_approximated,
+            "sti_residual_pct":       sti_residual_pct,
         }
 
     # =========================================
