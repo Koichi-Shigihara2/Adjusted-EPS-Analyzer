@@ -939,36 +939,6 @@ M&A起因の一過性歪みを認識した上で、生FCFの複数年平均に�
 
 ---
 
-### [KO-SPIR-CF-CAUSE-UNCONFIRMED-1] KO・SPIRのFCF乖離原因が一次情報不足で未確定
-**優先度:** 未定
-**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
-**登録日:** 2026-07-18
-**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
-
-#### 内容
-KO（Coca-Cola）・SPIR（Spire Global）のFCF乖離原因は、SEC XBRLの
-構造化データ（`common/sec_data/data/{KO,SPIR}/annual_YYYY.json`）
-からは特定できず、一次情報不足のまま未確定で残っている。
-
-- **KO**: NIが安定成長する一方（$10.7B→$10.6B→$13.1B）、OCFが2024年に
-  -41%急落（$11.6B→$6.8B、2025年も$7.4Bと低水準継続）。SEC XBRLの
-  `cf`セクションに税金支払・運転資本の内訳フィールドがなく（`other`
-  フィールドも空）、原因を確定できなかった。10-K MD&A本文の直接確認が
-  必要
-- **SPIR**: 2025年NIが初めて黒字転換（+$51.3M）した一方、OCFは過去最悪
-  （-$59.8M）という不整合が見られる。非現金・非経常項目（負債消滅益・
-  ワラント再評価等）の可能性があるが、10-K注記での内訳確認が必要。
-  同年Revenueも前年比-35%（$110.5M→$71.6M）と大幅減収しており、
-  健全な事業サイクルとは言い難い
-
-#### 対応方針
-10-K MD&A本文・注記の個別確認（読み取り専用調査）。
-
-#### 着手条件
-なし
-
----
-
 ### [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
 **優先度:** 未定
 **分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
@@ -4242,14 +4212,14 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
 ⑨ [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
-   [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
-   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+   [[CWAN-SNPS-MA-DISTORTION-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
    ~~[[MRVL-2019-2020-NULL-1]]~~ ✅ 2026-07-20完了（実害なし・構造的境界特性と
    判明。詳細はBACKLOG_DONE.md参照。副次発見はCIK-DISCONTINUITY-OLDEST-YEAR-GAP-1
    として分離登録）
+   ~~[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。

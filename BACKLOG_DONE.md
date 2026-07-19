@@ -959,6 +959,64 @@ CIK断絶による最古年度PL/CF欠落という構造的パターンをBACKLO
 
 ---
 
+### ✅ [KO-SPIR-CF-CAUSE-UNCONFIRMED-1] KO・SPIRのFCF乖離原因が一次情報不足で未確定
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
+**完了日:** 2026-07-20（10-K MD&A一次情報で原因確定、可視化注記まで実装完了）
+
+#### 内容（登録時）
+KO（Coca-Cola）・SPIR（Spire Global）のFCF乖離原因は、SEC XBRLの
+構造化データ（`common/sec_data/data/{KO,SPIR}/annual_YYYY.json`）
+からは特定できず、一次情報不足のまま未確定で残っていた。
+
+- **KO**: NIが安定成長する一方（$10.7B→$10.6B→$13.1B）、OCFが2024年に
+  -41%急落（$11.6B→$6.8B、2025年も$7.4Bと低水準継続）。SEC XBRLの
+  `cf`セクションに税金支払・運転資本の内訳フィールドがなく（`other`
+  フィールドも空）、原因を確定できなかった。10-K MD&A本文の直接確認が
+  必要
+- **SPIR**: 2025年NIが初めて黒字転換（+$51.3M）した一方、OCFは過去最悪
+  （-$59.8M）という不整合が見られる。非現金・非経常項目（負債消滅益・
+  ワラント再評価等）の可能性があるが、10-K注記での内訳確認が必要。
+  同年Revenueも前年比-35%（$110.5M→$71.6M）と大幅減収しており、
+  健全な事業サイクルとは言い難い
+
+#### 原因調査結果（2026-07-20完了・10-K MD&A一次情報、確度：高）
+- **KO 2024年OCF急落**: IRS移転価格税務訴訟（2007-2009年度分）の追徴
+  課税$6.0Bを一括納付（2024年9月、控訴審係属中で還付可能性あり）。
+  FY2024 10-K（accn 0000021344-25-000011）Note 12に明記
+- **KO 2025年OCF低水準継続**: 2020年fairlife買収の偶発対価（業績連動
+  マイルストーン）$6.1Bの最終決済（2025年3月）という、前年とは別の
+  一過性項目。FY2025 10-K（accn 0001628280-26-010047）Note 17/18に
+  明記。両年度の一過性項目を除いた正常化OCFは$12.8B(2024)/$13.5B(2025)
+  相当となり、NIの成長トレンドと整合
+- **SPIR NI/OCF乖離**: 2025年4月完了の海事(maritime)事業売却（Kpler
+  Holding SAへ約$238.9M）に伴う非現金の売却益$154.3M（投資CF区分計上
+  のためOCF算定上はNIから控除）が主因。FY2025 10-K（accn
+  0001193125-26-116169）MD&Aに明記
+- **SPIR 減収-35%**: 同じ海事事業売却による連結売上ベースの恒久的縮小
+  （一過性ではなく構造的変化）
+
+#### 対応（実装完了）
+`FCF_TRANSIENT_ITEM_EXPLANATIONS`（KOは年度キー・SPIRはカテゴリキーの
+ネスト辞書）を新設し、既存の`FCF_CYCLICAL_VOLATILITY_TICKERS`
+（SITM/LITE）と同型の個別ティッカーリスト方式でreport.txt・stock.html
+に可視化注記を実装（コミット`18cc4b6b7`）。DCF計算式・FCF算出ロジック
+自体は変更なし、Classification判定にも影響しない。
+
+#### 検証
+- `report_consistency_check.py --ticker KO,SPIR`: NG=0（SPIRの既存
+  WARN-26は[[BS-FIELD-NEWLY-MISSING-2026-1]]で追跡中の別件データ品質
+  事象であり、本タスクとは無関係）
+- `pytest tests/`: 426 passed / 2 known failed（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]既知の無関係な失敗のみ）
+- KO/SPIRのlatest.json diffでIV・upside等の数値項目に影響がないこと、
+  `FCF_TRANSIENT_ITEM_EXPLANATIONS`の参照箇所がpipeline.py・
+  stock.htmlの2ファイル（KO/SPIRの2銘柄のみ）に閉じていることを確認済み
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
