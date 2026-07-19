@@ -56,6 +56,30 @@ GROWTH_STRUCTURAL_MISMATCH_TICKERS = {
     "LLY", "TER", "XOM", "ALAB", "IONQ", "RCAT",
 }
 
+# FCF-CONVRATE②派生（KO-SPIR-CF-CAUSE-UNCONFIRMED-1）: FCF_CYCLICAL_VOLATILITY_TICKERSと
+# 同型の個別ティッカーリスト方式だが、原因が「業界サイクル変動」ではなく銘柄固有の
+# 一過性項目（税務訴訟・M&A偶発対価の精算・事業売却益等）であると10-K一次情報で
+# 確定した銘柄向け。ティッカーごとに理由・金額・出所が異なる具体的な説明文を持つため、
+# 単純なSetではなくティッカー→説明（dict）で保持する。
+# KOのみ複数年度（2024年・2025年）にまたがる別々の一過性項目が存在するため、
+# 年度キー付きのネスト辞書とする。SPIRは「NI/OCF乖離＝一過性」「減収＝構造的変化」の
+# 2つの性質が異なる理由を区別して保持する（カテゴリキー）。
+# 将来3件目以降を追加する場合も、閾値による自動判定ではなく個別の原因分析
+# （10-K MD&A等の一次情報確認）を経てから手動追加すること。
+FCF_TRANSIENT_ITEM_EXPLANATIONS = {
+    "KO": {
+        2024: "IRS移転価格税務訴訟（2007-2009年度分）の追徴課税$6.0Bを一括納付"
+              "（2024年9月、控訴審係属中で還付可能性あり。10-K FY2024 Note 12参照）",
+        2025: "2020年fairlife買収の偶発対価（業績連動マイルストーン）$6.1Bを最終決済"
+              "（2025年3月。10-K FY2025 Note 17/18参照）",
+    },
+    "SPIR": {
+        "ni_ocf_divergence": "2025年4月完了の海事(maritime)事業売却に伴う非現金の売却益"
+                              "$154.3M（投資CF区分計上のためOCF算定上はNIから控除）が主因",
+        "revenue_decline": "同じ海事事業売却による連結売上ベースの恒久的縮小",
+    },
+}
+
 
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
     """希薄化率から (severity, badge, report_comment) を返す"""
@@ -1510,6 +1534,26 @@ class TanukiValuationPipeline:
                     L.append(f"⚠️ FCF実力推定に注意（業績サイクル変動）: 直近乖離 {_cyclical_dr}倍")
                     L.append("   [業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率")
                     L.append("    による推定値と実際の乖離が大きくなっています。分類判定には使用しません。]")
+            # FCF-CONVRATE②派生（KO-SPIR-CF-CAUSE-UNCONFIRMED-1）: 生FCFが銘柄固有の
+            # 一過性項目（税務訴訟・M&A偶発対価の精算・事業売却益等）で押し下げられている
+            # と10-K一次情報で確定した銘柄への注記。FCF_CYCLICAL_VOLATILITY_TICKERS
+            # （業界サイクル起因）とは原因が異なるため区別して表示する。
+            # Classification（BUY/WATCH等）には影響しない。
+            if ticker in FCF_TRANSIENT_ITEM_EXPLANATIONS:
+                _transient = FCF_TRANSIENT_ITEM_EXPLANATIONS[ticker]
+                if ticker == "KO":
+                    L.append("⚠️ FCF実力推定に注意（一過性項目により生FCFが押し下げ）:")
+                    for _yr in sorted(_transient.keys()):
+                        L.append(f"   [{_yr}年: {_transient[_yr]}]")
+                    L.append("   [両年度の一過性項目を除いた正常化OCFは$12.8B(2024)/$13.5B(2025)相当で")
+                    L.append("    NIの成長トレンドと整合。分類判定には使用しません。詳細はBACKLOG_DONE.md")
+                    L.append("    [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]参照。]")
+                elif ticker == "SPIR":
+                    L.append(f"⚠️ NI/OCF乖離に注意（一過性）: {_transient['ni_ocf_divergence']}")
+                    L.append(f"⚠️ 減収に注意（構造的変化・継続）: {_transient['revenue_decline']}")
+                    L.append("   [前者は一過性の会計事象、後者は今後も継続する事業規模の縮小として")
+                    L.append("    区別してください。分類判定には使用しません。詳細はBACKLOG_DONE.md")
+                    L.append("    [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]参照。]")
             # DCF-RELIABILITY-1: Policy B（FCF_Conversion_Rate方式向けDCF_Reliability）
             _reliability_b = self._calc_dcf_reliability_policy_b(valuation)
             if _reliability_b == "LOW":

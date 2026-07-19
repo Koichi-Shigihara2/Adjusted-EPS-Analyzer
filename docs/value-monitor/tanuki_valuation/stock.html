@@ -885,6 +885,23 @@ function render(d) {
   ]);
   const growthStructuralMismatch = GROWTH_STRUCTURAL_MISMATCH_TICKERS.has(ticker);
 
+  // FCF-CONVRATE②派生（KO-SPIR-CF-CAUSE-UNCONFIRMED-1）: FCF_CYCLICAL_VOLATILITY_TICKERSと
+  // 同型の手動リスト方式だが、原因が業界サイクル変動ではなく銘柄固有の一過性項目
+  // （税務訴訟・M&A偶発対価の精算・事業売却益等）と10-K一次情報で確定した銘柄向け。
+  // ティッカーごとに理由・金額が異なるため、pipeline.py::FCF_TRANSIENT_ITEM_EXPLANATIONSと
+  // 同一内容をJS側にも個別に保持する（共有configファイル化は今回のスコープ外）。
+  const FCF_TRANSIENT_ITEM_EXPLANATIONS = {
+    KO: {
+      2024: 'IRS移転価格税務訴訟（2007-2009年度分）の追徴課税$6.0Bを一括納付（2024年9月、控訴審係属中で還付可能性あり）',
+      2025: '2020年fairlife買収の偶発対価（業績連動マイルストーン）$6.1Bを最終決済（2025年3月）',
+    },
+    SPIR: {
+      ni_ocf_divergence: '2025年4月完了の海事(maritime)事業売却に伴う非現金の売却益$154.3M（投資CF区分計上のためOCF算定上はNIから控除）が主因',
+      revenue_decline: '同じ海事事業売却による連結売上ベースの恒久的縮小',
+    },
+  };
+  const fcfTransientItem = FCF_TRANSIENT_ITEM_EXPLANATIONS[ticker];
+
   const rpo = d.components?.rpo || 0;
   const rpoPV = d.components?.rpo_pv || 0;
 
@@ -997,6 +1014,14 @@ function render(d) {
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
         ⚠️ <strong>FCF実力推定に注意（業績サイクル変動）</strong><br>
         <span style="font-size:12px">この銘柄は業界サイクルにより年度ごとのFCFが大きく変動するため、業種平均比率による推定値と実際の乖離が大きくなっています${fcfCyclicalDivergenceRatio ? `（直近乖離: ${fcfCyclicalDivergenceRatio}倍）` : ''}。</span>
+      </div>` : ''}
+      ${fcfTransientItem ? `
+      <div style="margin-bottom:16px;padding:12px 16px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.4);border-radius:8px;font-size:13px;color:var(--yellow);line-height:1.6">
+        ⚠️ <strong>FCF/OCF乖離に注意（銘柄固有の一過性項目）</strong><br>
+        <span style="font-size:12px">${ticker === 'KO'
+          ? Object.keys(fcfTransientItem).sort().map(y => `${y}年: ${fcfTransientItem[y]}`).join('<br>') + '<br>（両年度の一過性項目を除いた正常化OCFはNIの成長トレンドと整合。分類判定には使用しません）'
+          : `NI/OCF乖離（一過性）: ${fcfTransientItem.ni_ocf_divergence}<br>減収（構造的変化・継続）: ${fcfTransientItem.revenue_decline}<br>（前者は一過性の会計事象、後者は今後も継続する事業規模の縮小として区別。分類判定には使用しません）`}
+        </span>
       </div>` : ''}
       ${validationOverall === 'FAIL' ? `
       <div style="margin-bottom:16px;padding:12px 16px;background:rgba(248,113,113,0.12);border:1px solid var(--red);border-radius:8px;font-size:13px;color:var(--red)">
