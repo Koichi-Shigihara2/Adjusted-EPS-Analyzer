@@ -6516,3 +6516,108 @@ WARN55件のみ）。`pytest tests/` 377 passed（既知の
   と「採用値ベースの検証結果」を両方保持しreport.txt/latest.jsonで区別
   表示する別案）は別途改めて依頼予定
 - AIプロンプト経由の定性的楽観バイアス警告（quarterly_review_generator.py）で十分
+
+---
+
+### [FY52WEEK-BS-STI-OVERRIDE-DESIGN-1] short_term_investmentsのKLAC/NVDA/SOFI/TER/V 5銘柄は銘柄別override設計が必要
+**優先度:** 中〜高
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19（KLAC/TER/V/SOFIの4銘柄。NVDAは対応タグ未特定のため
+[[NVDA-STI-TAG-UNIDENTIFIED-1]]として分離継続）
+**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B「合算/準タグ」12件の個別確定調査
+
+#### 背景
+short_term_investments absent銘柄の一次情報確認で、KLAC・NVDA・SOFI・
+TER・Vの5銘柄はBS本体に「Marketable securities」「Investment
+securities」等の実在する流動資産行を持つことを10-K原本で確認済み
+（①候補タグ欠落は確定）。ただし候補となるXBRL値は銘柄ごとに異なる
+挙動を示し、単一の汎用候補タグをXBRL_MAPPINGへ追加する方式
+（Phase B Stage1で採用した方式）では対応できない：
+
+- **KLAC**: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`系タグは
+  債券部分のみで、株式性有価証券（差額約$24M）を除外し実額をわずかに
+  過小評価
+- **NVDA**: 同タグはBS計上額$51,951Mを約24%（$12.4B）過小評価。
+  差額の対応タグをXBRL全項目照合したが特定できず
+- **TER/V**: 同タグは非流動分も含む合算値のため、真の流動値を過大評価
+  （TER: タグ$97.1M vs 真の流動値$28.2M）。正確な値は
+  `AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue`
+  （TER）・`Investments`（V、汎用的すぎる名前で他銘柄への誤爆リスク大）
+  という、いずれも汎用候補リストに不向きなタグで個別確認済み
+- **SOFI**: 非分類BS（流動/非流動を区分しない銀行持株会社）のため
+  「Current」概念自体が適用されにくい。MD&A「Investment securities」
+  $2,575.6Mとタグ値の差は約5%（償却原価ベースの違いと推測）
+
+#### 対応内容（2026-07-19実装、KLAC/TER/V/SOFIの4銘柄）
+実装前調査で以下4銘柄の正しいXBRL概念を一次情報（SEC EDGAR 10-K原本）で
+確定した：
+
+- **KLAC**: `AvailableForSaleSecuritiesDebtSecurities`（"Current"接尾辞
+  なし版）。**訂正記録**: 登録時点の背景記述にあった候補タグ
+  `AvailableForSaleSecuritiesDebtSecuritiesCurrent`は2021-03-31を最後に
+  申告停止済みの死んだタグであることが実装前調査で判明し、使用しな
+  かった。BS「Marketable securities」（FY2025: $2,415,715K）の99.0%
+  （$2,391,753K）に一致、残差は`EquitySecuritiesFvNiCost`約$22.9Mの
+  株式性有価証券（対象外が正しい挙動）
+- **TER**: `AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue`。
+  BS「Marketable securities」（FY2025: $28,247K）と誤差ゼロで完全一致
+- **V**: `Investments`（"Current"接尾辞なしの汎用タグ名）。BS流動側
+  「Investment securities」（FY2025: $1,833,000,000）と完全一致。
+  他9銘柄（ADSK/BSY/CEG/CRWV/DELL/LRCX/LYFT/MO/ONDS）が同タグを別の
+  意味で申告しているため、グローバル候補リストへの追加は行わずV限定
+  オーバーライドとして厳格運用
+- **SOFI**: `OtherInvestments`。**経緯記録**: 登録時点では「非分類BS
+  特有の近似値許容が必要（MD&A比約5%の残差を許容）」と想定していたが、
+  実装前調査でNote 15（公正価値ヒエラルキー）の内訳を確認したところ、
+  残差の正体は証券化VIE由来の非AFS分類資産担保証券・残余持分と判明し、
+  `OtherInvestments`タグがBS「Investment securities」合計と全期間
+  （2021〜2025年）で完全一致することを発見。当初想定していた近似値
+  扱いは不要だった
+
+実装は`SOFI-DATA-1`の`ltdebt_concept`ticker_restrictions方式と同型：
+- `quarterly.py`の`TICKER_RESTRICTIONS`辞書へ、既存の`ltdebt_concept`と
+  同型の`sti_concept`キーを4銘柄分追加（SOFIは既存の`revenue_concept`/
+  `ltdebt_concept`に続く3つ目のキー）
+- `parser.py::_parse_raw_data()`へ、既存の`ltdebt_concept`分岐と同型の
+  `field_name == "short_term_investments" and _sti_concept_override`
+  分岐を追加（`xbrl_keys`を単一タグへ完全置換）
+- `quarterly.py`のFIELD_CONCEPTS側は変更不要（short_term_investments
+  はBS項目のためquarterly.pyのPL/CF専用ロジックの対象外）
+
+#### 実装前の安全確認・検証結果
+既存company_facts.jsonのみを使ったオフライン全銘柄再パース
+（`SECParser.parse_company_facts()`、ネットワークアクセスなし）で実装
+前後を比較し、105銘柄中KLAC/TER/V/SOFIの4銘柄以外に一切変化がないこと
+を確認してから本番反映した。
+
+本番反映（`update.py KLAC TER V SOFI`実行）後の実測値は事前確認した
+一次情報の値と完全一致：
+
+| Ticker | 実装後の値（annual_2025.json） | 一次情報の値 |
+|---|---|---|
+| KLAC | $2,391,753,000 | $2,391,753K ✓ |
+| TER | $28,247,000 | $28,247K ✓ |
+| V | $1,833,000,000 | $1,833,000,000 ✓ |
+| SOFI | $2,575,607,000 | $2,575,607K ✓ |
+
+`report_consistency_check.py` NG=0（WARN55件、既存の無関係な項目のみ）。
+`pytest tests/` 377 passed（既知の[[TEST-STALE-IV-1]] MSFT/NVDA 2件を
+除き新規失敗なし）。git diffでKLAC/TER/V/SOFI（annual/quarterly/
+normalized/raw/ttm各ファイル）以外に意図しない変更がないことを確認済み。
+
+#### 副次発見（未対応・別途記録が必要）
+実装前後比較のためのオフライン全銘柄再パース実行中、`AVAV`/`COHR`/
+`FICO`/`HON`の`fy_collision_log.json`が実行のたびに重複エントリを
+蓄積する非決定的な挙動を発見した（本タスクの`sti_concept`変更とは
+無関係。`_save_fy_collision_log()`自体は`ticker`引数で正しくスコープ
+されているが、衝突検知リスト`_fy_collisions`の構築ロジックに、
+再実行のたびに結果が変わりうる要因があると推測される）。今回はscope外
+のため該当4ファイルを`git checkout`で復元し、本コミットには含めて
+いない。新規BACKLOG項目として別途起票が必要。
+
+#### 未着手として残した項目
+NVDA: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`系タグがBS計上額
+$51,951Mを約24%（$12.4B）過小評価する問題は、対応タグが特定できて
+いない（XBRL全項目照合済みだが該当なし）。[[NVDA-STI-TAG-UNIDENTIFIED-1]]
+として分離継続。

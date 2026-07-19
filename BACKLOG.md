@@ -1190,6 +1190,8 @@ annual_YYYY.jsonを直接参照して対象6フィールドのNoneを検知す�
 
 残る2グループを新規BACKLOG登録した：
 - [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（Stage2・5銘柄・銘柄別override設計要）
+  → **2026-07-19: KLAC/TER/V/SOFIの4銘柄完了（BACKLOG_DONE.md参照）。
+  NVDAのみ[[NVDA-STI-TAG-UNIDENTIFIED-1]]として分離継続**
 - [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]（Stage3・25銘柄・履歴フォールバック設計要）
 
 Phase C（rpoの非SaaS銘柄True-negative群の扱い）はStage1のrpo分の
@@ -1466,6 +1468,43 @@ BACKLOG.mdに残置する。
 ---
 
 ## 優先度：未定（要判断）
+
+### [FY-COLLISION-LOG-NONDETERMINISTIC-1] fy_collision_log.jsonが再パースのたびに重複エントリを蓄積する
+**優先度:** 未定
+**分類:** データ品質 / SECデータ基盤
+**登録日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（完了・BACKLOG_DONE.md参照）
+実装前後比較のための全銘柄オフライン再パース実行中の副次発見
+
+#### 内容
+`AVAV`/`COHR`/`FICO`/`HON`の4銘柄で、`SECParser.parse_company_facts()`
+（`_parse_raw_data()`経由で`_save_fy_collision_log()`を呼ぶ）を同一の
+company_facts.jsonに対して連続実行すると、`fy_collision_log.json`に
+**内容が完全に同一のエントリが重複して蓄積される**ことを確認した
+（例: FICOの`rpo`フィールドFY2019衝突エントリが1回の追加再パースで
+2件に増殖）。`_save_fy_collision_log()`自体は`ticker`引数で正しく
+スコープされ`json.dump(mode="w")`で毎回全体を上書きしているため、
+ファイル書き込み処理自体に不具合はない。衝突検知リスト
+`_fy_collisions`を構築する上流ロジック（`_collect_own_data_annual()`
+等）に、複数回実行時に結果が変わりうる非決定的な要因（辞書の
+反復順序・同一(fy, end_date)への重複追加防止漏れ等）があると推測
+されるが、根本原因の特定には至っていない。
+
+`report_consistency_check.py`のWARN-22（fyキー競合）はこのログの
+件数をそのまま表示するため、再パースを繰り返すたびに「N件」の表示が
+実態と乖離して増加していく可能性がある（非ブロッキングのWARNのため
+実害は限定的だが、ログの信頼性に関わる）。
+
+#### 対応方針（未確定・要調査）
+`_collect_own_data_annual()`・`_extract_values_best_candidate()`周辺で
+`_fy_collisions`へのappend処理が重複実行されうる経路がないか調査する。
+同一(field, fy, end_dates)の組み合わせを追加前に重複排除するガードを
+`_save_fy_collision_log()`側に追加する対症療法も選択肢。
+
+#### 着手条件
+なし
+
+---
 
 ### [GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1] ハイパーグロース銘柄と成熟業種平均のミスマッチによるgrowth_sanity警告
 **優先度:** 未定
@@ -2134,46 +2173,28 @@ industry_g単独1件の場合のみ候補数閾値を緩和）が既存の実装
 
 ---
 
-### [FY52WEEK-BS-STI-OVERRIDE-DESIGN-1] short_term_investmentsのKLAC/NVDA/SOFI/TER/V 5銘柄は銘柄別override設計が必要
+### [NVDA-STI-TAG-UNIDENTIFIED-1] short_term_investmentsのNVDAは対応タグ未特定（$12.4B差額）
 **優先度:** 中〜高
 **分類:** アーキテクチャ / データ品質ゲート
 **登録日:** 2026-07-19
-**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B「合算/準タグ」12件の個別確定調査
+**発見:** [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（完了・BACKLOG_DONE.md参照）
+実装時、KLAC/TER/V/SOFIの4銘柄は解決したがNVDAのみ対応タグ未特定のため分離
 
-#### 背景
-short_term_investments absent銘柄の一次情報確認で、KLAC・NVDA・SOFI・
-TER・Vの5銘柄はBS本体に「Marketable securities」「Investment
-securities」等の実在する流動資産行を持つことを10-K原本で確認済み
-（①候補タグ欠落は確定）。ただし候補となるXBRL値は銘柄ごとに異なる
-挙動を示し、単一の汎用候補タグをXBRL_MAPPINGへ追加する方式
-（Phase B Stage1で採用した方式）では対応できない：
+#### 内容
+KLAC/TER/V/SOFIは[[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]でSOFI-DATA-1の
+`ltdebt_concept`と同型のticker_restrictions（`sti_concept`）方式による
+オーバーライドを実装済み（2026-07-19）。NVDAのみ正しいXBRL概念タグが
+未特定のまま残っている。標準候補`AvailableForSaleSecuritiesDebtSecuritiesCurrent`
+系タグはBS計上額$51,951Mを約24%（$12.4B）過小評価しており、差額に対応
+するタグをXBRL全項目照合したが登録時点調査では特定できなかった。
 
-- **KLAC**: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`系タグは
-  債券部分のみで、株式性有価証券（差額約$24M）を除外し実額をわずかに
-  過小評価
-- **NVDA**: 同タグはBS計上額$51,951Mを約24%（$12.4B）過小評価。
-  差額の対応タグをXBRL全項目照合したが特定できず
-- **TER/V**: 同タグは非流動分も含む合算値のため、真の流動値を過大評価
-  （TER: タグ$97.1M vs 真の流動値$28.2M）。正確な値は
-  `AvailableForSaleSecuritiesDebtMaturitiesWithinOneYearFairValue`
-  （TER）・`Investments`（V、汎用的すぎる名前で他銘柄への誤爆リスク大）
-  という、いずれも汎用候補リストに不向きなタグで個別確認済み
-- **SOFI**: 非分類BS（流動/非流動を区分しない銀行持株会社）のため
-  「Current」概念自体が適用されにくい。MD&A「Investment securities」
-  $2,575.6Mとタグ値の差は約5%（償却原価ベースの違いと推測）
-
-#### 対応方針（未確定・要設計）
-SOFI-DATA-1の`ltdebt_concept`ticker_restrictions方式を参考に、
-5銘柄それぞれに専用のXBRL概念（またはタグの組み合わせ・按分ロジック）
-を個別指定する仕組みが必要。単純な候補タグ追加では対応不可のため、
-設計コストは高い。
-
-#### 関連
-[[TANUKI-FIN-2]]（JPM・GS・SOFI向けFCFEエクイティDCF並行評価対応）とは
-独立に進めてよい。SOFIのshort_term_investments override設計は既存FCFF
-（企業DCF）のNet Debt計算に引き続き使われるフィールドのため、
-TANUKI-FIN-2の着手・実装時期に関わらず本エントリを先行して進めることが
-できる。
+#### 対応方針（未確定）
+KLAC/TER/V/SOFIで確立したticker_restrictions（`sti_concept`）方式を
+そのまま適用できる見込み。NVDAの10-K原本（Note等の内訳開示）・
+company_facts.jsonの全タグ照合で正しいタグを特定してから、
+`quarterly.py`の`TICKER_RESTRICTIONS["NVDA"]`へ`sti_concept`キーを
+追加し、`parser.py`側の実装済みロジック（`field_name ==
+"short_term_investments" and _sti_concept_override`）をそのまま適用する。
 
 #### 着手条件
 なし
@@ -2904,6 +2925,9 @@ JPM・GS同様「負債・投資有価証券が事業構造そのものの一部
   override設計）は、既存FCFFのNet Debt計算に引き続き使われるフィールドの
   ため、本エントリの着手を待たず独立に進めてよい（FCFE並行評価の実装
   時期に関わらず、既存FCFFの正確性向上に直接寄与するため）。
+  **2026-07-19実装完了（`sti_concept=OtherInvestments`、BACKLOG_DONE.md
+  参照）。既存FCFFのNet Debt計算にSOFIの正しいshort_term_investments値が
+  反映される状態になった**。
 
 ---
 
@@ -4800,9 +4824,12 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    growth_sanityのverdict/warnings・TANUKI SCORE判定を採用値ベースに
    根本修正、61銘柄再生成（改善17件・悪化3件・変化なし8件）。
    詳細はBACKLOG_DONE.md参照
-① [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（優先度：中〜高・着手条件なし・
-   KLAC/NVDA/SOFI/TER/V 5銘柄の銘柄別override設計。
-   SOFI-DATA-1の`ltdebt_concept`方式を参考にできる見込み）
+~~① [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]~~ ✅ 2026-07-19完了
+   （KLAC/TER/V/SOFIの4銘柄）。NVDAのみ[[NVDA-STI-TAG-UNIDENTIFIED-1]]
+   として分離継続。詳細はBACKLOG_DONE.md参照
+① [[NVDA-STI-TAG-UNIDENTIFIED-1]]（優先度：中〜高・着手条件なし・
+   short_term_investments $12.4B差額の対応タグ未特定。KLAC/TER/V/SOFIで
+   確立したticker_restrictions方式をそのまま適用できる見込み）
 ② [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（WARN-24設計・優先度：中・
    着手条件なし。実害は現状RCAT1銘柄のみで緊急性は低い）
 ③ [[SKIP-RISK-EVENTS-WIPE-1]]（優先度：中・着手条件なし・実装単純、
@@ -4820,7 +4847,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ⑧ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
    [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
-   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]・
+   [[FY-COLLISION-LOG-NONDETERMINISTIC-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
