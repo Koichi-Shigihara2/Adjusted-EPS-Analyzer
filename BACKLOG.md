@@ -1471,43 +1471,6 @@ BACKLOG.mdに残置する。
 
 ## 優先度：未定（要判断）
 
-### [FY-COLLISION-LOG-NONDETERMINISTIC-1] fy_collision_log.jsonが再パースのたびに重複エントリを蓄積する
-**優先度:** 未定
-**分類:** データ品質 / SECデータ基盤
-**登録日:** 2026-07-19
-**発見:** [[FY52WEEK-BS-STI-OVERRIDE-DESIGN-1]]（完了・BACKLOG_DONE.md参照）
-実装前後比較のための全銘柄オフライン再パース実行中の副次発見
-
-#### 内容
-`AVAV`/`COHR`/`FICO`/`HON`の4銘柄で、`SECParser.parse_company_facts()`
-（`_parse_raw_data()`経由で`_save_fy_collision_log()`を呼ぶ）を同一の
-company_facts.jsonに対して連続実行すると、`fy_collision_log.json`に
-**内容が完全に同一のエントリが重複して蓄積される**ことを確認した
-（例: FICOの`rpo`フィールドFY2019衝突エントリが1回の追加再パースで
-2件に増殖）。`_save_fy_collision_log()`自体は`ticker`引数で正しく
-スコープされ`json.dump(mode="w")`で毎回全体を上書きしているため、
-ファイル書き込み処理自体に不具合はない。衝突検知リスト
-`_fy_collisions`を構築する上流ロジック（`_collect_own_data_annual()`
-等）に、複数回実行時に結果が変わりうる非決定的な要因（辞書の
-反復順序・同一(fy, end_date)への重複追加防止漏れ等）があると推測
-されるが、根本原因の特定には至っていない。
-
-`report_consistency_check.py`のWARN-22（fyキー競合）はこのログの
-件数をそのまま表示するため、再パースを繰り返すたびに「N件」の表示が
-実態と乖離して増加していく可能性がある（非ブロッキングのWARNのため
-実害は限定的だが、ログの信頼性に関わる）。
-
-#### 対応方針（未確定・要調査）
-`_collect_own_data_annual()`・`_extract_values_best_candidate()`周辺で
-`_fy_collisions`へのappend処理が重複実行されうる経路がないか調査する。
-同一(field, fy, end_dates)の組み合わせを追加前に重複排除するガードを
-`_save_fy_collision_log()`側に追加する対症療法も選択肢。
-
-#### 着手条件
-なし
-
----
-
 ### [GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1] ハイパーグロース銘柄と成熟業種平均のミスマッチによるgrowth_sanity警告
 **優先度:** 未定
 **分類:** データ品質 / TANUKI VALUATION / [[TRUST-SUMMARY-EPIC-1]]可視化候補
@@ -4892,9 +4855,10 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]・
    [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
-   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]・
-   [[FY-COLLISION-LOG-NONDETERMINISTIC-1]]
+   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
+   ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
+   AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。

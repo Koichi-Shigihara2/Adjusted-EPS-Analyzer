@@ -1533,14 +1533,33 @@ class SECParser:
         本人データ同士のfyキー衝突（CRM/FCX/CAKE/HON/COHR/AVAV/FICO/NVDA等で
         実在確認済み。filing代行者側のタグ付け起因と推測されるが原因追及は対象外）を
         report_consistency_check.pyから参照できる形で記録する。
+
+        FY-COLLISION-LOG-NONDETERMINISTIC-1: `_extract_values_best_candidate()`が
+        フィールドの候補XBRLタグごとに`_collect_own_data`を独立呼び出しするため、
+        複数の候補タグが同一(fy, end_dates)衝突を独立に検出すると、内容が完全
+        同一のエントリが候補タグ数だけ重複して`collisions`に含まれる場合がある
+        （AVAV/CAKE/COHR/CRM/FCX/FICO/HONで実在確認済み。決定的なバグであり、
+        実行のたびに増殖するのではなく毎回同じ件数だけ重複する）。値の採用
+        ロジック自体には影響しないため、根本原因（`_extract_values_best_candidate`
+        の候補タグループ）には手を入れず、ここで(field, fy, end_dates, resolution)
+        をキーに重複排除してから書き込む対症療法とした。
         """
+        seen = set()
+        deduped: List[Dict[str, Any]] = []
+        for c in collisions:
+            key = (c.get("field"), c.get("fy"), tuple(c.get("end_dates", [])), c.get("resolution"))
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(c)
+
         ticker_dir = os.path.join(self.data_dir, ticker)
         os.makedirs(ticker_dir, exist_ok=True)
         path = os.path.join(ticker_dir, "fy_collision_log.json")
         with open(path, "w", encoding="utf-8") as f:
-            json.dump({"ticker": ticker, "collisions": collisions}, f, ensure_ascii=False, indent=2)
-        if collisions:
-            print(f"   [{ticker}] fyキー競合を検知・記録: {len(collisions)}件 ({path})")
+            json.dump({"ticker": ticker, "collisions": deduped}, f, ensure_ascii=False, indent=2)
+        if deduped:
+            print(f"   [{ticker}] fyキー競合を検知・記録: {len(deduped)}件 ({path})")
 
     def _save_fy_tag_mismatch_log(self, ticker: str, mismatches: List[Dict[str, Any]]) -> None:
         """
