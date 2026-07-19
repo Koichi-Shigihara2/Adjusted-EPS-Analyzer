@@ -2321,6 +2321,54 @@ WARN-26（前年値あり→当年None遷移検知）実装後の全100銘柄検
 
 ---
 
+### [FYE-BOUNDARY-COLLISION-UNCONFIRMED-1] LITE/WSTの決算期変更境界バケツ競合が一次情報未確認のまま残存
+**優先度:** 低〜未定
+**分類:** データ品質ゲート / 検知体制
+**登録日:** 2026-07-19
+**発見:** [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（完了・BACKLOG_DONE.md参照）
+実装後の全銘柄検証時、WARN-24が想定していたRCAT以外にLITE・WSTでも発火し判明
+
+#### 内容
+WARN-24（決算期変更境界の年度バケツ競合検知）実装後の全100銘柄検証で、
+事前調査で想定していたRCAT（2件）に加え、以下2件が新規に発火した：
+
+- **LITE（net_income）**: end=2015-06-27（本人データ、fy=2015）と
+  end=2015-08-01（fy=2018の10-Qで参考開示、is_own_data=False）が
+  同一年度バケツで競合
+- **WST（rpo）**: end=2013-12-31（本人データ、fy=2013）と
+  end=2013-06-30（fy=2022の10-Kで参考開示、is_own_data=False）が
+  同一年度バケツで競合
+
+いずれも`override_applied: true`（現在のパイプラインは既に本人データ側の
+正しい値を採用済み）であり、`_fiscal_anchors_far_apart()`フィルタ
+（(月,日)循環距離>30日）を通過しているため、決算日そのものが動いた
+可能性を示す一次シグナルとしては真陽性の候補だが、RCATのような継続的な
+決算期変更パターン（クラスタリングスキャンでも複数クラスタとして検出
+される）とは異なり、`fye_change_candidate_scan.py`の再スキャンでは
+LITE/WSTともに候補として検出されていない（単発の孤立したエントリ1件のみ）。
+そのため、NOW型（2013年10-Kの単発参考開示によるノイズ、[[FYE-CHANGE-
+BOUNDARY-COLLISION-BLIND-1]]参照）と同種の「決算期変更を伴わない単発の
+参考開示・データ入力ミス」の可能性が高いと推測されるが、SEC EDGAR
+10-K/10-Q原本による一次情報確認は未実施。
+
+#### 対応方針（未確認・要一次情報調査）
+LITE（accn 0001633978-18-000108、end=2015-08-01のnet_income参考開示）・
+WST（accn 0000105770-23-000012、end=2013-06-30のrpo参考開示）それぞれの
+該当filingを10-K/10-Q原本で確認し、以下いずれかを判定する：
+- 単発の参考開示・タグ付けミス（対応不要、`config/warn_acknowledged.json`
+  への登録を検討）
+- 未確認の決算期変更が実在する（`fye_change_candidate_scan.py`の
+  クラスタリング閾値の見直し、または個別のticker_restrictions対応を検討）
+
+調査後、`report_consistency_check.py::CHECK-24`（WARN-24）は現状
+「🆕未確認」のまま維持しておりブロッキングではないため、緊急対応は不要
+（`override_applied: true`のため現時点で実害はない）。
+
+#### 着手条件
+なし
+
+---
+
 ### [MRVL-2019-2020-NULL-1] MRVLのannual_2019.json/annual_2020.jsonが両方ともrevenue/net_income=None
 **優先度:** 中〜低
 **分類:** データ品質 / SECデータ正規化
