@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -42.3,
-  "calculation_date": "2026-07-19T02:27:11+09:00",
+  "calculation_date": "2026-07-19T10:37:26+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -480,9 +480,9 @@
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
-    "verdict": "PLAUSIBLE",
+    "verdict": "REVIEW",
     "floor_hit": false,
-    "phase1_growth": 0.15,
+    "phase1_growth": 0.5480362628467157,
     "industry_benchmark": 0.09607252569343137,
     "damodaran_industry": "Semiconductor",
     "damodaran_year": 2025,
@@ -497,11 +497,12 @@
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "陶酔継続",
     "signals": [
-      "業界平均Semiconductor(9.6%)の1.6倍 ℹ️",
       "過去実績(3yr:120.2% / 5yr:N/A)と整合 ✅",
       "RR×ROIC(2.6%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
-    "warnings": [],
+    "warnings": [
+      "業界平均Semiconductor(9.6%)の5.7倍超 ⚠️"
+    ],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
@@ -509,21 +510,5 @@
   "forward_earnings_yield": 0.0144,
   "dilution_severity": "critical",
   "dilution_comment": "極度の希薄化 🚨 IPO直後か継続増資か要確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning amid 2025-2026 competition",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

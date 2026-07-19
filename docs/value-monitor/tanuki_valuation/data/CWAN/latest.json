@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 184.6,
-  "calculation_date": "2026-07-19T02:29:47+09:00",
+  "calculation_date": "2026-07-19T10:38:41+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -486,9 +486,9 @@
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
-    "verdict": "AGGRESSIVE",
+    "verdict": "REVIEW",
     "floor_hit": false,
-    "phase1_growth": 0.7349,
+    "phase1_growth": 0.5533926923932628,
     "industry_benchmark": 0.21630769255217946,
     "damodaran_industry": "Software (System & Application)",
     "damodaran_year": 2025,
@@ -502,10 +502,11 @@
     "hype_phase_used": 2,
     "hype_phase_label": "期待拡大期",
     "hype_substage_label": "期待拡大開始",
-    "signals": [],
+    "signals": [
+      "過去実績(3yr:34.1% / 5yr:29.2%)より高め（減速想定あり） ℹ️"
+    ],
     "warnings": [
-      "業界平均Software (System & Application)(21.6%)の3.4倍超 ⚠️",
-      "過去実績(3yr:34.1% / 5yr:29.2%)の2.2倍超 ⚠️"
+      "業界平均Software (System & Application)(21.6%)の2.6倍超 ⚠️"
     ],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
@@ -514,21 +515,5 @@
   "forward_earnings_yield": 0.0357,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit against Clearwater Analytics",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Ongoing SEC regulatory investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning and competitive pressures for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

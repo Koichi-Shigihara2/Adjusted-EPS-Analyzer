@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -79.1,
-  "calculation_date": "2026-07-19T02:37:43+09:00",
+  "calculation_date": "2026-07-19T10:39:37+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -456,9 +456,9 @@
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
-    "verdict": "AGGRESSIVE",
+    "verdict": "PLAUSIBLE",
     "floor_hit": false,
-    "phase1_growth": 0.5,
+    "phase1_growth": 0.03799662292008987,
     "industry_benchmark": 0.09564794907580026,
     "damodaran_industry": "Computers/Peripherals",
     "damodaran_year": 2025,
@@ -472,11 +472,11 @@
     "hype_phase_used": 3,
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "過熱継続",
-    "signals": [],
-    "warnings": [
-      "業界平均Computers/Peripherals(9.6%)の5.2倍超 ⚠️",
-      "過去実績(3yr:3.5% / 5yr:3.8%)の13.2倍超 ⚠️"
+    "signals": [
+      "業界平均Computers/Peripherals(9.6%)の0.4倍以内 ✅",
+      "過去実績(3yr:3.5% / 5yr:3.8%)と整合 ✅"
     ],
+    "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
@@ -484,21 +484,5 @@
   "forward_earnings_yield": 0.0543,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

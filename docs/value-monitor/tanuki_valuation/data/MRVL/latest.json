@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -73.8,
-  "calculation_date": "2026-07-19T02:32:01+09:00",
+  "calculation_date": "2026-07-19T10:42:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -497,9 +497,9 @@
   "fcf_margin_bear_mult_applied": true,
   "fcf_margin_note": "FCFマージン悪化(20.0%→17.0%) BEAR補正係数=0.850",
   "growth_sanity": {
-    "verdict": "REVIEW",
+    "verdict": "PLAUSIBLE",
     "floor_hit": false,
-    "phase1_growth": 0.3407,
+    "phase1_growth": 0.10528420105849423,
     "industry_benchmark": 0.09607252569343137,
     "damodaran_industry": "Semiconductor",
     "damodaran_year": 2025,
@@ -514,12 +514,11 @@
     "hype_phase_label": "陶酔期",
     "hype_substage_label": "過熱感に陰り",
     "signals": [
-      "過去実績(3yr:11.4% / 5yr:22.5%)より高め（減速想定あり） ℹ️",
+      "業界平均Semiconductor(9.6%)の1.1倍以内 ✅",
+      "過去実績(3yr:11.4% / 5yr:22.5%)と整合 ✅",
       "RR×ROIC(0.8%)：再投資より還元重視型、または期待値先行 ℹ️"
     ],
-    "warnings": [
-      "業界平均Semiconductor(9.6%)の3.5倍超 ⚠️"
-    ],
+    "warnings": [],
     "fcf_margin_bear_multiplier": 0.85,
     "fcf_margin_note": "FCFマージン悪化(20.0%→17.0%) BEAR補正係数=0.850"
   },
@@ -527,21 +526,5 @@
   "forward_earnings_yield": 0.0329,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit against Marvell Technology",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "Active SEC regulatory investigation into company practices",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning issued for fiscal 2025-2026 outlook",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }
