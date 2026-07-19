@@ -68,9 +68,10 @@ annual_*.json比較）に該当するか個別確認した。結果:
   しない別カテゴリだった。GitHub Actionsによる自動データ更新でFY2025分の
   annual_*.jsonが事前調査時点より新しくなったことで新たに顕在化したとみられる。
   一次情報（10-K原本）での確認は未実施のため、warn_acknowledged.jsonへの
-  登録は行わず「🆕未確認」のまま残し、CASH-TAG-MISSING-1と同様に別途
-  調査が必要な事項としてBACKLOG.mdへの新規登録要否を次回判断する
-  （本タスクのスコープ外のため、本コミットでは対応しない）。
+  登録は行わず「🆕未確認」のまま残し、[[CASH-TAG-MISSING-1]]と同様に一次
+  情報確認が必要な事項として**[[BS-FIELD-NEWLY-MISSING-2026-1]]をBACKLOG.md
+  へ独立タスクとして新規登録した**（本タスクのスコープ外のため、本コミット
+  では原因調査・修正は行わない）。
 - **pytest**: 390件中388 passed・2 failed（`test_iv_formula.py`のMSFT/NVDA、
   [[TEST-STALE-IV-1]]として既知・登録済みの事前確認済み失敗のみ。新規failなし）
 - **既存チェックへの影響**: WARN-25はCPRT/GEV/HEI/SITM/SOFIの5件（本タスクと
