@@ -615,15 +615,41 @@ def check_growth_sanity(
     # 誤検知してしまう）。recommended_gがこの時点で算出できている＝pipeline.py側で
     # override適用が見込める銘柄は対象から除外し、recommended_g=Noneのため
     # override自体が発火しない銘柄（MO/LOAR/XOM型）のみを検知する。
-    # （_FCF_CAGR_FLOOR自体はStage 1の候補閾値緩和判定でも使うため関数冒頭で定義済み）
-    floor_hit = (
+    # （_FCF_CAGR_FLOORはStage 1の候補閾値緩和判定でも使うため関数冒頭で定義済み）
+    _fcf_cagr_floor_hit = (
         growth_source == "fcf_cagr"
         and phase1_growth is not None
         and abs(phase1_growth - _FCF_CAGR_FLOOR) < 0.002
         and recommended_g is None
     )
+
+    # JOBY-STATIC-GROWTH-HARDCODE-1: segment_weighted経路（admin.html::
+    # fetchSegmentsForTicker()が新規銘柄登録時に機械的に書き込むGeneral
+    # 100%セグメントのgrowth値、デフォルト0.15）が、rev_cagr_3yr/5yr/
+    # g_fundamentalの実測系3指標すべてNone（量産前・低ベース効果等で
+    # TTM注入の安全弁〈_inject_ttm_for_general_segment〉にも棄却され、
+    # pipeline.py側のoverrideが一切発火しない）ため、未検証のまま
+    # DCF成長率として使われ続けているケースを検知する。
+    # recommended_g is None を必須条件に含めるのは、CRWV型（同じ実測系
+    # 3指標None・segment_weightedだが、ttm_actual経由でdecayモデルの
+    # recommended_gが正しく算出済み＝overrideが機能している銘柄）を
+    # 誤検知しないため（全母集団シミュレーションで確認済み、2026-07-20）。
+    _segment_weighted_all_none_hit = (
+        growth_source == "segment_weighted"
+        and cagr.get("cagr_3yr") is None
+        and cagr.get("cagr_5yr") is None
+        and g_fundamental is None
+        and recommended_g is None
+    )
+
+    floor_hit = _fcf_cagr_floor_hit or _segment_weighted_all_none_hit
     if floor_hit:
         verdict = GrowthVerdict.FLOOR_HIT_REVIEW
+        if _segment_weighted_all_none_hit:
+            warnings.append(
+                f"実測データ不足のためテンプレートのデフォルト成長率"
+                f"（{_FCF_CAGR_FLOOR:.0%}）が未検証のまま使用中 ⚠️"
+            )
 
     return {
         "verdict": verdict,
