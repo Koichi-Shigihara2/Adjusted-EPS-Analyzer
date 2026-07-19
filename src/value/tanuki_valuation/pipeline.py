@@ -484,6 +484,9 @@ class TanukiValuationPipeline:
             if upside is not None and upside < -30 and stage is not None and stage >= 3:
                 # DCF-2: 逆DCFの必要成長率が現在TTM成長率を下回る場合は GROWTH_PREMIUM
                 # （DCFが保守的でも現在の成長が市場の要求をすでに上回っている）
+                # GROWTH-VERDICT-SEQUENCING-BUG-1: growth_sanity.phase1_growthは
+                # recommended_g自動再計算（_save_result内）発火時に採用値へ更新される
+                # ため、ここは常に実際にDCFへ採用された成長率を参照する。
                 _ttm_g = valuation.get("growth_sanity", {}).get("phase1_growth")
                 # WACC-1: セクター別ターミナル成長率を逆DCFに適用
                 try:
@@ -660,6 +663,36 @@ class TanukiValuationPipeline:
                     extra = self._load_extra_data(ticker, valuation)
                     _phase1_auto_adjusted = True
                     valuation["phase1_growth"] = _recommended_g
+
+                    # GROWTH-VERDICT-SEQUENCING-BUG-1: growth_sanityのverdict/warningsは
+                    # 直前(605-617行)に初期計算値(_phase1_growth_original)で判定済みのまま
+                    # なので、実際にDCF・IVへ採用された_recommended_gを基準に再判定する。
+                    # recommended_g/recommended_g_median/growth_model/growth_model_reasonは
+                    # 「_recommended_gがどう導出されたか」の説明のため初期計算パスの値を
+                    # 維持する（ここで上書きすると、report.txt「推奨成長率内訳」欄の表示と
+                    # 実際にDCFへ適用された_recommended_gが不一致になってしまう）。
+                    try:
+                        _adopted_source = valuation.get("growth", {}).get("source")
+                        _growth_sanity_adopted = check_growth_sanity(
+                            ticker=ticker,
+                            phase1_growth=_recommended_g,
+                            sector=_sector,
+                            annual_revenues=_annual_revs,
+                            g_fundamental=_g_fund,
+                            ttm_actual=_recommended_g if _recommended_g > 0 else None,
+                            hype_phase=_hype_phase,
+                            hype_phase_label=_hype_info.get("stage_label"),
+                            hype_substage_label=_hype_info.get("substage_label"),
+                            fcf_margins=_fcf_margins or None,
+                            growth_source=_adopted_source,
+                        )
+                        for _key in ("verdict", "warnings", "signals", "phase1_growth", "floor_hit"):
+                            _growth_sanity[_key] = _growth_sanity_adopted[_key]
+                    except Exception as _e2:
+                        import logging as _logging
+                        _logging.getLogger(__name__).warning(
+                            f"[{ticker}] growth_sanity re-evaluation after recommended_g re-run failed: {_e2}"
+                        )
             except Exception as _e:
                 import logging as _logging
                 _logging.getLogger(__name__).warning(
@@ -1690,7 +1723,10 @@ class TanukiValuationPipeline:
             L.append("[4. 成長率根拠]")
             if _phase1_auto_adjusted and _recommended_g is not None:
                 L.append(f"Phase1成長率 : {_recommended_g * 100:.1f}% (DCF適用値・推奨成長率)")
-                L.append(f"元成長率      : {gs_p1g * 100:.1f}% (推奨適用前)" if gs_p1g is not None else "元成長率 : N/A")
+                # GROWTH-VERDICT-SEQUENCING-BUG-1: gs_p1g(growth_sanity.phase1_growth)は
+                # 再判定後は_recommended_gと同値になるため、「推奨適用前」の値は
+                # extra["phase1_growth_original"]（_phase1_growth_original）を使う。
+                L.append(f"元成長率      : {_phase1_growth_original * 100:.1f}% (推奨適用前)" if _phase1_growth_original is not None else "元成長率 : N/A")
             else:
                 L.append(f"Phase1成長率 : {gs_p1g * 100:.1f}%" if gs_p1g is not None else "Phase1成長率 : N/A")
             _gs_rec_median = growth_sanity.get("recommended_g_median")
