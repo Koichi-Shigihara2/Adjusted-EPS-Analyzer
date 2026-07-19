@@ -1,6 +1,6 @@
 {
   "ticker": "CELH",
-  "last_updated": "2026-07-15T22:28:52.457983",
+  "last_updated": "2026-07-20T00:38:13.728719",
   "quarters": [
     {
       "gaap_eps": 0.42384241080365254,
@@ -89,26 +89,26 @@
       },
       "ai_analysis": {
         "health": "調整中",
-        "comment": "調整項目の半数以上（SBC、無形資産償却）が恒常的性格が強く、リストラや異常貸倒引当は一過性です。市場がGAAP EPSのみで判断する場合、非現金・一時的項目を除いた調整後EPSの方が企業の実力を正確に表している可能性があり、実力が過小評価されるリスクがあります。ただしSBCや償却の加算は実態を過大に見せる恐れもあり、投資家は株式希薄化効果や無形資産の持続的価値を注視すべきです。全体として過小評価リスクはあるが、過大調整の可能性も排除できず中立的な判断が必要です。",
+        "comment": "調整項目にはSBCや無形資産償却といった恒常的・非現金費用が含まれる一方で、リストラや異常貸倒引当は一過性である。市場がGAAP EPS（0.42）で判断する場合、非現金・一過性費用により企業の実力が見えにくくなり、過小評価の可能性がある。ただし恒常的項目の調整によりAdjusted EPS（0.49）が実力を過大に示すリスクもあり、投資家は持続可能なコア利益を慎重に見極める必要がある。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが成長企業で継続的に発生する株式報酬であり恒常的コストの可能性が高い",
+            "snippet": "株式報酬費用は非現金費用だが、成長企業では毎期発生する恒常的なコストである。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は買収後も継続的に発生する非現金費用",
+            "snippet": "買収関連無形資産の償却は過去のM&Aに基づく恒常的な非現金費用であり、継続的に発生する。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる異常貸倒引当金繰入",
+            "snippet": "マクロ変動による一時的影響として位置づけられる異常貸倒引当金繰入であり、一過性の調整項目。",
             "confidence": 0.75
           },
           {
             "item": "restructuring",
-            "snippet": "一過性の事業再編費用として位置づけられるリストラ費用",
+            "snippet": "一過性の事業再編費用であり、リストラ費用は非経常的とみなされる。",
             "confidence": 0.8
           }
         ]
@@ -960,11 +960,11 @@
       "pretax_income": 13395000.0
     },
     {
-      "gaap_eps": -2.3998100163597025,
-      "adjusted_eps": -2.3338235568430035,
+      "gaap_eps": -0.7999366721199008,
+      "adjusted_eps": -0.7779411856143345,
       "gaap_net_income": -181896000.0,
       "adjusted_net_income": -176894490.3144723,
-      "diluted_shares_used": 75796000.0,
+      "diluted_shares_used": 227388000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1015,19 +1015,20 @@
         "gov_subsidy_timing"
       ],
       "revenue": 188233000.0,
-      "diluted_shares": 75796000.0,
+      "diluted_shares": 227388000.0,
       "period_end": "2022-09-30",
       "fiscal_year": 2022,
       "quarter": 3,
       "tax_expense": 35492000.0,
-      "pretax_income": -146404000.0
+      "pretax_income": -146404000.0,
+      "split_adjusted": true
     },
     {
-      "gaap_eps": 0.11685295768897055,
-      "adjusted_eps": 0.15901297367334347,
+      "gaap_eps": 0.038950985896323516,
+      "adjusted_eps": 0.05300432455778115,
       "gaap_net_income": 9158000.0,
       "adjusted_net_income": 12462164.772727273,
-      "diluted_shares_used": 78372000.0,
+      "diluted_shares_used": 235116000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1078,19 +1079,20 @@
         "gov_subsidy_timing"
       ],
       "revenue": 154020000.0,
-      "diluted_shares": 78372000.0,
+      "diluted_shares": 235116000.0,
       "period_end": "2022-06-30",
       "fiscal_year": 2022,
       "quarter": 2,
       "tax_expense": 2810000.0,
-      "pretax_income": 11968000.0
+      "pretax_income": 11968000.0,
+      "split_adjusted": true
     },
     {
-      "gaap_eps": 0.0853121128127834,
-      "adjusted_eps": 0.12669231508937276,
+      "gaap_eps": 0.028437370937594467,
+      "adjusted_eps": 0.042230771696457586,
       "gaap_net_income": 6679000.0,
       "adjusted_net_income": 9918614.656031903,
-      "diluted_shares_used": 78289000.0,
+      "diluted_shares_used": 234867000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1141,12 +1143,13 @@
         "gov_subsidy_timing"
       ],
       "revenue": 133388000.0,
-      "diluted_shares": 78289000.0,
+      "diluted_shares": 234867000.0,
       "period_end": "2022-03-31",
       "fiscal_year": 2022,
       "quarter": 1,
       "tax_expense": 3351000.0,
-      "pretax_income": 10030000.0
+      "pretax_income": 10030000.0,
+      "split_adjusted": true
     }
   ]
 }

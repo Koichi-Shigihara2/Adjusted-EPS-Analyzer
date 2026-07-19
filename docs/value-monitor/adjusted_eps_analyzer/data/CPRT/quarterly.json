@@ -1,6 +1,6 @@
 {
   "ticker": "CPRT",
-  "last_updated": "2026-07-13T12:45:23.726388",
+  "last_updated": "2026-07-20T00:38:01.732602",
   "quarters": [
     {
       "gaap_eps": 0.4257591989562672,
@@ -50,17 +50,17 @@
       "pretax_income": 502094000.0,
       "ai_analysis": {
         "health": "調整小",
-        "comment": "SBCは毎期発生する恒常的な非現金費用（株式報酬関連）である一方、貸倒引当金の異常変動分はマクロ要因による一時的影響と位置づけられる。調整幅は全体で小さく（EPS差約0.0076）、GAAP EPS使用の場合でも企業の実力が見えにくくなる程度は限定的。市場がGAAPベースで評価していれば若干の過小評価リスクはあるが、SBCの継続発生を考慮すると実力の過大評価リスクも同時に存在。投資家はSBCによる希薄化効果と信用コストの異常性の持続可能性に特に注目すべき。",
+        "comment": "SBCは恒常的に発生する非現金費用であるため調整の正当性は中程度（毎期の報酬コストとして実質的な希薄化影響あり）。一方、貸倒引当金の異常変動分はマクロ要因による一時的項目と位置づけられる。全体の調整幅は小さく（EPS差約1.8%）、市場がGAAP EPSで判断する場合でも企業の実力が見えにくくなっている可能性は低い。ただしSBCのadd_backによりGAAPベースではやや過小評価のリスクが存在する一方、恒常的SBCを調整した実力は過大評価される恐れもあるため投資家は両指標を併せて注視すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬費用（category: 株式報酬関連）",
+            "snippet": "株式報酬費用、非現金費用としてadd_back。ただし恒常的な報酬コストであり、毎期発生する可能性が高い。",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響とされる異常変動分（reason: マクロ変動による一時的影響）",
-            "confidence": 0.65
+            "snippet": "貸倒引当金繰入（異常変動分）、マクロ変動による一時的影響としてadd_back。一過性の異常項目。",
+            "confidence": 0.75
           }
         ]
       }
@@ -940,11 +940,11 @@
       "pretax_income": 514559000.0
     },
     {
-      "gaap_eps": 0.5787125504727406,
-      "adjusted_eps": 0.5966859040985751,
+      "gaap_eps": 0.2893562752363703,
+      "adjusted_eps": 0.29834295204928757,
       "gaap_net_income": 278620000.0,
       "adjusted_net_income": 287273235.1564508,
-      "diluted_shares_used": 481448000.0,
+      "diluted_shares_used": 962896000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -992,19 +992,20 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 939941000.0,
-      "diluted_shares": 481448000.0,
+      "diluted_shares": 962896000.0,
       "period_end": "2022-04-30",
       "fiscal_year": 2022,
       "quarter": 3,
       "tax_expense": 90985000.0,
-      "pretax_income": 369605000.0
+      "pretax_income": 369605000.0,
+      "split_adjusted": true
     },
     {
-      "gaap_eps": 0.5958281333571046,
-      "adjusted_eps": 0.6182325462475435,
+      "gaap_eps": 0.2979140666785523,
+      "adjusted_eps": 0.30911627312377177,
       "gaap_net_income": 287412000.0,
       "adjusted_net_income": 298219306.26361257,
-      "diluted_shares_used": 482374000.0,
+      "diluted_shares_used": 964748000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1052,19 +1053,20 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 867460000.0,
-      "diluted_shares": 482374000.0,
+      "diluted_shares": 964748000.0,
       "period_end": "2022-01-31",
       "fiscal_year": 2022,
       "quarter": 2,
       "tax_expense": 54643000.0,
-      "pretax_income": 342055000.0
+      "pretax_income": 342055000.0,
+      "split_adjusted": true
     },
     {
-      "gaap_eps": 0.5396773083603832,
-      "adjusted_eps": 0.5588030192601805,
+      "gaap_eps": 0.2698386541801916,
+      "adjusted_eps": 0.27940150963009025,
       "gaap_net_income": 260363000.0,
       "adjusted_net_income": 269590046.21792,
-      "diluted_shares_used": 482442000.0,
+      "diluted_shares_used": 964884000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -1112,12 +1114,13 @@
       "sector": null,
       "sector_exclusions": [],
       "revenue": 810132000.0,
-      "diluted_shares": 482442000.0,
+      "diluted_shares": 964884000.0,
       "period_end": "2021-10-31",
       "fiscal_year": 2022,
       "quarter": 1,
       "tax_expense": 65463000.0,
-      "pretax_income": 325826000.0
+      "pretax_income": 325826000.0,
+      "split_adjusted": true
     }
   ]
 }
