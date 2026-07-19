@@ -896,6 +896,69 @@ LRCX/CELH/TSLA）の1つであったにもかかわらず記載漏れとなっ�
 
 ---
 
+### ✅ [MRVL-2019-2020-NULL-1] MRVLのannual_2019.json/annual_2020.jsonが両方ともrevenue/net_income=None
+**優先度:** 中〜低
+**分類:** データ品質 / SECデータ正規化
+**登録日:** 2026-07-15
+**発見:** [[FY52WEEK-BUCKET-MISPLACE-1]] IOT `_build_period_data`追加調査時の機械スキャン（副次発見）
+**完了日:** 2026-07-20（原因調査により実害なしと確認、クローズ）
+
+#### 内容（登録時）
+MRVLの`annual_2019.json`・`annual_2020.json`が両方ともrevenue/net_income=None
+であることを、隣接年度の完全重複を検出する機械スキャンで発見した。
+`git log`で確認したところ、`annual_2019.json`の最終更新は2026-06-13時点
+（ARCH-DATA-1-FYコミット`ab792d38b`＝2026-06-25より前）であり、
+その時点で既に空だった。したがって[[FY52WEEK-BUCKET-MISPLACE-1]]で
+特定した回帰バグ（determine_fiscal_year()導入コミットによる年度キー
+シフト）とは無関係の別原因と判断される。
+
+CLAUDE_CODE_START.mdの「調査中に発見した別バグの実装は別途依頼を待つ」
+ルールに従い、その場での原因調査・修正は行わず、新規登録のみ実施。
+
+#### 原因調査結果（2026-07-20完了）
+**依頼時の前提は誤りだったことをまず記録**: 実ファイルを確認したところ
+`annual_2020.json`は revenue/net_income とも正常に値が入っており
+None ではなかった（pl/cf/shares すべて充足）。None だったのは
+`annual_2019.json` のみ（`pl`/`cf`/`shares`/`other` が全て空、`bs` に
+`stockholders_equity` が1件あるのみ）。
+
+**確定した原因**: MRVLが2021年にCIK切替（旧1058057「MARVELL TECHNOLOGY
+GROUP LTD」バミューダ籍 → 新1835632「Marvell Technology, Inc.」
+デラウェア籍、Inphi買収に伴う持株会社再編）を経ており、`cik_lookup.csv`
+は新CIKのみを登録している。新CIKの初回10-K（FY2022、accn
+0001835632-22-000016、filed 2022-03-10）の損益計算書比較年度は
+FY2020までしか遡らないため、FY2019の revenue/net_income タグは
+新CIK配下のXBRL company facts に一切存在しない
+（`RevenueFromContractWithCustomerExcludingAssessedTax`・`NetIncomeLoss`
+とも end~2019-02-02 のfactが0件と一次情報で確認）。`bs.stockholders_equity`
+のみ値が入っているのは、株主資本変動計算書のロールフォワード開始残高
+（FY2019期末残高）が副産物的にXBRLへ開示されているため。
+
+経済実体としてのFY2019データは旧CIK（1058057）配下にSEC上実在する
+（10-K filed 2019-03-28, accn 0001058057-19-000010, period 2019-02-02、
+EDGARで確認済み）が、現行システムは新CIKのみを参照しているため取得できない。
+
+git履歴（初回コミット`09efb2553`時点から既にこの状態）・fy_collision_log.json
+/fy_tag_mismatch_log.json（ともに空）から、正規化処理中に消失したのでは
+なく初回生成時点からの構造的欠落と確認。マッピング側の候補タグ不足でも
+正規化ロジックのバグでもない。
+
+**横展開確認**: 「最古年度がBS項目の一部のみでPL/CFが空」という同型
+パターンは86ファイル・ほぼ全銘柄で再現する普遍的な最古10-K比較年度
+ウィンドウ境界の特性と判明。MRVLはCIK切替によりこの境界が異例に新しい
+2019年に来ているだけ。CEG（2022年Exelonからのスピンオフ）も同型パターン
+を示す実例として確認済み。
+
+**結論**: 実害なし・マッピング側の不備でも正規化処理のバグでもないと
+確認済みとしてクローズ。
+
+#### 副次発見
+CIK断絶による最古年度PL/CF欠落という構造的パターンをBACKLOG.mdに
+[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]として新規分離登録した
+（対応方針〈旧CIK補完 or 現状維持〉の確定を含む、優先度：未定）。
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）

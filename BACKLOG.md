@@ -1609,27 +1609,41 @@ FY52WEEK-BS-FADEOUT-FALLBACK-1で実装した履歴フォールバック（過�
 
 ---
 
-### [MRVL-2019-2020-NULL-1] MRVLのannual_2019.json/annual_2020.jsonが両方ともrevenue/net_income=None
-**優先度:** 中〜低
+### [CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1] 法人再編によるCIK断絶で最古年度のPL/CF項目が構造的に欠落するパターン
+**優先度:** 未定
 **分類:** データ品質 / SECデータ正規化
-**登録日:** 2026-07-15
-**発見:** [[FY52WEEK-BUCKET-MISPLACE-1]] IOT `_build_period_data`追加調査時の機械スキャン（副次発見）
+**登録日:** 2026-07-20
+**発見:** [[MRVL-2019-2020-NULL-1]]原因調査時の副次発見
 
 #### 内容
-MRVLの`annual_2019.json`・`annual_2020.json`が両方ともrevenue/net_income=None
-であることを、隣接年度の完全重複を検出する機械スキャンで発見した。
-`git log`で確認したところ、`annual_2019.json`の最終更新は2026-06-13時点
-（ARCH-DATA-1-FYコミット`ab792d38b`＝2026-06-25より前）であり、
-その時点で既に空だった。したがって[[FY52WEEK-BUCKET-MISPLACE-1]]で
-特定した回帰バグ（determine_fiscal_year()導入コミットによる年度キー
-シフト）とは無関係の別原因と判断される。
+法人再編（持株会社化・スピンオフ等）でCIKが切り替わった銘柄は、現在
+追跡中のCIK配下の最古10-Kの比較年度ウィンドウより前の年度でPL/CF項目が
+構造的に取得不能になる（BS項目の一部のみ、株主資本変動計算書のロール
+フォワード開始残高等の副産物として拾える場合がある）。
 
-CLAUDE_CODE_START.mdの「調査中に発見した別バグの実装は別途依頼を待つ」
-ルールに従い、その場での原因調査・修正は行わず、新規登録のみ実施。
+実例:
+- **MRVL**: 2021年にCIK切替（旧1058057「MARVELL TECHNOLOGY GROUP LTD」
+  →新1835632「Marvell Technology, Inc.」、Inphi買収に伴う持株会社再編）。
+  新CIKの初回10-K（FY2022、accn 0001835632-22-000016）の損益計算書比較年度は
+  FY2020までしか遡らないため、annual_2019.jsonはPL/CFが空でBS項目
+  （stockholders_equityのみ、株主資本変動計算書の開始残高として副産物的に
+  取得）という状態になっている。経済実体としてのFY2019データは旧CIK
+  （1058057）配下にSEC上実在する（10-K filed 2019-03-28, accn
+  0001058057-19-000010, period 2019-02-02）が、現在の`cik_lookup.csv`は
+  新CIKのみを登録しているため参照できない。
+- **CEG**: 2022年Exelonからのスピンオフ。annual_2019.jsonで同型のPL/CF欠落を確認済み。
+
+なお「最古年度がBS項目の一部のみでPL/CFが空」という表面パターン自体は
+CIK断絶と無関係に86ファイル・ほぼ全銘柄で再現する（各銘柄の最古10-Kの
+比較年度ウィンドウ境界という普遍的特性）。MRVL/CEGが特異なのは、この
+境界がCIK切替により2019〜2022年という異例に新しい位置に来ている点のみ。
 
 #### 対応方針（未定）
-原因調査は別途依頼が必要。MRVLの2019/2020年度revenue/net_income抽出元
-タグの履歴（データ欠落かタグ不在か等）を確認するところから着手する。
+①旧CIKからのデータ補完を実装する ②実害が限定的（古い年度のみ）で
+あれば現状維持し「既知の構造的境界」として記録に留める、のいずれか。
+全106銘柄でCIK切替歴の有無を棚卸しし、影響範囲（何銘柄がこのパターンに
+該当するか）を確認してから判断する（対応方針の確定自体を本タスクの
+スコープに含む）。
 
 #### 着手条件
 なし
@@ -4229,10 +4243,13 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
 ⑨ [[JOBY-STATIC-GROWTH-HARDCODE-1]]・[[FCF-OUTLIER-PREROUNDING-LOSS-1]]・
    [[CWAN-SNPS-MA-DISTORTION-1]]・[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]・
-   [[MRVL-2019-2020-NULL-1]]・[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
+   ~~[[MRVL-2019-2020-NULL-1]]~~ ✅ 2026-07-20完了（実害なし・構造的境界特性と
+   判明。詳細はBACKLOG_DONE.md参照。副次発見はCIK-DISCONTINUITY-OLDEST-YEAR-GAP-1
+   として分離登録）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
