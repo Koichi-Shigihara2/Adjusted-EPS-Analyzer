@@ -4,6 +4,95 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [WST-SECTOR-MISCLASSIFICATION-1] [RCAT-SECTOR-MISCLASSIFICATION-1] sector分類修正（2件一括）
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19
+**発見:** WST=[[GROWTH-SANITY-CLASS-SYNC-1]]（完了）verdict≠PLAUSIBLE全32銘柄の
+原因分析、RCAT=[[GROWTH-VERDICT-SEQUENCING-BUG-1]]対応中のverdict悪化3銘柄
+個別調査
+
+#### 問題（再掲）
+両銘柄とも`config/beta_config.json`のsector値がyfinance実態（industry）と
+不一致。WST: "Healthcare_IT"→実態"Medical Instruments & Supplies"。
+RCAT: "Electronics_General"→実態"Aerospace & Defense"。
+
+**RCATについては、分類修正してもgrowth_sanityのREVIEW警告自体は解消しない
+（乖離比率が拡大する）ことを事前調査時点で確認済みであり、本対応は
+データ品質としての正しさを目的とし、verdict改善を目的としないという前提の
+まま実施した。**
+
+#### 実装内容
+1. `growth_sanity.py::SECTOR_TO_DAMODARAN`辞書から、`beta_config.json`に
+   実在する業種カテゴリキーを確認（推測で決め打ちせず）:
+   - WST向け: `Healthcare_Products` → Damodaran「Healthcare Products」
+   - RCAT向け: `Aerospace_Defense` → Damodaran「Aerospace/Defense」
+     （`Space_Defense`も同一Damodaranシート名にマップされ機能的に等価だが、
+     RCATはドローン〈航空機〉であり衛星等の「Space」要素はないため
+     `Aerospace_Defense`をyfinance industry文字列との対応の分かりやすさで
+     採用）
+2. `config/beta_config.json`のWST・RCATエントリの`sector`値をそれぞれ
+   `Healthcare_Products`・`Aerospace_Defense`に修正（`beta`/`source`は無変更）。
+3. `sector`値を参照する全計算経路をgrepで洗い出し、以下の通り整理:
+   - **growth_sanity Damodaran業種ベンチマーク比較**
+     （`pipeline.py::_load_beta_sector()`→`check_growth_sanity(sector=...)`）:
+     意図通り影響を受ける（本対応の主目的）。
+   - **FCF実力推定の転換率**（`core_calculator.py`の`_sector`→
+     `estimate_fcf_from_eps(sector=...)`→`fcf_conversion_config.json`の
+     `sector_conversion_rates`）: RCATは`Electronics_General`（テーブル
+     未掲載→デフォルト0.7）から`Aerospace_Defense`（テーブル掲載値0.55）
+     に変わり**表示上の転換率は変化する**が、RCATは`adj_net_income`が
+     マイナスのため`fcf_estimation.applied=False`（生FCFへフォールバック）
+     であり、**実際のIVには影響しない**ことを確認。WSTは新旧いずれの
+     キーもテーブル未掲載でデフォルト0.7のまま変化なし。
+   - **WACC/β計算**（`core_calculator.py`→`calculate_wacc(sector=...)`）:
+     `sector`引数は`beta`がNoneの場合のみのフォールバック用。WST・RCATとも
+     `beta_config.json`に明示的な`beta`値（1.159/1.296）があるため、この
+     フォールバック経路は発火せず**影響なし**。
+   - **Phase2成長率上限**（`_sector_caps`）・**αセクター/業種別上限**
+     （`_alpha_caps`/`_industry_alpha_caps`、`maturity_config.json`）:
+     いずれも新旧いずれのキーも未掲載のため**影響なし**。加えて
+     `_alpha_caps`のキーは実際にはyfinanceの広義sector（"Healthcare"
+     "Industrials"等のGICS的分類、`financials["sector"]`由来）であり、
+     `beta_config.json`の狭義sector（Damodaran向け）とは別軸の値である
+     ことも確認した（両者を混同しないよう注意）。
+   - **beta_fetcher.py**（Software_System暫定分類判定）:
+     `sector=="Software_System"`限定のロジックのため対象外。
+
+#### 検証結果（新旧比較、具体的数値）
+- **WST**: IV $99.97（不変）、Classification TRIM（不変）、WACC 10.906%
+  （不変）。growth_sanity: verdict REVIEW→**PLAUSIBLE**、industry_benchmark
+  1.66%→7.81%、damodaran_industry "Heathcare Information and Technology"→
+  "Healthcare Products"、recommended_g（Layer2参考値・DCF未適用）3.3%→5.9%、
+  warnings「3.9倍超」→解消（0.8倍以内）。IVが不変な理由: WSTはLayer 1
+  （セグメント加重モデル）で実際のDCF成長率6.4%を直接使用しており、
+  recommended_gは参考表示のみでDCF計算には使われないため。
+- **RCAT**: IV $3.89→**$3.73**（-4.2%）、乖離率-49.1%→-51.2%、
+  Classification WATCH（不変）。growth_sanity: verdict REVIEW→REVIEW
+  （**不変、事前調査通り**）、industry_benchmark 13.8%→10.9%、
+  damodaran_industry "Electronics (General)"→"Aerospace/Defense"、
+  実際にDCFへ適用される成長率（Layer2逓減モデル、CAGR_max×35%+
+  industry_benchmark×65%）44.0%→**42.1%**、warnings「3.2倍超」→
+  **「3.9倍超」（乖離拡大、事前調査で予告した通り）**。IVが変化した理由:
+  RCATはセグメント未設定のためLayer 2（逓減モデル）の成長率が実際のDCFに
+  直接使用されており、industry_benchmarkの低下がrecommended_gを
+  引き下げDCF成長率を下げたため（FCF転換率変化は前述の通り無関係）。
+- **他98銘柄への影響**: `pipeline.py WST RCAT --skip-risk`のみ実行し、
+  `git status`でWST/RCAT以外の98銘柄のデータファイルが一切変更されて
+  いないことを確認（`tickers.json`の`updated_at`タイムスタンプ更新のみ、
+  `count`は100で不変）。sector値はticker単位のオーバーライドのため
+  他銘柄への影響は構造的にゼロであることも設計上確認済み。
+- **pytest**: 406件中404 passed（既知failのMSFT/NVDA 2件のみ、新規fail
+  なし）。
+- **report_consistency_check.py --fail-on-ng**: NG=0（WARN=69件、既存分
+  から変化なし）。
+
+#### 着手条件（消滅・完了）
+なし（実装完了）
+
+---
+
 ### ✅ [SKIP-RISK-EVENTS-WIPE-1] pipeline.py --skip-risk実行時のrisk_events保全
 **優先度:** 中
 **分類:** バグ修正 / TANUKI VALUATION / データ保全

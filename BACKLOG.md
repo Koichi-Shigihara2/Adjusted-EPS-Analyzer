@@ -2072,68 +2072,6 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
-### [WST-SECTOR-MISCLASSIFICATION-1] WSTの業種がHealthcare_ITに誤分類、Damodaranベンチマーク比較が不適切
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-19
-**発見:** [[GROWTH-SANITY-CLASS-SYNC-1]]（完了・BACKLOG_DONE.md参照）verdict≠PLAUSIBLE
-全32銘柄の原因分析
-
-#### 内容
-West Pharmaceutical Services（WST、医薬品送達デバイス・パッケージング
-製造業）が`config/beta_config.json`で`sector: "Healthcare_IT"`に
-分類されているが、これはヘルスケアIT/ソフトウェア企業向けの業種であり、
-製造業のWSTには不適合。yfinance実際のindustryは"Medical Instruments
-& Supplies"。Damodaran「Healthcare Information and Technology」
-（g_ebit=1.7%、低成長ソフトウェア業種の平均）と比較され、WSTの
-実際の成長率6.4%が「3.9倍」と警告される誤検知の原因になっている。
-
-#### 対応方針（未確定）
-`beta_config.json`のWSTエントリの`sector`値を、実態に近いDamodaran業種
-（例: "Healthcare Products"やDrugs関連の製造業カテゴリ）へ修正する。
-修正時はWACC/β計算等、`sector`値を参照する他の計算経路（growth_sanity
-以外）への影響も確認すること。
-
-#### 着手条件
-なし
-
----
-
-### [RCAT-SECTOR-MISCLASSIFICATION-1] RCATの業種がElectronics_Generalに設定、yfinance実態（Aerospace & Defense）と不一致
-**優先度:** 中
-**分類:** データ品質 / TANUKI VALUATION
-**登録日:** 2026-07-19
-**発見:** [[GROWTH-VERDICT-SEQUENCING-BUG-1]]対応中、verdict悪化3銘柄
-（ALAB/IONQ/RCAT）の個別調査
-
-#### 内容
-Red Cat Holdings（RCAT、軍用小型ドローン製造・DoD Blue sUAS認定
-サプライヤー）が`config/beta_config.json`で`sector: "Electronics_General"`
-に分類され、Damodaran「Electronics (General)」（g_ebit=13.8%）と比較
-されているが、`latest.json`の`components.industry`（yfinance由来）は
-明確に"Aerospace & Defense"を示している。[[WST-SECTOR-MISCLASSIFICATION-1]]
-と同型の、内部sectorバケットとyfinance実態の不一致。
-
-なおSEC EDGAR公式SIC（7372「Services-Prepackaged Software」）は旧社名
-（TimefireVR）時代の残存タグで現業態と無関係なため、SIC情報は参考にならない。
-
-**業種分類を"Aerospace_Defense"（Damodaran「Aerospace/Defense」
-g_ebit=10.9%）へ修正しても、現在Electronics (General)の13.8%より
-むしろ低いため、recommended_g（44.0%）との乖離比率は3.2倍→4.0倍へ拡大し、
-growth_sanityのREVIEW警告は解消しない**（[[GROWTH-VERDICT-SEQUENCING-BUG-1]]
-完了時の個別調査で確認済み。BACKLOG_DONE.md参照）。分類修正はデータ品質
-としては妥当だが、RCATのverdict自体を改善する対応ではない。
-
-#### 対応方針（未確定）
-`beta_config.json`のRCATエントリの`sector`値を"Aerospace_Defense"または
-"Space_Defense"へ修正する。修正時はWACC/β計算等、`sector`値を参照する
-他の計算経路（growth_sanity以外）への影響も確認すること。
-
-#### 着手条件
-なし
-
----
-
 ### [JNJ-XOM-PM-FLOOR-RISK-1] JNJ・XOM・PM・CONはrecommended_g候補が最低ラインでMO型floor転落の潜在リスクあり
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION / 監視対象
