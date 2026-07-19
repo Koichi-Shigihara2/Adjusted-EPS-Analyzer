@@ -504,6 +504,30 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    発火することが事前調査済みのため、`config/warn_acknowledged.json`へ
 │    事前登録済み。詳細はBACKLOG_DONE.md
 │    [[BS-FIELD-NONE-TRANSITION-DETECT-1]]参照
+│    **追記（FY52WEEK-BS-FADEOUT-FALLBACK-1 2026-07-19）**: 「生涯
+│    フェードアウト」（過去に明示的$0申告があるが最新年度はNone）銘柄向けに
+│    `short_term_investments`/`long_term_debt`/`short_term_debt`の履歴
+│    フォールバックを追加。新設`_lookup_last_confirmed_zero_year()`が
+│    `get_annual_range(ticker, years=100)`を最新年度を除き降順走査し、
+│    最初に見つかった非None値が**厳密に0**の場合のみその年度を返す
+│    （非0ならNoneを返し即座にフォールバック不成立とする）。年数閾値・
+│    M&A等イベント判別の専用機構は設けず、この「直近既知値が0か否か」
+│    という条件のみで判定する設計（CSGP/KULR/RCATの3件は最後の$0の後に
+│    非0の実額が再出現する複雑パターンのため、この条件で自然に除外
+│    される。ハードコードされた銘柄リストは一切使用しない）。該当時は
+│    `{field}_estimated_zero`/`{field}_last_confirmed_zero_year`を
+│    戻り値に追加し、BUG-NETDEBT-3（正規化データからのLTDebt補完）・
+│    BUG-NETDEBT-4（同一時点原則の四半期上書き）のいずれかで実データが
+│    見つかった場合はフラグを解除する（四半期上書き時は該当サブ
+│    フィールド自体に実データがある場合のみ解除、四半期側も同フィールドを
+│    欠く場合はannualベースの推定ゼロ注記を維持）。adjustments.py::
+│    BSAdjustmentResult・pipeline.py::financial_health経由でreport.txtに
+│    「推定ゼロ（最終確認: FY20XX）」注記として表示、および従来combined
+│    のみだった`total_debt`に加え`long_term_debt`/`short_term_debt`を
+│    financial_healthへ個別公開。100銘柄実測で対象22件中19件が発火
+│    （残3件はBUG-NETDEBT-3/4のより新しいデータへの正当な迂回）。
+│    詳細はBACKLOG_DONE.md [[FY52WEEK-BS-FADEOUT-FALLBACK-1]]、除外3件は
+│    BACKLOG.md [[BS-FIELD-FADEOUT-NONZERO-LAST-VALUE-1]]参照
 ├─ data_fetcher.py::TTMReader  # common/sec_data/ttm/{TICKER}_ttm_series.jsonを
 │    読み込み、_select_fcf_source()経由でSEC 10-Kベースのfcf_5yr_avg/fcf_listと
 │    比較のうえ採用可否を決定する（TTM-QUARTERS-CHECK-1 2026-07-12完了:

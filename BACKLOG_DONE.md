@@ -4,6 +4,102 @@
 
 ## 2026-07-19（完了）
 
+### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質ゲート
+**登録日:** 2026-07-19
+**完了日:** 2026-07-19
+**発見:** [[FY52WEEK-BS-NULL-SILENT-1]] Phase B/C 全179件の一次情報確認
+
+#### 設計方針（事前調査で確定・実装方針の根拠）
+- **年数閾値を設けない**: 事前調査（ギャップ年数分布: 最小1年・最大12年・
+  中央値3年）の結果、単一の固定閾値では広い分布をカバーできず、また
+  「過去に明示的$0実績がある」という条件自体が既に十分に強いシグナル
+  （企業が意図的に$0を申告した実績）であるため、年数による足切りは
+  設けないこととした。
+- **M&A等重大イベント時の無効化の仕組みは設けない**: 事前調査で25件と
+  BACKLOG既知のM&A・組織再編イベント（BROS Up-C再編・CART・CWAN
+  Enfusion買収・SNPS Ansys買収・CON 2024年スピンオフ・AVAV BlueHalo
+  買収）との重複がないことを確認済みのため、無効化機構は今回のスコープ
+  外とした。
+- **25件中3件を除外**: CSGP/short_term_investments・KULR/short_term_debt・
+  RCAT/long_term_debtは「最後の$0の後に実額の非ゼロ値が再登場してから
+  消失する」複雑パターンと判明したため、[[BS-FIELD-FADEOUT-NONZERO-
+  LAST-VALUE-1]]として別タスクに分離し、今回は対象外とした。
+
+#### 実装内容
+- **reader.py**: `_lookup_last_confirmed_zero_year()`を新設。
+  22件のハードコードリストではなく、**「最新年度が完全欠損（None）かつ
+  直近の既知値（過去に遡って最初に見つかった非None値）が明示的0である」
+  という条件判定による汎用ロジック**として実装（この条件により
+  CSGP/KULR/RCAT型は「直近の既知値が非ゼロ」のため自然に除外される）。
+  `get_net_cash()`の3フィールド（short_term_investments/long_term_debt/
+  short_term_debt）それぞれに適用し、`{field}_estimated_zero`・
+  `{field}_last_confirmed_zero_year`をprovenanceとして返す。
+  - **既存ロジックとの整合を確保するための追加修正**: 実装当初は
+    四半期側の同一時点原則（BUG-NETDEBT-4）・正規化データ補完
+    （BUG-NETDEBT-3）が発火した際に無条件で推定ゼロフラグをリセット
+    していたが、これだと「四半期側も同じタグ欠損を抱えている場合」に
+    annual側の推定ゼロ注記が不必要に消えてしまうことが判明（例:
+    ENTG/short_term_debtは四半期が明示的0を報告済みのため正しく
+    リセットされるべきだが、他のケースでは四半期側もNoneのままの
+    場合がある）。四半期・正規化データ側が「そのフィールド自身の
+    実データ」を持っている場合のみリセットするよう修正した。
+- **adjustments.py**: `BSAdjustmentResult`に6フィールド
+  （sti/ltdebt/stdebt × estimated_zero/last_confirmed_zero_year）を追加。
+- **pipeline.py**: `financial_health`辞書に`long_term_debt`/
+  `short_term_debt`の個別値（従来`total_debt`への合算のみ）と上記6
+  フィールドを追加露出。report.txtのST_Invest行に推定ゼロ注記
+  （近似値注記と排他）を追加、LTDebt/STDebtいずれかが推定ゼロの場合
+  のみ新規「Debt内訳」行を表示。
+- **report_consistency_check.py**: コード変更は不要と判断（後述）。
+- **tests/test_pipeline_logic.py**: `TestFadeoutZeroFallback`
+  （7件、PLTR型の代表例・年数閾値なし確認・CSGP/KULR/RCAT型の
+  非該当確認×3・構造的不明ケース・最新年度に実データありのケース）
+  を合成データで新設。
+
+#### 検証結果
+- **全100銘柄スキャン**（reader.py直接呼び出し、データ再生成なしの
+  安全な方式）: `estimated_zero`が付与されたのは想定19件（22件中、
+  3件は下記理由でより新しい実データに委ねられ非該当）。ENTG/
+  short_term_debt・FLYW/long_term_debt・CPRT/long_term_debtは、
+  四半期の明示的0報告・正規化データの実額発見により、推定ゼロより
+  優先される新しい情報が見つかったため`estimated_zero=False`となる
+  （設計上正しい挙動、バグではない）。他78銘柄・rpoフィールドは
+  0件で想定通り非該当。
+- **除外3件の再確認**: CSGP/short_term_investments・KULR/
+  short_term_debt・RCAT/long_term_debtはいずれも`estimated_zero=False`
+  のまま（誤って推定ゼロにならないことを確認）。
+- **19件の実ライブ確認**: PLTR/CSGP(std)/KULR/RCAT/APP/BKNG/CDNS/DELL/
+  DOCN/ENTG(sti)/HQY/META/MSCI/NOW/RMBS(両field)/RXRX/S/SOUN(両field)/
+  TER・FLYW・CPRTの計21銘柄で`pipeline.py --skip-risk`を実行。
+  report.txtで想定通り「推定ゼロ（最終確認: FY20XX）」注記・Debt内訳
+  行が表示され、FLYW/CPRTは想定通り注記なし（正規の実データに解決）
+  であることを確認。**IV・Classification・Net_Debtの数値は全21銘柄で
+  一切変化なし**（本タスクは既にNone→0扱いされていた値へメタデータ・
+  表示注記を追加するのみで、実際の計算値は変更しないため）。
+  TERのみNet_Debt表示が$-0.04B→$-0.05Bと僅かに変化したが、baseline
+  コード（本タスクの変更前）でも同一の再生成で同じ値になることを
+  確認済みで、本タスクとは無関係な既存データの再生成漏れ（他タスクでも
+  複数回確認済みの既知パターン）と判断した。
+- **他銘柄への影響**: `git status`でPLTR/CSGP/KULR/RCAT/APP/BKNG/CDNS/
+  CPRT/DELL/DOCN/ENTG/FLYW/HQY/META/MSCI/NOW/RMBS/RXRX/S/SOUN/TER
+  の21銘柄以外のデータファイルが一切変更されていないことを確認
+  （`tickers.json`のタイムスタンプ更新のみ、count=100不変）。
+- **report_consistency_check.py**: WARN-25（`_BS_NULL_CHECK_FIELDS`）は
+  対象3フィールドを含まないため無関係。WARN-26（BS項目遷移検知）は
+  raw annual_YYYY.jsonを直接読むためreader.py層の本フォールバックとは
+  独立しており、影響がないことを実行確認済み（コード変更は行っていない）。
+- **pytest**: 413件中411 passed（既知failのMSFT/NVDA 2件のみ、
+  新規failなし）。
+- **report_consistency_check.py --fail-on-ng**: NG=0（WARN=69件、
+  既存分から変化なし）。
+
+#### 着手条件（消滅・完了）
+なし（実装完了）
+
+---
+
 ### ✅ [WST-SECTOR-MISCLASSIFICATION-1] [RCAT-SECTOR-MISCLASSIFICATION-1] sector分類修正（2件一括）
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION
