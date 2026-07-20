@@ -798,6 +798,12 @@ function render(d) {
   const fcfEstRatio = fcfEstimation.divergence_ratio || 1.0;
   const fcfEstWarning = fcfEstimation.divergence_warning || "";
   const fcfEstNote = fcfEstimation.note || "";
+  // FCF-EST-NOTE-DISPLAY-1: 「買収・統合関連」加算の控除・検出額
+  // （CWAN-SNPS-MA-DISTORTION-1・FCF-EST-DIRECTION-GUARD-1・
+  // FCF-EST-NET-BASIS-FIX-1で計算済み。固定リスト方式は使わず、
+  // latest.jsonの既存フィールドを直接参照する）
+  const fcfEstMaExcluded = fcfEstimation.ma_addback_excluded || 0;
+  const fcfEstMaSkipped = fcfEstimation.ma_addback_detected_but_not_applied || 0;
   const fcfOutlierDetected = fcfOutlier.detected || false;
   const fcfOutlierRule = fcfOutlier.rule || "none";
   const fcfOutlierNote = fcfOutlier.note || "";
@@ -1774,6 +1780,19 @@ function render(d) {
                     '<div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">' +
                     '<span class="input-label" style="color:var(--yellow);font-size:12px">⚠ 大幅乖離の警告（' + fcfEstRatio.toFixed(1) + '倍）</span>' +
                     '<span class="input-value" style="color:var(--yellow);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">' + fcfEstWarning + '</span>' +
+                    '</div></div>';
+                }
+                if (fcfEstMaExcluded > 0) {
+                  html += '<div class="inputs-grid" style="margin-top:12px">' +
+                    '<div class="input-item" style="grid-column:1/-1;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:6px;padding:12px">' +
+                    '<span class="input-label" style="color:var(--yellow);font-size:12px">⚠ 買収・統合関連加算を控除: ' + fmtB(fcfEstMaExcluded) + '</span>' +
+                    '<span class="input-value" style="color:var(--mut);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">無形資産償却費・M&amp;A統合費用等の買収由来の非現金加算がAdj_NIに含まれたままだと推定FCFが過大になるため、FCF換算専用に控除しています。分類判定には使用しません。</span>' +
+                    '</div></div>';
+                } else if (fcfEstMaSkipped > 0) {
+                  html += '<div class="inputs-grid" style="margin-top:12px">' +
+                    '<div class="input-item" style="grid-column:1/-1;background:rgba(148,163,184,0.08);border:1px solid rgba(148,163,184,0.3);border-radius:6px;padding:12px">' +
+                    '<span class="input-label" style="color:var(--mut);font-size:12px">ℹ 買収・統合関連加算' + fmtB(fcfEstMaSkipped) + 'を検出したが未控除</span>' +
+                    '<span class="input-value" style="color:var(--mut);font-size:12px;font-weight:400;margin-top:4px;display:block;white-space:pre-wrap">控除すると生FCFを下回る（過小推定側）と判定されたため、方向性ガードにより調整済み純利益をそのまま採用しています。</span>' +
                     '</div></div>';
                 }
                 return html;

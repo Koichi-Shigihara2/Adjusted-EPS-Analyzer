@@ -1548,6 +1548,22 @@ class TanukiValuationPipeline:
                         L.append(f"   [DCF-REL-SYNC-1: FCF実績が5年平均から{_dev_pct_polb_raw:.0f}%乖離]")
                 else:
                     L.append("DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)")
+            # FCF-EST-NOTE-DISPLAY-1: 「買収・統合関連」加算の控除・検出情報を表示
+            # （生FCF安定(CV<0.3)のためこの分岐に来た銘柄は、控除自体が
+            # estimated_fcfの計算に使われない＝表示すると誤解を招くため対象外とする）
+            _fcf_note_fb = fcf_est.get("note", "") or ""
+            if not _fcf_note_fb.startswith("生FCF安定"):
+                _ma_excluded_fb = fcf_est.get("ma_addback_excluded") or 0
+                _ma_skipped_fb  = fcf_est.get("ma_addback_detected_but_not_applied") or 0
+                if _ma_excluded_fb > 0:
+                    L.append(f"⚠️ 買収・統合関連加算${_ma_excluded_fb/1e6:,.0f}Mを控除後も調整済み")
+                    L.append("    純利益がマイナスのため、生FCFへフォールバックしています。詳細は")
+                    L.append("    BACKLOG_DONE.md [[CWAN-SNPS-MA-DISTORTION-1]]参照。]")
+                elif _ma_skipped_fb > 0:
+                    L.append(f"ℹ️ 買収・統合関連加算${_ma_skipped_fb/1e6:,.0f}Mを検出したが未控除")
+                    L.append("   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性")
+                    L.append("    ガードにより調整済み純利益をそのまま採用しています。詳細は")
+                    L.append("    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]")
         else:
             L.append(f"FCF_Conversion_Rate: {fcf_conv} (Industry: {fcf_industry})")
             L.append("  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from")
@@ -1599,6 +1615,23 @@ class TanukiValuationPipeline:
                     L.append("   [前者は一過性の会計事象、後者は今後も継続する事業規模の縮小として")
                     L.append("    区別してください。分類判定には使用しません。詳細はBACKLOG_DONE.md")
                     L.append("    [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]参照。]")
+            # FCF-EST-NOTE-DISPLAY-1: 「買収・統合関連」加算の控除・検出情報を表示
+            # （CWAN-SNPS-MA-DISTORTION-1・FCF-EST-DIRECTION-GUARD-1・
+            # FCF-EST-NET-BASIS-FIX-1で計算済みだがreport.txtに未表示だった情報）。
+            # Classification（BUY/WATCH等）には影響しない。
+            _ma_excluded = fcf_est.get("ma_addback_excluded") or 0
+            _ma_skipped  = fcf_est.get("ma_addback_detected_but_not_applied") or 0
+            if _ma_excluded > 0:
+                L.append(f"⚠️ 買収・統合関連加算を控除: ${_ma_excluded/1e6:,.0f}M")
+                L.append("   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに")
+                L.append("    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して")
+                L.append("    います。分類判定には使用しません。詳細はBACKLOG_DONE.md")
+                L.append("    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]")
+            elif _ma_skipped > 0:
+                L.append(f"ℹ️ 買収・統合関連加算${_ma_skipped/1e6:,.0f}Mを検出したが未控除")
+                L.append("   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性")
+                L.append("    ガードにより調整済み純利益をそのまま採用しています。詳細は")
+                L.append("    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]")
             # DCF-RELIABILITY-1: Policy B（FCF_Conversion_Rate方式向けDCF_Reliability）
             _reliability_b = self._calc_dcf_reliability_policy_b(valuation)
             if _reliability_b == "LOW":
