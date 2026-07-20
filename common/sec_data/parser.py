@@ -14,6 +14,28 @@ from .tag_definitions import TAG_CANDIDATES
 from .utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date, _day_of_year
 from .fetcher import load_submissions
 
+_FACT_OVERRIDES_PATH = os.path.join(os.path.dirname(__file__), "fact_overrides.json")
+
+
+def _load_fact_overrides() -> dict:
+    """fact_overrides.json（法人再編に伴う遡及修正で会計基準自体が変わった
+    特定ティッカー・年度・フィールドの個別上書き設定）を読み込む。
+
+    CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: GOOGL FY2012/2013のように、本人データ
+    優先ロジックが「当初申告値」を採用してしまうが、後年の遡及修正
+    （非継続事業区分変更等）により会計基準自体が変わっているケース向け。
+    ticker_overrides（fcf_conversion_config.json）と同型の、ticker+年度+
+    フィールド単位の明示的な手動リスト方式。閾値による自動判定は行わない。
+    ファイル不在時は空dict。
+    """
+    if os.path.exists(_FACT_OVERRIDES_PATH):
+        try:
+            with open(_FACT_OVERRIDES_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
 
 class SECParser:
     """SEC Company Facts データパーサー"""
@@ -1606,14 +1628,39 @@ class SECParser:
         if collisions:
             print(f"   [{ticker}] 決算期変更境界の年度バケツ競合を検知・記録: {len(collisions)}件 ({path})")
 
+    def _apply_fact_overrides(self, ticker: str, year: Any, data: dict) -> None:
+        """fact_overrides.json記載の個別上書きを、その年度のpl辞書・
+        pl_provenanceに適用する（該当ticker+yearが未登録なら何もしない）。
+
+        CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 本人データ優先ロジックの一般
+        動作はここでは一切変更しない。ロジックが出した結果を、特定
+        ticker+year+fieldのみ明示的に差し替える最終ステージの後処理。
+        """
+        override = _load_fact_overrides().get(ticker, {}).get(str(year))
+        if not override:
+            return
+        reason = override.get("reason", "")
+        for field, ov in override.get("fields", {}).items():
+            if field not in data.get("pl", {}):
+                continue
+            data["pl"][field] = ov["value"]
+            data.setdefault("pl_provenance", {})[field] = {
+                "accn": ov.get("source_accn"),
+                "filed": ov.get("source_filed"),
+                "is_own_data": False,
+                "override_applied": True,
+                "override_reason": reason,
+            }
+
     def save_parsed_data(self, ticker: str, parsed: dict) -> None:
         """パース済みデータを個別ファイルに保存"""
         ticker = ticker.upper()
         ticker_dir = os.path.join(self.data_dir, ticker)
         os.makedirs(ticker_dir, exist_ok=True)
-        
+
         # 年次データ
         for year, data in parsed.get("annual", {}).items():
+            self._apply_fact_overrides(ticker, year, data)
             path = os.path.join(ticker_dir, f"annual_{year}.json")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({
