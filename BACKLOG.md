@@ -997,29 +997,6 @@ TDY/ASTSの対応は[[REVENUE-TAG-PRIORITY-FRAGILE-1]]にそれぞれ統合し�
 
 ---
 
-### [EPS-ANALYZER-NORMALIZE-SCOPE-1] EPS Analyzer独自SECデータ抽出パイプラインの正規化統合対象化の要否判断
-**優先度:** 未定
-**分類:** アーキテクチャ / SECデータ取得層
-**登録日:** 2026-07-15
-**発見:** [[ARCH-DATA-1]]着手前棚卸し調査
-
-#### 内容
-EPS Analyzer（`src/value/adjusted_eps_analyzer/extract_key_facts.py`）は
-ARCH-DATA-1が現在スコープとする`parser.py`/`normalizer.py`/`data_fetcher.py`/
-`common/sec_data/`配下とは別の独立SECデータ抽出パイプラインであり、同種の
-タグフォールバック・fact選定ロジックを独自実装している（`SPLIT-AUTO-CHECK-1`
-完了記録で対象外と明記済み。SEC Company Facts APIを都度ライブ取得し、
-ローカルraw JSONキャッシュも持たない。importしているのは
-`common.sec_data.utils.determine_fiscal_year`のみ）。
-
-これをARCH-DATA-1の正規化統合対象に含めるか、独立パイプラインとして維持
-するかを次回セッションで判断する。
-
-#### 着手条件
-なし（次回セッションで方針判断してから着手）
-
----
-
 ### [CATALYST-DEDUP-1] catalyst.jsonの重複排除なし無制限追記問題
 **優先度:** 未定
 **分類:** アーキテクチャ / Discover
@@ -4179,14 +4156,15 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
-⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]・
-   [[EPS-ANALYZER-NORMALIZE-SCOPE-1]]
+⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]
    （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
    ~~[[MRVL-2019-2020-NULL-1]]~~ ✅ 2026-07-20完了（実害なし・構造的境界特性と
    判明。詳細はBACKLOG_DONE.md参照。副次発見はCIK-DISCONTINUITY-OLDEST-YEAR-GAP-1
    として分離登録）
+   ~~[[EPS-ANALYZER-NORMALIZE-SCOPE-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
+   参照（net_income共通化過程で41銘柄規模の潜在バグを発見・是正）
    ~~[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
    ~~[[JOBY-STATIC-GROWTH-HARDCODE-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
 

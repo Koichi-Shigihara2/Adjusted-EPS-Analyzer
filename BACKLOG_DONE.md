@@ -1089,6 +1089,92 @@ recommended_g=54.3%と正しく上書き成功済み）、`recommended_g is None
 
 ---
 
+### ✅ [EPS-ANALYZER-NORMALIZE-SCOPE-1] EPS Analyzer独自SECデータ抽出パイプラインの正規化統合対象化の要否判断
+**優先度:** 未定
+**分類:** アーキテクチャ / SECデータ取得層
+**登録日:** 2026-07-15
+**発見:** [[ARCH-DATA-1]]着手前棚卸し調査
+**完了日:** 2026-07-20（リスク評価→スコーピング調査→部分統合実装→本番データ再生成まで完了）
+
+#### 内容（登録時）
+EPS Analyzer（`src/value/adjusted_eps_analyzer/extract_key_facts.py`）は
+ARCH-DATA-1が現在スコープとする`parser.py`/`normalizer.py`/`data_fetcher.py`/
+`common/sec_data/`配下とは別の独立SECデータ抽出パイプラインであり、同種の
+タグフォールバック・fact選定ロジックを独自実装している（`SPLIT-AUTO-CHECK-1`
+完了記録で対象外と明記済み。SEC Company Facts APIを都度ライブ取得し、
+ローカルraw JSONキャッシュも持たない。importしているのは
+`common.sec_data.utils.determine_fiscal_year`のみ）。
+
+これをARCH-DATA-1の正規化統合対象に含めるか、独立パイプラインとして
+維持するかを判断する必要があった。
+
+#### 方針判断
+リスク評価・スコーピング調査（一次コード網羅照合）の結果、EPS Analyzer
+全体を統一パイプライン配下へ完全統合はせず、以下の部分統合に限定した：
+- **net_income候補タグリスト**: 統合する（既存の`tag_definitions.py::
+  TAG_CANDIDATES`パターンに合流可能・影響範囲が特定しやすいため）
+- **fact選定（filed日最新優先の部分）**: 共通プリミティブとして切り出す
+- **revenue系タグ**: 統合しない。`tag_definitions.py`のdocstringで
+  既に「統合対象外」（ティッカー別`revenue_concept`オーバーライドとの
+  相互作用が複雑）と明記済みの設計判断を維持
+
+#### 実装内容
+1. **net_income統合**（コミット`609fbc1ac`）: `common/sec_data/
+   tag_definitions.py::TAG_CANDIDATES["NET_INCOME"]`を3タグ→6タグに
+   拡張（既存3タグの順序は維持、`extract_key_facts.py`固有だった
+   3タグを末尾に追加）。`extract_key_facts.py`の
+   `NET_INCOME_ANNUAL_TAGS`/`NET_INCOME_QUARTERLY_TAGS`（独自6タグ・
+   独自順序）をこの共有定数の参照に置き換え、内部に存在した矛盾する
+   第3の候補リスト（`net_income_priority`、四半期後段で無条件上書き）
+   を削除
+2. **fact選定共通プリミティブ**: `common/sec_data/fact_selection.py`を
+   新設し`select_latest_filed()`を実装。`quarterly.py`
+   （`_select_best_filing`・`_process_entries`）と`extract_key_facts.py`
+   （希薄化後株式数のQ1-Q3選定）双方から参照するようリファクタ
+   （parser.py本体の多段規則は今回対象外）
+3. **全101銘柄本番データ再生成**（コミット`ecdb6b805`）:
+   `python -m src.value.adjusted_eps_analyzer.pipeline`を
+   `get_eps_tickers()`経由の全101銘柄で再実行
+
+#### 重大な副次発見（実装過程で判明）
+削除した`net_income_priority`は`'us-gaap:NetIncomeLoss'`を探すが、
+そのキーは直前のループで意図的に除外されており`data`辞書に決して
+現れないため、`NetIncomeLossAvailableToCommonStockholders`/
+`AttributableToParent`を持たない銘柄（`NetIncomeLoss`と`ProfitLoss`を
+両方申告する成熟企業に多い）では、常に`ProfitLoss`（非支配持分込みの
+連結利益）へ意図せずフォールバックするバグを内包していた。
+`NetIncomeLoss`はUS-GAAP XBRLタクソノミ上「親会社帰属利益」を表す
+概念であり、EPS分析（1株当たり利益）の目的にはこちらが正しい。
+
+実装前のスコーピング調査時点では「影響0件」と予測していたが、これは
+検証方法の誤り（タグの新旧比較のみを見て、`net_income_priority`削除
+自体の影響を見落としていた）と判明。実際に全母集団シミュレーション
+（キャッシュデータ）で再検証した結果、**40銘柄・434四半期**に実害が
+あることが発覚し、本番データでの再検証では**41銘柄**（ABBV/ASTS/
+AVAV/BROS/BSY/CAKE/CAT/CDNS/CEG/COHR/CON/CPRT/CWAN/DELL/GEV/GTLB/
+HEI/HON/IONQ/IOT/JNJ/KLAC/KO/LITE/MO/ONDS/PAYS/PEP/PLTR/PM/RCAT/RDW/
+SCCO/SNPS/SPIR/TDY/TSLA/VST/VZ/WMT/XOM）が該当することを確認した
+（キャッシュ時点との差は本番の最新SEC生データ反映によるもの）。
+regressionではなく、既存の潜在バグの発見・是正と判断した。
+
+#### 検証
+- net_income統合の全母集団シミュレーション（キャッシュデータ）:
+  想定外候補として発見された「40銘柄・434四半期」の実害を、
+  ABBVの一次データ（`NetIncomeLoss`=$3,179M vs `ProfitLoss`=$3,180M等）
+  で根本原因を確認
+- fact_selection.py切り出し: `quarterly.py`は全105銘柄でリファクタ
+  前後の出力が`generated_at`タイムスタンプ以外完全一致（0差分）。
+  `extract_key_facts.py`の希薄化後株式数選定もnet_income変更を分離
+  した状態で完全一致を確認
+- 本番データ再生成後: `report_consistency_check.py --fail-on-ng`
+  NG=0件（対象100銘柄、WARN=69件は既存の無関係事象）
+- `pytest tests/`: 429 passed / 2 known failed（MSFT/NVDA、
+  [[TEST-STALE-IV-1]]既知の無関係な失敗のみ、regressionなし）。
+  回帰テスト`tests/test_extract_key_facts_net_income_selection.py`
+  を新規追加（3件）
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
