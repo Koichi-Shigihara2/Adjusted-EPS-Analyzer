@@ -1262,6 +1262,79 @@ SELL）・GOOGL（HOLD→TRIM）は既存分類ロジックがより正確なIV�
 
 ---
 
+### ✅ [CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1] 法人再編によるCIK断絶で最古年度のPL/CF項目が構造的に欠落するパターン
+**優先度:** 未定
+**分類:** データ品質 / SECデータ正規化
+**登録日:** 2026-07-20
+**発見:** [[MRVL-2019-2020-NULL-1]]原因調査時の副次発見
+**完了日:** 2026-07-20（全106銘柄棚卸し→汎用検知ロジック設計・精度検証→
+スキーマ・アクセッサ調査→複数CIK統合実装・検知ロジックの登録フロー組み込み
+→GOOGL FY2012/2013個別上書きまで完了）
+
+#### 背景
+法人再編（持株会社化・スピンオフ等）でCIKが切り替わった銘柄は、現在
+追跡中のCIK配下の最古10-Kの比較年度ウィンドウより前の年度でPL/CF項目が
+構造的に取得不能になるパターンを全106銘柄で棚卸しした。以下3類型に分類:
+- ①同一事業の法人形態変更型（MRVL/GOOGL/AVGO/DELL）: 持株会社化・買収に伴う
+  CIK切替だが、同一事業が継続している
+- ②スピンオフ・カーブアウト型（CEG/LITE/ABBV/GEV/SN/CON）: 親会社からの
+  分離により新規CIKが発行されている
+- ③破産再生型（VST）: Chapter 11破産手続きのfresh-start会計により新規CIKが
+  発行されている
+
+#### 対応方針
+①のみ複数CIK統合で連続データ化する。②③は接続せず構造的境界の注記のみ
+表示する。理由: ②は親会社連結からの区分推定値、③はfresh-start会計で
+連続性自体が断絶しているため、旧データを接続すると実績としての性質が
+異なるデータを混同表示することになり不正確なため。
+
+#### 実装（コミット`57e84af52`・`68d24a0e9`）
+- `common/sec_data/cik_history.json`を新設し、①4銘柄の旧CIK・移行経緯を登録。
+  `fetcher.py`層で該当銘柄のみ旧CIKのcompany_facts.json・submissions.jsonを
+  追加取得しus-gaap facts・submissionsをマージする実装（マージ専用の優先順位
+  ロジックは追加せず、既存のparser.py本人データ優先ロジックにそのまま委ねる）
+- 拡張年度: MRVL 2007-2018、GOOGL 2006-2011、AVGO 2006-2014、DELL 2007-2013
+  （DELLはFY2013〜FY2016が旧CIK・新CIKいずれの自社10-Kも存在しない申告
+  ギャップと判明。FY2015/2016は新CIKのFY2017 10-Kの比較年度再掲データ
+  〈本人データではない〉のみ存在し、FY2014は値が完全に欠落。フロントエンドに
+  `DELL_PRIVATE_PERIOD_NOTE`で注記）
+- GOOGL FY2012/2013はMotorola Mobile事業の非継続事業区分変更（2015年
+  遡及修正）により、本人データ優先ロジックが当初申告値（未修正）を採用して
+  しまうと判明。`fact_overrides.json`（ticker_overrides型と同型の個別上書き
+  設定）を新設し、parser.pyの`_apply_fact_overrides()`で該当4項目
+  （revenue/operating_income/research_and_development/selling_and_marketing）
+  のみ修正後の値に置き換え。net_incomeは修正前後で金額が完全一致するため
+  対象外、eps_diluted/eps_basicは別要因（2014年株式分割の遡及調整）による
+  変動と判明したためスコープ外として切り分けた
+- 汎用検知ロジック（境界年>=2010かつ判定年度revenue>=$500M、既知9銘柄で
+  Recall100%/Precision65%）を`registration_validator.py`のP6チェックとして
+  新規銘柄登録フローに組み込み。確定済み4銘柄・確認済み構造的境界7銘柄
+  （CEG/LITE/ABBV/GEV/SN/CON/VST）以外の新規候補（APP/BSY/CART/PLTR/RBRK/
+  LYFT）はWARNとして人手確認待ちで提示する設計（自動でcik_history.jsonへ
+  登録することはしない）
+- フロントエンド（pipeline.py）: ②③7銘柄に`CIK_DISCONTINUITY_TICKERS`で
+  構造的境界の注記を表示。DELLのみ`DELL_PRIVATE_PERIOD_NOTE`で申告ギャップの
+  注記を追加表示
+
+#### 検証
+- pytest: 433/435 passed（NVDA/MSFT失敗2件はstock split起因の既知の無関係な
+  問題、regressionなし）
+- `report_consistency_check.py`: NG=0（WARN=71件、うちMRVL/DELL各1件は
+  新規追加した古い年度のfyタグ裏取り不一致・自動修正なしの情報用WARNで
+  Classificationに影響なし）
+- 対象外101銘柄のデータファイルへの影響ゼロを確認済み
+- GOOGLの成長率計算（`growth_sanity.calc_revenue_cagr`）は2点間CAGRのため
+  現行の本番窓（直近5年）では上書きの影響を受けないことを確認。FY2013を
+  終点とする仮想窓ではcagr_3yr 26.8%→23.7%、cagr_5yr 22.4%→20.6%と、
+  遡及修正前の過大な成長率が是正されることを確認
+
+#### 副次的成果
+本タスクの過程（GOOGL FY2012/2013個別上書きの実装方式検討）が、
+CHAT_RULES.mdに「銘柄固定のハードコード禁止」原則を新規追加するきっかけと
+なった（別途ブラッシュアップ時に反映予定）。
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
