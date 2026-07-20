@@ -872,6 +872,32 @@ report.txt表示を追加実装した。これにより段階1（成長率算出
 可視化パターンが確立された。詳細はBACKLOG_DONE.md
 「[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]」参照。
 
+**追記（2026-07-20・段階2の広範な再調査。FCF-OUTLIER-PREROUNDING-LOSS-1
+着手前の状況確認）**:
+
+- **判断保留5件の記載修正**: このうち**GROWTH-SANITY-CLASS-SYNC-1は
+  2026-07-19に既に完了・BACKLOG_DONE.md移動済み**であり、上記
+  「判断保留5件」の記載は陳腐化していたと判明した。判断保留として
+  実質残るのは4件（FY52WEEK-BS-NULL-SILENT-1 Phase B/C・
+  MRVL-2019-2020-NULL-1・EPS-ANALYZER-NORMALIZE-SCOPE-1・
+  FCF-CONVRATE③）のみ
+- **FCF-CONVRATE①・③は独立した定義エントリが見つからず**、
+  BACKLOG.md・BACKLOG_DONE.mdのいずれを検索しても2026-07-18棚卸し時点の
+  暫定ラベル以外の記述が存在しないことを確認した。次回このEPICに触れる際に
+  定義を確認・明文化するか、既存の完了タスク（例:
+  [[FCF-CONVRATE-DESIGN-LIMIT-1]]のキー名不一致修正等）への再マッピングを
+  検討する必要がある
+- **FCF-CONVRATE②の現状値を更新**: CWAN-SNPS-MA-DISTORTION-1完了後、
+  LITEは買収・統合関連加算の控除により調整済み純利益がマイナス転落し、
+  生FCFフォールバックへ切替わった（4.33倍→フォールバック採用、
+  DCF_Reliability=LOWである点は変わらず）。SPIRは8.65倍→8.47倍、
+  LLYは1.92倍→1.88倍（いずれも微減）。`FCF_CYCLICAL_VOLATILITY_TICKERS`
+  （LITE・SITM限定）の可視化スコープ自体は変更不要と判断した
+- 本再調査から派生した新規タスク: [[MA-INTEGRATION-TAG-GAP-1]]
+  （状況追記）・[[FCF-EST-DIRECTION-GUARD-1]]・
+  [[FCF-CONVRATE-LOWER-DIVERGENCE-1]]・[[AMZN-DIVERGENCE-HIGH-1]]・
+  [[FCF-EST-NOTE-DISPLAY-1]]（いずれも新規登録、詳細は各エントリ参照）
+
 ---
 
 ## 優先度：未定（要判断）
@@ -900,8 +926,134 @@ BACKLOG_DONE.md記録）を確認した結果判明した。[[POLICYB-GATE-FIX-1
 新フィールドとしてローカル変数を保持し、report.txt表示・Classification
 一覧の参考列として使う設計案。
 
+#### 状況追記（2026-07-20・TRUST-SUMMARY-EPIC-1段階2の広範な再調査を実施）
+着手前にTRUST-SUMMARY-EPIC-1段階2（FCF/DCF信頼性層）全体を再調査した
+結果、[[FCF-EST-DIRECTION-GUARD-1]]・[[FCF-CONVRATE-LOWER-DIVERGENCE-1]]
+等、本タスクより優先度が高いと考えられる複数の課題が新規に判明した。
+本タスク自体（丸め前情報の保持）は依然有効な対応と考えるが、
+優先順位は上記より低いと判断し、次回以降に持ち越す。
+
 #### 着手条件
 なし（次回セッションで設計方針を判断してから着手）
+
+---
+
+### [FCF-EST-DIRECTION-GUARD-1] 買収・統合関連控除にdr>1限定の方向性ガードを追加
+**優先度:** 中
+**分類:** アーキテクチャ / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-20
+**発見:** [[MA-INTEGRATION-TAG-GAP-1]]全105銘柄タグ影響網羅調査時
+
+#### 背景
+現在の「買収・統合関連」加算控除メカニズム（CWAN-SNPS-MA-DISTORTION-1）
+は、divergence_ratio（dr、推定FCF÷実測FCFの比）>1（過大推定）の是正には
+有効だが、dr<1（過小推定）の銘柄に同じ控除を適用すると乖離がさらに
+悪化することが判明した（例: CSGP 0.52→0.28、ZETA 0.66→0.53、いずれも
+[[MA-INTEGRATION-TAG-GAP-1]]のタグ追加を仮定した試算）。
+
+一次コード確認の結果、drは`divergence_warning`（dr>=2.0でのみ発火）を
+経由して`eps_invalid`→Policy B判定（DCF_Reliability=LOW/NORMAL）の
+入力になっているが、dr<1側には対応する下限チェックが一切存在しない。
+このためdr<1が悪化してもClassification/WATCH丸めには影響しないが、
+`estimated_fcf`自体はDCF計算の`base_fcf`として直接使われ
+intrinsic_value_per_shareを実質的に左右するため、IVの絶対値精度に
+実害がある（詳細は本タスクの発見元調査の報告を参照）。
+
+#### 対応方針（未確定）
+控除適用前にdr>1判定を行い、dr<=1の場合は控除しない（元のAdj_NIを
+そのまま使う）ガードを追加する案。ただし[[MA-INTEGRATION-TAG-GAP-1]]の
+タグ追加自体を実施するかどうかとは独立に、既存の47銘柄（CWAN-SNPS-
+MA-DISTORTION-1適用済み銘柄）の中にも既にdr<1のケース（AMD/HQY等）が
+含まれているため、タグ追加の有無に関わらず本ガードの要否を検討する
+価値がある。
+
+#### 着手条件
+なし（[[MA-INTEGRATION-TAG-GAP-1]]のタグ追加より先に着手すべきと判断）
+
+---
+
+### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-20
+**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査・divergence_warning閾値検証
+
+#### 背景
+`divergence_warning`はdr>=2.0のみ検知し、dr<1（過小推定）側は一切検知
+しない非対称設計になっている。既存の2.0/5.0という閾値はgit調査の結果、
+明確な根拠のない経験的な割り切り値と確認済み（導入コミット`3c12dd1b1`
+2026-04-19「Add files via upload」、根拠記載なし）。
+
+dr<1の銘柄はtanuki=true・fcf_estimation.applied=Trueの59銘柄中
+**29銘柄（49%）**と多数存在する。サンプル5銘柄（LYFT/PAYS/FLYW/CSGP/
+ZETA）を10-K等の一次情報で確認した結果、いずれも①raw_fcfの一過性な
+水増しでも③Adj_NI側の異常な過小評価（バグ）でもなく、
+**②conversion_rateの構造的ミスマッチ**（FCF-CONVRATE②と同型の性質）
+と判明した。内訳は以下の通り異なるメカニズムに分解される：
+- **決済/フロート型（LYFT/PAYS/FLYW）**: 事業モデル特有の運転資本
+  タイミング（保険準備金・顧客資金float等）がOCFを体系的に押し上げる、
+  SITM/LITEの「サイクル変動」とは別種の固定比率限界
+- **意図的な成長投資による一時圧縮（CSGP）**: AMZN/LLY等で既に確認済みの
+  「戦略的投資による収益圧縮」と同型パターン（CoStarはHomes.com投資を
+  2026年に$3億削減予定と表明済みで、時間経過で正常化する見込み）
+- **SBC比重の高い高成長企業のD&A非加算（ZETA）**:
+  [[FCF-CONVRATE-DESIGN-LIMIT-1]]既知の残課題（Mature/SaaS判定精度
+  約78%問題）と関連する可能性
+
+#### 対応方針（未確定）
+Policy B判定に新たな下限閾値を追加する方向（＝異常検知として扱う）
+ではなく、既存のFCF-CONVRATE②可視化パターン（現在
+`FCF_CYCLICAL_VOLATILITY_TICKERS`＝LITE・SITMのみ）を拡張し、構造的
+限界として透明化する方向を推奨する。ただし残り29銘柄中、サンプル5件を
+除く24銘柄は未確認のままであり、同様の一次情報確認が必要。
+
+#### 着手条件
+なし（残り24銘柄の一次情報確認を先行させることを推奨）
+
+---
+
+### [AMZN-DIVERGENCE-HIGH-1] 買収・統合関連控除後もdr=2.95と高止まり
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-20
+**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査（CWAN-SNPS-MA-DISTORTION-1適用後の
+全数再スキャン）
+
+#### 内容
+CWAN-SNPS-MA-DISTORTION-1の控除（47銘柄対象）適用後、対象銘柄の大半は
+divergence_ratioが1.0近傍に大幅改善したが、AMZNのみticker_override
+（conversion_rate 0.55適用済み、AI/クラウドCapEx急増を考慮した既存の
+個別設定）を経てもdr=2.95と高止まりしていることを確認した。
+KO-SPIR-CF-CAUSE-UNCONFIRMED-1と同型の一次情報調査（10-K MD&A確認）が
+有効な可能性がある。
+
+#### 着手条件
+なし
+
+---
+
+### [FCF-EST-NOTE-DISPLAY-1] 買収・統合関連控除の理由がreport.txtに未表示
+**優先度:** 低
+**分類:** TANUKI VALUATION / 透明性
+**登録日:** 2026-07-20
+**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査（divergence_ratio消費箇所の一次コード確認）
+
+#### 内容
+`estimate_fcf_from_eps()`が「買収・統合関連」加算の控除理由を
+`fcf_estimation.note`（例:「調整済み純利益$2.11B（買収・統合関連加算
+$193Mを控除後）× 転換率100%」）としてlatest.jsonに保存しているが、
+**report.txtのどこにも表示されていない**ことを確認した。KO/SPIRの
+FCF_TRANSIENT_ITEM_EXPLANATIONSバナー（一過性費用の理由を明示表示する
+既存の仕組み）とは対照的で、透明性という設計思想（TRUST-SUMMARY-EPIC-1
+の骨子）に照らすと表示漏れがある。CWAN-SNPS-MA-DISTORTION-1適用済みの
+47銘柄に影響する。
+
+#### 対応方針（未確定）
+`fcf_est.get('note')`（`ma_addback_excluded > 0`の場合のみ）を
+report.txtのFCF_Conversion_Rate表示部分に1行追加する程度の軽微な対応。
+
+#### 着手条件
+なし
 
 ---
 
@@ -1086,6 +1238,37 @@ AVAV・RDW自体は悪化の主因が別（運転資本変動）だったため�
 未登録タグ候補を含む）の申告有無・金額を洗い出し、上記2つの穴
 （タグ不足・カテゴリ除外設計）の影響を受けている銘柄が他にないか
 網羅的に確認すること。
+
+#### 状況追記（2026-07-20・全105銘柄タグ影響網羅調査完了）
+機械スキャンの結果、未登録2タグを過去に一度でも申告した銘柄は34件、
+うち現在（EPS Analyzer最新年度）も申告中は**17件**（過去申告のみで
+現在は無関係な17件を除外済み）。
+
+現在も申告中の17件を、CWAN-SNPS-MA-DISTORTION-1控除メカニズムへの
+影響で3グループに分類した：
+- **グループA（メカニズム未到達・無関係、6件）**: AVAV/BBAI/COHR/RDW
+  （`fcf_outlier.action=="excluded"`によりガードAで早期リターンし
+  控除ロジック自体に到達しない）・CART（該当額$0）・VZ（別要因で
+  `applied=False`）
+- **グループB（タグ追加で改善方向、dr>1が是正される、4件）**: SNPS
+  （1.34→1.18）・SITM（2.41→2.14）・NOW（1.54→1.50）・AVGO
+  （1.15→1.14、ほぼ無視できる）
+- **グループC（タグ追加で悪化方向、dr<1が更に悪化する、4件）**: CSGP
+  （0.52→0.28、明確に悪化）・ZETA（0.66→0.53）・AMD（0.52→0.51、
+  無視できる）・HQY（0.52→0.51、無視できる）
+
+**単純なタグ追加は改善（グループB）と悪化（グループC）がほぼ相殺し、
+net効果は中立に近いと判明**。控除メカニズムはdr>1（過大推定の是正）を
+前提に設計されており、dr<1の銘柄に同じ控除を機械的に適用する妥当性は
+別途検証が必要（詳細は[[FCF-EST-DIRECTION-GUARD-1]]参照）。タグ追加
+単独での対応は非推奨、方向性ガード実装を優先すべきと判断する。
+
+`TRANSIENT_CATEGORIES`からの「買収・統合関連」除外設計（カテゴリ除外
+問題）についても検証した。技術的にはitem_id単位の分離が
+`adjustment_items.json`のスキーマ変更なしで実現可能と確認したが、
+現在flagged状態の対象銘柄は全て上方乖離（FCF-OUTLIER-1ルールにより
+一過性費用の有無に関わらずaction=flaggedのまま変化しない設計）のため、
+**現在の母集団では実害ゼロ**と確認した。優先度は低のまま据え置く。
 
 #### 着手条件
 なし
