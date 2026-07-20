@@ -967,6 +967,30 @@ CapEx・低転換率という二分法を前提としている。
 
 ---
 
+### [STOCK-HTML-CLASSIFICATION-MISSING-1] stock.html個別銘柄ページにTANUKI SCORE Classificationが表示されていない
+**優先度:** 未定
+**分類:** TANUKI VALUATION / 表示 / フロントエンド
+**登録日:** 2026-07-20
+**発見:** [[FCF-OUTLIER-PREROUNDING-LOSS-1]]（完了・BACKLOG_DONE.md参照）調査時の副次発見
+
+#### 背景
+FCF-OUTLIER-PREROUNDING-LOSS-1の実装可否調査時、`stock.html`
+（銘柄個別ページ）には`tanuki_score`・`score_comment`・
+Classification（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）の
+いずれも表示されていないことが判明した。ファイル内の"tanuki_score"の
+出現箇所はMatrix可視化に関するコメント文言のみで、実際のフィールド
+参照ではない。
+
+Classification一覧がどの画面・ツール（`index.html`等）に存在するかは、
+本タスクの発見元調査の範囲では特定できなかった。FCF-OUTLIER-
+PREROUNDING-LOSS-1で追加した`pre_rounding_score`・
+`rounded_by_policy`等の表示先を検討する際にも関わる可能性がある。
+
+#### 着手条件
+なし
+
+---
+
 ### [REVENUE-TAG-CONFLICT-SCAN-1] revenue_tag_conflict_check.py全銘柄実行で新規発見した候補タグ競合
 **優先度:** 未定
 **分類:** データ品質 / SECデータ取得層
