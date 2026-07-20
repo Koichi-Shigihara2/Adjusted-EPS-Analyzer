@@ -876,37 +876,6 @@ report.txt表示を追加実装した。これにより段階1（成長率算出
 
 ## 優先度：未定（要判断）
 
-### [CWAN-SNPS-MA-DISTORTION-1] CWAN・SNPSのFCF乖離は大型M&Aに伴う一過性歪みと判明
-**優先度:** 未定
-**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
-**登録日:** 2026-07-18
-**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
-
-#### 内容
-CWAN（Clearwater Analytics）・SNPS（Synopsys）のFCF乖離
-（divergence_ratio 2.19倍・1.47倍）は、いずれも大型M&A
-（CWAN: Enfusion買収、SNPS: Ansys買収）に伴う無形資産償却（D&A）の
-段階的増加・一過性の税務関連項目が原因と判明した（SEC XBRL実データ
-`common/sec_data/data/{CWAN,SNPS}/annual_YYYY.json`で確認済み）。
-
-- CWAN: D&Aが2024年$12.2M→2025年$85.5Mに急増（買収による無形資産
-  償却ステップアップと整合）。2024年NIが$424.4Mの巨額プラスとなって
-  いるのはUp-C構造特有の税務関連負債（tax receivable agreement）
-  再評価等の一過性項目の可能性が高い
-- SNPS: D&Aが2024年$295.1M→2025年$660.4Mに急増（Ansys買収の無形資産
-  償却ステップアップと整合）。SNPSはsector_rationale適用済み9銘柄の
-  1つのためconversion_rate自体は業種特性に基づき設定済みであり、
-  実害は限定的
-
-#### 対応方針（未確定）
-M&A起因の一過性歪みを認識した上で、生FCFの複数年平均に統合初年度を
-含めるべきか除外すべきかの設計判断が必要。
-
-#### 着手条件
-なし（次回セッションで方針判断してから着手）
-
----
-
 ### [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
 **優先度:** 未定
 **分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
@@ -4156,8 +4125,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
-⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]・[[CWAN-SNPS-MA-DISTORTION-1]]
-   （いずれも優先度：未定〜中〜低。個別に方針判断してから着手）
+⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]
+   （優先度：未定。方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
    ~~[[MRVL-2019-2020-NULL-1]]~~ ✅ 2026-07-20完了（実害なし・構造的境界特性と
@@ -4167,6 +4136,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    参照（net_income共通化過程で41銘柄規模の潜在バグを発見・是正）
    ~~[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
    ~~[[JOBY-STATIC-GROWTH-HARDCODE-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
+   ~~[[CWAN-SNPS-MA-DISTORTION-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
+   （対応方針を生FCF平均調整から買収・統合関連加算控除へ転換、47銘柄に一般適用）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。

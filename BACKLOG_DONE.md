@@ -1175,6 +1175,93 @@ regressionではなく、既存の潜在バグの発見・是正と判断した�
 
 ---
 
+### ✅ [CWAN-SNPS-MA-DISTORTION-1] CWAN・SNPSのFCF乖離は大型M&Aに伴う一過性歪みと判明
+**優先度:** 未定
+**分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]FCF-CONVRATE②原因ベース分析（12銘柄個別調査）
+**完了日:** 2026-07-20（原因調査→対応方針転換→実装→全母集団シミュレーション
+→全100銘柄再生成まで完了）
+
+#### 内容（登録時）
+CWAN（Clearwater Analytics）・SNPS（Synopsys）のFCF乖離
+（divergence_ratio 2.19倍・1.47倍）は、いずれも大型M&A
+（CWAN: Enfusion買収、SNPS: Ansys買収）に伴う無形資産償却（D&A）の
+段階的増加・一過性の税務関連項目が原因と判明した（SEC XBRL実データ
+`common/sec_data/data/{CWAN,SNPS}/annual_YYYY.json`で確認済み）。
+
+- CWAN: D&Aが2024年$12.2M→2025年$85.5Mに急増（買収による無形資産
+  償却ステップアップと整合）。2024年NIが$424.4Mの巨額プラスとなって
+  いるのはUp-C構造特有の税務関連負債（tax receivable agreement）
+  再評価等の一過性項目の可能性が高い
+- SNPS: D&Aが2024年$295.1M→2025年$660.4Mに急増（Ansys買収の無形資産
+  償却ステップアップと整合）。SNPSはsector_rationale適用済み9銘柄の
+  1つのためconversion_rate自体は業種特性に基づき設定済みであり、
+  実害は限定的
+
+当初の対応方針（未確定）は「M&A起因の一過性歪みを認識した上で、生FCF
+の複数年平均に統合初年度を含めるべきか除外すべきかの設計判断が必要」
+だった。
+
+#### 原因調査結果（2026-07-20・前提の転換）
+一次データ確認の結果、当初想定は**前提不成立**と判明。CWANは統合年
+（2025）にFCFがむしろ倍増（$69.1M→$164.3M）しており、生FCFが
+「統合初年度に歪んで低く出ている」という前提自体が成立しなかった。
+
+真因は`estimate_fcf_from_eps()`が参照する`adjusted_net_income`
+（EPS Analyzer annual.json）に「買収・統合関連」カテゴリ（無形資産
+償却費等、非現金・買収由来の加算）が含まれたまま、通常時の
+conversion_rateをそのまま掛けていたため、実際のキャッシュフロー
+創出力を超える推定FCFが算出されていたこと。生FCF側（実績）は正常
+だった。
+
+#### 対応（実装完了・コミット`479500ac1`）
+`estimate_fcf_from_eps()`のestimated_fcf算出専用に、「買収・統合関連」
+カテゴリの加算分を控除したAdj_NIを使う方式に変更。EPS Analyzer側
+annual.jsonのadjusted_net_income自体・他の呼び出し元での参照値は
+変更しない。新規フィールド`FCFEstimationResult.ma_addback_excluded`
+で控除額を透明化。新規ticker_overrides・フラグは追加せず、EPS
+Analyzerの既存の構造化されたカテゴリ分類を直接参照する設計とした。
+
+#### 全母集団シミュレーション（実装前）
+「買収・統合関連」加算を持つ銘柄は**47件**（CWAN/SNPS/SOFI/CELH以外に
+AVGO/MSFT/AMD/MRVL/AMZN/META/NVDA/LLY/INTU/DELL/ADBE/APP/GEV/VRT/
+ENTG/HQY/LITE/HEI/GOOGL/NOW/CSGP/PEP/ADSK/ZETA/LOAR/ELF/FROG/LYFT/
+FLYW/DOCN/CEG/SITM/NET/CPRT/FRSH/ESTC/GTLB/SCCO/RMBS/DDOG/PAYS/SPIR/
+CAKE）。全銘柄でdivergence_ratioが改善し悪化ゼロを確認。LITEのみ
+控除後にadj_net_incomeがマイナスに転じ、既存のFCF_Conversion_Rate
+→FCF_Base方式フォールバックガードが正しく発火することを確認。
+
+#### CELHの扱い（最終判断）
+特例化せず一律控除を適用。改善は限定的（divergence 1.30x→1.23x、
+restructuring費$327.5Mが支配的要因のため）だが、①控除自体は
+方法論的に正しく悪化もない、②タスクの設計方針（新規ticker_overrides
+不要）に反するため特例化は避けるべき、③残る乖離は別課題（事業再編費
+側）として切り分けるのが妥当、と判断。新規タスク化するかは次回検討。
+
+#### 全100銘柄再生成（コミット`42531f681`）
+主要4銘柄の変化: CWAN 2.19x→0.88x（IV $69.90→$38.10）、SNPS
+1.47x→1.34x（$335.32→$310.32）、SOFI 1.33x→1.20x（$16.77→$18.22）、
+CELH 1.30x→1.23x（$28.12→$26.73）。いずれもWATCH維持
+（CWAN/SNPS/SOFI/CELHとも`fcf_outlier.detected=True・action="flagged"`
+が独立にPolicy Bを発火させ続けるため）。LITEはFCF_Conversion_Rate
+方式→FCF_Base方式へフォールバック（IV $14.72→$9.17）。ENTG（WATCH→
+SELL）・GOOGL（HOLD→TRIM）は既存分類ロジックがより正確なIV・upside
+入力を受けて正当に再判定した結果であり、分類ロジック自体は変更していない。
+
+#### 検証
+- `report_consistency_check.py --fail-on-ng`: NG=0件（対象100銘柄、
+  WARN=69件は既存の無関係事象）
+- `pytest tests/`: 433 passed / 2 known failed（regressionなし。
+  回帰テスト`tests/test_estimate_fcf_ma_addback.py`を新規追加、4件）
+- 対象外52/53銘柄はほぼ変化なし。1件（BROS）のみ微小変化したが
+  `ma_addback_excluded=0`で本タスク無関係と確認済み（EPS Analyzer側
+  net_income_priority修正の遅延反映によるもの）
+- LYFTの`anomaly_detection`検証失敗は本タスク以前から存在する既知の
+  状態（構造的にFCF恒久マイナス銘柄）でregressionではないことを確認
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
