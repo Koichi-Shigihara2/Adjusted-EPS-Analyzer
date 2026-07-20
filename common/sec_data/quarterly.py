@@ -13,6 +13,7 @@ from datetime import date, datetime, timedelta
 from .tag_definitions import TAG_CANDIDATES
 from .contracts import validate_fields
 from .utils import quarters_in_trailing_window
+from .fact_selection import select_latest_filed
 
 logger = logging.getLogger(__name__)
 
@@ -481,7 +482,7 @@ def _select_best_filing(filings: list, end_date: str) -> dict | None:
     candidates = [f for f in filings if f.get("end") == end_date]
     if not candidates:
         return None
-    return max(candidates, key=lambda x: x.get("filed", ""))
+    return select_latest_filed(candidates)
 
 
 def _classify_period(start: str, end: str, fp: str, form: str = "") -> dict:
@@ -587,13 +588,11 @@ def _process_entries(raw_entries: list) -> list:
 
     # 四半期: 同一(start, end)内は最新filed優先。異なるstartは別期間として全保持。
     for period, candidates in quarterly_by_period.items():
-        best = max(candidates, key=lambda x: x["filed"])
-        result.append(best)
+        result.append(select_latest_filed(candidates))
 
     # 年次: 最新filed
     for end_date, candidates in annual_by_end.items():
-        best = max(candidates, key=lambda x: x["filed"])
-        result.append(best)
+        result.append(select_latest_filed(candidates))
 
     result.sort(key=lambda x: x["end"])
     return result

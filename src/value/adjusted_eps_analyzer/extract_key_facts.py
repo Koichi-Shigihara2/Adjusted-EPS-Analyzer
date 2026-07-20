@@ -38,6 +38,8 @@ CONFIG_DIR = os.path.join(PROJECT_ROOT, "config")
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 from common.sec_data.utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date
+from common.sec_data.tag_definitions import TAG_CANDIDATES
+from common.sec_data.fact_selection import select_latest_filed
 CIK_FILE = os.path.join(CONFIG_DIR, "cik_lookup.csv")
 ADJUSTMENT_ITEMS_FILE = os.path.join(CONFIG_DIR, "adjustment_items.json")
 
@@ -435,14 +437,13 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             annual_data_by_tag[tag] = annual_items
         
         # 会計年度終了月を特定（複数タグをフォールバックしながら取得）
-        NET_INCOME_ANNUAL_TAGS = [
-            'us-gaap:NetIncomeLoss',
-            'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
-            'us-gaap:NetIncomeLossAvailableToCommonStockholders',
-            'us-gaap:NetIncomeLossAttributableToParent',
-            'us-gaap:IncomeLossFromContinuingOperations',
-            'us-gaap:ProfitLoss',
-        ]
+        # EPS-ANALYZER-NORMALIZE-SCOPE-1: common/sec_data/tag_definitions.py::
+        # TAG_CANDIDATES["NET_INCOME"]（parser.py/quarterly.pyと共有）を参照する。
+        # 順序: NetIncomeLoss, ProfitLoss, NetIncomeLossAvailableToCommonStockholdersBasic
+        # （既存3タグ、順序変更なし）+ NetIncomeLossAvailableToCommonStockholders,
+        # NetIncomeLossAttributableToParent, IncomeLossFromContinuingOperations
+        # （EPS Analyzer固有だった3タグ、末尾に追加）
+        NET_INCOME_ANNUAL_TAGS = [f'us-gaap:{tag}' for tag in TAG_CANDIDATES["NET_INCOME"]]
         net_income_annual = []
         _annual_tag_used = None
         _annual_tag_map = {t: annual_data_by_tag.get(t, []) for t in NET_INCOME_ANNUAL_TAGS if annual_data_by_tag.get(t)}
@@ -484,14 +485,9 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         # ---------- 10-Qデータを四半期ごとに分類 ----------
         # まず、すべての10-Qデータを期間でフィルタ（70～120日）し、さらに同じend日付で複数ある場合は最も短い期間（四半期）を優先
         # NetIncomeLossがない銘柄（例: AVAV）のためフォールバックタグを試みる
-        NET_INCOME_QUARTERLY_TAGS = [
-            'us-gaap:NetIncomeLoss',
-            'us-gaap:NetIncomeLossAvailableToCommonStockholdersBasic',
-            'us-gaap:NetIncomeLossAvailableToCommonStockholders',
-            'us-gaap:NetIncomeLossAttributableToParent',
-            'us-gaap:IncomeLossFromContinuingOperations',
-            'us-gaap:ProfitLoss',
-        ]
+        # EPS-ANALYZER-NORMALIZE-SCOPE-1: NET_INCOME_ANNUAL_TAGSと同じ共有定数を使う
+        # （旧実装は年次・四半期で別々のリストを保持していたが値は同一だった）
+        NET_INCOME_QUARTERLY_TAGS = NET_INCOME_ANNUAL_TAGS
         # タグごとに四半期候補を収集し、最新データを持つタグを選択する
         # (SCCO等: NetIncomeLossは2012で終了、ProfitLossが2026まで継続)
         _tag_candidates_map = {}
@@ -599,7 +595,11 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
         # SPLIT-AUTO-CHECK-1: 同一期間に複数のfactが競合する場合（株式分割による
         # 比較年度再掲等、SEC-TAG-FICO-CPRT-1と同型のfact競合パターン）、
         # filed日が最新のものを優先する。以前は無条件上書き（リスト末尾勝ち）だった。
-        _diluted_shares_filed: Dict[Tuple[int, int], str] = {}
+        # EPS-ANALYZER-NORMALIZE-SCOPE-1: filed日最新優先の判定自体は
+        # common/sec_data/fact_selection.py::select_latest_filed()
+        # （quarterly.pyと共有）に委譲する。まず(fiscal_year, quarter)キーで
+        # 候補をグルーピングしてから、キーごとに最新filedの1件を選ぶ。
+        _diluted_shares_candidates: Dict[Tuple[int, int], list] = {}
         for item in diluted_shares_all:
             if not item.get('form', '').startswith('10-Q'):
                 continue
@@ -617,26 +617,28 @@ def extract_quarterly_facts(ticker: str, years: int = 10) -> List[Dict[str, Any]
             key = (fiscal_year, quarter_num)
             if key not in quarters_map:
                 continue
-            item_filed = item.get('filed', '')
-            if key not in _diluted_shares_filed or item_filed > _diluted_shares_filed[key]:
-                quarters_map[key]['diluted_shares'] = {'value': item['val'], 'unit': item['unit']}
-                _diluted_shares_filed[key] = item_filed
+            _diluted_shares_candidates.setdefault(key, []).append(item)
+
+        for key, candidates in _diluted_shares_candidates.items():
+            best_item = select_latest_filed(candidates)
+            quarters_map[key]['diluted_shares'] = {'value': best_item['val'], 'unit': best_item['unit']}
         
-        # ---------- 当期純利益を優先順位付きタグから選択 ----------
-        net_income_priority = [
-            'us-gaap:NetIncomeLossAvailableToCommonStockholders',
-            'us-gaap:NetIncomeLossAttributableToParent',
-            'us-gaap:NetIncomeLoss',
-            'us-gaap:ProfitLoss',
-        ]
-        print("\n=== Selecting net_income with priority tags ===")
-        for key, data in quarters_map.items():
-            for tag in net_income_priority:
-                if tag in data:
-                    data['net_income'] = data[tag]
-                    print(f"  Using {tag} for net_income in {data['filing_date']}")
-                    break
-        
+        # EPS-ANALYZER-NORMALIZE-SCOPE-1: 以前はここに`net_income_priority`という
+        # 第3の候補タグリスト（NET_INCOME_QUARTERLY_TAGSとは異なる順序）が存在し、
+        # 上のbest_tag選定結果を無条件で上書きしていた。この上書きロジックは
+        # 'us-gaap:NetIncomeLoss'を探すが、そのキーは直前の「他のタグのデータを
+        # 追加」ループで意図的に除外されており`data`辞書には決して現れないため、
+        # NetIncomeLossAvailableToCommonStockholders/AttributableToParentが
+        # 存在しない銘柄（ABBV/XOM/WMT/VZ等、NetIncomeLossとProfitLossを両方
+        # 申告する成熟企業に多い）では常にProfitLoss（非支配持分込みの連結利益）
+        # へ意図せずフォールバックしていた。全101銘柄の実値検証で、このバグにより
+        # 40銘柄・434四半期でProfitLossが誤採用されていたことを確認済み
+        # （削除後はNetIncomeLoss＝親会社帰属利益が正しく採用される。詳細は
+        # tests/test_extract_key_facts_net_income_selection.py参照）。
+        # net_income はNET_INCOME_QUARTERLY_TAGS（TAG_CANDIDATES["NET_INCOME"]）
+        # ベースのbest_tag選定結果（quarters_map[key]['net_income']、568行目で設定済み）
+        # をそのまま採用する。
+
         # ---------- 10-KからQ4を計算（ただし、実際のQ4が存在する場合はスキップ）----------
         # まず、実際のQ4データが既に quarters_map に含まれているか確認するために、各fiscal_yearのQ4キーをチェック
         actual_q4_keys = []

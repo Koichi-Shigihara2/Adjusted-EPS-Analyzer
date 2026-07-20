@@ -14,6 +14,18 @@ Q3以降申告停止、新タグ PaymentsToAcquireOtherPropertyPlantAndEquipment
 上位集合になっている」フィールドのみを集約する。統合しても既存の
 意図的な設計判断を壊さないフィールドに限定している。
 
+【NET_INCOME拡張（EPS-ANALYZER-NORMALIZE-SCOPE-1、2026-07-20）】
+src/value/adjusted_eps_analyzer/extract_key_facts.pyが独自に保持していた
+NET_INCOME_ANNUAL_TAGS/NET_INCOME_QUARTERLY_TAGS（6タグ）をこのTAG_CANDIDATES
+["NET_INCOME"]に統合した。既存3タグ（parser.py/quarterly.py実績検証済み、
+順序変更なし）の末尾にEPS Analyzer固有の3タグを追加する方式を採用（全101銘柄
+シミュレーションで既存3タグの選定結果より新しいデータを持つ銘柄は0件と確認済み
+のため、parser.py/quarterly.py側の挙動への影響はない）。extract_key_facts.py
+が内部に持っていた第3の候補リスト（net_income_priority、四半期後段で無条件
+上書きする別優先順位）は本タグ集合と矛盾していたため削除し、単一の選定ロジック
+（このTAG_CANDIDATES参照＋既存の「最新データを持つタグを採用」アルゴリズム）
+に統一した。
+
 【意図的に統合していないフィールド】（優先順位や候補集合が構造的に異なり、
 無条件でのマージは既存の修正済みバグ・設計判断を壊すリスクがあるため。
 詳細は BACKLOG.md [TAG-DEFS-UNIFY-1] 参照）:
@@ -54,6 +66,11 @@ TAG_CANDIDATES: dict[str, tuple[str, ...]] = {
         "NetIncomeLoss",
         "ProfitLoss",                                        # AVGO等
         "NetIncomeLossAvailableToCommonStockholdersBasic",    # BKNG/AVAV等
+        # EPS-ANALYZER-NORMALIZE-SCOPE-1（2026-07-20）: 以下3タグは
+        # extract_key_facts.py固有だった候補。既存3タグの順序は変えず末尾に追加
+        "NetIncomeLossAvailableToCommonStockholders",
+        "NetIncomeLossAttributableToParent",
+        "IncomeLossFromContinuingOperations",
     ),
     "CASH_AND_EQUIVALENTS": (
         "CashAndCashEquivalentsAtCarryingValue",
