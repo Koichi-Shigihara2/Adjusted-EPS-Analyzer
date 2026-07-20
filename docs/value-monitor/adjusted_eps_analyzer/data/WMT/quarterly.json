@@ -1,12 +1,12 @@
 {
   "ticker": "WMT",
-  "last_updated": "2026-07-20T00:37:52.600510",
+  "last_updated": "2026-07-20T09:09:56.690066",
   "quarters": [
     {
-      "gaap_eps": 0.6863357919739967,
-      "adjusted_eps": 0.6863357919739967,
-      "gaap_net_income": 5490000000.0,
-      "adjusted_net_income": 5490000000.0,
+      "gaap_eps": 0.6663332916614577,
+      "adjusted_eps": 0.6663332916614577,
+      "gaap_net_income": 5330000000.0,
+      "adjusted_net_income": 5330000000.0,
       "diluted_shares_used": 7999000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -20,7 +20,7 @@
       "fiscal_year": 2027,
       "quarter": 1,
       "tax_expense": 1658000000.0,
-      "pretax_income": 7148000000.0,
+      "pretax_income": 6988000000.0,
       "ai_analysis": {
         "health": "Excellent",
         "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
@@ -28,10 +28,10 @@
       }
     },
     {
-      "gaap_eps": 0.50049862877088,
-      "adjusted_eps": 0.8553191224133633,
-      "gaap_net_income": 4015000000.0,
-      "adjusted_net_income": 6861370000.0,
+      "gaap_eps": 0.5281725255547245,
+      "adjusted_eps": 0.8829930191972076,
+      "gaap_net_income": 4237000000.0,
+      "adjusted_net_income": 7083370000.0,
       "diluted_shares_used": 8022000000.0,
       "adjustments": [
         {
@@ -59,16 +59,30 @@
       "fiscal_year": 2026,
       "quarter": 4,
       "tax_expense": 7199000000.0,
-      "pretax_income": 11214000000.0
+      "pretax_income": 11436000000.0
     },
     {
-      "gaap_eps": 0.7599550617900387,
-      "adjusted_eps": 0.7599550617900387,
-      "gaap_net_income": 6088000000.0,
-      "adjusted_net_income": 6088000000.0,
+      "gaap_eps": 0.7668206216452378,
+      "adjusted_eps": 0.5639707901635251,
+      "gaap_net_income": 6143000000.0,
+      "adjusted_net_income": 4517970000.0,
       "diluted_shares_used": 8011000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjustments": [
+        {
+          "item_id": "investment_fv_change",
+          "item_name": "投資公正価値変動損益",
+          "amount": -2057000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の投資時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "公正価値変動関連",
+          "net_amount": -1625030000.0,
+          "tax_rate_applied": 0.21
+        }
+      ],
+      "net_adjustment_total": -1625030000.0,
       "filing_date": "2025-10-31",
       "form": "10-Q",
       "sector": null,
@@ -79,13 +93,32 @@
       "fiscal_year": 2026,
       "quarter": 3,
       "tax_expense": 2098000000.0,
-      "pretax_income": 8186000000.0
+      "pretax_income": 8241000000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "投資公正価値変動損益",
+              "xbrl_tag": "us-gaap:GainLossOnInvestments",
+              "xbrl_value": 2057000000,
+              "adjustment_amount": -2057000000,
+              "net_amount": -1625030000.0
+            }
+          ],
+          "condition1": "純利益変動34% / 売上変動6% = 5.9倍（閾値5倍）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
+        }
+      }
     },
     {
-      "gaap_eps": 0.8920908183632734,
-      "adjusted_eps": 0.6341778942115769,
-      "gaap_net_income": 7151000000.0,
-      "adjusted_net_income": 5083570000.0,
+      "gaap_eps": 0.8764970059880239,
+      "adjusted_eps": 0.6185840818363273,
+      "gaap_net_income": 7026000000.0,
+      "adjusted_net_income": 4958570000.0,
       "diluted_shares_used": 8016000000.0,
       "adjustments": [
         {
@@ -113,7 +146,7 @@
       "fiscal_year": 2026,
       "quarter": 2,
       "tax_expense": 2168000000.0,
-      "pretax_income": 9319000000.0,
+      "pretax_income": 9194000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -129,16 +162,16 @@
               "net_amount": -2067430000.0
             }
           ],
-          "condition1": "純利益変動52% / 売上変動5% = 10.9倍（閾値5倍）",
+          "condition1": "純利益変動56% / 売上変動5% = 11.8倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.576201714072786,
-      "adjusted_eps": 0.576201714072786,
-      "gaap_net_income": 4639000000.0,
-      "adjusted_net_income": 4639000000.0,
+      "gaap_eps": 0.557322071792324,
+      "adjusted_eps": 0.557322071792324,
+      "gaap_net_income": 4487000000.0,
+      "adjusted_net_income": 4487000000.0,
       "diluted_shares_used": 8051000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -152,13 +185,13 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 1355000000.0,
-      "pretax_income": 5994000000.0
+      "pretax_income": 5842000000.0
     },
     {
-      "gaap_eps": 0.5821061749783443,
-      "adjusted_eps": 0.8528041084024255,
-      "gaap_net_income": 4704000000.0,
-      "adjusted_net_income": 6891510000.0,
+      "gaap_eps": 0.6501670585323599,
+      "adjusted_eps": 0.920864991956441,
+      "gaap_net_income": 5254000000.0,
+      "adjusted_net_income": 7441510000.0,
       "diluted_shares_used": 8081000000.0,
       "adjustments": [
         {
@@ -186,13 +219,13 @@
       "fiscal_year": 2025,
       "quarter": 4,
       "tax_expense": 6152000000.0,
-      "pretax_income": 10856000000.0
+      "pretax_income": 11406000000.0
     },
     {
-      "gaap_eps": 0.5832714674585499,
-      "adjusted_eps": 0.5832714674585499,
-      "gaap_net_income": 4714000000.0,
-      "adjusted_net_income": 4714000000.0,
+      "gaap_eps": 0.5663202177678792,
+      "adjusted_eps": 0.5663202177678792,
+      "gaap_net_income": 4577000000.0,
+      "adjusted_net_income": 4577000000.0,
       "diluted_shares_used": 8082000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -206,13 +239,13 @@
       "fiscal_year": 2025,
       "quarter": 3,
       "tax_expense": 1384000000.0,
-      "pretax_income": 6098000000.0
+      "pretax_income": 5961000000.0
     },
     {
-      "gaap_eps": 0.5829724044053953,
-      "adjusted_eps": 0.5829724044053953,
-      "gaap_net_income": 4711000000.0,
-      "adjusted_net_income": 4711000000.0,
+      "gaap_eps": 0.5569855215938622,
+      "adjusted_eps": 0.5569855215938622,
+      "gaap_net_income": 4501000000.0,
+      "adjusted_net_income": 4501000000.0,
       "diluted_shares_used": 8081000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -226,13 +259,13 @@
       "fiscal_year": 2025,
       "quarter": 2,
       "tax_expense": 1502000000.0,
-      "pretax_income": 6213000000.0
+      "pretax_income": 6003000000.0
     },
     {
-      "gaap_eps": 0.6564819396338446,
-      "adjusted_eps": 0.6564819396338446,
-      "gaap_net_income": 5307000000.0,
-      "adjusted_net_income": 5307000000.0,
+      "gaap_eps": 0.6313706086095993,
+      "adjusted_eps": 0.6313706086095993,
+      "gaap_net_income": 5104000000.0,
+      "adjusted_net_income": 5104000000.0,
       "diluted_shares_used": 8084000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -246,13 +279,13 @@
       "fiscal_year": 2025,
       "quarter": 1,
       "tax_expense": 1728000000.0,
-      "pretax_income": 7035000000.0
+      "pretax_income": 6832000000.0
     },
     {
-      "gaap_eps": 0.606684755796744,
-      "adjusted_eps": 0.8106154415392205,
-      "gaap_net_income": 4919000000.0,
-      "adjusted_net_income": 6572470000.0,
+      "gaap_eps": 0.6776023680315738,
+      "adjusted_eps": 0.8815330537740503,
+      "gaap_net_income": 5494000000.0,
+      "adjusted_net_income": 7147470000.0,
       "diluted_shares_used": 8108000000.0,
       "adjustments": [
         {
@@ -280,13 +313,13 @@
       "fiscal_year": 2024,
       "quarter": 4,
       "tax_expense": 5578000000.0,
-      "pretax_income": 10497000000.0
+      "pretax_income": 11072000000.0
     },
     {
-      "gaap_eps": 0.07928483353884094,
-      "adjusted_eps": 0.5469531442663379,
-      "gaap_net_income": 643000000.0,
-      "adjusted_net_income": 4435790000.0,
+      "gaap_eps": 0.055856966707768185,
+      "adjusted_eps": 0.5235252774352651,
+      "gaap_net_income": 453000000.0,
+      "adjusted_net_income": 4245790000.0,
       "diluted_shares_used": 8110000000.0,
       "adjustments": [
         {
@@ -314,7 +347,7 @@
       "fiscal_year": 2024,
       "quarter": 3,
       "tax_expense": 272000000.0,
-      "pretax_income": 915000000.0,
+      "pretax_income": 725000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -330,16 +363,16 @@
               "net_amount": 3792790000.0
             }
           ],
-          "condition1": "FV変動が純利益の747%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の1060%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.9932165762210163,
-      "adjusted_eps": 0.619554760730143,
-      "gaap_net_income": 8053000000.0,
-      "adjusted_net_income": 5023350000.0,
+      "gaap_eps": 0.9732363098174642,
+      "adjusted_eps": 0.599574494326591,
+      "gaap_net_income": 7891000000.0,
+      "adjusted_net_income": 4861350000.0,
       "diluted_shares_used": 8108000000.0,
       "adjustments": [
         {
@@ -367,7 +400,7 @@
       "fiscal_year": 2024,
       "quarter": 2,
       "tax_expense": 2674000000.0,
-      "pretax_income": 10727000000.0,
+      "pretax_income": 10565000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -383,16 +416,16 @@
               "net_amount": -3029650000.0
             }
           ],
-          "condition1": "純利益変動56% / 売上変動6% = 9.8倍（閾値5倍）",
+          "condition1": "純利益変動53% / 売上変動6% = 9.3倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.23372781065088757,
-      "adjusted_eps": 0.5319255424063116,
-      "gaap_net_income": 1896000000.0,
-      "adjusted_net_income": 4314980000.0,
+      "gaap_eps": 0.20623767258382644,
+      "adjusted_eps": 0.5044354043392505,
+      "gaap_net_income": 1673000000.0,
+      "adjusted_net_income": 4091980000.0,
       "diluted_shares_used": 8112000000.0,
       "adjustments": [
         {
@@ -420,7 +453,7 @@
       "fiscal_year": 2024,
       "quarter": 1,
       "tax_expense": 792000000.0,
-      "pretax_income": 2688000000.0,
+      "pretax_income": 2465000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -436,16 +469,16 @@
               "net_amount": 2418980000.0
             }
           ],
-          "condition1": "FV変動が純利益の161%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の183%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.7555474274567179,
-      "adjusted_eps": 0.6066055220357559,
-      "gaap_net_income": 6197000000.0,
-      "adjusted_net_income": 4975378491.73727,
+      "gaap_eps": 0.7650573030968056,
+      "adjusted_eps": 0.6152210948896639,
+      "gaap_net_income": 6275000000.0,
+      "adjusted_net_income": 5046043420.285024,
       "diluted_shares_used": 8202000000.0,
       "adjustments": [
         {
@@ -458,8 +491,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
           "category": "株式報酬関連",
-          "net_amount": 820305846.8249308,
-          "tax_rate_applied": 0.48016106031373207
+          "net_amount": 825231269.2724394,
+          "tax_rate_applied": 0.47703975331277604
         },
         {
           "item_id": "investment_fv_change",
@@ -471,11 +504,11 @@
           "reason": "非現金・非経常の投資時価評価変動",
           "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
           "category": "公正価値変動関連",
-          "net_amount": -2041927355.0876606,
-          "tax_rate_applied": 0.48016106031373207
+          "net_amount": -2054187848.9874158,
+          "tax_rate_applied": 0.47703975331277604
         }
       ],
-      "net_adjustment_total": -1221621508.2627296,
+      "net_adjustment_total": -1228956579.7149763,
       "filing_date": "2023-01-31",
       "form": "10-K",
       "sector": null,
@@ -486,7 +519,7 @@
       "fiscal_year": 2023,
       "quarter": 4,
       "tax_expense": 5724000000.0,
-      "pretax_income": 11921000000.0,
+      "pretax_income": 11999000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -499,7 +532,7 @@
               "xbrl_tag": "us-gaap:UnrealizedGainLossOnInvestments",
               "xbrl_value": 3928000000,
               "adjustment_amount": -3928000000,
-              "net_amount": -2041927355.0876606
+              "net_amount": -2054187848.9874158
             }
           ],
           "condition1": "前年同期データなし（条件1スキップ）",
@@ -508,10 +541,10 @@
       }
     },
     {
-      "gaap_eps": -0.217263002582073,
-      "adjusted_eps": 0.134657567933112,
-      "gaap_net_income": -1767000000.0,
-      "adjusted_net_income": 1095170000.0,
+      "gaap_eps": -0.22107463420631993,
+      "adjusted_eps": 0.13084593630886512,
+      "gaap_net_income": -1798000000.0,
+      "adjusted_net_income": 1064170000.0,
       "diluted_shares_used": 8133000000.0,
       "adjustments": [
         {
@@ -539,7 +572,7 @@
       "fiscal_year": 2023,
       "quarter": 3,
       "tax_expense": 336000000.0,
-      "pretax_income": -1431000000.0,
+      "pretax_income": -1462000000.0,
       "split_adjusted": true,
       "special_flags": [
         "EPS_DISCREPANCY"
@@ -556,16 +589,16 @@
               "net_amount": 2862170000.0
             }
           ],
-          "condition1": "FV変動が純利益の205%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の202%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.6250151791135398,
-      "adjusted_eps": 0.6250151791135398,
-      "gaap_net_income": 5147000000.0,
-      "adjusted_net_income": 5147000000.0,
+      "gaap_eps": 0.625258044930176,
+      "adjusted_eps": 0.625258044930176,
+      "gaap_net_income": 5149000000.0,
+      "adjusted_net_income": 5149000000.0,
       "diluted_shares_used": 8235000000.0,
       "adjustments": [],
       "net_adjustment_total": 0.0,
@@ -579,14 +612,14 @@
       "fiscal_year": 2023,
       "quarter": 2,
       "tax_expense": 1497000000.0,
-      "pretax_income": 6644000000.0,
+      "pretax_income": 6646000000.0,
       "split_adjusted": true
     },
     {
-      "gaap_eps": 0.2535262206148282,
-      "adjusted_eps": 0.44295479204339966,
-      "gaap_net_income": 2103000000.0,
-      "adjusted_net_income": 3674310000.0,
+      "gaap_eps": 0.24761904761904763,
+      "adjusted_eps": 0.4370476190476191,
+      "gaap_net_income": 2054000000.0,
+      "adjusted_net_income": 3625310000.0,
       "diluted_shares_used": 8295000000.0,
       "adjustments": [
         {
@@ -614,7 +647,7 @@
       "fiscal_year": 2023,
       "quarter": 1,
       "tax_expense": 798000000.0,
-      "pretax_income": 2901000000.0,
+      "pretax_income": 2852000000.0,
       "split_adjusted": true,
       "special_flags": [
         "EPS_DISCREPANCY"
@@ -631,7 +664,7 @@
               "net_amount": 1571310000.0
             }
           ],
-          "condition1": "FV変動が純利益の95%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の97%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 投資公正価値変動損益"
         }
       }

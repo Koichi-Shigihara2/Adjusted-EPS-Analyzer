@@ -1,6 +1,6 @@
 {
   "ticker": "CAKE",
-  "last_updated": "2026-07-15T22:27:45.468173",
+  "last_updated": "2026-07-20T09:06:27.316475",
   "quarters": [
     {
       "gaap_eps": 1.0225570116603033,
@@ -36,12 +36,12 @@
       "tax_expense": 3803000.0,
       "pretax_income": 53351000.0,
       "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目はSBC（株式報酬費用）で恒常的な運用コストであり、非現金だが株主希薄化を伴う実質コストです。市場がGAAP EPS（1.02）で判断する場合、SBC加算によるAdjusted EPS（1.16）より保守的な実力を把握しており、企業の実力が見えにくくなり過小評価の可能性があります。ただしSBCを routinely add backすると持続可能性を過大評価するリスクもあり、投資家は希薄化調整後EPSや将来の株式発行影響を注視すべきです。",
+        "health": "調整中",
+        "comment": "調整項目はSBC（株式報酬費用）であり、恒常的に発生する非現金コストです。市場がGAAP EPS（1.02）で判断する場合、非現金費用を除いたAdjusted EPS（1.16）の企業実力が分かりにくくなり、過小評価の可能性があります。ただしSBCは株主希薄化を伴う実質コストのため、調整を過信すると過大評価リスクが生じます。投資家は現金フロー、希薄化後シェア数、SBCの長期トレンドを注視すべきです。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は毎期発生する非現金費用であり、恒常的な運用コストである（非一過性）。",
+            "snippet": "非現金費用として毎期発生する株式報酬費用をadd_backしており、恒常的な調整項目である。",
             "confidence": 0.2
           }
         ]
@@ -346,6 +346,53 @@
       "pretax_income": 37532000.0
     },
     {
+      "gaap_eps": 0.2585321100917431,
+      "adjusted_eps": 0.3975703762891267,
+      "gaap_net_income": 12681000.0,
+      "adjusted_net_income": 19500826.956981666,
+      "diluted_shares_used": 49050000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 6931000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 6114114.686177716,
+          "tax_rate_applied": 0.11785966149506347
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 800000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 705712.2708039492,
+          "tax_rate_applied": 0.11785966149506347
+        }
+      ],
+      "net_adjustment_total": 6819826.9569816645,
+      "filing_date": "2024-01-02",
+      "form": "10-K",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 3439503000.0,
+      "diluted_shares": 49050000.0,
+      "period_end": "2024-01-02",
+      "fiscal_year": 2023,
+      "quarter": 4,
+      "tax_expense": -1337000.0,
+      "pretax_income": 11344000.0
+    },
+    {
       "gaap_eps": 0.36633663366336633,
       "adjusted_eps": 0.4940506815196696,
       "gaap_net_income": 17945000.0,
@@ -448,24 +495,24 @@
       "pretax_income": 32046000.0
     },
     {
-      "gaap_eps": -0.9034593565279486,
-      "adjusted_eps": -0.8050438692343236,
-      "gaap_net_income": -45547000.0,
-      "adjusted_net_income": -40585481.62357919,
+      "gaap_eps": -0.06541833617645892,
+      "adjusted_eps": 0.1289867893839013,
+      "gaap_net_income": -3298000.0,
+      "adjusted_net_income": 6502740.0,
       "diluted_shares_used": 50414000.0,
       "adjustments": [
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 5576000,
+          "amount": 7206000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 4553230.162429632,
-          "tax_rate_applied": 0.18342357201764137
+          "net_amount": 5692740.0,
+          "tax_rate_applied": 0.21
         },
         {
           "item_id": "amortization_intangibles",
@@ -477,11 +524,24 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 408288.2139911793,
-          "tax_rate_applied": 0.18342357201764137
+          "net_amount": 395000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "contingent_consideration_fv",
+          "item_name": "偶発対価公正価値変動損益",
+          "amount": 4700000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の買収偶発対価時価変動",
+          "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
+          "category": "公正価値変動関連",
+          "net_amount": 3713000.0,
+          "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 4961518.376420811,
+      "net_adjustment_total": 9800740.0,
       "filing_date": "2023-01-03",
       "form": "10-K",
       "sector": null,
@@ -489,10 +549,29 @@
       "revenue": 3303156000.0,
       "diluted_shares": 50414000.0,
       "period_end": "2023-01-03",
-      "fiscal_year": 2023,
+      "fiscal_year": 2022,
       "quarter": 4,
       "tax_expense": -10231000.0,
-      "pretax_income": -55778000.0
+      "pretax_income": -13529000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "偶発対価公正価値変動損益",
+              "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
+              "xbrl_value": 4700000.0,
+              "adjustment_amount": 4700000.0,
+              "net_amount": 3713000.0
+            }
+          ],
+          "condition1": "FV変動が純利益の143%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
+        }
+      }
     },
     {
       "gaap_eps": -0.04829516846917608,

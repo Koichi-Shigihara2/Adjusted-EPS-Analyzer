@@ -1,15 +1,15 @@
 {
   "ticker": "WMT",
-  "last_updated": "2026-07-20T00:37:52.601883",
+  "last_updated": "2026-07-20T09:09:56.692589",
   "years": [
     {
       "year": "2026",
       "filing_date": "2026-01-31",
       "gaap_net_income": 21893000000.0,
-      "adjusted_net_income": 22671940000.0,
+      "adjusted_net_income": 21046910000.0,
       "diluted_shares_used": 8025000000.0,
       "gaap_eps": 2.7280996884735202,
-      "adjusted_eps": 2.825163862928349,
+      "adjusted_eps": 2.622667912772586,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -27,6 +27,19 @@
         {
           "item_id": "investment_fv_change",
           "item_name": "投資公正価値変動損益",
+          "amount": -2057000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常の投資時価評価変動",
+          "extracted_from": "us-gaap:GainLossOnInvestments",
+          "category": "公正価値変動関連",
+          "net_amount": -1625030000.0,
+          "tax_rate_applied": 0.21
+        },
+        {
+          "item_id": "investment_fv_change",
+          "item_name": "投資公正価値変動損益",
           "amount": -2617000000.0,
           "unit": "USD",
           "direction": "add_back",
@@ -38,7 +51,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 778940000.0
+      "net_adjustment_total": -846090000.0
     },
     {
       "year": "2025",
@@ -133,10 +146,10 @@
       "year": "2023",
       "filing_date": "2023-01-31",
       "gaap_net_income": 11680000000.0,
-      "adjusted_net_income": 14891858491.73727,
+      "adjusted_net_income": 14884523420.285023,
       "diluted_shares_used": 8216250000.0,
       "gaap_eps": 1.4215731020842841,
-      "adjusted_eps": 1.8124884821831457,
+      "adjusted_eps": 1.8115957304469827,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -148,8 +161,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
           "category": "株式報酬関連",
-          "net_amount": 820305846.8249308,
-          "tax_rate_applied": 0.48016106031373207
+          "net_amount": 825231269.2724394,
+          "tax_rate_applied": 0.47703975331277604
         },
         {
           "item_id": "investment_fv_change",
@@ -161,8 +174,8 @@
           "reason": "非現金・非経常の投資時価評価変動",
           "extracted_from": "us-gaap:UnrealizedGainLossOnInvestments",
           "category": "公正価値変動関連",
-          "net_amount": -2041927355.0876606,
-          "tax_rate_applied": 0.48016106031373207
+          "net_amount": -2054187848.9874158,
+          "tax_rate_applied": 0.47703975331277604
         },
         {
           "item_id": "investment_fv_change",
@@ -191,7 +204,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": 3211858491.7372704
+      "net_adjustment_total": 3204523420.2850237
     }
   ]
 }

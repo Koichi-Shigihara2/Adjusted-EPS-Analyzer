@@ -1,6 +1,6 @@
 {
   "ticker": "TASK",
-  "last_updated": "2026-07-13T12:45:59.633821",
+  "last_updated": "2026-07-20T09:09:26.334298",
   "quarters": [
     {
       "gaap_eps": 0.26137022232646095,
@@ -63,21 +63,21 @@
       "pretax_income": 36266000.0,
       "ai_analysis": {
         "health": "調整大",
-        "comment": "主な調整項目であるsbc（株式報酬）とamortization_intangibles（無形資産償却）は恒常的に発生する性質の費用であり、一過性とは言い難い。loan_loss_provision_abnormalのみマクロ要因による一時的項目と判断される。GAAP EPSに対しAdjusted EPSが約32%上方修正されており、市場がGAAPベースで判断する場合、非現金費用を控除した企業の実力（コア収益力）が過小評価されている可能性がある。ただしSBCの株主希薄化効果や継続的な償却を考慮すると、Adjusted EPSによる過大評価リスクも存在する。投資家はSBCの規模推移と経済的コスト、買収関連償却の残存期間を注視し、真正のキャッシュフロー生成力を評価すべき。",
+        "comment": "主な調整項目であるSBCと無形資産償却は恒常的に発生する非現金費用であり、一過性とは判断しにくい。一方、貸倒引当金の異常変動分はマクロ要因による一時的項目。市場がGAAP EPS（0.26）で判断する場合、非現金項目を排除したAdjusted EPS（0.35）の企業実力が見えにくくなり、過小評価の可能性がある。ただしSBCは株主希薄化の実質コストであるため、Adjusted EPS relianceは過大評価リスクも伴う。投資家はSBCの継続額、希薄化影響、買収戦略の持続可能性に特に注目すべき。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_back。恒常的な運用コストであり、毎期発生する可能性が高い。",
+            "snippet": "非現金費用だが毎期発生する恒常的な株式報酬コスト（reason: 非現金費用）",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却をadd_back。買収後も継続して発生する非現金費用。",
+            "snippet": "買収関連無形資産の償却で、買収後も継続する恒常的費用（reason: 買収関連無形資産の償却）",
             "confidence": 0.2
           },
           {
             "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響として異常変動分の貸倒引当金をadd_back。",
+            "snippet": "マクロ変動による一時的影響とされる異常貸倒引当金（reason: マクロ変動による一時的影響）",
             "confidence": 0.75
           }
         ]

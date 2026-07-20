@@ -1,6 +1,6 @@
 {
   "ticker": "CDNS",
-  "last_updated": "2026-07-15T22:28:27.185046",
+  "last_updated": "2026-07-20T09:08:37.042751",
   "years": [
     {
       "year": "2025",
@@ -819,13 +819,65 @@
     },
     {
       "year": "2021",
-      "filing_date": "2021-10-02",
-      "gaap_net_income": 590644000.0,
-      "adjusted_net_income": 779521258.2248629,
-      "diluted_shares_used": 279162500.0,
-      "gaap_eps": 2.1157712801683606,
-      "adjusted_eps": 2.7923566317999837,
+      "filing_date": "2022-01-01",
+      "gaap_net_income": 695955000.0,
+      "adjusted_net_income": 891548027.3832054,
+      "diluted_shares_used": 278966750.0,
+      "gaap_eps": 2.494759680141092,
+      "adjusted_eps": 3.195893515564867,
       "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 54230000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 38448235.83970063,
+          "tax_rate_applied": 0.29101538189746207
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 4979000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 3530034.413532536,
+          "tax_rate_applied": 0.29101538189746207
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 291000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 206314.52386783852,
+          "tax_rate_applied": 0.29101538189746207
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": -80000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringCharges",
+          "category": "リストラ・事業再編関連",
+          "net_amount": -56718.76944820303,
+          "tax_rate_applied": 0.29101538189746207
+        },
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
@@ -981,61 +1033,9 @@
           "category": "リストラ・事業再編関連",
           "net_amount": -256128.6279585616,
           "tax_rate_applied": 0.0753479135069978
-        },
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 41408000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 26029931.058815226,
-          "tax_rate_applied": 0.3713791765162474
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 3348000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 2104622.517023604,
-          "tax_rate_applied": 0.3713791765162474
-        },
-        {
-          "item_id": "loan_loss_provision_abnormal",
-          "item_name": "貸倒引当金繰入（異常変動分）",
-          "amount": 1394000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "マクロ変動による一時的影響",
-          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
-          "category": "金融関連",
-          "net_amount": 876297.4279363512,
-          "tax_rate_applied": 0.3713791765162474
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": 10183000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "リストラ・事業再編関連",
-          "net_amount": 6401245.845535053,
-          "tax_rate_applied": 0.3713791765162474
         }
       ],
-      "net_adjustment_total": 188877258.2248629
+      "net_adjustment_total": 195593027.38320547
     }
   ]
 }

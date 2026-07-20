@@ -1,12 +1,12 @@
 {
   "ticker": "ABBV",
-  "last_updated": "2026-07-15T22:24:54.946967",
+  "last_updated": "2026-07-20T09:09:26.037278",
   "quarters": [
     {
-      "gaap_eps": 0.3928974069898534,
-      "adjusted_eps": 2.124444304589987,
-      "gaap_net_income": 697000000.0,
-      "adjusted_net_income": 3768764196.342637,
+      "gaap_eps": 0.39177001127395716,
+      "adjusted_eps": 2.1216782867064063,
+      "gaap_net_income": 695000000.0,
+      "adjusted_net_income": 3763857280.6171646,
       "diluted_shares_used": 1774000000.0,
       "adjustments": [
         {
@@ -19,8 +19,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 297851780.5582291,
-          "tax_rate_applied": 0.329162656400385
+          "net_amount": 297569913.2111861,
+          "tax_rate_applied": 0.32979749276759884
         },
         {
           "item_id": "amortization_intangibles",
@@ -32,8 +32,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1172623676.612127,
-          "tax_rate_applied": 0.329162656400385
+          "net_amount": 1171513982.6422372,
+          "tax_rate_applied": 0.32979749276759884
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -45,11 +45,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1601288739.172281,
-          "tax_rate_applied": 0.329162656400385
+          "net_amount": 1599773384.7637415,
+          "tax_rate_applied": 0.32979749276759884
         }
       ],
-      "net_adjustment_total": 3071764196.342637,
+      "net_adjustment_total": 3068857280.6171646,
       "filing_date": "2026-03-31",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -63,7 +63,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 342000000.0,
-      "pretax_income": 1039000000.0,
+      "pretax_income": 1037000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -76,10 +76,10 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 2387000000,
               "adjustment_amount": 2387000000,
-              "net_amount": 1601288739.172281
+              "net_amount": 1599773384.7637415
             }
           ],
-          "condition1": "FV変動が純利益の342%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の343%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       },
@@ -95,31 +95,31 @@
       },
       "ai_analysis": {
         "health": "調整大",
-        "comment": "調整項目はSBC、無形資産償却、偶発対価FV変動の3つで総額約45億ドルと極めて大きく、GAAP EPS 0.39に対しAdjusted EPS 2.12と5倍超の開きを生んでいる。市場がGAAP EPSのみで判断する場合、買収関連非現金費用により企業の実力（特にキャッシュ生成力）が大幅に過小評価される可能性が高い。ただしSBCと無形資産償却は恒常的に発生するコストのため、調整後EPSが実力を過大評価するリスクもあり、投資家はこれらの項目の持続性と将来の買収依存度を注視すべき。",
+        "comment": "SBCと無形資産償却は恒常的なコスト（毎期発生する非現金費用）である一方、偶発対価の公正価値変動は買収関連の一過性要素が強い。GAAP EPS 0.39に対しAdjusted EPSが2.12と大幅に上昇するのは主にこれら加算によるもので、市場がGAAPベースで判断する場合、AbbVieの真の実力（買収統合後のコア収益力）が過小評価されている可能性が高い。投資家は調整後EPSを重視すべきだが、買収無形資産の経済的減価や偶発対価の将来変動リスクを考慮し、過大評価に転じる可能性にも警戒が必要。",
         "sources": [
           {
             "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストである。",
+            "snippet": "株式報酬費用は非現金費用だが、AbbVieが継続的に付与する恒常的な運用コストであり、調整の正当性は中程度。",
             "confidence": 0.2
           },
           {
             "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連無形資産の償却であり、毎期発生する非現金で恒常的な可能性が高い費用。",
+            "snippet": "買収関連無形資産の償却は非現金だが、過去のM&Aの経済的コストを反映する恒常的項目で、調整により実態が歪曲されるリスクあり。",
             "confidence": 0.2
           },
           {
             "item": "contingent_consideration_fv",
-            "snippet": "偶発対価公正価値変動は非現金・非経常の買収関連項目であり、M&A費用として調整されることが多い。",
-            "confidence": 0.8
+            "snippet": "偶発対価の公正価値変動は非現金・非経常的な買収関連項目で、市場がGAAPで評価する場合に実力を過小評価させる主要因。",
+            "confidence": 0.7
           }
         ]
       }
     },
     {
-      "gaap_eps": 1.0197405527354766,
-      "adjusted_eps": 2.5110716300056404,
-      "gaap_net_income": 1808000000.0,
-      "adjusted_net_income": 4452130000.0,
+      "gaap_eps": 1.0242526790750142,
+      "adjusted_eps": 2.5155837563451775,
+      "gaap_net_income": 1816000000.0,
+      "adjusted_net_income": 4460130000.0,
       "diluted_shares_used": 1773000000.0,
       "adjustments": [
         {
@@ -176,7 +176,7 @@
       "fiscal_year": 2025,
       "quarter": 4,
       "tax_expense": 2364000000.0,
-      "pretax_income": 4172000000.0,
+      "pretax_income": 4180000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -192,16 +192,16 @@
               "net_amount": 1110740000.0
             }
           ],
-          "condition1": "純利益変動5932% / 売上変動10% = 591.0倍（閾値5倍）",
+          "condition1": "純利益変動8355% / 売上変動10% = 832.3倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.10609480812641084,
-      "adjusted_eps": 1.3922968397291196,
-      "gaap_net_income": 188000000.0,
-      "adjusted_net_income": 2467150000.0,
+      "gaap_eps": 0.10496613995485328,
+      "adjusted_eps": 1.3911681715575621,
+      "gaap_net_income": 186000000.0,
+      "adjusted_net_income": 2465150000.0,
       "diluted_shares_used": 1772000000.0,
       "adjustments": [
         {
@@ -258,7 +258,7 @@
       "fiscal_year": 2025,
       "quarter": 3,
       "tax_expense": 526000000.0,
-      "pretax_income": 714000000.0,
+      "pretax_income": 712000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -274,16 +274,16 @@
               "net_amount": 613040000.0
             }
           ],
-          "condition1": "FV変動が純利益の413%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の417%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.5313382269904009,
-      "adjusted_eps": 2.197839204050384,
-      "gaap_net_income": 941000000.0,
-      "adjusted_net_income": 3892373230.37323,
+      "gaap_eps": 0.5296442687747036,
+      "adjusted_eps": 2.1940454074000453,
+      "gaap_net_income": 938000000.0,
+      "adjusted_net_income": 3885654416.5054803,
       "diluted_shares_used": 1771000000.0,
       "adjustments": [
         {
@@ -296,8 +296,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 108390604.89060488,
-          "tax_rate_applied": 0.3944658944658945
+          "net_amount": 108254029.65828498,
+          "tax_rate_applied": 0.3952288845905867
         },
         {
           "item_id": "amortization_intangibles",
@@ -309,8 +309,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1150514800.5148003,
-          "tax_rate_applied": 0.3944658944658945
+          "net_amount": 1149065119.2778852,
+          "tax_rate_applied": 0.3952288845905867
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -322,11 +322,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1692467824.9678247,
-          "tax_rate_applied": 0.3944658944658945
+          "net_amount": 1690335267.5693102,
+          "tax_rate_applied": 0.3952288845905867
         }
       ],
-      "net_adjustment_total": 2951373230.37323,
+      "net_adjustment_total": 2947654416.5054803,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -340,7 +340,7 @@
       "fiscal_year": 2025,
       "quarter": 2,
       "tax_expense": 613000000.0,
-      "pretax_income": 1554000000.0,
+      "pretax_income": 1551000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -353,19 +353,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 2795000000.0,
               "adjustment_amount": 2795000000.0,
-              "net_amount": 1692467824.9678247
+              "net_amount": 1690335267.5693102
             }
           ],
-          "condition1": "FV変動が純利益の297%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の298%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.7274266365688488,
-      "adjusted_eps": 2.385486387351306,
-      "gaap_net_income": 1289000000.0,
-      "adjusted_net_income": 4227081878.386514,
+      "gaap_eps": 0.7257336343115124,
+      "adjusted_eps": 2.38292756646072,
+      "gaap_net_income": 1286000000.0,
+      "adjusted_net_income": 4222547647.768396,
       "diluted_shares_used": 1772000000.0,
       "adjustments": [
         {
@@ -378,8 +378,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 318175797.71222156,
-          "tax_rate_applied": 0.22396146899458158
+          "net_amount": 318009650.1809409,
+          "tax_rate_applied": 0.2243667068757539
         },
         {
           "item_id": "amortization_intangibles",
@@ -391,8 +391,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1441879590.6080675,
-          "tax_rate_applied": 0.22396146899458158
+          "net_amount": 1441126658.6248493,
+          "tax_rate_applied": 0.2243667068757539
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -404,11 +404,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1178026490.066225,
-          "tax_rate_applied": 0.22396146899458158
+          "net_amount": 1177411338.9626057,
+          "tax_rate_applied": 0.2243667068757539
         }
       ],
-      "net_adjustment_total": 2938081878.386514,
+      "net_adjustment_total": 2936547647.768396,
       "filing_date": "2025-03-31",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -422,7 +422,7 @@
       "fiscal_year": 2025,
       "quarter": 1,
       "tax_expense": 372000000.0,
-      "pretax_income": 1661000000.0,
+      "pretax_income": 1658000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -435,7 +435,7 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1518000000,
               "adjustment_amount": 1518000000,
-              "net_amount": 1178026490.066225
+              "net_amount": 1177411338.9626057
             }
           ],
           "condition1": "FV変動が純利益の118%占有（超高materiality → 条件1スキップ）",
@@ -444,10 +444,10 @@
       }
     },
     {
-      "gaap_eps": -0.01748448956570784,
-      "adjusted_eps": 1.0247095318668922,
-      "gaap_net_income": -31000000.0,
-      "adjusted_net_income": 1816810000.0,
+      "gaap_eps": -0.012408347433728144,
+      "adjusted_eps": 1.029785673998872,
+      "gaap_net_income": -22000000.0,
+      "adjusted_net_income": 1825810000.0,
       "diluted_shares_used": 1773000000.0,
       "adjustments": [
         {
@@ -504,7 +504,7 @@
       "fiscal_year": 2024,
       "quarter": 4,
       "tax_expense": -570000000.0,
-      "pretax_income": -601000000.0,
+      "pretax_income": -592000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -520,16 +520,16 @@
               "net_amount": 220410000.0
             }
           ],
-          "condition1": "FV変動が純利益の900%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の1268%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.8826185101580135,
-      "adjusted_eps": 2.3382614177458696,
-      "gaap_net_income": 1564000000.0,
-      "adjusted_net_income": 4143399232.2456813,
+      "gaap_eps": 0.8809255079006773,
+      "adjusted_eps": 2.335870712443987,
+      "gaap_net_income": 1561000000.0,
+      "adjusted_net_income": 4139162902.4507446,
       "diluted_shares_used": 1772000000.0,
       "adjustments": [
         {
@@ -542,8 +542,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 135836852.20729366,
-          "tax_rate_applied": 0.2495201535508637
+          "net_amount": 135771744.3536761,
+          "tax_rate_applied": 0.2498798654493032
         },
         {
           "item_id": "amortization_intangibles",
@@ -555,8 +555,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1425911708.2533588,
-          "tax_rate_applied": 0.2495201535508637
+          "net_amount": 1425228255.646324,
+          "tax_rate_applied": 0.2498798654493032
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -568,11 +568,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1017650671.7850287,
-          "tax_rate_applied": 0.2495201535508637
+          "net_amount": 1017162902.4507449,
+          "tax_rate_applied": 0.2498798654493032
         }
       ],
-      "net_adjustment_total": 2579399232.2456813,
+      "net_adjustment_total": 2578162902.4507446,
       "filing_date": "2024-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -586,7 +586,7 @@
       "fiscal_year": 2024,
       "quarter": 3,
       "tax_expense": 520000000.0,
-      "pretax_income": 2084000000.0,
+      "pretax_income": 2081000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -599,7 +599,7 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1356000000,
               "adjustment_amount": 1356000000,
-              "net_amount": 1017650671.7850287
+              "net_amount": 1017162902.4507449
             }
           ],
           "condition1": "FV変動が純利益の87%占有（超高materiality → 条件1スキップ）",
@@ -608,10 +608,10 @@
       }
     },
     {
-      "gaap_eps": 0.7752682100508187,
-      "adjusted_eps": 2.0736437677966912,
-      "gaap_net_income": 1373000000.0,
-      "adjusted_net_income": 3672423112.7679405,
+      "gaap_eps": 0.7735742518351214,
+      "adjusted_eps": 2.0709264968633185,
+      "gaap_net_income": 1370000000.0,
+      "adjusted_net_income": 3667610825.9449368,
       "diluted_shares_used": 1771000000.0,
       "adjustments": [
         {
@@ -624,8 +624,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 139475302.889096,
-          "tax_rate_applied": 0.36020503261882575
+          "net_amount": 139365375.64162388,
+          "tax_rate_applied": 0.36070928604759683
         },
         {
           "item_id": "amortization_intangibles",
@@ -637,8 +637,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1215610438.0242312,
-          "tax_rate_applied": 0.36020503261882575
+          "net_amount": 1214652356.5095658,
+          "tax_rate_applied": 0.36070928604759683
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -650,11 +650,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 944337371.8546132,
-          "tax_rate_applied": 0.36020503261882575
+          "net_amount": 943593093.793747,
+          "tax_rate_applied": 0.36070928604759683
         }
       ],
-      "net_adjustment_total": 2299423112.7679405,
+      "net_adjustment_total": 2297610825.9449368,
       "filing_date": "2024-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -668,7 +668,7 @@
       "fiscal_year": 2024,
       "quarter": 2,
       "tax_expense": 773000000.0,
-      "pretax_income": 2146000000.0,
+      "pretax_income": 2143000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -681,7 +681,7 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1476000000.0,
               "adjustment_amount": 1476000000.0,
-              "net_amount": 944337371.8546132
+              "net_amount": 943593093.793747
             }
           ],
           "condition1": "FV変動が純利益の108%占有（超高materiality → 条件1スキップ）",
@@ -690,10 +690,10 @@
       }
     },
     {
-      "gaap_eps": 0.7738296672306825,
-      "adjusted_eps": 2.0520816360635874,
-      "gaap_net_income": 1372000000.0,
-      "adjusted_net_income": 3638340740.740741,
+      "gaap_eps": 0.7721376198533559,
+      "adjusted_eps": 2.0497785787317113,
+      "gaap_net_income": 1369000000.0,
+      "adjusted_net_income": 3634257420.0913243,
       "diluted_shares_used": 1773000000.0,
       "adjustments": [
         {
@@ -706,8 +706,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 272054700.85470086,
-          "tax_rate_applied": 0.21823361823361823
+          "net_amount": 271924657.53424656,
+          "tax_rate_applied": 0.21860730593607305
         },
         {
           "item_id": "amortization_intangibles",
@@ -719,8 +719,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1478320227.920228,
-          "tax_rate_applied": 0.21823361823361823
+          "net_amount": 1477613584.474886,
+          "tax_rate_applied": 0.21860730593607305
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -732,11 +732,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 515965811.96581197,
-          "tax_rate_applied": 0.21823361823361823
+          "net_amount": 515719178.0821918,
+          "tax_rate_applied": 0.21860730593607305
         }
       ],
-      "net_adjustment_total": 2266340740.740741,
+      "net_adjustment_total": 2265257420.0913243,
       "filing_date": "2024-03-31",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -750,7 +750,7 @@
       "fiscal_year": 2024,
       "quarter": 1,
       "tax_expense": 383000000.0,
-      "pretax_income": 1755000000.0,
+      "pretax_income": 1752000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -763,19 +763,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 660000000,
               "adjustment_amount": 660000000,
-              "net_amount": 515965811.96581197
+              "net_amount": 515719178.0821918
             }
           ],
-          "condition1": "純利益変動469% / 売上変動1% = 675.0倍（閾値5倍）",
+          "condition1": "純利益変動473% / 売上変動1% = 680.0倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.45910885504794136,
-      "adjusted_eps": 2.1121827411167513,
-      "gaap_net_income": 814000000.0,
-      "adjusted_net_income": 3744900000.0,
+      "gaap_eps": 0.46362098138747887,
+      "adjusted_eps": 2.116694867456289,
+      "gaap_net_income": 822000000.0,
+      "adjusted_net_income": 3752900000.0,
       "diluted_shares_used": 1773000000.0,
       "adjustments": [
         {
@@ -832,7 +832,7 @@
       "fiscal_year": 2023,
       "quarter": 4,
       "tax_expense": 1377000000.0,
-      "pretax_income": 2191000000.0,
+      "pretax_income": 2199000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -848,16 +848,16 @@
               "net_amount": 1339840000.0
             }
           ],
-          "condition1": "FV変動が純利益の208%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の206%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 1.0056465273856579,
-      "adjusted_eps": 2.102434598727927,
-      "gaap_net_income": 1781000000.0,
-      "adjusted_net_income": 3723411674.3471584,
+      "gaap_eps": 1.0039525691699605,
+      "adjusted_eps": 2.1005776831863785,
+      "gaap_net_income": 1778000000.0,
+      "adjusted_net_income": 3720123076.9230766,
       "diluted_shares_used": 1771000000.0,
       "adjustments": [
         {
@@ -870,8 +870,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 118550947.26062468,
-          "tax_rate_applied": 0.08806963645673323
+          "net_amount": 118533333.33333334,
+          "tax_rate_applied": 0.0882051282051282
         },
         {
           "item_id": "amortization_intangibles",
@@ -883,11 +883,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1823860727.0865335,
-          "tax_rate_applied": 0.08806963645673323
+          "net_amount": 1823589743.5897436,
+          "tax_rate_applied": 0.0882051282051282
         }
       ],
-      "net_adjustment_total": 1942411674.3471582,
+      "net_adjustment_total": 1942123076.9230769,
       "filing_date": "2023-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -901,13 +901,13 @@
       "fiscal_year": 2023,
       "quarter": 3,
       "tax_expense": 172000000.0,
-      "pretax_income": 1953000000.0
+      "pretax_income": 1950000000.0
     },
     {
-      "gaap_eps": 1.1445511010728402,
-      "adjusted_eps": 2.8245416252912503,
-      "gaap_net_income": 2027000000.0,
-      "adjusted_net_income": 5002263218.390804,
+      "gaap_eps": 1.1428571428571428,
+      "adjusted_eps": 2.822291632418215,
+      "gaap_net_income": 2024000000.0,
+      "adjusted_net_income": 4998278481.012659,
       "diluted_shares_used": 1771000000.0,
       "adjustments": [
         {
@@ -920,8 +920,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 139016475.09578544,
-          "tax_rate_applied": 0.22337164750957855
+          "net_amount": 138970464.13502112,
+          "tax_rate_applied": 0.22362869198312235
         },
         {
           "item_id": "amortization_intangibles",
@@ -933,8 +933,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1630919540.2298849,
-          "tax_rate_applied": 0.22337164750957855
+          "net_amount": 1630379746.8354433,
+          "tax_rate_applied": 0.22362869198312235
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -946,11 +946,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1205327203.065134,
-          "tax_rate_applied": 0.22337164750957855
+          "net_amount": 1204928270.0421941,
+          "tax_rate_applied": 0.22362869198312235
         }
       ],
-      "net_adjustment_total": 2975263218.3908043,
+      "net_adjustment_total": 2974278481.0126586,
       "filing_date": "2023-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -964,7 +964,7 @@
       "fiscal_year": 2023,
       "quarter": 2,
       "tax_expense": 583000000.0,
-      "pretax_income": 2610000000.0,
+      "pretax_income": 2607000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -977,19 +977,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1552000000.0,
               "adjustment_amount": 1552000000.0,
-              "net_amount": 1205327203.065134
+              "net_amount": 1204928270.0421941
             }
           ],
-          "condition1": "純利益変動118% / 売上変動5% = 24.1倍（閾値5倍）",
+          "condition1": "純利益変動119% / 売上変動5% = 24.2倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 0.1356981981981982,
-      "adjusted_eps": 1.3164153627311523,
-      "gaap_net_income": 241000000.0,
-      "adjusted_net_income": 2337953684.2105265,
+      "gaap_eps": 0.13457207207207209,
+      "adjusted_eps": 1.3104417842789935,
+      "gaap_net_income": 239000000.0,
+      "adjusted_net_income": 2327344608.8794923,
       "diluted_shares_used": 1776000000.0,
       "adjustments": [
         {
@@ -1002,8 +1002,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 158806315.78947368,
-          "tax_rate_applied": 0.4926315789473684
+          "net_amount": 158154334.03805494,
+          "tax_rate_applied": 0.49471458773784355
         },
         {
           "item_id": "amortization_intangibles",
@@ -1015,8 +1015,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 988353684.2105263,
-          "tax_rate_applied": 0.4926315789473684
+          "net_amount": 984295983.0866807,
+          "tax_rate_applied": 0.49471458773784355
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -1028,11 +1028,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 949793684.2105263,
-          "tax_rate_applied": 0.4926315789473684
+          "net_amount": 945894291.7547568,
+          "tax_rate_applied": 0.49471458773784355
         }
       ],
-      "net_adjustment_total": 2096953684.2105265,
+      "net_adjustment_total": 2088344608.8794923,
       "filing_date": "2023-03-31",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -1046,7 +1046,7 @@
       "fiscal_year": 2023,
       "quarter": 1,
       "tax_expense": 234000000.0,
-      "pretax_income": 475000000.0,
+      "pretax_income": 473000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1059,19 +1059,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1872000000,
               "adjustment_amount": 1872000000,
-              "net_amount": 949793684.2105263
+              "net_amount": 945894291.7547568
             }
           ],
-          "condition1": "FV変動が純利益の777%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の783%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 1.3852643419572555,
-      "adjusted_eps": 2.80841625566035,
-      "gaap_net_income": 2463000000.0,
-      "adjusted_net_income": 4993364102.564102,
+      "gaap_eps": 1.390888638920135,
+      "adjusted_eps": 2.8163377263591136,
+      "gaap_net_income": 2473000000.0,
+      "adjusted_net_income": 5007448477.466504,
       "diluted_shares_used": 1778000000.0,
       "adjustments": [
         {
@@ -1084,8 +1084,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 79393406.59340659,
-          "tax_rate_applied": 0.39853479853479856
+          "net_amount": 79521559.07429962,
+          "tax_rate_applied": 0.39756394640682097
         },
         {
           "item_id": "amortization_intangibles",
@@ -1097,8 +1097,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1179473260.07326,
-          "tax_rate_applied": 0.39853479853479856
+          "net_amount": 1181377101.096224,
+          "tax_rate_applied": 0.39756394640682097
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -1110,11 +1110,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1271497435.897436,
-          "tax_rate_applied": 0.39853479853479856
+          "net_amount": 1273549817.2959805,
+          "tax_rate_applied": 0.39756394640682097
         }
       ],
-      "net_adjustment_total": 2530364102.5641026,
+      "net_adjustment_total": 2534448477.466504,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": "ヘルスケア / バイオ",
@@ -1128,7 +1128,7 @@
       "fiscal_year": 2022,
       "quarter": 4,
       "tax_expense": 1632000000.0,
-      "pretax_income": 4095000000.0,
+      "pretax_income": 4105000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1141,19 +1141,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 2114000000,
               "adjustment_amount": 2114000000,
-              "net_amount": 1271497435.897436
+              "net_amount": 1273549817.2959805
             }
           ],
-          "condition1": "FV変動が純利益の86%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の85%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 2.225225225225225,
-      "adjusted_eps": 3.3004135954135956,
-      "gaap_net_income": 3952000000.0,
-      "adjusted_net_income": 5861534545.454546,
+      "gaap_eps": 2.223536036036036,
+      "adjusted_eps": 3.298641247000924,
+      "gaap_net_income": 3949000000.0,
+      "adjusted_net_income": 5858386854.673641,
       "diluted_shares_used": 1776000000.0,
       "adjustments": [
         {
@@ -1166,8 +1166,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 113170909.0909091,
-          "tax_rate_applied": 0.10181818181818182
+          "net_amount": 113162156.0154651,
+          "tax_rate_applied": 0.10188765067091199
         },
         {
           "item_id": "amortization_intangibles",
@@ -1179,11 +1179,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1796363636.3636365,
-          "tax_rate_applied": 0.10181818181818182
+          "net_amount": 1796224698.658176,
+          "tax_rate_applied": 0.10188765067091199
         }
       ],
-      "net_adjustment_total": 1909534545.4545455,
+      "net_adjustment_total": 1909386854.673641,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -1197,13 +1197,13 @@
       "fiscal_year": 2022,
       "quarter": 3,
       "tax_expense": 448000000.0,
-      "pretax_income": 4400000000.0
+      "pretax_income": 4397000000.0
     },
     {
-      "gaap_eps": 0.5225225225225225,
-      "adjusted_eps": 2.075514229360383,
-      "gaap_net_income": 928000000.0,
-      "adjusted_net_income": 3686113271.344041,
+      "gaap_eps": 0.5202702702702703,
+      "adjusted_eps": 2.0718141805928063,
+      "gaap_net_income": 924000000.0,
+      "adjusted_net_income": 3679541984.7328243,
       "diluted_shares_used": 1776000000.0,
       "adjustments": [
         {
@@ -1216,8 +1216,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 83935756.55114116,
-          "tax_rate_applied": 0.21555367709213863
+          "net_amount": 83857506.36132316,
+          "tax_rate_applied": 0.21628498727735368
         },
         {
           "item_id": "amortization_intangibles",
@@ -1229,8 +1229,8 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1412003381.2341504,
-          "tax_rate_applied": 0.21555367709213863
+          "net_amount": 1410687022.9007633,
+          "tax_rate_applied": 0.21628498727735368
         },
         {
           "item_id": "contingent_consideration_fv",
@@ -1242,11 +1242,11 @@
           "reason": "非現金・非経常の買収偶発対価時価変動",
           "extracted_from": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
           "category": "公正価値変動関連",
-          "net_amount": 1262174133.558749,
-          "tax_rate_applied": 0.21555367709213863
+          "net_amount": 1260997455.470738,
+          "tax_rate_applied": 0.21628498727735368
         }
       ],
-      "net_adjustment_total": 2758113271.344041,
+      "net_adjustment_total": 2755541984.7328243,
       "filing_date": "2022-06-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -1260,7 +1260,7 @@
       "fiscal_year": 2022,
       "quarter": 2,
       "tax_expense": 255000000.0,
-      "pretax_income": 1183000000.0,
+      "pretax_income": 1179000000.0,
       "special_flags": [
         "EPS_DISCREPANCY"
       ],
@@ -1273,19 +1273,19 @@
               "xbrl_tag": "us-gaap:BusinessCombinationContingentConsiderationArrangementsChangeInAmountOfContingentConsiderationLiability1",
               "xbrl_value": 1609000000.0,
               "adjustment_amount": 1609000000.0,
-              "net_amount": 1262174133.558749
+              "net_amount": 1260997455.470738
             }
           ],
-          "condition1": "FV変動が純利益の173%占有（超高materiality → 条件1スキップ）",
+          "condition1": "FV変動が純利益の174%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
       }
     },
     {
-      "gaap_eps": 2.5269966254218224,
-      "adjusted_eps": 3.6348967486793913,
-      "gaap_net_income": 4493000000.0,
-      "adjusted_net_income": 6462846419.1519575,
+      "gaap_eps": 2.5253093363329584,
+      "adjusted_eps": 3.6331439842857645,
+      "gaap_net_income": 4490000000.0,
+      "adjusted_net_income": 6459730004.060089,
       "diluted_shares_used": 1778000000.0,
       "adjustments": [
         {
@@ -1298,8 +1298,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:ShareBasedCompensation",
           "category": "株式報酬関連",
-          "net_amount": 278932440.65733415,
-          "tax_rate_applied": 0.08845607628322175
+          "net_amount": 278915956.1510353,
+          "tax_rate_applied": 0.08850994721883881
         },
         {
           "item_id": "amortization_intangibles",
@@ -1311,11 +1311,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1690913978.4946237,
-          "tax_rate_applied": 0.08845607628322175
+          "net_amount": 1690814047.9090538,
+          "tax_rate_applied": 0.08850994721883881
         }
       ],
-      "net_adjustment_total": 1969846419.1519578,
+      "net_adjustment_total": 1969730004.060089,
       "filing_date": "2022-03-31",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -1329,13 +1329,13 @@
       "fiscal_year": 2022,
       "quarter": 1,
       "tax_expense": 436000000.0,
-      "pretax_income": 4929000000.0
+      "pretax_income": 4926000000.0
     },
     {
-      "gaap_eps": 1.7895329206527857,
-      "adjusted_eps": 2.7769785533882567,
-      "gaap_net_income": 3180000000.0,
-      "adjusted_net_income": 4934690889.370933,
+      "gaap_eps": 1.7889701744513224,
+      "adjusted_eps": 2.7763730236535036,
+      "gaap_net_income": 3179000000.0,
+      "adjusted_net_income": 4933614863.032276,
       "diluted_shares_used": 1777000000.0,
       "adjustments": [
         {
@@ -1348,8 +1348,8 @@
           "reason": "非現金費用",
           "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
           "category": "株式報酬関連",
-          "net_amount": 116404555.31453362,
-          "tax_rate_applied": 0.13774403470715835
+          "net_amount": 116399511.79820994,
+          "tax_rate_applied": 0.13778139408733386
         },
         {
           "item_id": "amortization_intangibles",
@@ -1361,11 +1361,11 @@
           "reason": "買収関連無形資産の償却",
           "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
           "category": "買収・統合関連",
-          "net_amount": 1638286334.056399,
-          "tax_rate_applied": 0.13774403470715835
+          "net_amount": 1638215351.2340658,
+          "tax_rate_applied": 0.13778139408733386
         }
       ],
-      "net_adjustment_total": 1754690889.3709328,
+      "net_adjustment_total": 1754614863.0322757,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": "ヘルスケア / バイオ",
@@ -1379,7 +1379,7 @@
       "fiscal_year": 2021,
       "quarter": 3,
       "tax_expense": 508000000.0,
-      "pretax_income": 3688000000.0
+      "pretax_income": 3687000000.0
     }
   ]
 }
