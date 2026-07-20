@@ -1335,6 +1335,65 @@ CHAT_RULES.mdに「銘柄固定のハードコード禁止」原則を新規追�
 
 ---
 
+### ✅ [FCF-EST-DIRECTION-GUARD-1] 買収・統合関連控除にdr>1限定の方向性ガードを追加
+**優先度:** 中
+**分類:** アーキテクチャ / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-20
+**発見:** [[MA-INTEGRATION-TAG-GAP-1]]全105銘柄タグ影響網羅調査時
+**完了日:** 2026-07-20
+
+#### 背景
+CWAN-SNPS-MA-DISTORTION-1の「買収・統合関連」加算控除メカニズムは、
+divergence_ratio（dr、推定FCF÷実測FCFの比）>1（過大推定）の是正には
+有効だが、dr<=1（過小推定）の銘柄に同じ控除を適用すると乖離がさらに
+悪化する構造的な副作用があった（例: CSGP 0.52→0.28、ZETA 0.66→0.53、
+いずれも[[MA-INTEGRATION-TAG-GAP-1]]のタグ追加を仮定した試算）。
+Classification/WATCH丸めには影響しないが、`estimated_fcf`はDCF計算の
+`base_fcf`として直接使われintrinsic_value_per_shareを実質的に左右する
+ため、IVの絶対値精度に実害があった。
+
+#### 対応（コミット`3b413b849`）
+`estimate_fcf_from_eps()`に方向性ガードを実装。控除前のAdj_NIベースで
+独立に`pre_deduction_dr = (adj_net_income_orig × conversion_rate) /
+raw_fcf`を算出し、`pre_deduction_dr > 1.0`の場合のみ既存の控除を適用
+する（`<=1.0`の場合は元のAdj_NIをそのまま使用）。控除後のdrを判定基準に
+使うと「控除するかどうかを、控除した結果のdrで決める」循環参照になる
+ため、必ず控除前の値を使う設計とした。`FCFEstimationResult`に新フィールド
+`ma_addback_detected_but_not_applied`を追加し、ガード発火時の検出額を
+記録（`ma_addback_excluded`は実際に控除された額のみを表す設計を維持）。
+
+#### 全母集団シミュレーション（実関数呼び出し、対象72銘柄）
+CWAN-SNPS-MA-DISTORTION-1完了時の47銘柄から、定例データ更新で72銘柄に
+自然増加していたことを確認した上で全72銘柄を検証。無関係51銘柄
+（生FCF安定スキップ17・控除前から赤字8・pre_dr>1で現状維持26）は
+est_fcf・dr・method全て完全無変化を確認。実質的な変化ありは
+**21銘柄**（ADSK/AMD/CEG/CSGP/DELL/ELF/ENTG/ESTC/FLYW/FROG/GEV/HEI/HQY/
+LOAR/LYFT/MSFT/PAYS/PEP/RMBS/VRT/ZETA）でdrが是正方向に上昇、method自体
+（raw_fcfフォールバック⇔推定適用）の切替は発生しないことを確認。対象外
+28銘柄（ma_addback_excluded=0）は完全一致（ミスマッチ0件）。
+
+#### 本番データ再生成・IV変化幅
+該当21銘柄を`pipeline.py --skip-risk`で再生成。IV変化幅は+1.6%（PEP）
+〜+116.1%（ENTG）。**ENTGはClassificationがSELL→WATCHに是正**（従来IV
+$13.14→$28.40の是正により、upside -90.5%→-79.5%となりDCF信頼性LOWの
+WATCH丸めロジックが正しく適用された。過小評価されたIVによる過大な
+割高判定が解消）。他20銘柄はClassification変化なし。
+
+#### 検証
+- pytest: 434/435 passed（新規テスト1件追加。NVDA/MSFT失敗2件は既知の
+  無関係な問題）
+- `report_consistency_check.py`: NG=0（WARN=71件、前回と同数、新規WARNなし）
+- LYFTの`anomaly_detection`検証失敗（構造的FCF恒久マイナス銘柄）は
+  既知の非regression事象と再確認済み
+
+#### 副次的成果
+方向性ガード実装により、[[MA-INTEGRATION-TAG-GAP-1]]でタグ追加時の
+懸念事項だった「グループC（悪化方向）」が構造的に解消される見込みと
+なった。詳細は同エントリの状況追記を参照（正式な再検証は次回タグ追加
+検討時に実施）。
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）

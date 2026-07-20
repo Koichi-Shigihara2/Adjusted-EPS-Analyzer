@@ -938,40 +938,6 @@ BACKLOG_DONE.md記録）を確認した結果判明した。[[POLICYB-GATE-FIX-1
 
 ---
 
-### [FCF-EST-DIRECTION-GUARD-1] 買収・統合関連控除にdr>1限定の方向性ガードを追加
-**優先度:** 中
-**分類:** アーキテクチャ / TANUKI VALUATION / FCF-CONVRATE②派生
-**登録日:** 2026-07-20
-**発見:** [[MA-INTEGRATION-TAG-GAP-1]]全105銘柄タグ影響網羅調査時
-
-#### 背景
-現在の「買収・統合関連」加算控除メカニズム（CWAN-SNPS-MA-DISTORTION-1）
-は、divergence_ratio（dr、推定FCF÷実測FCFの比）>1（過大推定）の是正には
-有効だが、dr<1（過小推定）の銘柄に同じ控除を適用すると乖離がさらに
-悪化することが判明した（例: CSGP 0.52→0.28、ZETA 0.66→0.53、いずれも
-[[MA-INTEGRATION-TAG-GAP-1]]のタグ追加を仮定した試算）。
-
-一次コード確認の結果、drは`divergence_warning`（dr>=2.0でのみ発火）を
-経由して`eps_invalid`→Policy B判定（DCF_Reliability=LOW/NORMAL）の
-入力になっているが、dr<1側には対応する下限チェックが一切存在しない。
-このためdr<1が悪化してもClassification/WATCH丸めには影響しないが、
-`estimated_fcf`自体はDCF計算の`base_fcf`として直接使われ
-intrinsic_value_per_shareを実質的に左右するため、IVの絶対値精度に
-実害がある（詳細は本タスクの発見元調査の報告を参照）。
-
-#### 対応方針（未確定）
-控除適用前にdr>1判定を行い、dr<=1の場合は控除しない（元のAdj_NIを
-そのまま使う）ガードを追加する案。ただし[[MA-INTEGRATION-TAG-GAP-1]]の
-タグ追加自体を実施するかどうかとは独立に、既存の47銘柄（CWAN-SNPS-
-MA-DISTORTION-1適用済み銘柄）の中にも既にdr<1のケース（AMD/HQY等）が
-含まれているため、タグ追加の有無に関わらず本ガードの要否を検討する
-価値がある。
-
-#### 着手条件
-なし（[[MA-INTEGRATION-TAG-GAP-1]]のタグ追加より先に着手すべきと判断）
-
----
-
 ### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
 **優先度:** 未定
 **分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
@@ -1269,6 +1235,17 @@ net効果は中立に近いと判明**。控除メカニズムはdr>1（過大�
 現在flagged状態の対象銘柄は全て上方乖離（FCF-OUTLIER-1ルールにより
 一過性費用の有無に関わらずaction=flaggedのまま変化しない設計）のため、
 **現在の母集団では実害ゼロ**と確認した。優先度は低のまま据え置く。
+
+#### 状況追記（2026-07-20・[[FCF-EST-DIRECTION-GUARD-1]]完了により
+グループC懸念が構造的に解消）
+方向性ガード実装（コミット`3b413b849`）により、控除前Adj_NIベースの
+`pre_deduction_dr<=1.0`の銘柄には控除自体が適用されなくなった。これにより
+上記グループC（タグ追加で悪化方向、CSGP/ZETA/AMD/HQY）の懸念は構造的に
+解消されている見込みである——タグ追加後に新たに`pre_deduction_dr<=1`と
+判定される銘柄は、ガードにより自動的に控除対象から除外されるため、
+「タグ追加で改善と悪化が相殺する」問題自体が発生しないはずである。
+ただし本追記はガードの設計上の帰結からの推論であり、実際にタグを
+追加した場合の正式な全母集団再検証は次回タグ追加検討時に行うこと。
 
 #### 着手条件
 なし
@@ -4283,6 +4260,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    ~~[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]~~ ✅ 2026-07-20完了。詳細は
    BACKLOG_DONE.md参照（複数CIK統合実装・汎用検知ロジックの登録フロー組み込み
    まで完了）
+   ~~[[FCF-EST-DIRECTION-GUARD-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
+   参照（ENTGのSELL→WATCH是正含む21銘柄のIV精度改善）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
