@@ -173,3 +173,50 @@ class TestMaAddbackDeduction:
         )
         assert result.ma_addback_excluded == 0
         assert result.adj_net_income == 100_000_000
+
+    def test_ma_addback_uses_net_amount_not_pretax_amount(self, tmp_path):
+        """FCF-EST-NET-BASIS-FIX-1: adjusted_net_income自体が税引後
+        （net_amount）ベースで構築されているため、控除額もnet_amount
+        （税引前amountではなく）を使う。税引前amountで控除すると
+        税効果分だけ過剰に控除してしまう（CWAN実例: 0.88倍で停止して
+        いたが本来は1.15倍程度が正しかった）"""
+        eps_dir = _write_eps_annual(
+            tmp_path, "TESTCO",
+            adjusted_net_income=300_000_000,
+            adjustments=[
+                {"category": "買収・統合関連", "item_name": "無形資産償却費",
+                 "amount": 200_000_000, "net_amount": 150_000_000, "tax_rate_applied": 0.25},
+            ],
+        )
+        cfg = _config_path(tmp_path, sector_rate=1.0)
+
+        result = estimate_fcf_from_eps(
+            ticker="TESTCO", raw_fcf=100_000_000, diluted_shares=100_000_000,
+            sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
+            fcf_cv=0.9, outlier_detected=True,
+        )
+        # 控除前dr = (300M×1.0)/100M = 3.0 > 1.0 のためガードは控除を許可。
+        # net_amount(150M)を控除する（amount(200M)ではない）
+        assert result.ma_addback_excluded == 150_000_000
+        assert result.adj_net_income == 300_000_000 - 150_000_000
+        assert result.ma_addback_detected_but_not_applied == 0
+
+    def test_ma_addback_falls_back_to_amount_when_net_amount_missing(self, tmp_path):
+        """net_amountキーが存在しない場合はamountへフォールバックする
+        （後方互換性）"""
+        eps_dir = _write_eps_annual(
+            tmp_path, "TESTCO",
+            adjusted_net_income=300_000_000,
+            adjustments=[
+                {"category": "買収・統合関連", "item_name": "無形資産償却費", "amount": 200_000_000},
+            ],
+        )
+        cfg = _config_path(tmp_path, sector_rate=1.0)
+
+        result = estimate_fcf_from_eps(
+            ticker="TESTCO", raw_fcf=100_000_000, diluted_shares=100_000_000,
+            sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
+            fcf_cv=0.9, outlier_detected=True,
+        )
+        assert result.ma_addback_excluded == 200_000_000
+        assert result.adj_net_income == 300_000_000 - 200_000_000

@@ -1632,9 +1632,19 @@ def estimate_fcf_from_eps(
     # このためFCF換算にのみ、当該カテゴリの加算分を差し引いた値を使う
     # （EPS Analyzer側annual.jsonのadjusted_net_income自体・他の呼び出し元
     # での参照値は変更しない。ここでの控除はこの関数のローカル計算のみに閉じる）。
+    # FCF-EST-NET-BASIS-FIX-1: adjusted_net_income自体がEPS Analyzer側で
+    # 税引後（net_amount）ベースで構築されている（tax_adjuster.py::
+    # apply_tax_adjustments()、全カテゴリの net_amount 合計を加算）ため、
+    # ここで差し引く控除額も同じ税引後基準で揃える。税引前のamountを
+    # 差し引くと税効果分（amount×tax_rate）だけ過剰に控除してしまい、
+    # dr>1の是正が行き過ぎて過小推定側に転じる系統的なバイアスがあった
+    # （CWAN実測: 0.88倍で停止していたが本来は1.15倍程度が正しい）。
+    # 該当項目かどうかの判定（正の加算＝add_back）自体は従来通りamountの
+    # 符号で行い、合算する金額のみnet_amountに切り替える（未設定時は
+    # amountへフォールバック、後方互換のため）。
     MA_INTEGRATION_CATEGORY = "買収・統合関連"
     ma_addback = sum(
-        adj.get("amount", 0)
+        adj.get("net_amount", adj.get("amount", 0))
         for adj in latest.get("adjustments", [])
         if adj.get("category") == MA_INTEGRATION_CATEGORY and adj.get("amount", 0) > 0
     )
