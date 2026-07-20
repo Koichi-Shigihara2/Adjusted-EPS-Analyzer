@@ -978,20 +978,25 @@ Policy B判定に新たな下限閾値を追加する方向（＝異常検知と
 
 ---
 
-### [AMZN-DIVERGENCE-HIGH-1] 買収・統合関連控除後もdr=2.95と高止まり
-**優先度:** 未定
+### [AMZN-CONVRATE-OVERRIDE-REVIEW-1] AMZNのticker_override（conversion_rate 0.55）の前提再検証
+**優先度:** 低
 **分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
 **登録日:** 2026-07-20
-**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査（CWAN-SNPS-MA-DISTORTION-1適用後の
-全数再スキャン）
+**発見:** [[AMZN-DIVERGENCE-HIGH-1]]（完了・BACKLOG_DONE.md参照）原因調査時の副次発見
 
-#### 内容
-CWAN-SNPS-MA-DISTORTION-1の控除（47銘柄対象）適用後、対象銘柄の大半は
-divergence_ratioが1.0近傍に大幅改善したが、AMZNのみticker_override
-（conversion_rate 0.55適用済み、AI/クラウドCapEx急増を考慮した既存の
-個別設定）を経てもdr=2.95と高止まりしていることを確認した。
-KO-SPIR-CF-CAUSE-UNCONFIRMED-1と同型の一次情報調査（10-K MD&A確認）が
-有効な可能性がある。
+#### 背景
+AMZNのticker_override（`fcf_conversion_config.json`、conversion_rate
+0.55）の設定根拠は「EC部門の重いCapEx・ファイナンスリースを考慮。AWSの
+高転換とEC低転換の加重平均」——すなわちAWS＝軽CapEx・高転換率、EC＝重
+CapEx・低転換率という二分法を前提としている。
+
+しかし2025年以降のCapEx急増（$131.8B、前年比+59%、2026年計画$200B）は
+10-K・外部報道とも「大部分はAWS事業成長を支えるための技術インフラ投資」
+と明記されており、**AWS自体が現在のCapEx急増の主因**になっている。
+当初の二分法（AWS=軽CapEx）の前提が現在の実態とズレている可能性がある。
+
+0.55という数値自体が誤りとまでは断定できないため、次回セッションで
+実測データに基づく再較正の要否を検討する。
 
 #### 着手条件
 なし
@@ -4295,6 +4300,9 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    まで完了）
    ~~[[FCF-EST-DIRECTION-GUARD-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
    参照（ENTGのSELL→WATCH是正含む21銘柄のIV精度改善）
+   ~~[[AMZN-DIVERGENCE-HIGH-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
+   参照（原因確定・対応不要、副次発見はAMZN-CONVRATE-OVERRIDE-REVIEW-1として
+   分離登録）
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
