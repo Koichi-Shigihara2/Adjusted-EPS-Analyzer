@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 258.5,
-  "calculation_date": "2026-07-20T10:09:48+09:00",
+  "calculation_date": "2026-07-20T20:21:49+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -254,15 +254,16 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": -646825527.5983169,
+    "adj_net_income": -619825527.5983169,
     "conversion_rate": 0.9,
     "estimated_fcf": 410480000.0,
     "raw_fcf": 410480000.0,
     "sector": "Software_Internet",
-    "note": "調整済み純利益がマイナス($-647M)（買収・統合関連加算$27Mを控除後） → 従来FCFを使用",
+    "note": "調整済み純利益がマイナス($-620M)（買収・統合関連加算$23Mを検出したが、控除するとdr<=1のため未適用） → 従来FCFを使用",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
-    "ma_addback_excluded": 27000000
+    "ma_addback_excluded": 0.0,
+    "ma_addback_detected_but_not_applied": 22587319.06574455
   },
   "software_system_reclassification": {
     "applicable": false,

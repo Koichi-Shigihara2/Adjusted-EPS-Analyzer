@@ -1,5 +1,5 @@
 SPIR INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-20T19:43:25+09:00
+Generated: 2026-07-20T20:27:52+09:00
 Price: $12.14
 
 [1. TANUKI SCORE]
@@ -80,6 +80,11 @@ DCF_FCF_Base: $49M (= Adj_NI $69M × FCF_Conv 0.7)
    [前者は一過性の会計事象、後者は今後も継続する事業規模の縮小として
     区別してください。分類判定には使用しません。詳細はBACKLOG_DONE.md
     [[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]参照。]
+⚠️ 買収・統合関連加算を控除: $1M
+   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
+    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
+    います。分類判定には使用しません。詳細はBACKLOG_DONE.md
+    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
 DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから

@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 264.3,
-  "calculation_date": "2026-07-20T10:13:43+09:00",
+  "calculation_date": "2026-07-20T20:27:04+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -204,15 +204,16 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": -523785668.6823981,
+    "adj_net_income": -473485668.6823981,
     "conversion_rate": 0.7,
     "estimated_fcf": 5974480.0,
     "raw_fcf": 5974480.0,
     "sector": "Drugs_Biotech",
-    "note": "調整済み純利益がマイナス($-524M)（買収・統合関連加算$50Mを控除後） → 従来FCFを使用",
+    "note": "調整済み純利益がマイナス($-473M)（買収・統合関連加算$50Mを検出したが、控除するとdr<=1のため未適用） → 従来FCFを使用",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
-    "ma_addback_excluded": 50300000
+    "ma_addback_excluded": 0.0,
+    "ma_addback_detected_but_not_applied": 50274424.14662125
   },
   "software_system_reclassification": {
     "applicable": false,
