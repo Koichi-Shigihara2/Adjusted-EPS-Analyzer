@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 27707693912.37365,
   "intrinsic_value_per_share": 93.69974739598148,
   "intrinsic_value_beta": 120.83,
-  "upside_percent_beta": 163.7,
+  "upside_percent_beta": 159.2,
   "intrinsic_value_rf": 790.87,
-  "upside_percent_rf": 1626.0,
+  "upside_percent_rf": 1596.4,
   "v0": 27707693912.37365,
   "v0_adjusted": 27707693912.37365,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 104.79,
       "value_growth_pct": 11.8,
-      "expected_return_pct": 128.7
+      "expected_return_pct": 124.8
     },
     "2年後": {
       "future_value": 117.2,
       "value_growth_pct": 25.1,
-      "expected_return_pct": 155.8
+      "expected_return_pct": 151.4
     },
     "3年後": {
       "future_value": 131.07,
       "value_growth_pct": 39.9,
-      "expected_return_pct": 186.1
+      "expected_return_pct": 181.1
     },
     "4年後": {
       "future_value": 146.59,
       "value_growth_pct": 56.4,
-      "expected_return_pct": 219.9
+      "expected_return_pct": 214.4
     },
     "5年後": {
       "future_value": 163.94,
       "value_growth_pct": 75.0,
-      "expected_return_pct": 257.8
+      "expected_return_pct": 251.7
     }
   },
-  "upside_percent": 104.5,
-  "calculation_date": "2026-07-20T10:08:39+09:00",
+  "upside_percent": 101.0,
+  "calculation_date": "2026-07-21T01:02:16+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -214,7 +214,8 @@
     "note": "生FCF安定(CV=0.22<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
-    "ma_addback_excluded": 0
+    "ma_addback_excluded": 0.0,
+    "ma_addback_detected_but_not_applied": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -306,7 +307,7 @@
     "roe_10yr_avg": -0.03575283332567214,
     "roe_years_used": 3,
     "roe_outlier_adj": false,
-    "current_price": 45.82,
+    "current_price": 46.62,
     "latest_revenue": 3742000000.0,
     "rpo": 211000000.0,
     "beta": 0.751,
@@ -336,11 +337,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 25.455557,
+    "per": 25.9,
     "per_is_forward": false,
-    "per_adjusted": 15.93,
+    "per_adjusted": 16.21,
     "peg": 2.52,
-    "ps": 2.7870255,
+    "ps": 2.8356857,
     "ev_ebitda": 17.071,
     "ma200": 40.6453,
     "forward_eps": 4.74414,
@@ -358,11 +359,11 @@
     "insider_latest_date": "2026-07-17",
     "analyst_vs_iv": -46.6,
     "max_eps": 3.5613,
-    "max_eps_per": 12.9,
+    "max_eps_per": 13.1,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -387,9 +388,12 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 55,
-  "score_comment": "割安圏(104%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(101%)で買い余地大、FCF黒字、売上安定成長",
   "timing_score": 80,
   "sell_reason": null,
+  "pre_rounding_score": null,
+  "pre_rounding_comment": null,
+  "rounded_by_policy": null,
   "matrix": {
     "matrix": "②収益性系",
     "quadrant": "右下",
@@ -450,7 +454,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 1656000000
   },
-  "net_current_assets_ratio": 0.112,
+  "net_current_assets_ratio": 0.1101,
   "dupont": {
     "ni_ttm": 485000000,
     "revenue_ttm": 3864000000,
@@ -503,9 +507,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0605,
-  "forward_earnings_yield": 0.1035,
+  "erp": 0.0588,
+  "forward_earnings_yield": 0.1018,
   "dilution_severity": "severe",
   "dilution_comment": "深刻な希薄化 ⚠️ 株主価値毀損リスク大",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Ongoing antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Active SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid competition for 2025-2026",
+      "impact": "mid"
+    }
+  ]
 }

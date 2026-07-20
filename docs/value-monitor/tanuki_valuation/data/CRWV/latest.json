@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 102940592878.4464,
   "intrinsic_value_per_share": 262.433612889679,
   "intrinsic_value_beta": 147.27,
-  "upside_percent_beta": 101.2,
+  "upside_percent_beta": 96.7,
   "intrinsic_value_rf": 3046.98,
-  "upside_percent_rf": 4062.0,
+  "upside_percent_rf": 3969.7,
   "v0": 102940592878.4464,
   "v0_adjusted": 102940592878.4464,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 433.01,
       "value_growth_pct": 65.0,
-      "expected_return_pct": 491.5
+      "expected_return_pct": 478.3
     },
     "2年後": {
       "future_value": 714.47,
       "value_growth_pct": 172.3,
-      "expected_return_pct": 875.9
+      "expected_return_pct": 854.3
     },
     "3年後": {
       "future_value": 1178.87,
       "value_growth_pct": 349.2,
-      "expected_return_pct": 1510.3
+      "expected_return_pct": 1474.6
     },
     "4年後": {
       "future_value": 1945.13,
       "value_growth_pct": 641.2,
-      "expected_return_pct": 2556.9
+      "expected_return_pct": 2498.0
     },
     "5年後": {
       "future_value": 3209.47,
       "value_growth_pct": 1123.0,
-      "expected_return_pct": 4283.9
+      "expected_return_pct": 4186.7
     }
   },
-  "upside_percent": 258.5,
-  "calculation_date": "2026-07-20T20:21:49+09:00",
+  "upside_percent": 250.5,
+  "calculation_date": "2026-07-21T01:03:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + three_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "three_stage",
   "growth": {
@@ -355,7 +355,7 @@
     "roe_10yr_avg": -0.34992503748125936,
     "roe_years_used": 1,
     "roe_outlier_adj": false,
-    "current_price": 73.21,
+    "current_price": 74.87,
     "latest_revenue": 5131000000.0,
     "rpo": 98800000000,
     "beta": 1.35,
@@ -385,11 +385,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": -50.037933,
+    "per": -51.172523,
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 6.4141974,
+    "ps": 6.5596366,
     "ev_ebitda": 24.081,
     "ma200": 98.02397,
     "forward_eps": -1.46309,
@@ -411,7 +411,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -439,6 +439,9 @@
   "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
   "timing_score": 65,
   "sell_reason": null,
+  "pre_rounding_score": "HOLD",
+  "pre_rounding_comment": "割安圏(250%)で買い余地大、FCFマイナス（投資フェーズ）、売上成長加速",
+  "rounded_by_policy": "A",
   "matrix": {
     "matrix": "④キャッシュ創出力系",
     "quadrant": "右下",
@@ -489,7 +492,7 @@
     "stdebt_last_confirmed_zero_year": null
   },
   "computed_runway_months": 3.743639649659391,
-  "net_current_assets_ratio": -0.3057,
+  "net_current_assets_ratio": -0.2989,
   "dupont": {
     "ni_ttm": -1592000000,
     "revenue_ttm": 6227000000,
@@ -541,22 +544,22 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.063,
-  "forward_earnings_yield": -0.02,
+  "erp": -0.0625,
+  "forward_earnings_yield": -0.0195,
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit ongoing against CoreWeave",
+      "summary": "Antitrust lawsuit against CoreWeave",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation active",
+      "summary": "Ongoing SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning issued for 2025-2026 amid competition",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
       "impact": "mid"
     }
   ]

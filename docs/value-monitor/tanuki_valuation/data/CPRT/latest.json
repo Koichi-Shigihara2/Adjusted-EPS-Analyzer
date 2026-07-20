@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 22119459493.117672,
   "intrinsic_value_per_share": 24.351727671960358,
   "intrinsic_value_beta": 23.89,
-  "upside_percent_beta": -13.5,
+  "upside_percent_beta": -13.3,
   "intrinsic_value_rf": 134.28,
-  "upside_percent_rf": 386.3,
+  "upside_percent_rf": 387.3,
   "v0": 22119459493.117672,
   "v0_adjusted": 22119459493.117672,
   "alpha": 0.7,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 27.41,
       "value_growth_pct": 12.6,
-      "expected_return_pct": -0.7
+      "expected_return_pct": -0.5
     },
     "2年後": {
       "future_value": 30.85,
       "value_growth_pct": 26.7,
-      "expected_return_pct": 11.7
+      "expected_return_pct": 12.0
     },
     "3年後": {
       "future_value": 34.73,
       "value_growth_pct": 42.6,
-      "expected_return_pct": 25.8
+      "expected_return_pct": 26.0
     },
     "4年後": {
       "future_value": 39.09,
       "value_growth_pct": 60.5,
-      "expected_return_pct": 41.6
+      "expected_return_pct": 41.9
     },
     "5年後": {
       "future_value": 40.26,
       "value_growth_pct": 65.3,
-      "expected_return_pct": 45.8
+      "expected_return_pct": 46.1
     }
   },
-  "upside_percent": -11.8,
-  "calculation_date": "2026-07-20T20:21:04+09:00",
+  "upside_percent": -11.6,
+  "calculation_date": "2026-07-21T01:13:00+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -303,13 +303,13 @@
     "base": {
       "growth_rate": 0.126,
       "rice": 0.515,
-      "rice_per_ratio": 0.03,
+      "rice_per_ratio": 0.0301,
       "rice_adj": 0.801
     },
     "bull": {
       "growth_rate": 0.151,
       "rice": 0.618,
-      "rice_per_ratio": 0.036,
+      "rice_per_ratio": 0.0361,
       "rice_adj": 0.959
     }
   },
@@ -333,7 +333,7 @@
     "roe_10yr_avg": 0.2643977646648673,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 27.61,
+    "current_price": 27.555,
     "latest_revenue": 4646958000.0,
     "rpo": 89492000,
     "beta": 1.023,
@@ -363,11 +363,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.1104706115924425,
-    "per": 17.149069,
+    "per": 17.114906,
     "per_is_forward": false,
-    "per_adjusted": 16.86,
+    "per_adjusted": 16.83,
     "peg": 3.32,
-    "ps": 5.510323,
+    "ps": 5.4993463,
     "ev_ebitda": 10.948,
     "ma200": 36.66335,
     "forward_eps": 1.68293,
@@ -385,11 +385,11 @@
     "insider_latest_date": "2026-07-17",
     "analyst_vs_iv": 68.4,
     "max_eps": 1.7187,
-    "max_eps_per": 16.1,
+    "max_eps_per": 16.0,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -418,6 +418,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 25,
   "sell_reason": null,
+  "pre_rounding_score": "HOLD",
+  "pre_rounding_comment": "フェアバリュー近辺、FCF黒字、売上安定成長",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左下",
@@ -478,7 +481,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 1414353000
   },
-  "net_current_assets_ratio": 0.1773,
+  "net_current_assets_ratio": 0.1776,
   "dupont": {
     "ni_ttm": 1553201000,
     "revenue_ttm": 4638867000,
@@ -522,9 +525,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.018,
-  "forward_earnings_yield": 0.061,
+  "erp": 0.0181,
+  "forward_earnings_yield": 0.0611,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against Copart Inc.",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning with competitive threats 2025-2026",
+      "impact": "mid"
+    }
+  ]
 }

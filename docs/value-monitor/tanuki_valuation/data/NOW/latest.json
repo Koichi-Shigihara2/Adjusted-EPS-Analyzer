@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 278527236916.4513,
   "intrinsic_value_per_share": 262.7433861082638,
   "intrinsic_value_beta": 273.65,
-  "upside_percent_beta": 165.1,
+  "upside_percent_beta": 164.5,
   "intrinsic_value_rf": 2383.71,
-  "upside_percent_rf": 2208.9,
+  "upside_percent_rf": 2203.8,
   "v0": 278440061230.0606,
   "v0_adjusted": 278440061230.0606,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 320.55,
       "value_growth_pct": 22.0,
-      "expected_return_pct": 210.5
+      "expected_return_pct": 209.8
     },
     "2年後": {
       "future_value": 391.09,
       "value_growth_pct": 48.9,
-      "expected_return_pct": 278.8
+      "expected_return_pct": 278.0
     },
     "3年後": {
       "future_value": 477.14,
       "value_growth_pct": 81.6,
-      "expected_return_pct": 362.2
+      "expected_return_pct": 361.1
     },
     "4年後": {
       "future_value": 582.13,
       "value_growth_pct": 121.6,
-      "expected_return_pct": 463.9
+      "expected_return_pct": 462.6
     },
     "5年後": {
       "future_value": 710.22,
       "value_growth_pct": 170.3,
-      "expected_return_pct": 587.9
+      "expected_return_pct": 586.4
     }
   },
-  "upside_percent": 154.5,
-  "calculation_date": "2026-07-20T20:26:19+09:00",
+  "upside_percent": 153.9,
+  "calculation_date": "2026-07-21T01:07:29+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -292,7 +292,7 @@
     "bear": {
       "growth_rate": 0.154,
       "rice": 0.883,
-      "rice_per_ratio": 0.0144,
+      "rice_per_ratio": 0.0143,
       "rice_adj": 7.768
     },
     "base": {
@@ -325,10 +325,10 @@
       2140000000
     ],
     "diluted_shares": 1031308000,
-    "roe_10yr_avg": -0.010608523173643698,
+    "roe_10yr_avg": -0.010608523173643702,
     "roe_years_used": 10,
     "roe_outlier_adj": true,
-    "current_price": 103.24,
+    "current_price": 103.47,
     "latest_revenue": 13278000000.0,
     "rpo": 27700000000,
     "beta": 0.959,
@@ -349,7 +349,7 @@
     "moat_fcf_margin_norm": 1.0,
     "pv_high": 66792751166.74875,
     "pv_terminal": 211647310063.31186,
-    "roe_used": -0.010608523173643698,
+    "roe_used": -0.010608523173643702,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
     "fcf_growth_cap": 0.5,
@@ -358,11 +358,11 @@
     "rpo_pv": 87175686.39065741,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 61.45238,
+    "per": 61.589287,
     "per_is_forward": false,
-    "per_adjusted": 31.52,
+    "per_adjusted": 31.59,
     "peg": 0.9,
-    "ps": 7.626951,
+    "ps": 7.6439433,
     "ev_ebitda": 35.915,
     "ma200": 128.804,
     "forward_eps": 5.03184,
@@ -384,7 +384,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -413,6 +413,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 65,
   "sell_reason": null,
+  "pre_rounding_score": "BUY",
+  "pre_rounding_comment": "割安圏(154%)で買い余地大、FCF黒字、売上成長加速",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "右下",
@@ -529,9 +532,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0057,
-  "forward_earnings_yield": 0.0487,
+  "erp": 0.0056,
+  "forward_earnings_yield": 0.0486,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against ServiceNow",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning affecting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }

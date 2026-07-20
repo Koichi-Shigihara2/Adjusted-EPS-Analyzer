@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 30.2,
   "upside_percent_beta": -88.9,
   "intrinsic_value_rf": 218.98,
-  "upside_percent_rf": -19.6,
+  "upside_percent_rf": -19.9,
   "v0": 13884194147.409372,
   "v0_adjusted": 13884194147.409372,
   "alpha": 0.4283002182205502,
@@ -20,7 +20,7 @@
     "1年後": {
       "future_value": 39.43,
       "value_growth_pct": 10.1,
-      "expected_return_pct": -85.5
+      "expected_return_pct": -85.6
     },
     "2年後": {
       "future_value": 43.44,
@@ -30,7 +30,7 @@
     "3年後": {
       "future_value": 47.85,
       "value_growth_pct": 33.7,
-      "expected_return_pct": -82.4
+      "expected_return_pct": -82.5
     },
     "4年後": {
       "future_value": 52.7,
@@ -40,11 +40,11 @@
     "5年後": {
       "future_value": 58.06,
       "value_growth_pct": 62.2,
-      "expected_return_pct": -78.7
+      "expected_return_pct": -78.8
     }
   },
   "upside_percent": -86.9,
-  "calculation_date": "2026-07-20T10:15:32+09:00",
+  "calculation_date": "2026-07-21T01:11:53+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -209,7 +209,8 @@
     "note": "調整済み純利益$1.48B × 転換率55%[sector(Aerospace_Defense)] = 推定FCF$0.81B（従来$1.00Bの0.8倍）",
     "divergence_ratio": 0.81,
     "divergence_warning": "",
-    "ma_addback_excluded": 0
+    "ma_addback_excluded": 0.0,
+    "ma_addback_detected_but_not_applied": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -286,19 +287,19 @@
     "bear": {
       "growth_rate": 0.071,
       "rice": 2.349,
-      "rice_per_ratio": 0.0371,
+      "rice_per_ratio": 0.037,
       "rice_adj": 5.756
     },
     "base": {
       "growth_rate": 0.102,
       "rice": 3.375,
-      "rice_per_ratio": 0.0533,
+      "rice_per_ratio": 0.0531,
       "rice_adj": 8.269
     },
     "bull": {
       "growth_rate": 0.122,
       "rice": 4.036,
-      "rice_per_ratio": 0.0637,
+      "rice_per_ratio": 0.0635,
       "rice_adj": 9.891
     }
   },
@@ -322,7 +323,7 @@
     "roe_10yr_avg": 0.10197624243346434,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 272.43,
+    "current_price": 273.26,
     "latest_revenue": 8252000000.0,
     "rpo": 106000000,
     "beta": 1.191,
@@ -352,11 +353,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.4283002182205502,
-    "per": 63.35581,
+    "per": 63.548836,
     "per_is_forward": false,
-    "per_adjusted": 65.37,
+    "per_adjusted": 65.57,
     "peg": 0.8,
-    "ps": 12.640761,
+    "ps": 12.679274,
     "ev_ebitda": 43.504,
     "ma200": 231.76054,
     "forward_eps": 6.05262,
@@ -366,7 +367,7 @@
     "analyst_target_high": 346.0,
     "analyst_count": 20,
     "analyst_rec_key": "strong_buy",
-    "dividend_yield": 0.0016962277,
+    "dividend_yield": 0.0016885073,
     "payout_ratio": 0.1067,
     "insider_buy_count": 0,
     "insider_sell_count": 1,
@@ -374,11 +375,11 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": 767.3,
     "max_eps": 4.5413,
-    "max_eps_per": 60.0,
+    "max_eps_per": 60.2,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -407,6 +408,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 30,
   "sell_reason": null,
+  "pre_rounding_score": "TRIM",
+  "pre_rounding_comment": "割高(-87%超)、FCF黒字、売上安定成長",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左上",
@@ -467,7 +471,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 875000000
   },
-  "net_current_assets_ratio": 0.0307,
+  "net_current_assets_ratio": 0.0306,
   "dupont": {
     "ni_ttm": 1744000000,
     "revenue_ttm": 8623000000,
@@ -512,9 +516,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0208,
-  "forward_earnings_yield": 0.0222,
+  "erp": -0.0209,
+  "forward_earnings_yield": 0.0221,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit ongoing",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition",
+      "impact": "mid"
+    }
+  ]
 }

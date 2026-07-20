@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 11274724580.87582,
   "intrinsic_value_per_share": 39.207807979524475,
   "intrinsic_value_beta": 43.61,
-  "upside_percent_beta": 300.4,
+  "upside_percent_beta": 292.3,
   "intrinsic_value_rf": 217.67,
-  "upside_percent_rf": 1898.8,
+  "upside_percent_rf": 1858.4,
   "v0": 11274186507.225647,
   "v0_adjusted": 11274186507.225647,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 47.69,
       "value_growth_pct": 21.6,
-      "expected_return_pct": 337.9
+      "expected_return_pct": 329.1
     },
     "2年後": {
       "future_value": 58.01,
       "value_growth_pct": 47.9,
-      "expected_return_pct": 432.7
+      "expected_return_pct": 421.9
     },
     "3年後": {
       "future_value": 70.55,
       "value_growth_pct": 79.9,
-      "expected_return_pct": 547.8
+      "expected_return_pct": 534.7
     },
     "4年後": {
       "future_value": 85.82,
       "value_growth_pct": 118.9,
-      "expected_return_pct": 688.1
+      "expected_return_pct": 672.1
     },
     "5年後": {
       "future_value": 104.38,
       "value_growth_pct": 166.2,
-      "expected_return_pct": 858.5
+      "expected_return_pct": 839.1
     }
   },
-  "upside_percent": 260.0,
-  "calculation_date": "2026-07-20T20:23:51+09:00",
+  "upside_percent": 252.7,
+  "calculation_date": "2026-07-21T01:13:47+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -293,19 +293,19 @@
     "bear": {
       "growth_rate": 0.151,
       "rice": 0.078,
-      "rice_per_ratio": 0.0044,
+      "rice_per_ratio": 0.0043,
       "rice_adj": 3.501
     },
     "base": {
       "growth_rate": 0.216,
       "rice": 0.112,
-      "rice_per_ratio": 0.0062,
+      "rice_per_ratio": 0.0061,
       "rice_adj": 5.008
     },
     "bull": {
       "growth_rate": 0.26,
       "rice": 0.134,
-      "rice_per_ratio": 0.0075,
+      "rice_per_ratio": 0.0074,
       "rice_adj": 6.029
     }
   },
@@ -329,7 +329,7 @@
     "roe_10yr_avg": -0.08196893590374056,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 10.89,
+    "current_price": 11.115,
     "latest_revenue": 838809000.0,
     "rpo": 665300000,
     "beta": 0.879,
@@ -359,11 +359,11 @@
     "rpo_pv": 538073.6501727586,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 17.852459,
+    "per": 18.221312,
     "per_is_forward": false,
-    "per_adjusted": 19.34,
+    "per_adjusted": 19.74,
     "peg": 0.59,
-    "ps": 3.4555502,
+    "ps": 3.5269456,
     "ev_ebitda": 65.523,
     "ma200": 10.044,
     "forward_eps": 0.7989,
@@ -381,11 +381,11 @@
     "insider_latest_date": "2026-07-06",
     "analyst_vs_iv": -71.9,
     "max_eps": 1.1831,
-    "max_eps_per": 9.2,
+    "max_eps_per": 9.4,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -414,6 +414,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 65,
   "sell_reason": null,
+  "pre_rounding_score": "HOLD",
+  "pre_rounding_comment": "割安圏(253%)で買い余地大、FCF黒字、売上安定成長",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "右下",
@@ -474,7 +477,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 321065000
   },
-  "net_current_assets_ratio": 0.1617,
+  "net_current_assets_ratio": 0.1584,
   "dupont": {
     "ni_ttm": 180217000,
     "revenue_ttm": 871169000,
@@ -520,9 +523,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0304,
-  "forward_earnings_yield": 0.0734,
+  "erp": 0.0289,
+  "forward_earnings_yield": 0.0719,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition",
+      "impact": "mid"
+    }
+  ]
 }

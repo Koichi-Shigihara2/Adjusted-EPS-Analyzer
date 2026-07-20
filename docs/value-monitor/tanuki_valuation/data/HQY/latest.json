@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 20392687455.71494,
   "intrinsic_value_per_share": 92.1701400720937,
   "intrinsic_value_beta": 235.82,
-  "upside_percent_beta": 141.4,
+  "upside_percent_beta": 139.3,
   "intrinsic_value_rf": 568.77,
-  "upside_percent_rf": 482.3,
+  "upside_percent_rf": 477.1,
   "v0": 20392687455.71494,
   "v0_adjusted": 20392687455.71494,
   "alpha": 0.24141797720062722,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 106.07,
       "value_growth_pct": 15.1,
-      "expected_return_pct": 8.6
+      "expected_return_pct": 7.6
     },
     "2年後": {
       "future_value": 122.07,
       "value_growth_pct": 32.4,
-      "expected_return_pct": 25.0
+      "expected_return_pct": 23.8
     },
     "3年後": {
       "future_value": 140.48,
       "value_growth_pct": 52.4,
-      "expected_return_pct": 43.8
+      "expected_return_pct": 42.5
     },
     "4年後": {
       "future_value": 161.67,
       "value_growth_pct": 75.4,
-      "expected_return_pct": 65.5
+      "expected_return_pct": 64.0
     },
     "5年後": {
       "future_value": 186.05,
       "value_growth_pct": 101.9,
-      "expected_return_pct": 90.5
+      "expected_return_pct": 88.8
     }
   },
-  "upside_percent": -5.6,
-  "calculation_date": "2026-07-20T20:24:35+09:00",
+  "upside_percent": -6.5,
+  "calculation_date": "2026-07-21T01:13:27+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -293,19 +293,19 @@
     "bear": {
       "growth_rate": 0.106,
       "rice": 0.773,
-      "rice_per_ratio": 0.0211,
+      "rice_per_ratio": 0.0209,
       "rice_adj": 16.037
     },
     "base": {
       "growth_rate": 0.151,
       "rice": 1.101,
-      "rice_per_ratio": 0.0301,
+      "rice_per_ratio": 0.0298,
       "rice_adj": 22.845
     },
     "bull": {
       "growth_rate": 0.181,
       "rice": 1.32,
-      "rice_per_ratio": 0.0361,
+      "rice_per_ratio": 0.0357,
       "rice_adj": 27.383
     }
   },
@@ -329,7 +329,7 @@
     "roe_10yr_avg": 0.057480470762054106,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 97.67,
+    "current_price": 98.565,
     "latest_revenue": 1313429000.0,
     "rpo": 5000000,
     "beta": 0.3,
@@ -359,11 +359,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.24141797720062722,
-    "per": 36.580524,
+    "per": 36.91573,
     "per_is_forward": false,
-    "per_adjusted": 20.74,
+    "per_adjusted": 20.93,
     "peg": 1.4,
-    "ps": 6.10624,
+    "ps": 6.162195,
     "ev_ebitda": 17.723,
     "ma200": 88.14593,
     "forward_eps": 5.44708,
@@ -381,11 +381,11 @@
     "insider_latest_date": "2026-07-14",
     "analyst_vs_iv": 24.8,
     "max_eps": 3.6335,
-    "max_eps_per": 26.9,
+    "max_eps_per": 27.1,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -414,6 +414,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 25,
   "sell_reason": null,
+  "pre_rounding_score": "HOLD",
+  "pre_rounding_comment": "フェアバリュー近辺、FCF黒字、売上安定成長",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左下",
@@ -474,7 +477,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 363503000
   },
-  "net_current_assets_ratio": 0.0405,
+  "net_current_assets_ratio": 0.0401,
   "dupont": {
     "ni_ttm": 230704000,
     "revenue_ttm": 1337226000,
@@ -518,9 +521,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0128,
-  "forward_earnings_yield": 0.0558,
+  "erp": 0.0123,
+  "forward_earnings_yield": 0.0553,
   "dilution_severity": "low",
   "dilution_comment": "許容範囲内 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against HealthEquity Inc.",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }

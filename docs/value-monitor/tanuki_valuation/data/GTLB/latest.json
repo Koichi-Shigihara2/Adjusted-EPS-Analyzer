@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 15171340295.7906,
   "intrinsic_value_per_share": 94.41000758710668,
   "intrinsic_value_beta": 97.86,
-  "upside_percent_beta": 199.1,
+  "upside_percent_beta": 186.7,
   "intrinsic_value_rf": 799.76,
-  "upside_percent_rf": 2344.3,
+  "upside_percent_rf": 2243.3,
   "v0": 15171340295.7906,
   "v0_adjusted": 15171340295.7906,
   "alpha": 0.0,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 123.73,
       "value_growth_pct": 31.1,
-      "expected_return_pct": 278.1
+      "expected_return_pct": 262.5
     },
     "2年後": {
       "future_value": 162.16,
       "value_growth_pct": 71.8,
-      "expected_return_pct": 395.6
+      "expected_return_pct": 375.1
     },
     "3年後": {
       "future_value": 212.53,
       "value_growth_pct": 125.1,
-      "expected_return_pct": 549.5
+      "expected_return_pct": 522.7
     },
     "4年後": {
       "future_value": 278.53,
       "value_growth_pct": 195.0,
-      "expected_return_pct": 751.3
+      "expected_return_pct": 716.1
     },
     "5年後": {
       "future_value": 365.04,
       "value_growth_pct": 286.7,
-      "expected_return_pct": 1015.6
+      "expected_return_pct": 969.6
     }
   },
-  "upside_percent": 188.5,
-  "calculation_date": "2026-07-20T20:24:23+09:00",
+  "upside_percent": 176.6,
+  "calculation_date": "2026-07-21T01:05:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -208,7 +208,7 @@
     "note": "調整済み純利益$0.11B（買収・統合関連加算$6Mを控除後） × 転換率161%[sector(Software_System_SaaS)] = 推定FCF$0.18B（従来$0.13Bの1.4倍）",
     "divergence_ratio": 1.36,
     "divergence_warning": "",
-    "ma_addback_excluded": 6252914.426073873,
+    "ma_addback_excluded": 6252914.426073874,
     "ma_addback_detected_but_not_applied": 0.0
   },
   "software_system_reclassification": {
@@ -320,7 +320,7 @@
     "roe_10yr_avg": -0.24619372386547722,
     "roe_years_used": 5,
     "roe_outlier_adj": false,
-    "current_price": 32.72,
+    "current_price": 34.13,
     "latest_revenue": 955224000.0,
     "rpo": 1100000000,
     "beta": 0.961,
@@ -350,11 +350,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 31.790138,
+    "per": 33.16007,
     "per_is_forward": true,
-    "per_adjusted": 40.18,
+    "per_adjusted": 41.91,
     "peg": null,
-    "ps": 5.4996085,
+    "ps": 5.736603,
     "ev_ebitda": null,
     "ma200": 32.803474,
     "forward_eps": 1.02925,
@@ -372,11 +372,11 @@
     "insider_latest_date": "2026-07-01",
     "analyst_vs_iv": -64.0,
     "max_eps": 1.1243,
-    "max_eps_per": 29.1,
+    "max_eps_per": 30.4,
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -405,6 +405,9 @@
   "score_comment": "DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH",
   "timing_score": 65,
   "sell_reason": null,
+  "pre_rounding_score": "BUY",
+  "pre_rounding_comment": "割安圏(177%)で買い余地大、FCF黒字、売上成長加速",
+  "rounded_by_policy": "B",
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "右下",
@@ -465,7 +468,7 @@
     "shares_yr_3ago_label": "2023",
     "buyback_ttm": 50048000
   },
-  "net_current_assets_ratio": 0.1803,
+  "net_current_assets_ratio": 0.1728,
   "dupont": {
     "ni_ttm": -25053000,
     "revenue_ttm": 1004873000,
@@ -518,9 +521,25 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0115,
-  "forward_earnings_yield": 0.0315,
+  "erp": -0.0128,
+  "forward_earnings_yield": 0.0302,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against GitLab Inc.",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning amid 2025-2026 competition risks",
+      "impact": "mid"
+    }
+  ]
 }

@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 818173603.0446911,
   "intrinsic_value_per_share": 13.1091694857795,
   "intrinsic_value_beta": 5.23,
-  "upside_percent_beta": -10.3,
+  "upside_percent_beta": -12.1,
   "intrinsic_value_rf": 88.04,
-  "upside_percent_rf": 1410.1,
+  "upside_percent_rf": 1379.6,
   "v0": 818173603.0446911,
   "v0_adjusted": 818173603.0446911,
   "alpha": 0.31048074337382264,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 14.16,
       "value_growth_pct": 8.0,
-      "expected_return_pct": 142.9
+      "expected_return_pct": 138.0
     },
     "2年後": {
       "future_value": 15.29,
       "value_growth_pct": 16.6,
-      "expected_return_pct": 162.3
+      "expected_return_pct": 157.0
     },
     "3年後": {
       "future_value": 16.51,
       "value_growth_pct": 25.9,
-      "expected_return_pct": 183.2
+      "expected_return_pct": 177.5
     },
     "4年後": {
       "future_value": 17.84,
       "value_growth_pct": 36.1,
-      "expected_return_pct": 206.0
+      "expected_return_pct": 199.8
     },
     "5年後": {
       "future_value": 18.37,
       "value_growth_pct": 40.1,
-      "expected_return_pct": 215.1
+      "expected_return_pct": 208.7
     }
   },
-  "upside_percent": 124.9,
-  "calculation_date": "2026-07-20T10:16:56+09:00",
+  "upside_percent": 120.3,
+  "calculation_date": "2026-07-21T01:13:57+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -188,7 +188,7 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": 120102542.27140176,
+    "adj_net_income": 125127497.97121172,
     "conversion_rate": 0.7,
     "estimated_fcf": 88018000,
     "raw_fcf": 88018000,
@@ -196,7 +196,8 @@
     "note": "生FCF安定(CV=0.24<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
     "divergence_warning": "",
-    "ma_addback_excluded": 19983000
+    "ma_addback_excluded": 14958044.300190046,
+    "ma_addback_detected_but_not_applied": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -273,19 +274,19 @@
     "bear": {
       "growth_rate": 0.056,
       "rice": 0.414,
-      "rice_per_ratio": 0.0802,
+      "rice_per_ratio": 0.0786,
       "rice_adj": 2.804
     },
     "base": {
       "growth_rate": 0.08,
       "rice": 0.591,
-      "rice_per_ratio": 0.1146,
+      "rice_per_ratio": 0.1123,
       "rice_adj": 4.006
     },
     "bull": {
       "growth_rate": 0.096,
       "rice": 0.71,
-      "rice_per_ratio": 0.1376,
+      "rice_per_ratio": 0.1348,
       "rice_adj": 4.807
     }
   },
@@ -309,7 +310,7 @@
     "roe_10yr_avg": 0.07392398651757683,
     "roe_years_used": 7,
     "roe_outlier_adj": false,
-    "current_price": 5.83,
+    "current_price": 5.95,
     "latest_revenue": 1183547000.0,
     "rpo": 3273000.0,
     "beta": 2.056,
@@ -339,11 +340,11 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.31048074337382264,
-    "per": 5.159292,
+    "per": 5.2654867,
     "per_is_forward": false,
-    "per_adjusted": 3.84,
+    "per_adjusted": 3.92,
     "peg": null,
-    "ps": 0.4405047,
+    "ps": 0.44957167,
     "ev_ebitda": 4.248,
     "ma200": 9.614,
     "forward_eps": 1.5206,
@@ -365,7 +366,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-20",
+    "validated_at": "2026-07-21",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -390,9 +391,12 @@
   },
   "tanuki_score": "BUY",
   "funda_score": 70,
-  "score_comment": "割安圏(125%)で買い余地大、FCF黒字、売上安定成長",
+  "score_comment": "割安圏(120%)で買い余地大、FCF黒字、売上安定成長",
   "timing_score": 65,
   "sell_reason": null,
+  "pre_rounding_score": null,
+  "pre_rounding_comment": null,
+  "rounded_by_policy": null,
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "右下",
@@ -453,7 +457,7 @@
     "shares_yr_3ago_label": "2022",
     "buyback_ttm": 18098000
   },
-  "net_current_assets_ratio": 0.5354,
+  "net_current_assets_ratio": 0.5246,
   "dupont": {
     "ni_ttm": 105459000,
     "revenue_ttm": 1212021000,
@@ -507,9 +511,25 @@
     "fcf_margin_bear_multiplier": 0.6549,
     "fcf_margin_note": "FCFマージン悪化(9.5%→6.2%) BEAR補正係数=0.655"
   },
-  "erp": 0.2178,
-  "forward_earnings_yield": 0.2608,
+  "erp": 0.2126,
+  "forward_earnings_yield": 0.2556,
   "dilution_severity": "positive",
   "dilution_comment": "自社株買いによる株主還元 ✅",
-  "risk_events": []
+  "risk_events": [
+    {
+      "type": "litigation",
+      "summary": "Antitrust lawsuit against TaskUs Inc.",
+      "impact": "high"
+    },
+    {
+      "type": "regulatory",
+      "summary": "Ongoing SEC regulatory investigation",
+      "impact": "high"
+    },
+    {
+      "type": "earnings",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
+      "impact": "mid"
+    }
+  ]
 }
