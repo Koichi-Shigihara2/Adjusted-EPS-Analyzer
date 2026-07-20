@@ -587,6 +587,14 @@ class TanukiValuationPipeline:
 
         comment = self._generate_score_comment(score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest)
 
+        # FCF-OUTLIER-PREROUNDING-LOSS-1: Policy A/B丸め処理は score/comment を
+        # 単純に上書きし、丸め前の分類（元々BUY/TRIM/HOLD等のどれだったか）を
+        # 保持するフィールドが存在しなかった。丸め突入前にローカル変数を退避し、
+        # 発火した場合のみ戻り値に含める（丸め未発生時はNoneのまま）。
+        _pre_rounding_score = score
+        _pre_rounding_comment = comment
+        _rounded_by_policy = None
+
         # DCF_Reliability=LOW 丸め（Policy A: revenue_floor適用＝FCF_Base直接方式向け）
         # revenue_floor適用（FCF実績マイナス）は理論株価の信頼性が低いため
         # upside依存の判定を抑制して WATCH に統一する。SELL/PASS（ファンダ劣化）は維持。
@@ -607,6 +615,7 @@ class TanukiValuationPipeline:
             score = Classification.WATCH
             comment = "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH"
             sell_reason = None
+            _rounded_by_policy = "A"
 
         # DCF_Reliability=LOW 丸め（Policy B: fcf_outlier未解消向け、DCF-RELIABILITY-1）
         # POLICYB-GATE-FIX-1（2026-07-11）: 従来はfcf_estimation.appliedをゲート条件にしており、
@@ -625,10 +634,14 @@ class TanukiValuationPipeline:
             else:
                 comment = "DCF信頼性LOW(FCF_Base方式・外れ値未説明)のためupside依存判定を抑制→WATCH"
             sell_reason = None
+            _rounded_by_policy = "B"
 
         return {
             "score": score, "funda_score": funda, "score_comment": comment,
             "timing": timing, "sell_reason": sell_reason,
+            "pre_rounding_score": _pre_rounding_score if _rounded_by_policy else None,
+            "pre_rounding_comment": _pre_rounding_comment if _rounded_by_policy else None,
+            "rounded_by_policy": _rounded_by_policy,
         }
 
     def _generate_score_comment(self, score, upside, rev_yoy, rule40, fcf_base, funda, fcf_latest=None) -> str:
@@ -835,6 +848,10 @@ class TanukiValuationPipeline:
         latest_data["score_comment"] = score_data.get("score_comment")
         latest_data["timing_score"]  = score_data.get("timing")
         latest_data["sell_reason"]   = score_data.get("sell_reason")
+        # FCF-OUTLIER-PREROUNDING-LOSS-1: Policy A/B丸め発生時のみ非None
+        latest_data["pre_rounding_score"]   = score_data.get("pre_rounding_score")
+        latest_data["pre_rounding_comment"] = score_data.get("pre_rounding_comment")
+        latest_data["rounded_by_policy"]    = score_data.get("rounded_by_policy")
         latest_data["matrix"] = self._compute_matrix_position(
             ticker, valuation, extra.get("fcf_history", [])
         )
@@ -1142,6 +1159,7 @@ class TanukiValuationPipeline:
         score = score_data.get("score", "N/A")
         funda_score = score_data.get("funda_score", "N/A")
         score_comment = score_data.get("score_comment", "N/A")
+        pre_rounding_score = score_data.get("pre_rounding_score")
 
         # --- Matrix position ---
         rice_available = rice.get("available", False)
@@ -1372,6 +1390,9 @@ class TanukiValuationPipeline:
 
         L.append("[1. TANUKI SCORE]")
         L.append(f"Classification: {score}")
+        # FCF-OUTLIER-PREROUNDING-LOSS-1: Policy A/B丸めで元々何だったかを表示
+        if pre_rounding_score is not None:
+            L.append(f"Classification_Pre_Rounding: {pre_rounding_score}")
         L.append(f"Funda_Score: {funda_score}/100")
         L.append("Timing_Score (components):")
         L.extend(timing_lines)
