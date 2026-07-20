@@ -1003,31 +1003,6 @@ CapEx・低転換率という二分法を前提としている。
 
 ---
 
-### [FCF-EST-NOTE-DISPLAY-1] 買収・統合関連控除の理由がreport.txtに未表示
-**優先度:** 低
-**分類:** TANUKI VALUATION / 透明性
-**登録日:** 2026-07-20
-**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査（divergence_ratio消費箇所の一次コード確認）
-
-#### 内容
-`estimate_fcf_from_eps()`が「買収・統合関連」加算の控除理由を
-`fcf_estimation.note`（例:「調整済み純利益$2.11B（買収・統合関連加算
-$193Mを控除後）× 転換率100%」）としてlatest.jsonに保存しているが、
-**report.txtのどこにも表示されていない**ことを確認した。KO/SPIRの
-FCF_TRANSIENT_ITEM_EXPLANATIONSバナー（一過性費用の理由を明示表示する
-既存の仕組み）とは対照的で、透明性という設計思想（TRUST-SUMMARY-EPIC-1
-の骨子）に照らすと表示漏れがある。CWAN-SNPS-MA-DISTORTION-1適用済みの
-47銘柄に影響する。
-
-#### 対応方針（未確定）
-`fcf_est.get('note')`（`ma_addback_excluded > 0`の場合のみ）を
-report.txtのFCF_Conversion_Rate表示部分に1行追加する程度の軽微な対応。
-
-#### 着手条件
-なし
-
----
-
 ### [REVENUE-TAG-CONFLICT-SCAN-1] revenue_tag_conflict_check.py全銘柄実行で新規発見した候補タグ競合
 **優先度:** 未定
 **分類:** データ品質 / SECデータ取得層
@@ -4303,6 +4278,7 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    ~~[[AMZN-DIVERGENCE-HIGH-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
    参照（原因確定・対応不要、副次発見はAMZN-CONVRATE-OVERRIDE-REVIEW-1として
    分離登録）
+   ~~[[FCF-EST-NOTE-DISPLAY-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。

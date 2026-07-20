@@ -1438,6 +1438,52 @@ AWS自体が主因であり、当初の二分法の前提と実態にズレが�
 
 ---
 
+### ✅ [FCF-EST-NOTE-DISPLAY-1] 買収・統合関連控除の理由がreport.txtに未表示
+**優先度:** 低
+**分類:** TANUKI VALUATION / 透明性
+**登録日:** 2026-07-20
+**発見:** [[TRUST-SUMMARY-EPIC-1]]段階2再調査（divergence_ratio消費箇所の一次コード確認）
+**完了日:** 2026-07-20
+
+#### 背景
+`estimate_fcf_from_eps()`が生成する「買収・統合関連」控除理由
+（`fcf_estimation.note`）がreport.txt・stock.htmlのいずれにも
+表示されていなかった。KO/SPIRのFCF_TRANSIENT_ITEM_EXPLANATIONSバナー
+（一過性費用の理由を明示表示する既存の仕組み）とは対照的で、透明性
+という設計思想（TRUST-SUMMARY-EPIC-1の骨子）に照らすと表示漏れが
+あった。
+
+#### 対応（コミット`649c404d8`・`170ba198c`）
+- report.txt（`pipeline.py`）: applied=True・applied=False両分岐に、
+  `ma_addback_excluded`・`ma_addback_detected_but_not_applied`を
+  参照する控除理由表示を追加
+- stock.html: applied=True分岐の入力グリッドに、既存の
+  `fcfEstWarning`ブロックと同型の条件付きブロックを追加。固定リスト
+  方式は使わず、latest.jsonの既存フィールドを直接参照する設計とした
+  （M&A控除情報は機械的な値のため、KO/SPIR型の個別リスト手動保守は
+  不要と判断）
+- 生FCF安定(CV<0.3)分岐（17銘柄）は、控除自体がestimated_fcfの計算に
+  使われないため誤解を招くと判断し、意図的に表示対象外のまま維持
+  （noteが「生FCF安定」で始まるかで判定）
+
+#### 全55銘柄への本番反映
+対象銘柄（applied=True 46・applied=False 9）全55銘柄に
+`pipeline.py --skip-risk`で反映完了。IV・Classificationとも全銘柄で
+変化なしを確認（表示のみの変更）。その他の差分は全て無関係な要因と
+特定済み：
+- yfinance由来の生きた市場データ（PEG・analyst_target等）の定例的な変動
+- CRWV/IONQ/JOBY/QBTS/RCAT/RXRX/S/SOUNの8銘柄の`adj_net_income`変化は、
+  これらがFCF-EST-DIRECTION-GUARD-1・FCF-EST-NET-BASIS-FIX-1のいずれの
+  再生成対象にも含まれていなかった（最終出力`estimated_fcf`が不変のため
+  対象外と判定されていた）ことによる遅延反映効果であり、`estimated_fcf`・
+  IV自体は不変
+
+#### 検証
+- pytest: 438件中436件passed（NVDA/MSFT既知2件のみ、regressionなし）
+- `report_consistency_check.py`: NG=0（WARN=71件、新規WARNなし）
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）
