@@ -1287,7 +1287,8 @@ class FCFEstimationResult:
     """EPSベースFCF推定結果"""
     applied: bool                  # 新方式が適用されたか
     method: str                    # "adj_eps_estimated" or "raw_fcf"
-    adj_net_income: float          # 調整済み純利益
+    adj_net_income: float          # 調整済み純利益（FCF換算に実際使用した値。CWAN-SNPS-MA-DISTORTION-1で
+                                    # 「買収・統合関連」加算を控除済みの場合はその控除後の値）
     conversion_rate: float         # FCF転換率
     estimated_fcf: float           # 推定FCF
     raw_fcf: float                 # 従来のFCFベース
@@ -1295,6 +1296,7 @@ class FCFEstimationResult:
     note: str                      # 理由
     divergence_ratio: float = 0.0  # 推定FCF / 生FCF の倍率
     divergence_warning: str = ""   # 大幅乖離時の警告メッセージ
+    ma_addback_excluded: float = 0.0  # CWAN-SNPS-MA-DISTORTION-1: 控除した「買収・統合関連」加算額
 
     def to_dict(self):
         return {
@@ -1308,6 +1310,7 @@ class FCFEstimationResult:
             "note": self.note,
             "divergence_ratio": round(self.divergence_ratio, 2),
             "divergence_warning": self.divergence_warning,
+            "ma_addback_excluded": self.ma_addback_excluded,
         }
 
 
@@ -1616,7 +1619,27 @@ def estimate_fcf_from_eps(
 
     # 直近年度の調整済み純利益
     latest = years[0]
-    adj_net_income = latest.get('adjusted_net_income', 0)
+    adj_net_income_orig = latest.get('adjusted_net_income', 0)
+
+    # CWAN-SNPS-MA-DISTORTION-1: 「買収・統合関連」カテゴリ（無形資産償却費等の
+    # 買収由来の加算）はconversion_rateが前提とする「通常時のAdj_NI→キャッシュ
+    # フロー変換関係」を歪める。M&A後の企業でadjusted_net_incomeにこの加算が
+    # 含まれたままconversion_rateを掛けると、実際のキャッシュフロー創出力を
+    # 超える推定FCFになる（CWAN divergence_ratio 2.2倍・SNPS 1.5倍等で確認）。
+    # このためFCF換算にのみ、当該カテゴリの加算分を差し引いた値を使う
+    # （EPS Analyzer側annual.jsonのadjusted_net_income自体・他の呼び出し元
+    # での参照値は変更しない。ここでの控除はこの関数のローカル計算のみに閉じる）。
+    MA_INTEGRATION_CATEGORY = "買収・統合関連"
+    ma_addback = sum(
+        adj.get("amount", 0)
+        for adj in latest.get("adjustments", [])
+        if adj.get("category") == MA_INTEGRATION_CATEGORY and adj.get("amount", 0) > 0
+    )
+    adj_net_income = adj_net_income_orig - ma_addback
+
+    _ma_note_suffix = (
+        f"（買収・統合関連加算${ma_addback/1e6:.0f}Mを控除後）" if ma_addback > 0 else ""
+    )
 
     # ── フォールバック条件 ──
     # 調整済み純利益がマイナスの場合は従来FCFを使用
@@ -1626,7 +1649,8 @@ def estimate_fcf_from_eps(
             adj_net_income=adj_net_income, conversion_rate=conversion_rate,
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector,
-            note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M) → 従来FCFを使用"
+            note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M){_ma_note_suffix} → 従来FCFを使用",
+            ma_addback_excluded=ma_addback,
         )
 
     # ── スキップ条件: 生FCFが多年度で安定・外れ値未検出の場合は推定を適用しない ──
@@ -1641,18 +1665,19 @@ def estimate_fcf_from_eps(
             adj_net_income=adj_net_income, conversion_rate=conversion_rate,
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector,
-            note=f"生FCF安定(CV={fcf_cv:.2f}<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用"
+            note=f"生FCF安定(CV={fcf_cv:.2f}<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
+            ma_addback_excluded=ma_addback,
         )
 
     # ── FCF推定 ──
     estimated_fcf = adj_net_income * conversion_rate
 
     note = (
-        f"調整済み純利益${adj_net_income/1e9:.2f}B × 転換率{conversion_rate:.0%}"
+        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix} × 転換率{conversion_rate:.0%}"
         f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
         f"（従来${raw_fcf/1e9:.2f}Bの{estimated_fcf/raw_fcf:.1f}倍）"
         if raw_fcf != 0 else
-        f"調整済み純利益${adj_net_income/1e9:.2f}B × 転換率{conversion_rate:.0%}"
+        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix} × 転換率{conversion_rate:.0%}"
         f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
     )
 
@@ -1684,4 +1709,5 @@ def estimate_fcf_from_eps(
         note=note,
         divergence_ratio=round(divergence_ratio, 2),
         divergence_warning=divergence_warning,
+        ma_addback_excluded=ma_addback,
     )
