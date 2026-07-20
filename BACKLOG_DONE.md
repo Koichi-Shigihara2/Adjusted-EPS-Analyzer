@@ -1484,6 +1484,59 @@ AWS自体が主因であり、当初の二分法の前提と実態にズレが�
 
 ---
 
+### ✅ [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
+**優先度:** 未定
+**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
+**登録日:** 2026-07-18
+**発見:** [[TRUST-SUMMARY-EPIC-1]]棚卸し再検証（fcf_outlier丸めによる理由喪失の一次確認）
+**完了日:** 2026-07-20
+
+#### 背景
+`pipeline.py::_compute_tanuki_score()`にて、Policy A/B（DCF_Reliability=LOW
+丸め）発火時、それまでに計算済みの`score`/`comment`ローカル変数を単純に
+上書きしており、丸め前の分類（元々BUY/TRIM/HOLDのどれだったか）を保持する
+フィールドが存在しなかった。
+
+#### 対応
+丸め処理直前に`score`/`comment`を`_pre_rounding_score`/
+`_pre_rounding_comment`として退避し、発火したポリシー
+（`_rounded_by_policy`＝"A"|"B"|None）と共に戻り値に追加。
+`_compute_tanuki_score()`は純粋関数の性質を維持（valuation辞書の
+読み取りのみ、DCF計算・IV算出には無変更）。`latest_data`構築部に
+3フィールド（`pre_rounding_score`・`pre_rounding_comment`・
+`rounded_by_policy`）を同型でフラット追加。report.txtの
+`[1. TANUKI SCORE]`セクションに、丸め発生時のみ
+`Classification_Pre_Rounding`行を追加。
+
+#### 全母集団検証（重要な発見）
+`_compute_tanuki_score()`を全100銘柄の`latest.json`に対して再実行し、
+全銘柄で最終Classificationが不変であることを確認した。実際に丸めが
+発生するのは**65銘柄**（Policy A 10・Policy B 55）で、report.txtの
+「DCF_Reliability: LOW」表示件数（70）とは5銘柄分の差があった。
+差分の5銘柄（BBAI/QBTS/RDW/SPIR/KULR）は全て`tanuki_score=PASS`で
+あり、Policy A/B発火条件「`score not in (SELL, PASS)`」により実際の
+丸めは発生しない（PASSのまま）。report.txt側のDCF_Reliability表示は
+独立した判定でこの除外を考慮しないため情報表示としてLOWが出るのみで
+Classification自体は丸められない、という既存の仕様差であり、本タスクの
+バグではないと確認した。
+
+#### サンプル確認
+ENTG（WATCH←丸め前TRIM、Policy B）・SNPS（WATCH←HOLD、Policy B）・
+JOBY（WATCH←HOLD、Policy A）・QBTS（PASS、`Classification_Pre_Rounding`
+は正しく非表示）・AAPL（WATCH←TRIM、Policy B）で表示・挙動を確認。
+全銘柄でIV・Classification（丸め後の最終値）に変化なし。
+
+#### 検証
+- pytest: 438件中436件passed（既知2件のみ、regressionなし）
+- `report_consistency_check.py`: NG=0（WARN=71件、新規WARNなし）
+
+#### スコープ外として記録
+stock.html側への表示は、そもそもClassification自体がstock.html
+（銘柄個別ページ）に表示されていないという別の未解決論点のため対象外と
+した。必要であれば別タスクとして今後検討する。
+
+---
+
 ## 2026-07-19（完了）
 
 ### ✅ [FY52WEEK-BS-FADEOUT-FALLBACK-1] 生涯フェードアウト22件への履歴フォールバックロジック（3件除外・年数閾値なし）

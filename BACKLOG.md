@@ -902,42 +902,6 @@ report.txt表示を追加実装した。これにより段階1（成長率算出
 
 ## 優先度：未定（要判断）
 
-### [FCF-OUTLIER-PREROUNDING-LOSS-1] Policy A/B丸め処理で丸め前のClassificationが保持されず失われる
-**優先度:** 未定
-**分類:** アーキテクチャ / TANUKI VALUATION / 検証基盤
-**登録日:** 2026-07-18
-**発見:** [[TRUST-SUMMARY-EPIC-1]]棚卸し再検証（fcf_outlier丸めによる理由喪失の一次確認）
-
-#### 背景
-`pipeline.py::_compute_tanuki_score()`にて、Policy A/B（DCF_Reliability=LOW
-丸め）発火時、それまでに計算済みの`score`/`comment`ローカル変数を単純に
-上書きしており、丸め前の分類（元々BUY/TRIM/HOLDのどれだったか）を保持する
-フィールドが存在しない。report.txt側は乖離率（`deviation_pct`）や発火理由
-自体は明示表示しているため「理由」そのものは喪失していないが、**「丸め前の
-Classification」情報のみが失われている**。
-
-TRUST-SUMMARY-EPIC-1の棚卸し再検証（2026-07-18）で一次情報（コード・
-BACKLOG_DONE.md記録）を確認した結果判明した。[[POLICYB-GATE-FIX-1]]
-（完了・BACKLOG_DONE.md参照）は発火条件（ゲート）そのものの修正が本題で
-あり、「丸め前情報の喪失」自体は同タスクのスコープ外だったことを確認済み。
-
-#### 対応方針（未確定）
-丸め処理直前に`pre_rounding_score`・`pre_rounding_classification`等の
-新フィールドとしてローカル変数を保持し、report.txt表示・Classification
-一覧の参考列として使う設計案。
-
-#### 状況追記（2026-07-20・TRUST-SUMMARY-EPIC-1段階2の広範な再調査を実施）
-着手前にTRUST-SUMMARY-EPIC-1段階2（FCF/DCF信頼性層）全体を再調査した
-結果、[[FCF-EST-DIRECTION-GUARD-1]]・[[FCF-CONVRATE-LOWER-DIVERGENCE-1]]
-等、本タスクより優先度が高いと考えられる複数の課題が新規に判明した。
-本タスク自体（丸め前情報の保持）は依然有効な対応と考えるが、
-優先順位は上記より低いと判断し、次回以降に持ち越す。
-
-#### 着手条件
-なし（次回セッションで設計方針を判断してから着手）
-
----
-
 ### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
 **優先度:** 未定
 **分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
@@ -4279,6 +4243,7 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    参照（原因確定・対応不要、副次発見はAMZN-CONVRATE-OVERRIDE-REVIEW-1として
    分離登録）
    ~~[[FCF-EST-NOTE-DISPLAY-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
+   ~~[[FCF-OUTLIER-PREROUNDING-LOSS-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
 
 **着手条件未達のため次回候補から除外**: [[JNJ-XOM-PM-FLOOR-RISK-1]]
 （優先度：中だが着手条件は「候補件数が実際に2件を下回った場合」。
