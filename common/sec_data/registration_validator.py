@@ -39,8 +39,21 @@ SEG_CFG      = os.path.join(_REPO_ROOT, "config", "segment_config.json")
 DISCOVER_CFG = os.path.join(_REPO_ROOT, "config", "discover_config.json")
 CIK_CSV      = os.path.join(_REPO_ROOT, "config", "cik_lookup.csv")
 MONITOR_YAML = os.path.join(_REPO_ROOT, "config", "monitor_tickers.yaml")
+CIK_HISTORY_JSON = os.path.join(_REPO_ROOT, "common", "sec_data", "cik_history.json")
 
 TODAY = date.today()
+
+# CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 確認済み・接続しない方針の構造的境界銘柄
+# （スピンオフ・カーブアウト型、破産再生型）。旧CIKへの接続対象ではないため、
+# cik_history.json 未登録でも P6 の再フラグ対象から除外する。
+CIK_DISCONTINUITY_CONFIRMED_STRUCTURAL = {
+    "CEG", "LITE", "ABBV", "GEV", "SN", "CON", "VST",
+}
+
+# 汎用検知ロジック（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1で検証済み: 既知9銘柄
+# Recall100%/Precision65%）: 最古年度 >= 2010 かつ 判定年度revenue >= $500M
+CIK_DISCONTINUITY_BOUNDARY_YEAR_MIN = 2010
+CIK_DISCONTINUITY_REVENUE_MIN = 500_000_000
 
 # ── ヘルパー ──────────────────────────────────────────────────────────
 
@@ -256,6 +269,63 @@ def check_p2_data_quality(ticker: str, issues: Issues) -> None:
 
 
 # ═══════════════════════════════════════════════════════════════════════
+# P6: CIK断絶候補検知（新規登録銘柄向け）
+# ═══════════════════════════════════════════════════════════════════════
+
+def check_p6_cik_discontinuity_candidate(ticker: str, issues: Issues, cik_history: dict) -> None:
+    """CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1で検証済みの汎用検知ロジックを
+    新規登録銘柄に適用し、法人再編（持株会社化・スピンオフ・破産再生等）に
+    よるCIK断絶の候補を機械的に検知する。
+
+    既に確定登録済み（cik_history.json、同一事業継続型で旧CIKと接続済み）
+    または確認済み・接続しない方針が確定している構造的境界銘柄
+    （CIK_DISCONTINUITY_CONFIRMED_STRUCTURAL）は再フラグしない。
+
+    検知条件: 最古年度 >= 2010 かつ 判定年度revenue >= $500M
+    （既知9銘柄でRecall100%/Precision65%、残り35%は誤検知の可能性があるため
+    一次情報〈SEC EDGAR企業検索〉での人手確認が必須。自動でcik_history.jsonに
+    登録することはしない — 確定登録は引き続き人手判断を経ること）。
+    """
+    if ticker in cik_history or ticker in CIK_DISCONTINUITY_CONFIRMED_STRUCTURAL:
+        return
+
+    years_by_num: dict[int, dict] = {}
+    for fn in _annual_files(ticker):
+        d = _load_json(os.path.join(SEC_DATA_DIR, ticker, fn))
+        if not d:
+            continue
+        m = re.match(r"annual_(\d{4})\.json$", fn)
+        if not m:
+            continue
+        years_by_num[int(m.group(1))] = d
+
+    if not years_by_num:
+        return
+
+    years = sorted(years_by_num.keys())
+    earliest_year = years[0]
+    earliest_d = years_by_num[earliest_year]
+    boundary_pattern = (
+        not earliest_d.get("pl", {}) and not earliest_d.get("cf", {}) and bool(earliest_d.get("bs", {}))
+    )
+    check_year = earliest_year + 1 if boundary_pattern else earliest_year
+    check_d = years_by_num.get(check_year)
+    rev = check_d.get("pl", {}).get("revenue") if check_d else None
+
+    flagged = (earliest_year >= CIK_DISCONTINUITY_BOUNDARY_YEAR_MIN
+               and rev is not None and rev >= CIK_DISCONTINUITY_REVENUE_MIN)
+    if flagged:
+        issues.warn(
+            "P6-CIKDiscontinuity",
+            f"{ticker}: CIK断絶候補・一次情報確認要 (最古年度={earliest_year}, "
+            f"判定年度={check_year}, revenue=${(rev or 0)/1e6:,.0f}M) "
+            "— SEC EDGARで法人再編歴（持株会社化/スピンオフ/破産再生等）を確認し、"
+            "同一事業継続型ならcik_history.json、スピンオフ・破産再生型なら"
+            "CIK_DISCONTINUITY_CONFIRMED_STRUCTURALへの追加を検討（要人手判断）"
+        )
+
+
+# ═══════════════════════════════════════════════════════════════════════
 # P3: segment_config 整合性チェック
 # ═══════════════════════════════════════════════════════════════════════
 
@@ -403,13 +473,15 @@ def run(target_tickers: Optional[list] = None, summary_only: bool = False) -> Is
         pass
 
     all_issues = Issues()
+    cik_history = _load_json(CIK_HISTORY_JSON) or {}
 
-    # ── P1 / P2: 銘柄ごとチェック ────────────────────────────────────
+    # ── P1 / P2 / P6: 銘柄ごとチェック ────────────────────────────────
     for t in tickers_to_check:
         check_p1_registration_completeness(t, all_issues, beta_overrides,
                                            discover_tickers, monitor_set,
                                            eps_disabled=eps_disabled)
         check_p2_data_quality(t, all_issues)
+        check_p6_cik_discontinuity_candidate(t, all_issues, cik_history)
 
     # ── P3: segment_config（全銘柄対象）──────────────────────────────
     check_p3_segment_config(all_issues)
@@ -466,6 +538,7 @@ def _print_report(issues: Issues, n_tickers: int, summary_only: bool) -> None:
         "P4-SecDataOrphan":  "P4-S  SEC data孤立ディレクトリ",
         "P5-WorkflowGap":    "P5    ワークフローカバレッジ外",
         "P5-WorkflowSchedule":"P5   ワークフロースケジュール",
+        "P6-CIKDiscontinuity":"P6   CIK断絶候補(要一次情報確認)",
     }
 
     def _print_section(label: str, cats: dict[str, list[str]], icon: str) -> None:

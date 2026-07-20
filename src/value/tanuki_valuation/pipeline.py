@@ -81,6 +81,45 @@ FCF_TRANSIENT_ITEM_EXPLANATIONS = {
 }
 
 
+# CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: スピンオフ・カーブアウト型／破産再生型の
+# 法人再編でCIKが断絶しており、旧CIKへの接続を行わない方針が確定している銘柄。
+# ①同一事業継続型（MRVL/GOOGL/AVGO/DELL）は cik_history.json 経由で旧CIKの
+# データを実際に統合したため、この注記の対象ではない（DELLのみ非公開期間の
+# 別注記がある。DELL_PRIVATE_PERIOD_NOTE参照）。
+# ②スピンオフ・カーブアウト型は「親会社連結からの区分推定値」、③破産再生型は
+# 「fresh-start会計で連続性自体が断絶」のため、旧データを実績として接続しない
+# （FCF_CYCLICAL_VOLATILITY_TICKERS等と同型の手動リスト方式。閾値による
+# 自動判定は行わない）。
+CIK_DISCONTINUITY_TICKERS = {
+    "CEG": "2022年2月ExelonからのスピンオフによりConstellation Energy Corp発足。"
+           "スピンオフ以前のデータは親会社連結からの区分推定値であり接続していません。",
+    "LITE": "2015年8月JDS Uniphase(JDSU)の会社分割によりLumentum Holdings発足。"
+            "分割以前のデータは親会社(JDSU)連結からの区分推定値であり接続していません。",
+    "ABBV": "2013年1月Abbott LaboratoriesからのスピンオフによりAbbVie Inc.発足。"
+            "スピンオフ以前のデータは親会社連結からの区分推定値であり接続していません。",
+    "GEV": "2024年4月General ElectricからのスピンオフによりGE Vernova Inc.発足。"
+           "スピンオフ以前のデータは親会社連結からの区分推定値であり接続していません。",
+    "SN": "2023年7月、香港上場JS Global LifestyleからのスピンオフによりSharkNinja, Inc.が"
+          "米国単独上場。分離以前のデータは接続していません。",
+    "CON": "2024年11月Select Medical Holdingsからの完全スピンオフによりConcentra Group "
+           "Holdings発足（2024年7月に一部先行IPO）。分離以前のデータは親会社連結からの"
+           "区分推定値であり接続していません。",
+    "VST": "2016年のEnergy Future Holdings破産手続き(Chapter 11)に伴うfresh-start会計により"
+           "Vistra Energy Corp発足。破産前後で会計上の連続性自体が断絶しているため接続していません。",
+}
+
+# DELL固有: 旧CIK(826083)を統合してもFY2013〜FY2016の自社10-K申告ギャップ
+# （2013年LBOによる非公開化〜2016年EMC統合完了後の初回申告〈FY2017〉まで）は
+# 埋まらない。実データ検証済み: FY2015・FY2016はFY2017 10-Kの比較年度再掲データ
+# （本人データではない）のみ存在し、FY2014は比較年度ウィンドウにも入らず欠落する。
+DELL_PRIVATE_PERIOD_NOTE = (
+    "2013年LBOによる非公開化(最終自社10-K: FY2012, 期末2013-02-01)〜2016年EMC統合"
+    "完了後の初回自社10-K(FY2017, filed 2017-03-31)まで、自社10-K申告自体が"
+    "存在しない期間があります。FY2015/FY2016はFY2017 10-Kの比較年度再掲データ"
+    "（本人データではない）のみ、FY2014は値が完全に欠落します。"
+)
+
+
 def _dilution_severity_info(dil_pct: float | None) -> tuple:
     """希薄化率から (severity, badge, report_comment) を返す"""
     if dil_pct is None:
@@ -1273,6 +1312,12 @@ class TanukiValuationPipeline:
         L.append(f"Generated: {now}")
         L.append(f"Price: ${current_price:,.2f}" if current_price else "Price: N/A")
         L.append("")
+        if ticker in CIK_DISCONTINUITY_TICKERS:
+            L.append(f"⚠️ CIK断絶(構造的境界): {CIK_DISCONTINUITY_TICKERS[ticker]}")
+            L.append("")
+        if ticker == "DELL":
+            L.append(f"ℹ️ データ期間注記: {DELL_PRIVATE_PERIOD_NOTE}")
+            L.append("")
         # --- Timing score components ---
         ma200 = comps.get("ma200")
         ma200_dev = None

@@ -12,13 +12,31 @@ from typing import Optional, Dict, Any
 
 from .config import get_all, get_ticker_info
 
+_CIK_HISTORY_PATH = os.path.join(os.path.dirname(__file__), "cik_history.json")
+
+
+def _load_cik_history() -> dict:
+    """cik_history.json（法人再編でCIKが切り替わった銘柄の旧CIK一覧）を読み込む。
+
+    CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 同一事業継続型の法人再編
+    （MRVL/GOOGL/AVGO/DELL）のみ、旧CIKのCompany Facts/submissionsを
+    追加取得してマージする対象として登録される。ファイル不在時は空dict。
+    """
+    if os.path.exists(_CIK_HISTORY_PATH):
+        try:
+            with open(_CIK_HISTORY_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
 
 class SECFetcher:
     """SEC EDGAR Company Facts API クライアント"""
-    
+
     BASE_URL = "https://data.sec.gov/api/xbrl/companyfacts"
     CIK_LOOKUP_URL = "https://www.sec.gov/cgi-bin/browse-edgar"
-    
+
     # SEC APIは10リクエスト/秒制限
     RATE_LIMIT_DELAY = 0.15
     
@@ -112,27 +130,95 @@ class SECFetcher:
         # Company Facts API呼び出し
         url = f"{self.BASE_URL}/CIK{cik}.json"
         print(f"   [{ticker}] SEC API取得中... (CIK: {cik})")
-        
+
         try:
             time.sleep(self.RATE_LIMIT_DELAY)
             resp = requests.get(url, headers=self.headers, timeout=30)
-            
+
             if resp.status_code == 200:
                 data = resp.json()
-                
+
+                # CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 法人再編で同一事業が
+                # 旧CIKに継続していた銘柄は、旧CIKのus-gaap factsを追加取得して
+                # マージする。マージ専用の優先順位ロジックは追加しない
+                # （parser.pyの本人データ優先・タイブレークにそのまま委ねる）。
+                legacy_ciks = _load_cik_history().get(ticker, {}).get("legacy_ciks", [])
+                for legacy_cik in legacy_ciks:
+                    legacy_data = self._fetch_legacy_company_facts(ticker, legacy_cik, force_refresh)
+                    if legacy_data:
+                        data = self._merge_us_gaap_facts(data, legacy_data)
+
                 # 保存
                 with open(raw_path, "w", encoding="utf-8") as f:
                     json.dump(data, f, ensure_ascii=False, indent=2)
-                
+
                 print(f"   [{ticker}] SEC API取得完了")
                 return data
             else:
                 print(f"   [{ticker}] SEC API エラー: {resp.status_code}")
                 return None
-                
+
         except Exception as e:
             print(f"   [{ticker}] SEC API 例外: {e}")
             return None
+
+    def _fetch_legacy_company_facts(self, ticker: str, legacy_cik: str, force_refresh: bool) -> Optional[Dict[str, Any]]:
+        """cik_history.json記載の旧CIKのCompany Factsを取得（24時間キャッシュ）。
+
+        {ticker}/company_facts.json とは別に {ticker}/company_facts_legacy_{cik}.json
+        として保存する（監査・再検証用に旧CIK単独のスナップショットを残す）。
+        """
+        legacy_cik = str(legacy_cik).zfill(10)
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        legacy_path = os.path.join(ticker_dir, f"company_facts_legacy_{legacy_cik}.json")
+
+        if not force_refresh and os.path.exists(legacy_path):
+            age = (datetime.now() - datetime.fromtimestamp(os.path.getmtime(legacy_path))).total_seconds()
+            if age < 86400:
+                try:
+                    with open(legacy_path, "r", encoding="utf-8") as f:
+                        return json.load(f)
+                except Exception:
+                    pass
+
+        url = f"{self.BASE_URL}/CIK{legacy_cik}.json"
+        print(f"   [{ticker}] 旧CIK({legacy_cik})取得中...")
+        try:
+            time.sleep(self.RATE_LIMIT_DELAY)
+            resp = requests.get(url, headers=self.headers, timeout=30)
+            if resp.status_code == 200:
+                data = resp.json()
+                with open(legacy_path, "w", encoding="utf-8") as f:
+                    json.dump(data, f, ensure_ascii=False, indent=2)
+                return data
+            print(f"   [{ticker}] 旧CIK({legacy_cik}) SEC API エラー: {resp.status_code}")
+            return None
+        except Exception as e:
+            print(f"   [{ticker}] 旧CIK({legacy_cik}) SEC API 例外: {e}")
+            return None
+
+    @staticmethod
+    def _merge_us_gaap_facts(primary: Dict[str, Any], legacy: Dict[str, Any]) -> Dict[str, Any]:
+        """primaryのfacts.us-gaapに、legacyのfacts.us-gaapエントリを統合する。
+
+        同一conceptは units[unit_type] のentryリストをそのまま連結するのみで、
+        マージ専用の優先順位判定・重複排除は行わない。年度ごとの採用値決定は
+        既存のparser.py（本人データ優先・filed日時タイブレーク）にそのまま
+        委ねる設計（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1調査で確認済みの前提）。
+        """
+        merged = json.loads(json.dumps(primary))
+        legacy_us_gaap = legacy.get("facts", {}).get("us-gaap", {})
+        merged_us_gaap = merged.setdefault("facts", {}).setdefault("us-gaap", {})
+        for concept, concept_data in legacy_us_gaap.items():
+            if concept not in merged_us_gaap:
+                merged_us_gaap[concept] = concept_data
+                continue
+            merged_units = merged_us_gaap[concept].setdefault("units", {})
+            for unit_type, entries in concept_data.get("units", {}).items():
+                merged_units.setdefault(unit_type, [])
+                merged_units[unit_type].extend(entries)
+        return merged
     
     def fetch_submissions(self, ticker: str, force_refresh: bool = False) -> Optional[Dict[str, str]]:
         """
@@ -169,31 +255,50 @@ class SECFetcher:
             print(f"   [{ticker}] submissions: CIK取得失敗")
             return None
 
+        accn_to_reportdate = self._fetch_submissions_for_cik(ticker, cik)
+        if accn_to_reportdate is None:
+            return None
+
+        # CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 旧CIKのsubmissionsもマージする。
+        # parser.pyの本人データ判定（accn_reportdate.get(accn)==end_date）は
+        # このマッピングにaccnが含まれていないと機能しないため、company_facts.json
+        # だけでなくsubmissions.json側も旧CIK分を統合する必要がある。
+        legacy_ciks = _load_cik_history().get(ticker, {}).get("legacy_ciks", [])
+        for legacy_cik in legacy_ciks:
+            legacy_map = self._fetch_legacy_submissions(ticker, legacy_cik, force_refresh)
+            if legacy_map:
+                accn_to_reportdate.update(legacy_map)
+
+        with open(out_path, "w", encoding="utf-8") as f:
+            json.dump(
+                {"ticker": ticker, "cik": cik, "legacy_ciks_merged": legacy_ciks,
+                 "accn_to_reportdate": accn_to_reportdate},
+                f, ensure_ascii=False, indent=2,
+            )
+
+        print(f"   [{ticker}] submissions取得完了 ({len(accn_to_reportdate)}件)")
+        return accn_to_reportdate
+
+    def _fetch_submissions_for_cik(self, ticker: str, cik: str) -> Optional[Dict[str, str]]:
+        """指定CIKのsubmissions API（recent + 過去分アーカイブ）から
+        {accn: reportDate} マッピングを取得する（キャッシュ・保存は行わない）。"""
         relevant_forms = {"10-K", "10-K/A", "10-Q", "10-Q/A"}
         accn_to_reportdate: Dict[str, str] = {}
-
-        def _extract(recent_or_archive: dict) -> None:
-            forms = recent_or_archive.get("form", [])
-            accns = recent_or_archive.get("accessionNumber", [])
-            report_dates = recent_or_archive.get("reportDate", [])
-            for form, accn, rd in zip(forms, accns, report_dates):
-                if form in relevant_forms and rd:
-                    accn_to_reportdate[accn] = rd
 
         url = f"https://data.sec.gov/submissions/CIK{cik}.json"
         try:
             time.sleep(self.RATE_LIMIT_DELAY)
             resp = requests.get(url, headers=self.headers, timeout=30)
         except Exception as e:
-            print(f"   [{ticker}] submissions API 例外: {e}")
+            print(f"   [{ticker}] submissions({cik}) API 例外: {e}")
             return None
 
         if resp.status_code != 200:
-            print(f"   [{ticker}] submissions API エラー: {resp.status_code}")
+            print(f"   [{ticker}] submissions({cik}) API エラー: {resp.status_code}")
             return None
 
         data = resp.json()
-        _extract(data.get("filings", {}).get("recent", {}))
+        self._extract_accn_reportdate(data.get("filings", {}).get("recent", {}), relevant_forms, accn_to_reportdate)
 
         # 過去分アーカイブ（filings.recentは直近分のみのため、古いfilingは別JSONに分割）
         for finfo in data.get("filings", {}).get("files", []):
@@ -205,20 +310,53 @@ class SECFetcher:
                 time.sleep(self.RATE_LIMIT_DELAY)
                 aresp = requests.get(archive_url, headers=self.headers, timeout=30)
             except Exception as e:
-                print(f"   [{ticker}] submissions archive({fname}) 例外: {e}")
+                print(f"   [{ticker}] submissions({cik}) archive({fname}) 例外: {e}")
                 continue
             if aresp.status_code != 200:
-                print(f"   [{ticker}] submissions archive({fname}) エラー: {aresp.status_code}")
+                print(f"   [{ticker}] submissions({cik}) archive({fname}) エラー: {aresp.status_code}")
                 continue
-            _extract(aresp.json())
+            self._extract_accn_reportdate(aresp.json(), relevant_forms, accn_to_reportdate)
 
-        with open(out_path, "w", encoding="utf-8") as f:
-            json.dump(
-                {"ticker": ticker, "cik": cik, "accn_to_reportdate": accn_to_reportdate},
-                f, ensure_ascii=False, indent=2,
-            )
+        return accn_to_reportdate
 
-        print(f"   [{ticker}] submissions取得完了 ({len(accn_to_reportdate)}件)")
+    @staticmethod
+    def _extract_accn_reportdate(recent_or_archive: dict, relevant_forms: set, out: Dict[str, str]) -> None:
+        forms = recent_or_archive.get("form", [])
+        accns = recent_or_archive.get("accessionNumber", [])
+        report_dates = recent_or_archive.get("reportDate", [])
+        for form, accn, rd in zip(forms, accns, report_dates):
+            if form in relevant_forms and rd:
+                out[accn] = rd
+
+    def _fetch_legacy_submissions(self, ticker: str, legacy_cik: str, force_refresh: bool) -> Optional[Dict[str, str]]:
+        """cik_history.json記載の旧CIKのsubmissionsを取得（24時間キャッシュ）。
+
+        {ticker}/submissions.json とは別に {ticker}/submissions_legacy_{cik}.json
+        として保存する（監査・再検証用に旧CIK単独のスナップショットを残す）。
+        """
+        legacy_cik = str(legacy_cik).zfill(10)
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        legacy_path = os.path.join(ticker_dir, f"submissions_legacy_{legacy_cik}.json")
+
+        if not force_refresh and os.path.exists(legacy_path):
+            age = (datetime.now() - datetime.fromtimestamp(os.path.getmtime(legacy_path))).total_seconds()
+            if age < 86400:
+                try:
+                    with open(legacy_path, "r", encoding="utf-8") as f:
+                        return json.load(f).get("accn_to_reportdate", {})
+                except Exception:
+                    pass
+
+        accn_to_reportdate = self._fetch_submissions_for_cik(ticker, legacy_cik)
+        if accn_to_reportdate is None:
+            return None
+
+        with open(legacy_path, "w", encoding="utf-8") as f:
+            json.dump({"ticker": ticker, "cik": legacy_cik, "accn_to_reportdate": accn_to_reportdate},
+                      f, ensure_ascii=False, indent=2)
+
+        print(f"   [{ticker}] 旧CIK({legacy_cik}) submissions取得完了 ({len(accn_to_reportdate)}件)")
         return accn_to_reportdate
 
     def fetch_all(self, tickers: list = None, force_refresh: bool = False) -> Dict[str, bool]:
