@@ -241,6 +241,22 @@ GitHub Actions（クラウド・端末状態非依存）と同等の可用性は
 【SECデータ取得層】
 SEC EDGAR
 └─ common/sec_data/update.py
+├─ fetcher.py  # SECFetcher::fetch_company_facts()/fetch_submissions()。SEC EDGAR
+│    Company Facts/Submissions APIへの生取得（update.py Step1が最初に呼ぶ）。
+│    **追記（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1 2026-07-20新設）**: 企業再編で
+│    CIKが不連続になった銘柄（買収・スピンオフ・LBO等でSECが新CIKを発番し、
+│    旧CIK側のcompany_facts.json取得が新CIK単独では最古年度が欠落する）向けに、
+│    `common/sec_data/cik_history.json`（`{TICKER: {legacy_ciks: [...],
+│    transition_note: "..."}}`）を`_load_cik_history()`で読み込み、
+│    `_fetch_legacy_company_facts()`/`_fetch_legacy_submissions()`で旧CIKの
+│    データも取得した上で`_merge_us_gaap_facts()`（静的メソッド）が
+│    us-gaapタグ単位でマージする。`fetch_company_facts()`/`fetch_submissions()`
+│    は保存前に本マージを実行。現在登録銘柄: MRVL/GOOGL/AVGO/DELL
+│    （DELLはFY2013-2016非公開期間のフィリングギャップの注記あり）。
+│    `registration_validator.py::check_p6_cik_discontinuity_candidate()`
+│    （P6-CIKDiscontinuity、`CIK_DISCONTINUITY_CONFIRMED_STRUCTURAL`＝
+│    {CEG,LITE,ABBV,GEV,SN,CON,VST}・境界年2010以降・売上5億ドル以上を
+│    ヒューリスティックとする）が新規登録時にCIK不連続候補をWARN検知する。
 ├─ quarterly.py      # 四半期データ取得・正規化
 ├─ normalizer.py     # フィールド正規化
 ├─ ttm_calculator.py # TTM系列計算。本番経路は calc_ttm_series()/save_ttm_series()
@@ -265,6 +281,14 @@ SEC EDGAR
 │    モジュールロード時に検証する契約チェック（contracts.py::
 │    validate_field_classification()）も同時に追加済み。
 ├─ parser.py         # XBRL解析
+│    **追記（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1 2026-07-20新設）**:
+│    `common/sec_data/fact_overrides.json`（`{TICKER: {YEAR: {reason, fields:
+│    {field: {value, ...}}}}}`）による年度・フィールド単位の個別上書き機構を
+│    追加。本人データ優先ロジック自体は変更せず、`_apply_fact_overrides()`が
+│    `save_parsed_data()`内でannual/quarterly保存直前の最終ステージとして
+│    特定ticker+year+fieldのみ明示的に差し替える（GOOGL FY2012/2013の非継続
+│    事業区分変更に伴う遡及修正値など、本人データ優先では当初申告値のまま
+│    残ってしまうケース向け）。ファイル不在時は空dictで無効化。
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
@@ -398,14 +422,22 @@ SEC EDGAR
 │    quarterly.py::check_revenue_quality()・src/value/tanuki_valuation/pipeline.py
 │    （DILUTION-FYE-1、希薄化率の分割検知）双方が参照し、暦年グルーピングの
 │    重複実装（CHECK-QREV-FYE-1型バグの再発）を解消した
-└─ revenue_tag_conflict_check.py  # revenue系タグ競合検知（ARCH-DATA-1残課題③
-     2026-07-15新設）。company_facts.jsonを再読込し、MERGE_ALL_TAGS_FIELDS対象
-     （revenue/selling_and_marketing/depreciation_and_amortization）の候補タグ間で
-     同一年度の値が閾値以上乖離していないかWARN検知する。parser.py本体は無変更、
-     SECParserの既存メソッドを再利用（新規の候補タグ一覧は作らない）。
-     update.py Step1完了直後（check_revenue_quality()の直後、4c.相当）に配線。
-     自動修正は行わない（人間がTICKER_RESTRICTIONS登録可否を判断する既存フロー
-     に委ねる）。詳細はBACKLOG.md [[REVENUE-TAG-CONFLICT-SCAN-1]]参照
+├─ revenue_tag_conflict_check.py  # revenue系タグ競合検知（ARCH-DATA-1残課題③
+│    2026-07-15新設）。company_facts.jsonを再読込し、MERGE_ALL_TAGS_FIELDS対象
+│    （revenue/selling_and_marketing/depreciation_and_amortization）の候補タグ間で
+│    同一年度の値が閾値以上乖離していないかWARN検知する。parser.py本体は無変更、
+│    SECParserの既存メソッドを再利用（新規の候補タグ一覧は作らない）。
+│    update.py Step1完了直後（check_revenue_quality()の直後、4c.相当）に配線。
+│    自動修正は行わない（人間がTICKER_RESTRICTIONS登録可否を判断する既存フロー
+│    に委ねる）。詳細はBACKLOG.md [[REVENUE-TAG-CONFLICT-SCAN-1]]参照
+└─ fact_selection.py  # fact競合解決の共通プリミティブ（EPS-ANALYZER-NORMALIZE-
+     SCOPE-1 2026-07-20新設）。`select_latest_filed(candidates)`——同一期間
+     （同一end_date等）に複数XBRL factが競合する場合に「filed日が最新のものを
+     優先する」という単一規則のみを担う末端プリミティブ。quarterly.py
+     （`_process_entries`/`_select_best_filing`）とsrc/value/adjusted_eps_analyzer/
+     extract_key_facts.py（SPLIT-AUTO-CHECK-1）がそれぞれ独立実装していた
+     同一ロジックをここに集約。parser.py本体（本人データ優先・fy一致等の
+     多段規則）は対象外
 
 【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
 `src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを

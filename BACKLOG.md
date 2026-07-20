@@ -4245,8 +4245,6 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
 ~~⑨ [[GROWTH-STRUCTURAL-MISMATCH-CANDIDATES-1]]~~ ✅ 2026-07-20完了
    （HON: segment_config.json修正でAGGRESSIVE→PLAUSIBLE。残る14銘柄は
    FCF-CONVRATE②型の可視化注記を実装）。詳細はBACKLOG_DONE.md参照
-⑨ [[FCF-OUTLIER-PREROUNDING-LOSS-1]]
-   （優先度：未定。方針判断してから着手）
    ~~[[FY-COLLISION-LOG-NONDETERMINISTIC-1]]~~ ✅ 2026-07-20完了（対象7銘柄
    AVAV/CAKE/COHR/CRM/FCX/FICO/HON、詳細はBACKLOG_DONE.md参照）
    ~~[[MRVL-2019-2020-NULL-1]]~~ ✅ 2026-07-20完了（実害なし・構造的境界特性と
@@ -4263,6 +4261,8 @@ WARN-23全10銘柄検証・[[TTM-STOCK-FIELDS-DEAD-1]]完了・
    まで完了）
    ~~[[FCF-EST-DIRECTION-GUARD-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
    参照（ENTGのSELL→WATCH是正含む21銘柄のIV精度改善）
+   ~~[[FCF-EST-NET-BASIS-FIX-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md参照
+   （ma_addback計算をnet_amount基準に統一、25銘柄のIV精度改善）
    ~~[[AMZN-DIVERGENCE-HIGH-1]]~~ ✅ 2026-07-20完了。詳細はBACKLOG_DONE.md
    参照（原因確定・対応不要、副次発見はAMZN-CONVRATE-OVERRIDE-REVIEW-1として
    分離登録）

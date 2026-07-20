@@ -1394,6 +1394,46 @@ WATCH丸めロジックが正しく適用された。過小評価されたIVに�
 
 ---
 
+### ✅ [FCF-EST-NET-BASIS-FIX-1] ma_addback計算の税引前amount/税引後net_amount基準不一致
+**優先度:** 高
+**分類:** バグ修正 / TANUKI VALUATION / FCF-CONVRATE②派生
+**登録日:** 2026-07-20
+**発見:** [[MA-INTEGRATION-TAG-GAP-1]]再検証時の副次発見（境界跳ね返りリスク調査中に
+tax_adjuster.py::apply_tax_adjustments()との基準比較で判明）
+**完了日:** 2026-07-20
+
+#### 背景
+CWAN-SNPS-MA-DISTORTION-1実装当初から、`adjusted_net_income`自体は
+EPS Analyzer側で税引後（`net_amount`）ベースで構築されているのに、
+これを控除する`ma_addback`は税引前（`amount`）を合算しており、基準が
+不一致だった。税効果分だけ過剰に控除する系統的バイアスが生じ、dr>1の
+是正が行き過ぎて過小推定側に転じていた（CWAN: 0.88倍で停止、本来は
+1.15倍程度が正しい）。
+
+#### 対応（コミット`52730546e`）
+`estimate_fcf_from_eps()`の`ma_addback`計算を`net_amount`基準に変更
+（`net_amount`未設定時は`amount`へフォールバック）。`pre_deduction_dr`・
+方向性ガードの判定ロジック自体（FCF-EST-DIRECTION-GUARD-1）は無変更
+（ガード判定は`adj_net_income_orig`のみに依存し`ma_addback`を参照しない
+ため、ガードの許可/阻止決定は本修正の影響を受けない）。
+テスト2件追加（`test_ma_addback_uses_net_amount_not_pretax_amount`・
+`test_ma_addback_falls_back_to_amount_when_net_amount_missing`）。
+
+#### 全母集団シミュレーション（実関数呼び出し）
+ガード阻止中の21銘柄は`ma_addback`自体を参照しないため完全無変化を
+確認。ガード許可中51銘柄のうち実質的な変化があったのは**25銘柄**
+（いずれも`est_fcf`が増加する方向のみ、悪化ゼロ）。
+
+#### 本番データ再生成・IV変化幅
+該当25銘柄を`pipeline.py --skip-risk`で再生成。IV変化幅は+0.01%
+（GOOGL）〜+17.11%（CWAN）。Classification変化は0件（全25銘柄とも
+変化前後で同一クラス）。
+
+#### 検証
+pytest: regression検出なし（NVDA/MSFT既知2件のみ、無関係）
+
+---
+
 ### ✅ [AMZN-DIVERGENCE-HIGH-1] 買収・統合関連控除後もdr=2.95と高止まり
 **優先度:** 未定
 **分類:** データ品質 / TANUKI VALUATION / FCF-CONVRATE②派生
