@@ -1297,6 +1297,8 @@ class FCFEstimationResult:
     divergence_ratio: float = 0.0  # 推定FCF / 生FCF の倍率
     divergence_warning: str = ""   # 大幅乖離時の警告メッセージ
     ma_addback_excluded: float = 0.0  # CWAN-SNPS-MA-DISTORTION-1: 控除した「買収・統合関連」加算額
+    ma_addback_detected_but_not_applied: float = 0.0  # FCF-EST-DIRECTION-GUARD-1: 方向性ガードにより
+                                    # 控除しなかった「買収・統合関連」加算の検出額（0円なら未検出 or 控除適用済み）
 
     def to_dict(self):
         return {
@@ -1311,6 +1313,7 @@ class FCFEstimationResult:
             "divergence_ratio": round(self.divergence_ratio, 2),
             "divergence_warning": self.divergence_warning,
             "ma_addback_excluded": self.ma_addback_excluded,
+            "ma_addback_detected_but_not_applied": self.ma_addback_detected_but_not_applied,
         }
 
 
@@ -1635,10 +1638,30 @@ def estimate_fcf_from_eps(
         for adj in latest.get("adjustments", [])
         if adj.get("category") == MA_INTEGRATION_CATEGORY and adj.get("amount", 0) > 0
     )
-    adj_net_income = adj_net_income_orig - ma_addback
+
+    # FCF-EST-DIRECTION-GUARD-1: 控除前のAdj_NIベースで独立にdr（推定FCF÷生FCF）を
+    # 試算し、pre_deduction_dr<=1.0（控除しなくても既に生FCFを下回っている＝
+    # 過小推定側）の場合は控除を適用しない。控除後のdrをガード判定に使うと、
+    # 「控除するかどうかを、控除した結果のdrで決める」循環参照になるため、
+    # 必ず控除前（adj_net_income_orig）ベースの値を使う。
+    ma_addback_applied = 0.0
+    ma_addback_skipped = 0.0
+    if ma_addback > 0:
+        pre_deduction_estimated_fcf = adj_net_income_orig * conversion_rate
+        pre_deduction_dr = pre_deduction_estimated_fcf / raw_fcf if raw_fcf > 0 else 0.0
+        if pre_deduction_dr > 1.0:
+            ma_addback_applied = ma_addback
+        else:
+            ma_addback_skipped = ma_addback
+
+    adj_net_income = adj_net_income_orig - ma_addback_applied
 
     _ma_note_suffix = (
-        f"（買収・統合関連加算${ma_addback/1e6:.0f}Mを控除後）" if ma_addback > 0 else ""
+        f"（買収・統合関連加算${ma_addback_applied/1e6:.0f}Mを控除後）" if ma_addback_applied > 0 else ""
+    )
+    _ma_guard_note_suffix = (
+        f"（買収・統合関連加算${ma_addback_skipped/1e6:.0f}Mを検出したが、"
+        f"控除するとdr<=1のため未適用）" if ma_addback_skipped > 0 else ""
     )
 
     # ── フォールバック条件 ──
@@ -1649,8 +1672,10 @@ def estimate_fcf_from_eps(
             adj_net_income=adj_net_income, conversion_rate=conversion_rate,
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector,
-            note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M){_ma_note_suffix} → 従来FCFを使用",
-            ma_addback_excluded=ma_addback,
+            note=f"調整済み純利益がマイナス(${adj_net_income/1e6:.0f}M){_ma_note_suffix}"
+                 f"{_ma_guard_note_suffix} → 従来FCFを使用",
+            ma_addback_excluded=ma_addback_applied,
+            ma_addback_detected_but_not_applied=ma_addback_skipped,
         )
 
     # ── スキップ条件: 生FCFが多年度で安定・外れ値未検出の場合は推定を適用しない ──
@@ -1665,19 +1690,23 @@ def estimate_fcf_from_eps(
             adj_net_income=adj_net_income, conversion_rate=conversion_rate,
             estimated_fcf=raw_fcf, raw_fcf=raw_fcf,
             sector=sector,
-            note=f"生FCF安定(CV={fcf_cv:.2f}<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
-            ma_addback_excluded=ma_addback,
+            note=f"生FCF安定(CV={fcf_cv:.2f}<0.3)かつ外れ値未検出のため推定を適用せず"
+                 f"生FCFを採用{_ma_guard_note_suffix}",
+            ma_addback_excluded=ma_addback_applied,
+            ma_addback_detected_but_not_applied=ma_addback_skipped,
         )
 
     # ── FCF推定 ──
     estimated_fcf = adj_net_income * conversion_rate
 
     note = (
-        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix} × 転換率{conversion_rate:.0%}"
+        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix}{_ma_guard_note_suffix}"
+        f" × 転換率{conversion_rate:.0%}"
         f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
         f"（従来${raw_fcf/1e9:.2f}Bの{estimated_fcf/raw_fcf:.1f}倍）"
         if raw_fcf != 0 else
-        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix} × 転換率{conversion_rate:.0%}"
+        f"調整済み純利益${adj_net_income/1e9:.2f}B{_ma_note_suffix}{_ma_guard_note_suffix}"
+        f" × 転換率{conversion_rate:.0%}"
         f"[{rate_source}] = 推定FCF${estimated_fcf/1e9:.2f}B"
     )
 
@@ -1709,5 +1738,6 @@ def estimate_fcf_from_eps(
         note=note,
         divergence_ratio=round(divergence_ratio, 2),
         divergence_warning=divergence_warning,
-        ma_addback_excluded=ma_addback,
+        ma_addback_excluded=ma_addback_applied,
+        ma_addback_detected_but_not_applied=ma_addback_skipped,
     )

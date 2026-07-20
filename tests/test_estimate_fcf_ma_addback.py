@@ -103,7 +103,35 @@ class TestMaAddbackDeduction:
 
     def test_ma_addback_can_flip_to_raw_fcf_fallback(self, tmp_path):
         """控除後の調整済み純利益がマイナスに転じる場合は、生FCFへフォールバック
-        する（LITE型: 小さな調整済み純利益に大きな買収関連加算があるケース）"""
+        する（控除前drが1超のため方向性ガードは控除を許可するが、控除後に
+        マイナス転落するケース）"""
+        eps_dir = _write_eps_annual(
+            tmp_path, "TESTCO",
+            adjusted_net_income=200_000_000,
+            adjustments=[
+                {"category": "買収・統合関連", "item_name": "無形資産償却費", "amount": 250_000_000},
+            ],
+        )
+        cfg = _config_path(tmp_path, sector_rate=0.70)
+
+        result = estimate_fcf_from_eps(
+            ticker="TESTCO", raw_fcf=50_000_000, diluted_shares=100_000_000,
+            sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
+            fcf_cv=0.9, outlier_detected=True,
+        )
+        # 控除前dr = (200M×0.7)/50M = 2.8 > 1.0 のためガードは控除を許可
+        assert result.applied is False
+        assert result.method == "raw_fcf"
+        assert result.estimated_fcf == 50_000_000
+        assert result.ma_addback_excluded == 250_000_000
+        assert result.ma_addback_detected_but_not_applied == 0
+        assert result.adj_net_income < 0
+
+    def test_direction_guard_blocks_deduction_when_pre_dr_le_1(self, tmp_path):
+        """FCF-EST-DIRECTION-GUARD-1: 控除前Adj_NIベースのdrが1以下
+        （控除しなくても既に生FCFを下回っている＝過小推定側）の場合、
+        控除を適用せず元のAdj_NIをそのまま使う（LITE実例に近い比率:
+        控除前dr=0.435）"""
         eps_dir = _write_eps_annual(
             tmp_path, "TESTCO",
             adjusted_net_income=31_100_000,
@@ -118,11 +146,13 @@ class TestMaAddbackDeduction:
             sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
             fcf_cv=0.9, outlier_detected=True,
         )
-        assert result.applied is False
-        assert result.method == "raw_fcf"
-        assert result.estimated_fcf == 50_000_000
-        assert result.ma_addback_excluded == 149_700_000
-        assert result.adj_net_income < 0
+        # 控除前dr = (31.1M×0.7)/50M = 0.435 <= 1.0 のためガードが控除を阻止
+        assert result.applied is True
+        assert result.adj_net_income == 31_100_000
+        assert result.estimated_fcf == 31_100_000 * 0.70
+        assert result.ma_addback_excluded == 0
+        assert result.ma_addback_detected_but_not_applied == 149_700_000
+        assert result.divergence_ratio < 1.0
 
     def test_negative_ma_adjustment_amounts_not_subtracted(self, tmp_path):
         """買収・統合関連カテゴリの金額がマイナス（公正価値評価益等）の場合は
