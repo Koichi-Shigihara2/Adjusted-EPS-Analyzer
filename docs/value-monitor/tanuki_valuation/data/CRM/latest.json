@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 256.7,
-  "calculation_date": "2026-07-19T10:38:35+09:00",
+  "calculation_date": "2026-07-20T10:09:05+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -238,7 +238,8 @@
     "sector": "Software_System_SaaS",
     "note": "調整済み純利益$10.72B × 転換率161%[sector(Software_System_SaaS)] = 推定FCF$17.26B（従来$10.77Bの1.6倍）",
     "divergence_ratio": 1.6,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0
   },
   "software_system_reclassification": {
     "applicable": true,
@@ -288,7 +289,15 @@
     "fiscal_year": 2026,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2027Q1"
+    "net_debt_period": "2027Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": true,
@@ -400,7 +409,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -468,10 +477,20 @@
     "total_debt": 39280000000.0,
     "cash_and_equivalents": 8935000000.0,
     "short_term_investments": 2902000000.0,
+    "long_term_debt": 39280000000.0,
+    "short_term_debt": 0.0,
     "net_debt": 27443000000.0,
     "sbc_ttm": 3509000000,
     "net_debt_period": "2027Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": -1.39,
     "shares_yr_now": 956000000,
     "shares_yr_3ago": 997000000,

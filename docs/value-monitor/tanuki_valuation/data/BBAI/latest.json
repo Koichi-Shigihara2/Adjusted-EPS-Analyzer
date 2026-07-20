@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -20.3,
-  "calculation_date": "2026-07-19T02:28:08+09:00",
+  "calculation_date": "2026-07-20T10:08:23+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -232,7 +232,8 @@
     "sector": "Computer_Services",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -282,7 +283,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": false,
@@ -373,7 +382,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -440,10 +449,20 @@
     "total_debt": 16601000.0,
     "cash_and_equivalents": 100704000.0,
     "short_term_investments": 248682000.0,
+    "long_term_debt": 0.0,
+    "short_term_debt": 16601000.0,
     "net_debt": -332785000.0,
     "sbc_ttm": 23330000,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": 41.11,
     "shares_yr_now": 358801375,
     "shares_yr_3ago": 127698478,

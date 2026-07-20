@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -86.8,
-  "calculation_date": "2026-07-19T02:28:42+09:00",
+  "calculation_date": "2026-07-20T10:08:56+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -220,7 +220,8 @@
     "sector": "Electronics_General",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -270,7 +271,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q3"
+    "net_debt_period": "2026Q3",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": true,
@@ -357,7 +366,7 @@
     "alpha_uncapped": 0.17515660075391104,
     "per": 131.564,
     "per_is_forward": false,
-    "per_adjusted": 53.69,
+    "per_adjusted": 54.06,
     "peg": 0.92,
     "ps": 8.226111,
     "ev_ebitda": 42.36,
@@ -381,7 +390,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -448,10 +457,20 @@
     "total_debt": 3193781000.0,
     "cash_and_equivalents": 1592730000.0,
     "short_term_investments": 825000000.0,
+    "long_term_debt": 3184770000.0,
+    "short_term_debt": 9011000.0,
     "net_debt": 776051000.0,
     "sbc_ttm": 160239000,
     "net_debt_period": "2026Q3",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": 9.92,
     "shares_yr_now": 154755000,
     "shares_yr_3ago": 116513000,

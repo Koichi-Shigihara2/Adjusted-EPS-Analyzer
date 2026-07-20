@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -63.0,
-  "calculation_date": "2026-07-19T10:41:30+09:00",
+  "calculation_date": "2026-07-20T10:18:30+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -200,14 +200,15 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": 31679436154.626183,
+    "adj_net_income": 27079436154.626183,
     "conversion_rate": 0.7,
     "estimated_fcf": 18266500000.0,
     "raw_fcf": 18266500000.0,
     "sector": "Drugs_Pharma",
     "note": "生FCF安定(CV=0.10<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 4600000000
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -257,7 +258,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": true,
@@ -366,7 +375,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -390,10 +399,10 @@
     "ai_comment": null
   },
   "phase1_growth": 0.021800087540588143,
-  "tanuki_score": "TRIM",
+  "tanuki_score": "HOLD",
   "funda_score": 55,
   "score_comment": "割高(-63%超)、FCF黒字、売上安定成長",
-  "timing_score": 30,
+  "timing_score": 40,
   "sell_reason": null,
   "matrix": {
     "matrix": "①投資効率系",
@@ -434,10 +443,20 @@
     "total_debt": 54987000000.0,
     "cash_and_equivalents": 21688000000.0,
     "short_term_investments": 363000000.0,
+    "long_term_debt": 37527000000.0,
+    "short_term_debt": 17460000000.0,
     "net_debt": 32936000000.0,
     "sbc_ttm": 1354000000,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": -3.02,
     "shares_yr_now": 2429400000,
     "shares_yr_3ago": 2663900000,
@@ -478,9 +497,9 @@
     "recommended_g": 0.021800087540588143,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=15.0%のため中央値モデル適用",
-    "hype_phase_used": 3,
-    "hype_phase_label": "陶酔期",
-    "hype_substage_label": "陶酔期入り",
+    "hype_phase_used": 2,
+    "hype_phase_label": "期待拡大期",
+    "hype_substage_label": "期待拡大開始",
     "signals": [
       "業界平均Drugs (Pharmaceutical)(1.7%)の1.3倍以内 ✅",
       "過去実績(3yr:-0.3% / 5yr:2.7%)と整合 ✅"

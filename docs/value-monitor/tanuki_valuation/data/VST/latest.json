@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -93.2,
-  "calculation_date": "2026-07-19T02:35:50+09:00",
+  "calculation_date": "2026-07-20T10:16:03+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -195,7 +195,8 @@
     "sector": "Power_Utility",
     "note": "調整済み純利益$2.03B × 転換率70%[sector(Power_Utility)] = 推定FCF$1.42B（従来$2.14Bの0.7倍）",
     "divergence_ratio": 0.66,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -245,7 +246,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": false,
@@ -336,7 +345,7 @@
     "max_eps_reliability": "HIGH"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -403,10 +412,20 @@
     "total_debt": 19163000000.0,
     "cash_and_equivalents": 634000000.0,
     "short_term_investments": 0.0,
+    "long_term_debt": 19163000000.0,
+    "short_term_debt": 0.0,
     "net_debt": 18529000000.0,
     "sbc_ttm": 113000000,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": -6.47,
     "shares_yr_now": 345656067,
     "shares_yr_3ago": 422447074,
@@ -476,7 +495,7 @@
     "growth_model_reason": "CAGR_max=9.2%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
-    "hype_substage_label": "実体維持・バリュエーション過熱",
+    "hype_substage_label": "長期調整・実体強",
     "signals": [
       "業界平均Power(9.1%)の0.9倍以内 ✅",
       "過去実績(3yr:8.9% / 5yr:9.2%)と整合 ✅",

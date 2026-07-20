@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": 97.7,
-  "calculation_date": "2026-07-19T10:45:27+09:00",
+  "calculation_date": "2026-07-20T10:19:16+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -188,14 +188,15 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": 19002211834.520515,
+    "adj_net_income": 18995984106.41809,
     "conversion_rate": 0.7,
     "estimated_fcf": 37640800000.0,
     "raw_fcf": 37640800000.0,
     "sector": "Telecom_Services",
     "note": "生FCF安定(CV=0.03<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -245,7 +246,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": false,
@@ -313,7 +322,7 @@
     "alpha_uncapped": 1.2694932725593324,
     "per": 10.631707,
     "per_is_forward": false,
-    "per_adjusted": 9.61,
+    "per_adjusted": 9.62,
     "peg": 0.82,
     "ps": 1.3080692,
     "ev_ebitda": 7.355,
@@ -337,7 +346,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -405,10 +414,20 @@
     "total_debt": 172460000000.0,
     "cash_and_equivalents": 8366000000.0,
     "short_term_investments": 0.0,
+    "long_term_debt": 144231000000.0,
+    "short_term_debt": 28229000000.0,
     "net_debt": 164094000000.0,
     "sbc_ttm": null,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": 0.21,
     "shares_yr_now": 4231000000,
     "shares_yr_3ago": 4204000000,

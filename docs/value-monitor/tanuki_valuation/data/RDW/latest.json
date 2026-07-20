@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -52.7,
-  "calculation_date": "2026-07-19T10:43:49+09:00",
+  "calculation_date": "2026-07-20T10:13:35+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -199,7 +199,8 @@
     "sector": "Aerospace_Defense",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 0.0
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -249,7 +250,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": false,
@@ -331,7 +340,7 @@
     "dividend_yield": 0.0,
     "payout_ratio": 0.0,
     "insider_buy_count": 0,
-    "insider_sell_count": 8,
+    "insider_sell_count": 6,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-07-16",
     "analyst_vs_iv": 275.6,
@@ -340,7 +349,7 @@
     "max_eps_reliability": "LOW"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -408,10 +417,20 @@
     "total_debt": 88200000.0,
     "cash_and_equivalents": 144506000.0,
     "short_term_investments": 0.0,
+    "long_term_debt": 83369000.0,
+    "short_term_debt": 4831000.0,
     "net_debt": -56306000.0,
     "sbc_ttm": 58990000,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": 23.59,
     "shares_yr_now": 119544268,
     "shares_yr_3ago": 63324416,

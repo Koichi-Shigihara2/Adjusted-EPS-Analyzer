@@ -44,7 +44,7 @@
     }
   },
   "upside_percent": -34.9,
-  "calculation_date": "2026-07-19T10:44:46+09:00",
+  "calculation_date": "2026-07-20T10:15:55+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -194,14 +194,15 @@
   "fcf_estimation": {
     "applied": false,
     "method": "raw_fcf",
-    "adj_net_income": 1091700620.1227942,
+    "adj_net_income": 875114795.257968,
     "conversion_rate": 0.7,
     "estimated_fcf": 934900000.0,
     "raw_fcf": 934900000.0,
     "sector": "Electronics_General",
     "note": "生FCF安定(CV=0.15<0.3)かつ外れ値未検出のため推定を適用せず生FCFを採用",
     "divergence_ratio": 0.0,
-    "divergence_warning": ""
+    "divergence_warning": "",
+    "ma_addback_excluded": 216600000
   },
   "software_system_reclassification": {
     "applicable": false,
@@ -251,7 +252,15 @@
     "fiscal_year": 2025,
     "applied": true,
     "sector_guard": "none",
-    "net_debt_period": "2026Q1"
+    "net_debt_period": "2026Q1",
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null
   },
   "rice": {
     "available": true,
@@ -338,7 +347,7 @@
     "alpha_uncapped": 0.4551818157978871,
     "per": 32.161945,
     "per_is_forward": false,
-    "per_adjusted": 26.52,
+    "per_adjusted": 26.51,
     "peg": 1.4,
     "ps": 4.729358,
     "ev_ebitda": 20.411,
@@ -362,7 +371,7 @@
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-19",
+    "validated_at": "2026-07-20",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -430,10 +439,20 @@
     "total_debt": 2476300000.0,
     "cash_and_equivalents": 521400000.0,
     "short_term_investments": 0.0,
+    "long_term_debt": 2026200000.0,
+    "short_term_debt": 450100000.0,
     "net_debt": 1954900000.0,
     "sbc_ttm": null,
     "net_debt_period": "2026Q1",
     "cash_missing": false,
+    "sti_approximated": false,
+    "sti_residual_pct": null,
+    "sti_estimated_zero": false,
+    "sti_last_confirmed_zero_year": null,
+    "ltdebt_estimated_zero": false,
+    "ltdebt_last_confirmed_zero_year": null,
+    "stdebt_estimated_zero": false,
+    "stdebt_last_confirmed_zero_year": null,
     "dilution_3yr_annual_pct": -0.21,
     "shares_yr_now": 47400000,
     "shares_yr_3ago": 47700000,
