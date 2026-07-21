@@ -4187,8 +4187,13 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 追記（2026-07-21 FCF-CONVRATE①③調査完了・[[FCF-DIVERGENCE-SIGN-GUARD-1]]新規登録）:
 これにより次セッションの筆頭候補を更新する：
 ① ~~[[FCF-DIVERGENCE-SIGN-GUARD-1]]（優先度：高・新規・実装コスト低）~~
-   ✅ 2026-07-22完了。raw_fcf>0かつestimated_fcf<0の符号反転を閾値判定と
-   独立に無条件で高乖離警告扱いとするガードを追加。詳細はBACKLOG_DONE.md参照
+   ✅ 2026-07-22完了（両方向の符号不一致を検知するよう2段階で実装。
+   第1段階: raw_fcf>0×estimated_fcf<0の符号反転ガード
+   〈f6201ae04a4e242bbda2014b0f71ca2ef42911b6〉。
+   第2段階: raw_fcf<=0×estimated_fcf>0の対称ケース
+   〈99014218b676fa4e36e4babefaf9ce407cac8ba4〉。
+   回帰テスト計6件・100銘柄フローズン比較で影響なしを確認済み。
+   詳細はBACKLOG_DONE.md参照）
 ② TRUST-SUMMARY-EPIC-1の①③可視化統合設計（②と同型、実装未着手）
 
 ---
