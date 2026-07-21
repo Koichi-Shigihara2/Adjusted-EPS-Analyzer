@@ -26,7 +26,7 @@ BACKLOG.md本文に「状態: 全件対応完了・記録としてのみ残置�
 全文移動した。
 
 #### コミット
-`<COMMIT_HASH_PLACEHOLDER>`
+`6a9bc40d1e3d1068c466ff64d5605ca7a672d80c`
 
 ---
 
