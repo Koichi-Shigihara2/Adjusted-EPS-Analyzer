@@ -1733,6 +1733,16 @@ def estimate_fcf_from_eps(
             f"= 推定FCF${estimated_fcf/1e9:.1f}B（生FCF${raw_fcf/1e9:.1f}B比、符号反転）。"
             f"成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
         )
+    # FCF-DIVERGENCE-SIGN-GUARD-1（対称ケース）: raw_fcf<=0の場合はdivergence_ratioが
+    # 無条件で0.0に丸められ閾値判定（>=2.0/>=5.0）を通過できないため、
+    # 実績FCFが赤字/ゼロにも関わらず推定FCFが黒字という不一致を独立に検知する。
+    elif raw_fcf <= 0 and estimated_fcf > 0:
+        divergence_warning = (
+            f"実績FCFが赤字/ゼロにも関わらず推定FCFが黒字。"
+            f"調整済み純利益${adj_net_income/1e9:.1f}B × {conversion_rate:.0%}転換率"
+            f"= 推定FCF${estimated_fcf/1e9:.1f}B（生FCF${raw_fcf/1e9:.1f}B比）。"
+            f"実績と推定の不一致のため理論株価の信頼性に注意。"
+        )
     elif divergence_ratio >= 5.0:
         divergence_warning = (
             f"FCF推定値が生FCFの{divergence_ratio:.1f}倍。"

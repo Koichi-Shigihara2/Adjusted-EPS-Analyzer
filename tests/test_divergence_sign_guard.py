@@ -10,6 +10,11 @@ raw_fcf>0の場合のみ符号付きで計算されるため、conversion_rate�
 raw_fcf>0かつestimated_fcf<0の符号反転を、閾値判定とは独立に無条件で
 高乖離警告扱いとするガードの回帰テスト。
 
+対称ケース（raw_fcf<=0かつestimated_fcf>0）は、divergence_ratioが
+raw_fcf<=0で無条件0.0に丸められ閾値判定を通過できないため、
+「実績FCFが赤字/ゼロにも関わらず推定FCFが黒字」という不一致を
+独立に検知するガードの回帰テストも含む。
+
 実行方法:
     python -m pytest tests/test_divergence_sign_guard.py -v
 """
@@ -77,6 +82,45 @@ class TestDivergenceSignGuard:
         )
         assert result.divergence_warning != ""
         assert "符号反転" in result.divergence_warning
+
+    def test_raw_fcf_nonpositive_warns_despite_forced_zero_ratio(self, tmp_path):
+        """raw_fcf<=0（実績FCFが赤字/ゼロ）・estimated_fcf>0（推定FCFは黒字）の
+        対称ケースでは、divergence_ratioが無条件0.0に丸められ閾値判定
+        （>=2.0/>=5.0）を通過できないにも関わらず、divergence_warningが
+        生成されること（raw_fcf<=0盲点の見逃しパターンの再現）"""
+        eps_dir = _write_eps_annual(tmp_path, "TESTCO", adjusted_net_income=100_000_000)
+        cfg = _config_path(tmp_path, sector_rate=0.70)
+
+        result = estimate_fcf_from_eps(
+            ticker="TESTCO", raw_fcf=-5_000_000, diluted_shares=100_000_000,
+            sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
+            fcf_cv=0.9, outlier_detected=True,
+        )
+
+        assert result.applied is True
+        assert result.estimated_fcf > 0
+        assert result.raw_fcf <= 0
+        assert result.divergence_ratio == 0.0, (
+            "raw_fcf<=0では無条件0.0に丸められることが、旧ロジックの見逃し条件"
+        )
+        assert result.divergence_warning != ""
+        assert "実績FCFが赤字" in result.divergence_warning
+        assert "符号反転" not in result.divergence_warning
+
+    def test_raw_fcf_zero_also_warns(self, tmp_path):
+        """raw_fcf=0（境界値）でもestimated_fcf>0なら警告が生成されること"""
+        eps_dir = _write_eps_annual(tmp_path, "TESTCO", adjusted_net_income=100_000_000)
+        cfg = _config_path(tmp_path, sector_rate=0.70)
+
+        result = estimate_fcf_from_eps(
+            ticker="TESTCO", raw_fcf=0, diluted_shares=100_000_000,
+            sector="TestSector", eps_data_dir=eps_dir, config_path=cfg,
+            fcf_cv=0.9, outlier_detected=True,
+        )
+
+        assert result.applied is True
+        assert result.divergence_warning != ""
+        assert "実績FCFが赤字" in result.divergence_warning
 
     def test_positive_ratio_below_threshold_still_no_warning(self, tmp_path):
         """符号反転がなく、乖離率が2.0未満の通常ケースでは、
