@@ -4215,7 +4215,18 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
    〈99014218b676fa4e36e4babefaf9ce407cac8ba4〉。
    回帰テスト計6件・100銘柄フローズン比較で影響なしを確認済み。
    詳細はBACKLOG_DONE.md参照）
-② TRUST-SUMMARY-EPIC-1の①③可視化統合設計（②と同型、実装未着手）
+② TRUST-SUMMARY-EPIC-1の①③②対応（2026-07-22調査で「②と同型に統合」
+   という前回方針を撤回、3件に分けて設計し直す）:
+   - ①: FCFEstimationResultに`rate_is_sector_default`等のフラグを追加し、
+     機械的に検知・表示する設計（固定リスト不要）
+   - ③: ticker単位の表示ではなく、fcf_conversion_config.json側に
+     セクターカテゴリ単位の開発者向けメタ情報として持たせる設計
+     （画面表示は変更しない）
+   - ②表示不一致バグ（新規発見）: report.txtはfcf_estimation.applied=True
+     前提でネストされているが、stock.htmlはticker集合の所属のみで判定し
+     applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
+     食い違う。独立バグとして修正要（report.txt側の条件に合わせる方向を推奨）
+   いずれも実装未着手
 
 ---
 
