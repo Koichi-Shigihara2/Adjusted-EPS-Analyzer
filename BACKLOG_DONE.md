@@ -4,6 +4,54 @@
 
 ## 2026-07-22（完了）
 
+### ✅ [FCF-DIVERGENCE-SIGN-GUARD-1] raw_fcf<=0側の対称ケース対応（追補）
+**優先度:** 高
+**分類:** DCF信頼性判定ロジック / バグ
+**完了日:** 2026-07-22
+
+#### 内容
+[[FCF-DIVERGENCE-SIGN-GUARD-1]]本体で「raw_fcf>0かつestimated_fcf<0」の
+符号反転ガードを追加した際、対称ケース「raw_fcf<=0かつestimated_fcf>0」
+（実績FCFが赤字/ゼロにも関わらず推定FCFが黒字）は、divergence_ratioが
+raw_fcf<=0で無条件0.0に丸められ閾値判定（>=2.0/>=5.0）を通過できないため
+未対応のまま残っていた（追加調査で発見・報告済み、詳細は上記エントリ内
+「raw_fcf<=0ケースに関する追加調査」参照）。
+
+追加調査により、raw_fcf<=0は現行のrevenue_floor設計
+（`adjust_fcf()`、latest_revenue×8%のフロア）が`latest_revenue>0`の
+限り必ず正値化するため、`latest_revenue<=0`（pre-revenue企業）でのみ
+発生しうる構造であること、および現行監視銘柄100件（applied=True/False
+問わず）中0件が該当することを確認済み。
+
+#### 対応内容
+`src/value/tanuki_valuation/calculator/adjustments.py`の
+`estimate_fcf_from_eps()`に、前回の符号反転ガードと対称な
+`raw_fcf <= 0 and estimated_fcf > 0`条件を独立追加。該当時は
+divergence_ratioの値（常に0.0）に関わらず無条件で警告を生成。
+メッセージは「実績FCFが赤字/ゼロにも関わらず推定FCFが黒字」とし、
+前回の符号反転警告（「符号反転を検出」）と文言で区別できるようにした。
+divergence_ratio自体は仕様通りraw_fcf<=0で0.0のまま変更していない。
+
+#### 回帰テスト
+`tests/test_divergence_sign_guard.py`に2件追加（計6件）:
+- raw_fcf<0・estimated_fcf>0で、divergence_ratio=0.0のままでも
+  divergence_warningが生成され「実績FCFが赤字」を含み「符号反転」を
+  含まないこと
+- raw_fcf=0（境界値）でも同様に警告が生成されること
+
+`python -m pytest tests/ -q`: 442 passed, 2 failed（既知の
+[[TEST-STALE-IV-1]] MSFT/NVDA、本修正と無関係）。新規失敗なし。
+
+#### 100銘柄フローズン入力比較
+`fcf_estimation`を持つ全100銘柄（applied=True/False問わず）を新旧ロジックに
+再投入して比較 → **変化0件**（現行データにraw_fcf<=0が存在しないため
+想定通り無影響）。
+
+#### コミット
+`99014218b676fa4e36e4babefaf9ce407cac8ba4`
+
+---
+
 ### ✅ [FCF-DIVERGENCE-SIGN-GUARD-1] divergence_ratioの符号反転検知漏れ修正
 **優先度:** 高
 **分類:** DCF信頼性判定ロジック / バグ
