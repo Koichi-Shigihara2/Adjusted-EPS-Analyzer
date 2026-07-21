@@ -334,6 +334,23 @@ report_consistency_check.pyのCHECK-22（fyタグ衝突検知）はこの
 全量再カウントが別途必要になる。
 
 #### ステージ1（値の確定）完了（2026-07-16）
+**背景**: `common/sec_data/parser.py`の`form == "10-K"`完全一致フィルタにより、
+10-K/A（訂正申告）が全105銘柄中30銘柄で候補プールから完全除外されていた。
+また同一(tag, end_date)が複数エントリで競合する場合、filed日を一切参照せず
+「配列内で先に処理された方が勝つ」（実質的に古い方が残りやすい）ロジックに
+なっていた。
+
+**対応の技術的決定**: `_collect_own_data_annual`・`_extract_values_merged`・
+`_extract_single_key`のform判定を`"10-K"`→`("10-K","10-K/A")`に拡張したが、
+`_detect_fiscal_end_month`は対象外とした（10-K/Aを含めると最頻会計年度末月の
+検出結果が変わりRCATで年度バケツ計算全体に波及する回帰を発見したため、
+ステージ2の領域と判断し据え置き）。filed日タイブレークは「競合エントリの
+少なくとも一方がform=="10-K/A"」の場合に限定し、10-K/A非関与の通常の比較
+年度再掲同士（discontinued operations区分変更等で数字の意味が変わりうる）は
+変更しない設計とした（AAPL/HON等の実データ検証で無条件適用の危険性を発見・
+対処。実装過程で一度は無条件適用を試み509件の誤った差分を検出→設計を修正し
+185件に収束させた）。
+
 10-K/A候補プール化・filed日タイブレーク・出所メタデータサイドカー
 （{bs,pl,cf,shares,other}_provenance）を実装（コミット`4587ee09e`）。
 全105銘柄再生成（コミット`ba9927676`）し、事前検証の185件・18銘柄
@@ -416,7 +433,8 @@ CHAT_RULESの「検証結果が依頼の前提と乖離した場合の一時停�
   Intrinsic_Value_Per_Shareは AVGO +10.6%・JNJ +2.8%・TDY -1.4%
   変化（他13銘柄は不変）
 - pytest 325 passed（既知2件除く、新規16件のアンカー日ウィンドウ境界
-  テストを含む）・report_consistency_check.py NG=0/WARN=41（変更前と同一）
+  テストを`tests/test_fiscal_year_anchor_window.py`に含む）・
+  report_consistency_check.py NG=0/WARN=41（変更前と同一）
 
 **未解決のまま残る点（ステージ3以降）:**
 - RCAT型決算期変更検知（企業が実際に決算期を変更したケースと、単なる
@@ -480,7 +498,10 @@ CHAT_RULESの一時停止ルールに従い報告・設計変更の承認を得�
   おり実害なし
 - 全105銘柄で新旧比較（annual_*.jsonの値そのもの）: **差分0件**を確認
   （fy_tagサイドカー追加のみで既存の値・TANUKI SCORE分類には一切影響しない）
-- pytest 337 passed（既知2件除く、新規12件のfy_tag裏取りテストを含む）
+- pytest 337 passed（既知2件除く、新規12件のfy_tag裏取りテストを含む。
+  内訳: `tests/test_fy_tag_provenance.py`〈fy_tagサイドカー記録2件・
+  不一致検知4件・CHECK-22非干渉1件〉、`tests/test_report_consistency_check.py`
+  〈WARN-23検知4件・独立性確認1件〉）
 - report_consistency_check.py: NG=0/WARN=51（stage2完了時点の41件から
   +10、影響10銘柄それぞれにWARN-23が1件ずつ追加。NVDA/CAKEは事前登録済み
   のため確認済み表示、残り8銘柄は🆕未確認として表示される）
@@ -3157,232 +3178,6 @@ update.pyから呼ばれた形跡はあるものの、それ以降は本番か�
   （①独立実装4ファイルのreader.py統合は同日2026-07-17に別途完了済み）
 - [[TTM-STOCK-FIELDS-DEAD-1]]（本項目で発見・新規分離登録、優先度未定）
 
-
-### ✅ [ARCH-DATA-1] ステージ3「fyタグ裏取り」+ 3段階設計全完了（2026-07-17完了）
-**分類:** アーキテクチャ / SECデータ正規化
-**登録日:** 2026-07-17
-**完了日:** 2026-07-17
-**発見:** ステージ2完了時の事前調査（読み取り専用）を経て実装依頼
-
-#### 背景
-ステージ2で計算した年度ラベル（`determine_fiscal_year()`のアンカー日
-ウィンドウ方式による計算結果）を、企業が申告したXBRLの`fy`タグと
-突き合わせて食い違いを検出する副次チェックを新設する。既存のCHECK-22
-（`fy_collision_log.json`、同一fyタグへの複数本人end_date競合）は
-「fyタグは単一だが値の年度バケツ配置自体がfyタグと異なる」CDNS型
-（WMT型）を構造的に検知できないことが事前調査で判明していた。
-
-#### 対応内容
-- `parser.py`: `{bs,pl,cf,shares,other}_provenance`サイドカーに
-  生XBRL `fy`タグ値を`fy_tag`フィールドとして追加（既存の
-  accn/filed/is_own_dataへの追加のみ、破壊的変更なし）。
-  `_collect_own_data_annual`の戻り値を`(val, end_date, accn, filed,
-  raw_fy_tag)`の5要素に拡張し、fyタグ衝突の自然分離ケースでも
-  本来の生タグを追跡できるようにした
-- `_extract_values_merged`/`_extract_values_best_candidate`に
-  `fy_mismatches_out`引数を追加し、`fy_tag != 年度バケツキー`の
-  エントリを検出して`_save_fy_tag_mismatch_log()`（`fy_collision_log`と
-  同パターン）で`fy_tag_mismatch_log.json`に記録
-- `report_consistency_check.py`にCHECK-23/WARN-23を新設（CHECK-22とは
-  独立した別軸）
-- `config/warn_acknowledged.json`にWARN-23のNVDA・CAKEを一次情報
-  検証済みとして事前登録
-- テスト12件新設（`tests/test_fy_tag_provenance.py`: fy_tagサイドカー
-  記録2件・不一致検知4件・CHECK-22非干渉1件、`tests/
-  test_report_consistency_check.py`にWARN-23検知4件・独立性確認1件）
-
-#### 設計変更の経緯（is_own_data=False側の除外）
-初版実装ではfyタグ不一致を`is_own_data`の真偽に関わらず全件記録し、
-`is_own_data=True`を「要確認」・`False`を「info」とする2段階設計
-だったが、全105銘柄検証で**4,434件・105/105銘柄**という実用に耐えない
-ノイズになることが判明した。`is_own_data=False`側の大半は比較年度
-再掲エントリ（例: XOMの2008年値が2011年10-Kに比較年度として再掲載）
-由来であり、XBRLの`fy`タグは「その数値がどの10-Kに載っていたか」という
-filing側の属性でしかなく、比較年度再掲エントリでは載っていた10-Kの年と
-数値が表す期間が一致しないのが正常仕様（企業の申告ミスとは無関係）と
-判明した。CHAT_RULESの一時停止ルールに従い一度報告・設計変更の承認を
-得た上で、`is_own_data=True`（本人データ自身のfyタグが実際に採用されて
-しまっているケース）のみに検知対象を限定し、severity区分（要確認/info）
-を撤去して単一区分に簡素化した。
-
-#### 検証結果
-- 全105銘柄ネットワーク未使用検証（値の新旧比較）: **差分0件**
-  （fy_tagサイドカー追加のみで既存の値・TANUKI SCORE分類には無影響）
-- `is_own_data=True`限定後のWARN-23検知: **281件・10銘柄**
-  （ADSK/AVAV/CAKE/COHR/CRM/FCX/FICO/HON/NVDA/WMT）。
-  (ticker, end_date, fy_tag, computed_year)で重複排除すると
-  **16件のdistinctイベント**まで縮小（1イベントあたり平均12〜26
-  フィールドに重複計上。同一10-Kから抽出される複数フィールドが
-  同じ期間ズレを共有するため）
-- NVDA・CAKEの2件を一次情報で検証済み: NVDA（end=2013-01-27の売上
-  $4.28BはNVIDIA自身が「fiscal 2013」と公表、XBRL fyタグは2012と誤り）・
-  CAKE（end=2023-01-03はCheesecake Factory自身が「Fourth Quarter of
-  Fiscal 2022」と公表、XBRL fyタグは2023と誤り）。両者ともXBRL fyタグ
-  側の誤り（真陽性）と確認したが、`_own_override_is_safe()`の安全弁に
-  よりcomputed_year経由の正しい値が本番データで既に採用されており実害なし
-- pytest 337 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く）
-- report_consistency_check.py: NG=0/WARN=51（ステージ2完了時点の41件
-  から+10、影響10銘柄にWARN-23が1件ずつ追加。NVDA/CAKEは事前登録済みで
-  確認済み表示、残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）は
-  🆕未確認として表示される）
-
-#### 3段階設計（値の確定→年度ラベル計算→裏取り）が全完了
-
-ARCH-DATA-1本体が計画した年次データ正規化の3段階設計を全て実装完了。
-
-#### 残課題
-- RCAT型決算期変更検知（企業の実際の決算期変更と52/53週の測定誤差の
-  区別）は引き続き未着手
-- 残課題④のBS項目（instant fact）本人データ判定除外は未解消のまま
-  （BS項目はstart日を持たないため`_collect_own_data_annual`の対象外。
-  ステージ3の裏取りチェック自体はBS項目にも及ぶが、本人データ判定の
-  拡張は別途必要）
-- WARN-23の281件→16件イベントという重複計上は(ticker, end_date)単位の
-  集約表示に改善する余地があるが、今回のスコープ外として報告のみに留めた
-- 残り8銘柄（ADSK/AVAV/COHR/CRM/FCX/FICO/HON/WMT）のWARN-23一次情報検証は
-  未実施（今回のスコープは検知基盤の実装であり、全銘柄の一次情報確認までは
-  含めない）
-
-
-### ✅ [ARCH-DATA-1] ステージ2「年度ラベルの計算」アンカー日ウィンドウ方式（2026-07-17完了）
-**分類:** アーキテクチャ / SECデータ正規化
-**登録日:** 2026-07-17
-**完了日:** 2026-07-17
-**発見:** ステージ1完了時の残課題（`determine_fiscal_year()`の月比較方式の欠陥）
-に対する事前調査（読み取り専用）を経て実装依頼
-
-#### 背景
-`common/sec_data/utils.py::determine_fiscal_year()`は「end_date.month >
-fiscal_end_month」の片方向月比較のみで年度を判定しており、①12月決算企業
-（fiscal_end_month=12）ではmonth>12が恒常的にFalseとなり年またぎ補正が
-原理的に機能しない、②52/53週企業の決算日前後変動・月境界またぎを日単位で
-扱えない、という2つの欠陥を持っていた（FY52WEEK-BUCKET-MISPLACE-1で判明）。
-
-#### 対応内容
-- `common/sec_data/utils.py`に`detect_fiscal_end_month()`
-  （parser.py・extract_key_facts.pyに分散していた会計年度末月検出ロジックを
-  統一。parser.py側の「10-K完全一致・10-K/A除外」を正本採用）と
-  `detect_fiscal_anchor_date()`（本人10-K annualエントリの決算アンカー日
-  〈月+日〉を検出）を新設
-- `determine_fiscal_year()`をアンカー日ウィンドウ方式に書き換え。
-  end_date.yearを中心に[year-1,year,year+1]の3候補年度でアンカー日との
-  日数差を比較し最小の年度を採用。2/29アンカーの非うるう年フォールバック、
-  最小日数差60日超のWARN+月のみ比較フォールバックの安全弁を実装
-- `parser.py::_own_override_is_safe()`の条件2（`no_crossing_needed`事前
-  フィルタ、12月決算企業で恒常的にTrueとなり機能しない欠陥があった）を
-  廃止し、統一版`determine_fiscal_year()`の1条件に統一
-- `extract_key_facts.py`の独自会計年度末月検出実装（旧
-  `determine_fiscal_year_end()`、10-K/Aを含むstartswith判定で
-  parser.py側とは別基準だった）を削除し、統一関数を参照するよう変更
-- 呼び出し元8箇所（parser.py 4箇所・extract_key_facts.py 4箇所）に
-  anchor_month/anchor_dayを追加
-
-#### JNJ/TDY型の追加発見（実装中の検証で判明・CHAT_RULES一時停止ルール適用）
-`detect_fiscal_anchor_date()`初版（(月,日)完全一致の最頻値方式）で
-105銘柄ネットワーク未使用比較を実施した際、JNJ・TDY（決算日が12月末〜
-1月頭を往復する52/53週企業）で企業自身のfyタグと矛盾する誤判定を新たに
-発見した（JNJのend=2013-12-29は自社fy=2013申告だが、アンカーが(1,1)と
-検出されたため2014と誤判定）。BS項目（instant fact）は本人データ上書きの
-安全網対象外（残課題④/FY52WEEK-BS-INSTANT-FACT-1系統、未解消）のため、
-この誤判定がそのまま年度ラベルに反映されてしまうことを確認した。
-
-原因はDec側とJan側に得票が分散し、たまたまJan側の1点が単独最多になった
-こと。年境界をまたぐ循環距離（±7日）でクラスタリングし、最大クラスタの
-中央値（実在しない場合はクラスタ内最頻値）を採用する方式
-（`_cluster_fiscal_anchor_candidates()`新設）に変更して解消した。
-この経緯（依頼時に想定していなかった設計変更が必要と判明）を受け、
-一度実装を停止してチャット側Claudeに報告し、修正方針の承認を得てから
-再開した。
-
-#### 検証結果
-- 全105銘柄ネットワーク未使用新旧比較: 830件・16銘柄
-  （ADBE/AVGO/CAKE/CDNS/CEG/DELL/ELF/IOT/JNJ/KLAC/LITE/MRVL/MSCI/
-  RDW/TDY/WST）に差分。CDNS FY2015のtotal_assets $3,209,556,000→
-  **$2,351,015,000**・revenue $1,580,932,000→**$1,702,091,000**が
-  正しく是正されたことを一次情報（company_facts.json内own data・
-  reportDate照合）で確認
-- AVGOの真のFY2025値がbucket 2026（存在しない年度）に誤配置されていた
-  問題も是正。是正に伴い`common/sec_data/data/AVGO/annual_2026.json`が
-  化石ファイル化したため手動削除（`save_parsed_data()`に古い年度ファイルの
-  自動削除ロジックがない既知の構造的問題〈IOT/AVGO/MRVLの化石ファイル
-  問題と同型〉に起因）
-- JNJ/TDYはクラスタリング方式変更後、企業自身のfyタグと一致する年度に
-  是正されることを確認。修正前の(1,1)アンカー版で発生していた
-  「ほぼ全年度が1年ずつシフトする」広範な誤判定は解消され、52/53週の
-  年境界越えが実際に発生する年度のみに是正範囲が限定された
-- 影響16銘柄でTANUKI VALUATIONを再生成（`--skip-risk`）。TANUKI SCORE
-  分類（BUY/WATCH/HOLD/TRIM/GROWTH_PREMIUM/SELL/PASS）は全銘柄で不変。
-  Intrinsic_Value_Per_ShareはAVGO +10.6%・JNJ +2.8%・TDY -1.4%変化
-  （他13銘柄は不変）
-- pytest 325 passed（既知2件MSFT/NVDA・TEST-STALE-IV-1除く。新規
-  `tests/test_fiscal_year_anchor_window.py`16件のアンカー日ウィンドウ
-  境界テストを含む）
-- report_consistency_check.py: NG=0/WARN=41（変更前と同一。新規WARN
-  発生なし）
-
-#### 残課題
-ステージ3（fyタグ裏取り強化）は未着手。RCAT型決算期変更検知（企業が
-実際に決算期を変更したケースと52/53週の測定誤差の区別）はステージ2の
-スコープ外で未着手。残課題④のBS項目（instant fact）本人データ判定除外は
-未解消のまま（ステージ3または別途の安全網設計が必要）。詳細はBACKLOG.md
-[[ARCH-DATA-1]]「ステージ2完了」参照（ARCH-DATA-1本体は継続中のため
-BACKLOG.mdに残置）。
-
----
-
-## 2026-07-16（完了）
-
-### ✅ [ARCH-DATA-1] ステージ1「値の確定」10-K/A候補プール化・filed日タイブレーク・出所メタデータ（2026-07-16完了）
-**分類:** アーキテクチャ / SECデータ正規化
-**登録日:** 2026-07-16
-**完了日:** 2026-07-16
-**発見:** [[FY52WEEK-BS-INSTANT-FACT-1]]事前調査②（`_own_override_is_safe`安全弁欠陥調査）から、
-年次データ正規化を「①値の確定 ②年度ラベル計算 ③fyタグ裏取り」の3段階で
-再設計する方針を確定し、[[ARCH-DATA-1]]へ統合。今回はそのうちステージ1のみを実装
-
-#### 背景
-`common/sec_data/parser.py`の`form == "10-K"`完全一致フィルタにより、10-K/A（訂正申告）が
-全105銘柄中30銘柄で候補プールから完全除外されていた。また同一(tag, end_date)が複数エントリで
-競合する場合、filed日を一切参照せず「配列内で先に処理された方が勝つ」（実質的に古い方が
-残りやすい）ロジックになっていた。
-
-#### 対応内容
-- `_collect_own_data_annual`・`_extract_values_merged`・`_extract_single_key`のform判定を
-  `"10-K"`→`("10-K","10-K/A")`に拡張（`_detect_fiscal_end_month`は対象外。10-K/Aを含めると
-  最頻会計年度末月の検出結果が変わりRCATで年度バケツ計算全体に波及する回帰を発見したため、
-  ステージ2の領域と判断し据え置き）
-- filed日タイブレークは「競合エントリの少なくとも一方がform=="10-K/A"」の場合に限定。
-  10-K/A非関与の通常の比較年度再掲同士（discontinued operations区分変更等で数字の意味が
-  変わりうる）は変更しない設計とした（AAPL/HON等の実データ検証で無条件適用の危険性を発見・
-  対処。実装過程で一度は無条件適用を試み509件の誤った差分を検出→設計を修正し185件に収束させた）
-- `{bs,pl,cf,shares,other}_provenance`サイドカーを新設。各値の採用accn・filed日・
-  reportDate一致有無(is_own_data)を記録する追加キーのみで、既存スキーマは変更しない
-
-#### 検証結果
-- 全105銘柄ネットワーク未使用新旧比較で185件・18銘柄
-  （AAPL/ASTS/CELH/CPRT/DOCN/IONQ/JOBY/LITE/LYFT/QBTS/RDW/RKLB/RMBS/SOFI/SPIR/TSLA/VRT/WST）
-  の差分を確認し、Apple 2010年サブスクリプション会計変更・2021年SPACワラント会計是正
-  （IONQ/JOBY/RDW/RKLB/SOFI/SPIR/ASTS/VRT）・Lyft再保険契約誤り・Rambus収益認識誤り・
-  D-Wave(QBTS) SR&ED未収税額控除誤り等、実際に公表されている訂正事象と整合することを
-  一次情報（SEC EDGAR・WebSearch）で確認
-- 全105銘柄再生成後の値差分: 185件・18銘柄で事前検証と完全一致（差分0件）
-- pytest 309 passed / 2 known failed（MSFT/NVDA、TEST-STALE-IV-1、無関係）
-- report_consistency_check.py: NG=0 / WARN=41（再生成前と同一）
-- 5年トレーリング指標への影響が見込まれたDOCN/LYFT/QBTS/SPIRを個別確認。DOCN/LYFT/QBTSは
-  ROE平均が変化した（QBTSはroe_years_used 4→3、FY2021 stockholders_equity黒字→債務超過転換
-  により該当年度がROE平均から除外）が、いずれもalpha=0.0000床打ちによりIntrinsic_Value・
-  TANUKI SCORE分類とも完全不変。SPIRのみR&D資本化経路（FY2023研究開発費訂正）の影響で
-  Intrinsic_Value_BASEが$29.44→$31.68（+7.6%）に変化したが、分類（PASS）は維持
-
-#### コミット
-- `4587ee09e`: コード修正（`parser.py`）
-- `ba9927676`: 全105銘柄SECデータ再生成・17銘柄TANUKI VALUATION再生成
-
-#### 残課題
-ステージ2（年度ラベル計算のアンカー日ウィンドウ化・RCAT型決算期変更検知）・
-ステージ3（fyタグ裏取り強化）は未着手。CDNS FY2015のtotal_assets/revenue誤りは
-ステージ1の対象外のため未解消のまま（想定通り、ステージ2待ち）。詳細は
-BACKLOG.md [[ARCH-DATA-1]]「残課題④」参照（ARCH-DATA-1本体は継続中のためBACKLOG.mdに残置）。
 
 ---
 
