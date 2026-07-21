@@ -2,6 +2,75 @@
 
 ---
 
+## 2026-07-22（完了）
+
+### ✅ [FCF-DIVERGENCE-SIGN-GUARD-1] divergence_ratioの符号反転検知漏れ修正
+**優先度:** 高
+**分類:** DCF信頼性判定ロジック / バグ
+**登録日:** 2026-07-21
+**完了日:** 2026-07-22
+
+#### 内容
+`divergence_ratio`（estimated_fcf/raw_fcf）がraw_fcf>0の場合のみ符号付きで
+計算されるため、conversion_rateが負値等の理由でestimated_fcfの符号が
+raw_fcfと反転すると、divergence_ratioの絶対値が小さいまま（例: -0.9）
+既存の閾値判定（>=2.0/>=5.0）を満たさず、divergence_warningが生成されない
+まま素通りする問題があった。FCF-CONVRATE①③調査時のVSTシミュレーションで
+発見（divergence_ratio=-0.45が閾値2.0を満たさず無警告になることを確認）。
+
+divergence_warningが空だと、DCF_Reliability Policy Bの`eps_invalid`判定
+（`pipeline.py:465`）・stock.html/admin.htmlの警告表示の両方が「無警告＝
+正常」として素通りする構造だったため、符号反転時にIVが無警告でマイナス値
+になり得るリスクがあった。
+
+#### 対応内容
+`src/value/tanuki_valuation/calculator/adjustments.py`の`estimate_fcf_from_eps()`
+（divergence_ratio/divergence_warning生成箇所、旧1723-1738行目付近）に、
+既存の閾値判定（>=2.0中乖離／>=5.0高乖離）とは独立した条件として、
+`raw_fcf > 0 and estimated_fcf < 0`（符号反転）を追加。該当時は
+divergence_ratioの絶対値に関わらず無条件で高乖離警告扱いとし、
+メッセージに「符号反転を検出」の文言を含めて既存の高乖離警告と区別できる
+ようにした。
+
+#### 消費箇所への影響確認
+- `pipeline.py:465` `_calc_dcf_reliability_policy_b()`の`eps_invalid = bool(fcf_est.get("divergence_warning"))`:
+  符号反転ケースをシミュレーションし、`eps_invalid=True`→Policy B判定
+  `LOW`に正しく倒れることを確認済み
+- `stock.html:799`/`admin.html:2647`: いずれも`divergence_warning`の
+  非空判定（truthy check）のみで、文言をregexで再パースする箇所は
+  存在しないことを事前確認済み。新しい警告文言もそのまま黄色バッジ・
+  警告リストに反映される
+
+#### 回帰テスト
+`tests/test_divergence_sign_guard.py`新規追加（4件）:
+- 符号反転時（raw_fcf>0, estimated_fcf<0）にdivergence_ratioの絶対値が
+  閾値未満でもdivergence_warningが非空になり「符号反転」を含むこと
+- 符号反転なし・閾値未満（従来通り無警告）の回帰確認
+- 符号反転なし・中乖離（>=2.0）/高乖離（>=5.0）が従来通り警告し、
+  かつ「符号反転」の文言を含まないことの回帰確認
+
+`python -m pytest tests/ -q`: 440 passed, 2 failed（既知の[[TEST-STALE-IV-1]]
+MSFT/NVDA、本修正と無関係、修正前から存在）。新規失敗なし。
+
+#### 59銘柄（fcf_estimation.applied=True）フローズン入力比較
+既存のlatest.jsonをそのまま新旧ロジックに再投入して比較。59銘柄全件で
+`raw_fcf>0 and estimated_fcf<0`に該当する銘柄は0件のため、
+divergence_warningの分類（無警告/中乖離/高乖離）は全銘柄で変化なし
+（本番のconversion_rate設定に負値が存在しないため、今回のガード追加は
+現行データには影響しない設計通りの結果）。
+
+#### raw_fcf<=0ケースに関する追加調査（今回のスコープ外・報告のみ）
+`divergence_ratio = estimated_fcf / raw_fcf if raw_fcf > 0 else 0.0`の
+`raw_fcf <= 0`分岐（無条件で0.0に丸められ無警告になる別の盲点）は、
+今回のガードでは対応していない。現行59銘柄では`raw_fcf<=0`に該当する
+ケースは0件（2026-07-22時点）で実害未発現だが、構造的な盲点として
+残っている。別タスクとして起票が必要（BACKLOG.md未登録、次回検討）。
+
+#### コミット
+`f6201ae04a4e242bbda2014b0f71ca2ef42911b6`
+
+---
+
 ## 2026-07-20（完了）
 
 ### ✅ [ARCH-DATA-1] SECデータ正規化レイヤーの強化
