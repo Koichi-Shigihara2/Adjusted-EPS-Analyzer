@@ -607,7 +607,10 @@ normalizer.py/quarterly.py/data_fetcher.pyに含まれない）のため、対�
 
 #### 着手条件
 なし。Phase 1・Phase 2a・Phase 2b-1・Phase 2b-2・Phase 3前提整理・Phase 3aは完了。
-Phase 3b（4ファイル統合・規約C/D）は次回セッションで設計・着手する。
+**Phase 3b（[[GATE2-PHASE3B-1]]、4ファイル統合・規約C/D）も2026-07-17〜18に
+①②③-a③-b全項目完了し、BACKLOG_DONE.mdへ全文移動済み（2026-07-22訂正）。**
+未着手として残るのはPhase 4（ゲート3: 全計算式のゴールデンテスト・性質テスト
+整備、現状ほぼ手つかず）・Phase 5（[[TRUST-SUMMARY-EPIC-1]]の再評価）のみ。
 ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階設計）
 とは対象領域が重複しないため、並行して進めて支障ない。
 
@@ -950,8 +953,18 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 **新規発見: divergence_warningの符号反転検知漏れ**（重要度：高、
 [[FCF-DIVERGENCE-SIGN-GUARD-1]]として別途新規登録、下記参照）
 
-**①③の今後の扱い**: 個別の根本修正は見送り、[[FCF-CONVRATE②]]と同型の
-構造的限界として可視化統合する方向で次回検討する（実装はまだしない）。
+**①③の今後の扱い（2026-07-22訂正）**: 「②と同型に統合」という上記の
+方針は撤回し、3件に分けて設計し直す:
+- ①: FCFEstimationResultに`rate_is_sector_default`等のフラグを追加し、
+  機械的に検知・表示する設計（固定リスト不要）
+- ③: ticker単位の表示ではなく、fcf_conversion_config.json側に
+  セクターカテゴリ単位の開発者向けメタ情報として持たせる設計
+  （画面表示は変更しない）
+- ②表示不一致バグ（新規発見）: report.txtはfcf_estimation.applied=True
+  前提でネストされているが、stock.htmlはticker集合の所属のみで判定し
+  applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
+  食い違う。独立バグとして修正要
+いずれも実装未着手。詳細は「次セッション着手順序」欄参照。
 
 **過去記録の不正確性（新規発見）**: [[FCF-CONVRATE-DESIGN-LIMIT-1]]
 （2026-07-14完了記録）の「oifcff.xlsとの突合でEBIT(1-t)/Revenue比率を
@@ -2172,19 +2185,6 @@ sec_ctrl_fetcher.pyを拡張するか別スクリプトを作成するか設計�
 TAIL-CTRL-TRANS-1（2026-06-27完了）の構造を踏襲する。
 
 ---
-
-### [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
-**優先度:** 低〜中（調査してから判断）
-**分類:** データ品質 / 外部AIレビュー
-**状態:** 全件対応完了・記録としてのみ残置（次回同種レビュー時の参照用）
-
-#### 案件一覧（全件✅完了済み）
-| 銘柄 | 指摘内容 | 対応状況 |
-|------|---------|---------|
-| SCCO | EPS quarterly 株数（163.7M）vs 実際（821M）が 5.1x 乖離 | 修正完了: CIK誤登録修正 + ProfitLossフォールバック追加 |
-| NOW | adj_eps が SEC XBRL 値と乖離している疑い | 修正完了: 5:1株式分割未対応をBUG-NOW-SPLIT-1として修正 |
-| MRVL | EPS 四半期データに異常値の可能性 | 修正完了: DTA認識NIをBUG-LYFT-EPS-1と同類処理で対応 |
-| LMT | Q2 2025 EPS異常値、Adjustment_Delta=$0.0000 | 調査完了: プログラム損失はLIMITATION-1として記録、コード修正不要 |
 
 ### [EPS-1] アナリスト予想EPS四半期値の取得
 - 現状: Next_Quarter_EPSはN/A（Alpha Vantage無料枠の制約）
