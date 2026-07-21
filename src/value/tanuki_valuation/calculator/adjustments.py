@@ -1723,7 +1723,17 @@ def estimate_fcf_from_eps(
     # ── 乖離率の計算と警告生成 ──
     divergence_ratio = estimated_fcf / raw_fcf if raw_fcf > 0 else 0.0
     divergence_warning = ""
-    if divergence_ratio >= 5.0:
+    # FCF-DIVERGENCE-SIGN-GUARD-1: raw_fcf>0かつestimated_fcf<0の符号反転は、
+    # divergence_ratioの絶対値が小さくても（例: -0.45）質的に致命的な乖離のため、
+    # 閾値判定（>=2.0/>=5.0）とは独立に無条件で高乖離警告扱いとする。
+    if raw_fcf > 0 and estimated_fcf < 0:
+        divergence_warning = (
+            f"FCF推定値の符号反転を検出。"
+            f"調整済み純利益${adj_net_income/1e9:.1f}B × {conversion_rate:.0%}転換率"
+            f"= 推定FCF${estimated_fcf/1e9:.1f}B（生FCF${raw_fcf/1e9:.1f}B比、符号反転）。"
+            f"成長急拡大期またはSBC過大の可能性。理論株価の信頼性に注意。"
+        )
+    elif divergence_ratio >= 5.0:
         divergence_warning = (
             f"FCF推定値が生FCFの{divergence_ratio:.1f}倍。"
             f"調整済み純利益${adj_net_income/1e9:.1f}B × {conversion_rate:.0%}転換率"

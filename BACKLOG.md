@@ -941,33 +941,6 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 
 ---
 
-### [FCF-DIVERGENCE-SIGN-GUARD-1] divergence_ratioが符号付きのため負値化する乖離を検知できない
-**優先度:** 高
-**分類:** DCF信頼性判定ロジック / バグ
-**登録日:** 2026-07-21
-**発見:** FCF-CONVRATE①③調査時のVSTシミュレーション
-
-#### 内容
-`divergence_ratio`（estimated_fcf/raw_fcf）がabs()を取らず符号付きの
-まま計算されているため、conversion_rateが負値または個社の実態と逆方向の
-値になった場合、推定FCFの符号が反転し得るが、既存の乖離警告機構
-（divergence_warning、通常2倍以上の乖離を検知する安全網）はこの
-符号反転パターンを一切検知しない（VSTでdivergence_ratio=-0.45となり
-閾値2.0を満たさず素通りすることを実データで確認済み）。
-
-現状は該当するnegativeなconversion_rateがconfigに存在しないため未発現だが、
-将来同種の値を導入すれば無警告でIVがマイナス値になるリスクがある。
-
-#### 対応方針（案、要検討）
-推定FCFが負値になった場合、または divergence_ratio が負値になった場合に
-無条件でフォールバック（生FCFを採用）する、符号反転専用のガード条件を
-追加する。
-
-#### 着手条件
-なし
-
----
-
 ## 優先度：未定（要判断）
 
 ### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
@@ -4213,7 +4186,9 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 
 追記（2026-07-21 FCF-CONVRATE①③調査完了・[[FCF-DIVERGENCE-SIGN-GUARD-1]]新規登録）:
 これにより次セッションの筆頭候補を更新する：
-① [[FCF-DIVERGENCE-SIGN-GUARD-1]]（優先度：高・新規・実装コスト低）
+① ~~[[FCF-DIVERGENCE-SIGN-GUARD-1]]（優先度：高・新規・実装コスト低）~~
+   ✅ 2026-07-22完了。raw_fcf>0かつestimated_fcf<0の符号反転を閾値判定と
+   独立に無条件で高乖離警告扱いとするガードを追加。詳細はBACKLOG_DONE.md参照
 ② TRUST-SUMMARY-EPIC-1の①③可視化統合設計（②と同型、実装未着手）
 
 ---
