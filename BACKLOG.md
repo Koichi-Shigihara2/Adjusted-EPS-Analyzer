@@ -1,5 +1,26 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-22（[[FCF-DIVERGENCE-SIGN-GUARD-1]]実装完了。
+divergence_ratio（estimated_fcf/raw_fcf）が符号・境界を無視することで
+生じる乖離検知漏れを2段階で解消：第1段階はraw_fcf>0×estimated_fcf<0
+の符号反転ガード（コミット`f6201ae04a4e242bbda2014b0f71ca2ef42911b6`）、
+第2段階はraw_fcf<=0×estimated_fcf>0の対称ケース（コミット
+`99014218b676fa4e36e4babefaf9ce407cac8ba4`）。いずれも既存の閾値判定
+（>=2.0/>=5.0）とは独立に無条件で警告を生成する設計とし、回帰テスト
+計6件・全100銘柄フローズン入力比較で既存データへの影響なしを確認済み。
+FCF-CONVRATE①③（sector未収録銘柄・Damodaran NIベース設計の構造的
+脆弱性）を調査し、対象53銘柄中49銘柄でPolicy Bの強制丸めが支配的で
+TANUKI SCORE Classificationには無関係と判明したため、根本修正は
+見送り現状維持と決定。ARCH-DATA-1をゼロベース棚卸しし、SEC正規化
+3段階設計は既に全完了済み（RCAT型決算期変更検知も引き継ぎ先で解消済み）
+であることを再確認するとともに、BACKLOG_DONE.md内でStage1/2/3の
+完了記録が本体エントリと重複していた問題を解消（コミット
+`0316b90f2badd5797a9b3409e0880dd7d98da9fc`）。CHAT_RULES.mdへ教訓3件を
+追記: 独立ガード追加時の全象限（符号・境界の組み合わせ）事前洗い出し、
+新規発見事象はBACKLOG.md起票を実装依頼に先行させる運用徹底、入力精度
+向上に着手する前に下流の丸め・ゲート条件（Policy A/B等）への影響を
+安価に確認する。）
+
 最終更新: 2026-07-20（同日2回目: BACKLOG.md/BACKLOG_DONE.md整合性修正。
 ARCH-DATA-1・FY52WEEK-BS-NULL-SILENT-1（+統合済みのFY52WEEK-BS-
 INSTANT-FACT-1）の2件をクローズしBACKLOG_DONE.mdへ完全移動——ARCH-DATA-1は
