@@ -898,6 +898,74 @@ report.txt表示を追加実装した。これにより段階1（成長率算出
   [[FCF-CONVRATE-LOWER-DIVERGENCE-1]]・[[AMZN-DIVERGENCE-HIGH-1]]・
   [[FCF-EST-NOTE-DISPLAY-1]]（いずれも新規登録、詳細は各エントリ参照）
 
+**追記（2026-07-21・FCF-CONVRATE①③の調査完了・対応方針確定）**:
+
+①③の実体を[[FCF-CONVRATE-DESIGN-LIMIT-1]]まで遡って確認した結果、
+①＝sector未収録銘柄の未検証問題、③＝Damodaran EBIT(1-t)ベース業種比率を
+純利益(NI)ベースへ変換するロジック不在、と定義を確定した。
+
+**①の実害範囲を再確認**: sector未収録49銘柄のうち、実際にDCF計算へ
+反映される（`fcf_estimation.applied=True`）のは18銘柄のみ（SPIR, CPRT,
+AAPL, DELL, LLY, VRT, GEV, HQY, ELF, SCCO, XOM, VST, CSGP, CAKE, BROS,
+LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示されるのみで
+最終IVには無関係。
+
+**③の根本修正（案A: 会計恒等式によるDamodaran比率置換）を見送り、
+現状維持と決定**。理由:
+1. Damodaran公式データ（oifcff.xls・margin.xlsから算出したFCFF/NI比率）
+   への置換を①対象18銘柄＋既存9カテゴリ使用銘柄の計53銘柄でオフライン
+   シミュレーションした結果、IV/upsideが2〜20倍動く銘柄があるにも
+   関わらず、53銘柄中49銘柄でTANUKI SCORE Classificationは変化しない
+   （Policy B WATCH強制丸めが支配的なため）。実害改善効果が乏しい
+2. 既存の較正値（Software_System_Mature=1.00/SaaS=1.61、実測データに
+   基づく較正済み）は、Damodaran生値（両者とも0.477に収束、
+   Mature/SaaSの区別自体を持たない）より明確に優れており、置換すると
+   較正作業の成果を失う
+3. 残り7カテゴリ（Aerospace_Defense等）もDamodaran生値の機械的適用は
+   リスクが高い（Software_Internet業種でNet Margin≈0のため比率が21倍に
+   発散、Power_Utility業種でFCFF/NI比率が負値-0.473になりVSTのIVが
+   マイナスに符号反転する等を実データで確認済み）
+
+**新規発見: divergence_warningの符号反転検知漏れ**（重要度：高、
+[[FCF-DIVERGENCE-SIGN-GUARD-1]]として別途新規登録、下記参照）
+
+**①③の今後の扱い**: 個別の根本修正は見送り、[[FCF-CONVRATE②]]と同型の
+構造的限界として可視化統合する方向で次回検討する（実装はまだしない）。
+
+**過去記録の不正確性（新規発見）**: [[FCF-CONVRATE-DESIGN-LIMIT-1]]
+（2026-07-14完了記録）の「oifcff.xlsとの突合でEBIT(1-t)/Revenue比率を
+確認した」という記述は、oifcff.xls実データに比率列自体が存在しない
+（実額集計のみ、Revenue列なし）ため、当時の確認内容が不正確だった
+可能性が高い。事実として記録するのみで、当時の判断への遡及的な
+是正は行わない。
+
+---
+
+### [FCF-DIVERGENCE-SIGN-GUARD-1] divergence_ratioが符号付きのため負値化する乖離を検知できない
+**優先度:** 高
+**分類:** DCF信頼性判定ロジック / バグ
+**登録日:** 2026-07-21
+**発見:** FCF-CONVRATE①③調査時のVSTシミュレーション
+
+#### 内容
+`divergence_ratio`（estimated_fcf/raw_fcf）がabs()を取らず符号付きの
+まま計算されているため、conversion_rateが負値または個社の実態と逆方向の
+値になった場合、推定FCFの符号が反転し得るが、既存の乖離警告機構
+（divergence_warning、通常2倍以上の乖離を検知する安全網）はこの
+符号反転パターンを一切検知しない（VSTでdivergence_ratio=-0.45となり
+閾値2.0を満たさず素通りすることを実データで確認済み）。
+
+現状は該当するnegativeなconversion_rateがconfigに存在しないため未発現だが、
+将来同種の値を導入すれば無警告でIVがマイナス値になるリスクがある。
+
+#### 対応方針（案、要検討）
+推定FCFが負値になった場合、または divergence_ratio が負値になった場合に
+無条件でフォールバック（生FCFを採用）する、符号反転専用のガード条件を
+追加する。
+
+#### 着手条件
+なし
+
 ---
 
 ## 優先度：未定（要判断）
@@ -4142,6 +4210,11 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 ⑥ ~~[[TTM-STOCK-FIELDS-DEAD-1]]（方針判断のみの軽量タスク）~~
    ✅ 2026-07-18完了。対応方針(a)デッドコード削除を実施、
    BACKLOG_DONE.mdへ全文移動
+
+追記（2026-07-21 FCF-CONVRATE①③調査完了・[[FCF-DIVERGENCE-SIGN-GUARD-1]]新規登録）:
+これにより次セッションの筆頭候補を更新する：
+① [[FCF-DIVERGENCE-SIGN-GUARD-1]]（優先度：高・新規・実装コスト低）
+② TRUST-SUMMARY-EPIC-1の①③可視化統合設計（②と同型、実装未着手）
 
 ---
 
