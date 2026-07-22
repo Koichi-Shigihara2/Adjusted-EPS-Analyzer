@@ -14,6 +14,13 @@
 > 各項目には`AS-IS-285`以降の連番IDを仮付番した。**このフェーズでは既存14群・
 > 新規項目間の重複判定、TO_BE.mdへの統合、統一定義の設計は未実施**
 > （フェーズ2以降で別途実施予定）。
+>
+> **2026-07-22（フェーズ2: 重複再分類・取得経路調査実施済み）**: 全515項目
+> （AS-IS-001〜515）を対象に、外部データ取得経路（SEC EDGAR/yfinance/FRED）の
+> 追加調査、既存11群への新規項目マッチング、計算ロジック一致の機械抽出、
+> 意味的・機能的重複の絞り込みを実施した。結果は「外部データ取得経路」
+> セクション（本ドキュメント）と`TO_BE.md`（新規群⑮⑯、④群への追記）に
+> それぞれ反映済み。機械的網羅性証明は全515項目で再実行済み（`TO_BE.md`末尾）。
 
 本ドキュメントは、当初6サブシステム（TANUKI VALUATION / HypeCore / STONKS SILO /
 MACRO PULSE / Discover / EPS Analyzer）＋追加統合フェーズ1で4サブシステム
@@ -36,7 +43,8 @@ MACRO PULSE / Discover / EPS Analyzer）＋追加統合フェーズ1で4サブ�
 4. [ステップ2〜4: 統一定義・実データ突合・データ要件検証](#ステップ24-統一定義実データ突合データ要件検証)
 5. [ステップ5: 出力項目 計算ルート紐付け（サブシステム別）](#ステップ5-出力項目-計算ルート紐付けサブシステム別)
 6. [追加統合フェーズ1: 残り4サブシステムの出力項目一覧](#追加統合フェーズ1-残り4サブシステムの出力項目一覧2026-07-22)
-7. [横断的な発見事項まとめ](#横断的な発見事項まとめ)
+7. [外部データ取得経路（SEC EDGAR/yfinance/FRED、フェーズ2で確定）](#外部データ取得経路sec-edgaryfinancefredフェーズ2で確定)
+8. [横断的な発見事項まとめ](#横断的な発見事項まとめ)
 
 ---
 
@@ -1785,6 +1793,47 @@ quarterly_review_generator.py, prediction_tracker.py, __init__.py）。
 
 **TANUKI TAIL**: `report_date`・`ticker`（ctrl JSON内）、`last_period`/`last_checked`（rss_state.json）、`accn`/`filed`/`queued_at`（review_queue.json）、`action`固定値/`thesis_version`常時null/`macro_score_at_action`常時null（journal.json）、`ticker`/`fetched_at`（kpi layer2/layer3トップレベル）、`kpis.{name}.data[].filed`（layer2）、`unit`/`source_text`/`quarter`（layer3、`quarter`はconsumer側キー名`period`との不一致で実質デッド＝バグ）、`ticker`/`generated_at`/`thesis_version`（kpi_proposals トップレベル）、`change_risk`/`fallback_action`固定値（tail_kpi_map.json）、`ticker`/`quarter`/`scenario`自己ラベル/`generated_at`（scenario JSONトップレベル）、`assumptions.fcf_adjustment`/`base_revenue`（scenario）、`future_values["2年後"]`/`["4年後"]`（表示periods配列から除外）、`created_at`/`updated_at`（thesis）、`revised_item`/`old_thesis`/`new_thesis`（journal thesis_revision時）、`data_version`/`filed_date`/`layer1_complete`/`layer2_complete`/`layer2_missing_kpis`/`stage2_json_valid`/`grok_call1_success`/`grok_call2_success`/`transcript_available`常時False/`kpi_snapshot`/`layer3_snapshot`/`macro_snapshot`/`thesis_version`（review.jsonトップレベル各種）、`stage1.recommendation_reason`、`stage2.ticker`/`stage2.quarter`（トップレベルと重複）、`error`（review_queue.json）、`_updated_at`（prediction_history.jsonトップレベル）。
 
+
+## 外部データ取得経路（SEC EDGAR/yfinance/FRED、フェーズ2で確定）
+
+本セクションは、当初6サブシステム対象の外部データ取得経路調査（2026-07-22実施）と、
+フェーズ2ステップ0で追加実施した残り4サブシステム分の調査結果を統合したもの。
+いずれも読み取り専用調査。
+
+### SEC EDGAR取得経路（計9経路）
+
+| 経路 | 内容 | 使用サブシステム |
+|---|---|---|
+| A | `common/sec_data/`共通キャッシュパイプライン（`fetcher.py`取得、`reader.py`読取） | TANUKI VALUATION／HypeCore／STONKS SILO／Discover／TANUKI TAIL(一部) |
+| B | EPS Analyzer `extract_key_facts.py`（独自ライブ取得） | EPS Analyzerのみ |
+| C（フェーズ2新規確定） | TANUKI TAIL独自3ファイル（`sec_ctrl_fetcher.py`／`edgar_rss_monitor.py`／`xbrl_segment_fetcher.py`）が`common/sec_data`を一切importせず独自にrequestsでSEC EDGARへ直接アクセス。3ファイル間でUser-Agent文字列すら統一されていない | TANUKI TAILのみ |
+| D-F | TANUKI TAIL独自群（内部統制テキスト・新規提出監視・セグメントKPI、経路Cと同一ファイル群の呼称違い） | TANUKI TAILのみ |
+| G | `common/sec_data/segment_fetcher.py`（GitHub Actions未使用、ローカル手動実行専任） | 手動運用 |
+| H | CIKルックアップ（手動`workflow_dispatch`のみ） | 手動運用 |
+
+**フェーズ2で追加確認**: 経路Cの3ファイルのアクセス先エンドポイント: `sec_ctrl_fetcher.py`は`data.sec.gov/submissions/`→`www.sec.gov/Archives/edgar/data/.../{primaryDocument}`（10-Q本文Item4抽出）。`edgar_rss_monitor.py`は`www.sec.gov/cgi-bin/browse-edgar?output=atom`（新規提出監視）＋`submissions/`＋`company_tickers.json`。`xbrl_segment_fetcher.py`は`company_tickers.json`＋`submissions/`＋`.../{doc}_htm.xml`（XBRL Instance Document、セグメントKPI抽出）。
+
+### yfinance取得経路（13〜14ファイル）
+
+TANUKI VALUATION(5)／HypeCore(3)／STONKS SILO(1)／Discover(1)／Market Pulse(3)／EPS Analyzer(1、フォールバックのみ)。共通ラッパー`common/yfinance_utils.py`は2/13ファイルのみ使用。同一情報の重複取得: 現在株価（TANUKI vs STONKS SILO）、PER/PEG/PSR/EV_EBITDA（TANUKI・HypeCore・STONKS SILOの3系統）、アナリストコンセンサス（TANUKI vs HypeCore）、空売り比率（HypeCoreのみ取得、TANUKIは転記）、β（3経路：日次/月次/監査トリガー時）。
+
+**フェーズ2で追加確認（Portfolio）**: `src/portfolio/snapshot.py`自体はyfinance等の外部APIを一切呼び出さない。Market Pulseの`market_data.json`（USD/JPY、S&P500）とHypeCoreの`*_poc.json`（現在株価）を再利用する設計であり、新規の重複取得ではない。
+
+### FRED取得経路（3サブシステムに拡大確定）
+
+- MACRO PULSE: `05_main.py`内10箇所相当
+- Market Pulse: `collect_and_send.py`（VXN・HYスプレッド・DGS3MO）、`backfill_tech_pulse.py`
+- TANUKI VALUATIONのrisk_free_rateはFRED非参照（ハードコード0.043）を再確認済み
+
+**フェーズ2で新規確定した重複**: HYスプレッド（`BAMLH0A0HYM2`）がMACRO PULSE内部2箇所（AS-IS-194/199）に加え、**Market Pulseでも独立に3箇所目として取得**（AS-IS-371に含まれる`checks.hy_spread`）。詳細はTO_BE.md⑮群参照。VIX（無印）はMACRO PULSEがFRED `VIXCLS`、Market Pulseがyfinance `^VIX`と別ソースのため厳密な重複ではない。VXN・DGS3MOはMarket Pulse固有、MACRO PULSE側に参照なし。
+
+### 実行タイミング同期状況（フェーズ2追加分）
+
+| 箇所 | ズレ |
+|---|---|
+| SEC経路C（TANUKI TAIL）: `xbrl_segment_fetcher.py`が2ワークフローから起動 | `TANUKI_TAIL_RSS_Monitor.yml`（平日17:00 JST、pending銘柄のみ）と`TANUKI_TAIL_KPI_Update.yml`（月曜08:00 JST、全銘柄）が重複起動しうる週がある |
+| FRED HYスプレッド: Market Pulse(JST06:35頃) vs MACRO PULSE(JST07:15頃) | 約40分差で同一系列を独立取得、統合すれば1回で済む構造 |
+| Portfolio: TANUKI SCORE経由（平日23:05 JST起点、週末22:30 JST） | 自身は外部取得を行わないため、Market Pulse／HypeCoreより後続実行である限り鮮度は保たれる設計 |
 
 ## 横断的な発見事項まとめ
 

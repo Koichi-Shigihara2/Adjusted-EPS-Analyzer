@@ -1,13 +1,13 @@
 # TO_BE.md — 全サブシステム出力項目 あるべき姿の設計
 
-作成日: 2026-07-22
-出発点: `OUTPUT_ITEMS_INVENTORY.md`（2026-07-22時点のAS-ISスナップショット、全284項目にAS-IS-001〜284のIDを付番済み）
+作成日: 2026-07-22（フェーズ2改訂: 同日中）
+出発点: `OUTPUT_ITEMS_INVENTORY.md`（2026-07-22時点のAS-ISスナップショット、全515項目にAS-IS-001〜515のIDを付番済み。うち001-284が当初6サブシステム分、285-515がフェーズ1追加の残り4サブシステム分）
 
 ## 本ドキュメントの位置づけ
 
-AS-IS全284項目を、(a) 11共通項目群（①〜⑪、項目名キーワードマッチで
-特定）＋2026-07-22の計算ロジック照合で新たに発見した3群（⑫〜⑭、項目名
-ではなく計算ルート・データソースの一致で特定）のいずれかに該当する項目、
+AS-IS全515項目を、(a) 16共通項目群（①〜⑪、項目名キーワードマッチで
+特定／⑫〜⑭、計算ロジック照合で発見／⑮〜⑯、フェーズ2の外部取得経路調査・
+意味的重複調査で発見）のいずれかに該当する項目、
 (b) 単独ルートで重複のない項目、の2種類に機械的に分類し、(a)については
 統一定義・唯一の正とする計算ルート・削除対象ルートを設計する。(b)は
 「変更なし」として一括記録する。全284件のAS-IS-IDが本ドキュメントの
@@ -173,6 +173,8 @@ AS-IS-214/215（RECESSION RISK SCORE表示）は⑪マクロ環境認識系と�
 | AS-IS-214 | 5-4. MACRO PULSE | RECESSION RISK SCOREバー・マーカー | 統一しない。⑪（マクロ環境認識）とのUIレベル共有候補（同じRECESSION RISK SCOREウィジェットを複数箇所から参照する設計は可能）。 |
 | AS-IS-215 | 5-4. MACRO PULSE | RECESSION RISK SCORE数値 | 統一しない。⑪とのUIレベル共有候補（同上）。 |
 | AS-IS-279 | 5-6. EPS Analyzer | `health` | 統一しない（フィールドは維持）。表示スケール（0-100点/5段階の色分け規約）のみ②と合わせて統一候補。 |
+| AS-IS-289 | 1-7. TANUKI SCORE | funda_score | **統一済み（変更不要）**。フェーズ2追加確認: `daily_pick.py:93` `tk.get("funda_score")`によりTANUKI VALUATIONのAS-IS-035をライブ参照するパススルー実装（独自計算ではない）。⑧次回決算日と同型のパススルーパターン。 |
+| AS-IS-290 | 1-7. TANUKI SCORE | timing_score | **統一済み（変更不要）**。フェーズ2追加確認: `daily_pick.py:101` `tk.get("timing_score")`によりTANUKI VALUATIONのAS-IS-037をライブ参照するパススルー実装。 |
 
 ## ⑤ アナリストコンセンサス／マルチプル系（PER/PEG/PSR/EV_EBITDA）
 
@@ -520,6 +522,75 @@ HypeCore側のYoY成長率計算が前年同期の分母が極小の場合に発
 | AS-IS-129 | 5-3. STONKS SILO | `records`（yr→{revenue,net_income}） | 統一しない（存置）。期間ラベル（FY{year}）の明示を推奨。 |
 | AS-IS-281 | 5-6. EPS Analyzer | `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps`） | 統一しない（存置）。期間ラベル（TTM）の明示を推奨（`period`フィールドは既存だが明示的な"TTM"表記の徹底を推奨）。 |
 
+## ⑮ FRED HYスプレッド重複取得系（新規発見・フェーズ2 2026-07-22、外部取得経路調査で確定）
+
+### 発見経緯
+フェーズ2ステップ0（外部データ取得経路調査）で、MACRO PULSEが自身の内部で
+既に2箇所独立取得していたFRED `BAMLH0A0HYM2`（HYスプレッド）系列を、
+Market Pulseが**3箇所目として完全に独立**に取得していることが判明した。
+既存のMACRO PULSE内部2箇所重複（AS-IS-194/199、当初から把握済み）に、
+サブシステムをまたいだ3箇所目が新たに確定した。
+
+### 計算ロジック・取得経路の相違
+- **MACRO PULSE①**（AS-IS-194）: `05_main.py: fetch_event_row()`がevents.csv用に取得（`INDICATOR_CONFIG["HY Spread"]`, L309-317）
+- **MACRO PULSE②**（AS-IS-199）: `05_main.py: update_liquidity_csv()`が流動性カード用に別途取得（L1956）
+- **Market Pulse**（AS-IS-371に含まれる`checks.hy_spread`）: `collect_and_send.py: fetch_hy_spread_from_fred()`がBUYチェックリストの90日最高値との比較判定用に取得
+
+3箇所とも`fredapi`経由で同一系列`BAMLH0A0HYM2`を独立に取得しており、値自体は本来一致するはずだが、取得タイミングが異なるため厳密には同時点の値ではない。
+
+### 実行タイミングの非同期性
+- Market Pulse: `Market_Pulse_Update.yml`、UTC21:35（JST翌06:35）
+- MACRO PULSE: `MACRO_PULSE_Update.yml`（通常更新）、UTC22:15（JST07:15）
+- 両者は**約40分差**で連続的に同一系列を独立取得している。1回のfetchで済む構造を3回（サブシステム間2回＋MACRO PULSE内部2回）に分散させている。
+
+### 統一定義
+`common/`配下に1箇所のFRED取得共通関数を新設し、MACRO PULSE内部2箇所とMarket Pulseの計3箇所が共通利用する形に統合することを推奨する。ただし用途（events.csv記録用／流動性カード表示用／BUYチェックリスト90日比較用）はそれぞれ異なるため、**取得は1回に統合しつつ、加工・表示は各サブシステム側で個別に行う**設計が妥当。
+
+### 対象AS-IS項目と判断
+| AS-IS ID | サブシステム | 項目名 | TO-BE判断 |
+|---|---|---|---|
+| AS-IS-194 | 5-4. MACRO PULSE | HY SPREAD（ticker用） | 取得を共通化する統一候補。既知の内部重複（AS-IS-199とペア）。 |
+| AS-IS-199 | 5-4. MACRO PULSE | HYスプレッド（流動性カード用） | 取得を共通化する統一候補。既知の内部重複（AS-IS-194とペア）。 |
+| AS-IS-371 | 1-8. Market Pulse | buy_checklist.triggered/.../checks.*（うちchecks.hy_spread） | 取得を共通化する統一候補。フェーズ2で新規発見のクロスサブシステム重複。 |
+
+### 関連する確認済み事項（統合不要と判断・観点1）
+フェーズ2ステップ3で、Market PulseとMACRO PULSEの他の指標重複候補も
+併せて確認した。いずれも**概念は近いが計算方法・時間軸が異なるため
+統合不要**と判断する:
+- **VIX**: Market Pulse(yfinance `^VIX`)とMACRO PULSE(FRED `VIXCLS`)で別ソース取得。Market Pulseはセンチメントスコアの主要因子(22.5%)、MACRO PULSEは文脈記録のみでRECESSION RISK SCORE計算には不使用。
+- **Credit判定**: Market Pulseは HYG/LQD ETF価格比の代理指標（日次リスクオン/オフ）、MACRO PULSEは実際のOASスプレッド値（景気後退確率への15%ウェイト寄与）。計算根拠が別物。
+- **総合判定**: Market Pulseの`judgment`（当日の市場ムード、CNN F&G型）とMACRO PULSEのRECESSION RISK SCORE（数ヶ月先の景気後退確率）は時間軸が根本的に異なり補完関係。
+
+## ⑯ SEC EDGARセグメントXBRL抽出重複系（新規発見・フェーズ2 2026-07-22）
+
+### 発見経緯
+フェーズ2ステップ3（意味的重複調査・観点2）で、TANUKI TAILとTANUKI VALUATIONが
+同一のXBRLディメンション（`us-gaap:StatementBusinessSegmentsAxis`）を、
+別々の正規表現パーサで独立に抽出していることが判明した。加えて、
+TANUKI VALUATION側にはこの抽出パイプラインの**未使用の重複ファイル**も
+発見された。
+
+### 計算ロジックの相違・実態
+- **TANUKI TAIL**（AS-IS-419/420/421他）: `src/tail/xbrl_segment_fetcher.py`。対象3銘柄（PLTR/SOFI/TSLA、`tail_kpi_map.json`）。四半期(10-Q)ベースで稼働中、実データ確認済み（`docs/portfolio/tail/data/kpi/PLTR_layer2.json`に2026Q1 Commercial売上等が最新まで蓄積）。
+- **TANUKI VALUATION**（AS-IS-050 `segments[]`）: `common/sec_data/segment_fetcher.py`が同一ディメンションを年次(10-K)ベースで抽出する設計だが、**実データ確認の結果、全銘柄で`annual_*.json`の`segments`フィールドがnull**（未実行/未稼働）。実際のDCF/SOTPセグメント成長率ウェイトは、このXBRL自動抽出ではなく`config/segment_config.json`（admin.html経由の手動設定）から供給されている（`pipeline.py:2684-2736`）。
+- **死んだ重複ファイル**: `src/value/tanuki_valuation/segment_fetcher.py`（467行）は`common/sec_data/segment_fetcher.py`（468行）とほぼ同一内容（diff十数行程度）で、リポジトリ内のどこからもimportされていない未使用コピー。ファイル冒頭のコメント自体がcommon側の使用例を記載しており、コピペ残骸と判断できる。
+
+### 統一定義
+TANUKI TAIL側の`xbrl_segment_fetcher.py`は実際に稼働・データが蓄積されているのに対し、TANUKI VALUATION側の自動抽出パイプラインは事実上死んでおり手動設定（segment_config.json）に置き換わっている。**抽出ロジック自体を`common/`に一本化し、TANUKI TAIL・TANUKI VALUATION双方から呼び出す設計に統合することを推奨**（TANUKI VALUATION側が本来自動化を意図していたにもかかわらず稼働していない状態を解消する機会でもある）。未使用ファイル`src/value/tanuki_valuation/segment_fetcher.py`は削除候補。
+
+### 対象AS-IS項目と判断
+| AS-IS ID | サブシステム | 項目名 | TO-BE判断 |
+|---|---|---|---|
+| AS-IS-050 | 5-1. TANUKI VALUATION | segments[] | 抽出ロジック統合の統一候補。現状は`config/segment_config.json`手動設定が実効値、自動抽出パイプラインは死んでいる（`segments`フィールド全銘柄null確認済み）。 |
+| AS-IS-419 | 1-10. TANUKI TAIL | kpis.{kpi_name}.unit | 抽出ロジック統合の統一候補。稼働中（実データ確認済み）。 |
+| AS-IS-420 | 1-10. TANUKI TAIL | kpis.{kpi_name}.data[].quarter | 抽出ロジック統合の統一候補。稼働中。 |
+| AS-IS-421 | 1-10. TANUKI TAIL | kpis.{kpi_name}.data[].value | 抽出ロジック統合の統一候補。稼働中、最重要フィールド。 |
+
+### 確認済み・重複なしと判断した事項（範囲外の観点、フェーズ2ステップ3で検証）
+- **Portfolio保有情報とrunway計算**: `src/portfolio/snapshot.py`はTANUKI VALUATION/STONKS SILOのrunway計算を一切参照していないことをコード全文確認済み（重複なし、意図的な独立設計）。なお`docs/portfolio/data/portfolio.json`を実際に参照しているのはTANUKI TAILの`satellite_monitor.py`（加重平均取得単価算出）・`quarterly_review_generator.py`（エントリー価格取得）であり、損益監視目的でrunwayとは無関係。
+- **β取得3経路とMarket Pulseの関与**: `src/market/`配下を"beta"/"ベータ"で検索したが一致0件。Market PulseはβN計算に一切関与していないことを確認済み。
+- **参考発見（範囲外）**: `config/portfolio.json`が`docs/portfolio/data/portfolio.json`と内容完全一致だが、コード・ワークフローどちらからも参照されていない孤立ファイルの疑いがある（削除候補相当だが、今回のスコープ外のため対応は次ステップ判断）。
+
 ## 単独ルート項目（変更なし、機械的一括生成）
 
 以下は11共通項目群＋新規発見3群（計14群）のいずれにも該当しない
@@ -721,6 +792,239 @@ HypeCore側のYoY成長率計算が前年同期の分母が極小の場合に発
 - AS-IS-277：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `gaap_to_adj_positive`
 - AS-IS-278：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `yoy_growth`
 
+
+### 追加分（フェーズ2、TANUKI SCORE/Market Pulse/Portfolio/TANUKI TAIL、225件）
+
+フェーズ1で追加されたAS-IS-285〜515のうち、新規群⑮⑯・既存④群への追記で
+カバーされた6件（AS-IS-289,290,371,419,420,421）を除く225件。フェーズ2の
+ステップ1〜3で重複候補として抽出されなかったため、単独ルートとして機械記録する。
+
+- AS-IS-285：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / generated_at
+- AS-IS-286：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / ticker
+- AS-IS-287：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / company
+- AS-IS-288：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / selection_reason
+- AS-IS-291：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / category
+- AS-IS-292：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / report.fundamental
+- AS-IS-293：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / report.expectation
+- AS-IS-294：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / report.news
+- AS-IS-295：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / report.timing
+- AS-IS-296：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / report.summary
+- AS-IS-297：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / date（history.json各エントリ）
+- AS-IS-298：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / ticker（history.json各エントリ）
+- AS-IS-299：変更なし（単独ルート、重複なし） — 1-7. TANUKI SCORE / all_categories（history.json各エントリ）
+- AS-IS-300：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / date
+- AS-IS-301：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / judgment
+- AS-IS-302：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / indicators
+- AS-IS-303：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment
+- AS-IS-304：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed
+- AS-IS-305：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse
+- AS-IS-306：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow
+- AS-IS-307：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / credit
+- AS-IS-308：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / take_profit_checklist
+- AS-IS-309：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / buy_checklist
+- AS-IS-310：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / summary
+- AS-IS-311：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / comments_history
+- AS-IS-312：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 米10年債/VIX指数/ドル円/日経平均/S&P500/NASDAQ/WTI原油/金(GOLD)/HYG/LQDのval…
+- AS-IS-313：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 上記各指標のchange_percent
+- AS-IS-314：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 上記各指標のchange（絶対値）
+- AS-IS-315：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 上記各指標のvolume_ratio
+- AS-IS-316：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 上記各指標のdate
+- AS-IS-317：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 上記各指標のis_fallback
+- AS-IS-318：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / NYSE Composite（value, change_percent, volume_ratio, date）
+- AS-IS-319：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / NYSE Composite.divergence_vs_sp
+- AS-IS-320：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / S&P500グロース(IVW)（value, change_percent, date）
+- AS-IS-321：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / S&P500バリュー(IVE)（value, change_percent, date）
+- AS-IS-322：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / Russell2000小型(RUT)（value, change_percent, date）
+- AS-IS-323：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / グロース対バリュー比.diff_percent
+- AS-IS-324：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 大型対小型比.diff_percent
+- AS-IS-325：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / VIX9D（value, change, change_percent, date）
+- AS-IS-326：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / VIX9D対VIX比.value
+- AS-IS-327：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / VIX9D対VIX比.contango
+- AS-IS-328：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / HYG対LQD比（value, change, date）
+- AS-IS-329：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.score
+- AS-IS-330：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.label
+- AS-IS-331：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.sub_scores.{8指標}.score
+- AS-IS-332：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 同上.weight
+- AS-IS-333：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / 同上.raw
+- AS-IS-334：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.advances / declines
+- AS-IS-335：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.ad_ratio_5d
+- AS-IS-336：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.new_highs_52w / new_lows_52w
+- AS-IS-337：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.nh_nl_diff
+- AS-IS-338：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.pct_above_50ma / pct_above_200ma
+- AS-IS-339：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.rsp_spy_divergence_1d
+- AS-IS-340：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.rsp_spy_divergence_20d_avg
+- AS-IS-341：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.ad_line
+- AS-IS-342：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.mcclellan_oscillator
+- AS-IS-343：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / sentiment.breadth.date
+- AS-IS-344：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed.score
+- AS-IS-345：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed.rating
+- AS-IS-346：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed.previous_close
+- AS-IS-347：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed.one_week_ago
+- AS-IS-348：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / fear_greed.one_month_ago
+- AS-IS-349：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.score
+- AS-IS-350：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.label
+- AS-IS-351：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.qqq_vs_ma125
+- AS-IS-352：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.vxn_latest
+- AS-IS-353：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.vxn_vs_ma50
+- AS-IS-354：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.qqq_vs_spy_20d
+- AS-IS-355：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.fg_score
+- AS-IS-356：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.components.vxn_available
+- AS-IS-357：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.divergence.value
+- AS-IS-358：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.divergence.zscore
+- AS-IS-359：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / tech_pulse.divergence.signal
+- AS-IS-360：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.label / ticker
+- AS-IS-361：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.desc
+- AS-IS-362：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.value
+- AS-IS-363：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.change_pct
+- AS-IS-364：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.date
+- AS-IS-365：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / asset_flow.{key}.is_fallback
+- AS-IS-366：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / credit.stock
+- AS-IS-367：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / credit.bond
+- AS-IS-368：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / credit.credit
+- AS-IS-369：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / credit.risk_off_score
+- AS-IS-370：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / take_profit_checklist.triggered/fg_score/points/action/check…
+- AS-IS-372：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / date
+- AS-IS-373：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / advances / declines
+- AS-IS-374：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / unchanged
+- AS-IS-375：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / ad_ratio_1d
+- AS-IS-376：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / ad_ratio_5d
+- AS-IS-377：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / new_highs_52w / new_lows_52w
+- AS-IS-378：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / nh_nl_diff
+- AS-IS-379：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / total_stocks
+- AS-IS-380：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / pct_above_50ma / pct_above_200ma
+- AS-IS-381：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / rsp_return_1d / spy_return_1d
+- AS-IS-382：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / rsp_spy_divergence_1d
+- AS-IS-383：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / rsp_spy_divergence_20d_avg
+- AS-IS-384：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / ad_line
+- AS-IS-385：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / mcclellan_oscillator
+- AS-IS-386：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / market_data.csv 各列
+- AS-IS-387：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / extreme-fear参照: date
+- AS-IS-388：変更なし（単独ルート、重複なし） — 1-8. Market Pulse / extreme-fear参照: fear_greed.score
+- AS-IS-389：変更なし（単独ルート、重複なし） — 1-9. Portfolio / date
+- AS-IS-390：変更なし（単独ルート、重複なし） — 1-9. Portfolio / usdjpy
+- AS-IS-391：変更なし（単独ルート、重複なし） — 1-9. Portfolio / total_assets_usd
+- AS-IS-392：変更なし（単独ルート、重複なし） — 1-9. Portfolio / total_assets_jpy
+- AS-IS-393：変更なし（単独ルート、重複なし） — 1-9. Portfolio / total_pnl_usd
+- AS-IS-394：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / quarter
+- AS-IS-395：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / filing_date
+- AS-IS-396：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / effective
+- AS-IS-397：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / material_weaknesses
+- AS-IS-398：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / significant_deficiencies
+- AS-IS-399：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / item4_excerpt
+- AS-IS-400：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / item4_excerpt_ja
+- AS-IS-401：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / fetched_at
+- AS-IS-402：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / quarters（index.json）
+- AS-IS-403：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / last_accn（rss_state.json）
+- AS-IS-404：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / last_filed（rss_state.json）
+- AS-IS-405：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / no_filing_days（rss_state.json）
+- AS-IS-406：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / ticker（review_queue.json）
+- AS-IS-407：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / quarter（review_queue.json）
+- AS-IS-408：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / status（review_queue.json）
+- AS-IS-409：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / completed_at（review_queue.json）
+- AS-IS-410：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / review_path（review_queue.json）
+- AS-IS-411：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / "{ticker}:{condition}"タイムスタンプ（satellite_alerts.json）
+- AS-IS-412：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / timestamp（journal.json watchlist）
+- AS-IS-413：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / ticker（journal.json watchlist）
+- AS-IS-414：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / type="watchlist"（journal.json）
+- AS-IS-415：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / reason（journal.json watchlist）
+- AS-IS-416：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tags（journal.json watchlist）
+- AS-IS-417：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / layer2_complete
+- AS-IS-418：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / missing_kpis
+- AS-IS-422：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpis.{name}.value
+- AS-IS-423：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpis.{name}.value_numeric
+- AS-IS-424：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpis.{name}.confidence
+- AS-IS-425：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].name
+- AS-IS-426：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].description
+- AS-IS-427：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].source
+- AS-IS-428：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].warning_threshold
+- AS-IS-429：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].exit_threshold
+- AS-IS-430：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].related_exit_condition
+- AS-IS-431：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].auto_fetchable
+- AS-IS-432：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].extraction_hint
+- AS-IS-433：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].xbrl_tag
+- AS-IS-434：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].xbrl_dimension
+- AS-IS-435：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].xbrl_member
+- AS-IS-436：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / proposed_kpis[].layer2_name
+- AS-IS-437：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tail_kpi_map.json: kpi_name
+- AS-IS-438：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tail_kpi_map.json: tag_history[].tag/valid_from/valid_to
+- AS-IS-439：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tail_kpi_map.json: fallback_tags
+- AS-IS-440：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tail_kpi_map.json: revenue_tag
+- AS-IS-441：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tail_kpi_map.json: dimension
+- AS-IS-442：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / assumptions.Y1_growth / Y2_growth / Y3_growth
+- AS-IS-443：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / assumptions.terminal_growth
+- AS-IS-444：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / assumptions.operating_margin
+- AS-IS-445：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / assumptions.weighted_growth
+- AS-IS-446：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / base_intrinsic_value
+- AS-IS-447：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / current_price
+- AS-IS-448：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / future_values["1年後"]
+- AS-IS-449：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / future_values["3年後"]
+- AS-IS-450：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / future_values["5年後"]
+- AS-IS-451：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpi_forecasts["1年後"/"3年後"].{KPI名}
+- AS-IS-452：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpi_current.{KPI名}
+- AS-IS-453：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpi_layer1_keys
+- AS-IS-454：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpi_format.{KPI名}
+- AS-IS-455：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / ticker（thesis共通）
+- AS-IS-456：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / type（thesis共通）
+- AS-IS-457：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / status（thesis共通）
+- AS-IS-458：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / version（thesis共通）
+- AS-IS-459：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / thesis（core固有）
+- AS-IS-460：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / entry_story（core固有）
+- AS-IS-461：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / exit_guide（core固有）
+- AS-IS-462：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / entry_price（core固有）
+- AS-IS-463：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / entry_date（core固有）
+- AS-IS-464：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / strategy_name（satellite固有）
+- AS-IS-465：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / entry_condition（satellite固有）
+- AS-IS-466：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / exit_condition（satellite固有）
+- AS-IS-467：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / holding_period（satellite固有）
+- AS-IS-468：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpis[]（core/satellite共通）
+- AS-IS-469：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / positions（positions_index.json）
+- AS-IS-470：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / timestamp（journal.json entries）
+- AS-IS-471：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / ticker（journal.json entries）
+- AS-IS-472：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / type（journal.json entries）
+- AS-IS-473：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / reason（journal.json entries）
+- AS-IS-474：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / health_score_at_action（journal.json entries）
+- AS-IS-475：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / tags（journal.json entries）
+- AS-IS-476：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / price（journal.json entries）
+- AS-IS-477：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / shares（journal.json entries）
+- AS-IS-478：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / ticker（トップレベル）
+- AS-IS-479：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / quarter（トップレベル）
+- AS-IS-480：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / generated_at（トップレベル）
+- AS-IS-481：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / is_latest（トップレベル）
+- AS-IS-482：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.health_score
+- AS-IS-483：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.health_label
+- AS-IS-484：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.summary
+- AS-IS-485：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.positives
+- AS-IS-486：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.concerns
+- AS-IS-487：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.recommendation
+- AS-IS-488：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.next_kpis
+- AS-IS-489：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.exit_distance
+- AS-IS-490：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.exit_distance_reason
+- AS-IS-491：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage1.optimism_bias_warning
+- AS-IS-492：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.scenarios.{bear,base,bull}.revenue_growth_y1/y2/y3
+- AS-IS-493：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.scenarios.{...}.terminal_growth
+- AS-IS-494：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.scenarios.{...}.operating_margin_terminal
+- AS-IS-495：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.scenarios.{...}.rationale
+- AS-IS-496：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.scenarios.{...}.kpi_forecasts["1年後"/"3年後"][KPI名]
+- AS-IS-497：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.key_assumptions
+- AS-IS-498：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / stage2.risk_factors
+- AS-IS-499：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.five_perspectives.{5観点}
+- AS-IS-500：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.entry_story_progress
+- AS-IS-501：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.market_attention
+- AS-IS-502：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.historical_analogy
+- AS-IS-503：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.macro_implications
+- AS-IS-504：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.thesis_questions
+- AS-IS-505：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / call2.next_review_focus
+- AS-IS-506：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / {TICKER}（トップレベルキー）
+- AS-IS-507：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / review_quarter
+- AS-IS-508：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / forecast_target
+- AS-IS-509：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / scenario
+- AS-IS-510：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / predictions[KPI名].predicted
+- AS-IS-511：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / predictions[KPI名].actual
+- AS-IS-512：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / predictions[KPI名].deviation_pct
+- AS-IS-513：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / predictions[KPI名].accuracy
+- AS-IS-514：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / kpi_forecast_available
+- AS-IS-515：変更なし（単独ルート、重複なし） — 1-10. TANUKI TAIL / matchable
+
 ## 機械的網羅性証明
 
 本セクションは、OUTPUT_ITEMS_INVENTORY.md内の全AS-IS-IDと、本ドキュメント
@@ -730,19 +1034,23 @@ HypeCore側のYoY成長率計算が前年同期の分母が極小の場合に発
 **改訂履歴**:
 1. 2026-07-22（初回）: ①〜⑪の11群＋単独ルート項目199件のみの状態で実行し
    284/284完全一致を確認。
-2. 2026-07-22（本改訂）: 計算ロジックベースの再点検で⑫ネットキャッシュ系・
+2. 2026-07-22（第2回）: 計算ロジックベースの再点検で⑫ネットキャッシュ系・
    ⑬Rule of 40系・⑭純利益二重抽出パイプライン系の3群を新規追加し、
    該当する6件（AS-IS-025/095/129/134/143/281）を単独ルート項目リストから
-   新規群テーブルへ移動した。この変更後、diffを**再実行**した
-   （移動のみで純増減がないため理論上は284/284のまま変化しないはずだが、
-   実装上のtypo・移動漏れ等の混入を防ぐため実際に再実行して確認した）。
+   新規群テーブルへ移動。284/284完全一致を再確認。
+3. 2026-07-22（本改訂・フェーズ2）: OUTPUT_ITEMS_INVENTORY.mdに残り4サブシステム
+   （AS-IS-285〜515、231件）が追加されたことを受け、全515項目を対象に
+   重複再分類を実施。既存④群にTANUKI SCOREの2件（AS-IS-289/290、パススルー確認）を
+   追記、新規群⑮FRED HYスプレッド重複系・⑯SEC EDGARセグメントXBRL抽出重複系を
+   追加（計7件が新規群・既存群に統合）。残り225件を単独ルート項目リストに
+   機械追加。この状態でdiffを**全515項目に対して再実行**した。
 
-### 実行したコマンド（Python、正規表現`AS-IS-\d{3}`で抽出、本改訂での再実行分）
+### 実行したコマンド（Python、正規表現`AS-IS-\d{3}`で抽出、フェーズ2本改訂での再実行分）
 
 ```python
 import re
 
-all_expected = set(f'AS-IS-{i:03d}' for i in range(1, 285))
+all_expected = set(f'AS-IS-{i:03d}' for i in range(1, 516))
 with open('OUTPUT_ITEMS_INVENTORY.md', encoding='utf-8') as f:
     inv_text = f.read()
 with open('TO_BE.md', encoding='utf-8') as f:
@@ -754,11 +1062,11 @@ missing_in_tobe = sorted(all_expected - tobe_ids)
 extra_in_tobe = sorted(tobe_ids - all_expected)
 ```
 
-### 実行結果（そのまま転記、⑫⑬⑭追加・単独ルートリスト更新後の再実行分）
+### 実行結果（そのまま転記、フェーズ2・全515項目対象の再実行分）
 
 ```
-OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID数: 284
-TO_BE.md内で言及されているAS-IS-ID数: 284
+OUTPUT_ITEMS_INVENTORY.md IDs: 515
+TO_BE.md IDs: 515
 漏れ(TO_BE): []
 漏れ(INVENTORY): []
 範囲外: []
@@ -767,9 +1075,9 @@ TO_BE.md内で言及されているAS-IS-ID数: 284
 
 ### 結論
 
-- OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID総数: **284件**（AS-IS-001〜AS-IS-284、欠番なし、変更なし）
-- TO_BE.md内で言及されているAS-IS-ID総数: **284件**（⑫⑬⑭追加・単独ルートリスト更新後も284件を維持）
-- diffの結果、漏れ・過不足ともに**0件**。全284項目が、14群（①〜⑭）
+- OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID総数: **515件**（AS-IS-001〜AS-IS-515、欠番なし）
+- TO_BE.md内で言及されているAS-IS-ID総数: **515件**
+- diffの結果、漏れ・過不足ともに**0件**。全515項目が、16群（①〜⑯）
   いずれかの「対象AS-IS項目と判断」表、または「単独ルート項目」一括
   リストのどちらか一方に必ず1回以上出現していることを確認した。
 - 漏れが発見されなかったため、追記対応（内容の追加）は発生していない。
