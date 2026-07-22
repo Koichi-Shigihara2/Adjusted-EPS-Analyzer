@@ -663,3 +663,191 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 - AS-IS-068のCAGR経過年数未補正、AS-IS-109〜112のreal_strong Python/JS
   二重実装、AS-IS-143のコメント/実装不一致はいずれも実装（コード修正）を
   伴うため、本タスクの範囲外として記録にとどめた
+
+---
+
+## 対象6（フェーズ6）: 導出データ — DCF/WACC構成要素系（45件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「DCF/WACC構成要素系（45件）」
+（ステップ6確定後392件ベース。TANUKI VALUATION 28件: AS-IS-001/007/008/
+009/010/011/012/013/014/015/016/017/018/019/020/021/022/023/024/025/027/
+029/030/059/064/065/066/067。TANUKI TAIL 17件: AS-IS-442/443/444/445/446/
+448/449/450/451/492/493/494/495/496/497/498/509）
+
+本サブカテゴリは、既に定義済みの評価倍率系（AS-IS-002〜006等、フェーズ3）
+・キャッシュフロー収益性系（フェーズ4）から`base_fcf`（AS-IS-019）・
+`growth.rate`（AS-IS-012）・`wacc.value`（AS-IS-013）・`RPO_PV`
+（AS-IS-024）・`GrowthOption_PV`（AS-IS-016）・`net_cash`（AS-IS-025）
+として繰り返し引用されてきた中核部分であり、本フェーズで初めて内部
+アルゴリズムまで完全に展開する。実装（コード修正）は行っていない。
+定義の記録のみ。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解した計算式） | データ取得元（最終的にたどり着く一次データ等のAS-IS-ID一覧） | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-001 | TANUKI VALUATION | 理論株価（メイン、Rmβなし基準） | `intrinsic_value_per_share` | フェーズ3でAS-IS-006（乖離率）の分母として既に完全分解済み: `intrinsic_value_per_share = V0_rm/diluted_shares + RPO_PV/diluted_shares + GrowthOption_PV/diluted_shares + net_cash_per_share`。`V0_rm`はbase_fcf（AS-IS-019、本表）を高成長率（AS-IS-012、本表）で成長させた将来FCFを割引率=market_return（AS-IS-013の一部、本表、10%固定）で現在価値化した合計 | AS-IS-019, AS-IS-012, AS-IS-013, AS-IS-024, AS-IS-016, AS-IS-025（すべて本表で完全分解） | 導出データ |
+| AS-IS-007 | TANUKI VALUATION | v0（DCF現在価値合計） | `v0` | 2/3段階/線形逓減DCF（`maturity_config`判定）でbase_fcfを高成長率（AS-IS-012）で成長させた将来FCF列を、割引率=**WACC_β（AS-IS-013のβ込みCAPM値、Rmβなしではない）**で現在価値化した合計。`calculate_two_stage_dcf`/`calculate_three_stage_dcf`/`calculate_tapering_dcf`（`calculator/dcf.py`）が実装 | AS-IS-019, AS-IS-012, AS-IS-013（本表） | 導出データ |
+| AS-IS-008 | TANUKI VALUATION | v0_adjusted | `v0_adjusted` | `calculate_intrinsic_value()`内で`v0_adjusted = v0`（`adjustments.py:647`のコメント「RPO加算前（後方互換のため戻り値として維持）」の通り、**常にAS-IS-007と完全に同一の値**。実質的な「調整」は行われていない） | AS-IS-007（本表、常に同値） | 導出データ |
+| AS-IS-009 | TANUKI VALUATION | alpha / alpha_was_capped | `alpha` / `alpha_was_capped` | `calculate_alpha(roe=roe_avg, wacc=Rm, retention_rate=0.60, alpha_cap=業種/セクター別上限)`で計算される実際の値がそのまま格納される。`g_individual=max(0,roe×0.60)`、`alpha_raw=(g_individual/Rm)×discount_factor(0.7固定)`、`alpha=min(alpha_cap, max(0,alpha_raw))`、`alpha_was_capped=(alpha_raw>alpha_cap)`。**ただしP_t/IV計算では`alpha=0.0`固定（ALPHA-REDESIGN-1）が使われるため、この`alpha`フィールドはIV計算に反映されない参考値専用**（CLAUDE_CODE_START.mdに既記載の設計） | roe_10yr_avg（カタログ対象外）＋ AS-IS-013のmarket_return要素（本表） | 導出データ |
+| AS-IS-010 | TANUKI VALUATION | future_values（1〜5年後理論株価） | `future_values` | `calculate_future_values()`: 年ごとに`value *= (1+g)`を反復適用。`g = high_growth_rate（AS-IS-012）`が高成長期間内（Moat Score連動、AS-IS-026経由・フェーズ4既定義参照）、それ以降は`terminal_growth`（AS-IS-059、本表）。起点値は`scenario_valuations.base.intrinsic_value_per_share`（AS-IS-015、本表）優先、なければAS-IS-001 | AS-IS-012, AS-IS-015, AS-IS-059（本表） | 導出データ |
+| AS-IS-011 | TANUKI VALUATION | return_metrics（期待リターン指標） | `return_metrics` | `calculate_return_metrics()`: 各期間について`value_growth_pct=(future_value/current_value-1)×100`、`expected_return_pct=(future_value/current_price-1)×100`。`current_value`=AS-IS-010起点値、`future_value`=AS-IS-010各年値、`current_price`はyfinance（カタログ対象外） | AS-IS-010（本表）＋ current_price（yfinance、カタログ対象外） | 導出データ |
+| AS-IS-012 | TANUKI VALUATION | growth.rate/source（高成長率決定） | `determine_growth_rate()` | 優先順位: ①セグメント加重成長率（`get_segment_growth()`: `weighted_growth=Σ(segment.weight×segment.growth)`、`config/segment_config.json`の`segments`辞書。admin.html経由の手動入力相当、カタログ対象外）②FCF CAGR（`calculate_fcf_cagr()`: 直近5年の正のFCFのみ対象、`raw_cagr=(直近/最古)^(1/periods)-1`を`[growth_floor=0.15, growth_cap=0.50]`にクリップ。**両閾値ともコード内に根拠コメントなし**、下記備考）③デフォルト25%固定 | fcf_list_raw（AS-IS-019由来、カタログ対象外）＋ segment_config.json（手動入力相当、カタログ対象外） | 導出データ |
+| AS-IS-013 | TANUKI VALUATION | wacc.value/beta/risk_free_rate/market_return | `calculate_wacc()` | `WACC = risk_free_rate + beta × (market_return - risk_free_rate)`（CAPM）、`max(0.06, min(0.25, WACC))`にクリップ<br>`risk_free_rate=4.3%固定`（10年国債利回り、根拠コメントあり）<br>`market_return=10%固定`（**根拠コメントなし、下記備考**）<br>`beta`決定は2段階: (1)月次GitHub Actions（`Beta_Config_Update.yml`、毎月第1日曜JST8時）が`beta_fetcher.py`を実行し、yfinance 5年β取得→`max(0.3,min(2.5,raw_beta))`で`config/beta_config.json`のoverrides欄に書込（Damodaran手動設定銘柄・0.3〜2.5範囲外は個別対応）。(2)実行時、`data_fetcher.py:_determine_beta()`が優先順位: ①`beta_config.json`のoverride（無条件採用、再検証なし）②yfinance直接値（0.1〜3.0の範囲内のみ採用）③セクター別デフォルト④全体デフォルト1.0。**β=0/負値の無条件フォールバック、下記備考** | risk_free_rate/market_return(コード内定数)＋ yfinance beta(カタログ対象外)＋ beta_config.json(手動設定、カタログ対象外) | 導出データ |
+| AS-IS-014 | TANUKI VALUATION | sensitivity.matrix/wacc_values/growth_years | `calculate_sensitivity_matrix()` | WACC±1%（3値）× 高成長期間（base_years中心に3値、base_years=AS-IS-026のPhase1年数）の3×3マトリクス。各セルは`create_sensitivity_calc_func()`が生成する`calc_func(wacc,years)`で計算（two_stage/three_stage DCFを切替、tapering DCFは非対応）。`P_t=v0×(1+alpha)+rpo_pv`（alpha=0固定、rpo_pv=AS-IS-024+AS-IS-016合算） | AS-IS-019, AS-IS-013, AS-IS-024, AS-IS-016（本表） | 導出データ |
+| AS-IS-015 | TANUKI VALUATION | scenario_valuations.bear/base/bull | `calculate_scenario_valuations()` | `bear_rate=base_growth_rate×0.7`、`base_rate=base_growth_rate`、`bull_rate=base_growth_rate×1.2`（`base_growth_rate`=AS-IS-012）。各成長率で`create_scenario_calc_func()`がDCF（tapering/three_stage/two_stageを切替）を再計算し1株あたり価値を算出。**base_growth_rateが負の場合、Bear/Bullの符号が意図と逆転する構造的欠陥あり（下記備考、最重要）** | AS-IS-012, AS-IS-019, AS-IS-013, AS-IS-024, AS-IS-016（本表） | 導出データ |
+| AS-IS-016 | TANUKI VALUATION | growth_options.total_pv/count/options | `calculate_growth_option_total_pv()` | `expected_fcf = tam × penetration × fcf_margin × probability`<br>`pv = expected_fcf / (1+discount_rate)^delay_years`<br>`total_pv = Σ(pv)`。`tam`/`penetration`/`fcf_margin`/`probability`/`discount_rate`/`delay_years`は全て`config/growth_options_config.json`のticker別手動設定値（admin.html経由） | growth_options_config.json（手動入力相当、カタログ対象外） | 導出データ |
+| AS-IS-017 | TANUKI VALUATION | maturity_profile | `get_maturity_profile()` | `config/maturity_config.json`のticker別設定（`type`: two_stage/three_stage、`phase1.years`/`phase1.growth`〈null時はAS-IS-012流用〉、`phase2.years`/`phase2.growth`、`terminal_growth`）。admin.html経由の手動設定 | maturity_config.json（手動入力相当、カタログ対象外） | 導出データ |
+| AS-IS-018 | TANUKI VALUATION | dcf_components.*（v0/pv_high_growth/pv_terminal/high_growth_detail/terminal_fcf/terminal_value/v0_rm/pv_fcf_rm/pv_tv_rm/pv_phase1_rm/pv_phase2_rm） | `dcf_result.to_dict()` 等 | `DCFResult`/`ThreeStageDCFResult`（`calculator/dcf.py`、フェーズ3で式決定済み）の全フィールドをそのまま格納したバンドル。`v0`はAS-IS-007と同値。`_rm`サフィックス系（`v0_rm`/`pv_fcf_rm`/`pv_tv_rm`）はmarket_return基準（AS-IS-001のV0_rmと同一）で別途計算した参考値 | AS-IS-007（本表）＋ AS-IS-001のV0_rm系（本表） | 導出データ |
+| AS-IS-019 | TANUKI VALUATION | fcf_base.base_fcf/method/cv | `determine_fcf_base()` | CV（変動係数=std/\|mean\|）方式で自動選択。特殊ケース優先順: (1)データ3年未満→recent_2yr保守フォールバック (2)直近2年平均≤0または直近1年マイナス→avg_5yr (3)直近2年平均が5年平均の15%未満→avg_5yr (4)5年平均≤0→recent_2yr (5)5年CAGRが-5%未満かつ回復傾向なし→recent_1yr、回復傾向あり→avg_5yr_recovery (6)`CV≤0.5`→avg_5yr（成熟企業）、`CV>0.5`→recent_2yr（成長企業）。`fcf_5yr_avg`/`fcf_2yr_avg`/`fcf_list`はSEC EDGAR annual_*.jsonの`cf.free_cash_flow`（AS-IS-047と同一データ、フェーズ4既定義参照） | AS-IS-047（既定義・フェーズ4） | 導出データ |
+| AS-IS-020 | TANUKI VALUATION | fcf_outlier.detected/rule/action/note/deviation_pct | `analyze_fcf_outlier()` | ルール判定: 直近FCF<0→`latest_negative`（閾値なし）／5年平均からの乖離が閾値超（CV≤0.5なら±20%、CV>0.5なら±60%）→`deviation_large`。EPSアナライザーの`adjusted_eps_analyzer`annual.jsonから「一過性費用」カテゴリ（リストラ・在庫サプライチェーン・金融関連）を突合し、`transient_total≥閾値`なら`action="excluded"`（5年平均採用）、そうでなければ`action="flagged"`。**上方乖離（latest>5yr_avg）は一過性コストで除外しない**（FCF-OUTLIER-1、既知設計） | AS-IS-019（本表）＋ EPS Analyzerのadjustments（信頼性・品質判定系AS-IS-268/269、未定義） | 導出データ |
+| AS-IS-021 | TANUKI VALUATION | fcf_estimation.applied/conversion_rate/estimated_fcf等 | `estimate_fcf_from_eps()` | `estimated_fcf = adj_net_income × conversion_rate`。`conversion_rate`は`fcf_conversion_config.json`のticker別override＞保険/金融業種は1.0固定＞セクター別レートの優先順。`adj_net_income`はEPSアナライザーannual.jsonの直近年`adjusted_net_income`から「買収・統合関連」加算を条件付き控除（`pre_deduction_dr>1.0`の場合のみ控除、循環参照回避のため控除前drで判定）。スキップ条件: FCF外れ値`excluded`済み（保険/金融除く）／生FCF安定（CV<0.3）かつ外れ値未検出（ticker_overrides対象は除く）／調整済み純利益≤0 | AS-IS-019, AS-IS-020（本表）＋ EPS Analyzerのadjusted_net_income（CF収益性系AS-IS-267、既定義・フェーズ4） | 導出データ |
+| AS-IS-022 | TANUKI VALUATION | software_system_reclassification.* | `check_software_system_reclassification()` | `realized_ratio = mean(生FCF/調整済み純利益)`（黒字年のみ、直近5年）。現分類のレート（Mature=1.00/SaaS=1.61固定）から30%以上乖離し、かつもう一方のレートの方が実測値に近い場合のみ見直しを推奨（config書き換えは行わず、その実行限りの差替え） | AS-IS-021（本表）＋ AS-IS-047（既定義・フェーズ4） | 導出データ |
+| AS-IS-023 | TANUKI VALUATION | rd_capitalization.* | `capitalize_rd()` | `capitalized_rd = rd_current`（当年R&D全額を資本計上）、`amortization_current = mean(過去3年R&D、現年の3倍超は外れ値除外)`、`rd_adjustment = capitalized_rd - amortization_current`（FCFへの調整額）。適用条件: R&D/Revenue≥5%かつ過去2年以上のR&Dデータあり | R&D/Revenue（SEC EDGAR annual_*.json、カタログ対象外） | 導出データ |
+| AS-IS-024 | TANUKI VALUATION | rpo_adjustment.rpo_pv/application_rate/sector_category/rpo_incremental等 | `adjust_rpo()` | `rpo_incremental`: 前年同期RPO・Revenue成長率が判明→`max(0, rpo-rpo_yago×(1+rev_yoy))`／不明ならTTM Revenue代用→`max(0, rpo-rev_ttm×1.0)`／両方不明→0<br>`rpo_pv = rpo_incremental × application_rate × op_margin / (1+15%)^1.5年`（`op_margin≤0`ならrpo_pv=0）<br>`application_rate`: `config/rpo_config.json`のwhitelist登録済み銘柄は100%（比率ゲート免除）、保険0%、Fintech(Financial Services)50%、industry keywordでSaaS判定なら100%、セクター別テーブル参照<br>非whitelistは`rpo/rev_ttm<30%`で不適用（**rev_ttmがNoneの場合この安全弁ゲート自体がスキップされる、下記備考**） | rpo/op_margin/rpo_yago/rev_yoy/rev_ttm（SECReader経由、カタログ対象外）＋ rpo_config.json（手動設定、カタログ対象外） | 導出データ |
+| AS-IS-025 | TANUKI VALUATION | bs_adjustment.net_cash/net_cash_per_share/sector_guard | `calculate_bs_adjustment()` | `net_cash_per_share = net_cash / diluted_shares`（`diluted_shares>0`かつ`available`の場合のみ）。`net_cash`自体は`SECReader.get_net_cash()`（本タスク対象外ファイル）が算出するSEC EDGARベース値（cash+ST投資-LT債務-ST債務、セクターガード〈保険/fintech特殊処理〉・複数タグフォールバック補完あり） | SECReader.get_net_cash()（common/sec_data、カタログ対象外） | 導出データ |
+| AS-IS-027 | TANUKI VALUATION | rice.q/cf_conversion/q_years/cf_years/avg_intensity/avg_rev_growth/vc_factor/bear・base・bull | `calculate_rice()` | `RICE = (G × VC_Factor × Q × CF) / WACC`<br>`Q = mean(OCF/(NI+SBC))`直近3年（GAAP赤字年・利益ほぼゼロの年は除外、SBCは非現金費用の補正として純利益に足し戻す）<br>`CF = mean(売上成長率(t+1)/投資強度(t))`1年ラグ直近3点（投資強度=(\|CapEx\|+\|R&D\|+\|S&M\|)/Revenue、CF点は±10にクリップ）<br>`CF_adj`はCapExのみの投資強度版<br>`VC_Factor = clamp(roic_wacc_ratio, 0.3, 2.0)`（`roic_wacc_ratio`はAS-IS-026のmoat_score計算で使うROIC値と同一算出、フェーズ4既定義参照）<br>`G`=AS-IS-015の各シナリオgrowth_rate、`WACC`=market_return(10%固定)<br>`rice = (G×VC×Q×CF)/WACC`、`rice_adj = (G×VC×Q×CF_adj)/WACC`（**`cf_adj≤0`の場合のみ0.0にフォールバックする条件があり、mainのrice側には同等のcf≤0ガードがない非対称設計、下記備考RICE_adj非対称ゼロ化**） | AS-IS-015（本表）＋ SEC EDGAR annual_*.json（カタログ対象外）＋ roic_wacc_ratio（AS-IS-026関連、カタログ対象外） | 導出データ |
+| AS-IS-029 | TANUKI VALUATION | pv_high / pv_terminal（components内） | `components.pv_high`/`components.pv_terminal` | AS-IS-018の`pv_high_growth`/`pv_terminal`と完全に同一の値を`components`辞書に再格納しただけの重複フィールド | AS-IS-018（本表、完全重複） | 導出データ |
+| AS-IS-030 | TANUKI VALUATION | alpha_uncapped（components内） | `components.alpha_uncapped` | `alpha_result.alpha_uncapped = max(0.0, alpha_raw)`（AS-IS-009のcap適用前の値）。AS-IS-009の一部を再掲したもの | AS-IS-009（本表） | 導出データ |
+| AS-IS-059 | TANUKI VALUATION | terminal_growthの出所 | `get_terminal_growth()` | 優先順位: ①`maturity_config.json`のticker個別`terminal_growth`が**デフォルト3.0%と1e-5超の差**を持つ場合はそれを採用（**3.0%ちょうどを明示設定したい場合は区別できずセクター別フォールバックに流れる、下記備考**）②`growth_sanity.TICKER_INDUSTRY_OVERRIDES`経由でDamodaran業種別テーブル（長期GDP成長率+セクター構造成長プレミアム、2.0%〜3.5%）を参照③デフォルト3.0%固定 | maturity_config.json（手動設定、カタログ対象外）＋ growth_sanity.TICKER_INDUSTRY_OVERRIDES（カタログ対象外） | 導出データ |
+| AS-IS-064 | TANUKI VALUATION | 将来価値予測（シナリオ別テーブル、stock.html独自計算） | `projectFuture()` | クライアント側`projectFuture(baseVal, growthRate)`が`v×=(1+g)`を反復（`g`は高成長期間内`sc.rate`〈シナリオ別成長率、AS-IS-015〉・以降`terminalGrowth`）。**バックエンドのAS-IS-010〈future_values〉は不使用**、シナリオ数（bear/base/bullの有無）・年数（`Object.keys(futureVals).length`からの逆算）のみJSONを参照し、値自体は完全に独自再計算 | AS-IS-015（本表）＋ AS-IS-010（本表、年数構造の参照のみ） | 導出データ |
+| AS-IS-065 | TANUKI VALUATION | 5年BASE年率換算リターン（stock.html独自計算） | `annRate` | `annRate = (fv5/currentPrice)^0.2 - 1`（`fv5`=AS-IS-011の`return_metrics["5年後"].future_value`、`0.2=1/5`固定指数） | AS-IS-011（本表）＋ current_price（yfinance、カタログ対象外） | 導出データ |
+| AS-IS-066 | TANUKI VALUATION | 感応度分析（独自5×5マトリクス、stock.html独自計算） | `calcSensIV()` | クライアント側で`base_fcf`（AS-IS-019）を**常に2段階DCFのみ**で再計算する独自5×5マトリクス（WACC5値×成長率オフセット5値）。`iv=(pv+tvPv)/shares+bsps`。**バックエンドのAS-IS-014〈sensitivity.matrix、3×3、DCFタイプ切替あり〉とは別に、同一ページ内に完全に独立実装として並存**（下記備考、最重要級）。`const alpha=d.alpha??1.0`は宣言されるが式中で未使用（死コード） | AS-IS-019, AS-IS-014（本表、後者とは別実装で並存） | 導出データ |
+| AS-IS-067 | TANUKI VALUATION | Reverse DCF（市場vs DCF乖離分析、stock.html独自計算） | render内IIFE | 表示条件: `(base_iv-currentPrice)/currentPrice < -50%`（DCF価値が市場価格より50%超低い場合のみ）。`EV = currentPrice×diluted_shares + net_debt`（AS-IS-045、既定義・フェーズ4）<br>`fcfTerm = EV×(Rm-g_TV)/(1+g_TV)`（Rm=AS-IS-013のmarket_return、g_TV=AS-IS-059）<br>`reqGr = (fcfTerm/fcfCur)^(1/5) - 1`（fcfCur=AS-IS-019のbase_fcf） | AS-IS-045（既定義・フェーズ4）＋ AS-IS-013, AS-IS-059, AS-IS-019（本表） | 導出データ |
+| AS-IS-442 | TANUKI TAIL | assumptions.Y1_growth/Y2_growth/Y3_growth | `tail_dcf_bridge.py:generate_scenario_files()` | `review["stage2"]["scenarios"][シナリオ].revenue_growth_y1/y2/y3`（AS-IS-492、本表）をそのまま`round(値,4)`で転記 | AS-IS-492（本表） | 導出データ |
+| AS-IS-443 | TANUKI TAIL | assumptions.terminal_growth | 同上 | `review["stage2"]["scenarios"][シナリオ].terminal_growth`（AS-IS-493、本表）をそのまま転記 | AS-IS-493（本表） | 導出データ |
+| AS-IS-444 | TANUKI TAIL | assumptions.operating_margin | 同上 | `review["stage2"]["scenarios"][シナリオ].operating_margin_terminal`（AS-IS-494、本表）をそのまま転記 | AS-IS-494（本表） | 導出データ |
+| AS-IS-445 | TANUKI TAIL | assumptions.weighted_growth | `_weighted_growth()` | `weighted_growth = (Y1×3 + Y2×2 + Y3×1) / 6`（近い将来を重く見る加重平均。Y1/Y2/Y3=AS-IS-442） | AS-IS-442（本表） | 導出データ |
+| AS-IS-446 | TANUKI TAIL | base_intrinsic_value | `generate_scenario_files()` | TANUKI VALUATIONの`latest.json`から`intrinsic_value_per_share`（AS-IS-001、本表）を読み取り`round(値,2)`で転記するだけの移送 | AS-IS-001（本表） | 導出データ |
+| AS-IS-448 | TANUKI TAIL | future_values["1年後"] | `calculate_future_values()`（TANUKI VALUATIONの関数を直接import） | `current_value=base_intrinsic_value（AS-IS-446）`、`high_growth_rate=weighted_growth（AS-IS-445）`、`high_growth_years=3固定`、`terminal_growth=AS-IS-443`で計算した1年後値。**関数自体はAS-IS-010と共通（`future_values.py`を直接import）だが入力の成長率がTANUKI VALUATION本体〈AS-IS-012〉ではなくGrok生成の`weighted_growth`である点が異なる** | AS-IS-446, AS-IS-445, AS-IS-443（本表） | 導出データ |
+| AS-IS-449 | TANUKI TAIL | future_values["3年後"] | 同上 | AS-IS-448と同一計算の3年目要素 | AS-IS-448と同じ | 導出データ |
+| AS-IS-450 | TANUKI TAIL | future_values["5年後"] | 同上 | AS-IS-448と同一計算の5年目要素（`high_growth_years=3`のため4〜5年目は`terminal_growth`適用） | AS-IS-448と同じ | 導出データ |
+| AS-IS-451 | TANUKI TAIL | kpi_forecasts["1年後"/"3年後"].{KPI名} | `generate_scenario_files()` | `review["stage2"]["scenarios"][シナリオ].kpi_forecasts`（AS-IS-496、本表）をそのまま転記するだけの移送 | AS-IS-496（本表） | 導出データ |
+| AS-IS-492 | TANUKI TAIL | stage2.scenarios.{bear,base,bull}.revenue_growth_y1/y2/y3 | `build_stage2_prompt()`→Grok API | **決定論的な計算式は存在しない。AI（Grok）が下記プロンプト入力に基づき生成したJSON値**: 直近KPIテーブル・YoY・Stage1評価結果（health_score/concerns、信頼性・品質判定系AS-IS-482〜491・未定義）・営業利益率推移（4四半期連続改善なら現在値未満のシナリオを避けるよう指示）を渡し、bear/base/bull各シナリオの`revenue_growth_y1/y2/y3`を生成させる（下記備考、AI生成データの位置づけ） | Stage1評価結果（信頼性・品質判定系・未定義）＋ KPI実績（カタリスト・イベント予測系AS-IS-419〜423等・未定義）＋ 営業利益率推移（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-493 | TANUKI TAIL | stage2.scenarios.{...}.terminal_growth | 同上 | AS-IS-492と同一のAI生成JSON内のフィールド（プロンプト例では0.03〜0.035） | AS-IS-492と同じ | 導出データ |
+| AS-IS-494 | TANUKI TAIL | stage2.scenarios.{...}.operating_margin_terminal | 同上 | AS-IS-492と同一のAI生成JSON内のフィールド | AS-IS-492と同じ | 導出データ |
+| AS-IS-495 | TANUKI TAIL | stage2.scenarios.{...}.rationale | 同上 | AS-IS-492と同一のAI生成JSON内のフィールド（各シナリオの根拠を説明する自由記述文） | AS-IS-492と同じ | 導出データ |
+| AS-IS-496 | TANUKI TAIL | stage2.scenarios.{...}.kpi_forecasts["1年後"/"3年後"][KPI名] | 同上 | AI生成。プロンプトはKPI現在値（layer2実績優先・なければlayer1財務指標）と各シナリオの成長率を踏まえた1年後・3年後予想値を指示するが、**実際の計算はAIの推論に委ねられ、コード側での検算・固定式適用は行われない** | AS-IS-492（同一AI応答内）＋ KPI現在値（カタリスト・イベント予測系・未定義） | 導出データ |
+| AS-IS-497 | TANUKI TAIL | stage2.key_assumptions | 同上 | AI生成。全シナリオ共通の前提条件を箇条書きで生成させたリスト（決定論的な計算式なし） | AS-IS-492と同じプロンプト応答 | 導出データ |
+| AS-IS-498 | TANUKI TAIL | stage2.risk_factors | 同上 | AI生成。リスク要因を箇条書きで生成させたリスト（決定論的な計算式なし） | AS-IS-492と同じプロンプト応答 | 導出データ |
+| AS-IS-509 | TANUKI TAIL | scenario | `generate_scenario_files()` | `"scenario": sc_name`（"bear"/"base"/"bull"のいずれかのラベルをそのまま格納するだけのループ変数） | なし（ループ変数の転記） | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+- **AS-IS-015（scenario_valuations）: Bear/Bull成長率の符号が負の成長率で
+  意図と逆転する構造的欠陥（最重要）**: `calculate_scenario_valuations()`
+  （`calculator/scenarios.py:64-66`）は`bear_rate=base_growth_rate×0.7`・
+  `bull_rate=base_growth_rate×1.2`という単純な乗算で構成される。
+  `base_growth_rate`が正の値である前提では「Bearは基準より控えめ・Bullは
+  基準より強気」という意図通りに機能するが、**`base_growth_rate`が負の
+  場合（例: -10%）はBear(-10%×0.7=-7%、実際は基準より緩やかな下落=
+  楽観的)・Bull(-10%×1.2=-12%、実際は基準より急な下落=悲観的)と
+  ラベルと実態が完全に逆転する**。現状の`determine_growth_rate()`
+  （AS-IS-012）はFCF CAGRを`growth_floor=0.15`で下限クリップし、
+  セグメント加重成長率も現状の`config/segment_config.json`には負値の
+  設定例が存在しないため、本番データでは顕在化していないが、ロジック
+  自体の欠陥は現在も残る。同一の乗算ロジックは`calculator/growth.py`の
+  `get_scenario_growth_rates()`（未使用のデッドコード）・
+  `segment_config.py`の`calculate_scenario_growth()`（同じく未使用の
+  デッドコード、こちらは`max(0.0,min(0.50,...))`で追加クリップされる
+  点のみ異なる）にも重複実装されている。
+- **AS-IS-012: growth_floor(15%)・growth_cap(50%)の根拠が
+  コード内に一切記載されていない**: `calculate_fcf_cagr()`の
+  デフォルト引数として`growth_floor=0.15`・`growth_cap=0.50`が設定
+  されているが、なぜ15%・50%なのかを説明するコメントが存在しない
+  （`risk_free_rate=4.3%`には「10年国債利回り」という出典コメントが
+  付いているのと対照的）。
+- **AS-IS-013: market_return=10%固定の根拠もコード内に記載がない**:
+  `risk_free_rate`同様「一般的な株式市場の長期平均リターン想定」と
+  推測されるが、明示的な出典コメントはwacc.py内に存在しない。
+- **AS-IS-013: β=0/負値がbeta_fetcher.py（月次更新）で無条件に
+  フォールバックされ、かつdata_fetcher.py側で再検証されない**:
+  `beta_fetcher.py:calc_capped_beta()`（`beta_fetcher.py:262-268`）は
+  yfinanceから取得した生βが`None`かどうかのみをチェックし
+  （`beta_fetcher.py:304`）、`0`や負値であっても`max(0.3,min(2.5,raw_beta))`
+  で**無条件に0.3へフロアされ、beta_config.jsonに書き込まれる**。
+  この値は本来のyfinanceデータ異常（一時的な取得エラー等でゼロ値が
+  返る可能性）を示すシグナルかもしれないが、警告フラグは一切付与
+  されない。さらに、実行時の`data_fetcher.py:_determine_beta()`は
+  `beta_config.json`のoverrideを**最優先かつ無条件に採用**するため
+  （`data_fetcher.py:841-848`）、このoverride経由のβに対しては
+  `_determine_beta()`自身が持つ「yfinance直接値は0.1〜3.0の範囲内
+  のみ採用」という健全性チェックが一切適用されない。加えて
+  `beta_fetcher.py`の許容範囲（0.3〜2.5）と`_determine_beta()`の
+  直接値許容範囲（0.1〜3.0）が異なる2つの基準として並存している。
+- **AS-IS-024（RPO補正）: rev_ttm未提供時に比率安全弁がスキップされる**:
+  `adjust_rpo()`の比率条件ゲート（`adjustments.py:525`
+  `if not via_whitelist and rev_ttm is not None and rev_ttm > 0`）は、
+  `rev_ttm`が`None`の場合**ゲート自体を素通り**する。`rpo_incremental`の
+  計算（`adjustments.py:542-543`）は`rpo_yago`と`rev_yoy`さえあれば
+  `rev_ttm`なしでも非ゼロ値を返せるため、「`rpo_yago`/`rev_yoy`は
+  取得できたが`rev_ttm`だけがNone」という組み合わせでは、
+  RPO/Revenue比率が閾値（30%）未満でもRPO補正が適用されてしまう
+  可能性がある。
+- **AS-IS-027（RICE）: rice_adjのみに0フロアガードがあり、mainのrice
+  には対応するガードがない非対称設計**: `calculate_rice()`
+  （`rice.py:440`）で`rice_adj_val = (...) if cf_adj > 0 and wacc > 0
+  else 0.0`と明示的にゼロフロアされるのに対し、直上の`rice_val`
+  （`rice.py:438`）には`cf`（本来のCF値）が負であっても同様のガードが
+  なく、そのまま計算される。CF（投資再生産効率）が構造的に負値を
+  取りうる銘柄では、`rice`は符号が反転した値をそのまま返すのに
+  `rice_adj`だけが0にフォールバックするという不整合が生じる。
+- **AS-IS-007（v0）とAS-IS-001（intrinsic_value_per_share）は別々の
+  WACCで計算された別の値であり、latest.jsonのトップレベル`v0`
+  フィールドはメイン理論株価の直接の計算根拠ではない**: `v0`
+  （AS-IS-007）はSTEP1で計算されたβ込みCAPM WACCベースのDCF結果
+  （`intrinsic_value_beta`＝AS-IS-002の計算根拠）であるのに対し、
+  画面のメイン理論株価（AS-IS-001/AS-IS-006）は別途`_rm`（market_return
+  10%固定、βなし）で再計算した`_v0_rm`（`dcf_components.v0_rm`に
+  格納）を使う。latest.jsonを読む外部AIやレビュアーが「v0からIVを
+  積み上げ検算」しようとすると、トップレベルの`v0`ではなく
+  `dcf_components.v0_rm`を使わなければ整合しない、という罠になりうる
+  （CLAUDE_CODE_START.mdの`REPORT-ALPHA-STALE-1`と同種の「表示順序と
+  実際の計算根拠の不一致」パターン）。
+- **AS-IS-008（v0_adjusted）はAS-IS-007と常に完全に同一の値を返す
+  実質的な死フィールド**: `calculate_intrinsic_value()`内で
+  `v0_adjusted = v0`（`adjustments.py:647`）という代入のみで、
+  変数名が示唆する「調整」は一切行われない。コメント自体が
+  「後方互換のため戻り値として維持」と明記しており、意図的な
+  後方互換用の重複フィールドである。
+- **AS-IS-066: バックエンドのAS-IS-014（sensitivity.matrix、3×3、
+  DCFタイプに応じてtwo_stage/three_stageを切替）とは別に、stock.html
+  上に完全に独立したクライアント側5×5感応度マトリクス
+  （`calcSensIV()`）が同一ページに並存する**: `calcSensIV()`は
+  **常に2段階DCFのみ**で再計算するため、three_stage DCF
+  （`maturity_config.json`でtype="three_stage"設定済みの銘柄）や
+  tapering DCF（高成長銘柄向け線形逓減）を採用している銘柄では、
+  同じページ内の2つの「感応度分析」セクションが異なる計算式で
+  異なる数値を表示することになる。加えて`const alpha=d.alpha??1.0`
+  という変数が宣言されているが式中では一切使用されておらず、
+  ALPHA-REDESIGN-1以前の名残と思われる死コードが残存している。
+- **AS-IS-059: `get_terminal_growth()`はticker個別設定が「デフォルト値
+  3.0%ちょうど」の場合、それが意図的な明示設定か単なる未設定かを
+  区別できない**: `abs(ticker_tv_g - 0.03) > 1e-5`という差分チェックの
+  設計上、管理者が意図的に「このticker のTVは3.0%にする」と
+  `maturity_config.json`へ明示設定しても、デフォルト値と一致するため
+  「未設定」とみなされ、セクター別Damodaranテーブルの値がもし
+  異なればそちらが優先されてしまう。3.0%を明示指定したい場合の
+  抜け道が存在しない。
+- **AS-IS-492〜498（TANUKI TAIL stage2）は本サブカテゴリの他の
+  大半の項目と異なり、決定論的な計算式ではなくAI（Grok）による
+  自由生成JSONである**: 「定義」列に記載した内容は実際には
+  「このプロンプトをAIに渡すとこの構造のJSONが返る」という関係で
+  あり、`revenue_growth_y1`等の具体的な数値がどのような論理で
+  導かれたかをコード側から再現・検算することはできない。同じ
+  DCF/WACC構成要素系というサブカテゴリの中に「厳密な数式」と
+  「AIの裁量」が混在している点は、本カテゴリの定義作業における
+  特筆すべき構造的差異である。
+
+### 次フェーズへの申し送り
+
+- 本フェーズで引用のみ行い内部アルゴリズムを再展開しなかったAS-IS-ID:
+  信頼性・品質判定系のAS-IS-268/269（EPS Analyzer adjustments）・
+  AS-IS-482〜491（TANUKI TAIL stage1評価）、カタリスト・イベント予測系の
+  AS-IS-419〜423（TANUKI TAIL KPI実績）
+- AS-IS-026（moat_score）・AS-IS-047（fcf_history）・AS-IS-129（revenue）・
+  AS-IS-267（EPS Analyzer quarters）は既定義（フェーズ4）のものを
+  そのまま引用した
+- 本フェーズで発見したBear/Bull符号反転（AS-IS-015）・rev_ttm未提供時の
+  RPO安全弁スキップ（AS-IS-024）・RICE_adj非対称ゼロ化（AS-IS-027）・
+  β=0/負値の無条件フォールバック（AS-IS-013）・v0/v0_rmの取り違えリスク
+  （AS-IS-007）はいずれも実装（コード修正）を伴うため、本タスクの範囲外
+  として記録にとどめた
