@@ -5,7 +5,9 @@
 
 ## 本ドキュメントの位置づけ
 
-AS-IS全284項目を、(a) 11共通項目群（①〜⑪）のいずれかに該当する項目、
+AS-IS全284項目を、(a) 11共通項目群（①〜⑪、項目名キーワードマッチで
+特定）＋2026-07-22の計算ロジック照合で新たに発見した3群（⑫〜⑭、項目名
+ではなく計算ルート・データソースの一致で特定）のいずれかに該当する項目、
 (b) 単独ルートで重複のない項目、の2種類に機械的に分類し、(a)については
 統一定義・唯一の正とする計算ルート・削除対象ルートを設計する。(b)は
 「変更なし」として一括記録する。全284件のAS-IS-IDが本ドキュメントの
@@ -16,6 +18,7 @@ diffにより証明する。
 
 ## 分類方法（機械的ルール）
 
+### ①〜⑪（項目名ベース、2026-07-22当初実施）
 各AS-IS項目の「項目名」セル（テーブルの第1列）に対し、11群それぞれの
 キーワード正規表現をマッチングし、該当した群のうち最小番号を「主群」、
 それ以外を「重複候補（副群）」として記録した。項目名セルのみを対象と
@@ -27,6 +30,26 @@ diffにより証明する。
 
 分類スクリプトは本セッションのスクラッチパッドに保存済み
 （`classify_groups.py`）。
+
+### ⑫〜⑭（計算ロジックベース、2026-07-22追加実施）
+①〜⑪の項目名ベース分類では、(1)名前は違うが同じ計算ロジック・
+データソースを使っている項目、(2)名前は同じだが計算ロジック・
+データソースが実は異なる項目、の2種類の見落としパターンを検出できない
+ことが判明したため、追加で「計算ルート」列テキストから
+yfinance `.info`フィールド名・FRED系列コード・SEC bs/cf/pl
+フィールド名・具体的な関数名を正規表現抽出し、項目名に関わらず
+同一データソース参照を共有するAS-IS-IDをクラスタ化する機械的検査を
+実施した（`logic_fingerprint.py`／`logic_fingerprint2.py`）。
+最終判定ラベル系（tanuki_score・funda_score・timing_score・matrix・
+HypeCore stage・HypeCore推奨・STONKS SILO overall_score/overall_verdict・
+MACRO PULSE RECESSION RISK SCORE表示・EPS Analyzer health、計11件）は
+本検査のスコープから除外した（BUY/WATCH等の最終判定ラベルの機能的重複は
+別途の調査ステップとする方針のため）。
+
+クラスタ抽出結果のうち、既存11群で未分類かつクロスサブシステムで
+実質的に同一概念を指すと判断できたもの（ノイズ的な一般語一致は除外）
+を実データで検証し、⑫ネットキャッシュ系・⑬Rule of 40系・⑭純利益
+二重抽出パイプライン系の3群として新規に追加した。
 
 ## ① 乖離率／IV比 系
 
@@ -339,10 +362,169 @@ AS-IS-055/056（erp 2ルート重複）は⑪の群統一問題ではなく、TA
 | AS-IS-260 | 5-5. Discover | `macro_themes[].sources[]` | ⑩で主判断済み（macro_themes）。同上。 |
 | AS-IS-261 | 5-5. Discover | `macro_themes[].generated_at` | ⑩で主判断済み（macro_themes）。同上。 |
 
+## ⑫ ネットキャッシュ系（新規発見・2026-07-22計算ロジック照合）
+
+### 発見経緯
+項目名キーワードマッチでは発見できなかった重複。同名「net_cash」だが
+計算元データソースが全く異なる。当初「該当なし（単独ルート）」に
+分類されていたが、計算ロジックベースの再点検で発見。
+
+### 計算ロジックの相違
+- **TANUKI `bs_adjustment.net_cash`（AS-IS-025）**: `SECReader.get_net_cash()`
+  （`common/sec_data/reader.py:379`）。定義＝(現金+短期投資) − (長期有利子負債+短期
+  有利子負債)。全てSEC XBRL由来。Insurance/Fintechセクターガード（有利子負債側を
+  0または一部除外）あり。annual優先だが**四半期データへのフォールバックあり**
+  （docstringに明記、実データでも`net_debt_period: "2026Q1"`のように四半期時点の
+  値を採用しているケースを確認）。
+- **STONKS SILO `valuation.net_cash`（AS-IS-134）**: `pipeline.py:131-133`。
+  定義＝(現金+短期投資、SEC annual dataから) − `total_debt`（**yfinanceの
+  `info.get("totalDebt")`**）。セクターガードなし。**annual dataのみ参照、
+  四半期フォールバックなし**。
+
+### 実データ突合結果（25銘柄中23銘柄で比較可能、RKLB/ZSはTANUKIデータ欠損）
+最大乖離は符号反転を含む。代表例:
+
+| 銘柄 | TANUKI net_cash | STONKS SILO net_cash | 差分 |
+|---|---|---|---|
+| NET | +896,051,000（純キャッシュ） | **-2,581,000,064（純負債）** | **符号反転** |
+| LITE | -109,500,000 | -2,436,600,096 | 約22倍 |
+| RBRK | +617,323,000（純キャッシュ） | **-766,206,944（純負債）** | **符号反転** |
+| RDW | +56,306,000（純キャッシュ） | **-37,421,000（純負債）** | **符号反転** |
+| BBAI | +332,785,000 | +63,017,000 | 約81%減 |
+
+23銘柄全件で何らかの乖離あり（一致は0件）。
+
+### 根本原因（NETで実際にコンポーネント分解して特定）
+1. **total_debtの定義差**: TANUKI側の長期+短期有利子負債合計（SEC由来、
+   3,267,827,000）に対し、STONKS SILO側のyfinance `totalDebt`
+   （3,524,536,064）は約257M多い（リース債務等の追加項目を含む可能性）。
+2. **より支配的な原因＝現金側のデータ鮮度**: TANUKIは`net_debt_period:
+   "2026Q1"`が示す通り直近四半期データにフォールバックしており、
+   短期投資3,231,652,000を捕捉できている。STONKS SILOは`annual`
+   データのみ参照するため、直近四半期に積み増された短期投資分
+   （NETの場合、差額の大半に相当）を捕捉できていない。
+
+### 統一定義
+`common/sec_data`側の`get_net_cash()`を唯一の正とする（四半期フォールバック・
+セクターガードを備えた、より保守的で正確な実装のため）。STONKS SILOの
+独自net_cash計算（cash - yfinance totalDebt）を廃止し、`get_net_cash()`の
+戻り値を直接参照するよう変更する。
+
+### 対象AS-IS項目と判断
+| AS-IS ID | サブシステム | 項目名 | TO-BE判断 |
+|---|---|---|---|
+| AS-IS-025 | 5-1. TANUKI VALUATION | bs_adjustment.net_cash/net_cash_per_share/sector_guard | **唯一の正とする**。`SECReader.get_net_cash()`（四半期フォールバック・セクターガード付き）。 |
+| AS-IS-134 | 5-3. STONKS SILO | `valuation.net_cash` | **削除対象**。独自計算（cash - yfinance totalDebt）を廃止し、AS-IS-025の値を参照する形に変更。 |
+
+## ⑬ Rule of 40系（新規発見・2026-07-22計算ロジック照合）
+
+### 発見経緯
+同名「Rule of 40」だが計算式が異なるケース。当初「該当なし（単独ルート）」
+に分類されていたが、計算ロジックベースの再点検（トークン共有クラスタ
+`field:rule40`）で発見。既存の削除候補調査でも「計算式が異なる」旨は
+本文中に注記されていたが、独立群としては未設置だった。
+
+### 計算ロジックの相違
+- **HypeCore `rule40`（AS-IS-095）**: `hypecore.py:166-167`。
+  `rule40 = rev_yoy + op_margin`。ここで`op_margin = ni / revenue * 100`
+  （**変数名は"op_margin"だが実体は純利益率**、H9として既知のバグ）。
+  成長率は**直近YoY**（四半期/TTM値）。
+- **STONKS SILO `rule_of_40`（AS-IS-143）**: `analyzer.py:245-249`。
+  `rule_of_40 = cagr_3yr + operating_income / revenue_sanitized * 100`。
+  成長率は**3年CAGR**、利益率は**真の営業利益率**。
+
+つまり「成長率の期間」（YoY vs 3年CAGR）と「利益率の種類」
+（純利益率 vs 営業利益率）の両方が異なる、二重に別物の指標。
+
+### 実データ突合結果（25銘柄中23銘柄で比較可能）
+符号反転・大幅乖離を多数確認:
+
+| 銘柄 | HypeCore rule40 | STONKS SILO rule_of_40 | 差分 |
+|---|---|---|---|
+| RCAT | +1201.85 | **-78.5** | **符号反転** |
+| IONQ | +1579.96 | **-360.5** | **符号反転** |
+| LITE | +86.82 | **-12.9** | **符号反転** |
+| SITM | +60.59 | **-15.7** | **符号反転** |
+| SOUN | +23.35 | +62.0 | 約2.7倍 |
+| JOBY | +69420.40 | データなし | HypeCore側は異常値（前期比極小分母による発散の疑い） |
+
+23銘柄全件で何らかの乖離あり（一致は0件）。JOBY等の極端値は
+HypeCore側のYoY成長率計算が前年同期の分母が極小の場合に発散する
+既知パターンの疑いがあり、別途要確認事項として記録する。
+
+### 統一定義
+**統一しない（別指標として両立、ただし命名を分離する）**。両者は
+「成長率＋利益率の合成指標」という設計思想は同じだが、期間・利益率の
+定義が異なるため単純に一方を廃止できない。ただし**同じ「Rule of 40」
+という名称を名乗るべきではない**。命名規則の是正対象とし
+（`NAMING_CONVENTIONS.md`参照）、HypeCore側は
+`rule40_yoy_netmargin`、STONKS SILO側は`rule40_cagr3y_opmargin`のような
+計算基準を明示する名称に変更することを推奨する。あわせてHypeCore側の
+`op_margin`という誤った変数名（実体は純利益率）も是正対象とする
+（実装は範囲外、命名規則の適用対象として記録するのみ）。
+
+### 対象AS-IS項目と判断
+| AS-IS ID | サブシステム | 項目名 | TO-BE判断 |
+|---|---|---|---|
+| AS-IS-095 | 5-2. HypeCore | `rule40` | **改名対象**（統一はしない）。`rule40_yoy_netmargin`等、計算基準を明示する名称への変更を推奨。 |
+| AS-IS-143 | 5-3. STONKS SILO | `rule_of_40` | **改名対象**（統一はしない）。`rule40_cagr3y_opmargin`等、計算基準を明示する名称への変更を推奨。 |
+
+## ⑭ 純利益（SEC XBRL NetIncome）二重抽出パイプライン系（新規発見・2026-07-22計算ロジック照合）
+
+### 発見経緯
+同一のSEC XBRL概念（NetIncomeLoss）を、2つの独立した抽出パイプラインが
+別々にパースしている構造を発見。当初「該当なし（単独ルート）」に
+分類されていたが、計算ロジックベースの再点検（トークン共有クラスタ
+`sec_field:net_income`）で発見。
+
+### 計算ロジックの相違
+- **STONKS SILO `records[yr].net_income`（AS-IS-129）**: `pipeline.py:111-117`。
+  `common/sec_data`の年次正規化パイプライン（`fetcher.load_annual_data()`）
+  経由でSEC annual filingから抽出。
+- **EPS Analyzer `ttm.json`の`net_income`（AS-IS-281）**: `pipeline.py:calculate_ttm`
+  （直近4四半期合算）。EPS Analyzer自身の`extract_key_facts.py`による
+  独立したXBRL四半期抽出パイプライン経由。
+
+すなわち、`common/sec_data`（TANUKI・STONKS SILO等が共用）とEPS Analyzer
+自身の抽出コードという、**リポジトリ内に少なくとも2つの独立したSEC XBRL
+パース実装が存在する**ことを意味する。
+
+### 実データ突合結果（24銘柄、EPS Analyzer TTM(直近4Q合計) vs STONKS SILO Annual）
+比較の性質上、TTM（過去4四半期）とAnnual（単年度決算）という**期間の
+違いが乖離の一部を説明しうる**点に留意が必要だが、期間が実質的に一致する
+と思われる銘柄（AVAV, ESTC）では**完全一致**しており、両パイプラインの
+抽出結果自体は整合していることを確認した。一方、以下は符号反転を含む
+大幅乖離が見られる:
+
+| 銘柄 | EPS Analyzer TTM NI | STONKS SILO Annual NI | 差分 |
+|---|---|---|---|
+| AVAV | -265,122,000 | -265,122,000 | **完全一致（期間整合時の参照値）** |
+| ESTC | +367,766,000 | +367,766,000 | **完全一致（期間整合時の参照値）** |
+| IONQ | +327,234,000（黒字） | **-510,378,000（赤字）** | **符号反転** |
+| IOT | +57,512,000（黒字） | **-9,117,000（赤字）** | **符号反転** |
+| ONDS | +244,697,350（黒字） | **-132,235,000（赤字）** | **符号反転** |
+| LITE | +439,900,000 | +25,900,000 | 約17倍 |
+
+### 統一定義
+**統一しない（用途が異なるため両パイプラインの存置は妥当）が、
+両者の期間定義（TTM vs 単年度）の違いを明示するprovenance/期間タグの
+付与を推奨する**。AVAV/ESTCの完全一致が示す通り、抽出ロジック自体に
+矛盾はなく、期間の取り方の違いが主な乖離要因と考えられるが、
+利用者が両者を無意識に比較すると「黒字/赤字」の判断が逆転しうる
+重大なリスクがあるため、各出力に「TTM（直近4四半期）」「FY{year}
+（単年度決算）」を明示するラベル付けを必須化する。
+
+### 対象AS-IS項目と判断
+| AS-IS ID | サブシステム | 項目名 | TO-BE判断 |
+|---|---|---|---|
+| AS-IS-129 | 5-3. STONKS SILO | `records`（yr→{revenue,net_income}） | 統一しない（存置）。期間ラベル（FY{year}）の明示を推奨。 |
+| AS-IS-281 | 5-6. EPS Analyzer | `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps`） | 統一しない（存置）。期間ラベル（TTM）の明示を推奨（`period`フィールドは既存だが明示的な"TTM"表記の徹底を推奨）。 |
+
 ## 単独ルート項目（変更なし、機械的一括生成）
 
-以下は11共通項目群のいずれにも該当しない単独ルート項目（199件）。
-重複がないため、統一定義・削除対象の設計は不要。全件、以下の形式で
+以下は11共通項目群＋新規発見3群（計14群）のいずれにも該当しない
+単独ルート項目（193件）。重複がないため、統一定義・削除対象の設計は
+不要。全件、以下の形式で
 機械的に一括記録する。
 
 - AS-IS-001：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / intrinsic_value_per_share
@@ -361,7 +543,6 @@ AS-IS-055/056（erp 2ルート重複）は⑪の群統一問題ではなく、TA
 - AS-IS-022：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / software_system_reclassification.*
 - AS-IS-023：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / rd_capitalization.*
 - AS-IS-024：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / rpo_adjustment.rpo_pv/application_rate/sector_category/rpo_i…
-- AS-IS-025：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / bs_adjustment.net_cash/net_cash_per_share/sector_guard
 - AS-IS-026：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / moat_score系（components.moat_score等）
 - AS-IS-027：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / rice.q/cf_conversion/q_years/cf_years/avg_intensity/avg_rev_…
 - AS-IS-028：変更なし（単独ルート、重複なし） — 5-1. TANUKI VALUATION / moat_score / moat_phase1_years / moat_gross_margin_norm / mo…
@@ -407,7 +588,6 @@ AS-IS-055/056（erp 2ルート重複）は⑪の群統一問題ではなく、TA
 - AS-IS-091：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `volume_ratio`
 - AS-IS-092：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `vol_surge`
 - AS-IS-094：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `ni_yoy`
-- AS-IS-095：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `rule40`
 - AS-IS-096：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `fcf_yield`
 - AS-IS-101：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `earnings_growth`
 - AS-IS-104：変更なし（単独ルート、重複なし） — 5-2. HypeCore / `eps_surprise`
@@ -426,16 +606,13 @@ AS-IS-055/056（erp 2ルート重複）は⑪の群統一問題ではなく、TA
 - AS-IS-124：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `tickers`（辞書, ticker→result）
 - AS-IS-125：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `years`
 - AS-IS-128：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `summary`
-- AS-IS-129：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `records`（yr→{revenue,net_income}）
 - AS-IS-130：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `valuation.market_cap`
 - AS-IS-131：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `valuation.current_price`
-- AS-IS-134：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `valuation.net_cash`
 - AS-IS-137：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `rnd_ratio`
 - AS-IS-138：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `sm_ratio`
 - AS-IS-139：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `gross_margin`
 - AS-IS-140：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `gross_margin_derived`
 - AS-IS-142：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `score`
-- AS-IS-143：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `rule_of_40`
 - AS-IS-144：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `mature_profit`
 - AS-IS-145：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `mature_profit_note`
 - AS-IS-147：変更なし（単独ルート、重複なし） — 5-3. STONKS SILO / `sbc_ratio`
@@ -543,56 +720,56 @@ AS-IS-055/056（erp 2ルート重複）は⑪の群統一問題ではなく、TA
 - AS-IS-276：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `eps_ratio`
 - AS-IS-277：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `gaap_to_adj_positive`
 - AS-IS-278：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `yoy_growth`
-- AS-IS-281：変更なし（単独ルート、重複なし） — 5-6. EPS Analyzer / `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_…
 
 ## 機械的網羅性証明
 
 本セクションは、OUTPUT_ITEMS_INVENTORY.md内の全AS-IS-IDと、本ドキュメント
 （TO_BE.md）内で実際に言及されている全AS-IS-IDを再抽出してdiffした
-実行結果を記録するものである（2026-07-22実施、前回の完了報告では
-この結果をチャット上で報告したのみでファイルへの追記を怠っていたため、
-今回是正として追記する）。
+実行結果を記録するものである。
 
-### 実行したコマンド（Python、正規表現`AS-IS-\d{3}`で抽出）
+**改訂履歴**:
+1. 2026-07-22（初回）: ①〜⑪の11群＋単独ルート項目199件のみの状態で実行し
+   284/284完全一致を確認。
+2. 2026-07-22（本改訂）: 計算ロジックベースの再点検で⑫ネットキャッシュ系・
+   ⑬Rule of 40系・⑭純利益二重抽出パイプライン系の3群を新規追加し、
+   該当する6件（AS-IS-025/095/129/134/143/281）を単独ルート項目リストから
+   新規群テーブルへ移動した。この変更後、diffを**再実行**した
+   （移動のみで純増減がないため理論上は284/284のまま変化しないはずだが、
+   実装上のtypo・移動漏れ等の混入を防ぐため実際に再実行して確認した）。
+
+### 実行したコマンド（Python、正規表現`AS-IS-\d{3}`で抽出、本改訂での再実行分）
 
 ```python
 import re
 
+all_expected = set(f'AS-IS-{i:03d}' for i in range(1, 285))
 with open('OUTPUT_ITEMS_INVENTORY.md', encoding='utf-8') as f:
     inv_text = f.read()
 with open('TO_BE.md', encoding='utf-8') as f:
     tobe_text = f.read()
-
-all_expected = set(f'AS-IS-{i:03d}' for i in range(1, 285))
 inv_ids = set(re.findall(r'AS-IS-\d{3}', inv_text))
 tobe_ids = set(re.findall(r'AS-IS-\d{3}', tobe_text))
-
 missing_in_inv = sorted(all_expected - inv_ids)
 missing_in_tobe = sorted(all_expected - tobe_ids)
 extra_in_tobe = sorted(tobe_ids - all_expected)
 ```
 
-### 実行結果（そのまま転記）
+### 実行結果（そのまま転記、⑫⑬⑭追加・単独ルートリスト更新後の再実行分）
 
 ```
-=== 抽出結果 ===
 OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID数: 284
 TO_BE.md内で言及されているAS-IS-ID数: 284
-期待される全ID数(001-284): 284
-
-=== diff ===
-INVENTORYに存在しない期待ID: []
-TO_BE.mdに言及がないID(漏れ): []
-範囲外の不正ID: []
-
+漏れ(TO_BE): []
+漏れ(INVENTORY): []
+範囲外: []
 結果: 完全一致（漏れゼロ）
 ```
 
 ### 結論
 
-- OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID総数: **284件**（AS-IS-001〜AS-IS-284、欠番なし）
-- TO_BE.md内で言及されているAS-IS-ID総数: **284件**
-- diffの結果、漏れ・過不足ともに**0件**。全284項目が、11群いずれかの
-  「対象AS-IS項目と判断」表、または「単独ルート項目」一括リストの
-  どちらか一方に必ず1回以上出現していることを確認した。
+- OUTPUT_ITEMS_INVENTORY.md内のAS-IS-ID総数: **284件**（AS-IS-001〜AS-IS-284、欠番なし、変更なし）
+- TO_BE.md内で言及されているAS-IS-ID総数: **284件**（⑫⑬⑭追加・単独ルートリスト更新後も284件を維持）
+- diffの結果、漏れ・過不足ともに**0件**。全284項目が、14群（①〜⑭）
+  いずれかの「対象AS-IS項目と判断」表、または「単独ルート項目」一括
+  リストのどちらか一方に必ず1回以上出現していることを確認した。
 - 漏れが発見されなかったため、追記対応（内容の追加）は発生していない。
