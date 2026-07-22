@@ -1839,7 +1839,7 @@ stock.html側への表示は、そもそもClassification自体がstock.html
 
 ---
 
-### ✅ [WST-SECTOR-MISCLASSIFICATION-1] [RCAT-SECTOR-MISCLASSIFICATION-1] sector分類修正（2件一括）
+### ✅ [WST-SECTOR-MISCLASSIFICATION-1] sector分類修正（RCAT-SECTOR-MISCLASSIFICATION-1と2件一括対応）
 **優先度:** 中
 **分類:** データ品質 / TANUKI VALUATION
 **登録日:** 2026-07-19
@@ -1925,6 +1925,16 @@ RCAT: "Electronics_General"→実態"Aerospace & Defense"。
 
 #### 着手条件（消滅・完了）
 なし（実装完了）
+
+---
+
+### ✅ [RCAT-SECTOR-MISCLASSIFICATION-1] sector分類修正（WST-SECTOR-MISCLASSIFICATION-1と2件一括対応）
+**優先度:** 中
+**完了日:** 2026-07-19
+
+上記[[WST-SECTOR-MISCLASSIFICATION-1]]エントリと同一コミットで一括対応。
+実装内容・検証結果（RCAT: IV $3.89→$3.73、Classification WATCH不変、
+growth_sanity verdict REVIEW→REVIEW不変〈事前調査通り〉等）は同エントリ参照。
 
 ---
 
@@ -6816,7 +6826,7 @@ CSV書込み前にヘッダー整合チェックを追加。
   EPIC-LAYOUT-1全体を通じて「960px境界の問題」という分類自体を疑ってから
   実装することが重要だと再確認した
 
-✅ [MP-BREADTH-2] Market Pulse 市場の広がり強化・二極化警告実装（2026-06-22 完了）
+### ✅ [MP-BREADTH-2] Market Pulse 市場の広がり強化・二極化警告実装（2026-06-22 完了）
 - **内容**: 市場の二極化（一部銘柄のみ上昇）を捉えるための5指標を新規実装
   1. RSP/SPY乖離指標（Equal Weight vs Cap Weight）: yfinanceで1d=-0.576pt /
      20日平均=+0.097ptを実取得確認。`breadth_data.json`に保存
