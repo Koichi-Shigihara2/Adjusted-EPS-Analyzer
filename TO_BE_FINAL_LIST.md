@@ -1,0 +1,725 @@
+# TO_BE_FINAL_LIST.md — 515項目の矛盾是正・重複排除後の最終出力項目リスト
+
+作成日: 2026-07-22
+出発点: `OUTPUT_ITEMS_INVENTORY.md`（AS-IS全515項目）、`TO_BE.md`（16群の統一定義判断）
+
+## 本ドキュメントの位置づけ
+
+`TO_BE.md`の16群（①〜⑯）のうち、実際の統一定義本文を精読して機械的に
+再分類した結果、以下の通り「統一する」「統一しない」の実際の内訳は
+**依頼文で示された分類と一部異なる**ことが判明した。本リストはこの
+検証済みの分類に基づいて作成している（詳細は完了報告を参照）。
+
+- **実際に「1項目（または少数の共通最終形）へ統一する」と判断された群（7群）**: ①⑤⑧⑩⑫⑮⑯
+- **実際に「統一しない（フィールドは維持、表示規約等のみ統一）」と判断された群（9群）**: ②③④⑥⑦⑨⑪⑬⑭
+
+（依頼文で示された分類「統一する:①⑤⑫⑬⑭⑮⑯／統一しない:②③④⑥⑦⑧⑨⑩⑪」とは、
+⑧⑩⑬⑭の扱いが異なる。⑧⑩は実際には統一済み/統一対象、⑬⑭は実際には
+統一しない、というのが`TO_BE.md`本文の記載である）
+
+実装（コード修正）は行っていない。矛盾是正とリスト作成のみ。
+
+## ステップ1: 矛盾是正の内容
+
+`TO_BE.md`を機械的に検証した結果、当初「4件」と伝えられた矛盾のうち、
+実際に重複していたのは**3件**だった（AS-IS-289は元々単独ルートリストに
+記載されておらず、矛盾していなかった）。
+
+| AS-IS-ID | 是正内容 |
+|---|---|
+| AS-IS-050 | 単独ルートリストから削除。正しい区分は⑯（SEC EDGARセグメントXBRL抽出重複系）。 |
+| AS-IS-194 | 単独ルートリストから削除。正しい区分は⑮（FRED HYスプレッド重複取得系）。 |
+| AS-IS-199 | 単独ルートリストから削除。正しい区分は⑮（FRED HYスプレッド重複取得系）。 |
+| AS-IS-289 | **是正不要**（検証の結果、矛盾していなかった。元々④群のみに記載、単独ルートリストには存在しなかった）。 |
+
+是正後、`TO_BE.md`全体で重複群テーブルと単独ルートリストの両方に
+出現するAS-IS-IDは**0件**であることを機械的に確認済み。
+
+
+## ステップ2-A: 統一により集約された最終項目（①⑤⑧⑩⑫⑮⑯、実際に統一すると判断された7群）
+
+### ①-final: 乖離率／IV比
+
+**最終項目**: `upside_percent`（唯一の正: TANUKI VALUATION `bs_adjustment`ではなくcore_calculator.py算出のAS-IS-006）
+
+**統合元（6件）**:
+- AS-IS-006（TANUKI VALUATION `upside_percent`）: 唯一の正
+- AS-IS-003（TANUKI VALUATION `upside_percent_beta`）: 別の参考値として維持（削除対象外）
+- AS-IS-005（TANUKI VALUATION `upside_percent_rf`）: 別の参考値として維持（削除対象外）
+- AS-IS-075（TANUKI VALUATION `乖離率`、index.htmlクライアント再計算）: **削除対象**
+- AS-IS-116（HypeCore `price_iv_ratio`）: 月次時系列は維持、最新月のみAS-IS-006参照に変更
+- AS-IS-280（EPS Analyzer `deviation_rate`）: 既にパススルー、変更不要
+
+**削除される項目数**: 1件（AS-IS-075）
+
+### ⑤-final: アナリストコンセンサス／マルチプル系
+
+**最終形**: `common/valuation/`の共通取得関数1本に集約。ただし最終出力される
+メトリクス自体は単一値に潰れず、以下の複数の distinct な最終項目として存続する
+（取得経路のみ統一、値は統一しない）。
+
+**統合元（16件）**:
+- AS-IS-031（TANUKI `per_adjusted`）: 共通関数参照に変更、項目としては存続
+- AS-IS-032（TANUKI 束ねられたper/peg/ps/ev_ebitda/analyst_target等）: 共通関数参照、存続
+- AS-IS-061（TANUKI `フェアPER`クライアント再計算）: **削除対象**
+- AS-IS-062（TANUKI `PEGレシオ`クライアント再計算）: **削除対象**
+- AS-IS-063（TANUKI `PSR`クライアント再計算）: **削除対象**
+- AS-IS-097（HypeCore `forward_pe`）: 共通関数参照、存続
+- AS-IS-098（HypeCore `peg_ratio`）: 共通関数参照、存続
+- AS-IS-099（HypeCore `psr`）: 共通関数参照、存続
+- AS-IS-102（HypeCore `recommendation_mean`）: 共通関数参照、存続
+- AS-IS-105（HypeCore `analyst_upgrade_rate`）: 共通関数参照、存続
+- AS-IS-108（HypeCore `buy_hold_ratio`）: 共通関数参照、存続（⑨とも関連）
+- AS-IS-117（HypeCore `ev_ebitda`）: 正値フィルタ追加の修正対象、削除ではなく存続
+- AS-IS-132（STONKS SILO `valuation.psr`、Annual基準）: 統一対象外、別項目として併存
+- AS-IS-133（STONKS SILO `valuation.ev_sales`、Annual基準）: 統一対象外、別項目として併存
+- AS-IS-282（EPS Analyzer `components.per`、GAAP PER）: 共通関数参照、存続
+- AS-IS-283（EPS Analyzer `components.per_adjusted`）: 共通関数参照、存続
+
+**削除される項目数**: 3件（AS-IS-061/062/063、いずれもクライアント側独自再計算）
+
+### ⑧-final: 次回決算日
+
+**最終項目**: `next_earnings_date`（唯一の正: TANUKI VALUATION AS-IS-048）
+
+**統合元（3件）**:
+- AS-IS-048（TANUKI VALUATION `next_earnings_date`）: 唯一の正
+- AS-IS-179（STONKS SILO `次回決算日`）: 既にパススルー、変更不要
+- AS-IS-284（EPS Analyzer `next_earnings_date`）: 既にパススルー、変更不要
+
+**削除される項目数**: 0件（既に理想形で統一済み）
+
+### ⑩-final: リスクイベント／カタリスト系
+
+**最終形**: Discoverの`catalysts[]`/`macro_themes[]`（8フィールド）を唯一の正とし、
+TANUKIの簡易版`risk_events`を廃止。
+
+**統合元（9件）**:
+- AS-IS-054（TANUKI VALUATION `risk_events`）: **削除対象**
+- AS-IS-243〜246（Discover `catalysts[].id/title.../status/first_detected`）: 変更なし（唯一の正）、4件存続
+- AS-IS-258〜261（Discover `macro_themes[].theme.../related_tickers/sources/generated_at`）: 変更なし（唯一の正）、4件存続（⑪とも関連）
+
+**削除される項目数**: 1件（AS-IS-054）
+
+### ⑫-final: ネットキャッシュ系
+
+**最終項目**: `net_cash`（唯一の正: TANUKI VALUATION `bs_adjustment.net_cash`、AS-IS-025）
+
+**統合元（2件）**:
+- AS-IS-025（TANUKI VALUATION `bs_adjustment.net_cash`）: 唯一の正
+- AS-IS-134（STONKS SILO `valuation.net_cash`）: **削除対象**、AS-IS-025の値を参照する形に統合
+
+**削除される項目数**: 1件（AS-IS-134）
+
+### ⑮-final: FRED HYスプレッド重複取得系
+
+**最終形**: FRED `BAMLH0A0HYM2`の取得を`common/`共通関数1本に統合。ただし
+消費先（events.csv用／流動性カード用／BUYチェックリスト用）が異なるため、
+表示・加工は3箇所で個別に残る（取得のみ統一、出力項目としては3件存続）。
+
+**統合元（3件）**:
+- AS-IS-194（MACRO PULSE `HY SPREAD` ticker用）: 取得共通化、項目としては存続
+- AS-IS-199（MACRO PULSE `HYスプレッド` 流動性カード用）: 取得共通化、項目としては存続
+- AS-IS-371（Market Pulse `buy_checklist.checks.hy_spread`）: 取得共通化、項目としては存続
+
+**削除される項目数**: 0件（出力項目は3件とも存続、重複するのは取得コードのみ）
+
+### ⑯-final: SEC EDGARセグメントXBRL抽出重複系
+
+**最終形**: `us-gaap:StatementBusinessSegmentsAxis`のXBRL抽出ロジックを
+`common/`に一本化。TANUKI TAIL（稼働中）・TANUKI VALUATION（現状は死んでおり
+`config/segment_config.json`手動設定で代替中）双方が同一ロジックを参照する
+形に統合。出力項目（`segments[]`と`kpis.*`）は用途が異なるため4件とも存続。
+
+**統合元（4件）**:
+- AS-IS-050（TANUKI VALUATION `segments[]`）: 抽出ロジック統合対象、項目としては存続
+- AS-IS-419（TANUKI TAIL `kpis.{kpi_name}.unit`）: 抽出ロジック統合対象、存続
+- AS-IS-420（TANUKI TAIL `kpis.{kpi_name}.data[].quarter`）: 抽出ロジック統合対象、存続
+- AS-IS-421（TANUKI TAIL `kpis.{kpi_name}.data[].value`）: 抽出ロジック統合対象、存続
+
+**削除される項目数**: 0件（出力項目は4件とも存続。別途、未使用の重複ファイル
+`src/value/tanuki_valuation/segment_fetcher.py`が削除候補だが、これは
+「出力項目」ではなくソースファイルのため本カウントには含めない）
+
+**別途の削除候補（出力項目ではないため上記件数に不算入）**: `src/value/tanuki_valuation/segment_fetcher.py`（未使用の重複コピーファイル、467行）
+
+## ステップ2-B: 統一しない（フィールド維持）と判断された群（②③④⑥⑦⑨⑪⑬⑭、実際に統一しないと判断された9群）
+
+これらは実質的に統合されないため、元の項目数のまま個別の最終項目として記載する。各項目には同一群内の関連項目への相互参照を付す。
+
+### ②-final: 信頼性／品質判定バッジ系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-020 | 5-1. TANUKI VALUATION | fcf_outlier.detected/rule/action/note/deviation_pct | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-042 | 5-1. TANUKI VALUATION | growth_sanity.verdict/signals/warnings/recommended_g | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-052 | 5-1. TANUKI VALUATION | validation.* | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-141 | 5-3. STONKS SILO | `verdict` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-149 | 5-3. STONKS SILO | `dilution_risk` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-150 | 5-3. STONKS SILO | `deficit_fixed_risk` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-158 | 5-3. STONKS SILO | `verdict` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-161 | 5-3. STONKS SILO | `ocf_trend` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-182 | 5-4. MACRO PULSE | REGIME | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-183 | 5-4. MACRO PULSE | regime_source | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-205 | 5-4. MACRO PULSE | ステルス流動性 LAYER1（FRB政策意図） | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-206 | 5-4. MACRO PULSE | LAYER2（ステルス供給/吸収バッジ） | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-209 | 5-4. MACRO PULSE | ステルス吸収週数(stealth_absorb_weeks) | 表示規約統一のみ、フィールドは維持 |
+
+### ③-final: 成長率系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-012 | 5-1. TANUKI VALUATION | growth.rate/source | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-042 | 5-1. TANUKI VALUATION | growth_sanity.verdict/signals/warnings/recommended_g | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-043 | 5-1. TANUKI VALUATION | phase1_growth_auto_adjusted | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-079 | 5-2. HypeCore | STONKS SILO `deficit_quality.revenue_growth_pct` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-093 | 5-2. HypeCore | `rev_yoy` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-100 | 5-2. HypeCore | `revenue_growth` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-136 | 5-3. STONKS SILO | `cagr_3yr` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-152 | 5-3. STONKS SILO | `revenue_growth_pct` | 表示規約統一のみ、フィールドは維持 |
+
+### ④-final: 総合スコア／判定系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-034 | 5-1. TANUKI VALUATION | tanuki_score | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-035 | 5-1. TANUKI VALUATION | funda_score | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-037 | 5-1. TANUKI VALUATION | timing_score | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-041 | 5-1. TANUKI VALUATION | matrix.*（quadrant/label/key_metric_y/qx/qy） | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-085 | 5-2. HypeCore | `stage` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-126 | 5-3. STONKS SILO | `overall_score` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-127 | 5-3. STONKS SILO | `overall_verdict` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-214 | 5-4. MACRO PULSE | RECESSION RISK SCOREバー・マーカー | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-215 | 5-4. MACRO PULSE | RECESSION RISK SCORE数値 | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-279 | 5-6. EPS Analyzer | `health` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-289 | 1-7. TANUKI SCORE | funda_score | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-290 | 1-7. TANUKI SCORE | timing_score | 表示規約統一のみ、フィールドは維持 |
+
+### ⑥-final: モメンタム／複合トレンド系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-078 | 5-2. HypeCore | HypeCore `expectation_score` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-113 | 5-2. HypeCore | `expectation_score` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-114 | 5-2. HypeCore | `fundamental_score` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-115 | 5-2. HypeCore | `momentum_score` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-135 | 5-3. STONKS SILO | `financial_vectors.fields.*` | 表示規約統一のみ、フィールドは維持 |
+
+### ⑦-final: FCF／キャッシュフロー系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-018 | 5-1. TANUKI VALUATION | dcf_components.*（v0,pv_high_growth,pv_terminal,high_growth_detail,term… | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-019 | 5-1. TANUKI VALUATION | fcf_base.base_fcf/method/cv | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-021 | 5-1. TANUKI VALUATION | fcf_estimation.applied/conversion_rate/estimated_fcf等 | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-047 | 5-1. TANUKI VALUATION | fcf_history[] | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-068 | 5-1. TANUKI VALUATION | FCF CAGR(3yr) | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-071 | 5-1. TANUKI VALUATION | キャッシュフロー分析セクション | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-146 | 5-3. STONKS SILO | `sbc_adjusted_fcf` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-156 | 5-3. STONKS SILO | `ocf_annual` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-160 | 5-3. STONKS SILO | `ocf_annual`（年次dict） | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-167 | 5-3. STONKS SILO | `incremental_margin` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-168 | 5-3. STONKS SILO | `incremental_margin_prev` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-169 | 5-3. STONKS SILO | `incremental_margin_trend` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-170 | 5-3. STONKS SILO | `incremental_rev_delta`/`incremental_gp_delta` | 表示規約統一のみ、フィールドは維持 |
+
+### ⑨-final: インサイダー／空売り系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-032 | 5-1. TANUKI VALUATION | per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividen… | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+| AS-IS-103 | 5-2. HypeCore | `short_pct_float` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-108 | 5-2. HypeCore | `buy_hold_ratio` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+
+### ⑪-final: マクロ環境認識系
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-055 | 5-1. TANUKI VALUATION | ① | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-056 | 5-1. TANUKI VALUATION | ② | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-182 | 5-4. MACRO PULSE | REGIME | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-183 | 5-4. MACRO PULSE | regime_source | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-214 | 5-4. MACRO PULSE | RECESSION RISK SCOREバー・マーカー | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-215 | 5-4. MACRO PULSE | RECESSION RISK SCORE数値 | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-258 | 5-5. Discover | `macro_themes[].{theme,horizon,conviction,background,catalyst}` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+| AS-IS-259 | 5-5. Discover | `macro_themes[].related_tickers[].{ticker,role,note}` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+| AS-IS-260 | 5-5. Discover | `macro_themes[].sources[]` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+| AS-IS-261 | 5-5. Discover | `macro_themes[].generated_at` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+
+### ⑬-final: Rule of 40系（新規発見・2026-07-22計算ロジック照合）
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-095 | 5-2. HypeCore | `rule40` | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-143 | 5-3. STONKS SILO | `rule_of_40` | 表示規約統一のみ、フィールドは維持 |
+
+### ⑭-final: 純利益（SEC XBRL NetIncome）二重抽出パイプライン系（新規発見・2026-07-22計算ロジック照合）
+
+| AS-IS ID | サブシステム | 項目名 | 備考 |
+|---|---|---|---|
+| AS-IS-129 | 5-3. STONKS SILO | `records`（yr→{revenue,net_income}） | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-281 | 5-6. EPS Analyzer | `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps`） | 表示規約統一のみ、フィールドは維持 |
+
+## ステップ2-C: 単独ルート項目（415件）
+
+重複が確認されなかった項目。1件＝1最終項目としてそのまま採用する。
+
+| AS-IS ID | 出身サブシステム・項目 |
+|---|---|
+| AS-IS-001 | 5-1. TANUKI VALUATION / intrinsic_value_per_share |
+| AS-IS-002 | 5-1. TANUKI VALUATION / intrinsic_value_beta |
+| AS-IS-004 | 5-1. TANUKI VALUATION / intrinsic_value_rf |
+| AS-IS-007 | 5-1. TANUKI VALUATION / v0 |
+| AS-IS-008 | 5-1. TANUKI VALUATION / v0_adjusted |
+| AS-IS-009 | 5-1. TANUKI VALUATION / alpha / alpha_was_capped |
+| AS-IS-010 | 5-1. TANUKI VALUATION / future_values |
+| AS-IS-011 | 5-1. TANUKI VALUATION / return_metrics |
+| AS-IS-013 | 5-1. TANUKI VALUATION / wacc.value/beta/risk_free_rate/market_return |
+| AS-IS-014 | 5-1. TANUKI VALUATION / sensitivity.matrix/wacc_values/growth_years |
+| AS-IS-015 | 5-1. TANUKI VALUATION / scenario_valuations.bear/base/bull |
+| AS-IS-016 | 5-1. TANUKI VALUATION / growth_options.total_pv/count/options |
+| AS-IS-017 | 5-1. TANUKI VALUATION / maturity_profile |
+| AS-IS-022 | 5-1. TANUKI VALUATION / software_system_reclassification.* |
+| AS-IS-023 | 5-1. TANUKI VALUATION / rd_capitalization.* |
+| AS-IS-024 | 5-1. TANUKI VALUATION / rpo_adjustment.rpo_pv/application_rate/sector_category/rpo_i… |
+| AS-IS-026 | 5-1. TANUKI VALUATION / moat_score系（components.moat_score等） |
+| AS-IS-027 | 5-1. TANUKI VALUATION / rice.q/cf_conversion/q_years/cf_years/avg_intensity/avg_rev_… |
+| AS-IS-028 | 5-1. TANUKI VALUATION / moat_score / moat_phase1_years / moat_gross_margin_norm / mo… |
+| AS-IS-029 | 5-1. TANUKI VALUATION / pv_high / pv_terminal |
+| AS-IS-030 | 5-1. TANUKI VALUATION / alpha_uncapped |
+| AS-IS-033 | 5-1. TANUKI VALUATION / max_eps / max_eps_per / max_eps_reliability |
+| AS-IS-036 | 5-1. TANUKI VALUATION / score_comment |
+| AS-IS-038 | 5-1. TANUKI VALUATION / sell_reason |
+| AS-IS-039 | 5-1. TANUKI VALUATION / pre_rounding_score |
+| AS-IS-040 | 5-1. TANUKI VALUATION / rounded_by_policy |
+| AS-IS-044 | 5-1. TANUKI VALUATION / fcf_margin_bear_mult_applied |
+| AS-IS-045 | 5-1. TANUKI VALUATION / financial_health.*（net_debt,total_debt,cash_and_equivalents,… |
+| AS-IS-046 | 5-1. TANUKI VALUATION / dupont.net_margin/asset_turnover/financial_leverage/roe_deco… |
+| AS-IS-049 | 5-1. TANUKI VALUATION / computed_runway_months |
+| AS-IS-051 | 5-1. TANUKI VALUATION / breakeven_estimate |
+| AS-IS-053 | 5-1. TANUKI VALUATION / dilution_severity / dilution_comment |
+| AS-IS-057 | 5-1. TANUKI VALUATION / 場所 |
+| AS-IS-058 | 5-1. TANUKI VALUATION / 用途 |
+| AS-IS-059 | 5-1. TANUKI VALUATION / terminal_growthの出所 |
+| AS-IS-060 | 5-1. TANUKI VALUATION / ガード |
+| AS-IS-064 | 5-1. TANUKI VALUATION / 将来価値予測（シナリオ別テーブル） |
+| AS-IS-065 | 5-1. TANUKI VALUATION / 5年BASE年率換算リターン |
+| AS-IS-066 | 5-1. TANUKI VALUATION / 感応度分析（独自5×5マトリクス） |
+| AS-IS-067 | 5-1. TANUKI VALUATION / Reverse DCF |
+| AS-IS-069 | 5-1. TANUKI VALUATION / WACCスライダー |
+| AS-IS-070 | 5-1. TANUKI VALUATION / Layer2トグル |
+| AS-IS-072 | 5-1. TANUKI VALUATION / 銘柄数 |
+| AS-IS-073 | 5-1. TANUKI VALUATION / 平均Moat |
+| AS-IS-074 | 5-1. TANUKI VALUATION / 平均RICE |
+| AS-IS-076 | 5-1. TANUKI VALUATION / 200MA乖離 |
+| AS-IS-077 | 5-2. HypeCore / HypeCore `stage_label` |
+| AS-IS-080 | 5-2. HypeCore / `generated_at` |
+| AS-IS-081 | 5-2. HypeCore / `monthly` |
+| AS-IS-082 | 5-2. HypeCore / `tickers`（配列） |
+| AS-IS-083 | 5-2. HypeCore / `month` |
+| AS-IS-084 | 5-2. HypeCore / `price` |
+| AS-IS-086 | 5-2. HypeCore / `stage_label` |
+| AS-IS-087 | 5-2. HypeCore / `ma200_dev` |
+| AS-IS-088 | 5-2. HypeCore / `ma50_dev` |
+| AS-IS-089 | 5-2. HypeCore / `from_peak` |
+| AS-IS-090 | 5-2. HypeCore / `rsi` |
+| AS-IS-091 | 5-2. HypeCore / `volume_ratio` |
+| AS-IS-092 | 5-2. HypeCore / `vol_surge` |
+| AS-IS-094 | 5-2. HypeCore / `ni_yoy` |
+| AS-IS-096 | 5-2. HypeCore / `fcf_yield` |
+| AS-IS-101 | 5-2. HypeCore / `earnings_growth` |
+| AS-IS-104 | 5-2. HypeCore / `eps_surprise` |
+| AS-IS-106 | 5-2. HypeCore / `analyst_downgrade_rate` |
+| AS-IS-107 | 5-2. HypeCore / `sell_on_good_news` |
+| AS-IS-109 | 5-2. HypeCore / `substage_phase` |
+| AS-IS-110 | 5-2. HypeCore / `substage_label` |
+| AS-IS-111 | 5-2. HypeCore / `substage_watch` |
+| AS-IS-112 | 5-2. HypeCore / `substage_next` |
+| AS-IS-118 | 5-2. HypeCore / `low_base_effect` |
+| AS-IS-119 | 5-2. HypeCore / ライフサイクル（黎明/成長/拡大/成熟） |
+| AS-IS-120 | 5-2. HypeCore / HypeCore推奨（買い/保有/売り等） |
+| AS-IS-121 | 5-2. HypeCore / 1ヶ月後のステージ遷移確率 |
+| AS-IS-122 | 5-2. HypeCore / バリュエーション倍率パネル（PER/PS/PEG/EV-EBITDA） |
+| AS-IS-123 | 5-3. STONKS SILO / `generated_at` |
+| AS-IS-124 | 5-3. STONKS SILO / `tickers`（辞書, ticker→result） |
+| AS-IS-125 | 5-3. STONKS SILO / `years` |
+| AS-IS-128 | 5-3. STONKS SILO / `summary` |
+| AS-IS-130 | 5-3. STONKS SILO / `valuation.market_cap` |
+| AS-IS-131 | 5-3. STONKS SILO / `valuation.current_price` |
+| AS-IS-137 | 5-3. STONKS SILO / `rnd_ratio` |
+| AS-IS-138 | 5-3. STONKS SILO / `sm_ratio` |
+| AS-IS-139 | 5-3. STONKS SILO / `gross_margin` |
+| AS-IS-140 | 5-3. STONKS SILO / `gross_margin_derived` |
+| AS-IS-142 | 5-3. STONKS SILO / `score` |
+| AS-IS-144 | 5-3. STONKS SILO / `mature_profit` |
+| AS-IS-145 | 5-3. STONKS SILO / `mature_profit_note` |
+| AS-IS-147 | 5-3. STONKS SILO / `sbc_ratio` |
+| AS-IS-148 | 5-3. STONKS SILO / `sbc_yoy_change` |
+| AS-IS-151 | 5-3. STONKS SILO / `revenue_outlier_years` |
+| AS-IS-153 | 5-3. STONKS SILO / `cash` |
+| AS-IS-154 | 5-3. STONKS SILO / `monthly_burn` |
+| AS-IS-155 | 5-3. STONKS SILO / `runway_months` |
+| AS-IS-157 | 5-3. STONKS SILO / `capex_annual` |
+| AS-IS-159 | 5-3. STONKS SILO / `score` |
+| AS-IS-162 | 5-3. STONKS SILO / `gaap_breakeven_year`/`gaap_breakeven_reason` |
+| AS-IS-163 | 5-3. STONKS SILO / `ocf_breakeven_year`/`ocf_breakeven_reason` |
+| AS-IS-164 | 5-3. STONKS SILO / `hidden_profit_already` |
+| AS-IS-165 | 5-3. STONKS SILO / `discontinuous_growth` |
+| AS-IS-166 | 5-3. STONKS SILO / `discontinuous_growth_note` |
+| AS-IS-171 | 5-3. STONKS SILO / `reproduction_score` |
+| AS-IS-172 | 5-3. STONKS SILO / `reproduction_label` |
+| AS-IS-173 | 5-3. STONKS SILO / `score` |
+| AS-IS-174 | 5-3. STONKS SILO / `fields.{name}.yoy/qoq.change_pct,val_latest,val_prev,end_la… |
+| AS-IS-175 | 5-3. STONKS SILO / `fields.{name}.yoy/qoq.percentile` |
+| AS-IS-176 | 5-3. STONKS SILO / `fields.{name}.yoy/qoq.angle,length` |
+| AS-IS-177 | 5-3. STONKS SILO / `fields.{name}.series_q`（四半期時系列） |
+| AS-IS-178 | 5-3. STONKS SILO / TANUKIスコアバッジ |
+| AS-IS-180 | 5-3. STONKS SILO / 黒字転換目算（Adj.EPS線形推定） |
+| AS-IS-181 | 5-3. STONKS SILO / Adj.EPS系列（黒字化ロードマップ） |
+| AS-IS-184 | 5-4. MACRO PULSE / FF RATE |
+| AS-IS-185 | 5-4. MACRO PULSE / 1Y EXPECTED FF |
+| AS-IS-186 | 5-4. MACRO PULSE / IMPLIED CUTS |
+| AS-IS-187 | 5-4. MACRO PULSE / FRB主眼(dominant_label) |
+| AS-IS-188 | 5-4. MACRO PULSE / 判断理由(ai_reason) |
+| AS-IS-189 | 5-4. MACRO PULSE / FOMC日付 |
+| AS-IS-190 | 5-4. MACRO PULSE / S&P500現在値 |
+| AS-IS-191 | 5-4. MACRO PULSE / S&P500前日比 |
+| AS-IS-192 | 5-4. MACRO PULSE / 10Y-2Y SPREAD |
+| AS-IS-193 | 5-4. MACRO PULSE / 10Y-2Y判定(INVERTED/FLAT/NORMAL) |
+| AS-IS-195 | 5-4. MACRO PULSE / LAST UPDATE |
+| AS-IS-196 | 5-4. MACRO PULSE / （画面最上部）最終更新表示 |
+| AS-IS-197 | 5-4. MACRO PULSE / M2 |
+| AS-IS-198 | 5-4. MACRO PULSE / NET LIQUIDITY |
+| AS-IS-200 | 5-4. MACRO PULSE / FRBバランスシート |
+| AS-IS-201 | 5-4. MACRO PULSE / 各カードの前月比/前週比(chg) |
+| AS-IS-202 | 5-4. MACRO PULSE / 各カードのパーセンタイル/水準バー |
+| AS-IS-203 | 5-4. MACRO PULSE / 各カードの解説コメント(m2Comment/nlComment/hyComment/fedComment) |
+| AS-IS-204 | 5-4. MACRO PULSE / Hollow Rallyバッジ |
+| AS-IS-207 | 5-4. MACRO PULSE / LAYER3（NET流動性連続減少週数） |
+| AS-IS-208 | 5-4. MACRO PULSE / 警戒アラート文 |
+| AS-IS-210 | 5-4. MACRO PULSE / REPO残高(RRPONTSYD) |
+| AS-IS-211 | 5-4. MACRO PULSE / 準備預金(WRBWFRBL) |
+| AS-IS-212 | 5-4. MACRO PULSE / TGA残高(WTREGEN) |
+| AS-IS-213 | 5-4. MACRO PULSE / フェーズbadge / phase-sub |
+| AS-IS-216 | 5-4. MACRO PULSE / シグナルテキスト |
+| AS-IS-217 | 5-4. MACRO PULSE / ALERTバナー |
+| AS-IS-218 | 5-4. MACRO PULSE / 8指標シグナルグリッド |
+| AS-IS-219 | 5-4. MACRO PULSE / スコア比較バー（3ヶ月前/2ヶ月前/前月比/先週比/カスタム） |
+| AS-IS-220 | 5-4. MACRO PULSE / surprise_alerts |
+| AS-IS-221 | 5-4. MACRO PULSE / 週次カード日付/スコア/フェーズ |
+| AS-IS-222 | 5-4. MACRO PULSE / 週差/月差(chg1w/chg1m) |
+| AS-IS-223 | 5-4. MACRO PULSE / 総括(summary) |
+| AS-IS-224 | 5-4. MACRO PULSE / 要因分析(factor_analysis) |
+| AS-IS-225 | 5-4. MACRO PULSE / 注視ポイント(watchpoints) |
+| AS-IS-226 | 5-4. MACRO PULSE / 各指標コメント(indicator_comments) |
+| AS-IS-227 | 5-4. MACRO PULSE / 週差/月差バッジ(各指標) |
+| AS-IS-228 | 5-4. MACRO PULSE / model表示 |
+| AS-IS-229 | 5-4. MACRO PULSE / 8指標の値/シグナル(BULL/CAUTION/NEUTRAL/BEAR)/バー位置 |
+| AS-IS-230 | 5-4. MACRO PULSE / スコア推移折れ線 |
+| AS-IS-231 | 5-4. MACRO PULSE / NBER後退期帯 |
+| AS-IS-232 | 5-4. MACRO PULSE / フェーズゾーン背景(0-25/25-52/52-70/70-100) |
+| AS-IS-233 | 5-4. MACRO PULSE / 期間切替(1年/3年/5年/全期間)ボタン |
+| AS-IS-234 | 5-4. MACRO PULSE / レーダーチャート（現在/2019/2001/スライダー） |
+| AS-IS-235 | 5-4. MACRO PULSE / 類似度スコア(2019年/2001年、%) |
+| AS-IS-236 | 5-4. MACRO PULSE / スライダー（過去に戻る） |
+| AS-IS-237 | 5-4. MACRO PULSE / DATE/INDICATOR/ACTUAL |
+| AS-IS-238 | 5-4. MACRO PULSE / PREV |
+| AS-IS-239 | 5-4. MACRO PULSE / DIR(↑/↓/→)・CHANGE |
+| AS-IS-240 | 5-4. MACRO PULSE / DATE/INDICATOR |
+| AS-IS-241 | 5-4. MACRO PULSE / DAYS |
+| AS-IS-242 | 5-4. MACRO PULSE / CONSENSUS |
+| AS-IS-247 | 5-5. Discover / `tickers{}.updated_at` |
+| AS-IS-248 | 5-5. Discover / 影響予測`{direction, magnitude, thesis_effect, summary}` |
+| AS-IS-249 | 5-5. Discover / `tickers{}.category/memo` |
+| AS-IS-250 | 5-5. Discover / `classified.items[].{title,category,importance,summary,url,s… |
+| AS-IS-251 | 5-5. Discover / `classified.summary` |
+| AS-IS-252 | 5-5. Discover / `classified.conditions_met[]` / `classified.risk_flags[]` |
+| AS-IS-253 | 5-5. Discover / `top_importance`（tickers[ticker]直下） |
+| AS-IS-254 | 5-5. Discover / `candidates[].{ticker,company,sector,reason,risk}` |
+| AS-IS-255 | 5-5. Discover / `candidates[].screening_pass[]` |
+| AS-IS-256 | 5-5. Discover / `candidates[].catalyst_type` |
+| AS-IS-257 | 5-5. Discover / `candidates[].conviction` |
+| AS-IS-262 | 5-5. Discover / `price_change_next_day` |
+| AS-IS-263 | 5-5. Discover / `theme_config`（テーマID/ラベル/カラー） |
+| AS-IS-264 | 5-5. Discover / `discover_config`（銘柄別category/memo/themes） |
+| AS-IS-265 | 5-6. EPS Analyzer / `ticker` / `last_updated` |
+| AS-IS-266 | 5-6. EPS Analyzer / `quarters[].filing_date/period_end/fiscal_year/quarter` |
+| AS-IS-267 | 5-6. EPS Analyzer / `quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_n… |
+| AS-IS-268 | 5-6. EPS Analyzer / `quarters[].adjustments[].item_name/reason/extracted_from` |
+| AS-IS-269 | 5-6. EPS Analyzer / `quarters[].adjustments[].net_amount` |
+| AS-IS-270 | 5-6. EPS Analyzer / `quarters[].ai_analysis.health/comment` |
+| AS-IS-271 | 5-6. EPS Analyzer / `quarters[].ai_analysis.sources[].item/snippet/confidence` |
+| AS-IS-272 | 5-6. EPS Analyzer / `quarters[].special_flags(EPS_DISCREPANCY)` / `special_notes… |
+| AS-IS-273 | 5-6. EPS Analyzer / `ticker/company_name/latest_filing_date` |
+| AS-IS-274 | 5-6. EPS Analyzer / `gaap_eps/adjusted_eps` |
+| AS-IS-275 | 5-6. EPS Analyzer / `eps_diff` |
+| AS-IS-276 | 5-6. EPS Analyzer / `eps_ratio` |
+| AS-IS-277 | 5-6. EPS Analyzer / `gaap_to_adj_positive` |
+| AS-IS-278 | 5-6. EPS Analyzer / `yoy_growth` |
+| AS-IS-285 | 1-7. TANUKI SCORE / generated_at |
+| AS-IS-286 | 1-7. TANUKI SCORE / ticker |
+| AS-IS-287 | 1-7. TANUKI SCORE / company |
+| AS-IS-288 | 1-7. TANUKI SCORE / selection_reason |
+| AS-IS-291 | 1-7. TANUKI SCORE / category |
+| AS-IS-292 | 1-7. TANUKI SCORE / report.fundamental |
+| AS-IS-293 | 1-7. TANUKI SCORE / report.expectation |
+| AS-IS-294 | 1-7. TANUKI SCORE / report.news |
+| AS-IS-295 | 1-7. TANUKI SCORE / report.timing |
+| AS-IS-296 | 1-7. TANUKI SCORE / report.summary |
+| AS-IS-297 | 1-7. TANUKI SCORE / date（history.json各エントリ） |
+| AS-IS-298 | 1-7. TANUKI SCORE / ticker（history.json各エントリ） |
+| AS-IS-299 | 1-7. TANUKI SCORE / all_categories（history.json各エントリ） |
+| AS-IS-300 | 1-8. Market Pulse / date |
+| AS-IS-301 | 1-8. Market Pulse / judgment |
+| AS-IS-302 | 1-8. Market Pulse / indicators |
+| AS-IS-303 | 1-8. Market Pulse / sentiment |
+| AS-IS-304 | 1-8. Market Pulse / fear_greed |
+| AS-IS-305 | 1-8. Market Pulse / tech_pulse |
+| AS-IS-306 | 1-8. Market Pulse / asset_flow |
+| AS-IS-307 | 1-8. Market Pulse / credit |
+| AS-IS-308 | 1-8. Market Pulse / take_profit_checklist |
+| AS-IS-309 | 1-8. Market Pulse / buy_checklist |
+| AS-IS-310 | 1-8. Market Pulse / summary |
+| AS-IS-311 | 1-8. Market Pulse / comments_history |
+| AS-IS-312 | 1-8. Market Pulse / 米10年債/VIX指数/ドル円/日経平均/S&P500/NASDAQ/WTI原油/金(GOLD)/HYG/LQDのval… |
+| AS-IS-313 | 1-8. Market Pulse / 上記各指標のchange_percent |
+| AS-IS-314 | 1-8. Market Pulse / 上記各指標のchange（絶対値） |
+| AS-IS-315 | 1-8. Market Pulse / 上記各指標のvolume_ratio |
+| AS-IS-316 | 1-8. Market Pulse / 上記各指標のdate |
+| AS-IS-317 | 1-8. Market Pulse / 上記各指標のis_fallback |
+| AS-IS-318 | 1-8. Market Pulse / NYSE Composite（value, change_percent, volume_ratio, date） |
+| AS-IS-319 | 1-8. Market Pulse / NYSE Composite.divergence_vs_sp |
+| AS-IS-320 | 1-8. Market Pulse / S&P500グロース(IVW)（value, change_percent, date） |
+| AS-IS-321 | 1-8. Market Pulse / S&P500バリュー(IVE)（value, change_percent, date） |
+| AS-IS-322 | 1-8. Market Pulse / Russell2000小型(RUT)（value, change_percent, date） |
+| AS-IS-323 | 1-8. Market Pulse / グロース対バリュー比.diff_percent |
+| AS-IS-324 | 1-8. Market Pulse / 大型対小型比.diff_percent |
+| AS-IS-325 | 1-8. Market Pulse / VIX9D（value, change, change_percent, date） |
+| AS-IS-326 | 1-8. Market Pulse / VIX9D対VIX比.value |
+| AS-IS-327 | 1-8. Market Pulse / VIX9D対VIX比.contango |
+| AS-IS-328 | 1-8. Market Pulse / HYG対LQD比（value, change, date） |
+| AS-IS-329 | 1-8. Market Pulse / sentiment.score |
+| AS-IS-330 | 1-8. Market Pulse / sentiment.label |
+| AS-IS-331 | 1-8. Market Pulse / sentiment.sub_scores.{8指標}.score |
+| AS-IS-332 | 1-8. Market Pulse / 同上.weight |
+| AS-IS-333 | 1-8. Market Pulse / 同上.raw |
+| AS-IS-334 | 1-8. Market Pulse / sentiment.breadth.advances / declines |
+| AS-IS-335 | 1-8. Market Pulse / sentiment.breadth.ad_ratio_5d |
+| AS-IS-336 | 1-8. Market Pulse / sentiment.breadth.new_highs_52w / new_lows_52w |
+| AS-IS-337 | 1-8. Market Pulse / sentiment.breadth.nh_nl_diff |
+| AS-IS-338 | 1-8. Market Pulse / sentiment.breadth.pct_above_50ma / pct_above_200ma |
+| AS-IS-339 | 1-8. Market Pulse / sentiment.breadth.rsp_spy_divergence_1d |
+| AS-IS-340 | 1-8. Market Pulse / sentiment.breadth.rsp_spy_divergence_20d_avg |
+| AS-IS-341 | 1-8. Market Pulse / sentiment.breadth.ad_line |
+| AS-IS-342 | 1-8. Market Pulse / sentiment.breadth.mcclellan_oscillator |
+| AS-IS-343 | 1-8. Market Pulse / sentiment.breadth.date |
+| AS-IS-344 | 1-8. Market Pulse / fear_greed.score |
+| AS-IS-345 | 1-8. Market Pulse / fear_greed.rating |
+| AS-IS-346 | 1-8. Market Pulse / fear_greed.previous_close |
+| AS-IS-347 | 1-8. Market Pulse / fear_greed.one_week_ago |
+| AS-IS-348 | 1-8. Market Pulse / fear_greed.one_month_ago |
+| AS-IS-349 | 1-8. Market Pulse / tech_pulse.score |
+| AS-IS-350 | 1-8. Market Pulse / tech_pulse.label |
+| AS-IS-351 | 1-8. Market Pulse / tech_pulse.components.qqq_vs_ma125 |
+| AS-IS-352 | 1-8. Market Pulse / tech_pulse.components.vxn_latest |
+| AS-IS-353 | 1-8. Market Pulse / tech_pulse.components.vxn_vs_ma50 |
+| AS-IS-354 | 1-8. Market Pulse / tech_pulse.components.qqq_vs_spy_20d |
+| AS-IS-355 | 1-8. Market Pulse / tech_pulse.components.fg_score |
+| AS-IS-356 | 1-8. Market Pulse / tech_pulse.components.vxn_available |
+| AS-IS-357 | 1-8. Market Pulse / tech_pulse.divergence.value |
+| AS-IS-358 | 1-8. Market Pulse / tech_pulse.divergence.zscore |
+| AS-IS-359 | 1-8. Market Pulse / tech_pulse.divergence.signal |
+| AS-IS-360 | 1-8. Market Pulse / asset_flow.{key}.label / ticker |
+| AS-IS-361 | 1-8. Market Pulse / asset_flow.{key}.desc |
+| AS-IS-362 | 1-8. Market Pulse / asset_flow.{key}.value |
+| AS-IS-363 | 1-8. Market Pulse / asset_flow.{key}.change_pct |
+| AS-IS-364 | 1-8. Market Pulse / asset_flow.{key}.date |
+| AS-IS-365 | 1-8. Market Pulse / asset_flow.{key}.is_fallback |
+| AS-IS-366 | 1-8. Market Pulse / credit.stock |
+| AS-IS-367 | 1-8. Market Pulse / credit.bond |
+| AS-IS-368 | 1-8. Market Pulse / credit.credit |
+| AS-IS-369 | 1-8. Market Pulse / credit.risk_off_score |
+| AS-IS-370 | 1-8. Market Pulse / take_profit_checklist.triggered/fg_score/points/action/check… |
+| AS-IS-372 | 1-8. Market Pulse / date |
+| AS-IS-373 | 1-8. Market Pulse / advances / declines |
+| AS-IS-374 | 1-8. Market Pulse / unchanged |
+| AS-IS-375 | 1-8. Market Pulse / ad_ratio_1d |
+| AS-IS-376 | 1-8. Market Pulse / ad_ratio_5d |
+| AS-IS-377 | 1-8. Market Pulse / new_highs_52w / new_lows_52w |
+| AS-IS-378 | 1-8. Market Pulse / nh_nl_diff |
+| AS-IS-379 | 1-8. Market Pulse / total_stocks |
+| AS-IS-380 | 1-8. Market Pulse / pct_above_50ma / pct_above_200ma |
+| AS-IS-381 | 1-8. Market Pulse / rsp_return_1d / spy_return_1d |
+| AS-IS-382 | 1-8. Market Pulse / rsp_spy_divergence_1d |
+| AS-IS-383 | 1-8. Market Pulse / rsp_spy_divergence_20d_avg |
+| AS-IS-384 | 1-8. Market Pulse / ad_line |
+| AS-IS-385 | 1-8. Market Pulse / mcclellan_oscillator |
+| AS-IS-386 | 1-8. Market Pulse / market_data.csv 各列 |
+| AS-IS-387 | 1-8. Market Pulse / extreme-fear参照: date |
+| AS-IS-388 | 1-8. Market Pulse / extreme-fear参照: fear_greed.score |
+| AS-IS-389 | 1-9. Portfolio / date |
+| AS-IS-390 | 1-9. Portfolio / usdjpy |
+| AS-IS-391 | 1-9. Portfolio / total_assets_usd |
+| AS-IS-392 | 1-9. Portfolio / total_assets_jpy |
+| AS-IS-393 | 1-9. Portfolio / total_pnl_usd |
+| AS-IS-394 | 1-10. TANUKI TAIL / quarter |
+| AS-IS-395 | 1-10. TANUKI TAIL / filing_date |
+| AS-IS-396 | 1-10. TANUKI TAIL / effective |
+| AS-IS-397 | 1-10. TANUKI TAIL / material_weaknesses |
+| AS-IS-398 | 1-10. TANUKI TAIL / significant_deficiencies |
+| AS-IS-399 | 1-10. TANUKI TAIL / item4_excerpt |
+| AS-IS-400 | 1-10. TANUKI TAIL / item4_excerpt_ja |
+| AS-IS-401 | 1-10. TANUKI TAIL / fetched_at |
+| AS-IS-402 | 1-10. TANUKI TAIL / quarters（index.json） |
+| AS-IS-403 | 1-10. TANUKI TAIL / last_accn（rss_state.json） |
+| AS-IS-404 | 1-10. TANUKI TAIL / last_filed（rss_state.json） |
+| AS-IS-405 | 1-10. TANUKI TAIL / no_filing_days（rss_state.json） |
+| AS-IS-406 | 1-10. TANUKI TAIL / ticker（review_queue.json） |
+| AS-IS-407 | 1-10. TANUKI TAIL / quarter（review_queue.json） |
+| AS-IS-408 | 1-10. TANUKI TAIL / status（review_queue.json） |
+| AS-IS-409 | 1-10. TANUKI TAIL / completed_at（review_queue.json） |
+| AS-IS-410 | 1-10. TANUKI TAIL / review_path（review_queue.json） |
+| AS-IS-411 | 1-10. TANUKI TAIL / "{ticker}:{condition}"タイムスタンプ（satellite_alerts.json） |
+| AS-IS-412 | 1-10. TANUKI TAIL / timestamp（journal.json watchlist） |
+| AS-IS-413 | 1-10. TANUKI TAIL / ticker（journal.json watchlist） |
+| AS-IS-414 | 1-10. TANUKI TAIL / type="watchlist"（journal.json） |
+| AS-IS-415 | 1-10. TANUKI TAIL / reason（journal.json watchlist） |
+| AS-IS-416 | 1-10. TANUKI TAIL / tags（journal.json watchlist） |
+| AS-IS-417 | 1-10. TANUKI TAIL / layer2_complete |
+| AS-IS-418 | 1-10. TANUKI TAIL / missing_kpis |
+| AS-IS-422 | 1-10. TANUKI TAIL / kpis.{name}.value |
+| AS-IS-423 | 1-10. TANUKI TAIL / kpis.{name}.value_numeric |
+| AS-IS-424 | 1-10. TANUKI TAIL / kpis.{name}.confidence |
+| AS-IS-425 | 1-10. TANUKI TAIL / proposed_kpis[].name |
+| AS-IS-426 | 1-10. TANUKI TAIL / proposed_kpis[].description |
+| AS-IS-427 | 1-10. TANUKI TAIL / proposed_kpis[].source |
+| AS-IS-428 | 1-10. TANUKI TAIL / proposed_kpis[].warning_threshold |
+| AS-IS-429 | 1-10. TANUKI TAIL / proposed_kpis[].exit_threshold |
+| AS-IS-430 | 1-10. TANUKI TAIL / proposed_kpis[].related_exit_condition |
+| AS-IS-431 | 1-10. TANUKI TAIL / proposed_kpis[].auto_fetchable |
+| AS-IS-432 | 1-10. TANUKI TAIL / proposed_kpis[].extraction_hint |
+| AS-IS-433 | 1-10. TANUKI TAIL / proposed_kpis[].xbrl_tag |
+| AS-IS-434 | 1-10. TANUKI TAIL / proposed_kpis[].xbrl_dimension |
+| AS-IS-435 | 1-10. TANUKI TAIL / proposed_kpis[].xbrl_member |
+| AS-IS-436 | 1-10. TANUKI TAIL / proposed_kpis[].layer2_name |
+| AS-IS-437 | 1-10. TANUKI TAIL / tail_kpi_map.json: kpi_name |
+| AS-IS-438 | 1-10. TANUKI TAIL / tail_kpi_map.json: tag_history[].tag/valid_from/valid_to |
+| AS-IS-439 | 1-10. TANUKI TAIL / tail_kpi_map.json: fallback_tags |
+| AS-IS-440 | 1-10. TANUKI TAIL / tail_kpi_map.json: revenue_tag |
+| AS-IS-441 | 1-10. TANUKI TAIL / tail_kpi_map.json: dimension |
+| AS-IS-442 | 1-10. TANUKI TAIL / assumptions.Y1_growth / Y2_growth / Y3_growth |
+| AS-IS-443 | 1-10. TANUKI TAIL / assumptions.terminal_growth |
+| AS-IS-444 | 1-10. TANUKI TAIL / assumptions.operating_margin |
+| AS-IS-445 | 1-10. TANUKI TAIL / assumptions.weighted_growth |
+| AS-IS-446 | 1-10. TANUKI TAIL / base_intrinsic_value |
+| AS-IS-447 | 1-10. TANUKI TAIL / current_price |
+| AS-IS-448 | 1-10. TANUKI TAIL / future_values["1年後"] |
+| AS-IS-449 | 1-10. TANUKI TAIL / future_values["3年後"] |
+| AS-IS-450 | 1-10. TANUKI TAIL / future_values["5年後"] |
+| AS-IS-451 | 1-10. TANUKI TAIL / kpi_forecasts["1年後"/"3年後"].{KPI名} |
+| AS-IS-452 | 1-10. TANUKI TAIL / kpi_current.{KPI名} |
+| AS-IS-453 | 1-10. TANUKI TAIL / kpi_layer1_keys |
+| AS-IS-454 | 1-10. TANUKI TAIL / kpi_format.{KPI名} |
+| AS-IS-455 | 1-10. TANUKI TAIL / ticker（thesis共通） |
+| AS-IS-456 | 1-10. TANUKI TAIL / type（thesis共通） |
+| AS-IS-457 | 1-10. TANUKI TAIL / status（thesis共通） |
+| AS-IS-458 | 1-10. TANUKI TAIL / version（thesis共通） |
+| AS-IS-459 | 1-10. TANUKI TAIL / thesis（core固有） |
+| AS-IS-460 | 1-10. TANUKI TAIL / entry_story（core固有） |
+| AS-IS-461 | 1-10. TANUKI TAIL / exit_guide（core固有） |
+| AS-IS-462 | 1-10. TANUKI TAIL / entry_price（core固有） |
+| AS-IS-463 | 1-10. TANUKI TAIL / entry_date（core固有） |
+| AS-IS-464 | 1-10. TANUKI TAIL / strategy_name（satellite固有） |
+| AS-IS-465 | 1-10. TANUKI TAIL / entry_condition（satellite固有） |
+| AS-IS-466 | 1-10. TANUKI TAIL / exit_condition（satellite固有） |
+| AS-IS-467 | 1-10. TANUKI TAIL / holding_period（satellite固有） |
+| AS-IS-468 | 1-10. TANUKI TAIL / kpis[]（core/satellite共通） |
+| AS-IS-469 | 1-10. TANUKI TAIL / positions（positions_index.json） |
+| AS-IS-470 | 1-10. TANUKI TAIL / timestamp（journal.json entries） |
+| AS-IS-471 | 1-10. TANUKI TAIL / ticker（journal.json entries） |
+| AS-IS-472 | 1-10. TANUKI TAIL / type（journal.json entries） |
+| AS-IS-473 | 1-10. TANUKI TAIL / reason（journal.json entries） |
+| AS-IS-474 | 1-10. TANUKI TAIL / health_score_at_action（journal.json entries） |
+| AS-IS-475 | 1-10. TANUKI TAIL / tags（journal.json entries） |
+| AS-IS-476 | 1-10. TANUKI TAIL / price（journal.json entries） |
+| AS-IS-477 | 1-10. TANUKI TAIL / shares（journal.json entries） |
+| AS-IS-478 | 1-10. TANUKI TAIL / ticker（トップレベル） |
+| AS-IS-479 | 1-10. TANUKI TAIL / quarter（トップレベル） |
+| AS-IS-480 | 1-10. TANUKI TAIL / generated_at（トップレベル） |
+| AS-IS-481 | 1-10. TANUKI TAIL / is_latest（トップレベル） |
+| AS-IS-482 | 1-10. TANUKI TAIL / stage1.health_score |
+| AS-IS-483 | 1-10. TANUKI TAIL / stage1.health_label |
+| AS-IS-484 | 1-10. TANUKI TAIL / stage1.summary |
+| AS-IS-485 | 1-10. TANUKI TAIL / stage1.positives |
+| AS-IS-486 | 1-10. TANUKI TAIL / stage1.concerns |
+| AS-IS-487 | 1-10. TANUKI TAIL / stage1.recommendation |
+| AS-IS-488 | 1-10. TANUKI TAIL / stage1.next_kpis |
+| AS-IS-489 | 1-10. TANUKI TAIL / stage1.exit_distance |
+| AS-IS-490 | 1-10. TANUKI TAIL / stage1.exit_distance_reason |
+| AS-IS-491 | 1-10. TANUKI TAIL / stage1.optimism_bias_warning |
+| AS-IS-492 | 1-10. TANUKI TAIL / stage2.scenarios.{bear,base,bull}.revenue_growth_y1/y2/y3 |
+| AS-IS-493 | 1-10. TANUKI TAIL / stage2.scenarios.{...}.terminal_growth |
+| AS-IS-494 | 1-10. TANUKI TAIL / stage2.scenarios.{...}.operating_margin_terminal |
+| AS-IS-495 | 1-10. TANUKI TAIL / stage2.scenarios.{...}.rationale |
+| AS-IS-496 | 1-10. TANUKI TAIL / stage2.scenarios.{...}.kpi_forecasts["1年後"/"3年後"][KPI名] |
+| AS-IS-497 | 1-10. TANUKI TAIL / stage2.key_assumptions |
+| AS-IS-498 | 1-10. TANUKI TAIL / stage2.risk_factors |
+| AS-IS-499 | 1-10. TANUKI TAIL / call2.five_perspectives.{5観点} |
+| AS-IS-500 | 1-10. TANUKI TAIL / call2.entry_story_progress |
+| AS-IS-501 | 1-10. TANUKI TAIL / call2.market_attention |
+| AS-IS-502 | 1-10. TANUKI TAIL / call2.historical_analogy |
+| AS-IS-503 | 1-10. TANUKI TAIL / call2.macro_implications |
+| AS-IS-504 | 1-10. TANUKI TAIL / call2.thesis_questions |
+| AS-IS-505 | 1-10. TANUKI TAIL / call2.next_review_focus |
+| AS-IS-506 | 1-10. TANUKI TAIL / {TICKER}（トップレベルキー） |
+| AS-IS-507 | 1-10. TANUKI TAIL / review_quarter |
+| AS-IS-508 | 1-10. TANUKI TAIL / forecast_target |
+| AS-IS-509 | 1-10. TANUKI TAIL / scenario |
+| AS-IS-510 | 1-10. TANUKI TAIL / predictions[KPI名].predicted |
+| AS-IS-511 | 1-10. TANUKI TAIL / predictions[KPI名].actual |
+| AS-IS-512 | 1-10. TANUKI TAIL / predictions[KPI名].deviation_pct |
+| AS-IS-513 | 1-10. TANUKI TAIL / predictions[KPI名].accuracy |
+| AS-IS-514 | 1-10. TANUKI TAIL / kpi_forecast_available |
+| AS-IS-515 | 1-10. TANUKI TAIL / matchable |
+
+## ステップ3: 最終項目数の集計
+
+| 区分 | 件数 |
+|---|---|
+| 単独ルート項目 | 415件 |
+| 統一する7群（①⑤⑧⑩⑫⑮⑯）の統合元AS-IS項目数 | 43件 |
+| うち実際に削除される項目数 | 6件 |
+| うち統合後も最終項目として存続する数 | 37件 |
+| 統一しない9群（②③④⑥⑦⑨⑪⑬⑭）の最終項目数（クロスバケット重複6件を⑤⑩側に主計上のため除いた実カウント） | 57件 |
+
+### 最終出力項目数
+
+```
+単独ルート:                415件
+統一7群・存続分:             37件
+統一しない9群:               57件
+----------------------------------------
+最終出力項目 合計:          509件
+```
+
+### 515件からの削減内訳
+
+```
+AS-IS-001〜515 総数:        515件
+削除される重複ルート:         6件
+  内訳: AS-IS-075（①乖離率クライアント再計算）
+       AS-IS-061,062,063（⑤PER/PEG/PSRクライアント再計算）
+       AS-IS-054（⑩TANUKI risk_events簡易版）
+       AS-IS-134（⑫STONKS SILO net_cash独自計算）
+----------------------------------------
+最終出力項目 合計:          509件
+```
+
+**515件から実際に削除されるのは6件のみ**。これは、
+「統一する」と判断された7群の大半が、値そのものを1つに強制collapseする
+のではなく「取得経路（fetch/計算ロジック）だけを1本化し、消費先ごとの
+最終表示項目は個別に維持する」という設計判断（⑤⑧⑩⑮⑯）を取っているため。
+真に「同じ値の重複計算」として1件に統合され、他方が完全削除されるのは
+①（乖離率のクライアント再計算）・⑤（PER/PEG/PSRのクライアント再計算×3）・
+⑩（TANUKI簡易版risk_events）・⑫（STONKS SILO独自net_cash計算）の
+6パターンに限られる。
