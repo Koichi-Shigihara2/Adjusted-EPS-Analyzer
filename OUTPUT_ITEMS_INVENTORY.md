@@ -5,10 +5,21 @@
 > 再構成は行わない。** ステップ5の全284項目には`AS-IS-001`〜`AS-IS-284`の
 > 連番IDが付番済み（各テーブルの「AS-IS ID」列）。あるべき姿（TO-BE）の
 > 設計・統一定義・削除対象の判断は本ドキュメントではなく`TO_BE.md`に記録する。
+>
+> **2026-07-22（追加統合フェーズ1）**: 当初の6サブシステム（TANUKI VALUATION /
+> HypeCore / STONKS SILO / MACRO PULSE / Discover / EPS Analyzer）は
+> リポジトリ内の独立稼働サブシステム10個のうち6個のみを対象としていたことが
+> 別途の調査で判明したため、残り4個（TANUKI SCORE / Market Pulse / Portfolio /
+> TANUKI TAIL）の出力項目を「追加統合フェーズ1」セクションとして追加した。
+> 各項目には`AS-IS-285`以降の連番IDを仮付番した。**このフェーズでは既存14群・
+> 新規項目間の重複判定、TO_BE.mdへの統合、統一定義の設計は未実施**
+> （フェーズ2以降で別途実施予定）。
 
-本ドキュメントは、6サブシステム（TANUKI VALUATION / HypeCore / STONKS SILO /
-MACRO PULSE / Discover / EPS Analyzer）の出力項目を洗い出し、統一定義の
-検討・実データ突合・計算ルート紐付けを行った調査結果の記録である。
+本ドキュメントは、当初6サブシステム（TANUKI VALUATION / HypeCore / STONKS SILO /
+MACRO PULSE / Discover / EPS Analyzer）＋追加統合フェーズ1で4サブシステム
+（TANUKI SCORE / Market Pulse / Portfolio / TANUKI TAIL）の出力項目を
+洗い出し、統一定義の検討・実データ突合・計算ルート紐付け（当初6サブシステムのみ）
+を行った調査結果の記録である。
 
 調査は2026-07-22に4段階（ステップ1〜4）で実施した。いずれも読み取り専用調査であり、
 本ドキュメント自体もその結果を転記したものであって、コード修正は一切含まない。
@@ -24,7 +35,8 @@ MACRO PULSE / Discover / EPS Analyzer）の出力項目を洗い出し、統一�
 3. [ステップ1: 削除候補リスト（サブシステム別）](#ステップ1-削除候補リストサブシステム別)
 4. [ステップ2〜4: 統一定義・実データ突合・データ要件検証](#ステップ24-統一定義実データ突合データ要件検証)
 5. [ステップ5: 出力項目 計算ルート紐付け（サブシステム別）](#ステップ5-出力項目-計算ルート紐付けサブシステム別)
-6. [横断的な発見事項まとめ](#横断的な発見事項まとめ)
+6. [追加統合フェーズ1: 残り4サブシステムの出力項目一覧](#追加統合フェーズ1-残り4サブシステムの出力項目一覧2026-07-22)
+7. [横断的な発見事項まとめ](#横断的な発見事項まとめ)
 
 ---
 
@@ -1403,6 +1415,376 @@ stock.htmlは`../tanuki_valuation/data/{ticker}/latest.json`をfetch（567行）
 3. `quarters[].adjustments[]`は起源が3経路（通常検出／DTA合成／公正価値自動検出）あり、DTA合成項目のみ`reason`キーを持たない構造上の非対称性がある。
 4. `special_flags`の`EPS_DISCREPANCY`も起源が2経路（Alpha Vantage比較／公正価値自動検出）あり、対象銘柄範囲が異なる（前者は`SOUN`/`CELH`限定、後者は全銘柄）。
 5. stock.htmlのページタイトルに表示される会社名は`summary.json`の`company_name`ではなく`../../common/company_names.json`という第三の独立ソースから取得している（1121行）。
+
+## 追加統合フェーズ1: 残り4サブシステムの出力項目一覧（2026-07-22）
+
+本セクションは、当初の284項目インベントリ（ステップ1〜5、TANUKI VALUATION/
+HypeCore/STONKS SILO/MACRO PULSE/Discover/EPS Analyzerの6サブシステムのみ
+対象）に含まれていなかった残り4サブシステム（TANUKI SCORE / Market Pulse /
+Portfolio / TANUKI TAIL）の出力項目を、同一形式（項目名・出力先・内容説明）
+で追加したものである。
+
+**本フェーズの範囲**: 出力項目の洗い出しのみ。既存14群・相互間の重複判定、
+TO_BE.mdへの統合、統一定義の設計は次フェーズ（フェーズ2）で別途実施する。
+
+### 1-7. TANUKI SCORE
+
+対象: `src/value/tanuki_score/daily_pick.py`。出力先: `docs/integrated-dashboard/daily_pick.json`,
+`docs/integrated-dashboard/history.json`。画面: `docs/value-monitor/tanuki_score/index.html`。
+daily_pick.jsonを消費しているのは`index.html`の「今日の特選銘柄」カードのみ。history.jsonは
+どの画面からも一切fetchされず、daily_pick.py自身が翌日実行時に読み返す内部状態ファイル。
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-285 | generated_at | daily_pick.json | レポート生成日時(JST)。画面ヘッダーの「生成: HH:MM JST」表示、24時間超過時の"生成中"フォールバック判定に使用 |
+| AS-IS-286 | ticker | daily_pick.json | 特選銘柄コード。tanuki_valuation/stock.htmlへのリンクとして表示 |
+| AS-IS-287 | company | daily_pick.json | 企業名。ticker横に表示 |
+| AS-IS-288 | selection_reason | daily_pick.json | 選出理由（分類変化／Grokニュース／ファンダ上位）。「選出理由:」欄に表示 |
+| AS-IS-289 | funda_score | daily_pick.json | ファンダスコア(0-100)。「F:xx」表示 |
+| AS-IS-290 | timing_score | daily_pick.json | タイミングスコア(0-100)。「T:xx」表示 |
+| AS-IS-291 | category | daily_pick.json | 6分類(BUY/WATCH/GROWTH_PREMIUM/HOLD等)。CAT_METAバッジ表示 |
+| AS-IS-292 | report.fundamental | daily_pick.json | Grok生成「ファンダメンタル評価」本文 |
+| AS-IS-293 | report.expectation | daily_pick.json | Grok生成「期待値評価」本文 |
+| AS-IS-294 | report.news | daily_pick.json | Grok生成「今日のニュース・時事」本文 |
+| AS-IS-295 | report.timing | daily_pick.json | Grok生成「タイミング評価」本文 |
+| AS-IS-296 | report.summary | daily_pick.json | Grok生成「総合所見」本文 |
+| AS-IS-297 | date（history.json各エントリ） | history.json | 当日日付。daily_pick.py自身が翌回実行時に「本日分の重複除去」判定に使用（画面表示なし） |
+| AS-IS-298 | ticker（history.json各エントリ） | history.json | 前日選出ticker。「直近選出銘柄の除外」「最長未選出ソート」に使用（画面表示なし） |
+| AS-IS-299 | all_categories（history.json各エントリ） | history.json | 全銘柄の当日分類マップ。「前日からの分類変化」検出に使用（画面表示なし） |
+
+### 1-8. Market Pulse
+
+対象: `src/market/market_pulse/collect_and_send.py`, `breadth_calculator.py`。
+出力先: `docs/market-monitor/market-pulse/data/market_data.json`, `market_data.csv`,
+`breadth_data.json`。画面: `docs/market-monitor/market-pulse/index.html`。
+`docs/value-monitor/extreme-fear/index.html`もmarket_data.jsonを一部参照（末尾に注記）。
+
+#### トップレベル（market_data.json 各エントリ）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-300 | date | index.html（タイムライン日付・チャート軸・最終更新表示）/ extreme-fear | エントリのJST実行時刻(ISO8601) |
+| AS-IS-301 | judgment | index.html（フェーズピル・タイムラインdot色・詳細バッジ「晴れ/曇り/嵐」） | Grokレポート冒頭「判定：」を正規表現抽出した市場フェーズ |
+| AS-IS-302 | indicators | index.html（メトリクスカード・チャート・サブスコア詳細） | 各種市場指標の辞書 |
+| AS-IS-303 | sentiment | index.html（ゲージ・サブスコアバー・ブレッスサマリー・推移グラフ） | センチメント指数 |
+| AS-IS-304 | fear_greed | index.html（Tech Pulseゲージ・推移グラフ）/ extreme-fear（過去EF抽出） | CNN Fear & Greed Index |
+| AS-IS-305 | tech_pulse | index.html（Tech Pulseゲージ・乖離表示・推移グラフ） | NASDAQ独自センチメント |
+| AS-IS-306 | asset_flow | index.html（資金フローグリッド） | 資産クラス別資金フロー |
+| AS-IS-307 | credit | index.html（詳細パネルのRISK ON/OFFバッジ） | 3軸リスクオン/オフ判定 |
+| AS-IS-308 | take_profit_checklist | index.html（TAKE PROFITチェックリストカード） | F&G≥75時の利確判定 |
+| AS-IS-309 | buy_checklist | index.html（BUYチェックリストカード） | F&G≤25時の買い判定 |
+| AS-IS-310 | summary | index.html（詳細パネル本文）/ CSV「summary」列 | Grok生成の市場分析レポート全文 |
+| AS-IS-311 | comments_history | index.html（「過去の分析を見る」折りたたみ） | 直近12件分の{date, summary}履歴 |
+
+#### indicators（銘柄別辞書）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-312 | 米10年債/VIX指数/ドル円/日経平均/S&P500/NASDAQ/WTI原油/金(GOLD)/HYG/LQDのvalue | index.html（メトリクスカードvalue・チャート）/ CSV | 各指標の終値 |
+| AS-IS-313 | 上記各指標のchange_percent | index.html（前日比%・色分け）/ CSV | 前日比変化率 |
+| AS-IS-314 | 上記各指標のchange（絶対値） | JSON保存のみ / CSV（VIX9D除く） | 前日比の絶対値 |
+| AS-IS-315 | 上記各指標のvolume_ratio | JSON保存のみ（S&P500分のみsentiment計算に再利用） | 前日比出来高比 |
+| AS-IS-316 | 上記各指標のdate | index.html（stale-markツールチップ） | その指標の実データ確定日 |
+| AS-IS-317 | 上記各指標のis_fallback | index.html（stale-mark「※」表示・薄字化） | 取得失敗のため前回値で補完したことを示すフラグ |
+| AS-IS-318 | NYSE Composite（value, change_percent, volume_ratio, date） | JSON / CSV | NYSE総合指数 |
+| AS-IS-319 | NYSE Composite.divergence_vs_sp | JSON保存のみ | NYA前日比%とS&P500前日比%の差分 |
+| AS-IS-320 | S&P500グロース(IVW)（value, change_percent, date） | JSON / CSV | グロースETF終値・変化率 |
+| AS-IS-321 | S&P500バリュー(IVE)（value, change_percent, date） | JSON / CSV | バリューETF終値・変化率 |
+| AS-IS-322 | Russell2000小型(RUT)（value, change_percent, date） | JSON / CSV | 小型株指数終値・変化率 |
+| AS-IS-323 | グロース対バリュー比.diff_percent | JSON / レポート本文引用 / CSV | IVW-IVE日次変化率差 |
+| AS-IS-324 | 大型対小型比.diff_percent | JSON / レポート本文引用 / CSV | S&P500-RUT日次変化率差 |
+| AS-IS-325 | VIX9D（value, change, change_percent, date） | JSON / index.html（VIX短期vs中期パネル）/ CSV | VIX9D終値・変化 |
+| AS-IS-326 | VIX9D対VIX比.value | JSON / CSV | VIX9D÷VIX比率 |
+| AS-IS-327 | VIX9D対VIX比.contango | JSON / index.html（短期安定/⚠短期警戒）/ CSV | 順鞘/逆転フラグ |
+| AS-IS-328 | HYG対LQD比（value, change, date） | JSON / index.html（間接表示）/ CSV | HYG÷LQD比率とその変化 |
+
+#### sentiment（センチメント指数）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-329 | sentiment.score | index.html（メインゲージ・タイムライン・推移グラフ）/ CSV | 0-100合成センチメントスコア |
+| AS-IS-330 | sentiment.label | index.html（ゲージラベル）/ CSV | EXTREME FEAR〜EXTREME GREEDの6段階 |
+| AS-IS-331 | sentiment.sub_scores.{8指標}.score | index.html（サブスコアバー長さ・色） | 各サブ指標の0-100正規化スコア |
+| AS-IS-332 | 同上.weight | index.html（バー横の重み%表示） | 各指標の加重比率 |
+| AS-IS-333 | 同上.raw | index.html（ツールチップの実値表示） | 各指標の生値 |
+| AS-IS-334 | sentiment.breadth.advances / declines | index.html（▲▼バー・件数） | 値上がり/値下がり銘柄数 |
+| AS-IS-335 | sentiment.breadth.ad_ratio_5d | index.html | 5日騰落比率 |
+| AS-IS-336 | sentiment.breadth.new_highs_52w / new_lows_52w | index.html | 52週新高値・新安値銘柄数 |
+| AS-IS-337 | sentiment.breadth.nh_nl_diff | index.html（差分・警戒バッジ） | 新高値-新安値の差分 |
+| AS-IS-338 | sentiment.breadth.pct_above_50ma / pct_above_200ma | index.html | 50日/200日MA上抜け銘柄比率 |
+| AS-IS-339 | sentiment.breadth.rsp_spy_divergence_1d | JSON保存のみ | RSP-SPY当日騰落率差 |
+| AS-IS-340 | sentiment.breadth.rsp_spy_divergence_20d_avg | index.html（乖離表示・警告バッジ） | RSP-SPY20日平均乖離 |
+| AS-IS-341 | sentiment.breadth.ad_line | index.html | 累積Advance-Declineライン |
+| AS-IS-342 | sentiment.breadth.mcclellan_oscillator | index.html | マクラレンオシレーター近似値 |
+| AS-IS-343 | sentiment.breadth.date | JSON保存のみ | ブレッスデータの基準日 |
+
+#### fear_greed / tech_pulse / asset_flow / credit / チェックリスト系
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-344 | fear_greed.score | index.html（CNN F&Gゲージ・推移グラフ）/ extreme-fear | CNN F&Gスコア(0-100) |
+| AS-IS-345 | fear_greed.rating | JSON保存のみ | CNN側のratingテキスト |
+| AS-IS-346 | fear_greed.previous_close | JSON保存のみ | history["1w"]の値 |
+| AS-IS-347 | fear_greed.one_week_ago | JSON保存のみ | history["1w"]の値 |
+| AS-IS-348 | fear_greed.one_month_ago | JSON保存のみ | history["1m"]の値 |
+| AS-IS-349 | tech_pulse.score | index.html（Tech Pulseゲージ・タイムライン・推移グラフ） | Tech Pulseスコア(0-100) |
+| AS-IS-350 | tech_pulse.label | index.html | ラベル文字列 |
+| AS-IS-351 | tech_pulse.components.qqq_vs_ma125 | JSON / 90日パーセンタイル計算に再利用 | QQQのMA125乖離率 |
+| AS-IS-352 | tech_pulse.components.vxn_latest | index.html（VXNカード表示） | VXN終値 |
+| AS-IS-353 | tech_pulse.components.vxn_vs_ma50 | JSON / 90日パーセンタイル計算に再利用 | VXNのMA50乖離率 |
+| AS-IS-354 | tech_pulse.components.qqq_vs_spy_20d | index.html（QQQ vs SPY 20日カード） | QQQ-SPY20日相対リターン差 |
+| AS-IS-355 | tech_pulse.components.fg_score | index.html（fallback値） | feargreedchart.com由来F&G |
+| AS-IS-356 | tech_pulse.components.vxn_available | JSON保存のみ | VXN取得成否フラグ |
+| AS-IS-357 | tech_pulse.divergence.value | index.html（乖離値・±20強調・シグナルバッジ） | Tech Pulse − CNN F&G |
+| AS-IS-358 | tech_pulse.divergence.zscore | index.html（Zスコア表示） | 乖離値の90日Zスコア |
+| AS-IS-359 | tech_pulse.divergence.signal | index.html（シグナルバッジ） | 3条件シグナル文字列 |
+| AS-IS-360 | asset_flow.{key}.label / ticker | JSON保存のみ（index.htmlは自前定義） | 資産名・ティッカー |
+| AS-IS-361 | asset_flow.{key}.desc | JSON保存のみ（表示はindex.html側の別定義） | 資産の説明文 |
+| AS-IS-362 | asset_flow.{key}.value | JSON保存のみ | 終値 |
+| AS-IS-363 | asset_flow.{key}.change_pct | index.html（%表示・色・バー幅）/ レポート引用 | 前日比変化率 |
+| AS-IS-364 | asset_flow.{key}.date | index.html（日付・週末判定・stale-mark） | 基準日 |
+| AS-IS-365 | asset_flow.{key}.is_fallback | index.html（stale-mark表示） | フォールバック補完フラグ |
+| AS-IS-366 | credit.stock | index.html（「株 リスクオン/オフ」バッジ） | S&P500前日比によるリスクオン/オフ判定 |
+| AS-IS-367 | credit.bond | index.html（「債券 買い/売り」バッジ） | TLT/SPYフローによる質への逃避判定 |
+| AS-IS-368 | credit.credit | index.html（「クレジット リスクオン/オフ」バッジ） | HYG-LQD変化率差による判定 |
+| AS-IS-369 | credit.risk_off_score | index.html（RISK ON/CAUTION/OFFゾーン判定） | 3軸合計のリスクオフスコア |
+| AS-IS-370 | take_profit_checklist.triggered/fg_score/points/action/checks[] | index.html（TAKE PROFITバナー） | F&G≥75時の利確判定一式 |
+| AS-IS-371 | buy_checklist.triggered/extreme/points/action/fg_score/checks.* | index.html（BUYバナー） | F&G≤25時の買い判定一式 |
+
+#### breadth_data.json（単体ファイル）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-372 | date | breadth_data.json / market_data.json経由 | 基準日 |
+| AS-IS-373 | advances / declines | breadth_data.json / market_data.json経由で画面表示 | 値上がり/値下がり銘柄数 |
+| AS-IS-374 | unchanged | breadth_data.json保存のみ | 変わらず銘柄数 |
+| AS-IS-375 | ad_ratio_1d | breadth_data.json保存のみ | 当日騰落比率 |
+| AS-IS-376 | ad_ratio_5d | breadth_data.json / market_data.json経由 | 5日騰落比率 |
+| AS-IS-377 | new_highs_52w / new_lows_52w | breadth_data.json / market_data.json経由 | 52週新高値・新安値数 |
+| AS-IS-378 | nh_nl_diff | breadth_data.json / market_data.json経由 | NH-NL差分 |
+| AS-IS-379 | total_stocks | breadth_data.json保存のみ | 有効銘柄数 |
+| AS-IS-380 | pct_above_50ma / pct_above_200ma | breadth_data.json / market_data.json経由 | 50日/200日MA上抜け比率 |
+| AS-IS-381 | rsp_return_1d / spy_return_1d | breadth_data.json保存のみ | RSP/SPY当日単独リターン |
+| AS-IS-382 | rsp_spy_divergence_1d | breadth_data.json / market_data.json経由（画面未参照） | RSP-SPY当日差 |
+| AS-IS-383 | rsp_spy_divergence_20d_avg | breadth_data.json / market_data.json経由で画面表示 | RSP-SPY20日平均差 |
+| AS-IS-384 | ad_line | breadth_data.json / market_data.json経由で画面表示 | 累積A-Dライン |
+| AS-IS-385 | mcclellan_oscillator | breadth_data.json / market_data.json経由で画面表示 | マクラレンオシレーター近似 |
+
+#### その他ファイル・extreme-fear連携
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-386 | market_data.csv 各列 | CSV / `src/subport/fg_level2/config.json`から外部AutoTrade fg_level2が参照 | indicators/sentiment.score・label/summaryのフラット化サブセット |
+| AS-IS-387 | extreme-fear参照: date | extreme-fear/index.html「過去のExtreme Fear買い場」テーブル | 日付ソート・イベントグループ化 |
+| AS-IS-388 | extreme-fear参照: fear_greed.score | extreme-fear/index.html | F&G≤20の日を抽出しイベント化 |
+
+### 1-9. Portfolio
+
+対象: `src/portfolio/snapshot.py`。出力先: `docs/portfolio/data/history.json`。
+画面: `docs/portfolio/index.html`。`portfolio.json`/`theme_config.json`/`discover_config.json`は
+snapshot.pyの入力として読み込まれる手動管理データのため出力項目としては対象外。
+`docs/portfolio/index.html`でhistory.jsonを参照しているのは「⑤資産推移」チャートと
+通貨換算レートの2箇所のみ。
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-389 | date | history.json | スナップショット日付。「⑤資産推移」チャートのX軸 |
+| AS-IS-390 | usdjpy | history.json | USD/JPYレート。画面右上の通貨切替表示の換算レートに使用 |
+| AS-IS-391 | total_assets_usd | history.json | 総資産(USD)。「⑤資産推移」チャートのライン |
+| AS-IS-392 | total_assets_jpy | history.json | 総資産(JPY)。「⑤資産推移」チャートのライン |
+| AS-IS-393 | total_pnl_usd | history.json | 評価損益(USD)。「⑤資産推移」チャートの破線 |
+
+### 1-10. TANUKI TAIL
+
+対象: `src/tail/`配下全11ファイル（sec_ctrl_fetcher.py, edgar_rss_monitor.py,
+satellite_monitor.py, xbrl_segment_fetcher.py, text_kpi_extractor.py,
+kpi_proposer.py, tail_dcf_bridge.py, workflow_write.py,
+quarterly_review_generator.py, prediction_tracker.py, __init__.py）。
+出力先: `docs/portfolio/tail/data/`配下各種JSON。画面: `index.html`, `detail.html`,
+`decision_log.html`。10サブセクションに分けて記載する。
+
+#### 内部統制評価（sec_ctrl_fetcher.py） — `data/ctrl/{TICKER}/{QUARTER}.json` + `latest.json` + `index.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-394 | quarter | index.html, detail.html | 四半期ラベル |
+| AS-IS-395 | filing_date | index.html, detail.html | 提出日 |
+| AS-IS-396 | effective | index.html, detail.html | 内部統制有効性バッジ |
+| AS-IS-397 | material_weaknesses | index.html, detail.html | マテリアルウィークネス抜粋配列 |
+| AS-IS-398 | significant_deficiencies | index.html | 重要な欠陥抜粋配列（detail.htmlでは未表示） |
+| AS-IS-399 | item4_excerpt | index.html, detail.html | Item4英文原文抜粋（折りたたみ） |
+| AS-IS-400 | item4_excerpt_ja | index.html, detail.html | Item4 Grok日本語訳（メイン表示） |
+| AS-IS-401 | fetched_at | index.html | データ取得日時（index.htmlのみ） |
+| AS-IS-402 | quarters（index.json） | index.html | 保存済み四半期一覧（四半期履歴セレクター） |
+
+#### 新規提出監視（edgar_rss_monitor.py）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-403 | last_accn（rss_state.json） | 内部処理（自スクリプト再実行時） | 直近確認accession number |
+| AS-IS-404 | last_filed（rss_state.json） | 内部処理（自スクリプト・satellite_monitor.py） | 直近提出日 |
+| AS-IS-405 | no_filing_days（rss_state.json） | 内部処理（自スクリプト再実行時） | 提出遅延の連続検知日数 |
+| AS-IS-406 | ticker（review_queue.json） | index.html, detail.html | 銘柄コード |
+| AS-IS-407 | quarter（review_queue.json） | index.html, detail.html | 対象四半期 |
+| AS-IS-408 | status（review_queue.json） | index.html, detail.html | pending→completed/errorフィルタ |
+| AS-IS-409 | completed_at（review_queue.json） | 内部記録のみ | 生成完了時刻 |
+| AS-IS-410 | review_path（review_queue.json） | 内部記録のみ | 出力先パス記録 |
+
+#### サテライト銘柄監視（satellite_monitor.py）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-411 | "{ticker}:{condition}"タイムスタンプ（satellite_alerts.json） | 内部処理（自スクリプト再実行時） | 4条件別の直近アラート発報時刻、重複通知抑止用 |
+| AS-IS-412 | timestamp（journal.json watchlist） | index.html, decision_log.html | 発生日時 |
+| AS-IS-413 | ticker（journal.json watchlist） | index.html, decision_log.html | 銘柄フィルタ・表示 |
+| AS-IS-414 | type="watchlist"（journal.json） | index.html, decision_log.html | アイコン判定・タイプフィルタ |
+| AS-IS-415 | reason（journal.json watchlist） | index.html, decision_log.html | アラート理由テキスト |
+| AS-IS-416 | tags（journal.json watchlist） | index.html, decision_log.html | タグバッジ表示 |
+
+#### セグメントKPI抽出（xbrl_segment_fetcher.py） — `data/kpi/{TICKER}_layer2.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-417 | layer2_complete | reviews/*.jsonへコピー（内部処理） | 全KPI取得成功フラグ |
+| AS-IS-418 | missing_kpis | reviews/*.jsonへコピー（内部処理） | 取得失敗KPI名リスト |
+| AS-IS-419 | kpis.{kpi_name}.unit | detail.html（数値書式分岐） | 単位（現状常に"USD"固定） |
+| AS-IS-420 | kpis.{kpi_name}.data[].quarter | detail.html（スパークラインX軸・ツールチップ） | 四半期ラベル |
+| AS-IS-421 | kpis.{kpi_name}.data[].value | detail.html（KPIトレンド）、quarterly_review_generator.py、tail_dcf_bridge.py | KPI実測値 |
+
+#### テキストKPI抽出（text_kpi_extractor.py） — `data/kpi/{TICKER}_layer3.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-422 | kpis.{name}.value | quarterly_review_generator.py（layer2欠損時のフォールバック） | 実績値 |
+| AS-IS-423 | kpis.{name}.value_numeric | quarterly_review_generator.py（優先参照） | 数値化した実績値 |
+| AS-IS-424 | kpis.{name}.confidence | quarterly_review_generator.py（信頼度表記） | 抽出信頼度 |
+
+#### KPI提案（kpi_proposer.py）
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-425 | proposed_kpis[].name | index.html KPI設定モーダル、positions/{T}_thesis.jsonへコピー | KPI名 |
+| AS-IS-426 | proposed_kpis[].description | index.html KPI設定モーダル | KPI説明文 |
+| AS-IS-427 | proposed_kpis[].source | index.html KPI設定モーダル | 出典 |
+| AS-IS-428 | proposed_kpis[].warning_threshold | index.html、閾値判定 | 警戒ライン |
+| AS-IS-429 | proposed_kpis[].exit_threshold | index.html、閾値判定 | エグジット閾値 |
+| AS-IS-430 | proposed_kpis[].related_exit_condition | index.html KPI設定モーダル | 関連エグジット条件 |
+| AS-IS-431 | proposed_kpis[].auto_fetchable | index.html「自動取得可」バッジ、text_kpi_extractor.py絞込み | XBRL自動取得可否 |
+| AS-IS-432 | proposed_kpis[].extraction_hint | text_kpi_extractor.py（Grok抽出プロンプト） | 抽出ヒント |
+| AS-IS-433 | proposed_kpis[].xbrl_tag | tail_kpi_map.jsonへ変換保存 | XBRLタグ |
+| AS-IS-434 | proposed_kpis[].xbrl_dimension | tail_kpi_map.jsonへ変換保存 | XBRLディメンション |
+| AS-IS-435 | proposed_kpis[].xbrl_member | tail_kpi_map.jsonへ変換保存 | XBRLメンバー |
+| AS-IS-436 | proposed_kpis[].layer2_name | quarterly_review_generator.pyのlookup_key | layer2 KPIとの紐付け名 |
+| AS-IS-437 | tail_kpi_map.json: kpi_name | xbrl_segment_fetcher.py（KPI名・layer2キー名） | KPI名 |
+| AS-IS-438 | tail_kpi_map.json: tag_history[].tag/valid_from/valid_to | xbrl_segment_fetcher.py（XBRLタグ選択） | タグ履歴 |
+| AS-IS-439 | tail_kpi_map.json: fallback_tags | xbrl_segment_fetcher.py | フォールバックタグ |
+| AS-IS-440 | tail_kpi_map.json: revenue_tag | xbrl_segment_fetcher.py | 収益タグ |
+| AS-IS-441 | tail_kpi_map.json: dimension | xbrl_segment_fetcher.py | XBRLディメンション軸 |
+
+#### DCFシナリオ生成（tail_dcf_bridge.py） — `docs/portfolio/scenario/{TICKER}/{bear,base,bull}.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-442 | assumptions.Y1_growth / Y2_growth / Y3_growth | index.html「シナリオ前提」テーブル | 売上成長率Y1/Y2/Y3 |
+| AS-IS-443 | assumptions.terminal_growth | index.html | ターミナル成長率 |
+| AS-IS-444 | assumptions.operating_margin | index.html | 最終営業利益率 |
+| AS-IS-445 | assumptions.weighted_growth | index.html | 加重成長率（使用値） |
+| AS-IS-446 | base_intrinsic_value | detail.html, index.html将来株価テーブル | 現在の理論価値 |
+| AS-IS-447 | current_price | 同上 | 現在株価 |
+| AS-IS-448 | future_values["1年後"] | 同上 | 1年後将来株価 |
+| AS-IS-449 | future_values["3年後"] | 同上 | 3年後将来株価 |
+| AS-IS-450 | future_values["5年後"] | 同上 | 5年後将来株価 |
+| AS-IS-451 | kpi_forecasts["1年後"/"3年後"].{KPI名} | index.html/detail.html「KPI予想値」テーブル | シナリオ別KPI予想値 |
+| AS-IS-452 | kpi_current.{KPI名} | 同テーブル | 現在KPI値 |
+| AS-IS-453 | kpi_layer1_keys | 同テーブル | KPI種別判定用 |
+| AS-IS-454 | kpi_format.{KPI名} | 同テーブル | 表示フォーマット指定 |
+
+#### 書き込み系（workflow_write.py）— positions/journal/positions_index
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-455 | ticker（thesis共通） | index.html全体 | 銘柄コード |
+| AS-IS-456 | type（thesis共通） | index.html, detail.html | core/satellite表示振り分け |
+| AS-IS-457 | status（thesis共通） | index.html, detail.html | active/archivedフィルタ |
+| AS-IS-458 | version（thesis共通） | kpi_proposer.py, quarterly_review_generator.py | テーゼバージョン |
+| AS-IS-459 | thesis（core固有） | index.html「投資テーゼ」ブロック | 投資テーゼ本文 |
+| AS-IS-460 | entry_story（core固有） | index.html「ENTRY STORY」ブロック | エントリーストーリー |
+| AS-IS-461 | exit_guide（core固有） | index.html「EXIT GUIDE」ブロック | エグジット目安 |
+| AS-IS-462 | entry_price（core固有） | index.html一覧・詳細 | 取得単価 |
+| AS-IS-463 | entry_date（core固有） | index.html一覧・詳細 | 監視開始日 |
+| AS-IS-464 | strategy_name（satellite固有） | index.html一覧タグ・詳細 | 戦略名 |
+| AS-IS-465 | entry_condition（satellite固有） | index.html詳細 | エントリー条件 |
+| AS-IS-466 | exit_condition（satellite固有） | index.html一覧・詳細 | エグジット条件 |
+| AS-IS-467 | holding_period（satellite固有） | index.html詳細 | 想定保有期間 |
+| AS-IS-468 | kpis[]（core/satellite共通） | positions/{T}_thesis.json経由でquarterly_review_generator.py参照 | kpi_proposer.pyの提案KPIをパススルー保存 |
+| AS-IS-469 | positions（positions_index.json） | index.htmlのloadPositions() | thesisファイル名配列 |
+| AS-IS-470 | timestamp（journal.json entries） | index.html, decision_log.html | 記録日時 |
+| AS-IS-471 | ticker（journal.json entries） | index.html, decision_log.html | 銘柄フィルタ・表示 |
+| AS-IS-472 | type（journal.json entries） | index.html, decision_log.html | entry/exit/thesis_revision/watchlist/memo |
+| AS-IS-473 | reason（journal.json entries） | index.html, decision_log.html | 記録理由本文 |
+| AS-IS-474 | health_score_at_action（journal.json entries） | index.html, decision_log.html | 記録時点の健全度スコア |
+| AS-IS-475 | tags（journal.json entries） | index.html, decision_log.html | タグバッジ |
+| AS-IS-476 | price（journal.json entries） | index.html, decision_log.html | 価格表示 |
+| AS-IS-477 | shares（journal.json entries） | index.html, decision_log.html | 株数表示 |
+
+#### 四半期レビュー生成（quarterly_review_generator.py）— `data/reviews/{TICKER}_{QUARTER}_review.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-478 | ticker（トップレベル） | reviews/*.json | 銘柄コード |
+| AS-IS-479 | quarter（トップレベル） | detail.html（reviewsキー、ソート） | 対象四半期 |
+| AS-IS-480 | generated_at（トップレベル） | index.html「前回レビューからXX日経過」、detail.html見出し | 生成日時 |
+| AS-IS-481 | is_latest（トップレベル） | tail_dcf_bridge.py（最新レビュー検索の起点） | 最新レビュー判定フラグ |
+| AS-IS-482 | stage1.health_score | detail.html, index.html健全度ピル・トレンドグラフ | 健全度スコア(0-100) |
+| AS-IS-483 | stage1.health_label | quarterly_review_generator.py自身（フォールバック） | 健全度ラベル |
+| AS-IS-484 | stage1.summary | detail.html「最新レビュー」本文 | 評価サマリー |
+| AS-IS-485 | stage1.positives | detail.htmlリスト表示 | 好材料リスト |
+| AS-IS-486 | stage1.concerns | detail.htmlリスト表示 | 懸念点リスト |
+| AS-IS-487 | stage1.recommendation | detail.html, index.html健全度ピル | CONTINUE/WATCH/REVISE/EXIT |
+| AS-IS-488 | stage1.next_kpis | detail.htmlタグ表示 | 次回確認KPIリスト |
+| AS-IS-489 | stage1.exit_distance | detail.html表示 | エグジット距離感 |
+| AS-IS-490 | stage1.exit_distance_reason | detail.html表示 | エグジット距離感の理由 |
+| AS-IS-491 | stage1.optimism_bias_warning | detail.html警告ボックス | 楽観バイアス警告文 |
+| AS-IS-492 | stage2.scenarios.{bear,base,bull}.revenue_growth_y1/y2/y3 | index.html/detail.html DCFシナリオテーブル | 売上成長率 |
+| AS-IS-493 | stage2.scenarios.{...}.terminal_growth | 同テーブル | ターミナル成長率 |
+| AS-IS-494 | stage2.scenarios.{...}.operating_margin_terminal | 同テーブル | 最終営業利益率 |
+| AS-IS-495 | stage2.scenarios.{...}.rationale | index.html「BEAR/BASE/BULL根拠」カード | シナリオ根拠文 |
+| AS-IS-496 | stage2.scenarios.{...}.kpi_forecasts["1年後"/"3年後"][KPI名] | index.html/detail.html KPI予想値テーブル | KPI予想値 |
+| AS-IS-497 | stage2.key_assumptions | index.html/detail.html | 主要前提リスト |
+| AS-IS-498 | stage2.risk_factors | index.html/detail.html | リスク要因リスト |
+| AS-IS-499 | call2.five_perspectives.{5観点} | detail.html AI視点セクション | 5観点分析 |
+| AS-IS-500 | call2.entry_story_progress | detail.html | エントリーストーリー進捗 |
+| AS-IS-501 | call2.market_attention | detail.html | 市場注目ポイント |
+| AS-IS-502 | call2.historical_analogy | detail.html | 歴史的類比 |
+| AS-IS-503 | call2.macro_implications | detail.html | マクロ環境の示唆 |
+| AS-IS-504 | call2.thesis_questions | detail.html、次回レビュー生成プロンプト | テーゼへの問いかけ |
+| AS-IS-505 | call2.next_review_focus | detail.html、次回レビュー生成プロンプト | 次回確認論点 |
+
+#### 予測トラッキング（prediction_tracker.py）— `data/prediction_history.json`
+
+| AS-IS ID | 項目名 | 出力先 | 内容説明 |
+|---|---|---|---|
+| AS-IS-506 | {TICKER}（トップレベルキー） | index.htmlのpredictionHistory[ticker] | 銘柄別予測履歴配列 |
+| AS-IS-507 | review_quarter | index.html予測振り返りテーブル見出し | 予測を行ったレビュー四半期 |
+| AS-IS-508 | forecast_target | 同上 | 予測対象四半期 |
+| AS-IS-509 | scenario | index.html（"base"のみ抽出表示） | bear/base/bull |
+| AS-IS-510 | predictions[KPI名].predicted | index.htmlテーブル | 予測値 |
+| AS-IS-511 | predictions[KPI名].actual | index.htmlテーブル | 実績値 |
+| AS-IS-512 | predictions[KPI名].deviation_pct | index.htmlテーブル（色分け） | 乖離率 |
+| AS-IS-513 | predictions[KPI名].accuracy | index.htmlバッジ | accurate/over/under_estimated |
+| AS-IS-514 | kpi_forecast_available | index.htmlフィルタ、quarterly_review_generator.pyフィルタ | 予測データ有無フラグ |
+| AS-IS-515 | matchable | 同上フィルタ | 実績突合可能フラグ |
+
+### 削除候補（フェーズ1追加分、計算・保存されるが未参照）
+
+**TANUKI SCORE**: daily_pick.json内`tanuki`オブジェクト全16フィールド（`intrinsic_value_per_share`, `current_price`, `upside_percent`, `deviation_rate`, `fcf_base`, `growth_rate`, `growth_source`, `wacc`, `alpha`, `alpha_was_capped`, `rpo_pv`, `net_cash_per_share`, `fcf_conversion_rate`, `fcf_estimated`, `rd_adjustment`, `rice_score`。Grokプロンプトには使われるが出力後は未参照。実データでは`current_price`/`deviation_rate`は常時null）。history.json内`company`/`reason`/`category`/`funda_score`/`timing_score`（書き込まれるが再読込・画面表示とも一切なし）。
+
+**Portfolio**: `total_equity_usd`/`total_equity_jpy`、`total_cash_usd`/`total_cash_jpy`、`total_pnl_jpy`、`total_pnl_pct`、`brokers`オブジェクト全体、`positions`オブジェクト全体（画面はportfolio.json＋HypeCore現在価格からその場で再計算しており、history.jsonのスナップショット値は不使用）。
+
+**Market Pulse**: `indicators.NYSE Composite.divergence_vs_sp`、`indicators.{VIX指数,米10年債,ドル円,日経平均,NASDAQ,WTI原油,金,HYG,LQD}.volume_ratio`、`indicators.VIX9D.change`、`fear_greed.rating`/`previous_close`/`one_week_ago`/`one_month_ago`、`tech_pulse.components.vxn_available`、`sentiment.breadth.date`/`rsp_spy_divergence_1d`、`asset_flow.{key}.label`/`ticker`/`desc`/`value`、`breadth_data.json`の`unchanged`/`ad_ratio_1d`/`total_stocks`/`rsp_return_1d`/`spy_return_1d`。
+
+**TANUKI TAIL**: `report_date`・`ticker`（ctrl JSON内）、`last_period`/`last_checked`（rss_state.json）、`accn`/`filed`/`queued_at`（review_queue.json）、`action`固定値/`thesis_version`常時null/`macro_score_at_action`常時null（journal.json）、`ticker`/`fetched_at`（kpi layer2/layer3トップレベル）、`kpis.{name}.data[].filed`（layer2）、`unit`/`source_text`/`quarter`（layer3、`quarter`はconsumer側キー名`period`との不一致で実質デッド＝バグ）、`ticker`/`generated_at`/`thesis_version`（kpi_proposals トップレベル）、`change_risk`/`fallback_action`固定値（tail_kpi_map.json）、`ticker`/`quarter`/`scenario`自己ラベル/`generated_at`（scenario JSONトップレベル）、`assumptions.fcf_adjustment`/`base_revenue`（scenario）、`future_values["2年後"]`/`["4年後"]`（表示periods配列から除外）、`created_at`/`updated_at`（thesis）、`revised_item`/`old_thesis`/`new_thesis`（journal thesis_revision時）、`data_version`/`filed_date`/`layer1_complete`/`layer2_complete`/`layer2_missing_kpis`/`stage2_json_valid`/`grok_call1_success`/`grok_call2_success`/`transcript_available`常時False/`kpi_snapshot`/`layer3_snapshot`/`macro_snapshot`/`thesis_version`（review.jsonトップレベル各種）、`stage1.recommendation_reason`、`stage2.ticker`/`stage2.quarter`（トップレベルと重複）、`error`（review_queue.json）、`_updated_at`（prediction_history.jsonトップレベル）。
+
 
 ## 横断的な発見事項まとめ
 
