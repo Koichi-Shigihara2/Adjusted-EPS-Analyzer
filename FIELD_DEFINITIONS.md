@@ -1032,3 +1032,163 @@ TAIL stage2で確立した記載方法を踏襲）。
   登場判定の精度不足・影響予測のindex.html非表示・buy_hold_ratioの
   名称不一致・unit常時"USD"固定はいずれも実装（コード修正）を伴うため、
   本タスクの範囲外として記録にとどめた
+
+---
+
+## 対象8（フェーズ8）: 導出データ — 信頼性・品質判定系（60件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「信頼性・品質判定系（60件）」
+（ステップ6確定後392件ベース。TANUKI VALUATION 14件・HypeCore 4件・
+STONKS SILO 11件・EPS Analyzer 6件・TANUKI SCORE 7件・TANUKI TAIL 18件）
+
+実装（コード修正）は行っていない。定義の記録のみ。本カテゴリは
+「データの信頼性を判定結果に混ぜず明確にフラグを立てる」という設計思想の
+中核であり、判定閾値・優先順位を数値まで明記する。
+
+**依頼文で名指しされたが本カテゴリの対象外だったもの**: 「MACRO PULSEの
+regime判定」は`DERIVED_DATA_SUBCATEGORIES.md`ではAS-IS-182/183として
+「マクロ・市場環境系」（未着手フェーズ）に分類されており、信頼性・品質
+判定系60件には含まれない。本フェーズでは対象外として扱い、マクロ・
+市場環境系フェーズで扱う。また「Policy B該当70銘柄の規模」は全銘柄の
+`fcf_outlier.detected`/`action`実測値の集計を要し、静的コード解析のみの
+本タスクでは検証できないため件数の確認は行っていない（ロジック自体は
+以下で正確に記述した）。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（判定ロジック・閾値を含む） | データ取得元 | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-033 | TANUKI VALUATION | max_eps/max_eps_per/max_eps_reliability | `pipeline.py:_save_result()` | `max_eps = (NI_TTM + SBC_TTM) / diluted_shares`（SBC＝非現金費用を完全除外した場合の理論上限EPS）<br>`max_eps_per = current_price / max_eps`<br>`reliability`: `NI_TTM`(AS-IS-046のni_ttm)と`SBC_TTM`(AS-IS-045のsbc_ttm)両方存在かつ`max_earn>0`→`HIGH`／片方のみ→`MED`（欠損側は0扱い）／それ以外→`LOW` | AS-IS-045, AS-IS-046（既定義・フェーズ4） | 導出データ |
+| AS-IS-034 | TANUKI VALUATION | tanuki_score（Classification） | `_compute_tanuki_score()` | `funda`（AS-IS-035）とタイミング（AS-IS-037）等から7分類（BUY/WATCH/HOLD/TRIM/SELL/PASS/GROWTH_PREMIUM）へ判定。優先順位: `funda<25→PASS`／`sell_funda or sell_tech→SELL`／`funda>=50`かつ`upside<-30%かつstage>=3`→逆算必要成長率<TTM成長率なら`GROWTH_PREMIUM`・それ以外`TRIM`／`funda>=50かつupside>20%かつtiming>=50`→`BUY`／`funda>=50かつupside>0%`→`WATCH`／`funda>=50`→`HOLD`／それ以外`HOLD`。**その後Policy A/B（下記備考）により`WATCH`へ丸められる場合がある** | AS-IS-006, AS-IS-035, AS-IS-037（本表/既定義） | 導出データ |
+| AS-IS-035 | TANUKI VALUATION | funda_score | `_compute_tanuki_score()` | 加算式（各25pt、計100pt上限）: `rev_yoy>20%→25/>=0%→15/else 0`＋`rule40>40→25/>=20→15/else 0`＋`eps_yoy>20%→25/>=0%→15/else 0`＋`fcf_base>0→25/else 0`。ペナルティ: `runway<12ヶ月→-30`（STONKS SILO AS-IS-155、既定義・フェーズ4）、`dilution_3yr_annual_pct>40%→-25/>20%→-15`（AS-IS-045既定義・フェーズ4）。下限0にクランプ | AS-IS-093（HypeCore rev_yoy、既定義・フェーズ5）＋AS-IS-095（rule40）＋AS-IS-278（EPS Analyzer yoy_growth、既定義・フェーズ7）＋AS-IS-019（既定義・フェーズ6）＋AS-IS-155, AS-IS-045（既定義・フェーズ4） | 導出データ |
+| AS-IS-036 | TANUKI VALUATION | score_comment | `_generate_score_comment()` | ルールベースの日本語コメント生成（AI不使用）。乖離率（>30%/>10%/>0%/>-20%/else）・FCF状況（マイナス/黒字/赤字）・売上YoY（>20%/>0%/else）の3要素から最大3文を`、`で連結。Policy A/B発火時は専用コメント文字列に上書きされる（下記備考） | AS-IS-006, AS-IS-019, AS-IS-093（本表/既定義） | 導出データ |
+| AS-IS-037 | TANUKI VALUATION | timing_score | `_calc_timing()` | 加算式（計100pt上限）: `upside>30%→+40/>=10%→+25/>=0%→+10`＋`fear_greed<30→+40/<50→+25/<70→+10`（Market Pulse `fear_greed.score`、マクロ・市場環境系AS-IS-344・未定義）＋`HypeCore stage==1→+20/==2→+15/==3→+5`（AS-IS-085既定義・フェーズ5） | AS-IS-006（本表）＋fear_greed.score（未定義）＋AS-IS-085（既定義・フェーズ5） | 導出データ |
+| AS-IS-038 | TANUKI VALUATION | sell_reason | `_compute_tanuki_score()` | `score==SELL`の場合のみ設定。`sell_funda`（売上YoY<0かつrule40<20かつFCF悪化）が成立なら`"funda"`、`sell_tech`（stage>=4かつupside<-20%かつma200_dev<-10%かつfunda<50）が成立なら`"tech"`。Policy A/B発火時は`None`にリセットされる | AS-IS-034（本表） | 導出データ |
+| AS-IS-039 | TANUKI VALUATION | pre_rounding_score | `_compute_tanuki_score()` | Policy A/Bのいずれかが発火した場合のみ、丸め前の分類（元々BUY/TRIM/HOLD等のどれだったか）を保持。発火しなかった場合は`None`（FCF-OUTLIER-PREROUNDING-LOSS-1対応、丸め前の分類が消えていた問題への対策） | AS-IS-034, AS-IS-040（本表） | 導出データ |
+| AS-IS-040 | TANUKI VALUATION | rounded_by_policy | `_compute_tanuki_score()` | `None`（丸めなし）／`"A"`（Policy A発火）／`"B"`（Policy B発火）。**Policy A**: `fcf_floor_applied>0`（AS-IS-019のFCF補正、既定義フェーズ6）かつ`fcf_estimation.applied==False`（AS-IS-021既定義フェーズ6）の場合に発火。**Policy B**: `_calc_dcf_reliability_policy_b(valuation)=="LOW"`（下記詳細）の場合に発火。**両者は排他**（Policy A発火時はPolicy Bを評価しない、`_policy_a_fires`でゲート）。発火時は`score`を`SELL`/`PASS`以外なら強制的に`WATCH`へ、`sell_reason`を`None`に上書き<br><br>**`_calc_dcf_reliability_policy_b()`の判定表**（`eps_invalid`優先）:<br>`eps_invalid=True → LOW`（`fcf_estimation.divergence_warning`が非空、AS-IS-021既定義）<br>`eps_invalid=False かつ fcf_outlier.detected=True かつ action!="excluded" → LOW`（AS-IS-020既定義・フェーズ6）<br>`eps_invalid=False かつ fcf_outlier.detected=True かつ action=="excluded" → NORMAL`<br>`eps_invalid=False かつ fcf_outlier.detected=False → NORMAL` | AS-IS-019, AS-IS-020, AS-IS-021（既定義・フェーズ6） | 導出データ |
+| AS-IS-041 | TANUKI VALUATION | matrix.*（quadrant/label/key_metric_y/qx/qy） | `_compute_matrix_position()` | RICE計算可否・除外理由により4象限に分岐: ①RICE算出可（AS-IS-027既定義・フェーズ6）→Y軸=RICE値（`>=3.0高効率/>=1.0中効率/>=0低効率/else N/A`）②セクター除外（保険等）→Y軸=ROE_10yr_avg（`>=15%`で高ROE）③Q異常値→Y軸=HypeCore rev_yoy（既定義・フェーズ5）④それ以外→Y軸=FCFマージン（`>=15%`で高FCF）。X軸は共通で`upside_percent>=0`（AS-IS-006既定義）が「割安」。`quadrant`=左上/右上/左下/右下、`label`=X軸ラベル×Y軸ラベル | AS-IS-027, AS-IS-006（既定義・フェーズ6/3） | 導出データ |
+| AS-IS-042 | TANUKI VALUATION | growth_sanity.verdict/signals/warnings/recommended_g | `check_growth_sanity()` | 3チェック（①Damodaran業界ベンチマーク比、比率>2.5倍で警告②過去CAGR(3yr/5yr)比、>2.0倍で警告③RR×ROIC上限、警告なし・signalsのみ）の警告数で`verdict`決定: `0件→PLAUSIBLE`/`1件→REVIEW`/`2件→AGGRESSIVE`。`recommended_g`は「3yr CAGR・5yr CAGR・業界ベンチマーク・RR×ROIC」候補の中央値（原則2件以上必要、fcf_cagr floor到達かつ業界ベンチマークのみの特例で1件許容）。ただしTTM/CAGR最大値が50%超なら中央値の代わりに「TTM寄りor業界平均寄りの逓減モデル」（HypeCoreフェーズ連動、Phase1-2は65:35寄りTTM、Phase4は35:65寄り業界平均）を採用。`floor_hit`（fcf_cagr floor値0.15への張り付き、または実測系3指標全None）検知時は`verdict=FLOOR_HIT_REVIEW`に上書き | AS-IS-012（既定義・フェーズ6）＋Damodaran業界別ベンチマーク（カタログ対象外）＋AS-IS-085（既定義・フェーズ5） | 導出データ |
+| AS-IS-043 | TANUKI VALUATION | phase1_growth_auto_adjusted | `pipeline.py:_save_result()` | `segment_configured==False`（Generalフォールバック、手動設定なし）かつ`growth_sanity.recommended_g`（AS-IS-042）が算出可能な場合、`True`。この場合`recommended_g`を成長率オーバーライドとして**DCF計算全体を再実行**し、`valuation`全体（intrinsic_value_per_share等含む）が差し替わる。算出不可・segment設定済みの場合は`False`（DCFは元の成長率のまま） | AS-IS-042（本表）＋AS-IS-012（既定義・フェーズ6） | 導出データ |
+| AS-IS-044 | TANUKI VALUATION | fcf_margin_bear_mult_applied | `check_growth_sanity()`内`fcf_margin_bear_multiplier` | FCFマージン時系列が3年以上あり、直近3年平均と最新年の差が2.0pt以上悪化している場合のみ`clamp(最新/平均3yr, 0.4, 1.0)`を算出（Bearシナリオの成長率に乗算する補正係数）。悪化なしまたはデータ不足の場合は`1.0`（補正なし） | AS-IS-047（既定義・フェーズ4、fcf_history.fcf_margin経由） | 導出データ |
+| AS-IS-052 | TANUKI VALUATION | validation.* | `validate_calculation()`/`run_basic_checks()` | AI（Grok）は現在無効化済み（`model:"basic_checks_only"`、v7.3でGrok廃止）、4つの決定論的チェックのみ実行:<br>①`pt_shares_consistency`: `(V0_rm+RPO_PV+GrowthOptionPV)/shares+BS補正`を再計算し保存済みivpsと比較、差異1.0%未満でpass<br>②`dcf_components`: `pv_high_growth+pv_terminal`（2段階）または`pv_phase1+pv_phase2+pv_terminal`（3段階）を再計算し**β込みWACC基準v0**（AS-IS-007既定義・フェーズ6）と比較、差異1.0%未満でpass<br>③`formula_verification`: alpha公式`ROE×0.6/Rm×0.7`を再計算しAS-IS-009と比較、差異0.01未満でpass（capped時はalpha_capとの一致で判定）<br>④`anomaly_detection`: 乖離率絶対値>1000%／株式数<100万／IV>$50000／IV<=0のいずれかで異常値検出<br>総合判定: 全pass→`PASS`、anomaly_detection失敗→`FAIL`、それ以外→`WARN` | AS-IS-006, AS-IS-007, AS-IS-009（既定義・フェーズ3/6/本表）＋AS-IS-024, AS-IS-016（既定義・フェーズ6） | 導出データ |
+| AS-IS-053 | TANUKI VALUATION | dilution_severity/dilution_comment | `_dilution_severity_info()` | `dilution_3yr_annual_pct`（AS-IS-045既定義・フェーズ4）による6段階分類: `<0%→positive`(自社株買い)／`<3%→low`／`<10%→medium`／`<30%→high`／`<50%→severe`／`else→critical` | AS-IS-045（既定義・フェーズ4） | 導出データ |
+| AS-IS-078 | HypeCore | expectation_score（重複カタログ） | `compute_scores()` | AS-IS-113（既定義・フェーズ3）と完全に同一のフィールドを指す重複カタログエントリ | AS-IS-113（既定義・フェーズ3） | 導出データ |
+| AS-IS-107 | HypeCore | sell_on_good_news | `compute_scores()` | `(eps_surprise>5) AND (price_mom1m<-3%)`（良い決算サプライズにもかかわらず当月株価が3%超下落＝期待剥落の最強シグナル） | AS-IS-104（既定義・フェーズ7）＋price_mom1m（AS-IS-084派生、カタログ対象外） | 導出データ |
+| AS-IS-114 | HypeCore | fundamental_score | `compute_scores()` | `mean(z(rev_yoy), z(ni_yoy), z(rule40), z(fcf_yield))`（存在する列のみ平均）。`z()`はAS-IS-113と同じ24ヶ月ローリングZ-score | AS-IS-093, AS-IS-094, AS-IS-095（既定義・フェーズ5）＋AS-IS-096（既定義・フェーズ4） | 導出データ |
+| AS-IS-120 | HypeCore | HypeCore推奨（買い/保有/売り等） | `getRec()`（detail.html） | ステージ（AS-IS-085既定義）ベースの分岐: `stage0←stage4`→強い買い推奨／`stage1`→買い推奨／`stage2`→保有継続／`stage3かつma200_dev<50%`→保有・要注意／`stage3かつma200_dev>=50%`→売り準備／`stage4かつ前月stage3`→売り推奨（転換直後）／`stage4かつreal_strongかつma200_shrinking`→様子見（底打ち兆候）／`stage4かつreal_strong`→売り継続・底は近い／`stage4`→売り継続。`real_strong`はJS独自定義（AS-IS-109〜112の`real_strong`とは異なる簡略版、フェーズ5で既発見の相違点） | AS-IS-085, AS-IS-089（既定義・フェーズ5）＋AS-IS-110のreal_strongとは別実装 | 導出データ |
+| AS-IS-126 | STONKS SILO | overall_score | `_overall()` | `dq_score×0.4 + ra_score×0.3 + path_score×0.3`（3本柱の加重平均、0-100点） | AS-IS-142, AS-IS-159, AS-IS-173（本表） | 導出データ |
+| AS-IS-127 | STONKS SILO | overall_verdict | `_overall()` | `overall_score`（AS-IS-126）による4段階: `>=75→10x_CANDIDATE`／`>=55→PROMISING`／`>=35→WATCH`／`else→AVOID` | AS-IS-126（本表） | 導出データ |
+| AS-IS-128 | STONKS SILO | summary | `_build_summary()` | ルールベース（AI不使用）の日本語レポート文生成。3本柱それぞれのスコア・verdictラベル・根拠（CAGR/投資比率/粗利率コメント、ランウェイ詳細、黒字化予測テキスト）を固定テンプレートで結合 | AS-IS-136, AS-IS-137/138, AS-IS-139, AS-IS-153/154/155, AS-IS-162/163/164（既定義・フェーズ4/5/7）＋AS-IS-141/142/158/159/173（本表） | 導出データ |
+| AS-IS-140 | STONKS SILO | gross_margin_derived | `fetcher.py:_normalize_record()`→`analyzer.py` | `gross_profit`がSEC EDGARに直接存在せず`revenue-cost_of_revenue`で逆算した場合のみ`True`（AS-IS-139既定義・フェーズ4の`gross_profit_derived`フラグをそのまま反映） | AS-IS-139（既定義・フェーズ4） | 導出データ |
+| AS-IS-141 | STONKS SILO | verdict（DeficitQuality） | `_deficit_verdict()` | 純利益黒字なら`PROFITABLE`。赤字の場合、100点満点スコア（売上成長40pt＋投資姿勢30pt＋粗利率20pt＋黒字状況10pt、下記AS-IS-142参照）により`>=65→GOOD_DEFICIT`／`>=35→WATCH`／`else→BAD_DEFICIT`。**このスコア閾値(65/35)は表示色`pillarColor()`の閾値(70/45)と一致しない（下記備考、依頼文名指し）** | AS-IS-142（本表） | 導出データ |
+| AS-IS-142 | STONKS SILO | score（DeficitQuality） | `_deficit_verdict()` | 加算式（計100pt）: 売上成長`cagr_3yr`（AS-IS-136既定義・フェーズ5）`>=50%→40/>=30%→30/>=20%→20/>=10%→10/else 0`＋投資姿勢`rnd_ratio+sm_ratio`（AS-IS-137/138既定義・フェーズ5）`>=60%→30/>=40%→20/>=20%→10/>0%→5/else 0`＋粗利率`gross_margin`（AS-IS-139既定義・フェーズ4）`>=70%→20/>=50%→15/>=30%→8/else 0`＋黒字状況`純利益>0→10/純利益データありだが赤字→5/else 0` | AS-IS-136, AS-IS-137, AS-IS-138, AS-IS-139（既定義・フェーズ4/5） | 導出データ |
+| AS-IS-149 | STONKS SILO | dilution_risk | `_analyze_deficit_quality()` | `sbc_ratio`（AS-IS-147既定義・フェーズ4）による4段階: `>=15%→HIGH`／`>=8%→MEDIUM`／`else→LOW`／`sbc_ratio`算出不可→`UNKNOWN` | AS-IS-147（既定義・フェーズ4） | 導出データ |
+| AS-IS-150 | STONKS SILO | deficit_fixed_risk | `_calc_deficit_fixed_risk()` | `dq.verdict=="GOOD_DEFICIT"かつocf_trend∈{ACCELERATING,IMPROVING}→LOW`／`dq.verdict=="GOOD_DEFICIT"（それ以外のtrend）→MEDIUM`／`dq.verdict=="BAD_DEFICIT"かつocf_trend=="DETERIORATING"→HIGH`／それ以外`→MEDIUM` | AS-IS-141（本表）＋AS-IS-161（既定義・フェーズ5） | 導出データ |
+| AS-IS-158 | STONKS SILO | verdict（RunwayAnalysis） | `_runway_verdict()` | `monthly_burn>=0または無限大→SAFE`（CF黒字・トントン）／`runway_months>=24→SAFE`／`>=12→WATCH`／`else→DANGER`／算出不可`→UNKNOWN` | AS-IS-153, AS-IS-154, AS-IS-155（既定義・フェーズ4） | 導出データ |
+| AS-IS-159 | STONKS SILO | score（RunwayAnalysis） | `_overall()` | `verdict`（AS-IS-158）を数値化: `SAFE→100/WATCH→60/DANGER→20/UNKNOWN→50` | AS-IS-158（本表） | 導出データ |
+| AS-IS-173 | STONKS SILO | score（ProfitabilityPath） | `_overall()` | `ocf_trend`（AS-IS-161既定義・フェーズ5）を数値化: `ACCELERATING→100/IMPROVING→75/FLAT→50/DETERIORATING→20/UNKNOWN→0`。ただし`hidden_profit_already`（AS-IS-164既定義・フェーズ7）が`True`の場合は`max(score,80)`に底上げ | AS-IS-161, AS-IS-164（既定義・フェーズ5/7） | 導出データ |
+| AS-IS-268 | EPS Analyzer | quarters[].adjustments[].item_name/reason/extracted_from | `detect_adjustments()` | ルールベース（AI不使用）。`config`の調整項目リスト（XBRLタグ・カテゴリ・方向・pre_tax・デフォルト理由文をセクター別除外込みで定義）と当該四半期のXBRLデータを突合し、該当タグが存在し値が非ゼロの項目のみ検出。REIT専用項目（減価償却・資産売却益）は不動産セクター以外除外 | period_data（SEC XBRL、カタログ対象外）＋調整項目config（カタログ対象外） | 導出データ |
+| AS-IS-269 | EPS Analyzer | quarters[].adjustments[].net_amount | `apply_tax_adjustments()` | `pre_tax`項目は`net_amount = amount×(1-実効税率)`、`pre_tax=False`項目は`net_amount = amount`そのまま。実効税率は`abs(tax_expense/pretax_income)`が0〜50%の範囲内ならその値、範囲外または`pretax_income==0`ならデフォルト21%（米国法定実効税率相当） | AS-IS-268（本表）＋pretax_income/tax_expense（SEC XBRL、カタログ対象外） | 導出データ |
+| AS-IS-270 | EPS Analyzer | quarters[].ai_analysis.health/comment | `analyze_adjustments()`→Grok | **AI生成**（モデル`grok-4.20-0309-reasoning`、環境変数で変更可、プロンプトは`config/prompts.yaml`）。ticker・会計期・GAAP EPS・Adjusted EPS・調整項目リストを渡し、5段階health（Excellent/Good/Caution/Warning/Error）と分析コメントを生成させる。**最新四半期のみ**に適用（過去四半期は対象外） | AS-IS-267, AS-IS-268, AS-IS-269（既定義・フェーズ4/本表）＋Grok API（カタログ対象外） | 導出データ |
+| AS-IS-271 | EPS Analyzer | quarters[].ai_analysis.sources[].item/snippet/confidence | 同上 | AS-IS-270と同一Grok応答内の`sources`配列。各調整項目について引用テキストと「真に一過性である確信度」（0.0〜1.0、AI自己申告）を生成 | AS-IS-270と同じ | 導出データ |
+| AS-IS-272 | EPS Analyzer | quarters[].special_flags(EPS_DISCREPANCY)/special_notes.eps_discrepancy | `check_eps_discrepancy()`＋`apply_fair_value_detection()` | **同一フラグ名`"EPS_DISCREPANCY"`を意味の異なる2つの独立処理が設定する（下記備考）**。①`check_eps_discrepancy()`: XBRL算出`gaap_eps`とAlpha Vantage公式`reportedEPS`の差が20%（`EPS_DISCREPANCY_THRESHOLD`）超で検出、`special_notes.eps_discrepancy`に詳細。**`EPS_CHECK_TICKERS`という許可リストの銘柄のみ対象**（全銘柄ではない）②`apply_fair_value_detection()`: 公正価値（時価評価）変動の自動検出・調整、3条件（前年同期比較・XBRL FVタグ検出・重複除外）を満たす場合に検出、`special_notes.fair_value_auto_detect`に詳細 | gaap_eps（AS-IS-267既定義）＋Alpha Vantage API（カタログ対象外）＋XBRL FVタグ（カタログ対象外） | 導出データ |
+| AS-IS-277 | EPS Analyzer | gaap_to_adj_positive | `generate_summary()` | `gaap_eps<0 かつ adjusted_eps>0`（最新四半期。GAAPで赤字だがAdjustedでは黒字＝市場誤認リスクが最も高い状態） | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-288 | TANUKI SCORE | selection_reason | `select_ticker()` | 3段階の優先順位: ①前日から分類（BUY/WATCH/GROWTH_PREMIUM/HOLDのみ対象）が変化した銘柄があれば優先度順（BUY>WATCH>GROWTH_PREMIUM>HOLD）に選出、理由="分類変化: {旧}→{新}"②Grok web検索で本日重大ニュースのある銘柄をBUY/WATCH上位20件から**AI選出**、理由=AIの50字以内コメント+"（Grok選出）"③ファンダスコア上位・最長未選出銘柄、理由="ファンダスコア上位・最長未選出"（固定文字列） | AS-IS-034（本表）＋Grok API（カタログ対象外） | 導出データ |
+| AS-IS-291 | TANUKI SCORE | category | `select_ticker()`/`build_stock_list()` | TANUKI VALUATIONの`tanuki_score`（AS-IS-034）をそのまま転記するパススルー | AS-IS-034（本表） | 導出データ |
+| AS-IS-292 | TANUKI SCORE | report.fundamental | `generate_report()`→Grok | **AI生成**（grok-3-mini→grok-3→grok-2-1212フォールバック、temperature=0.5）。TANUKI VALUATION/HypeCore/EPS Analyzer/Market Pulseの全指標を統合したデータパッケージとプロンプト内指標定義を渡し、「売上成長・収益性・FCF・理論株価と現在株価の両方を明記した上で乖離率を評価」する200〜400字の分析文を生成。「数値から結論への因果関係を必ず説明する」よう明示指示 | AS-IS-006, AS-IS-019, AS-IS-093他多数（本表/既定義）＋Grok API（カタログ対象外） | 導出データ |
+| AS-IS-293 | TANUKI SCORE | report.expectation | 同上 | 同一Grok応答内。「HypeCoreフェーズ・expectation_score・substageを分析。フェーズとTANUKI SCOREカテゴリが矛盾する場合はその理由を説明する」 | AS-IS-292と同じ | 導出データ |
+| AS-IS-294 | TANUKI SCORE | report.news | 同上 | 同一Grok応答内。「直近の重要な事象（契約・決算・規制・競合動向等）」を記述。**Discoverのcatalyst.py等と異なりweb検索は明示指示されておらずGrokの学習知識ベースに依存**（下記備考） | AS-IS-292と同じ | 導出データ |
+| AS-IS-295 | TANUKI SCORE | report.timing | 同上 | 同一Grok応答内。「market_pulse（fear_greed・risk_off・tech_pulse）・HypeCoreフェーズ・TANUKI乖離率を統合評価し、今買うべきか/待つべきか/売るべきかを明確に示す」 | AS-IS-292と同じ | 導出データ |
+| AS-IS-296 | TANUKI SCORE | report.summary | 同上 | 同一Grok応答内。「上記を統合した投資判断（2〜3文）。注目すべき次のトリガーイベントを明記」 | AS-IS-292と同じ | 導出データ |
+| AS-IS-396 | TANUKI TAIL | effective | `_analyze_ctrl_text()` | 正規表現ベース（AI不使用）の3値判定。「not effective」パターンが先にマッチ→`False`。「effective」パターンがマッチしかつ「material weakness」キーワードが**存在しない**→`True`。それ以外（両パターン不一致、またはeffectiveマッチだがmaterial weaknessキーワードも存在＝判定保留）→`None`（判定不能、"not effective"の明示なしにmaterial weaknessだけでは無効と断定しない設計） | 10-Q Item4テキスト（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-397 | TANUKI TAIL | material_weaknesses | `_analyze_ctrl_text()` | 正規表現`material\s+weakness(?:es)?`にマッチした前後±200文字の抜粋文リスト | AS-IS-396と同じ（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-398 | TANUKI TAIL | significant_deficiencies | 同上 | 正規表現`significant\s+deficienc(?:y|ies)`にマッチした前後±200文字の抜粋文リスト | AS-IS-396と同じ | 導出データ |
+| AS-IS-399 | TANUKI TAIL | item4_excerpt | `fetch_ctrl()` | HTML除去後のItem4「Controls and Procedures」テキストの先頭2000文字（英語原文、抽出のみで計算なし） | SEC EDGAR 10-Q（カタログ対象外） | 導出データ |
+| AS-IS-400 | TANUKI TAIL | item4_excerpt_ja | `_translate_item4()`→Grok | **AI翻訳**（temperature=0、grok-3-mini→grok-3→grok-2-1212）。AS-IS-399の英文をそのまま日本語に翻訳（分析・要約ではなく翻訳のみを指示） | AS-IS-399（本表）＋Grok API（カタログ対象外） | 導出データ |
+| AS-IS-417 | TANUKI TAIL | layer2_complete | `xbrl_segment_fetcher.py:fetch_ticker()` | `len(missing_kpis)==0`（全KPIについて最低1四半期分のXBRL抽出に成功したか） | AS-IS-421（既定義・フェーズ7） | 導出データ |
+| AS-IS-418 | TANUKI TAIL | missing_kpis | 同上 | 抽出対象KPIのうち`kpi_data[kpi_name]`が空リストのままだったKPI名一覧 | AS-IS-421（既定義・フェーズ7） | 導出データ |
+| AS-IS-424 | TANUKI TAIL | kpis.{name}.confidence（Layer3） | `text_kpi_extractor.py:extract_layer3()`→Grok | AS-IS-422/423（既定義・フェーズ7）と同一Grok応答内の`confidence`（high/medium/low、AI自己申告） | AS-IS-422（既定義・フェーズ7） | 導出データ |
+| AS-IS-482 | TANUKI TAIL | stage1.health_score | `build_stage1_prompt()`→Grok | **AI生成**（call1/stage1）。投資テーゼ・エントリーストーリー・エグジット目安・直近KPI実績8四半期＋YoY/QoQ・マクロ環境・理論株価との乖離・健全度推移履歴・過去予測振り返りを渡し、0-100点の健全度スコアを生成させる | AS-IS-001, AS-IS-006, AS-IS-034（既定義）＋AS-IS-420/421（既定義・フェーズ7）＋Grok API（カタログ対象外） | 導出データ |
+| AS-IS-483 | TANUKI TAIL | stage1.health_label | 同上 | 同一Grok応答内のhealth_scoreに対応するラベル（AIが数値とセットで生成、固定式マッピングではない） | AS-IS-482と同じ | 導出データ |
+| AS-IS-484 | TANUKI TAIL | stage1.summary | 同上 | 同一Grok応答内の総括自由記述 | AS-IS-482と同じ | 導出データ |
+| AS-IS-485 | TANUKI TAIL | stage1.positives | 同上 | 同一Grok応答内。今四半期の良い点2-3項目 | AS-IS-482と同じ | 導出データ |
+| AS-IS-486 | TANUKI TAIL | stage1.concerns | 同上 | 同一Grok応答内。今四半期の懸念点2-3項目 | AS-IS-482と同じ | 導出データ |
+| AS-IS-487 | TANUKI TAIL | stage1.recommendation | 同上 | 同一Grok応答内。CONTINUE（健全）/WATCH（一部懸念）/REVISE（テーゼ修正要）/EXIT（テーゼ崩壊）の4択（AI判定、固定式なし） | AS-IS-482と同じ | 導出データ |
+| AS-IS-488 | TANUKI TAIL | stage1.next_kpis | 同上 | 同一Grok応答内。次四半期に確認すべきKPI（優先度順、監視KPI設定がある場合は警戒ラインへの接近度も加味） | AS-IS-482と同じ | 導出データ |
+| AS-IS-489 | TANUKI TAIL | stage1.exit_distance | 同上 | 同一Grok応答内。エグジット条件との距離感の自由記述（例:"遠い"） | AS-IS-482と同じ | 導出データ |
+| AS-IS-490 | TANUKI TAIL | stage1.exit_distance_reason | 同上 | 同一Grok応答内。AS-IS-489の根拠説明 | AS-IS-482と同じ | 導出データ |
+| AS-IS-491 | TANUKI TAIL | stage1.optimism_bias_warning | 同上 | 同一Grok応答内。楽観バイアスの兆候が見られる場合のみ警告文、なければ`null`（AI自己判定） | AS-IS-482と同じ | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+- **DCF_Reliability Policy AとPolicy Bの「非LOW」表示語彙が不一致
+  （依頼文名指し・最重要）**: `_calc_dcf_reliability_policy_b()`は常に
+  文字列`"LOW"`/`"NORMAL"`のいずれかを返す一貫した関数だが、report.txtの
+  表示文言はこの関数がどちらの文脈で呼ばれたかによって異なる。
+  FCF_Base方式（`fcf_estimation.applied==False`）の分岐でPolicy Bが
+  `"NORMAL"`を返した場合、表示は`"DCF_Reliability: HIGH"`
+  （`pipeline.py:1571`）。一方FCF_Conversion_Rate方式
+  （`applied==True`）の分岐で同じ関数が同じ`"NORMAL"`を返した場合、
+  表示は`"DCF_Reliability: NORMAL"`（`pipeline.py:1667`）。**関数の
+  戻り値自体は一貫しているが、呼び出し元のreport.txt生成コードが
+  「LOWの対義語」として文脈により`HIGH`と`NORMAL`という異なる単語を
+  選んでいる**ため、report.txtを横断的に検索・パースするツール
+  （外部AIレビュー等）が「DCF_Reliability」の値を単純な2値
+  （LOW/非LOW）として扱おうとすると、非LOW側の文字列が銘柄によって
+  `HIGH`だったり`NORMAL`だったりして正規化が必要になる。
+- **STONKS SILOの`pillarColor()`表示色閾値(70/45)と`_deficit_verdict()`
+  の判定閾値(65/35)が一致しない（依頼文名指し）**: `index.html`の
+  `pillarColor(s)`は`s>=70`緑・`s>=45`amber・それ未満赤だが、
+  同じスコア値に対する`verdict`ラベル（AS-IS-141）は`>=65→GOOD_DEFICIT`
+  ・`>=35→WATCH`・それ未満`BAD_DEFICIT`で決まる。このため
+  スコア65〜69点の銘柄は**verdict="GOOD_DEFICIT"（好意的なラベル）
+  なのに表示色はamber（黄色、注意喚起色）**になり、スコア35〜44点の
+  銘柄は**verdict="WATCH"なのに表示色は赤**になる、という
+  ラベルと色の不整合区間（65-70点・35-45点）が存在する。
+- **同一フラグ名`EPS_DISCREPANCY`が意味の異なる2つの独立処理で
+  設定される**: `check_eps_discrepancy()`（XBRL vs Alpha Vantage公式値の
+  20%超乖離＝**データ品質上の疑義**）と`apply_fair_value_detection()`
+  （公正価値変動の自動検出・調整が**適用されたことの記録**）は、
+  意味的に全く異なる状況を示すにもかかわらず同一の
+  `special_flags: ["EPS_DISCREPANCY"]`を使う。`special_flags`だけを
+  見ても両者を区別できず、`special_notes`のどちらのサブキー
+  （`eps_discrepancy`か`fair_value_auto_detect`）が埋まっているかを
+  確認しない限り原因を判別できない。
+- **`_deficit_verdict()`のDEFICIT分類は、ロジック上100点満点だが
+  実質的な達成可能上限は状況によって100点未満になりうる**（新規発見・
+  軽微）: 売上成長40pt＋投資姿勢30pt＋粗利率20pt＋黒字状況10pt＝100pt
+  だが、赤字企業である前提上「黒字状況」は最大でも5pt（`else score+=5`
+  分岐は`net_income is not None`のみが条件で黒字判定には到達しない）
+  であり、赤字企業の実質上限は95点である。
+- **AS-IS-292〜296（TANUKI SCORE report.*）の`news`セクションのみ
+  web検索を伴わない**: Discover（AS-IS-244/250/254/258、既定義・
+  フェーズ7）は明示的にGrokのweb検索機能を使うのに対し、TANUKI SCOREの
+  `report.news`はプロンプト内に「web検索」の指示がなく、Grokの学習
+  知識ベース（最新情報ではない可能性がある）に依存している。同じ
+  レポート内の他セクション（fundamental/expectation/timing/summary）は
+  提供された定量データに基づくため問題ないが、newsだけは情報の鮮度が
+  保証されない構造になっている。
+- **AS-IS-396（effective）の判定は「material weaknessキーワードの
+  存在」だけでは無効と断定しない設計になっている**: 「effective」
+  パターンにマッチしても、同時に「material weakness」という単語が
+  文書のどこかに含まれていれば（例えば「過去に指摘されたmaterial
+  weaknessは是正済み」という文脈であっても）、`effective=None`
+  （判定不能）に後退する。実際に無効を意味する明示的な「not
+  effective」文言がない限り`False`にはならない、保守的だが
+  誤検知（過去の是正済み言及を無効と誤判定）は避ける設計。
+- **AS-IS-270/271（EPS Analyzer ai_analysis）は最新四半期のみに適用され、
+  過去四半期には遡及されない**: `pipeline.py`は
+  `quarterly_results[0]`（最新のみ）に対して`analyze_adjustments()`を
+  呼ぶため、過去四半期の調整項目についてはAIによる健全性評価
+  （health/comment/sources）が生成されない。
+
+### 次フェーズへの申し送り
+
+- 本フェーズで引用のみ行い内部アルゴリズムを再展開しなかったAS-IS-ID:
+  マクロ・市場環境系のfear_greed.score（AS-IS-344、未定義）・regime判定
+  （AS-IS-182/183、未定義、依頼文名指しだが本カテゴリ対象外と確認済み）
+- AS-IS-001/006/007/009/012/016/019/020/021/024/034/045/046/047/084/085/
+  089/093/094/095/096/104/109〜112/136/137/138/139/147/153/154/155/161/
+  164/267/278/420/421/422は既定義（フェーズ3〜7）のものをそのまま引用した
+- 本フェーズで発見したDCF_Reliability非LOW語彙不一致（HIGH/NORMAL）・
+  pillarColor(70/45)とDEFICIT判定(65/35)の閾値不一致・EPS_DISCREPANCYの
+  意味重複・赤字企業のDEFICIT実質上限95点はいずれも実装（コード修正）を
+  伴うため、本タスクの範囲外として記録にとどめた
