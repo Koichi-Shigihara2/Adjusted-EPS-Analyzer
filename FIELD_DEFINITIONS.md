@@ -506,3 +506,160 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 - AS-IS-026/028の重複統合、AS-IS-071とAS-IS-157のCapEx符号不統一修正は
   いずれも実装（コード修正）を伴うため、本タスクの範囲外として記録に
   とどめた。修正が必要と判断される場合は別途依頼文で着手する
+
+---
+
+## 対象5（フェーズ5）: 導出データ — 成長率・トレンド系（43件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「成長率・トレンド系（43件）」
+（ステップ6確定後392件ベース、AS-IS-068/076/077/079/085/086/087/088/089/090/
+091/092/093/094/095/109/110/111/112/115/118/119/121/135/136/137/138/143/151/
+152/161/165/166/167/168/169/170/171/172/174/175/176/177）
+
+実装（コード修正）は行っていない。定義の記録のみ。分解ルールは前フェーズ
+までと同一。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解した計算式） | データ取得元（最終的にたどり着く一次データ等のAS-IS-ID一覧） | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-068 | TANUKI VALUATION | FCF CAGR(3yr)（stock.html独自チャート） | render内IIFE | `valid = fcf_history.filter(fcf!=null && fcf>0)`（AS-IS-047の`fcf_history[]`、既定義・前フェーズ参照）<br>`cagr = ((valid[-1].fcf / valid[-4].fcf) ** (1/3) - 1) × 100`（`valid.length>=4`のときのみ算出） | AS-IS-047（既定義・前フェーズ） | 導出データ |
+| AS-IS-076 | TANUKI VALUATION | 200MA乖離（index.html独自計算） | `buildRows()` | `ma200_dev = (price - ma200_raw) / ma200_raw`<br>`price` = `components.current_price`（yfinance、カタログ対象外）<br>`ma200_raw` = `components.ma200` = yfinance `info.get("twoHundredDayAverage")`（Yahoo Finance側算出のスナップショット値、カタログ対象外、`data_fetcher.py:544`） | current_price/twoHundredDayAverage（yfinance、カタログ対象外） | 導出データ |
+| AS-IS-077 | HypeCore | stage_label（他サブシステムからの参照、削除候補） | （TANUKI stock.html/pipeline.py、tanuki_score/index.htmlが直接読取） | AS-IS-086（本表参照）の値を、TANUKI VALUATION（MATRIX×HYPEシグナル表示、`_load_hype_info`/`_save_hypecore_history`）・TANUKI SCORE（TRIMチップ表示）がそのまま再表示しているだけの参照 | AS-IS-086（本表参照） | 導出データ |
+| AS-IS-079 | HypeCore | STONKS SILO `deficit_quality.revenue_growth_pct`（他サブシステムからの参照、削除候補） | （TANUKI stock.html Matrix③パネル） | AS-IS-152（本表参照、STONKS SILO `revenue_growth_pct`）の値を、TANUKI VALUATION（Matrix③成長性系パネルのY軸）がそのまま再表示しているだけの参照 | AS-IS-152（本表参照） | 導出データ |
+| AS-IS-085 | HypeCore | stage | `determine_stage()` | 優先順位付きルールベースでステージ番号(0〜4)を判定。主な入力: `ma200_dev`(AS-IS-087)・`ma200_mom`(`ma200_dev.diff(3)`、**JSON出力なし**、下記備考)・`from_peak`(AS-IS-089)・`price_mom3m`(月次価格3ヶ月変化率、カタログ対象外)・`rsi`(AS-IS-090)・`vol_surge`(AS-IS-092)・`sell_on_good_news`/`eps_surprise`/`analyst_upgrade_rate`/`buy_hold_ratio`(カタリスト・イベント予測系・未定義)・`expectation_score`(前フェーズ既定義AS-IS-113)/`fundamental_score`/`momentum_score`(本表AS-IS-115)。前月ステージとS3/S4連続月数によるヒステリシス（優先チェック）を持つ | AS-IS-087, AS-IS-089, AS-IS-090, AS-IS-092, AS-IS-113(既定義), AS-IS-115(本表参照) ＋ ma200_mom/price_mom3m(カタログ対象外) ＋ カタリスト系複数(未定義) | 導出データ |
+| AS-IS-086 | HypeCore | stage_label | `STAGE_LABELS[stage]` | `{0:"失望/蓄積期",1:"期待覚醒期",2:"期待拡大期",3:"陶酔期",4:"期待剥落期"}`。AS-IS-085のstageをラベル文字列化しただけ | AS-IS-085（本表参照） | 導出データ |
+| AS-IS-087 | HypeCore | ma200_dev | `ma200_dev` | `ma200_dev = (price - ma200) / (ma200+1e-9) × 100`<br>`price` = AS-IS-084（一次データ・未定義、評価倍率フェーズ参照）<br>`ma200` = 同一日次価格系列の`rolling(200).mean()`（HypeCore内部計算、カタログ対象外） | AS-IS-084（一次データ・未定義） | 導出データ |
+| AS-IS-088 | HypeCore | ma50_dev（JSON出力のみ、未使用） | `ma50_dev` | `ma50_dev = (price - ma50) / (ma50+1e-9) × 100`。`ma50 = price.rolling(50).mean()`。AS-IS-087と同型（窓50日） | AS-IS-084（一次データ・未定義） | 導出データ |
+| AS-IS-089 | HypeCore | from_peak | `from_peak` | `from_peak = (price - peak_24m) / peak_24m × 100`<br>`peak_24m = price.rolling(24, min_periods=6).max()`（**24ヶ月**の過去最高値。月次df上のrolling、日足ベースではない） | AS-IS-084（一次データ・未定義） | 導出データ |
+| AS-IS-090 | HypeCore | rsi | `rsi` | 標準的な14日RSI（日次価格ベースで計算後、月末値のみ保持）<br>`gain=delta.clip(lower=0).rolling(14).mean()`、`loss=(-delta.clip(upper=0)).rolling(14).mean()`<br>`rsi = 100 - 100/(1+gain/(loss+1e-9))` | AS-IS-084（一次データ・未定義） | 導出データ |
+| AS-IS-091 | HypeCore | volume_ratio（JSON出力のみ、未使用） | `volume_ratio` | `volume_ratio = volume/(vol_20d_avg+1e-9)`、`vol_20d_avg = volume.rolling(20).mean()`（日次出来高ベース、月末値を保持） | volume（yfinance history()、カタログ対象外） | 導出データ |
+| AS-IS-092 | HypeCore | vol_surge | `vol_surge` | `vol_surge = volume_monthly/(vol_avg+1e-9)`、`vol_avg = volume_monthly.rolling(6, min_periods=3).mean()`（**月次**出来高の6ヶ月移動平均比。AS-IS-091〈日次20日平均比〉とは時間粒度が異なる別指標） | volume（yfinance history()、カタログ対象外） | 導出データ |
+| AS-IS-093 | HypeCore | rev_yoy | `rev_yoy` | `rev_ttm = Revenue.rolling(4).sum()`（直近4四半期合計=TTM）<br>`rev_yoy = (rev_ttm / rev_ttm.shift(4) - 1) × 100`（TTM同士のYoY）<br>`Revenue` = `{ticker}_quarterly_normalized.json`のRevenue四半期系列（SEC EDGAR、カタログ対象外） | Revenue（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-094 | HypeCore | ni_yoy（JSON出力のみ、直接表示なし） | `ni_yoy` | `ni_yoy = NetIncome.pct_change(4) × 100`（**単一四半期**同士のYoY。AS-IS-093のTTMベースとは時間粒度が異なる、下記備考） | NetIncome（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-095 | HypeCore | rule40 | `rule40` | `rule40 = rev_yoy + op_margin`<br>`rev_yoy` = AS-IS-093（TTMベース、本表参照）<br>`op_margin = NetIncome/Revenue×100`（**単一四半期**の値同士の比率、TTMではない） | AS-IS-093（本表参照）＋ NetIncome(SEC EDGAR、カタログ対象外) | 導出データ |
+| AS-IS-109 | HypeCore | substage_phase | `detect_substage()` | `detect_substage(row, stage, stage_months)`が返す`phase`キー（"入口"/"中盤"/"中盤A"/"中盤B"/"中盤B*"/"出口"等）。ステージごとに個別ロジック（下記real_strong等を参照） | AS-IS-085他（本表参照） | 導出データ |
+| AS-IS-110 | HypeCore | substage_label | `detect_substage()` | `label`キー。stage=3(陶酔期)は`ma200_mom`/`from_peak`/`rsi`の組合せ、stage=4(期待剥落期)は`real_strong`・`valuation_overheat`(`price_iv_ratio>2.0`または`forward_pe>100`)・`ma200_shrinking`(`ma200_mom>-5`)の組合せで判定<br>`real_strong = _real_standard or _real_growth`<br>`_real_standard=(rev_yoy>15 and (eps_surprise is None or eps_surprise>-5)) or (eps_surprise>0 and rev_yoy>0)`<br>`_real_growth=(rev_yoy>30 and (eps_surprise is None or eps_surprise>-30))` | AS-IS-093他（本表参照）＋ price_iv_ratio(前フェーズ既定義AS-IS-116) | 導出データ |
+| AS-IS-111 | HypeCore | substage_watch | `detect_substage()` | `watch`キー（次に確認すべき観点の説明文）。AS-IS-109/110と同一ロジック内で生成 | AS-IS-109/110（本表参照） | 導出データ |
+| AS-IS-112 | HypeCore | substage_next | `detect_substage()` | `next`キー（次のアクション方針の説明文）。AS-IS-109/110と同一ロジック内で生成 | AS-IS-109/110（本表参照） | 導出データ |
+| AS-IS-115 | HypeCore | momentum_score（JSON出力のみ、未使用） | `momentum_score` | `momentum_score = mean(z(ma50_dev), z(ma200_dev), z(rsi))`（存在する列のみ平均）。`z()`は前フェーズAS-IS-113と同じ24ヶ月ローリングZ-score | AS-IS-087, AS-IS-088（本表参照）＋ AS-IS-090（本表参照） | 導出データ |
+| AS-IS-118 | HypeCore | low_base_effect（JSON出力のみ、未使用） | `low_base_effect` | `low_base_effect = prev_rev_yoy.notna() & (prev_rev_yoy<-10) & (rev_yoy.fillna(0)>50)`<br>`prev_rev_yoy = rev_yoy.shift(12)`（12ヶ月前=前年同月のrev_yoy） | AS-IS-093（本表参照） | 導出データ |
+| AS-IS-119 | HypeCore | ライフサイクル（黎明/成長/拡大/成熟） | `detectLifecycle()`（detail.html/index.html重複実装、ロジック同一） | `g = (revenue_growth!=null) ? revenue_growth×100 : (rev_yoy ?? 0)`<br>`g>40→growth`、`g>15→expand`、`g>0→mature`、`それ以外→dawn`<br>`revenue_growth` = HypeCore一次データ相当（評価倍率フェーズでAS-IS-100として一次データへ再分類済みだが未定義。yfinance `revenueGrowth`、小数）<br>`rev_yoy` = AS-IS-093（本表参照、SEC EDGAR TTM%） | revenue_growth(一次データ相当・未定義) ＋ AS-IS-093（本表参照） | 導出データ |
+| AS-IS-121 | HypeCore | 1ヶ月後のステージ遷移確率 | `calcTrans()` | `cnt[from][to]+=1`（`monthly`配列の隣接月同士のステージ遷移を全期間で集計、マルコフ的頻度表）<br>`prob[to] = round(cnt[cur][to]/Σcnt[cur][*]×100)`（当該銘柄の月次履歴全体から集計、JSON側に事前計算値はなくクライアント側で毎回集計） | AS-IS-085（本表参照、月次履歴全体） | 導出データ |
+| AS-IS-135 | STONKS SILO | financial_vectors.fields.*（angle/length等） | `compute_vectors()` | `angle = _pct_to_angle(percentile)`、`length = _pct_to_length(percentile)`<br>`_pct_to_angle(pct) = (pct-50)/50×90`（-90°〜+90°）、`_pct_to_length(pct) = abs(pct-50)/50`（0〜1）<br>`percentile = _calc_percentile(change_pct, 同時点の全STONKS SILO銘柄のchange_pct分布)`（二分探索）<br>対象フィールド: Revenue/GrossProfit/OperatingIncome/RD/NetIncome/OCF/CapEx（SEC EDGAR、normalized四半期JSON経由、カタログ対象外） | SEC EDGAR（common/sec_data正規化JSON、カタログ対象外） | 導出データ |
+| AS-IS-136 | STONKS SILO | cagr_3yr | `cagr_3yr` | `cagr_3yr = ((revenue_sanitized[years[-1]] / revenue_sanitized[years[-4]]) ** (1/3) - 1) × 100`（`len(years)>=4`のときのみ）。`years`は連続した年次リスト（フィルタなし）のため、AS-IS-068のような経過年数ズレは生じにくい | AS-IS-129（既定義・一次データ、revenue_sanitized経由） | 導出データ |
+| AS-IS-137 | STONKS SILO | rnd_ratio | `rnd_ratio` | `rnd_ratio = research_and_development / revenue_sanitized × 100`（直近年） | AS-IS-129（既定義）＋ R&D(SEC EDGAR、カタログ対象外) | 導出データ |
+| AS-IS-138 | STONKS SILO | sm_ratio | `sm_ratio` | `sm_ratio = selling_and_marketing / revenue_sanitized × 100`（直近年） | AS-IS-129（既定義）＋ S&M(SEC EDGAR、カタログ対象外) | 導出データ |
+| AS-IS-143 | STONKS SILO | rule_of_40 | `rule_of_40` | `rule_of_40 = round(cagr_3yr + operating_income/revenue_sanitized×100, 1)`<br>`cagr_3yr` = AS-IS-136（本表参照）<br>`operating_income` = SEC EDGAR一次データ（カタログ対象外） | AS-IS-136（本表参照）＋ operating_income(SEC EDGAR、カタログ対象外) | 導出データ |
+| AS-IS-151 | STONKS SILO | revenue_outlier_years | `revenue_outlier_years` | `[yr for yr in years if revenue_is_outlier[yr]]`。`revenue_is_outlier`はAS-IS-129の2パス外れ値検出（`revenue_sanitized`と表裏の関係） | AS-IS-129（既定義・一次データ） | 導出データ |
+| AS-IS-152 | STONKS SILO | revenue_growth_pct | `revenue_growth_pct` | `revenue_growth_pct[yr] = (revenue_sanitized[yr]/revenue_sanitized[yr-1]-1)×100`（年次。前年が0以下または存在しない場合はNone） | AS-IS-129（既定義・一次データ） | 導出データ |
+| AS-IS-161 | STONKS SILO | ocf_trend | `_ocf_trend()` | `ocf_yoy[yr] = ocf_annual[yr]-ocf_annual[yr-1]`（**差分**、比率ではない）<br>`ocf_accel[yr] = ocf_yoy[yr]-ocf_yoy[yr-1]`（2階差分）<br>判定: 最新年ocf_yoy<=0→(ocf_annual>0なら"FLAT"、他"DETERIORATING")／ocf_yoy>0かつocf_accel>0→"ACCELERATING"／直近2年ともocf_yoy>0→"IMPROVING"／他→"FLAT" | AS-IS-156（既定義・前フェーズ） | 導出データ |
+| AS-IS-165 | STONKS SILO | discontinuous_growth | `discontinuous_growth` | 直近年revenue_sanitized YoY(`latest_yoy`)が200%以上、かつ過去1〜4年前ペアの平均YoYの3倍超の場合に`True`。黒字化予測でOLS回帰を使った場合（`ols_used`）のみ判定対象 | AS-IS-129（既定義、revenue_sanitized経由） | 導出データ |
+| AS-IS-166 | STONKS SILO | discontinuous_growth_note | `discontinuous_growth_note` | AS-IS-165が`True`の場合のみ`"直近売上が急拡大（+{latest_yoy:.0f}%）、予測精度が低下している可能性があります"`を設定 | AS-IS-165（本表参照） | 導出データ |
+| AS-IS-167 | STONKS SILO | incremental_margin | `incremental_margin` | `(gross_profit[yr]-gross_profit[yr-1]) / (revenue_sanitized[yr]-revenue_sanitized[yr-1]) × 100`（直近の年ペア。`prev_rev<latest_rev×10%`の年はスキップ、`rev_delta<=0`もスキップ） | AS-IS-129（既定義）＋ gross_profit(SEC EDGAR、カタログ対象外) | 導出データ |
+| AS-IS-168 | STONKS SILO | incremental_margin_prev | `incremental_margin_prev` | AS-IS-167と同一計算式の「1つ前の年ペア」版 | AS-IS-167（本表参照） | 導出データ |
+| AS-IS-169 | STONKS SILO | incremental_margin_trend | `incremental_margin_trend` | 全年ペアの増分粗利率系列にOLS単回帰（x=年次インデックス、y=増分粗利率%）。傾き`>5`→"IMPROVING"、`<-5`→"DETERIORATING"、他→"FLAT" | AS-IS-167/168（本表参照） | 導出データ |
+| AS-IS-170 | STONKS SILO | incremental_rev_delta/incremental_gp_delta | `incremental_rev_delta`/`incremental_gp_delta` | `incremental_rev_delta=revenue_sanitized[yr]-revenue_sanitized[yr-1]`、`incremental_gp_delta=gross_profit[yr]-gross_profit[yr-1]`（AS-IS-167計算過程の分子・分母実額） | AS-IS-167と同じ | 導出データ |
+| AS-IS-171 | STONKS SILO | reproduction_score | `reproduction_score` | `incremental_margin`水準の基礎スコア（`>=70→4,>=50→3,>=30→2,>=0→1,else→0`）に`incremental_margin_trend=="IMPROVING"`なら`+0.5`を加算し`min(4,...)`でキャップ | AS-IS-167, AS-IS-169（本表参照） | 導出データ |
+| AS-IS-172 | STONKS SILO | reproduction_label | `reproduction_label` | `reproduction_score`のしきい値による5段階ラベル（`>=3.5`"極めて強い拡大再生産"〜`else`"拡大再生産なし"。年ペアが1件も取れない場合は"データ不足"） | AS-IS-171（本表参照） | 導出データ |
+| AS-IS-174 | STONKS SILO | fields.{name}.yoy/qoq.change_pct/val_latest/val_prev/end_latest/end_prev/fp | `_calc_yoy_change()`/`_calc_qoq_change()` | `yoy: change_pct=(val_latest-val_prev)/abs(val_prev)×100`（同一fp=Q1〜Q4同士の前年比較）<br>`qoq: change_pct=(val_latest-val_prev)/abs(val_prev)×100`（直近四半期と前四半期の比較）<br>`val_latest`/`val_prev` = 対象フィールド（Revenue/GrossProfit/OperatingIncome/RD/NetIncome/OCF/CapEx）のnormalized四半期値（Q4 implied計算含む、SEC EDGAR、カタログ対象外） | SEC EDGAR（common/sec_data正規化JSON、カタログ対象外） | 導出データ |
+| AS-IS-175 | STONKS SILO | fields.{name}.yoy/qoq.percentile | `_calc_percentile()` | AS-IS-135と同一の`_calc_percentile()`（同時点の全STONKS SILO銘柄の当該フィールドchange_pct分布内での順位、0-100） | AS-IS-174（本表参照） | 導出データ |
+| AS-IS-176 | STONKS SILO | fields.{name}.yoy/qoq.angle,length | `_pct_to_angle()`/`_pct_to_length()` | AS-IS-135と同一の変換式（AS-IS-175のpercentileから変換） | AS-IS-175（本表参照） | 導出データ |
+| AS-IS-177 | STONKS SILO | fields.{name}.series_q（四半期時系列） | `compute_vectors()`内`series_q` | `base_end`（全対象フィールド中の最新end日の最大値）以下の直近8四半期分の`{end,fp,val}`をそのまま格納（計算なし、表示用時系列） | SEC EDGAR（common/sec_data正規化JSON、カタログ対象外） | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+- **AS-IS-068（FCF CAGR(3yr)）: CAGR経過年数未補正の確定バグ（最重要）**:
+  `valid = fcf_history.filter(fcf!=null && fcf>0)`はゼロ・マイナスFCFの
+  年を除外した**フィルタ後**配列であり、`valid[-4]`と`valid[-1]`の間に
+  除外年が挟まっていた場合、実際の経過年数は3年より多くなる（例:
+  5年分のうち1年がFCF赤字で除外されていれば実質4年差）。にもかかわらず
+  指数は`1/3`に固定されており、経過年数の実測値（`valid[-1].year -
+  valid[-4].year`）を一切使っていない。表示ラベルは常に「CAGR(3yr)」だが、
+  除外年がある銘柄では実際より長い期間の変化率を3年複利換算したかのように
+  誤表示する。同種のSTONKS SILO側`cagr_3yr`（AS-IS-136）は`years`配列
+  自体が連続した年次リスト（フィルタなし）のため、この問題は生じない。
+- **AS-IS-076とAS-IS-087は同名「200MA乖離」だが完全に別のデータソース・
+  計算方法**: AS-IS-087はHypeCoreが独自にyfinance `history()`で取得した
+  日次終値から`rolling(200).mean()`で自前計算するのに対し、AS-IS-076は
+  yfinanceが内部で計算済みの`twoHundredDayAverage`（算出方法・対象期間が
+  非公開のブラックボックス値）をそのまま使う。同じ概念・同じ変数名
+  （`ma200_dev`）でありながら両者が一致する保証はない。
+- **ma200_momがステージ判定の複数の重要分岐で使われるがJSON未出力**:
+  `ma200_mom = ma200_dev.diff(3)`は`determine_stage()`のS3→S4遷移判定
+  （例: `prev_stage in (3,4) and s3_streak>=2 and from_peak<-28 and
+  rsi<47`に隣接する分岐）や`detect_substage()`のS4底打ち判定
+  （`ma200_shrinking = ma200_mom>-5`）で使われるにもかかわらず、
+  `run_poc()`のJSON出力には一切含まれていない。ステージ判定の根拠を
+  事後的に検証・監査しようとしても、この中間変数だけは出力データから
+  再現できない。
+- **rev_yoy（TTM）とni_yoy/op_margin（単一四半期）の時間粒度混在**:
+  AS-IS-093の`rev_yoy`は`Revenue.rolling(4).sum()`によるTTM同士のYoYだが、
+  AS-IS-094の`ni_yoy`は`NetIncome.pct_change(4)`という**単一四半期**の
+  前年同期比であり、TTMではない。AS-IS-095の`rule40 = rev_yoy + op_margin`
+  も、TTMベースの`rev_yoy`と単一四半期ベースの`op_margin`（`NetIncome/
+  Revenue`、四半期値同士）を単純加算しており、分子・分母の期間ベースが
+  そもそも揃っていない。
+- **「Rule of 40」がHypeCoreとSTONKS SILOで別定義であるだけでなく、
+  STONKS SILO側はコード内コメントと実装自体が食い違っている**:
+  HypeCoreの`rule40`（AS-IS-095）はTTM売上YoY+四半期営業利益率。
+  STONKS SILOの`rule_of_40`（AS-IS-143）は3年CAGR（AS-IS-136）+
+  営業利益率。既存のOUTPUT_ITEMS_INVENTORY.mdの注記通り両者は別式だが、
+  加えて`DeficitQuality`データクラスの`rule_of_40`フィールドには
+  `# 売上成長率 + 営業利益率`というコメントが付いている一方、実装は
+  単年成長率ではなく3年CAGRを使っており、**コード内コメント自体が
+  実装と矛盾している**。
+- **real_strong判定がPython（サーバー側）とJS（クライアント側）で
+  別々に実装され、条件・閾値が異なる**: `detect_substage()`
+  （AS-IS-109〜112の計算元）の`real_strong`は
+  `(rev_yoy>15 and eps_surprise>-5超) or (eps_surprise>0 and rev_yoy>0)
+  or (rev_yoy>30 and eps_surprise>-30超)`という複数条件のORで構成される。
+  一方、detail.htmlのクライアント側`getRec()`関数は
+  `real_strong=(rev_yoy>30)&&(eps_surprise>0)`という「ANDのみ・閾値も
+  別」の簡略版を独自に再実装している。`getRec()`自体は信頼性・品質判定系
+  （本フェーズ対象外）の推奨表示に使われるが、同じ「実体が強いか」という
+  概念を判定するのに、JSON生成時とクライアント表示時で別ロジックが
+  走っており、同一銘柄・同一月でもサーバーの`substage`とクライアントの
+  推奨表示が矛盾する組み合わせ（例: substageは「実体崩壊中」なのに
+  getRecは「底打ち兆候」）が起こり得る。
+- **AS-IS-091（volume_ratio）とAS-IS-092（vol_surge）は「出来高急増」系
+  指標として並存するが時間粒度が異なる**: AS-IS-091は日次出来高の20日
+  平均比（月末値のみ保持）、AS-IS-092は月次出来高の6ヶ月移動平均比。
+  どちらも「出来高の急増」を表す名称・目的だが、算出する時間窓が
+  全く異なる別指標である。
+- **AS-IS-135/175/176（financial_vectors）のpercentile・angle・lengthは
+  絶対的な変化率ではなく、同時点の全STONKS SILO銘柄集合に対する相対順位**:
+  新規銘柄の追加・除外のたびに、対象銘柄自身のデータが変わっていなくても
+  他銘柄のpercentileが変動しうる。過去のresults.json保存値と時系列比較
+  する際はこの母集団変動の影響を考慮する必要がある。
+- **AS-IS-119（ライフサイクル）のフォールバック元`revenue_growth`
+  （yfinance、小数）と`rev_yoy`（AS-IS-093、SEC EDGAR TTM%）は算出基準が
+  異なる別の指標**であり、どちらが使われるかは単に
+  `revenue_growth`がnullかどうかで決まる。銘柄によって暗黙に異なる基準で
+  ライフサイクル判定される。detail.html/index.htmlの重複実装自体は
+  完全に同一ロジックのコードコピーであり値の不整合は生じないが、
+  保守時に片方だけ修正されるリスクがある。
+- **AS-IS-077/AS-IS-079は既に「削除候補」とマークされた重複カタログ
+  エントリであることを実コードで確認した**: 前者はAS-IS-086（stage_label）
+  の、後者はAS-IS-152（revenue_growth_pct）の単純な他サブシステム参照
+  （移送）であり、独立した計算ロジックを持たない。
+
+**依頼文で例示された問題のうち、本バッチでは直接該当が見つからなかったもの**:
+「Bear/Bull成長率の符号未考慮」「growth_floor根拠不明」は、コード上
+`bear_multiplier`・`fcf_growth_floor`/`fcf_growth_cap`がいずれも
+`core_calculator.py`（DCF/WACC構成要素系、未着手フェーズ）側にのみ存在し、
+成長率・トレンド系43件のいずれの計算にも直接関与していないことを確認した。
+該当する可能性がある場合はDCF/WACC構成要素系フェーズで確認する。
+
+### 次フェーズへの申し送り
+
+- 本フェーズで引用のみ行い内部アルゴリズムを再展開しなかったAS-IS-ID:
+  AS-IS-084・AS-IS-100相当・AS-IS-116（評価倍率フェーズで参照済み）、
+  AS-IS-047・AS-IS-129・AS-IS-156（前フェーズ既定義/参照済み）、
+  カタリスト・イベント予測系の`sell_on_good_news`/`eps_surprise`/
+  `analyst_upgrade_rate`/`buy_hold_ratio`（未定義）
+- HypeCoreの`determine_stage()`/`detect_substage()`は140行超のルール
+  ベース分岐を持つため、本フェーズでは主要な入力変数とロジック構造の
+  紐付けに留め、全ての閾値分岐を逐一書き出してはいない。詳細は
+  `src/value/hypecore/hypecore.py`の該当関数を参照
+- AS-IS-068のCAGR経過年数未補正、AS-IS-109〜112のreal_strong Python/JS
+  二重実装、AS-IS-143のコメント/実装不一致はいずれも実装（コード修正）を
+  伴うため、本タスクの範囲外として記録にとどめた
