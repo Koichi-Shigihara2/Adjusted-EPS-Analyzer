@@ -1,5 +1,11 @@
 # 全サブシステム 出力項目インベントリ
 
+> **【凍結宣言】本ドキュメントは2026-07-22時点のAS-ISスナップショットである。**
+> **以後の更新は「事実誤認の訂正」「AS-IS-ID付番」のみとし、新規の内容追記・
+> 再構成は行わない。** ステップ5の全284項目には`AS-IS-001`〜`AS-IS-284`の
+> 連番IDが付番済み（各テーブルの「AS-IS ID」列）。あるべき姿（TO-BE）の
+> 設計・統一定義・削除対象の判断は本ドキュメントではなく`TO_BE.md`に記録する。
+
 本ドキュメントは、6サブシステム（TANUKI VALUATION / HypeCore / STONKS SILO /
 MACRO PULSE / Discover / EPS Analyzer）の出力項目を洗い出し、統一定義の
 検討・実データ突合・計算ルート紐付けを行った調査結果の記録である。
@@ -863,97 +869,97 @@ TANUKI DCF_Reliability(Policy A/B)がlatest.jsonに構造化保存されずstock
 
 #### A. トップレベルDCF指標（core_calculator.py: `KoichiValuationCalculator.calculate_pt()`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| intrinsic_value_per_share | 両方 | core_calculator.py:641 `_calc_ivps_with_wacc(_rm)` | メインDCF株価（Rmβなし、10%割引率） |
-| intrinsic_value_beta | 両方 | core_calculator.py:550-556（`_calc_ivps_with_wacc`型計算にBS補正加算） | β込みWACCで再計算 |
-| upside_percent_beta | 両方 | core_calculator.py:789 `calculate_upside()`呼出 | |
-| intrinsic_value_rf | 両方 | core_calculator.py:650 `_ivps_rf = _calc_ivps_with_wacc(_rf)` | リスクフリーレート基準 |
-| upside_percent_rf | 両方 | core_calculator.py:791-792 | |
-| upside_percent | 両方 | core_calculator.py:642-645, 799 `calculator/dcf.py`系`calculate_upside()` | |
-| v0 | 両方 | core_calculator.py:353-440（dcf_type分岐: two_stage/three_stage/tapering） | `calculator/dcf.py`各関数のv0 |
-| v0_adjusted | 両方 | core_calculator.py:544 `calculate_intrinsic_value(v0, rpo_pv, alpha=0.0, growth_option_pv)` | |
-| alpha / alpha_was_capped | 両方 | core_calculator.py:517-525 `calculate_alpha()`（RM基準ROE差分） | ALPHA-REDESIGN-1により乗算には使わず参考値のみ |
-| future_values | 両方 | `calculator/future_values.py:calculate_future_values()` L11-49、呼出core_calculator.py:714 | |
-| return_metrics | 両方 | `calculator/future_values.py:calculate_return_metrics()` L52-86、呼出core_calculator.py:726 | current_price>0のときのみ |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-001 | intrinsic_value_per_share | 両方 | core_calculator.py:641 `_calc_ivps_with_wacc(_rm)` | メインDCF株価（Rmβなし、10%割引率） |
+| AS-IS-002 | intrinsic_value_beta | 両方 | core_calculator.py:550-556（`_calc_ivps_with_wacc`型計算にBS補正加算） | β込みWACCで再計算 |
+| AS-IS-003 | upside_percent_beta | 両方 | core_calculator.py:789 `calculate_upside()`呼出 | |
+| AS-IS-004 | intrinsic_value_rf | 両方 | core_calculator.py:650 `_ivps_rf = _calc_ivps_with_wacc(_rf)` | リスクフリーレート基準 |
+| AS-IS-005 | upside_percent_rf | 両方 | core_calculator.py:791-792 | |
+| AS-IS-006 | upside_percent | 両方 | core_calculator.py:642-645, 799 `calculator/dcf.py`系`calculate_upside()` | |
+| AS-IS-007 | v0 | 両方 | core_calculator.py:353-440（dcf_type分岐: two_stage/three_stage/tapering） | `calculator/dcf.py`各関数のv0 |
+| AS-IS-008 | v0_adjusted | 両方 | core_calculator.py:544 `calculate_intrinsic_value(v0, rpo_pv, alpha=0.0, growth_option_pv)` | |
+| AS-IS-009 | alpha / alpha_was_capped | 両方 | core_calculator.py:517-525 `calculate_alpha()`（RM基準ROE差分） | ALPHA-REDESIGN-1により乗算には使わず参考値のみ |
+| AS-IS-010 | future_values | 両方 | `calculator/future_values.py:calculate_future_values()` L11-49、呼出core_calculator.py:714 | |
+| AS-IS-011 | return_metrics | 両方 | `calculator/future_values.py:calculate_return_metrics()` L52-86、呼出core_calculator.py:726 | current_price>0のときのみ |
 
 #### B〜Q. calculator/配下の計算モジュール由来項目
 
-| 項目名 | 計算ルート | 計算式概要 | 補足 |
-|---|---|---|---|
-| growth.rate/source | `calculator/growth.py:determine_growth_rate()` L159-195（セグメント加重→FCF CAGR→デフォルトの優先順） | 優先順位ロジック | segment_weightedは外部`segment_config.py`に委譲 |
-| wacc.value/beta/risk_free_rate/market_return | `calculator/wacc.py:calculate_wacc()` L54-100 | `WACC=Rf+β×(Rm-Rf)`、上下限6-25% | |
-| sensitivity.matrix/wacc_values/growth_years | `calculator/sensitivity.py:calculate_sensitivity_matrix()` L61-83、セル計算は`create_sensitivity_calc_func`内calc_func L122-172 | 3×3、各セルで`calculator/dcf.py`のDCF関数を都度呼出 | 中央セルがメイン理論株価と一致するようbase_wacc=Rm |
-| scenario_valuations.bear/base/bull | `calculator/scenarios.py:calculate_scenario_valuations()` L64-84、実体は`create_scenario_calc_func`内calc_func L121-183 | growth_rate=base×0.7/1.0/1.2、内部で`dcf.py`呼出 | |
-| growth_options.total_pv/count/options | `calculator/adjustments.py:calculate_growth_option_pv()` L672-689 | 実計算式はadjustments.py内になし、外部`segment_config.calculate_growth_option_total_pv(ticker)`に完全委譲 | |
-| maturity_profile | core_calculator.py:363 `get_maturity_profile(ticker)`（`maturity_config.py`、対象外ファイル） | config読み込みそのまま | |
-| dcf_components.*（v0,pv_high_growth,pv_terminal,high_growth_detail,terminal_fcf,terminal_value等） | `calculator/dcf.py`: two_stage L106-132／three_stage L185-232／tapering L308-351 | 割引CF積算＋Gordon成長ターミナルバリュー | dcf_components.v0_rm/pv_fcf_rm/pv_tv_rm/pv_phase1_rm/pv_phase2_rmはcore_calculator.py:819-828でRm基準別途計算し追加合成 |
-| fcf_base.base_fcf/method/cv | `calculator/adjustments.py:determine_fcf_base()` L211-317 | データ不足/直近赤字/2yr-5yr乖離/過去赤字/減少トレンド/CV判定の順次分岐、CV=`stdev/mean` L260-265 | |
-| fcf_outlier.detected/rule/action/note/deviation_pct | `calculator/adjustments.py:analyze_fcf_outlier()` L941-1067 | ルール1(直近マイナス)/ルール2(乖離率)+EPSアナライザー突合 | |
-| fcf_estimation.applied/conversion_rate/estimated_fcf等 | `calculator/adjustments.py:estimate_fcf_from_eps()` L1495-1773 | `estimated_fcf=adj_net_income×conversion_rate`（L1710） | conversion_rateはticker override→保険金融直接NI→セクター別レートの優先順L1589-1598 |
-| software_system_reclassification.* | `calculator/adjustments.py:check_software_system_reclassification()` L1388-1492 | `realized_ratio=mean(生FCF/調整済純利益)`（黒字年のみ、L1455） | core_calculator.py:277-311で乖離時に実行限定の差替えも実施 |
-| rd_capitalization.* | `calculator/adjustments.py:capitalize_rd()` L1151-1280 | `rd_adjustment=資本化額-当期償却額`（L1260）、適用条件R&D/Rev≥5%(L1234) | |
-| rpo_adjustment.rpo_pv/application_rate/sector_category/rpo_incremental等 | `calculator/adjustments.py:adjust_rpo()` L473-565、レート決定`_get_rpo_application_rate()` L411-470 | `rpo_incremental=max(0,rpo-rpo_yago×(1+rev_yoy))`、`rpo_pv=incremental×rate×op_margin/(1+r)^years` | |
-| bs_adjustment.net_cash/net_cash_per_share/sector_guard | `calculator/adjustments.py:calculate_bs_adjustment()` L753-797 | `net_cash_per_share=net_cash/diluted_shares` | net_cash自体は`SECReader.get_net_cash()`（対象外ファイル）由来 |
-| moat_score系（components.moat_score等） | `calculator/adjustments.py:calculate_moat_score()` L597-634 | `moat_score=gm_norm×0.4+roic_norm×0.4+fcf_norm×0.2`、`phase1_years=3+round(moat_score×7)`(L625-626) | Phase1年数を通じてDCF年数・感度分析base_yearsに連動 |
-| rice.q/cf_conversion/q_years/cf_years/avg_intensity/avg_rev_growth/vc_factor/bear・base・bull | `calculator/rice.py`: Q=`_calc_q()` L153-158、CF=`_calc_cf_lagged()` L294-306、シナリオ本体=`calculate_rice()` L438-446 | `rice=g×vc_factor×Q×CF/wacc`、`vc_factor=clamp(roic_wacc_ratio,0.3,2.0)`(L420) | |
+| AS-IS ID | 項目名 | 計算ルート | 計算式概要 | 補足 |
+|---|---|---|---|---|
+| AS-IS-012 | growth.rate/source | `calculator/growth.py:determine_growth_rate()` L159-195（セグメント加重→FCF CAGR→デフォルトの優先順） | 優先順位ロジック | segment_weightedは外部`segment_config.py`に委譲 |
+| AS-IS-013 | wacc.value/beta/risk_free_rate/market_return | `calculator/wacc.py:calculate_wacc()` L54-100 | `WACC=Rf+β×(Rm-Rf)`、上下限6-25% | |
+| AS-IS-014 | sensitivity.matrix/wacc_values/growth_years | `calculator/sensitivity.py:calculate_sensitivity_matrix()` L61-83、セル計算は`create_sensitivity_calc_func`内calc_func L122-172 | 3×3、各セルで`calculator/dcf.py`のDCF関数を都度呼出 | 中央セルがメイン理論株価と一致するようbase_wacc=Rm |
+| AS-IS-015 | scenario_valuations.bear/base/bull | `calculator/scenarios.py:calculate_scenario_valuations()` L64-84、実体は`create_scenario_calc_func`内calc_func L121-183 | growth_rate=base×0.7/1.0/1.2、内部で`dcf.py`呼出 | |
+| AS-IS-016 | growth_options.total_pv/count/options | `calculator/adjustments.py:calculate_growth_option_pv()` L672-689 | 実計算式はadjustments.py内になし、外部`segment_config.calculate_growth_option_total_pv(ticker)`に完全委譲 | |
+| AS-IS-017 | maturity_profile | core_calculator.py:363 `get_maturity_profile(ticker)`（`maturity_config.py`、対象外ファイル） | config読み込みそのまま | |
+| AS-IS-018 | dcf_components.*（v0,pv_high_growth,pv_terminal,high_growth_detail,terminal_fcf,terminal_value等） | `calculator/dcf.py`: two_stage L106-132／three_stage L185-232／tapering L308-351 | 割引CF積算＋Gordon成長ターミナルバリュー | dcf_components.v0_rm/pv_fcf_rm/pv_tv_rm/pv_phase1_rm/pv_phase2_rmはcore_calculator.py:819-828でRm基準別途計算し追加合成 |
+| AS-IS-019 | fcf_base.base_fcf/method/cv | `calculator/adjustments.py:determine_fcf_base()` L211-317 | データ不足/直近赤字/2yr-5yr乖離/過去赤字/減少トレンド/CV判定の順次分岐、CV=`stdev/mean` L260-265 | |
+| AS-IS-020 | fcf_outlier.detected/rule/action/note/deviation_pct | `calculator/adjustments.py:analyze_fcf_outlier()` L941-1067 | ルール1(直近マイナス)/ルール2(乖離率)+EPSアナライザー突合 | |
+| AS-IS-021 | fcf_estimation.applied/conversion_rate/estimated_fcf等 | `calculator/adjustments.py:estimate_fcf_from_eps()` L1495-1773 | `estimated_fcf=adj_net_income×conversion_rate`（L1710） | conversion_rateはticker override→保険金融直接NI→セクター別レートの優先順L1589-1598 |
+| AS-IS-022 | software_system_reclassification.* | `calculator/adjustments.py:check_software_system_reclassification()` L1388-1492 | `realized_ratio=mean(生FCF/調整済純利益)`（黒字年のみ、L1455） | core_calculator.py:277-311で乖離時に実行限定の差替えも実施 |
+| AS-IS-023 | rd_capitalization.* | `calculator/adjustments.py:capitalize_rd()` L1151-1280 | `rd_adjustment=資本化額-当期償却額`（L1260）、適用条件R&D/Rev≥5%(L1234) | |
+| AS-IS-024 | rpo_adjustment.rpo_pv/application_rate/sector_category/rpo_incremental等 | `calculator/adjustments.py:adjust_rpo()` L473-565、レート決定`_get_rpo_application_rate()` L411-470 | `rpo_incremental=max(0,rpo-rpo_yago×(1+rev_yoy))`、`rpo_pv=incremental×rate×op_margin/(1+r)^years` | |
+| AS-IS-025 | bs_adjustment.net_cash/net_cash_per_share/sector_guard | `calculator/adjustments.py:calculate_bs_adjustment()` L753-797 | `net_cash_per_share=net_cash/diluted_shares` | net_cash自体は`SECReader.get_net_cash()`（対象外ファイル）由来 |
+| AS-IS-026 | moat_score系（components.moat_score等） | `calculator/adjustments.py:calculate_moat_score()` L597-634 | `moat_score=gm_norm×0.4+roic_norm×0.4+fcf_norm×0.2`、`phase1_years=3+round(moat_score×7)`(L625-626) | Phase1年数を通じてDCF年数・感度分析base_yearsに連動 |
+| AS-IS-027 | rice.q/cf_conversion/q_years/cf_years/avg_intensity/avg_rev_growth/vc_factor/bear・base・bull | `calculator/rice.py`: Q=`_calc_q()` L153-158、CF=`_calc_cf_lagged()` L294-306、シナリオ本体=`calculate_rice()` L438-446 | `rice=g×vc_factor×Q×CF/wacc`、`vc_factor=clamp(roic_wacc_ratio,0.3,2.0)`(L420) | |
 
 #### R. components.*（core_calculator.py:861-923、30項目超）
 
 `fcf_5yr_avg`〜`insider_latest_date`まで大半は`financials.get(...)`の直接パススルー（データ取得元は`data_fetcher.py`など今回対象外のファイル）。本サブシステム内での計算ルートは以下のもののみ:
 
-| 項目名 | 計算ルート |
-|---|---|
-| moat_score / moat_phase1_years / moat_gross_margin_norm / moat_roic_norm / moat_fcf_margin_norm | 上記B〜Q節`adjustments.py:calculate_moat_score()`参照 |
-| pv_high / pv_terminal | dcf.py各DCF関数の戻り値をcore_calculator.py:889-890でそのまま転記 |
-| alpha_uncapped | core_calculator.py:899、`calculate_alpha()`結果 |
-| per_adjusted | core_calculator.py:930-962 `_calc_adjusted_per()`（EPS Analyzer調整後TTM EPSベースで独自算出、GAAP PERとの比較用） |
-| per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividend_yield, payout_ratio, insider_* | `financials.get()`パススルー（計算元はdata_fetcher.py側、本調査対象ファイル外） |
-| max_eps / max_eps_per / max_eps_reliability | core_calculator.pyではなくpipeline.py側で追加: `_load_extra_data`（pipeline.py:976-978、`dupont.ni_ttm`＋`financial_health.sbc_ttm`から算出） |
+| AS-IS ID | 項目名 | 計算ルート |
+|---|---|---|
+| AS-IS-028 | moat_score / moat_phase1_years / moat_gross_margin_norm / moat_roic_norm / moat_fcf_margin_norm | 上記B〜Q節`adjustments.py:calculate_moat_score()`参照 |
+| AS-IS-029 | pv_high / pv_terminal | dcf.py各DCF関数の戻り値をcore_calculator.py:889-890でそのまま転記 |
+| AS-IS-030 | alpha_uncapped | core_calculator.py:899、`calculate_alpha()`結果 |
+| AS-IS-031 | per_adjusted | core_calculator.py:930-962 `_calc_adjusted_per()`（EPS Analyzer調整後TTM EPSベースで独自算出、GAAP PERとの比較用） |
+| AS-IS-032 | per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividend_yield, payout_ratio, insider_* | `financials.get()`パススルー（計算元はdata_fetcher.py側、本調査対象ファイル外） |
+| AS-IS-033 | max_eps / max_eps_per / max_eps_reliability | core_calculator.pyではなくpipeline.py側で追加: `_load_extra_data`（pipeline.py:976-978、`dupont.ni_ttm`＋`financial_health.sbc_ttm`から算出） |
 
 #### S〜Z. pipeline.py（TANUKI SCORE / report.txt / latest.json）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| tanuki_score | 両方 | pipeline.py:`_compute_tanuki_score()` L473-645（返却L639-645） | latest.json代入L846、report.txt「Classification」L1392 |
-| funda_score | 両方 | 同上 L503-533、返却L640 | latest.json L847、report.txt「Funda_Score」L1396 |
-| score_comment | 両方 | `_generate_score_comment()` L647-669（Policy A/B時はL616/633/635で上書き） | latest.json L848、report.txt「Comment」L1399 |
-| timing_score | 両方 | `_calc_timing()` L372-395、呼出L536 | report.txt内訳L1384-1389 |
-| sell_reason | latest.jsonのみ | `_compute_tanuki_score()` L552-557 | report.txt非出力 |
-| pre_rounding_score | latest.jsonのみ | 同上 L594, 642 | report.txtは別途`Classification_Pre_Rounding`として再取得(L1394-1395) |
-| rounded_by_policy | latest.jsonのみ | 同上 L596, 618("A")/637("B") | |
-| matrix.*（quadrant/label/key_metric_y/qx/qy） | 両方 | `_compute_matrix_position()` L1023-1124 | RICE可否/セクター除外(ROE軸)/Q異常値(Revenue_Growth軸)/通常(FCF_Margin軸)の4分岐 |
-| growth_sanity.verdict/signals/warnings/recommended_g | 両方 | `growth_sanity.py::check_growth_sanity()`、pipeline.py側呼出は2箇所: `_save_result()` L710-723(初回)・L779-793(recommended_g採用後の再判定) | 出力: latest.json L928 `growth_sanity`, report.txt「[4. 成長率根拠]」L1920-1995 |
-| phase1_growth_auto_adjusted | 両方 | `_save_result()` L731初期化, L767成功時True | |
-| fcf_margin_bear_mult_applied | 両方 | `_save_result()` L811初期化, L823成功時True | report.txt L1468 |
-| financial_health.*（net_debt,total_debt,cash_and_equivalents,sbc_ttm,dilution_3yr_annual_pct等） | 両方 | `_load_extra_data()` L2305-2740内、確定代入L2360-2508 | report.txtは「[3. TANUKI VALUATION]」内Financial_Healthブロック L1754-1815（STONKS SILOセクションではない点に注意） |
-| dupont.net_margin/asset_turnover/financial_leverage/roe_decomposed | latest.jsonのみ | `_load_extra_data()` L2512-2621、確定L2573-2587（`roe_decomposed=net_margin×asset_turnover×financial_leverage`） | report.txtには一切出力なし |
-| fcf_history[] | 両方 | `_load_extra_data()` L2313-2347 | report.txt「FCF_History:」L1816-1841 |
-| next_earnings_date | 両方 | `_load_extra_data()` L2625-2649（yfinance calendar、過去日除外） | report.txt L1815/2123/2264 |
-| computed_runway_months | latest.jsonメイン | `_load_extra_data()` L2408-2420（`cash/月次バーン`） | `_compute_tanuki_score()`のRunwayペナルティ判定でも使用(L518-522) |
-| segments[] | 両方 | `_load_extra_data()` L2684-2738、確定L2724-2730 | report.txt「Segment_Breakdown:」L1844-1867 |
-| breakeven_estimate | 両方 | `_load_extra_data()` L2651-2682（線形回帰） | report.txt L2265-2266 |
-| validation.* | latest.jsonのみ | `validator.py::validate_calculation()`呼出2箇所: `run()` L225-230（初回）／`_save_result()` L754-765（recommended_g再計算後） | report.txt非出力 |
-| dilution_severity / dilution_comment | latest.jsonのみ | `_dilution_severity_info()`（L123-138）呼出、`_save_result()` L942-945 | report.txt側は同関数を`_generate_report()` L1760で再呼出し「Dilution_3yr_Annual」「Dilution_Comment」L1803-1804として別出力 |
-| risk_events | 両方 | `_save_result()` L980-1005（`risk_fetcher.py::fetch_risk_events()`、Grok検索） | report.txt「[RISK EVENTS]」L2282-2295 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-034 | tanuki_score | 両方 | pipeline.py:`_compute_tanuki_score()` L473-645（返却L639-645） | latest.json代入L846、report.txt「Classification」L1392 |
+| AS-IS-035 | funda_score | 両方 | 同上 L503-533、返却L640 | latest.json L847、report.txt「Funda_Score」L1396 |
+| AS-IS-036 | score_comment | 両方 | `_generate_score_comment()` L647-669（Policy A/B時はL616/633/635で上書き） | latest.json L848、report.txt「Comment」L1399 |
+| AS-IS-037 | timing_score | 両方 | `_calc_timing()` L372-395、呼出L536 | report.txt内訳L1384-1389 |
+| AS-IS-038 | sell_reason | latest.jsonのみ | `_compute_tanuki_score()` L552-557 | report.txt非出力 |
+| AS-IS-039 | pre_rounding_score | latest.jsonのみ | 同上 L594, 642 | report.txtは別途`Classification_Pre_Rounding`として再取得(L1394-1395) |
+| AS-IS-040 | rounded_by_policy | latest.jsonのみ | 同上 L596, 618("A")/637("B") | |
+| AS-IS-041 | matrix.*（quadrant/label/key_metric_y/qx/qy） | 両方 | `_compute_matrix_position()` L1023-1124 | RICE可否/セクター除外(ROE軸)/Q異常値(Revenue_Growth軸)/通常(FCF_Margin軸)の4分岐 |
+| AS-IS-042 | growth_sanity.verdict/signals/warnings/recommended_g | 両方 | `growth_sanity.py::check_growth_sanity()`、pipeline.py側呼出は2箇所: `_save_result()` L710-723(初回)・L779-793(recommended_g採用後の再判定) | 出力: latest.json L928 `growth_sanity`, report.txt「[4. 成長率根拠]」L1920-1995 |
+| AS-IS-043 | phase1_growth_auto_adjusted | 両方 | `_save_result()` L731初期化, L767成功時True | |
+| AS-IS-044 | fcf_margin_bear_mult_applied | 両方 | `_save_result()` L811初期化, L823成功時True | report.txt L1468 |
+| AS-IS-045 | financial_health.*（net_debt,total_debt,cash_and_equivalents,sbc_ttm,dilution_3yr_annual_pct等） | 両方 | `_load_extra_data()` L2305-2740内、確定代入L2360-2508 | report.txtは「[3. TANUKI VALUATION]」内Financial_Healthブロック L1754-1815（STONKS SILOセクションではない点に注意） |
+| AS-IS-046 | dupont.net_margin/asset_turnover/financial_leverage/roe_decomposed | latest.jsonのみ | `_load_extra_data()` L2512-2621、確定L2573-2587（`roe_decomposed=net_margin×asset_turnover×financial_leverage`） | report.txtには一切出力なし |
+| AS-IS-047 | fcf_history[] | 両方 | `_load_extra_data()` L2313-2347 | report.txt「FCF_History:」L1816-1841 |
+| AS-IS-048 | next_earnings_date | 両方 | `_load_extra_data()` L2625-2649（yfinance calendar、過去日除外） | report.txt L1815/2123/2264 |
+| AS-IS-049 | computed_runway_months | latest.jsonメイン | `_load_extra_data()` L2408-2420（`cash/月次バーン`） | `_compute_tanuki_score()`のRunwayペナルティ判定でも使用(L518-522) |
+| AS-IS-050 | segments[] | 両方 | `_load_extra_data()` L2684-2738、確定L2724-2730 | report.txt「Segment_Breakdown:」L1844-1867 |
+| AS-IS-051 | breakeven_estimate | 両方 | `_load_extra_data()` L2651-2682（線形回帰） | report.txt L2265-2266 |
+| AS-IS-052 | validation.* | latest.jsonのみ | `validator.py::validate_calculation()`呼出2箇所: `run()` L225-230（初回）／`_save_result()` L754-765（recommended_g再計算後） | report.txt非出力 |
+| AS-IS-053 | dilution_severity / dilution_comment | latest.jsonのみ | `_dilution_severity_info()`（L123-138）呼出、`_save_result()` L942-945 | report.txt側は同関数を`_generate_report()` L1760で再呼出し「Dilution_3yr_Annual」「Dilution_Comment」L1803-1804として別出力 |
+| AS-IS-054 | risk_events | 両方 | `_save_result()` L980-1005（`risk_fetcher.py::fetch_risk_events()`、Grok検索） | report.txt「[RISK EVENTS]」L2282-2295 |
 
 **erp（2ルート、既知の重複実装）**
 
-| ルート | 出力先 | 場所 | 数式 |
-|---|---|---|---|
-| ① | latest.json（`erp`,`forward_earnings_yield`） | pipeline.py:`_save_result()` L931-940 | `_ey=forward_eps/current_price; erp=round(_ey-risk_free_rate,4)` |
-| ② | report.txtのみ（ローカル変数、JSON非保存） | pipeline.py:`_generate_report()` L2206-2230 | 同数式だがround非適用、HYPECOREセクション |
+| AS-IS ID | ルート | 出力先 | 場所 | 数式 |
+|---|---|---|---|---|
+| AS-IS-055 | ① | latest.json（`erp`,`forward_earnings_yield`） | pipeline.py:`_save_result()` L931-940 | `_ey=forward_eps/current_price; erp=round(_ey-risk_free_rate,4)` |
+| AS-IS-056 | ② | report.txtのみ（ローカル変数、JSON非保存） | pipeline.py:`_generate_report()` L2206-2230 | 同数式だがround非適用、HYPECOREセクション |
 
 数式・入力元は同一だが完全に独立した重複実装（丸め桁数のみ差異）。
 
 **Reverse DCF必要成長率（2ルート、既知の差異）**
 
-| | `_calc_required_growth()`（判定用） | report.txtインライン（表示用） |
-|---|---|---|
-| 場所 | pipeline.py L397-423（静的メソッド） | pipeline.py:`_generate_report()` L1505-1525 |
-| 用途 | Classification判定（GROWTH_PREMIUM/TRIM分岐）内部使用のみ、report.txt非表示 | 「Valuation_Gap_Analysis」表示専用、スコア判定に不使用 |
-| terminal_growthの出所 | `maturity_config.get_terminal_growth(ticker)`（セクター別） | `components.terminal_growth_used`（DCF計算結果、なければ0.03固定） |
-| ガード | `ev<=0`／`required_fcf5<=0`で早期None等、厳密 | `ev<=0`チェックなし、やや緩い |
+| AS-IS ID | | `_calc_required_growth()`（判定用） | report.txtインライン（表示用） |
+|---|---|---|---|
+| AS-IS-057 | 場所 | pipeline.py L397-423（静的メソッド） | pipeline.py:`_generate_report()` L1505-1525 |
+| AS-IS-058 | 用途 | Classification判定（GROWTH_PREMIUM/TRIM分岐）内部使用のみ、report.txt非表示 | 「Valuation_Gap_Analysis」表示専用、スコア判定に不使用 |
+| AS-IS-059 | terminal_growthの出所 | `maturity_config.get_terminal_growth(ticker)`（セクター別） | `components.terminal_growth_used`（DCF計算結果、なければ0.03固定） |
+| AS-IS-060 | ガード | `ev<=0`／`required_fcf5<=0`で早期None等、厳密 | `ev<=0`チェックなし、やや緩い |
 
 tv_gの出所が異なるため同一銘柄でも両者の必要成長率が食い違い得る。
 
@@ -965,19 +971,19 @@ tv_gの出所が異なるため同一銘柄でも両者の必要成長率が食�
 
 主要なJSON直接表示: `intrinsic_value_per_share`, `intrinsic_value_beta`, `intrinsic_value_rf`, `upside_percent`, `sensitivity.matrix`（数値そのもの、色分けのみ独自）, `scenario_valuations`, `rice.*`, `validation.*`, `dcf_components`, `financial_health`, `dupont`, `segments`, `risk_events`, `components.analyst_target_*`, `components.insider_*`, `components.per`/`per_adjusted`。
 
-| クライアント独自計算項目 | 計算箇所（関数:行番号） | 計算式・入力 |
-|---|---|---|
-| フェアPER | render:942-943 | `ivps/(currentPrice/perForCalc)` |
-| PEGレシオ | render:944-945 | `perForCalc/(growthRate×100)`（入力: `per_adjusted`, `growth_scenarios.primary.rate`） |
-| PSR | render:946-947 | `(currentPrice×diluted_shares)/latest_revenue` |
-| 将来価値予測（シナリオ別テーブル） | `projectFuture()`:1205-1215、呼出1221-1230 | 各年`v×=(1+g)`（`scenario_valuations`のg使用、JSONの`future_values`は不使用） |
-| 5年BASE年率換算リターン | render:1252-1261 | `(fv5/currentPrice)^0.2-1` |
-| 感応度分析（独自5×5マトリクス） | `calcSensIV()`:1285-1294 | 2段階DCFの完全クライアント再実装 |
-| Reverse DCF | render内IIFE:1480-1522 | `EV=price×shares+netDebt; fcfTerm=EV×(Rm-g_TV)/(1+g_TV); reqGr=(fcfTerm/fcfCur)^(1/5)-1` |
-| FCF CAGR(3yr) | render内IIFE:2106-2113 | `(最新FCF/3年前FCF)^(1/3)-1` |
-| WACCスライダー | `updateWacc()`:2524-2556 | 正確な再DCFではなく`adjustFactor=baseWacc/newWacc`の比例近似 |
-| Layer2トグル | `applyLayer2Toggle()`:2558-2580 | `(v0+rpoPV+goPv)/shares+bs` |
-| キャッシュフロー分析セクション | `loadCfData()`:411-456, `renderCfCharts()`:458-580 | latest.json不使用、別ファイル`{ticker}_quarterly_normalized.json`から独自算出 |
+| AS-IS ID | クライアント独自計算項目 | 計算箇所（関数:行番号） | 計算式・入力 |
+|---|---|---|---|
+| AS-IS-061 | フェアPER | render:942-943 | `ivps/(currentPrice/perForCalc)` |
+| AS-IS-062 | PEGレシオ | render:944-945 | `perForCalc/(growthRate×100)`（入力: `per_adjusted`, `growth_scenarios.primary.rate`） |
+| AS-IS-063 | PSR | render:946-947 | `(currentPrice×diluted_shares)/latest_revenue` |
+| AS-IS-064 | 将来価値予測（シナリオ別テーブル） | `projectFuture()`:1205-1215、呼出1221-1230 | 各年`v×=(1+g)`（`scenario_valuations`のg使用、JSONの`future_values`は不使用） |
+| AS-IS-065 | 5年BASE年率換算リターン | render:1252-1261 | `(fv5/currentPrice)^0.2-1` |
+| AS-IS-066 | 感応度分析（独自5×5マトリクス） | `calcSensIV()`:1285-1294 | 2段階DCFの完全クライアント再実装 |
+| AS-IS-067 | Reverse DCF | render内IIFE:1480-1522 | `EV=price×shares+netDebt; fcfTerm=EV×(Rm-g_TV)/(1+g_TV); reqGr=(fcfTerm/fcfCur)^(1/5)-1` |
+| AS-IS-068 | FCF CAGR(3yr) | render内IIFE:2106-2113 | `(最新FCF/3年前FCF)^(1/3)-1` |
+| AS-IS-069 | WACCスライダー | `updateWacc()`:2524-2556 | 正確な再DCFではなく`adjustFactor=baseWacc/newWacc`の比例近似 |
+| AS-IS-070 | Layer2トグル | `applyLayer2Toggle()`:2558-2580 | `(v0+rpoPV+goPv)/shares+bs` |
+| AS-IS-071 | キャッシュフロー分析セクション | `loadCfData()`:411-456, `renderCfCharts()`:458-580 | latest.json不使用、別ファイル`{ticker}_quarterly_normalized.json`から独自算出 |
 
 **重要な不一致（実データAAPLで検証済み）**:
 - PEGレシオ: JSON`components.peg=2.69` vs クライアント再計算値≈4.92（約1.8倍乖離、JSON値は画面に一切表示されず破棄）
@@ -988,13 +994,13 @@ tv_gの出所が異なるため同一銘柄でも両者の必要成長率が食�
 
 JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RICE_PER、成長率BASE、WACC、Q、CF、更新日（`buildRows()` L396-427）。
 
-| クライアント独自集計項目 | 箇所 | 計算式 |
-|---|---|---|
-| 銘柄数 | `loadTickers()`:561 | `valid.length` |
-| 平均Moat | `loadTickers()`:567-569 | `moat_score`配列の算術平均 |
-| 平均RICE | `loadTickers()`:571-573 | `rice.base.rice`配列の算術平均 |
-| 乖離率 | `buildRows()`:401 | `(ivps-price)/price`（JSON`upside_percent`は同ファイル内に一切参照なし、grep確認済み） |
-| 200MA乖離 | `buildRows()`:407-408 | `(price-ma200_raw)/ma200_raw`（率自体はJSON非保持、生MA値のみJSON由来） |
+| AS-IS ID | クライアント独自集計項目 | 箇所 | 計算式 |
+|---|---|---|---|
+| AS-IS-072 | 銘柄数 | `loadTickers()`:561 | `valid.length` |
+| AS-IS-073 | 平均Moat | `loadTickers()`:567-569 | `moat_score`配列の算術平均 |
+| AS-IS-074 | 平均RICE | `loadTickers()`:571-573 | `rice.base.rice`配列の算術平均 |
+| AS-IS-075 | 乖離率 | `buildRows()`:401 | `(ivps-price)/price`（JSON`upside_percent`は同ファイル内に一切参照なし、grep確認済み） |
+| AS-IS-076 | 200MA乖離 | `buildRows()`:407-408 | `(price-ma200_raw)/ma200_raw`（率自体はJSON非保持、生MA値のみJSON由来） |
 
 ### 5-2. HypeCore
 
@@ -1002,11 +1008,11 @@ JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RI
 
 事前情報で「削除候補」とされていた項目のうち、実際には他サブシステムから読み取られており削除候補扱いが誤りだった項目が見つかった。
 
-| 項目 | 事前情報での扱い | 実際の使用箇所 |
-|---|---|---|
-| HypeCore `stage_label` | 削除候補 | `tanuki_valuation/stock.html:666`（MATRIX×HYPEシグナル表示）／`tanuki_valuation/pipeline.py:3059-3060,3112`（`_load_hype_info`/`_save_hypecore_history`）／`tanuki_score/index.html:481,517,576`（TRIMチップ表示） |
-| HypeCore `expectation_score` | 削除候補 | `tanuki_valuation/stock.html:667,670-673,691-698`（「期待プレミアム」パーセンタイル表示） |
-| STONKS SILO `deficit_quality.revenue_growth_pct` | 削除候補 | `tanuki_valuation/stock.html:2907-2912`（Matrix③成長性系パネルのY軸＝売上成長率） |
+| AS-IS ID | 項目 | 事前情報での扱い | 実際の使用箇所 |
+|---|---|---|---|
+| AS-IS-077 | HypeCore `stage_label` | 削除候補 | `tanuki_valuation/stock.html:666`（MATRIX×HYPEシグナル表示）／`tanuki_valuation/pipeline.py:3059-3060,3112`（`_load_hype_info`/`_save_hypecore_history`）／`tanuki_score/index.html:481,517,576`（TRIMチップ表示） |
+| AS-IS-078 | HypeCore `expectation_score` | 削除候補 | `tanuki_valuation/stock.html:667,670-673,691-698`（「期待プレミアム」パーセンタイル表示） |
+| AS-IS-079 | STONKS SILO `deficit_quality.revenue_growth_pct` | 削除候補 | `tanuki_valuation/stock.html:2907-2912`（Matrix③成長性系パネルのY軸＝売上成長率） |
 
 いずれも自サブシステムのHTML（hypecore/detail.html・index.html、stonks-silo/index.html）内では未使用だが、他サブシステムが直接JSONを読みに来ているため「他サブシステムから読み取られる」の基準に該当し削除候補から除外すべき。
 
@@ -1019,61 +1025,61 @@ JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RI
 
 #### トップレベル・tickers.json
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `generated_at` | poc.json トップレベル | `hypecore.py:923,927` `datetime.now(JST)` | index.html:217,225,241-244で`toJST()`表示。detail.htmlでは未使用 |
-| `monthly` | poc.json トップレベル | `hypecore.py:874-921` のリスト構築 | 以下で個別項目を列挙 |
-| `tickers`（配列） | tickers.json | `hypecore.py:969` `sorted(p.stem[:-4] for p in docs_dir.glob("*_poc.json"))` | index.html:206-211 `loadAll()`が一覧描画に使用 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-080 | `generated_at` | poc.json トップレベル | `hypecore.py:923,927` `datetime.now(JST)` | index.html:217,225,241-244で`toJST()`表示。detail.htmlでは未使用 |
+| AS-IS-081 | `monthly` | poc.json トップレベル | `hypecore.py:874-921` のリスト構築 | 以下で個別項目を列挙 |
+| AS-IS-082 | `tickers`（配列） | tickers.json | `hypecore.py:969` `sorted(p.stem[:-4] for p in docs_dir.glob("*_poc.json"))` | index.html:206-211 `loadAll()`が一覧描画に使用 |
 
 #### `monthly[]` 各項目
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `month` | 両HTML | `hypecore.py:80-81`（月次resample index）→`877` `idx.strftime("%Y-%m")` | 全チャート/テーブルのX軸・ラベル |
-| `price` | 両HTML | `fetch_price_data:78,80`（yfinance日次Close→月末値）→`878` | hero株価・チャート・テーブル |
-| `stage` | 両HTML＋他サブシステム | `determine_stage()`（501-644行）、呼び出しループ`810-820`→`879` | 全表示の起点。TANUKI VALUATION `pipeline.py:3040-3064,3107`、`tanuki_score/index.html:474`でも読取 |
-| `stage_label` | 他サブシステムのみ | `STAGE_LABELS`辞書（37-43行）→`821,880` | 自HTML未使用（STAGES定数で独自定義）。上記「前提の訂正」参照 |
-| `ma200_dev` | 両HTML | `fetch_price_data:93,99-100` | buildVsMetrics各分岐・チャート・テーブル |
-| `ma50_dev` | JSON出力のみ（未使用） | `fetch_price_data:92,99-100`→`883` | どのHTML・他サブシステムからも未参照 |
-| `from_peak` | 両HTML | `compute_scores:442-443` | hero推奨サブ文言・buildRatio・テーブル・index.html高値比列 |
-| `rsi` | detail.htmlのみ | `fetch_price_data:87-90,99-100` | buildVsMetrics(dawn/expand)・expectChart・テーブル |
-| `volume_ratio` | JSON出力のみ（未使用） | `fetch_price_data:96-97,99-100`→`886` | 参照箇所なし（`vol_surge`とは別物） |
-| `vol_surge` | detail.htmlのみ | `compute_scores:448-450` | buildVsMetrics(dawn分岐) |
-| `rev_yoy` | 両HTML＋他サブシステム | `fetch_quarterly_fundamentals:155,162-164,169-175`（SEC正規化データ） | buildVsMetrics/fundChart/index.html revyoy列。TANUKI stock.html:631,3119、tanuki_score/index.html:472で読取 |
-| `ni_yoy` | JSON出力のみ（直接表示なし） | `fetch_quarterly_fundamentals:156,165,169-175`→`890` | 表としては未表示だが`determine_stage:550-554`のS4脱出判定、`detect_substage:732-733,748-749`のwatchテキストに間接的に反映 |
-| `rule40` | 両HTML＋他サブシステム | `fetch_quarterly_fundamentals:167,169-175`（rev_yoy+op_margin方式） | buildVsMetrics/index.html rule40列。TANUKI stock.html:632、tanuki_score/index.html:473で読取。※STONKS SILOのrule_of_40とは計算式が異なる |
-| `fcf_yield` | detail.htmlのみ | `compute_scores:410-415` | buildVsMetrics(mature分岐) |
-| `forward_pe` | detail.html＋内部判定 | `fetch_info_snapshot:116`（yfinance `.info`）、最新月にのみ注入`compute_scores:418-424` | buildVsMetrics(growth/mature)。`determine_stage:572-573`のS3判定、`detect_substage:704-726`のバリュエーション過熱判定にも使用 |
-| `peg_ratio` | detail.html | `fetch_info_snapshot:119`→`418-424` | buildVsMetrics(mature)、renderValMultiples フォールバック（552行） |
-| `psr` | detail.html | `fetch_info_snapshot:118`→`421`（明示的にpsrキー追加） | buildVsMetrics(expand)、renderValMultiples フォールバック（553行） |
-| `revenue_growth` | 両HTML | `fetch_info_snapshot:120`→`419` | `detectLifecycle()`（detail.html:297, index.html:151）のライフサイクル判定の主要入力 |
-| `earnings_growth` | JSON出力のみ（未使用） | `fetch_info_snapshot:121`→`419`→`898` | HTML未参照。`compute_scores:434-438`でeps_surpriseフォールバック元として内部利用のみ |
-| `recommendation_mean` | JSON出力のみ（未使用） | `fetch_info_snapshot:123`→`419`→`899` | HTML未参照。`determine_stage:537,636`のS1判定に内部利用 |
-| `short_pct_float` | JSON出力のみ（未使用） | `fetch_info_snapshot:125`→`419`→`900` | HTML未参照。`determine_stage:536,608`のS0判定に内部利用 |
-| `eps_surprise` | 両HTML | `fetch_analyst_history:277-347`（3段階フォールバック）＋`compute_scores:430-438` | buildVsMetrics(growth)・buildRatio(S4)。両HTMLの`getRec()`のreal_strong算出にも使用 |
-| `analyst_upgrade_rate` | detail.html | `fetch_analyst_history:242-272` | buildVsMetrics(growth)。`determine_stage:528,631-634`のS1判定にも使用 |
-| `analyst_downgrade_rate` | JSON出力のみ（未使用） | `fetch_analyst_history:265-266`→`904` | 参照箇所なし |
-| `sell_on_good_news` | JSON出力のみ（直接表示なし） | `compute_scores:452-459` | 直接表示なしだが`determine_stage:526,589`のS4核心シグナルとして`stage`値自体を決定 |
-| `buy_hold_ratio` | JSON出力のみ（未使用） | `fetch_analyst_history:349-364`→`906` | 参照箇所なし。`determine_stage:529,577,636`に内部利用のみ |
-| `substage_phase` | 両HTML | `detect_substage()`戻り値`phase`キー（680-799行）、ループ`824-835`→`908` | phaseVal/subBadge・テーブル・index.htmlフェーズ列 |
-| `substage_label` | 両HTML＋他サブシステム | `detect_substage()`の`label`キー→`909` | phaseVal/subLabel・テーブル。TANUKI pipeline.py:3060,3112、tanuki_score/index.html:480,517,530-532,572-573で読取 |
-| `substage_watch` | detail.htmlのみ | `detect_substage()`の`watch`キー→`910` | phaseSub/subWatch |
-| `substage_next` | detail.htmlのみ | `detect_substage()`の`next`キー→`911` | subNext |
-| `expectation_score` | 他サブシステムのみ | `compute_scores:470-480`（ma200_dev/ma50_dev/price_iv_ratio/analyst_scoreのz-score合成）→`913` | 自HTML未使用。TANUKI stock.html:667,670-698で読取（上記「前提の訂正」参照） |
-| `fundamental_score` | JSON出力のみ（未使用） | `compute_scores:482-487`→`914` | 参照箇所なし |
-| `momentum_score` | JSON出力のみ（未使用） | `compute_scores:489-494`→`915` | 参照箇所なし |
-| `price_iv_ratio` | 両HTML＋他サブシステム | `compute_scores:402-408`（price÷iv）。iv元は`fetch_tanuki_iv:186-220`がTANUKI `history/*.json`・`latest.json`の`intrinsic_value_per_share`を月次化 | buildVsMetrics(dawn/expand)。index.html piv列(237,279,287)。TANUKI stock.html:630,3118、pipeline.py:3118でも読取 |
-| `ev_ebitda` | detail.html | `fetch_info_snapshot:130`→`421` | renderValMultiples（正値のみ表示、554-556行） |
-| `low_base_effect` | JSON出力のみ（未使用） | `run_poc:838-843`（rev_yoyの12ヶ月shift比較） | 参照箇所なし |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-083 | `month` | 両HTML | `hypecore.py:80-81`（月次resample index）→`877` `idx.strftime("%Y-%m")` | 全チャート/テーブルのX軸・ラベル |
+| AS-IS-084 | `price` | 両HTML | `fetch_price_data:78,80`（yfinance日次Close→月末値）→`878` | hero株価・チャート・テーブル |
+| AS-IS-085 | `stage` | 両HTML＋他サブシステム | `determine_stage()`（501-644行）、呼び出しループ`810-820`→`879` | 全表示の起点。TANUKI VALUATION `pipeline.py:3040-3064,3107`、`tanuki_score/index.html:474`でも読取 |
+| AS-IS-086 | `stage_label` | 他サブシステムのみ | `STAGE_LABELS`辞書（37-43行）→`821,880` | 自HTML未使用（STAGES定数で独自定義）。上記「前提の訂正」参照 |
+| AS-IS-087 | `ma200_dev` | 両HTML | `fetch_price_data:93,99-100` | buildVsMetrics各分岐・チャート・テーブル |
+| AS-IS-088 | `ma50_dev` | JSON出力のみ（未使用） | `fetch_price_data:92,99-100`→`883` | どのHTML・他サブシステムからも未参照 |
+| AS-IS-089 | `from_peak` | 両HTML | `compute_scores:442-443` | hero推奨サブ文言・buildRatio・テーブル・index.html高値比列 |
+| AS-IS-090 | `rsi` | detail.htmlのみ | `fetch_price_data:87-90,99-100` | buildVsMetrics(dawn/expand)・expectChart・テーブル |
+| AS-IS-091 | `volume_ratio` | JSON出力のみ（未使用） | `fetch_price_data:96-97,99-100`→`886` | 参照箇所なし（`vol_surge`とは別物） |
+| AS-IS-092 | `vol_surge` | detail.htmlのみ | `compute_scores:448-450` | buildVsMetrics(dawn分岐) |
+| AS-IS-093 | `rev_yoy` | 両HTML＋他サブシステム | `fetch_quarterly_fundamentals:155,162-164,169-175`（SEC正規化データ） | buildVsMetrics/fundChart/index.html revyoy列。TANUKI stock.html:631,3119、tanuki_score/index.html:472で読取 |
+| AS-IS-094 | `ni_yoy` | JSON出力のみ（直接表示なし） | `fetch_quarterly_fundamentals:156,165,169-175`→`890` | 表としては未表示だが`determine_stage:550-554`のS4脱出判定、`detect_substage:732-733,748-749`のwatchテキストに間接的に反映 |
+| AS-IS-095 | `rule40` | 両HTML＋他サブシステム | `fetch_quarterly_fundamentals:167,169-175`（rev_yoy+op_margin方式） | buildVsMetrics/index.html rule40列。TANUKI stock.html:632、tanuki_score/index.html:473で読取。※STONKS SILOのrule_of_40とは計算式が異なる |
+| AS-IS-096 | `fcf_yield` | detail.htmlのみ | `compute_scores:410-415` | buildVsMetrics(mature分岐) |
+| AS-IS-097 | `forward_pe` | detail.html＋内部判定 | `fetch_info_snapshot:116`（yfinance `.info`）、最新月にのみ注入`compute_scores:418-424` | buildVsMetrics(growth/mature)。`determine_stage:572-573`のS3判定、`detect_substage:704-726`のバリュエーション過熱判定にも使用 |
+| AS-IS-098 | `peg_ratio` | detail.html | `fetch_info_snapshot:119`→`418-424` | buildVsMetrics(mature)、renderValMultiples フォールバック（552行） |
+| AS-IS-099 | `psr` | detail.html | `fetch_info_snapshot:118`→`421`（明示的にpsrキー追加） | buildVsMetrics(expand)、renderValMultiples フォールバック（553行） |
+| AS-IS-100 | `revenue_growth` | 両HTML | `fetch_info_snapshot:120`→`419` | `detectLifecycle()`（detail.html:297, index.html:151）のライフサイクル判定の主要入力 |
+| AS-IS-101 | `earnings_growth` | JSON出力のみ（未使用） | `fetch_info_snapshot:121`→`419`→`898` | HTML未参照。`compute_scores:434-438`でeps_surpriseフォールバック元として内部利用のみ |
+| AS-IS-102 | `recommendation_mean` | JSON出力のみ（未使用） | `fetch_info_snapshot:123`→`419`→`899` | HTML未参照。`determine_stage:537,636`のS1判定に内部利用 |
+| AS-IS-103 | `short_pct_float` | JSON出力のみ（未使用） | `fetch_info_snapshot:125`→`419`→`900` | HTML未参照。`determine_stage:536,608`のS0判定に内部利用 |
+| AS-IS-104 | `eps_surprise` | 両HTML | `fetch_analyst_history:277-347`（3段階フォールバック）＋`compute_scores:430-438` | buildVsMetrics(growth)・buildRatio(S4)。両HTMLの`getRec()`のreal_strong算出にも使用 |
+| AS-IS-105 | `analyst_upgrade_rate` | detail.html | `fetch_analyst_history:242-272` | buildVsMetrics(growth)。`determine_stage:528,631-634`のS1判定にも使用 |
+| AS-IS-106 | `analyst_downgrade_rate` | JSON出力のみ（未使用） | `fetch_analyst_history:265-266`→`904` | 参照箇所なし |
+| AS-IS-107 | `sell_on_good_news` | JSON出力のみ（直接表示なし） | `compute_scores:452-459` | 直接表示なしだが`determine_stage:526,589`のS4核心シグナルとして`stage`値自体を決定 |
+| AS-IS-108 | `buy_hold_ratio` | JSON出力のみ（未使用） | `fetch_analyst_history:349-364`→`906` | 参照箇所なし。`determine_stage:529,577,636`に内部利用のみ |
+| AS-IS-109 | `substage_phase` | 両HTML | `detect_substage()`戻り値`phase`キー（680-799行）、ループ`824-835`→`908` | phaseVal/subBadge・テーブル・index.htmlフェーズ列 |
+| AS-IS-110 | `substage_label` | 両HTML＋他サブシステム | `detect_substage()`の`label`キー→`909` | phaseVal/subLabel・テーブル。TANUKI pipeline.py:3060,3112、tanuki_score/index.html:480,517,530-532,572-573で読取 |
+| AS-IS-111 | `substage_watch` | detail.htmlのみ | `detect_substage()`の`watch`キー→`910` | phaseSub/subWatch |
+| AS-IS-112 | `substage_next` | detail.htmlのみ | `detect_substage()`の`next`キー→`911` | subNext |
+| AS-IS-113 | `expectation_score` | 他サブシステムのみ | `compute_scores:470-480`（ma200_dev/ma50_dev/price_iv_ratio/analyst_scoreのz-score合成）→`913` | 自HTML未使用。TANUKI stock.html:667,670-698で読取（上記「前提の訂正」参照） |
+| AS-IS-114 | `fundamental_score` | JSON出力のみ（未使用） | `compute_scores:482-487`→`914` | 参照箇所なし |
+| AS-IS-115 | `momentum_score` | JSON出力のみ（未使用） | `compute_scores:489-494`→`915` | 参照箇所なし |
+| AS-IS-116 | `price_iv_ratio` | 両HTML＋他サブシステム | `compute_scores:402-408`（price÷iv）。iv元は`fetch_tanuki_iv:186-220`がTANUKI `history/*.json`・`latest.json`の`intrinsic_value_per_share`を月次化 | buildVsMetrics(dawn/expand)。index.html piv列(237,279,287)。TANUKI stock.html:630,3118、pipeline.py:3118でも読取 |
+| AS-IS-117 | `ev_ebitda` | detail.html | `fetch_info_snapshot:130`→`421` | renderValMultiples（正値のみ表示、554-556行） |
+| AS-IS-118 | `low_base_effect` | JSON出力のみ（未使用） | `run_poc:838-843`（rev_yoyの12ヶ月shift比較） | 参照箇所なし |
 
 #### クライアント側で独自算出される表示項目（JSONフィールドではない）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| ライフサイクル（黎明/成長/拡大/成熟） | 両HTML | `detectLifecycle()` — detail.html:295-299／index.html:149-153（同一ロジックの重複実装） | `revenue_growth`（無ければ`rev_yoy`）から閾値判定 |
-| HypeCore推奨（買い/保有/売り等） | 両HTML＋TANUKI | `getRec()` — detail.html:364-378／index.html:155-169（重複実装、判定文言が微妙に異なる）／`_hypecore_recommendation()` tanuki_valuation/pipeline.py:3067-3090（Python簡略版） | 上記「前提の訂正」参照。3実装間の同期リスクあり |
-| 1ヶ月後のステージ遷移確率 | detail.htmlのみ | `calcTrans()` detail.html:380-388 | `monthly`配列全体からのマルコフ的頻度集計、JSON側計算なし |
-| バリュエーション倍率パネル（PER/PS/PEG/EV-EBITDA） | detail.htmlのみ | `renderValMultiples()` detail.html:537-601 | TANUKI `latest.json`の`components.{per,peg,ps,ev_ebitda,per_is_forward}`を優先取得し無ければpoc.jsonの`peg_ratio`/`psr`/`ev_ebitda`にフォールバック（552-556行）＝2ルート併存 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-119 | ライフサイクル（黎明/成長/拡大/成熟） | 両HTML | `detectLifecycle()` — detail.html:295-299／index.html:149-153（同一ロジックの重複実装） | `revenue_growth`（無ければ`rev_yoy`）から閾値判定 |
+| AS-IS-120 | HypeCore推奨（買い/保有/売り等） | 両HTML＋TANUKI | `getRec()` — detail.html:364-378／index.html:155-169（重複実装、判定文言が微妙に異なる）／`_hypecore_recommendation()` tanuki_valuation/pipeline.py:3067-3090（Python簡略版） | 上記「前提の訂正」参照。3実装間の同期リスクあり |
+| AS-IS-121 | 1ヶ月後のステージ遷移確率 | detail.htmlのみ | `calcTrans()` detail.html:380-388 | `monthly`配列全体からのマルコフ的頻度集計、JSON側計算なし |
+| AS-IS-122 | バリュエーション倍率パネル（PER/PS/PEG/EV-EBITDA） | detail.htmlのみ | `renderValMultiples()` detail.html:537-601 | TANUKI `latest.json`の`components.{per,peg,ps,ev_ebitda,per_is_forward}`を優先取得し無ければpoc.jsonの`peg_ratio`/`psr`/`ev_ebitda`にフォールバック（552-556行）＝2ルート併存 |
 
 ### 5-3. STONKS SILO
 
@@ -1081,216 +1087,216 @@ JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RI
 
 #### トップレベル
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `generated_at` | index.html hero | `pipeline.py:189` | `dt.toLocaleDateString`表示(415-417行) |
-| `tickers`（辞書, ticker→result） | index.html全体 | `pipeline.py:191`, `allData`格納 | `loadData()`406-421行 |
-| `years` | index.htmlチャート | `analyzer.py:154,166-167`（`fetcher.load_annual_data`の年リストをそのまま透過） | yearRange表示(857行)、chart X軸(903,928行) |
-| `overall_score` | index.htmlスコア列 | `_overall()` analyzer.py:807-855（840-844行で加重合計） | render()527行、score-bar |
-| `overall_verdict` | index.html判定バッジ | `_overall()` analyzer.py:846-853 | `verdictBadge()`表示、フィルターボタン |
-| `summary` | index.html「総合スコア判定根拠」 | `_build_summary()` analyzer.py:857-1004 | `formatSummary()`1467-1482行でパース表示 |
-| `records`（yr→{revenue,net_income}） | index.html売上/純利益チャート | `pipeline.py:111-117`（`fetcher.load_annual_data()`のpl.revenue/net_incomeをそのまま抽出、SEC由来） | `buildDetail()`935-946行のrevVals/niVals |
-| `valuation.market_cap` | index.html詳細パネル | `valuation_fetcher.py:8`(yfinance `.info.marketCap`)→`pipeline.py:136` | valInlineHtml(994-1004行) |
-| `valuation.current_price` | index.htmlテーブル・詳細 | `valuation_fetcher.py:9`→`pipeline.py:137` | テーブル価格列(558行)、ソート(463行) |
-| `valuation.psr` | index.html詳細パネル | `pipeline.py:127`（`market_cap ÷ latest_rev`、rev=SEC年次`revenue_sanitized`） | valInlineHtml |
-| `valuation.ev_sales` | index.html詳細パネル | `pipeline.py:128`（`enterprise_value ÷ latest_rev`） | valInlineHtml |
-| `valuation.net_cash` | index.html詳細パネル | `pipeline.py:131-133`（cash - total_debt） | valInlineHtml |
-| `financial_vectors.fields.*` | index.html財務トレンドパネル | `financial_trend_calculator.py:compute_vectors()`230-405行 | `buildVectorPanel`/`initFvCharts`/`buildProfitPath` |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-123 | `generated_at` | index.html hero | `pipeline.py:189` | `dt.toLocaleDateString`表示(415-417行) |
+| AS-IS-124 | `tickers`（辞書, ticker→result） | index.html全体 | `pipeline.py:191`, `allData`格納 | `loadData()`406-421行 |
+| AS-IS-125 | `years` | index.htmlチャート | `analyzer.py:154,166-167`（`fetcher.load_annual_data`の年リストをそのまま透過） | yearRange表示(857行)、chart X軸(903,928行) |
+| AS-IS-126 | `overall_score` | index.htmlスコア列 | `_overall()` analyzer.py:807-855（840-844行で加重合計） | render()527行、score-bar |
+| AS-IS-127 | `overall_verdict` | index.html判定バッジ | `_overall()` analyzer.py:846-853 | `verdictBadge()`表示、フィルターボタン |
+| AS-IS-128 | `summary` | index.html「総合スコア判定根拠」 | `_build_summary()` analyzer.py:857-1004 | `formatSummary()`1467-1482行でパース表示 |
+| AS-IS-129 | `records`（yr→{revenue,net_income}） | index.html売上/純利益チャート | `pipeline.py:111-117`（`fetcher.load_annual_data()`のpl.revenue/net_incomeをそのまま抽出、SEC由来） | `buildDetail()`935-946行のrevVals/niVals |
+| AS-IS-130 | `valuation.market_cap` | index.html詳細パネル | `valuation_fetcher.py:8`(yfinance `.info.marketCap`)→`pipeline.py:136` | valInlineHtml(994-1004行) |
+| AS-IS-131 | `valuation.current_price` | index.htmlテーブル・詳細 | `valuation_fetcher.py:9`→`pipeline.py:137` | テーブル価格列(558行)、ソート(463行) |
+| AS-IS-132 | `valuation.psr` | index.html詳細パネル | `pipeline.py:127`（`market_cap ÷ latest_rev`、rev=SEC年次`revenue_sanitized`） | valInlineHtml |
+| AS-IS-133 | `valuation.ev_sales` | index.html詳細パネル | `pipeline.py:128`（`enterprise_value ÷ latest_rev`） | valInlineHtml |
+| AS-IS-134 | `valuation.net_cash` | index.html詳細パネル | `pipeline.py:131-133`（cash - total_debt） | valInlineHtml |
+| AS-IS-135 | `financial_vectors.fields.*` | index.html財務トレンドパネル | `financial_trend_calculator.py:compute_vectors()`230-405行 | `buildVectorPanel`/`initFvCharts`/`buildProfitPath` |
 
 #### `deficit_quality`（`_analyze_deficit_quality`, analyzer.py:180-383）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `cagr_3yr` | index.html詳細＋サマリー | `analyzer.py:215-222`（4年分の売上比較） | 詳細行1050、summary内`cagr_cmt()`892-898 |
-| `rnd_ratio` | index.html詳細（合算表示） | `analyzer.py:225-236` | 「成長投資比率」としてsm_ratioと合算表示(1054行) |
-| `sm_ratio` | 同上 | `analyzer.py:225-236` | 同上 |
-| `gross_margin` | index.html詳細＋サマリー | `analyzer.py:235-236`（gross_profit÷revenue_sanitized） | 1051行、`gm_cmt()`906-911 |
-| `gross_margin_derived` | index.html詳細（"逆"バッジ） | `analyzer.py:237`（`pl.get("gross_profit_derived")`を透過） | CostOfRevenueからの逆算フラグ、1051行 |
-| `verdict` | index.htmlバッジ・ソート | `_deficit_verdict()` analyzer.py:385-469（459-467行で最終判定） | `deficitBadge()` |
-| `score` | index.htmlスコア円・ソート | `_deficit_verdict()`同上（405-457行のスコアリング） | `s1`表示、`getSortVal('deficit')` |
-| `rule_of_40` | index.html詳細 | `analyzer.py:245-249`（cagr_3yr + operating_income÷revenue） | 1052行（HypeCoreの`rule40`とは別計算式） |
-| `mature_profit` | index.html詳細 | `analyzer.py:252-259`（net_income + R&D + S&M） | 1055行 |
-| `mature_profit_note` | index.html詳細 | `analyzer.py:253,258-259` | 1055行の注記表示 |
-| `sbc_adjusted_fcf` | index.html詳細 | `analyzer.py:262-265`（FCF - SBC） | 1056行 |
-| `sbc_ratio` | index.html詳細 | `analyzer.py:266` | 1057行 |
-| `sbc_yoy_change` | index.html詳細 | `analyzer.py:269-273` | 1058行 |
-| `dilution_risk` | index.html詳細バッジ | `analyzer.py:276-283` | `riskBadge()`1062行 |
-| `deficit_fixed_risk` | index.html詳細バッジ | `_calc_deficit_fixed_risk()` analyzer.py:472-479、`analyze()`160行で呼出 | `riskBadge()`1061行。既知バグ: 黒字企業でもverdict="PROFITABLE"は条件分岐に含まれず常にMEDIUM |
-| `revenue_outlier_years` | index.htmlチャート注記 | `analyzer.py:190-193`（`revenue_is_outlier`フラグ集計） | 1115行 |
-| `revenue_growth_pct` | index.html未使用、他サブシステムから参照 | `analyzer.py:196-212` | TANUKI `stock.html:2907-2912`（Matrix③のY軸）で使用。5-2節「前提の訂正」参照 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-136 | `cagr_3yr` | index.html詳細＋サマリー | `analyzer.py:215-222`（4年分の売上比較） | 詳細行1050、summary内`cagr_cmt()`892-898 |
+| AS-IS-137 | `rnd_ratio` | index.html詳細（合算表示） | `analyzer.py:225-236` | 「成長投資比率」としてsm_ratioと合算表示(1054行) |
+| AS-IS-138 | `sm_ratio` | 同上 | `analyzer.py:225-236` | 同上 |
+| AS-IS-139 | `gross_margin` | index.html詳細＋サマリー | `analyzer.py:235-236`（gross_profit÷revenue_sanitized） | 1051行、`gm_cmt()`906-911 |
+| AS-IS-140 | `gross_margin_derived` | index.html詳細（"逆"バッジ） | `analyzer.py:237`（`pl.get("gross_profit_derived")`を透過） | CostOfRevenueからの逆算フラグ、1051行 |
+| AS-IS-141 | `verdict` | index.htmlバッジ・ソート | `_deficit_verdict()` analyzer.py:385-469（459-467行で最終判定） | `deficitBadge()` |
+| AS-IS-142 | `score` | index.htmlスコア円・ソート | `_deficit_verdict()`同上（405-457行のスコアリング） | `s1`表示、`getSortVal('deficit')` |
+| AS-IS-143 | `rule_of_40` | index.html詳細 | `analyzer.py:245-249`（cagr_3yr + operating_income÷revenue） | 1052行（HypeCoreの`rule40`とは別計算式） |
+| AS-IS-144 | `mature_profit` | index.html詳細 | `analyzer.py:252-259`（net_income + R&D + S&M） | 1055行 |
+| AS-IS-145 | `mature_profit_note` | index.html詳細 | `analyzer.py:253,258-259` | 1055行の注記表示 |
+| AS-IS-146 | `sbc_adjusted_fcf` | index.html詳細 | `analyzer.py:262-265`（FCF - SBC） | 1056行 |
+| AS-IS-147 | `sbc_ratio` | index.html詳細 | `analyzer.py:266` | 1057行 |
+| AS-IS-148 | `sbc_yoy_change` | index.html詳細 | `analyzer.py:269-273` | 1058行 |
+| AS-IS-149 | `dilution_risk` | index.html詳細バッジ | `analyzer.py:276-283` | `riskBadge()`1062行 |
+| AS-IS-150 | `deficit_fixed_risk` | index.html詳細バッジ | `_calc_deficit_fixed_risk()` analyzer.py:472-479、`analyze()`160行で呼出 | `riskBadge()`1061行。既知バグ: 黒字企業でもverdict="PROFITABLE"は条件分岐に含まれず常にMEDIUM |
+| AS-IS-151 | `revenue_outlier_years` | index.htmlチャート注記 | `analyzer.py:190-193`（`revenue_is_outlier`フラグ集計） | 1115行 |
+| AS-IS-152 | `revenue_growth_pct` | index.html未使用、他サブシステムから参照 | `analyzer.py:196-212` | TANUKI `stock.html:2907-2912`（Matrix③のY軸）で使用。5-2節「前提の訂正」参照 |
 
 #### `runway`（`_analyze_runway`, analyzer.py:484-527）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `cash` | index.html詳細 | `analyzer.py:490-493`（現金＋短期投資） | 1078行 |
-| `monthly_burn` | index.html詳細 | `analyzer.py:499-504`（(OCF-\|CapEx\|)÷12） | 1079行 |
-| `runway_months` | index.htmlテーブル・詳細・ソート | `analyzer.py:507-513` | テーブルバー(537-546行)、`fmtRunway()`、TANUKI `stock.html:2904`でも読取（Matrix③のX軸） |
-| `ocf_annual` | index.html詳細（テキスト内） | `analyzer.py:494` | 1079行の月次バーン内訳表示 |
-| `capex_annual` | index.html詳細（テキスト内） | `analyzer.py:495` | 同上 |
-| `verdict` | index.htmlバッジ・pillar-label | `_runway_verdict()` analyzer.py:529-543 | 1071,1077行 |
-| `score` | index.htmlスコア円 | `_overall()` analyzer.py:837 | `s2`表示 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-153 | `cash` | index.html詳細 | `analyzer.py:490-493`（現金＋短期投資） | 1078行 |
+| AS-IS-154 | `monthly_burn` | index.html詳細 | `analyzer.py:499-504`（(OCF-\|CapEx\|)÷12） | 1079行 |
+| AS-IS-155 | `runway_months` | index.htmlテーブル・詳細・ソート | `analyzer.py:507-513` | テーブルバー(537-546行)、`fmtRunway()`、TANUKI `stock.html:2904`でも読取（Matrix③のX軸） |
+| AS-IS-156 | `ocf_annual` | index.html詳細（テキスト内） | `analyzer.py:494` | 1079行の月次バーン内訳表示 |
+| AS-IS-157 | `capex_annual` | index.html詳細（テキスト内） | `analyzer.py:495` | 同上 |
+| AS-IS-158 | `verdict` | index.htmlバッジ・pillar-label | `_runway_verdict()` analyzer.py:529-543 | 1071,1077行 |
+| AS-IS-159 | `score` | index.htmlスコア円 | `_overall()` analyzer.py:837 | `s2`表示 |
 
 #### `profitability_path`（`_analyze_profitability_path`, analyzer.py:549-716）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `ocf_annual`（年次dict） | index.html営業CFチャート | `analyzer.py:551-553` | `buildDetail()`938-939行のocfVals、`buildProfitPath`のOCF系列 |
-| `ocf_trend` | index.htmlバッジ多数 | `_ocf_trend()` analyzer.py:718-763 | pillar-label、trendCell、サマリー |
-| `gaap_breakeven_year`/`gaap_breakeven_reason` | index.html詳細 | `_breakeven_estimate()`(765-801)→`_gaap_margin_breakeven()`(1132-1210, マージン外挿＋OLSフォールバック) | `fmtBe()`1099行 |
-| `ocf_breakeven_year`/`ocf_breakeven_reason` | index.htmlテーブル・詳細 | `_breakeven_estimate()`(765-801)→`_margin_breakeven()`(1055-1129) | テーブルbeCell(531-534行)、詳細1098行 |
-| `hidden_profit_already` | index.htmlテーブル・詳細 | `_breakeven_estimate()`analyzer.py:787 | beCell(533行)、詳細1097行 |
-| `discontinuous_growth` | index.html詳細（警告） | `analyzer.py:606-627`（OLS使用時のみ、直近YoY≥200%かつ過去比3倍超で検出） | 1100,1108行 |
-| `discontinuous_growth_note` | index.html詳細 | `analyzer.py:627` | 1100行の警告文 |
-| `incremental_margin` | index.html拡大再生産バー | `_calc_incremental_margin()`(1020-1042)を`analyze:630`で呼出 | 984-990行の`reproDetailText` |
-| `incremental_margin_prev` | 同上 | `analyzer.py:645-647` | reproTrendText差分計算(984-987行) |
-| `incremental_margin_trend` | 同上 | `analyzer.py:648-665`（OLS回帰スロープ判定） | reproTrendText分岐 |
-| `incremental_rev_delta`/`incremental_gp_delta` | 同上 | `analyzer.py:641-643` | reproDetailText(989-990行) |
-| `reproduction_score` | index.html拡大再生産バー（●○表示） | `analyzer.py:669-680` | `reproDots`(982行) |
-| `reproduction_label` | 同上 | `analyzer.py:682-693` | `repro-label`表示 |
-| `score` | index.htmlスコア円 | `_overall()` analyzer.py:838 | `s3`表示 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-160 | `ocf_annual`（年次dict） | index.html営業CFチャート | `analyzer.py:551-553` | `buildDetail()`938-939行のocfVals、`buildProfitPath`のOCF系列 |
+| AS-IS-161 | `ocf_trend` | index.htmlバッジ多数 | `_ocf_trend()` analyzer.py:718-763 | pillar-label、trendCell、サマリー |
+| AS-IS-162 | `gaap_breakeven_year`/`gaap_breakeven_reason` | index.html詳細 | `_breakeven_estimate()`(765-801)→`_gaap_margin_breakeven()`(1132-1210, マージン外挿＋OLSフォールバック) | `fmtBe()`1099行 |
+| AS-IS-163 | `ocf_breakeven_year`/`ocf_breakeven_reason` | index.htmlテーブル・詳細 | `_breakeven_estimate()`(765-801)→`_margin_breakeven()`(1055-1129) | テーブルbeCell(531-534行)、詳細1098行 |
+| AS-IS-164 | `hidden_profit_already` | index.htmlテーブル・詳細 | `_breakeven_estimate()`analyzer.py:787 | beCell(533行)、詳細1097行 |
+| AS-IS-165 | `discontinuous_growth` | index.html詳細（警告） | `analyzer.py:606-627`（OLS使用時のみ、直近YoY≥200%かつ過去比3倍超で検出） | 1100,1108行 |
+| AS-IS-166 | `discontinuous_growth_note` | index.html詳細 | `analyzer.py:627` | 1100行の警告文 |
+| AS-IS-167 | `incremental_margin` | index.html拡大再生産バー | `_calc_incremental_margin()`(1020-1042)を`analyze:630`で呼出 | 984-990行の`reproDetailText` |
+| AS-IS-168 | `incremental_margin_prev` | 同上 | `analyzer.py:645-647` | reproTrendText差分計算(984-987行) |
+| AS-IS-169 | `incremental_margin_trend` | 同上 | `analyzer.py:648-665`（OLS回帰スロープ判定） | reproTrendText分岐 |
+| AS-IS-170 | `incremental_rev_delta`/`incremental_gp_delta` | 同上 | `analyzer.py:641-643` | reproDetailText(989-990行) |
+| AS-IS-171 | `reproduction_score` | index.html拡大再生産バー（●○表示） | `analyzer.py:669-680` | `reproDots`(982行) |
+| AS-IS-172 | `reproduction_label` | 同上 | `analyzer.py:682-693` | `repro-label`表示 |
+| AS-IS-173 | `score` | index.htmlスコア円 | `_overall()` analyzer.py:838 | `s3`表示 |
 
 #### `financial_vectors.fields.{Revenue,GrossProfit,OperatingIncome,RD,NetIncome,OCF,CapEx}`
 
 計算元: `financial_trend_calculator.py`の`compute_vectors()`（230-405行）。`pipeline.py:176-184`が`load_all_normalized()`（408-421行）と併せて呼出し、`results[ticker]["financial_vectors"]`に格納。
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `fields.{name}.yoy/qoq.change_pct,val_latest,val_prev,end_latest,end_prev,fp` | index.html spark統計・ヒートマップ | `_calc_yoy_change()`(151-190)/`_calc_qoq_change()`(193-211)、`compute_vectors:335-361`で格納 | sparkCols(1160-1176行)、hmRows(1205-1225行、独自にQoQ再計算もしている点に注意=1210-1219行) |
-| `fields.{name}.yoy/qoq.percentile` | 未直接表示（角度算出の中間値） | `_calc_percentile()`(276-289)、`compute_vectors:346` | HTML上は角度化された値のみ利用、percentile自体は非表示 |
-| `fields.{name}.yoy/qoq.angle,length` | チャート未直接使用だが将来利用想定 | `_pct_to_angle()`(214-222)/`_pct_to_length()`(225-227)、`compute_vectors:347-348` | index.html grep上は未参照。ただしJSON出力＝正式仕様のため一覧には含める |
-| `fields.{name}.series_q`（四半期時系列） | index.html sparkline・ヒートマップ・黒字化ロードマップ | `compute_vectors:323-333`（Q4逆算含む`_build_q4_implied:86-129`） | `initFvCharts()`のChart.js描画(1311-1364行)、`buildProfitPath()`のgetSeries/getLatest(708-726行、CapEx込みFCF系列算出にも使用) |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-174 | `fields.{name}.yoy/qoq.change_pct,val_latest,val_prev,end_latest,end_prev,fp` | index.html spark統計・ヒートマップ | `_calc_yoy_change()`(151-190)/`_calc_qoq_change()`(193-211)、`compute_vectors:335-361`で格納 | sparkCols(1160-1176行)、hmRows(1205-1225行、独自にQoQ再計算もしている点に注意=1210-1219行) |
+| AS-IS-175 | `fields.{name}.yoy/qoq.percentile` | 未直接表示（角度算出の中間値） | `_calc_percentile()`(276-289)、`compute_vectors:346` | HTML上は角度化された値のみ利用、percentile自体は非表示 |
+| AS-IS-176 | `fields.{name}.yoy/qoq.angle,length` | チャート未直接使用だが将来利用想定 | `_pct_to_angle()`(214-222)/`_pct_to_length()`(225-227)、`compute_vectors:347-348` | index.html grep上は未参照。ただしJSON出力＝正式仕様のため一覧には含める |
+| AS-IS-177 | `fields.{name}.series_q`（四半期時系列） | index.html sparkline・ヒートマップ・黒字化ロードマップ | `compute_vectors:323-333`（Q4逆算含む`_build_q4_implied:86-129`） | `initFvCharts()`のChart.js描画(1311-1364行)、`buildProfitPath()`のgetSeries/getLatest(708-726行、CapEx込みFCF系列算出にも使用) |
 
 （`financial_vectors.composite`・`financial_vectors.data_quality`は削除候補として未使用を確認。index.html全体を検索しても`fv.composite`/`fv.data_quality`の参照なし）
 
 #### クライアント側の他サブシステムデータ結合（STONKS SILO自身のJSON外）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| TANUKIスコアバッジ | index.htmlティッカー横 | `loadTanukiBadges()` index.html:428-446 | `../tanuki_valuation/data/{ticker}/latest.json`の`tanuki_score`を読取 |
-| 次回決算日 | index.html詳細 | `toggleDetail()` index.html:611-619 | 同上`latest.json`の`next_earnings_date` |
-| 黒字転換目算（Adj.EPS線形推定） | index.html詳細 | `toggleDetail()` index.html:620-627 | 同上`latest.json`の`breakeven_estimate` |
-| Adj.EPS系列（黒字化ロードマップ） | index.html「黒字化への道のり」 | `toggleDetail()` index.html:631-680 | `adjusted_eps_analyzer/data/{ticker}/quarterly.json`の`quarters[].adjusted_eps` |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-178 | TANUKIスコアバッジ | index.htmlティッカー横 | `loadTanukiBadges()` index.html:428-446 | `../tanuki_valuation/data/{ticker}/latest.json`の`tanuki_score`を読取 |
+| AS-IS-179 | 次回決算日 | index.html詳細 | `toggleDetail()` index.html:611-619 | 同上`latest.json`の`next_earnings_date` |
+| AS-IS-180 | 黒字転換目算（Adj.EPS線形推定） | index.html詳細 | `toggleDetail()` index.html:620-627 | 同上`latest.json`の`breakeven_estimate` |
+| AS-IS-181 | Adj.EPS系列（黒字化ロードマップ） | index.html「黒字化への道のり」 | `toggleDetail()` index.html:631-680 | `adjusted_eps_analyzer/data/{ticker}/quarterly.json`の`quarters[].adjusted_eps` |
 
 ### 5-4. MACRO PULSE
 
 #### FEDレジームバー（`#regimeBar`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| REGIME | `rb-regime` | 05_main.py: `analyze_fomc_with_grok()`(1218-1271) / `_fallback_regime()`(1207-1216) → `update_fed_context()`(1273-1345)がfed_context.csvの`regime`列に保存／index.html: `renderRegimeBar()`(979-1001) | CSV値をそのまま表示（加工は大文字化と枠色分岐のみ） |
-| regime_source | `rb-regime-src` | 同上（`analyze_fomc_with_grok`は"FOMC声明分析（Grok）"、`_fallback_regime`は"DGS1数値ベース"を設定） | XAI_API_KEY未設定/失敗時はDGS1ベースにフォールバック |
-| FF RATE | `rb-ff` | 05_main.py: `get_ff_current()`(727-735, DFEDTARU/DFEDTARL平均、失敗時FEDFUNDS) → `update_fed_context()`(1291-1293、取得失敗時3.625固定フォールバック)／index.html: `renderRegimeBar()` | |
-| 1Y EXPECTED FF | `rb-exp` | 05_main.py: `get_implied_cuts()`(737-753、FRED:DGS1をそのまま採用) / エイリアス`get_zq_futures()`(757-758) → `update_fed_context()`(1290)／index.html: `renderRegimeBar()` | 旧ZQ先物ロジックは廃止済み、DGS1直採用 |
-| IMPLIED CUTS | `rb-cuts` | 05_main.py: `update_fed_context()`内でインライン計算 `(ff_current - zq_rate) / 0.25`(1295-1297)／index.html: `renderRegimeBar()` | |
-| FRB主眼(dominant_label) | `rb-concern` | 05_main.py: `analyze_fomc_with_grok()`/`_fallback_regime()` → `update_fed_context()`／index.html: `renderRegimeBar()` | |
-| 判断理由(ai_reason) | `rb-reason` | 同上 | |
-| FOMC日付 | `rb-concern-label`のツールチップ | 05_main.py: `fetch_latest_fomc_statement()`(1149-1205、FRB声明カレンダーHTMLスクレイピング＋既知日付フォールバック) → `update_fed_context()`の`new_row["fomc_date"]`(1328)／index.html: `renderRegimeBar()`(996-998) | |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-182 | REGIME | `rb-regime` | 05_main.py: `analyze_fomc_with_grok()`(1218-1271) / `_fallback_regime()`(1207-1216) → `update_fed_context()`(1273-1345)がfed_context.csvの`regime`列に保存／index.html: `renderRegimeBar()`(979-1001) | CSV値をそのまま表示（加工は大文字化と枠色分岐のみ） |
+| AS-IS-183 | regime_source | `rb-regime-src` | 同上（`analyze_fomc_with_grok`は"FOMC声明分析（Grok）"、`_fallback_regime`は"DGS1数値ベース"を設定） | XAI_API_KEY未設定/失敗時はDGS1ベースにフォールバック |
+| AS-IS-184 | FF RATE | `rb-ff` | 05_main.py: `get_ff_current()`(727-735, DFEDTARU/DFEDTARL平均、失敗時FEDFUNDS) → `update_fed_context()`(1291-1293、取得失敗時3.625固定フォールバック)／index.html: `renderRegimeBar()` | |
+| AS-IS-185 | 1Y EXPECTED FF | `rb-exp` | 05_main.py: `get_implied_cuts()`(737-753、FRED:DGS1をそのまま採用) / エイリアス`get_zq_futures()`(757-758) → `update_fed_context()`(1290)／index.html: `renderRegimeBar()` | 旧ZQ先物ロジックは廃止済み、DGS1直採用 |
+| AS-IS-186 | IMPLIED CUTS | `rb-cuts` | 05_main.py: `update_fed_context()`内でインライン計算 `(ff_current - zq_rate) / 0.25`(1295-1297)／index.html: `renderRegimeBar()` | |
+| AS-IS-187 | FRB主眼(dominant_label) | `rb-concern` | 05_main.py: `analyze_fomc_with_grok()`/`_fallback_regime()` → `update_fed_context()`／index.html: `renderRegimeBar()` | |
+| AS-IS-188 | 判断理由(ai_reason) | `rb-reason` | 同上 | |
+| AS-IS-189 | FOMC日付 | `rb-concern-label`のツールチップ | 05_main.py: `fetch_latest_fomc_statement()`(1149-1205、FRB声明カレンダーHTMLスクレイピング＋既知日付フォールバック) → `update_fed_context()`の`new_row["fomc_date"]`(1328)／index.html: `renderRegimeBar()`(996-998) | |
 
 #### ティッカー（`.ticker`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| S&P500現在値 | `tk-sp` | 05_main.py: `get_sp500()`(825-830、FRED SP500優先→stooqフォールバック) → `run()`内で`row["sp500_t0"]`に格納(2211, 2220)、events.csvへ保存／index.html: `updateTicker()`(1006-1018)がDATA中の最新日`sp500_t0`をスキャン | |
-| S&P500前日比 | `tk-sp-c` | index.html: `updateTicker()`(1020-1043)のみで計算。events.csvの日別`sp500_t0`から直近2日分を抽出し差分・騰落率を算出 | バックエンドに対応する計算なし。frontend専用ロジック |
-| 10Y-2Y SPREAD | `tk-yc` | 05_main.py: `fetch_event_row()`(896-956)がFRED `T10Y2Y`（`INDICATOR_CONFIG["Yield Curve 10Y-2Y"]`, 300-308）を取得、`run()`の日次ループ(2217-2223)で毎日1行events.csvへ追加／index.html: `updateTicker()`(1008, 1045)が`idxLatestAsOf()`で最新値取得 | |
-| 10Y-2Y判定(INVERTED/FLAT/NORMAL) | `tk-yc-i` | index.html: `updateTicker()`(1045) `yc<-0.2:INVERTED / yc<0.5:FLAT / else NORMAL` | frontend専用の閾値。②Health Bars（L2_CFG: bull 0.5/bear -0.2）や①フェーズゲージ内のYC閾値（-0.5/0/0.5）とは別の第3の閾値セット |
-| HY SPREAD | `tk-hy` | 05_main.py: `fetch_event_row()`が FRED `BAMLH0A0HYM2`（`INDICATOR_CONFIG["HY Spread"]`, 309-317）を取得、同じ日次ループでevents.csvへ追加／index.html: `updateTicker()`(1009, 1046) | 流動性モニターのHYスプレッドカードとは別経路。同一FRED系列を2箇所で独立に取得・保存している |
-| LAST UPDATE | `tk-last` / `tk-src` | index.html: `updateTicker()`(1049-1062)のみ。全指標のIND_INDEXを走査し最新`release_date`とその行の`data_source`列（backendの`fetch_event_row()`953-954で"FRED"/"manual"/"N/A"を設定）を表示 | frontend計算だがdata_source自体はbackend由来 |
-| （画面最上部）最終更新表示 | `#last-updated` | 05_main.py: `update_liquidity_csv()`末尾(2126-2130)が`05_meta.json`の`generated_at`（JST）を書き込み／index.html: `loadLiquidityData()`(2730-2750)が`toJST()`で整形して表示 | 上記`tk-last`とは別の値・別経路。流動性CSV更新時のみ更新される |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-190 | S&P500現在値 | `tk-sp` | 05_main.py: `get_sp500()`(825-830、FRED SP500優先→stooqフォールバック) → `run()`内で`row["sp500_t0"]`に格納(2211, 2220)、events.csvへ保存／index.html: `updateTicker()`(1006-1018)がDATA中の最新日`sp500_t0`をスキャン | |
+| AS-IS-191 | S&P500前日比 | `tk-sp-c` | index.html: `updateTicker()`(1020-1043)のみで計算。events.csvの日別`sp500_t0`から直近2日分を抽出し差分・騰落率を算出 | バックエンドに対応する計算なし。frontend専用ロジック |
+| AS-IS-192 | 10Y-2Y SPREAD | `tk-yc` | 05_main.py: `fetch_event_row()`(896-956)がFRED `T10Y2Y`（`INDICATOR_CONFIG["Yield Curve 10Y-2Y"]`, 300-308）を取得、`run()`の日次ループ(2217-2223)で毎日1行events.csvへ追加／index.html: `updateTicker()`(1008, 1045)が`idxLatestAsOf()`で最新値取得 | |
+| AS-IS-193 | 10Y-2Y判定(INVERTED/FLAT/NORMAL) | `tk-yc-i` | index.html: `updateTicker()`(1045) `yc<-0.2:INVERTED / yc<0.5:FLAT / else NORMAL` | frontend専用の閾値。②Health Bars（L2_CFG: bull 0.5/bear -0.2）や①フェーズゲージ内のYC閾値（-0.5/0/0.5）とは別の第3の閾値セット |
+| AS-IS-194 | HY SPREAD | `tk-hy` | 05_main.py: `fetch_event_row()`が FRED `BAMLH0A0HYM2`（`INDICATOR_CONFIG["HY Spread"]`, 309-317）を取得、同じ日次ループでevents.csvへ追加／index.html: `updateTicker()`(1009, 1046) | 流動性モニターのHYスプレッドカードとは別経路。同一FRED系列を2箇所で独立に取得・保存している |
+| AS-IS-195 | LAST UPDATE | `tk-last` / `tk-src` | index.html: `updateTicker()`(1049-1062)のみ。全指標のIND_INDEXを走査し最新`release_date`とその行の`data_source`列（backendの`fetch_event_row()`953-954で"FRED"/"manual"/"N/A"を設定）を表示 | frontend計算だがdata_source自体はbackend由来 |
+| AS-IS-196 | （画面最上部）最終更新表示 | `#last-updated` | 05_main.py: `update_liquidity_csv()`末尾(2126-2130)が`05_meta.json`の`generated_at`（JST）を書き込み／index.html: `loadLiquidityData()`(2730-2750)が`toJST()`で整形して表示 | 上記`tk-last`とは別の値・別経路。流動性CSV更新時のみ更新される |
 
 #### 流動性モニター（`.liq-wrap`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| M2 | `liqGrid`カード | 05_main.py: `update_liquidity_csv()`内 FRED `M2SL`取得(1952)、carry-forward処理(2004-2020)含め保存(2096)／index.html: `renderLiquidityCards()`(2373-2582)が`latestNonEmpty()`(2365-2371)で表示 | |
-| NET LIQUIDITY | 同上 | 05_main.py: `update_liquidity_csv()`内 `net_liq = (fed_val - tga_val - rrp_val) / 1_000_000`(1973-1977、carry-forward後に再計算2022-2025)／index.html: `renderLiquidityCards()` | |
-| HYスプレッド（流動性カード） | 同上 | 05_main.py: `update_liquidity_csv()`内 FRED `BAMLH0A0HYM2`取得(1956)、events.csv経路とは独立の取得・保存(2097)／index.html: `renderLiquidityCards()` | ②ティッカーのHY SPREADと二重取得（同一系列を別CSVに別途保存） |
-| FRBバランスシート | 同上 | 05_main.py: FRED `WALCL`取得(1954)、保存(2098)／index.html: `renderLiquidityCards()` | |
-| 各カードの前月比/前週比(chg) | 同上 | index.html: `chgHtml()`(2383-2392)、`liqPrevVal()`(2354-2362)がCSV内の過去行と比較して算出 | frontend計算 |
-| 各カードのパーセンタイル/水準バー | 同上 | index.html: `pctRank()`(2415-2420)、`levelBar()`(2475-2484)が過去全履歴内での順位を算出 | frontend計算のみ、backendに対応ロジックなし |
-| 各カードの解説コメント(m2Comment/nlComment/hyComment/fedComment) | 同上 | index.html: 2438-2467 | frontend専用のルールベース文言生成 |
-| Hollow Rallyバッジ | `liq-wrap`直下 | index.html: `renderLiquidityCards()`(2533-2559) `rows.sp500`列とNET LIQUIDITY週比を条件判定 | 注意: `LIQUIDITY_COLUMNS`(05_main.py 1934-1941)に`sp500`列は存在しない。`rows.filter(r=>r.sp500!==undefined)`は常に空集合となり、現行データパイプラインではこの条件分岐が実質到達不能（バッジが表示されることはない）。削除候補には含まれていなかった追加の要確認箇所 |
-| ステルス流動性 LAYER1（FRB政策意図） | `stealthLayer1` | 05_main.py: `update_fed_context()`が書き込む`regime`列／index.html: `updateStealthLayer1()`(2703-2717)が`05_fed_context.csv`を別途fetchして表示 | 上部REGIMEバーと同じ列を独立に再取得表示 |
-| LAYER2（ステルス供給/吸収バッジ） | `stealthLayer2`相当 | 05_main.py: `update_liquidity_csv()`内「ステルス流動性シグナル計算」ブロック(2027-2049) RRP/TGA/準備預金の増減から`stealth_signal`列を決定／index.html: `renderStealthCard()`(2585-2700) | |
-| LAYER3（NET流動性連続減少週数） | `stealthLayer3`相当 | 05_main.py: `update_liquidity_csv()`内(2063-2073) `net_liq_decline_weeks`列を算出／index.html: `renderStealthCard()` | |
-| 警戒アラート文 | ステルスカード内 | 05_main.py: `update_liquidity_csv()`内(2084-2092) `stealth_alert`列（`\|`区切り）／index.html: `renderStealthCard()`(2653-2659) | |
-| ステルス吸収週数(stealth_absorb_weeks) | ステルスカード内Layer2補足 | 05_main.py: `update_liquidity_csv()`(2053-2061)／index.html: `renderStealthCard()`(2677) | |
-| REPO残高(RRPONTSYD) | ステルスカード内metric | 05_main.py: FRED `RRPONTSYD`取得後 ×1000でMillionsに換算(1962-1963)、保存(2100)／index.html: `renderStealthCard()`のmetrics配列(2620-2628) | |
-| 準備預金(WRBWFRBL) | 同上 | 05_main.py: FRED `WRBWFRBL`取得(1966-1967)、保存(2102)／index.html: 同上(2629-2636) | |
-| TGA残高(WTREGEN) | 同上 | 05_main.py: FRED `WTREGEN`（失敗時`FTSD`）取得(1957-1960)、保存(2099)／index.html: 同上(2637-2644) | |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-197 | M2 | `liqGrid`カード | 05_main.py: `update_liquidity_csv()`内 FRED `M2SL`取得(1952)、carry-forward処理(2004-2020)含め保存(2096)／index.html: `renderLiquidityCards()`(2373-2582)が`latestNonEmpty()`(2365-2371)で表示 | |
+| AS-IS-198 | NET LIQUIDITY | 同上 | 05_main.py: `update_liquidity_csv()`内 `net_liq = (fed_val - tga_val - rrp_val) / 1_000_000`(1973-1977、carry-forward後に再計算2022-2025)／index.html: `renderLiquidityCards()` | |
+| AS-IS-199 | HYスプレッド（流動性カード） | 同上 | 05_main.py: `update_liquidity_csv()`内 FRED `BAMLH0A0HYM2`取得(1956)、events.csv経路とは独立の取得・保存(2097)／index.html: `renderLiquidityCards()` | ②ティッカーのHY SPREADと二重取得（同一系列を別CSVに別途保存） |
+| AS-IS-200 | FRBバランスシート | 同上 | 05_main.py: FRED `WALCL`取得(1954)、保存(2098)／index.html: `renderLiquidityCards()` | |
+| AS-IS-201 | 各カードの前月比/前週比(chg) | 同上 | index.html: `chgHtml()`(2383-2392)、`liqPrevVal()`(2354-2362)がCSV内の過去行と比較して算出 | frontend計算 |
+| AS-IS-202 | 各カードのパーセンタイル/水準バー | 同上 | index.html: `pctRank()`(2415-2420)、`levelBar()`(2475-2484)が過去全履歴内での順位を算出 | frontend計算のみ、backendに対応ロジックなし |
+| AS-IS-203 | 各カードの解説コメント(m2Comment/nlComment/hyComment/fedComment) | 同上 | index.html: 2438-2467 | frontend専用のルールベース文言生成 |
+| AS-IS-204 | Hollow Rallyバッジ | `liq-wrap`直下 | index.html: `renderLiquidityCards()`(2533-2559) `rows.sp500`列とNET LIQUIDITY週比を条件判定 | 注意: `LIQUIDITY_COLUMNS`(05_main.py 1934-1941)に`sp500`列は存在しない。`rows.filter(r=>r.sp500!==undefined)`は常に空集合となり、現行データパイプラインではこの条件分岐が実質到達不能（バッジが表示されることはない）。削除候補には含まれていなかった追加の要確認箇所 |
+| AS-IS-205 | ステルス流動性 LAYER1（FRB政策意図） | `stealthLayer1` | 05_main.py: `update_fed_context()`が書き込む`regime`列／index.html: `updateStealthLayer1()`(2703-2717)が`05_fed_context.csv`を別途fetchして表示 | 上部REGIMEバーと同じ列を独立に再取得表示 |
+| AS-IS-206 | LAYER2（ステルス供給/吸収バッジ） | `stealthLayer2`相当 | 05_main.py: `update_liquidity_csv()`内「ステルス流動性シグナル計算」ブロック(2027-2049) RRP/TGA/準備預金の増減から`stealth_signal`列を決定／index.html: `renderStealthCard()`(2585-2700) | |
+| AS-IS-207 | LAYER3（NET流動性連続減少週数） | `stealthLayer3`相当 | 05_main.py: `update_liquidity_csv()`内(2063-2073) `net_liq_decline_weeks`列を算出／index.html: `renderStealthCard()` | |
+| AS-IS-208 | 警戒アラート文 | ステルスカード内 | 05_main.py: `update_liquidity_csv()`内(2084-2092) `stealth_alert`列（`\|`区切り）／index.html: `renderStealthCard()`(2653-2659) | |
+| AS-IS-209 | ステルス吸収週数(stealth_absorb_weeks) | ステルスカード内Layer2補足 | 05_main.py: `update_liquidity_csv()`(2053-2061)／index.html: `renderStealthCard()`(2677) | |
+| AS-IS-210 | REPO残高(RRPONTSYD) | ステルスカード内metric | 05_main.py: FRED `RRPONTSYD`取得後 ×1000でMillionsに換算(1962-1963)、保存(2100)／index.html: `renderStealthCard()`のmetrics配列(2620-2628) | |
+| AS-IS-211 | 準備預金(WRBWFRBL) | 同上 | 05_main.py: FRED `WRBWFRBL`取得(1966-1967)、保存(2102)／index.html: 同上(2629-2636) | |
+| AS-IS-212 | TGA残高(WTREGEN) | 同上 | 05_main.py: FRED `WTREGEN`（失敗時`FTSD`）取得(1957-1960)、保存(2099)／index.html: 同上(2637-2644) | |
 
 #### ①景気フェーズ判定（`#phaseGauge`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| フェーズbadge / phase-sub | `pg-phase-badge`/`pg-phase-sub` | index.html: `computeCurrentScore()`(1070-1149、8指標の値取得とステップ関数式スコア化) → `renderPhaseGauge()`(1151-1215、score<30/52/70でフェーズ判定) | 完全にfrontend計算。events.csvの各指標`actual`列を直接読み込んで再計算しており、backendに対応する「表示用スコア」の生成関数はない |
-| RECESSION RISK SCOREバー・マーカー | `pg-track-fill`/`pg-track-marker` | 同上 `renderPhaseGauge()` | |
-| RECESSION RISK SCORE数値 | `pg-score-num` | 同上 | 既知バグ: 境界値は実装上30だが画面下部の目盛り表示は25のまま |
-| シグナルテキスト | `pg-signal-text` | `renderPhaseGauge()`(1162-1165) bearCount/cautionCountの集計 | |
-| ALERTバナー | `pg-alert`/`pg-alert-msg` | `renderPhaseGauge()`(1177-1182) `bearCount>=3 && score>=52` | |
-| 8指標シグナルグリッド | `pg-signals` | `computeCurrentScore()`内で各指標ごとにscore/signal/weight/lead/desc/threshを算出(1096-1148)、`renderPhaseGauge()`(1191-1214)でHTML化 | |
-| スコア比較バー（3ヶ月前/2ヶ月前/前月比/先週比/カスタム） | `#compareBar` | index.html: `renderCompareBar()`(2093-2131) → `computeScoreAsOf()`(1990-2076) | `computeScoreAsOf()`は「現在」時点は`computeCurrentScore()`を再利用するが、過去日付では`calcSignal()`内でlerp補間する別ロジック（1990-2076内`calcSignal`）を使用。ステップ関数（現在値用）とlerp補間（過去値用）で2種類の計算式が併存 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-213 | フェーズbadge / phase-sub | `pg-phase-badge`/`pg-phase-sub` | index.html: `computeCurrentScore()`(1070-1149、8指標の値取得とステップ関数式スコア化) → `renderPhaseGauge()`(1151-1215、score<30/52/70でフェーズ判定) | 完全にfrontend計算。events.csvの各指標`actual`列を直接読み込んで再計算しており、backendに対応する「表示用スコア」の生成関数はない |
+| AS-IS-214 | RECESSION RISK SCOREバー・マーカー | `pg-track-fill`/`pg-track-marker` | 同上 `renderPhaseGauge()` | |
+| AS-IS-215 | RECESSION RISK SCORE数値 | `pg-score-num` | 同上 | 既知バグ: 境界値は実装上30だが画面下部の目盛り表示は25のまま |
+| AS-IS-216 | シグナルテキスト | `pg-signal-text` | `renderPhaseGauge()`(1162-1165) bearCount/cautionCountの集計 | |
+| AS-IS-217 | ALERTバナー | `pg-alert`/`pg-alert-msg` | `renderPhaseGauge()`(1177-1182) `bearCount>=3 && score>=52` | |
+| AS-IS-218 | 8指標シグナルグリッド | `pg-signals` | `computeCurrentScore()`内で各指標ごとにscore/signal/weight/lead/desc/threshを算出(1096-1148)、`renderPhaseGauge()`(1191-1214)でHTML化 | |
+| AS-IS-219 | スコア比較バー（3ヶ月前/2ヶ月前/前月比/先週比/カスタム） | `#compareBar` | index.html: `renderCompareBar()`(2093-2131) → `computeScoreAsOf()`(1990-2076) | `computeScoreAsOf()`は「現在」時点は`computeCurrentScore()`を再利用するが、過去日付では`calcSignal()`内でlerp補間する別ロジック（1990-2076内`calcSignal`）を使用。ステップ関数（現在値用）とlerp補間（過去値用）で2種類の計算式が併存 |
 
 バックエンド側の対応スコア計算: 05_main.py `_compute_current_score()`(1378-1486)は上記①ゲージの表示には使われず、週次AI解説用に独立して動く。同一の閾値・重みをPython側に再実装しており（コメントにも「renderPhaseGaugeと同一ロジック」と明記、1445-1446）、frontend/backendで計算ロジックが二重管理されている。
 
 #### マクロサプライズバナー（`#surpriseBanner`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| surprise_alerts | `surpriseBannerBody` | 05_main.py: `detect_macro_surprises()`(124-192、前回比が`_SURPRISE_THRESHOLDS`を超えた指標を検知、複合カテゴリサプライズも検知) → `run_weekly_analysis()`(1729)で呼び出し、weekly_analysis.csvの`surprise_alerts`列に保存(1743)／index.html: `renderWeeklyAnalysis()`(2192-2222)がセミコロン分割・カテゴリバッジ化して表示 | 週次バッチでのみ更新（日次では更新されない） |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-220 | surprise_alerts | `surpriseBannerBody` | 05_main.py: `detect_macro_surprises()`(124-192、前回比が`_SURPRISE_THRESHOLDS`を超えた指標を検知、複合カテゴリサプライズも検知) → `run_weekly_analysis()`(1729)で呼び出し、weekly_analysis.csvの`surprise_alerts`列に保存(1743)／index.html: `renderWeeklyAnalysis()`(2192-2222)がセミコロン分割・カテゴリバッジ化して表示 | 週次バッチでのみ更新（日次では更新されない） |
 
 #### AI WEEKLY COMMENTARY（`.ai-wrap`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| 週次カード日付/スコア/フェーズ | `ai-card-date`/`ai-card-score`/`ai-card-phase` | 05_main.py: `run_weekly_analysis()`(1655-1766)が`_compute_current_score()`(1378-1486)を呼び出しweekly_analysis.csvの`score`/`phase`列に保存／index.html: `renderWeeklyAnalysis()`(2182-2340) | この`score`は①フェーズゲージのJS計算(`computeCurrentScore()`)とは別のPython再計算値。週次生成時点の値が固定表示される |
-| 週差/月差(chg1w/chg1m) | ai-card-header内 | 05_main.py: `_compute_score_change()`(1488-1495)がweekly_analysis.csvの`score_change_1w`/`score_change_1m`列に保存／index.html: `renderWeeklyAnalysis()`(2235-2244) | |
-| 総括(summary) | `ai-card-section-text` | 05_main.py: `generate_weekly_analysis_with_grok()`(1520-1640、xAI Grok API呼び出し) / 失敗時`_fallback_weekly_analysis()`(1642-1653) → weekly_analysis.csv `summary`列 | |
-| 要因分析(factor_analysis) | 同上 | 同上 | |
-| 注視ポイント(watchpoints) | 同上 | 同上 | |
-| 各指標コメント(indicator_comments) | `ai-card-indicators`内チップ | 同上（Grok出力の`;`区切りテキスト） → index.html `renderWeeklyAnalysis()`(2277-2303)でパース・チップ化 | |
-| 週差/月差バッジ(各指標) | チップ内`deltaBadge` | 05_main.py: `run_weekly_analysis()`内`indicator_deltas`計算(1672-1685、`_compute_current_score()`の1週間前/1ヶ月前スナップショットとの差分) → weekly_analysis.csv `indicator_deltas`列 ／index.html: `deltaBadge()`(2264-2274) | |
-| model表示 | ai-card下部 | 05_main.py: `generate_weekly_analysis_with_grok()`のモデル試行ループ(1602-1636、grok-3-mini→grok-3→grok-2-1212の順にフォールバック) → weekly_analysis.csv `model`列 | |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-221 | 週次カード日付/スコア/フェーズ | `ai-card-date`/`ai-card-score`/`ai-card-phase` | 05_main.py: `run_weekly_analysis()`(1655-1766)が`_compute_current_score()`(1378-1486)を呼び出しweekly_analysis.csvの`score`/`phase`列に保存／index.html: `renderWeeklyAnalysis()`(2182-2340) | この`score`は①フェーズゲージのJS計算(`computeCurrentScore()`)とは別のPython再計算値。週次生成時点の値が固定表示される |
+| AS-IS-222 | 週差/月差(chg1w/chg1m) | ai-card-header内 | 05_main.py: `_compute_score_change()`(1488-1495)がweekly_analysis.csvの`score_change_1w`/`score_change_1m`列に保存／index.html: `renderWeeklyAnalysis()`(2235-2244) | |
+| AS-IS-223 | 総括(summary) | `ai-card-section-text` | 05_main.py: `generate_weekly_analysis_with_grok()`(1520-1640、xAI Grok API呼び出し) / 失敗時`_fallback_weekly_analysis()`(1642-1653) → weekly_analysis.csv `summary`列 | |
+| AS-IS-224 | 要因分析(factor_analysis) | 同上 | 同上 | |
+| AS-IS-225 | 注視ポイント(watchpoints) | 同上 | 同上 | |
+| AS-IS-226 | 各指標コメント(indicator_comments) | `ai-card-indicators`内チップ | 同上（Grok出力の`;`区切りテキスト） → index.html `renderWeeklyAnalysis()`(2277-2303)でパース・チップ化 | |
+| AS-IS-227 | 週差/月差バッジ(各指標) | チップ内`deltaBadge` | 05_main.py: `run_weekly_analysis()`内`indicator_deltas`計算(1672-1685、`_compute_current_score()`の1週間前/1ヶ月前スナップショットとの差分) → weekly_analysis.csv `indicator_deltas`列 ／index.html: `deltaBadge()`(2264-2274) | |
+| AS-IS-228 | model表示 | ai-card下部 | 05_main.py: `generate_weekly_analysis_with_grok()`のモデル試行ループ(1602-1636、grok-3-mini→grok-3→grok-2-1212の順にフォールバック) → weekly_analysis.csv `model`列 | |
 
 #### ②Indicator Health Bars（`#l2Grid`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| 8指標の値/シグナル(BULL/CAUTION/NEUTRAL/BEAR)/バー位置 | `l2-row`各行 | index.html: `renderL2()`(1220-1314)、指標値は`idxLatestAsOf()`でevents.csv由来、閾値は`L2_CFG`配列(1227-1240)にハードコード | 既知の二重管理: `05_main.py`の`INDICATOR_CONFIG`（197-327、threshold_bull/threshold_bear列、削除候補）とは独立にindex.html側で全閾値・レンジ(rMin/rMax)を再定義している |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-229 | 8指標の値/シグナル(BULL/CAUTION/NEUTRAL/BEAR)/バー位置 | `l2-row`各行 | index.html: `renderL2()`(1220-1314)、指標値は`idxLatestAsOf()`でevents.csv由来、閾値は`L2_CFG`配列(1227-1240)にハードコード | 既知の二重管理: `05_main.py`の`INDICATOR_CONFIG`（197-327、threshold_bull/threshold_bear列、削除候補）とは独立にindex.html側で全閾値・レンジ(rMin/rMax)を再定義している |
 
 #### ③RECESSION RISK SCORE推移チャート（`#scoreHistoryChart`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| スコア推移折れ線 | `scoreHistoryChart` | index.html: `renderScoreHistory()`(1631-1780) → `buildScoreTimeSeries()`(1598-1629) → `computeScoreAsOf()`(1990-2076、lerp補間版) | 完全frontend計算。比較バーと同じ`computeScoreAsOf()`を共用 |
-| NBER後退期帯 | 同上マークエリア | index.html: ハードコード定数`NBER_RECESSIONS`(1577-1586) | 計算ではなく静的データ |
-| フェーズゾーン背景(0-25/25-52/52-70/70-100) | 同上 | index.html: `renderScoreHistory()`内`zoneMarkAreas`(1669-1680) | |
-| 期間切替(1年/3年/5年/全期間)ボタン | `.score-range-btn` | index.html: `setScoreRange()`(1590-1596) | UI状態のみ、値の計算は上記と同じ |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-230 | スコア推移折れ線 | `scoreHistoryChart` | index.html: `renderScoreHistory()`(1631-1780) → `buildScoreTimeSeries()`(1598-1629) → `computeScoreAsOf()`(1990-2076、lerp補間版) | 完全frontend計算。比較バーと同じ`computeScoreAsOf()`を共用 |
+| AS-IS-231 | NBER後退期帯 | 同上マークエリア | index.html: ハードコード定数`NBER_RECESSIONS`(1577-1586) | 計算ではなく静的データ |
+| AS-IS-232 | フェーズゾーン背景(0-25/25-52/52-70/70-100) | 同上 | index.html: `renderScoreHistory()`内`zoneMarkAreas`(1669-1680) | |
+| AS-IS-233 | 期間切替(1年/3年/5年/全期間)ボタン | `.score-range-btn` | index.html: `setScoreRange()`(1590-1596) | UI状態のみ、値の計算は上記と同じ |
 
 #### ④類似度レーダーチャート（`#l3Chart`, `#l3Scores`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| レーダーチャート（現在/2019/2001/スライダー） | `l3Chart` | index.html: `renderL3()`(1782-1792) → `l3norm()`(1349-1352、指標を0-100正規化) → `drawL3Chart()`(1478-1569) | `L3_INDICATORS`(1329-1338)のmin/maxもハードコード、①フェーズゲージ・②Health Barsとはまた別の正規化レンジ定義 |
-| 類似度スコア(2019年/2001年、%) | `l3Scores`内 | index.html: `l3similarity()`(1354-1359、ユークリッド距離ベース) | REF_DATE_2019/2001(1341-1342)もハードコード定数 |
-| スライダー（過去に戻る） | `#l3Slider` | index.html: `buildL3Snapshots()`(1372-1423)、`onL3SliderInput()`(1425-1442)、`resetL3Slider()`(1444-1476) | スライダー移動時のスコア表示(`l3SliderScore`)は`computeScoreAsOf()`(1990-2076)を再利用 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-234 | レーダーチャート（現在/2019/2001/スライダー） | `l3Chart` | index.html: `renderL3()`(1782-1792) → `l3norm()`(1349-1352、指標を0-100正規化) → `drawL3Chart()`(1478-1569) | `L3_INDICATORS`(1329-1338)のmin/maxもハードコード、①フェーズゲージ・②Health Barsとはまた別の正規化レンジ定義 |
+| AS-IS-235 | 類似度スコア(2019年/2001年、%) | `l3Scores`内 | index.html: `l3similarity()`(1354-1359、ユークリッド距離ベース) | REF_DATE_2019/2001(1341-1342)もハードコード定数 |
+| AS-IS-236 | スライダー（過去に戻る） | `#l3Slider` | index.html: `buildL3Snapshots()`(1372-1423)、`onL3SliderInput()`(1425-1442)、`resetL3Slider()`(1444-1476) | スライダー移動時のスコア表示(`l3SliderScore`)は`computeScoreAsOf()`(1990-2076)を再利用 |
 
 #### ⑤RECENT SIGNALS（`#recentSignals`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| DATE/INDICATOR/ACTUAL | `signals-table` | 05_main.py: `fetch_event_row()`(896-956)がevents.csvの`actual`/`release_date`/`indicator`列を生成／index.html: `renderRecentSignals()`(1797-1900、直近90日をIND_INDEXから抽出) | |
-| PREV | 同上 | index.html: `renderRecentSignals()`内で1つ前のIND_INDEXエントリを参照(1816-1817) | CSVの直前行を単純に前値として使用（サプライズ用の`consensus`列とは無関係） |
-| DIR(↑/↓/→)・CHANGE | 同上 | index.html: `renderRecentSignals()`(1854-1876) `BULL_UP`/`BULL_DOWN`セットで方向色分け、差分と閾値判定 | frontend専用計算 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-237 | DATE/INDICATOR/ACTUAL | `signals-table` | 05_main.py: `fetch_event_row()`(896-956)がevents.csvの`actual`/`release_date`/`indicator`列を生成／index.html: `renderRecentSignals()`(1797-1900、直近90日をIND_INDEXから抽出) | |
+| AS-IS-238 | PREV | 同上 | index.html: `renderRecentSignals()`内で1つ前のIND_INDEXエントリを参照(1816-1817) | CSVの直前行を単純に前値として使用（サプライズ用の`consensus`列とは無関係） |
+| AS-IS-239 | DIR(↑/↓/→)・CHANGE | 同上 | index.html: `renderRecentSignals()`(1854-1876) `BULL_UP`/`BULL_DOWN`セットで方向色分け、差分と閾値判定 | frontend専用計算 |
 
 #### ⑥発表スケジュール（`#schedGrid`）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| DATE/INDICATOR | `sched-table` | 05_main.py: `update_schedule()`(520-609)が`fred_release_dates()`(458-498)・`michigan_release_dates()`(438-453)・`building_permit_release_dates()`(424-436)・`michigan_consumer_sentiment_release_dates()`(408-422)から05_indicator_schedule.csvへ書き込み／index.html: `renderSchedule()`(1905-1952)が今後14日分をフィルタ表示 | |
-| DAYS | 同上 | index.html: `renderSchedule()`(1929-1937) `diffDays`をJSで計算 | |
-| CONSENSUS | 同上 | 05_indicator_schedule.csvの`consensus`列を直接表示 | この列は`update_schedule()`では常に空文字で初期化。実際の値は運用者が手動でCSVに入力する運用（Discordリマインダー`remind_manual_indicators()`566-647が入力を促す）。計算値ではなく手入力値 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-240 | DATE/INDICATOR | `sched-table` | 05_main.py: `update_schedule()`(520-609)が`fred_release_dates()`(458-498)・`michigan_release_dates()`(438-453)・`building_permit_release_dates()`(424-436)・`michigan_consumer_sentiment_release_dates()`(408-422)から05_indicator_schedule.csvへ書き込み／index.html: `renderSchedule()`(1905-1952)が今後14日分をフィルタ表示 | |
+| AS-IS-241 | DAYS | 同上 | index.html: `renderSchedule()`(1929-1937) `diffDays`をJSで計算 | |
+| AS-IS-242 | CONSENSUS | 同上 | 05_indicator_schedule.csvの`consensus`列を直接表示 | この列は`update_schedule()`では常に空文字で初期化。実際の値は運用者が手動でCSVに入力する運用（Discordリマインダー`remind_manual_indicators()`566-647が入力を促す）。計算値ではなく手入力値 |
 
 #### その他の付随ルート（参考）
 
@@ -1310,35 +1316,35 @@ JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RI
 
 #### カタリスト（catalyst.json / catalyst.html）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `catalysts[].id` | catalyst.json / catalyst.html | `src/discover/catalyst.py:next_id`(81-88) → `process_ticker`(173) で採番 | |
-| `catalysts[].title/detail/timing/importance/type/probability` | catalyst.json / catalyst.html | `catalyst.py:discover_catalysts`(93-117, Grok呼び出し・JSON抽出) → `process_ticker`(172-186, 値の正規化・デフォルト補完) | |
-| `catalysts[].status` | catalyst.json / catalyst.html | 初期値`"未達"`は`process_ticker`(183)。以降は`reevaluate_catalysts`(120-151, Grok再評価)→`process_ticker`(195-203)で更新 | |
-| `catalysts[].first_detected` | catalyst.json / catalyst.html | `process_ticker`(184) `= today` | |
-| `tickers{}.updated_at` | catalyst.json / catalyst.html(`tc-updated`) | `process_ticker`の戻り値(210-213)。`main`(277-278)でマージし保存 | |
-| 影響予測`{direction, magnitude, thesis_effect, summary}` | impact_predictions_*.json / catalyst.html・news_history.html（`renderImpact`） | `src/discover/impact_predictor.py:predict_for_items`(80-102, Grok呼び出し) → `_normalize_prediction`(72-77, 値域チェック) | catalyst向け=`run_catalyst`(167-212)、news向け=`run_news`(116-162)の2つの呼び出し経路があるが計算関数自体は共通 |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-243 | `catalysts[].id` | catalyst.json / catalyst.html | `src/discover/catalyst.py:next_id`(81-88) → `process_ticker`(173) で採番 | |
+| AS-IS-244 | `catalysts[].title/detail/timing/importance/type/probability` | catalyst.json / catalyst.html | `catalyst.py:discover_catalysts`(93-117, Grok呼び出し・JSON抽出) → `process_ticker`(172-186, 値の正規化・デフォルト補完) | |
+| AS-IS-245 | `catalysts[].status` | catalyst.json / catalyst.html | 初期値`"未達"`は`process_ticker`(183)。以降は`reevaluate_catalysts`(120-151, Grok再評価)→`process_ticker`(195-203)で更新 | |
+| AS-IS-246 | `catalysts[].first_detected` | catalyst.json / catalyst.html | `process_ticker`(184) `= today` | |
+| AS-IS-247 | `tickers{}.updated_at` | catalyst.json / catalyst.html(`tc-updated`) | `process_ticker`の戻り値(210-213)。`main`(277-278)でマージし保存 | |
+| AS-IS-248 | 影響予測`{direction, magnitude, thesis_effect, summary}` | impact_predictions_*.json / catalyst.html・news_history.html（`renderImpact`） | `src/discover/impact_predictor.py:predict_for_items`(80-102, Grok呼び出し) → `_normalize_prediction`(72-77, 値域チェック) | catalyst向け=`run_catalyst`(167-212)、news向け=`run_news`(116-162)の2つの呼び出し経路があるが計算関数自体は共通 |
 
 #### 日次ニュース分類・候補・テーマ（daily_report.json / index.html）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `tickers{}.category/memo` | daily_report.json / index.html | `collect.py:main`(369, 389-390) — `config/discover_config.json`からの単純パススルー（計算なし） | `memo`は`docs/discover/admin.html:saveDiscoverConfig`(317-335)で人手編集しGitHub API経由でconfig更新 |
-| `classified.items[].{title,category,importance,summary,url,source,published_at}` | daily_report.json / index.html | 経路①`collect.py:classify_news`(107-161, NEWS_API記事+Grok分類) / 経路②`classify_news_with_grok_search`(164-202, NEWS_API 0件時のGrok代替検索)。いずれも`_dedupe_items`(93-104)で重複除去 | どちらが使われるかは`main`(381-387)の分岐（NEWS_API結果有無・category）による |
-| `classified.summary` | daily_report.json / index.html | 上記と同一（Grok応答の`summary`キー） | 経路①②同様 |
-| `classified.conditions_met[]` / `classified.risk_flags[]` | daily_report.json / index.html（`buildConditionsPanel`, 257-273） | 上記と同一関数のGrok応答（プロンプトで`conditions_met`/`risk_flags`を指示、collect.py:149, 188-189） | news_history側の日次・銘柄単位の同名フィールドは削除候補だが、daily_report.json側はindex.htmlで実際に表示されているため対象外ではない |
-| `top_importance`（tickers[ticker]直下） | daily_report.json / index.html | `collect.py:main`(392) `= classified.get("top_importance","低")` | `classified.top_importance`（Grok応答）の複製。表示側は`data.top_importance`（複製後の値）を参照 |
-| `candidates[].{ticker,company,sector,reason,risk}` | daily_report.json / index.html | `collect.py:explore_candidates`(205-241, Grok Web検索プロンプト+JSON抽出) | |
-| `candidates[].screening_pass[]` | 同上 | 同上（Grok応答の`screening_pass`キー、collect.py:230） | |
-| `candidates[].catalyst_type` | 同上 | 同上（Grok応答の`catalyst_type`キー） | |
-| `candidates[].conviction` | 同上 | 同上（Grok応答の`conviction`キー） | |
-| `macro_themes[].{theme,horizon,conviction,background,catalyst}` | daily_report.json / index.html | `collect.py:explore_macro_themes`(244-292, Grok Web検索、日曜のみ実行`main`400-414) | 日曜以外は前回`daily_report.json`から引き継ぎ（`main`415-422） |
-| `macro_themes[].related_tickers[].{ticker,role,note}` | 同上 | `explore_macro_themes`内Grok応答（254-278） | index.html側`buildRelatedTickers`(594-630)はrole別グルーピング表示のみ、値の再計算なし |
-| `macro_themes[].sources[]` | 同上 | 同上（Grok応答の`sources`キー） | |
-| `macro_themes[].generated_at` | 同上 | `explore_macro_themes`(287-288) `theme["generated_at"]=today` | |
-| `price_change_next_day` | news_history_*.json / news_history.html | `collect.py:get_price_change`(295-307, yfinance 2日終値比) → `add_price_changes_to_yesterday`(310-333)で前日分の履歴JSONに事後付加 | 当日の`daily_report.json`側itemsには付かない（`append_to_monthly_history`336-363で明示的に除外、352行目） |
-| `theme_config`（テーマID/ラベル/カラー） | config/theme_config.json / index.html（テーマフィルタ・バッジ色）・admin.html | 静的設定ファイル。計算ロジックなし。`docs/discover/admin.html:renderThemeEditor/saveThemeConfig`(228-287)で人手編集しGitHub commit | |
-| `discover_config`（銘柄別category/memo/themes） | config/discover_config.json / index.html・admin.html | 静的設定ファイル。`admin.html:renderTickerEditor/saveDiscoverConfig`(290-335)で人手編集 | |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-249 | `tickers{}.category/memo` | daily_report.json / index.html | `collect.py:main`(369, 389-390) — `config/discover_config.json`からの単純パススルー（計算なし） | `memo`は`docs/discover/admin.html:saveDiscoverConfig`(317-335)で人手編集しGitHub API経由でconfig更新 |
+| AS-IS-250 | `classified.items[].{title,category,importance,summary,url,source,published_at}` | daily_report.json / index.html | 経路①`collect.py:classify_news`(107-161, NEWS_API記事+Grok分類) / 経路②`classify_news_with_grok_search`(164-202, NEWS_API 0件時のGrok代替検索)。いずれも`_dedupe_items`(93-104)で重複除去 | どちらが使われるかは`main`(381-387)の分岐（NEWS_API結果有無・category）による |
+| AS-IS-251 | `classified.summary` | daily_report.json / index.html | 上記と同一（Grok応答の`summary`キー） | 経路①②同様 |
+| AS-IS-252 | `classified.conditions_met[]` / `classified.risk_flags[]` | daily_report.json / index.html（`buildConditionsPanel`, 257-273） | 上記と同一関数のGrok応答（プロンプトで`conditions_met`/`risk_flags`を指示、collect.py:149, 188-189） | news_history側の日次・銘柄単位の同名フィールドは削除候補だが、daily_report.json側はindex.htmlで実際に表示されているため対象外ではない |
+| AS-IS-253 | `top_importance`（tickers[ticker]直下） | daily_report.json / index.html | `collect.py:main`(392) `= classified.get("top_importance","低")` | `classified.top_importance`（Grok応答）の複製。表示側は`data.top_importance`（複製後の値）を参照 |
+| AS-IS-254 | `candidates[].{ticker,company,sector,reason,risk}` | daily_report.json / index.html | `collect.py:explore_candidates`(205-241, Grok Web検索プロンプト+JSON抽出) | |
+| AS-IS-255 | `candidates[].screening_pass[]` | 同上 | 同上（Grok応答の`screening_pass`キー、collect.py:230） | |
+| AS-IS-256 | `candidates[].catalyst_type` | 同上 | 同上（Grok応答の`catalyst_type`キー） | |
+| AS-IS-257 | `candidates[].conviction` | 同上 | 同上（Grok応答の`conviction`キー） | |
+| AS-IS-258 | `macro_themes[].{theme,horizon,conviction,background,catalyst}` | daily_report.json / index.html | `collect.py:explore_macro_themes`(244-292, Grok Web検索、日曜のみ実行`main`400-414) | 日曜以外は前回`daily_report.json`から引き継ぎ（`main`415-422） |
+| AS-IS-259 | `macro_themes[].related_tickers[].{ticker,role,note}` | 同上 | `explore_macro_themes`内Grok応答（254-278） | index.html側`buildRelatedTickers`(594-630)はrole別グルーピング表示のみ、値の再計算なし |
+| AS-IS-260 | `macro_themes[].sources[]` | 同上 | 同上（Grok応答の`sources`キー） | |
+| AS-IS-261 | `macro_themes[].generated_at` | 同上 | `explore_macro_themes`(287-288) `theme["generated_at"]=today` | |
+| AS-IS-262 | `price_change_next_day` | news_history_*.json / news_history.html | `collect.py:get_price_change`(295-307, yfinance 2日終値比) → `add_price_changes_to_yesterday`(310-333)で前日分の履歴JSONに事後付加 | 当日の`daily_report.json`側itemsには付かない（`append_to_monthly_history`336-363で明示的に除外、352行目） |
+| AS-IS-263 | `theme_config`（テーマID/ラベル/カラー） | config/theme_config.json / index.html（テーマフィルタ・バッジ色）・admin.html | 静的設定ファイル。計算ロジックなし。`docs/discover/admin.html:renderThemeEditor/saveThemeConfig`(228-287)で人手編集しGitHub commit | |
+| AS-IS-264 | `discover_config`（銘柄別category/memo/themes） | config/discover_config.json / index.html・admin.html | 静的設定ファイル。`admin.html:renderTickerEditor/saveDiscoverConfig`(290-335)で人手編集 | |
 
 補足: index.htmlの`loadData`(446-458)は`macro_themes_history.json`から`themeStreakMap`（🔥N週連続バッジ）をクライアント側でのみ算出。サーバー側には保存されない純粋な表示専用の派生値。
 
@@ -1346,16 +1352,16 @@ JSON直接表示: 現在株価、理論株価BASE/β込み、Moat、RICE base/RI
 
 #### quarterly.json（四半期データ）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `ticker` / `last_updated` | quarterly.json | `pipeline.py:process_one_ticker`(626-630) | |
-| `quarters[].filing_date/period_end/fiscal_year/quarter` | quarterly.json / stock.html（チャートラベル`formatLabel`849-859） | `extract_key_facts.py:extract_quarterly_facts`（quarters_map構築554-561、最終確定1024-1029）→ `pipeline.py:process_one_ticker`(532, 539-541)でコピー | |
-| `quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_net_income/diluted_shares_used/adjustments/net_adjustment_total` | quarterly.json / stock.html（メトリクスカード・ウォーターフォール・チャート） | 基本経路: `eps_calculator.py:calculate_eps`(10-50) | 複数経路あり（下記参照）。分割補正・DTA検出・公正価値自動検出が事後的に上書きする |
-| `quarters[].adjustments[].item_name/reason/extracted_from` | quarterly.json / stock.html（調整内訳テーブル`buildAdjHtml`1027-1064） | 通常項目: `adjustment_detector.py:detect_adjustments`(86-147, item_name:136, reason:141, extracted_from:142) | 下記の通りDTA・公正価値ルートでも別途生成される |
-| `quarters[].adjustments[].net_amount` | 同上 | `tax_adjuster.py:apply_tax_adjustments`(41-57, net_amount:53) | |
-| `quarters[].ai_analysis.health/comment` | quarterly.json / stock.html（AdjEPS信頼性バッジ・AI分析欄`updateAI`814-847） | `ai_analyzer.py:analyze_adjustments`(64-152, Grok応答から取得) → `pipeline.py:process_one_ticker`(613-619)で最新四半期にのみ付与 | 重要: この`health`は英語enum（Excellent/Good/Caution/Warning/Error）。summary.json/tickers.htmlの`health`（日本語enum、後述）とは値ドメインが異なる別概念で混同注意 |
-| `quarters[].ai_analysis.sources[].item/snippet/confidence` | quarterly.json / stock.html | `ai_analyzer.py:analyze_adjustments`(114, Grok応答)。confidenceは115-123行で0.0-1.0にクランプ・丸め | stock.htmlの調整内訳テーブルでは`buildAdjHtml`(1039-1042)が`item_name`/`item_id`一致でsourcesとクライアント側JOINし、行ごとのconfidenceバーを表示 |
-| `quarters[].special_flags(EPS_DISCREPANCY)` / `special_notes.eps_discrepancy` | quarterly.json / stock.html（⚠️EPS差分ツールチップ`updateMetricsWithQuarter`754-805） | `pipeline.py:check_eps_discrepancy`(66-138, Alpha Vantage比較) → `process_one_ticker`(579-593)で`EPS_CHECK_TICKERS=['SOUN','CELH']`のみに適用 | 同じフラグ値がもう1経路で発生: `fair_value_detector.py:apply_fair_value_detection`(377-380)も全銘柄対象に同一フラグを立てるが、こちらは`special_notes.fair_value_auto_detect`という別キーに詳細を格納（383-404）。両者は独立でどちらか一方または両方が付く |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-265 | `ticker` / `last_updated` | quarterly.json | `pipeline.py:process_one_ticker`(626-630) | |
+| AS-IS-266 | `quarters[].filing_date/period_end/fiscal_year/quarter` | quarterly.json / stock.html（チャートラベル`formatLabel`849-859） | `extract_key_facts.py:extract_quarterly_facts`（quarters_map構築554-561、最終確定1024-1029）→ `pipeline.py:process_one_ticker`(532, 539-541)でコピー | |
+| AS-IS-267 | `quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_net_income/diluted_shares_used/adjustments/net_adjustment_total` | quarterly.json / stock.html（メトリクスカード・ウォーターフォール・チャート） | 基本経路: `eps_calculator.py:calculate_eps`(10-50) | 複数経路あり（下記参照）。分割補正・DTA検出・公正価値自動検出が事後的に上書きする |
+| AS-IS-268 | `quarters[].adjustments[].item_name/reason/extracted_from` | quarterly.json / stock.html（調整内訳テーブル`buildAdjHtml`1027-1064） | 通常項目: `adjustment_detector.py:detect_adjustments`(86-147, item_name:136, reason:141, extracted_from:142) | 下記の通りDTA・公正価値ルートでも別途生成される |
+| AS-IS-269 | `quarters[].adjustments[].net_amount` | 同上 | `tax_adjuster.py:apply_tax_adjustments`(41-57, net_amount:53) | |
+| AS-IS-270 | `quarters[].ai_analysis.health/comment` | quarterly.json / stock.html（AdjEPS信頼性バッジ・AI分析欄`updateAI`814-847） | `ai_analyzer.py:analyze_adjustments`(64-152, Grok応答から取得) → `pipeline.py:process_one_ticker`(613-619)で最新四半期にのみ付与 | 重要: この`health`は英語enum（Excellent/Good/Caution/Warning/Error）。summary.json/tickers.htmlの`health`（日本語enum、後述）とは値ドメインが異なる別概念で混同注意 |
+| AS-IS-271 | `quarters[].ai_analysis.sources[].item/snippet/confidence` | quarterly.json / stock.html | `ai_analyzer.py:analyze_adjustments`(114, Grok応答)。confidenceは115-123行で0.0-1.0にクランプ・丸め | stock.htmlの調整内訳テーブルでは`buildAdjHtml`(1039-1042)が`item_name`/`item_id`一致でsourcesとクライアント側JOINし、行ごとのconfidenceバーを表示 |
+| AS-IS-272 | `quarters[].special_flags(EPS_DISCREPANCY)` / `special_notes.eps_discrepancy` | quarterly.json / stock.html（⚠️EPS差分ツールチップ`updateMetricsWithQuarter`754-805） | `pipeline.py:check_eps_discrepancy`(66-138, Alpha Vantage比較) → `process_one_ticker`(579-593)で`EPS_CHECK_TICKERS=['SOUN','CELH']`のみに適用 | 同じフラグ値がもう1経路で発生: `fair_value_detector.py:apply_fair_value_detection`(377-380)も全銘柄対象に同一フラグを立てるが、こちらは`special_notes.fair_value_auto_detect`という別キーに詳細を格納（383-404）。両者は独立でどちらか一方または両方が付く |
 
 #### `adjusted_eps`等の複数計算経路（重要・見落とし注意）
 
@@ -1368,27 +1374,27 @@ pipeline.pyの実行順序（551行→556行→597行）に沿って、以下3�
 
 #### summary.json / ttm.json（ダッシュボード集計値）
 
-| 項目名 | 出力先 | 計算ルート | 補足 |
-|---|---|---|---|
-| `ticker/company_name/latest_filing_date` | summary.json / index.html・tickers.html | `pipeline.py:generate_summary`(346-411, 393-397)。`company_name`は`process_one_ticker`(644)で`ticker_to_name`(cik_lookup.csv)→`metadata['name']`(SEC Submissions API, `company_metadata.py:get_company_metadata`14-44)の順にフォールバック | |
-| `gaap_eps/adjusted_eps` | summary.json / index.html・tickers.html | `generate_summary`(373-374) — 最新四半期(`quarters[0]`)の値をそのまま転記 | |
-| `eps_diff` | summary.json / index.html | `generate_summary`(400) `round(adj_eps-gaap_eps,4)` | stock.htmlは`diff = q.adjusted_eps - q.gaap_eps`(793)をクライアント側で再計算（丸めなし）。同一概念の別経路 |
-| `eps_ratio` | summary.json / index.html | `generate_summary`(375, 401) `(adj_eps-gaap_eps)/|gaap_eps|*100` | |
-| `gaap_to_adj_positive` | summary.json / index.html | `generate_summary`(402) `gaap_eps<0 and adj_eps>0` | |
-| `yoy_growth` | summary.json / tickers.html・index.html | `generate_summary`(366-370) — `quarters[0]`と`quarters[4]`（4期前）の`adjusted_eps`比較 | stock.htmlは`calculateYoY`(730-752)で独立に再計算：日付フィルタ後の最新四半期と「前年同一暦四半期」を優先照合し、なければidx-4にフォールバック。同一概念だがロジックが異なる別経路で値が一致しない場合がある |
-| `health` | summary.json / tickers.html・index.html | `generate_summary`(372-392) — `eps_ratio`に基づく閾値判定（日本語enum：調整なし/調整小/調整中/調整大/過大調整/調整小（マイナス）） | `ai_analysis.health`（英語enum）とは別概念（同名だが別ドメイン、混同注意） |
-| `deviation_rate` | index.html（テーブル・投資機会ランキング） | サーバー側には存在しない。`index.html`(230-240)がTANUKIの`../tanuki_valuation/data/{ticker}/latest.json`を都度fetchし`upside_percent/100`で算出（クライアント側ライブ計算） | stock.htmlのPER比較欄とは別の取得先・別計算（下記参照） |
-| `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps`） | ttm.json / stock.html（TTMタブ） | `pipeline.py:calculate_ttm`(288-304) — 直近4四半期の合算・平均 | |
+| AS-IS ID | 項目名 | 出力先 | 計算ルート | 補足 |
+|---|---|---|---|---|
+| AS-IS-273 | `ticker/company_name/latest_filing_date` | summary.json / index.html・tickers.html | `pipeline.py:generate_summary`(346-411, 393-397)。`company_name`は`process_one_ticker`(644)で`ticker_to_name`(cik_lookup.csv)→`metadata['name']`(SEC Submissions API, `company_metadata.py:get_company_metadata`14-44)の順にフォールバック | |
+| AS-IS-274 | `gaap_eps/adjusted_eps` | summary.json / index.html・tickers.html | `generate_summary`(373-374) — 最新四半期(`quarters[0]`)の値をそのまま転記 | |
+| AS-IS-275 | `eps_diff` | summary.json / index.html | `generate_summary`(400) `round(adj_eps-gaap_eps,4)` | stock.htmlは`diff = q.adjusted_eps - q.gaap_eps`(793)をクライアント側で再計算（丸めなし）。同一概念の別経路 |
+| AS-IS-276 | `eps_ratio` | summary.json / index.html | `generate_summary`(375, 401) `(adj_eps-gaap_eps)/|gaap_eps|*100` | |
+| AS-IS-277 | `gaap_to_adj_positive` | summary.json / index.html | `generate_summary`(402) `gaap_eps<0 and adj_eps>0` | |
+| AS-IS-278 | `yoy_growth` | summary.json / tickers.html・index.html | `generate_summary`(366-370) — `quarters[0]`と`quarters[4]`（4期前）の`adjusted_eps`比較 | stock.htmlは`calculateYoY`(730-752)で独立に再計算：日付フィルタ後の最新四半期と「前年同一暦四半期」を優先照合し、なければidx-4にフォールバック。同一概念だがロジックが異なる別経路で値が一致しない場合がある |
+| AS-IS-279 | `health` | summary.json / tickers.html・index.html | `generate_summary`(372-392) — `eps_ratio`に基づく閾値判定（日本語enum：調整なし/調整小/調整中/調整大/過大調整/調整小（マイナス）） | `ai_analysis.health`（英語enum）とは別概念（同名だが別ドメイン、混同注意） |
+| AS-IS-280 | `deviation_rate` | index.html（テーブル・投資機会ランキング） | サーバー側には存在しない。`index.html`(230-240)がTANUKIの`../tanuki_valuation/data/{ticker}/latest.json`を都度fetchし`upside_percent/100`で算出（クライアント側ライブ計算） | stock.htmlのPER比較欄とは別の取得先・別計算（下記参照） |
+| AS-IS-281 | `ttm.json`（`ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps`） | ttm.json / stock.html（TTMタブ） | `pipeline.py:calculate_ttm`(288-304) — 直近4四半期の合算・平均 | |
 
 #### TANUKI由来フィールド（`per`/`per_adjusted`/`next_earnings_date`）
 
 stock.htmlは`../tanuki_valuation/data/{ticker}/latest.json`をfetch（567行）し、`updateTanukiInfo`(592-630)でそのまま表示（再計算なし。`per-delta`のみ`perAdj-perGaap`をクライアント側で算出、619行）。TANUKI側の算出元は以下の通り。
 
-| 項目名 | TANUKI側の計算ルート | 補足 |
-|---|---|---|
-| `components.per`（GAAP PER） | `src/value/tanuki_valuation/data_fetcher.py:get_financials`(513-523) — yfinanceの`trailingPE`優先・`forwardPE`フォールバック → `core_calculator.py:calculate_pt`(900)で`components.per`に格納 | |
-| `components.per_adjusted` | `src/value/tanuki_valuation/core_calculator.py:_calc_adjusted_per`(930-962) → `calculate_pt`(902-906)で呼び出し | EPS Analyzer自身の`quarterly.json`を直接読みに行く（947行：`docs/value-monitor/adjusted_eps_analyzer/data/{ticker}/quarterly.json`）。直近4四半期の`adjusted_eps`合計で現在株価を割る。**EPS Analyzer→TANUKI→EPS Analyzer(stock.html)という一方向の周回参照になっている点に注意** |
-| `next_earnings_date` | `src/value/tanuki_valuation/pipeline.py:_load_extra_data`(2305, 本体2625-2649) | yfinanceの`calendar["Earnings Date"]`から本日以降の直近日を採用 |
+| AS-IS ID | 項目名 | TANUKI側の計算ルート | 補足 |
+|---|---|---|---|
+| AS-IS-282 | `components.per`（GAAP PER） | `src/value/tanuki_valuation/data_fetcher.py:get_financials`(513-523) — yfinanceの`trailingPE`優先・`forwardPE`フォールバック → `core_calculator.py:calculate_pt`(900)で`components.per`に格納 | |
+| AS-IS-283 | `components.per_adjusted` | `src/value/tanuki_valuation/core_calculator.py:_calc_adjusted_per`(930-962) → `calculate_pt`(902-906)で呼び出し | EPS Analyzer自身の`quarterly.json`を直接読みに行く（947行：`docs/value-monitor/adjusted_eps_analyzer/data/{ticker}/quarterly.json`）。直近4四半期の`adjusted_eps`合計で現在株価を割る。**EPS Analyzer→TANUKI→EPS Analyzer(stock.html)という一方向の周回参照になっている点に注意** |
+| AS-IS-284 | `next_earnings_date` | `src/value/tanuki_valuation/pipeline.py:_load_extra_data`(2305, 本体2625-2649) | yfinanceの`calendar["Earnings Date"]`から本日以降の直近日を採用 |
 
 #### 追加で判明した留意点
 
