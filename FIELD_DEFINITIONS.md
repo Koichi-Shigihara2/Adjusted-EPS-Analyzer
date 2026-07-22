@@ -379,3 +379,130 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   項目として含まれていない）。DCF/WACC構成要素系フェーズで`fcf_base`等を
   定義する際、これらの実際の取得経路（`data_fetcher.py`経由のyfinance/
   SEC EDGAR）も合わせて記録することを推奨する
+
+---
+
+## 対象4（フェーズ4）: 導出データ — キャッシュフロー・収益性系（27件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「キャッシュフロー・収益性系（27件）」
+（ステップ6確定後392件ベース、AS-IS-026/028/045/046/047/049/071/073/096/139/
+144/145/146/147/148/153/154/155/156/157/160/267/274/281/391/392/393）
+
+実装（コード修正）は行っていない。定義の記録のみ。分解ルールは前フェーズ
+（評価倍率・バリュエーション系）と同一（既定義AS-IS-IDで停止／別サブ
+カテゴリのAS-IS-IDは一文引用で停止／カタログ対象外の一次データは実際の
+取得経路を直接明記）。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解した計算式） | データ取得元（最終的にたどり着く一次データ等のAS-IS-ID一覧） | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-026 | TANUKI VALUATION | Moat Score（経済的濠スコア） | `components.moat_score` 等 | `moat_score = gm_norm×0.40 + roic_norm×0.40 + fcf_norm×0.20`（3指標が全てNoneの場合のみ`moat_score=0.5`固定）<br>`gm_norm = clamp(gross_margin_3yr_avg / 1.0, 0, 1)`<br>`roic_norm = clamp((roic - 0.10) / 0.30, 0, 1)`（0.10はAS-IS-013の`market_return`要素、DCF/WACC構成要素系・未定義）<br>`fcf_norm = clamp(fcf_margin_3yr_avg / 0.30, 0, 1)`<br>`phase1_years = 3 + round(moat_score × 7)`（3〜10年、DCF高成長期間・感応度分析base_yearsに連動）<br>`gross_margin_3yr_avg` = normalized四半期JSONの年次GrossProfit/Revenue直近3年平均（年次タグ欠如時は直近12四半期合算にフォールバック。SEC EDGAR一次データ、カタログ対象外、`pipeline.py:_calc_moat_inputs`）<br>`roic = NOPAT/Invested_Capital`、`NOPAT=OperatingIncome×(1-21%固定実効税率)`、`Invested_Capital=Equity+LTDebt+STDebt-Cash`（いずれもSEC EDGAR annual一次データ、カタログ対象外、`pipeline.py:_calc_roic_wacc_ratio`）<br>`fcf_margin_3yr_avg` = annual SECの`free_cash_flow/revenue`直近3年平均（`free_cash_flow`はAS-IS-047と同一データ由来） | AS-IS-013（未定義）＋ GrossProfit/Revenue/OperatingIncome/Equity/LTDebt/STDebt/Cash/FCF（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-028 | TANUKI VALUATION | moat_score / moat_phase1_years / moat_gross_margin_norm / moat_roic_norm / moat_fcf_margin_norm | 同上 | AS-IS-026と完全に同一の`calculator/adjustments.py:calculate_moat_score()`戻り値を指す別カタログエントリ（重複、下記「気づいた問題」参照） | AS-IS-026と同じ | 導出データ |
+| AS-IS-045 | TANUKI VALUATION | financial_health.*（net_debt/total_debt/cash_and_equivalents/sbc_ttm/dilution_3yr_annual_pct等） | `financial_health` | `total_debt = bs_adjustment.long_term_debt + bs_adjustment.short_term_debt`<br>`cash_and_equivalents = bs_adjustment.cash`、`short_term_investments = bs_adjustment.short_term_investments`<br>`net_debt = -bs_adjustment.net_cash`（符号反転。net_cashは「純キャッシュ」+、net_debtは「純負債」+の逆符号設計）<br>`bs_adjustment.*` = AS-IS-025（DCF/WACC構成要素系・未定義。TANUKIのDCF計算に使うBS値〈`SECReader.get_net_cash()`戻り値〉をreport.txt表示にもそのまま再利用し、単一の計算経路に統一）<br>`sbc_ttm` = 直近年`annual_{yr}.json`の`cf.stock_based_compensation`（SEC EDGAR、カタログ対象外）<br>`dilution_3yr_annual_pct = ((直近希薄化後株式数/3年前希薄化後株式数)^(1/3) - 1) × 100`。株式数はnormalized JSONの年次`SharesDiluted`（株式分割の遡及調整・SEC/yfinance株式数10倍超乖離時のsanity-check skipあり、SEC EDGAR、カタログ対象外） | AS-IS-025（未定義）＋ SharesDiluted/SBC（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-046 | TANUKI VALUATION | dupont.net_margin/asset_turnover/financial_leverage/roe_decomposed | `dupont` | `net_margin = NI_TTM / Revenue_TTM`<br>`asset_turnover = Revenue_TTM / Total_Assets`<br>`financial_leverage = Total_Assets / Equity`<br>`roe_decomposed = net_margin × asset_turnover × financial_leverage`<br>`NI_TTM`/`Revenue_TTM` = `common/sec_data/ttm/{ticker}_ttm_series.json`の`series[0].flow.NetIncome/Revenue`（SEC EDGAR、カタログ対象外）<br>`Total_Assets`/`Equity` = 直近四半期`quarterly_*.json`の`bs.total_assets`/`bs.stockholders_equity`（同上）<br>除外条件: `Revenue_TTM < $15M`は計算せず`{"excluded": True}`<br>信頼性フラグ: 直近4四半期のうち最大1四半期の`NetIncome`絶対値がTTM合計の60%超なら`reliability="LOW"` | NI_TTM/Revenue_TTM/Total_Assets/Equity（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-047 | TANUKI VALUATION | fcf_history[] | `fcf_history` | `fcf_history[].fcf` = 直近5年`annual_{yr}.json`の`cf.free_cash_flow`（SEC EDGAR一次データ、カタログ対象外。`common/sec_data/parser.py`が`FCF=OCF-max(0,\|CapEx\|-\|FinanceLeasePmts\|)`として事前計算済みの値をそのまま転記）<br>`fcf_history[].fcf_margin = round(fcf/revenue×100, 1)`、`revenue`は同年`pl.revenue`（SEC EDGAR、カタログ対象外） | free_cash_flow/revenue（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-049 | TANUKI VALUATION | computed_runway_months | `computed_runway_months` | `computed_runway_months = cash / monthly_burn`、`monthly_burn = abs(直近年fcf) / 12`<br>発動条件（いずれか）: 直近四半期GAAP EPS<0（AS-IS-267参照）／直近年FCF<0（AS-IS-047参照）／`cash < $100M`<br>`cash` = AS-IS-045の`financial_health.cash_and_equivalents`（本表参照） | AS-IS-045, AS-IS-047, AS-IS-267（いずれも本表内） | 導出データ |
+| AS-IS-071 | TANUKI VALUATION | キャッシュフロー分析セクション（stock.html独自チャート） | `loadCfData()` / `renderCfCharts()` | `OCF`/`CapEx`/`Revenue`/`SBC`/`DA` = `common/sec_data/normalized/{ticker}_quarterly_normalized.json`の直近8四半期値。**latest.jsonは使用せず、stock.htmlが独自に別ファイルを直接fetchして再計算する**（`loadCfData():411-456`）<br>チャート①CF推移: `OCF`（バー）、`CapEx`は`-CapEx`（符号反転して表示）、`FCF = OCF - CapEx`（**abs()なしでそのまま減算**）<br>チャート②FCFマージン: `(OCF-CapEx)/Revenue×100`。直近4四半期FCF合計が負なら「FCF赤字」バナー<br>チャート③SBC・D&A比率: `SBC/Revenue×100`、`DA/Revenue×100`。SBC比率100%超の四半期があれば注記（`renderCfCharts():458-580`） | OCF/CapEx/Revenue/SBC/DA（SEC EDGAR、common/sec_data正規化JSON、カタログ対象外） | 導出データ |
+| AS-IS-073 | TANUKI VALUATION | 平均Moat | `avg-moat`（index.html集計表示） | `avg-moat = mean(全銘柄のcomponents.moat_score)`（nullは除外）。`components.moat_score`はAS-IS-026/028と同一値（`loadTickers():567-569`） | AS-IS-026（本表参照） | 導出データ |
+| AS-IS-096 | HypeCore | FCF Yield | `fcf_yield` | `fcf_yield = ocf / (price × shares) × 100`<br>`ocf` = HypeCoreが`{ticker}_quarterly_normalized.json`から取得した**単一四半期**のOCF値（TTM合算ではない。SEC EDGAR、カタログ対象外、`fetch_quarterly_fundamentals():155-157`）<br>`price` = AS-IS-084（HypeCore `price`、一次データ・未定義、評価倍率フェーズ参照）<br>`shares` = yfinance `info.get("sharesOutstanding")`（カタログ対象外、`fetch_info_snapshot():129`） | AS-IS-084（一次データ・未定義）＋ ocf(SEC EDGAR、カタログ対象外) + shares(yfinance、カタログ対象外) | 導出データ |
+| AS-IS-139 | STONKS SILO | gross_margin | `gross_margin` | `gross_margin = gross_profit / revenue_sanitized × 100`（直近年）<br>`gross_profit` = SEC EDGAR一次データ（`pl.gross_profit`、カタログ対象外。欠損時は`revenue-cost_of_revenue`等で逆算し`gross_profit_derived=True`）<br>`revenue_sanitized` = 前フェーズ定義のAS-IS-132/133と同じ2パス外れ値検出済み値（最終的にAS-IS-129に帰着） | AS-IS-129（既定義・一次データ）＋ gross_profit（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-144 | STONKS SILO | mature_profit（成熟想定利益） | `mature_profit` | `mature_profit = net_income + (research_and_development or 0) + (selling_and_marketing or 0)`（直近年、投資的支出を全て足し戻した想定利益）<br>`net_income`/`research_and_development`/`selling_and_marketing` = SEC EDGAR一次データ（`pl.*`、カタログ対象外） | net_income/R&D/S&M（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-145 | STONKS SILO | mature_profit_note | `mature_profit_note` | `mature_profit < 0` の場合のみ`"投資除外後も赤字"`を設定、それ以外は空文字。AS-IS-144のmature_profitに従属 | AS-IS-144（本表参照） | 導出データ |
+| AS-IS-146 | STONKS SILO | sbc_adjusted_fcf | `sbc_adjusted_fcf` | `sbc_adjusted_fcf = free_cash_flow - stock_based_compensation`（直近年、両方非Noneの場合のみ）<br>`free_cash_flow` = AS-IS-047と同一の`common/sec_data`由来FCF（既にCapEx符号吸収済み）<br>`stock_based_compensation` = SEC EDGAR一次データ（`cf.stock_based_compensation`、カタログ対象外） | AS-IS-047（本表参照）＋ stock_based_compensation（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-147 | STONKS SILO | sbc_ratio | `sbc_ratio` | `sbc_ratio = stock_based_compensation / revenue_sanitized × 100`（直近年） | AS-IS-139のrevenue_sanitized経由でAS-IS-129（既定義）＋ SBC（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-148 | STONKS SILO | sbc_yoy_change | `sbc_yoy_change` | `sbc_yoy_change = (sbc_今年 - sbc_前年) / abs(sbc_前年) × 100`（前年SBCが0でない場合のみ算出） | SBC（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-153 | STONKS SILO | cash | `cash` | `cash = cash_and_equivalents + short_term_investments`（Noneは0扱い、両方Noneならcash=None。直近年`bs.*`、SEC EDGAR、カタログ対象外） | bs.cash_and_equivalents/short_term_investments（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-154 | STONKS SILO | monthly_burn | `monthly_burn` | `monthly_burn = (ocf - abs(capex)) / 12`（ocf・capex両方非None時）。ocfのみ判明時は`monthly_burn = ocf / 12`<br>`ocf`/`capex` = 直近年`cf.operating_cash_flow`/`cf.capital_expenditure`（SEC EDGAR、カタログ対象外） | ocf/capex（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-155 | STONKS SILO | runway_months | `runway_months` | `runway_months = cash / abs(monthly_burn)`（`monthly_burn<0`の場合のみ。`monthly_burn>=0`は無限大=SAFE扱い）<br>`cash`=AS-IS-153、`monthly_burn`=AS-IS-154（いずれも本表参照） | AS-IS-153, AS-IS-154（本表内） | 導出データ |
+| AS-IS-156 | STONKS SILO | ocf_annual（単年、月次バーン内訳表示用） | `ocf_annual` | 直近年`cf.operating_cash_flow`（AS-IS-154の`ocf`と同一値。SEC EDGAR、カタログ対象外） | ocf（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-157 | STONKS SILO | capex_annual | `capex_annual` | 直近年`cf.capital_expenditure`のSEC EDGAR生値を**符号正規化なしでそのまま表示**（SEC EDGAR、カタログ対象外） | capex（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-160 | STONKS SILO | ocf_annual（年次dict） | `ocf_annual`（`_analyze_profitability_path()`内） | `{year: cf.operating_cash_flow for year in years}`（複数年。AS-IS-156の単年版を全年に拡張したもの） | AS-IS-156と同じ（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-267 | EPS Analyzer | quarters[].gaap_eps/adjusted_eps/gaap_net_income/adjusted_net_income/diluted_shares_used/adjustments/net_adjustment_total | `calculate_eps()` | `gaap_eps = gaap_net_income / diluted_shares_used`<br>`gaap_net_income`/`diluted_shares_used` = 四半期`net_income`/`diluted_shares`のXBRL正規化値（計算なしのパススルー。SEC EDGAR、カタログ対象外）<br>`adjusted_net_income = gaap_net_income + net_adjustment_total`<br>`adjusted_eps = adjusted_net_income / diluted_shares_used`<br>`net_adjustment_total`/`adjustments[]` = 一過性項目検出（`detect_adjustments()`）＋税効果適用（`apply_tax_adjustments()`）の結果。信頼性・品質判定系のAS-IS-268/269（未定義。DTA自動補正Type-A/B等の内部ロジックは当該サブカテゴリで別途定義予定） | AS-IS-268, AS-IS-269（信頼性・品質判定系・未定義）＋ net_income/diluted_shares（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-274 | EPS Analyzer | gaap_eps/adjusted_eps（summary.json） | `generate_summary()` | `summary.json`の`gaap_eps`/`adjusted_eps` = 最新四半期`quarters[0]`（AS-IS-267）の値をそのまま転記（再計算なし） | AS-IS-267（本表参照） | 導出データ |
+| AS-IS-281 | EPS Analyzer | ttm.json（ttm[].period/net_income/adjusted_income/diluted_shares/eps/adjusted_eps） | `calculate_ttm()` | `net_income = Σ(直近4四半期のgaap_net_income)`<br>`adjusted_income = net_income + Σ(直近4四半期のnet_adjustment_total)`<br>`diluted_shares = mean(直近4四半期のdiluted_shares_used)`（単純平均、加重なし）<br>`eps = net_income/diluted_shares`、`adjusted_eps = adjusted_income/diluted_shares`。いずれもAS-IS-267の4四半期分から算出 | AS-IS-267（本表参照） | 導出データ |
+| AS-IS-391 | Portfolio | total_assets_usd | `total_assets_usd` | `total_assets_usd = total_equity_usd + total_cash_usd`<br>`total_equity_usd = Σ(shares × price)`（全ブローカー・全ポジション合算）<br>`shares`/`avg_cost` = `docs/portfolio/data/portfolio.json`の`brokers.{broker}.positions.{ticker}.shares/avg_cost`（手動編集ファイル、書き込みスクリプトなし。カタログ対象外）<br>`price` = AS-IS-084（HypeCore `{ticker}_poc.json`の`monthly[-1].price`、一次データ・未定義、評価倍率フェーズ参照）<br>`total_cash_usd = Σ(brokers.{broker}.cash)`（同portfolio.json） | portfolio.json（手動入力相当、カタログ対象外）＋ AS-IS-084（一次データ・未定義） | 導出データ |
+| AS-IS-392 | Portfolio | total_assets_jpy | `total_assets_jpy` | `total_assets_jpy = total_assets_usd × usdjpy`。`usdjpy` = AS-IS-390（Portfolio `usdjpy`、**既定義・移送データ**。Market Pulseの`indicators.ドル円.value`=AS-IS-312〈既定義・一次データ〉を再利用） | AS-IS-391（本表参照）＋ AS-IS-390（既定義・移送データ） | 導出データ |
+| AS-IS-393 | Portfolio | total_pnl_usd | `total_pnl_usd` | `total_pnl_usd = total_equity_usd - total_cost_usd`<br>`total_cost_usd = Σ(shares × avg_cost)`（全ブローカー・全ポジション合算、portfolio.json由来）<br>`total_equity_usd`はAS-IS-391と共通 | portfolio.json（カタログ対象外）＋ AS-IS-391の構成要素 | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+- **FCF/CapExの符号不統一が実害化している箇所を特定した（AS-IS-071・最重要）**:
+  `common/sec_data/parser.py:1499`が既知の設計注記として明記する通り、
+  SEC XBRLの`CapEx`（capital_expenditure相当）は報告企業により正負どちらの
+  符号でも報告されうる。正式なFCF計算（AS-IS-047が使う`cf.free_cash_flow`、
+  `common/sec_data/parser.py`側）は`FCF = OCF - max(0, |CapEx|-|FinanceLease|)`
+  と`abs()`で符号を吸収済みだが、**stock.htmlの「キャッシュフロー分析
+  セクション」（AS-IS-071、`loadCfData()`/`renderCfCharts()`）はlatest.json
+  を使わず独自に`{ticker}_quarterly_normalized.json`を直接fetchして
+  `FCF = OCF - CapEx`をabs()なしで再計算している**。CapExが負値（cash
+  outflowをマイナス表現する報告様式）の銘柄では`OCF - (負のCapEx) =
+  OCF + |CapEx|`となり、実際より高いFCFを表示してしまう。同様に
+  `capexNeg = -CapEx`（棒グラフ表示用）も、CapExが既に負値の銘柄では
+  正のバー（あたかも現金流入であるかのような表示）になる。この画面は
+  latest.json不使用・独自再計算のため、AS-IS-047（正しくabs()処理済み）
+  との整合性チェックが構造的に効かない。
+- **同種の符号不統一がSTONKS SILOの表示専用フィールドにも存在する
+  （AS-IS-157）**: `_analyze_runway()`内部の`monthly_burn`計算
+  （AS-IS-154）は`abs(capex)`で符号を正規化するのに対し、**表示用の
+  `capex_annual`フィールド自体（AS-IS-157）は生の符号のまま**
+  （`analyzer.py:495,524`）。同一のCapEx原因で「ロジック側は正規化・
+  表示側は未正規化」という非対称な設計が2箇所（TANUKI VALUATIONの
+  AS-IS-071とSTONKS SILOのAS-IS-157）で独立に発生している。
+- **moat_score（AS-IS-026/028）の部分欠損が「実測値0」として混入する**:
+  `gm_norm`/`roic_norm`/`fcf_norm`はいずれも`(値 or 0.0)`で計算されており、
+  3指標が**全て**Noneの場合のみ`moat_score=0.5`のデフォルトが働く
+  （`calculate_moat_score()`冒頭の特殊ケース）。しかし3指標のうち
+  1〜2個だけが欠損している場合はこの特殊ケースに該当せず、欠損指標が
+  「実測値ゼロ」（例: ROIC=市場期待リターンちょうど、成長率=0等の
+  最悪スコア相当）としてそのまま平均に混入し、moat_scoreが不当に
+  低く算出される。
+- **mature_profit/mature_profit_note（AS-IS-144/145）にS&M支出欠落の
+  実例が確認できる**: `research_and_development`・`selling_and_marketing`
+  がSEC上非開示（タグなし=None、SG&Aに統合計上する企業等）の場合、
+  `or 0`により「支出ゼロ」として足し戻される。実際にはS&M費用が存在する
+  のに個別タグ開示していないだけの銘柄では、本来より過小な足し戻し額に
+  なり`mature_profit`が実態より低く算出される。`mature_profit_note`は
+  この「タグ欠落による過小評価」と「真の赤字」を区別する仕組みを持たず、
+  `mature_profit<0`という結果のみで判定する。
+- **「Runway」概念がTANUKI VALUATION（AS-IS-049）とSTONKS SILO
+  （AS-IS-155）で独立実装されており、cashの算出経路が異なる**:
+  TANUKI側は`cash`をAS-IS-025（`SECReader.get_net_cash()`、セクター
+  ガード適用・複数タグフォールバック補完あり）経由で取得するのに対し、
+  STONKS SILO側の`cash`（AS-IS-153）は直近年`annual_{yr}.json`の`bs`
+  セクションを単純合算するのみで、そうした補正を一切経由しない。
+- **AS-IS-096（HypeCore `fcf_yield`）は名称と実体が食い違う**: 変数名は
+  `fcf_yield`だが分子はOCF（営業CF、CapEx控除前）そのものであり、FCF
+  ではない。かつ分子が単一四半期値のまま年率換算（×4等）されておらず、
+  TANUKIのFCFマージン（年次・TTM前提）やSTONKS SILOのrunway計算
+  （年次FCF/12=月次バーン）と単純比較すると期間ベースが食い違う。
+- **AS-IS-267は同一AS-IS内に一次データ相当のパススルーと計算値が混在する**:
+  `gaap_eps`/`gaap_net_income`/`diluted_shares_used`はXBRL値のパススルー
+  （計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
+  `net_adjustment_total`の加算を伴う真の計算値であり、Market Pulse
+  ETF束ね行（AS-IS-320等）で既に記録済みのパターンと同型の混在が
+  ここにも存在する。
+- **AS-IS-045の`net_debt`はAS-IS-025の`net_cash`を符号反転しただけの
+  別名フィールド**: `net_debt = -net_cash`という単純な符号反転だが、
+  「正=ネットキャッシュ」の概念と「正=純負債」の概念が同じ元データから
+  並存しているため、report.txt・latest.jsonを横断的に参照するコードで
+  符号を取り違えるリスクがある。
+- **AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す
+  重複カタログエントリ**: 過去のインベントリ作成過程で同じ関数の出力が
+  2つの異なるAS-IS-IDとして重複記録されている（前フェーズで発見した
+  ERP①②の「重複計算」とは異なり、こちらは「同一計算の重複カタログ化」）。
+
+### 次フェーズへの申し送り
+
+- 本フェーズで引用のみ行い内部アルゴリズムを再展開しなかったAS-IS-ID:
+  AS-IS-013（DCF/WACC構成要素系）、AS-IS-025（DCF/WACC構成要素系）、
+  AS-IS-268・AS-IS-269（信頼性・品質判定系）、AS-IS-084・AS-IS-390・
+  AS-IS-312（評価倍率フェーズで参照済み、AS-IS-312/390は既定義）
+- STONKS SILOのSEC EDGAR一次データ（`gross_profit`/`net_income`/
+  `research_and_development`/`selling_and_marketing`/`operating_cash_flow`/
+  `capital_expenditure`/`stock_based_compensation`等）およびTANUKI
+  VALUATIONの同種フィールド（`total_assets`/`stockholders_equity`等）は
+  いずれもAS-IS番号を持たない内部フィールドである。DCF/WACC構成要素系・
+  信頼性・品質判定系フェーズで関連項目を定義する際、実際の取得経路
+  （`common/sec_data`正規化JSON経由）を合わせて記録することを推奨する
+- AS-IS-026/028の重複統合、AS-IS-071とAS-IS-157のCapEx符号不統一修正は
+  いずれも実装（コード修正）を伴うため、本タスクの範囲外として記録に
+  とどめた。修正が必要と判断される場合は別途依頼文で着手する
