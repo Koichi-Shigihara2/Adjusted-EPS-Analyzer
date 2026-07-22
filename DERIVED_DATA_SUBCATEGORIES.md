@@ -115,12 +115,21 @@ HypeCore8件の調査中、同一パターン（外部ソース単一値のそ�
 | マクロ・市場環境系 | 124件 |
 | 信頼性・品質判定系 | 60件 |
 | カタリスト・イベント予測系 | 50件 |
-| DCF/WACC構成要素系 | 45件 |
+| DCF/WACC構成要素系 | 48件（訂正後、後述） |
 | 成長率・トレンド系 | 43件 |
-| その他 | 30件 |
+| その他 | 27件（訂正後、後述） |
 | キャッシュフロー・収益性系 | 27件 |
 | 評価倍率・バリュエーション系 | 13件 |
 | **合計** | **392件** |
+
+**訂正（フェーズ9・FIELD_DEFINITIONS.md作成時）**: AS-IS-447
+（current_price）・AS-IS-453（kpi_layer1_keys）・AS-IS-454
+（kpi_format）の3件は、`tail_dcf_bridge.py:generate_scenario_files()`が
+生成するシナリオファイルの一部であり、既にDCF/WACC構成要素系として
+定義済みのAS-IS-442〜451と完全に同一の戻り値オブジェクトに属することが
+判明したため、「その他」から「DCF/WACC構成要素系」へ再分類した
+（その他30→27件、DCF/WACC構成要素系45→48件、合計392件は不変）。
+詳細は`FIELD_DEFINITIONS.md`フェーズ9セクション参照。
 
 ### サブシステム別内訳（クロス集計）
 
@@ -165,7 +174,7 @@ CF・ランウェイ判定が主体）ため、この分類は妥当と判断す
 | AS-IS-132 | 5-3. STONKS SILO | `valuation.psr` |
 | AS-IS-133 | 5-3. STONKS SILO | `valuation.ev_sales` |
 
-### DCF/WACC構成要素系（45件）
+### DCF/WACC構成要素系（48件、フェーズ9でAS-IS-447/453/454を「その他」から再分類後）
 
 | AS-IS ID | サブシステム | 項目名 |
 |---|---|---|
@@ -202,10 +211,13 @@ CF・ランウェイ判定が主体）ため、この分類は妥当と判断す
 | AS-IS-444 | 1-10. TANUKI TAIL | assumptions.operating_margin |
 | AS-IS-445 | 1-10. TANUKI TAIL | assumptions.weighted_growth |
 | AS-IS-446 | 1-10. TANUKI TAIL | base_intrinsic_value |
+| AS-IS-447 | 1-10. TANUKI TAIL | current_price（フェーズ9でその他から再分類） |
 | AS-IS-448 | 1-10. TANUKI TAIL | future_values["1年後"] |
 | AS-IS-449 | 1-10. TANUKI TAIL | future_values["3年後"] |
 | AS-IS-450 | 1-10. TANUKI TAIL | future_values["5年後"] |
 | AS-IS-451 | 1-10. TANUKI TAIL | kpi_forecasts["1年後"/"3年後"].{KPI名} |
+| AS-IS-453 | 1-10. TANUKI TAIL | kpi_layer1_keys（フェーズ9でその他から再分類） |
+| AS-IS-454 | 1-10. TANUKI TAIL | kpi_format.{KPI名}（フェーズ9でその他から再分類） |
 | AS-IS-492 | 1-10. TANUKI TAIL | stage2.scenarios.{bear,base,bull}.revenue_growth_y1/y2/y3 |
 | AS-IS-493 | 1-10. TANUKI TAIL | stage2.scenarios.{...}.terminal_growth |
 | AS-IS-494 | 1-10. TANUKI TAIL | stage2.scenarios.{...}.operating_margin_terminal |
@@ -544,7 +556,7 @@ CF・ランウェイ判定が主体）ため、この分類は妥当と判断す
 | AS-IS-514 | 1-10. TANUKI TAIL | kpi_forecast_available |
 | AS-IS-515 | 1-10. TANUKI TAIL | matchable |
 
-### その他（30件）
+### その他（27件、フェーズ9でAS-IS-447/453/454をDCF/WACC構成要素系へ再分類後）
 
 | AS-IS ID | サブシステム | 項目名 |
 |---|---|---|
@@ -573,8 +585,5 @@ CF・ランウェイ判定が主体）ため、この分類は妥当と判断す
 | AS-IS-439 | 1-10. TANUKI TAIL | tail_kpi_map.json: fallback_tags |
 | AS-IS-440 | 1-10. TANUKI TAIL | tail_kpi_map.json: revenue_tag |
 | AS-IS-441 | 1-10. TANUKI TAIL | tail_kpi_map.json: dimension |
-| AS-IS-447 | 1-10. TANUKI TAIL | current_price |
-| AS-IS-453 | 1-10. TANUKI TAIL | kpi_layer1_keys |
-| AS-IS-454 | 1-10. TANUKI TAIL | kpi_format.{KPI名} |
 | AS-IS-481 | 1-10. TANUKI TAIL | is_latest（トップレベル） |
 | AS-IS-506 | 1-10. TANUKI TAIL | {TICKER}（トップレベルキー） |

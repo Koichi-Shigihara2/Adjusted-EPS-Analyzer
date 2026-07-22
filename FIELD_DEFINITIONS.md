@@ -1192,3 +1192,122 @@ regime判定」は`DERIVED_DATA_SUBCATEGORIES.md`ではAS-IS-182/183として
   pillarColor(70/45)とDEFICIT判定(65/35)の閾値不一致・EPS_DISCREPANCYの
   意味重複・赤字企業のDEFICIT実質上限95点はいずれも実装（コード修正）を
   伴うため、本タスクの範囲外として記録にとどめた
+
+---
+
+## 対象9（フェーズ9）: 導出データ — その他（30件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「その他（30件）」（ステップ6確定後
+392件ベース。TANUKI VALUATION 6件・HypeCore 3件・STONKS SILO 1件・
+TANUKI SCORE 4件・Portfolio 1件・TANUKI TAIL 15件）
+
+実装（コード修正）は行っていない。定義の記録のみ。本カテゴリは既存7分類
+（評価倍率・DCF/WACC・成長率トレンド・CF収益性・カタリスト・信頼性品質・
+マクロ市場環境）のいずれにも明確に当てはまらなかった項目群であり、
+各項目についてその理由も付記する。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解） | データ取得元 | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-050 | TANUKI VALUATION | segments[] | `pipeline.py:_save_result()` | `{name, weight, growth, estimated_revenue}`のリスト。`weight`/`growth`は`config/segment_config.json`のticker別セグメント設定（admin.html手動入力、SEGMENT-1ルール準拠のASC 280正式セグメント）。`estimated_revenue = weight × latest_revenue`（Generalフォールバック銘柄でTTM Revenueが年次より新しい場合はそちらを使用）。**他分類非該当の理由**: 個々のセグメント比率・成長率はAS-IS-012（growth.rate、DCF/WACC構成要素系）の入力元と重なるが、本項目自体はDCF計算の構成要素ではなく「手動設定内容をそのまま画面表示するための内訳リスト」であるため、計算式を持つDCF/WACC構成要素系というより設定の可視化に近い | segment_config.json（手動入力相当、カタログ対象外）＋AS-IS-012（既定義・フェーズ6、weighted_growth経由） | 導出データ |
+| AS-IS-057 | TANUKI VALUATION | 場所（Reverse DCF比較表の行ラベル） | OUTPUT_ITEMS_INVENTORY.md記載の比較分析 | **実データ値ではなく、`_calc_required_growth()`（Classification判定用、`pipeline.py:397-423`）とreport.txtインライン実装（表示用、`pipeline.py:1505-1525`）という2つの独立したReverse DCF実装を比較した表の行ラベル「場所」を指す**。前者は静的メソッドとして`pipeline.py`内に定義、後者は`_generate_report()`内に直接ベタ書き。**他分類非該当の理由**: 実際の出力データ値ではなく、過去調査で作成された「既知の実装差異」比較表そのものがAS-IS番号を振られてしまったメタ情報であるため、他のいずれの実質データ分類にも該当しない | pipeline.py（コード構造の記述、カタログ対象外） | 導出データ |
+| AS-IS-058 | TANUKI VALUATION | 用途（Reverse DCF比較表の行ラベル） | 同上 | AS-IS-057と同じ比較表の「用途」行。`_calc_required_growth()`はGROWTH_PREMIUM/TRIM分岐（AS-IS-034既定義）の内部判定にのみ使用されreport.txtには非表示。report.txtインライン版は「Valuation_Gap_Analysis」表示専用でスコア判定には一切使われない。**両者は同じ「必要成長率」概念を計算しながら全く別の目的（判定用 vs 表示用）に使われている**（下記備考）。他分類非該当の理由はAS-IS-057と同じ | AS-IS-034（既定義・フェーズ8） | 導出データ |
+| AS-IS-060 | TANUKI VALUATION | ガード（Reverse DCF比較表の行ラベル） | 同上 | AS-IS-057と同じ比較表の「ガード」行。`_calc_required_growth()`は`price>0 and shares>0 and fcf_base>0 and wacc>tv_g`の事前チェックに加え`ev<=0`・`required_fcf5<=0`で明示的に`None`を返す。report.txtインライン版（`_gap_ev`/`_gap_term`）には`ev<=0`の明示チェックがなく、最終的な`_gap_rg`算出時に`_gap_fcf>0 and _gap_term>0`のみで暗黙にガードする「やや緩い」実装（下記備考）。他分類非該当の理由はAS-IS-057と同じ | pipeline.py（コード構造の記述、カタログ対象外） | 導出データ |
+| AS-IS-072 | TANUKI VALUATION | 銘柄数（index.html集計表示） | `loadTickers()` | `valid.length`（`intrinsic_value_per_share>0`の銘柄数、index.html上部の統計バー）。**他分類非該当の理由**: 個別銘柄の計算値ではなく全銘柄一覧の単純な件数集計であり、いずれの分析的カテゴリの計算ロジックにも該当しない | AS-IS-001（既定義・フェーズ6） | 導出データ |
+| AS-IS-074 | TANUKI VALUATION | 平均RICE（index.html集計表示） | `loadTickers()` | `mean(全銘柄のrice.base.rice)`（nullは除外）。AS-IS-073（既定義・フェーズ4、平均Moat）と同一パターンの別指標版。他分類非該当の理由はAS-IS-072と同じ（単純集計） | AS-IS-027（既定義・フェーズ6） | 導出データ |
+| AS-IS-081 | HypeCore | monthly（poc.jsonトップレベル配列） | `run_poc()` | 月次データの配列コンテナキー自体。個別要素（stage/price/ma200_dev等）はAS-IS-084以降で既定義（フェーズ3/5）。**他分類非該当の理由**: 配列という構造そのものであり、計算式を持つ「値」ではない | AS-IS-085他多数（既定義・フェーズ5等） | 導出データ |
+| AS-IS-082 | HypeCore | tickers（配列、tickers.json） | `hypecore.py:969` | `sorted(p.stem[:-4] for p in docs_dir.glob("*_poc.json"))`（既存の`{ticker}_poc.json`ファイル名から拡張子・サフィックスを除いたticker一覧、実行のたびに自動再生成。HYPECORE-TICKERS-INDEX-1で自動化済み、CLAUDE_CODE_START.md記載）。**他分類非該当の理由**: ディレクトリスキャンによる単純な一覧生成であり分析的計算を含まない | ファイルシステム（カタログ対象外） | 導出データ |
+| AS-IS-083 | HypeCore | month（monthly[].month） | `run_poc()` | `idx.strftime("%Y-%m")`（pandasの月次リサンプル済みDatetimeIndexを文字列化しただけ）。**他分類非該当の理由**: 日付フォーマット変換のみで分析ロジックを含まない | AS-IS-084（既定義・フェーズ3、月次時系列の起点） | 導出データ |
+| AS-IS-124 | STONKS SILO | tickers（辞書、ticker→result） | `pipeline.py` | `results[ticker] = _to_dict(analysis)`（StonksAnalysis全体を格納するコンテナキー、個別フィールドはAS-IS-126以降で既定義・フェーズ4/8）。**他分類非該当の理由**: AS-IS-081と同様、構造そのものであり値ではない | AS-IS-126他多数（既定義・フェーズ4/8） | 導出データ |
+| AS-IS-286 | TANUKI SCORE | ticker（daily_pick.jsonトップレベル） | `daily_pick.py` | `selected["ticker"]`（AS-IS-288既定義・フェーズ8のselect_ticker()が選出した銘柄コードをそのまま転記）。**他分類非該当の理由**: 単純な識別子の転記であり計算を含まない | AS-IS-288（既定義・フェーズ8） | 導出データ |
+| AS-IS-287 | TANUKI SCORE | company（daily_pick.jsonトップレベル） | `daily_pick.py` | `selected["company"]`（EPS Analyzer summary.jsonの`company_name`、なければticker自体をフォールバック使用）。他分類非該当の理由はAS-IS-286と同じ | EPS Analyzer company_name（カタログ対象外） | 導出データ |
+| AS-IS-297 | TANUKI SCORE | date（history.json各エントリ） | `daily_pick.py` | `today_str`（JST基準の実行日、`now_jst.strftime()`）。他分類非該当の理由はAS-IS-286と同じ（単純な日付記録） | システム内部（カタログ対象外） | 導出データ |
+| AS-IS-299 | TANUKI SCORE | all_categories（history.json各エントリ） | `daily_pick.py` | `{ticker: category for 全銘柄}`（その日の全銘柄のTANUKI SCORE分類スナップショット、AS-IS-034既定義・フェーズ8のticker別値をそのまま集約）。翌日の`select_ticker()`優先①（分類変化検知）で使用するための履歴保持。30日分ローテーション保持。**他分類非該当の理由**: 既定義のAS-IS-034を全銘柄分束ねただけのスナップショットであり新たな計算を含まない | AS-IS-034（既定義・フェーズ8） | 導出データ |
+| AS-IS-389 | Portfolio | date | `snapshot.py` | `datetime.now(JST).strftime("%Y-%m-%d")`（スナップショット実行日）。**他分類非該当の理由**: 単純な実行日時記録であり分析的計算を含まない | システム内部（カタログ対象外） | 導出データ |
+| AS-IS-394 | TANUKI TAIL | quarter（review_queue.jsonエントリ） | `edgar_rss_monitor.py:process_ticker()` | `quarter_label(period)`（新規提出検知時にSEC submissions APIで補完した提出対象期間を四半期ラベル化。RSS自体には対象期間情報がないため別途API呼び出しで取得）。取得失敗時は`"不明"`。**他分類非該当の理由**: レビュー生成キューの運用管理用メタデータであり、カタリスト予測系（Discover等）とは異なりAI生成でも予測でもない機械的な提出監視の記録 | SEC EDGAR submissions API（カタログ対象外） | 導出データ |
+| AS-IS-402 | TANUKI TAIL | quarters（ctrl/{ticker}/index.json） | `sec_ctrl_fetcher.py:main()` | 既存`index.json`の`quarters`配列と新規取得四半期をマージ・重複排除・ソートした一覧（内部統制データ取得済み四半期のセレクター用）。**他分類非該当の理由**: 信頼性・品質判定系の内部統制データ（AS-IS-396〜400、既定義・フェーズ8）自体ではなく、その「取得済み一覧」という運用管理メタデータであるため | AS-IS-396（既定義・フェーズ8の取得元、SEC EDGAR） | 導出データ |
+| AS-IS-404 | TANUKI TAIL | last_filed（rss_state.json） | `edgar_rss_monitor.py:process_ticker()` | SEC EDGAR RSSフィードで確認した直近提出日をそのまま記録（次回実行時の遅延検知用基準日）。**他分類非該当の理由**: 監視スクリプト自身が次回実行時に読み返す内部状態変数であり（フェーズ1で定義した「システム設定データ（監視状態管理系）」と同種の性質だが本サブカテゴリでの再検討時点では「その他」に分類されていた）、分析的な計算値ではない | SEC EDGAR RSS（カタログ対象外） | 導出データ |
+| AS-IS-408 | TANUKI TAIL | status（review_queue.jsonエントリ） | `edgar_rss_monitor.py`→`quarterly_review_generator.py` | `"pending"`（キュー登録時）→`"completed"`（レビュー生成成功時）または`"error"`（生成失敗時）の3値ステートマシン。**他分類非該当の理由**: レビュー生成パイプラインの処理状態を追跡する運用管理フラグであり、レビュー内容そのもの（信頼性・品質判定系のstage1/call2、既定義・フェーズ8）ではない | AS-IS-482他（既定義・フェーズ8、生成対象） | 導出データ |
+| AS-IS-410 | TANUKI TAIL | review_path（review_queue.jsonエントリ） | `quarterly_review_generator.py` | レビュー生成成功時（`status="completed"`と同時）に設定される生成済みレビューJSONのファイルパス。**他分類非該当の理由**: AS-IS-408と同じくパイプライン運用管理のためのメタデータ | AS-IS-408（本表） | 導出データ |
+| AS-IS-437 | TANUKI TAIL | tail_kpi_map.json: kpi_name | `xbrl_segment_fetcher.py` | KPI提案・確定フロー（kpi_proposer.py Grok提案→TANUKI TAIL画面で人手確定、既存の手動入力データAS-IS-425〜436と同一のワークフロー）で登録されるKPI識別名。layer2データのキー名としても使用される。**他分類非該当の理由（要注意）**: 本項目は計算値ではなく手動確定されたKPI設定スキーマであり、性質としては既定義の「手動入力データ」（AS-IS-425〜436、AI下書き＋人手承認のハイブリッド）に酷似している。ステップ7の一次分類（一次データ/手動入力データ/移送データ/システム設定データ/導出データの5分類）の時点で「導出データ」側に区分されたため本カテゴリ作業の対象になったが、**分類そのものを見直す余地がある**（下記備考） | kpi_proposer.py Grok提案＋人手確定（カタログ対象外、手動入力データ相当） | 導出データ |
+| AS-IS-438 | TANUKI TAIL | tail_kpi_map.json: tag_history[].tag/valid_from/valid_to | `xbrl_segment_fetcher.py:select_tag()` | KPI抽出に使うXBRLタグの有効期間履歴（企業がタグ命名を変更した場合に対応するため）。`select_tag()`は対象四半期の`period_end`が`valid_from`〜`valid_to`の範囲に収まる最新のタグを選択。他分類非該当の理由はAS-IS-437と同じ | AS-IS-437と同じ（手動入力データ相当、カタログ対象外） | 導出データ |
+| AS-IS-439 | TANUKI TAIL | tail_kpi_map.json: fallback_tags | `xbrl_segment_fetcher.py` | 主タグ（tag_history経由）での抽出失敗時に試行する代替XBRLタグのリスト（手動設定）。他分類非該当の理由はAS-IS-437と同じ | AS-IS-437と同じ | 導出データ |
+| AS-IS-440 | TANUKI TAIL | tail_kpi_map.json: revenue_tag | `xbrl_segment_fetcher.py` | セグメント別数値抽出時に参照する収益タグ（デフォルト`us-gaap:Revenues`、手動設定で上書き可）。他分類非該当の理由はAS-IS-437と同じ | AS-IS-437と同じ | 導出データ |
+| AS-IS-441 | TANUKI TAIL | tail_kpi_map.json: dimension | `xbrl_segment_fetcher.py` | セグメント別数値を選び出すXBRLディメンション軸（デフォルト`us-gaap:StatementBusinessSegmentsAxis`、手動設定で上書き可）。他分類非該当の理由はAS-IS-437と同じ | AS-IS-437と同じ | 導出データ |
+| AS-IS-447 | TANUKI TAIL | current_price（scenarioファイル） | `tail_dcf_bridge.py:generate_scenario_files()` | `round(current_price, 2)`（TANUKI VALUATIONのcurrent_price、yfinance一次データをそのまま転記）。**再分類の判明（下記「他分類への再分類」参照）**: フェーズ6で既に定義したAS-IS-442〜451（TANUKI TAIL DCFブリッジのscenario出力）と**全く同じ`generate_scenario_files()`関数の同じ戻り値オブジェクト**の一部であり、本来DCF/WACC構成要素系に属する | current_price（yfinance、カタログ対象外） | 導出データ |
+| AS-IS-453 | TANUKI TAIL | kpi_layer1_keys（scenarioファイル） | `tail_dcf_bridge.py:generate_scenario_files()` | 「営業利益率」「SBC」「希薄化後EPS」のうちlayer1（SEC正規化四半期データ）から実際に値が取得できたキー名のリスト（KPI表示の種別判定用）。**AS-IS-447と同じ理由でDCF/WACC構成要素系に再分類すべき項目** | tail_dcf_bridge.py:_load_layer1_financials()（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-454 | TANUKI TAIL | kpi_format.{KPI名}（scenarioファイル） | `tail_dcf_bridge.py:generate_scenario_files()` | KPI名ごとの表示フォーマット判定: `"希薄化後EPS"→"usd_small"`／`"SBC"または値の絶対値>=100万→"usd"`／値の絶対値<=10→"pct"`／それ以外`"usd_small"`。**AS-IS-447/453と同じ理由でDCF/WACC構成要素系に再分類すべき項目** | AS-IS-452（既定義・フェーズ7、kpi_current値を判定入力に使用） | 導出データ |
+| AS-IS-481 | TANUKI TAIL | is_latest（レビューJSONトップレベル） | `quarterly_review_generator.py:_mark_older_reviews_not_latest()` | 新規レビュー生成時、同一tickerの既存レビューで`is_latest=True`のものを全て`False`に更新してから、新規レビューを`is_latest=True`で保存する単純な排他フラグ管理。**他分類非該当の理由**: レビュー内容（AS-IS-482〜505、既定義・フェーズ8）ではなく「どれが最新か」を示す運用管理フラグ | AS-IS-482〜505（既定義・フェーズ8） | 導出データ |
+| AS-IS-506 | TANUKI TAIL | {TICKER}（prediction_history.jsonトップレベルキー） | `prediction_tracker.py:build_prediction_history()` | `result[ticker] = entries`（AS-IS-507〜515既定義・フェーズ7のリストを格納するコンテナキー）。**他分類非該当の理由**: AS-IS-081/124と同様、構造そのものであり値ではない | AS-IS-507〜515（既定義・フェーズ7） | 導出データ |
+
+### 他分類への再分類（DERIVED_DATA_SUBCATEGORIES.md更新）
+
+以下3件は分解の結果、既存のDCF/WACC構成要素系に属することが判明した。
+根拠: AS-IS-447（current_price）・AS-IS-453（kpi_layer1_keys）・
+AS-IS-454（kpi_format）は、フェーズ6で既に定義したAS-IS-442〜451
+（`tail_dcf_bridge.py:generate_scenario_files()`が生成するシナリオ
+ファイルのassumptions/base_intrinsic_value/future_values/kpi_forecasts）
+と**完全に同一の戻り値オブジェクトの別フィールド**であり、切り離して
+「その他」に分類する理由がない。`DERIVED_DATA_SUBCATEGORIES.md`の
+「その他（30件）」からこの3件を除去し、「DCF/WACC構成要素系（45件）」に
+追加した（件数は その他30→27件、DCF/WACC構成要素系45→48件、
+合計392件は不変）。
+
+### 分解の過程で新たに気づいた問題
+
+- **AS-IS-437〜441（tail_kpi_map.json）は「導出データ」ではなく
+  「手動入力データ」に近い性質を持つ（要検討・最重要）**: これらは
+  `kpi_proposer.py`のGrok AI提案を人間がTANUKI TAIL画面で確認・編集して
+  確定するフローで登録されるKPI抽出設定であり、既に「手動入力データ」
+  として定義済みのAS-IS-425〜436（フェーズ1・2、「AI下書き＋人手承認の
+  ハイブリッド」と明記済み）と全く同じ性質・同じワークフローに由来する。
+  にもかかわらず`TO_BE_FINAL_LIST.md`ステップ7の一次分類（5分類）では
+  「導出データ」側に区分されており、その結果`DERIVED_DATA_SUBCATEGORIES.md`
+  の8分類でも「その他」に落ち着いていた。これは`DERIVED_DATA_SUBCATEGORIES.md`
+  内の8分類間の再配置では解決できない、より上位の5分類（一次データ／
+  手動入力データ／移送データ／システム設定データ／導出データ）の判定に
+  遡る問題であり、本タスクの依頼範囲（8分類内の再分類）を超えるため
+  `TO_BE_FINAL_LIST.md`自体の変更は行っていない。5分類の再判定要否は
+  別途確認を推奨する。
+- **AS-IS-057/058/060は実データ値ではなく「実装差異の比較分析」自体が
+  AS-IS番号を持ってしまっている**: 過去のOUTPUT_ITEMS_INVENTORY.md調査で
+  「Reverse DCF必要成長率の2ルート（判定用`_calc_required_growth()`と
+  表示用report.txtインライン実装）」を比較する表を作成した際、表の行
+  ラベル（「場所」「用途」「terminal_growthの出所」「ガード」）自体が
+  個別にAS-IS番号を振られた。このうち「terminal_growthの出所」は
+  AS-IS-059としてフェーズ6で実データ的側面（`get_terminal_growth()`の
+  優先順位ロジック）を持つため定義できたが、「場所」「用途」「ガード」
+  （AS-IS-057/058/060）は純粋に2つの実装を比較する視点のラベルであり、
+  実際に画面や JSON に出力される値ではない。499件の最終カタログに
+  「データ」として残すべきかどうかは判断が分かれるところであり、
+  本タスクでは削除・統合は行わず記録にとどめた。
+  なお比較内容自体は重要な発見であり、`_calc_required_growth()`
+  （Classification判定用、terminal_growthは`maturity_config.
+  get_terminal_growth(ticker)`＝セクター別Damodaran値）とreport.txt
+  インライン版・stock.htmlのAS-IS-067（既定義・フェーズ6、いずれも
+  `components.terminal_growth_used`＝DCF計算に実際使用された値を参照）
+  との間で、**tv_gの出所が異なるため同一銘柄でも算出される必要成長率が
+  食い違いうる**構造は実在する（通常はDCF実行時の`get_terminal_growth()`
+  結果が`terminal_growth_used`に保存されるため一致するはずだが、
+  `maturity_config.json`が同一パイプライン実行中に変更されるような
+  想定外のケースでは食い違う）。
+- **AS-IS-404（last_filed）はフェーズ1で定義した「システム設定データ
+  （監視状態管理系）」と同種の性質を持つ**: `edgar_rss_monitor.py`
+  自身が次回実行時に読み返す内部状態変数であり、AS-IS-403
+  （`last_accn`、既定義・フェーズ1）・AS-IS-405（`no_filing_days`、
+  既定義・フェーズ1）と全く同じファイル（rss_state.json）の隣接
+  フィールドである。これらは「システム設定データ（監視状態管理系）」
+  として既に一つのグループにまとめられているにもかかわらず、
+  AS-IS-404だけが499件カタログの「導出データ・その他」側に取り残されて
+  いた。前項（AS-IS-437〜441）と同様、8分類内の再配置ではなく
+  5分類自体の見直しが必要なケースである。
+
+### 次フェーズへの申し送り
+
+- 本フェーズは`DERIVED_DATA_SUBCATEGORIES.md`の8分類のうち最後の
+  「その他」を完了した。残る唯一の未着手分類は「マクロ・市場環境系
+  （124件）」であり、これが導出データ392件の最終フェーズとなる
+- AS-IS-001/012/027/034/067/084/085/442〜451/482〜505/507〜515等は
+  既定義（フェーズ3〜8）のものをそのまま引用した
+- AS-IS-437〜441・AS-IS-404の5分類再判定要否、AS-IS-057/058/060の
+  カタログ存置要否はいずれも本タスクの範囲外（実装・分類変更を伴わない
+  記録のみ）として次の判断機会に委ねる
