@@ -82,7 +82,7 @@
 | AS-IS-105 | HypeCore | analyst_upgrade_rate | `analyst_upgrade_rate` | 導出データ | 共通関数参照、存続 |
 | AS-IS-108 | HypeCore | buy_hold_ratio | `buy_hold_ratio` | 導出データ | 共通関数参照、存続（⑨とも関連） |
 | AS-IS-117 | HypeCore | ev_ebitda | `ev_ebitda` | 導出データ | 正値フィルタ追加の修正対象、削除ではなく存続 |
-| AS-IS-132 | STONKS SILO | valuation.psr（Annual基準） | `valuation.psr` | 一次データ | 統一対象外、別項目として併存（PSR概念クラスタの元AS-IS-ID） |
+| AS-IS-132 | STONKS SILO | valuation.psr（Annual基準） | `valuation.psr` | 導出データ（**FIELD_DEFINITIONS.mdフェーズ2で訂正**: `market_cap ÷ latest_rev`の計算値のため） | 統一対象外、別項目として併存（PSR概念クラスタの元AS-IS-ID） |
 | AS-IS-133 | STONKS SILO | valuation.ev_sales（Annual基準） | `valuation.ev_sales` | 導出データ | 統一対象外、別項目として併存 |
 | AS-IS-282 | EPS Analyzer | components.per（GAAP PER） | `components.per`（GAAP PER） | 移送データ | 共通関数参照、存続 |
 | AS-IS-283 | EPS Analyzer | components.per_adjusted | `components.per_adjusted` | 移送データ | 共通関数参照、存続（per_adjusted概念クラスタの元AS-IS-ID） |
@@ -368,7 +368,7 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-131 | 5-3. STONKS SILO / `valuation.current_price` | `valuation.current_price` | 導出データ |
 | AS-IS-137 | 5-3. STONKS SILO / `rnd_ratio` | `rnd_ratio` | 導出データ |
 | AS-IS-138 | 5-3. STONKS SILO / `sm_ratio` | `sm_ratio` | 導出データ |
-| AS-IS-139 | 5-3. STONKS SILO / `gross_margin` | `gross_margin` | 一次データ |
+| AS-IS-139 | 5-3. STONKS SILO / `gross_margin` | `gross_margin` | 導出データ（**FIELD_DEFINITIONS.mdフェーズ2で訂正**: `gross_profit÷revenue_sanitized`の計算値のため） |
 | AS-IS-140 | 5-3. STONKS SILO / `gross_margin_derived` | `gross_margin_derived` | 導出データ |
 | AS-IS-142 | 5-3. STONKS SILO / `score` | `score` | 導出データ |
 | AS-IS-144 | 5-3. STONKS SILO / `mature_profit` | `mature_profit` | 導出データ |
@@ -1182,16 +1182,23 @@ UI操作機構4件（AS-IS-069/070/233/236）を除外:  -4件
 
 ### 5分類 集計結果（515件ベース、延べ数・参考値）
 
-**注記（FIELD_DEFINITIONS.md作成時に訂正）**: AS-IS-183（regime_source）は
-「生成日時」ではなくregime判定方法のメタ情報であり、システム設定データの
-定義（銘柄・分析内容とは無関係な運用値）に該当しないため、導出データに
-再分類した。以下の数値は訂正反映済み。
+**注記（FIELD_DEFINITIONS.md作成時に訂正、フェーズ1・2両方反映）**:
+- AS-IS-183（regime_source）: 「生成日時」ではなくregime判定方法のメタ
+  情報であり、システム設定データの定義に該当しないため導出データに再分類
+  （フェーズ1で発見）
+- AS-IS-132（valuation.psr）: `market_cap ÷ latest_rev`の計算値であり、
+  「計算を一切加えていない生の値」という一次データの定義に該当しないため
+  導出データに再分類（フェーズ2で発見）
+- AS-IS-139（gross_margin）: `gross_profit÷revenue_sanitized`の計算値で
+  あり、同様に導出データに再分類（フェーズ2で発見）
+
+以下の数値は3件すべての訂正反映済み。
 
 | データ性質分類 | 件数 |
 |---|---|
-| 導出データ | 414件 |
+| 導出データ | 416件 |
 | 手動入力データ | 44件 |
-| 一次データ | 31件 |
+| 一次データ | 29件 |
 | システム設定データ | 15件 |
 | 移送データ | 11件 |
 | **合計** | **515件** |
@@ -1215,7 +1222,7 @@ AS-IS-006、funda_scoreはAS-IS-035、timing_scoreはAS-IS-037、per_adjusted
         + 異なる定義488件からUI操作機構4件を除いた484件
 ```
 
-**実行結果（そのまま転記）**:
+**実行結果（そのまま転記、AS-IS-183/132/139の3件訂正を反映）**:
 
 ```
 truly_different (488想定): 488
@@ -1223,24 +1230,24 @@ truly_different (488想定): 488
 UI機構4件はいずれも「異なる定義488件」の一部であることを確認
 ステップ6除外後の最終出力項目数: 499
 
-=== ステップ6・7反映後 5分類集計（499件ベース、AS-IS-183訂正反映後） ===
-  導出データ: 403
+=== ステップ6・7反映後 5分類集計（499件ベース、AS-IS-183/132/139訂正反映後） ===
+  導出データ: 405
   手動入力データ: 44
-  一次データ: 31
+  一次データ: 29
   システム設定データ: 15
   移送データ: 6
 合計: 499
 ```
 
-（AS-IS-183の訂正前は「導出データ402／システム設定データ16」だった。
-`FIELD_DEFINITIONS.md`作成時にregime判定方法のメタ情報であり生成日時
-ではないと判明したため導出データへ再分類し、以下は訂正後の数値）
+（訂正前は「導出データ402／システム設定データ16／一次データ31」だった。
+`FIELD_DEFINITIONS.md`フェーズ1・2の作成時に3件の誤分類を発見・訂正し、
+以下は訂正後の数値）
 
 | データ性質分類 | 件数（515件ベース参考値） | 件数（**499件ベース確定版**） |
 |---|---|---|
-| 導出データ | 414件 | **403件** |
+| 導出データ | 416件 | **405件** |
 | 手動入力データ | 44件 | **44件** |
-| 一次データ | 31件 | **31件** |
+| 一次データ | 29件 | **29件** |
 | システム設定データ | 15件 | **15件** |
 | 移送データ | 11件 | **6件** |
 | **合計** | **515件** | **499件** |
@@ -1252,9 +1259,11 @@ AS-IS-283、next_earnings_dateクラスタのAS-IS-179/284）が個別にカウ�
 されており、これらの多くが「移送データ」（パススルー実装）に分類されて
 いた。499件ベースでは各クラスタの代表項目（いずれも導出データ）のみを
 カウントするため、これら6件の「移送データ」カウントが母数から外れる。
-手動入力データ・一次データ・システム設定データは、UI操作機構4件（いずれも
-導出データ）の除外・同一定義クラスタの非代表項目除外のいずれの影響も
-受けなかったため件数は不変。
+手動入力データ・システム設定データは、UI操作機構4件（いずれも導出データ）
+の除外・同一定義クラスタの非代表項目除外のいずれの影響も受けなかったため
+件数は不変。一次データはAS-IS-132/139の訂正分（2件）が導出データへ
+移動したため31→29に減少（499件ベースは元々この2件を含んでいたため
+415件ベースと同じ減少幅）。
 
 ### 表示名称について（方法論上の注記）
 
