@@ -851,3 +851,184 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
   β=0/負値の無条件フォールバック（AS-IS-013）・v0/v0_rmの取り違えリスク
   （AS-IS-007）はいずれも実装（コード修正）を伴うため、本タスクの範囲外
   として記録にとどめた
+
+---
+
+## 対象7（フェーズ7）: 導出データ — カタリスト・イベント予測系（50件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「カタリスト・イベント予測系
+（50件）」（ステップ6確定後392件ベース。AS-IS-048/051/104/105/106/108/
+162/163/164/243/244/245/246/248/250/251/252/253/254/255/256/257/258/259/
+260/275/276/278/279/419/420/421/422/423/452/499/500/501/502/503/504/505/
+507/508/510/511/512/513/514/515）
+
+実装（コード修正）は行っていない。定義の記録のみ。
+
+**前フェーズ（DCF/WACC構成要素系）での訂正**: フェーズ6でAS-IS-113
+（HypeCore `expectation_score`）の構成要素として引用したAS-IS-105
+（`analyst_upgrade_rate`）を誤って「成長率・トレンド系」と記載したが、
+本ドキュメント作成時に`DERIVED_DATA_SUBCATEGORIES.md`を再確認したところ
+AS-IS-105は正しくは本フェーズの「カタリスト・イベント予測系」に属する
+（492行目のセクション見出し配下）。分類ラベルの誤記であり計算式自体への
+影響はない。
+
+**本カテゴリの特徴（依頼文の想定通り）**: Discover（16件）・TANUKI TAIL
+のcall2系（7件）・stage2 kpi_forecasts等はAI（Grok）による自由生成
+コンテンツであり、決定論的な計算式が存在しない。該当項目は「定義」欄に
+プロンプトの入力データ・生成頻度・出力構造を記載する（フェーズ6のTANUKI
+TAIL stage2で確立した記載方法を踏襲）。
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解、AI生成の場合は入力データ・生成方法） | データ取得元 | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-048 | TANUKI VALUATION | next_earnings_date | `pipeline.py:_load_extra_data()` | yfinance `Ticker.calendar["Earnings Date"]`から本日以降の最初の日付を採用。全て過去日の場合はリスト先頭（＝最も古い過去日）をそのまま採用する（**この場合「次回決算日」が実際には過去日になる、下記備考**） | yfinance calendar（カタログ対象外） | 導出データ |
+| AS-IS-051 | TANUKI VALUATION | breakeven_estimate | `pipeline.py:_load_extra_data()` | 対象は直近四半期`adjusted_eps<0`（赤字）銘柄のみ。直近4四半期の`adjusted_eps`（AS-IS-267、既定義・フェーズ4）にOLS単回帰（x=四半期インデックス、y=EPS）を適用し、回帰直線がゼロを横切る時点`x_zero=-intercept/slope`を四半期数に換算、`slope>0`かつ`0<quarters_until<20`の場合のみ`round(現在年+quarters_until/4)`で黒字化年を算出 | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-104 | HypeCore | eps_surprise | `fetch_analyst_history()` | 優先順位: ①yfinance `earnings_history.surprisePercent`（四半期ごとの実績、月次前方補完、最大4ヶ月）②`quarterly_earnings["Surprise(%)"]`（フォールバック1）③`info.get("earningsGrowth")×100`（フォールバック2、欠損月のみ適用）。最終的に3ヶ月まで前方補完 | yfinance（カタログ対象外） | 導出データ |
+| AS-IS-105 | HypeCore | analyst_upgrade_rate | `fetch_analyst_history()` | yfinance `upgrades_downgrades`を月次集計し、`ToGrade`がBuy系（Buy/Strong Buy/Outperform等）なら`is_upgrade=1`、Sell系なら`is_downgrade=1`として月次件数を集計。`upgrade_rate = upgrades/(upgrades+downgrades+1e-9)`を3ヶ月移動平均で平滑化 | yfinance（カタログ対象外） | 導出データ |
+| AS-IS-106 | HypeCore | analyst_downgrade_rate | `fetch_analyst_history()` | AS-IS-105と同一集計の`downgrade_rate = downgrades/(upgrades+downgrades+1e-9)`（3ヶ月移動平均あり） | AS-IS-105と同じ（yfinance、カタログ対象外） | 導出データ |
+| AS-IS-108 | HypeCore | buy_hold_ratio | `fetch_analyst_history()` | yfinance `recommendations`の直近月（`period=="0m"`）行から`buy_ratio = (strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell+1e-9)`。**名称は「buy_hold」だがholdは分子に含まれない、下記備考**。現時点値のみ本日の月に設定（過去月は未設定） | yfinance（カタログ対象外） | 導出データ |
+| AS-IS-162 | STONKS SILO | gaap_breakeven_year/gaap_breakeven_reason | `_gaap_margin_breakeven()` | 直近年`net_income>0`なら`ACHIEVED`。それ以外は2段階: Step1「純利益率(NI/Revenue×100)」の直近2点線形外挿（傾き≤500pt/年）でゼロ交差年を算出、`be_year<=latest_yr`なら`IMMINENT`、`>latest_yr+5年`なら`TOO_FAR`。Step1不成立ならStep2「直近3年の絶対値OLS回帰」にフォールバック（`NO_TREND`/`NO_DATA`/`PREDICTED`等）。`ocf_trend`（AS-IS-161、既定義・フェーズ5）が`DETERIORATING`の場合は最終的に`NO_TREND`へ上書き | AS-IS-129（既定義・一次データ、revenue_sanitized経由）＋ AS-IS-161（既定義・フェーズ5）＋ net_income（SEC EDGAR、カタログ対象外） | 導出データ |
+| AS-IS-163 | STONKS SILO | ocf_breakeven_year/ocf_breakeven_reason | `_margin_breakeven()` | 直近年`OCF>0`なら`ACHIEVED`（＝AS-IS-164）。それ以外はAS-IS-162と同型の2段階（OCFマージン=OCF/Revenueの2点線形外挿→3年絶対値OLSフォールバック）だが`IMMINENT`判定分岐はなくStep1不成立時は直ちにStep2へ | AS-IS-129（既定義）＋ AS-IS-156（既定義・フェーズ4、ocf_annual経由） | 導出データ |
+| AS-IS-164 | STONKS SILO | hidden_profit_already | `_breakeven_estimate()` | `latest_ocf = ocf_annual[直近年] > 0`の単純真偽判定（AS-IS-163のACHIEVED条件と同一式） | AS-IS-156（既定義・フェーズ4） | 導出データ |
+| AS-IS-243 | Discover | catalysts[].id | `next_id()` | `{ticker}-{年}-{連番3桁}`形式の決定論的な採番（既存IDと重複しないシーケンス番号）。AI生成ではない | システム内部（カタログ対象外） | 導出データ |
+| AS-IS-244 | Discover | catalysts[].title/detail/timing/importance/type/probability | `discover_catalysts()`→Grok | **AI生成**: `{ticker}について今後12ヶ月以内のカタリスト候補を幅広く列挙`というプロンプト（grok-3、web検索）。毎週日曜JST23:30、HypeCore対象銘柄（`get_hypecore_tickers()`）全件に対して実行。`importance`/`type`/`probability`は選択肢外の値ならデフォルト（中/不確定シナリオ/中）に丸められる | Grok API（grok-3、web検索、カタログ対象外） | 導出データ |
+| AS-IS-245 | Discover | catalysts[].status | `reevaluate_catalysts()`→Grok | 新規発掘時は`"未達"`固定。既存の「未達」カタリストのみ、別のGrok呼び出し（web検索で最新情報確認）で`"未達"/"達成済み"/"消滅"`に再判定。**判定対象は`status=="未達"`の既存分のみ**（達成済み・消滅済みは再評価対象外） | Grok API（web検索、カタログ対象外） | 導出データ |
+| AS-IS-246 | Discover | catalysts[].first_detected | `process_ticker()` | 新規発掘時点の`today`（**JST基準ではなく`date.today()`という素の日付、下記備考UTC/JST不整合参照**） | システム内部（カタログ対象外） | 導出データ |
+| AS-IS-248 | Discover | 影響予測{direction, magnitude, thesis_effect, summary} | `predict_for_items()`→Grok（`impact_predictor.py`） | **AI生成**: news/catalyst由来の項目一覧を渡し、株価・投資シナリオへの影響方向（positive/negative/neutral）・度合い（高中低）・保有テーゼへの影響（補強/弱化/中立）・30字要約を生成させる。3モデルフォールバック（grok-3-mini→grok-3→grok-2-1212）。**catalystモードは`first_detected==本日`の新規項目のみ対象**（既存カタリストは再評価されない、下記備考）。**表示先はcatalyst.html/news_history.htmlのみで、Discoverのメイン一覧index.htmlには一切表示されない**（下記備考） | AS-IS-244, AS-IS-250（本表）＋ Grok API（カタログ対象外） | 導出データ |
+| AS-IS-250 | Discover | classified.items[].{title,category,importance,summary,url,source,published_at} | `classify_news()`/`classify_news_with_grok_search()` | **AI生成**: NEWS API（NewsAPI.org、直近2日分見出し5件）を渡しGrokに分類させる。NEWS APIが0件かつ`category∈{保有中,監視中}`の銘柄のみGrok web検索に代替（**category=様子見はAPI 0件時そのまま「データなし」、下記備考**）。カテゴリ（カタリスト/リスク/ブレイクスルー/一般）・重要度（高中低なし）を判定、`importance="なし"`および完全重複タイトルは`_dedupe_items()`で除外。毎日JST 7:00実行 | NewsAPI.org（カタログ対象外）＋ Grok API（カタログ対象外） | 導出データ |
+| AS-IS-251 | Discover | classified.summary | 同上 | 同一Grok応答内の`summary`（全体を50字以内で要約、AI生成） | AS-IS-250と同じ | 導出データ |
+| AS-IS-252 | Discover | classified.conditions_met[]/risk_flags[] | 同上 | 同一Grok応答内の`conditions_met`（銘柄の通過条件、最大3件）・`risk_flags`（リスク要因、最大3件）。いずれもAI生成 | AS-IS-250と同じ | 導出データ |
+| AS-IS-253 | Discover | top_importance | 同上 | 同一Grok応答内の`top_importance`（高/中/低、AI生成）。`tickers[ticker]`直下に`classified.top_importance`のコピーとしても格納される（同一値の重複格納） | AS-IS-250と同じ | 導出データ |
+| AS-IS-254 | Discover | candidates[].{ticker,company,sector,reason,risk} | `explore_candidates()`→Grok | **AI生成**: 時価総額$5億〜$100億・機関投資家保有率40%未満・直近12ヶ月売上成長率30%以上・主要指数未採用等の条件を満たす新規候補銘柄をGrokにweb検索させる。既存監視リスト銘柄は除外指示。毎日JST 7:00実行（collect.pyのメインフロー） | Grok API（web検索、カタログ対象外） | 導出データ |
+| AS-IS-255 | Discover | candidates[].screening_pass[] | 同上 | 同一Grok応答内の`screening_pass`（実際に満たす通過条件、最大5件、AI自己申告） | AS-IS-254と同じ | 導出データ |
+| AS-IS-256 | Discover | candidates[].catalyst_type | 同上 | 同一Grok応答内の`catalyst_type`（決算サプライズ/製品発表/規制変化/市場拡大/その他） | AS-IS-254と同じ | 導出データ |
+| AS-IS-257 | Discover | candidates[].conviction | 同上 | 同一Grok応答内の`conviction`（高中低） | AS-IS-254と同じ | 導出データ |
+| AS-IS-258 | Discover | macro_themes[].{theme,horizon,conviction,background,catalyst} | `explore_macro_themes()`→Grok | **AI生成**: 今後6〜18ヶ月の「特大テーマ候補」3件をGrok（grok-3固定、web検索）に生成させる。**日曜日のみ実行**（`now_jst.weekday()==6`）、それ以外の曜日は前回`daily_report.json`の`macro_themes`をそのまま引き継ぐ（下記備考）。履歴は`macro_themes_history.json`に最大26件（≒半年分）保持 | Grok API（web検索、カタログ対象外） | 導出データ |
+| AS-IS-259 | Discover | macro_themes[].related_tickers[].{ticker,role,note} | 同上 | 同一Grok応答内の`related_tickers`。プロンプトで既存監視銘柄リストを提示し「リスト外の銘柄は含めない」よう指示。`role`は「主要」「ボトルネック」「注目」の3種類に限定指示（AI生成のため厳密な保証はプロンプト依存） | AS-IS-258と同じ | 導出データ |
+| AS-IS-260 | Discover | macro_themes[].sources[] | 同上 | 同一Grok応答内の`sources`（情報源名・URL、1〜3件。URLが不明な場合はnullをAIが自己申告） | AS-IS-258と同じ | 導出データ |
+| AS-IS-275 | EPS Analyzer | eps_diff | `generate_summary()` | `eps_diff = round(adjusted_eps - gaap_eps, 4)`（最新四半期`quarters[0]`、AS-IS-267既定義・フェーズ4のサブフィールド） | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-276 | EPS Analyzer | eps_ratio | 同上 | `ratio = (adjusted_eps-gaap_eps)/abs(gaap_eps)×100`（`gaap_eps==0`なら0） | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-278 | EPS Analyzer | yoy_growth | 同上 | `yoy_growth = (quarters[0].adjusted_eps - quarters[4].adjusted_eps) / abs(quarters[4].adjusted_eps)`（直近四半期と4件前＝前年同期の比較。5四半期未満のデータではNone） | AS-IS-267（既定義・フェーズ4） | 導出データ |
+| AS-IS-279 | EPS Analyzer | health | 同上 | `eps_ratio`（AS-IS-276）の値による5段階分類: `0→調整なし`、`0<ratio≤20→調整小`、`20<ratio≤80→調整中`、`ratio>80→調整大`、`-20≤ratio<0→調整小（マイナス）`、`ratio<-20→過大調整`。ただし`gaap_eps<0かつadjusted_eps>0`の場合は強制的に`調整大`に上書き | AS-IS-276（本表） | 導出データ |
+| AS-IS-419 | TANUKI TAIL | kpis.{kpi_name}.unit | `xbrl_segment_fetcher.py:fetch_ticker()` | **常に固定文字列`"USD"`**（KPIの実際の性質〈比率・件数等〉に関わらず無条件、下記備考） | 定数（カタログ対象外） | 導出データ |
+| AS-IS-420 | TANUKI TAIL | kpis.{kpi_name}.data[].quarter | 同上 | `quarter_label(period)`（10-Q提出書類のperiod日付から四半期ラベルへ変換） | SEC EDGAR 10-Q（カタログ対象外） | 導出データ |
+| AS-IS-421 | TANUKI TAIL | kpis.{kpi_name}.data[].value | 同上 | XBRL 10-Qファイリングから`parse_and_extract()`が抽出した値。整数に近い値（USD金額）は`int`、小数値（比率）は`round(値,4)`のfloatで保持 | SEC EDGAR 10-Q XBRL（カタログ対象外） | 導出データ |
+| AS-IS-422 | TANUKI TAIL | kpis.{name}.value（Layer3テキスト抽出） | `text_kpi_extractor.py:extract_layer3()` | **AI生成**: `auto_fetchable=false`のKPI（XBRL構造化データで取得不可）のみ対象。10-Q MD&Aテキスト＋8-K EX-99.1（決算プレスリリース）をGrokに渡し、`extraction_hint`を手がかりに数値を抽出させる。「数値が明示されている場合のみ記入・推測禁止」と指示。`value`は原文の文字列表現（例:"150%"） | Grok API（10-Q MD&A/8-K EX-99.1テキストベース、カタログ対象外） | 導出データ |
+| AS-IS-423 | TANUKI TAIL | kpis.{name}.value_numeric（Layer3） | 同上 | AS-IS-422と同一Grok応答内の`value_numeric`（AIが自ら数値化した値、例:150）。`confidence`（high/medium/low）もAI自己申告 | AS-IS-422と同じ | 導出データ |
+| AS-IS-452 | TANUKI TAIL | kpi_current.{KPI名} | `tail_dcf_bridge.py:_build_current_kpi_values()` | `layer2.kpis[KPI名].data[0].value`（最新1件、AS-IS-421既定義のパススルー） | AS-IS-421（本表） | 導出データ |
+| AS-IS-499 | TANUKI TAIL | call2.five_perspectives.{5観点} | `build_call2_prompt()`→Grok | **AI生成**（web検索併用）: ①ビジネスモデル②成長性③競争優位④経営⑤市場環境の5観点分析。プロンプト入力: 投資テーゼ・エントリーストーリー・Call1（stage1）評価結果全体・マクロ環境・過去call2の引き継ぎ事項（前回5観点要約等、重複回避目的）・KPI実績8四半期＋YoY/QoQ・Layer3抽出KPI・健全度推移。「KPI実績を各観点の起点として必ず使用」「テーゼの言い換え禁止」と明示的に指示 | Stage1評価結果（信頼性・品質判定系・未定義）＋ KPI実績（AS-IS-420/421既定義、本表422/423）＋ マクロ環境（未定義） | 導出データ |
+| AS-IS-500 | TANUKI TAIL | call2.entry_story_progress | 同上 | 同一Grok応答内。「エントリーストーリーは現在どの程度実現しているか」をweb検索で確認させた自由記述 | AS-IS-499と同じ | 導出データ |
+| AS-IS-501 | TANUKI TAIL | call2.market_attention | 同上 | 同一Grok応答内。「市場・メディア・アナリストが今最も注目している点」をweb検索させた自由記述（出典明示指示あり） | AS-IS-499と同じ | 導出データ |
+| AS-IS-502 | TANUKI TAIL | call2.historical_analogy | 同上 | 同一Grok応答内。ビジネスモデル・成長軌跡・リスク構造が類似する歴史的企業1社（`company`/`similarity`/`outcome`/`implication`）。「一般的な類比は禁止」と明示指示 | AS-IS-499と同じ | 導出データ |
+| AS-IS-503 | TANUKI TAIL | call2.macro_implications | 同上 | 同一Grok応答内。現在のマクロ環境（スコア・フェーズ）がテーゼに与える影響の自由記述 | AS-IS-499と同じ | 導出データ |
+| AS-IS-504 | TANUKI TAIL | call2.thesis_questions | 同上 | 同一Grok応答内。テーゼへの問いかけ3件。「言い換え禁止」「過去の問いと重複禁止」（過去call2の`thesis_questions`をプロンプトに含めて重複回避） | AS-IS-499と同じ | 導出データ |
+| AS-IS-505 | TANUKI TAIL | call2.next_review_focus | 同上 | 同一Grok応答内。次回決算で確認すべき論点3件（優先度順）。過去call2の`next_review_focus`との重複除外指示あり | AS-IS-499と同じ | 導出データ |
+| AS-IS-507 | TANUKI TAIL | review_quarter | `prediction_tracker.py:track_ticker()` | レビューJSON自体の`quarter`フィールドをそのまま参照（`quarterly_review_generator.py`が生成時に設定） | レビューJSONのquarter（カタログ対象外） | 導出データ |
+| AS-IS-508 | TANUKI TAIL | forecast_target | 同上 | `_add_quarters(review_quarter, 4)`（レビュー対象四半期の1年後＝4四半期後を計算） | AS-IS-507（本表） | 導出データ |
+| AS-IS-510 | TANUKI TAIL | predictions[KPI名].predicted | 同上 | `stage2.scenarios.{シナリオ}.kpi_forecasts["1年後"][KPI名]`（AS-IS-496、既定義・フェーズ6、AI生成値）をそのまま参照 | AS-IS-496（既定義・フェーズ6） | 導出データ |
+| AS-IS-511 | TANUKI TAIL | predictions[KPI名].actual | 同上 | `layer2.kpis[KPI名]`の`forecast_target`（AS-IS-508）時点の実績値（AS-IS-421既定義のXBRL実測値） | AS-IS-421（本表）＋ AS-IS-508（本表） | 導出データ |
+| AS-IS-512 | TANUKI TAIL | predictions[KPI名].deviation_pct | 同上 | `round((actual-predicted)/abs(predicted)×100, 1)`（`predicted`が非ゼロの場合のみ、それ以外はNone） | AS-IS-510, AS-IS-511（本表） | 導出データ |
+| AS-IS-513 | TANUKI TAIL | predictions[KPI名].accuracy | 同上 | `_classify_deviation(dev_pct)`: `abs(dev_pct)≤10→accurate`、`dev_pct>10→under_estimated`（実績が予測を上回った＝予測が過小だった）、`dev_pct<-10→over_estimated`（実績が予測を下回った＝予測が過大だった） | AS-IS-512（本表） | 導出データ |
+| AS-IS-514 | TANUKI TAIL | kpi_forecast_available | 同上 | `bool(stage2.scenarios.{シナリオ}.kpi_forecasts["1年後"])`（AI生成のkpi_forecastsが空でないか） | AS-IS-496（既定義・フェーズ6） | 導出データ |
+| AS-IS-515 | TANUKI TAIL | matchable | 同上 | `len(predictions_1y) > 0`（AS-IS-510〜513が1件以上生成できたか＝予測KPIと実績KPIが最低1つ一致したか） | AS-IS-510〜513（本表） | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+- **UTC/JST日付不整合（`explore_macro_themes()`、最重要）**:
+  `collect.py:249` `today = date.today().isoformat()`は**タイムゾーン
+  非対応の素の日付**（GitHub Actionsランナーの実行環境時刻、実質UTC）を
+  使うのに対し、同じcollect.pyの他の箇所（`main()`内`now_jst =
+  datetime.now(JST)`、`append_to_monthly_history()`内`today =
+  now_jst.strftime(...)`）は明示的にJST変換している。collect.pyは
+  「毎日JST 7:00」に実行される設計（ファイル冒頭コメント）だが、
+  JST 7:00は同日UTC ではまだ前日22:00（UTC 7:00-9:00=-2:00、日付が
+  繰り下がる）であり、`date.today()`はJSTの実行日より**1日古い日付**を
+  返す。この結果`macro_themes[].generated_at`（AS-IS-258の一部、
+  `explore_macro_themes()`が設定）は、同じレポート内の
+  `daily_report.json.generated_at`（正しくJST基準）より1日古い値に
+  なりうる。`catalyst.py`（毎週日曜JST23:30実行）の同種の`date.today()`
+  使用（`first_detected`/`last_updated`、AS-IS-246）はJST23:30が
+  UTC 14:30で日付を跨がないため実害が生じにくいが、同様に
+  タイムゾーン非対応である点は同一の設計リスクとして残る。
+- **影響予測（AS-IS-248）はDiscoverのメイン画面index.htmlに一切表示
+  されない**: `docs/discover/catalyst.html`・`docs/discover/
+  news_history.html`は`impact_predictions_{ym}.json`をfetchして
+  表示するが、`docs/discover/index.html`は同ファイルを一切参照しない
+  （grep確認済み、0件）。影響予測は計算・保存されているにもかかわらず、
+  Discoverの一覧画面を見るだけのユーザーには存在自体が伝わらない。
+- **config二重管理（discover_config.json/theme_config.json）**:
+  管理画面`docs/discover/admin.html`は`config/discover_config.json`・
+  `config/theme_config.json`にGitHub API経由で直接コミットする。
+  日次バッチ`collect.py`も`config/discover_config.json`を正しく参照する。
+  しかし**表示画面`docs/discover/index.html`は別パス
+  `docs/portfolio/data/discover_config.json`・
+  `docs/portfolio/data/theme_config.json`（コピー）を参照する**。
+  この2ファイルの同期は新規銘柄登録手順（Step 6）の
+  `shutil.copy()`一回限りの処理に依存しており、admin.html経由で
+  テーマ・カテゴリを直接編集した場合はこのコピー処理を経由しないため、
+  「admin.htmlは保存成功と表示するがindex.htmlの表示は更新されない」
+  というズレが発生しうる。
+- **テーマ連続登場判定（index.html）が文字列部分一致に依存し精度が
+  低い**: `themeStreakMap`の算出ロジック
+  （`docs/discover/index.html:452-457`）は、今週のテーマ名と過去4週分の
+  テーマ名を`hn.includes(name) || name.includes(hn)`という**単純な
+  部分文字列一致**で比較する。テーマ名自体は`explore_macro_themes()`
+  （AS-IS-258）が毎週Grokに自由生成させた20字以内の文字列であり、
+  同一の実質的テーマでも週によって表現が微妙に変わりうる（例:
+  「AI電力インフラ需要」と「データセンター電力不足」）。この場合
+  部分文字列一致では継続と判定されず「🔥N週連続」バッジが過小評価
+  される（偽陰性）。逆に無関係な2つのテーマが偶然共通の部分文字列を
+  持つ場合は誤って連続登場と判定される（偽陽性）リスクもある。
+  ID・埋め込みベースの意味的一致ではなく素朴な文字列比較である点が
+  精度の限界。
+- **AS-IS-248（影響予測）はcatalystモードで新規発掘分のみが対象**:
+  `impact_predictor.py:run_catalyst()`は`first_detected==本日`の
+  カタリストのみを予測対象とする（既存の累積カタリストは対象外、
+  コスト抑制目的とコード内コメントに明記）。このため、ある日の
+  `catalyst.py`実行後に`impact_predictor.py --source catalyst`の
+  実行が何らかの理由で漏れた場合、そのカタリストは**未来永劫
+  影響予測を持てない**（翌日以降は`first_detected`が過去日になり
+  対象外になるため）。
+- **classified.items（AS-IS-250）は「様子見」カテゴリ銘柄でNEWS API
+  0件時のフォールバックが効かない**: `collect.py:main()`の分岐
+  （`elif info.get("category") in ["保有中","監視中"]`）はGrok web検索
+  代替を「保有中」「様子見」に限定せず「様子見」を除外している。
+  「様子見」銘柄はNEWS APIで0件だった場合、Grok代替を試さず
+  無条件で`{"items":[],"summary":"データなし"}`になる。
+- **buy_hold_ratio（AS-IS-108）は名称と実体が食い違う**:
+  変数名・フィールド名は「buy_HOLD_ratio」だが、実際の計算式
+  `(strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell)`には
+  `hold`が分子に含まれておらず、実質的に「Buy比率」（Strong Buy+Buy
+  の比率）である。
+- **kpis.{kpi_name}.unit（AS-IS-419）が常に"USD"固定**:
+  `xbrl_segment_fetcher.py:fetch_ticker()`は抽出したKPIの`unit`欄に
+  無条件で`"USD"`を設定する。同じ関数内で「整数に近い値（USD金額）は
+  int、小数値（比率）はfloat」と値の型を使い分けている（コード自身が
+  比率KPIの存在を認識している）にもかかわらず、`unit`フィールドは
+  比率KPIであっても"USD"のままになる。
+- **「黒字化年予測」がTANUKI VALUATION（AS-IS-051）とSTONKS SILO
+  （AS-IS-162/163）で全く異なる手法を採る**: 前者は調整後EPS
+  （四半期）4点のOLS単回帰、後者はマージン（OCF or NI ÷ Revenue）の
+  直近2点線形外挿を優先しOLS絶対値回帰へフォールバックする2段階方式。
+  同じ「黒字化時期の予測」という概念に対し、データ粒度（四半期EPS vs
+  年次マージン）・手法（単純OLS vs 2段階外挿）ともに独立した実装が
+  並存している。
+- **macro_themes（AS-IS-258〜260）は日曜以外に「見た目上は毎日更新
+  されているが中身は先週のまま」になりうる**: `collect.py:main()`は
+  日曜以外`macro_themes`を前回`daily_report.json`からそのまま引き継ぐ
+  （416-422行）が、`daily_report.json`自体の`generated_at`は毎日
+  更新される。ユーザーが`generated_at`だけを見て「今日生成された
+  最新のテーマ」と誤認するリスクがある（各テーマオブジェクト自体が
+  持つ`generated_at`〈週次生成日〉を見れば区別できるが、レポート全体の
+  タイムスタンプとは別に確認する必要がある）。
+
+### 次フェーズへの申し送り
+
+- 本フェーズで引用のみ行い内部アルゴリズムを再展開しなかったAS-IS-ID:
+  信頼性・品質判定系のStage1評価結果（AS-IS-482〜491、未定義）、
+  マクロ環境スコア（未定義）
+- AS-IS-129・AS-IS-156・AS-IS-161・AS-IS-267・AS-IS-420・AS-IS-421・
+  AS-IS-496は既定義（フェーズ4/5/6）のものをそのまま引用した
+- 本フェーズで発見したUTC/JST日付不整合・config二重管理・テーマ連続
+  登場判定の精度不足・影響予測のindex.html非表示・buy_hold_ratioの
+  名称不一致・unit常時"USD"固定はいずれも実装（コード修正）を伴うため、
+  本タスクの範囲外として記録にとどめた
