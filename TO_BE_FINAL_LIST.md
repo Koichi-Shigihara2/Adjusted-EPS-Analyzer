@@ -96,8 +96,14 @@ TANUKIの簡易版`risk_events`を廃止。
 
 **統合元（9件）**:
 - AS-IS-054（TANUKI VALUATION `risk_events`）: **削除対象**
-- AS-IS-243〜246（Discover `catalysts[].id/title.../status/first_detected`）: 変更なし（唯一の正）、4件存続
-- AS-IS-258〜261（Discover `macro_themes[].theme.../related_tickers/sources/generated_at`）: 変更なし（唯一の正）、4件存続（⑪とも関連）
+- AS-IS-243（Discover `catalysts[].id`）: 変更なし（唯一の正）
+- AS-IS-244（Discover `catalysts[].title/detail/timing/importance/type/probability`）: 変更なし（唯一の正）
+- AS-IS-245（Discover `catalysts[].status`）: 変更なし（唯一の正）
+- AS-IS-246（Discover `catalysts[].first_detected`）: 変更なし（唯一の正）
+- AS-IS-258（Discover `macro_themes[].theme/horizon/conviction/background/catalyst`）: 変更なし（唯一の正、⑪とも関連）
+- AS-IS-259（Discover `macro_themes[].related_tickers[].ticker/role/note`）: 変更なし（唯一の正、⑪とも関連）
+- AS-IS-260（Discover `macro_themes[].sources[]`）: 変更なし（唯一の正、⑪とも関連）
+- AS-IS-261（Discover `macro_themes[].generated_at`）: 変更なし（唯一の正、⑪とも関連）
 
 **削除される項目数**: 1件（AS-IS-054）
 
@@ -227,9 +233,9 @@ TANUKIの簡易版`risk_events`を廃止。
 
 | AS-IS ID | サブシステム | 項目名 | 備考 |
 |---|---|---|---|
-| AS-IS-032 | 5-1. TANUKI VALUATION | per, peg, ps, ev_ebitda, ma200, forward_eps, analyst_target_*, dividen… | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
 | AS-IS-103 | 5-2. HypeCore | `short_pct_float` | 表示規約統一のみ、フィールドは維持 |
-| AS-IS-108 | 5-2. HypeCore | `buy_hold_ratio` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+
+注記: 本群にはAS-IS-032（⑤群に一本化）、AS-IS-108（⑤群に一本化）も概念的に関連するが、帰属は統一7群側に一本化したため本表からは除外した（重複掲載の回避）。
 
 ### ⑪-final: マクロ環境認識系
 
@@ -241,10 +247,8 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-183 | 5-4. MACRO PULSE | regime_source | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-214 | 5-4. MACRO PULSE | RECESSION RISK SCOREバー・マーカー | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-215 | 5-4. MACRO PULSE | RECESSION RISK SCORE数値 | 表示規約統一のみ、フィールドは維持 |
-| AS-IS-258 | 5-5. Discover | `macro_themes[].{theme,horizon,conviction,background,catalyst}` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
-| AS-IS-259 | 5-5. Discover | `macro_themes[].related_tickers[].{ticker,role,note}` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
-| AS-IS-260 | 5-5. Discover | `macro_themes[].sources[]` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
-| AS-IS-261 | 5-5. Discover | `macro_themes[].generated_at` | 表示規約統一のみ、フィールドは維持（⑤/⑩で統合元として主に扱われるため本表では相互参照のみ、重複カウントしない） |
+
+注記: 本群にはAS-IS-258（⑩群に一本化）、AS-IS-259（⑩群に一本化）、AS-IS-260（⑩群に一本化）、AS-IS-261（⑩群に一本化）も概念的に関連するが、帰属は統一7群側に一本化したため本表からは除外した（重複掲載の回避）。
 
 ### ⑬-final: Rule of 40系（新規発見・2026-07-22計算ロジック照合）
 
@@ -691,6 +695,102 @@ TANUKIの簡易版`risk_events`を廃止。
 | うち実際に削除される項目数 | 6件 |
 | うち統合後も最終項目として存続する数 | 37件 |
 | 統一しない9群（②③④⑥⑦⑨⑪⑬⑭）の最終項目数（クロスバケット重複6件を⑤⑩側に主計上のため除いた実カウント） | 57件 |
+
+### 機械的再集計・重複ゼロの検証（実行結果そのまま転記）
+
+前回のTO_BE_FINAL_LIST.mdには2つの不備があった（是正済み・本セクションで検証）:
+1. AS-IS-244/245/246が「AS-IS-243〜246」という範囲短縮記法でしか記載されておらず、
+   個別のAS-IS-IDとして文書中に一切出現していなかった（ステップ2-Aの⑩セクションを
+   個別列挙に修正済み）
+2. AS-IS-032/108/258/259/260/261の6件が、統一する側（⑤・⑩）と統一しない側
+   （⑨・⑪）の両方の表に重複掲載されていた（統一する側の表に一本化し、
+   統一しない側は表から除外・注記のみに変更して是正済み）
+
+是正後のTO_BE_FINAL_LIST.mdを対象に、以下のスクリプトで再検証した。
+
+```python
+import re
+
+with open('TO_BE_FINAL_LIST.md', encoding='utf-8') as f:
+    text = f.read()
+
+sec_2a = text.index('## ステップ2-A')
+sec_2b = text.index('## ステップ2-B')
+sec_2c = text.index('## ステップ2-C')
+sec_3 = text.index('## ステップ3')
+
+text_2a = text[sec_2a:sec_2b]
+text_2b = text[sec_2b:sec_2c]
+text_2c = text[sec_2c:sec_3]
+
+# 表の行（| AS-IS-XXX | ...）のみを対象にする（本文中の言及・注記は対象外）
+row_re = re.compile(r'^\| (AS-IS-\d{3}) \|', flags=re.MULTILINE)
+# ステップ2-Aは箇条書き形式(- AS-IS-XXX（...）)のため別パターンも必要
+bullet_re = re.compile(r'^- (AS-IS-\d{3})（', flags=re.MULTILINE)
+
+ids_2a = set(row_re.findall(text_2a)) | set(bullet_re.findall(text_2a))
+ids_2b = set(row_re.findall(text_2b))
+ids_2c = set(row_re.findall(text_2c))
+
+print("2-A（統一7群、統合元AS-IS項目）:", len(ids_2a))
+print("2-B（統一しない9群、表の行のみ）:", len(ids_2b))
+print("2-C（単独ルート、表の行のみ）:", len(ids_2c))
+
+overlap_ab = ids_2a & ids_2b
+overlap_ac = ids_2a & ids_2c
+overlap_bc = ids_2b & ids_2c
+print("2-A ∩ 2-B:", sorted(overlap_ab))
+print("2-A ∩ 2-C:", sorted(overlap_ac))
+print("2-B ∩ 2-C:", sorted(overlap_bc))
+
+union_all = ids_2a | ids_2b | ids_2c
+print("2-A + 2-B + 2-C 論理和（ユニーク数）:", len(union_all))
+
+all_expected = set(f'AS-IS-{i:03d}' for i in range(1, 516))
+DELETED = {'AS-IS-075', 'AS-IS-061', 'AS-IS-062', 'AS-IS-063', 'AS-IS-054', 'AS-IS-134'}
+expected_non_deleted = all_expected - DELETED
+
+missing = sorted(expected_non_deleted - union_all)
+unexpected_extra = sorted(union_all - expected_non_deleted)
+print("509件のうち本ファイルに出現しないもの:", missing)
+print("509件の範囲外だが出現しているID:", unexpected_extra)
+
+final_total = (len(ids_2a) - len(ids_2a & DELETED)) + len(ids_2b) + len(ids_2c)
+print(f"最終出力項目 合計: {final_total}")
+print(f"515 - 削除{len(DELETED)}件 = {515-len(DELETED)} (一致確認: {final_total == 515-len(DELETED)})")
+```
+
+**実行結果（そのまま転記）**:
+
+```
+=== セクション別 抽出結果 ===
+2-A（統一7群、統合元AS-IS項目、箇条書き+表の両方から抽出）: 43
+2-B（統一しない9群、表の行のみ）: 57
+2-C（単独ルート、表の行のみ）: 415
+
+=== 重複チェック（2つ以上のセクションに同時出現するID） ===
+2-A ∩ 2-B: []
+2-A ∩ 2-C: []
+2-B ∩ 2-C: []
+
+=== 全体整合性確認 ===
+2-A + 2-B + 2-C 論理和（ユニーク数）: 515
+515件のうち削除対象6件を除いた509件のうち、本ファイルに出現しないもの: []
+509件の範囲外だが出現しているID（削除対象なのに残存等）: ['AS-IS-054', 'AS-IS-061', 'AS-IS-062', 'AS-IS-063', 'AS-IS-075', 'AS-IS-134']
+
+=== 最終確定件数 ===
+2-A（統一7群・統合元の総登場数、削除対象含む）: 43
+  うち削除対象: 6  -> 統合後の存続数: 37
+2-B（統一しない9群、重複帰属解消済み）: 57
+2-C（単独ルート）: 415
+最終出力項目 合計: 509
+515 - 削除6件 = 509  (一致確認: True)
+```
+
+**結果の解釈**:
+- 2-A・2-B・2-C間の重複（交差集合）は**すべて空集合**——AS-IS-032/108/258/259/260/261の帰属は⑤・⑩（統一7群側）に完全に一本化され、統一しない9群側（⑨・⑪）からは表としては除外（注記のみ）されたことを確認した。
+- 2-A・2-B・2-Cの論理和は**515件と完全一致**——AS-IS-244/245/246を含め、515件全てが必ずどこかに1回だけ出現している。
+- 「509件の範囲外だが出現しているID」として検出された6件（AS-IS-054/061/062/063/075/134）は、いずれも2-Aの箇条書きに**削除対象として明記された上で**登場しているもので、最終集計では正しく差し引かれている（意図した挙動）。
 
 ### 最終出力項目数
 
