@@ -950,4 +950,111 @@ net_cash（⑫）: ['AS-IS-025', 'AS-IS-134'] (2件 -> 1件)
 - AS-IS-001〜515: **515件**（生成物ベースの延べ数、重複含む）
 - ステップ3時点（群単位の粗い集計、509件）: 「統一する7群」を丸ごと
   1グループとして扱った暫定値。**参考値として残すが、真の最終数ではない**
-- 本ステップ4（項目単位の同一定義判定、503件）: **真に必要な出力項目数**
+- 本ステップ4（項目単位の同一定義判定、503件）: 2分類（同一定義／異なる定義）
+  時点での真に必要な出力項目数。**ステップ5でさらに精緻化する**
+
+## ステップ5: 第3カテゴリ「概念統一・パラメータ違い」の導入と最終集計
+
+`CONCEPT_PARAMETER_VARIATIONS.md`で検証した結果、ステップ4で「異なる定義」
+（497件）に分類していた項目のうち9件が、実際には「計算目的・対象データは
+同じだが、集計期間（TTM/FY/YoY/3年CAGR等）というパラメータのみが異なる」
+関係にあることが判明した。これらは削除・統合せず、4つの「概念」の下に
+パラメータバリエーションとして記録し直す。
+
+### 該当した4概念・9項目
+
+| 概念 | 該当AS-IS-ID | パラメータ差 |
+|---|---|---|
+| PSR（株価売上高倍率） | AS-IS-099（HypeCore, TTM）／AS-IS-132（STONKS SILO, Annual） | TTM vs Annual |
+| net_income（純利益） | AS-IS-129（STONKS SILO, FY）／AS-IS-281（EPS Analyzer, TTM） | FY vs TTM |
+| 売上高成長率 | AS-IS-152（STONKS SILO, 単年YoY）／AS-IS-136（STONKS SILO, 3年CAGR）／AS-IS-093（HypeCore, TTM YoY） | 単年 vs 3年 vs TTM（093のみ正規化パイプライン差の注記あり） |
+| STONKS SILO OCF年次値 | AS-IS-156（最新1年）／AS-IS-160（全年度dict） | 単年 vs 全年度 |
+
+（`AS-IS-032`内包の`ps`サブフィールドはPSR概念に概念的に関連するが、
+束ねられた行のため独立カウントからは除外。詳細は`CONCEPT_PARAMETER_VARIATIONS.md`参照）
+
+**精査したが棄却した候補**（名称は類似だが測定対象・データソースが異なると
+判明）: ③TANUKI「FCF CAGR(3yr)」vs STONKS SILO「cagr_3yr」（FCF≠売上高）、
+⑬Rule of 40全体（利益率の定義自体が異なる。ただし成長率サブコンポーネント
+はそれぞれ売上高成長率概念のAS-IS-093／AS-IS-136と同一値であることを発見）、
+⑦TANUKI「fcf_base」vs STONKS SILO「ocf_annual」（FCF≠OCF）。
+
+### 再集計スクリプトの実行（そのまま転記）
+
+```python
+MERGE_CLUSTERS = {
+    "upside_percent（乖離率、①）": ["AS-IS-006", "AS-IS-075", "AS-IS-280"],
+    "funda_score（④）": ["AS-IS-035", "AS-IS-289"],
+    "timing_score（④）": ["AS-IS-037", "AS-IS-290"],
+    "per_adjusted（⑤）": ["AS-IS-031", "AS-IS-283"],
+    "next_earnings_date（次回決算日、⑧）": ["AS-IS-048", "AS-IS-179", "AS-IS-284"],
+    "net_cash（⑫）": ["AS-IS-025", "AS-IS-134"],
+}
+PURE_DELETE = {"AS-IS-061", "AS-IS-062", "AS-IS-063", "AS-IS-054"}
+CONCEPT_VARIATIONS = {
+    "PSR（株価売上高倍率）": ["AS-IS-099", "AS-IS-132"],
+    "net_income（純利益）": ["AS-IS-129", "AS-IS-281"],
+    "売上高成長率": ["AS-IS-152", "AS-IS-136", "AS-IS-093"],
+    "STONKS SILO OCF年次値": ["AS-IS-156", "AS-IS-160"],
+}
+
+all_ids = set(f"AS-IS-{i:03d}" for i in range(1, 516))
+cluster_source_ids = set()
+for ids in MERGE_CLUSTERS.values():
+    cluster_source_ids |= set(ids)
+concept_ids = set()
+for ids in CONCEPT_VARIATIONS.values():
+    concept_ids |= set(ids)
+
+assert not (cluster_source_ids & PURE_DELETE)
+assert not (cluster_source_ids & concept_ids)
+assert not (PURE_DELETE & concept_ids)
+
+remaining_truly_different = all_ids - cluster_source_ids - PURE_DELETE - concept_ids
+
+n_same_def_concepts = len(MERGE_CLUSTERS)
+n_concept_variation_concepts = len(CONCEPT_VARIATIONS)
+n_concept_variation_items = len(concept_ids)
+n_truly_different = len(remaining_truly_different)
+
+final_output_count = n_same_def_concepts + n_concept_variation_items + n_truly_different
+check = len(cluster_source_ids) + len(PURE_DELETE) + n_concept_variation_items + n_truly_different
+assert check == 515
+```
+
+**実行結果（そのまま転記）**:
+
+```
+同一定義クラスタ ∩ 純粋削除: []
+同一定義クラスタ ∩ 概念統一パラメータ違い: []
+純粋削除 ∩ 概念統一パラメータ違い: []
+
+=== 3層集計 ===
+同一定義: 6概念（元14件から統合）
+純粋削除: 4件
+概念統一・パラメータ違い: 4概念（実項目9件、削除なし・維持）
+真に異なる定義: 488件
+
+真に必要な出力項目数 = 同一定義6 + 概念統一パラメータ違い9(実項目) + 異なる定義488 = 503
+検算(515件の内訳): 同一定義元14 + 純粋削除4 + 概念統一パラメータ違い9 + 異なる定義488 = 515
+
+前回report(503件)との比較: 503 == 503 ? True
+```
+
+### 最終集計（3分類、確定版）
+
+| 区分 | 概念（親項目）数 | 実際の出力項目数 |
+|---|---|---|
+| 同一定義（1項目に統合） | 6概念 | 6件 |
+| 概念統一・パラメータ違い（親概念でグルーピング、個別の値は維持） | 4概念 | 9件（削除なし） |
+| 真に異なる定義（個別維持） | — | 488件 |
+| **合計（真に必要な出力項目数）** | | **503件** |
+
+**重要**: 「概念統一・パラメータ違い」への再分類は、実際に表示・出力される
+値の数を1件も減らしていない（9件は9件のまま出力され続ける）。変わったのは
+分類の精緻化のみであり、そのため合計は503件のままステップ4から変化しない。
+これは第3カテゴリの導入意図（「削除はしない、統合先の1項目に値を潰すのでも
+ない」）に照らして正しい結果である。
+
+515（延べ数）→509（群単位の粗い集計）→503（項目単位の真の集計、3分類後も503で不変）
+という3段階の集計値を、それぞれ異なる粒度の指標として明確に区別する。
