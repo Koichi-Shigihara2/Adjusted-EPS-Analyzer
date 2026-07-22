@@ -75,13 +75,13 @@
 | AS-IS-061 | TANUKI VALUATION | フェアPER（クライアント再計算） | フェアPER | 導出データ | **削除対象** |
 | AS-IS-062 | TANUKI VALUATION | PEGレシオ（クライアント再計算） | PEGレシオ | 導出データ | **削除対象** |
 | AS-IS-063 | TANUKI VALUATION | PSR（クライアント再計算） | PSR | 導出データ | **削除対象** |
-| AS-IS-097 | HypeCore | forward_pe | `forward_pe` | 導出データ | 共通関数参照、存続 |
-| AS-IS-098 | HypeCore | peg_ratio | `peg_ratio` | 導出データ | 共通関数参照、存続 |
-| AS-IS-099 | HypeCore | psr | `psr` | 導出データ | 共通関数参照、存続（PSR概念クラスタの元AS-IS-ID、CONCEPT_PARAMETER_VARIATIONS.md参照） |
-| AS-IS-102 | HypeCore | recommendation_mean | `recommendation_mean` | 導出データ | 共通関数参照、存続 |
+| AS-IS-097 | HypeCore | forward_pe | `forward_pe` | 一次データ（**導出データ405件着手前に訂正**: `fetch_info_snapshot:116` `info.get("forwardPE")`のyfinance単一フィールド直接取得、計算なし） | 共通関数参照、存続 |
+| AS-IS-098 | HypeCore | peg_ratio | `peg_ratio` | 一次データ（**同上訂正**: `info.get("pegRatio")`の直接取得） | 共通関数参照、存続 |
+| AS-IS-099 | HypeCore | psr | `psr` | 一次データ（**同上訂正**: `info.get("priceToSalesTrailing12Months")`の直接取得） | 共通関数参照、存続（PSR概念クラスタの元AS-IS-ID、CONCEPT_PARAMETER_VARIATIONS.md参照） |
+| AS-IS-102 | HypeCore | recommendation_mean | `recommendation_mean` | 一次データ（**同上訂正**: `info.get("recommendationMean")`の直接取得） | 共通関数参照、存続 |
 | AS-IS-105 | HypeCore | analyst_upgrade_rate | `analyst_upgrade_rate` | 導出データ | 共通関数参照、存続 |
 | AS-IS-108 | HypeCore | buy_hold_ratio | `buy_hold_ratio` | 導出データ | 共通関数参照、存続（⑨とも関連） |
-| AS-IS-117 | HypeCore | ev_ebitda | `ev_ebitda` | 導出データ | 正値フィルタ追加の修正対象、削除ではなく存続 |
+| AS-IS-117 | HypeCore | ev_ebitda | `ev_ebitda` | 一次データ（**同上訂正**: `info.get("enterpriseToEbitda")`の直接取得） | 正値フィルタ追加の修正対象、削除ではなく存続 |
 | AS-IS-132 | STONKS SILO | valuation.psr（Annual基準） | `valuation.psr` | 導出データ（**FIELD_DEFINITIONS.mdフェーズ2で訂正**: `market_cap ÷ latest_rev`の計算値のため） | 統一対象外、別項目として併存（PSR概念クラスタの元AS-IS-ID） |
 | AS-IS-133 | STONKS SILO | valuation.ev_sales（Annual基準） | `valuation.ev_sales` | 導出データ | 統一対象外、別項目として併存 |
 | AS-IS-282 | EPS Analyzer | components.per（GAAP PER） | `components.per`（GAAP PER） | 移送データ | 共通関数参照、存続 |
@@ -196,7 +196,7 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-043 | 5-1. TANUKI VALUATION | phase1_growth_auto_adjusted | phase1_growth_auto_adjusted | 導出データ | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-079 | 5-2. HypeCore | STONKS SILO `deficit_quality.revenue_growth_pct` | STONKS SILO `deficit_quality.revenue_growth_pct` | 導出データ | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-093 | 5-2. HypeCore | `rev_yoy` | `rev_yoy` | 導出データ | 表示規約統一のみ、フィールドは維持 |
-| AS-IS-100 | 5-2. HypeCore | `revenue_growth` | `revenue_growth` | 導出データ | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-100 | 5-2. HypeCore | `revenue_growth` | `revenue_growth` | 一次データ（**導出データ405件着手前に訂正**: `fetch_info_snapshot:120` `info.get("revenueGrowth")`のyfinance単一フィールド直接取得、計算なし） | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-136 | 5-3. STONKS SILO | `cagr_3yr` | `cagr_3yr` | 導出データ | 表示規約統一のみ、フィールドは維持 |
 | AS-IS-152 | 5-3. STONKS SILO | `revenue_growth_pct` | `revenue_growth_pct` | 導出データ | 表示規約統一のみ、フィールドは維持 |
 
@@ -249,7 +249,7 @@ TANUKIの簡易版`risk_events`を廃止。
 
 | AS-IS ID | サブシステム | 項目名 | 表示名称 | データ性質分類 | 備考 |
 |---|---|---|---|---|---|
-| AS-IS-103 | 5-2. HypeCore | `short_pct_float` | `short_pct_float` | 導出データ | 表示規約統一のみ、フィールドは維持 |
+| AS-IS-103 | 5-2. HypeCore | `short_pct_float` | `short_pct_float` | 一次データ（**導出データ405件着手前に訂正**: `fetch_info_snapshot:125` `info.get("shortPercentOfFloat")`のyfinance単一フィールド直接取得、計算なし） | 表示規約統一のみ、フィールドは維持 |
 
 注記: 本群にはAS-IS-032（⑤群に一本化）、AS-IS-108（⑤群に一本化）も概念的に関連するが、帰属は統一7群側に一本化したため本表からは除外した（重複掲載の回避）。
 
@@ -337,7 +337,7 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-081 | 5-2. HypeCore / `monthly` | `monthly` | 導出データ |
 | AS-IS-082 | 5-2. HypeCore / `tickers`（配列） | `tickers`（配列） | 導出データ |
 | AS-IS-083 | 5-2. HypeCore / `month` | `month` | 導出データ |
-| AS-IS-084 | 5-2. HypeCore / `price` | `price` | 導出データ |
+| AS-IS-084 | 5-2. HypeCore / `price` | `price` | 一次データ（**導出データ405件着手前に訂正**: `fetch_price_data:80` `resample("ME").agg({"price":"last"})`は月末値の選択であり計算ではない） |
 | AS-IS-086 | 5-2. HypeCore / `stage_label` | `stage_label` | 導出データ |
 | AS-IS-087 | 5-2. HypeCore / `ma200_dev` | `ma200_dev` | 導出データ |
 | AS-IS-088 | 5-2. HypeCore / `ma50_dev` | `ma50_dev` | 導出データ |
@@ -347,7 +347,7 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-092 | 5-2. HypeCore / `vol_surge` | `vol_surge` | 導出データ |
 | AS-IS-094 | 5-2. HypeCore / `ni_yoy` | `ni_yoy` | 導出データ |
 | AS-IS-096 | 5-2. HypeCore / `fcf_yield` | `fcf_yield` | 導出データ |
-| AS-IS-101 | 5-2. HypeCore / `earnings_growth` | `earnings_growth` | 導出データ |
+| AS-IS-101 | 5-2. HypeCore / `earnings_growth` | `earnings_growth` | 一次データ（**導出データ405件着手前に訂正**: `fetch_info_snapshot:121` `info.get("earningsGrowth")`のyfinance単一フィールド直接取得、計算なし） |
 | AS-IS-104 | 5-2. HypeCore / `eps_surprise` | `eps_surprise` | 導出データ |
 | AS-IS-106 | 5-2. HypeCore / `analyst_downgrade_rate` | `analyst_downgrade_rate` | 導出データ |
 | AS-IS-107 | 5-2. HypeCore / `sell_on_good_news` | `sell_on_good_news` | 導出データ |
@@ -362,10 +362,10 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-122 | 5-2. HypeCore / バリュエーション倍率パネル（PER/PS/PEG/EV-EBITDA） | バリュエーション倍率パネル（PER/PS/PEG/EV-EBITDA） | 導出データ |
 | AS-IS-123 | 5-3. STONKS SILO / `generated_at` | `generated_at` | システム設定データ |
 | AS-IS-124 | 5-3. STONKS SILO / `tickers`（辞書, ticker→result） | `tickers`（辞書, ticker→result） | 導出データ |
-| AS-IS-125 | 5-3. STONKS SILO / `years` | `years` | 導出データ |
+| AS-IS-125 | 5-3. STONKS SILO / `years` | `years` | 一次データ（**導出データ405件着手前に訂正**: `fetcher.load_annual_data`が返す年リストのそのまま透過、計算なし） |
 | AS-IS-128 | 5-3. STONKS SILO / `summary` | `summary` | 導出データ |
-| AS-IS-130 | 5-3. STONKS SILO / `valuation.market_cap` | `valuation.market_cap` | 導出データ |
-| AS-IS-131 | 5-3. STONKS SILO / `valuation.current_price` | `valuation.current_price` | 導出データ |
+| AS-IS-130 | 5-3. STONKS SILO / `valuation.market_cap` | `valuation.market_cap` | 一次データ（**導出データ405件着手前に訂正**: `valuation_fetcher.py:8` `info.get("marketCap")`のyfinance単一フィールド直接取得、計算なし） |
+| AS-IS-131 | 5-3. STONKS SILO / `valuation.current_price` | `valuation.current_price` | 一次データ（**導出データ405件着手前に訂正**: `valuation_fetcher.py:9` `info.get("currentPrice") or info.get("regularMarketPrice")`のフォールバック選択、計算なし） |
 | AS-IS-137 | 5-3. STONKS SILO / `rnd_ratio` | `rnd_ratio` | 導出データ |
 | AS-IS-138 | 5-3. STONKS SILO / `sm_ratio` | `sm_ratio` | 導出データ |
 | AS-IS-139 | 5-3. STONKS SILO / `gross_margin` | `gross_margin` | 導出データ（**FIELD_DEFINITIONS.mdフェーズ2で訂正**: `gross_profit÷revenue_sanitized`の計算値のため） |
@@ -397,7 +397,7 @@ TANUKIの簡易版`risk_events`を廃止。
 | AS-IS-180 | 5-3. STONKS SILO / 黒字転換目算（Adj.EPS線形推定） | 黒字転換目算（Adj.EPS線形推定） | 移送データ |
 | AS-IS-181 | 5-3. STONKS SILO / Adj.EPS系列（黒字化ロードマップ） | Adj.EPS系列（黒字化ロードマップ） | 移送データ |
 | AS-IS-184 | 5-4. MACRO PULSE / FF RATE | FF RATE | 導出データ |
-| AS-IS-185 | 5-4. MACRO PULSE / 1Y EXPECTED FF | 1Y EXPECTED FF | 導出データ |
+| AS-IS-185 | 5-4. MACRO PULSE / 1Y EXPECTED FF | 1Y EXPECTED FF | 一次データ（**導出データ405件着手前に訂正**: `get_implied_cuts():737-753` `round(dgs1,4)`のみでFRED `DGS1`をそのまま採用、四捨五入のみで計算式は適用されていない） |
 | AS-IS-186 | 5-4. MACRO PULSE / IMPLIED CUTS | IMPLIED CUTS | 導出データ |
 | AS-IS-187 | 5-4. MACRO PULSE / FRB主眼(dominant_label) | FRB主眼(dominant_label) | 導出データ |
 | AS-IS-188 | 5-4. MACRO PULSE / 判断理由(ai_reason) | 判断理由(ai_reason) | 導出データ |
@@ -1191,14 +1191,28 @@ UI操作機構4件（AS-IS-069/070/233/236）を除外:  -4件
   導出データに再分類（フェーズ2で発見）
 - AS-IS-139（gross_margin）: `gross_profit÷revenue_sanitized`の計算値で
   あり、同様に導出データに再分類（フェーズ2で発見）
+- HypeCoreの8件（AS-IS-097 forward_pe／098 peg_ratio／099 psr／100
+  revenue_growth／101 earnings_growth／102 recommendation_mean／103
+  short_pct_float／117 ev_ebitda）: いずれも`hypecore.py:fetch_info_snapshot`
+  内で`info.get(...)`によりyfinance `.info`の単一フィールドをそのまま
+  取得しているのみで計算を加えていないため、導出データから一次データに
+  再分類（導出データ405件の性格別サブ分類着手前に発見）
+- 追加で発見した5件（AS-IS-084 HypeCore`price`／125 STONKS SILO`years`／
+  130 STONKS SILO`valuation.market_cap`／131 STONKS SILO
+  `valuation.current_price`／185 MACRO PULSE「1Y EXPECTED FF」）:
+  いずれも外部ソースの単一値をそのまま採用（月末値の選択・年リストの
+  透過・yfinance `.info`直接取得・FRED `DGS1`の丸めのみ）であり計算式を
+  伴わないため、同様に一次データへ再分類（HypeCore8件の調査中、同一パターンの
+  他候補を横断的に検索して発見）
 
-以下の数値は3件すべての訂正反映済み。
+以下の数値は上記3件（AS-IS-183/132/139）＋HypeCore8件＋追加5件、計16件の
+訂正反映済み。
 
 | データ性質分類 | 件数 |
 |---|---|
-| 導出データ | 416件 |
+| 導出データ | 403件 |
 | 手動入力データ | 44件 |
-| 一次データ | 29件 |
+| 一次データ | 42件 |
 | システム設定データ | 15件 |
 | 移送データ | 11件 |
 | **合計** | **515件** |
@@ -1222,7 +1236,7 @@ AS-IS-006、funda_scoreはAS-IS-035、timing_scoreはAS-IS-037、per_adjusted
         + 異なる定義488件からUI操作機構4件を除いた484件
 ```
 
-**実行結果（そのまま転記、AS-IS-183/132/139の3件訂正を反映）**:
+**実行結果（そのまま転記、AS-IS-183/132/139＋HypeCore8件＋追加5件の計16件訂正を反映）**:
 
 ```
 truly_different (488想定): 488
@@ -1230,24 +1244,26 @@ truly_different (488想定): 488
 UI機構4件はいずれも「異なる定義488件」の一部であることを確認
 ステップ6除外後の最終出力項目数: 499
 
-=== ステップ6・7反映後 5分類集計（499件ベース、AS-IS-183/132/139訂正反映後） ===
-  導出データ: 405
+=== ステップ6・7反映後 5分類集計（499件ベース、計16件訂正反映後） ===
+  導出データ: 392
   手動入力データ: 44
-  一次データ: 29
+  一次データ: 42
   システム設定データ: 15
   移送データ: 6
 合計: 499
 ```
 
 （訂正前は「導出データ402／システム設定データ16／一次データ31」だった。
-`FIELD_DEFINITIONS.md`フェーズ1・2の作成時に3件の誤分類を発見・訂正し、
+`FIELD_DEFINITIONS.md`フェーズ1・2の作成時にAS-IS-183/132/139の3件、
+導出データ405件の性格別サブ分類着手時にHypeCore8件＋横断検索で追加発見
+した5件（AS-IS-084/125/130/131/185）、計16件の誤分類を発見・訂正し、
 以下は訂正後の数値）
 
 | データ性質分類 | 件数（515件ベース参考値） | 件数（**499件ベース確定版**） |
 |---|---|---|
-| 導出データ | 416件 | **405件** |
+| 導出データ | 403件 | **392件** |
 | 手動入力データ | 44件 | **44件** |
-| 一次データ | 29件 | **29件** |
+| 一次データ | 42件 | **42件** |
 | システム設定データ | 15件 | **15件** |
 | 移送データ | 11件 | **6件** |
 | **合計** | **515件** | **499件** |
@@ -1262,8 +1278,10 @@ AS-IS-283、next_earnings_dateクラスタのAS-IS-179/284）が個別にカウ�
 手動入力データ・システム設定データは、UI操作機構4件（いずれも導出データ）
 の除外・同一定義クラスタの非代表項目除外のいずれの影響も受けなかったため
 件数は不変。一次データはAS-IS-132/139の訂正分（2件）が導出データへ
-移動したため31→29に減少（499件ベースは元々この2件を含んでいたため
-415件ベースと同じ減少幅）。
+移動した一方、HypeCore8件＋追加5件の計13件が導出データから一次データへ
+移動したため、515件ベース・499件ベースいずれも31→29（132/139分）→42
+（+13件分）という同一の増減幅で推移している（いずれの訂正も同一定義
+クラスタの非代表項目に該当しないため、両ベースで増減幅が一致する）。
 
 ### 表示名称について（方法論上の注記）
 
