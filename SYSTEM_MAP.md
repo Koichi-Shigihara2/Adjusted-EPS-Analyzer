@@ -1,7 +1,7 @@
 # SYSTEM MAP — On-a-journey
 
 最終更新: 2026-07-23（新一次データベース構築プロジェクトの存在を追記。
-現状の一次データ取得（`common/sec_data/`のSEC EDGAR・yfinance13ファイル/
+現状の一次データ取得（`common/sec_data/`のSEC EDGAR・yfinance11ファイル/
 FRED2サブシステムの分散状態）を、TO-BE設計に基づく統合層へ再構築する
 プロジェクトが2026-07-22〜23の設計フェーズを経て起票された（**実装は
 まだ未着手**）。進捗は`PROJECT_STATUS.md`（リポジトリルート）で管理する。
