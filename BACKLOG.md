@@ -2192,6 +2192,34 @@ common/sec_data統合スキーマ設計の確定後
 
 ---
 
+### [RICE-TTM-CAPEX-SUM-SIGN-1] TTM経由CapEx合算値の「合算後abs()」によるRICE投資強度の過小評価リスク
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION（RICE計算）
+**登録日:** 2026-07-23
+**発見:** CapEx符号処理実態調査（フェーズ1、CAPEX-SIGN-UNNORMALIZED-1対応方針検討の過程）
+
+#### 内容
+`ttm_calculator.py::calc_ttm_series()`（L87）が4四半期分のCapExを
+符号処理せず単純合算してから`ttm/{ticker}_ttm_series.json`に保存し、
+この合算値が`data_fetcher.py::build_rice_annual_shape()`（abs()なし）
+経由で`rice.py`のRICE投資強度計算（Q値の構成要素）に渡る。4四半期の
+うち1四半期でも符号が逆転していると、abs(合算値)が各四半期の
+abs()の合計と一致せず、投資強度が本来より過小評価される。
+
+該当実データ: normalized/側の混在5銘柄（ALAB/APGE/INTU/KULR/ONDS）が
+TTM直近4四半期ウィンドウに該当四半期を含むタイミングで影響を受ける。
+ただし該当する負値自体の金額は小さい（数千〜数千万ドル）ため、影響度
+自体は限定的。
+
+#### 対応方針
+未定。[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定と合わせて検討する
+（ttm_calculator.py側でCapExを合算前に個別abs()する対応が有力候補）。
+
+#### 着手条件
+[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定後
+
+---
+
 ### [NAMING-CONVENTIONS-APPLY-1] NAMING_CONVENTIONS.md規則1〜5の実装への適用
 **優先度:** 中
 **分類:** リファクタリング / 命名規則
