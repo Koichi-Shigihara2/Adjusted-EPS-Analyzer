@@ -1269,6 +1269,37 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 
 ---
 
+### [DOCS-SECDATA-NORMALIZED-DIR-STALE-1] docs/common/sec_data/normalized/という第7の重複ディレクトリが陳腐化したまま本番参照されている
+**優先度:** 高
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-23
+**発見:** common/sec_data統合投資調査（フェーズ1）⑤(A)
+
+#### 内容
+`docs/common/sec_data/normalized/`という第7の重複ディレクトリが存在し、
+`src/tail/quarterly_review_generator.py`（L49）と
+`src/tail/tail_dcf_bridge.py`（L47）が`COMMON_NORMALIZED_DIR`として
+これを参照している（本来の正規化ストア`common/sec_data/normalized/`
+ではない）。2026-05-23作成以降、同期処理が見つからず更新されて
+いない（本家は2026-07-19更新）。ファイル数51件 vs 105件、サンプル
+3ティッカー（AAPL/AMD/AMZN）全て内容相違を確認済み。54ティッカー
+分がこちら側に存在しない。
+
+#### 影響
+TANUKI TAILの四半期レビュー生成（layer1財務指標）とDCFブリッジが、
+約2ヶ月古い・多くの銘柄で存在しないSECデータを参照し続けている
+可能性が高い。
+
+#### 対応方針
+[[SECDATA-STORAGE-FRAGMENTATION-1]]の統合設計と合わせて検討する
+（正規化ストアの唯一の正を`common/sec_data/normalized/`に確定させ、
+`docs/common/sec_data/normalized/`参照箇所を移行する）。
+
+#### 着手条件
+なし（調査結果の登録のみ、実装は別途依頼）
+
+---
+
 ## 優先度：未定（要判断）
 
 ### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
@@ -2042,9 +2073,17 @@ HypeCoreの`rule40`（TTM売上YoY+四半期純利益率）とSTONKS SILOの
 `common/sec_data/`配下は`data/{TICKER}/annual_*.json・quarterly_*.json`に
 加え、`raw/`（正規化前の生XBRL）・`normalized/`（別スキーマの独立した
 正規化四半期データ）・`ttm/`（TTM系列）という最低6ファイル系統に分岐して
-いる。特に`normalized/{TICKER}_quarterly_normalized.json`は
-[[CAPEX-SIGN-UNNORMALIZED-1]]（stock.htmlのCF分析セクション）が直接
-参照する独立スキーマである。
+いる。`normalized/`はstock.html直接fetchに加え、reader.py共通アクセサ
+経由で最低5系統（TANUKI VALUATION本体のNet Debt計算・
+financial_trend_calculator.py〈STONKS SILO〉・
+quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
+〈TANUKI TAIL DCF〉・hypecore.py〈HypeCore〉）が本番で依存している
+（GATE2-PHASE3B-1で意図的に共通化された経緯あり）。廃止・統合時は
+これら5系統全ての移行が必要。
+
+なお、[[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]・
+[[NORMALIZER-YTD-METADATA-STALE-1]]は、本タスクの統合設計時に
+合わせて解消すべき関連課題として発見されている。
 
 #### 対応方針
 `INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの統合を検討する。
@@ -2053,6 +2092,36 @@ UNNORMALIZED-1]]の修正と合わせて判断）を決定する必要がある�
 
 #### 着手条件
 [[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定後に着手する
+
+---
+
+### [NORMALIZER-YTD-METADATA-STALE-1] normalizer.py::_ytd_to_quarterly()変換後にstart/period_daysが変換前のYTD期間のまま残る
+**優先度:** 低〜中
+**分類:** データ品質
+**登録日:** 2026-07-23
+**発見:** common/sec_data統合投資調査（フェーズ1）⑤(B)
+
+#### 内容
+`normalizer.py::_ytd_to_quarterly()`のQ2以降エントリで、val（値）は
+正しくYTD差分変換済みだが、start/period_daysが変換前のYTD期間の
+まま残る（AAPL実データ: Q2 CapEx val=1,971,000,000は正しい単四半期値
+だがperiod_days=181・start=2025-09-28＝会計年度開始日のまま、本来は
+約90日・2025-12-28になるべき）。原因は`normalizer.py`L186の
+`new_entry = dict(entry)`が元のYTDエントリをコピーするのみで、
+start/period_daysを再計算していないこと（L215-218）。
+
+#### 影響
+valのみを参照するロジックには実害なし。period_daysやstartを期間長
+判定・比較に使う将来のコード（または既存の未確認箇所）があれば
+誤動作しうる。既知の[[CAPEX-SIGN-UNNORMALIZED-1]]（符号バグ）とは
+別種の問題。
+
+#### 対応方針
+未定。start/period_daysを実際に参照している箇所の網羅調査を行って
+から判断する。
+
+#### 着手条件
+なし（優先度低のため急ぎではない）
 
 ---
 
@@ -4463,6 +4532,35 @@ WATCH丸めに限られ、IV・upside等のDCF計算値自体は変更されな�
 
 #### 着手条件
 なし（修正方針の設計から着手可能。優先度：低のため次回以降の余力時対応）
+
+---
+
+### [SEGMENT-FETCHER-DUPLICATE-ORPHAN-1] segment_fetcher.pyが2箇所に存在し内容が乖離している
+**優先度:** 低
+**分類:** リファクタリング / 技術的負債
+**登録日:** 2026-07-23
+**発見:** common/sec_data統合投資調査（フェーズ1）⑤(C)
+
+#### 内容
+`src/value/tanuki_valuation/segment_fetcher.py`と
+`common/sec_data/segment_fetcher.py`が両方存在し内容が乖離
+（両方ともannual_{fy}.jsonのsegmentsフィールドを更新する処理、
+467/468行）。common/sec_data側にのみXBRLコンテキスト正規表現の
+バグ修正（コンテキストブロック境界を跨ぐ誤マッチ防止）と金融業向け
+追加タグ（revenuesnetofinterestexpense/netrevenues）が存在し、
+src/value側には未反映。
+
+#### 影響
+両ファイルとも他モジュールからimportされず、GitHub Actionsからも
+呼ばれていない（手動実行専用のオーファンスクリプトと見られる）ため、
+現状の実害はなし。ただしどちらが「正」か不明な状態が放置されている。
+
+#### 対応方針
+未定。どちらか一方への統合、または両方削除（手動実行フローが
+実際に必要かの確認込み）を次回検討する。
+
+#### 着手条件
+なし（優先度低）
 
 ---
 
