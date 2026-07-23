@@ -19,6 +19,11 @@ git pull --rebase origin kaihatsu
 以下のファイルを読んでください：
 - SYSTEM_MAP.md（システム間の依存関係・変更影響範囲を把握）
 - BACKLOG.md
+- PROJECT_STATUS.md（新一次データベース構築プロジェクトの進捗確認。
+  フェーズ1〜3のいずれかが「構築中」以上になっている場合、そのプロジェクトが
+  進行中であることを認識した上で作業する。全て「未着手」の場合は
+  プロジェクト自体は設計完了・実装未着手の段階であるため、通常の
+  BACKLOG.md起点の作業を優先してよい）
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行

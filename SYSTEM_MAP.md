@@ -1,5 +1,21 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-07-23（新一次データベース構築プロジェクトの存在を追記。
+現状の一次データ取得（`common/sec_data/`のSEC EDGAR・yfinance13ファイル/
+FRED2サブシステムの分散状態）を、TO-BE設計に基づく統合層へ再構築する
+プロジェクトが2026-07-22〜23の設計フェーズを経て起票された（**実装は
+まだ未着手**）。進捗は`PROJECT_STATUS.md`（リポジトリルート）で管理する。
+仕様書一式は`docs/architecture/new_data_platform/`配下:
+`INPUT_DATA_TOBE.md`（新DB設計仕様書）・`INPUT_DATA_AS_IS.md`（移行対象
+棚卸し）・`FIELD_DEFINITIONS.md`（導出データ499項目要件定義書）・
+`TO_BE_FINAL_LIST.md`（導出データ最終仕様）・`NAMING_CONVENTIONS.md`
+（命名規約）・`CONCEPT_PARAMETER_VARIATIONS.md`（要注意パラメータ
+バリエーション一覧）。経緯記録は同ディレクトリ`archive/`配下
+（`RETROSPECTIVE_2026-07-22.md`・`OUTPUT_ITEMS_INVENTORY.md`・
+`TO_BE.md`・`DERIVED_DATA_SUBCATEGORIES.md`）。本プロジェクトに関わる
+実装・仕様書更新を依頼する際は、完了報告に`PROJECT_STATUS.md`の該当
+ステータス更新有無を含めること（`CHAT_RULES.md`参照）。）
+
 最終更新: 2026-07-12（TTM-QUARTERS-CHECK-1完了に伴いdata_fetcher.py::TTMReader
 の説明を更新（_select_fcf_source()導入・quarters_used>=4フィルタ反映）、
 report_consistency_check.pyのWARN確認済み台帳（config/warn_acknowledged.json・

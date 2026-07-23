@@ -459,6 +459,30 @@ BACKLOG.md新規タスクとして登録し（例: 優先度「低〜未定」�
 重要度の最終判断はチャット側Claude・Koichiさんに委ねる。
 BACKLOG_DONE.mdの完了記録内への言及のみでは登録として不十分。
 
+## 新DB構築プロジェクトの進捗管理（2026-07-23新設）
+
+「新一次データベース構築プロジェクト」（`docs/architecture/
+new_data_platform/`配下の仕様書一式、進捗は`PROJECT_STATUS.md`で管理）に
+関わる依頼を作成・完了確認する際は、以下を徹底する。
+
+**依頼作成時**: 本プロジェクトのコンポーネント（`common/sec_data/`統合・
+`common/market_data/`新設・`common/macro_data/`新設・provenance標準化・
+fetcher/reader分離等、`PROJECT_STATUS.md`のフェーズ1〜3参照）に関わる
+実装依頼を作成する際は、完了報告の必須項目として
+「`PROJECT_STATUS.md`の該当ステータス（未着手/構築中/完成）を更新した
+か」を依頼文に明記する。
+
+**仕様書自体の変更を伴う依頼**: `FIELD_DEFINITIONS.md`・
+`NAMING_CONVENTIONS.md`・`TO_BE_FINAL_LIST.md`等（`docs/architecture/
+new_data_platform/`配下の仕様書）に影響する変更（新規出力項目の追加、
+命名規則が関わるフィールド名変更等）を実装依頼する際は、コード変更の
+依頼と合わせて該当仕様書の更新も依頼文に含める。仕様書とコードが
+乖離した状態を作らない。
+
+**定期棚卸しでの確認**: 次回のシステム全体監査・セッション終了時の
+ブラッシュアップ等で、`PROJECT_STATUS.md`の記載（各コンポーネントの
+ステータス）と実際のコード状態に乖離がないか確認する。
+
 ## 調査・作業の継続性管理
 
 ### 完了報告の確認
