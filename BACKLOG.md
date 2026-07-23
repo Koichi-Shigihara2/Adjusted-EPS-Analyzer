@@ -2125,6 +2125,67 @@ valのみを参照するロジックには実害なし。period_daysやstartを�
 
 ---
 
+### [SCHEMA-STDEBT-COVERAGE-GAP-1] STDebt（短期有利子負債）のタグ網羅性がnormalized/側で著しく劣化している
+**優先度:** 中〜高
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-23
+**発見:** data/quarterly⇔normalizedフィールド網羅性比較調査⑤(D)
+
+#### 内容
+短期有利子負債（STDebt/short_term_debt）のタグ網羅性が、
+normalized/側で著しく劣化している。data/quarterly側
+（parser.py::XBRL_MAPPING、9タグ候補＋フォールバック）に対し、
+normalized側（quarterly.py::FIELD_CONCEPTS、単一タグ
+`ShortTermBorrowings`のみ・フォールバックなし）は、10銘柄実データ
+確認でAAPL 33/51件・XOM 51/51件・V 30/51件がnormalized側で**0件**
+という深刻な乖離を示した（逆にCAT等はdata/quarterly側が0件で
+normalized側に値がある逆転ケースもあり）。
+
+#### 影響
+normalized/はNet Debt計算等の一部経路で既に5系統
+（[[SECDATA-STORAGE-FRAGMENTATION-1]]参照）から参照されているため、
+現時点でもこのタグ抜けが精度に影響している可能性がある。
+
+#### 対応方針
+未定。フェーズ1統合スキーマ設計時に、parser.py側の9タグ＋
+フォールバックロジックをnormalized側のconcept設定に統合する形で
+解消する想定。
+
+#### 着手条件
+common/sec_data統合スキーマ設計の確定後
+
+---
+
+### [SCHEMA-SM-SGA-CONFLATION-1] normalized/のSMフィールドが銘柄によって「純S&M」と「SGA総額」を混同している
+**優先度:** 中
+**分類:** データ品質
+**登録日:** 2026-07-23
+**発見:** data/quarterly⇔normalizedフィールド網羅性比較調査⑤(E)
+
+#### 内容
+data/quarterlyは`selling_and_marketing`（純S&M費用）と
+`selling_general_and_administrative`（SGA総額）を別フィールドとして
+両方保持するが、normalized/は`SM`という単一フィールドしか持たず、
+S&M単体タグが取得できない銘柄（JOBY/NVDA/CIX/ELF/KO等、
+quarterly.py:236-243に明記）では`_FIELD_FALLBACKS["SM"]`経由で
+SGA総額へ静かにフォールバックする。同じ`SM`値が銘柄によって
+「純S&M」と「SGA総額」という異なる意味を持ちうるが、フィールド名
+からは判別できない。
+
+#### 影響
+投資強度分母等でこのフィールドを使う計算が、銘柄によって異なる
+性質の値を同一フィールドとして扱っている可能性がある。
+
+#### 対応方針
+未定。統合スキーマではSM単体とSGA総額を明示的に別フィールドとして
+分離保持する方向で検討（data/quarterly側は既に分離済みのため、
+その構造を踏襲する案が有力）。
+
+#### 着手条件
+common/sec_data統合スキーマ設計の確定後
+
+---
+
 ### [NAMING-CONVENTIONS-APPLY-1] NAMING_CONVENTIONS.md規則1〜5の実装への適用
 **優先度:** 中
 **分類:** リファクタリング / 命名規則
