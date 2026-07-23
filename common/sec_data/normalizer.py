@@ -97,6 +97,14 @@ def normalize(ticker: str, raw: dict) -> dict:
             logger.debug("[%s] %s 未解決YTD %d件を除外", ticker, field_name, dropped)
             fields_norm[field_name] = cleaned
 
+    # CapEx符号正規化（CAPEX-SIGN-UNNORMALIZED-1）: SEC XBRLのCapExは発行体に
+    # よって正負どちらの符号でも報告されるため、最終出力直前の1箇所で
+    # abs()を適用する。Q4逆算（上記）より後に行うことで、直接取得エントリ・
+    # Q4逆算エントリの両方を区別なく正しくカバーする。
+    for entry in fields_norm.get("CapEx", []):
+        if entry.get("val") is not None:
+            entry["val"] = abs(entry["val"])
+
     logger.info("[%s] normalization done", ticker)
     return {
         "ticker": ticker,

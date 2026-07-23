@@ -144,6 +144,13 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
     cf = _extract("cf", _CF_FIELDS)
     bs = _extract("bs", _BS_FIELDS)
 
+    # CapEx符号正規化（CAPEX-SIGN-UNNORMALIZED-1）: SEC XBRLのCapExは
+    # 発行体によって正負どちらの符号でも報告されるため、生値抽出直後に
+    # abs()を適用する（既存のfree_cash_flowフォールバック計算が
+    # abs(capex)を使っているのと同じ正規化を生値自体にも適用）。
+    if cf["capital_expenditure"] is not None:
+        cf["capital_expenditure"] = abs(cf["capital_expenditure"])
+
     # free_cash_flow が欠損でも OCF + CapEx から補完
     if cf["free_cash_flow"] is None:
         ocf = cf["operating_cash_flow"]

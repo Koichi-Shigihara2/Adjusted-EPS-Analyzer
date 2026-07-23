@@ -83,6 +83,7 @@ _TODAY = date.today().isoformat()
 def _build_q4_quarterly_entries(
     annual_entries: list,
     quarterly_entries: list,
+    field_name: str = "",
 ) -> list:
     """
     各FY年次エントリについて Q4 implied 合成エントリを生成する。
@@ -94,6 +95,14 @@ def _build_q4_quarterly_entries(
     quarterly_entries に永続化済みの場合は再生成しない（financial_trend_calculator.py
     _build_q4_implied と同じ重複排除パターン）。重複生成すると呼び出し元のマージ処理で
     同一end日付のエントリが2件になり、TTM合算（直近4Q）が実態と乖離する。
+
+    RICE-TTM-CAPEX-SUM-SIGN-1: field_name=="CapEx"の場合、算出したq4_valに
+    abs()を適用する。normalizer.py側の最終出力時abs()（CAPEX-SIGN-
+    UNNORMALIZED-1本対応）がこのend日付のQ4エントリを既に生成済みであれば
+    このフォールバック自体発火しない（上記BUG-TTM-Q4DUP-1のガードで
+    スキップされる）が、稀に未生成のまま渡ってくるケースへの保険として
+    同じ正規化を独立に適用する。CapEx以外のフィールド（NetIncome等、
+    負値が正当な意味を持つもの）には適用しない。
     """
     result: list = []
     existing_ends = {e["end"] for e in quarterly_entries if not e.get("is_annual")}
@@ -125,6 +134,8 @@ def _build_q4_quarterly_entries(
 
         q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
         q4_val = fy_val - sum(e["val"] or 0 for e in top3)
+        if field_name == "CapEx":
+            q4_val = abs(q4_val)
 
         # period_days: FY_end - Q3_end
         try:
@@ -274,6 +285,7 @@ def calc_ttm_series(
         q4_list = _build_q4_quarterly_entries(
             annual_by_field.get(field_name, []),
             quarterly_by_field.get(field_name, []),
+            field_name,
         )
         if q4_list:
             merged = sorted(
