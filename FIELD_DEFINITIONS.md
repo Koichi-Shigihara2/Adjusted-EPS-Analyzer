@@ -1311,3 +1311,218 @@ AS-IS-454（kpi_format）は、フェーズ6で既に定義したAS-IS-442〜451
 - AS-IS-437〜441・AS-IS-404の5分類再判定要否、AS-IS-057/058/060の
   カタログ存置要否はいずれも本タスクの範囲外（実装・分類変更を伴わない
   記録のみ）として次の判断機会に委ねる
+
+---
+
+## 対象10（フェーズ10・最終）: 導出データ — マクロ・市場環境系（124件）
+
+出発点: `DERIVED_DATA_SUBCATEGORIES.md`「マクロ・市場環境系（124件）」
+（ステップ6確定後392件ベース。MACRO PULSE 45件・Market Pulse 79件）。
+本フェーズをもって導出データ392件全件の定義が完了する。
+
+実装（コード修正）は行っていない。定義の記録のみ。規模が大きいため
+Market Pulse（79件）はサブエージェント（Explore、バックグラウンド実行）
+に一次調査を委任し、本人（メインセッション）がMACRO PULSE（45件、
+依頼文で名指しされた問題を含む）を直接調査した。両者の結果は本人が
+単一の統合パスで`FIELD_DEFINITIONS.md`へ書き起こし、主要な指摘事項
+（センチメントスコアの重み・fear_greed重複バグ・CSV列欠落等）は
+実コードを直接再確認した上で採用している。
+
+### MACRO PULSE（45件）
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解） | データ取得元（FRED系列コード等） | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-182 | MACRO PULSE | REGIME | `analyze_fomc_with_grok()`/`_fallback_regime()` | **AI生成（フォールバックあり）**: FOMC声明文（federalreserve.govからスクレイピング）・現在FF金利（AS-IS-184）・DGS1（AS-IS-186算出に使用）をGrok（grok-3-mini→grok-3→grok-2-1212）に渡し`EASING`/`BALANCED`/`TIGHTENING`を判定。Grok APIキー未設定・応答失敗・不正なregime値の場合は`_fallback_regime()`が`cuts_implied>=1.0→EASING`／`<=-1.0→TIGHTENING`／それ以外`BALANCED`のルールベースで代替 | FOMC声明文（カタログ対象外）＋AS-IS-184, AS-IS-186（本表）＋Grok API | 導出データ |
+| AS-IS-183 | MACRO PULSE | regime_source | 同上 | `"FOMC声明分析（Grok）"`（Grok成功時）または`"DGS1数値ベース"`（フォールバック時）。AS-IS-182がどちらの経路で判定されたかを示す | AS-IS-182（本表） | 導出データ |
+| AS-IS-184 | MACRO PULSE | FF RATE | `get_ff_current()` | `(DFEDTARU + DFEDTARL) / 2`（FF金利誘導目標レンジの上限・下限平均）。取得失敗時は`FEDFUNDS`（実効FF金利）にフォールバック | FRED: DFEDTARU/DFEDTARL、フォールバックFEDFUNDS | 導出データ |
+| AS-IS-186 | MACRO PULSE | IMPLIED CUTS | `get_implied_cuts()` | `(ff_current - DGS1) / 0.25`（0.25%刻みの利下げ／利上げ織り込み回数。正値=利下げ織り込み、負値=利上げ織り込み） | AS-IS-184（本表）＋FRED: DGS1 | 導出データ |
+| AS-IS-187 | MACRO PULSE | FRB主眼(dominant_label) | `analyze_fomc_with_grok()`/`_fallback_regime()` | AS-IS-182と同一のAI応答（またはフォールバック）内の`dominant_label`（例:"雇用重視"/"インフレ警戒"/"両睨み"） | AS-IS-182と同じ | 導出データ |
+| AS-IS-188 | MACRO PULSE | 判断理由(ai_reason) | 同上 | AS-IS-182と同一のAI応答（またはフォールバック）内の`ai_reason`（100字以内の日本語根拠文、フォールバック時は定型文） | AS-IS-182と同じ | 導出データ |
+| AS-IS-189 | MACRO PULSE | FOMC日付 | `fetch_latest_fomc_statement()` | 直近FOMC声明の発表日（federalreserve.govから取得） | federalreserve.gov（カタログ対象外） | 導出データ |
+| AS-IS-191 | MACRO PULSE | S&P500前日比 | `updateTicker()`（index.html） | `chg = 最新日値 - 前営業日値`、`pct = chg/前営業日値×100`。値自体はAS-IS-190（既定義・フェーズ1、FRED SP500→stooqフォールバック）と同一系列 | AS-IS-190（既定義・フェーズ1） | 導出データ |
+| AS-IS-193 | MACRO PULSE | 10Y-2Y判定(INVERTED/FLAT/NORMAL) | `updateTicker()` | `yc<-0.2→INVERTED`／`yc<0.5→FLAT`／`else→NORMAL`。**この-0.2/0.5という閾値は、同じ10Y-2YスプレッドをRECESSION RISK SCORE計算（AS-IS-215）で使う-0.5/0/0.5の4段階閾値とは別の第3の閾値セット**（下記備考） | AS-IS-192（既定義・フェーズ1、FRED T10Y2Y） | 導出データ |
+| AS-IS-198 | MACRO PULSE | NET LIQUIDITY | `update_liquidity_csv()` | `NET LIQUIDITY(兆USD) = (WALCL - WTREGEN - RRPONTSYD×1000) / 1,000,000`（RRPはFRED値がBillions単位のため×1000でMillions換算後に合算）。週次公表（WALCL/WTREGEN木曜）のため非公表日はcarry-forward（直前値で補完） | FRED: WALCL/WTREGEN/RRPONTSYD | 導出データ |
+| AS-IS-201 | MACRO PULSE | 各カードの前月比/前週比(chg) | `chgHtml()` | `diff = 現在値 - 前回値`。`inverse`フラグが立つ指標（HYスプレッド等、値が下がる方が改善）は色（up/down）を反転表示 | AS-IS-197/198/199/200他（既定義・フェーズ1、束ね値） | 導出データ |
+| AS-IS-202 | MACRO PULSE | 各カードのパーセンタイル/水準バー | `pctRank()`/`levelBar()` | `rank = (history内で現在値以下の件数) / history件数 × 100`（読み込み済みCSV全期間に対する相対順位、0-100）。バー表示は`rank`（またはinverse指標は`100-rank`）を`>=70高水準／<=30低水準／それ以外中程度`の3段階に分類 | AS-IS-197/198/199/200他（既定義・フェーズ1） | 導出データ |
+| AS-IS-203 | MACRO PULSE | 各カードの解説コメント(m2Comment/nlComment/hyComment/fedComment) | `m2Comment()`/`nlComment()`/`hyComment()`/`fedComment()` | **ルールベース（AI不使用）**の日本語解釈文。パーセンタイル順位（AS-IS-202）とトレンド方向（`liqVector()`: 前回比±0.5%超で拡大中/縮小中、それ以外横ばい）の組み合わせで固定テンプレート文を選択 | AS-IS-202（本表） | 導出データ |
+| AS-IS-204 | MACRO PULSE | Hollow Rallyバッジ | index.html内Hollow Rally検知ロジック | 設計上の条件: S&P500が直近5日で+1.0%超上昇 かつ NET流動性が前週比-0.5%超で縮小。**しかし判定コードは`rows.filter(r => r.sp500 !== undefined ...)`のように`05_liquidity.csv`に存在しない`sp500`列を参照しており、実際のCSV列（`date/m2/hy_spread/fed_balance/tga/rrp/net_liquidity/reserve_balance/stealth_signal/stealth_absorb_weeks/net_liq_decline_weeks/stealth_alert`）にsp500列は一切存在しないため`sp500Rows`は常に空配列となり、条件式`length>=6`が恒久的にfalseとなる。実装以来一度も表示されたことがない構造的な恒久不発火状態**（下記備考・依頼文名指し・最重要） | AS-IS-198（本表）＋05_liquidity.csv（sp500列不在） | 導出データ |
+| AS-IS-206 | MACRO PULSE | LAYER2（ステルス供給/吸収バッジ） | `update_liquidity_csv()` | `stealth_signal`: RRP減少またはTGA減少→`"supply"`（ステルス供給）／RRP増加かつTGA増加→`"absorb"`（ステルス吸収）／準備預金増加（RRP・TGAが中立）→`"supply"`（補助判定）／それ以外`"neutral"` | AS-IS-210, AS-IS-211, AS-IS-212（既定義・フェーズ1、FRED RRPONTSYD/WRBWFRBL/WTREGEN） | 導出データ |
+| AS-IS-207 | MACRO PULSE | LAYER3（NET流動性連続減少週数） | 同上 | 直近5件のnet_liquidity値（当週含む）を新しい順に走査し、連続して前の値を下回っている週数をカウント（下回らなくなった時点で停止） | AS-IS-198（本表） | 導出データ |
+| AS-IS-208 | MACRO PULSE | 警戒アラート文 | 同上 | 条件付き警告文の配列（`|`区切り）: `stealth_absorb_weeks>=4`→"政策EASINGの効果が限定的"／`net_liq_decline_weeks>=3`→"実質的にTIGHTENINGに近い状態"／ステルス吸収額（RRP増加+TGA増加）がFED供給額（WALCL増加）を上回る→"EASING認識の見直しを推奨" | AS-IS-206, AS-IS-207（本表） | 導出データ |
+| AS-IS-209 | MACRO PULSE | ステルス吸収週数(stealth_absorb_weeks) | 同上 | 直近7件のstealth_signal履歴（当週含む）を新しい順に走査し、連続して`"absorb"`である週数をカウント | AS-IS-206（本表） | 導出データ |
+| AS-IS-213 | MACRO PULSE | フェーズbadge / phase-sub | `renderPhaseGauge()` | `score<30→"拡張"(景気は拡大局面)`／`<52→"踊り場"`／`<70→"後退入口"`／`else→"後退"`。badgeとsub文言はセットで決定 | AS-IS-215（本表） | 導出データ |
+| AS-IS-214 | MACRO PULSE | RECESSION RISK SCOREバー・マーカー | 同上 | バー幅・マーカー位置=score%そのまま、色=フェーズに対応。**ゾーン区切り線は`left:25%/52%/70%`にハードコードされており、実際のフェーズ切替閾値30（AS-IS-213）と一致しない**（下記備考・依頼文名指し・最重要） | AS-IS-215, AS-IS-213（本表） | 導出データ |
+| AS-IS-215 | MACRO PULSE | RECESSION RISK SCORE数値 | `computeCurrentScore()`(JS)/`_compute_current_score()`(Python、週次AI解説生成時) | 8指標（YC10Y-2Y/HYスプレッド/Philly Fed/CFNAI/Initial Claims/Building Permits/Michigan/Sahm Rule）を各々ステップ関数でスコア化（重み20/15/18/12/10/10/8/7%）し加重平均。**JS版とPython版はMACRO-BUG-1修正により完全一致**（例: YC`<-0.5→90,<0→70,<0.5→40,else→15`）。**ただし過去日付のスコア計算（`computeScoreAsOf()`、AS-IS-219/230が使用）は全く別のlerp補間カーブを使う第3の実装であり、同じ入力値でもステップ関数版と異なるスコアを返しうる**（下記備考・依頼文名指し・最重要） | 8指標の一次データ（FRED各種系列、カタログ対象外） | 導出データ |
+| AS-IS-216 | MACRO PULSE | シグナルテキスト | `renderPhaseGauge()` | `"{データ取得済み指標数}指標中: 後退シグナル{bearCount}個 / 注意{cautionCount}個"` | AS-IS-215, AS-IS-218（本表） | 導出データ |
+| AS-IS-217 | MACRO PULSE | ALERTバナー | 同上 | `bearCount>=3 かつ score>=52`の場合のみ表示。固定文言 | AS-IS-215, AS-IS-216（本表） | 導出データ |
+| AS-IS-218 | MACRO PULSE | 8指標シグナルグリッド | `computeCurrentScore()`の`signals`配列 | 各指標の値・スコア・signal（bull/neutral/caution/bear）・重み・先行性ラベル・閾値をツールチップ表示 | AS-IS-215（本表） | 導出データ |
+| AS-IS-219 | MACRO PULSE | スコア比較バー（3ヶ月前/2ヶ月前/前月比/先週比/カスタム） | `renderCompareBar()`/`renderCustomCmp()` | `diff = 現在スコア(ステップ関数版) - computeScoreAsOf(過去日付)`。**過去日付側は常にlerp補間カーブ（AS-IS-215の備考参照）を使うため、現在値と過去値が別の数式で算出された値の差分になっている** | AS-IS-215（本表） | 導出データ |
+| AS-IS-220 | MACRO PULSE | surprise_alerts | `detect_macro_surprises()` | **ルールベース（AI不使用）**。直近60日の各指標について前回発表値との絶対差分が指標別閾値（NFP:5万人／Initial Claims:2万件／Sahm Rule:0.20pt／Michigan Inflation 1Y・5Y:0.30pt／Michigan Consumer Sentiment:8pt／Philadelphia Fed:10pt／CFNAI:0.30pt／Building Permits:10万件）を超えたら検知。同一カテゴリで2件以上同時悪化した場合は複合サプライズを追加 | events.csv（一次データ経路、カタログ対象外） | 導出データ |
+| AS-IS-221 | MACRO PULSE | 週次カード日付/スコア/フェーズ | `run_weekly_analysis()` | `analysis_date`=解析実行日、`score`/`phase`=AS-IS-215のPython版をtarget_date時点で実行した結果 | AS-IS-215（本表） | 導出データ |
+| AS-IS-222 | MACRO PULSE | 週差/月差(chg1w/chg1m) | `_compute_score_change()` | `_compute_current_score(target_date) - _compute_current_score(target_date-7日/30日)`。**両者ともステップ関数版（Python）のため、AS-IS-219のlerp混在問題とは異なり同一数式同士の比較で一貫している** | AS-IS-215（本表） | 導出データ |
+| AS-IS-223 | MACRO PULSE | 総括(summary) | `generate_weekly_analysis_with_grok()` | **AI生成**（grok-3-mini→grok-3→grok-2-1212、失敗時`_fallback_weekly_analysis()`の定型文）。現在スコア/フェーズ・週次月次差分・FED regime/FF金利/利下げ織り込み・8指標の値/トレンド/週差月差・直近1週間の発表イベントを渡し150字以内で景気判断を生成。**プロンプト内に明記されたフェーズ境界「0-25=拡張」はAS-IS-213の実際の閾値30と異なる（下記備考・依頼文名指し・最重要、AIが誤った境界を前提に説明文を生成しうる）** | AS-IS-215, AS-IS-221, AS-IS-222, AS-IS-182, AS-IS-184, AS-IS-186（本表）＋Grok API | 導出データ |
+| AS-IS-224 | MACRO PULSE | 要因分析(factor_analysis) | 同上 | AS-IS-223と同一Grok応答内の`factor_analysis`（200字以内、各指標の差分データを根拠として言及するよう指示） | AS-IS-223と同じ | 導出データ |
+| AS-IS-225 | MACRO PULSE | 注視ポイント(watchpoints) | 同上 | AS-IS-223と同一Grok応答内の`watchpoints`（200字以内） | AS-IS-223と同じ | 導出データ |
+| AS-IS-226 | MACRO PULSE | 各指標コメント(indicator_comments) | 同上 | AS-IS-223と同一Grok応答内の`indicator_comments`（8指標×20字以内、セミコロン区切り） | AS-IS-223と同じ | 導出データ |
+| AS-IS-227 | MACRO PULSE | 週差/月差バッジ(各指標) | `run_weekly_analysis()`内`indicator_deltas` | 各指標`delta_1w=現在値-7日前値`、`delta_1m=現在値-30日前値`（AS-IS-222と同一パターンの指標別版） | AS-IS-215（本表） | 導出データ |
+| AS-IS-228 | MACRO PULSE | model表示 | `generate_weekly_analysis_with_grok()` | 成功したGrokモデル名（grok-3-mini/grok-3/grok-2-1212のいずれか） | AS-IS-223（本表） | 導出データ |
+| AS-IS-229 | MACRO PULSE | 8指標の値/シグナル/バー位置 | `renderL2()`のL2_CFG | AS-IS-218と同一8指標だがレンジ正規化バー表示用の別レンダリング（LAYER2健全性バー）。閾値はAS-IS-218と同一値を再利用 | AS-IS-215（本表） | 導出データ |
+| AS-IS-230 | MACRO PULSE | スコア推移折れ線 | スコア履歴チャート | 過去の各時点で`computeScoreAsOf()`を呼び出し折れ線化。**チャート表示期間内のほぼ全ての点がlerp補間カーブで計算され、当日のみステップ関数版のため、直近1点だけ算出方法が異なる時系列になっている** | AS-IS-215（本表） | 導出データ |
+| AS-IS-231 | MACRO PULSE | NBER後退期帯 | `NBER_RECESSIONS`（ハードコード配列） | NBER公式の景気後退期間8件（1969-70年〜2020年COVID）をチャート背景の網掛け帯として表示。手動入力の参照定数（COVID期間のみ「外生ショック」の別色分類） | NBER公式データ（手動入力相当、カタログ対象外） | 導出データ |
+| AS-IS-232 | MACRO PULSE | フェーズゾーン背景(0-25/25-52/52-70/70-100) | `zoneMarkAreas` | チャート背景の4色帯。**AS-IS-214と同様、境界に25を使用しておりフェーズ判定の実閾値30（AS-IS-213）と不一致** | AS-IS-215（本表） | 導出データ |
+| AS-IS-234 | MACRO PULSE | レーダーチャート（現在/2019/2001/スライダー） | `buildL3Snapshots()`/`l3norm()` | 8指標（各々min/maxレンジ定義）を0-100に正規化し、現在値・2019年参照値・2001年参照値・任意選択日の値を同一レーダーに重ね描画 | AS-IS-215構成要素の8指標（本表） | 導出データ |
+| AS-IS-235 | MACRO PULSE | 類似度スコア(2019年/2001年、%) | `l3similarity()` | `similarity% = (1 - dist/maxDist) × 100`、`dist = sqrt(Σ(現在値_i - 比較年値_i)^2)`（正規化済み8指標ベクトル間のユークリッド距離）、`maxDist = sqrt(指標数×100^2)` | AS-IS-234（本表） | 導出データ |
+| AS-IS-237 | MACRO PULSE | DATE/INDICATOR/ACTUAL | 過去発表結果テーブル | events.csvの`release_date`/`indicator`/`actual`をそのまま表示 | events.csv（一次データ経路、カタログ対象外） | 導出データ |
+| AS-IS-238 | MACRO PULSE | PREV | 同上 | 同一indicatorの直前発表回の`actual`値 | AS-IS-237（本表） | 導出データ |
+| AS-IS-239 | MACRO PULSE | DIR(↑/↓/→)・CHANGE | 同上 | `chg=actual-prevVal`。`abs(chg)>abs(actual)×0.1%+0.001`（ノイズ閾値）の場合のみ矢印・変化量表示。色分けは「上昇が改善」（Philly Fed/CFNAI/Michigan/Building Permits/Conference Board LEI/NFP）と「下降が改善」（Sahm Rule/Initial Claims/HY Spread）の指標別分類で決定 | AS-IS-237, AS-IS-238（本表） | 導出データ |
+| AS-IS-240 | MACRO PULSE | DATE/INDICATOR（次回発表予定） | `renderSchedule()` | 今後2週間以内の予定発表を日付順表示。日次系列（YC10Y-2Y/HYスプレッド/Michigan Inflation 5Y）は対象外 | AS-IS-242（既定義・フェーズ2、05_indicator_schedule.csv） | 導出データ |
+| AS-IS-241 | MACRO PULSE | DAYS | 同上 | `diffDays=round((発表予定日-今日)/1日ms)`。0日→"TODAY"、それ以外→"+Nd" | AS-IS-240（本表） | 導出データ |
+
+### Market Pulse（79件）
+
+| AS-IS ID(元) | サブシステム | 表示名 | プログラム名称 | 定義（最小単位まで分解） | データ取得元 | データ性質分類 |
+|---|---|---|---|---|---|---|
+| AS-IS-301 | Market Pulse | judgment | `collect_and_send.py:1080-1083`（正規表現抽出） | **AI生成の副産物**: Grok自由記述レポート（AS-IS-310と同一の`report_text`）から正規表現`判定[：:]\s*(嵐|曇り|晴れ)`で該当語を抽出、不一致なら`"不明"` | AS-IS-310（本表） | 導出データ |
+| AS-IS-302 | Market Pulse | indicators | `get_realtime_data()` | 束ねコンテナ（AS-IS-312既定義＋AS-IS-318〜328）。保存前に`_fill_fallbacks()`適用（AS-IS-317参照） | AS-IS-312他（既定義/本表） | 導出データ |
+| AS-IS-303 | Market Pulse | sentiment | `compute_sentiment()` | 束ねコンテナ（AS-IS-329〜343） | AS-IS-329他（本表） | 導出データ |
+| AS-IS-304 | Market Pulse | fear_greed | `fetch_cnn_fear_greed()` | 束ねコンテナ。**CNN Fear & Greed Index**を`fear_greed`という別Pythonパッケージ経由で取得（feargreedchart.com由来のAS-IS-355とは異なる一次情報源） | fear_greedパッケージ（CNN、カタログ対象外） | 導出データ |
+| AS-IS-305 | Market Pulse | tech_pulse | `calc_tech_pulse_score()`他 | 束ねコンテナ（AS-IS-349〜359） | AS-IS-349他（本表） | 導出データ |
+| AS-IS-306 | Market Pulse | asset_flow | `collect_asset_flow()` | 束ねコンテナ（AS-IS-360〜365、資産7件） | AS-IS-360他（本表） | 導出データ |
+| AS-IS-307 | Market Pulse | credit | `save_data_to_json_and_csv()`内 | 束ねコンテナ（AS-IS-366〜369） | AS-IS-366他（本表） | 導出データ |
+| AS-IS-308 | Market Pulse | take_profit_checklist | `calc_take_profit_checklist()` | 束ねコンテナ（AS-IS-370） | AS-IS-370（本表） | 導出データ |
+| AS-IS-309 | Market Pulse | buy_checklist | `calc_buy_checklist()` | 束ねコンテナ（AS-IS-371） | AS-IS-371（本表） | 導出データ |
+| AS-IS-310 | Market Pulse | summary | `analyse_market()` | **AI生成**: xAI Grok（grok-3-mini→grok-3→grok-2-1212）による市場分析自由記述テキスト。全指標データ＋RSSニュースを入力 | 全指標（本表）＋RSSニュース（カタログ対象外）＋Grok API | 導出データ |
+| AS-IS-311 | Market Pulse | comments_history | `collect_and_send.py:1360-1369` | 当日分＋直近11件（`{date,summary}`ペア、summary非空のみ）を先頭に積む。同日重複実行時は既存の同日エントリを削除してから追加 | AS-IS-310（本表） | 導出データ |
+| AS-IS-313 | Market Pulse | 各指標のchange_percent | `collect_and_send.py`各ブロック | `change_percent = (latest-prev)/prev×100`（yfinance直近2営業日終値、`fetch_hist()`）。主要9銘柄・NYSE Composite・グロース/バリューETF・VIX9D・HYG/LQDの各ブロックで同一パターンを個別実装 | AS-IS-312他（既定義・フェーズ1） | 導出データ |
+| AS-IS-314 | Market Pulse | 各指標のchange（絶対値） | 同上 | `change = latest - prev`。主要9銘柄・HYG/LQD・VIX9Dのみ保持し、NYSE Composite・スタイルETF（IVW/IVE/RUT）には存在しない | AS-IS-312他（既定義・フェーズ1） | 導出データ |
+| AS-IS-315 | Market Pulse | 各指標のvolume_ratio | 同上 | `volume_ratio = 直近日出来高/前日出来高`。主要9銘柄・NYSE Composite・HYG/LQDのみ保持、スタイルETF・VIX9D系には存在しない | AS-IS-312他（既定義・フェーズ1） | 導出データ |
+| AS-IS-316 | Market Pulse | 各指標のdate | 同上 | `hist.index[-1]`（yfinance最終バーのタイムスタンプ）をJSTに変換した日付文字列 | AS-IS-312他（既定義・フェーズ1） | 導出データ |
+| AS-IS-317 | Market Pulse | 各指標のis_fallback | `_fill_fallbacks()` | 値が`None`のキーについて、直近5件（`FALLBACK_LOOKBACK_ENTRIES`）の過去JSONエントリを新しい順に遡り、最初に見つかった「非フォールバック・非null」の値をコピーして`is_fallback=True`を付与。**フォールバック値自体は次回のフォールバック元として使わない**設計（フォールバック連鎖の防止）。5件以内に見つからない場合は`None`のまま（`is_fallback`キー自体は付与されない） | AS-IS-312他（既定義・フェーズ1） | 導出データ |
+| AS-IS-318 | Market Pulse | NYSE Composite（value, change_percent, volume_ratio, date） | `collect_and_send.py:681-717` | `^NYA`をyfinanceで取得。**絶対値の`change`フィールドは持たず`change_percent`のみ** | yfinance: ^NYA（カタログ対象外） | 導出データ |
+| AS-IS-319 | Market Pulse | NYSE Composite.divergence_vs_sp | `collect_and_send.py:698-699,714` | `divergence = nya_pct - sp_pct`（sp_pctは`^GSPC`を本項目専用に別途フェッチした当日change_percent）。S&P500取得失敗時はキー自体が存在しない | AS-IS-318（本表）＋yfinance: ^GSPC（カタログ対象外、下記備考の重複フェッチ参照） | 導出データ |
+| AS-IS-323 | Market Pulse | グロース対バリュー比.diff_percent | `collect_and_send.py:744-748` | `diff_percent = IVW.change_percent - IVE.change_percent` | AS-IS-320, AS-IS-321（既定義・フェーズ1） | 導出データ |
+| AS-IS-324 | Market Pulse | 大型対小型比.diff_percent | `collect_and_send.py:750-757` | `diff_percent = sp_pct - RUT.change_percent`（sp_pctはここでも`^GSPC`を**別途フェッチ**、下記備考） | yfinance: ^GSPC（カタログ対象外）＋AS-IS-322（既定義・フェーズ1） | 導出データ |
+| AS-IS-326 | Market Pulse | VIX9D対VIX比.value | `collect_and_send.py:771,784-785` | `ratio = VIX9D終値 / VIX終値` | AS-IS-325（既定義・フェーズ1）＋yfinance: ^VIX（カタログ対象外） | 導出データ |
+| AS-IS-327 | Market Pulse | VIX9D対VIX比.contango | `collect_and_send.py:772,786` | `contango = (VIX9D < VIX)`（真=通常の順鞘、偽=逆転＝短期リスクオフ準備）。`False`の場合sentimentのVIXサブスコア（AS-IS-331）を-0.05補正 | AS-IS-326（本表） | 導出データ |
+| AS-IS-328 | Market Pulse | HYG対LQD比（value, change, date） | `collect_and_send.py:801-840` | `value = HYG終値/LQD終値`、`change = 当日比率-前日比率`。sentimentサブスコア4（AS-IS-331のhyg_lqd_dir）の直接入力 | yfinance: HYG/LQD（AS-IS-312の一部、既定義） | 導出データ |
+| AS-IS-329 | Market Pulse | sentiment.score | `compute_sentiment()` | 8サブ指標の加重平均を0-100スケール化。**重みは22.5/18.0/13.5/10.8/9.0/9.0/7.2/10.0%（実コードで直接確認、合計100%）**: ①VIX水準（12→100,35→0、VIX9D逆転時-5pt補正）②S&P500対50日MA乖離（-8%→0,+8%→100）③AD Ratio5日（0.5→0,2.0→100）④HYG/LQD比変化方向（-0.5%→0,+0.5%→100）⑤NH-NL差分（-50→0,+50→100）⑥グロース対バリュー比（-3%→0,+3%→100）⑦出来高比Distribution判定（出来高比>1.1かつ下落-0.3%超→0、出来高比>1.1かつ上昇+0.3%超→100、それ以外50の離散3値）⑧RSP/SPY乖離20日平均（-1.0pt→0,+1.0pt→100）。データ欠損サブ指標は0.5（中立）で計算に参加（除外されない） | AS-IS-331, AS-IS-332（本表） | 導出データ |
+| AS-IS-330 | Market Pulse | sentiment.label | `compute_sentiment()` | `<=20→EXTREME FEAR`／`<=35→FEAR`／`<=50→CAUTION`／`<=65→NEUTRAL`／`<=80→GREED`／`else→EXTREME GREED`。同一閾値がAS-IS-350（tech_pulse.label）にも使われる | AS-IS-329（本表） | 導出データ |
+| AS-IS-331 | Market Pulse | sentiment.sub_scores.{8指標}.score | 同上 | 各サブ指標の内部0.0-1.0スコアを`×100`で0-100スケール化して保存。8キー: `vix_level/sp500_ma_dev/ad_ratio/hyg_lqd_dir/nh_nl/growth_value/distribution/rsp_spy_divergence`（式はAS-IS-329参照） | AS-IS-326, AS-IS-335, AS-IS-328, AS-IS-337, AS-IS-323, AS-IS-313, AS-IS-315, AS-IS-340（本表） | 導出データ |
+| AS-IS-332 | Market Pulse | 同上.weight | 同上 | 各サブ指標の重み（0-1の小数、AS-IS-329参照。scoreは0-100だがweightは0-1のまま保存される点に注意） | AS-IS-331（本表） | 導出データ |
+| AS-IS-334 | Market Pulse | sentiment.breadth.advances / declines | `compute_sentiment()`（`breadth_data.json`の該当日エントリをそのまま転記） | **AS-IS-373（breadth_calculator.py算出）の値と完全に一致する単純パススルー**（実データで数値一致を確認済み、下記「重要な確認事項」参照） | AS-IS-373（本表） | 導出データ |
+| AS-IS-335 | Market Pulse | sentiment.breadth.ad_ratio_5d | 同上 | AS-IS-376のパススルー | AS-IS-376（本表） | 導出データ |
+| AS-IS-336 | Market Pulse | sentiment.breadth.new_highs_52w / new_lows_52w | 同上 | AS-IS-377のパススルー | AS-IS-377（本表） | 導出データ |
+| AS-IS-337 | Market Pulse | sentiment.breadth.nh_nl_diff | 同上 | AS-IS-378のパススルー | AS-IS-378（本表） | 導出データ |
+| AS-IS-338 | Market Pulse | sentiment.breadth.pct_above_50ma / pct_above_200ma | 同上 | AS-IS-380のパススルー | AS-IS-380（本表） | 導出データ |
+| AS-IS-339 | Market Pulse | sentiment.breadth.rsp_spy_divergence_1d | 同上 | AS-IS-382のパススルー | AS-IS-382（本表） | 導出データ |
+| AS-IS-340 | Market Pulse | sentiment.breadth.rsp_spy_divergence_20d_avg | 同上 | AS-IS-383のパススルー。sentimentサブスコア8（AS-IS-331）の直接入力 | AS-IS-383（本表） | 導出データ |
+| AS-IS-341 | Market Pulse | sentiment.breadth.ad_line | 同上 | AS-IS-384のパススルー | AS-IS-384（本表） | 導出データ |
+| AS-IS-342 | Market Pulse | sentiment.breadth.mcclellan_oscillator | 同上 | AS-IS-385のパススルー | AS-IS-385（本表） | 導出データ |
+| AS-IS-343 | Market Pulse | sentiment.breadth.date | 同上 | breadth算出バッチが最後に計算した取引日。**トップレベルの`date`（AS-IS-372、collect_and_send.py実行時刻）とは別スケジュールのバッチが生成する日付のため、1日程度ずれうる**（下記備考） | AS-IS-372（本表） | 導出データ |
+| AS-IS-344 | Market Pulse | fear_greed.score | `fetch_cnn_fear_greed()` | `fear_greed`パッケージ（CNN Fear & Greed Index）が返すscore値（0-100）をそのまま格納。tech_pulse divergence（AS-IS-357）・take_profit/buy checklist（AS-IS-370/371）のトリガー値として共通利用される。**フェーズ5〜9では本項目を「未定義（マクロ・市場環境系）」として引用していたが、本フェーズで正式に定義した** | AS-IS-304（本表） | 導出データ |
+| AS-IS-345 | Market Pulse | fear_greed.rating | `fetch_cnn_fear_greed()` | `fear_greed`パッケージが返す`rating`文字列をそのまま格納（"Extreme Fear"等、表記はパッケージ依存） | AS-IS-304（本表） | 導出データ |
+| AS-IS-346 | Market Pulse | fear_greed.previous_close | 同上 | `history.get("1w")`。**AS-IS-347（one_week_ago）と全く同一のキーを参照しており、常に同じ値になる（コピペミスの可能性が高いバグ、下記備考）** | AS-IS-304（本表） | 導出データ |
+| AS-IS-347 | Market Pulse | fear_greed.one_week_ago | 同上 | `history.get("1w")` | AS-IS-304（本表） | 導出データ |
+| AS-IS-348 | Market Pulse | fear_greed.one_month_ago | 同上 | `history.get("1m")` | AS-IS-304（本表） | 導出データ |
+| AS-IS-349 | Market Pulse | tech_pulse.score | `calc_tech_pulse_score()` | 直近90日のローリング履歴に対する3構成要素（AS-IS-351/353/354）の`percentileofscore`（scipy）平均。VXN逆転（`vxn_vs_ma50`）は`100-percentile`で反転（VXN高い=恐怖=低スコア）。`qqq_vs_spy_20d`は履歴5件以上のときのみ算入。**VXN取得失敗時はスコアを75に上限キャップ**。scipy未導入や算出不可時は50固定。前回比+20pt以上のジャンプでスコア=100になった場合は前回値を採用する異常値ガードあり | AS-IS-351, AS-IS-352, AS-IS-353, AS-IS-354（本表/既定義） | 導出データ |
+| AS-IS-350 | Market Pulse | tech_pulse.label | `_tp_label()` | AS-IS-330と同一の6段階閾値（<=20/35/50/65/80） | AS-IS-349（本表） | 導出データ |
+| AS-IS-351 | Market Pulse | tech_pulse.components.qqq_vs_ma125 | `fetch_qqq_tech_data()` | `(QQQ終値/MA125-1)×100`、`MA125=直近125営業日終値の単純平均`（yfinance200日履歴のうち直近125日、当日の未確定バーは除外） | yfinance: QQQ（カタログ対象外） | 導出データ |
+| AS-IS-353 | Market Pulse | tech_pulse.components.vxn_vs_ma50 | `collect_and_send.py:372-373` | `(VXN終値/MA50-1)×100`、`MA50=FRED VXNCLS直近50値の単純平均`（120日ウィンドウ取得、50件未満なら算出不可） | FRED: VXNCLS（AS-IS-352既定義・フェーズ1経由） | 導出データ |
+| AS-IS-354 | Market Pulse | tech_pulse.components.qqq_vs_spy_20d | `collect_and_send.py:342-349` | `QQQの20営業日リターン(%) - SPYの20営業日リターン(%)`（単純%ポイント差分）。**旧実装は比率方式だったがspy_ret≈0で発散するため廃止済み**（`backfill_tech_pulse.py`も同じ新方式に統一済み）。90日履歴構築時は`abs(値)>50`の外れ値（旧比率方式の名残）を除外 | yfinance: QQQ/SPY（カタログ対象外） | 導出データ |
+| AS-IS-355 | Market Pulse | tech_pulse.components.fg_score | `fetch_fg_score_from_feargreedchart()` | **feargreedchart.com API**（`https://feargreedchart.com/api/?action=all`）から取得。**AS-IS-304/344（CNN `fear_greed`パッケージ）とは別の一次情報源**。メインのdivergence計算（AS-IS-357）には使われないが、divergence履歴の後方互換フォールバック（古いJSONで`divergence.value`欠損時の再計算）とフロントエンドのF&G表示フォールバックで、CNN側スコアと区別なく代替利用されている（下記備考） | feargreedchart.com（カタログ対象外） | 導出データ |
+| AS-IS-356 | Market Pulse | tech_pulse.components.vxn_available | `collect_and_send.py:1525` | `vxn_vs_ma50 is not None`（FRED VXNCLS取得成否の単純真偽値） | AS-IS-353（本表） | 導出データ |
+| AS-IS-357 | Market Pulse | tech_pulse.divergence.value | `collect_and_send.py:1508-1509` | `tp_score(AS-IS-349) - fg_cnn_score(AS-IS-344、CNN)`。CNN取得失敗時は`None` | AS-IS-349, AS-IS-344（本表/既定義） | 導出データ |
+| AS-IS-358 | Market Pulse | tech_pulse.divergence.zscore | `_calc_divergence_zscore()` | AS-IS-357の90日ローリング履歴に対するZ-score。5件未満は`None`、標準偏差0は`0.0` | AS-IS-357（本表） | 導出データ |
+| AS-IS-359 | Market Pulse | tech_pulse.divergence.signal | `_get_tp_signal()` | `fg<30 かつ div>10 かつ zscore>1.0 → "ハイテク先行反発シグナル"`／`div<-10 かつ zscore<-1.0 → "ハイテク先行下落注意"`（**この分岐だけfgチェックなしの非対称条件**）／それ以外空文字 | AS-IS-357, AS-IS-358, AS-IS-344（本表/既定義） | 導出データ |
+| AS-IS-360 | Market Pulse | asset_flow.{key}.label / ticker | `collect_and_send.py:1135-1143`静的設定 | 7資産（ultra_short=SHV/short_bond=DGS3MO/gold=GLD/long_bond=TLT/ig_bond=LQD/hy_bond=HYG/equity=SPY）の固定メタデータ。計算値ではない | 静的設定（カタログ対象外） | 導出データ |
+| AS-IS-361 | Market Pulse | asset_flow.{key}.desc | 同上 | 固定説明文（例:"1-3ヶ月T-Bill ETF"） | 静的設定（カタログ対象外） | 導出データ |
+| AS-IS-363 | Market Pulse | asset_flow.{key}.change_pct | `collect_and_send.py:1160,1112` | `(latest-prev)/prev×100`。**short_bond（FRED DGS3MO）は利回り値そのものの変化率であり、他6資産（ETF価格）のパーセント変化とは意味論が異なる（旧`^IRX`時代の定義踏襲、コード内コメントに明記）** | AS-IS-362（既定義・フェーズ1） | 導出データ |
+| AS-IS-364 | Market Pulse | asset_flow.{key}.date | 同上 | yfinance資産は最終バーのJST日付、short_bondはFRED DGS3MOの最終観測日（約1営業日ラグあり） | AS-IS-362（既定義・フェーズ1） | 導出データ |
+| AS-IS-365 | Market Pulse | asset_flow.{key}.is_fallback | `_fill_fallbacks()` | AS-IS-317と同一メカニズムを`asset_flow`コンテナに適用 | AS-IS-317（本表） | 導出データ |
+| AS-IS-366 | Market Pulse | credit.stock | `collect_and_send.py:1318,1322` | `indicators.S&P500(^GSPC指数).change_percent < -1.0% → "リスクオフ"、それ以外"リスクオン"` | AS-IS-312（既定義・フェーズ1） | 導出データ |
+| AS-IS-367 | Market Pulse | credit.bond | `collect_and_send.py:1326-1334` | デフォルト`"債券売り"`。`asset_flow.long_bond(TLT).change_pct>0.3% かつ asset_flow.equity(SPY).change_pct<-0.5%`の場合のみ`"債券買い"`（質への逃避）。**credit.stockは^GSPC指数を使うのに対しcredit.bondの株式側判定はSPY ETFを使っており、同一ブロック内で「株式市場の方向」に2種類の異なる原資産を使い分けている**（下記備考） | AS-IS-306（asset_flow、本表） | 導出データ |
+| AS-IS-368 | Market Pulse | credit.credit | `collect_and_send.py:1319-1320,1324` | `(HYG.change_percent - LQD.change_percent) < 0 → "リスクオフ"、それ以外"リスクオン"`。**AS-IS-328（HYG対LQD比.change、比率ベース）とは別に、`indicators`の各ETF自体のchange_percent差分という独立した計算式でHYG対LQDの方向性を判定しており、両者は概念的に近いが計算経路が異なる** | AS-IS-312（既定義・フェーズ1） | 導出データ |
+| AS-IS-369 | Market Pulse | credit.risk_off_score | `collect_and_send.py:1336-1341` | `risk_off_count(credit.stock=="リスクオフ"/credit.bond=="債券買い"/credit.credit=="リスクオフ"の該当数) / 3 × 100`（丸め、取りうる値は0/33/67/100の4段階） | AS-IS-366, AS-IS-367, AS-IS-368（本表） | 導出データ |
+| AS-IS-370 | Market Pulse | take_profit_checklist.triggered/fg_score/points/action/checks[] | `calc_take_profit_checklist()` | `triggered = fg_score(CNN)>=75`。3チェック各1pt: ①`ma200`＝S&P500が200日MA未満または200日MAが10日前より下降②`hy_spread`＝HYスプレッド（FRED BAMLH0A0HYM2）が過去90日最小値+30bp超に拡大③`hindenburg`＝新高値・新安値がともに前提銘柄数500の2.2%（＝11）以上（**実測`total_stocks`〈AS-IS-379、503件〉ではなく固定500を使用**、下記備考）。`points>=3→"TAKE PROFIT"`／`>=2→"PARTIAL"`／`else→"HOLD"` | AS-IS-344, AS-IS-377（本表/既定義）＋FRED: BAMLH0A0HYM2 | 導出データ |
+| AS-IS-371 | Market Pulse | buy_checklist.triggered/extreme/points/action/fg_score/checks.* | `calc_buy_checklist()` | `triggered = fg_score<=25`、`extreme = fg_score<=10`。3チェック各1pt: ①`sp500_ma200`＝AS-IS-370と同一条件（ここでは買いシグナルとして加点）②`hy_spread`＝過去90日最大値-30bp未満に縮小③`hindenburg`＝AS-IS-370と同一変数を再利用し非発生なら加点。`points>=2→"BUY（積極的に拾う）"`／`else→"WATCH（準備段階・様子見）"` | AS-IS-370（本表、hindenburg判定・HYスプレッド取得を共有） | 導出データ |
+| AS-IS-372 | Market Pulse | date | `collect_and_send.py:1296-1297` | JST実行時刻そのもの（`YYYY-MM-DDTHH:MM:SS+09:00`）。**AS-IS-343（sentiment.breadth.date、別バッチの取引日）とは別概念で一致しない場合がある** | システム内部（カタログ対象外） | 導出データ |
+| AS-IS-373 | Market Pulse | advances / declines | `breadth_calculator.py:168-174` | S&P500構成銘柄（Wikipediaスクレイピング+GitHub CSVフォールバック）を`yf.download()`で一括取得、直近5営業日で終値NaNが3件以上の銘柄は除外。`daily_returns=pct_change()`の最新行について`>0.0001→上昇`／`<-0.0001→下落`（0.01%の不感帯あり） | yfinance一括ダウンロード（カタログ対象外） | 導出データ |
+| AS-IS-374 | Market Pulse | unchanged | `breadth_calculator.py:174` | `対象銘柄数 - advances - declines`。**sentiment.breadthには転記されない**（AS-IS-334参照） | AS-IS-373（本表） | 導出データ |
+| AS-IS-375 | Market Pulse | ad_ratio_1d | `breadth_calculator.py:175` | `advances / max(declines,1)`。**sentiment.breadthには転記されない** | AS-IS-373（本表） | 導出データ |
+| AS-IS-376 | Market Pulse | ad_ratio_5d | `breadth_calculator.py:177-181` | 直近5営業日×全銘柄の日次リターン行列全体で上昇/下落セルを集計した`adv_5d/max(dec_5d,1)`（5日平均ではなく5日×銘柄の累積集計） | AS-IS-373（本表） | 導出データ |
+| AS-IS-377 | Market Pulse | new_highs_52w / new_lows_52w | `breadth_calculator.py:183-200` | 直近252営業日（データ不足時は`len-1`）の高値・安値に対し、`最新終値>=52週高値×0.99`（1%以内）を新高値、`<=52週安値×1.01`を新安値としてカウント | AS-IS-373（本表） | 導出データ |
+| AS-IS-378 | Market Pulse | nh_nl_diff | `breadth_calculator.py:200` | `new_highs_52w - new_lows_52w` | AS-IS-377（本表） | 導出データ |
+| AS-IS-379 | Market Pulse | total_stocks | `breadth_calculator.py:226` | NaN品質フィルタ後の有効銘柄数（実測503件、名目500との差はデュアルクラス株式等）。**sentiment.breadthに転記されず、Hindenburg Omen判定（AS-IS-370/371）の固定500ともリンクしていない** | AS-IS-373（本表） | 導出データ |
+| AS-IS-380 | Market Pulse | pct_above_50ma / pct_above_200ma | `breadth_calculator.py:202-212` | `直近50日/200日終値の単純平均`を上回る銘柄の割合(%)。単純移動平均であり指数移動平均ではない | AS-IS-373（本表） | 導出データ |
+| AS-IS-381 | Market Pulse | rsp_return_1d / spy_return_1d | `breadth_calculator.py:239-287` | RSP（均等加重S&P500 ETF）・SPY（時価総額加重）の直近営業日リターン(%)。**sentiment.breadthには転記されない** | yfinance: RSP/SPY（カタログ対象外） | 導出データ |
+| AS-IS-382 | Market Pulse | rsp_spy_divergence_1d | `breadth_calculator.py:271,275` | `RSP当日リターン - SPY当日リターン` | AS-IS-381（本表） | 導出データ |
+| AS-IS-383 | Market Pulse | rsp_spy_divergence_20d_avg | `breadth_calculator.py:277-278` | 直近20日（不足時は実データ日数）の`rsp_spy_divergence`日次系列の平均。sentimentサブスコア8（AS-IS-331）の直接入力 | AS-IS-382（本表） | 導出データ |
+| AS-IS-384 | Market Pulse | ad_line | `breadth_calculator.py:301-339` | `net_advances=advances-declines`の全履歴に対する累積和。**保存の都度、全履歴を最初から再計算する設計**（差分追記ではない） | AS-IS-373（本表） | 導出データ |
+| AS-IS-385 | Market Pulse | mcclellan_oscillator | `breadth_calculator.py:290-298,330-333` | `EMA19(net_advances) - EMA39(net_advances)`（`α=2/(span+1)`の自前EMA実装）。**本来のMcClellan OscillatorはNYSE全銘柄基準だが、本実装はS&P500構成銘柄のみで近似している旨がコード内コメントで明記されている** | AS-IS-373（本表） | 導出データ |
+| AS-IS-386 | Market Pulse | market_data.csv 各列 | `CSV_COLUMNS`定数＋`save_data_to_json_and_csv()` | JSON構造を`{key}_{subkey}`列にフラット化（`csv.DictWriter(extrasaction='ignore')`）。**列リストに存在しないフィールドは無条件で欠落**: NASDAQ（主要9銘柄の1つ）自体・全銘柄のvolume_ratio・tech_pulse/asset_flow/credit/take_profit_checklist/buy_checklist/fear_greed/comments_historyは一切CSV化されない。JSONとCSVで内容が完全に一致しない（下記備考） | AS-IS-302他（本表） | 導出データ |
+| AS-IS-387 | Market Pulse | extreme-fear参照: date | `docs/value-monitor/extreme-fear/index.html` | 別画面（extreme-fear）がAS-IS-372（date）とAS-IS-344（fear_greed.score、既定義）を直接fetchして参照するだけの移送的パススルー。クライアント側で`score<=20`のイベントを3日以内の連続として1件にグルーピングする表示ロジックを持つ（このグルーピング閾値はこの画面固有のハードコード値） | AS-IS-372（本表）＋AS-IS-344（既定義） | 導出データ |
+
+### 分解の過程で新たに気づいた問題
+
+**MACRO PULSE**
+
+- **RECESSION RISK SCOREに3種類の独立した計算式が存在する（依頼文名指し・最重要）**:
+  ①現在時点用（`computeCurrentScore()`のJS版・`_compute_current_score()`のPython版、週次AI解説生成時）はステップ関数（8指標を各々4〜5段階の閾値で区切り、トレンド補正±10ptを一部指標に適用）で、MACRO-BUG-1修正によりJS/Python完全一致。②過去日付用（`computeScoreAsOf()`が`isEffectivelyNow()`で「実質現在」でないと判定した全ての日付に適用する`lerp()`補間版）は、**ステップ関数版とは全く異なる閾値・カーブを持つ第3の実装**（例: YCスコアはステップ版が`<-0.5→90,<0→70,<0.5→40,else→15`の4段階なのに対し、lerp版は`<=-0.5→90`から`>1.5→10`まで連続補間する別カーブ）。スコア推移折れ線（AS-IS-230）・スコア比較バー（AS-IS-219、3ヶ月前/2ヶ月前/前月比/先週比/カスタム日付）はいずれも過去日付を扱うため常にlerp版を使い、「現在スコア」（ステップ版）との比較は数式の異なる2値の差分になっている。コード自体のコメント（MACRO-COMPUTE-DUP-1、2026-05-22の意図的修正）はこれを「閾値付近の急変緩和のため」の設計判断として明記しており、単純な実装漏れではなく意図的な設計だが、この事実は表示上どこにも明記されていない。
+- **フェーズ境界の「25」と「30」が最低3箇所で不一致（依頼文名指し・最重要）**: 実際のフェーズ判定閾値（AS-IS-213、`score<30→拡張`）に対し、①ゲージバーのゾーン区切り線（`index.html:588`、`left:25%`）②スコア推移チャートの背景色分け（`zoneMarkAreas`、`[{yAxis:0},{yAxis:25}]`）③週次AI解説生成プロンプト自体（`generate_weekly_analysis_with_grok()`内、"フェーズ: 0-25=拡張（好調）"という文言をGrokに直接指示）の3箇所で「25」が使われている。特に③はAIが誤った境界を前提に景気解説文を生成しうるため、単なる表示上のズレに留まらずAI生成コンテンツの正確性にも影響する。
+- **Hollow Rally検知が実装以来一度も発火したことがない構造的バグ（依頼文名指し・最重要）**: 判定コードが参照する`r.sp500`列が`05_liquidity.csv`（`LIQUIDITY_COLUMNS`定数で列挙される全列）に一切存在しないため、`sp500Rows`は常に空配列となり、トリガー条件`sp500Rows.length>=6`が恒久的に成立しない。
+- **`dedupe_new_rows()`がCFNAI・Sahm Rule等の「同一値が正当に繰り返されうる指標」にも無条件適用される（依頼文名指し）**: 重複判定は`INDICATOR_CONFIG`の`obs_to_release_lag`に基づく日数窓＋完全一致する`actual`値のみで行われ、指標ごとの「値の反復が正常でありうるか」を区別する例外リストがない。Sahm Ruleが複数月連続で0.00に近い値を取る、CFNAI MA3が安定期に近似値を繰り返す、といった正当なケースを重複と誤判定して新規データ行を捨てるリスクが構造的に残る。
+- **ゼロ金利期間のff_rateがtruthy判定バグで欠落する（依頼文名指し）**: `05_import_history.py:122`の`get_historical_context()`が`if ff_hi and ff_lo: ctx["ff_rate"]=...`という真偽値判定を使っており、2020-2022年のゼロ金利期間（FF金利誘導目標下限=0.00%）では`ff_lo=0.0`がPythonの偽値として扱われ、正当なデータ（0.125%等）があるにもかかわらず`ctx["ff_rate"]`が空文字のまま欠落する。同じ関数内の`yc_10y2y`/`hy_spread`/`vix`も同型の`if yc:`等の真偽値判定を使っており、値がちょうど0になった場合は同様に欠落しうる（発生頻度はff_rateほど高くない）。この関数は現在稼働中の`05_main.py`本体（`get_financial_context()`、`is not None`で正しく判定）ではなく、履歴データバックフィル専用の`05_import_history.py`にのみ存在する。
+- **10Y-2Yスプレッドの判定閾値が用途によって3セット存在する**: ①ティッカー表示のINVERTED/FLAT/NORMAL（-0.2/0.5）②RECESSION RISK SCOREのステップ関数（-0.5/0/0.5の4段階）③LAYER2健全性バーのbull/bear（0.5/-0.2、①と一致）。②のみ異なる閾値セットであり、同一の10Y-2Y値でも画面の場所によって「危険度の解釈」が微妙に異なりうる。
+- **FRED HYスプレッド（BAMLH0A0HYM2）の複数取得経路**: 既にフェーズ1（AS-IS-194/199）で記録済みのMACRO PULSE内部の重複取得に加え、本フェーズでMarket Pulse側でも同一のFRED系列を独立に取得している（AS-IS-370/371のHYスプレッド判定）ことを確認した。3システム（MACRO PULSE ticker用・MACRO PULSE流動性カード用・Market Pulse checklist用）が同一FRED系列を独立に叩いている。
+- **S&P500指数の取得経路がMACRO PULSE・Market Pulse間で完全に分離しているだけでなく、Market Pulse内部だけでも`^GSPC`が4回独立にフェッチされている**（下記Market Pulse側の備考で詳述）。
+
+**Market Pulse**
+
+- **`fear_greed.previous_close`と`fear_greed.one_week_ago`が完全に同一のキー`history.get("1w")`を参照しているコピペミスの可能性が高いバグ**: `collect_and_send.py:1458-1459`で両フィールドが同一の値になる。「前日終値」を意図しているなら本来`history.get("1d")`等の別キーを参照すべきところ、`one_week_ago`用のキーがそのまま複製されている。
+- **CNN（`fear_greed`パッケージ）とfeargreedchart.comという2つの異なるFear & Greed情報源が、一部のフォールバック・後方互換コードで区別なく代替される**: メインのdivergence計算（AS-IS-357）はCNN一次データのみを使うが、①古いJSON（`divergence.value`欠損時）の後方互換再計算②フロントエンドのF&G表示フォールバック、の2箇所でfeargreedchart.com由来の`tech_pulse.components.fg_score`がCNN由来のスコアと同一視されて代替使用されている。両者は独立に算出される指数であり、同一スケール・同一算出方法という保証はない。
+- **`backfill_tech_pulse.py`のTech Pulseスコア計算式が現行`collect_and_send.py`と全く異なる**: バックフィル版は固定レンジ加算方式（`50 + clamp(qqq_vs_ma125/15×25,±25) + clamp(-vxn_vs_ma50/30×20,±20) + clamp(qqq_vs_spy_20d/10×15,±15)`）、現行版は90日パーセンタイル方式。両者は同じ「Tech Pulse Score」という名前でありながら方法論が異なり、過去にバックフィルされた値と最近収集された値は単純比較できない（ファイル自体のdocstringが「固定範囲方式でバックフィル」と明記済み）。
+- **Hindenburg Omen判定が実測`total_stocks`（503件）ではなく固定値500をハードコード**: AS-IS-370/371の新高値・新安値閾値（500×2.2%=11）は実際の構成銘柄数を反映していない。
+- **`credit.stock`（^GSPC指数）と`credit.bond`の株式側判定（SPY ETF）が同一の`credit`ブロック内で異なる原資産を参照している**。同様に`credit.credit`（HYG/LQD各ETFのchange_percent差分）とAS-IS-328（HYG対LQD比、比率そのものの変化）も「HYG対LQD」という同じ概念に対する独立した別計算経路。
+- **`market_data.csv`はJSONの完全な写しではなく、`CSV_COLUMNS`に列挙されていないフィールド（NASDAQ本体・全volume_ratio・tech_pulse/asset_flow/credit/両checklist/fear_greed/comments_history）を`extrasaction='ignore'`で無条件に欠落させる**。CSVとJSONを同一データソースとして扱うと不整合が生じる。
+- **sentiment.breadthはbreadth_data.jsonの単純なパススルー抜粋であり、独立した再計算ではないことを実データで確認**（advances/declines等の数値が完全一致）。ただし`unchanged`/`ad_ratio_1d`/`total_stocks`/`rsp_return_1d`/`spy_return_1d`はパススルー対象から漏れており、生の`breadth_data.json`でしか参照できない。
+- **トップレベル`date`（collect_and_send.py実行時刻）と`sentiment.breadth.date`（breadth_calculator.pyの取引日）は別スケジュールで生成されるため、日付が食い違いうる**。
+- **`^GSPC`（S&P500指数）がMarket Pulse単体のスクリプト内だけで少なくとも4箇所独立にyfinance取得されている**（主要9銘柄ブロック・NYSE Composite divergence用・大型対小型比用・`sentiment.sub_scores.sp500_ma_dev`及び両checklistのMA200判定用）。いずれもキャッシュ・再利用されておらず、同一実行内で同じティッカーに4回ネットワークアクセスしている。
+- **`asset_flow.short_bond`のchange_pctは「利回り値そのものの変化率」であり、他6資産（ETF価格）のパーセント変化とは定義が異なる**が、表示上は同一の`change_pct`フィールドとして扱われている（旧`^IRX`時代の定義を踏襲したままとコード内コメントに明記）。
+
+### 導出データ392件の完全性確認（機械的網羅性証明）
+
+`FIELD_DEFINITIONS.md`本文中で「導出データ」に分類したAS-IS-IDの総数と、
+`DERIVED_DATA_SUBCATEGORIES.md`が定義する392件（8サブカテゴリの合計、
+フェーズ9でのAS-IS-447/453/454再分類後の内訳: 評価倍率13＋CF収益性27＋
+成長率トレンド43＋DCF/WACC構成要素48＋カタリスト予測50＋信頼性品質60＋
+その他27＋マクロ市場環境124＝392）が完全に一致することを、以下の手順で
+機械的に確認した。
+
+```
+grep -oE 'AS-IS-[0-9]+' FIELD_DEFINITIONS.md（「導出データ」列を持つ全表内出現、
+  既定義参照・一次データ表記は除く）でユニーク集合を作成
+grep -oE 'AS-IS-[0-9]+' DERIVED_DATA_SUBCATEGORIES.md（8分類の明細一覧、
+  フェーズ9訂正後）でユニーク集合を作成
+両集合のdiffを取り、差分0件を確認
+```
+
+確認の結果、両ファイルの導出データAS-IS-ID集合は**完全に一致し、
+差分は0件**であった（本フェーズの追記により集合が一致した時点を最終
+確認とした）。これにより、392件の導出データ全件についてFIELD_DEFINITIONS.md
+への定義記録が完了したことを確認する。
+
+### 次フェーズへの申し送り
+
+- 本フェーズをもって`DERIVED_DATA_SUBCATEGORIES.md`の8サブカテゴリ
+  （評価倍率・バリュエーション系13件、キャッシュフロー・収益性系27件、
+  成長率・トレンド系43件、DCF/WACC構成要素系48件、カタリスト・イベント
+  予測系50件、信頼性・品質判定系60件、その他27件、マクロ・市場環境系
+  124件、合計392件）全ての定義が完了した
+- 499件の最終カタログのうち、導出データ392件に加え一次データ42件・
+  手動入力データ44件・移送データ6件・システム設定データ15件（合計499件）
+  については、フェーズ1・2で既に定義済みである
+- 本フェーズで発見した問題（RECESSION RISK SCOREの3計算式・25/30閾値
+  不一致・Hollow Rally恒久不発火・dedupe_new_rows()の無条件適用・
+  ff_rateのtruthy判定バグ・fear_greedの重複キーバグ・CSV列欠落・
+  `^GSPC`重複フェッチ等）はいずれも実装（コード修正）を伴うため、
+  本タスクの範囲外として記録にとどめた
