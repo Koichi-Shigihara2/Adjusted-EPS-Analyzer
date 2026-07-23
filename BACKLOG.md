@@ -1,5 +1,15 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-23（AS-IS/TO-BE設計セッション〈RETROSPECTIVE_2026-07-22.md・
+FIELD_DEFINITIONS.md全10フェーズ・CONCEPT_PARAMETER_VARIATIONS.md・
+INPUT_DATA_AS_IS.md/TOBE.md〉で発見された未対応事象を一括起票。優先度高
+11件〈net_cash/net_income二重計算・stock.html CapEx符号バグ・MACRO PULSE
+truthy判定バグ・RECESSION RISK SCORE閾値不一致・Hollow Rally恒久不発火・
+Portfolio二重保持・risk_free_rateハードコード・moat_score部分欠損・FCF
+CAGR経過年数未補正・Bear/Bull符号反転〉・中19件・低9件、計39件を新規
+登録。既存BACKLOG.mdとの重複は確認済みで該当なし。詳細は各エントリの
+「発見」欄の根拠ドキュメント参照）
+
 最終更新: 2026-07-22（[[FCF-DIVERGENCE-SIGN-GUARD-1]]実装完了。
 divergence_ratio（estimated_fcf/raw_fcf）が符号・境界を無視することで
 生じる乖離検知漏れを2段階で解消：第1段階はraw_fcf>0×estimated_fcf<0
@@ -617,6 +627,290 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [NETCASH-DUAL-CALC-1] net_cashの二重計算・実データ乖離（TANUKI VALUATION vs STONKS SILO）
+**優先度:** 高
+**分類:** データ品質 / 重複計算 / TANUKI VALUATION / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `TO_BE.md`⑫群・`NAMING_CONVENTIONS.md`問題パターンA（計算ロジックベースの重複再点検）
+
+#### 背景
+TANUKI VALUATION（`SECReader.get_net_cash()`、SEC XBRL・四半期フォールバック・
+セクターガードあり）とSTONKS SILO（`pipeline.py`、cash − yfinance
+`totalDebt`、セクターガードなし・年次データのみ）が同名`net_cash`を独立計算。
+比較可能25銘柄中23銘柄で乖離、うちNET/RBRK/RDWの3銘柄では符号が反転
+（TANUKI側は「純キャッシュ」、STONKS SILO側は同じ銘柄を「純負債」と表示）。
+
+#### 対応方針
+`TO_BE.md`⑫群で確定済みの統一定義（`SECReader.get_net_cash()`を唯一の正とし、
+STONKS SILOの独自計算を廃止してAS-IS-025の値を直接参照する）に従って実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [NETINCOME-DUAL-PIPELINE-1] 純利益の二重抽出パイプライン・符号反転（STONKS SILO vs EPS Analyzer）
+**優先度:** 高
+**分類:** データ品質 / 重複計算 / STONKS SILO / EPS Analyzer
+**登録日:** 2026-07-23
+**発見:** `TO_BE.md`⑭群（計算ロジックベースの重複再点検）
+
+#### 背景
+同一のSEC XBRL概念（`NetIncomeLoss`）を、STONKS SILO（`common/sec_data`の
+年次正規化パイプライン経由）とEPS Analyzer（自身の`extract_key_facts.py`に
+よる独立四半期XBRL抽出）という2つの独立パイプラインが別々に抽出している。
+期間が実質整合する銘柄（AVAV, ESTC）は完全一致するが、IONQ/IOT/ONDSの
+3銘柄はTTMとFY単年度の期間差により黒字/赤字が逆転する（利用者が両者を
+無意識に比較すると符号を取り違えるリスク）。
+
+#### 対応方針
+`TO_BE.md`⑭群の判断（パイプライン自体は統一せず、両者の出力に
+`TTM`/`FY{year}`の期間ラベルを必須で明示する）に従って実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [CAPEX-SIGN-UNNORMALIZED-1] CapEx符号不統一によるFCF過大表示（stock.html CF分析セクション・STONKS SILO表示専用フィールド）
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4（AS-IS-071・AS-IS-157）
+
+#### 背景
+SEC XBRLの`CapEx`は報告企業により正負どちらの符号でも報告されうる。正式な
+FCF計算（`common/sec_data/parser.py`）は`abs()`で符号を吸収済みだが、
+**stock.htmlの「キャッシュフロー分析セクション」（`loadCfData()`/
+`renderCfCharts()`）はlatest.jsonを使わず`{ticker}_quarterly_normalized.json`
+を直接fetchして`FCF = OCF - CapEx`をabs()なしで再計算**しており、CapExが
+負値の銘柄では実際より高いFCFを表示してしまう（棒グラフ表示も同様に
+現金流入であるかのような誤表示になる）。同種の符号不統一がSTONKS SILOの
+表示専用フィールド`capex_annual`（AS-IS-157、`analyzer.py:495,524`）にも
+独立に存在する（ロジック側`monthly_burn`は`abs(capex)`で正規化済みなのに
+表示側だけ未正規化という非対称設計）。
+
+#### 対応方針
+両箇所とも、正式なFCF計算と同じ`abs()`ベースの符号正規化を適用する。
+stock.html側はlatest.json不使用・独自再計算という設計自体の妥当性も
+合わせて確認する。
+
+#### 着手条件
+なし
+
+---
+
+### [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落
+**優先度:** 高
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-184関連）
+
+#### 背景
+`05_import_history.py:122`の`get_historical_context()`が
+`if ff_hi and ff_lo: ctx["ff_rate"]=...`という真偽値判定を使っており、
+2020-2022年のゼロ金利期間（`ff_lo=0.0`）ではPythonの偽値として扱われ、
+正当なデータがあるにもかかわらず`ff_rate`が欠落する。同じ関数内の
+`yc_10y2y`/`hy_spread`/`vix`も同型の`if yc:`等の真偽値判定を使っており、
+値がちょうど0になった場合は同様に欠落しうる。現行稼働中の`05_main.py`
+本体（`is not None`で正しく判定）ではなく、履歴データバックフィル専用
+スクリプトにのみ存在するバグ。
+
+#### 対応方針
+`if ff_hi and ff_lo:`を`if ff_hi is not None and ff_lo is not None:`に
+修正する（`yc_10y2y`/`hy_spread`/`vix`も同様）。修正後、2020-2022年の
+ゼロ金利期間のデータが正しく再構築されるか実データで確認する。
+
+#### 着手条件
+なし
+
+---
+
+### [RECESSION-SCORE-TRIPLE-CALC-1] RECESSION RISK SCOREの3計算式併存・フェーズ境界25/30の3箇所不一致
+**優先度:** 高
+**分類:** バグ / 設計不整合 / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-215/213/219/230、依頼文名指し）
+
+#### 背景
+現在時点用（`computeCurrentScore()`/`_compute_current_score()`、ステップ
+関数）と過去日付用（`computeScoreAsOf()`、lerp補間）という異なる2方式が
+「現在」と「過去」で使い分けられており、スコア推移チャート・比較バーは
+常に別数式同士の比較になっている（コード自体のコメントは意図的設計と
+明記しているが、この事実は画面表示上どこにも明記されていない）。
+
+加えてフェーズ判定の実閾値（30）に対し、①ゲージバーのゾーン区切り線
+（`left:25%`）②スコア推移チャートの背景色分け（`zoneMarkAreas`）③週次
+AI解説生成のGrokプロンプト自体（"フェーズ: 0-25=拡張"という文言を直接
+指示）の3箇所で「25」が誤用されている。③はAIが誤った境界を前提に景気
+解説文を生成しうるため、単なる表示ズレに留まらずAI生成コンテンツの
+正確性にも影響する。
+
+#### 対応方針
+①25→30への表示閾値修正（ゲージバー・チャート背景の2箇所）②Grokプロンプト
+文言の30への修正③lerp補間版とステップ関数版の関係（意図的な設計である
+ことを画面上にも明示するか、統一するか）を判断してから着手する。
+
+#### 着手条件
+なし
+
+---
+
+### [HOLLOW-RALLY-DEAD-1] Hollow Rally検知の構造的恒久不発火
+**優先度:** 高
+**分類:** バグ / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-204、依頼文名指し）
+
+#### 背景
+判定コードが参照する`r.sp500`列が`05_liquidity.csv`（`LIQUIDITY_COLUMNS`
+定数で列挙される全列）に一切存在しないため、`sp500Rows`は常に空配列となり、
+トリガー条件`sp500Rows.length>=6`が恒久的に成立しない。実装以来一度も
+発火したことがないことが構造的に確定している。
+
+#### 対応方針
+`05_liquidity.csv`にS&P500値を追加するか（`update_liquidity_csv()`側の
+改修）、判定ロジック自体を別データソース（例: 既存の`events.csv`や
+Market Pulseのmarket_data.json）から取得する設計に変更するかを判断して
+から着手する。
+
+#### 着手条件
+なし
+
+---
+
+### [PORTFOLIO-CONFIG-DUP-1] Portfolio保有データの二重保持・同期処理不在
+**優先度:** 高
+**分類:** データ品質 / Portfolio
+**登録日:** 2026-07-23
+**発見:** `INPUT_DATA_AS_IS.md`2-D（一次データ層AS-IS調査）
+
+#### 背景
+`config/portfolio.json`と`docs/portfolio/data/portfolio.json`はバイト
+完全一致の重複ファイルであることを確認した。両ファイルを同期する自動処理は
+見当たらず、`config/`側を参照するPythonコードも見つからない。Discoverの
+`discover_config.json`/`theme_config.json`二重管理（既知バグ）と同型の
+手動コピー依存パターンが、Portfolioの保有データについても存在する
+可能性が高い。
+
+#### 対応方針
+どちらか一方を唯一の保持場所と定め、もう一方は参照専用（または廃止）に
+する。手動編集フローがどちらのファイルを対象にしているか（実際の運用
+実態）を確認してから統一方針を決める。
+
+#### 着手条件
+なし
+
+---
+
+### [RISK-FREE-RATE-HARDCODE-1] risk_free_rateの常時ハードコード（0.043固定）
+**優先度:** 高
+**分類:** データ品質 / TANUKI VALUATION / DCF計算
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-013）・`INPUT_DATA_TOBE.md`1-C
+
+#### 背景
+`calculate_wacc()`のデフォルト引数として`risk_free_rate=0.043`が固定値の
+まま使われ続けており、実勢金利をその都度取得する設計になっていない。
+TANUKI VALUATIONの理論株価計算（AS-IS-002/004/006等、全銘柄のDCF計算の
+中核）に組み込まれる定数であり、影響範囲はTANUKI VALUATION対象銘柄全件
+（現状100銘柄）。`market_return=10%固定`も同様に根拠コメントなしの
+ハードコード。MACRO PULSEはFRED `DGS1`で実勢金利を都度取得しているのと
+対照的。
+
+#### 対応方針
+FRED `DGS10`（10年国債利回り）を都度取得する設計へ切り替えるか、固定値
+維持のまま「実勢金利非追随」である旨を明示するかを判断する。切り替える
+場合は`INPUT_DATA_TOBE.md`が設計したFRED統合層（`common/macro_data/`）
+経由の取得を前提とする。
+
+#### 着手条件
+なし
+
+---
+
+### [MOAT-SCORE-PARTIAL-NULL-1] moat_scoreの部分欠損が実測値ゼロとして混入
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4（AS-IS-026/028）・`RETROSPECTIVE_2026-07-22.md`c項#4
+
+#### 背景
+`calculate_moat_score()`は`gm_norm`/`roic_norm`/`fcf_norm`の各値を
+`(値 or 0.0)`で計算しており、3指標が**全て**Noneの場合のみ`moat_score=0.5`
+のデフォルトが働く。1〜2指標だけの欠損では欠損指標が「最悪スコア相当の
+実測値ゼロ」として平均に混入し、moat_scoreが不当に低く算出される。
+`RETROSPECTIVE_2026-07-22.md`作成時に実データを機械的に再検証したところ、
+対象100銘柄中56銘柄で3指標中1〜2個が厳密ゼロだった（ただし`roic_norm`は
+ROIC≤10%で正当に0へクランプされるため、この56件は欠損の可能性がある
+銘柄数の上限値であり、真の欠損件数ではない）。
+
+#### 対応方針
+`gm_norm`/`roic_norm`/`fcf_norm`それぞれについて、元データがNoneだった
+場合と正当に0だった場合を区別できるフラグを追加し、部分欠損時の
+`moat_score`算出方法（欠損指標を除いた残り指標のみで加重平均する等）を
+設計してから実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [FCF-CAGR-YEARS-MISMATCH-1] FCF CAGR(3yr)のCAGR経過年数未補正
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION / stock.html
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-068）
+
+#### 背景
+stock.htmlの`valid = fcf_history.filter(fcf!=null && fcf>0)`はゼロ・
+マイナスFCFの年を除外した**フィルタ後**配列であり、`valid[-4]`と
+`valid[-1]`の間に除外年が挟まっていた場合、実際の経過年数は3年より多く
+なる。にもかかわらず指数は`1/3`に固定されており、経過年数の実測値を
+一切使っていない。表示ラベルは常に「CAGR(3yr)」だが、除外年がある銘柄
+では実際より長い期間の変化率を3年複利換算したかのように誤表示する。
+同種のSTONKS SILO側`cagr_3yr`（AS-IS-136）は`years`配列自体が連続した
+年次リストのため、この問題は生じない。
+
+#### 対応方針
+`valid[-1].year - valid[-4].year`から実際の経過年数を算出し、指数計算
+（`^(1/実経過年数)`）に反映する。表示ラベルも実経過年数を明示する
+（例:「CAGR(4yr)」）よう変更する。
+
+#### 着手条件
+なし
+
+---
+
+### [SCENARIO-BEARBULL-SIGN-FLIP-1] Bear/Bull成長率の符号が負の基準成長率で意図と逆転
+**優先度:** 高
+**分類:** バグ / 設計上の欠陥 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-015、依頼文名指し）
+
+#### 背景
+`calculate_scenario_valuations()`（`calculator/scenarios.py:64-66`）は
+`bear_rate=base_growth_rate×0.7`・`bull_rate=base_growth_rate×1.2`という
+単純な乗算で構成される。`base_growth_rate`が正の値である前提では
+「Bearは基準より控えめ・Bullは基準より強気」という意図通りに機能するが、
+`base_growth_rate`が負の場合（例: -10%）はBear(-7%、実際は緩やかな下落=
+楽観的)・Bull(-12%、実際は急な下落=悲観的)とラベルと実態が完全に逆転する。
+現状は`growth_floor=0.15`による下限クリップ等により本番データでは顕在化
+していないが、ロジック自体の欠陥は残る。同一の乗算ロジックは
+`calculator/growth.py::get_scenario_growth_rates()`・`segment_config.py::
+calculate_scenario_growth()`という2つの未使用デッドコードにも重複実装
+されている。
+
+#### 対応方針
+`base_growth_rate`が負の場合の乗数を反転させる（例: Bearは`×1.3`、Bullは
+`×0.8`とし、下落幅がBear>Bullになるよう補正する）等の修正方針を設計して
+から実装する。使われていないデッドコード2箇所の削除も合わせて検討する。
+
+#### 着手条件
+なし
+
+---
 
 ### [BACKTEST-SCORE-1] TANUKI SCORE分類の事後検証
 **優先度:** 高
@@ -1515,6 +1809,577 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [DCF-RELIABILITY-LABEL-MISMATCH-1] DCF_Reliability非LOW表示語彙の不一致（HIGH/NORMAL）
+**優先度:** 中
+**分類:** 表示不整合 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（依頼文名指し）
+
+#### 内容
+`_calc_dcf_reliability_policy_b()`は常に`"LOW"`/`"NORMAL"`のいずれかを
+返す一貫した関数だが、report.txtの表示文言はどちらの文脈で呼ばれたかに
+よって異なる。FCF_Base方式の分岐でPolicy Bが`"NORMAL"`を返した場合は
+`"DCF_Reliability: HIGH"`（`pipeline.py:1571`）、FCF_Conversion_Rate方式の
+分岐で同じ`"NORMAL"`を返した場合は`"DCF_Reliability: NORMAL"`
+（`pipeline.py:1667`）と表示される。report.txtを横断的にパースする外部
+ツールが「非LOW側」を単純な2値として扱おうとすると正規化が必要になる。
+
+#### 対応方針
+report.txt生成コードの表示文言を「LOWの対義語」として統一する
+（`HIGH`/`NORMAL`のどちらかに揃える）。
+
+#### 着手条件
+なし
+
+---
+
+### [STONKS-PILLAR-THRESHOLD-MISMATCH-1] pillarColor(70/45)とDEFICIT判定(65/35)の閾値不一致
+**優先度:** 中
+**分類:** 表示不整合 / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-141、依頼文名指し）
+
+#### 内容
+`index.html`の`pillarColor(s)`は`s>=70`緑・`s>=45`amber・それ未満赤だが、
+同じスコア値に対する`verdict`ラベル（AS-IS-141）は`>=65→GOOD_DEFICIT`・
+`>=35→WATCH`・それ未満`BAD_DEFICIT`で決まる。スコア65〜69点の銘柄は
+verdict="GOOD_DEFICIT"（好意的ラベル）なのに表示色はamber、スコア35〜44点
+の銘柄はverdict="WATCH"なのに表示色は赤、という不整合区間が存在する。
+
+#### 対応方針
+`pillarColor()`の閾値をverdict判定と同じ65/35に揃えるか、意図的に別基準
+とする理由を明示するかを判断する。
+
+#### 着手条件
+なし
+
+---
+
+### [BETA-FALLBACK-DESIGN-GAPS-1] β取得の3経路重複・0/負値無条件フォールバック・許容範囲の2基準並存
+**優先度:** 中
+**分類:** 設計不整合 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-013）・`OUTPUT_ITEMS_INVENTORY.md`「β（3経路：日次/月次/監査トリガー時）」
+
+#### 内容
+`beta_fetcher.py::calc_capped_beta()`は生βが`None`かどうかのみをチェックし、
+`0`や負値であっても`max(0.3,min(2.5,raw_beta))`で無条件に0.3へフロアされ
+`beta_config.json`に書き込まれる。警告フラグは一切付与されない。さらに
+実行時の`data_fetcher.py::_determine_beta()`は`beta_config.json`のoverride
+を最優先かつ無条件に採用するため、`_determine_beta()`自身が持つ「yfinance
+直接値は0.1〜3.0の範囲内のみ採用」という健全性チェックが一切適用されない。
+加えて`beta_fetcher.py`の許容範囲（0.3〜2.5）と`_determine_beta()`の
+直接値許容範囲（0.1〜3.0）が異なる2つの基準として並存している。β取得
+自体も日次/月次/監査トリガー時の3経路が重複している。
+
+#### 対応方針
+①生βが0/負値だった場合に警告フラグを付与する②`beta_config.json`の
+overrideにも健全性チェックを適用する③許容範囲の基準を1つに統一する
+④3経路の重複を整理する、の優先順位を検討してから着手する。
+
+#### 着手条件
+なし
+
+---
+
+### [RPO-REVTTM-GATE-SKIP-1] RPO補正のrev_ttm未提供時に比率安全弁がスキップされる
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-024）
+
+#### 内容
+`adjust_rpo()`の比率条件ゲート（`adjustments.py:525`
+`if not via_whitelist and rev_ttm is not None and rev_ttm > 0`）は、
+`rev_ttm`が`None`の場合ゲート自体を素通りする。`rpo_incremental`の計算は
+`rpo_yago`と`rev_yoy`さえあれば`rev_ttm`なしでも非ゼロ値を返せるため、
+「`rpo_yago`/`rev_yoy`は取得できたが`rev_ttm`だけがNone」という組み合わせ
+では、RPO/Revenue比率が閾値（30%）未満でもRPO補正が適用されてしまう
+可能性がある。
+
+#### 対応方針
+`rev_ttm is None`の場合の代替チェック（例: 直近年次revenueで代用する等）
+を設計してから実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [DISCOVER-CONFIG-DUAL-MGMT-1] Discoverのconfig二重管理・admin.htmlバリデーション欠如
+**優先度:** 中
+**分類:** データ品質 / Discover
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（依頼文名指し）・`RETROSPECTIVE_2026-07-22.md`c項#11
+
+#### 内容
+管理画面`admin.html`は`config/discover_config.json`・`config/theme_config.json`
+にGitHub API経由で直接コミットするが、表示画面`docs/discover/index.html`は
+別パス`docs/portfolio/data/discover_config.json`・`theme_config.json`
+（コピー）を参照する。この2ファイルの同期は新規銘柄登録手順の
+`shutil.copy()`一回限りの処理に依存しており、admin.html経由でテーマ・
+カテゴリを直接編集した場合はこのコピー処理を経由しないため、
+「admin.htmlは保存成功と表示するがindex.htmlの表示は更新されない」という
+ズレが発生しうる。加えて`admin.html`の`saveThemeConfig()`/
+`saveDiscoverConfig()`は内容検証を一切行わず、テーマID重複・空ラベル・
+不正な色コードもエラーなく保存されてしまう。
+
+#### 対応方針
+`docs/portfolio/data/`のコピーを廃止し、`index.html`が`config/`側を直接
+参照する設計に変更する（[[PORTFOLIO-CONFIG-DUP-1]]と同型の問題であり
+合わせて設計するのが望ましい）。admin.html側にも基本的なバリデーション
+（重複チェック・必須項目チェック）を追加する。
+
+#### 着手条件
+なし
+
+---
+
+### [DISCOVER-UTCJST-DATE-MISMATCH-1] UTC/JST日付不整合によるmacro_themes.generated_atのズレ
+**優先度:** 中
+**分類:** バグ / Discover
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（依頼文名指し）
+
+#### 内容
+`collect.py:249`の`today = date.today().isoformat()`はタイムゾーン非対応
+の素の日付（GitHub Actionsランナーの実行環境時刻、実質UTC）を使うのに
+対し、同じcollect.pyの他の箇所は明示的にJST変換している。collect.pyは
+「毎日JST 7:00」に実行される設計だが、JST 7:00は同日UTCではまだ前日22:00
+であり、`date.today()`はJSTの実行日より1日古い日付を返す。この結果
+`macro_themes[].generated_at`は同じレポート内の`daily_report.json.
+generated_at`より1日古い値になりうる。`catalyst.py`の同種の`date.today()`
+使用はUTC変換で日付を跨がないため実害が生じにくいが、同様にタイムゾーン
+非対応である点は同一の設計リスクとして残る。
+
+#### 対応方針
+`collect.py:249`を他の箇所と同様に`datetime.now(JST)`ベースに統一する。
+`catalyst.py`側も将来のスケジュール変更に備えて同様に統一しておくことを
+推奨する。
+
+#### 着手条件
+なし
+
+---
+
+### [FRED-HYSPREAD-TRIPLE-FETCH-1] FRED HYスプレッドの3箇所独立取得（クロスサブシステム）
+**優先度:** 中
+**分類:** 効率化 / 重複取得 / MACRO PULSE / Market Pulse
+**登録日:** 2026-07-23
+**発見:** `TO_BE.md`⑮群・`FIELD_DEFINITIONS.md`フェーズ10（AS-IS-194/199/371）
+
+#### 内容
+既知だったMACRO PULSE内部2箇所（events.csv用・流動性カード用）に加え、
+Market Pulseの`buy_checklist`判定用取得が3箇所目として完全に独立している
+ことを確認した。3箇所とも約40分差で連続的に同一FRED系列
+`BAMLH0A0HYM2`を独立取得しており、1回のfetchで済む構造が3回に分散
+している。
+
+#### 対応方針
+`INPUT_DATA_TOBE.md`が設計したFRED統合層（`common/macro_data/`）経由の
+取得に統合する。取得は1回に統合しつつ、加工・表示は各サブシステム側で
+個別に行う設計とする。
+
+#### 着手条件
+なし
+
+---
+
+### [FEARGREED-DUPKEY-BUG-1] fear_greed.previous_close/one_week_agoの重複キーバグ
+**優先度:** 中
+**分類:** バグ / Market Pulse
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10（AS-IS-346/347）
+
+#### 内容
+`collect_and_send.py:1458-1459`で`fear_greed.previous_close`と
+`fear_greed.one_week_ago`が両方とも`history.get("1w")`という同一のキーを
+参照しており、常に同じ値になる。「前日終値」を意図しているなら本来
+`history.get("1d")`等の別キーを参照すべきところ、コピペミスの可能性が
+高い。
+
+#### 対応方針
+`previous_close`が本来参照すべきキー（CNN `fear_greed`パッケージの
+`history`辞書の実際のキー構成を確認の上）に修正する。
+
+#### 着手条件
+なし
+
+---
+
+### [RULE40-DEFINITION-MISMATCH-1] Rule of 40の定義相違（HypeCore vs STONKS SILO）とコメント矛盾
+**優先度:** 中
+**分類:** 命名・定義不整合 / HypeCore / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-095/143）・`NAMING_CONVENTIONS.md`問題パターンB・`CONCEPT_PARAMETER_VARIATIONS.md`軸3概念8
+
+#### 内容
+HypeCoreの`rule40`（TTM売上YoY+四半期純利益率）とSTONKS SILOの
+`rule_of_40`（3年CAGR+営業利益率）は期間・利益率の定義がいずれも異なる。
+加えてSTONKS SILOの`DeficitQuality`データクラスの`rule_of_40`フィールド
+には「# 売上成長率 + 営業利益率」というコメントが付いているが、実装は
+単年成長率ではなく3年CAGRを使っており、コード内コメント自体が実装と
+矛盾している。`NAMING_CONVENTIONS.md`は規則2（期間接尾辞）に基づき
+`rule40_yoy_netmargin`/`rule40_cagr3y_opmargin`への改名を提言済み。
+
+#### 対応方針
+`NAMING_CONVENTIONS.md`が提言した命名規則（規則2）を適用する。STONKS SILO
+側のコメントも実装（3年CAGR）に合わせて修正する。
+
+#### 着手条件
+なし
+
+---
+
+### [SECDATA-STORAGE-FRAGMENTATION-1] common/sec_data内のraw/normalized/ttm3系統並存によるスキーマ分岐
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質
+**登録日:** 2026-07-23
+**発見:** `INPUT_DATA_AS_IS.md`2-A（一次データ層AS-IS調査）
+
+#### 内容
+`common/sec_data/`配下は`data/{TICKER}/annual_*.json・quarterly_*.json`に
+加え、`raw/`（正規化前の生XBRL）・`normalized/`（別スキーマの独立した
+正規化四半期データ）・`ttm/`（TTM系列）という最低6ファイル系統に分岐して
+いる。特に`normalized/{TICKER}_quarterly_normalized.json`は
+[[CAPEX-SIGN-UNNORMALIZED-1]]（stock.htmlのCF分析セクション）が直接
+参照する独立スキーマである。
+
+#### 対応方針
+`INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの統合を検討する。
+統合時は`normalized/`をどちらのスキーマに寄せるか（[[CAPEX-SIGN-
+UNNORMALIZED-1]]の修正と合わせて判断）を決定する必要がある。
+
+#### 着手条件
+[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定後に着手する
+
+---
+
+### [NAMING-CONVENTIONS-APPLY-1] NAMING_CONVENTIONS.md規則1〜5の実装への適用
+**優先度:** 中
+**分類:** リファクタリング / 命名規則
+**登録日:** 2026-07-23
+**発見:** `NAMING_CONVENTIONS.md`
+
+#### 内容
+`NAMING_CONVENTIONS.md`が策定した5つの命名規則（データソース接尾辞・
+期間接尾辞・誤称禁止・provenance明示・唯一の正の参照元明示）は、策定の
+みで実装（既存フィールドのリネーム）には未反映。個別の適用例
+（[[NETCASH-DUAL-CALC-1]]の`net_cash_sec`化、[[RULE40-DEFINITION-
+MISMATCH-1]]の期間接尾辞化等）は該当タスク側で扱うが、命名規則全体の
+チェックリスト運用（新規フィールド追加時の適用）自体は独立したタスクと
+して管理する。
+
+#### 対応方針
+新規フィールド追加時に`NAMING_CONVENTIONS.md`の適用チェックリストを
+参照する運用をCLAUDE_CODE_START.md等に明記する。既存フィールドの一括
+リネームは影響範囲が大きいため、個別タスク（上記関連タスク）の実装時に
+順次適用する。
+
+#### 着手条件
+なし
+
+---
+
+### [HYPECORE-REALSTRONG-DUAL-IMPL-1] real_strong判定のPython/JS二重実装で条件・閾値が相違
+**優先度:** 中
+**分類:** バグ / 設計不整合 / HypeCore
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-109〜112）
+
+#### 内容
+`detect_substage()`（サーバー側）の`real_strong`は`(rev_yoy>15 and
+eps_surprise>-5超) or (eps_surprise>0 and rev_yoy>0) or (rev_yoy>30 and
+eps_surprise>-30超)`という複数条件のORで構成されるが、detail.htmlの
+クライアント側`getRec()`関数は`real_strong=(rev_yoy>30)&&(eps_surprise>0)`
+という「ANDのみ・閾値も別」の簡略版を独自に再実装している。同一銘柄・
+同一月でもサーバーの`substage`とクライアントの推奨表示が矛盾する組み合わせ
+が起こり得る。
+
+#### 対応方針
+クライアント側`getRec()`をサーバー側`detect_substage()`と同一ロジックに
+統一するか、JSON出力に`real_strong`の値自体を含めてクライアント側の
+再計算を廃止する。
+
+#### 着手条件
+なし
+
+---
+
+### [SENS-MATRIX-DUAL-IMPL-1] stock.html独自5×5感応度マトリクスとbackend 3×3の並存
+**優先度:** 中
+**分類:** 設計不整合 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-066/AS-IS-014）・`OUTPUT_ITEMS_INVENTORY.md`横断的発見事項1
+
+#### 内容
+バックエンドのAS-IS-014（`sensitivity.matrix`、3×3、DCFタイプにより
+two_stage/three_stageを切替）とは別に、stock.html上に完全に独立した
+クライアント側5×5感応度マトリクス（`calcSensIV()`）が同一ページに並存
+する。`calcSensIV()`は常に2段階DCFのみで再計算するため、three_stage DCFや
+tapering DCFを採用している銘柄では、同じページ内の2つの「感応度分析」
+セクションが異なる計算式で異なる数値を表示する。`const alpha=d.alpha??1.0`
+という宣言されているが式中で未使用の死コードも残存する。
+
+#### 対応方針
+バックエンドのAS-IS-014をそのまま表示する設計に統一するか、クライアント側
+5×5マトリクスをDCFタイプ切替に対応させるかを判断する。死コード
+（`alpha`変数）は合わせて削除する。
+
+#### 着手条件
+なし
+
+---
+
+### [RICE-ADJ-ASYMMETRIC-ZERO-1] RICEのrice_adjのみ0フロアガードがある非対称設計
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-027）
+
+#### 内容
+`calculate_rice()`（`rice.py:440`）で`rice_adj_val = (...) if cf_adj > 0
+and wacc > 0 else 0.0`と明示的にゼロフロアされるのに対し、直上の
+`rice_val`（`rice.py:438`）には`cf`（本来のCF値）が負であっても同様の
+ガードがなく、そのまま計算される。CF（投資再生産効率）が構造的に負値を
+取りうる銘柄では、`rice`は符号が反転した値をそのまま返すのに`rice_adj`
+だけが0にフォールバックするという不整合が生じる。
+
+#### 対応方針
+`rice_val`にも`cf`が負の場合の同等のガードを追加するか、両者とも
+ガードなしにするかを設計判断してから実装する。
+
+#### 着手条件
+なし
+
+---
+
+### [V0-V0RM-CONFUSION-RISK-1] v0(AS-IS-007)とv0_rmの取り違えリスク
+**優先度:** 中
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-007/AS-IS-001）
+
+#### 内容
+`v0`（AS-IS-007）はβ込みCAPM WACCベースのDCF結果（`intrinsic_value_beta`
+＝AS-IS-002の計算根拠）であるのに対し、画面のメイン理論株価
+（AS-IS-001/AS-IS-006）は別途`market_return`10%固定・βなしで再計算した
+`_v0_rm`（`dcf_components.v0_rm`に格納）を使う。latest.jsonを読む外部AI
+やレビュアーが「v0からIVを積み上げ検算」しようとすると、トップレベルの
+`v0`ではなく`dcf_components.v0_rm`を使わなければ整合しない罠になりうる。
+
+#### 対応方針
+latest.jsonのフィールド名・配置を見直し、どちらが「メイン計算根拠」かを
+明確にする（例: トップレベル`v0`を廃止し`dcf_components`配下に統一する等）。
+
+#### 着手条件
+なし
+
+---
+
+### [DISCOVER-IMPACT-PRED-GAPS-1] 影響予測(AS-IS-248)のindex.html非表示・catalystモード新規分限定・様子見銘柄フォールバック欠如
+**優先度:** 中
+**分類:** 機能ギャップ / Discover
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-248/AS-IS-250）
+
+#### 内容
+①`impact_predictor.py`が生成する影響予測（AS-IS-248）は
+`docs/discover/catalyst.html`・`news_history.html`では表示されるが、
+Discoverのメイン画面`index.html`は`impact_predictions_{ym}.json`を一切
+参照しない。②`run_catalyst()`は`first_detected==本日`のカタリストのみを
+予測対象とするため、ある日の`catalyst.py`実行後に`impact_predictor.py`の
+実行が漏れた場合、そのカタリストは未来永劫影響予測を持てない。
+③`collect.py:main()`の分岐は「様子見」カテゴリ銘柄をGrok web検索代替の
+対象から除外しており、NEWS APIで0件だった場合に無条件で空データになる。
+
+#### 対応方針
+①index.htmlに影響予測サマリーを追加表示する②catalyst実行と
+impact_predictor実行の依存関係をワークフロー上で保証する（同一
+ジョブ内での連続実行等）③「様子見」もGrok web検索代替の対象に含める。
+
+#### 着手条件
+なし
+
+---
+
+### [BREAKEVEN-FORECAST-METHOD-MISMATCH-1] 黒字化年予測の手法相違（TANUKI VALUATION vs STONKS SILO）
+**優先度:** 中
+**分類:** 設計不整合 / TANUKI VALUATION / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-051/AS-IS-162/163）
+
+#### 内容
+TANUKI VALUATION（AS-IS-051）は調整後EPS（四半期）4点のOLS単回帰、
+STONKS SILO（AS-IS-162/163）はマージン（OCF or NI÷Revenue）の直近2点
+線形外挿を優先しOLS絶対値回帰へフォールバックする2段階方式。同じ
+「黒字化時期の予測」という概念に対し、データ粒度・手法ともに独立した
+実装が並存している。
+
+#### 対応方針
+両者を統一すべきか（判定対象が異なるドメイン=DCF精度 vs 企業財務品質
+のため統一不要の可能性もある）を設計判断してから対応要否を決める。
+
+#### 着手条件
+なし
+
+---
+
+### [EPS-DISCREPANCY-FLAG-OVERLOAD-1] 同一フラグ名EPS_DISCREPANCYが意味の異なる2処理で設定される
+**優先度:** 中
+**分類:** データ品質 / EPS Analyzer
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-272）
+
+#### 内容
+`check_eps_discrepancy()`（XBRL vs Alpha Vantage公式値の20%超乖離＝
+データ品質上の疑義）と`apply_fair_value_detection()`（公正価値変動の
+自動検出・調整が適用されたことの記録）は、意味的に全く異なる状況を
+示すにもかかわらず同一の`special_flags: ["EPS_DISCREPANCY"]`を使う。
+`special_notes`のどちらのサブキーが埋まっているかを確認しない限り原因を
+判別できない。
+
+#### 対応方針
+2つの状況に別のフラグ名（例:`EPS_DISCREPANCY`と`FAIR_VALUE_ADJUSTED`）を
+割り当てる。
+
+#### 着手条件
+なし
+
+---
+
+### [EPS-AI-ANALYSIS-LATEST-ONLY-1] EPS Analyzer ai_analysisが最新四半期のみ・過去四半期に遡及されない
+**優先度:** 中
+**分類:** 機能ギャップ / EPS Analyzer
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ8（AS-IS-270/271）
+
+#### 内容
+`pipeline.py`は`quarterly_results[0]`（最新のみ）に対して
+`analyze_adjustments()`を呼ぶため、過去四半期の調整項目についてはAIに
+よる健全性評価（health/comment/sources）が生成されない。
+
+#### 対応方針
+過去四半期についても遡及的にAI分析を生成するか、意図的な設計（コスト
+抑制目的）であることを明示するかを判断する。
+
+#### 着手条件
+なし
+
+---
+
+### [FIVE-CATEGORY-RECLASSIFY-1] 5分類レベルの再判定（AS-IS-437〜441・404・057/058/060）
+**優先度:** 中
+**分類:** ドキュメント整合性 / 分類見直し
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ9・フェーズ10
+
+#### 内容
+①AS-IS-437〜441（TANUKI TAIL `tail_kpi_map.json`関連5項目）は「手動入力
+データ」（AS-IS-425〜436と同一のAI下書き＋人手承認ワークフロー）に酷似
+しているが、ステップ7の一次分類時点で「導出データ」側に区分された。
+②AS-IS-404（`last_filed`）はフェーズ1で定義した「システム設定データ
+（監視状態管理系）」と同種の性質だが「その他」に取り残されている。
+③AS-IS-057/058/060（Reverse DCF比較表のメタ情報行「場所」「用途」
+「ガード」）は実データ値ではなく「実装差異の比較分析」自体がAS-IS番号を
+持ってしまっている。いずれも`DERIVED_DATA_SUBCATEGORIES.md`の8分類内の
+再配置ではなく、より上位の5分類（一次データ／手動入力データ／移送
+データ／システム設定データ／導出データ）自体の再判定が必要。
+
+#### 対応方針
+①②は5分類を手動入力データ・システム設定データへ変更するか判断する。
+③はカタログから除外する（メタ情報であり出力データではないため）か、
+現状維持するかを判断する。`TO_BE_FINAL_LIST.md`・
+`DERIVED_DATA_SUBCATEGORIES.md`・`FIELD_DEFINITIONS.md`への反映が
+必要になる。
+
+#### 着手条件
+なし
+
+---
+
+### [SP500-GSPC-MULTI-FETCH-1] S&P500/^GSPCの複数取得経路（クロスシステム+Market Pulse内4重取得）
+**優先度:** 中
+**分類:** 効率化 / 重複取得 / MACRO PULSE / Market Pulse
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ1・フェーズ10（AS-IS-190/312）・`CONCEPT_PARAMETER_VARIATIONS.md`軸2概念5
+
+#### 内容
+MACRO PULSE（FRED `SP500`優先→stooqフォールバック）とMarket Pulse
+（yfinance `history()`）が完全に独立した経路でS&P500を取得しているのに
+加え、Market Pulse単体のスクリプト内だけで`^GSPC`が少なくとも4箇所
+独立にyfinance取得されている（主要9銘柄ブロック・NYSE Composite
+divergence用・大型対小型比用・`sentiment.sub_scores.sp500_ma_dev`及び
+両checklistのMA200判定用）。いずれもキャッシュ・再利用されていない。
+
+#### 対応方針
+Market Pulse内部の4箇所はまず1回の取得結果を使い回す設計に統合する
+（低コストで対応可能）。MACRO PULSE・Market Pulse間の統合は
+`INPUT_DATA_TOBE.md`のyfinance統合層設計に委ねる。
+
+#### 着手条件
+なし
+
+---
+
+### [MARKETPULSE-MINOR-INCONSISTENCIES-1] Market Pulseの軽微な構造的不整合まとめ（Hindenburg固定値・credit原資産不整合・CSV列欠落・breadthパススルー漏れ・F&G情報源混同・Tech Pulseバックフィル式相違）
+**優先度:** 中
+**分類:** データ品質 / Market Pulse
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10
+
+#### 内容
+①Hindenburg Omen判定が実測`total_stocks`（503件）ではなく固定値500を
+ハードコード。②`credit.stock`（^GSPC指数）と`credit.bond`の株式側判定
+（SPY ETF）が同一の`credit`ブロック内で異なる原資産を参照。
+`credit.credit`（HYG/LQD各ETFのchange_percent差分）とAS-IS-328（HYG対
+LQD比、比率そのものの変化）も独立した別計算経路。③`market_data.csv`は
+`CSV_COLUMNS`に列挙されていないフィールド（NASDAQ本体・全volume_ratio・
+tech_pulse/asset_flow/credit/両checklist/fear_greed/comments_history）を
+無条件に欠落させる。④`sentiment.breadth`は`breadth_data.json`の単純な
+パススルーだが`unchanged`/`ad_ratio_1d`/`total_stocks`/`rsp_return_1d`/
+`spy_return_1d`がパススルー対象から漏れている。⑤CNN（`fear_greed`
+パッケージ）とfeargreedchart.comという2つの異なるF&G情報源が一部の
+フォールバック・後方互換コードで区別なく代替される。⑥`backfill_tech_
+pulse.py`のTech Pulseスコア計算式（固定レンジ加算方式）が現行
+`collect_and_send.py`（90日パーセンタイル方式）と全く異なり、過去の
+バックフィル値と最近の値は単純比較できない。
+
+#### 対応方針
+①実測`total_stocks`を使うよう修正②原資産を統一するか意図的差異である
+旨を明示③CSV出力対象フィールドを見直すか、CSVとJSONの非互換性を明示
+④パススルー対象フィールドを追加⑤2つのF&G情報源を明確に区別する
+⑥バックフィル済みデータの再計算要否を判断する。優先順位を付けて
+順次対応する。
+
+#### 着手条件
+なし
+
+---
+
+### [TVGROWTH-EXPLICIT-DEFAULT-AMBIGUOUS-1] terminal_growth 3.0%の明示設定と未設定を区別できない
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ6（AS-IS-059）
+
+#### 内容
+`get_terminal_growth()`は`abs(ticker_tv_g - 0.03) > 1e-5`という差分
+チェックの設計上、管理者が意図的に「このtickerのTVは3.0%にする」と
+`maturity_config.json`へ明示設定しても、デフォルト値と一致するため
+「未設定」とみなされ、セクター別Damodaranテーブルの値がもし異なれば
+そちらが優先されてしまう。3.0%を明示指定したい場合の抜け道が存在
+しない。
+
+#### 対応方針
+「明示設定」と「未設定」を区別するフラグ（例: `maturity_config.json`
+側に`terminal_growth_explicit: true`等）を追加する。
+
+#### 着手条件
+なし
+
+---
 
 ### [JNJ-XOM-PM-FLOOR-RISK-1] JNJ・XOM・PM・CONはrecommended_g候補が最低ラインでMO型floor転落の潜在リスクあり
 **優先度:** 中
@@ -2781,6 +3646,227 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [ERP-DUAL-CALC-1] ERP①②の重複計算
+**優先度:** 低
+**分類:** 保守性 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ3（AS-IS-055/056）
+
+#### 内容
+`pipeline.py`内の`_save_result()`と`_generate_report()`が、どちらも
+`forward_eps`/`current_price`/`risk_free_rate`を個別に読み直して同じERP
+計算式を独立に再計算している。共通関数化されていないため、片方だけ修正
+すると①②が食い違う保守リスクがある。
+
+#### 対応方針
+共通関数に統合する。
+
+#### 着手条件
+なし
+
+---
+
+### [MOAT-CATALOG-DUP-1] moat_score（AS-IS-026/028）のカタログ重複
+**優先度:** 低
+**分類:** ドキュメント整合性
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4
+
+#### 内容
+AS-IS-026とAS-IS-028は同一の`calculate_moat_score()`戻り値を指す重複
+カタログエントリ。過去のインベントリ作成過程で同じ関数の出力が2つの
+異なるAS-IS-IDとして重複記録されている。
+
+#### 対応方針
+どちらか一方に統合する（コード修正は不要、カタログ整理のみ）。
+
+#### 着手条件
+なし
+
+---
+
+### [TANUKI-VALUATION-MISC-GAPS-1] TANUKI VALUATIONの軽微な構造的ギャップまとめ（PERフォールバック欠如・EV/EBITDA負値格納・net_debt符号エイリアス・v0_adjusted死フィールド・Runway cash算出相違・mature_profit S&M欠落・根拠不明な定数）
+**優先度:** 低
+**分類:** データ品質 / TANUKI VALUATION
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ3・4・6
+
+#### 内容
+①PS/PEG/EV-EBITDAはTANUKIデータ欠落時にHypeCore自身の`poc.json`へ
+フォールバックするが、PERだけはTANUKIの`comps.per`のみを参照しフォール
+バックしない（`detail.html:550`）。②`hypecore.py:130`は負のEV/EBITDAを
+そのまま格納する設計（現状UIガードで実害なしだが将来別画面追加時に
+誤表示リスク）。③`net_debt = -net_cash`という単純な符号反転が「正=
+ネットキャッシュ」「正=純負債」という2つの概念を並存させており、
+横断参照コードで符号取り違えリスクがある。④`v0_adjusted`（AS-IS-008）は
+`v0_adjusted = v0`という代入のみで実質的な死フィールド（コメント自体が
+後方互換用と明記）。⑤Runway概念がTANUKI（`SECReader.get_net_cash()`
+経由、セクターガードあり）とSTONKS SILO（`annual_{yr}.json`の`bs`単純
+合算のみ）でcash算出経路が異なる。⑥`research_and_development`・
+`selling_and_marketing`がSEC非開示の場合`or 0`で「支出ゼロ」として
+足し戻され、`mature_profit`が実態より低く算出される。⑦`growth_floor
+(15%)`・`growth_cap(50%)`・`market_return(10%)`の根拠がコード内に一切
+記載されていない。
+
+#### 対応方針
+各項目とも影響が限定的なため、他の関連タスク（[[RISK-FREE-RATE-
+HARDCODE-1]]等）着手時に合わせて解消することを推奨する。
+
+#### 着手条件
+なし
+
+---
+
+### [HYPECORE-MISC-NAMING-GAPS-1] HypeCoreの軽微な命名・観測性ギャップまとめ（buy_hold_ratio誤称・fcf_yield誤称・200MA乖離の別ソース並存・ma200_mom未出力・出来高指標の粒度相違・lifecycle基準相違）
+**優先度:** 低
+**分類:** 命名・観測性 / HypeCore
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5・7
+
+#### 内容
+①`buy_hold_ratio`（AS-IS-108）は名称と実体が食い違う。実際の計算式
+`(strongBuy+buy)/(strongBuy+buy+hold+sell+strongSell)`には`hold`が
+分子に含まれておらず、実質的に「Buy比率」である。②`fcf_yield`
+（AS-IS-096）も名称と実体が食い違う。分子はOCF（CapEx控除前）その
+ものでありFCFではなく、年率換算もされていない。③AS-IS-076と
+AS-IS-087は同名「200MA乖離」だがAS-IS-087はHypeCore自前計算
+（`rolling(200).mean()`）、AS-IS-076はyfinance内部計算済み値
+（`twoHundredDayAverage`）という別データソース。④`ma200_mom`は
+ステージ判定の複数の重要分岐で使われるがJSON出力に一切含まれず、
+判定根拠を事後検証できない。⑤`volume_ratio`（AS-IS-091、日次20日平均
+比）と`vol_surge`（AS-IS-092、月次6ヶ月移動平均比）は「出来高急増」系
+指標として並存するが時間窓が全く異なる。⑥ライフサイクル判定の
+フォールバック元`revenue_growth`（yfinance）と`rev_yoy`（SEC EDGAR
+TTM%）は算出基準が異なる別指標であり、どちらが使われるかは単に
+`revenue_growth`がnullかどうかで暗黙に決まる。
+
+#### 対応方針
+①②は`NAMING_CONVENTIONS.md`規則3（誤称の禁止）に基づきリネームを
+検討する。③⑤⑥は接尾辞での区別（規則1・2）を検討する。④はJSON出力に
+`ma200_mom`を追加する。
+
+#### 着手条件
+なし
+
+---
+
+### [DISCOVER-PRECISION-GAPS-1] Discoverの精度上の軽微なギャップ（テーマ連続登場の文字列部分一致・macro_themesの見た目上の更新）
+**優先度:** 低
+**分類:** データ品質 / Discover
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7
+
+#### 内容
+①`themeStreakMap`（`docs/discover/index.html:452-457`）は今週と過去4週
+分のテーマ名を`hn.includes(name) || name.includes(hn)`という単純な部分
+文字列一致で比較する。テーマ名はGrokが毎週自由生成する20字以内の文字列
+のため、同一の実質的テーマでも表現が微妙に変わると継続と判定されず
+（偽陰性）、逆に無関係な2テーマが偶然共通の部分文字列を持つと誤って
+連続登場と判定される（偽陽性）リスクがある。②`collect.py:main()`は
+日曜以外`macro_themes`を前回`daily_report.json`から引き継ぐが、
+`daily_report.json`自体の`generated_at`は毎日更新されるため、ユーザーが
+「今日生成された最新のテーマ」と誤認するリスクがある。
+
+#### 対応方針
+①ID・埋め込みベースの意味的一致への変更を検討する②レポート全体の
+タイムスタンプとは別に各テーマオブジェクトの`generated_at`（週次生成日）
+を画面上でも明示する。
+
+#### 着手条件
+なし
+
+---
+
+### [MACRO-THRESHOLD-INCONSISTENCY-1] MACRO PULSEの閾値不一致・重複判定の軽微な構造的リスク（YC閾値3セット・dedupe_new_rows()のCFNAI/Sahm無条件適用）
+**優先度:** 低
+**分類:** データ品質 / MACRO PULSE
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ10
+
+#### 内容
+①10Y-2Yスプレッドの判定閾値が用途によって3セット存在する（ティッカー
+表示のINVERTED/FLAT/NORMAL: -0.2/0.5、RECESSION RISK SCOREのステップ
+関数: -0.5/0/0.5の4段階、LAYER2健全性バーのbull/bear: 0.5/-0.2）。②
+`dedupe_new_rows()`の重複判定は`obs_to_release_lag`に基づく日数窓＋
+完全一致する`actual`値のみで行われ、指標ごとの「値の反復が正常で
+ありうるか」を区別する例外リストがない。Sahm Ruleが複数月連続で0.00に
+近い値を取る、CFNAI MA3が安定期に近似値を繰り返す、といった正当な
+ケースを重複と誤判定して新規データ行を捨てるリスクが構造的に残る。
+
+#### 対応方針
+①閾値セットを統一するか、用途別に異なる理由を明示する②指標別の
+「反復許容」例外リストを`dedupe_new_rows()`に追加する。
+
+#### 着手条件
+なし
+
+---
+
+### [KPI-UNIT-HARDCODE-USD-1] TANUKI TAILのkpis.{kpi_name}.unitが常時USD固定
+**優先度:** 低
+**分類:** バグ / TANUKI TAIL
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ7（AS-IS-419）
+
+#### 内容
+`xbrl_segment_fetcher.py:fetch_ticker()`は抽出したKPIの`unit`欄に無条件
+で`"USD"`を設定する。同じ関数内で「整数に近い値（USD金額）はint、小数値
+（比率）はfloat」と値の型を使い分けている（コード自身が比率KPIの存在を
+認識している）にもかかわらず、`unit`フィールドは比率KPIであっても
+"USD"のままになる。
+
+#### 対応方針
+値の型判定ロジックと連動させ、比率KPIには`"ratio"`等の適切な`unit`を
+設定する。
+
+#### 着手条件
+なし
+
+---
+
+### [STONKS-FINANCIAL-VECTORS-RELATIVE-1] financial_vectorsのpercentile/angle/lengthが相対順位であることの明示
+**優先度:** 低〜未定
+**分類:** ドキュメント整合性 / STONKS SILO
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ5（AS-IS-135/175/176）
+
+#### 内容
+`financial_vectors`のpercentile・angle・lengthは絶対的な変化率ではなく、
+同時点の全STONKS SILO銘柄集合に対する相対順位である。新規銘柄の追加・
+除外のたびに、対象銘柄自身のデータが変わっていなくても他銘柄の
+percentileが変動しうる。過去の`results.json`保存値と時系列比較する際は
+この母集団変動の影響を考慮する必要がある。
+
+#### 対応方針
+コード修正ではなく、画面上または`results.json`のメタデータとして
+「相対順位である」旨・母集団サイズを明示することを検討する。
+
+#### 着手条件
+なし
+
+---
+
+### [EPS-267-MIXED-PASSTHROUGH-1] AS-IS-267内でパススルー値と計算値が混在
+**優先度:** 低〜未定
+**分類:** ドキュメント整合性 / EPS Analyzer
+**登録日:** 2026-07-23
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4
+
+#### 内容
+AS-IS-267の`gaap_eps`/`gaap_net_income`/`diluted_shares_used`はXBRL値の
+パススルー（計算なし）である一方、`adjusted_eps`/`adjusted_net_income`は
+`net_adjustment_total`の加算を伴う真の計算値であり、同一AS-IS内に性質の
+異なるフィールドが混在する。
+
+#### 対応方針
+コード修正は不要。将来カタログを再整理する際に、パススルー値と計算値を
+分離したAS-ID採番を検討する。
+
+#### 着手条件
+なし
+
+---
 
 ### [TTM-SBC-QUARTERS-GAP-1] build_rice_annual_shape()のSBCがquarters完全性チェック対象外
 **優先度:** 低〜未定
