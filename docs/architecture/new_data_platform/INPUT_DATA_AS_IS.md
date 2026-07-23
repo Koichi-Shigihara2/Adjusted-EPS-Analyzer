@@ -1,6 +1,9 @@
 # INPUT_DATA_AS_IS.md — 一次データ層の現状（AS-IS）
 
 作成日: 2026-07-23
+更新日: 2026-07-23（`INPUT_DATA_TOBE.md`の3分類再構成・ID付番に対応し、
+本ファイルにもID対応表〈1-E〉を新設。両ファイル間のID機械的網羅性証明を
+実施）
 出発点: `INPUT_DATA_TOBE.md`と同一構成（ステップ1: 棚卸し、ステップ2:
 保持方法、ステップ3: 取得方法）。実コード（`.github/workflows/*.yml`・
 `common/sec_data/`・各サブシステムのfetcher/pipeline）を直接確認して作成。
@@ -104,29 +107,126 @@ risk_free_rate」は**「FRED非参照（ハードコード0.043）を再確認�
 ### 1-D. 手動入力データ（実測、`config/`以外の分散も含めて棚卸し）
 
 `config/`ディレクトリの全ファイルを直接列挙し、`INPUT_DATA_TOBE.md`
-作成時に把握していなかったものを含めて棚卸しした。
+作成時に把握していなかったものを含めて棚卸しした。IDは
+`INPUT_DATA_TOBE.md`の3分類再構成（分類B: 取得前提条件／分類C: 導出
+データの入力）に対応する（詳細は1-E参照）。
 
-| ファイル | 内容 | `INPUT_DATA_TOBE.md`での扱い |
+| ID | ファイル | 内容 | `INPUT_DATA_TOBE.md`での扱い |
+|---|---|---|---|
+| `INPUT-C-001` | `config/segment_config.json` | セグメント別加重成長率 | 記載済み |
+| `INPUT-C-002` | `config/growth_options_config.json` | 成長オプション設定 | 記載済み |
+| `INPUT-C-003` | `config/maturity_config.json` | DCF成熟プロファイル | 記載済み |
+| `INPUT-C-004` | `config/rpo_config.json` | RPO調整設定 | 記載済み |
+| `INPUT-C-005` | `config/beta_config.json` | β値オーバーライド | 記載済み |
+| `INPUT-C-006` | `config/discover_config.json` | 銘柄別テーマ・区分 | 記載済み |
+| `INPUT-C-007` | `config/theme_config.json` | テーママスタ | 記載済み |
+| `INPUT-C-008` | `config/portfolio.json` | 保有株数・取得単価 | 記載済み（ただし保持場所が`docs/portfolio/data/portfolio.json`と重複、2-Dで詳述） |
+| `INPUT-C-014` | `config/adjustment_items.json` | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義（`version: "2026-04"`） | 記載済み（当初考慮漏れ→追加済み） |
+| `INPUT-C-011` | `config/prompts.yaml` | Grok/AI分析プロンプトテンプレート（`adjustment_analysis`等） | 記載済み（当初考慮漏れ→追加済み、重要） |
+| `INPUT-C-013` | `config/sectors.yaml` | セクター/業種のキーワードマッピング | 記載済み（当初考慮漏れ→追加済み。実コード確認の結果、`sector_classifier_v2.py`経由でEPS Analyzerの調整項目除外に使われる分類C項目と判明） |
+| `INPUT-C-012` | `config/split_history.yaml` | 株式分割の遡及補正用手動記録（比率・効力発生日） | 記載済み（当初考慮漏れ→追加済み。実コード確認の結果、`apply_split_adjustments()`が事後適用する分類C項目と判明） |
+| `INPUT-B-001` | `config/monitor_tickers.yaml` | 監視銘柄マスタリスト | 記載済み（当初考慮漏れ→追加済み、重要） |
+| `INPUT-B-002` | `config/cik_lookup.csv` | Ticker→CIKマッピング | 記載済み（当初考慮漏れ→追加済み） |
+| `INPUT-B-003` | `config/cik_lookup_result.json` | CIKルックアップ結果キャッシュ | 記載済み（当初考慮漏れ→追加済み） |
+| — | `config/warn_acknowledged.json` | `report_consistency_check.py`のWARN確認済み台帳 | 対象外と判定（下記参照、IDなし） |
+| — | `config/workflow_dependencies.json` | ワークフロー依存関係定義（System Health用） | 対象外と判定（下記参照、IDなし） |
+| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | Damodaran業種別FCF変換率・ticker override | 記載済み（当初考慮漏れ→追加済み、`config/`外に配置されている点も特記） |
+| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | TANUKI TAIL KPI設定（AI提案＋人手確定） | 記載済み（ただし`config/`ではなく`docs/`配下、下記2-D参照） |
+
+### 1-E. ID対応表（`INPUT_DATA_TOBE.md`分類A/B/C全64件との対応）
+
+`INPUT_DATA_TOBE.md`が付番した分類A（一次データ本体、47件）・分類B
+（取得前提条件、3件）・分類C（導出データの入力、14件）の全IDについて、
+現状（AS-IS）のどの取得経路・保持場所が対応するかを確認した。
+
+#### 分類A: 一次データ本体（47件）— SEC EDGAR（`INPUT-A-001`〜`018`）
+
+| ID | 現状の取得経路 | 確認状況 |
 |---|---|---|
-| `config/segment_config.json` | セグメント別加重成長率 | 記載済み |
-| `config/growth_options_config.json` | 成長オプション設定 | 記載済み |
-| `config/maturity_config.json` | DCF成熟プロファイル | 記載済み |
-| `config/rpo_config.json` | RPO調整設定 | 記載済み |
-| `config/beta_config.json` | β値オーバーライド | 記載済み |
-| `config/discover_config.json` | 銘柄別テーマ・区分 | 記載済み |
-| `config/theme_config.json` | テーママスタ | 記載済み |
-| `config/portfolio.json` | 保有株数・取得単価 | 記載済み（ただし保持場所が`docs/portfolio/data/portfolio.json`と重複、2-Dで詳述） |
-| `config/adjustment_items.json` | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義（`version: "2026-04"`） | **未記載（考慮漏れ候補）** |
-| `config/prompts.yaml` | Grok/AI分析プロンプトテンプレート（`adjustment_analysis`等） | **未記載（考慮漏れ候補、重要）** |
-| `config/sectors.yaml` | セクター/業種のキーワードマッピング | **未記載（考慮漏れ候補）** |
-| `config/split_history.yaml` | 株式分割の遡及補正用手動記録（比率・効力発生日） | **未記載（考慮漏れ候補）** |
-| `config/monitor_tickers.yaml` | 監視銘柄マスタリスト | **未記載（考慮漏れ候補、重要）** |
-| `config/cik_lookup.csv` | Ticker→CIKマッピング | **未記載（考慮漏れ候補）** |
-| `config/cik_lookup_result.json` | CIKルックアップ結果キャッシュ | **未記載（考慮漏れ候補）** |
-| `config/warn_acknowledged.json` | `report_consistency_check.py`のWARN確認済み台帳 | 対象外と判定（下記参照） |
-| `config/workflow_dependencies.json` | ワークフロー依存関係定義（System Health用） | 対象外と判定（下記参照） |
-| `src/value/tanuki_valuation/fcf_conversion_config.json` | Damodaran業種別FCF変換率・ticker override | **未記載（考慮漏れ候補、`config/`外に配置されている点も特記）** |
-| `docs/portfolio/tail/data/tail_kpi_map.json` | TANUKI TAIL KPI設定（AI提案＋人手確定） | 記載済み（ただし`config/`ではなく`docs/`配下、下記2-D参照） |
+| `INPUT-A-001`（売上高）、`INPUT-A-002`（純利益）、`INPUT-A-003`（営業利益）、`INPUT-A-004`（売上総利益）、`INPUT-A-005`（OCF） | 経路A（`common/sec_data`）が一次情報源。経路B（EPS Analyzer）も純利益を独立再抽出 | 確認済み |
+| `INPUT-A-006`（CapEx） | 経路A。符号正規化は`parser.py`側で実施（`normalized/`側は未正規化、AS-IS-071参照） | 確認済み（既知バグあり） |
+| `INPUT-A-007`（ファイナンスリース関連）、`INPUT-A-008`（R&D）、`INPUT-A-009`（S&M）、`INPUT-A-010`（SBC） | 経路A | 確認済み |
+| `INPUT-A-011`（現金）、`INPUT-A-012`（短期投資）、`INPUT-A-013`（長期有利子負債）、`INPUT-A-014`（短期有利子負債） | 経路A | 確認済み |
+| `INPUT-A-015`（希薄化後株式数） | 経路A・経路B（EPS Analyzer独自抽出）の両方 | 確認済み（重複取得） |
+| `INPUT-A-016`（セグメント別売上・KPI） | 経路C3（`xbrl_segment_fetcher.py`） | 確認済み |
+| `INPUT-A-017`（内部統制関連テキスト） | 経路C1（`sec_ctrl_fetcher.py`） | 確認済み |
+| `INPUT-A-018`（直近提出日・提出書類一覧） | 経路C2（`edgar_rss_monitor.py`）・経路H（CIKルックアップ）が使用 | 確認済み |
+
+#### 分類A: 一次データ本体（47件）— yfinance（`INPUT-A-019`〜`023`）
+
+| ID | 現状の取得経路 | 確認状況 |
+|---|---|---|
+| `INPUT-A-019`（価格・出来高履歴） | TANUKI(`pipeline.py`)・HypeCore・STONKS SILO・Market Pulseが個別取得 | 確認済み（重複取得） |
+| `INPUT-A-020`（`.info`属性、β含む） | TANUKI(`data_fetcher.py`)・HypeCore・Beta_Config_Update.ymlが個別取得 | 確認済み（重複取得、β3経路） |
+| `INPUT-A-021`（アナリスト格上げ・格下げ履歴） | HypeCore(`hypecore.py`) | 確認済み |
+| `INPUT-A-022`（指数・ETF・商品） | Market Pulse(`collect_and_send.py`) | 確認済み（`^GSPC`は内部4重取得） |
+| `INPUT-A-023`（S&P500構成銘柄一括） | Market Pulse(`breadth_calculator.py`) | 確認済み |
+
+#### 分類A: 一次データ本体（47件）— FRED（`INPUT-A-024`〜`047`）
+
+| ID | 系列コード | 現状の取得経路 |
+|---|---|---|
+| `INPUT-A-024` | `T10Y2Y` | MACRO PULSE |
+| `INPUT-A-025` | `BAMLH0A0HYM2` | MACRO PULSE(内部2箇所)＋Market Pulse(1箇所)＝3箇所重複取得（既知） |
+| `INPUT-A-026` | `GACDFSA066MSFRBPHI` | MACRO PULSE |
+| `INPUT-A-027` | `CFNAI` | MACRO PULSE |
+| `INPUT-A-028` | `IC4WSA` | MACRO PULSE |
+| `INPUT-A-029` | `MICH` | MACRO PULSE |
+| `INPUT-A-030` | `T5YIE` | MACRO PULSE |
+| `INPUT-A-031` | `UMCSENT` | MACRO PULSE |
+| `INPUT-A-032` | `PERMIT` | MACRO PULSE |
+| `INPUT-A-033` | `SAHMCURRENT` | MACRO PULSE |
+| `INPUT-A-034` | `PAYEMS` | MACRO PULSE |
+| `INPUT-A-035` | `VIXCLS` | MACRO PULSE |
+| `INPUT-A-036` | `SP500` | MACRO PULSE |
+| `INPUT-A-037` | `DGS1` | MACRO PULSE |
+| `INPUT-A-038` | `DFEDTARU` | MACRO PULSE |
+| `INPUT-A-039` | `DFEDTARL` | MACRO PULSE |
+| `INPUT-A-040` | `FEDFUNDS` | MACRO PULSE |
+| `INPUT-A-041` | `WALCL` | MACRO PULSE |
+| `INPUT-A-042` | `WTREGEN` | MACRO PULSE |
+| `INPUT-A-043` | `RRPONTSYD` | MACRO PULSE |
+| `INPUT-A-044` | `WRBWFRBL` | MACRO PULSE |
+| `INPUT-A-045` | `M2SL` | MACRO PULSE |
+| `INPUT-A-046` | `VXNCLS` | Market Pulse |
+| `INPUT-A-047` | `DGS3MO` | Market Pulse |
+
+全24系列とも現状いずれかのサブシステムから確認済み。`DGS10`
+（risk_free_rate用、`INPUT_DATA_TOBE.md`が分類Aへの新規追加候補〈未採番〉
+とした系列）は現状いずれのサブシステムからも未取得——これは分類A47件の
+IDには含まれないため、機械的網羅性証明（両ファイルのID集合一致）の
+対象外であり、証明結果には影響しない。
+
+#### 分類B: 取得前提条件（3件）
+
+| ID | ファイル | 現状の存在確認 |
+|---|---|---|
+| `INPUT-B-001` | `config/monitor_tickers.yaml` | 存在確認済み（手動編集） |
+| `INPUT-B-002` | `config/cik_lookup.csv` | 存在確認済み（`TANUKI_CIK_Lookup.yml`で半自動生成） |
+| `INPUT-B-003` | `config/cik_lookup_result.json` | 存在確認済み（同上の実行結果キャッシュ） |
+
+#### 分類C: 導出データの入力（14件）
+
+| ID | ファイル | 現状の存在確認 |
+|---|---|---|
+| `INPUT-C-001`（`segment_config.json`）、`INPUT-C-002`（`growth_options_config.json`）、`INPUT-C-003`（`maturity_config.json`）、`INPUT-C-004`（`rpo_config.json`）、`INPUT-C-005`（`beta_config.json`）、`INPUT-C-006`（`discover_config.json`）、`INPUT-C-007`（`theme_config.json`） | いずれも`config/`配下（1-D表参照） | 存在確認済み |
+| `INPUT-C-008` | `config/portfolio.json` | 存在確認済み。ただし`docs/portfolio/data/portfolio.json`と重複（2-D参照） |
+| `INPUT-C-009` | `docs/portfolio/tail/data/tail_kpi_map.json` | 存在確認済み。`config/`外に配置（2-D参照） |
+| `INPUT-C-010` | `src/value/tanuki_valuation/fcf_conversion_config.json` | 存在確認済み。`config/`外に配置（2-D参照） |
+| `INPUT-C-011` | `config/prompts.yaml` | 存在確認済み |
+| `INPUT-C-012` | `config/split_history.yaml` | 存在確認済み |
+| `INPUT-C-013` | `config/sectors.yaml` | 存在確認済み |
+| `INPUT-C-014` | `config/adjustment_items.json` | 存在確認済み |
+
+**機械的網羅性証明（実行結果）**:
+```
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_TOBE.md | sort -u   → 64件
+grep -oE 'INPUT-[ABC]-[0-9]+' INPUT_DATA_AS_IS.md | sort -u  → 64件
+diff <(上記2つの出力)                                         → 差分0件
+```
+両ファイルのID集合は完全に一致し、差分は0件であった。分類A47件は全件が
+現状いずれかの取得経路で実際に取得されていること、分類B3件・分類C14件は
+全件が現状のファイルとして存在することを、上記1-Eの表で個別に確認した。
 
 ---
 
@@ -341,3 +441,12 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
 - 意図的に対象外とした項目: 2件（`warn_acknowledged.json`・
   `workflow_dependencies.json`、いずれもシステム設定データであり
   一次データ層の対象外）
+- **2026-07-23追記（3分類再構成後の機械的網羅性証明）**: `INPUT_DATA_TOBE.md`
+  が付番した分類A（一次データ本体、47件）・分類B（取得前提条件、3件）・
+  分類C（導出データの入力、14件）、合計64件のIDについて、本ファイル
+  （1-E）にも同一IDを付番し、`grep -oE 'INPUT-[ABC]-[0-9]+'`による
+  両ファイルのID集合の実際の`diff`を実行した結果、**両ファイルとも
+  64件・差分0件**であることを確認した（実行結果は本ファイル1-E末尾に
+  記載）。分類A47件は全件が現状いずれかの取得経路で実際に取得されて
+  いること、分類B3件・分類C14件は全件が現状ファイルとして存在する
+  ことを個別に確認済み
