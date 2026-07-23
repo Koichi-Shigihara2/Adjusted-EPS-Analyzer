@@ -18,6 +18,12 @@
 現状（AS-IS）の実装との具体的な比較・移行計画は次ステップで行う。
 本ドキュメントは設計のみを記録し、実装（コード修正）は一切行っていない。
 
+**更新（2026-07-23、`INPUT_DATA_AS_IS.md`との突合結果を反映）**: `INPUT_DATA_AS_IS.md`
+作成時に実コードを直接確認した結果、本ドキュメントの初版（本更新前）には
+8件の考慮漏れがあった。該当箇所（1-D手動入力データ、2-A SEC EDGAR層）に
+是正を反映済み。判定の詳細・根拠は`INPUT_DATA_AS_IS.md`「考慮漏れの判定
+結果」を参照。
+
 ---
 
 ## ステップ1: 必要な一次データの棚卸し（ソース別・重複排除済み）
@@ -126,9 +132,22 @@ Market Pulseの`collect_and_send.py`/`backfill_tech_pulse.py`）を直接確認�
 | `config/beta_config.json` | β値のオーバーライド（月次自動更新＋範囲外銘柄の手動設定） | GitHub Actions月次自動更新＋手動 |
 | `config/discover_config.json` | 銘柄別テーマ・区分・メモ | admin.html経由 |
 | `config/theme_config.json` | テーママスタ（ID/ラベル/カラー） | admin.html経由 |
-| `docs/portfolio/data/portfolio.json` | 保有株数・平均取得単価（ブローカー別） | 手動編集（書き込みスクリプトなし） |
-| `tail_kpi_map.json` | TANUKI TAILのKPI設定（AI提案＋人手確定のハイブリッド） | kpi_proposer.py提案→人手確定 |
-| `fcf_conversion_config.json`/`ticker_overrides`類 | Damodaran業種別FCF変換率等の銘柄別上書き | 手動設定 |
+| `config/portfolio.json` | 保有株数・平均取得単価（ブローカー別） | 手動編集（書き込みスクリプトなし）。**現状`docs/portfolio/data/portfolio.json`にバイト完全一致の重複コピーが存在し、同期処理が存在しない（`INPUT_DATA_AS_IS.md`2-D参照）。TO-BEでは`config/portfolio.json`を唯一の保持場所とし、表示側は都度この1箇所を参照する設計とする** |
+| `config/tail_kpi_map.json` | TANUKI TAILのKPI設定（AI提案＋人手確定のハイブリッド） | kpi_proposer.py提案→人手確定。**現状`config/`ではなく`docs/portfolio/tail/data/`配下（生成データと同居）に置かれているため、TO-BEでは他の手動設定ファイルと同様`config/`配下への集約を設計方針とする** |
+| `config/fcf_conversion_config.json`/`ticker_overrides`類 | Damodaran業種別FCF変換率等の銘柄別上書き | 手動設定。**現状は`src/value/tanuki_valuation/`直下（`config/`外）に配置されており、TO-BEでは`config/`への集約を設計方針とする** |
+| `config/monitor_tickers.yaml`（**考慮漏れ、2026-07-23追加**） | 監視銘柄マスタリスト（全サブシステムが対象とする銘柄の起点） | 手動編集。全ての一次データ取得（SEC EDGAR/yfinance/FRED）に先立って参照される最上流の設定であり、一次データ層の設計対象として明示する |
+| `config/prompts.yaml`（**考慮漏れ、2026-07-23追加、重要**） | Grok/AI分析プロンプトテンプレート集約（EPS調整分析・カタリスト予測・TANUKI TAIL Stage2シナリオ等） | 手動編集。392件の導出データの相当数がAI生成コンテンツであり、その生成品質・再現性を左右するプロンプト自体を一次データ層の管理対象として扱う（プロンプトの変更履歴・バージョン管理も将来的な設計対象） |
+| `config/split_history.yaml`（**考慮漏れ、2026-07-23追加**） | 株式分割の遡及補正用手動記録（比率・効力発生日） | 手動編集。希薄化後株式数の正規化（複数の計算式が依存する基礎データ）に直接影響する |
+| `config/sectors.yaml`（**考慮漏れ、2026-07-23追加**） | セクター/業種のキーワードマッピング | 手動編集。β・成長率のセクターデフォルト判定に使われる基礎データ |
+| `config/adjustment_items.json`（**考慮漏れ、2026-07-23追加**） | EPS Analyzerの調整項目カテゴリ・XBRLタグ定義 | 手動編集。EPS調整ロジックの根幹となる定義データ |
+| `config/cik_lookup.csv`／`config/cik_lookup_result.json`（**考慮漏れ、2026-07-23追加**） | Ticker→CIKマッピング（1-A SEC EDGAR取得の前提データ） | 半自動（`TANUKI_CIK_Lookup.yml`手動実行）。1-AのSEC EDGAR取得経路の前提条件として、本来1-Aと合わせて棚卸しすべきだった |
+
+**対象外と判定した項目（2026-07-23、`INPUT_DATA_AS_IS.md`との突合で確認）**:
+`config/warn_acknowledged.json`（品質ゲートの確認済み状態台帳）・
+`config/workflow_dependencies.json`（ワークフロー依存関係定義）は、
+いずれも499項目のいずれの計算にも入力されない運用状態データ・
+メタ設定であり、5分類上は「システム設定データ」に相当するため、
+一次データ層の設計対象には含めない。
 
 ---
 
@@ -143,6 +162,19 @@ TO-BEの唯一の正とし、**EPS Analyzer・TANUKI TAILが現在独自に持�
 （提出書類テキスト全文やセグメントKPIのような、現状の正規化ストアが
 保持していないデータ種別は、同じストアの中に別テーブル/別ファイルとして
 追加する形で吸収し、別パイプラインとして並存させない）。
+
+**統合スコープの明確化（2026-07-23、`INPUT_DATA_AS_IS.md`との突合で是正）**:
+「単一の正規化ストア」への一本化と述べたが、現状`common/sec_data/`自体が
+既に`data/{TICKER}/annual_*.json・quarterly_*.json`に加え、`raw/`
+（正規化前の生XBRL）・`normalized/`（`data/quarterly_*.json`とは別スキーマの
+独立した正規化四半期データ）・`ttm/`（TTM系列）という**最低6ファイル系統**に
+分岐している。特に`normalized/{TICKER}_quarterly_normalized.json`は
+stock.htmlのキャッシュフロー分析セクション（CapEx符号未処理バグ、
+`FIELD_DEFINITIONS.md`AS-IS-071）が直接参照する独立スキーマであるため、
+統合時は「どちらのスキーマを正とするか」を明示的に決定する必要がある
+（本ドキュメントは設計のみのため、この決定自体は次ステップの移行計画に
+委ねる）。TO-BEの統合対象は`data/`だけでなく`raw/`・`normalized/`・
+`ttm/`を含めた全系統である旨をここに明示する。
 
 保持構造の案:
 ```
@@ -230,7 +262,7 @@ Pulse用FRED」という現状のサブシステム別分断を解消する。
 |---|---|---|---|
 | SEC EDGAR新規提出監視（submissions API） | 日次（平日） | 1日1回、市場クローズ後 | 10-Q/10-Kは不定期提出のため、ポーリングで検知する以外に方法がない。現状TANUKI TAILが平日17:00 JSTで実施している頻度を踏襲すれば十分 |
 | SEC EDGAR XBRLファクト取得（新規提出検知時のみ） | イベント駆動 | 新規提出検知の都度 | 決算期ごとにしか値が変わらないデータを毎日再取得する必要はない |
-| yfinance日次スナップショット（価格・出来高） | 日次（平日） | 市場クローズ後、1回のみ | 現状13〜14ファイルがそれぞれ独自のタイミングで同じ銘柄の価格を取得しているのを1回に統合する |
+| yfinance日次スナップショット（価格・出来高） | 日次（平日） | 市場クローズ後、1回のみ | 現状11ファイル（`INPUT_DATA_AS_IS.md`で実測、既存記載の「13〜14」はF&G Level2 TQQQトレーダー等の対象外プロジェクト混入分を含む数だったと判明）がそれぞれ独自のタイミングで同じ銘柄の価格を取得しているのを1回に統合する |
 | yfinance準静的属性（.info由来） | 週次 | 週次バッチ1回 | PER・β・配当性向等は日次で変動しても実務上の意味が薄い。過度な頻度はAPI呼び出し回数の浪費 |
 | yfinanceアナリスト履歴 | 週次 | 週次バッチ1回 | 格上げ・格下げは高頻度イベントではない |
 | FRED系列 | 各系列の公表頻度に整合（日次系列は日次、月次系列は月次） | 系列ごとに設定された`obs_to_release_lag`を考慮した日次ポーリング | 月次公表データを日次ポーリングすること自体は問題ないが（値が変わらない日は差分なしとして処理）、重複排除（`dedupe_new_rows()`相当）は一次データ層側で一元的に行う |
@@ -261,7 +293,7 @@ common/
   `common/sec_data/fetcher.py`1箇所に統合すれば、新規サブシステムが
   「自分で取得する」という選択肢自体を持たなくなる（`reader.py`しか
   importできない設計にする）。
-- yfinance: 現状13〜14ファイルが個別に`yf.Ticker()`/`yf.download()`を
+- yfinance: 現状11ファイル（`INPUT_DATA_AS_IS.md`実測値）が個別に`yf.Ticker()`/`yf.download()`を
   呼んでいる状態を、`common/market_data/fetcher.py`1箇所（＋日次/週次の
   バッチ実行スケジュール）に統合すれば、同一銘柄・同一指数への重複
   リクエスト（現状確認済み: 現在株価2系統、PER/PEG/PSR/EV_EBITDA3系統、
@@ -290,8 +322,12 @@ Market PulseのHYG/LQD比率による代理判定、MACRO PULSEの実際のス�
 
 ## 次ステップへの申し送り
 
-- 本ドキュメントは白紙設計のみであり、現状（AS-IS）の実装との対比・
-  移行コスト評価・移行手順の設計はいずれも次ステップで行う
+- **2026-07-23、`INPUT_DATA_AS_IS.md`との突合完了**: 現状（AS-IS）の実装
+  との項目単位の比較を実施済み（比較結果・考慮漏れの判定は
+  `INPUT_DATA_AS_IS.md`参照）。本ドキュメントの1-D（手動入力データ6件
+  追加）・2-A（SEC EDGAR統合スコープの明確化）に是正を反映した
+- 移行コスト評価・移行手順の設計（何を・どの順序で・どう移行するか）は
+  引き続き次ステップで行う（本ドキュメント自体は設計のみに留める）
 - `common/market_data/`・`common/macro_data/`という新設レイヤーの命名・
   配置場所は暫定案であり、既存の`common/`配下の他モジュールとの整合は
   次ステップで確認する
@@ -300,4 +336,10 @@ Market PulseのHYG/LQD比率による代理判定、MACRO PULSEの実際のス�
   次ステップに委ねる
 - Discoverのconfig二重管理（`admin.html`保存先と`docs/discover/index.html`
   参照先の不一致）は一次データ層の設計とは別軸の問題（手動入力データの
-  同期バグ）であり、本ドキュメントでは設計対象に含めていない
+  同期バグ）であり、本ドキュメントでは設計対象に含めていない。ただし
+  Portfolio（`config/portfolio.json`と`docs/portfolio/data/portfolio.json`
+  の重複）については、同型の同期リスクとして一次データ層の「唯一の
+  保持場所」設計（1-D）に含めた
+- `common/sec_data`の`raw/`・`normalized/`・`ttm/`統合時にどちらのスキーマ
+  を正とするか（特に`normalized/`をAS-IS-071バグの温床として廃止するか、
+  修正して存置するか）の決定は、次ステップの移行計画に委ねる
