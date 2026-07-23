@@ -691,6 +691,12 @@ FCF計算（`common/sec_data/parser.py`）は`abs()`で符号を吸収済みだ�
 独立に存在する（ロジック側`monthly_burn`は`abs(capex)`で正規化済みなのに
 表示側だけ未正規化という非対称設計）。
 
+`financial_trend_calculator.py`（STONKS SILO、`VECTOR_FIELDS`/CapEx、
+L70）も、符号未処理のnormalized/CapExを消費する第3の経路として存在する
+（フェーズ1 common/sec_data統合投資調査で新規確認、2026-07-23）。ただし
+実害は限定的（YoY/QoQ個別表示のみに影響し、COMPOSITE_FIELDS合成スコア
+には不使用のため計算結果への影響なし）。
+
 #### 対応方針
 両箇所とも、正式なFCF計算と同じ`abs()`ベースの符号正規化を適用する。
 stock.html側はlatest.json不使用・独自再計算という設計自体の妥当性も
