@@ -4681,6 +4681,56 @@ annualデータも同一ファイル内に混在保持している
 
 ---
 
+### [Q4-IMPLIED-CALC-TRIPLICATION-1] 「FY年次値-(Q1+Q2+Q3)=Q4」のQ4逆算ロジックが3箇所に独立実装されている
+**優先度:** 低
+**分類:** リファクタリング / 技術的負債
+**登録日:** 2026-07-24
+**発見:** CapEx符号処理・TTM入力元確認調査（フェーズ1）
+
+#### 内容
+「FY年次値 - (Q1+Q2+Q3) = Q4」という同一のQ4逆算ロジックが、
+normalizer.py::_build_q4_implied_entries()・ttm_calculator.py::
+_build_q4_quarterly_entries()・financial_trend_calculator.py（STONKS
+SILO、同種の_build_q4_implied）の最低3箇所に独立実装されている。
+ttm_calculator.py側はnormalizer.py側と重複しないよう明示的なガード
+（BUG-TTM-Q4DUP-1）を持つが、3箇所とも同一ロジックが個別に保守されて
+いる状態自体は変わらない。現状ロジックは一貫しており直ちに実害は
+ないが、将来1箇所だけ修正すると挙動が分岐するリスクを構造的に
+抱えている。
+
+#### 対応方針
+未定。3箇所を共通関数へ集約する設計を将来検討する。
+
+#### 着手条件
+なし（優先度低、急ぎではない）
+
+---
+
+### [TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1] ttm_calculator.pyのFLOW_FIELDSがfrozensetのためキー順序が非決定的になる
+**優先度:** 低
+**分類:** 技術的負債 / 保守性
+**登録日:** 2026-07-24
+**発見:** CapEx符号正規化実装（フェーズ1）データ再生成作業中
+
+#### 内容
+ttm_calculator.pyのFLOW_FIELDSがfrozensetで定義されているため、
+プロセス起動ごとにキー順序が非決定的になる。値が同一でも
+ttm/{ticker}_ttm_series.jsonを再生成するたびに無関係なdiffが
+大量発生し、意図した変更内容がgit diff上で埋もれる。
+
+#### 影響
+通常のパイプライン再実行時には毎回この無関係diffが発生し続けている
+状態と推測される。
+
+#### 対応方針
+未定。FLOW_FIELDSをfrozensetから順序が決定的なtuple等に変更する
+対応が有力候補。
+
+#### 着手条件
+なし（優先度低）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
