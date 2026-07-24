@@ -4886,42 +4886,6 @@ RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルと�
 
 ---
 
-### [LAYER3-FALLBACK-STALE-TAG-PRIORITY-1] layer3_builder.pyの「最初に見つかった非空候補採用」方式が古いタグを新しいタグより優先してしまう
-**優先度:** 中
-**分類:** データ品質 / バグ
-**登録日:** 2026-07-24
-**発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
-
-#### 内容
-「最初に見つかった非空候補を採用」というフォールバック方式が、
-直近データを持たない古いタグ（例: `Revenues`）を、より新しく実際に
-使われているタグより先に拾ってしまう。IONQ等6銘柄のrevenueで確認
-（既存コードのdocstringに既知の限界として言及はあったが、BACKLOG
-未登録だった）。既存parser.py側の[[REVENUE-TAG-PRIORITY-FRAGILE-1]]
-（`XBRL_MAPPING["revenue"]`の候補優先順位が脆弱）と同種の「Revenuesタグ
-優先」パターンだが、発生箇所は別モジュール（本件はlayer3_builder.py
-の新規フォールバック方式、[[REVENUE-TAG-PRIORITY-FRAGILE-1]]は既存
-parser.py::`_extract_values_merged()`のtie-break規則）のため区別して
-登録する。
-
-#### 影響
-候補リストの並び順次第で、実際には報告されなくなった古いタグの値を
-誤って採用し続けるリスクがある。revenue以外のフィールドでも理論上
-同型の問題が起こりうる。
-
-#### 対応方針
-未定。「候補の中で最も直近のfiled日を持つタグを優先する」等、
-recency考慮のフォールバック方式への変更が候補。
-[[REVENUE-TAG-PRIORITY-FRAGILE-1]]の対応方針検討時にあわせて
-本件も検討するのが効率的と考えられる。
-
-#### 着手条件
-移行実装計画（SEC_EDGAR_LAYER_DESIGN.md 8章）フェーズD
-（TANUKI VALUATION本体切替）着手前までに解消すること。フェーズB・Cは
-このフィールドに依存しないため、それらの着手条件ではない。
-
----
-
 ### [LAYER3-UNEXPLAINED-SINGLE-TICKER-DIFFS-1] layer3_builder.py回帰レポートで検出された原因未調査の単一銘柄差異
 **優先度:** 低
 **分類:** データ品質 / 要調査
