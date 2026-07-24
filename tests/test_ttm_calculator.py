@@ -4,12 +4,15 @@ tests/test_ttm_calculator.py
 common/sec_data/ttm_calculator.py のユニットテスト。
 BUG-TTM-Q4DUP-1: implied Q4 の二重計上防止ロジックを検証する。
 
+Q4逆算本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()に
+集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
+
 実行方法:
     venv/Scripts/python.exe -m pytest tests/test_ttm_calculator.py -v
 """
 
+from common.sec_data.q4_implied import build_q4_implied_entries
 from common.sec_data.ttm_calculator import (
-    _build_q4_quarterly_entries,
     calc_ttm_series,
     STOCK_FIELDS,
     EXCLUDED_FIELDS,
@@ -39,7 +42,7 @@ class TestBuildQ4QuarterlyEntriesDedup:
             _q("2024-09-30", "2024-07-01", 300),
             _q("2024-12-31", "2024-09-30", 400, is_implied=True),  # 既存Q4
         ]
-        result = _build_q4_quarterly_entries(annual, quarterly)
+        result = build_q4_implied_entries(annual, quarterly, "NetIncome")
         assert result == []
 
     def test_skips_when_real_q4_already_reported(self):
@@ -51,7 +54,7 @@ class TestBuildQ4QuarterlyEntriesDedup:
             _q("2024-09-30", "2024-07-01", 300),
             _q("2024-12-31", "2024-09-30", 400),  # 実データのQ4
         ]
-        result = _build_q4_quarterly_entries(annual, quarterly)
+        result = build_q4_implied_entries(annual, quarterly, "NetIncome")
         assert result == []
 
     def test_generates_q4_when_not_already_present(self):
@@ -62,7 +65,7 @@ class TestBuildQ4QuarterlyEntriesDedup:
             _q("2024-06-30", "2024-04-01", 200),
             _q("2024-09-30", "2024-07-01", 300),
         ]
-        result = _build_q4_quarterly_entries(annual, quarterly)
+        result = build_q4_implied_entries(annual, quarterly, "NetIncome")
         assert len(result) == 1
         assert result[0]["end"] == "2024-12-31"
         assert result[0]["val"] == 1000 - (100 + 200 + 300)

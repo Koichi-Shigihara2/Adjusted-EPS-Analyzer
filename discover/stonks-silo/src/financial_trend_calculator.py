@@ -39,7 +39,7 @@ import json
 import logging
 import math
 import sys
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -57,6 +57,7 @@ _NORM_DIR = _REPO_ROOT / "common" / "sec_data" / "normalized"
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 from common.sec_data.reader import get_quarterly_series  # noqa: E402
+from common.sec_data.q4_implied import build_q4_implied_entries  # noqa: E402
 
 # 計算対象フィールド
 # invert=True: 値が下がる方が改善（原価率）
@@ -80,53 +81,8 @@ SUB_FIELDS = ["SM", "SBC"]
 COMPOSITE_FIELDS = {"Revenue", "GrossProfit", "NetIncome", "OCF"}
 
 
-_TODAY = date.today().isoformat()
-
-
-def _build_q4_implied(annual_entries: list, quarterly_entries: list) -> list:
-    """
-    ttm_calculator._build_q4_quarterly_entriesと同等のQ4逆算ロジック。
-    FY年次値 - (Q1+Q2+Q3) = Q4 implied
-    """
-    result = []
-    for annual in annual_entries:
-        fy_end   = annual.get("end", "")
-        fy_start = annual.get("start", "")
-        fy_val   = annual.get("val")
-        if not fy_end or fy_val is None:
-            continue
-        if fy_end > _TODAY:
-            continue
-        fy_qs = [
-            e for e in quarterly_entries
-            if e.get("end", "") < fy_end
-            and e.get("start", "") >= fy_start
-            and not e.get("is_annual")
-        ]
-        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
-        if len(top3) < 3:
-            continue
-        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
-        q4_val = fy_val - sum(e["val"] for e in top3)
-        try:
-            period_days = (date.fromisoformat(fy_end) - date.fromisoformat(q3_end)).days
-        except (ValueError, TypeError):
-            period_days = 90
-        result.append({
-            "end":         fy_end,
-            "start":       q3_end,
-            "val":         q4_val,
-            "fp":          "Q4",
-            "fy":          annual.get("fy"),
-            "form":        "10-K",
-            "filed":       annual.get("filed", ""),
-            "accn":        annual.get("accn", ""),
-            "period_days": period_days,
-            "is_ytd":      False,
-            "is_annual":   False,
-            "is_implied":  True,
-        })
-    return result
+# Q4 implied生成本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()
+# に集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
 
 
 def _get_quarterly_entries(normalized: dict, field_name: str) -> list:
@@ -136,7 +92,7 @@ def _get_quarterly_entries(normalized: dict, field_name: str) -> list:
     annual = [e for e in entries if e.get("is_annual")]
 
     # Q4 impliedを追加
-    q4_implied = _build_q4_implied(annual, quarterly)
+    q4_implied = build_q4_implied_entries(annual, quarterly, field_name)
 
     # 既存Q4エントリと重複しないよう end_date で管理
     existing_ends = {e["end"] for e in quarterly}

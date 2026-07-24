@@ -11,6 +11,7 @@ from datetime import date, datetime
 
 from .contracts import validate_field_classification
 from .quarterly import FIELD_CONCEPTS
+from .q4_implied import build_q4_implied_entries
 
 logger = logging.getLogger(__name__)
 
@@ -76,91 +77,10 @@ EXCLUDED_FIELDS = frozenset([
 # 実例）を、import時点で即座に検知するため。
 validate_field_classification(FIELD_CONCEPTS, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS)
 
-# TTMに含める当日以前の implied Q4 のみ
-_TODAY = date.today().isoformat()
-
-
-def _build_q4_quarterly_entries(
-    annual_entries: list,
-    quarterly_entries: list,
-    field_name: str = "",
-) -> list:
-    """
-    各FY年次エントリについて Q4 implied 合成エントリを生成する。
-
-    Q4 = FY年次値 - (Q1+Q2+Q3)
-    10-K は Q4 単独を報告しないため必要。
-
-    BUG-TTM-Q4DUP-1: normalizer.py が既に同じ end日付のimplied Q4を
-    quarterly_entries に永続化済みの場合は再生成しない（financial_trend_calculator.py
-    _build_q4_implied と同じ重複排除パターン）。重複生成すると呼び出し元のマージ処理で
-    同一end日付のエントリが2件になり、TTM合算（直近4Q）が実態と乖離する。
-
-    RICE-TTM-CAPEX-SUM-SIGN-1: field_name=="CapEx"の場合、算出したq4_valに
-    abs()を適用する。normalizer.py側の最終出力時abs()（CAPEX-SIGN-
-    UNNORMALIZED-1本対応）がこのend日付のQ4エントリを既に生成済みであれば
-    このフォールバック自体発火しない（上記BUG-TTM-Q4DUP-1のガードで
-    スキップされる）が、稀に未生成のまま渡ってくるケースへの保険として
-    同じ正規化を独立に適用する。CapEx以外のフィールド（NetIncome等、
-    負値が正当な意味を持つもの）には適用しない。
-    """
-    result: list = []
-    existing_ends = {e["end"] for e in quarterly_entries if not e.get("is_annual")}
-    for annual in annual_entries:
-        fy_end = annual.get("end", "")
-        fy_start = annual.get("start", "")
-        fy_val = annual.get("val")
-
-        if not fy_end or fy_val is None:
-            continue
-        # 未来のQ4は含めない（アナリスト予想にならないよう）
-        if fy_end > _TODAY:
-            continue
-        # BUG-TTM-Q4DUP-1: 既に同一end日付の四半期データ（実データ or 永続化済みimplied）が
-        # 存在する場合はスキップ（二重計上防止）
-        if fy_end in existing_ends:
-            continue
-
-        # 同FY内の Q1/Q2/Q3
-        fy_qs = [
-            e for e in quarterly_entries
-            if e.get("end", "") < fy_end
-            and e.get("start", "") >= fy_start
-            and not e.get("is_annual")
-        ]
-        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
-        if len(top3) < 3:
-            continue
-
-        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
-        q4_val = fy_val - sum(e["val"] or 0 for e in top3)
-        if field_name == "CapEx":
-            q4_val = abs(q4_val)
-
-        # period_days: FY_end - Q3_end
-        try:
-            period_days = (
-                date.fromisoformat(fy_end) - date.fromisoformat(q3_end)
-            ).days
-        except (ValueError, TypeError):
-            period_days = 90
-
-        result.append({
-            "end": fy_end,
-            "start": q3_end,
-            "val": q4_val,
-            "fp": "Q4",
-            "fy": annual.get("fy"),
-            "form": "10-K",
-            "filed": annual.get("filed", ""),
-            "accn": annual.get("accn", ""),
-            "period_days": period_days,
-            "is_ytd": False,
-            "is_annual": False,
-            "is_implied": True,
-        })
-
-    return result
+# Q4 implied生成本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()
+# に集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
+# BUG-TTM-Q4DUP-1（既存end日付との重複防止）・RICE-TTM-CAPEX-SUM-SIGN-1
+# （field_name=="CapEx"時のabs()適用）は共有関数側に同等の実装として維持。
 
 
 # ---------------------------------------------------------------------------
@@ -282,7 +202,7 @@ def calc_ttm_series(
 
     # Q4 implied 合成エントリを計算し、quarterly に追加
     for field_name in FLOW_FIELDS:
-        q4_list = _build_q4_quarterly_entries(
+        q4_list = build_q4_implied_entries(
             annual_by_field.get(field_name, []),
             quarterly_by_field.get(field_name, []),
             field_name,

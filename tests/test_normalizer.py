@@ -7,8 +7,11 @@ BUG-CON-YTD-3: AMZN等で発生した2つの回帰バグの再発防止テスト
 - バグA: _calc_gross_profit が end日付のみでRevenue/COGSを引き当てる際、
   未解決の累積値（is_ytd=True）が単独四半期値を上書きしてしまう問題。
 - バグB: _build_missing_quarter_implied_entries が算出する欠落四半期の
-  end/start日付が実際の暦四半期境界と1日ずれ、_build_q4_implied_entries が
+  end/start日付が実際の暦四半期境界と1日ずれ、build_q4_implied_entries が
   算出する同一四半期のend日付と一致せず二重計上される問題。
+
+Q4逆算本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()に
+集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
 
 実行方法:
     python -m pytest tests/test_normalizer.py -v
@@ -21,9 +24,9 @@ BUG-CON-YTD-3: AMZN等で発生した2つの回帰バグの再発防止テスト
 from common.sec_data.normalizer import (
     _calc_gross_profit,
     _build_missing_quarter_implied_entries,
-    _build_q4_implied_entries,
     normalize,
 )
+from common.sec_data.q4_implied import build_q4_implied_entries
 
 
 class TestGrossProfitPreferStandaloneOverUnresolvedYTD:
@@ -119,19 +122,24 @@ class TestMissingQuarterImpliedDateAlignment:
 
     def test_no_duplicate_with_standard_q4_implied_after_date_fix(self):
         # 統合テスト: missing_quarter_implied が算出したend日付が
-        # _build_q4_implied_entries のend日付と一致し、
+        # build_q4_implied_entries のend日付と一致し、
         # normalize()側の既存end重複排除で二重計上されなくなることを確認する
-        annual_end_aligned_q4 = _build_q4_implied_entries([
-            {"start": "2022-01-01", "end": "2022-12-31", "val": 1030,
-             "is_annual": True, "fp": "FY", "fy": 2022, "form": "10-K",
-             "filed": "z", "accn": "a"},
-            {"start": "2022-01-01", "end": "2022-03-31", "val": 110,
-             "is_annual": False, "is_ytd": False},
-            {"start": "2022-04-01", "end": "2022-06-30", "val": 210,
-             "is_annual": False, "is_ytd": False},
-            {"start": "2022-07-01", "end": "2022-09-30", "val": 310,
-             "is_annual": False, "is_ytd": False},
-        ])
+        annual_end_aligned_q4 = build_q4_implied_entries(
+            [
+                {"start": "2022-01-01", "end": "2022-12-31", "val": 1030,
+                 "is_annual": True, "fp": "FY", "fy": 2022, "form": "10-K",
+                 "filed": "z", "accn": "a"},
+            ],
+            [
+                {"start": "2022-01-01", "end": "2022-03-31", "val": 110,
+                 "is_annual": False, "is_ytd": False},
+                {"start": "2022-04-01", "end": "2022-06-30", "val": 210,
+                 "is_annual": False, "is_ytd": False},
+                {"start": "2022-07-01", "end": "2022-09-30", "val": 310,
+                 "is_annual": False, "is_ytd": False},
+            ],
+            "NetIncome",
+        )
         missing_quarter_result = _build_missing_quarter_implied_entries([
             {"start": "2022-10-01", "end": "2023-09-30", "val": 1030 + 100,
              "is_annual": True, "fp": "Q3", "fy": 2023, "form": "10-Q",

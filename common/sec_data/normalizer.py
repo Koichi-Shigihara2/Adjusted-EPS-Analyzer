@@ -11,6 +11,7 @@ from collections import defaultdict
 from datetime import datetime
 
 from .contracts import validate_fields
+from .q4_implied import build_q4_implied_entries
 
 logger = logging.getLogger(__name__)
 
@@ -69,7 +70,9 @@ def normalize(ticker: str, raw: dict) -> dict:
         src = fields_norm.get(field_name, [])
         if not src:
             continue
-        q4_list = _build_q4_implied_entries(src)
+        annual_entries = [e for e in src if e.get("is_annual")]
+        quarterly_entries = [e for e in src if not e.get("is_annual") and not e.get("is_ytd")]
+        q4_list = build_q4_implied_entries(annual_entries, quarterly_entries, field_name)
         if q4_list:
             existing_ends = {e["end"] for e in src if not e.get("is_annual")}
             added = [e for e in q4_list if e["end"] not in existing_ends]
@@ -228,69 +231,15 @@ def _ytd_to_quarterly(fy_entries: list) -> tuple[list, list]:
     return converted, unresolved
 
 
-def _build_q4_implied_entries(entries: list) -> list:
-    """
-    年次データ（is_annual=True）から Q4 implied エントリを生成する。
-    Q4 = FY年次値 - (Q1+Q2+Q3の合計)
-
-    同一FY内にQ1・Q2・Q3が揃っている場合のみQ4を逆算する。
-    """
-    from datetime import date
-    today = date.today().isoformat()
-
-    annual = [e for e in entries if e.get("is_annual") and e.get("end", "") <= today]
-    quarterly = [e for e in entries if not e.get("is_annual") and not e.get("is_ytd")]
-
-    result = []
-    for ann in annual:
-        fy_end = ann.get("end", "")
-        fy_start = ann.get("start", "")
-        fy_val = ann.get("val")
-        if not fy_end or fy_val is None:
-            continue
-
-        # 同FY内のQ1・Q2・Q3を取得
-        fy_qs = [
-            e for e in quarterly
-            if e.get("end", "") < fy_end
-            and e.get("start", "") >= fy_start
-        ]
-        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
-        if len(top3) < 3:
-            continue
-
-        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
-        q4_val = fy_val - sum(e["val"] for e in top3)
-
-        try:
-            from datetime import date as _date
-            period_days = (_date.fromisoformat(fy_end) - _date.fromisoformat(q3_end)).days
-        except (ValueError, TypeError):
-            period_days = 90
-
-        result.append({
-            "end":         fy_end,
-            "start":       q3_end,
-            "val":         q4_val,
-            "fp":          "Q4",
-            "fy":          ann.get("fy"),
-            "form":        "10-K",
-            "filed":       ann.get("filed", ""),
-            "accn":        ann.get("accn", ""),
-            "period_days": period_days,
-            "is_ytd":      False,
-            "is_annual":   False,
-            "is_implied":  True,
-        })
-
-    return result
+# Q4 implied生成本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()
+# に集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
 
 
 def _build_missing_quarter_implied_entries(entries: list) -> list:
     """
     複数四半期分のYTD累計（is_ytd=True のまま未解決で残っているエントリ、
     または年次実績）から、既知の単独四半期を差し引いて、残る1四半期分の
-    値を逆算する。_build_q4_implied_entries（FY - Q1〜Q3 = Q4）を一般化し、
+    値を逆算する。q4_implied.py::build_q4_implied_entries（FY - Q1〜Q3 = Q4）を一般化し、
     9ヶ月累計等の中間累計からも欠落四半期（例: 上場直後のQ1）を
     復元できるようにする（BUG-CON-YTD-1対応）。
 
@@ -350,7 +299,7 @@ def _build_missing_quarter_implied_entries(entries: list) -> list:
             # 欠落四半期は先頭（既知四半期群より前）。期間の非重複を保つため、
             # 終了日は次の既知四半期の開始日の前日とする（BUG-CON-YTD-3対応）。
             # ここを first_known_start のまま（1日ずれ）にすると、
-            # _build_q4_implied_entries が同じ四半期を end=12/31 として
+            # q4_implied.py::build_q4_implied_entries が同じ四半期を end=12/31 として
             # 別途算出した際に end 不一致で重複排除できず、二重計上を生む。
             try:
                 missing_end = (
