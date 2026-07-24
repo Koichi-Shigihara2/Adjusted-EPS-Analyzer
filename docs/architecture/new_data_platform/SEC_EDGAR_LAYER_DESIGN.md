@@ -79,24 +79,34 @@ company_facts APIはconcept単位の部分取得に対応せず、同一銘柄�
 
 ---
 
-## 3. 決定した統合スキーマ（Layer3、31フィールド）
+## 3. 決定した統合スキーマ（Layer3、32フィールド）
 
-既存`normalized/`の25フィールドに、`data/quarterly`側にのみ存在し
-参照実績のある6フィールドを追加。
+既存`normalized/`の25フィールドのうちSharesBasicを4-1章の設計に
+従い2フィールドへ分離（[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]、
+24＋2＝26フィールド）、これに`data/quarterly`側にのみ存在し
+参照実績のある6フィールドを追加した合計32フィールド。
 
 | # | フィールド | 追加理由 |
 |---|---|---|
-| 1〜25 | （既存normalized 25フィールド: OCF/ICF/CFF/CapEx/FinanceLeasePmts/SBC/DA/Revenue/GrossProfit/OperatingIncome/NetIncome/Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/SharesBasic/SharesDiluted/RD/SM/RPO/CurrentAssets/CurrentLiabilities/Buyback） | 既存 |
-| 26 | short_term_investments | Net Debt計算の中核入力、既存欠落 |
-| 27 | total_liabilities | 診断・警告表示で参照実績あり |
-| 28 | eps_basic | reader.py代替推計で参照実績あり |
-| 29 | eps_diluted | reader.py代替推計で参照実績あり |
-| 30 | cost_of_revenue | 内部取得済み（_COGS）、露出するのみ |
-| 31 | selling_general_and_administrative | SM/SGA明示分離（[[SCHEMA-SM-SGA-CONFLATION-1]]解消） |
+| 1〜24 | （既存normalized 24フィールド、SharesBasicを除く: OCF/ICF/CFF/CapEx/FinanceLeasePmts/SBC/DA/Revenue/GrossProfit/OperatingIncome/NetIncome/Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/SharesDiluted/RD/SM/RPO/CurrentAssets/CurrentLiabilities/Buyback） | 既存 |
+| 25 | shares_basic_weighted_avg | 期中加重平均株式数（PL項目）。[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]によりshares_outstanding_period_endと分離 |
+| 26 | shares_outstanding_period_end | 期末発行済株式数（BS項目） |
+| 27 | short_term_investments | Net Debt計算の中核入力、既存欠落 |
+| 28 | total_liabilities | 診断・警告表示で参照実績あり |
+| 29 | eps_basic | reader.py代替推計で参照実績あり |
+| 30 | eps_diluted | reader.py代替推計で参照実績あり |
+| 31 | cost_of_revenue | 内部取得済み（_COGS）、露出するのみ |
+| 32 | selling_general_and_administrative | SM/SGA明示分離（[[SCHEMA-SM-SGA-CONFLATION-1]]解消） |
 
 `free_cash_flow`は生フィールドとして維持（既存設計原則「符号正規化は
 取得レイヤーで一度」に整合すると判断、導出データ層への移動は不要と
 結論、詳細4章参照）。
+
+**表記法についての注記**: 規則7（`NAMING_CONVENTIONS.md`）に基づき、
+本一覧は将来のターゲットスキーマとしてsnake_case表記が正だが、
+既存フィールド名との対応が分かるよう当面は両表記を併記する（1〜24行の
+PascalCase表記は現行`normalized/`のフィールド名そのものであり、実際の
+一括リネームは行わない）。
 
 ---
 
@@ -117,7 +127,7 @@ company_facts APIはconcept単位の部分取得に対応せず、同一銘柄�
   新規フィールド追加（52タグ含む）はコード変更ではなく設定追加で
   対応可能にする。
 - **Layer3（抽出済み正規化ストア）**: Layer1にLayer2を適用して
-  生成される、3章の31フィールド統合ストア。`raw/`は本アーキテクチャ
+  生成される、3章の32フィールド統合ストア。`raw/`は本アーキテクチャ
   移行後は冗長化するため廃止候補（[[SECDATA-STORAGE-FRAGMENTATION-1]]
   で検討）。
 
@@ -139,7 +149,7 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
 - 既存`TICKER_RESTRICTIONS`（銘柄ごとにキー体系が不統一だった）は
   `exclude`/`override_concept`/`note`の3キーに統一する
 
-以下は代表フィールドの抜粋であり、全31フィールド分の完全なエントリは
+以下は代表フィールドの抜粋であり、全32フィールド分の完全なエントリは
 実装タスク側で本スキーマ形式に沿って`FIELD_CONCEPTS`・`XBRL_MAPPING`
 全量を機械変換する。
 
@@ -234,7 +244,7 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
 
 | 対象 | 判断 | 理由 |
 |---|---|---|
-| quarterly/annual（31フィールド） | 統合スコープに含める | 3章参照 |
+| quarterly/annual（32フィールド） | 統合スコープに含める | 3章参照 |
 | segments（セグメントKPI） | **除外**（現状維持） | 2-3参照、TOBE前提の誤りが判明 |
 | filing_text（内部統制テキスト） | 統合スコープに含める（低コスト、書き込み側1＋消費側3ファイル） | 既にfiling_text概念と構造的親和性高 |
 | submissions | 現状の`fetcher.py`キャッシュ経路を正とし、`edgar_rss_monitor.py`側は個別修正 | [[SEC-SUBMISSIONS-DUAL-FETCH-1]]で対応、統合スキーマ構造への影響なし |
@@ -277,4 +287,7 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
 [[SEC-SUBMISSIONS-DUAL-FETCH-1]]・
 [[SECDATA-COMPANYFACTS-OVERLOOKED-1]]・
 [[Q4-IMPLIED-CALC-TRIPLICATION-1]]・
-[[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]
+[[TTM-FLOW-FIELDS-FROZENSET-NONDETERMINISTIC-1]]・
+[[SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1]]・
+[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]・
+[[SCHEMA-DA-FALLBACK-MISSING-1]]
