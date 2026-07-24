@@ -2160,6 +2160,37 @@ common/sec_data統合スキーマ設計の確定後
 
 ---
 
+### [SEC-SUBMISSIONS-DUAL-FETCH-1] SEC EDGAR submissions APIがfetcher.pyとedgar_rss_monitor.pyで独立に重複取得されている
+**優先度:** 低〜中
+**分類:** 技術的負債 / API呼び出し重複
+**登録日:** 2026-07-23
+**発見:** annual/segment/filing_text AS-IS構造調査（フェーズ1）④
+
+#### 内容
+SEC EDGAR submissions API（`data.sec.gov/submissions/CIK{cik}.json`）
+が、`common/sec_data/fetcher.py::fetch_submissions()`（週次、全filings
+一括、`submissions.json`へキャッシュ）と`src/tail/
+edgar_rss_monitor.py::get_filing_period()`（平日毎日、特定accnのみ
+live fetch・キャッシュなし）の2箇所で独立に叩かれている。
+EPS Analyzerの独立SEC取得（前回調査⑤(A)②-3で確認済み、別課題）と
+同型のパターン。
+
+#### 影響
+API呼び出しの無駄な重複。実害としては、新規提出直後は週次キャッシュ
+に未反映なため、TAIL側がlive fetchで補っているという設計上の理由が
+ある（鮮度ギャップの解消目的）。単純な参照統合は鮮度要件を壊す
+リスクがある。
+
+#### 対応方針
+未定。edgar_rss_monitor.py側をsubmissions.json参照＋未ヒット時のみ
+live fetchにフォールバックする設計への変更が有力候補だが、鮮度
+ギャップの設計対応が別途必要。
+
+#### 着手条件
+なし
+
+---
+
 ### [NAMING-CONVENTIONS-APPLY-1] NAMING_CONVENTIONS.md規則1〜5の実装への適用
 **優先度:** 中
 **分類:** リファクタリング / 命名規則
@@ -4596,6 +4627,31 @@ src/value側には未反映。
 
 #### 着手条件
 なし（優先度低）
+
+---
+
+### [SCHEMA-NORMALIZED-ANNUAL-NAMING-MISMATCH-1] normalized/のファイル名が"quarterly"だがannualデータも混在保持している
+**優先度:** 低
+**分類:** 技術的負債 / ドキュメント不整合
+**登録日:** 2026-07-23
+**発見:** annual/segment/filing_text AS-IS構造調査（フェーズ1）
+
+#### 内容
+`normalized/{TICKER}_quarterly_normalized.json`はファイル名に
+"quarterly"と明記されているが、実際は`is_annual: true`エントリとして
+annualデータも同一ファイル内に混在保持している
+（quarterly.py::build_raw_table()がcompany_factsから四半期・年次
+両方を同一fieldsに格納するため）。
+
+#### 影響
+現状の実害は確認されていないが、統合スキーマ設計時にファイル名から
+内容を誤推測する混乱要因になりうる。
+
+#### 対応方針
+未定。統合スキーマ設計時にファイル命名規則を見直す。
+
+#### 着手条件
+なし
 
 ---
 
