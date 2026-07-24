@@ -4855,6 +4855,88 @@ L264の該当行を、除外判断を反映した表現（例: 該当行を削�
 
 ---
 
+### [LAYER3-RPO-CANDIDATE-ORDER-1] layer3_builder.pyのrpo候補統合（union）で総額系タグが長期限定タグより優先され値が大幅変動する
+**優先度:** 中〜高
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-24
+**発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
+
+#### 内容
+統合スキーマのrpo候補リスト（quarterly.py・parser.py双方のunion後）
+において、`ContractWithCustomerLiability`（総額系）が
+`ContractWithCustomerLiabilityNoncurrent`（長期のみ）より優先順位で
+先に選ばれてしまい、値が大きく変動する（AMZN実データ: 4.4B→25B）。
+15銘柄で差異確認。
+
+#### 影響
+RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルとして
+参照される指標であり、値の大幅な変動は下流の判定に影響しうる。
+
+#### 対応方針
+未定。総額系タグと長期のみタグのどちらを正とすべきか（あるいは
+両者を別フィールドとして分離すべきか）の判断が必要。
+[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]と同種の「候補統合時の
+概念混在」パターンの可能性がある。
+
+#### 着手条件
+なし
+
+---
+
+### [LAYER3-FALLBACK-STALE-TAG-PRIORITY-1] layer3_builder.pyの「最初に見つかった非空候補採用」方式が古いタグを新しいタグより優先してしまう
+**優先度:** 中
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-24
+**発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
+
+#### 内容
+「最初に見つかった非空候補を採用」というフォールバック方式が、
+直近データを持たない古いタグ（例: `Revenues`）を、より新しく実際に
+使われているタグより先に拾ってしまう。IONQ等6銘柄のrevenueで確認
+（既存コードのdocstringに既知の限界として言及はあったが、BACKLOG
+未登録だった）。既存parser.py側の[[REVENUE-TAG-PRIORITY-FRAGILE-1]]
+（`XBRL_MAPPING["revenue"]`の候補優先順位が脆弱）と同種の「Revenuesタグ
+優先」パターンだが、発生箇所は別モジュール（本件はlayer3_builder.py
+の新規フォールバック方式、[[REVENUE-TAG-PRIORITY-FRAGILE-1]]は既存
+parser.py::`_extract_values_merged()`のtie-break規則）のため区別して
+登録する。
+
+#### 影響
+候補リストの並び順次第で、実際には報告されなくなった古いタグの値を
+誤って採用し続けるリスクがある。revenue以外のフィールドでも理論上
+同型の問題が起こりうる。
+
+#### 対応方針
+未定。「候補の中で最も直近のfiled日を持つタグを優先する」等、
+recency考慮のフォールバック方式への変更が候補。
+[[REVENUE-TAG-PRIORITY-FRAGILE-1]]の対応方針検討時にあわせて
+本件も検討するのが効率的と考えられる。
+
+#### 着手条件
+なし
+
+---
+
+### [LAYER3-UNEXPLAINED-SINGLE-TICKER-DIFFS-1] layer3_builder.py回帰レポートで検出された原因未調査の単一銘柄差異
+**優先度:** 低
+**分類:** データ品質 / 要調査
+**登録日:** 2026-07-24
+**発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
+
+#### 内容
+以下、原因未調査・件数少・影響小の差異が回帰レポートで検出された:
+capital_expenditure（LLY 1件）・stock_based_compensation（CAT 1件）・
+gross_profit（ABBV/HON 2件）・cash_and_equivalents（PAYS/RCAT 2件）・
+short_term_investments（7件）・total_liabilities（AVAV/ELF/ESTC 3件）。
+
+#### 対応方針
+未定。フェーズB以降で個別に原因調査する。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
