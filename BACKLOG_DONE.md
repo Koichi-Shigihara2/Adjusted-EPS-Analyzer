@@ -2,6 +2,96 @@
 
 ---
 
+## 2026-07-24（完了）
+
+### ✅ [CAPEX-SIGN-UNNORMALIZED-1] CapEx符号不統一によるFCF過大表示（stock.html CF分析セクション・STONKS SILO表示専用フィールド）
+**優先度:** 高
+**分類:** バグ / TANUKI VALUATION / STONKS SILO
+**完了日:** 2026-07-24
+**発見:** `FIELD_DEFINITIONS.md`フェーズ4（AS-IS-071・AS-IS-157）、
+2026-07-23登録
+
+#### 背景
+SEC XBRLの`CapEx`は報告企業により正負どちらの符号でも報告されうる。正式な
+FCF計算（`common/sec_data/parser.py`）は`abs()`で符号を吸収済みだが、
+stock.htmlの「キャッシュフロー分析セクション」（`loadCfData()`/
+`renderCfCharts()`）はlatest.jsonを使わず`{ticker}_quarterly_normalized.json`
+を直接fetchして`FCF = OCF - CapEx`をabs()なしで再計算しており、CapExが
+負値の銘柄では実際より高いFCFを表示してしまう問題。同種の符号不統一が
+STONKS SILOの表示専用フィールド`capex_annual`（AS-IS-157）、および
+`financial_trend_calculator.py`（VECTOR_FIELDS/CapEx、2026-07-23の
+フェーズ1調査で追加確認）にも存在していた。
+
+#### 対応内容
+根本原因である`normalized/`生成元（`normalizer.py`）でのCapEx符号
+未処理を解消する方針で対応。表示側（stock.html/analyzer.py）を
+個別に直すのではなく、データ生成元3箇所に符号正規化を実装した:
+
+1. `normalizer.py::normalize()`: Q4逆算処理の後、最終出力直前の
+   1箇所でCapExエントリの`val`にabs()を適用
+2. `ttm_calculator.py::_build_q4_quarterly_entries()`: field_name
+   引数を追加し、CapExのQ4逆算値にも独立にabs()を適用（保険的対応、
+   [[RICE-TTM-CAPEX-SUM-SIGN-1]]参照）
+3. `discover/stonks-silo/src/fetcher.py::_normalize_record()`:
+   capital_expenditure抽出直後にabs()を適用
+
+既存raw/キャッシュ（SEC EDGAR再取得なし）で105銘柄全数を検証した結果、
+変更が生じたのはALAB/APGE/INTU/KULR/ONDSの5銘柄（事前調査で特定済みの
+混在符号銘柄と完全一致）のみで、他100銘柄・CapEx以外の全フィールドは
+完全にidempotent（無変更）であることを確認。TANUKI VALUATION側は
+ALAB/INTU/KULR/ONDS（4銘柄、APGEは非対象）をpipeline.py --skip-riskで
+再実行し、RICE値の変化（ALAB 5.882→5.861 / INTU 0.796→0.793 /
+ONDS -1.362→-1.273、KULRはRICE算出不可のため無変化）とTANUKI SCORE
+Classificationが4銘柄とも不変であることを確認済み。STONKS SILOの
+実運用25銘柄はいずれも現状abs()適用前後で無変化（HONは非対象のため
+`_normalize_record()`への直接呼び出しで動作のみ確認）。
+`report_consistency_check.py` NG=0（全5銘柄）、pytest 442 passed
+（既知のMSFT/NVDA IV式ミスマッチ2件は無関係）。
+
+#### コミット
+- `8843a51f2`（機能修正: normalizer.py/ttm_calculator.py/fetcher.py）
+- `12452519e`（データ再生成: ALAB/APGE/INTU/KULR/ONDSのnormalized/ttm/
+  latest.json等）
+
+---
+
+### ✅ [RICE-TTM-CAPEX-SUM-SIGN-1] TTM経由CapEx合算値の「合算後abs()」によるRICE投資強度の過小評価リスク
+**優先度:** 中
+**分類:** バグ / TANUKI VALUATION（RICE計算）
+**完了日:** 2026-07-24
+**発見:** CapEx符号処理実態調査（フェーズ1、CAPEX-SIGN-UNNORMALIZED-1
+対応方針検討の過程）、2026-07-23登録
+
+#### 内容
+`ttm_calculator.py::calc_ttm_series()`が4四半期分のCapExを符号処理せず
+単純合算してから`ttm/{ticker}_ttm_series.json`に保存し、この合算値が
+`data_fetcher.py::build_rice_annual_shape()`（abs()なし）経由で
+`rice.py`のRICE投資強度計算（Q値の構成要素）に渡っていた。4四半期の
+うち1四半期でも符号が逆転していると、abs(合算値)が各四半期のabs()の
+合計と一致せず、投資強度が本来より過小評価される問題。
+
+#### 対応内容
+[[CAPEX-SIGN-UNNORMALIZED-1]]の対応（`normalizer.py`側でのCapEx最終
+出力時abs()）により、ttm_calculator.pyが受け取る個々の四半期CapEx値が
+既に正規化された状態になるため、本問題は根本解消される。加えて保険的
+対応として、`ttm_calculator.py::_build_q4_quarterly_entries()`に
+field_name引数を追加し、CapExのQ4逆算フォールバック発火時にも独立に
+abs()を適用した（normalizer.py側が該当end日付のQ4エントリを未生成の
+稀なケースへの保険）。
+
+実データ検証: 該当5銘柄（ALAB/APGE/INTU/KULR/ONDS）のTTM系列で、
+CapEx/FCF値が影響を受けていたウィンドウ数はALAB 1・APGE 1・INTU 4・
+KULR 1・ONDS 3（合計10ウィンドウ）。修正後は該当ウィンドウ全てで
+CapExが正しい単四半期絶対値の合算に是正され、RICE投資強度
+（avg_intensity）もそれに応じて是正された（詳細は
+[[CAPEX-SIGN-UNNORMALIZED-1]]完了記録参照）。
+
+#### コミット
+- `8843a51f2`（機能修正）
+- `12452519e`（データ再生成）
+
+---
+
 ## 2026-07-22（完了）
 
 ### ✅ [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）

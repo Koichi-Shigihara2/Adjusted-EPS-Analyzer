@@ -673,40 +673,6 @@ STONKS SILOの独自計算を廃止してAS-IS-025の値を直接参照する）
 
 ---
 
-### [CAPEX-SIGN-UNNORMALIZED-1] CapEx符号不統一によるFCF過大表示（stock.html CF分析セクション・STONKS SILO表示専用フィールド）
-**優先度:** 高
-**分類:** バグ / TANUKI VALUATION / STONKS SILO
-**登録日:** 2026-07-23
-**発見:** `FIELD_DEFINITIONS.md`フェーズ4（AS-IS-071・AS-IS-157）
-
-#### 背景
-SEC XBRLの`CapEx`は報告企業により正負どちらの符号でも報告されうる。正式な
-FCF計算（`common/sec_data/parser.py`）は`abs()`で符号を吸収済みだが、
-**stock.htmlの「キャッシュフロー分析セクション」（`loadCfData()`/
-`renderCfCharts()`）はlatest.jsonを使わず`{ticker}_quarterly_normalized.json`
-を直接fetchして`FCF = OCF - CapEx`をabs()なしで再計算**しており、CapExが
-負値の銘柄では実際より高いFCFを表示してしまう（棒グラフ表示も同様に
-現金流入であるかのような誤表示になる）。同種の符号不統一がSTONKS SILOの
-表示専用フィールド`capex_annual`（AS-IS-157、`analyzer.py:495,524`）にも
-独立に存在する（ロジック側`monthly_burn`は`abs(capex)`で正規化済みなのに
-表示側だけ未正規化という非対称設計）。
-
-`financial_trend_calculator.py`（STONKS SILO、`VECTOR_FIELDS`/CapEx、
-L70）も、符号未処理のnormalized/CapExを消費する第3の経路として存在する
-（フェーズ1 common/sec_data統合投資調査で新規確認、2026-07-23）。ただし
-実害は限定的（YoY/QoQ個別表示のみに影響し、COMPOSITE_FIELDS合成スコア
-には不使用のため計算結果への影響なし）。
-
-#### 対応方針
-両箇所とも、正式なFCF計算と同じ`abs()`ベースの符号正規化を適用する。
-stock.html側はlatest.json不使用・独自再計算という設計自体の妥当性も
-合わせて確認する。
-
-#### 着手条件
-なし
-
----
-
 ### [MACRO-TRUTHY-ZERO-BUG-1] MACRO PULSE履歴バックフィルのtruthy判定によるゼロ値欠落
 **優先度:** 高
 **分類:** バグ / MACRO PULSE
@@ -2093,11 +2059,13 @@ quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
 
 #### 対応方針
 `INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの統合を検討する。
-統合時は`normalized/`をどちらのスキーマに寄せるか（[[CAPEX-SIGN-
-UNNORMALIZED-1]]の修正と合わせて判断）を決定する必要がある。
+`normalized/`のCapEx符号不統一は[[CAPEX-SIGN-UNNORMALIZED-1]]
+（2026-07-24対応完了、BACKLOG_DONE.md参照）で解消済みのため、統合
+スキーマ側は正規化済みCapExを前提に設計できる。
 
 #### 着手条件
-[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定後に着手する
+なし（着手条件だった「[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定」は
+2026-07-24の実装完了により満たされた。着手可能）
 
 ---
 
@@ -2189,34 +2157,6 @@ SGA総額へ静かにフォールバックする。同じ`SM`値が銘柄によ�
 
 #### 着手条件
 common/sec_data統合スキーマ設計の確定後
-
----
-
-### [RICE-TTM-CAPEX-SUM-SIGN-1] TTM経由CapEx合算値の「合算後abs()」によるRICE投資強度の過小評価リスク
-**優先度:** 中
-**分類:** バグ / TANUKI VALUATION（RICE計算）
-**登録日:** 2026-07-23
-**発見:** CapEx符号処理実態調査（フェーズ1、CAPEX-SIGN-UNNORMALIZED-1対応方針検討の過程）
-
-#### 内容
-`ttm_calculator.py::calc_ttm_series()`（L87）が4四半期分のCapExを
-符号処理せず単純合算してから`ttm/{ticker}_ttm_series.json`に保存し、
-この合算値が`data_fetcher.py::build_rice_annual_shape()`（abs()なし）
-経由で`rice.py`のRICE投資強度計算（Q値の構成要素）に渡る。4四半期の
-うち1四半期でも符号が逆転していると、abs(合算値)が各四半期の
-abs()の合計と一致せず、投資強度が本来より過小評価される。
-
-該当実データ: normalized/側の混在5銘柄（ALAB/APGE/INTU/KULR/ONDS）が
-TTM直近4四半期ウィンドウに該当四半期を含むタイミングで影響を受ける。
-ただし該当する負値自体の金額は小さい（数千〜数千万ドル）ため、影響度
-自体は限定的。
-
-#### 対応方針
-未定。[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定と合わせて検討する
-（ttm_calculator.py側でCapExを合算前に個別abs()する対応が有力候補）。
-
-#### 着手条件
-[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定後
 
 ---
 
@@ -5724,3 +5664,19 @@ AS-IS/TO-BE設計・499項目の完全定義（`FIELD_DEFINITIONS.md`）・一�
 次セッションの筆頭候補は、上記39件のうち優先度高から、実データでの
 実害が確認済みかつ統一定義が既に確定している[[NETCASH-DUAL-CALC-1]]・
 [[NETINCOME-DUAL-PIPELINE-1]]を推奨する（着手条件の確認は各エントリ参照）。
+
+---
+
+追記（2026-07-24 [[CAPEX-SIGN-UNNORMALIZED-1]]・[[RICE-TTM-CAPEX-SUM-SIGN-1]]完了）:
+~~[[CAPEX-SIGN-UNNORMALIZED-1]]~~・~~[[RICE-TTM-CAPEX-SUM-SIGN-1]]~~
+✅ 2026-07-24完了（normalizer.py・ttm_calculator.py・STONKS SILO
+fetcher.pyの3箇所にCapEx符号正規化を実装。影響銘柄5件
+〈ALAB/APGE/INTU/KULR/ONDS〉のnormalized/・ttm/・TANUKI VALUATION
+出力を再生成。詳細はBACKLOG_DONE.md「2026-07-24（完了）」参照）。
+
+この完了により、[[SECDATA-STORAGE-FRAGMENTATION-1]]（優先度：中、
+common/sec_data統合フェーズ1）の着手条件「[[CAPEX-SIGN-UNNORMALIZED-1]]
+の対応方針確定」が満たされ、着手可能な状態になった（同タスクの
+「対応方針」「着手条件」欄に反映済み）。ただし上記[[NETCASH-DUAL-CALC-1]]・
+[[NETINCOME-DUAL-PIPELINE-1]]（優先度：高）を差し置く優先度ではないため、
+次セッションの筆頭候補自体は変更しない。
