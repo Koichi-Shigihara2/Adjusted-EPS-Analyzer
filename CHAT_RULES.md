@@ -494,6 +494,14 @@ new_data_platform/`配下の仕様書）に影響する変更（新規出力項�
 ファイル間のID機械的網羅性証明（`grep`による差分確認）が引き続き
 成立することを確認する。
 
+**設計判断・根拠の記録（2026-07-24追記）**: common/sec_data統合
+（SEC EDGARレイヤー）に関する投資調査で新たに設計判断・根拠が
+確定した場合は、`docs/architecture/new_data_platform/
+SEC_EDGAR_LAYER_DESIGN.md`に都度追記する運用とする。同ファイルは
+「なぜこの設計にしたか」の記録に特化し、進捗ステータス
+（`PROJECT_STATUS.md`）・実装後の実態（`SYSTEM_MAP.md`）とは役割を
+分ける。
+
 ## 調査・作業の継続性管理
 
 ### 完了報告の確認
