@@ -76,6 +76,19 @@ Q4_IMPLIED_FIELDS = frozenset({
     "net_income", "operating_income", "gross_profit",
 })
 
+# LAYER3-FALLBACK-STALE-TAG-PRIORITY-1対応の対象外フィールド。
+# rpo: [[LAYER3-RPO-CANDIDATE-ORDER-1]]は別途概念分離（総額系/長期系の
+# 分離）で対応する前提のため、本対応では変更しない（該当BACKLOGの
+# 着手条件は変更なし）。
+# shares_basic_weighted_avg・shares_outstanding_period_end_sec: 加重平均
+# （PL項目）と期末残高（BS項目）は異なる会計概念であり、元々別フィールドに
+# 分離済み（[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]）。統合しない。
+NO_CANDIDATE_MERGE_FIELDS = frozenset({
+    "rpo",
+    "shares_basic_weighted_avg",
+    "shares_outstanding_period_end_sec",
+})
+
 BASE_DIR = os.path.dirname(__file__)
 REPO_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -121,25 +134,102 @@ def _get_concept_units(company_facts: dict, concept: str, unit: str) -> list:
         return []
 
 
-def extract_field_raw_entries(company_facts: dict, field_def: dict) -> tuple[list, str | None]:
+def extract_field_raw_entries(
+    company_facts: dict, field_def: dict, field_name: str = "",
+) -> tuple[list, str | None]:
     """
-    Layer2のcandidatesを順に試し、最初に非空のタグが見つかった時点で採用する。
+    Layer2のcandidatesからエントリを抽出する。
 
-    quarterly.py::_FIELD_FALLBACKS/_REVENUE_FALLBACKSのような複数タグの
-    マージ・件数比較によるフォールバック切り替えは行わない（フェーズAの
-    意図的な単純化。詳細はモジュールdocstring参照）。
+    [[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]対応: field_nameが
+    NO_CANDIDATE_MERGE_FIELDSに含まれない限り、候補タグごとに独立して
+    正規化（YTD→単四半期変換）を完了させたうえで、その正規化済み系列を
+    end_dateキーで優先順位マージする（_merge_candidate_entries参照）。
+    「最初に見つかった非空候補を採用」方式は、直近データを持たない古い
+    タグ（例: Revenues）が、より新しく実際に使われているタグより先に
+    拾われてしまう問題があった（IONQ等で確認）。
 
-    戻り値: (処理済みエントリのリスト, 採用したタグ名 or None)
+    戻り値の正規化状態が呼び出し元（build_ticker_store）で分岐に使われる:
+    NO_CANDIDATE_MERGE_FIELDS対象フィールドは従来通り「最初に見つかった
+    非空候補を採用」方式を維持し、_process_entries()止まりの未正規化
+    エントリを返す（呼び出し元が_normalize_field_entries()を適用する）。
+    候補マージ対象フィールドは、本関数内で正規化まで完了させた結果を
+    返す（呼び出し元は再度正規化しない。理由はモジュールdocstring・
+    _merge_candidate_entries参照）。
+
+    戻り値: (エントリのリスト, 採用したタグ名（複数採用時は"+"区切り）or None)
     """
     unit = field_def.get("unit", "USD")
-    for concept in field_def.get("candidates", []):
+    candidates = field_def.get("candidates", [])
+
+    if field_name in NO_CANDIDATE_MERGE_FIELDS:
+        for concept in candidates:
+            raw_entries = _get_concept_units(company_facts, concept, unit)
+            if not raw_entries:
+                continue
+            processed = _process_entries(raw_entries)
+            if processed:
+                return processed, concept
+        return [], None
+
+    return _merge_candidate_entries(company_facts, candidates, unit)
+
+
+def _merge_candidate_entries(
+    company_facts: dict, candidates: list, unit: str,
+) -> tuple[list, str | None]:
+    """
+    候補タグごとに独立して_process_entries()→_normalize_field_entries()を
+    適用し（各タグ内で完結したYTD→単四半期変換を完了させる）、得られた
+    正規化済み系列同士をend_date単位で優先順位マージする。優先タグ
+    （candidatesの先頭）にその期間のエントリがあれば採用し、なければ
+    次候補にフォールバックする（_merge_normalized_by_priority参照）。
+
+    設計変更の経緯: 当初は生エントリを先に統合してから正規化する順序
+    だったが、異なるタグ由来のエントリが同一end_dateで競合した際の
+    タイブレークが、_normalize_field_entries()内のFYチェーン判定
+    （startの完全一致でグルーピング）を破壊し、YTD差分計算が中間四半期を
+    1つ読み飛ばして2四半期分を1四半期として誤算出するバグを引き起こした
+    （CPRT capital_expenditure・PEP他で実データ確認）。タグごとに
+    独立して正規化を完了させてからマージすることで、この
+    クロスタグ混入を構造的に防ぐ。
+    """
+    used_concepts: list = []
+    per_tag_normalized: list = []
+    for concept in candidates:
         raw_entries = _get_concept_units(company_facts, concept, unit)
         if not raw_entries:
             continue
         processed = _process_entries(raw_entries)
-        if processed:
-            return processed, concept
-    return [], None
+        if not processed:
+            continue
+        normalized = _normalize_field_entries(processed)
+        if normalized:
+            used_concepts.append(concept)
+            per_tag_normalized.append(normalized)
+
+    if not per_tag_normalized:
+        return [], None
+
+    merged = _merge_normalized_by_priority(per_tag_normalized)
+    source_tag = "+".join(used_concepts) if len(used_concepts) > 1 else used_concepts[0]
+    return merged, source_tag
+
+
+def _merge_normalized_by_priority(per_tag_normalized: list) -> list:
+    """
+    候補タグごとに正規化済みの系列（per_tag_normalizedの並び順＝
+    candidatesの優先順位）を、end_date単位で優先順位マージする。
+    優先タグ（リスト先頭）にその期間のエントリがあれば採用し、
+    なければ次候補にフォールバックする。
+    """
+    merged_by_end: dict[str, dict] = {}
+    for normalized in per_tag_normalized:
+        for e in normalized:
+            key = e["end"]
+            if key not in merged_by_end:
+                merged_by_end[key] = e
+
+    return sorted(merged_by_end.values(), key=lambda x: x["end"])
 
 
 def _apply_sign_normalize(entries: list, mode: str | None) -> list:
@@ -397,8 +487,18 @@ def build_ticker_store(ticker: str) -> dict | None:
     fields_out: dict[str, dict] = {}
 
     for field_name, field_def in fields_def.items():
-        raw_entries, source_tag = extract_field_raw_entries(company_facts, field_def)
-        normalized_entries = _normalize_field_entries(raw_entries)
+        raw_entries, source_tag = extract_field_raw_entries(company_facts, field_def, field_name)
+        if field_name in NO_CANDIDATE_MERGE_FIELDS:
+            # NO_CANDIDATE_MERGE_FIELDSはextract_field_raw_entries()が
+            # _process_entries()止まりの未正規化エントリを返すため、ここで正規化する。
+            normalized_entries = _normalize_field_entries(raw_entries)
+        else:
+            # 候補マージ対象フィールドはextract_field_raw_entries()内
+            # （_merge_candidate_entries）で既に正規化済み。ここで再度
+            # _normalize_field_entries()を適用すると、複数タグ由来の
+            # エントリが混在した状態で再度FYチェーン判定が走り、
+            # クロスタグ混入バグを再発させかねないため適用しない。
+            normalized_entries = raw_entries
 
         if field_name in Q4_IMPLIED_FIELDS:
             q4_list = build_q4_implied_entries(normalized_entries)
