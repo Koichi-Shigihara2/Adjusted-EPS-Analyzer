@@ -4942,6 +4942,41 @@ short_term_investments（7件）・total_liabilities（AVAV/ELF/ESTC 3件）。
 
 ---
 
+### [LAYER3-MISSING-QUARTER-IMPLIED-GAP-1] 優先タグ自体の四半期報告欠落により、より完全な次候補タグより誤った合算値が優先される
+**優先度:** 低〜中
+**分類:** データ品質 / 既知の制限
+**登録日:** 2026-07-24
+**発見:** layer3_builder.pyフォールバック方式修正時の回帰検証
+（フェーズA、105銘柄×32フィールド全数スキャン）
+
+#### 内容
+優先タグ自体が特定の四半期報告を欠落させ、隣接する四半期をまとめて
+報告する場合（例: RCATのShareBasedCompensationがQ2を報告せずQ1→Q3に
+直接ジャンプ）、次候補タグ（この場合AllocatedShareBasedCompensationExpense、
+Q1/Q2/Q3すべて正常報告）がより完全なデータを持っていても、優先タグの
+欠落由来の誤った値（Q2+Q3合算値がQ3として誤計上）がそのまま採用される。
+
+これは今回修正した「クロスタグ混入」バグ（[[LAYER3-FALLBACK-STALE-TAG-
+PRIORITY-1]]）とは異なる性質の問題で、layer3_builder.pyのモジュール
+docstringに元々「未実装（フェーズAのスコープ外、既知の制限）:
+normalizer.py::_build_missing_quarter_implied_entries()相当（Q4以外の
+任意欠落四半期の逆算）」として明記済みだった。今回の回帰検証
+（105銘柄×32フィールド＝3,360件）でRCAT/stock_based_compensationの
+1件のみ発生を確認。
+
+#### 対応方針
+未定。優先タグ内の完全性チェック（欠落四半期の検知）を追加し、
+欠落がある場合は次候補タグの当該期間を採用する設計が候補。
+
+#### 着手条件
+移行実装計画（SEC_EDGAR_LAYER_DESIGN.md 8章）フェーズD
+（TANUKI VALUATION本体切替）着手前までに解消すること
+（stock_based_compensationはTTM FLOW_FIELDS対象のため、
+[[LAYER3-RPO-CANDIDATE-ORDER-1]]・[[LAYER3-FALLBACK-STALE-TAG-
+PRIORITY-1]]と同じ着手条件を適用）。
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
