@@ -123,6 +123,113 @@ company_facts APIはconcept単位の部分取得に対応せず、同一銘柄�
 
 ---
 
+## 4-1. Layer2スキーマ設計
+
+概念定義（現状`FIELD_CONCEPTS`/`XBRL_MAPPING`としてPythonコードに
+ハードコード）を、`config/sec_concept_definitions.json`（仮称）という
+JSON設定ファイル形式へ移行する。設計方針は以下の通り。
+
+- フィールド名はsnake_caseに統一（`NAMING_CONVENTIONS.md`規則7）
+- `category`（flow/stock/shares/excluded）は`contracts.py::
+  validate_field_classification()`の完全性契約をそのまま踏襲し、
+  必須項目とする
+- 意図的に除外した候補タグは`excluded_candidates`に理由とともに
+  記録する（DA・SharesBasic等で発覚した「候補数が多い方を機械的に
+  採用すると別の会計概念が混入する」問題の再発防止）
+- 既存`TICKER_RESTRICTIONS`（銘柄ごとにキー体系が不統一だった）は
+  `exclude`/`override_concept`/`note`の3キーに統一する
+
+以下は代表フィールドの抜粋であり、全31フィールド分の完全なエントリは
+実装タスク側で本スキーマ形式に沿って`FIELD_CONCEPTS`・`XBRL_MAPPING`
+全量を機械変換する。
+
+```json
+{
+  "_schema_version": "1.0",
+  "_description": "SEC EDGAR XBRLタグ→内部フィールド定義（Layer2）。新規フィールド追加はコード変更ではなく本ファイルへの追記で行う。",
+  "fields": {
+    "capital_expenditure": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "PaymentsToAcquirePropertyPlantAndEquipment",
+        "PaymentsToAcquireProductiveAssets",
+        "PaymentsForCapitalImprovements",
+        "PaymentsToAcquireOtherPropertyPlantAndEquipment"
+      ],
+      "sign_normalize": "abs",
+      "_note": "2026-07-23 CAPEX-SIGN-UNNORMALIZED-1対応に基づきsign_normalizeを明示"
+    },
+    "depreciation_and_amortization": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "DepreciationAndAmortization",
+        "DepreciationDepletionAndAmortization",
+        "Depreciation",
+        "AmortizationOfIntangibleAssets"
+      ],
+      "_note": "2026-07-24 SCHEMA-DA-FALLBACK-MISSING-1対応。primaryはDepreciationAndAmortization（Depletion除外、実際の成長率計算消費箇所の前提と一致）。DepreciationDepletionAndAmortizationは資源セクター銘柄（FCX/XOM/SCCO/CAT/HON等、Depletion込みタグのみ報告）向けの意図的なフォールバックとして2番目に維持する（完全除外するとこれらの銘柄でDA値が空になるため）。両タグは会計上厳密には異なる概念（Depletion込み/除外）である点に留意"
+    },
+    "shares_diluted": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "WeightedAverageNumberOfDilutedSharesOutstanding",
+        "CommonStockSharesOutstanding"
+      ]
+    },
+    "shares_basic_weighted_avg": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "WeightedAverageNumberOfSharesOutstandingBasic"
+      ],
+      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_endと分離"
+    },
+    "shares_outstanding_period_end": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "CommonStockSharesOutstanding"
+      ],
+      "_note": "2026-07-24 期末発行済株式数（BS項目）"
+    },
+    "long_term_debt": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "LongTermDebtNoncurrent",
+        "LongTermDebt",
+        "LongTermNotesPayable",
+        "SeniorNotes",
+        "LongTermDebtAndCapitalLeaseObligations",
+        "UnsecuredLongTermDebt",
+        "ConvertibleLongTermNotesPayable",
+        "ConvertibleDebtNoncurrent",
+        "OtherLongTermDebt"
+      ],
+      "_note": "2026-07-24 SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1対応。Noncurrentを先頭固定（二重計上防止）"
+    }
+  },
+  "ticker_overrides": {
+    "MSFT": {
+      "field": "revenue",
+      "action": "exclude",
+      "note": "既存TICKER_RESTRICTIONS移行"
+    }
+  }
+}
+```
+
+**未確定事項**:
+- Revenue・RPO・_COGS（単純網羅性差、union採用予定）の具体的な統合後
+  candidates順序は実装時に確定する
+- `TICKER_RESTRICTIONS`（9銘柄分の既存override）の3キー形式への変換
+  内容は実装時に個別確認する
+
+---
+
 ## 5. スコープ確定事項
 
 | 対象 | 判断 | 理由 |
