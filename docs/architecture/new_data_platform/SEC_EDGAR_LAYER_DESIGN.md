@@ -366,6 +366,24 @@ parser.pyとttm_calculator.pyに独立実装されている状態
 audit.pyのUP-C構造検知をLayer1直接判定に切替（raw/依存を断つ）。
 このタイミングで[[Q4-IMPLIED-CALC-TRIPLICATION-1]]（3重実装）を集約。
 
+**【2026-07-24完了】** コミット`ebef5e46a`（audit.py Layer1直接
+判定切替、105銘柄全数で新旧ロジック完全一致確認済み）・
+`a7678d16c`（Q4逆算ロジック集約、`common/sec_data/q4_implied.py`
+新規作成）。
+
+集約作業の過程で、`normalizer.py::Q4_IMPLIED_FIELDS`（13フィールド）
+と`ttm_calculator.py::FLOW_FIELDS`（Q4逆算適用対象14フィールド）が
+完全一致しておらず、`FinanceLeasePmts`・`Buyback`の2フィールドで
+`ttm_calculator.py`側のみが実際に非空のQ4 impliedエントリを生成して
+いたという、未文書化のスコープ差異が判明した。この差異は集約前の
+2モジュール間で気づかれないまま存在していたもので、バグとしての
+実害は確認されていない（両モジュールとも自身のスコープ内では
+正しく動作していた）。共有関数化にあたり「値を変えない集約」を
+優先し、両者の許可フィールドの**和集合（15フィールド）**をガード
+条件として採用した（元のガードの目的＝shares/stock系フィールドへの
+誤適用防止は維持）。105銘柄全数でnormalized/・ttm/・STONKS SILO
+financial_vectorsいずれも出力不変（idempotent）を確認済み。
+
 **フェーズC（ttm_calculator.py移行）**:
 FLOW_FIELDSとnormalize()相当関数の出力キー名を同一コミットで
 同時変更する（片方だけ変更するとサイレントにデータが消えるため）。
