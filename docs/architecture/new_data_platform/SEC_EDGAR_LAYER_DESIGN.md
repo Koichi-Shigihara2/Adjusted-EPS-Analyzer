@@ -220,6 +220,22 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
         "OtherLongTermDebt"
       ],
       "_note": "2026-07-24 SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1対応。Noncurrentを先頭固定（二重計上防止）"
+    },
+    "investing_cash_flow": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetCashProvidedByUsedInInvestingActivities"
+      ],
+      "_note": "2026-07-24 ICF（投資キャッシュフロー）。raw/・ttm/廃止方針検討時に命名未定と判明し、operating_cash_flowの命名パターンに揃えて新規命名"
+    },
+    "financing_cash_flow": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetCashProvidedByUsedInFinancingActivities"
+      ],
+      "_note": "2026-07-24 CFF（財務キャッシュフロー）。同上の理由で新規命名"
     }
   },
   "ticker_overrides": {
@@ -240,6 +256,43 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
 
 ---
 
+## 4-2. raw/・ttm/の廃止・統合方針
+
+raw/・ttm/の廃止・統合について、投資調査（2026-07-24）で以下の方針が
+確定した。
+
+**raw/の廃止**:
+唯一の消費者であるaudit.py（UP-C構造検知、SharesBasic/SharesDiluted
+タグの10-Q欠如チェック）は、Layer1（company_facts.json）から
+`facts["us-gaap"][concept]["units"][unit]`のエントリをform=="10-Q"で
+フィルタし空か否かを判定するだけで直接再現可能（raw/の重複排除・filed
+日タイブレーク処理は本チェックには不要）。raw/生成処理
+（build_raw_table()/save_raw_table()）と共に廃止する。raw/とttm/の間に
+依存関係はなく、独立して廃止可能。
+
+**ttm/の位置づけ**:
+`calc_ttm_series()`は`normalize()`の戻り値をインメモリで直接受け取る
+設計のため、「ファイルとしてのnormalized/統合完了」ではなく「normalize()
+相当関数がLayer2/Layer3準拠のfields{}辞書を返せるようになった時点」で
+ttm_calculator.py側を追随させる、という順序になる。
+
+**重要な実装制約**: `ttm_calculator.py::FLOW_FIELDS`（現状PascalCase
+frozenset）と、normalize()相当関数の出力キー名は、**同一コミットで
+同時に変更する必要がある**。片方だけ変更すると`flow.get(field_name, [])`
+が常に空を返し、データが静かに消える（サイレント障害のリスク）。
+移行実装時は、この2箇所の同時変更をタスクの必須要件として明記する。
+
+`_build_q4_quarterly_entries()`（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]の
+3重実装の1つ）は、normalized側のQ4逆算エントリのend日付と照合する
+設計のため、本移行と[[Q4-IMPLIED-CALC-TRIPLICATION-1]]の解消は連動して
+検討する。
+
+FCF（free_cash_flow）はLayer3の32フィールドの概念モデル（XBRLタグ→
+概念の1対1対応）に乗らない派生値のため、TTM集計層に個別の計算ロジック
+（現行`_calc_fcf()`相当）として残す。
+
+---
+
 ## 5. スコープ確定事項
 
 | 対象 | 判断 | 理由 |
@@ -255,7 +308,6 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
 ## 6. 未確定・今後の検討事項
 
 - Layer2（概念定義設定ファイル）の詳細スキーマ設計
-- `raw/`・`ttm/`の最終的な廃止／統合方法
 - 統合スキーマへの実際の移行順序・既存consumer（reader.py・
   pipeline.py等）の切り替え計画
 - EPS Analyzer変換ロジック（調整項目検出・DTA異常検知等）の
