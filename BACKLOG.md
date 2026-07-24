@@ -4823,6 +4823,38 @@ Layer2統合時にparser.py側の定義（DepreciationAndAmortization主体、
 
 ---
 
+### [TOBE-SEGMENTS-RESIDUAL-WORDING-1] INPUT_DATA_TOBE.mdの保持構造案にsegments除外判断前の「新規吸収」表現が残存している
+**優先度:** 低
+**分類:** ドキュメント不整合
+**登録日:** 2026-07-24
+**発見:** SEC_EDGAR_LAYER_DESIGN.md横断整合性確認調査（フェーズ1）③-1
+
+#### 内容
+`INPUT_DATA_TOBE.md`のセグメントKPI（INPUT-A-016）について、L104の
+定義行は実態訂正済み（正式ASC280セグメントではなく`tail_kpi_map.json`
+ベースの銘柄固有カスタムKPI、フェーズ1統合スコープ除外）だが、同一
+ドキュメント内L264の保持構造案（統合ストアのツリー図）には
+「segments/{FYQ}.json # セグメント別KPI（新規吸収、INPUT-A-016）」
+という、除外判断以前の「新規吸収」という表現が訂正されずに残存
+している。
+
+#### 影響
+実装への影響はない（[[SEC_EDGAR_LAYER_DESIGN.md]] 5章のスコープ確定
+事項が正としてsegments除外を明記しているため）。ドキュメントを読む順序
+によっては、保持構造案の図だけを見て「segmentsも統合対象」と誤解する
+可能性がある字句レベルの不整合。
+
+#### 対応方針
+L264の該当行を、除外判断を反映した表現（例: 該当行を削除するか、
+「segments/{FYQ}.json（対象外、詳細は2-3節参照）」等に修正する）に
+揃える。
+
+#### 着手条件
+なし（優先度低、次にINPUT_DATA_TOBE.mdを編集する機会に合わせて対応
+してよい）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
