@@ -71,7 +71,8 @@ company_facts APIはconcept単位の部分取得に対応せず、同一銘柄�
 ### 2-6. raw/の実態
 
 `raw/{TICKER}_quarterly_raw.json`は「正規化前生XBRL」という名称に
-反し、`FIELD_CONCEPTS`（23エントリ）で既にフィルタ済みの狭い
+反し、`FIELD_CONCEPTS`（26エントリ、うち1件は内部専用フィールド
+`_COGS`、出力からは除外）で既にフィルタ済みの狭い
 サブセット（AAPL実測26 concept、company_facts.jsonの505概念の
 約5.2%）。診断専用（`audit.py`のみ参照）であり、Layer1の役割は
 果たせないことが定量的に裏付けられた。
