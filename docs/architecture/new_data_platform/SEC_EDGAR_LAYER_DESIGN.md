@@ -89,8 +89,8 @@ company_facts APIはconcept単位の部分取得に対応せず、同一銘柄�
 | # | フィールド | 追加理由 |
 |---|---|---|
 | 1〜24 | （既存normalized 24フィールド、SharesBasicを除く: OCF/ICF/CFF/CapEx/FinanceLeasePmts/SBC/DA/Revenue/GrossProfit/OperatingIncome/NetIncome/Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/SharesDiluted/RD/SM/RPO/CurrentAssets/CurrentLiabilities/Buyback） | 既存 |
-| 25 | shares_basic_weighted_avg | 期中加重平均株式数（PL項目）。[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]によりshares_outstanding_period_endと分離 |
-| 26 | shares_outstanding_period_end | 期末発行済株式数（BS項目） |
+| 25 | shares_basic_weighted_avg | 期中加重平均株式数（PL項目）。[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]によりshares_outstanding_period_end_secと分離 |
+| 26 | shares_outstanding_period_end_sec | 期末発行済株式数（BS項目）。yfinance由来の同一概念（shares_outstanding）との将来的な衝突を避けるため規則1（データソース接尾辞）を適用 |
 | 27 | short_term_investments | Net Debt計算の中核入力、既存欠落 |
 | 28 | total_liabilities | 診断・警告表示で参照実績あり |
 | 29 | eps_basic | reader.py代替推計で参照実績あり |
@@ -195,15 +195,15 @@ JSON設定ファイル形式へ移行する。設計方針は以下の通り。
       "candidates": [
         "WeightedAverageNumberOfSharesOutstandingBasic"
       ],
-      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_endと分離"
+      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_end_secと分離"
     },
-    "shares_outstanding_period_end": {
+    "shares_outstanding_period_end_sec": {
       "category": "shares",
       "unit": "shares",
       "candidates": [
         "CommonStockSharesOutstanding"
       ],
-      "_note": "2026-07-24 期末発行済株式数（BS項目）"
+      "_note": "2026-07-24 期末発行済株式数（BS項目）。2026-07-24 NAMING_CONVENTIONS.md適用チェックリスト確認により、yfinance由来の同一概念（shares_outstanding、現状PER/PEG/PSR統一関数案の未実装構成要素として言及のみ）との将来的な衝突を避けるため、規則1（データソース接尾辞）を適用し_secを付与"
     },
     "long_term_debt": {
       "category": "stock",

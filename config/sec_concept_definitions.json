@@ -242,15 +242,15 @@
       "candidates": [
         "WeightedAverageNumberOfSharesOutstandingBasic"
       ],
-      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_endと分離"
+      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_end_secと分離"
     },
-    "shares_outstanding_period_end": {
+    "shares_outstanding_period_end_sec": {
       "category": "shares",
       "unit": "shares",
       "candidates": [
         "CommonStockSharesOutstanding"
       ],
-      "_note": "2026-07-24 期末発行済株式数（BS項目）"
+      "_note": "2026-07-24 期末発行済株式数（BS項目）。2026-07-24 NAMING_CONVENTIONS.md適用チェックリスト確認により、yfinance由来の同一概念（shares_outstanding、現状PER/PEG/PSR統一関数案の未実装構成要素として言及のみ）との将来的な衝突を避けるため、規則1（データソース接尾辞）を適用し_secを付与"
     },
     "short_term_investments": {
       "category": "stock",
