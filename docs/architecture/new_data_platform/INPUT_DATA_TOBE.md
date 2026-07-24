@@ -243,7 +243,8 @@ concept）を無加工のまま週次で保存済み（`fetcher.py::
 fetch_company_facts()`、git管理下）。統合設計はこのファイルを
 Layer1として位置づけ、以下の`annual_{FY}.json`等（Layer3相当）は
 Layer1からの抽出結果として再設計する。現状の`raw/
-{TICKER}_quarterly_raw.json`（23概念に絞ったフィルタ後データ、
+{TICKER}_quarterly_raw.json`（26概念（うち1件は内部専用フィールド
+`_COGS`、出力からは除外）に絞ったフィルタ後データ、
 Layer1ではなくLayer2設定の狭さの副産物）は、統合後は廃止候補
 （[[SECDATA-STORAGE-FRAGMENTATION-1]]で検討）。
 
