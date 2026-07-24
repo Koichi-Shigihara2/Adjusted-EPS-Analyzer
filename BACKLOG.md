@@ -2186,6 +2186,63 @@ common/sec_data統合スキーマ設計の確定後
 
 ---
 
+### [SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1] LTDebtのprimaryタグ優先順序がquarterly.pyとparser.pyで逆転している
+**優先度:** 中〜高
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-24
+**発見:** Layer2設計調査（FIELD_CONCEPTS/XBRL_MAPPING比較）
+
+#### 内容
+長期有利子負債（LTDebt/long_term_debt）のprimaryタグ優先順序が
+`quarterly.py::FIELD_CONCEPTS`と`parser.py::XBRL_MAPPING`の間で
+逆転している。`parser.py`側は`LongTermDebtNoncurrent`を`LongTermDebt`
+より優先しており、これは「`LongTermDebtCurrent`との二重計上防止」
+という明示的な設計意図（BUG-NETDEBT-2対応コメントあり）に基づく。
+一方`quarterly.py`側（`normalized/`生成元）は`LongTermDebt`を先に
+試す設定になっており、この配慮が反映されていない。
+
+#### 影響
+`normalized/`のLTDebtは[[SECDATA-STORAGE-FRAGMENTATION-1]]で確認済み
+の通りreader.pyのNet Debt計算（`get_lt_debt_from_normalized`）で
+使われている。二重計上防止のロジックが欠けているため、該当銘柄で
+Net Debtが過大計上される可能性がある。実害の有無は未検証。
+
+#### 対応方針
+未定。実害有無の検証（該当銘柄の特定）を先に行う必要がある。
+
+#### 着手条件
+なし
+
+---
+
+### [SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1] SharesBasicのprimaryタグが2システム間で意味的に異なる財務概念を指している
+**優先度:** 中
+**分類:** データ品質 / バグ
+**登録日:** 2026-07-24
+**発見:** Layer2設計調査（FIELD_CONCEPTS/XBRL_MAPPING比較）
+
+#### 内容
+SharesBasic（発行済株式数関連）のprimaryタグが、2システム間で
+単なる順序差ではなく**意味的に異なる財務概念**を指している。
+`quarterly.py`側は`CommonStockSharesOutstanding`（貸借対照表項目・
+期末時点の発行済株式数）をprimaryとするのに対し、`parser.py`側は
+`WeightedAverageNumberOfSharesOutstandingBasic`（損益計算書項目・
+期中加重平均株式数）をprimaryとする。
+
+#### 影響
+どちらの値を使うかによって、1株あたり指標・希薄化率計算等の結果が
+系統的に変わりうる。現状どちらがどの計算で使われているか、実害の
+有無は未検証。
+
+#### 対応方針
+未定。実際の消費箇所（EPS計算・1株あたり価値計算等）の洗い出しを
+先に行う必要がある。
+
+#### 着手条件
+なし
+
+---
+
 ### [SEC-SUBMISSIONS-DUAL-FETCH-1] SEC EDGAR submissions APIがfetcher.pyとedgar_rss_monitor.pyで独立に重複取得されている
 **優先度:** 低〜中
 **分類:** 技術的負債 / API呼び出し重複
