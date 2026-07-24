@@ -215,21 +215,64 @@ def _merge_candidate_entries(
     return merged, source_tag
 
 
+# [[LAYER3-MISSING-QUARTER-IMPLIED-GAP-1]]対応: 標準的な単四半期として
+# 妥当なperiod_daysの範囲。105銘柄×32フィールド全数（is_annual・
+# is_implied除外後、約38,000エントリ）のperiod_days分布を確認した結果、
+# 正常な単四半期は83〜98日に密集しており、唯一の異常値（RCAT
+# stock_based_compensationの優先タグ内欠落による誤合算値）は183日
+# だった。75〜100日を範囲とすることで、正常値（83〜98日）には
+# 十分な余裕を持たせつつ、183日の異常値は明確に除外できる。
+# 27〜55日の少数の短期スタブ期間（IPO直後の端数月次報告等、APGE/CEG/
+# FROG/LITE/VZで確認）はこの範囲より短いが正当なデータのため、
+# range外と判定された場合でも即座に破棄せず次候補を探索し、
+# 全候補が範囲外だった場合は元の優先候補の値を採用する
+# （データを失わないためのフォールバック、下記_pick_entry_for_end参照）。
+_STANDARD_QUARTER_MIN_DAYS = 75
+_STANDARD_QUARTER_MAX_DAYS = 100
+
+
+def _is_plausible_standalone_quarter(e: dict) -> bool:
+    """
+    標準的な単四半期として妥当なperiod_daysか判定する。
+    is_annual・is_implied（Q4逆算等）エントリはチェック対象外（常にTrue）。
+    period_days=0（残高スナップショット等のinstant fact）もチェック対象外
+    （四半期の「長さ」という概念が存在しないフィールドのため）。
+    """
+    if e.get("is_annual") or e.get("is_implied"):
+        return True
+    period_days = e.get("period_days")
+    if not period_days:
+        return True
+    return _STANDARD_QUARTER_MIN_DAYS <= period_days <= _STANDARD_QUARTER_MAX_DAYS
+
+
 def _merge_normalized_by_priority(per_tag_normalized: list) -> list:
     """
     候補タグごとに正規化済みの系列（per_tag_normalizedの並び順＝
     candidatesの優先順位）を、end_date単位で優先順位マージする。
     優先タグ（リスト先頭）にその期間のエントリがあれば採用し、
     なければ次候補にフォールバックする。
+
+    [[LAYER3-MISSING-QUARTER-IMPLIED-GAP-1]]対応: 優先タグのエントリが
+    標準的な単四半期として妥当なperiod_daysの範囲から外れている場合
+    （優先タグ自体が特定四半期の報告を欠落させ、隣接四半期と合算した
+    値を報告しているケース。RCAT等で確認）、そのエントリを不採用とし、
+    次候補タグの同一end_dateのエントリを探す。全候補が範囲外だった
+    場合は、データを完全に失わないよう最も優先度の高い候補の値に
+    フォールバックする（27〜55日の正当な短期スタブ期間等を誤って
+    欠落させないため）。
     """
-    merged_by_end: dict[str, dict] = {}
+    candidates_by_end: dict[str, list] = defaultdict(list)
     for normalized in per_tag_normalized:
         for e in normalized:
-            key = e["end"]
-            if key not in merged_by_end:
-                merged_by_end[key] = e
+            candidates_by_end[e["end"]].append(e)
 
-    return sorted(merged_by_end.values(), key=lambda x: x["end"])
+    merged: list = []
+    for end, entries in candidates_by_end.items():
+        chosen = next((e for e in entries if _is_plausible_standalone_quarter(e)), entries[0])
+        merged.append(chosen)
+
+    return sorted(merged, key=lambda x: x["end"])
 
 
 def _apply_sign_normalize(entries: list, mode: str | None) -> list:
