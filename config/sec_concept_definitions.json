@@ -1,0 +1,323 @@
+{
+  "_schema_version": "1.0",
+  "_description": "SEC EDGAR XBRLタグ→内部フィールド定義（Layer2）。新規フィールド追加はコード変更ではなく本ファイルへの追記で行う。詳細はdocs/architecture/new_data_platform/SEC_EDGAR_LAYER_DESIGN.md 4-1章を参照。",
+  "_generated_from": "common/sec_data/quarterly.py::FIELD_CONCEPTS と common/sec_data/parser.py::SECParser.XBRL_MAPPING を機械統合（2026-07-24、フェーズA）",
+  "fields": {
+    "operating_cash_flow": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetCashProvidedByUsedInOperatingActivities"
+      ]
+    },
+    "investing_cash_flow": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetCashProvidedByUsedInInvestingActivities"
+      ],
+      "_note": "2026-07-24 ICF（投資キャッシュフロー）。raw/・ttm/廃止方針検討時に命名未定と判明し、operating_cash_flowの命名パターンに揃えて新規命名"
+    },
+    "financing_cash_flow": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetCashProvidedByUsedInFinancingActivities"
+      ],
+      "_note": "2026-07-24 CFF（財務キャッシュフロー）。同上の理由で新規命名"
+    },
+    "capital_expenditure": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "PaymentsToAcquirePropertyPlantAndEquipment",
+        "PaymentsToAcquireProductiveAssets",
+        "PaymentsForCapitalImprovements",
+        "PaymentsToAcquireOtherPropertyPlantAndEquipment"
+      ],
+      "sign_normalize": "abs",
+      "_note": "2026-07-23 CAPEX-SIGN-UNNORMALIZED-1対応に基づきsign_normalizeを明示"
+    },
+    "finance_lease_payments": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "FinanceLeasePrincipalPayments",
+        "PaymentsForFinanceLeases",
+        "RepaymentsOfLongTermCapitalLeaseObligations"
+      ]
+    },
+    "stock_based_compensation": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "ShareBasedCompensation",
+        "AllocatedShareBasedCompensationExpense"
+      ]
+    },
+    "depreciation_and_amortization": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "DepreciationAndAmortization",
+        "DepreciationDepletionAndAmortization",
+        "Depreciation",
+        "AmortizationOfIntangibleAssets"
+      ],
+      "_note": "2026-07-24 SCHEMA-DA-FALLBACK-MISSING-1対応。primaryはDepreciationAndAmortization（Depletion除外、実際の成長率計算消費箇所の前提と一致）。DepreciationDepletionAndAmortizationは資源セクター銘柄（FCX/XOM/SCCO/CAT/HON等、Depletion込みタグのみ報告）向けの意図的なフォールバックとして2番目に維持する（完全除外するとこれらの銘柄でDA値が空になるため）。両タグは会計上厳密には異なる概念（Depletion込み/除外）である点に留意"
+    },
+    "revenue": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "Revenues",
+        "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "RevenueFromContractWithCustomerIncludingAssessedTax",
+        "RevenueFromContractWithCustomer",
+        "SalesRevenueNet",
+        "TotalRevenue",
+        "RevenuesNetOfInterestExpense"
+      ]
+    },
+    "gross_profit": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "GrossProfit",
+        "GrossProfitLoss"
+      ]
+    },
+    "operating_income": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "OperatingIncomeLoss"
+      ]
+    },
+    "net_income": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "NetIncomeLoss",
+        "ProfitLoss",
+        "NetIncomeLossAvailableToCommonStockholdersBasic",
+        "NetIncomeLossAvailableToCommonStockholders",
+        "NetIncomeLossAttributableToParent",
+        "IncomeLossFromContinuingOperations"
+      ]
+    },
+    "cash_and_equivalents": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "CashAndCashEquivalentsAtCarryingValue",
+        "CashCashEquivalentsAndShortTermInvestments",
+        "Cash"
+      ]
+    },
+    "short_term_debt": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "ShortTermBorrowings",
+        "NotesPayableCurrent",
+        "LongTermDebtCurrent",
+        "DebtCurrent",
+        "CommercialPaper",
+        "LongTermDebtAndCapitalLeaseObligationsCurrent",
+        "ConvertibleNotesPayableCurrent",
+        "ConvertibleDebtCurrent",
+        "OtherLongTermDebtCurrent"
+      ],
+      "_note": "2026-07-24 SCHEMA-STDEBT-COVERAGE-GAP-1対応。parser.py側の9候補をそのまま採用（旧quarterly.py側は単一タグのみでAAPL/XOM/V等主要銘柄が0件だった）"
+    },
+    "long_term_debt": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "LongTermDebtNoncurrent",
+        "LongTermDebt",
+        "LongTermNotesPayable",
+        "SeniorNotes",
+        "LongTermDebtAndCapitalLeaseObligations",
+        "UnsecuredLongTermDebt",
+        "ConvertibleLongTermNotesPayable",
+        "ConvertibleDebtNoncurrent",
+        "OtherLongTermDebt"
+      ],
+      "_note": "2026-07-24 SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1対応。Noncurrentを先頭固定（二重計上防止）"
+    },
+    "deferred_revenue": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "DeferredRevenue"
+      ],
+      "_note": "2026-07-24 parser.py側に対応する独立フィールドが存在しないため、quarterly.py側の単一タグ候補をそのまま採用"
+    },
+    "stockholders_equity": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "StockholdersEquity",
+        "StockholdersEquityIncludingPortionAttributableToNoncontrollingInterest"
+      ],
+      "_note": "2026-07-24 quarterly.py側は単一タグ（StockholdersEquity）のみだったが、parser.py側の非支配持分込み変種を含むフォールバックリストを採用。NCI（非支配持分）の扱いの一貫性はnet_incomeとあわせて別途検証が必要（SEC_EDGAR_LAYER_DESIGN.md 6章参照）"
+    },
+    "total_assets": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "Assets"
+      ]
+    },
+    "shares_diluted": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "WeightedAverageNumberOfDilutedSharesOutstanding",
+        "CommonStockSharesOutstanding"
+      ]
+    },
+    "research_and_development": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "ResearchAndDevelopmentExpense",
+        "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+        "CapitalizedComputerSoftwareDevelopmentCosts",
+        "CapitalizedComputerSoftwareAmortization1"
+      ]
+    },
+    "selling_and_marketing": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "MarketingAndAdvertisingExpense",
+        "SellingAndMarketingExpense",
+        "MarketingExpense",
+        "AdvertisingExpense"
+      ],
+      "_note": "2026-07-24 SCHEMA-SM-SGA-CONFLATION-1対応。parser.py側の4候補（SGAフォールバックなし）を採用し、selling_general_and_administrativeと明示的に分離"
+    },
+    "rpo": {
+      "category": "excluded",
+      "unit": "USD",
+      "candidates": [
+        "RevenueRemainingPerformanceObligation",
+        "RemainingPerformanceObligation",
+        "ContractWithCustomerLiability",
+        "DeferredRevenue",
+        "ContractWithCustomerLiabilityCurrent",
+        "DeferredRevenueCurrent",
+        "ContractWithCustomerLiabilityNoncurrent",
+        "DeferredRevenueNoncurrent"
+      ],
+      "_note": "2026-07-24 category=excludedはttm_calculator.pyのEXCLUDED_FIELDS分類を踏襲（reader.py::get_rpo_series()/get_rpo_context()が別経路で直接消費するためTTM集計対象外）"
+    },
+    "current_assets": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "AssetsCurrent"
+      ]
+    },
+    "current_liabilities": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "LiabilitiesCurrent"
+      ]
+    },
+    "buyback": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "PaymentsForRepurchaseOfCommonStock"
+      ]
+    },
+    "shares_basic_weighted_avg": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "WeightedAverageNumberOfSharesOutstandingBasic"
+      ],
+      "_note": "2026-07-24 期中加重平均株式数（PL項目）。SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1によりshares_outstanding_period_endと分離"
+    },
+    "shares_outstanding_period_end": {
+      "category": "shares",
+      "unit": "shares",
+      "candidates": [
+        "CommonStockSharesOutstanding"
+      ],
+      "_note": "2026-07-24 期末発行済株式数（BS項目）"
+    },
+    "short_term_investments": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "ShortTermInvestments",
+        "MarketableSecuritiesCurrent",
+        "AvailableForSaleSecuritiesCurrent",
+        "AvailableForSaleSecurities",
+        "AvailableForSaleSecuritiesDebtSecuritiesCurrent",
+        "DebtSecuritiesAvailableForSaleExcludingAccruedInterestCurrent",
+        "DebtSecuritiesHeldToMaturityAmortizedCostAfterAllowanceForCreditLossCurrent",
+        "OtherShortTermInvestments"
+      ]
+    },
+    "total_liabilities": {
+      "category": "stock",
+      "unit": "USD",
+      "candidates": [
+        "Liabilities",
+        "LiabilitiesAndStockholdersEquity"
+      ]
+    },
+    "eps_basic": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "EarningsPerShareBasic"
+      ],
+      "_note": "2026-07-24 categoryはflow/stock/shares/excludedのいずれにも既存分類の直接該当がないため、四半期ごとに独立して報告される値としてflowに暫定分類（要確認）"
+    },
+    "eps_diluted": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "EarningsPerShareDiluted"
+      ],
+      "_note": "2026-07-24 categoryの扱いはeps_basicと同じ暫定分類（要確認）"
+    },
+    "cost_of_revenue": {
+      "category": "excluded",
+      "unit": "USD",
+      "candidates": [
+        "CostOfRevenue",
+        "CostOfGoodsAndServicesSold",
+        "CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization",
+        "CostOfGoodsSold",
+        "CostOfServices",
+        "CostOfGoodsSoldExcludingDepreciationDepletionAndAmortization"
+      ],
+      "_note": "2026-07-24 旧_COGS（内部取得済みだが出力から除外されていたフィールド）を露出。GrossProfit逆算用の内部利用実績があるためcategory=excluded（ttm_calculator.pyのEXCLUDED_FIELDS分類を踏襲）"
+    },
+    "selling_general_and_administrative": {
+      "category": "flow",
+      "unit": "USD",
+      "candidates": [
+        "SellingGeneralAndAdministrativeExpense"
+      ],
+      "_note": "2026-07-24 SCHEMA-SM-SGA-CONFLATION-1対応。selling_and_marketingと明示的に分離"
+    }
+  },
+  "ticker_overrides": {
+    "MSFT": {
+      "field": "revenue",
+      "action": "exclude",
+      "note": "既存TICKER_RESTRICTIONS移行（暫定・簡易反映）。TICKER_RESTRICTIONSの完全移行（GOOGL/SOFI/IONQ/KLAC/TER/V/NVDAの複雑なoverride、approximate/cross_filing_tags等）は本フェーズのスコープ外。詳細はSEC_EDGAR_LAYER_DESIGN.md 4-1章「未確定事項」参照"
+    }
+  },
+  "_ticker_restrictions_migration_status": "未完了（MSFTのみ簡易反映）。既存TICKER_RESTRICTIONSの残り8銘柄（APP/GOOGL/SOFI/IONQ/KLAC/TER/V/NVDA）は、exclude/override_concept/noteの3キー形式に収まらない複雑な設定（approximate・note_discontinuous・revenue_concept+ltdebt_concept+sti_concept・cross_filing_tags）を含むため、本フェーズ（フェーズA）では変換せず据え置く。移行時は個別に設計・実装が必要。"
+}
