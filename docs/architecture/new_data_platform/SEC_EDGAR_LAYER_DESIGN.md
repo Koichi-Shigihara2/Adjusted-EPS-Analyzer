@@ -343,3 +343,53 @@ FCF（free_cash_flow）はLayer3の32フィールドの概念モデル（XBRLタ
 [[SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1]]・
 [[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]・
 [[SCHEMA-DA-FALLBACK-MISSING-1]]
+
+---
+
+## 8. 移行実装計画
+
+既存9→10系統から統合スキーマへの移行は、一斉切替ではなく
+「新旧併存→段階的切替→旧経路廃止」の順で進める。
+
+**フェーズA（新規構築、既存コード非改変）**:
+`config/sec_concept_definitions.json`（Layer2）を実際に作成し、
+Layer1（company_facts.json）＋Layer2からLayer3（32フィールド）を
+生成する新規モジュールを構築する。FCF（free_cash_flow）計算式は
+parser.pyとttm_calculator.pyに独立実装されている状態
+（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]と同種のリスク）を解消するため、
+共有関数として1箇所に集約し、通常のquarterly/annual生成側とttm集計側
+の両方がこれを呼ぶ設計にする。出力は既存data/・normalized/・raw/とは
+別の新規パスに書き、105銘柄全数で新旧比較の回帰レポートを作成する。
+既存consumerのコードは一切変更しない。
+
+**フェーズB（低リスク独立消費者の切替）**:
+audit.pyのUP-C構造検知をLayer1直接判定に切替（raw/依存を断つ）。
+このタイミングで[[Q4-IMPLIED-CALC-TRIPLICATION-1]]（3重実装）を集約。
+
+**フェーズC（ttm_calculator.py移行）**:
+FLOW_FIELDSとnormalize()相当関数の出力キー名を同一コミットで
+同時変更する（片方だけ変更するとサイレントにデータが消えるため）。
+移行直後に105銘柄全数のTTM値回帰確認を行う。
+
+**フェーズD（本体consumer切替、優先順位確定済み）**:
+1. TANUKI VALUATION本体（reader.py・pipeline.py） — 最大の影響範囲
+   だが中核システムのため最優先。切替時は105銘柄全数の実データ回帰
+   確認を最も手厚く行う
+2. STONKS SILO（financial_trend_calculator.py・fetcher.py・
+   analyzer.py）
+3. TANUKI TAIL（quarterly_review_generator.py・tail_dcf_bridge.py）
+4. HypeCore
+5. stock.htmlフロントエンド
+
+**フェーズE（旧経路廃止）**:
+全consumer移行完了後、raw/・旧normalized/・FIELD_CONCEPTS/
+XBRL_MAPPING（コード版）を削除する。
+
+**フェーズF・G（並行トラック）**:
+EPS Analyzer52タグのLayer2追加（独自取得層の廃止）／filing_text吸収。
+
+**スコープ外の確認事項**: net_cash・rule40等の導出データ層における
+計算式重複（[[NETCASH-DUAL-CALC-1]]・[[RULE40-DEFINITION-MISMATCH-1]]）
+は、本プロジェクト（一次データ層構築）のスコープ外とし、既存の個別
+BACKLOGタスク側で扱う。FCF計算式の集約（上記フェーズA）のみ、Layer3
+自体の一部として本プロジェクトに含める。
