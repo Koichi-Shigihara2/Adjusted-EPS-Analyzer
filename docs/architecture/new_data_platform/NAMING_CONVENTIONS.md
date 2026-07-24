@@ -109,6 +109,19 @@ MACRO PULSEのRECESSION RISK SCORE表示・EPS Analyzerの`health`等、
 これらの機能的重複（用途が実質的に同じかどうか）は別途のステップで
 調査する。
 
+### 規則7: フィールド名の表記法はsnake_caseに統一する
+既存の出力項目はTANUKI VALUATION・STONKS SILO・HypeCore・EPS Analyzer
+等ほぼ全てがsnake_case（net_cash_sec・rule40_yoy_netmargin・
+net_income_fy等）であり、規則1〜5の接尾辞（_sec・_yoy・_fred等）も
+snake_case前提の表記である。common/sec_data/normalized/（PascalCase、
+例: CapEx・NetIncome）はこの中で孤立した唯一の例外であり、統合スキーマ
+設計（SEC_EDGAR_LAYER_DESIGN.md）を機にsnake_caseへ統一する
+（2026-07-24策定）。
+
+既存PascalCase出力の一括リネームは行わない。[[NAMING-CONVENTIONS-APPLY-1]]
+と同じ運用方針に従い、統合スキーマへの実際の移行タスク実装時に、該当
+フィールドのみ順次snake_caseへ揃える。
+
 ## 適用チェックリスト（新規フィールド追加時）
 
 新しい出力項目を追加する際、以下を確認する:
