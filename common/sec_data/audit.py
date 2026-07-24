@@ -23,7 +23,7 @@ from datetime import datetime
 
 
 TTM_DIR  = os.path.join(os.path.dirname(__file__), "ttm")
-RAW_DIR  = os.path.join(os.path.dirname(__file__), "raw")
+SEC_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
                         "value-monitor", "tanuki_valuation", "data")
 EPS_DIR  = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
@@ -117,18 +117,30 @@ def audit_ticker(ticker: str) -> dict:
         except Exception:
             pass
 
-    # UP-C構造等: 10-Qに株式数タグ（SharesBasic/SharesDiluted）が存在しない銘柄を一覧化
-    # （V等、複数株式クラス構造でCommonStockSharesOutstanding/
-    #  WeightedAverageNumberOfDilutedSharesOutstandingを申告しない銘柄。
+    # UP-C構造等: 10-Qに株式数タグ（CommonStockSharesOutstanding/
+    # WeightedAverageNumberOfDilutedSharesOutstanding）が存在しない銘柄を一覧化
+    # （V等、複数株式クラス構造でこれらのタグを申告しない銘柄。
     #  ARCH-DATA-1のaudit.py拡張項目・未着手分）
-    _raw_path = os.path.join(RAW_DIR, f"{ticker}_quarterly_raw.json")
-    if os.path.exists(_raw_path):
+    # Layer1（company_facts.json）を直接判定（[[SECDATA-STORAGE-FRAGMENTATION-1]]
+    # フェーズB。旧: raw/{TICKER}_quarterly_raw.json経由の判定から切替）
+    _cf_path = os.path.join(SEC_DATA_DIR, ticker.upper(), "company_facts.json")
+    if os.path.exists(_cf_path):
         try:
-            _raw = json.load(open(_raw_path, encoding="utf-8"))
-            _fields = _raw.get("fields", {})
-            _sb_q = [e for e in _fields.get("SharesBasic", [])   if not e.get("is_annual")]
-            _sd_q = [e for e in _fields.get("SharesDiluted", []) if not e.get("is_annual")]
-            if not _sb_q and not _sd_q:
+            _cf = json.load(open(_cf_path, encoding="utf-8"))
+            _usgaap = _cf.get("facts", {}).get("us-gaap", {})
+            _has_shares_q = False
+            for _concept in (
+                "CommonStockSharesOutstanding",
+                "WeightedAverageNumberOfDilutedSharesOutstanding",
+            ):
+                _units = _usgaap.get(_concept, {}).get("units", {})
+                for _entries in _units.values():
+                    if any(e.get("form") == "10-Q" for e in _entries):
+                        _has_shares_q = True
+                        break
+                if _has_shares_q:
+                    break
+            if not _has_shares_q:
                 result["warning"].append(
                     "10-Qに株式数タグなし（UP-C構造・複数株式クラス等の可能性）"
                     " → yfinance実装株数へのフォールバック依存を確認"
