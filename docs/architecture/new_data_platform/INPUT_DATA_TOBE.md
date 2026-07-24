@@ -36,10 +36,10 @@ FIELD_DEFINITIONS.md499項目の分解から導かれた項目には、性質の
 
 | 分類 | 件数 | ID範囲 |
 |---|---|---|
-| A. 一次データ本体 | **47件** | `INPUT-A-001`〜`INPUT-A-047` |
+| A. 一次データ本体 | **48件** | `INPUT-A-001`〜`INPUT-A-048` |
 | B. 取得前提条件 | **3件** | `INPUT-B-001`〜`INPUT-B-003` |
 | C. 導出データの入力 | **14件** | `INPUT-C-001`〜`INPUT-C-014` |
-| **合計** | **64件** | — |
+| **合計** | **65件** | — |
 
 **判定に迷った項目の分類根拠（実コード確認済み）**:
 - `config/split_history.yaml`: `src/value/adjusted_eps_analyzer/pipeline.py`
@@ -101,9 +101,10 @@ TANUKI TAIL／EPS Analyzerの各サブシステムが依存する財務諸表項
 | INPUT-A-013 | 長期有利子負債 | `LongTermDebtNoncurrent`等 | net_cash・total_debt計算 |
 | INPUT-A-014 | 短期有利子負債 | `LongTermDebtCurrent`等 | net_cash・total_debt計算 |
 | INPUT-A-015 | 希薄化後株式数 | `WeightedAverageNumberOfDilutedSharesOutstanding` | EPS、1株あたり価値、希薄化率 |
-| INPUT-A-016 | セグメント別売上・KPI | `StatementBusinessSegmentsAxis`配下の各種タグ | TANUKI TAILのセグメントKPI抽出 |
+| INPUT-A-016 | セグメント別売上・KPI | 正式ASC280セグメントタグではなく、`tail_kpi_map.json`で銘柄ごとに個別定義された投資テーゼ用カスタムKPI（生XBRL XML文書の直接ダウンロード＋explicitMemberディメンション解析、company_facts APIとは別方式） | TANUKI TAILのセグメントKPI抽出（`docs/portfolio/tail/data/kpi/{ticker}_layer2.json`、現状common/sec_dataとは完全に独立した取得・保持経路） |
 | INPUT-A-017 | 内部統制関連テキスト | 10-Q Item4本文（非XBRL、全文テキスト） | TANUKI TAILの内部統制監視 |
 | INPUT-A-018 | 直近提出日・提出書類一覧 | EDGAR submissions API（`data.sec.gov/submissions/`） | 新規提出監視、CIKルックアップ |
+| INPUT-A-048 | 税務・一過性項目・銀行業向け詳細タグ群（52種） | `IncomeTaxExpenseBenefit`系・`IncomeLossBeforeIncomeTaxExpenseBenefit`系・`GoodwillImpairmentLoss`・`RestructuringCharges`・`LitigationSettlementExpense`・`FairValueAdjustmentOfWarrants`・`GainLossOnDerivativeInstrumentsNetPretax`・`ProvisionForLoanLosses`系・`NetInterestIncome`・`NoninterestIncome`等（全量はEPS Analyzer調査完了報告を参照） | Adjusted EPS算出専用（調整項目検出・税効果調整・DTA異常検知・公正価値変動検出）。現状はEPS Analyzer（`extract_key_facts.py`）が独自にSEC EDGAR company_facts APIを取得しているが、`company_facts.json`（後述）に既に全量含まれているため、新規API取得なしでLayer2設定の追加のみで対応可能 |
 
 **必要なアクセス方式**: (a) XBRL構造化ファクト取得（Company Facts API相当）、
 (b) 提出書類一覧・メタデータ取得（submissions API）、(c) 10-Q本文の
@@ -235,13 +236,37 @@ stock.htmlのキャッシュフロー分析セクション（CapEx符号未処�
 委ねる）。TO-BEの統合対象は`data/`だけでなく`raw/`・`normalized/`・
 `ttm/`を含めた全系統である旨をここに明示する。
 
+**Layer1（無加工アーカイブ）は新規構築不要、既に存在する**:
+`common/sec_data/data/{TICKER}/company_facts.json`が、SEC EDGAR
+company_facts APIの完全な生レスポンス（フィルタなし、AAPL実測505
+concept）を無加工のまま週次で保存済み（`fetcher.py::
+fetch_company_facts()`、git管理下）。統合設計はこのファイルを
+Layer1として位置づけ、以下の`annual_{FY}.json`等（Layer3相当）は
+Layer1からの抽出結果として再設計する。現状の`raw/
+{TICKER}_quarterly_raw.json`（23概念に絞ったフィルタ後データ、
+Layer1ではなくLayer2設定の狭さの副産物）は、統合後は廃止候補
+（[[SECDATA-STORAGE-FRAGMENTATION-1]]で検討）。
+
+概念抽出ロジック（現状`FIELD_CONCEPTS`/`XBRL_MAPPING`としてPython
+コードにハードコード）は、将来的に設定ファイル（YAML/JSON、
+1エントリ＝1概念：内部フィールド名・タグ候補リスト・カテゴリ・
+利用サブシステム）による管理へ移行する方向で検討する（Layer2、
+詳細設計は別タスク）。
+
 保持構造の案:
 ```
 common/sec_data/data/{TICKER}/
+  company_facts.json      # Layer1: SEC EDGAR company_facts API生レスポンス（既存）
   annual_{FY}.json        # 通期ファクト（正規化済み、INPUT-A-001〜015等）
   quarterly_{FYQ}.json    # 四半期ファクト（正規化済み）
   filing_meta.json        # 提出日・CIK・最終確認日等のメタ情報（INPUT-A-018）
   segments/{FYQ}.json     # セグメント別KPI（新規吸収、INPUT-A-016）
+                           # 【2026-07-23方針転換】当初は正式ASC280セグメントを
+                           # 想定していたが、実態は銘柄固有カスタムKPIであり、
+                           # 取得方式（生XBRL XML解析）も他フィールドと異なる。
+                           # フェーズ1の統合スコープからは除外し、現状の独立実装
+                           # （docs/portfolio/tail/data/kpi/{ticker}_layer2.json）
+                           # を維持する（投資調査により方針転換）
   filing_text/{accession}.json  # 10-Q本文抽出結果（新規吸収、INPUT-A-017）
 ```
 
