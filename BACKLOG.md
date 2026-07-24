@@ -2207,6 +2207,13 @@ common/sec_data統合スキーマ設計の確定後
 使われている。二重計上防止のロジックが欠けているため、該当銘柄で
 Net Debtが過大計上される可能性がある。実害の有無は未検証。
 
+【2026-07-24検証結果】reader.py::get_net_cash()の実装を確認した
+結果、二重計上が発生しうるのは「annual側long_term_debtが0/欠損 かつ
+normalizedフォールバックが非ゼロ」の場合に限られる。105銘柄全数で
+確認したところ該当銘柄は0件であり、現行データでは実害が確認されな
+かった。ただし構造的リスクは残るため、Layer2統合時にparser.py側の
+優先順序（二重計上防止済み）へ統一することで解消する方針とする。
+
 #### 対応方針
 未定。実害有無の検証（該当銘柄の特定）を先に行う必要がある。
 
@@ -4785,6 +4792,34 @@ ttm/{ticker}_ttm_series.jsonを再生成するたびに無関係なdiffが
 
 #### 着手条件
 なし（優先度低）
+
+---
+
+### [SCHEMA-DA-FALLBACK-MISSING-1] normalized/のDA（減価償却）フィールドがフォールバック欠如により一部銘柄で完全に空になる
+**優先度:** 低
+**分類:** データ品質
+**登録日:** 2026-07-24
+**発見:** Layer2設計・DA消費箇所調査
+
+#### 内容
+`quarterly.py::FIELD_CONCEPTS`のDA（減価償却）概念はフォールバック
+候補が一切設定されておらず（単一タグ`DepreciationDepletionAndAmortization`
+のみ）、このタグを報告しない銘柄（LMT等、`DepreciationAndAmortization`
+のみ報告）で`normalized/`側のDAフィールドが完全に空（0エントリ）になる。
+[[SCHEMA-STDEBT-COVERAGE-GAP-1]]と同型のフォールバック欠如パターン。
+
+#### 影響
+実質的な計算消費箇所（成長率推計、pipeline.py:2807）は`normalized/`
+ではなくannual/quarterly側（parser.py由来、フォールバック4候補あり）
+を参照しているため、現状の計算結果への実害はない。`normalized/`の
+DAはstock.htmlの単純表示にしか使われていないため影響は限定的。
+
+#### 対応方針
+Layer2統合時にparser.py側の定義（DepreciationAndAmortization主体、
+4候補）へ統一することで自動的に解消する見込み。
+
+#### 着手条件
+なし
 
 ---
 
