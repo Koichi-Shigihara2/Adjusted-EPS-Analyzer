@@ -628,6 +628,32 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
+### [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた
+**優先度:** 高
+**分類:** 調査精度 / アーキテクチャ
+**登録日:** 2026-07-23
+**発見:** 一次データベース設計・Layer1実態調査
+
+#### 内容
+`common/sec_data/data/{TICKER}/company_facts.json`（SEC EDGAR
+company_facts APIの完全な生レスポンス、フィルタなし、AAPL実測505
+concept、105銘柄合計582.2MB）が、本フェーズの一連の投資調査
+（「9系統」調査・annual/segment/filing_text調査を含む複数セッション）
+のいずれでも棚卸し対象に含まれておらず、存在自体が見落とされていた。
+
+#### 影響
+一次データベース設計（Layer1＝取得の無加工アーカイブ）の要否判断に
+直接影響する。このファイルは既にLayer1の要件を満たしている。
+
+#### 対応方針
+過去の調査結果（「9系統」という数え方）を10系統に訂正し、以降の
+統合設計はこのファイルの存在を前提に進める。
+
+#### 着手条件
+なし（事実訂正の登録のみ）
+
+---
+
 ### [NETCASH-DUAL-CALC-1] net_cashの二重計算・実データ乖離（TANUKI VALUATION vs STONKS SILO）
 **優先度:** 高
 **分類:** データ品質 / 重複計算 / TANUKI VALUATION / STONKS SILO
