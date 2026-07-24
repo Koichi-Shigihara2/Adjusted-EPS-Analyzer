@@ -4906,6 +4906,66 @@ short_term_investments（7件）・total_liabilities（AVAV/ELF/ESTC 3件）。
 
 ---
 
+### [LAYER3-EPS-UNIT-MISMATCH-1] eps_basic/eps_dilutedのunit指定誤りにより105銘柄全数で完全に空になっている
+**優先度:** 高
+**分類:** バグ
+**登録日:** 2026-07-24
+**発見:** eps_basic/eps_diluted加法性検証（フェーズC前提確認）
+
+#### 内容
+config/sec_concept_definitions.jsonのeps_basic・eps_dilutedが
+"unit": "USD"と誤って指定されている（正しくは"USD/shares"）。
+extract_field_raw_entries()はcompany_facts["facts"]["us-gaap"]
+[concept]["units"][unit]という厳密一致でルックアップするため、
+この不一致により105銘柄全数・完全に空（0エントリ、source_tag:
+None）のまま出力されている。
+
+#### 影響
+フェーズA完了時（105銘柄回帰レポート）でこの欠落が検出されな
+かった。両フィールドは新規追加分（旧データに対応物がない）のため、
+「diffなし」の判定に紛れて見落とされたと考えられる。現状のTTM
+消費者はこの2フィールドを参照していないため実害はないが、config
+自体が機能していない状態のまま「フェーズA完了」としていたことに
+なる。
+
+#### 対応方針
+unit指定を"USD/shares"に修正する。修正後、105銘柄で
+extract_field_raw_entries()が正しくエントリを取得できることを
+確認する。
+
+#### 着手条件
+なし（フェーズC実装前に修正すべき、本作業で対応）
+
+---
+
+### [SEC-BKNG-SHARES-ANOMALY-1] BKNGのWeightedAverageNumberOfDilutedSharesOutstandingがSEC提出データ自体で異常値
+**優先度:** 低〜中
+**分類:** データ品質 / SEC提出データ異常
+**登録日:** 2026-07-24
+**発見:** eps_basic/eps_diluted加法性検証時の希薄化銘柄スクリーニング
+
+#### 内容
+BKNGのWeightedAverageNumberOfDilutedSharesOutstanding
+（2026-03-31期、accession 0001075531-26-000025、2026-04-28提出）
+が、前四半期比24倍（32.6M→794M株）という異常値でSEC XBRL上に
+そのまま存在する。company_facts.json（Layer1）の生データ自体に
+含まれており、本コードベースのパイプラインが生成した値ではない。
+既知の大型分割の発表・登録もない（config/split_history.yaml未登録）
+ため、SEC提出企業側のXBRLタグ付けミスの可能性が高い。
+
+#### 影響
+BKNGの株式数・1株当たり指標を参照する計算（EPS・希薄化率等）が、
+この四半期のみ大きく歪む可能性がある。
+
+#### 対応方針
+未定。原因の詳細調査（他のSEC提出書類との突合等）と、判明した場合の
+除外・補正方法の検討が必要。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
