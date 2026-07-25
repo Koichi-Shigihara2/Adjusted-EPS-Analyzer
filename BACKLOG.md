@@ -5214,6 +5214,37 @@ selling_general_and_administrativeを追加する対応が候補。
 
 ---
 
+### [LAYER3-GA-STANDALONE-TAG-UNMAPPED-1] GeneralAndAdministrativeExpense（Selling抜きG&A単体タグ）がLayer2のどのフィールドにもマッピングされていない
+**優先度:** 中
+**分類:** データ品質 / タグ網羅性
+**登録日:** 2026-07-24
+**発見:** SM/SGA分離258件全数検証
+
+#### 内容
+GeneralAndAdministrativeExpense（Selling抜きのG&A単体タグ）が、
+Layer2の32フィールドのいずれにもマッピングされていない。少なくとも
+6銘柄（APGE/ASTS/CON/RXRX/CAKE/CPRT）で確認。これらの銘柄は
+selling_and_marketing・selling_general_and_administrative双方が
+空になる。CAKEはAdvertisingExpense（年次のみ）と
+GeneralAndAdministrativeExpense（未マッピング）を報告しているが、
+どちらも四半期粒度で取り込まれない。
+
+#### 影響
+少なくとも6銘柄でSM・SGA両フィールドが完全に空になる。他にも該当
+銘柄が存在する可能性がある（未網羅的調査）。
+
+#### 対応方針
+未定。GeneralAndAdministrativeExpenseを新規フィールド
+（general_and_administrative等）として追加するか、既存
+selling_general_and_administrativeのフォールバック候補に含める
+（ただし概念が異なる＝Selling抜きのため、[[SCHEMA-SM-SGA-
+CONFLATION-1]]と同種の概念混在リスクに注意）かの判断が必要。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
