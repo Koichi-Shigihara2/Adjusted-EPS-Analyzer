@@ -5136,6 +5136,22 @@ layer3_builder.pyにはこの機能が未実装（フェーズA当初からdocst
 end日付はカットオフを余裕を持って超えている）。決定論性は確認済み
 （同一日内の複数回実行で結果は完全一致、非決定性バグではない）。
 
+【2026-07-24範囲拡大】105銘柄全体の機械スキャンにより、当初記載の
+10銘柄（72件）に加え、6銘柄・16件の追加ケースを確認した
+（AVAV/SM×2件・CON/Revenue,OperatingIncome,SM×3件・
+ELF/Revenue,GrossProfit,OperatingIncome,NetIncome,SM,_COGS×6件・
+ONDS/_COGS×1件・PM/SBC×2件・SOUN/DA,Revenue×2件）。対象は計16銘柄・
+88件に拡大する。
+
+なお、この機能（_build_missing_quarter_implied_entries()）自体には
+フィールド種別のガードが内蔵されておらず、shares_diluted等の
+株式数系フィールドに無条件適用すると符号異常（意味不明な負値等）を
+生むことを確認済み。実装時はnormalizer.py側の既存スコープ
+（Revenue/_COGS/OCF/ICF/CFF/CapEx/RD/SM/SBC/DA/NetIncome/
+OperatingIncome/GrossProfit、13フィールド。q4_implied.pyの15
+フィールドとは非対称でFinanceLeasePmts/Buybackを含まない）を
+そのまま踏襲する。
+
 #### 影響
 5年ロールバック境界付近のTTMデータが不安定になる可能性がある
 （本番切替後、実行タイミングによって同じ結果が再現しないリスク）。
