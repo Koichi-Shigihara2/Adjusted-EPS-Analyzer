@@ -4,6 +4,78 @@
 
 ## 2026-07-24（完了）
 
+### ✅ [LAYER3-DA-SBC-CANDIDATE-REGRESSION-1] depreciation_and_amortization・stock_based_compensationのTTM系列で一部銘柄がquarters_used減少
+**優先度:** 低〜中
+**分類:** データ品質 / 要調査
+**完了日:** 2026-07-24
+**発見:** フェーズC実装、TTM系列全体での105銘柄回帰
+
+#### 内容
+depreciation_and_amortization（82件）・stock_based_compensation
+（62件）で、TTM系列全体の回帰差異を確認。多くは2022年前後の古い
+期間でquarters_usedが増加（1→2、2→3等）する改善方向だが、BSY・PM
+等一部銘柄で逆に減少するケースがあり、個別要因は未特定。
+
+【2026-07-24再調査】オリジナル登録時の「quarters_used減少」6件
+（DA: IOT・SOUN、SBC: CRM・NVDA・PM）は、その後の一連の実装
+（欠落四半期逆算・is_implied優先順位変更）により全て解消済み。
+
+残る37件（DA 28件・SBC 9件、対象: DA=ALAB/BSY/DDOG/ELF/FICO/JOBY/
+PEP/SOUN/SPIR、SBC=APGE/BKNG/CART/ESTC/RCAT）は原因を特定できた:
+source_tagが複数タグの"+"結合（例:
+DepreciationDepletionAndAmortization+
+AmortizationOfIntangibleAssets）になっているケースで、
+_merge_normalized_by_priority()が四半期スロットと年次スロットを
+それぞれ独立に別タグから採用してしまい、q4_implied.py（Q4逆算）が
+性質の異なる2つのタグ由来の値を組み合わせて意味のない値を生成する
+（BSYで実際にマイナスのQ4逆算値を確認）。今回の一連の実装とは
+無関係の、以前から存在する別種の問題と判明。
+
+【2026-07-24原因の再分割】37件は単一原因ではなく2種類に分かれる
+ことが判明した。
+
+**クロスタグ混入型（7銘柄: DA=ALAB/BSY/FICO/JOBY/SOUN、
+SBC=BKNG/RCAT）**: 優先タグが年次申告のみ・四半期申告のみ停止する
+等の理由で、年次キーと四半期キーが異なるタグを採用してしまい、
+q4_implied.pyが異なるタグ由来の値を組み合わせて意味のない値を
+生成する（BSY実例で確認済み）。パターンは「年次のみ停止」
+（BSY型）・「完全逆転」（SOUN型）・「部分混在」（ALAB/JOBY/RCAT型）・
+「完全分離」（FICO/BKNG型）等、複数バリエーションが存在する。
+
+**原因未特定型（7銘柄: DA=DDOG/ELF/PEP/SPIR、SBC=APGE/CART/
+ESTC）**: 年次・四半期とも一貫して同一タグを使用しており、
+クロスタグ混入ではない別原因。未調査。
+
+#### 対応方針
+クロスタグ混入型（7銘柄）: q4_implied.pyに「Q4逆算に使う年次
+エントリと3四半期エントリが全て同一source_tag由来であること」を
+要求するガードを追加し、満たさない場合はQ4逆算をスキップする方針
+（実データ確認済み: 7銘柄ともQ4に相当する期間の直接開示・他の
+復元経路が存在しないため、ガード追加によりQ4値は「誤った値」から
+「値の欠落」に変わる。コア原則〈各データポイントは正しいか、明確に
+不正確とフラグされるべき〉に照らし、誤った値より欠落の方が望ましい
+と判断）。_merge_normalized_by_priority()自体の作り替え（タグ
+一貫性制約の追加）は、[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]が
+解決した「優先タグ停止時の確実なフォールバック」を再度損なうリスクが
+あるため見送る。
+
+原因未特定型（7銘柄）: 別途投資調査が必要。
+
+【2026-07-24対応完了】コミット5bae1e9f4（q4_implied.pyへの
+同一source_tagガード＋単独タグ完結フォールバック追加、コミット
+c3eefe31a時点の方針を実装）。当初のDA/SBC 37件のうち、実際の
+クロスタグ混入型7銘柄（ALAB/BSY/FICO/JOBY/SOUN/BKNG/RCAT）は
+ガードで正しく遮断された上、フォールバックにより多くが正しい値で
+復元された。ガード追加の過程で、同一原因が他13フィールド・
+43銘柄にも及ぶことが判明し（[[LAYER3-CROSS-TAG-YEARLY-QUARTERLY-
+GENERAL-RISK-1]]の実例）、単独タグ完結フォールバックの追加により
+88件中88件を復元（旧normalized/値との一致をサンプル5件で確認）。
+TTM系列レベルで総不一致は本タスク開始前（426件）比-16件の410件に
+正味改善。残る新規差異2件（ASTS/revenue・DDOG/net_income）は原因
+特定済みの既知の残差として個別対応を検討する。
+
+---
+
 ### ✅ [CAPEX-SIGN-UNNORMALIZED-1] CapEx符号不統一によるFCF過大表示（stock.html CF分析セクション・STONKS SILO表示専用フィールド）
 **優先度:** 高
 **分類:** バグ / TANUKI VALUATION / STONKS SILO
