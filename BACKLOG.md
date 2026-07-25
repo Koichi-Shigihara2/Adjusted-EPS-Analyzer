@@ -5043,6 +5043,123 @@ shares_dilutedはNO_CANDIDATE_MERGE_FIELDS（今回の変更対象外パス）
 
 ---
 
+### [LAYER3-GROSSPROFIT-BACKFILL-MISSING-1] normalizer.py相当のGrossProfitバックフィル機能がlayer3_builder.pyに未実装
+**優先度:** 中
+**分類:** 未実装機能 / データ品質
+**登録日:** 2026-07-24
+**発見:** フェーズC実装、TTM系列全体（複数年）での105銘柄回帰
+
+#### 内容
+normalizer.py::_calc_gross_profit()（Revenue−cost_of_revenueから
+のGrossProfit逆算バックフィル）がlayer3_builder.pyに未実装
+（フェーズA当初からモジュールdocstringに既知の制限として明記済み）。
+TTM系列全体（最大6期・約5年分）での回帰確認で135件の差異として
+初めて規模が判明した（単一四半期の最新値のみを見る従来の回帰
+チェックでは見えなかった）。GrossProfitタグを直接開示しない期を
+持つ銘柄（ABBV/HON等）で、古い期間のquarters_usedが減少する。
+
+#### 影響
+フェーズC（ttm_calculator.py移行）の「値を変えない」という前提を
+満たせない規模になっている。
+
+#### 対応方針
+_calc_gross_profit()相当のバックフィル機能をlayer3_builder.pyに
+実装する。フェーズC完了の前提とするか、既知の制限として許容し
+フェーズD以降に持ち越すかの判断が必要。
+
+#### 着手条件
+なし（フェーズC完了可否の判断材料）
+
+---
+
+### [LAYER3-DA-SBC-CANDIDATE-REGRESSION-1] depreciation_and_amortization・stock_based_compensationのTTM系列で一部銘柄がquarters_used減少
+**優先度:** 低〜中
+**分類:** データ品質 / 要調査
+**登録日:** 2026-07-24
+**発見:** フェーズC実装、TTM系列全体での105銘柄回帰
+
+#### 内容
+depreciation_and_amortization（82件）・stock_based_compensation
+（62件）で、TTM系列全体の回帰差異を確認。多くは2022年前後の古い
+期間でquarters_usedが増加（1→2、2→3等）する改善方向だが、BSY・PM
+等一部銘柄で逆に減少するケースがあり、個別要因は未特定。
+
+#### 対応方針
+未定。BSY・PM等の減少ケースを個別調査する必要がある。
+
+#### 着手条件
+なし
+
+---
+
+### [LAYER3-IONQ-REVENUE-2022Q1-ANOMALY-1] IONQのRevenuesタグ2022年Q1データが事業規模に対して不自然に大きい
+**優先度:** 低〜中
+**分類:** データ品質 / SEC提出データ異常
+**登録日:** 2026-07-24
+**発見:** フェーズC実装、TTM系列全体での105銘柄回帰
+
+#### 内容
+IONQのRevenues（2022年Q1 anchor）が、旧比較値2,186,000に対し新値
+1,070,233,000と489倍の差異。原因はIONQの古いRevenuesタグ自体が
+raw XBRL上でval=1,070,000,000という値を持っており、これをそのまま
+採用した結果。当時のIONQの事業規模から見て値自体が不自然に大きく、
+[[SEC-BKNG-SHARES-ANOMALY-1]]と同種のSEC提出データ異常の可能性が
+ある。未検証。
+
+#### 対応方針
+未定。原因調査（他のSEC提出書類との突合）が必要。
+
+#### 着手条件
+なし
+
+---
+
+### [LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1] 10銘柄で2021年4-5月anchorのTTM値が計算不能に
+**優先度:** 中
+**分類:** バグ / 要調査
+**登録日:** 2026-07-24
+**発見:** フェーズC実装、TTM系列全体での105銘柄回帰
+
+#### 内容
+10銘柄（ADSK/CRM/DELL/GTLB/HQY/IOT/MRVL/NVDA/S/WMT）で、2021年
+4-5月anchorのTTM値が新パイプラインで計算不能（ANCHOR_MISSING）に
+なった。layer3_builder.py・quarterly.pyとも_QUARTERLY_YEARS=5で
+設定は同一だが、実行時点（「本日」からの5年ロールバック）の違いに
+より境界上のデータが変動した可能性が高いと推測されるが未検証。
+
+#### 影響
+5年ロールバック境界付近のTTMデータが不安定になる可能性がある
+（本番切替後、実行タイミングによって同じ結果が再現しないリスク）。
+
+#### 対応方針
+未定。原因特定（実行時点依存かどうかの切り分け）が必要。
+
+#### 着手条件
+なし。原因次第でフェーズC完了の前提になる可能性がある
+
+---
+
+### [LAYER3-TTM-TEST-SUITE-SHAPE-MISMATCH-1] tests/test_ttm_calculator.pyの既存テストが新store形状でクラッシュする
+**優先度:** 中
+**分類:** テスト / 技術的負債
+**登録日:** 2026-07-24
+**発見:** フェーズC実装、既存テストスイート実行確認
+
+#### 内容
+tests/test_ttm_calculator.pyの既存単体テスト3件が、新しいstore形状
+（{"fields": {name: {"entries": [...]}}}）と旧normalized形状
+（{"fields": {name: [...]}}）の不一致によりクラッシュする
+（AttributeError: 'list' object has no attribute 'get'）。テスト
+コード自体が旧形状を前提にしたまま。
+
+#### 対応方針
+テストを新形状に対応させる。フェーズC完了に必須。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
