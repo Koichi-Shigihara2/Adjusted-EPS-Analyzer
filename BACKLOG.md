@@ -5114,28 +5114,40 @@ raw XBRL上でval=1,070,000,000という値を持っており、これをその�
 
 ---
 
-### [LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1] 10銘柄で2021年4-5月anchorのTTM値が計算不能に
+### [LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1] TTM系列の古いanchor（H1YTD逆算による先行四半期復元）がlayer3_builder.pyで欠落
 **優先度:** 中
 **分類:** バグ / 要調査
 **登録日:** 2026-07-24
 **発見:** フェーズC実装、TTM系列全体での105銘柄回帰
 
 #### 内容
-10銘柄（ADSK/CRM/DELL/GTLB/HQY/IOT/MRVL/NVDA/S/WMT）で、2021年
-4-5月anchorのTTM値が新パイプラインで計算不能（ANCHOR_MISSING）に
-なった。layer3_builder.py・quarterly.pyとも_QUARTERLY_YEARS=5で
-設定は同一だが、実行時点（「本日」からの5年ロールバック）の違いに
-より境界上のデータが変動した可能性が高いと推測されるが未検証。
+【2026-07-24原因判明、当初推測を訂正】当初「5年ロールバック境界の
+実行時点依存」を疑ったが、実データ調査により異なる原因と判明した。
+10銘柄（ADSK/CRM/DELL/GTLB/HQY/IOT/MRVL/NVDA/S/WMT）の該当anchor
+四半期（例: NVDA 2021Q1）は、SEC提出上「単独四半期」としては一度も
+開示されておらず、同一10-Q提出物内の「H1（半期）YTD累計」と「Q2
+単独」の2エントリのみが存在する。旧パイプライン
+（normalizer.py::_build_missing_quarter_implied_entries()、
+「後続四半期の単独値をYTDから差し引いて先行四半期を逆算する」任意
+欠落四半期の逆算機能）はH1YTD−Q2SAでQ1を復元していたが、
+layer3_builder.pyにはこの機能が未実装（フェーズA当初からdocstringに
+既知の制限として明記済み、q4_implied.pyのFY−Q1−Q2−Q3パターンとは
+別種）。カットオフ（5年ロールバック）自体は無関係（該当エントリの
+end日付はカットオフを余裕を持って超えている）。決定論性は確認済み
+（同一日内の複数回実行で結果は完全一致、非決定性バグではない）。
 
 #### 影響
 5年ロールバック境界付近のTTMデータが不安定になる可能性がある
 （本番切替後、実行タイミングによって同じ結果が再現しないリスク）。
 
 #### 対応方針
-未定。原因特定（実行時点依存かどうかの切り分け）が必要。
+未定。_build_missing_quarter_implied_entries()相当の機能を
+layer3_builder.pyに実装する必要がある。
+[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]と同種の「フェーズA
+スコープ外機能の実装漏れ」であり、両者は関連タスクとして扱う。
 
 #### 着手条件
-なし。原因次第でフェーズC完了の前提になる可能性がある
+なし。フェーズC完了の前提（TTM系列の完全性に直接影響するため）
 
 ---
 
