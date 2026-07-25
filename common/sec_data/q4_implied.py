@@ -103,6 +103,16 @@ def build_q4_implied_entries(
       側のLayer2 sign_normalize:"abs"と重複適用されても
       abs(abs(x))==abs(x)のため無害）。
     - 未来のFY（fy_end > 本日）はアナリスト予想化を避けるため対象外。
+    - [[LAYER3-DA-SBC-CANDIDATE-REGRESSION-1]]対応: 年次エントリと
+      採用するQ1〜Q3の3エントリ、計4エントリの"source_tag"
+      （layer3_builder.py::_merge_candidate_entries()が付与。
+      candidatesが複数タグある場合、(end_date, is_annual)キーごとに
+      異なるタグが選ばれることがある）が完全一致しない場合はその
+      FYをスキップする（値を生成しない）。normalizer.py・
+      ttm_calculator.py・financial_trend_calculator.py等の既存呼び出し元
+      はエントリに"source_tag"キーを持たないため、4エントリとも
+      source_tag=Noneとなり、完全一致（全てNone）として扱われ、
+      従来通りQ4逆算が発火する（無改修で動作継続）。
     """
     canonical_field_name = _SNAKE_TO_PASCAL.get(field_name, field_name)
     if canonical_field_name not in Q4_IMPLIED_FIELDS:
@@ -132,6 +142,10 @@ def build_q4_implied_entries(
         ]
         top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
         if len(top3) < 3:
+            continue
+
+        source_tags = {annual.get("source_tag")} | {e.get("source_tag") for e in top3}
+        if len(source_tags) != 1:
             continue
 
         q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]

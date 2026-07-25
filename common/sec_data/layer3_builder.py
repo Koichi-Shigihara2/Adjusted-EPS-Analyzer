@@ -298,6 +298,35 @@ def _merge_candidate_entries(
     （post-merge適用で実際に検証し、対象87件中10件しか復元できなかった
     ことを確認済み）。タグ単位・マージ前に適用することで、YTD累計
     エントリがまだ生きている状態で欠落四半期を逆算できる。
+
+    各エントリに"source_tag"（採用元の候補タグ名）を付与する
+    （[[LAYER3-DA-SBC-CANDIDATE-REGRESSION-1]]対応）。
+    _merge_normalized_by_priority()は(end_date, is_annual)キーごとに
+    独立して候補タグを選ぶため、年次キーと四半期キーで異なるタグが
+    勝つことがある（優先タグが年次申告のみ・四半期申告のみ停止する
+    ケース等、BSY等で実データ確認済み）。この"source_tag"を
+    q4_implied.py::build_q4_implied_entries()が参照し、Q4逆算に使う
+    年次・Q1・Q2・Q3の4エントリのsource_tagが完全一致しない場合は
+    Q4逆算をスキップするガードに用いる。
+
+    Q4逆算はこのタグ単位ループの中で、各タグ自身の年次・四半期
+    エントリのみを使って独立して試みる（優先順位順に候補タグを
+    1つずつ試し、最初に4エントリが揃ったタグの結果を採用する構造。
+    実データ確認の結果、同一source_tagガード導入後に欠落した112件中
+    88件が、優先タグ以外の候補タグ単独では年次・Q1・Q2・Q3が揃って
+    おり復元可能だったため）。このタグ単位Q4逆算は、呼び出す
+    build_q4_implied_entries()自身が「同一タグ内の年次・四半期のみ」
+    を渡されるため、source_tagガードは常に自明に通過する（同一タグの
+    entries全てが同じsource_tagを持つため）。生成されたQ4エントリにも
+    その候補タグ名をsource_tagとして付与し、マージ時に他タグの
+    エントリと同様に優先順位に従って競合解決される（優先タグに
+    Q4エントリがあればそちらが採用され、無ければ次点タグのQ4
+    エントリが採用される）。この結果、build_ticker_store()側の
+    マージ後Q4逆算呼び出し（既存、マージ済みentriesに対して同一
+    ガードを適用）は、タグ単位で既に復元済みの場合は
+    existing_ends判定により重複生成せず、どのタグでも4エントリが
+    揃わなかった場合のみ空リストを返す（結果的に冗長だが無害な
+    二重チェックとして残置）。
     """
     used_concepts: list = []
     per_tag_normalized: list = []
@@ -312,13 +341,34 @@ def _merge_candidate_entries(
         normalized = _normalize_field_entries(processed)
         if not normalized:
             continue
+        for e in normalized:
+            e["source_tag"] = concept
         if apply_missing_quarter:
             missing_list = _build_missing_quarter_implied_entries(normalized)
             if missing_list:
+                for e in missing_list:
+                    e["source_tag"] = concept
                 existing_ends = {e["end"] for e in normalized if not e.get("is_annual")}
                 added = [e for e in missing_list if e["end"] not in existing_ends]
                 if added:
                     normalized = sorted(normalized + added, key=lambda x: x["end"])
+
+        # タグ単位Q4逆算（[[LAYER3-DA-SBC-CANDIDATE-REGRESSION-1]]対応）:
+        # このタグ自身の年次・四半期エントリのみでQ4逆算を試みる。
+        tag_annual_for_q4 = [e for e in normalized if e.get("is_annual")]
+        tag_quarterly_for_q4 = [
+            e for e in normalized
+            if not e.get("is_annual") and not e.get("is_ytd")
+        ]
+        tag_q4_list = build_q4_implied_entries(tag_annual_for_q4, tag_quarterly_for_q4, field_name)
+        if tag_q4_list:
+            for e in tag_q4_list:
+                e["source_tag"] = concept
+            existing_ends = {e["end"] for e in normalized if not e.get("is_annual")}
+            added = [e for e in tag_q4_list if e["end"] not in existing_ends]
+            if added:
+                normalized = sorted(normalized + added, key=lambda x: x["end"])
+
         used_concepts.append(concept)
         per_tag_normalized.append(normalized)
 
