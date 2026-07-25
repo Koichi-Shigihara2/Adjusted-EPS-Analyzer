@@ -4966,6 +4966,42 @@ BKNGの株式数・1株当たり指標を参照する計算（EPS・希薄化率
 
 ---
 
+### [LAYER3-ANNUAL-QUARTERLY-COLLISION-1] _merge_normalized_by_priority()がis_annualを区別せずend日付でグルーピングし年次エントリが四半期エントリを黙って上書きする
+**優先度:** 高
+**分類:** バグ
+**登録日:** 2026-07-24
+**発見:** eps_basic/eps_diluted unitバグ修正後の105銘柄再検証
+
+#### 内容
+`_merge_normalized_by_priority()`がend日付のみをキーにエントリを
+グルーピングしており、`is_annual`（年次/四半期の別）を区別していない。
+カレンダー年決算企業では、年次エントリ（is_annual=True、365日）と
+「Q4単独開示」エントリ（fp='FY'だが実際は91日程度、is_annual=False）
+が同一end日付（例: 2024-12-31）を持つケースがあり
+（[[XBRL-TAG-KLAC-1]]と同型のパターン）、両方とも
+`_is_plausible_standalone_quarter()`を通過するため、
+`next((e for e in entries if ...), entries[0])`が単純にリスト先頭
+（年次エントリ）を採用し、四半期エントリを黙って破棄する。
+
+具体例（ABBV eps_basic、2024-12-31期）: 年次エントリval=2.40
+（FY全体）が採用され、本来の四半期エントリval=-0.02（91日）が
+破棄された。
+
+#### 影響
+eps_basic/eps_diluted unitバグ修正の再検証で11銘柄・22件
+（ABBV/BBAI/DELL/DOCN/ELF/ENTG/HON/JNJ/LYFT/MSCI/SOUN）で発見された。
+`_merge_candidate_entries()`を通る全フィールド（RPO・shares系除く）
+に理論上該当し得るが、他フィールドでの実際の発生有無は未確認。
+
+#### 対応方針
+未定。年次/四半期の別をグルーピングキーに含める、または
+`_is_plausible_standalone_quarter()`の判定を強化する等が候補。
+
+#### 着手条件
+なし（フェーズC実装前に解消必須）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
