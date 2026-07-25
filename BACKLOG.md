@@ -5215,6 +5215,28 @@ tests/test_ttm_calculator.pyの既存単体テスト3件が、新しいstore形�
 
 ---
 
+### [LAYER3-CROSS-TAG-YEARLY-QUARTERLY-GENERAL-RISK-1] _merge_normalized_by_priority()のキー単位独立選択が他フィールドでも年次/四半期クロスタグ混入を起こしうる一般的リスク
+**優先度:** 低
+**分類:** データ品質 / 要調査
+**登録日:** 2026-07-24
+**発見:** LAYER3-DA-SBC-CANDIDATE-REGRESSION-1対応方針検討時
+
+#### 内容
+_merge_normalized_by_priority()の「(end_date, is_annual)キーごとに
+独立して候補タグを評価・選択する」という設計は、DA/SBC以外の複数
+候補タグを持つ他フィールドでも、理論上同型の年次/四半期クロスタグ
+混入を起こしうる一般的な性質。今回はDA/SBCの範囲内でのみ実例を
+確認・修正するが、他フィールドでの発生有無は未調査。
+
+#### 対応方針
+未定。他の複数候補タグフィールド（LTDebt・SM・Revenue等）で同様の
+機械スキャンを行う必要がある。
+
+#### 着手条件
+なし（フェーズC完了の前提ではない、将来的な網羅性確認）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
