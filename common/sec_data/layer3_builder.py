@@ -113,6 +113,106 @@ def load_concept_definitions() -> dict:
 
 
 # ---------------------------------------------------------------------------
+# ticker_overrides（quarterly.py::TICKER_RESTRICTIONS移行、
+# [[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]対応）
+# ---------------------------------------------------------------------------
+
+def _get_ticker_field_override(concept_defs: dict, ticker: str, field_name: str) -> dict | None:
+    """
+    config/sec_concept_definitions.jsonのticker_overridesから、指定
+    ticker・field_nameに対応する単純除外/概念差し替え設定を取り出す。
+
+    ticker_overridesは銘柄によって以下2形式のいずれかを取る:
+    - 単一フィールド（field/action/override_concept/noteを直接持つ）
+    - 複数フィールド（overrides: [{field/action/...}, ...]のリスト）
+    どちらの形式でも、指定field_nameに一致するエントリを1件返す
+    （該当なしの場合はNone）。cross_filing_tags・注記専用エントリ
+    （GOOGLのnoteのみ等）はこの関数の対象外
+    （cross_filing_tagsは_apply_cross_filing_tags()参照）。
+    """
+    ticker_config = concept_defs.get("ticker_overrides", {}).get(ticker.upper())
+    if not ticker_config:
+        return None
+    override_list = ticker_config.get("overrides")
+    if override_list is None:
+        override_list = [ticker_config] if "field" in ticker_config else []
+    for override in override_list:
+        if override.get("field") == field_name:
+            return override
+    return None
+
+
+def _apply_cross_filing_tags(
+    company_facts: dict, concept_defs: dict, ticker: str, field_name: str, unit: str,
+) -> list:
+    """
+    ticker_overrides.{ticker}.cross_filing_tags.{field_name}を適用し、
+    期間・フォーム条件付きで複数タグを合算したエントリを生成する
+    （NVDA short_term_investments等、非上場投資先の上場等により
+    単一タグでの捕捉が不可能なケース向け）。
+
+    各ruleについて、componentsに列挙されたタグそれぞれから
+    end_date・forms条件に合致するエントリを検索し、valを合算する。
+    periodキーの型（int=annual、str "YYYYQN"=quarterly）でis_annualを
+    判定する。componentsのいずれかが見つからない場合はそのruleを
+    スキップする（不完全な合算をしない）。合算結果には
+    "cross_filing": Trueを付与する（is_implied等の既存フラグとは
+    別扱い。呼び出し元が既存end_dateへの追加のみに使うため、
+    _merge_normalized_by_priority()の再マージや優先順位判定の対象には
+    ならない）。
+    """
+    ticker_config = concept_defs.get("ticker_overrides", {}).get(ticker.upper())
+    if not ticker_config:
+        return []
+    rules = ticker_config.get("cross_filing_tags", {}).get(field_name)
+    if not rules:
+        return []
+
+    result: list = []
+    for rule in rules:
+        end_date = rule.get("end_date")
+        period = rule.get("period")
+        components = rule.get("components", [])
+        if not end_date or not components:
+            continue
+
+        total = 0.0
+        found_all = True
+        for comp in components:
+            raw_entries = _get_concept_units(company_facts, comp.get("tag", ""), unit)
+            forms = comp.get("forms", [])
+            match = next(
+                (e for e in raw_entries if e.get("end") == end_date and e.get("form") in forms),
+                None,
+            )
+            if match is None or match.get("val") is None:
+                found_all = False
+                break
+            total += match["val"]
+        if not found_all:
+            continue
+
+        is_annual = isinstance(period, int)
+        result.append({
+            "end": end_date,
+            "start": "",
+            "val": total,
+            "fp": "FY" if is_annual else str(period),
+            "fy": None,
+            "form": "",
+            "filed": "",
+            "accn": "",
+            "period_days": 0,
+            "is_ytd": False,
+            "is_annual": is_annual,
+            "cross_filing": True,
+            "approx_residual_pct": rule.get("approx_residual_pct"),
+        })
+
+    return result
+
+
+# ---------------------------------------------------------------------------
 # フィールド抽出（Layer2 candidatesベースのフォールバック）
 # ---------------------------------------------------------------------------
 
@@ -125,7 +225,7 @@ def _get_concept_units(company_facts: dict, concept: str, unit: str) -> list:
 
 
 def extract_field_raw_entries(
-    company_facts: dict, field_def: dict, field_name: str = "",
+    company_facts: dict, field_def: dict, field_name: str = "", ticker: str = "",
 ) -> tuple[list, str | None]:
     """
     Layer2のcandidatesからエントリを抽出する。
@@ -146,6 +246,12 @@ def extract_field_raw_entries(
     返す（呼び出し元は再度正規化しない。理由はモジュールdocstring・
     _merge_candidate_entries参照）。
 
+    tickerは[[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]対応のticker_
+    overrides適用箇所を明示するために保持する（exclude・
+    override_concept自体はbuild_ticker_store()の呼び出し前に
+    field_def.candidatesへ反映済みの前提で、本関数はその結果を
+    通常通り処理するのみ）。
+
     戻り値: (エントリのリスト, 採用したタグ名（複数採用時は"+"区切り）or None)
     """
     unit = field_def.get("unit", "USD")
@@ -161,11 +267,11 @@ def extract_field_raw_entries(
                 return processed, concept
         return [], None
 
-    return _merge_candidate_entries(company_facts, candidates, unit, field_name)
+    return _merge_candidate_entries(company_facts, candidates, unit, field_name, ticker)
 
 
 def _merge_candidate_entries(
-    company_facts: dict, candidates: list, unit: str, field_name: str = "",
+    company_facts: dict, candidates: list, unit: str, field_name: str = "", ticker: str = "",
 ) -> tuple[list, str | None]:
     """
     候補タグごとに独立して_process_entries()→_normalize_field_entries()を
@@ -786,7 +892,29 @@ def build_ticker_store(ticker: str) -> dict | None:
     fields_out: dict[str, dict] = {}
 
     for field_name, field_def in fields_def.items():
-        raw_entries, source_tag = extract_field_raw_entries(company_facts, field_def, field_name)
+        # ticker_overrides（[[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]
+        # 対応）: 抽出処理そのものに入る前に、この銘柄・フィールドに
+        # 単純除外/概念差し替えの設定が無いか判定する。
+        override = _get_ticker_field_override(concept_defs, ticker, field_name)
+        if override and override.get("action") == "exclude":
+            # 抽出処理自体をスキップする（quarterly.py::build_raw_table()の
+            # excluded判定と同型）。
+            raw_entries, source_tag = [], None
+        elif override and override.get("action") == "override_concept":
+            # candidatesを銘柄固有タグ1件に完全に置き換えてから、通常の
+            # 抽出処理を行う（複数候補タグの混在によりタグ採用が不定に
+            # なる問題を避けるため、SOFI等のnoteが要求する「単一タグに
+            # 固定」を実現する）。
+            override_field_def = dict(field_def)
+            override_field_def["candidates"] = [override["override_concept"]]
+            raw_entries, source_tag = extract_field_raw_entries(
+                company_facts, override_field_def, field_name, ticker,
+            )
+        else:
+            raw_entries, source_tag = extract_field_raw_entries(
+                company_facts, field_def, field_name, ticker,
+            )
+
         if field_name in NO_CANDIDATE_MERGE_FIELDS:
             # NO_CANDIDATE_MERGE_FIELDSはextract_field_raw_entries()が
             # _process_entries()止まりの未正規化エントリを返すため、ここで正規化する。
@@ -798,6 +926,20 @@ def build_ticker_store(ticker: str) -> dict | None:
             # エントリが混在した状態で再度FYチェーン判定が走り、
             # クロスタグ混入バグを再発させかねないため適用しない。
             normalized_entries = raw_entries
+
+        # cross_filing_tags（NVDA short_term_investments等、
+        # [[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]対応）: 期間・フォーム
+        # 条件付きで複数タグを合算した値を、既存エントリに無いend_dateに
+        # のみ追加する（GrossProfitバックフィルと同様、既存エントリを
+        # 上書きしないため_merge_normalized_by_priority()の再実行は不要）。
+        cross_filing_entries = _apply_cross_filing_tags(
+            company_facts, concept_defs, ticker, field_name, field_def.get("unit", "USD"),
+        )
+        if cross_filing_entries:
+            existing_ends = {e["end"] for e in normalized_entries}
+            added = [e for e in cross_filing_entries if e["end"] not in existing_ends]
+            if added:
+                normalized_entries = sorted(normalized_entries + added, key=lambda x: x["end"])
 
         # 欠落四半期逆算（[[LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1]]対応）は
         # ここではなく_merge_candidate_entries()内、タグ単位・クロスタグ
