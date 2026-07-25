@@ -318,6 +318,72 @@ _calc_gross_profit()相当のバックフィル機能をlayer3_builder.pyに
 
 ---
 
+### ✅ [SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1] TICKER_RESTRICTIONS（9銘柄）のticker_overrides機構がbuild_ticker_store()に未実装
+**優先度:** 低
+**分類:** 既知の制限 / 移行未完了
+**完了日:** 2026-07-24
+**発見:** 残る161件の内訳再確認調査
+
+#### 内容
+【2026-07-24調査で判明、範囲を全面訂正】config/
+sec_concept_definitions.jsonのticker_overridesは、
+build_ticker_store()のどこからも読み込まれておらず、実質的に
+機能していない（MSFTのexcludeエントリを含め、config上に存在する
+だけで一切適用されない）。
+
+旧quarterly.py::TICKER_RESTRICTIONS（9銘柄: MSFT/APP/GOOGL/SOFI/
+IONQ/KLAC/TER/V/NVDA）は、現状のfield/action/note（3キー）形式
+では表現しきれない多様なパターンを持つ:
+- 単純除外（APP: CapEx除外）
+- 概念差し替え1件（IONQ/KLAC/TER/V: revenue_concept等1種類）
+- 概念差し替え複数同時（SOFI: revenue・LTDebt・
+  short_term_investmentsの3概念を同時差し替え）
+- 期間・フォーム種別条件付き複数タグ合算（NVDA:
+  cross_filing_tags、field/action/noteの枠組みと構造が根本的に
+  異なる）
+- 処理に影響しない警告ラベル（GOOGL: approximate/
+  note_discontinuous、quarterly.py本体はこれらのキーを一切読んで
+  いない）
+
+実データ確認済みの影響（7銘柄）: APP（除外すべき低品質CapExデータが
+素通し）・GOOGL（LTDebtが異常な急増パターン）・IONQ（revenue異常値、
+[[LAYER3-IONQ-REVENUE-2022Q1-ANOMALY-1]]と同一原因と確認）・KLAC・
+V（short_term_investments候補タグ全滅、0件）・TER
+（short_term_investments 2021年で更新停止）・NVDA
+（short_term_investments直近2期が欠落）。
+
+副次発見: MSFTのconfig側エントリは`field: "revenue"`だが、元の
+TICKER_RESTRICTIONSは`exclude: ["DA"]`であり、フィールドが一致
+していない（移行時の誤り、意図不明）。
+
+#### 影響
+SOFIのrevenue（TTM含む）が正しい概念（金融機関向け
+RevenuesNetOfInterestExpense）を使わず、通常のRevenues系タグに
+フォールバックした値になる。
+
+#### 対応方針
+未定。少なくとも3種類の異なる仕組みが必要: (1)
+ticker_overridesを実際に読み込み適用する機構自体の実装、(2)
+単純除外・概念差し替え（単一・複数）に対応するスキーマ拡張、(3)
+cross_filing_tags（期間・フォーム条件付き複数タグ合算）は既存の
+候補タグ探索の枠組みと別構造のため個別設計が必要。approximate/
+note_discontinuousは処理に影響しない注記のため、そのまま
+コメント欄として引き継ぐのみでよい。
+
+【2026-07-24対応完了】コミット46d05a542。ticker_overrides機構を
+実装（extract_field_raw_entries()等にticker引数を追加、単純除外・
+概念差し替え〈単一・複数同時〉・cross_filing_tagsの3パターンに
+対応）。9銘柄中8銘柄（APP/IONQ/KLAC/V/TER/SOFI/NVDA/MSFT）で意図
+通りの解消を確認、96銘柄への影響ゼロ。GOOGLは旧TICKER_RESTRICTIONS
+自体がLTDebt向けの概念差し替え設定を持たず（approximate/
+note_discontinuousは処理に影響しない注記のみ）、今回のスコープ外と
+判断（新規オーバーライドの追加は別途要否を検討）。TTM系列レベルで
+438件→426件に減少（IONQ・SOFI由来のrevenue/gross_profit異常値解消
+分）、新規差異ゼロ。MSFTのconfig不整合（field: revenue→
+depreciation_and_amortization）も本対応で是正済み。
+
+---
+
 ### ✅ [LAYER3-IMPLIED-BLOCKS-FALLBACK-1] タグ単位の欠落四半期逆算が優先タグの空スロットを埋め、下位候補への実報告値フォールバックを阻害する
 **優先度:** 中〜高
 **分類:** バグ
