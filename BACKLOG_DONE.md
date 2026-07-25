@@ -166,6 +166,71 @@ diff 1件（SOFI）はticker_restrictions未移行という別件の既知事項
 
 ---
 
+### ✅ [LAYER3-ANNUAL-QUARTERLY-COLLISION-1] _merge_normalized_by_priority()がis_annualを区別せずend日付でグルーピングし年次エントリが四半期エントリを黙って上書きする
+**優先度:** 高
+**分類:** バグ
+**完了日:** 2026-07-24
+**発見:** eps_basic/eps_diluted unitバグ修正後の105銘柄再検証、
+2026-07-24登録
+
+#### 内容
+`_merge_normalized_by_priority()`がend日付のみをキーにエントリを
+グルーピングしており、`is_annual`（年次/四半期の別）を区別していない。
+カレンダー年決算企業では、年次エントリ（is_annual=True、365日）と
+「Q4単独開示」エントリ（fp='FY'だが実際は91日程度、is_annual=False）
+が同一end日付（例: 2024-12-31）を持つケースがあり
+（[[XBRL-TAG-KLAC-1]]と同型のパターン）、両方とも
+`_is_plausible_standalone_quarter()`を通過するため、
+`next((e for e in entries if ...), entries[0])`が単純にリスト先頭
+（年次エントリ）を採用し、四半期エントリを黙って破棄する。
+
+具体例（ABBV eps_basic、2024-12-31期）: 年次エントリval=2.40
+（FY全体）が採用され、本来の四半期エントリval=-0.02（91日）が
+破棄された。
+
+【2026-07-24 波及範囲調査】105銘柄×28フィールド全数スキャンの
+結果、16フィールド・16銘柄（ABBV/BBAI/CWAN/DELL/DOCN/ELF/ENTG/
+FROG/HON/HQY/JNJ/LYFT/MSCI/SOUN/SPIR）・計234件で同一end日付の
+年次/四半期衝突を確認した。内訳:
+- パターンA（68件）: Q4_IMPLIED_FIELDS所属フィールドで、四半期
+  エントリ喪失後もbuild_q4_implied_entries()が独立に同じ値を
+  再計算し偶然「回復」していた（設計上の安全策ではなく偶然の
+  内部整合性による）
+- パターンB（156件、真の恒久的データ欠損）: eps_basic/eps_diluted
+  全件、およびQ1〜Q3データ自体が欠落気味の銘柄（BBAI・SOUN・FROG・
+  MSCI・LYFT等）でQ4逆算が発火せず回復されなかったケース
+- パターンC（4件）: DELLのnet_incomeで、逆に四半期エントリが
+  衝突に勝ち年次エントリが消失（回復機構なし）
+
+既存の回帰レポート（1〜3回目）は各フィールドの「最新四半期のみ」を
+突合対象としていたため、234件中231件（過去の四半期時点で発生）は
+検出できていなかった。回帰レポート自体の検証範囲が不十分だった
+ことも本件の一部として記録する。
+
+#### 影響
+eps_basic/eps_diluted unitバグ修正の再検証で11銘柄・22件
+（ABBV/BBAI/DELL/DOCN/ELF/ENTG/HON/JNJ/LYFT/MSCI/SOUN）で発見された。
+`_merge_candidate_entries()`を通る全フィールド（RPO・shares系除く）
+に理論上該当し得るが、他フィールドでの実際の発生有無は未確認。
+
+#### 対応方針
+未定。年次/四半期の別をグルーピングキーに含める、または
+`_is_plausible_standalone_quarter()`の判定を強化する等が候補。
+
+【2026-07-24対応完了】コミットee1a5479a。
+`_merge_normalized_by_priority()`のグルーピングキーを
+end_dateのみから(end_date, is_annual)の複合キーに変更し、年次・
+四半期エントリを別スロットに分離、同一end_dateでの競合自体を
+解消した。105銘柄回帰で228件（重複排除後）全て解消を確認。
+下流のQ4逆算処理も、以前は衝突で失われた四半期値を偶然回復して
+いた箇所が、本来の四半期エントリをそのまま保持する形に是正された
+ことを確認済み。なお[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]
+（DELL 181日エントリの誤分類自体）は本タスクでは未解消・別タスクの
+まま（両エントリが保持されるようになったため実害は解消したが、
+分類自体の正しさは別途対応が必要）。
+
+---
+
 ## 2026-07-22（完了）
 
 ### ✅ [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
