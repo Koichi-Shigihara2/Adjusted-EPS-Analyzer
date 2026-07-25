@@ -5182,6 +5182,29 @@ _merge_normalized_by_priority()の「(end_date, is_annual)キーごとに
 
 ---
 
+### [LAYER3-ASTS-DDOG-Q4-RESIDUAL-1] ASTS/revenue・DDOG/net_incomeで単独タグ計算値と旧normalized/の値が不一致
+**優先度:** 低
+**分類:** データ品質 / 要調査
+**登録日:** 2026-07-24
+**発見:** q4_implied.py単独タグ完結フォールバック実装時のTTM回帰
+
+#### 内容
+ASTS/revenue・DDOG/net_incomeで、新パイプラインの単独タグ計算値と
+旧normalized/の値が不一致。DDOGは原因判明済み（ProfitLossタグ単独
+では自己完結し45,594,000だが、旧データは断片エントリに起因する
+別値119,563,000）。ASTSは未調査（前タスクで単独タグ計算値が旧
+データと不一致と判明済みだが、どちらが正しいか未検証）。
+
+#### 対応方針
+未定。DDOGは旧データ側の断片エントリ（過去に発見した30日間の異常な
+断片エントリ）が原因と推測されるため、新パイプラインの値が正しい
+可能性が高い。ASTSは個別調査が必要。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
