@@ -260,16 +260,28 @@ class TestValidateFieldClassification:
         )
 
     def test_real_field_concepts_fully_classified(self):
-        """quarterly.py::FIELD_CONCEPTSとttm_calculator.pyの実際の分類セットが
-        現時点で矛盾なく全件分類されていることの統合確認（ttm_calculator.py
+        """Layer2フィールド定義（config/sec_concept_definitions.json::fields、
+        snake_case・32キー）とttm_calculator.pyの実際の分類セットが現時点で
+        矛盾なく全件分類されていることの統合確認（ttm_calculator.py
         モジュールロード時に同じチェックが既に走っているが、import副作用に
-        依存しない明示的な回帰テストとしてここでも確認する）"""
-        from common.sec_data.quarterly import FIELD_CONCEPTS
+        依存しない明示的な回帰テストとしてここでも確認する）。
+
+        フェーズC対応: ttm_calculator.py本体の突合対象がquarterly.py::
+        FIELD_CONCEPTS（PascalCase）からLayer2フィールド定義（snake_case）へ
+        切り替わったため、本テストも実際の本番コードと同じ参照元に揃える。
+        quarterly.py::FIELD_CONCEPTS自体は、ttm_calculator.pyがこの完全性
+        チェックの対象として消費しなくなった（Layer2定義に置き換わった）
+        ため、FIELD_CONCEPTS単体を検証する同種のテストは維持しない
+        （normalizer.py等はFIELD_CONCEPTSを直接参照するが、本チェックが
+        保証する「flow/stock/shares/excludedのいずれかへの全件分類」という
+        契約自体を要求してはいない）。"""
+        from common.sec_data.layer3_builder import load_concept_definitions
         from common.sec_data.ttm_calculator import (
             FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
         )
+        layer3_field_defs = load_concept_definitions().get("fields", {})
         validate_field_classification(
-            FIELD_CONCEPTS, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
+            layer3_field_defs, FLOW_FIELDS, STOCK_FIELDS, SHARES_FIELDS, EXCLUDED_FIELDS,
         )
 
 

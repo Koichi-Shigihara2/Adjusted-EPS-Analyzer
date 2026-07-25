@@ -19,6 +19,7 @@ from common.sec_data.fetcher import SECFetcher, load_company_facts
 from common.sec_data.parser import SECParser
 from common.sec_data.quarterly import build_raw_table, save_raw_table, check_revenue_quality
 from common.sec_data.normalizer import normalize, save_normalized
+from common.sec_data.layer3_builder import build_ticker_store
 from common.sec_data.ttm_calculator import calc_ttm_series, save_ttm_series
 from common.sec_data.revenue_tag_conflict_check import check_revenue_tag_conflict, _format_conflict
 
@@ -128,13 +129,18 @@ def main():
         except Exception as e:
             print(f"   [WARN] タグ競合チェックエラー: {e}")
 
-        # 5. TTMシリーズ生成
+        # 5. TTMシリーズ生成（フェーズC対応: 入力元をnormalize()の戻り値
+        #    からbuild_ticker_store()の戻り値〈Layer3、インメモリ〉に切替）
         try:
-            ttm_series = calc_ttm_series(ticker, normalized)
-            save_ttm_series(ticker, ttm_series)
-            n = len(ttm_series)
-            fields_sample = list(ttm_series[0].get("flow", {}).keys()) if ttm_series else []
-            print(f"   TTM: {n} periods → {fields_sample[:5]}...")
+            store = build_ticker_store(ticker)
+            if store is None:
+                print(f"   [WARN] Layer3ストア構築失敗 → TTMスキップ")
+            else:
+                ttm_series = calc_ttm_series(ticker, store)
+                save_ttm_series(ticker, ttm_series)
+                n = len(ttm_series)
+                fields_sample = list(ttm_series[0].get("flow", {}).keys()) if ttm_series else []
+                print(f"   TTM: {n} periods → {fields_sample[:5]}...")
         except Exception as e:
             print(f"   [WARN] TTM計算エラー: {e}")
 

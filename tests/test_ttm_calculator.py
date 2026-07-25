@@ -74,43 +74,53 @@ class TestBuildQ4QuarterlyEntriesDedup:
     def test_calc_ttm_series_no_duplicate_end_dates_in_window(self):
         # 統合テスト: calc_ttm_series が直近4Qに同一end日付を重複させないこと
         # (BUG-TTM-Q4DUP-1 再発防止の回帰テスト)
-        normalized = {
+        # フェーズC対応: store形状（{"fields": {name: {"entries": [...]}}}）
+        # ・snake_caseフィールド名（FLOW_FIELDSに合わせる。anchor選択の
+        # all_end_datesがFLOW_FIELDSのみを走査するため、FLOW_FIELDSに
+        # 属さないフィールド名だとanchorが1件も選ばれずseriesが空になる）
+        store = {
             "fields": {
-                "NetIncome": [
-                    _q("2024-03-31", "2024-01-01", 10),
-                    _q("2024-06-30", "2024-04-01", 20),
-                    _q("2024-09-30", "2024-07-01", 30),
-                    _q("2024-12-31", "2024-09-30", 940, is_implied=True),  # 永続化済みimplied Q4
-                    _q("2025-03-31", "2025-01-01", 50),
-                    _annual("2024-12-31", "2024-01-01", 1000),
-                ],
+                "net_income": {
+                    "entries": [
+                        _q("2024-03-31", "2024-01-01", 10),
+                        _q("2024-06-30", "2024-04-01", 20),
+                        _q("2024-09-30", "2024-07-01", 30),
+                        _q("2024-12-31", "2024-09-30", 940, is_implied=True),  # 永続化済みimplied Q4
+                        _q("2025-03-31", "2025-01-01", 50),
+                        _annual("2024-12-31", "2024-01-01", 1000),
+                    ],
+                },
             }
         }
-        series = calc_ttm_series("TEST", normalized, n_periods=1)
+        series = calc_ttm_series("TEST", store, n_periods=1)
         assert len(series) == 1
         ni_entries_end_dates = ["2025-03-31", "2024-12-31", "2024-09-30", "2024-06-30"]
         # 重複排除後の正しい4Q合計: 50 + 940 + 30 + 20 = 1040
-        assert series[0]["flow"]["NetIncome"]["val"] == 50 + 940 + 30 + 20
-        assert series[0]["flow"]["NetIncome"]["quarters_used"] == 4
+        assert series[0]["flow"]["net_income"]["val"] == 50 + 940 + 30 + 20
+        assert series[0]["flow"]["net_income"]["quarters_used"] == 4
 
 
 class TestCalcTtmSeriesNullValGuard:
     """TTM-NULL-1: calc_ttm_series() の4Q合算で val=None がTypeErrorを起こさないことを保証する"""
 
     def test_none_val_in_series_window_treated_as_zero(self):
-        normalized = {
+        # フェーズC対応: store形状・snake_caseフィールド名（理由は
+        # test_calc_ttm_series_no_duplicate_end_dates_in_window参照）
+        store = {
             "fields": {
-                "OCF": [
-                    _q("2025-03-31", "2025-01-01", None),
-                    _q("2024-12-31", "2024-10-01", 100.0),
-                    _q("2024-09-30", "2024-07-01", 200.0),
-                    _q("2024-06-30", "2024-04-01", 150.0),
-                ],
+                "operating_cash_flow": {
+                    "entries": [
+                        _q("2025-03-31", "2025-01-01", None),
+                        _q("2024-12-31", "2024-10-01", 100.0),
+                        _q("2024-09-30", "2024-07-01", 200.0),
+                        _q("2024-06-30", "2024-04-01", 150.0),
+                    ],
+                },
             }
         }
-        series = calc_ttm_series("TESTCO3", normalized, n_periods=1)
+        series = calc_ttm_series("TESTCO3", store, n_periods=1)
         assert len(series) == 1
-        assert series[0]["flow"]["OCF"]["val"] == 450.0
+        assert series[0]["flow"]["operating_cash_flow"]["val"] == 450.0
 
 
 class TestCurrentAssetsLiabilitiesStockFieldsClassification:
@@ -123,11 +133,12 @@ class TestCurrentAssetsLiabilitiesStockFieldsClassification:
     いるため、分類メンバーシップの検証（本クラス）は引き続き意味を持つ。"""
 
     def test_current_assets_and_liabilities_are_in_stock_fields(self):
-        assert "CurrentAssets" in STOCK_FIELDS
-        assert "CurrentLiabilities" in STOCK_FIELDS
+        # フェーズC対応: STOCK_FIELDSはsnake_case（Layer2/config準拠）
+        assert "current_assets" in STOCK_FIELDS
+        assert "current_liabilities" in STOCK_FIELDS
 
     def test_current_assets_and_liabilities_not_in_excluded_fields(self):
         """STOCK_FIELDSとEXCLUDED_FIELDSは排他的であるべき
         （両方に入っていると分類は通るが二重計上・意味の混乱を招く）"""
-        assert "CurrentAssets" not in EXCLUDED_FIELDS
-        assert "CurrentLiabilities" not in EXCLUDED_FIELDS
+        assert "current_assets" not in EXCLUDED_FIELDS
+        assert "current_liabilities" not in EXCLUDED_FIELDS
