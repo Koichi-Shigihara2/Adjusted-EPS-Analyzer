@@ -5084,11 +5084,31 @@ depreciation_and_amortization（82件）・stock_based_compensation
 期間でquarters_usedが増加（1→2、2→3等）する改善方向だが、BSY・PM
 等一部銘柄で逆に減少するケースがあり、個別要因は未特定。
 
+【2026-07-24再調査】オリジナル登録時の「quarters_used減少」6件
+（DA: IOT・SOUN、SBC: CRM・NVDA・PM）は、その後の一連の実装
+（欠落四半期逆算・is_implied優先順位変更）により全て解消済み。
+
+残る37件（DA 28件・SBC 9件、対象: DA=ALAB/BSY/DDOG/ELF/FICO/JOBY/
+PEP/SOUN/SPIR、SBC=APGE/BKNG/CART/ESTC/RCAT）は原因を特定できた:
+source_tagが複数タグの"+"結合（例:
+DepreciationDepletionAndAmortization+
+AmortizationOfIntangibleAssets）になっているケースで、
+_merge_normalized_by_priority()が四半期スロットと年次スロットを
+それぞれ独立に別タグから採用してしまい、q4_implied.py（Q4逆算）が
+性質の異なる2つのタグ由来の値を組み合わせて意味のない値を生成する
+（BSYで実際にマイナスのQ4逆算値を確認）。今回の一連の実装とは
+無関係の、以前から存在する別種の問題と判明。
+
 #### 対応方針
-未定。BSY・PM等の減少ケースを個別調査する必要がある。
+未定。q4_implied.py（またはその手前の候補タグ選択）が、年次
+スロットと四半期スロットで同一タグ由来のエントリを使うことを保証
+する仕組みが必要（現状は(end_date, is_annual)キーごとに独立して
+候補タグを選ぶため、キー間でタグが食い違いうる）。
 
 #### 着手条件
-なし
+なし。ただし[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]・
+[[LAYER3-IMPLIED-BLOCKS-FALLBACK-1]]と関連する同系統の問題のため、
+併せて検討する
 
 ---
 
