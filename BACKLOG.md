@@ -5043,45 +5043,6 @@ shares_dilutedはNO_CANDIDATE_MERGE_FIELDS（今回の変更対象外パス）
 
 ---
 
-### [LAYER3-GROSSPROFIT-BACKFILL-MISSING-1] normalizer.py相当のGrossProfitバックフィル機能がlayer3_builder.pyに未実装
-**優先度:** 中
-**分類:** 未実装機能 / データ品質
-**登録日:** 2026-07-24
-**発見:** フェーズC実装、TTM系列全体（複数年）での105銘柄回帰
-
-#### 内容
-normalizer.py::_calc_gross_profit()（Revenue−cost_of_revenueから
-のGrossProfit逆算バックフィル）がlayer3_builder.pyに未実装
-（フェーズA当初からモジュールdocstringに既知の制限として明記済み）。
-TTM系列全体（最大6期・約5年分）での回帰確認で135件の差異として
-初めて規模が判明した（単一四半期の最新値のみを見る従来の回帰
-チェックでは見えなかった）。GrossProfitタグを直接開示しない期を
-持つ銘柄（ABBV/HON等）で、古い期間のquarters_usedが減少する。
-
-【2026-07-24実装前調査】store（Layer3）レベルでの欠落は508件・
-30銘柄（TTM系列レベルの登録済み128件とは母数が異なる、1欠落四半期が
-複数TTM anchorに波及するため単純な倍数関係にはならない）。
-
-このうち11銘柄（BKNG/CDNS/CEG/CPRT/FLYW/INTU/JOBY/VST/VZ/V/XOM）は
-revenueは存在するがcost_of_revenue候補タグ自体が1件も存在しない
-ため、バックフィル実装後もGrossProfit欠落は解消されない見込み
-（normalizer.py側の既存ロジックも同条件でスキップするため、この
-制約は本タスク固有ではなく元の設計を踏襲した結果）。
-
-#### 影響
-フェーズC（ttm_calculator.py移行）の「値を変えない」という前提を
-満たせない規模になっている。
-
-#### 対応方針
-_calc_gross_profit()相当のバックフィル機能をlayer3_builder.pyに
-実装する。フェーズC完了の前提とするか、既知の制限として許容し
-フェーズD以降に持ち越すかの判断が必要。
-
-#### 着手条件
-なし（フェーズC完了可否の判断材料）
-
----
-
 ### [LAYER3-DA-SBC-CANDIDATE-REGRESSION-1] depreciation_and_amortization・stock_based_compensationのTTM系列で一部銘柄がquarters_used減少
 **優先度:** 低〜中
 **分類:** データ品質 / 要調査
