@@ -226,9 +226,24 @@ def _merge_candidate_entries(
 # FROG/LITE/VZで確認）はこの範囲より短いが正当なデータのため、
 # range外と判定された場合でも即座に破棄せず次候補を探索し、
 # 全候補が範囲外だった場合は元の優先候補の値を採用する
-# （データを失わないためのフォールバック、下記_pick_entry_for_end参照）。
+# （データを失わないためのフォールバック、下記_merge_normalized_by_priority参照）。
 _STANDARD_QUARTER_MIN_DAYS = 75
 _STANDARD_QUARTER_MAX_DAYS = 100
+
+# [[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]対応: 標準的な年次として
+# 妥当なperiod_daysの範囲。105銘柄×28フィールド全数のis_annual=True
+# エントリ（11,517件）のperiod_days分布を確認した結果、95%が
+# 363〜365日に、99%が370日以内に収まっていた。一方295日以下にも
+# 156件のクラスタ（180〜295日、300日未満）があり、これは
+# [[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]（quarterly.py::
+# _classify_period()のis_annual判定に上限が無く、中間的な期間長の
+# エントリを誤ってis_annual=Trueに分類するバグ）の実例と判明した
+# （DELL等）。300日を下限とすることで、この誤分類クラスタと明確に
+# 分離できる（_classify_period()自身が持つdays>300の代替分岐と
+# 一致させた値）。上限400日は53週決算年度等の変則的な年度長にも
+# 余裕を持たせるための保守的な値。
+_STANDARD_ANNUAL_MIN_DAYS = 300
+_STANDARD_ANNUAL_MAX_DAYS = 400
 
 
 def _is_plausible_standalone_quarter(e: dict) -> bool:
@@ -246,30 +261,52 @@ def _is_plausible_standalone_quarter(e: dict) -> bool:
     return _STANDARD_QUARTER_MIN_DAYS <= period_days <= _STANDARD_QUARTER_MAX_DAYS
 
 
+def _is_plausible_annual(e: dict) -> bool:
+    """
+    標準的な年次として妥当なperiod_daysか判定する
+    （[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]対応）。
+    period_days=0（instant fact）はチェック対象外。
+    """
+    period_days = e.get("period_days")
+    if not period_days:
+        return True
+    return _STANDARD_ANNUAL_MIN_DAYS <= period_days <= _STANDARD_ANNUAL_MAX_DAYS
+
+
 def _merge_normalized_by_priority(per_tag_normalized: list) -> list:
     """
     候補タグごとに正規化済みの系列（per_tag_normalizedの並び順＝
-    candidatesの優先順位）を、end_date単位で優先順位マージする。
-    優先タグ（リスト先頭）にその期間のエントリがあれば採用し、
-    なければ次候補にフォールバックする。
+    candidatesの優先順位）を、(end_date, is_annual)の複合キー単位で
+    優先順位マージする。優先タグ（リスト先頭）にその期間・区分の
+    エントリがあれば採用し、なければ次候補にフォールバックする。
 
-    [[LAYER3-MISSING-QUARTER-IMPLIED-GAP-1]]対応: 優先タグのエントリが
-    標準的な単四半期として妥当なperiod_daysの範囲から外れている場合
-    （優先タグ自体が特定四半期の報告を欠落させ、隣接四半期と合算した
-    値を報告しているケース。RCAT等で確認）、そのエントリを不採用とし、
-    次候補タグの同一end_dateのエントリを探す。全候補が範囲外だった
-    場合は、データを完全に失わないよう最も優先度の高い候補の値に
-    フォールバックする（27〜55日の正当な短期スタブ期間等を誤って
-    欠落させないため）。
+    [[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]対応: end_dateのみをキーに
+    すると、カレンダー年決算企業の年次エントリ（is_annual=True、365日
+    前後）と「Q4単独開示」エントリ（fp='FY'だが実際は91日程度、
+    is_annual=False）が同一end_dateを持つ場合に競合し、一方が黙って
+    破棄される問題があった（[[XBRL-TAG-KLAC-1]]と同型のパターン）。
+    is_annualをキーに含めることで、年次・四半期を別スロットに分離し、
+    両方とも最終出力に残す。
+
+    [[LAYER3-MISSING-QUARTER-IMPLIED-GAP-1]]対応: is_annual=False
+    スロット内で優先タグのエントリが標準的な単四半期として妥当な
+    period_daysの範囲から外れている場合（優先タグ自体が特定四半期の
+    報告を欠落させ、隣接四半期と合算した値を報告しているケース。RCAT
+    等で確認）、そのエントリを不採用とし、次候補タグの同一キーの
+    エントリを探す。is_annual=Trueスロットについても同様の妥当性判定
+    （_is_plausible_annual）を適用する。全候補が範囲外だった場合は、
+    データを完全に失わないよう最も優先度の高い候補の値にフォールバック
+    する（27〜55日の正当な短期スタブ期間等を誤って欠落させないため）。
     """
-    candidates_by_end: dict[str, list] = defaultdict(list)
+    candidates_by_key: dict[tuple, list] = defaultdict(list)
     for normalized in per_tag_normalized:
         for e in normalized:
-            candidates_by_end[e["end"]].append(e)
+            candidates_by_key[(e["end"], bool(e.get("is_annual")))].append(e)
 
     merged: list = []
-    for end, entries in candidates_by_end.items():
-        chosen = next((e for e in entries if _is_plausible_standalone_quarter(e)), entries[0])
+    for (end, is_annual), entries in candidates_by_key.items():
+        plausible_check = _is_plausible_annual if is_annual else _is_plausible_standalone_quarter
+        chosen = next((e for e in entries if plausible_check(e)), entries[0])
         merged.append(chosen)
 
     return sorted(merged, key=lambda x: x["end"])

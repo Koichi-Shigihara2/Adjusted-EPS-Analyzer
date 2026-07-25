@@ -276,19 +276,19 @@
     },
     "eps_basic": {
       "category": "flow",
-      "unit": "USD",
+      "unit": "USD/shares",
       "candidates": [
         "EarningsPerShareBasic"
       ],
-      "_note": "2026-07-24 categoryはflow/stock/shares/excludedのいずれにも既存分類の直接該当がないため、四半期ごとに独立して報告される値としてflowに暫定分類（要確認）"
+      "_note": "2026-07-24 categoryはflow/stock/shares/excludedのいずれにも既存分類の直接該当がないため、四半期ごとに独立して報告される値としてflowに暫定分類（要確認）。2026-07-25 [[LAYER3-EPS-UNIT-MISMATCH-1]]対応: unit指定を\"USD\"から\"USD/shares\"に修正（実際のSEC XBRL単位に合わせた。旧unit指定では105銘柄全数で完全に空になっていた）"
     },
     "eps_diluted": {
       "category": "flow",
-      "unit": "USD",
+      "unit": "USD/shares",
       "candidates": [
         "EarningsPerShareDiluted"
       ],
-      "_note": "2026-07-24 categoryの扱いはeps_basicと同じ暫定分類（要確認）"
+      "_note": "2026-07-24 categoryの扱いはeps_basicと同じ暫定分類（要確認）。2026-07-25 [[LAYER3-EPS-UNIT-MISMATCH-1]]対応: unit指定を\"USD\"から\"USD/shares\"に修正（同上）"
     },
     "cost_of_revenue": {
       "category": "excluded",
