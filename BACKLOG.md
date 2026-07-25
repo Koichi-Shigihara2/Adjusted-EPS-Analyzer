@@ -5212,6 +5212,34 @@ tests/test_ttm_calculator.pyの既存単体テスト3件が、新しいstore形�
 
 ---
 
+### [SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1] SOFIのrevenue_conceptオーバーライドがlayer3_builder.pyに未移行
+**優先度:** 低
+**分類:** 既知の制限 / 移行未完了
+**登録日:** 2026-07-24
+**発見:** 残る161件の内訳再確認調査
+
+#### 内容
+quarterly.py::TICKER_RESTRICTIONSにSOFI専用のrevenue_concept:
+"RevenuesNetOfInterestExpense"固定オーバーライドが存在するが、
+layer3_builder.pyは未移行（同ファイルdocstringに「MSFTのexcludeの
+みが簡易反映済み、他8銘柄は未移行」と既に明記されている既知の
+制限）。SOFIはこの「他8銘柄」の1つ。
+
+#### 影響
+SOFIのrevenue（TTM含む）が正しい概念（金融機関向け
+RevenuesNetOfInterestExpense）を使わず、通常のRevenues系タグに
+フォールバックした値になる。
+
+#### 対応方針
+未定。TICKER_RESTRICTIONS（9銘柄）全体のlayer3_builder.pyへの
+移行が必要（[[SEC_EDGAR_LAYER_DESIGN.md]] 4-1章「未確定事項」に
+既に記載済みの残作業）。
+
+#### 着手条件
+なし。フェーズC完了の前提（TTM revenueに影響するため）
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
