@@ -5245,6 +5245,39 @@ CONFLATION-1]]と同種の概念混在リスクに注意）かの判断が必要
 
 ---
 
+### [LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1] TTM回帰比較スクリプトが旧パイプライン非存在の新規フィールドを検証対象外にしている
+**優先度:** 中
+**分類:** テスト / 検証プロセスの欠陥
+**登録日:** 2026-07-24
+**発見:** SM/SGA分離258件全数検証
+
+#### 内容
+現行のTTM回帰比較スクリプトは、旧ttm/データが持つキーのみを起点に
+新旧を突合する設計（for pascal_key, old_val in old_flow.items():）
+のため、旧パイプラインに存在しなかった新規フィールド
+（selling_general_and_administrative等、Layer2スキーマ追加時に
+新設された6フィールド）は回帰比較の対象外になる。このため
+[[LAYER3-SGA-Q4-MISSING-1]]のような新規フィールド側のバグは、
+これまでの一連の回帰検証を何度実施しても一切検出されなかった。
+
+#### 影響
+新規追加6フィールド（short_term_investments・total_liabilities・
+eps_basic・eps_diluted・cost_of_revenue・
+selling_general_and_administrative）全てが、同様の「検証の死角」に
+入っている可能性がある。selling_general_and_administrative以外の
+5フィールドは未検証。
+
+#### 対応方針
+未定。回帰比較スクリプトを「新store側の全キーを起点に、旧データが
+存在すれば突合、存在しなければ新規フィールドとして別途整合性検証
+（Q4欠落・カットオフ・候補タグ網羅性等の内部チェック）を行う」設計に
+拡張する必要がある。
+
+#### 着手条件
+なし。フェーズD着手前に他5フィールドの検証を行うことを推奨
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
