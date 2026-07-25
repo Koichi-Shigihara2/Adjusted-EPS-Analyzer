@@ -5021,6 +5021,46 @@ eps_basic/eps_diluted unitバグ修正の再検証で11銘柄・22件
 
 ---
 
+### [QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1] _classify_period()のis_annual判定に上限が無く中間的な期間長を誤って年次扱いする
+**優先度:** 中〜高
+**分類:** バグ / SECデータ正規化
+**登録日:** 2026-07-24
+**発見:** [[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]波及範囲調査中の
+副次発見（DELL net_income 2023-08-04期の調査）
+
+#### 内容
+`quarterly.py::_classify_period()`（488-522行目）のis_annual判定は
+`form in ("10-K","10-K/A") and ((fp=='FY' and days>130) or
+days>300)`という基準で、130日という**下限のみ**設定されている
+（[[XBRL-TAG-KLAC-1]]対応として、fp='FY'だが実際は四半期程度
+〈89〜91日〉の期間を誤って年次扱いしないための下限）。**上限が
+存在しない**ため、181日（約6ヶ月累計）のような「四半期でも真の
+年次（365日前後）でもない」中間的な期間を持つエントリが
+is_annual=Trueに誤分類される。
+
+具体例: DELL（会計年度末は例年2月上旬）の2023-08-04期
+（181日、真の年度末ではない）が誤ってis_annual=Trueに分類されて
+いた。
+
+#### 影響
+このバグは`quarterly.py`という既存の本番コード（`normalized/`
+生成元）に存在するため、Layer3（新規コード）に限らず、現行の
+`normalized/`データ自体にも影響している可能性がある。会計年度末が
+暦年末以外の企業（DELL等）で、10-K内に埋め込まれた中間的な期間長の
+開示がある場合に発生しうる。影響範囲の全数調査は未実施。
+
+#### 対応方針
+未定。is_annualの上限（例: 300〜400日程度の範囲に限定する）を
+追加する対応が候補。[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]の
+根本修正とは別に、既存本番コードへの影響有無を別途確認する必要が
+ある。
+
+#### 着手条件
+なし。ただし本番`normalized/`への影響が疑われるため、優先度は
+[[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]と独立して判断すべき
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
