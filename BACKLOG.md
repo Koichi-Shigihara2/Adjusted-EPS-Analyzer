@@ -4904,9 +4904,9 @@ RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルと�
   フェーズA当初から「未実装（既知の制限）」と明記済みのスコープ外
   機能であり、新規バグではない。対応は当該バックフィル機能の
   layer3_builder.pyへの実装が必要（別タスク化を検討）
-- 残る未調査: short_term_investments（7件）・total_liabilities
-  （AVAV/ELF/ESTC 3件）。いずれもSTOCK分類のためTTM非対象、
-  フェーズD以降に持ち越し可
+- 残る未調査: cash_and_equivalents（PAYS/RCAT 2件）・
+  short_term_investments（7件）・total_liabilities（AVAV/ELF/ESTC
+  3件）。いずれもSTOCK分類のためTTM非対象、フェーズD以降に持ち越し可
 
 #### 対応方針
 未定。フェーズB以降で個別に原因調査する。
