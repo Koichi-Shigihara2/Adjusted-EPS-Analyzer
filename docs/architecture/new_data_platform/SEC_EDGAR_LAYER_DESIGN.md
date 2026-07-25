@@ -422,6 +422,40 @@ FLOW_FIELDSとnormalize()相当関数の出力キー名を同一コミットで
 同時変更する（片方だけ変更するとサイレントにデータが消えるため）。
 移行直後に105銘柄全数のTTM値回帰確認を行う。
 
+**【2026-07-24完了】** コミット`0148301c1`（tests/
+test_ttm_calculator.py・tests/test_contracts.py・
+common/sec_data/ttm_calculator.py・common/sec_data/update.py）。
+
+実装完了までに、layer3_builder.py（フェーズAの成果物）側で複数の
+バグを発見・修正した:
+- [[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]（タグ鮮度問題、候補
+  タグごと正規化→期間単位マージへの処理順序変更で解消）
+- [[LAYER3-MISSING-QUARTER-IMPLIED-GAP-1]]（優先タグ内欠落四半期、
+  period_days完全性チェック追加）
+- [[LAYER3-ANNUAL-QUARTERLY-COLLISION-1]]（年次/四半期の(end_date,
+  is_annual)複合キー分離）
+- [[LAYER3-Q4-IMPLIED-NOT-MIGRATED-1]]（Q4逆算のq4_implied.py統一、
+  PascalCase/snake_case両対応）
+- [[LAYER3-EPS-UNIT-MISMATCH-1]]（unit指定誤り修正）
+- [[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]（GrossProfitバックフィル
+  移植、全フィールドループ後処理として実装）
+- [[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]（ticker_overrides
+  機構の新規実装、9銘柄移行）
+- [[LAYER3-DA-SBC-CANDIDATE-REGRESSION-1]]（年次/四半期クロスタグ
+  混入、同一source_tagガード＋単独タグ完結フォールバック）
+- [[LAYER3-TTM-TEST-SUITE-SHAPE-MISMATCH-1]]（既存テストの新形状
+  対応）
+
+先頭欠落四半期逆算（H1YTD−Q2SA型、normalizer.py::
+_build_missing_quarter_implied_entries()相当）も本フェーズの過程で
+layer3_builder.pyへ移植した。
+
+TTM系列レベルの総不一致は、最初の回帰検証時点（633件）から410件
+まで減少。残る410件は既知の限界（selling_and_marketingのSM/SGA
+分離副作用等）または個別の残差（[[LAYER3-ASTS-DDOG-Q4-RESIDUAL-1]]
+は判定済みで対応不要と結論）であり、新規の未解明バグは残って
+いない。pytest 442件全通過（既知の無関係2件を除く）。
+
 **フェーズD（本体consumer切替、優先順位確定済み）**:
 1. TANUKI VALUATION本体（reader.py・pipeline.py） — 最大の影響範囲
    だが中核システムのため最優先。切替時は105銘柄全数の実データ回帰
