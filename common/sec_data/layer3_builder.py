@@ -667,6 +667,96 @@ def calc_fcf(ocf: float | None, capex: float | None, fl: float | None) -> float 
 # 銘柄単位のLayer3構築
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# GrossProfitバックフィル（[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]対応）。
+# normalizer.py::_calc_gross_profit()の移植。
+# ---------------------------------------------------------------------------
+
+def _index_quarterly_by_end(entries: list) -> dict:
+    """
+    非annualの四半期エントリをend日付でインデックス化する（valueではなく
+    エントリ全体を保持）。normalizer.py::_index_quarterly_by_end()と同一。
+
+    同一end日付に複数候補が存在する場合（単独四半期値=is_ytd Falseと、
+    まだ最終クリーンアップ前で残っている未解決の累積値=is_ytd Trueが
+    共存するケース）、単独四半期値を優先する。単独四半期値がない場合のみ
+    累積値にフォールバックし、同種同士では最新filed優先とする。
+    """
+    by_end: dict[str, list] = defaultdict(list)
+    for e in entries:
+        if e.get("is_annual"):
+            continue
+        by_end[e["end"]].append(e)
+
+    result: dict[str, dict] = {}
+    for end_date, candidates in by_end.items():
+        sa = [c for c in candidates if not c.get("is_ytd")]
+        pool = sa if sa else candidates
+        result[end_date] = max(pool, key=lambda x: x.get("filed", ""))
+    return result
+
+
+def _backfill_gross_profit(fields_out: dict) -> None:
+    """
+    gross_profitが欠落している四半期をrevenue − cost_of_revenueで
+    逆算する。normalizer.py::_calc_gross_profit()と同一のアルゴリズム
+    （[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]対応）。
+
+    build_ticker_store()の全フィールドループが完了した後の後処理として
+    呼び出すこと。config/sec_concept_definitions.jsonのフィールド定義
+    順序ではrevenueが7番目・cost_of_revenueが30番目と大きく離れており、
+    ループ内で参照するとcost_of_revenueが未処理のタイミングと衝突する
+    ため、ループ完了後の一括後処理でなければrevenue・cost_of_revenue
+    双方の最終値（マージ・欠落四半期逆算・Q4逆算まで完了済み）を確実に
+    参照できない。
+
+    fields_outを直接変更する（gross_profitキーのentriesに追加）。
+    既存gross_profitエントリのend日付には追加しない（上書きしない）ため
+    _merge_normalized_by_priority()の再実行は不要。出力エントリには
+    is_impliedではなく"backfilled": Trueを設定する（normalizer.py側の
+    既存規約を踏襲）。
+    """
+    gp_field = fields_out.get("gross_profit")
+    rev_field = fields_out.get("revenue")
+    cogs_field = fields_out.get("cost_of_revenue")
+    if gp_field is None or rev_field is None or cogs_field is None:
+        return
+
+    gp_entries = gp_field["entries"]
+    rev_entries = rev_field["entries"]
+    cogs_entries = cogs_field["entries"]
+
+    if not cogs_entries or not rev_entries:
+        return
+
+    # 既存gross_profitのend日付集合
+    gp_ends = {e["end"] for e in gp_entries if not e.get("is_annual")}
+
+    rev_by_end = _index_quarterly_by_end(rev_entries)
+    cogs_by_end = _index_quarterly_by_end(cogs_entries)
+
+    backfilled: list = []
+    for end_date, rev_entry in rev_by_end.items():
+        if end_date in gp_ends:
+            continue
+        cogs_entry = cogs_by_end.get(end_date)
+        if cogs_entry is None or rev_entry.get("val") is None or cogs_entry.get("val") is None:
+            continue
+        # revenue・cost_of_revenueは符号が正なので単純差分
+        gp_val = rev_entry["val"] - abs(cogs_entry["val"])
+        backfilled.append({
+            **{k: rev_entry[k] for k in ("end", "start", "fp", "fy", "form", "filed",
+                                          "period_days", "is_ytd", "is_annual")
+               if k in rev_entry},
+            "val": gp_val,
+            "accn": rev_entry.get("accn", ""),
+            "backfilled": True,
+        })
+
+    if backfilled:
+        gp_field["entries"] = sorted(gp_entries + backfilled, key=lambda x: x["end"])
+
+
 def build_ticker_store(ticker: str) -> dict | None:
     """
     1銘柄分のLayer3データ（32フィールド）を構築する。
@@ -753,6 +843,12 @@ def build_ticker_store(ticker: str) -> dict | None:
             "category": field_def.get("category"),
             "entries": normalized_entries,
         }
+
+    # GrossProfitバックフィル（[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]対応）。
+    # 全フィールドループ完了後の後処理。revenue・cost_of_revenue双方の
+    # 最終値を参照する必要があるため、ループ内ではなくここで実行する
+    # （理由は_backfill_gross_profit()のdocstring参照）。
+    _backfill_gross_profit(fields_out)
 
     return {
         "ticker": ticker,
