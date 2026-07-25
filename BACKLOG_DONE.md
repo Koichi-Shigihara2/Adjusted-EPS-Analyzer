@@ -231,6 +231,45 @@ end_dateのみから(end_date, is_annual)の複合キーに変更し、年次・
 
 ---
 
+### ✅ [LAYER3-Q4-IMPLIED-NOT-MIGRATED-1] layer3_builder.pyのQ4逆算がq4_implied.pyへ未移行のまま独自実装が残存していた
+**優先度:** 中
+**分類:** データ品質 / 設計不整合
+**完了日:** 2026-07-24（本来はフェーズC実装前の現状確認調査時に
+登録すべきだったが、登録漏れのまま2026-07-24中に対応完了。今回
+BACKLOG_DONE.mdへ遡って直接登録する）
+**発見:** フェーズC実装前の現状確認調査
+
+#### 内容
+[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応（フェーズB、コミット
+a7678d16c）でnormalizer.py・ttm_calculator.py・
+financial_trend_calculator.pyの3箇所をcommon/sec_data/q4_implied.py
+へ集約したが、layer3_builder.py（フェーズAの新規コード）は独自の
+Q4逆算実装（Q4_IMPLIED_FIELDS定数13フィールド・
+build_q4_implied_entries()関数）を持ったままで、q4_implied.pyへの
+移行が行われていなかった。両実装は適用フィールド範囲（13
+フィールド vs 和集合15フィールド）・None安全性・CapEx符号処理の
+扱いが異なっていた。
+
+#### 影響
+layer3_builder.pyの出力（store_v2/）は、finance_lease_payments・
+buybackについてQ4逆算エントリが生成されておらず、q4_implied.py
+経由の他3モジュールと整合しない状態だった。
+
+#### 対応方針・完了記録
+【2026-07-24対応完了】コミット76ff0cf1d。q4_implied.pyに
+PascalCase/snake_case両対応を追加し、layer3_builder.py独自の
+Q4逆算実装（13フィールドスコープ）をq4_implied.py呼び出しに置き換え。
+finance_lease_payments（26銘柄）・buyback（65銘柄）で新規にQ4逆算
+エントリが生成されることを確認（q4_implied.py側の既存生成数と完全
+一致）。既存13フィールドはidempotent、CapEx符号の二重適用
+（abs(abs(x))）も数学的に無害と確認済み。新規に発生した差異4件
+（finance_lease_payments: APP/CELH/KULR、buyback: PLTR）は全て
+比較対象normalized/側の未診断・不完全な状態に起因すると個別に実証
+確認済み（KULRは自前逆算で新Q4値と完全一致、PLTRはnormalized/側の
+start日付不整合という別の既知の限界が原因）。
+
+---
+
 ## 2026-07-22（完了）
 
 ### ✅ [REVIEW-1] 外部AIレビュー指摘・要調査案件（2026-06-15 レビュー由来）
