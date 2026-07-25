@@ -5182,6 +5182,38 @@ _merge_normalized_by_priority()の「(end_date, is_annual)キーごとに
 
 ---
 
+### [LAYER3-SGA-Q4-MISSING-1] selling_general_and_administrativeがQ4逆算・欠落四半期逆算どちらのスコープにも含まれておらずQ4が恒常的に欠落する
+**優先度:** 中〜高
+**分類:** バグ
+**登録日:** 2026-07-24
+**発見:** SM/SGA分離258件全数検証
+
+#### 内容
+selling_general_and_administrativeが、q4_implied.py::
+Q4_IMPLIED_FIELDS・layer3_builder.py::MISSING_QUARTER_IMPLIED_FIELDS
+のどちらのスコープにも含まれていない。年次・Q1・Q2・Q3は正しく
+取得できるが、Q4（多くの企業の12月決算年度末）が恒常的に欠落する。
+ABBVで実データ確認: 2024-12-31年次14,752,000,000・Q1〜Q3は正常
+だが、Q4単体・Q4逆算エントリともに0件。
+
+#### 影響
+42銘柄・171四半期に影響（ABBV/AMD/AVGO/BBAI/BROS/CAT/CIX/COHR/
+DELL/ELF/ENTG/FCX/FICO/GEV/HEI/HON/HWM/JNJ/JOBY/KLAC/KO/KULR/LITE/
+LLY/LOAR/LRCX/NVDA/PAYS/PEP/RDW/RKLB/RMBS/SCCO/SITM/TASK/TDY/TSLA/
+VRT/VST/VZ/WMT/WST/XOM）。selling_general_and_administrative自体が
+既存TTM回帰比較の対象外（旧パイプラインに存在しない新規フィールド
+のため）のため、これまでの不一致件数には一切反映されておらず可視化
+されていなかった。
+
+#### 対応方針
+未定。Q4_IMPLIED_FIELDS・MISSING_QUARTER_IMPLIED_FIELDS双方に
+selling_general_and_administrativeを追加する対応が候補。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
