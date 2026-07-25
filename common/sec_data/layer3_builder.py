@@ -161,11 +161,11 @@ def extract_field_raw_entries(
                 return processed, concept
         return [], None
 
-    return _merge_candidate_entries(company_facts, candidates, unit)
+    return _merge_candidate_entries(company_facts, candidates, unit, field_name)
 
 
 def _merge_candidate_entries(
-    company_facts: dict, candidates: list, unit: str,
+    company_facts: dict, candidates: list, unit: str, field_name: str = "",
 ) -> tuple[list, str | None]:
     """
     候補タグごとに独立して_process_entries()→_normalize_field_entries()を
@@ -182,9 +182,20 @@ def _merge_candidate_entries(
     （CPRT capital_expenditure・PEP他で実データ確認）。タグごとに
     独立して正規化を完了させてからマージすることで、この
     クロスタグ混入を構造的に防ぐ。
+
+    欠落四半期逆算（[[LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1]]対応）は
+    このタグ単位の正規化直後・クロスタグマージの前に適用する。マージ後
+    （_merge_normalized_by_priority）は(end_date, is_annual)複合キーで
+    候補を1件に絞り込むため、同一end_dateを持つYTD累計エントリと単独
+    四半期エントリ（例: H1 YTDとQ2単独）が競合し、標準的な単四半期の
+    period_days範囲外であるYTD側がマージの時点で破棄されてしまう
+    （post-merge適用で実際に検証し、対象87件中10件しか復元できなかった
+    ことを確認済み）。タグ単位・マージ前に適用することで、YTD累計
+    エントリがまだ生きている状態で欠落四半期を逆算できる。
     """
     used_concepts: list = []
     per_tag_normalized: list = []
+    apply_missing_quarter = field_name in MISSING_QUARTER_IMPLIED_FIELDS
     for concept in candidates:
         raw_entries = _get_concept_units(company_facts, concept, unit)
         if not raw_entries:
@@ -193,9 +204,17 @@ def _merge_candidate_entries(
         if not processed:
             continue
         normalized = _normalize_field_entries(processed)
-        if normalized:
-            used_concepts.append(concept)
-            per_tag_normalized.append(normalized)
+        if not normalized:
+            continue
+        if apply_missing_quarter:
+            missing_list = _build_missing_quarter_implied_entries(normalized)
+            if missing_list:
+                existing_ends = {e["end"] for e in normalized if not e.get("is_annual")}
+                added = [e for e in missing_list if e["end"] not in existing_ends]
+                if added:
+                    normalized = sorted(normalized + added, key=lambda x: x["end"])
+        used_concepts.append(concept)
+        per_tag_normalized.append(normalized)
 
     if not per_tag_normalized:
         return [], None
@@ -287,6 +306,18 @@ def _merge_normalized_by_priority(per_tag_normalized: list) -> list:
     （_is_plausible_annual）を適用する。全候補が範囲外だった場合は、
     データを完全に失わないよう最も優先度の高い候補の値にフォールバック
     する（27〜55日の正当な短期スタブ期間等を誤って欠落させないため）。
+
+    [[LAYER3-IMPLIED-BLOCKS-FALLBACK-1]]対応: 上記の選択はタグ優先順位
+    のみに従っていたため、優先タグに欠落四半期逆算（is_implied=True）
+    による派生値が新規に生成されると、それが実報告値（is_implied=False）
+    を持つ下位タグより先に採用されてしまう問題があった（ONDS
+    selling_and_marketing 2024Q1で実データ確認: 最優先タグの狭い概念
+    "広告費のみ"の派生値26,143が、次点タグの正しい報告値1,321,149より
+    先に採用されていた）。「実報告データは派生値より常に優先する」
+    原則をタグ優先順位より上位に置くため、①is_implied=Falseかつ妥当な
+    エントリをタグ優先順位順に探し、②該当が1件もない場合のみ
+    is_implied=Trueのエントリをタグ優先順位順に探す、の2段階選択に
+    変更する。
     """
     candidates_by_key: dict[tuple, list] = defaultdict(list)
     for normalized in per_tag_normalized:
@@ -296,7 +327,12 @@ def _merge_normalized_by_priority(per_tag_normalized: list) -> list:
     merged: list = []
     for (end, is_annual), entries in candidates_by_key.items():
         plausible_check = _is_plausible_annual if is_annual else _is_plausible_standalone_quarter
-        chosen = next((e for e in entries if plausible_check(e)), entries[0])
+        chosen = next(
+            (e for e in entries if not e.get("is_implied") and plausible_check(e)),
+            None,
+        )
+        if chosen is None:
+            chosen = next((e for e in entries if plausible_check(e)), entries[0])
         merged.append(chosen)
 
     return sorted(merged, key=lambda x: x["end"])
@@ -441,6 +477,163 @@ def _normalize_field_entries(raw_entries: list) -> list:
 
 
 # ---------------------------------------------------------------------------
+# 欠落四半期逆算（任意欠落四半期の逆算、[[LAYER3-ANCHOR-MISSING-LOOKBACK-
+# WINDOW-1]]対応）。normalizer.py::_build_missing_quarter_implied_entries()
+# の移植（先頭欠落パターンのみに限定した派生版）。
+#
+# 【末尾欠落パターンを対象外とした理由】normalizer.py版は先頭・末尾どちらの
+# 欠落も扱うが、末尾欠落（FY−Q1−Q2−Q3=Q4型）はq4_implied.pyの担当領域と
+# 数学的に同型である。本関数はタグ単位・クロスタグマージ前に適用するため、
+# 末尾欠落も扱うと「単一タグのみの視点」で独自にQ4相当を再計算してしまい、
+# マージ後の統合系列（複数タグ横断）を使う既存q4_implied.pyの結果と乖離する
+# ことが実データで判明した（DDOG NetIncome 2024-12-31: 旧パイプラインは
+# クロスタグマージ後の異常な断片エントリによりq4_implied.py側のQ4逆算が
+# 発火せず旧データはそのまま残っていたが、本関数はタグ単位のためこの断片を
+# 見ずに独自にQ4を再計算し、値が旧normalized/と乖離した。ASTS Revenue・
+# ONDS SMでも同型の乖離を確認）。末尾欠落はq4_implied.pyに完全に委ね、
+# 本関数は末尾欠落と重複しない先頭欠落パターンのみを扱う。
+# ---------------------------------------------------------------------------
+
+# 適用対象フィールド（スコープ制限）。normalizer.py::normalize()内の既存
+# 13フィールドスコープ（Revenue/_COGS/OCF/ICF/CFF/CapEx/RD/SM/SBC/DA/
+# NetIncome/OperatingIncome/GrossProfit）をsnake_caseで踏襲する。
+# q4_implied.py::Q4_IMPLIED_FIELDS（15フィールド、PascalCase）とは非対称
+# であり、finance_lease_payments・buybackは含まない（normalizer.py側が
+# 元々この2フィールドを欠落四半期逆算の対象にしていないため、既存動作を
+# 変えない範囲でスコープを揃える。詳細はq4_implied.pyのdocstring参照）。
+# この関数自体にはフィールド種別のガードが無く、shares/stock系フィールド
+# （shares_diluted等）に適用すると符号異常な値を生む（105銘柄スキャンで
+# 実データ確認済み）ため、呼び出し側は必ずこのスコープで絞り込むこと。
+MISSING_QUARTER_IMPLIED_FIELDS = frozenset({
+    "revenue", "cost_of_revenue",
+    "operating_cash_flow", "investing_cash_flow", "financing_cash_flow",
+    "capital_expenditure",
+    "research_and_development", "selling_and_marketing",
+    "stock_based_compensation", "depreciation_and_amortization",
+    "net_income", "operating_income", "gross_profit",
+})
+
+
+def _build_missing_quarter_implied_entries(entries: list) -> list:
+    """
+    複数四半期分のYTD累計（is_ytd=Trueのまま未解決で残っているエントリ、
+    または年次実績）から、既知の単独四半期を差し引いて、残る1四半期分の
+    値を逆算する。normalizer.py::_build_missing_quarter_implied_entries()
+    のアルゴリズムをベースに、**先頭欠落パターンのみ**に限定した派生版
+    （9ヶ月累計等の中間累計からも欠落四半期を復元できるようにする一般化。
+    例: H1 YTD − Q2単独 = Q1）。
+
+    対象スパン内にちょうど1四半期分の欠落がある場合のみ逆算する
+    （複数四半期欠落・重複計上の疑いがある場合は対象外とし何もしない）。
+    欠落位置は先頭（既知四半期群より前）のみ対応。末尾欠落
+    （FY−Q1−Q2−Q3=Q4型）はq4_implied.pyの担当領域のため対象外とし、
+    中間の飛び地も非対応（モジュール冒頭のコメント参照）。
+    """
+    cumulative_candidates = [
+        e for e in entries
+        if (e.get("is_annual") or e.get("is_ytd")) and e.get("val") is not None
+        and e.get("start") and e.get("end")
+    ]
+    known_quarters = [
+        e for e in entries
+        if not e.get("is_annual") and not e.get("is_ytd") and e.get("val") is not None
+    ]
+
+    result: list = []
+    for cand in cumulative_candidates:
+        c_start, c_end, c_val = cand["start"], cand["end"], cand["val"]
+        try:
+            span_days = (date.fromisoformat(c_end) - date.fromisoformat(c_start)).days
+        except (ValueError, TypeError):
+            continue
+
+        # 単一四半期未満のスパンは対象外（2四半期分=約150日以上のみ）
+        if span_days < 150:
+            continue
+        n_quarters = round(span_days / 91)
+        if n_quarters < 2:
+            continue
+
+        contained = [
+            q for q in known_quarters
+            if q.get("start", "") >= c_start and q.get("end", "") <= c_end
+        ]
+        if len(contained) != n_quarters - 1:
+            continue  # ちょうど1四半期分の欠落でなければ対象外（安全側に倒す）
+
+        contained_sorted = sorted(contained, key=lambda x: x["start"])
+        try:
+            covered_span = sum(
+                (date.fromisoformat(q["end"]) - date.fromisoformat(q["start"])).days
+                for q in contained_sorted
+            )
+        except (ValueError, TypeError):
+            continue
+        # 既知四半期の合計期間 + 欠落想定1四半期(約91日) がスパン全体と
+        # ほぼ一致することを確認（重複・飛び地の混入を防ぐ簡易チェック）
+        if abs(covered_span + 91 - span_days) > 20:
+            continue
+
+        first_known_start = contained_sorted[0]["start"]
+        if first_known_start <= c_start:
+            # 欠落四半期が先頭でない（末尾または中間の飛び地）。末尾欠落
+            # （FY−Q1−Q2−Q3=Q4型）はq4_implied.pyの担当領域のため、本関数
+            # では意図的に何もしない（モジュール冒頭のコメント参照）。
+            continue
+        # 欠落四半期は先頭（既知四半期群より前）
+        try:
+            missing_end = (
+                date.fromisoformat(first_known_start) - timedelta(days=1)
+            ).isoformat()
+        except (ValueError, TypeError):
+            continue
+        missing_start = c_start
+
+        missing_val = c_val - sum(q["val"] for q in contained_sorted)
+
+        try:
+            period_days = (date.fromisoformat(missing_end) - date.fromisoformat(missing_start)).days
+        except (ValueError, TypeError):
+            period_days = 90
+
+        result.append({
+            "end":         missing_end,
+            "start":       missing_start,
+            "val":         missing_val,
+            "fp":          "implied",
+            "fy":          cand.get("fy"),
+            "form":        cand.get("form", ""),
+            "filed":       cand.get("filed", ""),
+            "accn":        cand.get("accn", ""),
+            "period_days": period_days,
+            "is_ytd":      False,
+            "is_annual":   False,
+            "is_implied":  True,
+        })
+
+    # 複数の累計候補（例: 6ヶ月YTDと9ヶ月YTDの両方）が同一の欠落四半期を
+    # 独立に逆算することがあるため、(start, end) 単位で重複排除する。
+    # 値が食い違う場合は不整合として両方除外する（HQY GrossProfit/_COGS
+    # end=2021-04-30で実データ確認済みの挙動）。
+    by_period: dict[tuple, list] = defaultdict(list)
+    for e in result:
+        by_period[(e["start"], e["end"])].append(e)
+
+    deduped: list = []
+    for period, candidates in by_period.items():
+        vals = {round(c["val"], 2) for c in candidates}
+        if len(vals) == 1:
+            deduped.append(candidates[0])
+        else:
+            logger.warning(
+                "missing quarter implied value mismatch for %s: %s",
+                period, [c["val"] for c in candidates],
+            )
+
+    return deduped
+
+
+# ---------------------------------------------------------------------------
 # Q4逆算本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()に
 # 集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]・[[LAYER3-Q4-IMPLIED-
 # NOT-MIGRATED-1]]対応）。ここではimportして再利用する（上部import参照）。
@@ -516,6 +709,18 @@ def build_ticker_store(ticker: str) -> dict | None:
             # クロスタグ混入バグを再発させかねないため適用しない。
             normalized_entries = raw_entries
 
+        # 欠落四半期逆算（[[LAYER3-ANCHOR-MISSING-LOOKBACK-WINDOW-1]]対応）は
+        # ここではなく_merge_candidate_entries()内、タグ単位・クロスタグ
+        # マージ前に適用済み（マージ後に適用すると、同一end_dateを持つYTD
+        # 累計エントリと単独四半期エントリが競合し、YTD側がマージの時点で
+        # 破棄されてしまうため。詳細は_merge_candidate_entries()のdocstring
+        # 参照）。実行順序: ①タグ正規化 → ②欠落四半期逆算（タグ単位、上記
+        # extract_field_raw_entries内） → ③クロスタグマージ（同）→
+        # ④Q4逆算（下記、マージ後の統一系列に対して既存通り適用） →
+        # ⑤CapEx符号正規化（末尾、既存）。④が③の後段である理由: Q4逆算は
+        # 複数タグから拾い集めた四半期を使うことに意味があるため、タグ単位に
+        # 分離する必要がない（②とは異なりクロスタグ混入のリスクがない）。
+
         # field_nameがQ4_IMPLIED_FIELDS（q4_implied.py側、PascalCase/
         # snake_case両対応）に該当しない場合はbuild_q4_implied_entries()
         # 内部のガードにより空リストが返るため、ここでの事前フィルタは不要。
@@ -555,6 +760,15 @@ def build_ticker_store(ticker: str) -> dict | None:
         "layer2_schema_version": concept_defs.get("_schema_version"),
         "fields": fields_out,
     }
+
+
+def get_field_entries(store: dict, field_name: str) -> list:
+    """
+    build_ticker_store()の戻り値からフィールド名を指定してentriesを
+    取り出す（reader.py::get_quarterly_series()等と同じget_接頭辞の
+    既存命名慣習に準拠したLayer3用アクセサ、フェーズC対応）。
+    """
+    return store.get("fields", {}).get(field_name, {}).get("entries", [])
 
 
 def save_ticker_store(ticker: str, store: dict) -> str:
