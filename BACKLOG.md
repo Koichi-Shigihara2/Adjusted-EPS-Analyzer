@@ -5101,11 +5101,19 @@ raw XBRL上でval=1,070,000,000という値を持っており、これをその�
 窓に含まれるTTM期間（2023-03-31）にも波及することを確認。原因は
 同一（2022Q1の異常値そのもの）。
 
+【2026-07-24原因確定】旧TICKER_RESTRICTIONSのIONQエントリ
+（revenue_concept: "RevenueFromContractWithCustomerExcludingAssessedTax"、
+note: "2022年10-KのRevenuesタグがSPAC調達金($1,235M)を誤タグ"）と
+金額・時期とも完全一致。SEC提出データ自体の誤タグ付けであることが
+確定した（未検証ステータスを解除）。対応は
+[[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]（IONQのrevenue_concept
+固定オーバーライド移行）に一本化する。
+
 #### 対応方針
 未定。原因調査（他のSEC提出書類との突合）が必要。
 
 #### 着手条件
-なし
+[[SOFI-TICKER-RESTRICTIONS-NOT-MIGRATED-1]]の対応と一体で解消
 
 ---
 
