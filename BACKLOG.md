@@ -5061,6 +5061,33 @@ is_annual=Trueに誤分類される。
 
 ---
 
+### [SEC-XBRL-MISSING-START-ENTRY-1] raw XBRLにstart日付が欠落した変則的なエントリが含まれる
+**優先度:** 低
+**分類:** データ品質 / SEC提出データ異常
+**登録日:** 2026-07-24
+**発見:** LAYER3-ANNUAL-QUARTERLY-COLLISION-1根本修正後の
+105銘柄回帰レポート（4回目）
+
+#### 内容
+AVAV（accession 0001104659-26-078906、2026-06-29提出の新しい
+10-K）等で、raw XBRLに`start`日付が欠落した変則的なエントリが
+含まれており、shares_dilutedで比較対象normalized/生成後に到着した
+新規提出によるデータドリフトとして3件（AVAV/ELF/ESTC）の差異と
+して検出された。
+
+#### 影響
+shares_dilutedはNO_CANDIDATE_MERGE_FIELDS（今回の変更対象外パス）
+を通るため、今回の修正とは無関係。影響範囲・実害は未調査。
+
+#### 対応方針
+未定。start欠落エントリの扱い（除外するか、end日付のみで妥当性
+判定するか）の検討が必要。
+
+#### 着手条件
+なし
+
+---
+
 ## システム全体バックログ（TANUKI VALUATION以外）
 
 ### 【Stonks Silo】
