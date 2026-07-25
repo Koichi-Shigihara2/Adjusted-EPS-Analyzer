@@ -456,6 +456,38 @@ TTM系列レベルの総不一致は、最初の回帰検証時点（633件）�
 は判定済みで対応不要と結論）であり、新規の未解明バグは残って
 いない。pytest 442件全通過（既知の無関係2件を除く）。
 
+### フェーズC完了後に発覚した検証の死角（2026-07-24）
+
+フェーズC完了を「問題ゼロ」の基準で再点検した結果、TTM回帰の
+残差410件のうちselling_and_marketing 258件を個別検証したところ、
+これまでの回帰比較スクリプト自体の設計欠陥が判明した
+（[[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]）: 旧パイプライン
+に存在しなかった新規6フィールド（short_term_investments・
+total_liabilities・eps_basic・eps_diluted・cost_of_revenue・
+selling_general_and_administrative）は、旧ttm/データのキーを起点に
+突合する現行スクリプトでは検証対象に入らない「死角」になっていた。
+
+この死角を通じて、selling_general_and_administrativeに実際に2件の
+未解決バグが存在することが判明した:
+- [[LAYER3-SGA-Q4-MISSING-1]]（Q4_IMPLIED_FIELDS等のスコープに
+  未登録のためQ4が恒常的に欠落、42銘柄・171四半期）
+- [[LAYER3-GA-STANDALONE-TAG-UNMAPPED-1]]（GeneralAndAdministrative
+  Expense単体タグが32フィールドいずれにも未マッピング、
+  少なくとも6銘柄でSM・SGA両方が空になる）
+
+残る新規5フィールド（short_term_investments・total_liabilities・
+eps_basic・eps_diluted・cost_of_revenue）は、同種の死角に入ったまま
+未検証。次回セッションはこの5フィールドの個別検証
+（[[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]着手時、または
+個別に）から再開することを推奨する。
+
+**フェーズCの完了判定について**: コード自体（ttm_calculator.py・
+update.py）はコミット済みだが、「原因不明の問題がゼロ件」という
+基準では未達成のまま本日のセッションを終了する。次回はこの3件
+（[[LAYER3-SGA-Q4-MISSING-1]]・[[LAYER3-GA-STANDALONE-TAG-
+UNMAPPED-1]]・[[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]）の
+解消、および死角に入っている残り5フィールドの検証から再開する。
+
 **フェーズD（本体consumer切替、優先順位確定済み）**:
 1. TANUKI VALUATION本体（reader.py・pipeline.py） — 最大の影響範囲
    だが中核システムのため最優先。切替時は105銘柄全数の実データ回帰
