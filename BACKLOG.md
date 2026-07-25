@@ -4893,10 +4893,20 @@ RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルと�
 **発見:** フェーズA（layer3_builder.py）105銘柄回帰レポート
 
 #### 内容
-以下、原因未調査・件数少・影響小の差異が回帰レポートで検出された:
-capital_expenditure（LLY 1件）・stock_based_compensation（CAT 1件）・
-gross_profit（ABBV/HON 2件）・cash_and_equivalents（PAYS/RCAT 2件）・
-short_term_investments（7件）・total_liabilities（AVAV/ELF/ESTC 3件）。
+【2026-07-24再調査】
+- capital_expenditure（LLY）・stock_based_compensation（CAT）:
+  解消済み。一連の修正（候補タグ正規化順序変更・優先タグ内欠落
+  フォールバック・年次/四半期複合キー分離・Q4逆算統一）の副次効果と
+  推定される（どの修正が直接要因かは未特定）
+- gross_profit（ABBV/HON）: 原因判明。normalizer.py::
+  _calc_gross_profit()（Revenue−cost_of_revenueからのGrossProfit
+  逆算バックフィル）はlayer3_builder.pyのモジュールdocstringに
+  フェーズA当初から「未実装（既知の制限）」と明記済みのスコープ外
+  機能であり、新規バグではない。対応は当該バックフィル機能の
+  layer3_builder.pyへの実装が必要（別タスク化を検討）
+- 残る未調査: short_term_investments（7件）・total_liabilities
+  （AVAV/ELF/ESTC 3件）。いずれもSTOCK分類のためTTM非対象、
+  フェーズD以降に持ち越し可
 
 #### 対応方針
 未定。フェーズB以降で個別に原因調査する。
