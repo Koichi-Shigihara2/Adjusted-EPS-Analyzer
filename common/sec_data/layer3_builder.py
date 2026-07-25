@@ -22,14 +22,17 @@ BUG-CON-YTD-1等）を経て確定した実装のため、重複再実装によ�
 - sign_normalize（符号正規化、CAPEX-SIGN-UNNORMALIZED-1対応）
 - YTD→単四半期差分変換（start/period_daysの再計算込み。
   NORMALIZER-YTD-METADATA-STALE-1のメタデータ不整合を修正）
-- Q4逆算ロジックの単一集約実装（Q4-IMPLIED-CALC-TRIPLICATION-1対応の先取り。
-  normalizer.py・ttm_calculator.py・financial_trend_calculator.pyの
-  3箇所独立実装を、本モジュールでは1箇所に統一する）。適用範囲は
-  normalizer.py::Q4_IMPLIED_FIELDSと同一の13フィールド（Q4_IMPLIED_FIELDS
-  定数）に限定する。FY年次値からQ1+Q2+Q3を差し引く近似はフロー系
+- Q4逆算ロジックは[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応として
+  common/sec_data/q4_implied.py::build_q4_implied_entries()に集約
+  済み（フェーズB、[[LAYER3-Q4-IMPLIED-NOT-MIGRATED-1]]対応で本
+  モジュールもそこに合流した）。同モジュールはPascalCase/snake_case
+  両方のfield_nameを受け付け、normalizer.py::Q4_IMPLIED_FIELDS∪
+  ttm_calculator.py::FLOW_FIELDSの和集合（15フィールド）にのみ
+  適用するガードを持つ。FY年次値からQ1+Q2+Q3を差し引く近似はフロー系
   （累積可能）フィールドでのみ有効であり、shares系（加重平均株式数）や
   stock系（残高スナップショット）に無条件適用すると符号反転等の
-  無意味な値を生む（実装時に発見・修正）
+  無意味な値を生む（layer3_builder.py独自実装時〈フェーズA〉に発見・
+  修正したバグ。詳細はq4_implied.pyのdocstring参照）
 - FCF計算の共有関数化（quarterly/annual生成側とTTM集計側の両方から
   呼べる設計。parser.py・ttm_calculator.pyの既存計算式と同一であることを
   確認済み: FCF = OCF - max(0, |CapEx| - |FinanceLeasePmts|)）
@@ -59,22 +62,9 @@ from datetime import date, datetime, timedelta
 
 from .quarterly import _classify_period, _process_entries
 from .fact_selection import select_latest_filed  # noqa: F401  (contract of _process_entries)
+from .q4_implied import build_q4_implied_entries
 
 logger = logging.getLogger(__name__)
-
-# Q4逆算はフロー系（累積・加算可能）フィールドにのみ有効な近似
-# （FY年次値 - (Q1+Q2+Q3) = Q4）。stock系（残高スナップショット）・
-# shares系（加重平均株式数）に適用すると数学的に無意味な値（符号反転等）
-# を生む。normalizer.py::Q4_IMPLIED_FIELDS（13フィールド、RPO等の
-# ストック値は明示的に対象外）と同一スコープを踏襲する。
-Q4_IMPLIED_FIELDS = frozenset({
-    "revenue", "cost_of_revenue",
-    "operating_cash_flow", "investing_cash_flow", "financing_cash_flow",
-    "capital_expenditure",
-    "research_and_development", "selling_and_marketing",
-    "stock_based_compensation", "depreciation_and_amortization",
-    "net_income", "operating_income", "gross_profit",
-})
 
 # LAYER3-FALLBACK-STALE-TAG-PRIORITY-1対応の対象外フィールド。
 # rpo: [[LAYER3-RPO-CANDIDATE-ORDER-1]]は別途概念分離（総額系/長期系の
@@ -451,64 +441,10 @@ def _normalize_field_entries(raw_entries: list) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Q4逆算（単一集約実装、Q4-IMPLIED-CALC-TRIPLICATION-1対応の先取り）
+# Q4逆算本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()に
+# 集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]・[[LAYER3-Q4-IMPLIED-
+# NOT-MIGRATED-1]]対応）。ここではimportして再利用する（上部import参照）。
 # ---------------------------------------------------------------------------
-
-def build_q4_implied_entries(entries: list) -> list:
-    """
-    年次データ（is_annual=True）から Q4 implied エントリを生成する。
-    Q4 = FY年次値 - (Q1+Q2+Q3の合計)
-
-    normalizer.py::_build_q4_implied_entries()・
-    ttm_calculator.py::_build_q4_quarterly_entries()・
-    financial_trend_calculator.py の3箇所独立実装（Q4-IMPLIED-CALC-
-    TRIPLICATION-1）を、本モジュールでは1箇所に統一する。
-    """
-    today = date.today().isoformat()
-
-    annual = [e for e in entries if e.get("is_annual") and e.get("end", "") <= today]
-    quarterly = [e for e in entries if not e.get("is_annual") and not e.get("is_ytd")]
-
-    result = []
-    for ann in annual:
-        fy_end = ann.get("end", "")
-        fy_start = ann.get("start", "")
-        fy_val = ann.get("val")
-        if not fy_end or fy_val is None:
-            continue
-
-        fy_qs = [
-            e for e in quarterly
-            if e.get("end", "") < fy_end and e.get("start", "") >= fy_start
-        ]
-        top3 = sorted(fy_qs, key=lambda x: x["end"], reverse=True)[:3]
-        if len(top3) < 3:
-            continue
-
-        q3_end = sorted(top3, key=lambda x: x["end"], reverse=True)[0]["end"]
-        q4_val = fy_val - sum(e["val"] for e in top3)
-
-        try:
-            period_days = (date.fromisoformat(fy_end) - date.fromisoformat(q3_end)).days
-        except (ValueError, TypeError):
-            period_days = 90
-
-        result.append({
-            "end": fy_end,
-            "start": q3_end,
-            "val": q4_val,
-            "fp": "Q4",
-            "fy": ann.get("fy"),
-            "form": "10-K",
-            "filed": ann.get("filed", ""),
-            "accn": ann.get("accn", ""),
-            "period_days": period_days,
-            "is_ytd": False,
-            "is_annual": False,
-            "is_implied": True,
-        })
-
-    return result
 
 
 # ---------------------------------------------------------------------------
@@ -580,13 +516,23 @@ def build_ticker_store(ticker: str) -> dict | None:
             # クロスタグ混入バグを再発させかねないため適用しない。
             normalized_entries = raw_entries
 
-        if field_name in Q4_IMPLIED_FIELDS:
-            q4_list = build_q4_implied_entries(normalized_entries)
-            if q4_list:
-                existing_ends = {e["end"] for e in normalized_entries if not e.get("is_annual")}
-                added = [e for e in q4_list if e["end"] not in existing_ends]
-                if added:
-                    normalized_entries = sorted(normalized_entries + added, key=lambda x: x["end"])
+        # field_nameがQ4_IMPLIED_FIELDS（q4_implied.py側、PascalCase/
+        # snake_case両対応）に該当しない場合はbuild_q4_implied_entries()
+        # 内部のガードにより空リストが返るため、ここでの事前フィルタは不要。
+        # is_ytd=Trueの未解決エントリはQ1〜Q3候補から除外する（normalizer.py
+        # の対応する呼び出し箇所と同様。未解決YTD累計自体の除外は本ループ
+        # 後段で行うが、Q4逆算の入力としては先に除外しておく必要がある）。
+        annual_for_q4 = [e for e in normalized_entries if e.get("is_annual")]
+        quarterly_for_q4 = [
+            e for e in normalized_entries
+            if not e.get("is_annual") and not e.get("is_ytd")
+        ]
+        q4_list = build_q4_implied_entries(annual_for_q4, quarterly_for_q4, field_name)
+        if q4_list:
+            existing_ends = {e["end"] for e in normalized_entries if not e.get("is_annual")}
+            added = [e for e in q4_list if e["end"] not in existing_ends]
+            if added:
+                normalized_entries = sorted(normalized_entries + added, key=lambda x: x["end"])
 
         # 未解決YTD累計の除外（is_ytd=Trueの残骸を四半期として誤計上しない）
         normalized_entries = [
