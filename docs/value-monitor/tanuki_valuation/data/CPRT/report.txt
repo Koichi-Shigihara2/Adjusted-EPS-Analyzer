@@ -1,16 +1,16 @@
 CPRT INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:53:06+09:00
-Price: $27.92
+Generated: 2026-07-28T01:44:17+09:00
+Price: $29.57
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -16.2%
-  MA200_Deviation: -23.1%
+  Deviation_Rate: -17.6%
+  MA200_Deviation: -18.4%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $41 median ($26-$55) | 10 analysts | vs IV: +75.2%
+  Analyst_Consensus: Buy | Target: $41 median ($26-$55) | 10 analysts | vs IV: +68.4%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.515
-Deviation_Rate: -16.2%
+Matrix: ④キャッシュ創出力系
+Quadrant: 左上
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 26.5%
+Deviation_Rate: -17.6%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,15 +57,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $27.92
-Intrinsic_Value_BASE: $23.40
-Deviation_BASE: -16.2%
-Growth_Rate_Original: 15.5% (TTM実績)
+Current_Price: $29.57
+Intrinsic_Value_BASE: $24.35
+Deviation_BASE: -17.6%
+Growth_Rate_Original: 23.5% (TTM実績)
 Growth_Rate_Adjusted: 12.6% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=8.8%, IV=$20.65 （推奨値ベース）
-BASE: Growth=12.6%, IV=$23.40 （推奨値ベース）
-BULL: Growth=15.1%, IV=$25.40 （推奨値ベース）
+BEAR: Growth=8.8%, IV=$21.48 （推奨値ベース）
+BASE: Growth=12.6%, IV=$24.35 （推奨値ベース）
+BULL: Growth=15.1%, IV=$26.42 （推奨値ベース）
 TTM_YoY_Growth: 1.0%
 (DCF Base vs TTM actual: +11.6pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -85,7 +85,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から26%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から40%乖離]
 DCF_FCF_PV: $4.69B (4yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $17.85B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $22.55B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -93,8 +93,8 @@ Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $22.55B (= v0 + RPO_PV + GO_PV)
-Shares_Used: 963.3M (source: yf_implied)
-→ Intrinsic_Value: $23.40 (= Equity_Value ÷ Shares_Used)
+Shares_Used: 925.8M (source: yf_implied)
+→ Intrinsic_Value: $24.35 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.02B (negative=net cash)
   Total_Debt: $0.02B  Cash: $0.00B
@@ -102,6 +102,7 @@ Financial_Health:
   SBC_TTM: $38M
   Dilution_3yr_Annual: +0.45%/yr  許容範囲内 ✅
   Dilution_Comment: 希薄化はほぼ無視できるレベル。
+  ⚠️ 期中に大規模な株式買戻しの可能性（-5.3%乖離: yf=926M vs SEC=978M）
   Next_Earnings_Date: 2026-09-04
 FCF_History:
   2021: $0.53B (FCF_Margin: 19.6%)
@@ -161,8 +162,8 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 12.6% (DCF適用値・推奨成長率)
-元成長率      : 15.5% (推奨適用前)
-成長モデル: 中央値モデル（CAGR_max=16.1%のため中央値モデル適用）  HypePhase=4
+元成長率      : 23.5% (推奨適用前)
+成長モデル: 中央値モデル（CAGR_max=23.5%のため中央値モデル適用）  HypePhase=4
 推奨成長率内訳:
   中央値ベース:          12.6%
   最終推奨値:            12.6%
@@ -187,19 +188,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.36
-BASE: RICE=0.515
-BULL: RICE=0.618
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 12.6%  [TANUKI forward growth rate]
-Q  = 1.0747   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.3806  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 0.5913  [R&D除外・CapExのみ投資強度]
-RICE_adj = 0.801  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -250,8 +249,8 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 17.3x
-  Adjusted_EPS_PER: 17.1x (TTM調整後EPS: $1.6377)
+  Market_PER_GAAP: 18.4x
+  Adjusted_EPS_PER: 18.1x (TTM調整後EPS: $1.6377)
   Delta: -0.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
@@ -278,10 +277,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 17.3x
-  PEG: 3.27
-  PS:  5.8x
-  EV_EBITDA: 10.8x
+  PER: 18.4x
+  PEG: 3.36
+  PS:  5.9x
+  EV_EBITDA: 11.1x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
 Definition:
@@ -301,9 +300,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.03%  (ForwardEPS $1.68 / Price $27.92)
+  Forward_Earnings_Yield: 5.69%  (ForwardEPS $1.68 / Price $29.57)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.73%
+  ERP: 1.39%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -325,9 +324,9 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 5.3%
+Short_Interest: 5.1%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $41 median ($26-$55) | 10 analysts | vs IV: +75.2%
+Analyst_Consensus: Buy | Target: $41 median ($26-$55) | 10 analysts | vs IV: +68.4%
 Insider_Activity: Sell優勢 | 買い0件 / 売り1件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 1.0%
@@ -353,7 +352,7 @@ based on recent 4Q linear trend. Rough estimate only.
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against Copart Inc.
   [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition risks 2025-2026
+  [mid] earnings: Earnings warning amid competition risks for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

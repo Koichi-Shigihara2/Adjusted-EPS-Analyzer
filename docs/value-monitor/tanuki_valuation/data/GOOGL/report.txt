@@ -1,16 +1,16 @@
 GOOGL INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:45:04+09:00
-Price: $321.02
+Generated: 2026-07-28T01:36:30+09:00
+Price: $328.02
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -24.8%
-  MA200_Deviation: -0.8%
+  Deviation_Rate: -26.4%
+  MA200_Deviation: +1.3%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Strong Buy | Target: $430 median ($340-$515) | 54 analysts | vs IV: +78.1%
-Comment: 割高(-25%超)、FCF黒字、売上安定成長
+Comment: 割高(-26%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,11 +28,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×中効率
-Key_Metric_Y: RICE = 1.072
-Deviation_Rate: -24.8%
+Matrix: ④キャッシュ創出力系
+Quadrant: 左上
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 18.7%
+Deviation_Rate: -26.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $321.02
+Current_Price: $328.02
 Intrinsic_Value_BASE: $241.42
-Deviation_BASE: -24.8%
+Deviation_BASE: -26.4%
 Scenarios:
-BEAR: Growth=8.7%, IV=$184.90, Deviation=-42.4%
-BASE: Growth=13.9%, IV=$241.42, Deviation=-24.8%
-BULL: Growth=16.6%, IV=$278.46, Deviation=-13.3%
+BEAR: Growth=8.7%, IV=$184.90, Deviation=-43.6%
+BASE: Growth=13.9%, IV=$241.42, Deviation=-26.4%
+BULL: Growth=16.6%, IV=$278.46, Deviation=-15.1%
 Growth_Rate_Rec: 16.7% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(20.8%→18.7%) BEAR補正係数=0.899
 TTM_YoY_Growth: 17.5%
@@ -75,7 +75,7 @@ FCF_Conversion_Rate: 0.55 (Industry: Software_Entertainment)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
 DCF_FCF_Base: $82,920M (= Adj_NI $150,764M × FCF_Conv 0.55)
-⚠️ 買収・統合関連加算を控除: $101M
+⚠️ 買収・統合関連加算を控除: $204M
    [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
     含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
     います。分類判定には使用しません。詳細はBACKLOG_DONE.md
@@ -185,21 +185,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.748
-BASE: RICE=1.072
-BULL: RICE=1.281
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 13.9%  [TANUKI forward growth rate]
-Q  = 0.982   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.3928  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 1.1268  [R&D除外・CapExのみ投資強度]
-RICE_adj = 3.076  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 2.35  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -228,15 +224,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $5.5711 (直近四半期値)
-Latest_GAAP_EPS: $5.1134
-Adjustment_Delta: $0.4577 (sbc/amortization_intangibles)
-YoY_Growth: 74.7%
+Latest_Adjusted_EPS: $9.6643 (直近四半期値)
+Latest_GAAP_EPS: $9.1147
+Adjustment_Delta: $0.5496 (sbc/amortization_intangibles)
+YoY_Growth: 254.2%
 Recent Surprises (Adjusted EPS):
+  2026 Q2: Actual=$9.6643 vs Est=N/A -> N/A%
   2026 Q1: Actual=$5.5711 vs Est=N/A -> N/A%
   2025 Q4: Actual=$3.1432 vs Est=N/A -> N/A%
   2025 Q3: Actual=$3.2814 vs Est=N/A -> N/A%
-  2025 Q2: Actual=$2.7201 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -250,13 +246,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 16.1x
-  Adjusted_EPS_PER: 21.8x (TTM調整後EPS: $14.7159)
-  Delta: +5.7x (more expensive on adjusted basis)
+  Market_PER_GAAP: 16.5x
+  Adjusted_EPS_PER: 15.1x (TTM調整後EPS: $21.6601)
+  Delta: -1.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-07-23
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $14.78 (yfinance forward EPS)
+  Next_FY_EPS: $14.73 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -278,10 +274,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 16.1x
-  PEG: 1.25
-  PS:  8.8x
-  EV_EBITDA: 21.8x
+  PER: 16.5x
+  PEG: 1.26
+  PS:  9.0x
+  EV_EBITDA: 22.0x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:
@@ -301,9 +297,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.60%  (ForwardEPS $14.78 / Price $321.02)
+  Forward_Earnings_Yield: 4.49%  (ForwardEPS $14.73 / Price $328.02)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.30%
+  ERP: 0.19%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -325,7 +321,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 1.5%
+Short_Interest: 1.3%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Strong Buy | Target: $430 median ($340-$515) | 54 analysts | vs IV: +78.1%
 Insider_Activity: Sell優勢 | 買い0件 / 売り46件 | 直近90日
@@ -351,9 +347,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit
-  [high] regulatory: SEC investigation into regulatory matters
-  [mid] earnings: Earnings warning amid 2025-2026 competition
+  [high] litigation: Ongoing antitrust lawsuit against Alphabet
+  [high] regulatory: SEC investigation into regulatory compliance
+  [mid] competitive: Intense competition pressures expected 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

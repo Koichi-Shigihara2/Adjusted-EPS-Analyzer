@@ -1,14 +1,14 @@
 AVGO INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:51:00+09:00
-Price: $384.07
+Generated: 2026-07-28T01:42:10+09:00
+Price: $382.61
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -42.9%
-  MA200_Deviation: +5.3%
+  Deviation_Rate: -42.7%
+  MA200_Deviation: +4.8%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Strong Buy | Target: $530 median ($216-$675) | 45 analysts | vs IV: +141.6%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左上
-Label: 割高×高効率
-Key_Metric_Y: RICE = 3.831
-Deviation_Rate: -42.9%
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 42.1%
+Deviation_Rate: -42.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,13 +57,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $384.07
+Current_Price: $382.61
 Intrinsic_Value_BASE: $219.33
-Deviation_BASE: -42.9%
+Deviation_BASE: -42.7%
 Scenarios:
-BEAR: Growth=12.6%, IV=$161.62, Deviation=-57.9%
-BASE: Growth=17.9%, IV=$219.33, Deviation=-42.9%
-BULL: Growth=21.5%, IV=$267.03, Deviation=-30.5%
+BEAR: Growth=12.6%, IV=$161.62, Deviation=-57.8%
+BASE: Growth=17.9%, IV=$219.33, Deviation=-42.7%
+BULL: Growth=21.5%, IV=$267.03, Deviation=-30.2%
 Growth_Rate_Rec: 15.7% (recommended)
 TTM_YoY_Growth: 32.3%
 (DCF Base vs TTM actual: -14.4pt discount)
@@ -188,21 +188,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=2.697
-BASE: RICE=3.831
-BULL: RICE=4.601
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 17.9%  [TANUKI forward growth rate]
-Q  = 1.1421   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.2124  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 31.598  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 1.55  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.55  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -253,13 +249,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 64.0x
-  Adjusted_EPS_PER: 41.4x (TTM調整後EPS: $9.2891)
-  Delta: -22.7x (cheaper on adjusted basis)
+  Market_PER_GAAP: 63.8x
+  Adjusted_EPS_PER: 41.2x (TTM調整後EPS: $9.2891)
+  Delta: -22.6x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $19.46 (yfinance forward EPS)
+  Next_FY_EPS: $19.51 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -281,10 +277,10 @@ Phase_History (recent 6 months):
 2026-06: Phase2 (期待拡大期)
 2026-07: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 64.0x
+  PER: 63.8x
   PEG: 0.43
-  PS:  24.2x
-  EV_EBITDA: 45.4x
+  PS:  24.1x
+  EV_EBITDA: 44.3x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -304,9 +300,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.07%  (ForwardEPS $19.46 / Price $384.07)
+  Forward_Earnings_Yield: 5.10%  (ForwardEPS $19.51 / Price $382.61)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.77%
+  ERP: 0.80%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -354,9 +350,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Broadcom
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition risks 2025-2026
+  [high] litigation: Antitrust lawsuit ongoing against Broadcom
+  [high] regulatory: SEC investigation into regulatory compliance
+  [mid] earnings: Earnings warning amid competition risks for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

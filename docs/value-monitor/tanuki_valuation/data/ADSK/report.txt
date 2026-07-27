@@ -1,16 +1,16 @@
 ADSK INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:51:09+09:00
-Price: $212.54
+Generated: 2026-07-28T01:42:18+09:00
+Price: $224.05
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: BUY
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: +54.9%
-  MA200_Deviation: -17.1%
+  Deviation_Rate: +44.3%
+  MA200_Deviation: -12.4%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Strong Buy | Target: $312 median ($235-$456) | 33 analysts | vs IV: -5.2%
+  Analyst_Consensus: Strong Buy | Target: $312 median ($235-$456) | 33 analysts | vs IV: -3.5%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
-Quadrant: 右下
-Label: 割安×低効率
-Key_Metric_Y: RICE = 0.617
-Deviation_Rate: +54.9%
+Matrix: ④キャッシュ創出力系
+Quadrant: 右上
+Label: 割安×高FCF
+Key_Metric_Y: FCF_Margin = 33.4%
+Deviation_Rate: +44.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,15 +57,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $212.54
-Intrinsic_Value_BASE: $329.14
-Deviation_BASE: +54.9%
+Current_Price: $224.05
+Intrinsic_Value_BASE: $323.38
+Deviation_BASE: +44.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 13.7% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=9.6%, IV=$248.93 （推奨値ベース）
-BASE: Growth=13.7%, IV=$329.14 （推奨値ベース）
-BULL: Growth=16.5%, IV=$395.97 （推奨値ベース）
+BEAR: Growth=9.6%, IV=$244.59 （推奨値ベース）
+BASE: Growth=13.7%, IV=$323.38 （推奨値ベース）
+BULL: Growth=16.5%, IV=$389.03 （推奨値ベース）
 TTM_YoY_Growth: 18.3%
 (DCF Base vs TTM actual: -4.6pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -75,25 +75,26 @@ Beta: 1.318
 FCF_Conversion_Rate: 1.0 (Industry: Software_System_Mature)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $1,864M (= Adj_NI $1,864M × FCF_Conv 1.0)
-ℹ️ 買収・統合関連加算$38Mを検出したが未控除
-   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
-    ガードにより調整済み純利益をそのまま採用しています。詳細は
-    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
+DCF_FCF_Base: $1,826M (= Adj_NI $1,826M × FCF_Conv 1.0)
+⚠️ 買収・統合関連加算を控除: $38M
+   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
+    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
+    います。分類判定には使用しません。詳細はBACKLOG_DONE.md
+    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
 DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から41%乖離]
-DCF_FCF_PV: $22.90B (9yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $46.11B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $69.01B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+   [DCF-REL-SYNC-1: FCF実績が5年平均から37%乖離]
+DCF_FCF_PV: $22.50B (9yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $45.29B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $67.79B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $61,726,427 (Remaining Performance Obligation premium)
 Growth_Option_PV: $0
-Equity_Value: $69.50B (= v0 + RPO_PV + GO_PV + Net_Cash $0.42B)
+Equity_Value: $68.28B (= v0 + RPO_PV + GO_PV + Net_Cash $0.42B)
 Shares_Used: 211.1M (source: yf_implied)
-→ Intrinsic_Value: $329.14 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $323.38 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.42B (negative=net cash)
   Total_Debt: $2.50B  Cash: $2.67B  ST_Invest: $0.25B
@@ -186,21 +187,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.433
-BASE: RICE=0.617
-BULL: RICE=0.743
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 13.7%  [TANUKI forward growth rate]
-Q  = 0.9553   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.2358  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 26.176  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 3.78  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -251,13 +248,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 31.0x
-  Adjusted_EPS_PER: 21.2x (TTM調整後EPS: $10.0316)
-  Delta: -9.8x (cheaper on adjusted basis)
+  Market_PER_GAAP: 32.7x
+  Adjusted_EPS_PER: 22.3x (TTM調整後EPS: $10.0316)
+  Delta: -10.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $14.25 (yfinance forward EPS)
+  Next_FY_EPS: $14.26 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -279,10 +276,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 31.0x
-  PEG: 0.79
-  PS:  6.0x
-  EV_EBITDA: 20.2x
+  PER: 32.7x
+  PEG: 0.80
+  PS:  6.3x
+  EV_EBITDA: 20.6x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 適正水準
 Definition:
@@ -302,9 +299,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 6.71%  (ForwardEPS $14.25 / Price $212.54)
+  Forward_Earnings_Yield: 6.36%  (ForwardEPS $14.26 / Price $224.05)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 2.41%
+  ERP: 2.06%
   ERP_Signal: 期待中立〜やや冷却（成長期待は限定的）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -328,7 +325,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 4.6%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Strong Buy | Target: $312 median ($235-$456) | 33 analysts | vs IV: -5.2%
+Analyst_Consensus: Strong Buy | Target: $312 median ($235-$456) | 33 analysts | vs IV: -3.5%
 Insider_Activity: Buy優勢 | 買い5件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 18.3%
@@ -352,9 +349,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
+  [high] litigation: Antitrust lawsuit against Autodesk
   [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

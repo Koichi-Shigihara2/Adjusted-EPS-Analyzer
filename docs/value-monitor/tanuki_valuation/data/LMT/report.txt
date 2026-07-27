@@ -1,16 +1,16 @@
 LMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:46:50+09:00
-Price: $580.64
+Generated: 2026-07-28T01:37:52+09:00
+Price: $581.38
 
 [1. TANUKI SCORE]
-Classification: HOLD
-Funda_Score: 40/100
+Classification: TRIM
+Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -42.7%
-  MA200_Deviation: +6.9%
+  Deviation_Rate: -34.7%
+  MA200_Deviation: +7.0%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Hold | Target: $600 median ($487-$756) | 19 analysts | vs IV: +80.3%
-Comment: 割高(-43%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Hold | Target: $605 median ($487-$756) | 19 analysts | vs IV: +59.4%
+Comment: 割高(-35%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,11 +28,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左下
-Label: 割高×中効率
-Key_Metric_Y: RICE = 2.442
-Deviation_Rate: -42.7%
+Label: 割高×低FCF
+Key_Metric_Y: FCF_Margin = 9.2%
+Deviation_Rate: -34.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $580.64
-Intrinsic_Value_BASE: $332.73
-Deviation_BASE: -42.7%
+Current_Price: $581.38
+Intrinsic_Value_BASE: $379.48
+Deviation_BASE: -34.7%
 Scenarios:
-BEAR: Growth=4.0%, IV=$303.89, Deviation=-47.7%
-BASE: Growth=5.7%, IV=$332.73, Deviation=-42.7%
-BULL: Growth=6.8%, IV=$352.94, Deviation=-39.2%
+BEAR: Growth=4.0%, IV=$347.41, Deviation=-40.2%
+BASE: Growth=5.7%, IV=$379.48, Deviation=-34.7%
+BULL: Growth=6.8%, IV=$401.96, Deviation=-30.9%
 Growth_Rate_Rec: 4.4% (recommended)
 TTM_YoY_Growth: 4.6%
 (DCF Base vs TTM actual: +1.1pt premium)
@@ -70,17 +70,17 @@ Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 8.52%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.74
-FCF_Base: $5,780.75M (4yr平均)
+FCF_Base: $6,451.00M (5yr平均)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $25.68B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $69.65B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $95.33B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $28.66B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $77.73B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $106.38B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $76.53B (= v0 + RPO_PV + GO_PV + Net_Cash $-18.80B)
-Shares_Used: 230.0M (source: yf_implied)
-→ Intrinsic_Value: $332.73 (= Equity_Value ÷ Shares_Used)
+Equity_Value: $87.58B (= v0 + RPO_PV + GO_PV + Net_Cash $-18.80B)
+Shares_Used: 230.8M (source: yf_implied)
+→ Intrinsic_Value: $379.48 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+18.80B (negative=net cash)
   Total_Debt: $20.70B  Cash: $1.89B
@@ -176,21 +176,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=1.714
-BASE: RICE=2.442
-BULL: RICE=2.914
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 5.7%  [TANUKI forward growth rate]
-Q  = 1.2469   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.7181  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 1.7181  [R&D除外・CapExのみ投資強度]
-RICE_adj = 2.442  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 2.51  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -219,15 +215,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $6.4388 (直近四半期値)
-Latest_GAAP_EPS: $6.4388
+Latest_Adjusted_EPS: $7.9446 (直近四半期値)
+Latest_GAAP_EPS: $7.9446
 Adjustment_Delta: $0.0000 (N/A)
-YoY_Growth: -11.5%
+YoY_Growth: 444.3%
 Recent Surprises (Adjusted EPS):
+  2026 Q2: Actual=$7.9446 vs Est=N/A -> N/A%
   2026 Q1: Actual=$6.4388 vs Est=N/A -> N/A%
   2025 Q4: Actual=$5.7559 vs Est=N/A -> N/A%
   2025 Q3: Actual=$6.9545 vs Est=N/A -> N/A%
-  2025 Q2: Actual=$1.4597 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -241,13 +237,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 21.4x
-  Adjusted_EPS_PER: 28.2x (TTM調整後EPS: $20.6088)
-  Delta: +6.8x (more expensive on adjusted basis)
+  Market_PER_GAAP: 21.5x
+  Adjusted_EPS_PER: 21.5x (TTM調整後EPS: $27.0937)
+  Delta: -0.0x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-20
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $32.18 (yfinance forward EPS)
+  Next_FY_EPS: $32.59 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -260,7 +256,7 @@ Compare with TANUKI G scenario for cross-validation
 [7. HYPECORE]
 Current_Phase: Phase4 (期待剥落期)
 Alpha_Premium: 0.7
-HYPE_Signal: 実体も崩壊中 — 売上・EPSの悪化も確認される本格的な下落局面。
+HYPE_Signal: 底打ち兆候 — 実体（売上・EPS）は強く、MA200乖離の縮小が鈍化。期待と実体が近づいている。
 Phase_History (recent 6 months):
 2026-02: Phase3 (陶酔期)
 2026-03: Phase2 (期待拡大期)
@@ -269,10 +265,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 21.4x
-  PEG: 1.09
-  PS:  1.8x
-  EV_EBITDA: 17.2x
+  PER: 21.5x
+  PEG: 1.23
+  PS:  1.7x
+  EV_EBITDA: 15.6x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -292,9 +288,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.54%  (ForwardEPS $32.18 / Price $580.64)
+  Forward_Earnings_Yield: 5.61%  (ForwardEPS $32.59 / Price $581.38)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.24%
+  ERP: 1.31%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -316,9 +312,9 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 1.8%
+Short_Interest: 1.6%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Hold | Target: $600 median ($487-$756) | 19 analysts | vs IV: +80.3%
+Analyst_Consensus: Hold | Target: $605 median ($487-$756) | 19 analysts | vs IV: +59.4%
 Insider_Activity: 中立 | 買い0件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 4.6%
@@ -342,9 +338,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing against LMT
-  [mid] regulatory: SEC investigation into regulatory compliance
-  [high] earnings: Earnings warning and competitive threats for 2025-2026
+  [high] litigation: Antitrust lawsuit ongoing
+  [high] regulatory: SEC regulatory investigation active
+  [mid] earnings: Earnings warning for 2025-2026 periods
 
 ==============================================
 DISCLAIMER: This report is generated automatically

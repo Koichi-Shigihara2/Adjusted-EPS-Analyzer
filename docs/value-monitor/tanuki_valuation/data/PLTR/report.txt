@@ -1,14 +1,14 @@
 PLTR INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:48:24+09:00
-Price: $123.61
+Generated: 2026-07-28T01:39:21+09:00
+Price: $130.52
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -0.4%
-  MA200_Deviation: -20.0%
+  Deviation_Rate: -5.7%
+  MA200_Deviation: -15.4%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $200 median ($70-$255) | 27 analysts | vs IV: +62.5%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左上
-Label: 割高×高効率
-Key_Metric_Y: RICE = 4.666
-Deviation_Rate: -0.4%
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 46.9%
+Deviation_Rate: -5.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,13 +57,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $123.61
+Current_Price: $130.52
 Intrinsic_Value_BASE: $123.06
-Deviation_BASE: -0.4%
+Deviation_BASE: -5.7%
 Scenarios:
-BEAR: Growth=23.7%, IV=$74.62, Deviation=-39.6%
-BASE: Growth=33.8%, IV=$123.06, Deviation=-0.4%
-BULL: Growth=40.6%, IV=$169.69, Deviation=+37.3%
+BEAR: Growth=23.7%, IV=$74.62, Deviation=-42.8%
+BASE: Growth=33.8%, IV=$123.06, Deviation=-5.7%
+BULL: Growth=40.6%, IV=$169.69, Deviation=+30.0%
 Growth_Rate_Rec: 27.1% (recommended  ⚠️ +6.7pt above recommended)
 TTM_YoY_Growth: 67.7%
 (DCF Base vs TTM actual: -33.9pt discount)
@@ -79,7 +79,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から115%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から136%乖離]
 DCF_FCF_PV: $94.90B (Ph1=$40.13B + Ph2=$54.77B, 7yr, pre-alpha, Rm=10%)
 DCF_TV_PV:  $190.26B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $285.16B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -185,21 +185,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=3.272
-BASE: RICE=4.666
-BULL: RICE=5.605
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 33.8%  [TANUKI forward growth rate]
-Q  = 0.9234   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.7981  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 58.467  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 1.87  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.87  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -250,9 +246,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 138.9x
-  Adjusted_EPS_PER: 105.9x (TTM調整後EPS: $1.1677)
-  Delta: -33.0x (cheaper on adjusted basis)
+  Market_PER_GAAP: 146.7x
+  Adjusted_EPS_PER: 111.8x (TTM調整後EPS: $1.1677)
+  Delta: -34.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -278,10 +274,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 138.9x
-  PEG: 1.77
-  PS:  56.7x
-  EV_EBITDA: 142.7x
+  PER: 146.7x
+  PEG: 1.76
+  PS:  59.9x
+  EV_EBITDA: 142.2x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -301,9 +297,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 1.69%  (ForwardEPS $2.09 / Price $123.61)
+  Forward_Earnings_Yield: 1.60%  (ForwardEPS $2.09 / Price $130.52)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.61%
+  ERP: -2.70%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -325,7 +321,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 4.1%
+Short_Interest: 3.6%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $200 median ($70-$255) | 27 analysts | vs IV: +62.5%
 Insider_Activity: Sell優勢 | 買い0件 / 売り49件 | 直近90日
@@ -351,9 +347,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Palantir Technologies
-  [mid] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid 2025-2026 competition risks
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

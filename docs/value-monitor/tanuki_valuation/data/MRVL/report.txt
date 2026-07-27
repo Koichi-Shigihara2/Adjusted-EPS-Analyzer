@@ -1,14 +1,14 @@
 MRVL INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:47:16+09:00
-Price: $196.59
+Generated: 2026-07-28T01:38:17+09:00
+Price: $188.37
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -79.2%
-  MA200_Deviation: +48.6%
+  Deviation_Rate: -78.3%
+  MA200_Deviation: +41.8%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Strong Buy | Target: $242 median ($126-$400) | 40 analysts | vs IV: +493.0%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
-Quadrant: 左下
-Label: 割高×低効率
-Key_Metric_Y: RICE = 0.186
-Deviation_Rate: -79.2%
+Matrix: ④キャッシュ創出力系
+Quadrant: 左上
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 17.0%
+Deviation_Rate: -78.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,9 +57,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $196.59
+Current_Price: $188.37
 Intrinsic_Value_BASE: $40.90
-Deviation_BASE: -79.2%
+Deviation_BASE: -78.3%
 Growth_Rate_Original: 34.1% (TTM実績)
 Growth_Rate_Adjusted: 10.5% (推奨値・中央値ベース)
 Scenarios:
@@ -75,11 +75,11 @@ Terminal_Growth_Rate: 3.5%
 Beta: 2.197
 Valuation_Gap_Analysis:
   DCF_IV:           $41 (保守的FCFベース・現在実力値)
-  Market_Price:     $197
-  Gap:              -79% (市場が将来成長を先取り)
-  Implied_FCF_2030: $11.15B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $188
+  Gap:              -78% (市場が将来成長を先取り)
+  Implied_FCF_2030: $10.69B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $1.77B
-  Required_Growth:  45%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  43%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.5 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -93,7 +93,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から27%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から26%乖離]
 DCF_FCF_PV: $8.97B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $28.85B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $37.82B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -119,7 +119,7 @@ FCF_History:
   2026: $1.40B (FCF_Margin: 17.0%)
   FCF_CAGR_3yr: +8.9%
 Segment_Breakdown:
-  General: $8.7B (100%, YoY 11%)
+  General: $8.2B (100%, YoY 11%)
   Segment_Weighted_Growth: 10.5% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
@@ -198,21 +198,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=0.131
-BASE: RICE=0.186
-BULL: RICE=0.223
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 10.5%  [TANUKI forward growth rate]
-Q  = 0.6461   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.424  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 2.9869  [R&D除外・CapExのみ投資強度]
-RICE_adj = 1.312  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 0.65  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 0.65  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -263,9 +259,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 67.5x
-  Adjusted_EPS_PER: 42.6x (TTM調整後EPS: $4.6157)
-  Delta: -24.9x (cheaper on adjusted basis)
+  Market_PER_GAAP: 64.7x
+  Adjusted_EPS_PER: 40.8x (TTM調整後EPS: $4.6157)
+  Delta: -23.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -291,12 +287,12 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 67.5x
-  PEG: 1.18
-  PS:  20.2x
-  EV_EBITDA: 68.0x
+  PER: 64.7x
+  PEG: 1.10
+  PS:  19.4x
+  EV_EBITDA: 63.2x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
-  PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
+  PS_Signal: 適正水準
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -314,9 +310,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.17%  (ForwardEPS $6.24 / Price $196.59)
+  Forward_Earnings_Yield: 3.31%  (ForwardEPS $6.24 / Price $188.37)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.13%
+  ERP: -0.99%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -338,7 +334,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 4.6%
+Short_Interest: 4.3%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Strong Buy | Target: $242 median ($126-$400) | 40 analysts | vs IV: +493.0%
 Insider_Activity: Sell優勢 | 買い0件 / 売り10件 | 直近90日
@@ -364,9 +360,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Marvell Technology
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid competition risks for 2025-2026
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning due to competition 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

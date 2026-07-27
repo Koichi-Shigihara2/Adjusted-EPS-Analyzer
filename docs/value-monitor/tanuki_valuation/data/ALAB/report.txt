@@ -1,14 +1,14 @@
 ALAB INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:41:07+09:00
-Price: $301.75
+Generated: 2026-07-28T01:32:23+09:00
+Price: $279.67
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 75/100
 Timing_Score (components):
-  Deviation_Rate: -55.7%
-  MA200_Deviation: +46.8%
+  Deviation_Rate: -52.2%
+  MA200_Deviation: +35.8%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Buy | Target: $275 median ($155-$475) | 22 analysts | vs IV: +105.8%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左上
-Label: 割高×高効率
-Key_Metric_Y: RICE = 5.861
-Deviation_Rate: -55.7%
+Label: 割高×高FCF
+Key_Metric_Y: FCF_Margin = 33.1%
+Deviation_Rate: -52.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,9 +57,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $301.75
+Current_Price: $279.67
 Intrinsic_Value_BASE: $133.64
-Deviation_BASE: -55.7%
+Deviation_BASE: -52.2%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 41.2% (推奨値・逓減モデル)
 Scenarios:
@@ -74,11 +74,11 @@ Terminal_Growth_Rate: 3.5%
 Beta: 2.5
 Valuation_Gap_Analysis:
   DCF_IV:           $134 (保守的FCFベース・現在実力値)
-  Market_Price:     $302
-  Gap:              -56% (市場が将来成長を先取り)
-  Implied_FCF_2030: $3.17B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $280
+  Gap:              -52% (市場が将来成長を先取り)
+  Implied_FCF_2030: $2.94B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.48B
-  Required_Growth:  46%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  44%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.85 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -87,7 +87,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から135%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から243%乖離]
 DCF_FCF_PV: $5.30B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $16.42B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $21.72B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -112,7 +112,7 @@ FCF_History:
   2024: $0.10B (FCF_Margin: 25.8%)
   2025: $0.28B (FCF_Margin: 33.1%)
 Segment_Breakdown:
-  General: $1.0B (100%, YoY 41%)
+  General: $0.9B (100%, YoY 41%)
   Segment_Weighted_Growth: 41.2% (推奨値・中央値を自動適用)
   (= basis for TANUKI forward growth rate G)
 Definition:
@@ -191,21 +191,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=4.111
-BASE: RICE=5.861
-BULL: RICE=7.041
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 41.2%  [TANUKI forward growth rate]
-Q  = 0.7668   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.6195  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
-RICE_adj = 36.189  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 1.15  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.15  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -256,9 +252,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 205.3x
-  Adjusted_EPS_PER: 131.4x (TTM調整後EPS: $2.2965)
-  Delta: -73.9x (cheaper on adjusted basis)
+  Market_PER_GAAP: 187.7x
+  Adjusted_EPS_PER: 121.8x (TTM調整後EPS: $2.2965)
+  Delta: -65.9x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-05
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -284,10 +280,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 205.3x
+  PER: 187.7x
   PEG: N/A
-  PS:  51.6x
-  EV_EBITDA: 235.2x
+  PS:  47.9x
+  EV_EBITDA: 209.3x
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
 
@@ -306,9 +302,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 1.50%  (ForwardEPS $4.53 / Price $301.75)
+  Forward_Earnings_Yield: 1.62%  (ForwardEPS $4.53 / Price $279.67)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.80%
+  ERP: -2.68%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -330,7 +326,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 9.7%
+Short_Interest: 7.3%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Buy | Target: $275 median ($155-$475) | 22 analysts | vs IV: +105.8%
 Insider_Activity: Sell優勢 | 買い0件 / 売り251件 | 直近90日
@@ -356,9 +352,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Astera Labs
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning impacting 2025-2026 outlook
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning for 2025 2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

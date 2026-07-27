@@ -1,6 +1,6 @@
 CON INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-25T00:57:21+09:00
-Price: $31.88
+Generated: 2026-07-28T01:48:19+09:00
+Price: $32.06
 
 ⚠️ CIK断絶(構造的境界): 2024年11月Select Medical Holdingsからの完全スピンオフによりConcentra Group Holdings発足（2024年7月に一部先行IPO）。分離以前のデータは親会社連結からの区分推定値であり接続していません。
 
@@ -8,8 +8,8 @@ Price: $31.88
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -52.0%
-  MA200_Deviation: +38.0%
+  Deviation_Rate: -52.2%
+  MA200_Deviation: +38.5%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $34 median ($28-$37) | 8 analysts | vs IV: +122.0%
 Comment: 割高(-52%超)、FCF黒字、売上安定成長
@@ -30,11 +30,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ①投資効率系
+Matrix: ④キャッシュ創出力系
 Quadrant: 左下
-Label: 割高×中効率
-Key_Metric_Y: RICE = 2.066
-Deviation_Rate: -52.0%
+Label: 割高×低FCF
+Key_Metric_Y: FCF_Margin = 9.1%
+Deviation_Rate: -52.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -58,9 +58,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $31.88
+Current_Price: $32.06
 Intrinsic_Value_BASE: $15.32
-Deviation_BASE: -51.9%
+Deviation_BASE: -52.2%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 7.5% (推奨値・中央値ベース)
 Scenarios:
@@ -79,7 +79,7 @@ Valuation_Gap_Analysis:
   Gap:              -52% (市場が将来成長を先取り)
   Implied_FCF_2030: $0.38B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.20B
-  Required_Growth:  13%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  14%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $201.91M (4yr平均)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
 DCF_FCF_PV: $0.76B (4yr discounted FCF sum, pre-alpha, Rm=10%)
@@ -183,21 +183,17 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: true
-Exclusion_Reason: N/A
-BEAR: RICE=1.46
-BASE: RICE=2.066
-BULL: RICE=2.479
+Available: false
+Exclusion_Reason: SEC年次データ未取得
+BEAR: RICE=N/A
+BASE: RICE=N/A
+BULL: RICE=N/A
 Components (BASE scenario):
-G  = 7.5%  [TANUKI forward growth rate]
-Q  = 1.5095   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 1.3054  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
-CF_adj = 4.7570  [R&D除外・CapExのみ投資強度]
-RICE_adj = 7.527  [参考：R&D資本化想定]
+G  = N/A
+Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 WACC = 10.0%
-VC_Factor = 1.40  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.40  [NOPAT/InvestedCapital / 0.10]
-SBC_Adjusted: true
+SBC_Adjusted: false
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -248,8 +244,8 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 22.9x
-  Adjusted_EPS_PER: 19.7x (TTM調整後EPS: $1.6201)
+  Market_PER_GAAP: 23.1x
+  Adjusted_EPS_PER: 19.8x (TTM調整後EPS: $1.6201)
   Delta: -3.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-07
@@ -276,7 +272,7 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 22.9x
+  PER: 23.1x
   PEG: N/A
   PS:  1.8x
   EV_EBITDA: 14.0x
@@ -298,9 +294,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.30%  (ForwardEPS $1.69 / Price $31.88)
+  Forward_Earnings_Yield: 5.27%  (ForwardEPS $1.69 / Price $32.06)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.00%
+  ERP: 0.97%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -322,7 +318,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 4.0%
+Short_Interest: 4.7%
 Institutional_Ownership: N/A (not in data source)
 Analyst_Consensus: Strong Buy | Target: $34 median ($28-$37) | 8 analysts | vs IV: +122.0%
 Insider_Activity: Sell優勢 | 買い0件 / 売り3件 | 直近90日
@@ -349,8 +345,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning for 2025 2026
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically
