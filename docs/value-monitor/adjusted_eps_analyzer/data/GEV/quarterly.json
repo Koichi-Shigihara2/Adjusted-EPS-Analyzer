@@ -1,7 +1,52 @@
 {
   "ticker": "GEV",
-  "last_updated": "2026-07-20T09:09:40.583071",
+  "last_updated": "2026-07-27T13:23:50.942428",
   "quarters": [
+    {
+      "gaap_eps": 2.474074074074074,
+      "adjusted_eps": 3.0925925925925926,
+      "gaap_net_income": 668000000.0,
+      "adjusted_net_income": 835000000.0,
+      "diluted_shares_used": 270000000.0,
+      "adjustments": [
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 236000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 167000000.0,
+          "tax_rate_applied": 0.2923728813559322
+        }
+      ],
+      "net_adjustment_total": 167000000.0,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 11104000000.0,
+      "diluted_shares": 270000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 276000000.0,
+      "pretax_income": 944000000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目は買収関連無形資産の償却費加算戻しであり、恒常的に発生する非現金費用です。市場がGAAP EPS（2.47）で判断する場合、非現金償却により企業の実力（キャッシュ生成力や買収シナジー効果）が過小評価されている可能性があります。ただし償却は過去買収の経済的コストを反映するため、調整後EPS（3.09）を過信すると過大評価リスクが生じます。投資家は償却スケジュールと持続可能性を注視し、GAAPと調整値の両面から評価すべきです。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は複数年にわたり毎期発生する恒常的費用であり、真に一過性とは言えない（reason: 買収関連無形資産の償却）。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 17.44485294117647,
       "adjusted_eps": 18.14962636849209,
@@ -60,28 +105,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 354000000.0,
-      "pretax_income": 5099000000.0,
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "調整項目の主力である無形資産償却費（買収関連）は恒常的な非現金費用とみなされ、リストラ費用・異常貸倒引当金は一過性と判断される。市場がGAAP EPSで判断する場合、無形資産償却の影響で企業の実力（コア収益力）が過小評価されやすい。特に調整後EPSがGAAPを上回るため、買収戦略を加味した真の実力が見えにくくなっており、過小評価リスクが高い。一方、償却費の調整が毎期継続する場合、過大調整の可能性も否定できないため、投資家は買収の頻度と経済的実態を注視すべき。",
-        "sources": [
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却のため、恒常的に発生する非現金費用（調整の妥当性は中程度）",
-            "confidence": 0.2
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響のため、異常変動分として一過性の調整項目",
-            "confidence": 0.8
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用であるリストラ費用で、ほぼ一過性とみなせる",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "pretax_income": 5099000000.0
     },
     {
       "gaap_eps": 13.27536231884058,

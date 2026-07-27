@@ -1,7 +1,32 @@
 {
   "ticker": "PM",
-  "last_updated": "2026-07-20T09:09:59.712988",
+  "last_updated": "2026-07-27T13:24:00.332847",
   "quarters": [
+    {
+      "gaap_eps": 1.8057692307692308,
+      "adjusted_eps": 1.8057692307692308,
+      "gaap_net_income": 2817000000.0,
+      "adjusted_net_income": 2817000000.0,
+      "diluted_shares_used": 1560000000.0,
+      "adjustments": [],
+      "net_adjustment_total": 0.0,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 11192000000.0,
+      "diluted_shares": 1560000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 955000000.0,
+      "pretax_income": 3772000000.0,
+      "ai_analysis": {
+        "health": "Excellent",
+        "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
+        "sources": []
+      }
+    },
     {
       "gaap_eps": 1.5638229634381013,
       "adjusted_eps": 1.6994145498633704,
@@ -47,23 +72,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 676000000.0,
-      "pretax_income": 3114000000.0,
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "調整項目のうち無形資産償却費(2.51億ドル)が大半を占め、これは買収に伴う恒常的な非現金費用であるため調整の正当性は中程度。リストラ費用は一過性だが全体に占める割合は小さい。市場がGAAP EPS(1.56)で判断する場合、調整後EPS(1.70)の企業実力が見えにくくなり、過小評価の可能性がある。ただし無形資産償却を恒常的に加算調整すると実態を過大評価するリスクもある。投資家は償却費の継続性と買収戦略の経済性を注視し、調整の質を慎重に判断すべき。",
-        "sources": [
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は過去のM&Aから生じる非現金費用で、毎期継続的に発生する恒常的項目である。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用であり、リストラ費用は通常非経常的で調整に適した項目。",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "pretax_income": 3114000000.0
     },
     {
       "gaap_eps": 1.3741976893453145,
@@ -739,53 +748,6 @@
       "pretax_income": 2950000000.0
     },
     {
-      "gaap_eps": 1.3425272610647851,
-      "adjusted_eps": 1.3866132135984606,
-      "gaap_net_income": 2093000000.0,
-      "adjusted_net_income": 2161730000.0,
-      "diluted_shares_used": 1559000000.0,
-      "adjustments": [
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 41000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 32390000.0,
-          "tax_rate_applied": 0.21
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": 46000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "リストラ・事業再編関連",
-          "net_amount": 36340000.0,
-          "tax_rate_applied": 0.21
-        }
-      ],
-      "net_adjustment_total": 68730000.0,
-      "filing_date": "2021-12-31",
-      "form": "10-K",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 8104000000.0,
-      "diluted_shares": 1559000000.0,
-      "period_end": "2021-12-31",
-      "fiscal_year": 2021,
-      "quarter": 4,
-      "tax_expense": 2671000000.0,
-      "pretax_income": 4764000000.0
-    },
-    {
       "gaap_eps": 1.5551282051282052,
       "adjusted_eps": 1.591042269972988,
       "gaap_net_income": 2426000000.0,
@@ -826,7 +788,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
+          "extracted_from": "us-gaap:RestructuringAndRelatedCostIncurredCost",
           "category": "リストラ・事業再編関連",
           "net_amount": 33001581.77791838,
           "tax_rate_applied": 0.23252135400189813
@@ -881,12 +843,12 @@
         {
           "item_id": "restructuring",
           "item_name": "リストラ費用",
-          "amount": 79000000.0,
+          "amount": 79000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
+          "extracted_from": "us-gaap:RestructuringAndRelatedCostIncurredCost",
           "category": "リストラ・事業再編関連",
           "net_amount": 60889992.90276792,
           "tax_rate_applied": 0.22924059616749468
@@ -904,53 +866,6 @@
       "quarter": 2,
       "tax_expense": 646000000.0,
       "pretax_income": 2818000000.0
-    },
-    {
-      "gaap_eps": 1.55,
-      "adjusted_eps": 1.582841091492777,
-      "gaap_net_income": 2418000000.0,
-      "adjusted_net_income": 2469232102.728732,
-      "diluted_shares_used": 1560000000.0,
-      "adjustments": [
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 18000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 13972391.653290529,
-          "tax_rate_applied": 0.22375601926163724
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": 48000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "リストラ・事業再編関連",
-          "net_amount": 37259711.07544141,
-          "tax_rate_applied": 0.22375601926163724
-        }
-      ],
-      "net_adjustment_total": 51232102.728731945,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 7585000000.0,
-      "diluted_shares": 1560000000.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 1,
-      "tax_expense": 697000000.0,
-      "pretax_income": 3115000000.0
     }
   ]
 }

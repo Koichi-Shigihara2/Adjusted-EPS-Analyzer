@@ -1,7 +1,65 @@
 {
   "ticker": "TSLA",
-  "last_updated": "2026-07-20T09:08:19.245478",
+  "last_updated": "2026-07-27T13:22:29.680194",
   "quarters": [
+    {
+      "gaap_eps": 0.31468926553672316,
+      "adjusted_eps": 0.5901321131662048,
+      "gaap_net_income": 1114000000.0,
+      "adjusted_net_income": 2089067680.608365,
+      "diluted_shares_used": 3540000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 1151000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 975067680.6083649,
+          "tax_rate_applied": 0.15285171102661596
+        }
+      ],
+      "net_adjustment_total": 975067680.6083649,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "一般消費財 / 製造 / EV",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing"
+      ],
+      "revenue": 28236000000.0,
+      "diluted_shares": 3540000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 201000000.0,
+      "pretax_income": 1315000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 118.0%）",
+        "sbc_contribution": 1.18,
+        "sbc_to_revenue": 0.041,
+        "sbc_per_share": 0.3251,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "SBCはテスラにとって恒常的な報酬コスト（非現金だが株式希薄化を生む実質コスト）であり一過性ではないため、この調整でAdjusted EPSがGAAPの0.31から0.59へ大幅に上昇するのは持続可能性に疑問を呈する。市場がGAAP EPSで判断する場合、非現金費用の影響で企業の実力（キャッシュ創出力や成長ポテンシャル）が見えにくくなり、過小評価のリスクがある一方、SBCの継続性を無視した調整は過大評価のリスクも伴う。投資家は希薄化調整後EPSやフリーキャッシュフローを重視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テスラでは定期的に発生する恒常的なコストであり、毎期の報酬体系に組み込まれている。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.13482193329564726,
       "adjusted_eps": 0.3240134745688308,
@@ -37,28 +95,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 257000000.0,
-      "pretax_income": 734000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 153.9%）",
-        "sbc_contribution": 1.539,
-        "sbc_to_revenue": 0.046,
-        "sbc_per_share": 0.2911,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "SBCはテスラのような成長企業において従業員報酬として毎期発生する恒常的な非現金費用であり、一過性ではない。GAAP EPSが0.13程度に抑えられている一方、調整後EPSは0.32と2倍以上となっており、市場がGAAPベースで判断する場合、企業の現金稼得力や事業実力を過小評価する可能性が高い。ただし株式報酬は実質的な株主希薄化を伴うため、調整を過度に信頼すると過大評価リスクもある。投資家は調整後EPSだけでなく、希薄化影響や将来のSBCトレンドを慎重に分析すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用として毎期継続的に発生する恒常的なコストであり、成長企業では避けられない報酬形態である。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 734000000.0
     },
     {
       "gaap_eps": 0.23809523809523808,
@@ -714,44 +751,6 @@
       "quarter": 3,
       "tax_expense": 223000000.0,
       "pretax_income": 1841000000.0
-    },
-    {
-      "gaap_eps": 0.3401846887101579,
-      "adjusted_eps": 0.46846435652926277,
-      "gaap_net_income": 1142000000.0,
-      "adjusted_net_income": 1572634844.868735,
-      "diluted_shares_used": 3357000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 474000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 430634844.8687351,
-          "tax_rate_applied": 0.09148766905330151
-        }
-      ],
-      "net_adjustment_total": 430634844.8687351,
-      "filing_date": "2021-06-30",
-      "form": "10-Q",
-      "sector": "一般消費財 / 製造 / EV",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing"
-      ],
-      "revenue": 11958000000.0,
-      "diluted_shares": 3357000000.0,
-      "period_end": "2021-06-30",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 115000000.0,
-      "pretax_income": 1257000000.0,
-      "split_adjusted": true
     }
   ]
 }

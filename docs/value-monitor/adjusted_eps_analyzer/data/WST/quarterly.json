@@ -1,7 +1,70 @@
 {
   "ticker": "WST",
-  "last_updated": "2026-07-20T09:10:08.118974",
+  "last_updated": "2026-07-27T13:24:12.429555",
   "quarters": [
+    {
+      "gaap_eps": 2.1598877980364657,
+      "adjusted_eps": 2.313005515190501,
+      "gaap_net_income": 154000000.0,
+      "adjusted_net_income": 164917293.2330827,
+      "diluted_shares_used": 71300000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 10900000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 9015037.593984963,
+          "tax_rate_applied": 0.17293233082706766
+        },
+        {
+          "item_id": "restructuring",
+          "item_name": "リストラ費用",
+          "amount": 2300000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の事業再編費用",
+          "extracted_from": "us-gaap:RestructuringAndRelatedCostIncurredCost",
+          "category": "リストラ・事業再編関連",
+          "net_amount": 1902255.6390977446,
+          "tax_rate_applied": 0.17293233082706766
+        }
+      ],
+      "net_adjustment_total": 10917293.233082708,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 872300000.0,
+      "diluted_shares": 71300000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 32200000.0,
+      "pretax_income": 186200000.0,
+      "ai_analysis": {
+        "health": "調整中",
+        "comment": "調整項目として恒常的なSBC（株式報酬費用）と一過性のリストラ費用が加算されており、Adjusted EPSがGAAP EPSを上回っている。SBCは非現金だが毎期発生する実質コスト（希薄化含む）であるため、調整の妥当性に疑問が残り、市場がGAAPベースで評価する場合に企業の実力が見えにくくなり過小評価の可能性がある一方、SBCの恒常的調整は過大評価リスクも孕む。投資家はSBCの継続規模とリストラの一時性を注視し、両リスクを考慮すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、恒常的に発生する経営コストであり調整により実態を歪める可能性がある",
+            "confidence": 0.2
+          },
+          {
+            "item": "restructuring",
+            "snippet": "リストラ費用は一過性の事業再編費用としてadd_backされており、非経常的性格が強い",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.9171270718232045,
       "adjusted_eps": 2.170632423562708,
@@ -60,28 +123,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 44700000.0,
-      "pretax_income": 183500000.0,
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目のうち、リストラ費用と一過性税効果は主に一過性だが、株式報酬費用(SBC)は恒常的な運用コストである。市場がGAAP EPS(1.92)で判断する場合、非現金・一過性項目の影響で企業の実力(持続的収益力)が過小評価されている可能性がある。ただしSBCの全額加算によりAdjusted EPS(2.17)が実力をやや過大に見せているリスクもあり、投資家はSBC控除後の持続可能EPSと税効果の一過性確認に注目すべき。全体として過小評価リスクが優勢だが、調整の質に注意が必要。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用だが恒常的に発生する株式報酬コストであり、毎期の運用費用として実力評価に含めるべき",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "一過性の事業再編費用であり、リストラ関連の非経常的コストとして加算調整が妥当",
-            "confidence": 0.8
-          },
-          {
-            "item": "tax_one_time",
-            "snippet": "法人税率変更・過年度税額戻し等の一過性影響であり、税効果の歪みを除去する明確に一過性の項目",
-            "confidence": 1.0
-          }
-        ]
-      }
+      "pretax_income": 183500000.0
     },
     {
       "gaap_eps": 1.8170563961485557,
@@ -654,53 +696,6 @@
       "quarter": 3,
       "tax_expense": 20400000.0,
       "pretax_income": 141000000.0
-    },
-    {
-      "gaap_eps": 2.4868073878627968,
-      "adjusted_eps": 2.528485723972229,
-      "gaap_net_income": 188500000.0,
-      "adjusted_net_income": 191659217.87709498,
-      "diluted_shares_used": 75800000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 5500000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 4455307.262569833,
-          "tax_rate_applied": 0.18994413407821228
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": -1600000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringAndRelatedCostIncurredCost",
-          "category": "リストラ・事業再編関連",
-          "net_amount": -1296089.3854748602,
-          "tax_rate_applied": 0.18994413407821228
-        }
-      ],
-      "net_adjustment_total": 3159217.8770949724,
-      "filing_date": "2022-06-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 771300000.0,
-      "diluted_shares": 75800000.0,
-      "period_end": "2022-06-30",
-      "fiscal_year": 2022,
-      "quarter": 2,
-      "tax_expense": 44200000.0,
-      "pretax_income": 232700000.0
     }
   ]
 }
