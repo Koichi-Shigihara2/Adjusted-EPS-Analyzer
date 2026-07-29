@@ -220,6 +220,15 @@ def calc_ttm_series(
         )
 
     # Q4 implied 合成エントリを計算し、quarterly に追加
+    # [[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]対応（2026-07-29投資調査）:
+    # FLOW_FIELDSにはeps_basic/eps_dilutedが含まれるが、両者は比率フィールド
+    # （加重平均株式数で変動するため単純合算・差分が数学的に無意味）であり、
+    # q4_implied.py::Q4_IMPLIED_FIELDSのガードに含まれないため
+    # build_q4_implied_entries()は常に空リストを返す（実害なし、冗長な
+    # 呼び出しのみ）。この2フィールドをFLOW_FIELDSから除外する対応は
+    # 本ループの外側（validate_field_classification()の分類契約）に影響する
+    # ため今回は行わない。short_term_investments/total_liabilitiesは
+    # category="stock"のためFLOW_FIELDSに含まれず、本ループに到達しない。
     for field_name in FLOW_FIELDS:
         q4_list = build_q4_implied_entries(
             annual_by_field.get(field_name, []),

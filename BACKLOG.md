@@ -5182,38 +5182,6 @@ _merge_normalized_by_priority()の「(end_date, is_annual)キーごとに
 
 ---
 
-### [LAYER3-SGA-Q4-MISSING-1] selling_general_and_administrativeがQ4逆算・欠落四半期逆算どちらのスコープにも含まれておらずQ4が恒常的に欠落する
-**優先度:** 中〜高
-**分類:** バグ
-**登録日:** 2026-07-24
-**発見:** SM/SGA分離258件全数検証
-
-#### 内容
-selling_general_and_administrativeが、q4_implied.py::
-Q4_IMPLIED_FIELDS・layer3_builder.py::MISSING_QUARTER_IMPLIED_FIELDS
-のどちらのスコープにも含まれていない。年次・Q1・Q2・Q3は正しく
-取得できるが、Q4（多くの企業の12月決算年度末）が恒常的に欠落する。
-ABBVで実データ確認: 2024-12-31年次14,752,000,000・Q1〜Q3は正常
-だが、Q4単体・Q4逆算エントリともに0件。
-
-#### 影響
-42銘柄・171四半期に影響（ABBV/AMD/AVGO/BBAI/BROS/CAT/CIX/COHR/
-DELL/ELF/ENTG/FCX/FICO/GEV/HEI/HON/HWM/JNJ/JOBY/KLAC/KO/KULR/LITE/
-LLY/LOAR/LRCX/NVDA/PAYS/PEP/RDW/RKLB/RMBS/SCCO/SITM/TASK/TDY/TSLA/
-VRT/VST/VZ/WMT/WST/XOM）。selling_general_and_administrative自体が
-既存TTM回帰比較の対象外（旧パイプラインに存在しない新規フィールド
-のため）のため、これまでの不一致件数には一切反映されておらず可視化
-されていなかった。
-
-#### 対応方針
-未定。Q4_IMPLIED_FIELDS・MISSING_QUARTER_IMPLIED_FIELDS双方に
-selling_general_and_administrativeを追加する対応が候補。
-
-#### 着手条件
-なし
-
----
-
 ### [LAYER3-GA-STANDALONE-TAG-UNMAPPED-1] GeneralAndAdministrativeExpense（Selling抜きG&A単体タグ）がLayer2のどのフィールドにもマッピングされていない
 **優先度:** 中
 **分類:** データ品質 / タグ網羅性
@@ -5245,36 +5213,142 @@ CONFLATION-1]]と同種の概念混在リスクに注意）かの判断が必要
 
 ---
 
-### [LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1] TTM回帰比較スクリプトが旧パイプライン非存在の新規フィールドを検証対象外にしている
-**優先度:** 中
-**分類:** テスト / 検証プロセスの欠陥
-**登録日:** 2026-07-24
-**発見:** SM/SGA分離258件全数検証
+### [LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1] GrossProfitバックフィルが本番データパス(annual_YYYY.json)に到達しない構造的欠落
+**優先度:** 中〜高
+**分類:** データ品質 / アーキテクチャ欠陥
+**登録日:** 2026-07-29
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
 
 #### 内容
-現行のTTM回帰比較スクリプトは、旧ttm/データが持つキーのみを起点に
-新旧を突合する設計（for pascal_key, old_val in old_flow.items():）
-のため、旧パイプラインに存在しなかった新規フィールド
-（selling_general_and_administrative等、Layer2スキーマ追加時に
-新設された6フィールド）は回帰比較の対象外になる。このため
-[[LAYER3-SGA-Q4-MISSING-1]]のような新規フィールド側のバグは、
-これまでの一連の回帰検証を何度実施しても一切検出されなかった。
+normalizer.py::_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()は
+中間パイプライン(ttm/{ticker}_ttm_series.json・store_v2)にのみ作用し、TANUKI VALUATION・
+STONKS SILOが実際に読むcommon/sec_data/data/{TICKER}/annual_YYYY.jsonには一切書き戻され
+ない。加えてこのバックフィルは書き込み専用(一方向)であり、gross_profitが既に存在する
+期間ではcost_of_revenueとの突合・検算は一切行われない。
 
 #### 影響
-新規追加6フィールド（short_term_investments・total_liabilities・
-eps_basic・eps_diluted・cost_of_revenue・
-selling_general_and_administrative）全てが、同様の「検証の死角」に
-入っている可能性がある。selling_general_and_administrative以外の
-5フィールドは未検証。
+cost_of_revenueは本番データパス上でSTONKS SILO以外どこからも参照・検算されない
+実質的な死角フィールドになっている。CAKE実例ではFY2008-2021の19年間、cost_of_revenue
+実額がありながらgross_profitは一貫してNoneだった。
 
 #### 対応方針
-未定。回帰比較スクリプトを「新store側の全キーを起点に、旧データが
-存在すれば突合、存在しなければ新規フィールドとして別途整合性検証
-（Q4欠落・カットオフ・候補タグ網羅性等の内部チェック）を行う」設計に
-拡張する必要がある。
+未定。バックフィル結果を本番annual_YYYY.jsonに書き戻すか、既存gross_profit
+との突合検算ロジックを追加するかの判断が必要。
 
 #### 着手条件
-なし。フェーズD着手前に他5フィールドの検証を行うことを推奨
+なし
+
+---
+
+### [LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1] 監視105銘柄中16銘柄でcost_of_revenue系タグが構造的に欠落
+**優先度:** 中
+**分類:** データ品質 / 一次データ開示側の制約
+**登録日:** 2026-07-29
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+revenue系タグの最終報告日とcost_of_revenue系6候補タグの最終報告日を比較した
+横展開スキャンにより、NEVER_REPORTED型8銘柄(APGE/CEG/ENB/FLYW/JOBY/VST/V/XOM)・GAP型
+8銘柄(ASTS/BKNG/CAKE/CDNS/CPRT/INTU/LRCX/VZ)、計16銘柄(約15%)で同種パターンを確認。
+CAKEについては一次情報(10-K原本)で根本原因を特定: FY2022の10-Kから勘定科目名を
+"Cost of goods and services sold"→"Food and beverage costs"に変更すると同時に、
+当該科目へのXBRLタグ付け自体を廃止していた(金額・会計処理自体に変化はない)。
+company_facts.json内を金額から逆引き検索してもマッチするタグは1件も存在せず、
+別タグへの切替(LLY-CAPEX-STALE-1型)ではなく、一次データ(SEC EDGAR提出)側で
+タグ付けされていない、抽出ロジック改善では回収不可能なパターンと判明。
+BKNG/VZ/CDNS等も業態的にCOGS概念が薄い・別カテゴリ開示のため同種の可能性が高いが、
+CAKE以外は一次情報での裏取り未実施。
+
+#### 影響
+STONKS SILOのgross margin表示がこの16銘柄について恒久的にNoneのまま表示され続ける。
+
+#### 対応方針
+未定。CAKE型(一次データ側の制約)は候補タグ拡充では解決しない。
+warn_acknowledged.json的なホワイトリスト運用、またはSTONKS SILO UI側で
+「原価データ未開示」等の明示区別表示を検討する余地がある。
+
+#### 着手条件
+なし。ASTS/LRCX([[LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1]])の
+個別調査結果を踏まえてから全体方針を決めるのが望ましい。
+
+---
+
+### [LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1] ASTS・LRCXのcost_of_revenue欠落は回収可能なタグサイレント切替の可能性
+**優先度:** 中
+**分類:** データ品質 / 要個別調査
+**登録日:** 2026-07-29
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]のGAP型8銘柄のうち、ASTS(約2.2年前に
+報告停止)・LRCX(約0.7年前に報告停止)は他6銘柄(CAKE等、数年〜十数年前に停止)と比べて
+停止時期が新しく、CAKEのような「タグ付け自体の廃止」ではなく、単に別の標準タグに
+切り替えた(LLY-CAPEX-STALE-1型の本当のサイレント切替)である可能性が残る。
+
+#### 影響
+この2銘柄は候補タグ拡充・ticker override(quarterly.pyの_COGS_FALLBACKS一部が
+まだparser.py本番に未反映であることも一因の可能性)で回収できる見込みがある。
+
+#### 対応方針
+未定。ASTS・LRCXのcompany_facts.jsonを個別に一次調査し、報告停止後に
+使い始めた代替タグの有無を確認する必要がある。
+
+#### 着手条件
+なし
+
+---
+
+### [STONKS-SILO-COGS-DEAD-FALLBACK-1] STONKS SILOのcost_of_revenue代替キー参照が実質常にNoneを返す死んだフォールバック
+**優先度:** 低〜中
+**分類:** バグ / デッドコード
+**登録日:** 2026-07-29
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+discover/stonks-silo/src/fetcher.py(L174-175)がpl_raw.get("cost_of_revenue") or
+pl_raw.get("cost_of_goods_sold") or pl_raw.get("cost_of_goods_and_services_sold")で
+GrossProfit補完を行っているが、後2者のキー(cost_of_goods_sold・
+cost_of_goods_and_services_sold)はparser.py生成のannual_YYYY.jsonのpl辞書に実在しない
+(parser.py側は複数候補タグをcost_of_revenueという単一キーに統合するため)。実質的に
+cost_of_revenue頼みの1経路のみが機能しており、後2者は常にNoneを返すデッドコード。
+
+#### 影響
+現状は実害が顕在化していない(cost_of_revenueキーが機能する限り問題ないため)が、
+将来のリファクタ時に誤解を招く可能性がある。
+
+#### 対応方針
+未定。デッドな2キー参照を削除するか、コメントで意図的なフォールバック
+候補(将来parser.py側のキー分離を見越した予約)である旨を明記するかの判断が必要。
+
+#### 着手条件
+なし
+
+---
+
+### [LAYER3-VISA-EPS-TAG-MISSING-1] Visa(V)がEPS関連タグを一切報告せずeps_diluted経由のROEフォールバックが機能しない
+**優先度:** 低
+**分類:** データ品質
+**登録日:** 2026-07-29
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+Visa(V)はEarningsPerShareBasic・EarningsPerShareDiluted・
+EarningsPerShareBasicAndDilutedのいずれのタグも全期間にわたり一切報告していない
+(実際に報告しているのはBusinessAcquisitionProFormaEarningsPerShareDiluted等の
+非該当タグのみ)。これによりVisaのeps_basic/eps_dilutedは全期間で暗黙にNoneになって
+いると推測される。
+
+#### 影響
+common/sec_data/reader.py::get_roe_avg_detail()のNetIncome欠損時フォールバック
+(net_income = eps_diluted × shares_diluted)がVisaに対して機能しない。Visaで
+net_incomeが欠損するケースが実際に発生した場合、代替推計手段が失われる。
+
+#### 対応方針
+未定。Visa向けのEPS個別override候補タグの探索、またはVisaについては
+ROEフォールバック不可を許容する明示的な設計判断が必要。
+
+#### 着手条件
+なし
 
 ---
 

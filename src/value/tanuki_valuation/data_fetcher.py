@@ -219,7 +219,7 @@ class TTMReader:
         filtered = [
             s for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
-            and _quarters_complete(s.get("flow", {}), "OCF", "CapEx")
+            and _quarters_complete(s.get("flow", {}), "operating_cash_flow", "capital_expenditure")
         ]
         if len(filtered) < 2:
             return None
@@ -251,7 +251,7 @@ class TTMReader:
         return sum(
             1 for s in self._series
             if s.get("flow", {}).get("FCF", {}).get("val") is not None
-            and _quarters_complete(s.get("flow", {}), "OCF", "CapEx")
+            and _quarters_complete(s.get("flow", {}), "operating_cash_flow", "capital_expenditure")
         )
 
     def get_series(self) -> list[dict] | None:
@@ -265,42 +265,50 @@ def build_rice_annual_shape(ttm_series: list[dict]) -> list[dict]:
 
     rice.py が使うフィールド:
       period                      ← "TTM@{ttm_end}" 形式（警告ログ用）
-      cf.operating_cash_flow      ← OCF
-      cf.capital_expenditure      ← CapEx
-      pl.revenue                  ← Revenue
-      pl.net_income               ← NetIncome
-      pl.research_and_development ← RD（Noneの場合はNoneのまま渡す）
-      pl.selling_and_marketing    ← SM（Noneの場合はNoneのまま渡す、rice側で or 0.0）
+      cf.operating_cash_flow      ← operating_cash_flow
+      cf.capital_expenditure      ← capital_expenditure
+      pl.revenue                  ← revenue
+      pl.net_income               ← net_income
+      pl.research_and_development ← research_and_development（Noneの場合はNoneのまま渡す）
+      pl.selling_and_marketing    ← selling_and_marketing（Noneの場合はNoneのまま渡す、rice側で or 0.0）
       data_quality                ← sga_gap_warning用（TTMパスでは空dict）
 
-    OCF/CapEx/Revenue/NetIncomeのいずれかがquarters_used<4（四半期集計が
-    不完全）の期間はresultから除外する（TTM-QUARTERS-CHECK-1）。RD/SMは
+    operating_cash_flow/capital_expenditure/revenue/net_incomeのいずれかが
+    quarters_used<4（四半期集計が不完全）の期間はresultから除外する
+    （TTM-QUARTERS-CHECK-1）。research_and_development/selling_and_marketingは
     rice.py側で既にNone許容（0扱い・警告ログのみ）のためチェック対象外。
 
     鮮度チェック（LLY-CAPEX-STALE-1型対策）はttm_series[0]（最新、降順ソート
     前提）のみに適用する。TTM系列は各エントリが約1年間隔で保存される設計の
     ため、series[0]以外は正常な銘柄でも構造的に365日以上古く、全エントリに
     適用すると正常な過去実績まで除外されてしまう（get_fcf_series()と同じ理由）。
+
+    [[TTM-PASCALCASE-KEY-STALE-1]]対応（2026-07-29）: フィールド名は
+    フェーズC移行（ttm_calculator.py snake_case化）後のLayer3命名
+    （config/sec_concept_definitions.json）に統一する。旧PascalCase
+    （"OCF"/"CapEx"/"Revenue"/"NetIncome"/"RD"/"SM"/"SBC"）のままだった
+    ため2026-07-26のデータ再生成以降、全ての結果がフィルタで除外され
+    本関数が常に空リストを返す状態になっていた（RICEスコア全銘柄停止）。
     """
     if ttm_series and not _quarters_fresh(_freshest_end(ttm_series)):
         return []
     result = []
     for s in ttm_series:
         flow = s.get("flow", {})
-        if not _quarters_complete(flow, "OCF", "CapEx", "Revenue", "NetIncome"):
+        if not _quarters_complete(flow, "operating_cash_flow", "capital_expenditure", "revenue", "net_income"):
             continue
         result.append({
             "period": f"TTM@{s.get('ttm_end', '?')}",
             "cf": {
-                "operating_cash_flow":    flow.get("OCF", {}).get("val"),
-                "capital_expenditure":    flow.get("CapEx", {}).get("val"),
-                "stock_based_compensation": flow.get("SBC", {}).get("val"),
+                "operating_cash_flow":    flow.get("operating_cash_flow", {}).get("val"),
+                "capital_expenditure":    flow.get("capital_expenditure", {}).get("val"),
+                "stock_based_compensation": flow.get("stock_based_compensation", {}).get("val"),
             },
             "pl": {
-                "revenue":                  flow.get("Revenue", {}).get("val"),
-                "net_income":               flow.get("NetIncome", {}).get("val"),
-                "research_and_development": flow.get("RD", {}).get("val"),
-                "selling_and_marketing":    flow.get("SM", {}).get("val"),
+                "revenue":                  flow.get("revenue", {}).get("val"),
+                "net_income":               flow.get("net_income", {}).get("val"),
+                "research_and_development": flow.get("research_and_development", {}).get("val"),
+                "selling_and_marketing":    flow.get("selling_and_marketing", {}).get("val"),
             },
             "data_quality": {},
         })
@@ -442,10 +450,16 @@ class TanukiDataFetcher:
             logging.warning("[%s] TTM series unavailable, fallback to annual FCF", ticker)
 
         ttm_series_data = ttm_reader.get_series()
-        if ttm_series_data:
-            rice_annual_data = build_rice_annual_shape(ttm_series_data)
+        rice_annual_data = build_rice_annual_shape(ttm_series_data) if ttm_series_data else []
+        if rice_annual_data:
             rice_data_source = "ttm_series"
         else:
+            # [[TTM-PASCALCASE-KEY-STALE-1]]対応: get_series()自体は非空でも
+            # build_rice_annual_shape()の完全性フィルタで全件除外されうる
+            # （field_name未取得＝quarters_used=0扱い）。get_fcf_series()/
+            # _select_fcf_source()と対称に、フィルタ後の結果が空の場合のみ
+            # annual実績へフォールバックする（フィルタ前のget_series()が
+            # 非空というだけでrice_data_source="ttm_series"を確定させない）。
             rice_annual_data = self.sec_reader.get_annual_range(ticker, years=4) if self.sec_reader else None
             rice_data_source = "annual_fallback"
 

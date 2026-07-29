@@ -66,9 +66,13 @@ def audit_ticker(ticker: str) -> dict:
         return result
 
     n = len(series)
-    ni_none  = sum(1 for s in series if s.get("flow", {}).get("NetIncome", {}).get("val") is None)
-    ocf_none = sum(1 for s in series if s.get("flow", {}).get("OCF",       {}).get("val") is None)
-    rev_none = sum(1 for s in series if s.get("flow", {}).get("Revenue",   {}).get("val") is None)
+    # フェーズC移行（2026-07-25、ttm_calculator.py snake_case化）でflowキーが
+    # PascalCase→snake_caseに変わったが本チェックが追随しておらず、2026-07-26
+    # のデータ再生成以降、全銘柄で「全件None」の誤検知が発生していた
+    # （[[TTM-PASCALCASE-KEY-STALE-1]]対応）。
+    ni_none  = sum(1 for s in series if s.get("flow", {}).get("net_income",           {}).get("val") is None)
+    ocf_none = sum(1 for s in series if s.get("flow", {}).get("operating_cash_flow",  {}).get("val") is None)
+    rev_none = sum(1 for s in series if s.get("flow", {}).get("revenue",             {}).get("val") is None)
 
     # 重大: 計算の根幹となるフィールドが全件 None
     if ni_none == n:

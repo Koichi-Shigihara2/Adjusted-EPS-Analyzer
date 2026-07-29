@@ -30,6 +30,24 @@ ttm/出力からimpliedエントリが消失し「値を変えない集約」と
 ため、両モジュールの既存許可フィールドの**和集合**（15フィールド）を
 本モジュールのガードとして採用する。いずれも実際に加算可能なフロー系
 概念であり、除外対象のshares/stock系フィールドとは性質が異なる。
+
+[[LAYER3-SGA-Q4-MISSING-1]]対応（2026-07-29）でselling_general_and_administrative
+（SGA）を追加し16フィールドとした（詳細は下記Q4_IMPLIED_FIELDS定義部のコメント参照）。
+
+[[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]対応（2026-07-29投資調査）:
+Layer2スキーマ追加時に新設された新規6フィールド（short_term_investments・
+total_liabilities・eps_basic・eps_diluted・cost_of_revenue・
+selling_general_and_administrative）のうち、意図的にこのガード（延いてはQ4逆算
+対象）に含めないフィールドとその理由:
+- short_term_investments・total_liabilities: category="stock"（期末残高の
+  スナップショット）。「年次−Q1−Q2−Q3」という近似はSTOCK系には数学的に無意味
+  （本docstring冒頭「適用範囲のガード」参照）。
+- eps_basic・eps_diluted: 比率フィールド（純利益÷加重平均株式数）。四半期ごとに
+  分母（加重平均株式数）が変動し、赤字/黒字混在期の希薄化証券の扱いも変わるため、
+  単純合算・差分が数学的に意味を持たない（shares系と同種のリスク）。
+cost_of_revenue（_COGS）・selling_general_and_administrative（SGA）の2フィールドは
+上記2グループと異なりFLOW系（期間累積可能）であるため、既にQ4_IMPLIED_FIELDSの
+対象。
 """
 
 from __future__ import annotations
@@ -39,10 +57,15 @@ from datetime import date
 # フロー系（累積・加算可能）フィールドの許可リスト（PascalCase）。
 # normalizer.py::Q4_IMPLIED_FIELDS ∪ ttm_calculator.py::FLOW_FIELDS。
 # 上記docstring参照。
+# [[LAYER3-SGA-Q4-MISSING-1]]対応（2026-07-29）: selling_general_and_administrative
+# （Layer2スキーマ追加時の新規フィールド、旧normalizer.py/ttm_calculator.pyには
+# 存在しないため上記の和集合には含まれていなかった）を追加。42銘柄・171四半期で
+# Q4が恒常的に欠落していたバグの是正。SGA自体はSM同様フロー系（累積可能）の
+# 費用項目であり、他フィールドと同じ「年次−Q1−Q2−Q3」近似が数学的に妥当。
 Q4_IMPLIED_FIELDS = frozenset({
     "Revenue", "_COGS",
     "OCF", "ICF", "CFF", "CapEx", "FinanceLeasePmts",
-    "RD", "SM", "SBC", "DA",
+    "RD", "SM", "SBC", "DA", "SGA",
     "NetIncome", "OperatingIncome", "GrossProfit",
     "Buyback",
 })
@@ -72,6 +95,7 @@ _SNAKE_TO_PASCAL = {
     "operating_income": "OperatingIncome",
     "gross_profit": "GrossProfit",
     "buyback": "Buyback",
+    "selling_general_and_administrative": "SGA",
 }
 
 

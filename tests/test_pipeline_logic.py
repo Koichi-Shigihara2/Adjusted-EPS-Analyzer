@@ -3015,16 +3015,18 @@ def _make_flow_entry(val, quarters_used=4, missing=0):
 
 
 def _make_ttm_entry(ttm_end, ocf_q=4, capex_q=4, revenue_q=4, ni_q=4, fcf_val=100.0):
-    """完全性フィルタのテスト用にOCF/CapEx/Revenue/NetIncomeのquarters_usedを
-    個別に指定できるTTM seriesエントリを構築する（MO実データ同様、FCF自体には
-    quarters_usedフィールドが存在しない）"""
+    """完全性フィルタのテスト用にoperating_cash_flow/capital_expenditure/
+    revenue/net_incomeのquarters_usedを個別に指定できるTTM seriesエントリを
+    構築する（MO実データ同様、FCF自体にはquarters_usedフィールドが存在しない）。
+    フィールド名はフェーズC移行後のLayer3 snake_case命名
+    （[[TTM-PASCALCASE-KEY-STALE-1]]対応、2026-07-29）。"""
     return {
         "ttm_end": ttm_end,
         "flow": {
-            "OCF": _make_flow_entry(500.0, ocf_q),
-            "CapEx": _make_flow_entry(400.0, capex_q),
-            "Revenue": _make_flow_entry(1000.0, revenue_q),
-            "NetIncome": _make_flow_entry(300.0, ni_q),
+            "operating_cash_flow": _make_flow_entry(500.0, ocf_q),
+            "capital_expenditure": _make_flow_entry(400.0, capex_q),
+            "revenue": _make_flow_entry(1000.0, revenue_q),
+            "net_income": _make_flow_entry(300.0, ni_q),
             "FCF": {"val": fcf_val},
         },
     }
@@ -3139,9 +3141,10 @@ class TestTTMReaderQuartersCompleteness:
         assert reader.get_periods() == 1
 
     def test_missing_field_key_treated_as_incomplete(self):
-        """OCF/CapExキー自体が存在しない場合もquarters_used=0扱いで除外される"""
+        """operating_cash_flow/capital_expenditureキー自体が存在しない場合も
+        quarters_used=0扱いで除外される"""
         entry = _make_ttm_entry(_rel_date(90), fcf_val=100.0)
-        del entry["flow"]["CapEx"]
+        del entry["flow"]["capital_expenditure"]
         series = [
             _make_ttm_entry(_rel_date(455), fcf_val=90.0),
             _make_ttm_entry(_rel_date(820), fcf_val=80.0),

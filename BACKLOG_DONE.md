@@ -9234,3 +9234,174 @@ NVDA: `AvailableForSaleSecuritiesDebtSecuritiesCurrent`系タグがBS計上額
 $51,951Mを約24%（$12.4B）過小評価する問題は、対応タグが特定できて
 いない（XBRL全項目照合済みだが該当なし）。[[NVDA-STI-TAG-UNIDENTIFIED-1]]
 として分離継続。
+
+---
+
+### ✅ [TTM-PASCALCASE-KEY-STALE-1] フェーズC移行（ttm_series.jsonキーPascalCase→snake_case化）で消費側2箇所が旧キー参照のまま取り残され本番障害化
+**優先度:** 高
+**分類:** バグ / 移行漏れ
+**完了日:** 2026-07-29
+**発見:** [[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]対応の実装検証中
+
+#### 内容
+フェーズC（コミット`0148301c1`、2026-07-25 20:34 JST）で`ttm_calculator.py`の
+`flow`辞書キーをPascalCase（`"Revenue"`/`"OCF"`/`"NetIncome"`等）から
+snake_case（`"revenue"`/`"operating_cash_flow"`/`"net_income"`等）へ移行した際、
+`ttm_series.json`の全消費者への横展開確認が行われず、以下2箇所が旧キー参照の
+まま取り残されていた:
+
+- `common/sec_data/audit.py`（L69-71）: `flow.get("NetIncome"/"OCF"/"Revenue")`
+  参照。診断ツールのみへの影響（実害なし、誤検知のみ）。
+- `src/value/tanuki_valuation/data_fetcher.py`: `build_rice_annual_shape()`・
+  `_quarters_complete()`・`get_fcf_series()`が`"OCF"/"CapEx"/"Revenue"/
+  "NetIncome"/"RD"/"SM"/"SBC"`という旧キーを参照。**本番影響あり。**
+
+データ自体は2026-07-26 21:50 JST（Phase C後最初の自動データ再生成
+コミット`340b8b8ae`）にPascalCase→snake_case化され、この時点から
+上記2箇所が「キーが存在しない＝quarters_used=0扱い」として全件フィルタ
+アウトする状態が実際に発火した。
+
+#### 影響
+2026-07-26 21:50 JST 〜 2026-07-29（発見・修正まで、約3日間）:
+- 監視100銘柄**全100銘柄**で`audit.py`のNI/OCF/Revenueチェックが
+  誤って「全件None」の重大エラーを報告（診断機能の機能不全、実害なし）
+- **監視100銘柄中100銘柄でRICEスコアが完全停止**（`rice_data_source=
+  "ttm_series"`のまま誤って確定するが`build_rice_annual_shape()`が
+  内部で空リストを返し`rice.available=False, note="SEC年次データ未取得"`
+  という誤った表示。`report.txt`のMatrix①・RICE=N/A表示として可視化）
+- **監視100銘柄中94銘柄でFCFソース選択が本来のTTM系列（`ttm_series`）
+  ではなく年次実績（`annual_fallback`）へ誤って後退**（`get_fcf_series()`
+  の同一キー不一致が原因。`_select_fcf_source()`の設計意図「TTM系列を
+  常に優先する」が機能不全に陥っていた）
+- DCF/Intrinsic Value自体は`_select_fcf_source()`のフォールバック設計に
+  救われ実害を免れていた（FCFソースが年次実績に後退するだけで計算自体は
+  継続。LYFT等の既知の恒久マイナスFCF銘柄によるFAIL判定は本件と無関係の
+  既存事象と確認済み）
+
+#### 対応方針
+変換層（マッピングテーブル）を新設せず、消費側をLayer3のsnake_case
+キーに合わせて書き換える方針を採用（PascalCase/snake_case二重管理を
+避けるため）。
+
+【2026-07-29対応完了】
+- `audit.py`: L69-71を`"net_income"/"operating_cash_flow"/"revenue"`に修正
+- `data_fetcher.py`: `build_rice_annual_shape()`・`_quarters_complete()`・
+  `get_fcf_series()`の全呼び出し箇所をsnake_case化。加えて
+  `build_rice_annual_shape()`が空リストを返す場合に`rice_data_source=
+  "annual_fallback"`へ再フォールバックする分岐を追加（`get_series()`が
+  非空というだけで`rice_data_source="ttm_series"`を確定させていた設計上の
+  非対称性を解消。`get_fcf_series()`側は元々フィルタ後の結果で判定する
+  対称的な設計だったため実害を免れていた）
+- `tests/test_pipeline_logic.py`のフィクスチャ（`_make_ttm_entry()`等）も
+  snake_caseに追従
+
+**検証結果**: pytest 442 passed（既知2件`[[TEST-STALE-IV-1]]`のみ）、
+`audit.py`（NI/OCF/Revenue正常値復帰、WARN14件のみ・重大エラー解消）、
+`report_consistency_check.py`（NG=0/WARN=71、既存WARNと同一）。全100銘柄
+`pipeline.py --skip-risk`再生成の結果:
+- RICE: 100銘柄中62銘柄が`rice.available=True`へ復帰（残る38銘柄は
+  「OCF/純利益データなし」「セクター除外」等、正当な既存の対象外理由で
+  RICE不算出。バグに起因する誤表示は0件に解消）
+- FCFソース: 94銘柄が`annual_fallback`→`ttm_series`へ復帰
+- うち40銘柄でIntrinsic_Value_Per_Shareが1セント超変化（MSCI+113.4%・
+  LITE-89.5%・ENTG+90.9%等）。3銘柄について一次データ（SEC EDGAR
+  company_facts.json、MSCIはQ1 2026 10-Q原本まで直接確認）で検証した結果、
+  TTM系列のOCF/CapEx自体は正確（単一タグ一貫使用・合算値も原本と完全一致）
+  であり、変化は既存の`core_calculator.py`側FCF_Base選択・外れ値調整
+  ロジック（本件の修正対象外、変更なし）が正しいデータソースを初めて
+  受け取った結果と判断（詳細は該当調査のチャット記録参照）
+- LRCXの`intrinsic_value_per_share=$62.76`等、FCF_Baseの選択結果が
+  たまたま同一だった銘柄ではIV完全一致を確認（デグレなし）
+
+---
+
+### ✅ [LAYER3-SGA-Q4-MISSING-1] selling_general_and_administrativeがQ4逆算・欠落四半期逆算どちらのスコープにも含まれておらずQ4が恒常的に欠落する
+**優先度:** 中〜高
+**分類:** バグ
+**完了日:** 2026-07-29
+**発見:** SM/SGA分離258件全数検証
+
+#### 内容
+selling_general_and_administrativeが、q4_implied.py::
+Q4_IMPLIED_FIELDS・layer3_builder.py::MISSING_QUARTER_IMPLIED_FIELDS
+のどちらのスコープにも含まれていない。年次・Q1・Q2・Q3は正しく
+取得できるが、Q4（多くの企業の12月決算年度末）が恒常的に欠落する。
+ABBVで実データ確認: 2024-12-31年次14,752,000,000・Q1〜Q3は正常
+だが、Q4単体・Q4逆算エントリともに0件。
+
+#### 影響
+42銘柄・171四半期に影響（ABBV/AMD/AVGO/BBAI/BROS/CAT/CIX/COHR/
+DELL/ELF/ENTG/FCX/FICO/GEV/HEI/HON/HWM/JNJ/JOBY/KLAC/KO/KULR/LITE/
+LLY/LOAR/LRCX/NVDA/PAYS/PEP/RDW/RKLB/RMBS/SCCO/SITM/TASK/TDY/TSLA/
+VRT/VST/VZ/WMT/WST/XOM）。selling_general_and_administrative自体が
+既存TTM回帰比較の対象外（旧パイプラインに存在しない新規フィールド
+のため）のため、これまでの不一致件数には一切反映されておらず可視化
+されていなかった。
+
+#### 対応方針
+Q4_IMPLIED_FIELDS・MISSING_QUARTER_IMPLIED_FIELDS双方に
+selling_general_and_administrativeを追加する。
+
+【2026-07-29対応完了】
+- `q4_implied.py`: `_SNAKE_TO_PASCAL`に`selling_general_and_administrative→
+  "SGA"`を追加、`Q4_IMPLIED_FIELDS`（15→16フィールド）に`"SGA"`を追加
+- `layer3_builder.py`: `MISSING_QUARTER_IMPLIED_FIELDS`に
+  `selling_general_and_administrative`を追加
+- `common/sec_data/newfield_q4_cutoff_check.py`（新規常設スクリプト）で
+  修正後の全量検証を実施した結果、SGAのQ4欠落は**0件**に解消
+  （旧: 42銘柄・171四半期）。cost_of_revenue側にも同種の検証を適用し
+  NG 0件（FRSHのsource_tag不一致による正当なガードスキップ1件のみ）
+- pytest 442 passed（既知2件のみ）、`report_consistency_check.py`
+  NG=0/WARN=71（既存と同一）で確認済み
+
+---
+
+### ✅ [LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1] TTM回帰比較スクリプトが旧パイプライン非存在の新規フィールドを検証対象外にしている
+**優先度:** 中
+**分類:** テスト / 検証プロセスの欠陥
+**完了日:** 2026-07-29
+**発見:** SM/SGA分離258件全数検証
+
+#### 内容
+現行のTTM回帰比較スクリプトは、旧ttm/データが持つキーのみを起点に
+新旧を突合する設計（for pascal_key, old_val in old_flow.items():）
+のため、旧パイプラインに存在しなかった新規フィールド
+（selling_general_and_administrative等、Layer2スキーマ追加時に
+新設された6フィールド）は回帰比較の対象外になる。このため
+[[LAYER3-SGA-Q4-MISSING-1]]のような新規フィールド側のバグは、
+これまでの一連の回帰検証を何度実施しても一切検出されなかった。
+
+#### 影響
+新規追加6フィールド（short_term_investments・total_liabilities・
+eps_basic・eps_diluted・cost_of_revenue・
+selling_general_and_administrative）全てが、同様の「検証の死角」に
+入っている可能性がある。selling_general_and_administrative以外の
+5フィールドは未検証だった。
+
+#### 対応方針
+回帰比較スクリプトを汎用的に拡張するのではなく、6フィールドそれぞれの
+性質を個別調査した上で対応要否を判断する方針とした。
+
+【2026-07-29対応完了】6フィールド全件の投資調査を実施し、以下の通り
+決着した:
+- **short_term_investments・total_liabilities（STOCK系）**: 「年次−Q1−
+  Q2−Q3」という新旧突合の前提自体が数学的に成立しないため対象外と判定
+  （対応不要）。既存のreport_consistency_check.py（WARN-25/26）による
+  None検知・遷移検知で部分的にカバーされていることを確認
+- **eps_basic・eps_diluted（比率フィールド）**: 加重平均株式数の変動に
+  より単純合算・差分が数学的に無意味なため対象外と判定（対応不要）。
+  eps_dilutedはreader.py::get_roe_avg_detail()のROEフォールバックとして
+  実消費されている一方、eps_basicは消費者ゼロと判明（[[LAYER3-VISA-
+  EPS-TAG-MISSING-1]]等、副次課題を分離して記録）
+- **cost_of_revenue（FLOW系）**: Q4逆算スコープには既に含まれていたが、
+  GrossProfitバックフィルが本番データパスに到達しない構造的欠落
+  （[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]）、および監視105
+  銘柄中16銘柄でタグ自体が構造的に欠落するパターン（[[LAYER3-COGS-
+  STRUCTURAL-GAP-16TICKERS-1]]）を新たに発見・分離記録
+- **selling_general_and_administrative（FLOW系）**: [[LAYER3-SGA-Q4-
+  MISSING-1]]として実バグを特定・修正済み
+- 汎用的な「新store全キー起点」への回帰スクリプト拡張の代わりに、
+  SGA・cost_of_revenueの2フィールドに限定した常設チェックツール
+  `common/sec_data/newfield_q4_cutoff_check.py`を新規実装（Q4欠落チェック・
+  非12月決算企業向けカットオフチェック）。汎用スクリプト化は見送り、
+  短期間で実効性のある個別対応を優先した

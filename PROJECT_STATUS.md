@@ -15,8 +15,9 @@ BACKLOG.md `[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）
 〈`FIELD_DEFINITIONS.md`499項目〉の管理方法検討）の進捗を追跡する。
 仕様書本体は`docs/architecture/new_data_platform/`を参照。
 
-現時点でプロジェクトは**未着手**（設計フェーズが2026-07-22〜23に完了した
-段階であり、実装〈コード構築〉はまだ1件も行われていない）。
+2026-07-24より`common/sec_data/` 統合（フェーズ1の一部）が**構築中**。
+他コンポーネント（`common/market_data/`・`common/macro_data/`等）は
+未着手のまま（設計フェーズは2026-07-22〜23に完了済み）。
 
 ## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-07-24時点）
 
@@ -33,7 +34,7 @@ BACKLOG.md `[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）
 
 | コンポーネント | 状態（未着手/構築中/完成） | 備考 |
 |---|---|---|
-| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み |
+| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（`BACKLOG_DONE.md`参照）。残課題: `[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`等、`BACKLOG.md`該当項目を参照 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |

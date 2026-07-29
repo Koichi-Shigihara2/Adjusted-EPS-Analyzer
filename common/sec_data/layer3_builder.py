@@ -653,13 +653,25 @@ def _normalize_field_entries(raw_entries: list) -> list:
 # 適用対象フィールド（スコープ制限）。normalizer.py::normalize()内の既存
 # 13フィールドスコープ（Revenue/_COGS/OCF/ICF/CFF/CapEx/RD/SM/SBC/DA/
 # NetIncome/OperatingIncome/GrossProfit）をsnake_caseで踏襲する。
-# q4_implied.py::Q4_IMPLIED_FIELDS（15フィールド、PascalCase）とは非対称
+# q4_implied.py::Q4_IMPLIED_FIELDS（16フィールド、PascalCase）とは非対称
 # であり、finance_lease_payments・buybackは含まない（normalizer.py側が
 # 元々この2フィールドを欠落四半期逆算の対象にしていないため、既存動作を
 # 変えない範囲でスコープを揃える。詳細はq4_implied.pyのdocstring参照）。
 # この関数自体にはフィールド種別のガードが無く、shares/stock系フィールド
 # （shares_diluted等）に適用すると符号異常な値を生む（105銘柄スキャンで
 # 実データ確認済み）ため、呼び出し側は必ずこのスコープで絞り込むこと。
+#
+# [[LAYER3-SGA-Q4-MISSING-1]]対応（2026-07-29）: selling_general_and_
+# administrativeを追加。Layer2スキーマ追加時の新規フィールドのため
+# normalizer.py側の元々の13フィールドスコープには存在しなかったが、SM
+# 同様のフロー系費用項目であり本関数の適用対象として妥当。
+#
+# [[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]対応: 同じくLayer2スキーマ
+# 追加時の新規フィールドであるshort_term_investments・total_liabilities
+# （category="stock"）・eps_basic・eps_diluted（比率フィールド）は、上記
+# 「shares/stock系フィールドに適用すると符号異常な値を生む」ガード対象と
+# 同種の理由で意図的にこのスコープに含めていない（詳細はq4_implied.pyの
+# モジュールdocstring参照）。cost_of_revenueは元々このスコープに含まれている。
 MISSING_QUARTER_IMPLIED_FIELDS = frozenset({
     "revenue", "cost_of_revenue",
     "operating_cash_flow", "investing_cash_flow", "financing_cash_flow",
@@ -667,6 +679,7 @@ MISSING_QUARTER_IMPLIED_FIELDS = frozenset({
     "research_and_development", "selling_and_marketing",
     "stock_based_compensation", "depreciation_and_amortization",
     "net_income", "operating_income", "gross_profit",
+    "selling_general_and_administrative",
 })
 
 
