@@ -1,16 +1,16 @@
 CIX INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-29T01:14:15+09:00
-Price: $27.85
+Generated: 2026-07-30T00:59:18+09:00
+Price: $28.65
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: -18.1%
-  MA200_Deviation: +17.6%
+  Deviation_Rate: -20.4%
+  MA200_Deviation: +20.8%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: N/A
-Comment: フェアバリュー近辺、FCF黒字、売上安定成長
+Comment: 割高(-20%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -32,7 +32,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 12.1%
-Deviation_Rate: -18.1%
+Deviation_Rate: -20.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,9 +56,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $27.85
+Current_Price: $28.65
 Intrinsic_Value_BASE: $22.80
-Deviation_BASE: -18.1%
+Deviation_BASE: -20.4%
 Growth_Rate_Original: 7.0% (TTM実績)
 Growth_Rate_Adjusted: 5.9% (推奨値・中央値ベース)
 Scenarios:
@@ -241,13 +241,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 17.0x
-  Adjusted_EPS_PER: 17.0x (TTM調整後EPS: $1.6393)
+  Market_PER_GAAP: 17.5x
+  Adjusted_EPS_PER: 17.5x (TTM調整後EPS: $1.6393)
   Delta: +0.0x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-05
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: N/A (no analyst estimates in data)
+  Next_FY_EPS: $1.61 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -269,10 +269,11 @@ Phase_History (recent 6 months):
 2026-06: Phase2 (期待拡大期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 17.0x
+  PER: 17.5x
   PEG: N/A
-  PS:  N/A
-  EV_EBITDA: 10.7x
+  PS:  2.2x
+  EV_EBITDA: 10.9x
+  PS_Signal: 低水準（売上対比で低い期待）
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -290,7 +291,10 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  N/A (ForwardEPS 未取得)
+  Forward_Earnings_Yield: 5.62%  (ForwardEPS $1.61 / Price $28.65)
+  Risk_Free_Rate (10Y):  4.30%
+  ERP: 1.32%
+  ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
 PER: Price / GAAP EPS (trailing)
