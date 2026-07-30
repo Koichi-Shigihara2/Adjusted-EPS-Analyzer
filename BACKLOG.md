@@ -1267,37 +1267,6 @@ LRCX, ENTG, LYFT）。残り28銘柄はconversion_rateが計算・表示され�
 
 ---
 
-### [DOCS-SECDATA-NORMALIZED-DIR-STALE-1] docs/common/sec_data/normalized/という第7の重複ディレクトリが陳腐化したまま本番参照されている
-**優先度:** 高
-**分類:** データ品質 / バグ
-**登録日:** 2026-07-23
-**発見:** common/sec_data統合投資調査（フェーズ1）⑤(A)
-
-#### 内容
-`docs/common/sec_data/normalized/`という第7の重複ディレクトリが存在し、
-`src/tail/quarterly_review_generator.py`（L49）と
-`src/tail/tail_dcf_bridge.py`（L47）が`COMMON_NORMALIZED_DIR`として
-これを参照している（本来の正規化ストア`common/sec_data/normalized/`
-ではない）。2026-05-23作成以降、同期処理が見つからず更新されて
-いない（本家は2026-07-19更新）。ファイル数51件 vs 105件、サンプル
-3ティッカー（AAPL/AMD/AMZN）全て内容相違を確認済み。54ティッカー
-分がこちら側に存在しない。
-
-#### 影響
-TANUKI TAILの四半期レビュー生成（layer1財務指標）とDCFブリッジが、
-約2ヶ月古い・多くの銘柄で存在しないSECデータを参照し続けている
-可能性が高い。
-
-#### 対応方針
-[[SECDATA-STORAGE-FRAGMENTATION-1]]の統合設計と合わせて検討する
-（正規化ストアの唯一の正を`common/sec_data/normalized/`に確定させ、
-`docs/common/sec_data/normalized/`参照箇所を移行する）。
-
-#### 着手条件
-なし（調査結果の登録のみ、実装は別途依頼）
-
----
-
 ## 優先度：未定（要判断）
 
 ### [FCF-CONVRATE-LOWER-DIVERGENCE-1] dr<1側29銘柄の構造的ミスマッチをFCF-CONVRATE②可視化に統合
@@ -5183,33 +5152,56 @@ _merge_normalized_by_priority()の「(end_date, is_annual)キーごとに
 ---
 
 ### [LAYER3-GA-STANDALONE-TAG-UNMAPPED-1] GeneralAndAdministrativeExpense（Selling抜きG&A単体タグ）がLayer2のどのフィールドにもマッピングされていない
-**優先度:** 中
+**優先度:** 低〜中（2026-07-30投資調査により中→低〜中に修正。理由は下記対応方針参照）
 **分類:** データ品質 / タグ網羅性
 **登録日:** 2026-07-24
 **発見:** SM/SGA分離258件全数検証
 
 #### 内容
 GeneralAndAdministrativeExpense（Selling抜きのG&A単体タグ）が、
-Layer2の32フィールドのいずれにもマッピングされていない。少なくとも
-6銘柄（APGE/ASTS/CON/RXRX/CAKE/CPRT）で確認。これらの銘柄は
-selling_and_marketing・selling_general_and_administrative双方が
-空になる。CAKEはAdvertisingExpense（年次のみ）と
-GeneralAndAdministrativeExpense（未マッピング）を報告しているが、
-どちらも四半期粒度で取り込まれない。
+Layer2の32フィールドのいずれにもマッピングされていない。
+
+【2026-07-30投資調査で規模を再確認】当初「少なくとも6銘柄」としていた
+規模認識は過小評価だった。全105銘柄スキャンの結果、
+GeneralAndAdministrativeExpenseタグを報告している銘柄は56銘柄に及ぶ。
+ただし影響度で3分類できる:
+- **実害なし（4銘柄: AAPL/AMAT/CELH/TER）**: SGA総額
+  （selling_general_and_administrative）が別途取得済みのため対応不要
+- **部分的ギャップ（47銘柄）**: selling_and_marketingは機能するが、
+  selling_general_and_administrativeのみ空
+- **完全なギャップ（5〜6銘柄: APGE/ASTS/CON/ENB/RXRX）**: SM・SGA両方が
+  完全に空。当初報告の6銘柄のうちCAKE/CPRTは、実際にはAdvertisingExpense
+  （SM候補タグ）を報告しており部分的ギャップ側に該当することが判明
+  （ただし四半期粒度では取り込まれないため実質SM空という当初の観測自体は
+  誤りではない）。ENBは今回の調査で新たに完全なギャップ銘柄として発見
 
 #### 影響
-少なくとも6銘柄でSM・SGA両フィールドが完全に空になる。他にも該当
-銘柄が存在する可能性がある（未網羅的調査）。
+5〜6銘柄（APGE/ASTS/CON/ENB/RXRX、CAKE/CPRTは部分的ギャップ）でSM・SGA
+両フィールドが完全に空になる。GeneralAndAdministrativeExpenseタグ自体の
+存在という意味では56銘柄規模。
 
 #### 対応方針
-未定。GeneralAndAdministrativeExpenseを新規フィールド
-（general_and_administrative等）として追加するか、既存
-selling_general_and_administrativeのフォールバック候補に含める
-（ただし概念が異なる＝Selling抜きのため、[[SCHEMA-SM-SGA-
-CONFLATION-1]]と同種の概念混在リスクに注意）かの判断が必要。
+- **選択肢B（既存selling_general_and_administrativeへのフォールバック
+  候補化）は非推奨**: [[SCHEMA-SM-SGA-CONFLATION-1]]と同型の概念混在
+  リスクを再導入する。G&A単体とSGA総額は金額の性質が異なり（SGA総額は
+  Selling費用を含むため同規模の企業でもG&A単体より必然的に大きい）、
+  同一フィールドに混在させると時系列比較・銘柄間比較の両方で不整合が
+  生じる
+- **選択肢A（新規フィールド化、例: general_and_administrative_expense）
+  を推奨するが、優先度は低〜中に留める**: selling_general_and_
+  administrative自体が現状TANUKI VALUATION計算に一切消費されておらず
+  （report_consistency_check.pyのSGA整合性チェック用途のみ）、新規
+  フィールド追加の実利は当面限定的なため
+- 技術的には、GeneralAndAdministrativeExpenseはFLOW系（duration型）
+  のため、Q4_IMPLIED_FIELDS・MISSING_QUARTER_IMPLIED_FIELDS・
+  newfield_q4_cutoff_check.pyの対象に加えることは可能
+  （selling_general_and_administrativeと同型の扱いができる）
 
 #### 着手条件
-なし
+SGA（selling_general_and_administrative）・SM（selling_and_marketing）
+のいずれかが新機能（投資強度分析の精緻化等）で実消費される計画が
+立った時点、またはreport_consistency_check.pyのSGA整合性チェックを
+強化するタイミングで、選択肢A（新規フィールド化）を再検討する。
 
 ---
 

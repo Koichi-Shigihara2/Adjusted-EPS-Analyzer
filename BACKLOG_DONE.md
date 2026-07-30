@@ -9408,3 +9408,59 @@ selling_general_and_administrative）全てが、同様の「検証の死角」�
   `common/sec_data/newfield_q4_cutoff_check.py`を新規実装（Q4欠落チェック・
   非12月決算企業向けカットオフチェック）。汎用スクリプト化は見送り、
   短期間で実効性のある個別対応を優先した
+
+---
+
+### ✅ [DOCS-SECDATA-NORMALIZED-DIR-STALE-1] docs/common/sec_data/normalized/という第7の重複ディレクトリが陳腐化したまま本番参照されている
+**優先度:** 高
+**分類:** データ品質 / バグ
+**完了日:** 2026-07-30
+**発見:** common/sec_data統合投資調査（フェーズ1）⑤(A)
+
+#### 内容
+`docs/common/sec_data/normalized/`という第7の重複ディレクトリが存在し、
+`src/tail/quarterly_review_generator.py`（L49）と
+`src/tail/tail_dcf_bridge.py`（L47）が`COMMON_NORMALIZED_DIR`として
+これを参照している（本来の正規化ストア`common/sec_data/normalized/`
+ではない）。2026-05-23作成以降、同期処理が見つからず更新されて
+いない（本家は週次自動更新）。ファイル数51件 vs 105件、55ティッカー
+分がこちら側に存在しなかった。
+
+【2026-07-30再調査で追加発見】本ディレクトリには第3の消費者が
+存在することが判明した。`docs/value-monitor/tanuki_valuation/
+stock.html`（GitHub Pages公開フロントエンド）がクライアントサイド
+JavaScriptから`/On-a-journey/common/sec_data/normalized/{ticker}_
+quarterly_normalized.json`を直接fetchしており、これは実際には
+`docs/common/sec_data/normalized/`を指す。TANUKI TAILだけでなく
+**公開サイトのキャッシュフロー表示も同期間陳腐化していた**。
+
+#### 影響
+TANUKI TAILの四半期レビュー生成（layer1財務指標）とDCFブリッジが、
+約2.2〜2.3ヶ月古い・55銘柄で存在しないSECデータを参照し続けていた。
+加えてGitHub Pages公開のstock.htmlも同様に陳腐化データを表示していた。
+
+#### 対応方針
+選択肢A（TANUKI TAIL側のredirect）＋選択肢B（docs/側の週次自動同期
+新設）を併用する。`docs/common/sec_data/normalized/`自体は
+stock.html向け公開専用コピーとして維持し削除しない。
+
+【2026-07-30対応完了】
+- `src/tail/quarterly_review_generator.py`（L49）・`tail_dcf_bridge.py`
+  （L47）の`COMMON_NORMALIZED_DIR`を`docs/common/sec_data/normalized/`
+  から`common/sec_data/normalized/`（本家）へredirect
+- `.github/workflows/SEC_Data_Update.yml`に、本家から
+  `docs/common/sec_data/normalized/`へ毎回同期する`rsync --delete`
+  ステップを新設（stock.html向け公開コピーの鮮度を今後自動的に維持）
+- `.gitattributes`に`docs/common/sec_data/normalized/*.json`の
+  `merge=ours`設定を追加（他の自動生成docsデータと同じ規約）
+- 初回手動同期を実施し、105銘柄全件を本家と完全一致（`diff -rq`で
+  差分ゼロ）させた
+- TANUKI TAIL 10ポジション（ADBE/APGE/APP/CELH/CRWV/NVDA/PLTR/SOFI/
+  SOUN/TSLA）で`load_layer1_financials()`相当の出力を新旧比較した
+  結果、ADBE・APGEは陳腐化データではファイル自体が存在せず空扱い
+  だったが復帰後は実データが取得できるようになり、NVDAは参照四半期が
+  2026-01-25（stale）→2026-04-26（fresh）に更新され
+  operating_margin/sbc_quarterly/eps_dilutedの値が変化した
+  （残り7ポジションは該当期間に新規四半期データがなく変化なし）
+- 検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
+  `report_consistency_check.py` NG=0/WARN=71（既存と同一）

@@ -498,6 +498,33 @@ UNMAPPED-1]]・[[LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1]]）の
 4. HypeCore
 5. stock.htmlフロントエンド
 
+**フェーズD対象リストへの追記（診断・補助スクリプト群、2026-07-30
+`common/sec_data`統合実施計画策定投資調査で判明）**:
+上記1〜5の主要パイプラインとは別に、`data/annual_*.json`または
+`normalized/`を直接参照する診断・補助スクリプトが以下7件存在する。
+フェーズE（旧経路廃止）実施時にこれらを見落とすと、
+`[[TTM-PASCALCASE-KEY-STALE-1]]`と同型の「消費者取り残し」が再発する
+リスクがあるため、フェーズD完了判定の対象に含める。
+
+| ファイル | 参照するストレージ |
+|---|---|
+| `common/sec_data/quality_checker.py` | `normalized/`をPascalCaseのまま直接引数で受け取る |
+| `common/screening/dcf_validity_checker.py` | `data/annual_*.json`直読み（独自glob） |
+| `src/value/tanuki_valuation/beta_fetcher.py` | `data/annual_*.json`直読み |
+| `src/value/tanuki_valuation/kpi_fetcher.py` | `data/annual_*.json`直読み（segments） |
+| `common/sec_data/segment_fetcher.py` | `data/annual_*.json`へ書き込み（`[[SEGMENT-FETCHER-DUPLICATE-ORPHAN-1]]`の重複ファイルの一つ） |
+| `src/value/tanuki_valuation/segment_fetcher.py` | 同上（重複ファイルのもう一つ） |
+| `common/sec_data/registration_validator.py` | `data/annual_*.json`存在チェック・年次/TTM revenue比較 |
+
+**注記（3スキーマ併存の実態）**: 上記調査により、現状は「新旧2スキーマ
+併存」ではなく、実態として**3スキーマが併存**していることが判明した。
+Layer3（`layer3_builder.py`、snake_case）・`data/annual_*.json`等
+（`parser.py`、snake_case）に加え、`normalizer.py`が出力する
+`normalized/`は今も**PascalCase**のまま`quality_checker.py`・
+`financial_trend_calculator.py`（STONKS SILO）から直接消費されている。
+フェーズD・E実施時は、この`normalized/`のPascalCase系統も明示的な
+移行対象として扱うこと。
+
 **フェーズE（旧経路廃止）**:
 全consumer移行完了後、raw/・旧normalized/・FIELD_CONCEPTS/
 XBRL_MAPPING（コード版）を削除する。

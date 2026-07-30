@@ -48,6 +48,16 @@ jobs:
             python common/sec_data/report_consistency_check.py --fail-on-ng --quiet
           fi
 
+      - name: Sync normalized data to docs/ (stock.html public copy)
+        # [[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]対応: common/sec_data/normalized/
+        # （正規化ストアの唯一の正）を、GitHub Pages公開用コピー
+        # docs/common/sec_data/normalized/ へ毎回同期する。stock.htmlが
+        # クライアントサイドからこのdocs/配下のパスを直接fetchしているため、
+        # docs/配下の存在自体は維持しつつ内容を常に本家と一致させる。
+        run: |
+          mkdir -p docs/common/sec_data/normalized
+          rsync -a --delete common/sec_data/normalized/ docs/common/sec_data/normalized/
+
       - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
@@ -57,6 +67,7 @@ jobs:
           git add common/sec_data/raw/ || true
           git add common/sec_data/normalized/ || true
           git add common/sec_data/ttm/ || true
+          git add docs/common/sec_data/normalized/ || true
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else

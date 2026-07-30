@@ -46,7 +46,7 @@ REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
 TANUKI_DATA_DIR       = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
 MACRO_DATA_DIR        = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
 PORTFOLIO_PATH        = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
-COMMON_NORMALIZED_DIR    = os.path.join(repo_root, "docs", "common", "sec_data", "normalized")
+COMMON_NORMALIZED_DIR    = os.path.join(repo_root, "common", "sec_data", "normalized")
 PREDICTION_HISTORY_PATH  = os.path.join(DATA_DIR, "prediction_history.json")
 
 JST = ZoneInfo("Asia/Tokyo")

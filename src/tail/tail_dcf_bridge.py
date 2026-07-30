@@ -44,7 +44,7 @@ VALUATION_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuat
 SCENARIO_DIR  = os.path.join(_REPO_ROOT, "docs", "portfolio", "scenario")
 POSITIONS_DIR         = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
 KPI_DIR               = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "kpi")
-COMMON_NORMALIZED_DIR = os.path.join(_REPO_ROOT, "docs", "common", "sec_data", "normalized")
+COMMON_NORMALIZED_DIR = os.path.join(_REPO_ROOT, "common", "sec_data", "normalized")
 
 JST = timezone(timedelta(hours=9))
 
