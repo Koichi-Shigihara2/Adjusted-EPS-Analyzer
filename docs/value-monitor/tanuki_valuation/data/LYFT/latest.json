@@ -4,7 +4,7 @@
   "intrinsic_value_beta": 0.17,
   "upside_percent_beta": -98.9,
   "intrinsic_value_rf": -13.86,
-  "upside_percent_rf": -191.2,
+  "upside_percent_rf": -190.7,
   "v0": -614731299.7032878,
   "v0_adjusted": -614731299.7032878,
   "alpha": 0.0,
@@ -35,16 +35,16 @@
     "4年後": {
       "future_value": -1.75,
       "value_growth_pct": 78.6,
-      "expected_return_pct": -111.5
+      "expected_return_pct": -111.4
     },
     "5年後": {
       "future_value": -2.02,
       "value_growth_pct": 106.1,
-      "expected_return_pct": -113.3
+      "expected_return_pct": -113.2
     }
   },
-  "upside_percent": -106.5,
-  "calculation_date": "2026-07-30T01:09:44+09:00",
+  "upside_percent": -106.4,
+  "calculation_date": "2026-07-31T01:14:19+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -265,21 +265,21 @@
   },
   "rice": {
     "available": false,
-    "q": 0.0,
+    "q": 1.3857,
     "cf_conversion": 0.0,
     "cf_adj": 0.0,
     "wacc": 0.1,
-    "q_years": 0,
+    "q_years": 2,
     "cf_years": 0,
     "avg_intensity": 0.0,
     "avg_rev_growth_lagged": 0.0,
     "warnings": true,
-    "note": "SEC年次データ未取得"
+    "note": "CF計算不可（Revenue/CapExデータなし）"
   },
   "fcf_source": "annual_fallback",
   "fcf_ttm_end": null,
   "fcf_ttm_periods": 0,
-  "rice_data_source": "ttm_series",
+  "rice_data_source": "annual_fallback",
   "components": {
     "fcf_5yr_avg": 316185000.0,
     "fcf_2yr_avg": 1009087500.0,
@@ -297,7 +297,7 @@
     "roe_10yr_avg": -0.42723982028946345,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 15.195,
+    "current_price": 15.285,
     "latest_revenue": 6316261000.0,
     "rpo": 0.0,
     "beta": 1.805,
@@ -327,13 +327,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.0,
-    "per": 2.221491,
+    "per": 2.234649,
     "per_is_forward": false,
-    "per_adjusted": 39.82,
+    "per_adjusted": 40.06,
     "peg": 0.15,
-    "ps": 0.8853229,
+    "ps": 0.8905667,
     "ev_ebitda": null,
-    "ma200": 16.509674,
+    "ma200": 16.488276,
     "forward_eps": 2.08874,
     "analyst_target_median": 18.0,
     "analyst_target_mean": 19.0,
@@ -349,11 +349,11 @@
     "insider_latest_date": "2026-07-27",
     "analyst_vs_iv": 1929.2,
     "max_eps": 0.8488,
-    "max_eps_per": 17.9,
+    "max_eps_per": 18.0,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-30",
+    "validated_at": "2026-07-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -444,7 +444,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": -0.3368,
+  "net_current_assets_ratio": -0.3349,
   "next_earnings_date": "2026-08-07",
   "segment_configured": false,
   "phase1_growth_original": 0.3751,
@@ -477,14 +477,14 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": 0.0945,
-  "forward_earnings_yield": 0.1375,
+  "erp": 0.0937,
+  "forward_earnings_yield": 0.1367,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Lyft",
+      "summary": "Ongoing antitrust lawsuit",
       "impact": "high"
     },
     {

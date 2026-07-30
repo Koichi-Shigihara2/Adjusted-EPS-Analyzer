@@ -1,6 +1,6 @@
 CON INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:10:57+09:00
-Price: $31.93
+Generated: 2026-07-31T01:15:49+09:00
+Price: $31.43
 
 ⚠️ CIK断絶(構造的境界): 2024年11月Select Medical Holdingsからの完全スピンオフによりConcentra Group Holdings発足（2024年7月に一部先行IPO）。分離以前のデータは親会社連結からの区分推定値であり接続していません。
 
@@ -8,11 +8,11 @@ Price: $31.93
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -52.0%
-  MA200_Deviation: +37.2%
+  Deviation_Rate: -51.3%
+  MA200_Deviation: +34.8%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Strong Buy | Target: $34 median ($28-$37) | 8 analysts | vs IV: +122.0%
-Comment: 割高(-52%超)、FCF黒字、売上安定成長
+Comment: 割高(-51%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,11 +30,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
-Quadrant: 左下
-Label: 割高×低FCF
-Key_Metric_Y: FCF_Margin = 9.1%
-Deviation_Rate: -52.0%
+Matrix: ①投資効率系
+Quadrant: 左上
+Label: 割高×高効率
+Key_Metric_Y: RICE = 7.527
+Deviation_Rate: -51.3%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -58,9 +58,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $31.93
+Current_Price: $31.43
 Intrinsic_Value_BASE: $15.32
-Deviation_BASE: -52.0%
+Deviation_BASE: -51.3%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 7.5% (推奨値・中央値ベース)
 Scenarios:
@@ -75,11 +75,11 @@ Terminal_Growth_Rate: 3.0%
 Beta: 0.511
 Valuation_Gap_Analysis:
   DCF_IV:           $15 (保守的FCFベース・現在実力値)
-  Market_Price:     $32
-  Gap:              -52% (市場が将来成長を先取り)
+  Market_Price:     $31
+  Gap:              -51% (市場が将来成長を先取り)
   Implied_FCF_2030: $0.38B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $0.20B
-  Required_Growth:  14%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  13%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $201.91M (4yr平均)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
 DCF_FCF_PV: $0.76B (4yr discounted FCF sum, pre-alpha, Rm=10%)
@@ -183,17 +183,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=5.319
+BASE: RICE=7.527
+BULL: RICE=9.033
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 7.5%  [TANUKI forward growth rate]
+Q  = 1.5095   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 4.757  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 4.7570  [R&D除外・CapExのみ投資強度]
+RICE_adj = 7.527  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 1.40  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 1.40  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -244,9 +248,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 23.0x
-  Adjusted_EPS_PER: 19.7x (TTM調整後EPS: $1.6201)
-  Delta: -3.3x (cheaper on adjusted basis)
+  Market_PER_GAAP: 22.6x
+  Adjusted_EPS_PER: 19.4x (TTM調整後EPS: $1.6201)
+  Delta: -3.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-07
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -272,10 +276,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 23.0x
+  PER: 22.6x
   PEG: N/A
   PS:  1.8x
-  EV_EBITDA: 14.3x
+  EV_EBITDA: 14.0x
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
 
@@ -294,9 +298,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.29%  (ForwardEPS $1.69 / Price $31.93)
+  Forward_Earnings_Yield: 5.38%  (ForwardEPS $1.69 / Price $31.43)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.99%
+  ERP: 1.08%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.

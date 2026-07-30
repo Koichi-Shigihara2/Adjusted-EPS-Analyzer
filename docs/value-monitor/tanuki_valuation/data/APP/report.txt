@@ -1,14 +1,14 @@
 APP INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T00:58:14+09:00
-Price: $401.72
+Generated: 2026-07-31T01:00:02+09:00
+Price: $400.00
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: BUY
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: +683.8%
-  MA200_Deviation: -23.2%
+  Deviation_Rate: +687.1%
+  MA200_Deviation: -23.4%
   HypeCore_Phase: Phase2 (期待拡大期)
   Analyst_Consensus: Strong Buy | Target: $660 median ($406-$860) | 30 analysts | vs IV: -79.0%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
+Matrix: ①投資効率系
 Quadrant: 右上
-Label: 割安×高FCF
-Key_Metric_Y: FCF_Margin = 72.5%
-Deviation_Rate: +683.8%
+Label: 割安×高効率
+Key_Metric_Y: RICE = 6.765
+Deviation_Rate: +687.1%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,13 +57,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $401.72
+Current_Price: $400.00
 Intrinsic_Value_BASE: $3,148.49
-Deviation_BASE: +683.8%
+Deviation_BASE: +687.1%
 Scenarios:
-BEAR: Growth=31.5%, IV=$1,362.70, Deviation=+239.2%
-BASE: Growth=45.0%, IV=$3,148.49, Deviation=+683.8%
-BULL: Growth=54.0%, IV=$5,313.47, Deviation=+1222.7%
+BEAR: Growth=31.5%, IV=$1,362.70, Deviation=+240.7%
+BASE: Growth=45.0%, IV=$3,148.49, Deviation=+687.1%
+BULL: Growth=54.0%, IV=$5,313.47, Deviation=+1228.4%
 Growth_Rate_Rec: 24.8% (recommended  ⚠️ +20.2pt above recommended)
 TTM_YoY_Growth: 85.4%
 (DCF Base vs TTM actual: -40.4pt discount)
@@ -187,17 +187,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=4.736
+BASE: RICE=6.765
+BULL: RICE=8.118
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 45.0%  [TANUKI forward growth rate]
+Q  = 1.224   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.6141  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
+RICE_adj = 110.161  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 10.38  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -248,8 +252,8 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 34.9x
-  Adjusted_EPS_PER: 32.4x (TTM調整後EPS: $12.3950)
+  Market_PER_GAAP: 34.8x
+  Adjusted_EPS_PER: 32.3x (TTM調整後EPS: $12.3950)
   Delta: -2.5x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-06
@@ -276,10 +280,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 34.9x
+  PER: 34.8x
   PEG: 1.13
-  PS:  21.9x
-  EV_EBITDA: 29.1x
+  PS:  21.8x
+  EV_EBITDA: 27.8x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
 Definition:
@@ -299,9 +303,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.40%  (ForwardEPS $21.67 / Price $401.72)
+  Forward_Earnings_Yield: 5.42%  (ForwardEPS $21.67 / Price $400.00)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.10%
+  ERP: 1.12%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -349,9 +353,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against AppLovin Corp
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning amid rising competition in 2025-2026
+  [high] litigation: Antitrust lawsuit against AppLovin
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

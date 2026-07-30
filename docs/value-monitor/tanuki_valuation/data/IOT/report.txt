@@ -1,16 +1,16 @@
 IOT INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:01:13+09:00
-Price: $39.19
+Generated: 2026-07-31T01:04:16+09:00
+Price: $36.12
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: HOLD
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -22.6%
-  MA200_Deviation: +16.8%
+  Deviation_Rate: -14.7%
+  MA200_Deviation: +7.7%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $44 median ($30-$58) | 21 analysts | vs IV: +45.1%
+  Analyst_Consensus: Buy | Target: $44 median ($30-$58) | 21 analysts | vs IV: +42.8%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
+Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低FCF
-Key_Metric_Y: FCF_Margin = 12.8%
-Deviation_Rate: -22.6%
+Label: 割高×中効率
+Key_Metric_Y: RICE = 1.082
+Deviation_Rate: -14.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,15 +57,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $39.19
-Intrinsic_Value_BASE: $30.33
-Deviation_BASE: -22.6%
+Current_Price: $36.12
+Intrinsic_Value_BASE: $30.82
+Deviation_BASE: -14.7%
 Growth_Rate_Original: 29.6% (TTM実績)
 Growth_Rate_Adjusted: 35.4% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=24.8%, IV=$21.13 （推奨値ベース）
-BASE: Growth=35.4%, IV=$30.33 （推奨値ベース）
-BULL: Growth=42.4%, IV=$38.23 （推奨値ベース）
+BEAR: Growth=24.8%, IV=$21.47 （推奨値ベース）
+BASE: Growth=35.4%, IV=$30.82 （推奨値ベース）
+BULL: Growth=42.4%, IV=$38.84 （推奨値ベース）
 TTM_YoY_Growth: 72.7%
 (DCF Base vs TTM actual: -37.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -80,7 +80,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から4217%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から216%乖離]
 DCF_FCF_PV: $3.00B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $13.87B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $16.87B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -88,8 +88,8 @@ Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
 Equity_Value: $17.68B (= v0 + RPO_PV + GO_PV + Net_Cash $0.80B)
-Shares_Used: 582.7M (source: yf_implied)
-→ Intrinsic_Value: $30.33 (= Equity_Value ÷ Shares_Used)
+Shares_Used: 573.5M (source: sec_diluted)
+→ Intrinsic_Value: $30.82 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.80B (negative=net cash)
   Total_Debt: $0.00B  Cash: $0.22B  ST_Invest: $0.59B
@@ -183,17 +183,19 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.758
+BASE: RICE=1.082
+BULL: RICE=1.296
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 35.4%  [TANUKI forward growth rate]
+Q  = 0.7107   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.4301  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 10.0000  [R&D除外・CapExのみ投資強度]
+RICE_adj = 25.159  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -244,9 +246,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 391.9x
-  Adjusted_EPS_PER: 68.4x (TTM調整後EPS: $0.5731)
-  Delta: -323.5x (cheaper on adjusted basis)
+  Market_PER_GAAP: 361.2x
+  Adjusted_EPS_PER: 63.0x (TTM調整後EPS: $0.5731)
+  Delta: -298.2x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -272,11 +274,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 391.9x
+  PER: 361.2x
   PEG: N/A
-  PS:  13.2x
+  PS:  N/A
   EV_EBITDA: N/A
-  PS_Signal: 適正水準
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -294,9 +295,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.30%  (ForwardEPS $0.90 / Price $39.19)
+  Forward_Earnings_Yield: 2.49%  (ForwardEPS $0.90 / Price $36.12)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.00%
+  ERP: -1.81%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -320,8 +321,8 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: yes
 Short_Interest: 12.6%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $44 median ($30-$58) | 21 analysts | vs IV: +45.1%
-Insider_Activity: Sell優勢 | 買い0件 / 売り112件 | 直近90日
+Analyst_Consensus: Buy | Target: $44 median ($30-$58) | 21 analysts | vs IV: +42.8%
+Insider_Activity: Sell優勢 | 買い0件 / 売り115件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 72.7%
 Next_Earnings_Date: 2026-09-04
@@ -344,9 +345,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit against Samsara Inc.
-  [high] regulatory: SEC regulatory investigation ongoing
-  [mid] earnings: Earnings warning amid rising competition in 2025-2026
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning with competition risks 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

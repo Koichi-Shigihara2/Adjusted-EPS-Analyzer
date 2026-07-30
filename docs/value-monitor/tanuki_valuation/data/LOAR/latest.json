@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 9029204372.167263,
   "intrinsic_value_per_share": 42.789106044573025,
   "intrinsic_value_beta": 87.31,
-  "upside_percent_beta": 29.8,
+  "upside_percent_beta": 29.4,
   "intrinsic_value_rf": 305.2,
-  "upside_percent_rf": 353.7,
+  "upside_percent_rf": 352.3,
   "v0": 9029204372.167263,
   "v0_adjusted": 9029204372.167263,
   "alpha": 0.09912033451913904,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 64.19,
       "value_growth_pct": 50.0,
-      "expected_return_pct": -4.6
+      "expected_return_pct": -4.9
     },
     "2年後": {
       "future_value": 96.28,
       "value_growth_pct": 125.0,
-      "expected_return_pct": 43.1
+      "expected_return_pct": 42.7
     },
     "3年後": {
       "future_value": 144.42,
       "value_growth_pct": 237.5,
-      "expected_return_pct": 114.7
+      "expected_return_pct": 114.0
     },
     "4年後": {
       "future_value": 216.62,
       "value_growth_pct": 406.2,
-      "expected_return_pct": 222.0
+      "expected_return_pct": 221.0
     },
     "5年後": {
       "future_value": 324.94,
       "value_growth_pct": 659.4,
-      "expected_return_pct": 383.0
+      "expected_return_pct": 381.5
     }
   },
-  "upside_percent": -36.4,
-  "calculation_date": "2026-07-30T01:09:35+09:00",
+  "upside_percent": -36.6,
+  "calculation_date": "2026-07-31T01:14:09+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -260,21 +260,21 @@
   },
   "rice": {
     "available": false,
-    "q": 0.0,
+    "q": 1.4693,
     "cf_conversion": 0.0,
     "cf_adj": 0.0,
     "wacc": 0.1,
-    "q_years": 0,
+    "q_years": 2,
     "cf_years": 0,
     "avg_intensity": 0.0,
     "avg_rev_growth_lagged": 0.0,
     "warnings": true,
-    "note": "SEC年次データ未取得"
+    "note": "CF計算不可（Revenue/CapExデータなし）"
   },
   "fcf_source": "annual_fallback",
   "fcf_ttm_end": null,
   "fcf_ttm_periods": 0,
-  "rice_data_source": "ttm_series",
+  "rice_data_source": "annual_fallback",
   "components": {
     "fcf_5yr_avg": 60021333.333333336,
     "fcf_2yr_avg": 83625500.0,
@@ -290,7 +290,7 @@
     "roe_10yr_avg": 0.023600079647414063,
     "roe_years_used": 3,
     "roe_outlier_adj": false,
-    "current_price": 67.27,
+    "current_price": 67.48,
     "latest_revenue": 496283000.0,
     "rpo": 0,
     "beta": 0.474,
@@ -320,13 +320,13 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.09912033451913904,
-    "per": 94.746475,
+    "per": 95.04226,
     "per_is_forward": false,
-    "per_adjusted": 62.74,
+    "per_adjusted": 62.93,
     "peg": null,
-    "ps": 11.71281,
-    "ev_ebitda": 39.255,
-    "ma200": 68.2311,
+    "ps": 11.749374,
+    "ev_ebitda": 36.783,
+    "ma200": 68.16665,
     "forward_eps": 1.57319,
     "analyst_target_median": 82.0,
     "analyst_target_mean": 85.2,
@@ -342,11 +342,11 @@
     "insider_latest_date": "2026-05-22",
     "analyst_vs_iv": 91.6,
     "max_eps": 0.1595,
-    "max_eps_per": 421.8,
+    "max_eps_per": 423.1,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-07-30",
+    "validated_at": "2026-07-31",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -375,7 +375,7 @@
   "timing_score": 25,
   "sell_reason": null,
   "pre_rounding_score": "TRIM",
-  "pre_rounding_comment": "割高(-36%超)、FCF黒字、売上成長加速",
+  "pre_rounding_comment": "割高(-37%超)、FCF黒字、売上成長加速",
   "rounded_by_policy": "B",
   "matrix": {
     "matrix": "④キャッシュ創出力系",
@@ -421,7 +421,7 @@
     "stdebt_estimated_zero": false,
     "stdebt_last_confirmed_zero_year": null
   },
-  "net_current_assets_ratio": 0.0415,
+  "net_current_assets_ratio": 0.0414,
   "next_earnings_date": "2026-08-06",
   "segment_configured": false,
   "phase1_growth_original": 0.5,
@@ -453,22 +453,22 @@
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0196,
-  "forward_earnings_yield": 0.0234,
+  "erp": -0.0197,
+  "forward_earnings_yield": 0.0233,
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Ongoing antitrust lawsuit",
+      "summary": "Antitrust lawsuit",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation",
+      "summary": "SEC investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025-2026 period",
+      "summary": "Earnings warning for 2025-2026",
       "impact": "mid"
     }
   ]

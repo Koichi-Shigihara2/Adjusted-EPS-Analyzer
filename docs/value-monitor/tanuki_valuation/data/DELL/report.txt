@@ -1,6 +1,6 @@
 DELL INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:08:57+09:00
-Price: $366.75
+Generated: 2026-07-31T01:13:19+09:00
+Price: $407.85
 
 ℹ️ データ期間注記: 2013年LBOによる非公開化(最終自社10-K: FY2012, 期末2013-02-01)〜2016年EMC統合完了後の初回自社10-K(FY2017, filed 2017-03-31)まで、自社10-K申告自体が存在しない期間があります。FY2015/FY2016はFY2017 10-Kの比較年度再掲データ（本人データではない）のみ、FY2014は値が完全に欠落します。
 
@@ -9,8 +9,8 @@ Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -77.5%
-  MA200_Deviation: +74.0%
+  Deviation_Rate: -79.7%
+  MA200_Deviation: +92.5%
   HypeCore_Phase: Phase3 (陶酔期)
   Analyst_Consensus: Buy | Target: $500 median ($360-$700) | 23 analysts | vs IV: +504.6%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -31,11 +31,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
+Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低FCF
-Key_Metric_Y: FCF_Margin = 7.5%
-Deviation_Rate: -77.5%
+Label: 割高×中効率
+Key_Metric_Y: RICE = 2.341
+Deviation_Rate: -79.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -59,10 +59,10 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $366.75
+Current_Price: $407.85
 Intrinsic_Value_BASE: $82.70
-Deviation_BASE: -77.5%
-Growth_Rate_Original: 15.0% (TTM実績)
+Deviation_BASE: -79.7%
+Growth_Rate_Original: 50.0% (TTM実績)
 Growth_Rate_Adjusted: 3.8% (推奨値・中央値ベース)
 Scenarios:
 BEAR: Growth=2.7%, IV=$76.48 （推奨値ベース）
@@ -76,11 +76,11 @@ Terminal_Growth_Rate: 3.0%
 Beta: 1.378
 Valuation_Gap_Analysis:
   DCF_IV:           $83 (保守的FCFベース・現在実力値)
-  Market_Price:     $367
-  Gap:              -78% (市場が将来成長を先取り)
-  Implied_FCF_2030: $17.44B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $408
+  Gap:              -80% (市場が将来成長を先取り)
+  Implied_FCF_2030: $19.24B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $4.77B
-  Required_Growth:  30%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  32%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.7 (Industry: Computers_Peripherals)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -93,7 +93,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から75%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から80%乖離]
 DCF_FCF_PV: $23.47B (6yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $49.55B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $73.02B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -170,8 +170,8 @@ market-priced future potential.
 
 [4. 成長率根拠]
 Phase1成長率 : 3.8% (DCF適用値・推奨成長率)
-元成長率      : 15.0% (推奨適用前)
-成長モデル: 中央値モデル（CAGR_max=15.0%のため中央値モデル適用）  HypePhase=3
+元成長率      : 50.0% (推奨適用前)
+成長モデル: 中央値モデル（CAGR_max=50.0%のため中央値モデル適用）  HypePhase=3
 推奨成長率内訳:
   中央値ベース:          3.8%
   最終推奨値:            3.8%
@@ -196,17 +196,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=1.664
+BASE: RICE=2.341
+BULL: RICE=2.834
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 3.8%  [TANUKI forward growth rate]
+Q  = 1.4221   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 2.1663  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 3.3937  [R&D除外・CapExのみ投資強度]
+RICE_adj = 3.668  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 3.68  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -257,9 +261,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 29.2x
-  Adjusted_EPS_PER: 26.6x (TTM調整後EPS: $13.8061)
-  Delta: -2.7x (cheaper on adjusted basis)
+  Market_PER_GAAP: 784.3x
+  Adjusted_EPS_PER: 29.5x (TTM調整後EPS: $13.8061)
+  Delta: -754.8x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-09-04
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -285,10 +289,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 29.2x
+  PER: 784.3x
   PEG: 0.70
-  PS:  1.8x
-  EV_EBITDA: 19.5x
+  PS:  2.0x
+  EV_EBITDA: 18.5x
   PEG_Signal: 割安水準（成長率対比でPEG<1.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -308,9 +312,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.96%  (ForwardEPS $21.85 / Price $366.75)
+  Forward_Earnings_Yield: 5.36%  (ForwardEPS $21.85 / Price $407.85)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.66%
+  ERP: 1.06%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -359,8 +363,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit
-  [high] regulatory: SEC investigation
-  [mid] earnings: Earnings warning amid competition 2025-2026
+  [high] regulatory: SEC regulatory investigation
+  [high] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

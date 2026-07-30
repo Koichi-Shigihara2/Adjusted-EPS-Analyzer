@@ -1,16 +1,16 @@
 LMT INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:01:52+09:00
-Price: $576.33
+Generated: 2026-07-31T01:05:16+09:00
+Price: $560.37
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -34.2%
-  MA200_Deviation: +5.9%
+  Deviation_Rate: -40.8%
+  MA200_Deviation: +2.9%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Hold | Target: $614 median ($503-$756) | 19 analysts | vs IV: +61.8%
-Comment: 割高(-34%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Hold | Target: $614 median ($503-$756) | 19 analysts | vs IV: +85.2%
+Comment: 割高(-41%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -28,11 +28,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
+Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低FCF
-Key_Metric_Y: FCF_Margin = 9.2%
-Deviation_Rate: -34.2%
+Label: 割高×中効率
+Key_Metric_Y: RICE = 2.442
+Deviation_Rate: -40.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $576.33
-Intrinsic_Value_BASE: $379.48
-Deviation_BASE: -34.2%
+Current_Price: $560.37
+Intrinsic_Value_BASE: $331.59
+Deviation_BASE: -40.8%
 Scenarios:
-BEAR: Growth=4.0%, IV=$347.41, Deviation=-39.7%
-BASE: Growth=5.7%, IV=$379.48, Deviation=-34.2%
-BULL: Growth=6.8%, IV=$401.96, Deviation=-30.3%
+BEAR: Growth=4.0%, IV=$302.85, Deviation=-46.0%
+BASE: Growth=5.7%, IV=$331.59, Deviation=-40.8%
+BULL: Growth=6.8%, IV=$351.73, Deviation=-37.2%
 Growth_Rate_Rec: 4.4% (recommended)
 TTM_YoY_Growth: 4.6%
 (DCF Base vs TTM actual: +1.1pt premium)
@@ -70,17 +70,17 @@ Discount_Rate_Primary: 10.00% (DCF discount rate used)
 WACC_CAPM_Reference: 8.52%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.74
-FCF_Base: $6,451.00M (5yr平均)
+FCF_Base: $5,780.75M (4yr平均)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $28.66B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $77.73B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $106.38B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $25.68B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $69.65B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $95.33B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $87.58B (= v0 + RPO_PV + GO_PV + Net_Cash $-18.80B)
+Equity_Value: $76.53B (= v0 + RPO_PV + GO_PV + Net_Cash $-18.80B)
 Shares_Used: 230.8M (source: yf_implied)
-→ Intrinsic_Value: $379.48 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $331.59 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+18.80B (negative=net cash)
   Total_Debt: $20.70B  Cash: $1.89B
@@ -176,17 +176,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=1.714
+BASE: RICE=2.442
+BULL: RICE=2.914
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 5.7%  [TANUKI forward growth rate]
+Q  = 1.2469   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 1.7181  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 1.7181  [R&D除外・CapExのみ投資強度]
+RICE_adj = 2.442  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 2.51  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -237,9 +241,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 21.2x
-  Adjusted_EPS_PER: 21.3x (TTM調整後EPS: $27.0937)
-  Delta: +0.0x (more expensive on adjusted basis)
+  Market_PER_GAAP: 20.7x
+  Adjusted_EPS_PER: 20.7x (TTM調整後EPS: $27.0937)
+  Delta: -0.0x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-20
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -265,10 +269,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 21.2x
+  PER: 20.7x
   PEG: 1.22
   PS:  1.7x
-  EV_EBITDA: 15.6x
+  EV_EBITDA: 15.3x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 低水準（売上対比で低い期待）
 Definition:
@@ -288,9 +292,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 5.68%  (ForwardEPS $32.71 / Price $576.33)
+  Forward_Earnings_Yield: 5.84%  (ForwardEPS $32.71 / Price $560.37)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 1.38%
+  ERP: 1.54%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -314,7 +318,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 1.6%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Hold | Target: $614 median ($503-$756) | 19 analysts | vs IV: +61.8%
+Analyst_Consensus: Hold | Target: $614 median ($503-$756) | 19 analysts | vs IV: +85.2%
 Insider_Activity: 中立 | 買い0件 / 売り0件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 4.6%
@@ -338,9 +342,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing against LMT
-  [high] regulatory: SEC investigation into regulatory compliance
-  [mid] earnings: Earnings warning and competitive threats for 2025-2026
+  [high] litigation: Antitrust lawsuit
+  [high] regulatory: SEC investigation
+  [mid] earnings: Earnings warning and competition risks 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

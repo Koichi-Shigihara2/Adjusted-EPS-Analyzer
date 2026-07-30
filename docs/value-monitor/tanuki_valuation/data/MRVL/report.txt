@@ -1,14 +1,14 @@
 MRVL INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:02:17+09:00
-Price: $165.11
+Generated: 2026-07-31T01:05:47+09:00
+Price: $183.49
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -75.2%
-  MA200_Deviation: +23.5%
+  Deviation_Rate: -77.7%
+  MA200_Deviation: +36.8%
   HypeCore_Phase: Phase4 (期待剥落期)
   Analyst_Consensus: Strong Buy | Target: $242 median ($126-$400) | 40 analysts | vs IV: +493.0%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
@@ -29,11 +29,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
-Quadrant: 左上
-Label: 割高×高FCF
-Key_Metric_Y: FCF_Margin = 17.0%
-Deviation_Rate: -75.2%
+Matrix: ①投資効率系
+Quadrant: 左下
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.186
+Deviation_Rate: -77.7%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,9 +57,9 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $165.11
+Current_Price: $183.49
 Intrinsic_Value_BASE: $40.90
-Deviation_BASE: -75.2%
+Deviation_BASE: -77.7%
 Growth_Rate_Original: 34.1% (TTM実績)
 Growth_Rate_Adjusted: 10.5% (推奨値・中央値ベース)
 Scenarios:
@@ -75,11 +75,11 @@ Terminal_Growth_Rate: 3.5%
 Beta: 2.197
 Valuation_Gap_Analysis:
   DCF_IV:           $41 (保守的FCFベース・現在実力値)
-  Market_Price:     $165
-  Gap:              -75% (市場が将来成長を先取り)
-  Implied_FCF_2030: $9.38B (現在株価を正当化するために必要な5年後FCF)
+  Market_Price:     $183
+  Gap:              -78% (市場が将来成長を先取り)
+  Implied_FCF_2030: $10.41B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $1.77B
-  Required_Growth:  40%/yr (現在FCFから必要成長率を逆算)
+  Required_Growth:  43%/yr (現在FCFから必要成長率を逆算)
 FCF_Conversion_Rate: 0.5 (Industry: Semiconductor)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
@@ -93,7 +93,7 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
-   [DCF-REL-SYNC-1: FCF実績が5年平均から26%乖離]
+   [DCF-REL-SYNC-1: FCF実績が5年平均から27%乖離]
 DCF_FCF_PV: $8.97B (5yr discounted FCF sum, pre-alpha, Rm=10%)
 DCF_TV_PV:  $28.85B (terminal value present value, pre-alpha, Rm=10%)
 DCF_v0:     $37.82B (= FCF_PV + TV_PV, Rm=10% enterprise value)
@@ -198,17 +198,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.131
+BASE: RICE=0.186
+BULL: RICE=0.223
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 10.5%  [TANUKI forward growth rate]
+Q  = 0.6461   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.424  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 2.9869  [R&D除外・CapExのみ投資強度]
+RICE_adj = 1.312  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 0.65  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 0.65  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -259,9 +263,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 56.7x
-  Adjusted_EPS_PER: 35.8x (TTM調整後EPS: $4.6157)
-  Delta: -21.0x (cheaper on adjusted basis)
+  Market_PER_GAAP: 63.1x
+  Adjusted_EPS_PER: 39.8x (TTM調整後EPS: $4.6157)
+  Delta: -23.3x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-28
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -287,10 +291,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 56.7x
+  PER: 63.1x
   PEG: 1.07
-  PS:  17.0x
-  EV_EBITDA: 56.8x
+  PS:  18.9x
+  EV_EBITDA: 53.2x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:
@@ -310,9 +314,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.78%  (ForwardEPS $6.24 / Price $165.11)
+  Forward_Earnings_Yield: 3.40%  (ForwardEPS $6.24 / Price $183.49)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.52%
+  ERP: -0.90%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -360,9 +364,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Ongoing antitrust lawsuit against Marvell Technology
-  [high] regulatory: Active SEC regulatory investigation
-  [mid] earnings: Earnings warning impacting 2025-2026 outlook
+  [high] litigation: Antitrust lawsuit ongoing
+  [high] regulatory: SEC regulatory investigation active
+  [mid] earnings: Earnings warning for 2025-2026 amid competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically

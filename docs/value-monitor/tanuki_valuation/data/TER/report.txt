@@ -1,15 +1,15 @@
 TER INTEGRATED INVESTMENT REPORT
-Generated: 2026-07-30T01:11:22+09:00
-Price: $331.22
+Generated: 2026-07-31T01:16:19+09:00
+Price: $360.50
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 100/100
 Timing_Score (components):
-  Deviation_Rate: -86.0%
-  MA200_Deviation: +15.7%
+  Deviation_Rate: -86.2%
+  MA200_Deviation: +25.6%
   HypeCore_Phase: Phase3 (陶酔期)
-  Analyst_Consensus: Buy | Target: $448 median ($270-$550) | 16 analysts | vs IV: +868.9%
+  Analyst_Consensus: Buy | Target: $448 median ($270-$550) | 16 analysts | vs IV: +799.5%
 Comment: 割高(-86%超)、FCF黒字、売上成長加速
 Definition:
 
@@ -28,11 +28,11 @@ PASS: Funda<25, excluded from consideration
 
 
 [2. MATRIX POSITION]
-Matrix: ④キャッシュ創出力系
+Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×低FCF
-Key_Metric_Y: FCF_Margin = 14.1%
-Deviation_Rate: -86.0%
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.086
+Deviation_Rate: -86.2%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $331.22
-Intrinsic_Value_BASE: $46.24
-Deviation_BASE: -86.0%
+Current_Price: $360.50
+Intrinsic_Value_BASE: $49.81
+Deviation_BASE: -86.2%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 2.0% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=1.4%, IV=$44.88 （推奨値ベース）
-BASE: Growth=2.0%, IV=$46.24 （推奨値ベース）
-BULL: Growth=2.4%, IV=$47.16 （推奨値ベース）
+BEAR: Growth=1.4%, IV=$48.35 （推奨値ベース）
+BASE: Growth=2.0%, IV=$49.81 （推奨値ベース）
+BULL: Growth=2.4%, IV=$50.80 （推奨値ベース）
 TTM_YoY_Growth: 30.3%
 (DCF Base vs TTM actual: -28.3pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,30 +72,23 @@ WACC_CAPM_Reference: 14.23%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.742
 Valuation_Gap_Analysis:
-  DCF_IV:           $46 (保守的FCFベース・現在実力値)
-  Market_Price:     $331
+  DCF_IV:           $50 (保守的FCFベース・現在実力値)
+  Market_Price:     $360
   Gap:              -86% (市場が将来成長を先取り)
-  Implied_FCF_2030: $3.52B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $0.51B
+  Implied_FCF_2030: $3.91B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $0.57B
   Required_Growth:  47%/yr (現在FCFから必要成長率を逆算)
-FCF_Conversion_Rate: 0.7 (Industry: Semiconductor_Equip)
-  [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
-   adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $449M (= Adj_NI $642M × FCF_Conv 0.7)
-ℹ️ 買収・統合関連加算$13Mを検出したが未控除
-   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
-    ガードにより調整済み純利益をそのまま採用しています。詳細は
-    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
-DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
-DCF_FCF_PV: $2.39B (6yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $4.81B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $7.19B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+FCF_Base: $565.16M (4yr平均 + R&D補正)
+DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
+DCF_FCF_PV: $2.62B (6yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $5.28B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $7.91B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $7.24B (= v0 + RPO_PV + GO_PV + Net_Cash $0.05B)
-Shares_Used: 156.5M (source: yf_implied)
-→ Intrinsic_Value: $46.24 (= Equity_Value ÷ Shares_Used)
+Equity_Value: $7.96B (= v0 + RPO_PV + GO_PV + Net_Cash $0.05B)
+Shares_Used: 159.7M (source: sec_diluted)
+→ Intrinsic_Value: $49.81 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.05B (negative=net cash)
   Total_Debt: $0.20B  Cash: $0.24B  ST_Invest: $0.00B
@@ -191,17 +184,21 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 
 
 [5. RICE METRICS]
-Available: false
-Exclusion_Reason: SEC年次データ未取得
-BEAR: RICE=N/A
-BASE: RICE=N/A
-BULL: RICE=N/A
+Available: true
+Exclusion_Reason: N/A
+BEAR: RICE=0.06
+BASE: RICE=0.086
+BULL: RICE=0.103
 Components (BASE scenario):
-G  = N/A
-Q  = 0.0   [OCF / (NetIncome + SBC), 3yr avg]
-CF = 0.0  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+G  = 2.0%  [TANUKI forward growth rate]
+Q  = 1.1079   [OCF / (NetIncome + SBC), 3yr avg]
+CF = 0.2047  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
+CF_adj = 1.1106  [R&D除外・CapExのみ投資強度]
+RICE_adj = 0.468  [参考：R&D資本化想定]
 WACC = 10.0%
-SBC_Adjusted: false
+VC_Factor = 1.90  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
+ROIC_WACC_Ratio = 1.90  [NOPAT/InvestedCapital / 0.10]
+SBC_Adjusted: true
 Definition:
 
 RICE measures reinvestment efficiency and compounding power
@@ -252,9 +249,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 61.5x
-  Adjusted_EPS_PER: 55.6x (TTM調整後EPS: $5.9539)
-  Delta: -5.8x (cheaper on adjusted basis)
+  Market_PER_GAAP: 49.5x
+  Adjusted_EPS_PER: 60.5x (TTM調整後EPS: $5.9539)
+  Delta: +11.0x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-22
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -280,12 +277,11 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 61.5x
+  PER: 49.5x
   PEG: 1.32
-  PS:  13.7x
-  EV_EBITDA: 43.1x
+  PS:  N/A
+  EV_EBITDA: 33.1x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
-  PS_Signal: 適正水準
 Definition:
 
 HypeCore measures market sentiment and hype lifecycle stage
@@ -303,9 +299,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.12%  (ForwardEPS $10.33 / Price $331.22)
+  Forward_Earnings_Yield: 2.87%  (ForwardEPS $10.33 / Price $360.50)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -1.18%
+  ERP: -1.43%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -329,7 +325,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: 5.4%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $448 median ($270-$550) | 16 analysts | vs IV: +868.9%
+Analyst_Consensus: Buy | Target: $448 median ($270-$550) | 16 analysts | vs IV: +799.5%
 Insider_Activity: Sell優勢 | 買い0件 / 売り12件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 30.3%
