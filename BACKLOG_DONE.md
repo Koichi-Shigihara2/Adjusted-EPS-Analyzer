@@ -9465,3 +9465,50 @@ stock.html向け公開専用コピーとして維持し削除しない。
   （残り7ポジションは該当期間に新規四半期データがなく変化なし）
 - 検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
   `report_consistency_check.py` NG=0/WARN=71（既存と同一）
+
+---
+
+### ✅ [SEGMENT-FETCHER-DUPLICATE-ORPHAN-1] segment_fetcher.pyが2箇所に存在し内容が乖離している
+**優先度:** 低
+**分類:** リファクタリング / 技術的負債
+**完了日:** 2026-07-30
+**発見:** common/sec_data統合投資調査（フェーズ1）⑤(C)
+
+#### 内容
+`src/value/tanuki_valuation/segment_fetcher.py`と
+`common/sec_data/segment_fetcher.py`が両方存在し内容が乖離
+（両方ともannual_{fy}.jsonのsegmentsフィールドを更新する処理、
+467/468行）。common/sec_data側にのみXBRLコンテキスト正規表現の
+バグ修正（コンテキストブロック境界を跨ぐ誤マッチ防止）と金融業向け
+追加タグ（revenuesnetofinterestexpense/netrevenues）が存在し、
+src/value側には未反映。
+
+【2026-07-30再調査で追加確認】`git log`により、両ファイルの分岐は
+単一のコミット`01fa5dec5`（2026-04-25）に起因することが判明した。
+同コミットが`common/sec_data`側にバグ修正を適用すると同時に、
+修正前のスナップショットを`src/value`側へ新規ファイルとして複製して
+いた。以降どちらも一度も変更されておらず、`src/value`側の独自要素は
+XBRL値スケールに関する説明コメント1件のみ（機能的な差ではない）。
+
+#### 影響
+両ファイルとも他モジュールからimportされず、GitHub Actionsからも
+呼ばれていない（手動実行専用のオーファンスクリプト）ため、現状の実害は
+なし。ただしどちらが「正」か不明な状態が放置されていた。
+
+#### 対応方針
+`common/sec_data/segment_fetcher.py`が機能的に完全上位互換（コンテキスト
+境界跨ぎ誤マッチ防止・金融業向けタグ2件を保持）であり、両ファイルとも
+呼び出し元ゼロのため統合の影響範囲もゼロと確認済み。
+
+**セグメントデータ手動取得スクリプト自体は、今後の銘柄新規登録が原則
+Claude Code経由で行われる方針となったため、現時点では使用しない**
+（将来的な再検討の余地は残す）。
+
+【2026-07-30対応完了】
+- `src/value/tanuki_valuation/segment_fetcher.py`側にのみ存在した
+  XBRL値スケール（decimals=-6）に関する補足コメントを、削除前に
+  `common/sec_data/segment_fetcher.py`の該当箇所へ移植
+- `src/value/tanuki_valuation/segment_fetcher.py`を削除。削除前後で
+  リポジトリ全体をgrepし、コードからの参照が皆無であることを最終確認
+- 検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
+  `report_consistency_check.py` NG=0/WARN=71（既存と同一）

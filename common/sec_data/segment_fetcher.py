@@ -262,6 +262,8 @@ def parse_xbrl_segments(
         try:
             val_str = tag.get_text(strip=True).replace(",", "")
             val     = float(val_str)
+            # XBRL Instance Document の値はフル数値（USD単位）
+            # decimals=-6 はラウンディング精度を示すだけ（スケール変換不要）
         except (ValueError, TypeError):
             continue
 

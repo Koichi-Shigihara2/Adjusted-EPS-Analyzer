@@ -4660,35 +4660,6 @@ WATCH丸めに限られ、IV・upside等のDCF計算値自体は変更されな�
 
 ---
 
-### [SEGMENT-FETCHER-DUPLICATE-ORPHAN-1] segment_fetcher.pyが2箇所に存在し内容が乖離している
-**優先度:** 低
-**分類:** リファクタリング / 技術的負債
-**登録日:** 2026-07-23
-**発見:** common/sec_data統合投資調査（フェーズ1）⑤(C)
-
-#### 内容
-`src/value/tanuki_valuation/segment_fetcher.py`と
-`common/sec_data/segment_fetcher.py`が両方存在し内容が乖離
-（両方ともannual_{fy}.jsonのsegmentsフィールドを更新する処理、
-467/468行）。common/sec_data側にのみXBRLコンテキスト正規表現の
-バグ修正（コンテキストブロック境界を跨ぐ誤マッチ防止）と金融業向け
-追加タグ（revenuesnetofinterestexpense/netrevenues）が存在し、
-src/value側には未反映。
-
-#### 影響
-両ファイルとも他モジュールからimportされず、GitHub Actionsからも
-呼ばれていない（手動実行専用のオーファンスクリプトと見られる）ため、
-現状の実害はなし。ただしどちらが「正」か不明な状態が放置されている。
-
-#### 対応方針
-未定。どちらか一方への統合、または両方削除（手動実行フローが
-実際に必要かの確認込み）を次回検討する。
-
-#### 着手条件
-なし（優先度低）
-
----
-
 ### [SCHEMA-NORMALIZED-ANNUAL-NAMING-MISMATCH-1] normalized/のファイル名が"quarterly"だがannualデータも混在保持している
 **優先度:** 低
 **分類:** 技術的負債 / ドキュメント不整合
