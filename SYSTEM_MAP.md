@@ -1,5 +1,23 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-07-30（common/sec_data統合フェーズA〜D準備セッション。
+【SECデータ取得層】ツリーに`layer3_builder.py`（Layer3、
+`config/sec_concept_definitions.json`ベースの統一snake_caseインメモリ
+ストア、`build_ticker_store()`）を新規追記し、`ttm_calculator.py`の
+入力元がフェーズC対応で旧`normalize()`戻り値からLayer3ストアに切替済み
+であることを反映。現状「新旧2スキーマ併存」ではなく実態は
+Layer3（snake_case・インメモリ）・`data/annual_*.json`等（parser.py、
+snake_case・ファイル）・`normalized/`（normalizer.py、PascalCase・
+quality_checker.py/STONKS SILO financial_trend_calculator.pyが直接消費）
+の**3スキーマ併存**であることを明記（詳細は`docs/architecture/
+new_data_platform/SEC_EDGAR_LAYER_DESIGN.md`「3スキーマ併存の実態」・
+移行手順は同ディレクトリ`MIGRATION_CHECKLIST.md`参照）。
+`tag_definitions.py`の項に、`config/sec_concept_definitions.json`
+（Layer3側の独立した候補タグリスト）との乖離リスク（[[JNJ-RD-TAG-
+PRIORITY-1]]・[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]で発見）を追記。
+フェーズD（本体consumer切替）は対象優先順位確定済みで着手可能な段階
+〈詳細はCLAUDE_CODE_START.md・PROJECT_STATUS.md参照〉）
+
 最終更新: 2026-07-23（新一次データベース構築プロジェクトの存在を追記。
 現状の一次データ取得（`common/sec_data/`のSEC EDGAR・yfinance11ファイル/
 FRED2サブシステムの分散状態）を、TO-BE設計に基づく統合層へ再構築する
@@ -275,8 +293,40 @@ SEC EDGAR
 │    ヒューリスティックとする）が新規登録時にCIK不連続候補をWARN検知する。
 ├─ quarterly.py      # 四半期データ取得・正規化
 ├─ normalizer.py     # フィールド正規化
+├─ layer3_builder.py # Layer3（common/sec_data統合、config/sec_concept_definitions.json
+│    〈全32フィールドの候補タグ・分類定義〉に基づきcompany_facts.json生データから
+│    直接、統一snake_caseの銘柄別ストア（インメモリのみ、ファイル永続化なし）を
+│    構築する`build_ticker_store()`が本体。update.py Step5で呼ばれ、戻り値は
+│    そのままttm_calculator.py::calc_ttm_series()へ渡される（フェーズC対応、
+│    2026-07-24〜。旧経路はnormalize()の戻り値を渡していた）。
+│    Q4逆算（q4_implied.py::Q4_IMPLIED_FIELDS）・欠落四半期逆算
+│    （MISSING_QUARTER_IMPLIED_FIELDS）・GrossProfitバックフィル
+│    （`_backfill_gross_profit()`、インメモリのみで本番の`data/annual_*.json`
+│    には反映されない＝[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]）・
+│    ticker_overrides機構（`action: "exclude"`/`"override_concept"`、
+│    `cross_filing_tags`によるNVDA向け複数タグ合算）を持つ。
+│    `_get_concept_units()`は2026-07-30、[[LAYER3-COGS-ASTS-LRCX-
+│    RECOVERABLE-FOLLOWUP-1]]対応で「名前空間:タグ名」形式（コロン区切り）の
+│    企業固有拡張タグ参照に対応（現状利用箇所はゼロ、将来の再利用向けに保持）。
+│    **重要（3スキーマ併存の実態、詳細は`docs/architecture/new_data_platform/
+│    SEC_EDGAR_LAYER_DESIGN.md`参照）**: 2026-07-30時点で
+│    ①Layer3（本ファイル、snake_case・インメモリ）②`data/annual_*.json`等
+│    （parser.py、snake_case・ファイル永続化）③`normalized/`
+│    （normalizer.py、**PascalCase**・`quality_checker.py`/STONKS SILO
+│    `financial_trend_calculator.py`が直接消費）の3スキーマが並行して
+│    存在する。`config/sec_concept_definitions.json`は`common/sec_data/
+│    tag_definitions.py::TAG_CANDIDATES`と一部フィールド（例:
+│    research_and_development、[[JNJ-RD-TAG-PRIORITY-1]]で発見）で
+│    独立した候補タグリストを保持しており、片方のみ修正すると優先順位が
+│    3スキーマ間で乖離する（[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]参照）。
+│    フェーズD（本体consumer切替、対象優先順位: ①TANUKI VALUATION本体
+│    ②STONKS SILO ③TANUKI TAIL ④HypeCore ⑤stock.html）着手前提条件は
+│    `SEC_EDGAR_LAYER_DESIGN.md`「フェーズD」節・`MIGRATION_CHECKLIST.md`参照。
 ├─ ttm_calculator.py # TTM系列計算。本番経路は calc_ttm_series()/save_ttm_series()
-│    のみ（update.pyが呼ぶ）。FLOW_FIELDS（4Q合算）のみを処理し、STOCK_FIELDS/
+│    のみ（update.pyが呼ぶ）。**フェーズC対応（2026-07-24〜）**: 入力元は
+│    旧`normalize()`の戻り値から`layer3_builder.py::build_ticker_store()`の
+│    戻り値（Layer3、インメモリ）に切替済み。フィールド抽出は
+│    `layer3_builder.py::get_field_entries()`経由。FLOW_FIELDS（4Q合算）のみを処理し、STOCK_FIELDS/
 │    SHARES_FIELDS（Cash/STDebt/LTDebt/DeferredRevenue/Equity/Assets/
 │    SharesBasic/SharesDiluted）は処理しない。
 │    **追記（TTM-STOCK-FIELDS-DEAD-1 2026-07-18・対応方針a完了）**:
@@ -308,6 +358,14 @@ SEC EDGAR
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
+│    **注意（[[JNJ-RD-TAG-PRIORITY-1]] 2026-07-30）**: `config/
+│    sec_concept_definitions.json`（Layer3、layer3_builder.pyが参照）は
+│    本ファイルとは独立した候補タグリストを保持する。両タグが並存報告
+│    される銘柄（研究開発費のResearchAndDevelopmentExpense vs
+│    ExcludingAcquiredInProcessCost等）で優先順位を修正する際は、本ファイル
+│    だけでなくLayer3側の候補順序も同時に確認すること
+│    （[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]は本ファイルのみ修正し
+│    Layer3側が未修正のまま残っている既知の実例）。
 ├─ contracts.py  # 正規化契約の型（QUALITY-GATES-EPIC-1 Gate2 Phase 3a 2026-07-13新設）
 │    FinancialEntry/EntryProvenance/FCFSeries。quarterly.py::save_raw_table()・
 │    normalizer.py::save_normalized()がjson.dump()直前にFinancialEntryで

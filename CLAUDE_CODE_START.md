@@ -23,7 +23,12 @@ git pull --rebase origin kaihatsu
   フェーズ1〜3のいずれかが「構築中」以上になっている場合、そのプロジェクトが
   進行中であることを認識した上で作業する。全て「未着手」の場合は
   プロジェクト自体は設計完了・実装未着手の段階であるため、通常の
-  BACKLOG.md起点の作業を優先してよい）
+  BACKLOG.md起点の作業を優先してよい。2026-07-30時点で`common/sec_data`
+  統合はフェーズ1「構築中」、`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C
+  〈Layer3スキーマ構築・consumer横展開検証〉が完了しフェーズD〈本体
+  consumer切替、対象優先順位確定済み〉着手可能な段階。フェーズD着手前に
+  `SEC_EDGAR_LAYER_DESIGN.md`のフェーズD対象リスト・「3スキーマ併存の
+  実態」を確認する）
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
@@ -294,6 +299,18 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `common/sec_data/normalizer.py`
 - `common/sec_data/ttm_calculator.py`
 - `common/sec_data/parser.py`
+- `common/sec_data/tag_definitions.py`（[[JNJ-RD-TAG-PRIORITY-1]]で発見:
+  `TAG_CANDIDATES`は`parser.py`〈merge型候補選択〉・`quarterly.py`〈primary
+  +fallback-if-empty型候補選択〉の2つの異なる消費ロジックから参照される
+  ため、候補タグの優先順位を変更する際は両消費者への影響を個別に確認する。
+  また`config/sec_concept_definitions.json`〈Layer3、`layer3_builder.py`が
+  参照〉に同名フィールドの独立した候補タグリストが存在する場合、
+  こちらも同時に見直すべきか確認する）
+- `config/sec_concept_definitions.json`（Layer3の候補タグ・フィールド定義。
+  `common/sec_data/tag_definitions.py`と重複する候補タグリストを独立して
+  保持しているため、片方のみ修正すると3スキーマ間でタグ優先順位が
+  乖離する。詳細は`docs/architecture/new_data_platform/
+  SEC_EDGAR_LAYER_DESIGN.md`「3スキーマ併存の実態」参照）
 - `src/value/tanuki_valuation/calculator/rice.py`
 - `src/value/tanuki_valuation/core_calculator.py`
 - `src/value/tanuki_valuation/calculator/growth.py`（GROWTH-CAGR-SIGN-1で発見:

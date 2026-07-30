@@ -1,5 +1,32 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-30（common/sec_data統合フェーズA〜D準備セッション。
+[[TTM-PASCALCASE-KEY-STALE-1]]〈Phase C移行によるPascalCase→snake_case
+キー不一致バグ、RICEスコア100/100銘柄・FCFフォールバック94/100銘柄への
+本番影響を修正〉・[[LAYER3-SGA-Q4-MISSING-1]]〈SGA/cost_of_revenueのQ4
+逆算・欠落四半期逆算スコープ漏れ、42銘柄・171四半期影響を修正、
+newfield_q4_cutoff_check.py新設〉・[[LAYER3-TTM-REGRESSION-NEWFIELD-
+BLINDSPOT-1]]〈TTM回帰比較スクリプトの新規フィールド検証漏れ〉・
+[[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]〈TANUKI TAIL/stock.htmlが参照する
+docs/common/sec_data/normalized/の2ヶ月超陳腐化、週次自動同期を追加〉・
+[[SEGMENT-FETCHER-DUPLICATE-ORPHAN-1]]〈segment_fetcher.py重複統合〉・
+[[LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1]]〈ASTS/LRCXのcost_of_
+revenue欠落を一次情報で個別裏取りし両銘柄とも回収不可能と確定、
+副産物として`layer3_builder.py::_get_concept_units()`に名前空間対応
+コードを追加〉・[[STONKS-SILO-COGS-DEAD-FALLBACK-1]]〈デッドな代替キー
+参照削除、副次的にfalsy-zeroバグ(RXRX)も解消〉・[[JNJ-RD-TAG-PRIORITY-1]]
+〈research_and_development候補タグ優先順位誤りをSEC EDGAR 10-K原本裏取り
+の上で修正、adjustments.py R&D資本化調整の不適用という現在進行形の実害を
+解消〉を完了。新規登録・未着手:
+[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]・
+[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]・
+[[LAYER3-VISA-EPS-TAG-MISSING-1]]・[[LAYER3-GA-STANDALONE-TAG-UNMAPPED-1]]・
+[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]〈JNJ-RD-TAG-PRIORITY-1と同一の誤りが
+config/sec_concept_definitions.json側に残存〉。詳細は各エントリ・
+BACKLOG_DONE.md参照。CHAT_RULES.mdへ運用原則2件を追記
+〈「バグが0にならなければ次に進まない」・「新セッション開始時は渡された
+資料を全文確認する」〉）
+
 最終更新: 2026-07-23（AS-IS/TO-BE設計セッション〈RETROSPECTIVE_2026-07-22.md・
 FIELD_DEFINITIONS.md全10フェーズ・CONCEPT_PARAMETER_VARIATIONS.md・
 INPUT_DATA_AS_IS.md/TOBE.md〉で発見された未対応事象を一括起票。優先度高
@@ -5260,6 +5287,47 @@ ROEフォールバック不可を許容する明示的な設計判断が必要�
 
 #### 着手条件
 なし
+
+---
+
+### [LAYER3-CONFIG-RD-TAG-PRIORITY-1] config/sec_concept_definitions.json(Layer3)のresearch_and_development候補タグ優先順位が[[JNJ-RD-TAG-PRIORITY-1]]と同一の誤り
+**優先度:** 中
+**分類:** データ品質 / Layer3統合
+**登録日:** 2026-07-30
+**発見:** [[JNJ-RD-TAG-PRIORITY-1]]対応中の波及範囲確認
+
+#### 内容
+`[[JNJ-RD-TAG-PRIORITY-1]]`（BACKLOG_DONE.md参照）で修正した
+`common/sec_data/tag_definitions.py::TAG_CANDIDATES["RESEARCH_AND_
+DEVELOPMENT"]`の優先順位バグと同一の誤り（`ResearchAndDevelopmentExpense`を
+`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`より優先）が、
+`config/sec_concept_definitions.json`（Layer3、`layer3_builder.py`が参照する
+独立した候補タグリスト）にもそのまま残っている。
+
+`data_fetcher.py::build_rice_annual_shape()`が参照するTTM系列
+（`TTMReader` → `ttm_calculator.py` → `layer3_builder.py` →
+本ファイル）はこの誤った優先順位を経由するため、JNJのように両タグを
+並存報告する銘柄が将来TTM経路を通る際、同型のresearch_and_development
+過小計上が再発する可能性がある。
+
+#### 影響
+現時点ではJNJのTTM系列自体が別要因（RICE`available: false`、
+`note: "SEC年次データ未取得"`）で機能していないため顕在化していないが、
+その別要因が解消されTTM経路が実際にJNJのRICE計算に使われるようになった
+場合、`[[JNJ-RD-TAG-PRIORITY-1]]`と同じ実害（R&D資本化調整の不適用等）が
+Layer3/TTM経由で再発する。またフェーズD（TANUKI VALUATION本体のLayer3
+切替）が進んだ場合、より広範囲に影響が及ぶ可能性がある。
+
+#### 対応方針
+`config/sec_concept_definitions.json`の`fields.research_and_development.
+candidates`の順序を、`tag_definitions.py`と同様に
+`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`優先へ入れ替える。
+`layer3_builder.py`側の候補タグ処理（merge型か優先順位型か）の挙動を
+`[[JNJ-RD-TAG-PRIORITY-1]]`と同様に事前確認した上で対応する。
+
+#### 着手条件
+なし。フェーズD着手前、またはJNJのRICE`available: false`要因が解消される
+タイミングで優先的に対応するのが望ましい。
 
 ---
 
