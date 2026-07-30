@@ -9584,3 +9584,75 @@ json` APIのレスポンスには反映されない場合がある。一次情�
 
 検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
 `report_consistency_check.py` NG=0/WARN=71（既存と同一）。
+
+---
+
+### ✅ [STONKS-SILO-COGS-DEAD-FALLBACK-1] STONKS SILOのcost_of_revenue代替キー参照が実質常にNoneを返す死んだフォールバック
+**優先度:** 低〜中
+**分類:** バグ / デッドコード
+**完了日:** 2026-07-30
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+discover/stonks-silo/src/fetcher.py(L174-175)がpl_raw.get("cost_of_revenue") or
+pl_raw.get("cost_of_goods_sold") or pl_raw.get("cost_of_goods_and_services_sold")で
+GrossProfit補完を行っているが、後2者のキー(cost_of_goods_sold・
+cost_of_goods_and_services_sold)はparser.py生成のannual_YYYY.jsonのpl辞書に実在しない
+(parser.py側は複数候補タグをcost_of_revenueという単一キーに統合するため)。実質的に
+cost_of_revenue頼みの1経路のみが機能しており、後2者は常にNoneを返すデッドコード。
+
+#### 影響
+現状は実害が顕在化していない(cost_of_revenueキーが機能する限り問題ないため)が、
+将来のリファクタ時に誤解を招く可能性がある。
+
+#### 対応方針・完了記録
+
+【2026-07-30対応完了】着手前の現状再確認で、fetcher.pyのコードが登録時から
+不変であること、annual_YYYY.jsonのpl辞書に`cost_of_goods_sold`・
+`cost_of_goods_and_services_sold`のいずれのキーも実在しないこと（全105銘柄・
+1441ファイルを走査し0件）、および当該コード追加コミット(`d23a410b62`,
+2026-05-09)のメッセージからも「parser.py側の将来のキー分離を見越した予約」
+である根拠は見当たらないことを確認した。意図的な設計上の予約ではなく、単純な
+誤った憶測(parser.pyの複数候補タグ→単一キー統合設計を正しく把握しないまま
+3候補を並べたもの)に基づくデッドコードと結論し、以下の通り単純削除で対応した。
+
+変更前:
+```python
+cost = (
+    pl_raw.get("cost_of_revenue")
+    or pl_raw.get("cost_of_goods_sold")
+    or pl_raw.get("cost_of_goods_and_services_sold")
+)
+```
+
+変更後:
+```python
+cost = pl_raw.get("cost_of_revenue")
+```
+
+**副次的発見・修正**: 変更前後で全stonks_silo対象25銘柄(直近5年分)の
+fetcher出力を比較した結果、RXRX 2021年のみ差分（`gross_profit`: `null`→
+`10178000`）を検出した。原因は、Pythonの`0`がfalsyであるため、
+`cost_of_revenue`が正当な値`0`（同年のannual_2021.jsonに実在）であっても
+`or`チェーンが次の候補キー(実在しない`cost_of_goods_sold`)へフォールスルーし、
+結果的に`cost`全体が`None`扱いとなってgross_profit補完自体がスキップされる
+という、デッドコードとは別の潜在バグ（falsy-zero値の取りこぼし）を内包して
+いたことによる。今回の単純化によりこの副次バグも同時に解消され、RXRX 2021年の
+gross_profit補完が正しく機能するようになった。
+
+この副作用の影響範囲を`analyzer.py::_calc_incremental_margin()`経由で検証した
+ところ、RXRX 2021年のgross_profit確定により増分粗利率ペア(2021→2022)が
+新たに計算対象へ追加され、`incremental_margin_trend`のOLS回帰対象点数が
+3点→4点に増えることを確認した。ただし実際に全25銘柄の`StonksAnalyzer.analyze()`
+出力全体を変更前後でフィールド単位まで比較した結果、差分は**ゼロ**であった
+(RXRXの`incremental_margin`・`incremental_margin_prev`は直近2ペア
+(2025年・2024年分)のみを参照するため2021年データの影響を受けず、
+`incremental_margin_trend`のOLS判定も追加点を含めて再計算してもDETERIORATING
+のまま変化しなかったため)。現時点のデータでは表示結果への影響はないが、
+将来別ティッカー・別年度でcost_of_revenue=0のケースが増えた場合はOLS対象点数の
+増加により`incremental_margin_trend`の判定が変わり得る点は留意事項として記録する。
+
+検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
+`report_consistency_check.py` NG=0/WARN=71（既存と同一）。加えて、全25
+stonks_silo銘柄の`StonksAnalyzer.analyze()`出力を変更前後でシリアライズし
+diffがゼロであることを個別に確認済み。

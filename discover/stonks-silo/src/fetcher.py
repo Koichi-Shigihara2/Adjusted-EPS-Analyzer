@@ -169,11 +169,7 @@ def _normalize_record(raw: dict, year: int, ticker: str, errors: list) -> dict:
     if pl["gross_profit"] is None:
         rev = pl.get("revenue")
         pl_raw = raw.get("pl", {})
-        cost = (
-            pl_raw.get("cost_of_revenue")
-            or pl_raw.get("cost_of_goods_sold")
-            or pl_raw.get("cost_of_goods_and_services_sold")
-        )
+        cost = pl_raw.get("cost_of_revenue")
         if rev is not None and cost is not None:
             pl["gross_profit"] = rev - cost
             pl["gross_profit_derived"] = True

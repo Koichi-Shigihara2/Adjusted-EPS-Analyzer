@@ -5236,33 +5236,6 @@ warn_acknowledged.json的なホワイトリスト運用、またはSTONKS SILO U
 
 ---
 
-### [STONKS-SILO-COGS-DEAD-FALLBACK-1] STONKS SILOのcost_of_revenue代替キー参照が実質常にNoneを返す死んだフォールバック
-**優先度:** 低〜中
-**分類:** バグ / デッドコード
-**登録日:** 2026-07-29
-**発見:** cost_of_revenue/EPS投資調査（チャット記録）
-
-#### 内容
-discover/stonks-silo/src/fetcher.py(L174-175)がpl_raw.get("cost_of_revenue") or
-pl_raw.get("cost_of_goods_sold") or pl_raw.get("cost_of_goods_and_services_sold")で
-GrossProfit補完を行っているが、後2者のキー(cost_of_goods_sold・
-cost_of_goods_and_services_sold)はparser.py生成のannual_YYYY.jsonのpl辞書に実在しない
-(parser.py側は複数候補タグをcost_of_revenueという単一キーに統合するため)。実質的に
-cost_of_revenue頼みの1経路のみが機能しており、後2者は常にNoneを返すデッドコード。
-
-#### 影響
-現状は実害が顕在化していない(cost_of_revenueキーが機能する限り問題ないため)が、
-将来のリファクタ時に誤解を招く可能性がある。
-
-#### 対応方針
-未定。デッドな2キー参照を削除するか、コメントで意図的なフォールバック
-候補(将来parser.py側のキー分離を見越した予約)である旨を明記するかの判断が必要。
-
-#### 着手条件
-なし
-
----
-
 ### [LAYER3-VISA-EPS-TAG-MISSING-1] Visa(V)がEPS関連タグを一切報告せずeps_diluted経由のROEフォールバックが機能しない
 **優先度:** 低
 **分類:** データ品質
