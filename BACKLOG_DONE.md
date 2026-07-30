@@ -9657,3 +9657,94 @@ gross_profit補完が正しく機能するようになった。
 `report_consistency_check.py` NG=0/WARN=71（既存と同一）。加えて、全25
 stonks_silo銘柄の`StonksAnalyzer.analyze()`出力を変更前後でシリアライズし
 diffがゼロであることを個別に確認済み。
+
+---
+
+### ✅ [JNJ-RD-TAG-PRIORITY-1] JNJのresearch_and_developmentが誤タグ採用により実態の約1/30に過小計上
+**優先度:** 高
+**分類:** データ品質 / 計算ロジックへの実害あり
+**完了日:** 2026-07-30
+**発見:** SECデータ全体の網羅的正確性検証
+
+#### 内容
+`common/sec_data/tag_definitions.py::TAG_CANDIDATES["RESEARCH_AND_DEVELOPMENT"]`
+の候補タグ優先順位は`ResearchAndDevelopmentExpense`を1位、
+`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`を2位としていた。
+大半の企業ではどちらか一方のみ報告するため問題にならないが、JNJは2023年以降
+両タグを並存報告しており、優先度1位のタグが誤って採用され続けていた。
+
+一次情報（SEC EDGAR 10-K原本、FY2023/2024/2025の3期連続）で裏取りした結果:
+- `ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost` = 損益計算書
+  本体（Consolidated Statements of Earnings, R5.htm）の主要科目
+  「Research and development expense」。FY2023: $15,085M / FY2024: $17,232M /
+  FY2025: $14,665M。JNJの実態R&D総額。
+- `ResearchAndDevelopmentExpense` = キャッシュフロー計算書（R10.htm）の非資金
+  調整項目「Charge(s) for (acquired) in-process research and development
+  assets」。M&A実行時に取得したIPR&D資産を即時費用化する一時的会計処理で、
+  通常のR&D活動とは無関係。FY2023: $483M / FY2024: $1,841M / FY2025: $109M。
+
+誤って後者が採用され続けた結果、annual_YYYY.jsonの`research_and_development`
+は実態の約1/30〜1/150という値になっていた。
+
+#### 影響
+- `src/value/tanuki_valuation/calculator/adjustments.py::capitalize_rd()`
+  （R&D資本化調整、R&D/Revenue≥5%閾値で適用）が、誤った比率0.1%
+  （正しくは約15.6%）により`applied: false`のまま誤って不適用になっていた
+  （現在進行形の実害、JNJのFCF・Intrinsic Valueに直接影響）。
+- RICE（`rice.py`）・STONKS SILO等、`research_and_development`を参照する
+  他経路にも波及する設計だが、JNJのRICEは現状別要因
+  （`note: "SEC年次データ未取得"`）で`available: false`のため、本バグの影響は
+  現時点では顕在化していない。
+- `data_fetcher.py`経由のTTM系列（`build_rice_annual_shape()`）は
+  `config/sec_concept_definitions.json`（Layer3、`layer3_builder.py`が参照）
+  という**別の独立した候補タグリスト**を経由しており、本対応では修正して
+  いない。同ファイルの`research_and_development`候補順序も現状
+  `["ResearchAndDevelopmentExpense", "ResearchAndDevelopmentExpenseExcluding
+  AcquiredInProcessCost", ...]`と同一の誤った優先順位のままであり、
+  Layer3/TTM経路が将来有効化された際に同型の問題が再発する可能性がある
+  （残課題として記録、本対応のスコープ外）。
+
+#### 対応方針・完了記録
+
+【2026-07-30対応完了】`tag_definitions.py::TAG_CANDIDATES["RESEARCH_AND_
+DEVELOPMENT"]`の優先順位を入れ替え、`ResearchAndDevelopmentExpenseExcluding
+AcquiredInProcessCost`を1位、`ResearchAndDevelopmentExpense`を2位とした。
+
+**後方互換性の確認**: `parser.py`（annual/quarterly、merge型候補選択）・
+`quarterly.py`（raw table、primary+fallback-if-empty型候補選択）の両消費者で
+優先順位を入れ替えた場合の影響を検証した。`quarterly.py`は主タグが空の場合
+のみフォールバックする設計のため、両タグが並存しない大半の銘柄では
+主タグが空→フォールバックで従来通り`ResearchAndDevelopmentExpense`が
+採用され、動作に変化がないことをロジック上確認した上で、全105銘柄について
+`SECParser.parse_company_facts()`・`quarterly.build_raw_table()`を変更前後で
+実行し出力を比較した（実際の企業データを用いた実証、ロジック確認のみに
+留めない）。
+
+**変更が生じた3銘柄**:
+- **JNJ**（意図した修正）: annual_2023/2024/2025の`research_and_development`
+  が$483M/$1,841M/$109M → $15,085M/$17,232M/$14,665Mに修正された。
+  `capitalize_rd()`の適用判定も`applied: false`（R&D/Rev=0.1%）→
+  `applied: true`（R&D/Rev=15.6%、FCF調整-$975M）に変化することを確認した。
+- **LLY**（副次的改善）: `quarterly.py`のraw table「RD」フィールドが、旧タグ
+  （`ResearchAndDevelopmentExpense`、2023-06-30で報告終了）に主タグが
+  張り付いたまま2023Q3以降のデータを一切拾えず停止していた潜在バグを
+  同時に解消した。修正後は2023Q3〜2026Q1まで正しく（新タグ`Excluding
+  AcquiredInProcessCost`経由で）継続取得できるようになった。
+- **AMD**（軽微な副作用、許容範囲と判断）: annual_2011.jsonの
+  `research_and_development`が$1,453M→$79Mに変化した。AMDは2012年提出の
+  FY2011 10-Kで`ExcludingAcquiredInProcessCost`タグを3件のみ（FY2010・
+  FY2011・2012Q1）例外的に報告しており、その値はJNJとは逆にごく小さい
+  （$79M/$114M、実態のR&D総額とは無関係な別区分と推測される）。しかし
+  これは2011年という14年以上前の単年データのみへの影響であり、
+  `research_and_development`を参照するRICE・R&D資本化調整のいずれも直近
+  数年のデータしか使用しないため、実質的な実害はないと判断した。
+
+全105銘柄について、変更が生じたAMD/JNJ/LLY以外の102銘柄は
+`annual_*.json`・`quarterly_*.json`・raw table・normalizedのいずれにも
+差分がないことを確認済み（変更前後比較、`research_and_development`以外の
+フィールドを含め完全一致）。
+
+検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
+`report_consistency_check.py` NG=0/WARN=71（既存と同一）。JNJ/AMD/LLYの
+`common/sec_data/data/`・`raw/`・`normalized/`配下の該当ファイルを実際に
+再生成し、上記3銘柄以外に差分が生じないことを確認済み。

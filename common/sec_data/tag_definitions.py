@@ -78,8 +78,15 @@ TAG_CANDIDATES: dict[str, tuple[str, ...]] = {
         "Cash",
     ),
     "RESEARCH_AND_DEVELOPMENT": (
-        "ResearchAndDevelopmentExpense",
+        # [[JNJ-RD-TAG-PRIORITY-1]]対応: ExcludingAcquiredInProcessCostを
+        # ResearchAndDevelopmentExpenseより優先する。JNJは両タグを2023年以降
+        # 並存報告しており、後者はキャッシュフロー計算書の非資金調整項目
+        # 「Charge for purchase of in-process research and development assets」
+        # （M&A時のIPR&D即時費用化、通常のR&D活動とは無関係の一時的項目）を指す
+        # ため、損益計算書本体の主要R&D科目である前者を優先する必要がある
+        # （10-K原本R5.htm/R10.htm、FY2023-2025の3期で確認済み）。
         "ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost",
+        "ResearchAndDevelopmentExpense",
         "CapitalizedComputerSoftwareDevelopmentCosts",
         "CapitalizedComputerSoftwareAmortization1",  # UNH等
     ),
