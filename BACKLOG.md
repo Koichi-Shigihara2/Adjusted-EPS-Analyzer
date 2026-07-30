@@ -5236,31 +5236,6 @@ warn_acknowledged.json的なホワイトリスト運用、またはSTONKS SILO U
 
 ---
 
-### [LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1] ASTS・LRCXのcost_of_revenue欠落は回収可能なタグサイレント切替の可能性
-**優先度:** 中
-**分類:** データ品質 / 要個別調査
-**登録日:** 2026-07-29
-**発見:** cost_of_revenue/EPS投資調査（チャット記録）
-
-#### 内容
-[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]のGAP型8銘柄のうち、ASTS(約2.2年前に
-報告停止)・LRCX(約0.7年前に報告停止)は他6銘柄(CAKE等、数年〜十数年前に停止)と比べて
-停止時期が新しく、CAKEのような「タグ付け自体の廃止」ではなく、単に別の標準タグに
-切り替えた(LLY-CAPEX-STALE-1型の本当のサイレント切替)である可能性が残る。
-
-#### 影響
-この2銘柄は候補タグ拡充・ticker override(quarterly.pyの_COGS_FALLBACKS一部が
-まだparser.py本番に未反映であることも一因の可能性)で回収できる見込みがある。
-
-#### 対応方針
-未定。ASTS・LRCXのcompany_facts.jsonを個別に一次調査し、報告停止後に
-使い始めた代替タグの有無を確認する必要がある。
-
-#### 着手条件
-なし
-
----
-
 ### [STONKS-SILO-COGS-DEAD-FALLBACK-1] STONKS SILOのcost_of_revenue代替キー参照が実質常にNoneを返す死んだフォールバック
 **優先度:** 低〜中
 **分類:** バグ / デッドコード

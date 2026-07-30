@@ -9513,3 +9513,73 @@ Claude Code経由で行われる方針となったため、現時点では使用
   リポジトリ全体をgrepし、コードからの参照が皆無であることを最終確認
 - 検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
   `report_consistency_check.py` NG=0/WARN=71（既存と同一）
+
+---
+
+### ✅ [LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1] ASTS・LRCXのcost_of_revenue欠落は回収可能なタグサイレント切替の可能性
+**優先度:** 中
+**分類:** データ品質 / 要個別調査
+**完了日:** 2026-07-30
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容
+[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]のGAP型8銘柄のうち、ASTS(約2.2年前に
+報告停止)・LRCX(約0.7年前に報告停止)は他6銘柄(CAKE等、数年〜十数年前に停止)と比べて
+停止時期が新しく、CAKEのような「タグ付け自体の廃止」ではなく、単に別の標準タグに
+切り替えた(LLY-CAPEX-STALE-1型の本当のサイレント切替)である可能性が残ると仮説されて
+いた。
+
+#### 影響
+この2銘柄は候補タグ拡充・ticker overrideで回収できる見込みがあると推測されていた。
+
+#### 対応方針・完了記録
+
+【2026-07-30調査・対応完了】ASTS・LRCXそれぞれについて一次情報（10-Q原本・
+company_facts.json構造）で個別に裏取りし、両銘柄とも**回収不可能**と結論した。
+
+**LRCX**: 最新10-Q（Q3 FY2026、accession `0000707549-26-000022`）のR2.htm
+（連結損益計算書のXBRLレンダリング）を確認したところ、「Cost of goods sold」
+科目は標準タグ`us-gaap:CostOfGoodsAndServicesSold`から、LRCX独自の拡張タグ
+`lrcx:CostOfGoodsAndServicesSoldExcludingRestructuringCharges`へ切り替わって
+いた（比較期間の金額は旧タグと完全一致、会計処理・科目自体に変化なし）。
+当初はticker_override（`override_concept`に名前空間プレフィックス付きで
+指定）による回収を試みたが、以下2点が判明し断念した:
+1. **`lrcx:`名前空間自体がSEC EDGARの`companyfacts.json` APIに存在しない**
+   （`data.sec.gov/api/xbrl/companyfacts/CIK0000707549.json`をライブ取得し
+   直接確認。10-Q本文のXBRLレンダリング〈R2.htm〉には表示されるが、SEC
+   companyfacts APIのレスポンスには反映されないという、企業独自拡張タグに
+   関するAPI仕様上の制約と判明）。ローカルキャッシュの陳腐化ではなく、
+   SEC側APIが現に返さないデータであることを確認済み
+2. `override_concept`は指定フィールドの候補タグリストを丸ごと1つの指定
+   タグに置き換える設計のため、解決不可能なタグで置き換えると、従来
+   標準タグ（`CostOfGoodsAndServicesSold`）経由で正常に取得できていた
+   21件の四半期データ（2025-06-29まで）が消失する**回帰**を引き起こす
+   ことをbefore/after比較（全105銘柄regeneration）で確認した
+
+このためLRCXへのticker_override追加は見送り、`[[LAYER3-COGS-STRUCTURAL-
+GAP-16TICKERS-1]]`の「完全なギャップ」銘柄として現状維持する。
+
+**ASTS**: 前回調査（2026-07-30）で確定した通り、標準タグ`us-gaap:
+CostOfRevenue`は技術的には存続しているが、製品別売上内訳のディメンション
+付き脚注文脈でのみ開示され、`company_facts.json` APIの仕様上（デフォルト
+コンテキストのみ公開）取得不可能。加えて損益計算書自体がCOGS概念を持たない
+区分（Engineering services costs等）に再構成済みのため、回収不可能。
+
+**副産物（実装済み・保持）**: `layer3_builder.py::_get_concept_units()`に、
+concept文字列の"名前空間:タグ名"形式（コロン区切り）対応コードを実装した。
+今回のLRCXでは根本原因（API自体がデータを公開しない）により活用に至らな
+かったが、コード自体は動作検証済み（全105銘柄regenerationでNVDA/KLAC/TER/
+V/SOFIを含む既存動作に差分ゼロを確認、コロンを含まない場合は完全に後方
+互換）であり、将来別銘柄で同種の企業固有拡張タグが`companyfacts.json`に
+実際に含まれるケースが出た場合に備え、保持することとした（現状の利用箇所
+はゼロ）。
+
+**一般的な教訓**: 企業独自の拡張タグ（`{ticker}:`名前空間）は、SEC EDGARの
+10-Q/10-K本文のXBRLレンダリング（R-file等）には表示されても、`companyfacts.
+json` APIのレスポンスには反映されない場合がある。一次情報での裏取りは
+「10-K/10-Q本文で科目・タグ参照が確認できること」だけでなく、「実際に
+`companyfacts.json`（またはcompany-concept API）から当該データが取得できる
+こと」まで確認しないと、回収可能性の判断を誤るリスクがある。
+
+検証: pytest 442 passed（既知2件のみ）、`audit.py` exit 0、
+`report_consistency_check.py` NG=0/WARN=71（既存と同一）。

@@ -217,9 +217,22 @@ def _apply_cross_filing_tags(
 # ---------------------------------------------------------------------------
 
 def _get_concept_units(company_facts: dict, concept: str, unit: str) -> list:
-    """company_facts.facts.us-gaap.{concept}.units.{unit} を安全に取得する。"""
+    """company_facts.facts.{namespace}.{concept}.units.{unit} を安全に取得する。
+
+    [[LAYER3-COGS-ASTS-LRCX-RECOVERABLE-FOLLOWUP-1]]対応: conceptに
+    "名前空間:タグ名"形式（コロン区切り、例: "lrcx:CostOfGoodsAndServices
+    SoldExcludingRestructuringCharges"）を許容する。企業固有の拡張タグ
+    （ticker_overrides::override_conceptでのみ使用想定）を明示的に参照
+    できるようにするため。コロンを含まない場合は従来通りus-gaap名前空間
+    を参照する（完全な後方互換。既存のNVDA/KLAC/TER/V/SOFIのticker_
+    overridesはいずれもus-gaap名前空間のタグのみを参照しており、本対応
+    による動作変更はない）。
+    """
+    namespace, _, tag = concept.partition(":")
+    if not tag:
+        namespace, tag = "us-gaap", concept
     try:
-        return company_facts["facts"]["us-gaap"][concept]["units"][unit]
+        return company_facts["facts"][namespace][tag]["units"][unit]
     except (KeyError, TypeError):
         return []
 
