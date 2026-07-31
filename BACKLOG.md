@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]の追加シミュレーション
+（`MERGE_ALL_TAGS_FIELDS`側revenue/selling_and_marketing/depreciation_and_
+amortizationの3フィールド）結果を反映（登録・確認のみ、実装・データ再生成は
+未実施）。OK約3,487件・b:改善13件（AVGO revenue 2016/2017の是正後値$13,240M/
+$17,636Mが10-K原本値と完全一致）・c:新規欠損化12件を確認。対応スコープを
+`_extract_single_key()`経由9フィールドに加えこの3フィールドにも拡大し、
+tie-breakを候補単一時も含めた無条件340-380日フィルタへ変更する方針を確定。
+新規発見のVRT 2016(revenue)・RCAT 2012(depreciation_and_amortization)を
+[[SPAC-STUB-PERIOD-VERIFICATION-1]]に追加（9銘柄→11銘柄）。また
+2026-07-12完了済み[[SEC-TAG-FICO-CPRT-1]]のFICO/CPRT/LITEについて、無条件
+フィルタ適用後もregressionが発生しないことを実コード・実データで個別確認済み
+（FICO全18年度・CPRT全17年度・LITE全13年度、合計48年度すべて340-380日の
+範囲内で維持）。
+
 最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]の全母集団オフライン
 シミュレーション結果を反映（登録・訂正のみ、実装・データ再生成は未実施）。
 105銘柄×9フィールドで実コード（`_detect_fiscal_end_month()`・
@@ -5333,22 +5347,57 @@ compensation）を対象に、実コードの`_detect_fiscal_end_month()`・
   現在進行形でSTONKS SILOのgross_margin判定に影響している可能性が高く、
   個別優先度が高い
 
+**追加シミュレーション（2026-07-31・`MERGE_ALL_TAGS_FIELDS`側3フィールド）**:
+`_extract_values_merged()`経由のrevenue・selling_and_marketing・
+depreciation_and_amortizationについても、同一方法論（実コードの
+`_detect_fiscal_end_month()`・`_detect_fiscal_anchor_date()`・
+`determine_fiscal_year()`使用）で、候補が単一の年度も含めて無条件で
+340-380日フィルタを適用した場合の影響を確認済み。
+
+- 結果: OK(現状340-380日以内)約3,487件・b:改善13件・c:新規欠損化12件
+- b:改善に含まれるAVGO revenue 2016/2017の是正後値($13,240M/$17,636M)は
+  10-K原本確認済みの真の年次値と完全一致を確認
+- 新規発見（登録済みSPAC/stub銘柄に含まれない欠損化ケース）: VRT 2016
+  (revenue、Emersonからのスピンオフ年度、私企業期スタブ報告の可能性)・
+  RCAT 2012(depreciation_and_amortization、1日間という極端に短い期間長、
+  シェル会社期の退化的ファクトの可能性)を影響範囲に追加
+- 対応スコープを`_extract_single_key()`経由の9フィールドに加え、
+  `_extract_values_merged()`経由の3フィールド(revenue/S&M/D&A)にも拡大する。
+  現在のtie-break（同一end_dateで複数候補競合時のみ発動、2026-07-12
+  [[SEC-TAG-FICO-CPRT-1]]で追加）を、候補単一時も含めた無条件340-380日
+  フィルタ適用へ変更する設計とする
+- **regression確認（2026-07-31実施）**: [[SEC-TAG-FICO-CPRT-1]]で修正済みの
+  FICO・CPRT・LITEのrevenueについて、無条件340-380日フィルタ適用後も現状
+  維持されるか実コード・実データで個別確認した。FICO全18年度(FY2008-2025)・
+  CPRT全17年度(FY2009-2025)・LITE全13年度(FY2013-2025)、合計48年度分すべてが
+  340-380日の範囲内（363〜370日）で既に正しく選択されており、regressionは
+  一切発生しないことを確認済み（FY2019/2020の是正済み値$1,160.1M/$1,294.6M
+  〈FICO〉・$2,042.0M/$2,205.6M〈CPRT〉・$1,565.3M〈LITE、FY2019〉も完全一致）
+
 #### 影響
 revenue(INPUT-A-001、PSR分母・成長率・Rule of 40・moat_score fcf_norm分母)を
 含む、システム全体で最も広く消費される一次データフィールドに影響しうる。
 確定範囲: AVGO 2016/2017年度のrevenue/net_income/operating_income、
-gross_profit9銘柄(TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC)、及び上記
-シミュレーションで新規発見したMRVL(gross_profit)・COHR/INTU(cost_of_revenue)。
-b:改善53件・c:新規欠損化138件の全容はシミュレーション結果節・チャット記録参照。
+gross_profit9銘柄(TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC)、及び
+シミュレーションで新規発見したMRVL(gross_profit)・COHR/INTU(cost_of_revenue)・
+VRT(revenue)・RCAT(depreciation_and_amortization)。
+9フィールド分のb:改善53件・c:新規欠損化138件、及び
+revenue/S&M/D&A3フィールド分のb:改善13件・c:新規欠損化12件の全容は
+シミュレーション結果節・チャット記録参照。
 
 #### 対応方針
 `_extract_single_key()`（または`_extract_values_best_candidate()`）に、
 `_collect_own_data_annual()`が既に持つ340-380日必須フィルタ相当のロジックを
-適用する方針で確定（安全性はシミュレーションで確認済み）。
+適用する方針で確定（安全性はシミュレーションで確認済み）。加えて
+`_extract_values_merged()`側の対応スコープを、現在は複数候補競合時のみ発動する
+tie-break（[[SEC-TAG-FICO-CPRT-1]]）から、候補単一時も含めた無条件
+340-380日フィルタへ拡大する方針も確定（FICO/CPRT/LITEのregressionなしを
+確認済み）。
 [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]・[[SPAC-STUB-PERIOD-VERIFICATION-1]]で
 判明した正当な非365日データ(スタブ期)は「c: 新規欠損化」としてNone化される
 想定だが、STONKS SILO等の既存フォールバックにより実害は限定的と確認済み。
-オフラインシミュレーションは完了。実装はまだ着手していない。
+オフラインシミュレーションは9フィールド+3フィールドとも完了。実装はまだ
+着手していない。
 
 #### 着手条件
 なし。シミュレーション完了・安全性確認済みのため、優先度高・次回セッション
@@ -5384,7 +5433,7 @@ BBAI 2020(net_incomeのみ27日、他フィールドは223日)・RDW 2020(155日
 
 ---
 
-### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ9銘柄の個別確認（2026-07-31訂正: RCAT除外）
+### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認（2026-07-31訂正: RCAT 2024除外・VRT/RCAT 2012追加）
 **優先度:** 中
 **分類:** データ品質 / 要個別確認
 **登録日:** 2026-07-31
@@ -5396,6 +5445,15 @@ SPIR(2020)・APGE(2022)・NOW(2010/2011)で、非365日の期間長が検出さ�
 いずれも同一銘柄内でフィールド間の期間長が内部整合的であり、SPAC合併前・
 IPO前の正当なスタブ期報告に該当する可能性が高い。ただし確定判定には10-K
 個別確認が必要。
+
+**追加（2026-07-31、revenue/selling_and_marketing/depreciation_and_
+amortization側の追加シミュレーションで判明）**: 以下2件を要確認対象に追加した。
+- VRT 2016(revenue、0、249日): Emersonからのスピンオフ年度（2016年10月）に
+  該当し、SPAC上場(2020年)より前の私企業期のスタブ報告の可能性がある
+- RCAT 2012(depreciation_and_amortization、0、**1日間**): 極端に短い期間長。
+  ドローン事業化以前のシェル会社期における退化的なXBRLファクトの可能性がある
+  （下記「訂正」のRCAT 2024/stock_based_compensationとは別年度・別フィールドの
+  独立したケース）
 
 **訂正（2026-07-31、[[PERIOD-LENGTH-VALIDATION-GAP-1]]全母集団シミュレーション
 により判明）**: 当初本エントリの対象に含めていたRCAT 2024
@@ -5411,7 +5469,7 @@ company_facts.json上に存在する「b: 改善」ケース（フィルタ適�
 
 #### 対応方針
 未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の
-対応が固まった後、該当9銘柄・年度についても10-K原本で個別に正当性を確認し、
+対応が固まった後、該当11銘柄・年度についても10-K原本で個別に正当性を確認し、
 「安全なNone扱いの確認」または「正当なデータとして保持」のいずれかで正式クローズする。
 
 #### 着手条件
