@@ -98,10 +98,16 @@ def test_merge_no_regression_when_single_candidate():
     assert result["annual"].get(2024) == 5000000000
 
 
-def test_merge_exact_match_still_wins_over_duration():
-    """fy==end_yearの完全一致（exact match）は引き続きdurationより優先される既存ルールを維持"""
+def test_merge_exact_match_does_not_bypass_duration_filter():
+    """[[PERIOD-LENGTH-VALIDATION-GAP-1]]対応後: fy==end_yearの完全一致（exact
+    match）であっても、期間長(340-380日)フィルタは無条件で優先適用され、
+    候補が1つのみでも範囲外なら採用されない（None）。
+    対応前は「候補が1つのみのためdurationに関わらず採用される」仕様だったが、
+    これはTDY/AVGO/CPRT等で四半期値が年次値として誤採用される直接の原因
+    だったため、意図的に仕様変更した。
+    """
     us_gaap = {
-        # exact=True（fy=2020, end_year=2020）だが91日間
+        # exact=True（fy=2020, end_year=2020）だが91日間の四半期エントリ
         "TagShortExact": {"units": {"USD": [
             _entry("2020-01-01", "2020-03-31", 50, fy=2020),
         ]}},
@@ -110,5 +116,4 @@ def test_merge_exact_match_still_wins_over_duration():
     result = parser._extract_values_merged(
         us_gaap, ["TagShortExact"], use_max=False, fiscal_end_month=12,
     )
-    # 候補が1つのみのため、durationに関わらず採用される（exact matchロジック自体は変更していない）
-    assert result["annual"].get(2020) == 50
+    assert result["annual"].get(2020) is None

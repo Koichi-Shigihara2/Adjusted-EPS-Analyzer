@@ -58,6 +58,23 @@ class SECParser:
         "rpo",
     }
 
+    # [[PERIOD-LENGTH-VALIDATION-GAP-1]]対応: _extract_single_key()（MERGE_ALL_
+    # TAGS_FIELDS以外の全FLOW型フィールドが経由する候補選定）で、年次候補として
+    # 受理する際に期間長(340-380日)を必須条件とするフィールド。GrossProfit等の
+    # タグが主要財務諸表になく「四半期実績（未監査）」注記にのみ存在する企業で、
+    # 91日程度の四半期値が年次値として誤採用される構造的バグへの対応
+    # （TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC/MRVL/COHR/INTU等で実害確認済み、
+    # 105銘柄×全対象フィールドのオフラインシミュレーションで安全性確認済み）。
+    # 対象は全母集団シミュレーション済みの9フィールドに限定し、同じ
+    # _extract_single_key()を経由する他フィールド（eps_diluted/eps_basic・
+    # buyback・finance_lease_payments・shares_diluted/shares_basic）は
+    # 未シミュレーションのため対象外のまま据え置く。
+    PERIOD_LENGTH_VALIDATED_FIELDS = {
+        "gross_profit", "cost_of_revenue", "net_income", "operating_income",
+        "research_and_development", "selling_general_and_administrative",
+        "operating_cash_flow", "capital_expenditure", "stock_based_compensation",
+    }
+
     # XBRL項目マッピング（優先順位順）
     XBRL_MAPPING = {
         # BS（貸借対照表）
@@ -999,6 +1016,17 @@ class SECParser:
                                 annual_form[end_year] = form
                                 annual_fy_tag[end_year] = fy
                         else:
+                            # [[PERIOD-LENGTH-VALIDATION-GAP-1]]対応: 従来は
+                            # 同一end_date・同一exact_matchレベルで複数候補が
+                            # 競合した場合のみ期間長でtie-breakしていた
+                            # （SEC-TAG-FICO-CPRT-1）。候補が単一の年度では
+                            # このtie-break自体が発動せず、91日程度の四半期
+                            # エントリがform='10-K'・fp='FY'で年次候補に混入した
+                            # まま無条件で採用されてしまう構造だったため、
+                            # 候補プールへの受理時点で340-380日を必須条件とし、
+                            # 単一候補の場合も含めて無条件に適用する。
+                            if days is not None and not (340 <= days <= 380):
+                                continue
                             if end_year not in result["annual"]:
                                 result["annual"][end_year] = val
                                 annual_end_dates[end_year] = end_date
@@ -1187,7 +1215,8 @@ class SECParser:
         for key in xbrl_keys:
             if key not in us_gaap:
                 continue
-            key_result = self._extract_single_key(us_gaap, key, fiscal_end_month, anchor_month, anchor_day)
+            key_result = self._extract_single_key(us_gaap, key, fiscal_end_month, anchor_month, anchor_day,
+                                                   field_name=field_name)
             if not key_result["annual"] and not key_result["quarterly"]:
                 continue
             candidates.append((key, key_result))
@@ -1298,8 +1327,16 @@ class SECParser:
         return result
 
     def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int,
-                             anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[str, Any]:
-        """1つのXBRLキーからannual/quarterly値を抽出する（候補選定の評価単位）"""
+                             anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                             field_name: str = "") -> Dict[str, Any]:
+        """1つのXBRLキーからannual/quarterly値を抽出する（候補選定の評価単位）
+
+        field_nameがPERIOD_LENGTH_VALIDATED_FIELDSに含まれる場合、年次候補として
+        受理する際に期間長(340-380日)を必須条件とする（[[PERIOD-LENGTH-VALIDATION-
+        GAP-1]]対応）。_collect_own_data_annual()の同種フィルタ（617行目）と
+        同一パターン。instant fact（start_dateを持たずdays=Noneになる）は
+        このフィールド集合の対象外（INSTANT_FACT_FIELDS）のため影響しない。
+        """
         result: Dict[str, Any] = {"annual": {}, "quarterly": {}}
         annual_end_dates: Dict[int, str] = {}
         quarterly_end_dates: Dict[str, str] = {}
@@ -1346,6 +1383,16 @@ class SECParser:
                             days = (end_dt - datetime.strptime(start_date, '%Y-%m-%d')).days
                         except ValueError:
                             days = None
+
+                    # [[PERIOD-LENGTH-VALIDATION-GAP-1]]対応: PERIOD_LENGTH_
+                    # VALIDATED_FIELDS対象フィールドでは、年次候補として受理する
+                    # 前に期間長(340-380日)を必須条件とする。instant fact
+                    # （days=None、INSTANT_FACT_FIELDSはそもそも対象外）は
+                    # 対象外のため影響しない。
+                    if (field_name in self.PERIOD_LENGTH_VALIDATED_FIELDS
+                            and days is not None and not (340 <= days <= 380)):
+                        continue
+
                     if end_year not in result["annual"]:
                         result["annual"][end_year] = val
                         annual_end_dates[end_year] = end_date
