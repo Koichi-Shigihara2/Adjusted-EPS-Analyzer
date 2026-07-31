@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]の全母集団オフライン
+シミュレーション結果を反映（登録・訂正のみ、実装・データ再生成は未実施）。
+105銘柄×9フィールドで実コード（`_detect_fiscal_end_month()`・
+`_detect_fiscal_anchor_date()`・`determine_fiscal_year()`）を読み取り専用で
+実行し、現状OK約9,700件・b:改善53件・c:新規欠損化138件を確認。対応方針
+（`_extract_single_key()`への340-380日フィルタ追加）の安全性（既存の正しい
+約9,700件には影響しない設計）を確認し、同エントリの「対応方針」を確定扱いに
+更新。新規発見のMRVL(gross_profit)・COHR/INTU(cost_of_revenue、INTUは
+12年連続)を影響範囲に追加。
+[[SPAC-STUB-PERIOD-VERIFICATION-1]]からRCAT 2024(stock_based_compensation)
+を訂正削除（「決算期変更に伴う正当なスタブ期」との推定が誤りと判明、実際は
+正しい年次代替値が存在する[[PERIOD-LENGTH-VALIDATION-GAP-1]]側のb:改善
+ケースだったため、対象9銘柄に変更）。
+
 最終更新: 2026-07-31（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]の調査から
 派生した横断調査（登録のみ、実装は未着手）。新規登録6件:
 [[PERIOD-LENGTH-VALIDATION-GAP-1]]〈優先度：高。parser.pyのFLOW型フィールド抽出
@@ -5287,23 +5301,58 @@ capital_expenditure・stock_based_compensation等）を処理する
 根本原因（`_extract_single_key()`経路全体の期間長検証欠如）を解消していなかった
 ことを確定させた。
 
+#### シミュレーション結果（2026-07-31実施・全母集団オフラインシミュレーション）
+105銘柄×9フィールド（gross_profit・cost_of_revenue・net_income・
+operating_income・research_and_development・selling_general_and_
+administrative・operating_cash_flow・capital_expenditure・stock_based_
+compensation）を対象に、実コードの`_detect_fiscal_end_month()`・
+`_detect_fiscal_anchor_date()`・`determine_fiscal_year()`を読み取り専用で
+使用したオフラインシミュレーションを実施済み（実装・データ再生成は未実施）。
+
+- 結果: 現状OK(340-380日以内で既に正しく採用済み)約9,700件・
+  b:改善53件・c:新規欠損化138件
+- 対応方針の安全性を確認: フィルタは`_extract_single_key()`の候補受理ループに
+  340-380日必須条件を追加する減算的(subtractive)操作として設計可能であり、
+  既存の正しい約9,700件には理論上影響しない
+  （`_collect_own_data_annual()`に既存の同種フィルタと同一パターンの横展開）
+- 新規発見（登録済みSPAC/stub銘柄に含まれない欠損化ケース）: MRVL
+  (gross_profit 2010-2015)・COHR(cost_of_revenue 2010-2012)・INTU
+  (cost_of_revenue 2009-2020、12年連続)を影響範囲に追加。特にINTUは
+  長期間の恒常的欠落
+- b:改善53件全件・c:新規欠損化138件全件の一覧はチャット記録参照
+  (次回実装依頼時に添付)
+- downstream影響: TANUKI VALUATION Moat Scoreはannual_YYYY.jsonの
+  gross_profitを参照しないため無関係。`growth.py::fcf_list[:5]`は直近5年
+  のみ対象のため、AVGO等の過去年度バグは現時点のIV計算に無関係
+  （ただし直近5年以内で同型バグが発生すれば直接影響する時限的事情であり、
+  恒久的な安全とは言えない）。STONKS SILOはgross_profit/cost_of_revenueを
+  直接読むため、c化(None)はfetcher.pyの既存自己修復ロジック
+  (Revenue-cost_of_revenue逆算)へ切り替わり、現状の誤った四半期値がそのまま
+  使われるより安全な結果になる
+- HON(2024/2025)・ABBV(2025)・CAT/KLAC/FICO/HEI/CPRT(直近年度含む)は
+  現在進行形でSTONKS SILOのgross_margin判定に影響している可能性が高く、
+  個別優先度が高い
+
 #### 影響
 revenue(INPUT-A-001、PSR分母・成長率・Rule of 40・moat_score fcf_norm分母)を
 含む、システム全体で最も広く消費される一次データフィールドに影響しうる。
-現時点で確定しているのはAVGO 2016/2017年度のrevenue/net_income/operating_income、
-及びgross_profit9銘柄。他フィールド・他銘柄への一般化範囲は未確定。
+確定範囲: AVGO 2016/2017年度のrevenue/net_income/operating_income、
+gross_profit9銘柄(TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC)、及び上記
+シミュレーションで新規発見したMRVL(gross_profit)・COHR/INTU(cost_of_revenue)。
+b:改善53件・c:新規欠損化138件の全容はシミュレーション結果節・チャット記録参照。
 
 #### 対応方針
-未定。`_extract_single_key()`（または`_extract_values_best_candidate()`）に、
+`_extract_single_key()`（または`_extract_values_best_candidate()`）に、
 `_collect_own_data_annual()`が既に持つ340-380日必須フィルタ相当のロジックを
-適用する案、または`_extract_values_merged()`のtie-break機構をMERGE_ALL_TAGS_
-FIELDS以外にも一般化する案が候補。ただし[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]・
-[[SPAC-STUB-PERIOD-VERIFICATION-1]]で判明した正当な非365日データ(スタブ期)を
-誤って除外しないよう、105銘柄×全FLOW型フィールドでのオフラインシミュレーション
-を実装前に必ず行う。
+適用する方針で確定（安全性はシミュレーションで確認済み）。
+[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]・[[SPAC-STUB-PERIOD-VERIFICATION-1]]で
+判明した正当な非365日データ(スタブ期)は「c: 新規欠損化」としてNone化される
+想定だが、STONKS SILO等の既存フォールバックにより実害は限定的と確認済み。
+オフラインシミュレーションは完了。実装はまだ着手していない。
 
 #### 着手条件
-なし。優先度高のため次回セッション筆頭候補。
+なし。シミュレーション完了・安全性確認済みのため、優先度高・次回セッション
+実装筆頭候補。
 
 ---
 
@@ -5335,7 +5384,7 @@ BBAI 2020(net_incomeのみ27日、他フィールドは223日)・RDW 2020(155日
 
 ---
 
-### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ10銘柄の個別確認
+### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ9銘柄の個別確認（2026-07-31訂正: RCAT除外）
 **優先度:** 中
 **分類:** データ品質 / 要個別確認
 **登録日:** 2026-07-31
@@ -5343,10 +5392,18 @@ BBAI 2020(net_incomeのみ27日、他フィールドは223日)・RDW 2020(155日
 
 #### 内容
 ASTS(2019)・IONQ(2020)・JOBY(2020)・RKLB(2020)・SOFI(2020)・SOUN(2020)・
-SPIR(2020)・APGE(2022)・NOW(2010/2011)・RCAT(2024)で、非365日の期間長が
-検出されたが、いずれも同一銘柄内でフィールド間の期間長が内部整合的であり、
-SPAC合併前・IPO前の正当なスタブ期報告、またはRCATは既知の決算期変更に該当する
-可能性が高い。ただし確定判定には10-K個別確認が必要。
+SPIR(2020)・APGE(2022)・NOW(2010/2011)で、非365日の期間長が検出されたが、
+いずれも同一銘柄内でフィールド間の期間長が内部整合的であり、SPAC合併前・
+IPO前の正当なスタブ期報告に該当する可能性が高い。ただし確定判定には10-K
+個別確認が必要。
+
+**訂正（2026-07-31、[[PERIOD-LENGTH-VALIDATION-GAP-1]]全母集団シミュレーション
+により判明）**: 当初本エントリの対象に含めていたRCAT 2024
+(stock_based_compensation)は削除した。「決算期変更に伴う正当なスタブ期」
+という推定は誤りで、実際には正しい年次代替値($3,609,000、365日)が
+company_facts.json上に存在する「b: 改善」ケース（フィルタ適用で正しく
+是正される）と判明したため、[[PERIOD-LENGTH-VALIDATION-GAP-1]]側の改善対象
+(b:53件)に含める。
 
 #### 影響
 現時点でバグと確定したものはない。誤って「バグ」として画一的に除外・修正すると、
@@ -5354,7 +5411,7 @@ SPAC合併前・IPO前の正当なスタブ期報告、またはRCATは既知の
 
 #### 対応方針
 未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の
-対応が固まった後、該当10銘柄・年度についても10-K原本で個別に正当性を確認し、
+対応が固まった後、該当9銘柄・年度についても10-K原本で個別に正当性を確認し、
 「安全なNone扱いの確認」または「正当なデータとして保持」のいずれかで正式クローズする。
 
 #### 着手条件
