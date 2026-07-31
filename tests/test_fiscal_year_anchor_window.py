@@ -148,17 +148,44 @@ def test_detect_fiscal_anchor_date_returns_none_when_no_qualifying_entries():
 
 def test_detect_fiscal_end_month_excludes_10ka_matching_parser_behavior():
     """detect_fiscal_end_month: form=='10-K'完全一致（10-K/Aは対象外）。
-    10-K/Aを含めると月4が多数派になってしまう構成だが、除外により正しく月9を検出する"""
+    10-K/Aを含めると月4が多数派になってしまう構成だが、除外により正しく月9を検出する
+
+    [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]対応後: 340-380日フィルタが追加
+    されたため、10-Kエントリにも真の年次期間（start）を持たせる必要がある
+    （10-K/Aエントリはform判定で除外されるためstart省略のまま）。"""
     us_gaap = {
         "NetIncomeLoss": {"units": {"USD": [
             {"form": "10-K/A", "fp": "FY", "end": "2018-04-30", "val": 1},
             {"form": "10-K/A", "fp": "FY", "end": "2019-04-30", "val": 1},
             {"form": "10-K/A", "fp": "FY", "end": "2020-04-30", "val": 1},
-            {"form": "10-K", "fp": "FY", "end": "2020-09-30", "val": 2},
-            {"form": "10-K", "fp": "FY", "end": "2021-09-30", "val": 3},
+            {"form": "10-K", "fp": "FY", "start": "2019-10-01", "end": "2020-09-30", "val": 2},
+            {"form": "10-K", "fp": "FY", "start": "2020-10-01", "end": "2021-09-30", "val": 3},
         ]}},
     }
     assert detect_fiscal_end_month(us_gaap, ["NetIncomeLoss"]) == 9
+
+
+def test_detect_fiscal_end_month_excludes_quarterly_footnote_reclosure():
+    """[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]回帰テスト: 毎年の10-Kに
+    再掲載される四半期比較値（Selected Quarterly Financial Data注記等）が
+    form=='10-K'・fp=='FY'のまま多数カウントされても、340-380日フィルタで
+    除外され、量的ノイズに惑わされず真の年次月（12月）を検出する
+    （ELF実測: 対策前は3月が45票で12月37票を上回り誤検出していた）"""
+    us_gaap = {
+        "NetIncomeLoss": {"units": {"USD": [
+            # 四半期比較値の再掲載（91日前後、複数年分で3月に票が集中）
+            {"form": "10-K", "fp": "FY", "start": "2015-01-01", "end": "2015-03-31", "val": 1},
+            {"form": "10-K", "fp": "FY", "start": "2016-01-01", "end": "2016-03-31", "val": 1},
+            {"form": "10-K", "fp": "FY", "start": "2017-01-01", "end": "2017-03-31", "val": 1},
+            {"form": "10-K", "fp": "FY", "start": "2018-01-01", "end": "2018-03-31", "val": 1},
+            {"form": "10-K", "fp": "FY", "start": "2019-01-01", "end": "2019-03-31", "val": 1},
+            # 真の年次エントリ（365日前後、12月決算）は年1回のみ
+            {"form": "10-K", "fp": "FY", "start": "2015-01-01", "end": "2015-12-31", "val": 2},
+            {"form": "10-K", "fp": "FY", "start": "2016-01-01", "end": "2016-12-31", "val": 2},
+            {"form": "10-K", "fp": "FY", "start": "2017-01-01", "end": "2017-12-31", "val": 2},
+        ]}},
+    }
+    assert detect_fiscal_end_month(us_gaap, ["NetIncomeLoss"]) == 12
 
 
 # ============================================

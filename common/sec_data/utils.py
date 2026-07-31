@@ -50,6 +50,14 @@ def detect_fiscal_end_month(us_gaap: dict, candidate_keys: Sequence[str]) -> int
     candidate_keysは'us-gaap:'プレフィックス付き・なしのいずれでも受け付ける
     （呼び出し元ごとにタグ名の記法が異なるため）。
 
+    [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]対応（案①）: form=="10-K"・
+    fp=="FY"の条件だけでは、毎年の10-Kに再掲載される「Selected Quarterly
+    Financial Data（未監査）」注記等の四半期比較値も同じform/fp属性を持つため
+    集計に混入し、四半期エントリの反復再掲載が多い銘柄（ELF等）で真の年次月を
+    量的に上回り最頻値が反転しうる。`_collect_own_data_annual()`・
+    `detect_fiscal_anchor_date()`と同一の340-380日必須フィルタを追加し、
+    真に年次（duration ~365日）のエントリのみを集計対象とする。
+
     Args:
         us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
         candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
@@ -64,10 +72,20 @@ def detect_fiscal_end_month(us_gaap: dict, candidate_keys: Sequence[str]) -> int
             continue
         for entry in us_gaap[xbrl_key].get("units", {}).get("USD", []):
             if entry.get("form") == "10-K" and entry.get("fp") == "FY":
+                start = entry.get("start", "")
                 end = entry.get("end", "")
-                if len(end) >= 7:
-                    m = int(end[5:7])
-                    month_counts[m] = month_counts.get(m, 0) + 1
+                if not start or not end or len(start) < 10 or len(end) < 10:
+                    continue
+                try:
+                    start_dt = datetime.strptime(start, "%Y-%m-%d")
+                    end_dt = datetime.strptime(end, "%Y-%m-%d")
+                except ValueError:
+                    continue
+                days = (end_dt - start_dt).days
+                if not (340 <= days <= 380):
+                    continue
+                m = end_dt.month
+                month_counts[m] = month_counts.get(m, 0) + 1
         if month_counts:
             break
     return max(month_counts, key=month_counts.get) if month_counts else 12
