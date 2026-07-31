@@ -2,6 +2,113 @@
 
 ---
 
+## 2026-08-01（完了）
+
+### ✅ [ELF-FISCAL-END-MONTH-MISDETECTION-1] fiscal_end_month/anchor検出が1銘柄単一値のみ対応、実在する決算期変更（ELF/RCAT/AVGO）をera別に扱えない構造的限界（2026-08-01案②完了）
+**優先度:** 高
+**分類:** バグ / 一次データ抽出ロジック（決算年度判定）
+**登録日:** 2026-07-31
+**完了日:** 2026-08-01
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]実装時の全105銘柄フローズン入力
+再生成・検証、および[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]との関係確認調査
+（いずれもチャット記録）
+
+#### 内容（根本原因、案①完了時点の記録）
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長フィルタ実装後、全105銘柄で
+annual_YYYY.jsonを再生成しフローズン入力比較を行ったところ、ELFのみ
+revenue/gross_profit/net_income等が「新年度の値に前年度の値が入り込む」
+一連のカスケード的な入れ替わりを起こすことを発見した。根本原因は
+`_detect_fiscal_end_month()`/`_detect_fiscal_anchor_date()`が1銘柄につき
+単一のfiscal_end_month/anchorしか持てず、実在する決算期変更（ELFは12月
+決算→3月決算へ変更）をera別に扱えない構造的限界だった。案①（期間長
+フィルタの`_detect_fiscal_end_month()`への追加、コミット`96c42d8f0`）は
+必要条件だが不十分と実証され、案②（era別anchor切替）が根治手段として
+確定していた。
+
+#### 実装内容（案②）
+- `common/sec_data/utils.py`: 新規関数`detect_fiscal_anchor_clusters(us_gaap,
+  candidate_keys, min_support=2)`を追加。`_cluster_fiscal_anchor_candidates()`
+  が返す全クラスタのうち、主anchor（最大クラスタ）以外でsupport>=2の
+  有意なクラスタのアンカー日のみを追加候補として返す。単一クラスタ銘柄
+  （105銘柄中100銘柄）は必ず空リストを返す設計。
+  `detect_fiscal_anchor_date()`との重複コードを避けるため、day_counts収集
+  （`_collect_anchor_day_counts()`）・クラスタ内アンカー日算出
+  （`_cluster_anchor_point()`）を共通ヘルパーへ抽出するリファクタリングを
+  実施（既存関数の挙動は変更なし、105銘柄全件比較で確認済み）。
+- `determine_fiscal_year()`に`extra_anchors: Optional[Sequence[Tuple[int,int]]]
+  = None`引数を追加。指定時は主anchor＋extra_anchorsの全候補から、同じ
+  365日ウィンドウ探索でグローバルに最小距離の候補年度を採用する。
+  extra_anchors省略/空リスト時は主anchor単独の探索のみとなり、追加前と
+  数学的に完全同一の計算になる（単一ループ順序が変わらないため）。
+- `common/sec_data/parser.py`: `SECParser._parse_raw_data()`冒頭で一度だけ
+  `detect_fiscal_anchor_clusters()`を呼び出し、既存の5つの
+  `determine_fiscal_year()`呼び出し箇所（`_collect_own_data_annual()`・
+  `_collect_own_data_instant()`・`_own_override_is_safe()`・
+  `_extract_values_merged()`・`_extract_single_key()`）全てに同じ配線
+  パターンで`extra_anchors`を通した（`_collect_own_data()`・
+  `_extract_values()`・`_extract_values_best_candidate()`も中継のため
+  シグネチャ拡張）。
+
+#### 検証結果
+1. 全105銘柄でbucketing結果を新旧比較（git worktreeで変更前コードを
+   分離して実行）。**変化があったのはELFのみ**。RCAT/AVGO/MSCI/NOWは
+   いずれも2クラスタ検出（RCAT: 主(4,30)+追加(12,31)、AVGO: 主(12,31)+
+   追加(10,30)、MSCI: 主(12,31)+追加(11,30)、NOW: 主(12,31)+追加(6,30)）
+   だが、実際のend_dateがいずれも主anchor側に十分近く、bucketingへの
+   実害はゼロ（era別の構造的な保険が追加されたのみ）。単一クラスタの
+   100銘柄は完全不変を確認。
+2. ELFのrevenue/gross_profit/cost_of_revenue/net_income/operating_incomeが
+   2015-2018年度で真の暦年値に復旧したことを確認（例: revenue
+   2015=$191,413,000、2016=$229,567,000、2017=$269,888,000、
+   2018=$267,435,000。10-K原本"Selected Financial Data"表の
+   Net sales $191,413/$229,567（千ドル）と一致確認済み）。
+3. ELFの2014年度・2019年度（移行期）はPL/CF系フィールドがNone化。
+   事前チャット確認済みの通り、2014年は本タスク着手前にPredecessor
+   （2014-01-01〜01-31、Net sales $9,810K）/Successor（2014-02-01〜
+   12-31、333日、Net sales $135,134K）分割による正当な333日Successor値
+   と10-K原本で確認済みであり、合算救済は行わず安全側のNone化を採用
+   （BS項目=instant factは期間長フィルタの対象外のため両年度とも維持）。
+4. 前回除外していたELF分annual_2014-2019.json（6ファイル）を、フローズン
+   入力（company_facts.json等は再取得せず）で`SECParser.parse_and_save
+   ('ELF')`により再生成し、[[PERIOD-LENGTH-VALIDATION-GAP-1]]コミット
+   `d6d404016`時点の除外を解除した。
+5. pytest: 447 passed/2 known failed（既知のMSFT/NVDA、[[TEST-STALE-IV-1]]）
+   → 453 passed/2 known failed（新規テスト6件追加、既知失敗数に変化なし）。
+   `report_consistency_check.py`: NG=0（WARN=68件、変化なし。ELFはWARN-10
+   〈yfinance PSステール値、無関係〉のみで新規WARNなし）。
+6. TANUKI VALUATIONパイプライン（`pipeline.py ELF --skip-risk`）を試験
+   実行し、Intrinsic_Value_BASE/DCF_FCF_PV/DCF_TV_PV/DCF_v0/
+   Growth_Rate_Original（いずれも`growth.py::fcf_list[:5]`の直近5年窓
+   ベース）が完全無変化であることを確認（最新年度が2026のためウィンドウは
+   2022-2026年度相当で2015-2019年度に到達しない）。STONKS SILOはELFが
+   `cik_lookup.csv`でstonks_silo=falseのため対象外。
+   **一方、`ROE_avg (10yr)`は7.0%→9.6%へ変化することを検知した**
+   （10年ROE平均窓が2017-2019年度を含むため、是正された正しい値が反映
+   された）。これに連動しAlpha_Premium（HypeCore expectation premium、
+   ALPHA-REDESIGN-1後はIntrinsic_Valueに非乗算の参考値）が0.29→0.40へ
+   変化するが、TANUKI SCORE分類（WATCH）・Matrix Quadrant/Labelは不変。
+   本タスクのスコープ外のため、このTANUKI VALUATION側の再生成・コミットは
+   実施していない（試験実行の出力は`git checkout`で破棄済み）。
+
+#### コミット
+- コード変更: `7c44ac266`（`common/sec_data/parser.py`・`utils.py`・
+  `tests/test_fiscal_year_anchor_window.py`）
+- データ再生成: `6d9c18b2f`（`common/sec_data/data/ELF/annual_2014-2019.json`
+  6ファイル）
+- BACKLOG更新: 本コミット
+（ユーザー指示により今回はpushを保留、コミットのみ）
+
+#### 対象銘柄の残課題
+- **ELF**: 本タスクで解消。
+- **RCAT**: bucketingへの実害は引き続きゼロ（本タスクの案②実装で
+  構造的な保険は追加済み）だが、直近10-Kが12月31日・4月30日の両クラスタに
+  同時投票しており3段階目の決算期変更が進行中の可能性を[[RCAT-TRIPLE-
+  FISCAL-CHANGE-SUSPECTED-1]]として別途登録済み（2026-08-01、優先度：中、
+  10-K原本での個別確認が未着手）。
+- **AVGO**: bucketingへの実害は引き続きゼロ。真のFYE（10月末）との
+  不一致自体は[[PERIOD-LENGTH-VALIDATION-GAP-1]]で背景要因として発見済み
+  のまま、個別の10-K確認は未着手。
+
 ## 2026-07-31（完了）
 
 ### ✅ [PERIOD-LENGTH-VALIDATION-GAP-1] parser.pyのFLOW型フィールド抽出に期間長検証が構造的に欠落（2026-07-31完了）
