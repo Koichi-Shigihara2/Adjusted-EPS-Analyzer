@@ -1,5 +1,13 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-01（[[ELF-ROE10YR-RECALC-PENDING-1]]新規登録、登録のみで
+TANUKI VALUATION側のコミット・反映は未実施。[[ELF-FISCAL-END-MONTH-
+MISDETECTION-1]]完了時の試験実行で、ELF 2015-2018年度データ是正に伴い
+ROE_avg(10yr)が7.0%→9.6%・Alpha_Premiumが0.29→0.40へ変化することを確認
+〈TANUKI SCORE分類・Matrix Quadrant/Labelは不変〉。バグではなく是正済み
+データに基づく期待された再計算結果のため、通常の定期更新サイクルでの
+反映を待つ方針で優先度：中で登録）。
+
 最終更新: 2026-08-01（[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②実装完了・
 BACKLOG_DONE.mdへ移動。`detect_fiscal_anchor_clusters()`を新規追加し、
 `determine_fiscal_year()`にextra_anchors引数を追加、SECParserの5つの
@@ -5382,6 +5390,35 @@ end_month()`=12月と`detect_fiscal_anchor_date()`=4月30日の不一致が、
 
 #### 着手条件
 なし
+
+---
+
+### [ELF-ROE10YR-RECALC-PENDING-1] ELFのROE_avg(10yr)是正が未反映（TANUKI VALUATION側の定期更新待ち）
+**優先度:** 中
+**分類:** データ反映待ち / TANUKI VALUATION
+**登録日:** 2026-08-01
+**発見:** [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]完了時の試験実行（チャット記録）
+
+#### 内容
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（era別fiscal_end_month対応）により
+ELFの2015-2018年度データが是正された結果、TANUKI VALUATIONのROE_avg(10yr)が
+7.0%→9.6%へ、連動してAlpha_Premiumが0.29→0.40へ変化することを試験実行
+（未コミット、出力破棄済み）で確認した。これはバグではなく、是正済みの正しい
+入力データに基づく期待された再計算結果である。TANUKI SCORE分類（WATCH）・
+Matrix Quadrant/Labelは不変であることを確認済み。
+
+#### 影響
+ELF単一銘柄。現時点でTANUKI VALUATION側のannual output（IV・Classification等）
+は未更新のまま古いROE値を参照し続けている。分類自体への影響はないため
+緊急性は低い。
+
+#### 対応方針
+TANUKI VALUATIONの通常の定期更新サイクル（全銘柄再計算）に含めて反映する。
+単独での緊急反映は不要。
+
+#### 着手条件
+なし。次回のTANUKI VALUATION全銘柄再計算時に自然に解消される見込み。
+反映確認後、本エントリをクローズすること。
 
 ---
 
