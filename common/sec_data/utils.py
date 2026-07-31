@@ -2,7 +2,7 @@
 共通ユーティリティ関数
 """
 from datetime import date, datetime, timedelta
-from typing import Any, Dict, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 
 def quarters_in_trailing_window(
@@ -157,31 +157,14 @@ def _cluster_fiscal_anchor_candidates(
     return clusters
 
 
-def detect_fiscal_anchor_date(us_gaap: dict, candidate_keys: Sequence[str]) -> Optional[Tuple[int, int]]:
+def _collect_anchor_day_counts(us_gaap: dict, candidate_keys: Sequence[str]) -> Dict[Tuple[int, int], int]:
     """
     本人10-K annualエントリ（form in ("10-K","10-K/A")・fp=="FY"・
-    340〜380日の真の年次期間）のend日から、決算アンカー日（月+日）を
-    検出する（ARCH-DATA-1ステージ2: アンカー日ウィンドウ方式の入力）。
+    340〜380日の真の年次期間）のend日から、(月,日)ごとの出現回数を集計する。
 
-    detect_fiscal_end_month()と同じcandidate_keys・us_gaapの走査パターンを
-    共有する（片方のタグでエントリが見つかった時点で走査を打ち切る）。
-
-    JNJ/TDY型対応（2026-07-17検証で発見・循環クラスタリング方式に変更）:
-    単純な(月,日)完全一致の最頻値では、年境界をまたぐ企業のend日が
-    Dec側とJan側に分散し、企業のfyタグと矛盾する年度判定を引き起こす。
-    _cluster_fiscal_anchor_candidates()で年境界を考慮した循環クラスタに
-    まとめた上で、最大クラスタ（合計出現数が最多）を採用し、その中央値
-    （中央値がクラスタ内に実在しない場合はクラスタ内最頻値）をアンカー日とする。
-
-    Args:
-        us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
-        candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
-
-    Returns:
-        (anchor_month, anchor_day): 検出したアンカー日。
-        該当エントリが1件もない場合はNone（呼び出し元は
-        determine_fiscal_year()に anchor_month/anchor_day=None を渡し、
-        従来の月のみ比較にフォールバックさせる）
+    detect_fiscal_anchor_date()・detect_fiscal_anchor_clusters()の共通部分
+    （ARCH-DATA-1ステージ2 [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②で
+    2関数に分岐する前の走査ロジックをここへ集約）。
     """
     day_counts: Dict[Tuple[int, int], int] = {}
     for raw_key in candidate_keys:
@@ -208,15 +191,13 @@ def detect_fiscal_anchor_date(us_gaap: dict, candidate_keys: Sequence[str]) -> O
                 day_counts[key] = day_counts.get(key, 0) + 1
         if day_counts:
             break
+    return day_counts
 
-    clusters = _cluster_fiscal_anchor_candidates(day_counts)
-    if not clusters:
-        return None
 
-    best_cluster = max(clusters, key=lambda c: sum(p[3] for p in c))
-
+def _cluster_anchor_point(cluster: list) -> Tuple[int, int]:
+    """クラスタ内エントリの加重中央値（実在しない場合はクラスタ内最頻値）をアンカー日とする"""
     weighted_points = []
-    for doy, m, d, cnt in best_cluster:
+    for doy, m, d, cnt in cluster:
         weighted_points.extend([(doy, m, d)] * cnt)
     weighted_points.sort()
     n = len(weighted_points)
@@ -230,14 +211,90 @@ def detect_fiscal_anchor_date(us_gaap: dict, candidate_keys: Sequence[str]) -> O
             _, month, day = lower
         else:
             # 中央値がクラスタ内に実在しない(月,日)になる → クラスタ内最頻値を採用
-            best_point = max(best_cluster, key=lambda p: p[3])
+            best_point = max(cluster, key=lambda p: p[3])
             month, day = best_point[1], best_point[2]
     return (month, day)
 
 
+def detect_fiscal_anchor_date(us_gaap: dict, candidate_keys: Sequence[str]) -> Optional[Tuple[int, int]]:
+    """
+    本人10-K annualエントリ（form in ("10-K","10-K/A")・fp=="FY"・
+    340〜380日の真の年次期間）のend日から、決算アンカー日（月+日）を
+    検出する（ARCH-DATA-1ステージ2: アンカー日ウィンドウ方式の入力）。
+
+    detect_fiscal_end_month()と同じcandidate_keys・us_gaapの走査パターンを
+    共有する（片方のタグでエントリが見つかった時点で走査を打ち切る）。
+
+    JNJ/TDY型対応（2026-07-17検証で発見・循環クラスタリング方式に変更）:
+    単純な(月,日)完全一致の最頻値では、年境界をまたぐ企業のend日が
+    Dec側とJan側に分散し、企業のfyタグと矛盾する年度判定を引き起こす。
+    _cluster_fiscal_anchor_candidates()で年境界を考慮した循環クラスタに
+    まとめた上で、最大クラスタ（合計出現数が最多）を採用し、その中央値
+    （中央値がクラスタ内に実在しない場合はクラスタ内最頻値）をアンカー日とする。
+
+    Args:
+        us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
+        candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
+
+    Returns:
+        (anchor_month, anchor_day): 検出したアンカー日。
+        該当エントリが1件もない場合はNone（呼び出し元は
+        determine_fiscal_year()に anchor_month/anchor_day=None を渡し、
+        従来の月のみ比較にフォールバックさせる）
+    """
+    day_counts = _collect_anchor_day_counts(us_gaap, candidate_keys)
+    clusters = _cluster_fiscal_anchor_candidates(day_counts)
+    if not clusters:
+        return None
+
+    best_cluster = max(clusters, key=lambda c: sum(p[3] for p in c))
+    return _cluster_anchor_point(best_cluster)
+
+
+def detect_fiscal_anchor_clusters(
+    us_gaap: dict, candidate_keys: Sequence[str], min_support: int = 2
+) -> List[Tuple[int, int]]:
+    """
+    [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②: detect_fiscal_anchor_date()と
+    同一の(月,日)クラスタリング結果のうち、主anchor（最大クラスタ）以外で
+    合計得票がmin_support以上の「有意な」クラスタのアンカー日を、era別決算期
+    変更の追加候補（determine_fiscal_year()のextra_anchors引数）として返す。
+
+    単一クラスタしか存在しない銘柄（実測105銘柄中100銘柄）は必ず空リストを
+    返す。これによりdetermine_fiscal_year()に渡るextra_anchorsが空リストと
+    なり、既存の計算結果と数学的に完全同一になることを設計上保証する
+    （新規候補を追加するだけの加算的操作とし、既存の正しい判定を上書きする
+    経路を作らない）。
+
+    Args:
+        us_gaap: SEC XBRLデータ（facts["us-gaap"]相当の辞書）
+        candidate_keys: 優先順位順のXBRLタグ名リスト（net_income+revenue等）
+        min_support: 追加候補として採用する最小クラスタ内合計得票数
+
+    Returns:
+        list[Tuple[int, int]]: 主クラスタ以外の(anchor_month, anchor_day)候補。
+        単一クラスタの場合、または他クラスタがいずれもmin_support未満の場合は空リスト
+    """
+    day_counts = _collect_anchor_day_counts(us_gaap, candidate_keys)
+    clusters = _cluster_fiscal_anchor_candidates(day_counts)
+    if len(clusters) <= 1:
+        return []
+
+    best_cluster = max(clusters, key=lambda c: sum(p[3] for p in c))
+    extra: List[Tuple[int, int]] = []
+    for cluster in clusters:
+        if cluster is best_cluster:
+            continue
+        support = sum(p[3] for p in cluster)
+        if support >= min_support:
+            extra.append(_cluster_anchor_point(cluster))
+    return extra
+
+
 def determine_fiscal_year(end_date, fiscal_end_month: int,
                            anchor_month: Optional[int] = None,
-                           anchor_day: Optional[int] = None) -> int:
+                           anchor_day: Optional[int] = None,
+                           extra_anchors: Optional[Sequence[Tuple[int, int]]] = None) -> int:
     """
     期末日と会計年度末月から、その期間が属する会計年度を返す。
 
@@ -250,6 +307,14 @@ def determine_fiscal_year(end_date, fiscal_end_month: int,
     機能しない欠陥と、52/53週企業の決算日前後変動・月境界またぎを
     扱えない欠陥の両方を持っていた（FY52WEEK-BUCKET-MISPLACE-1で判明）。
 
+    [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②: extra_anchors（detect_fiscal_
+    anchor_clusters()が返す、主anchor以外の有意なクラスタのアンカー日）が
+    指定された場合、主anchor（anchor_month/anchor_day）とextra_anchorsの
+    全候補から、同じ365日ウィンドウ探索でグローバルに最小距離の候補年度を
+    採用する（実在する決算期変更を、era（年代）ごとに正しいanchorへ機械的に
+    振り分ける）。extra_anchors省略時・空リスト時は主anchor単独のウィンドウ
+    探索のみとなり、本引数追加前と数学的に完全同一の計算になる。
+
     anchor_month/anchor_day省略時、または最小日数差が60日を超える場合
     （未知の異常パターンへの安全弁）は、従来の月のみ比較にフォールバックし
     WARNログを出力する（silent failさせない）。
@@ -259,6 +324,8 @@ def determine_fiscal_year(end_date, fiscal_end_month: int,
         fiscal_end_month: 会計年度末の月（1-12）
         anchor_month: 決算アンカー日の月（省略時は月のみ比較にフォールバック）
         anchor_day: 決算アンカー日の日（省略時は月のみ比較にフォールバック）
+        extra_anchors: 主anchor以外に探索するアンカー日候補のリスト
+                       （[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②）
 
     Returns:
         int: 会計年度（西暦4桁）
@@ -280,20 +347,25 @@ def determine_fiscal_year(end_date, fiscal_end_month: int,
 
     end_date_only = end_date.date() if isinstance(end_date, datetime) else end_date
 
+    anchors = [(anchor_month, anchor_day)]
+    if extra_anchors:
+        anchors.extend(extra_anchors)
+
     best_year = None
     best_diff = None
-    for candidate_year in (end_date_only.year - 1, end_date_only.year, end_date_only.year + 1):
-        try:
-            candidate = date(candidate_year, anchor_month, anchor_day)
-        except ValueError:
-            if (anchor_month, anchor_day) == (2, 29):
-                candidate = date(candidate_year, 2, 28)  # 非うるう年フォールバック
-            else:
-                continue
-        diff = abs((end_date_only - candidate).days)
-        if best_diff is None or diff < best_diff:
-            best_diff = diff
-            best_year = candidate_year
+    for a_month, a_day in anchors:
+        for candidate_year in (end_date_only.year - 1, end_date_only.year, end_date_only.year + 1):
+            try:
+                candidate = date(candidate_year, a_month, a_day)
+            except ValueError:
+                if (a_month, a_day) == (2, 29):
+                    candidate = date(candidate_year, 2, 28)  # 非うるう年フォールバック
+                else:
+                    continue
+            diff = abs((end_date_only - candidate).days)
+            if best_diff is None or diff < best_diff:
+                best_diff = diff
+                best_year = candidate_year
 
     if best_year is not None and best_diff <= 60:
         return best_year

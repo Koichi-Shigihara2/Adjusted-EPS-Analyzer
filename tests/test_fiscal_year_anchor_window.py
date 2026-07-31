@@ -32,6 +32,7 @@ from datetime import date, datetime, timedelta
 from common.sec_data.utils import (
     determine_fiscal_year,
     detect_fiscal_anchor_date,
+    detect_fiscal_anchor_clusters,
     detect_fiscal_end_month,
     _cluster_fiscal_anchor_candidates,
 )
@@ -354,3 +355,91 @@ def test_is_boundary_collision_false_when_existing_end_is_none():
         existing_end=None, existing_fy_tag=None,
         own_end="2024-04-30", own_fy_tag=2024,
     ) is False
+
+
+# ============================================
+# [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②:
+# detect_fiscal_anchor_clusters() / determine_fiscal_year(extra_anchors=...)
+# ============================================
+
+def test_detect_fiscal_anchor_clusters_empty_for_single_cluster():
+    """単一クラスタしか存在しない銘柄（105銘柄中100銘柄相当）は空リストを返す。
+    determine_fiscal_year()に渡るextra_anchorsが常に空になり、既存の計算結果と
+    数学的に完全同一になることを保証する前提条件"""
+    us_gaap = {
+        "NetIncomeLoss": {"units": {"USD": [
+            {"form": "10-K", "fp": "FY", "start": "2015-01-01", "end": "2015-12-31", "val": 1},
+            {"form": "10-K", "fp": "FY", "start": "2016-01-01", "end": "2016-12-31", "val": 2},
+            {"form": "10-K", "fp": "FY", "start": "2017-01-01", "end": "2017-12-31", "val": 3},
+        ]}},
+    }
+    assert detect_fiscal_anchor_clusters(us_gaap, ["NetIncomeLoss"]) == []
+
+
+def test_detect_fiscal_anchor_clusters_elf_type_returns_secondary_era():
+    """ELF型: 決算期変更で(3,31)クラスタ〈新era・多数〉と(12,31)クラスタ〈旧era・
+    少数だがmin_support以上〉が併存する場合、主クラスタ(3,31)以外の(12,31)を
+    追加候補として返す"""
+    entries = []
+    # 新era: 3月末決算（多数派）
+    for y in range(2020, 2026):
+        entries.append({"form": "10-K", "fp": "FY",
+                         "start": f"{y-1}-04-01", "end": f"{y}-03-31", "val": y})
+    # 旧era: 12月末決算（少数派だがmin_support=2以上）
+    for y in (2016, 2017, 2018):
+        entries.append({"form": "10-K", "fp": "FY",
+                         "start": f"{y}-01-01", "end": f"{y}-12-31", "val": y})
+    us_gaap = {"NetIncomeLoss": {"units": {"USD": entries}}}
+
+    assert detect_fiscal_anchor_date(us_gaap, ["NetIncomeLoss"]) == (3, 31)
+    assert detect_fiscal_anchor_clusters(us_gaap, ["NetIncomeLoss"]) == [(12, 31)]
+
+
+def test_detect_fiscal_anchor_clusters_excludes_below_min_support():
+    """他クラスタの合計得票がmin_support未満の場合は追加候補に含めない
+    （単発の異常値・データ不備で誤ったera切替を誘発しないための閾値）"""
+    entries = []
+    for y in range(2020, 2026):
+        entries.append({"form": "10-K", "fp": "FY",
+                         "start": f"{y-1}-04-01", "end": f"{y}-03-31", "val": y})
+    # 旧eraが1件のみ（min_support=2未満）
+    entries.append({"form": "10-K", "fp": "FY", "start": "2015-01-01", "end": "2015-12-31", "val": 1})
+    us_gaap = {"NetIncomeLoss": {"units": {"USD": entries}}}
+
+    assert detect_fiscal_anchor_clusters(us_gaap, ["NetIncomeLoss"], min_support=2) == []
+
+
+def test_determine_fiscal_year_extra_anchors_none_or_empty_is_identical():
+    """extra_anchors省略時とNone/空リスト明示指定時とで結果が完全同一
+    （加算的操作のみで既存の判定を上書きしないことの直接的な保証）"""
+    end_date = datetime(2015, 1, 3)
+    baseline = determine_fiscal_year(end_date, fiscal_end_month=12, anchor_month=12, anchor_day=31)
+    assert determine_fiscal_year(end_date, 12, 12, 31, None) == baseline
+    assert determine_fiscal_year(end_date, 12, 12, 31, []) == baseline
+    assert baseline == 2014
+
+
+def test_determine_fiscal_year_extra_anchors_picks_global_minimum_across_eras():
+    """ELF型: 主anchor(3,31)では60日超過でフォールバックしてしまうend_date
+    （旧eraの12月決算データ）が、extra_anchors=[(12,31)]を渡すことで
+    正しくその年度に判定されること（era別決算期変更の根治）"""
+    end_date = datetime(2016, 12, 31)
+    # 主anchorのみ: (3,31)との差が大きすぎて60日を超え月のみ比較にフォールバック
+    without_extra = determine_fiscal_year(end_date, fiscal_end_month=3,
+                                           anchor_month=3, anchor_day=31)
+    # extra_anchors指定: (12,31)との差0日が採用され正しく2016年と判定
+    with_extra = determine_fiscal_year(end_date, fiscal_end_month=3,
+                                        anchor_month=3, anchor_day=31,
+                                        extra_anchors=[(12, 31)])
+    assert with_extra == 2016
+    assert with_extra != without_extra
+
+
+def test_determine_fiscal_year_extra_anchors_does_not_override_closer_primary():
+    """主anchorの方がextra_anchorsより近い場合は主anchor側の年度が採用される
+    （グローバル最小距離探索であり、extra_anchors優先ではないことの確認）"""
+    end_date = datetime(2024, 3, 31)
+    result = determine_fiscal_year(end_date, fiscal_end_month=3,
+                                    anchor_month=3, anchor_day=31,
+                                    extra_anchors=[(12, 31)])
+    assert result == 2024

@@ -11,7 +11,10 @@ from typing import Optional, Dict, Any, List
 from .config import get_ticker_info
 from .quarterly import TICKER_RESTRICTIONS
 from .tag_definitions import TAG_CANDIDATES
-from .utils import determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date, _day_of_year
+from .utils import (
+    determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date,
+    detect_fiscal_anchor_clusters, _day_of_year,
+)
 from .fetcher import load_submissions
 
 _FACT_OVERRIDES_PATH = os.path.join(os.path.dirname(__file__), "fact_overrides.json")
@@ -367,6 +370,11 @@ class SECParser:
         # 側で従来の月のみ比較にフォールバックする
         _anchor = self._detect_fiscal_anchor_date(us_gaap)
         anchor_month, anchor_day = _anchor if _anchor else (None, None)
+        # [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②: 複数クラスタ検出時、主anchor
+        # 以外の有意なクラスタ（support>=2）をera別決算期変更の追加候補として
+        # determine_fiscal_year()に渡す。単一クラスタ銘柄（105銘柄中100銘柄）では
+        # 空リストとなり、既存の計算結果と数学的に完全同一になる
+        extra_anchors = detect_fiscal_anchor_clusters(us_gaap, self._fiscal_detection_keys())
 
         # FY52WEEK-BUCKET-MISPLACE-1 根本修正: reportDate==end_dateが成立する
         # 「本人の当期データ」のfyタグを年度キーとしてそのまま採用する。
@@ -402,6 +410,7 @@ class SECParser:
                 fiscal_end_month=fiscal_end_month, accn_reportdate=_accn_reportdate,
                 field_name=field_name, collisions_out=_fy_collisions,
                 anchor_month=anchor_month, anchor_day=anchor_day,
+                extra_anchors=extra_anchors,
                 fy_mismatches_out=_fy_tag_mismatches,
                 boundary_collisions_out=_fye_boundary_collisions,
             )
@@ -446,6 +455,7 @@ class SECParser:
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
                          field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None,
                          anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                         extra_anchors: Optional[List[tuple]] = None,
                          fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
                          boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """
@@ -462,6 +472,9 @@ class SECParser:
             field_name: ログ記録用のフィールド名（"revenue"等）
             collisions_out: 本人データ同士のfyキー衝突を記録するリスト（呼び出し元で集約）
             anchor_month/anchor_day: 決算アンカー日（ARCH-DATA-1ステージ2）。
+                              determine_fiscal_year()にそのまま渡す
+            extra_anchors: 主anchor以外の有意なクラスタのアンカー日候補リスト
+                              （[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②）。
                               determine_fiscal_year()にそのまま渡す
             fy_mismatches_out: 採用エントリのfyタグと年度バケツキーの不一致を記録する
                               リスト（ARCH-DATA-1ステージ3: fyタグ裏取り、呼び出し元で集約）
@@ -480,12 +493,14 @@ class SECParser:
                                                 accn_reportdate=accn_reportdate, field_name=field_name,
                                                 collisions_out=collisions_out,
                                                 anchor_month=anchor_month, anchor_day=anchor_day,
+                                                extra_anchors=extra_anchors,
                                                 fy_mismatches_out=fy_mismatches_out,
                                                 boundary_collisions_out=boundary_collisions_out)
         return self._extract_values_best_candidate(us_gaap, xbrl_keys, fiscal_end_month,
                                                     accn_reportdate=accn_reportdate, field_name=field_name,
                                                     collisions_out=collisions_out,
                                                     anchor_month=anchor_month, anchor_day=anchor_day,
+                                                    extra_anchors=extra_anchors,
                                                     fy_mismatches_out=fy_mismatches_out,
                                                     boundary_collisions_out=boundary_collisions_out)
 
@@ -574,7 +589,8 @@ class SECParser:
     def _collect_own_data_annual(self, us_gaap: dict, xbrl_keys: List[str],
                                   accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
                                   collisions_out: Optional[List[Dict[str, Any]]],
-                                  anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
+                                  anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                  extra_anchors: Optional[List[tuple]] = None) -> Dict[int, Any]:
         """
         reportDate==end_dateが成立する「本人の当期データ」のみを対象に、
         fyタグを年度キーとして採用した値マップを構築する
@@ -672,7 +688,7 @@ class SECParser:
             # 同一fyキーに複数の異なる本人end_dateが競合
             fallback_years = {
                 end_date: determine_fiscal_year(datetime.strptime(end_date, '%Y-%m-%d'), fiscal_end_month,
-                                                 anchor_month, anchor_day)
+                                                 anchor_month, anchor_day, extra_anchors)
                 for end_date in end_date_vals
             }
             if len(set(fallback_years.values())) == len(end_date_vals):
@@ -704,7 +720,8 @@ class SECParser:
     def _collect_own_data_instant(self, us_gaap: dict, xbrl_keys: List[str],
                                    accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
                                    collisions_out: Optional[List[Dict[str, Any]]],
-                                   anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
+                                   anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                   extra_anchors: Optional[List[tuple]] = None) -> Dict[int, Any]:
         """
         instant fact（BS項目・RPO残高等、単一時点のend_dateのみを持ちstart_dateを
         持たないXBRL概念）向けに、reportDate==end_dateが成立する「本人の当期データ」
@@ -764,7 +781,7 @@ class SECParser:
             # 同一fyキーに複数の異なる本人end_dateが競合
             fallback_years = {
                 end_date: determine_fiscal_year(datetime.strptime(end_date, '%Y-%m-%d'), fiscal_end_month,
-                                                 anchor_month, anchor_day)
+                                                 anchor_month, anchor_day, extra_anchors)
                 for end_date in end_date_vals
             }
             if len(set(fallback_years.values())) == len(end_date_vals):
@@ -792,16 +809,17 @@ class SECParser:
     def _collect_own_data(self, us_gaap: dict, xbrl_keys: List[str],
                            accn_reportdate: Dict[str, str], fiscal_end_month: int, field_name: str,
                            collisions_out: Optional[List[Dict[str, Any]]],
-                           anchor_month: Optional[int] = None, anchor_day: Optional[int] = None) -> Dict[int, Any]:
+                           anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                           extra_anchors: Optional[List[tuple]] = None) -> Dict[int, Any]:
         """duration fact / instant factに応じて_collect_own_data_annual/_instantへ振り分ける
         （ARCH-DATA-1残課題④）。呼び出し元（_extract_values_merged/_extract_values_best_candidate）
         は本メソッド経由で呼び出すことで、フィールド種別を意識せず本人データ判定を利用できる。
         """
         if field_name in self.INSTANT_FACT_FIELDS:
             return self._collect_own_data_instant(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
-                                                    collisions_out, anchor_month, anchor_day)
+                                                    collisions_out, anchor_month, anchor_day, extra_anchors)
         return self._collect_own_data_annual(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
-                                              collisions_out, anchor_month, anchor_day)
+                                              collisions_out, anchor_month, anchor_day, extra_anchors)
 
     # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 真の境界衝突（決算期変更）とみなす
     # 最小の(月,日)循環距離。common/sec_data/fye_change_candidate_scan.py の
@@ -863,7 +881,8 @@ class SECParser:
                                annual_end_dates: Dict[int, str], annual_durations: Dict[int, Any],
                                annual_accn: Dict[int, str], accn_reportdate: Dict[str, str],
                                anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
-                               is_instant: bool = False) -> bool:
+                               is_instant: bool = False,
+                               extra_anchors: Optional[List[tuple]] = None) -> bool:
         """
         本人データによる上書きが安全か判定する。
 
@@ -928,7 +947,8 @@ class SECParser:
                 existing_end_dt = datetime.strptime(existing_end, '%Y-%m-%d')
             except ValueError:
                 return True
-            if determine_fiscal_year(existing_end_dt, fiscal_end_month, anchor_month, anchor_day) == year:
+            if determine_fiscal_year(existing_end_dt, fiscal_end_month, anchor_month, anchor_day,
+                                      extra_anchors) == year:
                 return False  # 既存エントリは別の真の年次データとして自己無矛盾に存在する
 
         return True
@@ -937,6 +957,7 @@ class SECParser:
                                 accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                 collisions_out: Optional[List[Dict[str, Any]]] = None,
                                 anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                extra_anchors: Optional[List[tuple]] = None,
                                 fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
                                 boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max=True または merge_all_tags=True の場合の抽出（全キーを検索して統合）"""
@@ -995,7 +1016,8 @@ class SECParser:
                         # fy!=end_yearは比較年度エントリ（FCX等）または中間期エントリ（INTU Q1等）
                         if end_date and len(end_date) >= 10:
                             end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                            end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day)
+                            end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day,
+                                                              extra_anchors)
                         else:
                             end_year = fy  # end_date 不明時は SEC の fy フィールドを使用
                         exact = (fy == end_year)
@@ -1136,7 +1158,7 @@ class SECParser:
         # 判断を上書きの副作用で覆してしまう回帰を防ぐため）。
         if accn_reportdate:
             own_data = self._collect_own_data(us_gaap, xbrl_keys, accn_reportdate, fiscal_end_month, field_name,
-                                               collisions_out, anchor_month, anchor_day)
+                                               collisions_out, anchor_month, anchor_day, extra_anchors)
             for year, (val, own_end, own_accn, own_filed, own_fy_tag) in own_data.items():
                 # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 上書き判定の前に既存
                 # （フォールバック採用済み）側のend_date/fyタグを退避しておく。
@@ -1148,7 +1170,8 @@ class SECParser:
                 _override_ok = self._own_override_is_safe(year, own_end, fiscal_end_month, annual_end_dates,
                                                             annual_durations, annual_accn, accn_reportdate,
                                                             anchor_month, anchor_day,
-                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS)
+                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS,
+                                                            extra_anchors=extra_anchors)
                 if (boundary_collisions_out is not None
                         and self._is_boundary_collision(_existing_end, _existing_fy_tag, own_end, own_fy_tag)):
                     boundary_collisions_out.append({
@@ -1198,6 +1221,7 @@ class SECParser:
                                         accn_reportdate: Optional[Dict[str, str]] = None, field_name: str = "",
                                         collisions_out: Optional[List[Dict[str, Any]]] = None,
                                         anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                                        extra_anchors: Optional[List[tuple]] = None,
                                         fy_mismatches_out: Optional[List[Dict[str, Any]]] = None,
                                         boundary_collisions_out: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
         """use_max/merge_all_tagsいずれもFalseの場合の抽出（1つの候補タグを選んで採用する）
@@ -1216,7 +1240,7 @@ class SECParser:
             if key not in us_gaap:
                 continue
             key_result = self._extract_single_key(us_gaap, key, fiscal_end_month, anchor_month, anchor_day,
-                                                   field_name=field_name)
+                                                   extra_anchors=extra_anchors, field_name=field_name)
             if not key_result["annual"] and not key_result["quarterly"]:
                 continue
             candidates.append((key, key_result))
@@ -1275,7 +1299,7 @@ class SECParser:
                 if key not in us_gaap:
                     continue
                 key_own_data = self._collect_own_data(us_gaap, [key], accn_reportdate, fiscal_end_month, field_name,
-                                                       collisions_out, anchor_month, anchor_day)
+                                                       collisions_out, anchor_month, anchor_day, extra_anchors)
                 for fy, (val, end_date, own_accn, own_filed, own_fy_tag) in key_own_data.items():
                     if fy not in combined_own_data:
                         combined_own_data[fy] = (val, end_date, own_accn, own_filed, own_fy_tag)
@@ -1287,7 +1311,8 @@ class SECParser:
                 _override_ok = self._own_override_is_safe(year, own_end, fiscal_end_month, winning_end_dates,
                                                             winning_durations, winning_accns, accn_reportdate,
                                                             anchor_month, anchor_day,
-                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS)
+                                                            is_instant=field_name in self.INSTANT_FACT_FIELDS,
+                                                            extra_anchors=extra_anchors)
                 if (boundary_collisions_out is not None
                         and self._is_boundary_collision(_existing_end, _existing_fy_tag, own_end, own_fy_tag)):
                     boundary_collisions_out.append({
@@ -1328,6 +1353,7 @@ class SECParser:
 
     def _extract_single_key(self, us_gaap: dict, key: str, fiscal_end_month: int,
                              anchor_month: Optional[int] = None, anchor_day: Optional[int] = None,
+                             extra_anchors: Optional[List[tuple]] = None,
                              field_name: str = "") -> Dict[str, Any]:
         """1つのXBRLキーからannual/quarterly値を抽出する（候補選定の評価単位）
 
@@ -1372,7 +1398,8 @@ class SECParser:
                 if form in ("10-K", "10-K/A") and fp == "FY":
                     if end_date and len(end_date) >= 10:
                         end_dt = datetime.strptime(end_date, '%Y-%m-%d')
-                        end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day)
+                        end_year = determine_fiscal_year(end_dt, fiscal_end_month, anchor_month, anchor_day,
+                                                          extra_anchors)
                     else:
                         end_year = fy
                     exact = (fy == end_year)
