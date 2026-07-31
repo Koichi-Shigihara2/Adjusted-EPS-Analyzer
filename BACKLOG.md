@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]実装完了。
+`_extract_single_key()`（gross_profit等9フィールド）・`_extract_values_merged()`
+（revenue/S&M/D&A）双方に340-380日の期間長フィルタを追加し、全105銘柄の
+annual_YYYY.jsonをフローズン入力で再生成（コード`e3723b3eb`・データ
+`d6d404016`）。実際に値が変化したのは28銘柄・194フィールドエントリで、AVGO
+revenue 2016/2017の是正値($13,240M/$17,636M)は10-K原本と完全一致。
+pytest 446 passed/2 known failed（既知のみ）、report_consistency_check.py
+NG=0（WARN 71→68件に減少、新規WARNなし）を確認。STONKS SILOの自己修復
+ロジック・TANUKI VALUATIONの直近5年窓への影響も個別確認済み（RCAT 2024の
+stock_based_compensationのみ現役銘柄で該当、軽微な是正）。検証過程でELF
+固有の別バグ（fiscal_end_month自動検出誤り）を発見しELF分5ファイルは
+本コミットから除外、[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]として新規登録。
+[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]の着手条件は充足（対応方針
+決定・実装は別タスク）。詳細はBACKLOG_DONE.md「2026-07-31（完了）」参照）
+
 最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]の追加シミュレーション
 （`MERGE_ALL_TAGS_FIELDS`側revenue/selling_and_marketing/depreciation_and_
 amortizationの3フィールド）結果を反映（登録・確認のみ、実装・データ再生成は
@@ -5276,132 +5291,66 @@ cost_of_revenueは本番データパス上でSTONKS SILO以外どこからも参
 との突合検算ロジックを追加するかの判断が必要。
 
 #### 着手条件
-[[PERIOD-LENGTH-VALIDATION-GAP-1]]の解消が前提。gross_profit抽出値自体が
-壊れている状態で本番書き戻し方針を決めても無意味なため（2026-07-31追記）。
+~~[[PERIOD-LENGTH-VALIDATION-GAP-1]]の解消が前提。gross_profit抽出値自体が
+壊れている状態で本番書き戻し方針を決めても無意味なため（2026-07-31追記）。~~
+→ [[PERIOD-LENGTH-VALIDATION-GAP-1]]は2026-07-31完了（BACKLOG_DONE.md参照）。
+着手条件は充足された。ただし本タスク自体の対応方針決定（①本番書き戻し／
+②突合検算ロジック追加）・実装は別タスクとして改めて依頼を受けてから着手する
+（2026-07-31追記）。
 
 ---
 
-### [PERIOD-LENGTH-VALIDATION-GAP-1] parser.pyのFLOW型フィールド抽出に期間長検証が構造的に欠落（大半のフィールドで四半期値が年次値として誤採用されうる）
+### [ELF-FISCAL-END-MONTH-MISDETECTION-1] ELFのfiscal_end_month自動検出誤りで年度ラベルが一括してずれる
 **優先度:** 高
-**分類:** バグ / 一次データ抽出ロジック
+**分類:** バグ / 一次データ抽出ロジック（決算年度判定）
 **登録日:** 2026-07-31
-**発見:** GrossProfitバックフィル調査から派生した横断調査（チャット記録）
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]実装時の全105銘柄フローズン入力
+再生成・検証（チャット記録）
 
 #### 内容
-common/sec_data/parser.pyのFLOW型（duration型）フィールド抽出には2経路ある。
-`_extract_values_merged()`（`MERGE_ALL_TAGS_FIELDS` = revenue/selling_and_marketing/
-depreciation_and_amortizationの3フィールド限定）は、複数候補タグが競合した
-場合のみ期間長(365日近傍)によるtie-breakを行う（2026-07-12
-[[SEC-TAG-FICO-CPRT-1]]で追加）。一方、それ以外の全FLOW型フィールド
-（gross_profit・net_income・operating_income・cost_of_revenue・research_and_
-development・selling_general_and_administrative・operating_cash_flow・
-capital_expenditure・stock_based_compensation等）を処理する
-`_extract_values_best_candidate()` → `_extract_single_key()`には、期間長検証が
-一切存在しない。候補タグが単一しかない年度では、tie-break自体が発動せず、
-四半期(91日等)エントリがそのまま年次値として採用される。
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長フィルタ実装後、全105銘柄で
+annual_YYYY.jsonを再生成しフローズン入力比較を行ったところ、ELFのみ
+revenue/gross_profit/net_income等が「新年度の値に前年度の値が入り込む」
+一連のカスケード的な入れ替わりを起こすことを発見した（例: annual_2016.json
+のrevenueが229,567,000〈calendar 2016の値〉→191,413,000〈calendar 2015の値〉
+に変化、annual_2017.json/annual_2018.jsonも同様に1年分後ろにずれる）。
 
-確認済みの実害:
-- AVGO: revenue/net_income/operating_incomeが2016年度(90日)・2017年度(97日)
-  ともに四半期値を年次値として誤採用(10-K原本突合済み、真の年次revenue値は
-  2016:$13,240M・2017:$17,636M)
-- MSCI 2009・ELF 2019: 同型(4〜8フィールド一致、上場後のため正当なスタブ期
-  ではあり得ない)
-- gross_profit: TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC(9銘柄)で同型
-  (GrossProfitタグが主要財務諸表になく四半期注記のみに存在する銘柄で発生)
+根本原因を`SECParser._detect_fiscal_end_month()`・`_detect_fiscal_anchor_date()`
+を実コードで直接呼び出して特定: ELFは`fiscal_end_month=3`（3月決算）・
+`anchor=(3, 31)`と誤検出されている。ELFの実際の決算月はこの誤検出の影響を
+受けている期間（2015〜2019年頃）は12月であり（e.l.f. Beautyは後年に決算期を
+3月へ変更したとみられるが、その変更前の期間まで遡って3月決算として計算されて
+しまっている）。`determine_fiscal_year()`のアンカー日ウィンドウ判定が
+60日を超える差分でフォールバックする「月のみ比較」ロジック
+（`if end_date.month > fiscal_end_month: return end_date.year + 1`）により、
+12月決算だった時代の12月末データが機械的に「年度+1」に繰り上げられる形で
+誤って年度バケツに割り当てられていた。
 
-2026-07-12の[[SEC-TAG-FICO-CPRT-1]]修正は同一企業(FICO/CPRT/LITE)のrevenue
-フィールドのみを対象にスコープを限定しており、当時のログにも「S&M/D&Aは実害0件
-と確認」と対象拡大を意図的に見送った記録がある。今回の調査は、この対症療法が
-根本原因（`_extract_single_key()`経路全体の期間長検証欠如）を解消していなかった
-ことを確定させた。
-
-#### シミュレーション結果（2026-07-31実施・全母集団オフラインシミュレーション）
-105銘柄×9フィールド（gross_profit・cost_of_revenue・net_income・
-operating_income・research_and_development・selling_general_and_
-administrative・operating_cash_flow・capital_expenditure・stock_based_
-compensation）を対象に、実コードの`_detect_fiscal_end_month()`・
-`_detect_fiscal_anchor_date()`・`determine_fiscal_year()`を読み取り専用で
-使用したオフラインシミュレーションを実施済み（実装・データ再生成は未実施）。
-
-- 結果: 現状OK(340-380日以内で既に正しく採用済み)約9,700件・
-  b:改善53件・c:新規欠損化138件
-- 対応方針の安全性を確認: フィルタは`_extract_single_key()`の候補受理ループに
-  340-380日必須条件を追加する減算的(subtractive)操作として設計可能であり、
-  既存の正しい約9,700件には理論上影響しない
-  （`_collect_own_data_annual()`に既存の同種フィルタと同一パターンの横展開）
-- 新規発見（登録済みSPAC/stub銘柄に含まれない欠損化ケース）: MRVL
-  (gross_profit 2010-2015)・COHR(cost_of_revenue 2010-2012)・INTU
-  (cost_of_revenue 2009-2020、12年連続)を影響範囲に追加。特にINTUは
-  長期間の恒常的欠落
-- b:改善53件全件・c:新規欠損化138件全件の一覧はチャット記録参照
-  (次回実装依頼時に添付)
-- downstream影響: TANUKI VALUATION Moat Scoreはannual_YYYY.jsonの
-  gross_profitを参照しないため無関係。`growth.py::fcf_list[:5]`は直近5年
-  のみ対象のため、AVGO等の過去年度バグは現時点のIV計算に無関係
-  （ただし直近5年以内で同型バグが発生すれば直接影響する時限的事情であり、
-  恒久的な安全とは言えない）。STONKS SILOはgross_profit/cost_of_revenueを
-  直接読むため、c化(None)はfetcher.pyの既存自己修復ロジック
-  (Revenue-cost_of_revenue逆算)へ切り替わり、現状の誤った四半期値がそのまま
-  使われるより安全な結果になる
-- HON(2024/2025)・ABBV(2025)・CAT/KLAC/FICO/HEI/CPRT(直近年度含む)は
-  現在進行形でSTONKS SILOのgross_margin判定に影響している可能性が高く、
-  個別優先度が高い
-
-**追加シミュレーション（2026-07-31・`MERGE_ALL_TAGS_FIELDS`側3フィールド）**:
-`_extract_values_merged()`経由のrevenue・selling_and_marketing・
-depreciation_and_amortizationについても、同一方法論（実コードの
-`_detect_fiscal_end_month()`・`_detect_fiscal_anchor_date()`・
-`determine_fiscal_year()`使用）で、候補が単一の年度も含めて無条件で
-340-380日フィルタを適用した場合の影響を確認済み。
-
-- 結果: OK(現状340-380日以内)約3,487件・b:改善13件・c:新規欠損化12件
-- b:改善に含まれるAVGO revenue 2016/2017の是正後値($13,240M/$17,636M)は
-  10-K原本確認済みの真の年次値と完全一致を確認
-- 新規発見（登録済みSPAC/stub銘柄に含まれない欠損化ケース）: VRT 2016
-  (revenue、Emersonからのスピンオフ年度、私企業期スタブ報告の可能性)・
-  RCAT 2012(depreciation_and_amortization、1日間という極端に短い期間長、
-  シェル会社期の退化的ファクトの可能性)を影響範囲に追加
-- 対応スコープを`_extract_single_key()`経由の9フィールドに加え、
-  `_extract_values_merged()`経由の3フィールド(revenue/S&M/D&A)にも拡大する。
-  現在のtie-break（同一end_dateで複数候補競合時のみ発動、2026-07-12
-  [[SEC-TAG-FICO-CPRT-1]]で追加）を、候補単一時も含めた無条件340-380日
-  フィルタ適用へ変更する設計とする
-- **regression確認（2026-07-31実施）**: [[SEC-TAG-FICO-CPRT-1]]で修正済みの
-  FICO・CPRT・LITEのrevenueについて、無条件340-380日フィルタ適用後も現状
-  維持されるか実コード・実データで個別確認した。FICO全18年度(FY2008-2025)・
-  CPRT全17年度(FY2009-2025)・LITE全13年度(FY2013-2025)、合計48年度分すべてが
-  340-380日の範囲内（363〜370日）で既に正しく選択されており、regressionは
-  一切発生しないことを確認済み（FY2019/2020の是正済み値$1,160.1M/$1,294.6M
-  〈FICO〉・$2,042.0M/$2,205.6M〈CPRT〉・$1,565.3M〈LITE、FY2019〉も完全一致）
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長フィルタ自体はこのバグを生んで
+いないが、既にこの誤ったバケツ内で複数の候補が競合していた場合に「どちらの
+誤候補が勝つか」を変化させたため、既存の（結果的に正しい値を返していた）
+選択が、同じバケツ内の別の（誤った）候補に入れ替わる形で表面化した。
 
 #### 影響
-revenue(INPUT-A-001、PSR分母・成長率・Rule of 40・moat_score fcf_norm分母)を
-含む、システム全体で最も広く消費される一次データフィールドに影響しうる。
-確定範囲: AVGO 2016/2017年度のrevenue/net_income/operating_income、
-gross_profit9銘柄(TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC)、及び
-シミュレーションで新規発見したMRVL(gross_profit)・COHR/INTU(cost_of_revenue)・
-VRT(revenue)・RCAT(depreciation_and_amortization)。
-9フィールド分のb:改善53件・c:新規欠損化138件、及び
-revenue/S&M/D&A3フィールド分のb:改善13件・c:新規欠損化12件の全容は
-シミュレーション結果節・チャット記録参照。
+ELFのannual_2015〜2019.json（revenue/gross_profit/net_income/cost_of_revenue
+等）の年度ラベルが実際の会計年度とずれている可能性が高い。TANUKI VALUATION・
+STONKS SILOがこの期間のELFデータを参照する計算（成長率・CAGR等）に影響しうる。
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]のデータコミットからはELF分を除外済み
+（5ファイル、変更なしのまま）のため、現時点でこの入れ替わり自体は本番に
+反映されていない。
 
 #### 対応方針
-`_extract_single_key()`（または`_extract_values_best_candidate()`）に、
-`_collect_own_data_annual()`が既に持つ340-380日必須フィルタ相当のロジックを
-適用する方針で確定（安全性はシミュレーションで確認済み）。加えて
-`_extract_values_merged()`側の対応スコープを、現在は複数候補競合時のみ発動する
-tie-break（[[SEC-TAG-FICO-CPRT-1]]）から、候補単一時も含めた無条件
-340-380日フィルタへ拡大する方針も確定（FICO/CPRT/LITEのregressionなしを
-確認済み）。
-[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]・[[SPAC-STUB-PERIOD-VERIFICATION-1]]で
-判明した正当な非365日データ(スタブ期)は「c: 新規欠損化」としてNone化される
-想定だが、STONKS SILO等の既存フォールバックにより実害は限定的と確認済み。
-オフラインシミュレーションは9フィールド+3フィールドとも完了。実装はまだ
-着手していない。
+未定。`_detect_fiscal_end_month()`・`_detect_fiscal_anchor_date()`
+（common/sec_data/utils.py）がELFの決算期変更（12月決算→3月決算、時期は
+要調査）を正しく扱えるようにする必要がある。決算期変更を挟む場合の
+fiscal_end_month検出ロジック全般（変更前後で異なる決算月を使い分ける必要が
+あるか等）を10-K原本で個別確認してから設計する。
 
 #### 着手条件
-なし。シミュレーション完了・安全性確認済みのため、優先度高・次回セッション
-実装筆頭候補。
+なし。ただしELFのannual_2015〜2019.jsonの一部フィールド
+（revenue/gross_profit/net_income等）は[[PERIOD-LENGTH-VALIDATION-GAP-1]]の
+期間長フィルタ未適用のまま据え置かれているため、本タスク解消後に
+`update.py ELF`相当の再生成を改めて実施する必要がある。
 
 ---
 
@@ -6588,6 +6537,28 @@ COGS-CHECK-MISSING-1]]は①②の対応確定後（着手条件未達）。
 フェーズ進捗待ち（着手条件未達）。
 [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]（本体）は①の解消が前提
 のため、それまで着手保留。
+
+追記（2026-07-31 [[PERIOD-LENGTH-VALIDATION-GAP-1]]実装完了）:
+① ~~[[PERIOD-LENGTH-VALIDATION-GAP-1]]（優先度：高・全母集団シミュレーション
+   〈9フィールド+revenue/S&M/D&A3フィールド〉→parser.py実装
+   〈`_extract_single_key()`・`_extract_values_merged()`両方に340-380日
+   フィルタ追加〉→全105銘柄フローズン入力再生成・検証まで完了）~~
+   ✅ 2026-07-31完了（コード`e3723b3eb`・データ`d6d404016`。pytest 446 passed
+   /2 known failed、report_consistency_check.py NG=0〈WARN 71→68件に減少〉。
+   検証中にELF固有の別バグ（fiscal_end_month誤検出）を発見し
+   [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]として新規登録、ELF分5ファイルは
+   本コミットから除外。詳細はBACKLOG_DONE.md「2026-07-31（完了）」参照）。
+これにより次セッションの筆頭候補を更新する：
+① [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（優先度：高・新規。ELFの
+   fiscal_end_month自動検出誤り〈3月と誤検出、実際は当該期間12月決算〉に
+   よる年度ラベル一括ズレ。10-K原本で決算期変更の実態を確認してから設計）
+② [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]（優先度：高・要個別調査。BBAI/RDW/ELF/
+   KULRの10-K原本確認。ELFは①と合わせて調査すると効率的）
+③ 余力があれば[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
+   （優先度：低〜中・MO/PM/SCCOの10-K原本確認）
+④ [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]（本体、着手条件は充足済み）
+   の対応方針（①本番書き戻し／②突合検算ロジック追加）決定は、①②の10-K確認
+   結果を踏まえてから着手するのが望ましい。
 
 ---
 

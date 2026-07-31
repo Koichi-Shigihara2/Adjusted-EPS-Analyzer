@@ -2,6 +2,105 @@
 
 ---
 
+## 2026-07-31（完了）
+
+### ✅ [PERIOD-LENGTH-VALIDATION-GAP-1] parser.pyのFLOW型フィールド抽出に期間長検証が構造的に欠落（2026-07-31完了）
+**優先度:** 高
+**分類:** バグ / 一次データ抽出ロジック
+**登録日:** 2026-07-31
+**完了日:** 2026-07-31
+**発見:** GrossProfitバックフィル調査から派生した横断調査（チャット記録）
+
+#### 内容（根本原因）
+common/sec_data/parser.pyのFLOW型（duration型）フィールド抽出には2経路あった。
+`_extract_values_merged()`（`MERGE_ALL_TAGS_FIELDS` = revenue/selling_and_
+marketing/depreciation_and_amortizationの3フィールド限定）は、複数候補タグが
+競合した場合のみ期間長(365日近傍)によるtie-breakを行っていた（2026-07-12
+[[SEC-TAG-FICO-CPRT-1]]で追加）。一方、それ以外の全FLOW型フィールド
+（gross_profit・net_income・operating_income・cost_of_revenue・research_and_
+development・selling_general_and_administrative・operating_cash_flow・
+capital_expenditure・stock_based_compensation）を処理する
+`_extract_values_best_candidate()` → `_extract_single_key()`には、期間長検証が
+一切存在せず、候補タグが単一しかない年度では91日程度の四半期エントリが
+そのまま年次値として採用されていた。2026-07-12のSEC-TAG-FICO-CPRT-1修正は
+同一企業(FICO/CPRT/LITE)のrevenueフィールドのみを対象にスコープを限定して
+おり、根本原因（`_extract_single_key()`経路全体の期間長検証欠如）を解消して
+いなかったことが判明した。
+
+#### シミュレーション結果（実装前・全母集団オフライン検証）
+105銘柄×12フィールドで実コード（`_detect_fiscal_end_month()`・
+`_detect_fiscal_anchor_date()`・`determine_fiscal_year()`）を読み取り専用で
+使用したオフラインシミュレーションを実施:
+- 9フィールド（_extract_single_key()経由）: OK約9,700件・b:改善53件・
+  c:新規欠損化138件
+- 3フィールド（_extract_values_merged()経由、revenue/S&M/D&A）: OK約3,487件・
+  b:改善13件・c:新規欠損化12件
+- 新規発見: MRVL(gross_profit)・COHR/INTU(cost_of_revenue、INTUは12年連続)・
+  VRT(revenue)・RCAT(depreciation_and_amortization)
+- FICO/CPRT/LITE（SEC-TAG-FICO-CPRT-1対応済み）は無条件フィルタ適用後も
+  regressionなしを個別確認済み
+
+#### 実装内容
+- `_extract_single_key()`: `field_name`引数を追加し、新設の
+  `PERIOD_LENGTH_VALIDATED_FIELDS`（9フィールド）に該当する場合、年次候補
+  として受理する際に期間長(340-380日)を必須条件とする
+  （`_collect_own_data_annual()`の同種フィルタと同一パターン）。
+  同じ`_extract_single_key()`を経由する他フィールド（eps_diluted/eps_basic・
+  buyback・finance_lease_payments・shares_diluted/shares_basic）は
+  シミュレーション未実施のため意図的に対象外のまま据え置いた。
+- `_extract_values_merged()`: 候補受理時に、単一候補の場合も含めて無条件で
+  340-380日フィルタを適用するよう変更（従来は複数候補競合時のtie-breakのみ）。
+- 両者とも候補プールから範囲外エントリを除外する減算的(subtractive)設計とし、
+  既存の正しいエントリを再評価・上書きする経路は追加していない。
+- コミット: `e3723b3eb`（common/sec_data/parser.py・テスト）
+
+#### 検証結果
+1. pytest: 変更前442 passed/2 known failed（MSFT/NVDA、[[TEST-STALE-IV-1]]）→
+   変更後446 passed/2 known failed（新規テスト4件追加、既知失敗数に変化なし）
+2. 全105銘柄でannual_YYYY.jsonをフローズン入力（company_facts.json等は
+   再取得せず既存ファイルのまま）で再パース・再生成し、git diffで新旧比較。
+   実際に値が変化したのは28銘柄・194フィールドエントリ
+3. b:改善66件（53+13件）はシミュレーション予測とおおむね一致。AVGO
+   revenue 2016/2017の是正後値($13,240M/$17,636M)は10-K原本確認済みの
+   真の年次値と完全一致。3件（AVGO net_income 2016・AVGO operating_income
+   2017・VRT net_income 2016）はシミュレーションスクリプトの簡易tie-break
+   近似が実装の詳細なタグ横断選定ロジック（複数バージョン10-Kの併存等）を
+   完全に再現していなかったための予測誤差と判明したが、いずれも実装側
+   （company_facts.json上の正規の365日前後エントリを採用）が正しい挙動
+   であることを個別確認済み
+4. c:新規欠損化150件中、実際にNone化されたのは128件（残り22件はELF分、
+   下記「発見した別バグ」参照）。想定通りNoneとなることを確認
+5. 上記b・c以外のエントリで値の変化がないことを確認（フローズン入力
+   比較、git diffで無関係な差分なしを確認）。**例外: ELF(2015-2019、
+   revenue/gross_profit/net_income等)で、本タスクとは別系統の既知バグ
+   （ELFのfiscal_end_month自動検出が実際の決算月と異なる値を検出し
+   年度ラベルが一括でずれる）との相互作用により、既存の正しい値が別年度の
+   値に置き換わる「値の入れ替わり」を検知したため、ELF分のみ本コミットから
+   除外した**（[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]として別途新規登録）
+6. pytest全件・`report_consistency_check.py`ともにNG=0を確認
+   （report_consistency_check.py: 変更前WARN=71件〈未確認21件〉→変更後
+   WARN=68件〈未確認20件〉。件数減少のみで新規WARNの発生なし。減少分は
+   本修正で除外されたエントリに起因するfyタグ裏取り不一致WARN等の解消）
+7. STONKS SILOの自己修復ロジック（fetcher.py、gross_profit=None時に
+   Revenue-cost_of_revenue逆算）を、HON/ABBV/CAT/KLAC/FICO/HEIの直近5年度で
+   個別確認し、全て`gross_profit_derived=True`で正常にフォールバックする
+   ことを確認。CPRTのみ2013-2015・2020年以降でフォールバックが発動しない
+   ことを発見したが、原因はcost_of_revenue自体が本修正と無関係に
+   既に欠損していたため（pre-existing、git HEAD時点で既にNone）と確認済み。
+   TANUKI VALUATION側は、b/cの変化がgrowth.py::fcf_list[:5]の直近5年窓に
+   該当するケースを確認したところ、RCAT 2024(stock_based_compensation、
+   b:改善、$4,103,000→$3,609,000)のみがtanuki=trueの現役銘柄で該当。
+   APGE 2022(net_income等、c:新規欠損化)はcik_lookup.csvでtanuki=false・
+   status=candidateのため現状無関係。moat_score自体はannual_YYYY.jsonの
+   gross_profitを参照しないため無関係。
+
+#### データコミット
+`d6d404016`（common/sec_data/data/、28銘柄・125ファイル）
+
+#### 副産物として新規発見・登録した課題（未実装）
+- [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（優先度：高。ELFのfiscal_end_month
+  自動検出誤りによる年度ラベル一括ズレ。本タスクの対象銘柄から除外）
+
 ## 2026-07-24（完了）
 
 ### ✅ [LAYER3-ASTS-DDOG-Q4-RESIDUAL-1] ASTS/revenue・DDOG/net_incomeで単独タグ計算値と旧normalized/の値が不一致
