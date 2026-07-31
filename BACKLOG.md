@@ -1,5 +1,27 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]の調査から
+派生した横断調査（登録のみ、実装は未着手）。新規登録6件:
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]〈優先度：高。parser.pyのFLOW型フィールド抽出
+（`_extract_values_best_candidate()`→`_extract_single_key()`経路）に期間長検証が
+構造的に欠落しており、AVGO revenue/net_income/operating_income(2016/2017)・
+gross_profit9銘柄(TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC)で四半期値が年次値
+として誤採用されていたことを確認。2026-07-12 [[SEC-TAG-FICO-CPRT-1]]の対症療法
+（revenue等3フィールド限定のtie-break追加）では根本原因が未解消だったことも確定〉・
+[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]〈優先度：高、要個別調査。BBAI/RDW/ELF/KULRで
+同一年度内にフィールドごと異なる期間長が混在、predecessor/successor期間混在の疑い〉・
+[[SPAC-STUB-PERIOD-VERIFICATION-1]]〈優先度：中。ASTS/IONQ/JOBY/RKLB/SOFI/SOUN/
+SPIR/APGE/NOW/RCATの非365日期間データは正当なスタブ期の可能性が高く要個別確認〉・
+[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]〈優先度：低〜中。MO/PM/SCCO
+の年次同士の乖離は会計上の定義差の疑い〉・
+[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]〈優先度：低。gross_profit
+逆算ロジックの3箇所重複〉・
+[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]〈優先度：低〜中。
+gross_profit/cost_of_revenue整合性の常設監査項目が存在しない〉。
+既存[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]の着手条件に
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]解消を前提として追記。次回セッション筆頭候補は
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]）
+
 最終更新: 2026-07-30（common/sec_data統合フェーズA〜D準備セッション。
 [[TTM-PASCALCASE-KEY-STALE-1]]〈Phase C移行によるPascalCase→snake_case
 キー不一致バグ、RICEスコア100/100銘柄・FCFフォールバック94/100銘柄への
@@ -5226,7 +5248,196 @@ cost_of_revenueは本番データパス上でSTONKS SILO以外どこからも参
 との突合検算ロジックを追加するかの判断が必要。
 
 #### 着手条件
-なし
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]の解消が前提。gross_profit抽出値自体が
+壊れている状態で本番書き戻し方針を決めても無意味なため（2026-07-31追記）。
+
+---
+
+### [PERIOD-LENGTH-VALIDATION-GAP-1] parser.pyのFLOW型フィールド抽出に期間長検証が構造的に欠落（大半のフィールドで四半期値が年次値として誤採用されうる）
+**優先度:** 高
+**分類:** バグ / 一次データ抽出ロジック
+**登録日:** 2026-07-31
+**発見:** GrossProfitバックフィル調査から派生した横断調査（チャット記録）
+
+#### 内容
+common/sec_data/parser.pyのFLOW型（duration型）フィールド抽出には2経路ある。
+`_extract_values_merged()`（`MERGE_ALL_TAGS_FIELDS` = revenue/selling_and_marketing/
+depreciation_and_amortizationの3フィールド限定）は、複数候補タグが競合した
+場合のみ期間長(365日近傍)によるtie-breakを行う（2026-07-12
+[[SEC-TAG-FICO-CPRT-1]]で追加）。一方、それ以外の全FLOW型フィールド
+（gross_profit・net_income・operating_income・cost_of_revenue・research_and_
+development・selling_general_and_administrative・operating_cash_flow・
+capital_expenditure・stock_based_compensation等）を処理する
+`_extract_values_best_candidate()` → `_extract_single_key()`には、期間長検証が
+一切存在しない。候補タグが単一しかない年度では、tie-break自体が発動せず、
+四半期(91日等)エントリがそのまま年次値として採用される。
+
+確認済みの実害:
+- AVGO: revenue/net_income/operating_incomeが2016年度(90日)・2017年度(97日)
+  ともに四半期値を年次値として誤採用(10-K原本突合済み、真の年次revenue値は
+  2016:$13,240M・2017:$17,636M)
+- MSCI 2009・ELF 2019: 同型(4〜8フィールド一致、上場後のため正当なスタブ期
+  ではあり得ない)
+- gross_profit: TDY/AVGO/CPRT/ABBV/CAT/FICO/HEI/HON/KLAC(9銘柄)で同型
+  (GrossProfitタグが主要財務諸表になく四半期注記のみに存在する銘柄で発生)
+
+2026-07-12の[[SEC-TAG-FICO-CPRT-1]]修正は同一企業(FICO/CPRT/LITE)のrevenue
+フィールドのみを対象にスコープを限定しており、当時のログにも「S&M/D&Aは実害0件
+と確認」と対象拡大を意図的に見送った記録がある。今回の調査は、この対症療法が
+根本原因（`_extract_single_key()`経路全体の期間長検証欠如）を解消していなかった
+ことを確定させた。
+
+#### 影響
+revenue(INPUT-A-001、PSR分母・成長率・Rule of 40・moat_score fcf_norm分母)を
+含む、システム全体で最も広く消費される一次データフィールドに影響しうる。
+現時点で確定しているのはAVGO 2016/2017年度のrevenue/net_income/operating_income、
+及びgross_profit9銘柄。他フィールド・他銘柄への一般化範囲は未確定。
+
+#### 対応方針
+未定。`_extract_single_key()`（または`_extract_values_best_candidate()`）に、
+`_collect_own_data_annual()`が既に持つ340-380日必須フィルタ相当のロジックを
+適用する案、または`_extract_values_merged()`のtie-break機構をMERGE_ALL_TAGS_
+FIELDS以外にも一般化する案が候補。ただし[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]・
+[[SPAC-STUB-PERIOD-VERIFICATION-1]]で判明した正当な非365日データ(スタブ期)を
+誤って除外しないよう、105銘柄×全FLOW型フィールドでのオフラインシミュレーション
+を実装前に必ず行う。
+
+#### 着手条件
+なし。優先度高のため次回セッション筆頭候補。
+
+---
+
+### [SPAC-STUB-PERIOD-FIELD-SPLIT-1] SPAC合併・組織再編銘柄で同一年度内にフィールドごと異なる期間長が混在（predecessor/successor期間混在の疑い）
+**優先度:** 高（要個別調査）
+**分類:** データ品質 / SPAC会計特有の期間混在
+**登録日:** 2026-07-31
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）
+
+#### 内容
+BBAI 2020(net_incomeのみ27日、他フィールドは223日)・RDW 2020(155日/325日で
+フィールド群が2グループに分裂)・ELF 2015(89日/333日で分裂)・KULR 2015
+(net_income/operating_incomeのみ20日)で、同一銘柄・同一年度内でフィールドごとに
+異なる期間長が混在している。単純な「四半期→年次誤採用」ではなく、SPAC合併・
+組織再編に伴うpredecessor/successor(合併前後で会計主体が変わる)期間の混在、
+または部分年度の異なる報告単位の混在という別種の問題の可能性がある。
+
+#### 影響
+未確定。該当銘柄の該当年度で、フィールド間の値の整合性が取れていない可能性がある。
+
+#### 対応方針
+未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同一の機械的フィルタ(340-380日)を安易に
+適用すると、正当なpredecessor/successor期間のデータまで誤って除外するリスクが
+あるため、まず該当4銘柄の10-K原本で会計主体・報告期間の実態を個別確認する。
+
+#### 着手条件
+なし。[[PERIOD-LENGTH-VALIDATION-GAP-1]]の対応方針確定前に、このパターンの
+実態を先に把握しておく必要がある(全母集団シミュレーションの正確性に影響する)。
+
+---
+
+### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ10銘柄の個別確認
+**優先度:** 中
+**分類:** データ品質 / 要個別確認
+**登録日:** 2026-07-31
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）
+
+#### 内容
+ASTS(2019)・IONQ(2020)・JOBY(2020)・RKLB(2020)・SOFI(2020)・SOUN(2020)・
+SPIR(2020)・APGE(2022)・NOW(2010/2011)・RCAT(2024)で、非365日の期間長が
+検出されたが、いずれも同一銘柄内でフィールド間の期間長が内部整合的であり、
+SPAC合併前・IPO前の正当なスタブ期報告、またはRCATは既知の決算期変更に該当する
+可能性が高い。ただし確定判定には10-K個別確認が必要。
+
+#### 影響
+現時点でバグと確定したものはない。誤って「バグ」として画一的に除外・修正すると、
+正当なデータを失う恐れがある。
+
+#### 対応方針
+未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の
+対応が固まった後、該当10銘柄・年度についても10-K原本で個別に正当性を確認し、
+「安全なNone扱いの確認」または「正当なデータとして保持」のいずれかで正式クローズする。
+
+#### 着手条件
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の対応
+確定後。
+
+---
+
+### [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] MO/PM/SCCOのgross_profitとRevenue-cost_of_revenue逆算値の乖離（会計上の定義差の疑い、要確認）
+**優先度:** 低〜中
+**分類:** データ品質 / 会計上の定義差（要確認）
+**登録日:** 2026-07-31
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]Case B調査（チャット記録）
+
+#### 内容
+MO(2016、乖離35.5%)・PM(2016、73.6%)・SCCO(2016、27.6%)は、gross_profitと
+Revenue−cost_of_revenue逆算値の間に、いずれも年次エントリ同士(365日)での乖離が
+ある。[[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長誤採用パターンとは異なり、
+発行体独自の会計上の定義差(物品税・関税等の取扱い差の可能性)が疑われるが、
+10-K原本での裏取りは未実施。
+
+#### 影響
+未確定。3銘柄のgross_profit・cost_of_revenueの解釈に影響しうる。
+
+#### 対応方針
+未定。10-K原本で該当科目の定義を個別確認し、genuineな定義差と確定すれば
+「安全な差異として記録」、そうでなければ[[PERIOD-LENGTH-VALIDATION-GAP-1]]系統に
+合流させる。
+
+#### 着手条件
+なし。優先度低〜中のため、優先度高3件の後で対応可。
+
+---
+
+### [STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1] gross_profit=None時のRevenue-cost_of_revenue補完ロジックが3箇所に重複実装
+**優先度:** 低
+**分類:** アーキテクチャ / 重複実装
+**登録日:** 2026-07-31
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]調査（チャット記録）
+
+#### 内容
+discover/stonks-silo/src/fetcher.py(172-174行)が、normalizer.py::
+_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()とは独立に、
+gross_profit=None時のRevenue−cost_of_revenue自前補完ロジック
+(gross_profit_derived=Trueを付与)を持っている。None時の挙動自体は明示的で
+安全(暗黙のゼロ化なし)だが、同じ計算が3箇所に分散している。
+
+#### 影響
+現時点で実害なし(各箇所とも安全にNone/計算結果を扱っている)。将来的な保守性の
+問題。
+
+#### 対応方針
+未定。common/sec_data統合の一環として、共有アクセサ側にgross_profit計算を
+一本化する際に合わせて解消を検討する。
+
+#### 着手条件
+common/sec_data統合(フェーズ1)がSTONKS SILOのreader.py利用まで進んだ時点。
+
+---
+
+### [REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1] gross_profit/cost_of_revenue整合性を検証する監査項目が存在しない
+**優先度:** 低〜中
+**分類:** 品質ゲート / 監査カバレッジ欠如
+**登録日:** 2026-07-31
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]調査（チャット記録）
+
+#### 内容
+report_consistency_check.pyに、gross_profitとcost_of_revenueの整合性
+(Revenue−cost_of_revenueとの乖離検知等)を検証するWARN項目が一件も存在しない。
+今回発見した複数の乖離事象は、いずれも既存の常設監査では検知できず、個別調査
+でのみ発覚した。
+
+#### 影響
+同種の新規乖離が将来再発しても、既存の監査プロセスでは検知できない。
+
+#### 対応方針
+未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]等の根本原因対応が固まった後、
+再発防止のための常設WARN項目化を検討する(CHAT_RULES.md「探索的スキャンツールと
+常設WARN条件の分離」の原則に従い、今回の探索的スキャン手法をそのまま常設WARNに
+転用しない設計とする)。
+
+#### 着手条件
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]系統の対応確定後。
 
 ---
 
@@ -6241,6 +6452,27 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
      applied状態を見ないため、LITE等でapplied=Falseの間、両者の表示が
      食い違う。独立バグとして修正要（report.txt側の条件に合わせる方向を推奨）
    いずれも実装未着手
+
+追記（2026-07-31 [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]派生調査・
+新規6件登録、登録のみで実装は未着手）:
+これにより次セッションの筆頭候補を更新する：
+① [[PERIOD-LENGTH-VALIDATION-GAP-1]]（優先度：高・新規。parser.pyのFLOW型
+フィールド抽出〈`_extract_values_best_candidate()`→`_extract_single_key()`
+経路〉に期間長検証が構造的に欠落しており、AVGO revenue/net_income/
+operating_income(2016/2017)・gross_profit9銘柄で四半期値が年次値として
+誤採用されていたことを確認済み。対応方針確定前に105銘柄×全FLOW型フィールドの
+オフラインシミュレーションが必要）
+② [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]（優先度：高・要個別調査。BBAI/RDW/ELF/
+KULRの10-K原本確認。①のシミュレーション精度に影響するため①と並行、または
+①着手前に着手が望ましい）
+③ 余力があれば[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
+（優先度：低〜中・MO/PM/SCCOの10-K原本確認）
+④ [[SPAC-STUB-PERIOD-VERIFICATION-1]]・[[REPORT-CONSISTENCY-GROSSPROFIT-
+COGS-CHECK-MISSING-1]]は①②の対応確定後（着手条件未達）。
+[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]はcommon/sec_data統合
+フェーズ進捗待ち（着手条件未達）。
+[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]（本体）は①の解消が前提
+のため、それまで着手保留。
 
 ---
 
