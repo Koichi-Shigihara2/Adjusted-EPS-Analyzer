@@ -1,5 +1,14 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-01（[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]新規登録、
+登録のみで実装・調査は未着手。[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②
+シミュレーションの過程で、RCATの`detect_fiscal_anchor_date()`クラスタ分析が
+直近10-K〈filed 2026-03-19〉を12月31日・4月30日の両クラスタに同時投票させて
+いることを発見。RCATは既に決算期を2回変更済みとBACKLOG_DONE.mdに記載済みだが、
+今回の重複は3段階目の移行が進行中の可能性を示唆する。現時点でbucketingへの
+実害はゼロ〈月のみ比較フォールバックによる「事故的な正しさ」〉だが、将来の
+データ追加で均衡が崩れるリスクがあるため優先度：中で登録）。
+
 最終更新: 2026-07-31（[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案①実装完了。
 `detect_fiscal_end_month()`に`detect_fiscal_anchor_date()`と同一の340-380日
 必須フィルタを追加し、四半期注記再掲載による得票汚染を除去（コミット
@@ -5435,6 +5444,35 @@ annual_2015〜2019.jsonの一部フィールド（revenue/gross_profit/net_incom
 `update.py ELF`相当の再生成を改めて実施する必要がある。RCAT・AVGOについても
 案②の設計確定後、10-K原本で決算期変更の実態（時期・方向）を個別確認してから
 適用範囲を確定する。
+
+---
+
+### [RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1] RCATのdetect_fiscal_anchor_date()で直近10-Kが12月/4月の2クラスタに同時投票、3段階目の決算期変更が進行中の可能性
+**優先度:** 中
+**分類:** データ品質 / 要個別確認
+**登録日:** 2026-08-01
+**発見:** [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②シミュレーション（チャット記録）
+
+#### 内容
+RCATの`detect_fiscal_anchor_date()`クラスタ分析で、直近の10-K（filed
+2026-03-19）が12月31日クラスタ・4月30日クラスタの両方に同時にエントリを
+提供していることが判明した。RCATは既に決算期を2回変更した企業として
+BACKLOG_DONE.mdに記載済みだが、今回の重複は3段階目の移行が進行中である
+可能性を示唆する。
+
+#### 影響
+未確定。現時点でbucketingへの実害はゼロと確認済みだが（`detect_fiscal_
+end_month()`=12月と`detect_fiscal_anchor_date()`=4月30日の不一致が、
+月のみ比較フォールバックにより偶然正しく機能している「事故的な正しさ」）、
+将来のデータ追加でこの均衡が崩れるリスクがある。
+
+#### 対応方針
+未定。RCATの直近決算期変更の実態を10-K原本で個別確認する。
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②実装により構造的な保険
+（era別anchor候補の追加）は入るが、根本的な決算期変更の実態把握とは別軸。
+
+#### 着手条件
+なし
 
 ---
 
