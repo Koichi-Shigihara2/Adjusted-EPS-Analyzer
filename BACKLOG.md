@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]完了総括の
+記録是正＋[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]統合タスク化、報告・登録のみ
+実装は未着手）。[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]調査の過程で、
+BACKLOG_DONE.mdの[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]完了総括
+（「RCAT型決算期変更検知は解消済み」）が、実際の解決範囲（WARN-24による
+検知・ログ記録層のみ、`_own_override_is_safe()`は無改修）より広いラベルで
+表現されており、`_detect_fiscal_end_month()`/`_detect_fiscal_anchor_date()`
+自体のera別対応（1銘柄が単一のfiscal_end_month/anchorしか持てないアーキ
+テクチャ上の限界）は一貫して未着手のまま残っていたことが判明。BACKLOG_DONE.md
+のARCH-DATA-1クローズ根拠・冒頭changelog（本ファイル114行目付近）・
+「次セッションでの着手順序」欄の2026-07-17〜18付けブロックに訂正注記を追加。
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]を、ELF単独ではなくRCAT
+（2026-07-17から未着手のまま持ち越し）・AVGO（[[PERIOD-LENGTH-VALIDATION-
+GAP-1]]で背景要因として既発見）を含む統合タスクとして再定義（優先度：高、
+IDは変更せず内容を拡張）。
+
 最終更新: 2026-07-31（[[PERIOD-LENGTH-VALIDATION-GAP-1]]実装完了。
 `_extract_single_key()`（gross_profit等9フィールド）・`_extract_values_merged()`
 （revenue/S&M/D&A）双方に340-380日の期間長フィルタを追加し、全105銘柄の
@@ -127,7 +143,10 @@ TANUKI SCORE Classificationには無関係と判明したため、根本修正�
 ARCH-DATA-1・FY52WEEK-BS-NULL-SILENT-1（+統合済みのFY52WEEK-BS-
 INSTANT-FACT-1）の2件をクローズしBACKLOG_DONE.mdへ完全移動——ARCH-DATA-1は
 3段階設計+残課題④まで全完了、唯一残っていたRCAT型決算期変更検知は
-[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]へ引き継がれ完了済みと確認。
+[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]へ引き継がれ完了済みと確認
+（※2026-07-31追記: この完了はWARN-24による検知・ログ記録層のみを指す。
+`_detect_fiscal_end_month()`等の抽出ロジック自体のera別対応は含まれておらず、
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]調査で未解消と再確認した）。
 FY52WEEK-BS-NULL-SILENT-1はPhase A・Phase B Stage1-3・Phase C全完了
 （Stage2=FY52WEEK-BS-STI-OVERRIDE-DESIGN-1・Stage3=FY52WEEK-BS-
 FADEOUT-FALLBACK-1、いずれも完了・分離先タスクへ相互参照済み）。
@@ -5300,12 +5319,13 @@ cost_of_revenueは本番データパス上でSTONKS SILO以外どこからも参
 
 ---
 
-### [ELF-FISCAL-END-MONTH-MISDETECTION-1] ELFのfiscal_end_month自動検出誤りで年度ラベルが一括してずれる
+### [ELF-FISCAL-END-MONTH-MISDETECTION-1] fiscal_end_month/anchor検出が1銘柄単一値のみ対応、実在する決算期変更（ELF/RCAT/AVGO）をera別に扱えない構造的限界
 **優先度:** 高
 **分類:** バグ / 一次データ抽出ロジック（決算年度判定）
 **登録日:** 2026-07-31
 **発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]実装時の全105銘柄フローズン入力
-再生成・検証（チャット記録）
+再生成・検証、および[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]との関係確認調査
+（いずれもチャット記録）
 
 #### 内容
 [[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長フィルタ実装後、全105銘柄で
@@ -5331,26 +5351,69 @@ revenue/gross_profit/net_income等が「新年度の値に前年度の値が入�
 誤候補が勝つか」を変化させたため、既存の（結果的に正しい値を返していた）
 選択が、同じバケツ内の別の（誤った）候補に入れ替わる形で表面化した。
 
+**本質はELF固有の不具合ではなく、`_detect_fiscal_end_month()`/
+`_detect_fiscal_anchor_date()`が1銘柄につき単一のfiscal_end_month/anchorしか
+持てず、実在する決算期変更をera別に扱えないという構造的限界である**。
+[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]（2026-07-19完了）との関係を確認した
+ところ、同タスクは「本人データ側」と「非本人データ側（比較年度再掲）」の
+2エントリが同一年度バケツで衝突するケースの検知（WARN-24・ログ記録のみ、
+`_own_override_is_safe()`は無改修）に限定されており、抽出ロジック自体の
+era別対応は一切実装されていなかった。同タスクの事前調査時点で「ELFは決算期
+変更があったが競合なし（＝WARN-24の検知範囲外）」と明記されており、当時から
+本問題の存在は認識されていたが、対応スコープには含まれていなかった。
+
+#### 対象銘柄
+- **ELF**（2015-2019年度、実害確定済み。上記「内容」参照）
+- **RCAT**（2026-07-17〜18のBACKLOG.md「次セッションでの着手順序」欄に
+  「RCAT型決算期変更検知...引き続き未着手」として記録されて以来、
+  [[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]の検知対象外のまま未着手で
+  持ち越されている既知課題。`_detect_fiscal_end_month()`=12月・
+  `_detect_fiscal_anchor_date()`=(4,30)と結果が食い違い、
+  `_cluster_fiscal_anchor_candidates()`でも4月30日(13票) vs 12月31日(11票)の
+  僅差2クラスタを確認済み〈4月決算→12月決算への変更が実在する可能性〉）
+- **AVGO**（[[PERIOD-LENGTH-VALIDATION-GAP-1]]調査で背景要因として既に発見済み。
+  `_detect_fiscal_end_month()`=12月と誤検出〈真のFYEは10月末〉、
+  12月クラスタ18票 vs 10月29日クラスタ6票。AVGO revenue/net_income/
+  operating_incomeの2016-2017年度誤採用の一因）
+
 #### 影響
 ELFのannual_2015〜2019.json（revenue/gross_profit/net_income/cost_of_revenue
 等）の年度ラベルが実際の会計年度とずれている可能性が高い。TANUKI VALUATION・
 STONKS SILOがこの期間のELFデータを参照する計算（成長率・CAGR等）に影響しうる。
 [[PERIOD-LENGTH-VALIDATION-GAP-1]]のデータコミットからはELF分を除外済み
 （5ファイル、変更なしのまま）のため、現時点でこの入れ替わり自体は本番に
-反映されていない。
+反映されていない。RCAT・AVGOについては現時点でELFと同型の「値の入れ替わり」の
+実害は確認されていないが（RCATは`_own_override_is_safe()`による本人データ
+上書きが一部フィールド・年度をカバーしているため顕在化していない可能性がある）、
+`_extract_single_key()`/`_extract_values_merged()`のfallback経路（本人データ
+上書きの対象外の年度・フィールド）は引き続きリスクを抱えている。
 
 #### 対応方針
-未定。`_detect_fiscal_end_month()`・`_detect_fiscal_anchor_date()`
-（common/sec_data/utils.py）がELFの決算期変更（12月決算→3月決算、時期は
-要調査）を正しく扱えるようにする必要がある。決算期変更を挟む場合の
-fiscal_end_month検出ロジック全般（変更前後で異なる決算月を使い分ける必要が
-あるか等）を10-K原本で個別確認してから設計する。
+- **案①（前提修正・先行実施可能）**: `_detect_fiscal_end_month()`に、
+  `_detect_fiscal_anchor_date()`が既に持つ340-380日必須フィルタと同種のものを
+  追加する。低コスト・安全（既存の実証済みパターンの横展開）で、四半期注記の
+  再掲載による得票汚染（[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同型の問題）を
+  除去できる。単独でも価値があるが、ELFのように決算期変更が実在する銘柄では
+  これだけでは不十分（`_detect_fiscal_anchor_date()`は既にこのフィルタを
+  持ちながらELFで誤判定している）。
+- **案②（根治・要設計）**: `_cluster_fiscal_anchor_candidates()`が既に返す
+  複数クラスタの検出結果を活用し、各クラスタに属するエントリの`filed`日付が
+  時系列できれいに分離している（決算期変更の実在を示す）場合、era別に
+  適用するanchorを切り替える設計。ticker名を一切参照しない機械的条件
+  （クラスタ数・時系列分離）で判定可能なため、CHAT_RULES.md
+  「銘柄固定のハードコード禁止」原則に整合する。
+- **案③（暫定退避策）**: ELF個別のticker_overrides的対応。案②の設計・実装
+  コストが高いと判明した場合にのみ、ユーザーに説明の上で検討する
+  （CHAT_RULES.mdの原則により通常は不採用）。
+- 対応方針の最終決定・実装は別タスクとして改めて依頼を受けてから着手する。
 
 #### 着手条件
-なし。ただしELFのannual_2015〜2019.jsonの一部フィールド
+なし。優先度高。ただしELFのannual_2015〜2019.jsonの一部フィールド
 （revenue/gross_profit/net_income等）は[[PERIOD-LENGTH-VALIDATION-GAP-1]]の
 期間長フィルタ未適用のまま据え置かれているため、本タスク解消後に
-`update.py ELF`相当の再生成を改めて実施する必要がある。
+`update.py ELF`相当の再生成を改めて実施する必要がある。RCAT・AVGOについても
+案①②の設計確定後、10-K原本で決算期変更の実態（時期・方向）を個別確認してから
+適用範囲を確定する。
 
 ---
 
@@ -6484,6 +6547,9 @@ DEAD-1]]として分離登録。③-bの事前調査でreport_txt_parser.pyの�
 ② RCAT型決算期変更検知（企業が実際に決算期を変更したケースと単なる
    52/53週の測定誤差との区別。ARCH-DATA-1ステージ2のスコープ外として
    引き続き未着手）
+   ※2026-07-31追記: この行の内容は現在も有効（未着手のまま）。
+   [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]として2026-07-31に統合的に
+   再登録した（ELF/RCAT/AVGOを対象とする統合タスク）。
 ③ [[FY52WEEK-BS-NULL-SILENT-1]]（優先度：高・着手条件なし。
    ①と独立に着手可能）
 ④ [[TRUST-SUMMARY-EPIC-1]]（優先度：高・要設計・実装未着手の大規模EPIC）

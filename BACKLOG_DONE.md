@@ -1275,6 +1275,10 @@ CHECK-24/WARN-24の新設・`_is_boundary_collision()`/
 これによりARCH-DATA-1が抱えていた残課題は全て解消し、本エントリを
 クローズする。
 
+**※2026-07-31追記**: この完了はWARN-24による検知・ログ記録層のみを指す。
+`_detect_fiscal_end_month()`等の抽出ロジック自体のera別対応は含まれておらず、
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]調査で未解消と再確認した。
+
 ---
 
 ### ✅ [FY52WEEK-BS-INSTANT-FACT-1] BS項目（instant fact）が52/53週バグの本人データ判定から対象外で値がNoneに変化する
