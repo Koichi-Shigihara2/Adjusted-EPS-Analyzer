@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-07-31（[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案①実装完了。
+`detect_fiscal_end_month()`に`detect_fiscal_anchor_date()`と同一の340-380日
+必須フィルタを追加し、四半期注記再掲載による得票汚染を除去（コミット
+`96c42d8f0`）。全105銘柄で判定結果を新旧比較した結果、変化した銘柄は0件
+（ELF/RCAT/AVGO含む全銘柄で不変）。事前見立て通り、この修正単独では
+ELF（3月18票 vs 12月11票のまま）・RCAT（12月/(4,30)の食い違いのまま）・
+AVGO（12月のままで真のFYE 10月末と不一致）いずれの誤判定も解消せず、
+era別対応（案②）が根治に必須であることを実証的に確定した。ELFの
+annual_2015〜2019.json 5ファイルは引き続き除外を維持。pytest 447 passed/
+2 known failed、report_consistency_check.py NG=0（WARN=68件、変化なし）を
+確認。[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]の「対応方針」を案①完了・
+案②着手待ちに更新）
+
 最終更新: 2026-07-31（[[FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1]]完了総括の
 記録是正＋[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]統合タスク化、報告・登録のみ
 実装は未着手）。[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]調査の過程で、
@@ -5389,30 +5402,38 @@ STONKS SILOがこの期間のELFデータを参照する計算（成長率・CAG
 上書きの対象外の年度・フィールド）は引き続きリスクを抱えている。
 
 #### 対応方針
-- **案①（前提修正・先行実施可能）**: `_detect_fiscal_end_month()`に、
-  `_detect_fiscal_anchor_date()`が既に持つ340-380日必須フィルタと同種のものを
-  追加する。低コスト・安全（既存の実証済みパターンの横展開）で、四半期注記の
-  再掲載による得票汚染（[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同型の問題）を
-  除去できる。単独でも価値があるが、ELFのように決算期変更が実在する銘柄では
-  これだけでは不十分（`_detect_fiscal_anchor_date()`は既にこのフィルタを
-  持ちながらELFで誤判定している）。
-- **案②（根治・要設計）**: `_cluster_fiscal_anchor_candidates()`が既に返す
-  複数クラスタの検出結果を活用し、各クラスタに属するエントリの`filed`日付が
-  時系列できれいに分離している（決算期変更の実在を示す）場合、era別に
-  適用するanchorを切り替える設計。ticker名を一切参照しない機械的条件
+- **案①（前提修正）: ✅ 2026-07-31実装完了**（コミット`96c42d8f0`）。
+  `_detect_fiscal_end_month()`に`_detect_fiscal_anchor_date()`と同一の
+  340-380日必須フィルタを追加し、四半期注記の再掲載による得票汚染
+  （[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同型の問題）を除去した。
+  **検証結果、事前見立て通りELF/RCAT/AVGOいずれの誤判定も解消しなかった**
+  （全105銘柄で判定結果の変化は0件）。ELFはフィルタ適用後も真の年次
+  エントリのみで3月18票 vs 12月11票となり、新旧いずれの決算期でも一定量の
+  正規の年次申告が存在するため単純多数決だけでは解決しないことを実測で
+  確認した。RCAT（`_detect_fiscal_end_month()`=12月・`_detect_fiscal_
+  anchor_date()`=(4,30)のまま）・AVGO（`_detect_fiscal_end_month()`=12月の
+  ままで真のFYE 10月末とは不一致）も同様に不変。ELFのannual_2015〜2019.json
+  5ファイルは案①だけでは正しい値にならないため、[[PERIOD-LENGTH-
+  VALIDATION-GAP-1]]と同様に除外を継続する（今回の再生成でも変更前に戻した）。
+- **案②（根治・要設計）: 未着手**。`_cluster_fiscal_anchor_candidates()`が
+  既に返す複数クラスタの検出結果を活用し、各クラスタに属するエントリの
+  `filed`日付が時系列できれいに分離している（決算期変更の実在を示す）場合、
+  era別に適用するanchorを切り替える設計。ticker名を一切参照しない機械的条件
   （クラスタ数・時系列分離）で判定可能なため、CHAT_RULES.md
-  「銘柄固定のハードコード禁止」原則に整合する。
+  「銘柄固定のハードコード禁止」原則に整合する。案①実装完了により、案②が
+  唯一の根治手段であることが実証的に確定した。
 - **案③（暫定退避策）**: ELF個別のticker_overrides的対応。案②の設計・実装
   コストが高いと判明した場合にのみ、ユーザーに説明の上で検討する
   （CHAT_RULES.mdの原則により通常は不採用）。
-- 対応方針の最終決定・実装は別タスクとして改めて依頼を受けてから着手する。
+- 案②の設計・実装は別タスクとして改めて依頼を受けてから着手する。
 
 #### 着手条件
-なし。優先度高。ただしELFのannual_2015〜2019.jsonの一部フィールド
-（revenue/gross_profit/net_income等）は[[PERIOD-LENGTH-VALIDATION-GAP-1]]の
-期間長フィルタ未適用のまま据え置かれているため、本タスク解消後に
+案①は完了。案②はなし（優先度高、次回セッション着手候補）。ELFの
+annual_2015〜2019.jsonの一部フィールド（revenue/gross_profit/net_income等）
+は案①だけでは正しい値にならないことを確認済みのため、引き続き
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同様に除外を維持し、案②実装後に
 `update.py ELF`相当の再生成を改めて実施する必要がある。RCAT・AVGOについても
-案①②の設計確定後、10-K原本で決算期変更の実態（時期・方向）を個別確認してから
+案②の設計確定後、10-K原本で決算期変更の実態（時期・方向）を個別確認してから
 適用範囲を確定する。
 
 ---
