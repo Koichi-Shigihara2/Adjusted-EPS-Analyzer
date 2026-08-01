@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[SPAC-STUB-PERIOD-VERIFICATION-1]]個別調査完了
+（チャット記録、読み取りのみ）。11銘柄・12ティッカー年度すべてで現状の
+処理が妥当と確認。SPAC系6銘柄（ASTS/IONQ/JOBY/RKLB/SOFI/SPIR）はBSが
+SPAC本体の自己データ（Nasdaq上場要件由来の$5,000,00X型自己資本）、
+PL/CFは後年filingの正しい12ヶ月比較列と確認（340-380日フィルタが単純に
+None化するだけでなく、正しい代替値を自動的に拾い上げていたことが判明）。
+SOUN(2020)・APGE(2022)・NOW(2010/2011)も現状妥当と確認（NOW(2010)の
+BS一部欠落は原因未特定だが実害軽微につき注記のみ）。RCAT(2012)は
+own-dataで充実、D&A「1日間」エントリはval=0のXBRLタグ付けミスと特定し
+実害ゼロと確認。VRT(2016)は当初の記載理由（Emersonスピンオフ）が
+事実誤認と判明し、実際はSPAC〈GS Acquisition Holdings Corp〉自身の
+設立初年度スタブと訂正（データ自体は正確、実害はほぼゼロ）。
+「解消（実害なし、現状の処理は妥当）」としてBACKLOG_DONE.mdへ移動。
+「次セッションでの着手順序」欄を更新。クローズ・訂正のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]TANUKI
 VALUATION/STONKS SILO実害確認調査結果を反映（チャット記録、読み取りのみ）。
 TANUKI VALUATIONは実害なし（RCATのgrowth rateはsegment_weighted手動設定が
@@ -5687,51 +5702,6 @@ revenue/gross_profit/cost_of_revenue/net_income/operating_income等のPL/CF系
 
 ---
 
-### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認（2026-07-31訂正: RCAT 2024除外・VRT/RCAT 2012追加）
-**優先度:** 中
-**分類:** データ品質 / 要個別確認
-**登録日:** 2026-07-31
-**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）
-
-#### 内容
-ASTS(2019)・IONQ(2020)・JOBY(2020)・RKLB(2020)・SOFI(2020)・SOUN(2020)・
-SPIR(2020)・APGE(2022)・NOW(2010/2011)で、非365日の期間長が検出されたが、
-いずれも同一銘柄内でフィールド間の期間長が内部整合的であり、SPAC合併前・
-IPO前の正当なスタブ期報告に該当する可能性が高い。ただし確定判定には10-K
-個別確認が必要。
-
-**追加（2026-07-31、revenue/selling_and_marketing/depreciation_and_
-amortization側の追加シミュレーションで判明）**: 以下2件を要確認対象に追加した。
-- VRT 2016(revenue、0、249日): Emersonからのスピンオフ年度（2016年10月）に
-  該当し、SPAC上場(2020年)より前の私企業期のスタブ報告の可能性がある
-- RCAT 2012(depreciation_and_amortization、0、**1日間**): 極端に短い期間長。
-  ドローン事業化以前のシェル会社期における退化的なXBRLファクトの可能性がある
-  （下記「訂正」のRCAT 2024/stock_based_compensationとは別年度・別フィールドの
-  独立したケース）
-
-**訂正（2026-07-31、[[PERIOD-LENGTH-VALIDATION-GAP-1]]全母集団シミュレーション
-により判明）**: 当初本エントリの対象に含めていたRCAT 2024
-(stock_based_compensation)は削除した。「決算期変更に伴う正当なスタブ期」
-という推定は誤りで、実際には正しい年次代替値($3,609,000、365日)が
-company_facts.json上に存在する「b: 改善」ケース（フィルタ適用で正しく
-是正される）と判明したため、[[PERIOD-LENGTH-VALIDATION-GAP-1]]側の改善対象
-(b:53件)に含める。
-
-#### 影響
-現時点でバグと確定したものはない。誤って「バグ」として画一的に除外・修正すると、
-正当なデータを失う恐れがある。
-
-#### 対応方針
-未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の
-対応が固まった後、該当11銘柄・年度についても10-K原本で個別に正当性を確認し、
-「安全なNone扱いの確認」または「正当なデータとして保持」のいずれかで正式クローズする。
-
-#### 着手条件
-[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の対応
-確定後。
-
----
-
 ### [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] gross_profitとRevenue-cost_of_revenue逆算値の乖離が14銘柄で残存（2026-08-02対象拡大: MO/PM/SCCO→14銘柄）
 **優先度:** 低〜中
 **分類:** データ品質 / 会計上の定義差または未解消バグ（要確認）
@@ -7161,6 +7131,33 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
    定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
 ⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中・②の10-K確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 [[SPAC-STUB-PERIOD-VERIFICATION-1]]個別確認完了）:
+~~① [[SPAC-STUB-PERIOD-VERIFICATION-1]]~~ ✅ 解消（実害なし、現状の処理は
+   妥当）。11銘柄・12ティッカー年度すべてで追加対応不要と確認。SPAC系
+   6銘柄（ASTS/IONQ/JOBY/RKLB/SOFI/SPIR）はBSがSPAC本体の自己データ、
+   PL/CFは後年filingの正しい12ヶ月比較列と確認。VRT(2016)は記載理由を
+   訂正（Emersonスピンオフではなく、SPAC〈GS Acquisition Holdings
+   Corp〉自身の設立初年度スタブと判明）。RCAT(2012)はown-dataで充実、
+   D&A「1日間」エントリはval=0のタグ付けミスで実害ゼロと確認。
+   BACKLOG_DONE.md「2026-08-02（完了）」へ全文移動。
+これにより次セッションの筆頭候補を更新する：
+① [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+② [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]（優先度：中・現在進行形の実害は
+   解消済み、将来同型の決算期変更を行う他銘柄が現れた場合の再発リスクとして
+   監視対象。対応方針〈案1〜3〉未確定）
+③ [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（優先度：中・RCATの
+   operating_cash_flow欠落、継続/非継続事業タグ分割が原因の疑い。現時点で
+   直接的な計算実害は未確認だが将来のOCF黒字転換時にfcf_list/DCFへ影響
+   するリスク）
+④ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑤ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑥ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・①の10-K確認が概ね収束してから常設WARN項目化を検討）
 
 ---
 

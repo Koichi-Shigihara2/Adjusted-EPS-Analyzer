@@ -4,6 +4,57 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認
+**状態:** 解消（実害なし、現状の処理は妥当）
+**優先度:** 中
+**分類:** データ品質 / 要個別確認
+**登録日:** 2026-07-31
+**完了日:** 2026-08-02
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）
+
+#### 調査結果（個別確認、チャット記録）
+11銘柄・12ティッカー年度すべてで現状の処理が妥当と確認した:
+
+- **ASTS(2019)・IONQ(2020)・JOBY(2020)・RKLB(2020)・SOFI(2020)・
+  SPIR(2020)**: BSはSPAC本体の自己データ（$5,000,00X型の自己資本、
+  Nasdaq上場要件〈信託勘定を除く自己資本の最低ライン〉由来）、PL/CFは
+  後年filingの正式な比較列（本人データではないが正しい12ヶ月実績）。
+  340-380日フィルタが単純にNone化するだけでなく、後年filingから正しい
+  12ヶ月データを自動的に拾い上げていたことを確認した（想定より良い結果）
+- **SOUN(2020)**: 残存3件（stockholders_equity=-716・total_liabilities=
+  716・current_liabilities=716）はSEC原本自体がtotal_assetsタグを
+  報告していないことを確認済み。現状の欠落は原本に忠実
+- **APGE(2022)**: stockholders_equity欠落を確認したが軽微、実害なし
+- **NOW(2010)**: PL/CFは完全値。BS6項目中4項目（total_assets・
+  total_liabilities・current_assets・current_liabilities）欠落は原因
+  未特定（候補タグ網羅性の可能性）。深追いの優先度は低いため注記のみ
+  残し、新規タスク化はしない
+- **NOW(2011)**: PL/CF/BSともに完全値、正常
+- **RCAT(2012)**: own-dataで充実（`CostOfRealEstateSales`・
+  `IncreaseDecreaseInCoalInventories`タグの存在により、ドローン事業化
+  以前の石炭/不動産シェル期の実データであることを直接裏付け済み）。
+  当初懸念していたdepreciation_and_amortization「1日間」エントリは
+  `Depreciation{start:2012-12-30, end:2012-12-31, val:0}`という
+  val=0のXBRLタグ付けミス（後続FY2013 10-K由来）と特定。値が0のため
+  除外されていても実害はゼロ
+- **VRT(2016)**: 記載理由を訂正（下記参照）
+
+#### 訂正: VRT(2016)の記載理由
+当初の記載理由「Emersonからのスピンオフ年度、私企業期スタブ報告の
+可能性」は事実誤認と判明した。生データ（`company_facts.json`）を直接
+確認した結果、実際は`GS Acquisition Holdings Corp`（後にVertivと合併
+するSPAC）自身の設立初年度スタブ（2016-04-26設立〜2016-12-31）であり、
+Vertiv本体の実業績ではない。`Revenues=$0`（2016/2017/2018いずれも）・
+`ProceedsFromIssuanceInitialPublicOffering(2018)=$690,000,000`という
+典型的なSPAC IPO痕跡で裏付け済み。データ自体は正確（対応するXBRL
+エントリを正しく抽出しているだけ）で実害はほぼゼロ（金額$25,000と
+極小、stockholders_equity/operating_cash_flowのみ残存）。
+
+#### 対応方針
+完了。11銘柄・12ティッカー年度すべて追加対応不要と確認。
+
+---
+
 ### ✅ [RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1] RCATのdetect_fiscal_anchor_date()で直近10-Kが12月/4月の2クラスタに同時投票、3段階目の決算期変更が進行中の可能性
 **状態:** 解消（実害なし、当初の懸念は誤りだったと確認）
 **優先度:** 中（登録時）
