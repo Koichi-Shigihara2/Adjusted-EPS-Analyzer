@@ -4,6 +4,27 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] KULR(2019)でtotal_liabilities/current_liabilitiesが同一filing内で数学的に矛盾（candidate tag誤選択の疑い、entity混在ではないと確定）
+**状態:** 原因確定・[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]へ統合（2026-08-02）
+
+KULR(2019)単独の課題として再定義（ONDS(2017)・KULR(2016)は
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1で副次的に解消済み）した後、
+根本原因調査（チャット記録）でKULR(2019)の`current_liabilities`
+($1,033,731) > `total_liabilities`($236,766)という矛盾は、`XBRL_MAPPING
+["total_liabilities"]`の2番目のフォールバック候補`LiabilitiesAndStockholders
+Equity`（定義上`Assets`と数学的に一致する）が、KULR自身のFY2019 10-Kに
+`Liabilities`タグが存在しないために誤って採用されたことが原因と確定した。
+
+この誤選択パターンをKULR固有のタグ付けの特殊性と切り分けるため105銘柄で
+予備スキャンした結果、278件（銘柄年度）に及ぶ同型の設計欠陥（AMZN・GOOGL・
+MSFT・NVDA等の大型株を含む）と判明したため、KULR(2019)単独の個別対応は
+不要と判断し、本エントリはクローズして規模の大きい横断課題
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]（新規登録・優先度：高）
+へ統合する。詳細（提供元タグのprovenance確認・278件の内訳・downstream影響
+調査・機械的検知の設計案）は同エントリを参照。
+
+---
+
 ### ✅ [SPAC-SHELL-BS-ENTITY-MIXING-1] SPAC合併銘柄でBS（instant fact）フィールドが合併前シェル会社・合併後本体の異なる法的実体から混在採用され数学的に矛盾する値が本番稼働中（段階1・段階2いずれも完了）
 **優先度:** 高（登録時）→中（段階1完了後、実害解消済みのため）
 **分類:** バグ / 確定

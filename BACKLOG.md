@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（KULR2019
+単独）の根本原因調査完了（チャット記録、読み取りのみ）。原因を
+`XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
+`LiabilitiesAndStockholdersEquity`（定義上`Assets`と数学的に一致する
+誤った代替タグ）と確定。105銘柄への予備スキャンでAMZN/GOOGL/MSFT/NVDA等
+大型株を含む278件（銘柄年度）に及ぶ横断的な設計欠陥と判明したため、
+[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]をクローズしBACKLOG_DONE.md
+「2026-08-02（完了）」へ移動、[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-
+FLAW-1]]として新規登録（優先度：高）。downstream影響調査により
+Net_Debt/Total_Debt算出への直接汚染はないことを確認済み（`pipeline.py`
+内の診断WARN専用の消費のみ）。「次セッションでの着手順序」欄を更新
+（①TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1を筆頭に追加）。登録のみ、
+実装は未着手）。
+
 最終更新: 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2実装完了・
 BACKLOG_DONE.mdへ移動（段階1・段階2いずれも完了）。`fetcher.py`で
 formerNames（法人名変更履歴）を既存レスポンスから追加取得・保存（新規API
@@ -887,6 +901,56 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1] XBRL_MAPPING["total_liabilities"]の2番目のフォールバック候補が意味論的に不適切（LiabilitiesAndStockholdersEquity≡Assets）で278件（銘柄年度）に影響
+**優先度:** 高
+**分類:** バグ / 確定・候補タグ設計欠陥
+**登録日:** 2026-08-02
+**発見:** [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]](KULR2019)個別調査から派生した横断スキャン（チャット記録）
+
+#### 内容
+`XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
+`LiabilitiesAndStockholdersEquity`は、定義上必ず`Assets`と数学的に一致する
+（負債合計ではなく貸借対照表の借方・貸方合計そのもの）ため、`Liabilities`
+タグが存在しない年度でこの候補が採用されると、`total_liabilities`に実質
+`total_assets`の値が格納される。[[JNJ-RD-TAG-PRIORITY-1]]・
+[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]と同種の「フォールバック候補が
+意味論的に不適切」というクラスの設計欠陥。
+
+#### 影響
+`total_liabilities == total_assets かつ stockholders_equity != 0`という
+数学的シグネチャで105銘柄を予備スキャンした結果、278件（銘柄年度）が該当。
+AMZN・GOOGL・MSFT・NVDA・AMD・WMT・VZ・KO・LLY・HON・ABBV・CDNS・ADSK・
+SCCO・ENTG・AVGO・CAKE・CIX・LITE・RCAT・AVAV・KULR等、大型株を含む
+広範囲。2パターン確認: A)恒常的欠如（AMZN/WMT/KULR、全期間`Liabilities`
+タグ自体が存在しない）、B)過渡期欠如（GOOGL/MSFT/NVDA、初期年度のみ
+タグ未整備）。
+
+downstream影響（消費箇所調査済み）: Net_Debt/Total_Debtは
+`long_term_debt`+`short_term_debt`から独立算出のため直接汚染なし。
+`pipeline.py`内では「total_debt=0だがtotal_liabilities大」という
+金融機関判定用の診断WARNメッセージにのみ使用。DCF/EV/株価評価
+アウトプットへの直接計算汚染は確認されていないが、BS項目としての値
+自体は278件すべて誤り。`report_consistency_check.py`のWARN-25はNone
+検査のみでこの種の誤りを検知できない。
+
+#### 対応方針
+未定。2案を設計調査で検討する:
+- 案A: 既存`_bs_math_violations()`（現状は複数accn混在ケースのみに適用）を
+  単一accnケースにも独立適用し、`report_consistency_check.py`に新規WARN
+  （構造的違反の検知のみ、自動修正はしない）を追加する
+- 案B（推奨）: 候補タグ選択ロジック自体に「採用値が既知の他フィールドと
+  数学的矛盾を生まないか」を検証するガードを入れ、矛盾時は次候補へ
+  フォールスルーする（`total_assets`以外の同種フィールドにも汎用適用可能な
+  パターン）
+
+実装は105銘柄・数十年分のannual_YYYY.json再生成を要するため、全母集団
+シミュレーションを実装前に必ず行う。
+
+#### 着手条件
+なし。優先度高（278件・主力銘柄を含む規模、確定バグ）。
+
+---
 
 ### [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた
 **優先度:** 高
@@ -5548,63 +5612,6 @@ revenue/gross_profit/cost_of_revenue/net_income/operating_income等のPL/CF系
 
 ---
 
-### [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] KULR(2019)でtotal_liabilities/current_liabilitiesが同一filing内で数学的に矛盾（candidate tag誤選択の疑い、entity混在ではないと確定）
-**優先度:** 中（2026-08-02当初登録時の水準を維持）
-**分類:** データ品質 / 原因未特定
-**登録日:** 2026-08-02
-**訂正日:** 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応方針設計調査で
-ONDS(2017)・KULR(2016)を対象から除外し、KULR(2019)単独の課題として再定義）
-**発見:** [[SPAC-SHELL-BS-ENTITY-MIXING-1]]横断スキャン（チャット記録）、
-2026-08-02設計調査（案Aシミュレーション、チャット記録）で原因を絞り込み
-
-#### 内容（2026-08-02再定義）
-当初はONDS(2017)・KULR(2016)・KULR(2019)の3件を「[[SPAC-SHELL-BS-
-ENTITY-MIXING-1]]と同様の症状だがSPACパターンと不一致、原因未特定」として
-一括登録していたが、[[SPAC-SHELL-BS-ENTITY-MIXING-1]]の対応方針設計調査
-（「案A: 年度内BS全フィールドのaccnを単一に強制」を105銘柄・87件へ
-オフラインシミュレーション）の副産物として、3件の原因が異なることが判明した：
-
-- **ONDS(2017)・KULR(2016)**: 案Aの単一accn強制で数学的矛盾が解消することを
-  確認。両者ともフィールド単位で独立にaccnを選ぶ既存ロジック（[[SPAC-SHELL-
-  BS-ENTITY-MIXING-1]]と同一メカニズム）が、SPAC文脈ではなく「単一企業が
-  該当年度の自社10-Kで一部BSタグを申告しておらず翌年10-Kの比較列から補完
-  された」ケースでも偶然発現していたと確認できた。両者ともSPAC非該当のため
-  [[SPAC-SHELL-BS-ENTITY-MIXING-1]]の案B（SPAC合併疑い検知）のゲートは
-  通過しないが、同エントリの段階1（「複数accn混在」かつ「数学的矛盾が既に
-  確認されている」場合にのみ単一accn強制を適用する、案B不要の低コスト経路）
-  の対象には含まれる。**この2件は段階1の実装過程で副次的に解消される
-  見込みのため、本エントリの対象から除外する**
-- **KULR(2019)**: 案Aを適用しても矛盾が**解消されないことを確認**
-  （シミュレーションで矛盾が残存）。`current_liabilities`($1,033,731)と
-  `total_liabilities`($236,766)は**既に同一accn**（KULR自身のFY2019 10-K、
-  accn `0001104659-20-061643`）から採用されており、accn混在（entity混在）
-  ではなく**同一filing内でのcandidate tag誤選択**が原因と確定した。
-  `short_term_debt`のみ別accn（2021-03-19提出10-K、fy=2020、2019年度比較列）
-  由来だが、矛盾自体はtotal_liabilities側とcurrent_liabilities側の食い違いで
-  あり、short_term_debtの混入は矛盾の直接原因ではない
-
-**本エントリはKULR(2019)単独の課題として再定義する**。
-
-#### 影響
-KULR(2019)で数学的矛盾を確認済み（現在進行形の実害）:
-current_liabilities($1,033,731) > total_liabilities($236,766)。
-[[SPAC-SHELL-BS-ENTITY-MIXING-1]]の案A/案Bいずれでも解消されないため、
-本エントリでの独立対応が必要。他銘柄への横展開有無は未確認（本件の
-原因確定後、同型のcandidate tag誤選択が他銘柄に存在しないか改めて
-横断確認する必要がある）。
-
-#### 対応方針
-未定。KULR(2019)のtotal_liabilities/current_liabilitiesが参照している
-candidate tag（XBRL概念）そのものを10-K原本と突合し、誤ったタグ・別概念の
-混入がないか個別確認する。原因が[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と異なる
-ことが確定しているため、対応方針は完全に独立して検討する。
-
-#### 着手条件
-なし。優先度は[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応後で可（原因が別系統の
-ため、そちらの解決を待つ必要はない）。
-
----
-
 ### [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認（2026-07-31訂正: RCAT 2024除外・VRT/RCAT 2012追加）
 **優先度:** 中
 **分類:** データ品質 / 要個別確認
@@ -6960,6 +6967,35 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
 これにより次セッションの筆頭候補を更新する：
 ① [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（優先度：中・KULR(2019)
    単独、candidate tag誤選択の10-K原本突合が未着手）
+② [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・10-K原本での
+   個別確認が未着手、①と独立に着手可能）
+③ [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
+   見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
+   未実施）
+④ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・④の10-K確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]根本原因調査
+完了）:
+~~① [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]~~ ✅ 原因確定・
+   [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]へ統合しクローズ
+   （BACKLOG_DONE.md「2026-08-02（完了）」へ移動）。KULR(2019)の矛盾は
+   `XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
+   `LiabilitiesAndStockholdersEquity`（定義上`Assets`と一致する誤った
+   代替タグ）が原因と確定。予備スキャンで105銘柄中278件（AMZN/GOOGL/
+   MSFT/NVDA等含む）に及ぶ横断的な設計欠陥と判明したため、KULR単独対応
+   ではなく新規タスクへ統合。
+これにより次セッションの筆頭候補を更新する（優先度順）：
+① [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]（優先度：高・新規。
+   278件（銘柄年度）・AMZN/GOOGL/MSFT/NVDA等の大型株を含む候補タグ設計
+   欠陥。対応方針（案A/案B）の設計調査・全母集団シミュレーションが未着手）
 ② [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・10-K原本での
    個別確認が未着手、①と独立に着手可能）
 ③ [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
