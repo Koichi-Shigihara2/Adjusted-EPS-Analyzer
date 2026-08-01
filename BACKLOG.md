@@ -7919,6 +7919,35 @@ UNCHECKED-1]]として新規登録（優先度：中〜高）。
    クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
    将来のcommon/sec_data統合フェーズ1到達時に検討）
 
+追記（2026-08-02 セッション終了処理、優先度順に並び順を最終整理）:
+本セッション（RCAT-FCF-5YR-AVG-ACTUAL-3YR-1パターンB実装前シミュレーション
+→RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1根本原因調査、いずれも
+読み取り専用の調査・BACKLOG登録のみ、実装なし）の結果を反映し、
+**次セッションでの着手順序（2026-08-02時点、最終版）**を確定する:
+① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+② [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は①側で行う）
+③ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+④ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑤ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑥ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑦ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑧ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑨ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑩ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑪ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
 ---
 
 ## セッション終了時ブラッシュアップ（2026-07-19）
