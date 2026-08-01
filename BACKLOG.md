@@ -7647,6 +7647,40 @@ check.py`への新規WARN追加のみ）を採用方針として確定、実装�
    クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理
    自体は将来のcommon/sec_data統合フェーズ1到達時に検討）
 
+追記（2026-08-02 セッション終了処理、優先度順に並び順を最終整理）:
+**2026-08-01〜02セッション全体のサマリ（gross_profit調査発端から2日間に
+わたり波及した一連のデータ品質是正作業）**: [[PERIOD-LENGTH-VALIDATION-
+GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]・[[SPAC-STUB-PERIOD-
+FIELD-SPLIT-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1/2・[[TOTAL-
+LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・[[GROSSPROFIT-COGS-ANNUAL-
+DEFINITION-GAP-MO-PM-SCCO-1]]（一部）・[[RCAT-TRIPLE-FISCAL-CHANGE-
+SUSPECTED-1]]・[[SPAC-STUB-PERIOD-VERIFICATION-1]]・[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]・[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]・
+[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（[[OPERATING-CASH-FLOW-
+CONTINUING-DISCONTINUED-GAP-1]]へ統合）・[[PL-FIELD-CROSS-ACCN-PERIOD-
+MISMATCH-1]]案bが完了。次回最優先タスクは
+[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（現在進行形のDCF計算実害）。
+**次セッションでの着手順序（2026-08-02時点、最終版）**:
+① [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：高。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分
+   〈パターンB〉解決が前提）
+② [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCATパターンBの対応がRCAT-FCF-5YR-AVG-ACTUAL-3YR-1
+   の前提）
+③ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+④ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑤ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑥ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑦ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑧ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑨ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
+   将来のcommon/sec_data統合フェーズ1到達時に検討）
+
 ---
 
 ## セッション終了時ブラッシュアップ（2026-07-19）
