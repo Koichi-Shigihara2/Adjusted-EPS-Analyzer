@@ -4,6 +4,79 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [FETCHER-10KT-10QT-FORM-EXCLUSION-1] fetcher.pyのrelevant_formsに10-KT・10-QT（決算期変更移行期報告書）が含まれず、is_own_data判定が恒常的にFalseになり本人データが採用されない
+**状態:** 案③（WARN検知のみ）実装完了でクローズ。案①（relevant_forms追加+
+バケツ再設計）は見送り、明確なトリガー条件（RCATが再度決算期を変更する、
+または他銘柄で同型の実害が確認される）発生時に再検討
+**優先度:** 高（登録時）→中（実害確認調査の結果、現在進行形の実害は解消済み
+と判明）
+**分類:** バグ / 確定・低リスクとして検知のみで運用
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]調査から派生（チャット記録）
+
+#### 内容（根本原因）
+`common/sec_data/fetcher.py::_fetch_submissions_for_cik()`の
+`relevant_forms`（`{"10-K", "10-K/A", "10-Q", "10-Q/A"}`）に、決算期変更に
+伴う移行期報告書`10-KT`・`10-QT`が含まれていない。このため該当accnが
+`accn_to_reportdate`マッピングに登録されず、`is_own_data`判定が恒常的に
+Falseとなり、10-KTで正式報告済みの本人データが年次バケツ争いで敗れ、
+採用されない。確認済みの実害: RCATの決算期変更移行期スタブ
+（2024-05-01〜2024-12-31、8ヶ月間、10-KT accn `0001641172-25-001892`で
+正式報告済み）が`annual_2024.json`/`annual_2025.json`のいずれにも含まれず
+完全に欠落。
+
+**実害確認結果**: TANUKI VALUATIONは無傷（RCATの成長率は`segment_
+weighted`の手動設定が優先採用され`annual_YYYY.json`の年度系列を参照しない
+ため）。STONKS SILOは一時的な歪んだYoYシグナル（`change_pct=-152.2%`）を
+生成していたが、データ蓄積により現在は自然解消済み。105銘柄全体で10-KT/
+10-QT提出実績があるのは現時点でRCATのみと確認済み。
+
+#### 対応方針確定調査（2026-08-02、チャット記録）
+**案1（relevant_forms追加+バケツ再設計）は見送り確定**。真のコストは当初
+想定より高いと判明: RCAT own-data 10-K（旧4月決算、accn
+`0001554795-24-000195`、end=2024-04-30）と10-KT（transition、accn
+`0001641172-25-001892`、end=2024-12-31）は、SEC自身が両方ともfy=2024として
+タグ付けしているため、単純な置換では済まない正真正銘のバケツキー衝突が
+発生する。a) 置換案は旧12ヶ月データの再配置先が既存の`annual_2023.json`
+（別期間を占有済み）と衝突するため存在しない、b) 別ファイル保持案は
+ファイル命名規則の新設に加え複数消費者（TANUKI VALUATION・STONKS SILO・
+`report_consistency_check.py`）の改修が必要で相応の規模になる。
+
+era別クラスタ検出で複数FYEを持つ5銘柄（ELF/NOW/RCAT/AVGO/MSCI）中、10-KT
+提出実績があるのはRCATのみと確認済みで、現時点の一般化リスクは低い。
+
+副産物としてSTONKS SILOのfpラベル脆弱性（fetcher.py側とは完全に独立、
+`quarterly_normalized.json`という別パイプラインを参照するため）を
+[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]として独立登録した。副産物
+として発見したRCATの`operating_cash_flow`完全欠落（別原因）を
+[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]として独立登録済み。
+
+#### 実装内容（案③、2026-08-02）
+`report_consistency_check.py`にCHECK-28（WARN-28）を新規追加
+（コード`1fd44fc0a`）。company_facts.json上のform=10-KT/10-QTのaccnの
+うち、`accn_to_reportdate`（submissions.json由来）に未登録のものを検知
+する（検知のみ、自動修正なし）。既存WARN-24（`fye_boundary_collision_log`）
+との役割分担をコード内コメントに明記: WARN-24＝症状（バケツ競合）検知、
+WARN-28＝根本原因（10-KT/10-QT自体の除外）の直接検知。
+
+#### 検証結果
+1. 全105銘柄で`report_consistency_check.py`実行、RCATでWARN-28が2件発火
+   （10-KT accn `0001641172-25-001892`・**新規発見**の10-QT accn
+   `0001554795-19-000269`〈2019年、RCAT第1回目の決算期変更に伴う移行期
+   四半期報告書、当初想定していなかったが正しく検知された〉）
+2. RCAT以外の104銘柄でWARN-28の誤検知なしを確認
+3. 既存WARN数68件→70件（+2、RCATの新規2件）に変化。NG=0を維持
+4. pytest 519 passed/2 known failed（既知のMSFT/NVDA、[[TEST-STALE-IV-1]]、
+   新規追加6件のCHECK-28ユニットテストを含む）
+5. `annual_YYYY.json`等のデータファイルは一切変更なし（検知のみ、
+   `git status`で確認）
+
+#### 対応方針
+完了。案③実装済み。案1は上記トリガー条件が発生するまで着手しない。
+
+---
+
 ### ✅ [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] gross_profitとRevenue-cost_of_revenue逆算値の乖離が14銘柄で残存（MO/PM/SCCOはgenuine定義差と確定・クローズ、残り11銘柄は別エントリへ引き継ぎ）
 **状態:** MO・PM・SCCOの3銘柄は「①genuine定義差、確定・対応不要」で解消。
 残りはBACKLOG.mdの[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
