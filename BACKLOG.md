@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]パターンB実装前
+シミュレーション完了（チャット記録、読み取り・オフライン試算のみ）。RCATの
+本番FCF計算がreader.py::get_fcf_5yr_avg()（年次ファイルベース）を使わず、
+data_fetcher.py::_select_fcf_source()がTTM系列
+（common/sec_data/ttm/RCAT_ttm_series.json）を優先採用する設計と判明。
+TTM系列は四半期10-Qの集計であり年次10-Kの継続/非継続事業分割タグ問題の
+影響を受けず既に完全な値を持つため、年次パーサー側のパターンB実装では
+RCATのfcf_base_used・DCF・tanuki_score・Classificationは一切変化しない
+（ΔIV=$0と試算確認）ことが判明し、優先度を「高→低」に訂正。副次的に
+発見したTTM系列生成ロジック側の継続/非継続タグ扱い未検証の問題を
+[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]として新規登録
+（優先度：高）。「次セッションでの着手順序」欄を更新。訂正・登録のみ、
+実装は未着手）。
+
 最終更新: 2026-08-02（[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-
 GAP-1]]TANUKI VALUATION実害確認調査完了（チャット記録、読み取りのみ）。
 25銘柄中24銘柄（AAPL/MSFT/TSLA/XOM/CAT/ABBV等を含む）は該当年度がすべて
@@ -1077,9 +1091,10 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ## 優先度：高（早急に対応）
 
 ### [RCAT-FCF-5YR-AVG-ACTUAL-3YR-1] RCATのget_fcf_5yr_avg()が実質2021-2023年の3年平均になっておりDCFのFCFベース値計算に構造的な実害がある
-**優先度:** 高
+**優先度:** 高（登録時）→低（実装前シミュレーションの結果、実害なしと判明）
 **分類:** バグ / 確定・現在進行形の実害・DCF計算に直結
 **登録日:** 2026-08-02
+**訂正日:** 2026-08-02（パターンB実装前シミュレーション結果を反映）
 **発見:** [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]実害確認
 調査（チャット記録）
 
@@ -1116,10 +1131,67 @@ B、継続+非継続の合算、営業活動限定タグでのガード付き）
 ただし、この見込みの検証と、充足後の最終IV・Classificationへの影響
 定量化が実装前に必要。
 
+#### 実害訂正（2026-08-02、パターンB実装前シミュレーション結果・チャット記録）
+上記「reader.py側の追加修正は不要」という見込みの検証を実施した結果、
+そもそも**RCATの本番FCF計算がreader.py::get_fcf_5yr_avg()（年次ファイル
+ベース）を一切使用していない**ことが判明した。`data_fetcher.py::
+_select_fcf_source()`が、四半期10-Qの4四半期ロール集計である
+TTM系列（`common/sec_data/ttm/RCAT_ttm_series.json`）を常に優先採用する
+設計であり、この系列は年次10-Kの継続/非継続事業分割タグ問題の影響を
+受けず、FY2024・FY2025相当の期間も含め既に完全な非NULL値を持っている。
+実測した`fcf_5yr_avg=-40,185,008.5`・`fcf_2yr_avg=-50,540,837.0`は
+`latest.json`の実績値と完全一致し、この経路が実際に使われていることを
+確認済み。
+
+したがって、[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]の
+RCAT分（パターンB）を年次パーサー側のみに実装しても、RCATの
+`fcf_base_used`（$16,564,815.33）・DCF・tanuki_score・Classificationは
+一切変化しない（ΔIV=$0と試算確認済み）。年次パーサー修正の実益は
+「年次JSONのデータ品質改善」（他消費者・将来TTM系列欠損時のフォール
+バック精度向上）に限定される。TTM系列生成ロジック側に同型の継続/
+非継続タグ問題があるかは未調査であり、これは
+[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]として別途登録した。
+
 #### 着手条件
-[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分（パターン
-B、継続+非継続合算）の解決が前提。優先度は高（現在進行形の実害、DCF
-計算への直結）だが、実装は前提タスク解決後になる。
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+同時に、副次的効果として解消される（単独での緊急対応は不要）。
+
+---
+
+### [RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1] RCATの本番FCF計算が使うTTM系列の継続/非継続事業タグ扱いが未検証
+**優先度:** 高
+**分類:** 調査要 / 確認済み実害箇所の可能性
+**登録日:** 2026-08-02
+**発見:** [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]実装前シミュレーション
+（チャット記録）
+
+#### 内容
+RCATの本番FCF計算はTTM系列（`RCAT_ttm_series.json`、四半期10-Qの4四半期
+ロール集計）経由であることが確認された。年次10-Kで発生している継続/
+非継続事業の分割タグ問題（[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-
+GAP-1]]）が、TTM系列生成ロジック（四半期タグ選択）側にも同型で存在する
+かは未調査。現時点でTTM系列の該当四半期は「値の有無」のみ確認済み
+（非NULL）で、その値自体が継続事業のみを反映しているのか、継続+非継続の
+正しい合算値なのかは未検証。
+
+#### 影響
+RCATの実際のIV・DCF・Classificationに直結する可能性がある（年次パーサー
+側とは異なり、こちらは本番計算で実際に使用されている経路のため）。もし
+TTM系列側の値が継続事業のみ（非継続事業分を含まない過小計上）であれば、
+現在のfcf_5yr_avg（-40,185,008.5）・fcf_2yr_avg（-50,540,837.0）自体が
+誤りであり、[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]で懸念していたのとは別の
+形で実害が現在進行形で存在する可能性がある。
+
+#### 対応方針
+未定。まずTTM系列生成ロジック（四半期タグ選択、`common/sec_data/ttm_
+calculator.py`等）が、RCATの継続/非継続事業分割四半期タグをどう扱って
+いるかを調査し、正しく合算できているか、それとも継続事業のみを拾って
+いるかを確認する。
+
+#### 着手条件
+なし。優先度高（RCATの本番IV計算に直結する可能性があるため、
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]・
+[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]より優先して確認すべき）。
 
 ---
 
@@ -7678,6 +7750,43 @@ MISMATCH-1]]案bが完了。次回最優先タスクは
 ⑧ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑨ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
+   将来のcommon/sec_data統合フェーズ1到達時に検討）
+
+追記（2026-08-02 [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]パターンB実装前
+シミュレーション完了）:
+①の優先度を「高→低」に訂正。RCATの本番FCF計算がreader.py::
+get_fcf_5yr_avg()（年次ファイルベース）を使わず、data_fetcher.py::
+_select_fcf_source()がTTM系列（common/sec_data/ttm/RCAT_ttm_series.json）
+を優先採用する設計と判明。TTM系列は四半期10-Qの集計であり年次10-Kの
+継続/非継続事業分割タグ問題の影響を受けず既に完全な値を持つため、
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分（パターン
+B）を年次パーサー側のみに実装してもRCATのfcf_base_used・DCF・
+tanuki_score・Classificationは一切変化しない（ΔIV=$0と試算確認）。
+副次的に発見したTTM系列生成ロジック側の継続/非継続タグ扱い未検証の問題を
+[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]として新規登録
+（優先度：高。RCATの本番IV計算経路に直結するため、こちらを優先）。
+これにより次セッションでの着手順序を更新する:
+① [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：高・
+   新規。TTM系列生成ロジックの継続/非継続タグ扱いが未検証、RCATの本番
+   IV計算に直結する可能性）
+② [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+③ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+④ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：高→低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される。単独での緊急対応は不要）
+⑤ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑥ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑦ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑧ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑨ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑩ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
    将来のcommon/sec_data統合フェーズ1到達時に検討）
 
