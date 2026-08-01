@@ -4,6 +4,50 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1] RCATのannual_2024.json・annual_2025.jsonでoperating_cash_flowが完全欠落（継続/非継続事業タグ分割が原因の疑い）
+**状態:** 原因確定・[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]へ
+スコープ拡大・統合
+**優先度:** 中（登録時）
+**分類:** バグ / データ欠落
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]実害確認調査（チャット記録）
+
+#### 調査結果（根本原因調査、チャット記録）
+RCATの`annual_2024.json`・`annual_2025.json`で`cf.operating_cash_flow`が
+完全に欠落している原因を確認した。RCATのFY2023自社フィリングは標準タグ
+`NetCashProvidedByUsedInOperatingActivities`を使用していたが、FY2024
+フィリング（filed 2024-08-08）から`NetCashProvidedByUsedInOperatingActivities
+ContinuingOperations`（継続事業）＋`CashProvidedByUsedInOperatingActivities
+DiscontinuedOperations`（非継続事業、FY2024=-$875,227・FY2025=$0）の分割
+タグに切り替わっており、`XBRL_MAPPING["operating_cash_flow"]`の唯一の
+候補タグでは拾えなくなっていた。10-K原本相当のタグ構成確認で、事業
+セグメントの売却・清算（非継続事業）が実際に発生していることを
+`DisposalGroupIncludingDiscontinuedOperation...`系タグの併存で裏付けた。
+
+**重要な安全性の発見**: RCATの`CashProvidedByUsedInOperatingActivities
+DiscontinuedOperations`と`NetCashProvidedByUsedInDiscontinuedOperations`
+（範囲の広い非継続事業合計タグ）は同一期間で完全に同じ値を報告していたが、
+これは非継続事業の投資・財務活動によるキャッシュフローが両年度とも$0で
+あることによる偶然の一致と確認した。合算ロジックが範囲の広い方のタグを
+選ぶ設計だと、投資・財務活動を伴う非継続事業を持つ他銘柄で非営業
+キャッシュフローが混入する設計トラップになりうることを確認した。
+
+**105銘柄横断スキャンで想定を大幅に超える規模と判明**（25銘柄該当、
+AAPL/MSFT/TSLA/XOM/CAT/ABBV等の主力銘柄を含む。抜き取り確認全件で現在も
+`operating_cash_flow=None`と実測確認済み）。`operating_cash_flow`は
+TANUKI VALUATIONのDCF/FCF計算に直結するフィールドであり、
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]の`cost_of_revenue`（実害なしと
+確認済み）より実害の可能性が高いと判断し、
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]として規模の大きい
+横断課題へスコープ拡大・統合した（優先度：高）。
+
+#### 対応方針
+完了。RCAT単独での個別対応は不要と判断し、
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]へ統合。
+
+---
+
 ### ✅ [FETCHER-10KT-10QT-FORM-EXCLUSION-1] fetcher.pyのrelevant_formsに10-KT・10-QT（決算期変更移行期報告書）が含まれず、is_own_data判定が恒常的にFalseになり本人データが採用されない
 **状態:** 案③（WARN検知のみ）実装完了でクローズ。案①（relevant_forms追加+
 バケツ再設計）は見送り、明確なトリガー条件（RCATが再度決算期を変更する、

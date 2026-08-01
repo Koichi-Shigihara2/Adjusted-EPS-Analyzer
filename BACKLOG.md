@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]根本原因
+調査完了（チャット記録、読み取りのみ）。RCATのoperating_cash_flow欠落は
+標準タグ`NetCashProvidedByUsedInOperatingActivities`がFY2024フィリングから
+継続/非継続事業の分割タグに置き換わったことが原因と確定。105銘柄横断
+スキャンで25銘柄該当（AAPL/MSFT/TSLA/XOM/CAT/ABBV等の主力銘柄を含む）する
+候補タグ設計欠陥と判明し、`operating_cash_flow`はTANUKI VALUATIONのDCF/
+FCF計算に直結するため実害の可能性が高いと判断。「原因確定・スコープ拡大・
+統合」としてBACKLOG_DONE.mdへ移動し、
+[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]として新規登録
+（優先度：高）。「次セッションでの着手順序」欄を更新。登録のみ、実装は
+未着手）。
+
 最終更新: 2026-08-02（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]案③実装完了。
 `report_consistency_check.py`にCHECK-28（WARN-28）を新規追加（コード
 `1fd44fc0a`）し、company_facts.json上のform=10-KT/10-QTのaccnが
@@ -1052,6 +1064,53 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1] 標準OCFタグ不在時にContinuing/Discontinued分割タグを拾えずoperating_cash_flowが構造的に欠落する（25銘柄該当）
+**優先度:** 高
+**分類:** バグ / 確定・候補タグ設計欠陥・DCF計算に直結
+**登録日:** 2026-08-02
+**発見:** [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]根本原因調査から
+派生した横断スキャン（チャット記録）
+
+#### 内容
+標準タグ`NetCashProvidedByUsedInOperatingActivities`が存在せず、
+`ContinuingOperations`分割タグ（および一部で`DiscontinuedOperations`
+分割タグ）のみが存在する年度で、`operating_cash_flow`が構造的に欠落する。
+105銘柄スキャンで**25銘柄該当**（AAPL/ABBV/AVAV/BKNG/CAKE/CAT/CELH/CIX/
+CPRT/ELF/FICO/HEI/HON/LRCX/MRVL/MSFT/ONDS/PAYS/RCAT/RMBS/SCCO/SNPS/TER/
+TSLA/XOM）。抜き取り確認（ABBV/CAT/HON/MSFT/TSLA/XOM/AVAV/SCCO）**全件で
+現在も`operating_cash_flow=None`のまま**と実測確認済み。
+
+2つのサブパターン:
+- **パターンA（大多数）**: 非継続事業タグが一切存在せず、
+  `ContinuingOperations`タグがそのまま企業全体のOCF。候補タグリストへの
+  追加のみで解決可能（[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と
+  同型の低リスク）
+- **パターンB（少数、RCAT/HON/AVAV）**: 非継続事業タグが存在し真の合算が
+  必要な可能性。合算時は必ず「営業活動限定タグ」（`CashProvidedByUsedIn
+  OperatingActivitiesDiscontinuedOperations`、範囲の広い
+  `NetCashProvidedByUsedInDiscontinuedOperations`ではなく）を選択する
+  ガードが必須（RCATでは投資・財務活動の非継続事業CFが偶然$0のため実害
+  なしだったが、他銘柄では非営業CFの混入という設計トラップになりうる
+  ことを確認済み）
+
+#### 影響
+`operating_cash_flow`はTANUKI VALUATIONのDCF/FCF計算（`data_fetcher.py`・
+`reader.py::get_fcf_list()`）に直結するため、`cost_of_revenue`系の欠落
+（実害なしと確認済み）より実害の可能性が高い。AAPL/MSFT/TSLA/XOM等の
+主力銘柄を含む25銘柄への実際の計算経路への影響は未検証。
+
+#### 対応方針
+未定。まず25銘柄全体でTANUKI VALUATION計算経路（`fcf_list[:5]`直近5年窓・
+DCF・IV・Classification）への実害有無を確認することを優先する（RCAT単独の
+先行解決よりも、主力銘柄を含む規模の実害確認が急務のため）。実害確認後、
+パターンA（候補タグ追加）・パターンB（ガード付き合算）の実装設計・全母集団
+シミュレーションへ進む。
+
+#### 着手条件
+なし。優先度高（主力銘柄を含む規模、DCF計算への直結フィールド）。
+
+---
 
 ### [PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1] revenue/cost_of_revenue/gross_profitが独立にaccn・期間を選定するため異なる会計年度のデータが混在する
 **優先度:** 中〜高
@@ -2422,35 +2481,6 @@ LITE単独、9年間持続。gross_profit自体はown-dataの正しい値を維�
 
 #### 着手条件
 なし。優先度低〜中。
-
----
-
-### [RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1] RCATのannual_2024.json・annual_2025.jsonでoperating_cash_flowが完全欠落（継続/非継続事業タグ分割が原因の疑い）
-**優先度:** 中
-**分類:** バグ / データ欠落
-**登録日:** 2026-08-02
-**発見:** [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]実害確認調査（チャット記録）
-
-#### 内容
-RCATの`annual_2024.json`・`annual_2025.json`で`cf.operating_cash_flow`が
-完全に欠落している（連動して`free_cash_flow`もNone）。10-KT除外バグ
-（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]）とは別原因の可能性が高く、
-RCATの直近filingがOCFを「継続事業」「非継続事業」に分割タグ付けしており、
-`XBRL_MAPPING`の標準候補タグが合算値を拾えていない疑いがある。
-
-#### 影響
-現時点でRCATの`calculate_fcf_cagr()`はFCFが元々負値続き（2021-2023年、
-`recent_fcfs=[]`でNoneを返す設計）のため計算経路に到達せず、直接的な実害は
-未確認。ただし将来RCATのOCFが黒字転換した場合、この欠落が`fcf_list[:5]`・
-DCF計算に実害を及ぼすリスクがある。
-
-#### 対応方針
-未定。RCAT直近filingのXBRL継続/非継続事業タグ構成を個別調査し、
-`XBRL_MAPPING`への候補タグ追加（継続+非継続の合算、または適切な単一タグへの
-変更）を検討する。
-
-#### 着手条件
-なし。優先度中。
 
 ---
 
@@ -7464,6 +7494,38 @@ check.py`への新規WARN追加のみ）を採用方針として確定、実装�
 これにより次セッションの筆頭候補を更新する:
 ① [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（優先度：中・RCATの
    operating_cash_flow欠落、継続/非継続事業タグ分割が原因の疑い）
+② [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中・LITEのcost_of_revenue
+   がCOGS由来償却費タグを未合算、タグ拡張で解消可能）
+③ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]残存分（優先度：中〜高・案a
+   〈候補タグ拡張、AMD/KO/JNJ/MRVL等〉・案c〈2タグ合算、RMBS〉・案d
+   〈BSY個別対応〉、いずれもゲート条件込みの再設計が必要）
+④ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中・
+   _calc_yoy_change()への期間長妥当性チェック追加、緊急性なし）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・③の確認が概ね収束してから常設WARN項目化を検討）
+⑧ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低・
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理
+   自体は将来のcommon/sec_data統合フェーズ1到達時に検討）
+
+追記（2026-08-02 [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]根本原因調査
+完了）:
+~~① [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]~~ ✅ 原因確定・
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]へスコープ拡大・
+   統合しクローズ（BACKLOG_DONE.md「2026-08-02（完了）」へ移動）。RCATの
+   OCF欠落は標準タグ`NetCashProvidedByUsedInOperatingActivities`が
+   FY2024フィリングから継続/非継続事業の分割タグに置き換わったことが原因
+   と確定。105銘柄横断スキャンで**25銘柄該当**（AAPL/MSFT/TSLA/XOM/CAT/
+   ABBV等の主力銘柄を含む）する候補タグ設計欠陥と判明し、`operating_
+   cash_flow`はTANUKI VALUATIONのDCF/FCF計算に直結するため実害の可能性が
+   高いと判断、新規タスクへ統合（優先度：高）。
+これにより次セッションの筆頭候補を更新する:
+① [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：高・
+   新規。25銘柄該当、まずTANUKI VALUATION計算経路への実害有無の確認が
+   必要）
 ② [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中・LITEのcost_of_revenue
    がCOGS由来償却費タグを未合算、タグ拡張で解消可能）
 ③ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]残存分（優先度：中〜高・案a
