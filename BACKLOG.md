@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]内容確定
+（チャット記録、読み取りのみ）。残り6銘柄（AMD/BSY/KO/LRCX/ONDS/RMBS）を
+個別調査した結果、全6銘柄が②タグ選定バグと確定（①genuine定義差は0件）。
+確定9銘柄（AMD/BSY/CRM/JNJ/KO/LRCX/MRVL/ONDS/RMBS）の根本原因を4サブ
+パターン（(a)候補タグ完全欠落・(b)クロスaccn/期間不整合・(c)複数タグの
+合算漏れ・(d)同一filing内での類似タグ誤選択）に整理。net_income/
+operating_income等主要フィールドへの波及なしと確認し、当初想定した重い
+「同一期間強制」設計変更は不要と判明、軽量な個別候補タグ拡張（案a・c）
+優先の対応方針に更新。着手条件（6銘柄個別確認）を充足済みとして削除。
+登録・更新のみ、実装は未着手）。
+
 最終更新: 2026-08-02（セッション終了処理。「次セッションでの着手順序」欄を
 最終整理（①PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1 ②FETCHER-10KT-10QT-
 FORM-EXCLUSION-1 ③RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1 ④LITE-COGS-
@@ -1007,29 +1018,57 @@ flow-typeフィールドが、フィールドごとに独立してaccn・期間�
 「同一accn強制」と同種の思想が、PL flow-typeフィールド間・同一期間強制
 として応用できる可能性がある。
 
-確定した実害:
-- **CRM(2013)**: revenue/gross_profitは正しい比較列期間を採用、
-  cost_of_revenueのみ別会計年度（CRM自身のFY2014本人データ）を誤って
-  採用。真の同期間データでは乖離ゼロと確認済み
-- **JNJ(2017)・MRVL(2017)**: revenue/cost_of_revenue/gross_profitが
-  それぞれ異なる3つのaccn（異なる年度のfiling）から採用されていた、
-  CRMと同型
+確定した実害（2026-08-02、9銘柄・全件②タグ選定バグと確定。①genuine
+定義差は0件）:
+
+根本原因は単一メカニズムではなく、以下4つのサブパターンに整理できる:
+- **(a) 候補タグ完全欠落**: AMD(2016/2017)・KO(2017)。`CostOfGoodsSold`
+  タグが`cost_of_revenue`の候補リストに一切ない（[[TOTAL-LIABILITIES-
+  FALLBACK-TAG-DESIGN-FLAW-1]]と同型の「候補タグ設計の不完全さ」）。own
+  filingの`CostOfGoodsSold`を使えば乖離ゼロ（KOのみ比較列との差が僅少
+  〈$1M・0.003%〉で実質無害）
+- **(b) クロスaccn/期間不整合**: LRCX(2010)・ONDS(2017)・CRM(2013)・
+  JNJ(2017)・MRVL(2017)。正しい候補タグが正しいaccn内に存在するのに、
+  別accnの値が誤採用される。ONDSは規模が約100倍異なる異常な誤マッチング
+  だったが、本人データで乖離ゼロと確認
+- **(c) 複数タグの合算漏れ**: RMBS(2018/2019)。真のコストが2つの独立
+  タグ（`CostOfRevenue`・`CostOfGoodsAndServicesSold`）の合算値
+  （[[LITE-COGS-DA-TAG-UNMERGED-1]]と同型）。2018年は合算で乖離ゼロ、
+  2019年は$23.6M→$3.6Mへ85%削減（残差は追加のrestatementの可能性）
+- **(d) 同一filing内での類似タグ誤選択**: BSY(2019)。revenue側で複数の
+  類似タグ（`Revenues`・`RevenueFromContractWithCustomerExcludingAssessed
+  Tax`）から誤ったものが選ばれる新種パターン。正しいrevenueタグで乖離ゼロ
+
+**予備検討で判明した設計上の示唆**: net_income/operating_income/R&D/
+SGAへの波及は確認されず（AMD・LRCX・CRMで検証）、問題は`cost_of_revenue`
+（の一部、AMD/KO/LRCX）と`revenue`（BSYのみ）に限定的。「同一accn強制」
+（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]型）は、BS instant factと異なり
+PL/CF flow factは同一accn内に複数の(start,end)期間が混在するため実装が
+複雑化する（1つのaccnに四半期・累計・年次等、数十種類の期間区分が混在
+することをRCAT調査で確認済み）。
 
 #### 影響
-確定3銘柄に加え、[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
-の残り6銘柄（AMD/BSY/KO/LRCX/ONDS/RMBS、乖離が単発〜2年度の孤立パターン
-でCRM/JNJ/MRVLと類似）が同型バグの可能性が高いが、個別未確認。他フィールド
-（同種のPL/CF flow-typeフィールド全般）への一般化可能性も未確認。
+9銘柄（AMD/BSY/CRM/JNJ/KO/LRCX/MRVL/ONDS/RMBS）で確定。他フィールド
+（同種のPL/CF flow-typeフィールド全般）への一般化可能性は限定的と判明
+（net_income等主要フィールドへの波及なし）。
 
 #### 対応方針
-未定。まず6銘柄を個別に10-K原本突合し、①genuine定義差か②タグ選定バグ
-かを確定する。②が多数を占めることが確認できれば、フィールド間の同一期間
-強制という横断的な設計変更を検討する（実装前に全母集団シミュレーションが
-必要）。
+軽量な個別候補タグ拡張を優先する:
+- 案a（候補タグ追加）: `cost_of_revenue`の候補リストに`CostOfGoodsSold`
+  を追加（AMD/KO/LRCXの一部が解消見込み、[[TOTAL-LIABILITIES-FALLBACK-
+  TAG-DESIGN-FLAW-1]]と同程度の低リスク修正）
+- 案c（タグ合算）: `cost_of_revenue`に`CostOfGoodsAndServicesSold`型の
+  追加タグを合算する仕組み（RMBS、[[LITE-COGS-DA-TAG-UNMERGED-1]]と
+  共通の対応で解決できる可能性）
+- 案b（クロスaccn型、LRCX/ONDS/CRM/JNJ/MRVL）: 重い「同一期間強制」
+  メカニズムの新設ではなく、同一accn内に候補タグが存在する場合はそちらを
+  優先する軽量な検証を追加する方向で検討する
+- BSY型（revenue側の類似タグ誤選択）は個別に候補優先順位を見直す
+
+いずれも実装前に全母集団シミュレーションが必要。
 
 #### 着手条件
-なし。優先度中〜高（確定3銘柄に加え、システム全体で最も広く消費される
-revenueを含むフィールド間の一貫性問題のため）。
+なし（6銘柄個別確認は完了済み）。優先度中〜高。
 
 ---
 
