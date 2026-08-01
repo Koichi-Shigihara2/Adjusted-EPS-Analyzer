@@ -454,6 +454,13 @@ class SECParser:
         if _cross_filing_tags:
             self._apply_cross_filing_tags(us_gaap, extracted, _cross_filing_tags)
 
+        # [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b: revenueと
+        # cost_of_revenueが異なるaccnから独立採用されている年度についてのみ、
+        # revenueと同一accn・同一期間を持つcost_of_revenue候補タグが存在
+        # すればそちらを優先採用する（欠損穴埋め型のゲート条件、既に一致
+        # 済みのケースには一切触れない）
+        self._align_cost_of_revenue_to_revenue_period(extracted, us_gaap)
+
         # [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①: 標準タグから
         # gross_profitが取得できない年度のみ、revenue-cost_of_revenueで
         # 逆算した値を本番annual_YYYY.jsonへ書き戻す（欠損の穴埋めのみ、
@@ -768,6 +775,119 @@ class SECParser:
                 "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
                 "derived": True,
                 "source_is_own_data": ta_own and se_own,
+            }
+
+    @staticmethod
+    def _period_days(start: Optional[str], end: Optional[str]) -> Optional[int]:
+        """(start, end)の日数を返す。パース不能・欠損の場合はNone"""
+        if not start or not end:
+            return None
+        try:
+            return (datetime.strptime(end, "%Y-%m-%d") - datetime.strptime(start, "%Y-%m-%d")).days
+        except ValueError:
+            return None
+
+    def _find_revenue_end_date_by_value(self, us_gaap: dict, accn: str, val: Any) -> Optional[str]:
+        """指定accn内で、revenue候補タグ（XBRL_MAPPING["revenue"]）のうち
+        340-380日・値がvalと一致するエントリのend_dateを返す
+        （[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b: 既存のprovenance
+        にはend_dateが保持されていないため、値の一致から逆引きする）。
+        複数一致した場合は最初に見つかったものを返す（同一accn内の同一
+        値・同一期間のタグ重複は実質的に等価なため区別不要）。
+        """
+        for tag in self.XBRL_MAPPING["revenue"]:
+            for entry in us_gaap.get(tag, {}).get("units", {}).get("USD", []):
+                if entry.get("accn") != accn or entry.get("val") != val:
+                    continue
+                days = self._period_days(entry.get("start"), entry.get("end"))
+                if days is not None and 340 <= days <= 380:
+                    return entry.get("end")
+        return None
+
+    def _find_cost_of_revenue_in_accn(self, us_gaap: dict, accn: str,
+                                       end_date: str) -> Optional[tuple]:
+        """指定accn・指定end_date（340-380日の年次期間）に一致する
+        cost_of_revenue候補タグ（XBRL_MAPPING優先順位順）を検索する
+        （[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b）。
+
+        Returns: (tag, val, filed) のタプル、なければNone
+        """
+        for tag in self.XBRL_MAPPING["cost_of_revenue"]:
+            for entry in us_gaap.get(tag, {}).get("units", {}).get("USD", []):
+                if entry.get("accn") != accn or entry.get("end") != end_date:
+                    continue
+                days = self._period_days(entry.get("start"), entry.get("end"))
+                if days is None or not (340 <= days <= 380):
+                    continue
+                val = entry.get("val")
+                if val is None:
+                    continue
+                return (tag, val, entry.get("filed", ""))
+        return None
+
+    def _align_cost_of_revenue_to_revenue_period(self, extracted: Dict[str, Any], us_gaap: dict) -> None:
+        """
+        [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b: revenueと
+        cost_of_revenueが異なるaccnから独立に採用されている年度についてのみ、
+        revenueと同一accn・同一(start,end)期間を持つcost_of_revenue候補
+        タグが存在すればそちらを優先採用する。
+
+        適用条件（数学的シグネチャではなくprovenance不一致で機械的に検知、
+        銘柄名のハードコードなし）:
+          - revenue・cost_of_revenueが同一年度でpresent（Noneでない）
+          - 両者のprovenance.accnが異なる（既に一致しているケースは対象外、
+            [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同じ
+            「欠損穴埋めのみ・既存の正しい値は上書きしない」ゲート条件）
+          - revenueと同一accn・同一期間のcost_of_revenue候補が
+            company_facts.json上に実在する場合のみ置換する。存在しなければ
+            現状を維持する（新規のNone化・値の変更は一切行わない）
+
+        CRM(2013)型（同一accn・別期間の本人データ年度違い）は、accnが
+        「一致」しているため本ロジックの対象外となる既知の限界がある
+        （案b単独では解決しない、次回セッションでの期間一致精密化の対象）。
+        """
+        rev_field = extracted.get("revenue")
+        cogs_field = extracted.get("cost_of_revenue")
+        if rev_field is None or cogs_field is None:
+            return
+
+        rev_annual = rev_field.get("annual", {})
+        rev_prov = rev_field.get("_annual_provenance", {})
+        cogs_annual = cogs_field.setdefault("annual", {})
+        cogs_prov = cogs_field.setdefault("_annual_provenance", {})
+
+        for year, cogs_val in list(cogs_annual.items()):
+            rev_val = rev_annual.get(year)
+            if rev_val is None or cogs_val is None:
+                continue
+            rev_p = rev_prov.get(year)
+            cogs_p = cogs_prov.get(year)
+            if not rev_p or not cogs_p:
+                continue
+            rev_accn = rev_p.get("accn")
+            cogs_accn = cogs_p.get("accn")
+            if not rev_accn or rev_accn == cogs_accn:
+                continue  # 既に一致（ゲート条件、対象外）
+
+            rev_end = self._find_revenue_end_date_by_value(us_gaap, rev_accn, rev_val)
+            if rev_end is None:
+                continue
+
+            aligned = self._find_cost_of_revenue_in_accn(us_gaap, rev_accn, rev_end)
+            if aligned is None:
+                continue  # revenueと同一accn・同一期間の候補が存在しない、現状維持
+
+            _, aligned_val, aligned_filed = aligned
+            if aligned_val == cogs_val:
+                continue  # 値が変わらないなら何もしない（無用な書き換え回避）
+
+            cogs_annual[year] = aligned_val
+            cogs_prov[year] = {
+                "accn": rev_accn,
+                "filed": aligned_filed,
+                "is_own_data": rev_p.get("is_own_data", False),
+                "fy_tag": cogs_p.get("fy_tag"),
+                "accn_aligned": True,
             }
 
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
