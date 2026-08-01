@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]根本原因
+調査完了（チャット記録、読み取りのみ）。3段階目の決算期変更は存在せず、
+直近10-Kの12月/4月両クラスタ同時出現はSEC開示規則（Regulation S-X
+Article 3-06等）による比較列表示の正常な挙動、era別anchor不一致も対称
+探索設計により無害と確認。「解消（実害なし、当初の懸念は誤りだったと
+確認）」としてBACKLOG_DONE.mdへ移動。調査中に発見した別種の実害
+（RCATの決算期変更移行期スタブ8ヶ月分〈2024-05-01〜2024-12-31〉が
+annual_YYYY.jsonから完全欠落。根本原因はfetcher.pyのrelevant_formsに
+10-KT・10-QTが含まれずis_own_data判定が恒常的にFalseになるticker非依存の
+設計欠落）を[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]として新規登録
+（優先度：高）。「次セッションでの着手順序」欄を更新。クローズ・新規登録
+のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]
 実装完了。`SECParser._backfill_total_liabilities_via_identity()`を新規
 追加し、貸借対照表恒等式逆算（total_assets − stockholders_equity）で
@@ -926,6 +939,51 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [FETCHER-10KT-10QT-FORM-EXCLUSION-1] fetcher.pyのrelevant_formsに10-KT・10-QT（決算期変更移行期報告書）が含まれず、is_own_data判定が恒常的にFalseになり本人データが採用されない
+**優先度:** 高
+**分類:** バグ / 確定・現在進行形の実害
+**登録日:** 2026-08-02
+**発見:** [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]調査から派生（チャット記録）
+
+#### 内容
+`common/sec_data/fetcher.py::_fetch_submissions_for_cik()`の
+`relevant_forms`（`{"10-K", "10-K/A", "10-Q", "10-Q/A"}`）に、決算期変更に
+伴う移行期報告書`10-KT`・`10-QT`が含まれていない。このため該当accnが
+`accn_to_reportdate`マッピングに登録されず、`is_own_data`判定が恒常的に
+Falseとなり、10-KTで正式報告済みの本人データが年次バケツ争いで敗れ、
+採用されない。
+
+確認済みの実害: RCATの決算期変更移行期スタブ（2024-05-01〜2024-12-31、
+8ヶ月間、10-KT accn `0001641172-25-001892`で正式報告済み）が、
+`annual_2024.json`（旧4月決算12ヶ月分を格納）にも`annual_2025.json`
+（新12月決算12ヶ月分を格納）にも一切含まれず、完全に欠落している。
+
+#### 影響
+105銘柄全体で10-KT/10-QT提出実績があるのは現時点でRCATのみ（機械的
+スキャン済み）だが、原因はticker非依存のfetcher.py設計欠落であり、
+将来決算期を変更する他銘柄でも同型の欠落が再現するリスクがある。
+RCATについては、TANUKI VALUATIONのYoY成長率計算等で旧4月期→新12月期の
+比較（実質20ヶ月差）が12ヶ月差と誤認されるリスクが指摘されているが、
+実際の計算経路への影響は未検証。
+
+#### 対応方針
+未定。3案を検討する:
+- 案1（推奨・根本修正）: `relevant_forms`に`"10-KT"`・`"10-QT"`を追加。
+  ただし現状の「fyタグ単位バケツ」設計は同一fyタグに競合する2つの
+  本人データ期間（12ヶ月/8ヶ月）を同時に扱えないため、
+  `annual_2024.json`の置き換えか両保持かの設計判断が別途必要
+- 案2: 現状維持。影響範囲・実害の実データ確認（TANUKI VALUATION計算
+  経路への影響）が未検証のため、まずそちらを先に確認すべきという考え方
+- 案3（軽量）: `report_consistency_check.py`に「10-KT/10-QT提出銘柄で
+  `accn_to_reportdate`に未登録のaccnがある」ことを検知するWARNのみ追加し、
+  実装は見送る
+
+#### 着手条件
+なし。優先度高（現在進行形の実害、8ヶ月分のデータ完全欠落）。ただし
+対応方針確定には、まずTANUKI VALUATION計算経路への実害有無の確認が必要。
+
+---
 
 ### [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた
 **優先度:** 高
@@ -5475,35 +5533,6 @@ SGA（selling_general_and_administrative）・SM（selling_and_marketing）
 
 ---
 
-### [RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1] RCATのdetect_fiscal_anchor_date()で直近10-Kが12月/4月の2クラスタに同時投票、3段階目の決算期変更が進行中の可能性
-**優先度:** 中
-**分類:** データ品質 / 要個別確認
-**登録日:** 2026-08-01
-**発見:** [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②シミュレーション（チャット記録）
-
-#### 内容
-RCATの`detect_fiscal_anchor_date()`クラスタ分析で、直近の10-K（filed
-2026-03-19）が12月31日クラスタ・4月30日クラスタの両方に同時にエントリを
-提供していることが判明した。RCATは既に決算期を2回変更した企業として
-BACKLOG_DONE.mdに記載済みだが、今回の重複は3段階目の移行が進行中である
-可能性を示唆する。
-
-#### 影響
-未確定。現時点でbucketingへの実害はゼロと確認済みだが（`detect_fiscal_
-end_month()`=12月と`detect_fiscal_anchor_date()`=4月30日の不一致が、
-月のみ比較フォールバックにより偶然正しく機能している「事故的な正しさ」）、
-将来のデータ追加でこの均衡が崩れるリスクがある。
-
-#### 対応方針
-未定。RCATの直近決算期変更の実態を10-K原本で個別確認する。
-[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]案②実装により構造的な保険
-（era別anchor候補の追加）は入るが、根本的な決算期変更の実態把握とは別軸。
-
-#### 着手条件
-なし
-
----
-
 ### [ELF-ROE10YR-RECALC-PENDING-1] ELFのROE_avg(10yr)是正が未反映（TANUKI VALUATION側の定期更新待ち）
 **優先度:** 中
 **分類:** データ反映待ち / TANUKI VALUATION
@@ -6998,6 +7027,32 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
 これにより次セッションの筆頭候補を更新する（優先度順）：
 ① [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・10-K原本での
    個別確認が未着手、他項目と独立に着手可能）
+② [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
+   見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
+   未実施）
+③ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+④ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑤ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑥ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・③の10-K確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]根本原因調査完了）:
+~~① [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]~~ ✅ 解消（実害なし、
+   当初の懸念は誤りだったと確認）。3段階目の決算期変更は存在せず、直近
+   10-Kの2クラスタ同時出現はSEC開示規則（Regulation S-X Article 3-06等）
+   による比較列表示の正常な挙動と確認。era別anchor不一致も対称探索設計
+   により計算結果に無害と確認。BACKLOG_DONE.md「2026-08-02（完了）」へ
+   全文移動。調査から派生した実害（8ヶ月移行期データ完全欠落）は
+   [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]として独立登録（優先度：高）。
+これにより次セッションの筆頭候補を更新する（優先度順）：
+① [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]（優先度：高・新規。fetcher.pyの
+   relevant_formsに10-KT・10-QTが含まれず、RCATの8ヶ月移行期データが
+   annual_YYYY.jsonから完全欠落。対応方針確定にはまずTANUKI VALUATION
+   計算経路への実害有無の確認が必要）
 ② [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
    見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
    未実施）
