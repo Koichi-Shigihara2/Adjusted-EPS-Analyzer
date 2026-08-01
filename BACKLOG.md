@@ -1,5 +1,22 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-
+UNCHECKED-1]]根本原因調査完了（チャット記録、読み取りのみ）。当初の懸念
+（継続/非継続タグの取り扱いミス）ではなく、`ttm_calculator.py::
+calc_ttm_series()`が採用四半期の日付連続性を検証しない一般的な設計欠陥が
+根本原因と判明。RCATでは標準タグの空白（継続/非継続分割開示と決算期変更が
+重なった約11ヶ月間）により、2023年7〜10月・10月〜2024年1月の四半期が
+`ttm_end=2025-03-31`・`2026-03-31`の両方に重複使用され、現在の
+fcf_5yr_avg（-40,185,008.5）・fcf_2yr_avg（-50,540,837.0）が正しい値
+（試算：約-53,985,212・約-78,141,244）より34〜55%過小評価と確定。ただし
+IVへの影響は現時点でΔIV=$0（revenue floor＋EPSベース推定オーバーライド
+が吸収、将来業績改善時に顕在化しうる潜在リスクの留保付き）。他銘柄
+（HON/AVAV/TER）への現時点の実害なしと確認。優先度を「高→中」に訂正し、
+根本原因（ticker非依存の一般的欠陥）を
+[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]として新規登録（優先度：
+中〜高）。「次セッションでの着手順序」欄を更新。登録・更新のみ、実装は
+未着手）。
+
 最終更新: 2026-08-02（[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]パターンB実装前
 シミュレーション完了（チャット記録、読み取り・オフライン試算のみ）。RCATの
 本番FCF計算がreader.py::get_fcf_5yr_avg()（年次ファイルベース）を使わず、
@@ -1159,9 +1176,10 @@ RCAT分（パターンB）を年次パーサー側のみに実装しても、RCA
 ---
 
 ### [RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1] RCATの本番FCF計算が使うTTM系列の継続/非継続事業タグ扱いが未検証
-**優先度:** 高
+**優先度:** 高（登録時）→中（根本原因確定の結果、現時点のIV実害はゼロと判明）
 **分類:** 調査要 / 確認済み実害箇所の可能性
 **登録日:** 2026-08-02
+**確定日:** 2026-08-02（根本原因調査結果を反映）
 **発見:** [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]実装前シミュレーション
 （チャット記録）
 
@@ -1188,10 +1206,81 @@ calculator.py`等）が、RCATの継続/非継続事業分割四半期タグを�
 いるかを調査し、正しく合算できているか、それとも継続事業のみを拾って
 いるかを確認する。
 
+#### 根本原因確定結果（2026-08-02、チャット記録）
+当初の懸念（継続/非継続タグの取り扱いミス）ではなく、より一般的な設計
+欠陥が根本原因と判明した。`build_ticker_store('RCAT')`を実際に呼び出し
+検証:
+
+- `config/sec_concept_definitions.json`の`operating_cash_flow`候補タグは
+  標準タグ（`NetCashProvidedByUsedInOperatingActivities`）1つのみで、
+  年次パーサーと同型の候補タグ設計欠陥がLayer3（四半期・TTM経路）にも
+  存在する。
+- `ttm_calculator.py::calc_ttm_series()`が「アンカー日以前の直近4件を
+  採用」するロジック（`quarters_used=4`は件数のみをチェックし、実際に
+  日付が連続した12ヶ月分かは検証しない）を持つ、より根本的な設計欠陥を
+  発見した。
+- RCATでは、標準タグが継続/非継続分割開示と決算期変更（4月末→12月末、
+  8ヶ月スタブ期間）が重なった約11ヶ月間で完全な空白となり、この結果
+  2023年7〜10月・10月〜2024年1月の2四半期が、`ttm_end=2025-03-31`・
+  `2026-03-31`の両方のTTM算出に重複使用されるという実害を実機で確認・
+  再現した。
+- 定量化: 現在の`fcf_5yr_avg`（-40,185,008.5）・`fcf_2yr_avg`
+  （-50,540,837.0）は、正しい合算値の試算（約-53,985,212・
+  約-78,141,244）より34〜55%過小評価（悪化方向を過小に表示）されている、
+  現在進行形のデータ品質問題。
+- IVへの影響試算: 現時点はΔIV=$0（`fcf_5yr_avg`・`adj_net_income`が
+  両方赤字のため、revenue floor（$3,258,320固定）＋EPSベース推定
+  オーバーライドが吸収し、`fcf_base_used`=$16,564,815.33は修正前後で
+  完全に同一）。ただし将来RCATの業績が改善し`adj_net_income`が黒字転換
+  する、または`fcf_5yr_avg`が正転すればこのバグが直接IVに影響しうる、
+  という留保付き。
+- 他銘柄への一般化: HON・TERは直近四半期まで完全に連続（ギャップなし）、
+  AVAVは2022年の古い1件のみ（現在のTTMウィンドウ外）。現時点で同様の
+  実害なしと確認。
+
+根本原因（日付連続性チェックの欠如）自体はticker非依存の一般的設計欠陥
+のため、[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]として切り出して
+新規登録した。
+
 #### 着手条件
-なし。優先度高（RCATの本番IV計算に直結する可能性があるため、
-[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]・
-[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]より優先して確認すべき）。
+なし。優先度中（現時点のIV実害はゼロだが、データ品質問題は現在進行形かつ
+将来IVに影響しうる潜在リスクのため）。根本原因の恒久対応は
+[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（日付連続性チェック追加）
+側で行う。
+
+---
+
+### [TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1] calc_ttm_series()が採用四半期の日付連続性を検証せず古い四半期を重複使用しうる
+**優先度:** 中〜高
+**分類:** バグ / 確定・一般的な設計欠陥
+**登録日:** 2026-08-02
+**発見:** [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]根本原因
+調査（チャット記録）
+
+#### 内容
+`ttm_calculator.py::calc_ttm_series()`の「アンカー日以前の直近4件を採用」
+ロジック（`quarters_used=4`はいずれか4件を数えているだけで、実際に日付が
+連続した12ヶ月分かを検証しない）は、標準タグに一定期間の空白がある銘柄で、
+古い四半期を重複使用してしまう一般的な設計欠陥。RCATで実機確認済み
+（2023年7〜10月・10月〜2024年1月の四半期が2つの異なるTTM末日算出に
+重複使用）。
+
+#### 影響
+RCAT限定で確認済みだが、根本原因（日付連続性チェックの欠如）はticker
+非依存の設計欠陥であり、標準タグに空白期間を持つ他銘柄（決算期変更・
+M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄）でも将来
+再現しうる。105銘柄全体でのスキャンは未実施。
+
+#### 対応方針
+未定。`calc_ttm_series()`に、採用した4四半期の日付連続性チェック（各
+四半期のend-startが約90日、かつ隣接四半期間のギャップがない）を追加し、
+連続性が崩れている場合は不完全（`quarters_used<4`相当）として扱う設計を
+検討する。
+
+#### 着手条件
+なし。優先度中〜高（現在進行形のデータ品質問題、将来IVに影響しうる潜在
+リスク、ticker非依存の一般的欠陥のため）。まず105銘柄全体での該当有無の
+横断スキャンから着手するのが妥当。
 
 ---
 
@@ -7787,6 +7876,46 @@ tanuki_score・Classificationは一切変化しない（ΔIV=$0と試算確認�
 ⑨ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑩ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
+   将来のcommon/sec_data統合フェーズ1到達時に検討）
+
+追記（2026-08-02 [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]
+根本原因調査完了）:
+①の優先度を「高→中」に訂正。当初の懸念（継続/非継続タグの取り扱いミス）
+ではなく、`ttm_calculator.py::calc_ttm_series()`が採用四半期の日付連続性
+を検証しない一般的な設計欠陥が根本原因と判明。RCATでは標準タグの空白
+（継続/非継続分割開示と決算期変更が重なった約11ヶ月間）により、2023年
+7〜10月・10月〜2024年1月の四半期が`ttm_end=2025-03-31`・`2026-03-31`の
+両方に重複使用され、現在のfcf_5yr_avg（-40,185,008.5）・fcf_2yr_avg
+（-50,540,837.0）が正しい値（試算：約-53,985,212・約-78,141,244）より
+34〜55%過小評価と確定。IVへの影響は現時点でΔIV=$0（revenue floor＋EPS
+ベース推定オーバーライドが吸収。将来業績改善時に顕在化しうる潜在リスクの
+留保付き）。他銘柄（HON/AVAV/TER）への現時点の実害なしと確認。根本原因
+（ticker非依存の一般的欠陥）を[[TTM-CALC-QUARTER-CONTIGUITY-
+UNCHECKED-1]]として新規登録（優先度：中〜高）。
+これにより次セッションでの着手順序を更新する:
+① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高・新規。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   まず105銘柄横断スキャンから着手）
+② [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：
+   高→中。現時点のIV実害はゼロ、恒久対応は①側で行う）
+④ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑤ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：高→低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される。単独での緊急対応は不要）
+⑥ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑦ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑧ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑨ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑩ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑪ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理は
    将来のcommon/sec_data統合フェーズ1到達時に検討）
 
