@@ -1,6 +1,21 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-02（セッション後半。`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`
+段階2〈formerNames区間一致によるSPAC合併疑いの機械的検知〉が完了し、
+同エントリはBACKLOG_DONE.mdへ全文移動（段階1・段階2とも完了）。副産物
+として新規登録した`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`
+〈KULR(2019)単独〉は、根本原因調査（読み取りのみ）で
+`XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
+`LiabilitiesAndStockholdersEquity`〈定義上`total_assets`と数学的に一致する
+誤った代替タグ〉が原因と確定。予備スキャンで105銘柄中278件（銘柄年度、
+AMZN・GOOGL・MSFT・NVDA等の大型株を含む）に及ぶ横断的な候補タグ設計欠陥と
+判明したため、KULR単独対応は不要と判断してクローズし、規模の大きい横断課題
+`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`〈優先度：高、対応方針
+未定・実装未着手〉として新規登録・統合した。downstream影響調査により
+Net_Debt/Total_Debt算出への直接汚染はないことを確認済み（診断WARN
+メッセージでの消費のみ）。詳細はBACKLOG.md/BACKLOG_DONE.md該当項目参照）
+
 更新日: 2026-08-02（2026-08-01〜02セッションで`common/sec_data/`統合
 フェーズ1の一次データ抽出品質に関わる残課題6件が解消。①`[[PERIOD-
 LENGTH-VALIDATION-GAP-1]]`〈parser.pyのFLOW型フィールド抽出に期間長検証
@@ -58,7 +73,7 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 
 | コンポーネント | 状態（未着手/構築中/完成） | 備考 |
 |---|---|---|
-| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。**2026-08-01〜02、一次データ抽出品質の残課題6件が完了**（`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`、詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照）。残課題: `[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2〈SPAC合併疑いの機械的検知、submissions.jsonへのformerNames取得拡張が前提〉・`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)個別〉・`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`〈14銘柄〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`等、`BACKLOG.md`該当項目を参照 |
+| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。**2026-08-01〜02、一次データ抽出品質の残課題6件が完了**（`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`、詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照）。**セッション後半、`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2〈formerNames区間一致によるSPAC合併疑いの機械的検知〉も完了**し同エントリは段階1・段階2とも完了としてBACKLOG_DONE.mdへ全文移動済み。副産物`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)個別〉は根本原因調査でXBRL_MAPPING候補タグ設計欠陥と確定・105銘柄中278件へ及ぶ横断課題と判明したためクローズし`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`〈優先度：高、278件・AMZN/GOOGL/MSFT/NVDA等大型株含む〉へ統合。残課題: `[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`〈優先度：高、対応方針〈案A/案B〉未定〉・`[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`・`[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]`・`[[SPAC-STUB-PERIOD-VERIFICATION-1]]`・`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`〈14銘柄〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`・`[[ELF-ROE10YR-RECALC-PENDING-1]]`・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`等、`BACKLOG.md`該当項目を参照 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
