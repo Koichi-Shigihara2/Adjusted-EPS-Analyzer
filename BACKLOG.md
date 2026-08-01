@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（セッション終了処理。「次セッションでの着手順序」欄を
+最終整理（①PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1 ②FETCHER-10KT-10QT-
+FORM-EXCLUSION-1 ③RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1 ④LITE-COGS-
+DA-TAG-UNMERGED-1 ⑤HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1
+⑥ELF-ROE10YR-RECALC-PENDING-1 ⑦REPORT-CONSISTENCY-GROSSPROFIT-COGS-
+CHECK-MISSING-1 ⑧STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1〈クローズ
+済み、コード整理のみ将来検討〉の8件）。2026-08-01〜02セッション全体
+（gross_profit調査発端の一連の作業）の完了・クローズ・新規登録サマリを
+記録。BACKLOG整合性チェック実施、クロスリファレンス双方向・重複なしを
+確認。クローズ・更新のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-
 SCCO-1]]個別調査完了（チャット記録、読み取りのみ）。MO・PM・SCCOの3銘柄
 を「①genuine定義差、確定・対応不要」としてクローズしBACKLOG_DONE.mdへ
@@ -7226,6 +7237,42 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
    定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
 ⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中・①の6銘柄確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 セッション終了処理、次セッションでの着手順序を最終整理）:
+**2026-08-01〜02セッション全体のサマリ**: gross_profit調査（[[LAYER3-
+GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]）を発端に、[[PERIOD-LENGTH-
+VALIDATION-GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]・[[SPAC-
+SHELL-BS-ENTITY-MIXING-1]]段階1/2・[[TOTAL-LIABILITIES-FALLBACK-TAG-
+DESIGN-FLAW-1]]・[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
+（一部）・[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]・[[SPAC-STUB-PERIOD-
+VERIFICATION-1]]・[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]の
+完了・クローズが連鎖的に波及した。新規登録は
+[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（後に統合クローズ）・
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・[[FETCHER-10KT-10QT-
+FORM-EXCLUSION-1]]・[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]・
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・[[LITE-COGS-DA-TAG-
+UNMERGED-1]]。詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照。
+
+**次セッションでの着手順序（2026-08-02時点、最終版）**:
+① [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高・CRM/JNJ/
+   MRVLで確定、残り6銘柄〈AMD/BSY/KO/LRCX/ONDS/RMBS〉の個別確認→横断的
+   設計変更の検討へ）
+② [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]（優先度：中・現在進行形の実害は
+   解消済み、将来同型の決算期変更を行う他銘柄が現れた場合の再発リスクとして
+   監視対象）
+③ [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（優先度：中・RCATの
+   operating_cash_flow欠落、継続/非継続事業タグ分割が原因の疑い）
+④ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中・LITEのcost_of_revenue
+   がCOGS由来償却費タグを未合算、タグ拡張で解消可能）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・①の6銘柄確認が概ね収束してから常設WARN項目化を検討）
+⑧ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低・
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理
+   自体は将来のcommon/sec_data統合フェーズ1到達時に検討）
 
 ---
 
