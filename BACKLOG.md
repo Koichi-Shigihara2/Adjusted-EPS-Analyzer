@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①
+（本番書き戻し）実装完了・BACKLOG_DONE.mdへ移動。`SECParser._backfill_
+gross_profit_from_revenue_cogs()`を新規追加し、標準タグから取得できない
+gross_profitをrevenue-cost_of_revenue逆算値で埋め、`pl_provenance.
+gross_profit.derived=True`を付与（コード`dc0507c27`・データ`65ddd0d6b`）。
+Case A対象34銘柄342件で完全一致を確認、Case B残存49件・他71銘柄は無変化。
+STONKS SILO fetcher.pyの重複自己修復ロジック（[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]）はSTONKS SILO対象25銘柄全体で発火条件が
+0件になり実質デッドコード化したことを確認（同エントリのクローズ判断材料）。
+TANUKI VALUATIONはannual_YYYY.jsonのgross_profitを一切参照しないため
+IV・Classificationへの影響はゼロと確定。②（突合検算）は[[GROSSPROFIT-
+COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]へ引き継ぎ済み。pushは保留、
+コミットのみ）。
+
 最終更新: 2026-08-02（[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]新規登録
 （優先度：低。HON(2009)のgross_profit乖離が[[PERIOD-LENGTH-VALIDATION-
 GAP-1]]是正後も残存、他8銘柄は全解消したのに対し既知パターンと異なる原因の
@@ -5396,38 +5410,6 @@ SGA（selling_general_and_administrative）・SM（selling_and_marketing）
 
 ---
 
-### [LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1] GrossProfitバックフィルが本番データパス(annual_YYYY.json)に到達しない構造的欠落
-**優先度:** 中〜高
-**分類:** データ品質 / アーキテクチャ欠陥
-**登録日:** 2026-07-29
-**発見:** cost_of_revenue/EPS投資調査（チャット記録）
-
-#### 内容
-normalizer.py::_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()は
-中間パイプライン(ttm/{ticker}_ttm_series.json・store_v2)にのみ作用し、TANUKI VALUATION・
-STONKS SILOが実際に読むcommon/sec_data/data/{TICKER}/annual_YYYY.jsonには一切書き戻され
-ない。加えてこのバックフィルは書き込み専用(一方向)であり、gross_profitが既に存在する
-期間ではcost_of_revenueとの突合・検算は一切行われない。
-
-#### 影響
-cost_of_revenueは本番データパス上でSTONKS SILO以外どこからも参照・検算されない
-実質的な死角フィールドになっている。CAKE実例ではFY2008-2021の19年間、cost_of_revenue
-実額がありながらgross_profitは一貫してNoneだった。
-
-#### 対応方針
-未定。バックフィル結果を本番annual_YYYY.jsonに書き戻すか、既存gross_profit
-との突合検算ロジックを追加するかの判断が必要。
-
-#### 着手条件
-~~[[PERIOD-LENGTH-VALIDATION-GAP-1]]の解消が前提。gross_profit抽出値自体が
-壊れている状態で本番書き戻し方針を決めても無意味なため（2026-07-31追記）。~~
-→ [[PERIOD-LENGTH-VALIDATION-GAP-1]]は2026-07-31完了（BACKLOG_DONE.md参照）。
-着手条件は充足された。ただし本タスク自体の対応方針決定（①本番書き戻し／
-②突合検算ロジック追加）・実装は別タスクとして改めて依頼を受けてから着手する
-（2026-07-31追記）。
-
----
-
 ### [RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1] RCATのdetect_fiscal_anchor_date()で直近10-Kが12月/4月の2クラスタに同時投票、3段階目の決算期変更が進行中の可能性
 **優先度:** 中
 **分類:** データ品質 / 要個別確認
@@ -7023,6 +7005,36 @@ COGS-CHECK-MISSING-1]]は①②の対応確定後（着手条件未達）。
 ⑥ [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]（本体、着手条件は
    充足済み）の対応方針（①本番書き戻し／②突合検算ロジック追加）決定は、
    ⑤の10-K確認結果を踏まえてから着手するのが望ましい。
+
+追記（2026-08-02 [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①本番書き戻し
+実装完了）:
+~~⑥ [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]~~ ✅ 2026-08-02完了
+（①本番書き戻しを実装。コード`dc0507c27`・データ`65ddd0d6b`。標準タグから
+gross_profitが取得できない年度のみrevenue-cost_of_revenue逆算値で埋め、
+`pl_provenance.gross_profit.derived=True`を付与。Case A対象34銘柄342件で
+完全一致・Case B残存49件は無変化を確認。STONKS SILO fetcher.pyの重複自己
+修復ロジックが実質デッドコード化したことを確認〈[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]のクローズ判断材料〉。TANUKI VALUATIONへの
+影響はゼロと確定。pytest 467 passed/2 known failed、report_consistency_
+check.py NG=0〈WARN=68件、変化なし〉。②突合検算は[[GROSSPROFIT-COGS-
+ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]へ引き継ぎ。詳細はBACKLOG_DONE.md
+「2026-08-02（完了）」参照。副産物として[[HON-GROSSPROFIT-2009-RESIDUAL-
+DISCREPANCY-1]]を新規登録・[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-
+MO-PM-SCCO-1]]の対象を14銘柄へ拡大）
+これにより次セッションの筆頭候補を更新する：
+① [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2（優先度：中。SPIR(2020)型の
+   事前検知、submissions.jsonへのformerNames取得拡張が前提）
+② [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（優先度：中。KULR(2019)
+   単独、candidate tag誤選択の10-K原本突合が未着手）
+③ [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中。10-K原本での
+   個別確認が未着手、①②と独立に着手可能）
+④ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期
+   更新サイクルで自然解消見込み）
+⑤ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは10年連続、LITE/CRMは新規大規模
+   クラスタ。10-K原本確認が未着手）
+⑥ 余力があれば[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：
+   低・HON(2009)単独の10-K原本確認）
 
 ---
 

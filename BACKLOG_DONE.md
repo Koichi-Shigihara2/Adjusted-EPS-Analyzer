@@ -2,6 +2,90 @@
 
 ---
 
+## 2026-08-02（完了）
+
+### ✅ [LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1] GrossProfitバックフィルが本番データパス(annual_YYYY.json)に到達しない構造的欠落（①本番書き戻し完了、②はGROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1へ引き継ぎ）
+**優先度:** 中〜高
+**分類:** データ品質 / アーキテクチャ欠陥
+**登録日:** 2026-07-29
+**完了日:** 2026-08-02
+**発見:** cost_of_revenue/EPS投資調査（チャット記録）
+
+#### 内容（根本原因）
+normalizer.py::_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()は
+中間パイプライン(ttm/{ticker}_ttm_series.json・store_v2)にのみ作用し、TANUKI VALUATION・
+STONKS SILOが実際に読むcommon/sec_data/data/{TICKER}/annual_YYYY.jsonには一切書き戻され
+ない。加えてこのバックフィルは書き込み専用(一方向)であり、gross_profitが既に存在する
+期間ではcost_of_revenueとの突合・検算は一切行われない。CAKE実例ではFY2008-2021の19年間、
+cost_of_revenue実額がありながらgross_profitは一貫してNoneだった。
+
+着手条件（[[PERIOD-LENGTH-VALIDATION-GAP-1]]の解消）は2026-07-31に充足。その後
+2026-08-02の現状再確認で、gross_profit欠損・乖離状況を全105銘柄で再スキャンし、
+①(本番書き戻し)のリスク（既存の正しい値を誤って上書きするリスク）が実質ゼロで
+あることを確認した上で①を実装した。
+
+#### 実装内容（①本番書き戻し）
+`SECParser._backfill_gross_profit_from_revenue_cogs()`を新規追加。標準タグ
+（GrossProfit/GrossProfitLoss）からgross_profitが取得できない年度についてのみ、
+revenue - cost_of_revenueで逆算した値を採用し本番annual_YYYY.jsonへ書き戻す。
+
+適用条件（Case Aの定義を厳密に踏襲）:
+- gross_profitが標準タグから取得できていない年度のみ（標準タグを常に優先、
+  既存の正しい値を上書きする経路は持たない）
+- revenue・cost_of_revenueが同一年度で両方present
+
+採用値のprovenance（pl_provenance.gross_profit）には`"derived": True`を付与し、
+実タグに基づかない逆算値であることを明示（bs_provenance側のis_approximated規約と
+同種）。CLAUDE_CODE_START.mdの「生成パイプラインをバイパスした手動データパッチの
+禁止」原則に沿い、生成元コード（parser.py）自体に恒久的なフォールバックロジック
+として実装した（後処理パッチではない）。
+
+`_parse_raw_data()`の全フィールド抽出ループ・cross_filing_tags適用後に1回呼び出す。
+Predecessor/Successor型（revenue/cost_of_revenue自体もNoneの年度、例: ELF
+2014/2019・BBAI/RDW/RKLB/SOFI/VRT 2020/2019）は判定を経由せず自動的に対象外となる。
+
+コミット: `dc0507c27`（機能変更・common/sec_data/parser.py・テスト）
+
+#### 検証結果
+1. 対象34銘柄342件（ABBV/AMZN/APP/BROS/CAKE/CAT/COHR/CON/CPRT/CRWV/FCX/FICO/
+   GOOGL/HEI/HON/HWM/IONQ/KLAC/LLY/LYFT/META/MSCI/PEP/RMBS/RXRX/SCCO/SOFI/SOUN/
+   TASK/TDY/VRT/VZ/WMT/ZETA）でgross_profitがrevenue-cost_of_revenueの値で
+   完全一致（許容誤差なし）で埋まることを確認
+2. 全105銘柄フローズン入力比較で、対象342件以外（Case B残存49件・既存の正常値
+   含む）は変化ゼロを確認
+3. 対象342件すべてに`pl_provenance.gross_profit.derived=True`が正しく設定
+   されていることを確認
+4. STONKS SILO fetcher.py（discover/stonks-silo/src/fetcher.py、gross_profit=None
+   時の重複自己修復ロジック）について、STONKS SILO対象25銘柄全体で
+   `gross_profit=None かつ revenue/cost_of_revenue両方present`の残存ケースが
+   0件になったことを確認した。**[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-
+   DUP-1]]の重複ロジックは、少なくとも「revenue/cost_of_revenue両方存在」の
+   条件下では発火し得ない（実質デッドコード化）ことを確認**（同エントリの
+   クローズ判断材料として報告のみ、同エントリ自体の更新は別タスク）
+5. pytest 467 passed/2 known failed（既知のMSFT/NVDA、[[TEST-STALE-IV-1]]）、
+   report_consistency_check.py NG=0（WARN=68件、変化なし。pl_provenance/
+   gross_profitを参照する既存WARN項目は皆無のため誤作動リスクなしと事前確認
+   した上で実施）を確認
+6. pytest全件NG=0（上記5と同一）
+7. TANUKI VALUATION（growth.py・data_fetcher.py・core_calculator.py等）は
+   annual_YYYY.jsonの`pl.gross_profit`を一切参照しないことをコードベース全体で
+   確認した（Moat ScoreのGross Margin成分は`docs/common/sec_data/normalized/`
+   の別系統・normalizer.py独自の四半期ベース逆算を参照しており、本実装とは
+   無関係）。よってgrowth.py::fcf_list[:5]の直近5年窓・IV・Classificationへの
+   影響は**ゼロ**と確定
+
+#### データコミット
+`65ddd0d6b`（common/sec_data/data/、34銘柄・342ファイル）
+
+#### 副産物として新規発見・登録した課題（未実装）
+- [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低。HON(2009)のみ
+  期間長是正後も乖離が残存、既知パターンと異なる原因の疑い）
+- [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]の対象を14銘柄へ拡大
+  訂正（Case B残存49件の全容判明。**本タスクの②〈突合検算ロジック〉はこちらの
+  エントリへ実質的に引き継がれた**）
+
+---
+
 ## 2026-08-01（完了）
 
 ### ✅ [ELF-FISCAL-END-MONTH-MISDETECTION-1] fiscal_end_month/anchor検出が1銘柄単一値のみ対応、実在する決算期変更（ELF/RCAT/AVGO）をera別に扱えない構造的限界（2026-08-01案②完了）
