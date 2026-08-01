@@ -255,7 +255,12 @@ class SECFetcher:
             print(f"   [{ticker}] submissions: CIK取得失敗")
             return None
 
-        accn_to_reportdate = self._fetch_submissions_for_cik(ticker, cik)
+        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: 現CIKのformerNames
+        # （法人名変更履歴）を同一レスポンスから追加取得する。旧CIK
+        # （legacy_ciks、CIK自体が切り替わったケース）側は対象外
+        # （本機能はCIK不変のまま社名のみ変わったSPAC合併検知が目的のため）。
+        former_names: list = []
+        accn_to_reportdate = self._fetch_submissions_for_cik(ticker, cik, former_names_out=former_names)
         if accn_to_reportdate is None:
             return None
 
@@ -272,16 +277,24 @@ class SECFetcher:
         with open(out_path, "w", encoding="utf-8") as f:
             json.dump(
                 {"ticker": ticker, "cik": cik, "legacy_ciks_merged": legacy_ciks,
-                 "accn_to_reportdate": accn_to_reportdate},
+                 "accn_to_reportdate": accn_to_reportdate,
+                 "former_names": former_names},
                 f, ensure_ascii=False, indent=2,
             )
 
         print(f"   [{ticker}] submissions取得完了 ({len(accn_to_reportdate)}件)")
         return accn_to_reportdate
 
-    def _fetch_submissions_for_cik(self, ticker: str, cik: str) -> Optional[Dict[str, str]]:
+    def _fetch_submissions_for_cik(self, ticker: str, cik: str,
+                                    former_names_out: Optional[list] = None) -> Optional[Dict[str, str]]:
         """指定CIKのsubmissions API（recent + 過去分アーカイブ）から
-        {accn: reportDate} マッピングを取得する（キャッシュ・保存は行わない）。"""
+        {accn: reportDate} マッピングを取得する（キャッシュ・保存は行わない）。
+
+        former_names_out: 指定した場合、メインレスポンス（recent側、archive側には
+        含まれない）のformerNames配列（[{name, from, to}, ...]）を追記する
+        （[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: SPAC合併疑いの機械的検知に使用。
+        レスポンス自体は既に全量取得済みのため追加APIコールは発生しない）。
+        """
         relevant_forms = {"10-K", "10-K/A", "10-Q", "10-Q/A"}
         accn_to_reportdate: Dict[str, str] = {}
 
@@ -298,6 +311,8 @@ class SECFetcher:
             return None
 
         data = resp.json()
+        if former_names_out is not None:
+            former_names_out.extend(data.get("formerNames", []))
         self._extract_accn_reportdate(data.get("filings", {}).get("recent", {}), relevant_forms, accn_to_reportdate)
 
         # 過去分アーカイブ（filings.recentは直近分のみのため、古いfilingは別JSONに分割）
@@ -431,6 +446,28 @@ def load_submissions(ticker: str, data_dir: str = None) -> Dict[str, str]:
     except Exception as e:
         print(f"   [{ticker}] submissions.json 読み込みエラー: {e}")
         return {}
+
+
+def load_former_names(ticker: str, data_dir: str = None) -> list:
+    """
+    {data_dir}/{ticker}/submissions.json を読み込んでformer_names
+    （[{name, from, to}, ...]）を返す（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2）。
+
+    ファイルが存在しない場合・キー自体が存在しない場合（fetch_submissions()の
+    former_names追加より前に取得されたsubmissions.json）は空リストを返す
+    （ネットワーク取得は行わない）。
+    """
+    if data_dir is None:
+        data_dir = os.path.join(os.path.dirname(__file__), "data")
+    path = os.path.join(data_dir, ticker.upper(), "submissions.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f).get("former_names", [])
+    except Exception as e:
+        print(f"   [{ticker}] submissions.json 読み込みエラー: {e}")
+        return []
 
 
 def _get_latest_accn(company_facts: dict) -> Optional[str]:

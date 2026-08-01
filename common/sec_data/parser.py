@@ -15,7 +15,7 @@ from .utils import (
     determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date,
     detect_fiscal_anchor_clusters, _day_of_year,
 )
-from .fetcher import load_submissions
+from .fetcher import load_submissions, load_former_names
 
 _FACT_OVERRIDES_PATH = os.path.join(os.path.dirname(__file__), "fact_overrides.json")
 
@@ -335,9 +335,16 @@ class SECParser:
         # determine_fiscal_year()フォールバックのみで動作する（後方互換）
         accn_reportdate = load_submissions(ticker, data_dir=self.data_dir)
 
-        return self._parse_raw_data(ticker, raw_data, accn_reportdate=accn_reportdate)
+        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: 法人名変更履歴（現CIKの
+        # formerNames）を読み込む。存在しない場合は空リストとなり、段階2の
+        # 追加検知は発火せず段階1（矛盾トリガー型）のみで動作する（後方互換）
+        former_names = load_former_names(ticker, data_dir=self.data_dir)
 
-    def _parse_raw_data(self, ticker: str, raw_data: dict, accn_reportdate: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+        return self._parse_raw_data(ticker, raw_data, accn_reportdate=accn_reportdate,
+                                     former_names=former_names)
+
+    def _parse_raw_data(self, ticker: str, raw_data: dict, accn_reportdate: Optional[Dict[str, str]] = None,
+                         former_names: Optional[list] = None) -> Dict[str, Any]:
         """生データをパース"""
         result = {
             "ticker": ticker,
@@ -424,10 +431,14 @@ class SECParser:
                 boundary_collisions_out=_fye_boundary_collisions,
             )
 
-        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1: 複数accn混在かつ数学的整合性が
-        # 破綻している年度についてのみ、本人データ(is_own_data=True)を提供する
-        # accnへ統一する（矛盾のない年度には一切触れない）
-        self._resolve_bs_entity_mixing(extracted)
+        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・段階2: 複数accn混在かつ
+        # （①数学的整合性が破綻している、または②アンカー候補accnのreportDateが
+        # 法人名変更履歴の期間内にあり社名変更前後のデータ混在が疑われる）
+        # 年度についてのみ、本人データ(is_own_data=True)を提供するaccnへ統一する
+        _spac_shell_detections: List[Dict[str, Any]] = []
+        self._resolve_bs_entity_mixing(extracted, accn_reportdate=_accn_reportdate,
+                                        former_names=former_names or [],
+                                        spac_detections_out=_spac_shell_detections)
 
         # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tagsに明示登録された
         # ticker×period×fieldの組み合わせについてのみ、複数タグ合算値で
@@ -450,6 +461,10 @@ class SECParser:
         # 衝突0件でも毎回書き込む（IOT/AVGO/MRVLの化石ファイル問題の再発防止。
         # 一度検知された衝突が後日解消された場合に古いログが残り続けることを防ぐ）
         self._save_fy_collision_log(ticker, _fy_collisions)
+
+        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: 0件でも毎回書き込む（同上の
+        # 化石ファイル対策と同じ理由）
+        self._save_spac_shell_detection_log(ticker, _spac_shell_detections)
 
         # FYE-CHANGE-BOUNDARY-COLLISION-BLIND-1: 0件でも毎回書き込む（同上の化石
         # ファイル対策と同じ理由）
@@ -501,20 +516,56 @@ class SECParser:
             return True
         return False
 
-    def _resolve_bs_entity_mixing(self, extracted: Dict[str, Any]) -> None:
+    @staticmethod
+    def _report_date_in_former_name_window(report_date: str, former_name: Dict[str, Any]) -> bool:
         """
-        [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1: SPAC合併等により同一年度の
-        BS(instant fact)フィールドが異なる法的実体（accn）から混在採用され、
-        数学的な包含関係（current_assets<=total_assets等）が破綻している
-        ケースを是正する（実例: BBAI/RDW/RKLB/SOFI/VRT/ONDS/KULR(2016)）。
+        [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: reportDate（"YYYY-MM-DD"）が
+        formerNamesエントリの[from, to]区間（SEC APIはISO8601、例:
+        "2020-12-31T05:00:00.000Z"）に含まれるか判定する（日付部分のみで
+        比較、時刻・タイムゾーンは無視）。
+
+        境界は両端含む（inclusive）: BBAI実データでreportDate=2020-12-31が
+        formerNamesの"from"=2020-12-31と完全一致するケースを確認済みのため、
+        "from"側も含める必要がある。
+        """
+        if not report_date:
+            return False
+        try:
+            rd = datetime.strptime(report_date[:10], "%Y-%m-%d").date()
+            frm = datetime.strptime(str(former_name.get("from", ""))[:10], "%Y-%m-%d").date()
+            to = datetime.strptime(str(former_name.get("to", ""))[:10], "%Y-%m-%d").date()
+        except (ValueError, TypeError):
+            return False
+        return frm <= rd <= to
+
+    def _resolve_bs_entity_mixing(self, extracted: Dict[str, Any],
+                                   accn_reportdate: Optional[Dict[str, str]] = None,
+                                   former_names: Optional[list] = None,
+                                   spac_detections_out: Optional[List[Dict[str, Any]]] = None) -> None:
+        """
+        [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・段階2: SPAC合併等により同一
+        年度のBS(instant fact)フィールドが異なる法的実体（accn）から混在
+        採用されているケースを是正する（実例: BBAI/RDW/RKLB/SOFI/VRT/ONDS/
+        KULR(2016)、段階2追加によりSPIR(2020)も対象）。
 
         「①複数accnが混在」かつ「②本人データ(is_own_data=True)を提供する
-        accnが単一に定まる」かつ「③現に数学的矛盾が確認できる」かつ
-        「④アンカーへの統一により実際に矛盾が解消する」の4条件をすべて
-        満たす年度についてのみ、本人データのaccnをアンカーとして採用し、
-        アンカー以外のaccnから採用された_BS_ENTITY_MIXING_FIELDSの値を
-        None化する（安全側のNone化、[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]と
-        同じ設計方針）。
+        accnが単一に定まる」かつ「③現に数学的矛盾が確認できる、**または
+        ③'アンカー候補accnのreportDateが法人名変更履歴（former_names）の
+        いずれかの[from, to]区間内にある（段階2追加）**」かつ「④アンカーへの
+        統一により実際に矛盾が解消する（③'単独発火時は元々矛盾がないため
+        自明に満たす）」の4条件をすべて満たす年度についてのみ、本人データの
+        accnをアンカーとして採用し、アンカー以外のaccnから採用された
+        _BS_ENTITY_MIXING_FIELDSの値をNone化する（安全側のNone化、
+        [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]と同じ設計方針）。
+
+        ③'（段階2）はSPIR(2020)型（合併前SPACシェルのBSと合併後本体の
+        BSが混在するが、たまたま数学的矛盾が顕在化していない"事故的な
+        正しさ"）を、矛盾の有無に頼らず事前検知するために追加した。
+        former_names自体は「単なる社名変更・法人形態変更」でも記録される
+        ため単独では合併の疑いと区別できないが、本条件は常に①②（複数accn
+        混在・本人データaccnの一意性）とのAND条件でのみ発火するため、
+        単純な改名（accn混在を伴わない、同一法人が継続してBSを報告する
+        ケース）では①の時点で対象外となり誤検知しない。
 
         条件④はKULR(2019)型（矛盾の原因となる2フィールドが元々同一accnから
         採用されており、accn混在自体は矛盾と無関係）を除外するために必須。
@@ -523,13 +574,19 @@ class SECParser:
         （current_liabilities>total_liabilities）は解消されないまま無関係な
         変更だけが生じることを実データで確認した。
 
-        条件を1つでも満たさない年度（矛盾のない正常系、本人データaccnが
-        0個または2個以上で一意に定まらない年度、統一しても矛盾が解消しない
-        年度）は一切変更しない。105銘柄・87件の複数accn混在ケースへの
-        オフラインシミュレーションで、本条件により矛盾のない56件（41銘柄）・
-        KULR(2019)に一切影響しないことを確認済み（減算的〈subtractive〉設計
-        であり、既存の正しい値を上書きする経路は持たない）。
+        条件を1つも満たさない年度（矛盾もSPAC疑いもない正常系、本人データ
+        accnが0個または2個以上で一意に定まらない年度、統一しても矛盾が
+        解消しない年度）は一切変更しない。105銘柄・87件の複数accn混在
+        ケースへのオフラインシミュレーションで、本条件により矛盾のない
+        56件（41銘柄）・KULR(2019)に一切影響しないことを確認済み（減算的
+        〈subtractive〉設計であり、既存の正しい値を上書きする経路は持たない）。
+
+        spac_detections_out: ③'（former_names一致）で発火した年度の詳細
+        （アンカーaccn・reportDate・一致したformerNameエントリ・None化した
+        フィールド）を記録する。呼び出し元がspac_shell_detection_log.jsonへ
+        保存する。
         """
+        former_names = former_names or []
         years = set()
         for field in self._BS_ENTITY_MIXING_FIELDS:
             years.update(extracted.get(field, {}).get("_annual_provenance", {}).keys())
@@ -554,10 +611,25 @@ class SECParser:
                 continue  # ①複数accn混在なし
             if len(own_accns) != 1:
                 continue  # ②アンカーが一意に定まらない
-            if not self._bs_math_violations(bs_values):
-                continue  # ③矛盾が現に確認できない
 
             anchor = next(iter(own_accns))
+            violation_now = self._bs_math_violations(bs_values)
+
+            # ③'は矛盾の有無に関わらず常に評価する（violation_now=Trueの場合も
+            # 冪等性確認・監査ログの網羅性のため判定自体はスキップしない。
+            # BBAI/RDW/RKLB/SOFI/VRT〈矛盾も同時に存在〉でも実データで確認済み）
+            matched_former_name = None
+            if accn_reportdate and former_names:
+                anchor_report_date = accn_reportdate.get(anchor)
+                if anchor_report_date:
+                    for fn in former_names:
+                        if self._report_date_in_former_name_window(anchor_report_date, fn):
+                            matched_former_name = fn
+                            break
+
+            if not violation_now and matched_former_name is None:
+                continue  # ③④矛盾もSPAC疑い（③'）もない
+
             candidate_values = {f: v for f, v in bs_values.items() if field_accn.get(f) == anchor}
             if self._bs_math_violations(candidate_values):
                 # ④アンカーへの統一後も矛盾が解消しない（KULR 2019型: 矛盾の
@@ -565,10 +637,23 @@ class SECParser:
                 # この場合は是正効果がないため一切変更しない（無関係フィールドの
                 # 巻き添えNone化を防ぐ）
                 continue
-            for field, accn in field_accn.items():
-                if accn != anchor:
-                    extracted[field]["annual"].pop(year, None)
-                    extracted[field].get("_annual_provenance", {}).pop(year, None)
+
+            nulled_fields = [f for f, a in field_accn.items() if a != anchor]
+            for field in nulled_fields:
+                extracted[field]["annual"].pop(year, None)
+                extracted[field].get("_annual_provenance", {}).pop(year, None)
+
+            if matched_former_name is not None and spac_detections_out is not None:
+                spac_detections_out.append({
+                    "year": year,
+                    "anchor_accn": anchor,
+                    "anchor_report_date": accn_reportdate.get(anchor) if accn_reportdate else None,
+                    "former_name": matched_former_name.get("name"),
+                    "former_name_from": matched_former_name.get("from"),
+                    "former_name_to": matched_former_name.get("to"),
+                    "nulled_fields": nulled_fields,
+                    "triggered_by": "math_violation" if violation_now else "former_names_window",
+                })
 
     def _backfill_gross_profit_from_revenue_cogs(self, extracted: Dict[str, Any]) -> None:
         """
@@ -1868,6 +1953,25 @@ class SECParser:
             json.dump({"ticker": ticker, "collisions": collisions}, f, ensure_ascii=False, indent=2)
         if collisions:
             print(f"   [{ticker}] 決算期変更境界の年度バケツ競合を検知・記録: {len(collisions)}件 ({path})")
+
+    def _save_spac_shell_detection_log(self, ticker: str, detections: List[Dict[str, Any]]) -> None:
+        """
+        [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2: 法人名変更履歴（former_names）
+        の[from, to]区間一致によりBS実体混在の是正が発火した年度を記録する
+        （`_resolve_bs_entity_mixing()`のspac_detections_out参照）。
+
+        数学的矛盾の有無に関わらず、former_namesが一致して発火したケースは
+        すべて記録する（BBAI/RDW/RKLB/SOFI/VRTのように矛盾も同時に存在する
+        ケースも含む。段階2の検知範囲を監査目的で可視化するため）。
+        0件でも毎回書き込む（fy_collision_log等と同じ化石ファイル対策）。
+        """
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        path = os.path.join(ticker_dir, "spac_shell_detection_log.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"ticker": ticker, "detections": detections}, f, ensure_ascii=False, indent=2)
+        if detections:
+            print(f"   [{ticker}] SPAC合併疑い(法人名変更履歴一致)を検知・記録: {len(detections)}件 ({path})")
 
     def _apply_fact_overrides(self, ticker: str, year: Any, data: dict) -> None:
         """fact_overrides.json記載の個別上書きを、その年度のpl辞書・
