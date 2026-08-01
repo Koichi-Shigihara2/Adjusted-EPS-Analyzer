@@ -1,5 +1,15 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対象銘柄にSPIR(2020)を
+明示追加（同一パターンだが数学的矛盾は未顕在化の"事故的な正しさ"。対応方針の
+設計・検証範囲にBBAI/RDW/RKLB/SOFI/VRTと並べて含める）。[[BS-ENTITY-MIXING-
+UNEXPLAINED-ONDS-KULR-1]]を新規登録（優先度：低〜中。ONDS(2017)・KULR(2016)・
+KULR(2019)でSPACシェル型と一致しないBS混在＋数学的矛盾を確認。ONDS/KULR2016は
+total_assets側の値がcurrent_assetsより著しく過小、KULR2019はtotal_liabilities
+とcurrent_liabilitiesの食い違いで、いずれもSPAC実体混在とは異なりtotal_assets/
+total_liabilities集計タグ自体の誤選択が疑われる。原因未特定・登録のみ、
+実装は未着手）。
+
 最終更新: 2026-08-01（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]新規登録（優先度：高、
 登録・調査のみ実装は未着手）＋[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]訂正
 （ELF/KULR除外・BBAI/RDWのPL/CF系は既にNone化済みと確認しクローズ扱いへ）。
@@ -5501,7 +5511,10 @@ SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィール�
 チェックし、「同一年度・異なるBSフィールドが異なるaccn（法的実体）から
 来ていないか」という横断チェックを持たない。
 
-確定した実害:
+**対象銘柄（対応方針の設計・検証範囲、2026-08-02更新: SPIR(2020)を対象に
+明示追加）**:
+
+確定した実害（数学的矛盾あり）:
 - BBAI(2020): total_assets/stockholders_equity/total_liabilities/
   cash_and_equivalentsはGigCapital4（SPACシェル、is_own_data=true）由来、
   long_term_debt/short_term_debt/current_assets/current_liabilitiesは
@@ -5529,17 +5542,22 @@ SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィール�
   short_term_debtが混在。long_term_debt($3,467,300,000) >
   total_liabilities($30,752,104)
 
-**同一パターンだが数学的矛盾には至っていない（"事故的な正しさ"）ケース**:
-- SPIR(2020): 合併前SPAC「NavSight Holdings」の10-K（2021-05-12提出、
+対象銘柄として含めるが、現時点で数学的矛盾は未発生（"事故的な正しさ"）:
+- **SPIR(2020)**: 合併前SPAC「NavSight Holdings」の10-K（2021-05-12提出、
   fy=2020）由来のtotal_assets/total_liabilities等（trust勘定計上で
   total_assets=$231.6M・current_assets=$1.6Mと非流動比率が極端に高い、
   典型的なSPACシェルの貸借対照表）と、Spire Global本体の2022-11-07提出
   10-K由来のlong_term_debt($26,645,000)が混在。現時点ではlong_term_debt
   <total_liabilitiesのため数学的矛盾は顕在化していないが、根本原因は
   BBAI/RDW/RKLB/SOFI/VRTと同一であり、将来のデータ更新で偶然の整合が
-  崩れるリスクを抱える
+  崩れるリスクを抱える。**矛盾が顕在化していないだけで構造的欠陥は同一のため、
+  対応方針の設計・検証範囲（対象銘柄リスト）にBBAI/RDW/RKLB/SOFI/VRTと
+  並べて含める**（2026-08-02追加登録・[[ELF-FISCAL-END-MONTH-
+  MISDETECTION-1]]のRCAT/AVGO同型の「事故的な正しさ」パターンと同種であり、
+  対応方針を検証する際にSPIRを見落とすと再発防止漏れになる）
 
-**同じ症状だが根本原因が異なる可能性がある別枠（要個別確認）**:
+**同じ症状だが根本原因が異なる可能性があるため対象外に区分（別エントリ
+[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]で個別に扱う）**:
 - ONDS(2017)・KULR(2016)・KULR(2019): いずれも複数accnからのBS混在＋数学的
   矛盾を検出したが、accnの提出者・時期パターンがSPACシェル型（合併前シェルの
   自社10-K→合併後本体の10-K）と一致しない。KULR は[[SPAC-STUB-PERIOD-
@@ -5551,9 +5569,11 @@ SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィール�
 BS系フィールドは期間長フィルタ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]）の
 対象外のため検知不可能だった、独立した欠陥系統。105銘柄中53銘柄で複数accnから
 のBS混在が検出されたが、大半（AAPL/AMAT/GOOGL/TSLA/XOM等の非SPAC老舗企業）は
-数学的整合性チェックで矛盾なし＝実害なしと確認済み。実害（数学的矛盾）が
-確認できたのはBBAI/RDW/RKLB/SOFI/VRTの5銘柄5年度、"事故的な正しさ"で
-潜在するのがSPIR(2020)の1銘柄1年度。
+数学的整合性チェックで矛盾なし＝実害なしと確認済み。**対象銘柄は6銘柄6年度
+（BBAI(2020)・RDW(2020)・RKLB(2020)・SOFI(2020)・VRT(2019)・SPIR(2020)）**、
+うち数学的矛盾が確定しているのはBBAI/RDW/RKLB/SOFI/VRTの5銘柄5年度、
+SPIR(2020)は矛盾が未顕在化の"事故的な正しさ"だが同一の構造的欠陥を抱える
+ため対応方針の検証範囲に含める。
 
 #### 対応方針
 未定。案としては①同一年度・同一銘柄のBS instant factが複数の異なるaccnから
@@ -5563,7 +5583,59 @@ BS系フィールドは期間長フィルタ（[[PERIOD-LENGTH-VALIDATION-GAP-1]
 
 #### 着手条件
 なし。優先度高（現在進行形の実害・数学的矛盾、BBAI/RDW/RKLB/SOFI/VRTの
-5銘柄5年度で確認済み）。
+5銘柄5年度で確認済み。対応方針の設計・検証範囲にはSPIR(2020)も含める）。
+
+---
+
+### [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] ONDS/KULRでBS混在＋数学的矛盾を検出したがSPACパターンと不一致、原因未特定
+**優先度:** 低〜中
+**分類:** データ品質 / 原因未特定
+**登録日:** 2026-08-02
+**発見:** [[SPAC-SHELL-BS-ENTITY-MIXING-1]]横断スキャン（チャット記録）
+
+#### 内容
+ONDS(2017)・KULR(2016)・KULR(2019)で、[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と
+同様の症状（同一年度内で複数の異なるaccnからBSフィールドが混在採用）が
+検出されたが、accnの提出者・時期パターンがSPACシェル型（合併前シェルの
+自社10-K→合併後本体の10-K）と一致せず、原因は未特定。KULRは
+[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の2026-08-01個別調査でSPAC・M&A歴なしと
+確認済みのため、SPAC合併とは別の要因（決算期変更・子会社分割・組織再編・
+candidate tagの誤選択等）が疑われる。
+
+#### 影響（2026-08-02、数学的整合性チェックで確認・反映）
+3件すべてで数学的矛盾を確認済み（現在進行形の実害）:
+- **ONDS(2017)**: current_assets($704,771) > total_assets($8,127)、
+  current_liabilities($5,862,073) > total_liabilities($85,633)。
+  total_assets/total_liabilitiesは2018-03-28提出10-K（fy=2017）由来、
+  current_assets/current_liabilitiesは2019-03-19提出10-K（fy=2018、2017年度
+  比較列）由来。total_assets/total_liabilities側の値が実態よりも著しく
+  過小（3桁程度小さい）であり、SPACシェル/本体の実体混在ではなく
+  total_assets/total_liabilities側のcandidate tag誤選択（別概念・別単位の
+  混入等）を疑う根拠となる
+- **KULR(2016)**: current_assets($268,215) > total_assets($164,525)、
+  cash_and_equivalents($213,181) > total_assets($164,525)。total_assetsのみ
+  2018-04-17提出10-K（fy=2017、2016年度比較列）由来、他は2017-03-30提出
+  10-K（fy=2016本体）由来。total_assets側が単独で過小な値になっている
+- **KULR(2019)**: current_liabilities($1,033,731) > total_liabilities
+  ($236,766)。total_liabilities等は2020-05-14提出10-K（fy=2019本体）由来、
+  short_term_debtのみ2021-03-19提出10-K（fy=2020、2019年度比較列）由来だが、
+  矛盾はtotal_liabilities側とcurrent_liabilities側の食い違いであり
+  short_term_debtの混入自体が直接原因ではない可能性がある
+
+いずれもtotal_assets/total_liabilities側の値が対応するcurrent_assets/
+current_liabilitiesより明らかに小さすぎる、という共通パターンを示しており、
+BBAI/RDW型（法的実体丸ごとの混在）とは異なり、total_assets/total_liabilities
+という特定の集計タグ自体の誤選択・誤抽出が疑われる。
+
+#### 対応方針
+未定。原因調査が必要（SPAC以外の要因: 決算期変更・子会社分割・組織再編・
+candidate tagの誤選択等の可能性を個別に確認する）。原因が
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と異なる可能性が高いため、対応方針は
+独立して検討する。
+
+#### 着手条件
+なし。優先度は[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応後で可（原因が別系統の
+ため、そちらの解決を待つ必要はない）。
 
 ---
 
