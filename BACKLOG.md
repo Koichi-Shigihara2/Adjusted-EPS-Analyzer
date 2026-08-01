@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]
+実装完了。`SECParser._backfill_total_liabilities_via_identity()`を新規
+追加し、貸借対照表恒等式逆算（total_assets − stockholders_equity）で
+278件のtotal_liabilitiesをバックフィル（コード`ee46018b2`・データ
+`11d75b2c0`）。278件全件で完全一致（許容誤差なし）、全105銘柄フローズン
+入力比較で対象278件以外に変化なし、NVDA(2015)/RCAT(2023)で代替候補タグ
+値ではなく逆算値が採用されていることを確認。derived provenanceに加え
+逆算元データの本人データ有無を示すsource_is_own_dataを新設。
+report_consistency_check.py NG=0（WARN=68件、変化なし）、pytest 504
+passed/2 known failed（既知）。TANUKI VALUATION（growth.py・DCF/EV計算）
+への影響なしを再確認。BACKLOG_DONE.mdへ全文移動。「次セッションでの
+着手順序」欄を更新。pushは保留、コミットのみ）。
+
 最終更新: 2026-08-02（[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]の
 設計調査＋全母集団シミュレーション結果を反映（チャット記録、読み取り・
 オフラインシミュレーションのみ）。278件の内訳をパターンA(恒常的欠如)
@@ -913,87 +926,6 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
-
-### [TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1] XBRL_MAPPING["total_liabilities"]の2番目のフォールバック候補が意味論的に不適切（LiabilitiesAndStockholdersEquity≡Assets）で278件（銘柄年度）に影響
-**優先度:** 高
-**分類:** バグ / 確定・候補タグ設計欠陥
-**登録日:** 2026-08-02
-**発見:** [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]](KULR2019)個別調査から派生した横断スキャン（チャット記録）
-
-#### 内容
-`XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
-`LiabilitiesAndStockholdersEquity`は、定義上必ず`Assets`と数学的に一致する
-（負債合計ではなく貸借対照表の借方・貸方合計そのもの）ため、`Liabilities`
-タグが存在しない年度でこの候補が採用されると、`total_liabilities`に実質
-`total_assets`の値が格納される。[[JNJ-RD-TAG-PRIORITY-1]]・
-[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]と同種の「フォールバック候補が
-意味論的に不適切」というクラスの設計欠陥。
-
-#### 影響
-`total_liabilities == total_assets かつ stockholders_equity != 0`という
-数学的シグネチャで105銘柄を予備スキャンした結果、278件（銘柄年度）が該当。
-AMZN・GOOGL・MSFT・NVDA・AMD・WMT・VZ・KO・LLY・HON・ABBV・CDNS・ADSK・
-SCCO・ENTG・AVGO・CAKE・CIX・LITE・RCAT・AVAV・KULR等、大型株を含む
-広範囲。2パターン確認: A)恒常的欠如（AMZN/WMT/KULR、全期間`Liabilities`
-タグ自体が存在しない）、B)過渡期欠如（GOOGL/MSFT/NVDA、初期年度のみ
-タグ未整備）。
-
-downstream影響（消費箇所調査済み）: Net_Debt/Total_Debtは
-`long_term_debt`+`short_term_debt`から独立算出のため直接汚染なし。
-`pipeline.py`内では「total_debt=0だがtotal_liabilities大」という
-金融機関判定用の診断WARNメッセージにのみ使用。DCF/EV/株価評価
-アウトプットへの直接計算汚染は確認されていないが、BS項目としての値
-自体は278件すべて誤り。`report_consistency_check.py`のWARN-25はNone
-検査のみでこの種の誤りを検知できない。
-
-#### シミュレーション結果（2026-08-02、設計調査＋全母集団シミュレーション、チャット記録）
-278件の内訳を確定: **パターンA（恒常的欠如）14銘柄238件**（ABBV/ADSK/AMD/
-AMZN/AVAV/CDNS/CIX/ENTG/HON/KO/LLY/SCCO/VZ/WMT）・**パターンB（過渡期欠如）
-8銘柄40件**（AVGO/CAKE/GOOGL/KULR/LITE/MSFT/NVDA/RCAT）。
-
-案A（WARN検知のみ）・素朴な案B（候補タグのフォールスルー）はいずれも
-不採用と判断。代替候補タグ（同一end_dateの`Liabilities`値）は278件中
-**7件にしか存在せず**、残り271件（97.5%）はフォールスルーしても
-None化にしかならないことを確認したため。
-
-**採用方針**: 貸借対照表恒等式逆算（`total_assets − stockholders_equity`）
-によるバックフィル。278件全件で計算可能、**100%是正可能**と確認済み
-（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①のrevenue-cost_of_
-revenue逆算と同型パターン）。
-
-代替候補タグが存在した7件のうち5件は逆算値と厳密一致。2件（NVDA(2015)・
-RCAT(2023)）は解釈可能な軽微差（NVDAは丸め表示差$386,000・0.014%、RCATは
-[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]の決算期変更に伴う異filing比較列
-修正差で、同一accn内で逆算すると厳密一致）であり、恒等式ロジック自体の
-欠陥ではないと確認した。
-
-**安全性確認**: トリガー条件（`total_liabilities == total_assets` かつ
-`stockholders_equity != 0`）は278件に自己限定されており、正しく
-`Liabilities`タグから取得できている既存の全ての値には理論上一切影響しない
-（追加の対象外判定ロジックなしに自己限定される設計）。負の自己資本
-（債務超過）10件（ABBV 2012/2018/2019/2025・ADSK 2018-2020・AMD 2015・
-KULR 2018/2019）でも恒等式は符号に依存せず意味を持つことを確認。
-
-**実装時の留意点**: 278件中11件（ABBV(2012)・AMD(2009)・AMZN(2008)・
-CDNS(2009)・CIX(2010)・ENTG(2010)・HON(2008/2010)・KO(2008)・SCCO(2008)・
-VZ(2008)、いずれも当該銘柄の最古記録年度）は、逆算元のtotal_assets/
-stockholders_equity自体が本人データ（is_own_data=True）ではなく後続filing
-の比較列由来のため、逆算値の確度が他の267件よりやや低い可能性がある。
-実装フェーズで個別に対応可否を判断する必要がある。
-
-#### 対応方針
-貸借対照表恒等式逆算（`total_assets − stockholders_equity`）による
-バックフィルを採用する（上記シミュレーション結果参照）。候補タグの
-フォールスルー（素朴な案B）・WARN検知のみ（案A）はいずれも不採用。
-
-実装は105銘柄・数十年分のannual_YYYY.json再生成を要するため、実装前に
-本シミュレーション結果を踏まえた詳細設計（11件の非本人データケースの
-扱い含む）を別途行う。
-
-#### 着手条件
-なし。優先度高（278件・主力銘柄を含む規模、確定バグ、対応方針確定済み）。
-
----
 
 ### [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた
 **優先度:** 高
@@ -7053,6 +6985,31 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
    定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
 ⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中・④の10-K確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]実装完了）:
+~~① [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]~~ ✅ 2026-08-02完了
+   （コード`ee46018b2`・データ`11d75b2c0`。貸借対照表恒等式逆算
+   〈total_assets − stockholders_equity〉によるtotal_liabilitiesバック
+   フィルを実装。278件全件で完全一致（許容誤差なし）を確認、全105銘柄
+   フローズン入力比較で対象278件以外に変化がないことを確認。
+   report_consistency_check.py NG=0（WARN=68件、変化なし）、pytest 504
+   passed/2 known failed（既知のMSFT/NVDA）。BACKLOG_DONE.md
+   「2026-08-02（完了）」へ全文移動）。
+これにより次セッションの筆頭候補を更新する（優先度順）：
+① [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・10-K原本での
+   個別確認が未着手、他項目と独立に着手可能）
+② [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
+   見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
+   未実施）
+③ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+④ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑤ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑥ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・③の10-K確認が概ね収束してから常設WARN項目化を検討）
 
 ---
 

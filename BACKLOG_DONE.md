@@ -4,6 +4,90 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1] XBRL_MAPPING["total_liabilities"]の2番目のフォールバック候補が意味論的に不適切（LiabilitiesAndStockholdersEquity≡Assets）で278件（銘柄年度）に影響
+**優先度:** 高（登録時）→完了
+**分類:** バグ / 確定・候補タグ設計欠陥
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]](KULR2019)個別調査から派生した横断スキャン（チャット記録）
+
+#### 内容（根本原因）
+`XBRL_MAPPING["total_liabilities"]`の2番目のフォールバック候補
+`LiabilitiesAndStockholdersEquity`は、定義上必ず`Assets`と数学的に一致する
+（負債合計ではなく貸借対照表の借方・貸方合計そのもの）ため、`Liabilities`
+タグが存在しない年度でこの候補が採用されると、`total_liabilities`に実質
+`total_assets`の値が格納されていた。[[JNJ-RD-TAG-PRIORITY-1]]・
+[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]と同種の「フォールバック候補が
+意味論的に不適切」というクラスの設計欠陥。
+
+`total_liabilities == total_assets かつ stockholders_equity != 0`という
+数学的シグネチャで105銘柄を予備スキャンした結果、278件（銘柄年度・22銘柄）
+が該当。AMZN・GOOGL・MSFT・NVDA・AMD・WMT・VZ・KO・LLY・HON・ABBV・CDNS・
+ADSK・SCCO・ENTG・AVGO・CAKE・CIX・LITE・RCAT・AVAV・KULRの大型株を含む
+広範囲。2パターン確認: パターンA（恒常的欠如）14銘柄238件（ABBV/ADSK/AMD/
+AMZN/AVAV/CDNS/CIX/ENTG/HON/KO/LLY/SCCO/VZ/WMT、`Liabilities`タグ自体が
+全期間存在しない）・パターンB（過渡期欠如）8銘柄40件（AVGO/CAKE/GOOGL/
+KULR/LITE/MSFT/NVDA/RCAT、初期年度のみタグ未整備）。
+
+#### 設計調査＋全母集団シミュレーション（実装前に実施）
+案A（既存`_bs_math_violations()`を単一accnケースにも適用しWARN検知のみ）・
+素朴な案B（候補タグのフォールスルー）はいずれも不採用と判断。代替候補タグ
+（同一end_dateの`Liabilities`値）は278件中7件にしか存在せず、残り271件
+（97.5%）はフォールスルーしてもNone化にしかならないことを確認したため。
+
+貸借対照表恒等式逆算（`total_assets − stockholders_equity`）による
+バックフィルを採用方針として確定。278件全件で計算可能・100%是正可能と
+シミュレーションで確認（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①
+のrevenue-cost_of_revenue逆算と同型パターン）。代替候補タグが存在した
+7件のうち5件は逆算値と厳密一致、2件（NVDA(2015)・RCAT(2023)）は解釈可能な
+軽微差（丸め表示差・[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]の決算期変更
+に伴う異filing比較列修正差）でロジック欠陥ではないと確認。負の自己資本
+10件でも恒等式は符号に依存せず意味を持つことを確認。278件中11件（各銘柄の
+最古記録年度）は逆算元のtotal_assets/stockholders_equity自体が本人データ
+でないため確度がやや低い可能性がある点を実装時の留意点として明記した。
+
+#### 実装内容
+`SECParser._backfill_total_liabilities_via_identity()`を新規追加
+（`_backfill_gross_profit_from_revenue_cogs()`と同型のフォールバック設計）。
+`total_liabilities == total_assets`（かつ`stockholders_equity != 0`）という
+数学的シグネチャで検知した年度についてのみ、`total_assets -
+stockholders_equity`で逆算した値に置換する。代替候補タグの有無に関わらず
+一貫して恒等式逆算値を優先採用する設計とした（シミュレーションで逆算値の
+方が信頼性が高いと確認済みのため）。
+
+provenanceには`derived: True`に加え、逆算元のtotal_assets/stockholders_
+equity自体が本人データかを示す`source_is_own_data`を新設し、確度の低い
+11件を`report_consistency_check.py`側で将来識別できるようにした。
+
+コミット: `ee46018b2`（機能変更・テスト）・`11d75b2c0`（データ再生成）
+
+#### 検証結果
+1. 対象278件で`total_liabilities`が`total_assets − stockholders_equity`
+   の値に完全一致（許容誤差なし）することを確認
+2. 全105銘柄フローズン入力比較（`parse_and_save()`で再パース、新規API
+   コールなし）で変更されたファイルが278件と完全一致（過不足ゼロ）を確認
+3. 対象278件すべてに`derived: True`のprovenanceが正しく設定されている
+   ことを確認
+4. NVDA(2015)・RCAT(2023)で、代替候補タグ値（$2,783,000,000／$5,975,387）
+   ではなく逆算値（$2,783,386,000／$5,583,465）が採用されていることを確認
+5. `report_consistency_check.py`実行、NG=0・WARN=68件（変化なし）を確認。
+   RCAT(2023)のWARN-24（決算期変更境界バケツ競合、対象フィールドに
+   `total_liabilities`を含む）は本修正前から存在していたことを、修正前
+   データでの同一チェック実行で確認済み（新規発火ではない）。
+   `pipeline.py`の「total_debt=0だがtotal_liabilities大」診断WARNは
+   `_ann_total_liab`が印字にのみ使われ他の計算に波及しないことをコード上
+   確認済み
+6. pytest 504 passed/2 known failed（既知のMSFT/NVDA、[[TEST-STALE-IV-1]]）
+   を確認
+7. `growth.py`は`total_liabilities`を一切参照せず、`pipeline.py`側も
+   診断WARN専用の消費（`_ann_total_liab`は他の変数へ波及しない）である
+   ことをコード上再確認。DCF/EV/fcf_list直近5年窓への影響はないと確定
+
+#### 対応方針
+完了。貸借対照表恒等式逆算によるバックフィルを実装・全105銘柄へ反映済み。
+
+---
+
 ### ✅ [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] KULR(2019)でtotal_liabilities/current_liabilitiesが同一filing内で数学的に矛盾（candidate tag誤選択の疑い、entity混在ではないと確定）
 **状態:** 原因確定・[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]へ統合（2026-08-02）
 
