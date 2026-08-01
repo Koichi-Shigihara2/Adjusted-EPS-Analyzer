@@ -1,5 +1,18 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-02（2026-08-01〜02セッションの陳腐化是正。parser.py項に
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]（`_backfill_total_
+liabilities_via_identity()`）・[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]
+案b（`_align_cost_of_revenue_to_revenue_period()`）・[[LAYER3-GROSSPROFIT-
+BACKFILL-PROD-UNREACHED-1]]①（`_backfill_gross_profit_from_revenue_
+cogs()`）・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・段階2
+（`_resolve_bs_entity_mixing()`、新設`spac_shell_detection_log.json`）を
+追記。utils.py項に`detect_fiscal_anchor_clusters()`（ELF-FISCAL-END-
+MONTH-MISDETECTION-1案②）を追記。fetcher.py項に[[FETCHER-10KT-10QT-
+FORM-EXCLUSION-1]]案③（report_consistency_check.pyのCHECK-28/WARN-28）を
+追記。新規スクリプト`newfield_q4_cutoff_check.py`を独立ツールとして追記。
+いずれも2026-08-01実装済みだが本ファイル未反映だった陳腐化箇所）
+
 最終更新: 2026-07-30（common/sec_data統合フェーズA〜D準備セッション。
 【SECデータ取得層】ツリーに`layer3_builder.py`（Layer3、
 `config/sec_concept_definitions.json`ベースの統一snake_caseインメモリ
@@ -291,6 +304,17 @@ SEC EDGAR
 │    （P6-CIKDiscontinuity、`CIK_DISCONTINUITY_CONFIRMED_STRUCTURAL`＝
 │    {CEG,LITE,ABBV,GEV,SN,CON,VST}・境界年2010以降・売上5億ドル以上を
 │    ヒューリスティックとする）が新規登録時にCIK不連続候補をWARN検知する。
+│    **追記（FETCHER-10KT-10QT-FORM-EXCLUSION-1案③ 2026-08-01実装完了、
+│    コミット1fd44fc0a）**: fetcher.py本体は無変更（案①のrelevant_forms
+│    追加+バケツ再設計はコスト過大と判明し見送り確定）。代わりに
+│    `report_consistency_check.py`にCHECK-28/WARN-28を新設し、
+│    company_facts.json上のform=10-KT/10-QTのaccnが`accn_to_reportdate`に
+│    未登録の場合を検知する（検知のみ、自動修正なし）。全105銘柄実行で
+│    RCATにWARN-28が2件発火（10-KT accn`0001641172-25-001892`・10-QT accn
+│    `0001554795-19-000269`〈2019年、RCAT第1回目の決算期変更に伴う移行期
+│    四半期報告書〉）、他104銘柄で誤検知なし。単体テストは
+│    `tests/test_report_consistency_check.py`。詳細はBACKLOG_DONE.md
+│    [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]参照。
 ├─ quarterly.py      # 四半期データ取得・正規化
 ├─ normalizer.py     # フィールド正規化
 ├─ layer3_builder.py # Layer3（common/sec_data統合、config/sec_concept_definitions.json
@@ -308,6 +332,12 @@ SEC EDGAR
 │    `_get_concept_units()`は2026-07-30、[[LAYER3-COGS-ASTS-LRCX-
 │    RECOVERABLE-FOLLOWUP-1]]対応で「名前空間:タグ名」形式（コロン区切り）の
 │    企業固有拡張タグ参照に対応（現状利用箇所はゼロ、将来の再利用向けに保持）。
+│    **追記（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]① 2026-08-01
+│    実装完了）**: 上記「インメモリのみで本番に反映されない」ギャップは、
+│    parser.py側に独立の`_backfill_gross_profit_from_revenue_cogs()`を
+│    新設し本番`data/annual_YYYY.json`への反映経路を追加したことで解消（34
+│    銘柄342件是正）。本ファイルの`_backfill_gross_profit()`自体は無変更の
+│    ままインメモリ専用として残置。詳細はparser.pyの項・BACKLOG_DONE.md参照。
 │    **重要（3スキーマ併存の実態、詳細は`docs/architecture/new_data_platform/
 │    SEC_EDGAR_LAYER_DESIGN.md`参照）**: 2026-07-30時点で
 │    ①Layer3（本ファイル、snake_case・インメモリ）②`data/annual_*.json`等
@@ -475,6 +505,49 @@ SEC EDGAR
 │    同一年度なら別概念のタグでもend_dateが機械的に一致するため。VZの
 │    short_term_debtがShortTermBorrowings＝短期借入金でLongTermDebtCurrent
 │    ＝長期債務流動化分を誤って上書きする回帰を実装中に検出・修正）。
+│    **追記（TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1 2026-08-01実装完了、
+│    コミットee46018b2）**: `_backfill_total_liabilities_via_identity()`新設。
+│    `XBRL_MAPPING["total_liabilities"]`の2番目の候補タグ
+│    `LiabilitiesAndStockholdersEquity`（定義上total_assetsと数学的に一致する
+│    誤った代替タグ）が誤採用された年度をtotal_liabilities==total_assetsという
+│    数学的シグネチャで検知し、貸借対照表恒等式（total_assets-
+│    stockholders_equity）で逆算した値に置き換える。105銘柄中278件（銘柄年度、
+│    AMZN/GOOGL/MSFT/NVDA等の大型株含む）を是正、全105銘柄フローズン入力比較で
+│    対象外無変化を確認済み。
+│    **追記（PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1案b 2026-08-01実装完了、
+│    コミットb756021f6・ゲート追加9616e8058）**: `_align_cost_of_revenue_to_
+│    revenue_period()`新設。revenueとcost_of_revenueが異なるaccnから独立
+│    採用されている年度についてのみ、revenueと同一accn・同一期間を持つ
+│    cost_of_revenue候補タグが存在すればそちらを優先採用する（欠損穴埋め型の
+│    ゲート条件）。検証時の実データ確認で発見した「数学的矛盾がない場合は適用
+│    しない」ガードを追加（巻き添え防止）。LRCX(2010)のみ是正、CRM(2013)・
+│    JNJ(2017)・MRVL(2017)・ONDS(2017)は本案単独では未解決のまま残存
+│    （案a・案cはゲート条件込みの再設計が必要、詳細はBACKLOG.md参照）。
+│    **追記（LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1① 2026-08-01実装
+│    完了、コミットdc0507c27）**: `_backfill_gross_profit_from_revenue_cogs()`
+│    新設。標準タグからgross_profitが取得できない年度のみ、
+│    revenue-cost_of_revenueで逆算した値を本番data/annual_YYYY.jsonへ
+│    書き戻す（欠損の穴埋めのみ、既存の正しい値は上書きしない）。34銘柄342件を
+│    是正。従来layer3_builder.py::_backfill_gross_profit()はインメモリのみで
+│    本番ファイルに反映されない設計だった（同ファイル該当箇所参照）が、本対応で
+│    parser.py側から独立に本番ファイルへの反映経路を新設した。
+│    **追記（SPAC-SHELL-BS-ENTITY-MIXING-1段階1・段階2 2026-08-01実装完了、
+│    コミット段階1 4f9588fb1・段階2 1f6e95d92）**: `_resolve_bs_entity_
+│    mixing()`新設。SPAC合併等により同一年度のBS(instant fact)フィールドが
+│    異なる法的実体（accn）から混在採用されているケースを是正する（実例:
+│    BBAI/RDW/RKLB/SOFI/VRT/ONDS/KULR(2016)、段階2追加によりSPIR(2020)も対象）。
+│    「①複数accnが混在」「②本人データaccnが単一に定まる」「③数学的矛盾が
+│    確認できる、または③'アンカー候補accnのreportDateが法人名変更履歴
+│    〈former_names〉のいずれかの区間内にある（段階2、SPAC合併疑いの機械的
+│    検知）」「④アンカー統一で実際に矛盾が解消する」の4条件をすべて満たす
+│    年度のみ、本人データaccnをアンカーとして採用し他accn由来の値をNone化する
+│    （減算的設計、既存の正しい値を上書きする経路を持たない）。105銘柄・87件の
+│    複数accn混在ケースへのシミュレーションで矛盾のない56件（41銘柄）・
+│    KULR(2019)に無影響を確認済み。段階2で発火した年度の詳細は新設
+│    common/sec_data/data/{ticker}/spac_shell_detection_log.json
+│    （_save_spac_shell_detection_log()が保存、0件でも毎回書き込みの化石
+│    ファイル対策パターン）に記録。詳細はBACKLOG_DONE.md
+│    [[SPAC-SHELL-BS-ENTITY-MIXING-1]]参照。
 ├─ utils.py  # determine_fiscal_year() — 年度判定共通関数（ARCH-DATA-1-FY 2026-06-25）。
 │    ARCH-DATA-1ステージ2（2026-07-17）でアンカー日ウィンドウ方式に刷新:
 │    end_date.month > fiscal_end_monthの片方向月比較を廃し、
@@ -496,6 +569,16 @@ SEC EDGAR
 │    quarterly.py::check_revenue_quality()・src/value/tanuki_valuation/pipeline.py
 │    （DILUTION-FYE-1、希薄化率の分割検知）双方が参照し、暦年グルーピングの
 │    重複実装（CHECK-QREV-FYE-1型バグの再発）を解消した
+│    **追記（ELF-FISCAL-END-MONTH-MISDETECTION-1案② 2026-08-01新設、
+│    コミット499b4d478）**: detect_fiscal_anchor_clusters(us_gaap,
+│    candidate_keys, min_support=2)新設。detect_fiscal_anchor_date()と同一の
+│    (月,日)クラスタリング結果のうち、主anchor（最大クラスタ）以外で合計得票が
+│    min_support以上の「有意な」クラスタのアンカー日を、era別決算期変更の
+│    追加候補（determine_fiscal_year()のextra_anchors引数）として返す。単一
+│    クラスタしか存在しない銘柄（実測105銘柄中100銘柄）は必ず空リストを返す
+│    設計（加算的操作のみ、既存の正しい判定を上書きする経路を作らない）。
+│    ELFの2015-2018年度データ是正に使用。詳細はBACKLOG_DONE.md
+│    [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]参照
 ├─ revenue_tag_conflict_check.py  # revenue系タグ競合検知（ARCH-DATA-1残課題③
 │    2026-07-15新設）。company_facts.jsonを再読込し、MERGE_ALL_TAGS_FIELDS対象
 │    （revenue/selling_and_marketing/depreciation_and_amortization）の候補タグ間で
@@ -504,14 +587,25 @@ SEC EDGAR
 │    update.py Step1完了直後（check_revenue_quality()の直後、4c.相当）に配線。
 │    自動修正は行わない（人間がTICKER_RESTRICTIONS登録可否を判断する既存フロー
 │    に委ねる）。詳細はBACKLOG.md [[REVENUE-TAG-CONFLICT-SCAN-1]]参照
-└─ fact_selection.py  # fact競合解決の共通プリミティブ（EPS-ANALYZER-NORMALIZE-
-     SCOPE-1 2026-07-20新設）。`select_latest_filed(candidates)`——同一期間
-     （同一end_date等）に複数XBRL factが競合する場合に「filed日が最新のものを
-     優先する」という単一規則のみを担う末端プリミティブ。quarterly.py
-     （`_process_entries`/`_select_best_filing`）とsrc/value/adjusted_eps_analyzer/
-     extract_key_facts.py（SPLIT-AUTO-CHECK-1）がそれぞれ独立実装していた
-     同一ロジックをここに集約。parser.py本体（本人データ優先・fy一致等の
-     多段規則）は対象外
+├─ fact_selection.py  # fact競合解決の共通プリミティブ（EPS-ANALYZER-NORMALIZE-
+│    SCOPE-1 2026-07-20新設）。`select_latest_filed(candidates)`——同一期間
+│    （同一end_date等）に複数XBRL factが競合する場合に「filed日が最新のものを
+│    優先する」という単一規則のみを担う末端プリミティブ。quarterly.py
+│    （`_process_entries`/`_select_best_filing`）とsrc/value/adjusted_eps_analyzer/
+│    extract_key_facts.py（SPLIT-AUTO-CHECK-1）がそれぞれ独立実装していた
+│    同一ロジックをここに集約。parser.py本体（本人データ優先・fy一致等の
+│    多段規則）は対象外
+└─ newfield_q4_cutoff_check.py  # LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1
+     対応の常設チェックツール（2026-08-01新設）。現行のTTM回帰比較（旧ttm/
+     データのキーを起点に新旧を突合する設計）は、旧パイプラインに存在しな
+     かった新規フィールドを検証対象外にしてしまう構造的欠陥がある。
+     selling_general_and_administrative・cost_of_revenueの2フィールドに
+     ついて、①Q4欠落チェック（年次エントリのFY窓内にQ1〜Q3が揃っているのに
+     Q4が存在しないケースを検出、LAYER3-SGA-Q4-MISSING-1型の再発検知）・
+     ②カットオフチェック（非12月決算企業の単四半期エントリのperiod_daysが
+     layer3_builder.py::_is_plausible_standalone_quarter()の妥当範囲
+     〈75〜100日〉に収まっているか確認）を行う。対象2フィールドに限定する
+     理由はq4_implied.pyのモジュールdocstring参照
 
 【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
 `src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを
