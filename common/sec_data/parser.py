@@ -437,6 +437,12 @@ class SECParser:
         if _cross_filing_tags:
             self._apply_cross_filing_tags(us_gaap, extracted, _cross_filing_tags)
 
+        # [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①: 標準タグから
+        # gross_profitが取得できない年度のみ、revenue-cost_of_revenueで
+        # 逆算した値を本番annual_YYYY.jsonへ書き戻す（欠損の穴埋めのみ、
+        # 既存の正しい値は上書きしない）
+        self._backfill_gross_profit_from_revenue_cogs(extracted)
+
         # ARCH-DATA-1ステージ3: fyタグ裏取り不一致を記録（0件でも毎回書き込む。
         # fy_collision_logと同じ化石ファイル対策）
         self._save_fy_tag_mismatch_log(ticker, _fy_tag_mismatches)
@@ -563,6 +569,54 @@ class SECParser:
                 if accn != anchor:
                     extracted[field]["annual"].pop(year, None)
                     extracted[field].get("_annual_provenance", {}).pop(year, None)
+
+    def _backfill_gross_profit_from_revenue_cogs(self, extracted: Dict[str, Any]) -> None:
+        """
+        [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①: GrossProfit/
+        GrossProfitLossタグからgross_profitが取得できない年度についてのみ、
+        revenue - cost_of_revenueで逆算した値をフォールバックとして採用し、
+        本番annual_YYYY.jsonに書き戻す。
+
+        適用条件（Case Aの定義を厳密に踏襲）:
+          - gross_profitが標準タグから取得できていない（欠損）年度のみ
+            （標準タグでの取得を常に優先する。既存の正しい値を上書きする
+            経路は持たない、減算的〈subtractive〉ではなく加算的
+            〈additive〉だが「欠損の穴埋めのみ」という点で安全側設計）
+          - revenue・cost_of_revenueが同一年度で両方present（Noneでない）
+
+        採用した値のprovenanceには"derived": Trueを付与し、実タグに基づかない
+        逆算値であることを明示する（既存のbs_provenance側の
+        is_approximated/_apply_cross_filing_tags規約と同種のシグナル。
+        report_consistency_check.py等が実タグ由来の値と区別できるようにする
+        ため）。
+
+        Predecessor/Successor型（SPAC合併等でrevenue/cost_of_revenue自体も
+        Noneの年度、例: ELF 2014/2019・BBAI/RDW/RKLB/SOFI/VRT 2020/2019）は
+        フォールバック元データ自体が存在しないため、判定を経由せず自動的に
+        対象外となる。
+        """
+        gp_field = extracted.get("gross_profit")
+        rev_field = extracted.get("revenue")
+        cogs_field = extracted.get("cost_of_revenue")
+        if gp_field is None or rev_field is None or cogs_field is None:
+            return
+
+        gp_annual = gp_field.setdefault("annual", {})
+        gp_prov = gp_field.setdefault("_annual_provenance", {})
+        rev_annual = rev_field.get("annual", {})
+        cogs_annual = cogs_field.get("annual", {})
+
+        for year, rev_val in rev_annual.items():
+            if gp_annual.get(year) is not None:
+                continue  # 標準タグで既に取得済み（優先、上書きしない）
+            cogs_val = cogs_annual.get(year)
+            if rev_val is None or cogs_val is None:
+                continue
+            gp_annual[year] = rev_val - cogs_val
+            gp_prov[year] = {
+                "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
+                "derived": True,
+            }
 
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
