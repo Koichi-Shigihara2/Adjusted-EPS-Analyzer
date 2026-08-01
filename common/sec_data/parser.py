@@ -832,15 +832,26 @@ class SECParser:
         revenueと同一accn・同一(start,end)期間を持つcost_of_revenue候補
         タグが存在すればそちらを優先採用する。
 
-        適用条件（数学的シグネチャではなくprovenance不一致で機械的に検知、
-        銘柄名のハードコードなし）:
-          - revenue・cost_of_revenueが同一年度でpresent（Noneでない）
-          - 両者のprovenance.accnが異なる（既に一致しているケースは対象外、
-            [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同じ
-            「欠損穴埋めのみ・既存の正しい値は上書きしない」ゲート条件）
+        適用条件（数学的シグネチャで機械的に検知、銘柄名のハードコードなし。
+        [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同じ「欠損穴埋め
+        のみ・既存の正しい値は上書きしない」ゲート条件）:
+          - revenue・cost_of_revenue・gross_profitが同一年度でpresent
+            （Noneでない）。gross_profitは実タグ由来の値のみを対象とする
+            （本関数は_backfill_gross_profit_from_revenue_cogs()より前に
+            実行されるため、この時点でgross_profitがNoneであれば実タグが
+            存在しない年度＝比較不能として対象外とする。derived値との
+            比較を避けることで、GOOGL(2008)/HON(2008)/SCCO(2009/2010)等
+            gross_profit自体が導出値の年度を誤って書き換える巻き添えを
+            防ぐ〈実データ検証で発見・是正済み〉）
+          - 現に`revenue − cost_of_revenue ≠ gross_profit`という数学的
+            矛盾が確認できる年度のみ（矛盾のない年度＝両者のprovenance.accn
+            が異なっていても結果的に整合している年度は対象外）
           - revenueと同一accn・同一期間のcost_of_revenue候補が
-            company_facts.json上に実在する場合のみ置換する。存在しなければ
-            現状を維持する（新規のNone化・値の変更は一切行わない）
+            company_facts.json上に実在し、かつその値を採用すると
+            `revenue − 新cost_of_revenue = gross_profit`が厳密に成立する
+            （矛盾が実際に解消する）場合のみ置換する。解消しない場合は
+            現状を維持する（KULR(2019)型の巻き添え防止と同じ設計、
+            [[SPAC-SHELL-BS-ENTITY-MIXING-1]]の条件④と同種）
 
         CRM(2013)型（同一accn・別期間の本人データ年度違い）は、accnが
         「一致」しているため本ロジックの対象外となる既知の限界がある
@@ -848,18 +859,23 @@ class SECParser:
         """
         rev_field = extracted.get("revenue")
         cogs_field = extracted.get("cost_of_revenue")
-        if rev_field is None or cogs_field is None:
+        gp_field = extracted.get("gross_profit")
+        if rev_field is None or cogs_field is None or gp_field is None:
             return
 
         rev_annual = rev_field.get("annual", {})
         rev_prov = rev_field.get("_annual_provenance", {})
+        gp_annual = gp_field.get("annual", {})
         cogs_annual = cogs_field.setdefault("annual", {})
         cogs_prov = cogs_field.setdefault("_annual_provenance", {})
 
         for year, cogs_val in list(cogs_annual.items()):
             rev_val = rev_annual.get(year)
-            if rev_val is None or cogs_val is None:
+            gp_val = gp_annual.get(year)
+            if rev_val is None or cogs_val is None or gp_val is None:
                 continue
+            if (rev_val - cogs_val) == gp_val:
+                continue  # 現に矛盾がない（対象外、ゲート条件）
             rev_p = rev_prov.get(year)
             cogs_p = cogs_prov.get(year)
             if not rev_p or not cogs_p:
@@ -880,6 +896,8 @@ class SECParser:
             _, aligned_val, aligned_filed = aligned
             if aligned_val == cogs_val:
                 continue  # 値が変わらないなら何もしない（無用な書き換え回避）
+            if (rev_val - aligned_val) != gp_val:
+                continue  # 置換しても矛盾が解消しないなら採用しない（巻き添え防止）
 
             cogs_annual[year] = aligned_val
             cogs_prov[year] = {
