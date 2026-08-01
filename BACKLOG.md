@@ -1,5 +1,14 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]新規登録
+（優先度：低。HON(2009)のgross_profit乖離が[[PERIOD-LENGTH-VALIDATION-
+GAP-1]]是正後も残存、他8銘柄は全解消したのに対し既知パターンと異なる原因の
+疑い）＋[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]の対象を
+MO/PM/SCCOの3銘柄から14銘柄（AMD/BSY/CRM/JNJ/KO/LITE/LRCX/MO/MRVL/ONDS/
+PM/RMBS/SCCO）へ拡大訂正。再スキャンでMO/SCCOが各10年連続の持続的乖離、
+LITE(9年)・CRM(7年)という当初未記載の大規模クラスタが判明したことを反映。
+登録・訂正のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1実装完了。
 `SECParser._resolve_bs_entity_mixing()`を新規追加し、「①複数accn混在・
 ②本人データaccnが単一に定まる・③現に数学的矛盾が確認できる・④アンカー
@@ -5780,29 +5789,77 @@ company_facts.json上に存在する「b: 改善」ケース（フィルタ適�
 
 ---
 
-### [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] MO/PM/SCCOのgross_profitとRevenue-cost_of_revenue逆算値の乖離（会計上の定義差の疑い、要確認）
+### [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] gross_profitとRevenue-cost_of_revenue逆算値の乖離が14銘柄で残存（2026-08-02対象拡大: MO/PM/SCCO→14銘柄）
 **優先度:** 低〜中
-**分類:** データ品質 / 会計上の定義差（要確認）
+**分類:** データ品質 / 会計上の定義差または未解消バグ（要確認）
 **登録日:** 2026-07-31
-**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]Case B調査（チャット記録）
+**訂正日:** 2026-08-02（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]現状
+再確認で対象を拡大）
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]Case B調査（チャット記録）、
+2026-08-02再スキャン（チャット記録）で全容判明
 
-#### 内容
-MO(2016、乖離35.5%)・PM(2016、73.6%)・SCCO(2016、27.6%)は、gross_profitと
-Revenue−cost_of_revenue逆算値の間に、いずれも年次エントリ同士(365日)での乖離が
-ある。[[PERIOD-LENGTH-VALIDATION-GAP-1]]の期間長誤採用パターンとは異なり、
-発行体独自の会計上の定義差(物品税・関税等の取扱い差の可能性)が疑われるが、
-10-K原本での裏取りは未実施。
+#### 内容（2026-08-02再スキャンで対象拡大）
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]
+実装後、gross_profitとRevenue−cost_of_revenue逆算値の乖離（Case B）を
+全105銘柄で再スキャンしたところ、117件→49件（14銘柄）に減少した一方、
+当初想定（MO/PM/SCCOの2016年度3件を例示）より遥かに広範な残存パターンで
+あることが判明した：
+
+- **MO(10年連続: 2016-2025)・SCCO(10年連続: 2010-2019)・PM(2年: 2016-2017)**
+  ＝計22件。当初registeredの3件（各2016年度のみ）は氷山の一角で、
+  MO/SCCOは実際には10年連続の持続的乖離だった
+- **新規可視化（当初未記載の大規模クラスタ）**: LITE(9年: 2015-2016・
+  2019-2025)・CRM(7年: 2009-2013・2017-2018)
+- **その他残存**: JNJ(2017)・KO(2017)・AMD(2年: 2016-2017)・LRCX(2010)・
+  MRVL(2017)・ONDS(2017)・RMBS(2年: 2018-2019)
+- HON(2009)は既知パターン（四半期→年次誤採用）と異なる可能性が高いため
+  [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]として別エントリで
+  独立管理する（本エントリの対象からは除外）
+
+対象をMO/PM/SCCOの3銘柄から**14銘柄（AMD/BSY/CRM/JNJ/KO/LITE/LRCX/MO/
+MRVL/ONDS/PM/RMBS/SCCO、BSYは1年のみ）**に拡大し、「genuine会計定義差」
+「未解消のタグ選定バグ」のいずれに該当するかを個別確認する対象として
+再定義する。
 
 #### 影響
-未確定。3銘柄のgross_profit・cost_of_revenueの解釈に影響しうる。
+未確定。14銘柄・49件のgross_profit・cost_of_revenueの解釈に影響しうる。
+MO/SCCOのように10年連続で持続する乖離は、単年度の会計処理変更よりも
+構造的な定義差（物品税・関税等の取扱い差）を示唆する一方、LITE/CRMのような
+新規発見クラスタは原因未確認。
 
 #### 対応方針
 未定。10-K原本で該当科目の定義を個別確認し、genuineな定義差と確定すれば
 「安全な差異として記録」、そうでなければ[[PERIOD-LENGTH-VALIDATION-GAP-1]]系統に
-合流させる。
+合流させる。②突合検算ロジック（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-
+UNREACHED-1]]対応方針案②）の設計時にまとめて扱うのが効率的。
 
 #### 着手条件
-なし。優先度低〜中のため、優先度高3件の後で対応可。
+なし。優先度低〜中のため、優先度高の項目の後で対応可。
+
+---
+
+### [HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1] HON(2009)のgross_profit乖離が期間長是正後も残存、既知パターンと異なる原因の疑い
+**優先度:** 低
+**分類:** データ品質 / 要個別確認
+**登録日:** 2026-08-02
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]現状再確認（チャット記録）
+
+#### 内容
+HON(2009)のみ、[[PERIOD-LENGTH-VALIDATION-GAP-1]]是正後も乖離が残存
+（gross_profit=$6,896M vs revenue-cost_of_revenue逆算値=$7,723M、差$827M）。
+同じ「四半期→年次誤採用」パターンが確認されていた他の8銘柄（TDY/AVGO/CPRT/
+ABBV/CAT/FICO/HEI/KLAC）は全て解消したのに対し、この1件のみ既知パターンとは
+異なる原因の可能性がある。
+
+#### 影響
+HON単一年度。金額規模（$827M差）は小さくないが、他年度・他フィールドへの
+波及は未確認。
+
+#### 対応方針
+未定。10-K原本での個別確認が必要。
+
+#### 着手条件
+なし。優先度低。
 
 ---
 
