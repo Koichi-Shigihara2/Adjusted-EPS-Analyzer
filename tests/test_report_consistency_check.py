@@ -605,3 +605,123 @@ class TestCheck3LowRoundingWithEnumClassification:
             "__str__override漏れ時の表記だとNG-3が誤発火することを確認 "
             "（= 現在のClassificationは__str__overrideがあるため実際には発生しない）"
         )
+
+
+class TestCheck28TransitionFormExclusion:
+    """CHECK-28（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]で新設）が
+    company_facts.json上のform=10-KT/10-QTのaccnのうち、
+    accn_to_reportdate（submissions.json由来）に未登録のものを正しく
+    検知することを確認する。WARN-24（症状〈バケツ競合〉検知）とは独立した
+    根本原因〈10-KT/10-QT自体の除外〉を直接検知する別軸であることも確認する"""
+
+    def _make_ticker_dir(self, tmp_path, ticker: str) -> None:
+        """check_ticker()がreport.txtの存在で早期returnしないよう最小のfixtureを作る"""
+        ticker_dir = tmp_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        (ticker_dir / "report.txt").write_text("Classification: WATCH\n", encoding="utf-8")
+        (ticker_dir / "latest.json").write_text("{}", encoding="utf-8")
+
+    def _make_sec_data_dir(self, sec_data_path, ticker: str):
+        ticker_dir = sec_data_path / ticker
+        ticker_dir.mkdir(parents=True, exist_ok=True)
+        return ticker_dir
+
+    def _write_company_facts(self, ticker_dir, entries: list) -> None:
+        """entries: [{"form":..., "accn":..., "end":...}, ...]"""
+        (ticker_dir / "company_facts.json").write_text(
+            json.dumps({"facts": {"us-gaap": {"Revenues": {"units": {"USD": entries}}}}}),
+            encoding="utf-8",
+        )
+
+    def _write_submissions(self, ticker_dir, accn_to_reportdate: dict) -> None:
+        (ticker_dir / "submissions.json").write_text(
+            json.dumps({"accn_to_reportdate": accn_to_reportdate}), encoding="utf-8"
+        )
+
+    def test_warn_28_fires_when_transition_accn_unregistered(self, tmp_path, monkeypatch):
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        self._write_company_facts(ticker_dir, [
+            {"form": "10-KT", "accn": "AccnT", "end": "2024-12-31", "val": 100},
+        ])
+        self._write_submissions(ticker_dir, {})  # AccnTが未登録
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-28" in w and "AccnT" in w and "10-KT" in w for w in warn)
+        assert not any("WARN-28" in n for n in ng)  # 非ブロッキング（NGにはならない）
+
+    def test_no_warn_28_when_transition_accn_registered(self, tmp_path, monkeypatch):
+        """relevant_forms修正済み・または正しく登録済みのケースでは発火しない"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        self._write_company_facts(ticker_dir, [
+            {"form": "10-KT", "accn": "AccnT", "end": "2024-12-31", "val": 100},
+        ])
+        self._write_submissions(ticker_dir, {"AccnT": "2024-12-31"})  # 登録済み
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-28" in w for w in warn)
+
+    def test_no_warn_28_when_no_transition_forms_present(self, tmp_path, monkeypatch):
+        """10-KT/10-QTを一度も提出していない銘柄（105銘柄中104銘柄相当）では
+        誤検知しない"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        self._write_company_facts(ticker_dir, [
+            {"form": "10-K", "accn": "AccnNormal", "end": "2024-12-31", "val": 100},
+        ])
+        self._write_submissions(ticker_dir, {})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert not any("WARN-28" in w for w in warn)
+
+    def test_no_warn_28_when_company_facts_missing(self, tmp_path, monkeypatch):
+        """company_facts.json自体が存在しない場合は例外を送出せず何もしない"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        self._make_sec_data_dir(sec_data_path, "TESTCO")
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())  # no exception
+        assert not any("WARN-28" in w for w in warn)
+
+    def test_warn_28_reports_only_unregistered_accn_among_multiple(self, tmp_path, monkeypatch):
+        """複数の10-KT/10-QT accnが存在する場合、未登録のものだけが報告される
+        （RCAT実データ相当: 10-QT・10-KTの2件が別々に検知される）"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        self._write_company_facts(ticker_dir, [
+            {"form": "10-QT", "accn": "AccnQ", "end": "2018-12-31", "val": 100},
+            {"form": "10-KT", "accn": "AccnK", "end": "2024-12-31", "val": 200},
+        ])
+        self._write_submissions(ticker_dir, {"AccnQ": "2018-12-31"})  # AccnQのみ登録済み
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        warn_28 = [w for w in warn if "WARN-28" in w]
+        assert len(warn_28) == 1
+        assert "AccnK" in warn_28[0]
+        assert "AccnQ" not in warn_28[0]
+
+    def test_check_28_independent_of_check_24(self, tmp_path, monkeypatch):
+        """WARN-28（根本原因検知）とWARN-24（症状検知）は独立しており、
+        片方のログ・条件のみが存在する場合に他方が誤検知されないこと"""
+        self._make_ticker_dir(tmp_path, "TESTCO")
+        sec_data_path = tmp_path / "sec_data"
+        ticker_dir = self._make_sec_data_dir(sec_data_path, "TESTCO")
+        self._write_company_facts(ticker_dir, [
+            {"form": "10-KT", "accn": "AccnT", "end": "2024-12-31", "val": 100},
+        ])
+        self._write_submissions(ticker_dir, {})
+        monkeypatch.setattr(rcc, "DATA_DIR", str(tmp_path))
+        monkeypatch.setattr(rcc, "SEC_DATA_DIR", str(sec_data_path))
+        ng, warn = rcc.check_ticker("TESTCO", whitelist=set())
+        assert any("WARN-28" in w for w in warn)
+        assert not any("WARN-24" in w for w in warn)

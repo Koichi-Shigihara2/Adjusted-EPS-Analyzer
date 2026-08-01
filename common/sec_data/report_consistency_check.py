@@ -86,6 +86,17 @@ report_consistency_check.py
                               機構の将来の再利用先で、想定外に大きな乖離が
                               生じていないかの安全網。NVDA自身は+0.88%のため
                               通常は発火しない）
+  WARN 28. 10-KT/10-QT除外    company_facts.jsonにform=10-KT/10-QTのaccnが存在する
+                              のに、そのaccnがaccn_to_reportdate（submissions.json
+                              由来）に未登録（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]
+                              新設。fetcher.py::_fetch_submissions_for_cikの
+                              relevant_formsに10-KT/10-QTが含まれておらず、決算期
+                              変更移行期報告書の本人データがis_own_data判定の対象外
+                              になる構造的欠落を直接検知する。WARN-24〈決算期変更
+                              境界バケツ競合〉はこの欠落が引き起こす症状〈バケツ
+                              競合〉を検知するのに対し、本WARNは根本原因〈10-KT/
+                              10-QT自体の除外〉を直接検知する別軸。RCATで実在確認
+                              済み。自動修正なし、検知のみ）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -115,6 +126,7 @@ WARN_LEDGER  = os.path.join(REPO_ROOT, "config/warn_acknowledged.json")
 sys.path.insert(0, REPO_ROOT)
 from common.screening.dcf_validity_checker import check_c_data_jump  # noqa: E402
 from common.sec_data import tickers as _tickers_mod  # noqa: E402
+from common.sec_data.fetcher import load_submissions  # noqa: E402
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -946,6 +958,42 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                         f"閾値({_RESIDUAL_PCT_THRESHOLD*100:.0f}%)を超過 → 合算元タグ"
                         f"（{', '.join(_fp27.get('combined_tags', []))}）の妥当性を要確認"
                     )
+        except Exception:
+            pass
+
+    # CHECK-28: 10-KT/10-QT除外検知（[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]）
+    # fetcher.py::_fetch_submissions_for_cik()のrelevant_formsに10-KT・
+    # 10-QT（決算期変更移行期報告書）が含まれておらず、該当formのaccnが
+    # accn_to_reportdateに登録されないため、is_own_data判定が恒常的に
+    # Falseになり本人データが年次バケツ争いで採用されない構造的欠落を
+    # 直接検知する。WARN-24〈決算期変更境界バケツ競合〉はこの欠落が
+    # 引き起こす症状〈バケツ競合〉を検知するのに対し、本WARNは根本原因
+    # 〈10-KT/10-QT自体の除外〉を直接検知する別軸。自動修正なし、検知のみ。
+    _cf_path_c28 = os.path.join(SEC_DATA_DIR, ticker, "company_facts.json")
+    if os.path.exists(_cf_path_c28):
+        try:
+            with open(_cf_path_c28, encoding="utf-8") as _f28:
+                _cf28 = json.load(_f28)
+            _facts28 = _cf28.get("facts", {}).get("us-gaap", {})
+            _transition_forms28 = {"10-KT", "10-QT"}
+            _transition_accns28: dict = {}
+            for _tagdata28 in _facts28.values():
+                for _entries28 in _tagdata28.get("units", {}).values():
+                    for _e28 in _entries28:
+                        _accn28 = _e28.get("accn")
+                        _form28 = _e28.get("form")
+                        if _accn28 and _form28 in _transition_forms28:
+                            _transition_accns28.setdefault(_accn28, (_form28, _e28.get("end")))
+            if _transition_accns28:
+                _accn_reportdate28 = load_submissions(ticker, data_dir=SEC_DATA_DIR)
+                for _accn28, (_form28, _end28) in sorted(_transition_accns28.items()):
+                    if _accn28 not in _accn_reportdate28:
+                        warn.append(
+                            f"  [WARN-28 10-KT/10-QT除外] accn={_accn28} form={_form28} "
+                            f"end={_end28} → accn_to_reportdateに未登録のため本人データ"
+                            f"判定の対象外（fetcher.py relevant_forms除外、"
+                            f"[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]、自動修正なし）"
+                        )
         except Exception:
             pass
 
