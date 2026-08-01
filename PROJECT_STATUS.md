@@ -1,6 +1,35 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-02（セッション終了処理。2026-08-01〜02の2日間にわたり
+gross_profit調査を発端に波及した一連のデータ品質是正作業の最終サマリを
+反映。
+
+**完了・クローズ項目（全16件）**: `[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・
+`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-
+SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・段階2・`[[LAYER3-
+GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]`・`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-
+KULR-1]]`（`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`へ統合）・
+`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`（278件是正実装完了）・
+`[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]`（解消・実害なし）・
+`[[SPAC-STUB-PERIOD-VERIFICATION-1]]`（解消・11銘柄すべて妥当と確認）・
+`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`一部（MO/PM/
+SCCOをgenuine定義差と確定）・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`
+案b（LRCX(2010)是正実装完了、CRM/JNJ/MRVL/ONDS型は残存）・
+`[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]`（案③WARN-28実装完了）・
+`[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]`（`[[OPERATING-CASH-FLOW-
+CONTINUING-DISCONTINUED-GAP-1]]`へスコープ拡大・統合）。
+
+**次回最優先タスク**: `[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈優先度：高、
+現在進行形のDCF計算実害。RCATの`get_fcf_5yr_avg()`が実質2021-2023年の
+3年平均になっており、真により大きな悪化を示す2024/2025年〈特に-$89.1M〉
+が欠落。`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`のRCAT分
+〈パターンB、継続+非継続の合算〉解決が前提〉。残る25銘柄中24銘柄は該当
+年度が現在の直近5年窓の外にあり実害なしと確定済み。
+
+詳細はBACKLOG.md/BACKLOG_DONE.md該当項目参照）
+
 更新日: 2026-08-02（セッション終了処理。2026-08-01〜02セッション全体
 〈gross_profit調査発端の一連の作業〉のサマリを反映。
 
@@ -108,7 +137,7 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 
 | コンポーネント | 状態（未着手/構築中/完成） | 備考 |
 |---|---|---|
-| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。**2026-08-01〜02、一次データ抽出品質の残課題6件が完了**（`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`、詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照）。**セッション後半、`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2〈formerNames区間一致によるSPAC合併疑いの機械的検知〉も完了**し同エントリは段階1・段階2とも完了としてBACKLOG_DONE.mdへ全文移動済み。副産物`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)個別〉は根本原因調査でXBRL_MAPPING候補タグ設計欠陥と確定・105銘柄中278件へ及ぶ横断課題と判明したためクローズし`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`へ統合。**同エントリは実装完了**（貸借対照表恒等式逆算〈total_assets−stockholders_equity〉によるtotal_liabilitiesバックフィルを実装、278件全件で完全一致を確認、全105銘柄フローズン入力比較で対象外無変化を確認。BACKLOG_DONE.mdへ移動済み）。**`[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]`は解消**（3段階目の決算期変更は存在せず、実害なしと確認）。**`[[SPAC-STUB-PERIOD-VERIFICATION-1]]`は解消**（11銘柄すべて現状の処理が妥当と確認）。**`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`はMO/PM/SCCOの3銘柄をgenuine定義差と確定しクローズ**（残り11銘柄は`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`へ分離登録）。残課題（優先度順）: `[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`〈中〜高、revenue/cost_of_revenue/gross_profitの複数フィールド間accn・期間不整合、CRM/JNJ/MRVLで確定・残り6銘柄要確認〉・`[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]`〈中、決算期変更移行期報告書の除外バグ〉・`[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]`〈中、RCATのOCF欠落〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照 |
+| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。**2026-08-01〜02、一次データ抽出品質の残課題6件が完了**（`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`、詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照）。**セッション後半、`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2〈formerNames区間一致によるSPAC合併疑いの機械的検知〉も完了**し同エントリは段階1・段階2とも完了としてBACKLOG_DONE.mdへ全文移動済み。副産物`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)個別〉は根本原因調査でXBRL_MAPPING候補タグ設計欠陥と確定・105銘柄中278件へ及ぶ横断課題と判明したためクローズし`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`へ統合。**同エントリは実装完了**（貸借対照表恒等式逆算〈total_assets−stockholders_equity〉によるtotal_liabilitiesバックフィルを実装、278件全件で完全一致を確認、全105銘柄フローズン入力比較で対象外無変化を確認。BACKLOG_DONE.mdへ移動済み）。**`[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]`は解消**（3段階目の決算期変更は存在せず、実害なしと確認）。**`[[SPAC-STUB-PERIOD-VERIFICATION-1]]`は解消**（11銘柄すべて現状の処理が妥当と確認）。**`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`はMO/PM/SCCOの3銘柄をgenuine定義差と確定しクローズ**（残り11銘柄は`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`へ分離登録）。**`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`は案b（同一accn＋期間一致優先）を実装完了**（LRCX(2010)のcost_of_revenueを是正、全105銘柄フローズン入力比較で対象外無変化を確認。CRM(2013)・JNJ(2017)・MRVL(2017)・ONDS(2017)は案b単独では未解決のまま残存、案a・案cはゲート条件込みの再設計が必要）。**`[[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]`は案③（`report_consistency_check.py`へのWARN-28追加）を実装完了**しBACKLOG_DONE.mdへ移動（案①のrelevant_forms修正はコスト過大と判明し見送り確定）。**`[[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]`は根本原因調査の結果、105銘柄中25銘柄へ及ぶ横断課題と判明したためクローズし`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`へ統合**（実害確認調査で25銘柄中24銘柄は現在の直近5年窓の外にあり実害なしと確定、優先度を高→中に訂正）。**RCAT単独については`[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`として新規登録**（優先度：高、`get_fcf_5yr_avg()`が実質3年平均になっておりDCFのFCFベース値計算に現在進行形の実害）。残課題（優先度順）: `[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈高〉・`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`〈中〉・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`残存分〈中〜高〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]`〈低〜中〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
