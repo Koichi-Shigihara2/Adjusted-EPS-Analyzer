@@ -1,5 +1,23 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-02（2026-07-30の4コミット分の陳腐化を追加是正。
+data_fetcher.py::TTMReader項に[[TTM-PASCALCASE-KEY-STALE-1]]
+（audit.py::audit_ticker()・build_rice_annual_shape()のPascalCase→
+snake_case取り残しでRICEスコア3日間全停止・94銘柄FCFソース誤後退、
+コミットa7b840c32）を追記。layer3_builder.py項にLAYER3-SGA-Q4-MISSING-1
+（selling_general_and_administrativeのQ4恒常欠落42銘柄171四半期を解消、
+同コミット）を追記。同項に[[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]
+（`docs/common/sec_data/normalized/`が2.2〜2.3ヶ月55銘柄分陳腐化、
+quarterly_review_generator.py/tail_dcf_bridge.pyのredirect＋
+SEC_Data_Update.ymlへのrsync同期ステップ新設で解消、コミット5ee157c6b）を
+追記。新規`segment_fetcher.py`項を追加し[[SEGMENT-FETCHER-DUPLICATE-
+ORPHAN-1]]（src/value/tanuki_valuation側の重複ファイル削除・
+common/sec_data側へ一本化、コミット0e60ee255）を記載。STONKS SILO節に
+STONKS-SILO-COGS-DEAD-FALLBACK-1（discover/stonks-silo/src/fetcher.py::
+_normalize_record()のcost_of_revenue代替キー参照デッドコード削除・
+falsy-zeroバグ副次修正、コミット84385c271）を追記。newfield_q4_cutoff_
+check.pyの新設日表記を2026-08-01→2026-07-30〈同コミットa7b840c32〉に訂正）
+
 最終更新: 2026-08-02（2026-08-01〜02セッションの陳腐化是正。parser.py項に
 [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]（`_backfill_total_
 liabilities_via_identity()`）・[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]
@@ -211,6 +229,18 @@ HypeCore遷移確率サンプル数の4観点を機械判定。詳細はスク�
 financial_trend_calculator.py/valuation_fetcher.pyで構成）→
 `docs/value-monitor/stonks-silo/data/results.json`
 
+**追記（STONKS-SILO-COGS-DEAD-FALLBACK-1 2026-07-30実装完了、コミット
+84385c271）**: `fetcher.py::_normalize_record()`のgross_profit補完で、
+`cost_of_goods_sold`・`cost_of_goods_and_services_sold`の2キーはannual_
+YYYY.jsonのpl辞書に実在せず常にNoneを返すデッドコードだったため削除し
+`cost_of_revenue`のみ参照に単純化（登録時コミットのメッセージ確認により、
+意図的な将来予約ではなくparser.pyの複数候補タグ→単一キー統合設計を誤認
+した憶測に基づくデッドコードと確認）。副次的発見として、旧`or`チェーンは
+`cost_of_revenue=0`（RXRX 2021年で実在）の場合に次の候補キーへ誤って
+フォールスルーしcostがNone扱いになるfalsy-zeroバグを内包していたが、
+今回の単純化で同時に解消。全25 stonks_silo銘柄のStonksAnalyzer.analyze()
+出力を変更前後で比較し差分ゼロを確認済み。
+
 **主要フィールド構成（`results.json.tickers.{TICKER}`）:**
 - `deficit_quality`: revenue_growth_pct・cagr_3yr・rnd_ratio・sm_ratio・gross_margin・
   verdict（BUY/WATCH等）・score・sbc_adjusted_fcf・sbc_ratio・dilution_risk
@@ -338,6 +368,15 @@ SEC EDGAR
 │    新設し本番`data/annual_YYYY.json`への反映経路を追加したことで解消（34
 │    銘柄342件是正）。本ファイルの`_backfill_gross_profit()`自体は無変更の
 │    ままインメモリ専用として残置。詳細はparser.pyの項・BACKLOG_DONE.md参照。
+│    **追記（LAYER3-SGA-Q4-MISSING-1 2026-07-30実装完了、コミットa7b840c32）**:
+│    `selling_general_and_administrative`をQ4_IMPLIED_FIELDS・
+│    MISSING_QUARTER_IMPLIED_FIELDS双方に追加し、42銘柄・171四半期のQ4
+│    恒常欠落を解消。同コミットでLAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1
+│    （Layer2新規6フィールドの投資調査）も完了し、他4フィールド
+│    （short_term_investments/total_liabilities/eps_basic/eps_diluted）は
+│    性質上Q4逆算・カットオフチェックの対象外と判定した（SGA/cost_of_revenue
+│    向けの常設チェックは`newfield_q4_cutoff_check.py`、詳細は同ファイルの
+│    項参照）。
 │    **重要（3スキーマ併存の実態、詳細は`docs/architecture/new_data_platform/
 │    SEC_EDGAR_LAYER_DESIGN.md`参照）**: 2026-07-30時点で
 │    ①Layer3（本ファイル、snake_case・インメモリ）②`data/annual_*.json`等
@@ -352,6 +391,21 @@ SEC EDGAR
 │    フェーズD（本体consumer切替、対象優先順位: ①TANUKI VALUATION本体
 │    ②STONKS SILO ③TANUKI TAIL ④HypeCore ⑤stock.html）着手前提条件は
 │    `SEC_EDGAR_LAYER_DESIGN.md`「フェーズD」節・`MIGRATION_CHECKLIST.md`参照。
+│    **追記（DOCS-SECDATA-NORMALIZED-DIR-STALE-1 2026-07-30実装完了、
+│    コミット5ee157c6b）**: GitHub Pages公開フロントエンド（stock.html）向け
+│    公開コピー`docs/common/sec_data/normalized/`が2026-05-23以降同期
+│    されず、本家`common/sec_data/normalized/`（③、上記）から約2.2〜2.3
+│    ヶ月・55銘柄分乖離していた。選択肢A+B併用で解消: (A)
+│    `src/tail/quarterly_review_generator.py`・`src/tail/tail_dcf_bridge.py`
+│    のCOMMON_NORMALIZED_DIR定数を本家`common/sec_data/normalized/`へ
+│    redirect（TANUKI TAIL側は公開コピーではなく本家を直接参照するよう変更）、
+│    (B)`.github/workflows/SEC_Data_Update.yml`に本家→公開コピーへの
+│    `rsync --delete`同期ステップを新設（`.gitattributes`に
+│    `merge=ours`設定も追加）。初回手動同期で105銘柄を本家と完全一致させた。
+│    TANUKI TAIL 10ポジションでの新旧比較: ADBE/APGEはファイル不在→実データ
+│    復帰、NVDAは参照四半期が更新されoperating_margin等が変化（残り7銘柄は
+│    変化なし）。詳細はBACKLOG_DONE.md
+│    [[DOCS-SECDATA-NORMALIZED-DIR-STALE-1]]参照。
 ├─ ttm_calculator.py # TTM系列計算。本番経路は calc_ttm_series()/save_ttm_series()
 │    のみ（update.pyが呼ぶ）。**フェーズC対応（2026-07-24〜）**: 入力元は
 │    旧`normalize()`の戻り値から`layer3_builder.py::build_ticker_store()`の
@@ -595,17 +649,29 @@ SEC EDGAR
 │    extract_key_facts.py（SPLIT-AUTO-CHECK-1）がそれぞれ独立実装していた
 │    同一ロジックをここに集約。parser.py本体（本人データ優先・fy一致等の
 │    多段規則）は対象外
-└─ newfield_q4_cutoff_check.py  # LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1
-     対応の常設チェックツール（2026-08-01新設）。現行のTTM回帰比較（旧ttm/
-     データのキーを起点に新旧を突合する設計）は、旧パイプラインに存在しな
-     かった新規フィールドを検証対象外にしてしまう構造的欠陥がある。
-     selling_general_and_administrative・cost_of_revenueの2フィールドに
-     ついて、①Q4欠落チェック（年次エントリのFY窓内にQ1〜Q3が揃っているのに
-     Q4が存在しないケースを検出、LAYER3-SGA-Q4-MISSING-1型の再発検知）・
-     ②カットオフチェック（非12月決算企業の単四半期エントリのperiod_daysが
-     layer3_builder.py::_is_plausible_standalone_quarter()の妥当範囲
-     〈75〜100日〉に収まっているか確認）を行う。対象2フィールドに限定する
-     理由はq4_implied.pyのモジュールdocstring参照
+├─ newfield_q4_cutoff_check.py  # LAYER3-TTM-REGRESSION-NEWFIELD-BLINDSPOT-1
+│    対応の常設チェックツール（2026-07-30新設、コミットa7b840c32）。現行の
+│    TTM回帰比較（旧ttm/データのキーを起点に新旧を突合する設計）は、旧
+│    パイプラインに存在しなかった新規フィールドを検証対象外にしてしまう
+│    構造的欠陥がある。selling_general_and_administrative・cost_of_revenue
+│    の2フィールドについて、①Q4欠落チェック（年次エントリのFY窓内に
+│    Q1〜Q3が揃っているのにQ4が存在しないケースを検出、LAYER3-SGA-Q4-
+│    MISSING-1型の再発検知）・②カットオフチェック（非12月決算企業の単
+│    四半期エントリのperiod_daysがlayer3_builder.py::_is_plausible_
+│    standalone_quarter()の妥当範囲〈75〜100日〉に収まっているか確認）を
+│    行う。対象2フィールドに限定する理由はq4_implied.pyのモジュール
+│    docstring参照
+└─ segment_fetcher.py  # セグメント別売上・KPI取得（SEC EDGARセグメント
+     報告、ASC280）。コンテキスト境界跨ぎ誤マッチ防止・金融業向けタグ2件を
+     保持する。**追記（SEGMENT-FETCHER-DUPLICATE-ORPHAN-1 2026-07-30実装
+     完了、コミット0e60ee255）**: `src/value/tanuki_valuation/
+     segment_fetcher.py`（機能的下位互換の重複ファイル）を削除し本ファイルへ
+     一本化。両ファイルとも他モジュールからimportされておらず影響範囲は
+     ゼロだった。削除前に旧ファイル側のみに存在したXBRL値スケール
+     （decimals=-6）に関する補足コメントは本ファイルへ移植済み。セグメント
+     データ手動取得スクリプト自体は、銘柄新規登録が原則Claude Code経由と
+     なったため現状は使用しない（将来的な再検討の余地は残す）。詳細は
+     BACKLOG_DONE.md [[SEGMENT-FETCHER-DUPLICATE-ORPHAN-1]]参照
 
 【EPS ANALYZER 独自抽出パイプライン（common/sec_data/とは完全に独立・2026-07-12訂正）】
 `src/value/adjusted_eps_analyzer/extract_key_facts.py`はSEC Company Facts APIを
@@ -759,6 +825,18 @@ quarterly.py・parser.py・tag_definitions.pyは一切importしていない（im
 │    OCF・CapEx双方のquarters_used>=4フィルタを追加し不完全TTM値を除外。
 │    TTM点数が年次実績より少ない場合は年次を優先する_select_fcf_source()
 │    ヘルパーも新設。詳細はBACKLOG_DONE.md参照）
+│    **追記（TTM-PASCALCASE-KEY-STALE-1 2026-07-30実装完了、コミット
+│    a7b840c32）**: `get_fcf_series()`/`get_periods()`（本ファイル）・
+│    `build_rice_annual_shape()`（同ファイル、RICE用annual_data形状への
+│    変換）・`common/sec_data/audit.py::audit_ticker()`が、フェーズC移行
+│    （2026-07-25、ttm_calculator.py snake_case化）後もttm_series.jsonの
+│    flowキーを旧PascalCase（"OCF"/"CapEx"/"Revenue"/"NetIncome"等）のまま
+│    参照し続けていたため、2026-07-26〜29の約3日間、監視100銘柄全件で
+│    RICEスコアが完全停止し94銘柄でFCFソースが誤ってannual_fallbackへ後退
+│    していた。両ファイルのキー参照をsnake_caseへ修正し、全100銘柄再生成で
+│    RICE 62銘柄・FCFソース94銘柄が正常化（IVが変化した40銘柄のうち
+│    MSCI/LITE/ENTGは一次データで裏取りしFCF_Base選択ロジックの妥当な挙動と
+│    確認済み）。詳細はBACKLOG_DONE.md [[TTM-PASCALCASE-KEY-STALE-1]]参照。
 ├─ core_calculator.py    # DCF・理論株価
 ├─ calculator/rice.py    # RICE投資効率
 ├─ calculator/dcf.py     # DCFエンジン
