@@ -440,6 +440,12 @@ class SECParser:
                                         former_names=former_names or [],
                                         spac_detections_out=_spac_shell_detections)
 
+        # [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]: XBRL_MAPPING
+        # ["total_liabilities"]の2番目の候補LiabilitiesAndStockholdersEquityが
+        # 誤採用された年度（total_liabilities==total_assetsという数学的
+        # シグネチャで検知）のみ、貸借対照表恒等式で逆算した値に置き換える
+        self._backfill_total_liabilities_via_identity(extracted)
+
         # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tagsに明示登録された
         # ticker×period×fieldの組み合わせについてのみ、複数タグ合算値で
         # extracted[field]の該当バケツを上書きする（型C対応・①案）。
@@ -701,6 +707,67 @@ class SECParser:
             gp_prov[year] = {
                 "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
                 "derived": True,
+            }
+
+    def _backfill_total_liabilities_via_identity(self, extracted: Dict[str, Any]) -> None:
+        """
+        [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]: XBRL_MAPPING
+        ["total_liabilities"]の2番目のフォールバック候補
+        LiabilitiesAndStockholdersEquityは、定義上必ずtotal_assetsと
+        数学的に一致する（負債合計ではなく貸借対照表の借方・貸方合計
+        そのもの）ため、Liabilitiesタグが存在しない年度でこの候補が
+        採用されると、total_liabilitiesに実質total_assetsの値が格納
+        される。
+
+        適用条件（数学的シグネチャで機械的に検知、銘柄名のハードコードなし）:
+          - total_liabilities == total_assets（誤った候補採用の結果）
+          - stockholders_equity != 0（等しい場合は正常値の可能性があり対象外）
+          - 3項目すべてが同一年度でpresent（Noneでない）
+
+        該当年度についてのみ、貸借対照表恒等式
+        （total_liabilities = total_assets - stockholders_equity）で
+        逆算した値に置き換える。全母集団シミュレーション（チャット記録）で
+        278件全件が計算可能・代替候補タグが存在する7件中5件は逆算値と厳密
+        一致、残り2件（NVDA(2015)・RCAT(2023)）も同一accn内では厳密一致
+        する軽微差と確認済み。
+
+        採用した値のprovenanceには"derived": Trueを付与する
+        （_backfill_gross_profit_from_revenue_cogs()と同型の設計）。
+        加えて、逆算元のtotal_assets/stockholders_equity自体が本人データ
+        (is_own_data=True)かどうかを"source_is_own_data"に記録する
+        （is_own_data はderived値自体を指し常にFalseとなるため、逆算元
+        データの確度を別途識別できるようにするための追加フィールド）。
+        """
+        tl_field = extracted.get("total_liabilities")
+        ta_field = extracted.get("total_assets")
+        se_field = extracted.get("stockholders_equity")
+        if tl_field is None or ta_field is None or se_field is None:
+            return
+
+        tl_annual = tl_field.setdefault("annual", {})
+        tl_prov = tl_field.setdefault("_annual_provenance", {})
+        ta_annual = ta_field.get("annual", {})
+        ta_prov = ta_field.get("_annual_provenance", {})
+        se_annual = se_field.get("annual", {})
+        se_prov = se_field.get("_annual_provenance", {})
+
+        for year, tl_val in list(tl_annual.items()):
+            ta_val = ta_annual.get(year)
+            se_val = se_annual.get(year)
+            if tl_val is None or ta_val is None or se_val is None:
+                continue
+            if se_val == 0:
+                continue
+            if tl_val != ta_val:
+                continue  # バグの数学的シグネチャに該当しない（既存の正しい値は上書きしない）
+            derived = ta_val - se_val
+            tl_annual[year] = derived
+            ta_own = bool((ta_prov.get(year) or {}).get("is_own_data"))
+            se_own = bool((se_prov.get(year) or {}).get("is_own_data"))
+            tl_prov[year] = {
+                "accn": None, "filed": "", "is_own_data": False, "fy_tag": year,
+                "derived": True,
+                "source_is_own_data": ta_own and se_own,
             }
 
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
