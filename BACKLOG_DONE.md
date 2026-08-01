@@ -4,6 +4,98 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [SPAC-SHELL-BS-ENTITY-MIXING-1] SPAC合併銘柄でBS（instant fact）フィールドが合併前シェル会社・合併後本体の異なる法的実体から混在採用され数学的に矛盾する値が本番稼働中（段階1・段階2いずれも完了）
+**優先度:** 高（登録時）→中（段階1完了後、実害解消済みのため）
+**分類:** バグ / 確定
+**登録日:** 2026-08-01
+**完了日:** 2026-08-02（段階1・段階2とも）
+**発見:** [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]個別調査（チャット記録）
+
+#### 内容（根本原因）
+SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィールドが、異なる
+法的実体（合併前のSPACシェル会社 vs 合併後の本体）から混在して採用されて
+いた。既存の`_own_override_is_safe()`は「同一フィールド内での年度競合」
+のみをチェックし、「同一年度・異なるBSフィールドが異なるaccn（法的実体）
+から来ていないか」という横断チェックを持たなかった。
+
+確定した実害（段階1着手時点）: BBAI(2020)・RDW(2020)・RKLB(2020)・
+SOFI(2020)・VRT(2019)で`current_assets>total_assets`等の数学的に不可能な
+状態が本番稼働中だった。全105銘柄横断スキャンでSPIR(2020)は同一パターン
+だが矛盾が未顕在化の"事故的な正しさ"、ONDS(2017)・KULR(2016)は原因は同型
+だがSPAC非該当と判明。KULR(2019)のみ原因が別系統（同一filing内でのcandidate
+tag誤選択）と確定し[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]として
+分離登録（未解決のまま残存）。
+
+#### 段階1実装内容（矛盾トリガー型の単一accn強制）
+`SECParser._resolve_bs_entity_mixing()`を新規追加。「①複数accnが混在」
+かつ「②本人データ(is_own_data=True)を提供するaccnが単一に定まる」かつ
+「③現に数学的矛盾が確認できる」かつ「④アンカーへの統一により実際に矛盾が
+解消する」の4条件をすべて満たす年度についてのみ、本人データのaccnを
+アンカーとして採用し、アンカー以外のaccnから採用されたBSフィールドを
+None化する設計（安全側のNone化）。条件④はKULR(2019)型（矛盾の原因フィールド
+が元々同一accn内にあり、accn混在自体は矛盾と無関係）の巻き添えNone化を
+防ぐため実装時に追加。
+
+案A（単一accn強制）を無条件で全銘柄に適用する設計は、105銘柄・87件への
+オフラインシミュレーションで正常系56件（41銘柄）を新たにNone化する副作用が
+判明したため不採用と確定し、「矛盾トリガー型」に限定する設計へ絞り込んだ。
+
+コミット: `80e51d2c2`（機能変更・テスト）・`c5e588474`（データ再生成）
+
+**検証結果**: BBAI(2020)/RDW(2020)/RKLB(2020)/SOFI(2020)/VRT(2019)・
+ONDS(2017)・KULR(2016)の7銘柄7年度で数学的矛盾が解消。全105銘柄フローズン
+入力比較で対象7件以外に変化なし（矛盾のない56件・KULR(2019)・SPIR(2020)
+含む）を確認。pytest 461 passed/2 known failed、report_consistency_check.py
+NG=0（WARN=68件、変化なし）。
+
+#### 段階2実装内容（formerNames区間一致によるSPAC合併疑いの機械的検知）
+SPIR(2020)型（矛盾が未顕在化の"事故的な正しさ"）を、矛盾の有無に頼らず
+事前検知するため、SEC EDGAR submissions APIのformerNames（法人名変更履歴、
+[{name, from, to}, ...]）を活用した検知を追加。
+
+- `fetcher.py::_fetch_submissions_for_cik()`で、既に取得済みのレスポンスから
+  formerNamesを追加取得・保存するよう変更（**新規APIコールは発生しない**、
+  同一レスポンスからの追加抽出のみ）。`load_former_names()`を新設
+- `_resolve_bs_entity_mixing()`に新しいトリガー条件③'「矛盾はないが、
+  アンカー候補accnのreportDateがformerNames区間[from, to]内にある」を
+  追加。既存の条件③（数学的矛盾確認済み）とのOR条件とし、③または③'を
+  満たせば段階1と同じ解消処理に進む
+- 誤検知防止のため③'は常に条件①（複数accn混在）・②（本人データaccnの
+  一意性）とのAND条件でのみ発火する設計。formerNames単独では「単純な
+  改名」（例: RKLBの「Rocket Lab USA, Inc.」→「Rocket Lab Corp」2025年
+  再法人化、SPAC合併とは無関係）と合併疑いを区別できないため、accn混在
+  という構造的シグナルとの組み合わせで誤検知を防いだ
+- 検知条件は「reportDateがformerNamesの[from, to]区間に含まれるか」の
+  厳密な区間包含チェック（日数閾値は不要）。BBAI/RDW/RKLB/SOFI/VRT/SPIRの
+  6銘柄全件で例外なく一致することを実データで確認済み
+- 監査証跡として`_save_spac_shell_detection_log()`を新設し、
+  `spac_shell_detection_log.json`（既存のfy_collision_log.json等と同一
+  パターン、0件でも毎回書き込む）に検知内容を記録
+
+コミット: `1f6e95d92`（機能変更・テスト）・`43470bccf`（データ再生成）
+
+**検証結果**:
+1. SPIR(2020)が新規検知・解消されることを確認（long_term_debt
+   $26,645,000をNone化、triggered_by="former_names_window"）
+2. BBAI/RDW/RKLB/SOFI/VRT（既に段階1で解消済み）が③'条件でも重複検知
+   されるが結果は不変（冪等性を確認、triggered_by="math_violation"）
+3. 全105銘柄フローズン入力比較で、SPIR(2020)以外に一切変化がないことを
+   確認（RKLBの「単純な改名」ケースでの誤検知なしを含む）
+4. `spac_shell_detection_log.json`が全105銘柄で正しく生成され、検知6件
+   （BBAI/RDW/RKLB/SOFI/VRT・SPIR）が正しく記録されていることを確認
+5. pytest 473 passed/2 known failed（既知のMSFT/NVDA、[[TEST-STALE-IV-1]]）、
+   report_consistency_check.py NG=0（WARN=68件、変化なし）を確認
+6. formerNames取得は6対象銘柄のみforce_refreshで即時反映。残り99銘柄は
+   通常の週次自動更新（SEC_Data_Update.yml、24時間キャッシュより長い
+   間隔で必ず再取得が発生）で自然にバックフィルされ、特別な一括再取得は
+   不要と設計上確認（実行は行わず、次回以降の通常更新サイクルに委ねる）
+
+#### 副産物として新規発見・登録した課題（未実装）
+- [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（KULR(2019)単独、原因は
+  同一filing内でのcandidate tag誤選択と確定、entity混在ではない）
+
+---
+
 ### ✅ [LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1] GrossProfitバックフィルが本番データパス(annual_YYYY.json)に到達しない構造的欠落（①本番書き戻し完了、②はGROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1へ引き継ぎ）
 **優先度:** 中〜高
 **分類:** データ品質 / アーキテクチャ欠陥

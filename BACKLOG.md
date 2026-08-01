@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2実装完了・
+BACKLOG_DONE.mdへ移動（段階1・段階2いずれも完了）。`fetcher.py`で
+formerNames（法人名変更履歴）を既存レスポンスから追加取得・保存（新規API
+コールなし）、`_resolve_bs_entity_mixing()`にformerNames区間一致による
+新トリガー条件③'を追加（コード`1f6e95d92`・データ`43470bccf`）。SPIR(2020)
+のlong_term_debtをformerNames一致（triggered_by="former_names_window"）で
+新規検知・None化。BBAI/RDW/RKLB/SOFI/VRTは③'でも重複検知されるが結果不変
+（冪等性を確認）。全105銘柄フローズン入力比較でSPIR以外に変化なし（RKLBの
+2025年再法人化という「単純な改名」ケースでの誤検知なしを含む）。
+`spac_shell_detection_log.json`を全105銘柄で新規生成。pytest 473 passed/
+2 known failed、report_consistency_check.py NG=0（WARN=68件、変化なし）。
+残り99銘柄のformerNamesは通常の週次自動更新で自然にバックフィルされる
+設計（特別な一括再取得は未実施）。pushは保留、コミットのみ）。
+
 最終更新: 2026-08-02（セッション終了処理。[[STONKS-SILO-FETCHER-
 GROSSPROFIT-BACKFILL-DUP-1]]をクローズしBACKLOG_DONE.mdへ移動（実害解消済み
 〈STONKS SILO対象25銘柄で発火条件0件を確認〉、fetcher.py側のコード自体は
@@ -5534,153 +5548,6 @@ revenue/gross_profit/cost_of_revenue/net_income/operating_income等のPL/CF系
 
 ---
 
-### [SPAC-SHELL-BS-ENTITY-MIXING-1] SPAC合併銘柄でBS（instant fact）フィールドが合併前シェル会社・合併後本体の異なる法的実体から混在採用され数学的に矛盾する値が本番稼働中（2026-08-02段階1完了・段階2残タスク）
-**優先度:** 中（2026-08-02訂正: 高→中。段階1完了により現在進行形の数学的矛盾
-〈実害〉は解消済み。残る段階2はSPIR(2020)型の"事故的な正しさ"を事前検知する
-予防的対応であり、緊急性は段階1着手時点より低下）
-**分類:** バグ / 確定（段階1: ✅ 2026-08-02完了、段階2: 未着手）
-**登録日:** 2026-08-01
-**発見:** [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]個別調査（チャット記録）
-
-#### 内容
-SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィールドが、異なる
-法的実体（合併前のSPACシェル会社 vs 合併後の本体）から混在して採用されている。
-既存の`_own_override_is_safe()`は「同一フィールド内での年度競合」のみを
-チェックし、「同一年度・異なるBSフィールドが異なるaccn（法的実体）から
-来ていないか」という横断チェックを持たない。
-
-**対象銘柄（対応方針の設計・検証範囲、2026-08-02更新: SPIR(2020)を対象に
-明示追加）**:
-
-確定した実害（数学的矛盾あり）:
-- BBAI(2020): total_assets/stockholders_equity/total_liabilities/
-  cash_and_equivalentsはGigCapital4（SPACシェル、is_own_data=true）由来、
-  long_term_debt/short_term_debt/current_assets/current_liabilitiesは
-  Successor（BigBear.ai本体、is_own_data=false）由来。結果、
-  current_assets($34,346,000) > total_assets($380,653)という数学的に
-  不可能な状態が本番稼働中
-- RDW(2020): 同型。long_term_debt($76,642,000) > total_liabilities
-  ($42,409,421)
-
-**2026-08-01全105銘柄横断スキャンで追加確認した実害（BBAI/RDW以外）**:
-- RKLB(2020): 合併前SPAC「Vector Acquisition Corporation」の10-K/A
-  （2021-05-03提出、fy=2020）由来のtotal_assets等と、Rocket Lab本体の
-  2022-03-24提出10-K（fy=2021）由来のlong_term_debt/short_term_debt/
-  current_liabilitiesが混在。current_liabilities($48,419,000) >
-  total_liabilities($35,980,062)
-- SOFI(2020): 合併前SPAC「Social Capital Hedosophia Holdings Corp V」の
-  10-K/A（2021-04-22提出、fy=2020）由来のtotal_liabilities等と、SoFi本体の
-  2022-03-01提出10-K（fy=2021）由来のlong_term_debtが混在。
-  long_term_debt($4,798,925,000) > total_liabilities($127,639,700)
-  （フィンテック貸付事業の巨大負債が、SPACシェルの小さいtotal_liabilities
-  に乗っている状態）
-- VRT(2019): 合併前SPAC「GS Acquisition Holdings Corp」の2020-03-12提出
-  10-K（fy=2019）由来のtotal_assets等と、Vertiv本体（旧Vertiv Holdings、
-  PE傘下の私企業）の2021-04-30提出10-K/A（fy=2020）由来のlong_term_debt/
-  short_term_debtが混在。long_term_debt($3,467,300,000) >
-  total_liabilities($30,752,104)
-
-対象銘柄として含めるが、現時点で数学的矛盾は未発生（"事故的な正しさ"）:
-- **SPIR(2020)**: 合併前SPAC「NavSight Holdings」の10-K（2021-05-12提出、
-  fy=2020）由来のtotal_assets/total_liabilities等（trust勘定計上で
-  total_assets=$231.6M・current_assets=$1.6Mと非流動比率が極端に高い、
-  典型的なSPACシェルの貸借対照表）と、Spire Global本体の2022-11-07提出
-  10-K由来のlong_term_debt($26,645,000)が混在。現時点ではlong_term_debt
-  <total_liabilitiesのため数学的矛盾は顕在化していないが、根本原因は
-  BBAI/RDW/RKLB/SOFI/VRTと同一であり、将来のデータ更新で偶然の整合が
-  崩れるリスクを抱える。**矛盾が顕在化していないだけで構造的欠陥は同一のため、
-  対応方針の設計・検証範囲（対象銘柄リスト）にBBAI/RDW/RKLB/SOFI/VRTと
-  並べて含める**（2026-08-02追加登録・[[ELF-FISCAL-END-MONTH-
-  MISDETECTION-1]]のRCAT/AVGO同型の「事故的な正しさ」パターンと同種であり、
-  対応方針を検証する際にSPIRを見落とすと再発防止漏れになる）
-
-**当初「原因不一致」として対象外に区分していたが、2026-08-02設計調査
-（案Aシミュレーション）で内訳が判明**:
-- ONDS(2017)・KULR(2016): 案A（単一accn強制）の適用で数学的矛盾が解消される
-  ことをシミュレーションで確認した。SPAC文脈ではないため案B（SPAC合併疑いの
-  機械的検知）のゲートは通過しないが、本エントリの段階1（矛盾トリガー型の
-  単一accn強制、案B不要）の対象には含まれるため、その実装過程で副次的に
-  解消される見込み。個別対応は不要
-- KULR(2019): 案Aを適用しても矛盾が解消されないことを確認した。
-  current_liabilities/total_liabilitiesは既に同一accn（KULR自身のFY2019
-  10-K）から採用されており、entity混在ではなく同一filing内でのcandidate
-  tag誤選択が原因と確定。本エントリの対応方針検討の対象には含めず、
-  [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（KULR(2019)単独に再定義済み）
-  で個別に扱う
-
-#### 影響
-BS系フィールドは期間長フィルタ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]）の
-対象外のため検知不可能だった、独立した欠陥系統。105銘柄中53銘柄で複数accnから
-のBS混在が検出されたが、大半（AAPL/AMAT/GOOGL/TSLA/XOM等の非SPAC老舗企業）は
-数学的整合性チェックで矛盾なし＝実害なしと確認済み。**対象銘柄は7銘柄7年度
-（BBAI(2020)・RDW(2020)・RKLB(2020)・SOFI(2020)・VRT(2019)・ONDS(2017)・
-KULR(2016)）＋SPIR(2020)**、うち数学的矛盾が確定していた7件は**段階1実装
-（2026-08-02完了）で解消済み**。SPIR(2020)は矛盾が未顕在化の"事故的な正しさ"
-であり段階1（矛盾トリガー型）の対象外のまま、引き続き同一の構造的欠陥を抱える
-ため対応方針の検証範囲に含める。
-
-#### 対応方針
-**未定→ハイブリッド設計（案B先行実装が前提）**（2026-08-02設計調査で確定。
-チャット記録）。
-
-案A（年度内BS全フィールドのaccnを単一に強制し、アンカーaccn以外の値を
-None化する）単独は**不採用と確定**。105銘柄・87件の複数accn混在ケース全件に
-オフラインシミュレーション（実データ・現行bs_provenance使用、書き込みなし）
-した結果、実害解消7件（BBAI/RDW/RKLB/SOFI/VRT・ONDS(2017)・KULR(2016)）・
-事故的正しさの事前検知1件（SPIR(2020)）に対し、**現状すでに正しく動作している
-正常系56件（41銘柄）を新たにNone化する副作用**が判明した（例:
-HON(2010)のtotal_assets、AMAT(2014/2018/2022)のshort_term_debt等、単一の
-非SPAC企業が該当年度の自社10-Kで特定タグを申告しておらず翌年10-Kの比較列
-から正当に補完されている正常系）。コストに見合わない副作用の大きさのため、
-案Aを無条件で全銘柄に適用する設計は採用しない。
-
-妥当な設計は**二段構成のハイブリッド方式**（2026-08-02、対象銘柄の内訳確認
-過程で精緻化。前回の「案Bで全面ゲート」という記述は、ONDS(2017)・KULR(2016)
-がSPAC非該当であるため案Bのゲートを通過せず矛盾なく解消されない、という
-内部矛盾があったため訂正）:
-
-- **段階1（新規データ取得不要・低コスト・副作用ゼロ）: ✅ 2026-08-02実装完了**
-  （コミット`80e51d2c2`〈機能変更・テスト〉・`c5e588474`〈データ再生成〉）。
-  「年度内BS複数accn混在」かつ「本人データ(is_own_data=True)を提供する
-  accnが単一に定まる」かつ「数学的整合性チェックで矛盾（現在進行形の実害）が
-  既に確認されている」かつ「アンカーへの統一により実際に矛盾が解消する」の
-  4条件をすべて満たす場合にのみ、単一accn強制（案A）を適用する設計で実装
-  （4条件目はKULR(2019)型の巻き添えNone化を防ぐため実装時に追加、詳細は
-  `SECParser._resolve_bs_entity_mixing()`のdocstring参照）。矛盾が存在しない
-  56件の正常系には一切触れないため、シミュレーションで確認された副作用
-  （正常系の意図しないNone化）は実データ検証でも発生しないことを確認した。
-  BBAI(2020)/RDW(2020)/RKLB(2020)/SOFI(2020)/VRT(2019)・ONDS(2017)・
-  KULR(2016)の7銘柄7年度で数学的矛盾が解消され、全105銘柄フローズン入力
-  比較で対象7件以外に変化がないことを確認済み（KULR(2019)・SPIR(2020)も
-  対象外のまま変化なしを確認）。pytest 461 passed/2 known failed、
-  report_consistency_check.py NG=0（WARN=68件、変化なし）。段階2が残タスクの
-  ため本エントリはBACKLOG.mdに残置し、段階2完了後にBACKLOG_DONE.mdへ全文
-  移動する。
-- **段階2（案B・新規データ取得必要）**: SPIR(2020)のように矛盾が未顕在化の
-  "事故的な正しさ"を事前に検知するには、矛盾の有無に頼らないSPAC合併疑いの
-  機械的検知（案B）が必要。現在ローカルキャッシュのsubmissions.json
-  （`accn_to_reportdate`のみの縮約版）に`formerNames`（法人名変更履歴、
-  変更日付き。SEC提出APIの本来のsubmissions.jsonには含まれるが、現行の
-  `fetcher.py`の取得・保存処理では省略されている）を追加取得・保存する
-  **データ取得層の拡張が前提条件として必要**（[[INPUT-B-002/003]]的な取得
-  前提条件の追加に相当）。これにより「BSフィールドの採用元accnのfiled日が、
-  CIKの社名変更日と近接している」というticker名を一切参照しない機械的条件で
-  SPAC合併疑いを検知できる（BBAI 10-K原本の"previously known as
-  GigCapital4"、RDW 10-K原本の"previously known as Genesis Park
-  Acquisition Corp."という記載が`formerNames`に相当する一次情報である
-  ことを確認済み）
-
-#### 着手条件
-**段階1: ✅ 2026-08-02完了（上記「対応方針」参照）**。
-
-段階2（SPIR型の事前検知）は案B（submissions.json拡張によるformerNames取得）
-の実装が前提。優先度中（現在進行形の実害・数学的矛盾は段階1で解消済みのため、
-段階2は予防的対応。SPIR(2020)は引き続き対象）。案A（単一accn強制）を
-矛盾トリガーなしで無条件に全銘柄へ適用する設計は不採用が確定しているため、
-その形での実装依頼は受け付けないこと。
-
----
-
 ### [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] KULR(2019)でtotal_liabilities/current_liabilitiesが同一filing内で数学的に矛盾（candidate tag誤選択の疑い、entity混在ではないと確定）
 **優先度:** 中（2026-08-02当初登録時の水準を維持）
 **分類:** データ品質 / 原因未特定
@@ -7073,6 +6940,40 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
    低〜中・gross_profit/cost_of_revenue整合性の常設監査項目が存在しない。
    ⑤⑥の10-K確認が概ね収束してから、再発防止のための常設WARN項目化を
    検討するのが望ましい）
+
+追記（2026-08-02 [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2実装完了）:
+~~① [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2~~ ✅ 2026-08-02完了（コード
+   `1f6e95d92`・データ`43470bccf`。fetcher.pyで既存レスポンスから
+   formerNamesを追加取得〈新規APIコールなし〉、`_resolve_bs_entity_
+   mixing()`にformerNames区間一致による新トリガー条件③'を追加。
+   SPIR(2020)のlong_term_debtを新規検知・None化
+   〈triggered_by="former_names_window"〉。BBAI/RDW/RKLB/SOFI/VRTは
+   ③'でも重複検知されるが結果不変（冪等性を確認）。全105銘柄フローズン
+   入力比較でSPIR以外に変化なし（RKLBの2025年再法人化という「単純な
+   改名」ケースでの誤検知なしを含む）。spac_shell_detection_log.jsonを
+   全105銘柄で新規生成。pytest 473 passed/2 known failed、
+   report_consistency_check.py NG=0〈WARN=68件、変化なし〉。
+   [[SPAC-SHELL-BS-ENTITY-MIXING-1]]は段階1・段階2ともに完了し
+   BACKLOG_DONE.md「2026-08-02（完了）」へ全文移動。残り99銘柄の
+   formerNamesは通常の週次自動更新で自然にバックフィルされる設計
+   〈特別な一括再取得は未実施〉）
+これにより次セッションの筆頭候補を更新する：
+① [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（優先度：中・KULR(2019)
+   単独、candidate tag誤選択の10-K原本突合が未着手）
+② [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・10-K原本での
+   個別確認が未着手、①と独立に着手可能）
+③ [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
+   見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
+   未実施）
+④ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・④の10-K確認が概ね収束してから常設WARN項目化を検討）
 
 ---
 
