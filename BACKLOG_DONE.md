@@ -86,6 +86,48 @@ Predecessor/Successor型（revenue/cost_of_revenue自体もNoneの年度、例: 
 
 ---
 
+### ✅ [STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1] gross_profit=None時のRevenue-cost_of_revenue補完ロジックが3箇所に重複実装（実害解消済み・コード整理は将来検討）
+**優先度:** 低
+**分類:** アーキテクチャ / 重複実装
+**登録日:** 2026-07-31
+**完了日:** 2026-08-02
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]調査（チャット記録）
+
+#### 内容（登録時の記録）
+discover/stonks-silo/src/fetcher.py(172-174行)が、normalizer.py::
+_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()とは独立に、
+gross_profit=None時のRevenue−cost_of_revenue自前補完ロジック
+(gross_profit_derived=Trueを付与)を持っている。None時の挙動自体は明示的で
+安全(暗黙のゼロ化なし)だが、同じ計算が3箇所に分散している。
+
+#### クローズ判断根拠（2026-08-02）
+[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①実装
+（`SECParser._backfill_gross_profit_from_revenue_cogs()`、annual_YYYY.jsonへの
+gross_profit書き戻し）の検証過程で、STONKS SILO対象25銘柄全体を走査し、
+`gross_profit=None かつ revenue/cost_of_revenue両方present`という
+fetcher.py側の重複補完ロジックの発火条件に該当するケースが**0件**に
+なったことを確認した。annual_YYYY.json側で先に値が埋まるため、
+fetcher.py(172-174行)の当該コードパスは**実質的に発火し得ない状態
+（デッドコード化）**になっている。
+
+**「解消」の性質**: 実害（3箇所での計算重複によるメンテナンスコスト・
+将来的な計算式乖離リスク）は解消されたが、これはfetcher.py側の**コード
+自体を削除・整理した結果ではない**。コードは依然としてdiscover/
+stonks-silo/src/fetcher.pyに残存しており、発火条件に該当するデータが
+将来再び発生すれば動作する状態を維持している（デッドコードとしての残存、
+削除ではない）。
+
+#### 対応方針（クローズ後の扱い）
+コード自体の削除・共有アクセサへの一本化は本クローズの対象外とし、
+将来のcommon/sec_data統合（フェーズ1、STONKS SILOのreader.py利用まで
+進んだ時点）で改めて検討する。実害面では緊急性がなくなったため、
+統合作業の一環として着手可能になったタイミングでのクリーンアップを推奨する。
+
+#### 着手条件（コード整理を再検討する場合）
+common/sec_data統合(フェーズ1)がSTONKS SILOのreader.py利用まで進んだ時点。
+
+---
+
 ## 2026-08-01（完了）
 
 ### ✅ [ELF-FISCAL-END-MONTH-MISDETECTION-1] fiscal_end_month/anchor検出が1銘柄単一値のみ対応、実在する決算期変更（ELF/RCAT/AVGO）をera別に扱えない構造的限界（2026-08-01案②完了）

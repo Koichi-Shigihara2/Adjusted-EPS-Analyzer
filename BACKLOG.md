@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（セッション終了処理。[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]をクローズしBACKLOG_DONE.mdへ移動（実害解消済み
+〈STONKS SILO対象25銘柄で発火条件0件を確認〉、fetcher.py側のコード自体は
+デッドコードとして残存・削除ではない旨を明記。コード整理はcommon/sec_data
+統合フェーズ1到達時に別途検討）。「次セッションでの着手順序」欄を最終整理
+（①SPAC-SHELL-BS-ENTITY-MIXING-1段階2 ②BS-ENTITY-MIXING-UNEXPLAINED-
+ONDS-KULR-1 ③RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1 ④SPAC-STUB-PERIOD-
+VERIFICATION-1 ⑤GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1
+⑥HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1 ⑦ELF-ROE10YR-RECALC-
+PENDING-1 ⑧REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1の8件）。
+2026-08-01〜02セッションで完了6件・新規登録5件・訂正1件のサマリを記録）。
+
 最終更新: 2026-08-02（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①
 （本番書き戻し）実装完了・BACKLOG_DONE.mdへ移動。`SECParser._backfill_
 gross_profit_from_revenue_cogs()`を新規追加し、標準タグから取得できない
@@ -5845,32 +5857,6 @@ HON単一年度。金額規模（$827M差）は小さくないが、他年度・
 
 ---
 
-### [STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1] gross_profit=None時のRevenue-cost_of_revenue補完ロジックが3箇所に重複実装
-**優先度:** 低
-**分類:** アーキテクチャ / 重複実装
-**登録日:** 2026-07-31
-**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]調査（チャット記録）
-
-#### 内容
-discover/stonks-silo/src/fetcher.py(172-174行)が、normalizer.py::
-_calc_gross_profit()・layer3_builder.py::_backfill_gross_profit()とは独立に、
-gross_profit=None時のRevenue−cost_of_revenue自前補完ロジック
-(gross_profit_derived=Trueを付与)を持っている。None時の挙動自体は明示的で
-安全(暗黙のゼロ化なし)だが、同じ計算が3箇所に分散している。
-
-#### 影響
-現時点で実害なし(各箇所とも安全にNone/計算結果を扱っている)。将来的な保守性の
-問題。
-
-#### 対応方針
-未定。common/sec_data統合の一環として、共有アクセサ側にgross_profit計算を
-一本化する際に合わせて解消を検討する。
-
-#### 着手条件
-common/sec_data統合(フェーズ1)がSTONKS SILOのreader.py利用まで進んだ時点。
-
----
-
 ### [REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1] gross_profit/cost_of_revenue整合性を検証する監査項目が存在しない
 **優先度:** 低〜中
 **分類:** 品質ゲート / 監査カバレッジ欠如
@@ -7035,6 +7021,58 @@ MO-PM-SCCO-1]]の対象を14銘柄へ拡大）
    クラスタ。10-K原本確認が未着手）
 ⑥ 余力があれば[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：
    低・HON(2009)単独の10-K原本確認）
+
+追記（2026-08-02 セッション終了処理。[[STONKS-SILO-FETCHER-GROSSPROFIT-
+BACKFILL-DUP-1]]クローズ）:
+~~[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]~~ ✅ 2026-08-02
+クローズ（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①実装により、
+STONKS SILO対象25銘柄全体で発火条件〈gross_profit=None かつ revenue/
+cost_of_revenue両方present〉が0件になったことを確認。実害解消済みだが
+fetcher.py側のコード自体は残存〈デッドコード化、削除ではない〉。コード
+整理はcommon/sec_data統合フェーズ1到達時に別途検討。詳細はBACKLOG_DONE.md
+「2026-08-02（完了）」参照）
+
+**2026-08-01〜02セッションの完了サマリ**: [[PERIOD-LENGTH-VALIDATION-
+GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]・[[SPAC-STUB-PERIOD-
+FIELD-SPLIT-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・[[LAYER3-
+GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]①・[[STONKS-SILO-FETCHER-
+GROSSPROFIT-BACKFILL-DUP-1]]の6件完了。新規登録:
+[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]・[[ELF-ROE10YR-RECALC-
+PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
+[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（KULR2019単独に再定義）・
+[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]。訂正:
+[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（3銘柄→14銘柄へ
+対象拡大）。
+
+**次セッションでの着手順序（2026-08-02時点、優先度順に整理・最終版）**:
+① [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階2（優先度：中・実害が現在進行形
+   だった段階1は完了済み。SPIR(2020)型の"事故的な正しさ"を事前検知する
+   SPAC合併疑いの機械的検知〈案B〉。submissions.jsonへのformerNames
+   〈法人名変更履歴〉取得・保存拡張がデータ取得層の前提条件として必要）
+② [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（優先度：中・KULR(2019)
+   単独の課題に再定義済み。current_liabilities/total_liabilitiesが既に
+   同一accnから採用されているにも関わらず矛盾しており、同一filing内での
+   candidate tag誤選択が原因と確定。タグそのものを10-K原本と突合する
+   個別調査が未着手）
+③ [[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]（優先度：中・RCATの直近10-Kが
+   12月31日・4月30日の両クラスタに同時投票、3段階目の決算期変更が進行中の
+   可能性。10-K原本での個別確認が未着手、①②と独立に着手可能）
+④ [[SPAC-STUB-PERIOD-VERIFICATION-1]]（優先度：中・SPAC合併前・IPO前と
+   見られる正当な非365日期間データ11銘柄の個別確認、10-K原本での裏取り
+   未実施）
+⑤ [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]（優先度：
+   低〜中・対象14銘柄49件。MO/SCCOは各10年連続、LITE(9年)/CRM(7年)は
+   新規発見の大規模クラスタ。10-K原本確認が未着手）
+⑥ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑦ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・ELF是正済みデータに伴う
+   ROE_avg(10yr)の再計算未反映。TANUKI VALUATION通常の定期更新サイクルで
+   自然解消見込みのため、単独での緊急着手は不要。次回定期更新後に反映
+   確認・クローズ）
+⑧ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・gross_profit/cost_of_revenue整合性の常設監査項目が存在しない。
+   ⑤⑥の10-K確認が概ね収束してから、再発防止のための常設WARN項目化を
+   検討するのが望ましい）
 
 ---
 
