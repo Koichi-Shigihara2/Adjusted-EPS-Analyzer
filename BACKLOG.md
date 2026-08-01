@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応方針設計調査結果
+を反映。案A（単一accn強制）単独は105銘柄・87件シミュレーションで正常系56件
+（41銘柄）を新たにNone化する副作用が判明し不採用と確定。段階1（複数accn混在
+かつ数学的矛盾が既に確認されている場合のみ単一accn強制、新規データ取得
+不要・副作用ゼロ）と段階2（SPIR型の事故的正しさを事前検知するSPAC合併疑い
+機械的検知＝案B、submissions.jsonへのformerNames取得拡張が前提）の二段構成に
+整理した。[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]をKULR(2019)単独の
+課題に再定義（ONDS(2017)・KULR(2016)は段階1で副次的に解消見込みのため対象
+除外。KULR(2019)のみcurrent_liabilities/total_liabilitiesが既に同一accn
+〈entity混在ではない〉から採用されているにも関わらず矛盾しており、同一
+filing内でのcandidate tag誤選択が原因と確定）。登録・訂正のみ、実装は
+未着手）。
+
 最終更新: 2026-08-02（[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]の優先度を
 低〜中→中に訂正。ONDS(2017)・KULR(2016)・KULR(2019)の3件とも数学的矛盾＝
 実害が確定済みであり「原因未特定」は優先度を下げる理由にならないこと、また
@@ -5563,14 +5576,19 @@ SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィール�
   MISDETECTION-1]]のRCAT/AVGO同型の「事故的な正しさ」パターンと同種であり、
   対応方針を検証する際にSPIRを見落とすと再発防止漏れになる）
 
-**同じ症状だが根本原因が異なる可能性があるため対象外に区分（別エントリ
-[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]で個別に扱う）**:
-- ONDS(2017)・KULR(2016)・KULR(2019): いずれも複数accnからのBS混在＋数学的
-  矛盾を検出したが、accnの提出者・時期パターンがSPACシェル型（合併前シェルの
-  自社10-K→合併後本体の10-K）と一致しない。KULR は[[SPAC-STUB-PERIOD-
-  FIELD-SPLIT-1]]の2026-08-01個別調査でSPAC・M&A歴なしと確認済みのため、
-  本件はcandidate tagの誤選択等、別の独立した原因の可能性が高い。本エントリの
-  対応方針検討の対象には含めず、個別に扱う
+**当初「原因不一致」として対象外に区分していたが、2026-08-02設計調査
+（案Aシミュレーション）で内訳が判明**:
+- ONDS(2017)・KULR(2016): 案A（単一accn強制）の適用で数学的矛盾が解消される
+  ことをシミュレーションで確認した。SPAC文脈ではないため案B（SPAC合併疑いの
+  機械的検知）のゲートは通過しないが、本エントリの段階1（矛盾トリガー型の
+  単一accn強制、案B不要）の対象には含まれるため、その実装過程で副次的に
+  解消される見込み。個別対応は不要
+- KULR(2019): 案Aを適用しても矛盾が解消されないことを確認した。
+  current_liabilities/total_liabilitiesは既に同一accn（KULR自身のFY2019
+  10-K）から採用されており、entity混在ではなく同一filing内でのcandidate
+  tag誤選択が原因と確定。本エントリの対応方針検討の対象には含めず、
+  [[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]（KULR(2019)単独に再定義済み）
+  で個別に扱う
 
 #### 影響
 BS系フィールドは期間長フィルタ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]）の
@@ -5583,65 +5601,108 @@ SPIR(2020)は矛盾が未顕在化の"事故的な正しさ"だが同一の構�
 ため対応方針の検証範囲に含める。
 
 #### 対応方針
-未定。案としては①同一年度・同一銘柄のBS instant factが複数の異なるaccnから
-採用されている場合に警告する監査ロジック（report_consistency_check.pyへの
-新規WARN）、②SPAC合併の疑いがある銘柄を機械的に検知し、合併後の単一実体
-（Successor）のBSデータのみを一貫して採用するロジック、等。
+**未定→ハイブリッド設計（案B先行実装が前提）**（2026-08-02設計調査で確定。
+チャット記録）。
+
+案A（年度内BS全フィールドのaccnを単一に強制し、アンカーaccn以外の値を
+None化する）単独は**不採用と確定**。105銘柄・87件の複数accn混在ケース全件に
+オフラインシミュレーション（実データ・現行bs_provenance使用、書き込みなし）
+した結果、実害解消7件（BBAI/RDW/RKLB/SOFI/VRT・ONDS(2017)・KULR(2016)）・
+事故的正しさの事前検知1件（SPIR(2020)）に対し、**現状すでに正しく動作している
+正常系56件（41銘柄）を新たにNone化する副作用**が判明した（例:
+HON(2010)のtotal_assets、AMAT(2014/2018/2022)のshort_term_debt等、単一の
+非SPAC企業が該当年度の自社10-Kで特定タグを申告しておらず翌年10-Kの比較列
+から正当に補完されている正常系）。コストに見合わない副作用の大きさのため、
+案Aを無条件で全銘柄に適用する設計は採用しない。
+
+妥当な設計は**二段構成のハイブリッド方式**（2026-08-02、対象銘柄の内訳確認
+過程で精緻化。前回の「案Bで全面ゲート」という記述は、ONDS(2017)・KULR(2016)
+がSPAC非該当であるため案Bのゲートを通過せず矛盾なく解消されない、という
+内部矛盾があったため訂正）:
+
+- **段階1（新規データ取得不要・低コスト・副作用ゼロ）**: 「年度内BS複数
+  accn混在」かつ「数学的整合性チェックで矛盾（現在進行形の実害）が既に
+  確認されている」場合にのみ、単一accn強制（案A）を適用する。矛盾が
+  存在しない56件の正常系には一切触れないため、シミュレーションで確認された
+  副作用（正常系の意図しないNone化）が原理的に発生しない。この段階だけで
+  BBAI/RDW/RKLB/SOFI/VRT・ONDS(2017)・KULR(2016)の7件が解消される
+  （ONDS/KULRはSPAC非該当だが、矛盾トリガー型の適用であればSPAC判定を
+  経由せず解消できる）
+- **段階2（案B・新規データ取得必要）**: SPIR(2020)のように矛盾が未顕在化の
+  "事故的な正しさ"を事前に検知するには、矛盾の有無に頼らないSPAC合併疑いの
+  機械的検知（案B）が必要。現在ローカルキャッシュのsubmissions.json
+  （`accn_to_reportdate`のみの縮約版）に`formerNames`（法人名変更履歴、
+  変更日付き。SEC提出APIの本来のsubmissions.jsonには含まれるが、現行の
+  `fetcher.py`の取得・保存処理では省略されている）を追加取得・保存する
+  **データ取得層の拡張が前提条件として必要**（[[INPUT-B-002/003]]的な取得
+  前提条件の追加に相当）。これにより「BSフィールドの採用元accnのfiled日が、
+  CIKの社名変更日と近接している」というticker名を一切参照しない機械的条件で
+  SPAC合併疑いを検知できる（BBAI 10-K原本の"previously known as
+  GigCapital4"、RDW 10-K原本の"previously known as Genesis Park
+  Acquisition Corp."という記載が`formerNames`に相当する一次情報である
+  ことを確認済み）
 
 #### 着手条件
-なし。優先度高（現在進行形の実害・数学的矛盾、BBAI/RDW/RKLB/SOFI/VRTの
-5銘柄5年度で確認済み。対応方針の設計・検証範囲にはSPIR(2020)も含める）。
+段階1（矛盾トリガー型の単一accn強制）は追加のデータ取得なしで着手可能
+（新規着手条件なし）。段階2（SPIR型の事前検知）は案B
+（submissions.json拡張によるformerNames取得）の実装が前提。優先度高
+（現在進行形の実害・数学的矛盾、BBAI/RDW/RKLB/SOFI/VRTの5銘柄5年度で確認済み。
+段階2の設計・検証範囲にはSPIR(2020)も含める）。案A（単一accn強制）を
+矛盾トリガーなしで無条件に全銘柄へ適用する設計は不採用が確定しているため、
+その形での実装依頼は受け付けないこと。
 
 ---
 
-### [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] ONDS/KULRでBS混在＋数学的矛盾を検出したがSPACパターンと不一致、原因未特定
-**優先度:** 中（2026-08-02訂正: 低〜中→中。3件とも数学的矛盾＝実害が確定済みで
-あり、「原因未特定」は優先度を下げる理由にならない。また原因が
-[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と異なりSPAC文脈に限定されない汎用的な
-抽出ロジックの欠陥である可能性があり、105銘柄全体への影響範囲が未確認）
+### [BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1] KULR(2019)でtotal_liabilities/current_liabilitiesが同一filing内で数学的に矛盾（candidate tag誤選択の疑い、entity混在ではないと確定）
+**優先度:** 中（2026-08-02当初登録時の水準を維持）
 **分類:** データ品質 / 原因未特定
 **登録日:** 2026-08-02
-**発見:** [[SPAC-SHELL-BS-ENTITY-MIXING-1]]横断スキャン（チャット記録）
+**訂正日:** 2026-08-02（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応方針設計調査で
+ONDS(2017)・KULR(2016)を対象から除外し、KULR(2019)単独の課題として再定義）
+**発見:** [[SPAC-SHELL-BS-ENTITY-MIXING-1]]横断スキャン（チャット記録）、
+2026-08-02設計調査（案Aシミュレーション、チャット記録）で原因を絞り込み
 
-#### 内容
-ONDS(2017)・KULR(2016)・KULR(2019)で、[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と
-同様の症状（同一年度内で複数の異なるaccnからBSフィールドが混在採用）が
-検出されたが、accnの提出者・時期パターンがSPACシェル型（合併前シェルの
-自社10-K→合併後本体の10-K）と一致せず、原因は未特定。KULRは
-[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]の2026-08-01個別調査でSPAC・M&A歴なしと
-確認済みのため、SPAC合併とは別の要因（決算期変更・子会社分割・組織再編・
-candidate tagの誤選択等）が疑われる。
+#### 内容（2026-08-02再定義）
+当初はONDS(2017)・KULR(2016)・KULR(2019)の3件を「[[SPAC-SHELL-BS-
+ENTITY-MIXING-1]]と同様の症状だがSPACパターンと不一致、原因未特定」として
+一括登録していたが、[[SPAC-SHELL-BS-ENTITY-MIXING-1]]の対応方針設計調査
+（「案A: 年度内BS全フィールドのaccnを単一に強制」を105銘柄・87件へ
+オフラインシミュレーション）の副産物として、3件の原因が異なることが判明した：
 
-#### 影響（2026-08-02、数学的整合性チェックで確認・反映）
-3件すべてで数学的矛盾を確認済み（現在進行形の実害）:
-- **ONDS(2017)**: current_assets($704,771) > total_assets($8,127)、
-  current_liabilities($5,862,073) > total_liabilities($85,633)。
-  total_assets/total_liabilitiesは2018-03-28提出10-K（fy=2017）由来、
-  current_assets/current_liabilitiesは2019-03-19提出10-K（fy=2018、2017年度
-  比較列）由来。total_assets/total_liabilities側の値が実態よりも著しく
-  過小（3桁程度小さい）であり、SPACシェル/本体の実体混在ではなく
-  total_assets/total_liabilities側のcandidate tag誤選択（別概念・別単位の
-  混入等）を疑う根拠となる
-- **KULR(2016)**: current_assets($268,215) > total_assets($164,525)、
-  cash_and_equivalents($213,181) > total_assets($164,525)。total_assetsのみ
-  2018-04-17提出10-K（fy=2017、2016年度比較列）由来、他は2017-03-30提出
-  10-K（fy=2016本体）由来。total_assets側が単独で過小な値になっている
-- **KULR(2019)**: current_liabilities($1,033,731) > total_liabilities
-  ($236,766)。total_liabilities等は2020-05-14提出10-K（fy=2019本体）由来、
-  short_term_debtのみ2021-03-19提出10-K（fy=2020、2019年度比較列）由来だが、
-  矛盾はtotal_liabilities側とcurrent_liabilities側の食い違いであり
-  short_term_debtの混入自体が直接原因ではない可能性がある
+- **ONDS(2017)・KULR(2016)**: 案Aの単一accn強制で数学的矛盾が解消することを
+  確認。両者ともフィールド単位で独立にaccnを選ぶ既存ロジック（[[SPAC-SHELL-
+  BS-ENTITY-MIXING-1]]と同一メカニズム）が、SPAC文脈ではなく「単一企業が
+  該当年度の自社10-Kで一部BSタグを申告しておらず翌年10-Kの比較列から補完
+  された」ケースでも偶然発現していたと確認できた。両者ともSPAC非該当のため
+  [[SPAC-SHELL-BS-ENTITY-MIXING-1]]の案B（SPAC合併疑い検知）のゲートは
+  通過しないが、同エントリの段階1（「複数accn混在」かつ「数学的矛盾が既に
+  確認されている」場合にのみ単一accn強制を適用する、案B不要の低コスト経路）
+  の対象には含まれる。**この2件は段階1の実装過程で副次的に解消される
+  見込みのため、本エントリの対象から除外する**
+- **KULR(2019)**: 案Aを適用しても矛盾が**解消されないことを確認**
+  （シミュレーションで矛盾が残存）。`current_liabilities`($1,033,731)と
+  `total_liabilities`($236,766)は**既に同一accn**（KULR自身のFY2019 10-K、
+  accn `0001104659-20-061643`）から採用されており、accn混在（entity混在）
+  ではなく**同一filing内でのcandidate tag誤選択**が原因と確定した。
+  `short_term_debt`のみ別accn（2021-03-19提出10-K、fy=2020、2019年度比較列）
+  由来だが、矛盾自体はtotal_liabilities側とcurrent_liabilities側の食い違いで
+  あり、short_term_debtの混入は矛盾の直接原因ではない
 
-いずれもtotal_assets/total_liabilities側の値が対応するcurrent_assets/
-current_liabilitiesより明らかに小さすぎる、という共通パターンを示しており、
-BBAI/RDW型（法的実体丸ごとの混在）とは異なり、total_assets/total_liabilities
-という特定の集計タグ自体の誤選択・誤抽出が疑われる。
+**本エントリはKULR(2019)単独の課題として再定義する**。
+
+#### 影響
+KULR(2019)で数学的矛盾を確認済み（現在進行形の実害）:
+current_liabilities($1,033,731) > total_liabilities($236,766)。
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]の案A/案Bいずれでも解消されないため、
+本エントリでの独立対応が必要。他銘柄への横展開有無は未確認（本件の
+原因確定後、同型のcandidate tag誤選択が他銘柄に存在しないか改めて
+横断確認する必要がある）。
 
 #### 対応方針
-未定。原因調査が必要（SPAC以外の要因: 決算期変更・子会社分割・組織再編・
-candidate tagの誤選択等の可能性を個別に確認する）。原因が
-[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と異なる可能性が高いため、対応方針は
-独立して検討する。
+未定。KULR(2019)のtotal_liabilities/current_liabilitiesが参照している
+candidate tag（XBRL概念）そのものを10-K原本と突合し、誤ったタグ・別概念の
+混入がないか個別確認する。原因が[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と異なる
+ことが確定しているため、対応方針は完全に独立して検討する。
 
 #### 着手条件
 なし。優先度は[[SPAC-SHELL-BS-ENTITY-MIXING-1]]対応後で可（原因が別系統の
