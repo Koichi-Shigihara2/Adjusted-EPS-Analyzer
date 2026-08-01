@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b実装
+完了。`_align_cost_of_revenue_to_revenue_period()`を新規追加し、
+revenue・cost_of_revenueが異なるaccnから独立採用され、かつ数学的矛盾
+（revenue−cost_of_revenue≠gross_profit）が現に存在する年度についてのみ、
+revenueと同一accn・同一期間の候補で矛盾が厳密に解消する場合に限り置換
+（コード`b756021f6`＋安全性修正`9616e8058`・データ`7c94c6f95`）。
+**実装検証時に重大な副作用を発見**（初回実装が矛盾のない年度＝GOOGL
+(2008)/HON(2008)/SCCO(2009/2010)まで誤って書き換える巻き添え、
+gross_profit未確定〈derived前〉年度との比較が原因）し、ゲート条件強化で
+是正。最終的に対象はLRCX(2010)の1件のみ、全105銘柄フローズン入力比較で
+無変化を確認、report_consistency_check.py NG=0（WARN=68件）、pytest
+513 passed/2 known failed。CRM(2013)・JNJ(2017)・MRVL(2017)・ONDS(2017)
+は案b単独では未解決のまま残存（案aの対応が必要な可能性）。エントリは
+全件解決していないためBACKLOG.mdに残置し、実装結果・残存部分を明記。
+「次セッションでの着手順序」欄を更新。pushは保留、コミットのみ）。
+
 最終更新: 2026-08-02（[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]対応方針を
 全面改訂（チャット記録、全母集団シミュレーション結果）。案a（候補タグ追加）
 ・案c（2タグ合算）とも単純適用は既存の正しい値を壊す重大な副作用を確認
@@ -1095,10 +1111,49 @@ PL/CF flow factは同一accn内に複数の(start,end)期間が混在するた�
 とBSY単独の個別対応に絞り込む。案a・cは次回セッションでゲート条件込みの
 設計を詰める。
 
+#### 実装結果（2026-08-02、案b実装完了・LRCX(2010)のみ解消）
+`SECParser._align_cost_of_revenue_to_revenue_period()`を新規追加。
+revenue・cost_of_revenueが異なるaccnから独立採用され、かつ
+`revenue − cost_of_revenue ≠ gross_profit`という数学的矛盾が現に存在する
+年度についてのみ、revenueと同一accn・同一(start,end)期間のcost_of_revenue
+候補で矛盾が厳密に解消する場合に限り置換する設計（コード`b756021f6`＋
+安全性修正`9616e8058`・データ`7c94c6f95`）。
+
+**実装時に発見・是正した重大な副作用**: 初回実装（accn不一致のみを
+トリガーとする単純な設計）を全105銘柄フローズン入力比較で検証したところ、
+既に矛盾のない年度（GOOGL(2008)・HON(2008)・SCCO(2009/2010)、いずれも
+gross_profit自体が実タグを持たずderived値だった年度）まで誤って書き換える
+副作用を発見した（特にHON(2008)はgross_profitが$8,562M→$5,438M相当に
+劣化する規模）。原因はgross_profitがNone〈導出前〉の年度との巻き添え比較。
+ゲート条件を「矛盾が現に存在する年度のみ・gross_profitはNoneでない実タグ
+起源の値のみ対象・置換後に矛盾が厳密に解消する場合のみ採用」に強化して
+再検証し、対象をLRCX(2010)の1件のみに絞り込んだ上で実装完了とした。
+
+**検証結果**: LRCX(2010)のcost_of_revenueが$1,166,219,000→$1,163,841,000
+に是正され、revenue−cost_of_revenue=gross_profit($969,935,000)と完全
+一致することを確認。全105銘柄フローズン入力比較でLRCX(2010)以外に変化
+なし（GOOGL/HON/SCCO等の巻き添えが解消したことを含む）。
+report_consistency_check.py NG=0（WARN=68件、変化なし）、pytest 513
+passed/2 known failed（既知のMSFT/NVDA）。`cost_of_revenue`はTANUKI
+VALUATIONのDCF/growth計算に一切使用されず、STONKS SILO側の消費経路も
+gross_profit既存時は発火しないデッドコードのため、影響ゼロと確認。
+
+**残存（案b単独では未解決、CRM/JNJ/MRVL/ONDS）**: CRM(2013)は同一accn・
+別期間の本人データ年度違いのため設計上の既知の限界により対象外。
+JNJ(2017)・MRVL(2017)・ONDS(2017)はrevenueと同一accn内に矛盾を解消する
+候補が見つからず未解決のまま残存（案a〈候補タグ拡張〉の対応が必要な
+可能性がある）。RMBS(2018/2019、案c）・BSY(2019、案d）・AMD/KO(案a）も
+未着手のまま残存。
+
+#### 対応方針
+案bは完了。残る案a（候補タグ拡張、AMD/KO/JNJ/MRVL等）・案c（2タグ合算、
+RMBS）・案d（BSY個別対応）は、いずれもゲート条件込みの再設計
+（[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同一思想）が必要な
+まま次回セッションに引き継ぐ。
+
 #### 着手条件
-ゲート条件（欠損穴埋めのみ・既存の正しい値を上書きしない設計、
-[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同一思想）を伴わない
-実装は行わないこと。優先度中〜高。
+案a・案c・案d（BSY）: ゲート条件（欠損穴埋めのみ・既存の正しい値を上書き
+しない設計）を伴わない実装は行わないこと。優先度中〜高。
 
 ---
 
@@ -7339,6 +7394,43 @@ UNMERGED-1]]。詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照。
    定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
 ⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中・①の6銘柄確認が概ね収束してから常設WARN項目化を検討）
+⑧ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低・
+   クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理
+   自体は将来のcommon/sec_data統合フェーズ1到達時に検討）
+
+追記（2026-08-02 [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b実装完了）:
+①の一部（案b）を実装完了。`_align_cost_of_revenue_to_revenue_period()`を
+新規追加し、revenue・cost_of_revenueが異なるaccnから独立採用され、かつ
+`revenue − cost_of_revenue ≠ gross_profit`という数学的矛盾が現に存在する
+年度についてのみ、revenueと同一accn・同一期間のcost_of_revenue候補で
+矛盾が厳密に解消する場合に限り置換する設計（コード`b756021f6`＋安全性
+修正`9616e8058`・データ`7c94c6f95`）。**実装時の検証で発見した重大な
+副作用**（初回実装が矛盾のない年度＝GOOGL(2008)/HON(2008)/SCCO(2009/2010)
+まで誤って書き換える巻き添え）を、gross_profitがNone〈導出前〉の年度を
+比較不能として除外するゲート条件の追加で是正した。結果、対象はLRCX(2010)
+の1件のみとなり、それ以外は全105銘柄フローズン入力比較で無変化と確認。
+report_consistency_check.py NG=0（WARN=68件）、pytest 513 passed/2 known
+failed。CRM(2013)・JNJ(2017)・MRVL(2017)・ONDS(2017)は案b単独では未解決
+のまま残存（案aの対応が必要な可能性）。エントリ自体は全件解決していない
+ためBACKLOG.mdに残置し、実装結果・残存部分を本文に明記した
+（BACKLOG_DONE.mdへの完全移動はしない）。
+これにより次セッションの筆頭候補を更新する:
+① [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]（優先度：中・現在進行形の実害は
+   解消済み、将来同型の決算期変更を行う他銘柄が現れた場合の再発リスクとして
+   監視対象）
+② [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（優先度：中・RCATの
+   operating_cash_flow欠落、継続/非継続事業タグ分割が原因の疑い）
+③ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中・LITEのcost_of_revenue
+   がCOGS由来償却費タグを未合算、タグ拡張で解消可能）
+④ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]残存分（優先度：中〜高・案a
+   〈候補タグ拡張、AMD/KO/JNJ/MRVL等〉・案c〈2タグ合算、RMBS〉・案d
+   〈BSY個別対応〉、いずれもゲート条件込みの再設計が必要）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・④の確認が概ね収束してから常設WARN項目化を検討）
 ⑧ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低・
    クローズ済み〈実害解消済み〉、fetcher.py側の重複ロジックのコード整理
    自体は将来のcommon/sec_data統合フェーズ1到達時に検討）
