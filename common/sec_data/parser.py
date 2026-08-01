@@ -61,6 +61,15 @@ class SECParser:
         "rpo",
     }
 
+    # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1で対象とするBSフィールド。
+    # SPAC合併等で同一年度のBS(instant fact)が異なる法的実体（accn）から
+    # 混在採用され、current_assets>total_assets等の数学的矛盾を起こす
+    # ケースの是正対象。short_term_investments/rpoは調査スコープ外のため含めない。
+    _BS_ENTITY_MIXING_FIELDS = (
+        "total_assets", "stockholders_equity", "total_liabilities", "cash_and_equivalents",
+        "long_term_debt", "short_term_debt", "current_assets", "current_liabilities",
+    )
+
     # [[PERIOD-LENGTH-VALIDATION-GAP-1]]対応: _extract_single_key()（MERGE_ALL_
     # TAGS_FIELDS以外の全FLOW型フィールドが経由する候補選定）で、年次候補として
     # 受理する際に期間長(340-380日)を必須条件とするフィールド。GrossProfit等の
@@ -415,6 +424,11 @@ class SECParser:
                 boundary_collisions_out=_fye_boundary_collisions,
             )
 
+        # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1: 複数accn混在かつ数学的整合性が
+        # 破綻している年度についてのみ、本人データ(is_own_data=True)を提供する
+        # accnへ統一する（矛盾のない年度には一切触れない）
+        self._resolve_bs_entity_mixing(extracted)
+
         # NVDA-STI-TAG-UNIDENTIFIED-1: cross_filing_tagsに明示登録された
         # ticker×period×fieldの組み合わせについてのみ、複数タグ合算値で
         # extracted[field]の該当バケツを上書きする（型C対応・①案）。
@@ -450,7 +464,106 @@ class SECParser:
                 result["quarterly"][quarter] = quarterly_data
         
         return result
-    
+
+    @staticmethod
+    def _bs_math_violations(bs: Dict[str, Any]) -> bool:
+        """BS項目間の基本的な包含関係が破綻しているか判定する
+        （[[SPAC-SHELL-BS-ENTITY-MIXING-1]]）。current_assets<=total_assets・
+        current_liabilities<=total_liabilities・long_term_debt<=total_liabilities・
+        short_term_debt<=total_liabilities・(long_term_debt+short_term_debt)<=
+        total_liabilities・cash_and_equivalents<=total_assetsのいずれかに
+        違反する場合にTrueを返す。値が片方でもNoneの組は判定対象外（比較不能）。
+        """
+        ta = bs.get("total_assets")
+        tl = bs.get("total_liabilities")
+        ca = bs.get("current_assets")
+        cl = bs.get("current_liabilities")
+        ltd = bs.get("long_term_debt")
+        std = bs.get("short_term_debt")
+        cash = bs.get("cash_and_equivalents")
+        if ta is not None and ca is not None and ca > ta:
+            return True
+        if tl is not None and cl is not None and cl > tl:
+            return True
+        if tl is not None and ltd is not None and ltd > tl:
+            return True
+        if tl is not None and std is not None and std > tl:
+            return True
+        if tl is not None and ltd is not None and std is not None and (ltd + std) > tl:
+            return True
+        if ta is not None and cash is not None and cash > ta:
+            return True
+        return False
+
+    def _resolve_bs_entity_mixing(self, extracted: Dict[str, Any]) -> None:
+        """
+        [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1: SPAC合併等により同一年度の
+        BS(instant fact)フィールドが異なる法的実体（accn）から混在採用され、
+        数学的な包含関係（current_assets<=total_assets等）が破綻している
+        ケースを是正する（実例: BBAI/RDW/RKLB/SOFI/VRT/ONDS/KULR(2016)）。
+
+        「①複数accnが混在」かつ「②本人データ(is_own_data=True)を提供する
+        accnが単一に定まる」かつ「③現に数学的矛盾が確認できる」かつ
+        「④アンカーへの統一により実際に矛盾が解消する」の4条件をすべて
+        満たす年度についてのみ、本人データのaccnをアンカーとして採用し、
+        アンカー以外のaccnから採用された_BS_ENTITY_MIXING_FIELDSの値を
+        None化する（安全側のNone化、[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]と
+        同じ設計方針）。
+
+        条件④はKULR(2019)型（矛盾の原因となる2フィールドが元々同一accnから
+        採用されており、accn混在自体は矛盾と無関係）を除外するために必須。
+        条件④なしでは、KULR(2019)のshort_term_debt（矛盾とは無関係な別
+        フィールド、たまたま他accn由来）が巻き添えでNone化され、根本の矛盾
+        （current_liabilities>total_liabilities）は解消されないまま無関係な
+        変更だけが生じることを実データで確認した。
+
+        条件を1つでも満たさない年度（矛盾のない正常系、本人データaccnが
+        0個または2個以上で一意に定まらない年度、統一しても矛盾が解消しない
+        年度）は一切変更しない。105銘柄・87件の複数accn混在ケースへの
+        オフラインシミュレーションで、本条件により矛盾のない56件（41銘柄）・
+        KULR(2019)に一切影響しないことを確認済み（減算的〈subtractive〉設計
+        であり、既存の正しい値を上書きする経路は持たない）。
+        """
+        years = set()
+        for field in self._BS_ENTITY_MIXING_FIELDS:
+            years.update(extracted.get(field, {}).get("_annual_provenance", {}).keys())
+
+        for year in years:
+            field_accn: Dict[str, str] = {}
+            own_accns = set()
+            bs_values: Dict[str, Any] = {}
+            for field in self._BS_ENTITY_MIXING_FIELDS:
+                field_data = extracted.get(field, {})
+                val = field_data.get("annual", {}).get(year)
+                if val is None:
+                    continue
+                bs_values[field] = val
+                prov = field_data.get("_annual_provenance", {}).get(year)
+                if prov and prov.get("accn"):
+                    field_accn[field] = prov["accn"]
+                    if prov.get("is_own_data"):
+                        own_accns.add(prov["accn"])
+
+            if len(set(field_accn.values())) < 2:
+                continue  # ①複数accn混在なし
+            if len(own_accns) != 1:
+                continue  # ②アンカーが一意に定まらない
+            if not self._bs_math_violations(bs_values):
+                continue  # ③矛盾が現に確認できない
+
+            anchor = next(iter(own_accns))
+            candidate_values = {f: v for f, v in bs_values.items() if field_accn.get(f) == anchor}
+            if self._bs_math_violations(candidate_values):
+                # ④アンカーへの統一後も矛盾が解消しない（KULR 2019型: 矛盾の
+                # 原因フィールドが元々同一accn内にあり、accn混在は無関係）。
+                # この場合は是正効果がないため一切変更しない（無関係フィールドの
+                # 巻き添えNone化を防ぐ）
+                continue
+            for field, accn in field_accn.items():
+                if accn != anchor:
+                    extracted[field]["annual"].pop(year, None)
+                    extracted[field].get("_annual_provenance", {}).pop(year, None)
+
     def _extract_values(self, us_gaap: dict, xbrl_keys: List[str], use_max: bool = False, merge_all_tags: bool = False,
                          fiscal_end_month: int = 12, accn_reportdate: Optional[Dict[str, str]] = None,
                          field_name: str = "", collisions_out: Optional[List[Dict[str, Any]]] = None,
