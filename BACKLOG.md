@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-
+SCCO-1]]個別調査完了（チャット記録、読み取りのみ）。MO・PM・SCCOの3銘柄
+を「①genuine定義差、確定・対応不要」としてクローズしBACKLOG_DONE.mdへ
+移動（PM/MOはExciseAndSalesTaxesタグ、SCCOはDepreciationDepletionAnd
+Amortizationタグが検出diffと完全一致することを10-K原本相当の生データ
+突合で確認）。CRM/JNJ/MRVLで確定した「revenue/cost_of_revenue/gross_
+profitが異なるaccn・会計年度から独立採用される」設計欠陥を
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]として新規登録（優先度：中〜
+高、[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と同種のフィールド間整合性問題、
+残り6銘柄は要個別確認）。LITEのCOGS由来償却費タグ未合算を
+[[LITE-COGS-DA-TAG-UNMERGED-1]]として新規登録（優先度：低〜中）。
+「次セッションでの着手順序」欄を更新。登録・クローズのみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[SPAC-STUB-PERIOD-VERIFICATION-1]]個別調査完了
 （チャット記録、読み取りのみ）。11銘柄・12ティッカー年度すべてで現状の
 処理が妥当と確認。SPAC系6銘柄（ASTS/IONQ/JOBY/RKLB/SOFI/SPIR）はBSが
@@ -967,6 +980,47 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1] revenue/cost_of_revenue/gross_profitが独立にaccn・期間を選定するため異なる会計年度のデータが混在する
+**優先度:** 中〜高
+**分類:** バグ / 確定・複数フィールド間の期間不整合
+**登録日:** 2026-08-02
+**発見:** [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]個別調査
+（チャット記録）
+
+#### 内容
+`revenue`/`cost_of_revenue`/`gross_profit`という相互に関連する複数のPL
+flow-typeフィールドが、フィールドごとに独立してaccn・期間（fy_tag）を
+選定するため、結果として異なる会計年度のデータが混在する設計上の欠陥。
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]がBS instant-factフィールド間で解決した
+「同一accn強制」と同種の思想が、PL flow-typeフィールド間・同一期間強制
+として応用できる可能性がある。
+
+確定した実害:
+- **CRM(2013)**: revenue/gross_profitは正しい比較列期間を採用、
+  cost_of_revenueのみ別会計年度（CRM自身のFY2014本人データ）を誤って
+  採用。真の同期間データでは乖離ゼロと確認済み
+- **JNJ(2017)・MRVL(2017)**: revenue/cost_of_revenue/gross_profitが
+  それぞれ異なる3つのaccn（異なる年度のfiling）から採用されていた、
+  CRMと同型
+
+#### 影響
+確定3銘柄に加え、[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
+の残り6銘柄（AMD/BSY/KO/LRCX/ONDS/RMBS、乖離が単発〜2年度の孤立パターン
+でCRM/JNJ/MRVLと類似）が同型バグの可能性が高いが、個別未確認。他フィールド
+（同種のPL/CF flow-typeフィールド全般）への一般化可能性も未確認。
+
+#### 対応方針
+未定。まず6銘柄を個別に10-K原本突合し、①genuine定義差か②タグ選定バグ
+かを確定する。②が多数を占めることが確認できれば、フィールド間の同一期間
+強制という横断的な設計変更を検討する（実装前に全母集団シミュレーションが
+必要）。
+
+#### 着手条件
+なし。優先度中〜高（確定3銘柄に加え、システム全体で最も広く消費される
+revenueを含むフィールド間の一貫性問題のため）。
+
+---
 
 ### [SECDATA-COMPANYFACTS-OVERLOOKED-1] company_facts.json（SEC EDGAR生レスポンス全量）が一連の投資調査で棚卸し対象から見落とされていた
 **優先度:** 高
@@ -2147,6 +2201,37 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 ---
 
 ## 優先度：中（こなれてきたら対応）
+
+### [LITE-COGS-DA-TAG-UNMERGED-1] LITEのcost_of_revenueがCOGS由来の償却費タグを合算しておらずgross_profitが過大評価される
+**優先度:** 低〜中
+**分類:** データ品質 / タグ拡張で解消可能な構造的ギャップ
+**登録日:** 2026-08-02
+**発見:** [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]個別調査
+（チャット記録）
+
+#### 内容
+LITE（2024年他、9年持続: 2015-2016・2019-2025）で、`cost_of_revenue`が
+`CostOfGoodsAndServiceExcludingDepreciationDepletionAndAmortization`
+（$1,023.8M、現在採用中）のみを拾い、COGS由来の償却費
+`CostOfGoodsAndServicesSoldAmortization`（$83.9M、未採用）が候補タグに
+含まれていない。SCCOと類似の「D&A分離型」構造だが、SCCOと異なりタグの
+合算拡張で原理的に解消可能。
+
+#### 影響
+LITE単独、9年間持続。gross_profit自体はown-dataの正しい値を維持している
+ため、`gross_profit`自体への実害はない。`cost_of_revenue`フィールド単体
+を参照する消費者がいる場合、過小評価（$83.9M程度、年度により変動）の
+影響を受ける可能性がある。
+
+#### 対応方針
+未定。`cost_of_revenue`のXBRL_MAPPINGに
+`CostOfGoodsAndServicesSoldAmortization`型タグの合算を追加するか検討
+する。他銘柄への影響範囲（全母集団シミュレーション）を踏まえて判断する。
+
+#### 着手条件
+なし。優先度低〜中。
+
+---
 
 ### [FETCHER-10KT-10QT-FORM-EXCLUSION-1] fetcher.pyのrelevant_formsに10-KT・10-QT（決算期変更移行期報告書）が含まれず、is_own_data判定が恒常的にFalseになり本人データが採用されない
 **優先度:** 高（登録時）→中（実害確認調査の結果、現在進行形の実害は解消済みと判明）
@@ -5702,55 +5787,6 @@ revenue/gross_profit/cost_of_revenue/net_income/operating_income等のPL/CF系
 
 ---
 
-### [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] gross_profitとRevenue-cost_of_revenue逆算値の乖離が14銘柄で残存（2026-08-02対象拡大: MO/PM/SCCO→14銘柄）
-**優先度:** 低〜中
-**分類:** データ品質 / 会計上の定義差または未解消バグ（要確認）
-**登録日:** 2026-07-31
-**訂正日:** 2026-08-02（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]現状
-再確認で対象を拡大）
-**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]Case B調査（チャット記録）、
-2026-08-02再スキャン（チャット記録）で全容判明
-
-#### 内容（2026-08-02再スキャンで対象拡大）
-[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]
-実装後、gross_profitとRevenue−cost_of_revenue逆算値の乖離（Case B）を
-全105銘柄で再スキャンしたところ、117件→49件（14銘柄）に減少した一方、
-当初想定（MO/PM/SCCOの2016年度3件を例示）より遥かに広範な残存パターンで
-あることが判明した：
-
-- **MO(10年連続: 2016-2025)・SCCO(10年連続: 2010-2019)・PM(2年: 2016-2017)**
-  ＝計22件。当初registeredの3件（各2016年度のみ）は氷山の一角で、
-  MO/SCCOは実際には10年連続の持続的乖離だった
-- **新規可視化（当初未記載の大規模クラスタ）**: LITE(9年: 2015-2016・
-  2019-2025)・CRM(7年: 2009-2013・2017-2018)
-- **その他残存**: JNJ(2017)・KO(2017)・AMD(2年: 2016-2017)・LRCX(2010)・
-  MRVL(2017)・ONDS(2017)・RMBS(2年: 2018-2019)
-- HON(2009)は既知パターン（四半期→年次誤採用）と異なる可能性が高いため
-  [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]として別エントリで
-  独立管理する（本エントリの対象からは除外）
-
-対象をMO/PM/SCCOの3銘柄から**14銘柄（AMD/BSY/CRM/JNJ/KO/LITE/LRCX/MO/
-MRVL/ONDS/PM/RMBS/SCCO、BSYは1年のみ）**に拡大し、「genuine会計定義差」
-「未解消のタグ選定バグ」のいずれに該当するかを個別確認する対象として
-再定義する。
-
-#### 影響
-未確定。14銘柄・49件のgross_profit・cost_of_revenueの解釈に影響しうる。
-MO/SCCOのように10年連続で持続する乖離は、単年度の会計処理変更よりも
-構造的な定義差（物品税・関税等の取扱い差）を示唆する一方、LITE/CRMのような
-新規発見クラスタは原因未確認。
-
-#### 対応方針
-未定。10-K原本で該当科目の定義を個別確認し、genuineな定義差と確定すれば
-「安全な差異として記録」、そうでなければ[[PERIOD-LENGTH-VALIDATION-GAP-1]]系統に
-合流させる。②突合検算ロジック（[[LAYER3-GROSSPROFIT-BACKFILL-PROD-
-UNREACHED-1]]対応方針案②）の設計時にまとめて扱うのが効率的。
-
-#### 着手条件
-なし。優先度低〜中のため、優先度高の項目の後で対応可。
-
----
-
 ### [HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1] HON(2009)のgross_profit乖離が期間長是正後も残存、既知パターンと異なる原因の疑い
 **優先度:** 低
 **分類:** データ品質 / 要個別確認
@@ -7158,6 +7194,38 @@ PENDING-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]（段階2残存）・
    定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
 ⑥ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中・①の10-K確認が概ね収束してから常設WARN項目化を検討）
+
+追記（2026-08-02 [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]
+個別調査完了）:
+~~① [[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]~~ ✅ 一部
+   解消（MO/PM/SCCOの3銘柄は①genuine定義差、確定・対応不要としてクローズ。
+   PM/MOはExciseAndSalesTaxesタグが検出diffと完全一致〈物品税込み収益vs
+   税抜きベースのgross profitという業界標準〉、SCCOはDepreciationDepletion
+   AndAmortizationタグが検出diffと完全一致〈D&A別建て表示という鉱業界
+   標準〉。BACKLOG_DONE.md「2026-08-02（完了）」へ全文移動）。残り11銘柄
+   は[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高、CRM/JNJ/
+   MRVL確定3件＋AMD/BSY/KO/LRCX/ONDS/RMBS要確認6件）・
+   [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中、LITE1件）へ新規分離
+   登録。
+これにより次セッションの筆頭候補を更新する：
+① [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高・新規。
+   revenue/cost_of_revenue/gross_profitが異なるaccn・会計年度から独立
+   採用される設計欠陥。CRM/JNJ/MRVLで確定、残り6銘柄は要個別確認）
+② [[FETCHER-10KT-10QT-FORM-EXCLUSION-1]]（優先度：中・現在進行形の実害は
+   解消済み、将来同型の決算期変更を行う他銘柄が現れた場合の再発リスクとして
+   監視対象。対応方針〈案1〜3〉未確定）
+③ [[RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1]]（優先度：中・RCATの
+   operating_cash_flow欠落、継続/非継続事業タグ分割が原因の疑い。現時点で
+   直接的な計算実害は未確認だが将来のOCF黒字転換時にfcf_list/DCFへ影響
+   するリスク）
+④ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中・新規。LITEのcost_of_
+   revenueがCOGS由来償却費タグを未合算、タグ拡張で解消可能）
+⑤ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低・HON(2009)
+   単独、既知パターンと異なる原因の疑い。10-K原本確認が未着手）
+⑥ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中・TANUKI VALUATION通常の
+   定期更新サイクルで自然解消見込み。次回定期更新後に反映確認・クローズ）
+⑦ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中・①の6銘柄確認が概ね収束してから常設WARN項目化を検討）
 
 ---
 

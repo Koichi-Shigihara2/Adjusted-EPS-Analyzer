@@ -4,6 +4,62 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1] gross_profitとRevenue-cost_of_revenue逆算値の乖離が14銘柄で残存（MO/PM/SCCOはgenuine定義差と確定・クローズ、残り11銘柄は別エントリへ引き継ぎ）
+**状態:** MO・PM・SCCOの3銘柄は「①genuine定義差、確定・対応不要」で解消。
+残りはBACKLOG.mdの[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
+[[LITE-COGS-DA-TAG-UNMERGED-1]]へ引き継ぎのため本エントリはクローズ
+**優先度:** 低〜中
+**分類:** データ品質 / 会計上の定義差または未解消バグ（要確認）
+**登録日:** 2026-07-31
+**完了日:** 2026-08-02
+**発見:** [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]Case B調査（チャット記録）、
+2026-08-02再スキャン（チャット記録）で全容判明
+
+#### 内容（14銘柄への対象拡大の経緯）
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]
+実装後、gross_profitとRevenue−cost_of_revenue逆算値の乖離（Case B）を
+全105銘柄で再スキャンしたところ、117件→49件（14銘柄、AMD/BSY/CRM/JNJ/
+KO/LITE/LRCX/MO/MRVL/ONDS/PM/RMBS/SCCO）に減少した一方、当初想定
+（MO/PM/SCCOの2016年度3件を例示）より遥かに広範な残存パターン（MO 10年
+連続・SCCO 10年連続・LITE 9年・CRM 7年等）であることが判明した。
+
+#### 個別確認結果（2026-08-02、10-K原本突合、チャット記録）
+**MO・PM（①genuine定義差、確定）**: PM own-filingに`ExciseAndSalesTaxes
+= $48,268,000,000`タグを発見し、検出diff（-$48,268,000,000）と完全一致。
+MOも`ExciseAndSalesTaxes = $6,407,000,000`が検出diff（-$6,388,000,000）
+とほぼ一致（誤差0.3%）。たばこ産業特有の「物品税込み総収益」を`revenue`
+として採用する一方、`gross_profit`は物品税控除後の収益ベースで算出する
+業界標準の会計慣行と確定した。
+
+**SCCO（①genuine定義差、確定）**: own-data同一accn内で
+`RevenueFromContractWithCustomerExcludingAssessedTax`・`CostOfRevenue`・
+`GrossProfit`を確認し、単純差引と実際のGrossProfitの差（$764.4M、10年
+連続で類似構造）が同accn内の`DepreciationDepletionAndAmortization`と
+完全一致。鉱業界特有の「売上原価とD&Aを別建て表示しGross ProfitはD&A
+控除後で算出する」業界慣行と確定した。
+
+**CRM・JNJ・MRVL（②タグ選定バグ、確定）**: revenue/cost_of_revenue/
+gross_profitがそれぞれ異なるaccn（異なる会計年度のfiling）から独立に
+採用されており、真の同期間データで再計算すると乖離ゼロと確認。
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]として独立登録した。
+
+**LITE（③境界事例、タグ拡張で解消可能）**: SCCOと類似の「D&A分離型」
+構造だが、COGS由来の償却費が別タグ（`CostOfGoodsAndServicesSoldAmortization`）
+として存在し未合算なだけであり、原理的にタグ拡張で解消可能と判明。
+[[LITE-COGS-DA-TAG-UNMERGED-1]]として独立登録した。
+
+**AMD/BSY/KO/LRCX/ONDS/RMBS（②の可能性が高いが個別未確認）**: 乖離が
+単発〜2年度の孤立パターンでCRM/JNJ/MRVLと類似。
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]の対応範囲として引き継ぐ。
+
+#### 対応方針
+完了。MO/PM/SCCOの3銘柄は「安全な差異として記録」でクローズ。残り
+11銘柄（CRM/JNJ/MRVL確定3件・AMD/BSY/KO/LRCX/ONDS/RMBS要確認6件・
+LITE境界1件）は[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
+[[LITE-COGS-DA-TAG-UNMERGED-1]]へ引き継ぎ。
+
+---
+
 ### ✅ [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認
 **状態:** 解消（実害なし、現状の処理は妥当）
 **優先度:** 中
