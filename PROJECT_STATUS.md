@@ -1,15 +1,39 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
-更新日: 2026-07-24（一次データベース設計の投資調査で判明した3件の実態を
-反映。①INPUT-A-016〈セグメント別売上・KPI〉を正式ASC280セグメントから
-`tail_kpi_map.json`ベースの銘柄固有カスタムKPI〈フェーズ1統合スコープ外〉
-に訂正、②Adjusted EPS算出専用の税務・一過性項目タグ群52種を`INPUT-A-048`
-として新規追加、③`common/sec_data/data/{TICKER}/company_facts.json`
-〈SEC EDGAR company_facts API生レスポンス全量、既存〉がLayer1（無加工
-アーカイブ）の要件を既に満たしていることが判明し、新規構築不要と判明。
-分類A件数を47件→48件に更新。詳細は`INPUT_DATA_TOBE.md`該当箇所・
-BACKLOG.md `[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）
+更新日: 2026-08-02（2026-08-01〜02セッションで`common/sec_data/`統合
+フェーズ1の一次データ抽出品質に関わる残課題6件が解消。①`[[PERIOD-
+LENGTH-VALIDATION-GAP-1]]`〈parser.pyのFLOW型フィールド抽出に期間長検証
+340-380日を追加、9銘柄のgross_profit等の四半期→年次誤採用を是正〉、
+②`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`〈era別fiscal_end_month/
+anchor対応、ELFの2015-2018年度データを是正〉、③`[[SPAC-STUB-PERIOD-
+FIELD-SPLIT-1]]`〈BBAI/RDW/ELF/KULRのSPAC・predecessor/successor期間
+混在を個別調査、対応不要と確認〉、④`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`
+段階1〈BS instant factの法的実体混在によるcurrent_assets>total_assets
+等の数学的矛盾を7銘柄7年度で解消。段階2〈SPAC合併疑いの機械的検知〉は
+未着手で残存〉、⑤`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①
+〈gross_profitのrevenue-cost_of_revenue逆算フォールバックを本番
+annual_YYYY.jsonへ実装、34銘柄342件を書き戻し〉、⑥`[[STONKS-SILO-
+FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`〈⑤の効果でSTONKS SILO側の重複
+補完ロジックが実質デッドコード化、クローズ〉が完了。新規発見の残存事項:
+`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)、同一filing内
+でのcandidate tag誤選択、entity混在ではない別原因と確定〉・
+`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`〈14銘柄49件へ
+対象拡大、会計上の定義差または未解消バグの疑い〉・
+`[[RCAT-TRIPLE-FISCAL-CHANGE-SUSPECTED-1]]`〈RCAT直近10-Kの決算期変更
+再発疑い〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈TANUKI VALUATION定期
+更新待ち〉。詳細はBACKLOG.md/BACKLOG_DONE.md該当項目参照）
+
+更新日（2026-07-24分、履歴として保持）: 一次データベース設計の投資調査で
+判明した3件の実態を反映。①INPUT-A-016〈セグメント別売上・KPI〉を正式
+ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタムKPI
+〈フェーズ1統合スコープ外〉に訂正、②Adjusted EPS算出専用の税務・一過性
+項目タグ群52種を`INPUT-A-048`として新規追加、③`common/sec_data/data/
+{TICKER}/company_facts.json`〈SEC EDGAR company_facts API生レスポンス
+全量、既存〉がLayer1（無加工アーカイブ）の要件を既に満たしていることが
+判明し、新規構築不要と判明。分類A件数を47件→48件に更新。詳細は
+`INPUT_DATA_TOBE.md`該当箇所・BACKLOG.md
+`[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）
 位置づけ: 「新一次データベース構築プロジェクト」（2段階プロジェクトの
 第1段階＝一次データ層の構築・過去データ移管、第2段階＝導出データ層
 〈`FIELD_DEFINITIONS.md`499項目〉の管理方法検討）の進捗を追跡する。
@@ -34,8 +58,7 @@ BACKLOG.md `[[SECDATA-COMPANYFACTS-OVERLOOKED-1]]`参照）
 
 | コンポーネント | 状態（未着手/構築中/完成） | 備考 |
 |---|---|---|
-| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット
-`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。残課題: `[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`等、`BACKLOG.md`該当項目を参照 |
+| `common/sec_data/` 統合（raw/normalized/ttm統合含む、`INPUT-A-001〜018`対応） | 構築中（着手日2026-07-24） | `INPUT_DATA_TOBE.md` 2-A参照。統合スコープに`raw/`・`normalized/`・`ttm/`の3系統を含む旨を明記済み。`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C（Layer3スキーマ構築・`layer3_builder.py`実装・`ttm_calculator.py`snake_case統一）が実装済み。2026-07-29、フェーズC移行時の消費者横展開漏れ（`data_fetcher.py`・`audit.py`が旧PascalCaseキー参照のまま取り残されRICEスコア全銘柄停止）を`[[TTM-PASCALCASE-KEY-STALE-1]]`として修正完了（コミット`a7b840c32fde3b6619707f7a7c588baeaed12fd1`、`BACKLOG_DONE.md`参照）。**2026-08-01〜02、一次データ抽出品質の残課題6件が完了**（`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`・`[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階1・`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`①・`[[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]`、詳細はBACKLOG_DONE.md「2026-08-01/02（完了）」参照）。残課題: `[[LAYER3-COGS-STRUCTURAL-GAP-16TICKERS-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2〈SPAC合併疑いの機械的検知、submissions.jsonへのformerNames取得拡張が前提〉・`[[BS-ENTITY-MIXING-UNEXPLAINED-ONDS-KULR-1]]`〈KULR(2019)個別〉・`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`〈14銘柄〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`等、`BACKLOG.md`該当項目を参照 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計 |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
