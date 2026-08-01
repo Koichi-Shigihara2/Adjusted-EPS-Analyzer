@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-01（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]新規登録（優先度：高、
+登録・調査のみ実装は未着手）＋[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]訂正
+（ELF/KULR除外・BBAI/RDWのPL/CF系は既にNone化済みと確認しクローズ扱いへ）。
+[[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]個別調査で、BBAI/RDW 2020のBS系フィールドが
+合併前SPACシェルと合併後本体の異なる法的実体から混在採用され、数学的に矛盾
+する値（current_assets>total_assets等）が本番稼働中であることが判明。全105
+銘柄横断スキャンでRKLB(2020)・SOFI(2020)・VRT(2019)にも同型の数学的矛盾を
+確認、SPIR(2020)は同一パターンだが偶然矛盾していない状態を確認。ONDS(2017)・
+KULR(2016/2019)は類似症状だがSPACパターンと一致せず別原因の可能性ありとして
+対応方針検討の対象外に区分。BS系は期間長フィルタの対象外のため
+[[PERIOD-LENGTH-VALIDATION-GAP-1]]では検知不可能だった独立した欠陥系統）。
+
 最終更新: 2026-08-01（[[ELF-ROE10YR-RECALC-PENDING-1]]新規登録、登録のみで
 TANUKI VALUATION側のコミット・反映は未実施。[[ELF-FISCAL-END-MONTH-
 MISDETECTION-1]]完了時の試験実行で、ELF 2015-2018年度データ是正に伴い
@@ -5422,31 +5434,136 @@ TANUKI VALUATIONの通常の定期更新サイクル（全銘柄再計算）に�
 
 ---
 
-### [SPAC-STUB-PERIOD-FIELD-SPLIT-1] SPAC合併・組織再編銘柄で同一年度内にフィールドごと異なる期間長が混在（predecessor/successor期間混在の疑い）
-**優先度:** 高（要個別調査）
-**分類:** データ品質 / SPAC会計特有の期間混在
+### [SPAC-STUB-PERIOD-FIELD-SPLIT-1] BBAI/RDW 2020年度のPredecessor/Successor期間混在、PL/CF系は既にNone化済みで対応不要（2026-08-01訂正: ELF/KULR除外・BS系実害は[[SPAC-SHELL-BS-ENTITY-MIXING-1]]へ分離）
+**優先度:** 低（記録のみ・追加対応不要）
+**分類:** データ品質 / SPAC会計特有の期間混在（確認完了）
 **登録日:** 2026-07-31
-**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）
+**訂正日:** 2026-08-01
+**発見:** [[PERIOD-LENGTH-VALIDATION-GAP-1]]調査時の横断スキャン（チャット記録）、
+2026-08-01個別調査（チャット記録）で対象を絞り込み
 
-#### 内容
-BBAI 2020(net_incomeのみ27日、他フィールドは223日)・RDW 2020(155日/325日で
-フィールド群が2グループに分裂)・ELF 2015(89日/333日で分裂)・KULR 2015
-(net_income/operating_incomeのみ20日)で、同一銘柄・同一年度内でフィールドごとに
-異なる期間長が混在している。単純な「四半期→年次誤採用」ではなく、SPAC合併・
-組織再編に伴うpredecessor/successor(合併前後で会計主体が変わる)期間の混在、
-または部分年度の異なる報告単位の混在という別種の問題の可能性がある。
+#### 内容（2026-08-01個別調査で確定）
+BBAI(2020)・RDW(2020)を10-K原本で確認したところ、いずれも実在するPredecessor/
+Successor会計処理だった：
+- BBAI 2020: BigBear.ai FY2021 10-K原本に"Successor 2020 Period"（2020-05-22〜
+  12-31、223日）・"Predecessor 2020 Period"（2020-01-01〜10-22、295日）の記載を
+  確認。合併前SPAC「GigCapital4, Inc.」自身の最初の10-K（27日間、2020-12-04〜
+  12-31）も同一CIKに混在
+- RDW 2020: Redwire FY2021 10-K原本に"the registrant... previously known as
+  Genesis Park Acquisition Corp."・Successor期間（2020-02-10〜12-31、325日）・
+  Predecessor期間（2020-01-01〜06-21、172日）の記載を確認
+
+revenue/gross_profit/cost_of_revenue/net_income/operating_income等のPL/CF系
+フィールドは、Predecessor(295日/172日)・Successor(223日/325日)いずれも
+340-380日フィルタの範囲外であり、**既存の[[PERIOD-LENGTH-VALIDATION-GAP-1]]
+フィルタによって両銘柄とも安全側にNone化済みであることを確認した（実データ・
+現行コードで検証済み）**。追加対応は不要。
+
+**訂正: ELF(2015)・KULR(2015)は対象外と判明したため本エントリから削除**
+（2026-08-01個別調査）：
+- ELF(2015): predecessor/successor分裂は実在せず、四半期比較開示の再掲載
+  （89/90/91/91日）と真の年次値（364日、$191,413,000等）の混在であり、
+  [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]により既に正しい年次値が採用
+  されている。元の「89日/333日で分裂」という記述は、隣接する2014年度
+  （predecessor/successor分割、333日）との混同だった可能性が高い
+- KULR(2015): SPAC・M&Aとは無関係。10-K原本に"Predecessor"/"Successor"/
+  "reverse merger"の記載は一切なく、2015-12-11の法人設立から会計年度末までの
+  20日間が単純に最初の（短い）事業年度だった。PL/CF系は正しくNone化済み、
+  BS系は単一実体（同一accn）から内部整合的に取得されており問題なし
 
 #### 影響
-未確定。該当銘柄の該当年度で、フィールド間の値の整合性が取れていない可能性がある。
+なし（PL/CF系は安全側のNone化で確認完了）。ただしBS系（instant fact、
+期間長フィルタの対象外）で、BBAI/RDWとも「合併前SPACシェルのBS」と
+「合併後本体のBS」が同一年度内で混在し、数学的に矛盾する値
+（current_assets>total_assetsの類）が本番稼働中であることが同じ調査で
+新たに判明した。この実害は本エントリのスコープ外とし、
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]として独立登録した（2026-08-01、優先度：高）。
 
 #### 対応方針
-未定。[[PERIOD-LENGTH-VALIDATION-GAP-1]]と同一の機械的フィルタ(340-380日)を安易に
-適用すると、正当なpredecessor/successor期間のデータまで誤って除外するリスクが
-あるため、まず該当4銘柄の10-K原本で会計主体・報告期間の実態を個別確認する。
+なし。PL/CF系は追加対応不要（確認完了・現状維持）。BS系の対応は
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]側で検討する。
 
 #### 着手条件
-なし。[[PERIOD-LENGTH-VALIDATION-GAP-1]]の対応方針確定前に、このパターンの
-実態を先に把握しておく必要がある(全母集団シミュレーションの正確性に影響する)。
+なし（本エントリはクローズ扱い。記録として残置）。
+
+---
+
+### [SPAC-SHELL-BS-ENTITY-MIXING-1] SPAC合併銘柄でBS（instant fact）フィールドが合併前シェル会社・合併後本体の異なる法的実体から混在採用され数学的に矛盾する値が本番稼働中
+**優先度:** 高
+**分類:** バグ / 確定
+**登録日:** 2026-08-01
+**発見:** [[SPAC-STUB-PERIOD-FIELD-SPLIT-1]]個別調査（チャット記録）
+
+#### 内容
+SPAC合併を経た銘柄で、同一年度のBS（instant fact）フィールドが、異なる
+法的実体（合併前のSPACシェル会社 vs 合併後の本体）から混在して採用されている。
+既存の`_own_override_is_safe()`は「同一フィールド内での年度競合」のみを
+チェックし、「同一年度・異なるBSフィールドが異なるaccn（法的実体）から
+来ていないか」という横断チェックを持たない。
+
+確定した実害:
+- BBAI(2020): total_assets/stockholders_equity/total_liabilities/
+  cash_and_equivalentsはGigCapital4（SPACシェル、is_own_data=true）由来、
+  long_term_debt/short_term_debt/current_assets/current_liabilitiesは
+  Successor（BigBear.ai本体、is_own_data=false）由来。結果、
+  current_assets($34,346,000) > total_assets($380,653)という数学的に
+  不可能な状態が本番稼働中
+- RDW(2020): 同型。long_term_debt($76,642,000) > total_liabilities
+  ($42,409,421)
+
+**2026-08-01全105銘柄横断スキャンで追加確認した実害（BBAI/RDW以外）**:
+- RKLB(2020): 合併前SPAC「Vector Acquisition Corporation」の10-K/A
+  （2021-05-03提出、fy=2020）由来のtotal_assets等と、Rocket Lab本体の
+  2022-03-24提出10-K（fy=2021）由来のlong_term_debt/short_term_debt/
+  current_liabilitiesが混在。current_liabilities($48,419,000) >
+  total_liabilities($35,980,062)
+- SOFI(2020): 合併前SPAC「Social Capital Hedosophia Holdings Corp V」の
+  10-K/A（2021-04-22提出、fy=2020）由来のtotal_liabilities等と、SoFi本体の
+  2022-03-01提出10-K（fy=2021）由来のlong_term_debtが混在。
+  long_term_debt($4,798,925,000) > total_liabilities($127,639,700)
+  （フィンテック貸付事業の巨大負債が、SPACシェルの小さいtotal_liabilities
+  に乗っている状態）
+- VRT(2019): 合併前SPAC「GS Acquisition Holdings Corp」の2020-03-12提出
+  10-K（fy=2019）由来のtotal_assets等と、Vertiv本体（旧Vertiv Holdings、
+  PE傘下の私企業）の2021-04-30提出10-K/A（fy=2020）由来のlong_term_debt/
+  short_term_debtが混在。long_term_debt($3,467,300,000) >
+  total_liabilities($30,752,104)
+
+**同一パターンだが数学的矛盾には至っていない（"事故的な正しさ"）ケース**:
+- SPIR(2020): 合併前SPAC「NavSight Holdings」の10-K（2021-05-12提出、
+  fy=2020）由来のtotal_assets/total_liabilities等（trust勘定計上で
+  total_assets=$231.6M・current_assets=$1.6Mと非流動比率が極端に高い、
+  典型的なSPACシェルの貸借対照表）と、Spire Global本体の2022-11-07提出
+  10-K由来のlong_term_debt($26,645,000)が混在。現時点ではlong_term_debt
+  <total_liabilitiesのため数学的矛盾は顕在化していないが、根本原因は
+  BBAI/RDW/RKLB/SOFI/VRTと同一であり、将来のデータ更新で偶然の整合が
+  崩れるリスクを抱える
+
+**同じ症状だが根本原因が異なる可能性がある別枠（要個別確認）**:
+- ONDS(2017)・KULR(2016)・KULR(2019): いずれも複数accnからのBS混在＋数学的
+  矛盾を検出したが、accnの提出者・時期パターンがSPACシェル型（合併前シェルの
+  自社10-K→合併後本体の10-K）と一致しない。KULR は[[SPAC-STUB-PERIOD-
+  FIELD-SPLIT-1]]の2026-08-01個別調査でSPAC・M&A歴なしと確認済みのため、
+  本件はcandidate tagの誤選択等、別の独立した原因の可能性が高い。本エントリの
+  対応方針検討の対象には含めず、個別に扱う
+
+#### 影響
+BS系フィールドは期間長フィルタ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]）の
+対象外のため検知不可能だった、独立した欠陥系統。105銘柄中53銘柄で複数accnから
+のBS混在が検出されたが、大半（AAPL/AMAT/GOOGL/TSLA/XOM等の非SPAC老舗企業）は
+数学的整合性チェックで矛盾なし＝実害なしと確認済み。実害（数学的矛盾）が
+確認できたのはBBAI/RDW/RKLB/SOFI/VRTの5銘柄5年度、"事故的な正しさ"で
+潜在するのがSPIR(2020)の1銘柄1年度。
+
+#### 対応方針
+未定。案としては①同一年度・同一銘柄のBS instant factが複数の異なるaccnから
+採用されている場合に警告する監査ロジック（report_consistency_check.pyへの
+新規WARN）、②SPAC合併の疑いがある銘柄を機械的に検知し、合併後の単一実体
+（Successor）のBSデータのみを一貫して採用するロジック、等。
+
+#### 着手条件
+なし。優先度高（現在進行形の実害・数学的矛盾、BBAI/RDW/RKLB/SOFI/VRTの
+5銘柄5年度で確認済み）。
 
 ---
 
