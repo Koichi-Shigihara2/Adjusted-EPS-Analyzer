@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]の対応方針を
+確定（チャット記録、読み取り・オフラインシミュレーションのみ）。COHR個別の
+是正は`fact_overrides.json`個別上書き（GOOGLと同型）に確定、値は2009年度
+60,164,000/59,334,000・2010年度61,504,000/60,304,000・2011年度
+63,612,000/62,211,000（shares_diluted/basic）。「後続filing優先」への
+一般設計変更は不採用（2011年度は本人データ優先ロジックが他銘柄で正しく
+機能しており巻き添えリスク大、2009年度はそもそも後続filingに正しい値が
+存在せず解決しない）。調査過程で2件を新規分離登録: 本人データ不在時に
+複数比較年度再掲が競合すると最も古いfilingが勝つ未文書化tie-break欠陥
+[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]（優先度：中〜高、COHR2010で実証）、
+同一タグ・同一期間の値が複数filing間で10のべき乗単位（1000倍等）で乖離
+する場合を検知する汎用チェック提案[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]
+（優先度：中、105銘柄試験適用で18銘柄・126件を検出）。「次セッションでの
+着手順序」欄を更新。登録・更新のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]実装完了。
 影響範囲確認（チャット記録、読み取り・オフラインシミュレーションのみ）で
 fact_overrides.json対象がGOOGL(2012/2013)限定であること、逆算バックフィル
@@ -1449,7 +1464,7 @@ COHR(2009-2011)のshares_diluted・関連するEPS系指標に影響。現状の
 を検知する仕組みがなく、今回のような1,000倍規模の異常値がそのまま
 採用され続ける構造的な検知の空白がある。
 
-#### 対応方針
+#### 対応方針（登録時点）
 未定。COHR個別の対応（後続filingの正しい値への差し替え）に加え、
 「同一タグ・同一期間の値が複数filing間で桁違い（例: 100倍以上）に乖離
 する場合に検知する」という汎用チェックの新設を検討する
@@ -1457,9 +1472,109 @@ COHR(2009-2011)のshares_diluted・関連するEPS系指標に影響。現状の
 横断検証、「単一filing内の恒等式」ではなく「複数filing間の値の一貫性」
 を見る点が異なる）。105銘柄全体での同型ケースの横断スキャンも必要。
 
+#### 対応方針確定（2026-08-02、チャット記録、読み取り・オフライン
+シミュレーションのみ）
+COHR個別の是正は`fact_overrides.json`個別上書き（GOOGLと同型の確立済み
+手法）に確定。値: 2009年度 shares_diluted=60,164,000/shares_basic=
+59,334,000、2010年度 61,504,000/60,304,000、2011年度 63,612,000/
+62,211,000（company_facts.json内の実在値と完全一致確認済み）。
+
+「後続filing優先」への一般設計変更は不採用と確定した。2011年度の誤り値は
+本人データ優先ロジック（exact一致、fy_tag==年度）により採用されており、
+このロジックは他104銘柄で正しく機能しているため一般変更は巻き添え
+リスクが大きい。2009年度は後続filingに正しい値自体が存在しない
+（10-Kの比較年度開示ウィンドウ〈2〜3年〉から外れた）ため、そもそも
+「後続filing優先」では解決しない。
+
+調査の過程で、2010年度については正しい値がcompany_facts.json内に実在
+するにもかかわらず採用されていなかった別原因（本人データ不在時の
+FIFO的tie-break欠陥）を発見し、[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]
+として分離登録した。また汎用検知チェックの設計・105銘柄試験適用は
+[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]として分離登録した（COHR個別の
+是正とスコープを分離）。
+
 #### 着手条件
 なし。優先度中（現状確認済みはCOHR1銘柄のみだが、汎用チェックとしての
-価値が高い）。
+価値が高い）。対応方針は確定済み、実装は次セッションで着手可能。
+
+---
+
+### [FIFO-TIEBREAK-OLDEST-FILING-WINS-1] 本人データ不在時に複数の比較年度再掲が競合すると最も古いfilingが優先される未文書化の選定ロジック欠陥
+**優先度:** 中〜高
+**分類:** バグ / 確定・未文書化の選定ロジック欠陥
+**登録日:** 2026-08-02
+**発見:** [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]調査から派生（chat記録）
+
+#### 内容
+`_extract_single_key()`内で、本人データが存在せず複数の比較年度再掲
+（exact一致なし同士）が競合した場合、「end_date同一・10-K/A関与なしなら
+先に見つかった方が勝つ」というFIFO的tie-break（`parser.py`1911-1920行
+付近）が存在する。COHR(2010)で実証: 正しい値（61,504,000、FY2012 10-K
+比較年度再掲）がcompany_facts.jsonに存在するにもかかわらず、より古い
+（誤った）FY2011 10-K側のエントリが先に見つかったため優先採用されて
+いた。[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]とは別種・独立したバグ。
+
+#### 影響
+未確定。「本人データ不在・複数比較年度再掲が競合」という条件に該当する
+全ケースで、意図せず古い（場合によっては誤った）filingが優先される
+リスクがある。105銘柄全体での該当範囲は未調査。
+
+#### 対応方針
+未定。tie-break条件を「より新しいfiling（accn番号・filed日）を優先する」
+方向に変更するか、そもそも複数の比較年度再掲が競合する場合は不確実性が
+高いとして両方を候補として保持し個別確認を促す設計にするか検討する。
+実装前に全母集団シミュレーションが必須（tie-break条件の変更は影響範囲が
+広い可能性がある）。
+
+#### 着手条件
+なし。優先度中〜高（未文書化・直感に反する挙動、他銘柄への影響範囲が
+未確認のため）。
+
+---
+
+### [XBRL-UNIT-SCALE-MISMATCH-DETECTION-1] 同一タグ・同一期間の値が複数filing間で10のべき乗単位で乖離する場合を検知する汎用チェックの新設提案
+**優先度:** 中
+**分類:** アーキテクチャ改善 / 新規検知チェック提案
+**登録日:** 2026-08-02
+**発見:** [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]調査から派生（chat記録）
+
+#### 内容
+同一XBRLタグ・同一unit・同一(start,end)期間について、異なるaccn
+（filing）間で値の比率が10のべき乗値（1000倍・1,000,000倍等、±2%許容）
+に近い場合、SEC提出時のスケール指定漏れ（"in thousands"欠落等）という
+業界共通のXBRLタグ付けミスの可能性が高いことが判明した。素朴な閾値
+（比≥100）のみでは72銘柄がヒットしノイズが大きすぎたが、比≒10の
+べき乗という条件を追加することで、SPAC逆合併の会計主体入替
+（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]と同系統、正当な処理）等のノイズを
+排除し、18銘柄・126件まで収束することを確認した。
+
+該当銘柄・件数: COHR(26)・KO(20)・NVDA(20)・CPRT(18)・TER(12)・ONDS(5)・
+FCX(4)・HEI(4)・MO(4)・ADSK(2)・CELH(2)・TSLA(2)・ZS(2)・ASTS(1)・
+IONQ(1)・MSCI(1)・SOUN(1)・ZETA(1)。対象フィールドはWeightedAverageNumber
+OfSharesOutstandingBasic/Diluted(計98)が過半だが、CommonStockShares
+Outstanding・EPS系・Depreciation系・NetIncomeLoss系・LongTermDebt・
+DebtCurrent・Liabilities・OperatingIncomeLoss・AmortizationOfIntangible
+Assets等、幅広いフィールドに及ぶ。
+
+#### 影響
+COHR以外の該当銘柄は未トリアージ。検知＝即実害ではなく、本人データ優先
+ロジックにより既に正しい値が採用されているケース（実害なし、COHR自身の
+FY2019/2020 Q3・FY2023/2024 D&A等で確認済み）もあれば、実際に格納値が
+誤っているケース（COHR 2009-2011のshares系）もある、個別トリアージが
+必要な問題。
+
+#### 対応方針
+未定。既存WARN群（WARN-24等）と同型の「検知のみ・自動修正なし」枠組みで
+新設（WARN-30候補）することを推奨する。ただし既存WARN群がextracted
+（抽出済み）データを対象にするのに対し、本チェックはcompany_facts.json
+の生タグレベル（抽出前）を横断的に見る必要があり、`_parse_raw_data()`
+または`report_consistency_check.py`への新規ロジック層追加という設計に
+なる。検知後は126件を個別トリアージし、実害あり/なしを分類する運用が
+必要。
+
+#### 着手条件
+なし。優先度中（業界共通のミスパターンとして汎用的価値が高いが、
+即座の実害は限定的〈COHR以外は未確認〉のため）。
 
 ---
 
@@ -8720,6 +8835,51 @@ HEI・ONDS型許可リスト拡張〈機能コミット`a910afef2`〉、いず�
 ⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+   bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+追記（2026-08-02 [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]の対応方針確定・
+[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]・[[XBRL-UNIT-SCALE-MISMATCH-
+DETECTION-1]]新規登録を反映し、次セッションでの着手順序を更新する）:
+**次セッションでの着手順序（2026-08-02時点、最終版）**:
+① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+② [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+③ [[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]（優先度：中〜高。本人データ
+   不在時に複数比較年度再掲が競合すると最も古いfilingが勝つ未文書化
+   tie-break欠陥、COHR(2010)で実証。105銘柄全体での該当範囲・実装前
+   全母集団シミュレーションが未着手）
+④ [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（優先度：中。対応方針確定済み
+   〈fact_overrides.json個別上書き、値も確定〉、実装のみ残存）
+⑤ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+   own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
+   COHR2件のみ）
+⑥ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。同一タグ・同一
+   期間の値が複数filing間で10のべき乗単位で乖離する場合の汎用検知チェック
+   新設提案、105銘柄試験適用で18銘柄・126件を検出済み・個別トリアージ未着手）
+⑦ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
+   HEI・ONDSは実装完了・COHRは⑤で別扱い）
+⑧ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は①側で行う）
+⑨ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑩ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑪ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑫ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑬ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑭ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑮ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑯ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+⑰ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 ---
