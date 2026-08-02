@@ -522,6 +522,15 @@ fetcher/reader分離等、`PROJECT_STATUS.md`のフェーズ1〜3参照）に関
 「`PROJECT_STATUS.md`の該当ステータス（未着手/構築中/完成）を更新した
 か」を依頼文に明記する。
 
+**新規データ層着手時の設計原則確認（2026-08-02追記）**: `common/
+market_data/`・`common/macro_data/`等、新規データ層に着手する際は、
+着手前に`docs/architecture/new_data_platform/EXTRACTION_DESIGN_
+PRINCIPLES.md`（`common/sec_data/`で発見された5バグ（[[PERIOD-LENGTH-
+VALIDATION-GAP-1]]・[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・[[SPAC-SHELL-BS-ENTITY-
+MIXING-1]]・[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]）の教訓をまとめた
+設計原則文書）を確認すること。
+
 **仕様書自体の変更を伴う依頼**: `FIELD_DEFINITIONS.md`・
 `NAMING_CONVENTIONS.md`・`TO_BE_FINAL_LIST.md`等（`docs/architecture/
 new_data_platform/`配下の仕様書）に影響する変更（新規出力項目の追加、

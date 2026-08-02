@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（`docs/architecture/new_data_platform/
+EXTRACTION_DESIGN_PRINCIPLES.md`を新規作成。common/sec_data/抽出
+アーキテクチャの俯瞰的脆弱性分析で判明した5バグの教訓（期間の妥当性・
+フィールド間整合性・会計恒等式の3原則）を、これから新設する
+`common/market_data/`・`common/macro_data/`向けに一般化。
+`MIGRATION_CHECKLIST.md`と同型の位置づけの独立文書。
+[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]・[[CHECK29-
+ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]から本文書への参照を追記。
+CHAT_RULES.mdの「新DB構築プロジェクトの進捗管理」節・PROJECT_STATUS.md
+のcommon/market_data/・common/macro_data/行にも参照を追記。作成・登録
+のみ、実装は未着手）。
+
 最終更新: 2026-08-02（common/sec_data/抽出アーキテクチャの俯瞰的脆弱性
 分析完了（チャット記録、読み取りのみ）。本セッションで発見した5バグ
 （[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[TOTAL-LIABILITIES-FALLBACK-TAG-
@@ -1341,6 +1353,12 @@ IDENTITY-DETECTION-LAYER-1]]、下記別エントリ）の設計と並行して�
 #### 着手条件
 なし。優先度高（システム全体のデータ品質基盤に関わる構造的問題のため）。
 
+#### 関連ドキュメント
+本エントリの教訓は`docs/architecture/new_data_platform/
+EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
+`common/macro_data/`向けの抽出設計原則、2026-08-02新設）に一般化して
+反映済み。
+
 ---
 
 ### [CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1] 抽出後・保存前に会計恒等式・フィールド間整合性を一括検証する共通レイヤーの新設提案
@@ -1379,6 +1397,13 @@ IDENTITY-DETECTION-LAYER-1]]、下記別エントリ）の設計と並行して�
 [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査（TA=TL+SE
 違反156件のサンプル原因確認等）を先行させることが望ましいが、CHECK-29
 自体の実装（検知ロジック）は並行して設計・シミュレーション可能。
+
+#### 関連ドキュメント
+本エントリが提案する検証レイヤーの設計思想（横断的検証・検知専用・
+穴埋めロジックとの役割分離）は、`docs/architecture/new_data_platform/
+EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
+`common/macro_data/`向けの抽出設計原則、2026-08-02新設）の原則3として
+一般化して反映済み。
 
 ---
 
