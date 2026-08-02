@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]を新規登録
+（優先度：高）。[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装検証時に
+発見した「common/sec_data/ttm/配下が2026-07-26生成のまま、以降の
+layer3_builder.py/q4_implied.py〈2026-07-30〉・parser.py〈2026-08-02〉
+側のパイプライン修正に追従せず陳腐化している」という事象について、
+既存BACKLOG.md/BACKLOG_DONE.mdに独立登録がないことをgrepで確認した
+うえで新規登録した。PEP実測（SG&A約9.5%差）・`.github/workflows/
+SEC_Data_Update.yml`（毎週日曜自動実行の既存ワークフローの存在、なぜ
+2026-07-26以降ttm/が更新されていないかは未確認）を記載。対応方針は
+未定、まず陳腐化の実際の範囲（何銘柄・何フィールド）とワークフロー
+実行履歴の確認調査が必要。「次セッションでの着手順序」欄を更新。登録
+のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装
 完了。`ttm_calculator.py`に`_last4_is_contiguous()`（合計スパン305-425日・
 隣接ギャップ±10日）を新設し`calc_ttm_series()`のlast4選定直後に挿入
@@ -1635,6 +1648,62 @@ liabilities/stockholders_equity/NCI/一時的持分）のみを対象とする�
 完結、tie-break変更部分は将来の予防的対応として保留。優先度中（業界
 共通のミスパターンとして汎用的価値が高いが、即座の実害は限定的
 〈COHR以外は未確認〉のため）。
+
+---
+
+### [TTM-DATA-DRIFT-BEHIND-PIPELINE-1] common/sec_data/ttm/配下のTTM系列ファイルが2026-07-26生成のまま、以降のパイプライン修正に追従しておらず陳腐化している可能性
+**優先度:** 高
+**分類:** データ品質 / パイプライン出力の陳腐化
+**登録日:** 2026-08-02
+**発見:** [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装検証時（チャット記録）
+
+#### 内容
+`common/sec_data/ttm/`配下の全105銘柄のTTM系列ファイル
+（`{ticker}_ttm_series.json`）が、`git log`確認で2026-07-26生成のまま
+であることが判明した。一方、TTM系列の入力元となる抽出パイプライン
+（`common/sec_data/layer3_builder.py`・`common/sec_data/q4_implied.py`）
+は2026-07-30に、`common/sec_data/parser.py`は本セッション中の
+2026-08-02に、それぞれ別コミットで修正されている。実際にPEP銘柄で
+検証したところ、現行パイプライン（2026-08-02時点）で再生成すると
+`selling_general_and_administrative`が$34,501,000,000→$37,791,000,000
+（約9.5%）変化することを確認済み（`[[TTM-CALC-QUARTER-CONTIGUITY-
+UNCHECKED-1]]`実装作業の副産物として発見。この差分は今回実装した連続性
+チェックとは無関係で、単純にttm/ファイルが2026-07-26時点のパイプライン
+出力のまま更新されていないことに起因すると特定済み）。
+
+`.github/workflows/SEC_Data_Update.yml`を確認したところ、毎週日曜
+12:00 UTC（cron: `0 12 * * 0`）に`update.py`を実行し
+`common/sec_data/ttm/`を含む全出力を自動再生成・commit・pushする
+ワークフローが既に存在する。**このワークフローが正常に稼働していれば
+陳腐化は本来自然解消されるはずであり、なぜ2026-07-26以降ttm/が
+更新されていないのか（ワークフロー自体の失敗・無効化・直近未実行等）
+が未確認の論点として残る。**
+
+#### 影響
+未確定。PEP1銘柄のSG&Aで約9.5%の差分を確認したのみで、105銘柄全体で
+どのフィールド・どの銘柄にどの程度の乖離があるかは未調査。TTM系列は
+TANUKI VALUATIONのFCFベースDCF計算・STONKS SILOのrunway計算に直結する
+ため、陳腐化の程度次第では現在進行形のIV算出精度への実害がありうる。
+`[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`実装時は対象18銘柄のみを
+最新化し、残り87銘柄は意図的に未対応のまま据え置いている。
+
+#### 対応方針
+未定。実装は行わず、まず以下の調査が必要:
+- `.github/workflows/SEC_Data_Update.yml`のGitHub Actions実行履歴を
+  確認し、2026-07-26以降に正常実行されているか・失敗しているか・
+  無効化されていないかを特定する
+- 陳腐化の実際の範囲（全105銘柄中何銘柄・どのフィールドで実質的な差分が
+  生じるか）を、現行パイプラインでの全銘柄再生成とフローズン入力比較で
+  定量化する
+- 通常の週次自動更新サイクルで自然解消される見込みか（ワークフローが
+  正常なら次回日曜実行で解消するはず）を確認する
+- 上記調査の結果次第で、手動での全105銘柄再生成が必要か、ワークフロー
+  側の修正が必要かを判断する
+
+#### 着手条件
+なし。優先度高（TTM系列がFCF/IV計算に直結するインフラであり、陳腐化の
+範囲次第では現在進行形の実害となりうるため）。ただし着手前に上記調査で
+実際の影響範囲を確認することが必須。
 
 ---
 
@@ -9030,50 +9099,47 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
-追記（2026-08-02 [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]・
-[[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]の実装完了を反映し、
+追記（2026-08-02 [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]新規登録を反映し、
 次セッションでの着手順序を更新する）:
 **次セッションでの着手順序（2026-08-02時点、最終版）**:
-① [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：高。common/sec_data/
+   ttm/配下が2026-07-26生成のまま以降のパイプライン修正〈2026-07-30〜〉
+   に追従しておらず陳腐化。PEP実測で約9.5%の差分を確認済みだが105銘柄
+   全体の範囲は未調査。まずGitHub Actions〈SEC_Data_Update.yml、毎週
+   日曜自動実行〉の実行履歴確認・陳腐化範囲の定量化調査から着手）
+② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
-② [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
    〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは①で別扱い）
-③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   HEI・ONDSは実装完了・COHRは②で別扱い）
+④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
    根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
    別途確認が必要なため未着手のまま残置）
-④ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+⑤ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
-⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+⑥ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
    〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
    未解決分）
-⑥ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
-⑦ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
-⑧ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑨ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
    [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
    同時に副次的効果として解消される見込み）
-⑨ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
-⑩ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+⑩ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑪ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
    で自然解消見込み）
-⑪ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。汎用検知チェック
+⑫ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。汎用検知チェック
    〈WARN-30候補〉の新設提案。tie-break変更部分は当面見送り済み、
    残るのは検知ロジック自体の新設・126件の個別トリアージ運用）
-⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
-⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
-⑭ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
-
-**新たに判明した残課題**: `common/sec_data/ttm/`ディレクトリが
-2026-07-26生成のまま、以降の`layer3_builder.py`/`q4_implied.py`側の
-既存コミット（2026-07-30〜）に対して広範に陳腐化していることが今回の
-実装検証過程で判明した（本タスクのスコープ外のため対応せず据え置き）。
-次回セッションで全105銘柄のTTM系列を最新パイプラインに合わせて再生成
-することを検討する（優先度は要検討、実害の有無は個別確認が必要）。
 
 ---
 
