@@ -4,6 +4,64 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1] HEI・LRCXでNCI等を含めてもTotal_Assets=Total_Liabilities+Stockholders_Equityが成立しない未特定の不整合
+**状態:** 誤登録・訂正のうえクローズ（原因は①genuine、探索範囲不足による
+誤判定だった）
+**優先度:** 中〜高（登録時）
+**分類:** バグ / 未特定・同一filing内の会計恒等式不整合（登録時の分類。
+実際はバグではなくgenuine差と確定）
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]分類調査
+（チャット記録）
+
+#### 登録時の内容
+HEI(2020)・LRCX(2012-2015)で、NCI・一時的持分タグを含めた完全な資本合計
+を使ってもTotal_Assets = Total_Liabilities + Stockholders_Equity（+NCI
+等）が成立しない。HEIは残差$221,208,000（同一accn・同一filing内）、
+LRCXは残差$190,343,000（同一accn内、2012年Novellus Systems買収前後の
+時期）。いずれも同一filing・同一accn内での不整合であり、企業側の申告
+ミスとは考えにくく、抽出パイプライン側の未発見バグの可能性が高いと
+判断し、優先度中〜高で登録した。
+
+#### 訂正結果（根本原因調査、チャット記録）
+登録時の判定は**誤り**だったと判明した。原因は候補タグの探索範囲不足
+であり、対象accn・end_dateに紐づく**全XBRLタグを網羅的に洗い出す**手法
+（前回は限定した候補タグ名のみをチェックしていた）で再調査した結果:
+
+- **HEI(2020)**: `MinorityInterest`($30,430,000)に加え、
+  `TemporaryEquityCarryingAmountIncludingPortionAttributableTo
+  NoncontrollingInterests`($221,208,000)という別名タグが存在していた
+  （前回は`TemporaryEquityCarryingAmountAttributableToParent`のみを
+  候補としており、この別名タグを見落としていた）。
+  検算: TL($1,315,896,000) + SE($1,980,177,000) + MinorityInterest
+  ($30,430,000) + TemporaryEquity($221,208,000) =
+  **$3,547,711,000 = TA（完全一致）**
+- **LRCX(2012)**: `TemporaryEquityCarryingAmountAttributableToParent`
+  ($190,343,000)は候補として既にチェック対象に含めていたが、確認
+  スクリプトが「各タグの直近6件のみ」を表示する仕様だったため、2018年
+  以降のエントリしか見えておらず、2012年分のエントリの存在自体を
+  見落としていた。
+  検算: TL($2,682,528,000) + SE($5,131,781,000) + TemporaryEquity
+  ($190,343,000) = **$8,004,652,000 = TA（完全一致）**
+
+いずれも同一accn・同一filing内で企業の申告データ自体は正確であり、
+NCI・一時的持分（HEIは買収子会社の少数株主の償還権付き持分、LRCXは
+2012年Novellus Systems買収関連と推定）が抽出パイプラインに未捕捉
+だっただけと確定した。accn/期間不整合・候補タグ設計欠陥・複数タグ
+合算漏れ・単位スケール誤りのいずれにも該当せず、新種のバグでもない。
+
+追加でTSLA(2018)・XOM(2023)も同手法でサンプル確認し、いずれも
+MinorityInterest・RedeemableNoncontrollingInterestEquityCarrying
+Amount等で完全一致することを確認済み（詳細は
+[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]参照）。
+
+**教訓**: 候補タグの網羅性確認は「想定される候補タグ名をチェックする」
+のではなく「対象accn・end_dateに紐づく全タグを機械的に列挙する」方式で
+行うべきである。また、タグのエントリ一覧を確認する際は「直近N件のみ」
+のような表示制限をかけると、過去の年度に存在するエントリを見落とす
+リスクがある。
+
 ### ✅ [RCAT-OCF-CONTINUING-DISCONTINUED-SPLIT-1] RCATのannual_2024.json・annual_2025.jsonでoperating_cash_flowが完全欠落（継続/非継続事業タグ分割が原因の疑い）
 **状態:** 原因確定・[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]へ
 スコープ拡大・統合
