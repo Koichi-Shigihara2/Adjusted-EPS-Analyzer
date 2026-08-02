@@ -97,6 +97,21 @@ report_consistency_check.py
                               競合〉を検知するのに対し、本WARNは根本原因〈10-KT/
                               10-QT自体の除外〉を直接検知する別軸。RCATで実在確認
                               済み。自動修正なし、検知のみ）
+  WARN 29. 会計恒等式不成立    Total_Assets=Total_Liabilities+Stockholders_Equity
+                              が、NCI・一時的持分（MinorityInterest・
+                              TemporaryEquityCarryingAmount系・
+                              RedeemableNoncontrollingInterestEquity...
+                              CarryingAmount系の許可リストのみ）を加算した拡張形
+                              でも成立しない（[[CHECK29-ACCOUNTING-IDENTITY-
+                              DETECTION-LAYER-1]]新設。①本体一致・②拡張形一致の
+                              OR条件フォールバックはparser.py側で判定済みで、
+                              いずれでも解消しないケースのみ発火する。実装前
+                              シミュレーションで、無条件加算はKO/WMT/VZ等の
+                              既存正常ケースで二重計上を起こすと判明したため、
+                              「本体不一致の場合のみ拡張形を試す」設計とした。
+                              105銘柄実測で156件中133件が拡張形で解消、残る
+                              23件が本WARN対象（[[CHECK29-UNRESOLVED-23-MIXED-
+                              CAUSES-1]]参照）。自動修正なし、検知のみ）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -262,6 +277,26 @@ def _read_fye_boundary_collision_log(ticker: str) -> list:
     try:
         with open(path, encoding="utf-8") as f:
             return json.load(f).get("collisions", [])
+    except Exception:
+        return []
+
+
+def _read_bs_identity_violations_log(ticker: str) -> list:
+    """
+    [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]: parser.pyが会計恒等式
+    Total_Assets = Total_Liabilities + Stockholders_Equity（+NCI+一時的
+    持分）の検証結果を書き出す
+    common/sec_data/data/{ticker}/bs_identity_violations_log.json を読む。
+    本体一致で解消したケースはparser.py側で記録対象外済みのため、ここには
+    ①拡張形（NCI・一時的持分の許可リスト加算）で解消したケースと
+    ②いずれでも解消しないケースのみが含まれる。
+    """
+    path = os.path.join(SEC_DATA_DIR, ticker, "bs_identity_violations_log.json")
+    if not os.path.exists(path):
+        return []
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("violations", [])
     except Exception:
         return []
 
@@ -996,6 +1031,26 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
                         )
         except Exception:
             pass
+
+    # CHECK-29: 会計恒等式Total_Assets=Total_Liabilities+Stockholders_
+    # Equity（+NCI+一時的持分）検知（[[CHECK29-ACCOUNTING-IDENTITY-
+    # DETECTION-LAYER-1]]）。parser.pyが①本体一致・②NCI/一時的持分を加算
+    # した拡張形一致（許可リスト方式、OR条件フォールバック）のいずれでも
+    # 解消しなかったケースを検知した際に書き出すログを監視する。①で解消
+    # したケース・②拡張形で解消したケースはparser.py側で記録対象外済み
+    # （ノイズ削減）のため、ここで発火するのはいずれでも未解消のケースのみ。
+    # 自動修正は行わない。
+    _violations_c29 = _read_bs_identity_violations_log(ticker)
+    _unresolved_c29 = [v for v in _violations_c29 if not v.get("resolved_by_extension")]
+    if _unresolved_c29:
+        _periods_c29 = sorted({str(v.get("period", "?")) for v in _unresolved_c29})
+        warn.append(
+            f"  [WARN-29 会計恒等式不成立] {len(_unresolved_c29)}件"
+            f" (対象年度: {', '.join(_periods_c29[:5])}{'...' if len(_periods_c29) > 5 else ''})"
+            f" → Total_Assets=Total_Liabilities+Stockholders_Equity"
+            f"（NCI・一時的持分の許可リスト加算を含む拡張形でも）が成立しない"
+            f"（自動修正なし、[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]参照）"
+        )
 
     return ng, warn
 

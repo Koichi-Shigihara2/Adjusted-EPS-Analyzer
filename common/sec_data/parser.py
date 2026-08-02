@@ -496,7 +496,13 @@ class SECParser:
             quarterly_data = self._build_period_data(extracted, quarter, is_annual=False)
             if quarterly_data:
                 result["quarterly"][quarter] = quarterly_data
-        
+
+        # [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]: 会計恒等式
+        # TA=TL+SE(+NCI+一時的持分)の検証。0件でも毎回書き込む（同上の
+        # 化石ファイル対策と同じ理由）
+        _bs_identity_violations = self._check_bs_identity_violations(ticker, result, us_gaap)
+        self._save_bs_identity_violations_log(ticker, _bs_identity_violations)
+
         return result
 
     @staticmethod
@@ -2177,6 +2183,163 @@ class SECParser:
             json.dump({"ticker": ticker, "detections": detections}, f, ensure_ascii=False, indent=2)
         if detections:
             print(f"   [{ticker}] SPAC合併疑い(法人名変更履歴一致)を検知・記録: {len(detections)}件 ({path})")
+
+    # [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]: 会計恒等式
+    # Total_Assets = Total_Liabilities + Stockholders_Equity（+NCI+一時的
+    # 持分）の検証。実装前シミュレーション（チャット記録）で、無条件に
+    # NCI・一時的持分を加算する設計は既存の正しいケース（KO/WMT/VZ等、
+    # stockholders_equityが候補タグ選定の結果次第でNCI込みの場合がある）で
+    # 二重計上による新規誤検知を引き起こすと判明したため、①まず
+    # TA==TL+SE（本体のみ）を試し、②不一致の場合のみ許可リストの
+    # NCI・一時的持分タグを加算した拡張形を試す、というOR条件の
+    # フォールバック方式を採用する。
+
+    # 許可リスト: 簿価（carrying amount）を表すタグのみに限定する。
+    # 実装前シミュレーションで、単純な部分一致（タグ名に"Noncontrolling"・
+    # "TemporaryEquity"を含むか）は、TemporaryEquityLiquidationPreference
+    # （清算優先分配額）・RedeemableNoncontrollingInterestEquityCommon
+    # FairValue（公正価値）等、簿価とは異なる測定基準の開示専用タグまで
+    # 合算してしまい、LYFT(2018)で$10.3Bの過大計上を引き起こす等、重大な
+    # 誤りがあることが判明したため、簿価タグのみへ限定する。
+    _BS_IDENTITY_ALLOWLIST = frozenset([
+        "MinorityInterest",
+        "TemporaryEquityCarryingAmount",
+        "TemporaryEquityCarryingAmountAttributableToParent",
+        "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests",
+        "RedeemableNoncontrollingInterestEquityCarryingAmount",
+        "RedeemableNoncontrollingInterestEquityCommonCarryingAmount",
+        "RedeemableNoncontrollingInterestEquityPreferredCarryingAmount",
+    ])
+
+    # "Including...NoncontrollingInterests"系タグ（一時的持分のうちNCI分も
+    # 含む合算値）が存在する場合、"AttributableToParent"系・無印の
+    # "TemporaryEquityCarryingAmount"はその内訳の一部を指すため、両方を
+    # 合算すると二重計上になる。前者が存在する場合は後者を除外する。
+    _BS_IDENTITY_SUPERSEDES = {
+        "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests": frozenset([
+            "TemporaryEquityCarryingAmountAttributableToParent",
+            "TemporaryEquityCarryingAmount",
+        ]),
+    }
+
+    _BS_IDENTITY_TOL_REL = 0.02
+    _BS_IDENTITY_TOL_ABS = 2_000_000
+
+    @staticmethod
+    def _find_assets_end_date(us_gaap: dict, accn: Optional[str], target_val: Any) -> Optional[str]:
+        """total_assetsの採用accn・値から対応するend_dateを逆引きする
+        （total_assetsの候補タグはXBRL_MAPPINGで"Assets"単独のため、
+        このタグのみを見れば良い）。"""
+        if not accn:
+            return None
+        entries = us_gaap.get("Assets", {}).get("units", {}).get("USD", [])
+        for e in entries:
+            if e.get("accn") == accn and e.get("val") == target_val and e.get("form") in ("10-K", "10-K/A"):
+                return e.get("end")
+        for e in entries:
+            if e.get("accn") == accn and e.get("val") == target_val:
+                return e.get("end")
+        return None
+
+    def _bs_identity_extra_components(self, us_gaap: dict, accn: str, end_date: str) -> Dict[str, float]:
+        """同一accn・同一end_dateに紐づくNCI・一時的持分の簿価タグ（許可
+        リストのみ）を収集する。instant fact（start_date不要）のみ対象。"""
+        matched: Dict[str, float] = {}
+        for tag in self._BS_IDENTITY_ALLOWLIST:
+            tagdata = us_gaap.get(tag)
+            if not tagdata:
+                continue
+            entries = tagdata.get("units", {}).get("USD", [])
+            for e in entries:
+                if (e.get("accn") == accn and e.get("end") == end_date
+                        and not e.get("start")):
+                    matched[tag] = e.get("val")
+                    break
+        for winner, losers in self._BS_IDENTITY_SUPERSEDES.items():
+            if winner in matched:
+                for loser in losers:
+                    matched.pop(loser, None)
+        return matched
+
+    def _check_bs_identity_violations(self, ticker: str, result: Dict[str, Any],
+                                       us_gaap: dict) -> List[Dict[str, Any]]:
+        """年次データのTotal_Assets = Total_Liabilities + Stockholders_
+        Equity（+NCI+一時的持分）を検証する。検知専用（自動修正なし）。
+        ①本体一致で解消したケースはログに含めない（ノイズ削減、既存の
+        fy_collision_log等と同じ「異常のみ記録」方針）。②拡張形で解消した
+        ケース・③いずれでも解消しないケースのみ記録する。
+        """
+        violations: List[Dict[str, Any]] = []
+        for year, data in result.get("annual", {}).items():
+            bs = data.get("bs", {})
+            ta = bs.get("total_assets")
+            tl = bs.get("total_liabilities")
+            se = bs.get("stockholders_equity")
+            if ta is None or tl is None or se is None:
+                continue
+
+            base_diff = ta - (tl + se)
+            base_denom = max(abs(ta), abs(tl + se), 1)
+            base_pct = base_diff / base_denom
+            if abs(base_diff) <= self._BS_IDENTITY_TOL_ABS or abs(base_pct) <= self._BS_IDENTITY_TOL_REL:
+                continue  # ①本体一致で解消。ログ対象外。
+
+            prov = data.get("bs_provenance", {}).get("total_assets", {})
+            accn = prov.get("accn")
+            end_date = self._find_assets_end_date(us_gaap, accn, ta)
+
+            entry: Dict[str, Any] = {
+                "period": year,
+                "accn": accn,
+                "end_date": end_date,
+                "total_assets": ta,
+                "total_liabilities": tl,
+                "stockholders_equity": se,
+                "diff_base": base_diff,
+                "diff_base_pct": round(base_pct, 4),
+            }
+
+            if not accn or not end_date:
+                entry["extra_components"] = {}
+                entry["diff_extended"] = base_diff
+                entry["resolved_by_extension"] = False
+                entry["method"] = None
+                violations.append(entry)
+                continue
+
+            extra = self._bs_identity_extra_components(us_gaap, accn, end_date)
+            extra_sum = sum(extra.values())
+            ext_diff = ta - (tl + se + extra_sum)
+            ext_denom = max(abs(ta), abs(tl + se + extra_sum), 1)
+            ext_pct = ext_diff / ext_denom
+            resolved = abs(ext_diff) <= self._BS_IDENTITY_TOL_ABS or abs(ext_pct) <= self._BS_IDENTITY_TOL_REL
+
+            entry["extra_components"] = extra
+            entry["diff_extended"] = ext_diff
+            entry["resolved_by_extension"] = resolved
+            entry["method"] = "extended" if resolved else None
+            violations.append(entry)
+
+        return violations
+
+    def _save_bs_identity_violations_log(self, ticker: str, violations: List[Dict[str, Any]]) -> None:
+        """[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]: BS恒等式検証の
+        結果をreport_consistency_check.pyから参照できる形で記録する。
+        本体一致（method="base"相当）のケースはノイズ削減のため
+        _check_bs_identity_violations()側で除外済みで、ここに記録される
+        のは①拡張形で解消したケース（resolved_by_extension=True）・
+        ②いずれでも解消しないケース（resolved_by_extension=False）のみ。
+        0件でも毎回書き込む（fy_collision_log等と同じ化石ファイル対策）。
+        """
+        ticker_dir = os.path.join(self.data_dir, ticker)
+        os.makedirs(ticker_dir, exist_ok=True)
+        path = os.path.join(ticker_dir, "bs_identity_violations_log.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"ticker": ticker, "violations": violations}, f, ensure_ascii=False, indent=2)
+        if violations:
+            unresolved = sum(1 for v in violations if not v.get("resolved_by_extension"))
+            print(f"   [{ticker}] 会計恒等式(TA=TL+SE)検知: {len(violations)}件"
+                  f"（拡張形で解消{len(violations)-unresolved}件・未解消{unresolved}件） ({path})")
 
     def _apply_fact_overrides(self, ticker: str, year: Any, data: dict) -> None:
         """fact_overrides.json記載の個別上書きを、その年度のpl辞書・
