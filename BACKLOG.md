@@ -1,5 +1,25 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の内容を確定
+（チャット記録、読み取りのみ）。GitHub Actions APIでワークフロー実行
+履歴を確認した結果、`SEC Data Update`ワークフロー自体は正常稼働中
+（毎週日曜success、無効化なし）で、単なる週次発火タイミングの問題と
+判明。一方、より深刻な構造的発見: `common/sec_data/ttm/`を生成する
+`layer3_builder.py`は`parser.py`（annual_YYYY.json生成）とは完全に
+独立した別実装のパイプラインであり、`fact_overrides.json`も読み込まず
+`_resolve_bs_entity_mixing()`等annual側の主要ロジックも実装されていない
+ことを確認。結果、本セッションの修正（[[PERIOD-LENGTH-VALIDATION-
+GAP-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]・[[TOTAL-LIABILITIES-
+FALLBACK-TAG-DESIGN-FLAW-1]]・[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
+[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]・[[COHR-SHARES-DILUTED-UNIT-
+SCALE-BUG-1]]・[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]）はワークフローが
+正常実行されてもTTM系列には反映されない（唯一の例外は
+[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]、ttm_calculator.py自体への
+実装のため次回実行で全105銘柄に自動反映）。対応方針を確定: まずTANUKI
+VALUATION・STONKS SILOの実消費への影響を実測確認してから、大規模な
+layer3_builder.pyへの個別移植の要否・優先度を判断する。「次セッション
+での着手順序」欄を更新。登録のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]を新規登録
 （優先度：高）。[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装検証時に
 発見した「common/sec_data/ttm/配下が2026-07-26生成のまま、以降の
@@ -1687,7 +1707,7 @@ TANUKI VALUATIONのFCFベースDCF計算・STONKS SILOのrunway計算に直結�
 `[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`実装時は対象18銘柄のみを
 最新化し、残り87銘柄は意図的に未対応のまま据え置いている。
 
-#### 対応方針
+#### 対応方針（登録時点）
 未定。実装は行わず、まず以下の調査が必要:
 - `.github/workflows/SEC_Data_Update.yml`のGitHub Actions実行履歴を
   確認し、2026-07-26以降に正常実行されているか・失敗しているか・
@@ -1700,10 +1720,76 @@ TANUKI VALUATIONのFCFベースDCF計算・STONKS SILOのrunway計算に直結�
 - 上記調査の結果次第で、手動での全105銘柄再生成が必要か、ワークフロー
   側の修正が必要かを判断する
 
+#### 根本原因調査結果（2026-08-02、チャット記録、読み取りのみ・重大な
+構造的発見）
+GitHub Actions APIで`SEC Data Update`ワークフローの実行履歴を確認した
+結果、**ワークフロー自体は正常稼働中**と判明した（毎週日曜、直近9回超
+すべて`schedule`トリガーで`success`、無効化もされていない。`git log`上の
+`ttm/`最終更新コミット`340b8b8ae`〈author=`github-actions[bot]`〉が
+2026-07-26の実行と完全に一致）。調査時点（2026-08-02 12:32〜12:36 UTC、
+本日も日曜）では本日分の実行が未発火だったが、前週の実行もcron時刻
+（12:00 UTC）から49分遅れて開始しており、GitHub自身が公式に案内する
+「12:00〜15:00 UTC帯はscheduleトリガーの遅延が起きやすい」時間帯と
+一致するため、**単なる未発火（これから発火する見込み）であり失敗では
+ない可能性が高い**。default_branch=`kaihatsu`とワークフローの
+checkout先も一致しており、本セッションのコード変更後も
+`common.sec_data.update`のimportエラーなし・ゲート
+（`report_consistency_check.py`）もNG=0を確認済みで、本セッションの
+変更との衝突の兆候はない。
+
+**真の問題（当初想定より深刻）**: `common/sec_data/ttm/`を生成する
+`layer3_builder.py`（＋`quarterly.py`・`fact_selection.py`・
+`q4_implied.py`）は、`parser.py`（annual_YYYY.json生成）とは**完全に
+独立した別実装のパイプライン**であることを確認した。`layer3_builder.py`
+は`parser.py`のクラス・関数を一切importせず、`fact_overrides.json`も
+読み込まない。`parser.py`側の`_resolve_bs_entity_mixing()`・
+`_backfill_total_liabilities_via_identity()`・
+`_align_cost_of_revenue_to_revenue_period()`に相当する処理も存在しない。
+
+結果、本セッションで実装した以下の修正は、**ワークフローが正常実行
+されてもTTM系列には反映されない**（唯一の例外は
+[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]。これは`ttm_calculator.py`
+自体への実装のため次回実行で全105銘柄に自動反映される）:
+- [[PERIOD-LENGTH-VALIDATION-GAP-1]]（28銘柄）
+- [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・2（7銘柄+SPIR）
+- [[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]（22銘柄278件、
+  AMZN/GOOGL/MSFT/NVDA/AMD/WMT等の大型株含む）
+- [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]案b（LRCX）
+- [[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]（GOOGL、`fact_overrides.json`
+  自体が未読込のため）
+- [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（COHR、同上）
+- [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（ELF）
+
+なお`layer3_builder.py`側は`gross_profit`逆算のみ独自に別実装済みで
+（既存の別系統バグ追跡ID`[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]`、
+annual側の`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`とは別系統
+であることを確認済み）、全ての annual側修正が未移植というわけではない。
+
+**結論**: 「ワークフローを動かせば陳腐化が解消する」という単純な話では
+なく、今回実装した連続性チェック以外のannual側の修正は、たとえ
+ワークフローが毎週正常に動いても恒久的にTTM側へは反映されない
+（別途`layer3_builder.py`側への個別移植が必要）という、より根深い
+構造的問題であることが判明した。
+
+**対応方針の選択肢**:
+1. 現状維持（cron待ち）: [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]の
+   みが次回実行で全105銘柄に自動反映される。他は反映されないまま。
+2. 手動トリガー（`workflow_dispatch`）: pushを伴うため明示的承認が必要。
+3. `layer3_builder.py`側への個別移植: 範囲が大きく複数タスクへの分割が
+   必要。
+4. 影響の実測確認を先行: TANUKI VALUATION・STONKS SILOがTTM経由で
+   未移植の修正対象フィールド・銘柄をどの程度消費しているか確認し、
+   実害の大きさに応じて3の優先度を判断する。
+
+#### 対応方針
+④（影響の実測確認を先行）から着手する。範囲の大きい③（個別移植）に
+いきなり着手する前に、実装前に実害を確認するという原則に基づき、実際に
+どれだけの影響があるかをまず確認する。
+
 #### 着手条件
-なし。優先度高（TTM系列がFCF/IV計算に直結するインフラであり、陳腐化の
-範囲次第では現在進行形の実害となりうるため）。ただし着手前に上記調査で
-実際の影響範囲を確認することが必須。
+なし。優先度を「高」で維持する（annual側修正の大部分がTTM側に反映
+されないという構造的問題、大型株〈AMZN/GOOGL/MSFT/NVDA〉を含む278件
+規模のため）。まず④（影響の実測確認）から着手する。
 
 ---
 
@@ -9102,11 +9188,13 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 追記（2026-08-02 [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]新規登録を反映し、
 次セッションでの着手順序を更新する）:
 **次セッションでの着手順序（2026-08-02時点、最終版）**:
-① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：高。common/sec_data/
-   ttm/配下が2026-07-26生成のまま以降のパイプライン修正〈2026-07-30〜〉
-   に追従しておらず陳腐化。PEP実測で約9.5%の差分を確認済みだが105銘柄
-   全体の範囲は未調査。まずGitHub Actions〈SEC_Data_Update.yml、毎週
-   日曜自動実行〉の実行履歴確認・陳腐化範囲の定量化調査から着手）
+① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：高。ワークフロー自体は
+   正常稼働中と確認済み〈根本原因は別〉。layer3_builder.pyがparser.pyと
+   完全に独立したパイプラインのため、annual側の主要修正〈SPAC-SHELL/
+   TOTAL-LIABILITIES-FALLBACK/PL-FIELD-CROSS-ACCN/GOOGL・COHR fact_
+   overrides等〉がTTM系列に恒久的に反映されない構造的問題と判明。まず
+   TANUKI VALUATION・STONKS SILOの実消費への影響を実測確認してから、
+   layer3_builder.pyへの個別移植の要否・優先度を判断する）
 ② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
