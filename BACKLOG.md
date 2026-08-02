@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（common/sec_data/抽出アーキテクチャの俯瞰的脆弱性
+分析完了（チャット記録、読み取りのみ）。本セッションで発見した5バグ
+（[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[TOTAL-LIABILITIES-FALLBACK-TAG-
+DESIGN-FLAW-1]]・[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・[[SPAC-SHELL-
+BS-ENTITY-MIXING-1]]・[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]）が
+「候補プールから単純な新しさ基準で1つを確定し、他フィールド・他期間・
+会計上の制約とは一切照合しない」という共通の設計的欠陥に帰着すると判明。
+105銘柄への機械的予備スキャンでTA≠TL+SE違反156件（50銘柄）・GP≠Revenue−
+COGS違反43件（9銘柄、GOOGL(2012/2013)は新規発見）・OI>GP違反22件（LMT
+単独、新規発見）・NI≠EPS×Shares違反67件（31銘柄、COHRに単位スケール
+バグの疑い）を確認。[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]
+（優先度：高、分類調査未着手）・[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-
+LAYER-1]]（優先度：高、横断検証レイヤー新設提案）を新規登録。「次
+セッションでの着手順序」欄を更新。登録のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-
 UNCHECKED-1]]根本原因調査完了（チャット記録、読み取りのみ）。当初の懸念
 （継続/非継続タグの取り扱いミス）ではなく、`ttm_calculator.py::
@@ -1281,6 +1296,89 @@ M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄�
 なし。優先度中〜高（現在進行形のデータ品質問題、将来IVに影響しうる潜在
 リスク、ticker非依存の一般的欠陥のため）。まず105銘柄全体での該当有無の
 横断スキャンから着手するのが妥当。
+
+---
+
+### [ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1] 抽出アーキテクチャに横断的な会計恒等式・フィールド間整合性検証が存在しない
+**優先度:** 高
+**分類:** アーキテクチャ改善 / 横断的検証レイヤー未整備
+**登録日:** 2026-08-02
+**発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
+
+#### 内容
+本セッションで発見した5つのバグ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]・
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・[[PL-FIELD-CROSS-ACCN-
+PERIOD-MISMATCH-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]・[[TTM-CALC-
+QUARTER-CONTIGUITY-UNCHECKED-1]]）は、いずれも「候補プールから単純な
+新しさ基準で1つを確定し、他フィールド・他期間・会計上の制約とは一切
+照合しない」という同一の設計的欠陥に帰着することが俯瞰分析で判明した。
+現状、期間長検証は一部フィールドのみ部分導入、フィールド間整合性検証は
+revenue↔cost_of_revenueの1組のみ、会計恒等式検証は`_bs_math_violations()`
+のBS包含関係6条件のみ（Total_Assets=Total_Liabilities+Stockholders_
+Equity自体すら現状未検証）。
+
+105銘柄への機械的予備スキャン（許容誤差: 相対2%かつ絶対$2M超）で以下が
+判明:
+- TA≠TL+SE違反: 156件・50銘柄（全体の約半数）
+- GP≠Revenue−COGS: 43件・9銘柄（AMD/CRM/GOOGL/HON/LITE含む）
+- OI>GP（多段階損益計算書として不整合）: 22件・LMT単独
+- NI≠EPS_diluted×Shares_diluted（粗い近似、許容誤差20%）: 67件・31銘柄
+
+#### 影響
+未確定（分類前）。TA=TL+SE違反はNCI等の未捕捉フィールドによる「バグでは
+なく設計スコープ外」の可能性が高いと推定されるが未検証。個別に覗いた
+サンプルで以下の懸念を確認:
+- BROS: 2021-2025全年度で継続的にTA≠TL+SE、NCI/一時的持分の未捕捉が疑われる
+- LMT: OI>GPが年度により整合/不整合が入れ替わる、タグ切り替えの揺れの疑い
+- COHR(2009-2011): shares_dilutedが60,164〜63,612という桁違いに小さい値、
+  単位スケールバグの疑い
+
+#### 対応方針
+未定。まず4種の違反それぞれについて分類調査（bug/genuine差/対応不要）を
+行い、優先度を確定する。横断的検証レイヤー（[[CHECK29-ACCOUNTING-
+IDENTITY-DETECTION-LAYER-1]]、下記別エントリ）の設計と並行して進める。
+
+#### 着手条件
+なし。優先度高（システム全体のデータ品質基盤に関わる構造的問題のため）。
+
+---
+
+### [CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1] 抽出後・保存前に会計恒等式・フィールド間整合性を一括検証する共通レイヤーの新設提案
+**優先度:** 高
+**分類:** アーキテクチャ改善 / 新規実装提案
+**登録日:** 2026-08-02
+**発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
+
+#### 内容
+「個別バグを都度直す」現状アプローチから、「抽出後・保存前に既知の会計
+恒等式・フィールド間整合性を一括で検証する共通レイヤー」への移行を提案する。
+`_bs_math_violations()`（現状は[[SPAC-SHELL-BS-ENTITY-MIXING-1]]専用の
+狭いゲートとしてのみ呼び出される）を、report_consistency_check.py側から
+呼べる独立ユーティリティへ格上げし、PL側（GP=Rev-COGS・OI≤GP等）を追加した
+最小構成でCHECK-29として試験導入する設計。
+
+設計方針（チャット記録より）:
+- 検知専用（自動修正はしない）。既存の穴埋め系ロジック
+  （`_backfill_total_liabilities_via_identity()`・
+  `_backfill_gross_profit_from_revenue_cogs()`）とは役割を分離する
+  （前者=欠損値の穴埋め、後者=既存値同士の矛盾検知）
+- parser.py側に検知専用の軽量ログ機構を新設（既存のfy_collision_log.json・
+  spac_shell_detection_log.json等と同型の「0件でも毎回書き込み」パターン）
+- report_consistency_check.py側がそのログを読んでCHECK-29としてWARN化する
+  （既存CHECK-22〜28と同型の運用フローに乗せる）
+- 実装コスト自体は小規模（数十〜100行程度）と見積もられるが、検知後の
+  大量WARN（TA=TL+SE違反156件等）への個別対応工数が真のコストになりうる
+
+#### 対応方針
+まずBS側恒等式（TA=TL+SE）・PL側2条件（GP=Rev-COGS・OI≤GP）の最小構成で
+試験導入することを推奨する。105銘柄×数十年分の履歴データへの適用となる
+ため、[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査結果を
+踏まえてから実装に進む（検知後の分類フローを確立してから本格導入する）。
+
+#### 着手条件
+[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査（TA=TL+SE
+違反156件のサンプル原因確認等）を先行させることが望ましいが、CHECK-29
+自体の実装（検知ロジック）は並行して設計・シミュレーション可能。
 
 ---
 
@@ -7946,6 +8044,48 @@ UNCHECKED-1]]として新規登録（優先度：中〜高）。
 ⑩ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑪ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
+追記（2026-08-02 common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析
+完了）:
+本セッションで発見した5バグが共通の設計的欠陥（候補プールから新しさ
+基準のみで値を確定し、他フィールド・他期間・会計恒等式と照合しない）に
+帰着すると判明。105銘柄への機械的予備スキャンでTA≠TL+SE違反156件
+（50銘柄）・GP≠Revenue−COGS違反43件（9銘柄、GOOGL(2012/2013)は新規
+発見）・OI>GP違反22件（LMT単独、新規発見）・NI≠EPS×Shares違反67件
+（31銘柄、COHRに単位スケールバグの疑い）を確認（詳細調査は未実施、件数
+把握のみ）。[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]・
+[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]を優先度：高で新規登録。
+これにより次セッションでの着手順序を更新する:
+① [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高・新規。
+   予備スキャンで見つかった4種の違反〈TA≠TL+SE 156件・GP≠Revenue−COGS
+   43件・OI>GP 22件・NI≠EPS×Shares 67件〉の分類調査〈bug/genuine差/
+   対応不要〉が未着手）
+② [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]（優先度：高・新規。
+   横断的な会計恒等式検証レイヤーの新設提案。①の分類調査結果を踏まえて
+   から実装に進むのが望ましい）
+③ [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は③側で行う）
+⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑥ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑨ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑩ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑪ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 
 ---
