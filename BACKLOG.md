@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（セッション終了処理。BACKLOG.md/BACKLOG_DONE.mdの
+クロスリファレンス整合性を確認（本セッションでクローズした7件
+〈[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]・[[GOOGL-FACT-
+OVERRIDE-SEQUENCING-BUG-1]]・[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]・
+[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]・[[TTM-CALC-QUARTER-CONTIGUITY-
+UNCHECKED-1]]・[[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]〉が
+BACKLOG.mdに残存していないこと、双方向の[[...]]参照が機能していることを
+確認済み。DESIGN-8・UI-DISCOVER-1のID重複は本セッション以前からの既知の
+構造的経緯のため今回は対応せず記録のみ）。作業ツリークリーン確認済み。
+「次セッションでの着手順序」欄を最終整理（[[TTM-DATA-DRIFT-BEHIND-
+PIPELINE-1]]を①に、以降指定順で再構成、[[XBRL-UNIT-SCALE-MISMATCH-
+DETECTION-1]]はリストから除外）。PROJECT_STATUS.mdのcommon/sec_data/
+統合フェーズ1備考欄・更新日も、セッション最終盤の構造的発見
+（layer3_builder.pyとparser.pyの独立パイプライン問題）を反映して更新。
+登録・整理のみで実装は未着手）。
+
 最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の影響実測
 結果を反映（チャット記録、読み取りのみ）。7件の既知修正
 （[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-SHELL-BS-ENTITY-
@@ -9239,33 +9255,27 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
-追記（2026-08-02 [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の影響実測結果
-（実害ゼロ確定・優先度「高」→「中」引き下げ）を反映し、次セッションでの
-着手順序を更新する）:
-**次セッションでの着手順序（2026-08-02時点、最終版）**:
-① [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+追記（2026-08-02 セッション終了処理、次セッションでの着手順序を最終整理）:
+**次セッションでの着手順序（2026-08-02時点、セッション終了時最終版）**:
+① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：中。layer3_builder.pyと
+   parser.pyが同期しない構造的脆弱性は残存するが、既知7件の修正への
+   現在進行形の実害はゼロと確定済み）
+② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
-② [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
    〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは①で別扱い）
-③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   HEI・ONDSは実装完了・COHRは②で別扱い）
+④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
    根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
    別途確認が必要なため未着手のまま残置）
-④ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+⑤ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
-⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+⑥ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
    〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
    未解決分）
-⑥ [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：中〈「高」から引き下げ〉。
-   影響実測の結果、既知7件の修正いずれもTANUKI VALUATION・STONKS SILOへの
-   現在進行形の実害はゼロと確定。ただしlayer3_builder.pyとparser.pyが
-   同期しない構造的脆弱性自体は残存しており、将来の新規annual側修正が
-   TTM anchor範囲内の年度を対象とする場合は同様のリスクが顕在化しうる。
-   短期的運用対応〈実装依頼テンプレートへのチェック項目追加〉・長期的
-   構造対応〈パイプライン統合の独立検討〉のいずれかを将来検討）
 ⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
 ⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
 ⑨ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
@@ -9274,14 +9284,11 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑩ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
 ⑪ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
    で自然解消見込み）
-⑫ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。汎用検知チェック
-   〈WARN-30候補〉の新設提案。tie-break変更部分は当面見送り済み、
-   残るのは検知ロジック自体の新設・126件の個別トリアージ運用）
-⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
-⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
-⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+⑭ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 ---
