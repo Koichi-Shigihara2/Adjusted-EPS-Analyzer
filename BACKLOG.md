@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]のHEI・
+ONDS型を実装完了。CHECK29の許可リストに`TemporaryEquityRedemption
+Value`（CarryingAmount系タグ不在時のフォールバック限定）・
+`RedeemableNoncontrollingInterestEquityCarryingAmount`のSUPERSEDES
+ルールを追加（機能コミット`a910afef2`）。全105銘柄で再検証し156件中
+133件→139件が解消（HEI×5・ONDS×1）、副次的にFCX(2013)も改善、他99
+銘柄・既存133件・COHR型2件・残り15件のresolved状態は維持を確認。
+annual_YYYY.json等は無変更、pytest 497 passed/2 known failed、
+WARN 83→81件（-2）を確認。「次セッションでの着手順序」欄を更新。
+BACKLOG更新コミットは機能コミットとは別）。
+
 最終更新: 2026-08-02（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]の個別調査
 （COHR・HEI・ONDS優先、チャット記録、読み取りのみ）完了。3件とも
 ①genuineと確定（②タグ選定バグに分類されるものはなし）。COHR(2022/2023)
@@ -1564,27 +1575,48 @@ BACKLOG_DONE.mdへ移動済み。
 
 残る20件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は未着手のまま。
 
+#### HEI・ONDS実装完了（2026-08-02、チャット記録）
+HEI型・ONDS型（計6件）の許可リスト拡張を実装した。
+
+- **HEI型**: `TemporaryEquityRedemptionValue`を許可リストに追加。無条件
+  加算ではなく、簿価（CarryingAmount）系タグが同一accn・同一end_dateに
+  1つも存在しない場合のみのフォールバックとして限定（他社での二重計上
+  を防止）。
+- **ONDS型**: `RedeemableNoncontrollingInterestEquityCarryingAmount`
+  （合算値）が存在する場合に`...CommonCarryingAmount`・
+  `...PreferredCarryingAmount`（内訳）を除外するSUPERSEDESルールを、
+  既存の`TemporaryEquityCarryingAmount...`系ルールと同型で追加。
+
+全105銘柄でオフライン再パースを実行し、HEI(2009-2013、5件)・
+ONDS(2023、1件)が`resolved_by_extension=true`に変わることを確認
+（156件中133件→**139件が解消**）。副次的にFCX(2013)の拡張形一致が
+より厳密に改善（残差$716,000,000→$0、resolved自体は変化なし）。他99
+銘柄・既存133件のresolved=trueは維持、COHR型2件・残り15件のresolved=
+falseも維持を確認。annual_YYYY.json等の既存データ値は無変更。
+pytest 497 passed/2 known failed（既知・無関係）。report_consistency_
+check.py実行: WARN 83→81件（-2、HEI・ONDSのWARN-29が解消）。
+
+機能コミット: `a910afef2`。
+
 #### 対応方針
 CHECK29本体（133件解消分）は実装完了済み
 （[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]、BACKLOG_DONE.md
-参照）。今回の個別調査確定分は以下の方針とする:
-- HEI・ONDS: 許可リスト・SUPERSEDESルールの拡張で解決見込み。実装時に
-  他の未解決20件・既存133件の解消分に悪影響がないか全母集団
-  シミュレーションで確認してから着手する。
+参照）。HEI・ONDS（6件）は許可リスト拡張を実装完了。
 - COHR: [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]として別スコープ
   切り出し済み。
-- 残る20件は`resolved_by_extension=false`として検知ログ
+- 残る15件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は
+  `resolved_by_extension=false`として検知ログ
   （`{ticker}/bs_identity_violations_log.json`）・WARN-29に記録済みの
   まま、個別調査で②genuine確定→config/warn_acknowledged.json登録、
   または③真のバグとして別途対応、のいずれかに順次分類していく。
 
 #### 着手条件
-なし（充足済み）。[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]本体
-の実装が2026-08-02に完了し、検知ログ・WARN-29が実際に稼働中のため
-着手可能。実測で対象23件（COHR×2・HEI×5・PLTR×1・CART×3・CRWV×1・
-BKNG×2・V×1・CRM×1・CELH×1・ASTS×2・VRT×2・RDW×1・ONDS×1）を
-WARN-29で確認済み。うちCOHR・HEI・ONDS（8件）は原因確定済み、残る
-PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW（15件）が未着手。
+なし（充足済み）。実測で対象は当初23件から**17件**に減少（HEI×5・
+ONDS×1の計6件が解消）。残るのはCOHR×2（[[CHECK29-COHR-CROSS-ACCN-
+TEMPORARY-EQUITY-1]]で別扱い）・PLTR×1・CART×3・CRWV×1・BKNG×2・V×1・
+CRM×1・CELH×1・ASTS×2・VRT×2・RDW×1（計15件、未着手）。WARN-29発火
+銘柄も13→11銘柄に減少（ASTS/BKNG/CART/CELH/COHR/CRM/CRWV/PLTR/RDW/V/
+VRT）。
 
 ---
 
@@ -8532,6 +8564,47 @@ CarryingAmount系タグ不在時のフォールバックとして許可リスト
 ⑥ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中・新規。
    CHECK29の本人データ限定照合の設計方針拡張検討、該当は現時点でCOHR
    2件のみ）
+⑦ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
+追記（2026-08-02 [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]のHEI・ONDS型
+実装完了）:
+CHECK29の許可リストに`TemporaryEquityRedemptionValue`（CarryingAmount系
+タグ不在時のフォールバック限定）・`RedeemableNoncontrollingInterest
+EquityCarryingAmount`のSUPERSEDESルールを追加（機能コミット
+`a910afef2`）。全105銘柄で再検証し156件中133件→139件が解消（HEI×5・
+ONDS×1）、副次的にFCX(2013)も改善。他99銘柄・既存133件・COHR型2件・
+残り15件のresolved状態は維持を確認。WARN 83→81件（-2）。
+これにより次セッションでの着手順序を更新する:
+① [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高。
+   TA=TL+SE分は対応完了、残る3種〈GP≠Revenue−COGS 43件・OI>GP 22件・
+   NI≠EPS×Shares 67件〉の分類調査が未着手）
+② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は②側で行う）
+④ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑤ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+   本人データ限定照合の設計方針拡張検討、該当は現時点でCOHR2件のみ）
+⑥ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残る15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
+   HEI・ONDSは実装完了・COHRは⑤で別扱い）
 ⑦ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
