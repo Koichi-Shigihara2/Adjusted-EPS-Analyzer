@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の影響実測
+結果を反映（チャット記録、読み取りのみ）。7件の既知修正
+（[[PERIOD-LENGTH-VALIDATION-GAP-1]]・[[SPAC-SHELL-BS-ENTITY-
+MIXING-1]]・[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・
+[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・[[GOOGL-FACT-OVERRIDE-
+SEQUENCING-BUG-1]]・[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]・
+[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]）について、TANUKI VALUATION・
+STONKS SILOいずれも現在進行形の実害はゼロと確定。BS項目・shares系は
+TTM出力（FLOW_FIELDS）に構造的に含まれず消費経路もannual_*.json直接
+参照のため無関係、その他は対象年度が現在のTTM anchor範囲（2021〜2022年
+始まり）の外のため無関係、STONKS SILOはTTM/layer3を一切参照しない独立
+パイプラインのため無関係、と確認。ただし2つの独立パイプラインが同期
+しない構造的脆弱性自体は温存されているため、優先度を「高」→「中」に
+引き下げつつエントリは残置。短期的運用対応・長期的構造対応の2案を記録。
+「次セッションでの着手順序」欄を更新。登録・更新のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の内容を確定
 （チャット記録、読み取りのみ）。GitHub Actions APIでワークフロー実行
 履歴を確認した結果、`SEC Data Update`ワークフロー自体は正常稼働中
@@ -1672,7 +1688,8 @@ liabilities/stockholders_equity/NCI/一時的持分）のみを対象とする�
 ---
 
 ### [TTM-DATA-DRIFT-BEHIND-PIPELINE-1] common/sec_data/ttm/配下のTTM系列ファイルが2026-07-26生成のまま、以降のパイプライン修正に追従しておらず陳腐化している可能性
-**優先度:** 高
+**優先度:** 中（登録時「高」から引き下げ、影響実測の結果、現在進行形の
+実害はゼロと確定したため。構造的リスクは残存）
 **分類:** データ品質 / パイプライン出力の陳腐化
 **登録日:** 2026-08-02
 **発見:** [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装検証時（チャット記録）
@@ -1781,15 +1798,52 @@ annual側の`[[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]`とは別系統
    未移植の修正対象フィールド・銘柄をどの程度消費しているか確認し、
    実害の大きさに応じて3の優先度を判断する。
 
-#### 対応方針
+#### 対応方針（前回時点）
 ④（影響の実測確認を先行）から着手する。範囲の大きい③（個別移植）に
 いきなり着手する前に、実装前に実害を確認するという原則に基づき、実際に
 どれだけの影響があるかをまず確認する。
 
+#### 影響実測結果（2026-08-02、チャット記録、読み取りのみ）
+7件の既知修正について、TANUKI VALUATION・STONKS SILOいずれも**現在
+進行形の実害は確認されなかった**。
+
+- [[SPAC-SHELL-BS-ENTITY-MIXING-1]]・[[TOTAL-LIABILITIES-FALLBACK-
+  TAG-DESIGN-FLAW-1]]（AMZN/GOOGL/MSFT/NVDA/AMD/WMT等22銘柄278件）・
+  [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]: 対象フィールド（BS項目・
+  shares系）が構造的にTTM出力（`FLOW_FIELDS`17種のみ）に一切含まれない
+  カテゴリであり、消費経路（`get_net_cash()`・`get_diluted_shares()`）も
+  `annual_*.json`を直接参照するため無関係と確定。
+- [[PERIOD-LENGTH-VALIDATION-GAP-1]]（28銘柄）・[[PL-FIELD-CROSS-ACCN-
+  PERIOD-MISMATCH-1]]（LRCX）・[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]・
+  [[ELF-FISCAL-END-MONTH-MISDETECTION-1]]: 対象年度が現在のTTM系列
+  anchor範囲（実測で2021〜2022年始まり）の外にあるため無関係。唯一の
+  例外RCAT(2024年度)のstock_based_compensationも、FCF計算式
+  （`_calc_fcf()`）に直接使われず、現状RCATのRICEスコア自体が「年次
+  データ不足で計算不可」のため現時点で出力に無影響。
+- STONKS SILOは独立した第3のパイプライン（`load_annual_data()`経由で
+  `annual_*.json`を直接読み込み）であり、コード全体を検索してもTTM/
+  layer3経由の参照が一切存在せず、実害はゼロと確定。
+
+**重要な留保**: これは「今回はたまたま対象年度がTTM窓の外だった」結果
+であり、2つの独立パイプラインが同期しない設計上の脆弱性自体は温存されて
+いる。将来のannual側修正が、対象年度が現在のTTM窓内である場合には同様の
+未反映リスクが顕在化しうる。
+
+#### 対応方針
+現在進行形の実害がゼロと確定したため、優先度を「高」から「中」に
+引き下げる。ただし構造的脆弱性は残存するため、以下のいずれかの対応を
+将来検討する:
+- 短期的な運用対応: annual側で新規修正を行う際は、対象年度がTTM系列の
+  anchor範囲内かどうかを都度確認し、範囲内の場合はlayer3_builder.py側
+  への個別移植も検討するというチェック項目を、今後の実装依頼テンプレート
+  に追加する
+- 長期的な構造対応: layer3_builder.pyとparser.pyの重複ロジック
+  （gross_profit逆算等）を統合する、またはannual側の修正結果をTTM側が
+  参照する設計に変更する等、パイプライン統合自体の検討（大規模な設計
+  変更のため別途独立検討が必要）
+
 #### 着手条件
-なし。優先度を「高」で維持する（annual側修正の大部分がTTM側に反映
-されないという構造的問題、大型株〈AMZN/GOOGL/MSFT/NVDA〉を含む278件
-規模のため）。まず④（影響の実測確認）から着手する。
+なし。優先度中（現在進行形の実害なし、ただし構造的リスクは残存）。
 
 ---
 
@@ -9185,32 +9239,33 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
-追記（2026-08-02 [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]新規登録を反映し、
-次セッションでの着手順序を更新する）:
+追記（2026-08-02 [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の影響実測結果
+（実害ゼロ確定・優先度「高」→「中」引き下げ）を反映し、次セッションでの
+着手順序を更新する）:
 **次セッションでの着手順序（2026-08-02時点、最終版）**:
-① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：高。ワークフロー自体は
-   正常稼働中と確認済み〈根本原因は別〉。layer3_builder.pyがparser.pyと
-   完全に独立したパイプラインのため、annual側の主要修正〈SPAC-SHELL/
-   TOTAL-LIABILITIES-FALLBACK/PL-FIELD-CROSS-ACCN/GOOGL・COHR fact_
-   overrides等〉がTTM系列に恒久的に反映されない構造的問題と判明。まず
-   TANUKI VALUATION・STONKS SILOの実消費への影響を実測確認してから、
-   layer3_builder.pyへの個別移植の要否・優先度を判断する）
-② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+① [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
-③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+② [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
    〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは②で別扱い）
-④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   HEI・ONDSは実装完了・COHRは①で別扱い）
+③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
    根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
    別途確認が必要なため未着手のまま残置）
-⑤ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+④ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
-⑥ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
    〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
    未解決分）
+⑥ [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：中〈「高」から引き下げ〉。
+   影響実測の結果、既知7件の修正いずれもTANUKI VALUATION・STONKS SILOへの
+   現在進行形の実害はゼロと確定。ただしlayer3_builder.pyとparser.pyが
+   同期しない構造的脆弱性自体は残存しており、将来の新規annual側修正が
+   TTM anchor範囲内の年度を対象とする場合は同様のリスクが顕在化しうる。
+   短期的運用対応〈実装依頼テンプレートへのチェック項目追加〉・長期的
+   構造対応〈パイプライン統合の独立検討〉のいずれかを将来検討）
 ⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
 ⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
 ⑨ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
