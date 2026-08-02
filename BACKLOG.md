@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]の個別調査
+（COHR・HEI・ONDS優先、チャット記録、読み取りのみ）完了。3件とも
+①genuineと確定（②タグ選定バグに分類されるものはなし）。COHR(2022/2023)
+はCHECK29の「本人データ限定」照合という設計方針そのものが原因で検知
+不可能な構造的限界と判明し[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-
+EQUITY-1]]として別スコープで新規登録（優先度：中）。HEI(2009-2013)は
+TemporaryEquityRedemptionValueをCarryingAmount系タグ不在時のフォール
+バックとして許可リストに追加すれば対応可能と判明。ONDS(2023)は
+CHECK29自体のSUPERSEDESルール不備（自己申告）と判明、既存ルールと
+同型の拡張で対応可能。残る20件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/
+VRT/RDW）は未着手のまま。「次セッションでの着手順序」欄を更新。調査・
+登録のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]
 実装完了。会計恒等式TA=TL+SE(+NCI+一時的持分)検証をOR条件フォールバック
 方式（許可リスト方式のタグ選定）でparser.py・report_consistency_
@@ -1513,20 +1526,99 @@ BACKLOG_DONE.mdへ移動済み。
 ①genuineと確定できる可能性が高いが、標準タグ体系外の命名を持つ銘柄
 （PLTR/CART/CRWV等）は個別の10-K確認が必要。
 
+#### COHR・HEI・ONDS個別調査結果（2026-08-02、チャット記録）
+件数の多い3件を優先調査し、いずれも①genuineと確定した（②タグ選定バグ
+〈抽出パイプライン側の不具合〉に分類されるものはなし）。
+
+- **COHR(2022/2023)**: 自社own accnの10-Kには`TemporaryEquityCarrying
+  AmountAttributableToParent`が一切存在しないが、後続四半期filing
+  （2022年分は次四半期10-Q、2023年分はFY2024 Q2 10-Q）の比較列としては
+  同一値が一貫して報告されており、その値を用いるとTA=TL+SE+extraが
+  完全一致することを確認済み（2022年: $766,803,000、2023年:
+  $2,241,415,000）。COHR/II-VI合併がFY2022期末の翌日（2022-07-01）に
+  完了しており、合併対価の優先株式が合併後最初の四半期報告書で遡及的に
+  付与されたものと推定される。**CHECK29の「本人データ（own accn）限定」
+  照合という設計方針そのものが原因で検知不可能な構造的限界**であり、
+  単純な許可リスト拡張では解決しない。[[CHECK29-COHR-CROSS-ACCN-
+  TEMPORARY-EQUITY-1]]として別スコープで新規登録した。
+- **HEI(2009-2013)**: 該当5年度いずれも`TemporaryEquityRedemptionValue`
+  （償還価額）以外に簿価（CarryingAmount）タグが一切存在せず、この
+  タグを用いるとTA=TL+SE+MinorityInterest+RedemptionValueが完全一致
+  することを確認済み（例: 2013年度 $750,562,000+$606,346,000+
+  $116,889,000+$59,218,000=$1,533,015,000=TA）。2009-2013年当時のHEIは
+  RedemptionValueをそのまま貸借対照表上の簿価として計上していたと
+  推定される（2014年以降は`...Including...NoncontrollingInterests`
+  タグに移行）。**許可リストに`TemporaryEquityRedemptionValue`を、
+  CarryingAmount系タグが1つも存在しない場合のみのフォールバックとして
+  追加すれば対応可能**（無条件追加は他銘柄での二重計上リスクがあるため
+  不可）。
+- **ONDS(2023)**: `RedeemableNoncontrollingInterestEquityCarrying
+  Amount`($11,920,694、合算値）と`...PreferredCarryingAmount`
+  ($14,692,000、内訳の一部）が両方存在し、元の乖離額が前者単体と完全
+  一致することから、後者は前者に既に含まれる内訳であり両方合算すると
+  優先株式分が二重計上されると確定。**原因はCHECK29自体の実装不備
+  （自己申告）**: `TemporaryEquityCarryingAmountIncludingPortionAttribu
+  tableToNoncontrollingInterests`と同型のSUPERSEDESルール（合算値タグが
+  存在する場合に内訳タグを除外する）を`RedeemableNoncontrollingInterest
+  Equity...`系にも追加すれば解決可能。
+
+残る20件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は未着手のまま。
+
 #### 対応方針
-未定。CHECK29本体（133件解消分）は実装完了済み
+CHECK29本体（133件解消分）は実装完了済み
 （[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]、BACKLOG_DONE.md
-参照）。この23件は`resolved_by_extension=false`として検知ログ
-（`{ticker}/bs_identity_violations_log.json`）・WARN-29に記録済み。
-個別調査で②genuine確定→config/warn_acknowledged.json登録、または
-③真のバグとして別途対応、のいずれかに順次分類していく。
+参照）。今回の個別調査確定分は以下の方針とする:
+- HEI・ONDS: 許可リスト・SUPERSEDESルールの拡張で解決見込み。実装時に
+  他の未解決20件・既存133件の解消分に悪影響がないか全母集団
+  シミュレーションで確認してから着手する。
+- COHR: [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]として別スコープ
+  切り出し済み。
+- 残る20件は`resolved_by_extension=false`として検知ログ
+  （`{ticker}/bs_identity_violations_log.json`）・WARN-29に記録済みの
+  まま、個別調査で②genuine確定→config/warn_acknowledged.json登録、
+  または③真のバグとして別途対応、のいずれかに順次分類していく。
 
 #### 着手条件
 なし（充足済み）。[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]本体
 の実装が2026-08-02に完了し、検知ログ・WARN-29が実際に稼働中のため
 着手可能。実測で対象23件（COHR×2・HEI×5・PLTR×1・CART×3・CRWV×1・
 BKNG×2・V×1・CRM×1・CELH×1・ASTS×2・VRT×2・RDW×1・ONDS×1）を
-WARN-29で確認済み。
+WARN-29で確認済み。うちCOHR・HEI・ONDS（8件）は原因確定済み、残る
+PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW（15件）が未着手。
+
+---
+
+### [CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1] CHECK29の本人データ(own accn)限定照合が、後続四半期の比較列としてのみ開示される一時的持分を検知できない構造的限界
+**優先度:** 中
+**分類:** アーキテクチャ改善 / CHECK29設計方針の拡張検討
+**登録日:** 2026-08-02
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査（チャット記録）
+
+#### 内容
+CHECK29の「本人データ（own accn）限定」照合という設計方針により、
+一時的持分・NCIタグが当該年度自身の10-Kではなく後続四半期の比較列
+としてのみ開示される場合（COHR型、M&A直後の合併対価としての優先株式等）
+を原理的に検知できない。COHR(2022/2023)で実例を確認済み: 自社own accn
+の10-Kには該当タグが存在しないが、後続四半期filing（2022年分は次
+四半期10-Q、2023年分はFY2024 Q2 10-Q）の比較列としては一貫した値が
+報告されており、その値を用いるとTA=TL+SE+extraが完全一致する
+（2022年: $766,803,000、2023年: $2,241,415,000）。COHR/II-VI合併が
+FY2022期末の翌日（2022-07-01）に完了しており、合併対価の優先株式が
+合併後最初の四半期報告書で遡及的に付与されたものと推定される。
+
+#### 影響
+現時点でCOHR2件のみ確認済み。他銘柄への一般化可能性は未調査（M&A直後の
+決算期末をまたぐ企業で同様のパターンが起こりうる）。
+
+#### 対応方針
+未定。「同一end_dateの複数filingで値が一致する場合のみ採用する」等の
+安全策込みで、一時的持分・NCIタグに限りown-accn限定制約を緩和する設計を
+検討する。本人データ優先というパイプライン全体の原則との整合性を慎重に
+検討する必要がある。
+
+#### 着手条件
+なし。優先度中（該当は現時点でCOHR2件のみ、他銘柄への一般化可能性は
+未調査）。
 
 ---
 
@@ -8407,6 +8499,53 @@ MISSING-1]]にTA=TL+SE分の対応完了を反映（残る3種の分類調査が
 ⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
+追記（2026-08-02 [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査完了
+〈COHR・HEI・ONDS優先〉）:
+3件とも①genuineと確定（②タグ選定バグに分類されるものはなし）。
+COHR(2022/2023)はCHECK29の「本人データ限定」照合という設計方針そのもの
+が原因で検知不可能な構造的限界と判明し
+[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]として別スコープで新規
+登録（優先度：中）。HEI(2009-2013)はTemporaryEquityRedemptionValueを
+CarryingAmount系タグ不在時のフォールバックとして許可リストに追加すれば
+対応可能と判明。ONDS(2023)はCHECK29自体のSUPERSEDESルール不備
+（RedeemableNoncontrollingInterestEquityCarryingAmount存在時に
+...PreferredCarryingAmountを除外するルールの欠如、自己申告）と判明、
+既存ルールと同型の拡張で対応可能。残る20件
+（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は未着手のまま。
+これにより次セッションでの着手順序を更新する:
+① [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高。
+   TA=TL+SE分は対応完了、残る3種〈GP≠Revenue−COGS 43件・OI>GP 22件・
+   NI≠EPS×Shares 67件〉の分類調査が未着手）
+② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は②側で行う）
+④ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑤ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。COHR・HEI・
+   ONDS（8件）は原因確定済み・許可リスト拡張の実装待ち。残る15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉は個別調査未着手）
+⑥ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中・新規。
+   CHECK29の本人データ限定照合の設計方針拡張検討、該当は現時点でCOHR
+   2件のみ）
+⑦ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 
 ---
