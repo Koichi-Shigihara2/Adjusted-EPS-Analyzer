@@ -4,6 +4,64 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [FIFO-TIEBREAK-OLDEST-FILING-WINS-1] 本人データ不在時に複数の比較年度再掲が競合すると最も古いfilingが優先される未文書化の選定ロジック欠陥
+**状態:** 解消・[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]へ統合（tie-break
+条件自体の広範な見直しは全母集団シミュレーションで危険と判明したため
+不採用、ガード条件付き介入として統合済み）
+**優先度:** 中〜高
+**分類:** バグ / 確定・未文書化の選定ロジック欠陥
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]調査から派生（chat記録）
+
+#### 内容
+`_extract_single_key()`内で、本人データが存在せず複数の比較年度再掲
+（exact一致なし同士）が競合した場合、「end_date同一・10-K/A関与なしなら
+先に見つかった方が勝つ」というFIFO的tie-break（`parser.py`1911-1920行
+付近）が存在する。COHR(2010)で実証: 正しい値（61,504,000、FY2012 10-K
+比較年度再掲）がcompany_facts.jsonに存在するにもかかわらず、より古い
+（誤った）FY2011 10-K側のエントリが先に見つかったため優先採用されて
+いた。[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]とは別種・独立したバグ。
+
+#### 影響
+未確定。「本人データ不在・複数比較年度再掲が競合」という条件に該当する
+全ケースで、意図せず古い（場合によっては誤った）filingが優先される
+リスクがある。105銘柄全体での該当範囲は未調査。
+
+#### 対応方針（登録時点）
+未定。tie-break条件を「より新しいfiling（accn番号・filed日）を優先する」
+方向に変更するか、そもそも複数の比較年度再掲が競合する場合は不確実性が
+高いとして両方を候補として保持し個別確認を促す設計にするか検討する。
+実装前に全母集団シミュレーションが必須（tie-break条件の変更は影響範囲が
+広い可能性がある）。
+
+#### 全母集団シミュレーション結果・方針転換確定（2026-08-02、チャット
+記録、読み取り・オフラインシミュレーションのみ）
+`_extract_single_key()`のtie-breakを「常に新しいfiling優先」へ単純に
+変更した場合の全105銘柄シミュレーションを実施した結果、31銘柄・124件で
+値が変化し、確実な改善はCOHRの2件（shares_diluted/basic）のみと判明した。
+残り122件は改悪（VZ(2008)純利益が黒字$6,428M→赤字-$2,193Mに反転等）・
+改悪疑い（SOUN/KULRのSPAC実体混同、HON/FCX/HEIのrestatement・株式分割
+調整）・判断不能な乖離が大半で、広範なtie-break変更は危険と確定した。
+加えてWMT(2014)で、既存の恒等式ベース安全網
+（`_backfill_total_liabilities_via_identity()`）が偶発的にすり抜け、
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]と同型のバグを別経路で
+復活させかねないという重大な相互作用リスクも発見した。
+
+一方で、「同符号 かつ 比が10のべき乗値（±2%許容、n≥2）」という
+[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]で確立済みのガード条件を
+tie-break変更の発動条件として流用すると、124件中COHRの2件のみが該当し
+他122件は自動的に除外されることを確認した。
+
+**結論**: 本エントリが当初提起した「tie-break条件自体の広範な見直し」は
+不採用とし、ガード条件付き介入として[[XBRL-UNIT-SCALE-MISMATCH-
+DETECTION-1]]に統合する。未文書化のFIFO的tie-break挙動自体の発見・
+COHR(2010)の実例は本エントリに記録として保持したうえで、本エントリは
+「解消・XBRL-UNIT-SCALE-MISMATCH-DETECTION-1へ統合」として
+BACKLOG_DONE.mdへ移動する。
+
+---
+
 ### ✅ [GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1] fact_overrides.jsonによるrevenue手動補正がgross_profit逆算より後段で適用されるシーケンシングバグ
 **状態:** 実装完了（案A採用: `_apply_fact_overrides()`を全逆算バックフィル
 より前に移動。GOOGL(2012/2013)のgross_profitを是正・105銘柄フローズン
