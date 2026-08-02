@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（セッション終了処理。BACKLOG.md/BACKLOG_DONE.mdの
+クロスリファレンス整合性を確認（本セッションでクローズした5件
+〈[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]・[[GOOGL-FACT-
+OVERRIDE-SEQUENCING-BUG-1]]・[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]〉が
+BACKLOG.mdに残存していないこと、双方向の[[...]]参照が機能していることを
+確認済み。DESIGN-8・UI-DISCOVER-1のID重複はいずれも本セッション以前から
+存在する既知の構造的経緯（DESIGN-8はサブタスク8-1〜8-6の共有ベースID、
+UI-DISCOVER-1は同一IDの別タスクへの再利用）であり、本セッションの作業
+とは無関係のため今回は対応せず記録のみ）。作業ツリークリーン確認済み。
+「次セッションでの着手順序」欄を最終整理（[[XBRL-UNIT-SCALE-MISMATCH-
+DETECTION-1]]を①に、[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]は密結合の
+ため①内に統合表示）。PROJECT_STATUS.mdのcommon/sec_data/統合フェーズ1
+備考欄・更新日も本セッション後半の完了項目を反映して更新。登録・整理の
+みで実装は未着手）。
+
 最終更新: 2026-08-02（[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]の全母集団
 シミュレーション（チャット記録、読み取り・オフラインシミュレーションの
 み）の結果、当初提起した「tie-break条件を新しいfiling優先に単純変更
@@ -8945,6 +8960,49 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑮ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 ⑯ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+   bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+追記（2026-08-02 セッション終了処理、次セッションでの着手順序を最終整理）:
+[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（fact_overrides.json個別対応）
+と[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（tie-break恒久対応）は
+対象・実装タイミングが密結合のため①に統合表示する。
+**次セッションでの着手順序（2026-08-02時点、セッション終了時最終版）**:
+① [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。ガード条件付き
+   介入〈同符号かつ比が10のべき乗値〉で実装方式確定済み。実装前に
+   (a)既存の恒等式ベース安全網との相互作用再検証、(b)ガード適用後の
+   全母集団再シミュレーションが必須。[[COHR-SHARES-DILUTED-UNIT-
+   SCALE-BUG-1]]〈fact_overrides.json個別上書き、値も確定済み〉の
+   実装も同時に判断・実施する）
+② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+③ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+   own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
+   COHR2件のみ）
+④ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
+   HEI・ONDSは実装完了・COHRは③で別扱い）
+⑤ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は②側で行う）
+⑥ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑦ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 ---

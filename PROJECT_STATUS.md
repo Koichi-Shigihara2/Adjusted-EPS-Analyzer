@@ -1,6 +1,22 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-02（セッション終了処理。common/sec_data/統合フェーズ1の
+備考欄を更新。`[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]`が
+提起した4種の恒等式違反すべての分類調査が完了し同エントリをクローズ
+（TA=TL+SE分は先行実装済み、GP≠Revenue−COGS/OI>GP/NI≠EPS×Sharesの
+残る3種も本セッションで分類調査完了）。GOOGL(2012/2013)のGP≠Revenue−
+COGSは`[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]`として実装完了（案A
+採用、`_apply_fact_overrides()`実行順序修正、機能コミット`ba8628198`・
+データコミット`dd6fba1a1`）。COHR(2009-2011)のNI≠EPS×Sharesは
+`[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]`として対応方針確定（
+`fact_overrides.json`個別上書き、実装は次回）。同調査から派生した
+`[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]`（未文書化tie-break欠陥）は
+全母集団シミュレーションで広範な設計変更は危険と判明したため不採用とし
+`[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]`へガード条件付き介入として
+統合。「次セッションでの着手順序」欄を最終整理。詳細はBACKLOG.md/
+BACKLOG_DONE.md該当項目参照）
+
 更新日: 2026-08-02（セッション終了処理。common/sec_data/抽出アーキテク
 チャの俯瞰的脆弱性分析から`docs/architecture/new_data_platform/
 EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層向け抽出設計原則）を新設。
@@ -199,7 +215,9 @@ Total_Assets=Total_Liabilities+Stockholders_Equityの横断検証レイヤー）
 残る17件のうちCOHR2件は[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]
 （CHECK29のown-accn限定照合という設計方針の緩和検討）へ切り出し、
 残り15件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は個別調査未着手。
-残課題（優先度順）: `[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`〈中〜高、105銘柄横断スキャン未着手〉・`[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]`〈中〉・`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`〈中、残り15件〉・`[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]`〈中〉・`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`〈中〉・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`残存分〈中〜高〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]`〈低〜中〉・`[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈低、副次的解消見込み〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照 |
+**2026-08-02セッション後半（続き）、`[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]`が提起した4種のPL/BS恒等式違反のうち残る3種（GP≠Revenue−COGS・OI>GP・NI≠EPS×Shares）の分類調査が完了**（TA=TL+SE分は上記の通り実装済み）。GOOGL(2012/2013)のGP≠Revenue−COGSは`fact_overrides.json`によるrevenue手動補正が`_backfill_gross_profit_from_revenue_cogs()`より後段で適用されるシーケンシングバグと確定・**`[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]`として実装完了**（案A採用、`_apply_fact_overrides()`を全逆算バックフィルより前に移動、機能コミット`ba8628198`・データコミット`dd6fba1a1`、GOOGL(2012/2013)のgross_profitを是正、105銘柄フローズン入力比較で対象外無変化を確認）。LMT(18/19年度)のOI>GPは①genuine（設計スコープ外）と確定・対応不要。COHR(2009-2011)のNI≠EPS×SharesはCOHR自身のFY2011 10-Kのshares_diluted/basic単位スケール申告誤り（1/1000）と確定し**`[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]`として新規登録・対応方針確定**（`fact_overrides.json`個別上書き、値も確定済み、実装は次回）。同エントリ調査から派生した`[[FIFO-TIEBREAK-OLDEST-FILING-WINS-1]]`（本人データ不在時の未文書化tie-break欠陥）は全母集団シミュレーションの結果、広範な設計変更は危険（31銘柄・124件変化、確実な改善はCOHRの2件のみ）と判明したため不採用とし、**ガード条件付き介入として`[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]`へ統合・実装方式確定**（同符号かつ比が10のべき乗値の場合のみ新filing優先へ切り替え）。`[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]`本体は4種すべて分類調査完了としてBACKLOG_DONE.mdへ移動。
+
+残課題（優先度順、2026-08-02セッション終了時点）: `[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]`〈中、ガード条件付き介入で実装方式確定・`[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]`実装も同時判断〉・`[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`〈中〜高、105銘柄横断スキャン未着手〉・`[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]`〈中〉・`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`〈中、残り15件〉・`[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]`〈中〉・`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`〈中〉・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`残存分〈中〜高〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]`〈低〜中〉・`[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈低、副次的解消見込み〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
