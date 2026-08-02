@@ -24,8 +24,8 @@
     "finance_lease_payments_applied": false
   },
   "shares": {
-    "shares_diluted": 60164,
-    "shares_basic": 59334
+    "shares_diluted": 60164000,
+    "shares_basic": 59334000
   },
   "other": {},
   "bs_provenance": {
@@ -108,16 +108,18 @@
   },
   "shares_provenance": {
     "shares_diluted": {
-      "accn": "0001193125-11-233520",
-      "filed": "2011-08-26",
+      "accn": null,
+      "filed": null,
       "is_own_data": false,
-      "fy_tag": 2011
+      "override_applied": true,
+      "override_reason": "COHR自身のFY2011 10-K(accn 0001193125-11-233520, filed 2011-08-26)が、WeightedAverageNumberOfDilutedSharesOutstanding/WeightedAverageNumberOfSharesOutstandingBasicを2009-2011年度いずれも実際の株式数の1/1000でタグ付けしていた(単位スケール申告誤り)。2010/2011年度は翌年度以降のFY2012/2013 10-Kで正しくスケールして再掲されているが、2009年度(2008-07-01〜2009-06-30)は10-Kの比較年度開示ウィンドウ(通常2〜3年)から外れており、company_facts.json内に独立した訂正値が存在しない。2010/2011年度で確認済みの1000倍スケール誤りパターン(61,504→61,504,000・63,612→63,612,000)から、2009年度分(60,164/59,334)も同一の1/1000誤りと確定し、×1000した値を採用する。XBRL-UNIT-SCALE-MISMATCH-DETECTION-1調査で確立した検知基準(同符号・比が10のべき乗値±2%)に合致。"
     },
     "shares_basic": {
-      "accn": "0001193125-11-233520",
-      "filed": "2011-08-26",
+      "accn": null,
+      "filed": null,
       "is_own_data": false,
-      "fy_tag": 2011
+      "override_applied": true,
+      "override_reason": "COHR自身のFY2011 10-K(accn 0001193125-11-233520, filed 2011-08-26)が、WeightedAverageNumberOfDilutedSharesOutstanding/WeightedAverageNumberOfSharesOutstandingBasicを2009-2011年度いずれも実際の株式数の1/1000でタグ付けしていた(単位スケール申告誤り)。2010/2011年度は翌年度以降のFY2012/2013 10-Kで正しくスケールして再掲されているが、2009年度(2008-07-01〜2009-06-30)は10-Kの比較年度開示ウィンドウ(通常2〜3年)から外れており、company_facts.json内に独立した訂正値が存在しない。2010/2011年度で確認済みの1000倍スケール誤りパターン(61,504→61,504,000・63,612→63,612,000)から、2009年度分(60,164/59,334)も同一の1/1000誤りと確定し、×1000した値を採用する。XBRL-UNIT-SCALE-MISMATCH-DETECTION-1調査で確立した検知基準(同符号・比が10のべき乗値±2%)に合致。"
     }
   },
   "data_quality": {
