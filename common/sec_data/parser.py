@@ -431,6 +431,13 @@ class SECParser:
                 boundary_collisions_out=_fye_boundary_collisions,
             )
 
+        # [[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]: fact_overrides.jsonの
+        # 個別上書きを、抽出直後・全ての逆算バックフィル処理より前に適用する
+        # （旧実装はsave_parsed_data()内の最終段〈逆算バックフィルより後〉で
+        # 適用しており、gross_profit逆算に補正前revenueが使われる不整合が
+        # あった）
+        self._apply_fact_overrides(ticker, extracted)
+
         # [[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1・段階2: 複数accn混在かつ
         # （①数学的整合性が破綻している、または②アンカー候補accnのreportDateが
         # 法人名変更履歴の期間内にあり社名変更前後のデータ混在が疑われる）
@@ -2388,29 +2395,47 @@ class SECParser:
             print(f"   [{ticker}] 会計恒等式(TA=TL+SE)検知: {len(violations)}件"
                   f"（拡張形で解消{len(violations)-unresolved}件・未解消{unresolved}件） ({path})")
 
-    def _apply_fact_overrides(self, ticker: str, year: Any, data: dict) -> None:
-        """fact_overrides.json記載の個別上書きを、その年度のpl辞書・
-        pl_provenanceに適用する（該当ticker+yearが未登録なら何もしない）。
+    def _apply_fact_overrides(self, ticker: str, extracted: Dict[str, Any]) -> None:
+        """fact_overrides.json記載の個別上書きを、extracted[field]["annual"]
+        [year]へ直接適用する（該当tickerが未登録なら何もしない）。
+
+        [[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]: 全ての逆算バックフィル処理
+        （_backfill_total_liabilities_via_identity()・_backfill_gross_
+        profit_from_revenue_cogs()等）より前、_parse_raw_data()の抽出直後に
+        実行する。旧実装はsave_parsed_data()内の最終段（逆算バックフィルより
+        後）でdata["pl"]に直接書き込んでいたため、GOOGL(2012/2013)で
+        gross_profitが補正前revenueを使った古い逆算値のまま保存される不整合
+        があった。extracted側で書き換えることで、後続の逆算バックフィルが
+        補正後の値を入力として使用できる。
 
         CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1: 本人データ優先ロジックの一般
         動作はここでは一切変更しない。ロジックが出した結果を、特定
-        ticker+year+fieldのみ明示的に差し替える最終ステージの後処理。
+        ticker+year+fieldのみ明示的に差し替える後処理。
         """
-        override = _load_fact_overrides().get(ticker, {}).get(str(year))
-        if not override:
+        overrides = _load_fact_overrides().get(ticker, {})
+        if not overrides:
             return
-        reason = override.get("reason", "")
-        for field, ov in override.get("fields", {}).items():
-            if field not in data.get("pl", {}):
+        for year_str, override in overrides.items():
+            try:
+                year = int(year_str)
+            except ValueError:
                 continue
-            data["pl"][field] = ov["value"]
-            data.setdefault("pl_provenance", {})[field] = {
-                "accn": ov.get("source_accn"),
-                "filed": ov.get("source_filed"),
-                "is_own_data": False,
-                "override_applied": True,
-                "override_reason": reason,
-            }
+            reason = override.get("reason", "")
+            for field, ov in override.get("fields", {}).items():
+                field_data = extracted.get(field)
+                if field_data is None:
+                    continue
+                annual = field_data.get("annual", {})
+                if annual.get(year) is None:
+                    continue  # 抽出値が存在しない年度は対象外（元実装と同じゲート条件）
+                annual[year] = ov["value"]
+                field_data.setdefault("_annual_provenance", {})[year] = {
+                    "accn": ov.get("source_accn"),
+                    "filed": ov.get("source_filed"),
+                    "is_own_data": False,
+                    "override_applied": True,
+                    "override_reason": reason,
+                }
 
     def save_parsed_data(self, ticker: str, parsed: dict) -> None:
         """パース済みデータを個別ファイルに保存"""
@@ -2420,7 +2445,6 @@ class SECParser:
 
         # 年次データ
         for year, data in parsed.get("annual", {}).items():
-            self._apply_fact_overrides(ticker, year, data)
             path = os.path.join(ticker_dir, f"annual_{year}.json")
             with open(path, "w", encoding="utf-8") as f:
                 json.dump({
