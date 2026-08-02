@@ -1,5 +1,22 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装
+完了。`ttm_calculator.py`に`_last4_is_contiguous()`（合計スパン305-425日・
+隣接ギャップ±10日）を新設し`calc_ttm_series()`のlast4選定直後に挿入
+（機能コミット`e2892a91f`）。実装中に、eps_basic/eps_dilutedを対象外
+とする除外を実装し忘れ99/105銘柄が誤って影響を受ける不具合を発見し
+即座に是正（`CONTIGUITY_CHECK_EXEMPT_FIELDS`追加）。該当18銘柄のTTM
+系列を再生成（データコミット`426b4fa2f`、対象外の87銘柄は無変化を
+確認の上で意図的に据え置き）。`pipeline.py`試験実行によりRCAT・KULRの
+IV影響を実測しΔIV=$0を確定（`FCF外れ値`検知時の代替推定オーバーライドが
+fcf_avgの値によらず同一の理論株価を出力するため、当初見立てていた
+「約20%改善がIVに反映される」は誤りと訂正）。FROGはTTM系列を維持し
+投資適格性の結論に変化なし。report_consistency_check.py NG=0・
+pytest 519 passed/2 known failedを確認。[[TTM-CALC-QUARTER-CONTIGUITY-
+UNCHECKED-1]]・[[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]をいずれも
+BACKLOG_DONE.mdへ移動。「次セッションでの着手順序」欄を更新。pushは
+保留、コミットのみ）。
+
 最終更新: 2026-08-02（[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]の実装前
 最終シミュレーション完了（チャット記録、読み取り・オフラインシミュレー
 ションのみ）。重要な設計上の発見: 「不完全な四半期の代わりに古い代替
@@ -1502,170 +1519,6 @@ calculator.py`等）が、RCATの継続/非継続事業分割四半期タグを�
 将来IVに影響しうる潜在リスクのため）。根本原因の恒久対応は
 [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（日付連続性チェック追加）
 側で行う。
-
----
-
-### [TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1] calc_ttm_series()が採用四半期の日付連続性を検証せず古い四半期を重複使用しうる
-**優先度:** 中〜高
-**分類:** バグ / 確定・一般的な設計欠陥
-**登録日:** 2026-08-02
-**発見:** [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]根本原因
-調査（チャット記録）
-
-#### 内容
-`ttm_calculator.py::calc_ttm_series()`の「アンカー日以前の直近4件を採用」
-ロジック（`quarters_used=4`はいずれか4件を数えているだけで、実際に日付が
-連続した12ヶ月分かを検証しない）は、標準タグに一定期間の空白がある銘柄で、
-古い四半期を重複使用してしまう一般的な設計欠陥。RCATで実機確認済み
-（2023年7〜10月・10月〜2024年1月の四半期が2つの異なるTTM末日算出に
-重複使用）。
-
-#### 影響
-RCAT限定で確認済みだが、根本原因（日付連続性チェックの欠如）はticker
-非依存の設計欠陥であり、標準タグに空白期間を持つ他銘柄（決算期変更・
-M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄）でも将来
-再現しうる。105銘柄全体でのスキャンは未実施。
-
-#### 対応方針（登録時点）
-未定。`calc_ttm_series()`に、採用した4四半期の日付連続性チェック（各
-四半期のend-startが約90日、かつ隣接四半期間のギャップがない）を追加し、
-連続性が崩れている場合は不完全（`quarters_used<4`相当）として扱う設計を
-検討する。
-
-#### 105銘柄横断スキャン結果（2026-08-02、チャット記録、読み取りのみ）
-`calc_ttm_series()`が実際に使用する内部関数（`build_ticker_store()`・
-`get_field_entries()`・`build_q4_implied_entries()`・`FLOW_FIELDS`・
-`_select_anchors()`）を再利用し、全105銘柄・全FLOWフィールド・全anchorで
-「採用された4四半期（last4）」の連続性を機械的に検証した。
-
-前処理上の発見: `eps_basic`/`eps_diluted`は素朴な検証で99/105銘柄が
-「該当」となったが、これは`build_q4_implied_entries()`の対象外という
-設計上の既知の理由により、単独10-Qを提出しないほぼ全企業でQ4付近に
-構造的なギャップが生じる**既知・実害なしの仕様**と判明。この2フィールド
-は対象から除外する。
-
-除外後、**18銘柄**（うちRCATを除く17銘柄が新規発見）が該当。原因は
-3タイプに分類:
-- **①RCAT型**（標準タグの一時的空白、RCATのみ）: 継続/非継続事業分割に
-  伴う標準タグの一時的欠落。既報告済み・IV影響はΔIV=$0で確定済み
-  （今回のスキャンでも再確認）。
-- **②タグ切り替え・段階的移行型**（5銘柄: CDNS〈R&D〉・CAKE
-  〈gross_profit〉・PM〈SBC/D&A〉・CIX〈financing_cash_flow〉・TDY
-  〈buyback/SBC〉）: 同一の古い四半期が複数年のanchorで繰り返し再利用
-  される「固定化」パターン。operating_cash_flow/revenue/net_income/
-  capital_expenditure（FCF計算の中核4フィールド）には該当せず、DCFの
-  核心（FCFベースIV）への直接影響はないと判断。個別トリアージは未実施。
-- **③本人データ側の異常エントリ型**（新規発見、KULR・FROG）:
-  開始日欠落または大幅に短い期間（1ヶ月）のスタブエントリが、通常の
-  四半期と同列に候補プールへ混入し、end日付ソートの結果で正規の四半期を
-  押し出す。KULRは現在進行形の実害を確認し
-  [[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]として個別登録した
-  （優先度：高）。FROGは同型だが影響僅少（約2.6%差）。
-
-その他の該当銘柄（FLYW/GTLB/NET/AAPL/ALAB/AMAT/AMD/CART/LITE）は
-buyback・SG&A・D&A・SBC・S&M等の副次フィールドに限定され、FCF計算の
-中核フィールドには該当しない。APGE（stock_based_compensation該当）は
-tanuki=falseのため現状パイプラインで実質未消費。
-
-#### 対応方針確定（2026-08-02、チャット記録、読み取りのみ）
-実現可能性を確認した: 「合計スパンが305〜425日に収まっているか」
-「隣接四半期間の日数ギャップ・重複が±10日程度を超えないか」という
-統一チェックで①②③の3タイプ全てを検知・除外できることを確認した
-（個々の四半期長〈end-start〉は判定基準に**含めない**。PEP等、決算暦
-特性により単一四半期が112日超と自然に長くなる正当なケースを誤検知
-するため、当初案の「各四半期end-start≈90日」は不採用とする）。
-
-実装前には（前回のFIFO-TIEBREAK調査と同様に）全母集団シミュレーション
-での最終確認が必要。
-
-#### 実装前最終シミュレーション結果・実装方針確定（2026-08-02、チャット
-記録、読み取り・オフラインシミュレーションのみ）
-**重要な設計上の発見**: 「不完全と判定した四半期の代わりに、より古い
-代替4四半期を探索する」設計は不採用と確定した。KULR(2024-03-31)で試験
-実装したところ、探索が正規四半期3件も巻き添えで飛ばし、約6ヶ月古い
-データを「現在時点のTTM」として無自覚に混入させる、欠損除外より悪い
-結果を生むことが判明した。連続性チェックに落ちた場合は単純に
-`quarters_used=0`（不完全・計算対象外）として扱う保守的設計を採用する。
-
-該当18銘柄のうちFCF自体（DCF直接入力）に変化が生じるのはRCAT・KULR・
-FROGの3銘柄のみ。残り15銘柄は副次フィールドのみで、FCF自体には変化
-なし。PEP等の正当ケース・他87銘柄で新規誤検知が発生しないことを最終
-確認済み。
-
-**重要な訂正**: KULR・RCATともに、単なる数値微修正ではなく、TTM系列の
-「完全」点数が4→2（KULR）・4→1（RCAT）に減少し、`_select_fcf_source()`の
-`min_years=3`未満となることで、TTM系列から年次実績ベースへ完全に
-フォールバックすることが判明した。これにより:
-- KULR: fcf_avg -$26,088,907→-$20,850,327（約20%改善、[[KULR-CAPEX-
-  TTM-STUB-ENTRY-CONTAMINATION-1]]の前回試算2.7%より大幅に大きい）
-- RCAT: fcf_avg -$40,185,009→-$16,477,214（約59%改善、既報告の
-  「34〜55%過小評価」の枠組みより大きい変化。ただしIV自体への影響は
-  revenue floor＋EPSベース推定オーバーライドにより引き続きΔIV=$0と
-  推定されるが、実装時の個別再確認を推奨する）
-- FROG: 年次実績（5年とも大幅黒字$72.6M平均）へフォールバック、
-  投資適格性の結論には実質影響なし
-
-**実装設計を確定**: `calc_ttm_series()`内、`last4 = q_entries[:4]`の
-直後（271行目付近）に連続性チェック（合計スパン305-425日、隣接ギャップ
-±10日）を挿入し、不合格の場合`continue`（候補ゼロ時と同じ扱い）とする
-最小改修。既存の`TTM-QUARTERS-CHECK-1`（`get_fcf_series()`側の
-quarters_used<4フィルタ）と自然に統合され追加の下流改修は不要と確認。
-
-#### 着手条件
-なし。優先度中〜高（現在進行形のデータ品質問題、将来IVに影響しうる潜在
-リスク、ticker非依存の一般的欠陥のため）。105銘柄横断スキャン・実装前
-最終シミュレーション・実装方針確定まで完了、実装は次セッションで着手
-可能。
-
----
-
-### [KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1] KULRのcapital_expenditure四半期系列に開始日欠落の異常エントリが混入し正規四半期を押し出している
-**優先度:** 高
-**分類:** バグ / 確定・現在進行形の実害
-**登録日:** 2026-08-02
-**発見:** [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]横断スキャン（chat記録）
-
-#### 内容
-KULRのcapital_expenditure四半期系列に、開始日が空欄の異常エントリ
-（例: start="", end="2023-10-06", val=$2,000,000）が混入しており、
-end日付ソートの結果、真の四半期データを押し出している。
-
-確定した実害:
-- 2024-03-31時点: 正しいcapex＝$192,752に対し、現状値は$2,086,906
-  （約10.8倍過大）
-- 2023-03-31時点: 正しいcapex＝$2,960,109に対し、現状値は$3,863,684
-  （約30%過大）
-- IV影響: 現状fcf_avg≈-$26,088,907に対し、補正後fcf_avg≈-$25,389,475
-  （約2.7%改善）。方向性（大幅な資金流出）は変わらないが非ゼロの実測
-  影響を確認。KULRはtanuki=true・stonks_silo=trueのため、runway計算にも
-  波及しうる
-
-#### 影響
-KULR（現役銘柄）のFCF計算・runway計算に現在進行形で影響している。
-FROG（同型・実害僅少、約2.6%差）も同時に発見されているが、影響が小さい
-ため別枠で扱う。
-
-#### 対応方針（登録時点）
-未定。個別対応（KULR/FROGの異常エントリの原因〈8-K等での不完全な
-context指定の疑い〉を特定し除外する）と、汎用対応（[[TTM-CALC-QUARTER-
-CONTIGUITY-UNCHECKED-1]]の連続性チェック実装で自動的に捕捉される見込み）
-のいずれで対応するか検討する。汎用対応が実装されれば自動解消される
-可能性が高いため、そちらの実装を優先し個別対応は不要になる可能性がある。
-
-#### 実装前最終シミュレーション結果（2026-08-02、チャット記録、読み取り・
-オフラインシミュレーションのみ）
-[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]の連続性チェック実装により
-自動解消されることが確定した。単純な数値補正（前回試算の2.7%改善）
-ではなく、TTM系列が「完全」点数不足（4→2点）で`_select_fcf_source()`の
-`min_years=3`未満となり、年次実績ベースへ完全にフォールバックする
-（約20%改善、fcf_avg -$26,088,907→-$20,850,327）という、より大きな
-構造的変化を伴うことが判明した。個別対応は不要、
-[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]の実装で解消される。
-
-#### 着手条件
-[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]の実装で自動解消されることが
-確定したため、個別対応は不要。同エントリの実装完了をもって本エントリも
-解消見込み。優先度は高のまま維持する（実害は現在進行形のため）。
 
 ---
 
@@ -9177,53 +9030,50 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
-追記（2026-08-02 [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装前最終
-シミュレーション完了・[[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]
-追記を反映し、次セッションでの着手順序を更新する）:
+追記（2026-08-02 [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]・
+[[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]の実装完了を反映し、
+次セッションでの着手順序を更新する）:
 **次セッションでの着手順序（2026-08-02時点、最終版）**:
-① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。105銘柄
-   横断スキャン・実装前全母集団シミュレーション・実装方針確定まで完了
-   〈calc_ttm_series()内last4選定直後に連続性チェックを挿入、代替候補
-   探索は不採用〉。実装のみ残存。実装されれば[[KULR-CAPEX-TTM-STUB-
-   ENTRY-CONTAMINATION-1]]も自動解消される見込み）
-② [[KULR-CAPEX-TTM-STUB-ENTRY-CONTAMINATION-1]]（優先度：高。KULRの
-   capital_expenditureに開始日欠落の異常エントリが混入し現在進行形の
-   実害あり。実装前最終シミュレーションで、単純な数値補正ではなくTTM
-   系列から年次実績への完全フォールバック〈fcf_avg約20%改善〉という
-   より大きな構造的変化と判明。①の実装で自動解消されるため個別対応は
-   不要、①の実装方針決定待ちが合理的だが実害が現在進行形のため優先度は
-   高で維持）
-③ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+① [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
-④ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+② [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
    〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは③で別扱い）
-⑤ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
-   現時点のIV実害はゼロ、恒久対応は①側で行う）
-⑥ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   HEI・ONDSは実装完了・COHRは①で別扱い）
+③ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
+   根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
+   別途確認が必要なため未着手のまま残置）
+④ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
-⑦ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
    〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
    未解決分）
-⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
-⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
-⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+⑥ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑦ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑧ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
    [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
    同時に副次的効果として解消される見込み）
-⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
-⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+⑨ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑩ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
    で自然解消見込み）
-⑬ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。汎用検知チェック
+⑪ [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。汎用検知チェック
    〈WARN-30候補〉の新設提案。tie-break変更部分は当面見送り済み、
    残るのは検知ロジック自体の新設・126件の個別トリアージ運用）
-⑭ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
-⑮ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
-⑯ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+⑭ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+**新たに判明した残課題**: `common/sec_data/ttm/`ディレクトリが
+2026-07-26生成のまま、以降の`layer3_builder.py`/`q4_implied.py`側の
+既存コミット（2026-07-30〜）に対して広範に陳腐化していることが今回の
+実装検証過程で判明した（本タスクのスコープ外のため対応せず据え置き）。
+次回セッションで全105銘柄のTTM系列を最新パイプラインに合わせて再生成
+することを検討する（優先度は要検討、実害の有無は個別確認が必要）。
 
 ---
 
