@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]
+実装前シミュレーション完了（チャット記録、読み取り・オフライン試算のみ）。
+当初想定した「TA=TL+SE+NCI+TemporaryEquityへの拡張」を無条件適用する
+設計は、既存の正しい1,085件のうち33件（VZ最大-$56.6B・WMT・KO・AVGO・
+LLY・AMD・ASTS・BROS・CAKE）で新規誤検知を生む重大な危険があると実証。
+「TA=TL+SEが不一致の場合のみNCI・一時的持分を試すOR条件フォールバック
+方式」・許可リスト方式のタグ選定に設計を確定。この設計で156件中133件
+（85.3%）が解消見込みと判明し、残る23件を
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]として新規登録（優先度：中）。
+検知専用ログフォーマット・report_consistency_check.py側の実装方法・
+実装コストの再評価も反映。「次セッションでの着手順序」欄を更新。設計
+確定・登録のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]根本原因
 調査完了（チャット記録、読み取りのみ）。登録時は「バグ・未特定の会計
 恒等式不整合」としたが、対象accn・end_dateの全XBRLタグを機械的に網羅する
@@ -1448,6 +1461,7 @@ end_dateの全タグを機械的に列挙する」方式で行うべき）。
 **優先度:** 高
 **分類:** アーキテクチャ改善 / 新規実装提案
 **登録日:** 2026-08-02
+**設計確定日:** 2026-08-02（実装前シミュレーション結果を反映し設計確定）
 **発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
 
 #### 内容
@@ -1470,23 +1484,128 @@ end_dateの全タグを機械的に列挙する」方式で行うべき）。
 - 実装コスト自体は小規模（数十〜100行程度）と見積もられるが、検知後の
   大量WARN（TA=TL+SE違反156件等）への個別対応工数が真のコストになりうる
 
-#### 対応方針
+#### 対応方針（登録時点）
 まずBS側恒等式（TA=TL+SE）・PL側2条件（GP=Rev-COGS・OI≤GP）の最小構成で
 試験導入することを推奨する。105銘柄×数十年分の履歴データへの適用となる
 ため、[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査結果を
 踏まえてから実装に進む（検知後の分類フローを確立してから本格導入する）。
 
+#### 実装前シミュレーション結果・設計確定（2026-08-02、チャット記録）
+当初想定した「TA=TL+SE+NCI+TemporaryEquityへの拡張」を無条件適用した
+場合の危険性を実データで検証した。
+
+**重大な発見**: 無条件加算は、既存の正しい1,085件のうち**33件で新規
+誤検知を生む**（VZ(2008-2013)最大-$56.6B・WMT(2011-2026)・KO(2017-2020)・
+AVGO(2017)・LLY(2018)・AMD(2009)・ASTS(2021-2025)・BROS(2020)・
+CAKE(2020)）。これらの銘柄は既に`total_liabilities`＋`stockholders_
+equity`（候補タグ選定の結果次第でparent-onlyまたはNCI込みが混在）で
+TA=TL+SEが完結しており、MinorityInterest等をさらに加算すると二重計上
+になる（例: KO(2017)はTL($70,824M)+SE($17,072M)=TA($87,896M)が既に
+完全一致、MinorityInterest($1,905M)を加えると破綻）。
+
+**設計を確定**:
+- 「TA=TL+SEが不一致の場合のみNCI・一時的持分を試すフォールバック方式
+  （OR条件: ①まずTA==TL+SEを試す、②不一致の場合のみ拡張形を試す、
+  ③いずれか成立すれば違反なし）」に確定する。無条件加算は不採用。
+- タグ選定は許可リスト方式（`MinorityInterest`・`TemporaryEquity
+  CarryingAmount`系・`RedeemableNoncontrollingInterestEquity...
+  CarryingAmount`系の簿価タグのみ）とする。当初検討した単純な部分一致
+  （タグ名に"Noncontrolling"/"TemporaryEquity"を含むかで判定）は、
+  `TemporaryEquityLiquidationPreference`等の異なる測定基準の開示専用
+  タグまで合算してしまい、LYFT(2018)で$10.3Bの過大計上を引き起こす等
+  重大な誤りがあり不採用とした。"Including"系combined-totalタグが
+  存在する場合はそちらを優先し、個別タグとの二重計上を避ける。
+
+**156件への適用結果**: この設計で**133件（85.3%）が解消見込み**。残る
+23件は複数の異なる原因（クロスaccn開示・測定基準の異なるタグ・標準
+タグ体系外の命名等）が混在しており、
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]として個別に切り出し新規登録
+した。
+
+**検知専用ログフォーマット案**（`{ticker}_bs_identity_violations_
+log.json`、既存の`fy_collision_log.json`等と同型の「0件でも毎回書き込み」
+パターン）:
+```json
+{
+  "ticker": "HEI",
+  "generated_at": "2026-08-02T...",
+  "violations": [
+    {
+      "period": 2020, "accn": "0000046619-20-000078", "end_date": "2020-10-31",
+      "total_assets": 3547711000, "total_liabilities": 1315896000,
+      "stockholders_equity": 1980177000, "diff_base": 251638000,
+      "diff_base_pct": 0.071,
+      "extra_components": {"MinorityInterest": 30430000,
+        "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests": 221208000},
+      "diff_extended": 0, "resolved_by_extension": true
+    }
+  ]
+}
+```
+
+**report_consistency_check.py側の実装方法**: 既存CHECK-25/26と同型の
+枠組みに乗せられる。CHECK-25（BS None検知）と同様、`annual_YYYY.json`の
+`bs`辞書とcompany_facts.jsonの許可リストタグを突合し、
+`resolved_by_extension=false`（未解消）の件のみWARN-29として発火させる。
+既存の`config/warn_acknowledged.json`に、①genuineだが許可リストでは
+未解消の既知パターン（HEI早期年度・COHR等）を事前登録しノイズを抑制する。
+
+**実装コストの再評価**: 当初「数十〜100行程度」としていたが、動的タグ
+検出ロジック（許可リスト管理・combined-total優先ルール・OR条件の
+フォールバック制御）にも相応のコードが必要と判明したため、見積りを
+上方修正する。
+
 #### 着手条件
-[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査（TA=TL+SE
-違反156件のサンプル原因確認等）を先行させることが望ましいが、CHECK-29
-自体の実装（検知ロジック）は並行して設計・シミュレーション可能。
+[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の分類調査は完了。
+設計確定済みのため実装に着手可能な段階。[[CHECK29-UNRESOLVED-23-MIXED-
+CAUSES-1]]（残る23件の個別対応）はCHECK29本体の実装後に着手する。
 
 #### 関連ドキュメント
 本エントリが提案する検証レイヤーの設計思想（横断的検証・検知専用・
 穴埋めロジックとの役割分離）は、`docs/architecture/new_data_platform/
 EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
 `common/macro_data/`向けの抽出設計原則、2026-08-02新設）の原則3として
-一般化して反映済み。
+一般化して反映済み。残る23件の未解消ケースは
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]として個別登録済み。
+
+---
+
+### [CHECK29-UNRESOLVED-23-MIXED-CAUSES-1] 拡張恒等式検証（許可リスト＋OR条件方式）を適用しても解消しない23件が複数原因混在で残存
+**優先度:** 中
+**分類:** データ品質 / 複数原因混在・個別対応要
+**登録日:** 2026-08-02
+**発見:** [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]実装前
+シミュレーション（チャット記録）
+
+#### 内容
+拡張恒等式検証（許可リスト＋OR条件フォールバック方式）を適用しても解消
+しない23件が判明した。原因は複数混在:
+- COHR(2022/2023): 該当タグが自社当該年度10-Kに存在せず後年の比較列
+  としてのみ開示（クロスaccn問題、本人データ限定照合では発見不可）
+- HEI(2009-2013): TemporaryEquityRedemptionValue（償還価額、簿価とは
+  別基準）のみ存在。許可リストから意図的に除外したため未解消
+- PLTR(2019)・CART(2023-2025)・CRWV(2024)・BKNG(2011/2012)・V(2008):
+  該当accn・end_dateにNoncontrolling/TemporaryEquity系タグが一切存在
+  せず、標準タグ体系と異なる命名の優先株式等の可能性
+- CELH(2025): 大型買収（Alani Nu）関連の会計処理の可能性
+- ASTS(2019/2020)・VRT(2017)・RDW(2020): RedemptionValue系タグのみ
+  存在、許可リストの基準（簿価のみ）から除外したため未解消
+- ONDS(2023): 優先株式・普通株式2区分のタグが両方存在し、追加検出で
+  むしろ過大計上（-13.7%）に転じた二重計上の疑い
+
+#### 影響
+未確定。156件中の残り23件（14.7%）。COHR・ONDS等一部は追加調査で
+①genuineと確定できる可能性が高いが、標準タグ体系外の命名を持つ銘柄
+（PLTR/CART/CRWV等）は個別の10-K確認が必要。
+
+#### 対応方針
+未定。CHECK29本体（133件解消分）の実装を先行させ、この23件は
+「resolved_by_extension=false」として検知ログ・WARN-29に残したまま、
+個別調査で②genuine確定→config/warn_acknowledged.json登録、または
+③真のバグとして別途対応、のいずれかに順次分類していく。
+
+#### 着手条件
+[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]本体の実装後。
 
 ---
 
@@ -8280,6 +8399,47 @@ BACKLOG_DONE.mdへ移動。追加でTSLA・XOMもサンプル確認し完全一�
 ⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
+追記（2026-08-02 [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]実装前
+シミュレーション完了）:
+無条件でNCI・一時的持分を加算する設計は、既存の正しい1,085件のうち33件
+（VZ最大-$56.6B・WMT・KO・AVGO・LLY・AMD・ASTS・BROS・CAKE）で新規誤検知
+を生む重大な危険があると実証。「TA=TL+SEが不一致の場合のみ拡張形を試す
+OR条件フォールバック方式」・許可リスト方式のタグ選定に設計を確定し、
+156件中133件（85.3%）が解消見込みと判明。残る23件を
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]として新規登録（優先度：中）。
+これにより次セッションでの着手順序を更新する:
+① [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]（優先度：高。設計
+   確定済み、実装に着手可能な段階。OR条件フォールバック方式・許可リスト
+   方式のタグ選定・検知専用ログ・CHECK-29実装方法まで確定済み）
+② [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高。
+   TA=TL+SE違反の分類調査は完了、残る3種〈GP≠Revenue−COGS 43件・
+   OI>GP 22件・NI≠EPS×Shares 67件〉の分類調査が未着手）
+③ [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は③側で行う）
+⑤ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑥ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑨ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中・新規。着手条件:
+   ①CHECK29本体の実装後）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 
 ---
