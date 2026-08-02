@@ -4,6 +4,88 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1] 抽出後・保存前に会計恒等式・フィールド間整合性を一括検証する共通レイヤーの新設提案
+**状態:** 実装完了（BS側TA=TL+SE恒等式検証のみ。PL側GP=Rev-COGS・OI≤GP等は
+スコープ外のまま、必要なら別タスクとして新規登録する）
+**優先度:** 高
+**分類:** アーキテクチャ改善 / 新規実装
+**登録日:** 2026-08-02
+**設計確定日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
+
+#### 内容（登録時点）
+「個別バグを都度直す」現状アプローチから、「抽出後・保存前に既知の会計
+恒等式・フィールド間整合性を一括で検証する共通レイヤー」への移行を提案。
+`_bs_math_violations()`（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]専用の狭い
+ゲートとしてのみ呼び出される）を格上げし、CHECK-29として試験導入する
+設計。
+
+#### 実装前シミュレーション結果・設計確定（2026-08-02、チャット記録）
+当初想定した「TA=TL+SE+NCI+TemporaryEquityへの拡張」を無条件適用した
+場合の危険性を実データで検証した。**重大な発見**: 無条件加算は、既存の
+正しい1,085件のうち33件で新規誤検知を生む（VZ(2008-2013)最大-$56.6B・
+WMT・KO・AVGO・LLY・AMD・ASTS・BROS・CAKE）。これらの銘柄は既に
+`total_liabilities`＋`stockholders_equity`でTA=TL+SEが完結しており、
+MinorityInterest等をさらに加算すると二重計上になる。
+
+**設計を確定**: 「TA=TL+SEが不一致の場合のみNCI・一時的持分を試す
+フォールバック方式（OR条件）」・許可リスト方式のタグ選定（`Minority
+Interest`・`TemporaryEquityCarryingAmount`系・`RedeemableNoncontrolling
+InterestEquity...CarryingAmount`系の簿価タグのみ、"Including"系
+combined-totalタグが存在する場合はそちらを優先）に確定。156件中133件
+（85.3%）が解消見込みと判明、残る23件を[[CHECK29-UNRESOLVED-23-MIXED-
+CAUSES-1]]として個別登録した。
+
+#### 実装結果（2026-08-02、チャット記録）
+上記設計をそのまま実装した。
+
+**parser.py**: `_BS_IDENTITY_ALLOWLIST`（7タグ）・`_BS_IDENTITY_
+SUPERSEDES`（"Including"系優先ルール）を新設。`_check_bs_identity_
+violations()`がOR条件フォールバック（①本体一致→②不一致時のみ拡張形）を
+実装し、本体一致で解消したケースはログ対象外（ノイズ削減）。
+`_save_bs_identity_violations_log()`が`{ticker}/bs_identity_
+violations_log.json`を0件でも毎回書き込む（既存のfy_collision_log.json
+等と同型）。`_parse_raw_data()`の年次データ集約後に呼び出し。
+
+**report_consistency_check.py**: `_read_bs_identity_violations_log()`・
+CHECK-29/WARN-29を追加。`resolved_by_extension=false`（拡張形でも
+未解消）の件のみWARN化する。
+
+**検証結果**:
+1. 全105銘柄でオフライン再パース（company_facts.jsonの再取得なし）を
+   実行し、156件中133件が拡張形で解消・23件が未解消となることを確認
+   （事前シミュレーションと完全一致）。未解消23件の銘柄・年度も
+   [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]記載の23件（ASTS×2・BKNG×2・
+   CART×3・CELH×1・COHR×2・CRM×1・CRWV×1・HEI×5・ONDS×1・PLTR×1・
+   RDW×1・V×1・VRT×2）と完全一致
+2. 元々「違反なし」だった1,085件で新規の誤検知は発生せず。特にVZ・WMT・
+   KO・AVGO・LLY・AMD・ASTS・BROS・CAKEの33件は①本体一致で解消済みの
+   ためログ自体に一切記録されないことを個別確認済み
+3. HEI(2020)・LRCX(2012-2015)・FCX・BROS・RKLB・GTLB・COHR・ONDS・TSLA・
+   XOM（サンプル確認済み10銘柄）で、method="extended"かつ正しい
+   extra_componentsが記録されることを確認済み（例: FCX/XOM=
+   MinorityInterest、LRCX=TemporaryEquityCarryingAmountAttributable
+   ToParent、HEI=MinorityInterest+TemporaryEquityCarryingAmount
+   IncludingPortionAttributableToNoncontrollingInterests）
+4. annual_YYYY.json等の既存データファイルは無変更（`git status`で
+   新規追加は105件の`bs_identity_violations_log.json`のみ、`M`（変更）は
+   `parser.py`・`report_consistency_check.py`の2ファイルのみと確認済み）
+5. pytest 497 passed/2 known failed（`test_iv_formula.py`のMSFT/NVDA、
+   [[TEST-STALE-IV-1]]既知・無関係）
+6. `report_consistency_check.py`実行: NG=0/WARN=70件（CHECK-29追加前）
+   →83件（追加後）、純増13件（全てWARN-29、対象13銘柄・23件のticker
+   単位集約）
+
+機能コミット: `bd91000f0`（parser.py・report_consistency_check.py・
+新規bs_identity_violations_log.json 105件）
+
+#### 残タスク
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（残る23件の個別調査、着手条件
+充足済み）はBACKLOG.mdに残置。PL側恒等式（GP=Rev-COGS・OI≤GP・NI≠EPS×
+Shares）の検証は[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]側の
+分類調査未完了のため、本タスクのスコープには含めていない。
+
 ### ✅ [HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1] HEI・LRCXでNCI等を含めてもTotal_Assets=Total_Liabilities+Stockholders_Equityが成立しない未特定の不整合
 **状態:** 誤登録・訂正のうえクローズ（原因は①genuine、探索範囲不足による
 誤判定だった）
