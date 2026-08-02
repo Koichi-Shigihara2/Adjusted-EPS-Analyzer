@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]の実装前
+最終確認（チャット記録、読み取り・オフラインシミュレーションのみ）完了。
+既存の恒等式ベース安全網（`_backfill_total_liabilities_via_identity()`・
+[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]）との相互作用リスクは
+なし（BS項目とshares項目でフィールド集合が重ならず構造的に相互作用
+経路が存在しない）と確認、前回懸念したWMT(2014)型のすり抜けもガード
+条件により正しく除外されることを確認。ガード適用後の全母集団シミュ
+レーションで該当・変化するのはCOHR(2010)のshares_diluted/basicの2
+フィールドのみと最終確定。実装方針を確定: [[COHR-SHARES-DILUTED-
+UNIT-SCALE-BUG-1]]の`fact_overrides.json`個別上書き（3年度とも1回で
+解決）を実装対象とし、tie-break変更（ソースコード変更）は当面見送る
+（2010年度1件しか解決せずfact_overrides側で重複解決される・現時点で
+COHR以外に該当する実ケースがゼロと確定しコストに見合う価値が現状ない
+ため。ガード条件の設計自体は破棄せず将来の予防的対応として保留）。
+着手条件を更新。登録・更新のみ、実装は未着手）。
+
 最終更新: 2026-08-02（セッション終了処理。BACKLOG.md/BACKLOG_DONE.mdの
 クロスリファレンス整合性を確認（本セッションでクローズした5件
 〈[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]・[[GOOGL-FACT-
@@ -1607,9 +1623,42 @@ COHRの2件（shares_diluted/basic）のみが該当し、他122件は自動的�
 UNIT-SCALE-BUG-1]]で確定済み）と、tie-break側の恒久対応のどちらを
 採るか、または両方必要かは実装時に判断する。
 
+#### 実装前最終確認結果・実装方針確定（2026-08-02、チャット記録、読み取り・
+オフラインシミュレーションのみ）
+実装前の2点の追加確認（前項）を完了した。
+
+(a) 既存の恒等式ベース安全網との相互作用リスクはなし。
+`_backfill_total_liabilities_via_identity()`・[[CHECK29-ACCOUNTING-
+IDENTITY-DETECTION-LAYER-1]]はいずれもBS項目（total_assets/total_
+liabilities/stockholders_equity/NCI/一時的持分）のみを対象とする一方、
+ガード条件付き介入が実際に触れるのはshares項目の2フィールドのみで、
+両者が扱うフィールド集合に重なりがなく構造的に相互作用の経路が存在し
+ないことを確認した。前回懸念したWMT(2014)型のすり抜けは、ガード条件
+（比が10のべき乗、最低100倍）により正しく除外されることを確認した
+（WMTの乖離比≒1.001はガード条件を満たさないため対象外）。
+
+(b) ガード適用後の全母集団シミュレーションで、該当・変化するのはCOHRの
+2010年度shares_diluted/basicの2フィールドのみと最終確定した。他104
+銘柄・COHRの他年度（2009・2011年度含む）は完全に無変化、新規の意図
+しない波及も確認されなかった。
+
+**実装方針を確定**: [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]の
+`fact_overrides.json`個別上書き（2009-2011年度、3年度とも1回で解決）を
+実装対象とし、tie-break変更（ソースコード変更）は当面見送る。理由:
+(a)tie-break変更は2010年度1件しか解決せず、その1件もfact_overrides側
+で重複解決される（tie-break変更単独では2009・2011年度は解決しない:
+2009年度は後続filingに正しい値自体が存在せず、2011年度は本人データ
+優先ロジックにより保護されているため）、(b)現時点でCOHR以外に該当する
+実ケースがゼロと確定しており、ソースコード変更のコストに見合う実利用
+価値が現状ない。ガード条件の設計自体は妥当性・安全性が確認済みのため
+破棄せず、将来「本人データ優先ロジックでは救えず、かつ個別override
+登録が非現実的な規模の」新規ケースが発見された時点で再検討する。
+
 #### 着手条件
-なし。優先度中（業界共通のミスパターンとして汎用的価値が高いが、
-即座の実害は限定的〈COHR以外は未確認〉のため）。実装方式は確定済み。
+[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]のfact_overrides実装で事実上
+完結、tie-break変更部分は将来の予防的対応として保留。優先度中（業界
+共通のミスパターンとして汎用的価値が高いが、即座の実害は限定的
+〈COHR以外は未確認〉のため）。
 
 ---
 
@@ -8967,12 +9016,12 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 と[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（tie-break恒久対応）は
 対象・実装タイミングが密結合のため①に統合表示する。
 **次セッションでの着手順序（2026-08-02時点、セッション終了時最終版）**:
-① [[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]（優先度：中。ガード条件付き
-   介入〈同符号かつ比が10のべき乗値〉で実装方式確定済み。実装前に
-   (a)既存の恒等式ベース安全網との相互作用再検証、(b)ガード適用後の
-   全母集団再シミュレーションが必須。[[COHR-SHARES-DILUTED-UNIT-
-   SCALE-BUG-1]]〈fact_overrides.json個別上書き、値も確定済み〉の
-   実装も同時に判断・実施する）
+① [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（優先度：中。実装前最終確認
+   完了・fact_overrides.json個別上書き〈2009-2011年度、値も確定済み〉の
+   実装のみ残存。[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]のtie-break
+   変更部分は、実装しても2010年度1件しか解決せずfact_overrides側で
+   重複解決される・現時点で他に該当実ケースがゼロと確定したため、
+   当面見送り〈将来の予防的対応として保留〉）
 ② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
    calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
    105銘柄横断スキャンが未着手）
