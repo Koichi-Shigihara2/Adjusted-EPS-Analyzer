@@ -2215,12 +2215,43 @@ class SECParser:
     # 含む合算値）が存在する場合、"AttributableToParent"系・無印の
     # "TemporaryEquityCarryingAmount"はその内訳の一部を指すため、両方を
     # 合算すると二重計上になる。前者が存在する場合は後者を除外する。
+    #
+    # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]ONDS(2023)個別調査（実装前
+    # チャット記録）: RedeemableNoncontrollingInterestEquityCarrying
+    # Amount（優先株式・普通株式を合算した総額）が存在するのに、内訳の
+    # 一部である...PreferredCarryingAmount/...CommonCarryingAmountを
+    # 別途加算すると、優先株式分が二重計上される（ONDS(2023)で実測:
+    # base_diff($11,920,694)がCarryingAmount単体と完全一致するのに対し、
+    # ...PreferredCarryingAmount($14,692,000)まで加算すると
+    # 過大計上〈-13.7%〉に転じることを確認済み）。同型のルールを追加する。
     _BS_IDENTITY_SUPERSEDES = {
         "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests": frozenset([
             "TemporaryEquityCarryingAmountAttributableToParent",
             "TemporaryEquityCarryingAmount",
         ]),
+        "RedeemableNoncontrollingInterestEquityCarryingAmount": frozenset([
+            "RedeemableNoncontrollingInterestEquityCommonCarryingAmount",
+            "RedeemableNoncontrollingInterestEquityPreferredCarryingAmount",
+        ]),
     }
+
+    # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI(2009-2013)個別調査
+    # （実装前チャット記録）: 2009-2013年当時のHEIは一時的持分の簿価を
+    # 表す"CarryingAmount"系タグを一切報告しておらず、
+    # `TemporaryEquityRedemptionValue`（償還価額）がその代わりに貸借
+    # 対照表上の簿価として機能していたことを実測で確認済み（例: 2013年度
+    # TL+SE+MinorityInterest+RedemptionValueがTAと完全一致）。ただし
+    # RedemptionValueは通常、簿価とは異なる測定基準の開示専用タグである
+    # ため（LYFT(2018)等での過大計上の教訓）、無条件加算は行わず、同一
+    # accn・同一end_dateに簿価系タグ（下記_BS_IDENTITY_CARRYING_AMOUNT_
+    # TEMP_EQUITY_TAGS）が1つも存在しない場合のみのフォールバックとして
+    # 限定する。
+    _BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS = frozenset([
+        "TemporaryEquityCarryingAmount",
+        "TemporaryEquityCarryingAmountAttributableToParent",
+        "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests",
+    ])
+    _BS_IDENTITY_FALLBACK_ONLY_TAG = "TemporaryEquityRedemptionValue"
 
     _BS_IDENTITY_TOL_REL = 0.02
     _BS_IDENTITY_TOL_ABS = 2_000_000
@@ -2259,6 +2290,22 @@ class SECParser:
             if winner in matched:
                 for loser in losers:
                     matched.pop(loser, None)
+
+        # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI型フォールバック:
+        # 簿価系タグ（_BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS）が
+        # 1つも見つからなかった場合のみ、測定基準の異なる
+        # TemporaryEquityRedemptionValueを最終手段として採用する。
+        if not (self._BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS & matched.keys()):
+            tag = self._BS_IDENTITY_FALLBACK_ONLY_TAG
+            tagdata = us_gaap.get(tag)
+            if tagdata:
+                entries = tagdata.get("units", {}).get("USD", [])
+                for e in entries:
+                    if (e.get("accn") == accn and e.get("end") == end_date
+                            and not e.get("start")):
+                        matched[tag] = e.get("val")
+                        break
+
         return matched
 
     def _check_bs_identity_violations(self, ticker: str, result: Dict[str, Any],
