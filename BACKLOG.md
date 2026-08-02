@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]
+のTA=TL+SE違反156件・分類調査完了（チャット記録、読み取りのみ）。持続性
+区分（単年度28銘柄・2年度5銘柄・3年度以上17銘柄）を確定。8銘柄のサンプル
+確認で6銘柄（FCX/BROS/RKLB/GTLB/COHR/ONDS）が①genuine（NCI・一時的持分の
+未捕捉、設計スコープ外）と確定、156件の過半数が①に該当する見込みと判明。
+HEI・LRCXの2銘柄はNCI等を含めても解消しない未特定の不整合と判明し
+[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]として新規登録（優先度：
+中〜高）。恒等式検証の対応方針を「TA==TL+SE+NCI+一時的持分」の拡張形で
+確定。「次セッションでの着手順序」欄を更新。分類調査・登録のみ、実装は
+未着手）。
+
 最終更新: 2026-08-02（`docs/architecture/new_data_platform/
 EXTRACTION_DESIGN_PRINCIPLES.md`を新規作成。common/sec_data/抽出
 アーキテクチャの俯瞰的脆弱性分析で判明した5バグの教訓（期間の妥当性・
@@ -1315,6 +1326,7 @@ M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄�
 **優先度:** 高
 **分類:** アーキテクチャ改善 / 横断的検証レイヤー未整備
 **登録日:** 2026-08-02
+**分類調査日:** 2026-08-02（TA=TL+SE違反156件の分類調査結果を反映）
 **発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
 
 #### 内容
@@ -1345,10 +1357,40 @@ Equity自体すら現状未検証）。
 - COHR(2009-2011): shares_dilutedが60,164〜63,612という桁違いに小さい値、
   単位スケールバグの疑い
 
-#### 対応方針
-未定。まず4種の違反それぞれについて分類調査（bug/genuine差/対応不要）を
-行い、優先度を確定する。横断的検証レイヤー（[[CHECK29-ACCOUNTING-
-IDENTITY-DETECTION-LAYER-1]]、下記別エントリ）の設計と並行して進める。
+#### TA=TL+SE違反156件の分類調査結果（2026-08-02、チャット記録）
+**持続性区分**: 単年度28銘柄28件・2年度5銘柄10件・3年度以上17銘柄118件。
+
+**8銘柄のサンプル原因確認**（company_facts.jsonでNCI・一時的持分候補
+タグの有無・値を実際に突合）:
+- **①genuine（NCI・一時的持分・償還可能優先株式の未捕捉、設計スコープ
+  外）と確定**: FCX・BROS・RKLB・GTLB・COHR・ONDSの6銘柄。いずれも
+  `MinorityInterest`・`TemporaryEquityCarryingAmountAttributableTo
+  Parent`・`RedeemableNoncontrollingInterestEquityCarryingAmount`等の
+  タグ値が、観測した差分額と完全一致または近似一致することを確認済み
+  （例: FCX 2023年diff=$10,617,000,000＝MinorityInterest(2023)と完全
+  一致、ONDS 2023/2024年もRedeemableNCIと完全一致）。加えてSPAC設立年
+  （stockholders_equity≈$5,000,00X、単年度・2年度区分に計7銘柄:
+  IONQ/JOBY/RKLB/SPIR/ASTS×2/SOFI）・IPO前後の大幅マイナスSE（十数銘柄）
+  も同カテゴリと強く推定され、**156件のうち過半数が①に該当する見込み**。
+- **③要個別確認（genuine仮説では説明しきれない残差あり）**: HEI・LRCXの
+  2件。NCI・一時的持分タグを含めた完全な資本合計を使ってもTA=TL+SEが
+  成立しない**同一filing・同一accn内での不整合**であり、企業側の申告
+  ミスではなく抽出パイプライン側の未発見バグの可能性が高いと判断し、
+  [[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]として個別に切り出し
+  新規登録した。
+- **②タグ選定バグ**: サンプル8件では確定例なし（HEI・LRCXの残差が今後の
+  個別調査でこのカテゴリに転じる可能性は残る）。
+
+#### 対応方針（2026-08-02、分類調査結果を反映し確定）
+恒等式検証を「`TA == TL + SE + NCI(存在すれば) + TemporaryEquity(存在
+すれば)`」という拡張形で実装し、拡張後もなお乖離が残る銘柄（HEI・LRCX
+型）のみを真の異常として検知する設計とする。許容誤差を広げるだけの対応は
+③要個別確認のケースを隠蔽するため不採用とする。
+
+NCI・一時的持分の新規フィールド追加は`INPUT_DATA_TOBE.md`の分類A件数
+（現行48件）に影響するため、実装時は同ドキュメントの更新も必要。
+
+GP≠Revenue−COGS・OI>GP・NI≠EPS×Sharesの3種の分類調査は未着手のまま残存。
 
 #### 着手条件
 なし。優先度高（システム全体のデータ品質基盤に関わる構造的問題のため）。
@@ -1357,7 +1399,41 @@ IDENTITY-DETECTION-LAYER-1]]、下記別エントリ）の設計と並行して�
 本エントリの教訓は`docs/architecture/new_data_platform/
 EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
 `common/macro_data/`向けの抽出設計原則、2026-08-02新設）に一般化して
-反映済み。
+反映済み。HEI・LRCXの未解決残差は[[HEI-LRCX-TA-TLSE-UNEXPLAINED-
+RESIDUAL-1]]として個別登録済み。
+
+---
+
+### [HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1] HEI・LRCXでNCI等を含めてもTotal_Assets=Total_Liabilities+Stockholders_Equityが成立しない未特定の不整合
+**優先度:** 中〜高
+**分類:** バグ / 未特定・同一filing内の会計恒等式不整合
+**登録日:** 2026-08-02
+**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]分類調査
+（チャット記録）
+
+#### 内容
+HEI(2020)・LRCX(2012-2015)で、NCI・一時的持分タグを含めた完全な資本合計
+を使ってもTotal_Assets = Total_Liabilities + Stockholders_Equity（+NCI
+等）が成立しない。HEIは残差$221,208,000（同一accn・同一filing内）、
+LRCXは残差$190,343,000（同一accn内、2012年Novellus Systems買収前後の
+時期）。いずれも同一filing・同一accn内での不整合であり、企業側の申告
+ミスとは考えにくく、抽出パイプライン側の未発見バグの可能性が高い。
+
+#### 影響
+未確定。他の持続的違反銘柄（VRT・CART・RDW・CELH・HWM・DELL・PM・TSLA・
+LITE・XOM）についても同様の個別確認が必要で、②タグ選定バグに分類される
+件数がさらに増える可能性がある。
+
+#### 対応方針
+未定。HEI・LRCXそれぞれについて、company_facts.jsonの全BS関連タグを
+網羅的に洗い出し、TA/TL/SEそれぞれが実際にどのタグ・どのaccnから
+採用されているかを特定した上で、これまでのセッションで見つけたパターン
+（accn/期間不整合・候補タグ設計欠陥・複数タグ合算漏れ等）のいずれかに
+該当するか個別に切り分ける。
+
+#### 着手条件
+なし。優先度中〜高（会計恒等式の最も基本的な違反であり、原因未特定の
+ため）。
 
 ---
 
@@ -8111,6 +8187,50 @@ UNCHECKED-1]]として新規登録（優先度：中〜高）。
 ⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
 ⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+
+追記（2026-08-02 [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の
+TA=TL+SE違反156件・分類調査完了）:
+持続性区分（単年度28銘柄・2年度5銘柄・3年度以上17銘柄）を確定。8銘柄の
+サンプル確認で6銘柄（FCX/BROS/RKLB/GTLB/COHR/ONDS）が①genuine（NCI・
+一時的持分の未捕捉、設計スコープ外）と確定し、156件の過半数が①に該当する
+見込みと判明。HEI・LRCXの2銘柄はNCI等を含めても解消しない未特定の不整合
+（同一filing・同一accn内での恒等式不成立）と判明し
+[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]として新規登録（優先度：
+中〜高）。恒等式検証の対応方針を「TA==TL+SE+NCI+一時的持分」の拡張形で
+確定（許容誤差を広げるだけの対応はHEI・LRCX型の真の異常を隠蔽するため
+不採用）。GP≠Revenue−COGS・OI>GP・NI≠EPS×Shares の3種の分類調査は未着手。
+これにより次セッションでの着手順序を更新する:
+① [[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]（優先度：中〜高・新規。
+   NCI等を含めても解消しない同一filing内の恒等式不成立、原因未特定）
+② [[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]（優先度：高。
+   横断的な会計恒等式検証レイヤーの新設提案。TA=TL+SE違反の分類調査結果
+   〈①の設計方針〉を踏まえて実装可能な段階）
+③ [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高。
+   TA=TL+SE違反の分類調査は完了、残る3種〈GP≠Revenue−COGS 43件・
+   OI>GP 22件・NI≠EPS×Shares 67件〉の分類調査が未着手）
+④ [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+⑤ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は④側で行う）
+⑥ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+⑦ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 
 ---
