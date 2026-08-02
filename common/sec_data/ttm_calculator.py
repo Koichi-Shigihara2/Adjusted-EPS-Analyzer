@@ -166,6 +166,49 @@ def _select_anchors(all_end_dates: list[str], n_periods: int) -> list[str]:
     return anchors
 
 
+# [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]: 連続性チェックの対象外
+# フィールド。eps_basic/eps_dilutedはbuild_q4_implied_entries()の対象外
+# （比率フィールドのため単純合算が数学的に無意味、q4_implied.py側のガード
+# 対象外）という設計上の理由により、単独10-Qを提出しないほぼ全企業で
+# Q4付近に構造的なギャップが生じる既知・実害なしの仕様（全母集団
+# シミュレーションで99/105銘柄が誤検知することを確認済み）。
+CONTIGUITY_CHECK_EXEMPT_FIELDS = frozenset(["eps_basic", "eps_diluted"])
+
+
+def _last4_is_contiguous(last4: list[dict]) -> bool:
+    """
+    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]: 採用した4四半期
+    （end降順、last4[0]が最新）が実際に連続した約12ヶ月分かを検証する。
+
+    条件（個々の四半期長〈end-start〉は判定基準に含めない。PEP等、決算暦
+    特性により単一四半期が112日超と自然に長くなる正当なケースを誤検知
+    するため）:
+      - 合計スパン（last4[0]の end 〜 last4[3]の start）が305〜425日
+      - 隣接四半期間の日数ギャップ・重複（newerのstart 〜 olderのend）が
+        ±10日以内
+
+    RCAT（標準タグの一時的空白）・KULR/FROG（開始日欠落等の異常エントリの
+    混入）いずれのパターンもこの2条件で検知できることを全母集団
+    シミュレーションで確認済み。不合格の場合は呼び出し元が「候補ゼロ」と
+    同様に扱う（代替候補〈より古い4四半期〉の探索は行わない。KULRの試験
+    実装で、探索が正規四半期を巻き添えで飛ばし約6ヶ月古いデータを現在
+    時点のTTMとして無自覚に混入させる、除外より悪い結果を生むことが
+    判明したため）。
+    """
+    try:
+        span = (date.fromisoformat(last4[0]["end"]) - date.fromisoformat(last4[3]["start"])).days
+        if not (305 <= span <= 425):
+            return False
+        for i in range(3):
+            newer, older = last4[i], last4[i + 1]
+            gap = (date.fromisoformat(newer["start"]) - date.fromisoformat(older["end"])).days
+            if abs(gap) > 10:
+                return False
+        return True
+    except (KeyError, TypeError, ValueError):
+        return False
+
+
 def calc_ttm_series(
     ticker: str,
     store: dict,
@@ -266,6 +309,12 @@ def calc_ttm_series(
             ]
             last4 = q_entries[:4]
             if not last4:
+                continue
+            if (len(last4) == 4 and field_name not in CONTIGUITY_CHECK_EXEMPT_FIELDS
+                    and not _last4_is_contiguous(last4)):
+                # [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]: 連続性が
+                # 崩れている場合は「候補ゼロ」と同様に扱う（quarters_used<4
+                # 相当。代替候補探索は行わない）
                 continue
             total = sum(e["val"] or 0 for e in last4)
             flow[field_name] = {
