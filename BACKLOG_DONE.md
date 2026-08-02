@@ -4,6 +4,77 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1] fact_overrides.jsonによるrevenue手動補正がgross_profit逆算より後段で適用されるシーケンシングバグ
+**状態:** 実装完了（案A採用: `_apply_fact_overrides()`を全逆算バックフィル
+より前に移動。GOOGL(2012/2013)のgross_profitを是正・105銘柄フローズン
+入力比較でGOOGL以外への副作用ゼロを確認・TANUKI VALUATION/STONKS SILOへの
+影響なしを確認）
+**優先度:** 中〜高
+**分類:** バグ / 確定・パイプライン実行順序
+**登録日:** 2026-08-02
+**完了日:** 2026-08-02
+**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]残り3種の分類調査（chat記録）
+
+#### 内容
+GOOGL(2012/2013)で、fact_overrides.jsonによるrevenue手動補正
+（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1対応、Motorola Mobile非継続事業
+区分変更の遡及修正）が、`_backfill_gross_profit_from_revenue_cogs()`
+（gross_profit逆算）より後段（`save_parsed_data()`内の
+`_apply_fact_overrides()`）で実行されるため、gross_profitが補正前
+revenue（Motorola Mobile込み、推定$50,175M）を使って逆算された古い値
+のまま保存され、補正後revenue（$46,039M）と整合しない。検算:
+$32,999M(GP)+$17,176M(COGS)=$50,175M=旧revenue、$50,175M−$46,039M=
+$4,136M=観測乖離額と完全一致で確定。
+
+#### 影響
+GOOGL(2012/2013)のgross_profitが誤り。他のfact_overrides.json対象
+フィールド・銘柄で同様のシーケンシング問題が波及していないか未調査
+（手動補正対象は現状GOOGL限定の可能性が高いが未確認）。
+
+#### 対応方針（登録時点）
+未定。`_apply_fact_overrides()`の実行タイミングを
+`_backfill_gross_profit_from_revenue_cogs()`より前に移動するか、逆算系
+バックフィル処理をoverrides適用後に再実行する設計を検討する。
+fact_overrides.json対象の他フィールド・他銘柄への一般化可能性も合わせて
+確認する。
+
+#### 影響範囲確認・実装前シミュレーション結果（2026-08-02、チャット記録、
+読み取りのみ）
+fact_overrides.json対象は**GOOGL(2012/2013)限定**（revenue・
+operating_income・research_and_development・selling_and_marketingの
+4フィールド）で他銘柄の登録は一切ないことを確認。`_parse_raw_data()`
+内で`_apply_fact_overrides()`より前に実行される逆算バックフィルは
+`_backfill_gross_profit_from_revenue_cogs()`（revenue・cost_of_revenue
+入力）と`_backfill_total_liabilities_via_identity()`（total_assets・
+stockholders_equity入力）の2つのみで、重複するのはrevenueのみ
+（→gross_profit逆算に影響）。operating_income・research_and_
+development・selling_and_marketingはいずれのバックフィル・派生計算の
+入力にもなっていない。2013年分の乖離額も新たに定量化（$4,306M、
+$37,832M(旧GP)-$33,526M(正)）。案A（`_apply_fact_overrides()`を全逆算
+バックフィルより前に移動）・案B（バックフィルをoverrides適用後に再実行）
+を比較し、副作用リスクが実質ゼロ（他銘柄に登録なし）かつ将来の
+fact_overrides登録にも自動対応できる案Aを推奨。
+
+#### 実装完了報告（2026-08-02、案A採用）
+`_apply_fact_overrides()`を、`data["pl"]`への直接書き込みから
+`extracted[field]["annual"][year]`への書き込みに作り直し、
+`_parse_raw_data()`内で抽出直後・全ての逆算バックフィル処理より前
+（`_resolve_bs_entity_mixing()`より前）で実行するよう変更（機能コミット
+`ba8628198`）。GOOGL再生成（データコミット`dd6fba1a1`）で
+gross_profitを是正: 2012年 $32,999M→$28,863M、2013年 $37,832M→
+$33,526M。revenue/operating_income/research_and_development/
+selling_and_marketing・override provenanceは変化なし。105銘柄フローズン
+入力比較（現在の保存データ vs 修正後コードでの再パース結果）でGOOGL
+(2012/2013)以外は0件差分、全19年次・51四半期でも他の変化なしを確認。
+`report_consistency_check.py` NG=0・WARN 81件（変化なし、GOOGLはWARN-29
+非対象のため元々発火なし）、pytest 519 passed/2 known failed
+（MSFT/NVDA、既知・本修正と無関係）を確認。TANUKI VALUATIONの計算ロジック
+（`src/value/tanuki_valuation/`）はgross_profitフィールドを一切参照して
+おらず、STONKS SILOの追跡銘柄一覧にもGOOGLは含まれないため、いずれも
+影響なしと確定。
+
+---
+
 ### ✅ [ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1] 抽出アーキテクチャに横断的な会計恒等式・フィールド間整合性検証が存在しない
 **状態:** 分類調査完了・後継タスクへ引き継ぎ（[[GOOGL-FACT-OVERRIDE-
 SEQUENCING-BUG-1]]・[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]として新規

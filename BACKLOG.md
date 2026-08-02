@@ -1,5 +1,23 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]実装完了。
+影響範囲確認（チャット記録、読み取り・オフラインシミュレーションのみ）で
+fact_overrides.json対象がGOOGL(2012/2013)限定であること、逆算バックフィル
+との重複入力がrevenueのみ（→gross_profit逆算にのみ影響）であることを確認
+した上で、案A（`_apply_fact_overrides()`を全逆算バックフィルより前に移動）
+を採用して実装（機能コミット`ba8628198`）。extracted[field]["annual"]
+[year]構造への書き込みに作り直し、`_parse_raw_data()`内で抽出直後・
+`_backfill_total_liabilities_via_identity()`/`_backfill_gross_profit_
+from_revenue_cogs()`より前で実行するよう変更。GOOGL再生成（データコミット
+`dd6fba1a1`）でgross_profitを是正（2012: $32,999M→$28,863M、2013:
+$37,832M→$33,526M）。105銘柄フローズン入力比較でGOOGL(2012/2013)以外は
+0件差分・全19年次/51四半期も他の変化なしを確認。report_consistency_
+check.py NG=0・WARN 81件（変化なし）、pytest 519 passed/2 known failed
+（MSFT/NVDA、既知・無関係）を確認。TANUKI VALUATIONはgross_profitを参照
+しておらずSTONKS SILOの追跡対象にもGOOGLは含まれないため影響なしと確定。
+同エントリをBACKLOG_DONE.mdへ移動。「次セッションでの着手順序」欄を更新。
+pushは保留、コミットのみ）。
+
 最終更新: 2026-08-02（[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]
 の残る3種（GP≠Revenue−COGS・OI>GP・NI≠EPS×Shares）の分類調査結果
 （チャット記録、読み取りのみ）を反映し、同エントリを「分類調査完了・
@@ -1407,40 +1425,6 @@ M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄�
 なし。優先度中〜高（現在進行形のデータ品質問題、将来IVに影響しうる潜在
 リスク、ticker非依存の一般的欠陥のため）。まず105銘柄全体での該当有無の
 横断スキャンから着手するのが妥当。
-
----
-
-### [GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1] fact_overrides.jsonによるrevenue手動補正がgross_profit逆算より後段で適用されるシーケンシングバグ
-**優先度:** 中〜高
-**分類:** バグ / 確定・パイプライン実行順序
-**登録日:** 2026-08-02
-**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]残り3種の分類調査（chat記録）
-
-#### 内容
-GOOGL(2012/2013)で、fact_overrides.jsonによるrevenue手動補正
-（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1対応、Motorola Mobile非継続事業
-区分変更の遡及修正）が、`_backfill_gross_profit_from_revenue_cogs()`
-（gross_profit逆算）より後段（`save_parsed_data()`内の
-`_apply_fact_overrides()`）で実行されるため、gross_profitが補正前
-revenue（Motorola Mobile込み、推定$50,175M）を使って逆算された古い値
-のまま保存され、補正後revenue（$46,039M）と整合しない。検算:
-$32,999M(GP)+$17,176M(COGS)=$50,175M=旧revenue、$50,175M−$46,039M=
-$4,136M=観測乖離額と完全一致で確定。
-
-#### 影響
-GOOGL(2012/2013)のgross_profitが誤り。他のfact_overrides.json対象
-フィールド・銘柄で同様のシーケンシング問題が波及していないか未調査
-（手動補正対象は現状GOOGL限定の可能性が高いが未確認）。
-
-#### 対応方針
-未定。`_apply_fact_overrides()`の実行タイミングを
-`_backfill_gross_profit_from_revenue_cogs()`より前に移動するか、逆算系
-バックフィル処理をoverrides適用後に再実行する設計を検討する。
-fact_overrides.json対象の他フィールド・他銘柄への一般化可能性も合わせて
-確認する。
-
-#### 着手条件
-なし。優先度中〜高（確定バグ、ただし影響範囲は現状GOOGL限定）。
 
 ---
 
@@ -8698,6 +8682,44 @@ HEI・ONDS型許可リスト拡張〈機能コミット`a910afef2`〉、いず�
 ⑮ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 ⑯ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+   bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+追記（2026-08-02 [[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]実装完了を反映し、
+次セッションでの着手順序を更新する）:
+**次セッションでの着手順序（2026-08-02時点、最終版）**:
+① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+② [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+③ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+   own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
+   COHR2件のみ）
+④ [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（優先度：中。COHR自身の
+   FY2011 10-Kのshares_diluted単位スケール申告誤り、汎用の桁違い
+   検知チェック新設も検討。105銘柄横断スキャン未着手）
+⑤ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
+   HEI・ONDSは実装完了・COHRは③で別扱い）
+⑥ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は①側で行う）
+⑦ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 ---
