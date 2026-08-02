@@ -8659,43 +8659,40 @@ ONDS×1）、副次的にFCX(2013)も改善。他99銘柄・既存133件・COHR�
 HEI・ONDS型許可リスト拡張〈機能コミット`a910afef2`〉、いずれも全105銘柄
 検証・pytest/WARN数確認済み）の結果を反映し、
 **次セッションでの着手順序（2026-08-02時点、最終版）**を確定する:
-① [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+① [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（優先度：高。
+   TA=TL+SE以外の残る3種の分類調査が未着手: GP≠Revenue−COGS新規2件・
+   OI>GP〈LMT〉・NI≠EPS×Shares〈COHR単位スケール疑い〉）
+② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
    calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
    105銘柄横断スキャンが未着手）
-② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+③ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
    own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
    COHR2件のみ）
-③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+④ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
    〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは②で別扱い）
-④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
-   現時点のIV実害はゼロ、恒久対応は①側で行う）
-⑤ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   HEI・ONDSは実装完了・COHRは③で別扱い）
+⑤ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は②側で行う）
+⑥ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
    24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
    IVへの実効果なしと判明）
-⑥ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+⑦ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
    〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
    未解決分）
-⑦ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
-⑧ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
-⑨ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+⑧ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑨ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑩ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
    [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
    同時に副次的効果として解消される見込み）
-⑩ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
-⑪ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+⑪ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑫ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
    で自然解消見込み）
-⑫ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+⑬ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
    低〜中）
-⑬ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
-⑭ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
-
-**注**: [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（TA=TL+SE分は
-[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]で対応完了）は残る3種
-〈GP≠Revenue−COGS 43件・OI>GP 22件・NI≠EPS×Shares 67件〉の分類調査が
-未着手のため優先度：高のまま存置しているが、今回のご指示リストには
-含まれていない。次回セッション開始時に着手順序への組み込みを要確認。
 
 ---
 
