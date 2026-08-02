@@ -4,6 +4,167 @@
 
 ## 2026-08-02（完了）
 
+### ✅ [ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1] 抽出アーキテクチャに横断的な会計恒等式・フィールド間整合性検証が存在しない
+**状態:** 分類調査完了・後継タスクへ引き継ぎ（[[GOOGL-FACT-OVERRIDE-
+SEQUENCING-BUG-1]]・[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]として新規
+登録、TA=TL+SE分は[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]で
+実装完了済み、OI>GP（LMT）は①genuine・対応不要と確定）
+**優先度:** 高（登録時点）
+**分類:** アーキテクチャ改善 / 横断的検証レイヤー未整備
+**登録日:** 2026-08-02
+**分類調査日:** 2026-08-02（TA=TL+SE違反156件の分類調査結果を反映）
+**完了日:** 2026-08-02
+**発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
+
+#### 内容
+本セッションで発見した5つのバグ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]・
+[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・[[PL-FIELD-CROSS-ACCN-
+PERIOD-MISMATCH-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]・[[TTM-CALC-
+QUARTER-CONTIGUITY-UNCHECKED-1]]）は、いずれも「候補プールから単純な
+新しさ基準で1つを確定し、他フィールド・他期間・会計上の制約とは一切
+照合しない」という同一の設計的欠陥に帰着することが俯瞰分析で判明した。
+現状、期間長検証は一部フィールドのみ部分導入、フィールド間整合性検証は
+revenue↔cost_of_revenueの1組のみ、会計恒等式検証は`_bs_math_violations()`
+のBS包含関係6条件のみ（Total_Assets=Total_Liabilities+Stockholders_
+Equity自体すら現状未検証）。
+
+105銘柄への機械的予備スキャン（許容誤差: 相対2%かつ絶対$2M超）で以下が
+判明:
+- TA≠TL+SE違反: 156件・50銘柄（全体の約半数）
+- GP≠Revenue−COGS: 43件・9銘柄（AMD/CRM/GOOGL/HON/LITE含む）
+- OI>GP（多段階損益計算書として不整合）: 22件・LMT単独
+- NI≠EPS_diluted×Shares_diluted（粗い近似、許容誤差20%）: 67件・31銘柄
+
+#### 影響
+未確定（分類前）。TA=TL+SE違反はNCI等の未捕捉フィールドによる「バグでは
+なく設計スコープ外」の可能性が高いと推定されるが未検証。個別に覗いた
+サンプルで以下の懸念を確認:
+- BROS: 2021-2025全年度で継続的にTA≠TL+SE、NCI/一時的持分の未捕捉が疑われる
+- LMT: OI>GPが年度により整合/不整合が入れ替わる、タグ切り替えの揺れの疑い
+- COHR(2009-2011): shares_dilutedが60,164〜63,612という桁違いに小さい値、
+  単位スケールバグの疑い
+
+#### TA=TL+SE違反156件の分類調査結果（2026-08-02、チャット記録）
+**持続性区分**: 単年度28銘柄28件・2年度5銘柄10件・3年度以上17銘柄118件。
+
+**8銘柄のサンプル原因確認**（company_facts.jsonでNCI・一時的持分候補
+タグの有無・値を実際に突合）:
+- **①genuine（NCI・一時的持分・償還可能優先株式の未捕捉、設計スコープ
+  外）と確定**: FCX・BROS・RKLB・GTLB・COHR・ONDSの6銘柄。いずれも
+  `MinorityInterest`・`TemporaryEquityCarryingAmountAttributableTo
+  Parent`・`RedeemableNoncontrollingInterestEquityCarryingAmount`等の
+  タグ値が、観測した差分額と完全一致または近似一致することを確認済み
+  （例: FCX 2023年diff=$10,617,000,000＝MinorityInterest(2023)と完全
+  一致、ONDS 2023/2024年もRedeemableNCIと完全一致）。加えてSPAC設立年
+  （stockholders_equity≈$5,000,00X、単年度・2年度区分に計7銘柄:
+  IONQ/JOBY/RKLB/SPIR/ASTS×2/SOFI）・IPO前後の大幅マイナスSE（十数銘柄）
+  も同カテゴリと強く推定され、**156件のうち過半数が①に該当する見込み**。
+- **③要個別確認（登録時点、後日訂正）**: HEI・LRCXの2件。登録時点では
+  NCI・一時的持分タグを含めても解消しない不整合と判断し
+  [[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]として個別に切り出し
+  新規登録したが、下記「追加調査結果」の通り**探索範囲不足による誤判定**
+  と判明し、実際は①genuineだった（同エントリはBACKLOG_DONE.mdへ
+  移動済み）。
+- **②タグ選定バグ**: サンプル8件では確定例なし。
+
+#### 追加調査結果（2026-08-02、[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]
+根本原因調査、チャット記録）
+HEI・LRCXについて、対象accn・end_dateに紐づく**全XBRLタグを機械的に
+網羅**する手法（前回は限定した候補タグ名のみをチェックしていた）で
+再調査した結果、両銘柄とも該当タグを発見し完全一致で解消した:
+- HEI(2020): `MinorityInterest`($30,430,000)＋前回未チェックの別名タグ
+  `TemporaryEquityCarryingAmountIncludingPortionAttributableTo
+  NoncontrollingInterests`($221,208,000)で、TL+SE+両者=TA完全一致
+- LRCX(2012): `TemporaryEquityCarryingAmountAttributableToParent`
+  ($190,343,000、候補には含めていたが確認スクリプトが「直近6件のみ」
+  表示する仕様で2012年分エントリを見落としていた）で、TL+SE+同額=TA
+  完全一致
+
+追加でTSLA(2018)・XOM(2023)も同手法でサンプル確認し、いずれも
+`MinorityInterest`・`RedeemableNoncontrollingInterestEquityCarrying
+Amount`で完全一致を確認。**累計10銘柄（FCX/BROS/RKLB/GTLB/COHR/ONDS/
+HEI/LRCX/TSLA/XOM）が例外なく①genuineに分類され、ほぼ全てで検算が
+完全一致した**。②タグ選定バグ・③要個別確認に分類すべきケースは、この
+サンプル範囲では実質ゼロだったことになる。
+
+#### 対応方針（2026-08-02、追加調査結果を反映し確定）
+恒等式検証を「`TA == TL + SE + NCI(存在すれば) + TemporaryEquity(存在
+すれば)`」という拡張形で実装する。累計10銘柄の検証で②③に該当する
+ケースが実質ゼロだったことから、この拡張形の検証により**156件のほぼ
+全件が①genuineとして正しく吸収される見込みが高い**。残る46件（単年度
+28件のうちSPAC/IPOパターンで説明済みの分を除く）についても、同種の
+徹底調査（同一accn内の全タグ網羅）を行えば同様に①genuineへ収束する
+可能性が高いと推定される。許容誤差を広げるだけの対応は、万一残る真の
+異常を隠蔽するリスクがあるため不採用のまま維持する。
+
+NCI・一時的持分の新規フィールド追加は`INPUT_DATA_TOBE.md`の分類A件数
+（現行48件）に影響するため、実装時は同ドキュメントの更新も必要。
+
+GP≠Revenue−COGS・OI>GP・NI≠EPS×Sharesの3種の分類調査は未着手のまま残存。
+
+#### 実装完了報告（2026-08-02、[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-
+LAYER-1]]実装、チャット記録）
+TA=TL+SE違反への対応（横断的検証レイヤーの新設）は
+[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]として実装完了し
+BACKLOG_DONE.mdへ移動済み（コミット`bd91000f0`）。OR条件フォールバック
+方式・許可リスト方式のタグ選定で156件中133件が拡張形で解消・23件が
+未解消（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]で個別対応）と確定。
+新規誤検知なし・データ値無変更・pytest/report_consistency_check.py確認
+済み。**本エントリ自体は、TA=TL+SE以外の残る3種（GP≠Revenue−COGS 43件・
+OI>GP 22件・NI≠EPS×Shares 67件）の分類調査が未着手のため、クローズせず
+残置する**（俯瞰分析全体のスコープはBS恒等式1種に留まらないため）。
+
+#### 残る3種の分類調査完了（2026-08-02、チャット記録）
+GP≠Revenue−COGS・OI>GP・NI≠EPS×Sharesの3種すべてについて代表銘柄の
+分類調査を完了した。
+
+- **GP≠Revenue−COGS（GOOGL(2012/2013)）**: `fact_overrides.json`による
+  revenue手動補正（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1対応、Motorola
+  Mobile非継続事業区分変更の遡及修正）が、`_backfill_gross_profit_
+  from_revenue_cogs()`（gross_profit逆算）より後段
+  （`save_parsed_data()`内の`_apply_fact_overrides()`）で実行される
+  ため、gross_profitが補正前revenueを使って逆算された古い値のまま
+  残存すると確定（検算: $32,999M+$17,176M=$50,175M=旧revenue、
+  $50,175M−$46,039M=$4,136M=観測乖離額と完全一致）。**③新種のバグ**
+  （既知9銘柄のクロスaccn/期間不整合パターンとは別種のシーケンシング
+  バグ）と確定し、[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]として新規
+  登録した。既知9銘柄（CRM/JNJ/MRVL/AMD/BSY/KO/LRCX/ONDS/RMBS）は
+  引き続き[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]で対応中。
+- **OI>GP（LMT、実測18/19年度）**: 乖離大・乖離小・非該当（2020年）の
+  3パターンでprovenanceを確認した結果、全て単一accn・`derived`フラグ
+  なし（直接タグ値）で、候補タグの切り替わりは一切確認できなかった。
+  19年中18年度で一貫して安定的に発生しており、**①genuine（設計スコープ
+  外）**と確定。防衛関連企業特有の開示構造（FAS/CAS年金調整等の可能性、
+  10-K原本での科目名確認は範囲外のため未確認）に起因すると推定され、
+  対応不要と判断する。
+- **NI≠EPS×Shares（COHR(2009-2011)）**: company_facts.jsonの生XBRL
+  エントリで、COHR自身のFY2011 10-K（accn`0001193125-11-233520`）が
+  `WeightedAverageNumberOfDilutedSharesOutstanding`を当期・比較年度
+  （2009-2011年度）いずれも実際の株式数の1/1000でタグ付けしていたと
+  確定（例: 2010年度61,504→正しくは61,504,000）。翌年度FY2012 10-Kでは
+  正しくスケールして再掲されており、COHR自身が事後的に是正していた
+  ことも確認済み。既知パターンのいずれとも異なる**③新種のバグ**（本人
+  データ自体に含まれる単位スケールの申告誤り）と確定し、
+  [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]として新規登録した。残り
+  30銘柄（67件のうちCOHR以外）は未調査のまま。
+
+4種すべての分類調査が完了したため、本エントリは「分類調査完了・後継
+タスクへ引き継ぎ」としてBACKLOG_DONE.mdへ移動する。
+
+#### 関連ドキュメント
+本エントリの教訓は`docs/architecture/new_data_platform/
+EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
+`common/macro_data/`向けの抽出設計原則、2026-08-02新設）に一般化して
+反映済み。[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]は誤登録・訂正の
+うえBACKLOG_DONE.mdへ移動済み（教訓: 候補タグ網羅性確認は「対象accn・
+end_dateの全タグを機械的に列挙する」方式で行うべき）。
+[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]も実装完了として
+BACKLOG_DONE.mdへ移動済み。残る3種の後継タスクは
+[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]・
+[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]として個別登録済み。
+
+---
+
 ### ✅ [CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1] 抽出後・保存前に会計恒等式・フィールド間整合性を一括検証する共通レイヤーの新設提案
 **状態:** 実装完了（BS側TA=TL+SE恒等式検証のみ。PL側GP=Rev-COGS・OI≤GP等は
 スコープ外のまま、必要なら別タスクとして新規登録する）

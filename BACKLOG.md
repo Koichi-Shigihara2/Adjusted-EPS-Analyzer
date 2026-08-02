@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]
+の残る3種（GP≠Revenue−COGS・OI>GP・NI≠EPS×Shares）の分類調査結果
+（チャット記録、読み取りのみ）を反映し、同エントリを「分類調査完了・
+後継タスクへ引き継ぎ」としてBACKLOG_DONE.mdへ移動しクローズ。GOOGL
+(2012/2013)のGP≠Revenue−COGSは`fact_overrides.json`によるrevenue手動
+補正が`_backfill_gross_profit_from_revenue_cogs()`より後段で実行される
+シーケンシングバグと確定し[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]
+（優先度：中〜高）として新規登録。LMT(18/19年度)のOI>GPは同一accn・
+非derivedの安定パターンから①genuine（設計スコープ外、対応不要）と確定。
+COHR(2009-2011)のNI≠EPS×Sharesは、COHR自身のFY2011 10-Kが
+shares_dilutedを実際の1/1000でタグ付けしていた本人データ側の単位
+スケール申告誤りと確定し[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]
+（優先度：中）として新規登録。「次セッションでの着手順序」欄を更新。
+登録・クローズのみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]を
 新規登録（優先度：低）。CHECK29のHEI・ONDS実装検証時、PM銘柄の
 `bs_identity_violations_log.json`でキー順序のみが実行のたびに非決定的に
@@ -1395,123 +1410,72 @@ M&A・タグ切り替え等で一時的にXBRLタグ報告が途切れた銘柄�
 
 ---
 
-### [ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1] 抽出アーキテクチャに横断的な会計恒等式・フィールド間整合性検証が存在しない
-**優先度:** 高
-**分類:** アーキテクチャ改善 / 横断的検証レイヤー未整備
+### [GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1] fact_overrides.jsonによるrevenue手動補正がgross_profit逆算より後段で適用されるシーケンシングバグ
+**優先度:** 中〜高
+**分類:** バグ / 確定・パイプライン実行順序
 **登録日:** 2026-08-02
-**分類調査日:** 2026-08-02（TA=TL+SE違反156件の分類調査結果を反映）
-**発見:** common/sec_data/抽出アーキテクチャの俯瞰的脆弱性分析（チャット記録）
+**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]残り3種の分類調査（chat記録）
 
 #### 内容
-本セッションで発見した5つのバグ（[[PERIOD-LENGTH-VALIDATION-GAP-1]]・
-[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]・[[PL-FIELD-CROSS-ACCN-
-PERIOD-MISMATCH-1]]・[[SPAC-SHELL-BS-ENTITY-MIXING-1]]・[[TTM-CALC-
-QUARTER-CONTIGUITY-UNCHECKED-1]]）は、いずれも「候補プールから単純な
-新しさ基準で1つを確定し、他フィールド・他期間・会計上の制約とは一切
-照合しない」という同一の設計的欠陥に帰着することが俯瞰分析で判明した。
-現状、期間長検証は一部フィールドのみ部分導入、フィールド間整合性検証は
-revenue↔cost_of_revenueの1組のみ、会計恒等式検証は`_bs_math_violations()`
-のBS包含関係6条件のみ（Total_Assets=Total_Liabilities+Stockholders_
-Equity自体すら現状未検証）。
-
-105銘柄への機械的予備スキャン（許容誤差: 相対2%かつ絶対$2M超）で以下が
-判明:
-- TA≠TL+SE違反: 156件・50銘柄（全体の約半数）
-- GP≠Revenue−COGS: 43件・9銘柄（AMD/CRM/GOOGL/HON/LITE含む）
-- OI>GP（多段階損益計算書として不整合）: 22件・LMT単独
-- NI≠EPS_diluted×Shares_diluted（粗い近似、許容誤差20%）: 67件・31銘柄
+GOOGL(2012/2013)で、fact_overrides.jsonによるrevenue手動補正
+（CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1対応、Motorola Mobile非継続事業
+区分変更の遡及修正）が、`_backfill_gross_profit_from_revenue_cogs()`
+（gross_profit逆算）より後段（`save_parsed_data()`内の
+`_apply_fact_overrides()`）で実行されるため、gross_profitが補正前
+revenue（Motorola Mobile込み、推定$50,175M）を使って逆算された古い値
+のまま保存され、補正後revenue（$46,039M）と整合しない。検算:
+$32,999M(GP)+$17,176M(COGS)=$50,175M=旧revenue、$50,175M−$46,039M=
+$4,136M=観測乖離額と完全一致で確定。
 
 #### 影響
-未確定（分類前）。TA=TL+SE違反はNCI等の未捕捉フィールドによる「バグでは
-なく設計スコープ外」の可能性が高いと推定されるが未検証。個別に覗いた
-サンプルで以下の懸念を確認:
-- BROS: 2021-2025全年度で継続的にTA≠TL+SE、NCI/一時的持分の未捕捉が疑われる
-- LMT: OI>GPが年度により整合/不整合が入れ替わる、タグ切り替えの揺れの疑い
-- COHR(2009-2011): shares_dilutedが60,164〜63,612という桁違いに小さい値、
-  単位スケールバグの疑い
+GOOGL(2012/2013)のgross_profitが誤り。他のfact_overrides.json対象
+フィールド・銘柄で同様のシーケンシング問題が波及していないか未調査
+（手動補正対象は現状GOOGL限定の可能性が高いが未確認）。
 
-#### TA=TL+SE違反156件の分類調査結果（2026-08-02、チャット記録）
-**持続性区分**: 単年度28銘柄28件・2年度5銘柄10件・3年度以上17銘柄118件。
-
-**8銘柄のサンプル原因確認**（company_facts.jsonでNCI・一時的持分候補
-タグの有無・値を実際に突合）:
-- **①genuine（NCI・一時的持分・償還可能優先株式の未捕捉、設計スコープ
-  外）と確定**: FCX・BROS・RKLB・GTLB・COHR・ONDSの6銘柄。いずれも
-  `MinorityInterest`・`TemporaryEquityCarryingAmountAttributableTo
-  Parent`・`RedeemableNoncontrollingInterestEquityCarryingAmount`等の
-  タグ値が、観測した差分額と完全一致または近似一致することを確認済み
-  （例: FCX 2023年diff=$10,617,000,000＝MinorityInterest(2023)と完全
-  一致、ONDS 2023/2024年もRedeemableNCIと完全一致）。加えてSPAC設立年
-  （stockholders_equity≈$5,000,00X、単年度・2年度区分に計7銘柄:
-  IONQ/JOBY/RKLB/SPIR/ASTS×2/SOFI）・IPO前後の大幅マイナスSE（十数銘柄）
-  も同カテゴリと強く推定され、**156件のうち過半数が①に該当する見込み**。
-- **③要個別確認（登録時点、後日訂正）**: HEI・LRCXの2件。登録時点では
-  NCI・一時的持分タグを含めても解消しない不整合と判断し
-  [[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]として個別に切り出し
-  新規登録したが、下記「追加調査結果」の通り**探索範囲不足による誤判定**
-  と判明し、実際は①genuineだった（同エントリはBACKLOG_DONE.mdへ
-  移動済み）。
-- **②タグ選定バグ**: サンプル8件では確定例なし。
-
-#### 追加調査結果（2026-08-02、[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]
-根本原因調査、チャット記録）
-HEI・LRCXについて、対象accn・end_dateに紐づく**全XBRLタグを機械的に
-網羅**する手法（前回は限定した候補タグ名のみをチェックしていた）で
-再調査した結果、両銘柄とも該当タグを発見し完全一致で解消した:
-- HEI(2020): `MinorityInterest`($30,430,000)＋前回未チェックの別名タグ
-  `TemporaryEquityCarryingAmountIncludingPortionAttributableTo
-  NoncontrollingInterests`($221,208,000)で、TL+SE+両者=TA完全一致
-- LRCX(2012): `TemporaryEquityCarryingAmountAttributableToParent`
-  ($190,343,000、候補には含めていたが確認スクリプトが「直近6件のみ」
-  表示する仕様で2012年分エントリを見落としていた）で、TL+SE+同額=TA
-  完全一致
-
-追加でTSLA(2018)・XOM(2023)も同手法でサンプル確認し、いずれも
-`MinorityInterest`・`RedeemableNoncontrollingInterestEquityCarrying
-Amount`で完全一致を確認。**累計10銘柄（FCX/BROS/RKLB/GTLB/COHR/ONDS/
-HEI/LRCX/TSLA/XOM）が例外なく①genuineに分類され、ほぼ全てで検算が
-完全一致した**。②タグ選定バグ・③要個別確認に分類すべきケースは、この
-サンプル範囲では実質ゼロだったことになる。
-
-#### 対応方針（2026-08-02、追加調査結果を反映し確定）
-恒等式検証を「`TA == TL + SE + NCI(存在すれば) + TemporaryEquity(存在
-すれば)`」という拡張形で実装する。累計10銘柄の検証で②③に該当する
-ケースが実質ゼロだったことから、この拡張形の検証により**156件のほぼ
-全件が①genuineとして正しく吸収される見込みが高い**。残る46件（単年度
-28件のうちSPAC/IPOパターンで説明済みの分を除く）についても、同種の
-徹底調査（同一accn内の全タグ網羅）を行えば同様に①genuineへ収束する
-可能性が高いと推定される。許容誤差を広げるだけの対応は、万一残る真の
-異常を隠蔽するリスクがあるため不採用のまま維持する。
-
-NCI・一時的持分の新規フィールド追加は`INPUT_DATA_TOBE.md`の分類A件数
-（現行48件）に影響するため、実装時は同ドキュメントの更新も必要。
-
-GP≠Revenue−COGS・OI>GP・NI≠EPS×Sharesの3種の分類調査は未着手のまま残存。
-
-#### 実装完了報告（2026-08-02、[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-
-LAYER-1]]実装、チャット記録）
-TA=TL+SE違反への対応（横断的検証レイヤーの新設）は
-[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]として実装完了し
-BACKLOG_DONE.mdへ移動済み（コミット`bd91000f0`）。OR条件フォールバック
-方式・許可リスト方式のタグ選定で156件中133件が拡張形で解消・23件が
-未解消（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]で個別対応）と確定。
-新規誤検知なし・データ値無変更・pytest/report_consistency_check.py確認
-済み。**本エントリ自体は、TA=TL+SE以外の残る3種（GP≠Revenue−COGS 43件・
-OI>GP 22件・NI≠EPS×Shares 67件）の分類調査が未着手のため、クローズせず
-残置する**（俯瞰分析全体のスコープはBS恒等式1種に留まらないため）。
+#### 対応方針
+未定。`_apply_fact_overrides()`の実行タイミングを
+`_backfill_gross_profit_from_revenue_cogs()`より前に移動するか、逆算系
+バックフィル処理をoverrides適用後に再実行する設計を検討する。
+fact_overrides.json対象の他フィールド・他銘柄への一般化可能性も合わせて
+確認する。
 
 #### 着手条件
-なし。優先度高のまま維持（TA=TL+SE以外の3種の分類調査が未着手のため）。
+なし。優先度中〜高（確定バグ、ただし影響範囲は現状GOOGL限定）。
 
-#### 関連ドキュメント
-本エントリの教訓は`docs/architecture/new_data_platform/
-EXTRACTION_DESIGN_PRINCIPLES.md`（新規データ層`common/market_data/`・
-`common/macro_data/`向けの抽出設計原則、2026-08-02新設）に一般化して
-反映済み。[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]は誤登録・訂正の
-うえBACKLOG_DONE.mdへ移動済み（教訓: 候補タグ網羅性確認は「対象accn・
-end_dateの全タグを機械的に列挙する」方式で行うべき）。
-[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]も実装完了として
-BACKLOG_DONE.mdへ移動済み。
+---
+
+### [COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1] COHR自身のFY2011 10-Kがshares_diluted等を実際の1/1000でタグ付けしていた本人データ側の単位スケール申告誤り
+**優先度:** 中
+**分類:** バグ / 確定・本人データ自体の申告誤り・新種
+**登録日:** 2026-08-02
+**発見:** [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]残り3種の分類調査（chat記録）
+
+#### 内容
+COHR自身のFY2011 10-K（accn`0001193125-11-233520`）が、
+`WeightedAverageNumberOfDilutedSharesOutstanding`を、当期・比較年度
+（2009-2011年度）いずれについても実際の株式数の1/1000でタグ付けして
+いた。翌年度FY2012 10-Kでは正しくスケールして再掲されており、COHR
+自身が事後的に是正していたことを確認済み。既知の候補タグ選定・クロス
+accn・二重計上パターンのいずれとも異なり、企業側の本人データ自体が
+SEC提出時点で単位スケールの申告ミスを含んでいた新種のケース。
+
+#### 影響
+COHR(2009-2011)のshares_diluted・関連するEPS系指標に影響。現状の
+パイプラインには、同一タグ・同一期間を複数filingで突合し桁違いの乖離
+を検知する仕組みがなく、今回のような1,000倍規模の異常値がそのまま
+採用され続ける構造的な検知の空白がある。
+
+#### 対応方針
+未定。COHR個別の対応（後続filingの正しい値への差し替え）に加え、
+「同一タグ・同一期間の値が複数filing間で桁違い（例: 100倍以上）に乖離
+する場合に検知する」という汎用チェックの新設を検討する
+（[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]とは異なる種類の
+横断検証、「単一filing内の恒等式」ではなく「複数filing間の値の一貫性」
+を見る点が異なる）。105銘柄全体での同型ケースの横断スキャンも必要。
+
+#### 着手条件
+なし。優先度中（現状確認済みはCOHR1銘柄のみだが、汎用チェックとしての
+価値が高い）。
 
 ---
 
@@ -8692,6 +8656,48 @@ HEI・ONDS型許可リスト拡張〈機能コミット`a910afef2`〉、いず�
 ⑭ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 ⑮ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
+   bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+追記（2026-08-02 [[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]の
+残る3種の分類調査が完了し同エントリをクローズしたことを反映し、
+次セッションでの着手順序を更新する:
+**次セッションでの着手順序（2026-08-02時点、最終版）**:
+① [[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]（優先度：中〜高。GOOGL
+   (2012/2013)のgross_profitがfact_overrides.json適用順序バグで誤り、
+   対応方針未定・他フィールド・他銘柄への波及有無も未調査）
+② [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]（優先度：中〜高。
+   calc_ttm_series()の日付連続性チェック欠如、ticker非依存の一般的欠陥。
+   105銘柄横断スキャンが未着手）
+③ [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]（優先度：中〜高。残存: 案a
+   〈候補タグ拡張再設計〉・案c〈2タグ合算再設計〉・CRM/JNJ/MRVL/ONDS型の
+   未解決分）
+④ [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
+   own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
+   COHR2件のみ）
+⑤ [[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]（優先度：中。COHR自身の
+   FY2011 10-Kのshares_diluted単位スケール申告誤り、汎用の桁違い
+   検知チェック新設も検討。105銘柄横断スキャン未着手）
+⑥ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
+   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
+   HEI・ONDSは実装完了・COHRは④で別扱い）
+⑦ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
+   現時点のIV実害はゼロ、恒久対応は②側で行う）
+⑧ [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]（優先度：中。
+   24銘柄分は実害なし・RCAT分〈パターンB〉も年次パーサーのみでは
+   IVへの実効果なしと判明）
+⑨ [[LITE-COGS-DA-TAG-UNMERGED-1]]（優先度：低〜中）
+⑩ [[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]（優先度：低〜中）
+⑪ [[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]（優先度：低。着手条件:
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]のRCAT分実装と
+   同時に副次的効果として解消される見込み）
+⑫ [[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]（優先度：低）
+⑬ [[ELF-ROE10YR-RECALC-PENDING-1]]（優先度：中。TANUKI VALUATION定期更新
+   で自然解消見込み）
+⑭ [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]（優先度：
+   低〜中）
+⑮ [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]（優先度：低。
+   クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
+⑯ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 ---
