@@ -1,5 +1,11 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-02（[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]を
+新規登録（優先度：低）。CHECK29のHEI・ONDS実装検証時、PM銘柄の
+`bs_identity_violations_log.json`でキー順序のみが実行のたびに非決定的に
+変化する現象を発見（Python `frozenset`のハッシュランダム化が原因と推定、
+値・resolved状態は完全に同一で実害なし）。登録のみ、実装は未着手）。
+
 最終更新: 2026-08-02（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]のHEI・
 ONDS型を実装完了。CHECK29の許可リストに`TemporaryEquityRedemption
 Value`（CarryingAmount系タグ不在時のフォールバック限定）・
@@ -1617,6 +1623,32 @@ TEMPORARY-EQUITY-1]]で別扱い）・PLTR×1・CART×3・CRWV×1・BKNG×2・V�
 CRM×1・CELH×1・ASTS×2・VRT×2・RDW×1（計15件、未着手）。WARN-29発火
 銘柄も13→11銘柄に減少（ASTS/BKNG/CART/CELH/COHR/CRM/CRWV/PLTR/RDW/V/
 VRT）。
+
+---
+
+### [BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1] bs_identity_violations_log.jsonのキー順序が実行のたびに非決定的に変化する
+**優先度:** 低
+**分類:** データ品質 / 再現性
+**登録日:** 2026-08-02
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI・ONDS実装検証時
+（チャット記録）
+
+#### 内容
+PM銘柄の`bs_identity_violations_log.json`で、キー順序のみが実行のたびに
+非決定的に変化する現象を発見した（Python `frozenset`のハッシュランダム化
+が原因と推定。値・resolved状態は完全に同一で実害なし）。
+
+#### 影響
+実害なし（データの正しさには影響しない）。ただし将来の検証作業で、
+実質的な変化がないにもかかわらずgit diffにノイズが生じ、確認作業を
+誤らせるリスクがある。
+
+#### 対応方針
+未定。frozensetをsorted listに置き換える、またはJSON出力時に
+sort_keys=True相当の安定化を行う等、低コストな対応が見込まれる。
+
+#### 着手条件
+なし。優先度低。
 
 ---
 
