@@ -1,7 +1,52 @@
 {
   "ticker": "AMZN",
-  "last_updated": "2026-07-27T13:20:13.525370",
+  "last_updated": "2026-08-03T13:18:31.605242",
   "quarters": [
+    {
+      "gaap_eps": 5.745849766119417,
+      "adjusted_eps": 6.174979727871749,
+      "gaap_net_income": 62647000000.0,
+      "adjusted_net_income": 67325803972.98568,
+      "diluted_shares_used": 10903000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 6038000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 4678803972.985677,
+          "tax_rate_applied": 0.22510699354327982
+        }
+      ],
+      "net_adjustment_total": 4678803972.985677,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 200606000000.0,
+      "diluted_shares": 10903000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 18199000000.0,
+      "pretax_income": 80846000000.0,
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "SBCは恒常的に発生する非現金費用であり一過性ではないため、調整によりAdjusted EPSが押し上げられている。市場がGAAP EPSで判断する場合、企業の実力（キャッシュフロー面）を過小評価している可能性があるが、SBCは株式希薄化を通じて実質的な継続コストであるため、調整依存は過大評価リスクを高める。投資家はSBC規模の持続可能性と希薄化効果を注視し、調整後の数字を過信しないよう留意すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業において毎期発生する恒常的な報酬コストであり、経済的実態としてコア事業に関わる。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 2.7823248114769172,
       "adjusted_eps": 3.064086299355228,
@@ -34,18 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 9560000000.0,
-      "pretax_income": 39815000000.0,
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "SBCは毎期発生する恒常的なコスト（非現金だが報酬としての実質的負担と希薄化効果あり）であり、一過性ではないため調整の妥当性は低い。市場がGAAP EPS（2.78）で判断する場合、SBC費用控除により企業の実力が保守的に見え、過小評価の可能性がある。ただしSBCを加算したAdjusted EPS（3.06）は実力を過大に見せるリスクがあり、投資家は継続的なSBC規模・希薄化影響・キャッシュフローとの整合性を注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_backするが、テック企業で毎期恒常的に発生するコア報酬コストであり一過性ではない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 39815000000.0
     },
     {
       "gaap_eps": 1.9573288999722915,

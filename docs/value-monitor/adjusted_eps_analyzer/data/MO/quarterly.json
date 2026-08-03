@@ -1,7 +1,52 @@
 {
   "ticker": "MO",
-  "last_updated": "2026-07-27T13:24:01.787791",
+  "last_updated": "2026-08-03T13:22:41.866265",
   "quarters": [
+    {
+      "gaap_eps": 1.3760479041916167,
+      "adjusted_eps": 1.3868533332788162,
+      "gaap_net_income": 2298000000.0,
+      "adjusted_net_income": 2316045066.575623,
+      "diluted_shares_used": 1670000000.0,
+      "adjustments": [
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 23000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 18045066.575623076,
+          "tax_rate_applied": 0.21543188801638785
+        }
+      ],
+      "net_adjustment_total": 18045066.575623076,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 6111000000.0,
+      "diluted_shares": 1670000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 631000000.0,
+      "pretax_income": 2929000000.0,
+      "ai_analysis": {
+        "health": "調整小",
+        "comment": "調整項目は買収関連無形資産の償却費で恒常的に発生する非現金項目（毎期計上される可能性が高い）。市場がGAAP EPS（1.376）で判断する場合、Adjusted EPS（1.387）より低く表示されるため企業の実力（キャッシュ生成力）が過小評価されるリスクがある。ただし償却は過去の買収に起因する継続費用であり、調整の正当性は投資家により判断が分かれる。影響額は小さく（EPS差約0.01）、過小評価リスクは限定的だが、恒常的調整として長期的な収益性を慎重に評価すべき。",
+        "sources": [
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却。これはM&Aにより認識された無形資産に対する毎期発生する非現金償却費であり、恒常的な調整項目に該当する。",
+            "confidence": 0.25
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.3048416019127316,
       "adjusted_eps": 1.3153387536594938,
@@ -34,18 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 676000000.0,
-      "pretax_income": 2859000000.0,
-      "ai_analysis": {
-        "health": "調整小",
-        "comment": "無形資産償却費は買収関連で毎期発生する恒常的な非現金費用であるため、本質的に一過性調整とは言えず、Adjusted EPSをわずかに押し上げているに過ぎない（影響度0.8%程度）。市場がGAAP EPSで判断する場合、非現金償却を控除した保守的な数字に注目しがちで企業の実力（キャッシュ生成力）をやや過小評価するリスクがある。ただし償却は買収対価の経済的コストを反映するため、調整を過度に信用すると過大評価リスクも伴う。投資家は償却の残存期間と買収戦略の持続性を注視すべき。",
-        "sources": [
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は恒常的に毎期発生する費用であり、リストラ等の一過性項目とは性質が異なる（ガイドライン上、無形資産償却は恒常的な可能性が高い項目に該当）",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 2859000000.0
     },
     {
       "gaap_eps": 0.6636957813428401,
@@ -618,74 +652,13 @@
       "pretax_income": 2673000000.0
     },
     {
-      "gaap_eps": 0.8802168021680217,
-      "adjusted_eps": 0.8861382068243824,
-      "gaap_net_income": 1624000000.0,
-      "adjusted_net_income": 1634924991.5909855,
-      "diluted_shares_used": 1845000000.0,
-      "adjustments": [
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 19000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 10378742.01143626,
-          "tax_rate_applied": 0.45375042045072317
-        },
-        {
-          "item_id": "restructuring",
-          "item_name": "リストラ費用",
-          "amount": 1000000.0,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "一過性の事業再編費用",
-          "extracted_from": "us-gaap:RestructuringCharges",
-          "category": "リストラ・事業再編関連",
-          "net_amount": 546249.5795492767,
-          "tax_rate_applied": 0.45375042045072317
-        }
-      ],
-      "net_adjustment_total": 10924991.590985537,
-      "filing_date": "2021-12-31",
-      "form": "10-K",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 6255000000.0,
-      "diluted_shares": 1845000000.0,
-      "period_end": "2021-12-31",
-      "fiscal_year": 2021,
-      "quarter": 4,
-      "tax_expense": 1349000000.0,
-      "pretax_income": 2973000000.0
-    },
-    {
       "gaap_eps": -1.477741585233442,
-      "adjusted_eps": -1.4696909349506933,
+      "adjusted_eps": -1.477741585233442,
       "gaap_net_income": -2722000000.0,
-      "adjusted_net_income": -2707170702.179177,
+      "adjusted_net_income": -2722000000.0,
       "diluted_shares_used": 1842000000.0,
-      "adjustments": [
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 18000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 14829297.820823245,
-          "tax_rate_applied": 0.1761501210653753
-        }
-      ],
-      "net_adjustment_total": 14829297.820823245,
+      "adjustments": [],
+      "net_adjustment_total": 0.0,
       "filing_date": "2021-09-30",
       "form": "10-Q",
       "sector": null,
@@ -717,26 +690,6 @@
       "quarter": 2,
       "tax_expense": 759000000.0,
       "pretax_income": 2908000000.0
-    },
-    {
-      "gaap_eps": 0.7668282175551966,
-      "adjusted_eps": 0.7668282175551966,
-      "gaap_net_income": 1424000000.0,
-      "adjusted_net_income": 1424000000.0,
-      "diluted_shares_used": 1857000000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 6036000000.0,
-      "diluted_shares": 1857000000.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 1,
-      "tax_expense": 516000000.0,
-      "pretax_income": 1940000000.0
     }
   ]
 }

@@ -1,12 +1,75 @@
 {
   "ticker": "FICO",
-  "last_updated": "2026-07-27T13:23:14.988146",
+  "last_updated": "2026-08-03T13:21:57.653369",
   "quarters": [
     {
+      "gaap_eps": 10.446725102409372,
+      "adjusted_eps": 12.184321203855063,
+      "gaap_net_income": 237172000.0,
+      "adjusted_net_income": 276620644.2911215,
+      "diluted_shares_used": 22703000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 52331000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 39444121.83347688,
+          "tax_rate_applied": 0.24625705922919733
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 6000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 4522.457644624817,
+          "tax_rate_applied": 0.24625705922919733
+        }
+      ],
+      "net_adjustment_total": 39448644.291121505,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 674188000.0,
+      "diluted_shares": 22703000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 3,
+      "tax_expense": 77487000.0,
+      "pretax_income": 314659000.0,
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "主要調整であるsbc（株式報酬費用）は恒常的な非現金報酬コストであり一過性とは判断しにくい一方、loan_loss_provision_abnormalはマクロ変動による一時的影響とされるが金額が僅少（6千ドル）で影響は限定的です。GAAP EPSを市場が基準とする場合、SBCを加算したAdjusted EPS（約17%増）より実態に近い保守的な評価となっており、企業の実力が見えにくくなっているとは言えません。投資家としてはSBCの恒常性を考慮し、調整後EPS使用による過大評価リスクに留意すべきで、過小評価の可能性は低いと考えます。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが恒常的に発生する報酬コストであり、毎期のコア事業に関わる恒常的性質を持つ",
+            "confidence": 0.2
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "貸倒引当金繰入の異常変動分はマクロ変動による一時的影響とされ、非経常的とみなせる",
+            "confidence": 0.75
+          }
+        ]
+      }
+    },
+    {
       "gaap_eps": 11.136011453596092,
-      "adjusted_eps": 12.553234991460812,
+      "adjusted_eps": 12.564213703925844,
       "gaap_net_income": 264458000.0,
-      "adjusted_net_income": 298114224.5772114,
+      "adjusted_net_income": 298374947.04083097,
       "diluted_shares_used": 23748000.0,
       "adjustments": [
         {
@@ -21,9 +84,22 @@
           "category": "株式報酬関連",
           "net_amount": 33656224.57721141,
           "tax_rate_applied": 0.25720095834889856
+        },
+        {
+          "item_id": "loan_loss_provision_abnormal",
+          "item_name": "貸倒引当金繰入（異常変動分）",
+          "amount": 351000.0,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "マクロ変動による一時的影響",
+          "extracted_from": "us-gaap:ProvisionForDoubtfulAccounts",
+          "category": "金融関連",
+          "net_amount": 260722.4636195366,
+          "tax_rate_applied": 0.25720095834889856
         }
       ],
-      "net_adjustment_total": 33656224.57721141,
+      "net_adjustment_total": 33916947.04083095,
       "filing_date": "2026-03-31",
       "form": "10-Q",
       "sector": null,
@@ -34,18 +110,7 @@
       "fiscal_year": 2026,
       "quarter": 2,
       "tax_expense": 91571000.0,
-      "pretax_income": 356029000.0,
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目は株式報酬費用（SBC）であり、毎期発生する恒常的な非現金コストです。GAAP EPSはSBCの影響で11.14程度に圧縮されていますが、Adjusted EPSは12.55と約13%上方修正されており、市場がGAAPベースで判断する場合に企業のキャッシュ生成力や真の実力が過小評価される可能性があります。ただしSBCは株主希薄化の実質コストを伴うため、これを全額加算するのは過大調整のリスクが高く、投資家はSBCのトレンドや希薄化後EPSを注視する必要があります。過小評価リスクがある一方で、調整EPSを過信すると過大評価に繋がる点に留意すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、ソフトウェア企業で毎期発生する恒常的なコストであり、株主希薄化の実質影響を無視した過大調整の可能性がある。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 356029000.0
     },
     {
       "gaap_eps": 6.610443275732532,
@@ -1048,53 +1113,6 @@
       "quarter": 3,
       "tax_expense": 36694000.0,
       "pretax_income": 187892000.0
-    },
-    {
-      "gaap_eps": 2.325488469743659,
-      "adjusted_eps": 3.0637520433355028,
-      "gaap_net_income": 68674000.0,
-      "adjusted_net_income": 90475661.59174073,
-      "diluted_shares_used": 29531000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 28206000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 21094908.128593832,
-          "tax_rate_applied": 0.25211273741069873
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 945000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 706753.4631468897,
-          "tax_rate_applied": 0.25211273741069873
-        }
-      ],
-      "net_adjustment_total": 21801661.591740724,
-      "filing_date": "2021-03-31",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 331361000.0,
-      "diluted_shares": 29531000.0,
-      "period_end": "2021-03-31",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 23150000.0,
-      "pretax_income": 91824000.0
     }
   ]
 }

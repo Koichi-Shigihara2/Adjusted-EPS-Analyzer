@@ -1,6 +1,6 @@
 {
   "ticker": "AVAV",
-  "last_updated": "2026-07-27T13:20:19.758248",
+  "last_updated": "2026-08-03T13:18:39.557563",
   "quarters": [
     {
       "gaap_eps": -0.49092081694536915,
@@ -89,32 +89,32 @@
       "pretax_income": -47157000.0,
       "ai_analysis": {
         "health": "調整大",
-        "comment": "GAAP EPSが-0.49の赤字に対しAdjusted EPSが+1.12と大幅に改善しており、主にのれん減損(89M)、無形資産償却(51M)、SBC(10M)の加算が影響。SBCと無形資産償却は恒常的な非現金費用である一方、のれん減損や在庫評価損・異常貸倒引当は一過性が高い。市場がGAAP EPSのみで判断する場合、非現金・一時的費用により企業のキャッシュ生成実力を過小評価している可能性がある。ただし恒常的項目の調整割合が高いため過大調整リスクもあり、投資家は買収関連費用の継続性と真の持続的利益を慎重に検証する必要がある。",
+        "comment": "GAAP EPSが-0.49の赤字に対しAdjusted EPSが1.12と大幅に改善しており、主にのれん減損89Mや無形資産償却51Mなどの非現金・買収関連項目のadd_backによるものです。これにより市場がGAAPベースで判断する場合、企業のキャッシュ生成実力や事業潜在力を過小評価する可能性が高いです。特に一過性の減損・在庫評価損は調整が妥当ですが、SBCや継続的な償却費も含まれており、調整後EPSがやや過大評価されるリスクもあります。投資家は買収統合の持続影響と真のオペレーション収益性を注視すべきです。",
         "sources": [
           {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に利用する報酬形態であり恒常的コストの可能性が高い",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用で、恒常的な性質を持つ",
-            "confidence": 0.2
-          },
-          {
             "item": "goodwill_impairment",
-            "snippet": "のれん減損は非現金の一過性減損費用であり、調整の根拠として妥当性が高い",
-            "confidence": 0.85
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による異常貸倒引当金は一時的影響とされ、調整対象として適切",
+            "snippet": "非現金減損であり買収関連の一過性費用としてadd_back",
             "confidence": 0.8
           },
           {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却で一定期間継続発生する可能性が高い",
+            "confidence": 0.25
+          },
+          {
+            "item": "sbc",
+            "snippet": "非現金だが事業運営上恒常的に発生する株式報酬費用",
+            "confidence": 0.2
+          },
+          {
             "item": "inventory_writeoff",
-            "snippet": "一過性の在庫評価損・減損であり、非経常的費用として加算の根拠がある",
-            "confidence": 0.7
+            "snippet": "一過性の在庫評価損として調整",
+            "confidence": 0.75
+          },
+          {
+            "item": "loan_loss_provision_abnormal",
+            "snippet": "マクロ変動による一時的な異常貸倒引当金",
+            "confidence": 0.85
           }
         ]
       }

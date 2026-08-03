@@ -1,7 +1,86 @@
 {
   "ticker": "MSFT",
-  "last_updated": "2026-07-27T13:21:42.891450",
+  "last_updated": "2026-08-03T13:20:15.455099",
   "quarters": [
+    {
+      "gaap_eps": 4.7988729370723195,
+      "adjusted_eps": 5.08997909072145,
+      "gaap_net_income": 35766000000.0,
+      "adjusted_net_income": 37935614163.14697,
+      "diluted_shares_used": 7453000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 3122000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 1643264293.3878825,
+          "tax_rate_applied": 0.4736501302409089
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 1000000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 526349869.75909114,
+          "tax_rate_applied": 0.4736501302409089
+        }
+      ],
+      "net_adjustment_total": 2169614163.1469736,
+      "filing_date": "2026-06-30",
+      "form": "10-K",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 90007000000.0,
+      "diluted_shares": 7453000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 4,
+      "tax_expense": 32185000000.0,
+      "pretax_income": 67951000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 143.9%）",
+        "sbc_contribution": 1.439,
+        "sbc_to_revenue": 0.035,
+        "sbc_per_share": 0.4189,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整中",
+        "comment": "SBCと無形資産償却はともに恒常的に発生する非現金費用であり、一過性調整とは言えない。市場がGAAP EPS（約4.80）で判断する場合、非現金項目を加回したAdjusted EPS（約5.09）の真の実力が見えにくくなり、企業価値の過小評価リスクが生じる可能性がある。ただしSBCは報酬としての実質的コスト（株主希薄化）を伴うため、調整を過信すると過大評価リスクも存在する。投資家はキャッシュフロー生成力とSBCの希薄化効果を総合的に評価すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は毎期継続して発生する恒常的な非現金報酬コストであり、買収等の一過性項目ではない",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は過去の買収関連無形資産から毎期発生する恒常的な非現金費用である",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 4.2683680322364,
       "adjusted_eps": 4.722004197533309,
@@ -53,33 +132,7 @@
       "fiscal_year": 2026,
       "quarter": 3,
       "tax_expense": 7562000000.0,
-      "pretax_income": 39340000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 91.2%）",
-        "sbc_contribution": 0.912,
-        "sbc_to_revenue": 0.037,
-        "sbc_per_share": 0.4138,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "調整項目のSBCと無形資産償却費はいずれも恒常的に発生する非現金費用であり、一過性とは言えない。市場がGAAP EPS（4.27）で判断する場合、非現金項目を加算したAdjusted EPS（4.72）の企業実力が見えにくくなり、MSFTの真のキャッシュ生成力や成長投資余力を過小評価するリスクがある。ただしSBCは株主希薄化を伴う実質コストのため、調整を過度に信用すると過大評価のリスクも存在。投資家はフリーキャッシュフローとSBCの希薄化影響を特に注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は毎期発生する非現金報酬コストであり、恒常的な運用費用として実質的な経済的コストを伴う。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は過去の買収に関連した継続的な非現金償却であり、成長戦略に伴う恒常的な費用と考えられる。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 39340000000.0
     },
     {
       "gaap_eps": 5.155227882037534,
