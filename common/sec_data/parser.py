@@ -2263,6 +2263,20 @@ class SECParser:
     _BS_IDENTITY_TOL_REL = 0.02
     _BS_IDENTITY_TOL_ABS = 2_000_000
 
+    # [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]: 重複値ガード用の
+    # 許容誤差（本体の恒等式許容誤差とは別の、より厳格な基準）。
+    _BS_IDENTITY_DUP_TOL_REL = 0.001
+    _BS_IDENTITY_DUP_TOL_ABS = 1_000
+
+    @staticmethod
+    def _bs_identity_values_equal(a: float, b: float) -> bool:
+        if a is None or b is None:
+            return False
+        if abs(a - b) <= SECParser._BS_IDENTITY_DUP_TOL_ABS:
+            return True
+        denom = max(abs(a), abs(b), 1)
+        return abs(a - b) / denom <= SECParser._BS_IDENTITY_DUP_TOL_REL
+
     @staticmethod
     def _find_assets_end_date(us_gaap: dict, accn: Optional[str], target_val: Any) -> Optional[str]:
         """total_assetsの採用accn・値から対応するend_dateを逆引きする
@@ -2279,9 +2293,32 @@ class SECParser:
                 return e.get("end")
         return None
 
-    def _bs_identity_extra_components(self, us_gaap: dict, accn: str, end_date: str) -> Dict[str, float]:
+    def _bs_identity_extra_components(self, us_gaap: dict, accn: str, end_date: str,
+                                       ta: float, tl: float, se: float) -> Dict[str, float]:
         """同一accn・同一end_dateに紐づくNCI・一時的持分の簿価タグ（許可
-        リストのみ）を収集する。instant fact（start_date不要）のみ対象。"""
+        リストのみ）を収集する。instant fact（start_date不要）のみ対象。
+
+        [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]: own-accnに該当
+        タグが1件も見つからない場合、同一end_dateの他filing（後続四半期の
+        比較列等）へ探索範囲を広げるフォールバックを行う。M&A・組織再編
+        直後、一時的持分が当該年度自身の10-Kには一切開示されず後続filing
+        の比較列としてのみ開示されるケース（COHR/CRWV/VRT）に対応。
+
+        フォールバックには2段階のガードを設ける（実データ検証で判明した
+        回帰〈SOUN2021・PM2010/2011・TSLA2020/2021・HEI2014・FCX2015〉の
+        再発防止）:
+        ① ベースゲート: own-accnのみの値で恒等式が厳密に一致（diff=0）
+           する場合、そのentity（年度）に対してはcross-accnフォール
+           バック自体を一切実行しない。own-accnのみで既に完成している
+           解を、無関係な後続filingの値で上書きしないため。
+        ② 重複値ガード: ①を通過した場合でも、フォールバックで見つかった
+           候補値が既にmatched済みの他タグの値と一致（許容誤差0.1%または
+           $1,000以内）する場合は採用しない（別タグ族での同額の二重計上
+           を防ぐ。実例: FCX(2015)の`RedeemableNoncontrollingInterest
+           EquityCarryingAmount`が、既にmatched済みの`TemporaryEquity
+           CarryingAmountIncludingPortion...`と同額$764,000,000で重複
+           していた）。
+        """
         matched: Dict[str, float] = {}
         for tag in self._BS_IDENTITY_ALLOWLIST:
             tagdata = us_gaap.get(tag)
@@ -2297,6 +2334,29 @@ class SECParser:
             if winner in matched:
                 for loser in losers:
                     matched.pop(loser, None)
+
+        if ta - (tl + se + sum(matched.values())) != 0:
+            for tag in self._BS_IDENTITY_ALLOWLIST:
+                if tag in matched:
+                    continue
+                tagdata = us_gaap.get(tag)
+                if not tagdata:
+                    continue
+                entries = tagdata.get("units", {}).get("USD", [])
+                candidate = None
+                for e in entries:
+                    if e.get("end") == end_date and not e.get("start"):
+                        candidate = e.get("val")
+                        break
+                if candidate is None:
+                    continue
+                if any(self._bs_identity_values_equal(candidate, v) for v in matched.values()):
+                    continue
+                matched[tag] = candidate
+            for winner, losers in self._BS_IDENTITY_SUPERSEDES.items():
+                if winner in matched:
+                    for loser in losers:
+                        matched.pop(loser, None)
 
         # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI型フォールバック:
         # 簿価系タグ（_BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS）が
@@ -2361,7 +2421,7 @@ class SECParser:
                 violations.append(entry)
                 continue
 
-            extra = self._bs_identity_extra_components(us_gaap, accn, end_date)
+            extra = self._bs_identity_extra_components(us_gaap, accn, end_date, ta, tl, se)
             extra_sum = sum(extra.values())
             ext_diff = ta - (tl + se + extra_sum)
             ext_denom = max(abs(ta), abs(tl + se + extra_sum), 1)
