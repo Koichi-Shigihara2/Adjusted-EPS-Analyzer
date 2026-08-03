@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-03（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]残り13件の
+個別調査結果を反映（チャット記録、読み取りのみ）。①genuine（対応不要）
+2件（BKNG2011/2012、Redeemable NCIがFairValue基準のみで簿価タグが
+存在しないため既存の許可リスト設計方針と整合的に対応不要と確定）・
+②許可リスト拡張で対応可能2件（ASTS2020のTemporaryEquityValue
+ExcludingAdditionalPaidInCapital加算・RDW2020のRedeemableNoncontrolling
+InterestEquityCommonRedemptionValue、HEI型フォールバックと同型の別タグ名
+パターン）・③要さらなる確認7件（PLTR2019・CART2023-2025・V2008・
+CELH2025・ASTS2019）に分類。調査の過程でCRM(2011)・VRT(2017)の2件が
+CHECK29の対象外（NCI/一時的持分タグ不足ではなく、stockholders_equity
+抽出自体が別年度・別filingの無関係な値を誤って採用している独立した
+parser.pyバグ）と判明し、[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
+MISSELECT-1]]（優先度：高、新規）として分離登録。「次セッションでの
+着手順序」欄を更新。登録・更新のみ、実装は未着手。
+
 最終更新: 2026-08-03（BACKLOG.md統合作業。同一種類の作業をまとめられる
 3グループを統合（実装・修正は行わず記録整理のみ）。①normalized/スキーマ
 問題群6件（SCHEMA-STDEBT-COVERAGE-GAP-1・SCHEMA-SM-SGA-CONFLATION-1・
@@ -2071,12 +2086,113 @@ CHECK29本体（133件解消分）は実装完了済み
   まま、個別調査で②genuine確定→config/warn_acknowledged.json登録、
   または③真のバグとして別途対応、のいずれかに順次分類していく。
 
+#### 残り13件個別調査結果（2026-08-03、チャット記録・読み取りのみ）
+残り13件を個別に調査し、①genuine・②許可リスト拡張可能・③要さらなる
+確認の3分類に整理した。
+
+**①genuine（対応不要、2件）**:
+- **BKNG(2011/2012)**: `RedeemableNoncontrollingInterestEquityCommon
+  FairValue`（own accn）のみが存在し、CarryingAmount基準のタグは
+  一切ない。加算しても乖離は解消しない（2012年: 必要額$214,942,000 vs
+  タグ値$160,287,000）。既存の許可リスト設計方針（簿価タグのみ限定、
+  LYFT型過大計上の教訓）と整合的に、FairValue基準の値は加算対象外と
+  すべきであり対応不要と確定。
+
+**②許可リスト拡張で対応可能（2件）**:
+- **ASTS(2020)**: own accnに`TemporaryEquityValueExcludingAdditional
+  PaidInCapital: $150,596,928`が存在し、加算すると完全一致
+  （diff=$0）。現行の許可リスト（7タグ）に含まれていないタグ。
+  cross-accn問題ではなくown-accnのみで解決する。
+- **RDW(2020)**: own accnに`RedeemableNoncontrollingInterestEquity
+  CommonRedemptionValue: $120,314,578`が存在し、加算すると完全一致
+  （diff=$0）。HEI型フォールバック（`TemporaryEquityRedemptionValue`
+  のみ対象）と同型だが別タグ名のため現行フォールバックの対象外に
+  なっている。
+
+**③要さらなる確認（7件）**:
+- **PLTR(2019)**: 全namespace横断でもNCI/TemporaryEquity系タグは
+  一切存在しない。stockholders_equity（$-1,980,642,000）は自身の
+  内訳（CommonStock+APIC+RetainedEarnings+AOCI−TreasuryStock）と
+  完全一致し抽出バグではない。乖離$2,127,231,000の原因は上場前の
+  複雑な資本構成に起因する可能性が高いが特定できず。
+- **CART(2023/2024/2025)**: 3年度ともNCI/一時的持分/優先株式系タグは
+  一切存在せず、stockholders_equity・liabilitiesとも各々の内訳合計と
+  一致（抽出は正しい）。乖離（$177M〜$195M）の原因が特定できず、
+  NCI/一時的持分以外の可能性が高い。
+- **V(2008)**: `SharesSubjectToMandatoryRedemptionSettlementTerms
+  AmountCurrent: $1,508,000,000`（own accn）を発見したが、加算すると
+  $372,000,000超過し一致しない（既にLiabilities側に含まれている
+  可能性）。Visa 2008年IPO特有のクラスB/C制限株式・訴訟エスクロー
+  構造に起因する可能性が高いが確証は得られず。
+- **CELH(2025)**: NCI/一時的持分/優先株式系タグは一切存在せず、
+  stockholders_equityは内訳と一致（抽出は正しい）。乖離
+  $1,759,975,000は大型買収（Alani Nu）関連の負債側項目に起因する
+  可能性が高いが特定できず。
+- **ASTS(2019)**: own accnには一時的持分タグが一切存在しない
+  （2021年SPAC規制ガイダンスによる遡及的restatement以前の初回10-Kの
+  ため）。後続の2020年10-K/A比較列に近い値（$202,557,751）はあるが
+  必要額（$218,519,748）と一致せず（残差$15,961,997）。restatement
+  時にtotal_assets/total_liabilities自体も変更されている可能性があり
+  単純加算では解消しない。
+
+**CHECK29対象外の独立バグ発見（2件、別エントリへ分離）**:
+- **CRM(2011)・VRT(2017)**: 調査の過程で、この2件は「NCI/一時的持分
+  タグ不足」ではなく、`stockholders_equity`の抽出自体が別年度・別
+  filingの無関係な値を誤って採用している独立したバグと判明した。
+  [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]として別途
+  新規登録した。
+
 #### 着手条件
 なし（充足済み）。実測で対象は当初23件から**13件**に減少（HEI×5・
-ONDS×1・COHR×2・CRWV×1・VRT×1〈2018分〉の計10件が解消）。残るのは
-PLTR×1・CART×3・BKNG×2・V×1・CRM×1・CELH×1・ASTS×2・VRT×1〈2017分〉・
-RDW×1（計13件、未着手）。WARN-29発火銘柄も13→9銘柄に減少
-（ASTS/BKNG/CART/CELH/CRM/PLTR/RDW/V/VRT）。
+ONDS×1・COHR×2・CRWV×1・VRT×1〈2018分〉の計10件が解消）。残る13件は
+上記個別調査により①genuine2件（BKNG×2）・②許可リスト拡張可能2件
+（ASTS2020・RDW2020）・③要さらなる確認7件（PLTR・CART×3・V・CELH・
+ASTS2019）に整理。CRM・VRTの2件は[[PARSER-STOCKHOLDERS-EQUITY-
+CROSS-YEAR-MISSELECT-1]]へ分離（CHECK29対象外）。WARN-29発火銘柄も
+13→9銘柄に減少（ASTS/BKNG/CART/CELH/CRM/PLTR/RDW/V/VRT）。
+
+---
+
+### [PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1] stockholders_equityが正しいaccnと異なる別年度・別filingの無関係な値を誤って採用するケースが存在する
+**優先度:** 高
+**分類:** バグ / 確定・CHECK29対象外の独立した抽出バグ
+**登録日:** 2026-08-03
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査から派生
+（チャット記録）
+
+#### 内容
+CRM(2011)・VRT(2017)で、stockholders_equityの抽出が正しいaccn
+（total_assets/total_liabilitiesと同一のfiling）ではなく、別年度・別
+filingの無関係な値を誤って採用している:
+- CRM(2011): 正しいaccn（FY2011 10-K）はStockholdersEquity単体タグを
+  持たずStockholdersEquityIncludingPortionAttributableToNoncontrolling
+  Interest（$1,587,360,000）のみタグ付けされているが、抽出ロジックが
+  これを見つけられず1年前のFY2010の値（$1,276,491,000）にフォール
+  バックしていた
+- VRT(2017): 正しいaccn自体にStockholdersEquity: $23,724が存在するに
+  もかかわらず、3年後のFY2020 10-K/A比較列（-$129,600,000、全く無関係
+  な値）を誤って採用していた
+
+いずれも、正しい値を採用すればCHECK29の恒等式検証も完全一致する
+（CRM: 加算後diff=$0、VRT: diff=$0）ことを確認済み。
+
+#### 影響
+CHECK29のNCI/一時的持分許可リスト拡張では解決しない、独立した
+stockholders_equity own-data選定ロジックのバグ。他銘柄への一般化可能性
+は未調査（本調査はCRM/VRTの2件を深掘りした結果の偶発的発見のため）。
+
+#### 対応方針
+未定。①CRMのような「単体タグが存在せずIncludingNCI系タグのみ存在する
+場合の見落とし」と②VRTのような「同一accn内に正しい値が存在するのに
+無関係な別filingの値を誤って優先する」という2つの異なるサブパターンが
+あり、原因の切り分けが必要。105銘柄全体でstockholders_equityの
+provenance（採用accn vs total_assets/total_liabilitiesの採用accn）の
+一致率を横断スキャンし、他に同型の該当がないか確認することを推奨する。
+
+#### 着手条件
+なし。優先度高（他の主要フィールド〈total_assets/liabilities〉と異なる
+accnから値を取得するという、会計恒等式の前提そのものを崩しかねない
+バグのため）。
 
 ---
 
@@ -9204,7 +9320,7 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
 
 追記（2026-08-02 セッション終了処理、次セッションでの着手順序を最終整理）:
-**次セッションでの着手順序（2026-08-02時点、セッション終了時最終版）**:
+**次セッションでの着手順序（2026-08-03時点、最終版）**:
 ① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：中。layer3_builder.pyと
    parser.pyが同期しない構造的脆弱性は残存するが、既知7件の修正への
    現在進行形の実害はゼロと確定済み）
@@ -9214,9 +9330,17 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    CRWV(2024)・VRT(2018)の4件を解消、実装過程で発見した回帰5件
    〈SOUN2021・PM2010/2011・TSLA2020/2021・HEI2014・FCX2015〉は
    ガードにより再発防止済みで検証済み。詳細はBACKLOG_DONE.md参照）
-③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り13件
-   〈PLTR/CART/BKNG/V/CRM/CELH/ASTS/VRT(2017)/RDW〉が個別調査未着手。
-   HEI・ONDS・COHR・CRWV・VRT(2018)は実装完了）
+② [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]（優先度：高・
+   新規。CRM(2011)・VRT(2017)でstockholders_equityが正しいaccnと
+   異なる別年度・別filingの無関係な値を誤って採用している独立バグ。
+   会計恒等式の前提〈同一filingから一貫して取得〉を崩しかねないため、
+   105銘柄横断でのprovenance一致率スキャンを優先的に実施すべき）
+③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り13件の
+   個別調査完了・①genuine2件〈BKNG2011/2012〉・②許可リスト拡張可能
+   2件〈ASTS2020・RDW2020〉・③要さらなる確認7件〈PLTR/CART×3/V/CELH/
+   ASTS2019〉に分類済み。CRM/VRT(2017)は②〈PARSER-STOCKHOLDERS-
+   EQUITY-CROSS-YEAR-MISSELECT-1〉へ分離。次のアクションは②の許可
+   リスト拡張実装、または③の個別方針確定）
 ④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
    根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
