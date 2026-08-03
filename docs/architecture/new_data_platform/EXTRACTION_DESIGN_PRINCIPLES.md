@@ -123,6 +123,15 @@ Total_Assets≠Total_Liabilities+Stockholders_Equity違反等）の分類調査
   としてのみ事後的に作られた狭いゲートであり、汎用的な検証レイヤーとして
   設計されたものではない。
 
+（参考）同種の「検証仕組みの欠如」は`common/sec_data/`以外のサブシステム
+にも存在する。[[RECESSION-SCORE-TRIPLE-CALC-1]]（MACRO PULSE、フェーズ
+境界閾値25/30の3箇所不一致・画面上未開示の2計算方式併存）・
+[[BETA-FALLBACK-DESIGN-GAPS-1]]（TANUKI VALUATION、0/負値βの無条件
+フォールバック・許容範囲の2基準並存）は、いずれも本原則が指す「抽出後・
+保存前の制約検証」がTANUKI VALUATION/Market Pulse側にも同様に欠けている
+実例として参考になる（詳細はBACKLOG.md該当エントリ参照。本ドキュメントの
+適用範囲〈新規データ層〉には含めない）。
+
 新規データ層のドメインで検証可能な制約の例:
 - 市場データ（`common/market_data/`）: 価格・出来高等が0以下にならない、
   高値≥安値、52週高値≥52週安値、時価総額=株価×発行済株式数の近似一致等
