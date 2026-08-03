@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-03（[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
+MISSELECT-1]]の全105銘柄横断スキャン結果を反映（チャット記録、読み取り
+のみ）。不一致は1249年度中13件（1.04%）のみと判明。真のバグは
+CRM(2011)・VRT(2017)の2件、CWAN(2023)は構造的に必然（cross-accn、
+値は正しい可能性が高い）、9件（ELF/LITE/QBTS/TSLA/BKNG2009/HON/
+V2008/DOCN/LYFT）はメタデータのみ不一致で実害なし、CAKE(2009)・
+LITE(2014)は別種の異常（total_liabilities欠損、本バグとは無関係）。
+根本原因を`_collect_own_data_instant()`のフィールド独立抽出設計と
+`_resolve_bs_entity_mixing()`の「本人データaccnが単一」前提の限界と
+特定（EXTRACTION_DESIGN_PRINCIPLES.md原則2の新実例）。実害確認:
+CRM(2011)は現在の10年ROEトレイリング窓外のため実害なし、VRT(2017)は
+窓内のため現在進行形の実害可能性あり（winsorize仕様により影響は限定的
+と推測、実測は未実施）。対応方針2案（VRT型・CRM型）を記録し、VRT型
+から着手する方針を確定。登録・更新のみ、実装は未着手。
+
 最終更新: 2026-08-03（[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]残り13件の
 個別調査結果を反映（チャット記録、読み取りのみ）。①genuine（対応不要）
 2件（BKNG2011/2012、Redeemable NCIがFairValue基準のみで簿価タグが
@@ -2178,21 +2193,73 @@ filingの無関係な値を誤って採用している:
 
 #### 影響
 CHECK29のNCI/一時的持分許可リスト拡張では解決しない、独立した
-stockholders_equity own-data選定ロジックのバグ。他銘柄への一般化可能性
-は未調査（本調査はCRM/VRTの2件を深掘りした結果の偶発的発見のため）。
+stockholders_equity own-data選定ロジックのバグ。
+
+#### 全105銘柄横断スキャン結果・根本原因（2026-08-03、チャット記録・
+読み取りのみ）
+全105銘柄・1249年度でtotal_assetsとstockholders_equityのaccn一致を
+確認したところ、**不一致は13件（1.04%）のみ**だった。
+
+- **真のバグ（値も誤り、2件）**: CRM(2011)・VRT(2017)（既知）
+- **構造的に必然（1件）**: CWAN(2023) — 正しいaccnに
+  StockholdersEquity系タグが一切存在せず、後続3つの異なるfiling
+  （10-Q×2・10-K×1）で一貫して報告される値（$354,329,000）を採用。
+  MinorityInterest($55,328,000)加算で恒等式が完全一致するため値自体は
+  正しい可能性が高い（COHR/CRWV型のcross-accn必然パターンと同種で、
+  CRM/VRT型の見落としバグとは性質が異なる）
+- **無害（9件）**: ELF(2019)・LITE(2014)・QBTS(2021)・TSLA(2010)・
+  BKNG(2009)・HON(2010)・V(2008)・DOCN(2020)・LYFT(2018) —
+  provenanceのaccnフィールド（メタデータ）は真の同一accnと異なるが、
+  格納されている値自体は真の同一accnのタグ値と完全一致することを
+  個別確認済み（比較対象filingが過去の確定値をそのまま繰り返し開示
+  しているため無害）
+- **別種の異常（本バグとは無関係、2件）**: CAKE(2009)・LITE(2014) —
+  total_liabilities自体が完全に欠損（None）。本調査のスコープ外
+
+**根本原因（コードレベルで確認済み）**: `parser.py::_collect_own_data_
+instant()`（L1190-1277）が各BSフィールドを完全に独立して抽出する設計
+であり、既存の安全策`_resolve_bs_entity_mixing()`（L567-682）は
+「本人データ（is_own_data=True）を提供するaccnが単一に定まる」ことを
+前提とするため、以下2パターンではこの前提の外側にあり是正されない:
+- **CRM型**: total_assets・stockholders_equityの両方が別々の年度に
+  対してそれぞれ独立に`is_own_data=True`と判定される（アンカー候補が
+  2つで一意に定まらない）
+- **VRT型**: 両方とも`is_own_data=False`（アンカー候補が0個で一意に
+  定まらない）
+
+`EXTRACTION_DESIGN_PRINCIPLES.md`原則2（「相互に関連するフィールドは
+独立に抽出・選定しないこと」）が指摘する一般的な設計欠陥の新しい実例。
+
+**実害確認**: `get_net_cash()`はstockholders_equityに依存しないため
+無関係。`get_roe_avg_detail()`（ROE=net_income/stockholders_equity、
+TANUKI VALUATIONのROE平均に使用、tanuki=trueの銘柄が対象）が唯一の
+消費経路。CRM(2011)は現在の10年ROEトレイリング窓（2017-2026年、
+annual_2026.jsonまで存在）の外のため実害なし。VRT(2017)は現在の窓
+（2016-2025年のちょうど10件）に含まれており現在進行形の実害の可能性
+あり（ただし`get_roe_avg_detail()`の`|ROE|>80%` winsorize仕様により、
+誤った値・正しい値のいずれも分母が極端に小さくROEが±80%に丸められる
+可能性が高く、影響は「その1年分の符号がおそらく反転する」程度に限定
+される可能性。実際の影響度はpipeline.py再実行が必要なため未確定）。
 
 #### 対応方針
-未定。①CRMのような「単体タグが存在せずIncludingNCI系タグのみ存在する
-場合の見落とし」と②VRTのような「同一accn内に正しい値が存在するのに
-無関係な別filingの値を誤って優先する」という2つの異なるサブパターンが
-あり、原因の切り分けが必要。105銘柄全体でstockholders_equityの
-provenance（採用accn vs total_assets/total_liabilitiesの採用accn）の
-一致率を横断スキャンし、他に同型の該当がないか確認することを推奨する。
+未定。CRM型・VRT型で有効な修正方式が異なるため2案を記録する:
+- **VRT型（0アンカー）向け**: total_assets/total_liabilitiesが採用した
+  accnと同一のaccnを、stockholders_equity抽出時にも優先的に探索する
+  設計。今回確認した「正しいaccn内に正しい値が実在していた」ケース
+  （VRT・CRMのIncludingタグ）に有効
+- **CRM型（2アンカー競合）向け**: `_resolve_bs_entity_mixing()`の
+  条件②を「本人データaccnのうち、他の同年度フィールドと一致するもの
+  を優先する」形に緩和する設計。既存の安全側原則（「一意に定まらない
+  場合は何もしない」）の変更を伴うため、KULR(2019)型の巻き添え
+  None化防止等の既存安全性を壊さないよう全母集団シミュレーションが
+  必須
+
+まずVRT型向けの設計（より安全・影響範囲が明確）から全母集団
+シミュレーションを行い、実装する。CRM型向けの設計は既存の安全側原則の
+変更を伴うためより慎重な検討が必要。
 
 #### 着手条件
-なし。優先度高（他の主要フィールド〈total_assets/liabilities〉と異なる
-accnから値を取得するという、会計恒等式の前提そのものを崩しかねない
-バグのため）。
+なし。優先度高を維持（VRT(2017)は現在進行形の実害可能性があるため）。
 
 ---
 
