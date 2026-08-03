@@ -2,9 +2,9 @@
   "intrinsic_value_pt": 30418139969.394306,
   "intrinsic_value_per_share": 121.93772719142855,
   "intrinsic_value_beta": 106.55,
-  "upside_percent_beta": -68.4,
+  "upside_percent_beta": -68.5,
   "intrinsic_value_rf": 1079.44,
-  "upside_percent_rf": 219.8,
+  "upside_percent_rf": 219.1,
   "v0": 30248345599.81578,
   "v0_adjusted": 30248345599.81578,
   "alpha": 0.8,
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 139.71,
       "value_growth_pct": 14.6,
-      "expected_return_pct": -58.6
+      "expected_return_pct": -58.7
     },
     "2年後": {
       "future_value": 160.07,
       "value_growth_pct": 31.3,
-      "expected_return_pct": -52.6
+      "expected_return_pct": -52.7
     },
     "3年後": {
       "future_value": 183.4,
       "value_growth_pct": 50.4,
-      "expected_return_pct": -45.7
+      "expected_return_pct": -45.8
     },
     "4年後": {
       "future_value": 210.12,
       "value_growth_pct": 72.3,
-      "expected_return_pct": -37.7
+      "expected_return_pct": -37.9
     },
     "5年後": {
       "future_value": 240.74,
       "value_growth_pct": 97.4,
-      "expected_return_pct": -28.7
+      "expected_return_pct": -28.8
     }
   },
   "upside_percent": -63.9,
-  "calculation_date": "2026-08-01T01:16:47+09:00",
+  "calculation_date": "2026-08-04T01:45:31+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -272,33 +272,33 @@
   "rice": {
     "available": true,
     "q": 0.9762,
-    "cf_conversion": 0.2694,
+    "cf_conversion": 0.7368,
     "cf_adj": 5.0024,
     "wacc": 0.1,
     "q_years": 3,
     "cf_years": 3,
-    "avg_intensity": 0.5394,
+    "avg_intensity": 0.1981,
     "avg_rev_growth_lagged": 0.1457,
     "warnings": true,
-    "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=2.38)",
+    "note": "SBC補正済み（純利益+SBCを分母に使用） / RICE-1価値創造係数=2.00(ROIC/WACC=2.38) / R&D未取得（FYTTM@2025-03-31, TTM@2024-03-31, TTM@2023-03-31）: parser.pyにResearchAndDevelopmentExpenseタグ追加を検討",
     "vc_factor": 2.0,
     "roic_wacc_ratio": 2.38,
     "bear": {
       "growth_rate": 0.102,
-      "rice": 0.537,
-      "rice_per_ratio": 0.008,
+      "rice": 1.467,
+      "rice_per_ratio": 0.0218,
       "rice_adj": 9.962
     },
     "base": {
       "growth_rate": 0.146,
-      "rice": 0.768,
-      "rice_per_ratio": 0.0114,
+      "rice": 2.1,
+      "rice_per_ratio": 0.0312,
       "rice_adj": 14.26
     },
     "bull": {
       "growth_rate": 0.175,
-      "rice": 0.92,
-      "rice_per_ratio": 0.0137,
+      "rice": 2.517,
+      "rice_per_ratio": 0.0374,
       "rice_adj": 17.092
     }
   },
@@ -322,7 +322,7 @@
     "roe_10yr_avg": 0.27531422571666087,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 337.49,
+    "current_price": 338.24,
     "latest_revenue": 5296759000.0,
     "rpo": 8000000000,
     "beta": 1.149,
@@ -352,14 +352,14 @@
     "rpo_pv": 169794369.57852727,
     "growth_option_pv": 0,
     "alpha_uncapped": 1.1563197480099754,
-    "per": 67.09542,
+    "per": 67.24453,
     "per_is_forward": false,
-    "per_adjusted": 58.38,
-    "peg": 3.04,
-    "ps": 15.921271,
-    "ev_ebitda": 43.033,
-    "ma200": 327.5874,
-    "forward_eps": 9.52669,
+    "per_adjusted": 58.51,
+    "peg": 3.11,
+    "ps": 15.956654,
+    "ev_ebitda": 43.953,
+    "ma200": 327.62634,
+    "forward_eps": 9.53711,
     "analyst_target_median": 402.5,
     "analyst_target_mean": 403.6727,
     "analyst_target_low": 300.0,
@@ -369,16 +369,16 @@
     "dividend_yield": 0.0,
     "payout_ratio": 0.0,
     "insider_buy_count": 0,
-    "insider_sell_count": 60,
+    "insider_sell_count": 58,
     "insider_net_direction": "Sell優勢",
     "insider_latest_date": "2026-07-23",
     "analyst_vs_iv": 230.1,
     "max_eps": 1.6528,
-    "max_eps_per": 204.2,
+    "max_eps_per": 204.6,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-01",
+    "validated_at": "2026-08-04",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -413,8 +413,8 @@
   "matrix": {
     "matrix": "①投資効率系",
     "quadrant": "左下",
-    "label": "割高×低効率",
-    "key_metric_y": "RICE = 0.768",
+    "label": "割高×中効率",
+    "key_metric_y": "RICE = 2.100",
     "qx": false,
     "qy": false
   },
@@ -469,7 +469,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.011,
+  "net_current_assets_ratio": 0.0109,
   "next_earnings_date": "2026-10-27",
   "segment_configured": false,
   "phase1_growth_original": 0.15,
@@ -509,12 +509,12 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit against Cadence Design Systems",
+      "summary": "Antitrust lawsuit involving Cadence Design Systems",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation into company practices",
+      "summary": "SEC investigation into regulatory compliance",
       "impact": "high"
     },
     {

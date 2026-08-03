@@ -1,15 +1,15 @@
 MSFT INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-01T01:13:33+09:00
-Price: $462.18
+Generated: 2026-08-04T01:42:08+09:00
+Price: $487.62
 
 [1. TANUKI SCORE]
 Classification: HOLD
-Funda_Score: 80/100
+Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -17.6%
-  MA200_Deviation: +6.5%
+  Deviation_Rate: -5.4%
+  MA200_Deviation: +12.5%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Strong Buy | Target: $550 median ($400-$870) | 53 analysts | vs IV: +44.4%
+  Analyst_Consensus: Strong Buy | Target: $550 median ($400-$870) | 54 analysts | vs IV: +19.2%
 Comment: フェアバリュー近辺、FCF黒字、売上安定成長
 Definition:
 
@@ -32,7 +32,7 @@ Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×中効率
 Key_Metric_Y: RICE = 1.332
-Deviation_Rate: -17.6%
+Deviation_Rate: -5.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,13 +56,13 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $462.18
-Intrinsic_Value_BASE: $380.89
-Deviation_BASE: -17.6%
+Current_Price: $487.62
+Intrinsic_Value_BASE: $461.35
+Deviation_BASE: -5.4%
 Scenarios:
-BEAR: Growth=9.3%, IV=$280.40, Deviation=-39.3%
-BASE: Growth=14.5%, IV=$380.89, Deviation=-17.6%
-BULL: Growth=17.4%, IV=$451.92, Deviation=-2.2%
+BEAR: Growth=9.3%, IV=$338.57, Deviation=-30.6%
+BASE: Growth=14.5%, IV=$461.35, Deviation=-5.4%
+BULL: Growth=17.4%, IV=$548.15, Deviation=+12.4%
 Growth_Rate_Rec: 13.5% (recommended)
 FCF_Margin_Bear_Adj: FCFマージン悪化(28.5%→26.2%) BEAR補正係数=0.919
 TTM_YoY_Growth: 17.9%
@@ -74,21 +74,22 @@ Beta: 1.13
 FCF_Conversion_Rate: 0.6 (Industry: Software_System)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $69,165M (= Adj_NI $115,275M × FCF_Conv 0.6)
-ℹ️ 買収・統合関連加算$4,440Mを検出したが未控除
-   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
-    ガードにより調整済み純利益をそのまま採用しています。詳細は
-    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
+DCF_FCF_Base: $85,716M (= Adj_NI $142,860M × FCF_Conv 0.6)
+⚠️ 買収・統合関連加算を控除: $3,585M
+   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
+    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
+    います。分類判定には使用しません。詳細はBACKLOG_DONE.md
+    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
 DCF_Reliability: NORMAL  (FCF_Conversion_Rate方式: 通常判定適用)
-DCF_FCF_PV: $1202.30B (Ph1=$716.75B + Ph2=$485.54B, 8yr, pre-alpha, Rm=10%)
-DCF_TV_PV:  $1490.05B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $2692.35B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $1469.11B (Ph1=$875.81B + Ph2=$593.30B, 8yr, pre-alpha, Rm=10%)
+DCF_TV_PV:  $1820.72B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $3289.83B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 1.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $96.630B (Remaining Performance Obligation premium)
 Growth_Option_PV: $1.289B (optional segment premium)
-Equity_Value: $2828.28B (= v0 + RPO_PV + GO_PV + Net_Cash $38.01B)
+Equity_Value: $3425.76B (= v0 + RPO_PV + GO_PV + Net_Cash $38.01B)
 Shares_Used: 7425.5M (source: yf_implied)
-→ Intrinsic_Value: $380.89 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $461.35 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-38.01B (negative=net cash)
   Total_Debt: $40.26B  Cash: $32.10B  ST_Invest: $46.17B
@@ -227,15 +228,15 @@ for unconfigured segments.
 
 
 [6. EPS ANALYZER]
-Latest_Adjusted_EPS: $4.7220 (直近四半期値)
-Latest_GAAP_EPS: $4.2684
-Adjustment_Delta: $0.4536 (sbc/amortization_intangibles)
-YoY_Growth: 19.4%
+Latest_Adjusted_EPS: $5.0900 (直近四半期値)
+Latest_GAAP_EPS: $4.7989
+Adjustment_Delta: $0.2911 (sbc/amortization_intangibles)
+YoY_Growth: 27.6%
 Recent Surprises (Adjusted EPS):
+  2026 Q4: Actual=$5.0900 vs Est=N/A -> N/A%
   2026 Q3: Actual=$4.7220 vs Est=N/A -> N/A%
   2026 Q2: Actual=$5.6274 vs Est=N/A -> N/A%
   2026 Q1: Actual=$4.2022 vs Est=N/A -> N/A%
-  2025 Q4: Actual=$3.9884 vs Est=N/A -> N/A%
 Definition:
 
 EPS_Source: SEC EDGAR XBRL (EPS Basic/Diluted tags). May differ from
@@ -249,13 +250,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 25.7x
-  Adjusted_EPS_PER: 24.9x (TTM調整後EPS: $18.5399)
-  Delta: -0.8x (cheaper on adjusted basis)
+  Market_PER_GAAP: 27.2x
+  Adjusted_EPS_PER: 24.8x (TTM調整後EPS: $19.6416)
+  Delta: -2.4x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-29
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $23.08 (yfinance forward EPS)
+  Next_FY_EPS: $23.47 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -277,10 +278,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 25.7x
-  PEG: 1.21
-  PS:  10.3x
-  EV_EBITDA: 17.5x
+  PER: 27.2x
+  PEG: 1.52
+  PS:  10.9x
+  EV_EBITDA: 18.0x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:
@@ -300,9 +301,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.99%  (ForwardEPS $23.08 / Price $462.18)
+  Forward_Earnings_Yield: 4.81%  (ForwardEPS $23.47 / Price $487.62)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.69%
+  ERP: 0.51%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -324,9 +325,9 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 
 [8. STONKS SILO]
 Short_Report_Target: no
-Short_Interest: 1.2%
+Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Strong Buy | Target: $550 median ($400-$870) | 53 analysts | vs IV: +44.4%
+Analyst_Consensus: Strong Buy | Target: $550 median ($400-$870) | 54 analysts | vs IV: +19.2%
 Insider_Activity: Sell優勢 | 買い0件 / 売り4件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 17.9%
@@ -351,8 +352,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Ongoing antitrust lawsuit
-  [mid] regulatory: SEC investigation into regulatory compliance
-  [mid] earnings: Earnings warning amid 2025-2026 competition pressures
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================
 DISCLAIMER: This report is generated automatically
