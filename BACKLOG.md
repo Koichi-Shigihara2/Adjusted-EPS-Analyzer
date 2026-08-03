@@ -1,5 +1,25 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-03（[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]実装
+完了。CHECK29の本人データ〈own-accn〉限定照合に、cross-accnフォール
+バック（同一end_dateの他filingへ探索範囲を拡張）を実装。M&A・組織再編
+直後、一時的持分が当該年度自身の10-Kには存在せず後続filingの比較列
+としてのみ開示されるケース（COHR2022/2023・CRWV2024・VRT2018）を解消。
+実装過程の最初の版で、既存の正しい解消結果を壊す回帰5件（SOUN2021・
+PM2010/2011・TSLA2020/2021・HEI2014・FCX2015、いずれも「別タグ族での
+同額重複計上」または「own-accnのみで既に完成していた解への不要な追加」
+が原因）を検知し、コミット前に復元。2段階ガード
+（①ベースゲート: own-accnのみで恒等式が厳密に一致する場合はフォール
+バック自体をスキップ、②重複値ガード: 候補値が既にmatched済みの値と
+同額の場合は不採用）を再設計し、全105銘柄・全156エントリの網羅的な
+before/after比較で回帰5件の再発防止・意図した4件の解消・TSLA(2016)の
+精度改善（1件、既存判定は不変）を確認してからコミット。WARN-29は
+17件/11銘柄→13件/9銘柄に減少。annual_YYYY.json等の実データは無変更
+（検知専用ロジックのため）。pytest 497 passed/2 known failed（既知・
+無関係）。機能コミット`b63be0026`・データ再生成コミット`05e7f853d`。
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]の残件を15件→13件に更新。
+「次セッションでの着手順序」欄を更新。pushは保留、コミットのみ。
+
 最終更新: 2026-08-03（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]の長期的構造
 対応（パイプライン統合）の設計調査結果を反映（チャット記録、読み取り
 のみ）。当初「parser.py⇔layer3_builder.pyの2パイプライン問題」という
@@ -2020,21 +2040,21 @@ check.py実行: WARN 83→81件（-2、HEI・ONDSのWARN-29が解消）。
 CHECK29本体（133件解消分）は実装完了済み
 （[[CHECK29-ACCOUNTING-IDENTITY-DETECTION-LAYER-1]]、BACKLOG_DONE.md
 参照）。HEI・ONDS（6件）は許可リスト拡張を実装完了。
-- COHR: [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]として別スコープ
-  切り出し済み。
-- 残る15件（PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW）は
+- COHR/CRWV/VRT(2018)分（4件）: [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-
+  EQUITY-1]]でcross-accnフォールバック（2段階ガード）を実装し解消済み
+  （2026-08-03、BACKLOG_DONE.md参照）。
+- 残る13件（PLTR/CART/BKNG/V/CRM/CELH/ASTS/VRT(2017)/RDW）は
   `resolved_by_extension=false`として検知ログ
   （`{ticker}/bs_identity_violations_log.json`）・WARN-29に記録済みの
   まま、個別調査で②genuine確定→config/warn_acknowledged.json登録、
   または③真のバグとして別途対応、のいずれかに順次分類していく。
 
 #### 着手条件
-なし（充足済み）。実測で対象は当初23件から**17件**に減少（HEI×5・
-ONDS×1の計6件が解消）。残るのはCOHR×2（[[CHECK29-COHR-CROSS-ACCN-
-TEMPORARY-EQUITY-1]]で別扱い）・PLTR×1・CART×3・CRWV×1・BKNG×2・V×1・
-CRM×1・CELH×1・ASTS×2・VRT×2・RDW×1（計15件、未着手）。WARN-29発火
-銘柄も13→11銘柄に減少（ASTS/BKNG/CART/CELH/COHR/CRM/CRWV/PLTR/RDW/V/
-VRT）。
+なし（充足済み）。実測で対象は当初23件から**13件**に減少（HEI×5・
+ONDS×1・COHR×2・CRWV×1・VRT×1〈2018分〉の計10件が解消）。残るのは
+PLTR×1・CART×3・BKNG×2・V×1・CRM×1・CELH×1・ASTS×2・VRT×1〈2017分〉・
+RDW×1（計13件、未着手）。WARN-29発火銘柄も13→9銘柄に減少
+（ASTS/BKNG/CART/CELH/CRM/PLTR/RDW/V/VRT）。
 
 ---
 
@@ -2061,40 +2081,6 @@ sort_keys=True相当の安定化を行う等、低コストな対応が見込ま
 
 #### 着手条件
 なし。優先度低。
-
----
-
-### [CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1] CHECK29の本人データ(own accn)限定照合が、後続四半期の比較列としてのみ開示される一時的持分を検知できない構造的限界
-**優先度:** 中
-**分類:** アーキテクチャ改善 / CHECK29設計方針の拡張検討
-**登録日:** 2026-08-02
-**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査（チャット記録）
-
-#### 内容
-CHECK29の「本人データ（own accn）限定」照合という設計方針により、
-一時的持分・NCIタグが当該年度自身の10-Kではなく後続四半期の比較列
-としてのみ開示される場合（COHR型、M&A直後の合併対価としての優先株式等）
-を原理的に検知できない。COHR(2022/2023)で実例を確認済み: 自社own accn
-の10-Kには該当タグが存在しないが、後続四半期filing（2022年分は次
-四半期10-Q、2023年分はFY2024 Q2 10-Q）の比較列としては一貫した値が
-報告されており、その値を用いるとTA=TL+SE+extraが完全一致する
-（2022年: $766,803,000、2023年: $2,241,415,000）。COHR/II-VI合併が
-FY2022期末の翌日（2022-07-01）に完了しており、合併対価の優先株式が
-合併後最初の四半期報告書で遡及的に付与されたものと推定される。
-
-#### 影響
-現時点でCOHR2件のみ確認済み。他銘柄への一般化可能性は未調査（M&A直後の
-決算期末をまたぐ企業で同様のパターンが起こりうる）。
-
-#### 対応方針
-未定。「同一end_dateの複数filingで値が一致する場合のみ採用する」等の
-安全策込みで、一時的持分・NCIタグに限りown-accn限定制約を緩和する設計を
-検討する。本人データ優先というパイプライン全体の原則との整合性を慎重に
-検討する必要がある。
-
-#### 着手条件
-なし。優先度中（該当は現時点でCOHR2件のみ、他銘柄への一般化可能性は
-未調査）。
 
 ---
 
@@ -9324,12 +9310,15 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ① [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]（優先度：中。layer3_builder.pyと
    parser.pyが同期しない構造的脆弱性は残存するが、既知7件の修正への
    現在進行形の実害はゼロと確定済み）
-② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]（優先度：中。CHECK29の
-   own-accn限定照合という設計方針そのものの緩和検討、該当は現時点で
-   COHR2件のみ）
-③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り15件
-   〈PLTR/CART/CRWV/BKNG/V/CRM/CELH/ASTS/VRT/RDW〉が個別調査未着手。
-   HEI・ONDSは実装完了・COHRは②で別扱い）
+~~② [[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]~~ ✅ 2026-08-03完了
+   （2段階ガード〈own-accnのみで厳密一致する場合はフォールバック自体を
+   スキップするベースゲート＋重複値ガード〉を実装。COHR(2022/2023)・
+   CRWV(2024)・VRT(2018)の4件を解消、実装過程で発見した回帰5件
+   〈SOUN2021・PM2010/2011・TSLA2020/2021・HEI2014・FCX2015〉は
+   ガードにより再発防止済みで検証済み。詳細はBACKLOG_DONE.md参照）
+③ [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]（優先度：中。残り13件
+   〈PLTR/CART/BKNG/V/CRM/CELH/ASTS/VRT(2017)/RDW〉が個別調査未着手。
+   HEI・ONDS・COHR・CRWV・VRT(2018)は実装完了）
 ④ [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]（優先度：中。
    [[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]実装完了によりRCAT分の
    根本原因は解消済みの可能性が高いが、本エントリ自体のクローズ判断は
