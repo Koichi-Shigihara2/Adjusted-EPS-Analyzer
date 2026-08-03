@@ -561,6 +561,22 @@ SEC_EDGAR_LAYER_DESIGN.md`に都度追記する運用とする。同ファイル
 （`PROJECT_STATUS.md`）・実装後の実態（`SYSTEM_MAP.md`）とは役割を
 分ける。
 
+**parser.py修正時のTTM同期確認（2026-08-03追記）**: `common/sec_data/
+parser.py`（annual_YYYY.json生成）側でrevenue・net_income・
+gross_profit・operating_income等のFLOW型フィールドに関わる修正を
+依頼する際は、`common/sec_data/ttm/`（`layer3_builder.py`生成）が
+独立した別パイプラインであり自動連動しないことを踏まえ
+（[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]）、依頼文作成前に以下を確認する:
+1. 対象銘柄・対象年度が現在のTTM系列anchor範囲内（直近数年、銘柄により
+   異なる）に該当するか確認する
+2. 該当する場合、TTM系列への影響（実害の有無）を実測確認する
+   （[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]で確立した手法：TANUKI
+   VALUATIONの`_select_fcf_source()`がTTM/年次のどちらを採用しているか、
+   STOCK_FIELDS/SHARES_FIELDSはTTM出力対象外であること等を踏まえて
+   判定する）
+3. 実害がある場合は、`layer3_builder.py`側への個別移植を検討する
+   （移植の要否・設計は都度判断）
+
 ## 調査・作業の継続性管理
 
 ### 完了報告の確認
