@@ -1,5 +1,27 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-03（BACKLOG.md統合作業。同一種類の作業をまとめられる
+3グループを統合（実装・修正は行わず記録整理のみ）。①normalized/スキーマ
+問題群6件（SCHEMA-STDEBT-COVERAGE-GAP-1・SCHEMA-SM-SGA-CONFLATION-1・
+SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1・SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1・
+SCHEMA-NORMALIZED-ANNUAL-NAMING-MISMATCH-1・SCHEMA-DA-FALLBACK-MISSING-1）
+を`[[SCHEMA-NORMALIZED-ISSUES-1]]`へ統合。②不要ファイル判定待ち4件
+（PHASE1-SCAN-CLEANUP-1・BACKFILL-HISTORY-CLEANUP-1・QUALITY-CHECKER-
+CLEANUP-1・REPORT-TXT-PARSER-CLEANUP-1）を`[[DEAD-CODE-AUDIT-BATCH-1]]`
+へ統合（STALE-SUBPORT-CLEANUP-1は判定基準がリポジトリ外の別システム
+〈AutoTrade〉の参照確認を要し、他4件の「grep確認→未使用なら削除」という
+共通基準と異なるため統合対象から除外し、既存エントリのまま残置）。
+③銘柄リスト重複読み込み3件（SYSHEALTH-CIK-DEDUP-1・TAIL-CIK-LOOKUP-
+DEDUP-1・TICKER-SOURCE-CONFIG-DUP-1）を`[[TICKER-LOADING-
+UNIFICATION-1]]`へ統合。いずれも旧ID参照を「(旧XXX)」形式で各箇条書きに
+残置し、`SEC_EDGAR_LAYER_DESIGN.md`・`layer3_builder.py`等の外部からの
+旧ID言及の追跡可能性を維持。DESIGN-8の既知のID重複（8-3/8-4が同一
+`[DESIGN-8]`タグを共有）も確認し、`[DESIGN-8-3]`/`[DESIGN-8-4]`へ表記
+訂正（他ファイルからの`[[DESIGN-8]]`参照が皆無であることを確認済みの
+ため実質的な参照断絶リスクなし）。BACKLOG_DONE.mdの8-1/8-2/8-5/8-6
+（完了済み）も同型のID共有パターンを持つが、今回のスコープ外のため
+未対応のまま。コミットのみ、pushは保留。
+
 最終更新: 2026-08-03（[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]実装
 完了。CHECK29の本人データ〈own-accn〉限定照合に、cross-accnフォール
 バック（同一end_dateの他filingへ探索範囲を拡張）を実装。M&A・組織再編
@@ -3801,128 +3823,100 @@ valのみを参照するロジックには実害なし。period_daysやstartを�
 
 ---
 
-### [SCHEMA-STDEBT-COVERAGE-GAP-1] STDebt（短期有利子負債）のタグ網羅性がnormalized/側で著しく劣化している
-**優先度:** 中〜高
-**分類:** データ品質 / バグ
-**登録日:** 2026-07-23
-**発見:** data/quarterly⇔normalizedフィールド網羅性比較調査⑤(D)
+### [SCHEMA-NORMALIZED-ISSUES-1] normalized/スキーマ関連の構造的ギャップまとめ（STDebtタグ網羅性劣化・SM/SGA概念混同・LTDebt優先順序逆転・SharesBasic概念不一致・ファイル名annualデータ混在・DAフォールバック欠如）
+**優先度:** 中〜高（内訳: 中〜高2件・中2件・低2件、個別優先度は各項目参照）
+**分類:** データ品質 / normalized/スキーマ（common/sec_data統合スキーマ設計関連）
+**登録日:** 2026-07-23〜2026-07-24（統合日: 2026-08-03）
+**発見:** data/quarterly⇔normalizedフィールド網羅性比較調査・Layer2設計調査
 
 #### 内容
-短期有利子負債（STDebt/short_term_debt）のタグ網羅性が、
-normalized/側で著しく劣化している。data/quarterly側
-（parser.py::XBRL_MAPPING、9タグ候補＋フォールバック）に対し、
-normalized側（quarterly.py::FIELD_CONCEPTS、単一タグ
-`ShortTermBorrowings`のみ・フォールバックなし）は、10銘柄実データ
-確認でAAPL 33/51件・XOM 51/51件・V 30/51件がnormalized側で**0件**
-という深刻な乖離を示した（逆にCAT等はdata/quarterly側が0件で
-normalized側に値がある逆転ケースもあり）。
+`normalized/`（`quarterly.py::FIELD_CONCEPTS`由来）と`data/quarterly`
+（`parser.py::XBRL_MAPPING`由来）の間で、タグ網羅性・優先順序・概念
+定義が系統的に食い違っている個別事象をまとめる。いずれも
+`docs/architecture/new_data_platform/SEC_EDGAR_LAYER_DESIGN.md`
+（367-378行目）でLayer2/Layer3統合スキーマ設計時の解消対象として
+参照されている。
 
-#### 影響
+① **STDebtタグ網羅性劣化**（旧SCHEMA-STDEBT-COVERAGE-GAP-1、優先度
+中〜高）: 短期有利子負債（STDebt/short_term_debt）のタグ網羅性が、
+normalized/側（`quarterly.py::FIELD_CONCEPTS`、単一タグ
+`ShortTermBorrowings`のみ・フォールバックなし）でdata/quarterly側
+（`parser.py::XBRL_MAPPING`、9タグ候補＋フォールバック）に対し著しく
+劣化している。10銘柄実データ確認でAAPL 33/51件・XOM 51/51件・
+V 30/51件がnormalized側で**0件**という深刻な乖離を示した（逆にCAT等は
+data/quarterly側が0件でnormalized側に値がある逆転ケースもあり）。
 normalized/はNet Debt計算等の一部経路で既に5系統
 （[[SECDATA-STORAGE-FRAGMENTATION-1]]参照）から参照されているため、
-現時点でもこのタグ抜けが精度に影響している可能性がある。
+現時点でもこのタグ抜けが精度に影響している可能性がある。着手条件:
+common/sec_data統合スキーマ設計の確定後。
 
-#### 対応方針
-未定。フェーズ1統合スキーマ設計時に、parser.py側の9タグ＋
-フォールバックロジックをnormalized側のconcept設定に統合する形で
-解消する想定。
-
-#### 着手条件
-common/sec_data統合スキーマ設計の確定後
-
----
-
-### [SCHEMA-SM-SGA-CONFLATION-1] normalized/のSMフィールドが銘柄によって「純S&M」と「SGA総額」を混同している
-**優先度:** 中
-**分類:** データ品質
-**登録日:** 2026-07-23
-**発見:** data/quarterly⇔normalizedフィールド網羅性比較調査⑤(E)
-
-#### 内容
+② **SM/SGA概念混同**（旧SCHEMA-SM-SGA-CONFLATION-1、優先度中）:
 data/quarterlyは`selling_and_marketing`（純S&M費用）と
 `selling_general_and_administrative`（SGA総額）を別フィールドとして
 両方保持するが、normalized/は`SM`という単一フィールドしか持たず、
 S&M単体タグが取得できない銘柄（JOBY/NVDA/CIX/ELF/KO等、
-quarterly.py:236-243に明記）では`_FIELD_FALLBACKS["SM"]`経由で
-SGA総額へ静かにフォールバックする。同じ`SM`値が銘柄によって
-「純S&M」と「SGA総額」という異なる意味を持ちうるが、フィールド名
-からは判別できない。
+quarterly.py:236-243に明記）では`_FIELD_FALLBACKS["SM"]`経由でSGA
+総額へ静かにフォールバックする。同じ`SM`値が銘柄によって「純S&M」と
+「SGA総額」という異なる意味を持ちうるが、フィールド名からは判別
+できない。投資強度分母等でこのフィールドを使う計算が、銘柄によって
+異なる性質の値を同一フィールドとして扱っている可能性がある。着手
+条件: common/sec_data統合スキーマ設計の確定後。
 
-#### 影響
-投資強度分母等でこのフィールドを使う計算が、銘柄によって異なる
-性質の値を同一フィールドとして扱っている可能性がある。
-
-#### 対応方針
-未定。統合スキーマではSM単体とSGA総額を明示的に別フィールドとして
-分離保持する方向で検討（data/quarterly側は既に分離済みのため、
-その構造を踏襲する案が有力）。
-
-#### 着手条件
-common/sec_data統合スキーマ設計の確定後
-
----
-
-### [SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1] LTDebtのprimaryタグ優先順序がquarterly.pyとparser.pyで逆転している
-**優先度:** 中〜高
-**分類:** データ品質 / バグ
-**登録日:** 2026-07-24
-**発見:** Layer2設計調査（FIELD_CONCEPTS/XBRL_MAPPING比較）
-
-#### 内容
-長期有利子負債（LTDebt/long_term_debt）のprimaryタグ優先順序が
-`quarterly.py::FIELD_CONCEPTS`と`parser.py::XBRL_MAPPING`の間で
+③ **LTDebt優先順序逆転**（旧SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1、優先度
+中〜高）: 長期有利子負債（LTDebt/long_term_debt）のprimaryタグ優先
+順序が`quarterly.py::FIELD_CONCEPTS`と`parser.py::XBRL_MAPPING`の間で
 逆転している。`parser.py`側は`LongTermDebtNoncurrent`を`LongTermDebt`
 より優先しており、これは「`LongTermDebtCurrent`との二重計上防止」
-という明示的な設計意図（BUG-NETDEBT-2対応コメントあり）に基づく。
-一方`quarterly.py`側（`normalized/`生成元）は`LongTermDebt`を先に
-試す設定になっており、この配慮が反映されていない。
+という明示的な設計意図（BUG-NETDEBT-2対応コメントあり）に基づく。一方
+`quarterly.py`側（`normalized/`生成元）は`LongTermDebt`を先に試す設定
+になっており、この配慮が反映されていない。【2026-07-24検証結果】
+reader.py::get_net_cash()の実装を確認した結果、二重計上が発生しうる
+のは「annual側long_term_debtが0/欠損 かつ normalizedフォールバックが
+非ゼロ」の場合に限られる。105銘柄全数で確認したところ該当銘柄は0件
+であり、現行データでは実害が確認されなかった。ただし構造的リスクは
+残るため、Layer2統合時にparser.py側の優先順序（二重計上防止済み）へ
+統一することで解消する方針とする。着手条件: なし。
 
-#### 影響
-`normalized/`のLTDebtは[[SECDATA-STORAGE-FRAGMENTATION-1]]で確認済み
-の通りreader.pyのNet Debt計算（`get_lt_debt_from_normalized`）で
-使われている。二重計上防止のロジックが欠けているため、該当銘柄で
-Net Debtが過大計上される可能性がある。実害の有無は未検証。
-
-【2026-07-24検証結果】reader.py::get_net_cash()の実装を確認した
-結果、二重計上が発生しうるのは「annual側long_term_debtが0/欠損 かつ
-normalizedフォールバックが非ゼロ」の場合に限られる。105銘柄全数で
-確認したところ該当銘柄は0件であり、現行データでは実害が確認されな
-かった。ただし構造的リスクは残るため、Layer2統合時にparser.py側の
-優先順序（二重計上防止済み）へ統一することで解消する方針とする。
-
-#### 対応方針
-未定。実害有無の検証（該当銘柄の特定）を先に行う必要がある。
-
-#### 着手条件
-なし
-
----
-
-### [SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1] SharesBasicのprimaryタグが2システム間で意味的に異なる財務概念を指している
-**優先度:** 中
-**分類:** データ品質 / バグ
-**登録日:** 2026-07-24
-**発見:** Layer2設計調査（FIELD_CONCEPTS/XBRL_MAPPING比較）
-
-#### 内容
-SharesBasic（発行済株式数関連）のprimaryタグが、2システム間で
-単なる順序差ではなく**意味的に異なる財務概念**を指している。
+④ **SharesBasic概念不一致**（旧SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1、
+優先度中）: SharesBasic（発行済株式数関連）のprimaryタグが、2システム
+間で単なる順序差ではなく**意味的に異なる財務概念**を指している。
 `quarterly.py`側は`CommonStockSharesOutstanding`（貸借対照表項目・
 期末時点の発行済株式数）をprimaryとするのに対し、`parser.py`側は
-`WeightedAverageNumberOfSharesOutstandingBasic`（損益計算書項目・
-期中加重平均株式数）をprimaryとする。
+`WeightedAverageNumberOfSharesOutstandingBasic`（損益計算書項目・期中
+加重平均株式数）をprimaryとする。どちらの値を使うかによって、1株
+あたり指標・希薄化率計算等の結果が系統的に変わりうる。現状どちらが
+どの計算で使われているか、実際の消費箇所（EPS計算・1株あたり価値計算
+等）の洗い出しは未実施。着手条件: なし。
 
-#### 影響
-どちらの値を使うかによって、1株あたり指標・希薄化率計算等の結果が
-系統的に変わりうる。現状どちらがどの計算で使われているか、実害の
-有無は未検証。
+⑤ **ファイル名とannualデータ混在**（旧SCHEMA-NORMALIZED-ANNUAL-NAMING-
+MISMATCH-1、優先度低）: `normalized/{TICKER}_quarterly_normalized.json`
+はファイル名に"quarterly"と明記されているが、実際は`is_annual: true`
+エントリとしてannualデータも同一ファイル内に混在保持している
+（`quarterly.py::build_raw_table()`がcompany_factsから四半期・年次
+両方を同一fieldsに格納するため）。現状の実害は確認されていないが、
+統合スキーマ設計時にファイル名から内容を誤推測する混乱要因になり
+うる。着手条件: なし。
+
+⑥ **DAフォールバック欠如**（旧SCHEMA-DA-FALLBACK-MISSING-1、優先度
+低）: `quarterly.py::FIELD_CONCEPTS`のDA（減価償却）概念はフォール
+バック候補が一切設定されておらず（単一タグ
+`DepreciationDepletionAndAmortization`のみ）、このタグを報告しない
+銘柄（LMT等、`DepreciationAndAmortization`のみ報告）で`normalized/`側
+のDAフィールドが完全に空（0エントリ）になる。①と同型のフォール
+バック欠如パターン。実質的な計算消費箇所（成長率推計、
+pipeline.py:2807）は`normalized/`ではなくannual/quarterly側
+（parser.py由来、フォールバック4候補あり）を参照しているため、現状の
+計算結果への実害はない。`normalized/`のDAはstock.htmlの単純表示にしか
+使われていないため影響は限定的。着手条件: なし。
 
 #### 対応方針
-未定。実際の消費箇所（EPS計算・1株あたり価値計算等）の洗い出しを
-先に行う必要がある。
+①〜⑥のいずれも、`common/sec_data`統合スキーマ（Layer2/Layer3）設計時に
+`parser.py`側の定義（フォールバック網羅性・優先順序とも既に安全性検証
+済み）へ統一することで一括解消する見込み。個別の緊急対応は不要。
 
 #### 着手条件
-なし
+①②はcommon/sec_data統合スキーマ設計の確定後。③④⑤⑥は個別の着手条件
+なし（優先度に応じて統合作業と同時対応で可）。
 
 ---
 
@@ -5218,22 +5212,57 @@ TICKER-SOURCE-UNIFY-1は対応方針1・2・3すべて2026-07-11中に完了し�
 
 ---
 
-### [TICKER-SOURCE-CONFIG-DUP-1] common/sec_data/config.pyがtickers.pyと機能重複
+### [TICKER-LOADING-UNIFICATION-1] 銘柄リスト読み込みロジックのtickers.py統一
 **優先度:** 低
-**分類:** アーキテクチャ / 銘柄リスト参照
-**登録日:** 2026-07-11
-**発見:** [[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）対応方針3実施時の横断調査
+**分類:** 保守 / 銘柄リスト参照
+**登録日:** 2026-07-11〜2026-07-13（統合日: 2026-08-03）
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン・
+[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）対応方針3実施時の
+横断調査
 
-#### 背景
-`common/sec_data/config.py`は`tickers.py`とは別の独立した重複ユーティリティで、
+#### 内容
+以下3箇所が、`tickers.py`が既に提供する銘柄リスト取得機能
+（`get_all_tickers()`等）を使わず、cik_lookup.csv等を独自に読み込む
+重複実装を持つ。いずれもバグではなくコード重複（DRY違反）で、
+`tickers.py`経由への統一で解消できる。
+
+**対象箇所**:
+
+① `common/system_health.py::check_h_config()`（旧SYSHEALTH-CIK-
+DEDUP-1、優先度低）: segment/maturity configの孤立エントリ検出のため
+`all_tickers`（フラグ無視の全登録銘柄）を`csv.DictReader`で独自に
+パースしている。同一の全銘柄取得は`tickers.get_all_tickers()`が既に
+提供しており、置換可能（バグではなくコード重複の解消のみ）。
+`all_tickers = {r["ticker"] for r in rows}`を`tickers.get_all_
+tickers()`ベースに置換する。挙動が完全に同一であることを確認してから
+着手する。
+
+② `src/tail/kpi_proposer.py`・`src/tail/sec_ctrl_fetcher.py`・
+`src/tail/text_kpi_extractor.py`（旧TAIL-CIK-LOOKUP-DEDUP-1、優先度
+低）: 3ファイルが`load_cik(ticker)`（cik_lookup.csvから指定ティッカー
+のCIKを検索して返す関数）をそれぞれ独立に実装している（関数名・実装
+内容ともほぼ同一）。FLAG-CONSUMER-AUDIT-2/3のようなフラグバイパスバグ
+型ではなく、単純なDRY違反（3箇所の重複実装）。共有ヘルパー（例:
+`common/sec_data/tickers.py`または`config.py`への`get_cik(ticker)`
+追加）に統合し、3ファイルから呼び出す形に変更する。
+
+③ `common/sec_data/config.py`（旧TICKER-SOURCE-CONFIG-DUP-1、優先度
+低）: `tickers.py`とは別の独立した重複ユーティリティで、
 `_load_from_csv()`が独自にcik_lookup.csvを読み、`get_all()`（全銘柄）・
-`get_holdings()`・`get_watchlist()`・`get_ticker_info()`を提供している。
-`common/sec_data/update.py`（SEC生データ取得）が現在も正規にこれを使用しており
-「バグ」ではないが、`tickers.py`の`get_all_tickers()`と機能重複している。
+`get_holdings()`・`get_watchlist()`・`get_ticker_info()`を提供して
+いる。`common/sec_data/update.py`（SEC生データ取得）が現在も正規に
+これを使用しており「バグ」ではないが、`tickers.py`の
+`get_all_tickers()`と機能重複している。統合要否・移行方針は他2件より
+スコープが広い可能性があるため、個別に検討する。
 
 #### 対応方針
-統合要否・移行方針は本タスクのスコープ外として別途検討する。
-[[TICKER-SOURCE-UNIFY-1]]（完了・BACKLOG_DONE.md参照）の関連課題として記録する。
+①②は単純な置換で完結する見込み。③は`common/sec_data/update.py`が
+正規に依存している既存の公開APIのため、統合時は移行方針
+（config.pyのAPI群をtickers.py側にどう吸収するか）を先に検討してから
+着手する。
+
+#### 着手条件
+なし
 
 ---
 
@@ -5888,31 +5917,71 @@ fiscal_yearフィールドを間接的に消費する」旨に修正する。
 
 ---
 
-### [REPORT-TXT-PARSER-CLEANUP-1] report_txt_parser.pyが本番未配線の孤立モジュール
+### [DEAD-CODE-AUDIT-BATCH-1] common/sec_data配下の陳腐化・未使用ファイル一括監査（削除要否判断）
 **優先度:** 低
-**分類:** 保守 / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
-**登録日:** 2026-07-18
-**発見:** [[GATE2-PHASE3B-1]]③-b事前調査時
+**分類:** 保守 / リポジトリ整理
+**登録日:** 2026-07-13〜2026-07-18（統合日: 2026-08-03）
+**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン・
+[[ARCH-DATA-1]]残課題③調査時・[[GATE2-PHASE3B-1]]③-b事前調査時
 
-#### 問題
-`common/screening/report_txt_parser.py`は report.txt を regex でパースして
+#### 内容
+以下4ファイルは、いずれも「全リポジトリでのimport/参照有無をgrep確認
+→未使用と確認できれば削除、継続利用の可能性があれば個別対応」という
+共通の判定基準で削除要否を判断できる状態にある。1つの監査作業単位として
+まとめて調査・判断する。
+
+**対象ファイルリスト**:
+
+① `common/sec_data/phase1_scan.py`（旧PHASE1-SCAN-CLEANUP-1、優先度
+低）: `os.listdir(DATA)`で`docs/value-monitor/tanuki_valuation/data/`を
+無条件スキャンし、tanukiフラグを見ずに全ディレクトリを対象銘柄として
+扱う。ハードコードされた`TODAY = date(2026, 6, 11)`から、2026-06-11頃に
+使われた一回限りの診断スクリプトと推測される。CIワークフロー・他
+スクリプトからの参照なし（grep全数確認済み）。一回限りの診断スクリプト
+であることを確認できれば削除、継続利用の可能性がある場合は
+`tickers.get_tanuki_tickers()`経由に修正する。
+
+② `src/value/tanuki_valuation/backfill_history.py`（旧BACKFILL-
+HISTORY-CLEANUP-1、優先度低）: `os.listdir(DATA_ROOT)`で無条件スキャン
+し、tanukiフラグを見ない。ファイル内コメント「May 14-16 History
+Backfill (v8.2)」から特定日付向けの一回限りのバックフィルスクリプトと
+推測される。一回限りのバックフィルスクリプトであることを確認できれば
+削除、継続利用の可能性がある場合は`tickers.get_tanuki_tickers()`経由に
+修正する。
+
+③ `common/sec_data/quality_checker.py`（旧QUALITY-CHECKER-CLEANUP-1、
+優先度低）: 独自のQ01〜Q13チェックカタログ、独自の`TICKER_RESTRICTIONS`
+定義を保持するが、全リポジトリを検索した結果どこからもimportされて
+いない未使用コードと判明している。同ファイル内の`TICKER_RESTRICTIONS`は
+コメント上「quarterly.pyと同期」とあるが実態は非同期で、SOFI・IONQの
+エントリ（quarterly.py側には存在）を欠いている。
+`report_consistency_check.py`（CHECK-N命名）・`quality_checker.py`
+（Q0N命名）・`registration_validator.py`（P1-xxx命名）と、既に3種類の
+独立したチェックカタログ・命名規則が併存しており、本ファイルは実質的に
+その一つが死蔵された状態。一度も呼ばれていないことを再確認できれば
+削除する、何らかの理由で将来利用予定がある場合は`TICKER_RESTRICTIONS`を
+quarterly.py側と同期させるか共有カタログへの統合を検討する。
+
+④ `common/screening/report_txt_parser.py`（旧REPORT-TXT-PARSER-
+CLEANUP-1、優先度低）: report.txt を regex でパースして
 `Classification`/`Matrix`/`FCF_History`等を抽出する公開API
 （`parse_report_text()`/`parse_ticker_report()`）を持つが、
 `common/sec_data/report_consistency_check.py`・
 `common/screening/dcf_validity_checker.py`のどちらからも`import`されて
 おらず、`tests/test_report_txt_parser.py`からのみ使用される孤立モジュール
-であることが判明した。
+であることが判明した。一方`report_consistency_check.py`は同じ
+「report.txtのClassification行をregexでパースする」ロジックを255-259
+行目に**独自に**実装しており（`report_txt_parser.py::_parse_tanuki_
+score()`とは別の正規表現・別の実装）、実質的な重複が存在する。対応方針
+候補（未確定）: a.`report_txt_parser.py`を削除する（未使用コードの
+整理）b.`report_consistency_check.py`側の独自パース実装を
+`report_txt_parser.py`に統合し重複を解消する c.現状維持（実害なし、
+テストのみで担保されている状態を許容）。
 
-一方`report_consistency_check.py`は同じ「report.txtのClassification行を
-regexでパースする」ロジックを255-259行目に**独自に**実装しており
-（`report_txt_parser.py::_parse_tanuki_score()`とは別の正規表現・別の
-実装）、実質的な重複が存在する。
-
-#### 対応方針候補（未確定）
-a. `report_txt_parser.py`を削除する（未使用コードの整理）
-b. `report_consistency_check.py`側の独自パース実装を`report_txt_parser.py`
-   に統合し、重複を解消する
-c. 現状維持（実害なし、テストのみで担保されている状態を許容）
+#### 対応方針
+4件とも「grep確認→未使用なら削除、継続利用の可能性があれば個別対応」の
+共通フローで一括調査する。個別の判定結果（削除/修正/現状維持）は対象
+ごとに異なってよい。
 
 #### 着手条件
 なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
@@ -5945,124 +6014,6 @@ b. 実害がないため現状維持（history.jsonの当該フィールドを�
 
 #### 着手条件
 なし（実害報告なし、優先度低。次回セッションで方針判断してから着手）
-
----
-
-### [QUALITY-CHECKER-CLEANUP-1] 未使用のquality_checker.py削除要否判断
-**優先度:** 低
-**分類:** 保守 / SECデータ取得層
-**登録日:** 2026-07-15
-**発見:** [[ARCH-DATA-1]]残課題③調査時
-
-#### 問題
-`common/sec_data/quality_checker.py`（独自のQ01〜Q13チェックカタログ、
-独自の`TICKER_RESTRICTIONS`定義を保持）が、全リポジトリを検索した結果
-どこからもimportされていない未使用コードと判明した。同ファイル内の
-`TICKER_RESTRICTIONS`はコメント上「quarterly.pyと同期」とあるが実態は
-非同期で、SOFI・IONQのエントリ（quarterly.py側には存在）を欠いている。
-
-`report_consistency_check.py`（CHECK-N命名）・`quality_checker.py`
-（Q0N命名）・`registration_validator.py`（P1-xxx命名）と、既に3種類の
-独立したチェックカタログ・命名規則が併存しており、本ファイルは実質的に
-その一つが死蔵された状態。
-
-#### 対応方針（未確定）
-- 一度も呼ばれていないことを再確認できれば削除する
-- 何らかの理由で将来利用予定がある場合は、`TICKER_RESTRICTIONS`を
-  quarterly.py側と同期させるか、共有カタログへの統合を検討する
-
-#### 着手条件
-なし
-
----
-
-### [PHASE1-SCAN-CLEANUP-1] phase1_scan.pyの陳腐化確認・削除要否判断
-**優先度:** 低
-**分類:** 保守 / SECデータ取得層
-**登録日:** 2026-07-13
-**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
-
-#### 問題
-`common/sec_data/phase1_scan.py`が`os.listdir(DATA)`で
-`docs/value-monitor/tanuki_valuation/data/`を無条件スキャンし、tanukiフラグを
-見ずに全ディレクトリを対象銘柄として扱う。ハードコードされた
-`TODAY = date(2026, 6, 11)`から、2026-06-11頃に使われた一回限りの診断
-スクリプトと推測される。CIワークフロー・他スクリプトからの参照なし
-（grep全数確認済み）。
-
-#### 対応方針（未確定）
-- 一回限りの診断スクリプトであることを確認できれば削除する
-- 継続利用の可能性がある場合は`tickers.get_tanuki_tickers()`経由に修正する
-
-#### 着手条件
-なし
-
----
-
-### [BACKFILL-HISTORY-CLEANUP-1] backfill_history.pyの陳腐化確認・削除要否判断
-**優先度:** 低
-**分類:** 保守 / TANUKI VALUATION
-**登録日:** 2026-07-13
-**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
-
-#### 問題
-`src/value/tanuki_valuation/backfill_history.py`が`os.listdir(DATA_ROOT)`で
-無条件スキャンし、tanukiフラグを見ない。ファイル内コメント
-「May 14-16 History Backfill (v8.2)」から特定日付向けの一回限りの
-バックフィルスクリプトと推測される。
-
-#### 対応方針（未確定）
-- 一回限りのバックフィルスクリプトであることを確認できれば削除する
-- 継続利用の可能性がある場合は`tickers.get_tanuki_tickers()`経由に修正する
-
-#### 着手条件
-なし
-
----
-
-### [SYSHEALTH-CIK-DEDUP-1] system_health.pyの独自CSVパースをtickers.get_all_tickers()に統一
-**優先度:** 低
-**分類:** 保守 / 品質管理
-**登録日:** 2026-07-13
-**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
-
-#### 問題
-`common/system_health.py::check_h_config()`が、segment/maturity configの
-孤立エントリ検出のため`all_tickers`（フラグ無視の全登録銘柄）を
-`csv.DictReader`で独自にパースしている。同一の全銘柄取得は
-`tickers.get_all_tickers()`が既に提供しており、置換可能（バグではなく
-コード重複の解消のみ）。
-
-#### 対応方針
-`all_tickers = {r["ticker"] for r in rows}`を
-`tickers.get_all_tickers()`ベースに置換する。挙動が完全に同一であることを
-確認してから着手する。
-
-#### 着手条件
-なし
-
----
-
-### [TAIL-CIK-LOOKUP-DEDUP-1] TANUKI TAIL 3スクリプトのload_cik(ticker)重複実装の統合
-**優先度:** 低
-**分類:** 保守 / TANUKI TAIL
-**登録日:** 2026-07-13
-**発見:** [[TICKER-DIRECT-ACCESS-GUARD-1]]実装時の全リポジトリスキャン
-
-#### 問題
-`src/tail/kpi_proposer.py`・`src/tail/sec_ctrl_fetcher.py`・
-`src/tail/text_kpi_extractor.py`の3ファイルが、`load_cik(ticker)`
-（cik_lookup.csvから指定ティッカーのCIKを検索して返す関数）を
-それぞれ独立に実装している（関数名・実装内容ともほぼ同一）。
-FLAG-CONSUMER-AUDIT-2/3のようなフラグバイパスバグ型ではなく、単純な
-DRY違反（3箇所の重複実装）。
-
-#### 対応方針
-共有ヘルパー（例: `common/sec_data/tickers.py`または`config.py`への
-`get_cik(ticker)`追加）に統合し、3ファイルから呼び出す形に変更する。
-
-#### 着手条件
-なし
 
 ---
 
@@ -6121,13 +6072,13 @@ EXTREME-FEAR-1対応時、買い候補TOP10機能（TANUKI score×乖離率×fun
 - 現状: 構想中
 - 内容: 各サブポート戦略の期待値を統合管理するエンジン
 
-### [DESIGN-8] 8-3 ワンクリック銘柄登録〜更新
+### [DESIGN-8-3] 8-3 ワンクリック銘柄登録〜更新
 - 概要: Discover画面から「➕ 登録」ボタンで
   CIK取得→β/セグメント/Damodaran業種AI提案→承認→一括更新
   を一気通貫で実行
 - 実装難易度: 高
 
-### [DESIGN-8] 8-4 指数採用候補銘柄の発掘（設計見直し済み・実装保留）
+### [DESIGN-8-4] 8-4 指数採用候補銘柄の発掘（設計見直し済み・実装保留）
 - 概要: S&P MidCap 400 → S&P 500 昇格候補を定期サーチ
   GS・バンカメ等が発表する昇格候補レポートをGrok Web検索で収集
   機械的条件判定（yfinance）ではなくアナリストレポートベースの設計
@@ -6367,31 +6318,6 @@ WATCH丸めに限られ、IV・upside等のDCF計算値自体は変更されな�
 
 ---
 
-### [SCHEMA-NORMALIZED-ANNUAL-NAMING-MISMATCH-1] normalized/のファイル名が"quarterly"だがannualデータも混在保持している
-**優先度:** 低
-**分類:** 技術的負債 / ドキュメント不整合
-**登録日:** 2026-07-23
-**発見:** annual/segment/filing_text AS-IS構造調査（フェーズ1）
-
-#### 内容
-`normalized/{TICKER}_quarterly_normalized.json`はファイル名に
-"quarterly"と明記されているが、実際は`is_annual: true`エントリとして
-annualデータも同一ファイル内に混在保持している
-（quarterly.py::build_raw_table()がcompany_factsから四半期・年次
-両方を同一fieldsに格納するため）。
-
-#### 影響
-現状の実害は確認されていないが、統合スキーマ設計時にファイル名から
-内容を誤推測する混乱要因になりうる。
-
-#### 対応方針
-未定。統合スキーマ設計時にファイル命名規則を見直す。
-
-#### 着手条件
-なし
-
----
-
 ### [Q4-IMPLIED-CALC-TRIPLICATION-1] 「FY年次値-(Q1+Q2+Q3)=Q4」のQ4逆算ロジックが3箇所に独立実装されている
 **優先度:** 低
 **分類:** リファクタリング / 技術的負債
@@ -6439,34 +6365,6 @@ ttm/{ticker}_ttm_series.jsonを再生成するたびに無関係なdiffが
 
 #### 着手条件
 なし（優先度低）
-
----
-
-### [SCHEMA-DA-FALLBACK-MISSING-1] normalized/のDA（減価償却）フィールドがフォールバック欠如により一部銘柄で完全に空になる
-**優先度:** 低
-**分類:** データ品質
-**登録日:** 2026-07-24
-**発見:** Layer2設計・DA消費箇所調査
-
-#### 内容
-`quarterly.py::FIELD_CONCEPTS`のDA（減価償却）概念はフォールバック
-候補が一切設定されておらず（単一タグ`DepreciationDepletionAndAmortization`
-のみ）、このタグを報告しない銘柄（LMT等、`DepreciationAndAmortization`
-のみ報告）で`normalized/`側のDAフィールドが完全に空（0エントリ）になる。
-[[SCHEMA-STDEBT-COVERAGE-GAP-1]]と同型のフォールバック欠如パターン。
-
-#### 影響
-実質的な計算消費箇所（成長率推計、pipeline.py:2807）は`normalized/`
-ではなくannual/quarterly側（parser.py由来、フォールバック4候補あり）
-を参照しているため、現状の計算結果への実害はない。`normalized/`の
-DAはstock.htmlの単純表示にしか使われていないため影響は限定的。
-
-#### 対応方針
-Layer2統合時にparser.py側の定義（DepreciationAndAmortization主体、
-4候補）へ統一することで自動的に解消する見込み。
-
-#### 着手条件
-なし
 
 ---
 
@@ -6522,8 +6420,8 @@ RPO（残存履行義務）はHypeCore・STONKS SILO等で成長シグナルと�
 #### 対応方針
 未定。総額系タグと長期のみタグのどちらを正とすべきか（あるいは
 両者を別フィールドとして分離すべきか）の判断が必要。
-[[SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1]]と同種の「候補統合時の
-概念混在」パターンの可能性がある。
+[[SCHEMA-NORMALIZED-ISSUES-1]]（旧SCHEMA-SHARESBASIC-CONCEPT-
+MISMATCH-1）と同種の「候補統合時の概念混在」パターンの可能性がある。
 
 #### 着手条件
 移行実装計画（SEC_EDGAR_LAYER_DESIGN.md 8章）フェーズD
@@ -6860,8 +6758,8 @@ GeneralAndAdministrativeExpenseタグを報告している銘柄は56銘柄に�
 
 #### 対応方針
 - **選択肢B（既存selling_general_and_administrativeへのフォールバック
-  候補化）は非推奨**: [[SCHEMA-SM-SGA-CONFLATION-1]]と同型の概念混在
-  リスクを再導入する。G&A単体とSGA総額は金額の性質が異なり（SGA総額は
+  候補化）は非推奨**: [[SCHEMA-NORMALIZED-ISSUES-1]]（旧SCHEMA-SM-SGA-
+  CONFLATION-1）と同型の概念混在リスクを再導入する。G&A単体とSGA総額は金額の性質が異なり（SGA総額は
   Selling費用を含むため同規模の企業でもG&A単体より必然的に大きい）、
   同一フィールドに混在させると時系列比較・銘柄間比較の両方で不整合が
   生じる
