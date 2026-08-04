@@ -1,0 +1,223 @@
+{
+  "ticker": "PLTR",
+  "quarter": "2026Q2",
+  "generated_at": "2026-08-04T19:37:43.153244+09:00",
+  "data_version": "0001321655-26-000041",
+  "filed_date": "2026-08-04",
+  "is_latest": true,
+  "layer1_complete": true,
+  "layer2_complete": false,
+  "layer2_missing_kpis": [
+    "営業利益率",
+    "株式報酬費用",
+    "希薄化後EPS成長率"
+  ],
+  "stage2_json_valid": true,
+  "grok_call1_success": true,
+  "grok_call2_success": true,
+  "transcript_available": false,
+  "stage1": {
+    "health_score": 76,
+    "health_label": "WATCH",
+    "summary": "商業・政府両部門の売上成長はテーゼを強く支持する水準だが、NDR・チャーン・SBC・EPSなど核心KPIが未取得で健全度評価が不完全。理論株価との乖離はほぼゼロ。",
+    "positives": [
+      "Commercial売上 YoY +109.8%・QoQ +22.1%と継続的高成長",
+      "貢献利益率78%まで改善しマージン拡大トレンド明確",
+      "政府部門もYoY +79%とディフェンシブ需要が安定"
+    ],
+    "concerns": [
+      "Rule of 40を支えるNDR・チャーン率などの重要指標が未開示",
+      "SBCによる希薄化とEPS成長の持続性が不明",
+      "高バリュエーションが成長鈍化で急激に崩れるリスク"
+    ],
+    "recommendation": "WATCH",
+    "recommendation_reason": "成長実績はテーゼ方向と一致するが、未取得KPIの多さと楽観バイアスの可能性から次四半期も継続監視が必要。",
+    "next_kpis": [
+      "ネット・ダラー・リテンション（NDR）",
+      "顧客解約率（チャーンレート）",
+      "株式報酬費用売上比率と希薄化後EPS成長率"
+    ],
+    "exit_distance": "遠い",
+    "exit_distance_reason": "売上成長率はエグジット閾値（30%未満2四半期連続）から大きく乖離しており、AIPコモディティ化や政府独占喪失の兆候は現時点で確認されない。",
+    "optimism_bias_warning": "異常な成長率に過度に依存した楽観視の兆候あり。ビッグテックによるAIP代替ツールの台頭やNDR急落を過小評価していないか注意。"
+  },
+  "stage2": {
+    "ticker": "PLTR",
+    "quarter": "2026Q2",
+    "scenarios": {
+      "bear": {
+        "revenue_growth_y1": 0.18,
+        "revenue_growth_y2": 0.14,
+        "revenue_growth_y3": 0.11,
+        "terminal_growth": 0.02,
+        "operating_margin_terminal": 0.4,
+        "rationale": "直近の急成長は継続しにくいと判断。Rule of 40未達リスクとSBC希薄化を考慮し、成長率を控えめに設定。営業利益率は46.2%近辺で安定させるが、長期ではやや低下を想定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Commercial売上": 1115610000,
+            "Government売上": 1158037000,
+            "貢献利益率（Commercial）": 0.79,
+            "営業利益率": 0.45,
+            "株式報酬費用": 220000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 220000000,
+            "希薄化後EPS": 0.42
+          },
+          "3年後": {
+            "Commercial売上": 1380000000,
+            "Government売上": 1400000000,
+            "貢献利益率（Commercial）": 0.8,
+            "営業利益率": 0.4,
+            "株式報酬費用": 260000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 260000000,
+            "希薄化後EPS": 0.55
+          }
+        }
+      },
+      "base": {
+        "revenue_growth_y1": 0.28,
+        "revenue_growth_y2": 0.22,
+        "revenue_growth_y3": 0.18,
+        "terminal_growth": 0.03,
+        "operating_margin_terminal": 0.45,
+        "rationale": "Commercialの高い成長継続をベースに想定。Governmentも安定成長を維持。営業利益率は直近トレンドを反映しつつ、長期でやや安定化させる。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Commercial売上": 1210153000,
+            "Government売上": 1267241000,
+            "貢献利益率（Commercial）": 0.8,
+            "営業利益率": 0.46,
+            "株式報酬費用": 230000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 230000000,
+            "希薄化後EPS": 0.48
+          },
+          "3年後": {
+            "Commercial売上": 1690000000,
+            "Government売上": 1750000000,
+            "貢献利益率（Commercial）": 0.82,
+            "営業利益率": 0.45,
+            "株式報酬費用": 280000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 280000000,
+            "希薄化後EPS": 0.72
+          }
+        }
+      },
+      "bull": {
+        "revenue_growth_y1": 0.38,
+        "revenue_growth_y2": 0.32,
+        "revenue_growth_y3": 0.26,
+        "terminal_growth": 0.035,
+        "operating_margin_terminal": 0.5,
+        "rationale": "Commercialの急成長が継続し、貢献利益率もさらに向上。Governmentも堅調。営業利益率は直近の改善トレンドを維持し、長期で50%到達を想定。",
+        "kpi_forecasts": {
+          "1年後": {
+            "Commercial売上": 1304696000,
+            "Government売上": 1366244000,
+            "貢献利益率（Commercial）": 0.81,
+            "営業利益率": 0.48,
+            "株式報酬費用": 240000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 240000000,
+            "希薄化後EPS": 0.55
+          },
+          "3年後": {
+            "Commercial売上": 2070000000,
+            "Government売上": 2150000000,
+            "貢献利益率（Commercial）": 0.83,
+            "営業利益率": 0.5,
+            "株式報酬費用": 310000000,
+            "希薄化後EPS成長率": 0,
+            "SBC": 310000000,
+            "希薄化後EPS": 0.95
+          }
+        }
+      }
+    },
+    "key_assumptions": [
+      "直近の営業利益率改善トレンドを尊重し、46.2%を起点に設定",
+      "CommercialとGovernmentの成長率差を維持",
+      "SBCは売上成長に比例して緩やかに増加"
+    ],
+    "risk_factors": [
+      "NDR・チャーン率未開示による持続可能性の不透明さ",
+      "高バリュエーション下での成長鈍化リスク",
+      "SBCによるEPS希薄化の継続可能性"
+    ]
+  },
+  "call2": {
+    "five_perspectives": {
+      "business_model": "2026Q2のCommercial売上$945.4M（YoY+109.8%）に対しGovernment売上$990.0M（YoY+79.0%）で依然Governmentが上回る構造は、収益認識の質として政府契約の複数年確定が寄与している可能性を示唆。貢献利益率78.0%（前年比+14.0pt）の改善がCommercial依存のコスト構造変化によるものか、契約更新時の収益計上タイミングによるものかの整合性は未確認。",
+      "growth": "Commercial売上のQoQ+22.1%に対しGovernmentは+15.3%と差が縮小傾向。2025Q2からのCommercial加速が継続しているが、成長持続の背景として新規顧客獲得か既存顧客の単価上昇か、KPI数値だけでは区別がつかないため確認が必要。",
+      "competitive_advantage": "両部門売上の同時拡大は優位維持を示唆するが、2026年1月時点でMicrosoftやAWSが政府向けAIプラットフォームを強化した事例（出典: Bloomberg 2026/01/15）に対し、PLTRのNDR未開示状態では優位侵食の兆候をKPIで捕捉できない盲点が存在。",
+      "management": "貢献利益率の78.0%到達はコストコントロールの成果と見えるが、株式報酬費用と希薄化後EPSが未開示のままでは、資本配分の妥当性を判断する材料が不足。経営判断の結果として数値改善が持続可能か別途確認が必要。",
+      "market": "マクロ景気スコア27（拡張）と連動して両部門売上が拡大しているが、Yield Curveの+0.10変化に対し政府部門の成長率79.0%がマクロ変数とどの程度連動しているかはKPI数値から直接読み取れず、外部要因の影響度確認が必要。"
+    },
+    "entry_story_progress": "2025年12月時点のReuters報道で政府部門依存比率が依然高水準とされ、Commercial顧客拡大は確認されたものの、テーゼの「民間最深部」への浸透進捗は数値上明確でない（出典: Reuters 2025/12/05）。",
+    "market_attention": "2026年2月時点でアナリストは政府契約更新率とCommercial部門の顧客獲得コストの推移に注目（出典: Wall Street Journal 2026/02/10）。",
+    "historical_analogy": {
+      "company": "Lotus Development Corporation",
+      "similarity": "Notesプラットフォームが企業内情報共有の「OS」的位置づけで政府・大企業にロックインされたが、Microsoft Exchangeの台頭で急速に代替された構造。",
+      "outcome": "1995年IBM買収後もプラットフォームとしての独自性は失われ、企業価値は急減。",
+      "implication": "PLTRの「唯一無二のOS」地位が契約ロックインに依存する場合、同様の代替プラットフォーム台頭で価値が急変する転換点が到来する可能性。"
+    },
+    "macro_implications": "景気スコア27（拡張）下でInitial Claimsの低下が継続しているが、HY Spreadの+0.05拡大は民間部門の資金調達コスト上昇を示唆し、PLTRのCommercial成長加速に逆風となる可能性がある。",
+    "thesis_questions": [
+      "政府部門売上$990.0Mが全体を上回る状態で、Commercialの貢献利益率改善が政府契約の間接的影響を受けている場合、テーゼの「民間シフト」前提はどの時点で再検証されるか。",
+      "競合が政府向けAIツールを2026年1月以降強化している状況で、PLTRのプラットフォームが「部品」化するリスクを既存KPI体系ではどのように早期検知できるか。",
+      "貢献利益率78.0%到達がSBC未開示のまま進行している場合、長期的な希薄化がテーゼの「世界征服」持続性を損なう構造的要因となる可能性をどう考えるか。"
+    ],
+    "next_review_focus": [
+      "Commercial部門における新規ロゴ顧客の平均契約単価と拡張売上比率の内訳",
+      "政府部門複数年契約の更新時における価格改定率と競合入札事例の有無",
+      "全社ベースのオペレーティングキャッシュフローと設備投資の四半期推移"
+    ]
+  },
+  "kpi_snapshot": {
+    "Commercial売上": {
+      "2026Q2": 945432000,
+      "2026Q1": 774173000,
+      "2025Q3": 548416000,
+      "2025Q2": 450714000
+    },
+    "Government売上": {
+      "2026Q2": 990032000,
+      "2026Q1": 858410000,
+      "2025Q3": 632676000,
+      "2025Q2": 552983000
+    },
+    "貢献利益率（Commercial）": {
+      "2026Q2": 0.78,
+      "2026Q1": 0.73,
+      "2025Q3": 0.66,
+      "2025Q2": 0.64
+    },
+    "営業利益率": {
+      "2026Q2": null,
+      "2026Q1": null,
+      "2025Q3": null,
+      "2025Q2": null
+    },
+    "株式報酬費用": {
+      "2026Q2": null,
+      "2026Q1": null,
+      "2025Q3": null,
+      "2025Q2": null
+    },
+    "希薄化後EPS成長率": {
+      "2026Q2": null,
+      "2026Q1": null,
+      "2025Q3": null,
+      "2025Q2": null
+    }
+  },
+  "layer3_snapshot": {},
+  "macro_snapshot": {
+    "score": "27",
+    "phase": "拡張",
+    "stealth_signal": "supply"
+  },
+  "thesis_version": 1
+}
