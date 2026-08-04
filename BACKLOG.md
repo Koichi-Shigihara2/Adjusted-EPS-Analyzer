@@ -1552,119 +1552,43 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
-### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）
+### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— Stage 2〜3残タスク
 **優先度:** 高
-**分類:** アーキテクチャ再設計 / 運用方針確定
+**分類:** アーキテクチャ再設計 / 運用方針確定・実装
 **登録日:** 2026-08-04
+**更新日:** 2026-08-05（Stage 1完了。詳細はBACKLOG_DONE.md「2026-08-05
+（完了）」参照。以下はStage 2〜3の残タスクのみ記載）
 **発見:** common/sec_data一次データ取得層 再設計 運用方針検討（chat記録）
 
-#### 内容
-`common/sec_data/`を一から作り直すにあたり、以下3点の運用方針を確定した:
+#### 内容（要約。運用方針・スキーマ設計・Stage 1実装の全詳細は
+BACKLOG_DONE.md「[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 1」参照）
+`common/sec_data/`再設計の運用方針3点（フィックス機構・銘柄数絞り込み
+基準・新規登録フロー）を確定し、フィックス機構（`fixed_registry.json`、
+銘柄×年度単位の差分適用方式）のスキーマ設計・`parser.py`/`utils.py`/
+`report_consistency_check.py`（CHECK-31/WARN-31）への実装・taxonomy属性
+①〜⑧非該当26銘柄・372銘柄×年度エントリのStage 1登録・検証（全105銘柄
+再パースで無変化確認、pytest 497 passed/2 known failed、NG=0確認）まで
+完了した（機能コミット`7c15b2a75`、BACKLOG更新コミット`ae88715c5`、
+いずれもpush済み）。
 
-1. **フィックス機構**: 別ファイル管理（`fixed_registry.json`、銘柄×年度単位）
-   ＋差分適用方式（fixed年度は既存フィールドを変更しないが新規フィールドは
-   通常ロジックで追加）＋二重防御（生成パイプライン側のスキップ機構＋
-   `audit.py`等での「fixed年度に差分があればNG」という常設CI検知）
-2. **銘柄数の絞り込み基準**: 属性ベース（SPAC/決算期変更等）での除外は
-   実データ確認の結果、AAPL/MSFT/GOOGL/NVDA/TSLA等の主力銘柄まで対象に
-   含んでしまい非現実的と判明。代わりに投資上の重要度軸（誤登録・投資
-   対象として無効な銘柄は完全除外、探索的候補〈status=candidate〉で
-   データ品質問題も抱える銘柄は保留、主力・保有銘柄は属性に関わらず
-   個別対応前提で残す）を採用する
-3. **新規登録時の運用フロー**: 既存の[[ANOMALY-PATTERN-CATALOG-1]]の
-   先行決定（登録前の完全判定は見送り、登録後・実データ取得後に照合）を
-   踏襲し一般化する。CLAUDE_CODE_START.mdのStep 0.5を正式フロー化、
-   Step 1完了直後に新設Step 1.5（既存の汎用検知器CHECK29/WARN-24/
-   WARN-28/formerNames検知等を新規銘柄にも自動適用しtaxonomy①〜⑧の
-   該当型を機械判定）、Step 8（`registration_validator.py`）で個別対応
-   完了を最終確認する
-
-#### 追記（2026-08-04、fixed_registry.json具体スキーマ確定・chat記録）
-上記1.のフィックス機構について、具体的なJSONスキーマ・生成パイプライン
-統合方法・CI検知・移行手順を確定した:
-
-- **スキーマ**: `common/sec_data/fixed_registry.json`（`fact_overrides.json`
-  と同階層・同型のロード方式）。銘柄×年度単位で`fixed_at`・`fixed_by`
-  （統制語彙: `manual_verification`/`checkgate_pass`/`bulk_migration`）・
-  `verified_against`（10-K原本のaccn/filed/form）・`fields_snapshot`
-  （フィックス対象フィールド名一覧。「新規フィールド」の判定基準は
-  値がNoneかどうかではなく本リストへの掲載有無とする）・`snapshot_hash`
-  （`annual_{year}.json`全体を`sort_keys=True`で正規化したハッシュ、
-  CI検知に使用）を記録する。フィックス済みの値そのものは複製せず、
-  単一の正は常に`annual_{year}.json`側に置く（`INPUT-C-008`Portfolio
-  二重保持等、既存のデータ二重管理への反省を踏襲）
-- **生成パイプライン統合**: `parser.py::_parse_raw_data()`の最終段
-  （`_apply_fact_overrides()`・各種逆算バックフィルより後、`return result`
-  の直前）に新設`_apply_fixed_registry_freeze()`を配置し、フィックス
-  対象フィールドは旧`annual_{year}.json`の値へ強制復元、新規フィールド
-  のみ通常抽出を通す差分適用方式とする
-- **判断分岐点①（TTM側の適用範囲）**: [[TTM-DATA-DRIFT-BEHIND-
-  PIPELINE-1]]で確認済みの独立パイプライン構造（`layer3_builder.py`/
-  `ttm_calculator.py`が`parser.py`と完全に別実装）を踏まえ、今回は
-  annual（`parser.py`）側のみを対象とし、TTM側（`layer3_builder.py`）
-  への適用は別途検討する。「フィックスしたつもりでもTTM経由でIVを
-  計算する銘柄（RCAT等）では実際には保護されない」という既知の限界を
-  明示した上でスコープを限定する
-- **CI検知（二次防御）**: `report_consistency_check.py`にCHECK-31/
-  WARN-31（`[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]`が予約済みの
-  WARN-30と衝突しないよう次の空き番号を採用）として、fixed年度の
-  `snapshot_hash`不一致を検知するチェックを追加する
-- **判断分岐点②（NG/WARN扱い）**: 不一致検知時は**NG化**を採用し、
-  既存の`--fail-on-ng`運用にそのまま統合する。WARN化すると既存の
-  「許容してよいWARN」と同様に放置されるリスクがあり、フィックスの
-  「以後変更されない」という保証自体が骨抜きになるため不採用とした
-- **段階的移行手順**: 既存チェックゲート（CHECK-1〜29・
-  `revenue_tag_conflict_check.py`・`registration_validator.py` P1〜P6）
-  全通過を「検証済み」の近似基準として採用し、Stage1（taxonomy属性①〜⑧
-  非該当の約55銘柄・チェックゲート全通過年度、`fixed_by: checkgate_pass`）
-  →Stage2（属性該当銘柄のうちBACKLOG_DONE.mdで解消済み確認済みの年度、
-  `fixed_by: manual_verification`）→Stage3（属性該当銘柄でOPEN課題が
-  残る年度は保留）の順で段階的にフィックス対象を拡大する
-- **一括登録前の必須確認事項**: Stage1〜2の対象範囲（銘柄×年度リスト）
-  生成結果は差分としてユーザーに提示し、確認を経てから`fixed_registry.json`
-  へ一括登録する（[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]の教訓
-  「対象サブセットのみへのシミュレーションでは既解決集団への回帰を
-  見逃す——常に全母集団で再シミュレーションすること」を踏襲）
-
-#### 追記（2026-08-05、Stage 1対象リスト実測・実登録・実装完了）
-Stage 1対象リストを実測した結果、taxonomy属性①〜⑧該当は**58銘柄**
-（前回見積の「約55銘柄」より上方修正。`[[OPERATING-CASH-FLOW-
-CONTINUING-DISCONTINUED-GAP-1]]`確定25銘柄リスト反映のため）、非該当は
-47銘柄（ENBは誤登録として別枠除外、実質候補46銘柄）と判明。
-`registration_validator.py`・`report_consistency_check.py`
-（CHECK-1〜29）・`revenue_tag_conflict_check.py`を実際に実行した結果、
-**Stage 1最終候補は26銘柄・372銘柄×年度エントリ**に確定した
-（除外6銘柄はregistration_validator.py NG/WARN、13銘柄は
-report_consistency_check.py WARN、TDYはrevenue_tag_conflict_check.pyの
-真の競合〈FY2012〜2014、`[[REVENUE-TAG-PRIORITY-FRAGILE-1]]`と一致〉）。
-D&A/S&M系のrevenue_tag_conflict_check.py警告26銘柄全件は、
-`SEC_DATA_BUG_TAXONOMY.md` #19記載の既知の誤検知パターン（タグの
-包含関係）と判断しStage1除外対象から除外した。
-
-上記26銘柄・372エントリを`fixed_registry.json`へ実登録し、
-`parser.py`（`_load_fixed_registry()`・`_apply_fixed_registry_freeze()`
-新設）・`utils.py`（`compute_snapshot_hash()`新設）・
-`report_consistency_check.py`（CHECK-31/WARN-31新設、NG化）を実装した。
-検証: 全105銘柄で`parser.parse_and_save()`を再実行し、フィックス対象
-372エントリを含む全annual/quarterly出力が無変化であることを確認
-（`bs_identity_violations_log.json`10銘柄分のキー順序差分のみ発生、
-これは無関係の既知問題`[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-
-ORDER-1]]`のため元に戻してコミット対象から除外）。CHECK-31は
-意図的な改変で正しく発火・復元後に再度クリーンになることを確認。
-pytest 497 passed/2 known failed（既知の`[[TEST-STALE-IV-1]]`
-MSFT/NVDAのみ）。`report_consistency_check.py --fail-on-ng`でNG=0を確認。
-
-機能コミット: `7d7c63faf`（`fixed_registry.json`新設・`parser.py`・
-`utils.py`・`report_consistency_check.py`）。pushは保留、コミットのみ
-（明示的な指示があるまで保留の運用に従う）。
-
-**残タスク（Stage 2〜3、未着手）**: taxonomy属性①〜⑧該当58銘柄のうち、
+**残タスク（Stage 2〜3、未着手）**: taxonomy属性①〜⑧該当58銘柄
+（AAPL, ABBV, APGE, ASTS, AVAV, AVGO, BBAI, BKNG, BROS, CAKE, CART,
+CAT, CELH, CEG, CIX, COHR, CON, CPRT, DELL, ELF, ESTC, FICO, GEV,
+GOOGL, HEI, HON, IONQ, JOBY, KLAC, LITE, LLY, LRCX, MO, MRVL, MSFT,
+NOW, NVDA, ONDS, PAYS, PLTR, PM, RCAT, RDW, RKLB, RMBS, SCCO, SN,
+SNPS, SOFI, SOUN, SPIR, TER, TSLA, V, VRT, VST, WST, XOM）のうち、
 BACKLOG_DONE.mdで個別バグ対応が完了・確認済みの年度をStage 2として
-`fixed_by: manual_verification`で登録する作業が未着手のまま残る。
+`fixed_by: manual_verification`で登録する作業（次のアクション）。
+Stage 3（属性該当銘柄でOPEN課題が残る年度は保留のまま）も未着手。
 
 #### 対応方針
 次のステップとして、Stage 2対象銘柄×年度リストの生成（属性該当58銘柄の
 うちBACKLOG_DONE.mdで解消済み確認済みの年度の洗い出し）に着手する。
+Stage1〜2の対象範囲生成結果は差分としてユーザーに提示し、確認を経てから
+`fixed_registry.json`へ一括登録する運用（[[CHECK29-COHR-CROSS-ACCN-
+TEMPORARY-EQUITY-1]]の教訓「対象サブセットのみへのシミュレーションでは
+既解決集団への回帰を見逃す——常に全母集団で再シミュレーションすること」
+を踏襲）を継続する。
 
 #### 着手条件
 なし。優先度高（sec_data再設計の土台となる方針決定のため）。Stage 1は
@@ -9576,10 +9500,10 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 
 **次セッションでの着手順序（2026-08-05時点、最終版）**:
 ① [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]（優先度：高。Stage 1
-   〈taxonomy属性①〜⑧非該当26銘柄・372エントリ〉は実装完了
-   〈機能コミット`7d7c63faf`、push保留〉。次はStage 2〈属性該当58銘柄の
-   うちBACKLOG_DONE.mdで解消済み確認済みの年度、`fixed_by:
-   manual_verification`で登録〉の対象リスト生成に着手する）
+   〈taxonomy属性①〜⑧非該当26銘柄・372エントリ〉は実装完了・push済み
+   〈機能コミット`7c15b2a75`、詳細はBACKLOG_DONE.md参照〉。次はStage 2
+   〈属性該当58銘柄のうちBACKLOG_DONE.mdで解消済み確認済みの年度、
+   `fixed_by: manual_verification`で登録〉の対象リスト生成に着手する）
 ② 以下、2026-08-03時点リストから変更なし（上記①〜⑭を参照）:
    [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・[[PARSER-STOCKHOLDERS-EQUITY-
    CROSS-YEAR-MISSELECT-1]]・[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・

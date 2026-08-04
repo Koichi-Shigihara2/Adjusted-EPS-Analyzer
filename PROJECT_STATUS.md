@@ -1,6 +1,20 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 1
+完了。`common/sec_data/`一次データ取得層の「フィックス」機構
+（`fixed_registry.json`、検証済み銘柄×年度を以後の抽出ロジック変更の
+対象外とする仕組み）の運用方針確定・スキーマ設計・実装・検証まで
+完了した。taxonomy属性①〜⑧（SPAC上場・決算期変更・M&A直後・非継続
+事業・IPO前・業界特有会計慣行・標準タグ外れ・原因不明）非該当26銘柄・
+372銘柄×年度エントリを`fixed_by: checkgate_pass`で登録、`parser.py`
+（`_apply_fixed_registry_freeze()`、差分適用方式）・`report_
+consistency_check.py`（CHECK-31/WARN-31、NG化）を実装。全105銘柄再
+パースでフィックス対象含め全出力が無変化であることを確認済み。
+機能コミット`7c15b2a75`・BACKLOG更新コミット`ae88715c5`（push済み）。
+残タスク: taxonomy属性該当58銘柄のStage 2〜3（段階的フィックス拡大）。
+詳細はBACKLOG_DONE.md「2026-08-05（完了）」・BACKLOG.md該当項目参照）
+
 更新日: 2026-08-02（セッション終了処理。common/sec_data/統合フェーズ1の
 備考欄に、セッション最終盤で発見した最重要事項を反映: TTM系列生成
 パイプライン`layer3_builder.py`が`parser.py`（annual_YYYY.json生成）
@@ -233,7 +247,7 @@ Total_Assets=Total_Liabilities+Stockholders_Equityの横断検証レイヤー）
 **2026-08-02セッション最終盤、`[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`実装完了に伴う検証過程で、common/sec_data/統合フェーズ1の設計上の重大な発見があった**: TTM系列（`common/sec_data/ttm/`）を生成する`layer3_builder.py`（＋`quarterly.py`・`fact_selection.py`・`q4_implied.py`）は、annual_YYYY.jsonを生成する`parser.py`とは**完全に独立した別実装のパイプライン**であり、`parser.py`のクラス・関数を一切importせず`fact_overrides.json`も読み込まず、`_resolve_bs_entity_mixing()`等の主要ロジックも実装されていないことを確認した。結果、本セッションのannual側修正の大部分
 （`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`・`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`・`[[TOTAL-LIABILITIES-FALLBACK-TAG-DESIGN-FLAW-1]]`・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`・`[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]`・`[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]`・`[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]`）は、`.github/workflows/SEC_Data_Update.yml`（毎週日曜自動実行、正常稼働中と確認済み）が何度実行されてもTTM系列には反映されないという構造的問題であると判明し、`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`として新規登録した（唯一の例外は`[[TTM-CALC-QUARTER-CONTIGUITY-UNCHECKED-1]]`自体、`ttm_calculator.py`への直接実装のため自動反映される）。続く影響実測調査で、TANUKI VALUATION・STONKS SILOいずれも上記7件への現在進行形の実害はゼロと確定した（BS項目・shares系はTTM出力＝`FLOW_FIELDS`17種に構造的に含まれず消費経路も`annual_*.json`を直接参照、その他は対象年度が現在のTTM anchor範囲外、STONKS SILOはTTM/layer3を一切参照しない独立パイプラインと確認）ため優先度を高→中に引き下げたが、**2つの独立パイプラインが同期しない構造的脆弱性自体は温存されている**ため、将来の新規annual側修正では都度TTM側への影響確認が必要である旨を申し送る。
 
-残課題（優先度順、2026-08-02セッション終了時点）: `[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`〈中、構造的脆弱性は残存・既知7件への実害はゼロ確定〉・`[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]`〈中〉・`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`〈中、残り15件〉・`[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]`〈中〉・`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`〈中〉・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`残存分〈中〜高〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]`〈低〜中〉・`[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈低、副次的解消見込み〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照 |
+残課題（優先度順、2026-08-02セッション終了時点）: `[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`〈中、構造的脆弱性は残存・既知7件への実害はゼロ確定〉・`[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]`〈中〉・`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`〈中、残り15件〉・`[[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]`〈中〉・`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`〈中〉・`[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]`残存分〈中〜高〉・`[[LITE-COGS-DA-TAG-UNMERGED-1]]`〈低〜中〉・`[[STONKS-SILO-FP-LABEL-PERIOD-VALIDATION-1]]`〈低〜中〉・`[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]`〈低、副次的解消見込み〉・`[[HON-GROSSPROFIT-2009-RESIDUAL-DISCREPANCY-1]]`〈低〉・`[[ELF-ROE10YR-RECALC-PENDING-1]]`〈中、定期更新で自然解消見込み〉・`[[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]`〈低〜中〉等、`BACKLOG.md`該当項目を参照。**2026-08-05、`[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]` Stage 1完了**（`fixed_registry.json`フィックス機構の運用方針確定・スキーマ設計・実装・検証。taxonomy属性①〜⑧非該当26銘柄・372銘柄×年度エントリを`fixed_by: checkgate_pass`で登録、`parser.py`/`report_consistency_check.py`〈CHECK-31/WARN-31〉実装、全105銘柄再パースで無変化を確認。詳細はBACKLOG_DONE.md「2026-08-05（完了）」参照）。**残タスク: Stage 2〜3**（taxonomy属性該当58銘柄の段階的フィックス拡大、`fixed_by: manual_verification`）は未着手 |
 | `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |

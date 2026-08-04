@@ -2,6 +2,114 @@
 
 ---
 
+## 2026-08-05（完了）
+
+### ✅ [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] Stage 1: フィックス機構の運用方針確定・スキーマ設計・実装（taxonomy属性非該当26銘柄・372エントリ）
+**状態:** Stage 1（設計・スキーマ確定・実装・検証）完了。Stage 2〜3
+（taxonomy属性①〜⑧該当58銘柄の段階的フィックス）は未着手のまま
+BACKLOG.mdに同一IDで残置（本エントリはStage 1部分の完了記録）
+**優先度:** 高
+**分類:** アーキテクチャ再設計 / 運用方針確定・実装
+**登録日:** 2026-08-04
+**完了日:** 2026-08-05
+**発見:** common/sec_data一次データ取得層 再設計 運用方針検討（チャット記録）
+
+#### 内容（運用方針確定）
+`common/sec_data/`を一から作り直すにあたり、以下3点の運用方針を確定した。
+
+1. **フィックス機構**: 別ファイル管理（`fixed_registry.json`、銘柄×年度
+   単位）＋差分適用方式（fixed年度は既存フィールドを変更しないが新規
+   フィールドは通常ロジックで追加）＋二重防御（生成パイプライン側の
+   スキップ機構＋CI検知）
+2. **銘柄数の絞り込み基準**: 属性ベース（SPAC/決算期変更等）での除外は
+   実データ確認の結果、AAPL/MSFT/GOOGL/NVDA/TSLA等の主力銘柄まで対象に
+   含んでしまい非現実的と判明。代わりに投資上の重要度軸（誤登録・投資
+   対象として無効な銘柄は完全除外、探索的候補で品質問題も抱える銘柄は
+   保留、主力・保有銘柄は属性に関わらず個別対応前提で残す）を採用
+3. **新規登録時の運用フロー**: `[[ANOMALY-PATTERN-CATALOG-1]]`の先行決定
+   （登録前の完全判定は見送り、登録後・実データ取得後に照合）を踏襲し
+   一般化。CLAUDE_CODE_START.mdのStep 0.5正式化・Step 1.5新設・
+   Step 8で個別対応完了を最終確認する案を設計（CLAUDE_CODE_START.md
+   自体への反映は未実施）
+
+#### スキーマ設計
+`common/sec_data/fixed_registry.json`（`fact_overrides.json`と同階層・
+同型のロード方式）。銘柄×年度単位で`fixed_at`・`fixed_by`（統制語彙:
+`manual_verification`/`checkgate_pass`/`bulk_migration`）・
+`verified_against`（検証方法・通過チェック一覧）・`fields_snapshot`
+（フィックス対象フィールド名一覧。「新規フィールド」の判定基準は値が
+Noneかどうかではなく本リストへの掲載有無）・`snapshot_hash`
+（`annual_{year}.json`全体を`sort_keys=True`で正規化したSHA-256、CI
+検知に使用）を記録。フィックス済みの値そのものは複製せず、単一の正は
+常に`annual_{year}.json`側に置く設計とした。
+
+#### Stage 1対象の実測（26銘柄・372銘柄×年度エントリ）
+taxonomy属性①〜⑧該当を実測した結果**58銘柄**（前回見積の「約55銘柄」
+より上方修正、`[[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]`
+確定25銘柄リスト反映のため）、非該当は47銘柄（ENBは誤登録として別枠
+除外、実質候補46銘柄）と判明。`registration_validator.py`・
+`report_consistency_check.py`（CHECK-1〜29）・`revenue_tag_conflict_
+check.py`を実際に実行した結果、Stage 1最終候補は**26銘柄・372銘柄×
+年度エントリ**に確定した:
+
+- registration_validator.py NG/WARN除外: ZS・ENTG（NG）、APP・BSY・
+  RBRK・LYFT（WARN P6 CIK断絶候補）
+- report_consistency_check.py WARN除外: ADSK・ALAB・CRM・CRWV・DOCN・
+  FCX・KULR・MSCI・QBTS・RXRX・S・SITM・WMT（13銘柄）
+- revenue_tag_conflict_check.py: 26銘柄全件でD&A/S&M系警告が発生したが
+  `SEC_DATA_BUG_TAXONOMY.md` #19記載の既知の誤検知パターン（タグの
+  包含関係）と判断し除外対象から除外。TDYのみrevenueフィールドの真の
+  競合（FY2012〜2014、`[[REVENUE-TAG-PRIORITY-FRAGILE-1]]`と一致）の
+  ため除外
+
+最終26銘柄: AMAT, AMD, AMZN, CSGP, CWAN, DDOG, GTLB, IOT, KO, LMT,
+META, NET, ZETA, ADBE, CDNS, INTU, HWM, HQY, FRSH, TASK, FLYW, FROG,
+JNJ, LOAR, PEP, VZ
+
+#### 実装
+- `fixed_registry.json`新設: 上記26銘柄・372エントリを`fixed_by:
+  checkgate_pass`で登録
+- `common/sec_data/utils.py`: `compute_snapshot_hash()`新設（生成側・
+  検証側で重複実装しない単一実装）
+- `common/sec_data/parser.py`: `_load_fixed_registry()`・
+  `_apply_fixed_registry_freeze()`新設。`_apply_fact_overrides()`・
+  各種逆算バックフィルより後、`result["annual"]`組み立て直後に配置し、
+  差分適用方式でフィックス対象フィールドのみ既存値へ強制復元
+- `common/sec_data/report_consistency_check.py`: CHECK-31/WARN-31を
+  NG化で新設（fixed年度のsnapshot_hash不一致を検知。report.txtの有無に
+  関わらず常に実行）
+
+**スコープ限定（既知の制約）**: quarterly/TTM側（`layer3_builder.py`・
+`ttm_calculator.py`）は`parser.py`と完全に独立した別パイプラインの
+ため、本フィックス機構の対象外（`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`
+参照）。annual側のみを対象とする設計判断は確定済みだが、TTM側への
+適用要否は別途検討が必要なまま残る。
+
+#### 検証結果
+1. `fixed_registry.json`: 26銘柄・372エントリで正しく生成
+2. 全105銘柄で`parser.parse_and_save()`を再実行 → フィックス対象372
+   エントリを含む全annual/quarterly出力が無変化（`bs_identity_
+   violations_log.json`10銘柄分のキー順序差分のみ発生、無関係の既知
+   問題`[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]`のため復元し
+   コミット対象から除外）
+3. フィックス対象以外も通常通り動作（同上の無変化で確認）
+4. CHECK-31試験発火: AMZN 2025を意図的に改変→NG-31検知・
+   `--fail-on-ng`でexit(1)を確認→復元後NG=0に復帰を確認
+5. pytest 497 passed / 2 failed（既知の`[[TEST-STALE-IV-1]]`
+   MSFT/NVDAのみ、新規回帰なし）
+6. `report_consistency_check.py --fail-on-ng`でNG=0を確認
+
+機能コミット: `7c15b2a75`（origin push後のハッシュ。rebase前は
+`7d7c63faf`）。BACKLOG更新コミット: `ae88715c5`（rebase前は
+`e0f84ffdf`）。いずれもpush済み。
+
+#### 残タスク（Stage 2〜3、BACKLOG.mdに同一IDで残置）
+taxonomy属性①〜⑧該当58銘柄のうち、BACKLOG_DONE.mdで個別バグ対応が
+完了・確認済みの年度をStage 2として`fixed_by: manual_verification`で
+登録する作業が未着手。「次セッションでの着手順序」①に設定済み。
+
+---
+
 ## 2026-08-03（完了）
 
 ### ✅ [CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1] CHECK29の本人データ(own accn)限定照合が、後続四半期の比較列としてのみ開示される一時的持分を検知できない構造的限界

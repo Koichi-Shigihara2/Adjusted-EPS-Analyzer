@@ -439,6 +439,20 @@ SEC EDGAR
 │    特定ticker+year+fieldのみ明示的に差し替える（GOOGL FY2012/2013の非継続
 │    事業区分変更に伴う遡及修正値など、本人データ優先では当初申告値のまま
 │    残ってしまうケース向け）。ファイル不在時は空dictで無効化。
+│    **追記（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] 2026-08-05新設）**:
+│    `common/sec_data/fixed_registry.json`（`{TICKER: {YEAR: {fixed_at,
+│    fixed_by, verified_against, fields_snapshot, snapshot_hash}}}`）による
+│    「フィックス」機構を追加。`fact_overrides.json`（値の個別上書き）とは
+│    役割が異なり、`_apply_fixed_registry_freeze()`が`_apply_fact_
+│    overrides()`・各種逆算バックフィルより後・`result["annual"]`組み立て
+│    直後に、`fields_snapshot`記録済みフィールドを既存`annual_{year}.json`
+│    の値へ強制復元する（差分適用方式、新規フィールドのみ通常抽出を通す）。
+│    2026-08-05時点でStage1として26銘柄・372銘柄×年度エントリ登録済み
+│    （taxonomy属性①〜⑧非該当・既存チェックゲート全通過銘柄）。CI側は
+│    `report_consistency_check.py`のCHECK-31/WARN-31がsnapshot_hash
+│    不一致をNG検知。quarterly/TTM側（layer3_builder.py）は対象外
+│    （[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]と同じ独立パイプライン構造の
+│    ため）。
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）

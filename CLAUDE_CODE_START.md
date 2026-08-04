@@ -298,7 +298,13 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `common/sec_data/quarterly.py`
 - `common/sec_data/normalizer.py`
 - `common/sec_data/ttm_calculator.py`
-- `common/sec_data/parser.py`
+- `common/sec_data/parser.py`（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+  Stage1で発見: `fixed_registry.json`に登録済みの銘柄×年度
+  （2026-08-05時点26銘柄・372エントリ）は`_apply_fixed_registry_freeze()`
+  により抽出ロジック変更の影響を受けないよう意図的に凍結されている。
+  `parser.py`のロジックを変更しても対象銘柄×年度の`annual_{year}.json`が
+  変化しないのは想定通りの挙動でありバグではない。フィックス済みデータの
+  再検証・解除が必要な場合はBACKLOG.md該当項目を参照し個別に判断すること）
 - `common/sec_data/tag_definitions.py`（[[JNJ-RD-TAG-PRIORITY-1]]で発見:
   `TAG_CANDIDATES`は`parser.py`〈merge型候補選択〉・`quarterly.py`〈primary
   +fallback-if-empty型候補選択〉の2つの異なる消費ロジックから参照される
