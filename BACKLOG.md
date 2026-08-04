@@ -1561,11 +1561,56 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
    該当型を機械判定）、Step 8（`registration_validator.py`）で個別対応
    完了を最終確認する
 
+#### 追記（2026-08-04、fixed_registry.json具体スキーマ確定・chat記録）
+上記1.のフィックス機構について、具体的なJSONスキーマ・生成パイプライン
+統合方法・CI検知・移行手順を確定した:
+
+- **スキーマ**: `common/sec_data/fixed_registry.json`（`fact_overrides.json`
+  と同階層・同型のロード方式）。銘柄×年度単位で`fixed_at`・`fixed_by`
+  （統制語彙: `manual_verification`/`checkgate_pass`/`bulk_migration`）・
+  `verified_against`（10-K原本のaccn/filed/form）・`fields_snapshot`
+  （フィックス対象フィールド名一覧。「新規フィールド」の判定基準は
+  値がNoneかどうかではなく本リストへの掲載有無とする）・`snapshot_hash`
+  （`annual_{year}.json`全体を`sort_keys=True`で正規化したハッシュ、
+  CI検知に使用）を記録する。フィックス済みの値そのものは複製せず、
+  単一の正は常に`annual_{year}.json`側に置く（`INPUT-C-008`Portfolio
+  二重保持等、既存のデータ二重管理への反省を踏襲）
+- **生成パイプライン統合**: `parser.py::_parse_raw_data()`の最終段
+  （`_apply_fact_overrides()`・各種逆算バックフィルより後、`return result`
+  の直前）に新設`_apply_fixed_registry_freeze()`を配置し、フィックス
+  対象フィールドは旧`annual_{year}.json`の値へ強制復元、新規フィールド
+  のみ通常抽出を通す差分適用方式とする
+- **判断分岐点①（TTM側の適用範囲）**: [[TTM-DATA-DRIFT-BEHIND-
+  PIPELINE-1]]で確認済みの独立パイプライン構造（`layer3_builder.py`/
+  `ttm_calculator.py`が`parser.py`と完全に別実装）を踏まえ、今回は
+  annual（`parser.py`）側のみを対象とし、TTM側（`layer3_builder.py`）
+  への適用は別途検討する。「フィックスしたつもりでもTTM経由でIVを
+  計算する銘柄（RCAT等）では実際には保護されない」という既知の限界を
+  明示した上でスコープを限定する
+- **CI検知（二次防御）**: `report_consistency_check.py`にCHECK-31/
+  WARN-31（`[[XBRL-UNIT-SCALE-MISMATCH-DETECTION-1]]`が予約済みの
+  WARN-30と衝突しないよう次の空き番号を採用）として、fixed年度の
+  `snapshot_hash`不一致を検知するチェックを追加する
+- **判断分岐点②（NG/WARN扱い）**: 不一致検知時は**NG化**を採用し、
+  既存の`--fail-on-ng`運用にそのまま統合する。WARN化すると既存の
+  「許容してよいWARN」と同様に放置されるリスクがあり、フィックスの
+  「以後変更されない」という保証自体が骨抜きになるため不採用とした
+- **段階的移行手順**: 既存チェックゲート（CHECK-1〜29・
+  `revenue_tag_conflict_check.py`・`registration_validator.py` P1〜P6）
+  全通過を「検証済み」の近似基準として採用し、Stage1（taxonomy属性①〜⑧
+  非該当の約55銘柄・チェックゲート全通過年度、`fixed_by: checkgate_pass`）
+  →Stage2（属性該当銘柄のうちBACKLOG_DONE.mdで解消済み確認済みの年度、
+  `fixed_by: manual_verification`）→Stage3（属性該当銘柄でOPEN課題が
+  残る年度は保留）の順で段階的にフィックス対象を拡大する
+- **一括登録前の必須確認事項**: Stage1〜2の対象範囲（銘柄×年度リスト）
+  生成結果は差分としてユーザーに提示し、確認を経てから`fixed_registry.json`
+  へ一括登録する（[[CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1]]の教訓
+  「対象サブセットのみへのシミュレーションでは既解決集団への回帰を
+  見逃す——常に全母集団で再シミュレーションすること」を踏襲）
+
 #### 対応方針
-上記3方針に基づき、次のステップとして以下を順次実装する:
-- `fixed_registry.json`の具体スキーマ確定
-- 除外/継続対象銘柄の確定リスト作成（ENBのような誤登録の洗い出し含む）
-- CLAUDE_CODE_START.md改訂（Step 0.5正式化・Step 1.5新設）
+次のステップとして、Stage 1対象銘柄×年度リストの生成（既存チェック
+ゲート全通過の実測、taxonomy属性非該当55銘柄が対象）に着手する。
 
 #### 着手条件
 なし。優先度高（sec_data再設計の土台となる方針決定のため）。
