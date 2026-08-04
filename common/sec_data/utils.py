@@ -1,8 +1,28 @@
 """
 共通ユーティリティ関数
 """
+import hashlib
+import json
 from datetime import date, datetime, timedelta
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+
+def compute_snapshot_hash(data: Dict[str, Any]) -> str:
+    """fixed_registry.jsonのsnapshot_hash算出方式（[[SEC-DATA-REDESIGN-
+    OPERATIONAL-POLICY-1]]）。annual_{year}.jsonの内容全体を
+    sort_keys=Trueで正規化してからSHA-256を取る。fixed_registry.json
+    生成時（Stage 1一括登録）・report_consistency_check.py CHECK-31
+    （不一致検知）の両方から参照する単一実装（重複実装を避ける）。
+
+    ticker/period/formのような不変メタ情報も含めてハッシュ化対象とする
+    （これらは対象パスごとに恒久固定のため除外の必要がなく、除外ロジックを
+    足すことでの実装ミスの余地を避けるため）。`parsed_at`のような揮発性
+    タイムスタンプはannual_{year}.jsonファイル自体には含まれない
+    （save_parsed_data()が年次ファイルへ書き込まないため）ことを実測確認
+    済みで、再パース実行のたびの偽陽性は発生しない。
+    """
+    canonical = json.dumps(data, sort_keys=True, ensure_ascii=False)
+    return "sha256:" + hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 def quarters_in_trailing_window(

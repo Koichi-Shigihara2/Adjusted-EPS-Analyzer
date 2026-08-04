@@ -112,6 +112,23 @@ report_consistency_check.py
                               105銘柄実測で156件中133件が拡張形で解消、残る
                               23件が本WARN対象（[[CHECK29-UNRESOLVED-23-MIXED-
                               CAUSES-1]]参照）。自動修正なし、検知のみ）
+  NG   31. fixed_registry不整合 fixed_registry.json登録済みのticker×年度で、
+                              annual_{year}.jsonの現在のsnapshot_hashが
+                              registry記録時のsnapshot_hashと不一致
+                              （[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+                              新設。フィックス機構の二次防御〈CI検知〉。
+                              一次防御〈parser.py::_apply_fixed_registry_
+                              freeze()〉が正しく機能していればこのNGは
+                              発生しないはずであり、不一致は「意図しない
+                              書き換え」または「registry更新を伴わない
+                              手動再フィックス漏れ」を意味するためNG化する
+                              （WARN化すると「許容してよいWARN」として
+                              放置されるリスクがあり、フィックスの
+                              「以後変更されない」という保証自体が
+                              骨抜きになるため）。report.txtの有無に
+                              関わらず常に実行する（common/sec_data/側の
+                              検証でありTANUKI VALUATION出力に依存しない）。
+                              自動修正なし、検知のみ）
 
 WARN台帳（QUALITY-GATES-EPIC-1 Phase 1・2026-07-12新設）:
   config/warn_acknowledged.json に (CHECK番号, ticker) の組み合わせを事前登録すると
@@ -142,6 +159,8 @@ sys.path.insert(0, REPO_ROOT)
 from common.screening.dcf_validity_checker import check_c_data_jump  # noqa: E402
 from common.sec_data import tickers as _tickers_mod  # noqa: E402
 from common.sec_data.fetcher import load_submissions  # noqa: E402
+from common.sec_data.parser import _load_fixed_registry  # noqa: E402
+from common.sec_data.utils import compute_snapshot_hash  # noqa: E402
 
 _SEG_CFG_CACHE: dict = {}
 
@@ -190,6 +209,46 @@ def load_warn_ledger(path: str = WARN_LEDGER) -> set[tuple[str, str]]:
         }
     except Exception:
         return set()
+
+
+def _check_fixed_registry_integrity(ticker: str) -> list[str]:
+    """CHECK-31: fixed_registry.json登録済みのticker×年度について、
+    annual_{year}.jsonの現在のsnapshot_hashがregistry記録時のものと
+    一致するかを検証する（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]の
+    二次防御・CI検知）。NGメッセージのリストを返す（登録なし・全一致の
+    場合は空リスト）。
+    """
+    registry = _load_fixed_registry().get(ticker, {})
+    if not registry:
+        return []
+
+    ng: list[str] = []
+    for year_str, entry in sorted(registry.items()):
+        path = os.path.join(SEC_DATA_DIR, ticker, f"annual_{year_str}.json")
+        expected_hash = entry.get("snapshot_hash")
+        if not os.path.exists(path):
+            ng.append(
+                f"  [NG-31 fixed_registry不整合] {year_str}: fixed登録済みだが"
+                f"annual_{year_str}.jsonが存在しない"
+            )
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                current_data = json.load(f)
+        except Exception as e:
+            ng.append(
+                f"  [NG-31 fixed_registry不整合] {year_str}: annual_{year_str}.json"
+                f"読み込みエラー ({e})"
+            )
+            continue
+        current_hash = compute_snapshot_hash(current_data)
+        if current_hash != expected_hash:
+            ng.append(
+                f"  [NG-31 fixed_registry不整合] {year_str}: snapshot_hash不一致 "
+                f"(registry={str(expected_hash)[:19]}..., current={current_hash[:19]}...) "
+                f"→ fixed年度の値が意図せず変更された可能性（自動修正なし）"
+            )
+    return ng
 
 
 def annotate_warn(ticker: str, message: str, ledger: set[tuple[str, str]]) -> tuple[str, bool]:
@@ -476,14 +535,20 @@ def check_ticker(ticker: str, whitelist: set) -> tuple[list, list]:
     Returns (issues_ng, issues_warn)
     各要素は表示用文字列。
     """
+    ng: list[str]   = []
+    warn: list[str] = []
+
+    # CHECK-31: fixed_registry.json整合性検知。common/sec_data/側の検証
+    # であり、TANUKI VALUATION出力（report.txt）の有無に依存しないため
+    # report.txt存在チェックより前に実行する。
+    ng.extend(_check_fixed_registry_integrity(ticker))
+
     text = _read_report(ticker)
     if text is None:
-        return [], []
+        return ng, warn
 
     latest  = _read_latest(ticker)
     parsed  = _parse_report(text)
-    ng: list[str]   = []
-    warn: list[str] = []
 
     fcf_hist = parsed["fcf_history"]
     latest_entry = max(fcf_hist, key=lambda x: x[0]) if fcf_hist else None

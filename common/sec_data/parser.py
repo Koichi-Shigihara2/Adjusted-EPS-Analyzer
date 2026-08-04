@@ -18,6 +18,23 @@ from .utils import (
 from .fetcher import load_submissions, load_former_names
 
 _FACT_OVERRIDES_PATH = os.path.join(os.path.dirname(__file__), "fact_overrides.json")
+_FIXED_REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "fixed_registry.json")
+
+
+def _load_fixed_registry() -> dict:
+    """fixed_registry.json（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]の
+    フィックス機構。検証済み・確定済みのticker×年度について、以後の
+    抽出ロジック変更の影響を受けないよう既存annual_{year}.jsonの値へ
+    強制復元する）を読み込む。fact_overrides.jsonと同型のロード方式。
+    ファイル不在時・例外時は空dict。
+    """
+    if os.path.exists(_FIXED_REGISTRY_PATH):
+        try:
+            with open(_FIXED_REGISTRY_PATH, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
 
 
 def _load_fact_overrides() -> dict:
@@ -496,7 +513,15 @@ class SECParser:
             annual_data = self._build_period_data(extracted, year, is_annual=True)
             if annual_data:
                 result["annual"][year] = annual_data
-        
+
+        # [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]: fixed_registry.json
+        # 登録済みのticker×年度について、フィックス対象フィールドを
+        # 既存annual_{year}.jsonの値へ強制復元する（差分適用方式）。
+        # 上記の年次データ集約直後・quarterly集約より前に実行する
+        # （annual側のみを対象とし、quarterly/TTM側〈layer3_builder.py〉は
+        # 別実装のパイプラインのため本メソッドの対象外）
+        self._apply_fixed_registry_freeze(ticker, result)
+
         # 四半期データを集約
         quarters = self._get_available_quarters(extracted)
         for quarter in quarters:
@@ -2496,6 +2521,72 @@ class SECParser:
                     "override_applied": True,
                     "override_reason": reason,
                 }
+
+    _FIXED_REGISTRY_CATEGORIES = ("bs", "pl", "cf", "shares", "other")
+
+    def _apply_fixed_registry_freeze(self, ticker: str, result: Dict[str, Any]) -> None:
+        """fixed_registry.json登録済みのticker×年度について、
+        `fields_snapshot`に記録されたフィールドを既存annual_{year}.jsonの
+        値へ強制復元する（差分適用方式）。
+
+        [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]で確定した「フィックス」
+        機構の実装。`_apply_fact_overrides()`・各種逆算バックフィルより
+        後、`result["annual"]`組み立て直後の最終段に配置することで、通常の
+        抽出・上書き・バックフィルを一通り計算させた後に、フィックス対象
+        フィールドだけ強制的に旧値へ上書きする「最後の関所」として機能
+        させる（今回計算された値が何であれ、最終的にはフィックス時点の
+        値で上書きされる）。
+
+        `fields_snapshot`に無いフィールド（＝フィックス後にXBRL_MAPPING等
+        へ新規追加されたフィールド）は通常の抽出結果をそのまま通す
+        （差分適用方式）。
+
+        annual（本メソッド）のみを対象とし、quarterly/TTM側
+        （`layer3_builder.py`・`ttm_calculator.py`）は`parser.py`とは
+        完全に独立した別パイプラインのため対象外（[[TTM-DATA-DRIFT-
+        BEHIND-PIPELINE-1]]、スコープ限定は設計時に確定済み）。
+        """
+        registry = _load_fixed_registry().get(ticker, {})
+        if not registry:
+            return
+
+        for year_str, entry in registry.items():
+            year = int(year_str)
+            if year not in result["annual"]:
+                raise RuntimeError(
+                    f"{ticker} {year}: fixed_registry.json登録済みだが今回の"
+                    f"抽出結果に該当年度が存在しない（データ欠落の疑い）"
+                )
+
+            old_path = os.path.join(self.data_dir, ticker, f"annual_{year}.json")
+            if not os.path.exists(old_path):
+                raise RuntimeError(
+                    f"{ticker} {year}: fixed_registry.json登録済みだが"
+                    f"旧annual_{year}.jsonが見つからない"
+                )
+            with open(old_path, "r", encoding="utf-8") as f:
+                old_data = json.load(f)
+
+            fixed_fields = entry.get("fields_snapshot", [])
+            for field in fixed_fields:
+                found = False
+                for category in self._FIXED_REGISTRY_CATEGORIES:
+                    old_cat = old_data.get(category, {})
+                    if field not in old_cat:
+                        continue
+                    result["annual"][year].setdefault(category, {})[field] = old_cat[field]
+                    prov_key = f"{category}_provenance"
+                    old_prov = old_data.get(prov_key, {})
+                    if field in old_prov:
+                        result["annual"][year].setdefault(prov_key, {})[field] = old_prov[field]
+                    found = True
+                    break
+                if not found:
+                    raise RuntimeError(
+                        f"{ticker} {year}: fixed_registry.jsonのfields_snapshotに"
+                        f"記録されたフィールド'{field}'が旧annual_{year}.jsonに"
+                        f"見つからない（registryとデータの不整合）"
+                    )
 
     def save_parsed_data(self, ticker: str, parsed: dict) -> None:
         """パース済みデータを個別ファイルに保存"""
