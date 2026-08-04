@@ -1,5 +1,23 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+Stage 1実装完了。fixed_registry.jsonフィックス機構を実データで実測・
+実登録した。taxonomy属性①〜⑧非該当銘柄を実測した結果47銘柄（属性
+該当58銘柄、前回見積「約55銘柄」から上方修正）、既存チェックゲート
+（registration_validator.py・report_consistency_check.py CHECK-1〜29・
+revenue_tag_conflict_check.py）全通過の絞り込みを経て**Stage 1最終候補
+26銘柄・372銘柄×年度エントリ**を確定・実登録した（revenue_tag_
+conflict_check.pyのD&A/S&M系警告は`SEC_DATA_BUG_TAXONOMY.md` #19の
+既知誤検知パターンと判断し除外対象から除外、TDYは真のrevenue系競合
+`[[REVENUE-TAG-PRIORITY-FRAGILE-1]]`のためStage1から除外）。
+`parser.py`（`_apply_fixed_registry_freeze()`、差分適用方式）・
+`utils.py`（`compute_snapshot_hash()`）・`report_consistency_check.py`
+（CHECK-31/WARN-31、NG化）を実装し、全105銘柄再パースでフィックス対象
+372エントリ含め無変化を確認、CHECK-31の発火・復元も確認、pytest
+497 passed/2 known failed（既知）、NG=0を確認。機能コミット
+`7d7c63faf`。pushは保留、コミットのみ。Stage 2〜3（属性該当58銘柄の
+段階的フィックス）が残タスク。「次セッションでの着手順序」欄を更新）
+
 最終更新: 2026-08-03（[[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-
 MISSELECT-1]]の全105銘柄横断スキャン結果を反映（チャット記録、読み取り
 のみ）。不一致は1249年度中13件（1.04%）のみと判明。真のバグは
@@ -1608,12 +1626,49 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
   「対象サブセットのみへのシミュレーションでは既解決集団への回帰を
   見逃す——常に全母集団で再シミュレーションすること」を踏襲）
 
+#### 追記（2026-08-05、Stage 1対象リスト実測・実登録・実装完了）
+Stage 1対象リストを実測した結果、taxonomy属性①〜⑧該当は**58銘柄**
+（前回見積の「約55銘柄」より上方修正。`[[OPERATING-CASH-FLOW-
+CONTINUING-DISCONTINUED-GAP-1]]`確定25銘柄リスト反映のため）、非該当は
+47銘柄（ENBは誤登録として別枠除外、実質候補46銘柄）と判明。
+`registration_validator.py`・`report_consistency_check.py`
+（CHECK-1〜29）・`revenue_tag_conflict_check.py`を実際に実行した結果、
+**Stage 1最終候補は26銘柄・372銘柄×年度エントリ**に確定した
+（除外6銘柄はregistration_validator.py NG/WARN、13銘柄は
+report_consistency_check.py WARN、TDYはrevenue_tag_conflict_check.pyの
+真の競合〈FY2012〜2014、`[[REVENUE-TAG-PRIORITY-FRAGILE-1]]`と一致〉）。
+D&A/S&M系のrevenue_tag_conflict_check.py警告26銘柄全件は、
+`SEC_DATA_BUG_TAXONOMY.md` #19記載の既知の誤検知パターン（タグの
+包含関係）と判断しStage1除外対象から除外した。
+
+上記26銘柄・372エントリを`fixed_registry.json`へ実登録し、
+`parser.py`（`_load_fixed_registry()`・`_apply_fixed_registry_freeze()`
+新設）・`utils.py`（`compute_snapshot_hash()`新設）・
+`report_consistency_check.py`（CHECK-31/WARN-31新設、NG化）を実装した。
+検証: 全105銘柄で`parser.parse_and_save()`を再実行し、フィックス対象
+372エントリを含む全annual/quarterly出力が無変化であることを確認
+（`bs_identity_violations_log.json`10銘柄分のキー順序差分のみ発生、
+これは無関係の既知問題`[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-
+ORDER-1]]`のため元に戻してコミット対象から除外）。CHECK-31は
+意図的な改変で正しく発火・復元後に再度クリーンになることを確認。
+pytest 497 passed/2 known failed（既知の`[[TEST-STALE-IV-1]]`
+MSFT/NVDAのみ）。`report_consistency_check.py --fail-on-ng`でNG=0を確認。
+
+機能コミット: `7d7c63faf`（`fixed_registry.json`新設・`parser.py`・
+`utils.py`・`report_consistency_check.py`）。pushは保留、コミットのみ
+（明示的な指示があるまで保留の運用に従う）。
+
+**残タスク（Stage 2〜3、未着手）**: taxonomy属性①〜⑧該当58銘柄のうち、
+BACKLOG_DONE.mdで個別バグ対応が完了・確認済みの年度をStage 2として
+`fixed_by: manual_verification`で登録する作業が未着手のまま残る。
+
 #### 対応方針
-次のステップとして、Stage 1対象銘柄×年度リストの生成（既存チェック
-ゲート全通過の実測、taxonomy属性非該当55銘柄が対象）に着手する。
+次のステップとして、Stage 2対象銘柄×年度リストの生成（属性該当58銘柄の
+うちBACKLOG_DONE.mdで解消済み確認済みの年度の洗い出し）に着手する。
 
 #### 着手条件
-なし。優先度高（sec_data再設計の土台となる方針決定のため）。
+なし。優先度高（sec_data再設計の土台となる方針決定のため）。Stage 1は
+実装完了、Stage 2〜3が残タスク。
 
 #### 完了報告の必須項目
 - 反映されたコミットハッシュ
@@ -9518,6 +9573,25 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    クローズ済み〈実害解消済み〉、デッドコード整理は将来検討）
 ⑭ [[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]（優先度：低。
    bs_identity_violations_log.jsonのキー順序非決定性、実害なし）
+
+**次セッションでの着手順序（2026-08-05時点、最終版）**:
+① [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]（優先度：高。Stage 1
+   〈taxonomy属性①〜⑧非該当26銘柄・372エントリ〉は実装完了
+   〈機能コミット`7d7c63faf`、push保留〉。次はStage 2〈属性該当58銘柄の
+   うちBACKLOG_DONE.mdで解消済み確認済みの年度、`fixed_by:
+   manual_verification`で登録〉の対象リスト生成に着手する）
+② 以下、2026-08-03時点リストから変更なし（上記①〜⑭を参照）:
+   [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・[[PARSER-STOCKHOLDERS-EQUITY-
+   CROSS-YEAR-MISSELECT-1]]・[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・
+   [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]・
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]・
+   [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
+   [[LITE-COGS-DA-TAG-UNMERGED-1]]・[[STONKS-SILO-FP-LABEL-PERIOD-
+   VALIDATION-1]]・[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]・[[HON-GROSSPROFIT-
+   2009-RESIDUAL-DISCREPANCY-1]]・[[ELF-ROE10YR-RECALC-PENDING-1]]・
+   [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]・
+   [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]・[[BS-IDENTITY-
+   LOG-NONDETERMINISTIC-KEY-ORDER-1]]
 
 ---
 
