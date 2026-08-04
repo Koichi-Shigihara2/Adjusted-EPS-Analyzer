@@ -1,16 +1,16 @@
 LOAR INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-04T01:49:17+09:00
-Price: $70.47
+Generated: 2026-08-05T01:35:20+09:00
+Price: $74.39
 
 [1. TANUKI SCORE]
 Classification: WATCH
-Classification_Pre_Rounding: TRIM
+Classification_Pre_Rounding: HOLD
 Funda_Score: 65/100
 Timing_Score (components):
-  Deviation_Rate: -39.3%
-  MA200_Deviation: +3.6%
+  Deviation_Rate: -23.4%
+  MA200_Deviation: +9.3%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $82 median ($75-$102) | 5 analysts | vs IV: +91.6%
+  Analyst_Consensus: Buy | Target: $82 median ($75-$102) | 5 analysts | vs IV: +44.0%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -33,7 +33,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左上
 Label: 割高×高FCF
 Key_Metric_Y: FCF_Margin = 22.6%
-Deviation_Rate: -39.3%
+Deviation_Rate: -23.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,23 +57,23 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $70.47
-Intrinsic_Value_BASE: $42.79
-Deviation_BASE: -39.3%
+Current_Price: $74.39
+Intrinsic_Value_BASE: $56.95
+Deviation_BASE: -23.4%
 Scenarios:
-BEAR: Growth=35.0%, IV=$22.40, Deviation=-68.2%
-BASE: Growth=50.0%, IV=$42.79, Deviation=-39.3%
-BULL: Growth=60.0%, IV=$61.56, Deviation=-12.6%
+BEAR: Growth=35.0%, IV=$31.00, Deviation=-58.3%
+BASE: Growth=50.0%, IV=$56.95, Deviation=-23.4%
+BULL: Growth=60.0%, IV=$80.85, Deviation=+8.7%
 TTM_YoY_Growth: 26.3%
 (DCF Base vs TTM actual: +23.7pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
-WACC_CAPM_Reference: 7.00%
+WACC_CAPM_Reference: 7.50%
 Terminal_Growth_Rate: 3.0%
-Beta: 0.474
-FCF_Conversion_Rate: 0.55 (Industry: Aerospace_Defense)
+Beta: 0.562
+FCF_Conversion_Rate: 0.7 (Industry: Aerospace & Defense)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $58M (= Adj_NI $106M × FCF_Conv 0.55)
+DCF_FCF_Base: $74M (= Adj_NI $106M × FCF_Conv 0.7)
 ℹ️ 買収・統合関連加算$23Mを検出したが未控除
    [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
     ガードにより調整済み純利益をそのまま採用しています。詳細は
@@ -83,15 +83,15 @@ DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から87%乖離]
-DCF_FCF_PV: $0.81B (5yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $4.05B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $4.86B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $1.03B (5yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $5.15B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $6.19B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0991 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $4.01B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.86B)
+Equity_Value: $5.33B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.86B)
 Shares_Used: 93.6M (source: yf_implied)
-→ Intrinsic_Value: $42.79 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $56.95 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.86B (negative=net cash)
   Total_Debt: $0.95B  Cash: $0.09B
@@ -155,10 +155,10 @@ market-priced future potential.
 [4. 成長率根拠]
 Phase1成長率 : 50.0%
 成長モデル: 中央値モデル（CAGR_max=50.0%のため中央値モデル適用）  HypePhase=4
-判定         : REVIEW
-業界ベンチマーク: Aerospace/Defense / 10.9% (Damodaran 2025)
+判定         : PLAUSIBLE
+業界ベンチマーク: N/A
 signals:
-  - 業界平均Aerospace/Defense(10.9%)の4.6倍超 ⚠️
+  - ベンチマークデータ不足のため自動検証スキップ ℹ️
 Definition:
 
 Growth Rate Methodology:
@@ -236,9 +236,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 99.3x
-  Adjusted_EPS_PER: 65.7x (TTM調整後EPS: $1.0722)
-  Delta: -33.5x (cheaper on adjusted basis)
+  Market_PER_GAAP: 99.2x
+  Adjusted_EPS_PER: 69.4x (TTM調整後EPS: $1.0722)
+  Delta: -29.8x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-06
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -264,10 +264,10 @@ Phase_History (recent 6 months):
 2026-06: Phase4 (期待剥落期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 99.3x
+  PER: 99.2x
   PEG: N/A
-  PS:  12.3x
-  EV_EBITDA: 37.7x
+  PS:  13.0x
+  EV_EBITDA: 39.4x
   PS_Signal: 適正水準
 Definition:
 
@@ -286,9 +286,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 2.23%  (ForwardEPS $1.57 / Price $70.47)
+  Forward_Earnings_Yield: 2.11%  (ForwardEPS $1.57 / Price $74.39)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -2.07%
+  ERP: -2.19%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -312,7 +312,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $82 median ($75-$102) | 5 analysts | vs IV: +91.6%
+Analyst_Consensus: Buy | Target: $82 median ($75-$102) | 5 analysts | vs IV: +44.0%
 Insider_Activity: Sell優勢 | 買い0件 / 売り1件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 26.3%
@@ -336,9 +336,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit
+  [high] litigation: Antitrust lawsuit ongoing
   [high] regulatory: SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026
+  [mid] earnings: Earnings warning for 2025 2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

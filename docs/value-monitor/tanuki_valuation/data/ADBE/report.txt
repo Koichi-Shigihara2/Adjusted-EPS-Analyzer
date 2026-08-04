@@ -1,16 +1,16 @@
 ADBE INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-04T01:45:00+09:00
-Price: $254.17
+Generated: 2026-08-05T01:30:06+09:00
+Price: $253.59
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: BUY
 Funda_Score: 70/100
 Timing_Score (components):
-  Deviation_Rate: +145.0%
-  MA200_Deviation: -8.1%
+  Deviation_Rate: +76.4%
+  MA200_Deviation: -8.3%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Hold | Target: $250 median ($190-$380) | 34 analysts | vs IV: -59.9%
+  Analyst_Consensus: Hold | Target: $250 median ($190-$380) | 34 analysts | vs IV: -44.1%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -33,7 +33,7 @@ Matrix: ①投資効率系
 Quadrant: 右下
 Label: 割安×低効率
 Key_Metric_Y: RICE = 0.937
-Deviation_Rate: +145.0%
+Deviation_Rate: +76.4%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,43 +57,42 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $254.17
-Intrinsic_Value_BASE: $622.73
-Deviation_BASE: +145.0%
+Current_Price: $253.59
+Intrinsic_Value_BASE: $447.22
+Deviation_BASE: +76.4%
 Scenarios:
-BEAR: Growth=8.0%, IV=$480.25, Deviation=+88.9%
-BASE: Growth=11.5%, IV=$622.73, Deviation=+145.0%
-BULL: Growth=13.8%, IV=$740.13, Deviation=+191.2%
+BEAR: Growth=8.0%, IV=$344.75, Deviation=+35.9%
+BASE: Growth=11.5%, IV=$447.22, Deviation=+76.4%
+BULL: Growth=13.8%, IV=$531.66, Deviation=+109.6%
 Growth_Rate_Rec: 13.1% (recommended)
 TTM_YoY_Growth: 11.5%
 (DCF Base vs TTM actual: +0.0pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
-WACC_CAPM_Reference: 12.47%
+WACC_CAPM_Reference: 12.26%
 Terminal_Growth_Rate: 3.5%
-Beta: 1.433
-FCF_Conversion_Rate: 1.0 (Industry: Software_System_Mature)
+Beta: 1.397
+FCF_Conversion_Rate: 0.7 (Industry: Software - Application)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $8,576M (= Adj_NI $8,576M × FCF_Conv 1.0)
-⚠️ 買収・統合関連加算を控除: $235M
-   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
-    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
-    います。分類判定には使用しません。詳細はBACKLOG_DONE.md
-    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
+DCF_FCF_Base: $6,168M (= Adj_NI $8,812M × FCF_Conv 0.7)
+ℹ️ 買収・統合関連加算$235Mを検出したが未控除
+   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
+    ガードにより調整済み純利益をそのまま採用しています。詳細は
+    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
 DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から23%乖離]
-DCF_FCF_PV: $92.37B (10yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $156.09B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $248.46B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $66.44B (10yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $112.26B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $178.70B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $92,871,967 (Remaining Performance Obligation premium)
 Growth_Option_PV: $0
-Equity_Value: $247.54B (= v0 + RPO_PV + GO_PV + Net_Cash $-1.02B)
+Equity_Value: $177.77B (= v0 + RPO_PV + GO_PV + Net_Cash $-1.02B)
 Shares_Used: 397.5M (source: yf_implied)
-→ Intrinsic_Value: $622.73 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $447.22 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+1.02B (negative=net cash)
   Total_Debt: $6.64B  Cash: $4.92B  ST_Invest: $0.71B
@@ -304,9 +303,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 10.81%  (ForwardEPS $27.49 / Price $254.17)
+  Forward_Earnings_Yield: 10.84%  (ForwardEPS $27.49 / Price $253.59)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 6.51%
+  ERP: 6.54%
   ERP_Signal: 期待冷却圏（成長期待が市場に織り込まれていない）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -330,7 +329,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Hold | Target: $250 median ($190-$380) | 34 analysts | vs IV: -59.9%
+Analyst_Consensus: Hold | Target: $250 median ($190-$380) | 34 analysts | vs IV: -44.1%
 Insider_Activity: 中立 | 買い1件 / 売り1件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 11.5%
@@ -355,8 +354,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against Adobe Inc.
-  [high] regulatory: Ongoing SEC regulatory investigation.
-  [mid] earnings: Earnings warning amid competition risks for 2025-2026.
+  [high] regulatory: Ongoing SEC regulatory investigation
+  [mid] earnings: Earnings warning impacting 2025-2026 outlook
 
 ==============================================
 DISCLAIMER: This report is generated automatically

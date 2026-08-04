@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 4051232401.887624,
+  "intrinsic_value_pt": 3918814543.544202,
   "intrinsic_value_per_share": 36.59294599298991,
-  "intrinsic_value_beta": 16.74,
-  "upside_percent_beta": -94.2,
+  "intrinsic_value_beta": 16.06,
+  "upside_percent_beta": -95.2,
   "intrinsic_value_rf": 335.13,
-  "upside_percent_rf": 16.9,
-  "v0": 4051232401.887624,
-  "v0_adjusted": 4051232401.887624,
+  "upside_percent_rf": 0.6,
+  "v0": 3918814543.544202,
+  "v0_adjusted": 3918814543.544202,
   "alpha": 0.17515660075391104,
   "alpha_was_capped": false,
   "future_values": {
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 42.17,
       "value_growth_pct": 15.3,
-      "expected_return_pct": -85.3
+      "expected_return_pct": -87.3
     },
     "2年後": {
       "future_value": 48.61,
       "value_growth_pct": 32.9,
-      "expected_return_pct": -83.1
+      "expected_return_pct": -85.4
     },
     "3年後": {
       "future_value": 56.03,
       "value_growth_pct": 53.1,
-      "expected_return_pct": -80.5
+      "expected_return_pct": -83.2
     },
     "4年後": {
       "future_value": 64.58,
       "value_growth_pct": 76.5,
-      "expected_return_pct": -77.5
+      "expected_return_pct": -80.6
     },
     "5年後": {
       "future_value": 66.84,
       "value_growth_pct": 82.7,
-      "expected_return_pct": -76.7
+      "expected_return_pct": -79.9
     }
   },
-  "upside_percent": -87.2,
-  "calculation_date": "2026-08-04T01:38:44+09:00",
+  "upside_percent": -89.0,
+  "calculation_date": "2026-08-05T01:23:04+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -53,8 +53,8 @@
     "phase1_years": 4
   },
   "wacc": {
-    "value": 0.159109,
-    "beta": 2.037,
+    "value": 0.16309900000000002,
+    "beta": 2.107,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -124,37 +124,37 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 4051232401.887624,
-    "pv_high_growth": 1320788497.8041022,
-    "pv_terminal": 2730443904.0835214,
+    "v0": 3918814543.544202,
+    "pv_high_growth": 1309531584.5859864,
+    "pv_terminal": 2609282958.9582157,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 385973467.20000005,
-        "discount_factor": 1.159109,
-        "pv": 332991519.52059734
+        "discount_factor": 1.163099,
+        "pv": 331849195.2963591
       },
       {
         "year": 2,
         "fcf": 444873018.29472005,
-        "discount_factor": 1.343533673881,
-        "pv": 331121598.9173067
+        "discount_factor": 1.3527992838010003,
+        "pv": 328853676.6849455
       },
       {
         "year": 3,
         "fcf": 512760640.88649434,
-        "discount_factor": 1.5573019731985318,
-        "pv": 329262178.8909307
+        "discount_factor": 1.5734394941896597,
+        "pv": 325885197.8611178
       },
       {
         "year": 4,
         "fcf": 591007914.6857734,
-        "discount_factor": 1.805082732852177,
-        "pv": 327413200.4752674
+        "discount_factor": 1.8300659022524992,
+        "pv": 322943514.74356383
       }
     ],
     "terminal_fcf": 611693191.6997753,
-    "terminal_value": 4928677144.28265,
+    "terminal_value": 4775159772.517938,
     "v0_rm": 7935070107.458218,
     "pv_fcf_rm": 1507459638.4404945,
     "pv_tv_rm": 6427610469.017723
@@ -217,7 +217,7 @@
     "conversion_rate": 0,
     "estimated_fcf": 204780333.33333334,
     "raw_fcf": 204780333.33333334,
-    "sector": "Electronics_General",
+    "sector": "",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
     "divergence_warning": "",
@@ -226,7 +226,7 @@
   },
   "software_system_reclassification": {
     "applicable": false,
-    "current_subgroup": "Electronics_General",
+    "current_subgroup": "",
     "recommended_subgroup": null,
     "realized_ratio": null,
     "years_used": 0,
@@ -299,19 +299,19 @@
     "bear": {
       "growth_rate": 0.107,
       "rice": 0.741,
-      "rice_per_ratio": 0.0054,
+      "rice_per_ratio": 0.0051,
       "rice_adj": 1.795
     },
     "base": {
       "growth_rate": 0.153,
       "rice": 1.06,
-      "rice_per_ratio": 0.0078,
+      "rice_per_ratio": 0.0073,
       "rice_adj": 2.567
     },
     "bull": {
       "growth_rate": 0.183,
       "rice": 1.267,
-      "rice_per_ratio": 0.0093,
+      "rice_per_ratio": 0.0088,
       "rice_adj": 3.07
     }
   },
@@ -335,17 +335,17 @@
     "roe_10yr_avg": 0.04170395256045502,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 286.8,
+    "current_price": 333.23,
     "latest_revenue": 5810115000.0,
     "rpo": 11000000,
-    "beta": 2.037,
+    "beta": 2.107,
     "sector": "Technology",
     "industry": "Scientific & Technical Instruments",
     "eps_data": {
       "ticker": "COHR"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Electronics_General)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.15259999999999999,
     "high_growth_years": 4,
     "terminal_growth_used": 0.035,
@@ -354,8 +354,8 @@
     "moat_gross_margin_norm": 0.3408,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.1275,
-    "pv_high": 1320788497.8041022,
-    "pv_terminal": 2730443904.0835214,
+    "pv_high": 1309531584.5859864,
+    "pv_terminal": 2609282958.9582157,
     "roe_used": 0.04170395256045502,
     "fcf_floor_applied": 0.0,
     "fcf_growth_floor": 0.15,
@@ -365,12 +365,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.17515660075391104,
-    "per": 136.57143,
+    "per": 144.25542,
     "per_is_forward": false,
-    "per_adjusted": 55.85,
+    "per_adjusted": 64.89,
     "peg": 0.92,
-    "ps": 8.498734,
-    "ev_ebitda": 40.169,
+    "ps": 9.874594,
+    "ev_ebitda": 43.93,
     "ma200": 254.94685,
     "forward_eps": 8.29025,
     "analyst_target_median": 400.0,
@@ -387,11 +387,11 @@
     "insider_latest_date": "2026-07-24",
     "analyst_vs_iv": 993.1,
     "max_eps": 0.8191,
-    "max_eps_per": 350.1,
+    "max_eps_per": 406.8,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-04",
+    "validated_at": "2026-08-05",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -400,7 +400,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $1.32B + pv_terminal $2.73B = $4.05B (差異0.00%)"
+        "detail": "2段階: pv_high $1.31B + pv_terminal $2.61B = $3.92B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -416,8 +416,8 @@
   },
   "tanuki_score": "TRIM",
   "funda_score": 80,
-  "score_comment": "割高(-87%超)、FCF黒字、売上安定成長",
-  "timing_score": 25,
+  "score_comment": "割高(-89%超)、FCF黒字、売上安定成長",
+  "timing_score": 10,
   "sell_reason": null,
   "pre_rounding_score": null,
   "pre_rounding_comment": null,
@@ -481,7 +481,7 @@
     "shares_yr_now_label": "2025",
     "shares_yr_3ago_label": "2022"
   },
-  "net_current_assets_ratio": 0.0772,
+  "net_current_assets_ratio": 0.0664,
   "next_earnings_date": "2026-08-13",
   "segments": [
     {
@@ -507,36 +507,35 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.1526,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.19541572150598796,
+  "recommended_g": 0.2004522596656585,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
     "phase1_growth": 0.1526,
-    "industry_benchmark": 0.13823641959190958,
-    "damodaran_industry": "Electronics (General)",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.20548879782532903,
     "rev_cagr_5yr": 0.19541572150598796,
     "g_fundamental": null,
-    "recommended_g_median": 0.19541572150598796,
-    "recommended_g": 0.19541572150598796,
+    "recommended_g_median": 0.2004522596656585,
+    "recommended_g": 0.2004522596656585,
     "growth_model": "median",
     "growth_model_reason": "CAGR_max=20.5%のため中央値モデル適用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体維持・期待崩壊中",
     "signals": [
-      "業界平均Electronics (General)(13.8%)の1.1倍以内 ✅",
       "過去実績(3yr:20.5% / 5yr:19.5%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0141,
-  "forward_earnings_yield": 0.0289,
+  "erp": -0.0181,
+  "forward_earnings_yield": 0.0249,
   "dilution_severity": "medium",
   "dilution_comment": "やや高い希薄化 ℹ️ 要注意",
   "risk_events": [
@@ -547,13 +546,13 @@
     },
     {
       "type": "regulatory",
-      "summary": "SEC investigation",
+      "summary": "SEC regulatory investigation",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025 2026",
-      "impact": "high"
+      "summary": "Earnings warning for 2025-2026",
+      "impact": "mid"
     }
   ]
 }

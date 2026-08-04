@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 3412078042.300316,
+  "intrinsic_value_pt": 3375123309.608156,
   "intrinsic_value_per_share": 87.33474836015779,
-  "intrinsic_value_beta": 64.64,
-  "upside_percent_beta": -58.8,
+  "intrinsic_value_beta": 63.91,
+  "upside_percent_beta": -62.1,
   "intrinsic_value_rf": 498.02,
-  "upside_percent_rf": 217.3,
-  "v0": 3412078042.300316,
-  "v0_adjusted": 3412078042.300316,
+  "upside_percent_rf": 195.0,
+  "v0": 3375123309.608156,
+  "v0_adjusted": 3375123309.608156,
   "alpha": 0.009910983357224656,
   "alpha_was_capped": false,
   "future_values": {
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 101.58,
       "value_growth_pct": 16.3,
-      "expected_return_pct": -35.3
+      "expected_return_pct": -39.8
     },
     "2年後": {
       "future_value": 118.15,
       "value_growth_pct": 35.3,
-      "expected_return_pct": -24.7
+      "expected_return_pct": -30.0
     },
     "3年後": {
       "future_value": 137.42,
       "value_growth_pct": 57.4,
-      "expected_return_pct": -12.5
+      "expected_return_pct": -18.6
     },
     "4年後": {
       "future_value": 159.84,
       "value_growth_pct": 83.0,
-      "expected_return_pct": 1.8
+      "expected_return_pct": -5.3
     },
     "5年後": {
       "future_value": 164.63,
       "value_growth_pct": 88.5,
-      "expected_return_pct": 4.9
+      "expected_return_pct": -2.5
     }
   },
-  "upside_percent": -44.4,
-  "calculation_date": "2026-08-04T01:37:44+09:00",
+  "upside_percent": -48.3,
+  "calculation_date": "2026-08-05T01:21:51+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + two_stage DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "two_stage",
   "growth": {
@@ -53,8 +53,8 @@
     "phase1_years": 4
   },
   "wacc": {
-    "value": 0.12251500000000001,
-    "beta": 1.395,
+    "value": 0.12348400000000001,
+    "beta": 1.412,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -124,37 +124,37 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 3412078042.300316,
-    "pv_high_growth": 867455157.5667645,
-    "pv_terminal": 2544622884.7335515,
+    "v0": 3375123309.608156,
+    "pv_high_growth": 865553158.3889997,
+    "pv_terminal": 2509570151.2191567,
     "high_growth_detail": [
       {
         "year": 1,
         "fcf": 230612156.718,
-        "discount_factor": 1.122515,
-        "pv": 205442383.1467731
+        "discount_factor": 1.123484,
+        "pv": 205265189.99647525
       },
       {
         "year": 2,
         "fcf": 268231917.84340733,
-        "discount_factor": 1.2600399252249999,
-        "pv": 212875729.15239993
+        "discount_factor": 1.262216298256,
+        "pv": 212508678.75341374
       },
       {
         "year": 3,
         "fcf": 311988590.60120237,
-        "discount_factor": 1.4144137166639406,
-        "pv": 220578029.5577618
+        "discount_factor": 1.4180798156298435,
+        "pv": 220007778.9434101
       },
       {
         "year": 4,
         "fcf": 362883289.3859765,
-        "discount_factor": 1.5877006131610232,
-        "pv": 228559015.70982966
+        "discount_factor": 1.5931899835830792,
+        "pv": 227771510.69570068
       }
     ],
     "terminal_fcf": 373769788.0675558,
-    "terminal_value": 4040099314.3550315,
+    "terminal_value": 3998222028.021434,
     "v0_rm": 4560579565.053316,
     "pv_fcf_rm": 913582501.3520113,
     "pv_tv_rm": 3646997063.701305
@@ -241,7 +241,7 @@
     "conversion_rate": 0,
     "estimated_fcf": 158147600.0,
     "raw_fcf": 158147600.0,
-    "sector": "Aerospace_Defense",
+    "sector": "",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
     "divergence_warning": "",
@@ -250,7 +250,7 @@
   },
   "software_system_reclassification": {
     "applicable": false,
-    "current_subgroup": "Aerospace_Defense",
+    "current_subgroup": "",
     "recommended_subgroup": null,
     "realized_ratio": null,
     "years_used": 0,
@@ -321,19 +321,19 @@
     "bear": {
       "growth_rate": 0.114,
       "rice": 0.248,
-      "rice_per_ratio": 0.007,
+      "rice_per_ratio": 0.0065,
       "rice_adj": 0.834
     },
     "base": {
       "growth_rate": 0.163,
       "rice": 0.355,
-      "rice_per_ratio": 0.01,
+      "rice_per_ratio": 0.0093,
       "rice_adj": 1.193
     },
     "bull": {
       "growth_rate": 0.196,
       "rice": 0.426,
-      "rice_per_ratio": 0.012,
+      "rice_per_ratio": 0.0112,
       "rice_adj": 1.434
     }
   },
@@ -357,17 +357,17 @@
     "roe_10yr_avg": 0.002359757942196347,
     "roe_years_used": 10,
     "roe_outlier_adj": false,
-    "current_price": 156.9774,
+    "current_price": 168.815,
     "latest_revenue": 1976845000.0,
     "rpo": 1176192000,
-    "beta": 1.395,
+    "beta": 1.412,
     "sector": "Industrials",
     "industry": "Aerospace & Defense",
     "eps_data": {
       "ticker": "AVAV"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Aerospace_Defense)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.16313,
     "high_growth_years": 4,
     "terminal_growth_used": 0.03,
@@ -376,8 +376,8 @@
     "moat_gross_margin_norm": 0.3459,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.0,
-    "pv_high": 867455157.5667645,
-    "pv_terminal": 2544622884.7335515,
+    "pv_high": 865553158.3889997,
+    "pv_terminal": 2509570151.2191567,
     "roe_used": 0.002359757942196347,
     "fcf_floor_applied": 201390600.0,
     "fcf_growth_floor": 0.15,
@@ -387,12 +387,12 @@
     "rpo_pv": 0.0,
     "growth_option_pv": 0,
     "alpha_uncapped": 0.009910983357224656,
-    "per": 35.492603,
+    "per": 38.169086,
     "per_is_forward": true,
-    "per_adjusted": 41.94,
+    "per_adjusted": 45.1,
     "peg": 1.57,
-    "ps": 4.018685,
-    "ev_ebitda": 39.735,
+    "ps": 4.321732,
+    "ev_ebitda": 42.276,
     "ma200": 235.9083,
     "forward_eps": 4.42282,
     "analyst_target_median": 225.0,
@@ -409,11 +409,11 @@
     "insider_latest_date": "2026-07-16",
     "analyst_vs_iv": 157.6,
     "max_eps": 0.7575,
-    "max_eps_per": 207.2,
+    "max_eps_per": 222.9,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-04",
+    "validated_at": "2026-08-05",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -422,7 +422,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.87B + pv_terminal $2.54B = $3.41B (差異0.00%)"
+        "detail": "2段階: pv_high $0.87B + pv_terminal $2.51B = $3.38B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -439,10 +439,10 @@
   "tanuki_score": "WATCH",
   "funda_score": 60,
   "score_comment": "DCF信頼性LOW(実績FCF赤字)のためupside依存判定を抑制→WATCH",
-  "timing_score": 25,
+  "timing_score": 10,
   "sell_reason": null,
   "pre_rounding_score": "TRIM",
-  "pre_rounding_comment": "割高(-44%超)、FCFマイナス（投資フェーズ）、売上成長加速",
+  "pre_rounding_comment": "割高(-48%超)、FCFマイナス（投資フェーズ）、売上成長加速",
   "rounded_by_policy": "A",
   "matrix": {
     "matrix": "①投資効率系",
@@ -504,7 +504,7 @@
     "shares_yr_3ago_label": "2023"
   },
   "computed_runway_months": 24.679569770411785,
-  "net_current_assets_ratio": 0.1756,
+  "net_current_assets_ratio": 0.1633,
   "next_earnings_date": "2026-09-03",
   "segments": [
     {
@@ -530,53 +530,36 @@
   "segment_ttm_applied": false,
   "phase1_growth_original": 0.1631,
   "phase1_growth_auto_adjusted": false,
-  "recommended_g": 0.25993093233761866,
+  "recommended_g": 0.25424241213441,
   "fcf_margin_bear_mult_applied": false,
   "fcf_margin_note": null,
   "growth_sanity": {
     "verdict": "PLAUSIBLE",
     "floor_hit": false,
     "phase1_growth": 0.1631,
-    "industry_benchmark": 0.10875156954339793,
-    "damodaran_industry": "Aerospace/Defense",
+    "industry_benchmark": null,
+    "damodaran_industry": null,
     "damodaran_year": 2025,
     "rev_cagr_3yr": 0.5406926060983144,
     "rev_cagr_5yr": 0.3800488438563101,
     "g_fundamental": null,
-    "recommended_g_median": 0.3800488438563101,
-    "recommended_g": 0.25993093233761866,
+    "recommended_g_median": 0.46037072497731224,
+    "recommended_g": 0.25424241213441,
     "growth_model": "decay",
-    "growth_model_reason": "Phase4(剥落)に基づきCAGR_max=54.1%×35%＋業界平均10.9%×65%＝26.0%を採用",
+    "growth_model_reason": "Phase4(剥落)に基づきCAGR_max=54.1%×35%＋業界平均10.0%×65%＝25.4%を採用",
     "hype_phase_used": 4,
     "hype_phase_label": "期待剥落期",
     "hype_substage_label": "実体維持・期待崩壊中",
     "signals": [
-      "業界平均Aerospace/Defense(10.9%)の1.5倍以内 ✅",
       "過去実績(3yr:54.1% / 5yr:38.0%)と整合 ✅"
     ],
     "warnings": [],
     "fcf_margin_bear_multiplier": 1.0,
     "fcf_margin_note": null
   },
-  "erp": -0.0148,
-  "forward_earnings_yield": 0.0282,
+  "erp": -0.0168,
+  "forward_earnings_yield": 0.0262,
   "dilution_severity": "high",
   "dilution_comment": "高い希薄化 ⚠️ SBC・増資を確認",
-  "risk_events": [
-    {
-      "type": "litigation",
-      "summary": "Antitrust lawsuit",
-      "impact": "high"
-    },
-    {
-      "type": "regulatory",
-      "summary": "SEC investigation",
-      "impact": "high"
-    },
-    {
-      "type": "earnings",
-      "summary": "Earnings warning for 2025-2026",
-      "impact": "mid"
-    }
-  ]
+  "risk_events": []
 }

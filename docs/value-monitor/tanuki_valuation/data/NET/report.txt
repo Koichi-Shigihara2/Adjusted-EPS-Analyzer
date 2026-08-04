@@ -1,16 +1,16 @@
 NET INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-04T01:42:21+09:00
-Price: $285.05
+Generated: 2026-08-05T01:27:02+09:00
+Price: $297.23
 
 [1. TANUKI SCORE]
 Classification: WATCH
 Classification_Pre_Rounding: TRIM
 Funda_Score: 90/100
 Timing_Score (components):
-  Deviation_Rate: -67.0%
-  MA200_Deviation: +33.6%
+  Deviation_Rate: -72.0%
+  MA200_Deviation: +39.4%
   HypeCore_Phase: Phase3 (陶酔期)
-  Analyst_Consensus: Buy | Target: $280 median ($136-$330) | 31 analysts | vs IV: +197.2%
+  Analyst_Consensus: Buy | Target: $280 median ($136-$330) | 31 analysts | vs IV: +236.8%
 Comment: DCF信頼性LOW(FCF_Conversion_Rate方式・要注意フラグ)のためupside依存判定を抑制→WATCH
 Definition:
 
@@ -33,7 +33,7 @@ Matrix: ④キャッシュ創出力系
 Quadrant: 左下
 Label: 割高×低FCF
 Key_Metric_Y: FCF_Margin = 13.3%
-Deviation_Rate: -67.0%
+Deviation_Rate: -72.0%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -57,51 +57,50 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $285.05
-Intrinsic_Value_BASE: $94.20
-Deviation_BASE: -67.0%
+Current_Price: $297.23
+Intrinsic_Value_BASE: $83.13
+Deviation_BASE: -72.0%
 Growth_Rate_Original: 31.6% (TTM実績)
 Growth_Rate_Adjusted: 38.1% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=26.7%, IV=$58.99 （推奨値ベース）
-BASE: Growth=38.1%, IV=$94.20 （推奨値ベース）
-BULL: Growth=45.8%, IV=$126.92 （推奨値ベース）
+BEAR: Growth=26.7%, IV=$52.18 （推奨値ベース）
+BASE: Growth=38.1%, IV=$83.13 （推奨値ベース）
+BULL: Growth=45.8%, IV=$111.91 （推奨値ベース）
 TTM_YoY_Growth: 29.8%
 (DCF Base vs TTM actual: +8.3pt premium)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
-WACC_CAPM_Reference: 13.84%
+WACC_CAPM_Reference: 13.76%
 Terminal_Growth_Rate: 3.5%
-Beta: 1.673
+Beta: 1.66
 Valuation_Gap_Analysis:
-  DCF_IV:           $94 (保守的FCFベース・現在実力値)
-  Market_Price:     $285
-  Gap:              -67% (市場が将来成長を先取り)
-  Implied_FCF_2030: $6.30B (現在株価を正当化するために必要な5年後FCF)
-  Current_FCF:      $0.42B
-  Required_Growth:  72%/yr (現在FCFから必要成長率を逆算)
-FCF_Conversion_Rate: 0.9 (Industry: Software_Internet)
+  DCF_IV:           $83 (保守的FCFベース・現在実力値)
+  Market_Price:     $297
+  Gap:              -72% (市場が将来成長を先取り)
+  Implied_FCF_2030: $6.57B (現在株価を正当化するために必要な5年後FCF)
+  Current_FCF:      $0.37B
+  Required_Growth:  78%/yr (現在FCFから必要成長率を逆算)
+FCF_Conversion_Rate: 0.7 (Industry: Software - Infrastructure)
   [FCF_Conv: Adj_NI × rate = estimated FCF. Conservative conversion from
    adjusted net income; differs from OCF→FCF conversion rate.]
-DCF_FCF_Base: $271M (= Adj_NI $301M × FCF_Conv 0.9)
-⚠️ 買収・統合関連加算を控除: $13M
-   [無形資産償却費・M&A統合費用等の買収由来の非現金加算がAdj_NIに
-    含まれたままだと推定FCFが過大になるため、FCF換算専用に控除して
-    います。分類判定には使用しません。詳細はBACKLOG_DONE.md
-    [[CWAN-SNPS-MA-DISTORTION-1]]参照。]
+DCF_FCF_Base: $219M (= Adj_NI $313M × FCF_Conv 0.7)
+ℹ️ 買収・統合関連加算$13Mを検出したが未控除
+   [控除すると生FCFを下回る（過小推定側）と判定されたため、方向性
+    ガードにより調整済み純利益をそのまま採用しています。詳細は
+    BACKLOG_DONE.md [[FCF-EST-DIRECTION-GUARD-1]]参照。]
 DCF_Reliability: LOW ⚠️ (FCF_Conversion_Rate方式: 要注意フラグ検出, IV参考値)
   [Policy B: LOW時はBUY/TRIM/HOLD/WATCHをWATCHへ丸め。SELL/PASSは維持。
    fcf_outlier未解消（一過性費用で説明不可）または推定FCFが生FCFから
    大幅乖離（eps_invalid）のため、IVは参考値扱い。]
    [DCF-REL-SYNC-1: FCF実績が5年平均から70%乖離]
-DCF_FCF_PV: $6.08B (6yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $26.46B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $32.54B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $5.34B (6yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $23.27B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $28.61B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.0000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $33.43B (= v0 + RPO_PV + GO_PV + Net_Cash $0.90B)
+Equity_Value: $29.51B (= v0 + RPO_PV + GO_PV + Net_Cash $0.90B)
 Shares_Used: 354.9M (source: yf_implied)
-→ Intrinsic_Value: $94.20 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $83.13 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $-0.90B (negative=net cash)
   Total_Debt: $3.27B  Cash: $0.93B  ST_Invest: $3.23B
@@ -256,9 +255,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 179.7x
-  Adjusted_EPS_PER: 288.1x (TTM調整後EPS: $0.9893)
-  Delta: +108.4x (more expensive on adjusted basis)
+  Market_PER_GAAP: 187.4x
+  Adjusted_EPS_PER: 300.4x (TTM調整後EPS: $0.9893)
+  Delta: +113.0x (more expensive on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-08-07
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -284,9 +283,9 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase3 (陶酔期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 179.7x
+  PER: 187.4x
   PEG: 2.38
-  PS:  43.4x
+  PS:  45.3x
   EV_EBITDA: N/A
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 高水準（売上対比で高い期待が織り込み済み）
@@ -307,9 +306,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 0.56%  (ForwardEPS $1.59 / Price $285.05)
+  Forward_Earnings_Yield: 0.53%  (ForwardEPS $1.59 / Price $297.23)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -3.74%
+  ERP: -3.77%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -333,7 +332,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: yes
 Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $280 median ($136-$330) | 31 analysts | vs IV: +197.2%
+Analyst_Consensus: Buy | Target: $280 median ($136-$330) | 31 analysts | vs IV: +236.8%
 Insider_Activity: Sell優勢 | 買い0件 / 売り232件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 29.8%
@@ -358,8 +357,8 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Antitrust lawsuit against Cloudflare
-  [high] regulatory: Ongoing SEC regulatory investigation
-  [mid] earnings: Earnings warning for 2025-2026 period
+  [high] regulatory: SEC regulatory investigation
+  [mid] earnings: Earnings warning for 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically

@@ -1,12 +1,12 @@
 {
-  "intrinsic_value_pt": 96691447.12975805,
+  "intrinsic_value_pt": 94091152.06461532,
   "intrinsic_value_per_share": 4.531200814353473,
-  "intrinsic_value_beta": 2.26,
-  "upside_percent_beta": -18.4,
+  "intrinsic_value_beta": 2.2,
+  "upside_percent_beta": -22.1,
   "intrinsic_value_rf": 24.34,
-  "upside_percent_rf": 780.3,
-  "v0": 96691447.12975805,
-  "v0_adjusted": 96691447.12975805,
+  "upside_percent_rf": 761.6,
+  "v0": 94091152.06461532,
+  "v0_adjusted": 94091152.06461532,
   "alpha": 0.0,
   "alpha_was_capped": false,
   "future_values": {
@@ -20,31 +20,31 @@
     "1年後": {
       "future_value": 6.24,
       "value_growth_pct": 37.7,
-      "expected_return_pct": 125.7
+      "expected_return_pct": 120.9
     },
     "2年後": {
       "future_value": 8.58,
       "value_growth_pct": 89.4,
-      "expected_return_pct": 210.3
+      "expected_return_pct": 203.7
     },
     "3年後": {
       "future_value": 11.82,
       "value_growth_pct": 160.9,
-      "expected_return_pct": 327.5
+      "expected_return_pct": 318.4
     },
     "4年後": {
       "future_value": 16.26,
       "value_growth_pct": 258.9,
-      "expected_return_pct": 488.1
+      "expected_return_pct": 475.6
     },
     "5年後": {
       "future_value": 16.75,
       "value_growth_pct": 269.8,
-      "expected_return_pct": 505.8
+      "expected_return_pct": 492.9
     }
   },
-  "upside_percent": 63.9,
-  "calculation_date": "2026-08-04T01:46:23+09:00",
+  "upside_percent": 60.4,
+  "calculation_date": "2026-08-05T01:31:50+09:00",
   "formula": "Koichi式 v8.2.0（動的WACC + tapering DCF + FCFベース自動判定 + 成長オプション）",
   "dcf_type": "tapering",
   "growth": {
@@ -53,8 +53,8 @@
     "phase1_years": 4
   },
   "wacc": {
-    "value": 0.171763,
-    "beta": 2.259,
+    "value": 0.175468,
+    "beta": 2.324,
     "risk_free_rate": 0.043,
     "market_return": 0.1,
     "method": "CAPM"
@@ -124,41 +124,41 @@
   },
   "maturity_profile": null,
   "dcf_components": {
-    "v0": 96691447.12975805,
-    "pv_high_growth": 35040934.44478747,
-    "pv_terminal": 61650512.68497057,
+    "v0": 94091152.06461532,
+    "pv_high_growth": 34764751.63701879,
+    "pv_terminal": 59326400.42759653,
     "high_growth_detail": [
       {
         "year": 1,
         "growth_rate": 0.3765,
         "fcf": 9743358.832028681,
-        "discount_factor": 1.171763,
-        "pv": 8315127.574457192
+        "discount_factor": 1.175468,
+        "pv": 8288918.823846061
       },
       {
         "year": 2,
         "growth_rate": 0.2794,
         "fcf": 12466057.310243536,
-        "discount_factor": 1.373029,
-        "pv": 9079241.293600526
+        "discount_factor": 1.381725,
+        "pv": 9022097.116725225
       },
       {
         "year": 3,
         "growth_rate": 0.1824,
         "fcf": 14739382.72320712,
-        "discount_factor": 1.608864,
-        "pv": 9161360.11094385
+        "discount_factor": 1.624174,
+        "pv": 9075004.80576633
       },
       {
         "year": 4,
         "growth_rate": 0.0853,
         "fcf": 15996371.61843045,
-        "discount_factor": 1.885207,
-        "pv": 8485205.465785906
+        "discount_factor": 1.909164,
+        "pv": 8378730.890681178
       }
     ],
     "terminal_fcf": 16476262.766983364,
-    "terminal_value": 116223998.97704877,
+    "terminal_value": 113263829.61877088,
     "v0_rm": 201924195.71768296,
     "pv_fcf_rm": 41159779.089394934,
     "pv_tv_rm": 160764416.62828803
@@ -215,7 +215,7 @@
     "conversion_rate": 0,
     "estimated_fcf": 1293632.32,
     "raw_fcf": 1293632.32,
-    "sector": "Electrical_Equipment",
+    "sector": "",
     "note": "FCF外れ値除外済み（一過性費用補正適用済み）→ 二重補正防止のためフォールバック",
     "divergence_ratio": 1.0,
     "divergence_warning": "",
@@ -224,7 +224,7 @@
   },
   "software_system_reclassification": {
     "applicable": false,
-    "current_subgroup": "Electrical_Equipment",
+    "current_subgroup": "",
     "recommended_subgroup": null,
     "realized_ratio": null,
     "years_used": 0,
@@ -314,17 +314,17 @@
     "roe_10yr_avg": -0.6296839227208106,
     "roe_years_used": 7,
     "roe_outlier_adj": true,
-    "current_price": 2.765,
+    "current_price": 2.825,
     "latest_revenue": 16170404.0,
     "rpo": 107267.0,
-    "beta": 2.259,
+    "beta": 2.324,
     "sector": "Technology",
     "industry": "Electronic Components",
     "eps_data": {
       "ticker": "KULR"
     },
     "_shares_source": "yf_implied",
-    "_beta_source": "beta_config(Electrical_Equipment)",
+    "_beta_source": "beta_config()",
     "high_growth_rate_used": 0.3765217130377888,
     "high_growth_years": 4,
     "terminal_growth_used": 0.03,
@@ -333,8 +333,8 @@
     "moat_gross_margin_norm": 0.3104,
     "moat_roic_norm": 0.0,
     "moat_fcf_margin_norm": 0.0,
-    "pv_high": 35040934.44478747,
-    "pv_terminal": 61650512.68497057,
+    "pv_high": 34764751.63701879,
+    "pv_terminal": 59326400.42759653,
     "roe_used": -0.6296839227208106,
     "fcf_floor_applied": 22143959.52,
     "fcf_growth_floor": 0.15,
@@ -348,7 +348,7 @@
     "per_is_forward": false,
     "per_adjusted": null,
     "peg": null,
-    "ps": 6.8881674,
+    "ps": 7.037639,
     "ev_ebitda": null,
     "ma200": 3.25515,
     "forward_eps": 0.0,
@@ -366,11 +366,11 @@
     "insider_latest_date": "2026-06-12",
     "analyst_vs_iv": 76.6,
     "max_eps": 0.141,
-    "max_eps_per": 19.6,
+    "max_eps_per": 20.0,
     "max_eps_reliability": "MED"
   },
   "validation": {
-    "validated_at": "2026-08-04",
+    "validated_at": "2026-08-05",
     "model": "basic_checks_only",
     "checks": {
       "pt_shares_consistency": {
@@ -379,7 +379,7 @@
       },
       "dcf_components": {
         "pass": true,
-        "detail": "2段階: pv_high $0.04B + pv_terminal $0.06B = $0.10B (差異0.00%)"
+        "detail": "2段階: pv_high $0.03B + pv_terminal $0.06B = $0.09B (差異0.00%)"
       },
       "formula_verification": {
         "pass": true,
@@ -396,8 +396,8 @@
   "phase1_growth": 0.3765217130377888,
   "tanuki_score": "PASS",
   "funda_score": 20,
-  "score_comment": "割安圏(64%)で買い余地大、FCFマイナス（投資フェーズ）、売上成長加速",
-  "timing_score": 65,
+  "score_comment": "割安圏(60%)で買い余地大、FCFマイナス（投資フェーズ）、売上成長加速",
+  "timing_score": 50,
   "sell_reason": null,
   "pre_rounding_score": null,
   "pre_rounding_comment": null,
@@ -462,7 +462,7 @@
     "shares_yr_3ago_label": "2022"
   },
   "computed_runway_months": 1.9649093707198912,
-  "net_current_assets_ratio": 0.0536,
+  "net_current_assets_ratio": 0.0524,
   "next_earnings_date": "2026-08-14",
   "segment_configured": false,
   "phase1_growth_original": 0.25,
@@ -503,17 +503,17 @@
   "risk_events": [
     {
       "type": "litigation",
-      "summary": "Antitrust lawsuit ongoing",
+      "summary": "Antitrust lawsuit against KULR Technology Group",
       "impact": "high"
     },
     {
       "type": "regulatory",
-      "summary": "SEC regulatory investigation",
+      "summary": "Ongoing SEC investigation into company practices",
       "impact": "high"
     },
     {
       "type": "earnings",
-      "summary": "Earnings warning for 2025-2026",
+      "summary": "Earnings warning impacting 2025-2026 outlook",
       "impact": "mid"
     }
   ]
