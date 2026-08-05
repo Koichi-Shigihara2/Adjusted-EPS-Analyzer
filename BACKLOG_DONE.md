@@ -4,13 +4,15 @@
 
 ## 2026-08-05（完了）
 
-### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Step1（全消費者洗い出し）完了・raw/削除（デッドコード除去）
-**状態:** Step1（全消費者洗い出し）・raw/削除まで完了。残タスクは
-normalized/→data/統合の詳細設計のみ、BACKLOG.mdに同一IDで残置
+### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Step1（全消費者洗い出し）・raw/削除・quarterly_*.json YTD→SA修正 完了
+**状態:** Step1（全消費者洗い出し）・raw/削除・quarterly_{FYQ}.json
+pl/cf/shares区分のYTD→単一四半期(SA)修正まで完了。残タスクは新設
+アクセサ実装・5本番消費者のnormalized/→data/切り替え、BACKLOG.mdに
+同一IDで残置
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質（新DB構築プロジェクト フェーズ1 本線）
 **登録日:** 2026-07-23
-**完了日:** 2026-08-05（Step1・raw/削除分）
+**完了日:** 2026-08-05（Step1・raw/削除・YTD→SA修正分）
 **発見:** 新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合（チャット記録）
 
 #### Step1: 全消費者洗い出し（読み取り専用調査）
@@ -80,10 +82,99 @@ audit.py（コメント言及のみ）以外に参照はなかったが、**新�
 4. pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
    MSFT/NVDAのみ、新規回帰なし）
 
-#### 残タスク
+#### 残タスク（raw/削除完了時点）
 normalized/→data/統合の詳細設計（別途設計セッション。
 `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の解消方法・5本番消費者の
 フィールド名変換方式・SA/YTD再構成処理の扱いが主な論点）は
+BACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
+→ 下記「quarterly_{FYQ}.json pl/cf/shares区分のYTD→単一四半期(SA)修正」
+で「SA/YTD再構成処理の扱い」を実装完了、残タスクを更新。
+
+#### quarterly_{FYQ}.json pl/cf/shares区分のYTD→単一四半期(SA)修正（実装完了、2026-08-05）
+normalized/→data/統合の事前調査（4段階の読み取り専用調査）を通じて、
+`data/{TICKER}/quarterly_{FYQ}.json`の`pl`/`cf`区分（`bs`は時点値、
+`shares`は加重平均のため対象外）が、`parser.py::save_parsed_data()`に
+よってXBRL申告の**YTD累積値のまま**保存されており、`INPUT_DATA_TOBE.md`
+2-Aが想定する「正規化済み」（単一四半期値）を満たしていないことが
+判明した。
+
+**調査結果（4段階、読み取り専用）**:
+1. `parse_company_facts()`の四半期抽出ループ（`_extract_values_merged()`・
+   `_extract_single_key()`）には、annual側の340-380日必須判定に相当する
+   期間長検証が存在せず、同一end_dateを持つSA（単一四半期、約91日）候補
+   とYTD（累積、100日超）候補が競合した場合、JSON内の出現順で先に見つ
+   かった方が無条件に採用される構造的欠陥と判明
+2. revenue/net_income/gross_profit/operating_income/research_and_
+   development/selling_and_marketing/shares_diluted（希薄化後加重平均）
+   の7フィールドはSA候補がほぼ常に生XBRLファクトとして直接存在し
+   （タイブレーク修正のみで対応可能）、operating_cash_flow/
+   stock_based_compensationの2フィールドはSA候補が有意割合
+   （約22〜62%）で存在せず真の差分計算が必要と判明。long_term_debtは
+   instant fact（時点値）のため対象外、shares_diluted（加重平均）は
+   差分計算が数学的に無効と確認
+3. 52/53週決算銘柄（JNJ/TDY/ADBE/ESTC等）・SPAC銘柄（ASTS/RDW/IONQ等）
+   の個別サンプル検証で、`quarterly.py::_classify_period()`の実際の
+   閾値（131日）が両ケースとも日数レンジ調整不要と確認。RCAT等で
+   確認された同一end_date上の縮退エントリ（極端に短いXBRL誤タグ付け）
+   への対策として、期待日数91日への近さによるタイブレークを追加設計
+
+**実装内容**: `quarterly.py::_classify_period()`・`normalizer.py::
+_ytd_to_quarterly()`（normalized/側で実績のあるロジック）をそのまま
+再利用する統一アルゴリズムを`parser.py`に実装（ロジックの二重実装を
+回避）。
+- 新設: `_pick_quarterly_period_representative()`（同一(fy,fp)内の
+  複数候補からSA優先・end_date最新優先・期待日数91日近似優先で代表
+  エントリを1件選ぶ）・`_resolve_quarterly_values()`（fy単位のチェーンを
+  構築し`_ytd_to_quarterly()`で差分変換、加重平均フィールドは
+  `_QUARTERLY_NO_DIFF_FIELDS`で差分計算をスキップしSA代表のみ採用）
+- `_extract_values_merged()`（revenue/selling_and_marketing等）・
+  `_extract_single_key()`（gross_profit/operating_income/net_income/
+  operating_cash_flow/stock_based_compensation/shares_diluted等）の
+  四半期分岐を「即時確定」から「候補収集→全キー処理後にまとめて解決」
+  方式に変更
+
+**検証**: 独自の簡易シミュレーション（day数レンジによる手作業判定）が
+`parser.py`本体のタグ選定ロジック（`_extract_values_best_candidate()`の
+annual側鮮度ベース選定・`_extract_values_merged()`の全タグ統合）を
+正確に再現できず、revenueで明らかに矛盾する結果（差分不能43%、実際は
+ほぼ0%のはず）が出たため、手作業シミュレーションを放棄し、実際の
+`parser.py`関数に変更を直接実装した上でメモリ上比較する方式に切替
+（`save_parsed_data()`等の書き込み関数は呼ばずに実施）。この方式での
+検証結果と、その後の実書き込み・全105銘柄再パースの結果が完全一致する
+ことを確認した。
+
+**結果（全105銘柄、対象9フィールド）**:
+| フィールド | 対象件数 | 修正（YTD→SA） | null化 |
+|---|---|---|---|
+| revenue | 3,251 | 2,135（65.7%） | 0 |
+| gross_profit | 1,887 | 1,242（65.8%） | 0 |
+| operating_income | 3,148 | 2,078（66.0%） | 1 |
+| research_and_development | 2,136 | 1,410（66.0%） | 1 |
+| selling_and_marketing | 1,276 | 843（66.1%） | 0 |
+| net_income | 3,290 | 2,177（66.2%） | 2 |
+| operating_cash_flow | 3,097 | 1,957（63.2%） | 99（3.2%） |
+| stock_based_compensation | 2,884 | 1,856（64.4%） | 68（2.4%） |
+| shares_diluted | 3,036 | 1,849（60.9%） | 3 |
+
+null化は「復元不能な旧YTD値を誤って単一四半期値として提供し続けていた
+箇所を、正直に欠損として示す」形の修正であり、データの劣化ではない
+（例: AAPLの`operating_cash_flow` 2009Q3は該当四半期の起点〈Q1/Q2〉が
+XBRL上に存在せず、9ヶ月YTD値単体からは真の単一四半期値を復元不能なため
+null。旧データは誤ってこのYTD値をQ3の値として提供していた）。
+
+annual側は1,441ファイル横断比較で差分0件（annual側ロジックは無変更の
+ため想定通り）。normalized/・ttm/は今回変更対象外（構造的に独立）。
+`report_consistency_check.py --fail-on-ng`: NG=0（WARN=78件、既存と
+不変）。pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
+MSFT/NVDAのみ、新規回帰なし）。
+
+#### 残タスク
+1. 新設アクセサ（`reader.py::get_quarterly_series()`/
+   `get_latest_quarterly()`相当のdata/quarterly_*.json版）の実装
+2. `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の残り論点（②SM/SGA概念
+   混同の設計判断・⑤ファイル名混在等）の解消方法確定
+3. 5本番消費者のnormalized/→data/切り替え（フィールド名変換含む）
+
 BACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
 
 ---

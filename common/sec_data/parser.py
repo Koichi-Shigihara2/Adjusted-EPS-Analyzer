@@ -9,7 +9,8 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 
 from .config import get_ticker_info
-from .quarterly import TICKER_RESTRICTIONS
+from .quarterly import TICKER_RESTRICTIONS, _classify_period
+from .normalizer import _ytd_to_quarterly
 from .tag_definitions import TAG_CANDIDATES
 from .utils import (
     determine_fiscal_year, detect_fiscal_end_month, detect_fiscal_anchor_date,
@@ -19,6 +20,103 @@ from .fetcher import load_submissions, load_former_names
 
 _FACT_OVERRIDES_PATH = os.path.join(os.path.dirname(__file__), "fact_overrides.json")
 _FIXED_REGISTRY_PATH = os.path.join(os.path.dirname(__file__), "fixed_registry.json")
+
+# SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合: quarterly_{FYQ}.jsonの
+# pl/cf/shares区分がYTD累積値のまま保存されていた問題への対応（統一アルゴリズム）。
+# 加重平均フィールド（差分計算が数学的に無効）は差分計算フォールバックの対象外とし、
+# SA(単一四半期)候補が存在しない場合はその四半期を欠損のまま許容する。
+_QUARTERLY_NO_DIFF_FIELDS = frozenset({"shares_diluted", "shares_basic"})
+
+
+def _pick_quarterly_period_representative(candidates: List[tuple]) -> Optional[Dict[str, Any]]:
+    """同一(fy, fp)内の複数候補（当期・比較年度再掲・重複タグ等）から代表エントリを
+    1件選ぶ。
+
+    優先順位: ①SA（単一四半期相当。quarterly.py::_classify_period()の
+    is_ytd=Falseかつis_annual=False）を優先 ②end_dateが最新の方を優先
+    （当期データが比較年度再掲より優先されるようにする）③end_date同点時は
+    期待日数91日への近さを優先（SEC-TAG-FICO-CPRT-1と同種のタイブレーク。
+    RCAT等で確認された、同一end_dateを持つ極端に短い縮退エントリの誤採用を防ぐ）。
+
+    candidates: [(start, end, val, fp), ...]
+    戻り値: 代表エントリのdict（start/end/val/fp/is_ytd/period_days）。
+            候補が全てis_annual判定される等で空になった場合はNone。
+    """
+    classified = []
+    for start, end, val, fp in candidates:
+        cls = _classify_period(start, end, fp, "10-Q")
+        if cls["is_annual"]:
+            continue
+        classified.append({
+            "start": start, "end": end, "val": val, "fp": fp,
+            "is_ytd": cls["is_ytd"], "period_days": cls["period_days"],
+        })
+    if not classified:
+        return None
+
+    sa_candidates = [c for c in classified if not c["is_ytd"]]
+    pool = sa_candidates if sa_candidates else classified
+
+    best = None
+    for c in pool:
+        if best is None or c["end"] > best["end"]:
+            best = c
+        elif c["end"] == best["end"] and abs(c["period_days"] - 91) < abs(best["period_days"] - 91):
+            best = c
+    return best
+
+
+def _resolve_quarterly_values(quarterly_candidates: List[tuple], field_name: str) -> Dict[str, Any]:
+    """収集した四半期生候補群から単一四半期(SA)値を確定する統一アルゴリズム。
+
+    [[SECDATA-STORAGE-FRAGMENTATION-1]] normalized/→data/統合の一環（2026-08-05）。
+    quarterly_{FYQ}.jsonのpl/cf/shares区分がYTD累積値のまま保存されていた問題
+    （約65〜66%のエントリが該当）への対応。normalized/側で実績のある
+    quarterly.py::_classify_period()・normalizer.py::_ytd_to_quarterly()を
+    そのまま再利用し、ロジックの二重実装を避ける（annual側day変数判定
+    〈340-380日必須〉とは対象とする期間種別が異なるため共通化していないが、
+    「期間日数で期間種別を判定する」という考え方自体は同一）。
+
+    手順:
+      ①同一(fy, fp)ごとに代表エントリを1件選定（_pick_quarterly_period_
+        representative()、SA優先）
+      ②fy単位でend_date昇順のチェーンを構築
+      ③_ytd_to_quarterly()でYTDエントリを差分変換する
+        （SA優先のため、実際に差分計算が発火するのはSA候補が存在しない
+        フィールド〈operating_cash_flow・stock_based_compensation等〉
+        の四半期のみ。SA候補が存在する四半期はそのまま通る）
+      ④shares_diluted等の加重平均フィールド（_QUARTERLY_NO_DIFF_FIELDS）は
+        差分計算が数学的に無効なため③をスキップし、SA代表のみ採用する
+        （SA候補がない四半期はキー自体を発行せず欠損のまま許容する）
+
+    quarterly_candidates: [(fy, fp, start, end, val), ...]
+    戻り値: {"{fy}{fp}": val, ...}（差分不能・SA候補なしの四半期はキー自体が
+            存在しない＝呼び出し元のresult["quarterly"]はその四半期を更新しない）
+    """
+    by_period: Dict[tuple, list] = {}
+    for fy, fp, start, end, val in quarterly_candidates:
+        by_period.setdefault((fy, fp), []).append((start, end, val, fp))
+
+    by_fy: Dict[Any, list] = {}
+    for (fy, fp), cands in by_period.items():
+        rep = _pick_quarterly_period_representative(cands)
+        if rep is None:
+            continue
+        by_fy.setdefault(fy, []).append(rep)
+
+    resolved: Dict[str, Any] = {}
+    no_diff = field_name in _QUARTERLY_NO_DIFF_FIELDS
+    for fy, plist in by_fy.items():
+        plist_sorted = sorted(plist, key=lambda p: p["end"])
+        if no_diff:
+            for p in plist_sorted:
+                if not p["is_ytd"]:
+                    resolved[f"{fy}{p['fp']}"] = p["val"]
+            continue
+        converted, _unresolved = _ytd_to_quarterly(plist_sorted)
+        for c in converted:
+            resolved[f"{fy}{c['fp']}"] = c["val"]
+    return resolved
 
 
 def _load_fixed_registry() -> dict:
@@ -1460,6 +1558,10 @@ class SECParser:
         # 期末日を記録（同一end_yearで最新のend日付を優先するため）
         annual_end_dates = {}
         quarterly_end_dates = {}
+        # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合: 四半期の生候補を
+        # 即座に確定せず収集し、全キー処理後に_resolve_quarterly_values()で
+        # まとめて解決する（SA優先＋YTD差分計算フォールバックの統一アルゴリズム）
+        quarterly_candidates: List[tuple] = []
         # fy==end_yearの完全一致フラグ: 非December FY企業でQ1等中間期エントリが
         # 同一end_yearを持ち全年データを上書きするのを防ぐ（INTU等の対策）
         annual_exact_match = {}
@@ -1610,22 +1712,22 @@ class SECParser:
 
                     # 四半期（10-Q）
                     elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
-                        quarter_key = f"{fy}{fp}"
                         if use_max:
+                            # use_maxは現在全フィールドでFalse固定のため実質到達しない
+                            # （株式数の異常値対策を優先順位方式へ変更した経緯により
+                            # 事実上デッドパスだが、既存シグネチャ互換のため維持する）
+                            quarter_key = f"{fy}{fp}"
                             if quarter_key not in result["quarterly"] or val > result["quarterly"][quarter_key]:
                                 result["quarterly"][quarter_key] = val
                                 quarterly_end_dates[quarter_key] = end_date
                         else:
-                            # 同一四半期では最新のend日付を優先
-                            if quarter_key not in result["quarterly"]:
-                                result["quarterly"][quarter_key] = val
-                                quarterly_end_dates[quarter_key] = end_date
-                            elif end_date > quarterly_end_dates.get(quarter_key, ""):
-                                result["quarterly"][quarter_key] = val
-                                quarterly_end_dates[quarter_key] = end_date
+                            # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合:
+                            # 即座に確定せず候補として収集し、全キー処理後に
+                            # _resolve_quarterly_values()でまとめて解決する
+                            quarterly_candidates.append((fy, fp, entry.get("start", ""), end_date, val))
 
                 # 最初に見つかったunit_typeのデータを使用
-                if result["annual"] or result["quarterly"]:
+                if result["annual"] or result["quarterly"] or quarterly_candidates:
                     break
 
             # 全キーを検索（早期終了しない。merge_all_tagsは年代ごとのタグ切替を横断統合するため）
@@ -1710,6 +1812,12 @@ class SECParser:
                     })
 
         result["_annual_provenance"] = annual_provenance
+        # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合: 全キー分の四半期
+        # 生候補が出揃った時点でSA優先＋YTD差分計算フォールバックの統一
+        # アルゴリズムを適用する（use_max分岐はresult["quarterly"]へ既に確定済みの
+        # ため、quarterly_candidates収集分のみをここで解決してmergeする）
+        if quarterly_candidates:
+            result["quarterly"].update(_resolve_quarterly_values(quarterly_candidates, field_name))
         return result
 
     def _extract_values_best_candidate(self, us_gaap: dict, xbrl_keys: List[str], fiscal_end_month: int,
@@ -1861,6 +1969,10 @@ class SECParser:
         result: Dict[str, Any] = {"annual": {}, "quarterly": {}}
         annual_end_dates: Dict[int, str] = {}
         quarterly_end_dates: Dict[str, str] = {}
+        # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合: 四半期の生候補を
+        # 即座に確定せず収集し、_resolve_quarterly_values()でまとめて解決する
+        # （SA優先＋YTD差分計算フォールバックの統一アルゴリズム）
+        quarterly_candidates: List[tuple] = []
         annual_exact_match: Dict[int, bool] = {}
         annual_accn: Dict[int, str] = {}
         annual_durations: Dict[int, Any] = {}
@@ -1967,16 +2079,18 @@ class SECParser:
                                     annual_durations[end_year] = days
 
                 elif form == "10-Q" and fp in ["Q1", "Q2", "Q3"]:
-                    quarter_key = f"{fy}{fp}"
-                    if quarter_key not in result["quarterly"]:
-                        result["quarterly"][quarter_key] = val
-                        quarterly_end_dates[quarter_key] = end_date
-                    elif end_date > quarterly_end_dates.get(quarter_key, ""):
-                        result["quarterly"][quarter_key] = val
-                        quarterly_end_dates[quarter_key] = end_date
+                    # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合:
+                    # 即座に確定せず候補として収集し、ループ後に
+                    # _resolve_quarterly_values()でまとめて解決する
+                    quarterly_candidates.append((fy, fp, entry.get("start", ""), end_date, val))
 
-            if result["annual"] or result["quarterly"]:
+            if result["annual"] or quarterly_candidates:
                 break
+
+        # SECDATA-STORAGE-FRAGMENTATION-1 normalized/→data/統合: SA優先＋YTD
+        # 差分計算フォールバックの統一アルゴリズムで四半期候補を解決する
+        if quarterly_candidates:
+            result["quarterly"].update(_resolve_quarterly_values(quarterly_candidates, field_name))
 
         # 本人データの上書きは呼び出し元(_extract_values_best_candidate)で
         # タグ横断・優先順位順に一括適用する（このタグ単体では本人データが

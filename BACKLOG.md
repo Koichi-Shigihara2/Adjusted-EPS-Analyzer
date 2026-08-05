@@ -1,5 +1,23 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（新DB構築プロジェクト フェーズ1 Step1、
+`[[SECDATA-STORAGE-FRAGMENTATION-1]]`対応の一環として`data/
+quarterly_{FYQ}.json`のpl/cf/shares区分のYTD→単一四半期(SA)修正を
+実装。normalized/→data/統合の事前調査4段階を通じて、`quarterly_*.json`
+がXBRL申告のYTD累積値のまま保存されていた（約65〜66%のエントリが
+該当）ことが判明し、`quarterly.py::_classify_period()`・
+`normalizer.py::_ytd_to_quarterly()`（normalized/側で実績のある
+ロジック）を再利用する統一アルゴリズムを`parser.py::
+parse_company_facts()`に実装した。手作業シミュレーションが
+`parser.py`本体のタグ選定ロジックを正確に再現できず誤った結果を
+出したため、実際の`parser.py`関数への直接実装＋メモリ上比較方式に
+切り替えて検証し、その後の実書き込み・全105銘柄再パース結果と完全
+一致することを確認。annual側は無変化（1,441ファイル横断比較で差分
+0件）、report_consistency_check.py NG=0・WARN=78件（不変）、
+pytest 497 passed/2 known failed確認。残タスクは新設アクセサ実装・
+5本番消費者のnormalized/→data/切り替え。詳細はBACKLOG_DONE.md
+「2026-08-05（完了）」参照。コミット・push未実施（ユーザー確認待ち）。
+
 最終更新: 2026-08-05（`[[SCHEMA-NORMALIZED-ISSUES-1]]`④SharesBasic概念
 不一致の実害調査完了（読み取り専用）。normalized/側の「SharesBasic」
 フィールドはリポジトリ全体で消費者ゼロの死んだフィールドと確認、
@@ -6263,6 +6281,38 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 
 ## 優先度：低（アイデア段階）
 
+### [RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1] RCAT 2016Q3のquarterly_*.jsonが新ロジックで未上書きのまま残存
+**優先度:** 低
+**分類:** データ品質 / SEC EDGARデータ（新DB構築プロジェクト フェーズ1）
+**登録日:** 2026-08-05
+**発見:** `[[SECDATA-STORAGE-FRAGMENTATION-1]]` quarterly_*.json YTD→SA修正の
+検証中（メモリ上シミュレーションと実書き込み結果のSBC集計に±1件の
+差異が発生、原因調査で発見）
+
+#### 内容
+`parser.py::save_parsed_data()`は`parsed["quarterly"]`に存在する
+四半期キーのみを上書き保存する。RCATの`2016Q3`は、当該四半期の
+XBRL申告が極端に薄く（`AllocatedShareBasedCompensationExpense`タグの
+単独9ヶ月YTD候補〈起点四半期なし〉のみで、他フィールドも同様に
+差分計算不能）、統一アルゴリズム適用後は**どのフィールドも解決できず
+四半期キー自体が`parsed["quarterly"]`から消滅**した。結果、
+`common/sec_data/data/RCAT/quarterly_2016Q3.json`は今回の一括再パースで
+一切上書きされず、修正前（YTD値をSA値として誤保存していた）の内容が
+そのまま残存している（`stock_based_compensation=78472`は9ヶ月YTD値）。
+
+全105銘柄・2,296ファイルの再パースでこのパターンに該当するのは
+RCAT 2016Q3の1ファイルのみと確認済み（全銘柄横断で「旧ファイルには
+存在したが新抽出結果には四半期キー自体が存在しない」ケースを検索）。
+
+#### 実害
+現時点でゼロ。`data/quarterly_*.json`のpl/cf区分を直接参照する本番
+消費者は存在しない（`[[SECDATA-STORAGE-FRAGMENTATION-1]]`調査で確認済み）。
+
+#### 対応方針（未実施）
+残存ファイルを放置するか、明示的に削除する（「その四半期は再現不能」と
+正直に示す）か、設計判断が必要。優先度は低（1ファイルのみ・実害ゼロ・
+将来のアクセサ実装時に再検討で十分）。
+
 ### [DEFICIT-SCORE-CEILING-95-1] STONKS SILO DEFICIT分類、赤字企業の実質上限95点
 **優先度:** 低
 **分類:** 設計上の制約 / STONKS SILO
@@ -8077,9 +8127,26 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
      ✅ 2026-08-05完了（raw/normalized/ttm/data/company_facts.json・
      EPS Analyzer/TANUKI TAIL独自経路の全消費者を実ファイルで確認）
 0-B. ~~raw/削除（デッドコード除去）~~ ✅ 2026-08-05完了（詳細後述）
-0-C. **残タスク**: normalized/→data/統合の詳細設計（別途設計セッション。
-     `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の解消方法・5本番消費者の
-     フィールド名変換方式・SA/YTD再構成処理の扱いが主な論点）
+0-C. ~~`data/quarterly_{FYQ}.json` pl/cf/shares区分のYTD→単一四半期(SA)修正~~
+     ✅ 2026-08-05完了（事前調査でpl/cf/shares区分が従来XBRL申告のYTD
+     累積値のまま保存されていたと判明〈約65〜66%のエントリが該当〉。
+     quarterly.py::_classify_period()・normalizer.py::_ytd_to_quarterly()
+     を再利用する統一アルゴリズムをparser.py::parse_company_facts()に
+     実装し、全105銘柄を実再パース。annual側は無変化（1,441ファイル
+     横断比較で差分0件）、report_consistency_check.py NG=0・WARN=78件
+     （不変）、pytest 497 passed/2 known failed確認。詳細はBACKLOG_DONE.md
+     参照）
+0-D. **残タスク（優先順）**:
+     1. 新設アクセサ（`reader.py::get_quarterly_series()`/
+        `get_latest_quarterly()`相当のdata/quarterly_*.json版）の実装
+        （フィールド単位の時系列抽出関数。前回調査で未着手と判明済み）
+     2. `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の残り論点（②SM/SGA概念
+        混同の設計判断・⑤ファイル名混在等）の解消方法確定
+     3. 5本番消費者（financial_trend_calculator.py・
+        quarterly_review_generator.py・tail_dcf_bridge.py・hypecore.py・
+        pipeline.py内5用途）のnormalized/→data/切り替え（フィールド名
+        変換 PascalCase→snake_case を含む）
+     詳細な論点整理は別途設計セッションで実施
 
 **最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り。
 本線ではなく脇道扱い、CHAT_RULES.md「本線逸脱防止」参照）:**

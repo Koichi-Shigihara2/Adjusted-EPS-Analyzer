@@ -269,6 +269,19 @@ common/sec_data/data/{TICKER}/
   company_facts.json      # Layer1: SEC EDGAR company_facts API生レスポンス（既存）
   annual_{FY}.json        # 通期ファクト（正規化済み、INPUT-A-001〜015等）
   quarterly_{FYQ}.json    # 四半期ファクト（正規化済み）
+                           # 【2026-08-05実装済み】pl/cf/shares区分は従来
+                           # YTD累積値のまま保存されていたが（約65〜66%の
+                           # エントリが該当）、単一四半期(SA)優先＋YTD差分
+                           # 計算フォールバックの統一アルゴリズムを
+                           # parser.py::parse_company_facts()に実装し、
+                           # 本設計記述の「正規化済み」を実データで満たす
+                           # 状態にした（[[SECDATA-STORAGE-FRAGMENTATION-1]]）。
+                           # normalized/側で実績のあるquarterly.py::
+                           # _classify_period()・normalizer.py::
+                           # _ytd_to_quarterly()を再利用。差分計算が
+                           # 数学的に無効な加重平均フィールド
+                           # （shares_diluted等）はSA候補なし時に欠損を
+                           # 許容する。詳細はBACKLOG_DONE.md参照。
   filing_meta.json        # 提出日・CIK・最終確認日等のメタ情報（INPUT-A-018）
   segments/{FYQ}.json     # セグメント別KPI（新規吸収、INPUT-A-016）
                            # 【2026-07-23方針転換】当初は正式ASC280セグメントを
