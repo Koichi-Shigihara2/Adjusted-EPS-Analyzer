@@ -17,7 +17,7 @@ sys.path.insert(0, repo_root)
 from common.sec_data.config import get_all
 from common.sec_data.fetcher import SECFetcher, load_company_facts
 from common.sec_data.parser import SECParser
-from common.sec_data.quarterly import build_raw_table, save_raw_table, check_revenue_quality
+from common.sec_data.quarterly import build_raw_table, check_revenue_quality
 from common.sec_data.normalizer import normalize, save_normalized
 from common.sec_data.layer3_builder import build_ticker_store
 from common.sec_data.ttm_calculator import calc_ttm_series, save_ttm_series
@@ -75,7 +75,6 @@ def main():
                 continue
 
             raw_table = build_raw_table(ticker, company_facts)
-            save_raw_table(ticker, raw_table)
             print(f"   Raw Table: {len(raw_table.get('fields', {}))} fields")
         except Exception as e:
             print(f"   [WARN] Raw Table生成エラー: {e} → TTMスキップ")

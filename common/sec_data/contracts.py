@@ -169,12 +169,15 @@ def validate_entries(field_name: str, entries: list) -> list[FinancialEntry]:
 
 
 def validate_fields(fields: dict) -> None:
-    """raw/normalized JSON の "fields" 辞書全体を検証する（副作用なし・戻り値なし）。
+    """normalized JSON の "fields" 辞書全体を検証する（副作用なし・戻り値なし）。
 
-    quarterly.py::save_raw_table() / normalizer.py::save_normalized() の
-    json.dump() 直前で呼び出す想定。検証結果のオブジェクトは破棄し、
-    呼び出し元が保存しようとしている元の辞書はそのまま使う
-    （JSON on-disk形式を一切変えないため）。
+    normalizer.py::save_normalized() の json.dump() 直前で呼び出す想定。
+    検証結果のオブジェクトは破棄し、呼び出し元が保存しようとしている元の
+    辞書はそのまま使う（JSON on-disk形式を一切変えないため）。
+    （2026-08-05: raw/を永続化しなくなったため、quarterly.py::
+    save_raw_table()からの呼び出しは廃止。raw_table自体は
+    normalizer.py::normalize()への入力としてインメモリのまま使われ、
+    その結果〈normalized〉がここで検証される）
     """
     for field_name, entries in fields.items():
         validate_entries(field_name, entries)

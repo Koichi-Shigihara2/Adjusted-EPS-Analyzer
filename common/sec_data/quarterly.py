@@ -1,24 +1,21 @@
 """
 common/sec_data/quarterly.py
-責務: company_facts.json から四半期Raw Tableを生成する
-出力: raw/{ticker}_quarterly_raw.json
+責務: company_facts.json から四半期Raw Tableを生成する（インメモリ、
+normalizer.py::normalize()への入力）。ディスクへの永続化は行わない
+（[[SECDATA-STORAGE-FRAGMENTATION-1]]、2026-08-05: raw/への書き込みは
+実消費者ゼロのデッドコードと判明したため削除。以前は
+raw/{ticker}_quarterly_raw.jsonへ保存していた）。
 """
 
-import json
 import logging
-import os
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from .tag_definitions import TAG_CANDIDATES
-from .contracts import validate_fields
 from .utils import quarters_in_trailing_window
 from .fact_selection import select_latest_filed
 
 logger = logging.getLogger(__name__)
-
-BASE_DIR = os.path.dirname(__file__)
-RAW_DIR = os.path.join(BASE_DIR, "raw")
 
 # 銘柄別制限（ハードコード）
 TICKER_RESTRICTIONS: dict[str, dict] = {
@@ -597,23 +594,6 @@ def _process_entries(raw_entries: list) -> list:
     result.sort(key=lambda x: x["end"])
     return result
 
-
-def save_raw_table(ticker: str, raw: dict) -> str:
-    """raw tableをJSONファイルに保存し、パスを返す
-
-    QUALITY-GATES-EPIC-1 Phase 3a: json.dump()直前に規約B（標準エントリ形状）を
-    検証する。検証結果のオブジェクトは破棄し、保存対象データ自体は変更しない
-    （既存のJSON on-disk形式を一切変えないため）。違反時はContractViolation
-    （ValueErrorのサブクラス）を送出し、呼び出し元（update.py）の既存の
-    per-ticker try/except Exceptionで捕捉・スキップされる。
-    """
-    validate_fields(raw.get("fields", {}))
-    os.makedirs(RAW_DIR, exist_ok=True)
-    path = os.path.join(RAW_DIR, f"{ticker.upper()}_quarterly_raw.json")
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(raw, f, ensure_ascii=False, indent=2)
-    logger.info("[%s] raw table saved → %s", ticker, path)
-    return path
 
 
 # ---------------------------------------------------------------------------

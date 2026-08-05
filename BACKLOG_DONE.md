@@ -4,6 +4,90 @@
 
 ## 2026-08-05（完了）
 
+### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Step1（全消費者洗い出し）完了・raw/削除（デッドコード除去）
+**状態:** Step1（全消費者洗い出し）・raw/削除まで完了。残タスクは
+normalized/→data/統合の詳細設計のみ、BACKLOG.mdに同一IDで残置
+**優先度:** 中
+**分類:** アーキテクチャ / データ品質（新DB構築プロジェクト フェーズ1 本線）
+**登録日:** 2026-07-23
+**完了日:** 2026-08-05（Step1・raw/削除分）
+**発見:** 新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合（チャット記録）
+
+#### Step1: 全消費者洗い出し（読み取り専用調査）
+`common/sec_data/`の6ファイル系統（`data/annual_*.json・quarterly_*.json`・
+`company_facts.json`・`raw/`・`normalized/`・`ttm/`）＋EPS Analyzer・
+TANUKI TAILの独自SEC EDGARアクセス経路（EPS Analyzer1系統・TANUKI TAIL
+3系統＋RSS監視）について、全消費者を実ファイル・grepで洗い出した。
+
+**主な発見**:
+- `raw/{TICKER}_quarterly_raw.json`は`quarterly.py`の書き込み専用出力で、
+  リポジトリ全体を通じて読み込み側が一切存在しない実質デッドコードと
+  確認（`RAW_DIR`/`_quarterly_raw`の全参照を洗い出し）
+- `normalized/`の5本番消費者（`financial_trend_calculator.py`・
+  `quarterly_review_generator.py`・`tail_dcf_bridge.py`・`hypecore.py`・
+  `pipeline.py`）を確認。`pipeline.py`単体で最低5つの独立した用途
+  （希薄化率・TTM信頼性判定・`_calc_g_fundamental()`・
+  `_calc_moat_inputs()`・LTDebtフォールバック）を持つことが判明
+- `[[SCHEMA-NORMALIZED-ISSUES-1]]`①（STDebt網羅性）を実測再確認した
+  結果、AAPL/XOM/Vいずれもnormalized側STDebtが完全に0件（既存記載の
+  「AAPL 33/51・XOM 51/51・V 30/51が0件」よりさらに悪化）と確認
+- `raw/`と`normalized/`は同じ`quarterly.py::FIELD_CONCEPTS`定義を
+  共有しており（26概念のうち`_COGS`除く25概念が一致）、raw/は
+  company_facts.json（Layer1）からの一次フィルタ結果、normalized/は
+  raw/を入力としたSA/YTD再構成後の後段という関係を確認
+
+詳細（Step2スキーマ差異実測・Step3移行可能性粗評価含む）はチャット記録
+参照。
+
+#### raw/削除（実装完了）
+Step1で実消費者ゼロと確認された`raw/`を撤去した。
+
+**Step0（削除前の最終確認）**: 全リポジトリ（`.py`・テスト・
+`.github/workflows/`）を再grepした結果、想定通りquarterly.py（書込側）・
+audit.py（コメント言及のみ）以外に参照はなかったが、**新たに
+`.github/workflows/SEC_Data_Update.yml`の67行目
+（`git add common/sec_data/raw/ || true`）を発見**。当初は削除を中止し
+報告のみに留めたが、ユーザー確認の上でこの行も含めて削除する方針で
+再着手した。
+
+**実装内容**:
+- `common/sec_data/quarterly.py`: `save_raw_table()`関数を削除
+  （`RAW_DIR`・`json`/`os`インポートも連鎖的に不要となり削除。
+  `build_raw_table()`自体は`normalizer.py::normalize()`への入力として
+  インメモリのまま存続、変更なし）
+- `common/sec_data/update.py`: `save_raw_table`のインポート・呼び出しを削除
+- `common/sec_data/raw/`配下の既存105ファイル（約16MB）を削除
+- `.github/workflows/SEC_Data_Update.yml`: 67行目
+  （`git add common/sec_data/raw/ || true`）を削除
+- `common/sec_data/contracts.py`: `validate_fields()`のdocstringから
+  `save_raw_table()`への言及を除去（raw側の`validate_fields()`呼び出しは
+  廃止。`normalizer.py::save_normalized()`側の呼び出しは変更なく存続、
+  正規化後データの検証は引き続き実施される）
+- `common/sec_data/audit.py`: L129コメント（「旧: raw/経由の判定から
+  切替」）に、raw/自体が削除済みである旨を追記
+
+#### 検証結果
+1. `update.py AAPL`単体実行で、raw/への書き込みが正常にスキップされ
+   エラーが発生しないことを確認（`raw/`ディレクトリが再作成されない
+   ことも確認）。本実行に伴うAAPL本番データのライブ取得結果（
+   company_facts.json等）は調査目的外のため復元済み
+2. 全105銘柄フローズン検証（`build_raw_table()`+`normalize()`を
+   company_facts.json再取得なしで再実行）で、`normalized/`出力に
+   `generated_at`タイムスタンプ以外の実質的な差分がないことを確認
+   （検証用のタイムスタンプ差分105件は復元しコミット対象から除外）
+3. `report_consistency_check.py --fail-on-ng`: NG=0（WARN=78件、
+   既存と不変）
+4. pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
+   MSFT/NVDAのみ、新規回帰なし）
+
+#### 残タスク
+normalized/→data/統合の詳細設計（別途設計セッション。
+`[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の解消方法・5本番消費者の
+フィールド名変換方式・SA/YTD再構成処理の扱いが主な論点）は
+BACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
+
+---
+
 ### ✅ [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] Stage 1: フィックス機構の運用方針確定・スキーマ設計・実装（taxonomy属性非該当26銘柄・372エントリ）
 **状態:** Stage 1（設計・スキーマ確定・実装・検証）完了。Stage 2〜3
 （taxonomy属性①〜⑧該当58銘柄の段階的フィックス）は未着手のまま

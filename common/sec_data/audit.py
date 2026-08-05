@@ -126,7 +126,8 @@ def audit_ticker(ticker: str) -> dict:
     # （V等、複数株式クラス構造でこれらのタグを申告しない銘柄。
     #  ARCH-DATA-1のaudit.py拡張項目・未着手分）
     # Layer1（company_facts.json）を直接判定（[[SECDATA-STORAGE-FRAGMENTATION-1]]
-    # フェーズB。旧: raw/{TICKER}_quarterly_raw.json経由の判定から切替）
+    # フェーズB。旧: raw/{TICKER}_quarterly_raw.json経由の判定から切替。
+    # raw/自体は2026-08-05に実消費者ゼロのデッドコードと判明し削除済み）
     _cf_path = os.path.join(SEC_DATA_DIR, ticker.upper(), "company_facts.json")
     if os.path.exists(_cf_path):
         try:

@@ -1,5 +1,24 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR
+統合、`[[SECDATA-STORAGE-FRAGMENTATION-1]]`対応の一環として
+`common/sec_data/raw/`を削除した。全消費者洗い出し（Step1調査）で
+`raw/{TICKER}_quarterly_raw.json`が`quarterly.py`の書き込み専用出力
+であり、リポジトリ全体で読み込み側が一切存在しない実質デッドコードと
+確認済み。削除前の最終確認（Step0）で`.github/workflows/
+SEC_Data_Update.yml`に想定外の参照（`git add common/sec_data/raw/ ||
+true`）を新規発見し、これも含めて削除する方針をユーザーに確認の上で
+実施。`quarterly.py`の書込処理削除・既存105ファイル（約16MB）削除・
+`update.py`のimport整理・`SEC_Data_Update.yml`の該当行削除・
+`contracts.py`/`audit.py`のコメント整理を実施。全105銘柄フローズン
+検証（`build_raw_table()`+`normalize()`再実行）でnormalized/出力に
+`generated_at`タイムスタンプ以外の実質的な差分がないことを確認（検証用の
+タイムスタンプ差分は復元しコミット対象から除外）。
+`report_consistency_check.py --fail-on-ng`でNG=0（WARN=78件、既存と
+不変）、pytest 497 passed/2 known failed（既知）を確認。残タスクは
+normalized/→data/統合のみ（別途設計セッション）。「次セッションでの
+着手順序」欄を更新。コミット・push未実施（ユーザー確認待ち）。
+
 最終更新: 2026-08-05（[[AVGO-2015-DATA-THIN-1]]原因調査完了（読み取り
 専用）。SEC EDGAR一次情報の決算期比較（現行CIK・真の前身候補CIK
 1441634はいずれも10月末〜11月初決算、`cik_history.json`登録済みの
@@ -4391,9 +4410,26 @@ quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
 （2026-07-24対応完了、BACKLOG_DONE.md参照）で解消済みのため、統合
 スキーマ側は正規化済みCapExを前提に設計できる。
 
+**Step1完了（2026-08-05、全消費者洗い出し・読み取り専用調査）**:
+`raw/`（実消費者ゼロのデッドコード）・`normalized/`（5本番消費者、
+pipeline.py内部は最低5用途に細分化）・`ttm/`（独立パイプライン、
+`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`参照）・EPS Analyzer/TANUKI TAIL
+独自アクセス経路（EPS Analyzer1系統・TANUKI TAIL3系統＋RSS監視）の
+全消費者を実ファイルで確認済み。`[[SCHEMA-NORMALIZED-ISSUES-1]]`①
+（STDebt網羅性）を実測再確認した結果、AAPL/XOM/Vいずれもnormalized側
+STDebtが完全に0件（既存記載より悪化）と確認。詳細はチャット記録参照。
+
+**raw/削除完了（2026-08-05実装）**: 全消費者ゼロと確認済みの`raw/`を
+撤去した（`quarterly.py`の書込処理削除・既存105ファイル削除・
+`SEC_Data_Update.yml`のgit add対象からも除去）。詳細はBACKLOG_DONE.md
+参照。**残タスクはnormalized/→data/統合のみ**（別途設計セッションで
+着手。Step2〈スキーマ差異の実測〉・Step3〈移行可能性の粗評価〉は
+2026-08-05のStep1調査時に一部先行実施済み、詳細設計は次ステップ）。
+
 #### 着手条件
 なし（着手条件だった「[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定」は
-2026-07-24の実装完了により満たされた。着手可能）
+2026-07-24の実装完了により満たされた。raw/撤去は完了、
+normalized/→data/統合の詳細設計から再開可能）
 
 ---
 
@@ -7990,7 +8026,17 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ### 次セッションでの着手順序（提案）
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
-**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り）:**
+**本線（2026-08-05追加、新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合、CHAT_RULES.md「本線逸脱防止」参照）:**
+0-A. ~~`[[SECDATA-STORAGE-FRAGMENTATION-1]]` Step1: 全消費者洗い出し~~
+     ✅ 2026-08-05完了（raw/normalized/ttm/data/company_facts.json・
+     EPS Analyzer/TANUKI TAIL独自経路の全消費者を実ファイルで確認）
+0-B. ~~raw/削除（デッドコード除去）~~ ✅ 2026-08-05完了（詳細後述）
+0-C. **残タスク**: normalized/→data/統合の詳細設計（別途設計セッション。
+     `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の解消方法・5本番消費者の
+     フィールド名変換方式・SA/YTD再構成処理の扱いが主な論点）
+
+**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り。
+本線ではなく脇道扱い、CHAT_RULES.md「本線逸脱防止」参照）:**
 0. ~~Stage 3: 保留5件相当の年度・フィールド特定作業~~ ✅ 2026-08-05完了
    （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉・
    RDW(2020)/ASTS(2020) BS恒等式修正〈コミット1db003c0d・9618b6754〉・
