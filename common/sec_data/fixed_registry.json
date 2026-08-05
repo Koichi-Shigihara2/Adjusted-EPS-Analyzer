@@ -15576,5 +15576,340 @@
       "snapshot_hash": "sha256:0d22ca7b92c64cdc2fea4e04fcffd45306e3ee00dc6b1f80332fa3e3d3899830",
       "note": "Stage 1一括登録（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]、taxonomy属性①〜⑧非該当・既存チェックゲート全通過銘柄）"
     }
+  },
+  "HEI": {
+    "2020": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "対象accn・end_dateの全XBRLタグ網羅調査による会計恒等式TA=TL+SE完全一致確認",
+        "checks_passed": [
+          "TA=TL+SE+MinorityInterest($30,430,000)+TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests($221,208,000)完全一致（$3,547,711,000）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "total_assets",
+        "total_liabilities",
+        "stockholders_equity"
+      ],
+      "snapshot_hash": "sha256:18a641125c1913a985db8da02abd22f916b5dfedb15bc6f0998ac48df7233000",
+      "note": "[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]（Stage 2登録、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1）"
+    }
+  },
+  "LRCX": {
+    "2012": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "対象accn・end_dateの全XBRLタグ網羅調査による会計恒等式TA=TL+SE完全一致確認",
+        "checks_passed": [
+          "TA=TL+SE+TemporaryEquityCarryingAmountAttributableToParent($190,343,000)完全一致（$8,004,652,000）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "total_assets",
+        "total_liabilities",
+        "stockholders_equity"
+      ],
+      "snapshot_hash": "sha256:91d6b3fd999b4cfdd8dc583f66afda0147ebded211f889dcb2eda49fdb193e10",
+      "note": "[[HEI-LRCX-TA-TLSE-UNEXPLAINED-RESIDUAL-1]]（Stage 2登録）"
+    }
+  },
+  "TSLA": {
+    "2018": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "対象accn・end_dateの全XBRLタグ網羅調査による会計恒等式TA=TL+SE完全一致確認",
+        "checks_passed": [
+          "MinorityInterest等タグ加算によるTA=TL+SE完全一致（HEI-LRCX調査の追加サンプル確認）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "total_assets",
+        "total_liabilities",
+        "stockholders_equity"
+      ],
+      "snapshot_hash": "sha256:eba006f255734fc63614e765b35b74b5ad24e1483a9d35992f9c5d8b860931be",
+      "note": "[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（Stage 2登録）"
+    }
+  },
+  "XOM": {
+    "2023": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "対象accn・end_dateの全XBRLタグ網羅調査による会計恒等式TA=TL+SE完全一致確認",
+        "checks_passed": [
+          "RedeemableNoncontrollingInterestEquityCarryingAmount等タグ加算によるTA=TL+SE完全一致（HEI-LRCX調査の追加サンプル確認）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "total_assets",
+        "total_liabilities",
+        "stockholders_equity"
+      ],
+      "snapshot_hash": "sha256:0cb3101d1bb8b4537fd403d69a7c5ac39df58678cd4413bca2495fab6fb69fc9",
+      "note": "[[ACCOUNTING-IDENTITY-VALIDATION-LAYER-MISSING-1]]（Stage 2登録）"
+    }
+  },
+  "AVGO": {
+    "2016": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "SEC EDGAR companyconcept API直接照合（accn 0001730168-18-000084、ProfitLoss/OperatingIncomeLossタグ完全一致）",
+        "checks_passed": [
+          "revenue $13,240,000,000は10-K原本の真の年次値と完全一致確認",
+          "ProfitLossタグ $-1,861,000,000 とannual_2016.json値の完全一致確認（2026-08-05追加検証）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "net_income"
+      ],
+      "snapshot_hash": "sha256:68f942d967f2950941850fedf4b7acce052652fa31e8495070d63d5976134955",
+      "note": "[[PERIOD-LENGTH-VALIDATION-GAP-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
+    },
+    "2017": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "SEC EDGAR companyconcept API直接照合（accn 0001730168-18-000084、ProfitLoss/OperatingIncomeLossタグ完全一致）",
+        "checks_passed": [
+          "revenue $17,636,000,000は10-K原本の真の年次値と完全一致確認",
+          "OperatingIncomeLossタグ $2,383,000,000 とannual_2017.json値の完全一致確認（2026-08-05追加検証）"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "operating_income"
+      ],
+      "snapshot_hash": "sha256:df8e852d68d2a9f0aec25ec120e1169b8be3d6156ac785746d9329c9f3f6e0db",
+      "note": "[[PERIOD-LENGTH-VALIDATION-GAP-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
+    }
+  },
+  "RCAT": {
+    "2024": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "PERIOD-LENGTH-VALIDATION-GAP-1個別検証（実装挙動確認）",
+        "checks_passed": [
+          "改善値$4,103,000→$3,609,000、tanuki=true現役銘柄として確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "stock_based_compensation"
+      ],
+      "snapshot_hash": "sha256:be0ab7f1ddf417bfe3de98866272f113118601cbf82562e97decdfdae65c6aae",
+      "note": "[[PERIOD-LENGTH-VALIDATION-GAP-1]]（Stage 2登録）"
+    }
+  },
+  "ELF": {
+    "2015": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "10-K原本Selected Financial Data表との金額一致確認",
+        "checks_passed": [
+          "Net sales $191,413,000と一致確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "gross_profit",
+        "cost_of_revenue",
+        "net_income",
+        "operating_income"
+      ],
+      "snapshot_hash": "sha256:25c8ac103449e442b5f81bfc033b27e7b9742f8781a8a39e6f38ae35939ca9c2",
+      "note": "[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（Stage 2登録）"
+    },
+    "2016": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "10-K原本Selected Financial Data表との金額一致確認",
+        "checks_passed": [
+          "Net sales $229,567,000と一致確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "gross_profit",
+        "cost_of_revenue",
+        "net_income",
+        "operating_income"
+      ],
+      "snapshot_hash": "sha256:b1f8a239f9494ad32cb2bb4b6560cfaa304883bf361237132fca8c4736b0a594",
+      "note": "[[ELF-FISCAL-END-MONTH-MISDETECTION-1]]（Stage 2登録）"
+    }
+  },
+  "FICO": {
+    "2019": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "365日正規年次値へのフローズン入力比較検証",
+        "checks_passed": [
+          "105銘柄フローズン入力比較でFICO/CPRT/LITEのrevenueフィールドのみ変化、他無変化を確認",
+          "report_consistency_check.py NG=0"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue"
+      ],
+      "snapshot_hash": "sha256:d208ce813c2f904fd5861d9534b9e8008a791042427b05c9641b74d7c43c8e06",
+      "note": "[[SEC-TAG-FICO-CPRT-1]]（Stage 2登録）"
+    },
+    "2020": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "365日正規年次値へのフローズン入力比較検証",
+        "checks_passed": [
+          "105銘柄フローズン入力比較でFICO/CPRT/LITEのrevenueフィールドのみ変化、他無変化を確認",
+          "report_consistency_check.py NG=0"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue"
+      ],
+      "snapshot_hash": "sha256:b4e0fbf1fb5008178cd346f476ab29d99d00aa8325b3bd788cc17e02495c9bfa",
+      "note": "[[SEC-TAG-FICO-CPRT-1]]（Stage 2登録）"
+    }
+  },
+  "CPRT": {
+    "2019": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "365日正規年次値へのフローズン入力比較検証",
+        "checks_passed": [
+          "105銘柄フローズン入力比較でFICO/CPRT/LITEのrevenueフィールドのみ変化、他無変化を確認",
+          "report_consistency_check.py NG=0"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue"
+      ],
+      "snapshot_hash": "sha256:87da3c19338ffd80dd5fb2eece1ae32badf72983a2e017069f5ca9ff0814e06f",
+      "note": "[[SEC-TAG-FICO-CPRT-1]]（Stage 2登録）"
+    },
+    "2020": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "365日正規年次値へのフローズン入力比較検証",
+        "checks_passed": [
+          "105銘柄フローズン入力比較でFICO/CPRT/LITEのrevenueフィールドのみ変化、他無変化を確認",
+          "report_consistency_check.py NG=0"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue"
+      ],
+      "snapshot_hash": "sha256:a85720911487ab4608284ae6004c40672a98a6a2cba60204a640d49c5e3fd3b6",
+      "note": "[[SEC-TAG-FICO-CPRT-1]]（Stage 2登録）"
+    }
+  },
+  "LITE": {
+    "2019": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "365日正規年次値へのフローズン入力比較検証",
+        "checks_passed": [
+          "105銘柄フローズン入力比較でFICO/CPRT/LITEのrevenueフィールドのみ変化、他無変化を確認",
+          "report_consistency_check.py NG=0"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue"
+      ],
+      "snapshot_hash": "sha256:3620a0182c38cbe82755bc4e4769a012091af3a093a073545d060efd55f80499",
+      "note": "[[SEC-TAG-FICO-CPRT-1]]（Stage 2登録）"
+    }
+  },
+  "GOOGL": {
+    "2012": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "SEC EDGAR一次情報照合（accn 0001288776-15-000008）完全一致、selling_and_marketingはGOOGL固有のMarketingAndAdvertisingExpenseタグ規約との整合性を追加確認",
+        "checks_passed": [
+          "SEC EDGAR companyconcept API CIK0001288776 accn 0001288776-15-000008との完全一致確認（revenue $46,039,000,000/operating_income $13,834,000,000/research_and_development $6,083,000,000/selling_and_marketing $1,992,000,000〈MarketingAndAdvertisingExpenseタグ、GOOGL own-data年度と同一タグ規約〉、2026-08-05追加検証）",
+          "gross_profit $28,863,000,000は[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]是正後の値",
+          "105銘柄フローズン入力比較でGOOGL(2012/2013)以外0件差分確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "operating_income",
+        "research_and_development",
+        "selling_and_marketing",
+        "gross_profit"
+      ],
+      "snapshot_hash": "sha256:e5653c7eeae8ae51f49bf50607b1de3ae3563528fbfca9dddc31bbcba671023d",
+      "note": "[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]・[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
+    },
+    "2013": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "SEC EDGAR一次情報照合（accn 0001288776-15-000008）完全一致、selling_and_marketingはGOOGL固有のMarketingAndAdvertisingExpenseタグ規約との整合性を追加確認",
+        "checks_passed": [
+          "SEC EDGAR companyconcept API CIK0001288776 accn 0001288776-15-000008との完全一致確認（revenue $55,519,000,000/operating_income $15,403,000,000/research_and_development $7,137,000,000/selling_and_marketing $2,389,000,000〈MarketingAndAdvertisingExpenseタグ、GOOGL own-data年度と同一タグ規約〉、2026-08-05追加検証）",
+          "gross_profit $33,526,000,000は[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]是正後の値",
+          "105銘柄フローズン入力比較でGOOGL(2012/2013)以外0件差分確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "revenue",
+        "operating_income",
+        "research_and_development",
+        "selling_and_marketing",
+        "gross_profit"
+      ],
+      "snapshot_hash": "sha256:d86692d3b00098b2e867089410f99af3be1dd9b46e897856057a749e43cef7ff",
+      "note": "[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]・[[GOOGL-FACT-OVERRIDE-SEQUENCING-BUG-1]]（Stage 2登録、2026-08-05のSEC EDGAR一次情報追加検証込み）"
+    }
+  },
+  "SPIR": {
+    "2025": {
+      "fixed_at": "2026-08-05",
+      "fixed_by": "manual_verification",
+      "verified_against": {
+        "method": "10-K MD&A一次情報との金額一致確認",
+        "checks_passed": [
+          "10-K MD&A一次情報（海事事業売却$154.3M非現金益、FY2025 10-K accn 0001193125-26-116169）確認",
+          "report_consistency_check.py --ticker KO,SPIR NG=0確認"
+        ],
+        "verified_at": "2026-08-05"
+      },
+      "fields_snapshot": [
+        "net_income",
+        "operating_cash_flow"
+      ],
+      "snapshot_hash": "sha256:d9d46bfe45c20ec5e5a55fbcb5e8b29233ef1d812376f4c0728f16cef73967f7",
+      "note": "[[KO-SPIR-CF-CAUSE-UNCONFIRMED-1]]（Stage 2登録）"
+    }
   }
 }

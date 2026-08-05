@@ -1,6 +1,79 @@
 # On-a-journey — 改善バックログ（全システム）
 
 最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+Stage 2実装完了。taxonomy属性①〜⑧該当58銘柄のうち、過去の個別バグ
+調査（BACKLOG_DONE.md）とSEC EDGAR一次情報照合（companyconcept API
+直接照合）の両方で正しさが確定済みの12銘柄・17銘柄×年度エントリを
+`fixed_by: manual_verification`で`fixed_registry.json`へ登録した:
+HEI(2020)/LRCX(2012)/TSLA(2018)/XOM(2023)（会計恒等式TA=TL+SE全タグ
+網羅確認）、AVGO(2016 revenue・net_income／2017 revenue・
+operating_income、SEC EDGAR companyconcept API accn
+0001730168-18-000084と完全一致確認）、RCAT(2024
+stock_based_compensation)、ELF(2015/2016、10-K原本Selected Financial
+Data表と一致確認)、FICO(2019/2020)・CPRT(2019/2020)・LITE(2019)の
+revenue（365日正規年次値へのフローズン入力比較検証）、GOOGL(2012/2013、
+revenue/operating_income/research_and_development/selling_and_
+marketing/gross_profit、SEC EDGAR accn 0001288776-15-000008と完全
+一致確認。selling_and_marketingはGOOGL固有のMarketingAndAdvertising
+Expenseタグ規約との整合性も確認）、SPIR(2025 net_income・
+operating_cash_flow、10-K MD&A一次情報と一致確認)。
+
+**登録前検証で2件を対象外に確定（判定: 対応不要・既に是正済みのため
+凍結対象なし）**: VRT(2016)/net_income・SPIR(2020)/long_term_debtは、
+候補リスト作成時点のBACKLOG_DONE.md記述（前者は
+`[[PERIOD-LENGTH-VALIDATION-GAP-1]]`実装時点、後者は
+`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`登録時点の記述）を根拠にしていたが、
+本Stage 2実装の登録前検証でannual_{year}.jsonの実ファイルを直接確認した
+ところ、**現在は対象フィールド自体が存在しない**と判明した:
+- **VRT(2016)/net_income**: annual_2016.jsonの`pl`セクションが完全に空
+  （`{}`）。VRT(2016)はSPACシェル期（Vertivと合併前のGS Acquisition
+  Holdings Corp）で、PERIOD-LENGTH-VALIDATION-GAP-1完了時点では値が
+  存在した可能性が高いが、後続の`[[SPAC-STUB-PERIOD-VERIFICATION-1]]`
+  調査で「stockholders_equity/operating_cash_flowのみ残存」と再確定され、
+  その過程でPL系フィールドがNone化・削除されたとみられる（両タスクの
+  完了日はいずれも2026-08-02で近接しており、実行順序の記録は本セッション
+  時点では追跡できていない）。
+- **SPIR(2020)/long_term_debt**: annual_2020.jsonの`bs`セクションに
+  キー自体が存在しない。`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2
+  （2026-08-01）で該当値$26,645,000が誤った値としてNone化済みであり、
+  そもそも凍結すべき正しい値が存在しない。
+
+いずれも**Stage 3（保留・要追加調査）ではなく、この時点で「対応不要」
+として判定完了**する。もし将来これらのフィールドに値が再度現れた場合
+（例: 候補タグ拡充によるVRT(2016)のPL復旧、RDW(2020)と同型の許可リスト
+拡張がSPIR(2020)にも適用された場合等）、その時点で改めてfixed_registry
+登録の要否を検討する。
+
+**教訓**: BACKLOG_DONE.mdの記述はその投稿時点のスナップショットであり、
+同一領域で後続の別タスク（本件はいずれも同日2026-08-01/02の別エントリ）
+が実行されると記述と実データが乖離しうる。fixed_registry登録のような
+「値そのものを対象にした」作業では、BACKLOG_DONE.mdの記述を根拠として
+そのまま信用せず、登録直前に必ず実ファイル（annual_{year}.json）で
+対象フィールドの現存を確認する工程を欠かせない。一般化の要否（
+`MIGRATION_CHECKLIST.md`または`EXTRACTION_DESIGN_PRINCIPLES.md`への
+反映）は次回セッション終了時のブラッシュアップで検討する（今回は
+記録のみ）。
+
+**検証結果**: 全105銘柄フローズン再パースで新規21件を含め無変化
+（`bs_identity_violations_log.json`9銘柄分の非決定的キー順序差分〈既知の
+[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]〉のみ発生、復元しコミット
+対象から除外）。CHECK-31試験発火: RCAT(2024)を意図的に改変→NG-31検知
+→復元後NG=0に復帰を確認。`report_consistency_check.py --fail-on-ng`で
+NG=0（WARN=79件、既存と同水準）。pytest 497 passed/2 known failed
+（既知の[[TEST-STALE-IV-1]] MSFT/NVDA、新規回帰なし）。
+
+**残タスク: Stage 3**（対象年度・フィールドの追加特定が必要な保留分）:
+RDW(2020)〈[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]で別途未解決の残差
+$120,314,578が判明、要RedeemableNoncontrollingInterestEquityCommon
+RedemptionValue加算〉、MO/PM/SCCO〈gross_profit genuine定義差は確定済み
+だが対象年度リストの明示が必要〉、MRVL/AVGO/DELL旧CIK拡張分（MRVL
+2007-2018・AVGO 2006-2014・DELL 2007-2013、フィールド別の詳細特定が
+必要）、LLY（capital_expenditureの正確な対象年度特定）、BBAI/RKLB/SOFI/
+VRT/ONDS（[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1で解消済みだが
+None化されたBSフィールド名の特定が必要）。「次セッションでの着手順序」欄
+を更新。コミット未実施（ユーザー確認待ち）。
+
+最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
 Stage 1実装完了。fixed_registry.jsonフィックス機構を実データで実測・
 実登録した。taxonomy属性①〜⑧非該当銘柄を実測した結果47銘柄（属性
 該当58銘柄、前回見積「約55銘柄」から上方修正）、既存チェックゲート
@@ -7633,6 +7706,14 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 ### 次セッションでの着手順序（提案）
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
+
+**最優先（2026-08-05追加、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3）:**
+0. [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3: 保留5件相当の
+   年度・フィールド特定作業（RDW(2020)の残差解消・MO/PM/SCCOの対象年度
+   リスト化・MRVL/AVGO/DELL旧CIK拡張分のフィールド特定・LLYの
+   capital_expenditure対象年度特定・BBAI/RKLB/SOFI/VRT/ONDSのNone化
+   BSフィールド名特定）。詳細はBACKLOG.md冒頭2026-08-05エントリ・
+   BACKLOG_DONE.md該当項目参照。
 
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
