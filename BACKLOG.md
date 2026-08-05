@@ -1,6 +1,35 @@
 # On-a-journey — 改善バックログ（全システム）
 
 最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+Stage 3a実装完了。Stage 3準備調査（BACKLOG_DONE.md各エントリの訂正・
+新規登録2件）で特定した対象年度に基づき、MO(2016-2025)・PM(2016-2017)の
+gross_profit、LLY(2007-2025)のcapital_expenditure・free_cash_flow・
+fcf_method・finance_lease_payments_appliedの計3銘柄・31銘柄×年度
+エントリを`fixed_by: manual_verification`で`fixed_registry.json`へ
+登録した。
+
+MO/PMは10-K原本のExciseAndSalesTaxesタグ突合によるgenuine業界定義差
+確認（Stage 2以前のBACKLOG_DONE.md記載）＋Stage 3調査での対象年度実測を
+根拠とする。PMは従来「10年連続」との誤認があったが2016-2017の2年度のみが
+対象と訂正済み。LLYはタグフォールバック選定ロジック転換
+（コミット`14862976f`）のgit diff直接確認を根拠とし、従来「2023-2025のみ」
+という想定を2007-2025全19年度に訂正済み。SCCO(2010-2019)は今回のStage 3a
+の対象外（別途対応）。
+
+**検証結果**: 全105銘柄フローズン再パースで新規31件を含め無変化
+（`bs_identity_violations_log.json`10銘柄分の既知の非決定的キー順序
+差分〈[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]〉のみ発生、復元し
+コミット対象から除外）。CHECK-31試験発火: LLY(2023)を意図的に改変→NG-31
+検知→復元後NG=0に復帰を確認。`report_consistency_check.py --fail-on-ng`
+でNG=0（WARN=79件、既存と同水準）。pytest 497 passed/2 known failed
+（既知の[[TEST-STALE-IV-1]] MSFT/NVDA、新規回帰なし）。
+
+**残タスク**: SCCO(2010-2019)のfixed_registry登録（今回スコープ外）・
+RDW(2020)の許可リスト拡張実装・MRVL/AVGO/DELL旧CIK分の個別確認・
+AVGO(2015)原因調査・BBAI/RKLB/SOFI/VRT/ONDSグループの検討。「次セッション
+での着手順序」欄を更新。コミット未実施（ユーザー確認待ち）。
+
+最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
 Stage 2実装完了。taxonomy属性①〜⑧該当58銘柄のうち、過去の個別バグ
 調査（BACKLOG_DONE.md）とSEC EDGAR一次情報照合（companyconcept API
 直接照合）の両方で正しさが確定済みの12銘柄・17銘柄×年度エントリを
@@ -7786,13 +7815,16 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ### 次セッションでの着手順序（提案）
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
-**最優先（2026-08-05追加、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3）:**
-0. [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3: 保留5件相当の
-   年度・フィールド特定作業（RDW(2020)の残差解消・MO/PM/SCCOの対象年度
-   リスト化・MRVL/AVGO/DELL旧CIK拡張分のフィールド特定・LLYの
-   capital_expenditure対象年度特定・BBAI/RKLB/SOFI/VRT/ONDSのNone化
-   BSフィールド名特定）。詳細はBACKLOG.md冒頭2026-08-05エントリ・
-   BACKLOG_DONE.md該当項目参照。
+**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3）:**
+0. ~~Stage 3: 保留5件相当の年度・フィールド特定作業~~ ✅ 2026-08-05完了
+   （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉
+   まで完了）。**残タスク**: SCCO(2010-2019)のfixed_registry登録・
+   RDW(2020)の許可リスト拡張実装（`_BS_IDENTITY_ALLOWLIST`への
+   `RedeemableNoncontrollingInterestEquityCommonRedemptionValue`追加）・
+   MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認・
+   [[AVGO-2015-DATA-THIN-1]]原因調査・
+   [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]検討。
+   詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
 
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
