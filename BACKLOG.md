@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（`[[SCHEMA-NORMALIZED-ISSUES-1]]`④SharesBasic概念
+不一致の実害調査完了（読み取り専用）。normalized/側の「SharesBasic」
+フィールドはリポジトリ全体で消費者ゼロの死んだフィールドと確認、
+data/側の`shares_basic`は`reader.py::get_diluted_shares()`の
+異常値フォールバックとしてのみ限定的に参照されると判明。結論として
+④自体による実害はなし・normalized/→data/統合の障害にはならないと
+確定し、`[[SCHEMA-NORMALIZED-ISSUES-1]]`④の優先度を中→低に格下げ。
+副次発見として、フォールバックが現在実際に発火しているONDS・LOARの
+2銘柄で、shares_basic自体も同じ桁の異常値を持ち救済不能な疑いが
+判明したため`[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]`として新規登録
+（記録のみ、実装なし）。
+
 最終更新: 2026-08-05（新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR
 統合、`[[SECDATA-STORAGE-FRAGMENTATION-1]]`対応の一環として
 `common/sec_data/raw/`を削除した。全消費者洗い出し（Step1調査）で
@@ -4518,15 +4530,26 @@ reader.py::get_net_cash()の実装を確認した結果、二重計上が発生�
 統一することで解消する方針とする。着手条件: なし。
 
 ④ **SharesBasic概念不一致**（旧SCHEMA-SHARESBASIC-CONCEPT-MISMATCH-1、
-優先度中）: SharesBasic（発行済株式数関連）のprimaryタグが、2システム
-間で単なる順序差ではなく**意味的に異なる財務概念**を指している。
-`quarterly.py`側は`CommonStockSharesOutstanding`（貸借対照表項目・
-期末時点の発行済株式数）をprimaryとするのに対し、`parser.py`側は
-`WeightedAverageNumberOfSharesOutstandingBasic`（損益計算書項目・期中
-加重平均株式数）をprimaryとする。どちらの値を使うかによって、1株
-あたり指標・希薄化率計算等の結果が系統的に変わりうる。現状どちらが
-どの計算で使われているか、実際の消費箇所（EPS計算・1株あたり価値計算
-等）の洗い出しは未実施。着手条件: なし。
+優先度中→**実害調査完了により低**）: SharesBasic（発行済株式数関連）の
+primaryタグが、2システム間で単なる順序差ではなく**意味的に異なる財務
+概念**を指している。`quarterly.py`側は`CommonStockSharesOutstanding`
+（貸借対照表項目・期末時点の発行済株式数）をprimaryとするのに対し、
+`parser.py`側は`WeightedAverageNumberOfSharesOutstandingBasic`
+（損益計算書項目・期中加重平均株式数）をprimaryとする。
+
+**実害調査結果（2026-08-05、チャット記録・読み取りのみ）**: 消費箇所の
+洗い出しを完了。**normalized/側の「SharesBasic」フィールドは、
+`quarterly.py`（定義側）以外に参照するコードがリポジトリ全体でゼロ件**
+（既存5本番消費者はいずれも未参照の死んだフィールドと確認）。data/側の
+`shares_basic`は`reader.py::get_diluted_shares()`が
+`shares_diluted<1,000,000`時のフォールバックとしてのみ参照（呼び出し元:
+`data_fetcher.py`、TANUKI VALUATION）。15銘柄サンプルでnormalized側
+SharesBasicが5/15銘柄（BKNG/WMT/JNJ/PEP/VZ）で0件という新たな網羅性
+ギャップも確認。**結論: normalized/⇔data/間の概念不一致自体による実害は
+なし**（normalized/側に消費者がいないため、normalized/→data/統合の
+障害にはならない）。副次発見（ONDS/LOARのshares_basic単位スケール
+異常疑い）は`[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]`として別途登録。
+着手条件: なし（優先度を中→低に格下げ、統合作業と同時対応で可）。
 
 ⑤ **ファイル名とannualデータ混在**（旧SCHEMA-NORMALIZED-ANNUAL-NAMING-
 MISMATCH-1、優先度低）: `normalized/{TICKER}_quarterly_normalized.json`
@@ -4557,6 +4580,29 @@ pipeline.py:2807）は`normalized/`ではなくannual/quarterly側
 #### 着手条件
 ①②はcommon/sec_data統合スキーマ設計の確定後。③④⑤⑥は個別の着手条件
 なし（優先度に応じて統合作業と同時対応で可）。
+
+---
+
+### [ONDS-LOAR-SHARES-SCALE-SUSPECT-1] ONDS/LOARのshares_diluted・shares_basicがいずれも100万未満で、get_diluted_shares()のフォールバックが救済不能な疑い
+**優先度:** 中（実害の可能性はDCF計算に直結するが、規模2銘柄限定）
+**分類:** バグ疑い / データ品質
+**登録日:** 2026-08-05
+**発見:** [[SCHEMA-NORMALIZED-ISSUES-1]]④SharesBasic実害調査の副次発見
+（チャット記録）
+
+#### 内容
+`reader.py::get_diluted_shares()`のフォールバックロジック
+（`shares_diluted<1,000,000`の場合に`shares_basic`を試す）が、
+ONDS（shares_diluted=221,769・shares_basic=221,769、同一）・LOAR
+（shares_diluted=95,893・shares_basic=93,597）の2銘柄では両方とも
+100万未満のため、フォールバックが発火しても救済されず、最終的に
+桁違いの小さい値がDCF計算の株式数インプットにそのまま使われている
+可能性がある。`[[COHR-SHARES-DILUTED-UNIT-SCALE-BUG-1]]`（解決済み）
+と同型の単位スケール異常の疑い。
+
+#### 着手条件
+なし。次回の個別バグ対応セッションで着手可能（本線＝新DB構築
+フェーズ1とは別トラック）。
 
 ---
 
