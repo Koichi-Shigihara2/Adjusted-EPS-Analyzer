@@ -2304,6 +2304,85 @@ ASTS2019）に整理。CRM・VRTの2件は[[PARSER-STOCKHOLDERS-EQUITY-
 CROSS-YEAR-MISSELECT-1]]へ分離（CHECK29対象外）。WARN-29発火銘柄も
 13→9銘柄に減少（ASTS/BKNG/CART/CELH/CRM/PLTR/RDW/V/VRT）。
 
+**追記（2026-08-05、[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3
+準備調査）**: RDW(2020)について、②許可リスト拡張（`RedeemableNoncontrolling
+InterestEquityCommonRedemptionValue`の追加）が**まだ実装されていない**
+ことを実データで確認した。annual_2020.jsonを実測したところ現在も
+TA=$167,724,005・TL+SE=$47,409,427で**diff=$120,314,578が解消していない**
+（parser.pyの`_BS_IDENTITY_ALLOWLIST`に当該タグが未登録のまま）。
+ASTS(2020)側の実装状況は本追記では未確認（別途要確認）。RDW(2020)は
+fixed_registry.json Stage 3の登録候補から除外済み
+（BACKLOG_DONE.md「2026-08-05（完了）」Stage 2エントリ参照）。
+
+---
+
+### [AVGO-2015-DATA-THIN-1] AVGO(2015)がCIK拡張対象年度範囲外にもかかわらずデータが薄い（bs=2項目・pl=0項目・is_own_data=False）
+**優先度:** 中
+**分類:** データ品質 / 要調査
+**登録日:** 2026-08-05
+**発見:** [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3準備調査（チャット記録）
+
+#### 内容
+[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]の旧CIK拡張対象年度範囲
+（AVGO 2006-2014）の**外側**であるAVGO(2015)のannual_2015.jsonを
+実測したところ、`bs`2項目・`pl`0項目のみと極端に薄く、
+`is_own_data=False`だった。2009-2014年は完全充足
+（bs=7〜9項目・pl=7〜9項目・is_own_data=True）だったのに対し、2015年
+のみ突然薄くなっている。
+
+DELL(2014-2016)で確認済みの「旧CIK・新CIKいずれの自社10-Kも存在しない
+申告ギャップ」と同種のパターンの疑いがあるが、AVGO側では未確認。AVGOは
+2016年にBroadcom LimitedによるBroadcom Corporation買収が完了しており、
+その前後の法人再編・CIK切替の境界が2015年に関わっている可能性がある。
+
+#### 影響
+未確認。fixed_registry.json Stage 3での登録要否判断に影響する
+（AVGO(2015)を凍結候補に含めるべきか、DELL型の構造的ギャップとして
+扱うべきかが未確定なため）。
+
+#### 対応方針
+未定。原因調査（旧CIK→新CIK移行境界のSEC提出履歴を`submissions.json`
+で確認、DELL(2014-2016)調査と同じ手法を適用）が必要。
+
+#### 着手条件
+なし（次回セッションで調査可能）。
+
+---
+
+### [SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1] BBAI/RKLB/SOFI/VRT/ONDSグループの「維持フィールド」の凍結検討
+**優先度:** 低
+**分類:** データ品質 / 将来検討事項
+**登録日:** 2026-08-05
+**発見:** [[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3準備調査（チャット記録）
+
+#### 内容
+[[SPAC-SHELL-BS-ENTITY-MIXING-1]]段階1でBS項目をNone化・修正した
+BBAI(2020)・RDW(2020)・RKLB(2020)・SOFI(2020)・VRT(2019)・ONDS(2017)の
+6件は、None化されたフィールド自体（current_assets/current_liabilities/
+long_term_debt/short_term_debt等）に「凍結すべき正しい値」が存在しない
+ため、現行のfixed_registry.jsonスキーマでは登録不可と確定済み
+（Stage 3調査、BACKLOG_DONE.md「2026-08-05（完了）」Stage 2エントリ
+参照）。
+
+一方、各銘柄でNone化されず**維持**されたフィールド（例: BBAIの
+total_assets/stockholders_equity/total_liabilities/cash_and_equivalents）
+は、`_resolve_bs_entity_mixing()`の数学的整合性チェック
+（current_assets<=total_assets等）を通過済みであり、「誤った値をNone化
+した」修正の裏返しとして「正しいと確認済みの値」というカテゴリに
+位置づけられる可能性がある。
+
+#### 影響
+未確定。仮に凍結対象とする場合、Stage 1/2とは異なる「除外的検証
+（誤りが混入していないことの消去法的確認）」という性質を持つため、
+Stage 1/2の「積極的な値の検証」基準にそのまま当てはめてよいか設計判断が
+必要。
+
+#### 対応方針
+未定。次回以降、余力があれば検討する将来課題。
+
+#### 着手条件
+なし（Stage 2/3の主要スコープ外、優先度低のため急ぎ着手しない）。
+
 ---
 
 ### [PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1] stockholders_equityが正しいaccnと異なる別年度・別filingの無関係な値を誤って採用するケースが存在する

@@ -1134,6 +1134,31 @@ gross_profitがそれぞれ異なるaccn（異なる会計年度のfiling）か�
 LITE境界1件）は[[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
 [[LITE-COGS-DA-TAG-UNMERGED-1]]へ引き継ぎ。
 
+#### 訂正: 対象年度の明記（2026-08-05、Stage 3調査）
+[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3の準備調査で、
+annual_{year}.jsonを全年度実測し、genuine定義差が確定している具体的な
+年度範囲を特定した（登録時点の本文には「MO 10年連続・SCCO 10年連続」
+という記述のみで年度リストがなかった）。
+
+- **MO: 2016-2025（10年度）**。全年度`is_own_data=True`（本人データ
+  直接値）。2007-2015は`cost_of_revenue`自体が存在せずCase B比較の
+  対象外（該当年度なし、除外ではなく非該当）。
+- **PM: 2016-2017（2年度のみ）**。当初「MO/SCCOと同様に10年規模」と
+  誤認されていたが、実測の結果2016年diff=$48,268,000,000（本文記載の
+  `ExciseAndSalesTaxes`と完全一致）・2017年diff=$49,350,000,000のみが
+  genuine定義差パターンで、**2018年以降はdiff=0**（revenueが
+  $78,098M→$29,625Mへ急減しており、ASC 606適用等により物品税を含まない
+  収益計上へ切替わったとみられる）。2018年以降はそもそも乖離が存在せず
+  対象外。
+- **SCCO: 2010-2019（10年度）**。当該10年度は`is_own_data=True`かつ
+  `pl_provenance.gross_profit`に`derived`キーなし（本文記載の
+  「$764.4M、10年連続」の具体例は2019年の値と完全一致）。**2009年・
+  2020-2025年はgenuine定義差の母集団に含まれない**
+  （`pl_provenance.gross_profit.derived=True`＝
+  [[LAYER3-GROSSPROFIT-BACKFILL-PROD-UNREACHED-1]]由来のrevenue-cogs
+  逆算値であり、diff=0は逆算値ゆえの自明な一致。「誤ったデータのため
+  除外」ではなく「そもそも比較対象の母集団外」という整理）。
+
 ---
 
 ### ✅ [SPAC-STUB-PERIOD-VERIFICATION-1] SPAC合併前・IPO前と見られる正当な非365日期間データ11銘柄の個別確認
@@ -3420,6 +3445,34 @@ CIK断絶による最古年度PL/CF欠落という構造的パターンをBACKLO
 [[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]として新規分離登録した
 （対応方針〈旧CIK補完 or 現状維持〉の確定を含む、優先度：未定）。
 
+#### 解決済み（意図せぬ副次的解消、2026-08-05・Stage 3調査で発見）
+本エントリのクローズ時点（2026-07-20）では「経済実体としてのFY2019
+データは旧CIK（1058057）配下にSEC上実在するが、現行システムは新CIKのみを
+参照しているため取得できない」（構造的に取得不能）と結論していた。
+
+[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3の準備調査
+（2026-08-05）でannual_2019.jsonを実測したところ、**現在は`pl`/`cf`の
+全項目が旧CIKのown filing（accn `0001058057-19-000010`、
+`is_own_data=True`）で完全に充足していた**（revenue=$2,865,791,000・
+net_income=-$179,094,000・gross_profit・cost_of_revenue・eps_diluted・
+eps_basic・research_and_development・selling_and_marketing・
+operating_incomeの9項目）。
+
+原因は[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]（本エントリの副次発見から
+派生・2026-07-20完了、対象年度は「MRVL 2007-2018」と明記）の
+`fetcher.py`層での旧CIK company_facts.json/submissions.jsonマージ実装が、
+明記された対象年度（2007-2018）の外側であるFY2019にも実際には効果が
+及んでいたためと推定される（旧CIKが最後に自社10-Kを提出したのがFY2019分
+のため、旧CIKのcompany_facts.json全体をマージした時点でFY2019分も
+自動的に含まれた可能性が高い。CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1側の
+対象年度記載が実際の効果範囲より狭く記述されていたことになる）。
+
+**教訓**: 「構造的に取得不能」と判定してクローズしたタスクでも、後続の
+別タスクの実装が意図せず解決してしまうことがある。BACKLOG_DONE.mdの
+記述は完了時点のスナップショットであり、恒久的に正しいとは限らない
+（Stage 2で発見したVRT(2016)/SPIR(2020)の逆パターン〈記述時点では
+存在した値が後続タスクでNone化された〉と対をなす事例）。
+
 ---
 
 ### ✅ [KO-SPIR-CF-CAUSE-UNCONFIRMED-1] KO・SPIRのFCF乖離原因が一次情報不足で未確定
@@ -3795,6 +3848,30 @@ SELL）・GOOGL（HOLD→TRIM）は既存分類ロジックがより正確なIV�
 本タスクの過程（GOOGL FY2012/2013個別上書きの実装方式検討）が、
 CHAT_RULES.mdに「銘柄固定のハードコード禁止」原則を新規追加するきっかけと
 なった（別途ブラッシュアップ時に反映予定）。
+
+#### 申し送り事項（2026-08-05、Stage 3調査・記録のみ・実装なし）
+[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3の準備調査で、
+MRVL/AVGO/DELLの拡張年度範囲（本エントリ記載の「MRVL 2007-2018・
+AVGO 2006-2014・DELL 2007-2013」）を`annual_{year}.json`実測で確認した
+ところ、以下が判明した:
+
+- **年度×銘柄単位ではなく、年度×銘柄×フィールド単位での個別確認が
+  必要**: 同じ拡張年度範囲内でも年度によって充足フィールド数・
+  `is_own_data`が異なる（例: MRVLは2009-2013年が`is_own_data=False`
+  〈旧CIK内の比較列データ〉、2014-2018年が`is_own_data=True`〈旧CIK
+  自身のown filing〉、2007年はほぼ空〈bs=2,pl=0〉）
+- **MRVL(2019)は本エントリの対象年度範囲外（2007-2018）だが、実際には
+  効果が及んでいた**: 現在annual_2019.jsonのpl/cf全項目が旧CIKのown
+  filing（accn `0001058057-19-000010`）で充足済み。詳細は
+  [[MRVL-2019-2020-NULL-1]]の追記（2026-08-05）を参照
+- **AVGO(2015)は対象年度範囲外（2006-2014）だが、データが薄い状態
+  （bs=2,pl=0,is_own_data=False）**: 旧CIK→新CIK移行境界に別の申告
+  ギャップがある可能性があり未確認。新規登録
+  [[AVGO-2015-DATA-THIN-1]]（本日登録）で追跡する
+
+fixed_registry.json登録等の実装判断を行う場合は、上記の年度×フィールド
+単位の粒度で個別に実データ確認することが必須（本エントリの年度範囲記載を
+そのまま鵜呑みにしない）。本申し送りは記録のみで実装は行っていない。
 
 ---
 
@@ -6726,6 +6803,24 @@ Phase 3（ゲート0＋2）着手前提として本タスクを実施。Gate2本
   `report_consistency_check.py`（NG=0、既存WARN3件のみ）→pytest 214 passed/2 known failed
   （新規8件`tests/test_tag_fallback_selection.py`追加、既存2件のみ既知失敗）。
 - LLY FY2025 CapEx: $7.84B（新タグ反映後）。WMT FY2026 SBC: $3.60B。
+
+#### 訂正: 対象年度範囲の明記（2026-08-05、Stage 3調査）
+[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]] Stage 3の準備調査で、本
+コミット（`14862976f`）のannual_{year}.json側diffを直接確認したところ、
+**capital_expenditureフィールドはLLYのannual_2007.json〜annual_2025.json
+の全19年度で同時に新規追加**されていたと判明した（コミット前はこの期間
+全体でフィールド自体が存在しなかった。例: annual_2010.json
+$694,300,000・annual_2023.json $3,447,600,000・annual_2025.json
+$7,841,000,000）。
+
+本文の「LLYのCapEx四半期データが2022年以降取得できず」という表題・
+記述は`quarterly.py`側（TTM系列）の症状描述であり、`parser.py`側
+（annual_{year}.json、年次側）の対象範囲を正確に表していなかった。
+両者は同一コミット・同一の候補タグ選定ロジック転換（`tag_definitions.py`
+統合）で同時に修正されたが、年次側の実際の効果は2023-2025年に留まらず
+2007年まで遡って及んでいた。
+
+---
 
 ### ✅ [GROWTH-SOURCE-LABEL-1] segment_detail.sourceの誤表示バグ（2026-07-12完了）
 **分類:** データ品質 / TANUKI VALUATION
