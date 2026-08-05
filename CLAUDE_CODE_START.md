@@ -300,7 +300,7 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `common/sec_data/ttm_calculator.py`
 - `common/sec_data/parser.py`（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
   Stage1で発見: `fixed_registry.json`に登録済みの銘柄×年度
-  （2026-08-05時点Stage1〜3a累計41銘柄・420エントリ）は
+  （2026-08-05時点Stage1〜3b累計44銘柄・432エントリ）は
   `_apply_fixed_registry_freeze()`により抽出ロジック変更の影響を受けない
   よう意図的に凍結されている。`parser.py`のロジックを変更しても対象
   銘柄×年度の`annual_{year}.json`が変化しないのは想定通りの挙動であり
@@ -983,9 +983,10 @@ print(f'{ticker} を monitor_tickers.yaml から削除しました')
 "
 
 # Step 3: データファイルを削除
+# （common/sec_data/raw/は2026-08-05にデッドコード除去のため廃止済み
+#   [[SECDATA-STORAGE-FRAGMENTATION-1]]、削除対象から除外）
 rm -rf common/sec_data/data/[TICKER]
 rm -f common/sec_data/normalized/[TICKER]_quarterly_normalized.json
-rm -f common/sec_data/raw/[TICKER]_quarterly_raw.json
 rm -f common/sec_data/ttm/[TICKER]_ttm_series.json
 rm -rf docs/value-monitor/tanuki_valuation/data/[TICKER]
 rm -f docs/value-monitor/hypecore/data/[TICKER]_poc.json

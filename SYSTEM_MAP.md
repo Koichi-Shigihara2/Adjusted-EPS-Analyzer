@@ -449,7 +449,8 @@ SEC EDGAR
 │    の値へ強制復元する（差分適用方式、新規フィールドのみ通常抽出を通す）。
 │    2026-08-05時点でStage1（26銘柄・372エントリ、`fixed_by:
 │    checkgate_pass`）・Stage2（12銘柄・17エントリ）・Stage3a
-│    （MO/PM/LLY 3銘柄・31エントリ）まで累計**41銘柄・420銘柄×年度
+│    （MO/PM/LLY 3銘柄・31エントリ）・Stage3b（SCCO/RDW/ASTS
+│    3銘柄・12エントリ）まで累計**44銘柄・432銘柄×年度
 │    エントリ**登録済み（Stage2以降は`fixed_by: manual_verification`）。
 │    CI側は`report_consistency_check.py`のCHECK-31/WARN-31がsnapshot_hash
 │    不一致をNG検知。quarterly/TTM側（layer3_builder.py）は対象外
@@ -459,6 +460,22 @@ SEC EDGAR
 │    （CLAUDE_CODE_START.md該当節・BACKLOG_DONE.md「2026-08-05（完了）」
 │    Stage2/Stage3エントリ参照。BACKLOG_DONE.mdの過去記述と実データが
 │    後続タスクにより乖離しうるため）。
+│    **追記（[[SECDATA-STORAGE-FRAGMENTATION-1]] 2026-08-05実装完了、
+│    新DB構築プロジェクト フェーズ1 Step1本線）**: `data/quarterly_
+│    {FYQ}.json`のpl/cf/shares区分が従来XBRL申告のYTD累積値のまま
+│    保存されており（約65〜66%のエントリが該当）、annual側とは異なり
+│    正規化されていなかった問題を修正。`quarterly.py::
+│    _classify_period()`・`normalizer.py::_ytd_to_quarterly()`
+│    （normalized/側で実績のあるロジック）を再利用する統一アルゴリズム
+│    （SA〈単一四半期〉候補優先→YTD差分計算フォールバック→加重平均
+│    フィールドは差分計算対象外でnull許容）を`parse_company_facts()`の
+│    四半期抽出ループ（`_extract_values_merged()`・
+│    `_extract_single_key()`）に実装。annual側ロジックは無変更
+│    （1,441ファイル横断比較で差分0件）。RCAT 2016Q3の1ファイルのみ
+│    四半期キー自体が新抽出結果から消滅し旧ファイルが未上書きのまま
+│    残存（[[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]）。併せて
+│    `common/sec_data/raw/`（`quarterly.py`書き込み専用・実消費者ゼロの
+│    デッドコード）を削除済み（Step1で全消費者洗い出し済み）。
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
@@ -920,7 +937,7 @@ TANUKI TAIL（docs/portfolio/tail/）← EDGAR RSS / Grok（KPI提案・四半�
 |---|---|
 | quarterly.py / normalizer.py / ttm_calculator.py | 全銘柄TTM再生成（update.py）→ audit.py |
 | parser.py | 影響銘柄のupdate.py → audit.py。`XBRL_MAPPING`の`short_term_investments`/`long_term_debt`/`short_term_debt`/`rpo`候補タグリストは[[FY52WEEK-BS-NULL-SILENT-1]] Phase B Stage1（2026-07-19）で拡充済み（各フィールドの追加タグはコード内コメント参照）。**候補タグを追加する際は`quarterly.py`の`TICKER_RESTRICTIONS`（`ltdebt_concept`等の銘柄別override、SOFI-DATA-1）と衝突しないか個別確認すること**（SOFIは流動/非流動を分けず合算タグ`DebtLongtermAndShorttermCombinedAmount`を`long_term_debt`に固定済みのため、`short_term_debt`側に同種の合算タグを追加すると二重計上になる） |
-| tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。raw/*.jsonの生成日時差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可）→ 影響銘柄のみupdate.py → audit.py |
+| tag_definitions.py（TAG_CANDIDATES） | quarterly.py/parser.py双方に波及するため、変更前後で全銘柄のbuild_raw_table/_extract_values出力を比較し影響銘柄を特定（同日生成のcompany_facts.jsonで新旧比較すること。generated_atタイムスタンプ差だけで見かけ上の差分が出るため単純な過去ファイル比較は不可。raw/は2026-08-05にデッドコード除去のため廃止済み、normalized/の`generated_at`フィールドで同様の注意が必要）→ 影響銘柄のみupdate.py → audit.py |
 | contracts.py（FinancialEntry必須キー変更等） | quarterly.py::save_raw_table()・normalizer.py::save_normalized()の検証が全銘柄で走るため、変更後は全105銘柄のupdate.pyを実行しContractViolationが新規発生しないか確認 → report_consistency_check.py |
 | data_fetcher.py（TTMReader・_select_fcf_source） | 全銘柄fcf_list_raw/fcf_5yr_avgに影響するため全銘柄pipeline.py再実行 → report_consistency_check.py |
 | extract_key_facts.py | EPS quarterly.json 再生成 → report_consistency_check.py（CHECK-17/19確認）|

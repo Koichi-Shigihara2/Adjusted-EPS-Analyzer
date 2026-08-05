@@ -8122,7 +8122,7 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ### 次セッションでの着手順序（提案）
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
-**本線（2026-08-05追加、新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合、CHAT_RULES.md「本線逸脱防止」参照）:**
+**本線（2026-08-05更新、新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合、CHAT_RULES.md「本線逸脱防止」参照）:**
 0-A. ~~`[[SECDATA-STORAGE-FRAGMENTATION-1]]` Step1: 全消費者洗い出し~~
      ✅ 2026-08-05完了（raw/normalized/ttm/data/company_facts.json・
      EPS Analyzer/TANUKI TAIL独自経路の全消費者を実ファイルで確認）
@@ -8134,38 +8134,40 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
      を再利用する統一アルゴリズムをparser.py::parse_company_facts()に
      実装し、全105銘柄を実再パース。annual側は無変化（1,441ファイル
      横断比較で差分0件）、report_consistency_check.py NG=0・WARN=78件
-     （不変）、pytest 497 passed/2 known failed確認。詳細はBACKLOG_DONE.md
-     参照）
-0-D. **残タスク（優先順）**:
-     1. 新設アクセサ（`reader.py::get_quarterly_series()`/
-        `get_latest_quarterly()`相当のdata/quarterly_*.json版）の実装
-        （フィールド単位の時系列抽出関数。前回調査で未着手と判明済み）
-     2. `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の残り論点（②SM/SGA概念
-        混同の設計判断・⑤ファイル名混在等）の解消方法確定
-     3. 5本番消費者（financial_trend_calculator.py・
-        quarterly_review_generator.py・tail_dcf_bridge.py・hypecore.py・
-        pipeline.py内5用途）のnormalized/→data/切り替え（フィールド名
-        変換 PascalCase→snake_case を含む）
-     詳細な論点整理は別途設計セッションで実施
+     （不変）、pytest 497 passed/2 known failed確認。RCAT 2016Q3の
+     SBC1件のみ四半期キー自体が消滅しファイル未上書きという別要因の
+     残存を発見・`[[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]`として
+     記録。詳細はBACKLOG_DONE.md参照）
+1. **新設アクセサの実装**: `reader.py::get_quarterly_series()`/
+   `get_latest_quarterly()`相当のdata/quarterly_*.json版（フィールド
+   単位の時系列抽出関数）。前回調査で未着手と判明済み
+2. **5本番消費者のnormalized/→data/切り替え**: financial_trend_
+   calculator.py・quarterly_review_generator.py・tail_dcf_bridge.py・
+   hypecore.py・pipeline.py内5用途。フィールド名変換
+   （PascalCase→snake_case）・`[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の
+   残り論点（②SM/SGA概念混同の設計判断・⑤ファイル名混在等）の解消方法
+   確定を含む。詳細な論点整理は別途設計セッションで実施
+3. **normalized/廃止**: 上記1・2完了後、全消費者がdata/へ移行済みと
+   確認した上で実施（raw/削除と同じ手順: 全消費者洗い出し→Step0最終
+   確認→削除）
 
-**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り。
-本線ではなく脇道扱い、CHAT_RULES.md「本線逸脱防止」参照）:**
-0. ~~Stage 3: 保留5件相当の年度・フィールド特定作業~~ ✅ 2026-08-05完了
-   （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉・
-   RDW(2020)/ASTS(2020) BS恒等式修正〈コミット1db003c0d・9618b6754〉・
-   Stage 3b実装〈SCCO(2010-2019)/RDW(2020)/ASTS(2020)、12エントリ〉
-   まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3系
-   エントリ参照）。**残タスク（優先順）**:
-   0-1. ~~[[AVGO-2015-DATA-THIN-1]]の原因調査~~ ✅ 2026-08-05完了
-        （原因確定・`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`へ統合。
-        AVGO旧CIK登録が無関係な買収先企業Broadcom Corpを指している
-        疑いが判明、実害はゼロと確認済み、着手条件成立まで保留）
-   0-2. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
-        （AVGO分は`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`の対応方針
-        確定後に着手する方が効率的。MRVL/DELL分は先行して着手可）
-   0-3. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
-        （優先度低、余力があれば）
-   詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
+**本線外・優先度中（2026-08-05更新、CHAT_RULES.md「本線逸脱防止」参照）:**
+4. `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（旧CIK登録が無関係な
+   買収先企業Broadcom Corpを指している疑い。対応方針3案〈差し替え/
+   現状維持+警告/削除〉を検討・実装。着手条件成立まで保留）
+   + MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
+   （AVGO分は上記の対応方針確定後に着手する方が効率的。MRVL/DELL分は
+   先行して着手可）
+   + `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
+   ※ SCCO(2010-2019)のfixed_registry.json登録は2026-08-05
+   Stage 3bで完了済み（gross_profit、10エントリ）。以前の依頼文に
+   残タスクとして記載されていたが、現状確認の結果既に完了と判明。
+
+**本線外・優先度低（2026-08-05更新）:**
+5. `[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]`（shares_basic単位スケール
+   異常の疑い、記録のみ）
+   + `[[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]`（RCAT 2016Q3の
+   quarterly_*.jsonが新ロジックで未上書きのまま残存、記録のみ）
 
 **バグ修正（優先）:**
 1. ~~ALPHA-REDESIGN-2: stock.htmlのα乗算残存・説明文修正~~ ✅ 2026-06-26完了
