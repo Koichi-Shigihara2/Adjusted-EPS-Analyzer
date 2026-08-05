@@ -2278,12 +2278,30 @@ class SECParser:
     # accn・同一end_dateに簿価系タグ（下記_BS_IDENTITY_CARRYING_AMOUNT_
     # TEMP_EQUITY_TAGS）が1つも存在しない場合のみのフォールバックとして
     # 限定する。
+    #
+    # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]RDW(2020)個別調査（Stage 3
+    # 実装、チャット記録）: `RedeemableNoncontrollingInterestEquityCommon
+    # RedemptionValue`もHEI型と同型の別タグ名パターンと確認（RDW own accn
+    # ・own end_dateに簿価系タグが1つも存在せず、このRedemptionValueタグ
+    # （$120,314,578）を加算するとTA=TL+SE+RedemptionValueが完全一致）。
+    # 全105銘柄・全既知違反年度での机上シミュレーションで、このタグを
+    # `_BS_IDENTITY_ALLOWLIST`へ無条件追加する案・本フォールバック機構へ
+    # 追加する案のいずれも結果は同一（RDW(2020)のみ解消、他104銘柄・
+    # RDW自身の他年度に影響なし）と確認したが、RedemptionValueは簿価とは
+    # 異なる測定基準であるという上記TemporaryEquityRedemptionValueと同じ
+    # 設計上の懸念が当てはまるため、安全側であるフォールバック機構への
+    # 追加を採用した（無条件許可リストへの追加は、将来别銘柄で簿価系タグと
+    # このRedemptionValueタグが同一accn・同一end_dateに共存した場合の
+    # 二重計上リスクを理論上残すため）。
     _BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS = frozenset([
         "TemporaryEquityCarryingAmount",
         "TemporaryEquityCarryingAmountAttributableToParent",
         "TemporaryEquityCarryingAmountIncludingPortionAttributableToNoncontrollingInterests",
     ])
-    _BS_IDENTITY_FALLBACK_ONLY_TAG = "TemporaryEquityRedemptionValue"
+    _BS_IDENTITY_FALLBACK_ONLY_TAGS = (
+        "TemporaryEquityRedemptionValue",
+        "RedeemableNoncontrollingInterestEquityCommonRedemptionValue",
+    )
 
     _BS_IDENTITY_TOL_REL = 0.02
     _BS_IDENTITY_TOL_ABS = 2_000_000
@@ -2383,20 +2401,28 @@ class SECParser:
                     for loser in losers:
                         matched.pop(loser, None)
 
-        # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI型フォールバック:
+        # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]HEI型フォールバック
+        # （RDW(2020)対応でRedeemableNoncontrollingInterestEquityCommon
+        # RedemptionValueを追加、複数タグ対応化）:
         # 簿価系タグ（_BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS）が
-        # 1つも見つからなかった場合のみ、測定基準の異なる
-        # TemporaryEquityRedemptionValueを最終手段として採用する。
+        # 1つも見つからなかった場合のみ、測定基準の異なるRedemptionValue系
+        # タグ（_BS_IDENTITY_FALLBACK_ONLY_TAGS）を先頭から順に探索し、
+        # 最初に見つかったものを最終手段として採用する。
         if not (self._BS_IDENTITY_CARRYING_AMOUNT_TEMP_EQUITY_TAGS & matched.keys()):
-            tag = self._BS_IDENTITY_FALLBACK_ONLY_TAG
-            tagdata = us_gaap.get(tag)
-            if tagdata:
+            for tag in self._BS_IDENTITY_FALLBACK_ONLY_TAGS:
+                tagdata = us_gaap.get(tag)
+                if not tagdata:
+                    continue
                 entries = tagdata.get("units", {}).get("USD", [])
+                found = False
                 for e in entries:
                     if (e.get("accn") == accn and e.get("end") == end_date
                             and not e.get("start")):
                         matched[tag] = e.get("val")
+                        found = True
                         break
+                if found:
+                    break
 
         return matched
 

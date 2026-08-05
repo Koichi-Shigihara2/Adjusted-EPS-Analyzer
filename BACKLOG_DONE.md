@@ -262,11 +262,98 @@ VRT(2016)・SPIR(2020)・MRVL(2019)の3件で実例確認）。fixed_registry
 セッションで判断する。
 
 #### 残タスク（Stage 3残り、BACKLOG.mdに同一IDで残置）
-1. RDW(2020)の許可リスト拡張実装
+1. ~~RDW(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（後続エントリ参照）
 2. SCCO(2010-2019)のfixed_registry.json登録
 3. `[[AVGO-2015-DATA-THIN-1]]`の原因調査
 4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド粒度の個別確認
-5. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
+5. ASTS(2020)の許可リスト拡張実装（RDW型と同様の全母集団シミュレーション
+   が必要）
+6. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
+
+---
+
+### ✅ [CHECK29-UNRESOLVED-23-MIXED-CAUSES-1] RDW(2020) BS恒等式残差$120,314,578の解消（許可リストの安全な拡張、全母集団シミュレーション実施済み）
+**状態:** RDW(2020)分は実装完了。エントリ本体（残る「②ASTS(2020)」
+「③要さらなる確認7件」）はBACKLOG.mdに同一IDで残置
+**優先度:** 高
+**分類:** バグ / 確定・会計恒等式検証の候補タグ拡張
+**登録日:** 2026-08-03（元エントリ）
+**完了日:** 2026-08-05（RDW(2020)分）
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査（BACKLOG.md
+参照）、Stage 3準備調査での残差未解消確認（チャット記録）
+
+#### 内容（根本原因）
+RDW(2020)のTA=$167,724,005 / TL+SE=$47,409,427（残差$120,314,578、
+乖離率71.7%）は、own accnに`RedeemableNoncontrollingInterestEquity
+CommonRedemptionValue: $120,314,578`（一時的持分の償還価額）が存在する
+にも関わらず、`_BS_IDENTITY_ALLOWLIST`にも既存のフォールバック機構
+（`TemporaryEquityRedemptionValue`のみ対象）にも該当タグが登録されて
+いなかったため、会計恒等式検証で一時的持分として認識されていなかった。
+HEI(2009-2013)で確立済みの「RedemptionValue系タグは簿価とは異なる
+測定基準のため、簿価系タグ（CarryingAmount）が1つも存在しない場合のみ
+のフォールバックとして限定採用する」設計と同型の別タグ名パターン。
+
+#### Step 1: 全母集団シミュレーション（実装前、チャット記録）
+`EXTRACTION_DESIGN_PRINCIPLES.md`原則2・3に従い、実装前に机上シミュレー
+ションスクリプト（company_facts.json実データ＋既存の
+bs_identity_violations_log.json記録済み違反年度を入力）で以下を確認:
+
+1. **(A) `_BS_IDENTITY_ALLOWLIST`へ無条件追加する案**と**(B) 既存の
+   フォールバック機構（HEI型）へ追加する案**の両方を試算
+2. 両案とも**RDW(2020)のみが解消**（diff=$120,314,578→$0）し、他104
+   銘柄・全既知違反年度（HEI(2009-2012)含む）には**一切影響しない**
+   ことを確認（当初の簡易シミュレーションでHEIの既存解消が壊れる誤検知
+   が出たが、これはシミュレーションスクリプト側の不備〈既存の
+   `TemporaryEquityRedemptionValue`フォールバックを含め忘れていた〉と
+   判明し修正して再検証、真の回帰ではないことを確認済み）
+3. RDW自身の他年度: `RedeemableNoncontrollingInterestEquityCommon
+   RedemptionValue`タグはend=2020-12-31〜2021-06-30の期間にのみ存在し
+   （2021年中に一時的持分が解消されたとみられる）、RDW(2019)は
+   `bs_identity_violations_log.json`に記録なし（対象タグなし・base
+   違反自体が存在しない）、RDW(2021)以降も同様に影響なしと確認
+
+(A)(B)いずれも実測結果は同一だったが、RedemptionValueが簿価と異なる
+測定基準であるという設計上の懸念（HEI型フォールバック新設時と同じ
+懸念、LYFT(2018)過大計上の教訓）を踏まえ、将来別銘柄で簿価系タグと
+このRedemptionValueタグが同一accn・同一end_dateに共存した場合の理論上の
+二重計上リスクを避けるため、**(B) フォールバック機構への追加を採用**
+（元依頼は`_BS_IDENTITY_ALLOWLIST`への直接追加を指定していたが、
+Step 1のシミュレーション結果を踏まえてより安全側の設計に変更した）。
+
+#### 実装内容
+`common/sec_data/parser.py`: `_BS_IDENTITY_FALLBACK_ONLY_TAG`（単一タグ
+文字列）を`_BS_IDENTITY_FALLBACK_ONLY_TAGS`（タグのタプル、
+`TemporaryEquityRedemptionValue`・`RedeemableNoncontrollingInterest
+EquityCommonRedemptionValue`の2件）へ拡張。`_bs_identity_extra_
+components()`のフォールバック探索部を、単一タグ検索から複数タグを
+先頭から順に探索し最初に見つかったものを採用する方式に変更（既存の
+「簿価系タグが1つも存在しない場合のみ発火」というゲート条件は不変）。
+
+#### 検証結果
+1. 全105銘柄フローズン再パースでRDW(2020)以外に差分なし
+   （`bs_identity_violations_log.json`7銘柄分の既知の非決定的キー順序
+   差分〈[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]〉のみ発生、
+   復元しコミット対象から除外）
+2. RDW(2020)は`extra_components: {"RedeemableNoncontrollingInterest
+   EquityCommonRedemptionValue": 120314578}`・`diff_extended: 0`・
+   `resolved_by_extension: true`に変化したことを確認
+3. `report_consistency_check.py --ticker RDW`: NG=0/WARN=0（従来の
+   WARN-29が解消）
+4. `report_consistency_check.py --fail-on-ng`（全銘柄）: NG=0/WARN=79
+   →78件（RDWのWARN-29解消分のみ減少、新規WARNなし）
+5. pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
+   MSFT/NVDAのみ、新規回帰なし）
+
+#### 申し送り事項
+RDW(2020)のtotal_assets/total_liabilities/stockholders_equityは、本
+実装により正しさが確定した状態になったため、`fixed_registry.json`
+Stage 3登録候補になりうる（`[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]`
+参照）。今回は実装のみで登録は行っていない。
+
+`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`の「②許可リスト拡張で対応
+可能」の残りはASTS(2020)のみ（`TemporaryEquityValueExcludingAdditional
+PaidInCapital`、RDW型と同様の全母集団シミュレーションが未実施のまま
+残置）。
 
 ---
 

@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（RDW(2020) BS恒等式残差$120,314,578を解消。
+`_BS_IDENTITY_FALLBACK_ONLY_TAG`を複数タグ対応（`_BS_IDENTITY_
+FALLBACK_ONLY_TAGS`）へ拡張し、`RedeemableNoncontrollingInterest
+EquityCommonRedemptionValue`を追加（`_BS_IDENTITY_ALLOWLIST`への
+無条件追加ではなく、HEI型と同じ安全側のフォールバック機構を採用）。
+Step 1で全105銘柄・全既知違反年度の机上シミュレーションを実施し、
+無条件追加案・フォールバック追加案の両方でRDW(2020)のみが解消し他104
+銘柄・RDW自身の他年度（2019/2021含む）に影響がないことを確認してから
+実装。全105銘柄フローズン再パースでRDW(2020)以外に差分なし、
+`report_consistency_check.py`でRDW単体WARN=0・全体NG=0、pytest
+497 passed/2 known failed（既知）を確認。
+[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]の「②許可リスト拡張で対応可能」
+はASTS(2020)のみ残存。RDW(2020)のTA/TL/SE等は今後fixed_registry.json
+Stage 3登録候補になりうる旨を申し送り（今回は未登録）。「次セッション
+での着手順序」欄を更新。コミット・push未実施（ユーザー確認待ち）。
+
 最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
 Stage 3a実装完了。Stage 3準備調査（BACKLOG_DONE.md各エントリの訂正・
 新規登録2件）で特定した対象年度に基づき、MO(2016-2025)・PM(2016-2017)の
@@ -2342,6 +2358,20 @@ TA=$167,724,005・TL+SE=$47,409,427で**diff=$120,314,578が解消していな�
 ASTS(2020)側の実装状況は本追記では未確認（別途要確認）。RDW(2020)は
 fixed_registry.json Stage 3の登録候補から除外済み
 （BACKLOG_DONE.md「2026-08-05（完了）」Stage 2エントリ参照）。
+
+**実装完了（2026-08-05、RDW(2020) BS恒等式残差解消）**: `_BS_IDENTITY_
+FALLBACK_ONLY_TAG`（単数）を`_BS_IDENTITY_FALLBACK_ONLY_TAGS`（複数、
+`TemporaryEquityRedemptionValue`・`RedeemableNoncontrollingInterest
+EquityCommonRedemptionValue`の2タグ）へ拡張し、RDW(2020)を解消した。
+`_BS_IDENTITY_ALLOWLIST`への無条件追加ではなくフォールバック機構への
+追加を採用（RedemptionValueは簿価と異なる測定基準のため、HEI型と同じ
+安全側設計を踏襲。全105銘柄・全既知違反年度での机上シミュレーションで
+両案の結果が同一〈RDW(2020)のみ解消〉であることを確認した上での判断）。
+全105銘柄フローズン再パースでRDW(2020)以外に差分なし、
+`report_consistency_check.py`でRDW単体WARN=0・全体NG=0を確認、pytest
+497 passed/2 known failed（既知）を確認。詳細はBACKLOG_DONE.md該当
+エントリ参照。**②許可リスト拡張で対応可能の残りはASTS(2020)のみ**
+（未実装）。
 
 ---
 
@@ -7820,14 +7850,18 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
    （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉
    まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3
    エントリ参照）。**残タスク（優先順）**:
-   0-1. RDW(2020)の許可リスト拡張実装（`_BS_IDENTITY_ALLOWLIST`への
-        `RedeemableNoncontrollingInterestEquityCommonRedemptionValue`
-        追加。`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`参照）
+   0-1. ~~RDW(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（
+        `_BS_IDENTITY_FALLBACK_ONLY_TAGS`拡張で解消。
+        `[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`参照）。**派生タスク**:
+        RDW(2020)のfixed_registry.json Stage 3登録検討（今回は未登録）
    0-2. SCCO(2010-2019)のfixed_registry.json登録（genuine定義差
         確認済み、Stage 3aスコープ外だったため未登録のまま残存）
    0-3. [[AVGO-2015-DATA-THIN-1]]の原因調査
    0-4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
-   0-5. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
+   0-5. ASTS(2020)の許可リスト拡張実装（`TemporaryEquityValue
+        ExcludingAdditionalPaidInCapital`、RDW型と同様の全母集団
+        シミュレーションが必要）
+   0-6. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
         （優先度低、余力があれば）
    詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
 
