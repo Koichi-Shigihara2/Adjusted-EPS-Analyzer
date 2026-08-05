@@ -2233,6 +2233,29 @@ class SECParser:
     # FairValue（公正価値）等、簿価とは異なる測定基準の開示専用タグまで
     # 合算してしまい、LYFT(2018)で$10.3Bの過大計上を引き起こす等、重大な
     # 誤りがあることが判明したため、簿価タグのみへ限定する。
+    # [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]ASTS(2020)個別調査（Stage 3
+    # 実装、チャット記録）: `TemporaryEquityValueExcludingAdditionalPaid
+    # InCapital`を追加。RDW型（RedemptionValue、フォールバック機構へ追加）
+    # とは異なり、本タグは無条件でこの主許可リストへ追加した。理由:
+    # ①本タグはASTS own accnの一次パス（own-accn限定）だけで残差
+    # $150,596,928と完全一致（diff=$0）し、二次パス（cross-accn探索）を
+    # 経由する`MinorityInterest`のcross-accn一致（$2,490,000、後年
+    # filingの比較列由来）は一次パスで既に恒等式が解決するため参照され
+    # ない（本タグをフォールバック機構側へ追加した場合、既にcross-accnで
+    # matched済みのMinorityInterestの上に本タグが後乗せされ、
+    # diff=-$2,490,000という不正確な〈許容誤差内のため見かけ上resolved
+    # になるだけの〉合算になってしまうことをシミュレーションで確認済み）。
+    # ②「Value Excluding APIC」という名称自体が貸借対照表上の簿価
+    # （CarryingAmount系と同種の測定基準）を表しており、RedemptionValue
+    # のような測定基準の異なる開示専用タグではない。
+    # 全105銘柄・全既知違反年度の机上シミュレーションで、本タグの追加は
+    # ASTS(2020)を解消する以外に、FRSH(2020)（既に解消済み・
+    # `TemporaryEquityCarryingAmountAttributableToParent`使用）で
+    # 同タグの$0.0001（XBRL上の名目値、複数期間で同一の定型値と確認済み）
+    # が追加で一致するのみで、金額・解決判定とも実質的な影響なしと確認
+    # 済み。ASTS(2019)（別問題、[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]
+    # ③要さらなる確認）は本タグ追加後も未解消のまま（cross-accn値が
+    # 必要額と一致しないため）で、想定通り無関係。
     _BS_IDENTITY_ALLOWLIST = frozenset([
         "MinorityInterest",
         "TemporaryEquityCarryingAmount",
@@ -2241,6 +2264,7 @@ class SECParser:
         "RedeemableNoncontrollingInterestEquityCarryingAmount",
         "RedeemableNoncontrollingInterestEquityCommonCarryingAmount",
         "RedeemableNoncontrollingInterestEquityPreferredCarryingAmount",
+        "TemporaryEquityValueExcludingAdditionalPaidInCapital",
     ])
 
     # "Including...NoncontrollingInterests"系タグ（一時的持分のうちNCI分も

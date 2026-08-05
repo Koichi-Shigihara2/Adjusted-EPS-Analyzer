@@ -266,15 +266,15 @@ VRT(2016)・SPIR(2020)・MRVL(2019)の3件で実例確認）。fixed_registry
 2. SCCO(2010-2019)のfixed_registry.json登録
 3. `[[AVGO-2015-DATA-THIN-1]]`の原因調査
 4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド粒度の個別確認
-5. ASTS(2020)の許可リスト拡張実装（RDW型と同様の全母集団シミュレーション
-   が必要）
+5. ~~ASTS(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（後続エントリ参照）
 6. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
 
 ---
 
 ### ✅ [CHECK29-UNRESOLVED-23-MIXED-CAUSES-1] RDW(2020) BS恒等式残差$120,314,578の解消（許可リストの安全な拡張、全母集団シミュレーション実施済み）
-**状態:** RDW(2020)分は実装完了。エントリ本体（残る「②ASTS(2020)」
-「③要さらなる確認7件」）はBACKLOG.mdに同一IDで残置
+**状態:** RDW(2020)分は実装完了（ASTS(2020)分は後続エントリで別途
+完了）。エントリ本体（残る「③要さらなる確認7件」）はBACKLOG.mdに
+同一IDで残置
 **優先度:** 高
 **分類:** バグ / 確定・会計恒等式検証の候補タグ拡張
 **登録日:** 2026-08-03（元エントリ）
@@ -354,6 +354,99 @@ Stage 3登録候補になりうる（`[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
 可能」の残りはASTS(2020)のみ（`TemporaryEquityValueExcludingAdditional
 PaidInCapital`、RDW型と同様の全母集団シミュレーションが未実施のまま
 残置）。
+
+---
+
+### ✅ [CHECK29-UNRESOLVED-23-MIXED-CAUSES-1] ASTS(2020) BS恒等式残差$150,596,928の解消（RDWとは異なり主許可リストへ無条件追加）
+**状態:** ASTS(2020)分は実装完了。これで「②許可リスト拡張で対応可能」
+2件（RDW/ASTS）が両方解消。エントリ本体（残る「③要さらなる確認7件」、
+ASTS(2019)含む）はBACKLOG.mdに同一IDで残置
+**優先度:** 高
+**分類:** バグ / 確定・会計恒等式検証の候補タグ拡張
+**登録日:** 2026-08-03（元エントリ）
+**完了日:** 2026-08-05
+**発見:** [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]個別調査（BACKLOG.md
+参照）
+
+#### Step 0: 現状の再確認
+実装前にannual_2020.jsonを実測し、TA=$232,404,895・TL+SE=$81,807,967・
+残差$150,596,928が前回報告時点から変化していないことを確認した
+（VRT(2016)・SPIR(2020)で発生した「記述時点と現在の乖離」の再発防止）。
+`TemporaryEquityValueExcludingAdditionalPaidInCapital`はASTS own accn
+（`0001493152-21-010599`、end=2020-12-31）に$150,596,928で存在し、
+残差と完全一致することを確認済み。
+
+#### Step 1: 全母集団シミュレーション（実装前、チャット記録）
+RDW対応時と同じ手法（既存の全フォールバック機構をシミュレーションに
+正しく含める）で実施。**RDWとの重要な相違点を発見**:
+
+1. **(A) `_BS_IDENTITY_ALLOWLIST`へ無条件追加する案**: ASTS own-accn
+   一次パスのみで`TemporaryEquityValueExcludingAdditionalPaidInCapital`
+   ($150,596,928)が完全一致（diff=$0）し、恒等式が一次パスの時点で
+   解決するため、二次パス（cross-accn探索）自体が発火しない。結果
+   `extra_components`は本タグ単独となる
+2. **(B) 既存のフォールバック機構（`_BS_IDENTITY_FALLBACK_ONLY_TAGS`）
+   へ追加する案**: 一次・二次パスの時点で、既存ロジックが
+   `MinorityInterest`のcross-accn一致（$2,490,000、ASTS own accnには
+   存在せず後年filing〈2021 Q2/Q3 10-Q、2021 10-K〉の比較列のみに存在）
+   を先に確定させてしまう。その後フォールバック段階で本タグが**上乗せ**
+   され、合計$153,086,928となりdiff=-$2,490,000という**不正確な合算**
+   になる（許容誤差〈相対2%〉の範囲内のため見かけ上`resolved=True`には
+   なるが、真の恒等式一致ではない）
+3. RDW自身の他年度と同様、ASTS(2019)（`[[CHECK29-UNRESOLVED-23-MIXED-
+   CAUSES-1]]`③要さらなる確認、別問題）は本タグ追加後もdiff=$15,961,997
+   で未解消のまま変化なし（cross-accnの近似値$202,557,751が必要額と
+   一致しないため）。想定通り無関係
+4. **RDWとの設計判断の違い**: `TemporaryEquityValueExcludingAdditional
+   PaidInCapital`は「Value Excluding APIC」という名称通り貸借対照表上
+   の簿価（CarryingAmount系と同種の測定基準）であり、RDW型の
+   RedemptionValue（測定基準が異なる開示専用タグ、LYFT(2018)過大計上の
+   教訓が当てはまる）とは性質が異なる。加えて(A)案の方が数学的に厳密な
+   diff=0を達成する一方、(B)案は許容誤差に頼った不正確な合算になる
+   ため、**RDWとは逆に(A) 主許可リストへの無条件追加を採用**
+
+**全105銘柄での影響確認**: 上記(A)案で唯一の副次影響はFRSH(2020)
+（既存の`TemporaryEquityCarryingAmountAttributableToParent`
+$2,895,096,000で既に解消済み）。同銘柄も本タグを$0.0001という名目値
+（2020-12-31・2021-09-30・2021-12-31の複数期間で同一値、XBRLの定型的な
+プレースホルダー値と判断）で報告しており、一次パスで追加一致するが、
+`diff_extended`が$0→-$0.0001に変わるのみで`resolved_by_extension`は
+`True`のまま不変（金額・判定とも実質的な影響なし、実データで確認済み）。
+
+#### 実装内容
+`common/sec_data/parser.py`: `_BS_IDENTITY_ALLOWLIST`に
+`TemporaryEquityValueExcludingAdditionalPaidInCapital`を追加（RDWの
+`_BS_IDENTITY_FALLBACK_ONLY_TAGS`とは異なり、こちらは主許可リストへの
+直接追加）。
+
+#### 検証結果
+1. 全105銘柄フローズン再パースでASTS(2020)・FRSH(2020)以外に差分なし
+   （`bs_identity_violations_log.json`9銘柄分の既知の非決定的キー順序
+   差分〈[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]〉のみ発生、
+   復元しコミット対象から除外）
+2. ASTS(2020)は`extra_components: {"TemporaryEquityValueExcluding
+   AdditionalPaidInCapital": 150596928}`・`diff_extended: 0`・
+   `resolved_by_extension: true`に変化したことを確認。ASTS(2019)は
+   変化なし（想定通り未解消のまま）
+3. `report_consistency_check.py --ticker ASTS,FRSH`: NG=0/WARN=4件
+   （ASTS(2020)分のWARN-29は解消、ASTS(2019)分のWARN-29のみ残存。
+   FRSHのWARN-29は元々発火なし）
+4. `report_consistency_check.py --fail-on-ng`（全銘柄）: NG=0/WARN=78件
+   （RDW対応後と同水準、新規WARNなし）
+5. pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
+   MSFT/NVDAのみ、新規回帰なし）
+
+#### 申し送り事項
+ASTS(2020)のtotal_assets/total_liabilities/stockholders_equityは、本
+実装により正しさが確定した状態になったため、RDW(2020)と同様
+`fixed_registry.json`Stage 3登録候補になりうる
+（`[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]`参照）。今回は実装のみで
+登録は行っていない。
+
+`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`の「②許可リスト拡張で対応
+可能」2件（RDW・ASTS）は両方解消。残るのは「①genuine対応不要2件
+（BKNG×2）」「③要さらなる確認7件（PLTR・CART×3・V・CELH・
+ASTS(2019)）」のみ。
 
 ---
 
