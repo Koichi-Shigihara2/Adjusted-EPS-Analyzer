@@ -1,5 +1,24 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（[[AVGO-2015-DATA-THIN-1]]原因調査完了（読み取り
+専用）。SEC EDGAR一次情報の決算期比較（現行CIK・真の前身候補CIK
+1441634はいずれも10月末〜11月初決算、`cik_history.json`登録済みの
+旧CIK 1054374は12月31日決算）により、AVGOの旧CIK登録が無関係な買収先
+企業（Broadcom Corporation、2016年にAvago Technologies社に買収され
+Broadcomへ社名変更）を指している疑いが判明。2006-2014年の「AVGO」
+年次データがAvago自身ではなくBroadcom Corpの実績を表している可能性が
+あり、2015年欠落はこの誤りの副産物と確認。真の前身企業CIK 1441634
+「Avago Technologies LTD」は2016-02-08にForm 15-12B提出で消滅して
+おり`cik_history.json`に未登録のまま。実害は現時点でゼロと確認済み
+（growth_sanity・roe_10yr_avgとも窓が届く範囲外、fixed_registry.json
+はAVGO 2016/2017のみ登録済みで無関係）。原因確定により
+`[[AVGO-2015-DATA-THIN-1]]`をクローズし、`[[AVGO-CIK-HISTORY-WRONG-
+LEGACY-CIK-1]]`として新規登録（優先度：高、着手条件: 新DB構築フェーズ
+1完了後または実害発生時まで保留）。対応方針3案（旧CIK差し替え・
+現状維持＋警告・2006-2014年データ削除）を記録、実装は未実施。「次
+セッションでの着手順序」欄を更新。コミット・push未実施
+（ユーザー確認待ち）。
+
 最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
 Stage 3b実装完了。SCCO(2010-2019)のgross_profit、RDW(2020)・
 ASTS(2020)のBS恒等式修正後の値（total_assets/total_liabilities/
@@ -2484,8 +2503,53 @@ DELL(2014-2016)で確認済みの「旧CIK・新CIKいずれの自社10-Kも存�
 未定。原因調査（旧CIK→新CIK移行境界のSEC提出履歴を`submissions.json`
 で確認、DELL(2014-2016)調査と同じ手法を適用）が必要。
 
+#### 原因調査結果（2026-08-05完了、チャット記録・読み取りのみ）
+SEC EDGAR一次情報（submissions API）で調査した結果、DELL型の「申告
+ギャップ」ではなく、**より根本的な問題（`cik_history.json`のAVGO旧CIK
+登録が無関係な買収先企業を指している疑い）**と判明した。詳細・分類
+（(a)〜(e)）・実害確認・対応方針の選択肢は
+`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`として分離登録した（本エントリ
+は原因確定によりクローズ）。
+
+**状態: 原因確定・`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`へ統合**
+
+---
+
+### [AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1] AVGOの旧CIK登録が無関係な買収先企業（Broadcom Corp）を指しており、真の前身企業（Avago Technologies LTD, CIK 1441634）と決算期が不一致
+**優先度:** 高（データの正確性に関わるが、現時点の実害はゼロと確認済み）
+**分類:** バグ疑い / CIK統合設計の誤り
+**登録日:** 2026-08-05
+**発見:** [[AVGO-2015-DATA-THIN-1]]原因調査（チャット記録）
+
+#### 内容
+`cik_history.json`のAVGO `legacy_ciks=["1054374"]`は、SEC EDGAR一次
+情報の決算期比較（現行CIK・真の前身候補CIK 1441634はいずれも10月末〜
+11月初決算、登録済み旧CIK 1054374は12月31日決算）により、無関係な
+買収先企業（Broadcom Corporation、2016年にAvago Technologies社に
+買収されBroadcomへ社名変更）のデータである可能性が高いと判明した。
+真の前身企業CIK 1441634「Avago Technologies LTD」は2016-02-08に
+Form 15-12B提出で消滅しており、`cik_history.json`に未登録。
+
+現状、2006-2014年の「AVGO」年次データは、Avago自身の実績ではなく
+Broadcom Corpの実績を表している可能性がある。2015年の欠落はこの
+誤りの副産物（真の前身CIKが未登録のためFY2015 10-Kが参照されない）。
+
+#### 実害
+現時点でゼロと確認済み（growth_sanity・roe_10yr_avgともに窓が届く
+範囲外、fixed_registry.jsonはAVGO 2016/2017のみ登録済みで無関係）。
+潜在リスクとして、将来ROE/CAGR窓が拡張された場合、または2006-2014年
+実績が直接参照された場合に誤ったデータを見せるリスクが残る。
+
+#### 対応方針の選択肢（未実装のまま並記）
+案A: 旧CIKを1441634へ差し替え・2006-2014年データ再生成（コスト中、
+決算期変更に伴う年度キー再検証が必要）
+案B: 現状維持＋警告表示のみ（コスト低、誤データ残存）
+案C: 2006-2014年データを削除・DELL型の「接続しない」構造的境界扱い
+（コスト低〜中）
+
 #### 着手条件
-なし（次回セッションで調査可能）。
+新DB構築フェーズ1完了後、または実害が実際に発生した場合まで保留。
+実装せず記録のみ。
 
 ---
 
@@ -7933,8 +7997,13 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
    Stage 3b実装〈SCCO(2010-2019)/RDW(2020)/ASTS(2020)、12エントリ〉
    まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3系
    エントリ参照）。**残タスク（優先順）**:
-   0-1. [[AVGO-2015-DATA-THIN-1]]の原因調査
+   0-1. ~~[[AVGO-2015-DATA-THIN-1]]の原因調査~~ ✅ 2026-08-05完了
+        （原因確定・`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`へ統合。
+        AVGO旧CIK登録が無関係な買収先企業Broadcom Corpを指している
+        疑いが判明、実害はゼロと確認済み、着手条件成立まで保留）
    0-2. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
+        （AVGO分は`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`の対応方針
+        確定後に着手する方が効率的。MRVL/DELL分は先行して着手可）
    0-3. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
         （優先度低、余力があれば）
    詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
