@@ -1,5 +1,38 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-05（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
+Stage 3b実装完了。SCCO(2010-2019)のgross_profit、RDW(2020)・
+ASTS(2020)のBS恒等式修正後の値（total_assets/total_liabilities/
+stockholders_equity）を`fixed_by: manual_verification`で
+`fixed_registry.json`へ登録した（3銘柄・計12エントリ）。
+
+**登録前確認（SCCO）**: annual_2010.json〜annual_2019.jsonを実測し、
+gross_profit値・revenue-cost_of_revenue逆算差分が前回のStage 3調査
+時点から不変であることを確認。BACKLOG.md（未完了側）をgrepしたが
+SCCOのgross_profit・当該年度に関するOPEN課題は見つからなかった
+（唯一の関連言及は既にクローズ済みエントリ内の過去スナップショット
+記述）。**新たな発見**: SCCO(2010)は`is_own_data=False`（同一accnの
+2011年10-K比較列由来）であり、以前の報告「2010-2019は全年度is_own_
+data=True」は不正確だったと判明。ただし`derived`キーはなし（直接タグ
+値）であり、genuine定義差の対象母集団として妥当と判断し登録対象に
+含めた。
+
+**fields_snapshot特定（RDW/ASTS）**: 依頼は「一時的持分に対応する
+実際のフィールド名」の特定を求めていたが、実ファイル確認の結果、
+`bs_identity_violations_log.json`のextra_components（一時的持分の値）
+は検証専用ロジックがraw XBRLから都度算出するのみで、annual_{year}.json
+への書き戻しは一切行われない設計と確認した。したがってfields_snapshot
+はStage 2のHEI/LRCX/TSLA/XOMと同じ`total_assets`/`total_liabilities`/
+`stockholders_equity`の3項目とした。
+
+**検証結果**: 全105銘柄フローズン再パースで新規12件を含め無変化
+（`bs_identity_violations_log.json`10銘柄分の既知の非決定的キー順序
+差分のみ発生、復元しコミット対象から除外）。CHECK-31試験発火:
+SCCO(2015)を意図的に改変→NG-31検知→復元後NG=0に復帰を確認。
+`report_consistency_check.py --fail-on-ng`でNG=0（WARN=78件、既存と
+不変）。pytest 497 passed/2 known failed（既知）を確認。「次セッション
+での着手順序」欄を更新。コミット・push未実施（ユーザー確認待ち）。
+
 最終更新: 2026-08-05（ASTS(2020) BS恒等式残差$150,596,928を解消。
 Step 0でannual_2020.json実測により残差額が前回報告時点から不変と確認
 した上で着手。Step 1の全105銘柄机上シミュレーションで、RDWと同じ
@@ -7895,23 +7928,14 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 **最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り）:**
 0. ~~Stage 3: 保留5件相当の年度・フィールド特定作業~~ ✅ 2026-08-05完了
-   （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉
-   まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3
+   （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉・
+   RDW(2020)/ASTS(2020) BS恒等式修正〈コミット1db003c0d・9618b6754〉・
+   Stage 3b実装〈SCCO(2010-2019)/RDW(2020)/ASTS(2020)、12エントリ〉
+   まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3系
    エントリ参照）。**残タスク（優先順）**:
-   0-1. ~~RDW(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（
-        `_BS_IDENTITY_FALLBACK_ONLY_TAGS`拡張で解消。
-        `[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`参照）。**派生タスク**:
-        RDW(2020)のfixed_registry.json Stage 3登録検討（今回は未登録）
-   0-2. SCCO(2010-2019)のfixed_registry.json登録（genuine定義差
-        確認済み、Stage 3aスコープ外だったため未登録のまま残存）
-   0-3. [[AVGO-2015-DATA-THIN-1]]の原因調査
-   0-4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
-   0-5. ~~ASTS(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了
-        （`_BS_IDENTITY_ALLOWLIST`へ無条件追加、RDWとは異なる設計判断。
-        `[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`の「②許可リスト
-        拡張で対応可能」2件が両方解消）。**派生タスク**: ASTS(2020)の
-        fixed_registry.json Stage 3登録検討（今回は未登録）
-   0-6. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
+   0-1. [[AVGO-2015-DATA-THIN-1]]の原因調査
+   0-2. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
+   0-3. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
         （優先度低、余力があれば）
    詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
 

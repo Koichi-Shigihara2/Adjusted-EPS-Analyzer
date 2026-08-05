@@ -263,11 +263,63 @@ VRT(2016)・SPIR(2020)・MRVL(2019)の3件で実例確認）。fixed_registry
 
 #### 残タスク（Stage 3残り、BACKLOG.mdに同一IDで残置）
 1. ~~RDW(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（後続エントリ参照）
-2. SCCO(2010-2019)のfixed_registry.json登録
+2. ~~SCCO(2010-2019)のfixed_registry.json登録~~ ✅ 2026-08-05完了
+   （Stage 3bエントリ参照）
 3. `[[AVGO-2015-DATA-THIN-1]]`の原因調査
 4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド粒度の個別確認
 5. ~~ASTS(2020)の許可リスト拡張実装~~ ✅ 2026-08-05完了（後続エントリ参照）
 6. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
+
+---
+
+### ✅ [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] Stage 3b: SCCO(2010-2019) gross_profit + RDW(2020)/ASTS(2020) BS恒等式成立値をmanual_verificationで登録
+**状態:** Stage 3b完了。Stage 3残タスク（`[[AVGO-2015-DATA-THIN-1]]`・
+MRVL/AVGO/DELL旧CIK分・`[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-
+CONSIDERATION-1]]`）はBACKLOG.mdに同一IDで残置
+**優先度:** 高
+**分類:** アーキテクチャ再設計 / 運用方針確定・実装
+**登録日:** 2026-08-05
+**完了日:** 2026-08-05
+**発見:** Stage 3準備調査・RDW/ASTS修正の残タスク（チャット記録）
+
+#### 内容
+Stage 3で年度・フィールドを特定済みのSCCO(2010-2019) gross_profit、
+および直近のRDW(2020)・ASTS(2020) BS恒等式修正（コミット`1db003c0d`・
+`9618b6754`）で正しさが確定した値を`fixed_by: manual_verification`で
+登録した（3銘柄・計12エントリ）。
+
+**SCCO登録前確認**: annual_2010.json〜annual_2019.jsonを実測し、
+gross_profit値・revenue-cost_of_revenue逆算差分が前回のStage 3調査
+時点から不変であることを確認。BACKLOG.md（未完了側）grepでOPEN課題
+なしを確認。**新たな発見**: SCCO(2010)は`is_own_data=False`（同一accn
+の2011年10-K比較列由来）であり、以前の報告「2010-2019は全年度own
+data」は不正確だったと判明。ただし`derived`キーはなし（直接タグ値）
+であり、genuine定義差の対象母集団として妥当と判断し登録対象に含めた。
+
+**RDW/ASTSのfields_snapshot特定**: 依頼は「一時的持分に対応する実際の
+フィールド名」の特定を求めていたが、実ファイル確認の結果、
+`bs_identity_violations_log.json`のextra_components（一時的持分の値）
+は検証専用ロジックがraw XBRLから都度算出するのみで、annual_{year}.json
+への書き戻しは一切行われない設計と確認した。したがってfields_snapshot
+はStage 2のHEI/LRCX/TSLA/XOMと同じ`total_assets`/`total_liabilities`/
+`stockholders_equity`の3項目とした。
+
+#### 検証結果
+1. 全105銘柄フローズン再パースで新規12件を含め無変化
+   （`bs_identity_violations_log.json`10銘柄分の既知の非決定的キー順序
+   差分〈[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]〉のみ発生、
+   復元しコミット対象から除外）
+2. CHECK-31試験発火: SCCO(2015)を意図的に改変→NG-31検知→復元後NG=0に
+   復帰を確認
+3. `report_consistency_check.py --fail-on-ng`でNG=0（WARN=78件、既存と
+   不変）
+4. pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
+   MSFT/NVDAのみ、新規回帰なし）
+
+#### 残タスク
+`[[AVGO-2015-DATA-THIN-1]]`原因調査・MRVL/AVGO/DELL旧CIK拡張分の年度×
+フィールド粒度の個別確認・`[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-
+CONSIDERATION-1]]`検討はBACKLOG.mdに同一IDで残置。
 
 ---
 
