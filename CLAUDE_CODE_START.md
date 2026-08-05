@@ -300,11 +300,23 @@ fetchパスが正しい場合に限り、JSONファイルの
 - `common/sec_data/ttm_calculator.py`
 - `common/sec_data/parser.py`（[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]
   Stage1で発見: `fixed_registry.json`に登録済みの銘柄×年度
-  （2026-08-05時点26銘柄・372エントリ）は`_apply_fixed_registry_freeze()`
-  により抽出ロジック変更の影響を受けないよう意図的に凍結されている。
-  `parser.py`のロジックを変更しても対象銘柄×年度の`annual_{year}.json`が
-  変化しないのは想定通りの挙動でありバグではない。フィックス済みデータの
-  再検証・解除が必要な場合はBACKLOG.md該当項目を参照し個別に判断すること）
+  （2026-08-05時点Stage1〜3a累計41銘柄・420エントリ）は
+  `_apply_fixed_registry_freeze()`により抽出ロジック変更の影響を受けない
+  よう意図的に凍結されている。`parser.py`のロジックを変更しても対象
+  銘柄×年度の`annual_{year}.json`が変化しないのは想定通りの挙動であり
+  バグではない。フィックス済みデータの再検証・解除が必要な場合は
+  BACKLOG.md該当項目を参照し個別に判断すること。
+  **fixed_registry.jsonへ新規登録する際の必須手順（Stage 2/3の教訓、
+  2026-08-05追加）**: 登録候補の根拠がBACKLOG_DONE.mdの過去の完了記録
+  である場合、その記述を鵜呑みにせず、登録直前に必ず対象`annual_
+  {year}.json`を実際に読んでfields_snapshot対象フィールドが現存するか
+  確認すること。BACKLOG_DONE.mdは完了時点のスナップショットであり、
+  同一領域で後続の別タスクが実行されると記述と実データが乖離しうる
+  （実例: VRT(2016)・SPIR(2020)は後続タスクでフィールドがNone化されて
+  いたにも関わらず記述は旧値のまま、MRVL(2019)は逆に「取得不能」と
+  クローズされていたが後続タスクが意図せず解消していた）。未確認のまま
+  登録すると、`_apply_fixed_registry_freeze()`が対象フィールドを
+  見つけられずRuntimeErrorで全銘柄再パースを止める）
 - `common/sec_data/tag_definitions.py`（[[JNJ-RD-TAG-PRIORITY-1]]で発見:
   `TAG_CANDIDATES`は`parser.py`〈merge型候補選択〉・`quarterly.py`〈primary
   +fallback-if-empty型候補選択〉の2つの異なる消費ロジックから参照される

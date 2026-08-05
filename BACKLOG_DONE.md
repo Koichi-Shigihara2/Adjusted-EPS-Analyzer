@@ -110,6 +110,166 @@ taxonomy属性①〜⑧該当58銘柄のうち、BACKLOG_DONE.mdで個別バグ�
 
 ---
 
+### ✅ [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] Stage 2: 個別バグ調査で正しさが確定済みの12銘柄・17銘柄×年度エントリをmanual_verificationで登録
+**状態:** Stage 2完了。Stage 3（残る保留分・年度追加特定）はBACKLOG.mdに
+同一IDで残置
+**優先度:** 高
+**分類:** アーキテクチャ再設計 / 運用方針確定・実装
+**登録日:** 2026-08-05
+**完了日:** 2026-08-05
+**発見:** Stage 1の残タスク（チャット記録）
+
+#### 内容
+taxonomy属性①〜⑧該当58銘柄のうち、過去の個別バグ調査（BACKLOG_DONE.md）
+とSEC EDGAR一次情報照合（companyconcept API直接照合）の両方で正しさが
+確定済みの12銘柄・17銘柄×年度エントリを`fixed_by: manual_verification`
+で登録した:
+
+- HEI(2020)/LRCX(2012)/TSLA(2018)/XOM(2023)（total_assets/
+  total_liabilities/stockholders_equity、`[[HEI-LRCX-TA-TLSE-
+  UNEXPLAINED-RESIDUAL-1]]`の全XBRLタグ網羅調査による会計恒等式
+  TA=TL+SE完全一致確認）
+- AVGO(2016 revenue・net_income／2017 revenue・operating_income、
+  `[[PERIOD-LENGTH-VALIDATION-GAP-1]]`＋SEC EDGAR companyconcept API
+  accn `0001730168-18-000084`のProfitLoss/OperatingIncomeLossタグと
+  完全一致確認）
+- RCAT(2024 stock_based_compensation)
+- ELF(2015/2016、10-K原本Selected Financial Data表と一致確認)
+- FICO(2019/2020)・CPRT(2019/2020)・LITE(2019)のrevenue（365日正規
+  年次値へのフローズン入力比較検証）
+- GOOGL(2012/2013、revenue/operating_income/research_and_development/
+  selling_and_marketing/gross_profit、SEC EDGAR accn
+  `0001288776-15-000008`と完全一致確認。selling_and_marketingは
+  GOOGL固有の`MarketingAndAdvertisingExpense`タグ規約との整合性も確認）
+- SPIR(2025 net_income・operating_cash_flow、10-K MD&A一次情報と一致確認)
+
+#### 登録前検証で対象外に確定した2件（判定: 対応不要・既に是正済みのため凍結対象なし）
+**VRT(2016)/net_income・SPIR(2020)/long_term_debt**は候補リスト作成時点
+のBACKLOG_DONE.md記述を根拠にしていたが、登録前検証で`annual_{year}.json`
+実ファイルを確認したところ**現在は対象フィールド自体が存在しない**と
+判明した（VRT(2016)はSPACシェル期でPLセクション自体が空、SPIR(2020)は
+`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`段階2で該当値$26,645,000が誤った値
+としてNone化済み）。両者ともBACKLOG_DONE.md記述時点と実データの間で
+後続タスクによる乖離が生じていたと判明し、Stage 3ではなく「対応不要」
+として判定完了した。
+
+#### 検証結果
+1. 全105銘柄フローズン再パースで新規17件を含め無変化
+   （`bs_identity_violations_log.json`9銘柄分の非決定的キー順序差分
+   〈既知の`[[BS-IDENTITY-LOG-NONDETERMINISTIC-KEY-ORDER-1]]`〉のみ
+   発生、復元しコミット対象から除外）
+2. CHECK-31試験発火: RCAT(2024)を意図的に改変→NG-31検知→復元後NG=0に
+   復帰を確認
+3. `report_consistency_check.py --fail-on-ng`でNG=0（WARN=79件、既存と
+   同水準）
+4. pytest 497 passed / 2 known failed（既知の`[[TEST-STALE-IV-1]]`
+   MSFT/NVDAのみ、新規回帰なし）
+
+機能コミット: `9dca9f188`（origin push後のハッシュ。ローカル作業時は
+`49330ca19`だったが、後続の`git pull --rebase`でハッシュ再計算）。
+push済み。
+
+#### 残タスク
+Stage 3（保留分の年度・フィールド特定、後続エントリ参照）は
+BACKLOG.mdに同一IDで残置。
+
+---
+
+### ✅ [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] Stage 3準備調査・記録訂正・Stage 3a実装（MO/PM/LLY 31エントリ）
+**状態:** Stage 3準備調査・BACKLOG記録訂正・Stage 3a実装まで完了。
+残る保留分（RDW/SCCO/MRVL・AVGO・DELL旧CIK/AVGO(2015)/SPACシェル系5件）
+はBACKLOG.mdに同一IDで残置
+**優先度:** 高
+**分類:** アーキテクチャ再設計 / 運用方針確定・実装
+**登録日:** 2026-08-05
+**完了日:** 2026-08-05
+**発見:** Stage 2の残タスク（チャット記録）
+
+#### 内容（Stage 3準備調査、読み取り専用）
+Stage 2で保留とした5件について年度・フィールドを特定する調査を実施し、
+以下の重要な乖離を発見した（詳細はBACKLOG_DONE.md該当エントリの
+「訂正」「解決済み」「申し送り事項」節を参照）:
+
+- **RDW(2020)**: `[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`の残差
+  $120,314,578が現時点でも未解消（許可リスト拡張が未実装）と実測確認
+- **`[[GROSSPROFIT-COGS-ANNUAL-DEFINITION-GAP-MO-PM-SCCO-1]]`**:
+  対象年度を実測し訂正。MO(2016-2025・10年度)・SCCO(2010-2019・10年度)
+  はgenuine定義差確定年度として明記。**PMは従来「10年連続」との誤認が
+  あったが実際は2016-2017の2年度のみ**（2018年以降はASC 606適用等で
+  該当なし）
+- **`[[LLY-CAPEX-STALE-1]]`**: 対象年度を実測し訂正。従来「2023-2025
+  のみ」とされていたが、修正コミット`14862976f`のdiffを直接確認した
+  結果**2007-2025全19年度**が対象と判明（四半期側/TTM側の症状描述との
+  混同だった）
+- **`[[MRVL-2019-2020-NULL-1]]`**: MRVL(2019)が「構造的に取得不能」と
+  クローズされていたが、`[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]`の
+  後続実装が意図せず解消していたことを発見（対象年度記載2007-2018の
+  範囲外だが効果が及んでいた）
+- **`[[SPAC-SHELL-BS-ENTITY-MIXING-1]]`**: 本文は登録時から一貫して
+  VRT(2019)・ONDS(2017)と正しく記載されており訂正不要と確認（年度の
+  取り違えは調査側〈チャット履歴〉で発生していたもの）。段階1で
+  None化された6件（BBAI/RDW/RKLB/SOFI/VRT/ONDS）はNone化された
+  フィールド自体に凍結すべき値が存在しないため、現行スキーマでは
+  登録不可と確定
+- **AVGO(2015)**: `[[CIK-DISCONTINUITY-OLDEST-YEAR-GAP-1]]`の対象年度
+  範囲外にもかかわらずデータが薄い状態を新規発見、
+  `[[AVGO-2015-DATA-THIN-1]]`として新規登録
+
+#### 新規登録（2件）
+`[[AVGO-2015-DATA-THIN-1]]`（優先度：中）・
+`[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`（優先度：低）
+をBACKLOG.mdへ登録。
+
+#### Stage 3a実装内容（fixed_registry.json登録）
+準備調査で特定した年度に基づき、MO(2016-2025)・PM(2016-2017)の
+gross_profit、LLY(2007-2025)のcapital_expenditure・free_cash_flow・
+fcf_method・finance_lease_payments_appliedの**計3銘柄・31銘柄×年度
+エントリ**を`fixed_by: manual_verification`で登録した。LLYの
+fields_snapshotにfree_cash_flow等を含めたのは、capital_expenditureのみ
+凍結すると将来の再パースでfree_cash_flowとの内部矛盾（capex=凍結値・
+fcf=新ロジック再計算値）が生じうるため（Stage 1のfields_snapshot
+パターンを踏襲）。SCCO(2010-2019、genuine定義差確認済み)は本Stage 3a
+のスコープ外のまま残置（別途登録予定）。
+
+登録前・登録後の2回、コミット前にユーザーへLLYのfree_cash_flow等3
+フィールドに関するBACKLOG.md OPEN課題の有無、および2025年度値の
+算術整合性（OCF−CapEx=FCF、$16,813,000,000−$7,841,000,000=
+$8,972,000,000）を確認してからコミットした。
+
+#### 検証結果
+1. 全105銘柄フローズン再パースで新規31件を含め無変化
+   （`bs_identity_violations_log.json`10銘柄分の既知の非決定的キー順序
+   差分のみ発生、復元しコミット対象から除外）
+2. CHECK-31試験発火: LLY(2023)を意図的に改変→NG-31検知→復元後NG=0に
+   復帰を確認
+3. `report_consistency_check.py --fail-on-ng`でNG=0（WARN=79件、既存と
+   同水準）
+4. pytest 497 passed / 2 known failed（既知の`[[TEST-STALE-IV-1]]`
+   MSFT/NVDAのみ、新規回帰なし）
+
+機能コミット: `2318cc1ac`（Stage 3準備作業A、BACKLOG記録訂正・新規登録、
+ドキュメントのみ）・`775128858`（Stage 3a実装、fixed_registry.json）。
+いずれもpush済み。
+
+#### 教訓（一般化を検討中）
+BACKLOG_DONE.mdの記述はその投稿時点のスナップショットであり、同一領域
+で後続の別タスクが実行されると記述と実データが乖離しうる（本調査で
+VRT(2016)・SPIR(2020)・MRVL(2019)の3件で実例確認）。fixed_registry
+登録のような「値そのものを対象にした」作業では、記述を根拠としてその
+まま信用せず、登録直前に必ず実ファイルで対象フィールドの現存を確認する
+工程が必須。一般化（`MIGRATION_CHECKLIST.md`・
+`EXTRACTION_DESIGN_PRINCIPLES.md`への反映）の要否は本ブラッシュアップ
+セッションで判断する。
+
+#### 残タスク（Stage 3残り、BACKLOG.mdに同一IDで残置）
+1. RDW(2020)の許可リスト拡張実装
+2. SCCO(2010-2019)のfixed_registry.json登録
+3. `[[AVGO-2015-DATA-THIN-1]]`の原因調査
+4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド粒度の個別確認
+5. `[[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]`の検討
+
+---
+
 ## 2026-08-03（完了）
 
 ### ✅ [CHECK29-COHR-CROSS-ACCN-TEMPORARY-EQUITY-1] CHECK29の本人データ(own accn)限定照合が、後続四半期の比較列としてのみ開示される一時的持分を検知できない構造的限界
@@ -5411,7 +5571,6 @@ NG-3が全銘柄で誤発火するリスクがあった。`Classification`にも
   `report_txt_parser.py`クリーンアップ候補・`history.json`レガシーエントリ矛盾
   （③-b事前調査で発見、BACKLOG.mdに優先度：低で新規登録）
 
-
 ---
 
 ## 2026-07-17（完了）
@@ -5477,7 +5636,6 @@ NG-3が全銘柄で誤発火するリスクがあった。`Classification`にも
 - [[GATE2-PHASE3B-1]]③-b（pipeline.py::Classificationの型化、pipeline.py内
   14箇所の分岐比較を含み③-aより影響範囲が大きい）は引き続き未着手
 
-
 ### ✅ [GATE2-PHASE3B-1] ③-a規約D: growth_sanity.py::verdictのEnum化（2026-07-17完了）
 **分類:** アーキテクチャ / QUALITY-GATES-EPIC-1関連
 **登録日:** 2026-07-13
@@ -5523,7 +5681,6 @@ f-string補間（`f"判定 : {gs_verdict}"`）を含めた全既存コードが�
 - [[GATE2-PHASE3B-1]]③-b（pipeline.py::Classificationの型化、pipeline.py内
   14箇所の分岐比較を含み③-aより影響範囲が大きい）は引き続き未着手
   （①独立実装4ファイルのreader.py統合は同日2026-07-17に別途完了済み）
-
 
 ### ✅ [GATE2-PHASE3B-1] ②規約C: フィールド分類の二重管理是正（2026-07-17完了）
 **分類:** アーキテクチャ / SECデータ取得層 / QUALITY-GATES-EPIC-1関連
@@ -5589,7 +5746,6 @@ update.pyから呼ばれた形跡はあるものの、それ以降は本番か�
 - [[GATE2-PHASE3B-1]]③（規約D: enum風文字列の型化）は引き続き未着手
   （①独立実装4ファイルのreader.py統合は同日2026-07-17に別途完了済み）
 - [[TTM-STOCK-FIELDS-DEAD-1]]（本項目で発見・新規分離登録、優先度未定）
-
 
 ---
 

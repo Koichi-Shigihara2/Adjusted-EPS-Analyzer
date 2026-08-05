@@ -7815,15 +7815,20 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 ### 次セッションでの着手順序（提案）
 優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
-**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3）:**
+**最優先（2026-08-05更新、SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1 Stage 3 残り）:**
 0. ~~Stage 3: 保留5件相当の年度・フィールド特定作業~~ ✅ 2026-08-05完了
    （準備調査・BACKLOG記録訂正・Stage 3a実装〈MO/PM/LLY、31エントリ〉
-   まで完了）。**残タスク**: SCCO(2010-2019)のfixed_registry登録・
-   RDW(2020)の許可リスト拡張実装（`_BS_IDENTITY_ALLOWLIST`への
-   `RedeemableNoncontrollingInterestEquityCommonRedemptionValue`追加）・
-   MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認・
-   [[AVGO-2015-DATA-THIN-1]]原因調査・
-   [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]検討。
+   まで完了。BACKLOG_DONE.md「2026-08-05（完了）」Stage 2・Stage 3
+   エントリ参照）。**残タスク（優先順）**:
+   0-1. RDW(2020)の許可リスト拡張実装（`_BS_IDENTITY_ALLOWLIST`への
+        `RedeemableNoncontrollingInterestEquityCommonRedemptionValue`
+        追加。`[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]`参照）
+   0-2. SCCO(2010-2019)のfixed_registry.json登録（genuine定義差
+        確認済み、Stage 3aスコープ外だったため未登録のまま残存）
+   0-3. [[AVGO-2015-DATA-THIN-1]]の原因調査
+   0-4. MRVL/AVGO/DELL旧CIK拡張分の年度×フィールド単位の個別確認
+   0-5. [[SPAC-SHELL-MAINTAINED-FIELDS-FREEZE-CONSIDERATION-1]]の検討
+        （優先度低、余力があれば）
    詳細はBACKLOG.md冒頭2026-08-05エントリ・BACKLOG_DONE.md該当項目参照。
 
 **バグ修正（優先）:**

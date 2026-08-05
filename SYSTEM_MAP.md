@@ -447,12 +447,18 @@ SEC EDGAR
 │    overrides()`・各種逆算バックフィルより後・`result["annual"]`組み立て
 │    直後に、`fields_snapshot`記録済みフィールドを既存`annual_{year}.json`
 │    の値へ強制復元する（差分適用方式、新規フィールドのみ通常抽出を通す）。
-│    2026-08-05時点でStage1として26銘柄・372銘柄×年度エントリ登録済み
-│    （taxonomy属性①〜⑧非該当・既存チェックゲート全通過銘柄）。CI側は
-│    `report_consistency_check.py`のCHECK-31/WARN-31がsnapshot_hash
+│    2026-08-05時点でStage1（26銘柄・372エントリ、`fixed_by:
+│    checkgate_pass`）・Stage2（12銘柄・17エントリ）・Stage3a
+│    （MO/PM/LLY 3銘柄・31エントリ）まで累計**41銘柄・420銘柄×年度
+│    エントリ**登録済み（Stage2以降は`fixed_by: manual_verification`）。
+│    CI側は`report_consistency_check.py`のCHECK-31/WARN-31がsnapshot_hash
 │    不一致をNG検知。quarterly/TTM側（layer3_builder.py）は対象外
 │    （[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]と同じ独立パイプライン構造の
-│    ため）。
+│    ため）。**新規登録時は必ずannual_{year}.json実ファイルでfields_
+│    snapshot対象フィールドの現存を確認すること**
+│    （CLAUDE_CODE_START.md該当節・BACKLOG_DONE.md「2026-08-05（完了）」
+│    Stage2/Stage3エントリ参照。BACKLOG_DONE.mdの過去記述と実データが
+│    後続タスクにより乖離しうるため）。
 ├─ tag_definitions.py  # XBRLタグ候補の共通定義（TAG_CANDIDATES。quarterly.py・parser.py
 │    双方が参照。9概念のみ統合済み、LTDebt/SM/DA/RPO/Revenueは意図的に未統合。
 │    LLY-CAPEX-STALE-1 Phase 2a 2026-07-12新設）
