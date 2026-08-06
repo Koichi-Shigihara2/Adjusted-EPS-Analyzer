@@ -864,6 +864,14 @@ discover_config.json）は、バリデーションなしで直接GitHubにコミ
 
 実装（コード修正）は行っていない。定義の記録のみ。
 
+**用語衝突の注記（2026-08-06追記）**: 本フェーズおよびフェーズ8の
+AS-IS-422/423/424（`text_kpi_extractor.py::extract_layer3()`関連、
+TANUKI TAILのKPI AI抽出）が使う「Layer3」は、`common/sec_data`統合
+（SEC EDGAR Layer1〜3アーキテクチャ、`SEC_EDGAR_LAYER_DESIGN.md`・
+`layer3_builder.py`）の「Layer3」とは無関係の別概念（同名だが指す
+対象が異なる）。grep等で「Layer3」を横断検索する際に混同しないよう
+記録のみ残す（対応不要）。
+
 **前フェーズ（DCF/WACC構成要素系）での訂正**: フェーズ6でAS-IS-113
 （HypeCore `expectation_score`）の構成要素として引用したAS-IS-105
 （`analyst_upgrade_rate`）を誤って「成長率・トレンド系」と記載したが、

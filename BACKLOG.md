@@ -4435,10 +4435,13 @@ quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
 合わせて解消すべき関連課題として発見されている。
 
 #### 対応方針
-`INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの統合を検討する。
-`normalized/`のCapEx符号不統一は[[CAPEX-SIGN-UNNORMALIZED-1]]
-（2026-07-24対応完了、BACKLOG_DONE.md参照）で解消済みのため、統合
-スキーマ側は正規化済みCapExを前提に設計できる。
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズD（Layer3統合、5消費者の優先順位
+確定済み: ①TANUKI VALUATION本体 ②STONKS SILO ③TANUKI TAIL
+④HypeCore ⑤stock.htmlフロントエンド）を正とする（2026-08-06投資調査で
+確定、下記「2計画併存の経緯」参照）。`normalized/`のCapEx符号不統一は
+[[CAPEX-SIGN-UNNORMALIZED-1]]（2026-07-24対応完了、BACKLOG_DONE.md
+参照）で解消済みのため、統合スキーマ側は正規化済みCapExを前提に
+設計できる。
 
 **Step1完了（2026-08-05、全消費者洗い出し・読み取り専用調査）**:
 `raw/`（実消費者ゼロのデッドコード）・`normalized/`（5本番消費者、
@@ -4452,14 +4455,45 @@ STDebtが完全に0件（既存記載より悪化）と確認。詳細はチャ�
 **raw/削除完了（2026-08-05実装）**: 全消費者ゼロと確認済みの`raw/`を
 撤去した（`quarterly.py`の書込処理削除・既存105ファイル削除・
 `SEC_Data_Update.yml`のgit add対象からも除去）。詳細はBACKLOG_DONE.md
-参照。**残タスクはnormalized/→data/統合のみ**（別途設計セッションで
-着手。Step2〈スキーマ差異の実測〉・Step3〈移行可能性の粗評価〉は
-2026-08-05のStep1調査時に一部先行実施済み、詳細設計は次ステップ）。
+参照。
+
+**残タスクは`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装**（TANUKI
+VALUATION本体を最優先に、5消費者＋診断・補助スクリプト7件を
+Layer3〈`layer3_builder.py::build_ticker_store()`〉経由へ順次切替）。
+`data/quarterly_{FYQ}.json`のpl/cf/shares区分SA/YTD修正（コミット
+939b8f57f、2026-08-05）は、フェーズD完了までの暫定的な正確性向上
+として意味を持つ。フェーズD完了後の`normalized/`廃止（フェーズE）が
+実施されれば5消費者はLayer3のみに依存するようになり、data/系統向け
+アクセサの新規実装は不要になる見込み（Layer3側`get_field_entries()`が
+`get_quarterly_series()`相当の既存アクセサとして既に実装済みであると
+2026-08-06投資調査で確認済み）。
+
+**2計画併存の経緯（2026-08-06投資調査で判明）**: 本エントリ（登録日
+2026-07-23）と`SEC_EDGAR_LAYER_DESIGN.md`（作成日2026-07-24）は、
+`INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`という同一の調査を起点に
+1日違いで分岐した。`SEC_EDGAR_LAYER_DESIGN.md`は本エントリの
+「対応方針」欄（`INPUT_DATA_TOBE.md`2-Aが設計した単一正規化ストアへの
+統合）を詳細設計として具体化したものと位置づけられるが、本エントリの
+「対応方針」欄は2026-08-05まで`SEC_EDGAR_LAYER_DESIGN.md`への
+クロスリンクを持たないまま更新され続け、5消費者の移行先を独自に
+「normalized/→data/統合」と記述していた。2026-08-02〜03の
+`[[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]`調査で「両者は`SEC_EDGAR_LAYER_
+DESIGN.md`が既に『3スキーマ併存』として認識済みの既知課題の一部」と
+一度確定していたにも関わらず、その2日後（2026-08-05）に本エントリの
+ロードマップ（0-A〜0-C）が独立して実行され、フェーズDとの整合確認は
+行われなかった。両エントリとも技術的に誤ってはいなかったが、移行先
+（Layer3 vs data/）という最も重要な点で1ヶ月弱食い違ったまま別々に
+進行していた。原因は、担当セッションが参照した一次ドキュメントが
+異なっていたためと推測される（本エントリ自身が`SEC_EDGAR_LAYER_
+DESIGN.md`への参照を持たなかったため、本エントリの「次セッションでの
+着手順序」欄だけを見て着手すると、フェーズD側の決定事項に辿り着けない
+構造だった）。再発防止策はCHAT_RULES.md「文書横断整合性チェック」
+（2026-08-06追加）参照。
 
 #### 着手条件
 なし（着手条件だった「[[CAPEX-SIGN-UNNORMALIZED-1]]の対応方針確定」は
 2026-07-24の実装完了により満たされた。raw/撤去は完了、
-normalized/→data/統合の詳細設計から再開可能）
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装から再開可能）
 
 ---
 
@@ -6312,6 +6346,47 @@ RCAT 2016Q3の1ファイルのみと確認済み（全銘柄横断で「旧フ�
 残存ファイルを放置するか、明示的に削除する（「その四半期は再現不能」と
 正直に示す）か、設計判断が必要。優先度は低（1ファイルのみ・実害ゼロ・
 将来のアクセサ実装時に再検討で十分）。
+
+### [PARSER-MERGED-TAG-MIXING-RISK-1] parser.py::_extract_values_merged()が、Layer3が[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]で廃棄した危険パターン（複数タグの生エントリを先に混ぜてからYTD変換）と同型の構造を持つ疑い
+**優先度:** 低（Layer3統一方針確定により、data/系統の重要度自体が
+低下したため、中→低に格下げ）
+**分類:** バグ疑い / 構造的リスク
+**登録日:** 2026-08-06
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`との整合性確認調査（チャット記録、
+2026-08-06）
+
+#### 内容
+`layer3_builder.py::_merge_candidate_entries()`は、候補タグごとに
+独立して`_process_entries()`→`_normalize_field_entries()`（YTD→単四半期
+変換を含む）を完了させてから、正規化済み系列同士をend_date単位で
+マージする設計になっている。これは当初の実装（生エントリを先に
+end_date単位でマージしてからYTD→単四半期変換する順序）が、異なる
+タグ由来のエントリが同一end_dateで競合した際にFYチェーン判定を
+破壊し、YTD差分計算が中間四半期を1つ読み飛ばして2四半期分を1四半期
+として誤算出するバグを引き起こした（CPRT・PEP等6銘柄・20エントリで
+実データ確認、[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]）ことを踏まえた
+意図的な設計変更。
+
+一方、`common/sec_data/parser.py::_extract_values_merged()`
+（merge_all_tags対象フィールド向け、`SECDATA-STORAGE-FRAGMENTATION-1`
+2026-08-05実装のSA/YTD統一アルゴリズム）は、全キー（＝複数タグ）を
+早期終了せずループし、四半期の生候補`(fy, fp, start, end, val)`を
+タグ区別のないまま単一の`quarterly_candidates`リストへ蓄積してから、
+`_resolve_quarterly_values()`でまとめて解決する構造になっている。これは
+Layer3が明示的に廃棄した「生エントリを先に混ぜてから変換」という
+旧パターンと同型であり、複数タグが競合する銘柄・フィールドで同種の
+誤算出が発生する構造的リスクを持つ疑いがある。
+
+なお、単一タグのみを扱う`_extract_values_best_candidate()`経路は
+タグ混入の余地がないため対象外。939b8f57fコミット時の検証（全105銘柄
+再パース結果が独自シミュレーションと完全一致）は旧parser.py実装との
+内部整合性確認であり、Layer3側の値との突合ではないため、本リスクを
+検出できるものではない。実データでの影響有無は未検証。
+
+#### 着手条件
+merge_all_tags対象フィールド一覧の洗い出し・実データでの影響有無検証
+から。ただしdata/系統の位置づけがLayer3統一に伴い補助的になったため、
+緊急性は低い。
 
 ### [DEFICIT-SCORE-CEILING-95-1] STONKS SILO DEFICIT分類、赤字企業の実質上限95点
 **優先度:** 低

@@ -281,7 +281,10 @@ common/sec_data/data/{TICKER}/
                            # _ytd_to_quarterly()を再利用。差分計算が
                            # 数学的に無効な加重平均フィールド
                            # （shares_diluted等）はSA候補なし時に欠損を
-                           # 許容する。詳細はBACKLOG_DONE.md参照。
+                           # 許容する。この修正はdata/系統単独の正確性
+                           # 向上であり、Layer3（store_v2/）統合の一部
+                           # ではない（下記「本節の位置づけ」注記参照）。
+                           # 詳細はBACKLOG_DONE.md参照。
   filing_meta.json        # 提出日・CIK・最終確認日等のメタ情報（INPUT-A-018）
   segments/{FYQ}.json     # セグメント別KPI（新規吸収、INPUT-A-016）
                            # 【2026-07-23方針転換】当初は正式ASC280セグメントを
@@ -292,6 +295,17 @@ common/sec_data/data/{TICKER}/
                            # を維持する（投資調査により方針転換）
   filing_text/{accession}.json  # 10-Q本文抽出結果（新規吸収、INPUT-A-017）
 ```
+
+**本節の位置づけ（2026-08-06追記）**: 本節の保持構造案は2026-07-23
+策定時点のものであり、翌日策定の`SEC_EDGAR_LAYER_DESIGN.md`（統合
+スキーマ・Layer1〜3アーキテクチャ）により、実際の統合先は
+`common/sec_data/store_v2/`（Layer3、`layer3_builder.py`生成）に
+確定している。本節の`data/{TICKER}/...`構造は、Layer3移行後も
+`annual_*.json`（年次データ、フェーズDリストに切替計画なし）・
+診断/補助スクリプト7件の参照先としては存続するが、5本番消費者
+（TANUKI VALUATION本体・STONKS SILO・TANUKI TAIL・HypeCore・
+stock.htmlフロントエンド）の最終的な参照先ではない。詳細は
+`SEC_EDGAR_LAYER_DESIGN.md`8章（移行実装計画）参照。
 
 四半期データへのフォールバック（TANUKI側の`get_net_cash()`が既に持つ
 設計）は、正規化ストア自身の標準機能として全サブシステムに開放する

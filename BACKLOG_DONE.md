@@ -6,9 +6,9 @@
 
 ### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Step1（全消費者洗い出し）・raw/削除・quarterly_*.json YTD→SA修正 完了
 **状態:** Step1（全消費者洗い出し）・raw/削除・quarterly_{FYQ}.json
-pl/cf/shares区分のYTD→単一四半期(SA)修正まで完了。残タスクは新設
-アクセサ実装・5本番消費者のnormalized/→data/切り替え、BACKLOG.mdに
-同一IDで残置
+pl/cf/shares区分のYTD→単一四半期(SA)修正まで完了。残タスクは
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズDの実装（Layer3経由への切替、
+2026-08-06投資調査で移行先を訂正）、BACKLOG.mdに同一IDで残置
 **優先度:** 中
 **分類:** アーキテクチャ / データ品質（新DB構築プロジェクト フェーズ1 本線）
 **登録日:** 2026-07-23
@@ -168,12 +168,15 @@ annual側は1,441ファイル横断比較で差分0件（annual側ロジック�
 不変）。pytest 497 passed / 2 known failed（既知の[[TEST-STALE-IV-1]]
 MSFT/NVDAのみ、新規回帰なし）。
 
-#### 残タスク
-1. 新設アクセサ（`reader.py::get_quarterly_series()`/
-   `get_latest_quarterly()`相当のdata/quarterly_*.json版）の実装
-2. `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の残り論点（②SM/SGA概念
-   混同の設計判断・⑤ファイル名混在等）の解消方法確定
-3. 5本番消費者のnormalized/→data/切り替え（フィールド名変換含む）
+#### 残タスク（2026-08-06投資調査で移行先をLayer3に訂正、下記3項目に更新）
+1. アクセサのラッパー化（Layer3既存`get_field_entries()`を5消費者
+   向けインターフェースへ、新規実装ではない）
+2. `[[SCHEMA-NORMALIZED-ISSUES-1]]`①〜⑥の残り論点のうち、Layer3
+   統一後も有効なもの・無効化されるものの仕分け（Layer3が
+   `normalized/`を代替するため大半は無効化される見込み、要個別確認）
+3. 5本番消費者のnormalized/→Layer3切り替え（フェーズD、優先順位:
+   TANUKI VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→
+   stock.htmlフロントエンド）
 
 BACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
 
