@@ -1085,6 +1085,47 @@ def get_field_entries(store: dict, field_name: str) -> list:
     return store.get("fields", {}).get(field_name, {}).get("entries", [])
 
 
+def get_quarterly_series(store: dict, field_name: str) -> list:
+    """
+    is_annual・is_ytd両方を除外した四半期エントリをend日昇順で返す
+    （reader.py::get_quarterly_series(normalized, field_name)のLayer3版、
+    移行実装計画フェーズD Step1対応）。
+
+    reader.py側は第一引数にnormalize()の戻り値（PascalCaseキー、
+    fields[field_name]がentriesリストそのもの）を取るのに対し、本関数は
+    build_ticker_store()の戻り値（snake_caseキー、fields[field_name]が
+    {source_tag, category, entries}のdict）を取る。entries自体は
+    quarterly.py::_process_entries()を両者が共通で再利用しているため
+    同一shape（end/start/val/accn/fp/fy/form/filed/period_days/is_ytd/
+    is_annual、Layer3側はsource_tagが追加で付与される）。
+
+    呼び出し元がbuild_ticker_store()を1回呼んでstoreを保持し、同一
+    ticker内の複数フィールド参照に使い回す設計を前提とする（第一引数を
+    tickerではなくstore dictにしているのはget_field_entries()の既存
+    シグネチャに揃えたもの。quarterly_review_generator.py等、1銘柄で
+    get_latest_quarterly()を複数フィールド分呼ぶ既存消費者の呼び出し
+    パターンに合わせ、build_ticker_store()の重複呼び出しを避ける）。
+
+    この段階では新規追加のみで、既存normalized/経由の呼び出し
+    （reader.py::get_quarterly_series()）には一切影響しない。
+    """
+    entries = get_field_entries(store, field_name)
+    quarterly = [
+        e for e in entries
+        if not e.get("is_annual") and not e.get("is_ytd")
+    ]
+    return sorted(quarterly, key=lambda x: x["end"])
+
+
+def get_latest_quarterly(store: dict, field_name: str) -> dict | None:
+    """
+    get_quarterly_series()の最新1件（末尾）を返す。空ならNone
+    （reader.py::get_latest_quarterly()のLayer3版、フェーズD Step1対応）。
+    """
+    series = get_quarterly_series(store, field_name)
+    return series[-1] if series else None
+
+
 def save_ticker_store(ticker: str, store: dict) -> str:
     """common/sec_data/store_v2/{TICKER}.json へ保存する（新規パス、既存ファイルは変更しない）。"""
     os.makedirs(STORE_V2_DIR, exist_ok=True)

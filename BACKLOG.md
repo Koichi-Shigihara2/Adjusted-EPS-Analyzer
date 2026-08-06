@@ -10152,11 +10152,29 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 実装完了、詳細はBACKLOG_DONE.md「2026-08-05（完了）」参照）につき
 本リストから除外。Layer3統一方針の確定（2026-08-06投資調査）を受け、
 以下を最優先とする:
-1. `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step1: アクセサのラッパー化
-   （Layer3既存`get_field_entries()`を5消費者向けインターフェースへ）
-2. フェーズD Step2: 5本番消費者を優先順位通りに順次切替（TANUKI
-   VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→stock.html
-   フロントエンド、診断・補助スクリプト7件も対象に含む）
+~~1. `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step1: アクセサのラッパー化~~
+   ✅ 2026-08-06完了（`layer3_builder.py::get_quarterly_series()`/
+   `get_latest_quarterly()`を新設。`get_field_entries()`をそのまま
+   呼ぶ薄いラッパー、シグネチャは`(store, field_name)`で既存
+   `get_field_entries()`に統一。10フィールドのPascalCase→snake_case
+   対応表を確定〈Revenue→revenue・OperatingIncome→operating_income・
+   GrossProfit→gross_profit・RD→research_and_development・
+   NetIncome→net_income・OCF→operating_cash_flow・
+   CapEx→capital_expenditure・SM→selling_and_marketing・
+   SBC→stock_based_compensation・SharesDiluted→shares_diluted〉。
+   `get_lt_debt_from_normalized()`相当のLayer3版は見送り（BUG-
+   NETDEBT-3のdata/annual側フォールバックであり、フェーズD Step2で
+   TANUKI VALUATION本体を切り替える際に改めて要否判断する）。実データ
+   （AAPL/CPRT/PEP/RCAT/CEG）でnormalized/経由の値と突合、AAPLは
+   10/10フィールド完全一致・他4銘柄もselling_and_marketing以外は
+   完全一致（乖離2件はいずれも既知課題`[[SCHEMA-NORMALIZED-ISSUES-1]]`
+   ②・`[[LAYER3-GA-STANDALONE-TAG-UNMAPPED-1]]`由来と特定、新規bugでは
+   ない）。既存消費者は無変更、pytest 505 passed/2 known failed（既知の
+   `[[TEST-STALE-IV-1]]`のみ、新規8件追加分すべてpass）。詳細は
+   BACKLOG_DONE.md参照
+2. **次はフェーズD Step2**: 5本番消費者を優先順位通りに順次切替
+   （TANUKI VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→
+   stock.htmlフロントエンド、診断・補助スクリプト7件も対象に含む）
 3. フェーズD Step3: `normalized/`廃止（フェーズE）
 4. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
 5. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・

@@ -4,6 +4,101 @@
 
 ## 2026-08-06（完了）
 
+### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP1] フェーズD Step1: アクセサのラッパー化（Layer3既存get_field_entries()を5消費者向けに）
+**状態:** Step1（新規アクセサ関数2件の追加）完了。既存消費者の切替
+（フェーズD Step2）は未着手のままBACKLOG.mdに残置
+**優先度:** 高（本線）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**完了日:** 2026-08-06
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step1実装依頼（チャット記録）
+
+#### Step1: 現状の正確な仕様確認
+- `layer3_builder.py::get_field_entries(store, field_name)`の戻り値
+  （entries）は、`quarterly.py::_process_entries()`を`normalizer.py`と
+  共通で再利用しているため、`normalized/`のentries（end/start/val/
+  accn/fp/fy/form/filed/period_days/is_ytd/is_annual）と完全に同一
+  shape。Layer3側は`source_tag`（採用元候補タグ名）が追加で付与される
+  のみで、既存フィルタ・ソートロジックに影響しない
+- シグネチャ設計: `get_field_entries()`の既存シグネチャ
+  `(store: dict, field_name: str)`にラッパーも統一。ticker文字列を
+  受け取って内部で`build_ticker_store()`を呼ぶ設計は採らず、呼び出し
+  元が1回`build_ticker_store(ticker)`を呼んでstoreを保持し複数
+  フィールド参照に使い回す設計とした（`quarterly_review_generator.py`・
+  `tail_dcf_bridge.py`が1銘柄でget_latest_quarterly()を5回呼ぶ既存
+  呼び出しパターンを踏まえ、フェーズD Step2切替時の重複ビルドを避ける
+  ため）
+- 対象10フィールドの対応表を実データで確定（`financial_trend_
+  calculator.py`・`quarterly_review_generator.py`・`tail_dcf_bridge.py`・
+  `hypecore.py`・`reader.py`の全呼び出し箇所をgrepし、実際に使われて
+  いるPascalCase名を洗い出した）:
+  Revenue→revenue・OperatingIncome→operating_income・
+  GrossProfit→gross_profit・RD→research_and_development・
+  NetIncome→net_income・OCF→operating_cash_flow・
+  CapEx→capital_expenditure・SM→selling_and_marketing・
+  SBC→stock_based_compensation・SharesDiluted→shares_diluted。
+  10フィールド全てLayer3の32フィールド定義に既存。ラッパー内での
+  自動変換は行わず、フェーズD Step2切替時に呼び出し元がsnake_case名を
+  直接指定する設計とした（PascalCase→snake_case変換表を別途保守する
+  二重実装を避けるため）
+
+#### Step2: 実装
+`common/sec_data/layer3_builder.py`に新設（既存`get_field_entries()`の
+直後に配置）:
+- `get_quarterly_series(store: dict, field_name: str) -> list`:
+  `get_field_entries()`の戻り値からis_annual・is_ytd両方を除外した
+  四半期エントリをend日昇順で返す（`reader.py::get_quarterly_series()`
+  と同名・同ロジック、モジュールが異なるため衝突しない）
+- `get_latest_quarterly(store: dict, field_name: str) -> dict | None`:
+  上記の最新1件（末尾）を返す
+
+`get_lt_debt_from_normalized()`相当のLayer3版は**見送り**。同関数は
+BUG-NETDEBT-3対応として`annual_{year}.json`側の`long_term_debt`が
+0/欠損の場合にnormalized quarterlyから補完する、5消費者中TANUKI
+VALUATION本体のみが使う狭い用途のフォールバックである。Layer3の
+`long_term_debt`フィールドは存在する（`LongTermDebtNoncurrent`優先の
+候補タグ順、`[[SCHEMA-LTDEBT-DOUBLECOUNT-RISK-1]]`対応済みで
+`data/annual`側と同じ優先順位）ため技術的には実装可能だが、
+`data/annual`側の抽出とLayer3側の抽出が同じ優先順位ロジックを使う
+以上、data/annual側が0/欠損になるケースでLayer3側だけ非ゼロの値を
+返せるかは自明ではなく、フェーズD Step2でTANUKI VALUATION本体自体を
+Layer3に切り替える際に`data/annual`側の`long_term_debt`をLayer3の
+値でどう扱うか（フォールバックではなく主経路として使うか）を含めて
+再設計すべき論点と判断した。
+
+#### Step3: 単体動作確認
+- 新規ユニットテスト`tests/test_layer3_accessor_wrappers.py`（8件）を
+  追加。`get_field_entries`・`get_quarterly_series`・
+  `get_latest_quarterly`の空フィールド・annual/YTD除外・ソート順・
+  Layer3固有キー（source_tag）混在時の非干渉を検証
+- 実データ比較（AAPL・CPRT・PEP・RCAT・CEG、10フィールド×5銘柄＝50件）:
+  `build_ticker_store()`経由のLayer3値と`normalized/`経由の値を
+  `get_latest_quarterly()`で突合。AAPL・RCAT・CEGは10/10フィールド
+  完全一致。CPRT・PEPはselling_and_marketing 1件のみ不一致、原因を
+  特定した結果いずれも既知の未解決課題に起因（新規bugではない）:
+  - PEP: `normalized/`側の`SM`が`_FIELD_FALLBACKS["SM"]`経由で
+    `SellingGeneralAndAdministrativeExpense`（SGA総額）へ黙って
+    フォールバックしている一方、Layer3側は`selling_and_marketing`と
+    `selling_general_and_administrative`を独立フィールドとして分離
+    済みのためNoneのまま（`[[SCHEMA-NORMALIZED-ISSUES-1]]`②SM/SGA
+    概念混同、Layer3側が設計通り正しい）
+  - CPRT: 唯一報告されているタグが`GeneralAndAdministrativeExpense`
+    （Selling抜きG&A単体）で、`normalized/`側は`_FIELD_FALLBACKS`
+    経由でこれも`SM`へ吸収する一方、Layer3の32フィールド定義には
+    このタグの受け皿が存在しない（`[[LAYER3-GA-STANDALONE-TAG-
+    UNMAPPED-1]]`、既知・優先度低〜中で未解決）
+- 既存消費者（5系統）は無変更、呼び出しも一切追加していない
+- pytest全体: 505 passed / 2 known failed（既知の`[[TEST-STALE-IV-1]]`
+  MSFT/NVDAのみ、新規テスト8件を含め新規失敗なし）
+
+#### 残タスク
+フェーズD Step2（5本番消費者を優先順位通りに順次切替。TANUKI
+VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→stock.html
+フロントエンド）はBACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`
+として同一IDで残置。TANUKI VALUATION本体切替時に
+`get_lt_debt_from_normalized()`のLayer3化要否を再検討すること。
+
+---
+
 ### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Layer3統一方針への文書横断整合性確認・修正
 **状態:** 文書間の食い違い（対応方針の記述部分）を解消。BACKLOG.mdの
 本体エントリは「フェーズDの実装」へ統一済みのままアクティブ課題として
