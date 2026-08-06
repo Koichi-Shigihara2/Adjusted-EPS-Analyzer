@@ -1,5 +1,24 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-06（Layer3統一方針への文書横断整合性確認・修正。
+`SEC_EDGAR_LAYER_DESIGN.md`フェーズD（Layer3統合）と
+`[[SECDATA-STORAGE-FRAGMENTATION-1]]`が5消費者の移行先（Layer3 vs
+data/）で1ヶ月弱食い違ったまま併存していた問題を発見し、本エントリの
+対応方針・残タスクをフェーズD方向に統一。分岐の経緯を記録として追記。
+`INPUT_DATA_TOBE.md`2-A章の保持構造案に、実際の統合先が`store_v2/`
+（Layer3）である旨の位置づけ注記を追加。`FIELD_DEFINITIONS.md`に
+TANUKI TAIL側「Layer3」（AI KPI抽出）との用語衝突を記録。以前チャット
+上言及のみで未登録だった`[[PARSER-MERGED-TAG-MIXING-RISK-1]]`
+（`parser.py::_extract_values_merged()`のタグ混入リスク疑い）を正式
+登録（優先度：低）。`CHAT_RULES.md`に再発防止のためのルール3件
+（文書横断整合性チェック・根拠のない懸念提示の禁止・確定済み方針の
+独自変更禁止）を新設。本セッション追加分が旧セッション（2026-08-05）
+の日付表記をそのまま引き継いでいた5箇所を2026-08-06へ訂正。
+`PROJECT_STATUS.md`の残タスク記述も同様にLayer3方向へ修正。「次
+セッションでの着手順序」欄を更新。実装コード変更・データ再生成なし
+（ドキュメントのみ）。機能コミット・BACKLOG更新コミットとも同一
+コミットで実施、push済み。
+
 最終更新: 2026-08-05（新DB構築プロジェクト フェーズ1 Step1、
 `[[SECDATA-STORAGE-FRAGMENTATION-1]]`対応の一環として`data/
 quarterly_{FYQ}.json`のpl/cf/shares区分のYTD→単一四半期(SA)修正を
@@ -10117,6 +10136,36 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
 ② 以下、2026-08-03時点リストから変更なし（上記①〜⑭を参照）:
    [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・[[PARSER-STOCKHOLDERS-EQUITY-
    CROSS-YEAR-MISSELECT-1]]・[[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・
+   [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]・
+   [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]・
+   [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・
+   [[LITE-COGS-DA-TAG-UNMERGED-1]]・[[STONKS-SILO-FP-LABEL-PERIOD-
+   VALIDATION-1]]・[[RCAT-FCF-5YR-AVG-ACTUAL-3YR-1]]・[[HON-GROSSPROFIT-
+   2009-RESIDUAL-DISCREPANCY-1]]・[[ELF-ROE10YR-RECALC-PENDING-1]]・
+   [[REPORT-CONSISTENCY-GROSSPROFIT-COGS-CHECK-MISSING-1]]・
+   [[STONKS-SILO-FETCHER-GROSSPROFIT-BACKFILL-DUP-1]]・[[BS-IDENTITY-
+   LOG-NONDETERMINISTIC-KEY-ORDER-1]]
+
+**次セッションでの着手順序（2026-08-06時点、最終版）**:
+上記①[[SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1]]はStage 2〜3b（Stage
+2・Stage 3準備・Stage 3a・RDW/ASTS BS恒等式修正・Stage 3bまで全て
+実装完了、詳細はBACKLOG_DONE.md「2026-08-05（完了）」参照）につき
+本リストから除外。Layer3統一方針の確定（2026-08-06投資調査）を受け、
+以下を最優先とする:
+1. `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step1: アクセサのラッパー化
+   （Layer3既存`get_field_entries()`を5消費者向けインターフェースへ）
+2. フェーズD Step2: 5本番消費者を優先順位通りに順次切替（TANUKI
+   VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→stock.html
+   フロントエンド、診断・補助スクリプト7件も対象に含む）
+3. フェーズD Step3: `normalized/`廃止（フェーズE）
+4. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
+5. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・
+   [[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]・
+   [[PARSER-MERGED-TAG-MIXING-RISK-1]]
+6. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
+   Stage系を除く未完了分）: [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・
+   [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]・
+   [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・
    [[RCAT-TTM-SERIES-CONTINUING-DISCONTINUED-UNCHECKED-1]]・
    [[OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1]]・
    [[PL-FIELD-CROSS-ACCN-PERIOD-MISMATCH-1]]・

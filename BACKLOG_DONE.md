@@ -2,6 +2,54 @@
 
 ---
 
+## 2026-08-06（完了）
+
+### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Layer3統一方針への文書横断整合性確認・修正
+**状態:** 文書間の食い違い（対応方針の記述部分）を解消。BACKLOG.mdの
+本体エントリは「フェーズDの実装」へ統一済みのままアクティブ課題として
+BACKLOG.mdに同一IDで残置（本エントリは文書整合性確認・修正作業の
+完了記録）
+**優先度:** 中
+**分類:** アーキテクチャ / ドキュメント整合性（新DB構築プロジェクト フェーズ1）
+**完了日:** 2026-08-06
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`との整合性確認調査（チャット記録、
+事前のBACKLOG登録なし・投資調査からその場で発見・修正）
+
+#### 内容
+`SECDATA-STORAGE-FRAGMENTATION-1`（登録日2026-07-23、5消費者の
+移行先を独自に「normalized/→data/統合」と記述）と`SEC_EDGAR_LAYER_
+DESIGN.md`フェーズD（作成日2026-07-24、同じ5消費者をLayer3統合と
+確定済み）が、同一の`INPUT_DATA_AS_IS.md`・`INPUT_DATA_TOBE.md`調査を
+起点に1日違いで分岐したまま、2026-08-02〜03の`[[TTM-DATA-DRIFT-
+BEHIND-PIPELINE-1]]`調査で一度「同一課題」と確認されていたにも関わらず
+クロスリンクされずに1ヶ月弱併存していた問題を投資調査で発見した。
+
+#### 修正内容（5ファイル、コミット`08d56c2a1`）
+- `BACKLOG.md`: `[[SECDATA-STORAGE-FRAGMENTATION-1]]`の対応方針・
+  残タスクをフェーズD（Layer3統合）方向へ統一。2計画併存の経緯を記録。
+  以前チャット上言及のみで未登録だった`[[PARSER-MERGED-TAG-MIXING-
+  RISK-1]]`（`parser.py::_extract_values_merged()`が、Layer3が
+  `[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`で廃棄した危険パターンと
+  同型の構造を持つ疑い）を正式登録（優先度：低）。「次セッションでの
+  着手順序」欄を更新
+- `BACKLOG_DONE.md`: 「2026-08-05（完了）」内`[[SECDATA-STORAGE-
+  FRAGMENTATION-1]]`エントリの残タスク記述2箇所をLayer3方向へ修正
+- `INPUT_DATA_TOBE.md`: 2-A章の保持構造案に、実際の統合先が
+  `store_v2/`（Layer3）である旨の位置づけ注記を追加
+- `FIELD_DEFINITIONS.md`: TANUKI TAIL側「Layer3」（AI KPI抽出、
+  `text_kpi_extractor.py::extract_layer3()`）との用語衝突を記録
+- `CHAT_RULES.md`: 再発防止のためのルール3件を新設（文書横断整合性
+  チェック・根拠のない懸念提示の禁止・確定済み方針の独自変更禁止）
+- `PROJECT_STATUS.md`: common/sec_data統合フェーズ1備考欄の残タスク
+  記述をLayer3方向へ修正
+
+日付表記の誤り（本チャット会話中に追加した記述が、直前のコミット済み
+セッション〈2026-08-05〉の日付表記をそのまま引き継いでいた5箇所）も
+2026-08-06へ訂正した。実装コード変更・データ再生成なし（ドキュメント
+のみ）。
+
+---
+
 ## 2026-08-05（完了）
 
 ### ✅ [SECDATA-STORAGE-FRAGMENTATION-1] Step1（全消費者洗い出し）・raw/削除・quarterly_*.json YTD→SA修正 完了
