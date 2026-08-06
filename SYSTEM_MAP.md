@@ -391,6 +391,18 @@ SEC EDGAR
 │    フェーズD（本体consumer切替、対象優先順位: ①TANUKI VALUATION本体
 │    ②STONKS SILO ③TANUKI TAIL ④HypeCore ⑤stock.html）着手前提条件は
 │    `SEC_EDGAR_LAYER_DESIGN.md`「フェーズD」節・`MIGRATION_CHECKLIST.md`参照。
+│    **追記（フェーズD Step2-1 2026-08-06実装完了）**: ①TANUKI
+│    VALUATION本体（`pipeline.py`）のLayer3切替が完了し、`normalized/`を
+│    直接参照する箇所はゼロになった（希薄化率・TTM信頼性判定・LTDebt
+│    フォールバック・`_estimate_ttm_operating_income()`・
+│    `_calc_moat_inputs()`の6箇所を`layer3_builder.py::get_field_
+│    entries()`経由に統一）。事前に`[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]`
+│    （本節391行目で言及した3スキーマ間乖離）・`[[LAYER3-ANNUAL-
+│    MISCLASSIFICATION-BBAI-1]]`を先行修正済み。残る`normalized/`直接
+│    消費者は②STONKS SILO（`financial_trend_calculator.py`）・③TANUKI
+│    TAIL・④HypeCoreの3系統（次はフェーズD Step2-2、STONKS SILO）。
+│    詳細はBACKLOG_DONE.md「2026-08-06（完了）」
+│    [[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-1]]参照。
 │    **追記（DOCS-SECDATA-NORMALIZED-DIR-STALE-1 2026-07-30実装完了、
 │    コミット5ee157c6b）**: GitHub Pages公開フロントエンド（stock.html）向け
 │    公開コピー`docs/common/sec_data/normalized/`が2026-05-23以降同期

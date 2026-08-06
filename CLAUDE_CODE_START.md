@@ -23,12 +23,16 @@ git pull --rebase origin kaihatsu
   フェーズ1〜3のいずれかが「構築中」以上になっている場合、そのプロジェクトが
   進行中であることを認識した上で作業する。全て「未着手」の場合は
   プロジェクト自体は設計完了・実装未着手の段階であるため、通常の
-  BACKLOG.md起点の作業を優先してよい。2026-07-30時点で`common/sec_data`
+  BACKLOG.md起点の作業を優先してよい。2026-08-06時点で`common/sec_data`
   統合はフェーズ1「構築中」、`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C
-  〈Layer3スキーマ構築・consumer横展開検証〉が完了しフェーズD〈本体
-  consumer切替、対象優先順位確定済み〉着手可能な段階。フェーズD着手前に
-  `SEC_EDGAR_LAYER_DESIGN.md`のフェーズD対象リスト・「3スキーマ併存の
-  実態」を確認する）
+  〈Layer3スキーマ構築・consumer横展開検証〉に続きフェーズD〈本体
+  consumer切替、対象優先順位: ①TANUKI VALUATION本体②STONKS SILO
+  ③TANUKI TAIL④HypeCore⑤stock.html〉のStep2-1（①TANUKI VALUATION本体）
+  まで完了。次はStep2-2（②STONKS SILO、`financial_trend_calculator.py`・
+  `fetcher.py`・`analyzer.py`）。詳細はBACKLOG.md「次セッションでの
+  着手順序」・BACKLOG_DONE.md`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-
+  STEP2-1]]`参照。フェーズD着手時は`SEC_EDGAR_LAYER_DESIGN.md`の
+  フェーズD対象リスト・「3スキーマ併存の実態」を確認する）
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行

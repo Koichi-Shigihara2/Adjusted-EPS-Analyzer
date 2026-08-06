@@ -10210,19 +10210,22 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    4TICKERS-1]]`参照）。pytest 505 passed/2 known failed（既知）、
    report_consistency_check.py NG=0・WARN=78件（既存と不変）。詳細は
    BACKLOG_DONE.md参照
-3. **次はフェーズD Step2-2**: STONKS SILO（financial_trend_
-   calculator.py・fetcher.py・analyzer.py）への切替
-4. フェーズD Step2-3以降: TANUKI TAIL→HypeCore→stock.html
-   フロントエンド、診断・補助スクリプト7件も対象に含む
-5. フェーズD Step3: `normalized/`廃止（フェーズE）
-6. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
-7. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・
+3. **次はフェーズD Step2-2**: STONKS SILO切替
+   （financial_trend_calculator.py・fetcher.py・analyzer.py）
+4. フェーズD Step2-3: TANUKI TAIL切替
+   （quarterly_review_generator.py・tail_dcf_bridge.py）
+5. フェーズD Step2-4: HypeCore切替
+6. フェーズD Step2-5: stock.htmlフロントエンド＋診断・補助スクリプト
+   7件切替
+7. フェーズE: `normalized/`廃止
+8. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
+9. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・
    [[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]・
    [[PARSER-MERGED-TAG-MIXING-RISK-1]]・[[LAYER3-ANNUAL-
    MISCLASSIFICATION-NOW-RMBS-1]]・[[LAYER3-ANNUAL-MISCLASSIFICATION-
    MINOR-5TICKERS-1]]・[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]・
    [[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]
-8. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
+10. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
    Stage系を除く未完了分）: [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・
    [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]・
    [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・
