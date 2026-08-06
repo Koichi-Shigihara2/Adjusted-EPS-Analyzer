@@ -1813,6 +1813,31 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
+### [LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1] BBAIのRevenue/GrossProfitで、_classify_period()のfp=='FY' and days>130判定に中間期のYTD比較開示（is_annual誤分類）4件が該当し、Moat Score計算のrev_annual[-3:]窓を汚染している
+**優先度:** 高（Moat Score計算結果が実際に変わることを確認済み）
+**分類:** バグ / 期間分類ロジックの誤判定
+**登録日:** 2026-08-06
+**発見:** フェーズD Step2-1事前調査（チャット記録、2026-08-06）
+
+#### 内容
+Layer3のBBAI Revenue/GrossProfitに、is_annual=Trueと誤分類された
+4件の中間期エントリ（2023-06-30/09-30、2024-06-30/09-30、
+period_days=180〜273）が混入している。fp='FY'タグ付きの比較開示
+（YTD累計）が`_classify_period()`の`fp=='FY' and days>130`判定
+（`[[XBRL-TAG-KLAC-1]]`対応時に設定）に該当してしまう既知の判定漏れ
+パターンで、SEC EDGARで裏取り確認済み。
+
+pipeline.py用途1・6（`rev_annual[-3:]`）が、本来の
+[2023-12-31, 2024-12-31, 2025-12-31]ではなく
+[2024-09-30（偽）, 2024-12-31, 2025-12-31]を拾ってしまい、
+gross_margin_3yr_avgが変わる。
+
+#### 着手条件
+フェーズD Step2-1（TANUKI VALUATION本体切替）着手前に対応することを
+推奨。`_classify_period()`の`fp=='FY' and days>130`判定基準に、期間の
+連続性・他の同一fyエントリとの重複チェックを追加する等の対応が
+必要と見られる（詳細設計は未実施）。
+
 ### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— Stage 2〜3残タスク
 **優先度:** 高
 **分類:** アーキテクチャ再設計 / 運用方針確定・実装
@@ -6406,6 +6431,89 @@ Layer3が明示的に廃棄した「生エントリを先に混ぜてから変�
 merge_all_tags対象フィールド一覧の洗い出し・実データでの影響有無検証
 から。ただしdata/系統の位置づけがLayer3統一に伴い補助的になったため、
 緊急性は低い。
+
+### [LAYER3-SHARESDILUTED-TAG-GAP-1] Layer3のshares_diluted候補タグが加重平均（PL概念）と期末発行済株式数（BS概念）を混在させており、pipeline.py希薄化率計算の分割検知タイブレークに構造的リスクを持つ
+**優先度:** 低〜中
+**分類:** バグ疑い / 構造的リスク（Layer2スキーマ設計）
+**登録日:** 2026-08-06
+**発見:** フェーズD Step2-1投資調査（TANUKI VALUATION本体の現状使用実態確認、チャット記録）
+
+#### 内容
+`config/sec_concept_definitions.json`のLayer3`shares_diluted`フィールドは
+候補タグを`["WeightedAverageNumberOfDilutedSharesOutstanding",
+"CommonStockSharesOutstanding"]`の2段構成で定義している。これは
+`quarterly.py::FIELD_CONCEPTS["SharesDiluted"]`（normalized/側、
+`WeightedAverageNumberOfDilutedSharesOutstanding`単独タグのみ）とは
+異なるLayer2設計時の新規判断であり、`[[SCHEMA-SHARESBASIC-CONCEPT-
+MISMATCH-1]]`で`shares_basic`について既に実施した「加重平均（PL項目）と
+期末残高（BS項目）の分離」が`shares_diluted`には未適用のまま、両概念が
+同一フィールドに混在している。
+
+Layer3の候補タグごと独立正規化→end_date単位マージという設計
+（`[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`対応）により、
+`WeightedAverageNumberOfDilutedSharesOutstanding`が四半期報告されない
+期間（主にQ4相当）を`CommonStockSharesOutstanding`（期末発行済株式数、
+加重平均とは異なる会計概念）で埋めるため、normalized/には存在しない
+quarterlyエントリがLayer3側にのみ追加される。TANUKI 100銘柄中72銘柄で
+この追加エントリを確認済み（annual側は100銘柄全数で完全一致、影響は
+quarterly側のみ）。
+
+pipeline.pyの希薄化率計算（`financial_health.dilution_3yr_annual_pct`）は
+株式分割の遡及誤検知回避のため`quarters_in_trailing_window()`で四半期
+中央値を算出しYoY比とのタイブレーク判定に使っており、この追加エントリが
+判定用windowに混入する。
+
+**実データ検証結果（2026-08-06、分割検知トリガーが実際に発火する9銘柄中
+7銘柄で実施）**: ALAB, NOW, NVDA, ONDS, AVGO, KULR, LRCXいずれも
+最終出力（`dilution_3yr_annual_pct`・`split_factor`・`is_split`判定）に
+差分は発生しなかった。ただしLRCXは、Layer3が追加した2エントリ
+（`CommonStockSharesOutstanding`由来、133,297,000と136,975,000）が
+既存中央値（136,339,000）を挟んで下側・上側にちょうど1件ずつ配置される
+という**偶然の位置関係**により中央値が完全一致（5件windowのidx2＝3件
+windowのidx1）しただけであり、アルゴリズム上保証された性質ではない。
+KULRは中央値自体が24,312,500→33,083,812（約36%）変動する実例があり、
+`fy_q_ratio`が2.5/0.4の閾値を跨がなかったのはたまたまで、別銘柄・別期の
+データでは判定が変わりうる構造的リスクは残存している。
+
+#### 対応方針（確定）
+**案2を採用**: pipeline.py側の希薄化率計算（`quarters_in_trailing_
+window()`の入力`q_pairs`を構築する箇所）で、`source_tag`が
+`WeightedAverageNumberOfDilutedSharesOutstanding`由来のエントリのみを
+対象とし、`CommonStockSharesOutstanding`由来のフォールバックエントリを
+除外する。影響範囲をpipeline.py内の希薄化率計算に限定し、Layer3
+スキーマ自体（他消費者・他用途が参照する可能性がある`shares_diluted`
+フィールド全体）には触れない。
+
+不採用の案: Layer3の候補タグから`CommonStockSharesOutstanding`を除外する
+案（スキーマ側の根本修正）は、`shares_diluted`を参照する他用途への影響
+範囲の洗い出しが別途必要になるため、今回は見送り。将来的にLayer3の
+`shares_diluted`設計を`shares_basic`同様に概念分離する場合は、本エントリの
+実データ（72銘柄の差分内訳）を参照すること。
+
+#### 着手条件
+なし。フェーズD Step2-1（TANUKI VALUATION本体切替）実装の一部として
+対応可能。
+
+### [LAYER3-SNPS-STALE-TAG-PRIORITY-1] SNPS FY2022のRevenueで、Layer3の候補タグ優先順位が後発の修正再表示（restatement）を拾えず、原本の古い値に固定される構造的リスク
+**優先度:** 低（現時点でMoat Score計算への実害なし、将来的リスクの記録）
+**分類:** 設計上の潜在リスク
+**登録日:** 2026-08-06
+**発見:** フェーズD Step2-1事前調査（チャット記録、2026-08-06）
+
+#### 内容
+SNPS FY2022（2022-10-31）で、原本$5,081,542,000（`Revenues`タグ、
+2022年10-K）が、後に$4,615,714,000へ修正再表示
+（`RevenueFromContractWithCustomerExcludingAssessedTax`タグ、2024年
+10-K）されたが、Layer3の候補優先順位は`Revenues`が固定で先頭のため、
+修正再表示を拾えていない。SEC EDGARで裏取り確認済み。
+
+現時点では`rev_annual[-3:]`の対象外（FY2023/24/25は完全一致）のため
+実害なし。将来的にFY2022が対象窓に入る用途、または他の類似ケース
+（同種のrestatementパターン）で実害化しうる。
+
+#### 着手条件
+なし。実害が発生した時点、または類似ケースの横断調査を行う際に
+再検討する。
 
 ### [DEFICIT-SCORE-CEILING-95-1] STONKS SILO DEFICIT分類、赤字企業の実質上限95点
 **優先度:** 低
