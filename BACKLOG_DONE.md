@@ -4,6 +4,137 @@
 
 ## 2026-08-06（完了）
 
+### ✅ [LAYER3-CONFIG-RD-TAG-PRIORITY-1] config/sec_concept_definitions.json(Layer3)のresearch_and_development候補タグ優先順位が[[JNJ-RD-TAG-PRIORITY-1]]と同一の誤り
+**優先度:** 中
+**分類:** データ品質 / Layer3統合
+**登録日:** 2026-07-30
+**完了日:** 2026-08-06
+**発見:** `[[JNJ-RD-TAG-PRIORITY-1]]`対応中の波及範囲確認
+
+#### 内容
+`[[JNJ-RD-TAG-PRIORITY-1]]`（本ファイル参照）で修正した
+`common/sec_data/tag_definitions.py::TAG_CANDIDATES["RESEARCH_AND_
+DEVELOPMENT"]`の優先順位バグと同一の誤り（`ResearchAndDevelopmentExpense`を
+`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`より優先）が、
+`config/sec_concept_definitions.json`（Layer3、`layer3_builder.py`が参照する
+独立した候補タグリスト）にもそのまま残っていた。
+
+#### 影響
+JNJのように両タグを並存報告する銘柄で、損益計算書本体の主要R&D科目
+（ExcludingAcquiredInProcessCost）ではなく、IPR&D即時費用化等の一時的
+項目（ResearchAndDevelopmentExpense単体）が優先採用され、
+research_and_developmentが実態の約1/30に過小計上される
+（`[[JNJ-RD-TAG-PRIORITY-1]]`と同型の実害）。フェーズD（TANUKI
+VALUATION本体のLayer3切替）着手に伴い顕在化することを見越して先行修正。
+
+#### 対応（実装完了、2026-08-06）
+`config/sec_concept_definitions.json`の`fields.research_and_development.
+candidates`の順序を、`tag_definitions.py`と同様に
+`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`優先へ
+入れ替えた。105銘柄全数の前後差分比較で、影響がJNJの1銘柄のみである
+ことを確認済み（AMD/AVGOにも同型のタグ競合があったが、いずれも6年
+retention窓の外の古いデータのみで実害なし）。pytest 505 passed/2
+known failed（既知）。
+
+---
+
+### ✅ [LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1] BBAIのRevenue/GrossProfitで、_classify_period()のfp=='FY' and days>130判定に中間期のYTD比較開示（is_annual誤分類）4件が該当し、Moat Score計算のrev_annual[-3:]窓を汚染している
+**優先度:** 高（Moat Score計算結果が実際に変わることを確認済み）
+**分類:** バグ / 期間分類ロジックの誤判定
+**登録日:** 2026-08-06
+**完了日:** 2026-08-06
+**発見:** フェーズD Step2-1事前調査（チャット記録、2026-08-06）
+
+#### 内容
+Layer3のBBAI Revenue/GrossProfitに、is_annual=Trueと誤分類された
+4件の中間期エントリ（2023-06-30/09-30、2024-06-30/09-30、
+period_days=180〜273）が混入していた。fp='FY'タグ付きの比較開示
+（YTD累計）が`_classify_period()`の`fp=='FY' and days>130`判定
+（`[[XBRL-TAG-KLAC-1]]`対応時に設定）に該当してしまう既知の判定漏れ
+パターンで、SEC EDGARで裏取り確認済み。
+
+pipeline.py用途1・6（`rev_annual[-3:]`）が、本来の
+[2023-12-31, 2024-12-31, 2025-12-31]ではなく
+[2024-09-30（偽）, 2024-12-31, 2025-12-31]を拾ってしまい、
+gross_margin_3yr_avgが変わっていた。
+
+#### 対応（実装完了、2026-08-06）
+`layer3_builder.py`側の後処理として`_reclassify_misannotated_fy_
+entries()`を新設し対応（BBAI限定、共有関数`_classify_period()`/
+`_process_entries()`自体は変更せずnormalized/への影響を回避）。判定
+基準は「同一accn・同一start日内に複数end日付を持つfp=='FY'・130〜
+300日エントリ」（`accn`のみでのグルーピングは、SPAC合併等の
+predecessor/successor2エンティティの正当なstub決算〈start日が
+異なる〉を誤って巻き込むことをBBAI自身の2020年データで確認したため、
+`start`日を要件に追加）。105銘柄×32フィールド全数の前後差分比較で、
+影響がBBAI（revenue/gross_profit以外にoperating_cash_flow・
+net_income等14フィールドに同型の問題を確認・修正）とJNJ（RD、
+`[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]`、別件）以外に及ばないことを
+確認済み。pytest 505 passed/2 known failed（既知）。
+
+BBAI以外に同型の判定漏れが確認された銘柄は`[[LAYER3-ANNUAL-
+MISCLASSIFICATION-NOW-RMBS-1]]`（NOW・RMBS）・`[[LAYER3-ANNUAL-
+MISCLASSIFICATION-MINOR-5TICKERS-1]]`（ASTS/SPIR/DELL/VRT/META）
+としてBACKLOG.mdに別途記録・保留。
+
+---
+
+### ✅ [LAYER3-SHARESDILUTED-TAG-GAP-1] Layer3のshares_diluted候補タグが加重平均（PL概念）と期末発行済株式数（BS概念）を混在させており、pipeline.py希薄化率計算の分割検知タイブレークに構造的リスクを持つ
+**優先度:** 低〜中
+**分類:** バグ疑い / 構造的リスク（Layer2スキーマ設計）
+**登録日:** 2026-08-06
+**完了日:** 2026-08-06
+**発見:** フェーズD Step2-1投資調査（TANUKI VALUATION本体の現状使用実態確認、チャット記録）
+
+#### 内容
+`config/sec_concept_definitions.json`のLayer3`shares_diluted`フィールドは
+候補タグを`["WeightedAverageNumberOfDilutedSharesOutstanding",
+"CommonStockSharesOutstanding"]`の2段構成で定義している。これは
+`quarterly.py::FIELD_CONCEPTS["SharesDiluted"]`（normalized/側、
+`WeightedAverageNumberOfDilutedSharesOutstanding`単独タグのみ）とは
+異なるLayer2設計時の新規判断であり、`[[SCHEMA-SHARESBASIC-CONCEPT-
+MISMATCH-1]]`で`shares_basic`について既に実施した「加重平均（PL項目）と
+期末残高（BS項目）の分離」が`shares_diluted`には未適用のまま、両概念が
+同一フィールドに混在していた。
+
+Layer3の候補タグごと独立正規化→end_date単位マージという設計
+（`[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`対応）により、
+`WeightedAverageNumberOfDilutedSharesOutstanding`が四半期報告されない
+期間（主にQ4相当）を`CommonStockSharesOutstanding`（期末発行済株式数、
+加重平均とは異なる会計概念）で埋めるため、normalized/には存在しない
+quarterlyエントリがLayer3側にのみ追加される。TANUKI 100銘柄中72銘柄で
+この追加エントリを確認済み（annual側は100銘柄全数で完全一致、影響は
+quarterly側のみ）。
+
+**実データ検証結果（2026-08-06、分割検知トリガーが実際に発火する9銘柄中
+7銘柄で実施）**: ALAB, NOW, NVDA, ONDS, AVGO, KULR, LRCXいずれも
+最終出力（`dilution_3yr_annual_pct`・`split_factor`・`is_split`判定）に
+差分は発生しなかった。ただしLRCXは、Layer3が追加した2エントリ
+（`CommonStockSharesOutstanding`由来、133,297,000と136,975,000）が
+既存中央値（136,339,000）を挟んで下側・上側にちょうど1件ずつ配置される
+という**偶然の位置関係**により中央値が完全一致（5件windowのidx2＝3件
+windowのidx1）しただけであり、アルゴリズム上保証された性質ではない。
+KULRは中央値自体が24,312,500→33,083,812（約36%）変動する実例があり、
+`fy_q_ratio`が2.5/0.4の閾値を跨がなかったのはたまたまで、別銘柄・別期の
+データでは判定が変わりうる構造的リスクは残存していた。
+
+#### 対応（実装完了、2026-08-06）
+**案2を採用**: pipeline.py側の希薄化率計算（`quarters_in_trailing_
+window()`の入力`q_pairs`を構築する箇所）で、`source_tag`が
+`WeightedAverageNumberOfDilutedSharesOutstanding`由来のエントリのみを
+対象とし、`CommonStockSharesOutstanding`由来のフォールバックエントリを
+除外するフィルタを実装した。影響範囲をpipeline.py内の希薄化率計算に
+限定し、Layer3スキーマ自体（他消費者・他用途が参照する可能性がある
+`shares_diluted`フィールド全体）には触れていない。
+
+不採用の案: Layer3の候補タグから`CommonStockSharesOutstanding`を除外する
+案（スキーマ側の根本修正）は、`shares_diluted`を参照する他用途への影響
+範囲の洗い出しが別途必要になるため見送り。将来的にLayer3の
+`shares_diluted`設計を`shares_basic`同様に概念分離する場合は、本エントリの
+実データ（72銘柄の差分内訳）を参照すること。
+
+---
+
 ### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP1] フェーズD Step1: アクセサのラッパー化（Layer3既存get_field_entries()を5消費者向けに）
 **状態:** Step1（新規アクセサ関数2件の追加）完了。既存消費者の切替
 （フェーズD Step2）は未着手のままBACKLOG.mdに残置
@@ -96,6 +227,73 @@ VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→stock.html
 フロントエンド）はBACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`
 として同一IDで残置。TANUKI VALUATION本体切替時に
 `get_lt_debt_from_normalized()`のLayer3化要否を再検討すること。
+
+---
+
+### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-1] フェーズD Step2-1: TANUKI VALUATION本体切替（reader.py・pipeline.py）
+**状態:** pipeline.py 6箇所の切替完了。次はフェーズD Step2-2
+（STONKS SILO）
+**優先度:** 高（本線）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**完了日:** 2026-08-06
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step2-1実装依頼（チャット記録）
+
+#### 事前バグ修正
+`[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]`（JNJ RDタグ優先順位）・
+`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`（BBAI is_annual誤分類）を
+本切替の前提条件として先行修正（本ファイル該当エントリ参照）。
+
+#### 実装内容
+`pipeline.py`の6箇所を`layer3_builder.py::get_field_entries()`経由に
+切替（normalized/への直接アクセスを全廃）:
+1. 希薄化率計算（SharesDiluted）: quarterly側は`[[LAYER3-
+   SHARESDILUTED-TAG-GAP-1]]`案2どおりsource_tagフィルタを適用
+2. TTM信頼性判定（NetIncome）: フィルタは既存動作維持（is_annualのみ
+   除外、is_ytd除外は本切替のスコープ外・別途判断）
+3・4. LTDebtフォールバック（`_calc_g_fundamental()`・
+   `_calc_roic_wacc_ratio()`、共通メソッド）: `_get_normalized_lt_debt()`
+   を`_get_lt_debt_fallback()`に改名し、新設`get_long_term_debt_
+   latest()`（Layer3優先、normalized/へのフォールバックなし。
+   RCAT/SPIR/CPRTのSEC EDGAR照合結果に基づく設計）に切替
+5. `_estimate_ttm_operating_income()`（GrossProfit・RD・SM）
+6. `_calc_moat_inputs()`（GrossProfit・Revenue）
+
+`__init__`にticker単位のLayer3ストアキャッシュ
+（`_layer3_store_cache`）を追加し、同一tickerでの
+`company_facts.json`重複パースを回避。
+
+#### 全数回帰結果（100銘柄、実際に発火するゲート条件を踏まえた検証）
+- `_calc_g_fundamental`（G）: 0/100差分
+- `dilution_3yr_annual_pct`・`split_factor`・`is_split`: 0/100差分
+  （分割検知トリガー発火9銘柄の実アルゴリズムシミュレーションで確認、
+  `[[LAYER3-SHARESDILUTED-TAG-GAP-1]]`参照）
+- TTM信頼性判定（dupont.reliability）: 0/100差分（NetIncome四半期差分
+  5銘柄はいずれも`quarters_used==4`のゲート条件自体を満たさず無関係）
+- `moat_gross_margin_3yr`: 7/100差分、全て`[[LAYER3-GROSSPROFIT-
+  BACKFILL-MISSING-1]]`等の既知理由でLayer3側がより正確（改善）
+- `roic_wacc_ratio`・`moat_roic`: 4/100差分（COHR/LLY/JNJ/KLAC、値→
+  Noneに変化）。原因はLayer3の`selling_and_marketing`が正しく空判定
+  される（`_estimate_ttm_operating_income()`のGrossProfit-RD-SM
+  intersectionが0件）ことによる既知のSM/SGA概念混同問題の帰結。
+  ユーザー判断により選択肢1（現状維持、Noneのまま受け入れる）を採用。
+  詳細は`[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`参照
+
+検証当初、フォールバック関数を無条件に呼び出す方法で59銘柄もの
+差分を検出したが、これは`bs.get("long_term_debt") or fallback(...)`
+の短絡評価を無視した誤った検証方法だったため、実際に呼ばれる
+高レベルメソッドを直接比較する方式に訂正して再検証した。
+
+#### テスト結果
+pytest 505 passed/2 known failed（既知の`[[TEST-STALE-IV-1]]`のみ）。
+実装直後に新規失敗1件（`TestDuPontReliabilityLowFlag`、テスト側が
+normalized/フィクスチャに依存していたため）を発見し、
+`build_ticker_store()`をpatchする方式に修正して解消。
+`report_consistency_check.py --fail-on-ng`: NG=0・WARN=78件（既存と
+不変）。
+
+#### 残タスク
+フェーズD Step2-2（STONKS SILO）以降はBACKLOG.mdに
+`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
 
 ---
 

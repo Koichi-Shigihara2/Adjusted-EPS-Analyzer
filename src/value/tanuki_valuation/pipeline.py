@@ -34,6 +34,11 @@ _REPO_ROOT_FOR_IMPORT = os.path.dirname(os.path.dirname(os.path.dirname(_SCRIPT_
 if _REPO_ROOT_FOR_IMPORT not in sys.path:
     sys.path.insert(0, _REPO_ROOT_FOR_IMPORT)
 from common.sec_data.contracts import Classification  # GATE2-PHASE3B-1③-b
+from common.sec_data.layer3_builder import (  # フェーズD Step2-1
+    build_ticker_store,
+    get_field_entries,
+    get_long_term_debt_latest,
+)
 
 # FCF-CONVRATE②（TRUST-SUMMARY-EPIC-1）: FCF実力推定の業種平均固定転換率
 # （fcf_conversion_config.json の sector_conversion_rates）が、業界サイクルにより
@@ -167,6 +172,21 @@ class TanukiValuationPipeline:
         
         os.makedirs(self.output_dir, exist_ok=True)
         print(f"   出力先: {self.output_dir}")
+
+        # フェーズD Step2-1: Layer3ストアのticker単位キャッシュ。
+        # 希薄化率・TTM信頼性判定・LTDebtフォールバック（2箇所）・
+        # _estimate_ttm_operating_income()・_calc_moat_inputs()の
+        # 6箇所が同一tickerでbuild_ticker_store()を呼ぶため、
+        # company_facts.jsonの重複パースを避けるためインスタンス単位で
+        # キャッシュする。
+        self._layer3_store_cache: dict = {}
+
+    def _get_layer3_store(self, ticker: str):
+        """build_ticker_store()の結果をticker単位でキャッシュして返す（フェーズD Step2-1）。"""
+        ticker = ticker.upper()
+        if ticker not in self._layer3_store_cache:
+            self._layer3_store_cache[ticker] = build_ticker_store(ticker)
+        return self._layer3_store_cache[ticker]
 
     def run(self, tickers: Optional[List[str]] = None) -> dict:
         print("=" * 60)
@@ -2419,15 +2439,12 @@ class TanukiValuationPipeline:
                 if _monthly_burn > 0:
                     result["computed_runway_months"] = cash / _monthly_burn
 
-        # 希薄化率: 株式分割調整済みのnormalized JSONのSharesDiluted年次データを使用
-        norm_path = os.path.join(
-            self.repo_root, "common", "sec_data", "normalized", f"{ticker}_quarterly_normalized.json"
-        )
-        if os.path.exists(norm_path):
+        # 希薄化率: 株式分割調整済みのLayer3 shares_diluted年次データを使用
+        # （フェーズD Step2-1、normalized/からLayer3へ切替）
+        _layer3_store_dil = self._get_layer3_store(ticker)
+        if _layer3_store_dil is not None:
             try:
-                with open(norm_path, encoding="utf-8") as f:
-                    norm = json.load(f)
-                shares_series = norm.get("fields", {}).get("SharesDiluted", [])
+                shares_series = get_field_entries(_layer3_store_dil, "shares_diluted")
                 annual_shares = sorted(
                     [e for e in shares_series if e.get("is_annual") and e.get("fp") == "FY" and e.get("val")],
                     key=lambda e: e.get("end", "")
@@ -2452,9 +2469,16 @@ class TanukiValuationPipeline:
                     # 分割後ベースに遡及修正され、別四半期は未修正のまま残っていた。
                     # 暦年グルーピングだと同一暦年内に「修正済み・未修正」の四半期が
                     # 混在し、中央値が偶然「分割後基準」に一致して分割を見逃していた。
+                    # [[LAYER3-SHARESDILUTED-TAG-GAP-1]]案2対応: Layer3の
+                    # shares_dilutedはCommonStockSharesOutstanding
+                    # （期末発行済株式数、BS概念）をフォールバックタグとして
+                    # 含むため、加重平均（PL概念）でないエントリが混入する。
+                    # 分割検知の中央値計算をWeightedAverageNumberOf
+                    # DilutedSharesOutstanding由来のみに絞り、概念混在を防ぐ。
                     q_entries_all = [
                         e for e in shares_series
                         if not e.get("is_annual") and e.get("val") and e.get("end")
+                        and e.get("source_tag") == "WeightedAverageNumberOfDilutedSharesOutstanding"
                     ]
 
                     raw_vals = [e["val"] for e in annual_shares]
@@ -2588,20 +2612,19 @@ class TanukiValuationPipeline:
 
                 # ROE-DUPONT-1: 単四半期NI集中チェック（一過性要因の検出・DCF_Reliability=LOWと同形式）
                 # TTM4四半期のうち最大1Qのnet_incomeがTTM合計の60%超を占める場合は信頼性LOWとする
-                # 分母は normalized JSON から再構成した直近4四半期合計を使う（ttm_calculator側の
+                # 分母は Layer3 store から再構成した直近4四半期合計を使う（ttm_calculator側の
                 # implied-Q4二重計上の影響を受けないよう、TTM seriesのni_ttmは分母に使わない）
                 try:
                     _ni_q_count_du = _flow_du.get("NetIncome", {}).get("quarters_used")
                     if _ni_q_count_du == 4 and _ttm_entry_du is not None:
-                        _norm_path_du = os.path.join(
-                            self.repo_root, "common", "sec_data", "normalized",
-                            f"{ticker.upper()}_quarterly_normalized.json"
-                        )
-                        if os.path.exists(_norm_path_du):
-                            with open(_norm_path_du, encoding="utf-8") as _nf_du:
-                                _norm_du = json.load(_nf_du)
+                        # フェーズD Step2-1: normalized/からLayer3へ切替。
+                        # フィルタは既存動作を維持（is_annualのみ除外、
+                        # is_ytdは除外しない。is_ytdフィルタの扱いは
+                        # 本切替のスコープ外、別途判断）。
+                        _layer3_store_du = self._get_layer3_store(ticker)
+                        if _layer3_store_du is not None:
                             _ni_by_end_du: dict = {}
-                            for e in _norm_du.get("fields", {}).get("NetIncome", []):
+                            for e in get_field_entries(_layer3_store_du, "net_income"):
                                 if (
                                     not e.get("is_annual")
                                     and e.get("val") is not None
@@ -2760,11 +2783,20 @@ class TanukiValuationPipeline:
                 pass
         return revs
 
-    def _get_normalized_lt_debt(self, ticker: str) -> float:
-        """annual JSONでlong_term_debtが欠落した場合の補完値を取得。SECReaderに委譲（BUG-NETDEBT-3共通化）"""
-        if self.fetcher and self.fetcher.sec_reader:
-            return self.fetcher.sec_reader.get_lt_debt_from_normalized(ticker)
-        return 0
+    def _get_lt_debt_fallback(self, ticker: str) -> float:
+        """annual JSONでlong_term_debtが欠落した場合の補完値を取得（BUG-NETDEBT-3共通化）。
+
+        フェーズD Step2-1: normalized/経由（SECReader.get_lt_debt_from_
+        normalized()）からLayer3経由（get_long_term_debt_latest()）へ
+        切替。normalized/へのフォールバックは行わない（2026-08-06の
+        SEC EDGAR照合で、両者が食い違う3銘柄〈RCAT/SPIR/CPRT〉全てで
+        Layer3側がより正確・現行と確認済み。詳細は
+        get_long_term_debt_latest()のdocstring参照）。
+        """
+        store = self._get_layer3_store(ticker)
+        if store is None:
+            return 0.0
+        return get_long_term_debt_latest(store)
 
     def _calc_g_fundamental(self, ticker: str) -> float | None:
         """最新年次データから RR×ROIC ファンダメンタル成長率を計算"""
@@ -2801,7 +2833,7 @@ class TanukiValuationPipeline:
                 operating_income=pl.get("operating_income") or 0,
                 tax_rate=0.21,
                 total_equity=_equity_se or _equity_te or 0,
-                total_debt=(bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)) + (bs.get("short_term_debt") or 0),
+                total_debt=(bs.get("long_term_debt") or self._get_lt_debt_fallback(ticker)) + (bs.get("short_term_debt") or 0),
                 cash=_cash_raw,
                 capex=abs(cf.get("capital_expenditure") or cf.get("capital_expenditures") or 0),
                 depreciation=cf.get("depreciation_and_amortization") or cf.get("depreciation_amortization") or 0,
@@ -2905,7 +2937,7 @@ class TanukiValuationPipeline:
             if _cash_raw is None:
                 return None
             equity = _equity_se or _equity_te or 0
-            lt_debt = bs.get("long_term_debt") or self._get_normalized_lt_debt(ticker)
+            lt_debt = bs.get("long_term_debt") or self._get_lt_debt_fallback(ticker)
             st_debt = bs.get("short_term_debt") or 0
             cash = _cash_raw
             invested_capital = equity + lt_debt + st_debt - cash
@@ -2921,8 +2953,9 @@ class TanukiValuationPipeline:
     def _estimate_ttm_operating_income(self, ticker: str) -> float | None:
         """OperatingIncomeLossタグが欠落している銘柄向けTTM営業利益フォールバック
 
-        normalized quarterly JSON の直近4四半期分 GrossProfit - RD - SM を合算する
-        （XBRL-TAG-KLAC-1）。GrossProfit/RD/SMの3フィールドを独立に「直近4件」
+        Layer3 storeの直近4四半期分 GrossProfit - RD - SM を合算する
+        （XBRL-TAG-KLAC-1、フェーズD Step2-1でnormalized/からLayer3へ
+        切替）。GrossProfit/RD/SMの3フィールドを独立に「直近4件」
         取得すると、いずれかのフィールドのタグ報告が停止・欠落している場合に
         期末日が食い違い、存在しないデータをdict.get(end, 0)で暗黙的に0円
         扱いしてしまう（LLY: RDが2022-2023年で停止したままGP/SMは2025-2026年
@@ -2930,25 +2963,21 @@ class TanukiValuationPipeline:
         で停止しRD/SMは2025-2026年分のためGPが実質0扱いになる、という2種類の
         不具合が確認された）。3フィールド共通の期末日（intersection）でのみ
         合算し、共通期末日が4件未満の場合はフォールバック不可としてNoneを返す。
+
+        フィルタは既存動作を維持（is_annualのみ除外、is_ytdは除外しない。
+        is_ytdフィルタの扱いは本切替のスコープ外、別途判断）。
         """
-        norm_path = os.path.join(
-            self.repo_root, "common", "sec_data", "normalized",
-            f"{ticker}_quarterly_normalized.json"
-        )
-        if not os.path.exists(norm_path):
+        store = self._get_layer3_store(ticker)
+        if store is None:
             return None
         try:
-            with open(norm_path, encoding="utf-8") as f:
-                norm_data = json.load(f)
-            fields = norm_data.get("fields", {})
-
             def _by_end(field_name: str) -> dict:
-                q = (x for x in fields.get(field_name, []) if not x.get("is_annual"))
+                q = (x for x in get_field_entries(store, field_name) if not x.get("is_annual"))
                 return {x["end"]: x["val"] for x in q}
 
-            gp = _by_end("GrossProfit")
-            rd = _by_end("RD")
-            sm = _by_end("SM")
+            gp = _by_end("gross_profit")
+            rd = _by_end("research_and_development")
+            sm = _by_end("selling_and_marketing")
             common_ends = sorted(set(gp) & set(rd) & set(sm))[-4:]
             if len(common_ends) < 4:
                 return None
@@ -2959,7 +2988,7 @@ class TanukiValuationPipeline:
     def _calc_moat_inputs(self, ticker: str, roic: float | None = None) -> dict:
         """Moat Score計算用インプット（gross_margin_3yr_avg, roic, fcf_margin_3yr_avg）を返す
 
-        gross_margin_3yr_avg: normalized JSON の GrossProfit / Revenue 3年平均
+        gross_margin_3yr_avg: Layer3 store の GrossProfit / Revenue 3年平均（フェーズD Step2-1）
         roic:                 呼び出し元から渡された ROIC値（ROIC = roic_wacc_ratio × Rm）
         fcf_margin_3yr_avg:   annual SEC の free_cash_flow / revenue 3年平均
         """
@@ -2968,18 +2997,13 @@ class TanukiValuationPipeline:
         if roic is not None:
             result["moat_roic"] = roic
 
-        # gross_margin_3yr_avg: normalized quarterly JSON から年次GrossProfit/Revenue
-        norm_path = os.path.join(
-            self.repo_root, "common", "sec_data", "normalized",
-            f"{ticker}_quarterly_normalized.json"
-        )
-        if os.path.exists(norm_path):
+        # gross_margin_3yr_avg: Layer3 storeから年次GrossProfit/Revenue
+        # （フェーズD Step2-1、normalized/からLayer3へ切替）
+        _layer3_store_moat = self._get_layer3_store(ticker)
+        if _layer3_store_moat is not None:
             try:
-                with open(norm_path, encoding="utf-8") as f:
-                    norm_data = json.load(f)
-                fields = norm_data.get("fields", {})
-                gp_annual  = [x for x in fields.get("GrossProfit", []) if x.get("is_annual")]
-                rev_annual = [x for x in fields.get("Revenue", [])      if x.get("is_annual")]
+                gp_annual  = [x for x in get_field_entries(_layer3_store_moat, "gross_profit") if x.get("is_annual")]
+                rev_annual = [x for x in get_field_entries(_layer3_store_moat, "revenue")      if x.get("is_annual")]
                 # end日付でマッチング（位置zipは年ズレを起こす。XBRL-TAG-KLAC-1で発見）
                 gp_by_end = {x["end"]: x["val"] for x in gp_annual}
                 pairs = [
@@ -2999,12 +3023,12 @@ class TanukiValuationPipeline:
                     #  タグの報告が途中で停止した銘柄）も同様にフォールバックする。
                     #  直近12四半期（≒3年）を合算した粗利率で代替する）
                     gp_q  = sorted(
-                        (x for x in fields.get("GrossProfit", []) if not x.get("is_annual")),
+                        (x for x in get_field_entries(_layer3_store_moat, "gross_profit") if not x.get("is_annual")),
                         key=lambda x: x["end"],
                     )[-12:]
                     rev_by_end_q = {
                         x["end"]: x["val"]
-                        for x in fields.get("Revenue", [])
+                        for x in get_field_entries(_layer3_store_moat, "revenue")
                         if not x.get("is_annual")
                     }
                     gp_sum = sum(x["val"] for x in gp_q if x["end"] in rev_by_end_q)

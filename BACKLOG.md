@@ -1813,30 +1813,33 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 
 ## 優先度：高（早急に対応）
 
-### [LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1] BBAIのRevenue/GrossProfitで、_classify_period()のfp=='FY' and days>130判定に中間期のYTD比較開示（is_annual誤分類）4件が該当し、Moat Score計算のrev_annual[-3:]窓を汚染している
-**優先度:** 高（Moat Score計算結果が実際に変わることを確認済み）
-**分類:** バグ / 期間分類ロジックの誤判定
+### [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] _classify_period()のfp=='FY' and days>130判定漏れが、BBAI以外にNOW（41件）・RMBS（16件）でも広範に該当
+**優先度:** 中（`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同型だが、NOW/RMBSでの実害〈Moat Score等への影響〉は未確認）
+**分類:** バグ疑い / 期間分類ロジックの誤判定
 **登録日:** 2026-08-06
-**発見:** フェーズD Step2-1事前調査（チャット記録、2026-08-06）
+**発見:** `[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`対応時の全銘柄横断スキャン（チャット記録、2026-08-06）
 
 #### 内容
-Layer3のBBAI Revenue/GrossProfitに、is_annual=Trueと誤分類された
-4件の中間期エントリ（2023-06-30/09-30、2024-06-30/09-30、
-period_days=180〜273）が混入している。fp='FY'タグ付きの比較開示
-（YTD累計）が`_classify_period()`の`fp=='FY' and days>130`判定
-（`[[XBRL-TAG-KLAC-1]]`対応時に設定）に該当してしまう既知の判定漏れ
-パターンで、SEC EDGARで裏取り確認済み。
-
-pipeline.py用途1・6（`rev_annual[-3:]`）が、本来の
-[2023-12-31, 2024-12-31, 2025-12-31]ではなく
-[2024-09-30（偽）, 2024-12-31, 2025-12-31]を拾ってしまい、
-gross_margin_3yr_avgが変わる。
+BBAI修正時に採用した「同一accn・同一start日内に複数end日付を持つ
+fp=='FY'エントリを除外」方式が同様に適用できるか、NOW・RMBSの
+実データで確認した上で、pipeline.py計算への実害有無を検証する必要が
+ある。
 
 #### 着手条件
-フェーズD Step2-1（TANUKI VALUATION本体切替）着手前に対応することを
-推奨。`_classify_period()`の`fp=='FY' and days>130`判定基準に、期間の
-連続性・他の同一fyエントリとの重複チェックを追加する等の対応が
-必要と見られる（詳細設計は未実施）。
+BBAI修正の本番適用後、実害調査から着手。
+
+### [LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1] ASTS/SPIR/DELL/VRT/METAで同型の判定漏れが1〜3件ずつ孤立的に該当
+**優先度:** 低
+**分類:** バグ疑い / 期間分類ロジックの誤判定（軽微）
+**登録日:** 2026-08-06
+**発見:** `[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`対応時の全銘柄横断スキャン（チャット記録、2026-08-06）
+
+#### 内容
+該当件数が少なく特定のconcept・accnに限定されるため、実害有無の
+確認を含め優先度を下げる。
+
+#### 着手条件
+なし。
 
 ### [SEC-DATA-REDESIGN-OPERATIONAL-POLICY-1] common/sec_data再設計の運用方針確定（フィックス機構・銘柄数絞り込み・新規登録フロー）— Stage 2〜3残タスク
 **優先度:** 高
@@ -6432,68 +6435,6 @@ merge_all_tags対象フィールド一覧の洗い出し・実データでの影
 から。ただしdata/系統の位置づけがLayer3統一に伴い補助的になったため、
 緊急性は低い。
 
-### [LAYER3-SHARESDILUTED-TAG-GAP-1] Layer3のshares_diluted候補タグが加重平均（PL概念）と期末発行済株式数（BS概念）を混在させており、pipeline.py希薄化率計算の分割検知タイブレークに構造的リスクを持つ
-**優先度:** 低〜中
-**分類:** バグ疑い / 構造的リスク（Layer2スキーマ設計）
-**登録日:** 2026-08-06
-**発見:** フェーズD Step2-1投資調査（TANUKI VALUATION本体の現状使用実態確認、チャット記録）
-
-#### 内容
-`config/sec_concept_definitions.json`のLayer3`shares_diluted`フィールドは
-候補タグを`["WeightedAverageNumberOfDilutedSharesOutstanding",
-"CommonStockSharesOutstanding"]`の2段構成で定義している。これは
-`quarterly.py::FIELD_CONCEPTS["SharesDiluted"]`（normalized/側、
-`WeightedAverageNumberOfDilutedSharesOutstanding`単独タグのみ）とは
-異なるLayer2設計時の新規判断であり、`[[SCHEMA-SHARESBASIC-CONCEPT-
-MISMATCH-1]]`で`shares_basic`について既に実施した「加重平均（PL項目）と
-期末残高（BS項目）の分離」が`shares_diluted`には未適用のまま、両概念が
-同一フィールドに混在している。
-
-Layer3の候補タグごと独立正規化→end_date単位マージという設計
-（`[[LAYER3-FALLBACK-STALE-TAG-PRIORITY-1]]`対応）により、
-`WeightedAverageNumberOfDilutedSharesOutstanding`が四半期報告されない
-期間（主にQ4相当）を`CommonStockSharesOutstanding`（期末発行済株式数、
-加重平均とは異なる会計概念）で埋めるため、normalized/には存在しない
-quarterlyエントリがLayer3側にのみ追加される。TANUKI 100銘柄中72銘柄で
-この追加エントリを確認済み（annual側は100銘柄全数で完全一致、影響は
-quarterly側のみ）。
-
-pipeline.pyの希薄化率計算（`financial_health.dilution_3yr_annual_pct`）は
-株式分割の遡及誤検知回避のため`quarters_in_trailing_window()`で四半期
-中央値を算出しYoY比とのタイブレーク判定に使っており、この追加エントリが
-判定用windowに混入する。
-
-**実データ検証結果（2026-08-06、分割検知トリガーが実際に発火する9銘柄中
-7銘柄で実施）**: ALAB, NOW, NVDA, ONDS, AVGO, KULR, LRCXいずれも
-最終出力（`dilution_3yr_annual_pct`・`split_factor`・`is_split`判定）に
-差分は発生しなかった。ただしLRCXは、Layer3が追加した2エントリ
-（`CommonStockSharesOutstanding`由来、133,297,000と136,975,000）が
-既存中央値（136,339,000）を挟んで下側・上側にちょうど1件ずつ配置される
-という**偶然の位置関係**により中央値が完全一致（5件windowのidx2＝3件
-windowのidx1）しただけであり、アルゴリズム上保証された性質ではない。
-KULRは中央値自体が24,312,500→33,083,812（約36%）変動する実例があり、
-`fy_q_ratio`が2.5/0.4の閾値を跨がなかったのはたまたまで、別銘柄・別期の
-データでは判定が変わりうる構造的リスクは残存している。
-
-#### 対応方針（確定）
-**案2を採用**: pipeline.py側の希薄化率計算（`quarters_in_trailing_
-window()`の入力`q_pairs`を構築する箇所）で、`source_tag`が
-`WeightedAverageNumberOfDilutedSharesOutstanding`由来のエントリのみを
-対象とし、`CommonStockSharesOutstanding`由来のフォールバックエントリを
-除外する。影響範囲をpipeline.py内の希薄化率計算に限定し、Layer3
-スキーマ自体（他消費者・他用途が参照する可能性がある`shares_diluted`
-フィールド全体）には触れない。
-
-不採用の案: Layer3の候補タグから`CommonStockSharesOutstanding`を除外する
-案（スキーマ側の根本修正）は、`shares_diluted`を参照する他用途への影響
-範囲の洗い出しが別途必要になるため、今回は見送り。将来的にLayer3の
-`shares_diluted`設計を`shares_basic`同様に概念分離する場合は、本エントリの
-実データ（72銘柄の差分内訳）を参照すること。
-
-#### 着手条件
-なし。フェーズD Step2-1（TANUKI VALUATION本体切替）実装の一部として
-対応可能。
-
 ### [LAYER3-SNPS-STALE-TAG-PRIORITY-1] SNPS FY2022のRevenueで、Layer3の候補タグ優先順位が後発の修正再表示（restatement）を拾えず、原本の古い値に固定される構造的リスク
 **優先度:** 低（現時点でMoat Score計算への実害なし、将来的リスクの記録）
 **分類:** 設計上の潜在リスク
@@ -6514,6 +6455,23 @@ SNPS FY2022（2022-10-31）で、原本$5,081,542,000（`Revenues`タグ、
 #### 着手条件
 なし。実害が発生した時点、または類似ケースの横断調査を行う際に
 再検討する。
+
+### [LAYER3-ROIC-WACC-NONE-4TICKERS-1] COHR/LLY/JNJ/KLACのROIC-WACC比率・Moat ROICが、Layer3切替に伴いNone表示になった
+**優先度:** 低（意図的な仕様、既知のSM/SGA概念混同問題の帰結）
+**分類:** 仕様変更（改善）/ ユーザー影響あり
+**登録日:** 2026-08-06
+**発見:** フェーズD Step2-1実装時（チャット記録、2026-08-06）
+
+#### 内容
+normalized/時代は間違った値（SGA総額を誤混入）でROIC-WACC比率を
+計算していたが、Layer3切替後はselling_and_marketingが正しく分離
+されたため、3フィールド共通end日のintersectionが0件となりNoneを
+返すようになった。`[[SCHEMA-NORMALIZED-ISSUES-1]]`②SM/SGA概念混同
+問題の根本解消（別タスク）まで、この4銘柄はROIC-WACC比率非表示の
+まま。
+
+#### 着手条件
+SM/SGA概念混同問題の解消時に再検討。
 
 ### [DEFICIT-SCORE-CEILING-95-1] STONKS SILO DEFICIT分類、赤字企業の実質上限95点
 **優先度:** 低
@@ -7910,47 +7868,6 @@ ROEフォールバック不可を許容する明示的な設計判断が必要�
 
 #### 着手条件
 なし
-
----
-
-### [LAYER3-CONFIG-RD-TAG-PRIORITY-1] config/sec_concept_definitions.json(Layer3)のresearch_and_development候補タグ優先順位が[[JNJ-RD-TAG-PRIORITY-1]]と同一の誤り
-**優先度:** 中
-**分類:** データ品質 / Layer3統合
-**登録日:** 2026-07-30
-**発見:** [[JNJ-RD-TAG-PRIORITY-1]]対応中の波及範囲確認
-
-#### 内容
-`[[JNJ-RD-TAG-PRIORITY-1]]`（BACKLOG_DONE.md参照）で修正した
-`common/sec_data/tag_definitions.py::TAG_CANDIDATES["RESEARCH_AND_
-DEVELOPMENT"]`の優先順位バグと同一の誤り（`ResearchAndDevelopmentExpense`を
-`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`より優先）が、
-`config/sec_concept_definitions.json`（Layer3、`layer3_builder.py`が参照する
-独立した候補タグリスト）にもそのまま残っている。
-
-`data_fetcher.py::build_rice_annual_shape()`が参照するTTM系列
-（`TTMReader` → `ttm_calculator.py` → `layer3_builder.py` →
-本ファイル）はこの誤った優先順位を経由するため、JNJのように両タグを
-並存報告する銘柄が将来TTM経路を通る際、同型のresearch_and_development
-過小計上が再発する可能性がある。
-
-#### 影響
-現時点ではJNJのTTM系列自体が別要因（RICE`available: false`、
-`note: "SEC年次データ未取得"`）で機能していないため顕在化していないが、
-その別要因が解消されTTM経路が実際にJNJのRICE計算に使われるようになった
-場合、`[[JNJ-RD-TAG-PRIORITY-1]]`と同じ実害（R&D資本化調整の不適用等）が
-Layer3/TTM経由で再発する。またフェーズD（TANUKI VALUATION本体のLayer3
-切替）が進んだ場合、より広範囲に影響が及ぶ可能性がある。
-
-#### 対応方針
-`config/sec_concept_definitions.json`の`fields.research_and_development.
-candidates`の順序を、`tag_definitions.py`と同様に
-`ResearchAndDevelopmentExpenseExcludingAcquiredInProcessCost`優先へ入れ替える。
-`layer3_builder.py`側の候補タグ処理（merge型か優先順位型か）の挙動を
-`[[JNJ-RD-TAG-PRIORITY-1]]`と同様に事前確認した上で対応する。
-
-#### 着手条件
-なし。フェーズD着手前、またはJNJのRICE`available: false`要因が解消される
-タイミングで優先的に対応するのが望ましい。
 
 ---
 
@@ -10280,15 +10197,32 @@ MISMATCH-DETECTION-1]]へガード条件付き介入として統合したため�
    ない）。既存消費者は無変更、pytest 505 passed/2 known failed（既知の
    `[[TEST-STALE-IV-1]]`のみ、新規8件追加分すべてpass）。詳細は
    BACKLOG_DONE.md参照
-2. **次はフェーズD Step2**: 5本番消費者を優先順位通りに順次切替
-   （TANUKI VALUATION本体→STONKS SILO→TANUKI TAIL→HypeCore→
-   stock.htmlフロントエンド、診断・補助スクリプト7件も対象に含む）
-3. フェーズD Step3: `normalized/`廃止（フェーズE）
-4. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
-5. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・
+~~2. フェーズD Step2-1: TANUKI VALUATION本体切替（reader.py・
+   pipeline.py）~~ ✅ 2026-08-06完了（事前バグ修正2件
+   〈`[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]`・`[[LAYER3-ANNUAL-
+   MISCLASSIFICATION-BBAI-1]]`〉→pipeline.py 6箇所をget_field_entries()
+   経由に切替→100銘柄全数回帰確認、の順で実施。`get_lt_debt_v2`
+   （`get_long_term_debt_latest()`）新規実装、Layer3優先方式を採用
+   （RCAT/SPIR/CPRTのSEC EDGAR照合結果に基づく）。全数回帰で
+   `roic_wacc_ratio`/`moat_roic`が4銘柄（COHR/LLY/JNJ/KLAC）で値→
+   Noneに変化したが、SM/SGA概念混同問題の既知の帰結と特定し、
+   ユーザー判断で現状維持を採用（`[[LAYER3-ROIC-WACC-NONE-
+   4TICKERS-1]]`参照）。pytest 505 passed/2 known failed（既知）、
+   report_consistency_check.py NG=0・WARN=78件（既存と不変）。詳細は
+   BACKLOG_DONE.md参照
+3. **次はフェーズD Step2-2**: STONKS SILO（financial_trend_
+   calculator.py・fetcher.py・analyzer.py）への切替
+4. フェーズD Step2-3以降: TANUKI TAIL→HypeCore→stock.html
+   フロントエンド、診断・補助スクリプト7件も対象に含む
+5. フェーズD Step3: `normalized/`廃止（フェーズE）
+6. （本線外・優先度中）[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]対応
+7. （本線外・優先度低）[[ONDS-LOAR-SHARES-SCALE-SUSPECT-1]]・
    [[RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1]]・
-   [[PARSER-MERGED-TAG-MIXING-RISK-1]]
-6. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
+   [[PARSER-MERGED-TAG-MIXING-RISK-1]]・[[LAYER3-ANNUAL-
+   MISCLASSIFICATION-NOW-RMBS-1]]・[[LAYER3-ANNUAL-MISCLASSIFICATION-
+   MINOR-5TICKERS-1]]・[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]・
+   [[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]
+8. 以下、2026-08-03時点リストから変更なし（上記の旧①〜⑭のうち
    Stage系を除く未完了分）: [[TTM-DATA-DRIFT-BEHIND-PIPELINE-1]]・
    [[PARSER-STOCKHOLDERS-EQUITY-CROSS-YEAR-MISSELECT-1]]・
    [[CHECK29-UNRESOLVED-23-MIXED-CAUSES-1]]・

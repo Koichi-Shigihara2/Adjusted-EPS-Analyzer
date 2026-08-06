@@ -79,6 +79,83 @@ NO_CANDIDATE_MERGE_FIELDS = frozenset({
     "shares_outstanding_period_end_sec",
 })
 
+# [[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]対応。quarterly.py::
+# _classify_period()の`fp=='FY' and days>130`判定（[[XBRL-TAG-KLAC-1]]
+# 対応時に追加、[[QUARTERLY-CLASSIFY-PERIOD-NO-UPPER-BOUND-1]]で上限が
+# 無いことが既知課題として登録済み）に上限が無いため、10-K内の中間期
+# 比較開示（6ヶ月・9ヶ月累計等、fp='FY'タグ付きだが真の年次ではない）が
+# is_annual=Trueに誤分類されることがある。この関数はnormalized/生成と
+# 共有の`_classify_period()`/`_process_entries()`自体は変更せず、
+# Layer3側の後処理としてのみ対応する（normalized/への影響を避けるため）。
+#
+# 判定基準は「同一accn・同一start日内に、fp=='FY'かつ130<days<=300の
+# is_annual=Trueエントリが複数（end日付が異なる）存在する」こと
+# （accnのみでグルーピングすると、SPAC合併等でstart日が異なる正当な
+# predecessor/successor2エンティティのstub決算〈両方とも130〜300日
+# 相当〉を誤って巻き込む実害をBBAI自身の2020年データで確認したため、
+# 同一start日を要件に追加した）。同一start日で複数end日付を持つ
+# エントリ群は、真の単年度決算ではあり得ない（同一起点からのYTD累計を
+# 複数時点で開示している比較データの混入）と判定できる。
+#
+# 対象は実データ検証済みのBBAIのみ（2026-08-06投資調査で105銘柄横断
+# スキャンした結果、同型の誤分類がNOW・RMBS等18銘柄に及ぶことが判明
+# したが、実害未検証のため今回はBBAIのみに限定。NOW/RMBSは
+# [[LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1]]、ASTS/SPIR/DELL/
+# VRT/METAは[[LAYER3-ANNUAL-MISCLASSIFICATION-MINOR-5TICKERS-1]]で
+# 別途検証してから対象に加えるかを判断する）。
+_ANNUAL_MISCLASSIFICATION_FIX_TICKERS = frozenset({"BBAI"})
+
+
+def _reclassify_misannotated_fy_entries(entries: list, ticker: str) -> list:
+    """
+    同一accn・同一start日内に、fp=='FY'かつ130<period_days<=300の
+    is_annual=Trueエントリが複数（end日付が異なる）存在する場合、
+    真の単年度決算ではあり得ない（同一起点からのYTD累計を複数時点で
+    開示する比較データの混入）と判定し、該当エントリを除外する。
+
+    グルーピング単位に`start`を含める理由: `accn`のみでグルーピング
+    すると、SPAC合併等でpredecessor/successor2エンティティのstub決算
+    （start日が異なり、両方とも130〜300日相当になりうる正当なケース）
+    を誤って巻き込む（BBAI自身の2020年データで実際に確認・回帰した
+    バグ）。同一start日を要件に加えることで、YTD比較開示（同一起点から
+    の累計を複数end日で開示）のみを対象にできる。
+
+    対象は`_ANNUAL_MISCLASSIFICATION_FIX_TICKERS`に含まれるtickerのみ
+    （現状BBAI限定）。対象外のtickerでは入力をそのまま返す。
+
+    除外方式（is_annual=Falseへの再分類ではなく完全除外）を採用した
+    理由: これらのエントリをis_ytd=Trueの四半期候補として復活させると
+    quarterly側の解決ロジック（YTDチェーン構築等）に予期しない影響を
+    与えるリスクがあり、[[XBRL-TAG-KLAC-1]]対応時の設計方針
+    （四半期duration混入は誤タグ由来として除外のみ行う）と一貫性を
+    持たせるため、単純に除外する。
+    """
+    if ticker.upper() not in _ANNUAL_MISCLASSIFICATION_FIX_TICKERS:
+        return entries
+
+    suspect_ends_by_accn_start: dict[tuple, set] = defaultdict(set)
+    for e in entries:
+        if (
+            e.get("is_annual")
+            and e.get("fp") == "FY"
+            and 130 < (e.get("period_days") or 0) <= 300
+        ):
+            suspect_ends_by_accn_start[(e.get("accn", ""), e.get("start", ""))].add(e.get("end"))
+    bad_keys = {key for key, ends in suspect_ends_by_accn_start.items() if len(ends) > 1}
+    if not bad_keys:
+        return entries
+
+    return [
+        e for e in entries
+        if not (
+            e.get("is_annual")
+            and e.get("fp") == "FY"
+            and 130 < (e.get("period_days") or 0) <= 300
+            and (e.get("accn", ""), e.get("start", "")) in bad_keys
+        )
+    ]
+
+
 BASE_DIR = os.path.dirname(__file__)
 REPO_ROOT = os.path.dirname(os.path.dirname(BASE_DIR))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -276,6 +353,7 @@ def extract_field_raw_entries(
             if not raw_entries:
                 continue
             processed = _process_entries(raw_entries)
+            processed = _reclassify_misannotated_fy_entries(processed, ticker)
             if processed:
                 return processed, concept
         return [], None
@@ -349,6 +427,7 @@ def _merge_candidate_entries(
         if not raw_entries:
             continue
         processed = _process_entries(raw_entries)
+        processed = _reclassify_misannotated_fy_entries(processed, ticker)
         if not processed:
             continue
         normalized = _normalize_field_entries(processed)
@@ -1124,6 +1203,39 @@ def get_latest_quarterly(store: dict, field_name: str) -> dict | None:
     """
     series = get_quarterly_series(store, field_name)
     return series[-1] if series else None
+
+
+def get_long_term_debt_latest(store: dict) -> float:
+    """
+    long_term_debtの非NULLエントリのうち最新end日の値を返す
+    （reader.py::SECReader.get_lt_debt_from_normalized()のLayer3版、
+    フェーズD Step2-1対応）。
+
+    normalized/へのフォールバックは行わない。2026-08-06のSEC EDGAR
+    直接照合（companyconcept API）で、両者が食い違う3銘柄
+    （RCAT/SPIR/CPRT）全てでLayer3側の値がより正確・現行であることを
+    確認済み（`[[LAYER3-SHARESDILUTED-TAG-GAP-1]]`調査と同一セッション、
+    詳細はチャット記録参照）:
+    - RCAT: normalized/は2023-10-31時点の値のまま2年以上停止していた
+      （candidates不足）。Layer3は2026-03-31まで正しく追随
+    - CPRT: normalized/は2023-04-30時点の値のまま停止。Layer3は
+      2024-07-31時点の正しい$0（実際の負債完済）まで追随
+    - SPIR: 同一accn・同一end日で、normalized/はLongTermDebt
+      （$103.7M、流動/非流動区分を反映しない総額系タグ）を採用する
+      一方、Layer3はLongTermDebtNoncurrent（$0、優先）を採用。
+      SEC EDGARでLongTermDebtCurrent=$100Mを確認し、当該四半期の
+      長期負債がほぼ全額流動負債へ再分類されていたことを検証済み。
+      normalized/の値をそのまま使うとshort_term_debtとの二重計上
+      リスクがある
+
+    エントリが無い場合は0.0を返す（呼び出し元は`bs.get("long_term_
+    debt") or get_long_term_debt_latest(store)`のようなフォールバック
+    パターンで使うことを想定）。
+    """
+    entries = [e for e in get_field_entries(store, "long_term_debt") if e.get("val") is not None]
+    if not entries:
+        return 0.0
+    return float(max(entries, key=lambda e: e["end"])["val"])
 
 
 def save_ticker_store(ticker: str, store: dict) -> str:

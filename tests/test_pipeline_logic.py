@@ -2762,7 +2762,13 @@ def _write_dupont_quarterly_bs(tmp_path, ticker: str, total_assets: float, equit
 
 def _write_dupont_normalized_ni(tmp_path, ticker: str, quarterly_ni: list) -> None:
     """common/sec_data/normalized/{ticker}_quarterly_normalized.json を作成する。
-    quarterly_ni: [(end_date, val), ...] 直近4四半期分（reliability判定の単四半期集中チェック用）"""
+    quarterly_ni: [(end_date, val), ...] 直近4四半期分（reliability判定の単四半期集中チェック用）
+
+    フェーズD Step2-1でTTM信頼性判定の参照元がnormalized/からLayer3
+    （build_ticker_store()）へ切替済みのため、本ヘルパーが書き出す
+    ファイルは現在の実装からは参照されない。互換性のため残置するが、
+    新規テストは_mock_layer3_ni_store()を使うこと。
+    """
     norm_dir = tmp_path / "common" / "sec_data" / "normalized"
     norm_dir.mkdir(parents=True, exist_ok=True)
     fields_ni = [
@@ -2773,6 +2779,25 @@ def _write_dupont_normalized_ni(tmp_path, ticker: str, quarterly_ni: list) -> No
     (norm_dir / f"{ticker.upper()}_quarterly_normalized.json").write_text(
         json.dumps(data, ensure_ascii=False), encoding="utf-8"
     )
+
+
+def _mock_layer3_ni_store(ticker: str, quarterly_ni: list) -> dict:
+    """build_ticker_store()の戻り値と同じ形の、net_incomeのみを持つ
+    合成storeを作る（フェーズD Step2-1対応。TTM信頼性判定のテストが
+    build_ticker_store()呼び出しをpatchで差し替える際に使う）。
+
+    quarterly_ni: [(end_date, val), ...] 直近4四半期分
+    """
+    entries = [
+        {"end": end, "start": "", "val": val, "is_annual": False, "is_ytd": False}
+        for end, val in quarterly_ni
+    ]
+    return {
+        "ticker": ticker,
+        "fields": {
+            "net_income": {"source_tag": "NetIncomeLoss", "category": "flow", "entries": entries},
+        },
+    }
 
 
 class TestDuPontNormalCalculation:
@@ -2846,14 +2871,17 @@ class TestDuPontReliabilityLowFlag:
         _write_dupont_ttm(tmp_path, "LYFTLIKE", ni_ttm=130_000_000, revenue_ttm=200_000_000,
                            quarters_used=4, ttm_end="2026-03-31")
         _write_dupont_quarterly_bs(tmp_path, "LYFTLIKE", total_assets=400_000_000, equity=100_000_000)
-        _write_dupont_normalized_ni(tmp_path, "LYFTLIKE", [
+        # フェーズD Step2-1: TTM信頼性判定の参照元がLayer3
+        # （build_ticker_store()）に切替済みのため、normalized/への
+        # ファイル書き出しではなくbuild_ticker_store()自体をpatchする。
+        mock_store = _mock_layer3_ni_store("LYFTLIKE", [
             ("2026-03-31", 10_000_000),
             ("2025-12-31", 100_000_000),  # 一過性要因（DTA等）を想定した単四半期集中
             ("2025-09-30", 10_000_000),
             ("2025-06-30", 10_000_000),
         ])
-
-        result = pipe._load_extra_data("LYFTLIKE", {"components": {}})
+        with patch("pipeline.build_ticker_store", return_value=mock_store):
+            result = pipe._load_extra_data("LYFTLIKE", {"components": {}})
         dp = result.get("dupont")
 
         assert dp is not None
@@ -2867,14 +2895,14 @@ class TestDuPontReliabilityLowFlag:
         _write_dupont_ttm(tmp_path, "EVENCO", ni_ttm=100_000_000, revenue_ttm=200_000_000,
                            quarters_used=4, ttm_end="2026-03-31")
         _write_dupont_quarterly_bs(tmp_path, "EVENCO", total_assets=400_000_000, equity=100_000_000)
-        _write_dupont_normalized_ni(tmp_path, "EVENCO", [
+        mock_store = _mock_layer3_ni_store("EVENCO", [
             ("2026-03-31", 25_000_000),
             ("2025-12-31", 25_000_000),
             ("2025-09-30", 25_000_000),
             ("2025-06-30", 25_000_000),
         ])
-
-        result = pipe._load_extra_data("EVENCO", {"components": {}})
+        with patch("pipeline.build_ticker_store", return_value=mock_store):
+            result = pipe._load_extra_data("EVENCO", {"components": {}})
         dp = result.get("dupont")
 
         assert dp is not None
