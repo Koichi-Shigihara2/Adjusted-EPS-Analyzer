@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズD Step2-4（HypeCore）事前調査（読み取り
+専用）を反映。`hypecore.py::fetch_quarterly_fundamentals()`は
+`reader.py`共通アクセサのみでnormalized/を参照（独自インライン実装
+なし）、対象母集団は104銘柄（`hypecore=true`、ほぼ全銘柄ユニバース）
+と確認。104銘柄全数のLayer3事前差分シミュレーションでRevenue 2/104
+（ASTS/RCAT、既知パターン）・NetIncome 4/104（CEG/CWAN/DDOG/BROS、
+うちDDOGはLayer3側が異常な30日フラグメントを正しく除外する改善を
+実測）・OCF 0/104差分ゼロを確認。差分がpoc.json表示（2024年以降）に
+及ぶASTS/RCAT/DDOGの3銘柄について`determine_stage()`を実際に実行し
+ステージ判定への影響ゼロ（32ヶ月×3銘柄すべて一致）を確認。substage
+（別ロジック、rev_yoy/eps_surprise直接参照）は範囲外として
+`[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`（優先度：低）で記録。
+実装コード変更・データ再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（フェーズD Step2-3（TANUKI TAIL）実装完了。
 `quarterly_review_generator.py`・`tail_dcf_bridge.py`の
 normalized/参照をSEC EDGAR Layer3（`layer3_builder.py::
@@ -6474,6 +6488,23 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1] detect_substage()がrev_yoy・eps_surpriseを直接参照するが、Layer3切替時の影響が未検証
+**優先度:** 低（`determine_stage()`〈ステージ本体〉への影響はゼロと
+確認済み、substageは別ロジックのため範囲外のまま）
+**分類:** 未検証事項
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-4事前調査（チャット記録、2026-08-07）
+
+#### 内容
+substage（内部フェーズ）はrev_yoy・eps_surpriseを直接参照する別
+ロジックのため、stageとは独立してLayer3切替の影響を受ける可能性が
+ある。Step2-4実装時のスコープには含めない。
+
+#### 着手条件
+Step2-4実装完了後、必要であれば追加調査。
+
+---
 
 ### [TAIL-SHARESDILUTED-Q4-TIMING-RISK-1] TANUKI TAILのeps_diluted計算が、レビュー生成タイミングによってはCommonStockSharesOutstanding（期末発行済株式数）由来のSharesDilutedを拾う構造的リスクを持つ
 **優先度:** 低（現時点で10銘柄全数、最新四半期はWeightedAverage側が
