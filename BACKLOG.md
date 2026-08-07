@@ -1,5 +1,13 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`の「未決定
+事項」に、`EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合投資調査（チャット
+記録）の結果である追加6項目（営業日連続性保証・`fetched_at`付与・
+書き込みアトミック化・層またぎ再計算の禁止・保存前恒等式検証＋
+`market_data_violations_log.json`・`audit.py`との役割分担）を追記。
+着手順序を「6項目の設計確定」を最初のステップとして追加した5段階に
+更新。実装コード変更・データ再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`を新規登録
 （本来は事前調査着手時点で登録すべきだったが未登録のまま3回の投資
 調査を実施していたため遡って正式登録）。3回の投資調査サマリー
@@ -2033,6 +2041,35 @@ common/market_data/
 しない設計を維持）。
 
 #### 未決定事項（次回判断）
+`EXTRACTION_DESIGN_PRINCIPLES.md`3原則（期間・時系列の妥当性／
+フィールド間整合性／恒等式検証）を確定済み設計に照合した投資調査
+（チャット記録、2026-08-07）の結果、以下6項目を追加設計判断事項と
+する：
+
+1. `get_price_series`/`get_ma_deviation`の営業日連続性保証：
+   `days=N`は営業日ベースと明記する。`daily/{SYMBOL}.json`保存側で
+   欠損日を検知し、`get_price_series`はN件に満たない・欠損を挟む
+   場合は明示的にNoneまたは警告フラグ付きで返す。`get_ma_deviation`
+   は200日分未満のデータしかない場合はNoneを返す。
+2. `attributes/{SYMBOL}.json`への`fetched_at`フィールド追加：
+   週次バッチ取得のたびに`fetched_at`（ISO8601 UTC）を各レコードに
+   格納し、`reader.get_attributes()`が値と併せて返せるようにする。
+3. `daily/`・`attributes/`書き込みのアトミック化：
+   一時ファイル書き込み→renameで、バッチ実行中の部分書き込み状態を
+   他プロセスが読まないことを保証する。
+4. 層またぎ再計算の明示的禁止：
+   `attributes/`のPER/PEG/PSR/EV_EBITDA等は取得元`.info`呼び出し内で
+   自己完結した値であり、`daily/`の別時点データと組み合わせて再計算
+   してはならない旨を設計文書に明記する。
+5. 保存前検証ロジック（恒等式検証）：`fetcher.py`保存前に、価格・
+   出来高>0、高値≥安値≥終値、52週高値≥52週安値、時価総額≈株価×
+   発行済株式数（近似一致）を検証する。検証結果は
+   `common/market_data/{SYMBOL}/market_data_violations_log.json`
+   （`fy_collision_log.json`型、0件でも毎回書き込む）に記録する。
+6. `audit.py`のβ乖離監査（事後監査）と`fetcher.py`保存前検証（上記
+   5）の役割分担を明記する。
+
+以下は既存の未決定事項（次回判断、変更なし）：
 - `twoHundredDayAverage`・アナリスト目標株価コンセンサスの最終格納先
   （提案は上記の通りだが最終確認は次回）
 - `workflow_run`連鎖トリガー（`SEC_Data_Audit.yml`型）を市場データ側
@@ -2041,14 +2078,16 @@ common/market_data/
   既知課題）との関係整理
 
 #### 着手順序
-1. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化）
-2. `reader.py`新設（API群の実装）
-3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
+1. 上記6項目の設計を確定（実装着手前の最終設計判断）
+2. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化）
+3. `reader.py`新設（API群の実装）
+4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
    VALUATION本体から、フェーズDと同様の優先順位を検討）
-4. 周辺ツール2ファイルの切替
+5. 周辺ツール2ファイルの切替
 
 #### 着手条件
-上記「未決定事項」3件の確認、および実装着手の可否判断。
+上記「未決定事項」9件（3原則照合による追加6件＋既存3件）の確認、
+および実装着手の可否判断。
 
 ---
 
