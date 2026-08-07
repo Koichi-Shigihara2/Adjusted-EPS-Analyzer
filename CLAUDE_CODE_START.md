@@ -27,21 +27,24 @@ git pull --rebase origin kaihatsu
   統合はフェーズ1「構築中」、`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C
   〈Layer3スキーマ構築・consumer横展開検証〉に続きフェーズD〈本体
   consumer切替、対象優先順位: ①TANUKI VALUATION本体②STONKS SILO
-  ③TANUKI TAIL④HypeCore⑤stock.html〉のStep2-3（③TANUKI TAIL）は
-  `quarterly_review_generator.py`・`tail_dcf_bridge.py`とも切替完了
-  （2026-08-07、10銘柄全数比較で差分ゼロ）。Step2-2（②STONKS SILO）は
-  `financial_trend_calculator.py`のみ切替完了、`fetcher.py`は
-  `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（Layer3の
-  filed日最新優先とparser.pyのown-year優先という選択思想の不一致、
-  設計判断が必要）の対応方針決定待ちで保留中のまま。次セッションは
-  Step2-4（④HypeCore）への着手、または`[[LAYER3-FETCHER-SELECTION-
-  PHILOSOPHY-MISMATCH-1]]`の設計判断（Step2-2の残タスク）のどちらを
-  優先するかをBACKLOG.md「次セッションでの着手順序」で確認。詳細は
-  BACKLOG_DONE.md`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3]]`（③）・
-  `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-2]]`（②）・`[[SEC-EDGAR-
-  LAYER-DESIGN-PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。
-  フェーズD着手時は`SEC_EDGAR_LAYER_DESIGN.md`のフェーズD対象リスト・
-  「3スキーマ併存の実態」を確認する）
+  ③TANUKI TAIL④HypeCore⑤stock.html〉のStep2-4（④HypeCore）まで
+  完了（2026-08-07、`hypecore.py::fetch_quarterly_fundamentals()`切替、
+  104銘柄全数比較・ステージ判定再確認とも差分ゼロ）。主要4消費者
+  パイプラインの切替はこれで完了し、**残るはStep2-5（⑤stock.html
+  フロントエンド＋診断・補助スクリプト7件、`SEC_EDGAR_LAYER_DESIGN.md`
+  「フェーズD対象リストへの追記」参照）のみ**。次セッションの選択肢：
+  1. Step2-5（⑤stock.html＋診断・補助スクリプト7件）に着手
+  2. `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（Step2-2で
+     保留中のSTONKS SILO`fetcher.py`設計判断、Step2-5と並行して選択可）
+  3. フェーズE（`normalized/`廃止）はStep2-5完了後に着手
+
+  詳細はBACKLOG.md「次セッションでの着手順序」・BACKLOG_DONE.md
+  `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`（④）・
+  `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3]]`（③）・`[[SEC-EDGAR-
+  LAYER-DESIGN-PHASE-D-STEP2-2]]`（②）・`[[SEC-EDGAR-LAYER-DESIGN-
+  PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。フェーズD着手時は
+  `SEC_EDGAR_LAYER_DESIGN.md`のフェーズD対象リスト・「3スキーマ併存の
+  実態」を確認する）
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行

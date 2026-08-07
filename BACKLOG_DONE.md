@@ -4,6 +4,65 @@
 
 ## 2026-08-07（完了）
 
+### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4] フェーズD Step2-4: HypeCore切替（hypecore.py::fetch_quarterly_fundamentals）
+**状態:** `normalized/`参照をSEC EDGAR Layer3
+（`layer3_builder.py::build_ticker_store()`/`get_quarterly_series()`）
+経由に切替完了
+**優先度:** 高（フェーズD本線）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**完了日:** 2026-08-07
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step2-4実装依頼（チャット記録）
+
+#### 事前調査
+着手前に`hypecore.py`の使用実態を実コードで再確認。`reader.py`共通
+アクセサ（独自インライン実装なし）のみでnormalized/を参照しており、
+対象母集団は`hypecore=true`104銘柄（ほぼ全銘柄ユニバース）と確認。
+Q4逆算への独自呼び出しはなく`normalized/`ファイル自体に埋め込み
+済みのQ4逆算値をそのまま使う設計のため、Step2-2で発見された
+「`fp`ラベル世代差によるYoY計算停止」バグの影響を構造的に受けない
+ことを確認。104銘柄全数のLayer3事前差分シミュレーションでRevenue
+2/104（ASTS/RCAT、既知パターン）・NetIncome 4/104（CEG/CWAN/DDOG/
+BROS、うちDDOGはLayer3側が異常な30日フラグメントを正しく除外する
+改善を実測）・OCF 0/104を確認。差分がpoc.json表示（2024年以降）に
+及ぶASTS/RCAT/DDOGについて`determine_stage()`を実際に実行し、
+32ヶ月×3銘柄すべてでステージ判定への影響ゼロを確認（`fundamental_
+score`が`determine_stage()`内で未使用という既存コードの特性も
+判明）。substage（別ロジック、`rev_yoy`/`eps_surprise`直接参照）は
+範囲外として`[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`
+（優先度：低）で記録。
+
+#### 実装内容
+`fetch_quarterly_fundamentals()`を`layer3_builder.build_ticker_
+store()`・`get_quarterly_series()`経由に切替。PascalCase（Revenue/
+NetIncome/OCF）→ SEC EDGAR Layer3 snake_caseの`_SEC_LAYER3_FIELD_
+MAP`を新設。不要になった`_NORM_DIR`定数・`reader.py`のimportを削除。
+
+#### 全数比較結果（104銘柄）
+実装後の実コード（HEAD時点の旧コード vs 現在のコード）で
+`fetch_quarterly_fundamentals()`を直接比較し、事前調査の予測
+（差分銘柄数6/104：ASTS/CEG/CWAN/DDOG/RCAT/BROS）と完全一致を確認。
+ASTS/RCAT/DDOGについては実装後の実コードで`determine_stage()`を
+再実行し、32ヶ月×3銘柄すべてでステージ判定差分ゼロを再確認。
+
+#### テスト結果
+`tests/test_gate2_phase3b1_reader_integration.py`の
+`TestHypecoreRegression`のフィクスチャをLayer3ストア形状
+（`_make_layer3_store()`ヘルパー）に更新し、`build_ticker_store()`を
+直接monkeypatchする方式に変更（Step2-2/2-3と同型の対応）。
+`report_consistency_check.py --fail-on-ng`: NG=0・WARN=78件（既存と
+不変）。pytest 505 passed/2 known failed（既知の
+`[[TEST-STALE-IV-1]]`のみ、新規失敗なし）。
+
+#### 残タスク
+フェーズD Step2-5（⑤stock.htmlフロントエンド＋診断・補助スクリプト
+7件）が、フェーズD本線（主要4消費者パイプライン）完了後の最後の
+対象として残る。STONKS SILOの`fetcher.py`（年次データ）切替は
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の設計判断待ち
+のまま並行して残っている。フェーズE（`normalized/`廃止）は
+Step2-5完了後に着手。
+
+---
+
 ### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3] フェーズD Step2-3: TANUKI TAIL切替（quarterly_review_generator.py・tail_dcf_bridge.py）
 **状態:** 両ファイルとも`normalized/`参照をSEC EDGAR Layer3
 （`layer3_builder.py::build_ticker_store()`/`get_quarterly_series()`/

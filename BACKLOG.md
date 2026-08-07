@@ -1,5 +1,22 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズD Step2-4（HypeCore）実装完了。
+`hypecore.py::fetch_quarterly_fundamentals()`のnormalized/参照を
+SEC EDGAR Layer3（`layer3_builder.py::build_ticker_store()`/
+`get_quarterly_series()`）経由に切替。104銘柄全数比較で事前調査の
+予測（差分銘柄数6/104：ASTS/CEG/CWAN/DDOG/RCAT/BROS）と完全一致、
+ASTS/RCAT/DDOGの`determine_stage()`再確認でもステージ判定差分ゼロを
+再確認。report_consistency_check.py NG=0・WARN=78件（不変）、pytest
+505 passed/2 known failed（既知のみ）。完了記録は`[[SEC-EDGAR-LAYER-
+DESIGN-PHASE-D-STEP2-4]]`としてBACKLOG_DONE.mdへ記録。
+`[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`（優先度：低）も登録。
+「次セッションでの着手順序」欄を更新：①フェーズD Step2-5（⑤stock.html
+フロントエンド＋診断・補助スクリプト7件、主要4消費者パイプライン
+完了に伴う残る最後のフェーズD対象）②`[[LAYER3-FETCHER-SELECTION-
+PHILOSOPHY-MISMATCH-1]]`（Step2-2で保留中のSTONKS SILO fetcher.py
+設計判断、並行して選択可能）③フェーズE（`normalized/`廃止、Step2-5
+完了後）の3項目を明記。
+
 最終更新: 2026-08-07（フェーズD Step2-4（HypeCore）事前調査（読み取り
 専用）を反映。`hypecore.py::fetch_quarterly_fundamentals()`は
 `reader.py`共通アクセサのみでnormalized/を参照（独自インライン実装
@@ -4616,6 +4633,16 @@ quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
 [[CAPEX-SIGN-UNNORMALIZED-1]]（2026-07-24対応完了、BACKLOG_DONE.md
 参照）で解消済みのため、統合スキーマ側は正規化済みCapExを前提に
 設計できる。
+
+**進捗（2026-08-07更新）**: ①〜④の主要4消費者パイプラインすべて完了
+（①TANUKI VALUATION本体・②STONKS SILO〈`financial_trend_
+calculator.py`のみ、`fetcher.py`は`[[LAYER3-FETCHER-SELECTION-
+PHILOSOPHY-MISMATCH-1]]`の設計判断待ちで保留〉・③TANUKI TAIL・
+④HypeCore、いずれも完了記録は`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-
+STEP2-1]]`〜`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`参照）。
+残るのは⑤stock.htmlフロントエンド＋下記診断・補助スクリプト7件
+（Step2-5）のみ。Step2-5完了後にフェーズE（`normalized/`廃止）へ
+進む。
 
 **Step1完了（2026-08-05、全消費者洗い出し・読み取り専用調査）**:
 `raw/`（実消費者ゼロのデッドコード）・`normalized/`（5本番消費者、
