@@ -1,5 +1,17 @@
 # SYSTEM MAP — On-a-journey
 
+最終更新: 2026-08-07（common/sec_data統合フェーズD実質完了に伴う陳腐化
+是正。layer3_builder.py項の「フェーズD Step2-1」追記に続けて、
+②STONKS SILO・③TANUKI TAIL・④HypeCoreのLayer3切替完了、⑤stock.html
+＋診断・補助スクリプト7件（Step2-5）実質完了（切替対象がほぼ存在せず）、
+`normalized/`残存消費者が`fetcher.py`〈STONKS SILO〉・
+`dcf_validity_checker.py::check_c_data_jump()`・stock.htmlの3系統に
+確定・恒久化、フェーズE〈`normalized/`完全廃止〉着手不可、という
+最終状況を追記。あわせて2026-07-30時点の記述「`quality_checker.py`/
+STONKS SILO`financial_trend_calculator.py`が`normalized/`を直接消費」
+が陳腐化していた点（`quality_checker.py`はimportゼロの死蔵コードと
+判明、`financial_trend_calculator.py`はLayer3へ切替済み）を訂正）
+
 最終更新: 2026-08-02（2026-07-30の4コミット分の陳腐化を追加是正。
 data_fetcher.py::TTMReader項に[[TTM-PASCALCASE-KEY-STALE-1]]
 （audit.py::audit_ticker()・build_rice_annual_shape()のPascalCase→
@@ -398,11 +410,36 @@ SEC EDGAR
 │    `_calc_moat_inputs()`の6箇所を`layer3_builder.py::get_field_
 │    entries()`経由に統一）。事前に`[[LAYER3-CONFIG-RD-TAG-PRIORITY-1]]`
 │    （本節391行目で言及した3スキーマ間乖離）・`[[LAYER3-ANNUAL-
-│    MISCLASSIFICATION-BBAI-1]]`を先行修正済み。残る`normalized/`直接
-│    消費者は②STONKS SILO（`financial_trend_calculator.py`）・③TANUKI
-│    TAIL・④HypeCoreの3系統（次はフェーズD Step2-2、STONKS SILO）。
+│    MISCLASSIFICATION-BBAI-1]]`を先行修正済み。
 │    詳細はBACKLOG_DONE.md「2026-08-06（完了）」
 │    [[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-1]]参照。
+│    **追記（フェーズD 2026-08-07実質完了・最終状況）**: ②STONKS SILO
+│    〈`financial_trend_calculator.py`〉・③TANUKI TAIL
+│    〈`quarterly_review_generator.py`・`tail_dcf_bridge.py`〉・
+│    ④HypeCore〈`hypecore.py`〉のLayer3切替が完了（それぞれ
+│    `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-2]]`〜`[[SEC-EDGAR-LAYER-
+│    DESIGN-PHASE-D-STEP2-4]]`参照）。⑤stock.html＋診断・補助
+│    スクリプト7件（Step2-5）は投資調査の結果、Layer3切替の実質対象が
+│    `dcf_validity_checker.py::check_c_data_jump()`のみと判明し実装
+│    不要（実質完了扱い）。本節384行目の「`quality_checker.py`/STONKS
+│    SILO`financial_trend_calculator.py`が直接消費」という記述は
+│    **陳腐化**（`quality_checker.py`はrepo全体でimportゼロの死蔵
+│    コード`[[QUALITY-CHECKER-CLEANUP-1]]`と判明、
+│    `financial_trend_calculator.py`はStep2-2でLayer3へ切替済み）。
+│    **`normalized/`の残存消費者は以下3系統に確定・恒久化**（いずれも
+│    設計判断により現状維持を選択、着手見送り確定）:
+│    - `discover/stonks-silo/src/fetcher.py`（`data/annual_*.json`
+│      直読み、`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`
+│      案2採用）
+│    - `common/screening/dcf_validity_checker.py::check_c_data_jump()`
+│      （同上、`report_consistency_check.py`WARN-21として本番稼働中）
+│    - `docs/value-monitor/tanuki_valuation/stock.html`（ブラウザJSが
+│      `normalized/`を直接fetch、`[[STOCKHTML-LAYER3-PUBLISH-
+│      PIPELINE-MISSING-1]]`によりLayer3公開パイプライン未整備のため
+│      着手不可）
+│    **フェーズE（`normalized/`完全廃止）は上記3系統が存続する限り
+│    着手不可**と判定（詳細はBACKLOG.md`[[SECDATA-STORAGE-
+│    FRAGMENTATION-1]]`参照）。
 │    **追記（DOCS-SECDATA-NORMALIZED-DIR-STALE-1 2026-07-30実装完了、
 │    コミット5ee157c6b）**: GitHub Pages公開フロントエンド（stock.html）向け
 │    公開コピー`docs/common/sec_data/normalized/`が2026-05-23以降同期

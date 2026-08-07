@@ -8584,9 +8584,63 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 気づいた時点でBACKLOG.mdに登録することを標準動作とする。
 
 ### 次セッションでの着手順序（提案）
-優先度：高のバグ修正を先に実施してから、優先度：中の機能追加に移る。
 
-**本線（2026-08-05更新、新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合、CHAT_RULES.md「本線逸脱防止」参照）:**
+**（2026-08-07更新、フェーズD実質完了に伴う全面更新。以下が最新の
+優先順位。旧「本線（2026-08-05更新）」以下は`common/sec_data`
+統合フェーズD着手前〈normalized/→data/統合案〉時点の古い計画のため
+陳腐化・参照時は本節を優先すること）**
+
+**1. 本線（新DB構築プロジェクト フェーズ1の次ステップ）**:
+`common/sec_data/`統合（フェーズD含む）は2026-08-07に実質完了
+（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`・PROJECT_STATUS.md
+参照）。次ステップとして、新DB構築プロジェクト フェーズ1の残り
+コンポーネント着手を検討する:
+- `common/market_data/`新設（yfinance統合層、`INPUT-A-019〜023`対応、
+  日次/週次属性/イベント履歴の3層分離設計、`INPUT_DATA_TOBE.md`
+  2-B参照）
+- `common/macro_data/`新設（FRED統合層、`INPUT-A-024〜047`対応、
+  系列単位の時系列ストア設計、`INPUT_DATA_TOBE.md` 2-C参照）
+- **着手前に`docs/architecture/new_data_platform/
+  EXTRACTION_DESIGN_PRINCIPLES.md`（`common/sec_data/`で発見された
+  5バグの教訓を一般化した抽出設計原則・3原則）を必ず確認すること**
+
+**2. 本線外・優先度中**:
+`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（AVGOの旧CIK登録が
+無関係な買収先企業Broadcom Corporationを指している疑い。対応方針
+3案〈旧CIK差し替え・現状維持＋警告・2006-2014年データ削除〉を検討・
+実装。着手条件: 新DB構築フェーズ1完了後または実害発生時まで保留
+だったが、フェーズ1〈SEC EDGAR統合〉が実質完了したため着手条件は
+充足済み）
+
+**3. 本線外・優先度低（本セッション・前セッションで蓄積したLayer3
+関連課題群、一覧化）**:
+いずれも着手条件「なし」または実害発生時まで保留の低優先度課題。
+着手する場合は個別に判断する。
+- `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（fetcher.py・
+  dcf_validity_checker.pyの年次データ選択思想不一致、案2で決着済み・
+  恒久的例外）
+- `[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1]]`（stock.htmlの
+  Layer3切替、公開パイプライン未整備のため着手見送り）
+- `[[STOCKHTML-YTD-FILTER-BUG-SUSPECT-1]]`（stock.html JS側の
+  is_ytd未除外、実データでは未発現）
+- `[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`（detect_substage()の
+  Layer3切替影響が未検証）
+- `[[TAIL-SHARESDILUTED-Q4-TIMING-RISK-1]]`（TANUKI TAILのeps_diluted
+  計算、Q4タイミング依存の構造的リスク）
+- `[[FETCHER-PY-BS-FIELDS-DEAD-KEYS-1]]`（fetcher.pyの_BS_FIELDS
+  デッドコード、Layer3移行とは無関係の既存バグ）
+- `[[FINTREND-SM-JOBY-NONE-1]]`（financial_trend_calculator.pyの
+  SMフィールドJOBY None化、SUB_FIELDS自体が現状未使用と判明済み）
+- `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`（parser.py::
+  _extract_values_merged()のタグ混入リスク疑い）
+- `[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]`（SNPS FY2022 Revenue、
+  Layer3候補タグ優先順位が修正再表示を拾えない構造的リスク）
+- `[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`（COHR/LLY/JNJ/KLACの
+  ROIC-WACC比率None化、SM/SGA概念混同の帰結）
+
+---
+
+**旧・本線（2026-08-05更新、新DB構築プロジェクト フェーズ1 Step1: SEC EDGAR統合、CHAT_RULES.md「本線逸脱防止」参照。陳腐化・参照不要）:**
 0-A. ~~`[[SECDATA-STORAGE-FRAGMENTATION-1]]` Step1: 全消費者洗い出し~~
      ✅ 2026-08-05完了（raw/normalized/ttm/data/company_facts.json・
      EPS Analyzer/TANUKI TAIL独自経路の全消費者を実ファイルで確認）
