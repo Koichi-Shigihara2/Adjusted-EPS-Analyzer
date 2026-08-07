@@ -197,33 +197,50 @@ if _TAIL_SRC not in sys.path:
 import tail_dcf_bridge as tdb  # noqa: E402
 
 
+def _make_layer3_store(fields: dict) -> dict:
+    """[フェーズD Step2-3対応] SEC EDGAR Layer3ストア（layer3_builder.
+    build_ticker_store()の戻り値）形状のフィクスチャを組み立てるヘルパー。
+    fields は {snake_case_field_name: [entries...]} を渡す。
+    """
+    return {
+        "fields": {
+            name: {"source_tag": "TEST_TAG", "category": "flow", "entries": entries}
+            for name, entries in fields.items()
+        }
+    }
+
+
 class TestTailDcfBridgeRegression:
+    """[フェーズD Step2-3対応] normalized/ファイル（COMMON_NORMALIZED_DIR
+    経由）ではなく、tdb.build_ticker_store()をLayer3ストア形状のフィクス
+    チャでmonkeypatchする（_load_layer1_financials()がbuild_ticker_
+    store(ticker)を直接呼ぶため）。"""
+
     def test_load_layer1_financials_uses_latest_quarter_excludes_ytd(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(tdb, "COMMON_NORMALIZED_DIR", str(tmp_path))
         monkeypatch.setattr(tdb, "VALUATION_DIR", str(tmp_path))
 
-        normalized = {
-            "fields": {
-                "Revenue": [
-                    {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 999, "is_annual": False, "is_ytd": True},
-                ],
-                "OperatingIncome": [
-                    {"end": "2024-09-30", "val": 16, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 17, "is_annual": False, "is_ytd": False},
-                ],
-                "SBC": [{"end": "2024-12-31", "val": 5, "is_annual": False, "is_ytd": False}],
-                "NetIncome": [
-                    {"end": "2024-09-30", "val": 14, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False},
-                ],
-                "SharesDiluted": [{"end": "2024-12-31", "val": 1000, "is_annual": False, "is_ytd": False}],
-            }
-        }
-        (tmp_path / "TEST_quarterly_normalized.json").write_text(
-            json.dumps(normalized), encoding="utf-8"
-        )
+        store = _make_layer3_store({
+            "revenue": [
+                {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 999, "is_annual": False, "is_ytd": True},
+            ],
+            "operating_income": [
+                {"end": "2024-09-30", "val": 16, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 17, "is_annual": False, "is_ytd": False},
+            ],
+            "stock_based_compensation": [
+                {"end": "2024-12-31", "val": 5, "is_annual": False, "is_ytd": False},
+            ],
+            "net_income": [
+                {"end": "2024-09-30", "val": 14, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False},
+            ],
+            "shares_diluted": [
+                {"end": "2024-12-31", "val": 1000, "is_annual": False, "is_ytd": False},
+            ],
+        })
+        monkeypatch.setattr(tdb, "build_ticker_store", lambda ticker: store if ticker == "TEST" else None)
 
         result = tdb._load_layer1_financials("TEST")
         assert result["operating_margin"] == pytest.approx(0.1)
@@ -231,8 +248,8 @@ class TestTailDcfBridgeRegression:
         assert result["eps_diluted"] == pytest.approx(0.015)
 
     def test_load_layer1_financials_missing_file_returns_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(tdb, "COMMON_NORMALIZED_DIR", str(tmp_path))
         monkeypatch.setattr(tdb, "VALUATION_DIR", str(tmp_path))
+        monkeypatch.setattr(tdb, "build_ticker_store", lambda ticker: None)
         assert tdb._load_layer1_financials("NOPE") == {}
 
 
@@ -244,33 +261,40 @@ import quarterly_review_generator as qrg  # noqa: E402
 
 
 class TestQuarterlyReviewGeneratorRegression:
+    """[フェーズD Step2-3対応] normalized/ファイル（COMMON_NORMALIZED_DIR
+    経由）ではなく、qrg.build_ticker_store()をLayer3ストア形状のフィクス
+    チャでmonkeypatchする（load_layer1_financials()がbuild_ticker_
+    store(ticker)を直接呼ぶため）。"""
+
     def test_load_layer1_financials_matches_pre_migration_values(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(qrg, "COMMON_NORMALIZED_DIR", str(tmp_path))
         monkeypatch.setattr(qrg, "TANUKI_DATA_DIR", str(tmp_path))
 
-        normalized = {
-            "fields": {
-                "Revenue": [
-                    {"end": "2024-03-31", "val": 140, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-06-30", "val": 150, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 999, "is_annual": False, "is_ytd": True},
-                ],
-                "OperatingIncome": [
-                    {"end": "2024-03-31", "val": 14, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-06-30", "val": 15, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-09-30", "val": 16, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 17, "is_annual": False, "is_ytd": False},
-                ],
-                "SBC": [{"end": "2024-12-31", "val": 5, "is_annual": False, "is_ytd": False}],
-                "NetIncome": [{"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False}],
-                "SharesDiluted": [{"end": "2024-12-31", "val": 1000, "is_annual": False, "is_ytd": False}],
-            }
-        }
-        (tmp_path / "TEST_quarterly_normalized.json").write_text(
-            json.dumps(normalized), encoding="utf-8"
-        )
+        store = _make_layer3_store({
+            "revenue": [
+                {"end": "2024-03-31", "val": 140, "is_annual": False, "is_ytd": False},
+                {"end": "2024-06-30", "val": 150, "is_annual": False, "is_ytd": False},
+                {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 999, "is_annual": False, "is_ytd": True},
+            ],
+            "operating_income": [
+                {"end": "2024-03-31", "val": 14, "is_annual": False, "is_ytd": False},
+                {"end": "2024-06-30", "val": 15, "is_annual": False, "is_ytd": False},
+                {"end": "2024-09-30", "val": 16, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 17, "is_annual": False, "is_ytd": False},
+            ],
+            "stock_based_compensation": [
+                {"end": "2024-12-31", "val": 5, "is_annual": False, "is_ytd": False},
+            ],
+            "net_income": [
+                {"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False},
+            ],
+            "shares_diluted": [
+                {"end": "2024-12-31", "val": 1000, "is_annual": False, "is_ytd": False},
+            ],
+        })
+        monkeypatch.setattr(qrg, "build_ticker_store", lambda ticker: store if ticker == "TEST" else None)
+
         ticker_dir = tmp_path / "TEST"
         ticker_dir.mkdir()
         (ticker_dir / "latest.json").write_text(

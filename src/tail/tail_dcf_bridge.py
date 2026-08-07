@@ -36,7 +36,15 @@ if _REPO_ROOT not in sys.path:
 
 from future_values import calculate_future_values          # noqa: E402
 from common.sec_data import tickers as _tickers_mod         # noqa: E402
-from common.sec_data.reader import get_latest_quarterly     # noqa: E402
+# [フェーズD Step2-3対応、2026-08-07] SEC EDGAR Layer3
+# （common/sec_data/layer3_builder.py、company_facts.json由来の統合
+# スキーマ）経由でnormalized/参照を廃止した。本ファイル内の
+# layer1/layer2（_load_layer1_financials/_load_layer2_kpi、KPI取得元
+# 区分）とは完全に別概念のため、SEC側を指す場合は必ず「SEC EDGAR
+# Layer3」と明示して区別する。
+from common.sec_data.layer3_builder import (        # noqa: E402
+    build_ticker_store, get_latest_quarterly,
+)
 
 # ── パス定数 ──────────────────────────────────────────────────────
 REVIEWS_DIR   = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "reviews")
@@ -44,9 +52,18 @@ VALUATION_DIR = os.path.join(_REPO_ROOT, "docs", "value-monitor", "tanuki_valuat
 SCENARIO_DIR  = os.path.join(_REPO_ROOT, "docs", "portfolio", "scenario")
 POSITIONS_DIR         = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "positions")
 KPI_DIR               = os.path.join(_REPO_ROOT, "docs", "portfolio", "tail", "data", "kpi")
-COMMON_NORMALIZED_DIR = os.path.join(_REPO_ROOT, "common", "sec_data", "normalized")
 
 JST = timezone(timedelta(hours=9))
+
+# PascalCase（本ファイル内の既存呼び出し表記）→ SEC EDGAR Layer3の
+# snake_caseフィールド名の対応表（フェーズD Step2-3対応）。
+_SEC_LAYER3_FIELD_MAP = {
+    "Revenue": "revenue",
+    "OperatingIncome": "operating_income",
+    "SBC": "stock_based_compensation",
+    "NetIncome": "net_income",
+    "SharesDiluted": "shares_diluted",
+}
 
 
 def _load_latest_valuation(ticker: str) -> Optional[Dict[str, Any]]:
@@ -109,17 +126,22 @@ def _build_current_kpi_values(
 
 
 def _load_layer1_financials(ticker: str) -> Dict[str, Any]:
-    """SEC normalized quarterly data + latest.json から財務指標（layer1）を取得"""
+    """SEC EDGAR Layer3（company_facts.json由来の統合スキーマ）四半期
+    データ + latest.json から財務指標（TANUKI TAIL側の「layer1」区分、
+    ＝財務諸表由来のKPI）を取得する。
+
+    ※ 戻り値の意味上の区分名「layer1」（財務諸表由来）は、本関数が参照
+    するデータソース「SEC EDGAR Layer3」（layer3_builder.py、統合
+    スキーマ）とは無関係の別軸の用語。混同しないこと。
+    """
     result: Dict[str, Any] = {}
-    norm_path = os.path.join(COMMON_NORMALIZED_DIR, f"{ticker}_quarterly_normalized.json")
-    if os.path.exists(norm_path):
-        with open(norm_path, encoding="utf-8") as f:
-            data = json.load(f)
-        rev = get_latest_quarterly(data, "Revenue")
-        oi  = get_latest_quarterly(data, "OperatingIncome")
-        sbc = get_latest_quarterly(data, "SBC")
-        ni  = get_latest_quarterly(data, "NetIncome")
-        sd  = get_latest_quarterly(data, "SharesDiluted")
+    store = build_ticker_store(ticker)
+    if store is not None:
+        rev = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["Revenue"])
+        oi  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["OperatingIncome"])
+        sbc = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["SBC"])
+        ni  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["NetIncome"])
+        sd  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["SharesDiluted"])
 
         if rev and oi and rev.get("val"):
             result["operating_margin"] = round(oi["val"] / rev["val"], 4)

@@ -35,7 +35,16 @@ repo_root  = os.path.abspath(os.path.join(script_dir, "..", ".."))
 
 if repo_root not in sys.path:
     sys.path.insert(0, repo_root)
-from common.sec_data.reader import get_quarterly_series, get_latest_quarterly  # noqa: E402
+# [フェーズD Step2-3対応、2026-08-07] SEC EDGAR Layer3
+# （common/sec_data/layer3_builder.py、company_facts.json由来の統合
+# スキーマ）経由でnormalized/参照を廃止した。本ファイル内で扱う
+# TANUKI TAIL独自の「layer2」「layer3」（kpi_data_layer2/
+# kpi_data_layer3引数等、KPI自動取得/AI text抽出の精度階層）とは
+# 完全に別概念のため、SEC側を指す場合は必ず「SEC EDGAR Layer3」と
+# 明示して区別する。
+from common.sec_data.layer3_builder import (  # noqa: E402
+    build_ticker_store, get_quarterly_series, get_latest_quarterly,
+)
 
 DATA_DIR          = os.path.join(repo_root, "docs", "portfolio", "tail", "data")
 POSITIONS_DIR     = os.path.join(DATA_DIR, "positions")
@@ -46,8 +55,17 @@ REVIEW_QUEUE_PATH = os.path.join(DATA_DIR, "review_queue.json")
 TANUKI_DATA_DIR       = os.path.join(repo_root, "docs", "value-monitor", "tanuki_valuation", "data")
 MACRO_DATA_DIR        = os.path.join(repo_root, "docs", "market-monitor", "macro-pulse", "data")
 PORTFOLIO_PATH        = os.path.join(repo_root, "docs", "portfolio", "data", "portfolio.json")
-COMMON_NORMALIZED_DIR    = os.path.join(repo_root, "common", "sec_data", "normalized")
 PREDICTION_HISTORY_PATH  = os.path.join(DATA_DIR, "prediction_history.json")
+
+# PascalCase（本ファイル内の既存呼び出し表記）→ SEC EDGAR Layer3の
+# snake_caseフィールド名の対応表（フェーズD Step2-3対応）。
+_SEC_LAYER3_FIELD_MAP = {
+    "Revenue": "revenue",
+    "OperatingIncome": "operating_income",
+    "SBC": "stock_based_compensation",
+    "NetIncome": "net_income",
+    "SharesDiluted": "shares_diluted",
+}
 
 JST = ZoneInfo("Asia/Tokyo")
 
@@ -164,23 +182,28 @@ def load_tanuki_valuation(ticker: str) -> Optional[Dict[str, Any]]:
 
 
 def load_layer1_financials(ticker: str) -> Dict[str, Any]:
-    """SEC normalized quarterly data + latest.json から財務指標（layer1）を取得"""
+    """SEC EDGAR Layer3（company_facts.json由来の統合スキーマ）四半期
+    データ + latest.json から財務指標（TANUKI TAIL側の「layer1」区分、
+    ＝財務諸表由来のKPI）を取得する。
+
+    ※ 戻り値の意味上の区分名「layer1」（財務諸表由来）は、本関数が参照
+    するデータソース「SEC EDGAR Layer3」（layer3_builder.py、統合
+    スキーマ）とは無関係の別軸の用語。混同しないこと。
+    """
     result: Dict[str, Any] = {}
 
-    norm_path = os.path.join(COMMON_NORMALIZED_DIR, f"{ticker}_quarterly_normalized.json")
-    if os.path.exists(norm_path):
-        with open(norm_path, encoding="utf-8") as f:
-            data = json.load(f)
+    store = build_ticker_store(ticker)
+    if store is not None:
 
         def _end_to_quarter(end: str) -> str:
             yr, mo, _ = end.split("-")
             return f"{yr}Q{(int(mo) - 1) // 3 + 1}"
 
-        rev = get_latest_quarterly(data, "Revenue")
-        oi  = get_latest_quarterly(data, "OperatingIncome")
-        sbc = get_latest_quarterly(data, "SBC")
-        ni  = get_latest_quarterly(data, "NetIncome")
-        sd  = get_latest_quarterly(data, "SharesDiluted")
+        rev = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["Revenue"])
+        oi  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["OperatingIncome"])
+        sbc = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["SBC"])
+        ni  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["NetIncome"])
+        sd  = get_latest_quarterly(store, _SEC_LAYER3_FIELD_MAP["SharesDiluted"])
 
         if rev and oi and rev.get("val"):
             result["operating_margin"] = round(oi["val"] / rev["val"], 4)
@@ -191,12 +214,12 @@ def load_layer1_financials(ticker: str) -> Dict[str, Any]:
 
         # 直近4四半期の営業利益率推移
         rev_qs = sorted(
-            get_quarterly_series(data, "Revenue"),
+            get_quarterly_series(store, _SEC_LAYER3_FIELD_MAP["Revenue"]),
             key=lambda x: x.get("end", ""), reverse=True,
         )[:4]
         oi_map = {
             x["end"]: x["val"]
-            for x in get_quarterly_series(data, "OperatingIncome")
+            for x in get_quarterly_series(store, _SEC_LAYER3_FIELD_MAP["OperatingIncome"])
         }
         opm_history = []
         for r in reversed(rev_qs):
