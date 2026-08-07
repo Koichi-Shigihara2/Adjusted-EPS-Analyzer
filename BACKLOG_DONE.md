@@ -4,6 +4,31 @@
 
 ## 2026-08-07（完了）
 
+### ✅ [LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1] SPAC合併直後銘柄の最古年度で、fetcher.py現状値の出所accnがLayer3年次エントリに一切見当たらないケースが多数
+**状態:** 解消（前提条件の消滅）
+**優先度:** 中（登録時）
+**分類:** データ欠損疑い
+**登録日:** 2026-08-07
+**完了日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+BBAI2021・CWAN2021・ESTC2022・IONQ2023・JOBY2021・LITE2021/2022・
+NET2021・RCAT2021・S2022等、各銘柄の最古年度に集中する、fetcher.py
+現状値の出所accnがLayer3年次エントリに見当たらないデータ欠損疑いを
+登録した。
+
+#### クローズ理由
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`が案2（Layer3
+切替を見送り、`fetcher.py`・`dcf_validity_checker.py`とも`data/
+annual_*.json`直読みを継続）で確定したため、登録時から本エントリの
+着手条件・存在理由として明記していた「同課題でLayer3切替自体を
+見送る場合はこの課題も消滅する」の通り、前提条件が消滅した。
+fetcher.pyがLayer3に切り替わらない以上、Layer3年次エントリの欠落が
+STONKS SILOの実害になることはない。
+
+---
+
 ### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4] フェーズD Step2-4: HypeCore切替（hypecore.py::fetch_quarterly_fundamentals）
 **状態:** `normalized/`参照をSEC EDGAR Layer3
 （`layer3_builder.py::build_ticker_store()`/`get_quarterly_series()`）

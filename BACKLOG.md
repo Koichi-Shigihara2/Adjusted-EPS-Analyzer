@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-
+MISMATCH-1]]`の対応方針を確定。案2（Layer3切替を見送り、`fetcher.py`・
+`dcf_validity_checker.py::check_c_data_jump()`とも`data/annual_*.json`
+直読みを継続）を採用し、優先度を高→低に格下げ（対応不要、記録のみ・
+恒久的な例外扱い、BACKLOG.md「優先度：低」セクションへ移動）。採用
+理由：Layer3の「filed日最新優先」は修正再表示の正誤を区別できない
+不確実な方式である一方、parser.pyの「own-year優先」は実績ある一貫
+した基準のため、正確性の確実性を犠牲にしてまで統一する理由がない。
+本決定により前提条件が消滅した`[[LAYER3-STONKS-SPAC-EARLY-YEAR-
+GAP-1]]`をクローズしBACKLOG_DONE.mdへ移動。CLAUDE_CODE_START.mdの
+フェーズD進捗欄も本決定を反映するよう更新。実装コード変更・データ
+再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（フェーズD Step2-4（HypeCore）実装完了。
 `hypecore.py::fetch_quarterly_fundamentals()`のnormalized/参照を
 SEC EDGAR Layer3（`layer3_builder.py::build_ticker_store()`/
@@ -1903,38 +1916,6 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
-
-### [LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1] STONKS SILO fetcher.pyの年次データがparser.py（own-year優先）を直接参照している一方、Layer3（filed日最新優先）に単純差し替えるとPL/CF系年次データのほぼ全セルで値が変わる
-**優先度:** 高（フェーズD Step2-2完了の前提条件）
-**分類:** 設計判断が必要 / データソース選択思想の不一致
-**登録日:** 2026-08-07
-**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
-
-#### 内容
-Layer3の年次エントリ選択（`_process_entries()`→`select_latest_filed()`）
-は「同一end日付の全候補中、filed日最新」を機械的に採用する設計。
-parser.py（fetcher.pyが直読みする`annual_*.json`の生成元）は
-`is_own_data`判定・`_resolve_bs_entity_mixing()`等で「当年自身の10-K
-（own-year）」を優先する設計。両者は元々別目的（Layer3のこの設計は
-四半期のYTDチェーン解決・10-K/A訂正取り込みのため）で作られており、
-PL/CF系フィールド（10-Kで2〜3年比較列を持つ）でほぼ全銘柄・全年度
-異なる値を拾う。AVAV FY2022 revenueで実測検証済み（現状値
-445,732,000＝own-year10-K、Layer3選択値＝2年後の10-Kの比較列が
-同一期間を再採録したもの）。BS（残高、通常2年比較）で差分ゼロなのは
-この説明と整合。
-
-#### 対応方針の選択肢（未実装）
-1. Layer3側にown-year優先ロジックを追加移植する（parser.py相当の
-   選択ロジックをLayer3の年次エントリ解決に統合）
-2. fetcher.py側の切替を見送り、当面`data/annual_*.json`（parser.py
-   経由）を直読みし続ける（フェーズD対象からSTONKS SILO年次データを
-   除外する例外扱い）
-3. その他
-
-#### 着手条件
-対応方針の決定から。単純な切替実装ではなく設計判断セッションが必要。
-
----
 
 ### [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] _classify_period()のfp=='FY' and days>130判定漏れが、BBAI以外にNOW（41件）・RMBS（16件）でも広範に該当
 **優先度:** 中（`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同型だが、NOW/RMBSでの実害〈Moat Score等への影響〉は未確認）
@@ -4237,27 +4218,6 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
-### [LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1] SPAC合併直後銘柄の最古年度で、fetcher.py現状値の出所accnがLayer3年次エントリに一切見当たらないケースが多数
-**優先度:** 中（`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の
-対応方針決定後に再評価。同課題でLayer3切替自体を見送る場合はこの
-課題も消滅する）
-**分類:** データ欠損疑い
-**登録日:** 2026-08-07
-**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
-
-#### 内容
-BBAI2021・CWAN2021・ESTC2022・IONQ2023・JOBY2021・LITE2021/2022・
-NET2021・RCAT2021・S2022等、各銘柄の最古年度に集中。STONKS SILO対象
-銘柄は赤字初期企業が多く`cagr_3yr`等が4年分のデータを要求するため、
-最古年度欠落は分析ロジックへの実害に直結しうる。
-`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同系統の期間長妥当性
-フィルタが関与している可能性があるが未確認。
-
-#### 着手条件
-`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の対応方針決定後。
-
----
-
 ### [OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1] 標準OCFタグ不在時にContinuing/Discontinued分割タグを拾えずoperating_cash_flowが構造的に欠落する（25銘柄該当）
 **優先度:** 高（登録時）→中（実害確認調査の結果、緊急性は低いと判明）
 **分類:** バグ / 確定・候補タグ設計欠陥
@@ -6515,6 +6475,53 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1] STONKS SILO fetcher.py・dcf_validity_checker.py（check_c_data_jump）の年次データがparser.py（own-year優先）を直接参照している一方、Layer3（filed日最新優先）とは選択思想が異なる
+**優先度:** 低（対応不要、記録のみ。案2〈現状維持〉採用により
+2026-08-07に高→低へ格下げ）
+**分類:** 設計判断確定（恒久的な例外扱い）
+**登録日:** 2026-08-07
+**更新日:** 2026-08-07（対応方針確定。優先度を高→低に格下げ）
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+Layer3の年次エントリ選択（`_process_entries()`→`select_latest_filed()`）
+は「同一end日付の全候補中、filed日最新」を機械的に採用する設計。
+parser.py（`fetcher.py`・`dcf_validity_checker.py::check_c_data_
+jump()`が直読みする`annual_*.json`の生成元）は`is_own_data`判定・
+`_resolve_bs_entity_mixing()`等で「当年自身の10-K（own-year）」を
+優先する設計。両者は元々別目的（Layer3のこの設計は四半期のYTD
+チェーン解決・10-K/A訂正取り込みのため）で作られており、PL/CF系
+フィールド（10-Kで2〜3年比較列を持つ）でほぼ全銘柄・全年度異なる
+値を拾う。AVAV FY2022 revenueで実測検証済み（現状値445,732,000＝
+own-year10-K、Layer3選択値＝2年後の10-Kの比較列が同一期間を
+再採録したもの）。BS（残高、通常2年比較）で差分ゼロなのはこの説明と
+整合。
+
+フェーズD Step2-5事前調査（2026-08-07）で、`dcf_validity_checker.py::
+check_c_data_jump()`（`report_consistency_check.py`のWARN-21として
+本番稼働中）も同一のデータソース・同一の参照パターンで、この課題を
+同様に引き継ぐことを確認した。
+
+#### 対応方針（確定・2026-08-07）
+**案2を採用**：Layer3切替を見送り、現状維持。`fetcher.py`・
+`dcf_validity_checker.py`（`check_c_data_jump()`）は`data/
+annual_*.json`（parser.py経由）の直読みを継続する。
+
+**採用理由**：Layer3の「filed日最新優先」は、修正再表示（10-K/A等）を
+正しく反映するケースと、タグ定義変更等で不正確な値を拾うケースを
+区別できない不確実な方式である一方、parser.pyの「own-year優先」は
+一貫した基準を持つ実績のある方式。正確性の確実性を犠牲にしてまで
+統一する理由がない。
+
+3スキーマ並存のうち、この2ファイル分（`fetcher.py`・
+`dcf_validity_checker.py`の該当関数）は恒久的な例外として残る。
+
+#### 着手条件
+なし。将来、修正再表示の理由自動判定の仕組み（フェーズF/G
+「filing_text吸収」関連）が実現した場合に再検討する。
+
+---
 
 ### [HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1] detect_substage()がrev_yoy・eps_surpriseを直接参照するが、Layer3切替時の影響が未検証
 **優先度:** 低（`determine_stage()`〈ステージ本体〉への影響はゼロと

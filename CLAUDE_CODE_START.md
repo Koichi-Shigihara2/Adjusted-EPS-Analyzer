@@ -32,11 +32,17 @@ git pull --rebase origin kaihatsu
   104銘柄全数比較・ステージ判定再確認とも差分ゼロ）。主要4消費者
   パイプラインの切替はこれで完了し、**残るはStep2-5（⑤stock.html
   フロントエンド＋診断・補助スクリプト7件、`SEC_EDGAR_LAYER_DESIGN.md`
-  「フェーズD対象リストへの追記」参照）のみ**。次セッションの選択肢：
-  1. Step2-5（⑤stock.html＋診断・補助スクリプト7件）に着手
-  2. `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（Step2-2で
-     保留中のSTONKS SILO`fetcher.py`設計判断、Step2-5と並行して選択可）
-  3. フェーズE（`normalized/`廃止）はStep2-5完了後に着手
+  「フェーズD対象リストへの追記」参照）のみ**（2026-08-07事前調査で
+  9系統中Layer3切替が実質的に必要なのは1系統のみ、他は死蔵コード・
+  書き込み専用・既にLayer3経由・stock.htmlはLayer3成果物が未公開の
+  ためアーキテクチャ上切替不可、等と判明。詳細はチャット記録・
+  BACKLOG.md該当項目参照。実装未着手）。
+  `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（Step2-2で
+  保留中だったSTONKS SILO`fetcher.py`設計判断）は2026-08-07に案2
+  （Layer3切替を見送り現状維持、`dcf_validity_checker.py::
+  check_c_data_jump()`も同一の恒久的例外として扱う）で確定済み
+  （優先度：高→低）。フェーズE（`normalized/`廃止）はStep2-5完了後に
+  着手。
 
   詳細はBACKLOG.md「次セッションでの着手順序」・BACKLOG_DONE.md
   `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`（④）・
