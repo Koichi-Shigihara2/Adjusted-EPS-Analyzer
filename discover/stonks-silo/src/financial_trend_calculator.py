@@ -2,8 +2,18 @@
 """
 財務ベクトル計算モジュール
 
-quarterly_normalized.json の四半期データから各指標のYoY・QoQベクトルを計算し、
-全銘柄のパーセンタイルで正規化してベクトル（角度・長さ）に変換する。
+Layer3ストア（common/sec_data/layer3_builder.py::build_ticker_store()の
+戻り値、company_facts.json由来）の四半期データから各指標のYoY・QoQ
+ベクトルを計算し、全銘柄のパーセンタイルで正規化してベクトル（角度・長さ）
+に変換する。
+
+[フェーズD Step2-2対応、2026-08-07] 従来は`common/sec_data/normalized/`
+（quarterly.py出力）を参照していたが、Layer3
+（`layer3_builder.py::get_field_entries()`）経由に切替済み
+（`SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step2-2）。SMフィールドは
+`[[FINTREND-SM-JOBY-NONE-1]]`の通りLayer3の挙動（selling_and_marketing
+単体タグのみを候補とし、SGA総額へのフォールバックを行わない。JOBY等で
+該当フィールドがNoneになる）をそのまま受け入れている。
 
 ベクトル定義:
   角度: 半円180度。真上(90°)=最大改善, 水平(0°)=変化なし, 真下(-90°)=最大悪化
@@ -35,7 +45,6 @@ quarterly_normalized.json の四半期データから各指標のYoY・QoQベク
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 import sys
@@ -52,14 +61,15 @@ try:
     _REPO_ROOT = _THIS_DIR.parents[2]
 except IndexError:
     _REPO_ROOT = Path.cwd()
-_NORM_DIR = _REPO_ROOT / "common" / "sec_data" / "normalized"
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
-from common.sec_data.reader import get_quarterly_series  # noqa: E402
+from common.sec_data.layer3_builder import (  # noqa: E402
+    build_ticker_store, get_field_entries, get_quarterly_series,
+)
 from common.sec_data.q4_implied import build_q4_implied_entries  # noqa: E402
 
-# 計算対象フィールド
+# 計算対象フィールド（PascalCase、既存の表示・フロントエンド契約を維持）
 # invert=True: 値が下がる方が改善（原価率）
 VECTOR_FIELDS = [
     {"name": "Revenue",         "invert": False, "weight": 1.5},
@@ -80,19 +90,40 @@ SUB_FIELDS = ["SM", "SBC"]
 # 合成ベクトルに使うフィールド（RD/CapExは方向性が複雑なため除外）
 COMPOSITE_FIELDS = {"Revenue", "GrossProfit", "NetIncome", "OCF"}
 
+# PascalCase（既存フィールド名・フロントエンド契約）→ Layer3 snake_case
+# フィールド名の対応表（フェーズD Step2-2対応）。
+_FIELD_MAP = {
+    "Revenue": "revenue",
+    "GrossProfit": "gross_profit",
+    "OperatingIncome": "operating_income",
+    "RD": "research_and_development",
+    "NetIncome": "net_income",
+    "OCF": "operating_cash_flow",
+    "CapEx": "capital_expenditure",
+    "SM": "selling_and_marketing",
+    "SBC": "stock_based_compensation",
+}
+
 
 # Q4 implied生成本体はcommon/sec_data/q4_implied.py::build_q4_implied_entries()
 # に集約済み（[[Q4-IMPLIED-CALC-TRIPLICATION-1]]対応、移行実装計画フェーズB）。
 
 
-def _get_quarterly_entries(normalized: dict, field_name: str) -> list:
-    """standalone Q エントリ + Q4 implied を返す（年次・YTD除外）"""
-    quarterly = get_quarterly_series(normalized, field_name)
-    entries = normalized.get("fields", {}).get(field_name, [])
+def _get_quarterly_entries(store: dict, field_name: str) -> list:
+    """standalone Q エントリ + Q4 implied を返す（年次・YTD除外）。
+
+    store はLayer3ストア（layer3_builder.build_ticker_store()の戻り値）。
+    field_name は本モジュールのPascalCase表記（VECTOR_FIELDS/SUB_FIELDS）
+    をそのまま受け取り、内部で_FIELD_MAP経由でLayer3のsnake_case
+    フィールド名に変換する。
+    """
+    snake_field = _FIELD_MAP[field_name]
+    quarterly = get_quarterly_series(store, snake_field)
+    entries = get_field_entries(store, snake_field)
     annual = [e for e in entries if e.get("is_annual")]
 
     # Q4 impliedを追加
-    q4_implied = build_q4_implied_entries(annual, quarterly, field_name)
+    q4_implied = build_q4_implied_entries(annual, quarterly, snake_field)
 
     # 既存Q4エントリと重複しないよう end_date で管理
     existing_ends = {e["end"] for e in quarterly}
@@ -183,13 +214,17 @@ def _pct_to_length(pct: float) -> float:
     return round(abs(pct - 50) / 50, 3)
 
 
-def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
+def compute_vectors(all_stores: dict[str, dict]) -> dict[str, dict]:
     """
-    全銘柄のnormalizedデータからベクトルを計算する。
+    全銘柄のLayer3ストアからベクトルを計算する。
 
     Parameters
     ----------
-    all_normalized: {ticker: normalized_dict}
+    all_stores: {ticker: layer3_store_dict}
+        layer3_store_dict は layer3_builder.build_ticker_store() の戻り値
+        （引数名は`load_all_normalized()`と同様、既存呼び出し元
+        〈pipeline.py〉との互換性のため維持しているが、中身はLayer3
+        ストアである点に注意）。
 
     Returns
     -------
@@ -203,11 +238,11 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
 
     raw_changes: dict[str, dict] = {}  # {ticker: {field: {yoy/qoq: change_info}}}
 
-    for ticker, normalized in all_normalized.items():
+    for ticker, store in all_stores.items():
         raw_changes[ticker] = {}
         for field_cfg in VECTOR_FIELDS:
             fname = field_cfg["name"]
-            entries = _get_quarterly_entries(normalized, fname)
+            entries = _get_quarterly_entries(store, fname)
             yoy = _calc_yoy_change(entries)
             qoq = _calc_qoq_change(entries)
             raw_changes[ticker][fname] = {"yoy": yoy, "qoq": qoq}
@@ -248,7 +283,7 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
     results: dict[str, dict] = {}
 
     for ticker, field_data in raw_changes.items():
-        normalized = all_normalized[ticker]
+        store = all_stores[ticker]
         fields_out: dict = {}
         available: list[str] = []
         missing: list[str] = []
@@ -257,7 +292,7 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
 
         # 全フィールドの最新endを取得して基準日を決定
         all_entries_by_field = {
-            field_cfg["name"]: _get_quarterly_entries(normalized, field_cfg["name"])
+            field_cfg["name"]: _get_quarterly_entries(store, field_cfg["name"])
             for field_cfg in VECTOR_FIELDS
         }
         latest_ends = [
@@ -362,16 +397,18 @@ def compute_vectors(all_normalized: dict[str, dict]) -> dict[str, dict]:
 
 
 def load_all_normalized(tickers: list[str]) -> dict[str, dict]:
-    """対象ティッカーのquarterly_normalizedを一括読み込み"""
+    """対象ティッカーのLayer3ストアを一括構築する。
+
+    [フェーズD Step2-2対応] 関数名はpipeline.py等の既存呼び出し元との
+    互換性のため維持しているが、戻り値は従来のnormalized/ JSON辞書では
+    なく layer3_builder.build_ticker_store() の戻り値（Layer3ストア、
+    company_facts.json由来）である点に注意。
+    """
     result = {}
     for ticker in tickers:
-        path = _NORM_DIR / f"{ticker}_quarterly_normalized.json"
-        if not path.exists():
-            logger.warning("[%s] normalized not found: %s", ticker, path)
+        store = build_ticker_store(ticker)
+        if store is None:
+            logger.warning("[%s] Layer3 store not found (company_facts.json missing)", ticker)
             continue
-        try:
-            with open(path, encoding="utf-8") as f:
-                result[ticker] = json.load(f)
-        except Exception as e:
-            logger.error("[%s] failed to load normalized: %s", ticker, e)
+        result[ticker] = store
     return result

@@ -1,5 +1,22 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズD Step2-2（STONKS SILO）実装完了。
+`financial_trend_calculator.py`のnormalized/参照をLayer3
+（`layer3_builder.py::get_field_entries()`）経由に切替（`fetcher.py`は
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の対応方針決定待ちで
+現状維持、`analyzer.py`は変更不要と確認済み）。25銘柄全数比較で25/25
+銘柄に差分が生じたが、パーセンタイル母集団の連鎖効果・GrossProfit
+バックフィル改善・AVAV/ESTCのYoY計算停止解消（good side effect、
+normalized/側に`q4_implied.py`集約以前の旧世代`fp:"implied"`ラベルが
+残存していたことが原因と判明）・RCATの既知パターンのみで、いずれも
+許容範囲・改善方向と確認。`SUB_FIELDS`（SM/SBC）が`compute_vectors()`
+から現状呼び出されていない未使用の定数と判明したため
+`[[FINTREND-SM-JOBY-NONE-1]]`に補足を追記。完了記録は
+`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-2]]`としてBACKLOG_DONE.mdへ
+記録。report_consistency_check.py NG=0・WARN=78件（不変）、pytest 505
+passed/2 known failed（既知のみ）。「次セッションでの着手順序」欄を
+更新。
+
 最終更新: 2026-08-07（フェーズD Step2-2（STONKS SILO）着手前の使用実態
 調査（読み取り専用）を反映。`financial_trend_calculator.py`・
 `fetcher.py`・`analyzer.py`の実装・25銘柄（`stonks_silo=true`）全数の
@@ -6457,6 +6474,15 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 normalized側はSGA総額へのフォールバック値を保持していたがLayer3側は
 `selling_and_marketing`のみを候補としNoneを返す。正しい方の挙動として
 受け入れる。
+
+**補足（2026-08-07、実装時に判明）**: `financial_trend_calculator.py`の
+`compute_vectors()`は`VECTOR_FIELDS`（Revenue/GrossProfit/OperatingIncome/
+RD/NetIncome/OCF/CapExの7項目）のみを処理しており、`SUB_FIELDS`
+（SM・SBC）は定義されているだけで`compute_vectors()`から一切呼び出され
+ていない未使用の定数と判明した。そのため本項目のJOBY None化は
+`_get_quarterly_entries()`単体の挙動としては真だが、**現状の
+`results.json`出力（`financial_vectors`）には実影響がゼロ**である。
+将来`SUB_FIELDS`が実際に配線された場合に初めて表面化する。
 
 #### 着手条件
 SM/SGA概念混同問題（`[[SCHEMA-NORMALIZED-ISSUES-1]]`②）の根本解消時に

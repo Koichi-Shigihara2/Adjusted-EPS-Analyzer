@@ -2,6 +2,99 @@
 
 ---
 
+## 2026-08-07（完了）
+
+### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-2] フェーズD Step2-2: STONKS SILO切替（financial_trend_calculator.pyのみ、fetcher.pyは保留）
+**状態:** `financial_trend_calculator.py`のnormalized/参照をLayer3
+（`layer3_builder.py::get_field_entries()`）経由に切替完了。`fetcher.py`は
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の対応方針決定待ちで
+現状維持。`analyzer.py`はSEC生データを一切参照しないため変更不要
+（fetcher.py切替保留の影響も受けないことを確認済み）
+**優先度:** 高（フェーズD本線）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**完了日:** 2026-08-07
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step2-2実装依頼（チャット記録）
+
+#### 事前調査
+着手前に3ファイル（`financial_trend_calculator.py`・`fetcher.py`・
+`analyzer.py`）の使用実態を実コードで再確認し、依頼文の「105銘柄」
+前提が誤りで実際の消費範囲は25銘柄（`stonks_silo=true`）のみと訂正。
+`fetcher.py`が年次データをparser.py（own-year優先）から直読みしており
+Layer3（filed日最新優先）への単純差替えでほぼ全セルが変わることを
+AVAV実測で確認し、`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`
+（優先度：高）として設計判断待ちに切り出した。あわせて
+`[[LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1]]`・`[[FETCHER-PY-BS-FIELDS-
+DEAD-KEYS-1]]`・`[[FINTREND-SM-JOBY-NONE-1]]`を新規登録（詳細はBACKLOG.md
+該当項目参照）。
+
+#### 実装内容
+`financial_trend_calculator.py`の`_get_quarterly_entries()`が独自に
+行っていたnormalized/直読み（`reader.get_quarterly_series()`＋
+`is_annual`フィルタの独自インライン実装）を全廃し、
+`layer3_builder.build_ticker_store()`・`get_field_entries()`・
+`get_quarterly_series()`経由に統一。PascalCase（Revenue/GrossProfit/…/
+SM/SBC、既存の表示・フロントエンド契約）→ Layer3 snake_caseの
+`_FIELD_MAP`を新設し、呼び出し側のフィールド名表記は変更していない。
+`load_all_normalized()`・`compute_vectors()`は関数名・シグネチャを
+`pipeline.py`との互換性のため維持し、内部実装のみLayer3ストア経由に
+差し替えた（`pipeline.py`は無変更）。SMフィールドは
+`[[FINTREND-SM-JOBY-NONE-1]]`の通りLayer3の挙動（JOBYでNone）を
+そのまま受け入れる方針で特別扱いしていない。
+
+#### 全数比較結果（25銘柄、実際の消費範囲全数）
+git HEAD時点の旧コード（normalized/経由）と新コード（Layer3経由）を
+両方ロードし、`compute_vectors()`の実出力を比較。25/25銘柄で何らかの
+差分が生じたが、内訳は以下の通りいずれも許容範囲・改善方向と確認：
+
+- **パーセンタイル母集団の連鎖効果**（大半）: 一部銘柄のGrossProfit等が
+  None→値化したことで全銘柄共通の分布が動き、`angle`が微小シフト
+  （`change_pct`等の実測値自体は不変）
+- **GrossProfitバックフィル改善**（ASTS/AVAV/ESTC/IONQ）:
+  `[[LAYER3-GROSSPROFIT-BACKFILL-MISSING-1]]`の効果でNone→値化
+- **良い副作用（新規発見）：AVAV/ESTCのYoY計算停止が解消**:
+  normalized/側の四半期データに、Q4逆算ロジックの`q4_implied.py`集約
+  （`[[Q4-IMPLIED-CALC-TRIPLICATION-1]]`）**以前の古い世代で生成された
+  `fp:"implied"`ラベルがキャッシュとして残存**していた（本来は
+  `fp:"Q4"`であるべき値。`build_q4_implied_entries()`は常に`fp:"Q4"`を
+  付与するが、normalized/*.jsonは`update.py`実行時点のスナップショット
+  であり、このロジック統合前に生成されたQ4逆算エントリがfp表記の
+  まま取り残されていた）。4月決算のAVAV・ESTCは、直近四半期が
+  ちょうどこの旧世代Q4逆算エントリに当たっており、
+  `_calc_yoy_change()`の`fp.startswith("Q")`判定に失敗して
+  Revenue/GrossProfit/OperatingIncome/RD/NetIncomeのYoYが**本番で
+  Noneのまま計算停止していた**。Layer3は毎回`company_facts.json`から
+  再生成するため常に現行ロジック（`fp:"Q4"`）を使い、この停止状態が
+  解消された。
+- **RCATの実測値差異（4セル）**: Revenue YoY/QoQのval_prev・change_pct
+  が実際に変化（既知のRCAT決算期変更関連の期間分類問題に起因、
+  STONKS SILO側の既知課題群と同系統）
+- **SUB_FIELDS（SM/SBC）は現状未使用と判明**: `compute_vectors()`は
+  `VECTOR_FIELDS`のみを処理しており`SUB_FIELDS`を一切呼び出していない
+  ため、`[[FINTREND-SM-JOBY-NONE-1]]`のJOBY None化は`results.json`
+  出力には実影響なし（詳細はBACKLOG.md該当項目の補足参照）
+
+両側presentなセルのchange_pct/val_latest/val_prevの完全一致検証では、
+上記RCATの4セル以外は完全一致を確認。
+
+#### テスト結果
+`tests/test_gate2_phase3b1_reader_integration.py::
+TestFinancialTrendCalculatorRegression`のフィクスチャをLayer3ストア
+形状（snake_caseフィールド名＋`{source_tag, category, entries}`）に
+更新（`_get_quarterly_entries()`がstoreを直接引数で受け取るため、
+Step2-1の`TestDuPontReliabilityLowFlag`対応で必要だった
+`build_ticker_store()`のmonkeypatchは不要）。
+`report_consistency_check.py --fail-on-ng`: NG=0・WARN=78件（既存と
+不変）。pytest 505 passed/2 known failed（既知の`[[TEST-STALE-IV-1]]`
+のみ、新規失敗なし）。
+
+#### 残タスク
+`fetcher.py`の切替は`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`
+の対応方針決定後。`analyzer.py`は変更不要（確認済み、以後の再確認
+不要）。フェーズD Step2-3以降（③TANUKI TAIL④HypeCore⑤stock.html）は
+BACKLOG.mdに`[[SECDATA-STORAGE-FRAGMENTATION-1]]`として同一IDで残置。
+
+---
+
 ## 2026-08-06（完了）
 
 ### ✅ [LAYER3-CONFIG-RD-TAG-PRIORITY-1] config/sec_concept_definitions.json(Layer3)のresearch_and_development候補タグ優先順位が[[JNJ-RD-TAG-PRIORITY-1]]と同一の誤り

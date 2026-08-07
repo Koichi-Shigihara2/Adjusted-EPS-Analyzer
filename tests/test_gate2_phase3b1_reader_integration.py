@@ -144,24 +144,37 @@ import financial_trend_calculator as ftc  # noqa: E402
 
 
 class TestFinancialTrendCalculatorRegression:
+    """[フェーズD Step2-2対応] normalized/フィクスチャ（PascalCaseキー）
+    ではなく、Layer3ストア形状（layer3_builder.build_ticker_store()の
+    戻り値、snake_caseフィールド名＋{source_tag, category, entries}）の
+    フィクスチャを使う。_get_quarterly_entries()はticker/build_ticker_store()
+    を内部で呼ばず、storeを引数でそのまま受け取るため、Step2-1の
+    TestDuPontReliabilityLowFlag対応で必要だったbuild_ticker_store()の
+    monkeypatchは不要。
+    """
+
     def test_get_quarterly_entries_excludes_ytd_and_builds_q4_implied(self):
-        normalized = {
+        store = {
             "fields": {
-                "Revenue": [
-                    {"end": "2024-03-31", "start": "2024-01-01", "val": 90,
-                     "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-04-01", "accn": "Q1"},
-                    {"end": "2024-06-30", "start": "2024-04-01", "val": 95,
-                     "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-07-01", "accn": "Q2"},
-                    {"end": "2024-09-30", "start": "2024-07-01", "val": 100,
-                     "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-10-01", "accn": "Q3"},
-                    {"end": "2024-12-31", "start": "2024-01-01", "val": 400,
-                     "is_annual": True, "is_ytd": False, "fy": 2024, "filed": "2025-02-01", "accn": "FY"},
-                    {"end": "2024-06-30", "start": "2024-01-01", "val": 999,
-                     "is_annual": False, "is_ytd": True, "fy": 2024, "filed": "2024-07-01", "accn": "YTD"},
-                ]
+                "revenue": {
+                    "source_tag": "Revenues",
+                    "category": "flow",
+                    "entries": [
+                        {"end": "2024-03-31", "start": "2024-01-01", "val": 90,
+                         "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-04-01", "accn": "Q1"},
+                        {"end": "2024-06-30", "start": "2024-04-01", "val": 95,
+                         "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-07-01", "accn": "Q2"},
+                        {"end": "2024-09-30", "start": "2024-07-01", "val": 100,
+                         "is_annual": False, "is_ytd": False, "fy": 2024, "filed": "2024-10-01", "accn": "Q3"},
+                        {"end": "2024-12-31", "start": "2024-01-01", "val": 400,
+                         "is_annual": True, "is_ytd": False, "fy": 2024, "filed": "2025-02-01", "accn": "FY"},
+                        {"end": "2024-06-30", "start": "2024-01-01", "val": 999,
+                         "is_annual": False, "is_ytd": True, "fy": 2024, "filed": "2024-07-01", "accn": "YTD"},
+                    ],
+                }
             }
         }
-        entries = ftc._get_quarterly_entries(normalized, "Revenue")
+        entries = ftc._get_quarterly_entries(store, "Revenue")
         assert [(e["end"], e["val"]) for e in entries] == [
             ("2024-03-31", 90),
             ("2024-06-30", 95),
