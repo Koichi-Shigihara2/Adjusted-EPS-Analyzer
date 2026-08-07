@@ -1,5 +1,19 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-08（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`の未決定
+事項9件を全件最終確定。1.営業日連続性保証〈pandas_market_calendars
+新規依存採用〉2.fetched_at付与 3.書き込みアトミック化〈tempfile→
+os.replace()〉4.層またぎ再計算禁止〈reader.pyドキュメント明記〉
+5.保存前検証〈時価総額乖離許容率=相対2%または絶対$1,000,000の
+大きい方、52週高安は日次バッチ時点のみ、失敗時は警告フラグ付き保存、
+market_data_violations_log.json〉6.audit.pyとの役割分担〈内部整合性
+ゲートvs外部妥当性監視、両方維持〉7.twoHundredDayAverageは非保存・
+アナリスト目標株価コンセンサスはattributes/へ 8.workflow_run連鎖
+トリガー採用 9.NETCASH-DUAL-CALC-1とは独立並行進行、の内容で確定。
+着手順序を「fetcher.py→reader.py→本番消費者→周辺ツール」の4段階に
+更新（設計判断ステップを解消により削除）。実装コード変更・データ
+再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（セッション終了時ブラッシュアップ。「次セッション
 での着手順序」欄を全面再構成し、1〜5を`[[MARKETDATA-LAYER-
 CONSTRUCTION-1]]`の未決定事項9件確認→`fetcher.py`→`reader.py`→本番
@@ -2048,54 +2062,76 @@ common/market_data/
 独立に`reader.py`を参照する（診断ツールが本番消費者ロジックに依存
 しない設計を維持）。
 
-#### 未決定事項（次回判断）
-`EXTRACTION_DESIGN_PRINCIPLES.md`3原則（期間・時系列の妥当性／
-フィールド間整合性／恒等式検証）を確定済み設計に照合した投資調査
-（チャット記録、2026-08-07）の結果、以下6項目を追加設計判断事項と
-する：
+#### 設計確定事項（続き、2026-08-08、未決定事項9件の最終確定）
+2026-08-07時点の未決定事項9件（3原則照合による追加6件＋既存3件）
+それぞれについて投資調査（チャット記録、2026-08-07）で具体案を提示し、
+以下の内容で全件確定した：
 
-1. `get_price_series`/`get_ma_deviation`の営業日連続性保証：
-   `days=N`は営業日ベースと明記する。`daily/{SYMBOL}.json`保存側で
-   欠損日を検知し、`get_price_series`はN件に満たない・欠損を挟む
-   場合は明示的にNoneまたは警告フラグ付きで返す。`get_ma_deviation`
+1. 営業日連続性保証：`pandas_market_calendars`を新規依存として採用
+   （NYSE公式カレンダー準拠、正確性優先。既存の`src/market/
+   macro_pulse/05_main.py::us_holidays()`は米国連邦祝日〈Columbus
+   Day・Veterans Day含む、Good Friday除く〉でありNYSE取引カレンダー
+   とは異なるため流用不可と確認済み）。`get_price_series()`は
+   `nyse.valid_days()`と実際のレコード日付集合を突合し、説明のつかない
+   欠損があれば警告フラグ付きで返す。`get_ma_deviation(window=200)`
    は200日分未満のデータしかない場合はNoneを返す。
-2. `attributes/{SYMBOL}.json`への`fetched_at`フィールド追加：
-   週次バッチ取得のたびに`fetched_at`（ISO8601 UTC）を各レコードに
-   格納し、`reader.get_attributes()`が値と併せて返せるようにする。
-3. `daily/`・`attributes/`書き込みのアトミック化：
-   一時ファイル書き込み→renameで、バッチ実行中の部分書き込み状態を
-   他プロセスが読まないことを保証する。
-4. 層またぎ再計算の明示的禁止：
-   `attributes/`のPER/PEG/PSR/EV_EBITDA等は取得元`.info`呼び出し内で
-   自己完結した値であり、`daily/`の別時点データと組み合わせて再計算
-   してはならない旨を設計文書に明記する。
-5. 保存前検証ロジック（恒等式検証）：`fetcher.py`保存前に、価格・
-   出来高>0、高値≥安値≥終値、52週高値≥52週安値、時価総額≈株価×
-   発行済株式数（近似一致）を検証する。検証結果は
-   `common/market_data/{SYMBOL}/market_data_violations_log.json`
-   （`fy_collision_log.json`型、0件でも毎回書き込む）に記録する。
-6. `audit.py`のβ乖離監査（事後監査）と`fetcher.py`保存前検証（上記
-   5）の役割分担を明記する。
+2. `attributes/{SYMBOL}.json`へ`fetched_at`（ISO8601 UTC）フィールドを
+   追加する。
+3. `daily/`・`attributes/`書き込みをアトミック化する（`tempfile`で
+   同一ディレクトリに一時ファイルを作成→`os.replace()`、Python標準
+   ライブラリのみで実装、外部依存不要）。
+4. 層またぎ再計算の禁止を`reader.py`のdocstringに明記する（実行時
+   強制は過剰設計と判断、コメントレベルの明記に留める）。
+5. 保存前検証ロジック（恒等式検証）:
+   - 時価総額乖離許容率: `abs(computed_mcap - reported_mcap) <=
+     max(reported_mcap * 0.02, 1_000_000)`（`common/sec_data/
+     parser.py`のBS恒等式検証`_BS_IDENTITY_TOL_REL = 0.02`の相対2%を
+     踏襲し、小型株向けに絶対フロア$1,000,000を追加）
+   - 52週高安の検証は日次バッチ実行時点でのみ行う（過去データの
+     都度再検証はしない、sec_data既存パターン〈CHECK29等〉と整合）
+   - 検証失敗時は警告フラグ付きで保存する（保存拒否はしない、
+     `_validation_warnings: [...]`フィールドを追加。理由:
+     `fy_collision_log.json`等の既存パターンと同じ「検知のみ・
+     自動修正なし・保存継続」方式を踏襲し、保存拒否による日次欠損が
+     項目1の連続性保証に穴を作る副作用を避けるため）
+   - 検証結果は`common/market_data/{SYMBOL}/
+     market_data_violations_log.json`（`fy_collision_log.json`型、
+     0件でも毎回書き込む）に記録する
+6. `audit.py`のβ乖離監査（`beta_config.json`との外部妥当性監視）と
+   `fetcher.py`保存前検証（同一スナップショット内の内部整合性
+   ゲート）は検証対象が異なるため、両方維持する（役割分担を設計
+   文書に明記）。
+7. `twoHundredDayAverage`は保存しない（`get_ma_deviation`が
+   `price_series`から都度計算する設計を最終確定。`[[HYPECORE-MISC-
+   NAMING-GAPS-1]]`③既知の別データソース問題を踏まえ独自計算へ
+   一本化）。アナリスト目標株価コンセンサス（`targetMeanPrice`等）は
+   `.info`由来のスナップショット値のため`attributes/`へ格納し、
+   アップグレード・ダウングレード等の真のイベントを扱う
+   `analyst_history/`とは明確に区別する。
+8. `workflow_run`連鎖トリガーを採用する：`Market_Data_Daily_
+   Update.yml`（市場クローズ後、21:35 UTC付近想定）完了後にTANUKI
+   VALUATION・STONKS SILOをworkflow_runでトリガーする（前日終値
+   ベース化に伴うレース条件〈日次バッチ未完了時に読みに行くリスク〉
+   回避のため）。週次`attributes/`バッチは本番消費者を待たせる必要が
+   ないため独立cronのまま維持する。
+9. `[[NETCASH-DUAL-CALC-1]]`とは独立タスクとして並行進行する。
+   market_data層の`attributes/`には`totalDebt`を含めるが、STONKS
+   SILOの`net_cash`計算をmarket_data経由の`totalDebt`に置き換える
+   新規実装は行わない（`[[NETCASH-DUAL-CALC-1]]`の既存対応方針＝
+   `SECReader.get_net_cash()`〈SEC XBRLベース〉への統一を優先する）。
 
-以下は既存の未決定事項（次回判断、変更なし）：
-- `twoHundredDayAverage`・アナリスト目標株価コンセンサスの最終格納先
-  （提案は上記の通りだが最終確認は次回）
-- `workflow_run`連鎖トリガー（`SEC_Data_Audit.yml`型）を市場データ側
-  バッチにも広げるかの設計判断
-- `[[NETCASH-DUAL-CALC-1]]`（`valuation_fetcher.py`の`total_debt`重複、
-  既知課題）との関係整理
+これにより未決定事項9件は全件解消した。
 
 #### 着手順序
-1. 上記6項目の設計を確定（実装着手前の最終設計判断）
-2. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化）
-3. `reader.py`新設（API群の実装）
-4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
+1. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化、
+   `pandas_market_calendars`依存追加含む）
+2. `reader.py`新設（API群の実装）
+3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
    VALUATION本体から、フェーズDと同様の優先順位を検討）
-5. 周辺ツール2ファイルの切替
+4. 周辺ツール2ファイルの切替
 
 #### 着手条件
-上記「未決定事項」9件（3原則照合による追加6件＋既存3件）の確認、
-および実装着手の可否判断。
+なし（未決定事項9件は全件確定済み、実装着手可能）。
 
 ---
 
@@ -8766,45 +8802,39 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 ### 次セッションでの着手順序（提案）
 
-**（2026-08-07更新〈3原則照合・未決定事項確定に伴う再更新〉。以下が
-最新の優先順位。旧「本線（2026-08-05更新）」以下は`common/sec_data`
-統合フェーズD着手前〈normalized/→data/統合案〉時点の古い計画のため
-陳腐化・参照時は本節を優先すること）**
+**（2026-08-08更新〈`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`未決定事項
+9件の最終確定に伴う再更新〉。以下が最新の優先順位。旧「本線
+（2026-08-05更新）」以下は`common/sec_data`統合フェーズD着手前
+〈normalized/→data/統合案〉時点の古い計画のため陳腐化・参照時は
+本節を優先すること）**
 
-**1. `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`未決定事項9件の最終設計
-判断**（3原則〈期間・時系列の妥当性／フィールド間整合性／恒等式
-検証〉照合で追加された6件〈営業日連続性保証・`fetched_at`付与・
-書き込みアトミック化・層またぎ再計算の禁止・保存前検証ロジック＋
-`market_data_violations_log.json`・`audit.py`との役割分担〉と、既存
-3件〈`twoHundredDayAverage`等の格納先・`workflow_run`連鎖トリガーの
-適用範囲・`[[NETCASH-DUAL-CALC-1]]`との関係整理〉。特に保存前検証
-〈時価総額≈株価×発行済株式数の近似一致等〉の乖離許容率のような
-具体的な数値パラメータの確定が必要）
+**1. `fetcher.py`新設**（`.history()`・`.download()`呼び出しの一元化、
+`pandas_market_calendars`依存追加含む。`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`の未決定事項9件は2026-08-08に全件確定済みのため、
+設計判断ステップは不要）
 
-**2. `fetcher.py`新設**（`.history()`・`.download()`呼び出しの一元化）
-
-**3. `reader.py`新設**（API群の実装: `get_latest_price`・
+**2. `reader.py`新設**（API群の実装: `get_latest_price`・
 `get_price_series`・`get_ma_deviation`・`get_attributes`・
 `get_analyst_events`・`get_calendar`・`get_index_series`・
 `get_sp500_constituents_prices`）
 
-**4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替**
+**3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替**
 （`pipeline.py`・`data_fetcher.py`・`beta_fetcher.py`・`hypecore.py`・
 `valuation_fetcher.py`・`collect_and_send.py`・
 `breadth_calculator.py`・`collect.py`＋`score_verifier.py`・
 `audit.py`。TANUKI VALUATION本体から、フェーズDと同様の優先順位を
 検討）
 
-**5. 周辺ツール2ファイルの切替**（`backfill_tech_pulse.py`・
+**4. 周辺ツール2ファイルの切替**（`backfill_tech_pulse.py`・
 `extract_key_facts.py`）
 
-（上記1〜5完了後、新DB構築プロジェクト フェーズ1の残りコンポーネント
+（上記1〜4完了後、新DB構築プロジェクト フェーズ1の残りコンポーネント
 として`common/macro_data/`新設〈FRED統合層、`INPUT-A-024〜047`対応、
 `INPUT_DATA_TOBE.md` 2-C参照、investigate未着手〉に着手する。着手前に
 `docs/architecture/new_data_platform/EXTRACTION_DESIGN_PRINCIPLES.md`
 を必ず確認すること）
 
-**6. （本線外）本セッション・前セッションで蓄積した課題群**:
+**5. （本線外）本セッション・前セッションで蓄積した課題群**:
 
 - **優先度中**: `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（AVGOの
   旧CIK登録が無関係な買収先企業Broadcom Corporationを指している疑い。
