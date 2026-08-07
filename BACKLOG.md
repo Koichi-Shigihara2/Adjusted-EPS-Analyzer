@@ -1,5 +1,16 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（stock.htmlのLayer3切替着手要否投資調査結果を
+反映。`[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1]]`（優先度：低、
+Layer3ストア公開パイプライン未整備が着手ブロッカー、技術コストは
+低いが現状実害ゼロのため見送り）・`[[STOCKHTML-YTD-FILTER-BUG-
+SUSPECT-1]]`（優先度：低、JS側`getQ()`のis_ytd未除外は構造的リスク
+だが105銘柄×5フィールド全数実測で現状未発現と確認）を新規登録。
+`[[SCHEMA-NORMALIZED-ISSUES-1]]`⑥DAフォールバック欠如に、今回の
+実測データ（105銘柄中30銘柄・約29%でDAフィールド空、MSFT/TSLA/
+GOOGL/AVGO等主要銘柄含む）を追記。実装コード変更・データ再生成なし
+（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-
 MISMATCH-1]]`の対応方針を確定。案2（Layer3切替を見送り、`fetcher.py`・
 `dcf_validity_checker.py::check_c_data_jump()`とも`data/annual_*.json`
@@ -4785,6 +4796,16 @@ pipeline.py:2807）は`normalized/`ではなくannual/quarterly側
 計算結果への実害はない。`normalized/`のDAはstock.htmlの単純表示にしか
 使われていないため影響は限定的。着手条件: なし。
 
+**定量実測結果（2026-08-07、`[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-
+MISSING-1]]`着手要否投資調査の一環）**: `normalized/`105銘柄全数を
+実測した結果、**30銘柄（約29%）でDAフィールドが完全に空（0件）**と
+確認。MSFT・TSLA・GOOGL・AVGOを含む主要銘柄も対象:
+`ABBV, ADSK, AMD, APGE, AVGO, BBAI, CEG, COHR, CON, ENB, ESTC, GEV,
+GOOGL, INTU, IONQ, KULR, LITE, LMT, LOAR, LRCX, MRVL, MSFT, RKLB,
+TASK, TDY, TSLA, VZ, V, WMT, ZETA`。いずれもstock.htmlのCF滝グラフ
+「SBC・D&A比率」チャートでD&A系列が欠落する（表示のみへの影響、
+TANUKI VALUATION計算結果への実害は上記の通りなし）。
+
 #### 対応方針
 ①〜⑥のいずれも、`common/sec_data`統合スキーマ（Layer2/Layer3）設計時に
 `parser.py`側の定義（フォールバック網羅性・優先順序とも既に安全性検証
@@ -6475,6 +6496,50 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1] stock.htmlのLayer3切替は新規公開パイプライン構築が前提だが、現時点で着手しない
+**優先度:** 低（対応不要、記録のみ）
+**分類:** アーキテクチャ上のブロッカー / 着手見送り
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-5事前調査・着手要否投資調査（チャット記録、2026-08-07）
+
+#### 内容
+stock.htmlは`normalized/`を直接fetchしており、Layer3切替には
+Layer3ストアをJSON化して`docs/`配下に公開する新規パイプライン
+（GitHub Actions拡張）が必要。技術コストは低い（既存`SEC_Data_
+Update.yml`への追加ステップとして実装可能、ファイルサイズ2〜4MB
+程度、計算コストも軽微）が、以下の理由で着手を見送る：
+- 現状に緊急性のある実害はゼロ（is_ytdフィルタ漏れは実データで
+  未発現、DAフィールド欠如29%も表示のみへの影響でフォールバックも
+  堅牢）
+- CF滝グラフはページ最下部の補助的機能、2.5ヶ月間安定稼働
+- 着手すれば`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`と
+  同じ「filed日最新優先 vs own-year優先」の検証課題が再発する
+  可能性がある（未検証）
+
+#### 着手条件
+なし。DAフィールド欠如が実際にユーザー影響を持つと判明した場合、
+またはstock.htmlの利用実態が変化した場合に再検討。
+
+---
+
+### [STOCKHTML-YTD-FILTER-BUG-SUSPECT-1] stock.htmlのJS側フィルタがis_ytdを除外していない（構造的リスク、現状未発現）
+**優先度:** 低
+**分類:** バグ疑い（潜在的、実データでは未発現）
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-5事前調査・着手要否投資調査（チャット記録、2026-08-07）
+
+#### 内容
+JS側`getQ()`は`.filter(e => e.is_annual === false)`のみで`is_ytd`を
+除外しない。`normalizer.py`側がYTDエントリを標準四半期値へ変換完了
+させてから`normalized/`へ永続化しているため、現状データ（105銘柄×
+5フィールド全数実測）には未解決のYTD残骸が1件も存在せず、実害なし。
+
+#### 着手条件
+なし。将来`normalizer.py`側の変換ロジックが変わり未解決YTDが
+残存するようになった場合に再検討。
+
+---
 
 ### [LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1] STONKS SILO fetcher.py・dcf_validity_checker.py（check_c_data_jump）の年次データがparser.py（own-year優先）を直接参照している一方、Layer3（filed日最新優先）とは選択思想が異なる
 **優先度:** 低（対応不要、記録のみ。案2〈現状維持〉採用により
