@@ -1,5 +1,21 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズD Step2-2（STONKS SILO）着手前の使用実態
+調査（読み取り専用）を反映。`financial_trend_calculator.py`・
+`fetcher.py`・`analyzer.py`の実装・25銘柄（`stonks_silo=true`）全数の
+Layer3事前差分シミュレーション結果から、新規課題4件を登録:
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（優先度：高。
+fetcher.pyの年次データ選択思想がLayer3〈filed日最新優先〉とparser.py
+〈own-year優先〉で異なり、単純差替えでPL/CF系年次データのほぼ全セルが
+変わることをAVAV実測で確認。フェーズD Step2-2完了の前提条件）・
+`[[LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1]]`（優先度：中、①の対応方針
+決定後に再評価）・`[[FETCHER-PY-BS-FIELDS-DEAD-KEYS-1]]`（優先度：低、
+Layer3移行と無関係の既存デッドコード）・`[[FINTREND-SM-JOBY-NONE-1]]`
+（優先度：低、`[[SCHEMA-NORMALIZED-ISSUES-1]]`②の既知帰結）。調査時、
+依頼文の「105銘柄」前提が誤りで実際の消費範囲は25銘柄（`stonks_silo=
+true`）のみと訂正した。実装コード変更・データ再生成なし（BACKLOG登録
+のみ）。コミット・push未実施（ユーザー確認待ち）。
+
 最終更新: 2026-08-06（Layer3統一方針への文書横断整合性確認・修正。
 `SEC_EDGAR_LAYER_DESIGN.md`フェーズD（Layer3統合）と
 `[[SECDATA-STORAGE-FRAGMENTATION-1]]`が5消費者の移行先（Layer3 vs
@@ -1812,6 +1828,38 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1] STONKS SILO fetcher.pyの年次データがparser.py（own-year優先）を直接参照している一方、Layer3（filed日最新優先）に単純差し替えるとPL/CF系年次データのほぼ全セルで値が変わる
+**優先度:** 高（フェーズD Step2-2完了の前提条件）
+**分類:** 設計判断が必要 / データソース選択思想の不一致
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+Layer3の年次エントリ選択（`_process_entries()`→`select_latest_filed()`）
+は「同一end日付の全候補中、filed日最新」を機械的に採用する設計。
+parser.py（fetcher.pyが直読みする`annual_*.json`の生成元）は
+`is_own_data`判定・`_resolve_bs_entity_mixing()`等で「当年自身の10-K
+（own-year）」を優先する設計。両者は元々別目的（Layer3のこの設計は
+四半期のYTDチェーン解決・10-K/A訂正取り込みのため）で作られており、
+PL/CF系フィールド（10-Kで2〜3年比較列を持つ）でほぼ全銘柄・全年度
+異なる値を拾う。AVAV FY2022 revenueで実測検証済み（現状値
+445,732,000＝own-year10-K、Layer3選択値＝2年後の10-Kの比較列が
+同一期間を再採録したもの）。BS（残高、通常2年比較）で差分ゼロなのは
+この説明と整合。
+
+#### 対応方針の選択肢（未実装）
+1. Layer3側にown-year優先ロジックを追加移植する（parser.py相当の
+   選択ロジックをLayer3の年次エントリ解決に統合）
+2. fetcher.py側の切替を見送り、当面`data/annual_*.json`（parser.py
+   経由）を直読みし続ける（フェーズD対象からSTONKS SILO年次データを
+   除外する例外扱い）
+3. その他
+
+#### 着手条件
+対応方針の決定から。単純な切替実装ではなく設計判断セッションが必要。
+
+---
 
 ### [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] _classify_period()のfp=='FY' and days>130判定漏れが、BBAI以外にNOW（41件）・RMBS（16件）でも広範に該当
 **優先度:** 中（`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同型だが、NOW/RMBSでの実害〈Moat Score等への影響〉は未確認）
@@ -4114,6 +4162,27 @@ TRUST-SUMMARY-EPIC-1へ統合済み（詳細は同エントリ参照）。
 
 ## 優先度：中（こなれてきたら対応）
 
+### [LAYER3-STONKS-SPAC-EARLY-YEAR-GAP-1] SPAC合併直後銘柄の最古年度で、fetcher.py現状値の出所accnがLayer3年次エントリに一切見当たらないケースが多数
+**優先度:** 中（`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の
+対応方針決定後に再評価。同課題でLayer3切替自体を見送る場合はこの
+課題も消滅する）
+**分類:** データ欠損疑い
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+BBAI2021・CWAN2021・ESTC2022・IONQ2023・JOBY2021・LITE2021/2022・
+NET2021・RCAT2021・S2022等、各銘柄の最古年度に集中。STONKS SILO対象
+銘柄は赤字初期企業が多く`cagr_3yr`等が4年分のデータを要求するため、
+最古年度欠落は分析ロジックへの実害に直結しうる。
+`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同系統の期間長妥当性
+フィルタが関与している可能性があるが未確認。
+
+#### 着手条件
+`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`の対応方針決定後。
+
+---
+
 ### [OPERATING-CASH-FLOW-CONTINUING-DISCONTINUED-GAP-1] 標準OCFタグ不在時にContinuing/Discontinued分割タグを拾えずoperating_cash_flowが構造的に欠落する（25銘柄該当）
 **優先度:** 高（登録時）→中（実害確認調査の結果、緊急性は低いと判明）
 **分類:** バグ / 確定・候補タグ設計欠陥
@@ -6361,6 +6430,39 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [FETCHER-PY-BS-FIELDS-DEAD-KEYS-1] fetcher.pyの_BS_FIELDSでtotal_debt・shares_outstanding・shares_dilutedがannual_*.jsonに実在しないキーを参照しており常にNone
+**優先度:** 低（analyzer.pyがこの4項目を参照しないため現状無害）
+**分類:** バグ（死んだコード）
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+実際は`long_term_debt`/`short_term_debt`が別名、shares系は`shares`
+セクション別置き。Layer3移行とは無関係の独立した既存バグ。
+
+#### 着手条件
+なし。実害が発生した時点で対応。
+
+---
+
+### [FINTREND-SM-JOBY-NONE-1] financial_trend_calculator.pyのSMフィールドがJOBYでNone化する（Layer3切替時）
+**優先度:** 低（既知の`[[SCHEMA-NORMALIZED-ISSUES-1]]`②の帰結、
+`[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`と同型・同じ判断基準を適用）
+**分類:** 仕様変更（改善）
+**登録日:** 2026-08-07
+**発見:** フェーズD Step2-2事前調査（チャット記録、2026-08-07）
+
+#### 内容
+normalized側はSGA総額へのフォールバック値を保持していたがLayer3側は
+`selling_and_marketing`のみを候補としNoneを返す。正しい方の挙動として
+受け入れる。
+
+#### 着手条件
+SM/SGA概念混同問題（`[[SCHEMA-NORMALIZED-ISSUES-1]]`②）の根本解消時に
+再検討。
+
+---
 
 ### [RCAT-2016Q3-ORPHANED-QUARTERLY-FILE-1] RCAT 2016Q3のquarterly_*.jsonが新ロジックで未上書きのまま残存
 **優先度:** 低
