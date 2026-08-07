@@ -1,15 +1,15 @@
 JNJ INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-06T01:20:36+09:00
-Price: $258.17
+Generated: 2026-08-08T00:17:34+09:00
+Price: $256.66
 
 [1. TANUKI SCORE]
 Classification: HOLD
 Funda_Score: 55/100
 Timing_Score (components):
-  Deviation_Rate: -66.2%
-  MA200_Deviation: +13.9%
+  Deviation_Rate: -65.8%
+  MA200_Deviation: +13.2%
   HypeCore_Phase: Phase2 (期待拡大期)
-  Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +221.3%
+  Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +219.3%
 Comment: 割高(-66%超)、FCF黒字、売上安定成長
 Definition:
 
@@ -31,8 +31,8 @@ PASS: Funda<25, excluded from consideration
 Matrix: ①投資効率系
 Quadrant: 左下
 Label: 割高×低効率
-Key_Metric_Y: RICE = 0.093
-Deviation_Rate: -66.2%
+Key_Metric_Y: RICE = 0.050
+Deviation_Rate: -65.8%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $258.17
-Intrinsic_Value_BASE: $87.14
-Deviation_BASE: -66.2%
+Current_Price: $256.66
+Intrinsic_Value_BASE: $87.68
+Deviation_BASE: -65.8%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 2.2% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=1.5%, IV=$83.49 （推奨値ベース）
-BASE: Growth=2.2%, IV=$87.14 （推奨値ベース）
-BULL: Growth=2.6%, IV=$89.65 （推奨値ベース）
+BEAR: Growth=1.5%, IV=$84.42 （推奨値ベース）
+BASE: Growth=2.2%, IV=$87.68 （推奨値ベース）
+BULL: Growth=2.6%, IV=$89.91 （推奨値ベース）
 TTM_YoY_Growth: 7.9%
 (DCF Base vs TTM actual: -5.7pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,23 +72,23 @@ WACC_CAPM_Reference: 6.01%
 Terminal_Growth_Rate: 3.0%
 Beta: 0.3
 Valuation_Gap_Analysis:
-  DCF_IV:           $87 (保守的FCFベース・現在実力値)
-  Market_Price:     $258
+  DCF_IV:           $88 (保守的FCFベース・現在実力値)
+  Market_Price:     $257
   Gap:              -66% (市場が将来成長を先取り)
-  Implied_FCF_2030: $44.52B (現在株価を正当化するために必要な5年後FCF)
+  Implied_FCF_2030: $44.27B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $17.29B
   Required_Growth:  21%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $17,291.50M (4yr平均 + R&D補正)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $91.10B (7yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $151.84B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $242.94B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $80.78B (6yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $163.46B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $244.24B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.7000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $210.01B (= v0 + RPO_PV + GO_PV + Net_Cash $-32.94B)
+Equity_Value: $211.31B (= v0 + RPO_PV + GO_PV + Net_Cash $-32.94B)
 Shares_Used: 2409.9M (source: yf_implied)
-→ Intrinsic_Value: $87.14 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $87.68 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+32.94B (negative=net cash)
   Total_Debt: $54.99B  Cash: $21.69B  ST_Invest: $0.36B
@@ -183,18 +183,16 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.064
-BASE: RICE=0.093
-BULL: RICE=0.11
+BEAR: RICE=0.034
+BASE: RICE=0.05
+BULL: RICE=0.06
 Components (BASE scenario):
 G  = 2.2%  [TANUKI forward growth rate]
 Q  = 0.8949   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.2558  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 1.1646  [R&D除外・CapExのみ投資強度]
-RICE_adj = 0.426  [参考：R&D資本化想定]
+RICE_adj = 0.229  [参考：R&D資本化想定]
 WACC = 10.0%
-VC_Factor = 1.86  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 1.86  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -246,13 +244,13 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 30.2x
-  Adjusted_EPS_PER: 24.6x (TTM調整後EPS: $10.5119)
-  Delta: -5.6x (cheaper on adjusted basis)
+  Market_PER_GAAP: 29.8x
+  Adjusted_EPS_PER: 24.4x (TTM調整後EPS: $10.5119)
+  Delta: -5.4x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-13
   Next_Quarter_EPS: N/A (no analyst estimates in data)
-  Next_FY_EPS: $12.41 (yfinance forward EPS)
+  Next_FY_EPS: $12.31 (yfinance forward EPS)
 Definition:
 
 Market_PER_GAAP: Price / GAAP EPS TTM (market-provided, trailing 12M)
@@ -274,10 +272,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase2 (期待拡大期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 30.2x
-  PEG: 4.23
-  PS:  6.4x
-  EV_EBITDA: 18.4x
+  PER: 29.8x
+  PEG: 4.24
+  PS:  6.3x
+  EV_EBITDA: 18.6x
   PEG_Signal: 割高水準（成長率対比でPEG>2.0）
   PS_Signal: 適正水準
 Definition:
@@ -297,9 +295,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 4.81%  (ForwardEPS $12.41 / Price $258.17)
+  Forward_Earnings_Yield: 4.80%  (ForwardEPS $12.31 / Price $256.66)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: 0.51%
+  ERP: 0.50%
   ERP_Signal: 期待やや過熱（成長期待が株価に織り込まれ始めている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -323,7 +321,7 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +221.3%
+Analyst_Consensus: Buy | Target: $280 median ($190-$305) | 22 analysts | vs IV: +219.3%
 Insider_Activity: Sell優勢 | 買い0件 / 売り2件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 7.9%
@@ -348,7 +346,7 @@ based on recent 4Q linear trend. Rough estimate only.
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
   [high] litigation: Ongoing antitrust lawsuit
-  [high] regulatory: Active SEC regulatory investigation
+  [high] regulatory: SEC regulatory investigation
   [mid] earnings: Earnings warning amid 2025-2026 competition
 
 ==============================================

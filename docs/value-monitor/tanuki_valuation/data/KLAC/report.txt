@@ -1,16 +1,16 @@
 KLAC INTEGRATED INVESTMENT REPORT
-Generated: 2026-08-06T01:22:48+09:00
-Price: $193.81
+Generated: 2026-08-08T00:19:42+09:00
+Price: $197.62
 
 [1. TANUKI SCORE]
 Classification: TRIM
 Funda_Score: 80/100
 Timing_Score (components):
-  Deviation_Rate: -59.8%
-  MA200_Deviation: +18.9%
+  Deviation_Rate: -67.5%
+  MA200_Deviation: +21.3%
   HypeCore_Phase: Phase4 (期待剥落期)
-  Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +188.6%
-Comment: 割高(-60%超)、FCF黒字、売上安定成長
+  Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +250.4%
+Comment: 割高(-68%超)、FCF黒字、売上安定成長
 Definition:
 
 Funda_Score: Composite score of financial health,
@@ -30,9 +30,9 @@ PASS: Funda<25, excluded from consideration
 [2. MATRIX POSITION]
 Matrix: ①投資効率系
 Quadrant: 左下
-Label: 割高×中効率
-Key_Metric_Y: RICE = 1.352
-Deviation_Rate: -59.8%
+Label: 割高×低効率
+Key_Metric_Y: RICE = 0.676
+Deviation_Rate: -67.5%
 Thresholds:
   RICE_Threshold: 3.0/1.0/0 (>=3.0=high, 1.0-3.0=medium, 0-1.0=low, <0=undefined OCF-negative)
   ROE_Threshold: 15% (above=high profitability)
@@ -56,15 +56,15 @@ Positive deviation = undervalued (intrinsic > current)
 
 
 [3. TANUKI VALUATION]
-Current_Price: $193.81
-Intrinsic_Value_BASE: $77.96
-Deviation_BASE: -59.8%
+Current_Price: $197.62
+Intrinsic_Value_BASE: $64.21
+Deviation_BASE: -67.5%
 Growth_Rate_Original: 15.0% (TTM実績)
 Growth_Rate_Adjusted: 12.8% (推奨値・中央値ベース)
 Scenarios:
-BEAR: Growth=9.0%, IV=$59.89 （推奨値ベース）
-BASE: Growth=12.8%, IV=$77.96 （推奨値ベース）
-BULL: Growth=15.4%, IV=$92.80 （推奨値ベース）
+BEAR: Growth=9.0%, IV=$53.32 （推奨値ベース）
+BASE: Growth=12.8%, IV=$64.21 （推奨値ベース）
+BULL: Growth=15.4%, IV=$72.49 （推奨値ベース）
 TTM_YoY_Growth: 13.4%
 (DCF Base vs TTM actual: -0.6pt discount)
 Discount_Rate_Primary: 10.00% (DCF discount rate used)
@@ -72,23 +72,23 @@ WACC_CAPM_Reference: 12.61%
 Terminal_Growth_Rate: 3.0%
 Beta: 1.458
 Valuation_Gap_Analysis:
-  DCF_IV:           $78 (保守的FCFベース・現在実力値)
-  Market_Price:     $194
-  Gap:              -60% (市場が将来成長を先取り)
-  Implied_FCF_2030: $17.27B (現在株価を正当化するために必要な5年後FCF)
+  DCF_IV:           $64 (保守的FCFベース・現在実力値)
+  Market_Price:     $198
+  Gap:              -68% (市場が将来成長を先取り)
+  Implied_FCF_2030: $17.61B (現在株価を正当化するために必要な5年後FCF)
   Current_FCF:      $3.58B
   Required_Growth:  37%/yr (現在FCFから必要成長率を逆算)
 FCF_Base: $3,583.87M (4yr平均 + R&D補正)
 DCF_Reliability: HIGH  (FCF実績プラス: 通常判定適用)
-DCF_FCF_PV: $36.66B (9yr discounted FCF sum, pre-alpha, Rm=10%)
-DCF_TV_PV:  $66.15B (terminal value present value, pre-alpha, Rm=10%)
-DCF_v0:     $102.81B (= FCF_PV + TV_PV, Rm=10% enterprise value)
+DCF_FCF_PV: $23.51B (6yr discounted FCF sum, pre-alpha, Rm=10%)
+DCF_TV_PV:  $61.34B (terminal value present value, pre-alpha, Rm=10%)
+DCF_v0:     $84.84B (= FCF_PV + TV_PV, Rm=10% enterprise value)
 Alpha_Premium: 0.8000 (HypeCore expectation premium; Rm basis)
 RPO_PV: $0
 Growth_Option_PV: $0
-Equity_Value: $101.84B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.97B)
+Equity_Value: $83.87B (= v0 + RPO_PV + GO_PV + Net_Cash $-0.97B)
 Shares_Used: 1306.3M (source: yf_implied)
-→ Intrinsic_Value: $77.96 (= Equity_Value ÷ Shares_Used)
+→ Intrinsic_Value: $64.21 (= Equity_Value ÷ Shares_Used)
 Financial_Health:
   Net_Debt: $+0.97B (negative=net cash)
   Total_Debt: $5.89B  Cash: $1.79B  ST_Invest: $3.13B
@@ -183,18 +183,16 @@ Industry benchmark: Damodaran 2025 fundgrEB.xls
 [5. RICE METRICS]
 Available: true
 Exclusion_Reason: N/A
-BEAR: RICE=0.95
-BASE: RICE=1.352
-BULL: RICE=1.626
+BEAR: RICE=0.475
+BASE: RICE=0.676
+BULL: RICE=0.813
 Components (BASE scenario):
 G  = 12.8%  [TANUKI forward growth rate]
 Q  = 1.0167   [OCF / (NetIncome + SBC), 3yr avg]
 CF = 0.5193  [RevGrowth / InvestmentIntensity, 1yr lag, 3yr avg]
 CF_adj = 2.9260  [R&D除外・CapExのみ投資強度]
-RICE_adj = 7.615  [参考：R&D資本化想定]
+RICE_adj = 3.808  [参考：R&D資本化想定]
 WACC = 10.0%
-VC_Factor = 2.00  [RICE-1: clamp(ROIC/WACC,0.3,2.0)]
-ROIC_WACC_Ratio = 5.08  [NOPAT/InvestedCapital / 0.10]
 SBC_Adjusted: true
 Definition:
 
@@ -246,9 +244,9 @@ Surprise Rate = (Actual - Estimate) / |Estimate| x 100
 Positive surprise historically correlates with
 short-term price appreciation (PEAD effect)
 PER_Comparison:
-  Market_PER_GAAP: 53.1x
-  Adjusted_EPS_PER: 5.1x (TTM調整後EPS: $38.3089)
-  Delta: -48.0x (cheaper on adjusted basis)
+  Market_PER_GAAP: 53.8x
+  Adjusted_EPS_PER: 5.2x (TTM調整後EPS: $38.3089)
+  Delta: -48.7x (cheaper on adjusted basis)
 Forward_Estimates:
   Next_Earnings_Date: 2026-10-29
   Next_Quarter_EPS: N/A (no analyst estimates in data)
@@ -274,10 +272,10 @@ Phase_History (recent 6 months):
 2026-06: Phase3 (陶酔期)
 2026-07: Phase4 (期待剥落期)
 Valuation_Multiples (market-provided, yfinance):
-  PER: 53.1x
-  PEG: 1.75
-  PS:  18.6x
-  EV_EBITDA: 39.6x
+  PER: 53.8x
+  PEG: 1.85
+  PS:  19.0x
+  EV_EBITDA: 41.9x
   PEG_Signal: 適正水準（成長率対比でPEG 1.0〜2.0）
   PS_Signal: 適正水準
 Definition:
@@ -297,9 +295,9 @@ Higher alpha in Phase1-2, lower in Phase3-4
 HYPE_Signal: Combined judgment of Matrix quadrant
 and HypeCore phase
 ERP (Equity Risk Premium, 参考表示):
-  Forward_Earnings_Yield: 3.38%  (ForwardEPS $6.55 / Price $193.81)
+  Forward_Earnings_Yield: 3.31%  (ForwardEPS $6.55 / Price $197.62)
   Risk_Free_Rate (10Y):  4.30%
-  ERP: -0.92%
+  ERP: -0.99%
   ERP_Signal: 期待過熱圏（市場が将来成長を過度に先取りしている）
 Valuation_Multiples: Market-provided values (yfinance),
 NOT self-calculated. Distinct from TANUKI IV.
@@ -323,8 +321,8 @@ Note: Uses ForwardEPS from yfinance (analyst consensus).
 Short_Report_Target: no
 Short_Interest: N/A%
 Institutional_Ownership: N/A (not in data source)
-Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +188.6%
-Insider_Activity: Sell優勢 | 買い0件 / 売り9件 | 直近90日
+Analyst_Consensus: Buy | Target: $225 median ($165-$325) | 27 analysts | vs IV: +250.4%
+Insider_Activity: Sell優勢 | 買い0件 / 売り11件 | 直近90日
 Runway_Months: N/A (profitable or not in STONKS)
 Revenue_Growth_YoY: 13.4%
 Next_Earnings_Date: 2026-10-29
@@ -347,9 +345,9 @@ based on recent 4Q linear trend. Rough estimate only.
 
 [9. RISK EVENTS]
 Source: Grok web search (直近3ヶ月)
-  [high] litigation: Antitrust lawsuit ongoing against KLA Corp
-  [high] regulatory: Active SEC regulatory investigation
-  [mid] earnings: Earnings warning and competitive threats for 2025-2026
+  [high] litigation: Antitrust lawsuit against KLA Corp
+  [high] regulatory: Ongoing SEC regulatory investigation
+  [mid] earnings: Earnings warning due to competition risks in 2025-2026
 
 ==============================================
 DISCLAIMER: This report is generated automatically
