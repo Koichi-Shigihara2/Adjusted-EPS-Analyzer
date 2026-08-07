@@ -50,7 +50,7 @@ SEC EDGARへ直接アクセスしている（User-Agent文字列も3ファイル
 中心）を独自に再抽出している。セグメント別KPIは経路C3、内部統制テキストは
 経路C1、新規提出監視は経路C2が担う。
 
-### 1-B. yfinance（実測11ファイル、既存ドキュメントの「13〜14ファイル」を検証）
+### 1-B. yfinance（実測12ファイル、既存ドキュメントの「13〜14ファイル」を検証）
 
 `import yfinance`/`from yfinance`を直接grepしたところ、`src/`配下で
 ヒットする14ファイルのうち4ファイル（`src/subport/fg_level2/trader.py`・
@@ -60,7 +60,17 @@ SEC EDGARへ直接アクセスしている（User-Agent文字列も3ファイル
 属さない）**であり、499項目には無関係。加えてSTONKS SILOのyfinance利用
 （`discover/stonks-silo/src/valuation_fetcher.py`）は`src/`配下ではなく
 `discover/`配下にあるため通常のgrepでは見落としやすい。499項目に実際に
-関係する箇所を正確に数え直すと**11ファイル**であった。
+関係する箇所を正確に数え直すと**12ファイル**であった。
+
+**訂正（2026-08-07、`common/market_data/`新設事前調査で発見・
+`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`）**: 当初の調査は「`src/`配下
+でヒットする14ファイル」を起点としており、`common/`配下は探索範囲外
+だった。`common/sec_data/audit.py`（β乖離監査、`audit_beta_drift()`）が
+`import yfinance`をローカルスコープで2箇所行っており、
+`SEC_Data_Audit.yml`（`workflow_run`で"SEC Data Update"完了後に連鎖
+実行）から呼ばれる本番稼働中の診断ツールだが、当初の11ファイルには
+含まれていなかった。12番目のファイルとして下表に追加し、総数を
+11→12件に訂正する。
 
 | サブシステム | ファイル | 取得内容 |
 |---|---|---|
@@ -75,6 +85,7 @@ SEC EDGARへ直接アクセスしている（User-Agent文字列も3ファイル
 | Market Pulse | `src/market/market_pulse/breadth_calculator.py` | S&P500構成銘柄一括ダウンロード |
 | Market Pulse | `src/market/market_pulse/backfill_tech_pulse.py` | Tech Pulse履歴バックフィル用 |
 | EPS Analyzer | `src/value/adjusted_eps_analyzer/extract_key_facts.py` | フォールバックのみ（通常はSEC優先） |
+| SEC Data品質監査 | `common/sec_data/audit.py`（`audit_beta_drift()`） | β（`beta_config.json`との乖離監査、`--check-beta`時） |
 
 同一情報の重複取得（既知・`OUTPUT_ITEMS_INVENTORY.md`記載分を実ファイルで
 再確認）: 現在株価（TANUKI vs STONKS SILO）、PER/PEG/PSR/EV_EBITDA
@@ -377,7 +388,7 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
 
 | 項目 | TO-BEでの設計 | AS-ISの現状 |
 |---|---|---|
-| `common/market_data/`（yfinance統合層） | 頻度別3層構造の新設レイヤー | 存在しない。11ファイルがそれぞれ独立管理 |
+| `common/market_data/`（yfinance統合層） | 頻度別3層構造の新設レイヤー | 存在しない。12ファイルがそれぞれ独立管理 |
 | `common/macro_data/`（FRED統合層） | 系列単位の時系列ストア | 存在しない。MACRO PULSE専用CSV群とMarket Pulseの混在JSONに分断 |
 | risk_free_rateのFRED `DGS10`取得 | 一次データ層の管理対象として提案 | 未実装。`0.043`ハードコードのまま、`DGS10`はどのサブシステムからも未取得 |
 | 全データポイントへのprovenanceメタデータ（`as_of`/`fetched_at`/`source`/`fallback_used`） | 標準スキーマとして提案 | 現状は`net_debt_period`（TANUKI）のような個別実装が部分的に存在するのみで、統一スキーマはない |
@@ -402,7 +413,7 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
 |---|---|---|---|
 | SEC EDGARの正規化ストア | 「銘柄×決算期」の単一スキーマ（`annual`/`quarterly`/`filing_meta`/`segments`/`filing_text`） | 実際は`data/{TICKER}/annual_*.json`・`quarterly_*.json`・`submissions.json`・`raw/*_quarterly_raw.json`・`normalized/*_quarterly_normalized.json`・`ttm/*_ttm_series.json`の6ファイル系統に分岐 | `normalized/`は`data/quarterly_*.json`と別スキーマで、stock.htmlのCF分析セクション（AS-IS-071の符号バグの温床）が直接参照している。単純に1ファイルへ統合すると、どちらのスキーマを正とするかで既存の消費コードに影響が出る |
 | SEC EDGAR取得経路数 | （設計時点では現状分析なし） | 実測7経路（既存ドキュメントの「8〜9経路」は数え方の重複を含む） | 数値自体は設計に影響しないが、次ステップの移行計画で「何を統合対象とするか」のスコープ確定に必要 |
-| yfinanceファイル数 | （設計時点では現状分析なし） | 実測11ファイル（既存ドキュメントの「13〜14ファイル」はF&G Level2 TQQQトレーダー等の対象外プロジェクトを含めた数と判明） | 統合スコープを11ファイルに正しく絞る必要がある |
+| yfinanceファイル数 | （設計時点では現状分析なし） | 実測12ファイル（既存ドキュメントの「13〜14ファイル」はF&G Level2 TQQQトレーダー等の対象外プロジェクトを含めた数と判明。2026-08-07訂正: 当初の11ファイルは`common/sec_data/audit.py`を見落としていた、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照） | 統合スコープを12ファイルに正しく絞る必要がある |
 | FRED取得サブシステム数 | 「2サブシステム」という前提で設計 | 実測2サブシステム（既存ドキュメントの見出し「3」は検証結果の記述と数値の混同） | TO-BE設計自体は結果的に正しかったが、参照元ドキュメントの見出し表記の不整合は解消しておく必要がある |
 | 手動入力データの保持先 | `config/`配下に統一される前提 | `fcf_conversion_config.json`（`src/value/tanuki_valuation/`）・`tail_kpi_map.json`（`docs/portfolio/tail/data/`）は`config/`外 | TO-BEが「配置場所」まで設計するなら、この2ファイルの扱い（`config/`への移動を推奨するか、現状維持を許容するか）を明示する必要がある |
 
@@ -432,7 +443,7 @@ MACRO PULSE側はFRED専用のCSV群を持つのに対し、Market Pulse側はFR
 ## 完了報告時の参照用サマリー
 
 - SEC EDGAR実測経路数: **7**（既存記載の「8〜9」は数え方の重複含む）
-- yfinance実測ファイル数: **11**（既存記載の「13〜14」は対象外プロジェクト混入含む）
+- yfinance実測ファイル数: **12**（既存記載の「13〜14」は対象外プロジェクト混入含む。2026-08-07訂正: 当初の実測「11」は`common/sec_data/audit.py`を見落としていた、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照）
 - FRED実測サブシステム数: **2**（既存記載の見出し「3」は表記の不整合）
 - 考慮漏れとしてTO-BEに追加した項目: 8件（`config/prompts.yaml`・
   `monitor_tickers.yaml`・`split_history.yaml`・`sectors.yaml`・

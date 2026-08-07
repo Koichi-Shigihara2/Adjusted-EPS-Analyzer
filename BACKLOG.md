@@ -1,5 +1,13 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（`common/market_data/`新設事前調査で発見した
+`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`（優先度：低）を登録。
+`INPUT_DATA_AS_IS.md` 1-B節の「11ファイル」調査が`src/`配下のみを
+対象としており、`common/sec_data/audit.py`（β乖離監査、
+`SEC_Data_Audit.yml`経由で本番稼働中）を見落としていたと判明。
+`INPUT_DATA_AS_IS.md`本体は別途12ファイルへ訂正。実装コード変更・
+データ再生成なし（BACKLOG登録＋ドキュメント訂正のみ）。
+
 最終更新: 2026-08-07（フェーズE（`normalized/`廃止）の着手不可判定を
 `[[SECDATA-STORAGE-FRAGMENTATION-1]]`（マスター追跡エントリ）に反映。
 フェーズD最終状況：Step2-1〜2-4（①〜④主要4消費者パイプライン）完了、
@@ -6531,6 +6539,31 @@ ARCH-DATA-1残課題③調査結果を反映）」参照）。本タスクはこ
 ---
 
 ## 優先度：低（アイデア段階）
+
+### [MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1] INPUT_DATA_AS_IS.md 1-B節の「11ファイル」がcommon/sec_data/audit.pyを見落としていた
+**優先度:** 低（記録のみ、ドキュメント訂正で対応完了）
+**分類:** ドキュメント正確性 / 調査精度
+**登録日:** 2026-08-07
+**発見:** `common/market_data/`新設事前調査（チャット記録、2026-08-07）
+
+#### 内容
+`INPUT_DATA_AS_IS.md` 1-B節の調査方法は「`src/`配下でヒットする
+14ファイル」を起点にしており、`common/`配下は探索範囲外だった
+（`discover/`配下のSTONKS SILOは別途手当て済みだったが、同種の
+見落としが`common/`配下には残っていた）。`common/sec_data/audit.py`
+が`import yfinance`をローカルスコープで2箇所（`audit_beta_drift()`
+等）行っており、`SEC_Data_Audit.yml`（`workflow_run`で"SEC Data
+Update"完了後に連鎖実行、独立cronなし）から呼ばれる本番稼働中の
+診断ツールだが、11ファイルの母集団には含まれていなかった。
+
+#### 対応
+`INPUT_DATA_AS_IS.md` 1-B節に12番目のファイルとして追加、総数表記を
+11→12件に訂正（別途ドキュメント修正で対応）。
+
+#### 着手条件
+なし。
+
+---
 
 ### [STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1] stock.htmlのLayer3切替は新規公開パイプライン構築が前提だが、現時点で着手しない
 **優先度:** 低（対応不要、記録のみ）
