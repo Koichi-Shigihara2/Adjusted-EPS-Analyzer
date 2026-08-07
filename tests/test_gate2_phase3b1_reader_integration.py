@@ -328,39 +328,40 @@ import hypecore  # noqa: E402
 
 
 class TestHypecoreRegression:
-    def test_fetch_quarterly_fundamentals_excludes_ytd_and_annual(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(hypecore, "_NORM_DIR", tmp_path)
+    """[フェーズD Step2-4対応] normalized/ファイル（_NORM_DIR経由）では
+    なく、hypecore.build_ticker_store()をLayer3ストア形状のフィクス
+    チャでmonkeypatchする（fetch_quarterly_fundamentals()がbuild_
+    ticker_store(ticker)を直接呼ぶため）。"""
 
-        normalized = {
-            "fields": {
-                "Revenue": [
-                    {"end": "2023-03-31", "val": 100, "is_annual": False, "is_ytd": False},
-                    {"end": "2023-06-30", "val": 110, "is_annual": False, "is_ytd": False},
-                    {"end": "2023-09-30", "val": 120, "is_annual": False, "is_ytd": False},
-                    {"end": "2023-12-31", "val": 130, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-03-31", "val": 140, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-06-30", "val": 150, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-06-30", "val": 999, "is_annual": False, "is_ytd": True},
-                    {"end": "2024-12-31", "val": 500, "is_annual": True,  "is_ytd": False},
-                ],
-                "NetIncome": [
-                    {"end": "2023-03-31", "val": 8,  "is_annual": False, "is_ytd": False},
-                    {"end": "2023-06-30", "val": 9,  "is_annual": False, "is_ytd": False},
-                    {"end": "2023-09-30", "val": 10, "is_annual": False, "is_ytd": False},
-                    {"end": "2023-12-31", "val": 11, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-03-31", "val": 12, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-06-30", "val": 13, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-09-30", "val": 14, "is_annual": False, "is_ytd": False},
-                    {"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False},
-                ],
-                "OCF": [{"end": "2024-12-31", "val": 20, "is_annual": False, "is_ytd": False}],
-            }
-        }
-        (tmp_path / "TEST_quarterly_normalized.json").write_text(
-            json.dumps(normalized), encoding="utf-8"
-        )
+    def test_fetch_quarterly_fundamentals_excludes_ytd_and_annual(self, monkeypatch):
+        store = _make_layer3_store({
+            "revenue": [
+                {"end": "2023-03-31", "val": 100, "is_annual": False, "is_ytd": False},
+                {"end": "2023-06-30", "val": 110, "is_annual": False, "is_ytd": False},
+                {"end": "2023-09-30", "val": 120, "is_annual": False, "is_ytd": False},
+                {"end": "2023-12-31", "val": 130, "is_annual": False, "is_ytd": False},
+                {"end": "2024-03-31", "val": 140, "is_annual": False, "is_ytd": False},
+                {"end": "2024-06-30", "val": 150, "is_annual": False, "is_ytd": False},
+                {"end": "2024-09-30", "val": 160, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 170, "is_annual": False, "is_ytd": False},
+                {"end": "2024-06-30", "val": 999, "is_annual": False, "is_ytd": True},
+                {"end": "2024-12-31", "val": 500, "is_annual": True,  "is_ytd": False},
+            ],
+            "net_income": [
+                {"end": "2023-03-31", "val": 8,  "is_annual": False, "is_ytd": False},
+                {"end": "2023-06-30", "val": 9,  "is_annual": False, "is_ytd": False},
+                {"end": "2023-09-30", "val": 10, "is_annual": False, "is_ytd": False},
+                {"end": "2023-12-31", "val": 11, "is_annual": False, "is_ytd": False},
+                {"end": "2024-03-31", "val": 12, "is_annual": False, "is_ytd": False},
+                {"end": "2024-06-30", "val": 13, "is_annual": False, "is_ytd": False},
+                {"end": "2024-09-30", "val": 14, "is_annual": False, "is_ytd": False},
+                {"end": "2024-12-31", "val": 15, "is_annual": False, "is_ytd": False},
+            ],
+            "operating_cash_flow": [
+                {"end": "2024-12-31", "val": 20, "is_annual": False, "is_ytd": False},
+            ],
+        })
+        monkeypatch.setattr(hypecore, "build_ticker_store", lambda ticker: store if ticker == "TEST" else None)
 
         df = hypecore.fetch_quarterly_fundamentals("TEST")
         last = df.iloc[-1]
@@ -369,7 +370,7 @@ class TestHypecoreRegression:
         assert last["ni_yoy"] == pytest.approx((15 - 11) / 11 * 100)
         assert last["ocf"] == 20
 
-    def test_fetch_quarterly_fundamentals_missing_file_returns_empty(self, tmp_path, monkeypatch):
-        monkeypatch.setattr(hypecore, "_NORM_DIR", tmp_path)
+    def test_fetch_quarterly_fundamentals_missing_file_returns_empty(self, monkeypatch):
+        monkeypatch.setattr(hypecore, "build_ticker_store", lambda ticker: None)
         df = hypecore.fetch_quarterly_fundamentals("NOPE")
         assert df.empty

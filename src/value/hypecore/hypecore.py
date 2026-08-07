@@ -25,13 +25,25 @@ warnings.filterwarnings("ignore")
 _HERE      = Path(__file__).resolve().parent
 _REPO_ROOT = Path(__file__).resolve().parents[3]
 _TANUKI_DIR = _REPO_ROOT / "docs" / "value-monitor" / "tanuki_valuation" / "data"
-_NORM_DIR   = _REPO_ROOT / "common" / "sec_data" / "normalized"
 _OUT_DIR    = _HERE / "data"
 _OUT_DIR.mkdir(exist_ok=True, parents=True)
 
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
-from common.sec_data.reader import get_quarterly_series  # noqa: E402
+# [フェーズD Step2-4対応、2026-08-07] SEC EDGAR Layer3
+# （common/sec_data/layer3_builder.py、company_facts.json由来の統合
+# スキーマ）経由でnormalized/参照を廃止した。
+from common.sec_data.layer3_builder import (  # noqa: E402
+    build_ticker_store, get_quarterly_series,
+)
+
+# PascalCase（本ファイル内の既存呼び出し表記）→ SEC EDGAR Layer3の
+# snake_caseフィールド名の対応表（フェーズD Step2-4対応）。
+_SEC_LAYER3_FIELD_MAP = {
+    "Revenue": "revenue",
+    "NetIncome": "net_income",
+    "OCF": "operating_cash_flow",
+}
 
 # ── ステージ定義 ──────────────────────────────────────────
 STAGE_LABELS = {
@@ -132,18 +144,16 @@ def fetch_info_snapshot(ticker: str) -> dict:
 
 
 def fetch_quarterly_fundamentals(ticker: str) -> pd.DataFrame:
-    """normalizedJSONから四半期財務データを取得し月次補間"""
-    norm_path = _NORM_DIR / f"{ticker}_quarterly_normalized.json"
-    if not norm_path.exists():
-        print(f"  警告: normalizedファイルなし: {norm_path}")
+    """SEC EDGAR Layer3（company_facts.json由来の統合スキーマ）から
+    四半期財務データを取得し月次補間"""
+    store = build_ticker_store(ticker)
+    if store is None:
+        print(f"  警告: Layer3ストア構築不可（company_facts.json欠落）: {ticker}")
         return pd.DataFrame()
-
-    with open(norm_path, encoding="utf-8") as f:
-        norm = json.load(f)
 
     def extract(fname: str) -> pd.Series:
         entries = [
-            e for e in get_quarterly_series(norm, fname)
+            e for e in get_quarterly_series(store, _SEC_LAYER3_FIELD_MAP[fname])
             if e.get("val") is not None
         ]
         if not entries:
