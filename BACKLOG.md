@@ -1,5 +1,18 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズD Step2-3（TANUKI TAIL）実装完了。
+`quarterly_review_generator.py`・`tail_dcf_bridge.py`の
+normalized/参照をSEC EDGAR Layer3（`layer3_builder.py::
+build_ticker_store()`/`get_quarterly_series()`/`get_latest_
+quarterly()`）経由に個別切替。10銘柄全数比較で差分ゼロ、
+report_consistency_check.py NG=0・WARN=78件（不変）、pytest 505
+passed/2 known failed（既知のみ）。完了記録は`[[SEC-EDGAR-LAYER-
+DESIGN-PHASE-D-STEP2-3]]`としてBACKLOG_DONE.mdへ記録。「次セッション
+での着手順序」欄をフェーズD Step2-4（④HypeCore）に更新。STONKS SILO
+の`fetcher.py`（年次データ）切替は`[[LAYER3-FETCHER-SELECTION-
+PHILOSOPHY-MISMATCH-1]]`の設計判断待ちのまま並行して選択肢として
+残置（Step2-4着手前に対応してもよい）。
+
 最終更新: 2026-08-07（フェーズD Step2-3（TANUKI TAIL）着手前の使用実態
 調査（読み取り専用）を反映。`quarterly_review_generator.py`・
 `tail_dcf_bridge.py`はいずれも`reader.py`共通アクセサ（独自インライン

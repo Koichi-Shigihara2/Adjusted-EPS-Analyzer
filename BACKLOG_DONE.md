@@ -4,6 +4,75 @@
 
 ## 2026-08-07（完了）
 
+### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3] フェーズD Step2-3: TANUKI TAIL切替（quarterly_review_generator.py・tail_dcf_bridge.py）
+**状態:** 両ファイルとも`normalized/`参照をSEC EDGAR Layer3
+（`layer3_builder.py::build_ticker_store()`/`get_quarterly_series()`/
+`get_latest_quarterly()`）経由に切替完了
+**優先度:** 高（フェーズD本線）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**完了日:** 2026-08-07
+**発見:** `SEC_EDGAR_LAYER_DESIGN.md`フェーズD Step2-3実装依頼（チャット記録）
+
+#### 事前調査
+着手前に2ファイル（`quarterly_review_generator.py`・
+`tail_dcf_bridge.py`）の使用実態を実コードで再確認。両ファイルとも
+`reader.py`共通アクセサ（独自インライン実装なし）のみでnormalized/を
+参照しており、STONKS SILOのfetcher.py（年次・比較列問題）や
+financial_trend_calculator.py（Q4逆算絡みの停止パターン）のような
+複雑性を持たない、最もシンプルな消費パターンと確認。対象母集団は
+105銘柄でもSTONKS SILOの25銘柄でもなく、実データが存在する3銘柄
+（PLTR/SOFI/TSLA、ポジション登録10銘柄中）と訂正。
+`[[LAYER3-SHARESDILUTED-TAG-GAP-1]]`（完了済）の対応がpipeline.py
+限定実装であり本2ファイルの`get_latest_quarterly()`直接呼び出しには
+及ばない構造的リスクを`[[TAIL-SHARESDILUTED-Q4-TIMING-RISK-1]]`
+（優先度：低、現状実害なし）として新規登録。TANUKI TAIL独自の
+「layer1/layer2/layer3」（KPI取得元区分：財務諸表/構造化KPI自動取得/
+AI text抽出）という用語が、SEC EDGAR Layer3（`layer3_builder.py`/
+`store_v2/`）と衝突する点も記録（詳細はBACKLOG.md該当項目参照）。
+
+#### 実装内容
+`quarterly_review_generator.py::load_layer1_financials()`・
+`tail_dcf_bridge.py::_load_layer1_financials()`をそれぞれ
+`layer3_builder.build_ticker_store()`・`get_quarterly_series()`・
+`get_latest_quarterly()`経由に個別切替。PascalCase（Revenue/
+OperatingIncome/SBC/NetIncome/SharesDiluted、既存呼び出し表記）→
+SEC EDGAR Layer3 snake_caseの`_SEC_LAYER3_FIELD_MAP`を各ファイルに
+新設。コード・docstringで「SEC EDGAR Layer3」と明示し、TANUKI TAIL
+独自のlayer1/layer2/layer3との混同を防ぐ注記を追加。コード重複
+（2ファイルでほぼ同一実装）は指示により今回は共通化せず、両方に同じ
+切替を個別適用し、`build_ticker_store()`呼び出しが両ファイルとも
+1箇所ずつであることを相互確認した。不要になった`COMMON_NORMALIZED_
+DIR`定数は両ファイルから削除。
+
+#### 全数比較結果（10銘柄、positions/thesis.json登録済み全数）
+git HEAD時点の旧コード（normalized/経由）と新コード（SEC EDGAR
+Layer3経由）を両方ロードし、両関数の実出力を比較。**10/10銘柄で
+完全一致（差分ゼロ）**を確認（`eps_diluted`・`sbc_quarterly`・
+`operating_margin`・`operating_margin_history`等、戻り値dict全体の
+一致比較）。STONKS SILO（Step2-2）で見られたような改善方向の差分・
+既知パターンの差分もなく、完全な無変化での切替となった。
+
+#### テスト結果
+`tests/test_gate2_phase3b1_reader_integration.py`の
+`TestTailDcfBridgeRegression`・`TestQuarterlyReviewGeneratorRegression`
+のフィクスチャをLayer3ストア形状（`_make_layer3_store()`ヘルパー、
+snake_caseフィールド名＋`{source_tag, category, entries}`）に更新し、
+`build_ticker_store()`を直接monkeypatchする方式に変更（実装直後の
+pytest実行で当初3件新規失敗〈旧`COMMON_NORMALIZED_DIR`定数への
+`monkeypatch.setattr()`がAttributeErrorになる〉を検知し、ユーザー
+確認の上でテストファイルも合わせて修正）。
+`report_consistency_check.py --fail-on-ng`: NG=0・WARN=78件（既存と
+不変）。pytest 505 passed/2 known failed（既知の`[[TEST-STALE-IV-1]]`
+のみ、新規失敗なし）。
+
+#### 残タスク
+フェーズD Step2-4（④HypeCore）以降は`[[SECDATA-STORAGE-
+FRAGMENTATION-1]]`として同一IDでBACKLOG.mdに残置。STONKS SILOの
+`fetcher.py`（年次データ）切替は`[[LAYER3-FETCHER-SELECTION-
+PHILOSOPHY-MISMATCH-1]]`の設計判断待ちのまま並行して残っている。
+
+---
+
 ### ✅ [SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-2] フェーズD Step2-2: STONKS SILO切替（financial_trend_calculator.pyのみ、fetcher.pyは保留）
 **状態:** `financial_trend_calculator.py`のnormalized/参照をLayer3
 （`layer3_builder.py::get_field_entries()`）経由に切替完了。`fetcher.py`は
