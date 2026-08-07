@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（フェーズE（`normalized/`廃止）の着手不可判定を
+`[[SECDATA-STORAGE-FRAGMENTATION-1]]`（マスター追跡エントリ）に反映。
+フェーズD最終状況：Step2-1〜2-4（①〜④主要4消費者パイプライン）完了、
+Step2-5（⑤stock.html＋診断・補助スクリプト7件）は切替対象ほぼ存在
+せず実質完了、保留中だった2判断（`fetcher.py`選択思想・stock.html
+公開パイプライン）はいずれも現状維持・着手見送りで確定。
+`fetcher.py`・`dcf_validity_checker.py`・stock.htmlが`normalized/`
+またはparser.py系データへの依存を意図的に継続する恒久的例外として
+残るため、フェーズE（`normalized/`完全廃止）は着手不可と判定し、
+`normalized/`はこの3系統向けに存続する設計とすることを記録。
+CLAUDE_CODE_START.mdのフェーズD進捗欄も、フェーズD実質完了・次の
+優先タスクは新DB構築プロジェクトの他フェーズ（`common/market_data/`・
+`common/macro_data/`新設）への移行検討である旨に更新。実装コード
+変更・データ再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（stock.htmlのLayer3切替着手要否投資調査結果を
 反映。`[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1]]`（優先度：低、
 Layer3ストア公開パイプライン未整備が着手ブロッカー、技術コストは
@@ -4605,15 +4620,35 @@ quarterly_review_generator.py〈TANUKI TAIL〉・tail_dcf_bridge.py
 参照）で解消済みのため、統合スキーマ側は正規化済みCapExを前提に
 設計できる。
 
-**進捗（2026-08-07更新）**: ①〜④の主要4消費者パイプラインすべて完了
-（①TANUKI VALUATION本体・②STONKS SILO〈`financial_trend_
-calculator.py`のみ、`fetcher.py`は`[[LAYER3-FETCHER-SELECTION-
-PHILOSOPHY-MISMATCH-1]]`の設計判断待ちで保留〉・③TANUKI TAIL・
-④HypeCore、いずれも完了記録は`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-
-STEP2-1]]`〜`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`参照）。
-残るのは⑤stock.htmlフロントエンド＋下記診断・補助スクリプト7件
-（Step2-5）のみ。Step2-5完了後にフェーズE（`normalized/`廃止）へ
-進む。
+**進捗（2026-08-07更新・フェーズD最終状況）**:
+
+- Step2-1〜2-4（①TANUKI VALUATION本体・②STONKS SILO主要部
+  〈`financial_trend_calculator.py`のみ〉・③TANUKI TAIL・
+  ④HypeCore）: **完了**（完了記録は`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-
+  STEP2-1]]`〜`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`参照）
+- Step2-5（⑤stock.htmlフロントエンド＋診断・補助スクリプト7件）:
+  **実質完了**（2026-08-07投資調査の結果、9系統中Layer3切替の実質
+  対象は`dcf_validity_checker.py::check_c_data_jump()`のみと判明、
+  他8系統は死蔵コード・書き込み専用・既にLayer3経由・アーキテクチャ上
+  切替不可のいずれかで切替対象自体が存在しなかった）
+- 保留中だった2判断（`fetcher.py`選択思想・stock.html公開パイプライン）:
+  **いずれも現状維持を選択、着手見送りが確定**（`[[LAYER3-FETCHER-
+  SELECTION-PHILOSOPHY-MISMATCH-1]]`案2採用・`[[STOCKHTML-LAYER3-
+  PUBLISH-PIPELINE-MISSING-1]]`着手見送り、いずれも2026-08-07確定）
+
+**フェーズE（`normalized/`廃止）は着手不可**: 上記の通り、
+`fetcher.py`・`dcf_validity_checker.py`（いずれも`data/annual_*.json`
+依存を意図的に継続）・stock.html（`normalized/`直接依存、Layer3公開
+パイプライン未整備のため切替不可）が意図的に現状維持のまま残るため、
+`normalized/`を完全に廃止することはできない。**`normalized/`はこの
+3系統向けに存続し続ける設計とする**（フェーズDの目標だった「全消費者
+Layer3統一」は、この3系統を恒久的な例外として除いた形で達成とみなす）。
+
+**次セッション着手順序**: フェーズD（`common/sec_data`統合スキーマ
+移行）は実質完了。次の一次データ層プロジェクトの優先タスクは、
+新DB構築プロジェクトの他フェーズ（`PROJECT_STATUS.md`フェーズ1記載の
+`common/market_data/`・`common/macro_data/`新設）へ移行することを
+検討する。
 
 **Step1完了（2026-08-05、全消費者洗い出し・読み取り専用調査）**:
 `raw/`（実消費者ゼロのデッドコード）・`normalized/`（5本番消費者、

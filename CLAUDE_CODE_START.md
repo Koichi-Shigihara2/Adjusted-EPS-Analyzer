@@ -23,34 +23,37 @@ git pull --rebase origin kaihatsu
   フェーズ1〜3のいずれかが「構築中」以上になっている場合、そのプロジェクトが
   進行中であることを認識した上で作業する。全て「未着手」の場合は
   プロジェクト自体は設計完了・実装未着手の段階であるため、通常の
-  BACKLOG.md起点の作業を優先してよい。2026-08-06時点で`common/sec_data`
-  統合はフェーズ1「構築中」、`SEC_EDGAR_LAYER_DESIGN.md`のフェーズA〜C
-  〈Layer3スキーマ構築・consumer横展開検証〉に続きフェーズD〈本体
-  consumer切替、対象優先順位: ①TANUKI VALUATION本体②STONKS SILO
-  ③TANUKI TAIL④HypeCore⑤stock.html〉のStep2-4（④HypeCore）まで
-  完了（2026-08-07、`hypecore.py::fetch_quarterly_fundamentals()`切替、
-  104銘柄全数比較・ステージ判定再確認とも差分ゼロ）。主要4消費者
-  パイプラインの切替はこれで完了し、**残るはStep2-5（⑤stock.html
-  フロントエンド＋診断・補助スクリプト7件、`SEC_EDGAR_LAYER_DESIGN.md`
-  「フェーズD対象リストへの追記」参照）のみ**（2026-08-07事前調査で
-  9系統中Layer3切替が実質的に必要なのは1系統のみ、他は死蔵コード・
-  書き込み専用・既にLayer3経由・stock.htmlはLayer3成果物が未公開の
-  ためアーキテクチャ上切替不可、等と判明。詳細はチャット記録・
-  BACKLOG.md該当項目参照。実装未着手）。
-  `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（Step2-2で
-  保留中だったSTONKS SILO`fetcher.py`設計判断）は2026-08-07に案2
-  （Layer3切替を見送り現状維持、`dcf_validity_checker.py::
-  check_c_data_jump()`も同一の恒久的例外として扱う）で確定済み
-  （優先度：高→低）。フェーズE（`normalized/`廃止）はStep2-5完了後に
-  着手。
+  BACKLOG.md起点の作業を優先してよい。2026-08-07時点で`common/sec_data`
+  統合のフェーズD〈本体consumer切替、対象優先順位: ①TANUKI VALUATION
+  本体②STONKS SILO③TANUKI TAIL④HypeCore⑤stock.html〉は**実質完了**。
+  Step2-1〜2-4（①〜④の主要4消費者パイプライン）は完了、Step2-5
+  （⑤stock.html＋診断・補助スクリプト7件）は2026-08-07投資調査の結果
+  「9系統中Layer3切替の実質対象は1系統のみ、他8系統は死蔵コード・
+  書き込み専用・既にLayer3経由・アーキテクチャ上切替不可のいずれか」
+  と判明し実装不要（実質完了扱い）。保留中だった2判断
+  （`[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`のSTONKS
+  SILO`fetcher.py`選択思想・`[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-
+  MISSING-1]]`のstock.html公開パイプライン）はいずれも**現状維持
+  （着手見送り）で確定**。
 
-  詳細はBACKLOG.md「次セッションでの着手順序」・BACKLOG_DONE.md
+  **フェーズE（`normalized/`廃止）は着手不可**：`fetcher.py`・
+  `dcf_validity_checker.py`（`data/annual_*.json`依存継続）・
+  stock.html（`normalized/`直接依存継続）が意図的な恒久的例外として
+  残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
+  設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
+
+  **次セッションの一次データ層プロジェクト着手順序**：`common/
+  sec_data`統合（フェーズD）は実質完了したため、次の優先タスクは
+  `PROJECT_STATUS.md`フェーズ1記載の新DB構築プロジェクトの他フェーズ
+  （`common/market_data/`・`common/macro_data/`新設）への移行を検討
+  する。通常のBACKLOG.md起点の作業と並行して判断すること。
+
+  詳細はBACKLOG.md`[[SECDATA-STORAGE-FRAGMENTATION-1]]`（マスター
+  追跡エントリ、最終状況を記載）・BACKLOG_DONE.md
   `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`（④）・
   `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3]]`（③）・`[[SEC-EDGAR-
   LAYER-DESIGN-PHASE-D-STEP2-2]]`（②）・`[[SEC-EDGAR-LAYER-DESIGN-
-  PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。フェーズD着手時は
-  `SEC_EDGAR_LAYER_DESIGN.md`のフェーズD対象リスト・「3スキーマ併存の
-  実態」を確認する）
+  PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照）
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
