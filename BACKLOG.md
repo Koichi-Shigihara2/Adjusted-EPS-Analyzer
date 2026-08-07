@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`を新規登録
+（本来は事前調査着手時点で登録すべきだったが未登録のまま3回の投資
+調査を実施していたため遡って正式登録）。3回の投資調査サマリー
+（12ファイル使用実態・3区分分類・`fetcher.py`/`reader.py`実装設計）
+と、設計確定事項（保存構造・API設計、`.info`取得方式案C採用、
+TANUKI VALUATION/STONKS SILOの株価を取引時間中リアルタイムから前日
+終値ベースへ仕様変更、`audit.py`の`reader.py`経由切替）を記録。
+未決定事項3件（`twoHundredDayAverage`等の格納先・`workflow_run`連鎖
+トリガーの適用範囲・`[[NETCASH-DUAL-CALC-1]]`との関係整理）と着手
+順序（`fetcher.py`→`reader.py`→本番消費者→周辺ツール）を明記。
+実装コード変更・データ再生成なし（BACKLOG登録のみ）。
+
 最終更新: 2026-08-07（`common/market_data/`新設事前調査で発見した
 `[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`（優先度：低）を登録。
 `INPUT_DATA_AS_IS.md` 1-B節の「11ファイル」調査が`src/`配下のみを
@@ -1950,6 +1962,95 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 ---
 
 ## 優先度：高（早急に対応）
+
+### [MARKETDATA-LAYER-CONSTRUCTION-1] common/market_data/新設（yfinance統合層）— 投資調査・設計確定
+**優先度:** 高（新DB構築プロジェクト フェーズ1の本線、`common/sec_data`
+統合が2026-08-07に実質完了したことに伴う次の優先タスク）
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1
+**登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
+未登録のまま3回の投資調査を実施していたため、本エントリで遡って
+正式登録する）
+**発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
+記録、2026-08-07）
+
+#### 背景・投資調査サマリー
+`INPUT_DATA_TOBE.md` 2-B（yfinance層設計）・`MIGRATION_CHECKLIST.md`
+Step1に基づき、3回の投資調査を実施済み：
+
+1. **使用実態洗い出し**：`INPUT_DATA_AS_IS.md`記載の「11ファイル」を
+   実コードで再確認した結果、`common/sec_data/audit.py`
+   （`audit_beta_drift()`）が見落とされており実際は**12ファイル**と
+   判明（`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`、`INPUT_DATA_
+   AS_IS.md`・`INPUT_DATA_TOBE.md`とも訂正済み）。既知の重複取得
+   パターン（現在株価2系統・PER/PEG/PSR/EV_EBITDA3系統・
+   アナリストコンセンサス2系統・β3系統・`^GSPC`のMarket Pulse内
+   4重取得）を全て実データで再確認し、`^GSPC`4重取得は
+   `collect_and_send.py`内の4箇所（行292・652・682・750）と特定した。
+2. **3区分分類**（`MIGRATION_CHECKLIST.md`準拠）：本番消費者8
+   （`pipeline.py`・`data_fetcher.py`・`beta_fetcher.py`・
+   `hypecore.py`・`valuation_fetcher.py`・`collect_and_send.py`・
+   `breadth_calculator.py`・`collect.py`）・診断ツール2
+   （`score_verifier.py`・`audit.py`）・周辺ツール2
+   （`backfill_tech_pulse.py`・`extract_key_facts.py`）。
+3. **実装設計**：`data_fetcher.py`の`.info`単発呼び出しが抽出する
+   全フィールドを洗い出し3サブレイヤーへ仕分け、`fetcher.py`/
+   `reader.py`API設計案・リトライ機構統合の影響範囲・GitHub Actions
+   スケジュールとレート制限スタガリング案・`audit.py`の扱いを設計。
+
+#### 設計確定事項（2026-08-07、投資調査＋ユーザー判断）
+
+**保存構造・API設計**:
+```
+common/market_data/
+  fetcher.py・reader.py（sec_data/と同型構成）
+  daily/{SYMBOL}.json        # 日次価格層
+  attributes/{SYMBOL}.json   # 週次準静的属性層
+  analyst_history/{SYMBOL}.json  # イベント履歴層
+```
+`reader.py` API: `get_latest_price`・`get_price_series`・
+`get_ma_deviation`（`price_series`から都度計算、`twoHundredDayAverage`
+事前計算値は保存しない）・`get_attributes`・`get_analyst_events`・
+`get_calendar`・`get_index_series`・`get_sp500_constituents_prices`
+
+**取得方式（Step1案C採用）**:
+日次バッチ: `.history()`のみで株価・出来高取得→`daily/`へ
+週次バッチ: `.info`丸ごと取得→`attributes/`へ（PER/PEG/PSR/EV_EBITDA/
+β/セクター/業種/配当/株式数/Forward EPS/アナリスト目標株価コンセンサス
+を含む）
+
+**【重要・仕様変更】TANUKI VALUATION・STONKS SILOの株価仕様変更**:
+現状、`data_fetcher.py`・`valuation_fetcher.py`は市場取引時間中に
+リアルタイム株価を取得している（`TANUKI_VALUATION_Update.yml`平日
+14:05 UTC・`Stonks_Silo_Update.yml`平日15:05 UTC、いずれも米国市場
+取引時間中）。統合後は前日終値ベース（日次バッチ、市場クローズ後
+21:35 UTC付近に一本化）に仕様変更する。DCF計算・スコアリングに使用
+する株価の性質が「取引時間中の変動値」から「確定した前営業日終値」に
+変わる。ユーザー判断により決定（2026-08-07）。
+
+**`audit.py`（12番目消費者）の扱い**:
+`reader.get_attributes()["beta"]`経由に切替。`beta_fetcher.py`とは
+独立に`reader.py`を参照する（診断ツールが本番消費者ロジックに依存
+しない設計を維持）。
+
+#### 未決定事項（次回判断）
+- `twoHundredDayAverage`・アナリスト目標株価コンセンサスの最終格納先
+  （提案は上記の通りだが最終確認は次回）
+- `workflow_run`連鎖トリガー（`SEC_Data_Audit.yml`型）を市場データ側
+  バッチにも広げるかの設計判断
+- `[[NETCASH-DUAL-CALC-1]]`（`valuation_fetcher.py`の`total_debt`重複、
+  既知課題）との関係整理
+
+#### 着手順序
+1. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化）
+2. `reader.py`新設（API群の実装）
+3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
+   VALUATION本体から、フェーズDと同様の優先順位を検討）
+4. 周辺ツール2ファイルの切替
+
+#### 着手条件
+上記「未決定事項」3件の確認、および実装着手の可否判断。
+
+---
 
 ### [LAYER3-ANNUAL-MISCLASSIFICATION-NOW-RMBS-1] _classify_period()のfp=='FY' and days>130判定漏れが、BBAI以外にNOW（41件）・RMBS（16件）でも広範に該当
 **優先度:** 中（`[[LAYER3-ANNUAL-MISCLASSIFICATION-BBAI-1]]`と同型だが、NOW/RMBSでの実害〈Moat Score等への影響〉は未確認）
@@ -8628,11 +8729,16 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 （詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`・PROJECT_STATUS.md
 参照）。次ステップとして、新DB構築プロジェクト フェーズ1の残り
 コンポーネント着手を検討する:
-- `common/market_data/`新設（yfinance統合層、`INPUT-A-019〜023`対応、
-  日次/週次属性/イベント履歴の3層分離設計、`INPUT_DATA_TOBE.md`
-  2-B参照）
+- **`common/market_data/`新設（yfinance統合層）は投資調査・設計確定
+  済み**（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照。12ファイルの
+  使用実態・3区分分類・保存構造〈`daily/`/`attributes/`/
+  `analyst_history/`〉・`fetcher.py`/`reader.py`API・株価仕様変更
+  〈取引時間中リアルタイム→前日終値ベース〉まで確定済み。未決定
+  事項3件の確認後、実装着手順序〈`fetcher.py`→`reader.py`→本番
+  消費者→周辺ツール〉に従って着手可能）
 - `common/macro_data/`新設（FRED統合層、`INPUT-A-024〜047`対応、
-  系列単位の時系列ストア設計、`INPUT_DATA_TOBE.md` 2-C参照）
+  系列単位の時系列ストア設計、`INPUT_DATA_TOBE.md` 2-C参照、
+  investigate未着手）
 - **着手前に`docs/architecture/new_data_platform/
   EXTRACTION_DESIGN_PRINCIPLES.md`（`common/sec_data/`で発見された
   5バグの教訓を一般化した抽出設計原則・3原則）を必ず確認すること**
