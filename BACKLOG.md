@@ -1,5 +1,13 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-07（セッション終了時ブラッシュアップ。「次セッション
+での着手順序」欄を全面再構成し、1〜5を`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`の未決定事項9件確認→`fetcher.py`→`reader.py`→本番
+消費者→周辺ツールの具体的5段階に、6を本線外課題群（優先度中の
+AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1・優先度低のLayer3関連10件）に
+整理。`common/macro_data/`着手はmarket_data完了後の継続タスクとして
+注記。実装コード変更なし）
+
 最終更新: 2026-08-07（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`の「未決定
 事項」に、`EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合投資調査（チャット
 記録）の結果である追加6項目（営業日連続性保証・`fetched_at`付与・
@@ -8758,63 +8766,74 @@ ARCH-SCORE-SYNC-1と同種の問題では」という気づきを記憶やメモ
 
 ### 次セッションでの着手順序（提案）
 
-**（2026-08-07更新、フェーズD実質完了に伴う全面更新。以下が最新の
-優先順位。旧「本線（2026-08-05更新）」以下は`common/sec_data`
+**（2026-08-07更新〈3原則照合・未決定事項確定に伴う再更新〉。以下が
+最新の優先順位。旧「本線（2026-08-05更新）」以下は`common/sec_data`
 統合フェーズD着手前〈normalized/→data/統合案〉時点の古い計画のため
 陳腐化・参照時は本節を優先すること）**
 
-**1. 本線（新DB構築プロジェクト フェーズ1の次ステップ）**:
-`common/sec_data/`統合（フェーズD含む）は2026-08-07に実質完了
-（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`・PROJECT_STATUS.md
-参照）。次ステップとして、新DB構築プロジェクト フェーズ1の残り
-コンポーネント着手を検討する:
-- **`common/market_data/`新設（yfinance統合層）は投資調査・設計確定
-  済み**（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照。12ファイルの
-  使用実態・3区分分類・保存構造〈`daily/`/`attributes/`/
-  `analyst_history/`〉・`fetcher.py`/`reader.py`API・株価仕様変更
-  〈取引時間中リアルタイム→前日終値ベース〉まで確定済み。未決定
-  事項3件の確認後、実装着手順序〈`fetcher.py`→`reader.py`→本番
-  消費者→周辺ツール〉に従って着手可能）
-- `common/macro_data/`新設（FRED統合層、`INPUT-A-024〜047`対応、
-  系列単位の時系列ストア設計、`INPUT_DATA_TOBE.md` 2-C参照、
-  investigate未着手）
-- **着手前に`docs/architecture/new_data_platform/
-  EXTRACTION_DESIGN_PRINCIPLES.md`（`common/sec_data/`で発見された
-  5バグの教訓を一般化した抽出設計原則・3原則）を必ず確認すること**
+**1. `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`未決定事項9件の最終設計
+判断**（3原則〈期間・時系列の妥当性／フィールド間整合性／恒等式
+検証〉照合で追加された6件〈営業日連続性保証・`fetched_at`付与・
+書き込みアトミック化・層またぎ再計算の禁止・保存前検証ロジック＋
+`market_data_violations_log.json`・`audit.py`との役割分担〉と、既存
+3件〈`twoHundredDayAverage`等の格納先・`workflow_run`連鎖トリガーの
+適用範囲・`[[NETCASH-DUAL-CALC-1]]`との関係整理〉。特に保存前検証
+〈時価総額≈株価×発行済株式数の近似一致等〉の乖離許容率のような
+具体的な数値パラメータの確定が必要）
 
-**2. 本線外・優先度中**:
-`[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（AVGOの旧CIK登録が
-無関係な買収先企業Broadcom Corporationを指している疑い。対応方針
-3案〈旧CIK差し替え・現状維持＋警告・2006-2014年データ削除〉を検討・
-実装。着手条件: 新DB構築フェーズ1完了後または実害発生時まで保留
-だったが、フェーズ1〈SEC EDGAR統合〉が実質完了したため着手条件は
-充足済み）
+**2. `fetcher.py`新設**（`.history()`・`.download()`呼び出しの一元化）
 
-**3. 本線外・優先度低（本セッション・前セッションで蓄積したLayer3
-関連課題群、一覧化）**:
-いずれも着手条件「なし」または実害発生時まで保留の低優先度課題。
-着手する場合は個別に判断する。
-- `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（fetcher.py・
-  dcf_validity_checker.pyの年次データ選択思想不一致、案2で決着済み・
-  恒久的例外）
-- `[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1]]`（stock.htmlの
-  Layer3切替、公開パイプライン未整備のため着手見送り）
-- `[[STOCKHTML-YTD-FILTER-BUG-SUSPECT-1]]`（stock.html JS側の
-  is_ytd未除外、実データでは未発現）
-- `[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`（detect_substage()の
-  Layer3切替影響が未検証）
-- `[[TAIL-SHARESDILUTED-Q4-TIMING-RISK-1]]`（TANUKI TAILのeps_diluted
-  計算、Q4タイミング依存の構造的リスク）
-- `[[FETCHER-PY-BS-FIELDS-DEAD-KEYS-1]]`（fetcher.pyの_BS_FIELDS
-  デッドコード、Layer3移行とは無関係の既存バグ）
-- `[[FINTREND-SM-JOBY-NONE-1]]`（financial_trend_calculator.pyの
-  SMフィールドJOBY None化、SUB_FIELDS自体が現状未使用と判明済み）
-- `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`（parser.py::
-  _extract_values_merged()のタグ混入リスク疑い）
-- `[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]`（SNPS FY2022 Revenue、
-  Layer3候補タグ優先順位が修正再表示を拾えない構造的リスク）
-- `[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`（COHR/LLY/JNJ/KLACの
-  ROIC-WACC比率None化、SM/SGA概念混同の帰結）
+**3. `reader.py`新設**（API群の実装: `get_latest_price`・
+`get_price_series`・`get_ma_deviation`・`get_attributes`・
+`get_analyst_events`・`get_calendar`・`get_index_series`・
+`get_sp500_constituents_prices`）
+
+**4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替**
+（`pipeline.py`・`data_fetcher.py`・`beta_fetcher.py`・`hypecore.py`・
+`valuation_fetcher.py`・`collect_and_send.py`・
+`breadth_calculator.py`・`collect.py`＋`score_verifier.py`・
+`audit.py`。TANUKI VALUATION本体から、フェーズDと同様の優先順位を
+検討）
+
+**5. 周辺ツール2ファイルの切替**（`backfill_tech_pulse.py`・
+`extract_key_facts.py`）
+
+（上記1〜5完了後、新DB構築プロジェクト フェーズ1の残りコンポーネント
+として`common/macro_data/`新設〈FRED統合層、`INPUT-A-024〜047`対応、
+`INPUT_DATA_TOBE.md` 2-C参照、investigate未着手〉に着手する。着手前に
+`docs/architecture/new_data_platform/EXTRACTION_DESIGN_PRINCIPLES.md`
+を必ず確認すること）
+
+**6. （本線外）本セッション・前セッションで蓄積した課題群**:
+
+- **優先度中**: `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応（AVGOの
+  旧CIK登録が無関係な買収先企業Broadcom Corporationを指している疑い。
+  対応方針3案〈旧CIK差し替え・現状維持＋警告・2006-2014年データ
+  削除〉を検討・実装。着手条件: 新DB構築フェーズ1〈SEC EDGAR統合〉
+  実質完了により充足済み）
+- **優先度低**（Layer3関連課題群、一覧化。いずれも着手条件「なし」
+  または実害発生時まで保留）:
+  - `[[LAYER3-FETCHER-SELECTION-PHILOSOPHY-MISMATCH-1]]`（fetcher.py・
+    dcf_validity_checker.pyの年次データ選択思想不一致、案2で決着済み・
+    恒久的例外）
+  - `[[STOCKHTML-LAYER3-PUBLISH-PIPELINE-MISSING-1]]`（stock.htmlの
+    Layer3切替、公開パイプライン未整備のため着手見送り）
+  - `[[STOCKHTML-YTD-FILTER-BUG-SUSPECT-1]]`（stock.html JS側の
+    is_ytd未除外、実データでは未発現）
+  - `[[HYPECORE-SUBSTAGE-LAYER3-UNVERIFIED-1]]`（detect_substage()の
+    Layer3切替影響が未検証）
+  - `[[TAIL-SHARESDILUTED-Q4-TIMING-RISK-1]]`（TANUKI TAILの
+    eps_diluted計算、Q4タイミング依存の構造的リスク）
+  - `[[FETCHER-PY-BS-FIELDS-DEAD-KEYS-1]]`（fetcher.pyの_BS_FIELDS
+    デッドコード、Layer3移行とは無関係の既存バグ）
+  - `[[FINTREND-SM-JOBY-NONE-1]]`（financial_trend_calculator.pyの
+    SMフィールドJOBY None化、SUB_FIELDS自体が現状未使用と判明済み）
+  - `[[PARSER-MERGED-TAG-MIXING-RISK-1]]`（parser.py::
+    _extract_values_merged()のタグ混入リスク疑い）
+  - `[[LAYER3-SNPS-STALE-TAG-PRIORITY-1]]`（SNPS FY2022 Revenue、
+    Layer3候補タグ優先順位が修正再表示を拾えない構造的リスク）
+  - `[[LAYER3-ROIC-WACC-NONE-4TICKERS-1]]`（COHR/LLY/JNJ/KLACの
+    ROIC-WACC比率None化、SM/SGA概念混同の帰結）
 
 ---
 

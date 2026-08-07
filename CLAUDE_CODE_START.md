@@ -45,8 +45,16 @@ git pull --rebase origin kaihatsu
   **次セッションの一次データ層プロジェクト着手順序**：`common/
   sec_data`統合（フェーズD）は実質完了したため、次の優先タスクは
   `PROJECT_STATUS.md`フェーズ1記載の新DB構築プロジェクトの他フェーズ
-  （`common/market_data/`・`common/macro_data/`新設）への移行を検討
-  する。通常のBACKLOG.md起点の作業と並行して判断すること。
+  （`common/market_data/`・`common/macro_data/`新設）。このうち
+  `common/market_data/`（yfinance統合層）は2026-08-07に投資調査・
+  設計確定済み（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照。12ファイル
+  の使用実態・3区分分類・保存構造〈`daily/`/`attributes/`/
+  `analyst_history/`〉・`fetcher.py`/`reader.py`API・株価仕様変更
+  〈取引時間中リアルタイム→前日終値ベース〉・
+  `EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合まで完了）。次ステップは
+  同エントリの未決定事項9件の最終設計判断（特に保存前検証の乖離許容率
+  等の数値パラメータ）→`fetcher.py`新設→`reader.py`新設→本番消費者
+  切替、の順。通常のBACKLOG.md起点の作業と並行して判断すること。
 
   詳細はBACKLOG.md`[[SECDATA-STORAGE-FRAGMENTATION-1]]`（マスター
   追跡エントリ、最終状況を記載）・BACKLOG_DONE.md

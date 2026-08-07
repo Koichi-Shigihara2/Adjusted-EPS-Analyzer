@@ -1,6 +1,13 @@
 # PROJECT_STATUS.md — 新一次データベース構築プロジェクト進捗
 
 作成日: 2026-07-23
+更新日: 2026-08-07（`common/market_data/`の状態表記を「未着手」から
+「未着手（投資調査・設計確定済み）」に更新。`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`の3原則照合完了を反映し、フェーズ1表・冒頭サマリー
+段落を修正。あわせてフェーズ2表のyfinance既存データ行「実測11
+ファイル」を「実測12ファイル」に訂正（`[[MARKETDATA-AS-IS-AUDIT-
+PY-OMITTED-1]]`根拠、他ドキュメントには反映済みだったがPROJECT_
+STATUS.mdへの反映漏れを本更新で解消）。実装コード変更なし）
 更新日: 2026-08-07（フェーズD Step2-2〜2-5実質完了を反映し、
 `common/sec_data/`統合の状態を「構築中」→「完成（実質完了）」に更新。
 Step2-2（②STONKS SILO）・Step2-3（③TANUKI TAIL）・Step2-4
@@ -237,8 +244,13 @@ ASC280セグメントから`tail_kpi_map.json`ベースの銘柄固有カスタ�
 恒久的な設計上の例外を除き全消費者がLayer3へ切替済み、詳細は下記
 表・`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 他コンポーネント（`common/market_data/`・`common/macro_data/`等）は
-未着手のまま（設計フェーズは2026-07-22〜23に完了済み）。**次の優先
-タスクはこの2コンポーネントの着手検討**（着手前に
+実装未着手のまま。うち`common/market_data/`（yfinance統合層）は
+2026-08-07に投資調査・設計確定済み（`[[MARKETDATA-LAYER-
+CONSTRUCTION-1]]`参照。12ファイルの使用実態・3区分分類・保存構造・
+`fetcher.py`/`reader.py`API・株価仕様変更・`EXTRACTION_DESIGN_
+PRINCIPLES.md`3原則照合まで完了、未決定事項9件の最終判断後に実装
+着手可能）。`common/macro_data/`は投資調査未着手。**次の優先タスクは
+この2コンポーネントの着手検討**（着手前に
 `EXTRACTION_DESIGN_PRINCIPLES.md`の3原則を確認）。
 
 ## 一次データ層の総数（`INPUT_DATA_TOBE.md`3分類、2026-07-24時点）
@@ -306,7 +318,7 @@ market_data/`・`common/macro_data/`新設）への着手を検討する
 単位の個別確認・BBAI/RKLB/SOFI/VRT/ONDSの維持フィールド凍結検討・
 `[[AVGO-CIK-HISTORY-WRONG-LEGACY-CIK-1]]`対応）は優先度中〜低のまま
 BACKLOG.mdに残置 |
-| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
+| `common/market_data/` 新設（yfinance統合層、`INPUT-A-019〜023`対応） | 未着手（投資調査・設計確定済み、2026-08-07） | `INPUT_DATA_TOBE.md` 2-B参照。日次/週次属性/イベント履歴の3層分離設計。`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`で12ファイルの使用実態・保存構造・`fetcher.py`/`reader.py`API・株価仕様変更〈取引時間中リアルタイム→前日終値ベース〉・`EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合まで確定済み。未決定事項9件の最終判断後、`fetcher.py`→`reader.py`→本番消費者切替の順で実装着手 |
 | `common/macro_data/` 新設（FRED統合層、`INPUT-A-024〜047`対応） | 未着手 | `INPUT_DATA_TOBE.md` 2-C参照。系列単位の時系列ストア設計。**着手前に`EXTRACTION_DESIGN_PRINCIPLES.md`（common/sec_data/で発見された5バグの教訓を一般化した抽出設計原則）を確認すること（2026-08-02追記）** |
 | 取得前提条件の一元管理（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_TOBE.md`分類B参照。監視銘柄マスタ・CIKマッピングの管理方法は分類Aの取得と一体で設計する |
 | provenanceメタデータ標準化 | 未着手 | `INPUT_DATA_TOBE.md` 2-D参照（`as_of`/`fetched_at`/`source`/`source_detail`/`fallback_used`） |
@@ -317,7 +329,7 @@ BACKLOG.mdに残置 |
 | データソース | 状態 | 対象範囲 |
 |---|---|---|
 | SEC EDGAR既存データ（`INPUT-A-001〜018`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-A・2-A参照（実測7経路） |
-| yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測11ファイル） |
+| yfinance既存データ（`INPUT-A-019〜023`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-B・2-B参照（実測12ファイル。`common/sec_data/audit.py`見落としを2026-08-07訂正、`[[MARKETDATA-AS-IS-AUDIT-PY-OMITTED-1]]`参照） |
 | FRED既存データ（`INPUT-A-024〜047`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-C・2-C参照（実測2サブシステム） |
 | 取得前提条件（`INPUT-B-001〜003`） | 未着手 | `INPUT_DATA_AS_IS.md` 1-D・1-E参照（`monitor_tickers.yaml`・`cik_lookup.csv`／`cik_lookup_result.json`はいずれも現状`config/`配下に存在確認済み） |
 
