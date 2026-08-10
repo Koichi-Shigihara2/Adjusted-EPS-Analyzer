@@ -1,7 +1,68 @@
 {
   "ticker": "PLTR",
-  "last_updated": "2026-08-03T13:20:26.323893",
+  "last_updated": "2026-08-10T11:21:31.573739",
   "quarters": [
+    {
+      "gaap_eps": 0.413396846802305,
+      "adjusted_eps": 0.5151691592464046,
+      "gaap_net_income": 1061890000.0,
+      "adjusted_net_income": 1323311928.341284,
+      "diluted_shares_used": 2568694000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 265209000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 261421928.34128395,
+          "tax_rate_applied": 0.014279574443989593
+        }
+      ],
+      "net_adjustment_total": 261421928.34128395,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 1935464000.0,
+      "diluted_shares": 2568694000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 15383000.0,
+      "pretax_income": 1077273000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 101.4%）",
+        "sbc_contribution": 1.014,
+        "sbc_to_revenue": 0.137,
+        "sbc_per_share": 0.1032,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金だが毎期発生する本質的なコスト(株主希薄化含む)です。GAAP EPSはSBCにより0.41程度に圧縮されており、市場がGAAPベースで判断する場合にPLTRのキャッシュ生成力や事業実力が過小評価される可能性があります。一方でSBC規模が大きい同社では調整後EPSを過信すると過大評価リスクもあり、投資家は希薄化調整後EPS、フリーキャッシュフロー、株式発行動向を総合的に検証すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用としてadd_backされているが、テック企業では恒常的に発生する株式報酬関連コストであり一過性ではない",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.33860471954830246,
       "adjusted_eps": 0.41593336130484004,
@@ -40,28 +101,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 12199000.0,
-      "pretax_income": 882726000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 101.4%）",
-        "sbc_contribution": 1.014,
-        "sbc_to_revenue": 0.123,
-        "sbc_per_share": 0.0784,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "SBCはPLTRのような成長テック企業で毎期発生する恒常的な報酬コストであり、一過性ではない。市場がGAAP EPSで判断する場合、株式報酬の現金非支出性と希薄化効果を反映し企業の実力を正確に捉えている可能性が高いが、Adjusted EPSが23%程度上振れするためnon-GAAP重視の投資家は実力を過大評価するリスクがある。逆にGAAPベースでは実力を過小評価しているとは言い難く、むしろ持続可能性を慎重に評価していると言える。投資家はSBCの絶対額推移、希薄化率、フリーキャッシュフローへの影響を注視し、調整依存の過大評価リスクを警戒すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用として株式報酬費用をadd_backしているが、テック企業では恒常的に多額発生する報酬コストであり一過性ではない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 882726000.0
     },
     {
       "gaap_eps": 0.23728236076995257,
@@ -728,46 +768,6 @@
       "quarter": 1,
       "tax_expense": 2023000.0,
       "pretax_income": -99356000.0
-    },
-    {
-      "gaap_eps": -0.05199412541774948,
-      "adjusted_eps": 0.04075479862588713,
-      "gaap_net_income": -102137000.0,
-      "adjusted_net_income": 80058522.64669955,
-      "diluted_shares_used": 1964395000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 184835000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 182195522.64669955,
-          "tax_rate_applied": 0.014280181531097627
-        }
-      ],
-      "net_adjustment_total": 182195522.64669955,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 392146000.0,
-      "diluted_shares": 1964395000.0,
-      "period_end": "2021-09-30",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "tax_expense": 1438000.0,
-      "pretax_income": -100699000.0
     }
   ]
 }

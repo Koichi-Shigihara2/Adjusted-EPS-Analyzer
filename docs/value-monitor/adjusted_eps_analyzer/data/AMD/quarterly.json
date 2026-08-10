@@ -1,7 +1,68 @@
 {
   "ticker": "AMD",
-  "last_updated": "2026-08-03T13:18:23.381312",
+  "last_updated": "2026-08-10T11:18:43.824108",
   "quarters": [
+    {
+      "gaap_eps": 1.38456901748041,
+      "adjusted_eps": 1.6577891884465323,
+      "gaap_net_income": 2297000000.0,
+      "adjusted_net_income": 2750272263.6327972,
+      "diluted_shares_used": 1659000000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 503000000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 453272263.6327972,
+          "tax_rate_applied": 0.09886229894076108
+        }
+      ],
+      "net_adjustment_total": 453272263.6327972,
+      "filing_date": "2026-06-27",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 11536000000.0,
+      "diluted_shares": 1659000000.0,
+      "period_end": "2026-06-27",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 252000000.0,
+      "pretax_income": 2549000000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 111.0%）",
+        "sbc_contribution": 1.11,
+        "sbc_to_revenue": 0.044,
+        "sbc_per_share": 0.3032,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "株式報酬費用(SBC)は恒常的に毎期発生する運用コストであり一過性ではないため、調整によりAdjusted EPSがGAAPより約20%押し上げられている。市場がGAAP EPSで判断する場合、非現金だが実質的な報酬コストの影響で企業の実力が見えにくくなり、過小評価の可能性がある。ただしSBCは株主希薄化を生む継続コストのため、Adjusted EPSを過信すると過大評価リスクもある。投資家はSBCトレンド、希薄化影響、フリーキャッシュフローを注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用として株式報酬費用503000000 USDをadd_back。これは毎期発生する恒常的な報酬コストであり、一過性ではない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.8381818181818181,
       "adjusted_eps": 1.3749077449385902,
@@ -53,33 +114,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 238000000.0,
-      "pretax_income": 1621000000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 55.0%）",
-        "sbc_contribution": 0.55,
-        "sbc_to_revenue": 0.047,
-        "sbc_per_share": 0.2952,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目の株式報酬費用と無形資産償却費はいずれも恒常的に発生する非現金費用であり、一過性ではない。SBCは報酬として定期的に計上される運用コスト、無形資産償却も買収後の継続的償却であるため、Adjusted EPSがGAAP EPSを大幅に上回る（0.84→1.37）調整は実力を過度に美化している可能性が高い。市場がGAAP EPSで判断する場合、キャッシュベースの実力をやや見えにくくし過小評価につながるリスクがあるが、恒常的コストを加算しているため過大評価リスクの方が大きい。投資家は希薄化効果や真の経済的利益を注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、恒常的な運用コストとして毎期発生する（毎期発生するSBC）。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連の非現金費用だが、継続的に発生する恒常的償却（無形資産償却など）。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 1621000000.0
     },
     {
       "gaap_eps": 0.9235941320293398,
@@ -1007,46 +1042,6 @@
       "pretax_income": 899000000.0
     },
     {
-      "gaap_eps": 0.7925142392188771,
-      "adjusted_eps": 0.8522059640289069,
-      "gaap_net_income": 974000000.0,
-      "adjusted_net_income": 1047361129.7915266,
-      "diluted_shares_used": 1229000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 112000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 73361129.79152656,
-          "tax_rate_applied": 0.3449899125756557
-        }
-      ],
-      "net_adjustment_total": 73361129.79152656,
-      "filing_date": "2021-12-25",
-      "form": "10-K",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 4826000000.0,
-      "diluted_shares": 1229000000.0,
-      "period_end": "2021-12-25",
-      "fiscal_year": 2021,
-      "quarter": 4,
-      "tax_expense": 513000000.0,
-      "pretax_income": 1487000000.0
-    },
-    {
       "gaap_eps": 0.7504065040650406,
       "adjusted_eps": 0.8243271447639849,
       "gaap_net_income": 923000000.0,
@@ -1061,7 +1056,7 @@
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
           "category": "株式報酬関連",
           "net_amount": 90922388.05970149,
           "tax_rate_applied": 0.08159203980099503
@@ -1096,12 +1091,12 @@
         {
           "item_id": "sbc",
           "item_name": "株式報酬費用",
-          "amount": 83000000.0,
+          "amount": 83000000,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
           "category": "株式報酬関連",
           "net_amount": 71603888.21385176,
           "tax_rate_applied": 0.13730255164034022
@@ -1125,46 +1120,6 @@
       "quarter": 2,
       "tax_expense": 113000000.0,
       "pretax_income": 823000000.0
-    },
-    {
-      "gaap_eps": 0.45085296506904954,
-      "adjusted_eps": 0.510359955800213,
-      "gaap_net_income": 555000000.0,
-      "adjusted_net_income": 628253105.5900621,
-      "diluted_shares_used": 1231000000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 85000000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:ShareBasedCompensation",
-          "category": "株式報酬関連",
-          "net_amount": 73253105.59006211,
-          "tax_rate_applied": 0.13819875776397517
-        }
-      ],
-      "net_adjustment_total": 73253105.59006211,
-      "filing_date": "2021-03-27",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 3445000000.0,
-      "diluted_shares": 1231000000.0,
-      "period_end": "2021-03-27",
-      "fiscal_year": 2021,
-      "quarter": 1,
-      "tax_expense": 89000000.0,
-      "pretax_income": 644000000.0
     }
   ]
 }

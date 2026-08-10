@@ -1,7 +1,52 @@
 {
   "ticker": "CAKE",
-  "last_updated": "2026-08-03T13:18:50.059476",
+  "last_updated": "2026-08-10T11:19:20.319355",
   "quarters": [
+    {
+      "gaap_eps": 1.4104763868838937,
+      "adjusted_eps": 1.5711617128853472,
+      "gaap_net_income": 68394000.0,
+      "adjusted_net_income": 76185631.45781049,
+      "diluted_shares_used": 48490000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 8761000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 7791631.4578104885,
+          "tax_rate_applied": 0.1106458785743079
+        }
+      ],
+      "net_adjustment_total": 7791631.4578104885,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 1029633000.0,
+      "diluted_shares": 48490000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 8509000.0,
+      "pretax_income": 76903000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目の株式報酬費用（SBC）は恒常的に発生する非現金コストであり、一過性とは判断しにくい。市場がGAAP EPS（1.41）のみで評価する場合、Adjusted EPS（1.57）が示す真の実力（現金ベースの収益力）が十分に見えず、銘柄の過小評価リスクが生じている可能性がある。ただしSBCは株式希薄化を伴う実質的な報酬コストのため、調整を過信すると過大評価のリスクもある。投資家はSBCの継続規模と将来の希薄化効果を注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、企業経営においては恒常的に発生するコストであり、一過性ではない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 1.0225570116603033,
       "adjusted_eps": 1.1569915092289593,
@@ -34,18 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 3803000.0,
-      "pretax_income": 53351000.0,
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、一過性ではなく毎期発生するコストと見なされます。市場がGAAP EPSで判断する場合、非現金費用を反映した実質的な企業実力が適切に評価されており、むしろAdjusted EPSに依存すると希薄化効果を無視して実力を過大評価するリスクがあります。投資家はSBCの継続性と株主希薄化を注視すべきで、過小評価リスクは低いが過大評価リスクが高い点に留意が必要です。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用だが恒常的に発生する株式報酬費用",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 53351000.0
     },
     {
       "gaap_eps": 0.5926757430330992,
@@ -674,40 +708,6 @@
       "quarter": 1,
       "tax_expense": 3697000.0,
       "pretax_income": 26860000.0
-    },
-    {
-      "gaap_eps": 0.6393676755424256,
-      "adjusted_eps": 0.733850687925695,
-      "gaap_net_income": 32680000.0,
-      "adjusted_net_income": 37509310.21194605,
-      "diluted_shares_used": 51113000.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 5394000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 4829310.21194605,
-          "tax_rate_applied": 0.10468850353243417
-        }
-      ],
-      "net_adjustment_total": 4829310.21194605,
-      "filing_date": "2021-09-28",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 754474000.0,
-      "diluted_shares": 51113000.0,
-      "period_end": "2021-09-28",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "tax_expense": -3097000.0,
-      "pretax_income": 29583000.0
     }
   ]
 }

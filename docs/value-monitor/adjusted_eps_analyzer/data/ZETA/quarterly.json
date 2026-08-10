@@ -1,7 +1,86 @@
 {
   "ticker": "ZETA",
-  "last_updated": "2026-08-03T13:21:06.660571",
+  "last_updated": "2026-08-10T11:22:50.837336",
   "quarters": [
+    {
+      "gaap_eps": 0.031853423337058866,
+      "adjusted_eps": 0.2824623962453772,
+      "gaap_net_income": 8173000.0,
+      "adjusted_net_income": 72474632.94871795,
+      "diluted_shares_used": 256581527.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 52115000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 49622833.974358976,
+          "tax_rate_applied": 0.04782051282051282
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 15416000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 14678798.974358974,
+          "tax_rate_applied": 0.04782051282051282
+        }
+      ],
+      "net_adjustment_total": 64301632.94871795,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 442766000.0,
+      "diluted_shares": 256581527.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": -373000.0,
+      "pretax_income": 7800000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 81.0%）",
+        "sbc_contribution": 0.81,
+        "sbc_to_revenue": 0.118,
+        "sbc_per_share": 0.2031,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却はともに恒常的な非現金費用であり、一過性ではないため、GAAP EPS 0.03に対しAdjusted EPS 0.28への大幅調整は市場が企業の実力を過小評価している可能性を示唆する一方で、SBCの継続性や株主希薄化を考慮すると過大評価リスクが高い。投資家は調整後の数字だけでなく、フリーキャッシュフローやSBCの今後の趨勢を注視し、実質的な収益力を判断すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、テック企業で毎期継続的に発生する恒常的な運用コストであり一過性ではない。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する非現金費用で、償却期間中は恒常的に計上されるため調整の正当性は限定的。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.05553073200533798,
       "adjusted_eps": 0.2116021283150827,
@@ -66,38 +145,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": -2577000.0,
-      "pretax_income": -15824000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 83.2%）",
-        "sbc_contribution": 0.832,
-        "sbc_to_revenue": 0.134,
-        "sbc_per_share": 0.2223,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目のSBCと無形資産償却は恒常的なコスト（非現金だが実質的な負担）であり、リストラのみが一過性。GAAP EPSがマイナスであるため、市場がGAAPベースで判断する場合にZETAの事業実力（調整後プラスEPS）を過小評価している可能性が高い。ただしSBC加算が大きいため調整依存度が高く、投資家はキャッシュフローや株式希薄化リスクを注視すべき。過小評価リスクはあるが、恒常項目の調整による過大評価リスクも伴う。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが恒常的に発生するコストであり、毎期の事業運営に不可欠。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連の非現金償却で定期的に発生し、恒常的な調整項目。",
-            "confidence": 0.2
-          },
-          {
-            "item": "restructuring",
-            "snippet": "リストラ費用は一過性の事業再編費用として非経常的。",
-            "confidence": 0.8
-          }
-        ]
-      }
+      "pretax_income": -15824000.0
     },
     {
       "gaap_eps": 0.029625392507002017,
@@ -799,59 +847,6 @@
       "quarter": 1,
       "tax_expense": 198000.0,
       "pretax_income": -56757000.0
-    },
-    {
-      "gaap_eps": -0.49390398438261945,
-      "adjusted_eps": 0.07866457820896884,
-      "gaap_net_income": -69440000.0,
-      "adjusted_net_income": 11059777.777777776,
-      "diluted_shares_used": 140594128.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 75218000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 74234758.16993465,
-          "tax_rate_applied": 0.013071895424836602
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 6348000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 6265019.607843137,
-          "tax_rate_applied": 0.013071895424836602
-        }
-      ],
-      "net_adjustment_total": 80499777.77777778,
-      "filing_date": "2022-09-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 152252000.0,
-      "diluted_shares": 140594128.0,
-      "period_end": "2022-09-30",
-      "fiscal_year": 2022,
-      "quarter": 3,
-      "tax_expense": 896000.0,
-      "pretax_income": -68544000.0
     }
   ]
 }

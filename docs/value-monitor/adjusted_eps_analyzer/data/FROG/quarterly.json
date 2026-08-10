@@ -1,7 +1,86 @@
 {
   "ticker": "FROG",
-  "last_updated": "2026-08-03T13:22:29.110974",
+  "last_updated": "2026-08-10T11:24:55.597671",
   "quarters": [
+    {
+      "gaap_eps": -0.03419093810764593,
+      "adjusted_eps": 0.23711231755404566,
+      "gaap_net_income": -4165000.0,
+      "adjusted_net_income": 28884051.075268824,
+      "diluted_shares_used": 121815903.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 39577000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 29540896.953405023,
+          "tax_rate_applied": 0.253584229390681
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 4700000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 3508154.1218637996,
+          "tax_rate_applied": 0.253584229390681
+        }
+      ],
+      "net_adjustment_total": 33049051.075268824,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 163772000.0,
+      "diluted_shares": 121815903.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": -1415000.0,
+      "pretax_income": -5580000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 119.8%）",
+        "sbc_contribution": 1.198,
+        "sbc_to_revenue": 0.242,
+        "sbc_per_share": 0.3249,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "SBCと無形資産償却はともに恒常的に発生する非現金費用であり、一過性調整とは言えません。GAAP EPSがマイナス近辺であるのに対し、Adjusted EPSが大幅プラスに転換しているため、調整により企業の実力が過大に見えるリスクが高いです。市場がGAAP EPSで判断する場合、非現金費用の影響で実力が見えにくくなり過小評価の可能性がありますが、SBCの株式希薄化効果を考慮すると過大評価リスクの方が大きく、投資家は調整後数字に過度に依拠せずキャッシュフローや希薄化後EPSを注視すべきです。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用ですが、毎期継続的に発生する恒常的なコストであり、従業員報酬の実質負担を伴う（confidence低め）",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連の規則的償却であり、毎期発生する恒常的な会計費用である（confidence低め）",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.06880039720640593,
       "adjusted_eps": 0.1412804864502983,
@@ -53,33 +132,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 2488000.0,
-      "pretax_income": -5779000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 157.0%）",
-        "sbc_contribution": 1.57,
-        "sbc_to_revenue": 0.257,
-        "sbc_per_share": 0.3298,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目の主なものは株式報酬費用(SBC)と無形資産償却費であり、どちらも恒常的に発生する非現金費用です。特にSBCはテック企業において継続的な運用コストであり一過性とは言えません。市場がGAAP EPSの赤字(-0.0688)で判断する場合、企業の実力(調整後+0.1413)を過小評価する可能性がありますが、SBCの株式希薄化効果を無視した調整は実態を過大評価するリスクもあり、投資家はキャッシュフローと潜在的希薄化を注視すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用として加算調整されているが、毎期発生する恒常的な報酬コストであり一過性ではない(毎期発生するSBC)。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連の非現金償却として加算調整されているが、恒常的な可能性が高く一過性とは判断しにくい(毎期発生する無形資産償却)。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": -5779000.0
     },
     {
       "gaap_eps": -0.1308939947969422,
@@ -928,59 +981,6 @@
       "quarter": 1,
       "tax_expense": 838000.0,
       "pretax_income": -18866000.0
-    },
-    {
-      "gaap_eps": -0.2138191223548373,
-      "adjusted_eps": -0.017794384273308882,
-      "gaap_net_income": -20464000.0,
-      "adjusted_net_income": -1703048.238897398,
-      "diluted_shares_used": 95707062.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 16857000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 16508501.531393567,
-          "tax_rate_applied": 0.020673813169984685
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 2300000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 2252450.2297090353,
-          "tax_rate_applied": 0.020673813169984685
-        }
-      ],
-      "net_adjustment_total": 18760951.761102602,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 53703000.0,
-      "diluted_shares": 95707062.0,
-      "period_end": "2021-09-30",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "tax_expense": -432000.0,
-      "pretax_income": -20896000.0
     }
   ]
 }

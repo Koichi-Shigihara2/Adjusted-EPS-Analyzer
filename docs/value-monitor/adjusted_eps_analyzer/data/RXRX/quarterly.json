@@ -1,7 +1,83 @@
 {
   "ticker": "RXRX",
-  "last_updated": "2026-08-03T13:20:40.459178",
+  "last_updated": "2026-08-10T11:22:00.342168",
   "quarters": [
+    {
+      "gaap_eps": -0.24603722173841444,
+      "adjusted_eps": -0.18780794933868056,
+      "gaap_net_income": -131005000.0,
+      "adjusted_net_income": -100000236.66854954,
+      "diluted_shares_used": 532460085.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 19305000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 19304852.640337083,
+          "tax_rate_applied": 7.633238172297453e-06
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 11700000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 11699910.691113384,
+          "tax_rate_applied": 7.633238172297453e-06
+        }
+      ],
+      "net_adjustment_total": 31004763.33145047,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "ヘルスケア / バイオ",
+      "sector_exclusions": [
+        "ma_integration",
+        "iprd_amortization"
+      ],
+      "revenue": 7670000.0,
+      "diluted_shares": 532460085.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": -1000.0,
+      "pretax_income": -131006000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 62.3%）",
+        "sbc_contribution": 0.623,
+        "sbc_to_revenue": 2.517,
+        "sbc_per_share": 0.0363,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目のSBCと無形資産償却はともに恒常的な非現金費用であり、一過性とは判断しにくい。SBCは人材確保のための継続コスト、無形資産償却も買収後の定期償却であるため、調整後EPSは実態をやや美化している可能性がある。市場がGAAP EPS（-0.246）の大きな赤字のみで判断する場合、非現金項目を排除した運用実力を過小評価し、銘柄の実力を低く見積もるリスクがある。ただしSBCによる株式希薄化は実質的なコストであるため、調整を過信すると過大評価のリスクも伴う。投資家はキャッシュバーン率、希薄化影響、事業進捗を総合的に注視すべき。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが、継続的な株式報酬として恒常的コスト（毎期発生するSBC）",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の償却は定期的に発生する恒常的非現金費用",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.2219971954717046,
       "adjusted_eps": -0.15852033826419515,
@@ -50,33 +126,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": -4604000.0,
-      "pretax_income": -122108000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 66.1%）",
-        "sbc_contribution": 0.661,
-        "sbc_to_revenue": 3.432,
-        "sbc_per_share": 0.042,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "調整項目の株式報酬費用と無形資産償却費は非現金ではあるが恒常的に発生する費用であり、GAAP EPS(-0.222)がAdjusted EPS(-0.159)より大幅に悪化している。市場がGAAP EPSのみで判断する場合、このバイオAI企業の研究開発実力やキャッシュベースの運営状況が過小評価され、株価が実力以下に抑えられる可能性がある。ただしSBCは株主希薄化を伴う実質コストのため、調整を過信すると過大評価リスクも存在する。投資家はフリーキャッシュフローと今後の希薄化影響を特に注視すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、成長企業では毎期継続的に発生する恒常的コストである。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連で定期的に発生する非現金費用であり、一過性とは言えない。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": -122108000.0
     },
     {
       "gaap_eps": -0.24164250805899845,
@@ -916,56 +966,6 @@
       "quarter": 1,
       "tax_expense": 0,
       "pretax_income": -55979000.0
-    },
-    {
-      "gaap_eps": -0.2814157774520266,
-      "adjusted_eps": -0.2616927015422152,
-      "gaap_net_income": -47428000.0,
-      "adjusted_net_income": -44104000.0,
-      "diluted_shares_used": 168533550.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 3096000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 3096000.0,
-          "tax_rate_applied": 0.0
-        },
-        {
-          "item_id": "amortization_intangibles",
-          "item_name": "無形資産償却費",
-          "amount": 228000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "買収関連無形資産の償却",
-          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
-          "category": "買収・統合関連",
-          "net_amount": 228000.0,
-          "tax_rate_applied": 0.0
-        }
-      ],
-      "net_adjustment_total": 3324000.0,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "sector": "ヘルスケア / バイオ",
-      "sector_exclusions": [
-        "ma_integration",
-        "iprd_amortization"
-      ],
-      "revenue": 2534000.0,
-      "diluted_shares": 168533550.0,
-      "period_end": "2021-09-30",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "tax_expense": 0,
-      "pretax_income": -47428000.0
     }
   ]
 }

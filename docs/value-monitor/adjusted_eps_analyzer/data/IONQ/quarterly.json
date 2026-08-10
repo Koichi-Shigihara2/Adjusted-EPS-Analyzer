@@ -1,7 +1,123 @@
 {
   "ticker": "IONQ",
-  "last_updated": "2026-08-03T13:19:49.830675",
+  "last_updated": "2026-08-10T11:20:18.932274",
   "quarters": [
+    {
+      "gaap_eps": -5.080070633397915,
+      "adjusted_eps": -0.12817777024041405,
+      "gaap_net_income": -1867742000.0,
+      "adjusted_net_income": -47125920.5276525,
+      "diluted_shares_used": 367660636.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 144715000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 144246443.22340217,
+          "tax_rate_applied": 0.0032377899775270585
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 32700000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 32594124.267734863,
+          "tax_rate_applied": 0.0032377899775270585
+        },
+        {
+          "item_id": "warrant_fv_change",
+          "item_name": "ワラント公正価値変動損益",
+          "amount": 1649115000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金・非経常のワラント時価評価変動",
+          "extracted_from": "us-gaap:FairValueAdjustmentOfWarrants",
+          "category": "公正価値変動関連",
+          "net_amount": 1643775511.9812105,
+          "tax_rate_applied": 0.0032377899775270585
+        }
+      ],
+      "net_adjustment_total": 1820616079.4723475,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 80050000.0,
+      "diluted_shares": 367660636.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": -6067000.0,
+      "pretax_income": -1873809000.0,
+      "special_flags": [
+        "EPS_DISCREPANCY"
+      ],
+      "special_notes": {
+        "fair_value_auto_detect": {
+          "flag": "EPS_DISCREPANCY",
+          "detected_items": [
+            {
+              "item_name": "ワラント公正価値変動損益",
+              "xbrl_tag": "us-gaap:FairValueAdjustmentOfWarrants",
+              "xbrl_value": 1649115000,
+              "adjustment_amount": 1649115000,
+              "net_amount": 1643775511.9812105
+            }
+          ],
+          "condition1": "FV変動が純利益の88%占有（超高materiality → 条件1スキップ）",
+          "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
+        }
+      },
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 81.8%）",
+        "sbc_contribution": 0.818,
+        "sbc_to_revenue": 1.808,
+        "sbc_per_share": 0.3936,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "主にワラント公正価値変動（16億超のadd_back）による巨額調整でGAAP EPSが-5.08と大幅赤字に見える一方、Adjusted EPSは-0.13と実態に近い。市場がGAAP EPS中心に判断する場合、非現金・非経常項目が企業の実力を過小評価させる可能性が高い。特に量子コンピューティングという成長分野でSBCは事業継続に必要だが、ワラント変動は一時的歪み。投資家はSBCの希薄化効果に注意すべきで、過小評価リスクはあるが過大調整の懸念も残る。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "非現金費用だが成長企業では毎期発生する恒常的な株式報酬コストであり、コアオペレーションに関連。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "買収関連無形資産の定期的な償却で、非現金だが複数年にわたって発生する可能性が高い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "warrant_fv_change",
+            "snippet": "非現金・非経常のワラント時価評価変動であり、SPAC由来の会計処理がGAAP EPSを大きく歪める一時的項目。",
+            "confidence": 0.8
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 2.1694467538500017,
       "adjusted_eps": -0.22838654345922282,
@@ -85,37 +201,6 @@
           "condition1": "FV変動が純利益の131%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: ワラント公正価値変動損益"
         }
-      },
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 80.8%）",
-        "sbc_contribution": 0.808,
-        "sbc_to_revenue": 1.987,
-        "sbc_per_share": 0.3462,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "GAAP EPSが+2.17と大幅にプラスなのに対し、Adjusted EPSは-0.23と赤字転落しており、主にワラント公正価値変動による巨額の非現金利益がGAAPを押し上げている。市場がGAAP EPSのみで判断する場合、IONQのコア事業の実力（継続的な赤字体質）が隠され、企業の実力を過大評価するリスクが高い。SBCと無形資産償却は恒常的な調整項目であり、ワラント変動は非経常的だがボラティリティが大きいため、投資家は調整後ベースの運用実績と将来の量子コンピューティング事業進捗に注目すべき。過小評価リスクは低い一方、GAAP依存による過大評価リスクに警戒が必要。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用だが成長企業では毎期発生する恒常的な株式報酬コスト",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の定期的な償却費で、恒常的に発生する非現金項目",
-            "confidence": 0.2
-          },
-          {
-            "item": "warrant_fv_change",
-            "snippet": "非現金・非経常的なワラント時価評価変動であり、事業の実力とは無関係な会計要因",
-            "confidence": 0.8
-          }
-        ]
       }
     },
     {
@@ -1106,46 +1191,6 @@
       "quarter": 3,
       "tax_expense": 0,
       "pretax_income": -14781000.0
-    },
-    {
-      "gaap_eps": -0.06649897232268506,
-      "adjusted_eps": -0.04526695749327991,
-      "gaap_net_income": -7930260.0,
-      "adjusted_net_income": -5398260.0,
-      "diluted_shares_used": 119253873.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 2532000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 2532000.0,
-          "tax_rate_applied": 0.0
-        }
-      ],
-      "net_adjustment_total": 2532000.0,
-      "filing_date": "2021-06-30",
-      "form": "10-Q",
-      "sector": "Technology",
-      "sector_exclusions": [
-        "inventory_writeoff",
-        "gov_subsidy_timing",
-        "fx_gains_losses",
-        "derivative_gains_losses",
-        "tax_one_time"
-      ],
-      "revenue": 93000.0,
-      "diluted_shares": 119253873.0,
-      "period_end": "2021-06-30",
-      "fiscal_year": 2021,
-      "quarter": 2,
-      "tax_expense": 0,
-      "pretax_income": -7930260.0
     }
   ]
 }

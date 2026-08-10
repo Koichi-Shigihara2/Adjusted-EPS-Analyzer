@@ -1,7 +1,70 @@
 {
   "ticker": "ELF",
-  "last_updated": "2026-08-03T13:19:28.693703",
+  "last_updated": "2026-08-10T11:19:57.851592",
   "quarters": [
+    {
+      "gaap_eps": 1.1150461072628515,
+      "adjusted_eps": 1.4789596408382664,
+      "gaap_net_income": 66599000.0,
+      "adjusted_net_income": 88334672.87014061,
+      "diluted_shares_used": 59727575.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 19677000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:ShareBasedCompensation",
+          "category": "株式報酬関連",
+          "net_amount": 13896508.271298593,
+          "tax_rate_applied": 0.29376895505927764
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 11100000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 7839164.598842017,
+          "tax_rate_applied": 0.29376895505927764
+        }
+      ],
+      "net_adjustment_total": 21735672.870140612,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 479373000.0,
+      "diluted_shares": 59727575.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2027,
+      "quarter": 1,
+      "tax_expense": 27703000.0,
+      "pretax_income": 94302000.0,
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "SBCと無形資産償却費の両調整項目は恒常的に発生する非現金費用であり、一過性とは判断しにくい。市場がGAAP EPS（1.115）を基準に評価する場合、これらの費用により企業の実力（キャッシュ生成力）が過小表示され、銘柄の実力を過小評価している可能性がある。ただしSBCは実質的な株主希薄化コストを伴うため、Adjusted EPS（1.479）使用時は過大評価リスクに留意すべき。投資家は希薄化後EPSや将来の償却スケジュールを確認する必要がある。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用だが、企業が継続的に付与する恒常的な運用コストであり、毎期発生する可能性が高い。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収関連で定期的・系統的に発生する恒常的項目であり、一過性費用とはみなせない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": -0.8317404348459968,
       "adjusted_eps": 0.04007064466618652,
@@ -79,27 +142,6 @@
           "condition1": "FV変動が純利益の117%占有（超高materiality → 条件1スキップ）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: 偶発対価公正価値変動損益"
         }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "調整項目の合計が大きく、GAAP EPSが-0.83の赤字から調整後EPS+0.04へ転換しているため、市場がGAAPベースで評価する場合に企業の実力（特に非現金項目調整後）が過小評価されている可能性がある。ただしSBCと無形資産償却は恒常的コストであり、偶発対価変動は非経常性が高いため調整の質は中程度。投資家はこれら調整項目の持続可能性を注視すべきで、過大調整リスクにより将来的に実力が見直され株価が変動する可能性がある。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用だが、成長企業では毎期発生する恒常的な運用コストである。",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連無形資産の定期的な償却であり、恒常的に発生する非現金項目である。",
-            "confidence": 0.2
-          },
-          {
-            "item": "contingent_consideration_fv",
-            "snippet": "偶発対価公正価値変動損益は非現金・非経常の買収関連項目で、業績連動の時価変動による一過性の可能性が高い。",
-            "confidence": 0.7
-          }
-        ]
       }
     },
     {
@@ -151,9 +193,9 @@
     },
     {
       "gaap_eps": 0.050273593392344954,
-      "adjusted_eps": -0.2612515272114214,
+      "adjusted_eps": -0.3042257170237697,
       "gaap_net_income": 2996000.0,
-      "adjusted_net_income": -15569000.0,
+      "adjusted_net_income": -18130000.0,
       "diluted_shares_used": 59593910.0,
       "adjustments": [
         {
@@ -185,12 +227,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -18565000.0,
-          "net_amount": -18565000.0,
-          "note": "tax_expense=-6,985,000, median_normal_tax=11,580,000"
+          "amount": -21126000.0,
+          "net_amount": -21126000.0,
+          "note": "tax_expense=-6,985,000, median_normal_tax=14,141,000"
         }
       ],
-      "net_adjustment_total": -18565000.0,
+      "net_adjustment_total": -21126000.0,
       "filing_date": "2025-09-30",
       "form": "10-Q",
       "sector": null,

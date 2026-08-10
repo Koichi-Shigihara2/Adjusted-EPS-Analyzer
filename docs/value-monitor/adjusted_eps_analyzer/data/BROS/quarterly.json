@@ -1,7 +1,52 @@
 {
   "ticker": "BROS",
-  "last_updated": "2026-08-03T13:22:16.536351",
+  "last_updated": "2026-08-10T11:24:37.054596",
   "quarters": [
+    {
+      "gaap_eps": 0.2775943308722591,
+      "adjusted_eps": 0.31576056919637063,
+      "gaap_net_income": 37410000.0,
+      "adjusted_net_income": 42553473.10774889,
+      "diluted_shares_used": 134765000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 6879000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 5143473.107748886,
+          "tax_rate_applied": 0.25229348629904264
+        }
+      ],
+      "net_adjustment_total": 5143473.107748886,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 550851000.0,
+      "diluted_shares": 134765000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 12623000.0,
+      "pretax_income": 50033000.0,
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金ながら継続的な報酬コストと株主希薄化をもたらす性質を持つため、一過性調整とは言えません。GAAP EPSはこれを反映し実態に近い収益性を示していると考えられ、市場がGAAPで判断する場合に企業の実力が見えにくくなっている可能性は低いです。むしろ調整EPSを過信すると実力を過大評価するリスクがあり、投資家はSBCの継続発生額、将来の希薄化効果、及びフリーキャッシュフローへの影響を注視すべきです。過小評価リスクは限定的ですが、成長企業としてのキャッシュ創出力は別途評価が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、毎期発生する恒常的な報酬コストであり、株主希薄化の経済的実態を伴う。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.12636594862777115,
       "adjusted_eps": 0.16067809374853337,
@@ -34,18 +79,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 3341000.0,
-      "pretax_income": 19438000.0,
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "株式報酬費用（SBC）は恒常的な運用コストであり一過性ではありません。非現金費用として加算調整することでAdjusted EPSが約27%上昇していますが、市場がGAAP EPSで判断する場合でも企業の実力は適切に反映されており、むしろ調整依存により実態が過大に見えるリスクがあります。投資家はSBCによる株主希薄化の継続性と規模を注視し、過大評価リスクを警戒すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用としてadd_backされているが、成長企業において毎期発生する恒常的コストであり、調整の妥当性は低い。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 19438000.0
     },
     {
       "gaap_eps": 0.1699214401577558,
@@ -491,9 +525,9 @@
     },
     {
       "gaap_eps": 0.03239736851776986,
-      "adjusted_eps": -0.09094417288397222,
+      "adjusted_eps": -0.09571281561248117,
       "gaap_net_income": 1763000.0,
-      "adjusted_net_income": -4949000.0,
+      "adjusted_net_income": -5208500.0,
       "diluted_shares_used": 54418000.0,
       "adjustments": [
         {
@@ -512,12 +546,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -6712000.0,
-          "net_amount": -6712000.0,
-          "note": "tax_expense=-3,371,000, median_normal_tax=3,341,000"
+          "amount": -6971500.0,
+          "net_amount": -6971500.0,
+          "note": "tax_expense=-3,371,000, median_normal_tax=3,600,500"
         }
       ],
-      "net_adjustment_total": -6712000.0,
+      "net_adjustment_total": -6971500.0,
       "filing_date": "2022-09-30",
       "form": "10-Q",
       "sector": null,
@@ -734,26 +768,6 @@
       "quarter": 1,
       "tax_expense": 43000.0,
       "pretax_income": 43000.0
-    },
-    {
-      "gaap_eps": 0.14530530268299605,
-      "adjusted_eps": 0.14530530268299605,
-      "gaap_net_income": 6656000.0,
-      "adjusted_net_income": 6656000.0,
-      "diluted_shares_used": 45807000.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
-      "filing_date": "2020-09-30",
-      "form": "10-Q",
-      "sector": null,
-      "sector_exclusions": [],
-      "revenue": 86658000.0,
-      "diluted_shares": 45807000.0,
-      "period_end": "2020-09-30",
-      "fiscal_year": 2020,
-      "quarter": 3,
-      "tax_expense": 0,
-      "pretax_income": 6656000.0
     }
   ]
 }

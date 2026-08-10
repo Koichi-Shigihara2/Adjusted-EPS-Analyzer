@@ -1,7 +1,65 @@
 {
   "ticker": "SOFI",
-  "last_updated": "2026-08-03T13:20:53.106903",
+  "last_updated": "2026-08-10T11:22:13.843753",
   "quarters": [
+    {
+      "gaap_eps": 0.11582334188862344,
+      "adjusted_eps": 0.1593983247541313,
+      "gaap_net_income": 156592000.0,
+      "adjusted_net_income": 215504941.08433795,
+      "diluted_shares_used": 1351990000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 76865000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 58912941.084337935,
+          "tax_rate_applied": 0.23355309849296899
+        }
+      ],
+      "net_adjustment_total": 58912941.084337935,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "フィンテック / 銀行",
+      "sector_exclusions": [
+        "loan_fair_value",
+        "loan_loss_provision_abnormal"
+      ],
+      "revenue": 1218676000.0,
+      "diluted_shares": 1351990000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 47717000.0,
+      "pretax_income": 204309000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が30%超（現在 130.5%）",
+        "sbc_contribution": 1.305,
+        "sbc_to_revenue": 0.063,
+        "sbc_per_share": 0.0569,
+        "sector_threshold": {
+          "sbc_contribution": 0.3,
+          "sbc_to_revenue": 0.05
+        }
+      },
+      "ai_analysis": {
+        "health": "調整大",
+        "comment": "調整項目は恒常的な株式報酬費用(SBC)であり、非現金だが株主希薄化を伴う継続コストです。GAAP EPSで市場が判断する場合、SBCの影響で企業の実力(調整後収益力)が過小評価される可能性がありますが、SBCが毎期発生する本質的コストであるためAdjusted EPSが実力を過大に示すリスクもあり、投資家は希薄化影響や持続可能性を注視すべきです。過小評価リスクはあるものの、調整の質には慎重な判断が必要です。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用として毎期発生する恒常的な調整項目(非現金費用)",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 0.12099395432982755,
       "adjusted_eps": 0.16465684239509146,
@@ -37,28 +95,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 32821000.0,
-      "pretax_income": 199552000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が30%超（現在 119.7%）",
-        "sbc_contribution": 1.197,
-        "sbc_to_revenue": 0.065,
-        "sbc_per_share": 0.0523,
-        "sector_threshold": {
-          "sbc_contribution": 0.3,
-          "sbc_to_revenue": 0.05
-        }
-      },
-      "ai_analysis": {
-        "health": "過大調整",
-        "comment": "調整項目はSBC（株式報酬費用）のみで、これは恒常的に発生する運用コストであり一過性ではない。市場がGAAP EPS（0.121）で判断する場合、非現金費用を控除した保守的な数字を使用するため企業の実力（調整後0.165）が過小評価される可能性がある。ただしSBCは株式希薄化を伴う実質コストのため、調整を加味しすぎると過大評価リスクが生じる。投資家は希薄化後EPS、キャッシュフロー継続性、報酬政策の持続可能性に注目すべき。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "非現金費用としてadd_backされた株式報酬費用は恒常的な報酬コストであり、毎期発生するSBCとして実質的な希薄化影響を伴う。",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 199552000.0
     },
     {
       "gaap_eps": 0.1386432139527564,
@@ -236,9 +273,9 @@
     },
     {
       "gaap_eps": 0.30186673203860576,
-      "adjusted_eps": 0.055357321203206855,
+      "adjusted_eps": 0.05310289724802295,
       "gaap_net_income": 332473000.0,
-      "adjusted_net_income": 60970000.0,
+      "adjusted_net_income": 58487000.0,
       "diluted_shares_used": 1101390000.0,
       "adjustments": [
         {
@@ -283,12 +320,12 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -271503000.0,
-          "net_amount": -271503000.0,
-          "note": "tax_expense=-265,320,000, median_normal_tax=6,183,000"
+          "amount": -273986000.0,
+          "net_amount": -273986000.0,
+          "note": "tax_expense=-265,320,000, median_normal_tax=8,666,000"
         }
       ],
-      "net_adjustment_total": -271503000.0,
+      "net_adjustment_total": -273986000.0,
       "filing_date": "2024-12-31",
       "form": "10-K",
       "sector": "フィンテック / 銀行",
@@ -776,43 +813,6 @@
       "quarter": 1,
       "tax_expense": 752000.0,
       "pretax_income": -109605000.0
-    },
-    {
-      "gaap_eps": -0.03753220394130487,
-      "adjusted_eps": 0.05270462747556669,
-      "gaap_net_income": -30047000.0,
-      "adjusted_net_income": 42193523.83981785,
-      "diluted_shares_used": 800565830.0,
-      "adjustments": [
-        {
-          "item_id": "sbc",
-          "item_name": "株式報酬費用",
-          "amount": 72681000,
-          "unit": "USD",
-          "direction": "add_back",
-          "pre_tax": true,
-          "reason": "非現金費用",
-          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
-          "category": "株式報酬関連",
-          "net_amount": 72240523.83981785,
-          "tax_rate_applied": 0.0060604031339985265
-        }
-      ],
-      "net_adjustment_total": 72240523.83981785,
-      "filing_date": "2021-09-30",
-      "form": "10-Q",
-      "sector": "フィンテック / 銀行",
-      "sector_exclusions": [
-        "loan_fair_value",
-        "loan_loss_provision_abnormal"
-      ],
-      "revenue": 272006000.0,
-      "diluted_shares": 800565830.0,
-      "period_end": "2021-09-30",
-      "fiscal_year": 2021,
-      "quarter": 3,
-      "tax_expense": 181000.0,
-      "pretax_income": -29866000.0
     }
   ]
 }

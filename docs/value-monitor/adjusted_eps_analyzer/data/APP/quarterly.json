@@ -1,7 +1,86 @@
 {
   "ticker": "APP",
-  "last_updated": "2026-08-03T13:18:37.221790",
+  "last_updated": "2026-08-10T11:18:58.346839",
   "quarters": [
+    {
+      "gaap_eps": 3.7579273123243855,
+      "adjusted_eps": 4.035951720907127,
+      "gaap_net_income": 1266538000.0,
+      "adjusted_net_income": 1360240844.4490497,
+      "diluted_shares_used": 337031000.0,
+      "adjustments": [
+        {
+          "item_id": "sbc",
+          "item_name": "株式報酬費用",
+          "amount": 85783000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "非現金費用",
+          "extracted_from": "us-gaap:AllocatedShareBasedCompensationExpense",
+          "category": "株式報酬関連",
+          "net_amount": 72165760.8397331,
+          "tax_rate_applied": 0.1587405332089914
+        },
+        {
+          "item_id": "amortization_intangibles",
+          "item_name": "無形資産償却費",
+          "amount": 25601000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "買収関連無形資産の償却",
+          "extracted_from": "us-gaap:AmortizationOfIntangibleAssets",
+          "category": "買収・統合関連",
+          "net_amount": 21537083.60931661,
+          "tax_rate_applied": 0.1587405332089914
+        }
+      ],
+      "net_adjustment_total": 93702844.44904971,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "Technology",
+      "sector_exclusions": [
+        "inventory_writeoff",
+        "gov_subsidy_timing",
+        "fx_gains_losses",
+        "derivative_gains_losses",
+        "tax_one_time"
+      ],
+      "revenue": 1923686000.0,
+      "diluted_shares": 337031000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 238988000.0,
+      "pretax_income": 1505526000.0,
+      "maturity_monitor": {
+        "alert": "SBC寄与率が40%超（現在 91.5%）",
+        "sbc_contribution": 0.915,
+        "sbc_to_revenue": 0.045,
+        "sbc_per_share": 0.2545,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "過大調整",
+        "comment": "調整項目のSBCと無形資産償却費はともに恒常的に発生する非現金費用であり、一過性とは判断しにくいため調整の妥当性に疑問が残ります。市場がGAAP EPSで企業を評価する場合、非現金項目を加味しない実力（キャッシュ生成力）が過小評価される可能性がありますが、SBCによる株主希薄化や償却が反映する経済的コストを無視したAdjusted EPSは過大評価リスクを高めています。投資家はこれらの調整が真に持続的な価値を表しているか慎重に検証する必要があります。",
+        "sources": [
+          {
+            "item": "sbc",
+            "snippet": "株式報酬費用は非現金費用として毎期発生する恒常的なコストであり、調整によりEPSを押し上げているが、株主希薄化の観点から実質的な費用である。",
+            "confidence": 0.2
+          },
+          {
+            "item": "amortization_intangibles",
+            "snippet": "無形資産償却費は買収に伴う定期的な非現金償却であり、恒常的に発生するため一過性調整とはみなせない。",
+            "confidence": 0.2
+          }
+        ]
+      }
+    },
     {
       "gaap_eps": 3.559225811784642,
       "adjusted_eps": 3.830537559379498,
@@ -53,33 +132,7 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 225795000.0,
-      "pretax_income": 1431408000.0,
-      "maturity_monitor": {
-        "alert": "SBC寄与率が40%超（現在 90.7%）",
-        "sbc_contribution": 0.907,
-        "sbc_to_revenue": 0.045,
-        "sbc_per_share": 0.2461,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "調整中",
-        "comment": "SBCと無形資産償却費はいずれも恒常的に発生する非現金項目であり、特にSBCは事業運営上継続的な報酬コストです。市場がGAAP EPSのみで判断する場合、これらの控除により企業のキャッシュ生成実力や本業の収益力が過小評価される可能性があります。ただしSBCは株式希薄化を伴う実質コストであるため、調整後EPSを過信すると過大評価リスクも存在します。投資家は調整幅の持続可能性、フリーキャッシュフロー、及びSBCによる希薄化効果を慎重に検証すべきです。",
-        "sources": [
-          {
-            "item": "sbc",
-            "snippet": "株式報酬費用は非現金費用ですが、毎期継続して発生する恒常的な報酬コストであり、一過性ではない",
-            "confidence": 0.2
-          },
-          {
-            "item": "amortization_intangibles",
-            "snippet": "無形資産償却費は買収関連だが継続的な償却が発生する恒常的項目であり、一過性とは言えない",
-            "confidence": 0.2
-          }
-        ]
-      }
+      "pretax_income": 1431408000.0
     },
     {
       "gaap_eps": 3.223253501769161,
@@ -188,11 +241,11 @@
       "pretax_income": 1020946000.0
     },
     {
-      "gaap_eps": 2.3949279151481697,
-      "adjusted_eps": 2.539385141346873,
+      "gaap_eps": 2.3949309456039556,
+      "adjusted_eps": 2.5393883545936458,
       "gaap_net_income": 819531000.0,
       "adjusted_net_income": 868963458.6118181,
-      "diluted_shares_used": 342194433.0,
+      "diluted_shares_used": 342194000.0,
       "adjustments": [
         {
           "item_id": "sbc",
@@ -246,7 +299,7 @@
         "tax_one_time"
       ],
       "revenue": 1258754000.0,
-      "diluted_shares": 342194433.0,
+      "diluted_shares": 342194000.0,
       "period_end": "2025-06-30",
       "fiscal_year": 2025,
       "quarter": 2,

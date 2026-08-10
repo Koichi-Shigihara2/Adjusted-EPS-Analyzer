@@ -1,7 +1,32 @@
 {
   "ticker": "CEG",
-  "last_updated": "2026-08-03T13:19:09.241621",
+  "last_updated": "2026-08-10T11:19:15.033339",
   "quarters": [
+    {
+      "gaap_eps": 1.425,
+      "adjusted_eps": 1.425,
+      "gaap_net_income": 513000000.0,
+      "adjusted_net_income": 513000000.0,
+      "diluted_shares_used": 360000000.0,
+      "adjustments": [],
+      "net_adjustment_total": 0.0,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": null,
+      "sector_exclusions": [],
+      "revenue": 7504000000.0,
+      "diluted_shares": 360000000.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 398000000.0,
+      "pretax_income": 911000000.0,
+      "ai_analysis": {
+        "health": "Excellent",
+        "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
+        "sources": []
+      }
+    },
     {
       "gaap_eps": 4.491525423728813,
       "adjusted_eps": 2.3347457627118646,
@@ -79,27 +104,6 @@
           "condition1": "純利益変動1247% / 売上変動64% = 19.5倍（閾値5倍）",
           "note": "公正価値変動（非現金・非経常）が純利益の30%以上を占めると判定されました。GAAP EPSは経済実態を反映していない可能性があります。Adj EPSは以下の項目を除外して再計算しています: デリバティブ公正価値変動損益"
         }
-      },
-      "ai_analysis": {
-        "health": "調整大",
-        "comment": "主な調整はデリバティブ公正価値変動（-10.4億ドル規模のゲイン除外）によるもので、GAAP EPSを大幅に押し上げている。無形資産償却は恒常的コストだが、貸倒引当異常分とデリバティブ変動は一過性とみなせる。市場がGAAP EPS（4.49）で判断する場合、非経常ゲインにより持続的な企業実力（調整後2.33）を過大評価するリスクが高い。過小評価の可能性は低いが、デリバティブがエネルギー事業のヘッジとして繰り返し発生する性質を考慮すると、調整の妥当性に注意が必要。投資家はコア収益力の持続可能性と公正価値変動の反転リスクを注視すべき。",
-        "sources": [
-          {
-            "item": "amortization_intangibles",
-            "snippet": "買収関連無形資産の償却。これは複数年にわたる恒常的な非現金費用であり、調整により実力評価が歪む可能性がある。",
-            "confidence": 0.2
-          },
-          {
-            "item": "loan_loss_provision_abnormal",
-            "snippet": "マクロ変動による一時的影響の貸倒引当金繰入（異常変動分）。マクロ要因による一過性項目として調整される。",
-            "confidence": 0.8
-          },
-          {
-            "item": "derivative_fv_change",
-            "snippet": "非現金・非経常のデリバティブ時価評価変動。GAAPに含まれる大規模ゲインを除外し、調整後EPSを大幅に低下させている。",
-            "confidence": 0.65
-          }
-        ]
       }
     },
     {
@@ -744,9 +748,9 @@
     },
     {
       "gaap_eps": 0.10030395136778116,
-      "adjusted_eps": -0.8793920972644377,
+      "adjusted_eps": -1.0572036474164135,
       "gaap_net_income": 33000000.0,
-      "adjusted_net_income": -289320000.0,
+      "adjusted_net_income": -347820000.0,
       "diluted_shares_used": 329000000.0,
       "adjustments": [
         {
@@ -778,9 +782,9 @@
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -671500000.0,
-          "net_amount": -671500000.0,
-          "note": "tax_expense=-388,000,000, median_normal_tax=283,500,000"
+          "amount": -730000000.0,
+          "net_amount": -730000000.0,
+          "note": "tax_expense=-388,000,000, median_normal_tax=342,000,000"
         },
         {
           "item_id": "derivative_fv_change",
@@ -796,7 +800,7 @@
           "tax_rate_applied": 0.21
         }
       ],
-      "net_adjustment_total": -322320000.0,
+      "net_adjustment_total": -380820000.0,
       "filing_date": "2022-12-31",
       "form": "10-K",
       "sector": null,

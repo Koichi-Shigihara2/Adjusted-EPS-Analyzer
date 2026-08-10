@@ -1,7 +1,45 @@
 {
   "ticker": "RDW",
-  "last_updated": "2026-08-03T13:20:28.452115",
+  "last_updated": "2026-08-10T11:21:34.058241",
   "quarters": [
+    {
+      "gaap_eps": -0.185837615208855,
+      "adjusted_eps": -0.185837615208855,
+      "gaap_net_income": -40971000.0,
+      "adjusted_net_income": -40971000.0,
+      "diluted_shares_used": 220466669.0,
+      "adjustments": [],
+      "net_adjustment_total": 0.0,
+      "filing_date": "2026-06-30",
+      "form": "10-Q",
+      "sector": "宇宙・航空",
+      "sector_exclusions": [
+        "sbc",
+        "amortization_intangibles"
+      ],
+      "revenue": 117074000.0,
+      "diluted_shares": 220466669.0,
+      "period_end": "2026-06-30",
+      "fiscal_year": 2026,
+      "quarter": 2,
+      "tax_expense": 1862000.0,
+      "pretax_income": -39109000.0,
+      "maturity_monitor": {
+        "alert": null,
+        "sbc_contribution": 0,
+        "sbc_to_revenue": 0.033,
+        "sbc_per_share": 0.0177,
+        "sector_threshold": {
+          "sbc_contribution": 0.4,
+          "sbc_to_revenue": 0.25
+        }
+      },
+      "ai_analysis": {
+        "health": "Excellent",
+        "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
+        "sources": []
+      }
+    },
     {
       "gaap_eps": -0.3950074919344677,
       "adjusted_eps": -0.3950074919344677,
@@ -23,28 +61,13 @@
       "fiscal_year": 2026,
       "quarter": 1,
       "tax_expense": 641000.0,
-      "pretax_income": -75861000.0,
-      "maturity_monitor": {
-        "alert": "SBC/売上高が25%超（現在 48.2%）",
-        "sbc_contribution": 0,
-        "sbc_to_revenue": 0.482,
-        "sbc_per_share": 0.2413,
-        "sector_threshold": {
-          "sbc_contribution": 0.4,
-          "sbc_to_revenue": 0.25
-        }
-      },
-      "ai_analysis": {
-        "health": "Excellent",
-        "comment": "調整項目がゼロです。GAAP EPSがそのまま実質EPSと一致しており、最高水準の信頼性です。",
-        "sources": []
-      }
+      "pretax_income": -75861000.0
     },
     {
       "gaap_eps": -0.7149903665811899,
-      "adjusted_eps": -0.49145355018818393,
+      "adjusted_eps": -0.5071010626230706,
       "gaap_net_income": -85473000.0,
-      "adjusted_net_income": -58750454.91324771,
+      "adjusted_net_income": -60621025.33329713,
       "diluted_shares_used": 119544268.0,
       "adjustments": [
         {
@@ -63,18 +86,18 @@
         {
           "item_id": "inventory_writeoff",
           "item_name": "在庫評価損・減損",
-          "amount": 13645000.0,
+          "amount": 11227000.0,
           "unit": "USD",
           "direction": "add_back",
           "pre_tax": true,
           "reason": "一過性の在庫評価損",
           "extracted_from": "us-gaap:InventoryWriteDown",
           "category": "在庫・サプライチェーン関連",
-          "net_amount": 10555803.714464145,
+          "net_amount": 8685233.294414727,
           "tax_rate_applied": 0.22639767574465774
         }
       ],
-      "net_adjustment_total": 26722545.086752288,
+      "net_adjustment_total": 24851974.66670287,
       "filing_date": "2025-12-31",
       "form": "10-K",
       "sector": "宇宙・航空",
@@ -115,12 +138,26 @@
     },
     {
       "gaap_eps": -1.082899502807997,
-      "adjusted_eps": -1.082899502807997,
+      "adjusted_eps": -1.0626927550263456,
       "gaap_net_income": -96979000.0,
-      "adjusted_net_income": -96979000.0,
+      "adjusted_net_income": -95169385.91481908,
       "diluted_shares_used": 89554940.0,
-      "adjustments": [],
-      "net_adjustment_total": 0.0,
+      "adjustments": [
+        {
+          "item_id": "inventory_writeoff",
+          "item_name": "在庫評価損・減損",
+          "amount": 2418000,
+          "unit": "USD",
+          "direction": "add_back",
+          "pre_tax": true,
+          "reason": "一過性の在庫評価損",
+          "extracted_from": "us-gaap:InventoryWriteDown",
+          "category": "在庫・サプライチェーン関連",
+          "net_amount": 1809614.0851809266,
+          "tax_rate_applied": 0.25160707808894683
+        }
+      ],
+      "net_adjustment_total": 1809614.0851809266,
       "filing_date": "2025-06-30",
       "form": "10-Q",
       "sector": "宇宙・航空",
@@ -699,20 +736,20 @@
     },
     {
       "gaap_eps": 0.006993252688172043,
-      "adjusted_eps": -0.0306680376344086,
+      "adjusted_eps": -0.037818575268817205,
       "gaap_net_income": 260149.0,
-      "adjusted_net_income": -1140851.0,
+      "adjusted_net_income": -1406851.0,
       "diluted_shares_used": 37200000.0,
       "adjustments": [
         {
           "item_id": "tax_one_time_dta",
           "item_name": "DTA認識（繰延税金資産）除外",
-          "amount": -1401000.0,
-          "net_amount": -1401000.0,
-          "note": "tax_expense=-1,026,000, median_normal_tax=375,000"
+          "amount": -1667000.0,
+          "net_amount": -1667000.0,
+          "note": "tax_expense=-1,026,000, median_normal_tax=641,000"
         }
       ],
-      "net_adjustment_total": -1401000.0,
+      "net_adjustment_total": -1667000.0,
       "filing_date": "2021-03-31",
       "form": "10-Q",
       "sector": "宇宙・航空",
