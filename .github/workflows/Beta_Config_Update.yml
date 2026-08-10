@@ -36,7 +36,14 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install yfinance requests
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-1: beta_fetcher.pyが
+        # common.market_data.reader経由になったため、common/market_data/
+        # fetcher.py（__init__.py経由で連鎖import）が要求する
+        # pandas_market_calendars・pyyaml等もrequirements.txt経由で導入する
+        # （旧: pip install yfinance requests だけでは不足しImportErrorになる）
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run Beta Config Update
         env:

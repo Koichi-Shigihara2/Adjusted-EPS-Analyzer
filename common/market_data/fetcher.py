@@ -19,14 +19,17 @@ yfinance統合層のデータ取得モジュール（BACKLOG [[MARKETDATA-LAYER-
 daily/・attributes/・analyst_history/・violations_logの書き込みは全て
 tempfile→os.replace()でアトミック化する（BACKLOG確定事項3）。
 
-現時点でこのモジュールを参照する本番消費者は存在しない（グリーンフィールド
-実装）。既存の8本番消費者・2診断ツール・2周辺ツールの切替は別タスク
-（BACKLOG着手順序3・4）で行う。
+本番消費者切替（BACKLOG着手順序4）が開始しており、
+src/value/tanuki_valuation/beta_fetcher.py がcommon.market_data.reader
+経由で本モジュールの生成データ（attributes/）に依存する最初の消費者と
+なった（2026-08-11）。残り7本番消費者・2診断ツール・2周辺ツールの切替は
+順次対応する。
 """
 
 import io
 import json
 import os
+import sys
 import tempfile
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
@@ -42,6 +45,23 @@ MARKET_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 _REPO_ROOT = os.path.dirname(os.path.dirname(MARKET_DATA_DIR))  # common/market_data -> common -> リポジトリルート
 _MONITOR_TICKERS_YAML = os.path.join(_REPO_ROOT, "config", "monitor_tickers.yaml")
 _SP500_CACHE_FILENAME = "_sp500_constituents_cache.json"
+
+# common.yfinance_utils.safe_yf_ticker()（リトライ2回・待機3秒）経由で
+# .info を呼ぶための準備（src/value/tanuki_valuation/beta_fetcher.pyと同型
+# パターン）。本ファイルはGitHub Actions上で`python common/market_data/
+# fetcher.py ...`のようにスクリプトとして直接実行されるため、リポジトリ
+# ルートがsys.pathに乗っていないと`from common.yfinance_utils import ...`
+# が失敗する（相対importは`python -m`経由でない直接実行では使えないため
+# 採用しない。実測確認済み）。
+_repo_str = str(_REPO_ROOT)
+if _repo_str not in sys.path:
+    sys.path.insert(0, _repo_str)
+
+try:
+    from common.yfinance_utils import safe_yf_ticker as _safe_yf_ticker
+    _USE_SAFE_YF = True
+except ImportError:
+    _USE_SAFE_YF = False
 
 # 指数/ETF/商品ユニバース（既存消費者12ファイルの実使用実態から抽出、
 # BACKLOG [[MARKETDATA-LAYER-CONSTRUCTION-1]]投資調査参照）。網羅リストでは
@@ -371,16 +391,32 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
     失敗しても保存は拒否しない。twoHundredDayAverageは保存しない
     （BACKLOG確定事項7、get_ma_deviation()がprice_seriesから都度計算する
     設計のため）。
+
+    .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
+    待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
+    （import失敗時は無リトライの直接呼び出しにフォールバック）。全銘柄
+    バッチ実行時の一時的なネットワーク不調による取りこぼしを減らすため。
     """
     base = _resolve_base_dir(base_dir)
     target_symbols = _dedupe_symbols(symbols)
 
     for symbol in target_symbols:
-        try:
-            info = yf.Ticker(symbol).info
-        except Exception as e:
-            print(f"   [{symbol}] .info取得失敗（スキップ）: {e}")
-            continue
+        if _USE_SAFE_YF:
+            t = _safe_yf_ticker(symbol)
+            if t is None:
+                print(f"   [{symbol}] .info取得失敗（リトライ後もNone、スキップ）")
+                continue
+            try:
+                info = t.info
+            except Exception as e:
+                print(f"   [{symbol}] .info取得失敗（スキップ）: {e}")
+                continue
+        else:
+            try:
+                info = yf.Ticker(symbol).info
+            except Exception as e:
+                print(f"   [{symbol}] .info取得失敗（スキップ）: {e}")
+                continue
         if not info:
             print(f"   [{symbol}] .info が空（スキップ）")
             continue

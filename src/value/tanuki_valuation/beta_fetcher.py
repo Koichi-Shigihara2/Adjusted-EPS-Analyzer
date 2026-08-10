@@ -18,7 +18,12 @@ src/value/tanuki_valuation/beta_fetcher.py
     python beta_fetcher.py --dry-run
 
 ルール:
-    - yfinance 5年βをベース
+    - yfinance 5年βをベース。取得元はcommon/market_data/attributes/
+      （reader.get_attributes()）— [[MARKETDATA-LAYER-CONSTRUCTION-1]]
+      着手順序4-1でyfinance直接呼び出しから切替済み。データ実体は
+      Market_Data_Weekly_Update.yml（毎週日曜）が生成する。対象銘柄の
+      attributes/{TICKER}.jsonが未生成の場合はスキップされる
+      （yfinanceへの直接フォールバックは行わない・市場データ層専任）
     - 上限 2.5 / 下限 0.3
     - source が "damodaran_*" の銘柄は上書きしない（手動設定を保護）
     - DISCORD_WEB_HOOK が設定されていれば大きな変化を通知
@@ -27,7 +32,6 @@ src/value/tanuki_valuation/beta_fetcher.py
 import json
 import os
 import sys
-import time
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
@@ -42,11 +46,12 @@ _repo_str = str(REPO_ROOT)
 if _repo_str not in sys.path:
     sys.path.insert(0, _repo_str)
 
-try:
-    from common.yfinance_utils import safe_yf_ticker as _safe_yf_ticker
-    _USE_SAFE_YF = True
-except ImportError:
-    _USE_SAFE_YF = False
+# [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-1: β取得元をyfinance直接
+# 呼び出しからmarket_data統合層（reader.get_attributes()）経由に切替。
+# yfinance直接呼び出し（safe_yf_ticker等）は本ファイルから不要になった
+# （取得の実体はfetcher.py::fetch_weekly_attributes()に一本化済み、
+# そちらが同等のリトライ機構=safe_yf_ticker経由を持つ）。
+from common.market_data.reader import get_attributes as _get_market_data_attributes
 
 BETA_CAP    = 2.5
 BETA_FLOOR  = 0.3
@@ -239,24 +244,25 @@ def get_registered_tickers() -> list[str]:
     return json.loads(path.read_text(encoding="utf-8")).get("tickers", [])
 
 
-def fetch_yfinance_beta(ticker: str) -> Optional[float]:
-    """yfinance から5年βを取得する。失敗時は None を返す。リトライあり。"""
-    if _USE_SAFE_YF:
-        t = _safe_yf_ticker(ticker)
-        if t is None:
-            return None
-        try:
-            return t.info.get("beta")
-        except Exception as e:
-            print(f"  [{ticker}] yfinance info取得エラー: {e}", file=sys.stderr)
-            return None
-    try:
-        import yfinance as yf
-        info = yf.Ticker(ticker).info
-        return info.get("beta")
-    except Exception as e:
-        print(f"  [{ticker}] yfinance 取得エラー: {e}", file=sys.stderr)
+def fetch_market_data_beta(ticker: str) -> Optional[float]:
+    """common/market_data/attributes/{ticker}.json（reader.get_attributes()）
+    からβを取得する。
+
+    データ未生成（Market_Data_Weekly_Update.yml未実行・対象銘柄未収録）・
+    βキー欠落のいずれの場合もNoneを返す（呼び出し側のrefresh_tickers()が
+    「スキップ」として扱う。yfinanceへの直接フォールバックは行わない
+    ——[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-1の設計判断、
+    「market_data専任型」）。
+
+    値の生成元自体はfetcher.py::fetch_weekly_attributes()が呼ぶ同じ
+    yfinance `.info["beta"]`であり、値の意味・算出方法は変わらない
+    （層またぎ再計算はしていない。common/market_data/reader.pyの
+    docstring「層またぎ再計算の禁止」参照）。
+    """
+    attrs = _get_market_data_attributes(ticker)
+    if attrs is None:
         return None
+    return attrs.get("beta")
 
 
 def calc_capped_beta(raw_beta: float, ticker: str) -> tuple[float, str]:
@@ -273,7 +279,16 @@ def refresh_tickers(
     dry_run: bool = False,
 ) -> tuple[list[dict], list[dict]]:
     """
-    指定銘柄のβを yfinance から取得して beta_config.json を更新する。
+    指定銘柄のβを common/market_data/attributes/（reader.get_attributes()）
+    から取得して beta_config.json を更新する。
+
+    overrides[ticker]への書き込みは既存エントリとマージする（beta/source
+    キーのみ更新し、他のキー——sector・software_system_provisional等——は
+    保持する）。従来は`overrides[ticker] = {"beta":..., "source":...}`と
+    丸ごと置換していたため、classify_software_system_subgroup()が設定した
+    sector等が次回のβ更新時（値が実際に変化した回のみ）に消去される
+    リスクがあった（[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-1調査で
+    発見、本切替と同時に修正）。
 
     Returns:
         (updated_list, skipped_list)
@@ -287,32 +302,34 @@ def refresh_tickers(
     skipped  = []
 
     for ticker in tickers:
+        cur = overrides.get(ticker, {})
+
         # Damodaran手動設定は上書きしない
         if ticker in DAMODARAN_OVERRIDES:
             b, src = DAMODARAN_OVERRIDES[ticker]
-            cur = overrides.get(ticker, {})
             if cur.get("source", "").startswith("damodaran"):
                 skipped.append({"ticker": ticker, "reason": "Damodaran手動設定を保護"})
                 continue
-            # 初回登録のみ Damodaran 値を適用
+            # 初回登録のみ Damodaran 値を適用（既存キーを保持したままマージ）
             if not dry_run:
-                overrides[ticker] = {"beta": b, "source": src}
+                overrides[ticker] = {**cur, "beta": b, "source": src}
             updated.append({"ticker": ticker, "old": cur.get("beta"), "new": b, "source": src})
             continue
 
-        yf_beta = fetch_yfinance_beta(ticker)
-        if yf_beta is None:
-            skipped.append({"ticker": ticker, "reason": "yfinance 取得失敗"})
-            time.sleep(0.1)
+        raw_beta = fetch_market_data_beta(ticker)
+        if raw_beta is None:
+            skipped.append({
+                "ticker": ticker,
+                "reason": "market_data属性データなし（common/market_data/attributes/未生成、"
+                          "またはβキー欠落）",
+            })
             continue
 
-        new_beta, src = calc_capped_beta(yf_beta, ticker)
-        cur = overrides.get(ticker, {})
+        new_beta, src = calc_capped_beta(raw_beta, ticker)
         old_beta = cur.get("beta")
 
         if old_beta is not None and abs(new_beta - old_beta) < 0.01:
             # 変化なし
-            time.sleep(0.1)
             continue
 
         drift = f"{new_beta - old_beta:+.2f}" if old_beta is not None else "(新規)"
@@ -326,9 +343,7 @@ def refresh_tickers(
         })
 
         if not dry_run:
-            overrides[ticker] = {"beta": new_beta, "source": src}
-
-        time.sleep(0.15)  # API rate limit
+            overrides[ticker] = {**cur, "beta": new_beta, "source": src}
 
     if not dry_run and updated:
         save_config(cfg)
