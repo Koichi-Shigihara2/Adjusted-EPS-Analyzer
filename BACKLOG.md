@@ -2000,6 +2000,8 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
+**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設 完了。詳細は下記
+「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2123,9 +2125,23 @@ common/market_data/
 これにより未決定事項9件は全件解消した。
 
 #### 着手順序
-1. `fetcher.py`新設（`.history()`・`.download()`呼び出しの一元化、
-   `pandas_market_calendars`依存追加含む）
-2. `reader.py`新設（API群の実装）
+1. **【完了・2026-08-10】** `fetcher.py`新設（`.history()`・`.download()`
+   呼び出しの一元化、`pandas_market_calendars`依存追加含む）。
+   `common/market_data/fetcher.py`に`fetch_daily_prices()`（`daily/`）・
+   `fetch_weekly_attributes()`（`attributes/`）・`fetch_analyst_events()`
+   （`analyst_history/`）を実装。保存前検証（`validate_price_record()`・
+   `validate_attributes_record()`）・`{SYMBOL}/market_data_violations_log.json`
+   への毎回書き込み・`tempfile`→`os.replace()`アトミック書き込み・
+   `pandas_market_calendars`によるNYSE営業日判定（`is_trading_day()`）を
+   確定事項1〜7通りに実装済み。AAPL・IONQ（小型株）・`^GSPC`（指数）の
+   3層実データ取得動作確認・保存前検証の発火確認（正常系/異常系）・既知の
+   祝日/臨時休場日（感謝祭・独立記念日振替休場・ハリケーンサンディ2012・
+   9/11 2001）でのNYSEカレンダー認識確認・アトミック書き込みの中断耐性
+   確認まで完了。新規テスト`tests/test_market_data_fetcher.py`26件PASS、
+   pytest全体531 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+   既存消費者はまだ本モジュールを参照しないためシステムへの影響なし。
+   `reader.py`未実装のため`__init__.py`から`reader`は未import。
+2. `reader.py`新設（API群の実装）← 次のアクション
 3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
    VALUATION本体から、フェーズDと同様の優先順位を検討）
 4. 周辺ツール2ファイルの切替
