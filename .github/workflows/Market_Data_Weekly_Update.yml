@@ -1,0 +1,76 @@
+name: Market Data Weekly Update
+
+on:
+  schedule:
+    - cron: '20 13 * * 0'  # UTC 13:20 (JST 22:20) 日曜。HypeCore Update
+                            # (13:08 UTC)と近接だが完全同時刻は避けてリクエスト
+                            # 集中を分散（設計確定事項8）
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Target tickers (comma-separated, blank for full universe: S&P500+monitor+index/ETF/commodity)'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+jobs:
+  update-market-data-weekly:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install lxml html5lib
+
+      - name: Run fetch_weekly_attributes and fetch_analyst_events
+        run: |
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
+            python common/market_data/fetcher.py $TICKERS --layer attributes
+            python common/market_data/fetcher.py $TICKERS --layer analyst
+          else
+            python common/market_data/fetcher.py --layer attributes
+            python common/market_data/fetcher.py --layer analyst
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
+          git add common/market_data/attributes/ || true
+          git add common/market_data/analyst_history/ || true
+          git add common/market_data/*/market_data_violations_log.json || true
+          git add common/market_data/_sp500_constituents_cache.json || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Market Data Weekly - $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Market Data Weekly Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          attr_count=$(ls -1 common/market_data/attributes/*.json 2>/dev/null | wc -l)
+          hist_count=$(ls -1 common/market_data/analyst_history/*.json 2>/dev/null | wc -l)
+          echo "attributes/ 保存銘柄数: ${attr_count}" >> $GITHUB_STEP_SUMMARY
+          echo "analyst_history/ 保存銘柄数: ${hist_count}" >> $GITHUB_STEP_SUMMARY

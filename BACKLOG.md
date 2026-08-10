@@ -2001,7 +2001,8 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
 **更新日:** 2026-08-10（着手順序1. `fetcher.py`新設・2. `reader.py`新設
-完了。詳細は下記「着手順序」参照）
+完了。3. 定期実行ワークフロー新設はコミット済み・push待ち、push後に
+`workflow_dispatch`実行確認が必要。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2165,9 +2166,32 @@ common/market_data/
    GitHub Actionsバッチが最初に生成する際に正式にコミットする方針とした
    （`common/sec_data/data/`と同様、これらのディレクトリ自体は追跡対象
    とすべきものであり`.gitignore`追加は行っていない）。
-3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
+3. **【コミット済み・push待ち・2026-08-10】** 定期実行ワークフロー新設。
+   `.github/workflows/Market_Data_Daily_Update.yml`（平日21:40 UTC、
+   `fetch_daily_prices()`を全銘柄実行し`daily/`＋violations logをコミット
+   ＆push）・`Market_Data_Weekly_Update.yml`（日曜13:20 UTC、
+   `fetch_weekly_attributes()`＋`fetch_analyst_events()`を全銘柄実行し
+   `attributes/`＋`analyst_history/`＋violations logをコミット＆push）の
+   2ファイルを新設。いずれも`SEC_Data_Update.yml`と同型構成、既存
+   ワークフローとのcron衝突なし（Market_Pulse_Update 21:35 UTC・
+   HypeCore_Update 13:08 UTCとそれぞれ5分・12分ずらして分散、設計
+   確定事項8）。設計確定事項8のworkflow_run連鎖（本ワークフロー完了後に
+   TANUKI VALUATION・STONKS SILOを起動）は、発火先の本番消費者切替
+   （着手順序4）が完了するまで無効のまま、`Market_Data_Daily_Update.yml`
+   内にコメントとして記法のみ準備した（`TANUKI_VALUATION_Update.yml`・
+   `Stonks_Silo_Update.yml`自体は今回変更していない）。
+   ローカルでは両ワークフローの実行ステップと同一のCLIコマンド
+   （`fetcher.py --layer daily/attributes/analyst`）をAAPL・IONQ・
+   `^GSPC`で実行し正常動作・`git add`グロブの対象ファイル一致を確認
+   済みだが、**`workflow_dispatch`によるGitHub Actions上での実行確認は
+   push後でなければ実施できない**（GitHub側の制約、workflow定義が
+   リモートブランチに存在する必要があるため）。**次のアクション**:
+   push後に`workflow_dispatch`（または初回の自動cronスケジュール）で
+   両ワークフローを実際に1回実行し、正常終了・想定ファイル生成・
+   コミット内容を確認すること。
+4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
    VALUATION本体から、フェーズDと同様の優先順位を検討）
-4. 周辺ツール2ファイルの切替
+5. 周辺ツール2ファイルの切替
 
 #### 着手条件
 なし（未決定事項9件は全件確定済み、実装着手可能）。

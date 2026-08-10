@@ -1,0 +1,97 @@
+name: Market Data Daily Update
+
+on:
+  schedule:
+    - cron: '40 21 * * 1-5'  # UTC 21:40 (JST 翌6:40) 平日、市場クローズ後。
+                              # Market_Pulse_Update.yml(21:35 UTC)と近接だが
+                              # 完全同時刻は避けてリクエスト集中を分散（設計確定事項8）
+  workflow_dispatch:
+    inputs:
+      tickers:
+        description: 'Target tickers (comma-separated, blank for full universe: S&P500+monitor+index/ETF/commodity)'
+        required: false
+        default: ''
+
+env:
+  TZ: Asia/Tokyo
+
+# ─────────────────────────────────────────────────────────────────
+# [[MARKETDATA-LAYER-CONSTRUCTION-1]] 設計確定事項8（workflow_run連鎖
+# トリガー）の準備メモ:
+#
+# 本来は本ワークフロー完了後にTANUKI VALUATION・STONKS SILOを
+# workflow_runで連鎖起動する設計（前日終値ベース化に伴うレース条件
+# 〈日次バッチ未完了時に読みに行くリスク〉の回避が目的）。ただし
+# 本番消費者切替（着手順序3）が完了するまでは発火先が存在しないため、
+# 記法の準備のみ行い有効化しない。
+#
+# 着手順序3完了後、以下のスニペットを TANUKI_VALUATION_Update.yml・
+# Stonks_Silo_Update.yml それぞれの `on:` セクションに追加することで
+# 有効化する（本ファイル自体には実装しない。SEC_Data_Audit.ymlの
+# workflow_run連鎖と同型）。既存2ファイルは今回変更しない:
+#
+#   on:
+#     workflow_run:
+#       workflows: ["Market Data Daily Update"]
+#       types: [completed]
+#
+# 有効化と同時に、TANUKI_VALUATION_Update.yml・Stonks_Silo_Update.yml
+# 側の既存cronスケジュール（現状14:05 UTC・15:05 UTC、いずれも米国市場
+# 取引時間中）も前日終値ベースへの仕様変更に合わせて見直す必要がある
+# （現状のリアルタイム株価取得ロジック自体の切替は着手順序3の範囲）。
+# ─────────────────────────────────────────────────────────────────
+
+jobs:
+  update-market-data-daily:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: kaihatsu
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install lxml html5lib
+
+      - name: Run fetch_daily_prices
+        run: |
+          if [ -n "${{ github.event.inputs.tickers }}" ]; then
+            TICKERS=$(echo "${{ github.event.inputs.tickers }}" | tr ',' ' ')
+            python common/market_data/fetcher.py $TICKERS --layer daily
+          else
+            python common/market_data/fetcher.py --layer daily
+          fi
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config merge.ours.driver true
+          git add common/market_data/daily/ || true
+          git add common/market_data/*/market_data_violations_log.json || true
+          git add common/market_data/_sp500_constituents_cache.json || true
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update Market Data Daily - $(date +'%Y-%m-%d')"
+            git pull --rebase origin kaihatsu
+            git push origin kaihatsu
+          fi
+
+      - name: Summary
+        run: |
+          echo "## Market Data Daily Update Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          count=$(ls -1 common/market_data/daily/*.json 2>/dev/null | wc -l)
+          echo "daily/ 保存銘柄数: ${count}" >> $GITHUB_STEP_SUMMARY
