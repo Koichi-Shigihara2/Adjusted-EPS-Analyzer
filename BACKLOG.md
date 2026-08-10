@@ -2000,10 +2000,9 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設・2. `reader.py`新設・
-3. 定期実行ワークフロー新設（`.gitattributes`のmerge=ours恒久対応込み、
-Daily/Weeklyとも`workflow_dispatch`実行確認済み）完了。次は着手順序4.
-本番消費者切替、優先順位案は下記「着手順序」参照）
+**更新日:** 2026-08-10（着手順序1〜3完了に加え、4. 本番消費者切替の
+1件目`beta_fetcher.py`切替も完了（進捗1/8）。次は2番手
+`data_fetcher.py`（株価前日終値化含む）。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2208,13 +2207,45 @@ common/market_data/
    `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
    本番バッチ生成分としてそのままリポジトリに残している。
 4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
-   VALUATION本体から、フェーズDと同様の優先順位を検討）。
+   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 1/8。**
 
-   **申し送り: 優先順位案（2026-08-10時点、着手順序3完了時の提案）**
-   1. `beta_fetcher.py`（`reader.get_attributes()["beta"]`経由への切替。
-      影響範囲が最小、`audit.py`のβ乖離監査と役割分担済み確定事項6）
-   2. `data_fetcher.py`（株価取得を前日終値ベースへ仕様変更する本丸。
-      TANUKI VALUATION本体のDCF計算に直結するため慎重に）
+   **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
+   1. **【完了・2026-08-10】** `beta_fetcher.py`（`reader.get_attributes()
+      ["beta"]`経由への切替。影響範囲が最小、`audit.py`のβ乖離監査と
+      役割分担済み確定事項6）。
+      Step0として`common/market_data/fetcher.py::fetch_weekly_attributes()`
+      に`common.yfinance_utils.safe_yf_ticker()`経由のリトライ機構
+      （リトライ2回・待機3秒）を追加した上で切替。`fetch_yfinance_beta()`
+      → `fetch_market_data_beta()`に置換し、yfinanceへの直接フォール
+      バックは廃止（market_data専任型、選択肢2採用）。`refresh_tickers()`
+      の`overrides[ticker]`書き込みを丸ごと置換からマージ方式に修正し、
+      調査で発見した`sector`等副次キー消去バグも同時に解消。
+      `Beta_Config_Update.yml`の依存インストールを`requirements.txt`
+      経由に変更（`common.market_data`連鎖importに追随）。
+      `tests/test_beta_fetcher.py`新規14件。
+      Market_Data_Weekly_Update.ymlをフル母集団（引数なし、570銘柄）で
+      実行し`attributes/`をTANUKI対象100銘柄全件生成（欠落0件）した上で、
+      本番`beta_config.json`の一時コピーに対し実データで100銘柄全数
+      比較を実施：更新0件・スキップ3件（LMT=Damodaran保護、
+      CRWV・TASK=yfinance側5年β算出不能によりnull、既存値は無傷で保持）・
+      変化なし97件（切替前後で計算結果の実質差分ゼロ）。LMTの
+      Damodaran保護・36銘柄のsectorキー保持（副次キー含む）を実データで
+      確認済み。本番`config/beta_config.json`への書き込みは実施せず、
+      次回月次cron（`Beta_Config_Update.yml`、月初週の日曜）の自動実行に
+      委ねる方針で確定（ユーザー判断、2026-08-10）。
+   2. **次のアクション**: `data_fetcher.py`（株価取得を前日終値ベースへ
+      仕様変更する本丸。TANUKI VALUATION本体のDCF計算に直結するため
+      慎重に）。
+      着手前に`beta_fetcher.py`切替と同様の事前調査（現状の使用実態・
+      `reader.get_price_series()`/`get_latest_price()`への置換後の差分・
+      対象銘柄母集団の同期状況）を先に実施することを推奨。特に
+      `beta_fetcher.py`切替時の教訓（①スクリプト直接実行時は相対import
+      不可・sys.path手動追加が必要、②overrides等の既存dictへの書き込みは
+      丸ごと置換でなくマージ方式にする、③yfinance側のデータ欠如
+      〈CRWV/TASK型〉は切替のバグではなく実データの限界として区別する）
+      を踏まえること。株価前日終値化は市場取引時間中のリアルタイム取得
+      からの仕様変更（BACKLOG設計確定事項）のため、影響範囲（DCF計算・
+      スコアリング）の事前確認が特に重要。
    3. `valuation_fetcher.py`
    4. `hypecore.py`
    5〜8. `pipeline.py`・`collect.py`・`collect_and_send.py`・
