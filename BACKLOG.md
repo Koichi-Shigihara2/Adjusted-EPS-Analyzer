@@ -2000,9 +2000,10 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設・2. `reader.py`新設
-完了。3. 定期実行ワークフロー新設はコミット済み・push待ち、push後に
-`workflow_dispatch`実行確認が必要。詳細は下記「着手順序」参照）
+**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設・2. `reader.py`新設・
+3. 定期実行ワークフロー新設（`.gitattributes`のmerge=ours恒久対応込み、
+Daily/Weeklyとも`workflow_dispatch`実行確認済み）完了。次は着手順序4.
+本番消費者切替、優先順位案は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2166,7 +2167,7 @@ common/market_data/
    GitHub Actionsバッチが最初に生成する際に正式にコミットする方針とした
    （`common/sec_data/data/`と同様、これらのディレクトリ自体は追跡対象
    とすべきものであり`.gitignore`追加は行っていない）。
-3. **【コミット済み・push待ち・2026-08-10】** 定期実行ワークフロー新設。
+3. **【完了・2026-08-10】** 定期実行ワークフロー新設。
    `.github/workflows/Market_Data_Daily_Update.yml`（平日21:40 UTC、
    `fetch_daily_prices()`を全銘柄実行し`daily/`＋violations logをコミット
    ＆push）・`Market_Data_Weekly_Update.yml`（日曜13:20 UTC、
@@ -2180,17 +2181,47 @@ common/market_data/
    （着手順序4）が完了するまで無効のまま、`Market_Data_Daily_Update.yml`
    内にコメントとして記法のみ準備した（`TANUKI_VALUATION_Update.yml`・
    `Stonks_Silo_Update.yml`自体は今回変更していない）。
-   ローカルでは両ワークフローの実行ステップと同一のCLIコマンド
-   （`fetcher.py --layer daily/attributes/analyst`）をAAPL・IONQ・
-   `^GSPC`で実行し正常動作・`git add`グロブの対象ファイル一致を確認
-   済みだが、**`workflow_dispatch`によるGitHub Actions上での実行確認は
-   push後でなければ実施できない**（GitHub側の制約、workflow定義が
-   リモートブランチに存在する必要があるため）。**次のアクション**:
-   push後に`workflow_dispatch`（または初回の自動cronスケジュール）で
-   両ワークフローを実際に1回実行し、正常終了・想定ファイル生成・
-   コミット内容を確認すること。
+
+   **push後の`workflow_dispatch`実行確認（Daily/Weekyとも完了）**:
+   push直後にDaily・Weeklyをほぼ同時に手動起動したところ、Dailyは成功
+   したがWeeklyは`git pull --rebase`で`add/add`コンフリクト
+   （両者が同一の新規ファイル`{TICKER}/market_data_violations_log.json`
+   にほぼ同時commitしたため）により失敗した。原因は
+   `common/market_data/`配下が`docs/market-monitor/`等の既存自動生成
+   データディレクトリと異なり`.gitattributes`の`merge=ours`対象に
+   未登録だったこと。**恒久対応として`.gitattributes`に
+   `common/market_data/daily/*.json`・`attributes/*.json`・
+   `analyst_history/*.json`・`*/market_data_violations_log.json`・
+   `_sp500_constituents_cache.json`の5パターンへ`merge=ours`を追加**
+   （コミット`4749fbd6f`）。追加後にWeeklyを単独で再実行し成功
+   （コミット`51cc6e38f`）。`{TICKER}/market_data_violations_log.json`に
+   `daily_price_validation`（Daily由来）・`attributes_validation`
+   （Weekly由来）の両セクションが正しく共存することを確認、
+   `attributes/`・`analyst_history/`の実データ生成（AAPL/IONQ/^GSPCの
+   3銘柄、AAPL analyst_history 969件等）も確認済み。
+   本番cronでは実行日自体が重ならない（平日 vs 日曜）ためこの衝突は
+   通常発生しない想定だが、手動再実行が重なる場合等への保険として
+   本対応を維持する。
+
+   Daily/Weeklyとも`workflow_dispatch`によるGitHub Actions上での実行
+   確認が完了し、生成された実データ（`daily/`・`attributes/`・
+   `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
+   本番バッチ生成分としてそのままリポジトリに残している。
 4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
-   VALUATION本体から、フェーズDと同様の優先順位を検討）
+   VALUATION本体から、フェーズDと同様の優先順位を検討）。
+
+   **申し送り: 優先順位案（2026-08-10時点、着手順序3完了時の提案）**
+   1. `beta_fetcher.py`（`reader.get_attributes()["beta"]`経由への切替。
+      影響範囲が最小、`audit.py`のβ乖離監査と役割分担済み確定事項6）
+   2. `data_fetcher.py`（株価取得を前日終値ベースへ仕様変更する本丸。
+      TANUKI VALUATION本体のDCF計算に直結するため慎重に）
+   3. `valuation_fetcher.py`
+   4. `hypecore.py`
+   5〜8. `pipeline.py`・`collect.py`・`collect_and_send.py`・
+      `breadth_calculator.py`（残り4ファイル、優先順位は着手時に再検討）
+
+   診断ツール2ファイル（`score_verifier.py`・`audit.py`）の切替順序は
+   上記8ファイルの進捗を見ながら別途判断する。
 5. 周辺ツール2ファイルの切替
 
 #### 着手条件
