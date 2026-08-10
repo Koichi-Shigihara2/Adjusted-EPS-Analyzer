@@ -12,6 +12,19 @@ common/sec_data/ と同型構成（fetcher.py がネットワーク取得・保�
         analyst_history/{SYMBOL}.json  イベント履歴層（upgrades_downgrades由来）
         {SYMBOL}/market_data_violations_log.json  保存前検証の結果ログ
 
-reader.py は未実装（次ステップ）。現時点の消費者はまだ存在しない
-グリーンフィールドモジュールであり、既存システムへの依存・影響はない。
+現時点の消費者はまだ存在しないグリーンフィールドモジュールであり、
+既存システムへの依存・影響はない。
+
+使用例:
+    from common.market_data import reader
+
+    latest = reader.get_latest_price("AAPL")
+    series = reader.get_price_series("AAPL", days=30)
+    ma_dev = reader.get_ma_deviation("AAPL", window=50)
+    attrs = reader.get_attributes("AAPL")
 """
+
+from . import fetcher
+from . import reader
+
+__all__ = ["fetcher", "reader"]

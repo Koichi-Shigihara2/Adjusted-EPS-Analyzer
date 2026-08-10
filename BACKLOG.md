@@ -2000,8 +2000,8 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設 完了。詳細は下記
-「着手順序」参照）
+**更新日:** 2026-08-10（着手順序1. `fetcher.py`新設・2. `reader.py`新設
+完了。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2141,7 +2141,30 @@ common/market_data/
    pytest全体531 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
    既存消費者はまだ本モジュールを参照しないためシステムへの影響なし。
    `reader.py`未実装のため`__init__.py`から`reader`は未import。
-2. `reader.py`新設（API群の実装）← 次のアクション
+2. **【完了・2026-08-10】** `reader.py`新設（API群の実装）。
+   `common/market_data/reader.py`に`get_latest_price`・`get_price_series`・
+   `get_ma_deviation`・`get_attributes`・`get_analyst_events`・
+   `get_calendar`・`get_index_series`・`get_sp500_constituents_prices`を
+   実装。`get_price_series()`は`pandas_market_calendars`で期待される
+   営業日集合と実レコード日付集合を突合し、欠損があれば`_gap: True`の
+   プレースホルダーで埋めて返す設計（確定事項1）。`get_ma_deviation()`は
+   window日分の実データ（欠損を除く）が揃わない場合`None`を返す
+   （`twoHundredDayAverage`等の事前計算値は保存せず都度計算、確定事項7）。
+   全APIのdocstringに層またぎ再計算禁止（確定事項4）を明記。
+   `get_calendar()`はfetcher.pyが次回決算日等を未取得のため現状常に
+   空dictを返す（将来`attributes/`に`calendar`キーが追加されれば
+   reader.py側の変更なしに対応する設計）。`__init__.py`に`fetcher`・
+   `reader`をexport。AAPL・IONQ・`^GSPC`の実データ（fetcher.py実行）＋
+   合成30営業日データ（欠損なし/欠損注入の両方）で全API動作確認・
+   未フェッチ銘柄への全API呼び出しが例外なくNone/空リスト/空dictを返す
+   ことを確認。新規テスト`tests/test_market_data_reader.py`27件PASS、
+   pytest全体558 passed/2 known-failed（`[[TEST-STALE-IV-1]]`、無関係）。
+   動作確認で生成したAAPL/IONQ/^GSPCの実データ（`daily/`・`attributes/`・
+   `analyst_history/`・`{TICKER}/market_data_violations_log.json`計12
+   ファイル）は手動テスト由来のため今回のコミットには含めず、本番
+   GitHub Actionsバッチが最初に生成する際に正式にコミットする方針とした
+   （`common/sec_data/data/`と同様、これらのディレクトリ自体は追跡対象
+   とすべきものであり`.gitignore`追加は行っていない）。
 3. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
    VALUATION本体から、フェーズDと同様の優先順位を検討）
 4. 周辺ツール2ファイルの切替
