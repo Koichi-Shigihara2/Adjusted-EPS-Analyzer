@@ -28,6 +28,27 @@ DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
                         "value-monitor", "tanuki_valuation", "data")
 EPS_DIR  = os.path.join(os.path.dirname(__file__), "..", "..", "docs",
                         "value-monitor", "adjusted_eps_analyzer", "data")
+BETA_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..",
+                                "config", "beta_config.json")
+
+# common/ をimportできるようrepo rootをsys.pathに追加
+# （beta_fetcher.py・pipeline.py等の既存切替と同型のHAS_MARKET_DATA
+# ガードパターンを踏襲）
+_REPO_ROOT_FOR_IMPORT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT_FOR_IMPORT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT_FOR_IMPORT)
+
+# [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5: β乖離監査・カナダ企業判定を
+# yfinance直接呼び出しからcommon.market_data.reader経由に切替
+# （設計確定事項6「audit.pyとの役割分担」通り）。取得の実体は
+# fetcher.py::fetch_weekly_attributes()に一本化済み（Market_Data_Weekly_
+# Update.ymlが毎週日曜に生成）。
+try:
+    from common.market_data.reader import get_attributes as _md_get_attributes
+    HAS_MARKET_DATA = True
+except Exception:
+    _md_get_attributes = None
+    HAS_MARKET_DATA = False
 
 
 def get_registered_tickers() -> list[str]:
@@ -42,13 +63,17 @@ def audit_ticker(ticker: str) -> dict:
     result = {"ticker": ticker, "critical": [], "warning": []}
 
     # カナダ企業チェック（IFRS/40-F）— 早期リターン前に必ず実行
+    # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5でreader.get_attributes()
+    # 経由に切替（2026-08-11）。attributes/未生成銘柄（fetcher.py未実行）は
+    # Noneが返り、旧yfinance直接呼び出し失敗時と同じ「判定スキップ」の
+    # 中立デフォルト挙動になる。
     try:
-        import yfinance as yf
-        _info = yf.Ticker(ticker).info
-        if _info.get("country") == "Canada":
-            result["warning"].append(
-                "カナダ企業（IFRS/40-F）: TANUKI VALUATION・EPS非対応。登録前に要確認"
-            )
+        if HAS_MARKET_DATA:
+            _attrs = _md_get_attributes(ticker)
+            if _attrs and _attrs.get("country") == "Canada":
+                result["warning"].append(
+                    "カナダ企業（IFRS/40-F）: TANUKI VALUATION・EPS非対応。登録前に要確認"
+                )
     except Exception:
         pass
 
@@ -233,32 +258,38 @@ def post_discord(message: str) -> bool:
 
 def audit_beta_drift(tickers: list[str]) -> list[dict]:
     """
-    beta_config.json と yfinance の実測β値を比較し、
-    乖離が大きい銘柄をリストアップする。
+    beta_config.json と market_data層のβ実測値（reader.get_attributes()、
+    yfinance .info由来）を比較し、乖離が大きい銘柄をリストアップする。
 
-    yfinance が利用できない場合は空リストを返す（graceful skip）。
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5で、yfinance直接呼び出し
+    （毎回ライブ取得・レート制限対策のtime.sleep併用）から
+    common.market_data.reader.get_attributes()経由（Market_Data_Weekly_
+    Update.ymlが週次生成する attributes/{TICKER}.json を読むだけ、
+    ネットワークアクセスなし・sleep不要）に切替。beta_config.json自体が
+    既にbeta_fetcher.py経由でmarket_data由来のため、本チェックの意味は
+    「独立した外部ライブ値との比較」から「beta_config.jsonが週次
+    attributes/より陳腐化していないかの内部整合性チェック」に変わる
+    （BACKLOG確定事項6「audit.pyとの役割分担、両方維持」の想定通り）。
+
+    market_dataのattributes/が未生成の銘柄は空リストを返す（graceful skip、
+    reader.get_attributes()のNone返却をそのまま素通しする中立デフォルト）。
     """
-    try:
-        import yfinance as yf
-        import time as _time
-    except ImportError:
-        print("  [beta] yfinance 未インストール → βチェックをスキップ")
+    if not HAS_MARKET_DATA:
+        print("  [beta] common.market_data.reader 未利用可 → βチェックをスキップ")
         return []
 
-    repo_root = os.path.join(os.path.dirname(__file__), "..", "..")
-    cfg_path  = os.path.join(repo_root, "config", "beta_config.json")
-    if not os.path.exists(cfg_path):
+    if not os.path.exists(BETA_CONFIG_PATH):
         return []
 
-    cfg       = json.load(open(cfg_path, encoding="utf-8"))
+    cfg       = json.load(open(BETA_CONFIG_PATH, encoding="utf-8"))
     overrides = cfg.get("overrides", {})
     DRIFT_THRESHOLD = 0.5  # この差分以上を「大きな乖離」と判定
 
     drift_list = []
     for ticker in tickers:
         try:
-            info   = yf.Ticker(ticker).info
-            yf_b   = info.get("beta")
+            attrs  = _md_get_attributes(ticker)
+            yf_b   = attrs.get("beta") if attrs else None
             cfg_b  = overrides.get(ticker, {}).get("beta")
             src    = overrides.get(ticker, {}).get("source", "")
 
@@ -287,7 +318,9 @@ def audit_beta_drift(tickers: list[str]) -> list[dict]:
                     "src":  src,
                     "msg":  f"β乖離 config={cfg_b} / yfinance={yf_b:.2f} (差{yf_b-cfg_b:+.2f})",
                 })
-            _time.sleep(0.12)
+            # ネットワークアクセスなし（ローカルattributes/{TICKER}.json読み取り
+            # のみ）のため、旧yfinanceライブ呼び出し時代のレート制限対策
+            # time.sleep(0.12)は不要になり削除。
         except Exception:
             pass
 

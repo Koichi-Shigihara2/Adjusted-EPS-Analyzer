@@ -389,6 +389,34 @@ class TestFetchWeeklyAttributesHypecorePrereqFields:
             assert saved[key] is None
 
 
+class TestFetchWeeklyAttributesCountryField:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5（診断ツール2ファイル
+    切替、audit.py::audit_ticker()のカナダ企業判定の前提）で追加した
+    countryフィールドの回帰テスト。"""
+
+    def _patch_info(self, monkeypatch, info):
+        schema = TestFetchWeeklyAttributesSchema()
+        schema._patch_info(monkeypatch, info)
+
+    def test_country_is_extracted(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        info = dict(TestFetchWeeklyAttributesSchema._FAKE_INFO)
+        info["country"] = "Canada"
+        self._patch_info(monkeypatch, info)
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["country"] == "Canada"
+
+    def test_missing_country_defaults_to_none_not_error(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, {"currentPrice": 100.0})
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["country"] is None
+
+
 class TestFetchWeeklyAttributesCalendar:
     """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-4（pipeline.py .calendar
     切替）で追加したcalendarフィールドの回帰テスト。.calendarをmonkeypatchし、

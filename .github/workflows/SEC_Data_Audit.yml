@@ -32,7 +32,15 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install requests
+        # [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5: audit.pyが
+        # common.market_data.reader経由になったため、common/market_data/
+        # fetcher.py（reader.py経由で連鎖import）が要求するyfinance・
+        # pandas・pandas_market_calendars・pyyaml等もrequirements.txt経由で
+        # 導入する（TANUKI_VALUATION_Update.yml等の既存切替と同じ対応。
+        # 旧: pip install requestsのみでは不足しImportErrorになる）
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Run SEC Data Quality Audit
         env:

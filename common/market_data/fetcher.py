@@ -581,6 +581,13 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
       重複保存すると層またぎ問題を生む（BACKLOG確定事項4、
       previousClose非保存と同じ理由）。
 
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5（診断ツール2ファイル
+    切替、audit.py::audit_ticker()のカナダ企業判定の前提）で2026-08-11に
+    1フィールドを追加:
+    - `country`（`info.get("country")`）: 生値をそのまま保存する単純な
+      直接フィールド（フォールバックなし）。audit.py側が
+      `country == "Canada"`判定にのみ使用する。
+
     .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
     待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
     （import失敗時は無リトライの直接呼び出しにフォールバック）。全銘柄
@@ -645,6 +652,7 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
             "beta": info.get("beta"),
             "sector": info.get("sector"),
             "industry": info.get("industry"),
+            "country": info.get("country"),
             "dividend_yield": info.get("trailingAnnualDividendYield"),
             "payout_ratio": info.get("payoutRatio"),
             "shares_outstanding": info.get("sharesOutstanding"),
