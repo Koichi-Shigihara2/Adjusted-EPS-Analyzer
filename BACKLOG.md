@@ -1,5 +1,25 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-11（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`: `fetcher.py`・
+`reader.py`新設と定期実行ワークフロー2件（Daily/Weekly Update）を実装、
+続けて本番消費者8ファイル（`beta_fetcher.py`・`data_fetcher.py`・
+`valuation_fetcher.py`・`pipeline.py`・`collect.py`・`collect_and_send.py`・
+`breadth_calculator.py`・`hypecore.py`）**全数の切替が完了**。うち
+`hypecore.py`は前提作業3件（daily/バックフィルを`start="2021-01-01"`へ
+拡張・attributes/へ7フィールド追加・analyst_history/へearnings_history・
+recommendations_historyの2系統追加）を要する最複雑の消費者だった。
+一連の作業で発見した副次課題を`[[MARKETDATA-CWAN-FROZEN-DATA-
+SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・
+`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-CLI-TICKERS-
+SHADOW-1]]`として登録。誤って「バグ」登録した`[[MARKETDATA-DAILY-
+UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`（daily/層のauto_adjust=False
+〈未調整終値〉と旧実装のauto_adjust=True〈調整済み終値〉の乖離）は、
+事実確認調査の結果「旧実装の調整済み終値使用の方が技術指標としては
+元々不適切だった」と判明したため訂正・クローズ（対応不要で確定）。
+次は着手順序5（診断ツール2ファイル`score_verifier.py`・`audit.py`の
+切替）。詳細はBACKLOG_DONE.md「2026-08-11（完了）」および
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ参照）
+
 最終更新: 2026-08-08（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`の未決定
 事項9件を全件最終確定。1.営業日連続性保証〈pandas_market_calendars
 新規依存採用〉2.fetched_at付与 3.書き込みアトミック化〈tempfile→
@@ -2001,13 +2021,17 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
 **更新日:** 2026-08-11（着手順序1〜3完了に加え、4. 本番消費者切替が
-3/8に進捗：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸）・
-4-3`valuation_fetcher.py`（STONKS SILO）とも完了。前提条件（`attributes/`
-スキーマ拡張・日次価格層バックフィル全570銘柄実行）も完了済み。
-一連の切替作業中に発見した別課題3件を`[[MARKETDATA-CWAN-FROZEN-DATA-
-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・
-`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。次は4番手
-`hypecore.py`。詳細は下記「着手順序」参照）
+**8/8全数完了**：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸）・
+4-3`valuation_fetcher.py`（STONKS SILO）・4-4`pipeline.py`（.calendar）・
+4-5`collect.py`（Discover）・4-6`collect_and_send.py`（Market Pulse）・
+4-7`breadth_calculator.py`・4-8`hypecore.py`（3層混在の最複雑消費者、
+前提作業3件込み）とも完了。一連の切替作業中に発見した別課題群を
+`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。誤って「バグ」
+登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`は
+事実確認調査により前提の誤りが判明し訂正・クローズ済み。次は着手順序5
+（診断ツール2ファイル）。詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2211,8 +2235,8 @@ common/market_data/
    確認が完了し、生成された実データ（`daily/`・`attributes/`・
    `analyst_history/`・violations log、AAPL/IONQ/^GSPCの3銘柄分）は
    本番バッチ生成分としてそのままリポジトリに残している。
-4. 本番消費者8ファイル＋診断ツール2ファイルの段階的切替（TANUKI
-   VALUATION本体から、フェーズDと同様の優先順位を検討）。**進捗 3/8。**
+4. 本番消費者8ファイルの段階的切替（TANUKI VALUATION本体から、フェーズD
+   と同様の優先順位を検討）。**【完了・2026-08-11】進捗 8/8（全数完了）。**
 
    **優先順位案（2026-08-10時点、着手順序3完了時の提案）**
    1. **【完了・2026-08-10】** `beta_fetcher.py`。詳細・検証結果は
@@ -2235,74 +2259,68 @@ common/market_data/
       方針と整合）。副次発見`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`
       （CLI引数実行の既存バグ）は本切替の範囲外のため未修正のまま
       新規登録。
-   **次セッションでの着手順序（2026-08-11時点、hypecore.py事前調査を
-   反映し更新）**:
-   1. 着手順序4-4〜4-7: `pipeline.py`（`.calendar`のみ、他フィールドは
-      着手順序4-2のdata_fetcher.py切替で既に対応済み）・`collect.py`・
-      `collect_and_send.py`・`breadth_calculator.py`（軽量消費者を先に
-      処理。詳細な優先順位は着手時に再検討）
-   2. 着手順序4-8: `hypecore.py`切替（daily/attributes/analyst_history
-      の3層すべてが混在する消費者。事前調査（読み取り専用、チャット記録、
-      2026-08-11）の結果、前提作業が判明したため他消費者より後回しに
-      変更。詳細は下記「hypecore.py切替の前提作業」参照）
-   3. 着手順序5: 診断ツール2ファイル（`score_verifier.py`・`audit.py`）の
-      切替。上記8ファイルの進捗を見ながら詳細順序を判断する
-   4. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
-      `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
-      SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
-      `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
-5. 周辺ツール2ファイルの切替
+   4. **【完了・2026-08-11】** `pipeline.py`（`.calendar`のみ、他フィールドは
+      着手順序4-2で対応済み）。詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+      着手順序4-4`参照（コミット`c6bfb83f6`）。実データ100銘柄比較で
+      next_earnings_date 100/100完全一致。
+   5. **【完了・2026-08-11】** `collect.py`（Discover参考株価）。詳細・
+      検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-5`参照
+      （コミット`dfd7e3ef2`）。実データ98銘柄比較で96/98完全一致。
+   6. **【完了・2026-08-11】** `collect_and_send.py`（Market Pulse）。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6`参照
+      （コミット`4e95e23ce`）。sentiment_score・TAKE PROFIT/BUY判定
+      とも完全一致。副次発見`[[MARKETDATA-VIX9D-DATA-GAP-1]]`を新規登録。
+   7. **【完了・2026-08-11】** `breadth_calculator.py`（Market Pulse
+      breadth指標）。詳細・検証結果はBACKLOG_DONE.md「2026-08-11
+      （完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-7`参照
+      （コミット`e49ffb905`）。実データ502銘柄比較でrsp_spy_divergence
+      完全一致・breadth指標も軽微な乖離のみ。
+   8. **【完了・2026-08-11】** `hypecore.py`本体（daily/attributes/
+      analyst_historyの3層すべてが混在する最複雑の消費者）。前提作業
+      3件（daily/バックフィル拡張・attributes/7フィールド追加・
+      analyst_history/2系統追加）を含め、詳細・検証結果はBACKLOG_DONE.md
+      「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]
+      着手順序4-8前提作業1〜3`・`着手順序4-8`参照（コミット
+      `afa3c954b`・`223840d13`・`f223464f1`・`09d2151fd`）。HypeCore
+      対象104銘柄比較でanalyst_history 104/104完全一致。切替過程で
+      発見した`auto_adjust`不一致は、後続の事実確認調査で「旧実装の
+      調整済み終値使用の方が技術指標としては不適切だった」と判明し
+      訂正・クローズ（`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-
+      DRIFT-1]]`、対応不要で確定）。
 
-#### hypecore.py切替の前提作業（着手順序4-8、事前調査完了・2026-08-11）
-着手順序4-4として最優先候補だったが、読み取り専用の事前調査（チャット
-記録、2026-08-11）で以下3点が判明し、着手順序を4-4→4-8（残り消費者の
-最後）へ変更した:
+5. 診断ツール2ファイルの切替（`score_verifier.py`・`audit.py`）。
+   `audit.py`のβ乖離監査（`beta_config.json`との外部妥当性監視、設計
+   確定事項6で`reader.get_attributes()["beta"]`経由への切替方針が
+   既に確定済み）を含む。**次セッションの最優先候補（後述）。**
+6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
+   の切替。
 
-1. **daily/バックフィル期間拡張**: `fetch_price_data()`は
-   `start="2021-01-01"`固定（約5.5年分の日次終値）でma50/ma200/RSI/
-   出来高比を自前rolling計算し月次リサンプルする。既存の
-   `backfill_daily_prices(period="1y")`（PLTR実測251件、2025-08-11〜
-   2026-08-10）では約4.5年分・1000営業日超が不足。data_fetcher.py
-   切替時の「ma200単発値のブートストラップ」（`period="1y"`で解消済み）
-   とは要求規模が異なり、月次Z-score系列全体（24ヶ月ローリング窓等）を
-   要するため`period="5y"`または`max`相当への再バックフィルが前提。
-2. **attributes/スキーマ未収録7フィールド**: `fetch_info_snapshot()`が
-   使う14フィールド中7件（`revenue_growth`・`earnings_growth`・
-   `gross_margins`・`recommendation_mean`〈数値、既存
-   `analyst_recommendation_key`は文字列で別物〉・`short_pct_float`・
-   `short_ratio`・`volume_vs_avg`算出用の平均出来高系）が現行スキーマに
-   存在しない。過去2回の拡張（data_fetcher.py・valuation_fetcher.py、
-   各1フィールド追加）より規模が大きい。
-3. **analyst_history/未収録2系統**: `fetch_analyst_history()`が使う
-   3系統のうち`upgrades_downgrades`は既存スキーマと完全一致し流用可能
-   だが、`earnings_history`（EPSサプライズ率、S4「良決算でも下落」
-   判定の核心シグナル）・`recommendations`（Buy/Hold/Sell生カウント、
-   `buy_hold_ratio`算出用）の2系統は現行のanalyst_history/・
-   attributes/のどちらにも一切収録されておらず、新規スキーマ設計が
-   必要。
+**次セッションでの着手順序（2026-08-11時点、本番消費者8/8完了を反映し
+最終更新）**:
+1. 着手順序5: 診断ツール2ファイル切替（`score_verifier.py`・
+   `audit.py`のβ乖離監査等、設計確定事項6の方針通り
+   `reader.get_attributes()`経由に切替）
+2. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
+   `extract_key_facts.py`、該当あれば）
+3. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
+   プロジェクトの次フェーズ（`common/macro_data/`）検討
+4. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
+   `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
+   SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
+   `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
 
-母集団確認（Step3）: HypeCore対象104銘柄は`common/market_data/`週次
-バッチ母集団（570銘柄）に全件含まれる（欠落0件）。さらに104銘柄は
-`config/monitor_tickers.yaml`単独でも全件カバーされており、SP500
-Wikipediaスクレイピング（`[[MARKETDATA-SP500-SCRAPE-INVALID-
-TICKERS-1]]`参照）への依存はない。
-
-**副次発見（記録のみ、本切替の範囲外）**:
-- `hypecore.py`の`__main__`フォールバックticker配列（tickers.py読み込み
-  失敗時用、48銘柄ハードコード）が実際の104銘柄（`get_hypecore_
-  tickers()`）と乖離している。フォールバック発動時のみ顕在化する
-  潜在課題で、通常運用時は`get_hypecore_tickers()`が使われるため実害は
-  限定的。
-- `fetch_price_data()`の`if hist.empty: raise ValueError(...)`は、
-  `reader.get_price_series()`への切替により「対象銘柄のデータが完全に
-  存在しない」（空リスト）と「一部営業日のみ欠損」（`_gap: True`
-  プレースホルダーで日付集合は維持）を区別できる設計に改善可能。
-  既存のraise挙動をそのまま残すか、区別を活かした設計に改善するかは
-  実装時の判断事項として保留。
-
-#### 着手条件（hypecore.py切替）
-上記3点の前提作業（バックフィル期間拡張・attributes/7フィールド追加・
-analyst_history/2系統のスキーマ設計）の実装完了後に着手可能。
+#### hypecore.py切替の前提作業・本体切替（着手順序4-8、2026-08-11完了）
+事前調査で判明した3件の前提作業（daily/バックフィル期間拡張・
+attributes/7フィールド追加・analyst_history/2系統のスキーマ設計）を
+実装した上で本体切替まで完了。詳細・検証結果はBACKLOG_DONE.md
+「2026-08-11（完了）」`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序
+4-8前提作業1〜3`・`着手順序4-8`参照。副次発見（`__main__`フォールバック
+ticker配列の陳腐化、48銘柄ハードコードが実際の104銘柄と乖離。実害は
+限定的で対応不要）も記録済み。`ValueError`送出の改善（実データ完全
+欠如の場合のみ発火）は実装済み。
 
 #### 日次価格層バックフィル（着手順序4-2 data_fetcher.py切替の前提条件、2026-08-11完了）
 `daily/`の日次収集は2026-08-10開始のため、200営業日移動平均

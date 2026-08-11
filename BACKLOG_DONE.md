@@ -62,6 +62,311 @@ breadth_calculator.py本体はauto_adjust=True（調整済み終値）を使用�
 - 乖離幅と配当利回りの相関係数r=0.95〜0.97（強い相関）を確認
 - TASK 24.8pt・AAPL 0.2pt差分の再現性を確認
 
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-8: hypecore.py本体切替（本番消費者切替8/8、全数完了）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の8件目（最後）
+
+#### 内容
+`hypecore.py`のyfinance直接呼び出し（`.history()`/`.info`/
+`upgrades_downgrades`/`earnings_history`/`recommendations`、daily/
+attributes/analyst_historyの3層すべてが混在する最複雑の消費者）を
+`common.market_data.reader`経由に切替。
+
+- reader.py側API新設: `get_earnings_history(symbol)`・
+  `get_recommendations_history(symbol, latest_only=True)`
+- `fetch_price_data()`: `reader.get_price_series(ticker, days=1400)`に
+  切替。ma50/ma200/rsi/volume_ratio自前rolling計算ロジックは維持
+  （daily/層内での自前計算という設計方針）。`hist.empty`時の
+  `ValueError`送出を、実データ完全欠如の場合のみ発火するよう改善
+- `fetch_info_snapshot()`: `reader.get_attributes()`に切替。14フィールド
+  中7件は既存スキーマ、残り7件は前提作業2で追加済み
+- `fetch_analyst_history()`: upgrades_downgrades（`get_analyst_events()`）・
+  eps_surprise（`get_earnings_history()`の最新四半期、空の場合
+  `get_attributes()["earnings_growth"]`にフォールバック）・
+  buy_hold_ratio（`get_recommendations_history(latest_only=True)`）
+  にそれぞれ切替
+- 未使用になった`import yfinance as yf`を削除
+
+#### 検証
+HypeCore対象104銘柄全数比較: analyst_history
+（analyst_upgrade_rate/eps_surprise/buy_hold_ratio）**104/104完全一致**、
+info_snapshot 102/104一致（CRM/BROSのpsr差分は取得時刻によるYahoo側
+値変動）、price_data（ma50_dev/ma200_dev/rsi/volume_ratio）96/104一致
+（不一致8件は配当銘柄由来、後述）。`determine_stage()`/
+`detect_substage()`自体は無変更のため、analyst_history 104/104完全
+一致はS1条件D・S3条件D（buy_ratio）・S4核心シグナル（sell_on_good_news）
+が切替前後で同一評価されることを裏付ける。
+
+price_dataの8件不一致は`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-
+DRIFT-1]]`として一度「バグ」登録したが、直後の事実確認調査で前提が
+誤りと判明し訂正・クローズ済み（旧hypecore.pyの調整済み終値使用の方が
+技術指標としては元々不適切で、今回の移行が意図せず是正した形と結論）。
+
+`tests/test_hypecore_market_data_switch.py`新規16件・
+`tests/test_market_data_reader.py`新規8件、pytest全体698 passed /
+2 known failed（既知の`test_iv_formula.py` MSFT/NVDA、無関係）。
+
+コミット: `09d2151fd`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-8前提作業3: analyst_history/にearnings_history・recommendations_history追加
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替の前提作業
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-8（hypecore.py
+本体切替）の前提作業3件目
+
+#### 内容
+`fetch_analyst_events()`を拡張し、既存のupgrades_downgrades（events）に
+加えて2系統を追加:
+
+- `earnings_history`: `Ticker.earnings_history`（直近3〜4四半期の
+  確定済み実績）を`quarter`キーで追記型保存。`surprise_percent`は
+  Yahoo生値（小数）のまま保存し%変換しない。`quarterly_earnings`
+  （フォールバック①）は事前調査で現行yfinanceにおいて常にNoneを返す
+  （DeprecationWarning）と実測確認済みのため実装対象外。
+  `earningsGrowth`（フォールバック②）は前提作業2で既にattributes/の
+  `earnings_growth`として保存済みのため重複実装しない
+- `recommendations_history`: `Ticker.recommendations`（"0m"=現時点の
+  strongBuy/buy/hold/sell/strongSell生カウント）を取得日キーで週次
+  スナップショット蓄積。「不変イベント」ではなく「取得時点の
+  コンセンサススナップショット」という性質のため、upgrades_downgrades
+  とは異なる日付キーでの蓄積設計とした
+- 3系統を独立した失敗として扱うよう改善（旧実装はupgrades_downgrades
+  取得失敗時に銘柄全体をスキップしていたが、1系統の失敗が他系統の
+  保存を妨げない設計に変更）
+
+#### 検証
+AAPL/RKLB/KULR（前回投資調査と同じ銘柄）の実データでearnings_history・
+recommendations_historyが正常抽出されることを確認。`Market_Data_
+Weekly_Update.yml`をworkflow_dispatch（全銘柄）で実行し、575/575銘柄で
+両フィールドのキーが生成されていることを確認（非equity銘柄23件は
+earnings_history空、実在企業でもFOX/Lの2件のみデータなし＝yfinance
+側の軽微なデータ欠落）。
+
+`tests/test_market_data_fetcher.py`新規10件、pytest全体674 passed /
+2 known failed（既知、無関係）。
+
+コミット: `f223464f1`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-8前提作業2: attributes/スキーマに7フィールド追加
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替の前提作業
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-8（hypecore.py
+本体切替）の前提作業2件目
+
+#### 内容
+`fetch_weekly_attributes()`にhypecore.pyが必要とする7フィールドを追加:
+`revenue_growth`（revenueGrowth）・`earnings_growth`（earningsGrowth）・
+`gross_margins`（grossMargins）・`recommendation_mean`
+（recommendationMean、数値。既存の`analyst_recommendation_key`＝文字列
+とは別物として両方保持）・`short_pct_float`（shortPercentOfFloat）・
+`short_ratio`（shortRatio）・`average_volume`（averageVolume優先・
+averageVolume10daysフォールバック、hypecore.py::fetch_info_snapshot()と
+同じフォールバック順序）。現在出来高（info["volume"]）はdaily/層の
+責務のためattributes/には含めない（previousClose非保存と同じ理由）。
+
+#### 検証
+AAPL/KO/PLTRの実データで7フィールドすべて正常抽出を確認、
+recommendation_mean（数値）とanalyst_recommendation_key（文字列）が
+混同されず両方保存されることを確認。`Market_Data_Weekly_Update.yml`を
+全銘柄workflow_dispatchで実行し570銘柄全数への反映を確認。
+
+`tests/test_market_data_fetcher.py`新規5件、pytest全体664 passed /
+2 known failed（既知、無関係）。
+
+コミット: `223840d13`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-8前提作業1: daily/バックフィルをstart=2021-01-01へ拡張
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替の前提作業
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4-8（hypecore.py
+本体切替）の前提作業1件目
+
+#### 内容
+hypecore.py切替が要求する`start="2021-01-01"`（約5.5年分）に対応する
+ため、daily/価格層のバックフィル期間を`period="1y"`（251日）から
+`start="2021-01-01"`（1406日）へ拡張。事前調査で`period="5y"`は本日
+基準の相対期間のため2021-08-11開始となり要求日に約7ヶ月不足、
+`period="max"`は1980年からと約8.2倍の過剰取得と判明したため、
+`_download_historical_bars()`・`backfill_daily_prices()`に`start`引数
+（オプション、指定時は`period`を無視して`yf.download(symbols,
+start=start_date, ...)`を呼ぶ）を新設し、CLIにも`--start`フラグを追加。
+
+#### 検証
+`backfill_daily_prices(get_default_symbol_universe(), start=
+"2021-01-01")`を実行、575銘柄中575銘柄成功・失敗0件・所要時間35.4秒
+（事前調査で懸念されたレート制限は発生せず）。AAPL 1,406件取得
+（2021-01-04〜2026-08-10）、既存の日次cron取得分が正しく保持されている
+ことを確認。daily/ディレクトリサイズは34MB→181MBに拡大（事前調査の
+見積もり約184MBとほぼ一致）。
+
+`tests/test_market_data_fetcher.py`新規3件、pytest全体659 passed /
+2 known failed（既知、無関係）。
+
+コミット: `afa3c954b`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-7: breadth_calculator.py切替（本番消費者切替7/8）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の7件目
+
+#### 内容
+Market Pulseのbreadth（市場の広がり）指標算出のyfinance一括ダウンロード
+（`yf.download()`）を`common.market_data.reader`経由に切替。
+
+- Step1: `INDEX_ETF_COMMODITY_SYMBOLS`に`RSP`を追加
+  （sentiment_scoreのrsp_spy_divergence〈10.0%〉算出に必須）。
+  `backfill_daily_prices(period="1y")`で251日分に拡張
+- `get_sp500_tickers()`は意図的独立実装（DRY違反の見落としではないと
+  fetcher.py側docstringに明記済み）のため無変更
+- `compute_breadth()`: `yf.download()`一括ダウンロードを、全銘柄ループ+
+  `reader.get_price_series(ticker, days=260)`による生系列取得+daily/層
+  内での自前rolling計算に置き換え。実装中に52週高安値ウィンドウの
+  スライス処理で旧ロジックとの1件分のズレ（オフバイワン）を発見・修正
+- `fetch_rsp_spy_divergence()`: RSP・SPYそれぞれ`reader.
+  get_price_series()`から取得し騰落率差分を算出
+- 未使用になった`import yfinance as yf`を削除
+
+#### 検証
+実データ502銘柄で切替前後を比較: rsp_spy_divergence 4フィールド
+すべて完全一致、breadth指標はnew_highs_52w完全一致・他は取得時刻差
+1〜2pt程度の軽微な乖離のみ（EA銘柄がmarket_data未収録のため502 vs 503
+銘柄差）。sentiment_scoreのbreadth系サブスコア・TAKE PROFIT判定の
+hindenburg_activeが正しく算出・連動することを実データで確認。
+
+`tests/test_breadth_calculator_market_data_switch.py`新規14件、
+pytest全体656 passed / 2 known failed（既知、無関係）。
+
+コミット: `e49ffb905`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-6: collect_and_send.py切替（本番消費者切替6/8、Market Pulse）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の6件目
+
+#### 内容
+Market Pulseの指数・ETF・商品先物のyfinance直接呼び出し
+（`fetch_hist()`汎用ヘルパー・`_get_sp500_ma_deviation()`・
+`fetch_qqq_tech_data()`）を`common.market_data.reader`経由に切替。
+
+- Step1: `INDEX_ETF_COMMODITY_SYMBOLS`に`IVW`・`IVE`・`LQD`・`JPY=X`を
+  追加（growth_value〈9.0%〉・hyg_lqd_dir〈10.8%〉算出に必須）
+- `fetch_hist()`を`_fetch_hist_legacy()`（旧実装保持）＋新設
+  `fetch_recent_records()`（`get_price_series()`+`_gap`除外+末尾count件
+  抽出）に分離。`format_line()`の入力もレコードリストに変更
+- `_get_sp500_ma_deviation()`・`fetch_qqq_tech_data()`を
+  `get_ma_deviation()`/`get_price_series()`ベースに切替
+- `get_realtime_data()`内の4箇所を`fetch_recent_records()`に統一
+- `collect_asset_flow()`は対象外（SHVがmarket_data未収録のため
+  `_fetch_hist_legacy()`を使い続ける設計、別途判断）
+
+#### 検証
+sentiment_score・TAKE PROFIT/BUY判定・Tech Pulseスコアで切替前後を
+実データ比較: sentiment_score 67.2 GREEDで完全一致、growth_value・
+hyg_lqd_dirとも正しく算出、TAKE PROFIT/BUYとも完全一致、Tech Pulseは
+qqq_vs_ma125のみ0.11pt差（取得時刻差、許容範囲内）。
+
+副次発見: `^VIX9D`のyfinanceデータに約1ヶ月欠落を発見、
+`[[MARKETDATA-VIX9D-DATA-GAP-1]]`として新規登録。
+
+`tests/test_collect_and_send_market_data_switch.py`新規21件、
+pytest全体642 passed / 2 known failed（既知、無関係）。
+
+コミット: `4e95e23ce`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-5: collect.py切替（本番消費者切替5/8、Discover参考株価）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の5件目
+
+#### 内容
+collect.py（Discover）の`yf.Ticker(ticker).history(period="2d")`直接
+呼び出し（前日分ニュース履歴への翌日騰落率付加）を`common.market_data.
+reader`経由に切替。`get_price_change()`を`reader.get_price_series(
+ticker, days=5)`経由に置換、`_gap`プレースホルダー除外・末尾2件比較の
+防御的設計（data_fetcher.py切替と同型）。結果は表示専用
+（`price_change_next_day`、カタリスト判定等の計算ロジックには不使用）
+であることを確認済み。
+
+#### 検証
+Discover対象98銘柄で切替前後を比較: 96/98完全一致。差分2件は
+AAPL=0.09pt差（取得時刻差）・QBTS=意図した「取引時間中リアルタイム→
+前日終値ベース」の仕様変更差分（既存2件の前例と同じパターン）。CWANは
+新旧とも同一の空データ（既知事象、新規劣化なし）。
+
+`tests/test_collect_market_data_switch.py`新規8件、pytest全体621
+passed / 2 known failed（既知、無関係）。
+
+コミット: `dfd7e3ef2`
+
+---
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-4: pipeline.py .calendar切替（本番消費者切替4/8、次回決算日）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 本番消費者切替
+**登録日:** 2026-08-11（着手時）
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序4、本番消費者切替の4件目
+
+#### 内容
+pipeline.pyの`yf.Ticker(ticker).calendar`直接呼び出し（次回決算日取得
+のみ）を`common.market_data.reader`経由に切替。pipeline.py本体の他
+フィールドは着手順序4-2（data_fetcher.py切替）で既に対応済みのため、
+本切替は`.calendar`呼び出し1箇所のみが対象。`fetch_weekly_attributes()`
+に`.calendar`の取得を追加し、`{"earnings_date": [ISO8601日付文字列,
+...]}`形式で`attributes/{SYMBOL}.json`の新規`calendar`フィールドに
+保存。`next_earnings_date`はreport.txt・stock.html表示専用（計算
+ロジックには不使用）であることを確認済み。
+
+#### 検証
+TANUKI対象100銘柄でnext_earnings_date出力を比較: **100/100完全一致**。
+AAPLで実際にpipeline.py `_load_extra_data()`を実行しnext_earnings_
+date=2026-10-30（実測yfinance Earnings Dateと一致）を確認。
+
+`tests/test_market_data_fetcher.py`新規5件・`tests/test_pipeline_
+logic.py`新規5件、pytest全体613 passed / 2 known failed（既知、
+無関係）。
+
+コミット: `c6bfb83f6`
+
+---
+
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序4-1: beta_fetcher.py切替（本番消費者切替1/8）
 **状態:** 完了
 **優先度:** 高

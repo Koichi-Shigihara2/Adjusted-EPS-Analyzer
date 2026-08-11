@@ -1,5 +1,17 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-11（セッション終了時ブラッシュアップ。「次セッションの
+一次データ層プロジェクト着手順序」節を、本番消費者8ファイル**8/8切替
+完了**（`pipeline.py`・`collect.py`・`collect_and_send.py`・
+`breadth_calculator.py`・`hypecore.py`〈前提作業3件込み〉が今回完了）を
+反映して更新。次のアクションは着手順序5（診断ツール2ファイル
+`score_verifier.py`・`audit.py`）に変更。切替過程で発見した
+`auto_adjust`差分は「バグ」として誤登録した後、事実確認調査で
+「旧実装の調整済み終値使用の方が技術指標としては不適切だった」と判明し
+訂正・クローズ済み（教訓を`CHAT_RULES.md`へ新規ルール化）。詳細は
+BACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md
+「2026-08-11（完了）」参照。実装コード変更なし）
+
 最終更新: 2026-08-11（「次セッションの一次データ層プロジェクト着手順序」節の
 `hypecore.py`切替順序を訂正。読み取り専用事前調査（チャット記録、
 2026-08-11）でdaily/バックフィル期間拡張・attributes/未収録7フィールド・
@@ -66,18 +78,33 @@ git pull --rebase origin kaihatsu
   `common/sec_data`統合（フェーズD）は実質完了。`common/market_data/`
   （yfinance統合層）は設計確定・`fetcher.py`/`reader.py`実装・定期実行
   ワークフロー（`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_
-  Update.yml`、workflow_dispatchで実行確認済み）実装がいずれも完了し、
-  本番消費者切替が進行中（8ファイル中3/8完了: `beta_fetcher.py`・
-  `data_fetcher.py`・`valuation_fetcher.py`）。次のアクションは着手順序
-  4-4〜4-7（`pipeline.py`〈`.calendar`のみ未対応〉・`collect.py`・
-  `collect_and_send.py`・`breadth_calculator.py`、軽量消費者を先に
-  処理）。`hypecore.py`切替（`daily/`/`attributes/`/`analyst_history/`の
-  3層すべてが混在する消費者のため最も複雑）は着手順序4-8へ変更し
-  最後に回す（2026-08-11の読み取り専用事前調査で、daily/バックフィル
-  期間拡張〈`period="1y"`→`5y`/`max`相当〉・`attributes/`スキーマ
-  未収録7フィールド・`analyst_history/`未収録2系統という前提作業が
-  判明したため）。以降は診断ツール2ファイル
-  （`score_verifier.py`・`audit.py`、着手順序5）の順。
+  Update.yml`、workflow_dispatchで実行確認済み）実装に続けて、本番
+  消費者切替が**8ファイル全数完了**（`beta_fetcher.py`・
+  `data_fetcher.py`・`valuation_fetcher.py`・`pipeline.py`・
+  `collect.py`・`collect_and_send.py`・`breadth_calculator.py`・
+  `hypecore.py`〈`daily`/`attributes`/`analyst_history`の3層すべてが
+  混在する最複雑の消費者、前提作業3件〈daily/バックフィル期間拡張・
+  attributes/7フィールド追加・analyst_history/2系統追加〉込み〉）。
+  次のアクションは以下の順:
+  1. 着手順序5: 診断ツール2ファイル切替（`score_verifier.py`・
+     `audit.py`のβ乖離監査等、`reader.get_attributes()`経由に切替）
+  2. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
+     `extract_key_facts.py`、該当あれば）
+  3. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
+     プロジェクトの次フェーズ（`common/macro_data/`）検討
+  4. （本線外・本セッションで蓄積した課題群）: `[[MARKETDATA-CWAN-
+     FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-SCRAPE-INVALID-
+     TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・`[[STONKS-SILO-
+     CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等
+
+  切替過程で発見した`daily/`層の`auto_adjust=False`（未調整終値）と
+  旧実装`auto_adjust=True`（調整済み終値）の乖離は、当初「バグ」として
+  登録したが、事実確認調査の結果「旧実装の調整済み終値使用の方が
+  テクニカル指標としては元々不適切だった」と判明し訂正・クローズ済み
+  （`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`、対応不要
+  で確定）。この教訓は`CHAT_RULES.md`「新旧の値が食い違う場合、新側を
+  疑う前に『どちらが目的に対して正しいか』を確認する」として新規
+  ルール化済み。
 
   `common/sec_data`統合の詳細はBACKLOG.md`[[SECDATA-STORAGE-
   FRAGMENTATION-1]]`（マスター追跡エントリ、最終状況を記載）・
