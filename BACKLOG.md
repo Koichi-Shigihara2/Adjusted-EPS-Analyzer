@@ -1,5 +1,20 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-12（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5-2:
+`score_verifier.py`切替が**完了**。前提作業として`reader.py`へ
+`get_price_on_or_after(symbol, date)`を新規追加（date以降5日ウィンドウで
+先頭値を採用、旧`fetch_price_after()`と同じクエリ形状をdaily/層に対して
+再現）。`fetch_price_after()`をyfinance直接呼び出しから同API経由に置換。
+`Score_Verifier.yml`の依存インストールも`pip install -r requirements.txt`
+へ更新。ライブA/Bテスト（RKLB/ZS各3サンプル）で旧実装との価格・日付特定
+ロジック完全一致を確認、実データ全102銘柄でscore_verifier.py実行が
+例外なく完走することを確認済み。これで診断ツール2/2（`audit.py`・
+`score_verifier.py`）とも切替完了、本番消費者8＋診断ツール2の
+全10ファイルが切替完了。残るは着手順序6（周辺ツール2ファイル）のみ。
+詳細・検証結果はBACKLOG_DONE.md「2026-08-12（完了）」
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-2`参照（コミット
+`2668f3aaf`・`bc0f6fb24`）
+
 最終更新: 2026-08-11（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5-1:
 `audit.py`（β乖離監査・カナダ企業判定）切替完了。`attributes/`へ
 `country`フィールドを新規追加し、両判定ともyfinance直接呼び出しから
@@ -2306,7 +2321,7 @@ common/market_data/
       DRIFT-1]]`、対応不要で確定）。
 
 5. 診断ツール2ファイルの切替（`score_verifier.py`・`audit.py`）。
-   進捗1/2。
+   **【完了・2026-08-12】進捗2/2（全数完了）。**
    1. **【完了・2026-08-11】** `audit.py`（β乖離監査・カナダ企業判定）。
       `audit_beta_drift()`のβ乖離監査（設計確定事項6通り
       `reader.get_attributes()["beta"]`経由）・`audit_ticker()`の
@@ -2319,29 +2334,24 @@ common/market_data/
       import失敗のexcept節で本番自動実行時は常に無音スキップされ
       事実上死んでいた。今回`pip install -r requirements.txt`への変更と
       合わせ実際に機能するようになった。
-   2. `score_verifier.py`（判定実績の事後検証、`fetch_price_after()`）は
-      未着手。事前調査（チャット記録、2026-08-11）で判明した固有の
-      前提: `reader.get_price_series()`は「最新取得日を終点とする直近N
-      営業日」専用であり、`score_verifier.py`が必要とする「任意の過去日
-      （`base_date`）を起点とする点参照」に対応する`reader.py` API が
-      現状存在しない。`daily/{TICKER}.json`自体は該当データを保持済み
-      （`start=2021-01-01`バックフィルによりscore_history.json最古日
-      2026-06-03を十分カバー、対象102銘柄で`daily/`欠落0件を確認済み）。
-      `reader.py`へ`get_price_on_or_after(symbol, date)`相当の新規API
-      追加が前提作業となる（hypecore.py前提作業3と同型の設計提案が必要）。
+   2. **【完了・2026-08-12】** `score_verifier.py`（判定実績の事後検証、
+      `fetch_price_after()`）。前提作業として`reader.py`へ
+      `get_price_on_or_after(symbol, date)`を新規追加（date以降5日
+      ウィンドウで先頭値を採用、旧`fetch_price_after()`と同じクエリ形状を
+      daily/層に対して再現）した上で本体切替。詳細・検証結果は
+      BACKLOG_DONE.md「2026-08-12（完了）」`[[MARKETDATA-LAYER-
+      CONSTRUCTION-1]]着手順序5-2`参照（コミット`2668f3aaf`・
+      `bc0f6fb24`）。
 6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
    の切替。
 
-**次セッションでの着手順序（2026-08-11時点、着手順序5-1〈audit.py〉完了を
-反映し最終更新）**:
-1. 着手順序5-2: `score_verifier.py`切替。前提として`reader.py`へ
-   任意過去日点参照API（`get_price_on_or_after`相当）の設計・追加が必要
-   （上記5-2参照）
-2. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
+**次セッションでの着手順序（2026-08-12時点、着手順序5-2〈score_verifier.py〉
+完了を反映し最終更新）**:
+1. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
    `extract_key_facts.py`、該当あれば）
-3. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
+2. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築
    プロジェクトの次フェーズ（`common/macro_data/`）検討
-4. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
+3. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
    `[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
    SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
    `[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・`[[NETCASH-DUAL-CALC-1]]`等

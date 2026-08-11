@@ -2,6 +2,101 @@
 
 ---
 
+## 2026-08-12（完了）
+
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-2: score_verifier.py切替（診断ツール2/2、全数完了）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 診断ツール切替
+**登録日:** 2026-08-11（着手順序5-1完了時点で次点保留として記録）
+**完了日:** 2026-08-12
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5事前調査（診断ツール
+2ファイル切替の事前確認、チャット記録、2026-08-11）
+
+#### 内容
+`score_verifier.py`（TANUKI SCORE判定実績の事後検証、`fetch_price_after()`）
+のyfinance直接呼び出しを`common.market_data.reader`経由に切替。
+
+**前提作業（`reader.py`新規API）:** `score_verifier.py`が必要とする
+「任意の過去日（`base_date`）を起点とした点参照」に対応するAPIが
+`reader.py`に存在しなかった（既存の`get_price_series()`は「最新取得日を
+終点とする直近N営業日」専用）。`get_price_on_or_after(symbol, date,
+base_dir=None)`を新規追加:
+- `daily/{SYMBOL}.json`の全期間データから、`date <= record.date <=
+  date+5日`の範囲で最も早い日付のレコードを検索する（旧
+  `fetch_price_after()`のクエリ形状 `start=target, end=target+5日`
+  ウィンドウで先頭値を採用するロジックをdaily/層データに対して再現）
+- ウィンドウ内に該当データがない場合、またはシンボル自体のデータが
+  存在しない場合はNoneを返す（エラー耐性、他APIと同じ設計）
+- 層またぎ再計算禁止（確定事項4）: daily/のみを参照
+
+**本体切替:** `fetch_price_after()`の`yfinance.Ticker().history()`
+（`common.yfinance_utils.safe_yf_history`経由含む）呼び出しを
+`reader.get_price_on_or_after()`経由に置換。`target > 今日`の未経過
+チェックはネットワークアクセスと無関係のためロジック変更なし。エラー処理は
+既存の中立デフォルトパターン（例外捕捉→None返却、stderr出力）を踏襲。
+この切替により`fetch_price_after()`はネットワークアクセスを一切行わなく
+なった（`common.yfinance_utils`・`yfinance`直接importとも不要化、削除）。
+
+**Score_Verifier.yml:** 依存インストールを`pip install yfinance requests`
+から`pip install -r requirements.txt`に変更（他の切替済みワークフローと
+同じパターン。`common/market_data/`の連鎖importが要求する
+`pandas_market_calendars`・`pyyaml`等を導入するため）。
+
+#### 検証
+- 新規ユニットテスト16件追加:
+  - `tests/test_market_data_reader.py::TestGetPriceOnOrAfter`（9件）:
+    完全一致・非取引日への丸め・ウィンドウ境界（5日ちょうど採用/6日目は
+    不採用）・複数候補中の最速日採用・シンボル不在時None・
+    大文字小文字正規化・date型受理を検証
+  - `tests/test_score_verifier.py::TestFetchPriceAfter`（4件）:
+    未経過ターゲットはreader呼び出し自体を行わないこと・reader経由の
+    close値をそのまま返すこと・レコード不在時None・reader例外時に
+    例外を伝播させずNoneを返すことを検証
+  - 既存の`TestErrorResilienceForNeverFetchedSymbol`等へ3件統合
+- **ライブA/Bテスト**（旧実装 vs 新実装、実ネットワーク・実daily/データ
+  双方で同一(ticker, base_date, days)を検証）: RKLB/ZS各3サンプル計6件で
+  価格・日付特定ロジックが完全一致（`price_diff=$0.0`、6/6件）。
+  当初102銘柄・全4913エントリで`score_history.json`の既存
+  `return_30d/60d/90d`格納値と再計算値を突合したところ650件で大きな乖離
+  （最大21pt、QBTS等の高ボラティリティ銘柄中心）が見つかったが、原因は
+  `verify_ticker()`が`entry.get(key) is not None: continue`で**既に
+  値が入っているエントリを二度と再計算しない**設計のため、過去のある時点
+  （2026-08-06実行分）で生じた既存の陳腐化値（同一価格が複数の異なる
+  target日に紐づく等、本切替と無関係の過去のデータ品質問題）がそのまま
+  残っていたことによると判明。本切替は非Noneエントリを一切触らないため
+  実害なし（新規発見事項、別途本エントリ末尾に記録）。
+- **実データ全件実行**: `score_history.json`保有の全102銘柄で
+  `score_verifier.py`を実行し例外なく完走（tanuki=true 100銘柄は
+  `main()`引数なし実行、tanuki=false扱いで除外されるRKLB・ZS 2銘柄は
+  `--ticker`個別実行）。RKLB 9件・ZS 20件のreturn_30d/60dが新規に
+  正しく更新され、値はライブA/Bテストの結果と一致。AAPLの新規エントリ
+  （前回score_verifier実行後に追加された最新judgment）へnullプレース
+  ホルダー3キーが補完される既存の挙動（setdefault、非破壊）も確認。
+- **pytest全体**: 743 passed / 2 known-failed
+  （`tests/test_iv_formula.py::test_iv_formula_adds_up[MSFT]`・`[NVDA]`。
+  `git stash`で本切替前の状態に戻しても同一失敗を再現することを確認済み、
+  本切替とは無関係の既存問題`[[TEST-STALE-IV-1]]`）
+
+#### 副次発見（対応不要、記録のみ）
+`score_history.json`の一部エントリ（QBTS中心、他複数銘柄でも同様の
+パターンあり）で、異なる`(base_date, days)`の組み合わせにもかかわらず
+`return_30d`/`return_60d`が同一の株価に基づいて算出されている形跡があり
+（例: QBTS 4エントリが全て2026-07-24終値$16.21相当に基づく計算結果）、
+過去のいずれかの実行時点で生じた計算誤り、または当時のyfinance
+ライブ取得の一時的な不具合に由来すると推測される。`verify_ticker()`が
+既存の非Noneエントリを再計算しない設計のため放置されたまま。
+本切替の範囲外・実害は限定的（判定実績の事後トラッキング用途であり
+取引判断自体には使用されない）と判断し、対応不要のまま記録に留める。
+再計算・データクレンジングが必要と判断される場合は別タスクとして
+起票すること。
+
+これで`common/market_data/`への切替対象「本番消費者8＋診断ツール2」の
+全10ファイルが完了。残るは着手順序6（周辺ツール2ファイル:
+`backfill_tech_pulse.py`・`extract_key_facts.py`）のみ。
+
+---
+
 ## 2026-08-11（完了）
 
 ### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-1: audit.py切替（β乖離監査・カナダ企業判定）
