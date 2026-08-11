@@ -23,7 +23,6 @@ import time
 import io
 import pandas as pd
 import requests
-import yfinance as yf
 from datetime import datetime, timezone, timedelta
 
 # ── パス設定 ──────────────────────────────────────────────
@@ -34,6 +33,36 @@ BREADTH_JSON = os.path.join(DATA_DIR, "breadth_data.json")
 TICKERS_CACHE = os.path.join(DATA_DIR, "sp500_tickers.json")
 
 JST = timezone(timedelta(hours=9))
+
+# common/market_data - [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-7:
+# S&P500構成銘柄の株価データ一括取得（yf.download()）をcommon.market_data.
+# reader経由に切替。get_sp500_tickers()（銘柄リスト取得）は意図的独立
+# 実装のため対象外、compute_breadth()・fetch_rsp_spy_divergence()の価格
+# データ取得部分のみが対象。他の切替済みファイルと同じHAS_MARKET_DATA
+# ガード・二段構えsys.path解決パターンを踏襲する（本ファイルは`python
+# src/market/market_pulse/breadth_calculator.py`で直接実行されるため
+# リポジトリルートがsys.pathに含まれない。_REPO_ROOTは上で既に計算
+# 済みのため流用する）。
+HAS_MARKET_DATA = False
+_md_get_price_series = None
+
+try:
+    if _REPO_ROOT not in sys.path:
+        sys.path.insert(0, _REPO_ROOT)
+    from common.market_data.reader import get_price_series as _md_get_price_series
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.market_data.reader import get_price_series as _md_get_price_series
+        HAS_MARKET_DATA = True
+    except Exception:
+        pass
 
 
 def get_sp500_tickers():
@@ -111,7 +140,19 @@ def get_sp500_tickers():
 
 def compute_breadth(tickers):
     """
-    yfinanceで一括ダウンロードし、ブレッスデータを算出する。
+    common/market_data/のdaily/層から銘柄別に取得し、ブレッスデータを
+    算出する。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-7: yfinance一括ダウン
+    ロード（yf.download()）をcommon.market_data.reader経由に切替
+    （2026-08-11）。全銘柄をループしreader.get_price_series(ticker,
+    days=260)で生系列を取得し、daily/層内で自前rolling計算する
+    （hypecore.py・_get_sp500_ma_deviation()調査で確立した「daily/層内の
+    自前計算はreader.pyの層またぎ禁止ルールの例外規定に整合する」という
+    設計方針を踏襲）。pct_above_Nmaはreader.get_ma_deviation()と数学的に
+    同じ計算だが、52週高安値の算出に既に取得済みの生系列から自前計算する
+    ことで銘柄あたりのファイル読み込みを1回に抑える（get_ma_deviation()を
+    別途呼ぶと同一銘柄を二重読み込みすることになるため）。
 
     Returns:
         dict: {
@@ -129,89 +170,107 @@ def compute_breadth(tickers):
             "pct_above_200ma": 55.2
         }
     """
-    print(f"[INFO] {len(tickers)}銘柄の株価データを一括ダウンロード中 (period=1y)...")
+    if not HAS_MARKET_DATA:
+        print("[ERROR] common.market_data未import。ブレッス算出をスキップします。")
+        return None
+
+    print(f"[INFO] {len(tickers)}銘柄をmarket_data daily/層から取得中...")
     start_time = time.time()
 
-    # 1年分のデータを一括ダウンロード（52週高値/安値の算出に必要）
-    try:
-        data = yf.download(
-            tickers,
-            period="1y",
-            interval="1d",
-            auto_adjust=True,
-            progress=False,
-            threads=True
-        )
-    except Exception as e:
-        print(f"[ERROR] 一括ダウンロード失敗: {e}")
-        return None
+    advances = declines = unchanged = 0
+    adv_5d = dec_5d = 0
+    new_highs = new_lows = 0
+    above_50ma = above_200ma = 0
+    n_has_50ma = n_has_200ma = 0
+    valid_count = 0
+    last_date = None
+
+    for ticker in tickers:
+        try:
+            series = _md_get_price_series(ticker, days=260)
+        except Exception as e:
+            print(f"[WARN] {ticker}: 取得失敗 - {e}")
+            continue
+
+        # NaN(欠損)が多すぎる銘柄を除外（直近5営業日で実データが3日未満、
+        # 旧ロジックのrecent_nan<3条件と同義。_gapは営業日欠損プレース
+        # ホルダーのため実データとしてカウントしない）
+        recent_real = [r for r in series[-5:] if not r.get("_gap") and r.get("close") is not None]
+        if len(recent_real) < 3:
+            continue
+
+        vals = [r["close"] for r in series if not r.get("_gap") and r.get("close") is not None]
+        dates = [r["date"] for r in series if not r.get("_gap") and r.get("close") is not None]
+        if len(vals) < 2:
+            continue
+
+        valid_count += 1
+        latest = vals[-1]
+        prev = vals[-2]
+        if last_date is None or dates[-1] > last_date:
+            last_date = dates[-1]
+
+        # ── 日次 Advance / Decline ──
+        ret1d = (latest - prev) / prev if prev else 0.0
+        if ret1d > 0.0001:
+            advances += 1
+        elif ret1d < -0.0001:
+            declines += 1
+        else:
+            unchanged += 1
+
+        # ── 5日 AD Ratio (5日間の累積Advance / 累積Decline) ──
+        if len(vals) >= 6:
+            last6 = vals[-6:]
+            for i in range(1, 6):
+                r = (last6[i] - last6[i - 1]) / last6[i - 1] if last6[i - 1] else 0.0
+                if r > 0.0001:
+                    adv_5d += 1
+                elif r < -0.0001:
+                    dec_5d += 1
+
+        # ── 52週新高値 / 新安値 ──
+        # 直近の終値 vs 過去252営業日（≒52週）の高値/安値
+        lookback = min(252, len(vals) - 1)
+        if lookback >= 1:
+            window = vals[-lookback:]
+            hi = max(window)
+            lo = min(window)
+            # 新高値: 直近終値が52週高値の99%以上（ほぼ等しいか超えている）
+            if latest >= hi * 0.99:
+                new_highs += 1
+            # 新安値: 直近終値が52週安値の101%以下
+            if latest <= lo * 1.01:
+                new_lows += 1
+
+        # ── 移動平均上回り率 ──
+        if len(vals) >= 50:
+            ma50 = sum(vals[-50:]) / 50
+            n_has_50ma += 1
+            if latest > ma50:
+                above_50ma += 1
+        if len(vals) >= 200:
+            ma200 = sum(vals[-200:]) / 200
+            n_has_200ma += 1
+            if latest > ma200:
+                above_200ma += 1
 
     elapsed = time.time() - start_time
-    print(f"[INFO] ダウンロード完了 ({elapsed:.1f}秒)")
+    print(f"[INFO] 取得完了 ({elapsed:.1f}秒)")
+    print(f"[INFO] 有効銘柄数: {valid_count} / {len(tickers)}")
 
-    if data.empty:
-        print("[ERROR] ダウンロードデータが空です")
-        return None
-
-    close = data["Close"]
-
-    # NaNが多すぎる銘柄を除外（直近5日でNaNが3日以上）
-    recent_nan = close.iloc[-5:].isna().sum()
-    valid_tickers = recent_nan[recent_nan < 3].index.tolist()
-    close = close[valid_tickers]
-    print(f"[INFO] 有効銘柄数: {len(valid_tickers)} / {len(tickers)}")
-
-    if len(valid_tickers) < 100:
+    if valid_count < 100:
         print("[ERROR] 有効銘柄が100未満です。データ品質に問題があります。")
         return None
+    if last_date is None:
+        print("[ERROR] 有効な日付が取得できませんでした")
+        return None
 
-    # ── 日次 Advance / Decline ──
-    daily_returns = close.pct_change()
-    latest_returns = daily_returns.iloc[-1].dropna()
-
-    advances = int((latest_returns > 0.0001).sum())
-    declines = int((latest_returns < -0.0001).sum())
-    unchanged = int(len(latest_returns) - advances - declines)
     ad_ratio_1d = round(advances / max(declines, 1), 2)
-
-    # ── 5日 AD Ratio (5日間の累積Advance / 累積Decline) ──
-    last5_returns = daily_returns.iloc[-5:]
-    adv_5d = int((last5_returns > 0.0001).sum().sum())
-    dec_5d = int((last5_returns < -0.0001).sum().sum())
     ad_ratio_5d = round(adv_5d / max(dec_5d, 1), 2)
-
-    # ── 52週新高値 / 新安値 ──
-    # 直近の終値 vs 過去252営業日（≒52週）の高値/安値
-    lookback = min(252, len(close) - 1)
-    if lookback < 50:
-        print("[WARN] データ期間が短すぎます（52週分に満たない）")
-        high_52w = close.iloc[-lookback:].max()
-        low_52w = close.iloc[-lookback:].min()
-    else:
-        high_52w = close.iloc[-lookback:].max()
-        low_52w = close.iloc[-lookback:].min()
-
-    latest_close = close.iloc[-1].dropna()
-
-    # 新高値: 直近終値が52週高値の99%以上（ほぼ等しいか超えている）
-    new_highs = int((latest_close >= high_52w[latest_close.index] * 0.99).sum())
-    # 新安値: 直近終値が52週安値の101%以下
-    new_lows = int((latest_close <= low_52w[latest_close.index] * 1.01).sum())
     nh_nl_diff = new_highs - new_lows
-
-    # ── 移動平均上回り率 ──
-    pct_above_50ma = None
-    pct_above_200ma = None
-    if len(close) >= 50:
-        ma50 = close.iloc[-50:].mean()
-        above_50 = (latest_close > ma50[latest_close.index]).sum()
-        pct_above_50ma = round(above_50 / len(latest_close) * 100, 1)
-    if len(close) >= 200:
-        ma200 = close.iloc[-200:].mean()
-        above_200 = (latest_close > ma200[latest_close.index]).sum()
-        pct_above_200ma = round(above_200 / len(latest_close) * 100, 1)
-
-    last_date = close.index[-1].strftime('%Y-%m-%d')
+    pct_above_50ma = round(above_50ma / n_has_50ma * 100, 1) if n_has_50ma else None
+    pct_above_200ma = round(above_200ma / n_has_200ma * 100, 1) if n_has_200ma else None
 
     result = {
         "date": last_date,
@@ -223,7 +282,7 @@ def compute_breadth(tickers):
         "new_highs_52w": new_highs,
         "new_lows_52w": new_lows,
         "nh_nl_diff": nh_nl_diff,
-        "total_stocks": len(valid_tickers),
+        "total_stocks": valid_count,
         "pct_above_50ma": pct_above_50ma,
         "pct_above_200ma": pct_above_200ma,
     }
@@ -241,6 +300,13 @@ def fetch_rsp_spy_divergence():
     RSP（Equal Weight S&P500 ETF）とSPY（Cap Weight S&P500 ETF）の
     騰落率差分から「二極化スコア」を算出する（MP-BREADTH-2）。
 
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-7: yfinance直接呼び出し
+    （yf.download(["RSP","SPY"], period="2mo")）をcommon.market_data.
+    reader経由に切替（2026-08-11）。RSP・SPYそれぞれget_price_series()で
+    生系列を取得し、daily/層内で自前rolling計算する（RSPは同事前調査で
+    判明した未収録ETFのため、INDEX_ETF_COMMODITY_SYMBOLSへ2026-08-11に
+    追加済み）。
+
     Returns:
         dict | None: {
             "rsp_return_1d": 0.42,
@@ -251,40 +317,56 @@ def fetch_rsp_spy_divergence():
         マイナス = SPY（時価総額加重）のみが上昇 = 二極化（メガキャップ集中）
         プラス   = RSP（均等加重）が優勢 = 広範な上昇（健全な広がり）
     """
+    if not HAS_MARKET_DATA:
+        print("[WARN] common.market_data未import。RSP/SPY取得スキップ。")
+        return None
     try:
-        data = yf.download(["RSP", "SPY"], period="2mo", interval="1d",
-                            auto_adjust=True, progress=False, threads=True)
+        rsp_series = _md_get_price_series("RSP", days=25)
+        spy_series = _md_get_price_series("SPY", days=25)
+        rsp_closes = [r["close"] for r in rsp_series if not r.get("_gap") and r.get("close") is not None]
+        spy_closes = [r["close"] for r in spy_series if not r.get("_gap") and r.get("close") is not None]
+        if len(rsp_closes) < 2 or len(spy_closes) < 2:
+            print("[WARN] RSP/SPYの有効データが不足しています")
+            return None
+
+        # RSP/SPYの実データ件数が異なる場合に備え、末尾（直近）を基準に
+        # 同じ件数へ揃える（両者とも同一バッチで取得されるため通常は
+        # 一致するが、個別の欠損に対する耐性として揃える）
+        n = min(len(rsp_closes), len(spy_closes))
+        rsp_closes = rsp_closes[-n:]
+        spy_closes = spy_closes[-n:]
+
+        rsp_returns = [
+            (rsp_closes[i] - rsp_closes[i - 1]) / rsp_closes[i - 1] * 100 if rsp_closes[i - 1] else 0.0
+            for i in range(1, n)
+        ]
+        spy_returns = [
+            (spy_closes[i] - spy_closes[i - 1]) / spy_closes[i - 1] * 100 if spy_closes[i - 1] else 0.0
+            for i in range(1, n)
+        ]
+        if not rsp_returns or not spy_returns:
+            print("[WARN] RSP/SPYの有効データが不足しています")
+            return None
+        divergence_series = [r - s for r, s in zip(rsp_returns, spy_returns)]
+
+        rsp_return_1d = round(rsp_returns[-1], 3)
+        spy_return_1d = round(spy_returns[-1], 3)
+        divergence_1d = round(divergence_series[-1], 3)
+
+        lookback = min(20, len(divergence_series))
+        divergence_20d_avg = round(sum(divergence_series[-lookback:]) / lookback, 3)
+
+        print(f"[INFO] RSP/SPY乖離: 1d={divergence_1d:+.3f}pt 20d平均={divergence_20d_avg:+.3f}pt")
+
+        return {
+            "rsp_return_1d": rsp_return_1d,
+            "spy_return_1d": spy_return_1d,
+            "rsp_spy_divergence_1d": divergence_1d,
+            "rsp_spy_divergence_20d_avg": divergence_20d_avg,
+        }
     except Exception as e:
-        print(f"[WARN] RSP/SPYダウンロード失敗: {e}")
+        print(f"[WARN] RSP/SPY取得失敗: {e}")
         return None
-
-    if data.empty:
-        print("[WARN] RSP/SPYデータが空です")
-        return None
-
-    close = data["Close"][["RSP", "SPY"]].dropna()
-    if len(close) < 2:
-        print("[WARN] RSP/SPYの有効データが不足しています")
-        return None
-
-    returns = close.pct_change().dropna() * 100  # %
-    divergence_series = returns["RSP"] - returns["SPY"]
-
-    rsp_return_1d = round(float(returns["RSP"].iloc[-1]), 3)
-    spy_return_1d = round(float(returns["SPY"].iloc[-1]), 3)
-    divergence_1d = round(float(divergence_series.iloc[-1]), 3)
-
-    lookback = min(20, len(divergence_series))
-    divergence_20d_avg = round(float(divergence_series.iloc[-lookback:].mean()), 3)
-
-    print(f"[INFO] RSP/SPY乖離: 1d={divergence_1d:+.3f}pt 20d平均={divergence_20d_avg:+.3f}pt")
-
-    return {
-        "rsp_return_1d": rsp_return_1d,
-        "spy_return_1d": spy_return_1d,
-        "rsp_spy_divergence_1d": divergence_1d,
-        "rsp_spy_divergence_20d_avg": divergence_20d_avg,
-    }
 
 
 def _ema(values, span):
