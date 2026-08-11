@@ -87,6 +87,11 @@ INDEX_ETF_COMMODITY_SYMBOLS: List[str] = [
     # 為替（Market Pulse: collect_and_send.py、ドル円表示専用。同事前調査で
     # 発見、2026-08-11追加）
     "JPY=X",
+    # ETF（Market Pulse: breadth_calculator.py、[[MARKETDATA-LAYER-
+    # CONSTRUCTION-1]]着手順序4-7事前調査で判明した未収録分。RSPは
+    # fetch_rsp_spy_divergence()〈sentiment_scoreのrsp_spy_divergence
+    # 10.0%〉の算出に必須、2026-08-11追加。SPYは既収録）
+    "RSP",
 ]
 
 
