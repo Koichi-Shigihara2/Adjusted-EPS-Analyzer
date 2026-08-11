@@ -210,3 +210,91 @@ class TestNyseCalendar:
 
     def test_regular_weekend_is_not_trading_day(self):
         assert fetcher.is_trading_day("2026-08-08") is False
+
+
+class TestFetchWeeklyAttributesSchema:
+    """[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2（attributes/スキーマ拡張）の
+    フィールドマッピング回帰テスト。.infoをmonkeypatchし、ネットワークアクセス
+    なしでどのyfinanceキーがどの出力キーにマップされるかを検証する。"""
+
+    _FAKE_INFO = {
+        "currentPrice": 100.0, "marketCap": 1_000_000_000,
+        "trailingPE": 20.0, "forwardPE": 18.0,
+        "trailingPegRatio": 1.5, "pegRatio": 1.6,
+        "priceToSalesTrailing12Months": 5.0, "enterpriseToEbitda": 12.0,
+        "beta": 1.1, "sector": "Technology", "industry": "Software",
+        "dividendYield": 0.34,                    # 百分率表記（実測で判明した罠フィールド）
+        "trailingAnnualDividendYield": 0.0034,     # 小数表記（正しい採用元）
+        "payoutRatio": 0.12,
+        "sharesOutstanding": 1_000_000_000, "impliedSharesOutstanding": 1_010_000_000,
+        "forwardEps": 5.0,
+        "targetMeanPrice": 110.0, "targetMedianPrice": 112.0,
+        "targetLowPrice": 90.0, "targetHighPrice": 130.0,
+        "numberOfAnalystOpinions": 20, "recommendationKey": "buy",
+        "totalDebt": 500_000_000,
+    }
+
+    def _patch_info(self, monkeypatch, info):
+        class _FakeTicker:
+            def __init__(self, symbol):
+                pass
+            @property
+            def info(self):
+                return info
+        monkeypatch.setattr(fetcher, "_USE_SAFE_YF", False)
+        monkeypatch.setattr(fetcher.yf, "Ticker", _FakeTicker)
+
+    def test_new_fields_are_extracted_with_correct_mapping(self, tmp_path, monkeypatch):
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, dict(self._FAKE_INFO))
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["forward_pe"] == 18.0
+        assert saved["payout_ratio"] == 0.12
+        assert saved["implied_shares_outstanding"] == 1_010_000_000
+        assert saved["target_median_price"] == 112.0
+        assert saved["target_low_price"] == 90.0
+        assert saved["target_high_price"] == 130.0
+        assert saved["analyst_count"] == 20
+        assert saved["analyst_recommendation_key"] == "buy"
+        # 既存フィールドも維持されていること
+        assert saved["target_mean_price"] == 110.0
+        assert saved["trailing_pe"] == 20.0
+
+    def test_dividend_yield_uses_trailing_annual_not_percent_scaled_field(self, tmp_path, monkeypatch):
+        """dividend_yieldはdividendYield（百分率表記、実測でAAPL=0.34≒0.34%と
+        判明した罠フィールド）ではなくtrailingAnnualDividendYield（小数表記）
+        由来であることを回帰テストする"""
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, dict(self._FAKE_INFO))
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert saved["dividend_yield"] == 0.0034  # trailingAnnualDividendYield由来
+        assert saved["dividend_yield"] != 0.34    # dividendYield（誤ったスケール）ではない
+
+    def test_previous_close_is_not_captured(self, tmp_path, monkeypatch):
+        """previousCloseはdaily/層の責務のためattributes/には含めない設計を
+        回帰テストする（層またぎ再計算の禁止、BACKLOG確定事項4）"""
+        base = str(tmp_path)
+        info = dict(self._FAKE_INFO)
+        info["previousClose"] = 999.0
+        self._patch_info(monkeypatch, info)
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        assert "previous_close" not in saved
+        assert 999.0 not in saved.values()
+
+    def test_missing_new_fields_default_to_none_not_error(self, tmp_path, monkeypatch):
+        """新フィールドが.infoに存在しない銘柄（指数等）でも例外にならずNoneになる"""
+        base = str(tmp_path)
+        self._patch_info(monkeypatch, {"currentPrice": 100.0})
+        fetcher.fetch_weekly_attributes(["XYZ"], base_dir=base)
+
+        saved = json.load(open(os.path.join(base, "attributes", "XYZ.json"), encoding="utf-8"))
+        for key in ("forward_pe", "payout_ratio", "implied_shares_outstanding",
+                    "target_median_price", "target_low_price", "target_high_price",
+                    "analyst_count", "analyst_recommendation_key"):
+            assert saved[key] is None

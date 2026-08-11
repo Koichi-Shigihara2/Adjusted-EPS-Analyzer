@@ -384,13 +384,33 @@ def fetch_daily_prices(symbols: List[str], base_dir: Optional[str] = None) -> No
 def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) -> None:
     """週次準静的属性層を取得・保存する。
 
-    銘柄ごとに.infoを1回呼び出し、PER/PEG/PSR/EV_EBITDA/β/セクター/業種/
-    配当/株式数/Forward EPS/アナリスト目標株価コンセンサス/totalDebtを抽出し、
-    fetched_at（ISO8601 UTC）を付与してattributes/{SYMBOL}.jsonへ保存する。
-    保存前にvalidate_attributes_record()で時価総額恒等式を検証するが、
-    失敗しても保存は拒否しない。twoHundredDayAverageは保存しない
-    （BACKLOG確定事項7、get_ma_deviation()がprice_seriesから都度計算する
-    設計のため）。
+    銘柄ごとに.infoを1回呼び出し、PER（trailing/forward）/PEG/PSR/EV_EBITDA/
+    β/セクター/業種/配当/株式数（sharesOutstanding/impliedSharesOutstanding）/
+    Forward EPS/配当性向/アナリスト目標株価コンセンサス（mean/median/low/high/
+    件数/推奨度）/totalDebtを抽出し、fetched_at（ISO8601 UTC）を付与して
+    attributes/{SYMBOL}.jsonへ保存する。保存前にvalidate_attributes_record()で
+    時価総額恒等式を検証するが、失敗しても保存は拒否しない。
+    twoHundredDayAverageは保存しない（BACKLOG確定事項7、get_ma_deviation()が
+    price_seriesから都度計算する設計のため）。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-2（data_fetcher.py切替）の
+    事前調査で判明した必須フィールドを2026-08-11に追加（実装依頼「attributes/
+    スキーマ拡張」）。追加時の判断根拠:
+    - `previousClose`は追加しない: 株価フォールバック第3段はdaily/層
+      （reader.get_latest_price()のclose）の責務であり、attributes/に
+      重複保存すると「どちらが正か」の層またぎ問題を生む（BACKLOG確定事項4
+      「層またぎ再計算の禁止」、twoHundredDayAverage非保存と同じ理由）。
+    - `dividend_yield`のソースを`dividendYield`から`trailingAnnualDividendYield`
+      に変更した: 実測（AAPL/KO/MSFT）でdividendYieldは百分率表記
+      （例: AAPL=0.34≒0.34%）、trailingAnnualDividendYieldは小数表記
+      （例: AAPL=0.00335≒0.335%）と**スケールが100倍異なる**ことを発見。
+      data_fetcher.py（ディビデンドトラップ判定でtrailingAnnualDividendYield
+      使用）との単位統一、および小数表記の方が他の比率フィールド
+      （beta/per等）との一貫性が高いためtrailingAnnualDividendYieldに統一。
+    - `peg_ratio`（trailingPegRatio優先・pegRatio フォールバック）は変更なし:
+      実測で両者はほぼ同値（精度差のみ、単位不一致なし）であり、既存の
+      フォールバック設計が既にdata_fetcher.py単体（pegRatioのみ参照）より
+      堅牢なため、data_fetcher.py側が本フィールドへ合わせる想定。
 
     .info呼び出しはcommon.yfinance_utils.safe_yf_ticker()（リトライ2回・
     待機3秒、beta_fetcher.py::fetch_yfinance_beta()と同型）経由で行う
@@ -428,16 +448,24 @@ def fetch_weekly_attributes(symbols: List[str], base_dir: Optional[str] = None) 
             "current_price": info.get("currentPrice") or info.get("regularMarketPrice"),
             "market_cap": info.get("marketCap"),
             "trailing_pe": info.get("trailingPE"),
+            "forward_pe": info.get("forwardPE"),
             "peg_ratio": info.get("trailingPegRatio") or info.get("pegRatio"),
             "price_to_sales": info.get("priceToSalesTrailing12Months"),
             "ev_to_ebitda": info.get("enterpriseToEbitda"),
             "beta": info.get("beta"),
             "sector": info.get("sector"),
             "industry": info.get("industry"),
-            "dividend_yield": info.get("dividendYield"),
+            "dividend_yield": info.get("trailingAnnualDividendYield"),
+            "payout_ratio": info.get("payoutRatio"),
             "shares_outstanding": info.get("sharesOutstanding"),
+            "implied_shares_outstanding": info.get("impliedSharesOutstanding"),
             "forward_eps": info.get("forwardEps"),
             "target_mean_price": info.get("targetMeanPrice"),
+            "target_median_price": info.get("targetMedianPrice"),
+            "target_low_price": info.get("targetLowPrice"),
+            "target_high_price": info.get("targetHighPrice"),
+            "analyst_count": info.get("numberOfAnalystOpinions"),
+            "analyst_recommendation_key": info.get("recommendationKey"),
             "total_debt": info.get("totalDebt"),
         }
 
