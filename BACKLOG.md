@@ -2235,13 +2235,16 @@ common/market_data/
       方針と整合）。副次発見`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`
       （CLI引数実行の既存バグ）は本切替の範囲外のため未修正のまま
       新規登録。
-   **次セッションでの着手順序（2026-08-11時点、最終版）**:
-   1. 着手順序4-4: `hypecore.py`切替（3層〈daily/attributes/
-      analyst_history〉すべてが混在する消費者のため最も複雑、優先着手）
-   2. 着手順序4-5〜8: `pipeline.py`（`.calendar`のみ、他フィールドは
+   **次セッションでの着手順序（2026-08-11時点、hypecore.py事前調査を
+   反映し更新）**:
+   1. 着手順序4-4〜4-7: `pipeline.py`（`.calendar`のみ、他フィールドは
       着手順序4-2のdata_fetcher.py切替で既に対応済み）・`collect.py`・
-      `collect_and_send.py`・`breadth_calculator.py`（優先順位は着手時に
-      再検討）
+      `collect_and_send.py`・`breadth_calculator.py`（軽量消費者を先に
+      処理。詳細な優先順位は着手時に再検討）
+   2. 着手順序4-8: `hypecore.py`切替（daily/attributes/analyst_history
+      の3層すべてが混在する消費者。事前調査（読み取り専用、チャット記録、
+      2026-08-11）の結果、前提作業が判明したため他消費者より後回しに
+      変更。詳細は下記「hypecore.py切替の前提作業」参照）
    3. 着手順序5: 診断ツール2ファイル（`score_verifier.py`・`audit.py`）の
       切替。上記8ファイルの進捗を見ながら詳細順序を判断する
    4. （本線外・本セッションで蓄積した課題群、優先度は各エントリ参照）:
@@ -2249,6 +2252,57 @@ common/market_data/
       SCRAPE-INVALID-TICKERS-1]]`・`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`・
       `[[NETCASH-DUAL-CALC-1]]`等
 5. 周辺ツール2ファイルの切替
+
+#### hypecore.py切替の前提作業（着手順序4-8、事前調査完了・2026-08-11）
+着手順序4-4として最優先候補だったが、読み取り専用の事前調査（チャット
+記録、2026-08-11）で以下3点が判明し、着手順序を4-4→4-8（残り消費者の
+最後）へ変更した:
+
+1. **daily/バックフィル期間拡張**: `fetch_price_data()`は
+   `start="2021-01-01"`固定（約5.5年分の日次終値）でma50/ma200/RSI/
+   出来高比を自前rolling計算し月次リサンプルする。既存の
+   `backfill_daily_prices(period="1y")`（PLTR実測251件、2025-08-11〜
+   2026-08-10）では約4.5年分・1000営業日超が不足。data_fetcher.py
+   切替時の「ma200単発値のブートストラップ」（`period="1y"`で解消済み）
+   とは要求規模が異なり、月次Z-score系列全体（24ヶ月ローリング窓等）を
+   要するため`period="5y"`または`max`相当への再バックフィルが前提。
+2. **attributes/スキーマ未収録7フィールド**: `fetch_info_snapshot()`が
+   使う14フィールド中7件（`revenue_growth`・`earnings_growth`・
+   `gross_margins`・`recommendation_mean`〈数値、既存
+   `analyst_recommendation_key`は文字列で別物〉・`short_pct_float`・
+   `short_ratio`・`volume_vs_avg`算出用の平均出来高系）が現行スキーマに
+   存在しない。過去2回の拡張（data_fetcher.py・valuation_fetcher.py、
+   各1フィールド追加）より規模が大きい。
+3. **analyst_history/未収録2系統**: `fetch_analyst_history()`が使う
+   3系統のうち`upgrades_downgrades`は既存スキーマと完全一致し流用可能
+   だが、`earnings_history`（EPSサプライズ率、S4「良決算でも下落」
+   判定の核心シグナル）・`recommendations`（Buy/Hold/Sell生カウント、
+   `buy_hold_ratio`算出用）の2系統は現行のanalyst_history/・
+   attributes/のどちらにも一切収録されておらず、新規スキーマ設計が
+   必要。
+
+母集団確認（Step3）: HypeCore対象104銘柄は`common/market_data/`週次
+バッチ母集団（570銘柄）に全件含まれる（欠落0件）。さらに104銘柄は
+`config/monitor_tickers.yaml`単独でも全件カバーされており、SP500
+Wikipediaスクレイピング（`[[MARKETDATA-SP500-SCRAPE-INVALID-
+TICKERS-1]]`参照）への依存はない。
+
+**副次発見（記録のみ、本切替の範囲外）**:
+- `hypecore.py`の`__main__`フォールバックticker配列（tickers.py読み込み
+  失敗時用、48銘柄ハードコード）が実際の104銘柄（`get_hypecore_
+  tickers()`）と乖離している。フォールバック発動時のみ顕在化する
+  潜在課題で、通常運用時は`get_hypecore_tickers()`が使われるため実害は
+  限定的。
+- `fetch_price_data()`の`if hist.empty: raise ValueError(...)`は、
+  `reader.get_price_series()`への切替により「対象銘柄のデータが完全に
+  存在しない」（空リスト）と「一部営業日のみ欠損」（`_gap: True`
+  プレースホルダーで日付集合は維持）を区別できる設計に改善可能。
+  既存のraise挙動をそのまま残すか、区別を活かした設計に改善するかは
+  実装時の判断事項として保留。
+
+#### 着手条件（hypecore.py切替）
+上記3点の前提作業（バックフィル期間拡張・attributes/7フィールド追加・
+analyst_history/2系統のスキーマ設計）の実装完了後に着手可能。
 
 #### 日次価格層バックフィル（着手順序4-2 data_fetcher.py切替の前提条件、2026-08-11完了）
 `daily/`の日次収集は2026-08-10開始のため、200営業日移動平均
