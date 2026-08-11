@@ -1,5 +1,17 @@
 # On-a-journey — 改善バックログ（全システム）
 
+最終更新: 2026-08-11（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5-1:
+`audit.py`（β乖離監査・カナダ企業判定）切替完了。`attributes/`へ
+`country`フィールドを新規追加し、両判定ともyfinance直接呼び出しから
+`reader.get_attributes()`経由に切替（設計確定事項6の方針通り）。
+`SEC_Data_Audit.yml`の依存インストールも`pip install -r requirements.txt`
+へ更新。副次発見: 旧`SEC_Data_Audit.yml`はyfinance未導入のためカナダ判定が
+本番自動実行で常に無音スキップされ事実上死んでいたが、今回の切替で
+実際に機能するようになった。残る5-2`score_verifier.py`は、`reader.py`へ
+任意過去日点参照API（`get_price_on_or_after`相当）の新規追加が前提と
+判明し次点保留。詳細はBACKLOG_DONE.md「2026-08-11（完了）」着手順序5-1・
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`エントリ参照）
+
 最終更新: 2026-08-11（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`: `fetcher.py`・
 `reader.py`新設と定期実行ワークフロー2件（Daily/Weekly Update）を実装、
 続けて本番消費者8ファイル（`beta_fetcher.py`・`data_fetcher.py`・
@@ -2020,18 +2032,20 @@ ARCH-DATA-1のスコープ拡張（2026-07-16、年次データ正規化3段階�
 **登録日:** 2026-08-07（本来は事前調査着手時点で登録すべきだったが
 未登録のまま3回の投資調査を実施していたため、本エントリで遡って
 正式登録する）
-**更新日:** 2026-08-11（着手順序1〜3完了に加え、4. 本番消費者切替が
-**8/8全数完了**：4-1`beta_fetcher.py`・4-2`data_fetcher.py`（本丸）・
-4-3`valuation_fetcher.py`（STONKS SILO）・4-4`pipeline.py`（.calendar）・
-4-5`collect.py`（Discover）・4-6`collect_and_send.py`（Market Pulse）・
-4-7`breadth_calculator.py`・4-8`hypecore.py`（3層混在の最複雑消費者、
-前提作業3件込み）とも完了。一連の切替作業中に発見した別課題群を
-`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・`[[MARKETDATA-SP500-
-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-DATA-GAP-1]]`・
-`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。誤って「バグ」
-登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1]]`は
-事実確認調査により前提の誤りが判明し訂正・クローズ済み。次は着手順序5
-（診断ツール2ファイル）。詳細は下記「着手順序」参照）
+**更新日:** 2026-08-11（着手順序1〜4（本番消費者8/8）に加え、5-1
+`audit.py`（β乖離監査・カナダ企業判定）が**完了**。`attributes/`へ
+`country`フィールドを新規追加した上で両判定ともyfinance直接呼び出しから
+`reader.get_attributes()`経由に切替（設計確定事項6の方針通り）。
+`SEC_Data_Audit.yml`の依存インストールも`pip install -r requirements.txt`
+へ更新（詳細はBACKLOG_DONE.md「2026-08-11（完了）」着手順序5-1参照、
+コミット`be48054cc`）。残る5-2`score_verifier.py`は`reader.py`への
+新規API追加（任意過去日点参照）が前提と判明し次点保留。一連の切替作業中
+に発見した別課題群を`[[MARKETDATA-CWAN-FROZEN-DATA-SUSPECT-1]]`・
+`[[MARKETDATA-SP500-SCRAPE-INVALID-TICKERS-1]]`・`[[MARKETDATA-VIX9D-
+DATA-GAP-1]]`・`[[STONKS-SILO-CLI-TICKERS-SHADOW-1]]`として登録済み。
+誤って「バグ」登録した`[[MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-
+DRIFT-1]]`は事実確認調査により前提の誤りが判明し訂正・クローズ済み。
+詳細は下記「着手順序」参照）
 **発見:** `common/market_data/`新設事前調査・実装設計投資調査（チャット
 記録、2026-08-07）
 
@@ -2292,17 +2306,37 @@ common/market_data/
       DRIFT-1]]`、対応不要で確定）。
 
 5. 診断ツール2ファイルの切替（`score_verifier.py`・`audit.py`）。
-   `audit.py`のβ乖離監査（`beta_config.json`との外部妥当性監視、設計
-   確定事項6で`reader.get_attributes()["beta"]`経由への切替方針が
-   既に確定済み）を含む。**次セッションの最優先候補（後述）。**
+   進捗1/2。
+   1. **【完了・2026-08-11】** `audit.py`（β乖離監査・カナダ企業判定）。
+      `audit_beta_drift()`のβ乖離監査（設計確定事項6通り
+      `reader.get_attributes()["beta"]`経由）・`audit_ticker()`の
+      カナダ企業判定（`attributes/`へ`country`フィールドを新規追加した
+      上で`reader.get_attributes()["country"]`経由）とも切替完了。
+      詳細・検証結果はBACKLOG_DONE.md「2026-08-11（完了）」
+      `[[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序5-1`参照（コミット
+      `be48054cc`）。副次発見: `SEC_Data_Audit.yml`は従来
+      `pip install requests`のみでyfinance未導入のため、旧カナダ判定は
+      import失敗のexcept節で本番自動実行時は常に無音スキップされ
+      事実上死んでいた。今回`pip install -r requirements.txt`への変更と
+      合わせ実際に機能するようになった。
+   2. `score_verifier.py`（判定実績の事後検証、`fetch_price_after()`）は
+      未着手。事前調査（チャット記録、2026-08-11）で判明した固有の
+      前提: `reader.get_price_series()`は「最新取得日を終点とする直近N
+      営業日」専用であり、`score_verifier.py`が必要とする「任意の過去日
+      （`base_date`）を起点とする点参照」に対応する`reader.py` API が
+      現状存在しない。`daily/{TICKER}.json`自体は該当データを保持済み
+      （`start=2021-01-01`バックフィルによりscore_history.json最古日
+      2026-06-03を十分カバー、対象102銘柄で`daily/`欠落0件を確認済み）。
+      `reader.py`へ`get_price_on_or_after(symbol, date)`相当の新規API
+      追加が前提作業となる（hypecore.py前提作業3と同型の設計提案が必要）。
 6. 周辺ツール2ファイル（`backfill_tech_pulse.py`・`extract_key_facts.py`）
    の切替。
 
-**次セッションでの着手順序（2026-08-11時点、本番消費者8/8完了を反映し
-最終更新）**:
-1. 着手順序5: 診断ツール2ファイル切替（`score_verifier.py`・
-   `audit.py`のβ乖離監査等、設計確定事項6の方針通り
-   `reader.get_attributes()`経由に切替）
+**次セッションでの着手順序（2026-08-11時点、着手順序5-1〈audit.py〉完了を
+反映し最終更新）**:
+1. 着手順序5-2: `score_verifier.py`切替。前提として`reader.py`へ
+   任意過去日点参照API（`get_price_on_or_after`相当）の設計・追加が必要
+   （上記5-2参照）
 2. 着手順序6: 周辺ツール2ファイルの切替（`backfill_tech_pulse.py`・
    `extract_key_facts.py`、該当あれば）
 3. フェーズ完了後: `normalized/`廃止相当の判断、または新DB構築

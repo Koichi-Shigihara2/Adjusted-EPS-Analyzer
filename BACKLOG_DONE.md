@@ -4,6 +4,70 @@
 
 ## 2026-08-11（完了）
 
+### ✅ [MARKETDATA-LAYER-CONSTRUCTION-1] 着手順序5-1: audit.py切替（β乖離監査・カナダ企業判定）
+**状態:** 完了
+**優先度:** 高
+**分類:** アーキテクチャ / 新DB構築プロジェクト フェーズ1 / 診断ツール切替
+**登録日:** 2026-08-11
+**完了日:** 2026-08-11
+**発見:** `[[MARKETDATA-LAYER-CONSTRUCTION-1]]`着手順序5事前調査（診断ツール
+2ファイル切替の事前確認、チャット記録、2026-08-11）
+
+#### 内容
+`common/sec_data/audit.py`の2箇所のyfinance直接呼び出しを
+`common.market_data.reader.get_attributes()`経由に切替:
+- `audit_beta_drift()`: `yf.Ticker(ticker).info.get("beta")`（毎回ライブ
+  取得・レート制限対策の`time.sleep(0.12)`併用）を
+  `reader.get_attributes(ticker)["beta"]`に置換。ネットワークアクセス
+  不要になりsleep削除。設計確定事項6「audit.pyとの役割分担」で
+  事前確定していた方針通り。beta_config.json自体が既にbeta_fetcher.py
+  経由でmarket_data由来のため、本チェックの意味は「独立した外部ライブ
+  値との比較」から「beta_config.jsonが週次attributes/より陳腐化して
+  いないかの内部整合性チェック」に変わる（両方維持の想定通り）
+- `audit_ticker()`のカナダ企業チェック（IFRS/40-F判定）:
+  `yf.Ticker(ticker).info.get("country")`を`reader.get_attributes(ticker)
+  ["country"]`に置換。前提として`common/market_data/fetcher.py::
+  fetch_weekly_attributes()`へ`country`フィールド（`info.get("country")`、
+  生値そのまま・フォールバックなし）を新規追加
+
+副次発見: `SEC_Data_Audit.yml`は従来`pip install requests`のみで
+yfinance未導入だったため、旧カナダ判定は`import yfinance`失敗の
+`except Exception: pass`で本番自動実行時は常に無音スキップされ事実上
+死んでいた（`--check-beta`は自動実行workflow_dispatchの引数に含まれず
+CLI手動時のみ発火のため影響なし）。今回の切替＋依存インストール変更
+（`pip install requests`→`pip install -r requirements.txt`、
+TANUKI_VALUATION_Update.yml等の既存前例と同じ対応）で実際に機能する
+ようになった。
+
+`BETA_CONFIG_PATH`をモジュール定数化（既存の`TTM_DIR`等の他パス定数と
+同型、テスト容易性のため）。`HAS_MARKET_DATA`ガードパターン
+（beta_fetcher.py/pipeline.py等の既存切替と同型）を導入。
+
+#### 検証
+- 実データ検証: Weekly Update実行後、`attributes/`全575ファイルで
+  `country`キー存在100%（575/575）・非null553件を確認。カナダ企業として
+  ENB・LULU（いずれもyfinance実データで実在確認済み、実業種的にも
+  正しい）を検出
+- β乖離6サンプル比較（旧: ライブyfinance vs 新: reader経由）で
+  diff完全一致（BBAI diff=+0.68でwarning判定、他5件は閾値未満で
+  旧新とも未検出）を実測確認
+- 実装後の`audit.audit_ticker()`をLULU/ENB/AAPL/NVDAの4銘柄で実行し
+  カナダ警告の発火/非発火が意図通りであることをend-to-endで確認
+- `python common/sec_data/audit.py --check-beta`をTANUKI VALUATION
+  登録100銘柄全件で実行し、例外なく完走・exit code 0を確認（β警告5件
+  ・カナダ警告0件〈登録銘柄にLULU/ENB含まれず〉）
+- 新規テスト: `tests/test_audit_market_data_switch.py`8件・
+  `tests/test_market_data_fetcher.py::TestFetchWeeklyAttributesCountryField`
+  2件、いずれもPASS
+- pytest全体708 passed/2 known-failed（`test_iv_formula.py` MSFT/NVDA、
+  既知・無関係。切替前698から+10で新規失敗なしを確認）
+
+コミット`be48054cc`（実装）・`1e98ed1c9`（Weekly Update workflow_dispatch
+実行によるbot自動生成データ、attributes/全575ファイルへの`country`
+フィールド反映）。
+
+---
+
 ### ✅ [MARKETDATA-DAILY-UNADJUSTED-PRICE-DIVIDEND-DRIFT-1] 訂正：market_data層の未調整終値は正しい設計、旧実装（調整済み終値）の方が技術指標としては不適切だったと判明
 **状態:** 完了（クローズ、対応不要と確定）
 **優先度:** —（登録時「高」→クローズ済みのため無効）
