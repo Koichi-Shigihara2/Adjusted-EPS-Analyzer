@@ -77,8 +77,16 @@ INDEX_ETF_COMMODITY_SYMBOLS: List[str] = [
     "^GSPC", "^IXIC", "^DJI", "^NYA", "^RUT", "^VIX", "^VIX9D", "^TNX", "^N225",
     # ETF（Market Pulse: collect_and_send.py・breadth_calculator.py）
     "SPY", "QQQ", "GLD", "TLT", "HYG",
+    # ETF（Market Pulse: collect_and_send.py、[[MARKETDATA-LAYER-
+    # CONSTRUCTION-1]]着手順序4-6事前調査で判明した未収録分。IVW/IVEは
+    # sentiment_scoreのgrowth_value〈9.0%〉、LQDはhyg_lqd_dir〈10.8%〉の
+    # 算出に必須、2026-08-11追加）
+    "IVW", "IVE", "LQD",
     # 商品先物（Market Pulse: collect_and_send.py）
     "CL=F", "GC=F",
+    # 為替（Market Pulse: collect_and_send.py、ドル円表示専用。同事前調査で
+    # 発見、2026-08-11追加）
+    "JPY=X",
 ]
 
 
