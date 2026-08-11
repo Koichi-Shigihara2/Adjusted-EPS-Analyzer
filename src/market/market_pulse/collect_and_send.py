@@ -28,6 +28,37 @@ JSON_PATH = os.path.join(DATA_DIR, "market_data.json")
 CSV_PATH = os.path.join(DATA_DIR, "market_data.csv")
 BREADTH_JSON = os.path.join(DATA_DIR, "breadth_data.json")
 
+# common/market_data - [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6:
+# 指数・ETF・商品先物のyfinance直接呼び出し（fetch_hist()の.history()・
+# _get_sp500_ma_deviation()・fetch_qqq_tech_data()）をcommon.market_data.
+# reader経由に切替。他の切替済みファイルと同じHAS_MARKET_DATAガード・
+# 二段構えsys.path解決パターンを踏襲する（本ファイルは`python src/market/
+# market_pulse/collect_and_send.py`で直接実行されるためリポジトリルートが
+# sys.pathに含まれない。REPO_ROOTは上で既に計算済みのため流用する）。
+HAS_MARKET_DATA = False
+_md_get_price_series = None
+_md_get_ma_deviation = None
+
+try:
+    if REPO_ROOT not in sys.path:
+        sys.path.insert(0, REPO_ROOT)
+    from common.market_data.reader import get_price_series as _md_get_price_series
+    from common.market_data.reader import get_ma_deviation as _md_get_ma_deviation
+    HAS_MARKET_DATA = True
+except Exception:
+    pass
+
+if not HAS_MARKET_DATA:
+    try:
+        _github_workspace = os.environ.get("GITHUB_WORKSPACE", "")
+        if _github_workspace and _github_workspace not in sys.path:
+            sys.path.insert(0, _github_workspace)
+        from common.market_data.reader import get_price_series as _md_get_price_series
+        from common.market_data.reader import get_ma_deviation as _md_get_ma_deviation
+        HAS_MARKET_DATA = True
+    except Exception:
+        pass
+
 # CSVのカラム定義（必要に応じて拡張）
 CSV_COLUMNS = [
     "date", "judgment",
@@ -64,7 +95,13 @@ def _is_nan(x):
         return False
 
 
-def fetch_hist(ticker, period="5d"):
+def _fetch_hist_legacy(ticker, period="5d"):
+    """yfinance直接呼び出し版（旧fetch_hist()、[[MARKETDATA-LAYER-
+    CONSTRUCTION-1]]着手順序4-6切替の対象外）。collect_asset_flow()の
+    一部ティッカー（SHV等）が今回の投資調査スコープ外でmarket_data未収録
+    のため、collect_asset_flow()専用のフォールバックとして維持する
+    （別途SHV等の追加要否を判断してから切替を検討する）。
+    """
     try:
         t = yf.Ticker(ticker)
         hist = t.history(period=period)
@@ -73,22 +110,55 @@ def fetch_hist(ticker, period="5d"):
         return None
 
 
-def format_line(name, hist):
-    if hist is None:
+def fetch_recent_records(ticker, count=2, days=5):
+    """直近count件（既定2件）の実データ日次レコード（date/close/volume等、
+    古い順）をリストで返す。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6: yfinance直接呼び出し
+    （旧fetch_hist()の.history()）をcommon.market_data.reader経由に切替
+    （2026-08-11）。_gapプレースホルダー（営業日欠損）を除外した実データの
+    末尾count件を使う（単発の営業日欠損に対する耐性を持たせる、
+    collect.py::get_price_change()切替時と同型の防御的設計）。
+    common.market_data未import環境（HAS_MARKET_DATA=False）・データ不足
+    時は旧コードの「hist取得失敗」時と同じくNoneを返す（中立デフォルト）。
+    """
+    if not HAS_MARKET_DATA:
+        return None
+    try:
+        series = _md_get_price_series(ticker, days=days)
+        reals = [r for r in series if not r.get("_gap") and r.get("close") is not None]
+        if len(reals) < count:
+            return None
+        return reals[-count:]
+    except Exception as e:
+        print(f"  [{ticker}] market_data取得失敗: {e}")
+        return None
+
+
+def format_line(name, records):
+    """記録リスト（fetch_recent_records()の戻り値、date/close/volume・
+    古い順）から表示用の1行を生成する。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6: 引数をyfinance
+    DataFrameからcommon.market_data.reader経由のレコードリストに変更
+    （2026-08-11）。
+    """
+    if records is None:
         return f"● {name}: 取得制限あり\n"
     try:
-        latest = hist['Close'].iloc[-1]
-        if _is_nan(latest):
+        latest_rec = records[-1]
+        latest = latest_rec.get("close")
+        if latest is None or _is_nan(latest):
             return f"● {name}: 取得制限あり\n"
-        last_date = hist.index[-1].astimezone(JST).strftime('%m/%d')
+        last_date = datetime.strptime(latest_rec["date"], "%Y-%m-%d").strftime("%m/%d")
         diff, pct, vol_msg = 0.0, 0.0, ""
-        if len(hist) >= 2 and not _is_nan(hist['Close'].iloc[-2]):
-            prev = hist['Close'].iloc[-2]
+        if len(records) >= 2 and records[-2].get("close") is not None and not _is_nan(records[-2]["close"]):
+            prev = records[-2]["close"]
             diff = latest - prev
-            pct = (diff / prev) * 100
-            vol_latest = hist['Volume'].iloc[-1]
-            vol_prev = hist['Volume'].iloc[-2]
-            if vol_latest > 0 and vol_prev > 0:
+            pct = (diff / prev) * 100 if prev else 0.0
+            vol_latest = latest_rec.get("volume")
+            vol_prev = records[-2].get("volume")
+            if vol_latest is not None and vol_prev is not None and vol_latest > 0 and vol_prev > 0:
                 vol_msg = f" | 前日比出来高比:{vol_latest / vol_prev:.2f}"
         return f"● {name}: {latest:.2f} [{diff:+.2f} ({pct:+.2f}%){vol_msg}] ({last_date} 確定)\n"
     except Exception as e:
@@ -287,27 +357,36 @@ def _load_latest_breadth():
 def _get_sp500_ma_deviation():
     """S&P500の現在値と50日/200日移動平均の情報を返す
     Returns dict with keys: deviation_50, above_ma200, ma200_slope
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6: yfinance直接呼び出し
+    （.history(period="1y")）をcommon.market_data.reader経由に切替
+    （2026-08-11）。deviation_50はget_ma_deviation(window=50)の乖離率式
+    （(latest-ma)/ma*100）と完全一致するためそのまま流用。above_ma200は
+    get_ma_deviation(window=200)の符号（乖離率>0 ⟺ 終値>MA200）から導出。
+    ma200_slope（10営業日前時点のMA200との比較）はget_ma_deviation()が
+    最新1点のみ返す設計のため代替不可、get_price_series()で取得した生の
+    daily/系列からdaily/層内で自前rolling計算する（hypecore.py事前調査で
+    確立した「daily/層内での自前計算はreader.pyの層またぎ禁止ルールの
+    例外規定に整合する」という設計方針を踏襲）。
     """
+    if not HAS_MARKET_DATA:
+        return None
     try:
-        t = yf.Ticker("^GSPC")
-        hist = t.history(period="1y")
-        if hist is None or len(hist) < 200:
+        deviation_50 = _md_get_ma_deviation("^GSPC", window=50)
+        deviation_200 = _md_get_ma_deviation("^GSPC", window=200)
+        if deviation_50 is None or deviation_200 is None:
             return None
-        close = hist['Close']
-        latest = float(close.iloc[-1])
-        ma50 = float(close.iloc[-50:].mean())
-        ma200 = float(close.iloc[-200:].mean())
-        if _is_nan(latest) or _is_nan(ma50) or _is_nan(ma200):
-            return None
-        deviation_50 = (latest - ma50) / ma50 * 100
-        above_ma200 = latest > ma200
-        # MA200傾き: 直近MA200 vs 10日前のMA200
-        if len(close) >= 210:
-            ma200_10d_ago = float(close.iloc[-210:-10].mean())
-            ma200_slope = bool(ma200 > ma200_10d_ago)
+        above_ma200 = deviation_200 > 0
+        # MA200傾き: 直近MA200 vs 10営業日前のMA200（daily/層内の自前計算）
+        series = _md_get_price_series("^GSPC", days=220)
+        closes = [r["close"] for r in series if not r.get("_gap") and r.get("close") is not None]
+        if len(closes) >= 210:
+            ma200_now = sum(closes[-200:]) / 200
+            ma200_10d_ago = sum(closes[-210:-10]) / 200
+            ma200_slope = bool(ma200_now > ma200_10d_ago)
         else:
             ma200_slope = None
-        print(f"[INFO] S&P500: {latest:.2f}, MA50乖離={deviation_50:+.2f}%, above_MA200={above_ma200}, MA200傾き={'↑' if ma200_slope else '↓' if ma200_slope is not None else '—'}")
+        print(f"[INFO] S&P500: MA50乖離={deviation_50:+.2f}%, above_MA200={above_ma200}, MA200傾き={'↑' if ma200_slope else '↓' if ma200_slope is not None else '—'}")
         return {
             "deviation_50": round(deviation_50, 2),
             "above_ma200": above_ma200,
@@ -322,32 +401,38 @@ def _get_sp500_ma_deviation():
 # Tech Pulse — QQQ/VXN/F&Gベースのナスダック感情指数
 # ──────────────────────────────────────────────────────
 def fetch_qqq_tech_data():
-    """QQQのMA125乖離率とQQQ/SPY 20日相対強度を返す（%表示）"""
+    """QQQのMA125乖離率とQQQ/SPY 20日相対強度を返す（%表示）
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6: yfinance直接呼び出し
+    （.history(period="200d")）をcommon.market_data.reader経由に切替
+    （2026-08-11）。qqq_vs_ma125はget_ma_deviation(window=125)の乖離率式
+    と完全一致するためそのまま流用。qqq_vs_spy_20dは21営業日前時点との
+    単純比較のためget_price_series()の生系列（series[-21] vs series[-1]）
+    で算出する。daily/層は常に確定済み前日終値のみを保持する設計のため、
+    旧コードの「市場開場前・開場中の当日データ除外フィルタ」は不要になり
+    削除した（寄り付き前の未確定データが混入する余地がそもそもない）。
+    """
+    if not HAS_MARKET_DATA:
+        print("[WARN] common.market_data未import。Tech Pulseスキップ。")
+        return None, None
     try:
-        hist_qqq = yf.Ticker("QQQ").history(period="200d")
-        hist_spy = yf.Ticker("SPY").history(period="200d")
-        # 市場開場前・開場中は当日データが不確定なため除外
-        today = datetime.now(JST).date()
-        hist_qqq = hist_qqq[hist_qqq.index.date < today]
-        hist_spy = hist_spy[hist_spy.index.date < today]
-        if hist_qqq is None or len(hist_qqq) < 125:
+        qqq_vs_ma125 = _md_get_ma_deviation("QQQ", window=125)
+        if qqq_vs_ma125 is None:
             print("[WARN] QQQデータ不足。Tech Pulseスキップ。")
             return None, None
-        qqq_latest = hist_qqq['Close'].iloc[-1]
-        ma125 = hist_qqq['Close'].iloc[-125:].mean()
-        if _is_nan(qqq_latest) or _is_nan(ma125):
-            print("[WARN] QQQ終値がNaN。Tech Pulseスキップ。")
-            return None, None
-        qqq_vs_ma125 = round((qqq_latest / ma125 - 1) * 100, 2)
+        qqq_vs_ma125 = round(qqq_vs_ma125, 2)
+
         qqq_vs_spy_20d = None
-        if (hist_spy is not None and len(hist_spy) >= 21 and len(hist_qqq) >= 21
-                and not _is_nan(hist_qqq['Close'].iloc[-21]) and not _is_nan(hist_spy['Close'].iloc[-1])
-                and not _is_nan(hist_spy['Close'].iloc[-21])):
-            qqq_ret = (hist_qqq['Close'].iloc[-1] / hist_qqq['Close'].iloc[-21] - 1) * 100
-            spy_ret = (hist_spy['Close'].iloc[-1] / hist_spy['Close'].iloc[-21] - 1) * 100
+        qqq_series = _md_get_price_series("QQQ", days=25)
+        spy_series = _md_get_price_series("SPY", days=25)
+        qqq_reals = [r for r in qqq_series if not r.get("_gap") and r.get("close") is not None]
+        spy_reals = [r for r in spy_series if not r.get("_gap") and r.get("close") is not None]
+        if len(qqq_reals) >= 21 and len(spy_reals) >= 21:
+            qqq_ret = (qqq_reals[-1]["close"] / qqq_reals[-21]["close"] - 1) * 100
+            spy_ret = (spy_reals[-1]["close"] / spy_reals[-21]["close"] - 1) * 100
             # 単純差分（%pt）: QQQ超過リターン。旧式の比率計算は spy_ret≈0 で発散するため廃止
             qqq_vs_spy_20d = round(qqq_ret - spy_ret, 2)
-        print(f"[INFO] QQQ: {qqq_latest:.2f}, vs_MA125={qqq_vs_ma125:+.2f}%, vs_SPY_20d={qqq_vs_spy_20d}")
+        print(f"[INFO] QQQ: vs_MA125={qqq_vs_ma125:+.2f}%, vs_SPY_20d={qqq_vs_spy_20d}")
         return qqq_vs_ma125, qqq_vs_spy_20d
     except Exception as e:
         print(f"[WARN] QQQデータ取得失敗: {e}")
@@ -655,47 +740,50 @@ def get_realtime_data():
         "金（GOLD）": "GC=F",
     }
     for name, ticker in main_tickers.items():
-        hist = fetch_hist(ticker)
-        summary += format_line(name, hist)
-        if (hist is not None and len(hist) >= 2
-                and not _is_nan(hist['Close'].iloc[-1]) and not _is_nan(hist['Close'].iloc[-2])):
-            latest = hist['Close'].iloc[-1]
-            prev = hist['Close'].iloc[-2]
+        records = fetch_recent_records(ticker)
+        summary += format_line(name, records)
+        if (records is not None
+                and records[-1].get("close") is not None and records[-2].get("close") is not None
+                and not _is_nan(records[-1]["close"]) and not _is_nan(records[-2]["close"])):
+            latest = records[-1]["close"]
+            prev = records[-2]["close"]
             change = latest - prev
-            change_percent = (change / prev) * 100
-            vol_latest = hist['Volume'].iloc[-1]
-            vol_prev = hist['Volume'].iloc[-2]
-            volume_ratio = vol_latest / vol_prev if vol_prev > 0 else None
+            change_percent = (change / prev) * 100 if prev else 0.0
+            vol_latest = records[-1].get("volume")
+            vol_prev = records[-2].get("volume")
+            volume_ratio = vol_latest / vol_prev if (vol_latest is not None and vol_prev) else None
             data[name] = {
                 "value": round(latest, 2),
                 "change": round(change, 2),
                 "change_percent": round(change_percent, 2),
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
-                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+                "date": records[-1]["date"]
             }
         else:
             data[name] = None
 
     # NYSE Composite
     summary += "\n--- NYSE騰落統計（代替指標） ---\n"
-    nya_hist = fetch_hist("^NYA")
-    sp_hist = fetch_hist("^GSPC")
+    nya_records = fetch_recent_records("^NYA")
+    sp_records = fetch_recent_records("^GSPC")
     nya_data = None
-    if (nya_hist is not None and len(nya_hist) >= 2
-            and not _is_nan(nya_hist['Close'].iloc[-1]) and not _is_nan(nya_hist['Close'].iloc[-2])):
-        nya_latest = nya_hist['Close'].iloc[-1]
-        nya_prev = nya_hist['Close'].iloc[-2]
+    if (nya_records is not None
+            and nya_records[-1].get("close") is not None and nya_records[-2].get("close") is not None
+            and not _is_nan(nya_records[-1]["close"]) and not _is_nan(nya_records[-2]["close"])):
+        nya_latest = nya_records[-1]["close"]
+        nya_prev = nya_records[-2]["close"]
         nya_pct = (nya_latest - nya_prev) / nya_prev * 100
-        vol_latest = nya_hist['Volume'].iloc[-1]
-        vol_prev = nya_hist['Volume'].iloc[-2]
-        vol_ratio = vol_latest / vol_prev if vol_prev > 0 else None
+        vol_latest = nya_records[-1].get("volume")
+        vol_prev = nya_records[-2].get("volume")
+        vol_ratio = vol_latest / vol_prev if (vol_latest is not None and vol_prev) else None
         vol_ratio_str = f"{vol_ratio:.2f}" if vol_ratio is not None else "N/A"
-        last_date = nya_hist.index[-1].astimezone(JST).strftime('%m/%d')
+        last_date = datetime.strptime(nya_records[-1]["date"], "%Y-%m-%d").strftime("%m/%d")
         summary += f"● NYSE Composite(^NYA): {nya_latest:.2f} [{nya_pct:+.2f}%] | 前日比出来高比:{vol_ratio_str} ({last_date} 確定)\n"
-        sp_valid = (sp_hist is not None and len(sp_hist) >= 2
-                    and not _is_nan(sp_hist['Close'].iloc[-1]) and not _is_nan(sp_hist['Close'].iloc[-2]))
+        sp_valid = (sp_records is not None
+                    and sp_records[-1].get("close") is not None and sp_records[-2].get("close") is not None
+                    and not _is_nan(sp_records[-1]["close"]) and not _is_nan(sp_records[-2]["close"]))
         if sp_valid:
-            sp_pct = (sp_hist['Close'].iloc[-1] - sp_hist['Close'].iloc[-2]) / sp_hist['Close'].iloc[-2] * 100
+            sp_pct = (sp_records[-1]["close"] - sp_records[-2]["close"]) / sp_records[-2]["close"] * 100
             divergence = nya_pct - sp_pct
             summary += f"● NYA対S&P500乖離（騰落代理）: {divergence:+.2f}%pt"
             if divergence < -0.5:
@@ -708,7 +796,7 @@ def get_realtime_data():
             "value": round(nya_latest, 2),
             "change_percent": round(nya_pct, 2),
             "volume_ratio": round(vol_ratio, 2) if vol_ratio is not None else None,
-            "date": nya_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+            "date": nya_records[-1]["date"]
         }
         if sp_valid:
             nya_data["divergence_vs_sp"] = round(divergence, 2)
@@ -725,18 +813,19 @@ def get_realtime_data():
     }
     style_data = {}
     for name, ticker in style_tickers.items():
-        hist = fetch_hist(ticker)
-        summary += format_line(name, hist)
-        if (hist is not None and len(hist) >= 2
-                and not _is_nan(hist['Close'].iloc[-1]) and not _is_nan(hist['Close'].iloc[-2])):
-            latest = hist['Close'].iloc[-1]
-            prev = hist['Close'].iloc[-2]
+        records = fetch_recent_records(ticker)
+        summary += format_line(name, records)
+        if (records is not None
+                and records[-1].get("close") is not None and records[-2].get("close") is not None
+                and not _is_nan(records[-1]["close"]) and not _is_nan(records[-2]["close"])):
+            latest = records[-1]["close"]
+            prev = records[-2]["close"]
             pct = (latest - prev) / prev * 100
             style_data[name] = pct
             data[name] = {
                 "value": round(latest, 2),
                 "change_percent": round(pct, 2),
-                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+                "date": records[-1]["date"]
             }
         else:
             data[name] = None
@@ -747,10 +836,11 @@ def get_realtime_data():
         summary += f"  グロース対バリュー比（日次）: {gv_diff:+.2f}%pt → {direction}\n"
         data["グロース対バリュー比"] = {"diff_percent": round(gv_diff, 2)}
 
-    sp500_hist = fetch_hist("^GSPC")
-    if (sp500_hist is not None and "Russell2000小型(RUT)" in style_data and len(sp500_hist) >= 2
-            and not _is_nan(sp500_hist['Close'].iloc[-1]) and not _is_nan(sp500_hist['Close'].iloc[-2])):
-        sp_pct = (sp500_hist['Close'].iloc[-1] - sp500_hist['Close'].iloc[-2]) / sp500_hist['Close'].iloc[-2] * 100
+    sp500_records = fetch_recent_records("^GSPC")
+    if (sp500_records is not None and "Russell2000小型(RUT)" in style_data
+            and sp500_records[-1].get("close") is not None and sp500_records[-2].get("close") is not None
+            and not _is_nan(sp500_records[-1]["close"]) and not _is_nan(sp500_records[-2]["close"])):
+        sp_pct = (sp500_records[-1]["close"] - sp500_records[-2]["close"]) / sp500_records[-2]["close"] * 100
         lsv_diff = sp_pct - style_data["Russell2000小型(RUT)"]
         direction = "大型優勢（質への逃避）" if lsv_diff > 0 else "小型優勢（リスク選好）"
         summary += f"  大型対小型比（日次、S&P500対RUT）: {lsv_diff:+.2f}%pt → {direction}\n"
@@ -758,20 +848,22 @@ def get_realtime_data():
 
     # VIX9D vs VIX比較
     summary += "\n--- VIX9D vs VIX（短期・中期リスク比較） ---\n"
-    vix9d_hist = fetch_hist("^VIX9D")
-    vix_hist2  = fetch_hist("^VIX")
-    if (vix9d_hist is not None and vix_hist2 is not None and len(vix9d_hist) >= 2 and len(vix_hist2) >= 2
-            and not _is_nan(vix9d_hist['Close'].iloc[-1]) and not _is_nan(vix9d_hist['Close'].iloc[-2])
-            and not _is_nan(vix_hist2['Close'].iloc[-1])):
-        vix9d_now  = float(vix9d_hist['Close'].iloc[-1])
-        vix9d_prev = float(vix9d_hist['Close'].iloc[-2])
-        vix_now    = float(vix_hist2['Close'].iloc[-1])
+    vix9d_records = fetch_recent_records("^VIX9D")
+    vix_records2  = fetch_recent_records("^VIX")
+    if (vix9d_records is not None and vix_records2 is not None
+            and vix9d_records[-1].get("close") is not None and vix9d_records[-2].get("close") is not None
+            and vix_records2[-1].get("close") is not None
+            and not _is_nan(vix9d_records[-1]["close"]) and not _is_nan(vix9d_records[-2]["close"])
+            and not _is_nan(vix_records2[-1]["close"])):
+        vix9d_now  = float(vix9d_records[-1]["close"])
+        vix9d_prev = float(vix9d_records[-2]["close"])
+        vix_now    = float(vix_records2[-1]["close"])
         vix9d_chg  = vix9d_now - vix9d_prev
         vix9d_pct  = vix9d_chg / vix9d_prev * 100 if vix9d_prev > 0 else 0
         ratio      = vix9d_now / vix_now if vix_now > 0 else None
         contango   = vix9d_now < vix_now  # True=順鞘(通常), False=逆転(短期リスクオフ)
         state      = "順鞘（通常）" if contango else "逆転（短期リスクオフ準備）"
-        last_date  = vix9d_hist.index[-1].astimezone(JST).strftime('%m/%d')
+        last_date  = datetime.strptime(vix9d_records[-1]["date"], "%Y-%m-%d").strftime("%m/%d")
         summary += f"● VIX9D: {vix9d_now:.2f} [{vix9d_chg:+.2f} ({vix9d_pct:+.1f}%)] ({last_date} 確定) → {state}\n"
         if ratio is not None:
             summary += f"  VIX9D対VIX比: {ratio:.3f} (VIX9D {'>' if not contango else '<'} VIX={vix_now:.2f})\n"
@@ -779,12 +871,12 @@ def get_realtime_data():
             "value": round(vix9d_now, 2),
             "change": round(vix9d_chg, 2),
             "change_percent": round(vix9d_pct, 2),
-            "date": vix9d_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+            "date": vix9d_records[-1]["date"]
         }
         data["VIX9D対VIX比"] = {
             "value": round(ratio, 3) if ratio is not None else None,
             "contango": contango,
-            "date": vix9d_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+            "date": vix9d_records[-1]["date"]
         }
     else:
         summary += "● VIX9D: 取得失敗\n"
@@ -793,45 +885,46 @@ def get_realtime_data():
 
     # クレジット
     summary += "\n--- クレジット・金融コンディション ---\n"
-    hyg_hist = fetch_hist("HYG")
-    lqd_hist = fetch_hist("LQD")
-    summary += format_line("HYG（ハイイールド債ETF）", hyg_hist)
-    summary += format_line("LQD（投資適格債ETF）", lqd_hist)
+    hyg_records = fetch_recent_records("HYG")
+    lqd_records = fetch_recent_records("LQD")
+    summary += format_line("HYG（ハイイールド債ETF）", hyg_records)
+    summary += format_line("LQD（投資適格債ETF）", lqd_records)
 
-    if hyg_hist is not None and lqd_hist is not None:
-        for hist, name in [(hyg_hist, "HYG（ハイイールド債ETF）"), (lqd_hist, "LQD（投資適格債ETF）")]:
-            if (len(hist) < 2 or _is_nan(hist['Close'].iloc[-1])
-                    or _is_nan(hist['Close'].iloc[-2])):
+    if hyg_records is not None and lqd_records is not None:
+        for records, name in [(hyg_records, "HYG（ハイイールド債ETF）"), (lqd_records, "LQD（投資適格債ETF）")]:
+            if (records[-1].get("close") is None or records[-2].get("close") is None
+                    or _is_nan(records[-1]["close"]) or _is_nan(records[-2]["close"])):
                 data[name] = None
                 continue
-            latest = hist['Close'].iloc[-1]
-            prev = hist['Close'].iloc[-2]
+            latest = records[-1]["close"]
+            prev = records[-2]["close"]
             change = latest - prev
-            change_percent = (change / prev) * 100
-            vol_latest = hist['Volume'].iloc[-1]
-            vol_prev = hist['Volume'].iloc[-2]
-            volume_ratio = vol_latest / vol_prev if vol_prev > 0 else None
+            change_percent = (change / prev) * 100 if prev else 0.0
+            vol_latest = records[-1].get("volume")
+            vol_prev = records[-2].get("volume")
+            volume_ratio = vol_latest / vol_prev if (vol_latest is not None and vol_prev) else None
             data[name] = {
                 "value": round(latest, 2),
                 "change": round(change, 2),
                 "change_percent": round(change_percent, 2),
                 "volume_ratio": round(volume_ratio, 2) if volume_ratio is not None else None,
-                "date": hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+                "date": records[-1]["date"]
             }
-        if (len(hyg_hist) >= 2 and len(lqd_hist) >= 2
-                and not _is_nan(hyg_hist['Close'].iloc[-1]) and not _is_nan(hyg_hist['Close'].iloc[-2])
-                and not _is_nan(lqd_hist['Close'].iloc[-1]) and not _is_nan(lqd_hist['Close'].iloc[-2])):
+        if (hyg_records[-1].get("close") is not None and hyg_records[-2].get("close") is not None
+                and lqd_records[-1].get("close") is not None and lqd_records[-2].get("close") is not None
+                and not _is_nan(hyg_records[-1]["close"]) and not _is_nan(hyg_records[-2]["close"])
+                and not _is_nan(lqd_records[-1]["close"]) and not _is_nan(lqd_records[-2]["close"])):
             try:
-                ratio_now = hyg_hist['Close'].iloc[-1] / lqd_hist['Close'].iloc[-1]
-                ratio_prev = hyg_hist['Close'].iloc[-2] / lqd_hist['Close'].iloc[-2]
+                ratio_now = hyg_records[-1]["close"] / lqd_records[-1]["close"]
+                ratio_prev = hyg_records[-2]["close"] / lqd_records[-2]["close"]
                 ratio_chg = ratio_now - ratio_prev
-                last_date = hyg_hist.index[-1].astimezone(JST).strftime('%m/%d')
+                last_date = datetime.strptime(hyg_records[-1]["date"], "%Y-%m-%d").strftime("%m/%d")
                 direction = "HY優勢＝リスクオン" if ratio_chg > 0 else "スプレッド拡大示唆＝リスクオフ"
                 summary += f"● HYG対LQD比（クレジット代理）: {ratio_now:.4f} [{ratio_chg:+.6f}] ({last_date} 確定) → {direction}\n"
                 data["HYG対LQD比"] = {
                     "value": round(ratio_now, 4),
                     "change": round(ratio_chg, 6),
-                    "date": hyg_hist.index[-1].astimezone(JST).strftime('%Y-%m-%d')
+                    "date": hyg_records[-1]["date"]
                 }
             except Exception as e:
                 summary += f"● HYG/LQD比率: 計算エラー ({e})\n"
@@ -1131,6 +1224,13 @@ def collect_asset_flow():
     並び順（安全→リスク）: 超短期国債→短期国債→金→長期国債→投資適格社債→HY社債→株式
     short_bond（短期国債）のみFRED API経由（fetch_fred_short_bond参照、MP-IRX-FRED-1）。
     他6資産はyfinance経由のまま。
+
+    [[MARKETDATA-LAYER-CONSTRUCTION-1]]着手順序4-6のスコープ外（2026-08-11
+    実装時に発見）: SHV（超短期国債ETF）がmarket_dataの現行カバレッジ
+    （INDEX_ETF_COMMODITY_SYMBOLS）に未収録のため、本関数は_fetch_hist_
+    legacy()（旧fetch_hist()のyfinance直接呼び出し）を使い続ける。SHV
+    追加要否は別途判断が必要（登録するか判断するまでは全6資産を
+    legacy経路に統一し、資産ごとに取得経路が食い違う状態を避ける）。
     """
     ASSETS = [
         {"key": "ultra_short", "label": "超短期国債", "ticker": "SHV",     "desc": "1-3ヶ月T-Bill ETF"},
@@ -1147,7 +1247,7 @@ def collect_asset_flow():
             result[a["key"]] = fetch_fred_short_bond(a)
             continue
         try:
-            hist = fetch_hist(a["ticker"], period="5d")
+            hist = _fetch_hist_legacy(a["ticker"], period="5d")
             if (hist is None or len(hist) < 2
                     or _is_nan(hist["Close"].iloc[-1]) or _is_nan(hist["Close"].iloc[-2])):
                 reason = "hist取得失敗（空またはAPI例外）" if hist is None else (
