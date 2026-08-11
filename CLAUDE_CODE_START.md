@@ -1,5 +1,15 @@
 # Claude Code 作業開始テンプレート
 
+最終更新: 2026-08-11（「次セッションの一次データ層プロジェクト着手順序」節が
+2026-08-07時点の記述のまま陳腐化していたのを是正。PROJECT_STATUS.md・
+SYSTEM_MAP.md・BACKLOG.mdは2026-08-11時点の状態〈`common/market_data/`
+未決定事項9件の最終設計判断・`fetcher.py`/`reader.py`新設・Daily/Weekly
+Update workflows実装・本番消費者8ファイル中3/8切替完了〉へ既に更新済み
+だったが、本ファイルへの反映が漏れていたため今回訂正。訂正自体は
+ユーザーからの陳腐化発見依頼による。詳細はBACKLOG.md
+`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・BACKLOG_DONE.md「2026-08-11
+（完了）」参照。実装コード変更なし）
+
 ## 毎回の作業開始時に必ず実行すること
 
 ### Step 0: ローカルリポジトリの最新化（最優先）
@@ -42,26 +52,27 @@ git pull --rebase origin kaihatsu
   残るため、`normalized/`は完全廃止できず、この3系統向けに存続する
   設計とする（詳細は`[[SECDATA-STORAGE-FRAGMENTATION-1]]`参照）。
 
-  **次セッションの一次データ層プロジェクト着手順序**：`common/
-  sec_data`統合（フェーズD）は実質完了したため、次の優先タスクは
-  `PROJECT_STATUS.md`フェーズ1記載の新DB構築プロジェクトの他フェーズ
-  （`common/market_data/`・`common/macro_data/`新設）。このうち
-  `common/market_data/`（yfinance統合層）は2026-08-07に投資調査・
-  設計確定済み（`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`参照。12ファイル
-  の使用実態・3区分分類・保存構造〈`daily/`/`attributes/`/
-  `analyst_history/`〉・`fetcher.py`/`reader.py`API・株価仕様変更
-  〈取引時間中リアルタイム→前日終値ベース〉・
-  `EXTRACTION_DESIGN_PRINCIPLES.md`3原則照合まで完了）。次ステップは
-  同エントリの未決定事項9件の最終設計判断（特に保存前検証の乖離許容率
-  等の数値パラメータ）→`fetcher.py`新設→`reader.py`新設→本番消費者
-  切替、の順。通常のBACKLOG.md起点の作業と並行して判断すること。
+  **次セッションの一次データ層プロジェクト着手順序（2026-08-11更新）**：
+  `common/sec_data`統合（フェーズD）は実質完了。`common/market_data/`
+  （yfinance統合層）は設計確定・`fetcher.py`/`reader.py`実装・定期実行
+  ワークフロー（`Market_Data_Daily_Update.yml`/`Market_Data_Weekly_
+  Update.yml`、workflow_dispatchで実行確認済み）実装がいずれも完了し、
+  本番消費者切替が進行中（8ファイル中3/8完了: `beta_fetcher.py`・
+  `data_fetcher.py`・`valuation_fetcher.py`）。次のアクションは着手順序
+  4-4（`hypecore.py`切替、`daily/`/`attributes/`/`analyst_history/`の
+  3層すべてが混在する消費者のため最も複雑）。以降の優先順位は
+  `pipeline.py`（`.calendar`のみ未対応）・`collect.py`・
+  `collect_and_send.py`・`breadth_calculator.py`→診断ツール2ファイル
+  （`score_verifier.py`・`audit.py`）の順。
 
-  詳細はBACKLOG.md`[[SECDATA-STORAGE-FRAGMENTATION-1]]`（マスター
-  追跡エントリ、最終状況を記載）・BACKLOG_DONE.md
-  `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`（④）・
+  `common/sec_data`統合の詳細はBACKLOG.md`[[SECDATA-STORAGE-
+  FRAGMENTATION-1]]`（マスター追跡エントリ、最終状況を記載）・
+  BACKLOG_DONE.md`[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-4]]`（④）・
   `[[SEC-EDGAR-LAYER-DESIGN-PHASE-D-STEP2-3]]`（③）・`[[SEC-EDGAR-
   LAYER-DESIGN-PHASE-D-STEP2-2]]`（②）・`[[SEC-EDGAR-LAYER-DESIGN-
-  PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照）
+  PHASE-D-STEP2-1]]`（①TANUKI VALUATION本体）参照。`common/market_data/`
+  の詳細はBACKLOG.md`[[MARKETDATA-LAYER-CONSTRUCTION-1]]`・
+  BACKLOG_DONE.md「2026-08-11（完了）」参照
 - src/value/tanuki_valuation/pipeline.py（直近の変更を把握）
 
 ### Step 2: テスト実行
